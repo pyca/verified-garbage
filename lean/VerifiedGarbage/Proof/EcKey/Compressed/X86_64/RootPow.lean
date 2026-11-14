@@ -25,7 +25,7 @@ theorem rootPow_lay {c : Cfg} (hc : BaseCfgOk c) {j : Nat} (hj : j < 3)
     (hsep : j ≠ 1 ∨ c.n ≠ 9) :
     PowLay (Impl.EcKey.Compressed.X86_64.rootPow c ACC j) size :=
   powLay_of hc (jm := MP) (by decide) _ hj (base := W2) (by decide) (by decide)
-    (one := ONEP) (by decide) (by decide) ⟨by have := hc.n0; omega, Nat.le_refl _⟩ hsep
+    (one := ONEP) (by decide) (by decide) ⟨by have := hc.n0; omega_using [this], Nat.le_refl _⟩ hsep
 
 /-- The precise writes of one root exponentiation. -/
 abbrev rootPowerWrites (c : Cfg) (j : Nat) : List (Nat × Nat) :=
@@ -66,15 +66,15 @@ theorem rootPower_ok {c : Cfg} (hc : BaseCfgOk c) {e j : Nat}
       (pow (Impl.EcKey.Compressed.X86_64.rootPow c ACC j)))) s _
   refine WP.seq (WP.mono (setConst_ok hs hE he) fun s₁ ⟨e₁, k₁, O₁⟩ => ?_)
   have hs₁ := hs.of_keepRegs k₁ (by decide)
-  refine WP.seq (WP.mono (bits_ok hs₁ h0 (by omega) hE (bitsAt_le c h7 hj)
-    (sl_apart_bits c (i := EXPP) (j := j) (by decide) (.inl (by decide)) (64 * c.n) (by omega)))
+  refine WP.seq (WP.mono (bits_ok hs₁ h0 (by omega_using [h7]) hE (bitsAt_le c h7 hj)
+    (sl_apart_bits c (i := EXPP) (j := j) (by decide) (.inl (by decide)) (64 * c.n) (by omega_using [])))
     fun s₂ ⟨bits₂, k₂, O₂⟩ => ?_)
   have hs₂ := hs₁.of_keepRegs k₂ (by decide)
   have keep₂ {i : Nat} (hi : i < 45) (hiE : i ≠ EXPP) (hiT : i ≠ TMP) :
       sv c base s₂ i = sv c base s i := by
     have hsl := sl_le c h7 hi
-    rw [sv, O₂.wordsVal (sl_apart_bits c hi (.inl hiT) (64 * c.n) (by omega)) (by omega),
-      O₁.wordsVal (sl_apart c hiE) (by omega)]
+    rw [sv, O₂.wordsVal (sl_apart_bits c hi (.inl hiT) (64 * c.n) (by omega_using [])) (by omega_using [hn, hsl]),
+      O₁.wordsVal (sl_apart c hiE) (by omega_using [hn, hsl])]
   have hM₂ : ModOkW c.MP' size c.C.p s₂.mem base := modP_of hc (by
     change sv c base s₂ MP = c.C.p
     rw [keep₂ (by decide) (by decide) (by decide)]
@@ -111,6 +111,6 @@ theorem rootThree_ok {c : Cfg} (hc : BaseCfgOk c) (hp : c.C.p % 4 = 3)
         toM c.C.p (2 ^ (64 * c.n)) (sv c base s W2) ^ ((c.C.p + 1) / 4) := by
   simp only [Impl.EcKey.Compressed.X86_64.rootCandidate, hp, ↓reduceIte]
   exact rootPower_ok hc (by decide) (.inl (by decide))
-    (by have := hc.p_lt; have := hc.p_ge; omega) hs hM hB hO
+    (by have := hc.p_lt; have := hc.p_ge; omega_arith) hs hM hB hO
 
 end VG.Proof.EcKey.Compressed.X86_64

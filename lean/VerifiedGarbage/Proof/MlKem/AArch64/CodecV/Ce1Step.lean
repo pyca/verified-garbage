@@ -54,7 +54,7 @@ theorem L1 (s₀ : State) {g : Nat} (hg : g < 32) :
   rw [show width1.c = 8 from rfl, acc_succ, acc_succ, acc_succ, acc_succ, acc_succ, acc_succ, acc_succ,
     acc_succ, acc, List.range_zero, List.map_nil, digits_nil]
   simp only [show width1.d = 1 from rfl, show width1.c = 8 from rfl, Nat.add_zero, byte8]
-  omega
+  omega_using []
 
 theorem step1 {s₀ : State} (hp : Pre width1 s₀) {k : Nat} (hk : k < 8) {s : State}
     (h : VInv width1 4 (fun _ => True) s₀ k s) :
@@ -67,22 +67,22 @@ theorem step1 {s₀ : State} (hp : Pre width1 s₀) {k : Nat} (hk : k < 8) {s : 
   simp only [List.append_assoc]
   rw [WP.block_append_iff]
   refine WP.mono (ld4_ok src .v0 .v1 .v2 .v3 (o := 0) (j := 32 * k) (by decide)
-    (by rw [ptr_zero, e0]) (by omega)) fun s1 ⟨c1, l0, l1, l2, l3⟩ => ?_
+    (by rw [ptr_zero, e0]) (by omega_using [hk])) fun s1 ⟨c1, l0, l1, l2, l3⟩ => ?_
   rw [WP.block_append_iff]
   refine WP.mono (ld4_ok (src.chg c1) .v4 .v5 .v6 .v7 (o := 64) (j := 32 * k + 16) (by decide)
-    (by rw [c1.gpr, e0]; exact coeffAddr_off _ _ 16) (by omega))
+    (by rw [c1.gpr, e0]; exact coeffAddr_off _ _ 16) (by omega_using [hk]))
     fun s2 ⟨c2, l4, l5, l6, l7⟩ => ?_
   rw [WP.block_append_iff]
   have cs2 : CConsts width1 s2 := (h.cs.chg c1).chg c2
   refine WP.mono (ce1Math_ok cs2 (X := X) (fun i _ => val_lt _)
     (Lanes.chg c2 (by decide) l0)
-    ((Lanes.chg c2 (by decide) l1).congr fun e _ => by show _ = X (4 + e); congr 2; omega)
-    ((Lanes.chg c2 (by decide) l2).congr fun e _ => by show _ = X (8 + e); congr 2; omega)
-    ((Lanes.chg c2 (by decide) l3).congr fun e _ => by show _ = X (12 + e); congr 2; omega)
-    (l4.congr fun e _ => by show _ = X (16 + e); congr 2; omega)
-    (l5.congr fun e _ => by show _ = X (20 + e); congr 2; omega)
-    (l6.congr fun e _ => by show _ = X (24 + e); congr 2; omega)
-    (l7.congr fun e _ => by show _ = X (28 + e); congr 2; omega)) fun s3 ⟨c3, hb⟩ => ?_
+    ((Lanes.chg c2 (by decide) l1).congr fun e _ => by show _ = X (4 + e); congr 2; omega_using [])
+    ((Lanes.chg c2 (by decide) l2).congr fun e _ => by show _ = X (8 + e); congr 2; omega_using [])
+    ((Lanes.chg c2 (by decide) l3).congr fun e _ => by show _ = X (12 + e); congr 2; omega_using [])
+    (l4.congr fun e _ => by show _ = X (16 + e); congr 2; omega_using [])
+    (l5.congr fun e _ => by show _ = X (20 + e); congr 2; omega_using [])
+    (l6.congr fun e _ => by show _ = X (24 + e); congr 2; omega_using [])
+    (l7.congr fun e _ => by show _ = X (28 + e); congr 2; omega_using [])) fun s3 ⟨c3, hb⟩ => ?_
   have g3 : s3.gpr = s.gpr := by rw [c3.gpr, c2.gpr, c1.gpr]
   have m3 : s3.mem = s.mem := by rw [c3.mem, c2.mem, c1.mem]
   have w3 : s3.wr = s.wr := by rw [c3.wr, c2.wr, c1.wr]
@@ -90,9 +90,9 @@ theorem step1 {s₀ : State} (hp : Pre width1 s₀) {k : Nat} (hk : k < 8) {s : 
   refine wp_strw' (a := oP s₀ + BitVec.ofNat 64 (4 * k)) (by decide)
     (by rw [o4.get .x2, g3, ptr_zero, h.x2]; rfl)
     (by rw [o4.wr, w3, h.wr, hp.wr]
-        exact in_regions (List.mem_singleton_self _) (contains_off (by simp [width1]; omega) (by decide)))
+        exact in_regions (List.mem_singleton_self _) (contains_off (by simp [width1]; omega_using [hk]) (by decide)))
     fun s5 h5 v5 => ?_
-  have k4 : k < 256 / (width1.c * 4) := by simp [width1]; omega
+  have k4 : k < 256 / (width1.c * 4) := by simp [width1]; omega_using [hk]
   have gs : ∀ r, r ≠ .x9 → s5.gpr r = s.gpr r := fun r hr => by
     rw [h5.gpr, o4.gpr r (by simpa using hr), g3]
   refine WP.mono (tail_ok (w := width1) (G := 4) (s₀ := s₀) k4 (by rw [gs .x0 (by decide), h.x0])
@@ -104,27 +104,27 @@ theorem step1 {s₀ : State} (hp : Pre width1 s₀) {k : Nat} (hk : k < 8) {s : 
   · have cs3 : CConsts width1 s3 := cs2.chg c3
     have hv : t.v = s3.v := by rw [v, v5, v4]
     exact ⟨by rw [hv]; exact cs3.m, by rw [hv]; exact cs3.a, by rw [hv]; exact cs3.k⟩
-  · rw [o.mem, h5.mem, o4.mem, m3, show width1.nb * 4 * (k + 1) = 4 * k + 4 by simp [width1]; omega]
+  · rw [o.mem, h5.mem, o4.mem, m3, show width1.nb * 4 * (k + 1) = 4 * k + 4 by simp [width1]; omega_using []]
     have out := h.out
     rw [show width1.nb * 4 * k = 4 * k by simp [width1]] at out
-    refine bytes_write (n := 4) out (by decide) (by simp [width1]; omega) fun j hj => ?_
-    rw [x9, L1 s₀ (by omega)]
+    refine bytes_write (n := 4) out (by decide) (by simp [width1]; omega_using [hk]) fun j hj => ?_
+    rw [x9, L1 s₀ (by omega_using [hk, hj])]
     have e : BitVec.extractLsb' (8 * j) 8 (((((s3.v .v0).extractLsb' 0 32).setWidth 64).setWidth 32).setWidth (8 * (32 / 8))) =
         vbyte (s3.v .v0) j := by
       apply BitVec.eq_of_getLsbD_eq; intro i hi
-      simp [vbyte, hi, show 8 * j + i < 32 by omega]
+      simp [vbyte, hi, show 8 * j + i < 32 by omega_using [hj, hi]]
     rw [e]
     apply BitVec.eq_of_toNat_eq
     rw [hb j hj, BitVec.toNat_ofNat]
     simp only [byte8, C_cf width1_ok]
-    rw [show 8 * (4 * k + j) = 32 * k + 8 * j by omega]
-    simp only [show ∀ e, 32 * k + 8 * j + e = 32 * k + (8 * j + e) from fun e => by omega]
+    rw [show 8 * (4 * k + j) = 32 * k + 8 * j by omega_using []]
+    simp only [show ∀ e, 32 * k + 8 * j + e = 32 * k + (8 * j + e) from fun e => by omega_using []]
     have b : ∀ i, cf width1 (X i) < 2 ^ 1 := fun i => cf_lt width1 (X i)
     have := b (8 * j); have := b (8 * j + 1); have := b (8 * j + 2); have := b (8 * j + 3)
     have := b (8 * j + 4); have := b (8 * j + 5); have := b (8 * j + 6); have := b (8 * j + 7)
-    exact (Nat.mod_eq_of_lt (by simp only [X] at *; omega)).symm
+    exact (Nat.mod_eq_of_lt (by simp only [X] at *; omega_arith)).symm
   · rw [o.mem, h5.mem, o4.mem, m3]
     exact h.frame.write (n := 4) (List.mem_singleton_self _) _
-      (contains_off (by simp [width1]; omega) (by decide))
+      (contains_off (by simp [width1]; omega_using [hk]) (by decide))
 
 end VG.Proof.MlKem.AArch64.CE

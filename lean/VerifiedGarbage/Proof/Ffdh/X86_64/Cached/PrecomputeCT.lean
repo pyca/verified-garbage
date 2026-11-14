@@ -65,9 +65,9 @@ private theorem scan_pre (p : PcP) (s : State) (h : MainPre p s) (sp : Nat)
   have hZ := h.hZ
   have size : p.dom.length = 2 * p.k ∨ p.dom.length = 3 * p.k := by rw [h.doml]; exact h.dl
   have hl := VG.Proof.Ffdh.KeyScalar.bnd_length size
-  have hn : VG.Proof.Ffdh.KeyScalar.bnd p.k p.dom ≠ [] := by intro he; rw [he] at hl; simp at hl; omega
+  have hn : VG.Proof.Ffdh.KeyScalar.bnd p.k p.dom ≠ [] := by intro he; rw [he] at hl; simp at hl; omega_using [hk, hl]
   obtain ⟨hDom, _, hK, _, hQ, _, _⟩ := h.slots
-  refine ⟨h.scr, h.rdi, show 256 ≤ p.Z by omega, ?_, ?_, hn, by change (VG.Proof.Ffdh.KeyScalar.bnd p.k p.dom).length < 2 ^ 32; omega,
+  refine ⟨h.scr, h.rdi, show 256 ≤ p.Z by omega_using [hZ], ?_, ?_, hn, by change (VG.Proof.Ffdh.KeyScalar.bnd p.k p.dom).length < 2 ^ 32; omega_using [hk', hl],
     ?_, ?_⟩
   · change word s.mem p.B (8 * sp) = GenerateKey.boundPtr p.dp p.k p.dom
     unfold GenerateKey.boundPtr
@@ -100,18 +100,18 @@ theorem bound_ct : RelCT isa (Two MainPre) (seqs GenerateKey.bound) fun _ _ => T
     have hk' := h.k2
     have hZ := h.hZ
     obtain ⟨_, hDl, hK, _⟩ := h.slots
-    exact WP.mono (qTest_ok h.scr h.rdi (by omega) hDl hK (by rcases h.dl with e | e <;> omega)
-      (by rcases h.dl with e | e <;> omega)) fun t ⟨_, hz, hm, k⟩ => ⟨h.of_mem hm k (by decide), hz⟩
+    exact WP.mono (qTest_ok h.scr h.rdi (by omega_using [hZ]) hDl hK (by rcases h.dl with e | e <;> omega_using [e])
+      (by rcases h.dl with e | e <;> omega_using [hk', e])) fun t ⟨_, hz, hm, k⟩ => ⟨h.of_mem hm k (by decide), hz⟩
   refine two_ite (fun _ _ _ h₁ h₂ => by rw [iq_eval h₁, iq_eval h₂]) ?_ ?_
   · refine two_map PcP.scan (fun p s h => scan_pre p s h.1.1 sDom ?_)
       (VG.Proof.Ffdh.X86_64.scan_raw_ct (sp := sDom) (by taint_decide) (by taint_decide))
     have hd : p.dl = 2 * p.k := of_decide_eq_true (Option.some.inj ((iq_eval h.1).symm.trans h.2))
     have hk := h.1.1.k1
-    exact ite_eq_right (by omega)
+    exact ite_eq_right (by omega_using [hd, hk])
   · refine two_map PcP.scan (fun p s h => scan_pre p s h.1.1 sQ ?_)
       (VG.Proof.Ffdh.X86_64.scan_raw_ct (sp := sQ) (by taint_decide) (by taint_decide))
     have hd : p.dl ≠ 2 * p.k := of_decide_eq_false (Option.some.inj ((iq_eval h.1).symm.trans h.2))
-    have hd' : p.dl = 3 * p.k := by rcases h.1.1.dl with h | h <;> omega
+    have hd' : p.dl = 3 * p.k := by rcases h.1.1.dl with h | h <;> omega_arith
     exact ite_eq_left hd'
 
 /-- After the bound: its first significant byte in `rax`. -/
@@ -134,12 +134,12 @@ theorem front_ct :
     have hk2 := h.k2
     have hZ := h.hZ
     obtain ⟨hDom, hDl, hK, _, hQ, hCtx, _⟩ := h.slots
-    refine WP.mono (VG.Proof.Ffdh.X86_64.GenerateKey.bound_ok h.scr h.rdi (by omega) (by omega) (by omega) h.dl
+    refine WP.mono (VG.Proof.Ffdh.X86_64.GenerateKey.bound_ok h.scr h.rdi (by omega_using [hZ]) (by omega_using [hk1]) (by omega_using [hk2]) h.dl
       h.doml hDom hQ hK hDl h.dom) fun t ⟨hne, _, _, hax, hf, k⟩ => ⟨s, h, hne, hax, ?_, h.scr.congr k.2.2,
         (k.gpr (by decide)).trans h.rdi⟩
     rw [hf.word_eq (fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl <;> decide) (by unfold sCtx sXe sFn; omega)]
+      rcases hr with rfl | rfl <;> decide) (by unfold sCtx sXe sFn; omega_using [])]
     exact hCtx
   show RelCT isa (Two F1) (.seq Precompute.byteBits (.block (Precompute.width ++ Precompute.metadata))) _
   refine RelCT.seq (R := Two F2) (two_post (two_taint [.rax] (fun p s₁ s₂ h₁ h₂ r hr => by
@@ -150,7 +150,7 @@ theorem front_ct :
       rw [hax₁, hax₂]) (by taint_decide)) fun p s h => ?_) ?_
   · obtain ⟨s₀, h₀, hne, hax, hC, hs, hd⟩ := h
     exact WP.mono (byteBits_ok (h₀.lead_ne hne) hax) fun t ⟨_, hm, k⟩ =>
-      ⟨by rw [hm]; exact hC, hs.congr k.2.2, (k.gpr (by decide)).trans hd, by have := h₀.hZ; omega⟩
+      ⟨by rw [hm]; exact hC, hs.congr k.2.2, (k.gpr (by decide)).trans hd, by have := h₀.hZ; omega_using [this]⟩
   show RelCT isa (Two F2) (.block ([.mov .rsi (.mem (hdr sCtx))] ++
     (List.tail Precompute.width ++ Precompute.metadata))) _
   refine RelCT.block_append (RelCT.seq (R := Two fun p t => t.gpr .rdi = p.B ∧ t.gpr .rsi = p.cp)
@@ -162,7 +162,7 @@ theorem front_ct :
       · exact h.1
       · exact h.2) (by taint_decide)))
   have hC8 : InRegions (s.rd ++ s.wr) (off p.B (8 * sCtx)) 8 := hs.ld (by
-    unfold sCtx sXe sFn; omega)
+    unfold sCtx sXe sFn; omega_using [hZ])
   exact WP.mono (WP.keep [.rsi] (Q := fun t => t.gpr .rsi = p.cp) (by xrun [State.ea, hdr, hd, hdrOff, hC8, hC]) rfl)
     fun t ⟨hsi, k⟩ => ⟨(k.gpr (by decide)).trans hd, hsi⟩
 
@@ -187,7 +187,7 @@ theorem G0.setup {p : PcP} {s : State} (h : G0 p s) : VG.Proof.Ffdh.X86_64.Setup
   obtain ⟨hodd, _, _⟩ := valid_facts h.modValid hk1
   obtain ⟨hDom, _, hK, _⟩ := slots_of hf.hdr
   have hpl : (p.dom.take p.k).length = p.k := by
-    simp only [List.length_take, h.doml]; rcases h.dl with e | e <;> omega
+    simp only [List.length_take, h.doml]; rcases h.dl with e | e <;> omega_using [e]
   exact ⟨p.dom.take p.k, h.scr.congr hf.keep.2.2, (hf.keep.gpr (by decide)).trans h.rdi, hk1, h.k2, h.hZ,
     hDom, hK, (G0.src h hf).take p.k, hpl, hodd⟩
 
@@ -206,7 +206,7 @@ theorem setup_post_ct :
   obtain ⟨hodd, _, _⟩ := valid_facts h₀.modValid hk1
   obtain ⟨hDom, _, hK, _⟩ := slots_of hf.hdr
   have hpl : (p.dom.take p.k).length = p.k := by
-    simp only [List.length_take, h₀.doml]; rcases h₀.dl with e | e <;> omega
+    simp only [List.length_take, h₀.doml]; rcases h₀.dl with e | e <;> omega_using [e]
   exact WP.mono (VG.Proof.Ffdh.X86_64.setup_ok (h₀.scr.congr hf.keep.2.2) ((hf.keep.gpr (by decide)).trans h₀.rdi)
     hk1 h₀.k2 h₀.hZ hDom hK ((G0.src h₀ hf).take p.k) hpl hodd)
     fun t ⟨mi, hc, hv, _, hfr, k⟩ => ⟨mi, s₀, s, h₀, hf, hc, hv, hfr, k⟩
@@ -234,12 +234,12 @@ private theorem ph_r2 {s₁ s₂ : State} (h : Two PH s₁ s₂) : Two R2Pre s�
   have hk' := hm.k2
   have ew : p.w = (p.k + 7) / 8 := rfl
   obtain ⟨ho, _, hlo⟩ := valid_facts hm.modValid hk
-  obtain rfl := VG.Proof.Ffdh.X86_64.xvals_minv (show 1 ≤ p.w by omega) ho hv₁ hv₂
+  obtain rfl := VG.Proof.Ffdh.X86_64.xvals_minv (show 1 ≤ p.w by omega_using [hk, ew]) ho hv₁ hv₂
   refine ⟨⟨⟨off p.B (VG.Proof.Ffdh.X86_64.inner p.w), slot p.w 8, p.w, mi₁⟩,
     Spec.Rsa.os2ip (p.dom.take p.k)⟩, ?_, ?_⟩
-  · exact ⟨⟨hc₁.good, Nat.le_refl _⟩, show 2 ≤ p.w by omega, show p.w < 2 ^ 30 by omega,
+  · exact ⟨⟨hc₁.good, Nat.le_refl _⟩, show 2 ≤ p.w by omega_using [hk, ew], show p.w < 2 ^ 30 by omega_using [hk', ew],
       hv₁.n, hv₁.inv, h12₁, h10₁, ho, hlo⟩
-  · exact ⟨⟨hc₂.good, Nat.le_refl _⟩, show 2 ≤ p.w by omega, show p.w < 2 ^ 30 by omega,
+  · exact ⟨⟨hc₂.good, Nat.le_refl _⟩, show 2 ≤ p.w by omega_using [hk, ew], show p.w < 2 ^ 30 by omega_using [hk', ew],
       hv₂.n, hv₂.inv, h12₂, h10₂, ho, hlo⟩
 
 theorem r2_stage_ct (Mo : Mont) (R : R2Impl Mo) :
@@ -289,7 +289,7 @@ theorem fromOuter_link_ok {p : PcP} {t : State} (h : E1 p t) {o i : Nat} (ho : o
   have hlo := hc.lo
   have hhi := hc.hi
   have hO : InRegions (t.rd ++ t.wr) (off p.B (8 * o)) 8 := hc.scr.ld (by
-    have := hdr_lt_slot p.w 8 ho; omega)
+    have := hdr_lt_slot p.w 8 ho; omega_using [hhi, this])
   have hI : InRegions t.wr (off (off p.B (VG.Proof.Ffdh.X86_64.inner p.w)) (8 * i)) 8 :=
     hg.scr.st (hdr_lt_slot _ 8 hi')
   have hl : InRegions (t.rd ++ t.wr) (off (off p.B (VG.Proof.Ffdh.X86_64.inner p.w)) (8 * Crt.sLink)) 8 :=
@@ -297,17 +297,17 @@ theorem fromOuter_link_ok {p : PcP} {t : State} (h : E1 p t) {o i : Nat} (ho : o
   have hL : ∀ v : BitVec 64, (t.mem.writeW (off (off p.B (VG.Proof.Ffdh.X86_64.inner p.w)) (8 * i)) v).readW
       (off (off p.B (VG.Proof.Ffdh.X86_64.inner p.w)) (8 * Crt.sLink)) 64 = p.B := fun v => by
     change word _ _ (8 * Crt.sLink) = _
-    rw [(writeW_outside t.mem _ (d := 8 * i) v (by omega)).word (by unfold Crt.sLink sFn; omega)
-      (by unfold Crt.sLink sFn; omega)]
+    rw [(writeW_outside t.mem _ (d := 8 * i) v (by omega_using [hi'])).word (by unfold Crt.sLink sFn; omega_using [hi])
+      (by unfold Crt.sLink sFn; omega_using [])]
     exact hc.link
   refine WP.mono (WP.keep [.rdx, .rax] (Q := fun u => u.gpr .rax = p.B ∧
       u.mem = t.mem.writeW (off (off p.B (VG.Proof.Ffdh.X86_64.inner p.w)) (8 * i))
         (t.mem.readW (off p.B (8 * o)) 64))
     (by xrun [State.ea, hdr, hg.rdi, hdrOff, Crt.ws, hax, hO, hI, hl, hL]) rfl) fun u ⟨⟨hau, hmu⟩, ku⟩ => ?_
   have hf : Frm (off p.B (VG.Proof.Ffdh.X86_64.inner p.w)) [(8 * i, 8)] t.mem u.mem := by
-    rw [hmu]; exact Frm.of_outside (writeW_outside t.mem _ (d := 8 * i) _ (by omega)) (by simp)
+    rw [hmu]; exact Frm.of_outside (writeW_outside t.mem _ (d := 8 * i) _ (by omega_using [hi'])) (by simp)
   exact ⟨mi, hc.of_frm hf (fun r hr => by
-    rw [List.mem_singleton.mp hr]; exact ⟨by simp only; omega, hdr_lt_slot _ 8 hi'⟩) ku.2.2 (ku.gpr (by decide)), hau⟩
+    rw [List.mem_singleton.mp hr]; exact ⟨by simp only; omega_using [hi], hdr_lt_slot _ 8 hi'⟩) ku.2.2 (ku.gpr (by decide)), hau⟩
 
 theorem envBlock_ct :
     RelCT isa (Two fun (p : PcP) t => ∃ mi, SubCtx t p.B p.Z (VG.Proof.Ffdh.X86_64.inner p.w) p.w p.w mi)
@@ -345,20 +345,20 @@ theorem envBlock_post_ct :
     intro r hr
     simp only [VG.Proof.Ffdh.X86_64.setupR, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl
-    · show 8 * 6 + 8 ≤ p.Z; omega
-    · show 8 * 8 + 64 ≤ p.Z; omega
-    · show 8 * 29 + 8 ≤ p.Z; omega
+    · show 8 * 6 + 8 ≤ p.Z; omega_using [hZ]
+    · show 8 * 8 + 64 ≤ p.Z; omega_using [hZ]
+    · show 8 * 29 + 8 ≤ p.Z; omega_using [hZ]
     · show VG.Proof.Ffdh.X86_64.inner ((p.k + 7) / 8) + slot ((p.k + 7) / 8) 8 ≤ p.Z
       have := Nat.le_add_right (VG.Proof.Ffdh.X86_64.inner ((p.k + 7) / 8) + slot ((p.k + 7) / 8) 8)
         (tabBytes ((p.k + 7) / 8) 32)
-      omega
+      omega_using [hroom]
   have hin₁ : InScr p.B p.Z s.mem s₁.mem := InScr.of_frm hf₁ hsR
   have hb₁ : ∀ i < 32, i ≠ sW → i ≠ sWs → (i < sArr 0 ∨ sArr 0 + 8 ≤ i) →
       word s₁.mem p.B (8 * i) = word s.mem p.B (8 * i) := fun i hi h1 h2 h3 =>
     hf₁.word_eq (fun r hr => by
       simp only [VG.Proof.Ffdh.X86_64.setupR, List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl <;> simp only <;>
-        unfold sW sWs sArr sFn VG.Proof.Ffdh.X86_64.inner slot hdrBytes at * <;> omega) (by omega)
+        unfold sW sWs sArr sFn VG.Proof.Ffdh.X86_64.inner slot hdrBytes at * <;> omega_arith) (by omega_using [hi])
   obtain ⟨hb₂, hin₂⟩ := VG.Proof.Ffdh.X86_64.child_frm hc₁ hm₂.wide hf₂
     (fun r hr => Nat.le_trans (r2Ranges_le p.w r hr) (Nat.le_add_right _ _))
   have hCtx₂ : word s₂.mem p.B (8 * sCtx) = p.cp := by
@@ -381,19 +381,19 @@ theorem envBlock_post_ct :
       word s₃.mem p.B (8 * i) = word s.mem p.B (8 * i) := fun i hi h1 h2 h3 => by
     rw [hb₃ i hi, hb₂ i hi, hb₁ i hi h1 h2 h3]
   have hgl : p.gb.length = p.k := by
-    simp only [List.length_take, List.length_drop, h.doml]; rcases h.dl with e | e <;> omega
+    simp only [List.length_take, List.length_drop, h.doml]; rcases h.dl with e | e <;> omega_using [e]
   have hgsep : ∀ i < p.gb.length, 8 * (p.T mi).n ≤ ofs p.cp (p.dp + BitVec.ofNat 64 p.k + BitVec.ofNat 64 i) :=
     fun i hi => by
       rw [hgl] at hi
-      have := h.dsep (p.k + i) (by rcases h.dl with e | e <;> omega)
+      have := h.dsep (p.k + i) (by rcases h.dl with e | e <;> omega_using [hi, e])
       rwa [BitVec.add_assoc, BitVec.ofNat_add_ofNat]
-  refine ⟨mi, p.gb, he₃, ?_, ?_, rfl, ?_, ?_, hgl, ?_, hgsep, by omega, by rw [hgl]⟩
+  refine ⟨mi, p.gb, he₃, ?_, ?_, rfl, ?_, ?_, hgl, ?_, hgsep, by omega_using [hk1, hgl], by rw [hgl]⟩
   · have := h.bits_pos
     show 1 ≤ Spec.Rsa.FixedBaseComb.rows p.bits
-    unfold Spec.Rsa.FixedBaseComb.rows Spec.Rsa.FixedBaseComb.teeth; omega
+    unfold Spec.Rsa.FixedBaseComb.rows Spec.Rsa.FixedBaseComb.teeth; omega_using [this]
   · have := h.bits_le
     show Spec.Rsa.FixedBaseComb.rows p.bits < 2 ^ 63
-    unfold Spec.Rsa.FixedBaseComb.rows Spec.Rsa.FixedBaseComb.teeth; omega
+    unfold Spec.Rsa.FixedBaseComb.rows Spec.Rsa.FixedBaseComb.teeth; omega_using [this]
   · exact (hout₁₃ _ (by decide) (by decide) (by decide) (by decide)).trans hG
   · rw [hout₁₃ _ (by decide) (by decide) (by decide) (by decide), hgl]; exact hK
   · exact Src.of_pcOnly ((hsrc.drop p.k).take p.k) (PcP.Only.of_inScr hin₁₃) hgsep

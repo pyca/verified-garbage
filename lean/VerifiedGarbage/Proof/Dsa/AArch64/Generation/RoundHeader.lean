@@ -18,7 +18,7 @@ theorem round_header_ranges (w j : Nat) (hj : j ∈ [0, 16, 17, 18, 19, 20, 21, 
   · simp only [witnessMontRanges, List.mem_cons, List.not_mem_nil, or_false] at hm
     have hj32 : j < 32 := by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hj
-      omega
+      omega_using [hj]
     rcases hm with rfl | rfl | rfl <;> left <;>
       simp only [slot, hdrBytes, aAcc, aTmp, aXm] <;> omega_arith
   · exact sharedKernel_hdr w j hj r hk

@@ -44,16 +44,16 @@ theorem xor_mem128 (m : Mem) {d x y : Addr} {n k : Nat} (hk : k < n) (hlt : 16 *
   -- The words of `x` and `y` are not in the part of `d` written so far.
   have sx : Region.Disjoint ⟨x + BitVec.ofNat 64 (16 * k), 16⟩
       ⟨d, (xorBytes (bytesAt m x (16 * k)) (bytesAt m y (16 * k))).length⟩ := by
-    rw [hl]; exact (hdx.symm.sub_left (sub_off (by omega) (by omega))).sub_right
-      (Region.sub_prefix (by omega))
+    rw [hl]; exact (hdx.symm.sub_left (sub_off (by omega_using [hk]) (by omega_using [hk, hlt]))).sub_right
+      (Region.sub_prefix (by omega_using [hk]))
   have sy : Region.Disjoint ⟨y + BitVec.ofNat 64 (16 * k), 16⟩
       ⟨d, (xorBytes (bytesAt m x (16 * k)) (bytesAt m y (16 * k))).length⟩ := by
-    rw [hl]; exact (hdy.symm.sub_left (sub_off (by omega) (by omega))).sub_right
-      (Region.sub_prefix (by omega))
-  rw [writeW_xor128, bytesAt_writeBytes_sep _ _ sx (by omega), bytesAt_writeBytes_sep _ _ sy (by omega)]
+    rw [hl]; exact (hdy.symm.sub_left (sub_off (by omega_using [hk]) (by omega_using [hk, hlt]))).sub_right
+      (Region.sub_prefix (by omega_using [hk]))
+  rw [writeW_xor128, bytesAt_writeBytes_sep _ _ sx (by omega_using []), bytesAt_writeBytes_sep _ _ sy (by omega_using [])]
   have e := writeBytes_append m d _ (xorBytes (bytesAt m (x + BitVec.ofNat 64 (16 * k)) 16)
     (bytesAt m (y + BitVec.ofNat 64 (16 * k)) 16))
-    (by rw [hl, xorBytes_length _ _ (by simp [bytesAt]), bytesAt_length]; omega)
+    (by rw [hl, xorBytes_length _ _ (by simp [bytesAt]), bytesAt_length]; omega_using [hk, hlt])
   rw [hl] at e
   rw [e, Nat.mul_succ, bytesAt_add, bytesAt_add, xorBytes, xorBytes, xorBytes,
     List.zipWith_append (by simp [bytesAt])]

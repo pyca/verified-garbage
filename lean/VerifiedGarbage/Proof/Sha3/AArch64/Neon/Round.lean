@@ -46,10 +46,10 @@ theorem iota_ok {s : State} {A B : Spec.Sha3.State} (hp : Pairs s A B) (r : Nat)
     rw [hp0,pair_xor]
   · have h0 : vreg i ≠ VReg.v0 := by
       change vreg i ≠ vreg 0
-      rw [ne_eq,vreg_inj i (by omega) 0 (by decide)]; exact he
+      rw [ne_eq,vreg_inj i (by omega_using [hi]) 0 (by decide)]; exact he
     have h25 : vreg i ≠ VReg.v25 := by
       change vreg i ≠ vreg 25
-      rw [ne_eq,vreg_inj i (by omega) 25 (by decide)]; omega
+      rw [ne_eq,vreg_inj i (by omega_using [hi]) 25 (by decide)]; omega_using [hi]
     rw [ite_eq_right he,ite_eq_right he,h2.get _ h0,h1.get _ h25]
     exact hp i hi
 

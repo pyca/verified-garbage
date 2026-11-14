@@ -50,7 +50,7 @@ theorem Slots.frame {s : State} {m m' : Mem} (S : Slots s m) {rs : List Region} 
   have one : ∀ {d : Nat}, oOut ≤ d → d + 8 ≤ frameBytes → m'.readW (fb s + BitVec.ofNat 64 d) 64 =
       m.readW (fb s + BitVec.ofNat 64 d) 64 := fun h₁ h₂ =>
     hf.readW (Region.contains_self _ _) (fun r hr => (hd r hr).sub_left
-      (Offset.sub _ h₁ (by unfold oOut frameBytes at *; omega))) (by decide)
+      (Offset.sub _ h₁ (by unfold oOut frameBytes at *; omega_using [h₂]))) (by decide)
   refine ⟨S.sv.frame hf fun p hp r hr => (hd r hr).sub_left (Offset.sub _ (savedSlots_offs p hp).1
     (savedSlots_offs p hp).2), ?_, ?_, ?_⟩
   · rw [one (by decide) (by decide)]; exact S.dl
@@ -112,10 +112,10 @@ theorem psa_le : (if pc then 112 else 96) ≤ 112 := by cases pc <;> decide
 theorem psa_sub (s : State) : Region.Sub (psaR pc s) (kR s) := frame_sub s (by cases pc <;> decide)
 
 theorem nCall_lt {n : Nat} (hn : n < nCallArgs pc) : n < 14 ∧ 3 + n < if pc then 17 else 15 := by
-  cases pc <;> simp only [nCallArgs, Bool.false_eq_true, ↓reduceIte] at hn ⊢ <;> omega
+  cases pc <;> simp only [nCallArgs, Bool.false_eq_true, ↓reduceIte] at hn ⊢ <;> omega_using [hn]
 
 theorem fR_sub (s : State) : Region.Sub ⟨fb s, frameBytes⟩ (kR s) := by
-  have := frame_sub s (d := 0) (n := frameBytes) (by omega)
+  have := frame_sub s (d := 0) (n := frameBytes) (by omega_using [])
   rwa [BitVec.add_zero] at this
 
 /-- The saves, from the state after the frame's push: `r12` holds the frame's
@@ -141,7 +141,7 @@ theorem saves_ok {s : State} {rest : List Instr} {Q : State → Prop}
       simp [← hu, State.write, slotVal, allocated]
   refine Spill.save_ok (b := .r12) (l := savedSlots) (by decide) (by decide) (fun p hp => ?_) ?_
   · have := savedSlots_offs p hp
-    rw [uwr, u12]; exact in_fr s _ (by unfold oOut at this; omega) (by unfold oOut frameBytes at *; omega)
+    rw [uwr, u12]; exact in_fr s _ (by unfold oOut at this; omega_using [this]) (by unfold oOut frameBytes at *; omega_using [this])
   refine k _ (by rw [← hu]; rfl) (by rw [← hu]; rfl) uwr u12 (fun r h12 h0 => ?_) ?_ ?_
   · show u.gpr r = s.gpr r
     rw [← hu, gpr_write_of_ne _ _ h0, gpr_write_of_ne _ _ h12]; rfl
@@ -151,7 +151,7 @@ theorem saves_ok {s : State} {rest : List Instr} {Q : State → Prop}
       rw [hum]; exact Frame.write (Frame.refl _ _) (List.mem_singleton_self _) _ (fb_contains s)
     rw [u12]
     exact f1.trans ((Spill.saveMem_frame_base (n := frameBytes) (fun p hp => by
-      have := savedSlots_offs p hp; unfold oOut frameBytes at *; omega) (by decide) _ _ _).sub
+      have := savedSlots_offs p hp; unfold oOut frameBytes at *; omega_using [this]) (by decide) _ _ _).sub
       fun r hr => by rw [List.mem_singleton.mp hr]; exact ⟨_, List.mem_singleton_self _, fR_sub s⟩)
   · show Spill.Saved (fb s) (slotVal s) savedSlots (Spill.saveMem u.mem (u.gpr .r12) u.gpr savedSlots)
     rw [u12]
@@ -175,11 +175,11 @@ theorem copy_step {s w : State} (h : DPre pc s) (hw12 : w.gpr .r12 = fb s) (hrd 
   have hv : t.mem.readW (t.gpr .r12 + BitVec.ofNat 64 (arg (3 + n))) 64 = stackArg s (3 + n) := by
     rw [t12]; exact arg_readG h hmt hn'
   have ho : InRegions t.wr (t.gpr .r12 + BitVec.ofNat 64 (96 + 8 * n)) 8 := by
-    rw [t12, hc.keep.wr, hwr]; exact in_fr s _ (by omega) (by unfold frameBytes; omega)
-  have harg : arg (3 + n) < 2 ^ 15 ∧ arg (3 + n) % 4 = 0 := by unfold arg frameBytes; omega
+    rw [t12, hc.keep.wr, hwr]; exact in_fr s _ (by omega_using []) (by unfold frameBytes; omega_using [hn14])
+  have harg : arg (3 + n) < 2 ^ 15 ∧ arg (3 + n) % 4 = 0 := by unfold arg frameBytes; omega_using [hn14]
   apply WP.of_runBlock
   simp only [copyArg, mvArg, runBlock_cons, runStep_some, exec_load_d (show Reg.r12 ≠ .r0 by decide) harg hin]
-  rw [exec_store_d (show Reg.r12 ≠ .r0 by decide) ⟨by omega, by omega⟩
+  rw [exec_store_d (show Reg.r12 ≠ .r0 by decide) ⟨by omega_using [hn14], by omega_using []⟩
     (by rw [gpr_write_of_ne _ _ (show Reg.r12 ≠ .r0 by decide)]; exact ho)]
   simp only [runStep_some, runBlock_nil, Option.some.injEq, exists_eq_left']
   rw [gpr_write_of_ne _ _ (show Reg.r12 ≠ .r0 by decide), gpr_write_self, mem_write, hv, t12]
@@ -187,10 +187,10 @@ theorem copy_step {s w : State} (h : DPre pc s) (hw12 : w.gpr .r12 = fb s) (hrd 
   · show (t.write .r0 _).gpr r = w.gpr r
     rw [gpr_write_of_ne _ _ (by simpa using hr)]; exact hc.keep.gpr r hr
   · have := psa_le (pc := pc)
-    exact hc.mem.writeW (List.mem_singleton_self _) _ (Offset.contains _ (by omega)
-      (by cases pc <;> simp only [nCallArgs, Bool.false_eq_true, ↓reduceIte] at hn ⊢ <;> omega) (by omega))
+    exact hc.mem.writeW (List.mem_singleton_self _) _ (Offset.contains _ (by omega_using [])
+      (by cases pc <;> simp only [nCallArgs, Bool.false_eq_true, ↓reduceIte] at hn ⊢ <;> omega_arith) (by omega_using [this]))
   · rcases Nat.lt_succ_iff_lt_or_eq.mp hi with hi | rfl
-    · rw [Mem.readW_writeW_sep (Offset.sep _ (.inl (by omega)) (by omega) (by omega)) (by decide)]
+    · rw [Mem.readW_writeW_sep (Offset.sep _ (.inl (by omega_using [hi])) (by omega_arith) (by omega_using [hn14])) (by decide)]
       exact hc.psa i hi
     · rw [Mem.readW_writeW_self64]
 
@@ -248,7 +248,7 @@ theorem setup_ok {s : State} (h : DPre pc s) :
   -- the slots after the moves
   have sep : ∀ {d e : Nat}, d + 8 ≤ e ∨ e + 8 ≤ d → e + 8 ≤ frameBytes → d + 8 ≤ frameBytes →
       Mem.Sep (fb s + BitVec.ofNat 64 d) 8 (fb s + BitVec.ofNat 64 e) 8 := fun h₁ h₂ h₃ =>
-    Offset.sep _ h₁ (by unfold frameBytes at *; omega) (by unfold frameBytes at *; omega)
+    Offset.sep _ h₁ (by unfold frameBytes at *; omega_using [h₃]) (by unfold frameBytes at *; omega_using [h₂])
   have fm : Frame [kR s] s.mem w.mem := by
     rw [wm]
     exact ((vm.writeW (List.mem_singleton_self _) _ (frame_contains s (by decide))).writeW
@@ -279,7 +279,7 @@ theorem setup_ok {s : State} (h : DPre pc s) :
     rw [List.mem_singleton.mp hr]; exact ⟨_, List.mem_singleton_self _, psa_sub s⟩)
   have tsl : Slots s t.mem := sl.frame hc.mem fun r hr => by
     rw [List.mem_singleton.mp hr]
-    exact Offset.disjoint _ (.inr (by unfold oOut; omega)) (by unfold oOut frameBytes; omega) (by omega)
+    exact Offset.disjoint _ (.inr (by unfold oOut; omega_using [pl])) (by unfold oOut frameBytes; omega_using []) (by omega_using [pl])
   have kt : ∀ r, r ≠ .r12 → r ≠ .r0 → t.gpr r = s.gpr r := fun r h1 h2 =>
     (hc.keep.gpr r (by simpa using h2)).trans ((kw.gpr r (by simpa using h2)).trans (hg r h1 h2))
   have i1 : t.mem.readW (fb s + BitVec.ofNat 64 oIn) 64 = stackArg s 1 := tsl.inp

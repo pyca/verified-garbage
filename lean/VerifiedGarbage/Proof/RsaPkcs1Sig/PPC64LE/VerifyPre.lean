@@ -82,7 +82,7 @@ theorem preV_of {s : State} (h : (Spec.RsaPkcs1Sig.verifyPrecomputedContract abi
     stackArgs_five, List.append_eq, List.range, List.range.loop] at h
   obtain ⟨sp1, sp2, hrd, hwr, ns, es, ds, gs, sp, sa, kn, ke, kd, kg, ks, kp, ka, wn, we, wd, wg, ws, wp, ⟨k1, k2⟩,
     e1, e2, hs, hp⟩ := h
-  exact ⟨sp1, by omega, hrd, hwr, ns, es, ds, gs, sp, sa, kn, ke, kd, kg, ks, kp, ka, wn, we, wd, wg, ws, wp, k1, k2,
+  exact ⟨sp1, by omega_using [sp2], hrd, hwr, ns, es, ds, gs, sp, sa, kn, ke, kd, kg, ks, kp, ka, wn, we, wd, wg, ws, wp, k1, k2,
     e1, e2, hs, hp⟩
 
 end VG.Proof.RsaPkcs1Sig.PPC64LE.Ver

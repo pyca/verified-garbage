@@ -67,7 +67,7 @@ def AttAt (S : Signer) (a : AttPub) (s₀ t : State) : Prop := AttFacts S a s₀
 
 theorem AttFacts.spl_trace {a : AttPub} {s₀ : State} (F : AttFacts S a s₀) :
     (spl s₀ 128 a.used).trace = randomSamplingTrace a.tr := by
-  obtain ⟨f, hf⟩ : ∃ f, a.fuel = f + 1 := ⟨a.fuel - 1, by have := F.pos; omega⟩
+  obtain ⟨f, hf⟩ : ∃ f, a.fuel = f + 1 := ⟨a.fuel - 1, by have := F.pos; omega_using [this]⟩
   rw [← F.tr, hf]
   exact (VG.Proof.Dsa.random_sign_trace_draw _ _ _).symm
 
@@ -87,7 +87,7 @@ theorem AttFacts.signed {a : AttPub} {s₀ : State} (F : AttFacts S a s₀) {k :
     (hk : (spl s₀ 128 a.used).scalar = some k) :
     (Spec.Dsa.signBytes (rInput s₀).pLen (rInput s₀).qLen (rInput s₀).key
       (Spec.Dsa.encodeBE (rInput s₀).qLen k) (rInput s₀).digest).isSome = a.signed := by
-  obtain ⟨f, hf⟩ : ∃ f, a.fuel = f + 1 := ⟨a.fuel - 1, by have := F.pos; omega⟩
+  obtain ⟨f, hf⟩ : ∃ f, a.fuel = f + 1 := ⟨a.fuel - 1, by have := F.pos; omega_using [this]⟩
   have htr := F.tr
   rw [hf] at htr
   unfold AttPub.signed
@@ -175,7 +175,7 @@ theorem callFinish_ct : RelCT isa (Two fun a => At (Called a) a.pub) callFinish 
   · refine RelCT.seq (two_piece (Ψ := fun a => At (Spent' a) a.pub) [.r11]
       (pins_at' AttPub.pub fun _ _ _ h => h.1) (by taint_decide)
       fun a t ⟨⟨s₀, A, e, h, _, ha, hp, hl⟩, _⟩ => ?_) ?_
-    · obtain ⟨f, hf⟩ : ∃ f, a.fuel = f + 1 := ⟨a.fuel - 1, by omega⟩
+    · obtain ⟨f, hf⟩ : ∃ f, a.fuel = f + 1 := ⟨a.fuel - 1, by omega_using [hp]⟩
       rw [hf] at ha hl
       refine WP.mono (finDec_ok h ha hl) fun u ⟨h', _, _, z⟩ => ⟨s₀, A, e, h', ?_⟩
       rw [z, hf, Nat.add_sub_cancel]
@@ -205,7 +205,7 @@ theorem attempt_ct (S : Signer) (name : String) :
       by rw [fu.mem]; exact S.out.status, by rw [fu.mem]; exact S.out.nonce⟩, S.ready.fupd fu,
       by rw [fu.mem]; exact S.attempts, by rw [fu.mem]; exact S.saved⟩
   · have hle := sampleStatus_le (spl s₀ 128 a.used)
-    rw [z, r0, one_beq (by omega), S.facts.status]
+    rw [z, r0, one_beq (by omega_using [hle]), S.facts.status]
   refine two_ite (fun a t₁ t₂ ⟨_, _, _, _, z₁⟩ ⟨_, _, _, _, z₂⟩ => by rw [eval_eq, eval_eq, z₁, z₂]) ?_ ?_
   · refine RelCT.seq (two_piece (Ψ := fun a => At (Args S a) a.pub) [.r11]
       (pins_at' AttPub.pub fun _ _ _ h => h.1.ready) (by taint_decide)

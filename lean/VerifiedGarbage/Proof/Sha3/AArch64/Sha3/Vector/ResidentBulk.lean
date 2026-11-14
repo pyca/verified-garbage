@@ -55,7 +55,7 @@ theorem finish_ok (b : State) (hp : BulkPre b) (s₀ : State) (hs : Setup b s₀
       exact (hp.st_scr.sub_right (Region.sub_prefix (by decide))).symm
   refine (restore_ok b t saved (hp'.x1.trans h1) (fun i hi => ?_)).mono fun u ⟨hk,hv⟩ => ?_
   · rw [hp'.rd,hp'.wr,h.rd,h.wr,hp.rd,hp.wr,hp'.x1,h1]
-    exact ⟨scratchR b,by simp,Offset.contains_base _ (by change 16*i+16 ≤ 640; omega) (by omega)⟩
+    exact ⟨scratchR b,by simp,Offset.contains_base _ (by change 16*i+16 ≤ 640; omega_using [hi]) (by omega_using [hi])⟩
   · refine ⟨c,⟨h.c_le,h.aligned,?_,?_,hv,?_⟩⟩
     · exact (congrFun hk.gpr .x3).trans ((hg .x3 (by simp)).trans h.x3)
     · exact (congrFun hk.gpr .x4).trans ((hg .x4 (by simp)).trans h.x4)

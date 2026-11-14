@@ -88,7 +88,7 @@ theorem jointStep_core_ok (hu : u<2^(64*c.K.M.n)) (hv : v<2^(64*c.K.M.n)) {j : N
   rw [Joint.step]
   simp only [Code.inline]
   apply WP.seq
-  refine WP.mono_syms (decRbx_ok s (by omega) (by omega) hb) fun a ⟨ab,ka⟩ sa => ?_
+  refine WP.mono_syms (decRbx_ok s (by omega_using []) (by omega_using [hj, this, ht]) hb) fun a ⟨ab,ka⟩ sa => ?_
   have ab' : a.gpr .rbx=BitVec.ofNat 64 j := by rw [ab, Nat.add_sub_cancel]
   have ca := hs.of_keeps ka (by decide) (fun n hn hn' ho => (hs.external n hn hn' ho).of_keeps ka sa)
   -- The doubling, but where `R` is `O` (`j = 64 n`, the first iteration).
@@ -102,7 +102,7 @@ theorem jointStep_core_ok (hu : u<2^(64*c.K.M.n)) (hv : v<2^(64*c.K.M.n)) {j : N
     · exact WP.mono (hdouble _ a hA ca) fun b ⟨kb,cb⟩ =>
         ⟨kb,cb,(kb.gpr _ (rbx_not_clob _)).trans ab'⟩
     simp only [Code.inline]
-    refine WP.seq (WP.mono_syms (cmpRbxImm_ok a (k:=64*c.K.M.n) (by omega) (by omega) ab')
+    refine WP.seq (WP.mono_syms (cmpRbxImm_ok a (k:=64*c.K.M.n) (by omega_using [hj, this, ht]) (by omega_using [this]) ab')
       fun a' ⟨az,ka'⟩ sa' => ?_)
     have ca' := ca.of_keeps ka' (by decide) (fun n hn hn' ho => (ca.external n hn hn' ho).of_keeps ka' sa')
     have kp' : ProgKeep c.K.M base (jointWork c) a a' := jointKeeps_prog ka' (by simp)
@@ -119,10 +119,10 @@ theorem jointStep_core_ok (hu : u<2^(64*c.K.M.n)) (hv : v<2^(64*c.K.M.n)) {j : N
   refine WP.mono hg fun b ⟨kb,cb,bb⟩ => ?_
   apply WP.seq
   refine WP.mono (jointDigits_core_ok hL hm hC hd hOne hOneVal hG hQ
-    (hC.onCurve_add hA hA) cb (by omega) bb) fun d ⟨kd,cd⟩ => ?_
+    (hC.onCurve_add hA hA) cb (by omega_using [hj, ht]) bb) fun d ⟨kd,cd⟩ => ?_
   rw [jointPoint_step hC hG hQ (gw:=c.gw)] at cd
   have db : d.gpr .rbx=BitVec.ofNat 64 j := (kd.gpr _ (rbx_not_clob _)).trans bb
-  refine WP.mono_syms (testRbx_ok d (by omega) db) fun t ⟨tz,kt⟩ st => ?_
+  refine WP.mono_syms (testRbx_ok d (by omega_using [hj, this, ht]) db) fun t ⟨tz,kt⟩ st => ?_
   have ct := cd.of_keeps kt (by decide) (fun n hn hn' ho => (cd.external n hn hn' ho).of_keeps kt st)
   have kp : ProgKeep c.K.M base (jointWork c) d t := jointKeeps_prog kt (by simp)
   exact ⟨(JointLoopKeep.of_keeps ka).trans (JointLoopKeep.of_prog (kb.trans (kd.trans kp))),
@@ -143,14 +143,14 @@ theorem jointLoop_core_ok (hu : u<2^(64*c.K.M.n)) (hv : v<2^(64*c.K.M.n)) {s : S
   apply countLoop_ok (Inv:=I) (n:=Joint.top c)
   · intro j a hj1 hj256 hi
     obtain ⟨ka,ca,ab⟩ := hi
-    have he : j-1+1=j := by omega
+    have he : j-1+1=j := by omega_using [hj1]
     refine WP.mono (jointStep_core_ok hL hm hC hd hOne hOneVal hG hQ hdouble hu hv
-      (by omega) (he.symm ▸ ca) (he.symm ▸ ab)) fun t ⟨kt,ct,tb,tz⟩ => ⟨⟨ka.trans kt,ct,tb⟩,tz⟩
+      (by omega_using [hj1, hj256]) (he.symm ▸ ca) (he.symm ▸ ab)) fun t ⟨kt,ct,tb,tz⟩ => ⟨⟨ka.trans kt,ct,tb⟩,tz⟩
   · intro t ht
     obtain ⟨kt,ct,tb⟩ := ht
     rw [jointPoint_zero (gw:=c.gw)] at ct
     exact ⟨kt,ct,tb⟩
-  · omega
+  · omega_arith
   · exact ⟨JointLoopKeep.refl _ _ _ _,hs,hb⟩
 
 theorem jointRun_core_ok {s : State} (hu : u<2^(64*c.K.M.n)) (hv : v<2^(64*c.K.M.n))
@@ -166,7 +166,7 @@ theorem jointRun_core_ok {s : State} (hu : u<2^(64*c.K.M.n)) (hv : v<2^(64*c.K.M
     simp only [Code.inline]
     apply WP.seq
     refine WP.mono (jointDigits_core_ok hL hm hC hd hOne hOneVal hG hQ (A:=.infinity)
-      rfl hs (by omega) hb) fun a ⟨ka,ca⟩ => ?_
+      rfl hs (by omega_using []) hb) fun a ⟨ka,ca⟩ => ?_
     have he := jointPoint_step hC hG hQ u v (64*c.K.M.n) c.gw
     rw [jointPoint_topB G Q hu hv c.gw] at he
     change add (add .infinity (FastNaf.point C Q 5 v (64*c.K.M.n)))

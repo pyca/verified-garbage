@@ -66,10 +66,10 @@ theorem compute_piece : CPiece p STK (KX p STK 0 false 0) (KE p STK) (compute P 
   refine Piece.seq (J := KX p STK p.ℓ false 0) ?_ ((nttC_piece hP hF hS).cache.seq
     (Piece.seq (J := KX p STK p.ℓ true p.k) ?_ ((vhash_piece hF).cache.seq (cmp_piece hF).cache)))
   · refine Piece.mono (Piece.seqR (I := fun j => KX p STK j false 0) p.ℓ 0
-      fun j _ hj => (nttZ_piece hP hF hS (by omega)).cache) (fun _ _ _ h => h) fun _ _ _ h => ?_
+      fun j _ hj => (nttZ_piece hP hF hS (by omega_using [hj])).cache) (fun _ _ _ h => h) fun _ _ _ h => ?_
     simpa using h
   · refine Piece.mono (Piece.seqR (I := fun r => KX p STK p.ℓ true r) p.k 0
-      fun r _ hr => row_piece hP hF hS (by omega)) (fun _ _ _ h => h) fun _ _ _ h => ?_
+      fun r _ hr => row_piece hP hF hS (by omega_using [hr])) (fun _ _ _ h => h) fun _ _ _ h => ?_
     simpa using h
 
 end
@@ -178,7 +178,7 @@ theorem body_piece : CPiece p STK (fun σ s => VC p STK σ s ∧ s.gpr .r24 = 1)
     dsimp only [hintOf]
     rw [e]
   · refine Piece.seq (Piece.mono (Piece.seqR (I := fun j => V2 p STK j) p.ℓ 0
-      fun j _ hj => (zOne_piece hP hF hS (by omega)).cache) (fun _ _ _ h => v1_v2 h.1 h.2) fun _ _ _ h => ?_)
+      fun j _ hj => (zOne_piece hP hF hS (by omega_using [hj])).cache) (fun _ _ _ h => v1_v2 h.1 h.2) fun _ _ _ h => ?_)
       (inner_piece hP hF hS)
     rwa [Nat.zero_add] at h
 
@@ -195,7 +195,7 @@ theorem vepi_ok {p : Params} (hF : VFacts p) {STK : Nat} {σ s : State} (h : VFi
   have hk := hF.k
   have hin : ∀ o, 840 ≤ o → o + 8 ≤ 912 → InRegions (s.rd ++ s.wr) (vScr σ + BitVec.ofNat 64 o) 8 :=
     fun o h₁ h₂ => mem_rd_wr' (Lay.covers (L := vlay p STK σ) (o := o) (l := 8) (hs.cw 0 (by decide) (by decide))
-      (by rw [vlay_size0]; omega) _ _ ⟨_, List.mem_singleton_self _, Region.contains_self _ _⟩)
+      (by rw [vlay_size0]; omega_using [hscr, h₂]) _ _ ⟨_, List.mem_singleton_self _, Region.contains_self _ _⟩)
   refine WP.mono (topEnd_ok hs.r31 vc.sav hin vc.pres)
     fun s' ⟨pr, lr, r3, _, sp', _, _⟩ => ⟨⟨pr, sp'.trans vc.sp, lr⟩, ?_⟩
   sig_post [Spec.MlDsa.verifyContract, Spec.MlDsa.verifySig, PPC64LE.abi, PPC64LE.argRegs]
@@ -254,9 +254,9 @@ section
 variable {p : Params} {STK : Nat} {σ : State} (h : KPre p (STK + 96) σ)
 include h
 
-theorem KPre.fit : STK + 96 < 2 ^ 64 := by have := h.stk; have := σ.sp.isLt; omega
+theorem KPre.fit : STK + 96 < 2 ^ 64 := by have := h.stk; have := σ.sp.isLt; omega_arith
 
-theorem KPre.b96 : Region.Sub (below σ.sp 96) (below σ.sp (STK + 96)) := below_sub (by omega) h.fit
+theorem KPre.b96 : Region.Sub (below σ.sp 96) (below σ.sp (STK + 96)) := below_sub (by omega_using []) h.fit
 
 theorem KPre.bSTK : Region.Sub (below (kSt .r7 .r8 σ).sp STK) (below σ.sp (STK + 96)) := by
   rw [kSt_sp]
@@ -276,7 +276,7 @@ theorem kSt_inputs : pkOf p (kSt .r7 .r8 σ) = pkOf p σ ∧ muOf (kSt .r7 .r8 �
     sgOf p (kSt .r7 .r8 σ) = sgOf p σ := by
   simp only [pkOf, muOf, sgOf, vPk, vMu, vSg, kSt_gpr σ (show Reg.r3 ≠ .r14 by decide) (by decide),
     kSt_gpr σ (show Reg.r4 ≠ .r14 by decide) (by decide), kSt_gpr σ (show Reg.r5 ≠ .r14 by decide) (by decide)]
-  exact ⟨h.bytes h.b_p (by have := h.f_p; omega), h.bytes h.b_m (by decide), h.bytes h.b_s (by have := h.f_s; omega)⟩
+  exact ⟨h.bytes h.b_p (by have := h.f_p; omega_using [this]), h.bytes h.b_m (by decide), h.bytes h.b_s (by have := h.f_s; omega_using [this])⟩
 
 /-- The state verification starts in satisfies `CPre`. -/
 theorem kSt_cpre : CPre p STK (kSt .r7 .r8 σ) := by
@@ -311,7 +311,7 @@ theorem kSt_cpre : CPre p STK (kSt .r7 .r8 σ) := by
       rw [kSt_inputs h |>.1]
       have hsub : Region.Sub (Proof.MlDsa.Verify.polyRegion (σ.gpr .r7 + BitVec.ofNat 64 (4 * Spec.MlDsa.n * i)))
           (reg (σ.gpr .r7) (σ.gpr .r8).toNat) :=
-        Offset.sub_base _ (by rw [hl]; show 4 * 256 * i + 1024 ≤ 4 * 256 * p.k; omega)
+        Offset.sub_base _ (by rw [hl]; show 4 * 256 * i + 1024 ≤ 4 * 256 * p.k; omega_using [hi])
       exact Proof.MlDsa.Verify.polyIs_frame (kSt_mem σ) (fun r hr => by
         rw [List.mem_singleton] at hr; subst hr
         exact (h.b_x.sub_left h.b96).symm.sub_left hsub) (hc i hi)
@@ -374,11 +374,11 @@ theorem withCache_verified {P : Prims} {S : Nat} (hP : VPrimsOk P S) (h48 : 48 �
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hX
     rcases hX with rfl
     exact hk.b_c.sub_left hk.b96
-  have hn (σ : State) (hk : KPre p (S + 96) σ) : sdepth (verify P p) + 96 < 2 ^ 64 := by have := hk.fit; omega
+  have hn (σ : State) (hk : KPre p (S + 96) σ) : sdepth (verify P p) + 96 < 2 ^ 64 := by have := hk.fit; omega_using [hd, this]
   refine ⟨fun σ hs => ?_, fun s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hpub e₁ e₂ => ?_, ⟨kSat p, hsat⟩⟩
   · have hk := kpre_of (k := S + 95) hs
     refine WP.mono (kernel_wp (a := .r7) (b := .r8) (by decide) (by decide) (by decide)
-      (by have := hk.stk; omega) (hd96 σ hk) (hn σ hk)
+      (by have := hk.stk; omega_using [this]) (hd96 σ hk) (hn σ hk)
       (R := fun _ r => (r.setWidth 32 = 1 ∧ ∃ b, vv p σ b = some true) ∨
         (r.setWidth 32 = 0 ∧ vv p σ Spec.MlDsa.minBounds ≠ some true))
       (WP.mono (body σ hk) fun s' ⟨ha, hq⟩ => ⟨ha, ?_⟩)) fun s' ⟨ha, hq⟩ => ⟨ha, ?_⟩
@@ -405,7 +405,7 @@ theorem withCache_verified {P : Prims} {S : Nat} (hP : VPrimsOk P S) (h48 : 48 �
         sig_pub [Proof.MlDsa.verifyWithCacheContract, Proof.MlDsa.verifyWithCacheSig, Spec.MlDsa.verifySig,
           PPC64LE.abi, PPC64LE.argRegs] at hp
         exact hp.1)
-      (fun x y ⟨a, b, _⟩ => ⟨by have := a.stk; omega, by have := b.stk; omega, hd96 x a, hd96 y b⟩) (hn s₁ k₁)
+      (fun x y ⟨a, b, _⟩ => ⟨by have := a.stk; omega_using [this], by have := b.stk; omega_using [this], hd96 x a, hd96 y b⟩) (hn s₁ k₁)
       (fun x y ⟨a, b, _⟩ => ⟨⟨_, body x a⟩, ⟨_, body y b⟩⟩)
       (RelCT.mono hv.tr (fun u v ⟨x, y, ⟨a, b, hp⟩, eu, ev⟩ => by
         subst eu ev; exact ⟨_, _, kSt_cpre a, kSt_cpre b, kSt_cpub a b hp, rfl, rfl⟩) fun _ _ h => h)

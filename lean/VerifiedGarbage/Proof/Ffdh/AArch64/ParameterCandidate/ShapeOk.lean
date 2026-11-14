@@ -56,7 +56,7 @@ theorem sieved_sieve {bits c : Nat} (hb1 : 512 ≤ bits) (hb2 : bits ≤ 8192) (
   rw [← ht]
   have h53 : ((List.range 53).any fun i => c % tabEntry i == 0) = anyPre c 53 := rfl
   rw [h53]
-  have hle : 53 ≤ 4 * trialN (mW bits) := by unfold trialN; split <;> omega
+  have hle : 53 ≤ 4 * trialN (mW bits) := by unfold trialN; split <;> omega_using []
   cases h4 : anyPre c (4 * trialN (mW bits))
   · cases h5 : anyPre c 53
     · rfl
@@ -69,11 +69,11 @@ theorem shapeFlag_zero {bits g x : Nat} (hb1 : 512 ≤ bits) (hb2 : bits ≤ 819
         primeShape ((candidateOf bits x - 1) / 2) &&
         !Spec.RsaKeyGen.obviouslyComposite bits (candidateOf bits x) &&
         !Spec.RsaKeyGen.obviouslyComposite bits ((candidateOf bits x - 1) / 2)) = true := by
-  obtain ⟨ho, hl, _⟩ := VG.Proof.Ffdh.ParameterCandidate.candidate_shape (bits := bits) (by omega) x
-  have hlen := (VG.Proof.Ffdh.ParameterCandidate.candidate_bitLength (bits := bits) (by omega) x).1
+  obtain ⟨ho, hl, _⟩ := VG.Proof.Ffdh.ParameterCandidate.candidate_shape (bits := bits) (by omega_using [hb1]) x
+  have hlen := (VG.Proof.Ffdh.ParameterCandidate.candidate_bitLength (bits := bits) (by omega_using [hb1]) x).1
   generalize candidateOf bits x = c at ho hl hlen ⊢
-  have hbig : 2 ^ 14 ≤ 2 ^ (bits - 1) := Nat.pow_le_pow_right (by decide) (by omega)
-  have hq : (c - 1) / 2 = c / 2 := by omega
+  have hbig : 2 ^ 14 ≤ 2 ^ (bits - 1) := Nat.pow_le_pow_right (by decide) (by omega_using [hb1])
+  have hq : (c - 1) / 2 = c / 2 := by omega_using [ho]
   rw [hq]
   have reorder (a b c d e : Bool) : (a && b && c && !d && !e) = (a && (b && !d) && (c && !e)) := by
     cases a <;> cases b <;> cases c <;> cases d <;> cases e <;> rfl

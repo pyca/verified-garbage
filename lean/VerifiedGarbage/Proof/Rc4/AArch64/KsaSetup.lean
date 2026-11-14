@@ -56,7 +56,7 @@ theorem ident_ok {s : State} (hk : Consts s) :
   rrun [l0, l1, l2, l3, k64, k128, x0.1, x0.2.1, x0.2.2, x1.1, x1.2.1, x1.2.2, x2.1, x2.2.1,
     x2.2.2, x3.1, x3.2.1, x3.2.2]
   refine ⟨fun q hq => ?_, fun v hv => ?_, ?_⟩
-  · rcases (by omega : q = 0 ∨ q = 1 ∨ q = 2 ∨ q = 3 ∨ q = 4 ∨ q = 5 ∨ q = 6 ∨ q = 7 ∨ q = 8 ∨
+  · rcases (by omega_using [hq] : q = 0 ∨ q = 1 ∨ q = 2 ∨ q = 3 ∨ q = 4 ∨ q = 5 ∨ q = 6 ∨ q = 7 ∨ q = 8 ∨
       q = 9 ∨ q = 10 ∨ q = 11 ∨ q = 12 ∨ q = 13 ∨ q = 14 ∨ q = 15) with
       rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
       simp [treg]
@@ -106,7 +106,7 @@ theorem ident_get {k : Nat} (hk : k < 256) :
   simp [Vector.getD, hk]
   apply BitVec.eq_of_toNat_eq
   show k = k % 2 ^ 8
-  omega
+  omega_using [hk]
 
 theorem scheduleSetup_eq : scheduleSetup = save false ++ (constants ++ (identCode ++
     ([.vop (.movi0 (dq 0)), .vop (.movi0 si), .addImm .x .x7 .x0 0, .addImm .x .x5 .x1 0,
@@ -156,8 +156,8 @@ theorem ksaSetup_ok {s : State} (hL : 0 < (s.gpr .x1).toNat ∧ (s.gpr .x1).toNa
       (by rcases hr with rfl | rfl | rfl | rfl | rfl | rfl <;> decide),
       cv r (by rcases hr with rfl | rfl | rfl | rfl | rfl | rfl <;> decide)]
   have tb : ∀ k < 256, tbyte t.v k = BitVec.ofNat 8 k := fun k hk => by
-    rw [tbyte, tvt _ (by omega), laneNums, vbyte_ofVBytes _ (by omega)]
-    congr 1; omega
+    rw [tbyte, tvt _ (by omega_using [hk]), laneNums, vbyte_ofVBytes _ (by omega_using [])]
+    congr 1; omega_using []
   have keep : ∀ v, v ≠ .v0 → v ≠ .v4 → NotTable v → v ≠ .v7 → v ≠ .v8 → v ≠ .v9 → v ≠ .v10 →
       v ≠ .v11 → v ≠ .v12 → v ≠ .v13 → t.v v = s.v v := fun v h0 h4 ht h7 h8 h9 h10 h11 h12 h13 => by
     rw [tv v h0 h4, cv v ht, bv v h7 h8 h9 h10 h11 h12 h13, av]

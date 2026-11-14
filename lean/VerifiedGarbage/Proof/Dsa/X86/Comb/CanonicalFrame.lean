@@ -35,9 +35,9 @@ theorem canonical_check {n e k p g : Nat} {base : Addr} {m m' : Mem}
     change contextBytes k≤7048 at B
     apply Or.inr
     simp only [Nat.zero_add]
-    unfold context; split <;> omega
+    unfold context; split <;> omega_using [B]
   · apply Or.inr
     change 8248≤context n
-    unfold context; split <;> omega
+    unfold context; split <;> omega_using []
 
 end VG.Proof.Dsa.X86.Comb

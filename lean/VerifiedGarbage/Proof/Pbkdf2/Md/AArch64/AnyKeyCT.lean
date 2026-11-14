@@ -51,7 +51,7 @@ theorem keySub_ok {s : State} (h : KE (H := H) s₀ s) :
       KE (H := H) s₀ t ∧ isa.eval (.zero .x .x9) t = some (decide (kln s₀ = H.P.B)) := by
   have hB := hz.B_le
   unfold Hash.keySub
-  exact wp_subImm (by omega) fun s₂ u₂ => WP.block_nil ⟨h.upd u₂ (by decide), key_sub h u₂ (by omega)⟩
+  exact wp_subImm (by omega_using [hB]) fun s₂ u₂ => WP.block_nil ⟨h.upd u₂ (by decide), key_sub h u₂ (by omega_using [hB])⟩
 
 end
 
@@ -128,7 +128,7 @@ theorem hashKey_rel : RelCT isa (fun s s' => KE (H := H) s₀ s ∧ KE (H := H) 
   have ini : ∀ {σ₀ s : State}, Pre (H := H) σ₀ → KE (H := H) σ₀ s →
       Covers [⟨A σ₀ H.stWO, H.stream.S⟩] s.wr :=
     fun hp h => Covers.of_sub fun r hr => by
-      simp only [List.mem_singleton] at hr; subst hr; exact cov_part hp h.kr (by omega)
+      simp only [List.mem_singleton] at hr; subst hr; exact cov_part hp h.kr (by omega_using [hl, he, hSS])
   have c₂ := rel_wp (VG.Proof.Pbkdf2.Md.AArch64.Calls.init_rel hH.stream (st := A s₀ H.stWO)
       (P := fun s s' => (KE (H := H) s₀ s ∧ s.gpr .x0 = A s₀ H.stWO) ∧
         (KE (H := H) s₀' s' ∧ s'.gpr .x0 = A s₀' H.stWO))

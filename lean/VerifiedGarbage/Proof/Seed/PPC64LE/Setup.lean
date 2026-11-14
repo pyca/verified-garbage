@@ -26,7 +26,7 @@ theorem slot_in_scratch (s : State) {j : Nat} (hj : j < scratchSlots) :
   slot_contains (s.gpr .r8) (n := scratchSlots) hj (by unfold scratchSlots; decide)
 
 theorem slot_off {j : Nat} (hj : j < scratchSlots) : 8 * j % 8 = 0 ∧ 8 * j < 32768 := by
-  unfold scratchSlots at hj; omega
+  unfold scratchSlots at hj; omega_using [hj]
 
 /-- The memory after storing `v` in slot `k`. -/
 def stMem (s : State) (k : Nat) (v : BitVec 64) : Mem := s.mem.writeW (wordAddr (s.gpr .r8) k) v
@@ -47,7 +47,7 @@ theorem slotW_stMem (s : State) {k : Nat} (hk : k < scratchSlots) (v : BitVec 64
   split
   · subst j; exact Mem.readW_writeW_self64 _ _ _
   · rename_i hne
-    rw [Mem.readW_writeW_sep (slot_sep _ (by omega) (by omega) hne) (by decide)]
+    rw [Mem.readW_writeW_sep (slot_sep _ (by omega_using [hj]) (by omega_using [hk]) hne) (by decide)]
     rfl
 
 theorem stMem_frame {s : State} {k : Nat} (hk : k < scratchSlots) (v : BitVec 64) :

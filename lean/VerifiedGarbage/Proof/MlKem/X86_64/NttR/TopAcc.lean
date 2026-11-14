@@ -38,23 +38,23 @@ theorem ctxA {s : State} {d : Reg} (hS : pR (s.gpr .rsi) ∈ s.wr) (hX : sR (s.g
     intro x h1 h2
     rw [Offset.lt_iff x _ (by decide)] at h1
     rw [Offset.lt_iff x _ (by decide)] at h2
-    exact hD x (by show (x - s.gpr d).toNat + 1 ≤ 512; omega)
-      (by show (x - s.gpr .rsi).toNat + 1 ≤ 1024; simp only [oS] at h1; omega)
+    exact hD x (by show (x - s.gpr d).toNat + 1 ≤ 512; omega_using [h2])
+      (by show (x - s.gpr .rsi).toNat + 1 ≤ 1024; simp only [oS] at h1; omega_using [h1])
   refine ⟨fun k hk => ?_, fun k hk hw => ?_, fun k k' hk hk' hne => ?_, fun k hk => ?_, h8⟩
   · simp only [rsBA, List.length_cons, List.length_nil] at hk
-    rcases (by omega : k = 0 ∨ k = 1) with rfl | rfl
+    rcases (by omega_using [hk] : k = 0 ∨ k = 1) with rfl | rfl
     · exact ⟨_, List.mem_append_right _ hS, cS⟩
     · exact ⟨_, List.mem_append_right _ hX, cX⟩
   · simp only [rsBA, List.length_cons, List.length_nil] at hk
-    rcases (by omega : k = 0 ∨ k = 1) with rfl | rfl
+    rcases (by omega_using [hk] : k = 0 ∨ k = 1) with rfl | rfl
     · exact ⟨_, hS, cS⟩
     · exact ⟨_, hX, cX⟩
   · simp only [rsBA, List.length_cons, List.length_nil] at hk hk'
-    rcases (by omega : k = 0 ∧ k' = 1 ∨ k = 1 ∧ k' = 0) with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩
+    rcases (by omega_using [hk, hk', hne] : k = 0 ∧ k' = 1 ∨ k = 1 ∧ k' = 0) with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩
     · exact sep
     · exact fun x h1 h2 => sep x h2 h1
   · simp only [rsBA, List.length_cons, List.length_nil] at hk
-    rcases (by omega : k = 0 ∨ k = 1) with rfl | rfl <;> simp [rlen, rsBA, oS]
+    rcases (by omega_using [hk] : k = 0 ∨ k = 1) with rfl | rfl <;> simp [rlen, rsBA, oS]
 
 /-- Pass B to an accumulator starts from the registers and `S` pass A leaves. -/
 theorem reframeA {L : Nat → Nat → BitVec 16} {O : Nat → BitVec 16} {X d : Reg} {n : Nat} {σ : St} {s₀ s : State}
@@ -68,14 +68,14 @@ theorem reframeA {L : Nat → Nat → BitVec 16} {O : Nat → BitVec 16} {X d : 
     · rw [get_replicate _ he]; exact Hd.junk _
     · exact h.reg r e he
   · simp only [rsBA, List.length_cons, List.length_nil] at hk
-    rcases (by omega : k = 0 ∨ k = 1) with rfl | rfl
+    rcases (by omega_using [hk] : k = 0 ∨ k = 1) with rfl | rfl
     · exact h.mem 0 j (by simp) hj
     · left
       rw [show (toBA σ).mem.getD 1 [] = junks 16 by simp only [toBA, List.getD_cons_succ, List.getD_cons_zero],
         junks_get]; rfl
   · intro k hk hw
     simp only [List.length_cons, List.length_nil] at hk
-    rcases (by omega : k = 0 ∨ k = 1) with rfl | rfl
+    rcases (by omega_using [hk] : k = 0 ∨ k = 1) with rfl | rfl
     · exact hx 0 (by simp [rsBA]) rfl
     · cases hw
 
@@ -125,7 +125,7 @@ theorem nttRAcc_ok {pb : List Instr} {d : Reg} (hc : checkAcc pb d = true) (hd :
   refine WP.block_cons_iff.2 ⟨_, rfl, WP.block_nil ⟨?_, ?_, ?_⟩⟩
   · have hb : rbase (rsBA d) s1 1 = s.gpr d := by simp [rbase, rsBA, gd]
     intro w hw
-    have h0 := hr3.mem 1 w (by simp [rsBA]) (by simp [rlen, rsBA]; omega)
+    have h0 := hr3.mem 1 w (by simp [rsBA]) (by simp [rlen, rsBA]; omega_using [hw])
     rw [outAccOk_get hc hw, hb] at h0
     have e0 := h0.eq rfl
     show (wordAt s3.mem (s.gpr d) w).toNat = _
@@ -136,17 +136,17 @@ theorem nttRAcc_ok {pb : List Instr} {d : Reg} (hc : checkAcc pb d = true) (hd :
     rw [← hm1]
     refine hr3.fr x fun k hk hw hlt => ?_
     simp only [rsBA, List.length_cons, List.length_nil] at hk
-    rcases (by omega : k = 0 ∨ k = 1) with rfl | rfl
+    rcases (by omega_using [hk] : k = 0 ∨ k = 1) with rfl | rfl
     · refine hx (pR (s.gpr .rsi)) (by simp) ?_
       simp only [rbase, rlen, rsBA, List.getD_cons_zero, gsi] at hlt
       rw [Offset.lt_iff x _ (by decide)] at hlt
       show (x - s.gpr .rsi).toNat + 1 ≤ 1024
-      simp only [oS] at hlt; omega
+      simp only [oS] at hlt; omega_using [hlt]
     · refine hx (sR (s.gpr d)) (by simp) ?_
       simp only [rbase, rlen, rsBA, List.getD_cons_succ, List.getD_cons_zero, gd] at hlt
       rw [Offset.lt_iff x _ (by decide)] at hlt
       show (x - s.gpr d).toNat + 1 ≤ 512
-      omega
+      omega_using [hlt]
   · refine ⟨fun r hr => ?_, ?_, ?_⟩
     · show s3.gpr r = s.gpr r
       rw [hr3.gpr]; exact k1.1 r hr

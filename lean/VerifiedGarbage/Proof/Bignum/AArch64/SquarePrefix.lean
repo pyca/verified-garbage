@@ -36,18 +36,18 @@ theorem prefixStep_ok {s₀ : State} {B : Addr} {Z eA eb j : Nat}
   have t1 : t.gpr .x1 = s₀.gpr .x1 := hI.keep.gpr .x1 (by decide)
   have t16 : t.gpr .x16 = off B eA := (hI.keep.gpr .x16 (by decide)).trans h16
   have t17 : t.gpr .x17 = off B eb := (hI.keep.gpr .x17 (by decide)).trans h17
-  refine WP.mono (macAt_ok t j hI.scr t16 t17 t7 (by omega) (by omega) hI.carry_lt hj)
+  refine WP.mono (macAt_ok t j hI.scr t16 t17 t7 (by omega_using [hb, hj]) (by omega_using [hA, hj]) hI.carry_lt hj)
     fun t' ⟨⟨lo, hm, hv, hc⟩, k⟩ => ?_
   have hx : word t.mem B (eA + 8*j) = word s₀.mem B (eA + 8*j) :=
-    hI.out.word (Or.inr (Nat.le_refl _)) (by omega)
+    hI.out.word (Or.inr (Nat.le_refl _)) (by omega_using [hA, hj, hn])
   have hy : word t.mem B (eb + 8*j) = word s₀.mem B (eb + 8*j) :=
-    hI.out.word (by omega) (by omega)
+    hI.out.word (by omega_using [hsep, hj]) (by omega_using [hb, hj, hn])
   refine ⟨hI.scr.congr k.wr, (hI.keep.trans k).mono (by decide), ?_, ?_, hc⟩
   · rw [hm]
     intro x hx'
-    rw [writeW_outside t.mem B lo (by omega) x (by omega)]
-    exact hI.out x (by omega)
-  · rw [hm, wv_writeW_top _ _ _ _ _ (by omega)]
+    rw [writeW_outside t.mem B lo (by omega_using [hA, hj, hn]) x (by omega_using [hx'])]
+    exact hI.out x (by omega_using [hx'])
+  · rw [hm, wv_writeW_top _ _ _ _ _ (by omega_using [hA, hj, hn])]
     simp only [wv]
     rw [hx, hy, t1] at hv
     have hval := hI.val
@@ -66,7 +66,7 @@ theorem prefix4_ok {s : State} {B : Addr} {Z eA eb : Nat}
     ⟨hs, Keep.refl _ _, Outside.refl _ _ _ _, by simp only [wv, Nat.mul_zero, Nat.pow_zero, Nat.zero_add, Nat.add_zero, Nat.one_mul], hc⟩
   exact wp_range_flatMap (M := isa)
     (f := VG.Impl.Bignum.AArch64.Square.macAt) (N := 4) (PrefixInv s B Z eA eb)
-    (fun k t hk hI => prefixStep_ok h16 h17 h7 hA hb hsep hk hI) 4 (by omega) s h0
+    (fun k t hk hI => prefixStep_ok h16 h17 h7 hA hb hsep hk hI) 4 (by omega_using []) s h0
 
 theorem advance4_ok (s : State) :
     WP isa (.block [.addImm .x .x16 .x16 32, .addImm .x .x17 .x17 32]) s fun t =>

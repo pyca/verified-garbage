@@ -327,7 +327,7 @@ theorem schedule_ok {scr : BitVec 32} {H : HashValue} {M : Block} {s₀ s : Stat
       fun r h1 h2 h3 => ?_, ?_, ?_, ?_⟩
     · simp only [c.esi]
       rw [readW64_write_ne _ _ (by simp only [mirOff]; omega_using [fit]) (by have := vOff_lt t k; omega_using [fit, this])
-        (.inr (by have := mv k; have := mw t; omega)), rm _ (by have := vOff_lt t k; omega_using [this]) (.inr (mv k))]
+        (.inr (by have := mv k; have := mw t; omega_arith)), rm _ (by have := vOff_lt t k; omega_using [this]) (.inr (mv k))]
       exact hI.vars k hk h0' h4
     · rw [xk 0 (by decide)]; exact hI.xa
     · rw [xk 1 (by decide)]; exact hI.xe

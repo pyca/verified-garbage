@@ -60,11 +60,11 @@ theorem ciph_frame {rs : List Region} {m m' : Mem} (hf : Frame rs m m') {Ctx : B
     ciphOf m' Ctx R = ciphOf m Ctx R := by
   have hRb : 16 * (R + 1) ≤ 256 := by rcases hR with rfl | rfl | rfl <;> decide
   simp only [ciphOf]
-  rw [bytesAt_frame hf (fun r hr => (hd r hr).sub_left (Region.sub_prefix hRb)) (by omega)]
+  rw [bytesAt_frame hf (fun r hr => (hd r hr).sub_left (Region.sub_prefix hRb)) (by omega_using [hR])]
 
 theorem covers_pre {p : Addr} {k n : Nat} {rs : List Region} (h : Covers [⟨p, k⟩] rs) (hn : n ≤ k)
     (hk : k < 2 ^ 64) : Covers [⟨p, n⟩] rs := by
-  have := covers_off (d := 0) (n := n) h (by omega) hk
+  have := covers_off (d := 0) (n := n) h (by omega_using [hn]) hk
   rwa [BitVec.add_zero] at this
 
 /-- The call of `vg_aes_ctr32_to` and `ebp` back to `W`. -/
@@ -120,14 +120,14 @@ theorem CtrReady.call {R : Nat} {C Dp : BitVec 32} {nb : Nat} {s : State}
     CtrCall s Ctx C Dp (W + BitVec.ofNat 32 512) R nb := by
   have eS := L.aW (o := 512) (by decide)
   have hsp : below (s.gpr .esp) 32 = below SP 32 := by rw [h.esp]
-  refine ⟨h.eax, h.ecx, h.edx, h.ebx, h.edi, h.ebp, h.rounds.2, by rw [h.esp]; have := L.sp; omega,
+  refine ⟨h.eax, h.ecx, h.edx, h.ebx, h.edi, h.ebp, h.rounds.2, by rw [h.esp]; have := L.sp; omega_using [hK, this],
     h.kC.sub_left (Region.sub_prefix (by decide)), h.kD.sub_left (Region.sub_prefix (by decide)), ?_, h.cd,
     by rw [eS]; exact h.sC, by rw [eS]; exact h.sD, by rw [hsp]; subst hK; exact L.kc.sub_right (Region.sub_prefix (by decide)),
-    by rw [hsp]; exact h.bC, by rw [hsp]; exact h.bD, ?_, by have := L.fc; omega, h.fC, h.fD, ?_,
+    by rw [hsp]; exact h.bC, by rw [hsp]; exact h.bD, ?_, by have := L.fc; omega_using [this], h.fC, h.fD, ?_,
     covers_pre h.ctxR (by decide) (by decide), ?_⟩
   · rw [eS]; exact (L.cw.sub_left (Region.sub_prefix (by decide))).sub_right (Lay.wSub (by decide))
   · rw [hsp, eS]; subst hK; exact L.kw.sub_right (Lay.wSub (by decide))
-  · rw [L.nW (by decide)]; have := L.fw; omega
+  · rw [L.nW (by decide)]; have := L.fw; omega_using [this]
   · rw [eS]; exact covers_cons h.wC (covers_cons h.wD (covers_cons (covers_off h.wW (by decide) (by decide))
       covers_nil))
 

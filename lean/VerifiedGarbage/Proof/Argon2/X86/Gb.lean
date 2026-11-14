@@ -65,7 +65,7 @@ theorem lo_ofNat (p : Nat) : lo (BitVec.ofNat 64 p) = BitVec.ofNat 32 p := by
 theorem hi_ofNat {p : Nat} (h : p < 2 ^ 64) : hi (BitVec.ofNat 64 p) = BitVec.ofNat 32 (p / 2 ^ 32) := by
   apply BitVec.eq_of_toNat_eq
   rw [hi_toNat, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt h,
-    Nat.mod_eq_of_lt (by omega)]
+    Nat.mod_eq_of_lt (by omega_using [h])]
 
 theorem mul_lt (a b : BitVec 32) : a.toNat * b.toNat < 2 ^ 64 :=
   Nat.lt_of_lt_of_le (Nat.mul_lt_mul_of_lt_of_le a.isLt (Nat.le_of_lt b.isLt) (by decide))
@@ -118,9 +118,9 @@ theorem addMul_ok {a b : Nat} (ha : a + 8 ≤ N) (hb : b + 8 ≤ N) {s : State}
   rw [← List.append_nil (addMul a b)]
   unfold addMul
   simp only [List.append_assoc, List.cons_append, List.nil_append]
-  refine wp_movS (readSrc_mem h0 (mem_rd (hA b (by omega)))) fun s₁ u₁ => ?_
+  refine wp_movS (readSrc_mem h0 (mem_rd (hA b (by omega_using [hb])))) fun s₁ u₁ => ?_
   have b₁ : s₁.gpr .esi = B := by rw [u₁.other _ (by decide), h0]
-  refine wp_movS (readSrc_mem b₁ (by rw [u₁.rd, u₁.wr]; exact mem_rd (hA a (by omega))))
+  refine wp_movS (readSrc_mem b₁ (by rw [u₁.rd, u₁.wr]; exact mem_rd (hA a (by omega_using [ha]))))
     fun s₂ u₂ => ?_
   refine wp_mulEdx fun s₃ o₃ p₃ => ?_
   have O₃ := ((Only.of_upd u₁).trans (Only.of_upd u₂)).trans o₃
@@ -155,11 +155,11 @@ theorem xorLd_ok {d a : Nat} (hd : d + 8 ≤ N) (ha : a + 8 ≤ N) {rest : List 
   refine wp_ld (by decide) (by decide) h0 hA hd fun s₁ o₁ p₁ => ?_
   have b₁ : s₁.gpr .esi = B := by rw [o₁.gpr _ (by decide), h0]
   simp only [xor64m, VG.Impl.Sha512.X86.sc, List.cons_append, List.nil_append]
-  refine wp_xorS (readSrc_mem b₁ (by rw [o₁.rd, o₁.wr]; exact mem_rd (hA a (by omega))))
+  refine wp_xorS (readSrc_mem b₁ (by rw [o₁.rd, o₁.wr]; exact mem_rd (hA a (by omega_using [ha]))))
     fun s₂ u₂ => ?_
   have b₂ : s₂.gpr .esi = B := by rw [u₂.other _ (by decide), b₁]
   have r₂ : InRegions (s₂.rd ++ s₂.wr) (addr B (a + 4)) 4 := by
-    rw [u₂.rd, u₂.wr, o₁.rd, o₁.wr]; exact mem_rd (hA (a + 4) (by omega))
+    rw [u₂.rd, u₂.wr, o₁.rd, o₁.wr]; exact mem_rd (hA (a + 4) (by omega_using [ha]))
   refine wp_xorS (readSrc_mem b₂ r₂) fun s₃ u₃ =>
     k s₃ ((o₁.trans (Only.of_upd u₂)).trans (Only.of_upd u₃) |>.mono (by decide)) ⟨?_, ?_⟩
   · rw [u₃.other _ (by decide), u₂.gpr, p₁.1, o₁.mem]; simp only [lo_xor, lo_rd64]
@@ -241,29 +241,29 @@ theorem working_write (m : Mem) (i : Fin 128) (v : Word) :
   by_cases h : i.val = j
   · subst j
     simp only [ite_true]
-    exact rd64_write64_self m v (by simp only [wOff]; omega)
+    exact rd64_write64_self m v (by simp only [wOff]; omega_using [hfit])
   · simp only [h, ite_false]
-    exact rd64_write64_ne m v (by simp only [wOff]; omega) (by simp only [wOff]; omega)
-      (by simp only [wOff]; omega)
+    exact rd64_write64_ne m v (by simp only [wOff]; omega_using [hfit]) (by simp only [wOff]; omega_using [hfit, hj])
+      (by simp only [wOff]; omega_using [h])
 
 /-- The permuted block's region. -/
 abbrev permR (B : BitVec 32) : Region := ⟨addr B 1024, 1024⟩
 
 theorem addr_off {d : Nat} (hd : d < 4096) : addr B d = B.setWidth 64 + BitVec.ofNat 64 d :=
-  addr_eq (by omega)
+  addr_eq (by omega_using [hfit, hd])
 
 /-- A write to a word of the permuted block stays in its region. -/
 theorem frame_write (m m' : Mem) (hf : Frame [permR B] m m') (i : Fin 128) (v : Word) :
     Frame [permR B] m (write64 m' B (wOff i.val) v) := by
   have c : ∀ e, e + 4 ≤ 1024 → (permR B).Contains (addr B (1024 + e)) (32 / 8) := fun e he => by
     show (⟨addr B 1024, 1024⟩ : Region).Contains _ _
-    rw [addr_off hfit (by omega), addr_off hfit (by omega)]
-    exact Offset.contains _ (by omega) (by omega) (by omega)
+    rw [addr_off hfit (by omega_using []), addr_off hfit (by omega_using [he])]
+    exact Offset.contains _ (by omega_using []) (by omega_using [he]) (by omega_using [])
   have m₁ := List.mem_singleton_self (permR B)
   have := i.isLt
-  exact (hf.writeW m₁ _ (c (8 * i.val) (by omega))).writeW m₁ _
-    (by rw [show wOff i.val + 4 = 1024 + (8 * i.val + 4) by simp only [wOff]; omega]
-        exact c _ (by omega))
+  exact (hf.writeW m₁ _ (c (8 * i.val) (by omega_using []))).writeW m₁ _
+    (by rw [show wOff i.val + 4 = 1024 + (8 * i.val + 4) by simp only [wOff]; omega_using []]
+        exact c _ (by omega_using []))
 
 end
 
@@ -349,7 +349,7 @@ theorem Step.xr {s t t' : State} {v : Block} (S : Step B s v t) (k : Keep t t') 
 theorem gbAt_ok {s : State} (h0 : s.gpr .esi = B) (hA : Acc s.wr B 4096) (a b c d : Fin 128) :
     WP isa (gbAt a.val b.val c.val d.val) s (Step B s (gbV (working s.mem B) a b c d)) := by
   have o : ∀ i : Fin 128, wOff i.val + 8 ≤ 4096 := fun i => by
-    have := i.isLt; simp only [wOff]; omega
+    have := i.isLt; simp only [wOff]; omega_using []
   have S₀ : Step B s (working s.mem B) s := ⟨.refl s, rfl, Frame.refl _ _⟩
   have e : ∀ {t : State} {v : Block}, Step B s v t → t.gpr .esi = B := fun S => S.keep.esi.trans h0
   have A : ∀ {t : State} {v : Block}, Step B s v t → Acc t.wr B 4096 := fun S => S.keep.wr ▸ hA

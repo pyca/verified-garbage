@@ -176,7 +176,7 @@ theorem hashAt_tableOf {m : Mem} {p : Addr} {w : MVar}
     BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by
       have := List.findIdx_le_length (p := fun G => G.rust == w.l.G.rust) (xs := Spec.Mgf1.hashes)
       simp only [idx, Spec.HashTable.index, Spec.Mgf1.hashes, List.length_cons, List.length_nil] at this ⊢
-      omega)]
+      omega_using [this])]
   exact w.idx
 
 /-- What the proofs need of the table of `w` at `p`, the stack argument `j`
@@ -193,9 +193,9 @@ theorem mdTabS_of {S : State → Addr} {s : State} {j : Nat} (hj : arg j < 2 ^ 1
     MdTabS w.H w.F.cn w.F.cc (digName w) (digest w.F.P) (fnsOf vs) j S s p := by
   obtain ⟨hm, hc3, hd4, -⟩ := held_tableOf hh
   have hk : ∀ k < 11, Region.Sub ⟨p + BitVec.ofNat 64 (8 * k), 8⟩ (Sig.tableRegion 64 p 11) := fun k hk =>
-    Offset.sub_base p (by show 8 * k + 8 ≤ 11 * (64 / 8); omega)
+    Offset.sub_base p (by show 8 * k + 8 ≤ 11 * (64 / 8); omega_using [hk])
   exact ⟨hj, harg, ⟨A, hA, hAc⟩, (hkA.sub_right hAs).symm, (hSA.sub_right hAs).symm,
-    fun k hk => ⟨_, hT, Offset.contains_base p (by show 8 * k + 8 ≤ 11 * (64 / 8); omega) (by omega)⟩,
+    fun k hk => ⟨_, hT, Offset.contains_base p (by show 8 * k + 8 ≤ 11 * (64 / 8); omega_using [hk]) (by omega_using [hk])⟩,
     fun k hk' => (hkT.sub_right (hk k hk')).symm, fun k hk' => (hST.sub_right (hk k hk')).symm, hm, hc3, hd4,
     mdTabOK_of hc hd hw⟩
 
@@ -230,10 +230,10 @@ theorem tabS_of {S : State → Addr} {s : State} {j : Nat} (hj : arg j < 2 ^ 15 
   have hD : s.mem.readW (p + BitVec.ofNat 64 48) 64 = BitVec.ofNat 64 w.H.D :=
     (hh 6 (by simp)).trans (by rw [w.l.len]; rfl)
   have hk : ∀ k < 7, Region.Sub ⟨p + BitVec.ofNat 64 (8 * k), 8⟩ (Sig.tableRegion 64 p 11) := fun k hk =>
-    Offset.sub_base p (by show 8 * k + 8 ≤ 11 * (64 / 8); omega)
+    Offset.sub_base p (by show 8 * k + 8 ≤ 11 * (64 / 8); omega_using [hk])
   have ok := mdTabOK_of hc hd hw
   exact ⟨hj, harg, ⟨A, hA, hAc⟩, (hkA.sub_right hAs).symm, (hSA.sub_right hAs).symm,
-    fun k hk => ⟨_, hT, Offset.contains_base p (by show 8 * k + 8 ≤ 11 * (64 / 8); omega) (by omega)⟩,
+    fun k hk => ⟨_, hT, Offset.contains_base p (by show 8 * k + 8 ≤ 11 * (64 / 8); omega_using [hk]) (by omega_using [hk])⟩,
     fun k hk' => (hkT.sub_right (hk k hk')).symm, fun k hk' => (hST.sub_right (hk k hk')).symm, hm,
     hD, ⟨ok.i, ok.u, ok.fz⟩⟩
 
@@ -281,6 +281,6 @@ theorem withTable_held (s : State) (vs : List MVar) (w : MVar) :
 /-- Below `0x300000`, a word as in `s`. -/
 theorem withTable_below (s : State) (vs : List MVar) (w : MVar) {a : Addr} (ha : a.toNat + 8 ≤ 0x300000) :
     (withTable s vs w).mem.readW a 64 = s.mem.readW a 64 :=
-  putWs_out (.inl (by simpa using ha)) (twL_room vs w) (by omega)
+  putWs_out (.inl (by simpa using ha)) (twL_room vs w) (by omega_using [ha])
 
 end VG.Proof.MdHashTable.PPC64LE

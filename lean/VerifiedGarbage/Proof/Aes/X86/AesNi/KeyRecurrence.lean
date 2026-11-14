@@ -12,7 +12,7 @@ open VG.Impl.Aes.X86.AesNi (rc)
 /-- A broadcast supplies the same schedule temporary to every lane. -/
 theorem broadcast_dword (x : BitVec 32) {j : Nat} (hj : j < 4) :
     dword (ofDwords x x x x) j = x := by
-  rcases (by omega : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3) with rfl | rfl | rfl | rfl
+  rcases (by omega_using [hj] : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3) with rfl | rfl | rfl | rfl
   · exact dword_ofDwords_0 _ _ _ _
   · exact dword_ofDwords_1 _ _ _ _
   · exact dword_ofDwords_2 _ _ _ _
@@ -31,7 +31,7 @@ theorem kv_recurrence (f : Nat → BitVec 32) (B N : Nat) (a t : BitVec 128) (T 
   have a0 : dword a 0 = f B := by simpa only [Nat.add_zero] using ha 0 (by decide)
   obtain ⟨v0, v1, v2, v3⟩ := dword_kv a t
   intro j hj
-  rcases (by omega : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3) with rfl | rfl | rfl | rfl
+  rcases (by omega_using [hj] : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3) with rfl | rfl | rfl | rfl
   · rw [v0, a0, ht 0 (by decide)]
     simpa only [Nat.add_zero] using h0.symm
   · rw [v1, ha 1 (by decide), a0, ht 1 (by decide), Nat.add_zero, ← h0, ← h1]
@@ -51,15 +51,15 @@ theorem key128_next {m : Mem} {kp : Addr} (k : Nat) (a : BitVec 128)
   · intro j hj
     rw [shuf_ff, broadcast_dword _ hj, kga3, ha 3 (by decide)]
   · intro j hj
-    rw [W_ge (by decide) (by omega)]
-    rw [show 4 * (k + 1) + j - 4 = 4 * k + j by omega]
+    rw [W_ge (by decide) (by omega_using [])]
+    rw [show 4 * (k + 1) + j - 4 = 4 * k + j by omega_using []]
     by_cases h : j = 0
     · subst j
-      simp only [temp32, show (4 * (k + 1)) % 4 = 0 by omega, ite_true,
-        show (4 * (k + 1)) / 4 = k + 1 by omega,
-        show 4 * (k + 1) - 1 = 4 * k + 3 by omega, Nat.add_zero]
-    · have hmod : (4 * (k + 1) + j) % 4 = j := by omega
-      simp only [temp32, hmod, h, ite_false, show ¬ (4 > 6 ∧ j = 4) by omega]
+      simp only [temp32, show (4 * (k + 1)) % 4 = 0 by omega_using [], ite_true,
+        show (4 * (k + 1)) / 4 = k + 1 by omega_using [],
+        show 4 * (k + 1) - 1 = 4 * k + 3 by omega_using [], Nat.add_zero]
+    · have hmod : (4 * (k + 1) + j) % 4 = j := by omega_using [hj]
+      simp only [temp32, hmod, h, ite_false, show ¬ (4 > 6 ∧ j = 4) by omega_using []]
 
 /-- AES-192 generates the next four schedule words. -/
 theorem key192_first {m : Mem} {kp : Addr} (k : Nat) (a b : BitVec 128)
@@ -73,15 +73,15 @@ theorem key192_first {m : Mem} {kp : Addr} (k : Nat) (a b : BitVec 128)
   · intro j hj
     rw [shuf_55, broadcast_dword _ hj, kga1, hb 1 (by decide)]
   · intro j hj
-    rw [W_ge (by decide) (by omega)]
-    rw [show 6 * (k + 1) + j - 6 = 6 * k + j by omega]
+    rw [W_ge (by decide) (by omega_using [])]
+    rw [show 6 * (k + 1) + j - 6 = 6 * k + j by omega_using []]
     by_cases h : j = 0
     · subst j
-      simp only [temp32, show (6 * (k + 1)) % 6 = 0 by omega, ite_true,
-        show (6 * (k + 1)) / 6 = k + 1 by omega,
-        show 6 * (k + 1) - 1 = 6 * k + 5 by omega, Nat.add_zero]
-    · have hmod : (6 * (k + 1) + j) % 6 = j := by omega
-      simp only [temp32, hmod, h, ite_false, show ¬ (6 > 6 ∧ j = 4) by omega]
+      simp only [temp32, show (6 * (k + 1)) % 6 = 0 by omega_using [], ite_true,
+        show (6 * (k + 1)) / 6 = k + 1 by omega_using [],
+        show 6 * (k + 1) - 1 = 6 * k + 5 by omega_using [], Nat.add_zero]
+    · have hmod : (6 * (k + 1) + j) % 6 = j := by omega_using [hj]
+      simp only [temp32, hmod, h, ite_false, show ¬ (6 > 6 ∧ j = 4) by omega_using []]
 
 /-- AES-256 generates the next four schedule words. -/
 theorem key256_first {m : Mem} {kp : Addr} (k : Nat) (a b : BitVec 128)
@@ -95,15 +95,15 @@ theorem key256_first {m : Mem} {kp : Addr} (k : Nat) (a b : BitVec 128)
   · intro j hj
     rw [shuf_ff, broadcast_dword _ hj, kga3, hb 3 (by decide)]
   · intro j hj
-    rw [W_ge (by decide) (by omega)]
-    rw [show 8 * (k + 1) + j - 8 = 8 * k + j by omega]
+    rw [W_ge (by decide) (by omega_using [])]
+    rw [show 8 * (k + 1) + j - 8 = 8 * k + j by omega_using []]
     by_cases h : j = 0
     · subst j
-      simp only [temp32, show (8 * (k + 1)) % 8 = 0 by omega, ite_true,
-        show (8 * (k + 1)) / 8 = k + 1 by omega,
-        show 8 * (k + 1) - 1 = 8 * k + 7 by omega, Nat.add_zero]
-    · have hmod : (8 * (k + 1) + j) % 8 = j := by omega
-      simp only [temp32, hmod, h, ite_false, show ¬ (8 > 6 ∧ j = 4) by omega]
+      simp only [temp32, show (8 * (k + 1)) % 8 = 0 by omega_using [], ite_true,
+        show (8 * (k + 1)) / 8 = k + 1 by omega_using [],
+        show 8 * (k + 1) - 1 = 8 * k + 7 by omega_using [], Nat.add_zero]
+    · have hmod : (8 * (k + 1) + j) % 8 = j := by omega_using [hj]
+      simp only [temp32, hmod, h, ite_false, show ¬ (8 > 6 ∧ j = 4) by omega_using [hj]]
 
 /-- AES-192's trailing pair continues the four newly generated words. -/
 theorem key192_second {m : Mem} {kp : Addr} (k : Nat) (a b : BitVec 128)
@@ -117,20 +117,20 @@ theorem key192_second {m : Mem} {kp : Addr} (k : Nat) (a b : BitVec 128)
     rw [shuf_ff, broadcast_dword _ (by decide), ha 3 (by decide)]
   have h0 : W m kp 6 (6 * (k + 1) + 4) =
       W m kp 6 (6 * k + 4) ^^^ W m kp 6 (6 * (k + 1) + 3) := by
-    rw [W_ge (by decide) (by omega)]
-    rw [show 6 * (k + 1) + 4 - 6 = 6 * k + 4 by omega,
-      show 6 * (k + 1) + 4 - 1 = 6 * (k + 1) + 3 by omega]
-    simp only [temp32, show (6 * (k + 1) + 4) % 6 = 4 by omega]
+    rw [W_ge (by decide) (by omega_using [])]
+    rw [show 6 * (k + 1) + 4 - 6 = 6 * k + 4 by omega_using [],
+      show 6 * (k + 1) + 4 - 1 = 6 * (k + 1) + 3 by omega_using []]
+    simp only [temp32, show (6 * (k + 1) + 4) % 6 = 4 by omega_using []]
     rfl
   have h1 : W m kp 6 (6 * (k + 1) + 4 + 1) =
       W m kp 6 (6 * k + 4 + 1) ^^^ W m kp 6 (6 * (k + 1) + 4) := by
-    rw [W_ge (by decide) (by omega)]
-    rw [show 6 * (k + 1) + 4 + 1 - 6 = 6 * k + 4 + 1 by omega,
-      show 6 * (k + 1) + 4 + 1 - 1 = 6 * (k + 1) + 4 by omega]
-    simp only [temp32, show (6 * (k + 1) + 4 + 1) % 6 = 5 by omega]
+    rw [W_ge (by decide) (by omega_using [])]
+    rw [show 6 * (k + 1) + 4 + 1 - 6 = 6 * k + 4 + 1 by omega_using [],
+      show 6 * (k + 1) + 4 + 1 - 1 = 6 * (k + 1) + 4 by omega_using []]
+    simp only [temp32, show (6 * (k + 1) + 4 + 1) % 6 = 5 by omega_using []]
     rfl
   intro j hj
-  rcases (by omega : j = 0 ∨ j = 1) with rfl | rfl
+  rcases (by omega_using [hj] : j = 0 ∨ j = 1) with rfl | rfl
   · rw [v0, hb 0 (by decide), t0]
     simpa only [Nat.add_zero] using h0.symm
   · rw [v1, hb 1 (by decide), hb 0 (by decide), t1]
@@ -148,15 +148,15 @@ theorem key256_second {m : Mem} {kp : Addr} (k : Nat) (a b : BitVec 128)
   · intro j hj
     rw [shuf_aa, broadcast_dword _ hj, kga2, ha 3 (by decide)]
   · intro j hj
-    rw [W_ge (by decide) (by omega)]
-    rw [show 8 * (k + 1) + 4 + j - 8 = 8 * k + 4 + j by omega]
-    have hmod : (8 * (k + 1) + 4 + j) % 8 = 4 + j := by omega
+    rw [W_ge (by decide) (by omega_using [])]
+    rw [show 8 * (k + 1) + 4 + j - 8 = 8 * k + 4 + j by omega_using []]
+    have hmod : (8 * (k + 1) + 4 + j) % 8 = 4 + j := by omega_using [hj]
     by_cases h : j = 0
     · subst j
       simp only [temp32, hmod, Nat.add_zero, show ¬ (4 = 0) by decide, ite_false,
         show 8 > 6 ∧ 4 = 4 by decide, and_self, ite_true,
-        show 8 * (k + 1) + 4 - 1 = 8 * (k + 1) + 3 by omega]
-    · simp only [temp32, hmod, show ¬ (4 + j = 0) by omega,
-        show ¬ (8 > 6 ∧ 4 + j = 4) by omega, h, ite_false]
+        show 8 * (k + 1) + 4 - 1 = 8 * (k + 1) + 3 by omega_using []]
+    · simp only [temp32, hmod, show ¬ (4 + j = 0) by omega_using [],
+        show ¬ (8 > 6 ∧ 4 + j = 4) by omega_using [h], h, ite_false]
 
 end VG.Proof.Aes.X86.AesNi

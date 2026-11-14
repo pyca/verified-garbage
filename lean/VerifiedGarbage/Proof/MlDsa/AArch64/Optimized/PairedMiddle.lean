@@ -108,7 +108,7 @@ theorem hintConstants_ok (s : State) : WP isa (.block hintConstants) s fun t =>
     change vword 0 i-vword (HighPack.repeatedWord (s.gpr .x17).toNat) i = _
     rw [HighPack.repeatedWord_lane _ hi]
     have hz : vword 0 i=0 := by
-      rcases (show i=0 ∨ i=1 ∨ i=2 ∨ i=3 by omega) with rfl | rfl | rfl | rfl <;> rfl
+      rcases (show i=0 ∨ i=1 ∨ i=2 ∨ i=3 by omega_using [hi]) with rfl | rfl | rfl | rfl <;> rfl
     rw [hz]
     exact BitVec.zero_sub _
 
@@ -175,7 +175,7 @@ theorem hConstants_ok (g : Nat) (s : State)
     rw [hneg e he,hgamma e he]
   · intro _ e he
     rw [hzero]
-    rcases (show e=0 ∨ e=1 ∨ e=2 ∨ e=3 by omega) with rfl | rfl | rfl | rfl <;> rfl
+    rcases (show e=0 ∨ e=1 ∨ e=2 ∨ e=3 by omega_using [he]) with rfl | rfl | rfl | rfl <;> rfl
   · rw [ht.vec .v30 (by decide),hflag]
   · intro e he
     rw [hgamma e he,ha.gpr .x17 (by decide)]

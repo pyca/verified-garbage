@@ -40,17 +40,17 @@ theorem Room.congr {s s' : State} (h : Room s) (hb : s'.gpr sb = s.gpr sb) (hw :
   ⟨by unfold scratchR; rw [hb, hw]; exact h.mem, by rw [hb]; exact h.fit⟩
 
 theorem toNat_addr (b : BitVec 32) : (State.addr b).toNat = b.toNat := by
-  have := b.isLt; simp [State.addr]; omega
+  have := b.isLt; simp [State.addr]; omega_using []
 
 /-- Slot `k`, as a 64-bit offset from the base. -/
 theorem slot_addr {b : BitVec 32} {k : Nat} (hfit : b.toNat + 4 * k + 4 ≤ 2 ^ 32) :
-    wordAddr b k = State.addr b + BitVec.ofNat 64 (4 * k) := addr_add (by omega)
+    wordAddr b k = State.addr b + BitVec.ofNat 64 (4 * k) := addr_add (by omega_using [hfit])
 
 theorem slot_in {s : State} (h : Room s) {k : Nat} (hk : k < slots) :
     (scratchR s).Contains (wordAddr (s.gpr sb) k) 4 :=
   slot_contains (s.gpr sb) hk h.fit
 
-theorem slot_off {k : Nat} (hk : k < slots) : 4 * k < 4096 := by rw [slots_eq] at hk; omega
+theorem slot_off {k : Nat} (hk : k < slots) : 4 * k < 4096 := by rw [slots_eq] at hk; omega_using [hk]
 
 /-- Slot `k` of the scratch buffer. -/
 abbrev slotA (s : State) (k : Nat) : Addr := wordAddr (s.gpr sb) k
@@ -76,7 +76,7 @@ theorem slotW_setMem_write {s : State} (h : Room s) {k j : Nat} (hk : k < slots)
   show (s.mem.writeW (slotA s k) v).readW (slotA s j) 32 = _
   split
   · rename_i e; subst e; exact Mem.readW_writeW_self32 _ _ _
-  · rename_i e; exact Mem.readW_writeW_sep (slot_sep _ (by omega) (by omega) e) (by decide)
+  · rename_i e; exact Mem.readW_writeW_sep (slot_sep _ (by omega_using [hj, hf]) (by omega_using [hk, hf]) e) (by decide)
 
 theorem slotA_setReg (s : State) {r : Reg} (hr : r ≠ sb) (v : BitVec 32) (k : Nat) :
     slotA (s.setReg r v) k = slotA s k := by
@@ -109,15 +109,15 @@ def arraysR (s : State) : Region := ⟨State.addr (s.gpr sb) + BitVec.ofNat 64 (
 def workR (s : State) : Region := ⟨State.addr (s.gpr sb), 4 * tailSlot⟩
 
 theorem lane_slot {k b : Nat} (hk : k ∈ arrays) (hb : b < 8) : k + b < slots := by
-  have := arrays_bound k hk; rw [slots_eq]; omega
+  have := arrays_bound k hk; rw [slots_eq]; omega_using [hb, this]
 
 theorem lane_inArrays {s : State} (h : Room s) {k b : Nat} (hk : k ∈ arrays) (hb : b < 8) :
     (arraysR s).Contains (slotA s (k + b)) 4 := by
   have := arrays_bound k hk
   have hf := h.fit; rw [slots_eq] at hf
-  rw [slotA, slot_addr (by omega)]
+  rw [slotA, slot_addr (by omega_using [hb, this, hf])]
   have := toNat_addr (s.gpr sb)
-  exact Offset.contains _ (by omega) (by omega) (by omega)
+  exact Offset.contains _ (by omega_arith) (by omega_arith) (by omega_using [])
 
 theorem arraysR_sub_work (s : State) : Region.Sub (arraysR s) (workR s) :=
   Offset.sub_base _ (by simp [tailSlot])
@@ -132,11 +132,11 @@ theorem lane_sep {s : State} (h : Room s) {k b k' b' : Nat} (hk : k ∈ arrays) 
   have h1 := arrays_bound k hk
   have h2 := arrays_bound k' hk'
   have hf := h.fit; rw [slots_eq] at hf
-  refine slot_sep _ (by omega) (by omega) ?_
+  refine slot_sep _ (by omega_using [hb, h1, hf]) (by omega_using [hb', h2, hf]) ?_
   by_cases hkk : k = k'
   · subst hkk; have : b ≠ b' := by simpa using hne
-    omega
-  · have := arrays_apart k hk k' hk' hkk; omega
+    omega_using [hne]
+  · have := arrays_apart k hk k' hk' hkk; omega_using [hb, hb', this]
 
 /-! ## Steps on every lane -/
 
@@ -236,8 +236,8 @@ theorem lanes_ok {f : Nat → List Instr} {sp : LaneSpec} (hsp : ∀ kv ∈ sp, 
   | zero => exact ⟨s₀, runBlock_nil, h₀, fun k _ b _ => by simp, Frame.refl _ _, rfl, rfl, rfl,
       fun _ _ _ => rfl⟩
   | succ n ih =>
-    obtain ⟨s, hs, hPs, hv, hfr, hrd, hwr, hsp', hregs⟩ := ih (by omega)
-    obtain ⟨s', hs', hok⟩ := hf n (by omega) s hPs
+    obtain ⟨s, hs, hPs, hv, hfr, hrd, hwr, hsp', hregs⟩ := ih (by omega_using [hn])
+    obtain ⟨s', hs', hok⟩ := hf n (by omega_using [hn]) s hPs
     have hRs := hR s hPs
     have hsb : s.gpr sb = s₀.gpr sb := hregs _ (by decide) (by decide)
     have hsb' : s'.gpr sb = s.gpr sb := hok.regs _ (by decide) (by decide)
@@ -247,16 +247,16 @@ theorem lanes_ok {f : Nat → List Instr} {sp : LaneSpec} (hsp : ∀ kv ∈ sp, 
         List.flatMap_singleton, hs']
     · have hl : lv s' k b = (laneWrites s sp n).readW (slotA s (k + b)) 32 := by
         rw [lv, slotW, hsb', ← hok.mem]
-      rw [hl, lv_laneWrites hRs hsp hk hb (by omega)]
+      rw [hl, lv_laneWrites hRs hsp hk hb (by omega_using [hn])]
       have hx : newVal sp k (fun k' => lv s k' n) = newVal sp k (fun k' => lv s₀ k' n) :=
-        newVal_congr hd hk fun k' hk' => by rw [hv k' hk' n (by omega)]; simp
+        newVal_congr hd hk fun k' hk' => by rw [hv k' hk' n (by omega_using [hn])]; simp
       by_cases hbn : b = n
       · subst hbn; simp [hx]
       · rw [ite_eq_right hbn, hv k hk b hb]
         by_cases hbl : b < n
-        · simp [hbl, show b < n + 1 by omega]
-        · simp [hbl, show ¬ b < n + 1 by omega]
-    · have hfr' := laneWrites_frame hRs hsp (b := n) (by omega)
+        · simp [hbl, show b < n + 1 by omega_using [hbl]]
+        · simp [hbl, show ¬ b < n + 1 by omega_using [hbn, hbl]]
+    · have hfr' := laneWrites_frame hRs hsp (b := n) (by omega_using [hn])
       rw [← hok.mem] at hfr'
       refine hfr.trans ?_
       simpa [arraysR, hsb] using hfr'

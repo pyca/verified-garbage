@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Spec.Cfb8
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # CFB8's result, for any block cipher and target
@@ -57,7 +58,7 @@ theorem cfb8In_succ (enc : Bool) (ciph : Spec.Cbc.Cipher) (m₀ : Mem) (D : Addr
   | j + 1 => by
     obtain ⟨h1, h2⟩ := cfb8In_succ enc ciph m₀ D iv j
     have e : D + BitVec.ofNat 64 (j + 1 + 1) = D + 1 + BitVec.ofNat 64 (j + 1) := by
-      rw [BitVec.add_assoc]; congr 1; apply BitVec.eq_of_toNat_eq; simp; omega
+      rw [BitVec.add_assoc]; congr 1; apply BitVec.eq_of_toNat_eq; simp; omega_using []
     have hi : cfb8In enc ciph m₀ D iv (j + 1 + 1) =
         cfb8In enc ciph m₀ (D + 1) (iv.tail ++ [cfb8C enc ciph m₀ D iv 0]) (j + 1) := by
       rw [cfb8In_succ_eq, h1, h2, ← cfb8In_succ_eq]
@@ -67,7 +68,7 @@ theorem cfb8Out_succ (enc : Bool) (ciph : Spec.Cbc.Cipher) (m₀ : Mem) (D : Add
     cfb8Out enc ciph m₀ D iv (j + 1) =
       cfb8Out enc ciph m₀ (D + 1) (iv.tail ++ [cfb8C enc ciph m₀ D iv 0]) j := by
   have e : D + BitVec.ofNat 64 (j + 1) = D + 1 + BitVec.ofNat 64 j := by
-    rw [BitVec.add_assoc]; congr 1; apply BitVec.eq_of_toNat_eq; simp; omega
+    rw [BitVec.add_assoc]; congr 1; apply BitVec.eq_of_toNat_eq; simp; omega_using []
   simp only [cfb8Out, (cfb8In_succ enc ciph m₀ D iv j).1, e]
 
 theorem bytesAt_succ (m : Mem) (D : Addr) (n : Nat) :
@@ -75,7 +76,7 @@ theorem bytesAt_succ (m : Mem) (D : Addr) (n : Nat) :
   simp only [bytesAt, List.range_succ_eq_map, List.map_cons, List.map_map]
   refine congr (congrArg List.cons (by simp)) (List.map_congr_left fun j _ => ?_)
   simp only [Function.comp_apply]
-  rw [BitVec.add_assoc]; congr 1; apply BitVec.eq_of_toNat_eq; simp; omega
+  rw [BitVec.add_assoc]; congr 1; apply BitVec.eq_of_toNat_eq; simp; omega_using []
 
 /-- `Spec.Cfb8.next` after one more byte. -/
 theorem next_cons {iv : List Byte} (h : iv ≠ []) (c : Byte) (cs : List Byte) :
@@ -122,7 +123,7 @@ theorem cfb8In_length (enc : Bool) (ciph : Spec.Cbc.Cipher) (m₀ : Mem) (D : Ad
   | 0 => by rw [cfb8In]; exact hiv
   | j + 1 => by
     rw [cfb8In_succ_eq, List.length_append, List.length_tail, cfb8In_length enc ciph m₀ D hiv hL j, List.length_singleton]
-    omega
+    omega_using [hL]
 
 /-- Byte `u` of the input block of byte `j + 1`. -/
 theorem cfb8In_succ_getD (enc : Bool) (ciph : Spec.Cbc.Cipher) (m₀ : Mem) (D : Addr) {iv : List Byte} {L : Nat}
@@ -133,10 +134,10 @@ theorem cfb8In_succ_getD (enc : Bool) (ciph : Spec.Cbc.Cipher) (m₀ : Mem) (D :
   rw [cfb8In_succ_eq]
   split
   · rename_i h
-    rw [List.getD_eq_getElem?_getD, List.getElem?_append_left (by rw [List.length_tail]; omega),
+    rw [List.getD_eq_getElem?_getD, List.getElem?_append_left (by rw [List.length_tail]; omega_using [hl, h]),
       List.getElem?_tail, ← List.getD_eq_getElem?_getD]
-  · rw [List.getD_eq_getElem?_getD, List.getElem?_append_right (by rw [List.length_tail]; omega),
-      List.length_tail, hl, show u - (L - 1) = 0 by omega]
+  · rw [List.getD_eq_getElem?_getD, List.getElem?_append_right (by rw [List.length_tail]; omega_arith),
+      List.length_tail, hl, show u - (L - 1) = 0 by omega_using [hu]]
     rfl
 
 end VG.Proof.Modes

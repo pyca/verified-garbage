@@ -26,7 +26,7 @@ theorem apply_entry (s : State) (hs : applyC.pre s) :
       a.z = (s.gpr .r2 - BitVec.ofNat 32 0 == 0#32) := by
   obtain ⟨_, hwr, _, _, _, cfit, _, _⟩ := hs
   have a256 : State.addr (s.gpr .r0 + BitVec.ofNat 32 256) = State.addr (s.gpr .r0) + 256#64 :=
-    addr_add (a := s.gpr .r0) (k := 256) (by omega)
+    addr_add (a := s.gpr .r0) (k := 256) (by omega_using [cfit])
   have r256 : InRegions (s.rd ++ s.wr) (State.addr (s.gpr .r0 + BitVec.ofNat 32 256)) 1 := by
     rw [a256]
     refine region_in (region_offset _ _ 258 256 1 (by decide) (by decide) ?_)
@@ -46,7 +46,7 @@ theorem apply_start (b : State) {P : BitVec 32} (h0 : b.gpr .r0 = P)
       c.gpr .r4 = b.gpr .r12 ∧ c.gpr .r12 = P ∧
       c.gpr .r5 = (b.mem (State.addr P + 257#64)).setWidth 32 ∧ c.gpr .r0 = 0#32 ∧
       c.gpr .r10 = BitVec.allOnes 32 := by
-  have a257 : State.addr (P + BitVec.ofNat 32 257) = State.addr P + 257#64 := addr_add (by omega)
+  have a257 : State.addr (P + BitVec.ofNat 32 257) = State.addr P + 257#64 := addr_add (by omega_using [hfit])
   have r257 : InRegions (b.rd ++ b.wr) (State.addr (P + BitVec.ofNat 32 257)) 1 := by
     rw [a257]; exact h257
   refine WP.mono (WP.keep (Q := fun c => c.mem = b.mem ∧ c.gpr .r4 = b.gpr .r12 ∧
@@ -64,8 +64,8 @@ theorem apply_finish (d : State) (i j : Byte) {P : BitVec 32} (hfit : P.toNat + 
     WP isa (.block finish) d fun e =>
       e.mem = (d.mem.write (State.addr P + 256#64) 1 i).write (State.addr P + 257#64) 1 j ∧
       Keep [] d e := by
-  have a256 : State.addr (P + BitVec.ofNat 32 256) = State.addr P + 256#64 := addr_add (by omega)
-  have a257 : State.addr (P + BitVec.ofNat 32 257) = State.addr P + 257#64 := addr_add (by omega)
+  have a256 : State.addr (P + BitVec.ofNat 32 256) = State.addr P + 256#64 := addr_add (by omega_using [hfit])
+  have a257 : State.addr (P + BitVec.ofNat 32 257) = State.addr P + 257#64 := addr_add (by omega_using [hfit])
   have h256 : InRegions d.wr (State.addr (P + BitVec.ofNat 32 256)) 1 := by
     rw [a256]; exact region_offset _ _ _ 256 1 (by decide) (by decide) hw
   have h257 : InRegions d.wr (State.addr (P + BitVec.ofNat 32 257)) 1 := by
@@ -158,7 +158,7 @@ theorem apply_ok (s : State) (hs : applyC.pre s) :
           exact hsave.bytes (R := ⟨State.addr D, L.toNat⟩) (fun r hr => by
             simp only [List.mem_singleton] at hr
             subst hr
-            exact ds) (show L.toNat ≤ 2 ^ 64 by have := L.isLt; omega) hx
+            exact ds) (show L.toNat ≤ 2 ^ 64 by have := L.isLt; omega_using []) hx
         frame := Frame.refl _ _
         count := hc0
         keep := Keep.refl _ _ }
@@ -201,8 +201,8 @@ theorem apply_ok (s : State) (hs : applyC.pre s) :
   have hDP (o : Nat) (ho : o < 258) :
       Mem.Sep (State.addr D) L.toNat (State.addr P + BitVec.ofNat 64 o) 1 :=
     sep_of_sub cd.symm (contains_prefix _ (Nat.le_refl _))
-      (Offset.contains_base _ (by omega) (by omega))
-  have hLn : L.toNat < 2 ^ 64 := by have := L.isLt; omega
+      (Offset.contains_base _ (by omega_using [ho]) (by omega_using [ho]))
+  have hLn : L.toNat < 2 ^ 64 := by have := L.isLt; omega_using []
   refine ⟨⟨?_, ?_⟩, fun r hr => ?_, hgk.2.2.2.trans ke.2.2.2⟩
   · rw [hgm, hem, context_finish]
     exact context_ext hd.table rfl rfl

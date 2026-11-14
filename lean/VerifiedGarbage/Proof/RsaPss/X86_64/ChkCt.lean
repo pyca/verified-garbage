@@ -112,8 +112,8 @@ theorem hsl_ct : RelCT isa (Two (VAt T (CJa T.H))) (.block (hSlots ++ ([.mov .r1
   · simp [upd, vw]
   all_goals
     simp only [upd]
-    rw [ifn (by omega), ifn (by omega), ifn (by omega)]
-    exact hw _ (by simp only [KP0, List.mem_cons, List.not_mem_nil, or_false]; omega)
+    rw [ifn (by omega_using [h]), ifn (by omega_using [h]), ifn (by omega_using [h])]
+    exact hw _ (by simp only [KP0, List.mem_cons, List.not_mem_nil, or_false]; omega_using [h])
 
 theorem gsl_ct : RelCT isa (Two (VAt T (CJb T.H))) (.block gSlots) (Two (VAt T (CJ1 T.H))) := by
   obtain ⟨_, hc⟩ := cFixed.gSl
@@ -137,8 +137,8 @@ theorem gsl_ct : RelCT isa (Two (VAt T (CJb T.H))) (.block gSlots) (Two (VAt T (
   · simp [upd, vw]
   all_goals
     simp only [upd]
-    rw [ifn (by omega), ifn (by omega), ifn (by omega), ifn (by omega)]
-    exact hw _ (by simp only [KP1, List.mem_cons, List.not_mem_nil, or_false]; omega)
+    rw [ifn (by omega_using [h]), ifn (by omega_using [h]), ifn (by omega_using [h]), ifn (by omega_using [h])]
+    exact hw _ (by simp only [KP1, List.mem_cons, List.not_mem_nil, or_false]; omega_using [h])
 
 theorem copyIn_ct : RelCT isa (Two (VAt T (CJ1 T.H))) copyIn (Two (VAt T (CJ1 T.H))) := by
   obtain ⟨_, hc⟩ := cFixed.copyIn
@@ -187,7 +187,7 @@ theorem anyReg_ct : RelCT isa (Two (VAt T (CJ1 T.H))) anyReg (Two (VAt T (CJ2 T.
     by_cases h35 : k = 35
     · subst h35; simp [upd, vw]
     simp only [upd]; rw [ifn h35]
-    exact hw k (by simp only [K5, KP, List.mem_cons, List.not_mem_nil, or_false] at hk ⊢; omega)
+    exact hw k (by simp only [K5, KP, List.mem_cons, List.not_mem_nil, or_false] at hk ⊢; omega_using [h35, hk])
 
 theorem fit_ct (hc : HashChecks T.H.P T.H.D 1) (hH : HashOK T.H) :
     RelCT isa (Two (VAt T (CJ2 T.H))) (.block (fitH T.H)) (Two (VAt T (CJ3 T.H))) := by
@@ -199,9 +199,9 @@ theorem fit_ct (hc : HashChecks T.H.P T.H.D 1) (hH : HashOK T.H) :
   obtain ⟨V, W, R, hw, -⟩ := v.W
   have hk2 := S.ps.k2
   have hDN := hH.hDN; have hN := hH.N_le
-  refine X86_64.WP.mono_syms (fitH_ok (H := T.H) (by omega) v.L R (k := veml s)
+  refine X86_64.WP.mono_syms (fitH_ok (H := T.H) (by omega_using [hDN, hN]) v.L R (k := veml s)
     (by rw [hw 17 (by decide)]; show s.gpr .rdx = _; rw [veml, vlo, Nat.sub_zero, BitVec.ofNat_toNat, BitVec.setWidth_eq])
-    (by unfold veml; omega)) fun t' ⟨k', hm, hax, hcf⟩ sy =>
+    (by unfold veml; omega_using [hk2])) fun t' ⟨k', hm, hax, hcf⟩ sy =>
     ⟨s, S, ⟨v.keep k' hm (by decide) (fun _ hp => by cases hp) sy, k'.2.1.trans hrd, hm ▸ hM,
       (k'.gpr (by decide)).trans hdx⟩, hax, hcf⟩
 
@@ -229,7 +229,7 @@ theorem salt_ct (hc : VerifyChecks T.H.P T.H.D) (hH : HashOK T.H) :
   obtain ⟨⟨v, hrd, hM, hdx⟩, hax, hcf⟩ := h
   have hok : T.H.D + 2 ≤ veml s := by
     rw [show isa.eval .b t = t.cf from rfl, hcf] at hb
-    simp only [Option.some.injEq, decide_eq_false_iff_not] at hb; omega
+    simp only [Option.some.injEq, decide_eq_false_iff_not] at hb; omega_using [hb]
   obtain ⟨V, W, R, hw, -⟩ := v.W
   have hp := S.ps
   have hk2 := hp.k2
@@ -243,8 +243,8 @@ theorem salt_ct (hc : VerifyChecks T.H.P T.H.D) (hH : HashOK T.H) :
     show s.gpr .rdx - BitVec.ofNat 64 (vlo s) = BitVec.ofNat 64 ((s.gpr .rdx).toNat - vlo s)
     rw [vlo, Nat.sub_zero, BitVec.ofNat_toNat, BitVec.setWidth_eq]
     exact BitVec.sub_zero _
-  refine X86_64.WP.mono_syms (saltFits_ok (H := T.H) (by omega) t6 (a := veml s) (b := vrdx s) hok
-    (by unfold veml; omega) hax6 (by rw [k6.gpr (by decide)]; exact hdx)) fun t7 ⟨k7, hm7, hax7, hc7⟩ sy7 => ?_
+  refine X86_64.WP.mono_syms (saltFits_ok (H := T.H) (by omega_using [hDN, hN]) t6 (a := veml s) (b := vrdx s) hok
+    (by unfold veml; omega_using [hk2]) hax6 (by rw [k6.gpr (by decide)]; exact hdx)) fun t7 ⟨k7, hm7, hax7, hc7⟩ sy7 => ?_
   have hm : t7.mem = t.mem := by rw [hm7, hm6]
   exact ⟨s, S, v.keep (k6.trans k7) hm (by decide) (fun _ hp => by cases hp) (sy7.trans sy6),
     k7.2.1.trans (k6.2.1.trans hrd), hm ▸ hM, hax7, hc7, hok⟩
@@ -267,7 +267,7 @@ theorem dbSlots_ct : RelCT isa (Two fun a t => VAt T (J7 T.H) a t ∧ isa.eval .
   by_cases h24 : k = 24
   · subst h24
     simp only [upd, Nat.reduceEqDiff, ite_false, ite_true, vw, vdb]
-    congr 1; omega
+    congr 1; omega_using [hok]
   simp only [upd]; rw [ifn h24, ifn h23]; exact w k (km_k5 hk h23 h24)
 
 theorem restore_ct : RelCT isa (Two (VAt T (JR T.H))) (.block restoreRegs) fun _ _ => True := by

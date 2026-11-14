@@ -84,14 +84,14 @@ theorem sldoi8_eq (n m : BitVec 128) :
   apply BitVec.eq_of_getLsbD_eq; intro i hi
   simp only [BitVec.getLsbD_extractLsb', BitVec.getLsbD_shiftLeft, BitVec.getLsbD_append,
     hi, decide_true, Bool.true_and]
-  simp only [show 128 + i < 128 + 128 by omega, show ¬ 128 + i < 64 by omega,
+  simp only [show 128 + i < 128 + 128 by omega_using [hi], show ¬ 128 + i < 64 by omega_using [],
     decide_true, decide_false, Bool.not_false, Bool.true_and]
   by_cases h : i < 64
-  · simp only [h, show 128 + i - 64 < 128 by omega, decide_true, ite_true, Bool.true_and]
-    exact congrArg m.getLsbD (by omega)
-  · simp only [h, show ¬ 128 + i - 64 < 128 by omega, show i - 64 < 64 by omega,
+  · simp only [h, show 128 + i - 64 < 128 by omega_using [h], decide_true, ite_true, Bool.true_and]
+    exact congrArg m.getLsbD (by omega_using [])
+  · simp only [h, show ¬ 128 + i - 64 < 128 by omega_using [h], show i - 64 < 64 by omega_using [hi],
       decide_true, ite_false, Bool.true_and, Nat.zero_add]
-    exact congrArg n.getLsbD (by omega)
+    exact congrArg n.getLsbD (by omega_using [])
 
 theorem vector_step (i : Instr) (d : VReg) (v : BitVec 128) (s : State)
     (he : exec i s = some (s.writeV d v)) :
@@ -161,36 +161,36 @@ theorem packed_bit (f : Nat → BitVec 8) {j r : Nat} (hj : j < 16) (hr : r < 8)
   | 0, _ => by simp
   | k+1, hk => by
     rw [List.range_succ, List.foldl_append, List.foldl_cons, List.foldl_nil,
-      BitVec.getLsbD_or, packed_bit f hj hr k (by omega), byteTerm_bit f (by omega) hj hr]
+      BitVec.getLsbD_or, packed_bit f hj hr k (by omega_using [hk]), byteTerm_bit f (by omega_using [hk]) hj hr]
     by_cases h : 15-j < k
-    · simp [h, show 15-j < k+1 by omega, show j ≠ 15-k by omega]
+    · simp [h, show 15-j < k+1 by omega_using [h], show j ≠ 15-k by omega_using [hk, h]]
     · by_cases e : j = 15-k
-      · rw [ite_eq_right h, ite_eq_left e, ite_eq_left (show 15-j < k+1 by omega), Bool.false_or]
-        exact congrArg (fun i => (f i).getLsbD r) (by omega)
-      · simp [h, e, show ¬15-j < k+1 by omega]
+      · rw [ite_eq_right h, ite_eq_left e, ite_eq_left (show 15-j < k+1 by omega_using [e]), Bool.false_or]
+        exact congrArg (fun i => (f i).getLsbD r) (by omega_using [hk, e])
+      · simp [h, e, show ¬15-j < k+1 by omega_using [hj, h, e]]
 
 theorem getLsbD_packed (f : Nat → BitVec 8) {j r : Nat} (hj : j < 16) (hr : r < 8) :
     (VG.PPC64LE.ofVBytes f).getLsbD (8*j+r) = (f (15-j)).getLsbD r := by
-  simpa only [VG.PPC64LE.ofVBytes, BitVec.ofNat_eq_ofNat, show 15-j < 16 by omega, ite_true] using
+  simpa only [VG.PPC64LE.ofVBytes, BitVec.ofNat_eq_ofNat, show 15-j < 16 by omega_using [], ite_true] using
     packed_bit f hj hr 16 (by decide)
 
 
 theorem getLsbD_rev128 (x : BitVec 128) {i : Nat} (hi : i < 128) :
     (rev128 x).getLsbD i = x.getLsbD (8*(15-i/8)+i%8) := by
-  have he : i = 8*(i/8)+i%8 := by omega
+  have he : i = 8*(i/8)+i%8 := by omega_using []
   calc
     _ = (rev128 x).getLsbD (8*(i/8)+i%8) := congrArg (rev128 x).getLsbD he
     _ = _ := by
-      rw [rev128, getLsbD_packed _ (by omega) (by omega)]
-      simp only [vbyte, BitVec.getLsbD_extractLsb', show i % 8 < 8 by omega,
+      rw [rev128, getLsbD_packed _ (by omega_using [hi]) (by omega_using [])]
+      simp only [vbyte, BitVec.getLsbD_extractLsb', show i % 8 < 8 by omega_using [],
         decide_true, Bool.true_and]
-      exact congrArg x.getLsbD (by omega)
+      exact congrArg x.getLsbD (by omega_using [])
 
 theorem rev128_rev128 (x : BitVec 128) : rev128 (rev128 x) = x := by
   apply BitVec.eq_of_getLsbD_eq
   intro i hi
-  rw [getLsbD_rev128 _ hi, getLsbD_rev128 _ (by omega)]
-  exact congrArg x.getLsbD (by omega)
+  rw [getLsbD_rev128 _ hi, getLsbD_rev128 _ (by omega_using [])]
+  exact congrArg x.getLsbD (by omega_using [hi])
 
 theorem swapDwords_append (a b : BitVec 64) : swapDwords (a ++ b) = b ++ a := by
   simp only [swapDwords, vdword, Nat.reduceSub, Nat.mul_zero, Nat.mul_one,
@@ -207,14 +207,14 @@ theorem getLsbD_swapDwords (x : BitVec 128) {i : Nat} (hi : i < 128) :
     BitVec.getLsbD_append, BitVec.getLsbD_extractLsb', Nat.zero_add]
   by_cases h : i < 64
   · simp only [h, ite_true, decide_true, Bool.true_and]
-  · simp only [h, ite_false, show i-64 < 64 by omega, decide_true, Bool.true_and]
+  · simp only [h, ite_false, show i-64 < 64 by omega_using [hi], decide_true, Bool.true_and]
 
 theorem rev128_swapDwords (x : BitVec 128) : rev128 (swapDwords x) = swapDwords (rev128 x) := by
   apply BitVec.eq_of_getLsbD_eq
   intro i hi
-  rw [getLsbD_rev128 _ hi, getLsbD_swapDwords _ (by omega), getLsbD_swapDwords _ hi,
-    getLsbD_rev128 _ (by split <;> omega)]
-  exact congrArg x.getLsbD (by split <;> split <;> omega)
+  rw [getLsbD_rev128 _ hi, getLsbD_swapDwords _ (by omega_using []), getLsbD_swapDwords _ hi,
+    getLsbD_rev128 _ (by split <;> omega_arith)]
+  exact congrArg x.getLsbD (by split <;> split <;> omega_arith)
 
 theorem rev128_xor (a b : BitVec 128) : rev128 (a ^^^ b) = rev128 a ^^^ rev128 b := by
   apply BitVec.eq_of_getLsbD_eq
@@ -227,15 +227,15 @@ theorem vbyte_packed (f : Nat → BitVec 8) {i : Nat} (hi : i < 16) :
   apply BitVec.eq_of_getLsbD_eq
   intro r hr
   simp only [vbyte, BitVec.getLsbD_extractLsb', hr, decide_true, Bool.true_and]
-  rw [getLsbD_packed f (by omega) hr, show 15-(15-i) = i by omega]
+  rw [getLsbD_packed f (by omega_using []) hr, show 15-(15-i) = i by omega_using [hi]]
 
 theorem ext_vbyte {a b : BitVec 128} (h : ∀ i < 16, vbyte a i = vbyte b i) : a = b := by
   apply BitVec.eq_of_getLsbD_eq
   intro j hj
-  have he := congrArg (BitVec.getLsbD · (j % 8)) (h (15-j/8) (by omega))
-  simp only [vbyte, BitVec.getLsbD_extractLsb', show j % 8 < 8 by omega,
+  have he := congrArg (BitVec.getLsbD · (j % 8)) (h (15-j/8) (by omega_using []))
+  simp only [vbyte, BitVec.getLsbD_extractLsb', show j % 8 < 8 by omega_using [],
     decide_true, Bool.true_and] at he
-  exact (congrArg a.getLsbD (by omega)).symm.trans (he.trans (congrArg b.getLsbD (by omega)))
+  exact (congrArg a.getLsbD (by omega_using [hj])).symm.trans (he.trans (congrArg b.getLsbD (by omega_using [hj])))
 
 theorem vbyte_rev128 (x : BitVec 128) {i : Nat} (hi : i < 16) :
     vbyte (rev128 x) i = vbyte x (15-i) := by
@@ -246,8 +246,8 @@ theorem vbyte_swapDwords (x : BitVec 128) {i : Nat} (hi : i < 16) :
   apply BitVec.eq_of_getLsbD_eq
   intro r hr
   simp only [vbyte, BitVec.getLsbD_extractLsb', hr, decide_true, Bool.true_and]
-  rw [getLsbD_swapDwords _ (by omega)]
-  exact congrArg x.getLsbD (by split <;> split <;> omega)
+  rw [getLsbD_swapDwords _ (by omega_using [hr])]
+  exact congrArg x.getLsbD (by split <;> split <;> omega_arith)
 
 def permSelf (x control : BitVec 128) : BitVec 128 :=
   ofVBytes fun i =>
@@ -319,9 +319,9 @@ theorem extract_high_word_byte (v : BitVec 128) {q : Nat} (hq : q < 4) :
   apply BitVec.eq_of_getLsbD_eq
   intro r hr
   simp only [vbyte, BitVec.getLsbD_extractLsb', BitVec.getLsbD_setWidth,
-    hr, show 8*q+r < 32 by omega, show 8*q+r < 64 by omega,
+    hr, show 8*q+r < 32 by omega_using [hq, hr], show 8*q+r < 64 by omega_using [hq, hr],
     decide_true, Bool.true_and]
-  exact congrArg v.getLsbD (by omega)
+  exact congrArg v.getLsbD (by omega_using [hq])
 
 namespace VectorTaint
 open VG.PPC64LE.Taint (T pub set Agree)

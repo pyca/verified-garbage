@@ -32,15 +32,15 @@ theorem validatingShape_ok {p : VerifyingInput} {s0 : State} (h : ValidatingPre 
   have hkey := h.keySource.congrK hinside he.keep
   have hps : Src s1 p.base usedBytes (s0.gpr .x0) p.components.p := source_take hkey
   have hqs : Src s1 p.base usedBytes (s0.gpr .x0 + BitVec.ofNat 64 p.pLen) p.components.q :=
-    source_slice hkey (by rw [p.keyLength]; omega)
+    source_slice hkey (by rw [p.keyLength]; omega_using [])
   have hp1 : 0 < p.components.p.length := by
-    rw [p.components.pLength]; have := p.lengths; unfold Spec.Dsa.lengthsValid at this; omega
+    rw [p.components.pLength]; have := p.lengths; unfold Spec.Dsa.lengthsValid at this; omega_using [this]
   have hq1 : 0 < p.components.q.length := by
-    rw [p.components.qLength]; have := p.lengths; unfold Spec.Dsa.lengthsValid at this; omega
+    rw [p.components.qLength]; have := p.lengths; unfold Spec.Dsa.lengthsValid at this; omega_using [this]
   have hp64 : p.components.p.length < 2 ^ 64 := by
-    rw [p.components.pLength]; have := p.lengths; unfold Spec.Dsa.lengthsValid at this; omega
+    rw [p.components.pLength]; have := p.lengths; unfold Spec.Dsa.lengthsValid at this; omega_using [this]
   have hq64 : p.components.q.length < 2 ^ 64 := by
-    rw [p.components.qLength]; have := p.lengths; unfold Spec.Dsa.lengthsValid at this; omega
+    rw [p.components.qLength]; have := p.lengths; unfold Spec.Dsa.lengthsValid at this; omega_using [this]
   refine WP.mono (domainShape_ok (h.scratch.congr he.keep.wr) he.base (by decide) (he.fields .p (by decide) (by decide))
     (by rw [he.fields .q (by decide) (by decide)]; change _ + s0.gpr .x2 = _; rw [h.pLength])
     (by rw [he.fields .pLen (by decide) (by decide)]; change s0.gpr .x2 = _; rw [h.pLength, p.components.pLength])

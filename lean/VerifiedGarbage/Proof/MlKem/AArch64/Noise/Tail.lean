@@ -49,7 +49,7 @@ theorem padWord_ok {s : State} {p : Addr} {j : Nat} (hj : j < 256)
   refine VG.Proof.MlKem.AArch64.wp_x (d := .x6) (v := 0x8000000000000000) (by rfl)
     fun s1 h1 e1 => ?_
   refine wp_vop (d := .v0) rfl fun s2 h2 => ?_
-  refine wp_strq (a := wordAddr p j) (by omega)
+  refine wp_strq (a := wordAddr p j) (by omega_using [hj])
     (by rw [h2.gpr,h1.get .x19,hp]; rfl)
     (by rw [h2.wr,h1.wr]; exact hw) fun t h3 => WP.block_nil_iff.mpr ⟨?_,?_⟩
   · exact ((RegKeep.only h1).trans (RegKeep.vupd h2)).trans (RegKeep.vmem h3) |>.mono (by simp)

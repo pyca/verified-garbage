@@ -74,7 +74,7 @@ theorem matrix_initial_rel {nodes : Certificate} {size : Nat} (hi : Inputs nodes
   · intro off ha hb
     change (nodeVal nodes (matrixInput size s base) (off/8+1)).1=_
     rw [nodeVal,hi off ha hb]
-    simp only [matrixInput,show off<size by omega,↓reduceIte]
+    simp only [matrixInput,show off<size by omega_using [hb],↓reduceIte]
   · intro a h; cases h
 
 end VG.Proof.Weierstrass.AArch64.Forward

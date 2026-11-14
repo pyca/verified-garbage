@@ -27,11 +27,11 @@ theorem keyAddr_step (base : Addr) (direction : Direction) (j : Nat) (hj : j < 1
   · change base + BitVec.ofNat 64 (8 * j) + BitVec.ofNat 64 8 =
       base + BitVec.ofNat 64 (8 * (j + 1))
     rw [Offset.add_ofNat_add_ofNat]
-    exact congrArg (fun i => base + BitVec.ofNat 64 i) (by omega)
+    exact congrArg (fun i => base + BitVec.ofNat 64 i) (by omega_using [])
   · change base + BitVec.ofNat 64 (8 * (15 - j)) + -BitVec.ofNat 64 8 =
       base + BitVec.ofNat 64 (8 * (15 - (j + 1)))
-    rw [← BitVec.sub_eq_add_neg, Offset.add_ofNat_sub _ (by omega)]
-    exact congrArg (fun i => base + BitVec.ofNat 64 i) (by omega)
+    rw [← BitVec.sub_eq_add_neg, Offset.add_ofNat_sub _ (by omega_using [hj])]
+    exact congrArg (fun i => base + BitVec.ofNat 64 i) (by omega_using [])
 
 structure LoopInv (keys : DesSchedule) (direction : Direction) (base : Addr)
     (origin : State) (v : BitVec 32 × BitVec 32) (n : Nat) (s : State) : Prop where

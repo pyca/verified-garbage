@@ -35,15 +35,15 @@ theorem Arguments.append {g : Geometry} {values : Nat → BitVec 32} {n : Nat} {
   intro j hj
   by_cases same : j = n
   · subst j; rw [M, Mem.readW_writeW_self32]
-  · rw [outgoing_word_preserved (by omega) hn same F]
-    exact h j (by omega)
+  · rw [outgoing_word_preserved (by omega_using [hn, hj]) hn same F]
+    exact h j (by omega_using [hj, same])
 
 theorem slotFrame_outgoing {g : Geometry} {s t : State} {j : Nat} (hj : j < 20)
     (F : Frame [⟨byteAddr g.stack + BitVec.ofNat 64 (4 * j), 4⟩] s.mem t.mem) :
     Frame [⟨byteAddr g.stack, 80⟩] s.mem t.mem := F.sub (by
   intro r hr
   obtain rfl := List.mem_singleton.mp hr
-  exact ⟨_, List.mem_singleton_self _, Offset.sub_base _ (by omega)⟩)
+  exact ⟨_, List.mem_singleton_self _, Offset.sub_base _ (by omega_using [hj])⟩)
 
 theorem prepareArgument_ok {g : Geometry} {bs : Fin 8 → List Byte} {s : State}
     {values : Nat → BitVec 32} {n : Nat} {code : List Instr}
@@ -88,13 +88,13 @@ theorem copyPrefix_ok {g : Geometry} (values : Nat → BitVec 32) (input : Nat �
   | zero => exact WP.block_nil ⟨h, a, Frame.refl _ _, Keeps.refl _ _⟩
   | succ n ih =>
     rw [List.range_succ, List.flatMap_append, List.flatMap_singleton, WP.block_append_iff]
-    refine WP.mono (ih (by omega) (fun j hj => inputs j (by omega))
-      (fun j hj => valuesEq j (by omega)) h a) ?_
+    refine WP.mono (ih (by omega_using [bound]) (fun j hj => inputs j (by omega_using [hj]))
+      (fun j hj => valuesEq j (by omega_using [hj])) h a) ?_
     rintro u ⟨hu, au, F, K⟩
-    refine WP.mono (prepareArgument_ok (bs := bs) au (by omega)
-      (WP.mono (copyArgument_ok u hu (inputs n (by omega)) (by omega)) ?_)) ?_
+    refine WP.mono (prepareArgument_ok (bs := bs) au (by omega_using [bound])
+      (WP.mono (copyArgument_ok u hu (inputs n (by omega_using [])) (by omega_using [bound])) ?_)) ?_
     · rintro t ⟨ht, M, F', K'⟩
-      exact ⟨ht, by rw [valuesEq n (by omega)] at M; exact M, F', K'⟩
+      exact ⟨ht, by rw [valuesEq n (by omega_using [])] at M; exact M, F', K'⟩
     · rintro t ⟨ht, argsT, F', K'⟩
       exact ⟨ht, by simpa only [Nat.add_assoc] using argsT, F.trans F', K.trans K'⟩
 
@@ -121,8 +121,8 @@ theorem callArgs_ok {g : Geometry} {bs : Fin 8 → List Byte} {s : State}
   rintro c ⟨hc, ac, Fc, Kc⟩
   simp only [show (fun j : Nat => copyArgument (j + 9) (j + 8)) = (fun j => copyArgument (j + 9) (8 + j)) by funext j; rw [Nat.add_comm j 8]]
   refine WP.mono (copyPrefix_ok (g := g) (privateArgument g) (fun j => j + 9) 8 12 (by decide)
-    (by intro j hj; omega) (by intro j hj; simp only [privateArgument, show ¬8 + j < 6 by omega,
-      show ¬8 + j = 6 by omega, show ¬8 + j = 7 by omega, ite_false]; congr 1; omega) hc ac) ?_
+    (by intro j hj; omega_using [hj]) (by intro j hj; simp only [privateArgument, show ¬8 + j < 6 by omega_using [],
+      show ¬8 + j = 6 by omega_using [], show ¬8 + j = 7 by omega_using [], ite_false]; congr 1; omega_using []) hc ac) ?_
   rintro t ⟨ht, argsT, Ft, Kt⟩
   exact ⟨ht, argsT, F.trans (Fb.trans (Fc.trans Ft)), K.trans (Kb.trans (Kc.trans Kt))⟩
 
@@ -144,10 +144,10 @@ def privateWr (g : Geometry) : List Region :=
 theorem privateArgs_values {g : Geometry} {bs : Fin 8 → List Byte} {s : State}
     (h : Context g bs s) (a : PrivateArgs g s) {j : Nat} (hj : j < 20) :
     arg (s.callEntry.withRegions (privateRd g) (privateWr g)) j = privateArgument g j := by
-  rw [arg_withRegions, arg_callEntry (by rw [h.sp]; have := h.valid.stackLow; simp only [calleeBytes] at this; omega)
-    (by rw [h.sp]; have := h.valid.stackHigh; omega)]
+  rw [arg_withRegions, arg_callEntry (by rw [h.sp]; have := h.valid.stackLow; simp only [calleeBytes] at this; omega_using [this])
+    (by rw [h.sp]; have := h.valid.stackHigh; omega_using [hj, this])]
   change s.mem.readW (addr (s.gpr .esp) (4 * j)) 32 = _
-  rw [h.address (by omega)]
+  rw [h.address (by omega_using [hj])]
   exact a j hj
 
 theorem privateCall_pre {g : Geometry} {bs : Fin 8 → List Byte} {s : State}

@@ -58,18 +58,18 @@ theorem vector_getD {α : Type} {n : Nat} (v : Vector α n) (i : Nat) (hi : i < 
 theorem roundKey_readW (m : Mem) (p : Addr) {j : Nat} (hj : j < 16) :
     roundKey (scheduleAt m p) j =
       (m.readW (p + BitVec.ofNat 64 (8 * j)) 32, m.readW (p + BitVec.ofNat 64 (8 * j) + 4) 32) := by
-  rw [roundKey, vector_getD _ (2 * j) (by omega), vector_getD _ (2 * j + 1) (by omega),
-    scheduleAt_readW _ _ (2 * j) (by omega), scheduleAt_readW _ _ (2 * j + 1) (by omega),
+  rw [roundKey, vector_getD _ (2 * j) (by omega_using [hj]), vector_getD _ (2 * j + 1) (by omega_using [hj]),
+    scheduleAt_readW _ _ (2 * j) (by omega_using [hj]), scheduleAt_readW _ _ (2 * j + 1) (by omega_using [hj]),
     show (4 : BitVec 64) = BitVec.ofNat 64 4 from rfl, Offset.add_ofNat_add_ofNat,
-    show 4 * (2 * j) = 8 * j by omega, show 4 * (2 * j + 1) = 8 * j + 4 by omega]
+    show 4 * (2 * j) = 8 * j by omega_using [], show 4 * (2 * j + 1) = 8 * j + 4 by omega_using []]
 
 /-- A block's word at `k`, big-endian, from the byte-reversed load. -/
 theorem wordAt_blockAt (m : Mem) (q : Addr) {k : Nat} (hk : k ≤ 12) :
     wordAt (blockAt m q) k = byteRev32 (m.readW (q + BitVec.ofNat 64 k) 32) := by
   rw [byteRev32_readW]
   simp only [wordAt, blockAt]
-  rw [vector_getD _ _ (by omega), vector_getD _ _ (by omega), vector_getD _ _ (by omega),
-    vector_getD _ _ (by omega)]
+  rw [vector_getD _ _ (by omega_using [hk]), vector_getD _ _ (by omega_using [hk]), vector_getD _ _ (by omega_using [hk]),
+    vector_getD _ _ (by omega_using [hk])]
   simp only [Vector.getElem_ofFn]
   rw [show (1 : BitVec 64) = BitVec.ofNat 64 1 from rfl, Offset.add_ofNat_add_ofNat,
     Offset.add_ofNat_add_ofNat, Offset.add_ofNat_add_ofNat]

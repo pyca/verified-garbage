@@ -69,7 +69,7 @@ theorem hashG_ok (W : DcWfB K.L oCT16) {σ : State} (hp : (decapsK K.L).pre σ) 
     (out := sc oG) (len := 64) W.h₁ (show 6 < 256 by decide) L₀) fun s₁ ⟨hP₁, hb₁⟩ => ?_
   have k₁ := h.dc.step W hp hP₁.b W.h₁K
   simp only [pieces, List.flatMap_cons, List.flatMap_nil, List.append_nil, h.m,
-    slice_of h.dc.dk (show 768 * K.L.k + 32 + 32 ≤ K.L.dkLen by omega), KeyGen.sha3Suffix6] at hb₁
+    slice_of h.dc.dk (show 768 * K.L.k + 32 + 32 ≤ K.L.dkLen by omega_using [hdk]), KeyGen.sha3Suffix6] at hb₁
   rw [← sha3_512_eq, ← hP₁.pa rbx_cs] at hb₁
   have hK : bytesAt s₁.mem (pa s₁ (sc oG)) 32 = (dcG K.L σ).1 := by
     rw [← bytesAt_take _ _ (show 32 ≤ 64 by decide), hb₁]; rfl
@@ -78,7 +78,7 @@ theorem hashG_ok (W : DcWfB K.L oCT16) {σ : State} (hp : (decapsK K.L).pre σ) 
     have e' : (bytesAt s₁.mem (pa s₁ (sc oG)) 64).drop 32 = bytesAt s₁.mem (pa s₁ sigP) 32 := by
       rw [e, pa, pa, off_add]
     rw [← e', hb₁]; rfl
-  refine ⟨⟨⟨hp, k₁, hK⟩, slice_of k₁.dk (show 384 * K.L.k + (384 * K.L.k + 32) ≤ K.L.dkLen by omega), ?_, hr⟩, ?_⟩
+  refine ⟨⟨⟨hp, k₁, hK⟩, slice_of k₁.dk (show 384 * K.L.k + (384 * K.L.k + 32) ≤ K.L.dkLen by omega_using [hdk]), ?_, hr⟩, ?_⟩
   · rw [L₀.keepBytes hP₁.b W.h₁M]; exact h.m
   · rw [hP₁.cs .r15 (by decide), h.r15]
 
@@ -120,7 +120,7 @@ theorem kbJ_ok (F : DjHWf K) {σ : State} {s : State} (h : FJ F.toDcWfB σ (nb K
     ⟨by rw [hP₄.cs .r15 (by decide)]; exact h.eb.m.r15,
       fun e he f hf => L₃.keepPoly16 hP₄.b (hA e he) (h.eb.m.mat e he f hf)⟩⟩
   rw [hP₄.pa rbx_cs, hb₄, HSponge.bytesAt_stateAt, h.hs,
-    ← HSponge.J_of_hstate (by rw [hlen]; omega)]
+    ← HSponge.J_of_hstate (by rw [hlen]; omega_using [hn, hjl])]
 
 theorem entsJ_ok {n : String} {c : Prog isa} (v : S16Ok c) (F : DjHWf K) {σ : State} {s : State}
     (h : EBX F.toDcWfB σ (3 * nb K.L) s) :
@@ -129,8 +129,8 @@ theorem entsJ_ok {n : String} {c : Prog isa} (v : S16Ok c) (F : DjHWf K) {σ : S
   have h16 : K.L.k * K.L.k ≤ 16 := Nat.mul_le_mul F.k.2 F.k.2
   have := ents16_ok (n, c) K.L.k K.oA (sc K.oW) (I := fun e s => 3 * nb K.L ≤ e ∧ EBX F.toDcWfB σ e s)
     (fun e he he' _ hs => absurd F.noS (by omega))
-    (fun q hq _ hs => WP.mono (Enc16.quadE_step v (C := dcX F.toDcWfB σ) (by omega) (F.enc.q q hq) hs.2) fun _ h => ⟨by omega, h.2⟩)
-    (K.L.k * K.L.k - 3 * nb K.L) (3 * nb K.L) (by have := F.nbK; omega) F.eS s ⟨Nat.le_refl _, h⟩
+    (fun q hq _ hs => WP.mono (Enc16.quadE_step v (C := dcX F.toDcWfB σ) (by omega_using [h16, hq]) (F.enc.q q hq) hs.2) fun _ h => ⟨by omega, h.2⟩)
+    (K.L.k * K.L.k - 3 * nb K.L) (3 * nb K.L) (by have := F.nbK; omega_using [this]) F.eS s ⟨Nat.le_refl _, h⟩
   rw [Nat.add_sub_cancel' F.nbK.2] at this
   exact WP.mono this fun _ h => h.2
 

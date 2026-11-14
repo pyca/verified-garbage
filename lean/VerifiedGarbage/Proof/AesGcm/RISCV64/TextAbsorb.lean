@@ -102,7 +102,7 @@ theorem textAbsorb_ok [VG.Proof.Gcm.RISCV64.GhashLaw] {s : State} {H : Block} {a
     · subst hc; simp only [x', ite_true, List.length_append, Proof.Gcm.length_zeros, List.length_nil]
       exact Proof.Gcm.length_pad_mod _
     · simp only [x', hc, ite_false, Proof.Gcm.ghashInput_of_ne hc, List.length_append, Proof.Gcm.length_zeros]
-      have := Proof.Gcm.length_pad_mod a.length; omega
+      have := Proof.Gcm.length_pad_mod a.length; omega_using [this]
   have hlt := Nat.mod_lt a.length (show 16 > 0 by decide)
   have mid : WP isa (.ite (.zero .s11) firstFlush (.block [])) s fun s₄ => Env V sp s₄ ∧
       blockAt s₄.mem (V .s2 + BitVec.ofNat 64 240) = H ∧
@@ -158,7 +158,7 @@ theorem textAbsorb_ok [VG.Proof.Gcm.RISCV64.GhashLaw] {s : State} {H : Block} {a
       · exact hd.st.sub_right (Lay.stSub (by decide))
       · exact hd.w.sub_right (Lay.wSub (by decide))
       · exact hd.w.sub_right (Lay.wSub (by decide))
-      · exact he.sp ▸ hd.sk) (by have := hd.lt; omega)
+      · exact he.sp ▸ hd.sk) (by have := hd.lt; omega_using [])
   have hne : bytesAt s.mem (V .s9) (V .s8).toNat ≠ [] := by
     intro e; have := congrArg List.length e; rw [length_bytesAt] at this; exact h0 (by simpa using this)
   refine ⟨ho.env, ?_, ?_, ?_⟩

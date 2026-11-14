@@ -28,7 +28,7 @@ theorem neg_inv64 {a x : Nat} (h : ((a : Int) * x - 1) % (2 ^ 64 : Int) = 0) :
   generalize hy : (2 ^ 64 - x % 2 ^ 64) % 2 ^ 64 = y
   have h1 : (2 ^ 64 : Int) ∣ (a : Int) * x - 1 := Int.dvd_of_emod_eq_zero h
   have h2 : (2 ^ 64 : Int) ∣ ((x + y : Nat) : Int) :=
-    Int.dvd_of_emod_eq_zero (show ((x + y : Nat) : Int) % (2 ^ 64 : Int) = 0 by omega)
+    Int.dvd_of_emod_eq_zero (show ((x + y : Nat) : Int) % (2 ^ 64 : Int) = 0 by omega_using [hy])
   have h3 : (2 ^ 64 : Int) ∣ ((a * y + 1 : Nat) : Int) := by
     have e : ((a * y + 1 : Nat) : Int) = (a : Int) * ((x + y : Nat) : Int) - ((a : Int) * x - 1) := by
       push_cast; grind
@@ -42,8 +42,8 @@ theorem r12_inv {a : Nat} {v : BitVec 64} (h : (a * v.toNat + 1) % 2 ^ 64 = 0) :
   have hv : ((v <<< 32) >>> 32).toNat = v.toNat % 2 ^ 32 := by
     rw [BitVec.toNat_ushiftRight, BitVec.toNat_shiftLeft, Nat.shiftRight_eq_div_pow, Nat.shiftLeft_eq]
     have := v.isLt
-    omega
-  refine ⟨by rw [hv]; omega, ?_⟩
+    omega_using []
+  refine ⟨by rw [hv]; omega_using [], ?_⟩
   have h32 : (a * v.toNat + 1) % 2 ^ 32 = 0 := by
     rw [← Nat.mod_mod_of_dvd _ (show 2 ^ 32 ∣ 2 ^ 64 by decide), h]
   rw [hv, Nat.add_mod, ← Nat.mul_mod, ← Nat.add_mod]
@@ -77,7 +77,7 @@ theorem minv64_ok {s : State} {B : Addr} {Z d : Nat} (hs : Scr s B Z) (h10 : s.g
       simpa only [Int.natCast_mul, Int.natCast_emod, show ((8 : Nat) : Int) = 8 from rfl,
         show ((1 : Nat) : Int) = 1 from rfl] using congrArg (fun n : Nat => (n : Int)) h1
     show (((word s.mem B d).toNat : Int) * (word s.mem B d).toNat - 1) % 8 = 0
-    omega
+    omega_using [h1]
   rw [WP.block_append_iff]
   refine WP.mono (Pub.nstep_ok t₀ (j := 3) (by decide) e₀) fun t₁ ⟨⟨e₁, hb₁, hm₁⟩, k₁⟩ => ?_
   rw [WP.block_append_iff]
@@ -93,7 +93,7 @@ theorem minv64_ok {s : State} {B : Addr} {Z d : Nat} (hs : Scr s B Z) (h10 : s.g
   have kk := ((((k₀.trans k₁).trans k₂).trans k₃).trans k₄).trans k₅
   rw [hb] at e₅
   have hm : t₅.mem = s.mem := by rw [hm₅, hm₄, hm₃, hm₂, hm₁, hm₀]
-  have st : InRegions t₅.wr (B + BitVec.ofNat 64 56) 8 := by rw [kk.wr]; exact hs.st (d := 56) (by omega)
+  have st : InRegions t₅.wr (B + BitVec.ofNat 64 56) 8 := by rw [kk.wr]; exact hs.st (d := 56) (by omega_using [hZ])
   refine WP.mono (WP.keep [.r3, .r12] (Q := fun t =>
     t.mem = s.mem.writeW (B + BitVec.ofNat 64 56) (0 - t₅.gpr .r12) ∧
       t.gpr .r12 = ((0 - t₅.gpr .r12) <<< 32) >>> 32) ?_ (by decide))

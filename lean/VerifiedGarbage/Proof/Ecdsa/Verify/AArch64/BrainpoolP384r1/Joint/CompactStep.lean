@@ -57,7 +57,7 @@ theorem prepChoice_ok {base : Addr} {P Q : Point C} {s : State}
   have W : Changes base loopWork s u := Changes.of_keeps ku (by decide)
   have I := hi.unch (W.mono loopWork_sub)
   have T : Table base P Q (d-1) u := fun j hj hjm =>
-    W.table hi.scr hj (by omega) (ht j hj hjm)
+    W.table hi.scr hj (by omega_using [h15, hjm]) (ht j hj hjm)
   exact WP.mono (tablePrep_ok hc hC h1 h15 I T) fun t ⟨w,i,r,e⟩ => ⟨W.trans w,i,r,e⟩
 
 theorem storeChoice_ok {base : Addr} {P Q : Point C} {s : State}
@@ -74,15 +74,15 @@ theorem storeChoice_ok {base : Addr} {P Q : Point C} {s : State}
   have W : Changes base loopWork s u := Changes.of_keeps ku (by decide)
   have I := hi.unch (W.mono loopWork_sub)
   have T : Table base P Q (d-1) u := fun j hj hjm =>
-    W.table hi.scr hj (by omega) (ht j hj hjm)
+    W.table hi.scr hj (by omega_using [h15, hjm]) (ht j hj hjm)
   have R := hp.of_mem ku.mem
   refine WP.mono (copy_point I.scr (store_layout h1 h15) R) fun t ⟨k,p,_⟩ => ?_
   have K := (W.mono loopWork_sub).trans (k.cover (tableWork_cover h1 h15))
   refine ⟨K,hi.unch K,fun j hj hjd => ?_⟩
   by_cases heq : j=d
   · subst j; exact p
-  · have hj' : j < d := by omega
-    exact k.point I.scr (T j hj (by omega))
-      (fun x hx => Nat.le_trans (table_coord_bounds hj (by omega) x hx).2.1 (by decide))
+  · have hj' : j < d := by omega_using [hjd, heq]
+    exact k.point I.scr (T j hj (by omega_using [hjd, heq]))
+      (fun x hx => Nat.le_trans (table_coord_bounds hj (by omega_using [h15, hjd]) x hx).2.1 (by decide))
       (earlier_table_apart hj hj')
 end VG.Proof.Ecdsa.Verify.AArch64.BrainpoolP384r1.Joint

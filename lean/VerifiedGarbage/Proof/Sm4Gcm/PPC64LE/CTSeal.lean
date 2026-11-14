@@ -151,7 +151,7 @@ theorem sealBody_ct [VG.Proof.Gcm.PPC64LE.GhashLaw] : CT (fun s => OneT c W x sp
     · have hx := Nat.mod_lt (x ++ zeros (padLen x.length)).length (show 16 > 0 by decide)
       rw [← b] at hab ⊢
       exact hab.congr (blockAt_frame oc.frame (stp_crFrame X' hd (by decide)))
-        (bytesAt_frame oc.frame (stp_crFrame X' hd (by omega)) (by omega))
+        (bytesAt_frame oc.frame (stp_crFrame X' hd (by omega_using [])) (by omega_using []))
   -- `oneTag 0`
   refine CT.seq (J := fun s => ∃ V : Reg → BitVec 64, V .r31 = W ∧ V .r20 = T ∧ Env V sp s ∧
     Covers [⟨T, 16⟩] s.wr) ((oneTag_ct L X (.inl rfl)).mono fun s ⟨hT, _⟩ => hT.1)

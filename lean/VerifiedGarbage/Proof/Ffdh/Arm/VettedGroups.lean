@@ -24,7 +24,7 @@ open VG.Proof.X25519.Arm (Rest)
   refine withRest_all [.r4, .r6, .r7, .r8, .r9, .r10] ?_ (by rfl) (by rfl)
   have addr (d : Nat) (hd : d + 4 ≤ 72) :
       State.addr (s.sp + BitVec.ofNat 32 d) = VG.Proof.Mont.off (State.addr s.sp) d :=
-    VG.Arm.addr_add (by have := h.locals.space.nowrap; omega)
+    VG.Arm.addr_add (by have := h.locals.space.nowrap; omega_using [hd, this])
   have r24 := h.locals.read (d := 24) (by decide)
   have r28 := h.locals.read (d := 28) (by decide)
   have r32 := h.locals.read (d := 32) (by decide)
@@ -61,12 +61,12 @@ open VG.Proof.X25519.Arm (Rest)
   refine WP.mono (entry_ok s h h24 h28 h32) ?_
   rintro u ⟨⟨cursor, saved, memU⟩, restU⟩
   have source : Source p.domain p.k p.dom u :=
-    ⟨by rw [p.domainLength]; split <;> have := p.minLength <;> omega,
+    ⟨by rw [p.domainLength]; split <;> have := p.minLength <;> omega_using [this],
       h.domain.fits, by rw [restU.rd, restU.wr]; exact h.domain.readable,
       by rw [memU]; exact h.domain.bytes, by rw [p.domainLength]; split <;> simp⟩
   rw [WP.seq_iff]
   refine WP.mono (loop_ok u source (table.after memU restU) cursor (by decide)
-    (by have := p.maxLength; omega) (by decide)) ?_
+    (by have := p.maxLength; omega_using [this]) (by decide)) ?_
   rintro v ⟨cap, memV, restV⟩
   refine WP.mono (restore_ok v) ?_
   rintro t ⟨⟨ptr, memT⟩, restT⟩

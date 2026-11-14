@@ -128,7 +128,7 @@ def ok : HashOK hash where
     apply Vector.ext
     intro j hj
     simp only [Proof.Md5.md, Spec.Md5.stateAt, Vector.getElem_ofFn]
-    exact Hmac.Generic.Common.readW_reloc (n := 16) h (by omega)
+    exact Hmac.Generic.Common.readW_reloc (n := 16) h (by omega_using [hj])
   lenOk _ _ := trivial
   SH := Spec.Hmac.md5S
   iv := Spec.Md5.H0

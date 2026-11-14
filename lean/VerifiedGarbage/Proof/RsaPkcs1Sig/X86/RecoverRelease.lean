@@ -27,11 +27,11 @@ theorem release_ok {g : Geometry} {bs : Fin 4 → List Byte} {s : State} (h : Co
   have sourceWrite : InRegions a.wr (byteAddr g.digest) g.outputLength := by
     rw [h.valid.digestAddr]
     exact CallLay.inRegions_sub (off := g.length - g.outputLength) ha.em1Write
-      (by have := h.valid.outputFits; omega) (by have := h.valid.maxLength; omega)
+      (by have := h.valid.outputFits; omega_using [this]) (by have := h.valid.maxLength; omega_using [this])
   have sep : (⟨byteAddr g.digest, g.outputLength⟩ : Region).Disjoint ⟨byteAddr g.output, g.outputLength⟩ :=
     h.valid.stackOutput.sub_left (fun x hx => h.valid.innerSub x (h.em1Sub x (h.valid.digestSub x hx)))
   refine WP.seq (WP.mono (VG.Proof.Rsa.X86.PrivChecked.releaseBuffer_ok a
-    h.valid.outputPositive (by have := h.valid.outputBound; omega) h.valid.digestFit h.valid.outputFit
+    h.valid.outputPositive (by have := h.valid.outputBound; omega_using [this]) h.valid.digestFit h.valid.outputFit
     sourceWrite ha.outputWrite sep src dst cnt mask) ?_)
   rintro b ⟨out, _, F, T⟩
   have kt := (K.mono (by decide : ∀ r ∈ [.eax, .ebx, .edx, .edi, .ecx, .esi], r ∈ clobbers)).trans

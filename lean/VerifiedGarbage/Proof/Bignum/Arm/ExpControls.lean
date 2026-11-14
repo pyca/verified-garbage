@@ -24,19 +24,19 @@ theorem expControls_ok (s : State) {base : BitVec 32} {len w : Nat}
   have size : 256 ≤ 8 * len := by
     have := h.layout.2.2.1
     simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at this
-    omega
+    omega_using [this]
   have addr (d : Nat) (hd : d ≤ 252) :
       State.addr (s.gpr .r0 + BitVec.ofNat 32 d) = off (State.addr base) d := by
-    rw [h.ptr]; exact addr_add (by have := h.workspace.nowrap; omega)
+    rw [h.ptr]; exact addr_add (by have := h.workspace.nowrap; omega_using [size, hd, this])
   unfold expControls
   refine wp_str (a := off (State.addr base) 128) (by decide) (addr 128 (by decide))
-    (h.workspace.write (by omega)) fun u a => ?_
+    (h.workspace.write (by omega_using [size])) fun u a => ?_
   have restU : Rest [] s u := a.rest []
   obtain ⟨readyU, frameU, arraysU⟩ := h.after_header (d := 128) (by decide) (by decide) a.mem restU
     ((restU.gpr .r0 (by simp)).trans h.ptr)
   refine wp_str (a := off (State.addr base) 132) (by decide)
     (by rw [restU.gpr .r0 (by simp)]; exact addr 132 (by decide))
-    (by rw [restU.wr]; exact h.workspace.write (by omega)) fun t b => WP.block_nil ?_
+    (by rw [restU.wr]; exact h.workspace.write (by omega_using [size])) fun t b => WP.block_nil ?_
   have restT : Rest [] u t := b.rest []
   obtain ⟨readyT, frameT, arraysT⟩ := readyU.after_header (d := 132) (by decide) (by decide) b.mem restT
     ((restT.gpr .r0 (by simp)).trans readyU.ptr)

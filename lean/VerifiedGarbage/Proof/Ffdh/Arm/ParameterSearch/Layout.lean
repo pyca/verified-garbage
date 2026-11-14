@@ -36,7 +36,7 @@ theorem searchLayout {p : SearchParams} {s : State}
   obtain ⟨stackFit, argFit, rd, wr, _, _, _, _, _, _, _, _, _, _, _, _, _, controlArgs,
     stackOut, stackUsed, stackTape, stackScratch, stackControl, stackArgs, _⟩ := pre
   have widthNat : (s.gpr .r1).toNat = p.c.length := by
-    rw [args.width, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := p.width_bounds; omega)]
+    rw [args.width, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := p.width_bounds; omega_using [this])]
   have tapeNat : (stackArg s 2).toNat = p.c.bytes.length := by
     rw [args.tapeLength, BitVec.toNat_ofNat, Nat.mod_eq_of_lt p.c.tapeCount]
   have capNat : (stackArg s 4).toNat = p.c.capacity := by

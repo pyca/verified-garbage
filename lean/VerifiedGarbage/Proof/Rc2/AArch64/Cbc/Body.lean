@@ -56,11 +56,11 @@ theorem body_ok (d : Spec.Rc2.Direction) (s : State) (n : Nat) (hn : 1 ≤ n) (b
   refine ⟨by rw [ptr₂, h₁.reg .x1 (by decide)], count₂.trans count', ?_, ?_, ?_,
     keep₂.rd.trans h₁.rd, keep₂.wr.trans h₁.wr, ?_, ?_, ?_⟩
   · rw [flag₂, count']
-    have eqZero := counter_eq (n - 1) 0 (by omega) (by decide)
+    have eqZero := counter_eq (n - 1) 0 (by omega_using [bound]) (by decide)
     simp only [BitVec.sub_zero] at eqZero
     change some (BitVec.ofNat 64 (n - 1) == 0#64) = _
     rw [eqZero]
-    have he : n - 1 = 0 ↔ n = 1 := by omega
+    have he : n - 1 = 0 ↔ n = 1 := by omega_using [hn]
     simp only [he]
   · intro r hr hs hb
     exact (keep₂.reg r (by simp [hs, hb])).trans (h₁.reg r hr)
@@ -75,7 +75,7 @@ theorem body_ok (d : Spec.Rc2.Direction) (s : State) (n : Nat) (hn : 1 ≤ n) (b
 
 theorem BodyPost.tail {d : Spec.Rc2.Direction} {s s' : State} {n : Nat}
     (h : BodyPost d s (n + 1) s') (hp : StepPre s (n + 1)) : StepPre s' n :=
-  hp.slice (i := 1) (by omega) h.rd h.wr
+  hp.slice (i := 1) (by omega_using []) h.rd h.wr
     (h.reg .x0 (by decide) (by decide) (by decide))
     (h.reg .x23 (by decide) (by decide) (by decide))
     (h.reg .x2 (by decide) (by decide) (by decide))

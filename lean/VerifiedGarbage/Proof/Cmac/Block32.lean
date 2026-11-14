@@ -28,10 +28,10 @@ def Sep4 (c p : Addr) : Prop :=
   ∀ i < 4, ∀ j < 4, i < j → (⟨c + BitVec.ofNat 64 (4 * i), 4⟩ : Region).Disjoint ⟨p + BitVec.ofNat 64 (4 * j), 4⟩
 
 theorem Sep4.self (c : Addr) : Sep4 c c := fun i hi j hj hij =>
-  Offset.disjoint c (by omega) (by omega) (by omega)
+  Offset.disjoint c (by omega_using [hij]) (by omega_using [hi]) (by omega_using [hj])
 
 theorem Sep4.of_disjoint {c p : Addr} (h : (⟨c, 16⟩ : Region).Disjoint ⟨p, 16⟩) : Sep4 c p :=
-  fun i hi j hj _ => (h.sub_left (Offset.sub_base c (by omega))).sub_right (Offset.sub_base p (by omega))
+  fun i hi j hj _ => (h.sub_left (Offset.sub_base c (by omega_using [hi]))).sub_right (Offset.sub_base p (by omega_using [hj]))
 
 theorem readW_writeW_disj {m : Mem} {a b : Addr} (v : BitVec 32) (h : (⟨a, 4⟩ : Region).Disjoint ⟨b, 4⟩) :
     (m.writeW a v).readW b 32 = m.readW b 32 :=
@@ -73,7 +73,7 @@ theorem xor4Mem_eq (m : Mem) {c p q : Addr} (hp : Sep4 c p) (hq : Sep4 c q) :
 
 theorem xor4Mem_frame (m : Mem) (c p q : Addr) : Frame [⟨c, 16⟩] m (xor4Mem m c p q) := by
   have k (d : Nat) (h : d + 4 ≤ 16) : (⟨c, 16⟩ : Region).Contains (c + BitVec.ofNat 64 d) 4 :=
-    Offset.contains_base c h (by omega)
+    Offset.contains_base c h (by omega_using [h])
   have k0 : (⟨c, 16⟩ : Region).Contains c 4 := by simpa using k 0 (by decide)
   exact ((((Frame.refl _ _).writeW (List.mem_singleton_self _) _ k0).writeW (List.mem_singleton_self _) _
     (k 4 (by decide))).writeW (List.mem_singleton_self _) _ (k 8 (by decide))).writeW

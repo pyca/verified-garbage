@@ -167,31 +167,31 @@ theorem codeWith_ok {hdr : List Instr} {g : Geometry} (v : g.Valid) {s : State} 
     rw [Oa.val32 (fun r mem => by
       simp only [Header.ranges, List.mem_cons, List.not_mem_nil, or_false] at mem
       have h := v.arrayHeader 0
-      rcases mem with rfl | rfl | rfl <;> right <;> omega)
-      (by have := scratch.nowrap; have := v.arrayFit (j := 0) (by decide); omega)]
+      rcases mem with rfl | rfl | rfl <;> right <;> omega_using [h])
+      (by have := scratch.nowrap; have := v.arrayFit (j := 0) (by decide); omega_arith)]
     exact candidate
   have oddLow : w32 a.mem g.W (g.array 0) % 2 = 1 := by
-    rw [← LowWord.parity _ _ _ g.words (by have := v.minWidth; unfold Geometry.words; omega), candidateA]
+    rw [← LowWord.parity _ _ _ g.words (by have := v.minWidth; unfold Geometry.words; omega_using [this]), candidateA]
     exact odd
   have callerA := caller.keepOuts Ka (by decide) Oa (fun r mem => by
     simp only [Header.ranges, List.mem_cons, List.not_mem_nil, or_false] at mem
     have := v.headerFit
-    rcases mem with rfl | rfl | rfl <;> omega)
+    rcases mem with rfl | rfl | rfl <;> omega_using [this])
   have widthA : Proof.Rsa.Mont.wOf a.mem g.W = g.w := by
     rw [Ma]
-    exact Header.width_eq (by have := v.maxWidth; omega)
+    exact Header.width_eq (by have := v.maxWidth; omega_using [this])
   have layoutA : Proof.Rsa.Mont.Layout a.mem g.W capacity := by
     rw [Ma]
-    apply Header.layout scratch.edi (by have := v.minWidth; omega) (by have := v.maxWidth; omega)
+    apply Header.layout scratch.edi (by have := v.minWidth; omega_using [this]) (by have := v.maxWidth; omega_using [this])
     · rw [← length]
       have fit := v.arraysFit
       unfold Proof.Rsa.Mont.arrAt Proof.Rsa.Mont.hdrBytes at *
-      omega
+      omega_using [fit]
     · rw [← length]
       exact scratch.nowrap
   refine WP.mono (MontInverse.code_ok Sa
-    (by have := v.arrayFit (j := 0) (by decide); have := v.minWidth; unfold Geometry.words at *; omega)
-    (by have := v.headerFit; omega) (Or.inl (by have := v.arrayHeader 0; omega)) oddLow)
+    (by have := v.arrayFit (j := 0) (by decide); have := v.minWidth; unfold Geometry.words at *; omega_arith)
+    (by have := v.headerFit; omega_using [this]) (Or.inl (by have := v.arrayHeader 0; omega_using [this])) oddLow)
     fun t ⟨inverse, Ot, Kt⟩ => ?_
   have St := Sa.of_keeps Kt (by decide)
   have Ct : Context g t := by
@@ -200,7 +200,7 @@ theorem codeWith_ok {hdr : List Instr} {g : Geometry} (v : g.Valid) {s : State} 
     · rw [Ot.w32 (by decide) (by decide)]; exact Ca.width
     · rw [Ot.w32 (by decide) (by decide)]; exact Ca.stride
     · intro j hj
-      rw [Ot.w32 (by omega) (by omega)]; exact Ca.pointers j hj
+      rw [Ot.w32 (by omega_using []) (by omega_using [hj])]; exact Ca.pointers j hj
   have Mt : Modulus g c t.mem := by
     refine ⟨?_, ?_, ?_, ?_⟩
     · change (word t.mem g.W 48).toNat = g.w
@@ -208,14 +208,14 @@ theorem codeWith_ok {hdr : List Instr} {g : Geometry} (v : g.Valid) {s : State} 
       exact widthA
     · intro j hj
       change word t.mem g.W (8 * Proof.Rsa.Mont.arrWord j) = _
-      rw [Ot.word (Or.inr (by unfold Proof.Rsa.Mont.arrWord; omega)) (by unfold Proof.Rsa.Mont.arrWord; omega)]
+      rw [Ot.word (Or.inr (by unfold Proof.Rsa.Mont.arrWord; omega_using [])) (by unfold Proof.Rsa.Mont.arrWord; omega_using [hj])]
       simpa only [widthA, Geometry.array, VG.Proof.Mont.word, VG.Proof.Mont.off, Proof.Rsa.Mont.wordAt] using layoutA.2.2.2 j hj
-    · rw [Ot.val32 (Or.inr (by have := v.arrayHeader 0; omega))
-        (by have := scratch.nowrap; have := v.arrayFit (j := 0) (by decide); omega)]
+    · rw [Ot.val32 (Or.inr (by have := v.arrayHeader 0; omega_using [this]))
+        (by have := scratch.nowrap; have := v.arrayFit (j := 0) (by decide); omega_arith)]
       exact candidateA
     · exact inverse
   refine ⟨⟨Ct, Mt, callerA.keepOuts Kt (by decide) (Outs.of_outside Ot (List.mem_singleton_self _))
-    (fun r mem => by obtain rfl := List.mem_singleton.mp mem; have := v.headerFit; omega), St⟩, ?_, ?_, ?_⟩
+    (fun r mem => by obtain rfl := List.mem_singleton.mp mem; have := v.headerFit; omega_using [this]), St⟩, ?_, ?_, ?_⟩
   · exact (Oa.mono (fun r mem => List.mem_append_left _ mem)).trans
       (Outs.of_outside Ot (List.mem_append_right _ (List.mem_singleton_self _)))
   · exact (Ka.mono (by unfold clob; decide)).trans Kt
@@ -225,7 +225,7 @@ theorem codeWith_ok {hdr : List Instr} {g : Geometry} (v : g.Valid) {s : State} 
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat, VG.Impl.Bignum.X86.PublicContext.stride]
     have := v.maxWidth
-    omega
+    omega_using [this]
 
 theorem code_ok {g : Geometry} (v : g.Valid) {s : State} {c capacity : Nat} {p : BitVec 32}
     (scratch : Scr s g.W g.L) (caller : Caller g capacity p s) (length : g.L = 8 * capacity)

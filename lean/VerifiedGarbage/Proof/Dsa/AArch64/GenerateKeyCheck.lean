@@ -29,7 +29,7 @@ theorem keygenStackBase_toNat {extra : Nat} {s : State} (h : GenerateKeyABI extr
   have hl := h.stackLower
   have hb := (s.sp).isLt
   simp only [randomStackBase, BitVec.toNat_sub, BitVec.toNat_ofNat]
-  omega
+  omega_using [hl]
 
 theorem keygenStack_offset_toNat {extra : Nat} {s : State} (h : GenerateKeyABI extra s)
     {d : Nat} (hd : d ≤ extra + 256) :
@@ -38,7 +38,7 @@ theorem keygenStack_offset_toNat {extra : Nat} {s : State} (h : GenerateKeyABI e
   have hb := (s.sp).isLt
   have hk := keygenStackBase_toNat h
   simp only [off, BitVec.toNat_add, BitVec.toNat_ofNat]
-  omega
+  omega_using [hd, hl, hk]
 
 theorem keygen_callee_sub {extra : Nat} {s : State} (_h : GenerateKeyABI extra s) :
     Region.Sub (below (randomBase s) extra) (below s.sp (extra + 256)) :=
@@ -102,7 +102,7 @@ theorem keygen_check_pre {extra : Nat} {s t : State} (h : GenerateKeyABI extra s
   have hsmall : Spec.Dsa.scratchWords (s.gpr .x5).toNat ≤ (stackArg s 2).toNat := by
     unfold Spec.Dsa.generationScratchWords at hs
     unfold Spec.Dsa.scratchWords
-    omega
+    omega_using [hs]
   cases extra with
   | zero => exact ⟨trivial, trivial, trivial, h.paramsScratch, trivial, h.paramsBound, h.scratchBound,
       h.lengths, h.paramsLength, hsmall⟩
@@ -110,7 +110,7 @@ theorem keygen_check_pre {extra : Nat} {s t : State} (h : GenerateKeyABI extra s
       simp only
       have := keygenBase_toNat h
       unfold Random.frameBytes at this
-      omega,
+      omega_using [hl, this],
       trivial, trivial, h.paramsScratch, ⟨h.stackParams.sub_left (keygen_callee_sub h),
       h.stackScratch.sub_left (keygen_callee_sub h)⟩, h.paramsBound, h.scratchBound,
       h.lengths, h.paramsLength, hsmall⟩
@@ -132,11 +132,11 @@ theorem keygen_check_call (v : Backend) {s t : State} (h : GenerateKeyABI v.stac
   have hd := v.parametersDepth
   have hb := v.stackBound
   refine WP.callFV v.parametersVerified.1 (keygen_check_pre h hsp hdi hsi hdx hcx h8 h9)
-    hc hcw (fun u hur huw husp hf huc hv hp => ?_) (by omega)
+    hc hcw (fun u hur huw husp hf huc hv hp => ?_) (by omega_using [hd, hb])
   sig_post [Proof.Dsa.checkParametersContract, Proof.Dsa.checkParametersSig, abi, argRegs, stackArgs_zero] at hp
   simp only [hdi, hsi, hdx, hcx] at hp
   refine ⟨hur, huw, husp, huc, ?_, hp, hv⟩
   rw [hsp] at hf
-  exact Frame.below_mono hf hd (by omega)
+  exact Frame.below_mono hf hd (by omega_using [hb])
 
 end VG.Proof.Dsa.AArch64

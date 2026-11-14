@@ -61,7 +61,7 @@ theorem dEven_trace (B : Addr) (Z n : Nat) :
     exact M
   refine RelCT.seq (step_trace (Q := FromReady B Z n 32 .modulus (VG.Impl.RsaKeyGen.X86.KeyRuntime.arr aDen)) dEven_divide_public
     fun s ⟨h, M⟩ => WP.mono (arrayDivision_ok h (by decide) (by decide) (by decide) (by decide)
-      (by decide) (by decide) (by decide) (by decide) (by decide) (by have := M.2; omega))
+      (by decide) (by decide) (by decide) (by decide) (by decide) (by have := M.2; omega_using [this]))
       fun w ⟨hw, Ow, _, _, _⟩ => ?_) ?_
   · have same := arrayDivision_preserves_num (j := aDen) (by decide) (by decide) (by decide)
       (h.fit64 (by decide)) Ow

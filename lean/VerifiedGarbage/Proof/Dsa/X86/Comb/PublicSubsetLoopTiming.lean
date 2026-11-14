@@ -170,11 +170,11 @@ theorem publicSubsetLoop_relCT {n e : Nat} (h : Supported n e) (base : Addr) (m 
     · intro hc
       have next : a+1<32 := by
         by_contra hn
-        have eq : a+1=32 := by omega
+        have eq : a+1=32 := by omega_using [hi, hn]
         change VG.X86.eval .ne sf=some true at hc
         simp only [VG.X86.eval,Zs,eq,decide_true,Option.map_some,Bool.not_true] at hc
         cases hc
-      exact ⟨32-(a+1),by omega,a+1,rfl,by omega,next,S',T'⟩
+      exact ⟨32-(a+1),by omega_using [hi],a+1,rfl,by omega_using [],next,S',T'⟩
   · intro s t ⟨S,T⟩
     exact ⟨1,rfl,by decide,by decide,S,T⟩
 

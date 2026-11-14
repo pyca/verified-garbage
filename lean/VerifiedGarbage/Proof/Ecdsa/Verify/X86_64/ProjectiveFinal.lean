@@ -54,12 +54,12 @@ theorem projectiveFinal_fields_ok (hc : BaseCfgOk c) (hC : Law c.C) (hnp : c.C.n
   have saved := Saved.unch hP.fixed.saved (fun w hw => by
     obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hw
     show 48 ≤ c.sl i
-    rw [sl_eq']; omega) U
+    rw [sl_eq']; omega_using []) U
   have flag : word t.mem base (c.sl FLAG) = mask A := by
-    rw [U.word (fun w hw => ?_) (by have := sl_le c h7 (i := FLAG) (by decide); omega)]
+    rw [U.word (fun w hw => ?_) (by have := sl_le c h7 (i := FLAG) (by decide); omega_using [h0, hn, this])]
     · exact hP.flag
     · exact (apart_slW (c := c) (i := FLAG) (by decide)) w hw |>.elim
-        (fun h => Or.inl (by have := hc.n0; omega)) Or.inr
+        (fun h => Or.inl (by have := hc.n0; omega_using [h0, h])) Or.inr
   have wz : sv c base t W = 0 ↔ fx = Fin.ofNat c.C.p (sigR c s₀) * fz := by
     rw [← toM_eq_zero_iff hpR wlt, wval, hP.k]
     change fx - Fin.ofNat c.C.p (sigR c s₀) * fz = 0 ↔ _

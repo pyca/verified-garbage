@@ -20,7 +20,7 @@ theorem loadMask_relCT {g : Geometry} (v : g.Valid) :
     RelCT isa (Pair g copyRegisters) (.block [.mov .ecx (.mem (slot sEq1))]) (Pair g copyRegisters) := by
   refine readonly_relCT (checkedBlockInvariant rfl rfl) ?_
   intro s C
-  exact wp_movS (readSrc_ptr C.ws C.base (d := sEq1) (by have := v.headerFit; unfold sEq1; omega))
+  exact wp_movS (readSrc_ptr C.ws C.base (d := sEq1) (by have := v.headerFit; unfold sEq1; omega_using [this]))
     fun t T _ => WP.block_nil ⟨T.mem, T.keeps.mono (by decide)⟩
 
 theorem selectLoop_raw : RelCT isa (VG.X86.Taint.Agree (roundTaint copyRegisters))
@@ -33,7 +33,7 @@ theorem selectEntry_trace {g : Geometry} (v : g.Valid) (j : Nat) (digit : j < 16
   unfold selectEntry
   simp only [List.append_assoc]
   refine RelCT.seq (RelCT.block_append (RelCT.seq
-    (pointer_pair_relCT v .ebp (aTable + j) (by decide) (by unfold aTable; omega) [.edi] (by decide))
+    (pointer_pair_relCT v .ebp (aTable + j) (by decide) (by unfold aTable; omega_using [digit]) [.edi] (by decide))
     (RelCT.block_append (RelCT.seq
       (pointer_pair_relCT v .ebx aX (by decide) (by decide) [.ebp, .edi] (by decide))
       (RelCT.block_append (RelCT.seq

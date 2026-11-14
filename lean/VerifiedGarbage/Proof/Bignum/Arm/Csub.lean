@@ -52,13 +52,13 @@ theorem csub_ok (s : State) {base : BitVec 32} {size out acc mod tmp n : Nat}
   intro u inv
   have atop : State.addr (u.gpr .r10 + BitVec.ofNat 32 0) = off (State.addr base) (acc + 4 * n) := by
     rw [inv.aPtr, Offset.add_add, Nat.add_zero]
-    exact VG.Arm.addr_add (by omega)
+    exact VG.Arm.addr_add (by omega_using [nowrap, fits])
   have read : InRegions (u.rd ++ u.wr) (off (State.addr base) (acc + 4 * n)) 4 := by
-    refine ⟨⟨State.addr base, size⟩, List.mem_append_right _ ?_, Offset.contains_base _ (by omega) (by omega)⟩
+    refine ⟨⟨State.addr base, size⟩, List.mem_append_right _ ?_, Offset.contains_base _ (by omega_using [fits]) (by omega_using [nowrap, fits])⟩
     rw [inv.rest.wr]
     exact ctx.sub.writable
-  have oldTop := inv.outside.w32 (d := acc + 4 * n) (by omega) (by omega)
-  have oldAcc := inv.outside.val32 (d := acc) (k := n) (by omega) (by omega)
+  have oldTop := inv.outside.w32 (d := acc + 4 * n) (by omega_using [sep]) (by omega_using [nowrap, fits])
+  have oldAcc := inv.outside.val32 (d := acc) (k := n) (by omega_using [sep]) (by omega_using [nowrap, fits])
   have diff : val32 u.mem (State.addr base) tmp n + val32 s.mem (State.addr base) mod n =
       val32 s.mem (State.addr base) acc n + 2 ^ (32 * n) * (u.gpr .r11).toNat := by
     have h := inv.value

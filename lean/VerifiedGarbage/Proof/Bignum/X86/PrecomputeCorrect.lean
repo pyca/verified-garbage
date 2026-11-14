@@ -28,8 +28,8 @@ theorem precomputeOperation_ok {s : State} (A : PrecomputeABI s) :
       | some ws => t.gpr .eax = 1 ∧ Spec.Rsa.wordsAt t.mem (argumentPointer s 0) (arg s 1).toNat = ws
       | none => t.gpr .eax = 0 ∧ Spec.Rsa.wordsAt t.mem (argumentPointer s 0) (arg s 1).toNat =
           List.replicate (arg s 1).toNat 0) ∧ abiPreserved s t := by
-  have low : 16 ≤ (arg s 5).toNat * 8 := by have := A.used; omega
-  have high : (arg s 5).toNat * 8 ≤ 2 ^ 64 := by have := A.scratchBound; omega
+  have low : 16 ≤ (arg s 5).toNat * 8 := by have := A.used; omega_using [this]
+  have high : (arg s 5).toNat * 8 ≤ 2 ^ 64 := by have := A.scratchBound; omega_using []
   unfold PrecomputeFn.code
   refine WP.seq (WP.mono (precomputeInstalled_ok A) fun u ⟨I, S, K, O⟩ => ?_)
   refine WP.seq (WP.mono (precomputeBody_ok I) fun v ⟨⟨V, F⟩, Kv⟩ => ?_)
@@ -42,18 +42,18 @@ theorem precomputeOperation_ok {s : State} (A : PrecomputeABI s) :
     have B : p.2 + 4 ≤ 16 := by
       simp only [PublicFn.savedRegisters, List.mem_cons, List.not_mem_nil, or_false] at hp
       rcases hp with rfl | rfl | rfl | rfl <;> decide
-    refine (F.readW (r := ⟨argumentPointer s 4, 16⟩) (Offset.contains_base _ B (by omega)) ?_ (by decide)).trans
+    refine (F.readW (r := ⟨argumentPointer s 4, 16⟩) (Offset.contains_base _ B (by omega_using [B])) ?_ (by decide)).trans
       (S p hp)
     intro r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl
-    · exact Offset.base_disjoint _ (Nat.le_refl 16) (by omega)
-    · exact I.outApart.sub_left (Region.sub_prefix (by omega))
-    · have := I.room.apart; rw [espu] at this; exact (this.sub_right (Region.sub_prefix (by omega))).symm
-    · exact (slot.sub_right (Region.sub_prefix (by omega))).symm
+    · exact Offset.base_disjoint _ (Nat.le_refl 16) (by omega_using [])
+    · exact I.outApart.sub_left (Region.sub_prefix (by omega_using [low]))
+    · have := I.room.apart; rw [espu] at this; exact (this.sub_right (Region.sub_prefix (by omega_using [low]))).symm
+    · exact (slot.sub_right (Region.sub_prefix (by omega_using [low]))).symm
   have Ret : v.mem.readW ((s.gpr .esp).setWidth 64) 32 =
       s.mem.readW ((s.gpr .esp).setWidth 64) 32 := by
-    have Start := outside_frame O (by omega)
+    have Start := outside_frame O (by omega_using [])
     simp only [BitVec.add_zero] at Start
     have hlow := A.stackLow
     have hb := A.stackBound
@@ -65,16 +65,16 @@ theorem precomputeOperation_ok {s : State} (A : PrecomputeABI s) :
     intro r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl
-    · exact A.retScratch.sub_right (Offset.sub_base _ (by omega))
+    · exact A.retScratch.sub_right (Offset.sub_base _ (by omega_using [low]))
     · rw [← A.outputBytes]; exact A.retOut
     · exact VG.Proof.Bignum.X86.PublicRt.ret_below hlow
-    · have e : addr (s.gpr .esp) 8 = (s.gpr .esp).setWidth 64 + BitVec.ofNat 64 8 := addr_eq (by omega)
+    · have e : addr (s.gpr .esp) 8 = (s.gpr .esp).setWidth 64 + BitVec.ofNat 64 8 := addr_eq (by omega_using [hb])
       rw [e]
-      exact Offset.base_disjoint _ (by decide) (by omega)
+      exact Offset.base_disjoint _ (by decide) (by omega_using [])
   refine WP.mono (entryRestore_ok (I.scratch.of_keeps Kv (by decide) (by decide)) low Saved) fun t R => ?_
   refine ⟨?_, publicRestored_abi R ((Kv.1 _ (by decide)).trans (K.1 _ (by decide))) Ret⟩
   rw [R.mem, R.other .eax (by decide), A.preLength]
-  have N := scratch_bytes O (by have := A.lengths.2; omega) A.nScratch
+  have N := scratch_bytes O (by have := A.lengths.2; omega_using []) A.nScratch
   change (match Spec.Rsa.publicPrecompute (Spec.Rsa.bytesAt u.mem (argumentPointer s 2) (arg s 3).toNat) with
     | some ws => v.gpr .eax = 1 ∧ Spec.Rsa.wordsAt v.mem (argumentPointer s 0) (2 * Spec.Rsa.modulusWords (arg s 3).toNat) = ws
     | none => v.gpr .eax = 0 ∧ Spec.Rsa.wordsAt v.mem (argumentPointer s 0) (2 * Spec.Rsa.modulusWords (arg s 3).toNat) =

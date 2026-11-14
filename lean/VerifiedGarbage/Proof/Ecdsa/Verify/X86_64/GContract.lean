@@ -76,7 +76,7 @@ table). -/
 theorem satMemG_held : ∀ i < p256GW.length,
     satMemG.readW (0x100000 + BitVec.ofNat 64 (8 * i)) 64 = p256GW.getD i 0 := by
   unfold satMemG
-  exact constMem_held _ _ (by rw [p256GW_length]; omega)
+  exact constMem_held _ _ (by rw [p256GW_length]; omega_using [])
 
 end VG.Proof.Ecdsa.Verify.X86_64
 end

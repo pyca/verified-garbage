@@ -46,7 +46,7 @@ theorem flags_ok {n : Nat} {s : State} (env : EnvK σ s)
     WP isa (.block flags) s fun s' =>
       (s'.gpr .r14 = (if allFull σ n then 1 else 0) ∧ s'.mem = s.mem) ∧ Keep [.rax, .r14] s s' := by
   have hin : ∀ k < 4, InRegions (s.rd ++ s.wr) (scr σ + BitVec.ofNat 64 (oJ + 8 * k)) 8 :=
-    fun k hk => in_scr' hp env.rd env.wr (by simp only [oJ]; omega)
+    fun k hk => in_scr' hp env.rd env.wr (by simp only [oJ]; omega_using [hk])
   have h0 := hin 0 (by decide); have h1 := hin 1 (by decide)
   have h2 := hin 2 (by decide); have h3 := hin 3 (by decide)
   have j0 := j 0 (by decide); have j1 := j 1 (by decide)

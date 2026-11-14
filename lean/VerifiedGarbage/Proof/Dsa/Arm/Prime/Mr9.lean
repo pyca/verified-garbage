@@ -31,7 +31,7 @@ theorem tri_b2n (g : Bool) :
 theorem lt_bit' {x k : Nat} (hx : x < 2 ^ 31) (hk : k < 2 ^ 31) :
     (BitVec.ofNat 32 x - BitVec.ofNat 32 k) >>> 31 = BitVec.ofNat 32 (b2n (decide (x < k))) := by
   apply BitVec.eq_of_toNat_eq
-  rw [lt_bit hx hk, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := VG.Proof.Rsa.b2n_le (decide (x < k)); omega)]
+  rw [lt_bit hx hk, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := VG.Proof.Rsa.b2n_le (decide (x < k)); omega_using [this])]
 
 section
 variable {P : CP} {E : State → Prop} {A : State → Nat → Nat} {L : List Nat} {V : State → Nat → Nat}
@@ -52,7 +52,7 @@ theorem St.ponPass (hI : sI ∈ LS) (hUni : sUni ∈ LS) (hU : sU ∈ LS) (hChk 
     refine wp_dp (op2_imm (by decide)) fun s2 u2 => ?_
     have v2 : (s2.gpr .r1).toNat = V σ sI + 1 := by
       rw [u2.gpr, dpVal, u1.gpr, BitVec.toNat_add, BitVec.toNat_ofNat, show (1 : BitVec 32).toNat = 1 from rfl]
-      omega
+      omega_using [bI]
     refine (h1.of_rest (u2.rest (ws := [.r1]) (by simp)) u2.mem).strM (m1.of_upd u2)
       (hw1.of_upd u2 (by decide) (by decide) (by decide)) (d := sI) (by decide) fun s3 h3 hw3 m3 _ => ?_
     rw [v2] at h3
@@ -65,7 +65,7 @@ theorem St.ponPass (hI : sI ∈ LS) (hUni : sUni ∈ LS) (hU : sU ∈ LS) (hChk 
     have v6 : (s6.gpr .r3).toNat = V σ sUni + V σ sU := by
       rw [u6.gpr, dpVal, u5.gpr, u5.other _ (by decide), u4.gpr, eU, eUni, BitVec.toNat_add, BitVec.toNat_ofNat,
         BitVec.toNat_ofNat]
-      omega
+      omega_using [bUni, bU]
     refine (h5.of_rest (u6.rest (ws := [.r3]) (by simp)) u6.mem).strM (m5.of_upd u6)
       (hw5.of_upd u6 (by decide) (by decide) (by decide)) (d := sUni) (by decide) fun s7 h7 hw7 m7 _ => ?_
     rw [v6] at h7
@@ -86,10 +86,10 @@ theorem St.ponPass (hI : sI ∈ LS) (hUni : sUni ∈ LS) (hU : sU ∈ LS) (hChk 
         wp_dp (op2_imm (by decide)) fun s17 u17 => ?_
     have x10 : s10.gpr .r1 = BitVec.ofNat 32 (b2n (decide (V σ sI + 1 < 17))) := by
       rw [u10.gpr, u9.gpr, dpVal, u8.gpr, e7I, show (17 : BitVec 32) = BitVec.ofNat 32 17 from rfl]
-      exact lt_bit' (by omega) (by decide)
+      exact lt_bit' (by omega_using [bI]) (by decide)
     have x14 : s14.gpr .r2 = BitVec.ofNat 32 (b2n (decide (V σ sUni + V σ sU < V σ sChk))) := by
       rw [u14.gpr, u13.gpr, dpVal, u12.other _ (by decide), u11.gpr, u12.gpr, e7U, e7C]
-      exact lt_bit' (by omega) (by omega)
+      exact lt_bit' (by omega_using [bUni, bU]) (by omega_using [bChk])
     have x14' : s14.gpr .r1 = s10.gpr .r1 := by
       rw [u14.other _ (by decide), u13.other _ (by decide), u12.other _ (by decide), u11.other _ (by decide)]
     have x17 : s17.gpr .r1 = BitVec.ofNat 32

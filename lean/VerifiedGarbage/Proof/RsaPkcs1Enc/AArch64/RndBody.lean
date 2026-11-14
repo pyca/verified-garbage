@@ -72,8 +72,8 @@ theorem body_ok (c : PdChecked)
   · have hne : (BitVec.ofNat 64 (psLen s - (kept s (stackArg s 2).toNat).length) == 0) = false := by
       rw [beq_eq_false_iff_ne]; intro h
       have := congrArg BitVec.toNat h
-      rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)] at this
-      simp at this; omega
+      rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hP])] at this
+      simp at this; omega_using [hlt, this]
     refine WP.ite false (by rw [eval_zero, hI.x16, hne]) (fun h => absurd h (by decide))
       (fun _ => reject_ok hp hb hI hlt)
 
@@ -98,11 +98,11 @@ theorem code_ok (c : PdChecked)
     {s : State} (hp : RPre c.stack s) :
     WP isa (code (encName c) (encCode c)) s fun s' => abiPreserved s s' ∧ post s s' := by
   have hQ := Q_toNat hp
-  refine WP.frame (by omega) (WP.alloc (by decide) ?_ ?_)
+  refine WP.frame (by omega_using [hQ]) (WP.alloc (by decide) ?_ ?_)
   · show 1088 ≤ (s.sp - 16).toNat
-    rw [BitVec.toNat_sub_of_le (by show 16 ≤ s.sp.toNat; omega)]
+    rw [BitVec.toNat_sub_of_le (by show 16 ≤ s.sp.toNat; omega_using [hQ])]
     show 1088 ≤ s.sp.toNat - 16
-    omega
+    omega_using [hQ]
   · show WP isa (body (encName c) (encCode c)) (entered s) _
     refine WP.mono (body_ok c hsat hp) fun x ⟨hx, hpo⟩ => ?_
     have hsp' : (freed frameBytes x).sp = off (Q s) 1088 := by

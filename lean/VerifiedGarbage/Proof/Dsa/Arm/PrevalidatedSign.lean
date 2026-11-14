@@ -92,24 +92,24 @@ theorem signPrevCompute_ok {s : State} {base : Addr} {size pLen qLen nP nQ P Q G
   have Lr : Impl.Dsa.Layout.r = 14720 := rfl
   have Ls : Impl.Dsa.Layout.s = 14752 := rfl
   have L2 : Impl.Dsa.Layout.qMinusTwo = 14912 := rfl
-  have ho : 4960 ≤ Impl.Dsa.Layout.qMinusTwo ∧ Impl.Dsa.Layout.qMinusTwo + qLen ≤ 15712 := by omega
+  have ho : 4960 ≤ Impl.Dsa.Layout.qMinusTwo ∧ Impl.Dsa.Layout.qMinusTwo + qLen ≤ 15712 := by omega_using [q32, L2]
   simp only [PrevalidatedSign.compute, Core.sequence, List.foldr]
-  refine WP.seq (WP.mono (minus_ok (output := Impl.Dsa.Layout.qMinusTwo) Sc.ws (by omega) Sc.wq Iq.toReady
-    Iq.value (by omega) hQo (by omega) (by decide) (by decide) (by omega) (by decide)) fun u₁ ⟨B₁, St₁⟩ => ?_)
+  refine WP.seq (WP.mono (minus_ok (output := Impl.Dsa.Layout.qMinusTwo) Sc.ws (by omega_using [big]) Sc.wq Iq.toReady
+    Iq.value (by omega_using [hQ]) hQo (by omega_using [hQ]) (by decide) (by decide) (by omega_using [q32, big, L2]) (by decide)) fun u₁ ⟨B₁, St₁⟩ => ?_)
   have Sc₁ := Sc.stage St₁
   have r₁ : ∀ {p : Impl.Dsa.Layout.Pointer} {len v : Nat}, Input s base size p len v → Input u₁ base size p len v :=
     fun I => I.next Sc St₁ (.inr ho)
-  refine WP.seq (WP.mono (range_ok Sc₁.ws (by omega) Sc.wq (r₁ Iq).toReady (r₁ Ik).toReady false)
+  refine WP.seq (WP.mono (range_ok Sc₁.ws (by omega_using [big]) Sc.wq (r₁ Iq).toReady (r₁ Ik).toReady false)
     fun u₂ ⟨F₂, St₂⟩ => ?_)
   rw [(r₁ Iq).value, (r₁ Ik).value] at F₂
   have Sc₂ := Sc₁.stage St₂
   have r₂ : ∀ {p : Impl.Dsa.Layout.Pointer} {len v : Nat}, Input s base size p len v → Input u₂ base size p len v :=
     fun I => (r₁ I).next Sc₁ St₂ (.inl ⟨rfl, rfl⟩)
   have L₂ : localVal base u₂ Impl.Dsa.Layout.qMinusTwo qLen = Q - 2 := by
-    rw [St₂.localVal_eq (by omega) (by omega) (by omega) (by omega)]
-    exact localVal_of_bytes B₁ (by omega)
+    rw [St₂.localVal_eq (by omega_using [L2]) (by omega_using [q32, L2]) (by omega_using []) (by omega_using [L2])]
+    exact localVal_of_bytes B₁ (by omega_using [Qlt])
   have hc₂ : countValue base u₂ Core.digestPrefix = c :=
-    ((countValue_stage St₂ (by omega)).trans (countValue_stage St₁ (by omega))).trans hc
+    ((countValue_stage St₂ (by omega_using [])).trans (countValue_stage St₁ (by omega_using [L2]))).trans hc
   refine WP.seq (WP.mono (sign_ok Sc₂ (r₂ Ip) (r₂ Iq) (r₂ Ig) (r₂ Ix) (r₂ Ik) (r₂ Id) hc₂ L₂ hP hPo hQ hQo)
     fun u₃ ⟨R₃, S₃, M₃, Rn₃⟩ => ?_)
   have Sc₃ := Sc₂.run Rn₃
@@ -121,7 +121,7 @@ theorem signPrevCompute_ok {s : State} {base : Addr} {size pLen qLen nP nQ P Q G
   · rw [local_operand Sc₃.ws (by omega_arith), R₃] at F₄
     rw [local_operand (St₄.ws Sc₃.ws) (by omega_arith), St₄.localVal_eq (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith),
       S₃] at F₅
-    rw [F₅, F₄, M₃, F₂, St₁.maskW (by omega), BitVec.and_assoc, BitVec.and_assoc, mask32_and, mask32_and]
+    rw [F₅, F₄, M₃, F₂, St₁.maskW (by omega_using [L2]), BitVec.and_assoc, BitVec.and_assoc, mask32_and, mask32_and]
     exact congrArg _ (mask32_iff (by simp only [Bool.false_eq_true, ↓reduceIte, signPrevChecks]))
   · rw [St₅.localVal_eq (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith),
       St₄.localVal_eq (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith), R₃]

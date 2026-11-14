@@ -161,12 +161,12 @@ theorem mPrime_ct : RelCT isa (Two (M pc D Z)) (mPrime H) fun _ _ => True := by
         fun _ h y => ⟨⟨s, P, p, h.1, y.trans sy⟩, C⟩)) ?_
   refine two_seq (Ψ := fun a t => M pc D Z a t ∧ t.gpr .r5 = off (Ss a) (oY + 8 + D))
     (saltDst_taint H (mpin (fun _ _ h => h.1) []))
-    (fun a t ⟨⟨s, P, p, b, sy⟩, C⟩ => WP.of_syms (wp_addi (h := by unfold oY; omega) fun t' o e =>
+    (fun a t ⟨⟨s, P, p, b, sy⟩, C⟩ => WP.of_syms (wp_addi (h := by unfold oY; omega_using [hD, hD64]) fun t' o e =>
       wp_nil fun y => ⟨⟨⟨s, P, p, b.only (fits P.1) o, y.trans sy⟩, C⟩, by rw [e, b.r14, ss_eq p.1, hD]⟩)) ?_
   exact copySalt_ct (fun _ => oY + 8 + D)
 
 theorem mPrime_wp {a t : State} (h : M pc D Z a t) : WP isa (mPrime H) t (M pc D Z a) :=
-  h.step fun s P p b _ hf => WP.mono (mPrime_ok P hD hD0 hD64 b (by have := P.k2; unfold kk at hf; omega))
+  h.step fun s P p b _ hf => WP.mono (mPrime_ok P hD hD0 hD64 b (by have := P.k2; unfold kk at hf; omega_using [hf, this]))
     fun _ h => h.1
 
 omit hD0 in
@@ -179,12 +179,12 @@ theorem putSalt_ct : RelCT isa (Two (M pc D Z)) (putSalt H) fun _ _ => True := b
     (fun a t ⟨⟨s, P, p, b, sy⟩, C⟩ => ?_) (copySalt_ct d)
   have hf := (ck_s p C).2
   have := loN_le s
-  exact WP.mono_syms (saltHead_ok P.1 hD hD64 b (by omega)) fun t' ⟨b', _, _, a5⟩ y =>
+  exact WP.mono_syms (saltHead_ok P.1 hD hD64 b (by omega_using [hf])) fun t' ⟨b', _, _, a5⟩ y =>
     ⟨⟨⟨s, P, p, b', y.trans sy⟩, C⟩, by rw [a5, ss_eq p.1, p.1.1.pKk, p.1.1.args 11 (by decide)]⟩
 
 omit hD0 in
 theorem putSalt_wp {a t : State} (h : M pc D Z a t) : WP isa (putSalt H) t (M pc D Z a) :=
-  h.step fun s P p b _ hf => WP.mono (putSalt_ok P hD hD64 b (by have := loN_le s; omega)) fun _ h => h.1
+  h.step fun s P p b _ hf => WP.mono (putSalt_ok P hD hD64 b (by have := loN_le s; omega_using [hf])) fun _ h => h.1
 
 end
 
@@ -200,7 +200,7 @@ theorem qD_fit {D : Nat} {a : State} (C : Ck D a) : MFit (qD D a).1 (qD D a).2.1
   have := C.fit; have := C.k2; have := loN_le a
   have hE : oEm = 0 := rfl
   show MFit (oEm + (kk a - D - 1)) D (oEm + loN a) (kk a - loN a - D - 1)
-  exact ⟨by omega, by omega, .inr (by omega), by omega⟩
+  exact ⟨by omega_arith, by omega_arith, .inr (by omega_arith), by omega_arith⟩
 
 /-- MGF1's arguments, from the anchor. -/
 abbrev MgfL (pc : Bool) (D : Nat) (Z : Tabs) (a t : State) : Prop :=
@@ -225,25 +225,25 @@ theorem main_ct : RelCT isa (Two (M pc Gs.len Z)) (signMain Z.H Z.f Z.g pc) fun 
   refine two_seq (Ψ := M pc Gs.len Z)
     ((hashFixedG_ct tOk hH cH (tabH Z) hGl.symm (fun a => (stackArg a 11).toNat) fun a => by
       show stackArg a 11 = _; rw [BitVec.ofNat_toNat, BitVec.setWidth_eq]).mono
-      (fun _ _ ⟨a, h₁, h₂⟩ => ⟨a, ⟨h₁.1, by have := h₁.2.fit; have := h₁.2.k2; omega⟩,
-        ⟨h₂.1, by have := h₂.2.fit; have := h₂.2.k2; omega⟩⟩) fun _ _ h => h)
+      (fun _ _ ⟨a, h₁, h₂⟩ => ⟨a, ⟨h₁.1, by have := h₁.2.fit; have := h₁.2.k2; omega_arith⟩,
+        ⟨h₂.1, by have := h₂.2.fit; have := h₂.2.k2; omega_arith⟩⟩) fun _ _ h => h)
     (fun a t ⟨⟨s, P, p, b, sy⟩, C⟩ => ?_) ?_
   · have hf := (ck_s p C).2
     exact WP.mono (hashFixedG_ok (fits P.1) hH P.2.2.1 hGl.symm (sl := (stackArg s 11).toNat)
       (by show stackArg s 11 = _; rw [BitVec.ofNat_toNat, BitVec.setWidth_eq]) b sy
-      (by have := P.1.k2; unfold kk at hf; omega)) fun _ ⟨h, y⟩ => ⟨⟨s, P, p, h.1, y⟩, C⟩
+      (by have := P.1.k2; unfold kk at hf; omega_using [hf, this])) fun _ ⟨h, y⟩ => ⟨⟨s, P, p, h.1, y⟩, C⟩
   -- `EM`.
   refine two_seq (Ψ := M pc Gs.len Z) (clearEm_taint (mpin (fun _ _ h => h.1) [.r14, .r15]))
     (fun a t h => h.step fun s P p b _ _ => WP.mono (clearEm_ok P b) fun _ h => h.1) ?_
   refine two_seq (Ψ := M pc Gs.len Z) (putSalt_ct hGl.symm hD64) (fun a t h => putSalt_wp hGl.symm hD64 h) ?_
   refine two_seq (Ψ := M pc Gs.len Z) (putH_taint Z.H (mpin (fun _ _ h => h.1) [.r14, .r15]))
-    (fun a t h => h.step fun s P p b _ hf => WP.mono (putH_ok P hGl.symm hD0 hD64 b (by omega)) fun _ h => h.1) ?_
+    (fun a t h => h.step fun s P p b _ hf => WP.mono (putH_ok P hGl.symm hD0 hD64 b (by omega_using [hf])) fun _ h => h.1) ?_
   -- `maskedDB`.
   refine two_seq (Ψ := fun a t => MgfL pc Gs.len Z a t ∧ Ck Gs.len a) (dbArgs_taint Z.H (mpin (fun _ _ h => h.1) []))
     (fun a t ⟨⟨s, P, p, b, sy⟩, C⟩ => ?_) ?_
   · have h0 := (ck_s p C).1
     have hf := (ck_s p C).2
-    exact WP.mono_syms (dbArgs_ok P.1 hGl.symm hD64 b h0 (by omega)) fun t' ⟨b', _, e24, e25, e26, e27⟩ y =>
+    exact WP.mono_syms (dbArgs_ok P.1 hGl.symm hD64 b h0 (by omega_using [hf])) fun t' ⟨b', _, e24, e25, e26, e27⟩ y =>
       ⟨⟨s, P, p, b', y.trans sy, by rw [e24, ss_eq p.1, p.1.1.pKk], e25, by rw [e26, ss_eq p.1, p.1.1.pLoN p.1.2],
         by rw [e27, p.1.1.pKk, p.1.1.pLoN p.1.2]⟩, C⟩
   refine two_seq (Ψ := M pc Gs.len Z) (mgf_ct hG cG hGmh hGml hGmv)
@@ -285,7 +285,7 @@ theorem checks_ct : RelCT isa (Two (En pc Gs.len Z)) (checks Z.H Z.f Z.g pc) fun
       isa.eval (.nonzero .d .r3) t = some false → E2 a t := fun {a t} ⟨⟨⟨s, P, p, E, sy, h0⟩, c⟩, hc⟩ => by
     rw [eval_nonzero, c] at hc
     have : ¬ kk a - loN a < Z.H.D + 2 := by simpa using hc
-    exact ⟨s, P, p, E, sy, h0, by rw [p.1.1.pKk, p.1.1.pLoN p.1.2]; omega⟩
+    exact ⟨s, P, p, E, sy, h0, by rw [p.1.1.pKk, p.1.1.pLoN p.1.2]; omega_using [this]⟩
   -- The salt's length.
   refine two_seq (Ψ := fun a t => E2 a t ∧
       (t.gpr .r3 != 0) = decide (kk a - loN a - (Z.H.D + 2) < (stackArg a 11).toNat))
@@ -304,7 +304,7 @@ theorem checks_ct : RelCT isa (Two (En pc Gs.len Z)) (checks Z.H Z.f Z.g pc) fun
       have hn : ¬ kk a - loN a - (Z.H.D + 2) < (stackArg a 11).toNat := by simpa using hc
       have k2 : kk s ≤ 1024 := P.1.k2
       rw [p.1.1.byte p.1.2, p.1.1.pKk, p.1.1.pLoN p.1.2] at *
-      exact ⟨⟨s, P, p, E.base, sy⟩, ⟨h0, by omega, k2⟩⟩
+      exact ⟨⟨s, P, p, E.base, sy⟩, ⟨h0, by omega_using [hGl, hem, hn], k2⟩⟩
   exact (main_ct hH cH hGl hG cG hGmh hGml hGmv).mono (fun _ _ ⟨a, h₁, h₂⟩ => ⟨a, e4 h₁, e4 h₂⟩) fun _ _ h => h
 
 /-- After the frame's push and the choice by the index, from an entry state. -/
@@ -339,7 +339,7 @@ digest length, leak alike. -/
 theorem code_ct {i : Nat} (hi : i ∈ idxs) (hD : (shapeOf i).1.D = Z.H.D) :
     RelCT isa (Two fun a s => (PreT pc Z Gs.len s ∧ PubT pc Z a s) ∧
       s.mem.readW (stackArg s 14 + BitVec.ofNat 64 40) 64 = BitVec.ofNat 64 i) (signG Z.f Z.g pc) fun _ _ => True := by
-  have hi8 : i < 8 := by simp only [idxs, List.mem_cons, List.not_mem_nil, or_false] at hi; omega
+  have hi8 : i < 8 := by simp only [idxs, List.mem_cons, List.not_mem_nil, or_false] at hi; omega_using [hi]
   refine two_alloc (R := fun _ _ => True) (fun a s₁ s₂ h₁ h₂ =>
     ⟨h₁.1.2.1.1.sp.trans h₂.1.2.1.1.sp.symm, fun _ h => nomatch h⟩) ?_
   let A0 := fun (a s : State) => (PreT pc Z Gs.len s ∧ PubT pc Z a s) ∧
@@ -367,7 +367,7 @@ theorem code_ct {i : Nat} (hi : i ∈ idxs) (hD : (shapeOf i).1.D = Z.H.D) :
     exact WP.of_syms ((wordA_ok o e (by decide) ⟨tHR s, by rw [P.hrd]; simp, Offset.contains_base _ (by decide)
       (by decide)⟩ ((P.kth.sub_left kR_sub).sub_right (tab_sub (n := 11) (show 5 < 11 by decide))).symm).mono
         fun u' ⟨o', e'⟩ y' => ⟨s, h, o', y'.trans y, by rw [e']; exact h.2⟩)
-  refine byIdx_ct (D := i) (by omega) (Φ := Ix pc Z Gs.len i)
+  refine byIdx_ct (D := i) (by omega_using [hi8]) (Φ := Ix pc Z Gs.len i)
     (fun _ _ ⟨_, _, _, _, e⟩ => e) (fun a u₁ u₂ ⟨s₁, h₁, o₁, _⟩ ⟨s₂, h₂, o₂, _⟩ => by
       rw [o₁.sp, o₂.sp, allocated_sp, allocated_sp, h₁.2.1.1.sp, h₂.2.1.1.sp])
     (fun a u u' ⟨s, h, o, y, e⟩ o' y' => ⟨s, h, (o.trans o').mono, y'.trans y, by rw [o'.get .r11]; exact e⟩)

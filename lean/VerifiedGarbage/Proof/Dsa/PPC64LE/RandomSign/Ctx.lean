@@ -103,8 +103,8 @@ theorem rlOf_ok {s : State} (h : rsContract.pre s) : (rlOf s).Ok := by
     dFO, dFU, dFK, dFD, dFR, dFS, -, nO, nU, nK, nD, nR, nS, lv, hol, hkl, hsw, -⟩ := h
   simp only [Spec.Dsa.randomSignScratchWords, Spec.Dsa.scratchWords] at hsw
   have e4 : 2 * (s.gpr .r9).toNat = (s.gpr .r4).toNat := hol.symm
-  have e7 : 3 * (s.gpr .r8).toNat + (s.gpr .r4).toNat = (s.gpr .r7).toNat := by omega
-  have hT' : s.sp.toNat + 136 ≤ 2 ^ 64 := by omega
+  have e7 : 3 * (s.gpr .r8).toNat + (s.gpr .r4).toNat = (s.gpr .r7).toNat := by omega_using [hol, hkl]
+  have hT' : s.sp.toNat + 136 ≤ 2 ^ 64 := by omega_using [hT]
   refine ⟨lv, hsw, hF, hT', ?_, nU, ?_, nD, nR, nS, (stackArg s 0).isLt, (stackArg s 2).isLt,
     (stackArg s 4).isLt, ?_, ?_, ?_, ?_, ?_, ?_, dUD, dUR, dUS, ?_, dDS, dRS, ?_, dFU, ?_, dFD, dFR, dFS⟩ <;>
   simp only [RL.outR, RL.keyR, RL.kl, RL.frR, RL.F, rlOf, e4, e7]
@@ -126,20 +126,20 @@ variable {L : RL} (hL : L.Ok)
 include hL
 
 theorem ql : 20 ≤ L.ql ∧ L.ql ≤ 32 := by
-  have := hL.lv; simp only [Spec.Dsa.lengthsValid] at this; omega
+  have := hL.lv; simp only [Spec.Dsa.lengthsValid] at this; omega_using [this]
 
 theorem pl : L.pl = 128 ∨ L.pl = 256 ∨ L.pl = 384 := by
-  have := hL.lv; simp only [Spec.Dsa.lengthsValid] at this; omega
+  have := hL.lv; simp only [Spec.Dsa.lengthsValid] at this; omega_using [this]
 
 theorem F_toNat : L.F.toNat = L.sp.toNat - frameBytes := by
   have h1 := hL.spF
   have h2 := L.sp.isLt
   simp only [RL.F, frameBytes] at h1 ⊢
   rw [BitVec.toNat_sub, BitVec.toNat_ofNat]
-  omega
+  omega_using [h1]
 
 theorem fnw : L.F.toNat + frameBytes ≤ 2 ^ 64 := by
-  have := hL.F_toNat; have := hL.spF; have := hL.spTop; omega
+  have := hL.F_toNat; have := hL.spF; have := hL.spTop; omega_arith
 
 omit hL in
 /-- A range of the frame is apart from a region apart from the frame. -/
@@ -199,18 +199,18 @@ theorem Ctx.step {L : RL} {s₀ t t' : State} (hL : L.Ok) (h : Ctx L s₀ t) (hs
       rcases hr with rfl | rfl | rfl
       · exact RL.Ok.frame_disj hL.dFO hd
       · exact RL.Ok.frame_disj hL.dFS hd
-      · exact VG.Offset.disjoint L.F (by simp only [oNonce] at hn ⊢; omega) (by simp only [frameBytes] at hd; omega)
-          (by simp only [oNonce]; omega)) (by decide)
+      · exact VG.Offset.disjoint L.F (by simp only [oNonce] at hn ⊢; omega_using [hn]) (by simp only [frameBytes] at hd; omega_using [hd])
+          (by simp only [oNonce]; omega_using [])) (by decide)
   have nr : ∀ {A : Addr} {k : Nat}, L.frR.Disjoint ⟨A, k⟩ → (⟨A, k⟩ : Region).Disjoint L.nR := fun hd =>
     (RL.Ok.frame_disj hd (d := oNonce) (n := 32) (by decide)).symm
   refine ⟨hsp.trans h.sp, hrd.trans h.rd, hwr.trans h.wr, (hg _ (by decide)).trans h.r2,
     (hg _ (by decide)).trans h.r18, (hg _ (by decide)).trans h.r19, (hg _ (by decide)).trans h.r20,
     (hg _ (by decide)).trans h.r21, (hg _ (by decide)).trans h.r22, (hg _ (by decide)).trans h.r23,
     (hg _ (by decide)).trans h.r24, (hg _ (by decide)).trans h.r30,
-    fun i hi => (fw _ (by simp only [oSave, frameBytes]; omega) (by simp only [oSave, oNonce]; omega)).trans (h.sav i hi),
+    fun i hi => (fw _ (by simp only [oSave, frameBytes]; omega_using [hi]) (by simp only [oSave, oNonce]; omega_using [])).trans (h.sav i hi),
     (fw _ (by decide) (by decide)).trans h.lr, (fw _ (by decide) (by decide)).trans h.a0,
     (fw _ (by decide) (by decide)).trans h.a1, (fw _ (by decide) (by decide)).trans h.a2, ?_, ?_, ?_⟩
-  · refine (bytes_frame hf (fun r hr => ?_) (by have := hL.nwKey; omega)).trans h.key
+  · refine (bytes_frame hf (fun r hr => ?_) (by have := hL.nwKey; omega_using [this])).trans h.key
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
     · exact hL.dOK.symm

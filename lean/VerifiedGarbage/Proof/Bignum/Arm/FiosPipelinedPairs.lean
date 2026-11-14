@@ -19,11 +19,11 @@ theorem pair_ok {s0 s : State} {x q base : BitVec 32} {size acc b mod n start i 
     WP isa (VG.Impl.Bignum.Arm.FiosPipelined.pair (4*(i-start))) s
       (Inv s0 x q base acc b mod n start (i+2) .r6) := by
   rw [VG.Impl.Bignum.Arm.FiosPipelined.pair,WP.seq_iff]
-  refine WP.mono (step_ok (Or.inl ⟨rfl,rfl⟩) ctx h (by omega) (by omega)) ?_
+  refine WP.mono (step_ok (Or.inl ⟨rfl,rfl⟩) ctx h (by omega_using [hi]) (by omega_using [offsetFits])) ?_
   intro t ht
-  have next : 4*(i-start)+4=4*(i+1-start) := by have := h.progress;omega
+  have next : 4*(i-start)+4=4*(i+1-start) := by have := h.progress;omega_using [this]
   rw [next]
-  exact step_ok (Or.inr ⟨rfl,rfl⟩) ctx ht (by omega) (by have := h.progress;omega)
+  exact step_ok (Or.inr ⟨rfl,rfl⟩) ctx ht (by omega_using [hi]) (by have := h.progress;omega_using [offsetFits])
 
 theorem pairs_ok {s0 : State} {x q base : BitVec 32} {size acc b mod n start : Nat}
     (ctx : Fios.Ctx s0 base size acc b mod n) :
@@ -35,11 +35,11 @@ theorem pairs_ok {s0 : State} {x q base : BitVec 32} {size acc b mod n start : N
     simpa only [VG.Impl.Bignum.Arm.FiosPipelined.pairs,Nat.mul_zero,Nat.add_zero] using WP.block_nil h
   | k+1, i, s, h, bound, offset => by
     rw [VG.Impl.Bignum.Arm.FiosPipelined.pairs,WP.seq_iff]
-    refine WP.mono (pair_ok ctx h (by omega) (by have := h.progress;omega)) ?_
+    refine WP.mono (pair_ok ctx h (by omega_using [bound]) (by have := h.progress;omega_using [offset])) ?_
     intro t ht
-    have next : 4*(i-start)+8=4*(i+2-start) := by have := h.progress;omega
+    have next : 4*(i-start)+8=4*(i+2-start) := by have := h.progress;omega_using [this]
     rw [next]
-    have result := pairs_ok ctx k (i+2) t ht (by omega) (by omega)
-    simpa only [show i+2+2*k=i+2*(k+1) by omega] using result
+    have result := pairs_ok ctx k (i+2) t ht (by omega_using [bound]) (by omega_using [offset])
+    simpa only [show i+2+2*k=i+2*(k+1) by omega_using []] using result
 
 end VG.Proof.Bignum.Arm.FiosPipelined

@@ -69,11 +69,11 @@ theorem trHash_piece {p : Params} (hF : PFacts p) {S' : Nat} (h16 : 16 ≤ S') (
   refine WP.mono (shake_ok h16 hSl L (by simp) (trHash_chk hF)) fun s' ⟨hP', x', ho⟩ => ⟨A, S, R, ?_, ?_⟩
   · have hc : KRChk p (p.ℓ + p.k) p.ℓ p.k [((.x28, 0), 200), ((.x28, 200), 640), ((.x27, 64), 64)] :=
       (KRChk.x28 hF (Nat.le_refl _) (Nat.le_refl _) (.inl (by decide)) (.inl (by decide))
-        (by rw [hF.scr]; omega)).append (ws₁ := [_])
+        (by rw [hF.scr]; omega_using [])).append (ws₁ := [_])
       ((KRChk.x28 hF (Nat.le_refl _) (Nat.le_refl _) (.inl (by decide)) (.inl (by decide))
-        (by rw [hF.scr]; omega)).append (ws₁ := [_])
+        (by rw [hF.scr]; omega_using [])).append (ws₁ := [_])
       (KRChk.x27 hF (Nat.le_refl _) (Nat.le_refl _) (by decide) (.inl (by decide))
-        (.inl (by simp only [oT0]; omega)) (by rw [hF.sk, oT0]; omega)))
+        (.inl (by simp only [oT0]; omega_using [])) (by rw [hF.sk, oT0]; omega_using [])))
     exact h.keep hF hp hP' x' hc
   · simp only [List.map_cons, List.map_nil, List.flatten_cons, List.flatten_nil, List.append_nil] at ho
     rw [hP'.pa (show Reg.x27 ∈ keptRegs by decide), ho]
@@ -93,7 +93,7 @@ theorem epi_piece {p : Params} (hF : PFacts p) {S' : Nat} :
   have e26 : pa s (.x26, 0) = σ.gpr .x1 := by rw [pa_zero, h.kc.top.x26]
   have e27 : pa s (.x27, 0) = σ.gpr .x2 := by rw [pa_zero, h.kc.top.x27]
   rw [hr, h.x24, hm, ← e26, ← e27, pk_bytes hF h, sk_bytes hF h htr]
-  exact outcome_of (by have := hF.l; omega) h.good
+  exact outcome_of (by have := hF.l; omega_using [this]) h.good
 
 
 end VG.Proof.MlDsa.AArch64.KeyGen.Optimized

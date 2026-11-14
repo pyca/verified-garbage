@@ -37,12 +37,12 @@ structure PkCombPre (c : Cfg) (s : State) : Prop extends
 variable {c : Cfg}
 
 theorem PkCombPre.sp4 {s : State} (hp : PkCombPre c s) : 4 ≤ (s.gpr .esp).toNat := by
-  have := Cfg.stk_ge c; have := hp.toPkPre.sp_lo; omega
+  have := Cfg.stk_ge c; have := hp.toPkPre.sp_lo; omega_arith
 
 theorem PkPre.symAddr {s t : State} {extra : List Region} {name : String}
     (hp : PkPre c s extra) (h : SymAddrPost name s t) (hsp : 4 ≤ (s.gpr .esp).toNat) : PkPre c t extra := by
   have he := h.gpr .esp (by decide)
-  have ha : ∀ j < 3, arg t j = arg s j := fun j hj => h.arg hsp (by have := hp.sp_fit; omega)
+  have ha : ∀ j < 3, arg t j = arg s j := fun j hj => h.arg hsp (by have := hp.sp_fit; omega_using [hj, this])
   have haa : argAddr t 0 = argAddr s 0 := by simp only [argAddr, he]
   exact {
     rd := by simpa only [ptr, ha 1 (by decide), haa, h.rd] using hp.rd
@@ -118,9 +118,9 @@ theorem pkComb_ok (hC : Weierstrass.Law Spec.P256.curve) (hI : Weierstrass.X86.I
     rcases hr with rfl | rfl | rfl | rfl | rfl <;> decide)), ?_⟩, ?_⟩
   · have ht := ha.2
     rw [he] at ht
-    exact ht.trans (P.ret hp.sp4 (by have := hp.sp_fit; omega))
-  · have harg : ∀ j < 3, arg s₁ j = arg s₀ j := fun j hj => P.arg hp.sp4 (by have := hp.sp_fit; omega)
-    have hd := prefix_bytesAt P hp.d_stack (by have := hp.d_fit; change p256Comb.C.len ≤ 2 ^ 64; omega)
+    exact ht.trans (P.ret hp.sp4 (by have := hp.sp_fit; omega_using [this]))
+  · have harg : ∀ j < 3, arg s₁ j = arg s₀ j := fun j hj => P.arg hp.sp4 (by have := hp.sp_fit; omega_using [hj, this])
+    have hd := prefix_bytesAt P hp.d_stack (by have := hp.d_fit; change p256Comb.C.len ≤ 2 ^ 64; omega_using [this])
     simpa only [PkPost, dk, ptr, harg 0 (by decide), harg 1 (by decide), hd] using post
 
 def PkCombPub (s t : State) : Prop :=
@@ -144,7 +144,7 @@ theorem pkComb_ct (hC : Weierstrass.Law Spec.P256.curve) (hI : Weierstrass.X86.I
   have he' : s.gpr .esp = t.gpr .esp := by rw [P.gpr .esp (by decide), Q.gpr .esp (by decide), he]
   have ha' : ∀ j < 3, arg s j = arg t j := by
     intro j hj
-    rw [P.arg hp.sp4 (by have := hp.sp_fit; omega), Q.arg hq.sp4 (by have := hq.sp_fit; omega), ha j hj]
+    rw [P.arg hp.sp4 (by have := hp.sp_fit; omega_using [hj, this]), Q.arg hq.sp4 (by have := hq.sp_fit; omega_using [hj, this]), ha j hj]
   exact pkCombBody_rel (p256Comb_ok hI) hC (p256Comb_tables hC) p256Comb_shape p256Comb_am3
     (hp.toPkPre.symAddr P hp.sp4) (hq.toPkPre.symAddr Q hq.sp4)
     (pkPrefixTables hp P) (pkPrefixTables hq Q) he' ha' (by rw [P.addr, Q.addr, hg]) pkComb_spG

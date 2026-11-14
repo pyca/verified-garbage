@@ -88,24 +88,24 @@ theorem finish_base {p : GkP} {rb : List Byte} {s : State} (h : Inputs p rb s)
   have hk := h.base.k1
   have hl := h.base.ld_lt
   have hZ := h.base.hZ
-  refine WP.mono (cutFinish_ok h.base.scr h.rdi (by omega)
+  refine WP.mono (cutFinish_ok h.base.scr h.rdi (by omega_using [hZ])
     (h.base.hdr (sX, p.xp) (by simp [GkP.headers])) hn h8)
     fun t ⟨hX, hXl, hf, k⟩ => ?_
   have hi : InScr p.B p.Z s.mem t.mem := InScr.of_frm hf (by
     simp only [List.mem_cons, List.not_mem_nil, or_false]
-    rintro r (rfl | rfl) <;> simp only [sX, sXl, sFn] <;> omega)
+    rintro r (rfl | rfl) <;> simp only [sX, sXl, sFn] <;> omega_using [hZ])
   have hh : ∀ i < 32, i ≠ sX → i ≠ sXl → word t.mem p.B (8 * i) = word s.mem p.B (8 * i) :=
     fun i hi hx hxl => hf.word_eq (by
       simp only [List.mem_cons, List.not_mem_nil, or_false]
-      rintro r (rfl | rfl) <;> simp only <;> omega) (by omega)
+      rintro r (rfl | rfl) <;> simp only <;> omega_arith) (by omega_using [hi])
   refine ⟨⟨h.base.k1, h.base.k2, h.base.dl, h.base.doml, List.length_replicate,
-    h.base.xb_length, by change 1 ≤ p.k - p.ld; omega, by change p.k - p.ld ≤ p.k; omega,
+    h.base.xb_length, by change 1 ≤ p.k - p.ld; omega_using [hl], by change p.k - p.ld ≤ p.k; omega_using [],
     h.base.hZ, h.base.scr.congr k.2.2, h.base.dom.congrK hi k,
     (hx.drop p.ld).congrK hi k, h.y.congrK hi k, ?_, ?_⟩,
     (k.gpr (by decide)).trans h.rdi,
     (hh _ (by decide) (by decide) (by decide)).trans h.g,
     (hh _ (by decide) (by decide) (by decide)).trans h.q,
-    fun i hi => hh i (by omega) (by unfold sX sFn; omega) (by unfold sXl sFn; omega), hi, k⟩
+    fun i hi => hh i (by omega_using [hi]) (by unfold sX sFn; omega_using [hi]) (by unfold sXl sFn; omega_using [hi]), hi, k⟩
   · intro e he
     simp only [CheckPrivate.KpP.headers, GkP.kp, List.mem_cons, List.not_mem_nil, or_false] at he
     rcases he with rfl | rfl | rfl | rfl | rfl | rfl

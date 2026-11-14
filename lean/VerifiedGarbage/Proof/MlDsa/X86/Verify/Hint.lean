@@ -80,7 +80,7 @@ theorem keepHint {p : Params} {s₀ : State} (hp : TPre (YV p) s₀) {bs : List 
     (hs : (YV p).apart (hB p.k) bs = true) {m m' : Mem} (fr : Frame (FR s₀ bs N) m m')
     {h : List (Vector Bool Spec.MlDsa.n)} (hh : HintIs m (Buf.addr s₀ (hB p.k)) p.k h) :
     HintIs m' (Buf.addr s₀ (hB p.k)) p.k h :=
-  Proof.MlDsa.Verify.hintIs_congr (fun i hi => Top.keep hp (stkV hN) hs fr i (by show i < 256 * p.k * 4; omega)) hh
+  Proof.MlDsa.Verify.hintIs_congr (fun i hi => Top.keep hp (stkV hN) hs fr i (by show i < 256 * p.k * 4; omega_using [hi])) hh
 
 theorem HOk.keep {p : Params} {s₀ s s' : State} (h : HOk p s₀ s) (hp : TPre (YV p) s₀) {bs : List Buf} {N : Nat}
     (hN : N + 16 ≤ 96) (hs : (YV p).apart (hB p.k) bs = true) (fr : Frame (FR s₀ bs N) s.mem s'.mem) :
@@ -122,7 +122,7 @@ theorem hint_piece : VP p (Ctx (YV p)) (H1 p) (hint P p) := by
   have ea : accV s₀ s' = s.gpr .eax := by rw [accV, m', acc_write]
   have fr : Frame (FR s₀ [sb oACC 4] 0) s.mem s'.mem := by rw [m']; exact frW32 (Y := YV p)
   rcases h.2 with ⟨e, ho⟩ | ⟨e, hn⟩
-  · exact .inl ⟨by rw [ea, e], ho.keep hp (N := 0) (by omega) (by lvd) fr⟩
+  · exact .inl ⟨by rw [ea, e], ho.keep hp (N := 0) (by omega_using []) (by lvd) fr⟩
   · exact .inr ⟨by rw [ea, e], hn⟩
 
 end
@@ -159,10 +159,10 @@ theorem normsOk_succ {p : Params} {s₀ : State} {i : Nat} :
     (NormsOk p s₀ i ∧ normRq [toRq (vZ p (vSig p s₀) i)] < p.γ₁ - p.β) ↔ NormsOk p s₀ (i + 1) := by
   constructor
   · rintro ⟨h₁, h₂⟩ j hj
-    rcases (by omega : j < i ∨ j = i) with hj | rfl
+    rcases (by omega_using [hj] : j < i ∨ j = i) with hj | rfl
     exacts [h₁ j hj, h₂]
   · intro h
-    exact ⟨fun j hj => h j (by omega), h i (by omega)⟩
+    exact ⟨fun j hj => h j (by omega_using [hj]), h i (by omega_using [])⟩
 
 section
 variable {P : Prims} (hP : PrimsOk P) {p : Params} (hF : VFacts p)
@@ -174,7 +174,7 @@ theorem zOne_piece {i : Nat} (hi : i < p.ℓ) : VP p (ZI p · i) (ZI p · (i + 1
   refine Piece.seq (B := fun s₀ s => ZI p s₀ i s ∧ PolyIs s.mem (Buf.addr s₀ (pZ i)) (toRq (vZ p (vSig p s₀) i)))
     (bu_piece hP.bitUnpack 2 (p.ctildeLen + lenZ p * i) (lenZ p) (p.γ₁ - 1) p.γ₁ vS (oP (8 + i)) hF.bp.1 hF.bp.2
       (by lvd) (Nat.le_of_eq (YV_stk p).symm) (ht := .block []) (by kernel_rfl) (fun _ _ _ h => h.ctx)
-      fun s₀ s s' hp h h' fr post => ⟨h.keep hp (N := 80) (by omega) (by lvd) (by lvd)
+      fun s₀ s s' hp h h' fr post => ⟨h.keep hp (N := 80) (by omega_using []) (by lvd) (by lvd)
         (fun j hj => by lvd) fr h', ?_⟩) ?_
   · rw [sig_slice hF hp h.ctx (by lvd)] at post
     exact post
@@ -182,19 +182,19 @@ theorem zOne_piece {i : Nat} (hi : i < p.ℓ) : VP p (ZI p · i) (ZI p · (i + 1
       s.gpr .eax = if normRq [toRq (vZ p (vSig p s₀) i)] < p.γ₁ - p.β then 1 else 0)
     (normLt_piece hP.normLt vS (oP (8 + i)) (p.γ₁ - p.β) hF.beta.2 (by lvd) (Nat.le_of_eq (YV_stk p).symm)
       (ht := .block []) (by kernel_rfl) (fun _ _ _ h => ⟨h.1.ctx, h.2.1⟩)
-      fun s₀ s s' hp h h' fr e => ⟨⟨h.1.keep hp (N := 80) (by omega) (by lvd) (by lvd)
-        (fun j hj => by lvd) fr h', keepPolyD hp (stkV (by omega)) (by lvd) fr h.2⟩, ?_⟩) ?_
+      fun s₀ s s' hp h h' fr e => ⟨⟨h.1.keep hp (N := 80) (by omega_using []) (by lvd) (by lvd)
+        (fun j hj => by lvd) fr h', keepPolyD hp (stkV (by omega_using [])) (by lvd) fr h.2⟩, ?_⟩) ?_
   · rw [e, h.2.2]
   refine accAnd_piece (Y := YV p) (by lvd) (ht := .block []) (by kernel_rfl) (fun _ _ _ h => h.1.1.ctx)
     fun s₀ s s' hp h h' m' => ?_
   have fr : Frame (FR s₀ [sb oACC 4] 0) s.mem s'.mem := by rw [m']; exact frW32 (Y := YV p)
   obtain ⟨⟨hz, hzi⟩, he⟩ := h
-  refine ⟨h', hz.hint.keep hp (N := 0) (by omega) (by lvd) fr, fun j hj => ?_, ?_⟩
-  · rcases (by omega : j < i ∨ j = i) with hj | rfl
+  refine ⟨h', hz.hint.keep hp (N := 0) (by omega_using []) (by lvd) fr, fun j hj => ?_, ?_⟩
+  · rcases (by omega_using [hj] : j < i ∨ j = i) with hj | rfl
     · have : (YV p).apart (pZ j) [sb oACC 4] = true := by lvd
-      exact keepPolyD hp (stkV (by omega)) this fr (hz.z j hj)
+      exact keepPolyD hp (stkV (by omega_using [])) this fr (hz.z j hj)
     · have : (YV p).apart (pZ j) [sb oACC 4] = true := by lvd
-      exact keepPolyD hp (stkV (by omega)) this fr hzi
+      exact keepPolyD hp (stkV (by omega_using [])) this fr hzi
   · rw [accV, m', acc_write, accB_YV, ← accV, hz.acc, he, ite_and_ite]
     exact ite_congr (propext normsOk_succ) (fun _ => rfl) (fun _ => rfl)
 

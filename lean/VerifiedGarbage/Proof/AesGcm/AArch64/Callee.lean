@@ -136,7 +136,7 @@ theorem toNat_ofNat_lt {n : Nat} (h : n < 2 ^ 64) : (BitVec.ofNat 64 n).toNat = 
   rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt h
 
 theorem toNat_rounds {R : Nat} (hR : R = 10 ∨ R = 12 ∨ R = 14) : (BitVec.ofNat 64 R).toNat = R :=
-  toNat_ofNat_lt (by omega)
+  toNat_ofNat_lt (by omega_using [hR])
 
 theorem callEntry_x0 (s : State) : s.callEntry.gpr .x0 = s.gpr .x0 := s.callEntry_gpr (by decide)
 theorem callEntry_x1 (s : State) : s.callEntry.gpr .x1 = s.gpr .x1 := s.callEntry_gpr (by decide)
@@ -176,14 +176,14 @@ structure GhPost (s : State) (H Y D S : Addr) (n : Nat) (s' : State) (ex : List 
 
 theorem GhCall.pre {s : State} {H Y D S : Addr} {n : Nat} (h : GhCall s H Y D S n) :
     Proof.Gcm.ghashAArch64.pre (s.callEntry.withRegions [⟨H, 16⟩, ⟨D, 16 * n⟩] [⟨Y, 16⟩, ⟨S, 256⟩]) := by
-  have hn := toNat_ofNat_lt (show n < 2 ^ 64 by have := h.n_lt; omega)
+  have hn := toNat_ofNat_lt (show n < 2 ^ 64 by have := h.n_lt; omega_using [this])
   simp only [Proof.Gcm.ghashAArch64, State.withRegions_gpr, State.withRegions_rd, State.withRegions_wr,
     callEntry_x0, callEntry_x1, callEntry_x2, callEntry_x3, callEntry_x4, h.x0, h.x1, h.x2, h.x3, h.x4, hn]
   exact ⟨trivial, trivial, h.hy, h.hs, h.yd, h.ys, h.ds⟩
 
 theorem gh_call (g : GhashImpl) {s : State} {H Y D S : Addr} {n : Nat} (h : GhCall s H Y D S n) :
     WP isa (.call g.fn.name g.fn.code) s (GhPost s H Y D S n) := by
-  have hn := toNat_ofNat_lt (show n < 2 ^ 64 by have := h.n_lt; omega)
+  have hn := toNat_ofNat_lt (show n < 2 ^ 64 by have := h.n_lt; omega_using [this])
   refine WP.call (k := Proof.Gcm.ghashAArch64) g.ok (rd := [⟨H, 16⟩, ⟨D, 16 * n⟩])
     (wr := [⟨Y, 16⟩, ⟨S, 256⟩]) h.pre h.reads h.writes ?_ g.noFrames
   intro s' hrd hwr hsp hf hsaved _ hpost

@@ -37,13 +37,13 @@ theorem write_off (m : Mem) (b : Addr) {o j n : Nat} (v : BitVec (8 * n)) (ho : 
     m.write (b + BitVec.ofNat 64 o) n v (b + BitVec.ofNat 64 j) =
       if o ≤ j ∧ j < o + n then v.extractLsb' (8 * (j - o)) 8 else m (b + BitVec.ofNat 64 j) := by
   simp only [Mem.write]
-  rw [Offset.sub_toNat' b (by omega) hj]
+  rw [Offset.sub_toNat' b (by omega_using [ho]) hj]
   by_cases h : o ≤ j
   · simp only [h, ite_true, true_and]
     by_cases h' : j < o + n
-    · simp only [show j - o < n by omega, ite_true, h']
-    · simp only [show ¬ j - o < n by omega, ite_false, h']
-  · simp only [h, ite_false, false_and, show ¬ 2 ^ 64 + j - o < n by omega]
+    · simp only [show j - o < n by omega_using [h, h'], ite_true, h']
+    · simp only [show ¬ j - o < n by omega_using [h'], ite_false, h']
+  · simp only [h, ite_false, false_and, show ¬ 2 ^ 64 + j - o < n by omega_using [ho]]
 
 theorem writeW128_off (m : Mem) (b : Addr) {o j : Nat} (v : BitVec 128) (ho : o + 16 < 2 ^ 64)
     (hj : j < 2 ^ 64) :
@@ -60,20 +60,20 @@ theorem writeW8_off (m : Mem) (b : Addr) {o j : Nat} (v : BitVec 8) (ho : o + 1 
   rw [write_off m b _ ho hj]
   by_cases h : j = o
   · subst h; simp
-  · simp only [show ¬ (o ≤ j ∧ j < o + 1) by omega, ite_false, h]
+  · simp only [show ¬ (o ≤ j ∧ j < o + 1) by omega_using [h], ite_false, h]
 
 theorem writeBytes_off (m : Mem) (b : Addr) {o j : Nat} (xs : List Byte) (ho : o + xs.length < 2 ^ 64)
     (hj : j < 2 ^ 64) :
     writeBytes m (b + BitVec.ofNat 64 o) xs (b + BitVec.ofNat 64 j) =
       if o ≤ j ∧ j < o + xs.length then xs.getD (j - o) 0 else m (b + BitVec.ofNat 64 j) := by
   simp only [writeBytes]
-  rw [Offset.sub_toNat' b (by omega) hj]
+  rw [Offset.sub_toNat' b (by omega_using [ho]) hj]
   by_cases h : o ≤ j
   · simp only [h, ite_true, true_and]
     by_cases h' : j < o + xs.length
-    · simp only [show j - o < xs.length by omega, ite_true, h']
-    · simp only [show ¬ j - o < xs.length by omega, ite_false, h']
-  · simp only [h, ite_false, false_and, show ¬ 2 ^ 64 + j - o < xs.length by omega]
+    · simp only [show j - o < xs.length by omega_using [h, h'], ite_true, h']
+    · simp only [show ¬ j - o < xs.length by omega_using [h'], ite_false, h']
+  · simp only [h, ite_false, false_and, show ¬ 2 ^ 64 + j - o < xs.length by omega_using [ho]]
 
 /-- Byte `i` of a little-endian 16-byte read. -/
 theorem readW128_byte (m : Mem) (a : Addr) {i : Nat} (hi : i < 16) :
@@ -89,7 +89,7 @@ theorem getD_app (xs ys : List Byte) (k : Nat) :
   · rw [itp h, getD_append_left h]
   · rw [itn h]
     have := getD_append_right (p := xs) (q := ys) (j := k - xs.length)
-    rwa [show xs.length + (k - xs.length) = k by omega] at this
+    rwa [show xs.length + (k - xs.length) = k by omega_using [h]] at this
 
 theorem getD_rep (n k : Nat) : (List.replicate n (0 : Byte)).getD k 0 = 0 := by
   simp only [List.getD_eq_getElem?_getD, List.getElem?_replicate]
@@ -139,12 +139,12 @@ theorem pad2a_getD {k : Nat} :
   simp only [getD_app, List.length_append, Md.rest_length, List.length_singleton, getD_single, getD_rep,
     rest_getD]
   by_cases h1 : k < rem B xs
-  · rw [itp (show k < rem B xs + 1 by omega), itp h1, itp h1]
+  · rw [itp (show k < rem B xs + 1 by omega_using [h1]), itp h1, itp h1]
   by_cases h2 : k = rem B xs
   · subst h2
-    rw [itp (show rem B xs < rem B xs + 1 by omega), itn h1, itp (show rem B xs - rem B xs = 0 by omega), itn h1,
+    rw [itp (show rem B xs < rem B xs + 1 by omega_using []), itn h1, itp (show rem B xs - rem B xs = 0 by omega_using []), itn h1,
       itp rfl]
-  · rw [itn (show ¬ k < rem B xs + 1 by omega), itn h1, itn h2]
+  · rw [itn (show ¬ k < rem B xs + 1 by omega_using [h1, h2]), itn h1, itn h2]
 
 end
 

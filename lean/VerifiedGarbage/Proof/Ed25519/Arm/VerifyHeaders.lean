@@ -31,7 +31,7 @@ theorem pointTableWrite_ok {b : BitVec 32} {s : State} (hc : Ctx b s) (hl : AllL
       env t.mem b = env s.mem b ∧ tablePoint t.mem b o = point (env s.mem b) 0 1 2 3 := by
   unfold pointTableWrite
   rw [WP.block_append_iff]
-  refine WP.mono (scratchAddr_ok hc o (by omega)) fun u ⟨ur, um, up⟩ => ?_
+  refine WP.mono (scratchAddr_ok hc o (by omega_using [hn])) fun u ⟨ur, um, up⟩ => ?_
   refine WP.mono (pointToTable_ok (hc.of_rest ur (by decide)) (um ▸ hl) up ho hn) fun t ⟨tp, tk⟩ => ?_
   exact ⟨⟨(ur.mono (by decide)).trans (tk.rest.mono (by decide)), by rw [← um]; exact TableFrame.table tk.frame⟩,
     tk.lim ho hn (um ▸ hl), (tk.env ho hn).trans (congrArg (fun m => env m b) um),
@@ -44,7 +44,7 @@ theorem pointTableRead_ok {b : BitVec 32} {s : State} (hc : Ctx b s) (hl : AllLi
       ∀ i : Slot, 4 ≤ i.val → env t.mem b i = env s.mem b i := by
   unfold pointTableRead
   rw [WP.block_append_iff]
-  refine WP.mono (scratchAddr_ok hc o (by omega)) fun u ⟨ur, um, up⟩ => ?_
+  refine WP.mono (scratchAddr_ok hc o (by omega_using [hn])) fun u ⟨ur, um, up⟩ => ?_
   refine WP.mono (pointFromTable_ok (hc.of_rest ur (by decide)) (um ▸ hl) up ho hn) fun t ⟨tp, tl, tk⟩ => ?_
   refine ⟨(AccKeep.of_rest ur (by decide) um).trans (AccKeep.of_table tk (by decide) (by decide)), tl,
     tp.trans (congrArg (fun m => tablePoint m b o) um), fun i hi => ?_⟩
@@ -128,7 +128,7 @@ theorem VerifyKeep.header {b : BitVec 32} {s t : State} (h : VerifyKeep b s t)
   apply BitVec.eq_of_toNat_eq
   exact wd_frame h.frame fun r hr => by
     rw [List.mem_singleton.mp hr]
-    exact Offset.disjoint _ (.inr (by omega)) (by omega) (by decide)
+    exact Offset.disjoint _ (.inr (by omega_using [hd])) (by omega_using [hn]) (by decide)
 
 end VG.Proof.Ed25519.Arm
 end
@@ -151,24 +151,24 @@ theorem VerifyInput.bytes {b ptr : BitVec 32} {len : Nat} {s t : State}
     Spec.Ed25519.bytesAt t.mem (State.addr ptr) len = Spec.Ed25519.bytesAt s.mem (State.addr ptr) len := by
   unfold Spec.Ed25519.bytesAt
   refine List.map_congr_left fun i hi => hk.frame.bytes (R := ⟨State.addr ptr, len⟩)
-    (fun r hr => ?_) (by have := h.fit; omega : len ≤ 2 ^ 64) (List.mem_range.mp hi)
+    (fun r hr => ?_) (by have := h.fit; omega_using [this] : len ≤ 2 ^ 64) (List.mem_range.mp hi)
   rw [List.mem_singleton.mp hr]
   exact h.separate.sub_right (Offset.sub_base _ (by decide))
 
 theorem VerifyInput.prefix {b ptr : BitVec 32} {len n : Nat} {s : State}
     (h : VerifyInput b ptr len s) (hn : n ≤ len) : VerifyInput b ptr n s :=
-  ⟨by have := h.fit; omega, fun i hi => h.readable i (by omega), h.separate.sub_left (Region.sub_prefix hn)⟩
+  ⟨by have := h.fit; omega_using [hn, this], fun i hi => h.readable i (by omega_using [hn, hi]), h.separate.sub_left (Region.sub_prefix hn)⟩
 
 theorem VerifyInput.suffix32 {b ptr : BitVec 32} {s : State} (h : VerifyInput b ptr 64 s) :
     VerifyInput b (ptr + 32) 32 s := by
   have en : (ptr + (32 : BitVec 32)).toNat = ptr.toNat + 32 := by
-    rw [toNat_add_lt (by have := h.fit; change ptr.toNat + 32 < 2 ^ 32; omega)]
+    rw [toNat_add_lt (by have := h.fit; change ptr.toNat + 32 < 2 ^ 32; omega_using [this])]
     rfl
-  have ep : State.addr (ptr + (32 : BitVec 32)) = State.addr ptr + BitVec.ofNat 64 32 := addr_add (k := 32) (by have := h.fit; omega)
-  refine ⟨by rw [en]; have := h.fit; omega, ?_, ?_⟩
+  have ep : State.addr (ptr + (32 : BitVec 32)) = State.addr ptr + BitVec.ofNat 64 32 := addr_add (k := 32) (by have := h.fit; omega_using [en])
+  refine ⟨by rw [en]; have := h.fit; omega_using [this], ?_, ?_⟩
   · intro i hi
     rw [ep, Offset.add_add]
-    exact h.readable (32 + i) (by omega)
+    exact h.readable (32 + i) (by omega_using [hi])
   · rw [ep]
     exact h.separate.sub_left (Offset.sub_base _ (by decide))
 
@@ -200,10 +200,10 @@ theorem loadHeader_ok {b : BitVec 32} {s : State} (hc : Ctx b s) (d : Nat) (hd :
       t.gpr .r12 = s.mem.readW (State.addr b + BitVec.ofNat 64 d) 32 := by
   unfold loadHeader
   rw [WP.block_append_iff]
-  refine WP.mono (scratchAddr_ok hc d (by omega)) fun u ⟨ur, um, up⟩ => ?_
+  refine WP.mono (scratchAddr_ok hc d (by omega_using [hd])) fun u ⟨ur, um, up⟩ => ?_
   refine wp_ldr (a := State.addr b + BitVec.ofNat 64 d) (by decide)
-    (by rw [up]; exact (congrArg State.addr (BitVec.add_zero _)).trans (hc.ptr_addr (by omega)))
-    (by rw [ur.rd, ur.wr]; exact in_base (List.mem_append_right _ hc.wr) hd (by omega))
+    (by rw [up]; exact (congrArg State.addr (BitVec.add_zero _)).trans (hc.ptr_addr (by omega_using [hd])))
+    (by rw [ur.rd, ur.wr]; exact in_base (List.mem_append_right _ hc.wr) hd (by omega_using [hd]))
     fun t ht => WP.block_nil ⟨ur.trans (ht.rest (by decide)), ht.mem.trans um, ?_⟩
   rw [ht.gpr, um]
 

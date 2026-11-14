@@ -38,8 +38,8 @@ theorem validate_ok (s : State) {n : Nat} (hx : s.gpr .r4 = BitVec.ofNat 64 n) (
       t.gpr .r12 = BitVec.ofNat 64 (if 64 ≤ n ∧ n ≤ 1024 then 1 else 0) ∧ t.mem = s.mem := by
   unfold validate lt
   crunr [hx, List.cons_append, List.nil_append]
-  rw [lt_bit (by omega) (by decide), lt_bit (by omega) (by decide)]
-  split_ifs <;> first | rfl | (exfalso; omega)
+  rw [lt_bit (by omega_using [hn]) (by decide), lt_bit (by omega_using [hn]) (by decide)]
+  split_ifs <;> first | rfl | (exfalso; omega_arith)
 
 theorem clear_ok {s : State} (h : StateWr s) :
     WP isa (.block clear) s fun t => t.gpr .r3 = 0 ∧ t.mem = initWritten s.mem (s.gpr .r3) 0 0 0 0 := by
@@ -118,7 +118,7 @@ theorem init_ok {s : State} (h : StateWr s) : WP isa init s (initPost s) := by
       exact clear_post h kv (by decide) (by rw [hxn]; exact hv) (hm'.trans hm)
   · refine WP.ite false (by simp only [VG.PPC64LE.eval, State.read, BitVec.setWidth_eq, h12, hx,
         shr_zero hl, decide_eq_false hb]) (by simp) (fun _ => ?_)
-    exact clear_post h k (by decide) (by rw [hxn]; omega) hm
+    exact clear_post h k (by decide) (by rw [hxn]; omega_using [hb]) hm
 
 theorem init_correct (s : State) (h : initPre s) :
     ∃ tr t, Exec isa init s tr t ∧ abiPreserved s t ∧ initPost s t := by

@@ -67,7 +67,7 @@ open VG.Proof.Dsa.Random (sampleStatus)
 theorem pre_kl {s₀ : State} (h : gkContract.pre s₀) : (glOf s₀).kl = (s₀.gpr .r7).toNat := by
   obtain ⟨-, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -,
     -, hkl, -⟩ := h
-  simp only [GL.kl, glOf]; omega
+  simp only [GL.kl, glOf]; omega_using [hkl]
 
 /-- What the public data fix: the call's data, the domain, and the result's
 status and trace. -/
@@ -109,8 +109,8 @@ theorem qb_eq {s₁ s₂ : State} (h₁ : gkContract.pre s₁) (eL : glOf s₁ =
     simp only [parOf, ← eL] at this
     exact this
   have := VG.Proof.Dsa.bytesAt_slice s₁.mem (glOf s₁).par (offset := (glOf s₁).pl) (len := (glOf s₁).ql)
-    (total := (glOf s₁).kl) (by simp only [GL.kl]; omega)
-  rw [e, VG.Proof.Dsa.bytesAt_slice s₂.mem (glOf s₁).par (by simp only [GL.kl]; omega)] at this
+    (total := (glOf s₁).kl) (by simp only [GL.kl]; omega_using [])
+  rw [e, VG.Proof.Dsa.bytesAt_slice s₂.mem (glOf s₁).par (by simp only [GL.kl]; omega_using [])] at this
   exact this.symm
 
 /-- The sampler's data and q agree. -/
@@ -157,7 +157,7 @@ theorem mkOf_ge (s₀ : State) : ∀ x ∈ mkOf s₀, 5 ≤ x := by
   simp only [mkOf] at hx
   split at hx
   · simp at hx
-  · simp only [List.mem_singleton] at hx; subst hx; split <;> omega
+  · simp only [List.mem_singleton] at hx; subst hx; split <;> omega_using []
 
 /-- Equal traces: equal draws' traces, and the same success of the derivation. -/
 theorem trace_split {s₁ s₂ : State} (c₁ : chkOf s₁ = true) (c₂ : chkOf s₂ = true)
@@ -198,9 +198,9 @@ theorem check_st {s₁ s₂ w₁ w₂ : State} (h₁ : gkContract.pre s₁) (h�
   have g₁ := fun (r : Reg) (hr : r ∉ linkRegs) => State.callEntry_gpr w₁ (r := r) hr
   have g₂ := fun (r : Reg) (hr : r ∉ linkRegs) => State.callEntry_gpr w₂ (r := r) hr
   have b₁ : Spec.Rsa.bytesAt w₁.mem (glOf s₁).par (BitVec.ofNat 64 (glOf s₁).kl).toNat = parOf s₁ := by
-    rw [tn64 (by simp only [GL.kl]; omega)]; exact A₁.ctx.par
+    rw [tn64 (by simp only [GL.kl]; omega_using [q₁, p₁])]; exact A₁.ctx.par
   have b₂ : Spec.Rsa.bytesAt w₂.mem (glOf s₂).par (BitVec.ofNat 64 (glOf s₂).kl).toNat = parOf s₂ := by
-    rw [tn64 (by simp only [GL.kl]; omega)]; exact A₂.ctx.par
+    rw [tn64 (by simp only [GL.kl]; omega_using [q₂, p₂])]; exact A₂.ctx.par
   refine ⟨(A₁.ctx.sp.trans (by rw [eL])).trans A₂.ctx.sp.symm, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · show w₁.callEntry.gpr .r3 = w₂.callEntry.gpr .r3
     rw [g₁ .r3 (by decide), g₂ .r3 (by decide), A₁.r3, A₂.r3, eL]
@@ -261,7 +261,7 @@ theorem dcall_st {s₁ s₂ w₁ w₂ : State} (h₁ : gkContract.pre s₁) (h�
     by rw [p7, r7, eL], by rw [p8, r8, eL], by rw [p9, r9, eL], by rw [p10, r10, eL], by rw [a0, b0, eL], ?_⟩
   rw [dres_eq h₁ A₁, dres_eq h₂ A₂, hs]
   show (Spec.Rsa.bytesAt w₁.mem _ _).map (·.toNat) ++ _ = (Spec.Rsa.bytesAt w₂.mem _ _).map (·.toNat) ++ _
-  rw [p5, p6, r5, r6, tn64 (by simp only [GL.kl]; omega), tn64 (by simp only [GL.kl]; omega), A₁.ctx.par,
+  rw [p5, p6, r5, r6, tn64 (by simp only [GL.kl]; omega_using [q₁, p₁]), tn64 (by simp only [GL.kl]; omega_using [q₂, p₂]), A₁.ctx.par,
     A₂.ctx.par]
   show (parOf s₁).map (·.toNat) ++ _ = (parOf s₂).map (·.toNat) ++ _
   rw [ep]
@@ -286,7 +286,7 @@ theorem q_in {s₀ t : State} (h : gkContract.pre s₀) (hc : Ctx (glOf s₀) s�
   intro i hi
   rw [hc.rd, off_off]
   exact ⟨(glOf s₀).parR, List.mem_append_left _ (by rw [hrd]; exact List.mem_cons_self ..),
-    VG.Offset.contains_base _ (by omega) (by omega)⟩
+    VG.Offset.contains_base _ (by omega_using [hp, ekl, hi]) (by omega_using [hq, hp, hi])⟩
 
 theorem prepareQ_st {s₁ s₂ t₁ t₂ : State} (h₁ : gkContract.pre s₁) (h₂ : gkContract.pre s₂)
     (eL : glOf s₁ = glOf s₂) (eq : qbOf (glOf s₁) s₁.mem = qbOf (glOf s₁) s₂.mem)
@@ -302,8 +302,8 @@ theorem prepareQ_st {s₁ s₂ t₁ t₂ : State} (h₁ : gkContract.pre s₁) (
   have e12 : u₁.gpr .r12 = u₂.gpr .r12 := by rw [a12, b12, eL]
   have e6 : u₁.gpr .r6 = u₂.gpr .r6 := by rw [a6, b6, eL]
   refine SameTrace.seq (st_taint [.r12, .r6] usp ⟨e12, e6⟩ (by taint_decide))
-    (sigLen_ok a12 a6 (by omega) (by omega) fun i hi => by rw [k1.rd, k1.wr]; exact q_in h₁ c₁ i (by omega))
-    (sigLen_ok b12 b6 (by omega) (by omega) fun i hi => by rw [k2.rd, k2.wr]; exact q_in h₂ c₂ i (by omega))
+    (sigLen_ok a12 a6 (by omega_using [hq₁]) (by omega_using [hq₁]) fun i hi => by rw [k1.rd, k1.wr]; exact q_in h₁ c₁ i (by omega_using [hi]))
+    (sigLen_ok b12 b6 (by omega_using [hq₂]) (by omega_using [hq₂]) fun i hi => by rw [k2.rd, k2.wr]; exact q_in h₂ c₂ i (by omega_using [hi]))
     fun v₁ v₂ ⟨⟨x16, n1⟩, kv1⟩ ⟨⟨y16, n2⟩, kv2⟩ => ?_
   rw [m1, c₁.qb (glOf_ok h₁)] at x16
   rw [m2, c₂.qb (glOf_ok h₂), ← eL, ← eq] at y16
@@ -352,9 +352,9 @@ theorem derive_st {s₁ s₂ t₁ t₂ : State} (h₁ : gkContract.pre s₁) (h�
   refine SameTrace.seq (st_taint [] tsp trivial (by taint_decide)) W W fun u₁ u₂ ⟨⟨m1, a3⟩, k1⟩ ⟨⟨m2, b3⟩, k2⟩ => ?_
   have usp : u₁.sp = u₂.sp := by rw [k1.sp, k2.sp, tsp]
   have ev₁ : isa.eval (.zero .d .r3) u₁ = some (decide (sampleStatus (drawOf s₁) = 1)) := by
-    rw [VG.PPC64LE.eval_zero, a3, a31, RS.sub1_beq _ (by omega)]
+    rw [VG.PPC64LE.eval_zero, a3, a31, RS.sub1_beq _ (by omega_using [hs₁])]
   have ev₂ : isa.eval (.zero .d .r3) u₂ = some (decide (sampleStatus (drawOf s₂) = 1)) := by
-    rw [VG.PPC64LE.eval_zero, b3, b31, RS.sub1_beq _ (by omega)]
+    rw [VG.PPC64LE.eval_zero, b3, b31, RS.sub1_beq _ (by omega_using [hs₂])]
   refine SameTrace.ite (by rw [ev₁, ev₂, est]) (fun hc => ?_) (fun _ => by exact st_taint [] usp trivial (by taint_decide))
   rw [ev₁, Option.some.injEq, decide_eq_true_eq] at hc
   obtain ⟨x₁, hx₁⟩ := Option.isSome_iff_exists.mp (RS.sampleStatus_some.mp hc)
@@ -395,14 +395,14 @@ theorem after_sample {s₀ t₃ t₄ : State} {S : Spec.Dsa.Random.Sample} (h : 
   have hql' : (eOf s₀).ql ≤ 32 := hE.ql
   have hF := hL.fnw
   refine ⟨sc.ctx.step hL so.keep.sp so.keep.rd so.keep.wr (fun r hr => so.keep.gpr r (ctx_draw r hr))
-    (outside_frame hL (o := (eOf s₀).ql - (eOf s₀).W) (n := (eOf s₀).W) (by omega) so.out), fun j hj => ?_⟩
+    (outside_frame hL (o := (eOf s₀).ql - (eOf s₀).W) (n := (eOf s₀).W) (by omega_using [hW, hql']) so.out), fun j hj => ?_⟩
   have e : ofs (eOf s₀).F (off (glOf s₀).F (oNonce + j)) = oNonce + j :=
-    Mont.ofs_off0 _ (by simp only [oNonce, frameBytes] at hF ⊢; omega)
+    Mont.ofs_off0 _ (by simp only [oNonce, frameBytes] at hF ⊢; omega_using [hql, hj])
   have hj' : oNonce + j < (eOf s₀).o := by
     have e2 : (eOf s₀).ql = (glOf s₀).ql := rfl
-    simp only [SE.o]; omega
+    simp only [SE.o]; omega_using [hj, e2]
   rw [so.out _ (.inl (by rw [e]; exact hj'))]
-  exact nz j (by omega)
+  exact nz j (by omega_using [hql, hj])
 
 theorem valid_st {s₁ s₂ t₁ t₂ : State} (h₁ : gkContract.pre s₁) (h₂ : gkContract.pre s₂)
     (eL : glOf s₁ = glOf s₂) (ep : parOf s₁ = parOf s₂) (ck₁ : Chk s₁ t₁) (ck₂ : Chk s₂ t₂)

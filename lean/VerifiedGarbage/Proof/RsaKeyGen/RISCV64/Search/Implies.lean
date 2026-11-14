@@ -153,7 +153,7 @@ theorem satMem_held : ∀ i < Impl.RsaKeyGen.TrialTable32.packed.length,
     have h1 : (0x20000 : Addr).toNat = 131072 := rfl
     have h2 : (0x4000 : Addr).toNat = 16384 := rfl
     simp only [BitVec.toNat_sub, BitVec.toNat_add, BitVec.toNat_ofNat, h1, h2]
-    omega
+    omega_using [hi, hj]
   unfold satMem
   simp only [hn, ↓reduceIte]
 
@@ -165,7 +165,7 @@ theorem satMem_small (a : Addr) (ha : (a - 0x4000).toNat + 8 ≤ 0x4020) :
     have h2 : (0x4000 : Addr).toNat = 16384 := rfl
     have := a.isLt
     simp only [BitVec.toNat_sub, BitVec.toNat_add, BitVec.toNat_ofNat, h2] at ha ⊢
-    omega
+    omega_using [hj, ha]
   unfold satMem
   simp only [hn, ↓reduceIte]
 
@@ -184,7 +184,7 @@ def satState : State where
 theorem sat_arg (i : Nat) (hi : i < 4) :
     stackArg satState i = satSmall.readW (0x8000 + BitVec.ofNat 64 (8 * i)) 64 := by
   refine satMem_small _ ?_
-  have : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 := by omega
+  have : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 := by omega_using [hi]
   rcases this with rfl | rfl | rfl | rfl <;> decide
 
 theorem sat_arg0 : stackArg satState 0 = 0 := (sat_arg 0 (by decide)).trans (by decide)

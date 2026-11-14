@@ -46,5 +46,5 @@ theorem earlier_table_apart {j d : Nat} (hj : 1 ≤ j) (hjd : j < d) :
   intro x hx w hw
   obtain ⟨y,hy,rfl⟩ := List.mem_map.mp hw
   simp only [coordinates,tablePt,tableAt,List.mem_cons,List.not_mem_nil,or_false] at hx hy
-  rcases hx with rfl | rfl | rfl <;> rcases hy with rfl | rfl | rfl <;> exact Or.inl (by omega)
+  rcases hx with rfl | rfl | rfl <;> rcases hy with rfl | rfl | rfl <;> exact Or.inl (by omega_arith)
 end VG.Proof.Ecdsa.Verify.AArch64.P192.Joint

@@ -61,13 +61,13 @@ theorem round64 {y : Nat} (hy : y < 2 ^ 64) :
   · by_cases h₂ : i - 6 < 58
     · simp [h₁, h₂, Nat.add_sub_cancel' h₁]
     · have : y.testBit i = false := Nat.testBit_lt_two_pow
-        (Nat.lt_of_lt_of_le hy (Nat.pow_le_pow_right (by decide) (by omega)))
+        (Nat.lt_of_lt_of_le hy (Nat.pow_le_pow_right (by decide) (by omega_using [h₂])))
       simp [h₁, h₂, Nat.add_sub_cancel' h₁, this]
   · simp [h₁]
 
 /-- The table arrays' bytes. -/
 theorem arr_tab : arr l (aT0 + 16) = arr l aT0 + 16 * (8 * (l.W + 2)) := by
-  simp only [arr, aT0]; omega
+  simp only [arr, aT0]; omega_using []
 
 /-- The area lies in the table arrays: from array `aT0`'s offset at most 63
 bytes on, `size l` bytes before array `aT0 + 16`'s. -/
@@ -105,7 +105,7 @@ theorem frm_area {H B : Addr} {d : Nat} {rs : List (Nat × Nat)} {m m' : Mem} (h
     Frm H [(arr l aT0, 16 * (8 * (l.W + 2)))] m m' := by
   subst hB
   have ha := arr_tab (l := l)
-  have : 0 < size l := by unfold size; omega
+  have : 0 < size l := by unfold size; omega_using []
   refine (VG.Proof.Bignum.Frm.rebase h (by omega_arith) fun r hr' => by
     have := hr r hr'; omega_arith).widen fun r hr' => ?_
   obtain ⟨r₀, hr₀, rfl⟩ := List.mem_map.mp hr'
@@ -196,10 +196,10 @@ theorem ldA_ok (hl : MrOk l) {s : State} {H B : Addr} {d n j o : Nat} (hB : s.gp
   have hF : ∀ q < l.L, l.off q + 8 ≤ l.NB := fun q hq => VG.Proof.Bignum.X86_64.Ifma.off_ltN hl.amm hq
   have hJ : (arr l j + 8 * (l.W + 2) ≤ arr l aT0 ∨ arr l (aT0 + 16) ≤ arr l j) ∧
       arr l j + 8 * (l.W + 2) ≤ arr l 27 ∧ arr l j < 2 ^ 31 := by
-    rcases hj with rfl | rfl | rfl <;> simp only [arr, aT0, aN, aXm, aR1, VG.Impl.Bignum.hdrBytes] <;> omega
-  have h27 : arr l (aT0 + 16) ≤ arr l 27 := by simp only [arr, aT0]; omega
+    rcases hj with rfl | rfl | rfl <;> simp only [arr, aT0, aN, aXm, aR1, VG.Impl.Bignum.hdrBytes] <;> omega_arith
+  have h27 : arr l (aT0 + 16) ≤ arr l 27 := by simp only [arr, aT0]; omega_using []
   have hsB : Scr s B (size l) := by
-    rw [hBd]; exact hs.sub (by omega_arith) (by unfold size; omega)
+    rw [hBd]; exact hs.sub (by omega_arith) (by unfold size; omega_using [])
   have fa : ∀ m m' : Mem, Outside B o l.NB m m' → Frm H [(arr l aT0, 16 * (8 * (l.W + 2)))] m m' :=
     fun m m' f => frm_area (Frm.of_outside f (List.mem_singleton_self _)) hBd hd hd' (by omega_arith)
       (one_r (p := fun r => r.1 + r.2 ≤ size l) ho)
@@ -236,13 +236,13 @@ theorem block_ok (hl : MrOk l) {s : State} {H B : Addr} {d n c : Nat}
   have e1₁ := e1 1 (by decide)
   have ha := arr_tab (l := l)
   have hW := VG.Proof.Bignum.X86_64.Ifma.conv_boundsN hl.amm
-  have h27 : arr l (aT0 + 16) ≤ arr l 27 := by simp only [arr, aT0]; omega
+  have h27 : arr l (aT0 + 16) ≤ arr l 27 := by simp only [arr, aT0]; omega_using []
   have hn : H.toNat + 8 * n ≤ 2 ^ 64 := hs.nowrap
   have hF : ∀ q < l.L, l.off q + 8 ≤ l.NB := fun q hq => VG.Proof.Bignum.X86_64.Ifma.off_ltN hl.amm hq
   have hsB : Scr s B (size l) := by
-    rw [hBd]; exact hs.sub (by omega_arith) (by unfold size; omega)
-  have hT0 : arr l aT0 < 2 ^ 31 := by simp only [arr, aT0, VG.Impl.Bignum.hdrBytes]; omega
-  have hMv : 8 * sMinv + 8 ≤ arr l aT0 := by simp only [arr, aT0, sMinv, VG.Impl.Bignum.hdrBytes]; omega
+    rw [hBd]; exact hs.sub (by omega_arith) (by unfold size; omega_using [])
+  have hT0 : arr l aT0 < 2 ^ 31 := by simp only [arr, aT0, VG.Impl.Bignum.hdrBytes]; omega_using [hW]
+  have hMv : 8 * sMinv + 8 ≤ arr l aT0 := by simp only [arr, aT0, sMinv, VG.Impl.Bignum.hdrBytes]; omega_using []
   have fa : ∀ {m m' : Mem} {o k : Nat}, Outside B o k m m' → o + k ≤ size l →
       Frm H [(arr l aT0, 16 * (8 * (l.W + 2)))] m m' :=
     fun f ho => frm_area (Frm.of_outside f (List.mem_singleton_self _)) hBd hd hd' (by omega_arith)
@@ -344,14 +344,14 @@ theorem block_ok (hl : MrOk l) {s : State} {H B : Addr} {d n c : Nat}
   refine WP.mono (ldA_ok hl hb₆ hdi₆ r12₆ hBd hd hd' ((hs₃.congr k₅.2.2).congr k₆.2.2) hsz (.inr (.inr rfl))
     (by omega_arith)) fun t₇ ⟨v₇, o₇, F₇, k₇, x₇⟩ => ?_
   have hA : arr l aXm + 8 * l.W ≤ arr l 27 ∧ arr l aR1 + 8 * l.W ≤ arr l 27 := by
-    simp only [arr, aXm, aR1]; omega
+    simp only [arr, aXm, aR1]; omega_using []
   have hXm : wv M₄ H (arr l aXm) l.W = wv s.mem H (arr l aXm) l.W :=
-    wv_tab F₄ (.inl (by simp only [arr, aXm, aT0]; omega)) (by omega_arith)
+    wv_tab F₄ (.inl (by simp only [arr, aXm, aT0]; omega_using [])) (by omega_arith)
   have hR₅ : wv t₅.mem H (arr l aR1) l.W = wv s.mem H (arr l aR1) l.W :=
-    (wv_tab F₅ (.inr (by simp only [arr, aR1, aT0]; omega)) (by omega_arith)).trans
-      (wv_tab F₄ (.inr (by simp only [arr, aR1, aT0]; omega)) (by omega_arith))
+    (wv_tab F₅ (.inr (by simp only [arr, aR1, aT0]; omega_using [])) (by omega_arith)).trans
+      (wv_tab F₄ (.inr (by simp only [arr, aR1, aT0]; omega_using [])) (by omega_arith))
   have hR₆ : wv t₆.mem H (arr l aR1) l.W = wv s.mem H (arr l aR1) l.W :=
-    (wv_tab F₆ (.inr (by simp only [arr, aR1, aT0]; omega)) (by omega_arith)).trans hR₅
+    (wv_tab F₆ (.inr (by simp only [arr, aR1, aT0]; omega_using [])) (by omega_arith)).trans hR₅
   rw [hXm] at v₅
   rw [hR₅] at v₆
   rw [hR₆] at v₇
@@ -453,15 +453,15 @@ theorem setup_ok (hl : MrOk l) {s : State} {H : Addr} {n c bR : Nat}
   have e1₀ := e1 0 (by decide)
   have e1₁ := e1 1 (by decide)
   have hN31 : l.NB + 32 < 2 ^ 31 := by omega_arith
-  have h27 : arr l (aT0 + 16) ≤ arr l 27 := by simp only [arr, aT0]; omega
+  have h27 : arr l (aT0 + 16) ≤ arr l 27 := by simp only [arr, aT0]; omega_using []
   have hs : Scr s H (8 * n) := Scr.of_mem hwr hn
   have hn' : H.toNat + arr l (aT0 + 16) ≤ 2 ^ 64 := by omega_arith
   obtain ⟨hd, hd', hBd⟩ := areaBase_ofs hl hn'
   generalize ofs H (areaBase l H) = d at hd hd' hBd
   generalize hB : areaBase l H = B at hBd ⊢
   have hsB : Scr s B (size l) := by
-    rw [hBd]; exact hs.sub (by omega_arith) (by unfold size; omega)
-  have hc0 : 0 < c := by omega
+    rw [hBd]; exact hs.sub (by omega_arith) (by unfold size; omega_using [])
+  have hc0 : 0 < c := by omega_using [h3]
   have hR : 2 ^ (64 * l.W) % c < c := Nat.mod_lt _ hc0
   have fa : ∀ {m m' : Mem} {rs : List (Nat × Nat)}, Frm B rs m m' → (∀ r ∈ rs, r.1 + r.2 ≤ size l) →
       Frm H [(arr l aT0, 16 * (8 * (l.W + 2)))] m m' := fun f hr => frm_area f hBd hd hd' hn' hr

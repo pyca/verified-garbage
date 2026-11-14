@@ -32,10 +32,10 @@ theorem schedule_getElem! (M : Block) {t i : Nat} (hi : i < t) :
     | zero => simp
     | succ i =>
       simp only [getElem!_pos (W M t :: schedule M t) (i + 1) (by
-          simp only [List.length_cons, schedule_length]; omega),
+          simp only [List.length_cons, schedule_length]; omega_using [hi]),
         List.getElem_cons_succ]
-      rw [← getElem!_pos, ih (by omega)]
-      congr 1; omega
+      rw [← getElem!_pos, ih (by omega_using [hi])]
+      congr 1; omega_using []
 
 theorem W_lt (M : Block) {t : Nat} (h : t < 16) : W M t = M ⟨t, h⟩ := by
   simp [W, schedule, h]
@@ -43,11 +43,11 @@ theorem W_lt (M : Block) {t : Nat} (h : t < 16) : W M t = M ⟨t, h⟩ := by
 theorem W_ge (M : Block) {t : Nat} (h : 16 ≤ t) :
     W M t = (W M (t - 3) ^^^ W M (t - 8) ^^^ W M (t - 14) ^^^ W M (t - 16)).rotateLeft 1 := by
   show (schedule M (t + 1)).headD 0 = _
-  simp only [schedule, show ¬ t < 16 by omega, dite_false, List.headD_cons]
-  rw [schedule_getElem! M (by omega), schedule_getElem! M (by omega),
-    schedule_getElem! M (by omega), schedule_getElem! M (by omega),
-    show t - 1 - 2 = t - 3 by omega, show t - 1 - 7 = t - 8 by omega,
-    show t - 1 - 13 = t - 14 by omega, show t - 1 - 15 = t - 16 by omega]
+  simp only [schedule, show ¬ t < 16 by omega_using [h], dite_false, List.headD_cons]
+  rw [schedule_getElem! M (by omega_using [h]), schedule_getElem! M (by omega_using [h]),
+    schedule_getElem! M (by omega_using [h]), schedule_getElem! M (by omega_using [h]),
+    show t - 1 - 2 = t - 3 by omega_using [], show t - 1 - 7 = t - 8 by omega_using [],
+    show t - 1 - 13 = t - 14 by omega_using [], show t - 1 - 15 = t - 16 by omega_using []]
 
 /-! ## Rounds -/
 
@@ -71,7 +71,7 @@ theorem rotateLeft_eq (x : Word) {n : Nat} (h : n < 32) :
     x.rotateLeft n = x.rotateRight (32 - n) := by
   ext i hi
   simp only [BitVec.getElem_rotateLeft, BitVec.getElem_rotateRight]
-  (repeat' split) <;> first | omega | (congr 1; omega)
+  (repeat' split) <;> first | omega | (congr 1; omega_arith)
 
 theorem ch_eq (x y z : Word) : ch x y z = (y ^^^ z) &&& x ^^^ z := by
   ext i; simp only [ch, BitVec.getElem_xor, BitVec.getElem_and, BitVec.getElem_not]

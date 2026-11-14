@@ -339,22 +339,22 @@ theorem ctr_whole_to {m m' : Mem} {cb ks sp tp : Addr} {ciph : Block → Block} 
     (hc : blockAt m' cb = Nat.repeat Spec.Gcm.inc32 nb (blockAt m cb)) :
     bytesAt m' tp (16 * nb) = xorKs ciph icb n (bytesAt m sp (16 * nb)) ∧ Ctr m' cb ks ciph icb (n + 16 * nb) := by
   open VG.Proof.Gcm in
-  have hcb : blockAt m cb = Nat.repeat Spec.Gcm.inc32 (n / 16) icb := by rw [h.1]; congr 1; omega
-  refine ⟨?_, ?_, fun h1 => absurd (by omega) h1⟩
+  have hcb : blockAt m cb = Nat.repeat Spec.Gcm.inc32 (n / 16) icb := by rw [h.1]; congr 1; omega_using [h0]
+  refine ⟨?_, ?_, fun h1 => absurd (by omega_using [h0]) h1⟩
   · refine Proof.Gcm.list_ext (by simp [Proof.Gcm.length_xorKs, Cmac.bytesAt_length]) fun k hk => ?_
     simp only [Cmac.bytesAt_length] at hk
     rw [Proof.Gcm.getD_xorKs _ _ _ _ (by rw [Cmac.bytesAt_length]; exact hk), Proof.Gcm.getD_bytesAt' _ _ hk,
       Proof.Gcm.getD_bytesAt' _ _ hk]
-    have hq : k / 16 < nb := by omega
+    have hq : k / 16 < nb := by omega_using [hk]
     have e₁ := congrArg (fun L => L.getD (k / 16) 0) hd
     rw [Proof.Gcm.ctr32_getD _ _ _ (by rw [Proof.Gcm.length_blocksAt]; exact hq), Proof.Gcm.blocksAt_getD _ _ _ hq,
       Proof.Gcm.blocksAt_getD _ _ _ hq] at e₁
     have ea : ∀ p : Addr, p + BitVec.ofNat 64 k = p + BitVec.ofNat 64 (16 * (k / 16)) + BitVec.ofNat 64 (k % 16) :=
-      fun p => by rw [BitVec.add_assoc, ← BitVec.ofNat_add]; congr 2; omega
-    rw [ea tp, ea sp, Proof.Gcm.bytes_toBytes_blockAt m' _ (by omega), Proof.Gcm.bytes_toBytes_blockAt m _ (by omega),
-      e₁, Proof.Aes.toBytes_xor _ _ (by omega), Proof.Gcm.ksByte, hcb, ← Proof.Gcm.repeat_add,
-      show (n + k) / 16 = k / 16 + n / 16 by omega, show (n + k) % 16 = k % 16 by omega]
-  · rw [hc, hcb, ← Proof.Gcm.repeat_add]; congr 1; omega
+      fun p => by rw [BitVec.add_assoc, ← BitVec.ofNat_add]; congr 2; omega_using []
+    rw [ea tp, ea sp, Proof.Gcm.bytes_toBytes_blockAt m' _ (by omega_using []), Proof.Gcm.bytes_toBytes_blockAt m _ (by omega_using []),
+      e₁, Proof.Aes.toBytes_xor _ _ (by omega_using []), Proof.Gcm.ksByte, hcb, ← Proof.Gcm.repeat_add,
+      show (n + k) / 16 = k / 16 + n / 16 by omega_using [h0], show (n + k) % 16 = k % 16 by omega_using [h0]]
+  · rw [hc, hcb, ← Proof.Gcm.repeat_add]; congr 1; omega_using [h0]
 
 /-- Out of place, the whole blocks with `vg_aes_ctr32_to`, and the
 destination advanced past them. -/

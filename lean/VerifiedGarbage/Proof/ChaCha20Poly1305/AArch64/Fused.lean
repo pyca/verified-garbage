@@ -90,7 +90,7 @@ theorem tail_ok {s₀ : State} (hp : APre e s₀) {s : State} {Q : Addr} {t : Na
       have hz := eval_nonzero_ofNat s' .x10 (by lit_omega) h'.x10
       by_cases hl : i + 1 = t
       · exact .inl ⟨by rw [hz]; simp [hl], hl ▸ h'⟩
-      · exact .inr ⟨by rw [hz]; simp; omega, t - (i + 1), by omega, i + 1, rfl, by omega, h'⟩
+      · exact .inr ⟨by rw [hz]; simp; omega_using [hi, hl], t - (i + 1), by omega_using [hi], i + 1, rfl, by omega_using [hi, hl], h'⟩
     exact WP.loop (M := isa) Inv hstep t s₂ ⟨0, by simp, ht0, ⟨by rw [g₂ _ (by decide) (by decide), hx1]; simp,
       by rw [x9₂], by rw [g₂ _ (by decide) (by decide), hx10]; rfl, fun _ _ => rfl, rfl, rfl, rfl,
       Frame.refl _ _, fun j hj => by simp [z₂ j hj]⟩⟩
@@ -188,7 +188,7 @@ theorem seg_ok {s₀ : State} (hp : APre e s₀) {p n : Reg} (hr : MacRegs p n) 
     · have h0 : len / 16 ≠ 0 := by simpa using h
       refine WP.mono (WP.keepRegs [Reg.x7, .x8, .x17, .x21, .x22, .x23, .x24, .x25]
         (loop_hinv s₁ (hinv_keep hI acc₁) x1₁ x2₁ (Nat.pos_of_ne_zero h0) (by lit_omega)
-          (fun d hd => by rw [rd₁, wr₁]; exact hin d 8 (by omega))) loop_keeps (by decide))
+          (fun d hd => by rw [rd₁, wr₁]; exact hin d 8 (by omega_using [hd]))) loop_keeps (by decide))
         fun s₂ ⟨⟨hI₂, x1₂, k₂⟩, kr₂, rd₂, wr₂, _⟩ => ?_
       have n₂ : s₂.gpr n = s.gpr n := by
         rw [kr₂ n (by rcases hr.2 with rfl | rfl <;> decide), g₁ n hnn.2.1 hnn.2.2.1]
@@ -206,13 +206,13 @@ theorem seg_ok {s₀ : State} (hp : APre e s₀) {p n : Reg} (hr : MacRegs p n) 
   · have h0 : len % 16 = 0 := by simpa using h
     refine WP.block_nil ⟨?_, by rw [m₃, m₂]; exact Frame.refl _ _⟩
     rw [show pad16 (bytesAt s.mem P len) = [] by simp [VG.Spec.ChaCha20Poly1305.pad16, hlen, h0],
-      List.append_nil, ← show 16 * (len / 16) = len by omega]
+      List.append_nil, ← show 16 * (len / 16) = len by omega_using [h0]]
     exact hI₃
   · have h0 : len % 16 ≠ 0 := by simpa using h
     have hsrc : ∀ j < len % 16, InRegions (s₃.rd ++ s₃.wr)
         (P + BitVec.ofNat 64 (16 * (len / 16)) + BitVec.ofNat 64 j) 1 := fun j hj => by
       rw [add_ofNat, rd₃, wr₃, rd₂, wr₂]
-      exact hin _ 1 (by omega)
+      exact hin _ 1 (by omega_using [hj])
     have hdj : ∀ j < len % 16, (⟨P + BitVec.ofNat 64 (16 * (len / 16)) + BitVec.ofNat 64 j, 1⟩ :
         Region).Disjoint (sub s₀ 16 16) := fun j hj => by
       rw [add_ofNat]

@@ -33,7 +33,7 @@ theorem BlockAt.keep {rs : List Reg} {s s' : State} {A : Addr} (h : BlockAt s A)
 
 theorem BlockAt.off {s : State} {A : Addr} (h : BlockAt s A) {k : Nat} (hk : k < 8) :
     State.addr (s.gpr .r1 + BitVec.ofNat 32 k) = A + BitVec.ofNat 64 k := by
-  rw [addr_add (by have := h.fit; omega), h.addr]
+  rw [addr_add (by have := h.fit; omega_using [hk, this]), h.addr]
 
 /-- The bytes of the block at `A` can be read. -/
 def BlockRead (s : State) (A : Addr) : Prop :=
@@ -50,11 +50,11 @@ theorem loadWord_run {r : Reg} (hr : r ≠ .r8) (hr₁ : r ≠ .r1) (k : Nat) (h
     ∃ s', runBlock isa (loadWord r k) s = some s' ∧
       s'.gpr r = (s.mem (A + BitVec.ofNat 64 (2 * k)) ++ s.mem (A + BitVec.ofNat 64 (2 * k + 1))).setWidth 32 ∧
       Keep [.r8, r] s s' := by
-  have h0 := hb (2 * k) (by omega)
-  have h1 := hb (2 * k + 1) (by omega)
+  have h0 := hb (2 * k) (by omega_using [hk])
+  have h1 := hb (2 * k + 1) (by omega_using [hk])
   simp only [loadWord, runBlock_cons, runStep_some, runBlock_nil, isa, exec, State.load8, Op2.eval,
-    show 2 * k < 4096 by omega, show 2 * k + 1 < 4096 by omega, ↓reduceIte,
-    ha.off (k := 2 * k) (by omega), ha.off (k := 2 * k + 1) (by omega), h0, h1,
+    show 2 * k < 4096 by omega_using [hk], show 2 * k + 1 < 4096 by omega_using [hk], ↓reduceIte,
+    ha.off (k := 2 * k) (by omega_using [hk]), ha.off (k := 2 * k + 1) (by omega_using [hk]), h0, h1,
     Option.map_some, RegUpd.gpr_setReg, hr, hr₁.symm, Nat.reduceLeDiff, and_self,
     RegUpd.mem_setReg, RegUpd.rd_setReg, RegUpd.wr_setReg, Option.some.injEq, exists_eq_left']
   refine ⟨bytes16_32 _ _, ?_⟩
@@ -86,10 +86,10 @@ theorem load_run (s : State) {A : Addr} (ha : BlockAt s A) (hb : BlockRead s A) 
 /-! ## The rounds -/
 
 theorem regB_succ (n : Nat) : regB (n + 1) = regC n := by
-  unfold regB regC; by_cases h : n % 2 = 0 <;> simp [h, show (n + 1) % 2 = 0 ↔ ¬ n % 2 = 0 by omega]
+  unfold regB regC; by_cases h : n % 2 = 0 <;> simp [h, show (n + 1) % 2 = 0 ↔ ¬ n % 2 = 0 by omega_using []]
 
 theorem regC_succ (n : Nat) : regC (n + 1) = regB n := by
-  unfold regB regC; by_cases h : n % 2 = 0 <;> simp [h, show (n + 1) % 2 = 0 ↔ ¬ n % 2 = 0 by omega]
+  unfold regB regC; by_cases h : n % 2 = 0 <;> simp [h, show (n + 1) % 2 = 0 ↔ ¬ n % 2 = 0 by omega_using []]
 
 theorem regBC_ok (n : Nat) : (regB n == .r5 && regC n == .r6 || regB n == .r6 && regC n == .r5) = true := by
   unfold regB regC; by_cases h : n % 2 = 0 <;> simp [h]
@@ -100,8 +100,8 @@ theorem rounds_run (z : Spec.Idea.Schedule) (x : Spec.Idea.State) :
         Holds (roundsSpec z n x) (regB n) (regC n) s' ∧ Keep roundWrites s s'
   | 0, _, s, hx, _, _ => ⟨s, by simp [runBlock_nil], hx, Keep.refl _ _⟩
   | n + 1, hn, s, hx, hk, hm => by
-    obtain ⟨s₁, h₁, x₁, e₁⟩ := rounds_run z x n (by omega) s hx hk hm
-    obtain ⟨s₂, h₂, x₂, e₂⟩ := round_run n (by omega) (regB n) (regC n) (regBC_ok n) z _ s₁ x₁
+    obtain ⟨s₁, h₁, x₁, e₁⟩ := rounds_run z x n (by omega_using [hn]) s hx hk hm
+    obtain ⟨s₂, h₂, x₂, e₂⟩ := round_run n (by omega_using [hn]) (regB n) (regC n) (regBC_ok n) z _ s₁ x₁
       (hk.keep e₁ (by decide)) ((e₁.reg .r12 (by decide)).trans hm)
     refine ⟨s₂, ?_, ?_, e₁.trans e₂⟩
     · rw [List.range_succ, List.flatMap_append, List.flatMap_singleton]
@@ -164,18 +164,18 @@ theorem storeWord_run (r : Reg) (k : Nat) (hk : k < 4) (s : State) {A : Addr}
       s'.mem = (s.mem.writeW (A + BitVec.ofNat 64 (2 * k + 1)) ((s.gpr r).setWidth 8)).writeW
         (A + BitVec.ofNat 64 (2 * k)) ((s.gpr r >>> 8).setWidth 8) ∧
       (∀ q, q ≠ .r8 → s'.gpr q = s.gpr q) ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp := by
-  have h0 := hw (2 * k) (by omega)
-  have h1 := hw (2 * k + 1) (by omega)
+  have h0 := hw (2 * k) (by omega_using [hk])
+  have h1 := hw (2 * k + 1) (by omega_using [hk])
   simp only [storeWord, runBlock_cons, runStep_some, runBlock_nil, isa, exec, State.store8, Op2.eval,
-    show 2 * k < 4096 by omega, show 2 * k + 1 < 4096 by omega, ↓reduceIte, h0, h1,
+    show 2 * k < 4096 by omega_using [hk], show 2 * k + 1 < 4096 by omega_using [hk], ↓reduceIte, h0, h1,
     Option.map_some, RegUpd.gpr_setReg, RegUpd.wr_setReg, RegUpd.mem_setReg, Nat.reduceLeDiff, and_self,
-    reduceCtorEq, ha.off (k := 2 * k) (by omega), ha.off (k := 2 * k + 1) (by omega),
+    reduceCtorEq, ha.off (k := 2 * k) (by omega_using [hk]), ha.off (k := 2 * k + 1) (by omega_using [hk]),
     Option.some.injEq, exists_eq_left']
   exact ⟨trivial, fun q hq => ite_eq_right hq, rfl, trivial, rfl⟩
 
 theorem frame_write8 {a : Addr} {m m' : Mem} {j : Nat} (v : BitVec 8) (hj : j < 8)
     (h : Frame [⟨a, 8⟩] m m') : Frame [⟨a, 8⟩] m (m'.writeW (a + BitVec.ofNat 64 j) v) :=
-  h.writeW (List.mem_singleton_self _) v (Offset.contains_base a (by omega) (by omega))
+  h.writeW (List.mem_singleton_self _) v (Offset.contains_base a (by omega_using [hj]) (by omega_using [hj]))
 
 /-- What a store keeps. -/
 structure StoreKeep (s s' : State) : Prop where
@@ -221,7 +221,7 @@ theorem store_run (y : Spec.Idea.State) (s : State) {A : Addr} (ha : BlockAt s A
     intro i hi
     simp only [Spec.Idea.blockAt, Vector.getElem_ofFn, m₄, encodeBlock_get _ hi]
     obtain rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨
-        i = 5 ∨ i = 6 ∨ i = 7 := by omega
+        i = 5 ∨ i = 6 ∨ i = 7 := by omega_using [hi]
     all_goals simp (disch := decide) only [write8_apply, Nat.reduceMul, Nat.reduceAdd, Nat.reduceDiv,
       Nat.reduceMod, Nat.reduceSub, Nat.reduceEqDiff, ↓reduceIte, lo8_32, hi8_32, BitVec.ushiftRight_zero]
   · rw [m₄]

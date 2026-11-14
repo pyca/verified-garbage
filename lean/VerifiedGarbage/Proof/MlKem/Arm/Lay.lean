@@ -81,7 +81,7 @@ theorem disj (hL : L.Ok) {i o l j o' l' : Nat} (h : sepB L.sizes (i, o, l) (j, o
       · exact absurd rfl hs
       · exact .inl hs
       · exact .inr hs
-    exact region_disj_off hs' hla hlb (addr_fit _ (by omega))
+    exact region_disj_off hs' hla hlb (addr_fit _ (by omega_using [hf]))
   · exact ((hL.disj _ ha _ hb e).sub_left (R_sub hla)).sub_right (R_sub hlb)
 
 theorem disjAll (hL : L.Ok) {i o l : Nat} {W : List (Nat × Nat × Nat)} (h : sepAll L.sizes (i, o, l) W = true) :
@@ -93,7 +93,7 @@ theorem disjAll (hL : L.Ok) {i o l : Nat} {W : List (Nat × Nat × Nat)} (h : se
 /-- The address of a pointer into a buffer. -/
 theorem addr_off (hL : L.Ok) {i o : Nat} (hi : i < L.sizes.length) (ho : o < L.size i) :
     State.addr (L.ptr i + BitVec.ofNat 32 o) = State.addr (L.ptr i) + BitVec.ofNat 64 o :=
-  addr_add (by have := hL.fit i hi; omega)
+  addr_add (by have := hL.fit i hi; omega_using [ho, this])
 
 theorem regA_off (hL : L.Ok) {i o l : Nat} (hi : i < L.sizes.length) (ho : o < L.size i) :
     regA (L.ptr i + BitVec.ofNat 32 o) l = L.R i o l := by
@@ -105,9 +105,9 @@ theorem regA_zero (i l : Nat) : regA (L.ptr i) l = L.R i 0 l := by
 theorem fit_off (hL : L.Ok) {i o l : Nat} (hi : i < L.sizes.length) (h : o + l ≤ L.size i) (hl : 0 < l) :
     (L.ptr i + BitVec.ofNat 32 o).toNat + l ≤ 2 ^ 32 := by
   have := hL.fit i hi
-  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := o) (by omega),
-    Nat.mod_eq_of_lt (by omega)]
-  omega
+  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := o) (by omega_using [h, hl, this]),
+    Nat.mod_eq_of_lt (by omega_using [h, hl, this])]
+  omega_using [h, this]
 
 /-- A part of a buffer the state may access. -/
 theorem covers {i o l : Nat} {ws : List Region} (hin : ⟨State.addr (L.ptr i), L.size i⟩ ∈ ws)
@@ -207,17 +207,17 @@ theorem Ctx.cs {L : Lay} {s : State} (h : Ctx L s) {o l : Nat} (hl : o + l ≤ 3
 
 theorem Ctx.addr {L : Lay} {s : State} (h : Ctx L s) {o : Nat} (ho : o < 32768) :
     State.addr (L.ptr 0 + BitVec.ofNat 32 o) = State.addr (L.ptr 0) + BitVec.ofNat 64 o :=
-  Lay.addr_off h.ok (by have := h.len; omega) (Nat.lt_of_lt_of_le ho h.sz0)
+  Lay.addr_off h.ok (by have := h.len; omega_using [this]) (Nat.lt_of_lt_of_le ho h.sz0)
 
 theorem Ctx.regAo {L : Lay} {s : State} (h : Ctx L s) {o : Nat} (ho : o < 32768) (l : Nat) :
     regA (L.ptr 0 + BitVec.ofNat 32 o) l = L.R 0 o l :=
-  Lay.regA_off h.ok (by have := h.len; omega) (Nat.lt_of_lt_of_le ho h.sz0)
+  Lay.regA_off h.ok (by have := h.len; omega_using [this]) (Nat.lt_of_lt_of_le ho h.sz0)
 
 theorem Ctx.fit {L : Lay} {s : State} (h : Ctx L s) : (L.ptr 0).toNat + 32768 ≤ 2 ^ 32 := by
-  have := h.ok.fit 0 (by have := h.len; omega); have := h.sz0; omega
+  have := h.ok.fit 0 (by have := h.len; omega_using [this]); have := h.sz0; omega_arith
 
 theorem Ctx.fitO {L : Lay} {s : State} (h : Ctx L s) {o l : Nat} (hl : o + l ≤ 32768) (hl0 : 0 < l) :
     (L.ptr 0 + BitVec.ofNat 32 o).toNat + l ≤ 2 ^ 32 :=
-  Lay.fit_off h.ok (by have := h.len; omega) (Nat.le_trans hl h.sz0) hl0
+  Lay.fit_off h.ok (by have := h.len; omega_using [this]) (Nat.le_trans hl h.sz0) hl0
 
 end VG.Proof.MlKem.Arm

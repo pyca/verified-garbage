@@ -37,15 +37,15 @@ theorem importArgs_ok {g : Geometry} (v : g.Valid) {s : State} (C : Context g s)
   refine wp_addS rfl fun c Cc _ => wp_subS rfl fun d Dd _ => ?_
   have Kd : Keeps [.ebx, .edx] s d := (((Ka.mono (by decide)).widen Kb).widen Cc.keeps).widen Dd.keeps
   refine wp_movS (readSrc_ptr (C.ws.of_keeps Kd) (r := .edi) (x := 0) (d := 48)
-    (by rw [PtrAt, Kd.1 .edi (by decide)]; exact C.base) (by omega)) fun e E _ =>
+    (by rw [PtrAt, Kd.1 .edi (by decide)]; exact C.base) (by omega_using [head])) fun e E _ =>
     wp_addS rfl fun t T _ => WP.block_nil ?_
   have K : Keeps [.ebx, .ecx, .edx] s t := ((Kd.mono (by decide)).widen E.keeps).widen T.keeps
   have edx : (b.gpr .edx).toNat = 8 * g.w := by
-    rw [Kb.1 .edx (by decide), D, BitVec.toNat_ofNat]; omega
+    rw [Kb.1 .edx (by decide), D, BitVec.toNat_ofNat]; omega_using [bound]
   have sum : PtrAt c g.W .ebx (g.array 6 + 8 * g.w) := by
     rw [PtrAt, Cc.gpr, ptr_add P, edx]
   have ebx : PtrAt d g.W .ebx (g.array 6 + 8 * g.w - 4) := by
-    rw [PtrAt, Dd.gpr, ptr_sub sum 4 (by change 4 ≤ _; omega)]
+    rw [PtrAt, Dd.gpr, ptr_sub sum 4 (by change 4 ≤ _; omega_using [many, words])]
     rfl
   have base := C.base
   refine ⟨by rw [T.mem, E.mem, Dd.mem, Cc.mem, Mb, Ma], K, ?_, ?_, ?_⟩
@@ -57,12 +57,12 @@ theorem importArgs_ok {g : Geometry} (v : g.Valid) {s : State} (C : Context g s)
     unfold Import.Geometry.destPtr
     rw [← destination, count, Nat.mul_zero, show BitVec.ofNat 32 0 = 0#32 from rfl, BitVec.sub_zero,
       BitVec.toNat_add, BitVec.toNat_add, BitVec.toNat_ofNat, BitVec.toNat_ofNat, base]
-    omega
+    omega_using [many, words]
   · apply BitVec.eq_of_toNat_eq
     rw [T.gpr, BitVec.toNat_add, E.gpr, BitVec.toNat_ofNat, count]
     change (w32 d.mem g.W 48 + w32 d.mem g.W 48) % 2 ^ 32 = _
     rw [Dd.mem, Cc.mem, Mb, Ma, C.width]
-    omega
+    omega_using [words]
 
 theorem load_ok {g : Geometry} (v : g.Valid) {s : State} {c capacity : Nat} {p : BitVec 32}
     (S : Prepare.Data g c capacity p s) {input : Import.Geometry} (I : Import.Context input s)
@@ -86,13 +86,13 @@ theorem load_ok {g : Geometry} (v : g.Valid) {s : State} {c capacity : Nat} {p :
   rw [M] at value F
   have dstAddr : input.dst.setWidth 64 = off g.W (g.array 6) := by
     rw [← destination]
-    exact S.ready.scratch.ea (d := g.array 6) (by omega)
+    exact S.ready.scratch.ea (d := g.array 6) (by omega_using [fit, many])
   have region : input.destRegion = ⟨off g.W (g.array 6), 4 * input.count⟩ := by
     unfold Import.Geometry.destRegion
     rw [dstAddr]
   rw [region, count] at F
   rw [dstAddr, count, VG.Proof.Bignum.read_eq_val32] at value
-  have O := frame_outside F (by omega)
+  have O := frame_outside F (by omega_using [fit, nowrap])
   have Kt : Keeps [.eax, .ebx, .ecx, .edx, .esi] s t := (K.mono (by decide)).trans (T.keeps.mono (by decide))
   exact ⟨WitnessMont.data_outside v S O Kt (by decide) (by decide), value, O, Kt⟩
 
@@ -108,8 +108,8 @@ theorem drawn_ok {g : Geometry} (v : g.Valid) {s : State} {c capacity : Nat} {p 
       t.gpr .eax = cmask sampled.2 ∧ Outside g.W (g.array 6) (4 * g.words) s.mem t.mem ∧ Keeps clob s t := by
   obtain ⟨-, -, -, words⟩ := fits v
   refine WP.seq (WP.mono (load_ok v S I count source destination) fun a ⟨A, Va, Oa, Ka⟩ => ?_)
-  rw [show 4 * g.words = 8 * g.w by omega] at Va
-  refine WP.mono (sample_ok v A.ready.context A.ready.modulus.candidate Va odd (by rw [shape]; omega))
+  rw [show 4 * g.words = 8 * g.w by omega_using [words]] at Va
+  refine WP.mono (sample_ok v A.ready.context A.ready.modulus.candidate Va odd (by rw [shape]; omega_using [words]))
     fun t ⟨Vt, mask, Ot, Kt, _⟩ => ?_
   exact ⟨WitnessMont.data_outside v A Ot Kt (by unfold clob; decide) (by unfold clob; decide), Vt, mask,
     Oa.trans Ot, (Ka.mono (by unfold clob; decide)).trans Kt⟩

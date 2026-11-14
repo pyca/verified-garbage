@@ -77,10 +77,10 @@ def RAM (P : EP) (hK : 64 ≤ P.K ∧ P.K ≤ 1024) : Prf P where
   xv := clBlocks P
   vs_lt := by decide
   vs_len := by decide
-  nb1 := by omega
-  nb_le := by omega
+  nb1 := by omega_using [hK]
+  nb_le := by omega_using [hK]
   dst_lo := by decide
-  dst_hi := by simp only [sAM]; omega
+  dst_hi := by simp only [sAM]; omega_using [hK]
   dst_enc := by decide
   x_lo := by decide
   x_hi := by decide
@@ -127,7 +127,7 @@ theorem nb_val {K : Nat} (hK : K ≤ 1024) :
   rw [BitVec.ofNat_add_ofNat]
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow]
-  omega
+  omega_using [hK]
 
 theorem amInit_wp {σ s : State} (hK : 64 ≤ P.K ∧ P.K ≤ 1024) (h : CI P (RCL P) 8 σ s) :
     WP isa (.block amInit) s (B0 P (RAM P hK) 0 σ) := by
@@ -188,7 +188,7 @@ theorem flatMap_blocks_length (kd lab : List Byte) (L : Nat) :
   | n + 1 => by
     rw [List.range_succ, List.flatMap_append, List.length_append, flatMap_blocks_length kd lab L n,
       List.flatMap_singleton, prfBlock, hmac_len]
-    omega
+    omega_using []
 
 theorem bytesAt_take (m : Mem) (p : Addr) {k n : Nat} (h : k ≤ n) :
     Spec.Rsa.bytesAt m p k = (Spec.Rsa.bytesAt m p n).take k := by
@@ -203,7 +203,7 @@ theorem ir_of {σ s : State} {hK : 64 ≤ P.K ∧ P.K ≤ 1024} (h : CI P (RAM P
   refine ⟨h.base, by rw [clV_eq]; exact h.x, ?_⟩
   have hb := h.blk
   simp only [RAM] at hb
-  rw [amV, Proof.RsaPkcs1Enc.irprf_eq, ascii_message, ← hb, ← bytesAt_take _ _ (by omega)]
+  rw [amV, Proof.RsaPkcs1Enc.irprf_eq, ascii_message, ← hb, ← bytesAt_take _ _ (by omega_using [])]
 
 theorem clLoop_vp : VP (K6 P) (clLoop decFns) (CI P (RCL P) 8) :=
   (VP.stk (code := [_, _, _, _]) (by decide) (by decide) (fun _ _ _ _ h₁ h₂ => S_sp h₁.1.1 h₂.1.1)

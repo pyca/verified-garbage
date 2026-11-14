@@ -67,10 +67,10 @@ theorem AInv.zframe {s₀ : State} {c : Nat} {s s' : State} {rs : List XReg} (h 
 
 theorem AInv.keys {s₀ : State} (hp : SPre s₀) {c : Nat} {s : State} (hI : AInv s₀ c s) :
     Keys (nr s₀) (sch s₀) s :=
-  ⟨by rw [hI.rdi, sch_frame hp hI.frame], by rcases hp.rounds with h | h | h <;> omega,
+  ⟨by rw [hI.rdi, sch_frame hp hI.frame], by rcases hp.rounds with h | h | h <;> omega_using [h],
     fun j hj => by
       rw [hI.rd, hI.wr, hI.rdi]
-      exact Stitch.in_sub_int hp.k_in (by rcases hp.rounds with h | h | h <;> omega)⟩
+      exact Stitch.in_sub_int hp.k_in (by rcases hp.rounds with h | h | h <;> omega_using [hj, h])⟩
 
 /-- `AInv`, in place or out of place (`Stitch.AInvM` on four lanes). -/
 structure AInvM (ix : Bool) (s₀ : State) (c : Nat) (s : State) : Prop where
@@ -89,14 +89,14 @@ structure AInvM (ix : Bool) (s₀ : State) (c : Nat) (s : State) : Prop where
 
 theorem AInv.toM {s₀ : State} {c : Nat} {s : State} (h : AInv s₀ c s) : AInvM false s₀ c s :=
   ⟨h.le, h.ctr, h.msk, h.inc, h.rdi, h.rsi, h.r10, h.frame,
-    fun k hk => (h.blocks k (by have := h.le; omega)).trans (by simp only [hk, ite_true]),
-    fun k hk hc => (h.blocks k hk).trans (by simp only [show ¬ k < c by omega, ite_false]), h.rd, h.wr⟩
+    fun k hk => (h.blocks k (by have := h.le; omega_using [hk, this])).trans (by simp only [hk, ite_true]),
+    fun k hk hc => (h.blocks k hk).trans (by simp only [show ¬ k < c by omega_using [hc], ite_false]), h.rd, h.wr⟩
 
 theorem AInvM.toAInv {s₀ : State} {c : Nat} {s : State} (h : AInvM false s₀ c s) : AInv s₀ c s :=
   ⟨h.le, h.ctr, h.msk, h.inc, h.rdi, h.rsi, h.r10, h.frame, fun k hk => by
     by_cases hc : k < c
     · simp only [hc, ite_true]; exact h.out k hc
-    · simp only [hc, ite_false]; exact h.src k hk (by omega), h.rd, h.wr⟩
+    · simp only [hc, ite_false]; exact h.src k hk (by omega_using [hc]), h.rd, h.wr⟩
 
 theorem AInvM.zframe {ix : Bool} {s₀ : State} {c : Nat} {s s' : State} {rs : List XReg} (h : AInvM ix s₀ c s)
     (f : ZFrame rs s s') (h14 : .xmm14 ∉ rs) (h0 : .xmm0 ∉ rs) (h15 : .xmm15 ∉ rs) : AInvM ix s₀ c s' :=
@@ -109,10 +109,10 @@ theorem AInvM.zframe {ix : Bool} {s₀ : State} {c : Nat} {s s' : State} {rs : L
 
 theorem AInvM.keys {ix : Bool} {s₀ : State} (hp : Stitch.LPre ix s₀) {c : Nat} {s : State} (hI : AInvM ix s₀ c s) :
     Keys (nr s₀) (sch s₀) s :=
-  ⟨by rw [hI.rdi, Stitch.sch_frameM hp hI.frame], by rcases hp.rounds with h | h | h <;> omega,
+  ⟨by rw [hI.rdi, Stitch.sch_frameM hp hI.frame], by rcases hp.rounds with h | h | h <;> omega_using [h],
     fun j hj => by
       rw [hI.rd, hI.wr, hI.rdi]
-      exact Stitch.in_sub_int hp.k_in (by rcases hp.rounds with h | h | h <;> omega)⟩
+      exact Stitch.in_sub_int hp.k_in (by rcases hp.rounds with h | h | h <;> omega_using [hj, h])⟩
 
 /-! ## The XOR into the output -/
 
@@ -197,32 +197,32 @@ theorem xorDataZM_ok (ix ld : Bool) (t : XReg) (regs : List XReg) (j : Nat) (s :
     have h8' : t ∉ bs := fun h => h8 (List.mem_cons_of_mem _ h)
     simp only [List.length_cons] at hinS hin hsep hw
     rw [VG.Impl.Gcm.X86_64.StitchZ.xorDataZM, WP.block_append_iff]
-    have hin0 := hin 0 (by omega)
-    have hinS0 := hinS 0 (by omega)
+    have hin0 := hin 0 (by omega_using [])
+    have hinS0 := hinS 0 (by omega_using [])
     rw [Nat.add_zero] at hin0 hinS0
     refine WP.mono (xor1ZM_ok ix ld t b (64 * j) s hb8 hinS0 hin0) fun s₁ ⟨⟨v, m₁⟩, b₁, g₁, rd₁, wr₁, x₁, c₁⟩ => ?_
     have o₁ : Stitch.oA s₁ ix = Stitch.oA s ix := Stitch.oA_congr ix g₁
     have i₁ : Stitch.oA s₁ ld = Stitch.oA s ld := Stitch.oA_congr ld g₁
     refine WP.mono (ih (j + 1) s₁ (List.nodup_cons.mp hnd).2 h8'
       (fun k hk => by
-        rw [rd₁, wr₁, i₁, show j + 1 + k = j + (k + 1) by omega]; exact hinS (k + 1) (by omega))
+        rw [rd₁, wr₁, i₁, show j + 1 + k = j + (k + 1) by omega_using []]; exact hinS (k + 1) (by omega_using [hk]))
       (fun k hk => by
-        rw [wr₁, o₁, show j + 1 + k = j + (k + 1) by omega]; exact hin (k + 1) (by omega))
+        rw [wr₁, o₁, show j + 1 + k = j + (k + 1) by omega_using []]; exact hin (k + 1) (by omega_using [hk]))
       (fun a c hac hc l hl => by
-        rw [i₁, o₁, show j + 1 + a = j + (a + 1) by omega, show j + 1 + c = j + (c + 1) by omega]
-        exact hsep (a + 1) (c + 1) (by omega) (by omega) l hl)
-      (by omega)) fun s' ⟨hb, hf, g, rd, wr, hx, hc⟩ => ?_
+        rw [i₁, o₁, show j + 1 + a = j + (a + 1) by omega_using [], show j + 1 + c = j + (c + 1) by omega_using []]
+        exact hsep (a + 1) (c + 1) (by omega_using [hac]) (by omega_using [hc]) l hl)
+      (by omega_using [hw])) fun s' ⟨hb, hf, g, rd, wr, hx, hc⟩ => ?_
     rw [i₁, o₁] at hb
     rw [o₁] at hf hc
     rw [VG.Proof.Aes.X86_64.AesNi.ofInt_natCast] at m₁ b₁ c₁
     have adr : ∀ (p : Addr), ∀ l < 4, p + BitVec.ofNat 64 (16 * (4 * j + l)) =
         p + BitVec.ofNat 64 (64 * j) + BitVec.ofNat 64 (16 * l) := fun p l _ => by
-      rw [BitVec.add_assoc, ← BitVec.ofNat_add, show 64 * j + 16 * l = 16 * (4 * j + l) by omega]
+      rw [BitVec.add_assoc, ← BitVec.ofNat_add, show 64 * j + 16 * l = 16 * (4 * j + l) by omega_using []]
     have hdj : ∀ l < 4, ∀ r ∈ [(⟨Stitch.oA s ix + BitVec.ofNat 64 (64 * (j + 1)), 64 * bs.length⟩ : Region)],
         Region.Disjoint ⟨Stitch.oA s ix + BitVec.ofNat 64 (16 * (4 * j + l)), 16⟩ r := by
       intro l hl
       simp only [List.mem_singleton, forall_eq]
-      exact Offset.disjoint _ (by omega) (by omega) (by omega)
+      exact Offset.disjoint _ (by omega_using [hl]) (by omega_using [hw, hl]) (by omega_using [hw])
     refine ⟨fun k hk l hl => ?_, ?_, g.trans g₁, rd.trans rd₁, wr.trans wr₁, fun r hr hr' l hl => ?_,
       fun k hk l hl => ?_⟩
     · cases k with
@@ -232,19 +232,19 @@ theorem xorDataZM_ok (ix ld : Bool) (t : XReg) (regs : List XReg) (j : Nat) (s :
       | succ k =>
         simp only [List.getElem_cons_succ]
         have hk' : k < bs.length := by simpa using hk
-        have hd := hsep 0 (k + 1) (by omega) (by omega) l hl
+        have hd := hsep 0 (k + 1) (by omega_using []) (by omega_using [hk']) l hl
         rw [Nat.add_zero] at hd
-        rw [show j + (k + 1) = j + 1 + k by omega, hb k hk' l hl, m₁,
+        rw [show j + (k + 1) = j + 1 + k by omega_using [], hb k hk' l hl, m₁,
           StitchZTo.blockAt_writeW_out (R := ⟨Stitch.oA s ix + BitVec.ofNat 64 (64 * j), 64⟩) (by
-            rw [show j + 1 + k = j + (k + 1) by omega]; exact hd) rfl,
+            rw [show j + 1 + k = j + (k + 1) by omega_using []]; exact hd) rfl,
           x₁ _ (fun h => hbs (h ▸ List.getElem_mem hk')) (fun h => h8' (h ▸ List.getElem_mem hk')) l hl]
     · rw [m₁] at hf
       refine (Frame.writeW (Frame.refl [⟨Stitch.oA s ix + BitVec.ofNat 64 (64 * j), 64 * (bs.length + 1)⟩]
-        s.mem) List.mem_cons_self _ (by simp only [Region.Contains, BitVec.sub_self]; simp; omega)).trans
+        s.mem) List.mem_cons_self _ (by simp only [Region.Contains, BitVec.sub_self]; simp; omega_using [])).trans
         (hf.sub fun r hr => ⟨_, List.mem_cons_self, fun a ha => ?_⟩)
       simp only [List.mem_singleton] at hr
       subst hr
-      exact Offset.sub _ (by omega) (by omega) a ha
+      exact Offset.sub _ (by omega_using []) (by omega_using []) a ha
     · simp only [List.mem_cons, not_or] at hr'
       rw [hx r hr hr'.2 l hl, x₁ r hr'.1 hr l hl]
     · cases k with
@@ -254,7 +254,7 @@ theorem xorDataZM_ok (ix ld : Bool) (t : XReg) (regs : List XReg) (j : Nat) (s :
       | succ k =>
         simp only [List.getElem_cons_succ]
         have hk' : k < bs.length := by simpa using hk
-        rw [show j + (k + 1) = j + 1 + k by omega]
+        rw [show j + (k + 1) = j + 1 + k by omega_using []]
         exact hc k hk' l hl
 
 theorem aregs_ok : aregs.Nodup ∧ .xmm13 ∉ aregs ∧ ∀ r ∈ aregs, r ≠ .xmm14 ∧ r ≠ .xmm0 ∧ r ≠ .xmm15 := by decide
@@ -300,7 +300,7 @@ theorem batchM_ok {ix st ld : Bool} {s₀ : State} (hp : Stitch.LPre ix s₀) (h
     · exact hwd
     · obtain rfl := hld rfl; exact hw
   have raddr : ∀ i, s.gpr .rdx + BitVec.ofNat 64 (64 * j + 16 * i) =
-      Stitch.wp ld s₀ + BitVec.ofNat 64 (16 * (c + i)) := fun i => addr_eq (by omega)
+      Stitch.wp ld s₀ + BitVec.ofNat 64 (16 * (c + i)) := fun i => addr_eq (by omega_using [hrdx])
   have addr : ∀ i, Stitch.oA s ld + BitVec.ofNat 64 (64 * j + 16 * i) = bAddr s₀ (c + i) := fun i => by
     cases ld
     · exact raddr i
@@ -317,38 +317,38 @@ theorem batchM_ok {ix st ld : Bool} {s₀ : State} (hp : Stitch.LPre ix s₀) (h
       exact StitchZTo.src_addr (raddr i)
     · exact raddr i
   have e64 : ∀ k, BitVec.ofInt 64 ((64 * (j + k) : Nat) : Int) = BitVec.ofNat 64 (64 * j + 16 * (4 * k)) :=
-    fun k => by rw [BitVec.ofInt_natCast]; congr 1; omega
-  have e16 : ∀ k l, 16 * (4 * (j + k) + l) = 64 * j + 16 * (4 * k + l) := fun k l => by omega
+    fun k => by rw [BitVec.ofInt_natCast]; congr 1; omega_using []
+  have e16 : ∀ k l, 16 * (4 * (j + k) + l) = 64 * j + 16 * (4 * k + l) := fun k l => by omega_using []
   have o₂ : Stitch.oA s₂ st = Stitch.oA s st := Stitch.oA_congr st hg₂
   have i₂ : Stitch.oA s₂ ld = Stitch.oA s ld := Stitch.oA_congr ld hg₂
   refine WP.mono (xorDataZM_ok st ld .xmm13 aregs j s₂ hnd h13
       (fun k hk => by
         rw [i₂, f₂.rd, f₁.rd, f₂.wr, f₁.wr, hI.rd, hI.wr, e64, addr]
-        exact in_sub hp.d_in (by simp [aregs] at hk; omega))
+        exact in_sub hp.d_in (by simp [aregs] at hk; omega_using [hc, hk]))
       (fun k hk => by
         rw [o₂, f₂.wr, f₁.wr, hI.wr, e64, oaddr]
-        exact in_sub hp.w_in (by simp [aregs] at hk; omega))
+        exact in_sub hp.w_in (by simp [aregs] at hk; omega_using [hc, hk]))
       (fun a b hab hb l hl => by
-        rw [i₂, o₂, e16, show 64 * (j + a) = 64 * j + 16 * (4 * a) by omega, addr, oaddr]
+        rw [i₂, o₂, e16, show 64 * (j + a) = 64 * j + 16 * (4 * a) by omega_using [], addr, oaddr]
         simp only [aregs, List.length_cons, List.length_nil] at hb
         cases ix
         · cases ld
-          · exact Offset.disjoint _ (Or.inr (by omega)) (by omega) (by omega)
+          · exact Offset.disjoint _ (Or.inr (by omega_using [hab])) (by omega_using [hc, hwd, hb, hl]) (by omega_using [hc, hwd, hab, hb])
           · exact absurd (hld rfl) (by decide)
-        · exact ((hp.d_w rfl).sub_left (Offset.sub_base _ (by omega))).sub_right
-            (Offset.sub_base _ (by omega)))
-      (by simp only [aregs, List.length_cons, List.length_nil]; omega))
+        · exact ((hp.d_w rfl).sub_left (Offset.sub_base _ (by omega_using [hc, hb, hl]))).sub_right
+            (Offset.sub_base _ (by omega_using [hc, hab, hb])))
+      (by simp only [aregs, List.length_cons, List.length_nil]; omega_using [hc, hrdx, hwr]))
     fun s₃ ⟨b₃, fr₃, g₃, rd₃, wr₃, x₃, _⟩ => ?_
   have hm₂ : s₂.mem = s.mem := by rw [f₂.mem, f₁.mem]
   rw [hm₂, i₂, o₂] at b₃
   rw [hm₂, o₂] at fr₃
-  rw [show 64 * j = 64 * j + 16 * 0 by omega, oaddr, Nat.add_zero] at fr₃
+  rw [show 64 * j = 64 * j + 16 * 0 by omega_using [], oaddr, Nat.add_zero] at fr₃
   have hb3 : ∀ k (h : k < aregs.length), ∀ l < 4,
       blockAt s₃.mem (Stitch.wAddr ix s₀ (c + (4 * k + l))) =
         blk s₀ (c + (4 * k + l)) ^^^ XBinOp.eval .pshufb (s₂.zlane aregs[k] l) revMask :=
     fun k h l hl => by
       have := b₃ k h l hl
-      rwa [e16, oaddr, addr, hI.src _ (by simp [aregs] at h; omega) (by omega)] at this
+      rwa [e16, oaddr, addr, hI.src _ (by simp [aregs] at h; omega_using [hc, hl, h]) (by omega_using [])] at this
   have fr' : Frame [⟨Stitch.wAddr ix s₀ c, 256⟩] s.mem s₃.mem := by simpa [aregs] using fr₃
   have kx : ∀ r, r ≠ .xmm13 → r ≠ .xmm14 → r ∉ aregs → r ∉ G → ∀ l < 4, s₃.zlane r l = s.zlane r l :=
     fun r h13' h14 hr hg' l hl => by
@@ -360,9 +360,9 @@ theorem batchM_ok {ix st ld : Bool} {s₀ : State} (hp : Stitch.LPre ix s₀) (h
     subst hr
     cases ix
     · intro a h₁ h₂
-      exact VG.Proof.Aes.X86_64.AesNi.run_sep hwd hk hc (by omega) h₁ h₂
-    · exact ((hp.d_w rfl).sub_left (Offset.sub_base _ (by omega))).sub_right (Offset.sub_base _ (by omega))
-  refine ⟨⟨by omega, fun l hl => ?_, fun l hl => ?_, fun l hl => ?_, by rw [gs, hI.rdi],
+      exact VG.Proof.Aes.X86_64.AesNi.run_sep hwd hk hc (by omega_using [hck]) h₁ h₂
+    · exact ((hp.d_w rfl).sub_left (Offset.sub_base _ (by omega_using [hk]))).sub_right (Offset.sub_base _ (by omega_using [hc]))
+  refine ⟨⟨by omega_using [hc], fun l hl => ?_, fun l hl => ?_, fun l hl => ?_, by rw [gs, hI.rdi],
     by rw [gs, hI.rsi], by rw [gs, hI.r10], ?_, ?_, ?_,
     by rw [rd₃, f₂.rd, f₁.rd, hI.rd], by rw [wr₃, f₂.wr, f₁.wr, hI.wr]⟩,
     hqx s₂ s₃ hQ₂ g₃ rd₃ wr₃ (fun r h1 h2 l hl => x₃ r h1 h2 l hl) (by rw [hm₂]; exact fr'),
@@ -383,15 +383,15 @@ theorem batchM_ok {ix st ld : Bool} {s₀ : State} (hp : Stitch.LPre ix s₀) (h
         simp only [List.mem_singleton] at hr
         subst hr
         intro a h₁ h₂
-        exact VG.Proof.Aes.X86_64.AesNi.run_sep hw (by omega) hc (by omega) h₁ h₂]
+        exact VG.Proof.Aes.X86_64.AesNi.run_sep hw (by omega_using [hc, hk]) hc (by omega_using [hlo]) h₁ h₂]
       exact hI.out k hlo
-    · obtain ⟨i, rfl⟩ : ∃ i, k = c + (4 * (i / 4) + i % 4) := ⟨k - c, by omega⟩
-      have hj : i / 4 < aregs.length := by simp [aregs]; omega
-      rw [hb3 (i / 4) hj (i % 4) (by omega), ks (i / 4) hj (i % 4) (by omega),
-        show c + 4 * (i / 4) + i % 4 = c + (4 * (i / 4) + i % 4) by omega]
+    · obtain ⟨i, rfl⟩ : ∃ i, k = c + (4 * (i / 4) + i % 4) := ⟨k - c, by omega_using [hlo]⟩
+      have hj : i / 4 < aregs.length := by simp [aregs]; omega_using [hk]
+      rw [hb3 (i / 4) hj (i % 4) (by omega_using []), ks (i / 4) hj (i % 4) (by omega_using []),
+        show c + 4 * (i / 4) + i % 4 = c + (4 * (i / 4) + i % 4) by omega_using []]
   · intro k hk hck
     rw [blockAt_frame fr' (dsep k hk hck)]
-    exact hI.src k hk (by omega)
+    exact hI.src k hk (by omega_using [hck])
 
 theorem batch_ok {s₀ : State} (hp : SPre s₀) (g : Nat → List Instr) (G : List XReg)
     (hG : ∀ r ∈ G, r ∉ aregs ∧ r ≠ .xmm14 ∧ r ≠ .xmm0 ∧ r ≠ .xmm15)

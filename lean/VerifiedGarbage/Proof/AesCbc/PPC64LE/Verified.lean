@@ -84,7 +84,7 @@ theorem decGroup_ok : GroupOk (cbcMode false) decGroup := by
   refine WP.mono (stores_ok x r6x ((hx.loc.keep.gpr (by decide)).trans h0)
     ((hx.loc.v _ (by simp [facts.2.2.1])).trans hm) fun j hj => ?_) fun y hy => ?_
   · rw [hx.loc.keep.2.2, hl.keep.2.2, hu.wr, wr₁, hW, blk_add]
-    exact in_rw (by simp) (cBlk16 hp (by omega))
+    exact in_rw (by simp) (cBlk16 hp (by omega_using [hk, hj]))
   have gy (r : Reg) (hr : r ∈ preserved) : y.gpr r = s.gpr r := by
     obtain ⟨-, -, -, h6, h7, -⟩ := pres_ne hr
     rw [hy.keep.gpr (by simpa using h6), hx.loc.keep.gpr (by simpa using h7), gv r hr]
@@ -111,8 +111,8 @@ theorem decGroup_ok : GroupOk (cbcMode false) decGroup := by
   have slot (j : Nat) (hj : j ≤ 8) : bytesAt s₁.mem (sl s₀ j) 16 = chainK (cbcMode false) s₀ (k + j) := by
     rcases Nat.eq_zero_or_pos j with rfl | hj0
     · exact e₀
-    · obtain ⟨i, rfl⟩ : ∃ i, j = i + 1 := ⟨j - 1, by omega⟩
-      rw [e₁ i (by omega), ← Nat.add_assoc, cbcDec_chain s₀ (by omega)]
+    · obtain ⟨i, rfl⟩ : ∃ i, j = i + 1 := ⟨j - 1, by omega_using [hj0]⟩
+      rw [e₁ i (by omega_using [hj]), ← Nat.add_assoc, cbcDec_chain s₀ (by omega_using [hk, hj])]
   have mx : x.mem = s₁.mem := by rw [hx.loc.mem, mv]
   refine group_step cbcDec_steps hp hk h ?_ ?_ ?_ r17 r18 ?_ (fun r hr hv => ?_) ?_ ?_ ?_ (fun j hj => ?_) ?_
   · rw [g .r14 (by decide) (by decide) (by decide), h.r14]
@@ -129,11 +129,11 @@ theorem decGroup_ok : GroupOk (cbcMode false) decGroup := by
       simp only [List.mem_singleton] at hr; subst hr; exact ⟨_, by simp, fun _ h => h⟩).trans ?_
     exact (copyMem_frame _ _ _).sub fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact ⟨ivR s₀, by simp, fun _ h => h⟩
-  · have hi : k + j < N s₀ := by omega
+  · have hi : k + j < N s₀ := by omega_using [hk, hj]
     rw [mw, mz, copyMem_other _ (hp.blk_iv hi), ← blk_add, AesCbc.bytesAt_toList,
       hy.processed.stateAt (j := j) hj (Nat.le_refl _), hx.val j hj, ite_eq_left hj, st_xor,
       hv _ (breg_mem hj), hu.val j hj, hw, mv, load_state, load_state, ← AesCbc.bytesAt_toList,
-      slot j (by omega), ← h.blockAt (by omega) hi, ← bytesAt_frame f₁ (one_disj (hp.dBG hi)) (by decide),
+      slot j (by omega_using [hj]), ← h.blockAt (by omega_using []) hi, ← bytesAt_frame f₁ (one_disj (hp.dBG hi)) (by decide),
       AesCbc.aesInvWith_state]
     simp only [result, ite_true]
   · rw [mw, mz, copyMem_bytes _ (hp.dIS (by decide)),

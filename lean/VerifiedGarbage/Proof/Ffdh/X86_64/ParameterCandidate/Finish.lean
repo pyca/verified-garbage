@@ -56,7 +56,7 @@ theorem finish_ok {p : CandidateP} {used status : Nat} {s₀ s : State}
     have hn' := of_decide_eq_false hn
     refine WP.mono (clearOutput_ok hu hdu) fun v ⟨hv, hdv, hzv, hw, _, _, kv⟩ => ?_
     refine WP.mono (finishTail_ok hv hdv ((hw _ (by decide)).trans hsu') hstatus
-      (fun i hi => (hw i (by omega)).trans (hsavedu i hi)))
+      (fun i hi => (hw i (by omega_using [hi])).trans (hsavedu i hi)))
       fun t ⟨hax, hused, hout, hregs, kt⟩ => ?_
     exact ⟨hax, hused, by simpa only [hn', ite_false] using hout.trans hzv,
       hregs, ((ku.trans kv).trans kt).mono (by decide)⟩

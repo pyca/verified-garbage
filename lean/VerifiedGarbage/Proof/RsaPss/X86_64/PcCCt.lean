@@ -91,10 +91,10 @@ theorem veb_ok {s : State} (hp : VPre tsH tsG s) :
     vclo s ≤ 1 ∧ 1 ≤ veb s ∧ veb s ≤ Proof.RsaPss.maxEmBits ∧ vclo s + vel s = (s.gpr .rsi).toNat := by
   have hk1 := hp.k1; have hk2 := hp.k2
   have hl8 : Nat.log2 (n0v s) < 8 := RsaPss.log2_lt8 (s.mem (s.gpr .rdi))
-  refine ⟨lo_le hl8 (by omega), ?_, ?_, ?_⟩
-  · unfold veb ebV; omega
-  · unfold veb ebV Proof.RsaPss.maxEmBits; omega
-  · unfold vclo vel veb ebV Spec.RsaPss.emLength; omega
+  refine ⟨lo_le hl8 (by omega_using [hk1]), ?_, ?_, ?_⟩
+  · unfold veb ebV; omega_using [hk1]
+  · unfold veb ebV Proof.RsaPss.maxEmBits; omega_using [hk2, hl8]
+  · unfold vclo vel veb ebV Spec.RsaPss.emLength; omega_using [hk1, hl8]
 
 variable (f : MdFns) (g : Impl.Mgf1.X86_64.Table.Fns) in
 /-- What the tables give the runs whose entry states agree with `a`: the
@@ -178,7 +178,7 @@ theorem vidx_ct : RelCT isa (Two (CAt (tsH := tsH) (tsG := tsG) (J1 H))) (.block
     fun u ⟨L', k', R', hz', hM'⟩ sy => ⟨s, S, ⟨v.next L' k'.2.2 R' (fun k hk => ?_) trivial sy, k'.2.1.trans hrd, hM',
       (k'.gpr (by decide)).trans hax, hz'.trans hz⟩⟩
   rcases List.mem_append.mp hk with hk | hk
-  · have : k ≠ 47 := by simp only [K1, List.mem_cons, List.not_mem_nil, or_false] at hk; omega
+  · have : k ≠ 47 := by simp only [K1, List.mem_cons, List.not_mem_nil, or_false] at hk; omega_using [hk]
     simp only [upd]; rw [ifn this]; exact hw k hk
   · rw [List.mem_singleton.mp hk]; simp [upd, vw, vidxWord]
 
@@ -238,12 +238,12 @@ theorem prep_ct : RelCT isa (Two fun a t => CAt (tsH := tsH) (tsG := tsG) (J2 H)
     (hw 20 (by decide)) (hw 22 (by decide)) (hw 38 (by decide)) (x := n0v s) (BitVec.isLt _) h0 hax)
     fun u ⟨L', k', ⟨W', R', ha, hb⟩, di, si, dx, cx, r8, r9, hM'⟩ sy =>
       ⟨s, S, v.next L' k'.2.2 R' (fun k hk => ?_) (fun p hp => ?_) sy, k'.2.1.trans hrd, hM',
-        fun i hi => (R'.fr i (by unfold nW frameBytes; omega)).trans (ha i hi), di, si, dx, cx, r8, r9⟩
+        fun i hi => (R'.fr i (by unfold nW frameBytes; omega_using [hi])).trans (ha i hi), di, si, dx, cx, r8, r9⟩
   · have hk' := hk
     simp only [KP, K1, List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hk'
-    rw [hb k (by unfold nW frameBytes; omega) (by omega), ← hw k hk]
+    rw [hb k (by unfold nW frameBytes; omega_using [hk']) (by omega_using [hk']), ← hw k hk]
     simp only [vW, upd]
-    rw [ifn (by omega), ifn (by omega), ifn (by omega)]
+    rw [ifn (by omega_using [hk']), ifn (by omega_using [hk']), ifn (by omega_using [hk'])]
   · simp only [vex, List.mem_cons, List.not_mem_nil, or_false] at hp
     rcases hp with rfl | rfl | rfl <;> dsimp only <;> rw [hb _ (by decide) (by decide)] <;> simp [vW, upd] <;> rfl
 
@@ -276,7 +276,7 @@ theorem centry_e {a s t : State} (S : CSib (tsH := tsH) (tsG := tsG) a s) (hst :
   have hp := S.ps
   rw [← S.eB]
   exact centry_bytes (R := ⟨s.gpr .rdx, (s.gpr .rcx).toNat⟩) hst hM hp.dKe hp.des
-    (by have := hp.wE; dsimp only; omega)
+    (by have := hp.wE; dsimp only; omega_using [])
 
 theorem cvArg_sib {a s : State} (S : CSib (tsH := tsH) (tsG := tsG) a s) {i : Nat} : vArg s i = vArg a i := by
   unfold vArg
@@ -348,7 +348,7 @@ theorem pcall_ct (impl : PublicImpl) :
         · exact .inl hin)) (by
         intro p hp'
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hp'
-        subst hp'; dsimp only; unfold oRsa; omega)
+        subst hp'; dsimp only; unfold oRsa; omega_using [hk2])
     exact ⟨s, S, v.next (v.L.of_rep' R R' rfl (cs' .rsp (by decide)) wr') wr' R' hw hx sy, rd'.trans hrd, hM'⟩
 
 variable (H) in
@@ -397,7 +397,7 @@ theorem kAt_of {f : MdFns} {g : Impl.Mgf1.X86_64.Table.Fns} {s t : State} (hp : 
   obtain ⟨V, W, R, -, x0, x1, x2, x3⟩ := v.W
   obtain ⟨-, e1, e2, l⟩ := veb_ok hp.toVPre
   exact ⟨v.L.rsp, hrd, v.wr, hM, v.sy, (R.fr 0 (by decide)).trans x0, (R.fr 1 (by decide)).trans x1,
-    (R.fr 2 (by decide)).trans x2, (R.fr 3 (by decide)).trans x3, di, si, dx, cx, r8, r9, by omega, e1, e2, rfl,
+    (R.fr 2 (by decide)).trans x2, (R.fr 3 (by decide)).trans x3, di, si, dx, cx, r8, r9, by omega_using [l], e1, e2, rfl,
     E.hD, E.tabs⟩
 
 /-- The tables' words, at the call, as on entry. -/

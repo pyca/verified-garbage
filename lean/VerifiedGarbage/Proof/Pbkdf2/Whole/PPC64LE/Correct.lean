@@ -39,9 +39,9 @@ include hp
 theorem loopInit_ok {s : State} (h : Keyed hF s₀ s) : WP isa (.block F.loopInit) s (Inv hF s₀ 0) := by
   have hz := sizes hF; have hl := layout (F := F); have hb := hz.reach
   unfold Fns.loopInit
-  refine wp_li (by decide) fun s₁ u₁ => wp_li (by omega) fun s₂ u₂ => wp_stwbrx (a := sA s₀ F.intO)
+  refine wp_li (by decide) fun s₁ u₁ => wp_li (by omega_using [hl, hb]) fun s₂ u₂ => wp_stwbrx (a := sA s₀ F.intO)
     (by rw [u₂.other _ (by decide), u₁.other _ (by decide), h.kr.r21, u₂.gpr])
-    (by rw [u₂.wr, u₁.wr]; exact in_sc hp hb h.kr.wr (by omega)) fun s₃ m₃ => WP.block_nil ?_
+    (by rw [u₂.wr, u₁.wr]; exact in_sc hp hb h.kr.wr (by omega_using [hl])) fun s₃ m₃ => WP.block_nil ?_
   have fr : Frame [sR s₀ F.intO 4] s.mem s₃.mem := by
     rw [m₃.mem, u₂.mem, u₁.mem]; exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ _)
   have d0 : dn s₀ (F := F) 0 = 0 := by show min (0 * F.H.D) _ = 0; simp
@@ -49,11 +49,11 @@ theorem loopInit_ok {s : State} (h : Keyed hF s₀ s) : WP isa (.block F.loopIni
       (fun r hr => by rw [m₃.gpr, u₂.other r (by revert r; decide), u₁.other r (by revert r; decide)]) fr
       (fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr
-        exact part_disj hb (.inl (by omega)) (by omega) (by omega))
-      (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact ⟨scR F s₀, by simp, part_sub (by omega)⟩),
+        exact part_disj hb (.inl (by omega_using [hl])) (by omega_using [hl]) (by omega_using [hl]))
+      (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact ⟨scR F s₀, by simp, part_sub (by omega_using [hl])⟩),
     h.st.keep fr (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
-      exact part_disj hb (.inl (by omega)) (by omega) (by omega)),
+      exact part_disj hb (.inl (by omega_using [hl])) (by omega_using [hl]) (by omega_using [hl])),
     by rw [m₃.gpr, u₂.other _ (by decide), u₁.other _ (by decide), h.r23, d0]; simp,
     by rw [m₃.gpr, u₂.other _ (by decide), u₁.other _ (by decide), h.r24, d0]; simp, ?_,
     by rw [Nat.zero_mul]; rfl, ?_⟩
@@ -71,7 +71,7 @@ theorem main_ok : WP isa F.main (entry s₀) fun s' => (∀ r ∈ VG.Proof.Hmac.
   refine WP.seq (WP.mono (hi_ok hF hp h₁) fun s₂ h₂ => ?_)
   refine WP.seq (WP.mono (loopInit_ok hp h₂) fun s₃ h₃ => ?_)
   refine WP.seq (WP.mono (loop_ok hp h₃) fun s₄ h₄ => ?_)
-  refine restore_ok (so := 0) ⟨rfl, by decide⟩ h₄.kr.r21 (fun d _ hd => in_sc' hp hb h₄.kr.wr (by omega))
+  refine restore_ok (so := 0) ⟨rfl, by decide⟩ h₄.kr.r21 (fun d _ hd => in_sc' hp hb h₄.kr.wr (by omega_using [hl, hd]))
     s₀.gpr h₄.kr.saved fun s₅ hs hr hm _ _ hsp => ⟨fun r hr' => ?_, hs, by rw [hsp, h₄.kr.sp], ?_⟩
   · rw [hr r (by revert r hr'; decide), h₄.kr.un r hr']
   · rw [hm]
@@ -95,7 +95,7 @@ theorem sdepth_main (hF : FnsOK F) : sdepth F.main ≤ hF.X + 96 := by
   have hh := hF.hiSd
   simp only [Fns.main, Fns.block, Fns.callHi, Fns.callHf, Fns.callIt, Fns.outLen, Fns.outLoop, Hash.callUpd,
     sdepth, Nat.max_le] at *
-  omega
+  omega_using [hu, hud, hf, hfd, hi, hid, hh]
 
 variable (hF : FnsOK F)
 
@@ -104,14 +104,14 @@ theorem correct {s₀ : State} (h : (pbkG hF.hH.SH F.bytes (hF.X + 144)).pre s�
     WP isa F.pbkdf2 s₀ fun s' => abiPreserved s₀ s' ∧ (pbkG hF.hH.SH F.bytes (hF.X + 144)).post s₀ s' := by
   have hp := pre_of hF h
   have hD := (sizes hF).D
-  have hsp : 48 ≤ s₀.sp.toNat := by have := hp.sp; omega
+  have hsp : 48 ≤ s₀.sp.toNat := by have := hp.sp; omega_using [this]
   have hsd := sdepth_main hF
   have hX := hF.hX
   unfold Fns.pbkdf2
   refine WP.seq (VG.Proof.MdStream.PPC64LE.WP.cons exec_mflr (WP.block_nil (WP.seq ?_)))
-  refine WP.frameRegAny hsp (fun R hR => ?_) (WP.mono (main_ok hp) fun s' ⟨hu, hs, hsp', hb⟩ => ?_) (by omega)
+  refine WP.frameRegAny hsp (fun R hR => ?_) (WP.mono (main_ok hp) fun s' ⟨hu, hs, hsp', hb⟩ => ?_) (by omega_using [hsd, hX])
   · have hsub : Region.Sub ⟨s₀.sp - 48 + 32, 16⟩ (stk hF.X s₀) := fun a ha =>
-      below_sub (a := 48) (by omega) (by have := s₀.sp.isLt; omega) a
+      below_sub (a := 48) (by omega_using []) (by have := s₀.sp.isLt; omega_using [hX]) a
         (Proof.MdStream.PPC64LE.frame_sub s₀.sp a ha)
     rw [show (s₀.write .r0 s₀.lr).wr = s₀.wr from rfl, hp.wr] at hR
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hR

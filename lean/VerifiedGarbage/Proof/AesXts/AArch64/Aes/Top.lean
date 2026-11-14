@@ -78,7 +78,7 @@ theorem setup_ok (B : BlockFn) (enc : Bool) {setup : List Instr}
     simp only [bnr, R]; rw [g₁ _ (by decide) (by decide) (by decide) (by decide) (by decide)]
   have kp : KPre s₁ := ⟨fun ho => by
       rw [rd₁, wr₁, hx0, hp.rd]
-      exact in_rw (by simp) (Offset.contains_base _ ho (by omega)), by rw [hx1]; exact hp.rounds⟩
+      exact in_rw (by simp) (Offset.contains_base _ ho (by omega_using [ho])), by rw [hx1]; exact hp.rounds⟩
   refine WP.mono (hs s₁ kp) fun s₂ k₂ => ?_
   have g : ∀ r, r ≠ .x2 → r ≠ .x3 → r ≠ .x11 → r ≠ .x14 → r ≠ .x15 → r ≠ .x9 → r ≠ .x6 → r ≠ .x7 →
       r ≠ .x13 → s₂.gpr r = s₀.gpr r := fun r h2 h3 h11 h14 h15 h9 h6 h7 h13 => by
@@ -107,7 +107,7 @@ theorem getElem_tweaks (t : List Byte) {n k : Nat} (hk : k < n) :
   | succ n ih =>
     cases k with
     | zero => rfl
-    | succ k => simp only [Spec.Xts.tweaks, List.getElem_cons_succ]; rw [ih _ (by omega), AesXts.next_succ']
+    | succ k => simp only [Spec.Xts.tweaks, List.getElem_cons_succ]; rw [ih _ (by omega_using [hk]), AesXts.next_succ']
 
 /-- The tweak after the last block written back. -/
 theorem finish_ok (B : BlockFn) (enc : Bool) {s₀ : State} (hp : UPre s₀) {s : State}

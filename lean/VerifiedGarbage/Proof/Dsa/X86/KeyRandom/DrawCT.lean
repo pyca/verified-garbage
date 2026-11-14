@@ -98,7 +98,7 @@ theorem copy_ct : RelCT isa (Two fun a => At (DrawFull a) a.pub) copy fun _ _ =>
   refine RelCT.seq (two_post (Ψ := fun a => At (CopyHead a) a.pub) copyInit_ct
     fun a t ⟨s₀, A, e, D, hf⟩ => ?_) ?_
   · have hdl : (drawBytes s₀ a.used).length = rWidth s₀ := by
-      simp only [drawBytes, List.length_take, List.length_drop]; omega
+      simp only [drawBytes, List.length_take, List.length_drop]; omega_using [hf]
     exact WP.mono (copyInit_ok A D.smp.ready D.smp.usedW D.smp.width D.smp.mask hf (width_pos D.q))
       fun u ⟨I, z⟩ => ⟨s₀, A, e, ⟨t, I⟩, z, hdl⟩
   unfold copyRest
@@ -212,6 +212,6 @@ theorem draw_ct : RelCT isa (Two fun a => At (DrawPre a) a.pub) draw fun _ _ => 
     have := D.smp.usedBound
     show a.used + rWidth s₀ ≤ (rInput s₀).rand.length
     simp only [eval, c, Option.some.injEq, decide_eq_false_iff_not] at hb
-    omega
+    omega_using [this, hb]
 
 end VG.Proof.Dsa.X86.KeyRandom

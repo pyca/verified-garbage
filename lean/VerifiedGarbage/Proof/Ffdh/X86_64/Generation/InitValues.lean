@@ -47,7 +47,7 @@ theorem initialize_ok {s : State} {B : Addr} {bits : Nat}
   unfold initializeState initialized Spec.Ffdh.parameterAttempts Spec.Ffdh.parameterEntropy
   xrun [field, State.ea, off, BitVec.ofInt_natCast, hdi, hsi, hstore 0 (by decide), hstore 1 (by decide),
     hstore 2 (by decide), hstore 3 (by decide)]
-  have hcap (n : Nat) : n * 32768 + n = 32769 * n := by omega
+  have hcap (n : Nat) : n * 32768 + n = 32769 * n := by omega_using []
   simp only [hc, width_value hhi, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hb, shift_ofNat,
     ← BitVec.ofNat_add, Nat.reducePow, Nat.reduceMul, BitVec.add_zero, hcap]
   simp only [Nat.mul_comm, Nat.mul_assoc]

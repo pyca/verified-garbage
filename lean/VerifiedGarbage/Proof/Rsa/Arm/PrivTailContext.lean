@@ -20,7 +20,7 @@ theorem PrivContext.tailInput {g : PrivGeometry} {bs : Fin 8 → List Byte} {s :
   have low := h.valid.minLength
   have high := h.valid.maxLength
   have stackFit := h.valid.stackHigh
-  refine ⟨⟨by omega, by omega, by rw [h.sp]; simp only [frameBytes] at stackFit; omega,
+  refine ⟨⟨by omega_using [low], by omega_using [high], by rw [h.sp]; simp only [frameBytes] at stackFit; omega_using [stackFit],
     ?_, ?_, ?_, ?_, by rw [h.sp]; rfl, h.valid.temporaryFit, h.valid.outputFit,
     h.temporaryWrite, h.outputWrite, ?_⟩, ?_, ?_, h.valid.sourceFits 2, (h.sources 2).read⟩
   · rw [h.sp]; exact h.inner.read (by decide)
@@ -29,7 +29,7 @@ theorem PrivContext.tailInput {g : PrivGeometry} {bs : Fin 8 → List Byte} {s :
   · rw [h.sp]; exact slots 2 (by decide)
   · rw [temporary_region h.valid]
     exact (innerSlice_external h.valid (d := oM) (n := g.length)
-      (by simp only [oM, frameBytes]; omega)).1
+      (by simp only [oM, frameBytes]; omega_using [high])).1
   · rw [h.sp]; exact h.inner
   · rw [h.sp]; exact slots 5 (by decide)
 
@@ -42,5 +42,5 @@ theorem tailWrites_sub {g : PrivGeometry} (h : g.Valid) :
   · exact ⟨g.outputRegion, by simp [bodyWrites], fun _ hx => hx⟩
   · refine ⟨g.innerRegion, by simp [bodyWrites], ?_⟩
     rw [temporary_region h]
-    exact Offset.sub_base _ (by have := h.maxLength; simp only [oM, frameBytes]; omega)
+    exact Offset.sub_base _ (by have := h.maxLength; simp only [oM, frameBytes]; omega_using [this])
 end VG.Proof.Rsa.Arm

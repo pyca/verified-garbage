@@ -46,33 +46,33 @@ theorem or_byte (b : Byte) {v : Nat} (hv : v < 256) :
     ((b.setWidth 64 ||| BitVec.ofNat 64 v).setWidth 8 : Byte) = b ||| BitVec.ofNat 8 v := by
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_setWidth, BitVec.toNat_or, BitVec.toNat_ofNat]
-  rw [Nat.mod_eq_of_lt (a := v) (by omega), Nat.mod_eq_of_lt (a := v) (by omega),
-    Nat.mod_eq_of_lt (a := b.toNat) (by have := b.isLt; omega)]
-  exact Nat.mod_eq_of_lt (Nat.or_lt_two_pow b.isLt (by omega))
+  rw [Nat.mod_eq_of_lt (a := v) (by omega_using [hv]), Nat.mod_eq_of_lt (a := v) (by omega_using [hv]),
+    Nat.mod_eq_of_lt (a := b.toNat) (by have := b.isLt; omega_using [])]
+  exact Nat.mod_eq_of_lt (Nat.or_lt_two_pow b.isLt (by omega_using [hv]))
 
 theorem and_byte (b : Byte) {v : Nat} (hv : v < 256) :
     ((b.setWidth 64 &&& BitVec.ofNat 64 v).setWidth 8 : Byte) = b &&& BitVec.ofNat 8 v := by
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_setWidth, BitVec.toNat_and, BitVec.toNat_ofNat]
-  rw [Nat.mod_eq_of_lt (a := v) (by omega), Nat.mod_eq_of_lt (a := v) (by omega),
-    Nat.mod_eq_of_lt (a := b.toNat) (by have := b.isLt; omega)]
+  rw [Nat.mod_eq_of_lt (a := v) (by omega_using [hv]), Nat.mod_eq_of_lt (a := v) (by omega_using [hv]),
+    Nat.mod_eq_of_lt (a := b.toNat) (by have := b.isLt; omega_using [])]
   exact Nat.mod_eq_of_lt (Nat.lt_of_le_of_lt Nat.and_le_left b.isLt)
 
 theorem and63 (b : Byte) : b.setWidth 64 &&& BitVec.ofNat 64 63 = BitVec.ofNat 64 (b.toNat % 64) := by
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_setWidth, BitVec.toNat_and, BitVec.toNat_ofNat]
   rw [show (63 : Nat) % 2 ^ 64 = 2 ^ 6 - 1 by decide, Nat.and_two_pow_sub_one_eq_mod,
-    Nat.mod_eq_of_lt (a := b.toNat) (by have := b.isLt; omega)]
-  exact (Nat.mod_eq_of_lt (by omega)).symm
+    Nat.mod_eq_of_lt (a := b.toNat) (by have := b.isLt; omega_using [])]
+  exact (Nat.mod_eq_of_lt (by omega_using [])).symm
 
 theorem sub_one_addr (p : Addr) {a : Nat} (ha : 1 ≤ a) (ha' : a < 2 ^ 64) :
     p + BitVec.ofNat 64 a + BitVec.ofInt 64 (-1) = p + BitVec.ofNat 64 (a - 1) := by
   rw [BitVec.add_assoc]
   refine congrArg (p + ·) ?_
   apply BitVec.eq_of_toNat_eq
-  rw [BitVec.toNat_add, toNat_ofNat_of_lt ha', toNat_ofNat_of_lt (by omega),
+  rw [BitVec.toNat_add, toNat_ofNat_of_lt ha', toNat_ofNat_of_lt (by omega_using [ha']),
     show (BitVec.ofInt 64 (-1)).toNat = 2 ^ 64 - 1 by simp]
-  omega
+  omega_using [ha, ha']
 
 theorem getD_bytesAt_eq (m : Mem) (p : Addr) {k n : Nat} (hk : k < n) :
     m (p + BitVec.ofNat 64 k) = (bytesAt m p n).getD k 0 := by
@@ -83,15 +83,15 @@ theorem getD_set16 (L : List Byte) (hL : L.length = 16) {o : Nat} (ho : o < 16) 
     (hk : k < 16) : (L.take o ++ [b] ++ L.drop (o + 1)).getD k 0 = if k = o then b else L.getD k 0 := by
   simp only [List.getD_eq_getElem?_getD]
   rcases Nat.lt_trichotomy k o with h | rfl | h
-  · rw [List.getElem?_append_left (by simp; omega), List.getElem?_append_left (by simp; omega),
+  · rw [List.getElem?_append_left (by simp; omega_using [hL, ho, h]), List.getElem?_append_left (by simp; omega_using [hL, ho, h]),
       List.getElem?_take_of_lt h]
-    simp [show k ≠ o by omega]
-  · rw [List.getElem?_append_left (by simp; omega), List.getElem?_append_right (by simp; omega)]
-    simp [show min k L.length = k by omega]
-  · rw [List.getElem?_append_right (by simp; omega)]
+    simp [show k ≠ o by omega_using [h]]
+  · rw [List.getElem?_append_left (by simp; omega_using [hL, hk]), List.getElem?_append_right (by simp; omega_using [])]
+    simp [show min k L.length = k by omega_using [hL, hk]]
+  · rw [List.getElem?_append_right (by simp; omega_using [h])]
     simp only [List.length_append, List.length_take, List.length_singleton, List.getElem?_drop,
-      show ¬ k = o by omega, ↓reduceIte]
-    congr 2; omega
+      show ¬ k = o by omega_using [h], ↓reduceIte]
+    congr 2; omega_using [hL, ho, h]
 
 /-- What `nonceBlock` leaves. -/
 structure NoncePost (W : Addr) (t : Nat) (nonce : List Byte) (s s' : State) : Prop where

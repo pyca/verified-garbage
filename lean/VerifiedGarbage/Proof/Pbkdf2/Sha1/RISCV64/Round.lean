@@ -80,7 +80,7 @@ theorem var_succ (L : Lay) (t k : Nat) (hk : k < 4) : L.var (t + 1) (k + 1) = L.
   simp only [Lay.var]; congr 1; omega
 
 theorem var_succ_zero (L : Lay) (t : Nat) : L.var (t + 1) 0 = L.var t 4 := by
-  simp only [Lay.var]; congr 1; omega
+  simp only [Lay.var]; congr 1; omega_using []
 
 /-- The working variables `v` in the registers of round `t`: `a` and `b`
 doubled, and `c`, `d` and `e` in the low 32 bits. -/
@@ -237,15 +237,15 @@ theorem round_ok {L : Lay} (hL : LayOk L) (t : Nat) (s : State) (v : HashValue) 
   rw [round_split, WP.block_append_iff]
   refine WP.mono (wk_ok L t s sp4.2.1 sp4.1 h4 hw hc hk) fun s₁ ⟨e₁, k₁⟩ => ?_
   have g₁ : ∀ k, k < 4 → s₁.gpr (L.var t k) = s.gpr (L.var t k) := fun k hk =>
-    k₁.gpr _ (var_ne hL (by omega) (by decide) (by omega)) (var_ne hL (by omega) (by decide) (by omega))
-      (hL.vsp _ (var_mem hL t k (by omega))).2.1
+    k₁.gpr _ (var_ne hL (by omega_using [hk]) (by decide) (by omega_using [hk])) (var_ne hL (by omega_using [hk]) (by decide) (by omega_using [hk]))
+      (hL.vsp _ (var_mem hL t k (by omega_using [hk]))).2.1
   rw [WP.block_append_iff]
   refine WP.mono (fadd_ok (fn t) s₁ (x := v[1]) (y := v[2]) (z := v[3]) sp1.2.1 sp2.2.1 sp3.2.1 sp4.2.1 n41 n42 n43
     (by rw [g₁ 1 (by decide), h1, dbl_lo]) (by rw [g₁ 2 (by decide)]; exact h2)
     (by rw [g₁ 3 (by decide)]; exact h3) e₁) fun s₂ ⟨e₂, k₂⟩ => ?_
   have g₂ : ∀ k, k < 4 → s₂.gpr (L.var t k) = s.gpr (L.var t k) := fun k hk => by
-    rw [k₂.gpr _ (var_ne hL (by omega) (by decide) (by omega)) (var_ne hL (by omega) (by decide) (by omega))
-      (hL.vsp _ (var_mem hL t k (by omega))).2.1, g₁ k hk]
+    rw [k₂.gpr _ (var_ne hL (by omega_using [hk]) (by decide) (by omega_using [hk])) (var_ne hL (by omega_using [hk]) (by decide) (by omega_using [hk]))
+      (hL.vsp _ (var_mem hL t k (by omega_using [hk]))).2.1, g₁ k hk]
   refine WP.mono (tail_ok s₂ (x := v[0]) (y := v[1]) sp1.2.1 sp4.2.1 n41
     (by rw [g₂ 0 (by decide)]; exact h0) (by rw [g₂ 1 (by decide)]; exact h1) e₂)
     fun s₃ ⟨e₃, b₃, k₃⟩ => ?_
@@ -253,9 +253,9 @@ theorem round_ok {L : Lay} (hL : LayOk L) (t : Nat) (s : State) (v : HashValue) 
     by rw [k₃.wr, k₂.wr, k₁.wr], by rw [k₃.sp, k₂.sp, k₁.sp]⟩
   · have hne (k : Nat) (hk : k < 5) (h4' : k ≠ 4) (h1'' : k ≠ 1) : s₃.gpr (L.var t k) = s.gpr (L.var t k) := by
       rw [k₃.gpr _ (var_ne hL hk (by decide) h4') (var_ne hL hk (by decide) h1'') (hL.vsp _ (var_mem hL t k hk)).2.1]
-      exact g₂ k (by omega)
-    simp only [Vars, var_succ_zero, var_succ L t _ (show 0 < 4 by omega), var_succ L t _ (show 1 < 4 by omega),
-      var_succ L t _ (show 2 < 4 by omega), var_succ L t _ (show 3 < 4 by omega)]
+      exact g₂ k (by omega_using [hk, h4'])
+    simp only [Vars, var_succ_zero, var_succ L t _ (show 0 < 4 by omega_using []), var_succ L t _ (show 1 < 4 by omega_using []),
+      var_succ L t _ (show 2 < 4 by omega_using []), var_succ L t _ (show 3 < 4 by omega_using [])]
     refine ⟨?_, ?_, ?_, ?_, ?_⟩
     · rw [e₃, ← f_eq]; simp only [roundKW, Vector.getElem_mk, List.getElem_toArray, List.getElem_cons_zero]
       congr 1; ac_rfl

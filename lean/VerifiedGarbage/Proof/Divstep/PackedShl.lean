@@ -5,6 +5,7 @@ import VerifiedGarbage.Proof.Divstep.Packed
 public import Mathlib.Algebra.Group.Nat.Defs
 public import Mathlib.Algebra.Order.Group.Unbundled.Abs
 public import Mathlib.Algebra.Group.Int.Defs
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # Packed divsteps: the `g` row's low bits
@@ -29,11 +30,11 @@ theorem psteps_shl {d f g P Q : Int} {n : Nat} (hn : n ≤ 62) (hf : f % 2 = 1) 
   have hG : ((msteps k (MSt.init d f g)).q * P + (msteps k (MSt.init d f g)).r * Q) % 2 ^ (k + 1) =
       2 ^ k * ((msteps k (MSt.init d f g)).g % 2) := by
     obtain ⟨-, mg⟩ := msteps_mat (d := d) (g := g) hf k
-    have hdv : (2 : Int) ^ (k + 1) ∣ 2 ^ n := pow_dvd_pow 2 (by omega)
+    have hdv : (2 : Int) ^ (k + 1) ∣ 2 ^ n := pow_dvd_pow 2 (by omega_using [hk])
     rw [← pow_mul_emod_succ, mg, ← Int.emod_emod_of_dvd _ hdv, ← Int.emod_emod_of_dvd (_ * f + _) hdv]
     congr 1
     rw [Int.add_emod, Int.mul_emod _ P, hP, ← Int.mul_emod, Int.mul_emod _ Q, hQ, ← Int.mul_emod, ← Int.add_emod]
-  have hs := shl_bit (by omega) hb hG
+  have hs := shl_bit (by omega_using [hn, hk]) hb hG
   simp only at hs ⊢
   rcases hb with h | h <;> rw [h] at hs
   · left; simpa using hs

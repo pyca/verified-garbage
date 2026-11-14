@@ -23,13 +23,13 @@ theorem written_step {m : Mem} {out : Addr} {r : Block} {n : Nat}
   by_cases he : i.val = n
   · subst n
     exact Mem.readW_writeW_self64 _ _ _
-  · rw [Mem.readW_writeW_sep (Offset.sep out (by omega) (by omega) (by omega)) (by decide)]
-    exact h i (by omega)
+  · rw [Mem.readW_writeW_sep (Offset.sep out (by omega_using [he]) (by omega_using []) (by omega_using [hn])) (by decide)]
+    exact h i (by omega_using [hi, he])
 
 theorem scratch_unchanged {m m' : Mem} {out p : Addr} (hf : Frame [⟨out, 1024⟩] m m')
     (hd : (⟨p, 4096⟩ : Region).Disjoint ⟨out, 1024⟩) {d : Nat} (hd' : d + 8 ≤ 4096) :
     m'.readW (off p d) 64 = m.readW (off p d) 64 :=
-  hf.readW (r := ⟨p, 4096⟩) (Offset.contains_base p hd' (by omega))
+  hf.readW (r := ⟨p, 4096⟩) (Offset.contains_base p hd' (by omega_using [hd']))
     (by intro r hr; simp only [List.mem_singleton] at hr; subst r; exact hd) (by decide)
 
 /-- Finish an arbitrary prefix while preserving the complete scratch allocation. -/
@@ -45,26 +45,26 @@ theorem finish_prefix (n : Nat) (hn : n ≤ 128) (s : State) {p out : Addr}
     simp only [List.range_succ, List.flatMap_append, List.flatMap_cons,
       List.flatMap_nil, List.append_nil]
     apply WP.block_append
-    refine (ih (by omega)).mono ?_
+    refine (ih (by omega_using [hn])).mono ?_
     rintro t ⟨ht, hf, hk⟩
-    have hn' : n < 128 := by omega
+    have hn' : n < 128 := by omega_using [hn]
     have ho' : t.gpr .rdi = out := (hk.1 .rdi (by decide)).trans ho
     have hout : InRegions t.wr (off (t.gpr .rdi) (8 * n)) 8 := by
       rw [ho', hk.2.2]
-      exact ⟨_, hw, Offset.contains_base out (by omega) (by omega)⟩
+      exact ⟨_, hw, Offset.contains_base out (by omega_using [hn]) (by omega_using [hn])⟩
     refine (finishWord_ok t (hs.of_copy hk) ⟨n, hn'⟩ hout).mono ?_
     rintro u ⟨hm, hreg, hr, hw'⟩
     have hv : word t.mem p n ^^^ t.mem.readW (off p (8 * n)) 64 =
         (xorBlock (working s.mem p) (blockAt s.mem p))[(⟨n, hn'⟩ : Fin 128)] := by
       rw [xorBlock_get, working_get, blockAt_get]
-      simp only [word, scratch_unchanged hf hd (d := 1024 + 8 * n) (by omega),
-        scratch_unchanged hf hd (d := 8 * n) (by omega)]
+      simp only [word, scratch_unchanged hf hd (d := 1024 + 8 * n) (by omega_using [hn]),
+        scratch_unchanged hf hd (d := 8 * n) (by omega_using [hn])]
     refine ⟨?_, ?_, hk.trans ⟨hreg, hr, hw'⟩⟩
     · rw [hm, ho', hv]
       exact written_step hn' ht
     · rw [hm, ho']
       exact hf.writeW (r := ⟨out, 1024⟩) (by simp) _
-        (Offset.contains_base out (by omega) (by omega))
+        (Offset.contains_base out (by omega_using []) (by omega_using []))
 
 theorem written_block {m : Mem} {out : Addr} {r : Block} (h : Written m out r 128) :
     blockAt m out = r := by

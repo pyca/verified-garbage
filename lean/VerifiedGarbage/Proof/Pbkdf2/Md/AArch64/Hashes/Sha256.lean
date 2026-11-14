@@ -91,9 +91,9 @@ theorem sha256_repr (m m' : Mem) (p q : Addr) (msg : List Byte)
     apply Vector.ext
     intro j hj
     simp only [Spec.Sha256.stateAt, Vector.getElem_ofFn]
-    exact Hmac.Generic.Common.readW_reloc h (by omega)
+    exact Hmac.Generic.Common.readW_reloc h (by omega_using [hj])
   · rw [← hr.2]
-    exact Hmac.Generic.Common.bytesAt_reloc h (o := 32) (k := msg.length % 64) (by omega)
+    exact Hmac.Generic.Common.bytesAt_reloc h (o := 32) (k := msg.length % 64) (by omega_using [])
 
 variable (v : Compress)
 
@@ -148,7 +148,7 @@ def ok : HashOK (hash v) where
     apply Vector.ext
     intro j hj
     simp only [Proof.Sha256.md, Spec.Sha256.stateAt, Vector.getElem_ofFn]
-    exact Hmac.Generic.Common.readW_reloc (n := 32) h (by omega)
+    exact Hmac.Generic.Common.readW_reloc (n := 32) h (by omega_using [hj])
   lenOk _ _ := trivial
   stream := streamOK v
   iv := Spec.Sha256.H0

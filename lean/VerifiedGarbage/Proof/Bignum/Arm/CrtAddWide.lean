@@ -52,7 +52,7 @@ theorem crt_addWide_ok (s : State) {base : BitVec 32} {size o b w : Nat}
     change _ + 1 * _ + 0 < _
     simpa only [Nat.one_mul, Nat.add_zero] using h.sumFits
   rw [WP.seq_iff]
-  refine WP.mono (rowFull_ok u row (by have := h.positive; omega) h.outputFits out input count fits) ?_
+  refine WP.mono (rowFull_ok u row (by have := h.positive; omega_using [this]) h.outputFits out input count fits) ?_
   rintro v ⟨value, outside, _, restV⟩
   rw [one, zero, memU] at value
   change _ = _ + 1 * _ + 0 at value

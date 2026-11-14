@@ -88,7 +88,7 @@ theorem finEntry_ok {s₀ s : State} {w : Reg} {Ctx St W SP : Addr}
   have f₂ : Frame [slotsR W] s₁.mem s₂.mem := by
     rw [hm₂]
     have c : ∀ d, 176 ≤ d → d + 8 ≤ 208 → (slotsR W).Contains (W + BitVec.ofNat 64 d) (64 / 8) :=
-      fun d h₁ h₂ => Offset.contains _ h₁ (by omega) (by omega)
+      fun d h₁ h₂ => Offset.contains _ h₁ (by omega_using [h₂]) (by omega_using [])
     exact ((Frame.refl _ _).writeW (List.mem_singleton_self _) _ (c 184 (by decide) (by decide))).writeW
       (List.mem_singleton_self _) _ (c 192 (by decide) (by decide))
   refine WP.block_append (WP.of_runBlock ⟨s₁, run₁, WP.of_runBlock ⟨s₂, run₂, ?_⟩⟩)
@@ -101,7 +101,7 @@ theorem finEntry_ok {s₀ s : State} {w : Reg} {Ctx St W SP : Addr}
     simp (disch := first | decide | with_reducible assumption) only [Mem.readW_writeW_self64, Mem.readW_writeW_sep]
   · refine hsv₁'.frame f₂ fun r hr => ?_
     simp only [List.mem_singleton] at hr; subst hr
-    exact Offset.disjoint _ (.inl (by decide)) (by omega) (by omega)
+    exact Offset.disjoint _ (.inl (by decide)) (by omega_using []) (by omega_using [])
   · exact (f₁.mono fun r hr => by simp at hr; subst hr; simp).trans (f₂.mono fun r hr => by simp at hr; subst hr; simp)
 
 /-- The entry of `finish`, and the address `T` of `tag` kept at `W + 200`. -/
@@ -125,7 +125,7 @@ theorem finishEntry_ok {s : State} {Ctx St W SP T : Addr} (L : Lay4 Ctx St W SP)
   have rd₂ : ∀ d, (d + 8 ≤ 200 ∨ 208 ≤ d) → d + 8 ≤ 2560 →
       s₂.mem.readW (W + BitVec.ofNat 64 d) 64 = s₁.mem.readW (W + BitVec.ofNat 64 d) 64 := fun d h h' =>
     f₂.readW (r := ⟨W + BitVec.ofNat 64 d, 8⟩) (Region.contains_self _ _) (fun r hr => by
-      simp only [List.mem_singleton] at hr; subst hr; exact L.lay.w_w (by omega) h' (by decide)) (by decide)
+      simp only [List.mem_singleton] at hr; subst hr; exact L.lay.w_w (by omega_using [h]) h' (by decide)) (by decide)
   refine ⟨⟨he.env.keep (fun r _ => hg₂ r) hrd₂ hwr₂,
     by rw [rd₂ 184 (.inl (by decide)) (by decide)]; exact he.alen,
     by rw [rd₂ 192 (.inl (by decide)) (by decide)]; exact he.tlen, by rw [hg₂]; exact he.r8,
@@ -170,8 +170,8 @@ theorem streamFinish_run (v : GcmImpl) {s : State} (hp : Proof.Sm4Gcm.streamFini
     intro d k hk r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
-    · exact (d_sw.sub_left (Lay.stSub (by omega))).sub_right (Lay.wSub (by decide))
-    · exact (d_sw.sub_left (Lay.stSub (by omega))).sub_right (Lay.wSub (by decide))
+    · exact (d_sw.sub_left (Lay.stSub (by omega_using [hk]))).sub_right (Lay.wSub (by decide))
+    · exact (d_sw.sub_left (Lay.stSub (by omega_using [hk]))).sub_right (Lay.wSub (by decide))
   have dC : ∀ r ∈ [savedR W, slotsR W], (⟨Ctx, 256⟩ : Region).Disjoint r := by
     intro r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -223,7 +223,7 @@ theorem streamFinish_run (v : GcmImpl) {s : State} (hp : Proof.Sm4Gcm.streamFini
   have ha₂ : Absorbed s₂.mem (St + BitVec.ofNat 64 16) (St + BitVec.ofNat 64 32) (blockAt s₂.mem (Ctx + BitVec.ofNat 64 240)) x := by
     rw [hH]
     exact ha.congr (blockAt_frame F₂ (dF 16 16 (.inr ⟨by decide, by decide⟩)))
-      (bytesAt_frame F₂ (dF 32 (x.length % 16) (.inr ⟨by decide, by omega⟩)) (by omega))
+      (bytesAt_frame F₂ (dF 32 (x.length % 16) (.inr ⟨by decide, by omega_using []⟩)) (by omega_using []))
   have hc : ciphOf s₂.mem Ctx = ctxCiph s.mem Ctx := ciph_frame F₂ dC
   have hJ : blockAt s₂.mem St = blockAt s.mem St := by
     simpa using blockAt_frame F₂ (dF 0 16 (.inl (by decide)))

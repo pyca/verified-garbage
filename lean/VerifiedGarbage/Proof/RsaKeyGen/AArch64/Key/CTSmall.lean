@@ -66,19 +66,19 @@ theorem smallBlk_k {I : KIn} {s₀ s : State} (h : KS I s₀ s) :
   rw [← List.append_assoc, WP.block_append_iff]
   refine WP.mono (wsBase16_ok h aC) fun s₂ ⟨⟨h16, h12, _, m₂⟩, k₂⟩ => ?_
   have hs₂ := h.ws.scr.congr k₂.wr
-  have ew : BitVec.ofNat 64 I.W >>> 1 = BitVec.ofNat 64 (I.W / 2) := ofNat_shr1 (by omega)
+  have ew : BitVec.ofNat 64 I.W >>> 1 = BitVec.ofNat 64 (I.W / 2) := ofNat_shr1 (by omega_using [hw2])
   have e8 : BitVec.ofNat 64 (I.W / 2) <<< 3 = BitVec.ofNat 64 (8 * (I.W / 2)) := by
     apply BitVec.eq_of_toNat_eq
     rw [BitVec.toNat_shiftLeft, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.shiftLeft_eq,
-      Nat.mod_eq_of_lt (show I.W / 2 < 2 ^ 64 by omega)]
-    omega
+      Nat.mod_eq_of_lt (show I.W / 2 < 2 ^ 64 by omega_using [hw2])]
+    omega_using []
   have ea : off I.B (slot I.W aC) + BitVec.ofNat 64 (8 * (I.W / 2)) = off I.B (slot I.W aC + 8 * (I.W / 2)) :=
     VG.Offset.add_add _ _ _
   refine WP.mono (WP.keep [.x3, .x16] (Q := fun t => t.mem = s.mem.writeW (off I.B (slot I.W aC + 8 * (I.W / 2)))
       (1 : BitVec 64)) (by
-    brun [h16, h12, ew, e8, ea, hs₂.st (d := slot I.W aC + 8 * (I.W / 2)) (by omega), m₂]
+    brun [h16, h12, ew, e8, ea, hs₂.st (d := slot I.W aC + 8 * (I.W / 2)) (by omega_using [sC]), m₂]
     rfl) (by decide) (by decide) (by decide +kernel)) fun t ⟨m₃, k₃⟩ => ?_
-  exact h.arrW (j := aC) (by decide) (by omega) (by omega) ⟨_, m₃⟩ (k₂.trans k₃)
+  exact h.arrW (j := aC) (by decide) (by omega_using []) (by omega_using []) ⟨_, m₃⟩ (k₂.trans k₃)
 
 /-- `smallMask` leaks the same in runs with the same public data, and leaves
 `FF` (`smallMask_k`). -/
@@ -93,7 +93,7 @@ theorem smallMask_ct : RelCT isa (Two (KG DF)) (seqs smallMask) (Two (KG FF)) :=
     exact rs_app (by simp [ltA, cmpA]) (by simp) (ltA_ct (G := NF) (by decide) (by decide)
       (fun _ _ _ _ _ _ _ _ => trivial) (by taint_decide))
       (show RelCT isa _ (seqs [.block _]) _ from two_taint [.x0] (pins_kg NF) (by taint_decide))
-  · have e8 : 64 * (I.pl / 8) = 8 * I.pl := by have := L.pl8; omega
+  · have e8 : 64 * (I.pl / 8) = 8 * I.pl := by have := L.pl8; omega_using [this]
     refine WP.mono (smallMask_k h L.W hok) fun t ⟨ht, f, h15⟩ => ?_
     have hw : word t.mem I.B (8 * kOk) = mask ok := (f.word (by decide) (by decide) (by decide)).trans hok
     have hD : av I t.mem aDd = av I s.mem aDd := f.av (by decide) (by decide) (by decide) h.hZ
@@ -103,7 +103,7 @@ theorem smallMask_ct : RelCT isa (Two (KG DF)) (seqs smallMask) (Two (KG FF)) :=
 
 /-- The status 2: `d` exists and is at most `2^(8 pl)`. -/
 theorem KIn.st_two {I : KIn} : I.st = 2 ↔ ∃ d, Spec.Rsa.inverse I.E I.L = some d ∧ d ≤ 2 ^ (8 * I.pl) := by
-  have hW : 8 * I.pl = 16 * I.pl / 2 := by omega
+  have hW : 8 * I.pl = 16 * I.pl / 2 := by omega_using []
   have hswap : (if I.P₀ < I.Q₀ then (I.Q₀, I.P₀) else (I.P₀, I.Q₀)) = (I.P, I.Q) := by
     by_cases h : I.P₀ < I.Q₀ <;> simp [KIn.P, KIn.Q, h]
   simp only [KIn.st]

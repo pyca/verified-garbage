@@ -44,7 +44,7 @@ theorem arithmetic_ok {s : State} (hc : VConsts s) {A B : Nat → Nat}
         (redc (product (vword (s.v .v0) i) (vword (s.v .v1) i))).toNat = mont (A i*B i) := by
       rw [lazy_mont_word_nat _ _ (by rw [ha i hi]; exact halt i hi)
         (by rw [hb i hi]; exact hblt i hi),ha i hi,hb i hi]
-    rcases (show e=0 ∨ e=1 ∨ e=2 ∨ e=3 by omega) with rfl | rfl | rfl | rfl <;>
+    rcases (show e=0 ∨ e=1 ∨ e=2 ∨ e=3 by omega_using [he]) with rfl | rfl | rfl | rfl <;>
       exact hm _ (by decide)
   refine csub_ok (by decide) (hc.chg ht).lanes_q hl
     (fun e he => mont_lt (product_lt_qR (halt e he) (hblt e he))) fun u hu hlu =>

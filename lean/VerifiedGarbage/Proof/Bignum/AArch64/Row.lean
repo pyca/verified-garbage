@@ -55,7 +55,7 @@ theorem rowStep_ok {s₀ : State} {B : Addr} {Z w eA eb : Nat} (h7 : s₀.gpr .x
   have t1 : t.gpr .x1 = s₀.gpr .x1 := hI.keep.gpr .x1 (by decide)
   rw [WP.block_append_iff]
   refine WP.mono (WP.keep [.x2, .x3, .x4, .x16, .x17] (mac_ok t false hI.scr hI.x16 hI.x17 t7
-    (by omega) (by simp only [Bool.false_eq_true, ite_false]; omega) (by omega) hI.carry_lt)
+    (by omega_using [hb, hj]) (by simp only [Bool.false_eq_true, ite_false]; omega_using [hA, hj]) (by omega_using [hA, hj]) hI.carry_lt)
     (by decide) (by decide) (by decide +kernel)) fun t₁ ⟨⟨lo, hm, hv, h16, h17, hcarry⟩, k₁⟩ => ?_
   refine WP.mono (dec_ok t₁ .x14) fun t' ⟨⟨h14, hm', hcf⟩, k'⟩ => ⟨?_, by rw [h14, k₁.gpr .x14 (by decide)]⟩
   have hcar : carry t' = carry t₁ := by
@@ -65,17 +65,17 @@ theorem rowStep_ok {s₀ : State} {B : Addr} {Z w eA eb : Nat} (h7 : s₀.gpr .x
   have hmem : t'.mem = t.mem.writeW (off B (eA + 8 * j)) lo := hm'.trans hm
   -- The words read: `x` of the accumulator and `y` of `B`, both as on entry.
   have hx : word t.mem B (eA + 8 * j) = word s₀.mem B (eA + 8 * j) :=
-    hI.out.word (Or.inr (Nat.le_refl _)) (by omega)
+    hI.out.word (Or.inr (Nat.le_refl _)) (by omega_using [hA, hj, hn])
   have hy : word t.mem B (eb + 8 * j) = word s₀.mem B (eb + 8 * j) :=
-    hI.out.word (by omega) (by omega)
+    hI.out.word (by omega_using [hsep, hj]) (by omega_using [hb, hj, hn])
   refine ⟨hI.scr.congr (k'.wr.trans k₁.wr), (hI.keep.trans (k₁.trans k')).mono (by decide),
     by rw [k'.gpr .x16 (by decide), h16, Nat.mul_succ, Nat.add_assoc],
     by rw [k'.gpr .x17 (by decide), h17, Nat.mul_succ, Nat.add_assoc], ?_, ?_, ?_⟩
   · rw [hmem]
     refine fun x hx' => ?_
-    rw [writeW_outside t.mem B lo (by omega) x (by omega)]
-    exact hI.out x (by omega)
-  · rw [hmem, wv_writeW_top _ _ _ _ _ (by omega), hcar]
+    rw [writeW_outside t.mem B lo (by omega_using [hA, hj, hn]) x (by omega_using [hx'])]
+    exact hI.out x (by omega_using [hx'])
+  · rw [hmem, wv_writeW_top _ _ _ _ _ (by omega_using [hA, hj, hn]), hcar]
     simp only [wv]
     rw [hx, hy, t1] at hv
     have hval := hI.val
@@ -96,11 +96,11 @@ theorem rowTop_ok {t : State} {B : Addr} {Z d : Nat} (hs : Scr t B Z)
   have hn := hs.nowrap
   have hX : (t.mem.writeW (off B d) (t.mem.readW (off B d) 64 + t.gpr .x2)).readW (off B (d + 8)) 64 =
       t.mem.readW (off B (d + 8)) 64 :=
-    (writeW_outside t.mem B _ (by omega)).word (Or.inr (Nat.le_refl _)) (by omega)
+    (writeW_outside t.mem B _ (by omega_using [hA, hn])).word (Or.inr (Nat.le_refl _)) (by omega_using [hA, hn])
   refine WP.keep [.x3] ?_ (by decide) (by decide) (by decide +kernel)
   unfold rowTop
-  brun [h16, h7, hs.ld (show d + 8 ≤ Z by omega), hs.st (show d + 8 ≤ Z by omega),
-    hs.ld (show d + 8 + 8 ≤ Z by omega), hs.st (show d + 8 + 8 ≤ Z by omega)]
+  brun [h16, h7, hs.ld (show d + 8 ≤ Z by omega_using [hA]), hs.st (show d + 8 ≤ Z by omega_using [hA]),
+    hs.ld (show d + 8 + 8 ≤ Z by omega_using [hA]), hs.st (show d + 8 + 8 ≤ Z by omega_using [hA])]
   simp only [Bool.toNat_false, Nat.add_zero, add_ofNat0, add_zero64]
   simp only [hX]
 
@@ -111,7 +111,7 @@ theorem addc2_toNat (X Y c : BitVec 64) (hfit : X.toNat + c.toNat + 2 ^ 64 * Y.t
   have hX := X.isLt; have hY := Y.isLt; have hc := c.isLt
   by_cases h : 2 ^ 64 ≤ X.toNat + c.toNat <;>
   simp only [h, decide_true, decide_false, Bool.toNat_true, Bool.toNat_false, BitVec.toNat_add,
-    BitVec.toNat_ofNat] <;> omega
+    BitVec.toNat_ofNat] <;> omega_arith
 
 /-- The value after `rowTop`: `X + c` and `Y` plus its carry, if they fit. -/
 theorem rowTop_val (m : Mem) (B : Addr) {Z eA w : Nat} (hn : B.toNat + Z ≤ 2 ^ 64)
@@ -123,15 +123,15 @@ theorem rowTop_val (m : Mem) (B : Addr) {Z eA w : Nat} (hn : B.toNat + Z ≤ 2 ^
         B eA (w + 2) =
       wv m B eA w + 2 ^ (64 * w) * ((word m B (eA + 8 * w)).toNat + c.toNat +
         2 ^ 64 * (word m B (eA + 8 * w + 8)).toNat) := by
-  have o1 := writeW_outside m B (word m B (eA + 8 * w) + c) (d := eA + 8 * w) (by omega)
+  have o1 := writeW_outside m B (word m B (eA + 8 * w) + c) (d := eA + 8 * w) (by omega_using [hn, hA])
   have o2 := writeW_outside (m.writeW (off B (eA + 8 * w)) (word m B (eA + 8 * w) + c)) B
     (word m B (eA + 8 * w + 8) + BitVec.ofNat 64
       (decide (2 ^ 64 ≤ (word m B (eA + 8 * w)).toNat + c.toNat)).toNat)
-    (d := eA + 8 * w + 8) (by omega)
+    (d := eA + 8 * w + 8) (by omega_using [hn, hA])
   have hc := addc2_toNat (word m B (eA + 8 * w)) (word m B (eA + 8 * w + 8)) c hfit
-  rw [show w + 2 = w + 1 + 1 from rfl, wv, wv, show eA + 8 * (w + 1) = eA + 8 * w + 8 by omega,
-    word_writeW_self, o2.word (Or.inl (Nat.le_refl _)) (by omega), word_writeW_self,
-    o2.wv (Or.inl (by omega)) (by omega), o1.wv (Or.inl (Nat.le_refl _)) (by omega), pow64_succ, ← hc]
+  rw [show w + 2 = w + 1 + 1 from rfl, wv, wv, show eA + 8 * (w + 1) = eA + 8 * w + 8 by omega_using [],
+    word_writeW_self, o2.word (Or.inl (Nat.le_refl _)) (by omega_using [hn, hA]), word_writeW_self,
+    o2.wv (Or.inl (by omega_using [])) (by omega_using [hn, hA]), o1.wv (Or.inl (Nat.le_refl _)) (by omega_using [hn, hA]), pow64_succ, ← hc]
   grind
 
 /-! ## `mulAddRow` -/
@@ -157,18 +157,18 @@ theorem mulAddRow_ok {s : State} {B : Addr} {Z w eA eb : Nat} (hs : Scr s B Z)
     ⟨hs.congr k₁.wr, Keep.refl _ _, by rw [h16]; rfl, by rw [h17]; rfl, Outside.refl _ _ _ _,
       by simp only [carry, h2, hcf, Bool.toNat_false]; rfl,
       by simp only [carry, h2, hcf, Bool.toNat_false]; decide⟩
-  refine WP.seq (WP.mono (wp_countdown (N := w) (by omega) (by omega) (RowInv s₁ B Z eA eb)
-    (fun j hj t hI _ => rowStep_ok s₁7 (by omega) hb (by omega) hj hI) h0 h14) fun u hI => ?_)
+  refine WP.seq (WP.mono (wp_countdown (N := w) (by omega_using [hw']) (by omega_using [hw]) (RowInv s₁ B Z eA eb)
+    (fun j hj t hI _ => rowStep_ok s₁7 (by omega_using [hA]) hb (by omega_using [hsep]) hj hI) h0 h14) fun u hI => ?_)
   have u7 : u.gpr .x7 = 0 := (hI.keep.gpr .x7 (by decide)).trans s₁7
   refine WP.seq (WP.mono (carryOut_ok u u7 hI.carry_lt) fun t ⟨⟨hm, hcarry⟩, kc⟩ => ?_)
   have t7 : t.gpr .x7 = 0 := (kc.gpr .x7 (by decide)).trans u7
   refine WP.mono (rowTop_ok (hI.scr.congr kc.wr)
-    ((kc.gpr .x16 (by decide)).trans hI.x16) t7 (by omega)) fun t' ⟨hm', k'⟩ => ?_
+    ((kc.gpr .x16 (by decide)).trans hI.x16) t7 (by omega_using [hA])) fun t' ⟨hm', k'⟩ => ?_
   -- The words above the loop's, as on entry.
   have hX : word t.mem B (eA + 8 * w) = word s.mem B (eA + 8 * w) := by
-    rw [hm, hI.out.word (Or.inr (Nat.le_refl _)) (by omega), hm₁]
+    rw [hm, hI.out.word (Or.inr (Nat.le_refl _)) (by omega_using [hA, hn]), hm₁]
   have hY : word t.mem B (eA + 8 * w + 8) = word s.mem B (eA + 8 * w + 8) := by
-    rw [hm, hI.out.word (Or.inr (by omega)) (by omega), hm₁]
+    rw [hm, hI.out.word (Or.inr (by omega_using [])) (by omega_using [hA, hn]), hm₁]
   have hval := hI.val
   rw [hm₁, s₁1, ← hcarry, ← hm] at hval
   have e2 := wv_top2 s.mem B eA w
@@ -178,17 +178,17 @@ theorem mulAddRow_ok {s : State} {B : Addr} {Z w eA eb : Nat} (hs : Scr s B Z)
     rw [hX, hY]
     have hlt : 2 ^ (64 * w) * ((word s.mem B (eA + 8 * w)).toNat + (t.gpr .x2).toNat +
         2 ^ 64 * (word s.mem B (eA + 8 * w + 8)).toNat) < 2 ^ (64 * w) * 2 ^ 128 := by
-      rw [← Nat.pow_add, show 64 * w + 128 = 64 * (w + 2) by omega]
+      rw [← Nat.pow_add, show 64 * w + 128 = 64 * (w + 2) by omega_using []]
       have := wv_lt t.mem B eA w
       grind
     exact Nat.lt_of_mul_lt_mul_left hlt
   refine ⟨?_, ?_, (((k₁.trans hI.keep).trans kc).trans k').mono (by decide)⟩
-  · rw [hm', rowTop_val t.mem B hn (show eA + 8 * w + 16 ≤ Z by omega) _ hfit, hX, hY, e2]
+  · rw [hm', rowTop_val t.mem B hn (show eA + 8 * w + 16 ≤ Z by omega_using [hA]) _ hfit, hX, hY, e2]
     grind
   · rw [hm']
     intro x hx
-    rw [writeW_outside _ B _ (by omega) x (by omega), writeW_outside _ B _ (by omega) x (by omega)]
+    rw [writeW_outside _ B _ (by omega_using [hA, hn]) x (by omega_using [hx]), writeW_outside _ B _ (by omega_using [hA, hn]) x (by omega_using [hx])]
     rw [hm]
-    exact (hI.out x (by omega)).trans (by rw [hm₁])
+    exact (hI.out x (by omega_using [hx])).trans (by rw [hm₁])
 
 end VG.Proof.Bignum.AArch64

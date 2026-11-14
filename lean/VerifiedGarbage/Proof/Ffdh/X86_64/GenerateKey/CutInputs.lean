@@ -22,7 +22,7 @@ theorem Inputs.cut_keep {p : GkP} {rb : List Byte} {s t : State} (h : Inputs p r
   have ho : VG.Proof.Rsa.X86_64.OutOk s p.B p.Z p.xp rb.length := by rw [h.base.rl]; exact h.base.x
   have hout := hc.outside ho
   have hh : ∀ d, d + 8 ≤ p.Z → word t.mem p.B d = word s.mem p.B d :=
-    fun d hd => hout.word (Or.inl hd) (by have := h.base.scr.nowrap; omega)
+    fun d hd => hout.word (Or.inl hd) (by have := h.base.scr.nowrap; omega_using [hd, this])
   have hg : Src t p.B p.Z p.dp p.dom := hc.src_keep h.base.dom (by
     rw [h.base.rl, h.base.doml]; exact h.base.xd)
   have hr : Src t p.B p.Z p.rp rb := hc.src_keep h.base.rand (by
@@ -40,12 +40,12 @@ theorem Inputs.cut_keep {p : GkP} {rb : List Byte} {s t : State} (h : Inputs p r
     rw [hh _ (by
       simp only [GkP.headers, List.mem_cons, List.not_mem_nil, or_false] at he
       rcases he with rfl | rfl | rfl | rfl | rfl | rfl <;>
-        simp only [sDom, sDomLen, sK, sY, sX, sRand, sFn] <;> omega)]
+        simp only [sDom, sDomLen, sK, sY, sX, sRand, sFn] <;> omega_using [hZ])]
     exact h.base.hdr e he
   refine ⟨⟨hbase, (hc.keep.gpr (by decide)).trans h.rdi, hy, ?_, ?_⟩,
     hc.src (by rw [h.base.rl]; exact h.base.ld_lt) ho, hh⟩
-  · rw [hh _ (by change 224 ≤ p.Z; omega)]; exact h.g
-  · rw [hh _ (by change 232 ≤ p.Z; omega)]; exact h.q
+  · rw [hh _ (by change 224 ≤ p.Z; omega_using [hZ])]; exact h.g
+  · rw [hh _ (by change 232 ≤ p.Z; omega_using [hZ])]; exact h.q
 
 /-- The full cut loop, ready to select the public exponent slice. -/
 theorem cut_inputs {p : GkP} {rb : List Byte} {s : State} (h : Inputs p rb s) (hr : CutRegs p s) :
@@ -56,7 +56,7 @@ theorem cut_inputs {p : GkP} {rb : List Byte} {s : State} (h : Inputs p rb s) (h
   obtain ⟨hrp, hxp, hm, hld, hcx, h14⟩ := hr
   have hk := h.base.k1
   have hk' := h.base.k2
-  refine WP.mono (cut_ok (rb := rb) (by rw [h.base.rl]; omega) (by rw [h.base.rl]; omega)
+  refine WP.mono (cut_ok (rb := rb) (by rw [h.base.rl]; omega_using [hk]) (by rw [h.base.rl]; omega_using [hk'])
     (by rw [h.base.rl]; exact h.base.ld_lt) hrp hxp hcx hld hm (by rw [h.base.rl]; exact h14)
     h.base.rand.rd (fun i hi => h.base.x.wr i (by rwa [h.base.rl] at hi))
     (fun i hi => by simpa only [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem hi,

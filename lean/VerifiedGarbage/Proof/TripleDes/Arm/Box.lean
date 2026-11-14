@@ -60,7 +60,7 @@ theorem spillStep_frame (i : Instr) (s s' : State)
     refine ⟨rfl, ?_⟩
     rw [addr_add (by omega_using [fit, hhi])]
     exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _
-      (Offset.contains (State.addr (s.gpr .r2)) (by omega) (by omega) (by decide))
+      (Offset.contains (State.addr (s.gpr .r2)) (by omega_using [hlo]) (by omega_using [hhi]) (by decide))
 
 theorem spillBlock_frame (is : List Instr) (s s' : State)
     (fit : (s.gpr .r2).toNat + 512 ≤ 2 ^ 32)

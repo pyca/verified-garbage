@@ -54,7 +54,7 @@ theorem JacWinLay.ipApart (hL : JacWinLay K size) : CachedJac.IPApart K.M.n K.S 
   have hgW : ∀ c < 5, jg K (80 + c) ∉ rcbW K.S K.R := by
     intro c hc hw
     simp only [rcbW, List.mem_cons, List.not_mem_nil, or_false] at hw
-    have g := fun x (hx : x ∈ jwOther K) => hL.jg_ne (List.mem_append_right _ hx) (i := 80 + c) (by omega)
+    have g := fun x (hx : x ∈ jwOther K) => hL.jg_ne (List.mem_append_right _ hx) (i := 80 + c) (by omega_using [hc])
     rcases hw with h | h | h | h | h | h | h | h | h <;> exact g _ (by jw_mem) h.symm
   refine ⟨hL.rcbW_R, fun x hx => ?_⟩
   simp only [CachedJac.ipR, List.mem_cons, List.not_mem_nil, or_false] at hx
@@ -134,7 +134,7 @@ theorem jstepO_point (hC : Law C) (hM3 : AM3 C) (hO : PrimeOrder C) {P : Point C
     InvJ C (jacAddF X1 Y1 Z1 X2 Y2 Z2).1 (jacAddF X1 Y1 Z1 X2 Y2 Z2).2.1 (jacAddF X1 Y1 Z1 X2 Y2 Z2).2.2
       (mul (OddWin.oS J k i) P) := by
   obtain ⟨ne0, ne1, ne2⟩ := OddWin.loop_noexc hC hO hP hP0 hn2 hn64 hnb hk hkn hi
-  rw [← OddWin.win_add hC hP hk (by omega)]
+  rw [← OddWin.win_add hC hP hk (by omega_using [hi])]
   have hQ := hC.onCurve_mul hP (32 * OddWin.oS J k (i + 1))
   have hW := OddWin.onCurve_oddPt hC hP J k i
   have hz : Z1 ≠ 0 := fun h => ne0 ((h1.z_zero_iff hC).mp h)

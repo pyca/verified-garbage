@@ -47,7 +47,7 @@ theorem normalize_ok {s : State} {base : Addr} (hs : Scr s base) {o : Nat} (hp :
     hp.of_keeps (k₁.trans ((keep k₂).trans (k₃.trans (keep k₄)))) (by decide) (by decide)
   refine WP.mono (passR_ok hs₄ (rb := .r9) (o := 0) (q := o) (by decide) (by decide)
     (Nat.le_trans ho (by decide)) htmp
-    (fun i hi => by rw [hs₄.eaP hp₄ (by simp only [ACC] at ho; omega), Nat.zero_add])
+    (fun i hi => by rw [hs₄.eaP hp₄ (by simp only [ACC] at ho; omega_using [ho, hi]), Nat.zero_add])
     (Or.inr (Or.inl ho')) f₄
     (folded_bound (folded_bound hb))) fun s₅ ⟨f₅, _, m₅, k₅⟩ => ?_
   exact ⟨f₅, (hwork m₁).trans ((hwork m₂).trans ((hwork m₃).trans ((hwork m₄).trans (.output m₅)))),

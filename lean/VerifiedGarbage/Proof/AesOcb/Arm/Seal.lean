@@ -66,8 +66,8 @@ theorem tagOut_ok {p : Prm} (L : Lay p) {s : State} (E : Env p s) (A : Args p s.
   refine WP.seq (WP.of_runBlock ⟨_, by orun [E.sp, a₁₆, a₂₀, A.a16, A.a20], ?_⟩)
   refine WP.mono (copyLoop_ok _ (S := p.W) (D := p.T) (n := p.tl)
     ⟨by simp [gpr_setReg, E.r11], by simp [gpr_setReg, E.sp, A.a16], by simp [gpr_setReg, E.sp, A.a20], L.tl1,
-      by omega, by omega, L.tw, by simp only [rd_setReg, wr_setReg]; exact covers_left (covers_prefix E.perm.w (by omega)),
-      by simp only [wr_setReg]; exact hTw, (L.t_w.sub_right (Region.sub_prefix (by omega))).symm⟩)
+      by omega_using [t16], by omega_using [fw, t16], L.tw, by simp only [rd_setReg, wr_setReg]; exact covers_left (covers_prefix E.perm.w (by omega_using [t16])),
+      by simp only [wr_setReg]; exact hTw, (L.t_w.sub_right (Region.sub_prefix (by omega_using [t16]))).symm⟩)
     fun t ⟨m, O⟩ => ⟨by rw [m]; rfl, E.keep (fun r hr => ?_) (by rw [O.sp]; rfl) (by rw [O.rd]; rfl)
       (by rw [O.wr]; rfl), by rw [O.rd]; rfl, by rw [O.wr]; rfl⟩
   simp only [envRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -77,7 +77,7 @@ theorem tagOut_ok {p : Prm} (L : Lay p) {s : State} (E : Env p s) (A : Args p s.
 /-- The first `t ≤ 16` bytes of a block. -/
 theorem bytesAt_take_block (m : Mem) (q : Addr) {t : Nat} (h : t ≤ 16) :
     bytesAt m q t = (Spec.Ocb.toBytes (blockAtMem m q)).take t := by
-  rw [blockAtMem, Proof.Ocb.toBytes_ofBytes (length_bytesAt _ _ _), show (16 : Nat) = t + (16 - t) by omega,
+  rw [blockAtMem, Proof.Ocb.toBytes_ofBytes (length_bytesAt _ _ _), show (16 : Nat) = t + (16 - t) by omega_using [h],
     Proof.Ocb.bytesAt_append, List.take_left' (length_bytesAt _ _ _)]
 
 /-- What `tag d` writes, within the parts the pieces write. -/
@@ -134,19 +134,19 @@ theorem seal_wp' {p : Prm} (L : Lay p) {s₀ : State} (P : Perm p s₀) (A : Arg
     rw [blockAtMem_frame B.frame (by wdisj L), P₃.sum]
   have d₆ : bytesAt s'.mem (State.addr p.D) p.n = bytesAt s₄.mem (State.addr p.D) p.n := by
     rw [hm, Proof.Cmac.bytesAt_frame f₆ (fun r hr => by
-      simp only [List.mem_singleton] at hr; subst hr; exact L.t_d.symm) (by have := L.n_lt; omega)]
-    exact Proof.Cmac.bytesAt_frame T₅.frame (by ddisj L) (by have := L.n_lt; omega)
+      simp only [List.mem_singleton] at hr; subst hr; exact L.t_d.symm) (by have := L.n_lt; omega_using [this])]
+    exact Proof.Cmac.bytesAt_frame T₅.frame (by ddisj L) (by have := L.n_lt; omega_using [this])
   have tv := T₅.val
   rw [show State.addr p.W + BitVec.ofNat 64 tagO = State.addr p.W from BitVec.add_zero _] at tv
   have t₆ : bytesAt s'.mem (State.addr p.T) p.tl = (Spec.Ocb.toBytes (blockAtMem s₅.mem (State.addr p.W))).take p.tl := by
-    rw [hm, m₆, Proof.Ocb.bytesAt_writeBytes_base _ _ _ (by rw [hx]) (by have := L.tl16; omega), hx,
+    rw [hm, m₆, Proof.Ocb.bytesAt_writeBytes_base _ _ _ (by rw [hx]) (by have := L.tl16; omega_using [this]), hx,
       List.drop_of_length_le (by rw [length_bytesAt]), List.append_nil, bytesAt_take_block _ _ L.tl16]
   rw [Proof.Ocb.encryptWith_eq, d₆, hout, t₆, tv, hck, hofs, ld₄, sum₄, c₄]
   simp only [length_bytesAt, List.length_drop]
   by_cases hr : 0 < p.n % 16
-  · have h' : p.n - 16 * (p.n / 16) > 0 := by omega
+  · have h' : p.n - 16 * (p.n / 16) > 0 := by omega_using [hr]
     simp only [h', hr, ↓reduceIte]
-  · have h' : ¬ (p.n - 16 * (p.n / 16) > 0) := by omega
+  · have h' : ¬ (p.n - 16 * (p.n / 16) > 0) := by omega_using [hr]
     simp only [h', hr, ↓reduceIte]
 
 /-- `vg_aes_ocb_seal`. -/

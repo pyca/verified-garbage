@@ -31,7 +31,7 @@ theorem enc_pre {x : State} (h : PreE x) : encK.pre x := by
   rw [e] at h1 ⊢
   sig_pre [Proof.RsaPkcs1Enc.encryptPrecomputedContract, Proof.RsaPkcs1Enc.encryptPrecomputedSig, abi, argRegs,
     stackArgs_six, List.append_eq, List.range, List.range.loop]
-  exact ⟨h1, by have := h.sp2; omega, h.hrd, h.hwr, h.on, h.oe, h.om, h.ops, h.osc, h.op, h.oa, h.ns, h.es, h.ms,
+  exact ⟨h1, by have := h.sp2; omega_using [this], h.hrd, h.hwr, h.on, h.oe, h.om, h.ops, h.osc, h.op, h.oa, h.ns, h.es, h.ms,
     h.pss, h.sp, h.sa, h.ko, h.kn, h.ke, h.km, h.kps, h.ksc, h.kp, h.ka, h.wo, h.wn, h.we, h.wm, h.wps, h.wsc,
     h.wp, ⟨h.k1, h.k2⟩, h.ok, h.e1, h.e2, h.ml, h.pl, h.hs, h.hp⟩
 

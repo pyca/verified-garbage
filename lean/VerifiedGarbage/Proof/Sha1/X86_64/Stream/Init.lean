@@ -47,7 +47,7 @@ theorem init_post {s₀ : State}
   have hf : Frame [⟨s₀.gpr .rdi, 84⟩] s₀.mem (writeState s₀.mem (s₀.gpr .rdi) Spec.Sha1.H0) := by
     have c : ∀ k, k < 5 → (⟨s₀.gpr .rdi, 84⟩ : Region).Contains
         (s₀.gpr .rdi + BitVec.ofInt 64 ((4 * k : Nat) : Int)) (32 / 8) :=
-      fun k hk => contains_offset' (by omega) (by omega)
+      fun k hk => contains_offset' (by omega_using [hk]) (by omega_using [hk])
     simp only [writeState]
     refine ((((((Frame.refl _ _).writeW ?_ _ (c 0 ?_)).writeW ?_ _ (c 1 ?_)).writeW ?_ _
       (c 2 ?_)).writeW ?_ _ (c 3 ?_)).writeW ?_ _ (c 4 ?_)) <;> simp
@@ -61,9 +61,9 @@ theorem init_correct {s₀ : State} (hp : Proof.Sha1.initX86_64.pre s₀) :
     WP isa init s₀ fun s' => gprPreserved s₀ s' ∧ Proof.Sha1.initX86_64.post s₀ s' := by
   obtain ⟨hrd, hwr, hret⟩ := hp
   have o : ∀ k, k < 5 → InRegions s₀.wr (s₀.gpr .rdi + BitVec.ofInt 64 ((4 * k : Nat) : Int)) 4 :=
-    fun k hk => ⟨⟨s₀.gpr .rdi, 84⟩, by simp [hwr], contains_offset' (by omega) (by omega)⟩
-  have o0 := o 0 (by omega); have o1 := o 1 (by omega); have o2 := o 2 (by omega)
-  have o3 := o 3 (by omega); have o4 := o 4 (by omega)
+    fun k hk => ⟨⟨s₀.gpr .rdi, 84⟩, by simp [hwr], contains_offset' (by omega_using [hk]) (by omega_using [hk])⟩
+  have o0 := o 0 (by omega_using []); have o1 := o 1 (by omega_using []); have o2 := o 2 (by omega_using [])
+  have o3 := o 3 (by omega_using []); have o4 := o 4 (by omega_using [])
   rw [init_eq]
   apply WP.of_runBlock
   simp (config := {decide := true}) only [runBlock_cons, runStep_some,

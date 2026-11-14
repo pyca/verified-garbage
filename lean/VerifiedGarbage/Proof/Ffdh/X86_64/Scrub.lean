@@ -31,7 +31,7 @@ theorem contains_of {o : Addr} {k N : Nat} (hk : k < N) : Region.Contains ⟨o, 
   simp only [Region.Contains]
   rw [BitVec.add_comm o, BitVec.add_sub_cancel, BitVec.toNat_ofNat]
   have := Nat.mod_le k (2 ^ 64)
-  omega
+  omega_using [hk]
 
 /-- The `n` octets at `o` read the memory only within `⟨o, n * 1⟩`. -/
 theorem bytesAt_of {m₁ m₂ : Mem} {o : Addr} {n : Nat}
@@ -40,7 +40,7 @@ theorem bytesAt_of {m₁ m₂ : Mem} {o : Addr} {n : Nat}
   simp only [Spec.Rsa.bytesAt]
   refine List.map_congr_left fun i hi => ?_
   have := List.mem_range.mp hi
-  exact (h _ (contains_of (by omega))).symm
+  exact (h _ (contains_of (by omega_using [this]))).symm
 
 theorem toNat_sw (cs : List (String × List (BitVec 64))) (x : BitVec 64) :
     (x.setWidth (abi.withConsts cs).ptrBits).toNat = x.toNat := by
@@ -59,7 +59,7 @@ theorem wordsAt_of {m₁ m₂ : Mem} {o : Addr} {n N : Nat}
   List.map_congr_left fun i hi => Mem.readW_congr fun t ht => by
     have := List.mem_range.mp hi
     rw [Offset.add_add]
-    exact (h _ (contains_of (by simp only [Nat.reduceDiv] at ht; omega))).symm
+    exact (h _ (contains_of (by simp only [Nat.reduceDiv] at ht; omega_using [hN, ht, this]))).symm
 
 theorem checkDomainOut (stack : Nat) (cs : List (String × List (BitVec 64)) := []) :
     PostOut (Spec.Ffdh.checkDomainContract (abi.withConsts cs) stack) (Spec.Ffdh.checkDomainSig.retBits 64) :=

@@ -28,7 +28,7 @@ theorem odd_ct {base : BitVec 32} {len w a : Nat} (ha : a < 8) :
       (.block [.ldr .r4 .r0 (64 + 8 * a)]) (fun _ _ => True) := by
     have trace : RelCT isa (fun s t => s.gpr .r0 = t.gpr .r0)
         (.block [.ldr .r4 .r0 (64 + 8 * a)]) (fun _ _ => True) := by
-      have casesA : a = 0 ∨ a = 1 ∨ a = 2 ∨ a = 3 ∨ a = 4 ∨ a = 5 ∨ a = 6 ∨ a = 7 := by omega
+      have casesA : a = 0 ∨ a = 1 ∨ a = 2 ∨ a = 3 ∨ a = 4 ∨ a = 5 ∨ a = 6 ∨ a = 7 := by omega_using [ha]
       rcases casesA with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
         exact RelCT.taint (A := taint) (Taint.ofRegs [.r0]) (fun _ _ h => r0_agree h) (by taint_decide)
     exact trace.mono (fun _ _ h => h.1.ptr.trans h.2.1.ptr.symm) (fun _ _ h => h)
@@ -36,11 +36,11 @@ theorem odd_ct {base : BitVec 32} {len w a : Nat} (ha : a < 8) :
       WP isa (.block [.ldr .r4 .r0 (64 + 8 * a)]) s
         (fun t => t.gpr .r4 = base + BitVec.ofNat 32 (arrAt w a)) := by
     have fits : arrAt w 8 ≤ 8 * len := h.width ▸ h.layout.2.2.1
-    have size : 64 + 8 * a + 4 ≤ 8 * len := by simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at fits; omega
+    have size : 64 + 8 * a + 4 ≤ 8 * len := by simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at fits; omega_using [ha, fits]
     have header := nativeHeader_of_layout s.mem base h.workspace.nowrap (Nat.le_refl _) h.layout
     rw [h.width] at header
-    refine wp_ldr (by omega) (a := off (State.addr base) (64 + 8 * a))
-      (by rw [h.ptr]; exact addr_add (by have := h.workspace.nowrap; omega))
+    refine wp_ldr (by omega_using [ha]) (a := off (State.addr base) (64 + 8 * a))
+      (by rw [h.ptr]; exact addr_add (by have := h.workspace.nowrap; omega_using [size, this]))
       (h.workspace.read size) fun t loaded => WP.block_nil ?_
     exact loaded.gpr.trans (header.array a ha)
   have tail : RelCT isa (fun s t => s.gpr .r4 = base + BitVec.ofNat 32 (arrAt w a) ∧

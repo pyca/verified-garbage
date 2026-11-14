@@ -90,12 +90,12 @@ theorem outside_frame {L : RL} (hL : L.Ok) {o n : Nat} (hon : o + n ≤ 32) {m m
   refine ho x ?_
   have hn := hx L.nR (by simp)
   simp only [Region.Contains, off] at hn
-  rw [VG.Offset.toNat_sub_add x L.F (by simp only [oNonce]; omega)] at hn
+  rw [VG.Offset.toNat_sub_add x L.F (by simp only [oNonce]; omega_using [])] at hn
   simp only [ofs, oNonce, frameBytes] at hn hF ⊢
   have := (x - L.F).isLt
   by_contra hc
   rw [show 2 ^ 64 - 120 + (x - L.F).toNat = (x - L.F).toNat - 120 + 2 ^ 64 by omega, Nat.add_mod_right,
-    Nat.mod_eq_of_lt (by omega)] at hn
+    Nat.mod_eq_of_lt (by omega_using [])] at hn
   omega
 
 /-- The sampler's run keeps `Scanned` and the nonce's zeros. -/
@@ -109,14 +109,14 @@ theorem sampled {s₀ t t₁ : State} {u : Nat} {S : Spec.Dsa.Random.Sample} (h 
   have hql' := hL.ql
   have hdis : ∀ r ∈ ctxRegs, r ∉ drawRegs := by decide
   refine ⟨hs.step (hs.ctx.step hL so.keep.sp so.keep.rd so.keep.wr (fun r hr => so.keep.gpr r (hdis r hr))
-    (outside_frame hL (o := (eOf s₀).ql - (eOf s₀).W) (n := (eOf s₀).W) (by omega) so.out))
+    (outside_frame hL (o := (eOf s₀).ql - (eOf s₀).W) (n := (eOf s₀).W) (by omega_using [hW, hql]) so.out))
     (so.keep.gpr _ (by decide)) (so.keep.gpr _ (by decide)) (so.keep.gpr _ (by decide)), fun j hj => ?_⟩
   have hF := hL.fnw
   have e : ofs (eOf s₀).F (off (rlOf s₀).F (oNonce + j)) = oNonce + j :=
-    Mont.ofs_off0 _ (by simp only [oNonce, frameBytes] at hF ⊢; omega)
+    Mont.ofs_off0 _ (by simp only [oNonce, frameBytes] at hF ⊢; omega_using [hql', hj])
   have hj' : oNonce + j < (eOf s₀).o := by
     have e2 : (eOf s₀).ql = (rlOf s₀).ql := rfl
-    simp only [SE.o]; omega
+    simp only [SE.o]; omega_using [hj, e2]
   rw [so.out _ (.inl (by rw [e]; exact hj'))]
   exact hz j hj
 
@@ -139,7 +139,7 @@ theorem frame_byte {L : RL} (hL : L.Ok) {m m' : Mem} (hf : Frame (signWr L) m m'
     m' (off L.F d) = m (off L.F d) := by
   have hF := hL.fnw
   refine hf _ fun r hr hc => ?_
-  have hin : L.frR.Contains (off L.F d) 1 := VG.Offset.contains_base _ (by omega) (by simp only [frameBytes] at hd; omega)
+  have hin : L.frR.Contains (off L.F d) 1 := VG.Offset.contains_base _ (by omega_using [hd]) (by simp only [frameBytes] at hd; omega_using [hd])
   simp only [signWr, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl
   · exact hL.dFO _ hin hc
@@ -157,14 +157,14 @@ theorem attempt_ok {s₀ t : State} {a u : Nat} (h : rsContract.pre s₀) (hq : 
   have hQ := seOf_Q (L := rlOf s₀) s₀.mem hq
   have henv := hi.sc.env h hq
   have hql := hL.ql
-  obtain ⟨a', rfl⟩ : ∃ a', a = a' + 1 := ⟨a - 1, by have := hi.ha1; omega⟩
+  obtain ⟨a', rfl⟩ : ∃ a', a = a' + 1 := ⟨a - 1, by have := hi.ha1; omega_using [this]⟩
   generalize hD : randomSignDraw (inpOf (rlOf s₀) s₀.mem) u = D
   have hD' : Spec.Dsa.Random.sample (qOf s₀) 128 ((randOf (rlOf s₀) s₀.mem).drop u) = D := by
     rw [← hD, draw_eq hL]
   have hDu : u + D.used ≤ (rlOf s₀).rl := by
     have := Dsa.Random.sample_used_le (qOf s₀) 128 ((randOf (rlOf s₀) s₀.mem).drop u)
     rw [hD', List.length_drop, VG.Proof.Bignum.bytesAt_length] at this
-    have := hi.hu; omega
+    have := hi.hu; omega_arith
   unfold attempt
   refine WP.seq (WP.seq (WP.mono (sample_ok hE hQ henv hi.r25 hi.hu) fun t₁ so => ?_))
   rw [hD'] at so
@@ -179,7 +179,7 @@ theorem attempt_ok {s₀ t : State} {a u : Nat} (h : rsContract.pre s₀) (hq : 
   have b25 : t₂.gpr .r25 = BitVec.ofNat 64 (u + D.used) := (k2.gpr _ (by decide)).trans so.r25
   have b26 : t₂.gpr .r26 = BitVec.ofNat 64 (a' + 1) :=
     (k2.gpr _ (by decide)).trans ((so.keep.gpr _ (by decide)).trans hi.r26)
-  refine WP.ite (decide (sampleStatus D = 1)) (by rw [eval_zero, a3, so.r31, sub1_beq _ (by omega)])
+  refine WP.ite (decide (sampleStatus D = 1)) (by rw [eval_zero, a3, so.r31, sub1_beq _ (by omega_using [hst])])
     (fun hs => ?_) (fun hs => ?_)
   · -- A nonce: the call.
     simp only [decide_eq_true_eq] at hs
@@ -200,10 +200,10 @@ theorem attempt_ok {s₀ t : State} {a u : Nat} (h : rsContract.pre s₀) (hq : 
     have b25' : t₄.gpr .r25 = BitVec.ofNat 64 (u + D.used) :=
       (sg.pres _ (by decide)).trans ((k3.gpr _ (by decide)).trans b25)
     have z₄ : NZero s₀ t₄.mem := fun j hj => by
-      rw [frame_byte hL sg.frame (by simp only [oNonce, frameBytes]; omega), m3, m2]; exact z₁ j hj
+      rw [frame_byte hL sg.frame (by simp only [oNonce, frameBytes]; omega_using [hql, hj]), m3, m2]; exact z₁ j hj
     have hr3 := sg.r3
     rw [es] at hr3
-    refine WP.mono (callFinish_ok b26' (by omega) hi.ha8 hr3) fun t₅ ⟨m5, k5, hs1, hs0⟩ => ?_
+    refine WP.mono (callFinish_ok b26' (by omega_using []) hi.ha8 hr3) fun t₅ ⟨m5, k5, hs1, hs0⟩ => ?_
     have sc₅ : Scanned (rlOf s₀) s₀ t₅ := sc₄.step (sc₄.ctx.step hL k5.sp k5.rd k5.wr
       (fun r hr => k5.gpr r (ctx_r26 r hr)) (by rw [m5]; exact Frame.refl _ _))
       (k5.gpr _ (by decide)) (k5.gpr _ (by decide)) (k5.gpr _ (by decide))
@@ -252,11 +252,11 @@ theorem attempt_ok {s₀ t : State} {a u : Nat} (h : rsContract.pre s₀) (hq : 
           simp only [inpOf] at hsr ⊢
           simp [hsr, ha0]
         refine WP.mono (tail_ok c31 (by decide)) fun t₆ ⟨⟨ev, m6⟩, k6⟩ =>
-          ⟨by rw [ev, hAS], fun h => absurd hAS h, fun _ => ⟨by omega, ?_⟩⟩
+          ⟨by rw [ev, hAS], fun h => absurd hAS h, fun _ => ⟨by omega_using [ha0], ?_⟩⟩
         rw [Nat.add_sub_cancel]
         refine ⟨sc₅.step (sc₅.ctx.step hL k6.sp k6.rd k6.wr (fun r hr => k6.gpr r (ctx_r3 r hr))
           (by rw [m6]; exact Frame.refl _ _)) (k6.gpr _ (by decide)) (k6.gpr _ (by decide)) (k6.gpr _ (by decide)),
-          (k6.gpr _ (by decide)).trans b25'', hDu, (k6.gpr _ (by decide)).trans (c26.trans (by rw [Nat.add_sub_cancel])), by omega, by have := hi.ha8; omega, ?_, rel'⟩
+          (k6.gpr _ (by decide)).trans b25'', hDu, (k6.gpr _ (by decide)).trans (c26.trans (by rw [Nat.add_sub_cancel])), by omega_using [ha0], by have := hi.ha8; omega_using [this], ?_, rel'⟩
         intro j hj
         rw [m6, m5]; exact z₄ j hj
   · -- No nonce: the sampler's status.
@@ -273,7 +273,7 @@ theorem attempt_ok {s₀ t : State} {a u : Nat} (h : rsContract.pre s₀) (hq : 
       simp only [hk]
     refine WP.mono (WP.block_nil rfl) fun t₃ e₃ => ?_
     subst e₃
-    refine WP.mono (tail_ok b31 (by omega)) fun t₄ ⟨⟨ev, m4⟩, k4⟩ =>
+    refine WP.mono (tail_ok b31 (by omega_using [hst])) fun t₄ ⟨⟨ev, m4⟩, k4⟩ =>
       ⟨by rw [ev, hAS], fun _ => ?_, fun h4 => by rw [hAS] at h4; omega⟩
     · refine ⟨sc₂.step (sc₂.ctx.step hL k4.sp k4.rd k4.wr (fun r hr => k4.gpr r (ctx_r3 r hr))
         (by rw [m4]; exact Frame.refl _ _)) (k4.gpr _ (by decide)) (k4.gpr _ (by decide)) (k4.gpr _ (by decide)),

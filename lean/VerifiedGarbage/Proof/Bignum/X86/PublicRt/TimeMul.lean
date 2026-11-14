@@ -44,8 +44,8 @@ theorem mulArgs_call {base : Addr} {bytes len : Nat} {args : Nat → BitVec 32}
   have fEsp : (allocFrame 36 s).gpr .esp = s.gpr .esp - BitVec.ofNat 32 36 := allocFrame_esp _ _
   refine WP.mono (mulArgs_ok (f := allocFrame 36 s) (len := len) (o := o) (a := a) (b := b)
     (argAt_alloc (by rw [← h.outLen]; exact (h.stack 1 (by decide)).readSrc))
-    (argAt_alloc (h.stack 9 (by decide)).readSrc) h.upper (by omega) (by omega) (by omega)
-    (by rw [fEsp, VG.X86.sub_toNat (by omega)]; omega)
+    (argAt_alloc (h.stack 9 (by decide)).readSrc) h.upper (by omega_using [ho]) (by omega_using [ha]) (by omega_using [hb])
+    (by rw [fEsp, VG.X86.sub_toNat (by omega_using [low])]; omega_using [])
     (by rw [allocFrame_wr, fEsp]; exact List.mem_cons_self ..)) fun g ⟨Kg, Fg, Rg⟩ => ?_
   have gEsp : g.gpr .esp = s.gpr .esp - BitVec.ofNat 32 36 := by rw [Kg.1 _ (by decide), fEsp]
   have hFg : Frame [below (s.gpr .esp) 36] s.mem g.mem := by
@@ -57,7 +57,7 @@ theorem mulArgs_call {base : Addr} {bytes len : Nat} {args : Nat → BitVec 32}
     rw [E.mod]; exact E.inv
   have edi : s.gpr .edi = BitVec.ofNat 32 base.toNat := by
     apply BitVec.eq_of_toNat_eq
-    rw [h.scratch.edi_toNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := (h.fits (j := 0) (by decide)).1; simp only [numAt, numOff] at this; omega)]
+    rw [h.scratch.edi_toNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := (h.fits (j := 0) (by decide)).1; simp only [numAt, numOff] at this; omega_using [nwr, this])]
   refine ⟨callee_pre (callee_abi h hbytes R ho ha hb ho0 gEsp hFg hread hinv (by rw [E.mod]; exact hB)) R gEsp,
     by rw [gEsp, hsp],
     fun i hi => ?_, ?_, ?_⟩
@@ -95,7 +95,7 @@ theorem mul_relCT {base : Addr} {bytes len : Nat} {args : Nat → BitVec 32} (hb
         obtain ⟨⟨M₁, E₁, -⟩, A₁⟩ := I₁
         obtain ⟨⟨M₂, E₂, -⟩, A₂⟩ := I₂
         subst q₁ q₂
-        exact agreeF E₁.pi E₂.pi A₁ A₂ (e₁.trans e₂.symm) (by have := E₁.room.low; omega)) hT).wp
+        exact agreeF E₁.pi E₂.pi A₁ A₂ (e₁.trans e₂.symm) (by have := E₁.room.low; omega_using [this])) hT).wp
     (F₁ := CallOk base bytes len args sp o a b) (F₂ := CallOk base bytes len args sp o a b)
     (fun _ _ ⟨s₁, s₂, ⟨e₁, e₂, I₁, I₂⟩, q₁, q₂⟩ => by
       subst q₁ q₂

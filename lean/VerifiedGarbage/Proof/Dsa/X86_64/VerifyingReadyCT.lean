@@ -68,7 +68,7 @@ theorem VerifyingShaped.initialization {reference : VerifyingCall} {s : State}
   have hqs : Src s c.layout.base usedBytes (c.layout.fields .q) c.input.components.q := by
     change Src s c.input.base usedBytes (c.original.gpr .rdi + c.original.gpr .rdx) c.input.components.q
     rw [c.pre.pLength]
-    exact source_slice hkey (by rw [c.input.keyLength]; omega)
+    exact source_slice hkey (by rw [c.input.keyLength]; omega_using [])
   rw [hag.layout] at hf hr hscr hps hqs
   rw [hag.pBytes] at hps
   rw [hag.qBytes] at hqs

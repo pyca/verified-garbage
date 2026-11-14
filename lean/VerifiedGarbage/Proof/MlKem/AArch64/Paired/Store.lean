@@ -33,7 +33,7 @@ theorem store_ok {w16 : Bool} (s : State) {r : Reg} {slot : Nat} (ho : slot+8<32
   refine WP.mono (store_checkpoint s ho ha h0 h1) fun u ⟨hu,_,fr,p3,p4⟩ => ?_
   refine ⟨hu,fr,?_,?_,by rw [hu.get .x3,h3],by rw [hu.get .x4,h4]⟩
   · intro i hi
-    rw [coeffAtW_frame fr (by intro r hr; rw [List.mem_singleton.mp hr]; exact hd) (by omega)]
+    rw [coeffAtW_frame fr (by intro r hr; rw [List.mem_singleton.mp hr]; exact hd) (by omega_using [hl, hi])]
     exact hc i hi
   · refine ⟨by rw [p3,h3],?_⟩
     have haddr : s.gpr r+BitVec.ofNat 64 slot+8=s.gpr r+BitVec.ofNat 64 (slot+8) := by

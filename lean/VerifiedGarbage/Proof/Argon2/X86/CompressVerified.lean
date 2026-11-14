@@ -75,14 +75,14 @@ theorem outside_perm {m m' : Mem} (hf : Frame [permR B] m m') {d : Nat} (hd : d 
   refine hf.readW (r := ⟨addr B d, 4⟩) (Region.contains_self _ _) ?_ (by decide)
   simp only [List.mem_singleton, forall_eq]
   show Region.Disjoint _ ⟨addr B 1024, 1024⟩
-  rw [addr_off hfit (by omega), addr_off hfit (by decide)]
-  exact Offset.disjoint _ (by omega) (by omega) (by omega)
+  rw [addr_off hfit (by omega_using [hd]), addr_off hfit (by decide)]
+  exact Offset.disjoint _ (by omega_using [ho]) (by omega_using [hd]) (by omega_using [])
 
 theorem low_perm {m m' : Mem} (hf : Frame [permR B] m m') : blk m' B 0 = blk m B 0 := by
   apply Vector.ext
   intro j hj
   simp only [blk, Vector.getElem_ofFn, rd64]
-  rw [outside_perm hfit hf (by omega) (by omega), outside_perm hfit hf (by omega) (by omega)]
+  rw [outside_perm hfit hf (by omega_using [hj]) (by omega_using [hj]), outside_perm hfit hf (by omega_using [hj]) (by omega_using [hj])]
 
 end
 
@@ -110,10 +110,10 @@ theorem correct {s₀ : State} (hp : Pre s₀) :
   have sp₄ : s₄.gpr .esp = esp₀ s₀ := g₄ _ (by decide) (by decide) (by decide) (by decide)
   unfold epilogue
   simp only [List.cons_append]
-  refine wp_movm (ea_of sp₄ 12) (by rw [k₄.rd, k₄.wr, h₂.rd, h₂.wr]; exact hp.in_arg rfl (by omega) (by omega))
+  refine wp_movm (ea_of sp₄ 12) (by rw [k₄.rd, k₄.wr, h₂.rd, h₂.wr]; exact hp.in_arg rfl (by omega_using []) (by omega_using []))
     fun s₅ u₅ => ?_
   have h₅ : FinInv s₀ s₄ s₅ 0 :=
-    ⟨by rw [u₅.other _ (by decide), k₄.esi, h₂.esi], by rw [u₅.gpr, hp.arg_frame f₄ (by omega) (by omega)]; rfl,
+    ⟨by rw [u₅.other _ (by decide), k₄.esi, h₂.esi], by rw [u₅.gpr, hp.arg_frame f₄ (by omega_using []) (by omega_using [])]; rfl,
       fun r _ h1 => u₅.other r h1, by rw [u₅.rd, k₄.rd, h₂.rd], by rw [u₅.wr, k₄.wr, h₂.wr],
       by rw [u₅.mem]; exact Frame.refl _ _, fun i hi => absurd hi (Nat.not_lt_zero _)⟩
   refine WP.block_append ((finish_ok hp h₅ 256 (Nat.le_refl _)).mono fun s₆ h₆ => ?_)
@@ -201,8 +201,8 @@ theorem agree₀ {s₁ s₂ : State} (h₁ : compressX86.pre s₁) (h₂ : compr
     rw [show VG.X86.Taint.depth τ₀.stk = 0 from rfl, Nat.zero_add]
     rw [VG.X86.Taint.argByte_eq (by have := hp₁.esp_fits; omega) h4 hk,
       VG.X86.Taint.argByte_eq (by have := hp₂.esp_fits; omega) h4 hk,
-      Mem.readW_byte s₁.mem _ (Nat.mod_lt _ (by omega)), Mem.readW_byte s₂.mem _ (Nat.mod_lt _ (by omega))]
-    exact congrArg _ (ha _ (by omega))
+      Mem.readW_byte s₁.mem _ (Nat.mod_lt _ (by omega_using [])), Mem.readW_byte s₂.mem _ (Nat.mod_lt _ (by omega_using []))]
+    exact congrArg _ (ha _ (by omega_using [hk]))
 
 theorem compress_ct : ConstantTime isa compressX86.pre compressX86.pub Impl.Argon2.X86.compress :=
   VG.Taint.constantTime (A := taint) τ₀ (fun _ _ h₁ h₂ hpub => agree₀ h₁ h₂ hpub) (by taint_decide)

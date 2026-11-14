@@ -22,13 +22,13 @@ private theorem compare_digit (a b x y m : Nat) (hx : x < m) (hy : y < m) :
   by_cases hab : a < b
   · have hm := Nat.mul_le_mul_right m (Nat.succ_le_of_lt hab)
     rw [Nat.succ_mul] at hm
-    split <;> omega
+    split <;> omega_using [hx, hab, hm]
   · by_cases he : a = b
     · subst a
-      split <;> omega
-    · have hm := Nat.mul_le_mul_right m (show b + 1 ≤ a by omega)
+      split <;> omega_arith
+    · have hm := Nat.mul_le_mul_right m (show b + 1 ≤ a by omega_using [hab, he])
       rw [Nat.succ_mul] at hm
-      split <;> omega
+      split <;> omega_arith
 
 /-- The final borrow is exactly the unsigned comparison of the whole scalars. -/
 theorem randomBorrow_eq (as bs : List Byte) (h : as.length = bs.length) :
@@ -75,7 +75,7 @@ theorem randomOr_zero (bs : List Byte) : randomOr bs = 0 ↔ Spec.Dsa.decodeBE b
       · intro h
         apply BitVec.eq_of_toNat_eq
         have ht := congrArg BitVec.toNat h
-        rw [BitVec.toNat_setWidth, Nat.mod_eq_of_lt (by have := b.isLt; omega)] at ht
+        rw [BitVec.toNat_setWidth, Nat.mod_eq_of_lt (by have := b.isLt; omega_using [])] at ht
         exact ht
       · intro h; subst b; rfl
     change (randomOr bs ||| b.setWidth 64 = 0#64) ↔ _

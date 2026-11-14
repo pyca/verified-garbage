@@ -115,19 +115,19 @@ theorem SS.cEntry_ckin (h : SS G 176 σ c s) (regs : CArgs G s) : CkIn (cEntry G
   have hq15 : G.qLen < 2 ^ 15 := by rcases gi.lens with ⟨_, e⟩ | ⟨_, e⟩ | ⟨_, e⟩ <;> rw [e] <;> decide
   obtain ⟨r3, r4, r5, r6, r7, r8⟩ := regs
   have e4 : (BitVec.ofNat 64 (nPk G)).toNat = nPk G := by
-    rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by simp only [nPk]; omega)]
-  have e5 : (BitVec.ofNat 64 G.pLen).toNat = G.pLen := by rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
-  have e6 : (BitVec.ofNat 64 G.qLen).toNat = G.qLen := by rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+    rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by simp only [nPk]; omega_using [hp15, hq15])]
+  have e5 : (BitVec.ofNat 64 G.pLen).toNat = G.pLen := by rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hp15])]
+  have e6 : (BitVec.ofNat 64 G.qLen).toNat = G.qLen := by rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hq15])]
   have e8 : (BitVec.ofNat 64 (wWords G.pLen)).toNat = wWords G.pLen := by
-    rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
-  have W8 : wB G.pLen + wWords G.pLen * 8 ≤ G.scrLen * 8 := by omega
-  have P8 : sPacked + nPk G ≤ G.scrLen * 8 := by omega
+    rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [w15])]
+  have W8 : wB G.pLen + wWords G.pLen * 8 ≤ G.scrLen * 8 := by omega_using [big]
+  have P8 : sPacked + nPk G ≤ G.scrLen * 8 := by omega_using [big, hsz]
   have hbS : (rBelow σ 176).Disjoint G.rScr := by have := gi.pre.bC; rw [gi.hG] at this; exact this
   have sp : (cEntry G s).sp = σ.sp := by rw [State.withRegions_sp, State.callEntry_sp, gi.sp]
   have g := fun r hr => cEntry_gpr (G := G) (s := s) (r := r) hr
   have fitS : ∀ o, o < G.scrLen * 8 → (G.sa o).toNat = G.scr.toNat + o := fun o ho => by
     show (G.scr + BitVec.ofNat 64 o).toNat = _
-    rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := o) (by omega), Nat.mod_eq_of_lt (by omega)]
+    rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := o) (by omega_using [fit, ho]), Nat.mod_eq_of_lt (by omega_using [fit, ho])]
   refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · rw [sp]; exact gi.pre.spLo
   · rw [State.withRegions_rd, g .r3 (by simp), g .r4 (by simp), r3, r4]
@@ -136,8 +136,8 @@ theorem SS.cEntry_ckin (h : SS G 176 σ c s) (regs : CArgs G s) : CkIn (cEntry G
     exact gi.sdisj (.inl hsz) P8 W8
   · rw [sp, g .r3 (by simp), g .r4 (by simp), r3, r4, e4]; exact hbS.sub_right (sw G P8)
   · rw [sp, g .r7 (by simp), g .r8 (by simp), r7, r8, e8]; exact hbS.sub_right (sw G W8)
-  · rw [g .r3 (by simp), g .r4 (by simp), r3, r4, e4, fitS _ (by omega)]; omega
-  · rw [g .r7 (by simp), g .r8 (by simp), r7, r8, e8, fitS _ (by omega)]; omega
+  · rw [g .r3 (by simp), g .r4 (by simp), r3, r4, e4, fitS _ (by omega_using [big, hsz, wp])]; omega_using [fit, P8]
+  · rw [g .r7 (by simp), g .r8 (by simp), r7, r8, e8, fitS _ (by omega_using [big, wp])]; omega_using [big, fit]
   · rw [g .r5 (by simp), g .r6 (by simp), r5, r6, e5, e6]; exact lv
   · rw [g .r4 (by simp), g .r5 (by simp), g .r6 (by simp), r4, r5, r6, e4, e5, e6]
   · rw [g .r5 (by simp), g .r8 (by simp), r5, r8, e5, e8]; exact ws
@@ -148,19 +148,19 @@ theorem SS.cCovers (h : SS G 176 σ c s) : Covers (cRd G ++ cWr G) (s.rd ++ s.wr
   have big := gi.wBig
   obtain ⟨hsz, w15, _, _, _, _, n15⟩ := ck_sizes gi.lens
   have e4 : (BitVec.ofNat 64 (nPk G)).toNat = nPk G := by
-    rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+    rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [n15])]
   have e8 : (BitVec.ofNat 64 (wWords G.pLen)).toNat = wWords G.pLen := by
-    rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+    rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [w15])]
   have inS : G.rScr ∈ s.wr := by rw [gi.wr, gi.pre.wr, gi.hG]; simp
   have cw : Covers (cWr G) s.wr := (Covers.of_sub (rs' := [G.rScr]) fun r hr => by
     rw [List.mem_singleton] at hr; subst hr
     exact ⟨G.rScr, List.mem_singleton_self _, wB G.pLen, rfl,
-      show wB G.pLen + (BitVec.ofNat 64 (wWords G.pLen)).toNat * 8 ≤ G.scrLen * 8 by rw [e8]; omega⟩).trans
+      show wB G.pLen + (BitVec.ofNat 64 (wWords G.pLen)).toNat * 8 ≤ G.scrLen * 8 by rw [e8]; omega_using [big]⟩).trans
     (Covers.of_mem fun r hr => by rw [List.mem_singleton] at hr; subst hr; exact inS)
   have cr : Covers (cRd G) s.wr := (Covers.of_sub (rs' := [G.rScr]) fun r hr => by
     rw [List.mem_singleton] at hr; subst hr
     exact ⟨G.rScr, List.mem_singleton_self _, sPacked, rfl,
-      show sPacked + (BitVec.ofNat 64 (nPk G)).toNat ≤ G.scrLen * 8 by rw [e4]; omega⟩).trans
+      show sPacked + (BitVec.ofNat 64 (nPk G)).toNat ≤ G.scrLen * 8 by rw [e4]; omega_using [big, hsz]⟩).trans
     (Covers.of_mem fun r hr => by rw [List.mem_singleton] at hr; subst hr; exact inS)
   exact ⟨Covers.append_left (cr.right) (cw.right), cw⟩
 
@@ -181,16 +181,16 @@ theorem SS.checkCall_ok {code : Prog isa} {name : String} (ok : CheckOk code) (h
   have pin := h.cEntry_ckin regs
   obtain ⟨r3, r4, r5, r6, r7, r8⟩ := regs
   have e4 : (BitVec.ofNat 64 (nPk G)).toNat = nPk G := by
-    rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by simp only [nPk]; omega)]
+    rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by simp only [nPk]; omega_using [hp15, hq15])]
   have e8 : (BitVec.ofNat 64 (wWords G.pLen)).toNat = wWords G.pLen := by
-    rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+    rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [w15])]
   obtain ⟨hc, hw⟩ := h.cCovers
-  refine WP.callAny ok.verified.1 (pre_of_ckin pin) hc hw (fun t rd wr sp f g post => ?_) (by have := ok.stack; omega)
+  refine WP.callAny ok.verified.1 (pre_of_ckin pin) hc hw (fun t rd wr sp f g post => ?_) (by have := ok.stack; omega_using [this])
   have st := cpost_of_post post
   have hres : ckRes (cEntry G s) = Spec.Dsa.checkParametersBytes G.pLen G.qLen pk := by
     simp only [ckRes, State.withRegions_mem, State.callEntry_mem]
     rw [cEntry_gpr (by simp), cEntry_gpr (by simp), cEntry_gpr (by simp), cEntry_gpr (by simp), r3, r4, r5, r6, e4,
-      hpk, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega)]
+      hpk, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hp15]), Nat.mod_eq_of_lt (by omega_using [hq15])]
   refine k t g rd wr sp ?_ ?_
   · refine f.sub fun x hx => ?_
     simp only [List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hx
@@ -199,7 +199,7 @@ theorem SS.checkCall_ok {code : Prog isa} {name : String} (ok : CheckOk code) (h
     · refine ⟨rBelow σ 176, by simp, ?_⟩
       have := ok.stack
       rw [gi.sp]
-      exact Offset.sub_below _ (by omega) (by omega)
+      exact Offset.sub_below _ (by omega_using [this]) (by omega_using [this])
   · rw [State.withRegions_gpr] at st; rw [st, hres]
 
 end

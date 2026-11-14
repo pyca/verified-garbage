@@ -57,7 +57,7 @@ theorem Arrays.fit {W : Addr} {L w : Nat} {s : State} (S : Space W L w s) {j : N
     slot w j + 8 * w ≤ L ∧ 256 ≤ slot w j ∧ j < 32 := by
   have space := S.space
   unfold slot stride VG.Impl.Bignum.hdrBytes at space ⊢
-  rcases A with rfl | rfl | rfl | rfl <;> omega
+  rcases A with rfl | rfl | rfl | rfl <;> omega_using [space]
 
 theorem Arrays.apart {w : Nat} {i j : Nat} (I : Arrays i) (J : Arrays j) (different : i ≠ j) :
     slot w i + 4 * (2 * w) ≤ slot w j ∨ slot w j + 4 * (2 * w) ≤ slot w i := by
@@ -74,18 +74,18 @@ theorem Framed.edi_value {W : Addr} {L w : Nat} {q : BitVec 32} {s : State} (F :
   apply BitVec.eq_of_toNat_eq
   have := F.space.scratch.nowrap
   have := F.space.header
-  rw [F.space.edi_toNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+  rw [F.space.edi_toNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_arith)]
 
 /-- The frame again once `edi` is back at the workspace. -/
 theorem Framed.rebuild {W : Addr} {L w : Nat} {q : BitVec 32} {s t : State} (F : Framed W L w q s)
     {rs : List Reg} (K : Keeps rs s t) (esp : .esp ∉ rs) (edi : t.gpr .edi = s.gpr .edi) {d n : Nat}
     (O : Outside W d n s.mem t.mem) (header : 8 ≤ d) (fit : d + n ≤ L) : Framed W L w q t := by
   have nowrap := F.space.scratch.nowrap
-  have Fr := VG.Proof.Bignum.outside_frame O (by omega)
+  have Fr := VG.Proof.Bignum.outside_frame O (by omega_using [fit, nowrap])
   have Sc : Scr t W L := ⟨by rw [edi]; exact F.space.scratch.edi, by rw [K.2.2]; exact F.space.scratch.wr,
     nowrap, by rw [K.1 .esp esp]; exact F.space.scratch.stk⟩
   refine ⟨⟨Sc, F.space.width, F.space.widthBound, F.space.space,
-    (BitVec.eq_of_toNat_eq (O.w32 (d := 4) (Or.inl (by omega)) (by omega))).trans F.space.len⟩,
+    (BitVec.eq_of_toNat_eq (O.w32 (d := 4) (Or.inl (by omega_using [header])) (by omega_using []))).trans F.space.len⟩,
     ⟨F.stack.ws.of_keeps K, (K.1 .esp esp).trans F.stack.sp⟩, F.apart, ?_⟩
   rw [Fr.readW (r := ⟨q.setWidth 64, 20⟩) ?_ ?_ (by decide)]
   · exact F.saved
@@ -119,7 +119,7 @@ theorem subSetup_ok {W : Addr} {L w : Nat} {q : BitVec 32} {s : State} (F : Fram
   · rw [PtrAt, U.other .ebx (by decide), U₅.other .ebx (by decide), U₄.other .ebx (by decide),
       K₃.1 .ebx (by decide)]; exact Pb
   · rw [PtrAt, U.other .edi (by decide), U₅.gpr, U₄.other .eax (by decide)]; exact Po
-  · rw [U.other .edx (by decide), U₅.other .edx (by decide), U₄.gpr, BitVec.toNat_ofNat]; omega
+  · rw [U.other .edx (by decide), U₅.other .edx (by decide), U₄.gpr, BitVec.toNat_ofNat]; omega_using [bound]
   · exact (((((K₁.mono (by decide)).trans (K₂.mono (by decide))).trans (K₃.mono (by decide))).widen U₄.keeps).widen
       U₅.keeps).widen U.keeps
 
@@ -160,17 +160,17 @@ theorem subRest_ok {W : Addr} {L w : Nat} {q : BitVec 32} {s u : State} {out a b
     · exact Or.inl (Nat.le_trans (Nat.le_add_right _ _) h)
     · exact Or.inr h
   refine WP.seq (WP.mono (VG.Proof.Bignum.X86.PublicRt.reduceLoop_ok hw (a := slot w a) (m := slot w b)
-    (d := slot w out) (N := 2 * w) (by omega) (by omega) (by omega) (by omega) hda hdm H.aPtr H.bPtr H.outPtr
+    (d := slot w out) (N := 2 * w) (by omega_using [width]) (by omega_using [fa]) (by omega_using [fb]) (by omega_using [fo]) hda hdm H.aPtr H.bPtr H.outPtr
     H.count H.mask) fun v ⟨Ov, _, ⟨c, mask, value⟩, Kv⟩ => ?_)
   rw [Mu] at Ov value
   have Kuv : Keeps [.eax, .ebx, .ecx, .edx, .ebp, .edi] s v := Ku.trans Kv
   have stack := F.stack.keep Kuv (by decide)
-  have Fr := VG.Proof.Bignum.outside_frame Ov (by have := S.scratch.nowrap; omega)
+  have Fr := VG.Proof.Bignum.outside_frame Ov (by have := S.scratch.nowrap; omega_using [fo, this])
   have saved : v.mem.readW (off (q.setWidth 64) 0) 32 = BitVec.ofNat 32 W.toNat := by
     rw [Fr.readW (r := ⟨q.setWidth 64, 20⟩) (Offset.contains_base _ (by decide) (by decide)) (by
       intro r mem
       obtain rfl := List.mem_singleton.mp mem
-      exact (F.apart.sub_left (Offset.sub_base W (by omega))).symm) (by decide)]
+      exact (F.apart.sub_left (Offset.sub_base W (by omega_using [fo]))).symm) (by decide)]
     exact F.saved
   refine wp_movS (stack.read 0 (by decide)) fun t T _ => WP.block_nil ?_
   have edi : t.gpr .edi = s.gpr .edi := by rw [T.gpr, saved, F.edi_value]
@@ -181,7 +181,7 @@ theorem subRest_ok {W : Addr} {L w : Nat} {q : BitVec 32} {s u : State} {out a b
     · rw [T.other r h]; exact Kuv.1 r (by simp_all)
   have Ot : Outside W (slot w out) (4 * (2 * w)) s.mem t.mem := by rw [T.mem]; exact Ov
   refine ⟨⟨c, by rw [T.other .ecx (by decide)]; exact mask, by rw [T.mem]; exact value⟩, Ot, Kt,
-    F.rebuild Kt (by decide) edi Ot (by omega) (by omega)⟩
+    F.rebuild Kt (by decide) edi Ot (by omega_using [lo]) (by omega_using [fo])⟩
 
 /-- `[out] := [a] − [b]`, its borrow a mask in `ecx`, and the frame again. -/
 theorem sub_ok {W : Addr} {L w : Nat} {q : BitVec 32} {s : State} (F : Framed W L w q s)
@@ -228,7 +228,7 @@ theorem selectSetup_ok {W : Addr} {L w : Nat} {q : BitVec 32} {s : State} (F : F
     (((K₁.mono (by decide)).trans (K₂.mono (by decide))).widen U₃.keeps).widen U.keeps⟩
   · rw [PtrAt, U.other .ebp (by decide), U₃.other .ebp (by decide), K₂.1 .ebp (by decide)]; exact P₃
   · rw [PtrAt, U.other .ebx (by decide), U₃.other .ebx (by decide)]; exact P₂
-  · rw [U.other .edi (by decide), U₃.gpr, BitVec.toNat_ofNat]; omega
+  · rw [U.other .edi (by decide), U₃.gpr, BitVec.toNat_ofNat]; omega_using [bound]
   · rw [U.gpr, U₃.other .esi (by decide), K₂.1 .esi (by decide), K₁.1 .esi (by decide), mask]
 
 /-- The select's loop and `edi` restored. -/
@@ -249,17 +249,17 @@ theorem selectRest_ok {W : Addr} {L w : Nat} {q : BitVec 32} {k : Bool} {s u : S
   have apart : slot w 2 + 4 * (2 * w) ≤ slot w 3 ∨ slot w 3 + 4 * (2 * w) ≤ slot w 2 :=
     Arrays.apart arrays2 arrays3 (by decide)
   refine WP.seq (WP.mono (VG.Proof.Bignum.X86.PublicRt.selectLoop_ok (S.ws.of_keeps Ku) k (x := slot w 3)
-    (d := slot w 2) (N := 2 * w) (by omega) (by omega) (by omega) apart H.fromPtr H.toPtr H.count H.mask)
+    (d := slot w 2) (N := 2 * w) (by omega_using [width]) (by omega_using [f3]) (by omega_using [f2]) apart H.fromPtr H.toPtr H.count H.mask)
     fun v ⟨Ov, value, _, Kv⟩ => ?_)
   rw [Mu] at Ov value
   have Kuv : Keeps [.eax, .ebx, .ecx, .edx, .ebp, .edi] s v := (Ku.mono (by decide)).trans (Kv.mono (by decide))
   have stack := F.stack.keep Kuv (by decide)
-  have Fr := VG.Proof.Bignum.outside_frame Ov (by have := S.scratch.nowrap; omega)
+  have Fr := VG.Proof.Bignum.outside_frame Ov (by have := S.scratch.nowrap; omega_using [f2, this])
   have saved : v.mem.readW (off (q.setWidth 64) 0) 32 = BitVec.ofNat 32 W.toNat := by
     rw [Fr.readW (r := ⟨q.setWidth 64, 20⟩) (Offset.contains_base _ (by decide) (by decide)) (by
       intro r mem
       obtain rfl := List.mem_singleton.mp mem
-      exact (F.apart.sub_left (Offset.sub_base W (by omega))).symm) (by decide)]
+      exact (F.apart.sub_left (Offset.sub_base W (by omega_using [f2]))).symm) (by decide)]
     exact F.saved
   refine wp_movS (stack.read 0 (by decide)) fun t T _ => WP.block_nil ?_
   have edi : t.gpr .edi = s.gpr .edi := by rw [T.gpr, saved, F.edi_value]
@@ -269,7 +269,7 @@ theorem selectRest_ok {W : Addr} {L w : Nat} {q : BitVec 32} {k : Bool} {s u : S
     · subst h; exact edi
     · rw [T.other r h]; exact Kuv.1 r (by simp_all)
   have Ot : Outside W (slot w 2) (4 * (2 * w)) s.mem t.mem := by rw [T.mem]; exact Ov
-  exact ⟨by rw [T.mem]; exact value, Ot, Kt, F.rebuild Kt (by decide) edi Ot (by omega) (by omega)⟩
+  exact ⟨by rw [T.mem]; exact value, Ot, Kt, F.rebuild Kt (by decide) edi Ot (by omega_using [l2]) (by omega_using [f2])⟩
 
 /-- `[2] := [3]` where the mask `ecx` (saved in `esi`) is all ones, and the frame again. -/
 theorem select_ok {W : Addr} {L w : Nat} {q : BitVec 32} {s : State} (F : Framed W L w q s) {k : Bool}
@@ -310,12 +310,12 @@ theorem difference_ok {W : Addr} {L w : Nat} {q : BitVec 32} {s : State} (F : Fr
   have a43 := Arrays.apart arrays4 arrays3 (w := w) (by decide)
   have a23 := Arrays.apart arrays2 arrays3 (w := w) (by decide)
   have aSame : val32 v.mem W (slot w 0) (2 * w) = val32 s.mem W (slot w 0) (2 * w) := by
-    rw [V.mem]; exact Ou.val32 a02 (by omega)
+    rw [V.mem]; exact Ou.val32 a02 (by omega_using [nowrap, f0, l0, f2, l2, f3, l3, f4, l4, a02, a42, a03, a43, a23])
   have bSame : val32 v.mem W (slot w 4) (2 * w) = val32 s.mem W (slot w 4) (2 * w) := by
-    rw [V.mem]; exact Ou.val32 a42 (by omega)
+    rw [V.mem]; exact Ou.val32 a42 (by omega_using [nowrap, f0, l0, f2, l2, f3, l3, f4, l4, a02, a42, a03, a43, a23])
   rw [aSame, bSame] at backward
   have dSame : val32 z.mem W (slot w 2) (2 * w) = val32 u.mem W (slot w 2) (2 * w) := by
-    rw [Oz.val32 (by rcases a23 with h | h; exact Or.inl h; exact Or.inr h) (by omega), V.mem]
+    rw [Oz.val32 (by rcases a23 with h | h; exact Or.inl h; exact Or.inr h) (by omega_using [nowrap, f0, l0, f2, l2, f3, l3, f4, l4, a02, a42, a03, a43, a23]), V.mem]
   have values : val32 t.mem W (slot w 2) (2 * w) =
       if borrow then val32 z.mem W (slot w 3) (2 * w) else val32 u.mem W (slot w 2) (2 * w) := by
     rw [value]

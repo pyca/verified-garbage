@@ -46,11 +46,11 @@ theorem HiKept.trans {m1 m2 m3 : Mem} (h1 : HiKept b m1 m2) (h2 : HiKept b m2 m3
 theorem HiKept.of_frame {m m' : Mem} {rs : List Region} (hf : Frame rs m m')
     (hd : ∀ r ∈ rs, Region.Disjoint ⟨b + BitVec.ofNat 64 3840, 256⟩ r) : HiKept b m m' :=
   fun q hq hq' => hf.readW (Region.contains_self _ _)
-    (fun r hr => (hd r hr).sub_left (Offset.sub b (e := 3840) (k := 256) hq (by omega))) (by decide)
+    (fun r hr => (hd r hr).sub_left (Offset.sub b (e := 3840) (k := 256) hq (by omega_using [hq']))) (by decide)
 
 theorem HiKept.of_fa {m m' : Mem} (hf : Frame [VG.Proof.X448.PPC64LE.FA b] m m') : HiKept b m m' :=
   HiKept.of_frame hf fun r hr => by
-    rw [List.mem_singleton.mp hr]; exact Offset.disjoint_base b (by decide) (by omega)
+    rw [List.mem_singleton.mp hr]; exact Offset.disjoint_base b (by decide) (by omega_using [])
 
 /-- The slots below `Y` stay through `freeze`. -/
 theorem slots_freeze {m m' : Mem} {o : Addr}
@@ -151,12 +151,12 @@ theorem baseEncode_ok {s : State} (hc : Ctx b s) {o : Addr} (h3 : s.gpr .r3 = o)
     exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ (8 / 8))
   -- The saved doublewords.
   have hdo : Region.Disjoint ⟨b + BitVec.ofNat 64 3840, 256⟩ ⟨o, 57⟩ :=
-    hdisj.sub_left (Offset.sub_base _ (by omega))
+    hdisj.sub_left (Offset.sub_base _ (by omega_using []))
   have hfr : ∀ {m m' : Mem}, Frame [⟨b + BitVec.ofNat 64 Y, 56⟩, ⟨o, 56⟩] m m' → HiKept b m m' :=
     fun hf => HiKept.of_frame hf fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
-      · exact Offset.disjoint b (.inr (by decide)) (by omega) (by decide)
+      · exact Offset.disjoint b (.inr (by decide)) (by omega_using []) (by decide)
       · exact hdo.sub_right (Region.sub_prefix (by decide))
   have hi : HiKept b s.mem s10.mem :=
     (HiKept.of_fa hst1.frame).trans <| (HiKept.of_fa hf2).trans <| (hfr hf3).trans <|

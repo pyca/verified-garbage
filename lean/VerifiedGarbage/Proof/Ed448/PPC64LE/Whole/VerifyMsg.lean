@@ -99,7 +99,7 @@ theorem vfsub {s : State} {d n : Nat} (h : d + n ≤ 272) : Region.Sub ⟨s.gpr 
 
 theorem vfslot {s : State} {d n : Nat} (h : d + n ≤ 200) :
     (slotArea (s.gpr .r10) 200 verifyRegs).Disjoint ⟨s.gpr .r10 + BitVec.ofNat 64 d, n⟩ :=
-  Offset.disjoint _ (.inr h) (by decide) (by omega)
+  Offset.disjoint _ (.inr h) (by decide) (by omega_using [h])
 
 section
 variable {s : State} (hp : VerPre s)
@@ -173,7 +173,7 @@ theorem verSetup_ok {s u : State} (hp : VerPre s) (hu : ∀ r, r ≠ .r11 → u.
   have g25 : t₁.gpr .r25 = s.gpr .r5 := h₁.regs _ (by decide)
   have hFw₁ : (vfR s) ∈ t₁.wr := by rw [h₁.wr, hp.wr]; simp
   refine hdr_ok (F := s.gpr .r10) (cl := (s.gpr .r5).toNat) (by decide) (by decide) g23
-    (by rw [g25, ofNat_toNat]) (fun j hj => in_base hFw₁ (by omega) (by omega))
+    (by rw [g25, ofNat_toNat]) (fun j hj => in_base hFw₁ (by omega_using [hj]) (by omega_using [hj]))
     (by simpa using in_base (d := 0) (n := 8) hFw₁ (by decide) (by decide)) (by decide)
     fun t ht hrd hwr hsp hg => WP.block_nil ⟨?_, ?_⟩
   · refine h₁.step verifyRegs_pres hrd hwr hsp (fun r hr => hg r fun e => by revert hr; rw [e]; decide)
@@ -366,7 +366,7 @@ theorem shr8_zero (x : BitVec 64) : (x >>> 8 == 0) = decide (x.toNat < 256) := b
     intro e
     have := congrArg BitVec.toNat e
     rw [h] at this
-    exact hx (by simp at this; omega)
+    exact hx (by simp at this; omega_using [this])
 
 theorem verifyMessage_wp (hR : Proof.Ed448.RecoverOk) {s : State} (hp : VerPre s) :
     WP isa verifyMessage s fun t => (∀ r ∈ preserved, t.gpr r = s.gpr r) ∧ t.sp = s.sp ∧ t.lr = s.lr ∧
@@ -387,12 +387,12 @@ theorem verifyMessage_wp (hR : Proof.Ed448.RecoverOk) {s : State} (hp : VerPre s
       (fun p (hp' : p ∈ restoreList 200 verifyRegs) =>
         show InRegions (t₃.rd ++ t₃.wr) (s.gpr .r10 + BitVec.ofNat 64 p.2) 8 by
         rw [h₃.rd, h₃.wr, hp.rd, hp.wr]
-        exact ⟨vfR s, by simp, Offset.contains_base _ (hrl p hp') (by have := hrl p hp'; omega)⟩)
+        exact ⟨vfR s, by simp, Offset.contains_base _ (hrl p hp') (by have := hrl p hp'; omega_using [this])⟩)
       fun t₄ g₄ sp₄ lr₄ m₄ o₄ => ⟨g₄, sp₄, lr₄, ?_⟩
     rw [o₄ .r3 (by decide) (by decide), r₃]
     have : Spec.Ed448.verify (vpkB s) (vctxB s) (vmsgB s) (vsigB s) =
         Spec.Ed448.verifyEquation (vpkB s) (vsigB s) (vkB s) := by
-      simp only [Spec.Ed448.verify, show (vctxB s).length ≤ 255 by simp [bytesAt]; omega, decide_true,
+      simp only [Spec.Ed448.verify, show (vctxB s).length ≤ 255 by simp [bytesAt]; omega_using [hcl'], decide_true,
         Bool.true_and, vkB, bytesAt_take57]
     simp only [verResult, this]
   · -- `ctxlen ≥ 256`: 0.
@@ -402,7 +402,7 @@ theorem verifyMessage_wp (hR : Proof.Ed448.RecoverOk) {s : State} (hp : VerPre s
     · rw [(Upd.write _ _ _).gpr]
       have : Spec.Ed448.verify (vpkB s) (vctxB s) (vmsgB s) (vsigB s) = false := by
         simp only [Spec.Ed448.verify, Bool.and_eq_false_iff, decide_eq_false_iff_not]
-        left; simp [bytesAt]; omega
+        left; simp [bytesAt]; omega_using [hcl']
       simp only [verResult, this]; rfl
 
 end VG.Proof.Ed448.PPC64LE.Whole

@@ -811,14 +811,14 @@ section
 
 theorem inRegions_1024 {rs : List Region} {a : Addr} (h : InRegions rs a 1032) : InRegions rs a 1024 := by
   obtain ⟨r, hr, hc⟩ := h
-  exact ⟨r, hr, by unfold Region.Contains at hc ⊢; omega⟩
+  exact ⟨r, hr, by unfold Region.Contains at hc ⊢; omega_using [hc]⟩
 
 theorem sub_1024 (a : Addr) : Region.Sub ⟨a, 1024⟩ ⟨a, 1032⟩ := Region.sub_prefix (by decide)
 
 theorem sPreM_ofFlagged {s₀ : VG.X86_64.State} {lo : Nat} (h : SPreM Proof.Gcm.X86_64.Stitch.CtxMode.flagged s₀ lo) : SPreM Proof.Gcm.X86_64.Stitch.CtxMode.prepared s₀ lo where
   base := h.base
   k_in := inRegions_1024 h.k_in
-  wrap_k := by have := h.wrap_k; change _ + 1032 ≤ _ at this; change _ + 1024 ≤ _; omega
+  wrap_k := by have := h.wrap_k; change _ + 1032 ≤ _ at this; change _ + 1024 ≤ _; omega_using [this]
   d_k := h.d_k.sub_right (sub_1024 _)
   p_k := h.p_k.sub_right (sub_1024 _)
   ok := h.ok.2.2 h.ok.1
@@ -830,7 +830,7 @@ theorem sPreTo_ofFlagged {s₀ : VG.X86_64.State} (h : SPreTo Proof.Gcm.X86_64.S
     k_y := h.k_y.sub_left (sub_1024 _)
     k_o := h.k_o.sub_left (sub_1024 _)
     k_p := h.k_p.sub_left (sub_1024 _)
-    wrap_k := by have := h.wrap_k; change _ + 1032 ≤ _ at this; change _ + 1024 ≤ _; omega
+    wrap_k := by have := h.wrap_k; change _ + 1032 ≤ _ at this; change _ + 1024 ≤ _; omega_using [this]
     ok := h.ok.2.2 h.ok.1 }
 
 /-- Loops on the prepared powers, on a context whose powers are present. -/
@@ -1135,7 +1135,7 @@ theorem sPreM_ofFlagged16 {s₀ : VG.X86_64.State} {lo : Nat}
     SPreM Proof.Gcm.X86_64.Stitch.CtxMode.prepared16 s₀ lo where
   base := h.base
   k_in := inRegions_1024 h.k_in
-  wrap_k := by have := h.wrap_k; change _ + 1032 ≤ _ at this; change _ + 1024 ≤ _; omega
+  wrap_k := by have := h.wrap_k; change _ + 1032 ≤ _ at this; change _ + 1024 ≤ _; omega_using [this]
   d_k := h.d_k.sub_right (sub_1024 _)
   p_k := h.p_k.sub_right (sub_1024 _)
   ok := h.ok.2.1 h.ok.1
@@ -1148,7 +1148,7 @@ theorem sPreTo_ofFlagged16 {s₀ : VG.X86_64.State} (h : SPreTo (Proof.Gcm.X86_6
     k_y := h.k_y.sub_left (sub_1024 _)
     k_o := h.k_o.sub_left (sub_1024 _)
     k_p := h.k_p.sub_left (sub_1024 _)
-    wrap_k := by have := h.wrap_k; change _ + 1032 ≤ _ at this; change _ + 1024 ≤ _; omega
+    wrap_k := by have := h.wrap_k; change _ + 1032 ≤ _ at this; change _ + 1024 ≤ _; omega_using [this]
     ok := h.ok.2.1 h.ok.1 }
 
 /-- Loops on the first 16 prepared powers, on a context whose count is at

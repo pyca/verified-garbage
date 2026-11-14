@@ -38,21 +38,21 @@ theorem data_copy_wp {s : State} {B D : BitVec 32} {g j o : Nat} (h : Pre B D g 
   have wd : Covers [⟨dataAddr D j, 16⟩] s.wr :=
     (Covers.of_sub fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
-      exact ⟨⟨State.addr D, 16 * g⟩, List.mem_singleton_self _, 16 * j, rfl, by change 16 * j + 16 ≤ 16 * g; omega⟩).trans h.wd
+      exact ⟨⟨State.addr D, 16 * g⟩, List.mem_singleton_self _, 16 * j, rfl, by change 16 * j + 16 ≤ 16 * g; omega_using [hj]⟩).trans h.wd
   apply copyBlock_wp
-  exact ⟨by rw [h.base], by rw [h.data], by rw [h.base]; have := h.fitB; omega,
-    by rw [h.data]; have := h.fitD; omega,
-    by change o + 16 ≤ 4096; rw [total_eq] at ho; omega, by change 16 * j + 16 ≤ 4096; omega,
+  exact ⟨by rw [h.base], by rw [h.data], by rw [h.base]; have := h.fitB; omega_using [ho, this],
+    by rw [h.data]; have := h.fitD; omega_using [hj, this],
+    by change o + 16 ≤ 4096; rw [total_eq] at ho; omega_using [ho], by change 16 * j + 16 ≤ 4096; omega_using [hg, hj],
     by decide, by decide, by decide, by decide,
     workspace_part h.hw o 16 ho, Covers.right wd,
-    (h.sep.symm.sub_left (Offset.sub_base _ ho)).sub_right (Offset.sub_base _ (by omega))⟩
+    (h.sep.symm.sub_left (Offset.sub_base _ ho)).sub_right (Offset.sub_base _ (by omega_using [hj]))⟩
 
 theorem first_wp {s : State} {B D : BitVec 32} {g : Nat} (h : Pre B D g s) :
     WP isa (.block BatchCfb.first) s (CopyPost s (bufferAddr B 0) (counterAddr B)) := by
   apply copyBlock_wp
   exact ⟨by rw [h.base]; simp only [bufferAddr, Nat.mul_zero, Nat.add_zero], by rw [h.base],
-    by rw [h.base]; have := h.fitB; change B.toNat + 1512 ≤ 2 ^ 32 at this; change B.toNat + 256 + 16 ≤ 2 ^ 32; omega,
-    by rw [h.base]; have := h.fitB; change B.toNat + 1512 ≤ 2 ^ 32 at this; change B.toNat + 1492 + 16 ≤ 2 ^ 32; omega,
+    by rw [h.base]; have := h.fitB; change B.toNat + 1512 ≤ 2 ^ 32 at this; change B.toNat + 256 + 16 ≤ 2 ^ 32; omega_using [this],
+    by rw [h.base]; have := h.fitB; change B.toNat + 1512 ≤ 2 ^ 32 at this; change B.toNat + 1492 + 16 ≤ 2 ^ 32; omega_using [this],
     by decide, by decide, by decide, by decide, by decide, by decide,
     workspace_part h.hw 256 16 (by decide), Covers.right (workspace_part h.hw 1492 16 (by decide)),
     buffer_counter_sep B (by decide)⟩
@@ -73,14 +73,14 @@ theorem compare_eq {s : State} {g j : Nat} (hg : g ≤ 8) (hj : j < 8)
   rw [hn]
   apply Bool.eq_iff_iff.mpr
   simp only [beq_iff_eq, decide_eq_true_iff]
-  have gn : (BitVec.ofNat 32 g).toNat = g := by rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
-  have jn : (BitVec.ofNat 32 (j + 1)).toNat = j + 1 := by rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+  have gn : (BitVec.ofNat 32 g).toNat = g := by rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hg])]
+  have jn : (BitVec.ofNat 32 (j + 1)).toNat = j + 1 := by rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hj])]
   constructor
   · intro he
     have eq : BitVec.ofNat 32 g = BitVec.ofNat 32 (j + 1) := by bv_omega
     have e := congrArg BitVec.toNat eq
     rw [gn, jn] at e
-    omega
+    omega_using [e]
   · intro he
     rw [he, BitVec.sub_self]
     rfl
@@ -117,8 +117,8 @@ theorem Inv.data_kept {s₀ s : State} {B D : BitVec 32} {g j k : Nat}
   intro r hr
   simp only [regions, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl
-  · exact (h.sep.sub_left (Offset.sub_base _ (by omega))).sub_right (Offset.sub_base _ (by decide))
-  · exact (h.sep.sub_left (Offset.sub_base _ (by omega))).sub_right counter_frame
+  · exact (h.sep.sub_left (Offset.sub_base _ (by omega_using [hk]))).sub_right (Offset.sub_base _ (by decide))
+  · exact (h.sep.sub_left (Offset.sub_base _ (by omega_using [hk]))).sub_right counter_frame
 
 theorem Inv.cmp {s₀ s : State} {B D : BitVec 32} {j : Nat} (h : Inv s₀ B D j s) (a b : BitVec 32) :
     Inv s₀ B D j (subFlags s a b) := ⟨h.regs, h.rd, h.wr, h.sp, h.frame, h.first, h.lanes⟩
@@ -128,34 +128,34 @@ theorem Inv.next {s₀ s s' : State} {B D : BitVec 32} {g j : Nat}
     (c : CopyPost s (bufferAddr B (j + 1)) (dataAddr D j) s') : Inv s₀ B D (j + 1) s' := by
   have cf : Frame (regions B) s.mem s'.mem := c.frame.sub fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr
-    exact ⟨⟨bufferAddr B 0, 128⟩, List.mem_cons_self, lane_frame (by omega)⟩
+    exact ⟨⟨bufferAddr B 0, 128⟩, List.mem_cons_self, lane_frame (by omega_using [hg, hj])⟩
   refine ⟨fun r h9 h10 => (c.regs r h9 h10).trans (i.regs r h9 h10), c.rd.trans i.rd,
     c.wr.trans i.wr, c.sp.trans i.sp, i.frame.trans cf, ?_, ?_⟩
   · rw [bytes_frame (P := bufferAddr B 0) c.frame (fun r hr => ?_)]
     exact i.first
     simp only [List.mem_singleton] at hr; subst hr
     apply Offset.disjoint (State.addr B)
-    · left; change 4 * tailSlot + 16 * 0 + 16 ≤ 4 * tailSlot + 16 * (j + 1); omega
-    · change 4 * tailSlot + 16 * 0 + 16 ≤ 2 ^ 64; rw [tailSlot]; omega
-    · change 4 * tailSlot + 16 * (j + 1) + 16 ≤ 2 ^ 64; rw [tailSlot]; omega
+    · left; change 4 * tailSlot + 16 * 0 + 16 ≤ 4 * tailSlot + 16 * (j + 1); omega_using []
+    · change 4 * tailSlot + 16 * 0 + 16 ≤ 2 ^ 64; rw [tailSlot]; omega_using []
+    · change 4 * tailSlot + 16 * (j + 1) + 16 ≤ 2 ^ 64; rw [tailSlot]; omega_using [hg, hj]
   · intro k hk
     by_cases he : k = j
     · subst k
-      rw [c.block, i.data_kept h (by omega)]
+      rw [c.block, i.data_kept h (by omega_using [hj])]
     · rw [bytes_frame (P := bufferAddr B (k + 1)) c.frame (fun r hr => ?_)]
-      exact i.lanes k (by omega)
+      exact i.lanes k (by omega_using [hk, he])
       simp only [List.mem_singleton] at hr; subst hr
       apply Offset.disjoint (State.addr B)
-      · left; change 4 * tailSlot + 16 * (k + 1) + 16 ≤ 4 * tailSlot + 16 * (j + 1); omega
-      · change 4 * tailSlot + 16 * (k + 1) + 16 ≤ 2 ^ 64; rw [tailSlot]; omega
-      · change 4 * tailSlot + 16 * (j + 1) + 16 ≤ 2 ^ 64; rw [tailSlot]; omega
+      · left; change 4 * tailSlot + 16 * (k + 1) + 16 ≤ 4 * tailSlot + 16 * (j + 1); omega_using [hk, he]
+      · change 4 * tailSlot + 16 * (k + 1) + 16 ≤ 2 ^ 64; rw [tailSlot]; omega_using [hg, hj, hk]
+      · change 4 * tailSlot + 16 * (j + 1) + 16 ≤ 2 ^ 64; rw [tailSlot]; omega_using [hg, hj]
 
 theorem Inv.last {s₀ s s' : State} {B D : BitVec 32} {g j : Nat}
     (h : Pre B D g s₀) (hg : g ≤ 8) (hj : j + 1 = g) (i : Inv s₀ B D j s)
     (c : CopyPost s (counterAddr B) (dataAddr D j) s') : Post s₀ B D g s' := by
   have cf : Frame (regions B) s.mem s'.mem := c.frame.mono fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr; simp [regions]
-  have je : j = g - 1 := by omega
+  have je : j = g - 1 := by omega_using [hj]
   refine ⟨⟨fun r h9 h10 => (c.regs r h9 h10).trans (i.regs r h9 h10), c.rd.trans i.rd,
     c.wr.trans i.wr, c.sp.trans i.sp, i.frame.trans cf, ?_, ?_⟩, ?_⟩
   · rw [bytes_frame (P := bufferAddr B 0) c.frame (fun r hr => ?_)]
@@ -164,10 +164,10 @@ theorem Inv.last {s₀ s s' : State} {B D : BitVec 32} {g j : Nat}
     exact buffer_counter_sep B (by decide)
   · intro k hk
     rw [bytes_frame (P := bufferAddr B (k + 1)) c.frame (fun r hr => ?_)]
-    exact i.lanes k (by omega)
+    exact i.lanes k (by omega_using [hj, hk])
     simp only [List.mem_singleton] at hr; subst hr
-    exact buffer_counter_sep B (by omega)
-  · rw [c.block, i.data_kept h (by omega), je]
+    exact buffer_counter_sep B (by omega_using [hg, hk])
+  · rw [c.block, i.data_kept h (by omega_using [hj]), je]
 
 theorem steps_wp {s₀ s : State} {B D : BitVec 32} {g j m : Nat}
     (h : Pre B D g s₀) (hg : g ≤ 8) (hj : j < g) (hm : g ≤ j + m) (i : Inv s₀ B D j s) :
@@ -175,7 +175,7 @@ theorem steps_wp {s₀ s : State} {B D : BitVec 32} {g j m : Nat}
   induction m generalizing j s with
   | zero => omega
   | succ m ih =>
-    have jj : j < 8 := by omega
+    have jj : j < 8 := by omega_using [hg, hj]
     let sc := subFlags s (s.gpr .r11) (BitVec.ofNat 32 (j + 1))
     have ic : Inv s₀ B D j sc := i.cmp _ _
     have pc := ic.pre h
@@ -184,10 +184,10 @@ theorem steps_wp {s₀ s : State} {B D : BitVec 32} {g j m : Nat}
     · have eq : j + 1 = g := of_decide_eq_true he
       exact WP.mono (data_copy_wp pc hg hj (by decide)) fun s' c => ic.last h hg eq c
     · have ne : j + 1 ≠ g := by simpa using he
-      have jg : j + 1 < g := by omega
+      have jg : j + 1 < g := by omega_using [hj, ne]
       refine WP.seq (WP.mono (data_copy_wp (o := 4 * tailSlot + 16 * (j + 1)) pc hg hj
-        (by rw [tailSlot, total_eq]; omega)) fun s' c => ?_)
-      exact ih jg (by omega) (ic.next h hg jg c)
+        (by rw [tailSlot, total_eq]; omega_using [jj])) fun s' c => ?_)
+      exact ih jg (by omega_using [hm]) (ic.next h hg jg c)
 
 theorem pad_run (s : State) : runBlock isa BatchCfb.pad s = some s := by
   change some (s.setReg .r9 (s.gpr .r9)) = some s
@@ -206,7 +206,7 @@ theorem fill_wp {s : State} {B D : BitVec 32} {g : Nat} (h : Pre B D g s) (hg : 
   have cf : Frame (regions B) s.mem s'.mem := c.frame.sub fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr
     exact ⟨⟨bufferAddr B 0, 128⟩, List.mem_cons_self, lane_frame (by decide)⟩
-  exact steps_wp h hg8 (by omega) hg8
+  exact steps_wp h hg8 (by omega_using [hg]) hg8
     ⟨c.regs, c.rd, c.wr, c.sp, cf, c.block, fun _ hk => by omega⟩
 
 end VG.Proof.Sm4.Arm.CfbFill

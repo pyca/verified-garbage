@@ -68,7 +68,7 @@ theorem output_frame {n : Nat} {p : OutputPublic} {s : State} (h : OutputBefore 
   obtain ⟨⟨W, hm, _⟩, hf⟩ := h
   obtain ⟨V, R⟩ := hm.rep
   refine ⟨hf, fun k hk => ?_⟩
-  have bound : k < 37 := by simp only [List.mem_cons, List.not_mem_nil, or_false] at hk; omega
+  have bound : k < 37 := by simp only [List.mem_cons, List.not_mem_nil, or_false] at hk; omega_using [hk]
   rw [R.fr k bound]
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hk
   rcases hk with rfl | rfl | rfl

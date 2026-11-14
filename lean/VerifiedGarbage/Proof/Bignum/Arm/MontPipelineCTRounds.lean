@@ -34,10 +34,10 @@ theorem round_ready (round : Prog isa) (law : RoundLaw round) {base : BitVec 32}
   have tmpM := h.ctx.tmpM
   have oldB := post.outside.val32 (d := b) (k := n) (by
     intro r hr; simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl <;> simp only <;> omega) (by omega)
+    rcases hr with rfl | rfl <;> simp only <;> omega_arith) (by omega_using [nowrap, fitsB])
   have oldM := post.outside.val32 (d := mod) (k := n) (by
     intro r hr; simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl <;> simp only <;> omega) (by omega)
+    rcases hr with rfl | rfl <;> simp only <;> omega_arith) (by omega_using [nowrap, fitsM])
   refine ⟨⟨h.ctx.congr post.rest.wr, ⟨inv, post.hdr, ?_⟩, post.ptr, ?_, ?_⟩, post.zero⟩
   · rw [oldM]; exact inverse
   · rw [oldM]; exact post.bound
@@ -55,7 +55,7 @@ theorem rounds_ct (round : Prog isa) (law : RoundLaw round) (ctLaw : RoundCTLaw 
     apply RelCT.exists_
     intro i s t tr1 tr2 u v h e1 e2
     obtain ⟨hik, hk, hs, ht⟩ := h
-    have hi : i < n := by omega
+    have hi : i < n := by omega_using [hik, hk]
     obtain ⟨trace, posts⟩ := pair_posts (ctLaw even hi) (round_ready round law even hi)
       s t tr1 tr2 u v ⟨hs, ht⟩ e1 e2
     obtain ⟨⟨hu, zu⟩, ⟨hv, zv⟩⟩ := posts
@@ -68,11 +68,11 @@ theorem rounds_ct (round : Prog isa) (law : RoundLaw round) (ctLaw : RoundCTLaw 
         change some (!u.z) = some true at branch
         simp only [zu, eq, decide_true, Bool.not_true] at branch
         cases branch
-      exact ⟨k - 1, by omega, i + 1, by omega, by omega, hu, hv⟩
+      exact ⟨k - 1, by omega_using [hk], i + 1, by omega_using [hik, hk], by omega_using [hik, hk, ne], hu, hv⟩
   apply (RelCT.loop I step n).mono _ (fun _ _ h => h)
   intro s t h
   have count := h.1.ctx.count
-  exact ⟨0, by omega, by omega, h⟩
+  exact ⟨0, by omega_using [], by omega_using [count], h⟩
 
 
 theorem RoundCTLaw.loop {round : Prog isa} (law : RoundLaw round) (ctLaw : RoundCTLaw round) :

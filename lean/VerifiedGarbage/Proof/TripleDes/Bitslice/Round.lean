@@ -10,6 +10,7 @@ meta import VerifiedGarbage.Proof.TripleDes.Round
 meta import VerifiedGarbage.Proof.Framework.Bitslice.Table
 meta import VerifiedGarbage.Proof.TripleDes.Permutation
 meta import VerifiedGarbage.Impl.TripleDes.BitsliceLayout
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # A bitsliced DES round, lane by lane
@@ -88,7 +89,7 @@ theorem steps_read (ρ : Role) (k : BitVec 48) {n q : Nat} (hn : n ≤ 8) (hq : 
     (W : Nat → BitVec w) : steps ρ k n W (readWord ρ q) = W (readWord ρ q) := by
   induction n with
   | zero => rfl
-  | succ n ih => rw [steps_succ, step_read ρ k (by omega) hq, ih (by omega)]
+  | succ n ih => rw [steps_succ, step_read ρ k (by omega_using [hn]) hq, ih (by omega_using [hn])]
 
 theorem sboxIn_steps (ρ : Role) (k : BitVec 48) {n j : Nat} (hn : n ≤ 8) (hj : j < 8)
     (W : Nat → BitVec w) (b : Nat) : sboxIn ρ k j (steps ρ k n W) b = sboxIn ρ k j W b := by
@@ -107,17 +108,17 @@ theorem steps_write (ρ : Role) (k : BitVec 48) {n q : Nat} (hn : n ≤ 8) (hq :
   | zero => simp [steps]
   | succ n ih =>
     rw [steps_succ]
-    simp only [step, outIdx_write ρ n (by omega) q hq]
+    simp only [step, outIdx_write ρ n (by omega_using [hn]) q hq]
     have hs := (src_spec q hq).1
     by_cases he : n = src q / 4
     · subst he
-      simp only [ite_true, BitVec.getLsbD_xor, ih (by omega), sboxOut, getLsbD_ofBits,
-        sboxIn_steps ρ k (n := src q / 4) (j := src q / 4) (by omega) (by omega)]
-      have h1 : ¬ src q / 4 < src q / 4 := by omega
-      have h2 : src q / 4 < src q / 4 + 1 := by omega
+      simp only [ite_true, BitVec.getLsbD_xor, ih (by omega_using [hs]), sboxOut, getLsbD_ofBits,
+        sboxIn_steps ρ k (n := src q / 4) (j := src q / 4) (by omega_using [hs]) (by omega_using [hs])]
+      have h1 : ¬ src q / 4 < src q / 4 := by omega_using []
+      have h2 : src q / 4 < src q / 4 + 1 := by omega_using []
       simp [h1, h2]
-    · simp only [he, ite_false, ih (by omega)]
-      have : (src q / 4 < n + 1) ↔ (src q / 4 < n) := by omega
+    · simp only [he, ite_false, ih (by omega_using [hn])]
+      have : (src q / 4 < n + 1) ↔ (src q / 4 < n) := by omega_using [he]
       simp only [decide_eq_decide.mpr this]
 
 /-! ## The round function, lane by lane -/
@@ -142,14 +143,14 @@ theorem roundFunction_lane (ρ : Role) (k : BitVec 48) (W : Nat → BitVec w) (b
     (hq : q < 32) : (roundFunction (half (readWord ρ) W b) k).getLsbD q =
       (sBox (src q / 4) (sboxIn ρ k (src q / 4) W b)).getLsbD (src q % 4) := by
   obtain ⟨hs, ho⟩ := src_spec q hq
-  have hj : src q / 4 < 8 := by omega
+  have hj : src q / 4 < 8 := by omega_using [hs]
   have hi : src q % 4 < 4 := Nat.mod_lt _ (by decide)
   have spec := outBit_spec _ hj _ hi
   rw [ho] at spec
   rw [roundFunction_bit _ _ q hq, sboxIn_eq ρ k hj]
   simp only [spec]
-  have e1 : 7 - (4 * (7 - src q / 4) + src q % 4) / 4 = src q / 4 := by omega
-  have e2 : (4 * (7 - src q / 4) + src q % 4) % 4 = src q % 4 := by omega
+  have e1 : 7 - (4 * (7 - src q / 4) + src q % 4) / 4 = src q / 4 := by omega_using [hs]
+  have e2 : (4 * (7 - src q / 4) + src q % 4) % 4 = src q % 4 := by omega_using []
   rw [e1, e2]
 
 /-- A round XORs DES's `f` of the half it reads into the half it writes,
@@ -161,7 +162,7 @@ theorem roundW_half (ρ : Role) (k : BitVec 48) (W : Nat → BitVec w) {b : Nat}
   constructor
   · apply BitVec.eq_of_getLsbD_eq
     intro q hq
-    have hj : src q / 4 < 8 := by have := (src_spec q hq).1; omega
+    have hj : src q / 4 < 8 := by have := (src_spec q hq).1; omega_using [this]
     have l1 : (half (writeWord ρ) (roundW ρ k W) b).getLsbD q =
         (roundW ρ k W (writeWord ρ q)).getLsbD b := by
       simp only [half, getLsbD_ofBits, hq, decide_true, Bool.true_and]
@@ -205,8 +206,8 @@ theorem steps_congr (ρ : Role) (k : BitVec 48) {n : Nat} (hn : n ≤ 8) {W W' :
   | zero => exact hW
   | succ n ih =>
     intro x hx
-    have ih' := ih (by omega)
+    have ih' := ih (by omega_using [hn])
     rw [steps_succ, steps_succ]
-    exact step_congr ρ k (by omega) ih' (ih' x hx)
+    exact step_congr ρ k (by omega_using [hn]) ih' (ih' x hx)
 
 end VG.Proof.TripleDes.Bitslice

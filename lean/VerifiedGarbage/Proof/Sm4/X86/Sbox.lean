@@ -69,12 +69,12 @@ theorem sbox_ok {s : State} (hok : Ok sboxCfg s) :
       simp only [TableRel, inT, testBit_tableOf, hc, decide_true, Bool.true_and,
         BitVec.testBit_toNat, getLsbD_bsByte _ _ hk8, slotW, sboxCfg]
     · cases h
-  obtain ⟨s', hs', p₀⟩ := key 0 (by omega)
+  obtain ⟨s', hs', p₀⟩ := key 0 (by omega_using [])
   refine ⟨s', hs', fun j hj p hp => ?_, p₀.rd, p₀.wr, fun r hr => p₀.other r ?_, p₀.frame⟩
   · obtain ⟨s'', hs'', p₁⟩ := key p hp
     obtain rfl := run_unique hs'' hs'
     have hc := (bsByte (slotW s) p).isLt
-    have := p₁.rel.slot j _ (by simp [sboxCfg]; omega) (hout j hj)
+    have := p₁.rel.slot j _ (by simp [sboxCfg]; omega_using [hj]) (hout j hj)
     have hb : s''.gpr sb = s.gpr sb := p₁.base
     simp only [TableRel, sboxCfg, hb] at this
     rw [slotW, hb, ← this, sboxT, testBit_tableOf]

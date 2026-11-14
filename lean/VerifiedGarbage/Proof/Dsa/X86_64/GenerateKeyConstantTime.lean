@@ -31,7 +31,7 @@ theorem keygen_finish_public_pre {extra : Nat} {s t : State} {h : GenerateKeyABI
     have hl := h.lengths
     have ho := h.outLength
     unfold Spec.Dsa.lengthsValid at hl
-    omega
+    omega_using [hl, ho]
   · intro j hj
     exact ⟨⟨s.gpr .rdi, (s.gpr .rsi).toNat⟩, by rw [hr.wr, h.wr]; simp,
       contains_byte _ hj (Nat.le_of_lt (s.gpr .rsi).isLt)⟩
@@ -138,7 +138,7 @@ theorem keygen_alloc {extra : Nat} {s : State} (h : GenerateKeyABI extra s) :
     isa.push (.alloc Random.frameBytes) s = some (allocState Random.frameBytes s) := by
   have hl := h.stackLower
   simp only [isa, push, allocState]
-  exact ite_eq_left ⟨by decide, by decide, by decide, by unfold Random.frameBytes; omega⟩
+  exact ite_eq_left ⟨by decide, by decide, by decide, by unfold Random.frameBytes; omega_using [hl]⟩
 
 theorem keygen_constantTime (v : Backend) :
     ConstantTime isa (Spec.Dsa.generateKeyContract abi (v.stack + 256)).pre

@@ -29,13 +29,13 @@ theorem precompute_input_ready {s : State} (g : PrecomputeGeometry s) :
     apply g.context.st
     change 8*i+8≤(s.gpr .x1).toNat*8
     change i<3+34*(((s.gpr .x4).toNat+7)/8) at hi
-    rw [g.count];omega
+    rw [g.count];omega_using [hi]
   · intro i hi
     apply g.contextOutside
     change i<8*(3+34*(((s.gpr .x4).toNat+7)/8)) at hi
-    rw [g.count];omega
+    rw [g.count];omega_using [hi]
  have output : Scr s (s.gpr .x0) 24 :=by
-  have h:=g.context.sub (o:=0) (n:=24) (by rw [g.count];omega) (by decide)
+  have h:=g.context.sub (o:=0) (n:=24) (by rw [g.count];omega_using []) (by decide)
   simpa only [off,BitVec.ofNat_eq_ofNat,BitVec.add_zero] using h
  have source : PublicSource (precomputeNativeParameters s g) (s.gpr .x2) (precomputeDomain s) s :=by
   refine ⟨src_source g.source,g.source.out,?_⟩
@@ -44,6 +44,6 @@ theorem precompute_input_ready {s : State} (g : PrecomputeGeometry s) :
   change 8*(3+34*(((s.gpr .x4).toNat+7)/8))≤ofs (s.gpr .x0) (s.gpr .x2+BitVec.ofNat 64 i)
   rw [←g.count];simpa only [Nat.mul_comm] using g.domainOutside i hi
  exact ⟨g.scratch,space,output,source,g.span,rfl,rfl,(ofNat_toNat64 _).symm,(ofNat_toNat64 _).symm,rfl,
-  policyConsts_table g.constants g.scratch (by have :=g.room;dsimp only [slot,hdrBytes] at this;omega),rfl⟩
+  policyConsts_table g.constants g.scratch (by have :=g.room;dsimp only [slot,hdrBytes] at this;omega_using [this]),rfl⟩
 
 end VG.Proof.Ffdh.AArch64.Cached

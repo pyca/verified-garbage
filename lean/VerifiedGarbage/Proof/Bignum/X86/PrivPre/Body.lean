@@ -53,7 +53,7 @@ theorem bot_toNat (A : PPABI s) : (bot s).toNat = (s.gpr .esp).toNat - 196 := by
   have l := A.stackLow
   simp only [stackBytes] at l
   rw [bot, stackBytes, ← VG.X86.Taint.sub_setWidth l, BitVec.toNat_setWidth, sub_toNat l,
-    Nat.mod_eq_of_lt (by have := (s.gpr .esp).isLt; omega)]
+    Nat.mod_eq_of_lt (by have := (s.gpr .esp).isLt; omega_using [])]
 
 theorem esp_off (A : PPABI s) {a b : Nat} (ha : a ≤ 196) (hb : b ≤ a + 40) :
     ((s.gpr .esp - BitVec.ofNat 32 a) + BitVec.ofNat 32 b).setWidth 64 =
@@ -62,14 +62,14 @@ theorem esp_off (A : PPABI s) {a b : Nat} (ha : a ≤ 196) (hb : b ≤ a + 40) :
   have u := A.stackBound
   simp only [stackBytes] at l
   have x := (s.gpr .esp).isLt
-  have e1 : (s.gpr .esp - BitVec.ofNat 32 a).toNat = (s.gpr .esp).toNat - a := sub_toNat (by omega)
+  have e1 : (s.gpr .esp - BitVec.ofNat 32 a).toNat = (s.gpr .esp).toNat - a := sub_toNat (by omega_using [ha, l])
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_setWidth, BitVec.toNat_add, e1, BitVec.toNat_add, bot_toNat A, BitVec.toNat_ofNat,
-    BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := b) (by omega), Nat.mod_eq_of_lt (a := 196 - a + b) (by omega),
-    Nat.mod_eq_of_lt (a := (s.gpr .esp).toNat - a + b) (by omega),
-    Nat.mod_eq_of_lt (a := (s.gpr .esp).toNat - a + b) (by omega),
-    Nat.mod_eq_of_lt (a := (s.gpr .esp).toNat - 196 + (196 - a + b)) (by omega)]
-  omega
+    BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := b) (by omega_using [ha, hb]), Nat.mod_eq_of_lt (a := 196 - a + b) (by omega_using [ha, hb]),
+    Nat.mod_eq_of_lt (a := (s.gpr .esp).toNat - a + b) (by omega_using [ha, hb, u]),
+    Nat.mod_eq_of_lt (a := (s.gpr .esp).toNat - a + b) (by omega_using [ha, hb]),
+    Nat.mod_eq_of_lt (a := (s.gpr .esp).toNat - 196 + (196 - a + b)) (by omega_using [ha, hb])]
+  omega_using [ha, l]
 
 theorem frame_base (A : PPABI s) : frameR s = ⟨bot s + BitVec.ofNat 64 100, 96⟩ := by
   have := esp_off A (a := 96) (b := 0) (by decide) (by decide)
@@ -83,19 +83,19 @@ theorem esp_bot (A : PPABI s) : (s.gpr .esp).setWidth 64 = bot s + BitVec.ofNat 
 
 theorem argAddr_bot (A : PPABI s) {i : Nat} (hi : i < 10) :
     argAddr s i = bot s + BitVec.ofNat 64 (200 + 4 * i) := by
-  have := esp_off A (a := 0) (b := 4 + 4 * i) (by decide) (by omega)
+  have := esp_off A (a := 0) (b := 4 + 4 * i) (by decide) (by omega_using [hi])
   simp only [BitVec.sub_zero] at this
   rw [argAddr, this]
-  congr 2; omega
+  congr 2; omega_using []
 
 theorem slot_ea (A : PPABI s) (B : Body s t) {d : Nat} (hd : d < 96) : t.ea (stackAt d) = slot s d := by
   simp only [State.ea, stackAt, B.sp, Impl.Bignum.X86.PrivPre.frameBytes]
-  rw [esp_off A (by decide) (by omega)]
+  rw [esp_off A (by decide) (by omega_using [hd])]
 
 theorem incoming_ea (A : PPABI s) (B : Body s t) {i : Nat} (hi : i < 10) : t.ea (incoming i) = argAddr s i := by
   simp only [State.ea, incoming, stackAt, B.sp, Impl.Bignum.X86.PrivPre.frameBytes]
-  rw [esp_off A (by decide) (by omega), argAddr_bot A hi]
-  congr 2; omega
+  rw [esp_off A (by decide) (by omega_using [hi]), argAddr_bot A hi]
+  congr 2; omega_using []
 
 theorem Body.start : Body s (allocFrame Impl.Bignum.X86.PrivPre.frameBytes s) :=
   ⟨allocFrame_esp _ _, rfl, rfl, Frame.refl _ _⟩
@@ -118,7 +118,7 @@ theorem Body.argValue (A : PPABI s) (B : Body s t) {i : Nat} (hi : i < 10) :
     t.mem.readW (argAddr s i) 32 = arg s i := by
   refine B.frame.readW (r := ⟨argAddr s 0, 40⟩) ?_ (args_apart A) (by decide)
   rw [argAddr_bot A hi, argAddr_bot A (by decide : 0 < 10)]
-  exact Offset.contains _ (by omega) (by omega) (by omega)
+  exact Offset.contains _ (by omega_using []) (by omega_using [hi]) (by omega_using [])
 
 theorem Body.readArg (A : PPABI s) (B : Body s t) {i : Nat} (hi : i < 10) :
     readSrc t (.mem (incoming i)) = some (arg s i) := by
@@ -128,7 +128,7 @@ theorem Body.readArg (A : PPABI s) (B : Body s t) {i : Nat} (hi : i < 10) :
     refine ⟨⟨argAddr s 0, 40⟩, ?_, ?_⟩
     · rw [B.wr, A.wr]; simp
     · rw [argAddr_bot A hi, argAddr_bot A (by decide : 0 < 10)]
-      exact Offset.contains _ (by omega) (by omega) (by omega)
+      exact Offset.contains _ (by omega_using []) (by omega_using [hi]) (by omega_using [])
   simp only [State.load32, hin, ite_true, B.argValue A hi]
 
 /-- `mov [esp + d], r` in the frame. -/
@@ -139,25 +139,25 @@ theorem wp_slot {is : List Instr} {Q : State → Prop} {r : Reg} (A : PPABI s) (
   have hw : InRegions t.wr (slot s d) 4 := by
     refine ⟨frameR s, by rw [B.wr]; exact List.mem_cons_self .., ?_⟩
     rw [frame_base A]
-    exact Offset.contains _ (by omega) (by omega) (by omega)
-  refine wp_storeS (slot_ea A B (by omega)) hw fun u M => k u ?_ M
+    exact Offset.contains _ (by omega_using []) (by omega_using [hd]) (by omega_using [])
+  refine wp_storeS (slot_ea A B (by omega_using [hd])) hw fun u M => k u ?_ M
   refine B.next (by rw [M.gpr]) M.rd M.wr ?_
   rw [M.mem]
   refine (Frame.refl _ _).writeW (r := topR s) (by simp) _ ?_
-  exact Offset.contains_base _ (by simp only [stackBytes]; omega) (by omega)
+  exact Offset.contains_base _ (by simp only [stackBytes]; omega_using [hd]) (by omega_using [hd])
 
 theorem Body.readSlot (A : PPABI s) (B : Body s t) {d : Nat} (hd : d + 4 ≤ 96) :
     readSrc t (.mem (stackAt d)) = some (t.mem.readW (slot s d) 32) := by
   show t.load32 (t.ea (stackAt d)) = _
-  rw [slot_ea A B (by omega)]
+  rw [slot_ea A B (by omega_using [hd])]
   have hin : InRegions (t.rd ++ t.wr) (slot s d) 4 :=
-    ⟨frameR s, by rw [B.wr]; simp, by rw [frame_base A]; exact Offset.contains _ (by omega) (by omega) (by omega)⟩
+    ⟨frameR s, by rw [B.wr]; simp, by rw [frame_base A]; exact Offset.contains _ (by omega_using []) (by omega_using [hd]) (by omega_using [])⟩
   simp only [State.load32, hin, ite_true]
 
 /-- A word of the frame, kept by writes to `pre` and the working space. -/
 theorem slot_keep (A : PPABI s) {m m' : Mem} (F : Frame [preR s, wsR s] m m') {d : Nat} (hd : d + 4 ≤ 96) :
     m'.readW (slot s d) 32 = m.readW (slot s d) 32 := by
-  refine F.readW (r := topR s) (Offset.contains_base _ (by simp [stackBytes]; omega) (by omega)) (fun r hr => ?_)
+  refine F.readW (r := topR s) (Offset.contains_base _ (by simp [stackBytes]; omega_using [hd]) (by omega_using [hd])) (fun r hr => ?_)
     (by decide)
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl

@@ -110,7 +110,7 @@ theorem readonly_pair_tail_ok {initial s : State} {p a f g w : Addr} {off0 off1 
     intro r hr; exact hfar r (by simp only [pairWrites,List.mem_cons,List.not_mem_nil,or_false] at hr ⊢; grind))
   have tab1 := ht1.frame su ku.rd ku.wr fu (by
     intro r hr; exact hfar r (by simp only [pairWrites,List.mem_cons,List.not_mem_nil,or_false] at hr ⊢; grind))
-  have r0 := output_prf (by omega : n<256) ra
+  have r0 := output_prf (by omega_using [hn] : n<256) ra
   have r1 := output_prf hn rb
   refine WP.seq (WP.mono_syms (readonly_out_okW tr0 h0 hns (by decide)
     (by rw [ku.gpr .x19 (by decide),hp]; rfl)

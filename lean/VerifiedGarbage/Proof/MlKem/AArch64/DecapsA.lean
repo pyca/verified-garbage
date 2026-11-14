@@ -75,19 +75,19 @@ theorem pre_of (hP : P.Wf) {s₀ : State} (h : (decapsAArch64 P).pre s₀) : Pre
   obtain ⟨rd, wr, d02, d03, d12, d13, d23, sp16, k0, k1, k2, k3⟩ := h
   refine ⟨by
     intro b hb
-    have hb' : b = 0 ∨ b = 1 := by change b < 2 at hb; omega
+    have hb' : b = 0 ∨ b = 1 := by change b < 2 at hb; omega_using [hb]
     rcases hb' with rfl | rfl <;> rw [rd] <;> simp [kA, deL, argReg], by rw [wr]; rfl, ⟨fun b hb c hc hbc hw => ?_, fun b hb => ?_, fun b hb => ?_⟩, sp16,
     fun k hk => hk, by dek, rfl, hP⟩
   · have e : ∀ {x y : Region}, x.Disjoint y → y.Disjoint x := fun h => h.symm
     simp only [deL] at hb hc hw
-    rcases (by omega : b = 0 ∨ b = 1 ∨ b = 2 ∨ b = 3) with rfl | rfl | rfl | rfl <;>
-    rcases (by omega : c = 0 ∨ c = 1 ∨ c = 2 ∨ c = 3) with rfl | rfl | rfl | rfl <;>
+    rcases (by omega_using [hb] : b = 0 ∨ b = 1 ∨ b = 2 ∨ b = 3) with rfl | rfl | rfl | rfl <;>
+    rcases (by omega_using [hc] : c = 0 ∨ c = 1 ∨ c = 2 ∨ c = 3) with rfl | rfl | rfl | rfl <;>
     first | exact absurd rfl hbc | exact absurd hw (by decide) | assumption | exact e ‹_›
   · simp only [deL] at hb
-    rcases (by omega : b = 0 ∨ b = 1 ∨ b = 2 ∨ b = 3) with rfl | rfl | rfl | rfl <;>
+    rcases (by omega_using [hb] : b = 0 ∨ b = 1 ∨ b = 2 ∨ b = 3) with rfl | rfl | rfl | rfl <;>
       simp only [deL, List.getD_cons_zero, List.getD_cons_succ] <;> lom
   · simp only [deL] at hb
-    rcases (by omega : b = 0 ∨ b = 1 ∨ b = 2 ∨ b = 3) with rfl | rfl | rfl | rfl <;> assumption
+    rcases (by omega_using [hb] : b = 0 ∨ b = 1 ∨ b = 2 ∨ b = 3) with rfl | rfl | rfl | rfl <;> assumption
 
 /-- `dk`. -/
 abbrev dkD (P : KemLay) (s₀ : State) : List Byte := bytesAt s₀.mem (kA s₀ 0) P.dkLen
@@ -118,13 +118,13 @@ theorem DInv.frame {s₀ : State} {n : Nat} {s s' : State} (h : DInv P s₀ n s)
     (hx : s'.gpr .x24 = s.gpr .x24) {W : List Region} (hf : Frame W s.mem s'.mem)
     (hW : ∀ r ∈ W, (R (kA s₀) (deL P).sc (YH P) (1024 * n)).Disjoint r) : DInv P s₀ n s' :=
   ⟨hk, by rw [hx, h.x24], fun i hi => polyIs_frame hf (fun r hr => (hW r hr).sub_left
-    (R.sub2 (by simp only [yOff]; omega) (by simp only [yOff]; omega))) (h.u i hi)⟩
+    (R.sub2 (by simp only [yOff]; omega_using []) (by simp only [yOff]; omega_using [hi]))) (h.u i hi)⟩
 
 /-- A buffer of `scratch` past `û'`. -/
 theorem dfar {s₀ : State} (hp : Pre P (deL P) s₀) {n o l : Nat} (hn : n ≤ P.k) (f : o + l ≤ SV P + 48)
     (h : o + l ≤ YH P ∨ YH P + 1024 * n ≤ o) :
     (R (kA s₀) (deL P).sc (YH P) (1024 * n)).Disjoint (R (kA s₀) (deL P).sc o l) :=
-  sdisj hp (by kom) f (by omega)
+  sdisj hp (by kom) f (by omega_using [h])
 
 theorem u_step {s₀ : State} (hp : Pre P (deL P) s₀) (hc : Calls P) {i : Nat} (hi : i < P.k) {s : State}
     (h : DInv P s₀ i s) : WP isa (P.deU i) s (DInv P s₀ (i + 1)) := by
@@ -136,16 +136,16 @@ theorem u_step {s₀ : State} (hp : Pre P (deL P) s₀) (hc : Calls P) {i : Nat}
     fu (.inl rfl) hpo (.inl (by dek)) h.kb)
     fun s₁ ⟨kb₁, f₁, p₁, x₁⟩ => ?_)
   have e₁ := h.frame kb₁ x₁ f₁ fun r hr => by
-    rw [List.mem_singleton.mp hr]; exact dfar hp (by omega) hpo.le (.inr (by simp only [yOff]; omega))
+    rw [List.mem_singleton.mp hr]; exact dfar hp (by omega_using [hi]) hpo.le (.inr (by simp only [yOff]; omega_using []))
   rw [slice_eq h.kb (b := 1) (by decide) fu] at p₁
   refine WP.mono (ntt_ok hp hpo kb₁ p₁.1) fun s₂ ⟨kb₂, f₂, p₂, x₂⟩ => ?_
   have e₂ := e₁.frame kb₂ x₂ f₂ fun r hr => by
     rcases mem2' hr with rfl | rfl
-    · exact dfar hp (by omega) hpo.le (.inr (by simp only [yOff]; omega))
-    · exact dfar hp (by omega) (by kom) (.inl (by kom))
+    · exact dfar hp (by omega_using [hi]) hpo.le (.inr (by simp only [yOff]; omega_using []))
+    · exact dfar hp (by omega_using [hi]) (by kom) (.inl (by kom))
   rw [p₁.2] at p₂
   refine ⟨e₂.kb, e₂.x24, fun i' hi' => ?_⟩
-  rcases (by omega : i' < i ∨ i' = i) with hi' | rfl
+  rcases (by omega_using [hi'] : i' < i ∨ i' = i) with hi' | rfl
   · exact e₂.u i' hi'
   · refine (congrArg (fun x => PolyIs s₂.mem (sA (deL P) s₀ (yOff P i')) (ntt x)) ?_).mp p₂
     simp only [KPke.dcU, cD, deL, List.getD_cons_zero, List.getD_cons_succ, KemLay.params]

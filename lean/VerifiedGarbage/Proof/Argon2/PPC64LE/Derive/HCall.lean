@@ -86,8 +86,8 @@ theorem hcall_pre {s : State} (h : Inv s₀ s) (r7 : s.gpr .r7 = scrP s₀)
         Region.Sub ⟨s.gpr .r5, (s.gpr .r6).toNat⟩ (outR s₀)) := by
   have hsp : 48 ≤ s.sp.toNat := by
     rw [h.sp, show E s₀ = s₀.sp - BitVec.ofNat 64 336 from rfl,
-      toNat_sub_ofNat' (by have := hp.sp_lo; omega)]
-    have := hp.sp_lo; omega
+      toNat_sub_ofNat' (by have := hp.sp_lo; omega_using [this])]
+    have := hp.sp_lo; omega_using [this]
   have g : ∀ r, r ∉ linkRegs → s.callEntry.gpr r = s.gpr r := fun r hr => State.callEntry_gpr s hr
   let I : Region := ⟨s.gpr .r3, (s.gpr .r4).toNat⟩
   let O : Region := ⟨s.gpr .r5, (s.gpr .r6).toNat⟩
@@ -154,7 +154,7 @@ theorem hcall_pre {s : State} (h : Inv s₀ s) (r7 : s.gpr .r7 = scrP s₀)
     rcases hR with rfl | rfl
     · exact ⟨memR s₀, by rw [h.wr, entry_wr, hp.wr]; simp, off, hb, hl⟩
     · exact ⟨⟨at' s₀ 80, 304⟩, by rw [h.wr]; exact frame_mem, off, hb, by
-        show off + (s.gpr .r4).toNat ≤ 304; simp only at hl; omega⟩
+        show off + (s.gpr .r4).toNat ≤ 304; simp only at hl; omega_using [hl]⟩
   exact ⟨pre, cov, wrs, hout'⟩
 
 /-- `hprime(r3, r4, r5, r6, r7)` from the body. -/

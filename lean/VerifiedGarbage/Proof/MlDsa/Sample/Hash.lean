@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Spec.MlDsa
 import VerifiedGarbage.Proof.Sha3.Stream
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # ML-DSA: `H` and `G` through the streaming sponge
@@ -40,9 +41,9 @@ theorem G_eq (s : List Byte) (d : Nat) : G s d = squeezeFrom 168 (padded 168 sha
 /-- The first `d` bytes of a longer output. -/
 theorem squeeze_take {rate : Nat} (hr : 0 < rate) (hr' : rate ≤ 200) (S : State) {d d' : Nat}
     (h : d ≤ d') : (squeeze rate S d').take d = squeeze rate S d := by
-  refine List.ext_getElem (by simp [length_squeeze hr hr']; omega) fun i h₁ h₂ => ?_
+  refine List.ext_getElem (by simp [length_squeeze hr hr']; omega_using [h]) fun i h₁ h₂ => ?_
   rw [length_squeeze hr hr'] at h₂
-  rw [List.getElem_take, squeeze_getElem hr hr' _ h₂, squeeze_getElem hr hr' _ (by omega)]
+  rw [List.getElem_take, squeeze_getElem hr hr' _ h₂, squeeze_getElem hr hr' _ (by omega_using [h, h₂])]
 
 theorem H_length (s : List Byte) (d : Nat) : (H s d).length = d := length_squeeze (by decide) (by decide) _ _
 

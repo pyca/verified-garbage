@@ -105,14 +105,14 @@ theorem base_sub8 (q : Addr) {o n : Nat} (h : o + n ≤ 8184) :
     Region.Sub ⟨base q + BitVec.ofNat 64 o, n⟩ ⟨q, 8192⟩ := by
   have := Align.pad_lt q
   rw [Offset.add_add]
-  exact Offset.sub_base _ (by omega)
+  exact Offset.sub_base _ (by omega_using [h, this])
 
 /-- A range of the rounded working space below `8184`, in the regions of the working space. -/
 theorem base_in {rs : List Region} {q : Addr} (hws : (⟨q, 8192⟩ : Region) ∈ rs) {d n : Nat} (h : d + n ≤ 8184) :
     InRegions rs (base q + BitVec.ofNat 64 d) n := by
   have := Align.pad_lt q
   rw [Offset.add_add]
-  exact in_base hws (by omega) (by omega)
+  exact in_base hws (by omega_using [h, this]) (by omega_using [h, this])
 
 /-- The regions the copies write. -/
 abbrev copyW (b : Addr) : List Region :=
@@ -141,7 +141,7 @@ theorem copies_ok {s0 : State} (hc : Ctx b s0) {q : Addr}
   have hin : ∀ {p : Addr} {n : Nat}, (⟨p, n⟩ : Region) ∈ s0.rd → n ≤ 114 → ∀ i < n,
       InRegions (s0.rd ++ s0.wr) (p + BitVec.ofNat 64 i) 1 :=
     fun {p n} hr hn i hi => in_base (P := p) (len := n) (d := i) (n := 1) (List.mem_append_left s0.wr hr)
-      (by omega) (by omega)
+      (by omega_using [hi]) (by omega_using [hn, hi])
   have sigR : (⟨s0.gpr .a1, 114⟩ : Region) ∈ s0.rd := by rw [hrd]; simp only [List.mem_cons, true_or, or_true]
   have sR : (⟨s0.gpr .a1 + BitVec.ofNat 64 57, 57⟩ : Region).Disjoint ⟨q, 8192⟩ :=
     sig_ws.sub_left (Offset.sub_base (s0.gpr .a1) (d := 57) (n := 57) (k := 114) (by decide))

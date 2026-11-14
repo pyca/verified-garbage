@@ -72,7 +72,7 @@ theorem SlotsOk.above {m m' : Mem} {qs : List Nat} {v : Nat → Fe} (hS : SlotsO
   have h := List.all_eq_true.mp hq q hq'
   simp only [decide_eq_true_eq] at h
   have e := limb_frame (o := q) hf fun r hr k hk => by
-    rw [List.mem_singleton.mp hr]; exact Offset.disjoint _ (.inl (by omega)) (by omega) (by omega)
+    rw [List.mem_singleton.mp hr]; exact Offset.disjoint _ (.inl (by omega_using [h, hk])) (by omega_using [hn, h, hk]) (by omega_using [hn])
   rw [FS, V, val32_congr e]; exact hS q hq'
 
 /-- The bits stay through a write of the saved registers. -/
@@ -81,7 +81,7 @@ theorem Bits.save {m m' : Mem} {k : Nat} (h : Bits b k m)
   have hB : BITS = 608 := rfl
   have hS : SAVE = 896 := rfl
   rw [hf _ fun r hr hc => (Offset.disjoint b (d := BITS + t) (n := 1) (e := SAVE) (k := 136)
-    (.inl (by omega)) (by omega) (by omega)) _ (Region.contains_self _ _)
+    (.inl (by omega_using [ht, hB, hS])) (by omega_using [ht, hB]) (by omega_using [hS])) _ (Region.contains_self _ _)
     (by rw [List.mem_singleton.mp hr] at hc; exact hc)]
   exact h t ht
 
@@ -108,14 +108,14 @@ theorem nvL_regs : ∀ p ∈ nvL, p.1 ∉ clob ∧ p.1 ∉ [Reg.r4, .r7, .r8, .r
     p.1 ≠ .r3 ∧ p.1 ≠ .r6 := by decide
 
 theorem nvL_le {p : Reg × Nat} (hp : p ∈ nvL) : p.2 + 8 ≤ 4096 := by
-  have := nvL_in p hp; have hS : SAVE = 896 := rfl; omega
+  have := nvL_in p hp; have hS : SAVE = 896 := rfl; omega_using [this, hS]
 
 theorem bytesAt_frame {m m' : Mem} {rs : List Region} (hf : Frame rs m m') {p : Addr}
     (hd : ∀ r ∈ rs, Region.Disjoint ⟨p, 32⟩ r) : bytesAt m' p 32 = bytesAt m p 32 := by
   simp only [bytesAt]
   refine List.map_congr_left fun i hi => ?_
   have hi := List.mem_range.mp hi
-  exact hf _ fun r hr hc => hd r hr _ (Offset.contains_base _ (by omega) (by omega)) hc
+  exact hf _ fun r hr hc => hd r hr _ (Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi])) hc
 
 theorem x25519_correct {s : State} (hp : XPre s) :
     WP isa x25519 s fun s' => x25519PPC64LE.post s s' ∧ ∀ p ∈ nvL, s'.gpr p.1 = s.gpr p.1 := by
@@ -152,7 +152,7 @@ theorem x25519_correct {s : State} (hp : XPre s) :
   have hc7 : Ctx (s.gpr .r6) s7 := hc6.of_rest hr7 (by decide)
   have hsv7 : Spill.Saved (s.gpr .r6) s2.gpr nvL s7.mem :=
     hsv.frame_in nvL_in hst7.frame fun r hr => by
-      rw [List.mem_singleton.mp hr]; exact Offset.disjoint_base _ (by omega) (by omega)
+      rw [List.mem_singleton.mp hr]; exact Offset.disjoint_base _ (by omega_using [hSV, hA]) (by omega_using [hSV])
   -- The restores.
   refine Spill.restore_ok (by decide) hc7.r6 nvL_ok nvL_restorable (fun p hp => hc7.inR (nvL_le hp)) hsv7
     fun s8 hR => ?_

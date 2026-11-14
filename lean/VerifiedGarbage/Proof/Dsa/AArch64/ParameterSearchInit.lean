@@ -41,7 +41,7 @@ def words (L : Nat) : List (BitVec 64) :=
 theorem movi64 {n : Nat} (hn : n < 65536) : (BitVec.ofNat 16 n).setWidth 64 = BitVec.ofNat 64 n := by
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]
-  omega
+  omega_using [hn]
 
 /-! ## The blocks -/
 
@@ -51,13 +51,13 @@ theorem words_ok {s : State} {B : Addr} {L : Nat} (scr : Scr s B 32) (h0 : s.gpr
       t.mem = written s.mem B (words L) := by
   have h00 : InRegions s.wr B 8 := by simpa only [off, BitVec.add_zero] using scr.st (d := 0) (by decide)
   have hc : BitVec.ofNat 64 L <<< 15 + BitVec.ofNat 64 L = BitVec.ofNat 64 (32769 * L) := by
-    rw [shl_ofNat L 15 (by omega), add_ofNat]
+    rw [shl_ofNat L 15 (by omega_using [hL]), add_ofNat]
     congr 1
-    omega
+    omega_using []
   have hr : BitVec.ofNat 64 L <<< 9 = BitVec.ofNat 64 (512 * L) := by
-    rw [shl_ofNat L 9 (by omega)]
+    rw [shl_ofNat L 9 (by omega_using [hL])]
     congr 1
-    omega
+    omega_using []
   unfold initWords written words
   brun [h0, h1, movi64 (show 1 < 65536 by decide), movi64 (show 4096 < 65536 by decide), h00,
     scr.st (d := 8) (by decide), scr.st (d := 16) (by decide), scr.st (d := 24) (by decide), hc, hr,
@@ -77,12 +77,12 @@ theorem test_ok (s : State) {n : Nat} (hn : n = 128 ∨ n = 256 ∨ n = 384) :
   refine WP.keep [.x9] ?_ (by rcases hn with rfl | rfl | rfl <;> decide) rfl
     (by rcases hn with rfl | rfl | rfl <;> decide +kernel)
   unfold test
-  brun [exec_subImm_x' (show n < 4096 by omega), eval]
+  brun [exec_subImm_x' (show n < 4096 by omega_using [hn]), eval]
   apply Bool.eq_iff_iff.mpr
   simp only [beq_iff_eq, decide_eq_true_eq, BitVec.sub_eq_iff_eq_add]
   have hz : (0 : BitVec 64) + BitVec.ofNat 64 n = BitVec.ofNat 64 n := BitVec.zero_add _
   constructor
-  · intro h; rw [h, hz, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+  · intro h; rw [h, hz, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hn])]
   · intro h; rw [← h, BitVec.ofNat_toNat, BitVec.setWidth_eq]; exact (BitVec.zero_add _).symm
 
 /-! ## The whole initialization -/
@@ -97,7 +97,7 @@ theorem words_post {t : State} {B : Addr} {L : Nat} {m : Mem} (scr : Scr t B 32)
     (h0 : t.gpr .x0 = B) (h1 : t.gpr .x1 = BitVec.ofNat 64 L) (hm : t.mem = m)
     (hv : L = 128 ∨ L = 256 ∨ L = 384) :
     WP isa (.block initWords) t (InitPost L m B) := by
-  refine WP.mono (words_ok scr h0 h1 (by omega)) fun u ⟨ha, hu⟩ => ?_
+  refine WP.mono (words_ok scr h0 h1 (by omega_using [hv])) fun u ⟨ha, hu⟩ => ?_
   have hvalid : Spec.Dsa.generationPLenValid L = true := by
     rcases hv with rfl | rfl | rfl <;> rfl
   simp only [InitPost, hvalid, ↓reduceIte]
@@ -169,12 +169,12 @@ theorem result_post {s t : State} (h : InitPost (s.gpr .x1).toNat s.mem (s.gpr .
     rw [ite_eq_left_of_eq_true _ _ (eq_true hv)]
     have hp : 0 < (s.gpr .x1).toNat := by
       simp only [Spec.Dsa.generationPLenValid, Bool.or_eq_true, beq_iff_eq] at hv
-      omega
+      omega_using [hv]
     refine ⟨by rw [h.1]; rfl, 512 * (s.gpr .x1).toNat, ?_, ?_⟩
     · rw [h.2, words, written_words]
       rfl
     · unfold Spec.Entropy.RequestValid Spec.Dsa.parameterEntropy
-      omega
+      omega_using [hp]
   · rename_i hv
     rw [ite_eq_right_of_eq_false _ _ (eq_false hv)]
     exact ⟨by rw [h.1]; rfl, by rw [h.2, written_words]; rfl⟩

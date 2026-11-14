@@ -150,7 +150,7 @@ theorem prune_step (hc : Ctx L g m₀ t) (hL : L.Ok) :
     (by rw [e12]; exact hL.kit.frame_fit (by decide))
     (fun j hj => by
       have h := hc.writable_frame (Offset.contains_base (State.addr L.E) (d := S + j) (n := 1)
-        (k := 248) (by simp only [S]; omega) (by simp only [S]; omega))
+        (k := 248) (by simp only [S]; omega_using [hj]) (by simp only [S]; omega_using [hj]))
       rw [← Offset.add_add] at h
       exact h))
     fun u ⟨um, usp, urd, uwr, ug⟩ => ?_
@@ -158,12 +158,12 @@ theorem prune_step (hc : Ctx L g m₀ t) (hL : L.Ok) :
     rw [um]
     refine (((Frame.refl _ _).writeW (List.mem_singleton_self _) _ ?_).writeW (List.mem_singleton_self _) _
       ?_).writeW (List.mem_singleton_self _) _ ?_
-    · have h := Offset.contains_base (State.addr L.E + BitVec.ofNat 64 S) (d := 0) (n := 1) (k := 57) (by omega) (by omega)
+    · have h := Offset.contains_base (State.addr L.E + BitVec.ofNat 64 S) (d := 0) (n := 1) (k := 57) (by omega_using []) (by omega_using [])
       rw [show State.addr L.E + BitVec.ofNat 64 S + BitVec.ofNat 64 0 = State.addr L.E + BitVec.ofNat 64 S from
         BitVec.add_zero _] at h
       exact h
-    · exact Offset.contains_base _ (by omega) (by omega)
-    · exact Offset.contains_base _ (by omega) (by omega)
+    · exact Offset.contains_base _ (by omega_using []) (by omega_using [])
+    · exact Offset.contains_base _ (by omega_using []) (by omega_using [])
   refine ⟨?_, hf, ?_⟩
   · refine hc.of_frame urd uwr usp ?_ hf ?_
     · intro r hr _
@@ -171,7 +171,7 @@ theorem prune_step (hc : Ctx L g m₀ t) (hL : L.Ok) :
       exact RegUpd.gpr_setReg_of_ne _ _ (by rintro rfl; simp [preserved] at hr)
     · intro r hr
       rw [List.mem_singleton.mp hr]
-      exact .inl (Offset.sub_base _ (by simp only [S]; omega))
+      exact .inl (Offset.sub_base _ (by simp only [S]; omega_using []))
   · rw [um, PublicKey.pruned_value]
     unfold Spec.Ed448.prune
     rw [PublicKey.bytesAt_take57]
@@ -216,7 +216,7 @@ theorem nonce_step (hc : Ctx L g m₀ t) (hL : L.Ok) (ha : Arguments L m₀)
   refine WP.seq (WP.mono (next_abs hc2 hL ha (src := .caller 3 0) (len := .caller 4 0) (P := L.ctx)
     (N := L.ctxLen.toNat) ⟨by decide, by decide⟩ ⟨by decide, by decide⟩ (by simp [argVal, Lay.value])
     (by simp [argVal, Lay.value]) cx dx hL.nx hr2 hp2') fun t3 ⟨hc3, hf3, hr3, hp3⟩ => ?_)
-  have ex := hk.input_bytes hc2 rx wx (by change L.ctxLen.toNat ≤ 2 ^ 64; have := L.ctxLen.isLt; omega)
+  have ex := hk.input_bytes hc2 rx wx (by change L.ctxLen.toNat ≤ 2 ^ 64; have := L.ctxLen.isLt; omega_using [])
   simp only at ex
   rw [ex] at hr3 hp3
   -- The prefix.
@@ -233,7 +233,7 @@ theorem nonce_step (hc : Ctx L g m₀ t) (hL : L.Ok) (ha : Arguments L m₀)
   refine WP.seq (WP.mono (next_abs hc4 hL ha (src := .caller 5 0) (len := LEN) (P := L.msg)
     (N := L.len.toNat) ⟨by decide, by decide⟩ ⟨by decide, by decide⟩ (by simp [argVal, Lay.value])
     (by simp [argVal, Lay.value, LEN]) cm dm hL.nm hr4 hp4) fun t5 ⟨hc5, hf5, hr5, hp5⟩ => ?_)
-  have em := hk.input_bytes hc4 rm wm (by change L.len.toNat ≤ 2 ^ 64; have := L.len.isLt; omega)
+  have em := hk.input_bytes hc4 rm wm (by change L.len.toNat ≤ 2 ^ 64; have := L.len.isLt; omega_using [])
   simp only at em
   rw [em] at hr5 hp5
   -- Pad and squeeze.
@@ -281,13 +281,13 @@ theorem chal_step (hc : Ctx L g m₀ t) (hL : L.Ok) (ha : Arguments L m₀)
   refine WP.seq (WP.mono (next_abs hc2 hL ha (src := .caller 3 0) (len := .caller 4 0) (P := L.ctx)
     (N := L.ctxLen.toNat) ⟨by decide, by decide⟩ ⟨by decide, by decide⟩ (by simp [argVal, Lay.value])
     (by simp [argVal, Lay.value]) cx dx hL.nx hr2 hp2') fun t3 ⟨hc3, hf3, hr3, hp3⟩ => ?_)
-  have ex := hk.input_bytes hc2 rx wx (by change L.ctxLen.toNat ≤ 2 ^ 64; have := L.ctxLen.isLt; omega)
+  have ex := hk.input_bytes hc2 rx wx (by change L.ctxLen.toNat ≤ 2 ^ 64; have := L.ctxLen.isLt; omega_using [])
   simp only at ex
   rw [ex] at hr3 hp3
   -- `R`.
   refine WP.seq (WP.mono (next_abs hc3 hL ha (src := .caller 0 0) (len := .const 57) (P := L.out) (N := 57)
     ⟨by decide, by decide⟩ (valid_const (by decide)) (by simp [argVal, Lay.value]) rfl
-    (.inr ⟨L.OUT, List.mem_append_right _ (out_in L), r0_within L⟩) hL.away_r0 (by have := hL.no; omega) hr3 hp3)
+    (.inr ⟨L.OUT, List.mem_append_right _ (out_in L), r0_within L⟩) hL.away_r0 (by have := hL.no; omega_using [this]) hr3 hp3)
     fun t4 ⟨hc4, hf4, hr4, hp4⟩ => ?_)
   have hr3' := hL.away_r0.bytes (ex := []) (fun _ h => nomatch h)
     (((W.zero hf1).trans (W.abs hf2)).trans (W.abs hf3)) (by change 57 ≤ 2 ^ 64; decide)
@@ -304,7 +304,7 @@ theorem chal_step (hc : Ctx L g m₀ t) (hL : L.Ok) (ha : Arguments L m₀)
   refine WP.seq (WP.mono (next_abs hc5 hL ha (src := .caller 5 0) (len := LEN) (P := L.msg)
     (N := L.len.toNat) ⟨by decide, by decide⟩ ⟨by decide, by decide⟩ (by simp [argVal, Lay.value])
     (by simp [argVal, Lay.value, LEN]) cm dm hL.nm hr5 hp5) fun t6 ⟨hc6, hf6, hr6, hp6⟩ => ?_)
-  have em := hk.input_bytes hc5 rm wm (by change L.len.toNat ≤ 2 ^ 64; have := L.len.isLt; omega)
+  have em := hk.input_bytes hc5 rm wm (by change L.len.toNat ≤ 2 ^ 64; have := L.len.isLt; omega_using [])
   simp only at em
   rw [em] at hr6 hp6
   -- Pad and squeeze.

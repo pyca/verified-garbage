@@ -74,7 +74,7 @@ theorem random_prepare_ok {s : State} {B p : Addr} {bs : List Byte}
   refine WP.mono (random_prepareFinish_ok (hs.congr hkx'.wr)
     (hkx'.sp.trans hsp) ((hkx.gpr .x0 (by decide)).trans hwa)
     ((hkx.gpr .x9 (by decide)).trans hw11)
-    (by have := VG.Proof.Dsa.significant_fits bs; omega))
+    (by have := VG.Proof.Dsa.significant_fits bs; omega_using [hbound, this]))
     fun t ⟨hta, htm, hkt⟩ => ?_
   exact ⟨hta, by rw [htm, hxm, hwm, hvm, hum]; rfl,
     (hkx'.trans hkt).mono (by decide)⟩
@@ -96,10 +96,10 @@ theorem random_prepare_valid {s : State} {B p : Addr} {bs : List Byte}
   have hv := VG.Proof.Dsa.random_valid_scan_ge bs
   by_cases h : 1 < Spec.Dsa.decodeBE bs
   · have hn : ¬ ((VG.Proof.Dsa.significant bs).1 < 2 ∧
-        (VG.Proof.Dsa.significant bs).2.toNat < 2) := by omega
+        (VG.Proof.Dsa.significant bs).2.toNat < 2) := by omega_using [hv, h]
     rw [ite_eq_right hn, ite_eq_left h]
   · have hn : (VG.Proof.Dsa.significant bs).1 < 2 ∧
-        (VG.Proof.Dsa.significant bs).2.toNat < 2 := by omega
+        (VG.Proof.Dsa.significant bs).2.toNat < 2 := by omega_using [hv, h]
     rw [ite_eq_left hn, ite_eq_right h]
 
 theorem random_prepare_width (m : Mem) (B p : Addr) (bs : List Byte) :
@@ -136,11 +136,11 @@ theorem random_prepare_zero (m : Mem) (B p : Addr) (bs : List Byte)
     randomPrepareMem m B p bs (off B (200 + i)) = 0 := by
   have ho : ofs B (off B (200 + i)) = 200 + i := by
     have he : off B (200 + i) + BitVec.ofNat 64 0 = off B (200 + i) := BitVec.add_zero _
-    simpa only [he, Nat.add_zero] using ofs_off B (d := 200 + i) (i := 0) (by omega)
+    simpa only [he, Nat.add_zero] using ofs_off B (d := 200 + i) (i := 0) (by omega_using [hi])
   unfold randomPrepareMem
-  rw [(writeW_outside _ B _ (by decide)) _ (by rw [ho]; right; simp only [Random.oMask]; omega),
-    (writeW_outside _ B _ (by decide)) _ (by rw [ho]; right; simp only [Random.oWidth]; omega),
-    (writeW_outside _ B _ (by decide)) _ (by rw [ho]; right; simp only [Random.oQ]; omega)]
+  rw [(writeW_outside _ B _ (by decide)) _ (by rw [ho]; right; simp only [Random.oMask]; omega_using []),
+    (writeW_outside _ B _ (by decide)) _ (by rw [ho]; right; simp only [Random.oWidth]; omega_using []),
+    (writeW_outside _ B _ (by decide)) _ (by rw [ho]; right; simp only [Random.oQ]; omega_using [])]
   exact random_clear_byte m B i hi
 
 end VG.Proof.Dsa.AArch64

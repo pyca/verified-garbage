@@ -28,8 +28,8 @@ theorem shapeCall_relCT (L : CallLayout) (digestLen : Nat)
   intro s t tr ur sf tf ⟨S, T⟩ E F
   have ctx : VG.Impl.Mont.X86.Dynamic.contextBytes 48 ≤ L.size := by
     have H : 15712 ≤ L.size := L.extent
-    change 7048 ≤ L.size; omega
-  obtain ⟨trace, A⟩ := shape_relCT L.pLen L.qLen L.base L.size L.saved (by omega) (by omega) L.aligned.1
+    change 7048 ≤ L.size; omega_using [H]
+  obtain ⟨trace, A⟩ := shape_relCT L.pLen L.qLen L.base L.size L.saved (by omega_using [W]) (by omega_using [W]) L.aligned.1
     _ _ _ _ _ _ ⟨S.scr, T.scr, (S.buffers _ P).ready ctx, (T.buffers _ P).ready ctx,
       (S.pointers _ P).trans (T.pointers _ P).symm, (S.pointers _ Q).trans (T.pointers _ Q).symm⟩ E F
   obtain ⟨Z1, M1, _, _⟩ := wp_result (shapeCall_ok S P Q stable hd) E
@@ -54,7 +54,7 @@ theorem verifySized_relCT (L : CallLayout) (digestLen : Nat)
     have CT := callVerifyBody_relCT L (.inl ⟨_, P, Nat.le_refl _⟩) (.inl ⟨_, Q, Nat.le_refl _⟩)
       (.inl ⟨_, G, Nat.le_refl _⟩) (.inl ⟨_, Y, Nat.le_refl _⟩)
       (.inl ⟨_, R, Nat.le_refl _⟩) (.inl ⟨_, S, Nat.le_refl _⟩)
-      (.inl ⟨_, D, by rw [hd]; exact Nat.min_le_left _ _⟩) (by rw [hd]; omega)
+      (.inl ⟨_, D, by rw [hd]; exact Nat.min_le_left _ _⟩) (by rw [hd]; omega_using [B])
     exact CT.mono (fun _ _ H => ⟨(H.2 True.intro).1.ready, (H.2 True.intro).2.ready⟩) (fun _ _ h => h)
   · simp only [valid, decide_false, Bool.not_false, ite_true]
     exact verifyFailure_relCT.mono (fun _ _ H => H.1) (fun _ _ h => h)

@@ -38,7 +38,7 @@ def tailQ (W : Nat) : Nat := (15 * (W / 2) + 10) / 64
 def tailT (W : Nat) : Nat := (15 * (W / 2) + 10) % 64
 
 theorem tail_split (W : Nat) : 15 * (W / 2) + 10 = 64 * tailQ W + tailT W := by
-  unfold tailQ tailT; omega
+  unfold tailQ tailT; omega_using []
 
 theorem se10 : BitVec.signExtend 64 (10 : BitVec 32) = BitVec.ofNat 64 10 := by decide
 
@@ -47,7 +47,7 @@ theorem se2 : BitVec.signExtend 64 (2 : BitVec 32) = BitVec.ofNat 64 2 := by dec
 theorem shr1W {W : Nat} (hW : W < 2 ^ 24) : BitVec.ofNat 64 W >>> 1 = BitVec.ofNat 64 (W / 2) := by
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow]
-  omega
+  omega_using [hW]
 
 /-- `K = 15 n + 10` into `rax`, for `n` in `r12` (`n < 2^24`). -/
 theorem k15_eq (n : Nat) :
@@ -55,14 +55,14 @@ theorem k15_eq (n : Nat) :
       BitVec.ofNat 64 (15 * n + 10) := by
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_add, BitVec.toNat_sub, BitVec.toNat_shiftLeft, BitVec.toNat_ofNat, Nat.shiftLeft_eq]
-  omega
+  omega_using []
 
 /-- `startT`: the first digit's index `Q + 2`, from `w` in `r12`. -/
 theorem startT_ok {W : Nat} (hW : 6 ≤ W) (hW' : W < 2 ^ 24) :
     WordDivide.StartOk WordDivide.startT W (tailQ W + 2) where
-  pos := by omega
-  fit := by unfold tailQ; omega
-  lt := by unfold tailQ; omega
+  pos := by omega_using []
+  fit := by unfold tailQ; omega_using [hW]
+  lt := by unfold tailQ; omega_using [hW']
   run := fun {s} h12 => by
     refine WP.mono (WP.keep [.rax, .r12] (Q := fun t => t.gpr .rax = BitVec.ofNat 64 (tailQ W + 2) ∧
       t.gpr .r12 = BitVec.ofNat 64 (W / 2) ∧ t.mem = s.mem) ?_ rfl) fun t ⟨⟨a, b, c⟩, k⟩ => ⟨a, b, c, k⟩
@@ -70,7 +70,7 @@ theorem startT_ok {W : Nat} (hW : 6 ≤ W) (hW' : W < 2 ^ 24) :
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.toNat_add, BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow,
       show (2 : BitVec 64).toNat = 2 from rfl, Nat.reducePow]
-    unfold tailQ; simp (disch := omega) only [Nat.mod_eq_of_lt]
+    unfold tailQ; simp (disch := omega_using [hW']) only [Nat.mod_eq_of_lt]
 
 /-- `shSetup`'s arithmetic: `rax := 8 Q`, `rcx := T` and `r12 := n + 1`, from `w` in `r12`. -/
 theorem shArith_ok {s : State} {W : Nat} (hW' : W < 2 ^ 24) (h12 : s.gpr .r12 = BitVec.ofNat 64 W) :
@@ -87,12 +87,12 @@ theorem shArith_ok {s : State} {W : Nat} (hW' : W < 2 ^ 24) (h12 : s.gpr .r12 = 
   refine ⟨?_, ?_, ?_⟩ <;> apply BitVec.eq_of_toNat_eq
   · simp only [BitVec.toNat_shiftLeft, BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, Nat.shiftLeft_eq,
       Nat.shiftRight_eq_div_pow, Nat.reducePow]
-    unfold tailQ; simp (disch := omega) only [Nat.mod_eq_of_lt]; omega
+    unfold tailQ; simp (disch := omega_using [hW']) only [Nat.mod_eq_of_lt]; omega_using []
   · simp only [BitVec.toNat_and, BitVec.toNat_ofNat, show (BitVec.signExtend 64 (63 : BitVec 32)).toNat = 63 from rfl,
       e63, Nat.reducePow]
     unfold tailT; simp (disch := omega) only [Nat.mod_eq_of_lt]
   · simp only [BitVec.toNat_add, BitVec.toNat_ofNat, show (1 : BitVec 64).toNat = 1 from rfl, Nat.reducePow]
-    simp (disch := omega) only [Nat.mod_eq_of_lt]
+    simp (disch := omega_using [hW']) only [Nat.mod_eq_of_lt]
 
 /-- `shSetup` and its loop: `[x₂]`'s low `n + 1` words times `2^T`, at word `Q` of `[d]`. -/
 theorem qShift_ok {I : CvIn} {m₀ : Mem} {s : State} (h : CvS I m₀ s) :
@@ -105,8 +105,8 @@ theorem qShift_ok {I : CvIn} {m₀ : Mem} {s : State} (h : CvS I m₀ s) :
   have hw1 := h.ws.w1
   have sD := h.ws.sl (j := aD) (by decide)
   have sX := h.ws.sl (j := aX₂) (by decide)
-  have hq : tailQ (wk I.k) + (wk I.k / 2 + 1) ≤ wk I.k := by unfold tailQ; omega
-  have hT : tailT (wk I.k) < 64 := by unfold tailT; omega
+  have hq : tailQ (wk I.k) + (wk I.k / 2 + 1) ≤ wk I.k := by unfold tailQ; omega_using [hw1]
+  have hT : tailT (wk I.k) < 64 := by unfold tailT; omega_using []
   have far : slot (wk I.k) aD + 8 * (wk I.k + 2) ≤ slot (wk I.k) aX₂ := by
     simp only [slot, VG.Impl.Rsa.X86_64.Keys.CrtValues.aD, aX₂]; omega_arith
   unfold shSetup
@@ -135,7 +135,7 @@ theorem qShift_ok {I : CvIn} {m₀ : Mem} {s : State} (h : CvS I m₀ s) :
     fun s₅ ⟨m₅, k₅⟩ => (show WP isa (wordLoop 1 shlClBody) s₅ _ from ?_)
   have hs₅ := hs₄.congr k₅.2.2
   refine WP.mono (shlCl_ok hT hs₅ ((k₅.gpr (by decide)).trans hsi₄) ((k₅.gpr (by decide)).trans h8₄)
-    ((k₅.gpr (by decide)).trans r12₄) ((k₅.gpr (by decide)).trans cx₄) (by omega) (by omega_arith)
+    ((k₅.gpr (by decide)).trans r12₄) ((k₅.gpr (by decide)).trans cx₄) (by omega_using [hw1]) (by omega_arith)
     (by omega_arith) (by omega_arith) (.inl (by omega_arith)) (by
       rw [m₅, word_writeW_self, (writeW_outside _ _ _ (by omega_arith)).word (by omega_arith) (by omega_arith), mm,
         BitVec.toNat_shiftLeft, Nat.shiftLeft_eq])) fun u ⟨v, _, o, k₆⟩ => ?_
@@ -171,8 +171,8 @@ theorem cvQTail_ok {I : CvIn} {m₀ : Mem} {s : State} (h : CvS I m₀ s) (L : C
     have hz := L.z
     simp only [slot, Impl.Bignum.hdrBytes, wk]
     omega_using [hk1, hz]
-  have hq : tailQ (wk I.k) + (wk I.k / 2 + 1) ≤ wk I.k := by unfold tailQ; omega
-  have hT : tailT (wk I.k) < 64 := by unfold tailT; omega
+  have hq : tailQ (wk I.k) + (wk I.k / 2 + 1) ≤ wk I.k := by unfold tailQ; omega_using [hW6]
+  have hT : tailT (wk I.k) < 64 := by unfold tailT; omega_using []
   have ot : ∀ {m m' : Mem} {j i Ln : Nat}, Outside I.B (slot (wk I.k) j) Ln m m' → Ln ≤ 8 * (wk I.k + 2) → i ≠ j →
       i < 16 → wv m' I.B (slot (wk I.k) i) (wk I.k) = wv m I.B (slot (wk I.k) i) (wk I.k) :=
     fun o hL hij hi => outside_arr o hL hij (by omega_arith) hi hZ hn
@@ -280,54 +280,54 @@ theorem cvQTail_ok {I : CvIn} {m₀ : Mem} {s : State} (h : CvS I m₀ s) (L : C
     · exact pre aQ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
     · rw [ct, aSvT]
   · intro hPt hPlt hx
-    have hn1 : 1 ≤ wk I.k / 2 := by omega
+    have hn1 : 1 ≤ wk I.k / 2 := by omega_using [hW6]
     generalize hP : wv s.mem I.B (slot (wk I.k) aP) (wk I.k) = P at hPt hPlt hx
     generalize hX : wv s.mem I.B (slot (wk I.k) aX₂) (wk I.k) = x at hx
     have hP1 : 2 ^ (64 * (wk I.k / 2)) * 2 ^ 64 = 2 ^ (64 * (wk I.k / 2 + 1)) := by
       rw [← pow_add]; congr 1
     have hxT : x * 2 ^ tailT (wk I.k) < 2 ^ (64 * (wk I.k / 2 + 1)) := by
       rw [← hP1]
-      exact Nat.mul_lt_mul_of_lt_of_le (by omega) (Nat.pow_le_pow_right (by decide) hT.le) (by positivity)
+      exact Nat.mul_lt_mul_of_lt_of_le (by omega_using [hPlt, hx]) (Nat.pow_le_pow_right (by decide) hT.le) (by positivity)
     have hxn : x < 2 ^ (64 * (wk I.k / 2 + 1)) := by
-      have : 2 ^ (64 * (wk I.k / 2)) ≤ 2 ^ (64 * (wk I.k / 2 + 1)) := Nat.pow_le_pow_right (by decide) (by omega)
-      omega
+      have : 2 ^ (64 * (wk I.k / 2)) ≤ 2 ^ (64 * (wk I.k / 2 + 1)) := Nat.pow_le_pow_right (by decide) (by omega_using [])
+      omega_using [hPlt, hx, hP1]
     have x5 : wv s₅.mem I.B (slot (wk I.k) aX₂) (wk I.k) = x := by
       rw [ot o₅ (Nat.le_refl _) (by decide) (by decide), u₂ aX₂ (by decide) (by decide), hX]
     have xl5 : wv s₅.mem I.B (slot (wk I.k) aX₂) (wk I.k / 2 + 1) = x :=
-      (wv_low_of_lt (by omega) (by rw [x5]; exact hxn)).trans x5
+      (wv_low_of_lt (by omega_using [hW6]) (by rw [x5]; exact hxn)).trans x5
     rw [xl5, Nat.mod_eq_of_lt hxT] at c₆
     have zD : ∀ i, i < wk I.k + 2 → word s₅.mem I.B (slot (wk I.k) aD + 8 * i) = 0 :=
       (wv_eq_zero_iff _ _ _ _).mp z₅
     have dlow : wv s₆.mem I.B (slot (wk I.k) aD) (tailQ (wk I.k)) = 0 := by
-      rw [o₆.wv (Or.inl (by omega)) (by omega_arith)]
-      exact wv_zero fun i hi => zD i (by omega)
+      rw [o₆.wv (Or.inl (by omega_using [])) (by omega_arith)]
+      exact wv_zero fun i hi => zD i (by omega_using [hq, hi])
     have dhigh : wv s₆.mem I.B (slot (wk I.k) aD + 8 * tailQ (wk I.k) + 8 * (wk I.k / 2 + 1))
         (wk I.k - tailQ (wk I.k) - (wk I.k / 2 + 1)) = 0 := by
-      rw [o₆.wv (Or.inr (by omega)) (by omega_arith)]
+      rw [o₆.wv (Or.inr (by omega_using [])) (by omega_arith)]
       exact wv_zero fun i hi => by
         rw [show slot (wk I.k) aD + 8 * tailQ (wk I.k) + 8 * (wk I.k / 2 + 1) + 8 * i =
-          slot (wk I.k) aD + 8 * (tailQ (wk I.k) + (wk I.k / 2 + 1) + i) by omega]
-        exact zD _ (by omega)
+          slot (wk I.k) aD + 8 * (tailQ (wk I.k) + (wk I.k / 2 + 1) + i) by omega_using []]
+        exact zD _ (by omega_using [hi])
     have d6 : wv s₆.mem I.B (slot (wk I.k) aD) (wk I.k) = 2 ^ (64 * tailQ (wk I.k)) * (x * 2 ^ tailT (wk I.k)) := by
       have e := wv_add s₆.mem I.B (slot (wk I.k) aD) (tailQ (wk I.k)) (wk I.k - tailQ (wk I.k))
       have e' := wv_add s₆.mem I.B (slot (wk I.k) aD + 8 * tailQ (wk I.k)) (wk I.k / 2 + 1)
         (wk I.k - tailQ (wk I.k) - (wk I.k / 2 + 1))
-      rw [show tailQ (wk I.k) + (wk I.k - tailQ (wk I.k)) = wk I.k by omega] at e
-      rw [show wk I.k / 2 + 1 + (wk I.k - tailQ (wk I.k) - (wk I.k / 2 + 1)) = wk I.k - tailQ (wk I.k) by omega,
+      rw [show tailQ (wk I.k) + (wk I.k - tailQ (wk I.k)) = wk I.k by omega_using [hq]] at e
+      rw [show wk I.k / 2 + 1 + (wk I.k - tailQ (wk I.k) - (wk I.k / 2 + 1)) = wk I.k - tailQ (wk I.k) by omega_using [hq],
         c₆, dhigh, Nat.mul_zero, Nat.add_zero] at e'
       rw [e, dlow, e', Nat.zero_add]
     have d8 : wv s₈.mem I.B (slot (wk I.k) aD) (wk I.k) = 2 ^ (64 * tailQ (wk I.k)) * (x * 2 ^ tailT (wk I.k)) := by
       rw [ot o₈ (by omega_arith) (by decide) (by decide), ot o₇ (Nat.le_refl _) (by decide) (by decide), d6]
     have hXlt : wv s₈.mem I.B (slot (wk I.k) aD) (wk I.k) <
         2 ^ (64 * (tailQ (wk I.k) + 2 + (wk I.k / 2 - 1))) := by
-      rw [d8, show 64 * (tailQ (wk I.k) + 2 + (wk I.k / 2 - 1)) = 64 * tailQ (wk I.k) + 64 * (wk I.k / 2 + 1) by omega,
+      rw [d8, show 64 * (tailQ (wk I.k) + 2 + (wk I.k / 2 - 1)) = 64 * tailQ (wk I.k) + 64 * (wk I.k / 2 + 1) by omega_using [hW6],
         pow_add]
       exact Nat.mul_lt_mul_of_le_of_lt (Nat.le_refl _) hxT (by positivity)
     have p8 : wv s₈.mem I.B (slot (wk I.k) aC) (wk I.k) = P := by
       rw [c₈, ot o₇ (Nat.le_refl _) (by decide) (by decide), o6 aP (by decide) (by decide),
         ot o₅ (Nat.le_refl _) (by decide) (by decide), u₂ aP (by decide) (by decide), hP]
     have pn : wv s₈.mem I.B (slot (wk I.k) aC) (wk I.k / 2) = P :=
-      (wv_low_of_lt (by omega) (by rw [p8]; exact hPlt)).trans p8
+      (wv_low_of_lt (by omega_using []) (by rw [p8]; exact hPlt)).trans p8
     have top := WordDivide.top_of_bound (m := s₈.mem) (B := I.B) (e := slot (wk I.k) aC) (n := wk I.k / 2) hn1
       (by rw [pn]; exact hPt)
     have r9 := v₉ hXlt top
@@ -335,10 +335,10 @@ theorem cvQTail_ok {I : CvIn} {m₀ : Mem} {s : State} (h : CvS I m₀ s) (L : C
       wv s₈.mem I.B (slot (wk I.k) aD) (wk I.k) % wv s₈.mem I.B (slot (wk I.k) aC) (wk I.k / 2) at r9
     rw [d8, pn] at r9
     have hlt : 2 ^ (64 * tailQ (wk I.k)) * (x * 2 ^ tailT (wk I.k)) % P < 2 ^ (64 * wk I.k) :=
-      Nat.lt_of_lt_of_le (Nat.mod_lt _ (by omega))
-        (Nat.le_trans hPlt.le (Nat.pow_le_pow_right (by decide) (by omega)))
+      Nat.lt_of_lt_of_le (Nat.mod_lt _ (by omega_using [hx]))
+        (Nat.le_trans hPlt.le (Nat.pow_le_pow_right (by decide) (by omega_using [])))
     have r9' : wv s₉.mem I.B (slot (wk I.k) aV) (wk I.k) = 2 ^ (64 * tailQ (wk I.k)) * (x * 2 ^ tailT (wk I.k)) % P :=
-      (wv_low_of_lt (by omega) (by rw [r9]; exact hlt)).trans r9
+      (wv_low_of_lt (by omega_using []) (by rw [r9]; exact hlt)).trans r9
     rw [ot ot' (by omega_arith) (by decide) (by decide), c₁₁, ot o₁₀ (Nat.le_refl _) (by decide) (by decide), r9',
       tail_split, pow_add, pow_mul]
     congr 1; ring
@@ -350,8 +350,8 @@ def cvGuard (I : CvIn) : Prop := WordDivide.guardVal (wk I.k) I.k I.pl I.ql ((I.
 instance (I : CvIn) : Decidable (cvGuard I) := by unfold cvGuard; infer_instance
 
 theorem cvGuard_iff {I : CvIn} (L : CvLens I) :
-    cvGuard I ↔ WordDivide.guardVal (wk I.k) I.k I.pl I.ql (I.nb[0]'(by rw [L.nl]; have := L.k1; omega)) = 0 := by
-  have hnl : 0 < I.nb.length := by rw [L.nl]; have := L.k1; omega
+    cvGuard I ↔ WordDivide.guardVal (wk I.k) I.k I.pl I.ql (I.nb[0]'(by rw [L.nl]; have := L.k1; omega_using [this])) = 0 := by
+  have hnl : 0 < I.nb.length := by rw [L.nl]; have := L.k1; omega_using [this]
   simp only [cvGuard, List.getElem?_eq_getElem hnl, Option.getD_some]
 
 /-- `guarded a b` runs `a` where the guard holds, else `b`, from the state after
@@ -364,7 +364,7 @@ theorem cvGuarded_ok {I : CvIn} {m₀ : Mem} {s : State} (h : CvS I m₀ s) (L :
   unfold guarded
   refine WP.seq (WP.mono (WordDivide.guardHead_ok h) fun s₁ ⟨h₁, m₁, h12, hdx⟩ => ?_)
   refine WP.seq (WP.mono (WordDivide.guardTail_ok h₁ L h12 hdx) fun s₂ ⟨h₂, m₂, hz⟩ => ?_)
-  refine WP.ite (WordDivide.guardVal (wk I.k) I.k I.pl I.ql (I.nb[0]'(by rw [L.nl]; have := L.k1; omega)) == 0)
+  refine WP.ite (WordDivide.guardVal (wk I.k) I.k I.pl I.ql (I.nb[0]'(by rw [L.nl]; have := L.k1; omega_using [this])) == 0)
     (by simp only [eval, hz]) (fun hg => ha s₂ h₂ (m₂.trans m₁) ((cvGuard_iff L).mpr (by simpa using hg)))
     (fun hg => hb s₂ h₂ (m₂.trans m₁) (fun g => by simp [(cvGuard_iff L).mp g] at hg))
 

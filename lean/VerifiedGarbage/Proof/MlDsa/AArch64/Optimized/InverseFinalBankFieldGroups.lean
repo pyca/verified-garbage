@@ -29,27 +29,27 @@ theorem stridedRegBlock_get (w : Poly) {base gap u t : Nat} (hgap : 0<gap)
   induction t generalizing i with
   | zero =>
     simp only [stridedRegBlock,List.range_zero,List.foldl_nil,Nat.add_zero]
-    rw [ite_eq_right (by omega),ite_eq_right (by omega)]
+    rw [ite_eq_right (by omega_using []),ite_eq_right (by omega_using [])]
   | succ t ih =>
     rw [stridedRegBlock,foldl_range_succ]
     change (blockN bflyInv (stridedRegBlock w base gap u z t) (32*gap) z (stridedLoc u (base+t) 0) 4)[stridedLoc u i e]! = _
-    rw [blockN_bflyInv_get' _ (by omega) (by omega) (by unfold stridedLoc n; omega) (by unfold stridedLoc n; omega)]
+    rw [blockN_bflyInv_get' _ (by omega_using [hgap]) (by omega_using [hgap]) (by unfold stridedLoc n; omega_using [hb, hu, ht]) (by unfold stridedLoc n; omega_using [hu, he, hi])]
     by_cases ha : i=base+t
     · subst i
-      rw [ite_eq_left (by unfold stridedLoc; omega),
-        show stridedLoc u (base+t) e+32*gap=stridedLoc u (base+t+gap) e by unfold stridedLoc; omega,
-        ih (by omega) hi, ih (by omega) (by omega)]
+      rw [ite_eq_left (by unfold stridedLoc; omega_using [he]),
+        show stridedLoc u (base+t) e+32*gap=stridedLoc u (base+t+gap) e by unfold stridedLoc; omega_using [],
+        ih (by omega_using [ht]) hi, ih (by omega_using [ht]) (by omega_using [hb, ht])]
       simp (disch := omega) only [ite_eq_left,ite_eq_right]
     · by_cases hd : i=base+t+gap
       · subst i
-        rw [ite_eq_right (by unfold stridedLoc; omega),ite_eq_left (by unfold stridedLoc; omega),
-          show stridedLoc u (base+t+gap) e-32*gap=stridedLoc u (base+t) e by unfold stridedLoc; omega,
-          ih (by omega) hi,ih (by omega) (by omega)]
+        rw [ite_eq_right (by unfold stridedLoc; omega_using [hgap]),ite_eq_left (by unfold stridedLoc; omega_using [he]),
+          show stridedLoc u (base+t+gap) e-32*gap=stridedLoc u (base+t) e by unfold stridedLoc; omega_using [],
+          ih (by omega_using [ht]) hi,ih (by omega_using [ht]) (by omega_using [hb, ht])]
         simp (disch := omega) only [ite_eq_left,ite_eq_right]
         rw [Nat.add_sub_cancel]
-      · rw [ite_eq_right (by unfold stridedLoc; omega),ite_eq_right (by unfold stridedLoc; omega),ih (by omega) hi]
-        have h1 : (base≤i ∧ i<base+t) ↔ (base≤i ∧ i<base+(t+1)) := by omega
-        have h2 : (base+gap≤i ∧ i<base+gap+t) ↔ (base+gap≤i ∧ i<base+gap+(t+1)) := by omega
+      · rw [ite_eq_right (by unfold stridedLoc; omega_using [he, ha]),ite_eq_right (by unfold stridedLoc; omega_using [he, hd]),ih (by omega_using [ht]) hi]
+        have h1 : (base≤i ∧ i<base+t) ↔ (base≤i ∧ i<base+(t+1)) := by omega_using [ha]
+        have h2 : (base+gap≤i ∧ i<base+gap+t) ↔ (base+gap≤i ∧ i<base+gap+(t+1)) := by omega_using [hd]
         simp only [h1,h2]
 
 def stridedRegGroupSchedule (u base gap rootIndex : Nat) : List Op :=

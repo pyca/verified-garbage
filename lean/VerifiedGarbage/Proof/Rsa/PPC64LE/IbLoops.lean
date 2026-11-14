@@ -53,12 +53,12 @@ theorem macW_arith (k b a c : Nat) (hk : k < 2 ^ 64) (hb : b < 2 ^ 64) (ha : a <
     let x4 := x2 % 2 ^ 64 + (decide (2 ^ 64 ≤ x3)).toNat
     x3 % 2 ^ 64 + 2 ^ 64 * (x4 % 2 ^ 64) = a + k * b + c := by
   dsimp only
-  have hkb : k * b ≤ (2 ^ 64 - 1) * (2 ^ 64 - 1) := Nat.mul_le_mul (by omega) (by omega)
-  have e1 : k * b / 2 ^ 64 % 2 ^ 64 = k * b / 2 ^ 64 := Nat.mod_eq_of_lt (by omega)
+  have hkb : k * b ≤ (2 ^ 64 - 1) * (2 ^ 64 - 1) := Nat.mul_le_mul (by omega_using [hk]) (by omega_using [hb])
+  have e1 : k * b / 2 ^ 64 % 2 ^ 64 = k * b / 2 ^ 64 := Nat.mod_eq_of_lt (by omega_using [hkb])
   rw [e1]
   generalize k * b = P at hkb ⊢
   by_cases h1 : 2 ^ 64 ≤ P % 2 ^ 64 + a <;> by_cases h3 : 2 ^ 64 ≤ (P % 2 ^ 64 + a) % 2 ^ 64 + c <;>
-    simp only [h1, h3, decide_true, decide_false, Bool.toNat_true, Bool.toNat_false] <;> omega
+    simp only [h1, h3, decide_true, decide_false, Bool.toNat_true, Bool.toNat_false] <;> omega_arith
 
 /-- `[o] := [a] + k [b]` over `n` words (`countLoop .r8 macWBody`), from the
 carry `c` in `r9`: the sum and the carry out. -/
@@ -135,7 +135,7 @@ theorem shr_arith (x y : BitVec 64) :
     omega_arith
   rw [BitVec.toNat_add, h1, h2]
   have := x.isLt
-  have : x.toNat / 2 ^ 59 < 2 ^ 5 := Nat.div_lt_of_lt_mul (by omega)
+  have : x.toNat / 2 ^ 59 < 2 ^ 5 := Nat.div_lt_of_lt_mul (by omega_using [])
   omega_arith
 
 /-- The shift's invariant, a word on: `R + 2^(64 i) ⌊a / 2^59⌋ = ⌊A / 2^59⌋`
@@ -156,7 +156,7 @@ theorem shr_inv_step {R A a y i : Nat}
     have : 2 ^ (64 * i) * 2 ^ 5 * y = 2 ^ (64 * i) * 2 ^ 5 * (y % 2 ^ 59 + 2 ^ 59 * (y / 2 ^ 59)) := by rw [hy]
     rw [this, Nat.mul_add]; ac_rfl
   rw [Nat.mul_add, k]
-  omega
+  omega_using []
 
 /-! ## Signed accumulators -/
 
@@ -165,7 +165,7 @@ theorem msb_mul (c x : BitVec 64) :
     ((c >>> 63) * x).toNat = if c.toNat < 2 ^ 63 then 0 else x.toNat := by
   have hc := c.isLt
   have e : (c >>> 63).toNat = if c.toNat < 2 ^ 63 then 0 else 1 := by
-    rw [BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow]; split <;> omega
+    rw [BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow]; split <;> omega_arith
   rw [BitVec.toNat_mul, e]
   split
   · simp
@@ -179,21 +179,21 @@ theorem smul_split (c x : BitVec 64) :
   rw [BitVec.toNat_mul, BitVec.toInt_eq_toNat_cond, msb_mul]
   have hc := c.isLt
   by_cases h : c.toNat < 2 ^ 63
-  · simp only [h, show 2 * c.toNat < 2 ^ 64 by omega, ↓reduceIte]
+  · simp only [h, show 2 * c.toNat < 2 ^ 64 by omega_using [h], ↓reduceIte]
     rw [← Int.natCast_mul]
     generalize c.toNat * x.toNat = P
-    omega
-  · simp only [h, show ¬ 2 * c.toNat < 2 ^ 64 by omega, ↓reduceIte]
+    omega_using []
+  · simp only [h, show ¬ 2 * c.toNat < 2 ^ 64 by omega_using [h], ↓reduceIte]
     rw [Int.sub_mul, ← Int.natCast_mul]
     generalize c.toNat * x.toNat = P
-    omega
+    omega_using []
 
 /-- The carry bit of a sum of two words. -/
 theorem carry_bit (a b : Nat) (ha : a < 2 ^ 64) (hb : b < 2 ^ 64) :
     (decide (2 ^ 64 ≤ a + b)).toNat = (a + b) / 2 ^ 64 := by
   by_cases h : 2 ^ 64 ≤ a + b
-  · rw [decide_eq_true h, Bool.toNat_true]; omega
-  · rw [decide_eq_false h, Bool.toNat_false]; omega
+  · rw [decide_eq_true h, Bool.toNat_true]; omega_using [ha, hb, h]
+  · rw [decide_eq_false h, Bool.toNat_false]; omega_using [h]
 
 /-- A signed accumulator: the low word unsigned, the high signed. -/
 def acc (lo hi : BitVec 64) : Int := lo.toNat + 2 ^ 64 * hi.toInt
@@ -234,39 +234,39 @@ theorem lin_term (c x lo hi : BitVec 64)
   generalize lo.toNat = T at *
   generalize hi.toNat = A at *
   generalize hi'.toNat = A' at *
-  split at ia <;> split at ia' <;> omega
+  split at ia <;> split at ia' <;> omega_arith
 
 /-- The accumulator shifted down a word: the high word's value. -/
 theorem acc_shift (a : BitVec 64) : acc a (0#64 - a >>> 63) = a.toInt := by
   unfold acc
   have ha := a.isLt
   have e : (a >>> 63).toNat = if a.toNat < 2 ^ 63 then 0 else 1 := by
-    rw [BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow]; split <;> omega
+    rw [BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow]; split <;> omega_arith
   rw [BitVec.toInt_eq_toNat_cond a]
   by_cases h : a.toNat < 2 ^ 63
   · have h0 : a >>> 63 = 0#64 := by
       apply BitVec.eq_of_toNat_eq
       rw [e]; simp only [h, ↓reduceIte, BitVec.toNat_zero]
-    have h2 : 2 * a.toNat < 2 ^ 64 := by omega
+    have h2 : 2 * a.toNat < 2 ^ 64 := by omega_using [h]
     rw [h0]
     simp only [h2, ↓reduceIte]
     simp
   · have h1 : a >>> 63 = 1#64 := by
       apply BitVec.eq_of_toNat_eq
       rw [e]; simp only [h, ↓reduceIte]; rfl
-    have h2 : ¬ 2 * a.toNat < 2 ^ 64 := by omega
+    have h2 : ¬ 2 * a.toNat < 2 ^ 64 := by omega_using [h]
     rw [h1, show (0#64 - 1#64) = BitVec.allOnes 64 from rfl, BitVec.toInt_allOnes]
     simp only [h2, ↓reduceIte]
-    omega
+    omega_using []
 
 /-- A coefficient of at most `2^61` times a word. -/
 theorem smul_bound (c x : BitVec 64) (h1 : -2 ^ 61 ≤ c.toInt) (h2 : c.toInt ≤ 2 ^ 61) :
     -2 ^ 125 ≤ c.toInt * x.toNat ∧ c.toInt * x.toNat ≤ 2 ^ 125 := by
   have hx0 : (0 : Int) ≤ x.toNat := Int.natCast_nonneg _
-  have hx1 : (x.toNat : Int) ≤ 2 ^ 64 := by have := x.isLt; omega
+  have hx1 : (x.toNat : Int) ≤ 2 ^ 64 := by have := x.isLt; omega_using []
   have a := Int.mul_le_mul_of_nonneg_right h2 hx0
   have b := Int.mul_le_mul_of_nonneg_right h1 hx0
-  omega
+  omega_using [a, b]
 
 /-- `lin`'s invariant, a word on. -/
 theorem lin_inv_step {W Ai Bi x1 x2 k : Nat} {u v a S0 : Int} {lo hi : BitVec 64}
@@ -320,11 +320,11 @@ theorem sgn_and (c x : BitVec 64) : sgn c &&& x = (c >>> 63) * x := by
   by_cases h : c.toNat < 2 ^ 63
   · have e : c >>> 63 = 0#64 := by
       apply BitVec.eq_of_toNat_eq
-      rw [BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow]; simp only [BitVec.toNat_ofNat]; omega
+      rw [BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow]; simp only [BitVec.toNat_ofNat]; omega_using [h]
     rw [sgn, e]; simp
   · have e : c >>> 63 = 1#64 := by
       apply BitVec.eq_of_toNat_eq
-      rw [BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow]; simp only [BitVec.toNat_ofNat]; omega
+      rw [BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow]; simp only [BitVec.toNat_ofNat]; omega_using [h]
     rw [sgn, e, show (0#64 - 1#64) = BitVec.allOnes 64 from rfl, BitVec.allOnes_and, BitVec.one_mul]
 
 /-- A term's low word: `lo + c x` by `addc`. -/
@@ -347,7 +347,7 @@ theorem term_acc (c x lo hi : BitVec 64)
     congr 1
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.toNat_add, BitVec.toNat_ofNat]
-    omega
+    omega_using []
   rw [e]
   exact lin_term c x lo hi h1 h2
 
@@ -364,8 +364,8 @@ theorem acc_two (c1 c2 x y lo hi : BitVec 64)
     acc (lo2 c1 c2 x y lo) (hi2 c1 c2 x y lo hi) = acc lo hi + c1.toInt * x.toNat + c2.toInt * y.toNat := by
   have b1 := smul_bound c1 x h1 h2
   have b2 := smul_bound c2 y h3 h4
-  have e1 := term_acc c1 x lo hi (by omega) (by omega)
-  have e2 := term_acc c2 y _ _ (by rw [e1]; omega) (by rw [e1]; omega)
+  have e1 := term_acc c1 x lo hi (by omega_using [hc1, b1]) (by omega_using [hc2, b1])
+  have e2 := term_acc c2 y _ _ (by rw [e1]; omega_using [hc1, b1, b2]) (by rw [e1]; omega_using [hc2, b1, b2])
   rw [e1] at e2
   exact e2
 
@@ -391,7 +391,7 @@ theorem fg_init (c1 c2 x y lo hi : BitVec 64) (hl : lo = 0) (hh : hi = 0)
   · rw [acc_shift, show 64 * (0 + 1) = 64 from rfl, show 64 * 0 = 0 from rfl]
     unfold acc at e
     push_cast
-    omega
+    omega_using [e]
   · rw [acc_shift]; exact BitVec.le_toInt _
   · rw [acc_shift]; exact BitVec.toInt_lt
 
@@ -408,10 +408,10 @@ theorem fg_step {c1 c2 : BitVec 64} {F G i R : Nat} {lo hi prev : BitVec 64} (x 
   have hl := last.isLt
   refine ⟨A + 2 ^ (64 * i) * last.toNat, lo2 c1 c2 x y lo, ?_, rfl, ?_, ?_, ?_, ?_⟩
   · have : A + 2 ^ (64 * i) * last.toNat < 2 ^ (64 * i) * 2 ^ 64 := by
-      have := Nat.mul_le_mul_left (2 ^ (64 * i)) (show last.toNat + 1 ≤ 2 ^ 64 by omega)
-      rw [Nat.mul_add_one] at this; omega
+      have := Nat.mul_le_mul_left (2 ^ (64 * i)) (show last.toNat + 1 ≤ 2 ^ 64 by omega_using [])
+      rw [Nat.mul_add_one] at this; omega_using [hA, this]
     rwa [Nat.mul_succ, Nat.pow_add]
-  · rw [acc_shift, show 64 * (i + 1 + 1) = 64 * (i + 1) + 64 by omega]
+  · rw [acc_shift, show 64 * (i + 1 + 1) = 64 * (i + 1) + 64 by omega_using []]
     have := lin_inv_step (u := c1.toInt) (v := c2.toInt) (S0 := 0) (by rw [Int.add_zero]; exact hlin) e
     rwa [Int.add_zero] at this
   · rw [BitVec.add_comm, hp, shr_arith]
@@ -435,8 +435,8 @@ theorem mac_word (k x a c : BitVec 64) :
   simp only [macS, macC, BitVec.toNat_ofNat, BitVec.toNat_mul] at m ⊢
   have e : k.toNat * x.toNat / 2 ^ 64 % 2 ^ 64 = k.toNat * x.toNat / 2 ^ 64 := by
     have hkb : k.toNat * x.toNat ≤ (2 ^ 64 - 1) * (2 ^ 64 - 1) :=
-      Nat.mul_le_mul (by have := k.isLt; omega) (by have := x.isLt; omega)
-    exact Nat.mod_eq_of_lt (by omega)
+      Nat.mul_le_mul (by have := k.isLt; omega_using []) (by have := x.isLt; omega_using [])
+    exact Nat.mod_eq_of_lt (by omega_using [m])
   rw [e] at m ⊢
   exact m
 
@@ -471,11 +471,11 @@ theorem ab_init (c1 c2 x y m iv lo hi c : BitVec 64) (hl : lo = 0#64) (hh : hi =
         rw [Nat.mul_add, Nat.mul_one, Nat.mul_assoc, Nat.mul_comm iv.toNat],
       Nat.mul_mod, hm, Nat.mul_zero, Nat.zero_mod]
   refine ⟨L.toNat, by have := L.isLt; simpa using this, Nat.mod_eq_of_lt L.isLt, ?_, ?_, ?_, ?_⟩
-  · rw [acc_shift, show 64 * (0 + 1) = 64 from rfl]; unfold acc at e; omega
+  · rw [acc_shift, show 64 * (0 + 1) = 64 from rfl]; unfold acc at e; omega_using [e]
   · rw [hz] at mw
     simp only [Nat.mul_zero, Nat.pow_zero, Nat.one_mul, Nat.zero_add, BitVec.toNat_ofNat, Nat.zero_mod,
       Nat.add_zero] at mw ⊢
-    omega
+    omega_using [mw]
   · rw [acc_shift]; exact BitVec.le_toInt _
   · rw [acc_shift]; exact BitVec.toInt_lt
 
@@ -495,12 +495,12 @@ theorem ab_step {c1 c2 : BitVec 64} {k : BitVec 64} {w0 Da Db P i R : Nat} {lo h
   have hl := (lo2 c1 c2 x y lo).isLt
   refine ⟨A + 2 ^ (64 * (i + 1)) * (lo2 c1 c2 x y lo).toNat, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · have : A + 2 ^ (64 * (i + 1)) * (lo2 c1 c2 x y lo).toNat < 2 ^ (64 * (i + 1)) * 2 ^ 64 := by
-      have := Nat.mul_le_mul_left (2 ^ (64 * (i + 1))) (show (lo2 c1 c2 x y lo).toNat + 1 ≤ 2 ^ 64 by omega)
-      rw [Nat.mul_add_one] at this; omega
-    rwa [show 64 * (i + 1 + 1) = 64 * (i + 1) + 64 by omega, Nat.pow_add]
-  · rw [show 64 * (i + 1) = 64 * i + 64 by omega, Nat.pow_add, Nat.mul_right_comm, Nat.add_mul_mod_self_right]
+      have := Nat.mul_le_mul_left (2 ^ (64 * (i + 1))) (show (lo2 c1 c2 x y lo).toNat + 1 ≤ 2 ^ 64 by omega_using [])
+      rw [Nat.mul_add_one] at this; omega_using [hA, this]
+    rwa [show 64 * (i + 1 + 1) = 64 * (i + 1) + 64 by omega_using [], Nat.pow_add]
+  · rw [show 64 * (i + 1) = 64 * i + 64 by omega_using [], Nat.pow_add, Nat.mul_right_comm, Nat.add_mul_mod_self_right]
     exact hw0
-  · rw [acc_shift, show 64 * (i + 1 + 1) = 64 * (i + 1) + 64 by omega]
+  · rw [acc_shift, show 64 * (i + 1 + 1) = 64 * (i + 1) + 64 by omega_using []]
     have := lin_inv_step (u := c1.toInt) (v := c2.toInt) (S0 := 0) (W := A) (by rw [Int.add_zero]; exact hlin) e
     rwa [Int.add_zero] at this
   · have ep : 2 ^ (64 * (i + 1)) = 2 ^ 64 * 2 ^ (64 * i) := by

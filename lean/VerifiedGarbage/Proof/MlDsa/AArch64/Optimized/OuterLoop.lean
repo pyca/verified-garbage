@@ -41,7 +41,7 @@ theorem outerSlice_ok (input : Reg)
     WP isa (.block (outerSliceCode input ++ rest)) s Q := by
   have ho : ∀ i : Fin 8, (128*i.val)%16=0 ∧ 128*i.val<65536 := by
     intro i
-    omega
+    omega_using []
   have hsub : ((bankLoads ({} : Ren).data 128).map Prod.fst) ⊆ outerRegs := by decide
   simp only [outerSliceCode, List.append_assoc]
   refine loadBank_ok ({} : Ren).data 128 input initial_good.injective ho hr fun s₁ hc₁ hb₁ => ?_
@@ -119,7 +119,7 @@ theorem outerLoop_ok {s : State} {z : Nat → Int} (hconst : Hoisted s z)
       · exact ⟨ht₁.range,by simpa only [hvec₂] using ht₁.q,
           by simpa only [hvec₂] using ht₁.roots⟩
       · rw [hp₂,hk₁.get .x2,hp]
-        rw [show 16*(u+1)=16*u+16 by omega,BitVec.ofNat_add,BitVec.add_assoc]
+        rw [show 16*(u+1)=16*u+16 by omega_using [],BitVec.ofNat_add,BitVec.add_assoc]
         rfl
       · rw [hm₂,hv₁.mem]
         simp only [outerSliceMem,hm,hp,outerPassMem,outerMemStep]

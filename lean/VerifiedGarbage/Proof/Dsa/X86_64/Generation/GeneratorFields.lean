@@ -30,7 +30,7 @@ theorem generatorFields_ok {s : State} {B : Addr} {Z w len : Nat} {mi : BitVec 6
   let m2 := m1.writeW (off B 288) (off B VG.Impl.Dsa.Generation.Layout.exponent)
   refine WP.mono (WP.keep [.rax] (Q := fun t => t.mem = m2.writeW (off B 328) (BitVec.ofNat 64 len)) (by
     xrun [Impl.Dsa.X86_64.Generation.generatorFields, Core.field, Field.offset, State.ea, BitVec.ofInt_natCast, h.rdi,
-      h.scr.st (d := 256) (by omega), h.scr.st (d := 288) (by omega), h.scr.st (d := 328) (by omega),
+      h.scr.st (d := 256) (by omega_using [hZ]), h.scr.st (d := 288) (by omega_using [hZ]), h.scr.st (d := 328) (by omega_using [hZ]),
       sx_ofNat (by decide : VG.Impl.Dsa.Generation.Layout.p < 2 ^ 31),
       sx_ofNat (by decide : VG.Impl.Dsa.Generation.Layout.exponent < 2 ^ 31), hv]
     rfl) rfl) fun t ⟨hm, hk⟩ => ?_
@@ -48,8 +48,8 @@ theorem generatorFields_ok {s : State} {B : Addr} {Z w len : Nat} {mi : BitVec 6
     · change word t.mem B 56 = _
       rw [ff.word (d := 56) (Or.inl (by decide)) (by decide)]
       exact h.hdr.hminv
-    · rw [ff.word (Or.inl (by unfold VG.Impl.Bignum.X86_64.sArr; omega))
-        (by unfold VG.Impl.Bignum.X86_64.sArr; omega)]
+    · rw [ff.word (Or.inl (by unfold VG.Impl.Bignum.X86_64.sArr; omega_using [hj]))
+        (by unfold VG.Impl.Bignum.X86_64.sArr; omega_using [hj])]
       exact h.hdr.harr j hj
   · rw [f3.word (d := 256) (Or.inl (by decide)) (by decide),
       f2.word (d := 256) (Or.inl (by decide)) (by decide)]

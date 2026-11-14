@@ -526,42 +526,42 @@ theorem kWord (lo k M kc : BitVec 64) :
   obtain ⟨P, hP⟩ : ∃ P, P = k.toNat * M.toNat := ⟨_, rfl⟩
   have hPq : P / 2 ^ 64 ≤ 2 ^ 64 - 2 := by
     rw [hP]
-    have : k.toNat * M.toNat ≤ (2 ^ 64 - 1) * (2 ^ 64 - 1) := Nat.mul_le_mul (by omega) (by omega)
+    have : k.toNat * M.toNat ≤ (2 ^ 64 - 1) * (2 ^ 64 - 1) := Nat.mul_le_mul (by omega_using []) (by omega_using [])
     have e : (2 ^ 64 - 1) * (2 ^ 64 - 1) = (2 ^ 64 - 2) * 2 ^ 64 + 1 := by decide
     rw [e] at this
-    exact Nat.le_of_lt_succ (Nat.div_lt_of_lt_mul (by omega))
+    exact Nat.le_of_lt_succ (Nat.div_lt_of_lt_mul (by omega_using [this]))
   have hT : T.toNat = P % 2 ^ 64 := by simp only [T, BitVec.toNat_mul, hP]
   have hT' : T'.toNat = (T.toNat + kc.toNat) % 2 ^ 64 := by simp only [T', BitVec.toNat_add]
   have hlo : lo'.toNat = (lo.toNat + T'.toNat) % 2 ^ 64 := by simp only [lo', BitVec.toNat_add]
-  have d1 := Divstep.decide_toNat_div (T.toNat + kc.toNat) (by omega)
-  have d2 := Divstep.decide_toNat_div (lo.toNat + T'.toNat) (by have := T'.isLt; omega)
+  have d1 := Divstep.decide_toNat_div (T.toNat + kc.toNat) (by omega_using [])
+  have d2 := Divstep.decide_toNat_div (lo.toNat + T'.toNat) (by have := T'.isLt; omega_using [])
   have hkc' : kc'.toNat = P / 2 ^ 64 + (T.toNat + kc.toNat) / 2 ^ 64 := by
     simp only [kc', BitVec.toNat_add, BitVec.toNat_ofNat, d1, Hk, ← hP]
-    have : (T.toNat + kc.toNat) / 2 ^ 64 ≤ 1 := by have := T.isLt; omega
-    rw [Nat.mod_eq_of_lt (a := P / 2 ^ 64) (by omega), Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega)]
+    have : (T.toNat + kc.toNat) / 2 ^ 64 ≤ 1 := by have := T.isLt; omega_using []
+    rw [Nat.mod_eq_of_lt (a := P / 2 ^ 64) (by omega_using [hPq]), Nat.mod_eq_of_lt (by omega_using [hPq]), Nat.mod_eq_of_lt (by omega_using [])]
   have hC : C = (lo.toNat + T'.toNat) / 2 ^ 64 := d2
   have := T'.isLt
-  refine ⟨?_, by omega⟩
+  refine ⟨?_, by omega_using [hC]⟩
   rw [hkc', hC, hlo, hT', hT, show ((k.toNat : Int) * M.toNat) = (P : Int) by rw [hP]; push_cast; rfl]
   have := Nat.div_add_mod P (2 ^ 64)
-  omega
+  omega_using []
 
 /-- A carry's bound from its word: `|u X + v Y + c| < 2^123 + 2^61` leaves
 `|c'| ≤ 2^59 + 1`. -/
 theorem carry_bound {lo : Nat} {c' S : Int} (hlo : lo < 2 ^ 64) (h : (lo : Int) + 2 ^ 64 * c' = S)
     (hS : S.natAbs ≤ 2 ^ 59 * (2 ^ 64 - 1) + 2 ^ 61) : c'.natAbs ≤ 2 ^ 59 + 1 := by
-  omega
+  omega_using [hlo, h, hS]
 
 theorem lin_abs (cu cv : BitVec 64) (X Y : Nat) (c : Int) (hX : X < 2 ^ 64) (hY : Y < 2 ^ 64)
     (hb : cu.toInt.natAbs + cv.toInt.natAbs ≤ 2 ^ 59) (hc : c.natAbs ≤ 2 ^ 61) :
     (cu.toInt * X + cv.toInt * Y + c).natAbs ≤ 2 ^ 59 * (2 ^ 64 - 1) + 2 ^ 61 := by
   have e1 : (cu.toInt * X).natAbs ≤ cu.toInt.natAbs * (2 ^ 64 - 1) := by
-    rw [Int.natAbs_mul, Int.natAbs_natCast]; exact Nat.mul_le_mul_left _ (by omega)
+    rw [Int.natAbs_mul, Int.natAbs_natCast]; exact Nat.mul_le_mul_left _ (by omega_using [hX])
   have e2 : (cv.toInt * Y).natAbs ≤ cv.toInt.natAbs * (2 ^ 64 - 1) := by
-    rw [Int.natAbs_mul, Int.natAbs_natCast]; exact Nat.mul_le_mul_left _ (by omega)
+    rw [Int.natAbs_mul, Int.natAbs_natCast]; exact Nat.mul_le_mul_left _ (by omega_using [hY])
   have e3 : cu.toInt.natAbs * (2 ^ 64 - 1) + cv.toInt.natAbs * (2 ^ 64 - 1) ≤ 2 ^ 59 * (2 ^ 64 - 1) := by
     rw [← Nat.add_mul]; exact Nat.mul_le_mul_right _ hb
-  omega
+  omega_using [hb, hc, e1, e2]
 
 /-- A coefficient pair's bound for a batch of 59. -/
 abbrev Cb59 (s : State) (c₁ c₂ : Reg) : Prop := (s.gpr c₁).toInt.natAbs + (s.gpr c₂).toInt.natAbs ≤ 2 ^ 59
@@ -570,12 +570,12 @@ abbrev Cb59 (s : State) (c₁ c₂ : Reg) : Prop := (s.gpr c₁).toInt.natAbs + 
 theorem toInt_add_bit (c : BitVec 64) (C : Nat) (hC : C ≤ 1) (hc : c.toInt.natAbs ≤ 2 ^ 59 + 1) :
     (c + BitVec.ofNat 64 C).toInt = c.toInt + C := by
   rw [BitVec.toInt_add, show (BitVec.ofNat 64 C).toInt = C by
-    rcases (show C = 0 ∨ C = 1 by omega) with rfl | rfl <;> decide]
-  exact Int.bmod_eq_of_le (by omega) (by omega)
+    rcases (show C = 0 ∨ C = 1 by omega_using [hC]) with rfl | rfl <;> decide]
+  exact Int.bmod_eq_of_le (by omega_using [hc]) (by omega_using [hC, hc])
 
 theorem natAbs_add_bit {x : Int} {C : Nat} (hC : C ≤ 1) (h : x.natAbs ≤ 2 ^ 59 + 1) :
     (x + C).natAbs ≤ 2 ^ 61 := by
-  omega
+  omega_using [hC, h]
 
 /-- A row's word over `(a, b)`: `rowWord`, then `k M + kc` (`kWord`), the
 carries unmerged. -/
@@ -598,7 +598,7 @@ theorem deRowValU (cu cv a b c k M kc : BitVec 64) (hb : cu.toInt.natAbs + cv.to
       cu.toInt * a.toNat + cv.toInt * b.toNat + c.toInt + k.toNat * M.toNat + kc.toNat ∧
       c''.toInt.natAbs ≤ 2 ^ 61 := by
   intro lo1 hi1 lo2 hi2 s1 lo c' T T' kc' lo' c''
-  obtain ⟨r1, -⟩ := Divstep.rowWord cu cv a b c (by omega) (by omega)
+  obtain ⟨r1, -⟩ := Divstep.rowWord cu cv a b c (by omega_using [hb]) (by omega_using [hc])
   have cb : c'.toInt.natAbs ≤ 2 ^ 59 + 1 :=
     carry_bound lo.isLt r1 (lin_abs cu cv _ _ _ a.isLt b.isLt hb hc)
   obtain ⟨k1, kC⟩ := kWord lo k M kc
@@ -609,7 +609,7 @@ theorem deRowValU (cu cv a b c k M kc : BitVec 64) (hb : cu.toInt.natAbs + cv.to
   have k1' : (lo'.toNat : Int) + 2 ^ 64 * (((decide (2 ^ 64 ≤ lo.toNat + T'.toNat)).toNat : Nat) + kc'.toNat) =
       lo.toNat + k.toNat * M.toNat + kc.toNat := k1
   push_cast at k1' ⊢
-  omega
+  omega_using [r1', k1']
 
 /-- `deRowValU` with the carries merged, as in the loop's word. -/
 theorem deRowVal (cu cv a b c k M kc : BitVec 64) (hb : cu.toInt.natAbs + cv.toInt.natAbs ≤ 2 ^ 59)
@@ -883,13 +883,13 @@ theorem fgHead_ok (s : State) {B : Addr} {Z eF eG n : Nat} (hs : Scr s B Z)
 
 theorem eq_zero_of_mul_lt {r R K : Int} (h : r = R * K) (h0 : 0 ≤ r) (hR : r < R) : K = 0 := by
   rcases Int.lt_trichotomy K 0 with hk | hk | hk
-  · have : R * K < 0 := Int.mul_neg_of_pos_of_neg (by omega) hk
-    omega
+  · have : R * K < 0 := Int.mul_neg_of_pos_of_neg (by omega_using [h0, hR]) hk
+    omega_using [h, h0, this]
   · exact hk
   · have : R ≤ R * K := by
-      have := Int.mul_le_mul_of_nonneg_left (show (1 : Int) ≤ K by omega) (show 0 ≤ R by omega)
+      have := Int.mul_le_mul_of_nonneg_left (show (1 : Int) ≤ K by omega_using [hk]) (show 0 ≤ R by omega_using [h0, hR])
       rwa [Int.mul_one] at this
-    omega
+    omega_using [h, hR, this]
 
 /-- The end of a row over `(f, g)`: with the carry corrected for the inputs'
 signs and word `n` written, the words written are `f'` modulo `2^(64 (n + 1))`. -/
@@ -909,8 +909,8 @@ theorem fgFinal {n r O prev X Y : Nat} {c u v f' : Int} {c' : BitVec 64} {xs ys 
   obtain ⟨b, hb, tn⟩ : ∃ b : Int, (b = 0 ∨ b = 1) ∧ (c'.toNat : Int) = c'.toInt + 2 ^ 64 * b := by
     rw [BitVec.toInt_eq_toNat_cond]
     split
-    · exact ⟨0, .inl rfl, by omega⟩
-    · exact ⟨1, .inr rfl, by omega⟩
+    · exact ⟨0, .inl rfl, by omega_using []⟩
+    · exact ⟨1, .inr rfl, by omega_using []⟩
   rw [show (2 : Int) ^ 64 = ((2 ^ 64 : Nat) : Int) by rw [Int.natCast_pow]; rfl] at tn
   rw [show (2 : Int) ^ 59 = ((2 ^ 59 : Nat) : Int) by rw [Int.natCast_pow]; rfl] at ef
   rw [hsX, hsY] at ef
@@ -931,7 +931,7 @@ theorem fgFinal {n r O prev X Y : Nat} {c u v f' : Int} {c' : BitVec 64} {xs ys 
     by_cases hx : xs <;> by_cases hy : ys <;> simp only [hx, hy, ite_true, ite_false] at hc' ef <;> grind
   have hR0 : (0 : Int) < R := by rw [← hR]; exact Int.natCast_pos.mpr (Nat.two_pow_pos 59)
   have hK := eq_zero_of_mul_lt (r := r) (R := R) (K := f' - (X' + P * Q * (m - F * b)))
-    (by rw [Int.mul_sub, hS, Int.add_sub_cancel]) (by omega) (by exact_mod_cast hr)
+    (by rw [Int.mul_sub, hS, Int.add_sub_cancel]) (by omega_using []) (by exact_mod_cast hr)
   rw [Int.sub_eq_zero.mp hK]
   push_cast
   rfl
@@ -939,7 +939,7 @@ theorem fgFinal {n r O prev X Y : Nat} {c u v f' : Int} {c' : BitVec 64} {xs ys 
 theorem toInt_sub_small (x y : BitVec 64) (h : (x.toInt - y.toInt).natAbs < 2 ^ 63) :
     (x - y).toInt = x.toInt - y.toInt := by
   rw [BitVec.toInt_sub]
-  exact Int.bmod_eq_of_le (by omega) (by omega)
+  exact Int.bmod_eq_of_le (by omega_using [h]) (by omega_using [h])
 
 /-- The carry less the coefficients where the top words are negative. -/
 theorem topFixVal (c a b u v : BitVec 64) (hc : c.toInt.natAbs ≤ 2 ^ 62)
@@ -949,9 +949,9 @@ theorem topFixVal (c a b u v : BitVec 64) (hc : c.toInt.natAbs ≤ 2 ^ 62)
   rw [Divstep.signMask_eq, Divstep.signMask_eq]
   by_cases ha : a.toNat < 2 ^ 63 <;> by_cases hb : b.toNat < 2 ^ 63 <;>
     simp only [ha, hb, ite_true, ite_false, BitVec.zero_and, BitVec.allOnes_and, BitVec.sub_zero, Int.sub_zero]
-  · exact toInt_sub_small _ _ (by omega)
-  · exact toInt_sub_small _ _ (by omega)
-  · rw [toInt_sub_small _ _ (by rw [toInt_sub_small _ _ (by omega)]; omega), toInt_sub_small _ _ (by omega)]
+  · exact toInt_sub_small _ _ (by omega_using [hc, huv])
+  · exact toInt_sub_small _ _ (by omega_using [hc, huv])
+  · rw [toInt_sub_small _ _ (by rw [toInt_sub_small _ _ (by omega_using [hc, huv])]; omega_using [hc, huv]), toInt_sub_small _ _ (by omega_using [hc, huv])]
 
 /-- The end of the pass over `(f, g)`: the carries corrected for the top
 words' signs (`x2`, `x3`), and words `n` written. -/
@@ -970,7 +970,7 @@ theorem fgTail_ok (s : State) {B : Addr} {Z eF eG : Nat} (hs : Scr s B Z)
         o₂.toNat = (s.gpr .x27).toNat / 2 ^ 59 + 2 ^ 5 * (c₂.toNat % 2 ^ 59) := by
   unfold topFix
   brun [h16, h17, hs.st hF, hs.st hG, exec_extr_x, show BitVec.setWidth 64 0#16 = 0#64 from rfl]
-  exact ⟨_, _, _, _, rfl, topFixVal _ _ _ _ _ (by omega) b1, topFixVal _ _ _ _ _ (by omega) b2,
+  exact ⟨_, _, _, _, rfl, topFixVal _ _ _ _ _ (by omega_using [c1]) b1, topFixVal _ _ _ _ _ (by omega_using [c2]) b2,
     Divstep.extr59 _ _, Divstep.extr59 _ _⟩
 
 /-- The value of a signed number of `n + 1` words from its top word's sign. -/
@@ -990,7 +990,7 @@ theorem fgInit_val {lo : Nat} {c u v : Int} {x y : Nat} (hw : (lo : Int) + 2 ^ 6
       ((2 ^ (64 * 0) * 2 ^ 64 : Nat) : Int) * c = u * (0 + 2 ^ (64 * 0) * x : Nat) + v * (0 + 2 ^ (64 * 0) * y : Nat) := by
   have := Nat.mod_add_div lo (2 ^ 59)
   simp only [Nat.mul_zero, Nat.pow_zero, Nat.one_mul, Nat.zero_add, Nat.add_zero]
-  rw [show (lo % 2 ^ 59 + 2 ^ 59 * (lo / 2 ^ 59)) = lo by omega]
+  rw [show (lo % 2 ^ 59 + 2 ^ 59 * (lo / 2 ^ 59)) = lo by omega_using []]
   rw [show ((2 ^ 64 : Nat) : Int) = (2 : Int) ^ 64 by rw [Int.natCast_pow]; rfl]
   exact hw
 
@@ -1017,8 +1017,8 @@ theorem fgPass_ok {s : State} {B : Addr} {Z w n : Nat} (hs : Scr s B Z) (h0 : s.
   have sG := Nat.le_trans (slot_lt (w := w) hG) hZ
   have sep : slot w iF + 8 * (n + 1) ≤ slot w iG ∨ slot w iG + 8 * (n + 1) ≤ slot w iF := by
     rcases slot_sep (w := w) dFG with h | h <;> [exact .inl (by omega_arith); exact .inr (by omega_arith)]
-  have cb1 : Cb s .x4 .x5 := by unfold Cb; unfold Cb59 at b1; omega
-  have cb2 : Cb s .x6 .x7 := by unfold Cb; unfold Cb59 at b2; omega
+  have cb1 : Cb s .x4 .x5 := by unfold Cb; unfold Cb59 at b1; omega_using [b1]
+  have cb2 : Cb s .x6 .x7 := by unfold Cb; unfold Cb59 at b2; omega_using [b2]
   unfold fgPass
   rw [show base iF .x16 ++ base iG .x17 ++ ([ld .x2 .x16, ld .x3 .x17, movi .x13 0, movi .x25 0] : List Instr) ++
       fgRow .x4 .x5 .x9 .x10 .x13 .x26 ++ fgRow .x6 .x7 .x19 .x20 .x25 .x27 ++ ([mov .x14 .x12] : List Instr) =
@@ -1241,7 +1241,7 @@ theorem deTopVal (cu cv a b c kc : BitVec 64) (hb : cu.toInt.natAbs + cv.toInt.n
   intro lo1 hi1 lo2 hi2 s1 lo lo' c''
   let c' := hi1 + hi2 + BitVec.ofNat 64 (decide (2 ^ 64 ≤ lo1.toNat + lo2.toNat)).toNat +
     ~~~((c >>> 63) - 1#64) + BitVec.ofNat 64 (decide (2 ^ 64 ≤ s1.toNat + c.toNat)).toNat
-  obtain ⟨r1, -⟩ := Divstep.rowWord cu cv a b c (by omega) (by omega)
+  obtain ⟨r1, -⟩ := Divstep.rowWord cu cv a b c (by omega_using [hb]) (by omega_using [hc])
   have cb : c'.toInt.natAbs ≤ 2 ^ 59 + 1 :=
     carry_bound lo.isLt r1 (lin_abs cu cv _ _ _ a.isLt b.isLt hb hc)
   have ec : c'' = c' + BitVec.ofNat 64 (decide (2 ^ 64 ≤ lo.toNat + kc.toNat)).toNat := by
@@ -1253,10 +1253,10 @@ theorem deTopVal (cu cv a b c kc : BitVec 64) (hb : cu.toInt.natAbs + cv.toInt.n
   rw [tc]
   have r1' : (lo.toNat : Int) + 2 ^ 64 * c'.toInt = cu.toInt * a.toNat + cv.toInt * b.toNat + c.toInt := r1
   have hl : lo'.toNat = (lo.toNat + kc.toNat) % 2 ^ 64 := by simp only [lo', BitVec.toNat_add]
-  have d := Divstep.decide_toNat_div (lo.toNat + kc.toNat) (by have := lo.isLt; have := kc.isLt; omega)
+  have d := Divstep.decide_toNat_div (lo.toNat + kc.toNat) (by have := lo.isLt; have := kc.isLt; omega_using [])
   rw [hl, d]
   have := Nat.div_add_mod (lo.toNat + kc.toNat) (2 ^ 64)
-  omega
+  omega_using [r1']
 
 /-- `deTopVal` for `prodsD`. -/
 theorem deTopValD (cu cv a b c kc : BitVec 64) (hb : cu.toInt.natAbs + cv.toInt.natAbs ≤ 2 ^ 59)
@@ -1319,10 +1319,10 @@ theorem deTail_ok (s : State) {B : Addr} {Z eA eB : Nat} (hs : Scr s B Z)
   refine ⟨_, _, _, _, rfl, ?_, ?_⟩
   · rw [topFixVal _ _ _ _ _ (Nat.le_trans r1.2 (by decide)) b1]
     have := r1.1
-    omega
+    omega_using [r1]
   · rw [topFixVal _ _ _ _ _ (Nat.le_trans r2.2 (by decide)) b2]
     have := r2.1
-    omega
+    omega_using [r2]
 
 /-- The end of a row over `(a, b)`: the words written, after the low word
 `s0`, are `(u a + v b + k M) / 2^64` modulo `2^(64 (n + 1))`. -/
@@ -1341,8 +1341,8 @@ theorem deFinal {N s0 O lo A B M an bn k : Nat} {c kc u v : Int} {c₁ : BitVec 
   obtain ⟨b, hb, tn⟩ : ∃ b : Int, (b = 0 ∨ b = 1) ∧ (c₁.toNat : Int) = c₁.toInt + 2 ^ 64 * b := by
     rw [BitVec.toInt_eq_toNat_cond]
     split
-    · exact ⟨0, .inl rfl, by omega⟩
-    · exact ⟨1, .inr rfl, by omega⟩
+    · exact ⟨0, .inl rfl, by omega_using []⟩
+    · exact ⟨1, .inr rfl, by omega_using []⟩
   rw [show (2 : Int) ^ 64 = ((2 ^ 64 : Nat) : Int) by rw [Int.natCast_pow]; rfl] at tn hw ⊢
   rw [hsA, hsB]
   refine ⟨-b, ?_⟩
@@ -1400,15 +1400,15 @@ theorem deLoop_ok {s₃ : State} {B : Addr} {Z N eA eB eM : Nat} (h14 : s₃.gpr
   · have : N = 0 := by
       rw [h14] at hz
       have := congrArg BitVec.toNat (beq_iff_eq.mp hz)
-      simp at this; omega
+      simp at this; omega_using [hN, this]
     subst this
     exact WP.block_nil I0
   · have hN0 : 0 < N := by
       rcases Nat.eq_zero_or_pos N with h | h
       · subst h; rw [h14] at hnz; simp at hnz
       · exact h
-    exact wp_countdown (N := N) (by omega) hN0 (DeInv s₃ B Z eA eB eM)
-      (fun j hj t hI _ => deStep_ok (n := N + 1) h28 m9 m10 m19 m20 b1 b2 hA hB hM sep sAM sBM (by omega) hI) I0 h14
+    exact wp_countdown (N := N) (by omega_using [hN]) hN0 (DeInv s₃ B Z eA eB eM)
+      (fun j hj t hI _ => deStep_ok (n := N + 1) h28 m9 m10 m19 m20 b1 b2 hA hB hM sep sAM sBM (by omega_using [hj]) hI) I0 h14
 
 /-- The end of the pass over `(a, b)`: word `n`, and `x30` back from its
 lane; the rows' sums from the loop's invariant. -/
@@ -1529,7 +1529,7 @@ theorem dePass_ok {s : State} {B : Addr} {Z w n : Nat} (hs : Scr s B Z) (h0 : s.
       Frm B [(slot w iA, 8 * (n + 1)), (slot w iB, 8 * (n + 1))] s.mem t.mem ∧
       Keep [.x1, .x2, .x3, .x8, .x13, .x14, .x16, .x17, .x21, .x22, .x23, .x24, .x25, .x26, .x27, .x28] s t ∧
       ∀ r l, l < 2 → r ≠ .v25 → r ≠ .v26 → laneOf t r l = laneOf s r l := by
-  obtain ⟨N, rfl⟩ : ∃ N, n = N + 1 := ⟨n - 1, by omega⟩
+  obtain ⟨N, rfl⟩ : ∃ N, n = N + 1 := ⟨n - 1, by omega_using [hn1]⟩
   have hn' := hs.nowrap
   have sA := Nat.le_trans (slot_lt (w := w) hA) hZ
   have sB := Nat.le_trans (slot_lt (w := w) hB) hZ
@@ -1561,7 +1561,7 @@ theorem dePass_ok {s : State} {B : Addr} {Z w n : Nat} (hs : Scr s B Z) (h0 : s.
       s₃.gpr r = s₂.gpr r := fun r hr => k₃.gpr r hr
   have hm₃ : s₃.mem = s.mem := m₃.trans (m₂.trans m₁)
   have h14' : s₃.gpr .x14 = BitVec.ofNat 64 N := by
-    rw [f₃ _ (by decide), e₂, h14, h12]; exact BitVec.eq_of_toNat_eq (by simp; omega)
+    rw [f₃ _ (by decide), e₂, h14, h12]; exact BitVec.eq_of_toNat_eq (by simp; omega_using [])
   have I0 : DeInv s₃ B Z (slot w iA) (slot w iB) (slot w iM) 0 s₃ := by
     refine ⟨hs.congr k₁₃.wr, Keep.refl _ _, by rw [f₃ _ (by decide), e₂, h16]; rfl,
       by rw [f₃ _ (by decide), e₂, h17]; rfl, by rw [f₃ _ (by decide), e₂, h8]; rfl, Frm.refl _ _ _,
@@ -1855,18 +1855,18 @@ theorem kmod {x y a0 b0 mi : BitVec 64} {u v a b : Int} (hu : x.toInt = u) (hv :
     (((x * a0 + y * b0) * mi).toNat : Int) = (u * a + v * b) * mi.toNat % 2 ^ 64 := by
   have ex : u % 2 ^ 64 = (x.toNat : Int) := by
     rw [← hu, Divstep.toInt_cond]; split
-    · exact Int.emod_eq_of_lt (by omega) (by have := x.isLt; omega)
-    · rw [show (x.toNat : Int) - 2 ^ 64 = x.toNat + (-1) * 2 ^ 64 by omega, Int.add_mul_emod_self_right]
-      exact Int.emod_eq_of_lt (by omega) (by have := x.isLt; omega)
+    · exact Int.emod_eq_of_lt (by omega_using []) (by have := x.isLt; omega_using [])
+    · rw [show (x.toNat : Int) - 2 ^ 64 = x.toNat + (-1) * 2 ^ 64 by omega_using [], Int.add_mul_emod_self_right]
+      exact Int.emod_eq_of_lt (by omega_using []) (by have := x.isLt; omega_using [])
   have ey : v % 2 ^ 64 = (y.toNat : Int) := by
     rw [← hv, Divstep.toInt_cond]; split
-    · exact Int.emod_eq_of_lt (by omega) (by have := y.isLt; omega)
-    · rw [show (y.toNat : Int) - 2 ^ 64 = y.toNat + (-1) * 2 ^ 64 by omega, Int.add_mul_emod_self_right]
-      exact Int.emod_eq_of_lt (by omega) (by have := y.isLt; omega)
+    · exact Int.emod_eq_of_lt (by omega_using []) (by have := y.isLt; omega_using [])
+    · rw [show (y.toNat : Int) - 2 ^ 64 = y.toNat + (-1) * 2 ^ 64 by omega_using [], Int.add_mul_emod_self_right]
+      exact Int.emod_eq_of_lt (by omega_using []) (by have := y.isLt; omega_using [])
   rw [Int.mul_emod, Int.add_emod, Int.mul_emod u, Int.mul_emod v, ex, ey, ha, hb]
   simp only [BitVec.toNat_mul, BitVec.toNat_add]
   push_cast
-  rw [Int.emod_eq_of_lt (a := (mi.toNat : Int)) (Int.natCast_nonneg _) (by have := mi.isLt; omega)]
+  rw [Int.emod_eq_of_lt (a := (mi.toNat : Int)) (Int.natCast_nonneg _) (by have := mi.isLt; omega_using [])]
 
 /-- `s0 + 2^64 X = t + k p` with `k = t mi mod 2^64` and `p mi ≡ -1`: `s0 = 0`
 and `X = mredRaw p mi t`. -/
@@ -1880,10 +1880,10 @@ theorem mred_words {s0 : Nat} {X t k p mi : Int} (hs0 : s0 < 2 ^ 64) (hm : (p * 
     exact this
   obtain ⟨R, hR⟩ := hdvd
   have hK := eq_zero_of_mul_lt (r := s0) (R := 2 ^ 64) (K := R - X)
-    (by rw [Int.mul_sub, ← hR, ← h]; omega) (by omega) (by exact_mod_cast hs0)
+    (by rw [Int.mul_sub, ← hR, ← h]; omega_using []) (by omega_using []) (by exact_mod_cast hs0)
   have hmr : Divstep.mredRaw p mi t = R := by
     unfold Divstep.mredRaw; rw [← hk, hR, Int.mul_ediv_cancel_left _ (by decide)]
-  rw [hmr]; omega
+  rw [hmr]; omega_using [hK]
 
 /-- The `a`, `b` half of a batch: `(a, b) := (mredRaw (u a + v b), mredRaw (q a + r b))`
 where `-m⁻¹` is right and `a`, `b` and the results are in `(-p, 2p)`. -/
@@ -2053,7 +2053,7 @@ theorem saveHi_eq : saveHi = insOf hiKs := rfl
 /-- The lanes `hiKs` leaves alone. -/
 theorem hiKs_other (v : VReg) (l : Nat) (hl : l < 2) (hv : v ∉ [VReg.v20, .v21, .v22, .v23, .v24]) :
     (v, l) ∉ hiKs.map (fun k => (k.2.1, k.2.2)) := by
-  rcases (show l = 0 ∨ l = 1 by omega) with rfl | rfl <;> cases v <;> simp_all [hiKs]
+  rcases (show l = 0 ∨ l = 1 by omega_using [hl]) with rfl | rfl <;> cases v <;> simp_all [hiKs]
 theorem restoreHi_eq : restoreHi = umovOf hiKs := rfl
 
 /-- `hiKs`' lanes are below 2 and none of the batch's own. -/
@@ -2202,18 +2202,18 @@ theorem batchDE_ok {C : ICfg} (hC : C.Ok) {s₀ s s₄ : State} {k : Nat} (hI : 
       |(Divstep.msteps 59 (Divstep.MSt.init (C.st k).d (C.st k).f (C.st k).g)).r| ≤ 2 ^ 59) :
     WP isa (.seq (dePass C.iX₂ C.iX₁ C.iM) (.block restoreHi)) s₄ fun t =>
       LInv C s₀ (k + 1) t ∧ t.gpr .x15 = s.gpr .x15 - 1#64 := by
-  have hnL : C.n + 1 ≤ C.w + 2 := by have := hC.nw; omega
-  have hnL' : C.n ≤ C.w + 2 := by have := hC.nw; omega
-  have hn8 : 8 * (C.n + 1) ≤ 8 * (C.w + 2) := by omega
+  have hnL : C.n + 1 ≤ C.w + 2 := by have := hC.nw; omega_using [this]
+  have hnL' : C.n ≤ C.w + 2 := by have := hC.nw; omega_using [hnL]
+  have hn8 : 8 * (C.n + 1) ≤ 8 * (C.w + 2) := by omega_using [hnL]
   have sl : ∀ {j : Nat}, j < 16 → slot C.w j + 8 * (C.w + 2) ≤ 2 ^ 64 := fun hj => by
-    have := slot_lt (w := C.w) hj; have := hI.scr.nowrap; have := hC.hZ; omega
+    have := slot_lt (w := C.w) hj; have := hI.scr.nowrap; have := hC.hZ; omega_arith
   have apart2 : ∀ {j a b L : Nat}, j ≠ a → j ≠ b → L ≤ C.w + 2 →
       ∀ r ∈ [(slot C.w a, 8 * (C.n + 1)), (slot C.w b, 8 * (C.n + 1))], slot C.w j + 8 * L ≤ r.1 ∨ r.1 + r.2 ≤ slot C.w j :=
     fun {j a b L} ha hb hL' r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
-      · exact slot_apart (w := C.w) ha (by omega) hn8
-      · exact slot_apart (w := C.w) hb (by omega) hn8
+      · exact slot_apart (w := C.w) ha (by omega_using [hL']) hn8
+      · exact slot_apart (w := C.w) hb (by omega_using [hL']) hn8
   have wid : ∀ {j : Nat} {L : Nat}, (slot C.w j, 8 * (C.w + 2)) ∈ C.ranges → L ≤ 8 * (C.w + 2) →
       ∃ r' ∈ C.ranges, r'.1 ≤ slot C.w j ∧ slot C.w j + L ≤ r'.1 + r'.2 := fun {j L} h hL' =>
     ⟨_, h, Nat.le_refl _, Nat.add_le_add_left hL' _⟩
@@ -2224,7 +2224,7 @@ theorem batchDE_ok {C : ICfg} (hC : C.Ok) {s₀ s s₄ : State} {k : Nat} (hI : 
     (by decide)) fun t ⟨⟨mt, rdt, wrt, spt, rest, oth⟩, vt⟩ => ?_
   have keepAB : ∀ {j L : Nat}, j ≠ C.iX₂ → j ≠ C.iX₁ → L ≤ C.w + 2 → j < 16 →
       wv t.mem C.B (slot C.w j) L = wv s₄.mem C.B (slot C.w j) L := fun {j L} a b hL' hj => by
-    rw [mt]; exact fr₅.wv_eq (apart2 a b hL') (Nat.le_trans (Nat.add_le_add_left (by omega) _) (sl hj))
+    rw [mt]; exact fr₅.wv_eq (apart2 a b hL') (Nat.le_trans (Nat.add_le_add_left (by omega_using [hL']) _) (sl hj))
   have lnT : ∀ v l, l < 2 → v ≠ .v25 → v ≠ .v26 → laneOf t v l = laneOf s₄ v l := fun v l hl d e => by
     rw [show laneOf t v l = laneOf s₅ v l by unfold laneOf; rw [vt], ln₅ v l hl d e]
   have hpm : wv s₄.mem C.B (slot C.w C.iM) C.n = C.p := by
@@ -2265,10 +2265,10 @@ theorem batch_ok {C : ICfg} (hC : C.Ok) {s₀ s : State} {k : Nat} (hk : k < 3 *
     WP isa (batch C.iV C.iU C.iX₂ C.iX₁ C.iM) s fun t =>
       LInv C s₀ (k + 1) t ∧ t.gpr .x15 = s.gpr .x15 - 1#64 := by
   have hn' := hI.scr.nowrap
-  have hnL : C.n + 1 ≤ C.w + 2 := by have := hC.nw; omega
-  have hn8 : 8 * (C.n + 1) ≤ 8 * (C.w + 2) := by omega
+  have hnL : C.n + 1 ≤ C.w + 2 := by have := hC.nw; omega_using [this]
+  have hn8 : 8 * (C.n + 1) ≤ 8 * (C.w + 2) := by omega_using [hnL]
   have sl : ∀ {j : Nat}, j < 16 → slot C.w j + 8 * (C.w + 2) ≤ 2 ^ 64 := fun hj => by
-    have := slot_lt (w := C.w) hj; have := hC.hZ; omega
+    have := slot_lt (w := C.w) hj; have := hC.hZ; omega_arith
   have hpC : (C.pf : Int) < 2 ^ (64 * C.n + 1) := by
     have := hC.pC; have : C.pf < 2 ^ (64 * C.n + 1) := by
       unfold ICfg.pf; rw [Nat.pow_succ]; omega_arith
@@ -2277,20 +2277,20 @@ theorem batch_ok {C : ICfg} (hC : C.Ok) {s₀ s : State} {k : Nat} (hk : k < 3 *
   obtain ⟨fodd, dbnd, bf, bg, buv, bqr, ef, eg, ed⟩ :=
     Rsa.Divstep.batch64fg (n := C.n) (k := k) (p := C.pf) (m := C.mi.toNat) (x := C.x)
       (by unfold ICfg.pf; omega_arith) (by omega_arith) (by omega_arith) hpC hxC (by have := hC.n21; omega_arith)
-  have hL : (1 : Nat) ≤ C.n + 1 := by omega
+  have hL : (1 : Nat) ≤ C.n + 1 := by omega_using []
   -- The low words of `f` and `g`.
   have low : ∀ {j : Nat} {y : Int}, sgn (C.n + 1) (wv s.mem C.B (slot C.w j) (C.n + 1)) = y →
       ((word s.mem C.B (slot C.w j)).toNat : Int) % 2 ^ 64 = y % 2 ^ 64 := fun {j y} h => by
     rw [← h, Divstep.sgn_mod64 hL (wv_lt _ _ _ _), wv_mod64 _ _ _ hL]
-    exact Int.emod_eq_of_lt (by omega) (by have := (word s.mem C.B (slot C.w j)).isLt; omega)
+    exact Int.emod_eq_of_lt (by omega_using []) (by have := (word s.mem C.B (slot C.w j)).isLt; omega_using [])
   have apartFG : ∀ {j L : Nat}, j ≠ C.iV → j ≠ C.iU → L ≤ C.w + 2 →
       ∀ r ∈ [(slot C.w C.iV, 8 * (C.n + 1)), (slot C.w C.iU, 8 * (C.n + 1))],
         slot C.w j + 8 * L ≤ r.1 ∨ r.1 + r.2 ≤ slot C.w j :=
     fun {j L} ha hb hL' r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
-      · exact slot_apart (w := C.w) ha (by omega) hn8
-      · exact slot_apart (w := C.w) hb (by omega) hn8
+      · exact slot_apart (w := C.w) ha (by omega_using [hL']) hn8
+      · exact slot_apart (w := C.w) hb (by omega_using [hL']) hn8
   have wid : ∀ {j : Nat} {L : Nat}, (slot C.w j, 8 * (C.w + 2)) ∈ C.ranges → L ≤ 8 * (C.w + 2) →
       ∃ r' ∈ C.ranges, r'.1 ≤ slot C.w j ∧ slot C.w j + L ≤ r'.1 + r'.2 := fun {j L} h hL' =>
     ⟨_, h, Nat.le_refl _, Nat.add_le_add_left hL' _⟩
@@ -2338,7 +2338,7 @@ theorem batch_ok {C : ICfg} (hC : C.Ok) {s₀ s : State} {k : Nat} (hk : k < 3 *
     (M (by decide) (by decide) n9) (M (by decide) (by decide) n10) (M (by decide) (by decide) n19)
     (M (by decide) (by decide) n20) f₄ g₄
     (fun {j L} a b hL' hj => by
-      rw [fr₄.wv_eq (apartFG a b hL') (Nat.le_trans (Nat.add_le_add_left (by omega) _) (sl hj)), mem₃])
+      rw [fr₄.wv_eq (apartFG a b hL') (Nat.le_trans (Nat.add_le_add_left (by omega_using [hL']) _) (sl hj)), mem₃])
     ((hI.frm.trans (by rw [mem₃]; exact Frm.refl _ _ _)).trans (Frm.widen fr₄ (fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl <;> exact wid (by simp [ICfg.ranges]) hn8)))
@@ -4436,11 +4436,11 @@ structure LInvG (C : ICfg) (s₀ : State) (k : Nat) (s : State) : Prop where
 theorem batchG_ok {C : ICfg} (hC : C.Ok) {s₀ s : State} {k : Nat} (hk : k < 3 * C.n + 2) (hI : LInvG C s₀ k s) :
     WP isa (batchG C.iV C.iU) s fun t => LInvG C s₀ (k + 1) t ∧ t.gpr .x15 = s.gpr .x15 - 1#64 := by
   have hn' := hI.scr.nowrap
-  have hnL : C.n + 1 ≤ C.w + 2 := by have := hC.nw; omega
-  have hnL' : C.n ≤ C.w + 2 := by have := hC.nw; omega
-  have hn8 : 8 * (C.n + 1) ≤ 8 * (C.w + 2) := by omega
+  have hnL : C.n + 1 ≤ C.w + 2 := by have := hC.nw; omega_using [this]
+  have hnL' : C.n ≤ C.w + 2 := by have := hC.nw; omega_using [hnL]
+  have hn8 : 8 * (C.n + 1) ≤ 8 * (C.w + 2) := by omega_using [hnL]
   have sl : ∀ {j : Nat}, j < 16 → slot C.w j + 8 * (C.w + 2) ≤ 2 ^ 64 := fun hj => by
-    have := slot_lt (w := C.w) hj; have := hC.hZ; omega
+    have := slot_lt (w := C.w) hj; have := hC.hZ; omega_arith
   have hpC : (C.pf : Int) < 2 ^ (64 * C.n + 1) := by
     have := hC.pC; have : C.pf < 2 ^ (64 * C.n + 1) := by
       unfold ICfg.pf; rw [Nat.pow_succ]; omega_arith
@@ -4449,19 +4449,19 @@ theorem batchG_ok {C : ICfg} (hC : C.Ok) {s₀ s : State} {k : Nat} (hk : k < 3 
   obtain ⟨fodd, dbnd, bf, bg, buv, bqr, ef, eg, ed⟩ :=
     Rsa.Divstep.batch64fg (n := C.n) (k := k) (p := C.pf) (m := C.mi.toNat) (x := C.x)
       (by unfold ICfg.pf; omega_arith) (by omega_arith) (by omega_arith) hpC hxC (by have := hC.n21; omega_arith)
-  have hL : (1 : Nat) ≤ C.n + 1 := by omega
+  have hL : (1 : Nat) ≤ C.n + 1 := by omega_using []
   have low : ∀ {j : Nat} {y : Int}, sgn (C.n + 1) (wv s.mem C.B (slot C.w j) (C.n + 1)) = y →
       ((word s.mem C.B (slot C.w j)).toNat : Int) % 2 ^ 64 = y % 2 ^ 64 := fun {j y} h => by
     rw [← h, Divstep.sgn_mod64 hL (wv_lt _ _ _ _), wv_mod64 _ _ _ hL]
-    exact Int.emod_eq_of_lt (by omega) (by have := (word s.mem C.B (slot C.w j)).isLt; omega)
+    exact Int.emod_eq_of_lt (by omega_using []) (by have := (word s.mem C.B (slot C.w j)).isLt; omega_using [])
   have apartFG : ∀ {j L : Nat}, j ≠ C.iV → j ≠ C.iU → L ≤ C.w + 2 →
       ∀ r ∈ [(slot C.w C.iV, 8 * (C.n + 1)), (slot C.w C.iU, 8 * (C.n + 1))],
         slot C.w j + 8 * L ≤ r.1 ∨ r.1 + r.2 ≤ slot C.w j :=
     fun {j L} ha hb hL' r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
-      · exact slot_apart (w := C.w) ha (by omega) hn8
-      · exact slot_apart (w := C.w) hb (by omega) hn8
+      · exact slot_apart (w := C.w) ha (by omega_using [hL']) hn8
+      · exact slot_apart (w := C.w) hb (by omega_using [hL']) hn8
   unfold batchG
   simp only [seqs]
   -- `x19`–`x28` into their lanes.
@@ -4515,14 +4515,14 @@ theorem batchG_ok {C : ICfg} (hC : C.Ok) {s₀ s : State} {k : Nat} (hk : k < 3 
   · rw [lnT, show laneOf s₄ .v18 0 = laneOf s₂ .v18 0 by unfold laneOf; rw [v₄, v₃], l1]
     exact congrArg _ ed.symm
   · rw [mt, fr₄.wv_eq (apartFG hC.dVM.symm hC.dUM.symm hnL')
-      (Nat.le_trans (Nat.add_le_add_left (by omega) _) (sl hC.hM)), mem₃]
+      (Nat.le_trans (Nat.add_le_add_left (by omega_using [hnL]) _) (sl hC.hM)), mem₃]
     exact hI.m
   · rw [mt]
     refine (hI.frm.trans (by rw [mem₃]; exact Frm.refl _ _ _)).trans (Frm.widen fr₄ fun r hr => ?_)
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
-    · exact ⟨(slot C.w C.iV, 8 * (C.w + 2)), by simp, Nat.le_refl _, by dsimp only; omega⟩
-    · exact ⟨(slot C.w C.iU, 8 * (C.w + 2)), by simp, Nat.le_refl _, by dsimp only; omega⟩
+    · exact ⟨(slot C.w C.iV, 8 * (C.w + 2)), by simp, Nat.le_refl _, by dsimp only; omega_using [hnL]⟩
+    · exact ⟨(slot C.w C.iU, 8 * (C.w + 2)), by simp, Nat.le_refl _, by dsimp only; omega_using [hnL]⟩
   · rw [lnT, l4s _ _ (by decide) (by decide) (by decide), lo₁ _ _ (by decide) (by decide)]; exact hI.x1s
   · rw [lnT, l4s _ _ (by decide) (by decide) (by decide), lo₁ _ _ (by decide) (by decide)]; exact hI.x2s
   · rw [q4 _ (by decide), k₃.gpr .x15 (by decide), h15, e₁]
@@ -4730,7 +4730,7 @@ theorem gcdB_ok {s : State} {B : Addr} {Z w n : Nat} {iU iV iX₁ iX₂ iM iT : 
   · rw [mt]
     refine hI₂.frm.trans ((by rw [m₃]; exact Frm.refl _ _ _ : Frm B _ s₂.mem s₃.mem).trans ?_)
     exact Frm.of_outside (Outside.mono (o' := slot w iV) (n' := 8 * (w + 2)) o₄ (Nat.le_refl _)
-      (by show slot w iV + 8 * (n + 1) ≤ slot w iV + 8 * (w + 2); omega)) (List.mem_cons_of_mem _ (List.mem_singleton_self _))
+      (by show slot w iV + 8 * (n + 1) ≤ slot w iV + 8 * (w + 2); omega_using [hnw])) (List.mem_cons_of_mem _ (List.mem_singleton_self _))
   -- The value.
   have G : C.Good := ⟨h1, h2⟩
   have hL : 1 ≤ C.n + 1 := by omega_arith

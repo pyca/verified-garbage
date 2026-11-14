@@ -26,7 +26,7 @@ abbrev argR (s : State) (j : Nat) : Region := ⟨slot s (4 * j), 4⟩
 
 theorem argR_apart {j j' : Nat} (h : j ≠ j') (hj : 4 * j + 4 ≤ 96) (hj' : 4 * j' + 4 ≤ 96) :
     (argR s j).Disjoint (argR s j') :=
-  Offset.disjoint _ (by omega) (by omega) (by omega)
+  Offset.disjoint _ (by omega_using [h]) (by omega_using [hj]) (by omega_using [hj'])
 
 theorem wp_copyArg (A : PPABI s) (B : Body s t) {i j : Nat} (hi : i < 10) (hj : 4 * j + 4 ≤ 96)
     (k : ∀ u, Body s u → Keeps [.eax] t u → Frame [argR s j] t.mem u.mem →

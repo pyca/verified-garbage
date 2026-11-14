@@ -37,7 +37,7 @@ theorem Finished.frame_word {s t : State} (h : Finished s t) (space : Space s)
   · exact space.frameStack.sub_left (Offset.sub_base _ bound)
   · simpa only [BitVec.add_zero] using
       Offset.disjoint (s.gpr .x19) (d := d) (n := 8) (e := 0) (k := 64)
-        (Or.inr afterDigest) (by omega) (by decide)
+        (Or.inr afterDigest) (by omega_using [bound]) (by decide)
 
 end VG.Proof.Argon2.AArch64.Initial
 end

@@ -45,8 +45,8 @@ theorem primeArguments_ok {P : PrimeParams} {s : State} {used candidate : Nat}
     WP isa (.block (headerArguments (primeArguments candidate P.len P.drawBytes P.checks))) s fun t =>
       PrimeArguments P used t ∧ word t.mem P.B 160 = W 5 + BitVec.ofNat 64 candidate ∧
       Outside P.B 128 128 s.mem t.mem ∧ Keep [.x3, .x4] s t := by
-  have hf := prime_arguments_fit (len := P.len) (draw := P.drawBytes) hc (by have := P.lenDraw; have := P.drawMax; omega)
-    (by have := P.drawMax; omega) hk
+  have hf := prime_arguments_fit (len := P.len) (draw := P.drawBytes) hc (by have := P.lenDraw; have := P.drawMax; omega_arith)
+    (by have := P.drawMax; omega_using [this]) hk
   have hB : Scr s P.B 256 := by
     simpa only [off, BitVec.add_zero] using hg.scr.sub (o := 0) (n := 256) hg.h256 (by decide)
   refine WP.mono (headerArguments_ok _ hf hB hg.x0 hsp hr hwords hsep) fun t ⟨hm, kt⟩ => ?_
@@ -56,12 +56,12 @@ theorem primeArguments_ok {P : PrimeParams} {s : State} {used candidate : Nat}
       argumentWords W (fun j => word s.mem P.B (8 * j)) (primeArguments candidate P.len P.drawBytes P.checks) k := by
     rw [hm]; exact argumentWrites_word _ _ _ _ hf hk32
   have hh (d : Nat) (hd : d + 8 ≤ 128) : word t.mem P.B d = word s.mem P.B d :=
-    ho.word (Or.inl hd) (by omega)
+    ho.word (Or.inl hd) (by omega_using [hd])
   have stride : word t.mem P.B 224 = word s.mem P.B 224 := wh 28 (by decide)
   have hg' : VG.Proof.Rsa.AArch64.Ws t P.B P.Z P.w :=
     ⟨hg.scr.congr kt.wr, (kt.gpr _ (by decide)).trans hg.x0,
       (hh 48 (by decide)).trans hg.hw, stride.trans hg.hS,
-      fun j hj => (hh (8 * VG.Impl.Bignum.sArr j) (by unfold VG.Impl.Bignum.sArr; omega)).trans (hg.harr j hj),
+      fun j hj => (hh (8 * VG.Impl.Bignum.sArr j) (by unfold VG.Impl.Bignum.sArr; omega_using [hj])).trans (hg.harr j hj),
       hg.hZ, hg.w1, hg.w2⟩
   refine ⟨⟨hg', ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩, ?_, ho, kt⟩
   · rw [wh kOut (by decide)]; simpa only [primeArguments, argumentWords, argumentValue,

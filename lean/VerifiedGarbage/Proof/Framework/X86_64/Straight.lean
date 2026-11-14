@@ -163,13 +163,13 @@ theorem slot_sep (b : Addr) {j k : Nat} (hj : 8 * j < 2 ^ 64) (hk : 8 * k < 2 ^ 
   intro x h₁ h₂
   simp only [wordAddr, Offset.sub_add_eq, Offset.toNat_sub_ofNat] at h₁ h₂
   have := (x - b).isLt
-  omega
+  omega_using [hj, hk, h, h₁, h₂]
 
 theorem slot_contains (b : Addr) {n k : Nat} (hk : k < n) (hn : 8 * n < 2 ^ 64) :
     (⟨b, 8 * n⟩ : Region).Contains (wordAddr b k) (64 / 8) := by
   simp only [Region.Contains, wordAddr]
-  rw [Offset.add_sub_cancel_left, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
-  omega
+  rw [Offset.add_sub_cancel_left, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hk, hn])]
+  omega_using [hk]
 
 theorem loc_some_slot {c : Cfg} {m : MemOp} {k : Nat} (h : c.loc m = some (.slot k)) :
     m.base = c.base ∧ m.index = none ∧ m.disp = ((8 * k : Nat) : Int) ∧ k < c.slots := by
@@ -181,7 +181,7 @@ theorem loc_some_slot {c : Cfg} {m : MemOp} {k : Nat} (h : c.loc m = some (.slot
       cases h
       refine ⟨h2.1, h1.1, ?_, h2.2⟩
       obtain ⟨-, h3, h4⟩ := h1
-      omega
+      omega_using [h3, h4]
     · split at h <;> cases h
   · cases h
 
@@ -197,7 +197,7 @@ theorem loc_some_ext {c : Cfg} {m : MemOp} {k : Nat} (h : c.loc m = some (.ext k
         cases h
         refine ⟨h2.1, h1.1, ?_, h2.2⟩
         obtain ⟨-, h3, h4⟩ := h1
-        omega
+        omega_using [h3, h4]
       · cases h
   · cases h
 
@@ -307,7 +307,7 @@ theorem step_ok (hD : D.Sound R) {e e' : Env α} {s : State} (hok : Ok c s)
       simp only [reduceExec, State.store64, hea, hin, ite_true, Option.some.injEq, exists_eq_left']
       have hsep : ∀ j < c.slots, j ≠ k → Mem.Sep (wordAddr (s.gpr c.base) j) (64 / 8)
           (wordAddr (s.gpr c.base) k) (64 / 8) := fun j hj hjk =>
-        slot_sep _ (by have := hok.slots; omega) (by have := hok.slots; omega) hjk
+        slot_sep _ (by have := hok.slots; omega_using [hj, this]) (by have := hok.slots; omega_using [hlt, this]) hjk
       refine ⟨⟨fun r' b hr' => hrel.reg r' b hr', fun j b hj hjb => ?_, fun j b hj hjb => ?_⟩,
         hok.congr rfl rfl rfl rfl, rfl, rfl, rfl, rfl, fun _ _ => rfl, ?_⟩
       · simp only [Env.setSlot] at hjb
@@ -416,7 +416,7 @@ theorem Ok.of_region {c : Cfg} {s : State} {r : Region} (hr : r ∈ s.wr)
   slotIn k hk := ⟨r, hr, by
     have := slot_contains (s.gpr c.base) hk hn
     simp only [Region.Contains] at this ⊢
-    rw [hb]; omega⟩
+    rw [hb]; omega_using [hlen, this]⟩
   extIn k hk := by omega
   slots := hn
   sep k _ j hj := by omega
@@ -437,16 +437,16 @@ theorem contains_word {r : Region} {a : Addr} {off k n : Nat} (ha : a = r.base +
     r.Contains (wordAddr a k) 8 := by
   simp only [Region.Contains, wordAddr, ha]
   rw [BitVec.add_assoc, ← BitVec.ofNat_add, Offset.add_sub_cancel_left, BitVec.toNat_ofNat,
-    Nat.mod_eq_of_lt (by omega)]
-  omega
+    Nat.mod_eq_of_lt (by omega_using [hk, hn, hlen])]
+  omega_using [hk, hn]
 
 /-- `Ok` for slots at offset `off` of a writable region, and no external words. -/
 theorem Ok.of_off {c : Cfg} {s : State} {r : Region} {off : Nat} (hr : r ∈ s.wr)
     (hb : s.gpr c.base = r.base + BitVec.ofNat 64 off) (hlen : off + 8 * c.slots ≤ r.len)
     (hn : r.len < 2 ^ 64) (he : c.exts = 0) : Ok c s where
-  slotIn k hk := ⟨r, hr, contains_word hb (by omega) (Nat.le_refl _) hn⟩
+  slotIn k hk := ⟨r, hr, contains_word hb (by omega_using [hlen, hk]) (Nat.le_refl _) hn⟩
   extIn k hk := by omega
-  slots := by omega
+  slots := by omega_using [hlen, hn]
   sep k _ j hj := by omega
 
 /-- `Ok` for external words at offset `off` of a readable region, and no slots. -/
@@ -454,8 +454,8 @@ theorem Ok.of_ext {c : Cfg} {s : State} {r : Region} {off : Nat} (hr : r ∈ s.r
     (hb : s.gpr c.ext = r.base + BitVec.ofNat 64 off) (hlen : off + 8 * c.exts ≤ r.len)
     (hn : r.len < 2 ^ 64) (hs : c.slots = 0) : Ok c s where
   slotIn k hk := by omega
-  extIn k hk := ⟨r, hr, contains_word hb (by omega) (Nat.le_refl _) hn⟩
-  slots := by omega
+  extIn k hk := ⟨r, hr, contains_word hb (by omega_using [hlen, hk]) (Nat.le_refl _) hn⟩
+  slots := by omega_using [hs]
   sep k hk := by omega
 
 end VG.X86_64.Straight

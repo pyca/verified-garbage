@@ -130,13 +130,13 @@ def PL (p : PhPub) (t : State) : Prop :=
 /-- `r2X`, from the prime's workspace: the cursor and `pre` are kept. -/
 theorem ph_r2_ct (M : Mont) : RelCT isa (Two PA) (seqs (r2X M.mm)) (Two PL) := by
   refine two_post (two_map (fun p : PhPub => (⟨p.B, p.Z, p.o, p.w, p.wx⟩ : XPub))
-    (fun p s ⟨mx, X, hc, hX, hX1, hwx2, hwx, hww, hw24, _⟩ => ⟨mx, X, hc, hX, hwx2, hww, show p.w < 2 ^ 30 by omega, hX1, by decide⟩)
+    (fun p s ⟨mx, X, hc, hX, hX1, hwx2, hwx, hww, hw24, _⟩ => ⟨mx, X, hc, hX, hwx2, hww, show p.w < 2 ^ 30 by omega_using [hw24], hX1, by decide⟩)
     (r2X_ct M)) fun p s h => ?_
   obtain ⟨mx, X, hc, hX, hX1, hwx2, hwx, hww, hw24, hoL, hcur, hsD, hsM, hcb, hwr, hsep⟩ := h
-  refine WP.mono (r2X_ok M hc hX hwx2 hww (by omega) hX1 (P := False) (fun h => h.elim))
+  refine WP.mono (r2X_ok M hc hX hwx2 hww (by omega_using [hw24]) hX1 (P := False) (fun h => h.elim))
     fun t ⟨hc', _, _, f, k⟩ => ⟨mx, hc', ?_, hsD, hsM, hwx2, hwx, hoL, hcb, by rw [k.wr]; exact hwr, hsep⟩
   have h8 := hdr_lt_slot p.wx 8 (show 0 < 32 by decide)
-  rw [(f.to_x (r2Ranges_ok p.wx) hoL (List.mem_singleton_self _)).x_below hsD (by omega)]
+  rw [(f.to_x (r2Ranges_ok p.wx) hoL (List.mem_singleton_self _)).x_below hsD (by omega_using [hoL, h8])]
   exact hcur
 
 /-- After the loads: the copy's source, destination and count. -/
@@ -202,7 +202,7 @@ theorem ph_copyOut_ct : RelCT isa (Two PM)
         p.cur + 8 * p.wx ≤ ofs p.op (off p.B (p.o + slot p.wx Public.aY + 8 * j) + BitVec.ofNat 64 b) := fun j hj b hb =>
       hsep _ (by rw [ofs_off p.B (d := p.o + slot p.wx Public.aY + 8 * j) (i := b) (by omega_arith)]; omega_arith)
     refine WP.mono (maskCopy_ok (S := p.B) (D := p.op) (eS := p.o + slot p.wx Public.aY) (eD := p.cur) (w := p.wx)
-      h16 h17 h12 (by omega) (by omega_arith) hcb (fun j hj => hc.scr.ld (by omega_arith)) hwr hsepC)
+      h16 h17 h12 (by omega_using [hwx2]) (by omega_arith) hcb (fun j hj => hc.scr.ld (by omega_arith)) hwr hsepC)
       fun t ⟨_, ho, _, _, k⟩ => ⟨(k.gpr .x0 (by decide)).trans hc.x0, ?_, by rw [k.rd, k.wr]; exact hc.ld' (by decide)⟩
     have h8 := hdr_lt_slot p.wx 8 (show sLink < 32 by decide)
     rw [word_of_pre ho hsep (by omega_arith) hn]
@@ -356,20 +356,20 @@ theorem outN_ct : RelCT isa (Two OF) (seqs outN) fun _ _ => True := by
     have hsN := slot_le (w := p.w) (show Public.aN < 8 by decide)
     have h17' : s.gpr .x17 = off p.op 0 := by rw [h17]; simp [off]
     have hsep0 : ∀ x, ofs p.B x < p.Z → ofs p.op x < 0 ∨ 0 + 8 * p.w ≤ ofs p.op x := fun x hx =>
-      Or.inr (by have := hsep x hx; omega)
+      Or.inr (by have := hsep x hx; omega_using [this])
     have hsC : ∀ j < p.w, ∀ b < 8, ofs p.op (off p.B (slot p.w Public.aN + 8 * j) + BitVec.ofNat 64 b) < 0 ∨
         0 + 8 * p.w ≤ ofs p.op (off p.B (slot p.w Public.aN + 8 * j) + BitVec.ofNat 64 b) := fun j hj b hb => by
       apply hsep0
       rw [ofs_off p.B (d := slot p.w Public.aN + 8 * j) (i := b) (by omega_arith)]
       omega_arith
     refine WP.mono (maskCopy_ok (S := p.B) (D := p.op) (eS := slot p.w Public.aN) (eD := 0) (w := p.w)
-      h16 h17' h12 (by omega) (by omega_arith) (by omega_arith) (fun j hj => hg.scr.ld (by omega_arith))
-      (fun i hi => by rw [Nat.zero_add]; exact hwr i (by omega)) hsC) fun t ⟨_, ho, _, ht17, k⟩ => ?_
+      h16 h17' h12 (by omega_using [hw]) (by omega_arith) (by omega_arith) (fun j hj => hg.scr.ld (by omega_arith))
+      (fun i hi => by rw [Nat.zero_add]; exact hwr i (by omega_using [hi])) hsC) fun t ⟨_, ho, _, ht17, k⟩ => ?_
     have hh : ∀ i < 32, word t.mem p.B (8 * i) = word s.mem p.B (8 * i) := fun i hi =>
-      word_of_pre ho hsep0 (by have := hdr_lt_slot p.w 8 hi; omega) hn
+      word_of_pre ho hsep0 (by have := hdr_lt_slot p.w 8 hi; omega_using [hZ, this]) hn
     exact ⟨⟨minv, hg.scr.congr k.wr, (k.gpr .x0 (by decide)).trans hg.x0,
       ⟨(hh _ (by decide)).trans hg.hdr.hw, (hh _ (by decide)).trans hg.hdr.hminv,
-        fun j hj => (hh _ (by unfold sArr; omega)).trans (hg.hdr.harr j hj)⟩⟩, hZ, hw, hw',
+        fun j hj => (hh _ (by unfold sArr; omega_using [hj])).trans (hg.hdr.harr j hj)⟩⟩, hZ, hw, hw',
       by rw [k.gpr .x12 (by decide), h12], by rw [ht17, Nat.zero_add], by rw [k.wr]; exact hwr, hsep⟩
   refine RelCT.seq (two_piece (Ψ := fun p t => t.gpr .x12 = BitVec.ofNat 64 p.w ∧
       t.gpr .x16 = off p.B (slot p.w Public.aR2) ∧ t.gpr .x17 = off p.op (8 * p.w) ∧ (∃ minv, Good t p.B p.Z p.w minv) ∧
@@ -391,16 +391,16 @@ theorem outN_ct : RelCT isa (Two OF) (seqs outN) fun _ _ => True := by
   rintro p s ⟨h12, h16, h17, ⟨minv, hg⟩, hZ, hw, hw', hwr, hsep⟩
   have hsR := slot_le (w := p.w) (show Public.aR2 < 8 by decide)
   exact WP.mono (maskCopy_ok (S := p.B) (D := p.op) (eS := slot p.w Public.aR2) (eD := 8 * p.w) (w := p.w)
-    h16 h17 h12 (by omega) (by omega_arith) (by have := hg.scr.nowrap; omega_arith)
+    h16 h17 h12 (by omega_using [hw]) (by omega_arith) (by have := hg.scr.nowrap; omega_arith)
     (fun j hj => hg.scr.ld (by omega_arith))
-    (fun i hi => by rw [show 8 * p.w + 8 * i = 8 * (p.w + i) by omega]; exact hwr _ (by omega))
+    (fun i hi => by rw [show 8 * p.w + 8 * i = 8 * (p.w + i) by omega_using []]; exact hwr _ (by omega_using [hi]))
     (fun j hj b hb => Or.inr (by
       have hb' : ofs p.B (off p.B (slot p.w Public.aR2 + 8 * j) + BitVec.ofNat 64 b) < p.Z := by
         have := hg.scr.nowrap
         rw [ofs_off p.B (d := slot p.w Public.aR2 + 8 * j) (i := b) (by omega_arith)]
         omega_arith
       have := hsep _ hb'
-      omega))) fun t ⟨_, _, _, _, k⟩ => (k.gpr .x0 (by decide)).trans hg.x0
+      omega_using [this]))) fun t ⟨_, _, _, _, k⟩ => (k.gpr .x0 (by decide)).trans hg.x0
 
 /-! ## The primes -/
 
@@ -442,10 +442,10 @@ theorem cursor_ok {q : PPub} {t : State} (h : PStage R3 q t) :
   have hwr : ∀ i < q.L, InRegions t.wr (off q.m.op (8 * i)) 8 := fun i hi => by rw [hr.keep.wr]; exact hwrσ i hi
   have hz : offQ q.m.w q.m.pl + slot (wsWords q.m.ql) 8 + wsTab (wsWords q.m.ql) ≤ q.m.Z := hz
   have hwk : q.m.w = (q.m.k + 7) / 8 := rfl
-  have hw8 : 8 ≤ q.m.w := by omega
-  have hw24 : q.m.w < 2 ^ 24 := by omega
-  have hpw : wsWords q.m.pl ≤ q.m.w := wsWords_le (by omega) (by omega)
-  have hqw : wsWords q.m.ql ≤ q.m.w := wsWords_le (by omega) (by omega)
+  have hw8 : 8 ≤ q.m.w := by omega_using [hk1, hwk]
+  have hw24 : q.m.w < 2 ^ 24 := by omega_using [hk2, hwk]
+  have hpw : wsWords q.m.pl ≤ q.m.w := wsWords_le (by omega_using [hpl2, hwk]) (by omega_using [hw8])
+  have hqw : wsWords q.m.ql ≤ q.m.w := wsWords_le (by omega_using [hql2, hwk]) (by omega_using [hw8])
   -- The primes are more than 1 under the mask.
   obtain ⟨hNo, hN1, -⟩ := valid_facts hv hk1
   have hN256 : 256 ^ (q.m.k - 1) ≤ q.m.N := by
@@ -458,46 +458,46 @@ theorem cursor_ok {q : PPub} {t : State} (h : PStage R3 q t) :
     factor_gt_one (by rw [Nat.mul_comm]; exact hpq h') hN256 (by have := os2ip_lt pb; rwa [hp.pbl] at this) hpl2
   generalize hM : q.m.mask xb pb qb qib = M at *
   have hsD : 8 * Crt.sD + 8 ≤ slot q.m.w 8 := hdr_lt_slot q.m.w 8 (show Crt.sD < 32 by decide)
-  have hp2 : 2 ≤ wsWords q.m.pl := by unfold wsWords; omega
-  have hq2 : 2 ≤ wsWords q.m.ql := by unfold wsWords; omega
-  have hZ8 : slot q.m.w 8 ≤ q.m.Z := by unfold offQ at hz; omega
+  have hp2 : 2 ≤ wsWords q.m.pl := by unfold wsWords; omega_using []
+  have hq2 : 2 ≤ wsWords q.m.ql := by unfold wsWords; omega_using []
+  have hZ8 : slot q.m.w 8 ≤ q.m.Z := by unfold offQ at hz; omega_using [hz]
   have eQ : offQ q.m.w q.m.pl = offP q.m.w + slot (wsWords q.m.pl) 8 + wsTab (wsWords q.m.pl) := rfl
-  have hP8 : 256 ≤ slot (wsWords q.m.pl) 8 := by unfold slot hdrBytes; omega
+  have hP8 : 256 ≤ slot (wsWords q.m.pl) 8 := by unfold slot hdrBytes; omega_using []
   have hPZ : offP q.m.w + slot (wsWords q.m.pl) 8 + wsTab (wsWords q.m.pl) + slot (wsWords q.m.ql) 8 +
       wsTab (wsWords q.m.ql) ≤ q.m.Z := by rw [← eQ]; exact hz
   have hoP : offP q.m.w = slot q.m.w 8 := rfl
-  have hQ8 : 256 ≤ slot (wsWords q.m.ql) 8 := by unfold slot hdrBytes; omega
-  have hQlo : slot q.m.w 8 ≤ offQ q.m.w q.m.pl := by omega
+  have hQ8 : 256 ≤ slot (wsWords q.m.ql) 8 := by unfold slot hdrBytes; omega_using []
+  have hQlo : slot q.m.w 8 ≤ offQ q.m.w q.m.pl := by omega_using [eQ, hoP]
   refine WP.mono (WP.keep [.x4, .x17] (Q := fun u =>
       u.mem = t.mem.writeW (off q.m.B (8 * Crt.sD)) (off q.m.op (16 * q.m.w)))
     (by brun [setCursor, hg.x0, hdr_enc (show Public.sOut < 32 by decide), hdr_enc (show sW < 32 by decide),
       hdr_enc (show Crt.sD < 32 by decide), hg.ld hZ8 (show Public.sOut < 32 by decide),
-      hg.ld hZ8 (show sW < 32 by decide), hs.st (d := 8 * Crt.sD) (by omega), hO, hg.hdr.hw,
-      shl_ofNat (show q.m.w * 2 ^ 4 < 2 ^ 64 by omega), show q.m.w * 2 ^ 4 = 16 * q.m.w by omega, off])
+      hg.ld hZ8 (show sW < 32 by decide), hs.st (d := 8 * Crt.sD) (by omega_using [hsD, hZ8]), hO, hg.hdr.hw,
+      shl_ofNat (show q.m.w * 2 ^ 4 < 2 ^ 64 by omega_using [hw24]), show q.m.w * 2 ^ 4 = 16 * q.m.w by omega_using [], off])
     (by decide) (by decide) (by decide +kernel)) fun t₁ ⟨hm₁, k₁⟩ => ?_
   have oT₁ : Outside q.m.B (8 * Crt.sD) 8 t.mem t₁.mem := by
-    rw [hm₁]; exact writeW_outside _ _ _ (by unfold Crt.sD sFn; omega)
+    rw [hm₁]; exact writeW_outside _ _ _ (by unfold Crt.sD sFn; omega_using [])
   have hw₁ : ∀ d, 8 * Crt.sD + 8 ≤ d → d + 8 ≤ 2 ^ 64 → word t₁.mem q.m.B d = word t.mem q.m.B d :=
     fun d hd hd' => oT₁.word (Or.inr hd) hd'
   have hg₁ : Good t₁ q.m.B q.m.Z q.m.w minv := ⟨hs.congr k₁.wr, (k₁.gpr .x0 (by decide)).trans hg.x0, by
     rw [hm₁]; exact Hdr.store hg.hdr (by decide) (by decide) _⟩
   have hhd : ∀ i < 31, word t₁.mem q.m.B (8 * i) = word t.mem q.m.B (8 * i) := fun i hi => by
-    rw [hm₁, hdrStore_hdr _ _ _ (by decide) (by omega) (by unfold Crt.sD sFn; omega)]
+    rw [hm₁, hdrStore_hdr _ _ _ (by decide) (by omega_using [hi]) (by unfold Crt.sD sFn; omega_using [hi])]
   have hN₁ : NVals t₁ q.m.B q.m.w minv q.m.N := nvals_of_words hr.nv fun d hd hd' =>
-    hw₁ _ (by unfold Crt.sD sFn; omega) (by omega)
+    hw₁ _ (by unfold Crt.sD sFn; omega_using [hd']) (by omega_arith)
   dsimp only [PPub.pP, PhRel]
-  refine ⟨⟨minv, mp, if M then Spec.Rsa.os2ip pb else 3, M, hg₁, by omega, by rw [← eQ]; omega, hp2, by omega,
+  refine ⟨⟨minv, mp, if M then Spec.Rsa.os2ip pb else 3, M, hg₁, by omega_using [hoP], by rw [← eQ]; omega_using [hz], hp2, by omega_using [hw24, hpw],
     by decide, (hhd _ (by decide)).trans hr.wsP,
     hr.pws.of_words fun i hi => by rw [word_off, word_off, hw₁ _ (by omega_arith) (by omega_arith)],
     xvals_of_words hr.pxv fun d hd hd' => hw₁ _ (by omega_arith) (by omega_arith), if3_gt hP1,
-    (hhd _ (by decide)).trans hr.msk, by rw [hm₁, word_writeW_self], by omega,
-    fun i hi => by rw [k₁.wr, show 16 * q.m.w + 8 * i = 8 * (2 * q.m.w + i) by omega]; exact hwr _ (by omega),
-    fun x hx => Or.inr (by have := hsep x hx; omega), hpw, hw24, fun hm => by
+    (hhd _ (by decide)).trans hr.msk, by rw [hm₁, word_writeW_self], by omega_using [hw24, hpw],
+    fun i hi => by rw [k₁.wr, show 16 * q.m.w + 8 * i = 8 * (2 * q.m.w + i) by omega_using []]; exact hwr _ (by omega_using [hLe, hi]),
+    fun x hx => Or.inr (by have := hsep x hx; omega_using [hL, hLe, hk1, hk2, hpl2, hql2, hwk, hw8, hw24, hpw, hqw, hp2, hq2, this]), hpw, hw24, fun hm => by
       simp only [hm, ite_true]
       exact ⟨odd_of_dvd hNo ⟨_, (hpq hm).symm⟩, r2_of_dvd ⟨_, (hpq hm).symm⟩ hN₁.r2⟩⟩,
     ⟨minv, mq, if M then Spec.Rsa.os2ip qb else 3, q.m.N, M, hg₁, (hhd _ (by decide)).trans hr.wsQ,
-    hr.qws.of_words fun i hi => by rw [word_off, word_off, hw₁ _ (by omega) (by omega)],
-    xvals_of_words hr.qxv fun d hd hd' => hw₁ _ (by omega) (by omega), if3_gt hQ1,
+    hr.qws.of_words fun i hi => by rw [word_off, word_off, hw₁ _ (by omega_using [hsD, hQlo]) (by omega_using [hn, hz, hQ8, hi])],
+    xvals_of_words hr.qxv fun d hd hd' => hw₁ _ (by omega_using [hsD, hQlo]) (by omega_arith), if3_gt hQ1,
     (hhd _ (by decide)).trans hr.msk, hN₁, (hhd _ (by decide)).trans hO,
     fun i hi => by rw [k₁.wr]; exact hwr i hi,
     fun hm => by
@@ -513,47 +513,47 @@ theorem phP_ok (MM : Mont) {q : PPub} {t₁ : State} (h : PhRel q.pP t₁ ∧ QF
     hsep, hLe, hn⟩ := h
   obtain ⟨_, _, _, _, hgP, hloP, hhiP, hp2, hwp24, hslP, hslvP, hwsP, hxP, hXP, hmkP, hcurP, hcbP, hwrP, hsepP,
     hwwP, hw24P, hPrP⟩ := hP
-  have hq2 : 2 ≤ wsWords q.m.ql := by unfold wsWords; omega
+  have hq2 : 2 ≤ wsWords q.m.ql := by unfold wsWords; omega_using []
   have hsD : 8 * Crt.sD + 8 ≤ slot q.m.w 8 := hdr_lt_slot q.m.w 8 (show Crt.sD < 32 by decide)
   have eQ : offQ q.m.w q.m.pl = offP q.m.w + slot (wsWords q.m.pl) 8 + wsTab (wsWords q.m.pl) := rfl
   have hoP : offP q.m.w = slot q.m.w 8 := rfl
-  have hQ8 : 256 ≤ slot (wsWords q.m.ql) 8 := by unfold slot hdrBytes; omega
-  have hQlo : slot q.m.w 8 ≤ offQ q.m.w q.m.pl := by rw [eQ]; omega
-  have hP8 : 256 ≤ slot (wsWords q.m.pl) 8 := by unfold slot hdrBytes; omega
-  have hS8 : 256 ≤ slot q.m.w 8 := by unfold slot hdrBytes; omega
+  have hQ8 : 256 ≤ slot (wsWords q.m.ql) 8 := by unfold slot hdrBytes; omega_using []
+  have hQlo : slot q.m.w 8 ≤ offQ q.m.w q.m.pl := by rw [eQ]; omega_using [hoP]
+  have hP8 : 256 ≤ slot (wsWords q.m.pl) 8 := by unfold slot hdrBytes; omega_using []
+  have hS8 : 256 ≤ slot q.m.w 8 := by unfold slot hdrBytes; omega_using []
   refine WP.mono (phase_ok MM (sl := sWsP) hgP hloP hhiP hp2 hwp24 hwwP hw24P hslP hslvP hPrP hwsP hxP hXP hmkP hcurP
     hcbP hwrP hsepP)
     fun t₂ ⟨hg₂, _, _, _, hc₂, f₂, k₂⟩ => ?_
   have hsep₂ : ∀ x, ofs q.m.B x < q.m.Z → ofs q.m.op x < 16 * q.m.w ∨
-      16 * q.m.w + 8 * wsWords q.m.pl ≤ ofs q.m.op x := fun x hx => Or.inr (by have := hsep x hx; omega)
+      16 * q.m.w + 8 * wsWords q.m.pl ≤ ofs q.m.op x := fun x hx => Or.inr (by have := hsep x hx; omega_using [hLe, this])
   have hrs₂ : ∀ d, d + 8 ≤ q.m.Z → (d + 8 ≤ 8 * Crt.sD ∨ 8 * Crt.sD + 8 ≤ d) →
       (d + 8 ≤ offP q.m.w + 8 * 17 ∨ offQ q.m.w q.m.pl ≤ d) → word t₂.mem q.m.B d = word t₁.mem q.m.B d :=
     fun d hd h1 h2 => pfrm_word f₂ (fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
-      · simp only [xRange]; rw [eQ] at h2; omega
+      · simp only [xRange]; rw [eQ] at h2; omega_using [hP8, h2]
       · exact h1) hd hn hsep₂
-  have hZ8 : slot q.m.w 8 ≤ q.m.Z := by unfold offQ at hz; omega
+  have hZ8 : slot q.m.w 8 ≤ q.m.Z := by unfold offQ at hz; omega_using [hz]
   have hhd : ∀ i < 31, word t₂.mem q.m.B (8 * i) = word t₁.mem q.m.B (8 * i) := fun i hi =>
-    hrs₂ _ (by omega) (Or.inl (by unfold Crt.sD sFn; omega)) (Or.inl (by omega))
+    hrs₂ _ (by omega_using [hz, hQ8, hi]) (Or.inl (by unfold Crt.sD sFn; omega_using [hi])) (Or.inl (by omega_using [hoP, hS8, hi]))
   have hg₂' : Good t₂ q.m.B q.m.Z q.m.w minv :=
     ⟨hg₂.scr, hg₂.x0, ⟨(hhd _ (by decide)).trans hg₁.hdr.hw, (hhd _ (by decide)).trans hg₁.hdr.hminv,
-      fun j hj => (hhd _ (by unfold sArr; omega)).trans (hg₁.hdr.harr j hj)⟩⟩
+      fun j hj => (hhd _ (by unfold sArr; omega_using [hj])).trans (hg₁.hdr.harr j hj)⟩⟩
   have hN₂ : NVals t₂ q.m.B q.m.w minv N :=
-    nvals_of_words hN₁ fun d hd hd' => hrs₂ d (by omega) (Or.inr (by unfold Crt.sD sFn; omega)) (Or.inl (by omega))
+    nvals_of_words hN₁ fun d hd hd' => hrs₂ d (by omega_using [hZ8, hd]) (Or.inr (by unfold Crt.sD sFn; omega_using [hd'])) (Or.inl (by omega_using [hoP, hd]))
   dsimp only [PPub.pQ, PPub.oP, PhRel, OF]
-  refine ⟨⟨minv, mq, X, M, hg₂', hQlo, hz, hq2, by omega, by decide, (hhd _ (by decide)).trans hslQ,
-    hwsQ.of_words fun i hi => by rw [word_off, word_off, hrs₂ _ (by omega) (Or.inr (by omega)) (Or.inr (by omega))],
-    xvals_of_words hxQ fun d hd hd' => hrs₂ _ (by omega) (Or.inr (by omega)) (Or.inr (by omega)), hX1,
-    (hhd _ (by decide)).trans hmk₁, hc₂, by omega,
+  refine ⟨⟨minv, mq, X, M, hg₂', hQlo, hz, hq2, by omega_using [hw24, hqw], by decide, (hhd _ (by decide)).trans hslQ,
+    hwsQ.of_words fun i hi => by rw [word_off, word_off, hrs₂ _ (by omega_using [hz, hQ8, hi]) (Or.inr (by omega_using [hsD, hQlo])) (Or.inr (by omega_using []))],
+    xvals_of_words hxQ fun d hd hd' => hrs₂ _ (by omega_using [hz, hd]) (Or.inr (by omega_using [hsD, hQlo])) (Or.inr (by omega_using [])), hX1,
+    (hhd _ (by decide)).trans hmk₁, hc₂, by omega_using [hw24, hpw, hqw],
     fun i hi => by
-      rw [k₂.wr, show 16 * q.m.w + 8 * wsWords q.m.pl + 8 * i = 8 * (2 * q.m.w + wsWords q.m.pl + i) by omega]
-      exact hwr₁ _ (by omega),
-    fun x hx => Or.inr (by have := hsep x hx; omega), hqw, hw24,
+      rw [k₂.wr, show 16 * q.m.w + 8 * wsWords q.m.pl + 8 * i = 8 * (2 * q.m.w + wsWords q.m.pl + i) by omega_using []]
+      exact hwr₁ _ (by omega_using [hLe, hi]),
+    fun x hx => Or.inr (by have := hsep x hx; omega_using [hLe, this]), hqw, hw24,
     fun hm => ⟨(hQd hm).1, r2_of_dvd (hQd hm).2 hN₂.r2⟩⟩,
-    ⟨minv, N, M, hg₂', hZ8, by omega, by omega, hN₂,
-      (hhd _ (by decide)).trans hmk₁, (hhd _ (by decide)).trans hO₁, fun i hi => by rw [k₂.wr]; exact hwr₁ i (by omega),
-      fun x hx => by have := hsep x hx; omega⟩⟩
+    ⟨minv, N, M, hg₂', hZ8, by omega_using [hw8], by omega_using [hw24], hN₂,
+      (hhd _ (by decide)).trans hmk₁, (hhd _ (by decide)).trans hO₁, fun i hi => by rw [k₂.wr]; exact hwr₁ i (by omega_using [hLe, hi]),
+      fun x hx => by have := hsep x hx; omega_using [hLe, this]⟩⟩
 
 /-- `q`'s phase keeps what `outN` needs. -/
 theorem phQ_ok (MM : Mont) {q : PPub} {t₂ : State} (h : PhRel q.pQ t₂ ∧ OF q.oP t₂) :
@@ -562,8 +562,8 @@ theorem phQ_ok (MM : Mont) {q : PPub} {t₂ : State} (h : PhRel q.pQ t₂ ∧ OF
   obtain ⟨_, _, _, _, hgQ, hloQ, hhiQ, hq2, hwq24, hslQ, hslvQ, hwsQ, hxQ, hXQ, hmkQ, hcurQ, hcbQ, hwrQ, hsepQ,
     hwwQ, hw24Q, hPrQ⟩ := hP
   have hn := hg₂.scr.nowrap
-  have hS8 : 256 ≤ slot q.m.w 8 := by unfold slot hdrBytes; omega
-  have hQ8 : 256 ≤ slot (wsWords q.m.ql) 8 := by unfold slot hdrBytes; omega
+  have hS8 : 256 ≤ slot q.m.w 8 := by unfold slot hdrBytes; omega_using []
+  have hQ8 : 256 ≤ slot (wsWords q.m.ql) 8 := by unfold slot hdrBytes; omega_using []
   have hlo : slot q.m.w 8 ≤ offQ q.m.w q.m.pl := hloQ
   have hZ : slot q.m.w 8 ≤ q.m.Z := hZ8
   refine WP.mono (phase_ok MM (sl := sWsQ) hgQ hloQ hhiQ hq2 hwq24 hwwQ hw24Q hslQ hslvQ hPrQ hwsQ hxQ hXQ hmkQ hcurQ
@@ -573,13 +573,13 @@ theorem phQ_ok (MM : Mont) {q : PPub} {t₂ : State} (h : PhRel q.pQ t₂ ∧ OF
       word t₃.mem q.m.B d = word t₂.mem q.m.B d := fun d hd h1 => pfrm_word f₃ (fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
-    · simp only [xRange]; omega
-    · exact h1) (show d + 8 ≤ q.m.Z by omega) hn hsepQ
+    · simp only [xRange]; omega_using [hlo, hd]
+    · exact h1) (show d + 8 ≤ q.m.Z by omega_using [hZ, hd]) hn hsepQ
   have hhd : ∀ i < 31, word t₃.mem q.m.B (8 * i) = word t₂.mem q.m.B (8 * i) := fun i hi =>
-    hrs _ (by omega) (Or.inl (by unfold Crt.sD sFn; omega))
+    hrs _ (by omega_using [hS8, hi]) (Or.inl (by unfold Crt.sD sFn; omega_using [hi]))
   exact ⟨minv, N, M, ⟨hg₃.scr, hg₃.x0, ⟨(hhd _ (by decide)).trans hg₂.hdr.hw, (hhd _ (by decide)).trans hg₂.hdr.hminv,
-      fun j hj => (hhd _ (by unfold sArr; omega)).trans (hg₂.hdr.harr j hj)⟩⟩, hZ8, hw2, hw28,
-    nvals_of_words hN₂ fun d hd hd' => hrs d hd (Or.inr (by unfold Crt.sD sFn; omega)),
+      fun j hj => (hhd _ (by unfold sArr; omega_using [hj])).trans (hg₂.hdr.harr j hj)⟩⟩, hZ8, hw2, hw28,
+    nvals_of_words hN₂ fun d hd hd' => hrs d hd (Or.inr (by unfold Crt.sD sFn; omega_using [hd'])),
     (hhd _ (by decide)).trans hmk₂, (hhd _ (by decide)).trans hO₂, fun i hi => by rw [k₃.wr]; exact hwr₂ i hi,
     hsep₂⟩
 
@@ -632,7 +632,7 @@ theorem e4_pstage {c : CPub} {t : State} (h : E4 c t) (hv : Spec.Rsa.modulusVali
   rw [hnb, hB, hZ, hk, hop, hnp, hpp, hqp, hpl, hql] at hcp
   refine ⟨t, _, _, _, _, _, _, by rw [e1, e2, e3, e4]; exact hcp, hv, rfl, fun i hi => ?_, ?_, fun x hx => ?_, ?_⟩
   · rw [hh.keep.wr, ← hop]; exact cx.hpw i (by rw [hL]; exact hi)
-  · rw [← hL]; have := cx.hpL; omega
+  · rw [← hL]; have := cx.hpL; omega_using [this]
   · rw [← hL, ← hop, Nat.mul_comm]; rw [← hB, ← hZ] at hx; exact cx.hps x hx
   · rw [← hL, cx.hpre]; simp only [ppW, ppWP, ppWQ, CrtPub.w, hk, hpl, hql]
 
@@ -681,7 +681,7 @@ theorem head_ct : RelCT isa (Two PPRel) VG.Impl.Rsa.AArch64.PrivPre.head (Two E4
       simp only [List.mem_singleton] at hr; subst hr; exact h8) (by taint_decide) fun c t ⟨s, hs, h8, k, hw⟩ => ?_
     have cx := ppCtx_of hs.1
     have hst : ∀ i < 32, InRegions t.wr (off c.q.m.B (8 * i)) 8 := fun i hi => by
-      rw [k.wr, ← hs.2.2.1]; exact cx.hs.st (by have := cx.hZ; omega)
+      rw [k.wr, ← hs.2.2.1]; exact cx.hs.st (by have := cx.hZ; omega_using [hi, this])
     refine WP.mono (wp_and hw (WP.keep [.x9, .x10] (Q := fun u => u.gpr .x10 = t.gpr .x0) (by
       brun [entry1, entry, List.drop_succ_cons, List.drop_zero, Impl.Rsa.AArch64.Crt.stw, h8, hdr_enc (show Public.sOut < 32 by decide),
         hdr_enc (show Public.sN < 32 by decide), hdr_enc (show Public.sK < 32 by decide),

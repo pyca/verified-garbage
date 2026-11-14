@@ -81,10 +81,10 @@ theorem restore_ok {s : State} (hc : Ctx b s) {g : Reg → BitVec 32} (hs : Save
       Rest [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11] s s' ∧ s'.mem = s.mem)
     (fun n s' hn ⟨hl, hr, hm⟩ => ?_) 8 (Nat.le_refl _) s
     ⟨fun _ h => absurd h (Nat.not_lt_zero _), Rest.refl _ _, rfl⟩) fun s' h => h
-  refine ldr0_ok (hc.of_rest hr (by decide)) (d := 4 * n) (by omega) fun s1 u1 =>
+  refine ldr0_ok (hc.of_rest hr (by decide)) (d := 4 * n) (by omega_using [hn]) fun s1 u1 =>
     WP.block_nil ⟨fun i hi => ?_, hr.trans (u1.rest (hsr n hn)), by rw [u1.mem, hm]⟩
   rcases Nat.lt_succ_iff_lt_or_eq.mp hi with h' | rfl
-  · rw [u1.other _ (fun e => absurd (hinj _ (by omega) _ hn e) (by omega))]; exact hl i h'
+  · rw [u1.other _ (fun e => absurd (hinj _ (by omega_using [hn, hi]) _ hn e) (by omega_using [h']))]; exact hl i h'
   · rw [u1.gpr, hm, hs i hn]
 
 /-- The saved registers stay where no code writes. -/
@@ -95,7 +95,7 @@ theorem Saved.frame {g : Reg → BitVec 32} {m m' : Mem} (hs : Saved (State.addr
 
 theorem FA_saved (i : Nat) (hi : i < 8) :
     Region.Disjoint ⟨State.addr b + BitVec.ofNat 64 (4 * i), 4⟩ (FA ACC b) :=
-  Offset.disjoint _ (.inl (by omega)) (by omega) (by rw [ACC_eq]; omega)
+  Offset.disjoint _ (.inl (by omega_using [hi])) (by omega_using [hi]) (by rw [ACC_eq]; omega_using [])
 
 /-- The slots stay through a write of `BITS`. -/
 theorem SlotsOk.bits {m m' : Mem} {qs : List Nat} {v : Nat → Fe} (hS : SlotsOk m (State.addr b) qs v)
@@ -106,7 +106,7 @@ theorem SlotsOk.bits {m m' : Mem} {qs : List Nat} {v : Nat → Fe} (hS : SlotsOk
   simp only [decide_eq_true_eq] at h
   have hB : BITS = 1280 := rfl
   have e := limb_frame (o := q) hf fun r hr k hk => by
-    rw [List.mem_singleton.mp hr]; exact Offset.disjoint _ (.inl (by omega)) (by omega) (by omega)
+    rw [List.mem_singleton.mp hr]; exact Offset.disjoint _ (.inl (by omega_using [h, hk])) (by omega_using [h, hB, hk]) (by omega_using [hB])
   exact ⟨fun k hk => by rw [e k hk]; exact (hS q hq').1 k hk, by rw [FS, V, val16_congr e]; exact (hS q hq').2⟩
 
 end
@@ -116,7 +116,7 @@ theorem bytesAt_frame {m m' : Mem} {rs : List Region} (hf : Frame rs m m') {p : 
   simp only [bytesAt]
   refine List.map_congr_left fun i hi => ?_
   have hi := List.mem_range.mp hi
-  exact hf _ fun r hr hc => hd r hr _ (Offset.contains_base _ (by omega) (by omega)) hc
+  exact hf _ fun r hr hc => hd r hr _ (Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi])) hc
 
 /-- `x25519With M`, for a multiplication `M`, writes `X25519(k, u)` to `out`. -/
 theorem x25519_correct {M : Nat → Nat → Nat → Prog isa} (hM : MulOk ACC M) {s : State} (hp : XPre s) :
@@ -148,12 +148,12 @@ theorem x25519_correct {M : Nat → Nat → Nat → Prog isa} (hM : MulOk ACC M)
   -- The saved registers.
   have hsv7 : Saved (State.addr (s.gpr .r3)) s.gpr s7.mem := by
     refine ((hsv1.frame hf2 fun r hr i hi => by
-      rw [List.mem_singleton.mp hr]; exact Offset.disjoint _ (.inl (by omega)) (by omega) (by decide)).frame
+      rw [List.mem_singleton.mp hr]; exact Offset.disjoint _ (.inl (by omega_using [hB, hi])) (by omega_using [hi]) (by decide)).frame
       hst6.frame fun r hr i hi => by rw [List.mem_singleton.mp hr]; exact FA_saved i hi).frame hf7 fun r hr i hi => ?_
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
     · exact FA_saved i hi
-    · exact (hp.out_ws.symm.sub_left (Offset.sub_base _ (by omega))).symm.symm
+    · exact (hp.out_ws.symm.sub_left (Offset.sub_base _ (by omega_using [hi]))).symm.symm
   refine WP.mono (restore_ok hc7 hsv7) fun s8 ⟨hg8, hr8, hm8⟩ => ⟨⟨fun r hr => ?_, ?_⟩, ?_⟩
   · simp only [preserved, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl

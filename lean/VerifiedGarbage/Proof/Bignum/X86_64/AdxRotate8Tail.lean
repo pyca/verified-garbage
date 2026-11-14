@@ -39,7 +39,7 @@ theorem tailAdd_ok {s : State} {B : Addr} {Z eU eO : Nat}
   unfold AdxRotate8.tailAdd
   simp only [List.append_assoc]
   rw [WP.block_append_iff]
-  refine WP.mono (carryIn_ok hs hc (by omega) huZ hb) fun a ⟨ca,oa,ma,ka⟩ => ?_
+  refine WP.mono (carryIn_ok hs hc (by omega_using [he]) huZ hb) fun a ⟨ca,oa,ma,ka⟩ => ?_
   rw [show ([Instr.mov32 .rax (.imm 0), .mov .rdx (.mem AdxRotate8.tileCarry)] ++ _) =
     [Instr.mov32 .rax (.imm 0)] ++ ([.mov .rdx (.mem AdxRotate8.tileCarry)] ++ _) from rfl,
     WP.block_append_iff]
@@ -47,7 +47,7 @@ theorem tailAdd_ok {s : State} {B : Addr} {Z eU eO : Nat}
   rw [WP.block_append_iff]
   have kab := ka.trans kb
   have hm := readSrc_word (hs.congr kab.2.2.2) (ea_tileCarry ((kab.gpr (by decide)).trans hc) he)
-    (show eU - 16 + 8 ≤ Z by omega)
+    (show eU - 16 + 8 ≤ Z by omega_using [he, huZ])
   refine WP.mono (movMem_ok b (dst := .rdx) hm) fun c ⟨dc,cc,oc,kc⟩ => ?_
   have kac := kab.trans kc
   rw [WP.block_append_iff]
@@ -56,7 +56,7 @@ theorem tailAdd_ok {s : State} {B : Addr} {Z eU eO : Nat}
     intro k hk t kt
     rw [kt.readMem (by simp [AdxDualAdd.regs, AdxRotate8.at_]) (by intro r h; nomatch h),
       kac.readMem (by simp [AdxRotate8.at_]) (by intro r h; nomatch h)]
-    exact readSrc_word hs (ea_at ho (8*k)) (by omega)
+    exact readSrc_word hs (ea_at ho (8*k)) (by omega_using [hoZ, hk])
   have dc' : c.gpr .rdx = word s.mem B (eU - 16) := by rw [dc, kab.2.1]
   have zc : c.gpr .rax = 0 := (kc.gpr (by decide)).trans zb
   have srcB : ∀ k < 8, ∀ t, Keeps AdxDualAdd.regs c t →
@@ -77,13 +77,13 @@ theorem tailAdd_ok {s : State} {B : Addr} {Z eU eO : Nat}
     show (0 : BitVec 64).toNat = 0 from rfl, Nat.mul_zero, Nat.add_zero,
     Bool.toNat_false] at ed
   have bit : (decide ((word s.mem B (eU - 8)).toNat = 1)).toNat = (word s.mem B (eU - 8)).toNat := by
-    rcases (show (word s.mem B (eU - 8)).toNat = 0 ∨ (word s.mem B (eU - 8)).toNat = 1 by omega) with h | h <;>
+    rcases (show (word s.mem B (eU - 8)).toNat = 0 ∨ (word s.mem B (eU - 8)).toNat = 1 by omega_using [hb]) with h | h <;>
       rw [h] <;> rfl
   rw [bit] at ed
   refine ⟨?_, ?_, kt.2.1.trans (kd.2.1.trans kac.2.1),
     (kac.trans (kd.trans kt)).mono (by simp [AdxDualAdd.regs])⟩
   · rw [cols_keep kt.keep (by decide), et]; omega_using [ed]
-  · rw [et]; have b1 := Bool.toNat_le cd; have b2 := Bool.toNat_le od; omega
+  · rw [et]; have b1 := Bool.toNat_le cd; have b2 := Bool.toNat_le od; omega_using [b1, b2]
 
 theorem tailCore_ok {s : State} {B : Addr} {Z eU eO : Nat}
     (hs : Scr s B Z) (hc : s.gpr .rcx = off B eU) (ho : s.gpr .rsi = off B eO)

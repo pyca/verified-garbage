@@ -71,21 +71,21 @@ theorem row_piece [CeOK L] [BaseOK L] [EntOK L] [RowOK L] (hS : SOK L Y) {I : In
   refine entries_piece hS hρ i hi ?_ |>.mono (fun _ _ _ h => ⟨h, fun h => absurd h (Nat.lt_irrefl _)⟩)
     fun _ _ _ h => h
   refine Piece.seq (B := S7 L Y I i) (inPlaceC_piece NttInvP.verified nttInv_nosp nttInv_stack Y.sc L.eU Y.sc
-    L.eNS o₁ hS.le (by sc_taint) (fun _ _ _ h => ⟨h.ctx, (h.u (by omega)).1⟩)
+    L.eNS o₁ hS.le (by sc_taint) (fun _ _ _ h => ⟨h.ctx, (h.u (by omega_using [hi])).1⟩)
     fun s₀ s s' hp h h' fr post => ?_) ?_
-  · have k := h.toB.keep hp hS.le r₁ (by omega) fr h'
+  · have k := h.toB.keep hp hS.le r₁ (by omega_using [hi]) fr h'
     have ea : accE L Y s₀ s' = accE L Y s₀ s := keepW hp hS.le r₂ fr
     refine ⟨k, post.1, fun e₁ => ?_⟩
-    rw [post.2, (h.u (by omega)).2 (ea ▸ e₁)]
+    rw [post.2, (h.u (by omega_using [hi])).2 (ea ▸ e₁)]
   refine Piece.seq (cbd_piece hS (L.p.k + i) L.eE (Q := S7 L Y I i) (fun _ _ h => h.toBase)
     (fun s₀ s s' hp h c fr => ?_) o₂) ?_
-  · have k := h.toB.keep hp k88 r₃ (by omega) fr c
+  · have k := h.toB.keep hp k88 r₃ (by omega_using [hi]) fr c
     have ea : accE L Y s₀ s' = accE L Y s₀ s := keepW hp k88 r₅ fr
     refine ⟨k, keepRed hp k88 r₄ fr h.u.1, fun e₁ => ?_⟩
     rw [polyAt_congr (Top.keep hp k88 r₄ fr)]; exact h.u.2 (ea ▸ e₁)
   refine Piece.seq (B := S8 L Y I i) (accC_piece add_verified add_nosp add_stack Y.sc L.eU Y.sc L.eE o₃ hS.le
     (by sc_taint) (fun _ _ _ h => ⟨h.1.ctx, h.1.u.1, h.2.1⟩) fun s₀ s s' hp h h' fr post => ?_) ?_
-  · have k := h.1.toB.keep hp hS.le r₆ (by omega) fr h'
+  · have k := h.1.toB.keep hp hS.le r₆ (by omega_using [hi]) fr h'
     have ea : accE L Y s₀ s' = accE L Y s₀ s := keepW hp hS.le r₇ fr
     refine ⟨k, post.1, fun e₁ => ?_⟩
     rw [post.2, h.1.u.2 (ea ▸ e₁), h.2.2]
@@ -160,7 +160,7 @@ theorem ekT_eq [EntOK L] [VOK L] (hS : SOK L Y) {I : Inp} {s₀ s : State} (hp :
     decode12 (bytesAt s.mem (Buf.addr s₀ ⟨Y.sc, L.eEK + 384 * j, 384⟩) 384) = ekT (I.ek s₀) j := by
   have hok := ((VOK.v hS).2.2.2.2.2.2.2.1 j hj)
   simp only [Bool.and_eq_true] at hok
-  rw [ekT, ← h.ek, bytesAt_slice _ _ (show 384 * j + 384 ≤ L.p.ekLen by unfold Params.ekLen; omega),
+  rw [ekT, ← h.ek, bytesAt_slice _ _ (show 384 * j + 384 ≤ L.p.ekLen by unfold Params.ekLen; omega_using [hj]),
     Buf.addr_eq hp (b := bEK L Y.sc) (EntOK.seed hS).2.1, Buf.addr_eq hp (b := ⟨Y.sc, L.eEK + 384 * j, 384⟩) hok.1.1,
     BitVec.add_assoc, ← BitVec.ofNat_add]
 
@@ -191,10 +191,10 @@ theorem term_piece [EntOK L] [VOK L] (hS : SOK L Y) {I : Inp} (j : Nat) (hj : j 
   obtain ⟨-, -, -, v₄, v₅, v₆, -, -, -, v₁₀, v₁₁⟩ := VOK.v hS
   refine dec_piece hS (j + 1) hj (.seq (B := V2 L Y I (j + 1))
     (mulC_piece (Y := Y) Y.sc L.eP Y.sc L.eT Y.sc (1024 * (j + 1)) Y.sc L.eNS (v₁₀ (j + 1) hj) hS.le
-      (by sc_taint) (fun _ _ _ h => ⟨h.ctx, h.t.1, (h.y (j + 1) (by omega)).1⟩)
+      (by sc_taint) (fun _ _ _ h => ⟨h.ctx, h.t.1, (h.y (j + 1) (by omega_using [hj])).1⟩)
       fun s₀ s s' hp h h' fr post => ?_) ?_)
   · refine ⟨h.keep hp hS.le v₄ v₆ fr h', ?_⟩
-    rw [h.t.2, (h.y (j + 1) (by omega)).2] at post; exact post
+    rw [h.t.2, (h.y (j + 1) (by omega_using [hj])).2] at post; exact post
   refine accC_piece add_verified add_nosp add_stack Y.sc L.eU Y.sc L.eP v₁₁ hS.le (by sc_taint)
     (fun _ _ _ h => ⟨h.ctx, (h.v (Nat.succ_pos _)).1, h.p.1⟩) fun s₀ s s' hp h h' fr post => ?_
   refine ⟨h.toB.keep hp hS.le v₅ (Nat.le_refl _) fr h', fun _ => ⟨post.1, ?_⟩⟩

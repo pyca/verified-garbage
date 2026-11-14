@@ -54,7 +54,7 @@ theorem maskPair_pre {g : Nat} (hg : g=2^17 ∨ g=2^19) {s1 : State}
   sig_pre [expandMaskPairContract,expandMaskPairSig,AArch64.abi,VG.AArch64.argRegs]
   rw [Args.r0 h1,Args.r1 h1,Args.r2 h1,Args.r3 h1,Args.r4 h1,Args.sp h1]
   simp only [Arg.val]
-  rw [imm32 (by omega)]
+  rw [imm32 (by omega_using [hg])]
   cpre L
   exact hg
 end
@@ -80,7 +80,7 @@ theorem maskPairAt_ok {S : Nat} (hS : S<2^64) {nm : String} {cd : Prog isa}
   sig_post [expandMaskPairContract,expandMaskPairSig,AArch64.abi,VG.AArch64.argRegs] at hq
   rw [Args.r0 h1,Args.r1 h1,Args.r2 h1,Args.r3 h1,Args.mem h1] at hq
   simp only [Arg.val] at hq
-  rw [imm32 (by omega)] at hq
+  rw [imm32 (by omega_using [hg])] at hq
   exact hq
 
 /-- Public pointers suffice for the paired call; neither seed is declassified. -/

@@ -19,10 +19,10 @@ theorem storePair_ok {s : State} {base : Addr} {size offset : Nat}
     WP isa (.block [.store (sc offset) .eax, .store (sc (offset + 4)) .edx]) s fun t =>
       t.mem = s.mem.writeW (off base offset) (s.gpr .edx ++ s.gpr .eax) ∧
       Outside base offset 8 s.mem t.mem ∧ Keeps [] s t := by
-  refine wp_storeS (scratch.ea (by omega)) (scratch.write (by omega)) fun a A => ?_
+  refine wp_storeS (scratch.ea (by omega_using [fit])) (scratch.write (by omega_using [fit])) fun a A => ?_
   have keep := A.keeps []
   have Sa := scratch.of_keeps keep (by decide)
-  refine wp_storeS (Sa.ea (by omega)) (Sa.write (by omega)) fun t T => WP.block_nil ?_
+  refine wp_storeS (Sa.ea (by omega_using [fit])) (Sa.write (by omega_using [fit])) fun t T => WP.block_nil ?_
   have memory : t.mem = (s.mem.writeW (off base offset) (s.gpr .eax)).writeW
       (off base (offset + 4)) (s.gpr .edx) := by
     rw [T.mem, A.mem, keep.1 .edx (by decide)]
@@ -31,8 +31,8 @@ theorem storePair_ok {s : State} {base : Addr} {size offset : Nat}
     congr 1
     simp only [off, BitVec.ofNat_add, BitVec.add_assoc]
   · rw [memory]
-    exact ((writeW32_outside _ _ _ (by have := scratch.nowrap; omega)).mono (by omega) (by omega)).trans
-      ((writeW32_outside _ _ _ (by have := scratch.nowrap; omega)).mono (by omega) (by omega))
+    exact ((writeW32_outside _ _ _ (by have := scratch.nowrap; omega_using [fit, this])).mono (by omega_using []) (by omega_using [])).trans
+      ((writeW32_outside _ _ _ (by have := scratch.nowrap; omega_using [fit, this])).mono (by omega_using []) (by omega_using []))
 
 theorem literal_ok {s : State} {base : Addr} {size offset value : Nat}
     (scratch : Scr s base size) (fit : offset + 8 ≤ size) (zero : s.gpr .edx = 0#32) :

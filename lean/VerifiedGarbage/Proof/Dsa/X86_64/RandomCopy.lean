@@ -36,14 +36,14 @@ theorem random_copyLoop_ok {s : State} {src out : Addr} {n : Nat}
       Keep [.rax, .r10, .rdx, .r11] s t := by
   refine WP.mono (wp_upto (a := 0) (N := n) h1 (RandomCopyInv s src out n ·) ?_ (fun t h => h)
     ⟨Keep.refl _ _, by simpa using hsi, by simpa using hdx, by simpa using hcx,
-      fun i hi => absurd hi (by omega), fun x _ => rfl⟩)
+      fun i hi => absurd hi (by omega_using []), fun x _ => rfl⟩)
     fun t ht => ⟨ht.bytes, ht.frame, ht.keep⟩
   intro j _ hj t ht
   have hrd : InRegions (t.rd ++ t.wr) (src + BitVec.ofNat 64 j) 1 := by
     rw [ht.keep.2.1, ht.keep.2.2]; exact hr j hj
   have hwr : InRegions t.wr (out + BitVec.ofNat 64 j) 1 := by
     rw [ht.keep.2.2]; exact hw j hj
-  have hval := ht.frame (src + BitVec.ofNat 64 j) (fun i hi => hsep j hj i (by omega))
+  have hval := ht.frame (src + BitVec.ofNat 64 j) (fun i hi => hsep j hj i (by omega_using [hj, hi]))
   refine WP.mono (WP.keep [.rax, .r10, .rdx, .r11] (Q := fun u =>
     u.mem = t.mem.writeW (out + BitVec.ofNat 64 j) (s.mem (src + BitVec.ofNat 64 j)) ∧
     u.gpr .r10 = src + BitVec.ofNat 64 (j + 1) ∧ u.gpr .rdx = out + BitVec.ofNat 64 (j + 1) ∧
@@ -52,20 +52,20 @@ theorem random_copyLoop_ok {s : State} {src out : Addr} {n : Nat}
   · unfold VG.Impl.Dsa.X86_64.Random.copyByte
     xrun [State.ea, ht.r10, ht.rdx, ht.r11,
       show BitVec.ofInt 64 0 = 0#64 from rfl, BitVec.add_zero, hrd, hwr, hval,
-      ofNat64_pred (show 1 ≤ n - j by omega) (by omega), BitVec.add_assoc, ofNat_add_one,
-      ofNat64_beq_zero (show n - j - 1 < 2 ^ 64 by omega)]
-    refine ⟨?_, by rw [show n - j - 1 = n - (j + 1) by omega], decide_eq_decide.mpr (by omega)⟩
+      ofNat64_pred (show 1 ≤ n - j by omega_using [hj]) (by omega_using [h64]), BitVec.add_assoc, ofNat_add_one,
+      ofNat64_beq_zero (show n - j - 1 < 2 ^ 64 by omega_using [h64])]
+    refine ⟨?_, by rw [show n - j - 1 = n - (j + 1) by omega_using []], decide_eq_decide.mpr (by omega_using [hj])⟩
     rw [BitVec.setWidth_setWidth_of_le _ (by decide), BitVec.setWidth_eq]
   · refine ⟨huz, (ht.keep.trans hku).mono (by decide), husi, hudx, hucx, ?_, ?_⟩
     · intro i hi
       rw [hum, writeW8_apply]
       by_cases hij : i = j
       · subst i; simp
-      · rw [ite_eq_right_of_eq_false _ _ (eq_false (out_ne (by omega) (by omega) hij))]
-        exact ht.bytes i (by omega)
+      · rw [ite_eq_right_of_eq_false _ _ (eq_false (out_ne (by omega_using [h64, hj, hi]) (by omega_using [h64, hj]) hij))]
+        exact ht.bytes i (by omega_using [hi, hij])
     · intro x hx
-      rw [hum, writeW8_apply, ite_eq_right_of_eq_false _ _ (eq_false (hx j (by omega)))]
-      exact ht.frame x fun i hi => hx i (by omega)
+      rw [hum, writeW8_apply, ite_eq_right_of_eq_false _ _ (eq_false (hx j (by omega_using [])))]
+      exact ht.frame x fun i hi => hx i (by omega_using [hi])
 
 /-- The suffix copy also accepts an empty suffix without touching memory. -/
 theorem random_copyRest_ok {s : State} {src out : Addr} {n : Nat}
@@ -82,8 +82,8 @@ theorem random_copyRest_ok {s : State} {src out : Addr} {n : Nat}
   by_cases h0 : n = 0
   · refine WP.ite false ?_ (fun h => Bool.noConfusion h) (fun _ => WP.block_nil ?_)
     · simp only [eval, hz, h0, decide_true, Option.map_some, Bool.not_true]
-    · exact ⟨fun i hi => False.elim (by omega), fun _ _ => rfl, Keep.refl _ _⟩
-  · refine WP.ite true ?_ (fun _ => random_copyLoop_ok hp hd hn (by omega) hbound hr hw hsep)
+    · exact ⟨fun i hi => False.elim (by omega_using [h0, hi]), fun _ _ => rfl, Keep.refl _ _⟩
+  · refine WP.ite true ?_ (fun _ => random_copyLoop_ok hp hd hn (by omega_using [h0]) hbound hr hw hsep)
       (fun h => Bool.noConfusion h)
     simp only [eval, hz, h0, decide_false, Option.map_some, Bool.not_false]
 

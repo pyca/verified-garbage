@@ -34,30 +34,30 @@ theorem redcStep_ok {s t : State} {B : Addr} {Z eQ eN k j : Nat} {inv : Word}
   have hns := hs.nowrap
   obtain ⟨p, hp⟩ := word_flag (t.gpr .x10) hI.carry
   have hn' := (hI.frame.word (d := 8 * sArr Public.aN)
-    (by unfold sArr Public.aN; omega) (by unfold sArr Public.aN; omega)).trans hn
-  have hi' := (hI.frame.word (d := 8 * sMinv) (by unfold sMinv; omega)
-    (by unfold sMinv; omega)).trans hi
-  have hw' := (hI.frame.word (d := 8 * sW) (by unfold sW; omega)
-    (by unfold sW; omega)).trans hw
+    (by unfold sArr Public.aN; omega_using [hHdr]) (by unfold sArr Public.aN; omega_using [])).trans hn
+  have hi' := (hI.frame.word (d := 8 * sMinv) (by unfold sMinv; omega_using [hHdr])
+    (by unfold sMinv; omega_using [])).trans hi
+  have hw' := (hI.frame.word (d := 8 * sW) (by unfold sW; omega_using [hHdr])
+    (by unfold sW; omega_using [])).trans hw
   refine WP.mono (rowBody_ok (hs.congr hI.keep.wr)
     ((hI.keep.gpr .x0 (by decide)).trans h0) hI.ptr
-    ((hI.keep.gpr .x7 (by decide)).trans h7) hp (by omega) (by omega)
-    (by omega) hk hk' hn' hi' hw') fun u ⟨d, hd, hv, ho, hc, h8, h12, ku⟩ => ?_
-  refine ⟨⟨?_, h8.trans (congrArg (off B) (by omega)), hc,
-    hI.frame.trans (ho.mono (by omega) (by omega)), (hI.keep.trans ku).mono (by decide)⟩, h12⟩
+    ((hI.keep.gpr .x7 (by decide)).trans h7) hp (by omega_using [hHdr]) (by omega_using [hSize, hj])
+    (by omega_using [hNQ]) hk hk' hn' hi' hw') fun u ⟨d, hd, hv, ho, hc, h8, h12, ku⟩ => ?_
+  refine ⟨⟨?_, h8.trans (congrArg (off B) (by omega_using [])), hc,
+    hI.frame.trans (ho.mono (by omega_using []) (by omega_using [hj])), (hI.keep.trans ku).mono (by decide)⟩, h12⟩
   intro hInv
-  have hN0 := congrArg BitVec.toNat (hI.frame.word (d := eN) (by omega) (by omega))
+  have hN0 := congrArg BitVec.toNat (hI.frame.word (d := eN) (by omega_using [hNQ, hk]) (by omega_using [hSize, hNQ, hk, hns]))
   have hInvT : ((word t.mem B eN).toNat * inv.toNat + 1) % 2 ^ 64 = 0 :=
     (congrArg (fun n => (n * inv.toNat + 1) % 2 ^ 64) hN0).trans hInv
-  have hfull := extend_row_value (n := 2 * k - j) (by omega) (by omega) ho (hv hInvT)
-  have hN := hI.frame.wv (d := eN) (k := 8 * k) (by omega) (by omega)
+  have hfull := extend_row_value (n := 2 * k - j) (by omega_using [hj]) (by omega_using [hSize, hj, hns]) ho (hv hInvT)
+  have hN := hI.frame.wv (d := eN) (k := 8 * k) (by omega_using [hNQ]) (by omega_using [hSize, hNQ, hns])
   have hpN : (t.gpr .x10).toNat = p.toNat := by
     have h := congrArg BitVec.toNat hp
     have h' : (BitVec.ofNat 64 p.toNat).toNat = p.toNat := by cases p <;> rfl
     exact h.trans h'
   rewrite [hN, ← hpN,
-    show eQ + 64 * j + 64 = eQ + 64 * (j + 1) by omega,
-    show 2 * k - j - 1 = 2 * k - (j + 1) by omega] at hfull
+    show eQ + 64 * j + 64 = eQ + 64 * (j + 1) by omega_using [],
+    show 2 * k - j - 1 = 2 * k - (j + 1) by omega_using []] at hfull
   obtain ⟨q, hq, he⟩ := hI.value hInv
   refine ⟨q + 2 ^ (64 * (8 * j)) * d, ?_, ?_⟩
   · rewrite [pow_blocks_succ]
@@ -67,7 +67,7 @@ theorem redcStep_ok {s t : State} {B : Addr} {Z eQ eN k j : Nat} {inv : Word}
           2 ^ (64 * (8 * k)) * (u.gpr .x10).toNat) =
         (wv t.mem B (eQ + 64 * j) (8 * (2 * k - j)) +
           2 ^ (64 * (8 * k)) * (t.gpr .x10).toNat) + d * wv s.mem B eN (8 * k) :=
-      hfull.trans (by omega)
+      hfull.trans (by omega_using [])
     rewrite [pow_blocks_succ]
     exact cancel_step he hrow
 
@@ -87,8 +87,8 @@ theorem redcRows_ok {s : State} {B : Addr} {Z eQ eN k : Nat} {inv : Word}
     refine ⟨?_, h8, Nat.le_trans (Nat.le_of_eq hzc) (by decide), Outside.refl _ _ _ _, Keep.refl _ _⟩
     intro _
     refine ⟨0, by decide, ?_⟩
-    exact outer_initial (congrArg (fun n => wv s.mem B eQ n) (show 8 * (2 * k - 0) = 16 * k by omega)) hzc
-  exact wp_countdown (by omega) (by omega) (RedcInv s B eQ eN k · inv)
+    exact outer_initial (congrArg (fun n => wv s.mem B eQ n) (show 8 * (2 * k - 0) = 16 * k by omega_using [])) hzc
+  exact wp_countdown (by omega_using [hk']) (by omega_using [hk]) (RedcInv s B eQ eN k · inv)
     (fun j hj t hI _ => redcStep_ok hs h0 h7 hHdr hSize hNQ hk hk' hn hi hw hj hI)
     hInit h12
 

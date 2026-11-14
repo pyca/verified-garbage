@@ -106,7 +106,7 @@ theorem lay_ok : (lay s₀ K).Ok := by
   have es := stack_eq hp
   refine Lay.ok_of (fun i hi => ?_) (fun i hi j hj hij => ?_)
   · simp only [lay, List.length_cons, List.length_nil] at hi
-    rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4) with rfl | rfl | rfl | rfl | rfl
+    rcases (by omega_using [hi] : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4) with rfl | rfl | rfl | rfl | rfl
     · exact hp.f_c
     · show (s₀.sp - BitVec.ofNat 32 8).toNat + 8 ≤ 2 ^ 32
       have := hp.sp8; have := s₀.sp.isLt; bv_omega
@@ -114,8 +114,8 @@ theorem lay_ok : (lay s₀ K).Ok := by
     · exact hp.f_e
     · exact hp.f_d
   · simp only [lay, List.length_cons, List.length_nil] at hi hj
-    rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3) with rfl | rfl | rfl | rfl <;>
-    rcases (by omega : j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4) with rfl | rfl | rfl | rfl <;>
+    rcases (by omega_using [hj, hij] : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3) with rfl | rfl | rfl | rfl <;>
+    rcases (by omega_using [hj, hij] : j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4) with rfl | rfl | rfl | rfl <;>
     simp only [lay, Lay.size, List.getD_cons_zero, List.getD_cons_succ] <;>
     first | omega | skip
     · rw [es]; exact hp.b_c.symm
@@ -179,7 +179,7 @@ theorem KEnv.keep {K : KemLay} {s₀ s s' : State} (hp : Pre K s₀) (h : KEnv K
   · rw [hk.cs .r5 (by decide) (by decide) (hx .r5 (by simp)), h.r5]
   · rw [hk.cs .r6 (by decide) (by decide) (hx .r6 (by simp)), h.r6]
   · rw [hk.frame.readW (r := Lay.R (lay s₀ K) 0 840 36)
-      (by rw [Offset.add_ofNat_add_ofNat]; exact Offset.contains _ (by omega) (by omega) (by omega)) hd (by decide)]
+      (by rw [Offset.add_ofNat_add_ofNat]; exact Offset.contains _ (by omega_using []) (by omega_using [hi]) (by omega_using [])) hd (by decide)]
     exact h.sav i hi
   · rw [hk.frame.readW hc hd (by decide)]; exact h.savlr
   · rw [Lay.bytes_keep hL hk.frame h2 (by decide)]; exact h.seed
@@ -197,11 +197,11 @@ theorem setup_ok {K : KemLay} {s₀ : State} (hp : Pre K s₀) :
   have := hK.scr
   obtain ⟨w0, -, -, -⟩ := buf_wr hp
   have wS : ∀ {o n : Nat}, o + n ≤ 32768 → InRegions s₀.wr ((lay s₀ K).A 0 o) n := fun h =>
-    Lay.covers w0 (by simp only [lay, Lay.size, List.getD_cons_zero]; omega) _ _
+    Lay.covers w0 (by simp only [lay, Lay.size, List.getD_cons_zero]; omega_using [this, h]) _ _
       ⟨_, List.mem_singleton_self _, Region.contains_self _ _⟩
   rw [KemLay.kgSetup, WP.block_append_iff]
-  refine WP.mono (saveRegs_ok .r3 (off := 840) (by decide) (fit_le (by omega) fc) fun i hi => by
-    rw [add_ofNat_add]; exact wS (by omega)) fun s₁ h₁ => ?_
+  refine WP.mono (saveRegs_ok .r3 (off := 840) (by decide) (fit_le (by omega_using [this]) fc) fun i hi => by
+    rw [add_ofNat_add]; exact wS (by omega_using [hi])) fun s₁ h₁ => ?_
   have g3 : s₁.gpr .r3 = pScr s₀ := by rw [h₁.gpr]
   have e872 : State.addr (s₁.gpr .r3 + BitVec.ofNat 32 (oSave + 32)) = (lay s₀ K).A 0 872 := by
     rw [g3]; exact addr_add (by offs)
@@ -219,11 +219,11 @@ theorem setup_ok {K : KemLay} {s₀ : State} (hp : Pre K s₀) :
   have ne1 : ∀ i < 8, ∀ (m : Mem) (v : BitVec 32), (m.writeW ((lay s₀ K).A 0 872) v).readW
       ((lay s₀ K).A 0 840 + BitVec.ofNat 64 (4 * i)) 32 = m.readW ((lay s₀ K).A 0 840 + BitVec.ofNat 64 (4 * i)) 32 :=
     fun i hi m v => Mem.readW_writeW_sep
-      (by rw [Offset.add_ofNat_add_ofNat]; exact Offset.sep _ (by omega) (by omega) (by omega)) (by decide)
+      (by rw [Offset.add_ofNat_add_ofNat]; exact Offset.sep _ (by omega_using [hi]) (by omega_using [hi]) (by omega_using [])) (by decide)
   have ne2 : ∀ i < 9, ∀ (m : Mem) (v : Byte), (m.writeW ((lay s₀ K).A 0 1152) v).readW
       ((lay s₀ K).A 0 840 + BitVec.ofNat 64 (4 * i)) 32 = m.readW ((lay s₀ K).A 0 840 + BitVec.ofNat 64 (4 * i)) 32 :=
     fun i hi m v => Mem.readW_writeW_sep
-      (by rw [Offset.add_ofNat_add_ofNat]; exact Offset.sep _ (by omega) (by omega) (by omega)) (by decide)
+      (by rw [Offset.add_ofNat_add_ofNat]; exact Offset.sep _ (by omega_using [hi]) (by omega_using [hi]) (by omega_using [])) (by decide)
   refine ⟨⟨⟨hL, hK.scr, rfl, by simp [lay], ?_, by show 8 ≤ s₁.sp.toNat; rw [h₁.sp]; exact hp.sp8, ?_, ?_⟩, ?_, ?_, ?_,
     h₁.rd, h₁.wr, h₁.sp, fun i hi => ?_, ?_, ?_⟩, ?_⟩
   · simp [h₁.gpr]; rfl
@@ -235,7 +235,7 @@ theorem setup_ok {K : KemLay} {s₀ : State} (hp : Pre K s₀) :
   · simp [h₁.gpr]
   · simp [h₁.gpr]
   · show ((s₁.mem.writeW _ _).writeW _ _).readW _ _ = _
-    rw [e872, e1152, ne2 i (by omega), ne1 i hi]
+    rw [e872, e1152, ne2 i (by omega_using [hi]), ne1 i hi]
     exact h₁.saved i hi
   · show ((s₁.mem.writeW _ _).writeW _ _).readW _ _ = _
     rw [e872, e1152, show (lay s₀ K).A 0 872 = (lay s₀ K).A 0 840 + BitVec.ofNat 64 (4 * 8) by
@@ -249,12 +249,12 @@ theorem setup_ok {K : KemLay} {s₀ : State} (hp : Pre K s₀) :
         (r := Lay.R (lay s₀ K) 0 840 36) (by simp) _ ?_).writeW (r := Lay.R (lay s₀ K) 0 1152 1) (by simp) _ ?_
       · rw [List.mem_singleton] at hr; subst hr
         show Region.Sub (Lay.R (lay s₀ K) 0 840 32) _
-        exact Lay.R_sub_R hL (by simp [lay]) (by decide) (by decide) (by simp [lay]; omega)
+        exact Lay.R_sub_R hL (by simp [lay]) (by decide) (by decide) (by simp [lay]; omega_using [this])
       · exact Offset.contains _ (by decide) (by decide) (by decide)
       · exact Offset.contains _ (by decide) (by decide) (by decide)
     exact Lay.bytes_keep hL fr (by ldecide) (by decide)
   · show ((s₁.mem.writeW _ _).writeW _ _) _ = _
-    rw [e1152, writeW8_apply, ite_eq_left rfl, setWidth8_ofNat (by have := hK.k4; omega)]
+    rw [e1152, writeW8_apply, ite_eq_left rfl, setWidth8_ofNat (by have := hK.k4; omega_using [this])]
 
 /-! ## Pieces of the hashes -/
 
@@ -374,7 +374,7 @@ theorem prf_phase {K : KemLay} {s₀ s : State} (hp : Pre K s₀) (h : KEnv K s�
       ∀ N < 2 * K.k, PolyIs s'.mem ((lay s₀ K).A 0 (oPoly (K.k + N)))
         (ntt (VG.Proof.MlKem.cbd (VG.Proof.MlKem.KPke.kgSigma K.p (D s₀)) N)) := by
   have hK := hp.wf
-  exact WP.mono (prfLoop_ok hK h.ctx true (by have := hK.k1; omega) (by omega) hs) fun s' ⟨k', p'⟩ =>
+  exact WP.mono (prfLoop_ok hK h.ctx true (by have := hK.k1; omega_using [this]) (by omega_using []) hs) fun s' ⟨k', p'⟩ =>
     ⟨h.keep hp k' (by simp) (by ldecide), by rw [← hr]; exact Lay.bytes_keep (lay_ok hp) k'.frame (by ldecide) (by decide),
       fun N hN => p' N (Nat.zero_le _) hN⟩
 
@@ -435,7 +435,7 @@ theorem rowK_ok {K : KemLay} (hK : K.WF) {i : Nat} (hi : i < K.k) : (rowK K i).a
     sepB (kSz K) (0, K.oAcc, 1024) (0, oPoly (K.k + (K.k + i)), 1024) = true := by
   have scr := hK.scr
   obtain ⟨c1, c2, c3, c4, c5, c6⟩ :=
-    (by decide : ∀ k < 5, RowKF (kOf k) (kSz (kOf k))) K.k (by have := hK.k4; omega) i hi
+    (by decide : ∀ k < 5, RowKF (kOf k) (kSz (kOf k))) K.k (by have := hK.k4; omega_using [this]) i hi
   refine ⟨List.all_eq_true.mpr fun w hw => ?_, sepAll_scr c2 scr, fun N hN => sepAll_scr (c3 N hN) scr,
     fun i' hi' hne => sepAll_scr (c4 i' hi' hne) scr, sepB_scr c5 scr, sepB_scr c6 scr⟩
   have := List.all_eq_true.mp c1 w hw
@@ -445,7 +445,7 @@ theorem rowK_ok {K : KemLay} (hK : K.WF) {i : Nat} (hi : i < K.k) : (rowK K i).a
 /-- The row's facts at its start `s`, for its `RowSum`. -/
 theorem KRow.rowPre {K : KemLay} {s₀ : State} (hp : Pre K s₀) {i : Nat} (hi : i < K.k) {s : State}
     (h : KRow K s₀ i s) : RowPre K (lay s₀ K) (ρ₀ K s₀) (sK K s₀) i (okK K s₀ i) s :=
-  ⟨hp.wf, h.env.ctx, hi, h.r9, h.r11, h.rho, fun j hj => h.slots j (by omega)⟩
+  ⟨hp.wf, h.env.ctx, hi, h.r9, h.r11, h.rho, fun j hj => h.slots j (by omega_using [hj])⟩
 
 section
 variable (K : KemLay) (s₀ : State) (i : Nat) (s : State)
@@ -508,7 +508,7 @@ theorem kr3_ok {s₂ : State} (r : KR2 K s₀ i s s₂) : WP isa callAdd s₂ (K
   obtain ⟨-, -, c_slots, -, -, c_add⟩ := rowK_ok hp.wf hi
   have sl₂ : PolyIs s₂.mem ((lay s₀ K).A 0 (oPoly (K.k + (K.k + i))))
       (ntt (VG.Proof.MlKem.cbd (VG.Proof.MlKem.KPke.kgSigma K.p (D s₀)) (K.k + i))) :=
-    Lay.polyIs_keep hL r.kx.frame (c_slots (K.k + i) (by omega)) (h.slots (K.k + i) (by omega))
+    Lay.polyIs_keep hL r.kx.frame (c_slots (K.k + i) (by omega_using [hi])) (h.slots (K.k + i) (by omega_using [hi]))
   exact addL hL r.r0 r.r1 c_add hc₂.buf0 (mem_rd_wr hc₂.buf0) r.acc sl₂ fun s₃ k₃ p₃ =>
     ⟨r.kx.trans ((k₃.x _).monoL (by simp)), by rw [k₃.cs .r9 (by decide) (by decide), r.r9],
       by rw [k₃.cs .r11 (by decide) (by decide), r.r11], p₃⟩
@@ -539,7 +539,7 @@ theorem kr6_ok {s₅ : State} (r : KR5 K s₀ i s s₅) :
   have hK := hp.wf
   have k4 := hK.k4
   obtain ⟨c_ok, c_rho, c_slots, c_ek, -, -⟩ := rowK_ok hK hi
-  refine WP.mono (count_ok (by omega) (by omega) (by kenc) r.r9) fun s' ⟨k', g', z'⟩ => ⟨⟨?_, g', ?_, ?_, ?_, ?_⟩, z'⟩
+  refine WP.mono (count_ok (by omega_using [hi, k4]) (by omega_using [k4]) (by kenc) r.r9) fun s' ⟨k', g', z'⟩ => ⟨⟨?_, g', ?_, ?_, ?_, ?_⟩, z'⟩
   all_goals have K' : KeptX [.r9, .r10, .r11] ((lay s₀ K).RL (rowK K i)) s s' :=
     r.kx.trans ((k'.weaken (by simp)).mono (fun _ h => absurd h List.not_mem_nil))
   · exact h.env.keep hp K' (by simp) c_ok
@@ -550,7 +550,7 @@ theorem kr6_ok {s₅ : State} (r : KR5 K s₀ i s s₅) :
     by_cases e : i' = i
     · subst e
       exact (bytesAt_frame k'.frame (fun _ h => absurd h List.not_mem_nil) (by decide)).trans r.enc
-    · rw [← h.ek i' (by omega)]; exact Lay.bytes_keep hL K'.frame (c_ek i' (by omega) e) (by decide)
+    · rw [← h.ek i' (by omega_using [hi', e])]; exact Lay.bytes_keep hL K'.frame (c_ek i' (by omega_using [hi, hi']) e) (by decide)
 
 end
 
@@ -600,7 +600,7 @@ theorem sK_ok {K : KemLay} (hK : K.WF) {j : Nat} (hj : j < K.k) : [((4 : Nat), 3
     sepB (kSz K) (0, oPoly (K.k + j), 1024) (4, 384 * j, 384) = true := by
   have scr := hK.scr
   obtain ⟨c1, c2, c3, c4, c5, c6⟩ :=
-    (by decide : ∀ k < 5, SKF (kOf k) (kSz (kOf k))) K.k (by have := hK.k4; omega) j hj
+    (by decide : ∀ k < 5, SKF (kOf k) (kSz (kOf k))) K.k (by have := hK.k4; omega_using [this]) j hj
   refine ⟨List.all_eq_true.mpr fun w hw => ?_, sepAll_scr c2 scr, fun i' hi' => sepAll_scr (c3 i' hi') scr,
     fun j' hj' => sepAll_scr (c4 j' hj') scr, fun j' hj' hne => sepAll_scr (c5 j' hj' hne) scr, sepB_scr c6 scr⟩
   have := List.all_eq_true.mp c1 w hw
@@ -612,7 +612,7 @@ theorem s_init {K : KemLay} {s₀ s : State} (hp : Pre K s₀) (h : KRow K s₀ 
   WP.mono (movc_ok .r9 (N := 0) (by decide)) fun _ ⟨k₆, g9', m₆⟩ =>
     ⟨h.env.keep hp (xs := [.r9]) (W := []) k₆ (by simp) rfl, g9',
       by rw [k₆.cs .r11 (by decide) (by decide) (by decide), h.r11], by rw [m₆]; exact h.rho,
-      by rw [m₆]; exact h.ek, fun j' hj' => by rw [m₆]; exact h.slots j' (by omega),
+      by rw [m₆]; exact h.ek, fun j' hj' => by rw [m₆]; exact h.slots j' (by omega_using [hj']),
       fun j' hj' => absurd hj' (Nat.not_lt_zero _)⟩
 
 section
@@ -659,7 +659,7 @@ theorem ks3_ok {s₂ : State} (r : KS2 K s₀ j s s₂) :
   have hK := hp.wf
   have k4 := hK.k4
   obtain ⟨c_ok, c_rho, c_ek, c_slots, c_dk, -⟩ := sK_ok hK hj
-  refine WP.mono (count_ok (by omega) (by omega) (by kenc) r.r9) fun s' ⟨k', g', z'⟩ =>
+  refine WP.mono (count_ok (by omega_using [hj, k4]) (by omega_using [k4]) (by kenc) r.r9) fun s' ⟨k', g', z'⟩ =>
     ⟨⟨?_, g', ?_, ?_, ?_, ?_, ?_⟩, z'⟩
   all_goals have K' : KeptX [.r9] ((lay s₀ K).RL [(4, 384 * j, 384)]) s s' :=
     r.kx.trans (k'.mono (fun _ h => absurd h List.not_mem_nil))
@@ -672,7 +672,7 @@ theorem ks3_ok {s₂ : State} (r : KS2 K s₀ j s s₂) :
     by_cases e : j' = j
     · subst e
       exact (bytesAt_frame k'.frame (fun _ h => absurd h List.not_mem_nil) (by decide)).trans r.enc
-    · exact (Lay.bytes_keep hL K'.frame (c_dk j' (by omega) e) (by decide)).trans (h.dk j' (by omega))
+    · exact (Lay.bytes_keep hL K'.frame (c_dk j' (by omega_using [hj, hj']) e) (by decide)).trans (h.dk j' (by omega_using [hj', e]))
 
 end
 
@@ -748,10 +748,10 @@ theorem ek_split (K : KemLay) (m : Mem) (q : Addr) :
 theorem dk_split (K : KemLay) (m : Mem) (q : Addr) :
     bytesAt m q K.dkLen = bytesAt m q (384 * K.k) ++ bytesAt m (q + BitVec.ofNat 64 (384 * K.k)) K.ekLen ++
       bytesAt m (q + BitVec.ofNat 64 (768 * K.k + 32)) 32 ++ bytesAt m (q + BitVec.ofNat 64 (768 * K.k + 64)) 32 := by
-  rw [show K.dkLen = 384 * K.k + (K.ekLen + (32 + 32)) by simp only [KemLay.dkLen, KemLay.ekLen]; omega,
+  rw [show K.dkLen = 384 * K.k + (K.ekLen + (32 + 32)) by simp only [KemLay.dkLen, KemLay.ekLen]; omega_using [],
     bytesAt_add _ _ (384 * K.k), bytesAt_add _ _ K.ekLen, bytesAt_add _ _ 32 32, add_ofNat_add, add_ofNat_add,
-    show 384 * K.k + K.ekLen = 768 * K.k + 32 by simp only [KemLay.ekLen]; omega,
-    show 768 * K.k + 32 + 32 = 768 * K.k + 64 by omega]
+    show 384 * K.k + K.ekLen = 768 * K.k + 32 by simp only [KemLay.ekLen]; omega_using [],
+    show 768 * K.k + 32 + 32 = 768 * K.k + 64 by omega_using []]
   simp only [List.append_assoc]
 
 /-- What a region of `KEnv` must be apart from, with the sizes `sz` of the buffers. -/
@@ -785,7 +785,7 @@ abbrev TailF (K : KemLay) (sz : List Nat) : Prop :=
 theorem tail_facts {K : KemLay} (hK : K.WF) : TailF K (kSz K) := by
   have s := hK.scr
   obtain ⟨f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12, f13, f14, f15⟩ :=
-    (by decide : ∀ k < 5, TailF (kOf k) (kSz (kOf k))) K.k (by have := hK.k4; omega)
+    (by decide : ∀ k < 5, TailF (kOf k) (kSz (kOf k))) K.k (by have := hK.k4; omega_using [this])
   exact ⟨sepB_scr f1 s, okWz_scr f2 s, fun i hi => sepAll_scr (f3 i hi) s, sepB_scr f4 s, okWz_scr f5 s,
     sepAll_scr f6 s, okWz_scr f7 s, sepB_scr f8 s, okWz_scr f9 s, sepAll_scr f10 s, sepAll_scr f11 s,
     fun i hi => ⟨sepAll_scr (f12 i hi).1 s, sepAll_scr (f12 i hi).2.1 s, sepAll_scr (f12 i hi).2.2.1 s,

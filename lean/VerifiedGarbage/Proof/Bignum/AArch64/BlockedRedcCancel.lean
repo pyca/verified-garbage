@@ -25,7 +25,7 @@ theorem cancelHead_ok {s : State} {B : Addr} {Z eQ i : Nat}
       (t.gpr .x1 = 0 ∧ t.gpr .x27 = s.gpr .x19 * s.gpr .x15 ∧
        t.mem = s.mem.writeW (off B (eQ + 8 * i)) (s.gpr .x19 * s.gpr .x15)) ∧
       Keep [.x1, .x27] s t := by
-  have enc : (8 * i) % 8 = 0 ∧ 8 * i < 32768 := ⟨by omega, by omega⟩
+  have enc : (8 * i) % 8 = 0 ∧ 8 * i < 32768 := ⟨by omega_using [], by omega_using [hi]⟩
   refine WP.keep [.x1, .x27] ?_ rfl rfl rfl
   brun [cancelHead, h8, enc, hs.st hQ]
 

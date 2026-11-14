@@ -46,7 +46,7 @@ theorem save_ok {s : State} (hw : (⟨s.gpr .rsp, 56⟩ : Region) ∈ s.wr) :
       Frame [⟨s.gpr .rsp, 48⟩] s.mem t.mem := by
   change WP isa (.block (saveCode .rsp spillSlots)) s _
   apply WP.mono (VG.X86_64.Spill.save_ok .rsp spillSlots s (fun p hp =>
-    ⟨_, hw, Offset.contains_base _ (spillSlots_fit p hp) (by have := spillSlots_fit p hp; omega)⟩))
+    ⟨_, hw, Offset.contains_base _ (spillSlots_fit p hp) (by have := spillSlots_fit p hp; omega_using [this])⟩))
   intro t ⟨hg, hr, hw, hm⟩
   refine ⟨hg, hr, hw, ?_, ?_⟩
   · rw [hm]; exact saveMem_saved _ _ _ _ (by decide)
@@ -62,7 +62,7 @@ theorem restore_ok {s : State} (g : Reg → BitVec 64)
   change WP isa (.block (restoreCode .rsp spillSlots)) s _
   exact VG.X86_64.Spill.restore_ok .rsp spillSlots g s (by decide) (fun p hp =>
     ⟨_, List.mem_append_right _ hw, Offset.contains_base _ (spillSlots_fit p hp)
-      (by have := spillSlots_fit p hp; omega)⟩) hs
+      (by have := spillSlots_fit p hp; omega_using [this])⟩) hs
 
 end VG.Proof.Dsa.X86_64.ProbablePrime
 end
@@ -123,24 +123,24 @@ theorem sizedWorkspace_ok {s : State} {B : Addr} {Z w : Nat}
   simp only [seqs]
   refine WP.seq (WP.mono (WP.keep [.rax] (Q := fun u =>
       u.mem = (s.mem.writeW (off B 48) (BitVec.ofNat 64 w)).writeW (off B 56) (0#64)) (by
-    xrun [State.ea, hdr, hdrOff, sW, sMinv, hdi, h12, h.st (d := 48) (by omega), h.st (d := 56) (by omega)]
+    xrun [State.ea, hdr, hdrOff, sW, sMinv, hdi, h12, h.st (d := 48) (by omega_using [hz]), h.st (d := 56) (by omega_using [hz])]
     rfl) rfl) fun u ⟨hm, ku⟩ => ?_)
   have hu := h.congr ku.2.2
   have hudi := (ku.gpr (by decide)).trans hdi
   have hu12 := (ku.gpr (by decide)).trans h12
-  refine WP.seq (WP.mono (setBases_ok hu hudi hu12 (by unfold sArr; omega))
+  refine WP.seq (WP.mono (setBases_ok hu hudi hu12 (by unfold sArr; omega_using [hz]))
     fun v ⟨harr, fv, kv⟩ => ?_)
   have hv := hu.congr kv.2.2
   have hvdi := (kv.gpr (by decide)).trans hudi
   have hv12 := (kv.gpr (by decide)).trans hu12
   refine WP.mono (WP.keep [.rax] (Q := fun t =>
       t.mem = v.mem.writeW (off B 224) (BitVec.ofNat 64 (8 * (w + 2)))) (by
-    xrun [State.ea, hdr, hdrOff, sStride, sFn, hvdi, hv12, hv.st (d := 224) (by omega)]
+    xrun [State.ea, hdr, hdrOff, sStride, sFn, hvdi, hv12, hv.st (d := 224) (by omega_using [hz])]
     congr 1
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.toNat_shiftLeft, BitVec.toNat_add, BitVec.toNat_ofNat, Nat.shiftLeft_eq,
       show (2 : BitVec 64).toNat = 2 from rfl]
-    omega) rfl) fun t ⟨htm, kt⟩ => ?_
+    omega_using []) rfl) fun t ⟨htm, kt⟩ => ?_
   have ft : Outside B 224 8 v.mem t.mem := by rw [htm]; exact writeW_outside _ _ _ (by decide)
   have allk := (ku.trans kv).trans kt
   have hw : word t.mem B 48 = BitVec.ofNat 64 w := by
@@ -151,7 +151,7 @@ theorem sizedWorkspace_ok {s : State} {B : Addr} {Z w : Nat}
     rfl
   have ha : ∀ j < 8, word t.mem B (8 * sArr j) = off B (slot w j) := by
     intro j hj
-    rw [ft.word (Or.inl (by unfold sArr; omega)) (by unfold sArr; omega)]
+    rw [ft.word (Or.inl (by unfold sArr; omega_using [hj])) (by unfold sArr; omega_using [hj])]
     exact harr j hj
   have hs := h.congr allk.2.2
   have ht := allk.gpr (by decide) |>.trans hdi
@@ -212,7 +212,7 @@ structure Ready {bits : Nat} (hb : Supported bits) {s : State} (A : PrimeABI bit
 
 theorem prep_ok {bits : Nat} (hb : Supported bits) {s : State} (A : PrimeABI bits s) :
     WP isa setup (allocState 56 s) (Ready hb A) := by
-  have hsize : domainCheck ≤ (s.gpr .rsi).toNat * 8 := by have := A.size; omega
+  have hsize : domainCheck ≤ (s.gpr .rsi).toNat * 8 := by have := A.size; omega_using [this]
   have hws : wsRegion s ∈ s.wr := by rw [A.wr]; exact List.mem_cons_self
   have hS0 : Scr (allocState 56 s) (s.gpr .rdi) ((s.gpr .rsi).toNat * 8) :=
     Scr.of_mem (List.mem_cons_of_mem _ hws) A.wsBound
@@ -221,10 +221,10 @@ theorem prep_ok {bits : Nat} (hb : Supported bits) {s : State} (A : PrimeABI bit
   have hFn : (frameSp s).toNat + 56 ≤ 2 ^ 64 := by
     have : 184 ≤ (s.gpr .rsp).toNat := A.stackLower
     change (s.gpr .rsp - BitVec.ofNat 64 56).toNat + 56 ≤ 2 ^ 64
-    rw [BitVec.toNat_sub_of_le (by rw [BitVec.le_def, BitVec.toNat_ofNat]; omega)]
+    rw [BitVec.toNat_sub_of_le (by rw [BitVec.le_def, BitVec.toNat_ofNat]; omega_using [this])]
     have := (s.gpr .rsp).isLt
     simp only [BitVec.toNat_ofNat]
-    omega
+    omega_using []
   have hg0 : ∀ r, r ≠ .rsp → (allocState 56 s).gpr r = s.gpr r := fun r h => by
     simp [allocState, State.setReg, h]
   -- Regions of the frame and of `ws` are disjoint.
@@ -247,7 +247,7 @@ theorem prep_ok {bits : Nat} (hb : Supported bits) {s : State} (A : PrimeABI bit
   have w2 : u2.wr = (allocState 56 s).wr := k2.2.2.trans w1
   have hS2 : Scr u2 (params hb A).B (params hb A).Z :=
     (hS0.congr w2).sub (o := arithmetic) (n := arithmeticBytes)
-      (by have : arithmetic + arithmeticBytes = domainCheck := rfl; omega) (by decide)
+      (by have : arithmetic + arithmeticBytes = domainCheck := rfl; omega_using [hsize, this]) (by decide)
   have hdi2 : u2.gpr .rdi = (params hb A).B := by
     rw [di2, g1, hg0 _ (by decide)]; rfl
   refine WP.seq (WP.mono (sizedWorkspace_ok (hS2.congr k2'.2.2) (hdi2'.trans hdi2) h12
@@ -305,21 +305,21 @@ theorem prep_ok {bits : Nat} (hb : Supported bits) {s : State} (A : PrimeABI bit
       ⟨off (s.gpr .rdi) arithmetic, arithmeticBytes⟩],
       ¬ r.Contains (off (s.gpr .rdi) (candidate bits) + BitVec.ofNat 64 i) 1 := by
     intro i hi r hr hc
-    have hb' := contains_byte (off (s.gpr .rdi) (candidate bits)) hi (by omega)
+    have hb' := contains_byte (off (s.gpr .rdi) (candidate bits)) hi (by omega_using [hlen])
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
     · have := fws (d := 0) (n := 56) (e := candidate bits) (k := len bits) (by decide)
-        (by have : witness ≤ domainCheck := (by decide); omega)
+        (by have : witness ≤ domainCheck := (by decide); omega_using [hcand, this])
       simp only [off, BitVec.add_zero] at this
       exact this _ hc hb'
     · exact Offset.disjoint (s.gpr .rdi) (d := candidate bits) (n := len bits) (e := arithmetic)
-        (k := arithmeticBytes) (Or.inl (by have : witness ≤ arithmetic := (by decide); omega))
-        (by have : witness < 2 ^ 64 := (by decide); omega) (by decide) _ hb' hc
+        (k := arithmeticBytes) (Or.inl (by have : witness ≤ arithmetic := (by decide); omega_using [hcand, this]))
+        (by have : witness < 2 ^ 64 := (by decide); omega_using [hcand, this]) (by decide) _ hb' hc
   have randOut : ∀ i < (s.gpr .rcx).toNat, ∀ r ∈ [(⟨frameSp s, 56⟩ : Region),
       ⟨off (s.gpr .rdi) arithmetic, arithmeticBytes⟩],
       ¬ r.Contains (s.gpr .rdx + BitVec.ofNat 64 i) 1 := by
     intro i hi r hr hc
-    have hb' := contains_byte (s.gpr .rdx) hi (by have := A.randBound; omega)
+    have hb' := contains_byte (s.gpr .rdx) hi (by have := A.randBound; omega_using [])
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
     · have hs := frame_stack_sub s (d := 0) (n := 56) (by decide)
@@ -356,21 +356,21 @@ theorem prep_ok {bits : Nat} (hb : Supported bits) {s : State} (A : PrimeABI bit
     refine ⟨fun i hi => ?_, fun i hi => ?_, fun i hi => ?_⟩
     · rw [bytesAt_length] at hi
       refine ⟨_, List.mem_append_left _ (by rw [rd4, A.rd]; exact List.mem_cons_self), ?_⟩
-      exact contains_byte _ hi (by have := A.randBound; omega)
+      exact contains_byte _ hi (by have := A.randBound; omega_using [])
     · have hi' : i < (s.gpr .rcx).toNat := by rw [bytesAt_length] at hi; exact hi
       rw [F04 _ (randOut i hi')]
       simp only [bytesAt_eq, List.getElem_map, List.getElem_range]
     · have hi' : i < (s.gpr .rcx).toNat := by rw [bytesAt_length] at hi; exact hi
       exact out_scr ((A.wsRand.symm).sub_right (ws_sub A (by decide)))
-        (contains_byte _ hi' (by have := A.randBound; omega))
+        (contains_byte _ hi' (by have := A.randBound; omega_using []))
   · change ∀ i < len bits, InRegions u4.wr (off (off (s.gpr .rdi) witness) i) 1
     intro i hi
     refine ⟨_, by rw [wr4]; exact List.mem_cons_of_mem _ hws, ?_⟩
     change (wsRegion s).Contains (off (off (s.gpr .rdi) witness) i) 1
     rw [show off (off (s.gpr .rdi) witness) i = off (s.gpr .rdi) (witness + i) by
       simp only [off, BitVec.add_assoc, BitVec.ofNat_add]]
-    exact Offset.contains_base _ (by have : witness + 384 ≤ domainCheck := (by decide); omega)
-      (by have : witness + 384 < 2 ^ 64 := (by decide); omega)
+    exact Offset.contains_base _ (by have : witness + 384 ≤ domainCheck := (by decide); omega_using [hsize, hlen, hi, this])
+      (by have : witness + 384 < 2 ^ 64 := (by decide); omega_using [hlen, hi, this])
   · exact hrsp
   · rw [wh 20 (by decide)]
     simp only [argList, VG.Proof.Dsa.X86_64.Generation.argumentWords,
@@ -383,16 +383,16 @@ theorem prep_ok {bits : Nat} (hb : Supported bits) {s : State} (A : PrimeABI bit
       refine ⟨_, List.mem_append_right _ (by rw [wr4]; exact List.mem_cons_of_mem _ hws), ?_⟩
       rw [show off (s.gpr .rdi) (candidate bits) + BitVec.ofNat 64 i = off (s.gpr .rdi) (candidate bits + i) by
         simp only [off, BitVec.add_assoc, BitVec.ofNat_add]]
-      exact Offset.contains_base _ (by have : witness ≤ domainCheck := (by decide); omega)
-        (by have : witness < 2 ^ 64 := (by decide); omega)
+      exact Offset.contains_base _ (by have : witness ≤ domainCheck := (by decide); omega_using [hsize, hcand, hi, this])
+        (by have : witness < 2 ^ 64 := (by decide); omega_using [hcand, hi, this])
     · have hi' : i < len bits := by rw [bytesAt_length] at hi; exact hi
       rw [F04 _ (candOut i hi')]
       simp only [bytesAt_eq, List.getElem_map, List.getElem_range]
     · have hi' : i < len bits := by rw [bytesAt_length] at hi; exact hi
       refine out_scr (r := ⟨off (s.gpr .rdi) (candidate bits), len bits⟩) ?_
-        (contains_byte _ hi' (by omega))
-      exact Offset.disjoint (s.gpr .rdi) (Or.inl (by have : witness ≤ arithmetic := (by decide); omega))
-        (by have : witness < 2 ^ 64 := (by decide); omega) (by decide)
+        (contains_byte _ hi' (by omega_using [hlen]))
+      exact Offset.disjoint (s.gpr .rdi) (Or.inl (by have : witness ≤ arithmetic := (by decide); omega_using [hcand, this]))
+        (by have : witness < 2 ^ 64 := (by decide); omega_using [hcand, this]) (by decide)
   · intro p hp
     have hne : p.1 ≠ .rsp := by revert p; decide
     have hp48 : ∀ q ∈ spillSlots, q.2 + 8 ≤ 48 := by decide
@@ -400,8 +400,8 @@ theorem prep_ok {bits : Nat} (hb : Supported bits) {s : State} (A : PrimeABI bit
     exact F14.readW (Region.contains_self _ _) (fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
-      · exact Offset.disjoint _ (Or.inl (hp48 p hp)) (by have := hp48 p hp; omega) (by decide)
-      · exact fws (by have := hp48 p hp; omega) (by decide)) (by decide)
+      · exact Offset.disjoint _ (Or.inl (hp48 p hp)) (by have := hp48 p hp; omega_using [this]) (by decide)
+      · exact fws (by have := hp48 p hp; omega_using [this]) (by decide)) (by decide)
   · have h2 : word u2.mem (frameSp s) 48 = s.gpr .r8 := by
       rw [m2, g1, hF, hg0 _ (by decide)]; exact word_writeW_self _ _ _ _
     rw [← h2]
@@ -438,14 +438,14 @@ theorem test_ok (M : Mont) (K : Kernel) {bits : Nat} (hb : Supported bits) {s : 
   have hlen : len bits ≤ 384 := by rcases hb with rfl | rfl | rfl | rfl | rfl <;> decide
   have hw : words bits ≤ 48 := by rcases hb with rfl | rfl | rfl | rfl | rfl <;> decide
   -- The test.
-  have hlow := ((bitLength_iff_bounds (by have := hb.le; omega)).mp A.bits).1
+  have hlow := ((bitLength_iff_bounds (by have := hb.le; omega_using [this])).mp A.bits).1
   refine WP.mono (VG.Proof.Dsa.X86_64.Generation.primeBytes_ok M K R.args R.ptr
     (bytesAt_length _ _ _) rfl R.src (Nat.zero_le _) hw
     (by change Bignum.slot (words bits) aTab + 2048 ≤ arithmeticBytes
         rcases hb with rfl | rfl | rfl | rfl | rfl <;> decide)
     (by
       change 8161 < candidateOf bits s
-      have h2 : 2 ^ 159 ≤ 2 ^ (bits - 1) := Nat.pow_le_pow_right (by decide) (by have := hb.le; omega)
+      have h2 : 2 ^ 159 ≤ 2 ^ (bits - 1) := Nat.pow_le_pow_right (by decide) (by have := hb.le; omega_using [this])
       have : (8161 : Nat) < 2 ^ 159 := by decide
       exact Nat.lt_of_lt_of_le this (Nat.le_trans h2 hlow))
     (by
@@ -467,11 +467,11 @@ theorem test_ok (M : Mont) (K : Kernel) {bits : Nat} (hb : Supported bits) {s : 
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
     · exact fws h (by decide)
-    · exact fws h (by have : witness + 384 ≤ domainCheck := (by decide); omega)
-    · exact Offset.disjoint_below _ (by omega)
+    · exact fws h (by have : witness + 384 ≤ domainCheck := (by decide); omega_using [hlen, this])
+    · exact Offset.disjoint_below _ (by omega_using [h])
   have hp48 : ∀ q ∈ spillSlots, q.2 + 8 ≤ 48 := by decide
   refine ⟨⟨mi', used', inp, hub, hnone, hsome⟩,
-    R.saved.frame F45 fun p hp r hr => frameOut (by have := hp48 p hp; omega) r hr,
+    R.saved.frame F45 fun p hp r hr => frameOut (by have := hp48 p hp; omega_using [this]) r hr,
     by rw [← R.used]; exact F45.readW (Region.contains_self _ _) (frameOut (by decide)) (by decide),
     ?_, k5.2.1.trans R.rd, k5.2.2.trans R.wr⟩
   refine (Frame.sub R.frame ?_).trans (Frame.sub F45 ?_)
@@ -503,8 +503,8 @@ theorem finish_ok {bits : Nat} (hb : Supported bits) {s : State}
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
     · exact fws h (by decide)
-    · exact fws h (by have : witness + 384 ≤ domainCheck := (by decide); omega)
-    · exact Offset.disjoint_below _ (by omega)
+    · exact fws h (by have : witness + 384 ≤ domainCheck := (by decide); omega_using [hlen, this])
+    · exact Offset.disjoint_below _ (by omega_using [h])
   obtain ⟨⟨mi', used', inp, hub, hnone, hsome⟩, sv5, hu5, F05, rd5, wr5⟩ := T
   have hsp5 : u5.gpr .rsp = frameSp s := inp.stack
   -- The exit.
@@ -532,7 +532,7 @@ theorem finish_ok {bits : Nat} (hb : Supported bits) {s : State}
     refine sv5.frame F56 ?_
     intro p hp r hr
     obtain rfl := List.mem_singleton.mp hr
-    exact fused (by have := hp48 p hp; omega)
+    exact fused (by have := hp48 p hp; omega_using [this])
   -- Restore the callee-saved registers.
   refine WP.mono (restore_ok s.gpr (by rw [hsp6, wr6]; exact List.mem_cons_self) sv6) ?_
   rintro u7 ⟨g7, k7, m7, rd7, wr7⟩

@@ -32,15 +32,15 @@ theorem finishRound_ok (s v : State) {base : BitVec 32} {size tmp a b mod acc n 
   have nowrap := ctx.workspace.nowrap
   have fits := ctx.tmpFits
   have layout := ctx.layout
-  have hdrV := hdr.of_outside outsideV (by omega) (by omega)
+  have hdrV := hdr.of_outside outsideV (by omega_using [layout]) (by omega_using [nowrap, fits])
   refine WP.mono (roundFinish_ok (tmp:=tmp) (top:=acc+4*(n+1)) v
-    (ctx.workspace.congr keepV.wr) (by omega) (by omega) ptrV) ?_
+    (ctx.workspace.congr keepV.wr) (by omega_using [fits]) (by omega_using [layout]) ptrV) ?_
   rintro t ⟨memT,ptrT,zero,keepT⟩
   have mt : t.mem = finishMem v.mem (State.addr base) (acc+4*(n+1)) tmp := memT
   have nowrap' : (State.addr base).toNat + size ≤ 2^32 := by
     simpa only [VG.Proof.X25519.Arm.addr_toNat] using nowrap
   obtain ⟨result,frame⟩ := finish_value (mem:=v.mem) (acc:=acc) (n:=n) (tmp:=tmp)
-    nowrap' (by omega) rfl (by omega)
+    nowrap' (by omega_using [fits]) rfl (by omega_using [layout])
   rw [←mt] at result frame
   obtain ⟨q,hq,quotient⟩ := quotient
   have value : 2^32 * val32 t.mem (State.addr base) acc (n+2) =
@@ -50,14 +50,14 @@ theorem finishRound_ok (s v : State) {base : BitVec 32} {size tmp a b mod acc n 
   have ha := (s.mem.readW (off (State.addr base) (a+4*i)) 32).isLt
   refine ⟨?_,ptrT,⟨q,hq,value⟩,round_lt value hT ha hB hq,?_,?_,?_⟩
   · rw [mt]
-    exact finish_meta nowrap fits (by omega) hdrV hi
+    exact finish_meta nowrap fits (by omega_using [layout]) hdrV hi
   · have enlarged : Outside (State.addr base) acc (4*(n+2)) s.mem v.mem :=
-      outsideV.mono (Nat.le_refl _) (by omega)
+      outsideV.mono (Nat.le_refl _) (by omega_using [])
     exact (Outs.of_outside enlarged (by simp)).trans frame
   · rw [zero,hdrV.remaining]
     change (BitVec.ofNat 32 (n-i) - BitVec.ofNat 32 1 == 0) = _
-    rw [BitVec.ofNat_sub_ofNat_of_le _ _ (by decide) (by omega), ofNat_beq_zero (by omega)]
-    simp only [show n-i-1=0 ↔ i+1=n by omega]
+    rw [BitVec.ofNat_sub_ofNat_of_le _ _ (by decide) (by omega_using [hi]), ofNat_beq_zero (by omega)]
+    simp only [show n-i-1=0 ↔ i+1=n by omega_using [hi]]
   · exact keepV.trans (keepT.mono (by decide))
 
 end VG.Proof.Bignum.Arm.Fios

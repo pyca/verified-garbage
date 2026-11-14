@@ -17,11 +17,11 @@ open VG.Impl.Aes.KeyWords (rc)
 
 theorem div_pred_zero {nk i : Nat} (h3 : nk = 4 ∨ nk = 6 ∨ nk = 8) (hi : nk ≤ i) (h : i % nk = 0) :
     (i-1)/nk+1 = i/nk := by
-  rcases h3 with rfl | rfl | rfl <;> omega
+  rcases h3 with rfl | rfl | rfl <;> omega_using [hi, h]
 
 theorem div_pred_ne {nk i : Nat} (h3 : nk = 4 ∨ nk = 6 ∨ nk = 8) (h : i % nk ≠ 0) :
     (i-1)/nk = i/nk := by
-  rcases h3 with rfl | rfl | rfl <;> omega
+  rcases h3 with rfl | rfl | rfl <;> omega_using [h]
 
 theorem temp_rotate_ok (s : State) {nk i : Nat} (h3 : nk = 4 ∨ nk = 6 ∨ nk = 8)
     (hi : nk ≤ i) (hlim : i < 4*(nk+7)) (hmod : i%nk = 0)
@@ -30,7 +30,7 @@ theorem temp_rotate_ok (s : State) {nk i : Nat} (h3 : nk = 4 ∨ nk = 6 ∨ nk =
       (t.gpr .r9).setWidth 32 = temp32 nk i ((s.gpr .r9).setWidth 32) ∧
       t.gpr .r6 = (rc (i/nk+1)).setWidth 64 ∧ Local [.r0, .r6, .r8, .r9] [.v0] s t := by
   have hdiv := div_pred_zero h3 hi hmod
-  have hj : 1 ≤ i/nk ∧ i/nk < 11 := by rcases h3 with rfl | rfl | rfl <;> omega
+  have hj : 1 ≤ i/nk ∧ i/nk < 11 := by rcases h3 with rfl | rfl | rfl <;> omega_using [hi, hlim]
   rw [WP.block_append_iff]
   refine WP.mono (subWord_ok s) fun u ⟨hv, he⟩ => ?_
   refine WP.mono (rotTail_ok u) fun t ⟨ht, hc, hf⟩ => ?_
@@ -53,7 +53,7 @@ theorem test_choice (r : Reg) (a b : Nat) (s : State) (yes no : Prog isa) (Q : S
   subst t
   have he : eval (.zero .d .r0) (s.write .r0 (s.gpr r - BitVec.ofNat 64 b)) = some (decide (a=b)) := by
     simp only [eval, State.read, Size.bits, BitVec.setWidth_eq, RegUpd.gpr_write_self, hreg]
-    exact congrArg some (Offset.ofNat_sub_ofNat_beq ha (by omega))
+    exact congrArg some (Offset.ofNat_sub_ofNat_beq ha (by omega_using [hb]))
   by_cases hab : a = b
   · refine WP.ite true (by simpa only [hab, decide_true] using he) (fun _ => hy hab) (by simp)
   · refine WP.ite false (by simpa only [hab, decide_false] using he) (by simp) (fun _ => hn hab)
@@ -67,14 +67,14 @@ theorem temp_nonrot_ok (s : State) {nk q : Nat} (hnk : nk ≤ 8) (hq : q < nk)
           (.ite (.zero .d .r0) (.block Impl.Aes.PPC64LE.Crypto.subWord) (.block []))) (.block []))) s fun t =>
       (t.gpr .r9).setWidth 32 = (if nk = 8 ∧ q = 4 then sub32 ((s.gpr .r9).setWidth 32) else (s.gpr .r9).setWidth 32) ∧
       Local [.r0, .r9] [.v0] s t := by
-  refine test_choice .r12 (4*q) 16 s _ _ _ (by decide) (by omega) (by decide) h12 ?_ ?_
+  refine test_choice .r12 (4*q) 16 s _ _ _ (by decide) (by omega_using [hnk, hq]) (by decide) h12 ?_ ?_
   · intro hq4
-    have hqe : q = 4 := by omega
+    have hqe : q = 4 := by omega_using [hq4]
     have hloc := Local.write s .r0 (s.gpr .r12 - BitVec.ofNat 64 16)
-    refine test_choice .r7 (4*nk) 32 _ _ _ _ (by decide) (by omega) (by decide)
+    refine test_choice .r7 (4*nk) 32 _ _ _ _ (by decide) (by omega_using [hnk]) (by decide)
       (by rw [hloc.keep.gpr (by decide)]; exact h7) ?_ ?_
     · intro hn8
-      have hnke : nk = 8 := by omega
+      have hnke : nk = 8 := by omega_using [hn8]
       have hloc' := Local.write (s.write .r0 (s.gpr .r12 - BitVec.ofNat 64 16)) .r0
         ((s.write .r0 (s.gpr .r12 - BitVec.ofNat 64 16)).gpr .r7 - BitVec.ofNat 64 32)
       refine WP.mono (subWord_ok _) fun t ⟨hv, he⟩ => ⟨?_, ?_⟩
@@ -83,12 +83,12 @@ theorem temp_nonrot_ok (s : State) {nk q : Nat} (hnk : nk ≤ 8) (hq : q < nk)
         simp only [hnke, hqe, and_self, ite_true]
       · exact ((hloc.trans hloc').trans he).weaken (by simp) (by simp)
     · intro hn8
-      have hnke : nk ≠ 8 := by omega
+      have hnke : nk ≠ 8 := by omega_using [hn8]
       refine WP.block_nil ⟨?_, ?_⟩
       · simp only [RegUpd.gpr_write, reduceCtorEq, ite_false, hnke, false_and, ite_false]
       · exact (hloc.trans (Local.write _ .r0 _)).weaken (by simp) (by simp)
   · intro hq4
-    have hqe : q ≠ 4 := by omega
+    have hqe : q ≠ 4 := by omega_using [hq4]
     refine WP.block_nil ⟨?_, (Local.write s .r0 (s.gpr .r12 - BitVec.ofNat 64 16)).weaken (by simp) (by simp)⟩
     simp only [RegUpd.gpr_write, reduceCtorEq, ite_false, hqe, and_false, ite_false]
 
@@ -99,17 +99,17 @@ theorem tempWord_ok (s : State) {nk i : Nat} (h3 : nk = 4 ∨ nk = 6 ∨ nk = 8)
     WP isa Impl.Aes.PPC64LE.Crypto.tempWord s fun t =>
       (t.gpr .r9).setWidth 32 = temp32 nk i ((s.gpr .r9).setWidth 32) ∧
       t.gpr .r6 = (rc (i/nk+1)).setWidth 64 ∧ Local [.r0, .r6, .r8, .r9] [.v0] s t := by
-  have hnk : 0 < nk ∧ nk ≤ 8 := by omega
+  have hnk : 0 < nk ∧ nk ≤ 8 := by omega_using [h3]
   have hrem : i%nk < nk := Nat.mod_lt _ hnk.1
-  have he := eval_zero_ofNat s .r12 (by omega) h12
+  have he := eval_zero_ofNat s .r12 (by omega_using [h3, hrem]) h12
   change eval (.zero .d .r12) s = some (decide (4*(i%nk)=0)) at he
   rw [Impl.Aes.PPC64LE.Crypto.tempWord]
   by_cases hmod : i%nk = 0
   · refine WP.ite true (by simpa only [hmod, Nat.mul_zero, decide_true] using he)
       (fun _ => temp_rotate_ok s h3 hi hlim hmod hrc) (by simp)
-  · refine WP.ite false (by simpa only [show ¬4*(i%nk)=0 by omega, decide_false] using he) (by simp) (fun _ => ?_)
+  · refine WP.ite false (by simpa only [show ¬4*(i%nk)=0 by omega_using [hmod], decide_false] using he) (by simp) (fun _ => ?_)
     refine WP.mono (temp_nonrot_ok s hnk.2 hrem h12 h7) fun t ⟨hv, hf⟩ => ⟨?_, ?_, ?_⟩
-    · have heq : (nk > 6 ∧ i%nk = 4) ↔ (nk = 8 ∧ i%nk = 4) := by omega
+    · have heq : (nk > 6 ∧ i%nk = 4) ↔ (nk = 8 ∧ i%nk = 4) := by omega_using [h3]
       simpa only [temp32, ite_eq_right hmod, propext heq] using hv
     · rw [hf.keep.gpr (by decide), hrc, div_pred_ne h3 hmod]
     · exact hf.weaken (by simp) (by simp)

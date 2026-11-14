@@ -89,9 +89,9 @@ theorem significantLoop_ok {s : State} {B p : Addr} {Z : Nat} {bs : List Byte} {
         change u.mem (ptr + 0) = b at e
         exact (congrArg u.mem (BitVec.add_zero ptr)).symm.trans e
       refine WP.mono (significantByte_ok hu.pointer hu.remaining hu.width hu.head hr hu.bound
-        (by simp) (by omega)) fun t ⟨htp, htl, ht8, ht9, htz, htm, hkt⟩ => ?_
+        (by simp) (by omega_using [hbnd, hlen])) fun t ⟨htp, htl, ht8, ht9, htz, htm, hkt⟩ => ?_
       rw [hbyte] at ht8 ht9
-      have hbounds := scanNext_bounds b hu.bound (show (b :: rest).length < 2 ^ 64 by omega)
+      have hbounds := scanNext_bounds b hu.bound (show (b :: rest).length < 2 ^ 64 by omega_using [hbnd, hlen])
         (by simp) hu.zero
       have ht : ScanState t B Z (ptr + 1) rest (scanNext first (rest.length + 1) b) :=
         ⟨htp, by simpa only [List.length_cons, Nat.add_sub_cancel] using htl,
@@ -114,8 +114,8 @@ theorem significantLoop_ok {s : State} {B p : Addr} {Z : Nat} {bs : List Byte} {
         · exact ht.width.trans (congrArg (fun x : Nat × Byte => BitVec.ofNat 64 x.1) hresult)
         · exact ht.head.trans (congrArg (fun x : Nat × Byte => x.2.zeroExtend 64) hresult)
       · right
-        refine ⟨?_, rest.length, by simp only [List.length_cons] at hlen; omega,
-          ptr + 1, rest, _, rfl, by omega, by simp only [List.length_cons] at hlen; omega,
+        refine ⟨?_, rest.length, by simp only [List.length_cons] at hlen; omega_using [hlen],
+          ptr + 1, rest, _, rfl, by omega_using [he], by simp only [List.length_cons] at hlen; omega_using [hbnd, hlen],
           ht, htarget', htm.trans hum, hk⟩
         change some (!(t.gpr .x9 == (0#64))) = some true
         simp only [htz, List.length_cons, Nat.add_eq_right, he,

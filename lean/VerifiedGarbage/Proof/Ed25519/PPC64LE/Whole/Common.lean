@@ -82,7 +82,7 @@ theorem sub_sc (sc : Addr) {d n : Nat} (h : d + n ≤ 8192) : Region.Sub ⟨sc +
   Offset.sub_base sc h
 
 theorem sub_sc0 (sc : Addr) {n : Nat} (h : n ≤ 8192) : Region.Sub ⟨sc, n⟩ ⟨sc, 8192⟩ := by
-  simpa using Offset.sub_base sc (d := 0) (n := n) (k := 8192) (by omega)
+  simpa using Offset.sub_base sc (d := 0) (n := n) (k := 8192) (by omega_using [h])
 
 theorem cov_sc {ws : List Region} {sc : Addr} (hw : (⟨sc, 8192⟩ : Region) ∈ ws) {d n : Nat} (h : d + n ≤ 8192) :
     ∃ r' ∈ ws, ∃ off, (⟨sc + BitVec.ofNat 64 d, n⟩ : Region).base = r'.base + BitVec.ofNat 64 off ∧
@@ -274,12 +274,12 @@ theorem hashFinalize_ok (C : ShaOK) {t : State} {sr f : Reg} {sc out : Addr} {cn
 theorem len_add_le {a b : Addr} {n k : Nat} (hn' : n ≤ 2 ^ 64) (hk : k ≤ 2 ^ 64) (h : Region.Disjoint ⟨a, n⟩ ⟨b, k⟩) :
     n + k ≤ 2 ^ 64 := by
   refine Nat.le_of_not_lt fun hlt => ?_
-  have hn : 0 < n := by omega
-  have hk0 : 0 < k := by omega
+  have hn : 0 < n := by omega_using [hk, hlt]
+  have hk0 : 0 < k := by omega_using [hn', hlt]
   by_cases hd : (b - a).toNat < n
   · refine h b ?_ ?_
-    · show (b - a).toNat + 1 ≤ n; omega
-    · show (b - b).toNat + 1 ≤ k; rw [BitVec.sub_self, BitVec.toNat_zero]; omega
+    · show (b - a).toNat + 1 ≤ n; omega_using [hd]
+    · show (b - b).toNat + 1 ≤ k; rw [BitVec.sub_self, BitVec.toNat_zero]; omega_using [hk0]
   · have hlt' := (b - a).isLt
     refine h (b + BitVec.ofNat 64 (2 ^ 64 - (b - a).toNat)) ?_ ?_
     · show (b + BitVec.ofNat 64 (2 ^ 64 - (b - a).toNat) - a).toNat + 1 ≤ n
@@ -291,13 +291,13 @@ theorem len_add_le {a b : Addr} {n k : Nat} (hn' : n ≤ 2 ^ 64) (hk : k ≤ 2 ^
       have : ((b - a).toNat + (2 ^ 64 - (b - a).toNat) % 2 ^ 64) % 2 ^ 64 = 0 := by
         by_cases h0 : (b - a).toNat = 0
         · simp [h0]
-        · rw [Nat.mod_eq_of_lt (by omega : 2 ^ 64 - (b - a).toNat < 2 ^ 64)]
-          rw [show (b - a).toNat + (2 ^ 64 - (b - a).toNat) = 2 ^ 64 by omega]
-      omega
+        · rw [Nat.mod_eq_of_lt (by omega_using [h0] : 2 ^ 64 - (b - a).toNat < 2 ^ 64)]
+          rw [show (b - a).toNat + (2 ^ 64 - (b - a).toNat) = 2 ^ 64 by omega_using []]
+      omega_using [hn]
     · show (b + BitVec.ofNat 64 (2 ^ 64 - (b - a).toNat) - b).toNat + 1 ≤ k
       rw [Offset.add_sub_cancel_left, BitVec.toNat_ofNat]
       have : (2 ^ 64 - (b - a).toNat) % 2 ^ 64 ≤ 2 ^ 64 - (b - a).toNat := Nat.mod_le _ _
-      omega
+      omega_using [hlt, hd]
 
 /-- What a block setting argument registers keeps. -/
 structure ArgsKeep (t u : State) : Prop where
@@ -351,6 +351,6 @@ theorem args5_ok {t : State} {a b c d e : Reg} {i j k l n : Nat} (ha : a ≠ .r0
 theorem cnt_eq (x : BitVec 64) (c : Nat) : x + BitVec.ofNat 64 c = BitVec.ofNat 64 (c + x.toNat) := by
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_add, BitVec.toNat_ofNat]
-  omega
+  omega_using []
 
 end VG.Proof.Ed25519.PPC64LE.Whole

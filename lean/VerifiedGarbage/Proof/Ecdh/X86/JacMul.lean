@@ -36,7 +36,7 @@ theorem jwinMul_ok (hc : CfgOk c) (h4 : c.n = 4) (hC : Law c.C) (hM3 : AM3 c.C)
         (tmv c.C c.n base u (c.sl RZ)) (mul (sv c base s K) P)) := by
   have hn := hs.nowrap
   have hp := hc.p_ge
-  have hmont : ∀ x, c.mont x < c.C.p := fun x => Nat.mod_lt _ (by omega)
+  have hmont : ∀ x, c.mont x < c.C.p := fun x => Nat.mod_lt _ (by omega_using [hpx])
   unfold Impl.Ecdh.X86.Cfg.jwinMul
   refine WP.seq (WP.mono (setConst_ok hs (sl_le c hc.n10 (i := EM) (by decide))
     (Nat.lt_trans (hmont _) hc.p_lt)) fun s₁ ⟨v₁, k₁, O₁⟩ => ?_)
@@ -54,7 +54,7 @@ theorem jwinMul_ok (hc : CfgOk c) (h4 : c.n = 4) (hC : Law c.C) (hM3 : AM3 c.C)
     intro i hi w hw
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
     left; rw [sl_eq, h4]
-    rcases hw with rfl | rfl <;> dsimp only [Impl.Ecdh.X86.Cfg.windowBits] <;> omega
+    rcases hw with rfl | rfl <;> dsimp only [Impl.Ecdh.X86.Cfg.windowBits] <;> omega_using [hi]
   have e₂ : ∀ {i}, i < 45 → sv c base s₂ i = sv c base s₁ i :=
     fun hi => sv_unch U₂ hc.n10 hn hi (ap₂ hi)
   have F₂ := F₁.unch hc.n10 hn (show FixedOk c [(3520, 120), (Impl.Ecdh.X86.Cfg.windowBits, 320)] from by
@@ -76,8 +76,8 @@ theorem jwinMul_ok (hc : CfgOk c) (h4 : c.n = 4) (hC : Law c.C) (hM3 : AM3 c.C)
       rw [e₂ (by decide),e₁ (by decide) (by decide)]; exact hpx
     · change sv c base s₂ PY < _
       rw [e₂ (by decide),e₁ (by decide) (by decide)]; exact hpy
-    · rw [F₂.onep]; exact Nat.mod_lt _ (by omega)
-    · rw [F₂.zero]; omega
+    · rw [F₂.onep]; exact Nat.mod_lt _ (by omega_using [hpx])
+    · rw [F₂.zero]; omega_using [hpx]
   have hz : tmv c.C c.n base s₂ (c.sl ONEP)=1 := by
     change toM _ _ (wordsVal s₂.mem base (c.sl ONEP) c.n)=1
     rw [F₂.onep]

@@ -48,7 +48,7 @@ theorem toBody {base out : Addr} {bytes len : Nat} {sp : BitVec 32} {ws : List (
 theorem body_of_outside {base out : Addr} {bytes len : Nat} {sp : BitVec 32} {a n : Nat} {m m' : Mem}
     (O : Outside base a n m m') (w : Body bytes (a, n)) (fit : bytes ≤ 2 ^ 64) :
     Frame (rtBody base out bytes len sp) m m' :=
-  toBody (ws := [(a, n)]) (frameR_of_outside O (by rcases w with w | w <;> dsimp only at w <;> omega) (by simp))
+  toBody (ws := [(a, n)]) (frameR_of_outside O (by rcases w with w | w <;> dsimp only at w <;> omega_arith) (by simp))
     (fun p hp => by rw [List.mem_singleton.mp hp]; exact w) fit
 
 /-- A component below `2^(8 l)` for its length `l`. -/
@@ -71,8 +71,8 @@ theorem accepted_result {N p q dp dq qi x : Nat} (odd : N % 2 = 1) (pBound : p <
   rw [sp, sq]
   refine ⟨?_, ?_⟩
   · unfold VG.Proof.Bignum.crtResult
-    rw [VG.Proof.Bignum.crt_coefficient_natural (by omega)]
-  · rw [← product]; exact VG.Proof.Bignum.crt_recombine_bound (by omega) (Nat.mod_lt _ (by omega))
+    rw [VG.Proof.Bignum.crt_coefficient_natural (by omega_using [hp])]
+  · rw [← product]; exact VG.Proof.Bignum.crt_recombine_bound (by omega_using [hp]) (Nat.mod_lt _ (by omega_using [hq]))
 
 section
 variable {s : State} {base : Addr} {bytes len : Nat} {args : Nat → BitVec 32}
@@ -94,9 +94,9 @@ theorem Comps.keep {m₀ m m' : Mem} (c : Comps base len args m₀ m)
       val32 m' base (lo len (.slot .wide j)) w = val32 m base (lo len (.slot .wide j)) w) :
     Comps base len args m₀ m' :=
   ⟨by rw [k (by decide) (by decide) (Nat.le_refl _)]; exact c.n,
-    by rw [k (by decide) (by decide) (Nat.le_refl _)]; exact c.x, by rw [k (by decide) (by decide) (by omega)]; exact c.p,
-    by rw [k (by decide) (by decide) (by omega)]; exact c.q, by rw [k (by decide) (by decide) (by omega)]; exact c.dp,
-    by rw [k (by decide) (by decide) (by omega)]; exact c.dq, by rw [k (by decide) (by decide) (Nat.le_refl _)]; exact c.qi⟩
+    by rw [k (by decide) (by decide) (Nat.le_refl _)]; exact c.x, by rw [k (by decide) (by decide) (by omega_using [])]; exact c.p,
+    by rw [k (by decide) (by decide) (by omega_using [])]; exact c.q, by rw [k (by decide) (by decide) (by omega_using [])]; exact c.dp,
+    by rw [k (by decide) (by decide) (by omega_using [])]; exact c.dq, by rw [k (by decide) (by decide) (Nat.le_refl _)]; exact c.qi⟩
 
 /-- The wide slots 9 to 17, within the working space. -/
 theorem wide_hi (h : RIn base bytes len args s) {j w : Nat} (hj9 : 9 ≤ j) (hj : j ≤ 17) (hw : w ≤ 2 * cwc len .wide) :
@@ -109,7 +109,7 @@ theorem wide_hi (h : RIn base bytes len args s) {j w : Nat} (hj9 : 9 ≤ j) (hj 
   have e18 : lo len (.slot .wide 18) = numBase + 18 * st len .wide := rfl
   have := Nat.mul_le_mul_right (st len .wide) (show j + 1 ≤ 18 by omega)
   rw [Nat.succ_mul] at this
-  omega
+  omega_using [hw, f, bw, est, ej, e18, this]
 
 /-- A component below `2^(32 W)` for the modulus's words `W` of 32 bits. -/
 theorem comp_wide (h : RIn base bytes len args s) (m : Mem) {i : Nat} (hi : i ∈ componentArguments) :
@@ -118,7 +118,7 @@ theorem comp_wide (h : RIn base bytes len args s) (m : Mem) {i : Nat} (hi : i �
   have b := h.crt.bounded i hi
   have lb := len_le_bc len
   have bw := bc_eq_cwc len .wide
-  exact Nat.lt_of_lt_of_le this (Nat.pow_le_pow_right (by decide) (by omega))
+  exact Nat.lt_of_lt_of_le this (Nat.pow_le_pow_right (by decide) (by omega_using [b, lb, bw]))
 
 /-- The components read and the key and input accepted or not. -/
 theorem front_ok (h : RIn base bytes len args s) {P : Prog isa} {Q : State → Prop}
@@ -136,10 +136,10 @@ theorem front_ok (h : RIn base bytes len args s) {P : Prog isa} {Q : State → P
   have e18 : lo len (.slot .wide 18) = numBase + 18 * st len .wide := rfl
   have nb : numBase = 3336 := rfl
   refine WP.seq (WP.mono (importComponents_ok h) fun u₁ ⟨O₁, N₁, X₁, P₁, Q₁, DP₁, DQ₁, QI₁, K₁⟩ => ?_)
-  have h₁ := h.keep K₁ (by decide) (by decide) (O₁.mono (Nat.zero_le _) (by omega))
+  have h₁ := h.keep K₁ (by decide) (by decide) (O₁.mono (Nat.zero_le _) (by omega_using [f, e9, e18]))
   have nlt : componentValue s.mem args 2 < 2 ^ (32 * cwc len .wide) := by
     have := h.crt.modulus_bound
-    exact Nat.lt_of_lt_of_le this (Nat.pow_le_pow_right (by decide) (by omega))
+    exact Nat.lt_of_lt_of_le this (Nat.pow_le_pow_right (by decide) (by omega_using [lb, bw]))
   have X₁' : val32 u₁.mem base (lo len (.slot .wide 15)) (cwc len .wide) = componentValue s.mem args 4 :=
     val32_low (b := cwc len .wide) (by rw [← Nat.two_mul]; exact X₁) (comp_wide h s.mem (by decide))
   have QI₁' : val32 u₁.mem base (lo len (.slot .wide 14)) (cwc len .wide) = componentValue s.mem args 14 :=
@@ -150,16 +150,16 @@ theorem front_ok (h : RIn base bytes len args s) {P : Prog isa} {Q : State → P
   rw [sp₁] at F₂
   have C₂ : Comps base len args s.mem u₂.mem :=
     Comps.keep ⟨N₁, X₁, P₁, Q₁, DP₁, DQ₁, QI₁⟩ fun hj9 hj hw =>
-      valR_keep h₁ F₂ (sp₁ ▸ h₁.room) (wide_hi h hj9 (by omega) hw).1
-        (by have := wide_hi h hj9 (by omega) hw; omega)
+      valR_keep h₁ F₂ (sp₁ ▸ h₁.room) (wide_hi h hj9 (by omega_using [hj]) hw).1
+        (by have := wide_hi h hj9 (by omega_using [hj]) hw; omega_using [this])
   refine k u₂ h₂ ?_ C₂ ?_ (K₁.trans K₂)
-  · refine (body_of_outside O₁ (.inr ⟨by omega, by omega⟩) (by omega)).trans (toBody F₂ ?_ (by omega))
+  · refine (body_of_outside O₁ (.inr ⟨by omega, by omega⟩) (by omega_using [bl])).trans (toBody F₂ ?_ (by omega_using [bl]))
     intro p hp; simp only [valR, List.mem_cons, List.not_mem_nil, or_false] at hp
     rcases hp with rfl | rfl | rfl | rfl
-    · exact .inl (show 8 + 4 ≤ 32 by omega)
-    · exact .inr ⟨by simp only [multOff]; omega, by simp only [multOff]; omega⟩
-    · exact .inr ⟨by simp only [prodOff]; omega, by omega⟩
-    · exact .inr ⟨by simp only [mulAOff]; omega, by omega⟩
+    · exact .inl (show 8 + 4 ≤ 32 by omega_using [])
+    · exact .inr ⟨by simp only [multOff]; omega_using [], by simp only [multOff]; omega_using [pf, nb]⟩
+    · exact .inr ⟨by simp only [prodOff]; omega_using [], by omega_using [pf]⟩
+    · exact .inr ⟨by simp only [mulAOff]; omega_using [], by omega_using [pf]⟩
   · apply BitVec.eq_of_toNat_eq
     rw [show (u₂.mem.readW (off base accOff) 32).toNat = w32 u₂.mem base accOff from rfl, A₂]
     rfl
@@ -175,17 +175,17 @@ theorem stR_body (h : RIn base bytes len args s) {o : Nat} (ho : o ≤ 19) : ∀
   have := fit q hq
   simp only [stR, List.mem_cons, List.not_mem_nil, or_false] at hq
   rcases hq with rfl | rfl | rfl | rfl
-  · exact .inl (show 0 + 8 ≤ 32 by omega)
-  · exact .inr ⟨by dsimp only; omega, this⟩
-  · exact .inr ⟨by dsimp only; omega, this⟩
-  · exact .inr ⟨by dsimp only; omega, this⟩
+  · exact .inl (show 0 + 8 ≤ 32 by omega_using [])
+  · exact .inr ⟨by dsimp only; omega_using [nb], this⟩
+  · exact .inr ⟨by dsimp only; omega_using [e20, t0, nb], this⟩
+  · exact .inr ⟨by dsimp only; omega_using [eo, nb], this⟩
 
 /-- A factor fits half the width when its length does. -/
 theorem fits_half {m : Mem} {i : Nat} (hl : (args (i + 1)).toNat ≤ bc len .half) :
     componentValue m args i < 2 ^ (32 * cwc len .half) := by
   have := comp_lt m args i
   have bh := bc_eq_cwc len .half
-  exact Nat.lt_of_lt_of_le this (Nat.pow_le_pow_right (by decide) (by omega))
+  exact Nat.lt_of_lt_of_le this (Nat.pow_le_pow_right (by decide) (by omega_using [hl, bh]))
 
 /-- The wide slots `a` and `b` exchanged through the wide slot 18, which only the wide slots 9 to 18
 change. -/
@@ -603,7 +603,7 @@ theorem acc_keep (h : RIn base bytes len args s) {sp : BitVec 32} {ws : List (Na
   apply BitVec.eq_of_toNat_eq
   show w32 m' base accOff = w32 m base accOff
   rw [← w32_val32_one, ← w32_val32_one]
-  exact frameR_val32 F R h.scratch.nowrap (by omega) (fun p hp => by have := hw p hp; omega) fit
+  exact frameR_val32 F R h.scratch.nowrap (by omega_using [f, z, nb, ao]) (fun p hp => by have := hw p hp; omega_using [this]) fit
 
 /-- The coefficient, the recombination and the result written out. -/
 theorem back_ok (h : RIn base bytes len args s) {m₀ : Mem} (c : Comps base len args m₀ s.mem) {mp mq : Nat}
@@ -723,7 +723,7 @@ theorem sized_ok (h : RIn base bytes len args s)
   have nB := h.crt.modulus_bound
   have g := bc_ge h.lower' .wide
   have facts := h.crt.factor_bounds valid
-  have pow : 2 ^ (8 * len) ≤ 2 ^ (32 * cwc len .wide) := Nat.pow_le_pow_right (by decide) (by omega)
+  have pow : 2 ^ (8 * len) ≤ 2 ^ (32 * cwc len .wide) := Nat.pow_le_pow_right (by decide) (by omega_using [lb, bw])
   unfold sized
   refine front_ok h fun u₁ h₁ F₁ c₁ A₁ K₁ => ?_
   refine powers_ok h₁ c₁ h.crt.dpLen h.crt.dqLen fun u₂ h₂ F₂ c₂ A₂ MP MQ L₂ K₂ => ?_
@@ -733,15 +733,15 @@ theorem sized_ok (h : RIn base bytes len args s)
     Nat.lt_of_lt_of_le (Nat.lt_trans facts.2.2 nB) pow
   have sp := safeM_lt pl (by omega)
   have sq := safeM_lt ql (by omega)
-  have mpl : (componentValue s.mem args 4) ^ componentValue s.mem args 10 % safeM (componentValue s.mem args 6) < safeM (componentValue s.mem args 6) := Nat.mod_lt _ (by have := safeM_gt (componentValue s.mem args 6); omega)
-  have mql : (componentValue s.mem args 4) ^ componentValue s.mem args 12 % safeM (componentValue s.mem args 8) < safeM (componentValue s.mem args 8) := Nat.mod_lt _ (by have := safeM_gt (componentValue s.mem args 8); omega)
-  refine WP.mono (back_ok h₂ c₂ MP mpl MQ (by omega) L₂ (cb := decide (accepted s.mem args))
+  have mpl : (componentValue s.mem args 4) ^ componentValue s.mem args 10 % safeM (componentValue s.mem args 6) < safeM (componentValue s.mem args 6) := Nat.mod_lt _ (by have := safeM_gt (componentValue s.mem args 6); omega_using [this])
+  have mql : (componentValue s.mem args 4) ^ componentValue s.mem args 12 % safeM (componentValue s.mem args 8) < safeM (componentValue s.mem args 8) := Nat.mod_lt _ (by have := safeM_gt (componentValue s.mem args 8); omega_using [this])
+  refine WP.mono (back_ok h₂ c₂ MP mpl MQ (by omega_using [sq, mql]) L₂ (cb := decide (accepted s.mem args))
     (by rw [A₂, A₁]) (pc := none) trivial ⟨trivial, fun _ => trivial⟩) fun t ⟨B, E, F, K⟩ => ⟨?_, E, ?_, ?_⟩
   · by_cases acc : accepted s.mem args
     · obtain ⟨R, Rlt⟩ := accepted_result (dp := componentValue s.mem args 10)
         (dq := componentValue s.mem args 12) (qi := componentValue s.mem args 14) (x := (componentValue s.mem args 4)) facts.1 facts.2.1
         facts.2.2 acc.1
-      have B' := B (fun _ => by omega)
+      have B' := B (fun _ => by omega_using [nB, Rlt])
       simp only [acc, decide_true, ↓reduceIte] at B' ⊢
       rw [B', R]; rfl
     · have B' := B (fun hc => absurd (of_decide_eq_true hc) acc)
@@ -779,10 +779,10 @@ theorem PreR2.keepBody {t : State} {i p : Nat} (h : RIn base bytes len args s) (
   have z : lo len (.slot .wide 0) = numBase := sl_zero len .wide
   have nb : numBase = 3336 := rfl
   have s0 : Region.Sub ⟨base, 32⟩ ⟨base, bytes⟩ := by
-    have := Offset.sub base (d := 0) (n := 32) (e := 0) (k := bytes) (Nat.zero_le _) (by omega)
+    have := Offset.sub base (d := 0) (n := 32) (e := 0) (k := bytes) (Nat.zero_le _) (by omega_using [f, z, nb])
     simpa only [off, BitVec.ofNat_eq_ofNat, BitVec.add_zero] using this
   have s48 : Region.Sub ⟨off base 48, bytes - 48⟩ ⟨base, bytes⟩ := by
-    have := Offset.sub base (d := 48) (n := bytes - 48) (e := 0) (k := bytes) (Nat.zero_le _) (by omega)
+    have := Offset.sub base (d := 48) (n := bytes - 48) (e := 0) (k := bytes) (Nat.zero_le _) (by omega_using [f, z, nb])
     simpa only [off, BitVec.ofNat_eq_ofNat, BitVec.add_zero] using this
   refine P.keep K sp F (fun r hr => ?_) (fun r hr => ?_) <;>
     simp only [rtBody, List.mem_cons, List.not_mem_nil, or_false] at hr <;> rcases hr with rfl | rfl | rfl | rfl
@@ -811,10 +811,10 @@ theorem frontPre_ok (h : RIn base bytes len args s) {P : Prog isa} {Q : State �
   have e18 : lo len (.slot .wide 18) = numBase + 18 * st len .wide := rfl
   have nb : numBase = 3336 := rfl
   refine WP.seq (WP.mono (importComponents_ok h) fun u₁ ⟨O₁, N₁, X₁, P₁, Q₁, DP₁, DQ₁, QI₁, K₁⟩ => ?_)
-  have h₁ := h.keep K₁ (by decide) (by decide) (O₁.mono (Nat.zero_le _) (by omega))
+  have h₁ := h.keep K₁ (by decide) (by decide) (O₁.mono (Nat.zero_le _) (by omega_using [f, e9, e18]))
   have nlt : componentValue s.mem args 2 < 2 ^ (32 * cwc len .wide) := by
     have := h.crt.modulus_bound
-    exact Nat.lt_of_lt_of_le this (Nat.pow_le_pow_right (by decide) (by omega))
+    exact Nat.lt_of_lt_of_le this (Nat.pow_le_pow_right (by decide) (by omega_using [lb, bw]))
   have X₁' : val32 u₁.mem base (lo len (.slot .wide 15)) (cwc len .wide) = componentValue s.mem args 4 :=
     val32_low (b := cwc len .wide) (by rw [← Nat.two_mul]; exact X₁) (comp_wide h s.mem (by decide))
   have QI₁' : val32 u₁.mem base (lo len (.slot .wide 14)) (cwc len .wide) = componentValue s.mem args 14 :=
@@ -825,16 +825,16 @@ theorem frontPre_ok (h : RIn base bytes len args s) {P : Prog isa} {Q : State �
   rw [sp₁] at F₂
   have C₂ : Comps base len args s.mem u₂.mem :=
     Comps.keep ⟨N₁, X₁, P₁, Q₁, DP₁, DQ₁, QI₁⟩ fun hj9 hj hw =>
-      valR_keep h₁ F₂ (sp₁ ▸ h₁.room) (wide_hi h hj9 (by omega) hw).1
-        (by have := wide_hi h hj9 (by omega) hw; omega)
+      valR_keep h₁ F₂ (sp₁ ▸ h₁.room) (wide_hi h hj9 (by omega_using [hj]) hw).1
+        (by have := wide_hi h hj9 (by omega_using [hj]) hw; omega_using [this])
   refine k u₂ h₂ ?_ C₂ ?_ (K₁.trans K₂)
-  · refine (body_of_outside O₁ (.inr ⟨by omega, by omega⟩) (by omega)).trans (toBody F₂ ?_ (by omega))
+  · refine (body_of_outside O₁ (.inr ⟨by omega, by omega⟩) (by omega_using [bl])).trans (toBody F₂ ?_ (by omega_using [bl]))
     intro p hp; simp only [valR, List.mem_cons, List.not_mem_nil, or_false] at hp
     rcases hp with rfl | rfl | rfl | rfl
-    · exact .inl (show 8 + 4 ≤ 32 by omega)
-    · exact .inr ⟨by simp only [multOff]; omega, by simp only [multOff]; omega⟩
-    · exact .inr ⟨by simp only [prodOff]; omega, by omega⟩
-    · exact .inr ⟨by simp only [mulAOff]; omega, by omega⟩
+    · exact .inl (show 8 + 4 ≤ 32 by omega_using [])
+    · exact .inr ⟨by simp only [multOff]; omega_using [], by simp only [multOff]; omega_using [pf, nb]⟩
+    · exact .inr ⟨by simp only [prodOff]; omega_using [], by omega_using [pf]⟩
+    · exact .inr ⟨by simp only [mulAOff]; omega_using [], by omega_using [pf]⟩
   · apply BitVec.eq_of_toNat_eq
     rw [show (u₂.mem.readW (off base accOff) 32).toNat = w32 u₂.mem base accOff from rfl, A₂]
 
@@ -860,10 +860,10 @@ theorem powersPre_ok (h : RIn base bytes len args s) {m₀ : Mem} (c : Comps bas
   refine WP.seq (WP.mono (factorsInit_ok h c) fun u₀ I₀ => ?_)
   refine WP.seq (WP.seq (WP.mono (facStep_ok c dpl dql (j := 0) (by decide) I₀ (pc := some 0)
     (P0.keepBody h O0 I₀.keeps (by decide) I₀.frame)
-    ⟨fitG_of h.lower (by show (args 7).toNat ≤ _; omega), fun hl => fitG_of h.lower hl⟩) fun u₁ ⟨I₁, _⟩ => ?_))
+    ⟨fitG_of h.lower (by show (args 7).toNat ≤ _; omega_using [lb, p7]), fun hl => fitG_of h.lower hl⟩) fun u₁ ⟨I₁, _⟩ => ?_))
   refine WP.mono (facStep_ok c dpl dql (j := 1) (by decide) I₁ (pc := some 1)
     (P1.keepBody h O1 I₁.keeps (by decide) I₁.frame)
-    ⟨fitG_of h.lower (by show (args 9).toNat ≤ _; omega), fun hl => fitG_of h.lower hl⟩) fun u I => ?_
+    ⟨fitG_of h.lower (by show (args 9).toNat ≤ _; omega_using [lb, q9]), fun hl => fitG_of h.lower hl⟩) fun u I => ?_
   exact k u I.1.inp I.1.frame ⟨(I.1.comps 9 _ (.inl rfl) (Nat.le_refl _)).trans c.n,
     (I.1.comps 15 _ (.inr (.inr rfl)) (Nat.le_refl _)).trans c.x, I.1.f₁, I.1.f₂, I.1.e₁, I.1.e₂,
     (I.1.comps 14 _ (.inr (.inl rfl)) (Nat.le_refl _)).trans c.qi⟩ I.1.acc (I.1.two rfl).1 (I.1.two rfl).2 I.1.l₁
@@ -886,7 +886,7 @@ theorem sizedPre_ok (h : RIn base bytes len args s)
   have nB := h.crt.modulus_bound
   have g := bc_ge h.lower' .wide
   have facts := h.crt.factor_bounds valid
-  have pow : 2 ^ (8 * len) ≤ 2 ^ (32 * cwc len .wide) := Nat.pow_le_pow_right (by decide) (by omega)
+  have pow : 2 ^ (8 * len) ≤ 2 ^ (32 * cwc len .wide) := Nat.pow_le_pow_right (by decide) (by omega_using [lb, bw])
   have accE : decide (acceptedPre s.mem args) = decide (accepted s.mem args) :=
     decide_eq_decide.mpr ⟨fun a => ⟨pq, a⟩, fun a => a.2⟩
   have p7 := h.crt.pShort
@@ -903,18 +903,18 @@ theorem sizedPre_ok (h : RIn base bytes len args s)
     Nat.lt_of_lt_of_le (Nat.lt_trans facts.2.2 nB) pow
   have sp := safeM_lt pl (by omega)
   have sq := safeM_lt ql (by omega)
-  have mpl : (componentValue s.mem args 4) ^ componentValue s.mem args 10 % safeM (componentValue s.mem args 6) < safeM (componentValue s.mem args 6) := Nat.mod_lt _ (by have := safeM_gt (componentValue s.mem args 6); omega)
-  have mql : (componentValue s.mem args 4) ^ componentValue s.mem args 12 % safeM (componentValue s.mem args 8) < safeM (componentValue s.mem args 8) := Nat.mod_lt _ (by have := safeM_gt (componentValue s.mem args 8); omega)
-  refine WP.mono (back_ok h₂ c₂ MP mpl MQ (by omega) L₂ (cb := decide (acceptedPre s.mem args))
+  have mpl : (componentValue s.mem args 4) ^ componentValue s.mem args 10 % safeM (componentValue s.mem args 6) < safeM (componentValue s.mem args 6) := Nat.mod_lt _ (by have := safeM_gt (componentValue s.mem args 6); omega_using [this])
+  have mql : (componentValue s.mem args 4) ^ componentValue s.mem args 12 % safeM (componentValue s.mem args 8) < safeM (componentValue s.mem args 8) := Nat.mod_lt _ (by have := safeM_gt (componentValue s.mem args 8); omega_using [this])
+  refine WP.mono (back_ok h₂ c₂ MP mpl MQ (by omega_using [sq, mql]) L₂ (cb := decide (acceptedPre s.mem args))
     (by rw [A₂, A₁]) (pc := some 0) (P0.keepBody h O0 (K₁.trans K₂) (by decide) (F₁.trans F₂))
-    ⟨fitG_of h.lower (by show (args 7).toNat ≤ _; omega), fun hl => fitG_of h.lower hl⟩)
+    ⟨fitG_of h.lower (by show (args 7).toNat ≤ _; omega_using [lb, p7]), fun hl => fitG_of h.lower hl⟩)
     fun t ⟨B, E, F, K⟩ => ⟨?_, by rw [E, accE], ?_, ?_⟩
   · rw [accE] at B
     by_cases acc : accepted s.mem args
     · obtain ⟨R, Rlt⟩ := accepted_result (dp := componentValue s.mem args 10)
         (dq := componentValue s.mem args 12) (qi := componentValue s.mem args 14) (x := (componentValue s.mem args 4)) facts.1 facts.2.1
         facts.2.2 acc.1
-      have B' := B (fun _ => by omega)
+      have B' := B (fun _ => by omega_using [nB, Rlt])
       simp only [acc, decide_true, ↓reduceIte] at B' ⊢
       rw [B', R]; rfl
     · have B' := B (fun hc => absurd (of_decide_eq_true hc) acc)

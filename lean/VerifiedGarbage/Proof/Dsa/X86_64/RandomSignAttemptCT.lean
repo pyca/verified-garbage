@@ -95,7 +95,7 @@ theorem random_sign_attempt_agreement (S : Signer) {s t a b : State}
               rw [← ham] at hnoncea
               rw [← hbm] at hnonceb
               rw [← hused] at hbr'
-              have hsingle := random_sign_single_agreement S har' hbr' hpub (by omega) hbound
+              have hsingle := random_sign_single_agreement S har' hbr' hpub (by omega_using []) hbound
                 hnoncea hnonceb hsucc hvs hvt eata ebtb
               rw [hsample, hcmp, hsingle]
             | iteF hcb _ =>

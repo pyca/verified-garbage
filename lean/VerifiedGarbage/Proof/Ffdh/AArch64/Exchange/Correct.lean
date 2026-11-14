@@ -101,7 +101,7 @@ theorem ex_correct (W : Window) (M : Mont) (S : Selector) (s : State) (h : exCon
     have := os2ip_lt ((p.D xb).dom.take (p.D xb).k)
     rw [hb₀.plen] at this
     exact this
-  have hk := octets_bitLength (by have := hb₀.k1; simp at this; omega) hlo hhi
+  have hk := octets_bitLength (by have := hb₀.k1; simp at this; omega_using [this]) hlo hhi
   rw [exchangeOp_eq hpv (by have := hp1.2.1; exact Nat.lt_trans (by decide) this) hk, h0]
   have hP : (domainOf p.k p.dom).p = (p.D xb).P := rfl
   have hfl : fl p xb ↔ (1 < zv p xb ∧ zv p xb < (p.D xb).P - 1) :=

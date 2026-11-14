@@ -62,8 +62,8 @@ theorem oneA_ok {s₀ : State} {off : Nat} {W : Addr} (hoff : off = 104 ∨ off 
     (hWv : s₀.mem.readW (s₀.sp + BitVec.ofNat 64 off) 64 = W) :
     WP isa (.block [.addSp .r12 0, .load .d .r12 .r12 off]) s₀ fun sA =>
       sA.gpr .r12 = W ∧ (∀ r, r ≠ .r12 → sA.gpr r = s₀.gpr r) ∧ Keeps s₀ sA := by
-  have ho4 : off % 4 = 0 := by omega
-  have ho15 : off < 2 ^ 15 := by omega
+  have ho4 : off % 4 = 0 := by omega_using [hoff]
+  have ho15 : off < 2 ^ 15 := by omega_using [hoff]
   apply WP.of_runBlock
   simp only [runBlock_cons, runStep_some, runBlock_nil, exec, addr, State.load, State.write, Size.bytes,
     hWi, ho4, ho15, Proof.Gcm.PPC64LE.read_8, hWv, Option.bind_some, Option.map_some, Option.some.injEq,
@@ -78,8 +78,8 @@ theorem one1_wp {s₀ : State} {off : Nat} {W T : Addr} (hoff : off = 104 ∨ of
     (hTv : s₀.mem.readW (s₀.sp + BitVec.ofNat 64 96) 64 = T)
     (hTd : (⟨s₀.sp + BitVec.ofNat 64 96, 8⟩ : Region).Disjoint (savedR W)) :
     WP isa (.block (oneEntry off)) s₀ (SO1 W T s₀) := by
-  have ho4 : off % 4 = 0 := by omega
-  have ho15 : off < 2 ^ 15 := by omega
+  have ho4 : off % 4 = 0 := by omega_using [hoff]
+  have ho15 : off < 2 ^ 15 := by omega_using [hoff]
   simp only [oneEntry]
   refine WP.block_append (WP.block_append ?_)
   have hA := oneA_ok hoff hWi hWv

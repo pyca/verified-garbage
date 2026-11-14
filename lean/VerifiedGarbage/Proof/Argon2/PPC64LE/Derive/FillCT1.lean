@@ -138,8 +138,8 @@ theorem stctr_w {s : State} {pass slice lane index ctr c : Nat} (h : W s₀ pass
     (ha : s.gpr .r3 = BitVec.ofNat 64 c) :
     WP isa (.block [st counterOff .r3]) s (W s₀ pass slice lane index c) :=
   wp_stloc h.inv (d := counterOff) (by decide) fun t it vt ot _ _ => WP.block_nil
-    ⟨it, Prm.of_lw h.pr fun d h₁ h₂ => ot d (by omega) (.inl (by simp only [counterOff]; omega)),
-      h.pos.of_lw fun d h₁ h₂ => ot d (by omega) (.inr (by simp only [counterOff]; omega)), by rw [vt, ha]⟩
+    ⟨it, Prm.of_lw h.pr fun d h₁ h₂ => ot d (by omega_using [h₂]) (.inl (by simp only [counterOff]; omega_using [h₁])),
+      h.pos.of_lw fun d h₁ h₂ => ot d (by omega_using [h₂]) (.inr (by simp only [counterOff]; omega_using [h₂])), by rw [vt, ha]⟩
 
 end
 
@@ -163,13 +163,13 @@ theorem stage_rel {x y o : Nat} (ho : 4096 ≤ o) (ho' : o + 1024 ≤ 8192)
       fun _ _ => True := by
   unfold Impl.Argon2.PPC64LE.Derive.stage
   refine RelCT.seqW (T.leaf [] [] (fun s₁ s₂ h => ⟨h.1, h.2, by simp, by simp⟩) hc)
-    (fun s h => stageBlk_ok h (x := x) (y := y) (o := o) (by omega) (by omega) (by omega))
-    (fun s h => stageBlk_ok h (x := x) (y := y) (o := o) (by omega) (by omega) (by omega)) ?_
-  refine T.ccall_rel ho (by omega) fun s₁ s₂ ⟨⟨i₁, d₁, a₁, e₁, c₁⟩, ⟨i₂, d₂, a₂, e₂, c₂⟩⟩ =>
-    ⟨⟨i₁, d₁, c₁, by rw [a₁]; exact .inr ⟨x, hx, by omega, hxo, rfl⟩,
-        by rw [e₁]; exact .inr ⟨y, hy, by omega, hyo, rfl⟩⟩,
-     ⟨i₂, d₂, c₂, by rw [a₂]; exact .inr ⟨x, hx, by omega, hxo, rfl⟩,
-        by rw [e₂]; exact .inr ⟨y, hy, by omega, hyo, rfl⟩⟩,
+    (fun s h => stageBlk_ok h (x := x) (y := y) (o := o) (by omega_using [hx']) (by omega_using [hy']) (by omega_using [ho']))
+    (fun s h => stageBlk_ok h (x := x) (y := y) (o := o) (by omega_using [hx']) (by omega_using [hy']) (by omega_using [ho'])) ?_
+  refine T.ccall_rel ho (by omega_using [ho']) fun s₁ s₂ ⟨⟨i₁, d₁, a₁, e₁, c₁⟩, ⟨i₂, d₂, a₂, e₂, c₂⟩⟩ =>
+    ⟨⟨i₁, d₁, c₁, by rw [a₁]; exact .inr ⟨x, hx, by omega_using [hx'], hxo, rfl⟩,
+        by rw [e₁]; exact .inr ⟨y, hy, by omega_using [hy'], hyo, rfl⟩⟩,
+     ⟨i₂, d₂, c₂, by rw [a₂]; exact .inr ⟨x, hx, by omega_using [hx'], hxo, rfl⟩,
+        by rw [e₂]; exact .inr ⟨y, hy, by omega_using [hy'], hyo, rfl⟩⟩,
      by rw [a₁, a₂, T.pb.scrP_eq], by rw [e₁, e₂, T.pb.scrP_eq]⟩
 
 /-- `addressCalls` leaks the same trace in two runs at the same position. -/

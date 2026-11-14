@@ -114,7 +114,7 @@ theorem saveMem_frame {r : Region} (m : Mem) (B : Addr) (g : Reg → BitVec 64) 
 theorem saveMem_frame_base (m : Mem) (B : Addr) (g : Reg → BitVec 64) {L : Nat}
     (l : List (Reg × Nat)) (h : ∀ p ∈ l, p.2 + 8 ≤ L) (hL : L ≤ 2 ^ 64) :
     Frame [⟨B, L⟩] m (saveMem m B g l) :=
-  saveMem_frame m B g l fun p hp => Offset.contains_base B (h p hp) (by have := h p hp; omega)
+  saveMem_frame m B g l fun p hp => Offset.contains_base B (h p hp) (by have := h p hp; omega_using [hL, this])
 
 /-- Reading 8 bytes at an offset of `B` that misses every slot. -/
 theorem saveMem_readW_sep (m : Mem) (B : Addr) (g : Reg → BitVec 64) {e : Nat}

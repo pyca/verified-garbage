@@ -51,7 +51,7 @@ theorem shapeCall_ok {L : CallLayout} {digestLen : Nat} {s : State}
     exact (shapeFrame_pointer O K (by decide) (stable input hi)).trans (R.pointers input hi)
   · apply BitVec.eq_of_toNat_eq
     have := (pointerValue L.base t (.input .digestPrefixLen)).isLt
-    rw [Pre, BitVec.toNat_ofNat, hd, Nat.mod_eq_of_lt (by omega)]
+    rw [Pre, BitVec.toNat_ofNat, hd, Nat.mod_eq_of_lt (by omega_using [Pre])]
   · simpa only [mask32, valid, ite_true] using F
 
 end VG.Proof.Dsa.X86

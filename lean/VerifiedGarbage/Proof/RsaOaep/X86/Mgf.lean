@@ -314,7 +314,7 @@ theorem tcallK_vp {X : State → State → Prop} (hX : ∀ σ s t v, X σ s → 
       (tcall k ts rs) G := by
   have hg := P.hg
   obtain ⟨σ', ok⟩ := hg.ok
-  have hk : 4 * k + 4 ≤ 44 := by omega
+  have hk : 4 * k + 4 ≤ 44 := by omega_using [hk3]
   obtain ⟨tR, tRo, tC⟩ := P.tbl
   let F : State → State → Prop := fun σ s =>
     (Ctx L scr σ s ∧ MI g (j := j) L scr so sl dOff dl c dstv seed Inv σ s.mem ∧ X σ s) ∧ s.syms = σ.syms

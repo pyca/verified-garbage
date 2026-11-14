@@ -45,7 +45,7 @@ theorem statesAt_frame {rs : List Region} {m m' : Mem} (hf : Frame rs m m') {p :
   congr 1
   funext j
   rw [add_ofNat_assoc]
-  exact hf.bytes (R := ⟨p, 16 * n⟩) hd hn (show 16 * i + j.1 < 16 * n by have := j.2; omega)
+  exact hf.bytes (R := ⟨p, 16 * n⟩) hd hn (show 16 * i + j.1 < 16 * n by have := j.2; omega_using [hi'])
 
 /-! ## `vg_aes_encrypt_blocks` and `vg_aes_decrypt_blocks` -/
 
@@ -93,9 +93,9 @@ variable {s : State} {K D S : BitVec 32} {R n : Nat} (h : BCall s K D S R n)
 include h
 
 theorem fit : 4 * blkRegs.length + 4 ≤ (s.gpr .esp).toNat := by
-  have := h.esp; simp only [List.length_cons, List.length_nil]; omega
+  have := h.esp; simp only [List.length_cons, List.length_nil]; omega_using [this]
 
-theorem n_lt : n < 2 ^ 32 := by have := h.fD; omega
+theorem n_lt : n < 2 ^ 32 := by have := h.fD; omega_using [this]
 
 theorem args : arg (pushed blkRegs s).callEntry 0 = K ∧ arg (pushed blkRegs s).callEntry 1 = BitVec.ofNat 32 R ∧
     arg (pushed blkRegs s).callEntry 2 = D ∧ arg (pushed blkRegs s).callEntry 3 = BitVec.ofNat 32 n ∧
@@ -103,10 +103,10 @@ theorem args : arg (pushed blkRegs s).callEntry 0 = K ∧ arg (pushed blkRegs s)
   refine ⟨?_, ?_, ?_, ?_, ?_⟩ <;>
   rw [callEntry_arg h.fit blkRegs_esp (by decide)] <;> simp [h.eax, h.ecx, h.edx, h.ebx, h.ebp]
 
-theorem sub20 : Region.Sub (below (s.gpr .esp) 20) (below (s.gpr .esp) 24) := below_sub (by omega) h.esp
+theorem sub20 : Region.Sub (below (s.gpr .esp) 20) (below (s.gpr .esp) 24) := below_sub (by omega_using []) h.esp
 
 theorem sub4 : Region.Sub ⟨(s.gpr .esp - BitVec.ofNat 32 24).setWidth 64, 4⟩ (below (s.gpr .esp) 24) := by
-  have := below_inner (sp := s.gpr .esp) (a := 4) (b := 24) (k := 20) (by omega) h.esp
+  have := below_inner (sp := s.gpr .esp) (a := 4) (b := 24) (k := 20) (by omega_using []) h.esp
   rw [show s.gpr .esp - BitVec.ofNat 32 24 = s.gpr .esp - BitVec.ofNat 32 20 - BitVec.ofNat 32 4 by
     rw [← VG.Offset.sub_add_eq]; rfl]
   exact this
@@ -125,7 +125,7 @@ theorem callPre (f : Nat → List Byte → Spec.Aes.State → Spec.Aes.State) :
       arg_withRegions, argAddr_withRegions, a0, a1, a2, a3, a4, eA, eSp, hR, hn]
     refine ⟨trivial, trivial, h.kd, h.ks, h.ds, h.bd.sub_left h.sub20, h.bs.sub_left h.sub20,
       h.bd.sub_left h.sub4, h.bs.sub_left h.sub4, h.fK, h.fD, h.fS, ?_, h.rounds⟩
-    rw [sub_toNat (by have := h.esp; omega)]; have := (s.gpr .esp).isLt; omega
+    rw [sub_toNat (by have := h.esp; omega_using [this])]; have := (s.gpr .esp).isLt; omega_using []
   · intro a m ⟨r, hr, hcn⟩
     simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl
@@ -150,10 +150,10 @@ theorem blk_call {f : Nat → List Byte → Spec.Aes.State → Spec.Aes.State} {
     WP isa (blocksFrame fn) s (BPost f s K D S R n) := by
   have hR := toNat_rounds h.rounds
   have hn := toNat_ofNat32 h.n_lt
-  have hR' : 16 * (R + 1) ≤ 240 := by rcases h.rounds with h' | h' | h' <;> omega
+  have hR' : 16 * (R + 1) ≤ 240 := by rcases h.rounds with h' | h' | h' <;> omega_using [h']
   unfold blocksFrame
   refine WP.callWith (rs := blkRegs) (k := Proof.Aes.blocksX86 f) ok nosp (by simp)
-    blkRegs_esp (by rw [stack]; have := h.esp; simp only [List.length_cons, List.length_nil]; omega)
+    blkRegs_esp (by rw [stack]; have := h.esp; simp only [List.length_cons, List.length_nil]; omega_using [this])
     (h.callPre f) fun s' rd' wr' cs' f' ⟨s₂, m₂, post⟩ => ?_
   obtain ⟨a0, a1, a2, a3, -⟩ := h.args
   rw [stack] at f'
@@ -163,8 +163,8 @@ theorem blk_call {f : Nat → List Byte → Spec.Aes.State → Spec.Aes.State} {
   have eK := bytesAt_frame fE (p := w64 K) (n := 16 * (R + 1))
     (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
-      exact (h.bk.sub_right (Region.sub_prefix hR')).symm) (by omega)
-  rw [statesAt_frame fE (one_disj h.bd) (by have := h.fD; omega), eK] at post
+      exact (h.bk.sub_right (Region.sub_prefix hR')).symm) (by omega_using [hR])
+  rw [statesAt_frame fE (one_disj h.bd) (by have := h.fD; omega_using [hn]), eK] at post
   refine ⟨rd', wr', cs', ?_, post⟩
   exact f'.mono fun r hr => by simp only [List.cons_append, List.nil_append] at hr; simpa using hr
 
@@ -189,7 +189,7 @@ theorem blk_ct {f : Nat → List Byte → Spec.Aes.State → Spec.Aes.State} {fn
   simp only [Proof.Aes.blocksX86]
   refine ⟨by simp only [State.withRegions_gpr, callEntry_esp', e₁, e₂], fun i hi => ?_⟩
   simp only [arg_withRegions]
-  rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4) with rfl | rfl | rfl | rfl | rfl
+  rcases (by omega_using [hi] : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4) with rfl | rfl | rfl | rfl | rfl
   · rw [a0, b0]
   · rw [a1, b1]
   · rw [a2, b2]
@@ -205,7 +205,7 @@ theorem key_ok (v : BlocksImpl) {s : State} {K C S : BitVec 32} {L : Nat} (h : K
   have hL := toNat_ofNat32 h.L_lt
   unfold keyFrame
   refine WP.callWith (rs := keyRegs) (k := Proof.Aes.expandKeyX86) v.expandOk v.expandNosp
-    (by simp) keyRegs_esp (by rw [v.expandStack]; have := h.esp; simp only [List.length_cons, List.length_nil]; omega)
+    (by simp) keyRegs_esp (by rw [v.expandStack]; have := h.esp; simp only [List.length_cons, List.length_nil]; omega_using [this])
     h.callPre fun s' rd' wr' cs' f' ⟨s₂, m₂, post⟩ => ?_
   obtain ⟨a0, a1, a2, -⟩ := h.args
   rw [v.expandStack] at f'
@@ -233,7 +233,7 @@ theorem key_ct (v : BlocksImpl) {I : State → Prop} {K C S E : BitVec 32} {L : 
   obtain ⟨b0, b1, b2, b3⟩ := h₂.args
   refine ⟨by simp only [State.withRegions_gpr, callEntry_esp', e₁, e₂], fun i hi => ?_⟩
   simp only [arg_withRegions]
-  rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3) with rfl | rfl | rfl | rfl
+  rcases (by omega_using [hi] : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3) with rfl | rfl | rfl | rfl
   · rw [a0, b0]
   · rw [a1, b1]
   · rw [a2, b2]

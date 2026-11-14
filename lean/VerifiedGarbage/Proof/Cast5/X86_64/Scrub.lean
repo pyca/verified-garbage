@@ -53,7 +53,7 @@ theorem blocksAt_of0 (h : ∀ a, Region.Contains ⟨p, L⟩ a 1 → m₁ a = m�
   intro j hj
   simp only [Spec.Cast5.blockAt, Vector.getElem_ofFn]
   rw [VG.Offset.add_add]
-  exact agree_le h hn _ (by omega)
+  exact agree_le h hn _ (by omega_using [this, hj])
 
 theorem cbcBlocksAt_of0 (h : ∀ a, Region.Contains ⟨p, L⟩ a 1 → m₁ a = m₂ a) {n : Nat} (hn : n * 8 ≤ L) :
     Spec.Cast5.cbcBlocksAt m₂ p n = Spec.Cast5.cbcBlocksAt m₁ p n := by

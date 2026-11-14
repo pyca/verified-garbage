@@ -29,7 +29,7 @@ open VG.Proof.X25519.Arm (Rest Upd wp_mov wp_movw op2_reg)
 
 /-- A 16-bit immediate, as `movw` loads it. -/
 theorem movw_toNat {c : Nat} (h : c < 2 ^ 16) : ((BitVec.ofNat 16 c).setWidth 32).toNat = c := by
-  rw [BitVec.toNat_setWidth, BitVec.toNat_ofNat]; omega
+  rw [BitVec.toNat_setWidth, BitVec.toNat_ofNat]; omega_using [h]
 
 /-- What a call writing `[o]` keeps: the registers but `r0`–`r3`, `r12` and
 `lr`, the regions, the stack pointer, `r12` as the working space, and the
@@ -65,7 +65,7 @@ theorem callR_ok {enc : Nat → Nat} {f : String} {body : Prog isa} (hn : body.n
   have g3 : (s₄.gpr .r3).toNat = enc b := by rw [u₄.gpr, movw_toNat hb]
   have hf₄ : Far s₄ base 8192 := hf.of_rest k₄
   have hcov : Covers [⟨base, 8192⟩] s₄.wr := by
-    have h := hf₄.write (d := 0) (n := 8192) (by omega)
+    have h := hf₄.write (d := 0) (n := 8192) (by omega_using [])
     simp only [off, BitVec.add_zero] at h
     exact Covers.one h
   refine WP.call (k := ⟨fun t => t.rd = [] ∧ t.wr = [⟨base, 8192⟩] ∧ t.gpr .r0 = s.gpr .r12 ∧
@@ -115,8 +115,8 @@ theorem mulCallR_ok (hB : wordsVal s.mem base (enc b) S.k < S.m) {u : Bool} :
   callR_ok (V := fun m m' => wordsVal m' base (enc o) S.k < S.m ∧
       wordsVal m' base (enc o) S.k * 2 ^ (64 * S.k) % S.m = wordsVal m base (enc a) S.k * wordsVal m base (enc b) S.k % S.m)
     (by unfold mulFnWith mulFnU mulFn; cases u <;> simp only [Bool.false_eq_true, ↓reduceIte] <;> (try split) <;> rfl)
-    hf (by have := own_le S.k hM.n9; omega) (by have := own_le S.k hM.n9; omega)
-    (by have := own_le S.k hM.n9; omega) fun t h1 h2 h3 h4 h5 h6 h7 => by
+    hf (by have := own_le S.k hM.n9; omega_using [lo, this]) (by have := own_le S.k hM.n9; omega_using [la, this])
+    (by have := own_le S.k hM.n9; omega_using [lb, this]) fun t h1 h2 h3 h4 h5 h6 h7 => by
       obtain ⟨hp, e0⟩ := pre_of_callR hs hf lo la lb h1 h2 h3 h4 h5 h6 (m := S.m)
       refine WP.mono (mulFnWith_ok u hM hp (by rw [e0, h6, h7]; exact hB)) fun t' ⟨A, K, ⟨V, C⟩, R⟩ => ?_
       rw [e0, h4, h5, h6] at *
@@ -127,8 +127,8 @@ theorem addCallR_ok (hAB : wordsVal s.mem base (enc a) S.k + wordsVal s.mem base
     WP isa (callR enc (S.fn "add") (addFn S.k S.m) o a b) s fun s' => CallKeepR S.k base (enc o) s s' ∧
       wordsVal s'.mem base (enc o) S.k = (wordsVal s.mem base (enc a) S.k + wordsVal s.mem base (enc b) S.k) % S.m :=
   callR_ok (V := fun m m' => wordsVal m' base (enc o) S.k = (wordsVal m base (enc a) S.k + wordsVal m base (enc b) S.k) % S.m)
-    rfl hf (by have := own_le S.k hM.n9; omega) (by have := own_le S.k hM.n9; omega)
-    (by have := own_le S.k hM.n9; omega) fun t h1 h2 h3 h4 h5 h6 h7 => by
+    rfl hf (by have := own_le S.k hM.n9; omega_using [lo, this]) (by have := own_le S.k hM.n9; omega_using [la, this])
+    (by have := own_le S.k hM.n9; omega_using [lb, this]) fun t h1 h2 h3 h4 h5 h6 h7 => by
       obtain ⟨hp, e0⟩ := pre_of_callR hs hf lo la lb h1 h2 h3 h4 h5 h6 (m := S.m)
       refine WP.mono (addFn_ok hM hp (by rw [e0, h5, h6, h7]; exact hAB)) fun t' ⟨A, K, V, R⟩ => ?_
       rw [e0, h4, h5, h6] at *
@@ -139,8 +139,8 @@ theorem subCallR_ok (hA : wordsVal s.mem base (enc a) S.k < S.m) (hB : wordsVal 
     WP isa (callR enc (S.fn "sub") (subFn S.k S.m) o a b) s fun s' => CallKeepR S.k base (enc o) s s' ∧
       wordsVal s'.mem base (enc o) S.k = (wordsVal s.mem base (enc a) S.k + S.m - wordsVal s.mem base (enc b) S.k) % S.m :=
   callR_ok (V := fun m m' => wordsVal m' base (enc o) S.k = (wordsVal m base (enc a) S.k + S.m - wordsVal m base (enc b) S.k) % S.m)
-    rfl hf (by have := own_le S.k hM.n9; omega) (by have := own_le S.k hM.n9; omega)
-    (by have := own_le S.k hM.n9; omega) fun t h1 h2 h3 h4 h5 h6 h7 => by
+    rfl hf (by have := own_le S.k hM.n9; omega_using [lo, this]) (by have := own_le S.k hM.n9; omega_using [la, this])
+    (by have := own_le S.k hM.n9; omega_using [lb, this]) fun t h1 h2 h3 h4 h5 h6 h7 => by
       obtain ⟨hp, e0⟩ := pre_of_callR hs hf lo la lb h1 h2 h3 h4 h5 h6 (m := S.m)
       refine WP.mono (subFn_ok hM hp (by rw [e0, h5, h7]; exact hA) (by rw [e0, h6, h7]; exact hB))
         fun t' ⟨A, K, V, R⟩ => ?_

@@ -77,7 +77,7 @@ open VG.AArch64
 def zeroSums : Nat → Sums := fun _ => ⟨0,0,0⟩
 theorem zeroLanes : Lanes 0 (fun _ => 0) := by
   intro e he
-  rcases (show e = 0 ∨ e = 1 ∨ e = 2 ∨ e = 3 by omega) with rfl | rfl | rfl | rfl <;> rfl
+  rcases (show e = 0 ∨ e = 1 ∨ e = 2 ∨ e = 3 by omega_using [he]) with rfl | rfl | rfl | rfl <;> rfl
 
 theorem sumTerms_bound (terms : List (Nat × Nat)) {F G : (Nat × Nat) → Nat → Nat}
     {a : Nat → Sums} {n : Nat} (ha : ∀ e < 4, (a e).Bounded n)
@@ -88,8 +88,8 @@ theorem sumTerms_bound (terms : List (Nat × Nat)) {F G : (Nat × Nat) → Nat �
   | nil => simpa only [sumTerms, List.foldl_nil, List.length_nil, Nat.add_zero] using ha
   | cons fg terms ih =>
     have hb : ∀ e < 4, (advance a (F fg) (G fg) e).Bounded (n+1) := fun e he =>
-      (ha e he).next (hF fg (by simp) _ (by omega)) (hF fg (by simp) _ (by omega))
-        (hG fg (by simp) _ (by omega)) (hG fg (by simp) _ (by omega))
+      (ha e he).next (hF fg (by simp) _ (by omega_using [he])) (hF fg (by simp) _ (by omega_using [he]))
+        (hG fg (by simp) _ (by omega_using [he])) (hG fg (by simp) _ (by omega_using [he]))
     have hr := ih hb (fun fg hf => hF fg (by simp [hf])) (fun fg hf => hG fg (by simp [hf]))
     simpa only [sumTerms, List.foldl_cons, List.length_cons, Nat.add_assoc,
       Nat.add_comm 1 terms.length] using hr

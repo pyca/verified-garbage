@@ -41,7 +41,7 @@ theorem quotient_zero {j : Nat} (hj : j < 2^64) :
     simp only [BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hj,
       Nat.shiftRight_eq_div_pow] at hh
     change j / 8 = 0 at hh
-    omega
+    omega_using [hh]
   · intro h
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hj,
@@ -59,7 +59,7 @@ theorem count_test (r : Reg) (s : State) {left N : Nat}
   constructor
   · intro h; rw [he, hz.mpr h]; rfl
   · intro h
-    have hn : s.gpr r ≠ 0 := fun he => by have := hz.mp he; omega
+    have hn : s.gpr r ≠ 0 := fun he => by have := hz.mp he; omega_using [h, this]
     exact he.trans (by simpa using hn)
 
 theorem zero_test (r : Reg) (s : State) (b : Bool)
@@ -74,7 +74,7 @@ theorem bit_test {c m : Nat} (hc : c = 1 ∨ c = 2 ∨ c = 4) (hm : m < 2 * c) :
     (BitVec.ofNat 64 m &&& BitVec.ofNat 64 c == 0) = decide (m < c) := by
   have h : ∀ c ∈ [1, 2, 4], ∀ m : Fin 8, m.val < 2 * c →
       (BitVec.ofNat 64 m.val &&& BitVec.ofNat 64 c == 0) = decide (m.val < c) := by decide
-  exact h c (by rcases hc with rfl | rfl | rfl <;> simp) ⟨m, by rcases hc with rfl | rfl | rfl <;> omega⟩ hm
+  exact h c (by rcases hc with rfl | rfl | rfl <;> simp) ⟨m, by rcases hc with rfl | rfl | rfl <;> omega_using [hm]⟩ hm
 
 theorem tail_step_ok {inverse ctr : Bool} {o : Reg} {base s : State} {nr n j c : Nat} {D E : Addr}
     {icb : Spec.Gcm.Block} (hc4 : c = 1 ∨ c = 2 ∨ c = 4)
@@ -98,8 +98,8 @@ theorem tail_step_ok {inverse ctr : Bool} {o : Reg} {base s : State} {nr n j c :
   by_cases hl : n - j < c
   · exact WP.ite true (by rw [hz, decide_eq_true hl]) (fun _ => WP.block_nil ⟨j, h.bound, hl, ht⟩) (by simp)
   · refine WP.ite false (by rw [hz, decide_eq_false hl]) (by simp) (fun _ => ?_)
-    exact WP.mono (loop_group_ok hc ht (by rcases hc4 with rfl | rfl | rfl <;> decide) (by omega))
-      fun u hu => ⟨j + c, by omega, by omega, hu⟩
+    exact WP.mono (loop_group_ok hc ht (by rcases hc4 with rfl | rfl | rfl <;> decide) (by omega_using [hc4, hl]))
+      fun u hu => ⟨j + c, by omega_using [hc4, hl], by omega_using [hlt], hu⟩
 
 theorem batch_loop_ok {inverse ctr : Bool} {o : Reg} {base s : State} {nr n k : Nat} {D E : Addr} {icb : Spec.Gcm.Block}
     (hc : LoopConfig inverse ctr o base nr n D E) (h : LoopInv inverse ctr base nr n D E icb k s)
@@ -122,7 +122,7 @@ theorem batch_loop_ok {inverse ctr : Bool} {o : Reg} {base s : State} {nr n k : 
     intro j t hj ht
     apply count_test
     rw [ht.2]
-    exact quotient_zero (by have := hc.size; omega)
+    exact quotient_zero (by have := hc.size; omega_using [this])
   -- The first iteration computes the quotient before the loop condition is tested.
   refine WP.loop (M := isa) (fun m t => ∃ j, m = n-j ∧ j+8 ≤ n ∧ LoopInv inverse ctr base nr n D E icb j t)
     (fun m t ht => ?_) (n-k) s ⟨k, rfl, hk, h⟩
@@ -131,7 +131,7 @@ theorem batch_loop_ok {inverse ctr : Bool} {o : Reg} {base s : State} {nr n k : 
   have he := test (j+8) u hj hu
   by_cases hl : n-(j+8) < 8
   · exact Or.inl ⟨he.1 hl, j+8, hj, hl, hu.1⟩
-  · exact Or.inr ⟨he.2 (by omega), n-(j+8), by omega, j+8, rfl, by omega, hu.1⟩
+  · exact Or.inr ⟨he.2 (by omega_using [hl]), n-(j+8), by omega_using [hj], j+8, rfl, by omega_using [hl], hu.1⟩
 
 theorem batches_ok {inverse ctr : Bool} {o : Reg} {base s : State} {nr n k : Nat} {D E : Addr} {icb : Spec.Gcm.Block}
     (hc : LoopConfig inverse ctr o base nr n D E) (h : LoopInv inverse ctr base nr n D E icb k s) :
@@ -143,7 +143,7 @@ theorem batches_ok {inverse ctr : Bool} {o : Reg} {base s : State} {nr n k : Nat
   have hs := h.write12 (s.gpr .r7 >>> 3)
   have hz : (s.write .r12 (s.gpr .r7 >>> 3)).gpr .r12 = 0 ↔ n-k < 8 := by
     rw [RegUpd.gpr_write_self, h.left]
-    exact quotient_zero (by have := hc.size; omega)
+    exact quotient_zero (by have := hc.size; omega_using [this])
   have full : WP isa (.ite (.zero .d .r12) (.block [])
       (.loop (.seq (Impl.Aes.PPC64LE.Crypto.group inverse ctr 8 o) (.block [.lsr .d .r12 .r7 3]))
         (.nonzero .d .r12))) (s.write .r12 (s.gpr .r7 >>> 3))
@@ -152,12 +152,12 @@ theorem batches_ok {inverse ctr : Bool} {o : Reg} {base s : State} {nr n k : Nat
     by_cases hl : n-k < 8
     · refine WP.ite true (by simpa using zero_test _ _ false (he.1 hl)) (fun _ => ?_) (by simp)
       exact WP.block_nil ⟨k, h.bound, hl, hs⟩
-    · refine WP.ite false (by simpa using zero_test _ _ true (he.2 (by omega))) (by simp) (fun _ => ?_)
-      exact batch_loop_ok hc hs (by omega)
+    · refine WP.ite false (by simpa using zero_test _ _ true (he.2 (by omega_using [hl]))) (by simp) (fun _ => ?_)
+      exact batch_loop_ok hc hs (by omega_using [hl])
   refine WP.seq (WP.mono full fun t ⟨j, hj, hl, ht⟩ => ?_)
-  refine WP.seq (WP.mono (tail_step_ok (c := 4) (by decide) hc ht (by omega)) fun t ⟨j, hj, hl, ht⟩ => ?_)
-  refine WP.seq (WP.mono (tail_step_ok (c := 2) (by decide) hc ht (by omega)) fun t ⟨j, hj, hl, ht⟩ => ?_)
-  refine WP.mono (tail_step_ok (c := 1) (by decide) hc ht (by omega)) fun t ⟨j, hj, hl, ht⟩ => ?_
-  exact (show j = n by omega) ▸ ht
+  refine WP.seq (WP.mono (tail_step_ok (c := 4) (by decide) hc ht (by omega_using [hl])) fun t ⟨j, hj, hl, ht⟩ => ?_)
+  refine WP.seq (WP.mono (tail_step_ok (c := 2) (by decide) hc ht (by omega_using [hl])) fun t ⟨j, hj, hl, ht⟩ => ?_)
+  refine WP.mono (tail_step_ok (c := 1) (by decide) hc ht (by omega_using [hl])) fun t ⟨j, hj, hl, ht⟩ => ?_
+  exact (show j = n by omega_using [hj, hl]) ▸ ht
 
 end VG.Proof.Aes.PPC64LE.Crypto

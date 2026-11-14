@@ -20,24 +20,24 @@ theorem HalfInv.frame {s0 s : State} {dst : BitVec 32} {bs : List Byte} {i : Nat
   apply inv.outside a
   intro j hj equal
   apply ha ⟨State.addr dst, bs.length⟩ (by simp)
-  rw [equal, VG.Arm.addr_add (by have := inv.index; omega)]
-  exact Offset.contains_base _ (by have := inv.index; omega) (by have := inv.index; omega)
+  rw [equal, VG.Arm.addr_add (by have := inv.index; omega_using [fit, hj, this])]
+  exact Offset.contains_base _ (by have := inv.index; omega_using [hj, this]) (by have := inv.index; omega_using [fit, hj, this])
 
 theorem HalfInv.parity {s0 s : State} {dst : BitVec 32} {bs : List Byte}
     (inv : HalfInv s0 dst bs bs.length s) (positive : 0 < bs.length)
     (fits : dst.toNat + bs.length ≤ 2 ^ 32) :
     (s.gpr .r1).toNat % 2 = (Spec.Rsa.os2ip bs / 2) % 2 := by
-  have last := inv.last (bs.length - 1) (by omega)
-  have byte := inv.shifted (bs.length - 1) (by omega)
-  rw [VG.Arm.addr_add (by omega : dst.toNat + (bs.length - 1) < 2 ^ 32)] at byte
+  have last := inv.last (bs.length - 1) (by omega_using [positive])
+  have byte := inv.shifted (bs.length - 1) (by omega_using [positive])
+  rw [VG.Arm.addr_add (by omega_using [fits] : dst.toNat + (bs.length - 1) < 2 ^ 32)] at byte
   have carry := carryAt_le (by decide : 0 ≤ 1) bs (bs.length - 1)
   have byteBound := (bs[bs.length - 1]?.getD 0).isLt
   have value : (s.gpr .r1).toNat =
       (bs[bs.length - 1]?.getD 0).toNat / 2 + 128 * carryAt 0 bs (bs.length - 1) := by
-    rw [last, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega :
+    rw [last, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [carry] :
       (bs[bs.length - 1]?.getD 0).toNat / 2 + 128 * carryAt 0 bs (bs.length - 1) < 2 ^ 32)]
   have residue := candidate_mod8_last s.mem (State.addr dst) positive
   rw [inv.value fits, byte, halfByte_val carry] at residue
-  omega
+  omega_using [value, residue]
 
 end VG.Proof.Ffdh.Arm.ParameterCandidate

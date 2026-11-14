@@ -35,7 +35,7 @@ theorem prefixed_probable {p a : Nat} {r first tailTape rest : Rand} {wp : List 
     exact ((Bool.and_eq_true _ _).mp witness).2
   · intro all
     have count := drawWitnesses_pass_count _ _ _ _ tail all
-    have length : (a :: wp).length = primeChecks (bitLength p) := by simp only [List.length_cons]; omega
+    have length : (a :: wp).length = primeChecks (bitLength p) := by simp only [List.length_cons]; omega_using [positive, count]
     simp only [probablePrime, shape, length, beq_self_eq_true, Bool.true_and]
     apply List.all_eq_true.mpr
     intro b hb

@@ -53,7 +53,7 @@ theorem hashRest_ok {V : Reg → BitVec 64} {sp : Addr} {D : Addr} {n R : Nat} {
   have E := H.env
   have hs := C.short
   generalize hm : a.length / 16 = m at H
-  have hrest : a.length - 16 * m = a.length % 16 := by omega
+  have hrest : a.length - 16 * m = a.length % 16 := by omega_using [hm]
   unfold hashRest
   -- `Offset_m ⊕ L_*`
   refine WP.seq (WP.mono (xorB_ok (s := t) (pd := ohO) (qd := 240) (cd := ohO) (by decide) (by decide)
@@ -69,18 +69,18 @@ theorem hashRest_ok {V : Reg → BitVec 64} {sp : Addr} {D : Addr} {n R : Nat} {
     simp only [List.mem_singleton] at hr; subst hr
     exact in_hashR (e := 272) (n := 16) (by simp) (by decide) (by decide))
   -- `pad(A_*)`
-  have hB := C.buf.slice (a := 16 * m) (k := a.length % 16) (by omega)
+  have hB := C.buf.slice (a := 16 * m) (k := a.length % 16) (by omega_using [hm])
   have hS : Covers [⟨A + BitVec.ofNat 64 (16 * m), a.length % 16⟩] (t₁.rd ++ t₁.wr) := by
     rw [B₁.rd, B₁.wr, H.rd, H.wr]; exact hB.rd
   have hSD : (⟨A + BitVec.ofNat 64 (16 * m), a.length % 16⟩ : Region).Disjoint
       ⟨V .r31 + BitVec.ofNat 64 bufO, 16⟩ :=
     hB.w.sub_right (Lay.wSub (by decide))
   have hrestb : bytesAt t₁.mem (A + BitVec.ofNat 64 (16 * m)) (a.length % 16) = a.drop (16 * m) := by
-    have hd := Proof.Ocb.bytesAt_drop s₀.mem A (a := 16 * m) (n := a.length) (by omega)
+    have hd := Proof.Ocb.bytesAt_drop s₀.mem A (a := 16 * m) (n := a.length) (by omega_using [hm])
     rw [C.aad, hrest] at hd
     rw [Proof.Cmac.bytesAt_frame (hashR_mut (D := D) (n := n) fr₁) (fun r hr =>
-      (C.a_mut r hr).sub_left (Offset.sub_base A (by omega))) (by omega), hd]
-  refine WP.seq (WP.mono (padTo_ok E₁.r31 E₁.perm.w hr (by omega) (by decide)
+      (C.a_mut r hr).sub_left (Offset.sub_base A (by omega_using [hm]))) (by omega_using []), hd]
+  refine WP.seq (WP.mono (padTo_ok E₁.r31 E₁.perm.w hr (by omega_using []) (by decide)
     (by rw [B₁.gpr _ (by decide), H.r24]) (by rw [B₁.gpr _ (by decide), h25]) hS hSD) fun t₂ P₂ => ?_)
   have pad₂ := P₂.val
   rw [hrestb] at pad₂
@@ -135,7 +135,7 @@ theorem hashRest_ok {V : Reg → BitVec 64} {sp : Addr} {D : Addr} {n R : Nat} {
       exact in_hashR (e := 48) (n := 16) (by simp) (by decide) (by decide)), ?_,
     by rw [B₅.rd, P₄.rd, B₃.rd, P₂.rd, B₁.rd, H.rd], by rw [B₅.wr, P₄.wr, B₃.wr, P₂.wr, B₁.wr, H.wr]⟩
   rw [B₅.val, sum₄, buf₄, Proof.Ocb.hash_eq]
-  have hlen : (a.drop (16 * m)).length = a.length % 16 := by simp; omega
+  have hlen : (a.drop (16 * m)).length = a.length % 16 := by simp; omega_using [hm]
   simp only [hlen, show a.length % 16 > 0 from hr, ↓reduceIte, hm]
 
 /-- `HASH(K, A)` with `aad` and `aad_len` in `r21` and `r22`: `HInv` at 0. -/
@@ -170,7 +170,7 @@ theorem hashHead_ok {V : Reg → BitVec 64} {sp : Addr} {D : Addr} {n R : Nat} {
   have kb : ∀ {d : Nat}, (d + 16 ≤ 304 ∨ 312 ≤ d) → d + 16 ≤ 2560 →
       blockAtMem s₆.mem (V .r31 + BitVec.ofNat 64 d) = blockAtMem s₂.mem (V .r31 + BitVec.ofNat 64 d) :=
     fun h₁ h₂ => blockAtMem_frame f₆ fun r hr => by
-      simp only [List.mem_singleton] at hr; subst hr; exact L.w_w (by simp only [hlO]; omega) h₂ (by decide)
+      simp only [List.mem_singleton] at hr; subst hr; exact L.w_w (by simp only [hlO]; omega_using [h₁]) h₂ (by decide)
   have g₆ : ∀ r, r ∉ [.r0, .r3, .r24, .r26] → s₆.gpr r = s₀.gpr r := fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
     rw [u₆.other _ hr.2.2.2, u₅.gpr, u₄.other _ hr.2.1, u₃.other _ hr.2.2.1, B₂.gpr r (by simp [hr.1]),
@@ -217,14 +217,14 @@ theorem hashLoop_ok {V : Reg → BitVec 64} {sp : Addr} {D : Addr} {n R : Nat} {
       HInv V sp ciph l A a s₀ u j) ?_ (a.length / 16 - 0) _ ⟨0, rfl, hm, H₀⟩
   rintro k u ⟨j, rfl, hj, H⟩
   refine WP.mono (hashChunk_ok C h28 H hj) fun u' H' => ?_
-  have ev := eval_nonzero H'.r3 (by omega)
+  have ev := eval_nonzero H'.r3 (by omega_using [hs])
   by_cases he : a.length / 16 - (j + min 8 (a.length / 16 - j)) = 0
   · left
-    have hje : j + min 8 (a.length / 16 - j) = a.length / 16 := by omega
+    have hje : j + min 8 (a.length / 16 - j) = a.length / 16 := by omega_using [hj, he]
     exact ⟨ev.trans (by simp [he]), hje ▸ H'⟩
   · right
-    exact ⟨ev.trans (by simp [he]), a.length / 16 - (j + min 8 (a.length / 16 - j)), by omega,
-      j + min 8 (a.length / 16 - j), rfl, by omega, H'⟩
+    exact ⟨ev.trans (by simp [he]), a.length / 16 - (j + min 8 (a.length / 16 - j)), by omega_using [hj],
+      j + min 8 (a.length / 16 - j), rfl, by omega_using [he], H'⟩
 
 /-- After the whole blocks: the length of the rest to `r25`. -/
 theorem tailHead_ok {V : Reg → BitVec 64} {sp : Addr} {D : Addr} {n R : Nat} {ciph : Cipher} {l : Block}
@@ -261,13 +261,13 @@ theorem hashTail_ok {V : Reg → BitVec 64} {sp : Addr} {D : Addr} {n R : Nat} {
       (HashOut V sp ciph l a s₀) := by
   have hs := C.short
   refine WP.seq (WP.mono (tailHead_ok C h22 H) fun t₂ ⟨H₁, h25⟩ => ?_)
-  refine WP.ite (decide (a.length % 16 = 0)) (eval_zero h25 (by omega)) (fun hb => WP.block_nil ?_) (fun hb => ?_)
+  refine WP.ite (decide (a.length % 16 = 0)) (eval_zero h25 (by omega_using [])) (fun hb => WP.block_nil ?_) (fun hb => ?_)
   · have h0 : a.length % 16 = 0 := of_decide_eq_true hb
     refine ⟨H₁.env, H₁.frame, ?_, H₁.rd, H₁.wr⟩
     rw [H₁.sum, Proof.Ocb.hash_eq]
-    have hlen : (a.drop (16 * (a.length / 16))).length = 0 := by simp; omega
+    have hlen : (a.drop (16 * (a.length / 16))).length = 0 := by simp; omega_using [h0]
     simp [hlen]
-  · exact hashRest_ok C h28 H₁ (by have := of_decide_eq_false hb; omega) h25
+  · exact hashRest_ok C h28 H₁ (by have := of_decide_eq_false hb; omega_using [this]) h25
 
 /-- The whole blocks of the associated data, if any. -/
 theorem hashBody_ok {V : Reg → BitVec 64} {sp : Addr} {D : Addr} {n R : Nat} {ciph : Cipher} {l : Block}
@@ -276,7 +276,7 @@ theorem hashBody_ok {V : Reg → BitVec 64} {sp : Addr} {D : Addr} {n R : Nat} {
     WP isa (.ite (.zero .d .r3) (.block []) (.loop hashChunk (.nonzero .d .r3))) t
       fun u => HInv V sp ciph l A a s₀ u (a.length / 16) := by
   have hs := C.short
-  refine WP.ite (decide (a.length / 16 = 0)) (eval_zero H₀.r3 (by omega)) (fun hb => WP.block_nil ?_)
+  refine WP.ite (decide (a.length / 16 = 0)) (eval_zero H₀.r3 (by omega_using [hs])) (fun hb => WP.block_nil ?_)
     (fun hb => hashLoop_ok C h28 H₀ (Nat.pos_of_ne_zero (of_decide_eq_false hb)))
   exact (of_decide_eq_true hb) ▸ H₀
 

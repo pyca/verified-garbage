@@ -25,25 +25,25 @@ theorem trialPairLoopWord_ok (s : State) {n : Nat} (positive : 0<n) (fits : n<2^
       trialPairStepWord_ok s positive fits count (readable.low positive) (fun h => readable.high h)
     have recurrenceA : trialWordResult s.mem (s.gpr .r0) (s.gpr .r3) (s.gpr .r4) n (s.gpr .r2)=
         trialWordResult u.mem (u.gpr .r0) (u.gpr .r3) (u.gpr .r4) (n-min 2 n) (u.gpr .r2) := by
-      rw [trialWordResult,dite_eq_right (by omega)]
+      rw [trialWordResult,dite_eq_right (by omega_using [positive])]
       rw [memory,ptr,valA,rest.gpr .r3 (by simp),rest.gpr .r4 (by simp)]
     have recurrenceB : trialWordResult s.mem (s.gpr .r0) (s.gpr .r3) (s.gpr .r4) n (s.gpr .r8)=
         trialWordResult u.mem (u.gpr .r0) (u.gpr .r3) (u.gpr .r4) (n-min 2 n) (u.gpr .r8) := by
-      rw [trialWordResult,dite_eq_right (by omega)]
+      rw [trialWordResult,dite_eq_right (by omega_using [positive])]
       rw [memory,ptr,valB,rest.gpr .r3 (by simp),rest.gpr .r4 (by simp)]
     by_cases last : n≤2
-    · have zero : n-min 2 n=0 := by omega
+    · have zero : n-min 2 n=0 := by omega_using [last]
       have resultA : u.gpr .r2=trialWordResult s.mem (s.gpr .r0) (s.gpr .r3) (s.gpr .r4) n (s.gpr .r2) := by
         rw [recurrenceA,zero,trialWordResult,dite_eq_left rfl]
       have resultB : u.gpr .r8=trialWordResult s.mem (s.gpr .r0) (s.gpr .r3) (s.gpr .r4) n (s.gpr .r8) := by
         rw [recurrenceB,zero,trialWordResult,dite_eq_left rfl]
       exact ⟨_,u,.loopExit run (by change some (!u.z)=some false;rw [flag,decide_eq_true last];rfl),
         resultA,resultB,memory,rest⟩
-    · have smaller : n-min 2 n<n := by omega
+    · have smaller : n-min 2 n<n := by omega_using [positive]
       have readU : TrialReadable u (u.gpr .r0) (n-min 2 n) := by
         rw [ptr]
         exact readable.advance rest (Nat.min_le_right 2 n)
-      obtain ⟨trT,t,runT,resultA,resultB,memoryT,restT⟩ := ih _ smaller u (by omega) (by omega) cnt readU
+      obtain ⟨trT,t,runT,resultA,resultB,memoryT,restT⟩ := ih _ smaller u (by omega_using [last]) (by omega_using [fits]) cnt readU
       exact ⟨_,t,.loopNext run (by change some (!u.z)=some true;rw [flag,decide_eq_false last];rfl) runT,
         resultA.trans recurrenceA.symm,resultB.trans recurrenceB.symm,memoryT.trans memory,rest.trans restT⟩
 

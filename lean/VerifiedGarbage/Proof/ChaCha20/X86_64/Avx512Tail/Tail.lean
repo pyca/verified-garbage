@@ -540,13 +540,13 @@ theorem storeLo_frame {buf : Addr} (ps : List (Nat × BitVec 64)) (hps : ∀ p �
   | cons p ps ih =>
     rw [Avx2.storeAll, List.foldl_cons, ← Avx2.storeAll]
     exact ((Frame.refl _ _).writeW (List.mem_singleton_self _) _
-      (Offset.contains_base buf (hps p (List.mem_cons_self ..)) (by have := hps p (List.mem_cons_self ..); omega))).trans
+      (Offset.contains_base buf (hps p (List.mem_cons_self ..)) (by have := hps p (List.mem_cons_self ..); omega_using [this]))).trans
       (ih (fun q hq => hps q (List.mem_cons_of_mem _ hq)) _)
 
 theorem incs3_mem {s₀ : State} {m : Mem} (h : Incs m (ebp s₀)) :
     Incs3 (Avx2.storeAll (ebp s₀) p3Pairs m) (ebp s₀) := by
   intro k hk p hp
-  rcases (by omega : k < 2 ∨ k = 2) with hk2 | rfl
+  rcases (by omega_using [hk] : k < 2 ∨ k = 2) with hk2 | rfl
   · exact incs_frame h (storeLo_frame p3Pairs p3Pairs_le m) (by
       intro r hr; simp only [List.mem_singleton] at hr; subst hr
       exact Offset.disjoint_base _ (by decide) (by decide)) k hk2 p hp

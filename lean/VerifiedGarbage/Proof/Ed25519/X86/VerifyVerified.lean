@@ -130,12 +130,12 @@ open VG VG.X86 VG.Impl.Ed25519.X86
 theorem VerifyCTFacts.inputBytes {s t : State} (h : VerifyCTFacts s t) {k : Nat} (hk : k < 2) :
     Spec.Ed25519.bytesAt s.mem ((arg s k + BitVec.ofNat 32 0).setWidth 64) 32 =
       Spec.Ed25519.bytesAt t.mem ((arg t k + BitVec.ofNat 32 0).setWidth 64) 32 := by
-  rcases (by omega : k = 0 ∨ k = 1) with rfl | rfl
+  rcases (by omega_using [hk] : k = 0 ∨ k = 1) with rfl | rfl
   exacts [h.pkBytes, h.rBytes]
 
 theorem VerifyPre.input {s : State} (hp : VerifyPre s) {k : Nat} (hk : k < 2) :
     SlicePre s 3 (arg s k + BitVec.ofNat 32 0) 32 := by
-  rcases (by omega : k = 0 ∨ k = 1) with rfl | rfl
+  rcases (by omega_using [hk] : k = 0 ∨ k = 1) with rfl | rfl
   exacts [hp.pk, hp.r]
 
 theorem VerifyCTFacts.inputA {s t : State} (h : VerifyCTFacts s t) : inputPoint s 0 = inputPoint t 0 :=
@@ -211,7 +211,7 @@ theorem decodeLoad_ct {s₀ t₀ : State} (h : VerifyCTFacts s₀ t₀) {k : Nat
       (.block [.mov .esi (.mem (Impl.X25519.X86.sc DPTR))])
       (fun x y => x.gpr .edi = y.gpr .edi ∧ x.gpr .esi = y.gpr .esi) :=
     hh.mono (fun _ _ h => h) fun (x y : State) ⟨_, _, _, _, hx, hy⟩ =>
-      ⟨hx.1.trans ((h.args 3 (by decide)).trans hy.1.symm), hx.2.trans ((h.args k (by omega)).trans hy.2.symm)⟩
+      ⟨hx.1.trans ((h.args 3 (by decide)).trans hy.1.symm), hx.2.trans ((h.args k (by omega_using [hk])).trans hy.2.symm)⟩
   show RelCT isa _ (.block ([.mov .esi (.mem (Impl.X25519.X86.sc DPTR))] ++ copyWords 96 8)) _
   exact ctBlockAppend hl copyWords96_ct
 
@@ -281,9 +281,9 @@ theorem decodeLoop_ct {s₀ t₀ : State} (h : VerifyCTFacts s₀ t₀) :
   have step (k : Nat) (hk : k < 2) := ((decodeBody_ct h hk).wp fun x y hh =>
     ⟨decodeBody_ok ps hk hh.1, decodeBody_ok pt hk hh.2⟩)
   rcases m with _ | _ | _ | m
-  · exact VG.RelCT.of_false fun _ _ ⟨k, hkm, hk, _⟩ => by omega
+  · exact VG.RelCT.of_false fun _ _ ⟨k, hkm, hk, _⟩ => by omega_using [hkm, hk]
   · refine ((step 1 (by decide)).mono (fun x y ⟨k, hkm, _, hx, hy⟩ => by
-      obtain rfl : k = 1 := by omega
+      obtain rfl : k = 1 := by omega_using [hkm]
       exact ⟨hx, hy⟩) (fun _ _ h => h)).mono (fun _ _ h => h) ?_
     intro x y ⟨_, ⟨hx, zx⟩, ⟨hy, zy⟩⟩
     refine ⟨?_, fun _ => ⟨hx, hy⟩, fun he => ?_⟩
@@ -291,14 +291,14 @@ theorem decodeLoop_ct {s₀ t₀ : State} (h : VerifyCTFacts s₀ t₀) :
     · have : x.zf.map (!·) = some true := he
       rw [zx] at this; cases this
   · refine ((step 0 (by decide)).mono (fun x y ⟨k, hkm, _, hx, hy⟩ => by
-      obtain rfl : k = 0 := by omega
+      obtain rfl : k = 0 := by omega_using [hkm]
       exact ⟨hx, hy⟩) (fun _ _ h => h)).mono (fun _ _ h => h) ?_
     intro x y ⟨_, ⟨hx, zx⟩, ⟨hy, zy⟩⟩
-    refine ⟨?_, fun he => ?_, fun _ => ⟨1, by omega, 1, rfl, by decide, hx, hy⟩⟩
+    refine ⟨?_, fun he => ?_, fun _ => ⟨1, by omega_using [], 1, rfl, by decide, hx, hy⟩⟩
     · show x.zf.map (!·) = y.zf.map (!·); rw [zx, zy]
     · have : x.zf.map (!·) = some false := he
       rw [zx] at this; cases this
-  · exact VG.RelCT.of_false fun _ _ ⟨k, hkm, hk, _⟩ => by omega
+  · exact VG.RelCT.of_false fun _ _ ⟨k, hkm, hk, _⟩ => by omega_using [hkm]
 
 /-- The test of `DOK`. -/
 theorem okTest_ok {u x : State} (hu : VerifyPre u) (hx : DecAt u 2 x) :

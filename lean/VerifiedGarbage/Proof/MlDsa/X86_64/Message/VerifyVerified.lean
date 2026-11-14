@@ -43,8 +43,8 @@ theorem satMem_stk (p : Params) {a : Addr} (ha : 0x8040 ≤ a.toNat) (hb : a.toN
     (satMem p).readW a 64 = stkMem.readW a 64 :=
   Mem.readW_congr fun i hi => by
     have he : (a + BitVec.ofNat 64 i).toNat = a.toNat + i := by
-      rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega : i < 2 ^ 64)]
-      exact Nat.mod_eq_of_lt (by omega)
+      rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hi] : i < 2 ^ 64)]
+      exact Nat.mod_eq_of_lt (by omega_using [hb, hi])
     simp only [satMem, he]
     split
     · omega
@@ -56,7 +56,7 @@ theorem satMem_key {p : Params} (hp : p.pkLen < 0x7000) :
   intro i hi
   have he : ((0x1000 : Addr) + BitVec.ofNat 64 i).toNat = 0x1000 + i := by
     simp only [BitVec.toNat_add, BitVec.toNat_ofNat, BitVec.reduceToNat]
-    omega
+    omega_using [hp, hi]
   simp only [satMem, he]
   split
   · omega
@@ -65,7 +65,7 @@ theorem satMem_key {p : Params} (hp : p.pkLen < 0x7000) :
   all_goals first
     | rfl
     | (rename_i e _; have := congrArg BitVec.toNat e; simp only [he, BitVec.reduceToNat] at this; omega)
-    | (rename_i e; have := congrArg BitVec.toNat e; simp only [he, BitVec.reduceToNat] at this; omega)
+    | (rename_i e; have := congrArg BitVec.toNat e; simp only [he, BitVec.reduceToNat] at this; omega_using [hp, hi, this])
 
 theorem satMem_digest {p : Params} (hp : p.pkLen < 0x7000) :
     bytesAt (satMem p) 0x8000 64 = pkTr (bytesAt (satMem p) 0x1000 p.pkLen) := by
@@ -75,10 +75,10 @@ theorem satMem_digest {p : Params} (hp : p.pkLen < 0x7000) :
   intro i hi
   have he : ((0x8000 : Addr) + BitVec.ofNat 64 i).toNat = 0x8000 + i := by
     simp only [BitVec.toNat_add, BitVec.toNat_ofNat, BitVec.reduceToNat]
-    omega
-  simp only [satMem, he, show 0x8000 ≤ 0x8000 + i ∧ 0x8000 + i < 0x8040 by omega, true_and, ite_true,
+    omega_using [hi]
+  simp only [satMem, he, show 0x8000 ≤ 0x8000 + i ∧ 0x8000 + i < 0x8040 by omega_using [hi], true_and, ite_true,
     Nat.add_sub_cancel_left]
-  rw [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem (by omega), Option.getD_some]
+  rw [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem (by omega_using [hl, hi]), Option.getD_some]
 
 /-- A state satisfying the precondition. -/
 def verifySat (p : Params) : State where

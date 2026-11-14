@@ -33,7 +33,7 @@ theorem encodedValue_rep {p q : Spec.Ed25519.Point} {a : Edwards.EPoint dZ} (hp 
   rw [encodedValue, encodedValue, hp.affine_x, hp.affine_y, hq.affine_x, hq.affine_y]
 
 theorem powersKeep_outside {base : Addr} {s t : State} (h : PowersKeep base 56 968 s t) :
-    Outside base 56 968 s.mem t.mem := fun p hp => h.mem p (by omega) hp
+    Outside base 56 968 s.mem t.mem := fun p hp => h.mem p (by omega_using [hp]) hp
 
 theorem scalarBasePrepare_ok {s : State} {base k : Addr} (hs : Scr s base) (hp : s.gpr .x1 = k)
     (hr : ∀ q < 32, InRegions (s.rd ++ s.wr) (off k q) 1)
@@ -71,7 +71,7 @@ theorem scalarBaseEngine_ok [VG.Proof.Ed25519.AArch64.Divstep.Sound] {s : State}
   rw [scalarBaseEngine]
   refine WP.seq (WP.mono_syms (scalarBasePrepare_ok hs hp hr hd) fun b ⟨kab, bbits, hscalar⟩ syb => ?_)
   have hbt : TblAt b base T := htb.of_far (by rw [kab.rd, kab.wr])
-    (fun x hx => (powersKeep_outside kab) x (Or.inr (by omega)))
+    (fun x hx => (powersKeep_outside kab) x (Or.inr (by omega_using [hx])))
   refine WP.seq (WP.mono (combMultiply_ok (kab.scratch hs) hbt (by rw [syb]; exact hT)
     (by simpa using hscalar) bbits)
     fun c ⟨cp, kc⟩ => ?_)

@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Framework.Lit
 meta import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Spec.Seed
 meta import VerifiedGarbage.Spec.Seed
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # SEED's S-boxes as a packed table
 
@@ -47,20 +48,20 @@ theorem sTable_getD (odd : Bool) (c : Nat) : (sTable odd).getD c 0 = BitVec.ofNa
   rw [sNat]
   split
   · rename_i hc
-    have hm : (16 * odd.toNat + c / 16) % 16 = c / 16 := by cases odd <;> simp <;> omega
+    have hm : (16 * odd.toNat + c / 16) % 16 = c / 16 := by cases odd <;> simp <;> omega_using [hc]
     have hodd : decide (16 ≤ 16 * odd.toNat + c / 16) = odd := by
-      cases odd <;> simp <;> omega
+      cases odd <;> simp <;> omega_using [hc]
     rw [sRowNat, hodd, hm, Vector.getD, sTable_eq, Array.getD, dite_eq_left (by simpa using hc)]
-    have h1 : c / 16 < (sRows odd).toArray.size := by simp only [Vector.size_toArray]; omega
-    have e1 : (sRows odd).toArray.getD (c / 16) default = (sRows odd)[c / 16]'(by omega) := by
+    have h1 : c / 16 < (sRows odd).toArray.size := by simp only [Vector.size_toArray]; omega_using [hc]
+    have e1 : (sRows odd).toArray.getD (c / 16) default = (sRows odd)[c / 16]'(by omega_using [hc]) := by
       unfold Array.getD; rw [dite_eq_left h1]; rfl
-    have h2 : c % 16 < ((sRows odd)[c / 16]'(by omega)).toArray.size := by
-      simp only [Vector.size_toArray]; omega
-    have e2 : ((sRows odd)[c / 16]'(by omega)).toArray.getD (c % 16) 0 =
-        ((sRows odd)[c / 16]'(by omega))[c % 16]'(by omega) := by
+    have h2 : c % 16 < ((sRows odd)[c / 16]'(by omega_using [hc])).toArray.size := by
+      simp only [Vector.size_toArray]; omega_using []
+    have e2 : ((sRows odd)[c / 16]'(by omega_using [hc])).toArray.getD (c % 16) 0 =
+        ((sRows odd)[c / 16]'(by omega_using [hc]))[c % 16]'(by omega_using []) := by
       unfold Array.getD; rw [dite_eq_left h2]; rfl
     rw [e1, e2, BitVec.ofNat_toNat, BitVec.setWidth_eq]
-    exact Vector.getElem_flatten (xss := sRows odd) (by omega)
+    exact Vector.getElem_flatten (xss := sRows odd) (by omega_using [hc])
   · rename_i hc
     rw [Vector.getD, Array.getD, dite_eq_right (by simpa using hc)]
     rfl

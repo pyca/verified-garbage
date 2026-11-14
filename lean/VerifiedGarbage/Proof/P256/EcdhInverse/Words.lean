@@ -47,15 +47,15 @@ theorem words_ok {base : Addr} {s : State} (hs : Scr s base 8192)
       simp only [show p256.invP.L=5 from rfl,wordsVal]
       push_cast
       rw [Int.add_mul_emod_self_left]
-      exact Int.emod_eq_of_lt (by omega) (by have := (word s.mem base a).isLt; omega)
+      exact Int.emod_eq_of_lt (by omega_using []) (by have := (word s.mem base a).isLt; omega_using [])
     rw [low] at hc
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.toNat_ofInt]
-    omega
+    omega_using [hc]
   refine WP.mono (packed_ok s₁ I.d I.f I.g
     (by rw [k₁.gpr _ (by decide)]; exact hI.d)
     (by rw [c2]; exact low _ _ hI.f) (by rw [c3]; exact low _ _ hI.g)
-    (by rw [k₁.gpr _ (by decide)]; exact hz) hf1 (by omega))
+    (by rw [k₁.gpr _ (by decide)]; exact hz) hf1 (by omega_using [hd]))
     fun t ⟨d,u,v,q,r,hk⟩ => ?_
   exact ⟨d,u,v,q,r,by rw [hk.gpr _ (by decide),c19],by rw [hk.mem,m₁],
     (k₁.mono (by decide)).trans ((VG.Proof.Mont.AArch64.Keeps.regs hk).mono (by decide)),

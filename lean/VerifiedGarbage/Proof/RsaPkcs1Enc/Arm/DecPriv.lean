@@ -76,25 +76,25 @@ theorem S.eB {σ s : State} (hs : S P σ s) : Spec.Rsa.bytesAt s.mem (State.addr
 
 theorem arg_lt {j : Nat} (hj : j < 25) : Impl.RsaPkcs1Sig.Arm.argOff frameBytes j < 4096 := by
   unfold Impl.RsaPkcs1Sig.Arm.argOff
-  split <;> simp only [frameBytes] <;> omega
+  split <;> simp only [frameBytes] <;> omega_using [hj]
 
 /-- `str r0, [r12, #4k]` of the stack argument `k`. -/
 theorem strSlot {σ s : State} {k : Nat} (h : S P σ s) (hs : Slots P s.mem k) (hk : k < 18)
     (h12 : s.gpr .r12 = P.B) (hv : s.gpr .r0 = (outv P).getD k 0) {is : List Instr} {Q : State → Prop}
     (kk : ∀ t, S P σ t → Slots P t.mem (k + 1) → t.gpr = s.gpr → WP isa (.block is) t Q) :
     WP isa (.block (.str .r0 .r12 (4 * k) :: is)) s Q := by
-  refine h.2.wp_strFr (d := 4 * k) (by show 4 * k + 4 ≤ frameBytes; simp only [frameBytes]; omega) (by omega) h12
+  refine h.2.wp_strFr (d := 4 * k) (by show 4 * k + 4 ≤ frameBytes; simp only [frameBytes]; omega_using [hk]) (by omega_using [hk]) h12
     fun t st m => kk t ⟨h.1, st⟩ ?_ m.gpr
   intro i hi
   rw [m.mem]
-  rcases (by omega : i = k ∨ i < k) with rfl | hik
+  rcases (by omega_using [hi] : i = k ∨ i < k) with rfl | hik
   · rw [Mem.readW_writeW_self32, hv]
-  · rw [Lay.readW_fr_other _ _ _ (by omega) (by omega) (by omega)]
+  · rw [Lay.readW_fr_other _ _ _ (by omega_using [hik]) (by omega_using [hk, hi]) (by omega_using [hk])]
     exact hs i hik
 
 /-- Argument `j` to the call's stack argument `k`. -/
 theorem argv23 (P : EP) : 23 ≤ P.argv.length := by
-  simp only [EP.argv, List.length_append, List.length_cons, List.length_nil]; omega
+  simp only [EP.argv, List.length_append, List.length_cons, List.length_nil]; omega_using []
 
 theorem copySlot {σ s : State} {k j : Nat} (h : S P σ s) (hs : Slots P s.mem k) (hk : k < 18)
     (h12 : s.gpr .r12 = P.B) (hj : j < 25) (hjl : j < P.argv.length) (hv : P.argv.getD j 0 = (outv P).getD k 0)
@@ -138,9 +138,9 @@ theorem privPre_wp {σ s : State} (h : S P σ s) (z : Slots P s.mem 16) (r12 : s
   · exact WP.block_nil ⟨h, z⟩
   · have len : P.argv.length = 25 := by simp [EP.argv, hpc]
     rw [← List.append_nil (copyArg 24 17)]
-    refine copySlot h z (by decide) r12 (j := 23) (by decide) (by omega) (by simp [EP.argv, outv, hpc])
+    refine copySlot h z (by decide) r12 (j := 23) (by decide) (by omega_using [len]) (by simp [EP.argv, outv, hpc])
       fun t1 h1 z1 r1 => ?_
-    refine copySlot h1 z1 (by decide) r1 (j := 24) (by decide) (by omega) (by simp [EP.argv, outv, hpc])
+    refine copySlot h1 z1 (by decide) r1 (j := 24) (by decide) (by omega_using [len]) (by simp [EP.argv, outv, hpc])
       fun t2 h2 z2 _ => WP.block_nil ⟨h2, z2⟩
 
 theorem privRegs_wp {σ s : State} (h : S P σ s) (z : Slots P s.mem (ncall P)) :
@@ -167,15 +167,15 @@ theorem R1.privArgs {σ s : State} (h : R1 P σ s) :
     PrivArgs s P.out P.n P.e P.inp P.p P.q P.dp P.dq P.qinv P.scr P.K P.el P.pl P.ql P.sl := by
   obtain ⟨hs, oa, r0, r1, r2, r3⟩ := h
   have a : ∀ i < 16, stackArg s i = (outv P).getD i 0 := fun i hi => by
-    rw [← oa i (by unfold ncall; split <;> omega)]
+    rw [← oa i (by unfold ncall; split <;> omega_using [hi])]
     simp only [stackArg, stackArgAddr, hs.2.sp]
-    rw [hs.2.ok.addrB (P.lt_lay (by simp only [frameBytes]; omega))]
+    rw [hs.2.ok.addrB (P.lt_lay (by simp only [frameBytes]; omega_using [hi]))]
   have h1 := hs.1
   exact ⟨r0, r1, r2, r3, a 0 (by decide), a 1 (by decide), a 2 (by decide), a 3 (by decide), a 4 (by decide),
     a 5 (by decide), a 6 (by decide), a 7 (by decide), a 8 (by decide), a 9 (by decide), a 10 (by decide),
     a 11 (by decide), a 12 (by decide), a 13 (by decide), a 14 (by decide), a 15 (by decide), h1.kv, h1.el1,
     h1.elK, h1.pl1, h1.plK, h1.ql1, h1.qlK, h1.slK,
-    by have := hs.1.ok.fits P.SCR (by simp); simp only [Proof.X25519.Arm.addr_toNat] at this; omega⟩
+    by have := hs.1.ok.fits P.SCR (by simp); simp only [Proof.X25519.Arm.addr_toNat] at this; omega_using [this]⟩
 
 theorem call_pre {σ s : State} (h : R1 P σ s) :
     (Proof.Rsa.privateCheckedContract abi Proof.Rsa.Arm.stackBytes).pre
@@ -192,7 +192,7 @@ theorem call_pre {σ s : State} (h : R1 P σ s) :
     simp only [List.pairwise_cons, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
       forall_eq] at this
     exact this.1.2
-  refine priv_pre h.privArgs hs.2.sp hB (by simp only [frameBytes] at fit; omega) ?_ dOS ?_ ?_
+  refine priv_pre h.privArgs hs.2.sp hB (by simp only [frameBytes] at fit; omega_using [fit]) ?_ dOS ?_ ?_
   · intro w hw r hr
     have hw' : w ∈ P.lay.rw := by
       simp only [privWr, List.mem_cons, List.not_mem_nil, or_false] at hw
@@ -207,7 +207,7 @@ theorem call_pre {σ s : State} (h : R1 P σ s) :
     · exact ok.rw_ro hw' (by simp)
     · exact ok.rw_ro hw' (by simp)
     · exact ok.rw_ro hw' (by simp)
-    · rw [q0]; exact (ok.stk_fr (d := 0) (n := 64) (.inr hw') (by simp only [frameBytes]; omega)).symm
+    · rw [q0]; exact (ok.stk_fr (d := 0) (n := 64) (.inr hw') (by simp only [frameBytes]; omega_using [])).symm
   · intro r hr
     have low : (⟨State.addr P.B - BitVec.ofNat 64 3440, 3440⟩ : Region) = P.lay.LOW := rfl
     rw [low]
@@ -290,13 +290,13 @@ theorem R1.preArgs {σ s : State} (hpc : P.pc = true) (h : R1 P σ s) :
   have a : ∀ i < 18, stackArg s i = (outv P).getD i 0 := fun i hi => by
     rw [← oa i (by unfold ncall; rw [hpc]; exact hi)]
     simp only [stackArg, stackArgAddr, hs.2.sp]
-    rw [hs.2.ok.addrB (P.lt_lay (by simp only [frameBytes]; omega))]
+    rw [hs.2.ok.addrB (P.lt_lay (by simp only [frameBytes]; omega_using [hi]))]
   refine ⟨(a 16 (by decide)).trans ?_, (a 17 (by decide)).trans ?_⟩ <;> simp [outv, hpc]
 
 theorem In.prl32 {σ : State} (hpc : P.pc = true) (h : In P σ) : P.prl < 2 ^ 32 := by
   have := h.ok.fits P.PRE (List.mem_append_left _ (by simp [EP.ro, hpc]))
   simp only [Proof.X25519.Arm.addr_toNat] at this
-  omega
+  omega_using [this]
 
 theorem call_preP {σ s : State} (hpc : P.pc = true) (h : R1 P σ s) :
     (Proof.Rsa.privateCheckedPrecomputedContract abi Proof.Rsa.Arm.stackBytes).pre
@@ -317,7 +317,7 @@ theorem call_preP {σ s : State} (hpc : P.pc = true) (h : R1 P σ s) :
       forall_eq] at this
     exact this.1.2
   obtain ⟨a16, a17⟩ := h.preArgs hpc
-  refine priv_preP h.privArgs a16 a17 (hs.1.prl32 hpc) hs.2.sp hB (by simp only [frameBytes] at fit; omega) ?_
+  refine priv_preP h.privArgs a16 a17 (hs.1.prl32 hpc) hs.2.sp hB (by simp only [frameBytes] at fit; omega_using [fit]) ?_
     dOS ?_ ?_ (hs.1.prl hpc) ?_
   · intro w hw r hr
     have hw' : w ∈ P.lay.rw := by
@@ -334,7 +334,7 @@ theorem call_preP {σ s : State} (hpc : P.pc = true) (h : R1 P σ s) :
     · exact ok.rw_ro hw' (by simp)
     · exact ok.rw_ro hw' (by simp)
     · exact ok.rw_ro hw' preRo
-    · rw [q0]; exact (ok.stk_fr (d := 0) (n := 72) (.inr hw') (by simp only [frameBytes]; omega)).symm
+    · rw [q0]; exact (ok.stk_fr (d := 0) (n := 72) (.inr hw') (by simp only [frameBytes]; omega_using [])).symm
   · intro r hr
     have low : (⟨State.addr P.B - BitVec.ofNat 64 3440, 3440⟩ : Region) = P.lay.LOW := rfl
     rw [low]
@@ -380,7 +380,7 @@ theorem leak_st {σ s : State} (hpc : P.pc = true) (hs : S P σ s) :
     Spec.Rsa.privatePrecomputedLeak s.mem (State.addr P.pre) P.K = P.preL := by
   have preRo : P.PRE ∈ P.lay.ro := by simp [EP.ro, hpc]
   have le : Spec.Rsa.precomputedWords P.K ≤ P.prl := by
-    rw [hs.1.prl hpc, Spec.Rsa.privatePrecomputedWords]; omega
+    rw [hs.1.prl hpc, Spec.Rsa.privatePrecomputedWords]; omega_using []
   have rw := hs.2.ro_words (R := P.PRE) preRo (n := P.prl) rfl
   dsimp only at rw
   rw [← hs.1.preL hpc]

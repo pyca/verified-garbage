@@ -52,14 +52,14 @@ theorem seedNonceState_eq (B : Spec.Sha3.State) (m : Mem) (p : Addr) (k : BitVec
     replaceWord_get _ _ _ _ hi,clearPrefix_get _ _ _ hi,seedPrefix_get _ _ _ _ _ hi]
   simp only [seedNonceState,Vector.getElem_ofFn]
   by_cases h8 : i<8
-  · simp only [h8,ite_true,show ¬ i=16 by omega,show ¬ i=8 by omega,
-      show ¬ (8≤i ∧ i<8+17) by omega,ite_false]
+  · simp only [h8,ite_true,show ¬ i=16 by omega_using [h8],show ¬ i=8 by omega_using [h8],
+      show ¬ (8≤i ∧ i<8+17) by omega_using [h8],ite_false]
   · by_cases he8 : i=8
     · subst i; simp only [ite_true,ite_false,Nat.reduceLT,ite_eq_right (by decide : ¬ (8:Nat)=16)]
     · by_cases he16 : i=16
       · subst i; simp only [ite_true,ite_false,Nat.reduceLT,ite_eq_right (by decide : ¬ (16:Nat)=8)]
       · simp only [h8,he8,he16,ite_false]
-        rw [ite_eq_left (by omega)]
+        rw [ite_eq_left (by omega_using [hi, h8])]
 
 /-- Initializes the mask seed in the second lane while preserving the
 commitment state in every first lane. -/

@@ -25,10 +25,10 @@ structure SigningShapePost (p : SigningInput) (original : State)
 
 theorem shape_saved {s t : State} {B : Addr} (hf : Frm B shapeRanges s.mem t.mem) {i : Nat} (hi : i < 6) :
     word t.mem B (8 * i) = word s.mem B (8 * i) := by
-  apply hf.word_eq _ (by omega)
+  apply hf.word_eq _ (by omega_using [hi])
   intro range hr
   simp only [shapeRanges, List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl <;> left <;> omega
+  rcases hr with rfl | rfl <;> left <;> omega_using [hi]
 
 theorem signingShape_ok {p : SigningInput} {s0 : State} (h : SigningPre p s0) :
     WP isa (.seq (.block SignVerify.signEntry) Checks.domainShape) s0 (SigningShapePost p s0 h.pLength) := by
@@ -38,15 +38,15 @@ theorem signingShape_ok {p : SigningInput} {s0 : State} (h : SigningPre p s0) :
   have hkey := h.keySource.congrK hinside he.keep
   have hps : Src s1 p.base usedBytes (s0.gpr .rdx) p.components.p := source_take hkey
   have hqs : Src s1 p.base usedBytes (s0.gpr .rdx + BitVec.ofNat 64 p.pLen) p.components.q :=
-    source_slice hkey (by rw [p.keyLength]; omega)
+    source_slice hkey (by rw [p.keyLength]; omega_using [])
   have hp1 : 0 < p.components.p.length := by
-    rw [p.components.pLength]; have := p.lengths; unfold Spec.Dsa.lengthsValid at this; omega
+    rw [p.components.pLength]; have := p.lengths; unfold Spec.Dsa.lengthsValid at this; omega_using [this]
   have hq1 : 0 < p.components.q.length := by
-    rw [p.components.qLength]; have := p.lengths; unfold Spec.Dsa.lengthsValid at this; omega
+    rw [p.components.qLength]; have := p.lengths; unfold Spec.Dsa.lengthsValid at this; omega_using [this]
   have hp64 : p.components.p.length < 2 ^ 64 := by
-    rw [p.components.pLength]; have := p.lengths; unfold Spec.Dsa.lengthsValid at this; omega
+    rw [p.components.pLength]; have := p.lengths; unfold Spec.Dsa.lengthsValid at this; omega_using [this]
   have hq64 : p.components.q.length < 2 ^ 64 := by
-    rw [p.components.qLength]; have := p.lengths; unfold Spec.Dsa.lengthsValid at this; omega
+    rw [p.components.qLength]; have := p.lengths; unfold Spec.Dsa.lengthsValid at this; omega_using [this]
   refine WP.mono (domainShape_ok (h.scratch.congr he.keep.2.2) he.base (by decide) he.p
     (by rw [he.q, h.pLength]) (by rw [he.pLen, h.pLength, p.components.pLength])
     (by rw [he.qLen, p.components.qLength]) hps hqs hp1 hp64 hq1 hq64 rfl rfl

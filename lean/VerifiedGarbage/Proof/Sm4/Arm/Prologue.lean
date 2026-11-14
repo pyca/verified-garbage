@@ -44,8 +44,8 @@ theorem inRd {s : State} {a : Addr} {n : Nat} (h : InRegions s.wr a n) : InRegio
 /-- A slot is inside the scratch buffer. -/
 theorem slot_sub {b : BitVec 32} (hfit : b.toNat + 4 * slots ≤ 2 ^ 32) {k : Nat} (hk : k < slots) :
     Region.Sub ⟨wordAddr b k, 4⟩ ⟨State.addr b, 4 * slots⟩ := by
-  rw [slot_addr (by omega)]
-  exact VG.Offset.sub_base _ (by omega)
+  rw [slot_addr (by omega_using [hfit, hk])]
+  exact VG.Offset.sub_base _ (by omega_using [hk])
 
 /-- A slot after a store to a slot. -/
 theorem readW_slot_write {m : Mem} {b : BitVec 32} (hfit : b.toNat + 4 * slots ≤ 2 ^ 32) {j k : Nat}
@@ -53,7 +53,7 @@ theorem readW_slot_write {m : Mem} {b : BitVec 32} (hfit : b.toNat + 4 * slots �
     (m.writeW (wordAddr b k) v).readW (wordAddr b j) 32 = if j = k then v else m.readW (wordAddr b j) 32 := by
   split
   · rename_i h; subst h; exact Mem.readW_writeW_self32 _ _ _
-  · rename_i h; exact Mem.readW_writeW_sep (slot_sep b (by omega) (by omega) h) (by decide)
+  · rename_i h; exact Mem.readW_writeW_sep (slot_sep b (by omega_using [hfit, hj]) (by omega_using [hfit, hk]) h) (by decide)
 
 /-- `ldr d, [n, #4 k]`, `n` holding `b`. -/
 theorem ldW_ok (s : State) (d n : Reg) {b : BitVec 32} {k : Nat} (hn : s.gpr n = b) (hk : 4 * k < 4096)
@@ -76,7 +76,7 @@ theorem stSlot_ok (s : State) (t n : Reg) {b : BitVec 32} {k : Nat} (hn : s.gpr 
     ∃ s', runBlock isa [.str t n (4 * k)] s = some s' ∧ s'.mem = s.mem.writeW (wordAddr b k) (s.gpr t) ∧
       s'.gpr = s.gpr ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp ∧ s'.z = s.z ∧
       Frame [⟨wordAddr b k, 4⟩] s.mem s'.mem :=
-  ⟨_, stW_ok s t n hn (by rw [slots_eq] at hk; omega) (hw.slot hk), rfl, rfl, rfl, rfl, rfl, rfl,
+  ⟨_, stW_ok s t n hn (by rw [slots_eq] at hk; omega_using [hk]) (hw.slot hk), rfl, rfl, rfl, rfl, rfl, rfl,
     (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ _)⟩
 
 /-- A load of a slot of the scratch buffer. -/
@@ -84,7 +84,7 @@ theorem ldSlot_ok (s : State) (d n : Reg) {b : BitVec 32} {k : Nat} (hn : s.gpr 
     (hw : ScrIn s.wr b) :
     ∃ s', runBlock isa [.ldr d n (4 * k)] s = some s' ∧ s'.gpr d = s.mem.readW (wordAddr b k) 32 ∧
       (∀ r, r ≠ d → s'.gpr r = s.gpr r) ∧ s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp :=
-  ldW_ok s d n hn (by rw [slots_eq] at hk; omega) (inRd (hw.slot hk))
+  ldW_ok s d n hn (by rw [slots_eq] at hk; omega_using [hk]) (inRd (hw.slot hk))
 
 /-- Stores of registers to distinct slots, through `n`, which none of them is. -/
 theorem stW_list_ok (n : Reg) {b : BitVec 32} : ∀ (L : List (Nat × Reg)) (s : State), s.gpr n = b →
@@ -161,11 +161,11 @@ theorem save_ok {s : State} {base : Reg} {b : BitVec 32} (hw : ScrIn s.wr b) (hb
       obtain ⟨i, hi, rfl⟩ := hx
       rw [savedSlot_eq, slots_eq]; omega)
   refine ⟨s', by rw [hL]; exact e', fun i hi => ?_, g', rd', wr', sp', f', fun k hk => o' k ?_ (by
-    rw [savedSlot_eq] at hk; rw [slots_eq]; omega)⟩
+    rw [savedSlot_eq] at hk; rw [slots_eq]; omega_using [hk])⟩
   · exact v' (savedSlot + i, sreg i) (by simp only [L, List.mem_map, List.mem_range]; exact ⟨i, hi, rfl⟩)
   · rw [hslots]
     simp only [List.mem_map, List.mem_range, not_exists, not_and]
-    intro i hi h; omega
+    intro i hi h; omega_using [hk, h]
 
 theorem sreg_ne_r12 : ∀ i < 9, sreg i ≠ .r12 := by decide
 

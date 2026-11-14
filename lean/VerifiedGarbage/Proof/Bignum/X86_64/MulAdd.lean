@@ -46,12 +46,12 @@ theorem mac_ok (s : State) {src : Reg} {d : Int} {aS aX aD : Addr}
   have hc := (s.gpr .rbp).isLt
   have hx := (s.mem.readW aX 64).isLt
   have e1 := addc_toNat (BitVec.ofNat 64 ((s.mem.readW aS 64).toNat * (s.gpr .rcx).toNat))
-    (BitVec.ofNat 64 ((s.mem.readW aS 64).toNat * (s.gpr .rcx).toNat / 2 ^ 64)) (s.mem.readW aX 64) (by omega)
+    (BitVec.ofNat 64 ((s.mem.readW aS 64).toNat * (s.gpr .rcx).toNat / 2 ^ 64)) (s.mem.readW aX 64) (by omega_using [hm, hl])
   have e2 := addc_toNat (BitVec.ofNat 64 ((s.mem.readW aS 64).toNat * (s.gpr .rcx).toNat) + s.mem.readW aX 64)
     (BitVec.ofNat 64 ((s.mem.readW aS 64).toNat * (s.gpr .rcx).toNat / 2 ^ 64) + 0 +
       (BitVec.ofBool (decide (2 ^ 64 ≤ (BitVec.ofNat 64 ((s.mem.readW aS 64).toNat *
-        (s.gpr .rcx).toNat)).toNat + (s.mem.readW aX 64).toNat))).setWidth 64) (s.gpr .rbp) (by omega)
+        (s.gpr .rcx).toNat)).toNat + (s.mem.readW aX 64).toNat))).setWidth 64) (s.gpr .rbp) (by omega_using [hm, hl, e1])
   rw [e2, Nat.mul_comm (s.gpr .rcx).toNat]
-  omega
+  omega_using [hm, e1]
 
 end VG.Proof.Bignum.X86_64

@@ -106,8 +106,8 @@ theorem advance_ok (s : State) {B : Addr} {e k n : Nat}
     change off (off B (e+64*k)) 64 = off B (e+64*(k+1))
     rw [off_off]; congr 1
   have cmp : ((off B (e+64*(k+1))-off B (e+64*n)) == 0) = decide (k+1=n) := by
-    rw [off_sub_beq B (by omega) hn]
-    exact decide_eq_decide.mpr (by omega)
+    rw [off_sub_beq B (by omega_using [hk, hn]) hn]
+    exact decide_eq_decide.mpr (by omega_using [])
   refine WP.mono (WP.keep [.rsi] (Q := fun t => t.gpr .rsi = off B (e+64*(k+1)) ∧
     t.zf = some (decide (k+1=n)) ∧ t.mem = s.mem) ?_ rfl)
     fun t ⟨⟨a,b,c⟩,keep⟩ => ⟨a,b,c,keep⟩
@@ -131,23 +131,23 @@ theorem step_ok {s₀ s : State} {B : Addr} {Z e k n : Nat}
       (t.gpr .rbp).toNat ≤ 1 ∧ Inv s₀ B Z e (k+1) n t := by
   have nowrap := h.scr.nowrap
   unfold AdxCarry8.step
-  refine WP.seq (WP.mono (block8_ok h.scr h.rsi (by omega) h.rcx)
+  refine WP.seq (WP.mono (block8_ok h.scr h.rsi (by omega_using [hZ, hk]) h.rcx)
     fun a ⟨ea,ba,oa,ka⟩ => ?_)
   refine WP.mono (advance_ok a ((ka.gpr (by decide)).trans h.rsi)
     ((ka.gpr (by decide)).trans h.rdx) hk hend) fun t ⟨pt,zt,mt,kt⟩ => ?_
-  have pre : wv a.mem B e (8*k) = wv s.mem B e (8*k) := oa.wv (by omega) (by omega)
-  have input : wv s.mem B (e+64*k) 8 = wv s₀.mem B (e+64*k) 8 := h.frame.wv (by omega) (by omega)
+  have pre : wv a.mem B e (8*k) = wv s.mem B e (8*k) := oa.wv (by omega_using []) (by omega_using [hend, hk])
+  have input : wv s.mem B (e+64*k) 8 = wv s₀.mem B (e+64*k) 8 := h.frame.wv (by omega_using []) (by omega_using [hend, hk])
   rw [input] at ea
   have kap := ka.trans kt
   refine ⟨zt,?_,⟨h.scr.congr kap.2.2,pt,(kap.gpr (by decide)).trans h.rdx,
     (kap.gpr (by decide)).trans h.rcx,(h.keep.trans kap).mono (by decide),?_,?_⟩⟩
   · rw [kt.gpr (by decide)]; exact ba
   · rw [mt]
-    exact (h.frame.mono (o' := e) (n' := 64*(k+1)) (by omega) (by omega)).trans
-      (oa.mono (o' := e) (n' := 64*(k+1)) (by omega) (by omega))
-  · rw [mt,kt.gpr (by decide),show 8*(k+1)=8*k+8 by omega,wv_add,wv_add,pre,
-      show e+8*(8*k)=e+64*k by omega,show 64*(8*k)=512*k by omega,
-      show 512*(k+1)=512*k+512 by omega,Nat.pow_add]
+    exact (h.frame.mono (o' := e) (n' := 64*(k+1)) (by omega_using []) (by omega_using [])).trans
+      (oa.mono (o' := e) (n' := 64*(k+1)) (by omega_using []) (by omega_using []))
+  · rw [mt,kt.gpr (by decide),show 8*(k+1)=8*k+8 by omega_using [],wv_add,wv_add,pre,
+      show e+8*(8*k)=e+64*k by omega_using [],show 64*(8*k)=512*k by omega_using [],
+      show 512*(k+1)=512*k+512 by omega_using [],Nat.pow_add]
     exact VG.Proof.Bignum.Rectangular.extend_carry h.val ea
 
 theorem propagate_ok {s : State} {B : Addr} {Z e n : Nat}
@@ -163,7 +163,7 @@ theorem propagate_ok {s : State} {B : Addr} {Z e n : Nat}
   · intro k _ hk t ⟨_,h⟩
     exact WP.mono (step_ok hZ hend hk h) fun _ ⟨z,b,i⟩ => ⟨z,Or.inr b,i⟩
   · intro t ⟨h,i⟩
-    exact ⟨h.resolve_left (by omega),i⟩
+    exact ⟨h.resolve_left (by omega_using [hn]),i⟩
   · exact ⟨Or.inl rfl,h0⟩
 
 end VG.Proof.Bignum.X86_64.AdxCarry8

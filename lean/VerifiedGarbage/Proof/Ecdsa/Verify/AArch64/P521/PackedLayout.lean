@@ -42,7 +42,7 @@ theorem packed_lay (hc : CfgOk c) (hn : c.n=9) : Lay (packedQ c).M size (· ∈ 
    change c.sl i + 8*c.n ≤ c.sl TMP ∨ c.sl TMP + 8*c.n ≤ c.sl i
    rw [sl_eq c i (hl i hi).2.2.1,sl_tmp c (.inr (.inr hn)),hn]
    have := (hl i hi).2.2.2
-   simp only [Mont.moAt]; omega
+   simp only [Mont.moAt]; omega_using [this]
 
 theorem packedWinLay (hc : CfgOk c) (hn : c.n=9) : WinLay (packedQ c) size := by
  refine ⟨packed_lay hc hn,?_,?_,?_,hc.n0,?_,?_,?_⟩
@@ -56,7 +56,7 @@ theorem packedWinLay (hc : CfgOk c) (hn : c.n=9) : WinLay (packedQ c) size := by
    change c.sl i + 8*c.n ≤ slot c.n 71
    rw [sl_eq c i (key i hi).2,hn]
    have := (key i hi).1
-   simp only [slot]; omega
+   simp only [slot]; omega_using [this]
  · exact (winLayQ hc).J
  · exact (winLayQ hc).bits
  · intro w hw
@@ -67,7 +67,7 @@ theorem packedWinLay (hc : CfgOk c) (hn : c.n=9) : WinLay (packedQ c) size := by
    rcases key i hi with rfl | ⟨hi,hT⟩ | ⟨hi,hT⟩
    · exact hc.window_tmp
    · exact Or.inr (sl_lt c hi hT)
-   · left; rw [sl_eq c WB,sl_eq c i hT,hn]; unfold WB; omega
+   · left; rw [sl_eq c WB,sl_eq c i hT,hn]; unfold WB; omega_using [hi]
 
 theorem packedWinA (hc : CfgOk c) : WinA (packedQ c) where
  sl x hx := by
@@ -85,7 +85,7 @@ theorem packedCacheAt (c : Cfg) : PubNaf.cacheAt (packedQ c) 1 = 64+8*c.n*95 := 
 theorem packed_below (hn : c.n=9) {i : Nat} (hi : i≤94) : c.sl i + 8*c.n ≤ 64+8*c.n*95 := by
  by_cases h : i=TMP
  · subst h; rw [sl_tmp c (.inr (.inr hn)),hn]; decide
- · rw [sl_eq c i h,hn]; omega
+ · rw [sl_eq c i h,hn]; omega_using [hi]
 
 theorem packedCacheLay (_hc : CfgOk c) (hn : c.n=9) : PubNaf.CacheLay (packedQ c) size where
  slots := by
@@ -100,18 +100,18 @@ theorem packedCacheLay (_hc : CfgOk c) (hn : c.n=9) : PubNaf.CacheLay (packedQ c
   change c.sl WB + 4*(16*c.n+1) ≤ _
   rw [sl_eq c WB,hn]; decide
  top := by rw [packedCacheAt]; change 64+8*c.n*95+128*c.n≤8192; rw [hn]; decide
- al := by rw [packedCacheAt]; omega
+ al := by rw [packedCacheAt]; omega_using []
 
 theorem packedNafLay (hc : CfgOk c) (hn : c.n=9) : PubNaf.NafLay (packedQ c) size where
  win := packedWinLay hc hn
  al := packedWinA hc
- n4 := by change c.n≠4; omega
- n6 := by change c.n≤9; omega
- digits := by change 64*c.n+1≤4*(16*c.n+1); omega
- rxy := by change c.sl RY=c.sl RX+8*c.n; simp (disch:=decide) only [sl_eq]; unfold RX RY; omega
- rxz := by change c.sl RZ=c.sl RX+16*c.n; simp (disch:=decide) only [sl_eq]; unfold RX RZ; omega
- exy := by change c.sl TY=c.sl TX+8*c.n; simp (disch:=decide) only [sl_eq]; unfold TX TY; omega
- exz := by change c.sl TZ=c.sl TX+16*c.n; simp (disch:=decide) only [sl_eq]; unfold TX TZ; omega
+ n4 := by change c.n≠4; omega_using [hn]
+ n6 := by change c.n≤9; omega_using [hn]
+ digits := by change 64*c.n+1≤4*(16*c.n+1); omega_using []
+ rxy := by change c.sl RY=c.sl RX+8*c.n; simp (disch:=decide) only [sl_eq]; unfold RX RY; omega_using []
+ rxz := by change c.sl RZ=c.sl RX+16*c.n; simp (disch:=decide) only [sl_eq]; unfold RX RZ; omega_using []
+ exy := by change c.sl TY=c.sl TX+8*c.n; simp (disch:=decide) only [sl_eq]; unfold TX TY; omega_using []
+ exz := by change c.sl TZ=c.sl TX+16*c.n; simp (disch:=decide) only [sl_eq]; unfold TX TZ; omega_using []
  cache := packedCacheLay hc hn
 
 end VG.Proof.Ecdsa.Verify.AArch64.P521

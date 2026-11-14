@@ -84,14 +84,14 @@ theorem QG.keepW {s₀ : State} {lo : Nat → Nat} {a : Addr} {X : Nat → Block
     fun k hk => by rw [hrd, hwr]; exact hE.ina k hk, fun k hk => by rw [hrd, hwr]; exact hE.inp k hk,
     fun l hl => by rw [hlane _ (by decide) (by decide) l hl]; exact hE.m0 l hl⟩,
     fun l hl => by rw [hlane _ (by decide) (by decide) l hl]; exact h1 l hl, ?_⟩
-  · have e : a + BitVec.ofNat 64 (16 * i) = b + BitVec.ofNat 64 (16 * (16 * g + i)) := addr_eq (by omega)
+  · have e : a + BitVec.ofNat 64 (16 * i) = b + BitVec.ofNat 64 (16 * (16 * g + i)) := addr_eq (by omega_using [ha])
     rw [e, blockAt_frame hf fun r hr => by
       simp only [List.mem_singleton] at hr
       subst hr
       exact hsep i hi hi']
     have := hE.xs i hi hi'
     rwa [e] at this
-  · rw [hf.readW (r := pR s₀) (Offset.contains_base _ (by omega) (by omega))
+  · rw [hf.readW (r := pR s₀) (Offset.contains_base _ (by omega_using [hk, hl]) (by omega_using [hk, hl]))
       (fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr
         exact hP) (by decide)]
@@ -116,12 +116,12 @@ theorem QG.keepM {ix : Bool} {s₀ : State} (hp : Stitch.LPre ix s₀) {lo : Nat
     (hf : Frame [⟨Stitch.wAddr ix s₀ c, 256⟩] t.mem t'.mem) : QG s₀ lo a X P yl j t' := by
   have hw := hp.wrap_d
   have hww := hp.wrap_w
-  refine QG.keepW ha (fun i hi hi' => ?_) (hp.w_p.symm.sub_right (Offset.sub_base _ (by omega))) h hgpr hrd hwr
+  refine QG.keepW ha (fun i hi hi' => ?_) (hp.w_p.symm.sub_right (Offset.sub_base _ (by omega_using [hc]))) h hgpr hrd hwr
     hlane hf
   cases ix
   · intro x h₁ h₂
-    exact run_sep hw (by omega) hc (hsep rfl i hi hi') h₁ h₂
-  · exact ((hp.d_w rfl).sub_left (Offset.sub_base _ (by omega))).sub_right (Offset.sub_base _ (by omega))
+    exact run_sep hw (by omega_using [hg, hi']) hc (hsep rfl i hi hi') h₁ h₂
+  · exact ((hp.d_w rfl).sub_left (Offset.sub_base _ (by omega_using [hg, hi']))).sub_right (Offset.sub_base _ (by omega_using [hc]))
 
 theorem QG.data {s₀ : State} (hp : SPre s₀) {lo : Nat → Nat} {a : Addr} {X : Nat → Block}
     {P : Nat → Nat → Block} {yl : Nat → Block} {j c g : Nat}

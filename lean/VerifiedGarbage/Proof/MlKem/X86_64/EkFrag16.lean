@@ -116,51 +116,51 @@ theorem padTail16_ok (K : Kem16) {rbs wbs : List (Reg × Nat)} {s : State} (Lx :
   have hc := Lx.cW hin
   have hw : ∀ d n, d + n ≤ 408 → InRegions s.wr (s.gpr .rbx + BitVec.ofNat 64 (oHB K + d)) n :=
     fun d n h => by
-      have := hc _ _ ⟨_, List.mem_singleton_self _, Offset.contains_base (pa s (sc (oHB K))) h (by omega)⟩
+      have := hc _ _ ⟨_, List.mem_singleton_self _, Offset.contains_base (pa s (sc (oHB K))) h (by omega_using [h])⟩
       rwa [show pa s (sc (oHB K)) = s.gpr .rbx + BitVec.ofNat 64 (oHB K) from rfl, off_add] at this
   unfold padTail
   rw [← List.singleton_append, List.append_assoc, List.append_assoc, WP.block_append_iff]
   refine WP.mono (mov0_ok s) fun s₁ ⟨h0, hm1, k1⟩ => ?_
   have e1 : s₁.gpr .rbx = s.gpr .rbx := k1.1 .rbx (by decide)
   rw [WP.block_append_iff]
-  refine WP.mono (zeros_ok .rbx (oHB K + len) ((408 - len) / 8) s₁ h0 (by omega) fun j hj => by
-    rw [k1.2.2, e1, off_add, Nat.add_assoc]; exact hw (len + 8 * j) 8 (by omega)) fun s₂ ⟨k2, f2, z2⟩ => ?_
+  refine WP.mono (zeros_ok .rbx (oHB K + len) ((408 - len) / 8) s₁ h0 (by omega_using []) fun j hj => by
+    rw [k1.2.2, e1, off_add, Nat.add_assoc]; exact hw (len + 8 * j) 8 (by omega_using [hj])) fun s₂ ⟨k2, f2, z2⟩ => ?_
   have e2 : s₂.gpr .rbx = s.gpr .rbx := by rw [k2.1 .rbx (by simp), e1]
   rw [WP.block_append_iff]
   refine WP.mono (setB_ok (sc (oHB K + len)) d (show Reg.rbx ≠ .rax by decide) hd s₂ (by
     show InRegions s₂.wr (s₂.gpr .rbx + BitVec.ofNat 64 (oHB K + len)) 1
-    rw [k2.2.2, k1.2.2, e2, ← Nat.add_zero len]; exact hw _ 1 (by omega))) fun s₃ ⟨m3, k3⟩ => ?_
+    rw [k2.2.2, k1.2.2, e2, ← Nat.add_zero len]; exact hw _ 1 (by omega_using [hlen]))) fun s₃ ⟨m3, k3⟩ => ?_
   have e3 : s₃.gpr .rbx = s.gpr .rbx := by rw [k3.1 .rbx (by decide), e2]
   refine WP.mono (setB_ok (sc (oHB K + 407)) 0x80 (show Reg.rbx ≠ .rax by decide) (by decide) s₃ (by
     show InRegions s₃.wr (s₃.gpr .rbx + BitVec.ofNat 64 (oHB K + 407)) 1
-    rw [k3.2.2, k2.2.2, k1.2.2, e3]; exact hw _ 1 (by omega))) fun s₄ ⟨m4, k4⟩ => ?_
+    rw [k3.2.2, k2.2.2, k1.2.2, e3]; exact hw _ 1 (by omega_using []))) fun s₄ ⟨m4, k4⟩ => ?_
   have p6 : pa s₂ (sc (oHB K + len)) = pa s (sc (oHB K + len)) := by
     show s₂.gpr .rbx + _ = s.gpr .rbx + _; rw [e2]
   have p8 : pa s₃ (sc (oHB K + 407)) = pa s (sc (oHB K + len)) + BitVec.ofNat 64 (407 - len) := by
-    show s₃.gpr .rbx + _ = s.gpr .rbx + _ + _; rw [e3, off_add, Nat.add_assoc, Nat.add_sub_cancel' (by omega)]
-  have hn8 : 8 * ((408 - len) / 8) = 408 - len := by omega
+    show s₃.gpr .rbx + _ = s.gpr .rbx + _ + _; rw [e3, off_add, Nat.add_assoc, Nat.add_sub_cancel' (by omega_using [hlen])]
+  have hn8 : 8 * ((408 - len) / 8) = 408 - len := by omega_using [h8]
   rw [hn8, e1] at f2 z2
   rw [p6] at m3
   rw [p8] at m4
   have hR : ∀ d n, d + n ≤ 408 - len →
       (⟨pa s (sc (oHB K + len)), 408 - len⟩ : Region).Contains (pa s (sc (oHB K + len)) + BitVec.ofNat 64 d) n :=
-    fun d n h => Offset.contains_base _ h (by omega)
+    fun d n h => Offset.contains_base _ h (by omega_using [h])
   refine ⟨post_of_keep (((k1.trans k2).trans k3).trans k4) (by decide) ?_, ?_⟩
   · show Frame [⟨pa s (sc (oHB K + len)), 408 - len⟩] s.mem s₄.mem
     rw [m4, m3, ← hm1]
-    refine (f2.writeW (List.mem_singleton_self _) _ ?_).writeW (List.mem_singleton_self _) _ (hR _ 1 (by omega))
-    have := hR 0 1 (by omega)
+    refine (f2.writeW (List.mem_singleton_self _) _ ?_).writeW (List.mem_singleton_self _) _ (hR _ 1 (by omega_using [hlen]))
+    have := hR 0 1 (by omega_using [hlen])
     rwa [BitVec.add_zero] at this
   · have z : bytesAt s₂.mem (pa s (sc (oHB K + len))) (408 - len) = List.replicate (408 - len) 0 := by
       refine List.ext_getElem (by simp [bytesAt]) fun i h₁ _ => ?_
       simp only [bytesAt, List.length_map, List.length_range] at h₁
       simp only [bytesAt, List.getElem_map, List.getElem_range, List.getElem_replicate]
       exact z2 i h₁
-    have w6 := bytesAt_writeW8 s₂.mem (pa s (sc (oHB K + len))) (i := 0) (len := 408 - len) (by omega)
-      (by omega) (BitVec.ofNat 8 d)
+    have w6 := bytesAt_writeW8 s₂.mem (pa s (sc (oHB K + len))) (i := 0) (len := 408 - len) (by omega_using [hlen])
+      (by omega_using []) (BitVec.ofNat 8 d)
     rw [BitVec.add_zero] at w6
-    rw [m4, bytesAt_writeW8 _ _ (by omega) (by omega), m3, w6, z, show 408 - len = 406 - len + 2 by omega,
-      show 407 - len = 406 - len + 1 by omega, padList]
+    rw [m4, bytesAt_writeW8 _ _ (by omega_using [hlen]) (by omega_using []), m3, w6, z, show 408 - len = 406 - len + 2 by omega_using [hlen],
+      show 407 - len = 406 - len + 1 by omega_using [hlen], padList]
 
 
 theorem hblk16_ok (F : Ek16FWf K) {σ : State} (hp : (encK K.L).pre σ) {i : Nat} (hi : i < nb K.L) {s : State}
@@ -183,9 +183,9 @@ theorem hblk16_ok (F : Ek16FWf K) {σ : State} (hp : (encK K.L).pre σ) {i : Nat
     obtain ⟨⟨⟨hcp, hin⟩, hkp⟩, -⟩ := hc
     have hl := F.last
     have hn := F.nbE
-    have hii : i = nb K.L - 1 := by omega
+    have hii : i = nb K.L - 1 := by omega_using [hi, hf, hl]
     have hlen : 272 < K.L.ekLen - 408 * i ∧ K.L.ekLen - 408 * i < 406 := by rw [hii]; exact ⟨hl.1, hl.2.1⟩
-    have h8 : (K.L.ekLen - 408 * i) % 8 = 0 := by have := F.ek8.1; omega
+    have h8 : (K.L.ekLen - 408 * i) % 8 = 0 := by have := F.ek8.1; omega_using [this]
     refine WP.seq (WP.mono (copy_okL L₀ (show Reg.r14 ≠ .rdi by decide) hcp) fun s₁ ⟨hP₁, hb₁⟩ => ?_)
     have L₁ := L₀.post hP₁.b (ecB_bases K.L)
     refine WP.mono (padTail16_ok K L₁ hlen.2 h8 hin (d := 6) (by decide)) fun s₂ ⟨hP₂, hb₂⟩ => ?_
@@ -200,14 +200,14 @@ theorem hblk16_ok (F : Ek16FWf K) {σ : State} (hp : (encK K.L).pre σ) {i : Nat
       rcases hw with rfl | rfl
       · exact Region.sub_prefix (by omega)
       · show Region.Sub ⟨pa s (sc (oHB K + (K.L.ekLen - 408 * i))), _⟩ ⟨pa s (sc (oHB K)), 408⟩
-        rw [e]; exact Offset.sub_base _ (by omega)
+        rw [e]; exact Offset.sub_base _ (by omega_using [hf])
     refine ⟨hP.b, hP.cs .r15 (by decide), ?_⟩
     have k₁ := L₁.keepBytes hP₂.b hkp
     rw [hP₂.pa rbx_cs, hP₁.pa rbx_cs, hb₁] at k₁
     rw [hP₁.pa rbx_cs] at hb₂
     have sp := bytesAt_add s₂.mem (pa s (sc (oHB K))) (K.L.ekLen - 408 * i) (408 - (K.L.ekLen - 408 * i))
-    rw [Nat.add_sub_cancel' (by omega), ← e, hb₂, k₁] at sp
-    rw [sp, ← ek, bytesAt_drop _ _ (by omega), pa, pa, off_add, Nat.zero_add]
+    rw [Nat.add_sub_cancel' (by omega_using [hf]), ← e, hb₂, k₁] at sp
+    rw [sp, ← ek, bytesAt_drop _ _ (by omega_using [hi, hl]), pa, pa, off_add, Nat.zero_add]
 
 
 /-- The step of three entries. -/
@@ -222,11 +222,11 @@ theorem MatB16.three {ρ : List Byte} {e : Nat} {rbs wbs : List (Reg × Nat)} {s
   refine ⟨?_, fun e' he' f hf => ?_⟩
   · rw [h15, and_acc h.r15]
     exact ite_congr (propext allOk_add3.symm) (fun _ => rfl) (fun _ => rfl)
-  · rcases (by omega : e' < e ∨ e ≤ e') with he'' | he''
+  · rcases (by omega_using [] : e' < e ∨ e ≤ e') with he'' | he''
     · exact Lx.keepPoly16 hP (kA e' he'') (h.mat e' he'' f hf)
-    · have := hres (e' - e) (by omega) f (by rw [Nat.add_sub_cancel' he'']; exact hf)
+    · have := hres (e' - e) (by omega_using [he']) f (by rw [Nat.add_sub_cancel' he'']; exact hf)
       rw [hP.pa rbx_bases]
-      rwa [show K.oA + 512 * e + 512 * (e' - e) = K.oA + 512 * e' by omega] at this
+      rwa [show K.oA + 512 * e + 512 * (e' - e) = K.oA + 512 * e' by omega_using [he'']] at this
 
 
 /-- While the seeds of fragment `i` are written. -/
@@ -245,7 +245,7 @@ theorem seedI16_ok (F : Ek16FWf K) {σ : State} (hp : (encK K.L).pre σ) {i : Na
   have L₀ := h.fi.ec.lay W hp
   have h16 : K.L.k * K.L.k ≤ 16 := Nat.mul_le_mul W.k.2 W.k.2
   have := F.nbK
-  refine WP.mono (seed_step L₀ (ecB_bases K.L) (by omega) hs h.sd) fun s' ⟨hP, hS⟩ =>
+  refine WP.mono (seed_step L₀ (ecB_bases K.L) (by omega_using [hi, hJ, h16, this]) hs h.sd) fun s' ⟨hP, hS⟩ =>
     ⟨h.fi.keep W hp hP.b (hP.cs .r15 (by decide)) hk, hS, ?_⟩
   rw [L₀.keepBytes hP.b hB]; exact h.hb
 
@@ -256,7 +256,7 @@ theorem blocks16_eq (F : Ek16FWf K) {σ : State} {i : Nat} (hi : i < nb K.L) {s 
   have hE : (ekE K.L σ).length = K.L.ekLen := bytesAt_length _ _ _
   have hl := F.last
   have hn := F.nbE
-  rw [← hbE_blk hj (by rw [hE]; omega), ← hb, bytesAt_slice _ _ (by omega)]
+  rw [← hbE_blk hj (by rw [hE]; omega_using [hi, hl]), ← hb, bytesAt_slice _ _ (by omega_using [hj])]
   show bytesAt _ (s.gpr .rbx + BitVec.ofNat 64 (K.oW) + BitVec.ofNat 64 (Sample4.oHB + 136 * j)) 136 =
     bytesAt _ (s.gpr .rbx + BitVec.ofNat 64 (K.oW + Sample4.oHB) + BitVec.ofNat 64 (136 * j)) 136
   rw [off_add, off_add, Nat.add_assoc]
@@ -288,20 +288,20 @@ theorem frag16_ok (F : Ek16FWf K) {b : Prog isa} (hb : BatchHOk16 b) {σ : State
     rw [Partial, show (ekE K.L σ).length = K.L.ekLen from bytesAt_length _ _ _]; exact F.part
   have hlen : (ekE K.L σ).length = K.L.ekLen := bytesAt_length _ _ _
   refine ⟨i₅.fi.ec.step W hp h₆.b hE, by rw [L₅.keepBytes h₆.b hS]; exact i₅.fi.sb, ?_, ?_⟩
-  · rw [show 3 * (i + 1) = 3 * i + 3 by omega]
+  · rw [show 3 * (i + 1) = 3 * i + 3 by omega_using []]
     refine MatB16.three i₅.fi.mat L₅ h₆.b hA ?_ fun t ht f hf => ?_
     · rw [h₆.r15, all3_16, range_all_congr fun k hk => congrArg (fun B => (sampleNTT minIterations B).isSome)
-        (seed4_eq i₅.sd (k := k) (by omega))]
-    · have := h₆.res t ht f (by rw [seed4_eq i₅.sd (by omega)]; exact hf)
+        (seed4_eq i₅.sd (k := k) (by omega_using [hk]))]
+    · have := h₆.res t ht f (by rw [seed4_eq i₅.sd (by omega_using [ht])]; exact hf)
       rwa [poly4W, pBytes_true, pa, off_add] at this
   · have e1 : pa s₅ (sc (oHS K)) = pa s₅ (sc (K.oW)) + BitVec.ofNat 64 Sample4.oHS := (off_add _ _ _).symm
     rw [h₆.b.pa rbx_bases, e1, h₆.hs, ← e1, i₅.fi.hs,
-      habs_congr _ 3 fun j hj => blocks16_eq F hi i₅.hb hj, show 3 * (i + 1) = 3 * i + 3 by omega]
-    exact habs_blk hpart (by rw [hlen]; omega)
+      habs_congr _ 3 fun j hj => blocks16_eq F hi i₅.hb hj, show 3 * (i + 1) = 3 * i + 3 by omega_using []]
+    exact habs_blk hpart (by rw [hlen]; omega_using [hi, hl])
 
 theorem frags16_ok (F : Ek16FWf K) {b : Prog isa} (hb : BatchHOk16 b) {σ : State} (hp : (encK K.L).pre σ) {s : State}
     (h : FI16 K σ 0 s) : WP isa (seqR (frag K b) 0 (nb K.L)) s (FI16 K σ (nb K.L)) := by
-  have := seqR_ok (I := FI16 K σ) (nb K.L) 0 (fun k _ hk s hs => frag16_ok F hb hp (by omega) hs) s h
+  have := seqR_ok (I := FI16 K σ) (nb K.L) 0 (fun k _ hk s hs => frag16_ok F hb hp (by omega_using [hk]) hs) s h
   rwa [Nat.zero_add] at this
 
 

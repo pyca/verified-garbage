@@ -116,7 +116,7 @@ theorem lenCmp_ok {lim : Nat} (hlim : lim < 2 ^ 31) (s : State)
   show (State.cf _) = _
   simp only [cf_arithFlags, gpr_setReg, ↓reduceIte, BitVec.toNat_ofNat]
   show some (decide ((s.mem.readW (s.gpr .rsp + BitVec.ofNat 64 16) 64).toNat < lim % 2 ^ 64)) = _
-  rw [Nat.mod_eq_of_lt (by omega)]
+  rw [Nat.mod_eq_of_lt (by omega_using [hlim])]
   rfl
 
 section
@@ -176,7 +176,7 @@ theorem whole_pre (hs : gatherPre s) : Whole.gatherPre e := by
     below_sub (a := 1832) (b := 1880) (by decide) (by decide)
   exact ⟨rd, wr, kd, kt, nd, nt, ad, at_, dt, dds, dls, darg, rdd, rt, bk.sub_left sub, bn.sub_left sub,
     ba.sub_left sub, bd.sub_left sub, bt.sub_left sub, bds.sub_left sub, fun r hr => (bls r hr).sub_left sub,
-    ok, on, oa, od, ot, ods, ol, by have : 1880 ≤ (e.gpr .rsp).toNat := w₁; show 1832 ≤ (e.gpr .rsp).toNat; omega, w₂, hgl, hpm⟩
+    ok, on, oa, od, ot, ods, ol, by have : 1880 ≤ (e.gpr .rsp).toNat := w₁; show 1832 ≤ (e.gpr .rsp).toNat; omega_using [this], w₂, hgl, hpm⟩
 
 /-- What the code leaves, from `s` or from the state after the comparison. -/
 theorem post_same {z : State} : gatherPost e z ↔ gatherPost s z := by
@@ -257,7 +257,7 @@ theorem rel_of_ct {pre : State → Prop} {pub : State → State → Prop} {c : P
 theorem sealGatherBy_ct {lim : Nat} (hlim : lim = 961 ∨ lim = 1025) (w : Width) (F : Whole.SealFn)
     (G : SealSplitFn) :
     ConstantTime isa gatherPre gatherPub (sealGatherBy lim w F.name F.code G.name G.code) := by
-  have hl : lim < 2 ^ 31 := by omega
+  have hl : lim < 2 ^ 31 := by omega_using [hlim]
   have ht : ∃ h, (taint.check (Taint.ofRegs [.rsp]) (.block (lenCmp lim)) h).isSome = true := by
     rcases hlim with rfl | rfl <;> exact ⟨_, by taint_decide⟩
   refine ct_of fun σ₁ σ₂ p₁ p₂ hq => ?_
@@ -274,7 +274,7 @@ theorem sealGatherBy_verified {lim : Nat} (hlim : lim = 961 ∨ lim = 1025) (w :
     (G : SealSplitFn) :
     Verified X86_64.target (sealGatherBy lim w F.name F.code G.name G.code)
       (Spec.ChaCha20Poly1305.sealGatherContract X86_64.abi 1880) :=
-  Verified.of_correct (k := gatherX86_64) (sealGatherBy_correct (by omega) w F G) (sealGatherBy_ct hlim w F G)
+  Verified.of_correct (k := gatherX86_64) (sealGatherBy_correct (by omega_using [hlim]) w F G) (sealGatherBy_ct hlim w F G)
     gather_implies
 
 /-- `Whole` alone, from `gatherPre` (with 1880 bytes of stack). -/

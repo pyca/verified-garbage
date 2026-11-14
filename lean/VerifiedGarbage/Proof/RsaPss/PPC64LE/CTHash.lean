@@ -165,7 +165,7 @@ theorem nbm_le (ok : CtOK P md Z.cc Z.dc) {a t : State} (h : BL D Z a t) :
   have := Nat.div_mul_le_self ((dbLen D a).toNat + (8 + D - 1 + P.L)) P.B
   refine ⟨?_, Nat.succ_pos _⟩
   unfold nbmOf
-  rw [Nat.add_mul, Nat.one_mul]; rcases hBd with e | e <;> rw [e] at this ⊢ <;> omega
+  rw [Nat.add_mul, Nat.one_mul]; rcases hBd with e | e <;> rw [e] at this ⊢ <;> omega_using [hd2, hLd]
 
 theorem ne0_ofNat {k : Nat} (hk : k < 2 ^ 64) : (BitVec.ofNat 64 k != 0) = decide (k ≠ 0) := by
   by_cases h : k = 0
@@ -196,13 +196,13 @@ theorem ctLens_wp (hD : Z.H.D = D) {a t : State} (h : BL D Z a t)
   obtain ⟨hlg1, hlg7, hlg⟩ := ok.dims.log
   have hLd := ok.dims.L
   subst hD
-  refine WP.of_syms (wp_addi (h := by omega) fun t₁ o₁ e₁ => wp_addi (h := by omega) fun t₂ o₂ e₂ =>
-    wp_lsr (h := by omega) fun t₃ o₃ e₃ => wp_addi (h := by decide) fun t₄ o₄ e₄ => wp_nil fun y₄ => ?_)
+  refine WP.of_syms (wp_addi (h := by omega_using [hd2]) fun t₁ o₁ e₁ => wp_addi (h := by omega_using [hLd, hd2]) fun t₂ o₂ e₂ =>
+    wp_lsr (h := by omega_using [hlg7]) fun t₃ o₃ e₃ => wp_addi (h := by decide) fun t₄ o₄ e₄ => wp_nil fun y₄ => ?_)
   have k₄ : Only [.r29, .r28] t t₄ := (o₁.trans (o₂.trans (o₃.trans o₄))).mono
   refine ⟨⟨s, Pr, p, b.only L.F k₄, y₄.trans sy⟩, ?_, sl, hsl, ?_⟩
-  · rw [e₄, e₃, e₂, o₁.get .r21, b.pdb, L.hdb, BitVec.ofNat_add_ofNat, ofNat_shr (by omega), hlg,
+  · rw [e₄, e₃, e₂, o₁.get .r21, b.pdb, L.hdb, BitVec.ofNat_add_ofNat, ofNat_shr (by omega_using [hLd, hd2]), hlg,
       BitVec.ofNat_add_ofNat]; rfl
-  · rw [o₄.get .r29, o₃.get .r29, o₂.get .r29, e₁, h25, BitVec.ofNat_add_ofNat]; congr 1; omega
+  · rw [o₄.get .r29, o₃.get .r29, o₂.get .r29, e₁, h25, BitVec.ofNat_add_ofNat]; congr 1; omega_using []
 
 omit ok in
 theorem hInit_K1 (hH : HashOK Z.H) {a t : State} (h : K1 D Z P a t) : WP isa (hInit Z.f hArg) t (K1 D Z P a) := by
@@ -220,7 +220,7 @@ theorem pad80_K1 {a t : State} (h : K1 D Z P a t) : WP isa (pad80 P) t (K1 D Z P
   obtain ⟨⟨s, Pr, p, b, sy⟩, h28, sl, hsl, h29⟩ := h
   have L := agree_lay Pr p
   obtain ⟨hlg1, hlg7, hlg⟩ := ok.dims.log
-  exact WP.of_syms (WP.mono (pad80_ok L hlg hlg7 b h28 h29 hnb (Nat.mul_pos hn0 ok.dims.pos) (by omega))
+  exact WP.of_syms (WP.mono (pad80_ok L hlg hlg7 b h28 h29 hnb (Nat.mul_pos hn0 ok.dims.pos) (by omega_using [hd2, hsl]))
     fun t' ⟨b', k', _⟩ y => ⟨⟨s, Pr, p, b', y.trans sy⟩, by rw [k'.get .r28, h28], sl, hsl, by rw [k'.get .r29, h29]⟩)
 
 theorem lenField_K2 {a t : State} (h : K1 D Z P a t) : WP isa (.block (lenField P)) t (K2 D Z P a) := by
@@ -232,11 +232,11 @@ theorem lenField_K2 {a t : State} (h : K1 D Z P a t) : WP isa (.block (lenField 
   have hBd := ok.dims.B
   have hLd := ok.dims.L
   have hO : oLen = 4608 := rfl
-  refine WP.of_syms (WP.mono (lenField_ok L ok.shape ok.lenLr (by rcases hBd with e | e <;> omega) hLd.2 hlg7
-    b h29 (by omega)) fun t' ⟨b', k', g27, _⟩ y => ⟨⟨s, Pr, p, b', y.trans sy⟩, by rw [k'.get .r28, h28],
+  refine WP.of_syms (WP.mono (lenField_ok L ok.shape ok.lenLr (by rcases hBd with e | e <;> omega_using [hNd, hO, e]) hLd.2 hlg7
+    b h29 (by omega_using [hd2, hsl])) fun t' ⟨b', k', g27, _⟩ y => ⟨⟨s, Pr, p, b', y.trans sy⟩, by rw [k'.get .r28, h28],
       (8 + D + sl + P.L) / 2 ^ lg P, ?_, g27⟩)
   rw [hlg]; unfold nbmOf
-  exact Nat.lt_succ_of_le (Nat.div_le_div_right (by omega))
+  exact Nat.lt_succ_of_le (Nat.div_le_div_right (by omega_using [hsl]))
 
 theorem lenLoop_K2 {a t : State} (h : K2 D Z P a t) : WP isa (lenLoop P) t (K2 D Z P a) := by
   obtain ⟨hnb, hn0⟩ := nbm_le ok h.1
@@ -244,9 +244,9 @@ theorem lenLoop_K2 {a t : State} (h : K2 D Z P a t) : WP isa (lenLoop P) t (K2 D
   have L := agree_lay Pr p
   have hBd := ok.dims.B
   have hLd := ok.dims.L
-  have hn32 : nbmOf D P a ≤ 32 := by rcases hBd with e | e <;> rw [e] at hnb <;> omega
-  exact WP.of_syms (WP.mono (lenLoop_ok L hBd (by rcases hBd with e | e <;> omega) hLd.1 b h28 h27 hn0 hnb
-    (by omega) (len := (List.range P.L).map fun k => view t.mem (Sp s) (oLen + k)) fun k hk => by
+  have hn32 : nbmOf D P a ≤ 32 := by rcases hBd with e | e <;> rw [e] at hnb <;> omega_using [hnb]
+  exact WP.of_syms (WP.mono (lenLoop_ok L hBd (by rcases hBd with e | e <;> omega_using [hLd, e]) hLd.1 b h28 h27 hn0 hnb
+    (by omega_using [hfb, hn32]) (len := (List.range P.L).map fun k => view t.mem (Sp s) (oLen + k)) fun k hk => by
       simp only [List.getD_eq_getElem?_getD, List.getElem?_map, List.getElem?_range hk, Option.map_some,
         Option.getD_some])
     fun t' ⟨b', k', _⟩ y => ⟨⟨s, Pr, p, b', y.trans sy⟩, by rw [k'.get .r28, h28], fb, hfb, by rw [k'.get .r27, h27]⟩)
@@ -260,7 +260,7 @@ omit ok in
 theorem compArgs_CA {ac : State × Nat} {u : State} (h : LI D Z P ac u) (hlg : 2 ^ lg P = P.B) (hlg7 : lg P ≤ 7)
     (hb : P.B * ac.2 + P.B ≤ 2048) : WP isa (.block (compArgs P)) u (CA D Z P ac) := by
   have h14 := h.1.r14
-  refine WP.of_syms (wp_addi (h := by decide) fun u₁ p₁ f₁ => wp_lsl (h := by omega) fun u₂ p₂ f₂ =>
+  refine WP.of_syms (wp_addi (h := by decide) fun u₁ p₁ f₁ => wp_lsl (h := by omega_using [hlg7]) fun u₂ p₂ f₂ =>
     wp_add fun u₃ p₃ f₃ => wp_addi (h := by decide) fun u₄ p₄ f₄ => wp_li (by decide) fun u₅ p₅ f₅ =>
     wp_addi (h := by decide) fun u₆ p₆ f₆ => wp_nil fun y₆ => ?_)
   have k₆ : Only [.r3, .r4, .r5, .r6] u u₆ := (p₁.trans (p₂.trans (p₃.trans (p₄.trans (p₅.trans p₆))))).mono
@@ -269,9 +269,9 @@ theorem compArgs_CA {ac : State × Nat} {u : State} (h : LI D Z P ac u) (hlg : 2
     by rw [k₆.get .r27, h27]⟩, by rw [p₆.get .r3, p₅.get .r3, p₄.get .r3, p₃.get .r3, p₂.get .r3, f₁, h14],
     ?_, by rw [p₆.get .r5, f₅], by rw [f₆, p₅.get .r14, p₄.get .r14, p₃.get .r14, p₂.get .r14, p₁.get .r14, h14]⟩
   rw [p₆.get .r4, p₅.get .r4, f₄, f₃, f₂, p₁.get .r26, h26, p₂.get .r14, p₁.get .r14, h14,
-    ofNat_shl (by rw [hlg]; omega), hlg]
+    ofNat_shl (by rw [hlg]; omega_using [hb]), hlg]
   show _ = Sp ac.1 + _
-  rw [BitVec.add_comm (BitVec.ofNat 64 _) (Sp ac.1), BitVec.add_assoc, BitVec.ofNat_add_ofNat]; congr 2; omega
+  rw [BitVec.add_comm (BitVec.ofNat 64 _) (Sp ac.1), BitVec.add_assoc, BitVec.ofNat_add_ofNat]; congr 2; omega_using []
 
 theorem comp_LI {ac : State × Nat} {u : State} (h : CA D Z P ac u) (hb : P.B * ac.2 + P.B ≤ 2048) :
     WP isa (tcall hArg 3 Z.f.comp) u (LI D Z P ac) := by
@@ -288,8 +288,8 @@ theorem sel_LI {ac : State × Nat} {u : State} (h : LI D Z P ac u) : WP isa (sel
   obtain ⟨⟨s, Pr, p, b, sy⟩, h28, h26, hi, fb, hfb, h27⟩ := h
   have L := agree_lay Pr p
   have hBd := ok.dims.B
-  have hn32 : nbmOf D P ac.1 ≤ 32 := by rcases hBd with e | e <;> rw [e] at hnb <;> omega
-  exact WP.of_syms (WP.mono (selHash_ok L ok.dims.N.1 ok.dims.N.2 b h26 h27 (by omega) (by omega))
+  have hn32 : nbmOf D P ac.1 ≤ 32 := by rcases hBd with e | e <;> rw [e] at hnb <;> omega_using [hnb]
+  exact WP.of_syms (WP.mono (selHash_ok L ok.dims.N.1 ok.dims.N.2 b h26 h27 (by omega_using [hi, hn32]) (by omega_using [hfb, hn32]))
     fun u' ⟨b', k', _⟩ y => ⟨⟨s, Pr, p, b', y.trans sy⟩, by rw [k'.get .r28, h28], by rw [k'.get .r26, h26], hi,
       fb, hfb, by rw [k'.get .r27, h27]⟩)
 
@@ -306,7 +306,7 @@ theorem step_LS {ac : State × Nat} {u : State} (h : LI D Z P ac u) :
   have k₂ : Only [.r26, .r28] u u₂ := (p₁.trans p₂).mono
   refine ⟨hb.only' k₂ y₂, ?_, by rw [p₂.get .r26, f₁, h26, BitVec.ofNat_add_ofNat], fb, hfb,
     by rw [k₂.get .r27, h27]⟩
-  rw [f₂, p₁.get .r28, h28, show nbmOf D P ac.1 - ac.2 = (nbmOf D P ac.1 - (ac.2 + 1)) + 1 by omega,
+  rw [f₂, p₁.get .r28, h28, show nbmOf D P ac.1 - ac.2 = (nbmOf D P ac.1 - (ac.2 + 1)) + 1 by omega_using [hi],
     ← BitVec.ofNat_add_ofNat, BitVec.add_sub_cancel]
 
 omit ok in
@@ -418,11 +418,11 @@ theorem ctHash_ct (hH : HashOK Z.H) (cH : HashCT hH) (hD : Z.H.D = D) (ok : CtOK
       have hnb' : nbmOf D P ac.1 - (ac.2 + 1) < 2 ^ 64 := by
         have := (nbm_le ok h₁.1).1
         have : nbmOf D P ac.1 ≤ nbmOf D P ac.1 * P.B := Nat.le_mul_of_pos_right _ ok.dims.pos
-        omega
+        omega_arith
       rw [eval_nonzero, eval_nonzero, h₁.2.1, h₂.2.1, ne0_ofNat hnb']
       refine ⟨rfl, fun _ => ⟨ac.1, h₁.1, h₂.1⟩, fun e => ?_⟩
-      have hlt : ac.2 + 1 < nbmOf D P ac.1 := by simp only [Option.some.injEq, decide_eq_true_eq] at e; omega
-      exact ⟨nbmOf D P ac.1 - (ac.2 + 1), by omega, (ac.1, ac.2 + 1),
+      have hlt : ac.2 + 1 < nbmOf D P ac.1 := by simp only [Option.some.injEq, decide_eq_true_eq] at e; omega_using [e]
+      exact ⟨nbmOf D P ac.1 - (ac.2 + 1), by omega_using [hn, hi], (ac.1, ac.2 + 1),
         ⟨⟨h₁.1, h₁.2.1, h₁.2.2.1, hlt, h₁.2.2.2⟩, rfl⟩, ⟨⟨h₂.1, h₂.2.1, h₂.2.2.1, hlt, h₂.2.2.2⟩, rfl⟩⟩
     refine RelCT.seq (two_post (Ψ := fun a t => LI D Z P (a, 0) t)
         (compInit_taint (bl_pins (an := id) (fun _ _ h => h.1) [])) fun a t h => ?_)

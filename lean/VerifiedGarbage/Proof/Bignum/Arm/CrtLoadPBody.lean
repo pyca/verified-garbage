@@ -61,7 +61,7 @@ theorem crt_loadPBody_ok (s : State) {base pp qp : BitVec 32} {len w k : Nat} {p
   have old : z.mem.readW (off (State.addr z.sp) 48) 32 = s.mem.readW (off (State.addr s.sp) 48) 32 := by
     rw [rest.sp]; exact stack.word (d := 48) (bits := 32) (by decide)
   refine WP.mono (mergeAcceptanceLayout_ready z readyZ
-    (by rw [rest.sp]; have := h.prime.nowrap; omega) (by rw [rest.wr, rest.sp]; exact h.write)
+    (by rw [rest.sp]; have := h.prime.nowrap; omega_using [this]) (by rw [rest.wr, rest.sp]; exact h.write)
     (by rw [rest.sp]; exact h.prime.stackSeparate.symm.sub_right (Offset.sub_base _ (by decide)))) ?_
   rintro t ⟨readyT, saved, eq, frameT, restT, _⟩
   rw [rest.sp] at frameT

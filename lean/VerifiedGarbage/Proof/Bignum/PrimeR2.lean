@@ -47,32 +47,32 @@ theorem r2E_spec {w wx : Nat} (hwx : 1 ≤ wx) (hw : wx ≤ w) :
     1 ≤ r2E w wx ∧ r2E w wx ≤ 2 * wx ∧ ((w + wx - 1) / wx + r2Z w wx) * wx + r2E w wx = 2 * w := by
   obtain ⟨h1, h2⟩ := kBounds (w := w) hwx
   have hz1 := Nat.div_mul_le_self (r2E0 w wx - wx - 1) wx
-  have hz2 := Nat.lt_div_mul_add (a := r2E0 w wx - wx - 1) (show 0 < wx by omega)
+  have hz2 := Nat.lt_div_mul_add (a := r2E0 w wx - wx - 1) (show 0 < wx by omega_using [hwx])
   unfold r2E r2Z at *
   unfold r2E0 at *
   rw [Nat.add_mul]
   generalize (w + wx - 1) / wx * wx = a at *
   generalize (2 * w - a - wx - 1) / wx * wx = b at *
-  omega
+  omega_using [hw, h2, hz1, hz2]
 
 /-- Before reduction `j + 1` of the further ones, `2 w_X < e₀ - (j + 1) w_X`
 iff another one follows. -/
 theorem r2Z_step {w wx j : Nat} (hwx : 1 ≤ wx) (hj : j < r2Z w wx) :
     2 * wx < r2E0 w wx - (j + 1) * wx ↔ j + 1 < r2Z w wx := by
-  have e1 := (Nat.le_div_iff_mul_le (k := wx) (x := j + 1) (y := r2E0 w wx - wx - 1) (by omega)).mp
-    (by unfold r2Z at hj; omega)
-  have e2 := Nat.le_div_iff_mul_le (k := wx) (x := j + 2) (y := r2E0 w wx - wx - 1) (by omega)
+  have e1 := (Nat.le_div_iff_mul_le (k := wx) (x := j + 1) (y := r2E0 w wx - wx - 1) (by omega_using [hwx])).mp
+    (by unfold r2Z at hj; omega_using [hj])
+  have e2 := Nat.le_div_iff_mul_le (k := wx) (x := j + 2) (y := r2E0 w wx - wx - 1) (by omega_using [hwx])
   unfold r2Z
-  rw [show j + 2 = j + 1 + 1 by omega, Nat.add_mul (j + 1) 1, Nat.one_mul] at e2
+  rw [show j + 2 = j + 1 + 1 by omega_using [], Nat.add_mul (j + 1) 1, Nat.one_mul] at e2
   generalize (j + 1) * wx = a at *
-  omega
+  omega_using [hwx, e2]
 
 /-- Some further reduction follows `redc` iff `2 w_X < e₀`. -/
 theorem r2Z_pos {w wx : Nat} (hwx : 1 ≤ wx) : 0 < r2Z w wx ↔ 2 * wx < r2E0 w wx := by
-  have e := Nat.le_div_iff_mul_le (k := wx) (x := 1) (y := r2E0 w wx - wx - 1) (by omega)
+  have e := Nat.le_div_iff_mul_le (k := wx) (x := 1) (y := r2E0 w wx - wx - 1) (by omega_using [hwx])
   rw [Nat.one_mul] at e
   unfold r2Z
-  omega
+  omega_using [hwx, e]
 
 /-- A further reduction: `A' R_X ≡ A` and `A R_X^k ≡ x` give
 `A' R_X^(k + 1) ≡ x`. -/
@@ -91,14 +91,14 @@ theorem r2_reduced {X A w wx : Nat} (hwx : 1 ≤ wx) (hw : wx ≤ w) (hX : X % 2
   rw [hA, ← Nat.pow_add]
   congr 2
   rw [Nat.mul_assoc, ← Nat.mul_add, Nat.mul_comm wx, Nat.add_comm, he]
-  omega
+  omega_using []
 
 /-- A Montgomery squaring of `2^(64 w_X + t)`: `2^(64 w_X + 2 t)`. -/
 theorem r2_square {X Y Y' wx t : Nat} (hX : X % 2 = 1) (hY : Y = 2 ^ (64 * wx + t) % X) (hlt : Y' < X)
     (h : Y' * 2 ^ (64 * wx) % X = Y * Y % X) : Y' = 2 ^ (64 * wx + 2 * t) % X := by
   have e : Y * Y % X = 2 ^ (64 * wx + 2 * t) * 2 ^ (64 * wx) % X := by
     rw [hY, ← Nat.mul_mod, ← Nat.pow_add, ← Nat.pow_add,
-      show 64 * wx + t + (64 * wx + t) = 64 * wx + 2 * t + 64 * wx by omega]
+      show 64 * wx + t + (64 * wx + t) = 64 * wx + 2 * t + 64 * wx by omega_using []]
   have := mont_cancel (coprime_pow2 hX (64 * wx)) (h.trans e)
   rwa [Nat.mod_eq_of_lt hlt] at this
 
@@ -108,20 +108,20 @@ theorem r2_doubled {w wx : Nat} (hwx : 1 ≤ wx) (hw : wx ≤ w) :
     64 * r2E w wx + r2C w wx = if r2E w wx ≤ wx then 64 * wx + wx else 128 * wx := by
   obtain ⟨-, h2, -⟩ := r2E_spec hwx hw
   unfold r2C
-  split <;> omega
+  split <;> omega_arith
 
 /-- At most `128 w_X` doublings, as many as from 1. -/
 theorem r2C_le {w wx : Nat} (hwx : 1 ≤ wx) (hw : wx ≤ w) : r2C w wx ≤ 128 * wx := by
   obtain ⟨h1, h2, -⟩ := r2E_spec hwx hw
   unfold r2C
-  split <;> omega
+  split <;> omega_using []
 
 /-- `R² mod n ≡ 2^(128 w)` modulo a factor `X` of `n`. -/
 theorem r2_of_dvd {N X r w : Nat} (hX : X ∣ N) (hr : r % N = 2 ^ (64 * w) * 2 ^ (64 * w) % N) :
     r % X = 2 ^ (128 * w) % X := by
   rw [← Nat.mod_mod_of_dvd r hX, hr, Nat.mod_mod_of_dvd _ hX, ← Nat.pow_add]
   congr 2
-  omega
+  omega_using []
 
 /-- A factor of an odd number is odd. -/
 theorem odd_of_dvd {N X : Nat} (hN : N % 2 = 1) (hX : X ∣ N) : X % 2 = 1 := by
@@ -149,15 +149,15 @@ theorem fold_reduced {X A w v : Nat} (hv : v ≤ w) (hX : X % 2 = 1)
     (hA : A * 2 ^ (64 * v) * 2 ^ (64 * v) % X = 2 ^ (128 * w) % X) :
     A % X = 2 ^ (64 * (2 * (w - v))) % X := by
   refine mont_cancel (coprime_pow2 hX (128 * v)) ?_
-  rw [show 2 ^ (128 * v) = 2 ^ (64 * v) * 2 ^ (64 * v) by rw [← Nat.pow_add]; congr 1; omega, ← Nat.mul_assoc,
+  rw [show 2 ^ (128 * v) = 2 ^ (64 * v) * 2 ^ (64 * v) by rw [← Nat.pow_add]; congr 1; omega_using [], ← Nat.mul_assoc,
     hA, ← Nat.pow_add, ← Nat.pow_add]
   congr 2
-  omega
+  omega_using [hv]
 
 /-- The fold's doublings: `2^(64 e + c)` for `e = 2 (w - v)`, as `r2_doubled`. -/
 theorem fold_doubled {w v : Nat} (hv : v ≤ w) (hw : w ≤ 2 * v) :
     64 * (2 * (w - v)) + (if 2 * (w - v) ≤ v then 64 * (v - 2 * (w - v)) + v else 64 * (2 * v - 2 * (w - v))) =
       if 2 * (w - v) ≤ v then 64 * v + v else 128 * v := by
-  split <;> omega
+  split <;> omega_arith
 
 end VG.Proof.Bignum

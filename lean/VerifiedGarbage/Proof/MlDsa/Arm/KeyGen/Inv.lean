@@ -124,7 +124,7 @@ theorem KC.keep {p : Params} {STK : Nat} {σ s s' : State} (h : KC p STK σ s) {
       have hb : w.1 < 5 := by
         simp only [sepB, Bool.and_eq_true, decide_eq_true_eq, List.length_cons, List.length_nil] at hs
         exact hs.1.1.1.2
-      rcases (by omega : w.1 = 0 ∨ w.1 = 1 ∨ w.1 = 2 ∨ w.1 = 3 ∨ w.1 = 4) with e | e | e | e | e <;> rw [e]
+      rcases (by omega_using [hb] : w.1 = 0 ∨ w.1 = 1 ∨ w.1 = 2 ∨ w.1 = 3 ∨ w.1 = 4) with e | e | e | e | e <;> rw [e]
       · exact .inl (by decide)
       · exact .inl (by decide)
       · exact .inr rfl
@@ -158,14 +158,14 @@ theorem pro_ok {p : Params} (hF : PFacts p) {STK : Nat} (hSTK : 8 ≤ STK) {σ :
     exact List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_singleton_self _))
   have eA : ∀ o, (lay p STK σ).A 0 o = State.addr (σ.gpr .r3) + BitVec.ofNat 64 o := fun o => rfl
   have wS : ∀ {o n : Nat}, o + n ≤ 32768 → InRegions σ.wr ((lay p STK σ).A 0 o) n := fun {o n} h =>
-    Lay.covers (o := o) (l := n) w0 (by rw [lay_size0]; omega) _ _
+    Lay.covers (o := o) (l := n) w0 (by rw [lay_size0]; omega_using [hs1, h]) _ _
       ⟨_, List.mem_singleton_self _, Region.contains_self _ _⟩
   rw [pro, WP.block_append_iff]
-  refine WP.mono (saveRegs_ok .r3 (off := 840) (by decide) (fit_le (by omega) fc) fun i hi => by
-    rw [add_ofNat_add, ← eA]; exact wS (o := 840 + 4 * i) (n := 4) (by omega)) fun s₁ h₁ => ?_
+  refine WP.mono (saveRegs_ok .r3 (off := 840) (by decide) (fit_le (by omega_using [hs1]) fc) fun i hi => by
+    rw [add_ofNat_add, ← eA]; exact wS (o := 840 + 4 * i) (n := 4) (by omega_using [hi])) fun s₁ h₁ => ?_
   have g3 : s₁.gpr .r3 = pScr σ := by rw [h₁.gpr]
   have e872 : State.addr (s₁.gpr .r3 + BitVec.ofNat 32 (Impl.MlKem.Arm.oSave + 32)) = (lay p STK σ).A 0 872 := by
-    rw [g3]; exact addr_add (by simp only [Impl.MlKem.Arm.oSave]; omega)
+    rw [g3]; exact addr_add (by simp only [Impl.MlKem.Arm.oSave]; omega_using [fc, hs1])
   have i872 : InRegions s₁.wr (State.addr (s₁.gpr .r3 + BitVec.ofNat 32 (Impl.MlKem.Arm.oSave + 32))) 4 := by
     rw [e872, h₁.wr]; exact wS (by decide)
   have o1 : Impl.MlKem.Arm.oSave + 32 < 4096 := by decide
@@ -180,7 +180,7 @@ theorem pro_ok {p : Params} (hF : PFacts p) {STK : Nat} (hSTK : 8 ≤ STK) {σ :
     · rw [List.mem_singleton] at hr; subst hr
       intro x hx; simp only [Region.Contains, eA] at hx ⊢; bv_omega_arith
     · simp only [Region.Contains, eA]; bv_omega_arith
-  refine ⟨⟨⟨hL, rfl, by decide, by decide, by rw [lay_size0]; omega, rfl,
+  refine ⟨⟨⟨hL, rfl, by decide, by decide, by rw [lay_size0]; omega_using [hs1], rfl,
     show σ.sp - BitVec.ofNat 32 STK = s₁.sp - BitVec.ofNat 32 STK by rw [h₁.sp], hSTK,
     by rw [h₁.sp]; exact hp.stk, ?_, ?_, ?_, ?_, fun i hi hi1 => ?_, fun i hi hi1 => ?_⟩, h₁.rd, h₁.wr, h₁.sp,
     fun i hi => ?_, ?_, ?_⟩, ?_⟩
@@ -198,7 +198,7 @@ theorem pro_ok {p : Params} (hF : PFacts p) {STK : Nat} (hSTK : 8 ≤ STK) {σ :
     · simp [Lay.buf, lay]
   · show _ ∈ s₁.rd ++ s₁.wr
     rw [h₁.rd, h₁.wr, hp.rd, hp.wr]
-    rcases (by omega : i = 0 ∨ i = 2 ∨ i = 3 ∨ i = 4) with rfl | rfl | rfl | rfl <;> simp [Lay.buf, lay]
+    rcases (by omega_using [hi, hi1] : i = 0 ∨ i = 2 ∨ i = 3 ∨ i = 4) with rfl | rfl | rfl | rfl <;> simp [Lay.buf, lay]
   · show (s₁.mem.writeW _ _).readW _ _ = _
     rw [e872, ne1 i hi]
     exact h₁.saved i hi

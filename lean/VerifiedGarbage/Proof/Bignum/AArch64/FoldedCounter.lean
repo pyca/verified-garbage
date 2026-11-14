@@ -22,14 +22,14 @@ theorem next_ok {s : State} {B : Addr} {Z w n : Nat} {mi : BitVec 64}
       t.gpr .x3 = BitVec.ofNat 64 (n-1) ∧ Keep [.x3] s t := by
   have bound : 8*sI+8 ≤ Z := by
     have := hdr_lt_slot w 8 (show sI < 32 by decide)
-    omega
+    omega_using [hZ, this]
   refine WP.mono (WP.keep [.x3] (Q := fun t =>
     t.mem = s.mem.writeW (off B (8*sI)) (BitVec.ofNat 64 (n-1)) ∧
     t.gpr .x3 = BitVec.ofNat 64 (n-1)) ?_ rfl rfl rfl)
     fun t ⟨⟨hm,hr⟩,hk⟩ => ⟨hm,hr,hk⟩
   unfold Folded.next
   brun [hg.x0, hdr_enc (show sI < 32 by decide), hg.scr.ld bound, hg.scr.st bound, hc,
-    ofNat_sub_one' hn (by omega)]
+    ofNat_sub_one' hn (by omega_using [hn'])]
 
 theorem init_ok {s : State} {B : Addr} {Z w : Nat} {mi : BitVec 64}
     (hg : Good s B Z w mi) (hZ : slot w 8 ≤ Z) :
@@ -37,7 +37,7 @@ theorem init_ok {s : State} {B : Addr} {Z w : Nat} {mi : BitVec 64}
       t.mem = s.mem.writeW (off B (8*sI)) (16 : BitVec 64) ∧ Keep [.x3] s t := by
   have bound : 8*sI+8 ≤ Z := by
     have := hdr_lt_slot w 8 (show sI < 32 by decide)
-    omega
+    omega_using [hZ, this]
   exact WP.keep [.x3] (by brun [hg.x0, hdr_enc (show sI < 32 by decide), hg.scr.st bound]; rfl) rfl rfl rfl
 
 end VG.Proof.Bignum.AArch64.FoldedPublic

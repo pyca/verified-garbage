@@ -39,7 +39,7 @@ theorem clear_ok (arg : Nat) {s : State} {out : BitVec 32} {len : Nat}
   · intro i hi
     rw [K.2.2]
     obtain ⟨r, hr, hc⟩ := write
-    exact ⟨r, hr, hc.byte (by rw [Mem.sub_ofNat_toNat _ (by omega)]; omega)⟩
+    exact ⟨r, hr, hc.byte (by rw [Mem.sub_ofNat_toNat _ (by omega_using [h32, hi])]; omega_using [hi])⟩
   · exact ⟨V, Z, M ▸ O, K.trans (T.mono (by decide))⟩
 
 end VG.Proof.Rsa.X86.CrtValues

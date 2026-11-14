@@ -47,7 +47,7 @@ theorem keygen_finish_result {extra : Nat} {s t : State} {h : GenerateKeyABI ext
     have hl := h.lengths
     have ho := h.outLength
     unfold Spec.Dsa.lengthsValid at hl
-    omega
+    omega_using [hl, ho]
   have hptr : word t.mem (randomBase s) Random.oUsedPtr = s.gpr .rdx :=
     hr.saved (56, s.gpr .rdx) (by simp [keygenSavedValues])
   have hframeOut := h.stackOut.sub_left (keygen_frame_sub h)
@@ -90,7 +90,7 @@ theorem keygen_finish_result {extra : Nat} {s t : State} {h : GenerateKeyABI ext
         rw [hstatus] at he
         have hn := congrArg BitVec.toNat he
         change result.status % 2 ^ 64 = 1 at hn
-        omega
+        omega_using [hbound, hs, hn]
       rw [hkey hs]
       exact keygen_bytes_zero (hbad hw)
   · rw [hum, ← hpM, random_publish_used, huM]

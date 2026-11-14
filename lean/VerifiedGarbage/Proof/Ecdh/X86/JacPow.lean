@@ -61,9 +61,9 @@ theorem jwinPow_ok (hc : CfgOk c) (h4 : c.n = 4) (hC : Law c.C) (ham3 : AM3 c.C)
     F₅.onep (fun t ht => by
       change  t < 64 * c.n at ht
       change s₅.mem (off base (bitsAt c.n 1 + t)) = _
-      rw [U₅.byte (jwinW_table h4 ht) (by rw [bitsAt_eq, h4]; rw [h4] at ht; omega)]
+      rw [U₅.byte (jwinW_table h4 ht) (by rw [bitsAt_eq, h4]; rw [h4] at ht; omega_using [ht])]
       exact ht₁ t ht)
-    (show c.C.p - 2 < 2 ^ (64 * c.n) by have := hc.p_lt; omega)) fun s₆ ⟨K₆, U₆, lt₆, v₆⟩ f₆ => h s₆ ?_ f₆))
+    (show c.C.p - 2 < 2 ^ (64 * c.n) by have := hc.p_lt; omega_using [this])) fun s₆ ⟨K₆, U₆, lt₆, v₆⟩ f₆ => h s₆ ?_ f₆))
   have r₆ : ∀ {i}, i < 45 → i ∉ [ACC, PT, TMP] → sv c base s₆ i = sv c base s₅ i := fun hi h₁ =>
     sv_unch U₆ h7 hn hi (apart_pwW hi h₁)
   refine ⟨hs₅.of_keeps K₆ (by decide), fun r hr => by rw [K₆.1 r hr, K₅.1 r hr],

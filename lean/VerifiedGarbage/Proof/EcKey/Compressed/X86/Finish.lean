@@ -104,7 +104,7 @@ theorem finish_ok {c : Cfg} (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s
   have hlhi := hc.len_hi
   have hl8 := hc.len8
   rw [finish_eq]
-  refine wp_movS (readSrc_sc hs (d := c.sl FLAG) (by omega)) fun s₁ u₁ _ => ?_
+  refine wp_movS (readSrc_sc hs (d := c.sl FLAG) (by omega_using [h0, hF])) fun s₁ u₁ _ => ?_
   refine wp_movS (show readSrc s₁ (.mem (Cfg.argOp 0)) = some o by
     have hea : s₁.ea (Cfg.argOp 0) = s.ea (Cfg.argOp 0) := by
       show addr (s₁.gpr .esp) _ = addr (s.gpr .esp) _
@@ -116,36 +116,36 @@ theorem finish_ok {c : Cfg} (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s
   have hb₂ : s₂.gpr .ebx = o := u₂.gpr
   have hc₂ : s₂.gpr .ecx = mask32 (b = true) := by rw [u₂.other _ (by decide), u₁.gpr, ← flagW, hf]
   have m₂ : s₂.mem = s.mem := u₂.mem.trans u₁.mem
-  refine WP.block_append (WP.mono (tag_ok hs₂ (by omega) hb₂
-    (by rw [K₂.2.2]; exact ⟨_, hw, by simpa using Offset.contains_base (o.setWidth 64) (d := 0) (n := 1) (by omega) (by decide)⟩)
+  refine WP.block_append (WP.mono (tag_ok hs₂ (by omega_using [h0, hY]) hb₂
+    (by rw [K₂.2.2]; exact ⟨_, hw, by simpa using Offset.contains_base (o.setWidth 64) (d := 0) (n := 1) (by omega_using []) (by decide)⟩)
     b hc₂ h0) fun s₃ ⟨L₃, O₃, K₃⟩ => ?_)
   simp only [sv, m₂] at L₃
   have hs₃ := hs₂.of_keeps K₃ (by decide)
   have hb₃ : s₃.gpr .ebx = o := (K₃.1 _ (by decide)).trans hb₂
   have hc₃ : s₃.gpr .ecx = mask32 (b = true) := (K₃.1 _ (by decide)).trans hc₂
-  have U₃ := O₃.unch_far (hd.symm.sub_right (Region.sub_prefix (by omega)))
+  have U₃ := O₃.unch_far (hd.symm.sub_right (Region.sub_prefix (by omega_using [])))
   have x₃ : wordsVal s₃.mem base (c.sl E) c.n = sv c base s E := by
-    rw [U₃.wordsVal (fun w hw => by simp only [List.mem_singleton] at hw; subst hw; omega) (by omega), m₂]
+    rw [U₃.wordsVal (fun w hw => by simp only [List.mem_singleton] at hw; subst hw; omega_using [hE]) (by omega_using [hsz, hE]), m₂]
   refine WP.block_append (WP.mono (storeBytes_ok hs₃ (dst := .ebx) (d := 1) (a := c.sl E)
-    (by decide) (by decide) b hc₃ hE (by omega) hlhi (by rw [hb₃]; omega)
+    (by decide) (by decide) b hc₃ hE (by omega_using [hl8]) hlhi (by rw [hb₃]; omega_using [hofit])
     (fun e m he => ⟨_, by rw [K₃.2.2, K₂.2.2]; exact hw, by
-      rw [hb₃, Offset.add_add]; exact Offset.contains_base (o.setWidth 64) (by omega) (by omega)⟩)
-    (by rw [hb₃]; exact (hd.symm.sub_left (Offset.sub_base base hE)).sub_right (Offset.sub_base (o.setWidth 64) (d := 1) (by omega)))) fun s₄ ⟨e₄, K₄, O₄⟩ => ?_)
+      rw [hb₃, Offset.add_add]; exact Offset.contains_base (o.setWidth 64) (by omega_using [he]) (by omega_using [hofit, he])⟩)
+    (by rw [hb₃]; exact (hd.symm.sub_left (Offset.sub_base base hE)).sub_right (Offset.sub_base (o.setWidth 64) (d := 1) (by omega_using [])))) fun s₄ ⟨e₄, K₄, O₄⟩ => ?_)
   rw [hb₃, x₃] at e₄
   rw [hb₃] at O₄
   have hs₄ := hs₃.of_keeps K₄ (by decide)
-  have U₄ := O₄.unch_far (hd.symm.sub_right (Offset.sub_base (o.setWidth 64) (d := 1) (by omega)))
+  have U₄ := O₄.unch_far (hd.symm.sub_right (Offset.sub_base (o.setWidth 64) (d := 1) (by omega_using [])))
   have hsv₄ : ∀ rd ∈ Cfg.saved, s₄.mem.readW (off base rd.2) 32 = g rd.1 := by
     intro rd hrd
     have := saved_lt rd hrd
     have ap : ∀ w ∈ [(size, 2 ^ 64)], rd.2 + 4 ≤ w.1 ∨ w.1 + w.2 ≤ rd.2 := by
       intro w hw; obtain rfl := List.mem_singleton.mp hw; exact .inl (by omega)
-    rw [Unch.readW32 U₄ ap (by omega), Unch.readW32 U₃ ap (by omega), m₂, hsv rd hrd]
+    rw [Unch.readW32 U₄ ap (by omega_using [this]), Unch.readW32 U₃ ap (by omega_using [this]), m₂, hsv rd hrd]
   refine WP.mono (tail_ok hs₄ hsv₄ b (by rw [K₄.1 _ (by decide), hc₃]))
     fun t ⟨mt, ret, saved, others⟩ => ⟨?_, ret, saved, ?_, ?_⟩
   · have lead : Spec.Ecdsa.bytesAt s₄.mem (o.setWidth 64) 1 =
         [if b then BitVec.ofNat 8 (2 + sv c base s Impl.Ecdh.X86.QY % 2) else 0] := by
-      rw [bytesAt_keep O₄ (Offset.base_disjoint (o.setWidth 64) (by omega) (by omega)) (by omega) (by omega)]
+      rw [bytesAt_keep O₄ (Offset.base_disjoint (o.setWidth 64) (by omega_using []) (by omega_using [hofit])) (by omega_using [hofit]) (by omega_using [])]
       simpa [Spec.Ecdsa.bytesAt, sv] using congrArg (· :: []) L₃
     rw [mt, bytesAt_add, lead, e₄]
     cases b
@@ -154,6 +154,6 @@ theorem finish_ok {c : Cfg} (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s
     · rfl
   · rw [others _ (by decide), K₄.1 _ (by decide), K₃.1 _ (by decide), K₂.1 _ (by decide)]
   · rw [mt, ← m₂]
-    exact (O₃.mono (Nat.zero_le _) (by omega)).trans ((O₄.shift (by omega)).mono (Nat.zero_le _) (by omega))
+    exact (O₃.mono (Nat.zero_le _) (by omega_using [])).trans ((O₄.shift (by omega_using [hofit])).mono (Nat.zero_le _) (by omega_using []))
 
 end VG.Proof.EcKey.Compressed.X86

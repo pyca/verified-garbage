@@ -66,7 +66,7 @@ theorem gw_lenE (g : Geo) : ∀ a, kw (wid.toLen a) = kw (16 * g.n + 24) → kw 
   fun a ea => by
     simp only [VG.Impl.Rsa.X86.KeyRt.Lay.toLen, VG.Impl.Rsa.X86.RecoverRt.lay, VG.Proof.Rsa.X86.KeyRt.kw,
       VG.Proof.Bignum.X86.PublicRt.wb, Spec.Rsa.modulusWords] at ea ⊢
-    omega
+    omega_using [ea]
 
 section
 variable {g : Geo} {C : Nat → Prop}
@@ -88,7 +88,7 @@ theorem gwEntry (F : GwFit g) {hc : VG.Taint.Hint VG.X86.Taint.T}
       (.block (slots wid ++ VG.Impl.Rsa.X86.RecoverDetRt.gN)) (gwB g fun _ => True) := by
   have up := F.up
   refine leaf0 (fun s ps => VG.Proof.Rsa.X86.InvBatchRt.slots_ok ps.1 ps.2.1 fun u H K O =>
-    WP.mono (G.gN_ok H (G.lenNar H.ws (gw_lenE g)) (by omega) (by rw [kw_nar]; simp only [VG.Impl.Rsa.X86.Recover.width]; omega))
+    WP.mono (G.gN_ok H (G.lenNar H.ws (gw_lenE g)) (by omega_using [up]) (by rw [kw_nar]; simp only [VG.Impl.Rsa.X86.Recover.width]; omega_using [up]))
       fun t ⟨H', K', O'⟩ => ?_) h
   have hn := H.nowrap
   have hZ := H'.halfZ
@@ -96,7 +96,7 @@ theorem gwEntry (F : GwFit g) {hc : VG.Taint.Hint VG.X86.Taint.T}
   have e96 : halfSlot = 96 := rfl
   rw [kw_nar] at H'
   refine ⟨H', ps.2.2.keep ((K.mono (by decide)).trans (K'.mono (by decide))) (regs := [.eax, .ecx, .edx])
-    (by decide) ((O.mono (Nat.zero_le _) (by omega)).trans (O'.mono (Nat.zero_le _) (by omega))),
+    (by decide) ((O.mono (Nat.zero_le _) (by omega_using [hZ, e52, e96])).trans (O'.mono (Nat.zero_le _) (by omega_using [hZ]))),
     trivial, trivial, trivial⟩
 
 /-- `zeroWide wid j`. -/
@@ -108,12 +108,12 @@ theorem gwZeroW (F : GwFit g) {j : Nat} (hj : j < 22) {hc : VG.Taint.Hint VG.X86
   have hjS : j * (4 * g.W + 8) + (4 * g.W + 8) ≤ 22 * (4 * g.W + 8) := by
     rw [← Nat.succ_mul]; exact Nat.mul_le_mul_right _ hj
   exact relOp (rs := [.eax, .ecx, .edx, .ebp]) (ws := [(160 + j * (4 * g.W + 8), 4 * g.W + 8)]) (by decide) (stable_true _)
-    (ws1 (by omega) (by omega))
+    (ws1 (by omega_using []) (by omega_using [fit, hjS]))
     (fun s hb _ => WP.mono (VG.Proof.Rsa.X86.KeyRt.zeroWide_ok hb.ws hj) fun t ⟨_, k, _, K⟩ => by
       have O := G.keep_outside k
       simp only [VG.Proof.Rsa.X86.Keys.arr, VG.Proof.Rsa.X86.Keys.S, VG.Impl.Rsa.X86.Keys.hdr, kw_wid] at O
-      rw [show 4 * (VG.Impl.Rsa.X86.Recover.wide g.n + 2) = 4 * g.W + 8 by simp only [Geo.W]; omega] at O
-      exact ⟨hb.keep K (by decide) (by decide) O (by omega) (by omega), K, O.unch, trivial⟩) h
+      rw [show 4 * (VG.Impl.Rsa.X86.Recover.wide g.n + 2) = 4 * g.W + 8 by simp only [Geo.W]; omega_using []] at O
+      exact ⟨hb.keep K (by decide) (by decide) O (by omega_using []) (by omega_using [fit, hjS]), K, O.unch, trivial⟩) h
 
 /-- `copy nar o a`. -/
 theorem gwCopyN (F : GwFit g) {o a : Nat} (ho : o < 44) (ha : a < 44) (hoa : o ≠ a)
@@ -126,12 +126,12 @@ theorem gwCopyN (F : GwFit g) {o a : Nat} (ho : o < 44) (ha : a < 44) (hoa : o �
   have hoS : o * (4 * g.w + 8) + (4 * g.w + 8) ≤ 44 * (4 * g.w + 8) := by
     rw [← Nat.succ_mul]; exact Nat.mul_le_mul_right _ ho
   exact relOp (rs := [.eax, .ebx, .ecx, .edx, .ebp]) (ws := [(160 + o * (4 * g.w + 8), 4 * g.w)]) (by decide) (stable_true _)
-    (ws1 (by omega) (by omega))
+    (ws1 (by omega_using []) (by omega_using [fit, hW, hoS]))
     (fun s hb _ => WP.mono (copyOut_ok (G.rtNar hb.ws F.up) ho ha hoa) fun t ⟨_, O, _, K⟩ => by
       simp only [VG.Proof.Rsa.X86.Keys.arr, VG.Proof.Rsa.X86.Keys.S, VG.Impl.Rsa.X86.Keys.hdr, kw_nar] at O
-      rw [show 4 * (VG.Impl.Rsa.X86.Recover.width g.n + 2) = 4 * g.w + 8 by simp only [Geo.w]; omega,
+      rw [show 4 * (VG.Impl.Rsa.X86.Recover.width g.n + 2) = 4 * g.w + 8 by simp only [Geo.w]; omega_using [],
         show VG.Impl.Rsa.X86.Recover.width g.n = g.w from rfl] at O
-      exact ⟨hb.keep K (by decide) (by decide) O (by omega) (by omega), K, O.unch, trivial⟩) h
+      exact ⟨hb.keep K (by decide) (by decide) O (by omega_using []) (by omega_using [fit, hW, hoS]), K, O.unch, trivial⟩) h
 
 /-- `zeroWide nar j`. -/
 theorem gwZeroN (F : GwFit g) {j : Nat} (hj : j < 44) {hc : VG.Taint.Hint VG.X86.Taint.T}
@@ -143,12 +143,12 @@ theorem gwZeroN (F : GwFit g) {j : Nat} (hj : j < 44) {hc : VG.Taint.Hint VG.X86
   have hjS : j * (4 * g.w + 8) + (4 * g.w + 8) ≤ 44 * (4 * g.w + 8) := by
     rw [← Nat.succ_mul]; exact Nat.mul_le_mul_right _ hj
   exact relOp (rs := [.eax, .ecx, .edx, .ebp]) (ws := [(160 + j * (4 * g.w + 8), 4 * g.w + 8)]) (by decide) (stable_true _)
-    (ws1 (by omega) (by omega))
+    (ws1 (by omega_using []) (by omega_using [fit, hW, hjS]))
     (fun s hb _ => WP.mono (VG.Proof.Rsa.X86.KeyRt.zeroWide_ok (G.rtNar hb.ws F.up) hj) fun t ⟨_, k, _, K⟩ => by
       have O := G.keep_outside k
       simp only [VG.Proof.Rsa.X86.Keys.arr, VG.Proof.Rsa.X86.Keys.S, VG.Impl.Rsa.X86.Keys.hdr, kw_nar] at O
-      rw [show 4 * (VG.Impl.Rsa.X86.Recover.width g.n + 2) = 4 * g.w + 8 by simp only [Geo.w]; omega] at O
-      exact ⟨hb.keep K (by decide) (by decide) O (by omega) (by omega), K, O.unch, trivial⟩) h
+      rw [show 4 * (VG.Impl.Rsa.X86.Recover.width g.n + 2) = 4 * g.w + 8 by simp only [Geo.w]; omega_using []] at O
+      exact ⟨hb.keep K (by decide) (by decide) O (by omega_using []) (by omega_using [fit, hW, hjS]), K, O.unch, trivial⟩) h
 
 /-- The block of the double batches' count, `(3 w + 6) / 2`. -/
 abbrev gwCountCode : Prog isa :=
@@ -161,17 +161,17 @@ theorem gwCount (F : GwFit g) {hc : VG.Taint.Hint VG.X86.Taint.T}
     RelCT isa (gwB g C) gwCountCode (gwB g (· = (3 * g.w + 6) / 2)) := by
   have up := F.up
   have fit := F.fit
-  refine leafU (fun s ps => WP.mono (G.countG_ok ps.1 (G.lenNar ps.1.ws (gw_lenE g)) (by omega))
+  refine leafU (fun s ps => WP.mono (G.countG_ok ps.1 (G.lenNar ps.1.ws (gw_lenE g)) (by omega_using [up]))
     fun t ⟨H, M, K⟩ => ?_) h
   have hn := ps.1.nowrap
   have hZ := ps.1.halfZ
   have e96 : halfSlot = 96 := rfl
-  have O : Outside g.B 100 4 s.mem t.mem := by rw [M]; exact writeW32_outside _ _ _ (by omega)
-  refine ⟨H, ps.2.1.keep K (by decide) (O.mono (Nat.zero_le _) (by omega)), ?_, trivial, trivial⟩
+  have O : Outside g.B 100 4 s.mem t.mem := by rw [M]; exact writeW32_outside _ _ _ (by omega_using [])
+  refine ⟨H, ps.2.1.keep K (by decide) (O.mono (Nat.zero_le _) (by omega_using [fit])), ?_, trivial, trivial⟩
   show w32 t.mem g.B 100 = (3 * g.w + 6) / 2
   rw [M, w32_write_self, BitVec.toNat_ofNat, kw_nar, show VG.Impl.Rsa.X86.Recover.width g.n = g.w from rfl]
   have : g.w = 2 * g.n + 2 := rfl
-  omega
+  omega_using [up, this]
 
 
 /-! ## A batch, and the loop of double batches -/
@@ -185,13 +185,13 @@ structure GwChecks (i o : Nat) : Prop where
   r₂ : RowChecks wid false fgArr fgSz (o + 4) [tQ i, tR i] [tQ i, tR i]
 
 theorem gw_eW (g : Geo) : g.W = 4 * g.n + 6 := by
-  simp only [Geo.W, VG.Impl.Rsa.X86.Recover.wide, VG.Impl.Rsa.X86.Recover.width]; omega
+  simp only [Geo.W, VG.Impl.Rsa.X86.Recover.wide, VG.Impl.Rsa.X86.Recover.width]; omega_using []
 
 theorem gw_nw (F : GwFit g) : 160 + 16 * (8 * VG.Proof.Rsa.X86.InvBatchRt.nw (16 * g.n + 24) + 8) ≤ g.Z := by
   have fit := F.fit
   have eW := gw_eW g
   simp only [VG.Proof.Rsa.X86.InvBatchRt.nw, kw_wid, show VG.Impl.Rsa.X86.Recover.wide g.n = g.W from rfl]
-  omega
+  omega_using [fit]
 
 theorem gwBatchCode (F : GwFit g) {i o : Nat} (hio : i = 0 ∧ o = 8 ∨ i = 8 ∧ o = 0) (K : GwChecks i o) :
     RelCT isa (gwB g C) (seqs [.block (VG.Proof.Rsa.X86.InvBatchRt.F.startF wid i),
@@ -203,14 +203,14 @@ theorem gwBatchCode (F : GwFit g) {i o : Nat} (hio : i = 0 ∧ o = 8 ∨ i = 8 �
   have eW := gw_eW g
   have hw : g.w = 2 * g.n + 2 := rfl
   have r4 : rv (kw (16 * g.n + 24)) { arr := fgArr } (g.w + 2) = 160 + 4 * (4 * g.W + 8) := by
-    rw [gw_rv]; show 160 + 4 * _ + 0 * _ + 0 = _; omega
+    rw [gw_rv]; show 160 + 4 * _ + 0 * _ + 0 = _; omega_using []
   have hnw := gw_nw F
   have eP : VG.Impl.Rsa.X86.InvBatchRt.sP = 176 := rfl
   have eU : VG.Impl.Rsa.X86.InvBatchRt.sMu = 160 := rfl
   have e16 : win = 16 := rfl
   have efs : fgSz = 16 := rfl
-  have hi : i ≤ 8 := by omega
-  have ho : o ≤ 8 := by omega
+  have hi : i ≤ 8 := by omega_using [hio]
+  have ho : o ≤ 8 := by omega_using [hio]
   have hm4 : ∀ t ∈ ms4 i,
       t.c + 4 ≤ rv (kw (16 * g.n + 24)) { arr := fgArr } (g.w + 2) ∧
       t.m + 4 ≤ rv (kw (16 * g.n + 24)) { arr := fgArr } (g.w + 2) ∧
@@ -219,17 +219,17 @@ theorem gwBatchCode (F : GwFit g) {i o : Nat} (hio : i = 0 ∧ o = 8 ∨ i = 8 �
     intro t ht
     simp only [ms4, List.mem_cons, List.not_mem_nil, or_false] at ht
     rw [r4]
-    rcases ht with rfl | rfl | rfl | rfl <;> simp only [tU, tV, tQ, tR] <;> omega
+    rcases ht with rfl | rfl | rfl | rfl <;> simp only [tU, tV, tQ, tR] <;> omega_using [eP, eU, e16]
   have H₁ : RowHyp (16 * g.n + 24) g.Z (g.w + 2) fgArr fgSz o [tU i, tV i] [tU i, tV i] (ms4 i) :=
-    ⟨by omega, by omega, .inl rfl, by omega, by rw [r4, efs]; omega, by rw [r4, eP]; omega, hm4, fun t ht => by
+    ⟨by omega_using [], by omega_using [hw], .inl rfl, by omega_using [hio, efs], by rw [r4, efs]; omega_using [fit, eW, hw], by rw [r4, eP]; omega_using [], hm4, fun t ht => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at ht
-      rcases ht with rfl | rfl <;> exact ⟨by simp [ms4], by simp only [tU, tV]; omega⟩, fun _ h => h⟩
+      rcases ht with rfl | rfl <;> exact ⟨by simp [ms4], by simp only [tU, tV]; omega_using [hio, efs]⟩, fun _ h => h⟩
   have H₂ : RowHyp (16 * g.n + 24) g.Z (g.w + 2) fgArr fgSz (o + 4) [tQ i, tR i] [tQ i, tR i] (ms4 i) :=
-    ⟨by omega, by omega, .inl rfl, by omega, by rw [r4, efs]; omega, by rw [r4, eP]; omega, hm4, fun t ht => by
+    ⟨by omega_using [], by omega_using [hw], .inl rfl, by omega_using [hio, efs], by rw [r4, efs]; omega_using [fit, eW, hw], by rw [r4, eP]; omega_using [], hm4, fun t ht => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at ht
-      rcases ht with rfl | rfl <;> exact ⟨by simp [ms4], by simp only [tQ, tR]; omega⟩, fun _ h => h⟩
+      rcases ht with rfl | rfl <;> exact ⟨by simp [ms4], by simp only [tQ, tR]; omega_using [hio, efs]⟩, fun _ h => h⟩
   simp only [seqs]
-  refine RelCT.seq (relStartF (by omega) hnw K.start) ?_
+  refine RelCT.seq (relStartF (by omega_using [hio, efs]) hnw K.start) ?_
   refine RelCT.seq (relWordSteps (stable_true _) hnw K.steps.choose_spec) ?_
   refine RelCT.seq (relCoefMasks (i := i) K.masks) ?_
   refine RelCT.seq (relRow H₁ K.r₁) ?_
@@ -283,7 +283,7 @@ theorem gwLoop (F : GwFit g) (K : Nat) :
   refine (gwDouble F hk.1 hk.2).mono (fun _ _ h => h.1) fun s t ⟨hb, zs, zt⟩ => ?_
   have es : isa.eval .ne s = s.zf.map (!·) := rfl
   have et : isa.eval .ne t = t.zf.map (!·) := rfl
-  refine ⟨by rw [es, et, zs, zt], fun hf => ?_, fun ht => ⟨k - 1, by omega, hb, ?_, by omega⟩⟩
+  refine ⟨by rw [es, et, zs, zt], fun hf => ?_, fun ht => ⟨k - 1, by omega_using [hk], hb, ?_, by omega_using [hk]⟩⟩
   · rw [es, zs] at hf
     have h0 : k - 1 = 0 := by by_contra h0; simp_all
     rw [h0] at hb
@@ -309,7 +309,7 @@ theorem gwTrace (F : GwFit g) :
   have rA : ∀ j h, rv (kw (16 * g.n + 24)) { arr := j, half := h } (g.w + 2) =
       160 + j * (4 * g.W + 8) + h * (4 * (g.w + 2)) := fun j h => by rw [gw_rv]; rfl
   have r4 : rv (kw (16 * g.n + 24)) { arr := fgArr } (g.w + 2) = 160 + 4 * (4 * g.W + 8) := by
-    rw [gw_rv]; show 160 + 4 * _ + 0 * _ + 0 = _; omega
+    rw [gw_rv]; show 160 + 4 * _ + 0 * _ + 0 = _; omega_using []
   have r7 := rA 7 0; have r8 := rA 8 0; have r9 := rA 9 0; have r12 := rA 12 0; have r14 := rA 14 0
   have r14h := rA 14 1
   have f1 : fgSz * (g.w + 2 + 1) = 16 * (g.w + 3) := rfl
@@ -325,29 +325,29 @@ theorem gwTrace (F : GwFit g) :
     (by decide) (by taint_decide)) ?_
   refine RelCT.seq (gwZeroW F (j := 9) (by decide) (by taint_decide)) ?_
   refine RelCT.seq (relEvenMask (stable_true _) (by taint_decide)) ?_
-  refine RelCT.seq (relSelIn (stable_true _) (by decide) (by omega) (by omega)
-    (by omega) (by taint_decide)) ?_
+  refine RelCT.seq (relSelIn (stable_true _) (by decide) (by omega_using [fit, eW, hw, r9]) (by omega_using [fit, eW, hw, r7])
+    (by omega_using [eW, hw, r7, r9]) (by taint_decide)) ?_
   refine RelCT.seq (relChainAdd (X := fun _ => True) (stable_true _) (fun _ _ => trivial) (by decide) rfl
-    (by omega) (by omega) (by omega)
-    (.inl (Nat.le_refl _)) (.inl (by omega)) (by taint_decide)) ?_
-  refine RelCT.seq (relScatter (by decide) (by omega) (by omega)
-    (by omega) (.inr (by omega)) ⟨_, by taint_decide⟩) ?_
-  refine RelCT.seq (relScatter (by decide) (by omega) (by omega)
-    (by omega) (.inr (by omega)) ⟨_, by taint_decide⟩) ?_
+    (by omega_using [fit, eW, hw, r8]) (by omega_using [fit, eW, hw, r8]) (by omega_using [fit, eW, hw, r9])
+    (.inl (Nat.le_refl _)) (.inl (by omega_using [r8, r9])) (by taint_decide)) ?_
+  refine RelCT.seq (relScatter (by decide) (by omega_using [fit, eW, hw, r4, f2]) (by omega_using [eP, r4])
+    (by omega_using [fit, eW, hw, r7]) (.inr (by omega_using [eW, hw, efs, r4, r7, f1])) ⟨_, by taint_decide⟩) ?_
+  refine RelCT.seq (relScatter (by decide) (by omega_using [fit, eW, hw, r4, f2]) (by omega_using [eP, r4])
+    (by omega_using [fit, eW, hw, r8]) (.inr (by omega_using [eW, hw, efs, r4, r8, f1])) ⟨_, by taint_decide⟩) ?_
   refine RelCT.seq (relWinOne (stable_true _) hnw (by taint_decide)) ?_
   refine RelCT.seq (gwCount F (by taint_decide)) ?_
-  refine RelCT.seq ((gwLoop F ((3 * g.w + 6) / 2)).mono (fun _ _ h => ⟨h, by omega, by omega⟩)
+  refine RelCT.seq ((gwLoop F ((3 * g.w + 6) / 2)).mono (fun _ _ h => ⟨h, by omega_using [], by omega_using [up, hw]⟩)
     fun _ _ h => h) ?_
   refine RelCT.seq (gwBatch F true) ?_
-  refine RelCT.seq (relGather (by decide) (by omega) (by omega)
-    (.inr (by omega)) ⟨_, by taint_decide⟩) ?_
+  refine RelCT.seq (relGather (by decide) (by omega_using [fit, eW, hw, r4, f2]) (by omega_using [fit, eW, hw, r14])
+    (.inr (by omega_using [eW, hw, efs, r4, r14, f1])) ⟨_, by taint_decide⟩) ?_
   refine RelCT.seq (gwZeroW F (j := 12) (by decide) (by taint_decide)) ?_
   refine RelCT.seq (relChainSub (X := fun _ => True) (stable_true _) (fun _ _ => trivial) (by decide) rfl
-    (by omega) (by omega) (by omega)
-    (.inl (Nat.le_refl _)) (.inl (by omega)) (by taint_decide)) ?_
-  refine RelCT.seq (relMaskAtNot (stable_true _) (by omega) (by taint_decide)) ?_
-  refine RelCT.seq (relSelIn (stable_true _) (by decide) (by omega) (by omega)
-    (.inl (by omega)) (by taint_decide)) ?_
+    (by omega_using [fit, eW, hw, r12]) (by omega_using [fit, eW, hw, r12]) (by omega_using [fit, eW, hw, r14])
+    (.inl (Nat.le_refl _)) (.inl (by omega_using [r12, r14])) (by taint_decide)) ?_
+  refine RelCT.seq (relMaskAtNot (stable_true _) (by omega_using [fit, eW, hw, r14h]) (by taint_decide)) ?_
+  refine RelCT.seq (relSelIn (stable_true _) (by decide) (by omega_using [fit, eW, hw, r12]) (by omega_using [fit, eW, hw, r14])
+    (.inl (by omega_using [eW, hw, r12, r14])) (by taint_decide)) ?_
   refine RelCT.seq (gwCopyN F (o := VG.Impl.Rsa.X86.RecoverDetRt.aG) (a := 24) (by decide) (by decide)
     (by decide) (by taint_decide)) ?_
   exact gwZeroN F (j := VG.Impl.Rsa.X86.Keys.aZero) (by decide) (by taint_decide)
@@ -370,7 +370,7 @@ theorem gw_fit {g : Geo} {n : Nat} {s : State} (hs : GW0 g n s) : GwFit g := by
     k.rtW.ws.fits
   simp only [VG.Proof.Rsa.X86.Keys.S, VG.Impl.Rsa.X86.Keys.hdr, kw_wid,
     show VG.Impl.Rsa.X86.Recover.wide g.n = g.W from rfl] at hf
-  exact ⟨k.upper, by have := k.lower; omega, by omega⟩
+  exact ⟨k.upper, by have := k.lower; omega_using [this], by omega_using [hf]⟩
 
 theorem gcdFused_relCT {g : Geo} (pg : PubG g) (n : Nat) :
     RelCT isa (RA (GW0 g n) (GW0 g n)) VG.Impl.Rsa.X86.RecoverDetRt.gcdFused (RA (GW1 g n) (GW1 g n)) := by

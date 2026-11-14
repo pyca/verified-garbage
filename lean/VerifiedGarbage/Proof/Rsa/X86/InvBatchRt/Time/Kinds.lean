@@ -51,7 +51,7 @@ theorem relCopy {o a : Ref} {e : Nat} (hG : Stable [.eax, .ebx, .ecx, .edx, .ebp
     (h : (VG.Taint.check sseTaint (τS L) (VG.Impl.Rsa.X86.InvBatchRt.copy L o a (nBytes .edi e)) hc).isSome = true) :
     RelCT isa (Both L B Z len N n args sp C fun g => G g ∧ True) (VG.Impl.Rsa.X86.InvBatchRt.copy L o a (nBytes .edi e))
       (Both L B Z len N n args sp C fun g => G g ∧ True) :=
-  relOp (by decide) hG (ws1 (by have := rv_ge (kw len) o n; omega) hoz)
+  relOp (by decide) hG (ws1 (by have := rv_ge (kw len) o n; omega_using [this]) hoz)
     (fun s hb _ => WP.mono (copy_ok hb he hoz haz sep) fun _ ⟨H, O, _, K⟩ => ⟨H, K, O.unch, trivial⟩) h
 
 theorem relSelIn {o a : Ref} {e : Nat} (hG : Stable [.eax, .ebx, .edx, .ebp] G)
@@ -61,7 +61,7 @@ theorem relSelIn {o a : Ref} {e : Nat} (hG : Stable [.eax, .ebx, .edx, .ebp] G)
     (h : (VG.Taint.check sseTaint (τS L) (selIn L o a (nBytes .edi e)) hc).isSome = true) :
     RelCT isa (Both L B Z len N n args sp C fun g => G g ∧ Mask g) (selIn L o a (nBytes .edi e))
       (Both L B Z len N n args sp C fun g => G g ∧ True) :=
-  relOp (by decide) hG (ws1 (by have := rv_ge (kw len) o n; omega) hoz)
+  relOp (by decide) hG (ws1 (by have := rv_ge (kw len) o n; omega_using [this]) hoz)
     (fun s hb ⟨k, hk⟩ => WP.mono (selIn_ok hb hk he hoz haz sep) fun _ ⟨H, O, _, K⟩ => ⟨H, K, O.unch, trivial⟩) h
 
 theorem relZeros {o : Ref} {cnt : List Instr} {c : Nat} (hG : Stable [.eax, .ecx, .edx, .ebp] G)
@@ -70,14 +70,14 @@ theorem relZeros {o : Ref} {cnt : List Instr} {c : Nat} (hG : Stable [.eax, .ecx
     (h : (VG.Taint.check sseTaint (τS L) (VG.Impl.Rsa.X86.InvBatchRt.zeros L o cnt) hc).isSome = true) :
     RelCT isa (Both L B Z len N n args sp C fun g => G g ∧ True) (VG.Impl.Rsa.X86.InvBatchRt.zeros L o cnt)
       (Both L B Z len N n args sp C fun g => G g ∧ True) :=
-  relOp (by decide) hG (ws1 (by have := rv_ge (kw len) o n; omega) hoz)
+  relOp (by decide) hG (ws1 (by have := rv_ge (kw len) o n; omega_using [this]) hoz)
     (fun s hb _ => WP.mono (zeros_ok hb (hcs s hb) hc0 hoz) fun _ ⟨H, O, _, K⟩ => ⟨H, K, O.unch, trivial⟩) h
 
 /-- `nBytes .ecx 1` counts `n + 1` words. -/
 theorem countN {s : State} (hb : Bx L s B Z len N) : CountSpec (nBytes .ecx 1) .ecx B Z (kw len) (nw len + 1) := by
-  have := nBytes_spec (r := .ecx) (e := 1) (B := B) hb.halfZ (w := kw len) (by have := kw_bound hb.ws.lenLe; omega)
-    (by decide) (by have := kw_eq len; omega)
-  rwa [show kw len / 2 + 1 = nw len + 1 by have := kw_eq len; omega] at this
+  have := nBytes_spec (r := .ecx) (e := 1) (B := B) hb.halfZ (w := kw len) (by have := kw_bound hb.ws.lenLe; omega_using [this])
+    (by decide) (by have := kw_eq len; omega_using [this])
+  rwa [show kw len / 2 + 1 = nw len + 1 by have := kw_eq len; omega_using [this]] at this
 
 /-- `nBytes .ecx 1` counts `n + 1` words, for rows of any `n` words. -/
 theorem countN_of {s : State} (hb : Bx L s B Z len N n) (hn : 4 * n + 16 < 2 ^ 32) :
@@ -86,14 +86,14 @@ theorem countN_of {s : State} (hb : Bx L s B Z len N n) (hn : 4 * n + 16 < 2 ^ 3
 
 /-- `wBytes .ecx` counts `w` words. -/
 theorem countW {s : State} (hb : Bx L s B Z len N) : CountSpec (wBytes .ecx) .ecx B Z (kw len) (kw len) :=
-  wBytes_spec hb.halfZ (by have := kw_bound hb.ws.lenLe; omega) (by have := kw_eq len; omega)
+  wBytes_spec hb.halfZ (by have := kw_bound hb.ws.lenLe; omega_using [this]) (by have := kw_eq len; omega_using [this])
 
 theorem relZeroWord {x : Ref} (hG : Stable [.eax, .ebx, .edx] G) (hxz : rv (kw len) x n + 4 ≤ Z)
     {hc : VG.Taint.Hint VG.X86.Taint.T}
     (h : (VG.Taint.check sseTaint (τS L) (.block (zeroWord L x)) hc).isSome = true) :
     RelCT isa (Both L B Z len N n args sp C fun g => G g ∧ True) (.block (zeroWord L x))
       (Both L B Z len N n args sp C fun g => G g ∧ True) :=
-  relOp (by decide) hG (ws1 (by have := rv_ge (kw len) x n; omega) hxz)
+  relOp (by decide) hG (ws1 (by have := rv_ge (kw len) x n; omega_using [this]) hxz)
     (fun s hb _ => by
       rw [show zeroWord L x = zeroWord L x ++ [] from (List.append_nil _).symm]
       exact zeroWord_ok hb hxz fun u H K O _ => WP.block_nil ⟨H, K, O.unch, trivial⟩) h
@@ -108,7 +108,7 @@ theorem relChainAdd {o a b : Ref} {e : Nat} (hG : Stable [.eax, .ebx, .ecx, .edx
     (h : (VG.Taint.check sseTaint (τS L) (VG.Impl.Rsa.X86.InvBatchRt.chain L .adc o a b (nBytes .edx e)) hc).isSome = true) :
     RelCT isa (Both L B Z len N n args sp C fun g => G g ∧ True) (VG.Impl.Rsa.X86.InvBatchRt.chain L .adc o a b (nBytes .edx e))
       (Both L B Z len N n args sp C fun g => G g ∧ X g) :=
-  relOp (by decide) hG (ws1 (by have := rv_ge (kw len) o n; omega) hoz)
+  relOp (by decide) hG (ws1 (by have := rv_ge (kw len) o n; omega_using [this]) hoz)
     (fun s hb _ => WP.mono (chainAdd_ok hb he hoh hoz haz hbz da db) fun _ ⟨H, O, ⟨c, hc, _⟩, K⟩ =>
       ⟨H, K, O.unch, hX _ ⟨c, hc⟩⟩) h
 
@@ -122,7 +122,7 @@ theorem relChainSub {o a b : Ref} {e : Nat} (hG : Stable [.eax, .ebx, .ecx, .edx
     (h : (VG.Taint.check sseTaint (τS L) (VG.Impl.Rsa.X86.InvBatchRt.chain L .sbb o a b (nBytes .edx e)) hc).isSome = true) :
     RelCT isa (Both L B Z len N n args sp C fun g => G g ∧ True) (VG.Impl.Rsa.X86.InvBatchRt.chain L .sbb o a b (nBytes .edx e))
       (Both L B Z len N n args sp C fun g => G g ∧ X g) :=
-  relOp (by decide) hG (ws1 (by have := rv_ge (kw len) o n; omega) hoz)
+  relOp (by decide) hG (ws1 (by have := rv_ge (kw len) o n; omega_using [this]) hoz)
     (fun s hb _ => WP.mono (chainSub_ok hb he hoh hoz haz hbz da db) fun _ ⟨H, O, ⟨c, hc, _⟩, K⟩ =>
       ⟨H, K, O.unch, hX _ ⟨c, hc⟩⟩) h
 
@@ -162,16 +162,16 @@ theorem relEvenMask (hG : Stable [.ecx] G) {hc : VG.Taint.Hint VG.X86.Taint.T}
   relOp (ws := []) (by decide) hG (fun _ h => nomatch h)
     (fun s hb _ => WP.mono (VG.Proof.Rsa.X86.GcdBatch.evenMask_ok hb.ws.ws.workspace
       (src := VG.Impl.Rsa.X86.InvBatchRt.offset 0 0) (by
-        have := hb.fits16; simp only [VG.Impl.Rsa.X86.InvBatchRt.offset]; omega)) fun t ⟨c, K, m⟩ =>
+        have := hb.fits16; simp only [VG.Impl.Rsa.X86.InvBatchRt.offset]; omega_using [this])) fun t ⟨c, K, m⟩ =>
       ⟨hb.keep K (by decide) (by decide) (o := 160) (c := 0) (by rw [m]; exact Outside.refl _ _ _ _) (Nat.le_refl _)
-        (by have := hb.fits16; omega), K, by rw [m]; exact Unch.refl _ _ _, mask_ite c⟩) h
+        (by have := hb.fits16; omega_using [this]), K, by rw [m]; exact Unch.refl _ _ _, mask_ite c⟩) h
 
 theorem relVirtualize (hG : Stable VG.Proof.Weierstrass.X86.Inv.wordClob G) (hn2 : 2 ≤ nw len)
     (hfit : 160 + 16 * (8 * nw len + 8) ≤ Z) {hc : VG.Taint.Hint VG.X86.Taint.T}
     (h : (VG.Taint.check sseTaint (τS L) (virtualize L) hc).isSome = true) :
     RelCT isa (Both L B Z len N (nw len) args sp C fun g => G g ∧ True) (virtualize L)
       (Both L B Z len N (nw len) args sp C fun g => G g ∧ True) :=
-  relOp (by decide) hG (ws1 (by have := rv_a len 2; omega) (by have := rv_a len 2; omega))
+  relOp (by decide) hG (ws1 (by have := rv_a len 2; omega_using [this]) (by have := rv_a len 2; omega_using [hfit, this]))
     (fun s hb _ => WP.mono (virtualize_ok hb hn2) fun _ ⟨H, _, K, O⟩ => ⟨H, K, O.unch, trivial⟩) h
 
 theorem rowAdd_frame {set : Bool} {s : State} (h : Bx L s B Z len N) {c : Nat} (hc : c + 4 ≤ 160)
@@ -184,7 +184,7 @@ theorem rowAdd_frame {set : Bool} {s : State} (h : Bx L s B Z len N) {c : Nat} (
       Keeps VG.Proof.Weierstrass.X86.Inv.wordClob s t := by
   have ra := rv_ge (kw len) acc
   unfold rowAdd
-  refine WP.seq (wp_movS (readSrc_sc h.ws.ws.workspace (d := c) (by omega)) fun u U _ => WP.block_nil ?_)
+  refine WP.seq (wp_movS (readSrc_sc h.ws.ws.workspace (d := c) (by omega_using [hc, haz, ra])) fun u U _ => WP.block_nil ?_)
   have hu : Bx L u B Z len N := h.keep U.keeps (by decide) (by decide) (by rw [U.mem]; exact Outside.refl _ _ _ _)
     (rv_ge _ acc) haz
   exact WP.mono (mulRow_gen hu he hsh haz hsz sep) fun t ⟨H, O, _, K⟩ =>
@@ -198,7 +198,7 @@ theorem relRowAdd {set : Bool} {c : Nat} {acc src : Ref} {e : Nat}
     (h : (VG.Taint.check sseTaint (τS L) (rowAdd L set c acc src (nBytes .esi e)) hc).isSome = true) :
     RelCT isa (Both L B Z len N (nw len) args sp C fun g => G g ∧ True) (rowAdd L set c acc src (nBytes .esi e))
       (Both L B Z len N (nw len) args sp C fun g => G g ∧ True) :=
-  relOp (by decide) hG (ws1 (by have := rv_ge (kw len) acc; omega) haz)
+  relOp (by decide) hG (ws1 (by have := rv_ge (kw len) acc; omega_using [this]) haz)
     (fun s hb _ => WP.mono (rowAdd_frame hb hc4 he hsh haz hsz sep) fun _ ⟨H, O, K⟩ => ⟨H, K, O.unch, trivial⟩) h
 
 /-- A coefficient's sign, then the selection of a correction into `[acc + 4]`. -/
@@ -213,14 +213,14 @@ theorem relMaskOfSel {c : Nat} {acc tmp : Ref} (hG : Stable [.eax, .ebx, .ecx, .
       (Both L B Z len N n args sp C fun g => G g ∧ True) := by
   have e4 := rv_byte (kw len) acc 4 n
   refine relOp (ws := [(rv (kw len) acc n + 4, 4 * n)]) (by decide) hG
-    (ws1 (by have := rv_ge (kw len) acc n; omega) (by omega)) (fun s hb _ => ?_) h
+    (ws1 (by have := rv_ge (kw len) acc n; omega_using [this]) (by omega_using [haz])) (fun s hb _ => ?_) h
   refine WP.seq (WP.mono (VG.Proof.Weierstrass.X86.Inv.maskOf_ok hb.ws.ws.workspace (coefficient := c) (by
-    have := hb.fits16; omega)) fun s₂ ⟨M₂, K₂, m₂⟩ => ?_)
+    have := hb.fits16; omega_using [hc4, this])) fun s₂ ⟨M₂, K₂, m₂⟩ => ?_)
   have H₂ : Bx L s₂ B Z len N n := hb.keep K₂ (by decide) (by decide) (by rw [m₂]; exact Outside.refl _ _ _ _)
     (rv_ge _ acc n) haz
   refine WP.mono (selIn_ok H₂ (o := { acc with byte := acc.byte + 4 }) (a := tmp) (e := 0)
     (k := decide (2 ^ 31 ≤ w32 s.mem B c)) (by rw [M₂]; simp [cmask]) (by decide)
-    (by rw [e4]; have := kw_eq len; omega) (by simpa using htz) (by rw [e4]; have := kw_eq len; omega)) fun u ⟨H, O, _, K⟩ => ?_
+    (by rw [e4]; have := kw_eq len; omega_using [haz]) (by simpa using htz) (by rw [e4]; have := kw_eq len; omega_using [ta])) fun u ⟨H, O, _, K⟩ => ?_
   rw [e4] at O
   simp only [Nat.add_zero] at O
   exact ⟨H, (K₂.mono (by decide)).trans (K.mono (by decide)), by rw [m₂] at O; exact O.unch, trivial⟩
@@ -248,7 +248,7 @@ theorem relSelect3 {o a b : Ref} (hG : Stable [.eax, .ebx, .edx, .ebp] G)
       (.seq (.block (ptr L .ebp a .edx ++ ptr L .ebx b .edx ++ nBytes .edx 0 ++ ptr L .edi o .eax))
         (.seq select3LoopX (.block (restoreEdi L))))
       (Both L B Z len N (nw len) args sp C fun g => G g ∧ True) :=
-  relOp (by decide) hG (ws1 (by have := rv_ge (kw len) o; omega) hoz)
+  relOp (by decide) hG (ws1 (by have := rv_ge (kw len) o; omega_using [this]) hoz)
     (fun s hb ⟨k, hk⟩ => WP.mono (select3_ok hb hk hoh hoz haz hbz soa sob) fun _ ⟨H, O, _, K⟩ =>
       ⟨H, K, O.unch, trivial⟩) h
 

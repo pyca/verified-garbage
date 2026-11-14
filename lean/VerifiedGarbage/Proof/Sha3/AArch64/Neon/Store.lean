@@ -32,7 +32,7 @@ theorem store_ok {s : State} {p : Addr} {r : Reg} {A B : Spec.Sha3.State}
     (fun k s' hk ⟨hmem,hframe,hvals⟩ => ?_) 25 (Nat.le_refl _) s
     ⟨⟨rfl,rfl,rfl,rfl,rfl,rfl⟩,Frame.refl _ _,fun _ h => False.elim (Nat.not_lt_zero _ h)⟩)
     fun s' ⟨hmem,hframe,hvals⟩ => ⟨hmem,hvals,hframe⟩
-  refine wp_strq (t := vreg k) (a := wordAddr p k) (by omega)
+  refine wp_strq (t := vreg k) (a := wordAddr p k) (by omega_using [hk])
     (by rw [hmem.gpr,hr]; rfl) (by rw [hmem.wr]; exact hw k hk)
     fun s'' h => WP.block_nil_iff.mpr ⟨?_,?_,?_⟩
   · exact ⟨h.gpr.trans hmem.gpr,h.v.trans hmem.v,rfl,h.rd.trans hmem.rd,h.wr.trans hmem.wr,h.sp.trans hmem.sp⟩
@@ -44,7 +44,7 @@ theorem store_ok {s : State} {p : Addr} {r : Reg} {A B : Spec.Sha3.State}
     · subst i
       rw [read_write16,hmem.v,hp k hk]
     · have hsep : Mem.Sep (wordAddr p i) 16 (wordAddr p k) 16 :=
-        Offset.sep p (d := 16*i) (e := 16*k) (n := 16) (k := 16) (by omega) (by omega) (by omega)
+        Offset.sep p (d := 16*i) (e := 16*k) (n := 16) (k := 16) (by omega_using [he]) (by omega_using [hk, hi]) (by omega_using [hk])
       rw [Mem.read_write_sep hsep (by decide)]
-      exact hvals i (by omega)
+      exact hvals i (by omega_using [hi, he])
 end VG.Proof.Sha3.AArch64.Neon

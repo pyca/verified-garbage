@@ -39,9 +39,9 @@ theorem xorPad_length (k : List Byte) (p : Byte) : (Spec.Hmac.xorPad k p).length
 
 theorem blockKey_length {key : List Byte} (h : key.length ≤ 64) :
     (Spec.Hmac.blockKey Spec.Hmac.sha256 key).length = 64 := by
-  have : ¬ (64 < key.length) := by omega
+  have : ¬ (64 < key.length) := by omega_using [h]
   simp only [Spec.Hmac.blockKey, Spec.Hmac.sha256, this, ite_false, List.length_append, List.length_replicate]
-  omega
+  omega_using [h]
 
 section
 variable {s : State} (h : DPre pc s) {R : BitVec 64} {EM : List Byte}
@@ -53,7 +53,7 @@ theorem keep_sc {m m' : Mem} {ws : List Region} (hf : Frame ws m m') {a l : Nat}
     (hs : ∀ r ∈ ws, Region.Disjoint (scR s a l) r) :
     Spec.Rsa.bytesAt m' (scA s a) l = Spec.Rsa.bytesAt m (scA s a) l := by
   simp only [Spec.Rsa.bytesAt]
-  exact List.map_congr_left fun i hi => hf.bytes (R := scR s a l) hs (show l ≤ 2 ^ 64 by unfold scrBytes at ha; omega)
+  exact List.map_congr_left fun i hi => hf.bytes (R := scR s a l) hs (show l ≤ 2 ^ 64 by unfold scrBytes at ha; omega_using [ha])
     (List.mem_range.mp hi)
 
 /-- What a call writing parts `ws` of `scratch` and the callees' stack leaves
@@ -85,7 +85,7 @@ theorem repr_call {m m' : Mem} {ws : List (Nat × Nat)} {X : Nat} (hX : X ≤ ca
 
 theorem hashD_ok {t : State} (hd : DB s R EM t) : WP isa hashD t (DHS s R EM) := by
   have hk := h.k2
-  have lk : sD + (s.gpr .a4).toNat ≤ scrBytes := by unfold sD scrBytes; omega
+  have lk : sD + (s.gpr .a4).toNat ≤ scrBytes := by unfold sD scrBytes; omega_using [hk]
   unfold hashD shaInitArgs
   refine WP.seq (wp_addi (imm := sSt) fun u₁ o₁ e₁ => wp_nil ?_)
   have P₁ : Post s R EM u₁ := hd.toPost.keep h o₁.keep (ws := []) (by rw [o₁.mem]; exact Frame.refl _ _)
@@ -121,7 +121,7 @@ theorem hashD_ok {t : State} (hd : DB s R EM t) : WP isa hashD t (DHS s R EM) :=
     fun u₄ P₆ A₄ r₄ => ⟨P₆, ?_⟩
   have hm := r₃ [] (by rw [O.mem]; exact r₂) (by rw [a1]; rfl)
   rw [List.nil_append] at hm
-  have e := r₄ _ (by rw [O'.mem]; exact hm) (by simp [Spec.Sha256.bytesAt]; omega)
+  have e := r₄ _ (by rw [O'.mem]; exact hm) (by simp [Spec.Sha256.bytesAt]; omega_using [])
     (by rw [b1]; simp [Spec.Sha256.bytesAt])
   show Spec.Sha256.bytesAt u₄.mem (scA s sDH) 32 = _
   rw [e]
@@ -167,7 +167,7 @@ theorem c_bytes {t : State} (hp : Post s R EM t) :
     rcases hr with rfl | rfl | rfl
     · exact h.ki.symm
     · exact h.oi.symm
-    · exact h.is) (by have := h.k2; omega)
+    · exact h.is) (by have := h.k2; omega_using [])
 
 theorem kdkMac_ok {t : State} (hd : DHS s R EM t) : WP isa kdkMac t (KD s R EM) := by
   have hk := h.k2
@@ -212,7 +212,7 @@ theorem kdkMac_ok {t : State} (hd : DHS s R EM t) : WP isa kdkMac t (KD s R EM) 
     rw [O.mem]; exact hO
   have hl : (Spec.Rsa.bytesAt v₄.mem (stackArg s 1) (s.gpr .a4).toNat).length = (s.gpr .a4).toNat := by
     simp only [Spec.Rsa.bytesAt, List.length_map, List.length_range]
-  have e := hmac _ (Spec.Rsa.bytesAt v₄.mem (stackArg s 1) (s.gpr .a4).toNat) k0l (by rw [k0l, hl]; omega)
+  have e := hmac _ (Spec.Rsa.bytesAt v₄.mem (stackArg s 1) (s.gpr .a4).toNat) k0l (by rw [k0l, hl]; omega_using [hk])
     (by
       rw [O'.mem]
       have := r₃ _ (by rw [O.mem]; exact hI) (by rw [c1, xorPad_length, k0l])
@@ -220,7 +220,7 @@ theorem kdkMac_ok {t : State} (hd : DHS s R EM t) : WP isa kdkMac t (KD s R EM) 
     (by
       rw [d2, hl]
       apply BitVec.eq_of_toNat_eq
-      simp only [BitVec.toNat_add, BitVec.toNat_ofNat]; omega) hO'
+      simp only [BitVec.toNat_add, BitVec.toNat_ofNat]; omega_using []) hO'
   rw [c_bytes h P₃, m₁] at e
   show Spec.Sha256.bytesAt u₄.mem (scA s sKDK) 32 = _
   rw [e]

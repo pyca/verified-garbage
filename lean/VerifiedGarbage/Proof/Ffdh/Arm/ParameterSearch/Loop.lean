@@ -73,8 +73,8 @@ theorem iteration (backend : VG.Proof.Ffdh.Arm.ParameterBackend)
         simp only [Classified, result] at classified
         refine WP.mono (classified.1.loop_guard classified.2) ?_
         rintro q ⟨⟨flagQ, liveQ⟩, restQ⟩
-        refine Or.inr ⟨flagQ, remaining, by omega, used + candidateUsed p used, remaining - 1,
-          by omega, liveQ, same.trans (p.tail_reject positive result),
+        refine Or.inr ⟨flagQ, remaining, by omega_using [measure], used + candidateUsed p used, remaining - 1,
+          by omega_using [positive], liveQ, same.trans (p.tail_reject positive result),
           restST.trans (restQ.mono (by simp [searchClobbers]))⟩
 
 theorem loop (backend : VG.Proof.Ffdh.Arm.ParameterBackend)

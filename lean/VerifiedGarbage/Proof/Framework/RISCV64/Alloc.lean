@@ -48,7 +48,7 @@ theorem WP.alloc {n : Nat} {body : Prog isa} {s : State} {Q : State → Prop}
     (hn : 0 < n ∧ n < 2048 ∧ n % 16 = 0) (hsp : n ≤ s.sp.toNat)
     (hb : WP isa body (allocd n s) fun s₂ => Q (freed n s₂)) :
     WP isa (.frame (.alloc n) body (.free n)) s Q :=
-  WP.allocLe ⟨hn.1, by omega, hn.2.2⟩ hsp hb
+  WP.allocLe ⟨hn.1, by omega_using [hn], hn.2.2⟩ hsp hb
 
 /-- The state after the frame, when its body keeps the permissions and the
 stack pointer: those of `s`. -/

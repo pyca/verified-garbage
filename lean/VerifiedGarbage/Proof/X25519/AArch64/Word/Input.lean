@@ -30,7 +30,7 @@ theorem outside_frame {base : Addr} {m m' : Mem} {d n : Nat}
   simp only [Region.Contains] at hh
   right
   change d+n ≤ (x-base).toNat
-  omega
+  omega_using [hn, hh]
 
 theorem base_ok {base : Addr} {s : State} (hs : Sc base s)
     (hn : base.toNat + 4096 ≤ 2^64) :
@@ -82,7 +82,7 @@ theorem init_ok {base : Addr} {s : State} {x : Fe} (hs : Scratch s base)
   have hS : Small s.mem base fun i => decide (i = 0) := fun i hi => by
     have : i = 0 := of_decide_eq_true hi
     subst this
-    omega
+    omega_using [h0]
   refine WP.mono (fieldCode_okS _ hs hS) fun a ⟨ka,ea,sa⟩ => ?_
   have ga := initGood (env s.mem base) x hx
   rw [← ea] at ga
@@ -142,11 +142,11 @@ theorem setup_ok {base sc pt : Addr} {s : State} (hs : Sc base s)
   rw [WP.block_append_iff]
   refine WP.mono (VG.Proof.X25519.AArch64.bits_ok hsa
     (by rw [ka.gpr _ (by simp),h1])
-    (fun i hi => ⟨_,List.mem_append_left _ (ka.rd ▸ hsr),Offset.contains_base sc (by omega) (by omega)⟩)
+    (fun i hi => ⟨_,List.mem_append_left _ (ka.rd ▸ hsr),Offset.contains_base sc (by omega_using [hi]) (by omega_using [hi])⟩)
     (fun i hi r hr => by
       rw [List.mem_singleton.mp hr]
       exact hdS.sub_right (VG.Proof.X25519.AArch64.sub_scR base (d := VG.Impl.X25519.AArch64.BITS) (n := 256) (by decide)) _
-        (Offset.contains_base sc (by omega) (by omega)))) fun b ⟨bb,fb,kb⟩ => ?_
+        (Offset.contains_base sc (by omega_using [hi]) (by omega_using [hi])))) fun b ⟨bb,fb,kb⟩ => ?_
   rw [WP.block_append_iff]
   refine WP.mono (base_ok (hsa.of_kp kb (by decide)) hn) fun c ⟨hsc,oc,wc,kc,fc⟩ => ?_
   have fsc := outside_frame fc (by decide)
@@ -162,7 +162,7 @@ theorem setup_ok {base sc pt : Addr} {s : State} (hs : Sc base s)
   rw [WP.block_append_iff]
   refine WP.mono (decode_ok hsc (by rw [kc.gpr _ (by decide),kb.gpr _ (by decide),ka.gpr _ (by simp),h2])
     (fun d hd => ⟨_,List.mem_append_left _ (by rw [kc.rd,kb.rd,ka.rd]; exact hpr),
-      Offset.contains_base pt (by omega) (by omega)⟩)) fun d ⟨kd,xd,bd⟩ => ?_
+      Offset.contains_base pt (by omega_using [hd]) (by omega_using [hd])⟩)) fun d ⟨kd,xd,bd⟩ => ?_
   rw [bp] at xd
   refine WP.mono (init_ok (kd.scr hsc) xd bd) fun t ⟨kt,gt,wt,st⟩ => ?_
   have ft : Outside base 48 728 b.mem t.mem :=
@@ -173,10 +173,10 @@ theorem setup_ok {base sc pt : Addr} {s : State} (hs : Sc base s)
       kb.gpr _ (by decide),ka.gpr _ (by simp)]
   · intro i hi
     rw [ft (off base (bitOffset+i)) (by
-      right; rw [ofs_off' base (by have := bitOffset_lt; omega)]; have := bitOffset_lt; change 776 ≤ bitOffset+i; simp only [bitOffset, VG.Impl.X25519.AArch64.Word.BITS, VG.Impl.X25519.AArch64.BITS, VG.Impl.X25519.AArch64.slot, VG.Impl.X25519.AArch64.NSLOT]; omega), bb i (by omega)]
+      right; rw [ofs_off' base (by have := bitOffset_lt; omega_using [hi, this])]; have := bitOffset_lt; change 776 ≤ bitOffset+i; simp only [bitOffset, VG.Impl.X25519.AArch64.Word.BITS, VG.Impl.X25519.AArch64.BITS, VG.Impl.X25519.AArch64.slot, VG.Impl.X25519.AArch64.NSLOT]; omega_using []), bb i (by omega_using [hi])]
     exact VG.Proof.X25519.AArch64.clampB_eq (fun j hj => VG.Proof.X25519.AArch64.byte_out fa fsa hdS hj) hi
   · intro i hi
-    rw [ft.word (Or.inl (by omega)) (by omega), savedBits fb hi]
+    rw [ft.word (Or.inl (by omega_using [hi])) (by omega_using [hi]), savedBits fb hi]
     exact savedInitial sv hi
   · exact (((ka.trans kb).trans kc).trans
       ((LoopKeep.of_field kd).trans kt).kp).sub (by decide)

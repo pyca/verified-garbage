@@ -70,9 +70,9 @@ theorem random_sampleLoop_ct (n : Nat) :
     have hn' := congrArg BitVec.toNat hcontinue
     have hb := status_bound p
     change randomSampleStepStatus p % 2 ^ 64 = 4 at hn'
-    omega
+    omega_using [hb, hn']
   obtain ⟨hfull, hf, ha⟩ := random_sample_status_four hfour
-  refine ⟨p.draw.draws - 1, by omega, p.next hfull hf, ?_, ?_, hsp⟩
+  refine ⟨p.draw.draws - 1, by omega_using [hn, hf], p.next hfull hf, ?_, ?_, hsp⟩
   · exact ⟨rfl, hs.1.2.2.2 hfull hf ha⟩
   · exact ⟨rfl, ht.1.2.2.2 hfull hf ha⟩
 

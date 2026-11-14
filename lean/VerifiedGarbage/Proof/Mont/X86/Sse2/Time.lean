@@ -76,7 +76,7 @@ theorem relCT_frame {i j : Instr} {body : Prog isa} {P R : State → State → P
       have hb' := e₁'.trans (hsp.trans e₂'.symm)
       rw [hh₁, hh₂] at hl
       simp only [Option.map_some, Option.some.injEq] at hl
-      have hk : k₁ = k₂ := by omega
+      have hk : k₁ = k₂ := by omega_using [hk₁, hk₁', hk₂, hk₂', hl]
       refine ⟨by rw [ha, hpop _ _ hb'], ?_⟩
       show s₁'.gpr .esp = s₂'.gpr .esp
       rw [g₁, g₂, hb', hk]

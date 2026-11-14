@@ -36,7 +36,7 @@ theorem checkedPrivateFlag_spec (p : Inputs) (yb xb : List Byte)
     by_cases member : Spec.Rsa.powMod (Spec.Rsa.os2ip yb) p.Q p.P = 1 <;>
     by_cases consistent : Spec.Rsa.powMod p.G (Spec.Rsa.os2ip xb) p.P = Spec.Rsa.os2ip yb <;>
     simp_all [VG.Proof.Bignum.powMod_eq]
-  all_goals split_ifs <;> simp_all <;> omega
+  all_goals split_ifs <;> simp_all <;> omega_arith
 
 theorem privateStatus_two_iff (a : Spec.Ffdh.Parameters) (y x : Nat) :
     Spec.Ffdh.privateStatus a y x = 2 ↔ Spec.Ffdh.privateValid a x = false := by

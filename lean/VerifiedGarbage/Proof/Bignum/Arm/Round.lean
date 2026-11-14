@@ -32,7 +32,7 @@ theorem montRound_ok (s : State) {base : BitVec 32} {size tmp a b mod acc n i : 
   rw [montRound, WP.seq_iff]
   refine WP.mono (productStage_ok s ctx hdr hi ptr hT hB) ?_
   rintro u ⟨product, hdrU, ptrU, outsideU, keepU⟩
-  have modulus := outsideU.val32 (d := mod) (k := n) (by omega) (by omega)
+  have modulus := outsideU.val32 (d := mod) (k := n) (by omega_using [sep]) (by omega_using [nowrap, mfits])
   have ctxU := ctx.congr keepU.wr
   let q := (inv * u.mem.readW (off (State.addr base) acc) 32).toNat
   have hq : q < 2 ^ 32 := (inv * u.mem.readW (off (State.addr base) acc) 32).isLt
@@ -45,14 +45,14 @@ theorem montRound_ok (s : State) {base : BitVec 32} {size tmp a b mod acc n i : 
     exact capacity
   · rintro v ⟨quotient,hdrV,ptrV,outsideV,keepV⟩
     have ctxV := ctxU.congr keepV.wr
-    refine WP.mono (roundFinish_ok (tmp:=tmp) (top:=acc+4*(n+1)) v ctxV.workspace (by have := ctx.tmpFits;omega)
-      (by have := ctx.layout;omega) ptrV) ?_
+    refine WP.mono (roundFinish_ok (tmp:=tmp) (top:=acc+4*(n+1)) v ctxV.workspace (by have := ctx.tmpFits;omega_using [this])
+      (by have := ctx.layout;omega_using [this]) ptrV) ?_
     rintro t ⟨memT,ptrT,zero,keepT⟩
     have mt : t.mem=finishMem v.mem (State.addr base) (acc+4*(n+1)) tmp := memT
     have nowrap' : (State.addr base).toNat+size≤2^32 := by
       simpa only [VG.Proof.X25519.Arm.addr_toNat] using nowrap
     obtain ⟨result,frame⟩ := finish_value (mem:=v.mem) (acc:=acc) (n:=n) (tmp:=tmp)
-      nowrap' (by have := ctx.tmpFits;omega) rfl (by have := ctx.layout;omega)
+      nowrap' (by have := ctx.tmpFits;omega_using [this]) rfl (by have := ctx.layout;omega_using [this])
     rw [←mt] at result frame
     have value : 2^32*val32 t.mem (State.addr base) acc (n+2)=
         val32 s.mem (State.addr base) acc (n+2)+
@@ -61,13 +61,13 @@ theorem montRound_ok (s : State) {base : BitVec 32} {size tmp a b mod acc n i : 
       rw [result,quotient,product,modulus]
     refine ⟨?_,ptrT,⟨q,hq,value⟩,round_lt value hT ha hB hq,?_,?_,?_⟩
     · rw [mt]
-      exact finish_meta nowrap ctx.tmpFits (by have := ctx.layout;omega) hdrV hi
+      exact finish_meta nowrap ctx.tmpFits (by have := ctx.layout;omega_using [this]) hdrV hi
     · exact (Outs.of_outside (outsideU.trans
-        (outsideV.mono (Nat.le_refl _) (by omega))) (by simp)).trans frame
+        (outsideV.mono (Nat.le_refl _) (by omega_using []))) (by simp)).trans frame
     · rw [zero,hdrV.remaining]
       change (BitVec.ofNat 32 (n-i)-BitVec.ofNat 32 1==0)=_
-      rw [BitVec.ofNat_sub_ofNat_of_le _ _ (by decide) (by omega),ofNat_beq_zero (by omega)]
-      simp only [show n-i-1=0↔i+1=n by omega]
+      rw [BitVec.ofNat_sub_ofNat_of_le _ _ (by decide) (by omega_using [hi]),ofNat_beq_zero (by omega_using [nowrap, mfits])]
+      simp only [show n-i-1=0↔i+1=n by omega_using [hi]]
     · exact keepU.trans (keepV.trans (keepT.mono (by decide)))
 
 end VG.Proof.Bignum.Arm

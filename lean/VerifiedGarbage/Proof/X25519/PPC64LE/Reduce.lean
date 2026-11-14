@@ -57,7 +57,7 @@ theorem opStep_ok {d : Reg} {off : Nat} (hd4 : d ≠ .r4) {s : State} (hc : Ctx 
       (s'.gpr d).toNat + 2 ^ 64 * s'.ca.toNat =
         (s.gpr d).toNat + part hi (dw s.mem b off) + (if e then s.ca.toNat else 0) ∧
       s'.ca.toNat ≤ 1 ∧ Rest [.r4, d] s s' ∧ s'.mem = s.mem := by
-  have e1 := exec_load_d (s := s) (t := .r4) (n := .r6) (off := off) (by decide) ⟨by omega, ho4⟩
+  have e1 := exec_load_d (s := s) (t := .r4) (n := .r6) (off := off) (by decide) ⟨by omega_using [ho], ho4⟩
     (by rw [hc.r6]; exact hc.inR ho)
   rw [hc.r6] at e1
   generalize hs1 : s.write .r4 (s.mem.readW (b + BitVec.ofNat 64 off) 64) = s1 at e1
@@ -77,7 +77,7 @@ theorem opStep_ok {d : Reg} {off : Nat} (hd4 : d ≠ .r4) {s : State} (hc : Ctx 
     · simp only [Bool.false_eq_true, ↓reduceIte, part]
       rw [BitVec.toNat_mul, g4, g5, t38]
     · simp only [↓reduceIte, part]
-      rw [g4, g5, t38, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+      rw [g4, g5, t38, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [g4])]
   have ex2 : exec (if hi then Instr.mulhu .r4 .r4 .r5 else .mul .r4 .r4 .r5) s1 =
       some (s1.write .r4 (if hi then BitVec.ofNat 64 ((s1.gpr .r4).toNat * (s1.gpr .r5).toNat / 2 ^ 64)
         else s1.gpr .r4 * s1.gpr .r5)) := by
@@ -111,7 +111,7 @@ theorem ldw_ok {s : State} (hc : Ctx b s) {t : Reg} {d : Nat} (hd : d + 8 ≤ 40
     {is : List Instr} {Q : State → Prop}
     (k : WP isa (.block is) (s.write t (s.mem.readW (b + BitVec.ofNat 64 d) 64)) Q) :
     WP isa (.block (.load .d t .r6 d :: is)) s Q := by
-  have e := exec_load_d (s := s) (t := t) (n := .r6) (off := d) (by decide) ⟨by omega, hd4⟩
+  have e := exec_load_d (s := s) (t := t) (n := .r6) (off := d) (by decide) ⟨by omega_using [hd], hd4⟩
     (by rw [hc.r6]; exact hc.inR hd)
   rw [hc.r6] at e
   exact WP.cons e k
@@ -126,14 +126,14 @@ theorem lstep_ok {acc k : Nat} (hA : acc + 64 ≤ 4096) (hA4 : acc % 4 = 0) (hk 
       s'.ca.toNat ≤ 1 ∧ Rest [.r4, wreg k] s s' ∧ s'.mem = s.mem := by
   have hw : wreg k ≠ .r4 ∧ wreg k ≠ .r5 ∧ wreg k ≠ .r6 := by revert hk; revert k; decide
   rw [redLo_eq]
-  refine ldw_ok hc (by omega) (by omega) ?_
+  refine ldw_ok hc (by omega_using [hA, hk]) (by omega_using [hA4]) ?_
   generalize hs1 : s.write (wreg k) _ = s1
   have hr1 : Rest [.r4, wreg k] s s1 := by rw [← hs1]; exact (Upd.write _ _ _).rest (by simp)
   have hm1 : s1.mem = s.mem := by rw [← hs1, RegUpd.mem_write]
   have hca : s1.ca = s.ca := by rw [← hs1, RegUpd.ca_write]
   have hg : (s1.gpr (wreg k)).toNat = dw s.mem b (acc + 8 * k) := by
     rw [← hs1, RegUpd.gpr_write_self]; rfl
-  refine WP.mono (opStep_ok hw.1 (hc.of_rest hr1 (by simp [Ne.symm hw.2.2])) (by omega) (by omega)
+  refine WP.mono (opStep_ok hw.1 (hc.of_rest hr1 (by simp [Ne.symm hw.2.2])) (by omega_using [hA, hk]) (by omega_using [hA4])
     (by rw [hr1.gpr _ (by simp [Ne.symm hw.2.1])]; exact h5) false (k != 0))
     fun s2 ⟨h2, c2, r2, m2⟩ => ⟨?_, c2, hr1.trans r2, by rw [m2, hm1]⟩
   rw [h2, hg, hm1, hca]
@@ -172,7 +172,7 @@ theorem lows_ok {acc : Nat} (hA : acc + 64 ≤ 4096) (hA4 : acc % 4 = 0) {s : St
       (r4.mono (by decide))))
 
 theorem part_hi_lt (x : Nat) (hx : x < 2 ^ 64) : part true x < 38 := by
-  unfold part; simp only [↓reduceIte]; omega
+  unfold part; simp only [↓reduceIte]; omega_using [hx]
 
 /-- The high words of `38 H`, one word up: into `r9`–`r11` and the top word
 `r7`. -/
@@ -187,16 +187,16 @@ theorem highs_ok {acc : Nat} (hA : acc + 64 ≤ 4096) (hA4 : acc % 4 = 0) {s : S
   simp only [show (0 != 0) = false from rfl, show (1 != 0) = true from rfl,
       show (2 != 0) = true from rfl, show (3 != 0) = true from rfl, Nat.reduceEqDiff, ↓reduceIte,
       Nat.reduceAdd, wreg]
-  refine WP.append (opStep_ok (d := .r9) (by decide) hc (by omega) (by omega) h5 true false)
+  refine WP.append (opStep_ok (d := .r9) (by decide) hc (by omega_using [hA]) (by omega_using [hA4]) h5 true false)
     fun s1 ⟨v1, c1, r1, m1⟩ => ?_
   have hc1 := hc.of_rest r1 (by decide)
-  refine WP.append (opStep_ok (d := .r10) (by decide) hc1 (by omega) (by omega)
+  refine WP.append (opStep_ok (d := .r10) (by decide) hc1 (by omega_using [hA]) (by omega_using [hA4])
     (by rw [r1.gpr _ (by decide), h5]) true true) fun s2 ⟨v2, c2, r2, m2⟩ => ?_
   have hc2 := hc1.of_rest r2 (by decide)
-  refine WP.append (opStep_ok (d := .r11) (by decide) hc2 (by omega) (by omega)
+  refine WP.append (opStep_ok (d := .r11) (by decide) hc2 (by omega_using [hA]) (by omega_using [hA4])
     (by rw [r2.gpr _ (by decide), r1.gpr _ (by decide), h5]) true true) fun s3 ⟨v3', c3, r3, m3⟩ => ?_
   have hc3 := hc2.of_rest r3 (by decide)
-  refine WP.mono (opStep_ok (d := .r7) (by decide) hc3 (by omega) (by omega)
+  refine WP.mono (opStep_ok (d := .r7) (by decide) hc3 (by omega_using [hA]) (by omega_using [hA4])
     (by rw [r3.gpr _ (by decide), r2.gpr _ (by decide), r1.gpr _ (by decide), h5]) true true)
     fun s4 ⟨v4, c4, r4, m4⟩ => ?_
   simp only [m1, m2, m3, Bool.false_eq_true, ↓reduceIte] at v1 v2 v3' v4
@@ -208,7 +208,7 @@ theorem highs_ok {acc : Nat} (hA : acc + 64 ≤ 4096) (hA4 : acc % 4 = 0) {s : S
     rw [r3.gpr _ (by decide), r2.gpr _ (by decide), r1.gpr _ (by decide)]
   rw [e7] at v4
   have hl7 := (s4.gpr .r7).isLt
-  refine ⟨?_, by omega, (r1.mono (by decide)).trans ((r2.mono (by decide)).trans ((r3.mono (by decide)).trans
+  refine ⟨?_, by omega_using [h7, c3, v4, p3], (r1.mono (by decide)).trans ((r2.mono (by decide)).trans ((r3.mono (by decide)).trans
       (r4.mono (by decide)))), by rw [m4, m3, m2, m1]⟩
   have e8 : s4.gpr .r8 = s.gpr .r8 := by
     rw [r4.gpr _ (by decide), r3.gpr _ (by decide), r2.gpr _ (by decide), r1.gpr _ (by decide)]
@@ -232,7 +232,7 @@ theorem foldTop_ok {s : State} (h5 : s.gpr .r5 = 38) (h7 : (s.gpr .r7).toNat < 2
     wp_addze fun s5 u5 => WP.cons (exec_li (by decide)) (wp_addze fun s7 u7 => WP.block_nil ?_)
   have t38 : (38 : BitVec 64).toNat = 38 := rfl
   have e1 : (s1.gpr .r4).toNat = (s.gpr .r7).toNat * 38 := by
-    rw [u1.gpr, h5, BitVec.toNat_mul, t38, Nat.mod_eq_of_lt (by omega)]
+    rw [u1.gpr, h5, BitVec.toNat_mul, t38, Nat.mod_eq_of_lt (by omega_using [h7])]
   have v2 := u2.val; have v3 := u3.val; have v4 := u4.val; have v5 := u5.val; have v7 := u7.val
   rw [u1.other _ (by decide), e1] at v2
   rw [u2.other _ (by decide), u1.other _ (by decide)] at v3
@@ -253,7 +253,7 @@ theorem foldTop_ok {s : State} (h5 : s.gpr .r5 = 38) (h7 : (s.gpr .r7).toNat < 2
     rw [u7.other _ (by decide), RegUpd.gpr_write_of_ne _ _ (by decide), u5.other _ (by decide)]
   have e11 : s7.gpr .r11 = s5.gpr .r11 := by
     rw [u7.other _ (by decide), RegUpd.gpr_write_of_ne _ _ (by decide)]
-  refine ⟨?_, by omega, ?_, by rw [u7.mem, RegUpd.mem_write, u5.mem, u4.mem, u3.mem, u2.mem, u1.mem]⟩
+  refine ⟨?_, by omega_using [v7, c5], ?_, by rw [u7.mem, RegUpd.mem_write, u5.mem, u4.mem, u3.mem, u2.mem, u1.mem]⟩
   · simp only [rv4, val4, wreg, Nat.reduceEqDiff, ↓reduceIte, e8, e9, e10, e11]
     omega_arith
   · exact (u1.rest (by decide)).trans ((u2.rest (by decide)).trans ((u3.rest (by decide)).trans
@@ -266,31 +266,31 @@ theorem stores4_ok {o : Nat} (ho : o + 32 ≤ 4096) (ho4 : o % 4 = 0) {s : State
       V s'.mem b o = rv4 s ∧ Frame [⟨b + BitVec.ofNat 64 o, 32⟩] s.mem s'.mem ∧ Rest [] s s' := by
   simp only [List.range_succ, List.range_zero, List.nil_append, List.map_cons, List.map_nil,
     List.cons_append]
-  refine sd0_ok hc (by omega) (by omega) fun s1 u1 => ?_
+  refine sd0_ok hc (by omega_using [ho]) (by omega_using [ho4]) fun s1 u1 => ?_
   have hc1 := hc.of_rest (u1.rest []) (by decide)
-  refine sd0_ok hc1 (by omega) (by omega) fun s2 u2 => ?_
+  refine sd0_ok hc1 (by omega_using [ho]) (by omega_using [ho4]) fun s2 u2 => ?_
   have hc2 := hc1.of_rest (u2.rest []) (by decide)
-  refine sd0_ok hc2 (by omega) (by omega) fun s3 u3 => ?_
+  refine sd0_ok hc2 (by omega_using [ho]) (by omega_using [ho4]) fun s3 u3 => ?_
   have hc3 := hc2.of_rest (u3.rest []) (by decide)
-  refine sd0_ok hc3 (by omega) (by omega) fun s4 u4 => WP.block_nil ⟨?_, ?_, ?_⟩
+  refine sd0_ok hc3 (by omega_using [ho]) (by omega_using [ho4]) fun s4 u4 => WP.block_nil ⟨?_, ?_, ?_⟩
   · have g3 : s3.gpr = s.gpr := by rw [u3.gpr, u2.gpr, u1.gpr]
     have g2 : s2.gpr = s.gpr := by rw [u2.gpr, u1.gpr]
     have g1 : s1.gpr = s.gpr := u1.gpr
     rw [V_eq4, u4.mem, u3.mem, u2.mem, u1.mem, g3, g2, g1]
     simp only [val4, ew, rv4, wreg, Nat.reduceEqDiff, ↓reduceIte, Nat.mul_zero, Nat.add_zero,
       Nat.mul_one, Nat.reduceMul]
-    rw [dw_write_other _ _ _ (by omega) (by omega) (by omega), dw_write_other _ _ _ (by omega) (by omega) (by omega),
-      dw_write_other _ _ _ (by omega) (by omega) (by omega), dw_write_self,
-      dw_write_other _ _ _ (by omega) (by omega) (by omega), dw_write_other _ _ _ (by omega) (by omega) (by omega),
-      dw_write_self, dw_write_other _ _ _ (by omega) (by omega) (by omega), dw_write_self, dw_write_self]
+    rw [dw_write_other _ _ _ (by omega_using []) (by omega_using [ho]) (by omega_using [ho]), dw_write_other _ _ _ (by omega_using []) (by omega_using [ho]) (by omega_using [ho]),
+      dw_write_other _ _ _ (by omega_using []) (by omega_using [ho]) (by omega_using [ho]), dw_write_self,
+      dw_write_other _ _ _ (by omega_using []) (by omega_using [ho]) (by omega_using [ho]), dw_write_other _ _ _ (by omega_using []) (by omega_using [ho]) (by omega_using [ho]),
+      dw_write_self, dw_write_other _ _ _ (by omega_using []) (by omega_using [ho]) (by omega_using [ho]), dw_write_self, dw_write_self]
   · rw [u4.mem, u3.mem, u2.mem, u1.mem]
     have hk : ∀ k < 4, (⟨b + BitVec.ofNat 64 (o + 8 * k), 8⟩ : Region).Sub ⟨b + BitVec.ofNat 64 o, 32⟩ :=
-      fun k hk => Offset.sub _ (by omega) (by omega)
+      fun k hk => Offset.sub _ (by omega_using []) (by omega_using [hk])
     exact (((Frame.refl _ _).writeW (List.mem_singleton_self _) _
-      (Offset.contains _ (by omega) (by omega) (by omega))).writeW (List.mem_singleton_self _) _
-      (Offset.contains _ (by omega) (by omega) (by omega))).writeW (List.mem_singleton_self _) _
-      (Offset.contains _ (by omega) (by omega) (by omega)) |>.writeW (List.mem_singleton_self _) _
-      (Offset.contains _ (by omega) (by omega) (by omega))
+      (Offset.contains _ (by omega_using []) (by omega_using []) (by omega_using [ho]))).writeW (List.mem_singleton_self _) _
+      (Offset.contains _ (by omega_using []) (by omega_using []) (by omega_using [ho]))).writeW (List.mem_singleton_self _) _
+      (Offset.contains _ (by omega_using []) (by omega_using []) (by omega_using [ho])) |>.writeW (List.mem_singleton_self _) _
+      (Offset.contains _ (by omega_using []) (by omega_using []) (by omega_using [ho]))
   · exact (u1.rest _).trans ((u2.rest _).trans ((u3.rest _).trans (u4.rest _)))
 
 /-- The low and high parts of `38 H` are `38 H`. -/
@@ -327,7 +327,7 @@ theorem reduce38_ok {acc o : Nat} (hA : acc + 64 ≤ 4096) (hA4 : acc % 4 = 0) (
   rw [z] at v3
   have c2 : s2.ca.toNat ≤ 1 := Bool.toNat_le _
   have l3 := (s3.gpr .r7).isLt
-  have e3 : (s3.gpr .r7).toNat = s2.ca.toNat := by omega
+  have e3 : (s3.gpr .r7).toNat = s2.ca.toNat := by omega_using [v3, c2]
   have rv3 : rv4 s3 = rv4 s2 := by
     simp only [rv4, val4, wreg, Nat.reduceEqDiff, ↓reduceIte]
     rw [u3.other _ (by decide), u3.other _ (by decide), u3.other _ (by decide), u3.other _ (by decide),
@@ -340,10 +340,10 @@ theorem reduce38_ok {acc o : Nat} (hA : acc + 64 ≤ 4096) (hA4 : acc % 4 = 0) (
     rw [r3.gpr _ (by decide), r2.gpr _ (by decide), u1.gpr]; rfl
   have hc3 := hc2.of_rest r3 (by decide)
   rw [List.nil_append]
-  refine WP.append (highs_ok hA hA4 hc3 h53 (by omega)) fun s4 ⟨v4, t4, r4, m4⟩ => ?_
-  refine WP.append (foldTop_ok (by rw [r4.gpr _ (by decide), h53]) (by omega))
+  refine WP.append (highs_ok hA hA4 hc3 h53 (by omega_using [v3, c2])) fun s4 ⟨v4, t4, r4, m4⟩ => ?_
+  refine WP.append (foldTop_ok (by rw [r4.gpr _ (by decide), h53]) (by omega_using [t4]))
     fun s5 ⟨v5, t5, r5, m5⟩ => ?_
-  refine WP.append (foldTop_ok (by rw [r5.gpr _ (by decide), r4.gpr _ (by decide), h53]) (by omega))
+  refine WP.append (foldTop_ok (by rw [r5.gpr _ (by decide), r4.gpr _ (by decide), h53]) (by omega_using [t5]))
     fun s6 ⟨v6, t6, r6, m6⟩ => ?_
   have hc6 := hc3.of_rest ((r4.mono (ws' := [.r4, .r7, .r8, .r9, .r10, .r11]) (by decide)).trans
     (r5.trans r6)) (by decide)
@@ -363,10 +363,10 @@ theorem reduce38_ok {acc o : Nat} (hA : acc + 64 ≤ 4096) (hA4 : acc % 4 = 0) (
     generalize val4 (fun k => dw s.mem b (acc + 32 + 8 * k)) = H at *
     generalize val4 (fun k => part false (dw s.mem b (acc + 32 + 8 * k))) = LO at *
     generalize val4 (fun k => part true (dw s.mem b (acc + 32 + 8 * k))) = HI at *
-    have z6 : (s6.gpr .r7).toNat = 0 := by omega
+    have z6 : (s6.gpr .r7).toNat = 0 := by omega_using [v3, c2, l3, e3, t4, v5, t5, v6, t6, b2, b4, b5, b6, v2, v4, hs]
     rw [z6] at v6
     rw [hP]
-    omega
+    omega_using [v5, v6, v2, v4, hs]
 
 end
 

@@ -61,20 +61,20 @@ theorem rowKeys_mod (r : Fin 4) (k : Fin 24) (hk : k ∈ rowKeys r) : k.val % 4 
   exact (by decide +kernel : ∀ r : Fin 4, ∀ k : Fin 24, k ∈ rowKeys r → k.val % 4 = r.val) r k hk
 
 theorem cachedFeedRow_ok (r : Fin 3) {s₀ s : State} {done : List (Fin 24)}
-    (h : Added s₀ done s) (hf : ∀ k ∈ rowKeys ⟨r.val, by omega⟩, k ∉ done)
+    (h : Added s₀ done s) (hf : ∀ k ∈ rowKeys ⟨r.val, by omega_using []⟩, k ∉ done)
     (hin : ∀ k : Fin 24, InRegions (s₀.rd ++ s₀.wr)
       (s₀.gpr .x0 + BitVec.ofNat 64 (16 * (k.val % 4))) 16)
     (hctr : InRegions (s₀.rd ++ s₀.wr) (s₀.gpr .x0 + 48) 4) :
-    WP isa (.block (cachedFeedRow r)) s (Added s₀ (rowKeys ⟨r.val, by omega⟩ ++ done)) := by
-  let k : Fin 24 := ⟨r.val, by omega⟩
-  have hm : k.val % 4 = r.val := Nat.mod_eq_of_lt (by change r.val < 4; omega)
+    WP isa (.block (cachedFeedRow r)) s (Added s₀ (rowKeys ⟨r.val, by omega_using []⟩ ++ done)) := by
+  let k : Fin 24 := ⟨r.val, by omega_using []⟩
+  have hm : k.val % 4 = r.val := Nat.mod_eq_of_lt (by change r.val < 4; omega_using [])
   have hi : InRegions (s.rd ++ s.wr) (s.gpr .x0 + BitVec.ofNat 64 (16 * (k.val % 4))) 16 := by
     rw [h.same.rd,h.same.wr,h.same.gpr _ (by decide)]; exact hin k
   have hc : InRegions (s.rd ++ s.wr) (s.gpr .x0 + 48) 4 := by
     rw [h.same.rd,h.same.wr,h.same.gpr _ (by decide)]; exact hctr
   have he : cachedFeedRow r = inputRowInto k .v31 ++
-      ((rowKeys ⟨r.val, by omega⟩).map fun l => Instr.vop (.add .s4 (vreg l) (vreg l) .v31)) := by
-    simp only [cachedFeedRow,inputRowInto,hm,show ¬r.val = 3 by omega,ite_false,
+      ((rowKeys ⟨r.val, by omega_using []⟩).map fun l => Instr.vop (.add .s4 (vreg l) (vreg l) .v31)) := by
+    simp only [cachedFeedRow,inputRowInto,hm,show ¬r.val = 3 by omega_using [],ite_false,
       List.append_nil,rowKeys,List.map_map]
     rfl
   rw [he]
@@ -85,7 +85,7 @@ theorem cachedFeedRow_ok (r : Fin 3) {s₀ s : State} {done : List (Fin 24)}
   refine cachedAdds_ok _ (rowKeys_nodup _) ha hf ?_
   intro l hl j hj
   rw [hw j hj,input_same h.same]
-  simp only [input,hm,rowKeys_mod _ l hl,show ¬(r.val = 3 ∧ j = 0) by omega,ite_false]
+  simp only [input,hm,rowKeys_mod _ l hl,show ¬(r.val = 3 ∧ j = 0) by omega_using [],ite_false]
 
 theorem feedForward_ok (s : State)
     (hin : ∀ k : Fin 24, InRegions (s.rd ++ s.wr)

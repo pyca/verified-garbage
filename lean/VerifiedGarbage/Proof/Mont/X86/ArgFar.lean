@@ -35,9 +35,9 @@ theorem readSrc_keep {s t : State} {base : Addr} {size : Nat} {rs : List (Nat ×
   simp only [State.load32, he, hrd, hwr]
   congr 1
   refine congrArg some (Mem.readW_congr fun i hi => O _ fun r hr' => .inr ?_)
-  have := hf i (by omega)
+  have := hf i (by omega_using [hi])
   have := hr r hr'
-  omega
+  omega_arith
 
 theorem ArgFar.keep {s t : State} {base : Addr} {size : Nat} {m : MemOp} (hf : ArgFar s base size m)
     (hb : t.gpr m.base = s.gpr m.base) : ArgFar t base size m := by

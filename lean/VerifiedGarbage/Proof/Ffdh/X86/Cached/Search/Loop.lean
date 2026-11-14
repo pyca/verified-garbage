@@ -55,7 +55,7 @@ theorem branch_ok {p : KPub} {o s : State} {used keys scalars : Nat} (h : Live p
   refine WP.seq (S.ld (Or.inl rfl) (d := keysOff) (by decide) (by decide) fun t₁ S₁ g₁ _ _ _ => ?_)
   refine wp_test fun t₂ F₂ z₂ => WP.block_nil ?_
   have L₂ := (S₁.fupd F₂).live hul hkl hcl
-  have e₂ := test_zero (k := keys) (by omega) g₁ z₂
+  have e₂ := test_zero (k := keys) (by omega_using [hkl]) g₁ z₂
   by_cases hk : keys = 0
   · refine WP.ite true (by rw [e₂]; simp [hk]) (fun _ => ?_) (fun h => absurd h (by decide))
     refine WP.mono (exhausted_ok L₂) fun v hv => Or.inl ⟨?_, fun h => h.1 hk⟩
@@ -65,7 +65,7 @@ theorem branch_ok {p : KPub} {o s : State} {used keys scalars : Nat} (h : Live p
   refine WP.seq (L₂.st.ld (Or.inl rfl) (d := scalarsOff) (by decide) (by decide) fun t₃ S₃ g₃ _ _ _ => ?_)
   refine wp_test fun t₄ F₄ z₄ => WP.block_nil ?_
   have L₄ := (S₃.fupd F₄).live hul hkl hcl
-  have e₄ := test_zero (k := scalars) (by omega) g₃ z₄
+  have e₄ := test_zero (k := scalars) (by omega_using [hcl]) g₃ z₄
   by_cases hs : scalars = 0
   · refine WP.ite true (by rw [e₄]; simp [hs]) (fun _ => ?_) (fun h => absurd h (by decide))
     refine WP.mono (exhausted_ok L₄) fun v hv => Or.inl ⟨?_, fun h => h.2.1 hs⟩
@@ -81,15 +81,15 @@ theorem branch_ok {p : KPub} {o s : State} {used keys scalars : Nat} (h : Live p
     show t₇.cf = _
     rw [c₇, o₆ .eax (by decide), g₅, g₆]
     simp only [liveF, leftOff, lenOff, ↓reduceIte, Nat.reduceEqDiff]
-    rw [toNat_ofNat_lt (by omega), toNat_ofNat_lt hL]
+    rw [toNat_ofNat_lt (by omega_using [hR]), toNat_ofNat_lt hL]
   by_cases hr : (ofState o).randLen - used < (ofState o).len
   · refine WP.ite true (by rw [hb]; simp [hr]) (fun _ => ?_) (fun h => absurd h (by decide))
-    refine WP.mono (request_ok L₇) fun v hv => Or.inl ⟨?_, fun h => by omega⟩
+    refine WP.mono (request_ok L₇) fun v hv => Or.inl ⟨?_, fun h => by omega_using [hkl, hcl, hul, hlen, hR, hL, g₁, hk, g₃, hs, g₅, g₆, hr, h]⟩
     show Done _ _ (keyTail .cached _ _ _ _ _ _) v
     rw [keyTail_short hk hs (by rw [hlen]; exact hr)]; exact hv
   refine WP.ite false (by rw [hb]; simp [hr]) (fun h => absurd h (by decide)) (fun _ => ?_)
-  refine WP.seq (WP.mono (attempt_ok L₇ (by omega)) fun u ⟨Su, eu, ou⟩ => ?_)
-  exact classify_ok L₇ Su eu ou hk hs (by omega)
+  refine WP.seq (WP.mono (attempt_ok L₇ (by omega_using [hul, hr])) fun u ⟨Su, eu, ou⟩ => ?_)
+  exact classify_ok L₇ Su eu ou hk hs (by omega_using [hul, hr])
 
 theorem Done.reg {p : KPub} {o s t : State} {r : KeySearchResult} (h : Done p o r s) {q : Reg} {v : BitVec 32}
     (U : Upd s t q v) (hq : Scratch q) : Done p o r t := by
@@ -133,9 +133,9 @@ theorem guard_done {p : KPub} {o v : State} {r : KeySearchResult} (D : Done p o 
   show t₂.zf = _
   rw [z₂, U₁.gpr, w]
   simp only [doneF, statusOff, ↓reduceIte, Nat.reduceEqDiff]
-  rw [show (4 : BitVec 32) = BitVec.ofNat 32 4 from rfl, sub_beq (by omega) (by decide)]
+  rw [show (4 : BitVec 32) = BitVec.ofNat 32 4 from rfl, sub_beq (by omega_using [this]) (by decide)]
   simp only [Option.some.injEq, decide_eq_false_iff_not]
-  omega
+  omega_using [this]
 
 theorem guard_rej {p : KPub} {o v : State} {used keys scalars : Nat} (R : Rej p o used keys scalars v) :
     WP isa (.block guard) v fun t => isa.eval .e t = some true ∧ Live p o used keys scalars t := by
@@ -165,12 +165,12 @@ theorem iteration_ok {p : KPub} {o s : State} {used keys scalars : Nat} {R : Key
         Same (p.tail (randOf o) u' k' c') (p.tail (randOf o) used keys scalars) := by
     rcases hv with ⟨D, _⟩ | ⟨hk, hs, hr, ⟨h2, Rj⟩ | ⟨h3, Rj⟩⟩
     · exact Or.inl D
-    · refine Or.inr ⟨_, _, _, by omega, Rj, ?_⟩
+    · refine Or.inr ⟨_, _, _, by omega_using [hs], Rj, ?_⟩
       show Same (keyTail .cached _ _ _ _ _ _) (keyTail .cached _ _ _ _ _ _)
-      rw [keyTail_scalar hk hs (by rw [hlen]; omega) h2]; exact Same.refl _
-    · refine Or.inr ⟨_, _, _, by omega, Rj, ?_⟩
+      rw [keyTail_scalar hk hs (by rw [hlen]; omega_using [hr]) h2]; exact Same.refl _
+    · refine Or.inr ⟨_, _, _, by omega_using [hk], Rj, ?_⟩
       show Same (keyTail .cached _ _ _ _ _ _) (keyTail .cached _ _ _ _ _ _)
-      rw [keyTail_public hk hs (by rw [hlen]; omega) h3]; exact Same.refl _
+      rw [keyTail_public hk hs (by rw [hlen]; omega_using [hr]) h3]; exact Same.refl _
   rcases hv' with D | ⟨u', k', c', hm, ⟨L, hst⟩, hs⟩
   · exact WP.mono (guard_done D) fun t ⟨he, Dt⟩ => Or.inl ⟨he, Dt.congr hR⟩
   · exact WP.mono (guard_rej ⟨L, hst⟩) fun t ⟨he, Lt⟩ => Or.inr ⟨he, _, hm, u', k', c', rfl, Lt, hs.trans hR⟩

@@ -40,23 +40,23 @@ theorem Ws.wb_toNat {s : State} {base : Addr} {size : Nat} (hs : Ws s base size)
 theorem Ws.ea {s : State} {base : Addr} {size : Nat} (hs : Ws s base size) {r : Reg} {K d : Nat}
     (hr : s.gpr r = s.gpr .r12 + BitVec.ofNat 32 K) (hd : K + d < size) :
     State.addr (s.gpr r + BitVec.ofNat 32 d) = off base (K + d) := by
-  rw [hr, Offset.add_add, VG.Arm.addr_add (by have := hs.nowrap; have := hs.wb_toNat; omega), hs.wb]
+  rw [hr, Offset.add_add, VG.Arm.addr_add (by have := hs.nowrap; have := hs.wb_toNat; omega_arith), hs.wb]
 
 /-- `[r12 + d]`. -/
 theorem Ws.ea12 {s : State} {base : Addr} {size : Nat} (hs : Ws s base size) {d : Nat} (hd : d < size) :
     State.addr (s.gpr .r12 + BitVec.ofNat 32 d) = off base d := by
-  have := hs.ea (r := .r12) (K := 0) (d := d) (BitVec.add_zero _).symm (by omega)
+  have := hs.ea (r := .r12) (K := 0) (d := d) (BitVec.add_zero _).symm (by omega_using [hd])
   rwa [Nat.zero_add] at this
 
 theorem Ws.read {s : State} {base : Addr} {size : Nat} (hs : Ws s base size) {d n : Nat}
     (hd : d + n ≤ size) : InRegions (s.rd ++ s.wr) (off base d) n :=
   have ⟨_, hl, hl', hR⟩ := hs.wr
-  ⟨_, List.mem_append_right _ hR, Offset.contains_base base (by omega) (by omega)⟩
+  ⟨_, List.mem_append_right _ hR, Offset.contains_base base (by omega_using [hd, hl]) (by omega_using [hd, hl, hl'])⟩
 
 theorem Ws.write {s : State} {base : Addr} {size : Nat} (hs : Ws s base size) {d n : Nat}
     (hd : d + n ≤ size) : InRegions s.wr (off base d) n :=
   have ⟨_, hl, hl', hR⟩ := hs.wr
-  ⟨_, hR, Offset.contains_base base (by omega) (by omega)⟩
+  ⟨_, hR, Offset.contains_base base (by omega_using [hd, hl]) (by omega_using [hd, hl, hl'])⟩
 
 theorem Ws.of_rest {rs : List Reg} {s s' : State} {base : Addr} {size : Nat} (hs : Ws s base size)
     (h : Rest rs s s') (hr : .r12 ∉ rs) : Ws s' base size :=
@@ -86,7 +86,7 @@ theorem _root_.VG.Proof.X25519.Arm.Upd.get {s s' : State} {d : Reg} {v : BitVec 
 theorem movw_ofNat {k : Nat} (h : k < 2 ^ 16) : (BitVec.ofNat 16 k).setWidth 32 = BitVec.ofNat 32 k := by
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]
-  omega
+  omega_using [h]
 
 /-- `d = r12 + k`. -/
 theorem wp_ptr {s : State} {is : List Instr} {Q : State → Prop} {d : Reg} {k : Nat} (hd : d ≠ .r12)
@@ -105,7 +105,7 @@ theorem encodable_lt {n : Nat} (h : n < 256) : encodable (BitVec.ofNat 32 n) = t
   List.any_eq_true.2 ⟨0, by simp, by
     have h0 : (BitVec.ofNat 32 n).rotateLeft (2 * 0) = BitVec.ofNat 32 n := by ext i; simp
     simp only [h0, decide_eq_true_eq, BitVec.toNat_ofNat]
-    omega⟩
+    omega_using [h]⟩
 
 /-- `p += k`. -/
 theorem wp_bump {s : State} {is : List Instr} {Q : State → Prop} {p : Reg} {k : Nat} (hk : k < 256)
@@ -120,7 +120,7 @@ theorem sub_add_add (A : BitVec 32) (a b : Nat) :
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_sub, BitVec.toNat_add, BitVec.toNat_ofNat]
   have := A.isLt
-  omega
+  omega_using []
 
 theorem cmp_ofNat {a b : Nat} (ha : a < 2 ^ 32) (hb : b < 2 ^ 32) :
     (BitVec.ofNat 32 a - BitVec.ofNat 32 b == 0) = decide (a = b) := by
@@ -131,7 +131,7 @@ theorem cmp_ofNat {a b : Nat} (ha : a < 2 ^ 32) (hb : b < 2 ^ 32) :
     have := congrArg BitVec.toNat e
     have z : (0 : BitVec 32).toNat = 0 := rfl
     simp only [BitVec.toNat_sub, BitVec.toNat_ofNat, z] at this
-    omega
+    omega_using [ha, hb, h, this]
 
 /-- The loop: `body` runs for `j = 0, …, k - 1`, from `P j` with `p = A + step·j`
 and `r9 = A + step·k`, to `P (j + 1)` with `p` moved up a step and `r9` kept.
@@ -157,11 +157,11 @@ theorem ptrLoop_ok {s : State} {p : Reg} {body : List Instr} {A : BitVec 32} {st
   have eu₁ : u₁.gpr p = A + BitVec.ofNat 32 (step * (j + 1)) := by rw [f₁.gpr]; exact eu
   have e9₁ : u₁.gpr .r9 = A + BitVec.ofNat 32 (step * k) := by rw [f₁.gpr]; exact e9u
   have hjs : step * (j + 1) ≤ step * k := Nat.mul_le_mul_left _ hj
-  rw [eu, e9u, sub_add_add, cmp_ofNat (by omega) hk32] at z₁
+  rw [eu, e9u, sub_add_add, cmp_ofNat (by omega_using [hk32, hjs]) hk32] at z₁
   by_cases hjk : j + 1 = k
   · have : step * (j + 1) = step * k := by rw [hjk]
     exact .inl ⟨by rw [eval_ne, z₁]; simp [this], hQ _ (hjk ▸ p₁) (by rw [eu₁, hjk])⟩
-  · refine .inr ⟨?_, k - (j + 1), by omega, j + 1, rfl, by omega, p₁, eu₁, e9₁⟩
+  · refine .inr ⟨?_, k - (j + 1), by omega_using [hj], j + 1, rfl, by omega_using [hj, hjk], p₁, eu₁, e9₁⟩
     rw [eval_ne, z₁]
     have : step * (j + 1) ≠ step * k := fun e => hjk (Nat.eq_of_mul_eq_mul_left hstep e)
     simp [this]

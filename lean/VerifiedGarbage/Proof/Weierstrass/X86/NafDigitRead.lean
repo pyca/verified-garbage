@@ -32,7 +32,7 @@ theorem nafRead_ok {K : WinCfg} {s : State} {base : Addr} {size j : Nat} {b : Bi
   have sc := hs.of_keeps kc (by decide)
   have ea : c.gpr .ecx=c.gpr .edi+BitVec.ofNat 32 j := by
     rw [uc.gpr,ua.gpr,ua.other _ (by decide),hc,kc.1 .edi (by decide)]
-  refine wp_load8 (ea_winByte sc ea hj) (sc.read (by omega)) fun d ud => ?_
+  refine wp_load8 (ea_winByte sc ea hj) (sc.read (by omega_using [hj])) fun d ud => ?_
   refine wp_test fun t ut zt => WP.block_nil ?_
   have vd : d.gpr .ebx=b.setWidth 32 := by rw [ud.gpr,uc.mem,ua.mem,hm]
   refine ⟨(congrFun ut.gpr .ebx).trans vd,?_,?_,?_,?_,?_⟩
@@ -53,7 +53,7 @@ theorem nafDigitSign_ok (s : State) {b : BitVec 8} (hb : s.gpr .ebx=b.setWidth 3
     Option.bind_some,RegUpd.cf_arithFlags,hb,Option.some.injEq,exists_eq_left']
   refine ⟨?_,fun _ _ => rfl,rfl,rfl,rfl⟩
   simp only [BitVec.toNat_setWidth]
-  rw [Nat.mod_eq_of_lt (show b.toNat<2^32 from by have:=b.isLt; omega)]
+  rw [Nat.mod_eq_of_lt (show b.toNat<2^32 from by have:=b.isLt; omega_using [])]
   rfl
 
 theorem nafAbs_ok (s : State) {b : BitVec 8} (hb : s.gpr .ebx=b.setWidth 32) :

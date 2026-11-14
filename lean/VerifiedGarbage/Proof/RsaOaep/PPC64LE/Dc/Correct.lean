@@ -91,7 +91,7 @@ theorem fail_done {v : State} (A : AfterPriv s v) (hk : kk s < 2 * H.D + 2) :
   rw [decOut_short' hl (by rw [hHl]; exact hk)]
   have hout : Spec.Rsa.bytesAt u.mem (s.gpr .r3) (kk s) = List.replicate (kk s) 0 := by
     have e := bytesAt_writeBytes v.mem (s.gpr .r3) (List.replicate (kk s) 0)
-      (by rw [List.length_replicate]; omega)
+      (by rw [List.length_replicate]; omega_using [ek])
     rw [List.length_replicate] at e
     rw [← e, hm]
     have f : Frame [mlR s] (writeBytes v.mem (s.gpr .r3) (List.replicate (kk s) 0))
@@ -102,7 +102,7 @@ theorem fail_done {v : State} (A : AfterPriv s v) (hk : kk s < 2 * H.D + 2) :
     have hi := List.mem_range.mp hi
     exact f _ (fun r hr => by
       rw [List.mem_singleton.mp hr]
-      exact fun hc => P.oml _ (Offset.contains_base _ (by have := P.ok; omega) (by omega)) hc)
+      exact fun hc => P.oml _ (Offset.contains_base _ (by have := P.ok; omega_using [ek, hi, this]) (by omega_using [ek, hi])) hc)
   have hml : u.mem.readW (s.gpr .r5) 64 = 0 := by rw [hm, Mem.readW_writeW_self64]; rfl
   have hrc2 := rcOf_le (privO s)
   by_cases h2 : rcOf (privO s) = 2
@@ -116,18 +116,18 @@ theorem chk_ok (hD64 : H.D ≤ 64) {v : State} (A : AfterPriv s v) :
   have hk2 := P.k2
   have ek : kk s = (s.gpr .r7).toNat := rfl
   have e7 : s.gpr .r7 = BitVec.ofNat 64 (kk s) := ((BitVec.ofNat_toNat _ _).trans (BitVec.setWidth_eq _)).symm
-  refine wp_li (by omega) fun v₁ o₁ e₁ => wp_sub fun v₂ o₂ e₂ => wp_lsr fun v₃ o₃ e₃ => wp_nil ?_
+  refine wp_li (by omega_using [hD64]) fun v₁ o₁ e₁ => wp_sub fun v₂ o₂ e₂ => wp_lsr fun v₃ o₃ e₃ => wp_nil ?_
   have k₃ : Only [.r3] v v₃ := (o₁.trans (o₂.trans o₃)).mono
   refine ⟨A.only P k₃, ?_⟩
   rw [e₃, e₂, e₁, o₁.get .r15, Base.r15 A.base, e7]
-  exact ne_zero_ltBit (by omega) (by omega)
+  exact ne_zero_ltBit (by omega_using [hk2, ek]) (by omega_using [hD64])
 
 /-- The branch on the check of `k`. -/
 theorem ite_done {v : State} (A : AfterPriv s v) (hsy : v.syms = s.syms)
     (r3 : (v.gpr .r3 != 0) = decide (kk s < 2 * H.D + 2)) :
     WP isa (.ite (.nonzero .d .r3) decFail (decMain H f)) v (Done Hs Gs s) :=
   WP.ite _ (eval_nonzero _ _) (fun hc => fail_done hHl P A (by rw [r3] at hc; simpa using hc))
-    (fun hc => WP.mono (decMain_ok P hH hG hHh hHl hHv hGh hGl hGv T TL A hsy (by rw [r3] at hc; simp at hc; omega))
+    (fun hc => WP.mono (decMain_ok P hH hG hHh hHl hHv hGh hGl hGv T TL A hsy (by rw [r3] at hc; simp at hc; omega_using [hc]))
       fun u ⟨sv, _, hw⟩ => ⟨sv, hw⟩)
 
 theorem checks_done {v : State} (A : AfterPriv s v) (hsy : v.syms = s.syms) :
@@ -137,7 +137,7 @@ theorem checks_done {v : State} (A : AfterPriv s v) (hsy : v.syms = s.syms) :
 
 theorem code_ok (X : pc = true → PreXD s) (hl : H.D ∈ lens) : WP isa (decryptG pc f) s (Post Hs Gs s) := by
   have hD64 := hH.hD64
-  refine WP.alloc (by decide) (by have := P.sp1; rw [stackBytes_eq] at this; unfold frameBytes; omega) ?_
+  refine WP.alloc (by decide) (by have := P.sp1; rw [stackBytes_eq] at this; unfold frameBytes; omega_using [this]) ?_
   refine WP.seq (WP.mono_syms (entry_ok P) fun t E y₁ => ?_)
   refine WP.seq (WP.mono_syms (priv_ok P X E) fun v A y₂ => ?_)
   -- The label's hash function's digest length to `r3`.
@@ -147,7 +147,7 @@ theorem code_ok (X : pc = true → PreXD s) (hl : H.D ∈ lens) : WP isa (decryp
   refine wp_tword TL' A.base (k := 6) (by decide) (d := .r3) (by decide) fun v₁ o₁ e₁ => wp_nil fun y₃ => ?_
   have e3 : v₁.gpr .r3 = BitVec.ofNat 64 H.D := e₁.trans TL'.d
   -- The code for that length.
-  refine WP.seq (byLen_ok (D := H.D) (by omega)
+  refine WP.seq (byLen_ok (D := H.D) (by omega_using [hD64])
     (F := fun u => AfterPriv s u ∧ u.syms = s.syms ∧ u.gpr .r3 = BitVec.ofNat 64 H.D)
     (fun _ h => h.2.2) (fun u u' ⟨A', y', r3'⟩ o y => ⟨A'.only P o, y.trans y', by rw [o.get .r3]; exact r3'⟩) ?_
     hl (fun x hx => (lens_certs x hx).1) v₁ ⟨A.only P o₁, y₃.trans (y₂.trans y₁), e3⟩)
@@ -171,7 +171,7 @@ theorem tabS_entryDL {vs : List MVar} (hc : Coh vs) {pc : Bool} {s : State} (P :
     (by rw [P.hrd]; exact List.mem_append_right _ (List.mem_cons_self ..)) (P.ktl.sub_left kR_sub)
     (P.stl.sub_left (sc_sub P)) hc hpw hw hh
   rw [stackArgAddr_eq]
-  exact Offset.sub_base _ (by split <;> omega)
+  exact Offset.sub_base _ (by split <;> omega_using [])
 
 /-- MGF1's table, on entry, if it is `w`'s: what MGF1 needs of it. -/
 theorem tabS_entryD {vs : List MVar} (hc : Coh vs) {pc : Bool} {s : State} (P : PreD pc s)
@@ -184,7 +184,7 @@ theorem tabS_entryD {vs : List MVar} (hc : Coh vs) {pc : Bool} {s : State} (P : 
     (by rw [P.hrd]; exact List.mem_append_right _ (List.mem_cons_of_mem _ (List.mem_cons_self ..))) (P.kt.sub_left kR_sub)
     (P.st.sub_left (sc_sub P)) hc hpw hw hh
   rw [stackArgAddr_eq]
-  exact Offset.sub_base _ (by split <;> omega)
+  exact Offset.sub_base _ (by split <;> omega_using [])
 
 /-- The tables, on entry: each one of the tables of `vs`, which names its
 hash function and holds what the calls through it need. -/

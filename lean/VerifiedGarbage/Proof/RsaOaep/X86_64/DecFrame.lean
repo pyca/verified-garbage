@@ -45,24 +45,24 @@ theorem frame_subD (s : State) : Region.Sub (frR s) (stkD s) :=
 
 theorem below_subD (s : State) {n : Nat} (hn : n ≤ 8 + privStack) : Region.Sub (below (fb s) n) (stkD s) := by
   simp only [below, fb, sub_sub']
-  exact Offset.sub_below _ (by unfold decStack frameBytes privStack at *; omega) (by unfold decStack frameBytes privStack at *; omega)
+  exact Offset.sub_below _ (by unfold decStack frameBytes privStack at *; omega_using [hn]) (by unfold decStack frameBytes privStack at *; omega_using [hn])
 
 theorem ret_subD (s : State) : Region.Sub (below (fb s) 16) (stkD s) := below_subD s (by decide)
 
 theorem fb_toNatD {s : State} (hp : DPre s) : (fb s).toNat + frameBytes = (s.gpr .rsp).toNat := by
   have := hp.sp1; unfold decStack privStack at this
-  simp only [fb, BitVec.toNat_sub, BitVec.toNat_ofNat]; unfold frameBytes at *; omega
+  simp only [fb, BitVec.toNat_sub, BitVec.toNat_ofNat]; unfold frameBytes at *; omega_using [this]
 
 theorem DPre.hsl {s : State} (hp : DPre s) : 16 * (s.gpr .r8).toNat + 32 + 1024 ≤ (stackArg s 16).toNat := by
-  have := hp.hsw; unfold Spec.RsaPss.scratchWords Spec.Rsa.scratchWords at this; omega
+  have := hp.hsw; unfold Spec.RsaPss.scratchWords Spec.Rsa.scratchWords at this; omega_using [this]
 
 theorem DPre.geo {s : State} (hp : DPre s) : Geo (fb s) (stackArg s 15) := by
   have hF := fb_toNatD hp
   have := hp.sp2
   have hsl := hp.hsl
   have wS := hp.wS
-  have sS : Region.Sub ⟨stackArg s 15, oRsa⟩ (scrD s) := Region.sub_prefix (by unfold oRsa; omega)
-  refine ⟨by unfold frameBytes at *; omega, by unfold oRsa; omega,
+  have sS : Region.Sub ⟨stackArg s 15, oRsa⟩ (scrD s) := Region.sub_prefix (by unfold oRsa; omega_using [hsl])
+  refine ⟨by unfold frameBytes at *; omega_using [hF, this], by unfold oRsa; omega_using [hsl, wS],
     ((hp.dKs.sub_left (frame_subD s)).sub_right sS), ((hp.dKs.sub_left (ret_subD s)).sub_right sS)⟩
 
 /-- Memory changed only in the stack the function uses, `out`, `*msg_len`
@@ -119,7 +119,7 @@ theorem arg_readD {s : State} (hp : DPre s) {m : Mem} (hf : Frame [frR s] s.mem 
   rw [argAddr]
   refine hf.readW (r := ⟨stackArgAddr s 0, 152⟩) ?_ (fun r' hr' => ?_) (by decide)
   · rw [stackArgAddr_j s j]
-    exact Offset.contains_base _ (by omega) (by omega)
+    exact Offset.contains_base _ (by omega_using [hj]) (by omega_using [hj])
   · simp only [List.mem_singleton] at hr'; subst hr'
     exact (hp.dKa.sub_left (frame_subD s)).symm
 
@@ -129,7 +129,7 @@ theorem DPre.argIn {s u : State} (hp : DPre s) (hrd : u.rd = s.rd) {j : Nat} (hj
   obtain ⟨A, hA, hm⟩ := hp.hra
   refine ⟨_, List.mem_append_left _ (by rw [hrd]; exact hm), ?_⟩
   show (stackArgAddr s j - stackArgAddr s 0).toNat + 8 ≤ A
-  rw [stackArgAddr_j s j, BitVec.add_comm, BitVec.add_sub_cancel, BitVec.toNat_ofNat]; omega
+  rw [stackArgAddr_j s j, BitVec.add_comm, BitVec.add_sub_cancel, BitVec.toNat_ofNat]; omega_using [hj, hA]
 
 /-- One stack argument copied to a slot. -/
 theorem copy1D_ok {s : State} (hp : DPre s) {u : State} (hsp : u.gpr .rsp = fb s) (hfr : frR s ∈ u.wr)
@@ -138,19 +138,19 @@ theorem copy1D_ok {s : State} (hp : DPre s) {u : State} (hsp : u.gpr .rsp = fb s
       u'.mem = u.mem.writeW (off (fb s) d) (stackArg s j) ∧ Frame [frR s] s.mem u'.mem := by
   have hF := fb_toNatD hp
   have := hp.sp2
-  have hsc : Scr u (fb s) frameBytes := Scr.of_mem hfr (by unfold frameBytes at *; omega)
+  have hsc : Scr u (fb s) frameBytes := Scr.of_mem hfr (by unfold frameBytes at *; omega_using [hF])
   have hin : InRegions (u.rd ++ u.wr) (off (fb s) (frameBytes + 8 + 8 * j)) 8 := by
     rw [argAddr]; exact hp.argIn hrd hj
   refine WP.mono (WP.keep [.rax] (Q := fun u' => u'.mem = u.mem.writeW (off (fb s) d) (stackArg s j)) ?_ rfl)
     fun u' ⟨hm, k⟩ => ⟨k, hm, hm ▸ hf.writeW (List.mem_singleton_self _) _
-      (Offset.contains_base _ (by omega) (by unfold frameBytes at *; omega))⟩
+      (Offset.contains_base _ (by omega_using [hd]) (by unfold frameBytes at *; omega_using [hd]))⟩
   xrun [argSlot, arg, ea_sp, hsp, hin, arg_readD hp hf hj, hsc.st (d := d) hd]
 
 theorem frame_wD {s : State} (hp : DPre s) {m m' : Mem} (hf : Frame [frR s] m m') {d : Nat}
     (hd : d + 8 ≤ frameBytes) (v : BitVec 64) : Frame [frR s] m (m'.writeW (off (fb s) d) v) := by
   have hF := fb_toNatD hp
   have := hp.sp2
-  exact hf.writeW (List.mem_singleton_self _) _ (Offset.contains_base _ (by omega) (by unfold frameBytes at *; omega))
+  exact hf.writeW (List.mem_singleton_self _) _ (Offset.contains_base _ (by omega_using [hd]) (by unfold frameBytes at *; omega_using [hd]))
 
 /-! ## The prologue -/
 
@@ -176,7 +176,7 @@ theorem decPro_ok {s : State} (hp : DPre s) :
   have G' := hp.geo
   have hsp : (allocState frameBytes s).gpr .rsp = fb s := rfl
   have hfr : frR s ∈ (allocState frameBytes s).wr := List.mem_cons_self ..
-  have hsc : Scr (allocState frameBytes s) (fb s) frameBytes := Scr.of_mem hfr (by unfold frameBytes at *; omega)
+  have hsc : Scr (allocState frameBytes s) (fb s) frameBytes := Scr.of_mem hfr (by unfold frameBytes at *; omega_using [hF])
   have R0 : Rep s.mem (fb s) (stackArg s 15) (fun o => s.mem (off (stackArg s 15) o))
       (fun k => word s.mem (fb s) (8 * k)) := ⟨fun _ _ => rfl, fun _ _ => rfl⟩
   rw [decPrologue_eq, WP.block_append_iff, WP.block_append_iff, WP.block_append_iff, WP.block_append_iff,
@@ -217,12 +217,12 @@ theorem decPro_ok {s : State} (hp : DPre s) :
       (by decide) (stackArg s 16)
   have := hp.sp1
   refine ⟨k16, ⟨(k16.gpr (by decide)).trans hsp, k16.2.2 ▸ hfr, ?_, ?_, ?_, ?_, G'.dFS, G'.dRS⟩, R6, f6⟩
-  · unfold decStack privStack at this; unfold frameBytes at *; omega
-  · unfold frameBytes at *; omega
+  · unfold decStack privStack at this; unfold frameBytes at *; omega_using [hF, this]
+  · unfold frameBytes at *; omega_arith
   · have hsl := hp.hsl
     have hk := hp.lv.1
     refine ⟨⟨stackArg s 15, 0, (stackArg s 16).toNat * 8, by rw [k16.2.2]; simp [allocState, hp.hwr],
-      (BitVec.add_zero _).symm, by unfold oRsa; omega, hp.wS.trans' (by omega)⟩, G'.Sw⟩
+      (BitVec.add_zero _).symm, by unfold oRsa; omega_using [hsl], hp.wS.trans' (by omega_using [])⟩, G'.Sw⟩
   · rw [show sScr = 8 * 14 from rfl]
     exact (R6.fr 14 (by decide)).trans (by simp [decW, upd])
 
@@ -252,11 +252,11 @@ theorem copyRep_ok {s : State} (hp : DPre s) {u : State} (L : Lay u (fb s) (stac
     WP isa (.block (argSlot j (8 * k))) u fun u' => Keep [.rax] u u' ∧ Lay u' (fb s) (stackArg s 15) ∧
       Rep u'.mem (fb s) (stackArg s 15) V (upd W k (stackArg s j)) ∧ Frame [frR s] s.mem u'.mem ∧
       u'.rd = s.rd ∧ frR s ∈ u'.wr :=
-  WP.mono (copy1D_ok hp L.rsp hfr hrd hf hj (d := 8 * k) (by unfold frameBytes; omega))
+  WP.mono (copy1D_ok hp L.rsp hfr hrd hf hj (d := 8 * k) (by unfold frameBytes; omega_using [hk]))
     fun u' ⟨k', hm, f'⟩ =>
       have R' : Rep u'.mem (fb s) (stackArg s 15) V (upd W k (stackArg s j)) := hm ▸ R.wf L.geo (by
-        unfold nW frameBytes; omega) _
-      ⟨k', L.of_rep' R R' (by simp only [upd]; rw [ifn (by omega)]) (k'.gpr (by decide)) k'.2.2, R', f',
+        unfold nW frameBytes; omega_using [hk]) _
+      ⟨k', L.of_rep' R R' (by simp only [upd]; rw [ifn (by omega_using [hk])]) (k'.gpr (by decide)) k'.2.2, R', f',
         k'.2.1.trans hrd, k'.2.2 ▸ hfr⟩
 
 /-- After the prologue and the private-key operation's arguments. -/

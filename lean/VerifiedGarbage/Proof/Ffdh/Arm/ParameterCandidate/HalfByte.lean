@@ -36,11 +36,11 @@ theorem halfByte_value (b : Byte) {carry : Nat} (bound : carry ≤ 1) :
   have hb := b.isLt
   rw [BitVec.toNat_or, BitVec.toNat_ushiftRight, BitVec.toNat_setWidth,
     Nat.shiftRight_eq_div_pow, BitVec.toNat_ofNat, BitVec.toNat_ofNat,
-    Nat.mod_eq_of_lt (by omega : b.toNat < 2 ^ 32),
-    Nat.mod_eq_of_lt (by omega : 128 * carry < 2 ^ 32),
-    Nat.mod_eq_of_lt (by omega : b.toNat / 2 + 128 * carry < 2 ^ 32)]
-  rw [Nat.or_comm, ← Nat.two_pow_add_eq_or_of_lt (by omega : b.toNat / 2 < 2 ^ 7) carry]
-  omega
+    Nat.mod_eq_of_lt (by omega_using [] : b.toNat < 2 ^ 32),
+    Nat.mod_eq_of_lt (by omega_using [bound] : 128 * carry < 2 ^ 32),
+    Nat.mod_eq_of_lt (by omega_using [bound] : b.toNat / 2 + 128 * carry < 2 ^ 32)]
+  rw [Nat.or_comm, ← Nat.two_pow_add_eq_or_of_lt (by omega_using [] : b.toNat / 2 < 2 ^ 7) carry]
+  omega_using []
 
 theorem halfByte_encoding (b : Byte) {carry : Nat} (bound : carry ≤ 1) :
     (((b.setWidth 32 >>> 1) ||| BitVec.ofNat 32 (128 * carry)).setWidth 8) =
@@ -53,11 +53,11 @@ theorem halfByte_carry (b : Byte) :
   apply BitVec.eq_of_toNat_eq
   have hb := b.isLt
   rw [BitVec.toNat_shiftLeft, BitVec.toNat_and, BitVec.toNat_setWidth,
-    Nat.mod_eq_of_lt (by omega : b.toNat < 2 ^ 32), Nat.shiftLeft_eq,
+    Nat.mod_eq_of_lt (by omega_using [] : b.toNat < 2 ^ 32), Nat.shiftLeft_eq,
     BitVec.toNat_ofNat]
   change ((b.toNat &&& (2 ^ 1 - 1)) * 2 ^ 7) % 2 ^ 32 = (128 * (b.toNat % 2)) % 2 ^ 32
   rw [Nat.and_two_pow_sub_one_eq_mod]
   congr 1
-  omega
+  omega_using []
 
 end VG.Proof.Ffdh.Arm.ParameterCandidate

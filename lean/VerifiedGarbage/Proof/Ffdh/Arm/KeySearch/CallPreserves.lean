@@ -68,12 +68,12 @@ theorem call_saved (h : KeyInput p s) : ∀ r ∈ callChanges p, (rSaved p).Disj
 theorem call_domain_frame (h : KeyInput p s) {m m' : Mem} (frame : Frame (callChanges p) m m') :
     Spec.Rsa.bytesAt m' (State.addr p.dp) p.dlen = Spec.Rsa.bytesAt m (State.addr p.dp) p.dlen :=
   bytesAt_frame (r := rDomain p) frame (h.call_read (by rw [h.read_regions]; simp))
-    (by change p.dlen ≤ 2 ^ 64; have := h.bounds.domainFit; omega)
+    (by change p.dlen ≤ 2 ^ 64; have := h.bounds.domainFit; omega_using [this])
 
 theorem call_random_frame (h : KeyInput p s) {m m' : Mem} (frame : Frame (callChanges p) m m') :
     Spec.Rsa.bytesAt m' (State.addr p.rp) p.randLen = Spec.Rsa.bytesAt m (State.addr p.rp) p.randLen :=
   bytesAt_frame (r := rRandom p) frame (h.call_read (by rw [h.read_regions]; simp))
-    (by change p.randLen ≤ 2 ^ 64; have := h.bounds.randomFits; omega)
+    (by change p.randLen ≤ 2 ^ 64; have := h.bounds.randomFits; omega_using [this])
 
 end KeyInput
 
@@ -95,10 +95,10 @@ theorem KeyLive.restore {p : KeyPublic sampling} {original s t : State} {used ke
       simp only [KeyPublic.headers, List.mem_cons, List.not_mem_nil, or_false] at he
       rcases he with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
       all_goals dsimp only; decide
-    exact (frame.readW (r := rControl p) (Offset.contains_base _ (by omega) (by omega))
+    exact (frame.readW (r := rControl p) (Offset.contains_base _ (by omega_using [index]) (by omega_using [index]))
       h.input.call_control (by decide)).trans (h.headers e he)
   · intro j hj
-    exact (frame.readW (r := rControl p) (Offset.contains_base _ (by omega) (by omega))
+    exact (frame.readW (r := rControl p) (Offset.contains_base _ (by omega_using [hj]) (by omega_using [hj]))
       h.input.call_control (by decide)).trans (h.high j hj)
   · exact (KeyConstants.tablePtr_of_syms syms).trans h.tablePtr
   · exact KeyConstants.held_after_frame h.held frame (fun table member r hr =>
@@ -107,7 +107,7 @@ theorem KeyLive.restore {p : KeyPublic sampling} {original s t : State} {used ke
   · apply h.cachedHeld.after_frame frame
     · intro active
       have := h.input.context_fit active
-      omega
+      omega_using [this]
     · intro active
       exact h.input.call_read (by rw [h.input.read_regions]; simp [contextRegions, active])
   · intro active

@@ -24,22 +24,22 @@ theorem reductionArgs_ok (s : State) {base : BitVec 32} {size top acc mod n : Na
       t.gpr .lr = BitVec.ofNat 32 n ∧ t.gpr .r11 = 0 ∧ t.mem = s.mem ∧
       Rest [.r0, .r1, .r2, .r11, .r12, .lr] s t := by
   unfold reductionArgs
-  refine wp_ldr (by decide) (ws.ea ptr (by omega)) (ws.read (by omega)) fun s1 u1 => ?_
+  refine wp_ldr (by decide) (ws.ea ptr (by omega_using [ht])) (ws.read (by omega_using [ht])) fun s1 u1 => ?_
   have w1 := ws.congr u1.wr
   have p1 := (u1.other .r0 (by decide)).trans ptr
-  refine wp_ldr (by decide) (w1.ea p1 (by omega)) (w1.read (by omega)) fun s2 u2 => ?_
+  refine wp_ldr (by decide) (w1.ea p1 (by omega_using [ht])) (w1.read (by omega_using [ht])) fun s2 u2 => ?_
   have k2 : Rest [.lr, .r12] s s2 := (u1.rest (by decide)).trans (u2.rest (by decide))
   have w2 := ws.congr k2.wr
   have p2 := (k2.gpr .r0 (by decide)).trans ptr
-  refine wp_ldr (by decide) (w2.ea p2 (by omega)) (w2.read (by omega)) fun s3 u3 => ?_
+  refine wp_ldr (by decide) (w2.ea p2 (by omega_using [ht])) (w2.read (by omega_using [ht])) fun s3 u3 => ?_
   have k3 : Rest [.lr, .r12, .r1] s s3 := (k2.mono (by simp_all)).trans (u3.rest (by decide))
   have w3 := ws.congr k3.wr
   have p3 := (k3.gpr .r0 (by decide)).trans ptr
-  refine wp_ldr (by decide) (w3.ea p3 (by omega)) (w3.read (by omega)) fun s4 u4 => ?_
+  refine wp_ldr (by decide) (w3.ea p3 (by omega_using [ht])) (w3.read (by omega_using [ht])) fun s4 u4 => ?_
   have w4 := w3.congr u4.wr
   have p4 : s4.gpr .r0 = base + BitVec.ofNat 32 acc := by
     rw [u4.gpr, u3.mem, u2.mem, u1.mem, ma]
-  refine wp_ldr (a := off (State.addr base) acc) (by decide) (w4.ea p4 (by omega))
+  refine wp_ldr (a := off (State.addr base) acc) (by decide) (w4.ea p4 (by omega_using [ha]))
     (w4.read ha) fun s5 u5 => ?_
   refine wp_mul fun s6 u6 => ?_
   refine wp_mov (op2_imm (by decide)) fun t u7 => WP.block_nil ?_

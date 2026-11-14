@@ -1,4 +1,5 @@
 module
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # Congruences of naturals, from core Lean alone
@@ -41,8 +42,8 @@ theorem mod_eq_of_mul_mod_eq {n a b c : Nat} (hc : Nat.Coprime c n) (h : a * c %
       simp only [Nat.mod_zero] at hdvd
       exact (Nat.le_antisymm hle (Nat.sub_eq_zero_iff_le.mp (Nat.eq_zero_of_zero_dvd hdvd))).symm ▸ rfl
     · have := Nat.mod_lt y hn
-      have := Nat.eq_zero_of_dvd_of_lt hdvd (by omega)
-      omega
+      have := Nat.eq_zero_of_dvd_of_lt hdvd (by omega_using [this])
+      omega_using [hle, this]
   rcases Nat.le_total (a % n) (b % n) with hle | hle
   · exact hd h hle
   · exact (hd h.symm hle).symm
@@ -57,7 +58,7 @@ theorem exists_gcd_eq (a b : Nat) : ∃ x y : Int, (Nat.gcd a b : Int) = x * a +
     rw [Nat.gcd_rec, h]
     have e : ((n % m : Nat) : Int) = n - m * (n / m : Nat) := by
       have := Nat.mod_add_div n m
-      omega
+      omega_using [this]
     rw [e]
     grind
 
@@ -67,10 +68,10 @@ theorem exists_mul_mod_eq {n c : Nat} (hc : Nat.Coprime c n) (hn : n ≠ 0) (a :
     ∃ u, u < n ∧ u * c % n = a % n := by
   obtain ⟨x, y, h⟩ := exists_gcd_eq c n
   rw [hc] at h
-  have hn' : (0 : Int) < n := by omega
+  have hn' : (0 : Int) < n := by omega_using [hn]
   refine ⟨((a * x) % (n : Int)).toNat, ?_, ?_⟩
   · have := Int.emod_lt_of_pos (a * x) hn'
-    omega
+    omega_using [hn, this]
   · apply mod_eq_of_dvd_sub
     rw [Int.natCast_mul, Int.toNat_of_nonneg (Int.emod_nonneg _ (by exact_mod_cast hn))]
     -- `a - (a x mod n) c = a (x c + y n) - (a x - n (a x / n)) c`

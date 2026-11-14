@@ -27,20 +27,20 @@ def SrcDst (S D : Addr) (n : Nat) : Prop := S = D ∨ Region.Disjoint ⟨S, 16 *
 theorem addr_zero (b : BitVec 32) : addr b 0 = b.setWidth 64 := by simp [addr]
 
 theorem toNat_setWidth32 (b : BitVec 32) : (b.setWidth 64).toNat = b.toNat := by
-  rw [BitVec.toNat_setWidth, Nat.mod_eq_of_lt (by have := b.isLt; omega)]
+  rw [BitVec.toNat_setWidth, Nat.mod_eq_of_lt (by have := b.isLt; omega_using [])]
 
 /-- The `n` bytes at offset `o` of a buffer at `b` are within its part at offset `a`. -/
 theorem part_contains {b : BitVec 32} {N a k o n : Nat} (hfit : b.toNat + N ≤ 2 ^ 32) (hak : a + k ≤ N)
     (h1 : a ≤ o) (h2 : o + n ≤ a + k) (hn : 0 < n) : (⟨addr b a, k⟩ : Region).Contains (addr b o) n := by
   simp only [Region.Contains]
-  rw [addr_eq (by omega), addr_eq (by omega)]
+  rw [addr_eq (by omega_using [hfit, hak, h2, hn]), addr_eq (by omega_using [hfit, hak, h1, h2, hn])]
   have hE := toNat_setWidth32 b
   generalize b.setWidth 64 = E at *
   bv_omega
 
 theorem reg_contains {b : BitVec 32} {N o n : Nat} (hfit : b.toNat + N ≤ 2 ^ 32) (h : o + n ≤ N)
     (hn : 0 < n) : (reg32 b N).Contains (addr b o) n := by
-  have := part_contains (a := 0) (k := N) hfit (by omega) (Nat.zero_le o) (by omega) hn
+  have := part_contains (a := 0) (k := N) hfit (by omega_using []) (Nat.zero_le o) (by omega_using [h]) hn
   rwa [addr_zero] at this
 
 theorem in_reg {rs : List Region} {b : BitVec 32} {N : Nat} (hr : reg32 b N ∈ rs)
@@ -64,11 +64,11 @@ theorem part_disj {b : BitVec 32} {N a n c k : Nat} (hfit : b.toNat + N ≤ 2 ^ 
   intro x h₁ h₂
   simp only [Region.Contains] at h₁ h₂
   by_cases hn : n = 0
-  · omega
+  · omega_using [h₁, hn]
   by_cases hk : k = 0
-  · omega
-  rw [addr_eq (by omega)] at h₁
-  rw [addr_eq (by omega)] at h₂
+  · omega_using [h₂, hk]
+  rw [addr_eq (by omega_using [hfit, ha, h₁])] at h₁
+  rw [addr_eq (by omega_using [hfit, hc, h₂])] at h₂
   have hE := toNat_setWidth32 b
   generalize b.setWidth 64 = E at *
   rcases h with h | h <;> bv_omega
@@ -79,15 +79,15 @@ theorem part_sub {b : BitVec 32} {N a n c k : Nat} (hfit : b.toNat + N ≤ 2 ^ 3
   intro x h
   simp only [Region.Contains] at h ⊢
   by_cases hn : n = 0
-  · omega
-  rw [addr_eq (by omega)] at h ⊢
+  · omega_using [h, hn]
+  rw [addr_eq (by omega_arith)] at h ⊢
   have hE := toNat_setWidth32 b
   generalize b.setWidth 64 = E at *
   bv_omega
 
 theorem part_sub_reg {b : BitVec 32} {N a n : Nat} (hfit : b.toNat + N ≤ 2 ^ 32) (h : a + n ≤ N) :
     Region.Sub ⟨addr b a, n⟩ (reg32 b N) := by
-  have := part_sub (c := 0) (k := N) (a := a) (n := n) hfit (by omega) (Nat.zero_le _) (by omega)
+  have := part_sub (c := 0) (k := N) (a := a) (n := n) hfit (by omega_using []) (Nat.zero_le _) (by omega_using [h])
   rwa [addr_zero] at this
 
 theorem addr_add (b : BitVec 32) (a o : Nat) : addr (b + BitVec.ofNat 32 a) o = addr b (a + o) := by
@@ -110,7 +110,7 @@ theorem rd_wr {B : BitVec 32} {N : Nat} (hfit : B.toNat + N ≤ 2 ^ 32) (m : Mem
   split
   · subst_vars; exact Mem.readW_writeW_self32 _ _ _
   · refine Mem.readW_writeW_sep (Region.Disjoint.sep (r₁ := ⟨addr B d, 4⟩) (r₂ := ⟨addr B e, 4⟩)
-      (part_disj hfit hd he (by omega)) (Region.contains_self _ _) (Region.contains_self _ _)) (by decide)
+      (part_disj hfit hd he (by omega_arith)) (Region.contains_self _ _) (Region.contains_self _ _)) (by decide)
 
 theorem rd_wr_ne {B : BitVec 32} {N : Nat} (hfit : B.toNat + N ≤ 2 ^ 32) (m : Mem) (v : BitVec 32)
     {d e : Nat} (hd : d + 4 ≤ N) (he : e + 4 ≤ N) (hd4 : d % 4 = 0) (he4 : e % 4 = 0) (hne : d ≠ e) :
@@ -146,10 +146,10 @@ theorem readW_bit (m : Mem) (a : Addr) {i t : Nat} (hi : i < 4) (ht : t < 8) :
   rw [← Mem.extractLsb'_read m a (n := 4) hi, BitVec.getLsbD_extractLsb']
   simp only [Mem.readW, ht, decide_true, Bool.true_and]
   rw [BitVec.getLsbD_setWidth]
-  simp [show 8 * i + t < 32 by omega]
+  simp [show 8 * i + t < 32 by omega_using [hi, ht]]
 
 theorem addr_add64 {S : BitVec 32} {x y : Nat} (h : S.toNat + x + y < 2 ^ 32) :
     addr S x + BitVec.ofNat 64 y = addr S (x + y) := by
-  rw [addr_eq (by omega), addr_eq (by omega), BitVec.add_assoc, ← BitVec.ofNat_add]
+  rw [addr_eq (by omega_using [h]), addr_eq (by omega_using [h]), BitVec.add_assoc, ← BitVec.ofNat_add]
 
 end VG.Proof.Aes.X86

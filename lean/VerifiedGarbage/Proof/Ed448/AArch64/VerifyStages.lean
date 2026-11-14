@@ -85,7 +85,7 @@ theorem negA_ok {s : State} {base : Addr} (hs : Scr s base) (hb : BEnv s.mem bas
     intro i hi j hj
     have h1 := VG.Proof.X448.AArch64.Weak.slot_sep hi
     have h2 := i.isLt
-    exact o3.limbs (by simp only [slot] at *; omega) (by simp only [slot]; omega) (by omega)
+    exact o3.limbs (by simp only [slot] at *; omega_using [h1]) (by simp only [slot]; omega_using []) (by omega_using [hj])
   have E23 : ∀ i : Fin 22, i ≠ 13 → E s3.mem base i = E s2b.mem base i := fun i hi =>
     congrArg VG.Proof.X448.toFe (VG.Proof.X448.Wide.valN_congr (l23 i hi))
   have z13 : ∀ j < 8, limbs s3.mem base (slot (13 : Fin 22).val) j < 2 ^ 56 := fun j hj => by
@@ -134,7 +134,7 @@ theorem negA_ok {s : State} {base : Addr} (hs : Scr s base) (hb : BEnv s.mem bas
   · exact ((((k2.regs.mono (by decide)).trans (k2b.regs.mono (by decide))).trans (k3.mono (by decide))).trans
       (k4.regs.mono (by decide))).trans ((k5.regs.mono (by decide)).trans (kt.mono (by decide)))
   · rw [mt]
-    exact (((fkeep_dframe k2).trans (fkeep_dframe k2b)).trans (DFrame.of_outside o3 (by simp only [slot]; omega))).trans
+    exact (((fkeep_dframe k2).trans (fkeep_dframe k2b)).trans (DFrame.of_outside o3 (by simp only [slot]; omega_using []))).trans
       ((fkeep_dframe k4).trans (fkeep_dframe k5))
 
 /-- `x19 := x1 - x3`. -/

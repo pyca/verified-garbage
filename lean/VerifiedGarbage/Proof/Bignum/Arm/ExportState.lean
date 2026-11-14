@@ -43,16 +43,16 @@ theorem exportArray_state (s : State) {base dst : BitVec 32} {len w o capacity :
   have fit := h.fits
   have size := h.size
   have write : InRegions s.wr (State.addr dst) (8 * w) := by
-    simpa only [BitVec.add_zero] using CallLay.inRegions_sub (off := 0) h.write (by omega) (by omega)
+    simpa only [BitVec.add_zero] using CallLay.inRegions_sub (off := 0) h.write (by omega_using [size]) (by omega_using [fit])
   have sep := h.separate.sub_right (Region.sub_prefix size)
-  refine WP.mono (exportArray_ok s h.workspace h.layout h.width ho (by omega) write sep h.ptr index h.output) ?_
+  refine WP.mono (exportArray_ok s h.workspace h.layout h.width ho (by omega_using [fit, size]) write sep h.ptr index h.output) ?_
   rintro t ⟨_, frame, ptr, out, rest⟩
   have nowrap := h.workspace.nowrap
   have fits := h.layout.2.2.1
-  have size : 128 ≤ 8 * len := by simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at fits; omega
-  have eq := WorkspaceEq.of_frame (by omega : 8 * len < 2 ^ 64) frame
+  have size : 128 ≤ 8 * len := by simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at fits; omega_using [fits]
+  have eq := WorkspaceEq.of_frame (by omega_using [nowrap] : 8 * len < 2 ^ 64) frame
     (by intro r hr; simp only [List.mem_singleton] at hr; subst r; exact sep)
-  exact ⟨h.workspace.congr rest.wr, eq.layout h.layout, (eq.width (by omega)).trans h.width,
+  exact ⟨h.workspace.congr rest.wr, eq.layout h.layout, (eq.width (by omega_using [size])).trans h.width,
     ptr, out, h.size, h.fits, by rw [rest.wr]; exact h.write, h.separate⟩
 
 end VG.Proof.Bignum.Arm

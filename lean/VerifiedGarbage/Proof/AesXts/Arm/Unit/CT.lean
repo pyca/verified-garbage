@@ -151,7 +151,7 @@ theorem tweak_rel : RelCT isa (fun a b => a = s₀ ∧ b = s₀') tweak fun a b 
         · exact hq.2.2.1
         · exact hq.2.2.2.1
         · exact hq.2.2.2.2.1
-      · rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2) with rfl | rfl | rfl
+      · rcases (by omega_using [hi] : i = 0 ∨ i = 1 ∨ i = 2) with rfl | rfl | rfl
         · exact hq.2.2.2.2.2.1
         · exact hq.2.2.2.2.2.2.1
         · exact hq.2.2.2.2.2.2.2) pro_taint
@@ -193,7 +193,7 @@ theorem encrypt_rel : RelCT isa (fun a b => a = s₀ ∧ b = s₀') Impl.AesXts.
   have a := rel_agree (F := TwPost s₀) (F' := TwPost s₀') (G := BlocksReady s₀ (M s₀))
     (G' := BlocksReady s₀' (M s₀')) (Taint.ofRegs pubRegs) (fun _ _ h₁ h₂ => Inv.agreeT hq h₁.inv h₂.inv)
     argsAll_taint (fun _ h => argsAll_wp hp h) (fun _ h => argsAll_wp hp' h)
-  have c := blocks_rel hp hp' hq true (by rw [len_eq s₀]; omega) (by rw [len_eq s₀']; omega) hM
+  have c := blocks_rel hp hp' hq true (by rw [len_eq s₀]; omega_using []) (by rw [len_eq s₀']; omega_using []) hM
   have sp := rel_agree (F := AllPost true s₀ (M s₀)) (F' := AllPost true s₀' (M s₀'))
     (G := SplitPost true s₀ (M s₀)) (G' := SplitPost true s₀' (M s₀')) (Taint.ofRegs pubRegs)
     (fun _ _ h₁ h₂ => Inv.agreeT hq h₁.inv h₂.inv) split_taint (fun _ h => splitAll_wp hp h)
@@ -249,7 +249,7 @@ theorem decrypt_rel : RelCT isa (fun a b => a = s₀ ∧ b = s₀') Impl.AesXts.
       have a := rel_agree (F := TwPost s₀) (F' := TwPost s₀') (G := BlocksReady s₀ (M s₀))
         (G' := BlocksReady s₀' (M s₀')) (Taint.ofRegs pubRegs) (fun _ _ h₁ h₂ => Inv.agreeT hq h₁.inv h₂.inv)
         argsAll_taint (fun _ h => argsAll_wp hp h) (fun _ h => argsAll_wp hp' h)
-      have c := blocks_rel hp hp' hq false (by rw [len_eq s₀]; omega) (by rw [len_eq s₀']; omega) hM
+      have c := blocks_rel hp hp' hq false (by rw [len_eq s₀]; omega_using []) (by rw [len_eq s₀']; omega_using []) hM
       exact a.seq (c.mono (fun _ _ h => h) fun _ _ h => ⟨whole_fin h.1 hb, whole_fin h.2 hb'⟩)
     · refine (RelCT.exists_ (P := fun (_ : B s₀ ≠ 0) a b => TwPost s₀ a ∧ TwPost s₀' b) fun hB => ?_).mono
         (fun a b h => ⟨by have := h.2; rw [eval_b h.1.1.2] at this; simpa using this,
@@ -258,8 +258,8 @@ theorem decrypt_rel : RelCT isa (fun a b => a = s₀ ∧ b = s₀') Impl.AesXts.
       have a := rel_agree (F := TwPost s₀) (F' := TwPost s₀') (G := BlocksReady s₀ (M s₀ - 1))
         (G' := BlocksReady s₀' (M s₀' - 1)) (Taint.ofRegs pubRegs) (fun _ _ h₁ h₂ => Inv.agreeT hq h₁.inv h₂.inv)
         argsHead_taint (fun _ h => argsHead_wp hp h) (fun _ h => argsHead_wp hp' h)
-      have c₁ := blocks_rel hp hp' hq false (N := M s₀ - 1) (N' := M s₀' - 1) (by rw [len_eq s₀]; omega)
-        (by rw [len_eq s₀']; omega) (by rw [hM])
+      have c₁ := blocks_rel hp hp' hq false (N := M s₀ - 1) (N' := M s₀' - 1) (by rw [len_eq s₀]; omega_using [])
+        (by rw [len_eq s₀']; omega_using []) (by rw [hM])
       have l₁ := rel_agree (F := AllPost false s₀ (M s₀ - 1)) (F' := AllPost false s₀' (M s₀' - 1))
         (G := DecL1 s₀) (G' := DecL1 s₀') (Taint.ofRegs pubRegs) (fun _ _ h₁ h₂ => Inv.agreeT hq h₁.inv h₂.inv)
         decL1_taint (fun _ h => decL1_wp hp h) (fun _ h => decL1_wp hp' h)

@@ -101,13 +101,13 @@ def reduce_ready (hL : L.Ok) {d : Nat} (hd : d + 32 ≤ 184) (ha : ReduceArgs L 
       List.not_mem_nil, or_false]
     rintro r (rfl | rfl | rfl)
     · exact .inl (digestWithin L)
-    · exact .inl (fieldWithin L (by omega))
+    · exact .inl (fieldWithin L (by omega_using [hd]))
     · exact .inr (scratch_covered L)
   have ws : ∀ r ∈ reduceWr L d, Whole.Within r L.FR ∨ ∃ R ∈ L.outputs, Whole.Within r R := by
     apply writes
     simp only [reduceWr, List.mem_cons, List.not_mem_nil, or_false]
     rintro r (rfl | rfl)
-    · exact .inl (fieldWithin L (by omega))
+    · exact .inl (fieldWithin L (by omega_using [hd]))
     · exact .inr (scratchWithin L)
   exact ⟨reduceRd L, reduceWr L d, reduce_pre hL hd ha, cov, ws⟩
 
@@ -226,7 +226,7 @@ theorem finalize_ct (hL : L.Ok) (ha : Arguments L m₁) (hb : Arguments L m₂)
     RelCT isa (Two L g₁ g₂ m₁ m₂ fun _ => True) (finalize n b)
       (Two L g₁ g₂ m₁ m₂ fun _ => True) := by
   have hv : valid (if b then .caller 2 n else .const n) := by
-    cases b <;> simp [valid] <;> omega
+    cases b <;> simp [valid] <;> omega_using [hn]
   have hvall : ∀ p : Reg × Value, p ∈ [(.r0, .caller 4 0),
       (.r2, if b then .caller 2 n else .const n), (.r3, .const 0)] → valid p.2 := by
     simp only [List.mem_cons, List.not_mem_nil, or_false]
@@ -505,7 +505,7 @@ theorem lay_ok {s : State} (h : verifyMessageLocal.pre s) : (lay s).Ok := by
   · have he := Whole.base_top (s := s) hb
     have hs := s.sp.isLt
     change (Whole.base s).toNat+272≤2^32
-    omega
+    omega_using [he]
   · simp only [Lay.inputs,List.mem_cons,List.not_mem_nil,or_false]
     rintro r (rfl | rfl | rfl | rfl | rfl)
     · exact pc
@@ -541,7 +541,7 @@ theorem entry_args {s p : State} (h : verifyMessageLocal.pre s)
     (hp : Whole.Saved (Whole.entered s) 5 p) : Arguments (lay s) p.mem := by
   intro j hj
   have hw := Whole.saved_words (entry_below h) (by decide : 5 ≤ 6) (entry_top h) hp hj
-  have he : j=0 ∨ j=1 ∨ j=2 ∨ j=3 ∨ j=4 := by omega
+  have he : j=0 ∨ j=1 ∨ j=2 ∨ j=3 ∨ j=4 := by omega_using [hj]
   rcases he with rfl | rfl | rfl | rfl | rfl <;>
     simpa only [Whole.originalWord, Impl.Ed25519.Arm.Whole.argReg, Nat.reduceLT, ite_true, ite_false,
       Nat.reduceSub, Nat.mul_zero, BitVec.add_zero, Lay.value, lay,
@@ -550,7 +550,7 @@ theorem entry_args {s p : State} (h : verifyMessageLocal.pre s)
 theorem entry_read {s : State} (h : verifyMessageLocal.pre s) : ∀ j < 5, 4 ≤ j →
     InRegions (s.rd ++ s.wr) (State.addr (s.sp + BitVec.ofNat 32 (4*(j-4)))) 4 := by
   intro j hj h4
-  have : j = 4 := by omega
+  have : j = 4 := by omega_using [hj, h4]
   subst j
   simp only [Nat.reduceSub,Nat.mul_zero,BitVec.add_zero]
   exact ⟨⟨State.addr s.sp,4⟩, List.mem_append_left _ (by rw [h.1]; simp), by simp [Region.Contains]⟩
@@ -599,7 +599,7 @@ theorem verifyMessage_ok {s : State} (h : verifyMessageLocal.pre s) :
   refine WP.mono hw fun u ⟨hu,m,hf,hp⟩ => ⟨hu,?_⟩
   have pk := entry_input h hf (r := ⟨State.addr (s.gpr .r0),32⟩) (by rw [h.1]; simp) (by change 32≤2^64; decide)
   have msg := entry_input h hf (r := ⟨State.addr (s.gpr .r1),(s.gpr .r2).toNat⟩) (by rw [h.1]; simp)
-    (by change (s.gpr .r2).toNat≤2^64; have := (s.gpr .r2).isLt; omega)
+    (by change (s.gpr .r2).toNat≤2^64; have := (s.gpr .r2).isLt; omega_using [])
   have sig := entry_input h hf (r := ⟨State.addr (s.gpr .r3),64⟩) (by rw [h.1]; simp) (by change 64≤2^64; decide)
   change u.gpr .r0 = signWord _
   rw [hp,pk,msg,sig]
@@ -627,9 +627,9 @@ theorem saved_inputs_eq {s t p q : State} (hs : verifyMessageLocal.pre s) (ht : 
   have epk := entry_input hs fp (r := ⟨State.addr (s.gpr .r0),32⟩) (by rw [hs.1]; simp) (by change 32≤2^64; decide)
   have fpk := entry_input ht fq (r := ⟨State.addr (t.gpr .r0),32⟩) (by rw [ht.1]; simp) (by change 32≤2^64; decide)
   have emsg := entry_input hs fp (r := ⟨State.addr (s.gpr .r1),(s.gpr .r2).toNat⟩) (by rw [hs.1]; simp)
-    (by have := (s.gpr .r2).isLt; change (s.gpr .r2).toNat ≤ 2 ^ 64; omega)
+    (by have := (s.gpr .r2).isLt; change (s.gpr .r2).toNat ≤ 2 ^ 64; omega_using [])
   have fmsg := entry_input ht fq (r := ⟨State.addr (t.gpr .r1),(t.gpr .r2).toNat⟩) (by rw [ht.1]; simp)
-    (by have := (t.gpr .r2).isLt; change (t.gpr .r2).toNat ≤ 2 ^ 64; omega)
+    (by have := (t.gpr .r2).isLt; change (t.gpr .r2).toNat ≤ 2 ^ 64; omega_using [])
   have esig := entry_input hs fp (r := ⟨State.addr (s.gpr .r3),64⟩) (by rw [hs.1]; simp) (by change 64≤2^64; decide)
   have fsig := entry_input ht fq (r := ⟨State.addr (t.gpr .r3),64⟩) (by rw [ht.1]; simp) (by change 64≤2^64; decide)
   change Spec.Ed25519.bytesAt p.mem (State.addr (s.gpr .r0)) 32=Spec.Ed25519.bytesAt q.mem (State.addr (s.gpr .r0)) 32 ∧

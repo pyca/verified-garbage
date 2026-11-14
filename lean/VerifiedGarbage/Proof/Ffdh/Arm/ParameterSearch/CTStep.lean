@@ -52,7 +52,7 @@ theorem step_ct (backend : VG.Proof.Ffdh.Arm.ParameterBackend) : RelCT isa (Two 
       (fun _ _ ⟨q, hs, ht, sp⟩ => ⟨q, hs.1.1, ht.1.1, sp⟩) (fun _ _ h => h)
   · have ready (q : SearchPoint) (s : State) (h : LengthCT q s ∧ isa.eval .eq s = some false) : ReadyCT q s := by
       have enough := of_decide_eq_false (Option.some.inj (h.1.2.symm.trans h.2))
-      exact ⟨h.1.1, by have := h.1.1.usedBound; omega⟩
+      exact ⟨h.1.1, by have := h.1.1.usedBound; omega_using [enough, this]⟩
     exact (RelCT.seq (two_post (candidate_run_ct backend) (run_ready backend)) classify_ct).mono
       (fun _ _ ⟨q, hs, ht, sp⟩ => ⟨q, ready q _ hs, ready q _ ht, sp⟩) (fun _ _ h => h)
 

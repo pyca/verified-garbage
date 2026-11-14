@@ -9,6 +9,7 @@ public import VerifiedGarbage.Proof.AesGcm.ScratchPrepared
 import VerifiedGarbage.Proof.AesGcm.Scratch
 import all Init.Data.Nat.Bitwise.Basic
 import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # Prepared-context scratch contracts and locality -/
 
@@ -66,14 +67,14 @@ theorem preparedPowers16Repr_congr {m₁ m₂ : Mem} {p : Addr}
     apply Mem.readW_congr
     intro i hi
     rw [BitVec.add_assoc, ← BitVec.ofNat_add]
-    exact h (o + i) (by omega)
+    exact h (o + i) (by omega_using [ho, hi])
   intro k hk
-  rw [keep _ (by omega), keep _ (by omega), ctxH_congr fun i hi => h i (by omega)]
+  rw [keep _ (by omega_using [hk]), keep _ (by omega_using [hk]), ctxH_congr fun i hi => h i (by omega_using [hi])]
   exact hr k hk
 
 /-- Zero memory has the prepared powers of the zero subkey. -/
 theorem preparedPowers16Repr_zeroMem (p : Addr) : PreparedPowers16Repr (fun _ => 0) p :=
-  fun k hk => preparedPowersRepr_zeroMem p k (by omega)
+  fun k hk => preparedPowersRepr_zeroMem p k (by omega_using [hk])
 
 /-- A context of zeros has the prepared powers. -/
 theorem preparedPowers16Repr_of_zeroMem {m : Mem} {p : Addr} (h : ∀ i < 128 * 8, m (p + BitVec.ofNat 64 i) = 0) :

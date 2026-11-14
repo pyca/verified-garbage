@@ -62,7 +62,7 @@ theorem squareStep_ok {c : Cfg} (hc : CfgOk c) {base : Addr} {count j : Nat}
       toM c.C.p (2 ^ (64 * c.n)) (sv c base s T3) ^ 2 := by
     rw [toM_mul (unitMod_pow_two hc.p_odd (64 * c.n)) e₁, Lean.Grind.Semiring.pow_two]
   refine wp_decCounter hj hb₁ fun s₂ u₂ => ?_
-  refine wp_testCounter (j := j - 1) (by omega) (by rw [u₂.gpr]) fun s₃ f₃ hz₃ => WP.block_nil ?_
+  refine wp_testCounter (j := j - 1) (by omega_using [hcount, hjc]) (by rw [u₂.gpr]) fun s₃ f₃ hz₃ => WP.block_nil ?_
   have m₃ : s₃.mem = s₁.mem := f₃.mem.trans u₂.mem
   have K : Rest powClob s₁ s₃ := (u₂.rest (by simp [powClob])).trans (f₃.rest _)
   refine ⟨⟨hs₁.of_rest K (by decide), (I.far.of_rest k₁.rest).of_rest K,
@@ -108,7 +108,7 @@ theorem squarePower_ok {c : Cfg} (hc : CfgOk c) {base : Addr} {count : Nat} {s :
       toM c.C.p (2 ^ (64 * c.n)) (sv c base s' T3) =
         toM c.C.p (2 ^ (64 * c.n)) (sv c base s T3) ^ (2 ^ count) := by
   rw [Impl.EcKey.Compressed.Arm.squarePower]
-  refine WP.seq (WP.mono (testCounter_ok s (by omega) hb) fun s₁ ⟨hz₁, k₁, m₁⟩ => ?_)
+  refine WP.seq (WP.mono (testCounter_ok s (by omega_using [hcount]) hb) fun s₁ ⟨hz₁, k₁, m₁⟩ => ?_)
   have hs₁ := hs.of_rest k₁ (by decide)
   refine WP.ite (decide (count = 0)) (by rw [VG.Proof.X25519.Arm.eval_eq, hz₁]) (fun hz => ?_) (fun hn => ?_)
   · have hn : count = 0 := of_decide_eq_true hz
@@ -121,7 +121,7 @@ theorem squarePower_ok {c : Cfg} (hc : CfgOk c) {base : Addr} {count : Nat} {s :
     · rw [sv, m₁, hn, Nat.pow_zero, Lean.Grind.Semiring.pow_one]
   · have hn : count ≠ 0 := of_decide_eq_false hn
     refine WP.mono (squareLoop_ok hc hs₁ (hf.of_rest k₁) (m₁ ▸ hM) (by rw [sv, m₁]; exact hlt)
-      (by rw [k₁.gpr _ (by decide), hb]) hcount (by omega)) fun t ⟨kt, Ut, lt, vt⟩ => ?_
+      (by rw [k₁.gpr _ (by decide), hb]) hcount (by omega_using [hn])) fun t ⟨kt, Ut, lt, vt⟩ => ?_
     refine ⟨(k₁.mono (by simp)).trans kt, ?_, lt, ?_⟩
     · rw [← m₁]
       exact Ut

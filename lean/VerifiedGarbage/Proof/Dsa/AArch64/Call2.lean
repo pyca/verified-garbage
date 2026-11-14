@@ -41,11 +41,11 @@ theorem call2_ok {s : State} {B : Addr} {Z o w wx m value k : Nat}
       Good t B Z w parentMinv ∧ ChildReady t.mem B o wx m minv ∧
       Spec.Rsa.bytesAt t.mem (pointerValue s.mem B output.pointer) k = Spec.Dsa.encodeBE k value ∧
       CallFrame B o wx (pointerValue s.mem B output.pointer) k s.mem t.mem ∧ Keep coreRegs s t := by
-  have hslot : 256 ≤ slot w 8 := by unfold slot hdrBytes; omega
+  have hslot : 256 ≤ slot w 8 := by unfold slot hdrBytes; omega_using []
   change WP isa (.seq (.block _) (.seq body (seqs Core.finish))) s _
   refine WP.seq ?_
   rw [WP.block_append_iff]
-  refine WP.mono (arguments2_ok hg child hZ (by omega) (by omega) a output ha houtp)
+  refine WP.mono (arguments2_ok hg child hZ (by omega_using [hlo, hslot]) (by omega_using [hhi]) a output ha houtp)
     fun u ⟨hgu, hchild, hargs, _, hf, hk⟩ => ?_
   refine WP.mono (enter_ok hgu hchild.header hlo hhi ho) fun v ⟨hcv, hmem, hkv⟩ => ?_
   have hfv : Frm B argumentRanges s.mem v.mem := by rw [hmem]; exact hf

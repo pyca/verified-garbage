@@ -67,7 +67,7 @@ theorem iota2_ok {s : State} {A B : Spec.Sha3.State} (hp : CPairs s A B) (rc : B
     rw [hp0,pair_xor]
   · rw [ite_eq_right h0,ite_eq_right h0,h2.get (vreg i) (by
       change ¬ vreg i = vreg 0
-      rw [vreg_inj i (by omega) 0 (by decide)]; exact h0),h1.get (vreg i)
+      rw [vreg_inj i (by omega_using [hi]) 0 (by decide)]; exact h0),h1.get (vreg i)
       ((show ∀ i < 25,vreg i ≠ .v26 by decide) i hi)]
     exact hp i hi
 

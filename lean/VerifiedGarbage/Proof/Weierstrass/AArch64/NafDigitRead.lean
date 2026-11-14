@@ -29,7 +29,7 @@ theorem nafRead_ok {K : WinCfg} {s : State} {base : Addr} {size j : Nat} {b : Bi
     WP isa (.block [.add .x .x16 .x0 .x19,.ldrb r .x16 K.bits]) s fun t =>
       t.gpr r=b.setWidth 64 ∧ Keeps [r,.x16] s t := by
   have hr : InRegions (s.rd++s.wr) (off base (K.bits+j)) 1 :=
-    ⟨_,List.mem_append_right _ hs.wr,hs.contains (by omega) (by decide)⟩
+    ⟨_,List.mem_append_right _ hs.wr,hs.contains (by omega_using [hj]) (by decide)⟩
   have he : base+BitVec.ofNat 64 j+BitVec.ofNat 64 K.bits=off base (K.bits+j) := by
     simp only [off,BitVec.add_assoc,←BitVec.ofNat_add]
     rw [Nat.add_comm j]

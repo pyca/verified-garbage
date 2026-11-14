@@ -36,7 +36,7 @@ theorem TransformTable.frameFar {s t : State} {symbol : String} {H : List Nat} {
  TransformTable t symbol H := by
  refine ⟨?_,by simpa only [hs,hr,hw] using h.2.1,by simpa only [hs,hw] using h.2.2⟩
  intro i hi
- rw [hs,hf.readW (r:=⟨s.syms symbol,512⟩) (Offset.contains_base _ (by omega) (by omega)) hd (by decide)]
+ rw [hs,hf.readW (r:=⟨s.syms symbol,512⟩) (Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi])) hd (by decide)]
  exact h.1 i hi
 
 theorem TransformTable.frame {s t : State} {symbol : String} {H : List Nat} {rs : List Region}
@@ -44,7 +44,7 @@ theorem TransformTable.frame {s t : State} {symbol : String} {H : List Nat} {rs 
  (hf : Frame rs s.mem t.mem) (hc : Covers rs s.wr) : TransformTable t symbol H := by
  refine ⟨?_,by simpa only [hs,hr,hw] using h.2.1,by simpa only [hs,hw] using h.2.2⟩
  intro i hi
- rw [hs,hf.readW (r:=⟨s.syms symbol,512⟩) (Offset.contains_base _ (by omega) (by omega)) ?_ (by decide)]
+ rw [hs,hf.readW (r:=⟨s.syms symbol,512⟩) (Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi])) ?_ (by decide)]
  · exact h.1 i hi
  · intro r hh
    exact h.apart (fun a n ⟨q,hq,ha⟩=>hc a n ⟨q,by rw [List.mem_singleton.mp hq]; exact hh,ha⟩)

@@ -42,7 +42,7 @@ abbrev fillRegs : List Reg := [.r0, .r1, .r2, .r3, .r4, .r5, .r6, .r8, .r12, .lr
 
 theorem w_A {p : Prm} (L : Lay p) {k : Nat} (h : 16 + k ≤ p.al) :
     State.addr (p.A + BitVec.ofNat 32 k) = State.addr p.A + BitVec.ofNat 64 k :=
-  addr_add (by have := L.aw; omega)
+  addr_add (by have := L.aw; omega_using [h, this])
 
 /-- What one `hashFill` leaves. -/
 structure FillPost (p : Prm) (l : Block) (j i c : Nat) (t t' : State) : Prop where
@@ -71,16 +71,16 @@ theorem hashFill_ok {p : Prm} (L : Lay p) {t : State} (E : Env p t) {l : Block} 
   have fw := L.ww
   have fa := L.aw
   have al32 := L.al_lt
-  have hb : bufO + 16 * i + 16 ≤ 512 := by simp only [bufO]; omega
+  have hb : bufO + 16 * i + 16 ≤ 512 := by simp only [bufO]; omega_using [hi, hc]
   unfold hashFill
-  refine WP.seq (WP.mono (lNtz_ok (i := j + i + 1) L E (by omega) (by omega) h6 hl0) fun t₁ P₁ => ?_)
+  refine WP.seq (WP.mono (lNtz_ok (i := j + i + 1) L E (by omega_using []) (by omega_using [hj, fa]) h6 hl0) fun t₁ P₁ => ?_)
   have E₁ : Env p t₁ := E.of_others P₁.gpr P₁.sp P₁.rd P₁.wr
   have g₁ : Others ntzRegs t t₁ := P₁.gpr
   -- the offset
   refine WP.block_append (WP.block_append (WP.mono (xorB_wp (s := t₁) (pb := .r11) (qb := .r11) (cb := .r11)
     (pd := ohO) (qd := lO) (cd := ohO) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
-    (by decide) (by decide) (by decide) (by rw [E₁.r11]; simp only [ohO]; omega)
-    (by rw [E₁.r11]; simp only [lO]; omega) (by rw [E₁.r11]; simp only [ohO]; omega)
+    (by decide) (by decide) (by decide) (by rw [E₁.r11]; simp only [ohO]; omega_using [fw])
+    (by rw [E₁.r11]; simp only [lO]; omega_using [fw]) (by rw [E₁.r11]; simp only [ohO]; omega_using [fw])
     (by rw [E₁.r11]; exact E₁.perm.wCR (by decide)) (by rw [E₁.r11]; exact E₁.perm.wCR (by decide))
     (by rw [E₁.r11]; exact E₁.perm.wC (by decide))) fun t₂ R₂ => ?_))
   rw [E₁.r11] at R₂
@@ -101,27 +101,27 @@ theorem hashFill_ok {p : Prm} (L : Lay p) {t : State} (E : Env p t) {l : Block} 
     rw [R₂.mem]; exact (P₁.frame.mono (by simp)).trans ((Proof.Cmac.xor4Mem_frame _ _ _ _).mono (by simp))
   -- the block of the associated data
   have eA : State.addr (p.A + BitVec.ofNat 32 (16 * (j + i))) = State.addr p.A + BitVec.ofNat 64 (16 * (j + i)) :=
-    w_A L (by omega)
+    w_A L (by omega_using [hj])
   have eB : State.addr (p.W + BitVec.ofNat 32 (bufO + 16 * i)) = State.addr p.W + BitVec.ofNat 64 (bufO + 16 * i) :=
-    L.wA (by omega)
+    L.wA (by omega_using [hb])
   have r4₂ : t₂.gpr .r4 = p.A + BitVec.ofNat 32 (16 * (j + i)) := by rw [g₂ _ (by decide), h4]
   have r8₂ : t₂.gpr .r8 = p.W + BitVec.ofNat 32 (bufO + 16 * i) := by rw [g₂ _ (by decide), h8]
-  have hj' : 16 * (j + i) + 16 ≤ p.al := by omega
+  have hj' : 16 * (j + i) + 16 ≤ p.al := by omega_using [hj]
   have dA : (⟨State.addr p.A + BitVec.ofNat 64 (16 * (j + i)), 16⟩ : Region).Sub ⟨State.addr p.A, p.al⟩ :=
-    Offset.sub_base _ (by omega)
+    Offset.sub_base _ (by omega_using [hj])
   refine WP.mono (xorB_wp (s := t₂) (pb := .r4) (qb := .r11) (cb := .r8) (pd := 0) (qd := ohO) (cd := 0)
     (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
-    (by rw [r4₂, BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := 16 * (j + i)) (by omega),
-      Nat.mod_eq_of_lt (by omega)]; omega)
-    (by rw [E₂.r11]; simp only [ohO]; omega) (by rw [r8₂, L.wN (by omega)]; omega)
-    (by rw [r4₂, eA, BitVec.add_zero]; exact Proof.AesGcm.Arm.covers_off E₂.perm.aad hj' (by omega))
+    (by rw [r4₂, BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := 16 * (j + i)) (by omega_using [hj, fa]),
+      Nat.mod_eq_of_lt (by omega_using [hj, fa])]; omega_using [hj, fa])
+    (by rw [E₂.r11]; simp only [ohO]; omega_using [fw]) (by rw [r8₂, L.wN (by omega_using [hb])]; omega_using [fw, hb])
+    (by rw [r4₂, eA, BitVec.add_zero]; exact Proof.AesGcm.Arm.covers_off E₂.perm.aad hj' (by omega_using [fa]))
     (by rw [E₂.r11]; exact E₂.perm.wCR (by decide))
-    (by rw [r8₂, eB, BitVec.add_zero]; exact E₂.perm.wC (by omega))) fun t₃ R₃ => ?_
+    (by rw [r8₂, eB, BitVec.add_zero]; exact E₂.perm.wC (by omega_using [hb]))) fun t₃ R₃ => ?_
   rw [r4₂, r8₂, E₂.r11, eA, eB, BitVec.add_zero, BitVec.add_zero] at R₃
   have fB : Frame [⟨State.addr p.W + BitVec.ofNat 64 (bufO + 16 * i), 16⟩] t₂.mem t₃.mem := by
     rw [R₃.mem]; exact Proof.Cmac.xor4Mem_frame _ _ _ _
   have dAW : (⟨State.addr p.A + BitVec.ofNat 64 (16 * (j + i)), 16⟩ : Region).Disjoint
-      ⟨State.addr p.W + BitVec.ofNat 64 (bufO + 16 * i), 16⟩ := (L.a_w' (by omega)).sub_left dA
+      ⟨State.addr p.W + BitVec.ofNat 64 (bufO + 16 * i), 16⟩ := (L.a_w' (by omega_using [hb])).sub_left dA
   have g₃ : ∀ r, r ∉ fillRegs → t₃.gpr r = t.gpr r := fun r hr => by
     simp only [fillRegs, List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
     rw [R₃.gpr r (by simp [hr.1, hr.2.1]), g₂ r (by simp [hr.1, hr.2.1, hr.2.2.1, hr.2.2.2.1, hr.2.2.2.2.2.2.2.2.1,
@@ -137,20 +137,20 @@ theorem hashFill_ok {p : Prm} (L : Lay p) {t : State} (E : Env p t) {l : Block} 
   · simp only [mem_setReg, Proof.AesGcm.Arm.mem_subFlags]
     rw [blockAtMem_frame fB (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
-      exact L.w_w (.inl (by simp only [ohO, bufO]; omega)) (by decide) (by omega)), oh₂]
+      exact L.w_w (.inl (by simp only [ohO, bufO]; omega_using [])) (by decide) (by omega_using [hb])), oh₂]
   · simp only [mem_setReg, Proof.AesGcm.Arm.mem_subFlags]
     rw [R₃.mem, blockAtMem_xor4 _ (Proof.Cmac.Sep4.of_disjoint dAW.symm)
-      (Proof.Cmac.Sep4.of_disjoint (L.w_w (.inr (by simp only [ohO, bufO]; omega)) (by omega) (by decide))),
+      (Proof.Cmac.Sep4.of_disjoint (L.w_w (.inr (by simp only [ohO, bufO]; omega_using [])) (by omega_using [hb]) (by decide))),
       blockAtMem_frame fr₂ (fun r hr => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl <;> exact (L.a_w' (by decide)).sub_left dA), oh₂]
   · simp only [Proof.AesGcm.Arm.gpr_subFlags, gpr_setReg, ite_true, ite_false, reduceCtorEq, BitVec.add_assoc, ← BitVec.ofNat_add]
-    rw [show 16 * (j + i) + 16 = 16 * (j + i + 1) by omega]
+    rw [show 16 * (j + i) + 16 = 16 * (j + i + 1) by omega_using []]
   · simp only [Proof.AesGcm.Arm.gpr_subFlags, gpr_setReg, ite_true, ite_false, reduceCtorEq, ← BitVec.ofNat_add]
   · simp only [Proof.AesGcm.Arm.gpr_subFlags, gpr_setReg, ite_true, ite_false, reduceCtorEq, BitVec.add_assoc, ← BitVec.ofNat_add]
-    rw [show 256 + 16 * i + 16 = bufO + 16 * (i + 1) by simp only [bufO]; omega]
-  · simp only [Proof.AesGcm.Arm.gpr_subFlags, gpr_setReg, ite_true, ite_false, reduceCtorEq, dec32 hi (by omega)]
-  · simp only [z_setReg, z_subFlags, dec32 hi (by omega), z_dec hi (by omega)]
+    rw [show 256 + 16 * i + 16 = bufO + 16 * (i + 1) by simp only [bufO]; omega_using []]
+  · simp only [Proof.AesGcm.Arm.gpr_subFlags, gpr_setReg, ite_true, ite_false, reduceCtorEq, dec32 hi (by omega_using [hc])]
+  · simp only [z_setReg, z_subFlags, dec32 hi (by omega_using [hc]), z_dec hi (by omega_using [hc])]
   · simp only [fillRegs, List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
     simp only [gpr_setReg, hr.2.2.2.2.1, hr.2.2.2.2.2.1, hr.2.2.2.2.2.2.1, hr.2.2.2.2.2.2.2.1, ite_false,
       Proof.AesGcm.Arm.gpr_subFlags]

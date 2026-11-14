@@ -39,10 +39,10 @@ theorem parent_ok {s : State} {B : Addr} {Z : Nat}
   · rw [hft.word (Or.inl (by decide)) (by decide), hum, word_writeW_self]
     rfl
   · intro x hx
-    rw [hft x (by change ofs B x < 64 ∨ 128 ≤ ofs B x; change ofs B x < 48 ∨ 128 ≤ ofs B x at hx; omega), hum]
+    rw [hft x (by change ofs B x < 64 ∨ 128 ≤ ofs B x; change ofs B x < 48 ∨ 128 ≤ ofs B x at hx; omega_using [hx]), hum]
     rw [writeW_outside _ B _ (d := 8 * sMinv) (by decide) x
-      (by change ofs B x < 56 ∨ 64 ≤ ofs B x; change ofs B x < 48 ∨ 128 ≤ ofs B x at hx; omega)]
+      (by change ofs B x < 56 ∨ 64 ≤ ofs B x; change ofs B x < 48 ∨ 128 ≤ ofs B x at hx; omega_using [hx])]
     exact writeW_outside _ B _ (d := 8 * sW) (by decide) x
-      (by change ofs B x < 48 ∨ 56 ≤ ofs B x; change ofs B x < 48 ∨ 128 ≤ ofs B x at hx; omega)
+      (by change ofs B x < 48 ∨ 56 ≤ ofs B x; change ofs B x < 48 ∨ 128 ≤ ofs B x at hx; omega_using [hx])
 
 end VG.Proof.Dsa.AArch64

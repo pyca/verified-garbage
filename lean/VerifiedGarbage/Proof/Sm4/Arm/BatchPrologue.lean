@@ -100,17 +100,17 @@ theorem prologue_wp {s₀ : State} (hp : Pre s₀) : WP isa BatchCtr.prologue s�
   have wc : Covers [⟨State.addr (Sc s₀), 4 * slots⟩] s₁.wr := by
     rw [e₁.wr]
     simpa only [BitVec.add_zero] using workspace_part hw 0 (4 * slots)
-      (by change 4 * slots ≤ 4 * BatchCtr.totalSlots; rw [slots_eq, total_eq]; omega)
+      (by change 4 * slots ≤ 4 * BatchCtr.totalSlots; rw [slots_eq, total_eq]; omega_using [])
   refine WP.seq (WP.mono (BatchCalls.prepare_wp e₁.key e₁.base hp.fitK
-    (by have h := hp.fitB; change (Sc s₀).toNat + 4 * slots ≤ 2 ^ 32; rw [slots_eq]; change (Sc s₀).toNat + 1512 ≤ 2 ^ 32 at h; omega)
-    (hp.ks.sub_right (Region.sub_prefix (by change 4 * slots ≤ 4 * BatchCtr.totalSlots; rw [slots_eq, total_eq]; omega)))
+    (by have h := hp.fitB; change (Sc s₀).toNat + 4 * slots ≤ 2 ^ 32; rw [slots_eq]; change (Sc s₀).toNat + 1512 ≤ 2 ^ 32 at h; omega_using [h])
+    (hp.ks.sub_right (Region.sub_prefix (by change 4 * slots ≤ 4 * BatchCtr.totalSlots; rw [slots_eq, total_eq]; omega_using [])))
     (by rw [e₁.rd, e₁.wr]; exact hp.key) wc) fun s₂ ⟨p₂, table₂⟩ => ?_)
   rw [sch₁] at table₂
   have base₂ : s₂.gpr sb = Sc s₀ := (p₂.regs _ (by decide) (by decide)).trans e₁.base
   have iv₂ : s₂.gpr .r5 = Iv s₀ := (p₂.regs _ (by decide) (by decide)).trans e₁.iv
   have pWide : Frame [wsR s₀] s₁.mem s₂.mem := p₂.frame.sub fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr
-    exact ⟨wsR s₀, List.mem_singleton_self _, Region.sub_prefix (by change 4 * slots ≤ 4 * BatchCtr.totalSlots; rw [slots_eq, total_eq]; omega)⟩
+    exact ⟨wsR s₀, List.mem_singleton_self _, Region.sub_prefix (by change 4 * slots ≤ 4 * BatchCtr.totalSlots; rw [slots_eq, total_eq]; omega_using [])⟩
   have prefixFrame := eWide.trans pWide
   have saved₂ := e₁.saved.frame mode_slots p₂.frame (fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr

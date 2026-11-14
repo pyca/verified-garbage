@@ -36,7 +36,7 @@ theorem tableWrite_ok {s : State} {base : BitVec 32} {size n : Nat}
   refine WP.mono (tableWrites_ok (space.congr rest.wr) ptr 1024 (by decide) fit) ?_
   rintro t ⟨values, outside, keep⟩
   rw [memory] at outside
-  exact ⟨values, VG.Proof.Bignum.outside_frame outside (by have := space.nowrap; omega),
+  exact ⟨values, VG.Proof.Bignum.outside_frame outside (by have := space.nowrap; omega_using [fit, this]),
     (rest.mono (by simp)).trans (keep.mono (by simp))⟩
 
 end VG.Proof.Ffdh.Arm.ParameterCandidate

@@ -37,22 +37,22 @@ instance (r : VReg) : Decidable (NotTable r) := Nat.decidableBallLT 16 fun a _ =
 
 theorem treg_of_ge {n : Nat} (h : 16 ≤ n) : treg n = .v16 := by
   simp only [treg, List.getD_eq_getElem?_getD]
-  rw [List.getElem?_eq_none (by simp; omega)]; rfl
+  rw [List.getElem?_eq_none (by simp; omega_using [h])]; rfl
 
 theorem NotTable.ne {r : VReg} (h : NotTable r) (n : Nat) : treg n ≠ r := by
   by_cases hn : n < 16
   · exact h n hn
-  · rw [treg_of_ge (by omega)]; exact h 0 (by decide)
+  · rw [treg_of_ge (by omega_using [hn])]; exact h 0 (by decide)
 
 theorem tbyte_congr {v w : VReg → BitVec 128} (h : ∀ a < 16, v (treg a) = w (treg a)) {k : Nat}
     (hk : k < 256) : tbyte v k = tbyte w k := by
-  simp only [tbyte, h _ (by omega : k / 16 < 16)]
+  simp only [tbyte, h _ (by omega_using [hk] : k / 16 < 16)]
 
 /-- The table byte that a quarter's `tbl` reads, for an index in the quarter. -/
 theorem tableByte_quarter (v : VReg → BitVec 128) {q : Nat} (hq : q < 4) {idx : Nat} (hi : idx < 64) :
     tableByte v ([VReg.v16, .v20, .v24, .v28].getD q .v16) idx = tbyte v (64 * q + idx) := by
-  simp only [tableByte, tbyte, treg_quarter q hq _ (by omega : idx / 16 < 4)]
-  rw [show (64 * q + idx) / 16 = 4 * q + idx / 16 by omega, show (64 * q + idx) % 16 = idx % 16 by omega]
+  simp only [tableByte, tbyte, treg_quarter q hq _ (by omega_using [hi] : idx / 16 < 4)]
+  rw [show (64 * q + idx) / 16 = 4 * q + idx / 16 by omega_using [], show (64 * q + idx) % 16 = idx % 16 by omega_using []]
 
 /-- The quarter of each byte, and its index there. -/
 theorem xor_quarter : ∀ x < 256, ∀ q < 4,

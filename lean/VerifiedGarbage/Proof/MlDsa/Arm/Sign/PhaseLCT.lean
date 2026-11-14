@@ -69,7 +69,7 @@ theorem leq_step (h : LeakEq p t σ₁ σ₂) (ht : t < 814) :
       ((List.range p.k).map (T0v p σ₁)) (muOf σ₁) (rppOf p σ₁) ((999 - t) + 1) (p.ℓ * t) =
     signLeakLoop p maxBounds (amat p (Am p σ₂)) ((List.range p.ℓ).map (S1v p σ₂)) ((List.range p.k).map (S2v p σ₂))
       ((List.range p.k).map (T0v p σ₂)) (muOf σ₂) (rppOf p σ₂) ((999 - t) + 1) (p.ℓ * t) := by
-  rw [show 999 - t + 1 = 1000 - t by omega]; exact h
+  rw [show 999 - t + 1 = 1000 - t by omega_using [ht]]; exact h
 
 theorem leq_ct (h : LeakEq p t σ₁ σ₂) (ht : t < 814) : CTv p σ₁ (p.ℓ * t) = CTv p σ₂ (p.ℓ * t) := by
   have := (leakF_step (leq_step h ht)).1
@@ -79,7 +79,7 @@ theorem leq_succ (h : LeakEq p t σ₁ σ₂) (ht : t < 814)
     (hr : ∃ ct, iterF p σ₁ maxBounds (p.ℓ * t) = some (ct, none)) : LeakEq p (t + 1) σ₁ σ₂ := by
   have := ((leakF_step (leq_step h ht)).2.1 hr).2
   unfold LeakEq
-  rw [show 1000 - (t + 1) = 999 - t by omega, Nat.mul_succ]
+  rw [show 1000 - (t + 1) = 999 - t by omega_using [], Nat.mul_succ]
   exact this
 
 theorem outTag_eq (hp : ParamsOk p) {σ : State} {κ : Nat} (hs : (sampleInBall p.τ maxBounds.ball (CTv p σ κ)).isSome) :
@@ -113,7 +113,7 @@ theorem tagFn_eq {a b c a' b' c' : Prop} [Decidable a] [Decidable b] [Decidable 
   unfold tagFn at h
   by_cases ha : a <;> by_cases hb : b <;> by_cases hc : c <;> by_cases ha' : a' <;> by_cases hb' : b' <;>
     by_cases hc' : c' <;> simp only [ha, hb, hc, ha', hb', hc', not_true_eq_false, not_false_eq_true,
-      ite_true, ite_false] at h <;> first | omega | (simp_all <;> omega)
+      ite_true, ite_false] at h <;> first | omega | (simp_all <;> omega_using [h])
 
 /-- The first polynomial of `z` that fails its check, or `ℓ`. -/
 abbrev zFirst (p : Params) (σ : State) (κ : Nat) : Nat :=
@@ -146,21 +146,21 @@ theorem leq_agree (hp : ParamsOk p) (h : LeakEq p t σ₁ σ₂) (ht : t < 814)
   have hpass := leq_pass hp h ht hs₁ hs₂
   by_cases h1 : PassV p σ₁ (p.ℓ * t)
   · have h2 := hpass.mp h1
-    exact ⟨fun r hr => iff_of_true (fun j hj => h1.1 j (by omega)) (fun j hj => h2.1 j (by omega)),
-      fun i hi => iff_of_true ⟨h1.1, fun j hj => h1.2.1 j (by omega)⟩ ⟨h2.1, fun j hj => h2.2.1 j (by omega)⟩, hpass⟩
+    exact ⟨fun r hr => iff_of_true (fun j hj => h1.1 j (by omega_using [hr, hj])) (fun j hj => h2.1 j (by omega_using [hr, hj])),
+      fun i hi => iff_of_true ⟨h1.1, fun j hj => h1.2.1 j (by omega_using [hi, hj])⟩ ⟨h2.1, fun j hj => h2.2.1 j (by omega_using [hi, hj])⟩, hpass⟩
   · have h2 : ¬ PassV p σ₂ (p.ℓ * t) := fun h2 => h1 (hpass.mpr h2)
     have e := leakF_tag (leq_step h ht) (iter_rej hp hs₁ h1) (iter_rej hp hs₂ h2)
     rw [tag_eq hp hs₁, tag_eq hp hs₂] at e
     obtain ⟨ea, ex, eab, ey⟩ := tagFn_eq e
     refine ⟨fun r hr => ?_, fun i hi => ?_, hpass⟩
     · by_cases hz : ZOk p σ₁ (p.ℓ * t)
-      · exact iff_of_true (fun j hj => hz j (by omega)) (fun j hj => ea.mp hz j (by omega))
+      · exact iff_of_true (fun j hj => hz j (by omega_using [hr, hj])) (fun j hj => ea.mp hz j (by omega_using [hr, hj]))
       · rw [prefix_ok _ hr, prefix_ok _ hr]; exact iff_of_eq (congrArg (r ≤ ·) (ex hz))
     · by_cases hz : ZOk p σ₁ (p.ℓ * t)
       · have hz' := ea.mp hz
         by_cases hr0 : R0Ok p σ₁ (p.ℓ * t)
         · have hr0' := (eab.mp ⟨hz, hr0⟩).2
-          exact iff_of_true ⟨hz, fun j hj => hr0 j (by omega)⟩ ⟨hz', fun j hj => hr0' j (by omega)⟩
+          exact iff_of_true ⟨hz, fun j hj => hr0 j (by omega_using [hi, hj])⟩ ⟨hz', fun j hj => hr0' j (by omega_using [hi, hj])⟩
         · rw [and_iff_right hz, and_iff_right hz', prefix_ok _ hi, prefix_ok _ hi]
           exact iff_of_eq (congrArg (i ≤ ·) (ey hz hr0))
       · exact iff_of_false (fun h => hz h.1) (fun h => hz (ea.mpr h.1))
@@ -344,7 +344,7 @@ theorem signLoop_tr {P : Prims} (hP : PrimsOk P D) (hp : ParamsOk p) (hc1 : cChk
   have ht : t < 814 := by obtain ⟨_, _, _, _, _, _, i₁, _⟩ := hr; exact i₁.t_lt
   obtain ⟨htr, hz, hc, ho⟩ := iter_tr hP hp hc1 hc2 hc3 hc4 ht _ _ _ _ _ _ hr e₁ e₂
   refine ⟨htr, by rw [hev, hev, hz], fun h => ho (z_of_eval h), fun h =>
-    ⟨814 - (t + 1), by omega, t + 1, rfl, hc (z_of_eval h)⟩⟩
+    ⟨814 - (t + 1), by omega_using [hn, ht], t + 1, rfl, hc (z_of_eval h)⟩⟩
 
 end
 

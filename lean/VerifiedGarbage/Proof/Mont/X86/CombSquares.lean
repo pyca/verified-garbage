@@ -44,7 +44,7 @@ theorem combSquares_ok {s : State} {base : Addr} {n size m o g E count : Nat}
   rintro i t hi ⟨Ct, counter, value, O, Kt⟩
   unfold squareStepWith
   refine WP.seq (WP.mono (context_mul_ok Ct ho ho ho ho0 ho1 ho2 ho2 ho2
-    (by rw [value]; exact Nat.mod_lt _ (by have := Ct.gt_one; omega)) ho1 ho1)
+    (by rw [value]; exact Nat.mod_lt _ (by have := Ct.gt_one; omega_using [this])) ho1 ho1)
     fun v ⟨Cv, Kv, lt, product⟩ => ?_)
   have Vv : wordsVal v.mem base (slot n o) n = Spec.Rsa.powMod g (2^(i+1)*E) m * 2^(64*n) % m := by
     have step := VG.Proof.Rsa.FixedBaseComb.mont_square_encoded Ct.coprime lt value product
@@ -62,9 +62,9 @@ theorem combSquares_ok {s : State} {base : Addr} {n size m o g E count : Nat}
     ⟨Cv.scr.of_keeps keep (by decide), Cv.size_le, mem ▸ Cv.modulus, Cv.gt_one, mem ▸ Cv.inverse⟩
   refine ⟨⟨Cz, ?_, mem ▸ Vv, mem ▸ O.trans Ov,
     Kt.trans (((OpKeep.keeps Kv).mono (by decide)).trans keep)⟩, ?_⟩
-  · rw [F.gpr, UW.gpr, counterv, counter_sub (by omega) (by omega)]
+  · rw [F.gpr, UW.gpr, counterv, counter_sub (by omega_using [hc32]) (by omega_using [hi])]
     congr 1
-  · rw [Z, UW.gpr, counterv, counter_sub (by omega) (by omega), counter_zero (by omega) (by omega)]
-    simp only [show (count-i = 1) ↔ i+1 = count by omega]
+  · rw [Z, UW.gpr, counterv, counter_sub (by omega_using [hc32]) (by omega_using [hi]), counter_zero (by omega_using [hc32]) (by omega_using [hi])]
+    simp only [show (count-i = 1) ↔ i+1 = count by omega_using []]
 
 end VG.Proof.Mont.X86.Dynamic

@@ -48,27 +48,27 @@ theorem n_lt' {σ : State} (pre : In P σ) : P.n < 2 ^ (32 * P.w) := by
   have := bytes_lt σ.mem (State.addr P.nP) P.K
   rw [pre.nB] at this
   have kw := pre.sizes.kw
-  exact Nat.lt_of_lt_of_le this (Nat.pow_le_pow_right (by decide) (by omega))
+  exact Nat.lt_of_lt_of_le this (Nat.pow_le_pow_right (by decide) (by omega_using [kw]))
 
 theorem valid_facts' (hv : Spec.Rsa.modulusValid P.n P.K = true) (hk : 2 ≤ P.K) : P.n % 2 = 1 ∧ 3 ≤ P.n := by
   simp only [Spec.Rsa.modulusValid, Bool.and_eq_true, beq_iff_eq, decide_eq_true_eq] at hv
   have h1 := hv.1.1.1
   have h2 := hv.2
-  have : 256 ^ 1 ≤ 256 ^ (P.K - 1) := Nat.pow_le_pow_right (by decide) (by omega)
+  have : 256 ^ 1 ≤ 256 ^ (P.K - 1) := Nat.pow_le_pow_right (by decide) (by omega_using [hk])
   have : (256 : Nat) ^ 1 = 256 := rfl
-  omega
+  omega_using [hv]
 
 /-- `u` is odd after the halvings. -/
 theorem u_odd (hv : Spec.Rsa.modulusValid P.n P.K = true) {σ : State} (pre : In P σ) :
     (ts P (fS P) σ (32 * P.w)).1 % 2 = 1 := by
-  obtain ⟨odd, three⟩ := valid_facts' hv (by have := pre.k1; omega)
+  obtain ⟨odd, three⟩ := valid_facts' hv (by have := pre.k1; omega_using [this])
   have nl := n_lt' pre
   have xl : xV P σ % 2 ^ (32 * P.w) < 2 ^ (32 * P.W) :=
-    Nat.lt_of_lt_of_le (Nat.mod_lt _ (Nat.two_pow_pos _)) (Nat.pow_le_pow_right (by decide) (by simp only [RP.W]; omega))
-  have un : sub32 P.w P.n 1 = P.n - 1 := VG.Proof.Rsa.sub32_one (by omega) nl
+    Nat.lt_of_lt_of_le (Nat.mod_lt _ (Nat.two_pow_pos _)) (Nat.pow_le_pow_right (by decide) (by simp only [RP.W]; omega_using []))
+  have un : sub32 P.w P.n 1 = P.n - 1 := VG.Proof.Rsa.sub32_one (by omega_using [odd]) nl
   simp only [ts, fS]
   rw [un, (VG.Proof.Rsa.RecoverDet.twos_proj (32 * P.W) (32 * P.w) _ _ _ (xV P σ % 2 ^ (32 * P.w))).1]
-  exact (VG.Proof.Rsa.RecoverDet.twos_iter (by omega) (by omega) xl).1
+  exact (VG.Proof.Rsa.RecoverDet.twos_iter (by omega_using [three]) (by omega_using [nl]) xl).1
 
 theorem gV_eq {σ : State} : AG P (fS P) σ aG =
     Nat.gcd (ts P (fS P) σ (32 * P.w)).1 (ts P (fS P) σ (32 * P.w)).2.1 := by
@@ -90,14 +90,14 @@ theorem result_bits {σ : State} :
           ok4v P (fS P) (gS P) σ && decide (r.2.1 = 0)
       then some ((bV P (fS P) (gS P) σ + r.2.2) % 2 ^ (32 * P.w) / 2, sub32 P.w (bV P (fS P) (gS P) σ) r.2.2 / 2)
       else none := by
-  have w1 : 1 < 2 ^ (32 * P.w) := Nat.one_lt_two_pow (by simp only [RP.w]; omega)
+  have w1 : 1 < 2 ^ (32 * P.w) := Nat.one_lt_two_pow (by simp only [RP.w]; omega_using [])
   have ql : qV P (fS P) (gS P) σ < 2 ^ (32 * P.w) :=
     Nat.lt_of_le_of_lt (Nat.div_le_self _ _) (Nat.mod_lt _ (Nat.two_pow_pos _))
   have hb : bV P (fS P) (gS P) σ = (qV P (fS P) (gS P) σ + 1) % 2 ^ (32 * P.w) := sub32_neg ql w1
   simp only [VG.Proof.Rsa.RecoverDet.result, VG.Proof.Rsa.RecoverDet.stage2, VG.Proof.Rsa.RecoverDet.bOf, VG.Proof.Rsa.RecoverDet.rootOf, VG.Proof.Rsa.RecoverDet.ok4Of,
     VG.Proof.Rsa.RecoverDet.xOf, VG.Proof.Rsa.RecoverDet.sqOf, VG.Proof.Rsa.RecoverDet.fourN, VG.Proof.Rsa.RecoverDet.ltOf, VG.Proof.Rsa.RecoverDet.mOf, VG.Proof.Rsa.RecoverDet.okDE,
     VG.Proof.Rsa.RecoverDet.deX]
-  simp only [← aV_eq, ← hb, show 32 * P.W / 2 = 16 * P.W by omega, Bool.and_assoc]
+  simp only [← aV_eq, ← hb, show 32 * P.W / 2 = 16 * P.W by omega_using [], Bool.and_assoc]
   rfl
 
 open VG.Spec.Rsa (isqrt) in
@@ -117,13 +117,13 @@ theorem okV_result {σ : State} (hn : 8 * (P.n + 2) ≤ 2 ^ (32 * P.w)) (n3 : 3 
   by_cases h4 : ok4v P (fS P) (gS P) σ = true
   swap
   · simp only [Bool.eq_false_iff.mpr h4, Bool.and_false, Bool.false_and, Bool.false_eq_true, ↓reduceIte]
-  have w1 : 1 < 2 ^ (32 * P.w) := Nat.one_lt_two_pow (by simp only [RP.w]; omega)
+  have w1 : 1 < 2 ^ (32 * P.w) := Nat.one_lt_two_pow (by simp only [RP.w]; omega_using [])
   -- the model's quotient
   have ltT : VG.Proof.Rsa.RecoverDet.ltOf (32 * P.w) (32 * P.W) P.n (Mv P σ) = true := by
     simp only [VG.Proof.Rsa.RecoverDet.ltOf, VG.Proof.Rsa.RecoverDet.mOf, ← aV_eq]; exact decide_eq_true hlt
   have m1e : VG.Proof.Rsa.RecoverDet.m1Of (32 * P.w) (32 * P.W) P.n (Mv P σ) = aV P (fS P) (gS P) σ / P.n + 1 := by
     rw [VG.Proof.Rsa.RecoverDet.m1Of, VG.Proof.Rsa.RecoverDet.mOf, ← aV_eq,
-      Nat.mod_eq_of_lt (show aV P (fS P) (gS P) σ / P.n < 2 ^ (32 * P.w) by omega), Nat.mod_eq_of_lt (by omega)]
+      Nat.mod_eq_of_lt (show aV P (fS P) (gS P) σ / P.n < 2 ^ (32 * P.w) by omega_using [hn, hlt]), Nat.mod_eq_of_lt (by omega_using [hn, hlt])]
   have m1pos : m1R P (fS P) (gS P) σ ≠ 0 := by rw [← hm, m1e]; exact Nat.succ_ne_zero _
   have hq : qV P (fS P) (gS P) σ = VG.Proof.Rsa.RecoverDet.dOf (32 * P.w) (32 * P.W) P.n (Mv P σ) /
       VG.Proof.Rsa.RecoverDet.m1Of (32 * P.w) (32 * P.W) P.n (Mv P σ) := by
@@ -133,12 +133,12 @@ theorem okV_result {σ : State} (hn : 8 * (P.n + 2) ≤ 2 ^ (32 * P.w)) (n3 : 3 
   have hb : bV P (fS P) (gS P) σ = VG.Proof.Rsa.RecoverDet.bOf (32 * P.w) (qV P (fS P) (gS P) σ) :=
     sub32_neg ql w1
   -- the root
-  obtain ⟨ry, rz, rl⟩ := VG.Proof.Rsa.RecoverDet.root_bridge (de := Mv P σ) n3 hn (by simp only [RP.W]; omega)
-    (by omega) ltT hq (by rw [← hb]; exact h4)
+  obtain ⟨ry, rz, rl⟩ := VG.Proof.Rsa.RecoverDet.root_bridge (de := Mv P σ) n3 hn (by simp only [RP.W]; omega_using [])
+    (by omega_using []) ltT hq (by rw [← hb]; exact h4)
   rw [← hb] at ry rz rl
   have hr : VG.Proof.Rsa.RecoverDet.rootOf (32 * P.w) (32 * P.W) P.n (bV P (fS P) (gS P) σ) =
       (sqrtStep (32 * P.w) (32 * P.W))^[16 * P.W] (xRV P (fS P) (gS P) σ, 0, 0) := by
-    simp only [VG.Proof.Rsa.RecoverDet.rootOf, show 32 * P.W / 2 = 16 * P.W by omega]; rfl
+    simp only [VG.Proof.Rsa.RecoverDet.rootOf, show 32 * P.W / 2 = 16 * P.W by omega_using []]; rfl
   have hx : VG.Proof.Rsa.RecoverDet.xOf (32 * P.w) (32 * P.W) P.n (bV P (fS P) (gS P) σ) = xRV P (fS P) (gS P) σ :=
     rfl
   rw [hr, hx] at ry rz
@@ -147,45 +147,45 @@ theorem okV_result {σ : State} (hn : 8 * (P.n + 2) ≤ 2 ^ (32 * P.w)) (n3 : 3 
   have e0 : ((sqrtStep (32 * P.w) (32 * P.W))^[16 * P.W] (xRV P (fS P) (gS P) σ, 0, 0)).2.1 = 0 ↔
       rmV P (fS P) (gS P) σ = 0 := by
     have := VG.Proof.Rsa.RecoverDet.isqrt_sq_le (xRV P (fS P) (gS P) σ)
-    rw [rz]; simp only [rmV]; omega
+    rw [rz]; simp only [rmV]; omega_using [this]
   simp only [e0, pV, qV', yV, Nat.mod_eq_of_lt rl]
 
 theorem pow_le_w {k : Nat} (hk : k ≤ 8 * P.K + 64) : 2 ^ k ≤ 2 ^ (32 * P.w) :=
-  Nat.pow_le_pow_right (by decide) (by simp only [RP.w, RP.w6]; omega)
+  Nat.pow_le_pow_right (by decide) (by simp only [RP.w, RP.w6]; omega_using [hk])
 
 theorem rd_eq (hv : Spec.Rsa.modulusValid P.n P.K = true) {σ : State} (pre : In P σ) (he : P.el ≤ 8) :
     Spec.Rsa.recoverDet P.n P.e (dv P σ) =
       if okV P (fS P) (gS P) σ then some (pV P (fS P) (gS P) σ, qV' P (fS P) (gS P) σ)
       else none := by
-  obtain ⟨odd, three⟩ := valid_facts' hv (by have := pre.k1; omega)
+  obtain ⟨odd, three⟩ := valid_facts' hv (by have := pre.k1; omega_using [this])
   have nK : P.n < 2 ^ (8 * P.K) := by have := bytes_lt σ.mem (State.addr P.nP) P.K; rwa [pre.nB] at this
   have hn : 8 * (P.n + 2) ≤ 2 ^ (32 * P.w) := by
-    have p2 : 2 ≤ 2 ^ (8 * P.K) := Nat.le_self_pow (by have := pre.k1; omega) 2
+    have p2 : 2 ≤ 2 ^ (8 * P.K) := Nat.le_self_pow (by have := pre.k1; omega_using [this]) 2
     have : 2 ^ (8 * P.K + 4) = 2 ^ (8 * P.K) * 16 := by rw [Nat.pow_add]
-    have := pow_le_w (P := P) (k := 8 * P.K + 4) (by omega)
-    omega
+    have := pow_le_w (P := P) (k := 8 * P.K + 4) (by omega_using [])
+    omega_arith
   have hde : dv P σ * P.e < 2 ^ (32 * P.w) := by
     have hd : dv P σ < 2 ^ (8 * P.dl) := bytes_lt σ.mem (State.addr P.dP) P.dl
     have hee : P.e < 2 ^ (8 * P.el) := by have := bytes_lt σ.mem (State.addr P.eP) P.el; rwa [pre.eB] at this
     calc dv P σ * P.e < 2 ^ (8 * P.dl) * 2 ^ (8 * P.el) := Nat.mul_lt_mul'' hd hee
       _ = 2 ^ (8 * P.dl + 8 * P.el) := (Nat.pow_add _ _ _).symm
-      _ ≤ 2 ^ (32 * P.w) := pow_le_w (by have := pre.dl2; omega)
-  have w1 : 1 < 2 ^ (32 * P.w) := Nat.one_lt_two_pow (by simp only [RP.w]; omega)
+      _ ≤ 2 ^ (32 * P.w) := pow_le_w (by have := pre.dl2; omega_using [he, this])
+  have w1 : 1 < 2 ^ (32 * P.w) := Nat.one_lt_two_pow (by simp only [RP.w]; omega_using [])
   have hlo : 256 ^ (P.K - 1) ≤ P.n := by
     simp only [Spec.Rsa.modulusValid, Bool.and_eq_true, decide_eq_true_eq] at hv; exact hv.2
   obtain ⟨-, -, nn, -⟩ := n_facts pre.sizes hlo nK
   by_cases aok : aV P (fS P) (gS P) σ < 2 ^ (32 * (P.W - sA P))
   swap
   · -- `a` too wide for the shifted division: `m ≥ n`, and both are `none`.
-    have hn0 : 0 < P.n := by omega
+    have hn0 : 0 < P.n := by omega_using [odd]
     have lt : ¬ aV P (fS P) (gS P) σ / P.n < P.n := fun h' => by
-      have := (Nat.div_lt_iff_lt_mul hn0).mp h'; omega
+      have := (Nat.div_lt_iff_lt_mul hn0).mp h'; omega_using [he, odd, three, nK, hn, hde, w1, hlo, nn, aok, hn0, h', this]
     rw [← VG.Proof.Rsa.RecoverDet.model_correct (nb := 32 * P.w) (wb := 32 * P.W)
       (q := VG.Proof.Rsa.RecoverDet.dOf (32 * P.w) (32 * P.W) P.n (dv P σ * P.e) /
         VG.Proof.Rsa.RecoverDet.m1Of (32 * P.w) (32 * P.W) P.n (dv P σ * P.e))
       (rem := VG.Proof.Rsa.RecoverDet.dOf (32 * P.w) (32 * P.W) P.n (dv P σ * P.e) %
         VG.Proof.Rsa.RecoverDet.m1Of (32 * P.w) (32 * P.W) P.n (dv P σ * P.e))
-      odd three hn hde (by simp only [RP.W]; omega) (by omega) fun _ => ⟨rfl, rfl⟩]
+      odd three hn hde (by simp only [RP.W]; omega_using []) (by omega_using []) fun _ => ⟨rfl, rfl⟩]
     have l2 : VG.Proof.Rsa.RecoverDet.ltOf (32 * P.w) (32 * P.W) P.n (dv P σ * P.e) = false := by
       simp only [VG.Proof.Rsa.RecoverDet.ltOf, VG.Proof.Rsa.RecoverDet.mOf]
       apply decide_eq_false
@@ -204,12 +204,12 @@ theorem rd_eq (hv : Spec.Rsa.modulusValid P.n P.K = true) {σ : State} (pre : In
     simp only [dV, rV, a0V, ha0]
     rw [← aV_eq]; rfl
   rw [← VG.Proof.Rsa.RecoverDet.model_correct (nb := 32 * P.w) (wb := 32 * P.W)
-    (q := qV P (fS P) (gS P) σ) (rem := remV P (fS P) (gS P) σ) odd three hn hde (by simp only [RP.W]; omega)
-    (by omega) fun pos => ?_]
+    (q := qV P (fS P) (gS P) σ) (rem := remV P (fS P) (gS P) σ) odd three hn hde (by simp only [RP.W]; omega_using [])
+    (by omega_using []) fun pos => ?_]
   · exact okV_result hn three hm hd
   rw [hm] at pos ⊢
   rw [hd]
-  have : m1V P (fS P) (gS P) σ = m1R P (fS P) (gS P) σ := by simp only [m1V]; split <;> omega
+  have : m1V P (fS P) (gS P) σ = m1R P (fS P) (gS P) σ := by simp only [m1V]; split <;> omega_arith
   exact ⟨by rw [← this], by rw [← this]⟩
 
 theorem pk_eq (hv : Spec.Rsa.modulusValid P.n P.K = true) {σ : State} (pre : In P σ) (he : P.el ≤ 8) :
@@ -229,9 +229,9 @@ theorem factors_lt (hv : Spec.Rsa.modulusValid P.n P.K = true) {σ : State} (pre
   simp only [ok, ↓reduceIte] at e
   have m := VG.Proof.Rsa.RecoverDet.recoverDet_mul e
   have nK : P.n < 2 ^ (8 * P.K) := by have := bytes_lt σ.mem (State.addr P.nP) P.K; rwa [pre.nB] at this
-  obtain ⟨odd, three⟩ := valid_facts' hv (by have := pre.k1; omega)
-  have p0 : 0 < pV P (fS P) (gS P) σ := Nat.pos_of_ne_zero fun h => by rw [h] at m; omega
-  have q0 : 0 < qV' P (fS P) (gS P) σ := Nat.pos_of_ne_zero fun h => by rw [h] at m; omega
+  obtain ⟨odd, three⟩ := valid_facts' hv (by have := pre.k1; omega_using [this])
+  have p0 : 0 < pV P (fS P) (gS P) σ := Nat.pos_of_ne_zero fun h => by rw [h] at m; omega_using [m, odd]
+  have q0 : 0 < qV' P (fS P) (gS P) σ := Nat.pos_of_ne_zero fun h => by rw [h] at m; omega_using [m, odd]
   constructor
   · exact Nat.lt_of_le_of_lt (by rw [← m]; exact Nat.le_mul_of_pos_right _ q0) nK
   · exact Nat.lt_of_le_of_lt (by rw [← m]; exact Nat.le_mul_of_pos_left _ p0) nK
@@ -262,7 +262,7 @@ theorem cntE_ok {V : Nat → Nat} {LS : List Nat} {R : Nat} (hd : sRows ∈ LS) 
   change (t.mem.readW (off (State.addr P.B) sRows) 32).toNat = _
   have l := (t.mem.readW (off (State.addr P.B) sRows) 32).isLt
   simp only [slot, w32] at e
-  omega
+  omega_using [e]
 
 /-- `d e` (wide `wM`), by a row for each of `e`'s words. -/
 theorem prodW_vp {E : State → Prop} (hE : ∀ σ, E σ → In P σ) :
@@ -307,14 +307,14 @@ theorem prodW_vp {E : State → Prop} (hE : ∀ σ, E σ → In P σ) :
       have : (3 : BitVec 32).toNat = 3 := rfl
       omega
     refine h4.strSlot hv4 (d := sRows) (r := .r1) (by decide) fun t ht hvt _ _ => WP.block_nil ⟨e, ?_, hvt⟩
-    rw [g4, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by simp only [rE]; omega)] at ht
+    rw [g4, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by simp only [rE]; omega_using [el2, k2])] at ht
     exact ht.mono (fun j hj => ⟨hj, rfl⟩) (fun j hj => ⟨hj, rfl⟩) (fun d hd => ⟨hd, rfl⟩)
   -- The rows, and the wide context.
   have rcfg : RCfg VG.Impl.Rsa.Arm.Recover.wM VG.Impl.Rsa.Arm.Recover.wD VG.Impl.Rsa.Arm.Recover.wE L0 LW0 := by
     constructor <;> decide
   refine VP.of_imp (p := 0 < rE P ∧ rE P ≤ P.w) (fun σ s ⟨e, h, _⟩ => by
     have := h.bs.pre.el1; have := h.bs.pre.el2; have kw := h.sizes.kw
-    simp only [rE]; constructor <;> omega) fun ⟨pos, hR⟩ => ?_
+    simp only [rE]; constructor <;> omega_arith) fun ⟨pos, hR⟩ => ?_
   refine VP.seq (rowProdG_vp rcfg (by decide) (by decide) (fun σ _ => by
       rfl) pos hR
     (fun σ _ => cntE_ok (by simp) (by simp [V1, upd])) copyM_taint pRowAM_taint pRowBE_taint) ?_
@@ -337,20 +337,20 @@ theorem prodW_vp {E : State → Prop} (hE : ∀ σ, E σ → In P σ) :
       have e2 : VG.Proof.Rsa.Arm.Recover.AW1 P σ VG.Impl.Rsa.Arm.Recover.wD = dv P σ := rfl
       have e3 : AWp P σ VG.Impl.Rsa.Arm.Recover.wM = Mv P σ := rfl
       rw [upd_self, e1, e2, e3]
-      have p1 : 2 ^ (8 * P.el) ≤ 2 ^ (32 * rE P) := Nat.pow_le_pow_right (by decide) (by simp only [rE]; omega)
+      have p1 : 2 ^ (8 * P.el) ≤ 2 ^ (32 * rE P) := Nat.pow_le_pow_right (by decide) (by simp only [rE]; omega_using [])
       rw [Nat.mod_eq_of_lt (Nat.lt_of_lt_of_le hee p1), Nat.mul_comm, Nat.mod_eq_of_lt]
       calc dv P σ * P.e < 2 ^ (8 * P.dl) * 2 ^ (8 * P.el) := Nat.mul_lt_mul'' hd hee
         _ = 2 ^ (8 * P.dl + 8 * P.el) := (Nat.pow_add _ _ _).symm
-        _ ≤ 2 ^ (32 * P.W) := Nat.pow_le_pow_right (by decide) (by simp only [RP.W, RP.w, RP.w6]; omega)
+        _ ≤ 2 ^ (32 * P.W) := Nat.pow_le_pow_right (by decide) (by simp only [RP.W, RP.w, RP.w6]; omega_arith)
     · simp [AWp, VG.Proof.Rsa.Arm.Recover.AW1, upd, VG.Impl.Rsa.Arm.Recover.wM, VG.Impl.Rsa.Arm.Recover.wZ, VG.Impl.Rsa.Arm.Recover.wE,
         VG.Impl.Rsa.Arm.Recover.wD]
 
 theorem validD_vp [InvLaw] {um : Bool} (hv : Spec.Rsa.modulusValid P.n P.K = true) (he : P.el ≤ 8) :
     VP (fun σ s => True ∧ Bs P σ s) (VG.Impl.Rsa.Arm.RecoverDet.valid um) (FeD P (In P) (pF' P) (qF' P) (okF' P)) := by
   have hn0 : 0 < P.n := by
-    simp only [Spec.Rsa.modulusValid, Bool.and_eq_true, beq_iff_eq, decide_eq_true_eq] at hv; omega
+    simp only [Spec.Rsa.modulusValid, Bool.and_eq_true, beq_iff_eq, decide_eq_true_eq] at hv; omega_using [hv]
   have hn2 : 2 ≤ P.n := by
-    simp only [Spec.Rsa.modulusValid, Bool.and_eq_true, beq_iff_eq, decide_eq_true_eq] at hv; omega
+    simp only [Spec.Rsa.modulusValid, Bool.and_eq_true, beq_iff_eq, decide_eq_true_eq] at hv; omega_using [hv]
   simp only [VG.Impl.Rsa.Arm.RecoverDet.valid, seqs]
   rw [show (prodW : Prog isa) = prodW from rfl]
   refine (loads_vp (E := In P)).mono (fun σ s ⟨_, h⟩ => ⟨h.pre, h⟩) (fun _ _ h => h) |>.seq ?_

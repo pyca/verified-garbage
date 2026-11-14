@@ -32,14 +32,14 @@ theorem tailBits_ok (W : Window) (n : Nat) {s : State} {P : Addr} {w b K V : Nat
       Nat.sub_zero, show 2 ^ 8 = 256 from rfl, Nat.div_eq_of_lt hV] using hp
   | succ n ih =>
     unfold tailBits
-    refine WP.seq (WP.mono (ih (by omega)) fun u ⟨cu,tu,pu,fu,ku,hu⟩ => ?_)
+    refine WP.seq (WP.mono (ih (by omega_using [hn])) fun u ⟨cu,tu,pu,fu,ku,hu⟩ => ?_)
     have huV : word u.mem P (8 * Crt.sV) = BitVec.ofNat 64 V :=
       (hu _ (by decide) (by decide) (by decide) (by decide) (by decide)).trans hbyte
-    refine WP.mono (takeBit_pending W cu tu hw hw' hR pu (by omega) hV huV)
+    refine WP.mono (takeBit_pending W cu tu hw hw' hR pu (by omega_using [hn]) hV huV)
       fun t ⟨ct,tt,pt,ft,kt,hh⟩ => ?_
     refine ⟨ct,tt,?_,fu.trans ft,(ku.trans kt).mono (by decide),?_⟩
-    · rw [tail_prefix_step K V (by omega)] at pt
-      have hb' : ((b + n) % 5 + 1) % 5 = (b + (n + 1)) % 5 := by omega
+    · rw [tail_prefix_step K V (by omega_using [hn])] at pt
+      have hb' : ((b + n) % 5 + 1) % 5 = (b + (n + 1)) % 5 := by omega_using []
       rw [hb'] at pt
       exact pt
     · intro k hk he hj hv hb

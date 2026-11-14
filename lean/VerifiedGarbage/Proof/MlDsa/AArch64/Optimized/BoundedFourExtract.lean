@@ -25,7 +25,7 @@ theorem zip1_byte (x y : BitVec 128) {i : Nat} (hi : i<16) :
     vbyte_ofVBytes _ hi,Nat.reduceDiv]
   simp only [List.range,List.range.loop,List.map_cons,List.map_nil,List.flatMap_cons,
     List.flatMap_nil,List.cons_append,List.nil_append,List.getD_cons_zero,List.getD_cons_succ]
-  rcases (by omega : i=0∨i=1∨i=2∨i=3∨i=4∨i=5∨i=6∨i=7∨i=8∨i=9∨i=10∨i=11∨i=12∨i=13∨i=14∨i=15) with
+  rcases (by omega_using [hi] : i=0∨i=1∨i=2∨i=3∨i=4∨i=5∨i=6∨i=7∨i=8∨i=9∨i=10∨i=11∨i=12∨i=13∨i=14∨i=15) with
     rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl <;>
     simp only [List.getD_cons_zero,List.getD_cons_succ,
       Nat.reduceDiv,Nat.reduceMod,Nat.reduceEqDiff,ite_true,ite_false,narrowByte]
@@ -41,12 +41,12 @@ theorem expandIndices_byte : ∀i<4,∀j<4,
 theorem extractVector_byte (x : BitVec 128) {i j : Nat} (hi : i<4) (hj : j<4) :
     vbyte (extractVector x) (4*i+j)=
       if j=0 then (nibbleWord x i).setWidth 8 else 0 := by
-  rw [extractVector,tableBytes,vbyte_ofVBytes _ (by omega),expandIndices_byte i hi j hj]
+  rw [extractVector,tableBytes,vbyte_ofVBytes _ (by omega_using [hi, hj]),expandIndices_byte i hi j hj]
   by_cases hz : j=0
   · subst j
-    simp only [ite_true,BitVec.toNat_ofNat,Nat.mod_eq_of_lt (show i<256 by omega)]
-    rw [ite_eq_left (by omega),zip1_byte _ _ (by omega),
-      vbyte_ofVBytes _ (by omega),vbyte_ofVBytes _ (by omega)]
+    simp only [ite_true,BitVec.toNat_ofNat,Nat.mod_eq_of_lt (show i<256 by omega_using [hi])]
+    rw [ite_eq_left (by omega_using [hi]),zip1_byte _ _ (by omega_using [hi]),
+      vbyte_ofVBytes _ (by omega_using [hi]),vbyte_ofVBytes _ (by omega_using [hi])]
     simp only [nibbleWord]
     split <;> rw [BitVec.setWidth_setWidth_of_le _ (by decide),BitVec.setWidth_eq]
   · simp only [hz,ite_false]
@@ -60,10 +60,10 @@ private theorem widened_byte (b : BitVec 8) {j : Nat} (hj : j<4) :
     BitVec.getLsbD_setWidth]
   by_cases hz : j=0
   · subst j
-    simp only [Nat.mul_zero,Nat.zero_add,show k<32 by omega,show k<128 by omega,decide_true,
+    simp only [Nat.mul_zero,Nat.zero_add,show k<32 by omega_using [hk],show k<128 by omega_using [hk],decide_true,
       Bool.true_and,ite_true]
-  · have h8 : ¬8*j+k<8 := by omega
-    rw [BitVec.getLsbD_of_ge b _ (by omega)]
+  · have h8 : ¬8*j+k<8 := by omega_using [hz]
+    rw [BitVec.getLsbD_of_ge b _ (by omega_using [hz])]
     simp only [Bool.and_false,hz,ite_false]
     change false=(0#8).getLsbD k
     exact (BitVec.getLsbD_zero).symm
@@ -96,6 +96,6 @@ theorem nibbleWord_value (x : BitVec 128) (i : Nat) :
 theorem nibbleWord_bound (x : BitVec 128) (i : Nat) : (nibbleWord x i).toNat<16 := by
   rw [nibbleWord_value,BitVec.toNat_ofNat]
   have hb := (vbyte x (i/2)).isLt
-  split <;> omega
+  split <;> omega_using []
 
 end VG.Proof.MlDsa.AArch64.Optimized.BoundedFour

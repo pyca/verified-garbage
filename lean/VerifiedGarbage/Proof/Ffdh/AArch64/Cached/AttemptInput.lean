@@ -16,7 +16,7 @@ def attemptNativeParameters (s : State) (g : AttemptGeometry s) : Parameters :=
 
 def attemptFront (s : State) (g : AttemptGeometry s) : FrontPublic :=by
  let p:=attemptNativeParameters s g
- have positive : 0<p.k :=by change 0<(s.gpr .x6).toNat;have :=g.small;omega
+ have positive : 0<p.k :=by change 0<(s.gpr .x6).toNat;have :=g.small;omega_using [this]
  have odd : p.P%2=1 :=by
   have mod:=VG.Proof.Ffdh.domainValid_mod g.checked
   simp only [Spec.Rsa.modulusValid,Bool.and_eq_true,beq_iff_eq,decide_eq_true_eq] at mod
@@ -30,7 +30,7 @@ def attemptFront (s : State) (g : AttemptGeometry s) : FrontPublic :=by
   simp only [Bool.and_eq_true] at h
   exact h.1
  exact ⟨⟨⟨p,s.gpr .x4,(s.gpr .x5).toNat,attemptDomain s,rfl,positive,
-   by change (s.gpr .x6).toNat<2^31;have :=g.large;omega,g.shape,
+   by change (s.gpr .x6).toNat<2^31;have :=g.large;omega_using [this],g.shape,
    by simp only [attemptDomain,Spec.Rsa.bytesAt,List.length_map,List.length_range],rfl,odd⟩,
   s.gpr .x2,Spec.Ffdh.keyStatus (attemptParameters s) (attemptScalar s),bitsPositive,bitsBound,width,rfl,valid,g.outsideX⟩,
   s.gpr .x7,(stackArg s 4).toNat,g.checked,rfl,rfl,g.separateRand,g.separateDomain,g.separateContext⟩

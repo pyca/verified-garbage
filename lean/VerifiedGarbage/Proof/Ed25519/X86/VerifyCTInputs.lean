@@ -374,7 +374,7 @@ structure VerifyCTFacts (s t : State) : Prop where
   pub : verifyLocal.pub s t
 
 theorem VerifyCTFacts.args {s t : State} (h : VerifyCTFacts s t) (i : Nat) (hi : i < 4) : arg s i = arg t i := by
-  rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3) with rfl | rfl | rfl | rfl
+  rcases (by omega_using [hi] : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3) with rfl | rfl | rfl | rfl
   exacts [h.pub.2.1, h.pub.2.2.1, h.pub.2.2.2.1, h.pub.2.2.2.2.1]
 
 /-- The address of the static of `-[1]B … -[15]B`, public. -/
@@ -399,8 +399,8 @@ theorem verify_pointCTCtx {s₀ s : State} (hp : verifyLocal.pre s₀) (hs : Sav
     rw [hw] at hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
-    · simp only [addr_zero, BitVec.toNat_setWidth]; omega
-    · simp only [BitVec.toNat_setWidth]; omega
+    · simp only [addr_zero, BitVec.toNat_setWidth]; omega_using []
+    · simp only [BitVec.toNat_setWidth]; omega_using [scf]
   · change s.wr.getD 1 ⟨0, 0⟩ = _
     rw [hw]; rfl
   · intro r hr
@@ -427,19 +427,19 @@ theorem loadSlicePointer_ct {s₀ t₀ : State} (h : VerifyCTFacts s₀ t₀) (i
     RelCT isa (VerifySaved s₀ t₀) (.block (loadSlicePointer i skip))
       (fun s t => s.gpr .edi = t.gpr .edi ∧ s.gpr .esi = t.gpr .esi) := by
   have hc : RelCT isa (VerifySaved s₀ t₀) (.block (loadSlicePointer i skip)) (fun _ _ => True) := by
-    rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2) with rfl | rfl | rfl
+    rcases (by omega_using [hi] : i = 0 ∨ i = 1 ∨ i = 2) with rfl | rfl | rfl
     all_goals rcases hk with rfl | rfl
     all_goals
       apply VG.RelCT.taint (A := taint) (regsTaint [.esp]) _ (by native_taint_decide)
       intro s t hp
       exact regsTaint_agree (fun r hr => (List.mem_singleton.mp hr) ▸
         (hp.1.esp.trans (h.pub.1.trans hp.2.esp.symm)))
-  have hp := ctWithRuns hc (fun _ _ hs => ⟨loadSlicePointer_ok (verify_pre h.left).scratch hs.1 (by omega),
-    loadSlicePointer_ok (verify_pre h.right).scratch hs.2 (by omega)⟩)
+  have hp := ctWithRuns hc (fun _ _ hs => ⟨loadSlicePointer_ok (verify_pre h.left).scratch hs.1 (by omega_using [hi]),
+    loadSlicePointer_ok (verify_pre h.right).scratch hs.2 (by omega_using [hi])⟩)
   apply hp.mono (fun _ _ h => h)
   intro s t ⟨_, a, b, _, hs, ht⟩
   exact ⟨hs.1.edi.trans ((h.args 3 (by decide)).trans ht.1.edi.symm),
-    hs.2.1.trans ((congrArg (· + BitVec.ofNat 32 skip) (h.args i (by omega))).trans ht.2.1.symm)⟩
+    hs.2.1.trans ((congrArg (· + BitVec.ofNat 32 skip) (h.args i (by omega_using [hi]))).trans ht.2.1.symm)⟩
 
 theorem copyWords96_ct : RelCT isa (fun s t => s.gpr .edi = t.gpr .edi ∧ s.gpr .esi = t.gpr .esi)
     (.block (copyWords 96 8)) (fun _ _ => True) := by

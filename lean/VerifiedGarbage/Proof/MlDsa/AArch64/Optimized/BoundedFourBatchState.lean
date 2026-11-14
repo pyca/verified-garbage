@@ -19,7 +19,7 @@ theorem Layout.frame {s t : State} {table p q : Addr} {X : List Byte} (h : Layou
   refine ⟨hs,he,?_,ho,ht,by simpa only [hk.rd,hk.wr] using hr,
     by simpa only [hk.rd,hk.wr] using htr,by simpa only [hk.wr] using hw⟩
   intro i hi
-  rw [hf.bytes ha (by change X.length+2≤2^64; omega) (by change i<X.length+2; omega)]
+  rw [hf.bytes ha (by change X.length+2≤2^64; omega_using [hs]) (by change i<X.length+2; omega_using [hi])]
   exact hx i hi
 
 theorem ScalarLayout.frame {s t : State} {p q : Addr} {X : List Byte} (h : ScalarLayout s p q X)
@@ -28,7 +28,7 @@ theorem ScalarLayout.frame {s t : State} {p q : Addr} {X : List Byte} (h : Scala
   rcases h with ⟨hs,hx,ho,hr,hw⟩
   refine ⟨hs,?_,ho,by simpa only [hk.rd,hk.wr] using hr,by simpa only [hk.wr] using hw⟩
   intro i hi
-  rw [hf.bytes ha (by change X.length+2≤2^64; omega) (by change i<X.length+2; omega)]
+  rw [hf.bytes ha (by change X.length+2≤2^64; omega_using [hs]) (by change i<X.length+2; omega_using [hi])]
   exact hx i hi
 
 structure BatchLayout (σ : State) (b p : Addr) (off : Nat) (X : Nat→List Byte) : Prop where

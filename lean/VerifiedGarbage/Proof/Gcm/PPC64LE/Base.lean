@@ -130,7 +130,7 @@ theorem nb_lt : 16 * nb s₀ < 2 ^ 64 := by
   refine h.y_d (yp s₀) (by simp [Region.Contains]) ?_
   simp only [Region.Contains]
   have := (yp s₀ - dp s₀).isLt
-  omega
+  omega_using [hn]
 
 end Pre
 

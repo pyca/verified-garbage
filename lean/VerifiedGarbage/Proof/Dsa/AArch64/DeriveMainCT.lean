@@ -189,7 +189,7 @@ theorem DeriveReady.sched {reference : DeriveCall} {s : State} (ha : reference.i
         rw [bytesAt_length] at hi
         show InRegions (s.rd ++ s.wr) (word s.mem reference.layout.base Field.y.offset + BitVec.ofNat 64 i) 1
         rw [hyw, off_add]
-        exact scr_byte_rd hscr (by unfold deriveExtent; omega)
+        exact scr_byte_rd hscr (by unfold deriveExtent; omega_using [hp384, hi])
       · intro i hi
         show s.mem (word s.mem reference.layout.base Field.y.offset + BitVec.ofNat 64 i) = _
         rw [hyw]
@@ -197,7 +197,7 @@ theorem DeriveReady.sched {reference : DeriveCall} {s : State} (ha : reference.i
       · intro i hi
         rw [bytesAt_length] at hi
         show usedBytes ≤ ofs reference.layout.base (word s.mem reference.layout.base Field.y.offset + BitVec.ofNat 64 i)
-        rw [hyw, ofs_off _ (by have := hscr.nowrap; unfold deriveExtent at this; omega)]
+        rw [hyw, ofs_off _ (by have := hscr.nowrap; unfold deriveExtent at this; omega_using [hp384, hi, this])]
         exact Nat.le_add_right _ _
     · exact ⟨_, ho.subgroup.shrink (by decide), hql⟩
     · exact ⟨_, ho.generator.shrink (by decide), hgl⟩

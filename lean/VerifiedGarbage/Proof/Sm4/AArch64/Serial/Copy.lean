@@ -56,12 +56,12 @@ theorem copySchedule_wp {s : State}
       runBlock_cons,ec,runStep_some,runBlock_nil]
   · have hA : ∀ j < 16, InRegions (c.rd ++ c.wr) (s.gpr .x0 + BitVec.ofNat 64 (8*j)) 8 := by
       intro j hj
-      exact CallLay.inRegions_sub hr (by omega) (by decide)
+      exact CallLay.inRegions_sub hr (by omega_using [hj]) (by decide)
     have hB : ∀ j < 16, InRegions c.wr (s.gpr .x5 + BitVec.ofNat 64 256 + BitVec.ofNat 64 (8*j)) 8 := by
       intro j hj
-      exact CallLay.inRegions_sub hw (by omega) (by decide)
+      exact CallLay.inRegions_sub hw (by omega_using [hj]) (by decide)
     have inv : CopyInv (s.gpr .x0) (s.gpr .x5+ BitVec.ofNat 64 256) 8 c 0 c := by
-      refine ⟨?_,?_,?_,fun _ h => absurd h (by omega),Frame.refl _ _,fun _ _ _ _ _ => rfl,rfl,rfl⟩
+      refine ⟨?_,?_,?_,fun _ h => absurd h (by omega_using []),Frame.refl _ _,fun _ _ _ _ _ => rfl,rfl,rfl⟩
       · simpa using c14
       · simpa using c15
       · simpa using c17

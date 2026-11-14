@@ -31,7 +31,7 @@ variable {l : VG.Impl.Rsa.X86_64.CrtIfma.Lay}
 /-- Digit `i` of `e` in base `T`, of `ND` digits, most significant first. -/
 def digit (l : VG.Impl.Rsa.X86_64.CrtIfma.Lay) (e i : Nat) : Nat := e / l.T ^ (l.ND - 1 - i) % l.T
 
-theorem T_pos (hl : AmmOk l) : 0 < l.T := by have := hl.T_bounds; omega
+theorem T_pos (hl : AmmOk l) : 0 < l.T := by have := hl.T_bounds; omega_using [this]
 
 theorem digit_lt (hl : AmmOk l) (e i : Nat) : digit l e i < l.T := Nat.mod_lt _ (T_pos hl)
 
@@ -90,7 +90,7 @@ theorem OutE.trans {B : Addr} {m₁ m₂ m₃ : Mem} (h₁ : OutE l B m₁ m₂)
   fun a ha => (h₂ a ha).trans (h₁ a ha)
 
 theorem OutE.ofW {B : Addr} {m m' : Mem} (h : OutW l B m m') : OutE l B m m' :=
-  fun a ha => h a fun p hp => ⟨(ha p hp).1.imp_right fun h => by omega, (ha p hp).2.1, (ha p hp).2.2.1⟩
+  fun a ha => h a fun p hp => ⟨(ha p hp).1.imp_right fun h => by omega_using [h], (ha p hp).2.1, (ha p hp).2.2.1⟩
 
 /-- What `convTab` writes: `Y`, `X`, `S` and the table, which are contiguous. -/
 theorem OutE.ofConv {B : Addr} {m m' : Mem} (h : Out2 l B l.oY (l.oTab + l.T * l.NB - l.oY) m m') : OutE l B m m' :=

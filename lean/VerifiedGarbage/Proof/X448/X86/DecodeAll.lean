@@ -25,7 +25,7 @@ open VG VG.X86 VG.Impl.X448.X86 VG.Proof.X448.Radix16
 theorem decoded_congr {m m' : Mem} {p : Addr} {i : Nat} (hi : i < 28)
     (h : ∀ j < 56, m' (off p j) = m (off p j)) : decoded m' p i = decoded m p i := by
   simp only [decoded, byteN]
-  rw [h (2 * i) (by omega), h (2 * i + 1) (by omega)]
+  rw [h (2 * i) (by omega_using [hi]), h (2 * i + 1) (by omega_using [hi])]
 
 theorem decodeAll_ok {s : State} {base p : Addr} (hs : Scr s base)
     (hp : (s.gpr .esi).setWidth 64 = p) (hfit : (s.gpr .esi).toNat + 56 ≤ 2 ^ 32)
@@ -48,7 +48,7 @@ theorem decodeAll_ok {s : State} {base p : Addr} (hs : Scr s base)
     have byte : ∀ j < 56, t.mem (off p j) = s.mem (off p j) := by
       intro j hj
       have h := hd j hj
-      exact tm _ (Or.inr (by simp only [X1, slot]; omega)) (Or.inr (by simp only [X3, slot]; omega))
+      exact tm _ (Or.inr (by simp only [X1, slot]; omega_using [hn, h])) (Or.inr (by simp only [X3, slot]; omega_using [hn, h]))
     have eq := decoded_congr hn byte
     refine WP.mono (decodeLimb_ok (hs.of_keeps tk (by decide)) hn tp tfit tr) fun u ⟨um, uk⟩ => ?_
     rw [eq] at um
@@ -59,17 +59,17 @@ theorem decodeAll_ok {s : State} {base p : Addr} (hs : Scr s base)
       (x := X1) (y := X3) (by decide) (by decide) (by decide) hn hj v v
     refine ⟨?_, ?_, ?_, tk.trans uk⟩
     · intro j hj
-      rw [um, (pair j (by omega)).1]
+      rw [um, (pair j (by omega_using [hn, hj])).1]
       by_cases h : j = n
       · rw [ite_eq_left h, vn, h]
-      · rw [ite_eq_right h]; exact tx j (by omega)
+      · rw [ite_eq_right h]; exact tx j (by omega_using [hj, h])
     · intro j hj
-      rw [um, (pair j (by omega)).2]
+      rw [um, (pair j (by omega_using [hn, hj])).2]
       by_cases h : j = n
       · rw [ite_eq_left h, vn, h]
-      · rw [ite_eq_right h]; exact ty j (by omega)
+      · rw [ite_eq_right h]; exact ty j (by omega_using [hj, h])
     · rw [um]
-      exact (tm.mono (by omega) (by omega)).trans (decodeLimb_outside _ _ hn _)
+      exact (tm.mono (by omega_using []) (by omega_using [])).trans (decodeLimb_outside _ _ hn _)
   exact wp_range_flatMap (M := isa) (N := 28) inv step 28 (by decide) s
     ⟨fun _ hj => by omega, fun _ hj => by omega, Outside2.refl _ _ _ _ _ _, Keeps.refl _ _⟩
 

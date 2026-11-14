@@ -21,11 +21,11 @@ theorem ivBytes_getElem? (iv : List (BitVec 32)) {j i : Nat} (hj : j < iv.length
     have chunk : ((List.range 4).map fun k => w.extractLsb' (8 * k) 8).length = 4 := by simp
     simp only [ivBytes, List.flatMap_cons] at ih ⊢
     rcases j with _ | j
-    · rw [List.getElem?_append_left (by rw [chunk]; omega)]
+    · rw [List.getElem?_append_left (by rw [chunk]; omega_using [hi])]
       simp [hi]
-    · rw [List.getElem?_append_right (by rw [chunk]; omega), chunk,
-        show 4 * (j + 1) + i - 4 = 4 * j + i by omega]
-      exact ih (by simp at hj; omega)
+    · rw [List.getElem?_append_right (by rw [chunk]; omega_using []), chunk,
+        show 4 * (j + 1) + i - 4 = 4 * j + i by omega_using []]
+      exact ih (by simp at hj; omega_using [hj])
 
 /-- The word `j` of an initial value whose bytes memory holds. -/
 theorem iv_word {m : Mem} {p : Addr} {iv : List (BitVec 32)}
@@ -35,7 +35,7 @@ theorem iv_word {m : Mem} {p : Addr} {iv : List (BitVec 32)}
   apply Mem.read_eq_of_bytes
   intro i hi
   have e := congrArg (·[4 * j + i]?) h
-  simp only [Spec.Sha256.bytesAt, List.getElem?_map, List.getElem?_range (show 4 * j + i < 4 * iv.length by omega),
+  simp only [Spec.Sha256.bytesAt, List.getElem?_map, List.getElem?_range (show 4 * j + i < 4 * iv.length by omega_using [hj, hi]),
     Option.map_some, ivBytes_getElem? iv hj hi, Option.some.injEq] at e
   rw [BitVec.add_assoc, ← BitVec.ofNat_add]
   exact e

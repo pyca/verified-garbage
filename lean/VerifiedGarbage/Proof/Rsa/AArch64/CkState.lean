@@ -60,8 +60,8 @@ theorem ckSlot_frm {m m' : Mem} {B : Addr} {rs : List (Nat × Nat)} (hf : Frm B 
   unfold ckSlot at hi
   exact hf.word_eq (fun r hr' => by
     rcases hr r hr' with h | rfl
-    · omega
-    · simp only [Public.sMask, sFn]; omega) (by omega)
+    · omega_using [hi, h]
+    · simp only [Public.sMask, sFn]; omega_using [hi]) (by omega_using [hi])
 
 /-- The inputs of `vg_rsa_check_key` and where they are. -/
 structure CkIn where
@@ -153,7 +153,7 @@ theorem CkS.arr {I : CkIn} {m₀ : Mem} {s t : State} (h : CkS I m₀ s) {j n : 
     (k : Keep regs s t) (hr : .x0 ∉ regs) : CkS I m₀ t :=
   h.step (Frm.of_outside ho (List.mem_singleton_self _)) (fun r hr => by
     rw [List.mem_singleton.mp hr]; exact Mut.ofSlot _ _ _) (fun r hr => by
-    rw [List.mem_singleton.mp hr]; have := h.ws.sl hj; dsimp only; omega) k hr
+    rw [List.mem_singleton.mp hr]; have := h.ws.sl hj; dsimp only; omega_using [hn, this]) k hr
 
 /-- `CkS` and the mask, after a store to the mask's slot. -/
 theorem CkS.mask {I : CkIn} {m₀ : Mem} {s t : State} (h : CkS I m₀ s) {v : BitVec 64}

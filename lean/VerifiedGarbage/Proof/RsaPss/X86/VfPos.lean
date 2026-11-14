@@ -107,19 +107,19 @@ theorem pos_vp (P : EP) (hP : ∃ σ, In h.D P σ) :
   have fr : Frame [slotR (P.lay h.D) sAcc] s.mem t18.mem := by rw [mm]; exact slot_frame _ _ _ _
   have kk : ∀ d, d + 4 ≤ frameBytes → (d + 4 ≤ sAcc ∨ sAcc + 4 ≤ d) →
       t18.mem.readW ((P.lay h.D).fr d) 32 = s.mem.readW ((P.lay h.D).fr d) 32 := fun d hd hd' => by
-    rw [mm, Lay.readW_fr_other _ _ _ hd' (by unfold frameBytes at hd; omega) (by decide)]
+    rw [mm, Lay.readW_fr_other _ _ _ hd' (by unfold frameBytes at hd; omega_using [hd]) (by decide)]
   have kb : ∀ o, o + 1 ≤ oRsa → t18.mem (sa P.scr o) = s.mem (sa P.scr o) := fun o ho =>
     fr _ fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
-      exact (hg.slot ok (o := o) (n := 1) (by omega) (by rw [hg.F]; decide)).symm _ (Region.contains_self _ _)
+      exact (hg.slot ok (o := o) (n := 1) (by omega_using [ho]) (by rw [hg.F]; decide)).symm _ (Region.contains_self _ _)
   obtain ⟨hlo, hdb, hsum, hK, hD, hD0, hK0⟩ := fitB h hi hf
   have e1 : oEm = 1024 := rfl
   have e2 : oRsa = 8192 := rfl
   refine ⟨⟨c17.fupd f18, hi, hf, ⟨by rw [kk _ (by decide) (by decide)]; exact hx.1.2.2.1.1,
       by rw [kk _ (by decide) (by decide)]; exact hx.1.2.2.1.2.1, by rw [kk _ (by decide) (by decide)]; exact hx.1.2.2.1.2.2.1,
       by rw [kk _ (by decide) (by decide)]; exact hx.1.2.2.1.2.2.2⟩,
-    fun i hi' => by rw [kb _ (by omega)]; exact hx.2.1 i hi',
-    fun i hi' => by rw [kb _ (by omega)]; exact hx.2.2 i hi',
+    fun i hi' => by rw [kb _ (by omega_using [hsum, hK, e1, e2, hi'])]; exact hx.2.1 i hi',
+    fun i hi' => by rw [kb _ (by omega_using [hsum, hK, e1, e2, hi'])]; exact hx.2.2 i hi',
     by rw [kk _ (by decide) (by decide)]; exact hp.pos, by rw [mm, Mem.readW_writeW_self32]⟩, ?_⟩
   rw [z18, u17.gpr, m16.mem, m15, Lay.readW_fr_other _ _ _ (by decide) (by decide) (by decide),
     hx.1.2.2.1.2.2.2, anyW_z]

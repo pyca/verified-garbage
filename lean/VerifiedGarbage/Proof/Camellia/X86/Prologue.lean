@@ -43,8 +43,8 @@ theorem inRd {s : State} {a : Addr} {n : Nat} (h : InRegions s.wr a n) : InRegio
 /-- A slot is inside the scratch buffer. -/
 theorem slot_sub {b : BitVec 32} (hfit : b.toNat + 4 * slots ≤ 2 ^ 32) {k : Nat} (hk : k < slots) :
     Region.Sub ⟨wordAddr b k, 4⟩ ⟨b.setWidth 64, 4 * slots⟩ := by
-  rw [slot_addr (by omega)]
-  exact VG.Offset.sub_base _ (by omega)
+  rw [slot_addr (by omega_using [hfit, hk])]
+  exact VG.Offset.sub_base _ (by omega_using [hk])
 
 /-- A slot after a store to a slot. -/
 theorem readW_slot_write {m : Mem} {b : BitVec 32} (hfit : b.toNat + 4 * slots ≤ 2 ^ 32) {j k : Nat}
@@ -52,14 +52,14 @@ theorem readW_slot_write {m : Mem} {b : BitVec 32} (hfit : b.toNat + 4 * slots �
     (m.writeW (wordAddr b k) v).readW (wordAddr b j) 32 = if j = k then v else m.readW (wordAddr b j) 32 := by
   split
   · rename_i h; subst h; exact Mem.readW_writeW_self32 _ _ _
-  · rename_i h; exact Mem.readW_writeW_sep (slot_sep b (by omega) (by omega) h) (by decide)
+  · rename_i h; exact Mem.readW_writeW_sep (slot_sep b (by omega_using [hfit, hj]) (by omega_using [hfit, hk]) h) (by decide)
 
 /-- What `crypt8` writes is in the scratch buffer. -/
 theorem ctx_sub {b : BitVec 32} (hfit : b.toNat + 4 * slots ≤ 2 ^ 32) :
     ∀ r ∈ ctxRegions b, Region.Sub r ⟨b.setWidth 64, 4 * slots⟩ := fun r hr => by
   simp only [ctxRegions, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl
-  · exact Region.sub_prefix (by rw [slots_eq, keySlot_eq]; omega)
+  · exact Region.sub_prefix (by rw [slots_eq, keySlot_eq]; omega_using [])
   · exact slot_sub hfit (by rw [grpSlot_eq, slots_eq]; decide)
 
 /-- The slots `lo … hi - 1` of the scratch buffer at `b`. -/
@@ -212,7 +212,7 @@ theorem saveAt_ok {s : State} {b : BitVec 32} {j k : Nat} (hj : j + 4 ≤ slots)
   · rw [m₃, o₂ i ?_ hi, m₁]
     rw [hslots]
     simp only [List.mem_map, List.mem_range, not_exists, not_and]
-    intro i' hi' h; omega
+    intro i' hi' h; omega_using [hji, hi', h]
 
 theorem save_ok {s : State} {b : BitVec 32} {k : Nat} (hw : ScrIn s.wr b)
     (ha : InRegions (s.rd ++ s.wr) (s.ea (argOp k)) 4) (hb : s.mem.readW (s.ea (argOp k)) 32 = b) :
@@ -221,7 +221,7 @@ theorem save_ok {s : State} {b : BitVec 32} {k : Nat} (hw : ScrIn s.wr b)
       s'.rd = s.rd ∧ s'.wr = s.wr ∧ Frame [⟨b.setWidth 64, 4 * slots⟩] s.mem s'.mem ∧
       ∀ k, k < savedSlot → s'.mem.readW (wordAddr b k) 32 = s.mem.readW (wordAddr b k) 32 :=
   let ⟨s', e, b', g, sv, rd, wr, f, kp⟩ := saveAt_ok (j := savedSlot) (by decide) hw ha hb
-  ⟨s', e, b', g, sv, rd, wr, f, fun i hi => kp i (by rw [slots_eq]; rw [savedSlot_eq] at hi; omega) (.inl hi)⟩
+  ⟨s', e, b', g, sv, rd, wr, f, fun i hi => kp i (by rw [slots_eq]; rw [savedSlot_eq] at hi; omega_using [hi]) (.inl hi)⟩
 
 theorem restoreAt_ok {s₀ s : State} {b : BitVec 32} {j : Nat} (hj : j + 4 ≤ slots) (hw : ScrIn s.wr b)
     (hb : s.gpr .edi = b) (hs : SavedAt j s₀ b s.mem) :
@@ -234,13 +234,13 @@ theorem restoreAt_ok {s₀ s : State} {b : BitVec 32} {j : Nat} (hj : j + 4 ≤ 
     (by intro x hx; simp only [L, List.mem_cons, List.not_mem_nil, or_false] at hx
         rcases hx with rfl | rfl | rfl <;> simp only <;> decide) (by rw [hLr]; decide)
     (by intro x hx; simp only [L, List.mem_cons, List.not_mem_nil, or_false] at hx
-        rcases hx with rfl | rfl | rfl <;> simp only <;> omega)
+        rcases hx with rfl | rfl | rfl <;> simp only <;> omega_using [hj])
   obtain ⟨s₂, e₂, v₂, o₂, m₂, rd₂, wr₂, -, -⟩ := ldSlot_ok s₁ .edi .edi (k := j + 2)
-    (by rw [o₁ _ (by rw [hLr]; decide), hb]) (by omega) (by rw [wr₁]; exact hw)
+    (by rw [o₁ _ (by rw [hLr]; decide), hb]) (by omega_using [hj]) (by rw [wr₁]; exact hw)
   refine ⟨s₂, ?_, fun i hi => ?_, fun r hr => ?_, by rw [m₂, m₁], by rw [rd₂, rd₁], by rw [wr₂, wr₁]⟩
   · rw [show restoreRegsAt j = (L.map fun x => .mov x.1 (.mem (slotAt .edi x.2))) ++
         [.mov .edi (.mem (slotAt .edi (j + 2)))] from rfl, runBlock_app, e₁, Option.bind_some, e₂]
-  · rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 by omega) with rfl | rfl | rfl | rfl
+  · rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 by omega_using [hi]) with rfl | rfl | rfl | rfl
     · show s₂.gpr .ebx = _
       rw [o₂ _ (by decide), v₁ (.ebx, j) (by simp [L])]; exact hs 0 (by decide)
     · show s₂.gpr .esi = _

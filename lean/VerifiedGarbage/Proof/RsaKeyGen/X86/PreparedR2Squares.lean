@@ -65,7 +65,7 @@ theorem squares_ready {mont : Prog isa} {name : String}
       SquaresState g c capacity p s t ∧
       val32 t.mem g.W (g.array 6) g.words = 2 ^ (64 * g.w) * 2 ^ (64 * g.w) % c := by
   let num : State → Nat := fun t => val32 t.mem g.W (g.array 6) g.words
-  have positive : 0 < c := by omega
+  have positive : 0 < c := by omega_using [odd]
   have initial : SquaresState g c capacity p s s :=
     ⟨S, WorkspaceFrame.refl _ _ _, Frame.refl _ _, Keeps.refl _ _⟩
   have step (a : State) (A : SquaresState g c capacity p s a) (lt : num a < c) :

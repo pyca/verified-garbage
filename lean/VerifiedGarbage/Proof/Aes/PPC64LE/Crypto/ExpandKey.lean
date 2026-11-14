@@ -55,9 +55,9 @@ theorem expandKey_ok (s : State) (hc : KeyConfig s (s.gpr .r3) (s.gpr .r5) (s.gp
   let P := s.gpr .r3
   let S := s.gpr .r5
   have hK : K = 16 ∨ K = 24 ∨ K = 32 := hc.length
-  have hkn : 4*nk = K := by omega
-  have hnk : 0 < nk ∧ nk ≤ 8 := by omega
-  have hdiv : 8*((4*nk)/8) = 4*nk := by omega
+  have hkn : 4*nk = K := by omega_using [hK]
+  have hnk : 0 < nk ∧ nk ≤ 8 := by omega_using [hK]
+  have hdiv : 8*((4*nk)/8) = 4*nk := by omega_using [hK]
   rw [Impl.Aes.PPC64LE.Crypto.expandKey]
   have hmov : WP isa (.block [Impl.Aes.PPC64LE.Crypto.mov .r7 .r4]) s (· = s.write .r7 (s.gpr .r4)) := by
     apply WP.of_runBlock
@@ -72,7 +72,7 @@ theorem expandKey_ok (s : State) (hc : KeyConfig s (s.gpr .r3) (s.gpr .r5) (s.gp
     exact ⟨hc.length, by rw [he.keep.2.1, he.keep.2.2]; exact hc.key,
       by rw [he.keep.2.2]; exact hc.schedule, hc.sep⟩
   have hi : CopyInv base P S (4*nk) 0 base := by
-    refine ⟨by omega, Keep.refl _ _, ?_, ?_, ?_, fun j hj => by omega, Frame.refl _ _⟩
+    refine ⟨by omega_using [], Keep.refl _ _, ?_, ?_, ?_, fun j hj => by omega, Frame.refl _ _⟩
     · rw [he.keep.gpr (by decide)]
       simp only [Nat.mul_zero, BitVec.add_zero]; rfl
     · rw [he.keep.gpr (by decide)]
@@ -93,38 +93,38 @@ theorem expandKey_ok (s : State) (hc : KeyConfig s (s.gpr .r3) (s.gpr .r5) (s.gp
         (4*(nk+7)) htg
       have hexpand := VG.Proof.Aes.KeyWords.expandKey_eq base.mem P hnk.1
       have hrounds : Spec.Aes.rounds nk = nk+6 := rfl
-      rw [hrounds, show nk+6+1 = nk+7 by omega] at hexpand
+      rw [hrounds, show nk+6+1 = nk+7 by omega_using []] at hexpand
       have hout := hbytes.trans hexpand.symm
       rw [he.mem, hkn] at hout
-      have hlen : 16*(Spec.Aes.rounds nk+1) = 4*(4*(nk+7)) := by rw [hrounds]; omega
+      have hlen : 16*(Spec.Aes.rounds nk+1) = 4*(4*(nk+7)) := by rw [hrounds]; omega_using []
       change Spec.Aes.bytesAt t.mem S (16*(Spec.Aes.rounds nk+1)) = _
       rw [hlen]
       exact hout
   have h7' : (u.write .r0 (u.gpr .r7 - BitVec.ofNat 64 24)).gpr .r7 = BitVec.ofNat 64 (4*nk) :=
     ((Local.write u .r0 _).keep.gpr (by decide)).trans h7
-  refine test_choice .r7 (4*nk) 24 u _ _ _ (by decide) (by omega) (by decide) h7 (fun h24 => ?_) (fun h24 => ?_)
+  refine test_choice .r7 (4*nk) 24 u _ _ _ (by decide) (by omega_using []) (by decide) h7 (fun h24 => ?_) (fun h24 => ?_)
   · have hu' := hu.write0 (u.gpr .r7 - BitVec.ofNat 64 24)
     rw [Impl.Aes.PPC64LE.Crypto.wordTail]
     refine WP.seq (WP.mono (wordSetup_ok hcfg hu' h7') fun v hv => ?_)
     refine WP.seq (WP.mono (prev_load_ok hcfg hv) fun w hw => ?_)
-    exact WP.mono (word_loop_ok hcfg hw.1 hw.2 (by omega)) fun t ht => ⟨ht.keep, ht.good⟩
-  · have h48 : nk = 4 ∨ nk = 8 := by omega
+    exact WP.mono (word_loop_ok hcfg hw.1 hw.2 (by omega_using [])) fun t ht => ⟨ht.keep, ht.good⟩
+  · have h48 : nk = 4 ∨ nk = 8 := by omega_using [hK, h24]
     have hu' := hu.write0 (u.gpr .r7 - BitVec.ofNat 64 24)
-    have hdiv : 8*((4*nk)/8) = 4*nk := by omega
+    have hdiv : 8*((4*nk)/8) = 4*nk := by omega_using [hdiv]
     rw [Impl.Aes.PPC64LE.Crypto.vecTail]
     refine WP.seq (WP.mono (vecSetup_ok hcfg h48 (hu'.keep.mono (by simp [keyGprs]))
       (by simpa only [hdiv] using hu'.out) h7' (by rw [RegUpd.mem_write]; exact copied_good hu hdiv) hu'.frame)
       fun v hv => ?_)
-    refine test_choice .r7 (4*nk) 16 v _ _ _ (by decide) (by omega) (by decide) hv.len (fun h16 => ?_) (fun h16 => ?_)
-    · have h4 : nk = 4 := by omega
-      have hc4 : KeyConfig base P S 16 := by rw [show (16 : Nat) = 4 * nk by omega]; exact hcfg
+    refine test_choice .r7 (4*nk) 16 v _ _ _ (by decide) (by omega_using []) (by decide) hv.len (fun h16 => ?_) (fun h16 => ?_)
+    · have h4 : nk = 4 := by omega_using [h16]
+      have hc4 : KeyConfig base P S 16 := by rw [show (16 : Nat) = 4 * nk by omega_using [h16]]; exact hcfg
       rw [h4] at hv ⊢
       rw [Impl.Aes.PPC64LE.Crypto.loop128]
       refine WP.seq (WP.mono (li4_ok _ 10 (by decide)) fun w hw => ?_)
       subst hw
       exact WP.mono (loop128_ok hc4 (hv.vinv4 _)) fun t ht => ⟨ht.keep, ht.good⟩
-    · have h8 : nk = 8 := by omega
-      have hc8 : KeyConfig base P S 32 := by rw [show (32 : Nat) = 4 * nk by omega]; exact hcfg
+    · have h8 : nk = 8 := by omega_using [h48, h16]
+      have hc8 : KeyConfig base P S 32 := by rw [show (32 : Nat) = 4 * nk by omega_using [h48, h16]]; exact hcfg
       rw [h8] at hv ⊢
       rw [Impl.Aes.PPC64LE.Crypto.loop256]
       refine WP.seq (WP.mono (li4_ok _ 6 (by decide)) fun w hw => ?_)

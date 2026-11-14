@@ -55,10 +55,10 @@ theorem comb_ok (K : TCombCfg) {C : Curve} {tbl : List (List (Nat × Nat))} {sta
         · exact h.layout.zeroApart _ (by simp)
         · exact h.layout.zeroApart _ (by simp)
         · exact (h.layout.negApart K.zero (by simp)).symm
-        · exact .inl low) (by omega),zero]
+        · exact .inl low) (by omega_using [low, hl]),zero]
     · intro j hj
-      rw [ou.byte (fun w hw => .inr (by have := h.layout.bounded w hw; have := h.bitsLow; omega))
-        (by have := h.bitsHigh; omega),bits j hj]
+      rw [ou.byte (fun w hw => .inr (by have := h.layout.bounded w hw; have := h.bitsLow; omega_arith))
+        (by have := h.bitsHigh; omega_using [hj, this]),bits j hj]
     · exact cp.2.2.2.1.trans coeffA
     · exact cp.2.2.2.2.trans coeffB
   have au : Acc K C base k K.J u := by

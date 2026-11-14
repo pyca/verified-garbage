@@ -33,13 +33,13 @@ structure Controller (base : BitVec 32) (s : State) : Prop where
 theorem Controller.addr {base : BitVec 32} {s : State} (h : Controller base s) {j : Nat} (fit : j < 16) :
     State.addr (s.gpr .r4 + BitVec.ofNat 32 (8 * j)) = off (State.addr base) (8 * j) := by
   rw [h.ptr]
-  exact VG.Arm.addr_add (by have := h.space.nowrap; omega)
+  exact VG.Arm.addr_add (by have := h.space.nowrap; omega_using [fit, this])
 
 theorem Controller.read {base : BitVec 32} {s : State} (h : Controller base s) {j : Nat} (fit : j < 16) :
-    InRegions (s.rd ++ s.wr) (off (State.addr base) (8 * j)) 4 := h.space.read (by omega)
+    InRegions (s.rd ++ s.wr) (off (State.addr base) (8 * j)) 4 := h.space.read (by omega_using [fit])
 
 theorem Controller.write {base : BitVec 32} {s : State} (h : Controller base s) {j : Nat} (fit : j < 16) :
-    InRegions s.wr (off (State.addr base) (8 * j)) 4 := h.space.write (by omega)
+    InRegions s.wr (off (State.addr base) (8 * j)) 4 := h.space.write (by omega_using [fit])
 
 theorem writeLow_frame (m : Mem) (base : BitVec 32) (values : List (Nat × BitVec 32))
     (bounds : ∀ e ∈ values, e.1 < 16) : Frame [⟨State.addr base, 128⟩] m (writeLow m base values) := by
@@ -47,10 +47,10 @@ theorem writeLow_frame (m : Mem) (base : BitVec 32) (values : List (Nat × BitVe
   | nil => exact Frame.refl _ _
   | cons e tail ih =>
     have sub : (⟨off (State.addr base) (8 * e.1), 4⟩ : Region).Sub ⟨State.addr base, 128⟩ :=
-      Offset.sub_base _ (by have := bounds e (by simp); omega)
+      Offset.sub_base _ (by have := bounds e (by simp); omega_using [this])
     have first : Frame [⟨State.addr base, 128⟩] m (m.writeW (off (State.addr base) (8 * e.1)) e.2) :=
       ((Frame.refl _ _).writeW (by simp : (⟨State.addr base, 128⟩ : Region) ∈ [⟨State.addr base, 128⟩]) _
-        (Offset.contains_base _ (by have := bounds e (by simp); omega) (by have := bounds e (by simp); omega)))
+        (Offset.contains_base _ (by have := bounds e (by simp); omega_using [this]) (by have := bounds e (by simp); omega_using [this])))
     exact first.trans (ih _ (fun v hv => bounds v (by simp [hv])))
 
 def lowValue (values : List (Nat × BitVec 32)) (j : Nat) (initial : BitVec 32) : BitVec 32 :=
@@ -65,7 +65,7 @@ theorem lowWord_store (m : Mem) (base : BitVec 32) (v : BitVec 32) {i j : Nat}
     rw [ite_eq_left rfl]
     exact Mem.readW_writeW_self32 _ _ _
   · rw [ite_eq_right same]
-    exact Mem.readW_writeW_sep (Offset.sep _ (by omega) (by omega) (by omega)) (by decide)
+    exact Mem.readW_writeW_sep (Offset.sep _ (by omega_using [same]) (by omega_using [hj]) (by omega_using [hi])) (by decide)
 
 theorem lowWord_writeLow (m : Mem) (base : BitVec 32) (values : List (Nat × BitVec 32))
     (bounds : ∀ e ∈ values, e.1 < 16) (j : Nat) (hj : j < 16) :

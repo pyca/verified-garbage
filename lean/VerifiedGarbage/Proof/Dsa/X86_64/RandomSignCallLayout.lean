@@ -36,10 +36,10 @@ theorem random_call_stackArg {t : State} {B : Addr} (hsp : t.gpr .rsp = B)
     (rd wr : List Region) {i : Nat} (hi : i < 5) :
     stackArg (t.callEntry.withRegions rd wr) i = word t.mem B (8 * i) := by
   have he : B - 8 + BitVec.ofNat 64 (8 * (i + 1)) = off B (8 * i) := by
-    rw [show 8 * (i + 1) = 8 + 8 * i by omega, BitVec.ofNat_add,
+    rw [show 8 * (i + 1) = 8 + 8 * i by omega_using [], BitVec.ofNat_add,
       ← BitVec.add_assoc, show BitVec.ofNat 64 8 = (8 : BitVec 64) from rfl, BitVec.sub_add_cancel]
   have hsep : Mem.Sep (B - 8 + BitVec.ofNat 64 (8 * (i + 1))) 8 (B - 8) 8 :=
-    fun x hx hy => Offset.sep_base (B - 8) (by omega) (by omega) x hy hx
+    fun x hx hy => Offset.sep_base (B - 8) (by omega_using []) (by omega_using [hi]) x hy hx
   simp only [stackArg, stackArgAddr, State.withRegions_mem, State.withRegions_gpr,
     State.callEntry_rsp, State.callEntry_mem, hsp]
   rw [Mem.readW_writeW_sep hsep (by decide), he]
@@ -56,7 +56,7 @@ theorem random_call_covers {extra : Nat} {s t : State} (h : RandomSignABI extra 
   have hq : (stackArg s 0).toNat ≤ 32 := by
     have hl := h.lengths
     unfold Spec.Dsa.lengthsValid at hl
-    omega
+    omega_using [hl]
   have hf : (⟨randomBase s, Random.frameBytes⟩ : Region) ∈ t.wr := by rw [hwr]; exact .head _
   have ho : (⟨s.gpr .rdi, (s.gpr .rsi).toNat⟩ : Region) ∈ t.wr := by rw [hwr, h.wr]; simp
   have hs : (⟨stackArg s 5, (stackArg s 6).toNat * 8⟩ : Region) ∈ t.wr := by rw [hwr, h.wr]; simp
@@ -70,7 +70,7 @@ theorem random_call_covers {extra : Nat} {s t : State} (h : RandomSignABI extra 
   simp only [randomCallRd, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl
   · exact ⟨_, List.mem_append_left _ (by rw [hrd, h.rd]; simp), 0, zero _, by simp⟩
-  · exact ⟨_, List.mem_append_right _ hf, 200, rfl, by change 200 + (stackArg s 0).toNat ≤ 248; omega⟩
+  · exact ⟨_, List.mem_append_right _ hf, 200, rfl, by change 200 + (stackArg s 0).toNat ≤ 248; omega_using [hq]⟩
   · exact ⟨_, List.mem_append_left _ (by rw [hrd, h.rd]; simp), 0, zero _, by simp⟩
   · exact ⟨_, List.mem_append_right _ hf, 0, zero _, by change 0 + 40 ≤ 248; decide⟩
 

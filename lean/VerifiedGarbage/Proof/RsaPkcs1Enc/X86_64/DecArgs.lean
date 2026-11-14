@@ -35,9 +35,9 @@ theorem DataOk.scr {s : State} (hp : DPre s) {a L : Nat} (h1 : sMsg ≤ a) (h2 :
     DataOk s (scA s a) L := by
   obtain ⟨hS1, _⟩ := scr_len hp
   refine ⟨Covers.of_sub fun r hr => ⟨scrR s, List.mem_append_right _ (by rw [hp.hwr]; simp [scrR]), a,
-      by rw [List.mem_singleton.mp hr]; rfl, by rw [List.mem_singleton.mp hr]; dsimp only [scrR]; omega⟩,
-    fun b n hb => scD (.inr (by omega)) h2 (by unfold sMsg scrBytes at *; omega), stkD hp (by decide) h2,
-    by unfold scrBytes at h2; omega⟩
+      by rw [List.mem_singleton.mp hr]; rfl, by rw [List.mem_singleton.mp hr]; dsimp only [scrR]; omega_using [h2, hS1]⟩,
+    fun b n hb => scD (.inr (by omega_using [h1, hb])) h2 (by unfold sMsg scrBytes at *; omega_using [hb]), stkD hp (by decide) h2,
+    by unfold scrBytes at h2; omega_using [h2]⟩
 
 /-- The ciphertext. -/
 theorem DataOk.c {s : State} (hp : DPre s) : DataOk s (stackArg s 3) (kOf s) := by
@@ -46,9 +46,9 @@ theorem DataOk.c {s : State} (hp : DPre s) : DataOk s (stackArg s 3) (kOf s) := 
   have hk2 := hp.k2
   have hC : (⟨stackArg s 3, kOf s⟩ : Region) = ⟨stackArg s 3, (stackArg s 4).toNat⟩ := by rw [hl]
   refine ⟨Covers.left (Covers.of_mem fun r hr => by rw [List.mem_singleton.mp hr, hC]; exact hp.hrd _ (by simp)),
-    fun a n han => ?_, by rw [hC]; exact hp.dKi.sub_left (below_sub s (by decide)), by unfold kOf; omega⟩
+    fun a n han => ?_, by rw [hC]; exact hp.dKi.sub_left (below_sub s (by decide)), by unfold kOf; omega_using []⟩
   rw [hC]
-  exact hp.dis.sub_right (sub_trans (scSub (by unfold sMsg at han; unfold scrBytes; omega)) (Region.sub_prefix hS1))
+  exact hp.dis.sub_right (sub_trans (scSub (by unfold sMsg at han; unfold scrBytes; omega_using [han])) (Region.sub_prefix hS1))
 
 theorem updArgsOf {s : State} (hp : DPre s) {R : BitVec 64} {EM : List Byte} {t : State} (hc : Ctx s R EM t)
     {da : Addr} {L : Nat} (hd : DataOk s da L) (hdi : t.gpr .rdi = scA s 0) (hdx : t.gpr .rdx = da)
@@ -97,8 +97,8 @@ theorem hinitArgsOf {s : State} (hp : DPre s) {R : BitVec 64} {EM : List Byte} {
       i_o := by rw [hS]; exact scD (.inl (by decide)) (by decide) (by decide)
       i_s := by rw [hS]; exact scD (.inl (by decide)) (by decide) (wScr v)
       o_s := by rw [hS]; exact scD (.inl (by decide)) (by decide) (wScr v)
-      k_i := by rw [hS]; exact scD (.inr (by unfold sMsg at hk1; omega)) hk2 (by decide)
-      k_o := by rw [hS]; exact scD (.inr (by unfold sMsg sOuter at *; omega)) hk2 (by decide)
+      k_i := by rw [hS]; exact scD (.inr (by unfold sMsg at hk1; omega_using [hk1])) hk2 (by decide)
+      k_o := by rw [hS]; exact scD (.inr (by unfold sMsg sOuter at *; omega_using [hk1])) hk2 (by decide)
       k_s := by exact scD (.inr (wBelow v hk1)) hk2 (wScr v)
       stk_i := by rw [below_rsp hc, hS]; exact stkD hp (by decide) (by decide)
       stk_o := by rw [below_rsp hc, hS]; exact stkD hp (by decide) (by decide)
@@ -106,7 +106,7 @@ theorem hinitArgsOf {s : State} (hp : DPre s) {R : BitVec 64} {EM : List Byte} {
       stk_s := by rw [below_rsp hc]; exact stkD hp (by decide) (wScr v)
       scnw := by
         have hw := (sizes v).2.1; obtain ⟨h1, h2⟩ := scr_len hp
-        simp only [scA, off, BitVec.toNat_add, BitVec.toNat_ofNat]; unfold scrBytes at h1; unfold sWork; omega }
+        simp only [scA, off, BitVec.toNat_add, BitVec.toNat_ofNat]; unfold scrBytes at h1; unfold sWork; omega_using [hw, h1, h2] }
 
 theorem hfinArgsOf {s : State} (hp : DPre s) {R : BitVec 64} {EM : List Byte} {t : State} (hc : Ctx s R EM t)
     {dOff : Nat} (hd1 : sMsg ≤ dOff) (hd2 : dOff + 32 ≤ scrBytes) {cnt : Addr} (hdi : t.gpr .rdi = scA s 0)
@@ -121,9 +121,9 @@ theorem hfinArgsOf {s : State} (hp : DPre s) {R : BitVec 64} {EM : List Byte} {t
       cr := by rw [hS]; exact Covers.right (scCov hp hc (by decide))
       cw := by rw [hS, hD]; exact cw
       i_u := by rw [hS]; exact scD (.inl (by decide)) (by decide) (by decide)
-      i_o := by rw [hS, hD]; exact scD (.inl (by unfold sMsg at hd1; omega)) (by decide) hd2
+      i_o := by rw [hS, hD]; exact scD (.inl (by unfold sMsg at hd1; omega_using [hd1])) (by decide) hd2
       i_s := by rw [hS]; exact scD (.inl (by decide)) (by decide) (wScr v)
-      u_o := by rw [hS, hD]; exact scD (.inl (by unfold sMsg sOuter at *; omega)) (by decide) hd2
+      u_o := by rw [hS, hD]; exact scD (.inl (by unfold sMsg sOuter at *; omega_using [hd1])) (by decide) hd2
       u_s := by rw [hS]; exact scD (.inl (by decide)) (by decide) (wScr v)
       o_s := by rw [hD]; exact scD (.inr (wBelow v hd1)) hd2 (wScr v)
       stk_i := by rw [below_rsp hc, hS]; exact stkD hp (by decide) (by decide)
@@ -132,7 +132,7 @@ theorem hfinArgsOf {s : State} (hp : DPre s) {R : BitVec 64} {EM : List Byte} {t
       stk_s := by rw [below_rsp hc]; exact stkD hp (by decide) (wScr v)
       scnw := by
         have hw := (sizes v).2.1; obtain ⟨h1, h2⟩ := scr_len hp
-        simp only [scA, off, BitVec.toNat_add, BitVec.toNat_ofNat]; unfold scrBytes at h1; unfold sWork; omega }
+        simp only [scA, off, BitVec.toNat_add, BitVec.toNat_ofNat]; unfold scrBytes at h1; unfold sWork; omega_using [hw, h1, h2] }
 
 
 /-! ## What each call keeps -/

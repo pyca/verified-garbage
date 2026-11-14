@@ -62,12 +62,12 @@ theorem word_xor (a b : List Byte) (ha : a.length = 64) (hb : b.length = 64) {j 
     Spec.Scrypt.wordLE (xorBytes a b) j = Spec.Scrypt.wordLE a j ^^^ Spec.Scrypt.wordLE b j := by
   have get : ∀ k < 64, (xorBytes a b).getD k 0 = a.getD k 0 ^^^ b.getD k 0 := by
     intro k hk
-    rw [← List.getElem_eq_getD (h := by simp only [xorBytes, List.length_zipWith, ha, hb]; omega),
-      ← List.getElem_eq_getD (l := a) (i := k) (h := by omega), ← List.getElem_eq_getD (l := b) (i := k) (h := by omega)]
+    rw [← List.getElem_eq_getD (h := by simp only [xorBytes, List.length_zipWith, ha, hb]; omega_using [hk]),
+      ← List.getElem_eq_getD (l := a) (i := k) (h := by omega_using [ha, hk]), ← List.getElem_eq_getD (l := b) (i := k) (h := by omega_using [hb, hk])]
     exact List.getElem_zipWith
-  simp only [Spec.Scrypt.wordLE, get _ (by omega : 4 * j + 3 < 64),
-    get _ (by omega : 4 * j + 2 < 64), get _ (by omega : 4 * j + 1 < 64),
-    get _ (by omega : 4 * j < 64)]
+  simp only [Spec.Scrypt.wordLE, get _ (by omega_using [hj] : 4 * j + 3 < 64),
+    get _ (by omega_using [hj] : 4 * j + 2 < 64), get _ (by omega_using [hj] : 4 * j + 1 < 64),
+    get _ (by omega_using [hj] : 4 * j < 64)]
   ext i
   simp only [BitVec.getElem_append, BitVec.getElem_xor]
   by_cases h0 : i < 8
@@ -87,7 +87,7 @@ theorem words_xor (m : Mem) (a b : Addr) :
   intro j hj
   simp only [Vector.getElem_ofFn, Vector.getElem_zipWith, memWords]
   rw [word_xor _ _ (Memory.bytesAt_length _ _ _) (Memory.bytesAt_length _ _ _) hj,
-    wordLE_bytesAt _ _ (by omega), wordLE_bytesAt _ _ (by omega)]
+    wordLE_bytesAt _ _ (by omega_using [hj]), wordLE_bytesAt _ _ (by omega_using [hj])]
   simp only [bufAt, ofInt_natCast]
 
 theorem core_bytes {m m' : Mem} {a b d : Addr}

@@ -34,12 +34,12 @@ theorem rounds_ok {t : MSt} {s : State} (hs : RowState t s) (hb : rowBounds t)
     have hdr : -(2^63)≤t.d ∧ t.d<2^63 := by
       have := le_abs_self t.d
       have := neg_abs_le t.d
-      omega
+      omega_arith
     refine WP.mono (roundStep_ok hs hdr hb) fun a ⟨ha,ka⟩ => ?_
     have hdn : |(mstep t).d|+2*n<2^62 := by
       have h := mstep_d t
       norm_num only [Nat.cast_add,Nat.cast_one] at hd
-      omega
+      omega_using [h, hd]
     refine WP.mono (ih ha (rowBounds_step hb) hdn) fun b ⟨hb,kb⟩ => ?_
     exact ⟨hb,ka.trans kb⟩
 

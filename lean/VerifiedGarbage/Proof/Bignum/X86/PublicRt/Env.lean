@@ -39,13 +39,13 @@ theorem frame_read {base : Addr} {bytes len : Nat} {sp : BitVec 32} {m m' : Mem}
     (h1 : numAt len 1 ≤ bytes) {d k : Nat} (hdk : d + k ≤ bytes) (hsep : d + k ≤ 128 ∨ (140 ≤ d ∧ d + k ≤ numAt len 1)) :
     m'.read (off base d) k = m.read (off base d) k := by
   have h256 : 256 ≤ numAt len 1 := by simp [numAt, numOff]
-  refine F.read (r := ⟨off base d, k⟩) (Region.contains_self _ _) (fun r hr => ?_) (by omega)
+  refine F.read (r := ⟨off base d, k⟩) (Region.contains_self _ _) (fun r hr => ?_) (by omega_using [hn, hdk])
   simp only [Chg, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl
-  · exact Offset.disjoint base (by omega) (by omega) (by omega)
-  · exact Offset.disjoint base (by omega) (by omega) (by omega)
+  · exact Offset.disjoint base (by omega_using [hsep]) (by omega_using [hn, hdk]) (by omega_using [])
+  · exact Offset.disjoint base (by omega_using [hsep, h256]) (by omega_using [hn, hdk]) (by omega_using [hn, h1])
   · refine (R.apart.sub_right ?_).symm
-    have := Offset.sub base (d := d) (n := k) (e := 0) (k := bytes) (Nat.zero_le _) (by omega)
+    have := Offset.sub base (d := d) (n := k) (e := 0) (k := bytes) (Nat.zero_le _) (by omega_using [hdk])
     simpa only [off, BitVec.ofNat_eq_ofNat, BitVec.add_zero] using this
 
 theorem Env.keep {base : Addr} {bytes len : Nat} {args : Nat → BitVec 32} {M : Nat} {s t : State}
@@ -74,29 +74,29 @@ theorem Env.keep {base : Addr} {bytes len : Nat} {args : Nat → BitVec 32} {M :
     simp only [Chg, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
     · refine ap.sub_right ?_
-      have := Offset.sub base (d := 128) (n := 12) (e := 0) (k := bytes) (Nat.zero_le _) (by omega)
+      have := Offset.sub base (d := 128) (n := 12) (e := 0) (k := bytes) (Nat.zero_le _) (by omega_using [f0, n0, h256])
       simpa only [off, BitVec.ofNat_eq_ofNat, BitVec.add_zero] using this
     · refine ap.sub_right ?_
       have := Offset.sub base (d := numAt len 1) (n := bytes - numAt len 1) (e := 0) (k := bytes) (Nat.zero_le _)
-        (by omega)
+        (by omega_using [f0, e01])
       simpa only [off, BitVec.ofNat_eq_ofNat, BitVec.add_zero] using this
     · -- The argument is above `esp`, the 96 bytes below it.
       have low := E.room.low
       have top := E.top
       have ea : (VG.Proof.Dsa.X86.stackAddress s i).toNat = (s.gpr .esp).toNat + (4 + 4 * i) := by
         simp only [VG.Proof.Dsa.X86.stackAddress, addr, setWidth_toNat, BitVec.toNat_add, BitVec.toNat_ofNat]
-        omega
+        omega_using [hi, top]
       have eb : ((s.gpr .esp - BitVec.ofNat 32 96).setWidth 64).toNat = (s.gpr .esp).toNat - 96 := by
-        rw [setWidth_toNat, sub_toNat (by omega)]
-      exact (Region.disjoint_of_le (r₁ := below (s.gpr .esp) 96) (.inl (by dsimp only; rw [eb, ea]; omega))
-        (by dsimp only; rw [eb]; omega) (by dsimp only; rw [ea]; omega)).symm
+        rw [setWidth_toNat, sub_toNat (by omega_using [low])]
+      exact (Region.disjoint_of_le (r₁ := below (s.gpr .esp) 96) (.inl (by dsimp only; rw [eb, ea]; omega_using [low]))
+        (by dsimp only; rw [eb]; omega_using []) (by dsimp only; rw [ea]; omega_using [hi])).symm
   · rw [← E.mod, ← read_eq_val32, ← read_eq_val32,
-      frame_read F E.room nw' (by rw [e01]; omega) (by rw [← wb_eq]; omega) (.inr ⟨by simp [numOff], by rw [← wb_eq]; omega⟩)]
+      frame_read F E.room nw' (by rw [e01]; omega_using [f0]) (by rw [← wb_eq]; omega_using [f0, n0]) (.inr ⟨by simp [numOff], by rw [← wb_eq]; omega_using [e01, n0]⟩)]
   · rw [show w32 t.mem base invOff = w32 s.mem base invOff by
       unfold w32
       simp only [Mem.readW]
-      rw [frame_read F E.room nw' (by rw [e01]; omega) (by simp only [invOff, n0, numOff] at f0 ⊢; omega)
-        (.inr ⟨by decide, by rw [e01, n0]; simp only [invOff, numOff]; omega⟩)]]
+      rw [frame_read F E.room nw' (by rw [e01]; omega_using [f0]) (by simp only [invOff, n0, numOff] at f0 ⊢; omega_using [f0])
+        (.inr ⟨by decide, by rw [e01, n0]; simp only [invOff, numOff]; omega_using []⟩)]]
     exact E.inv
 
 end VG.Proof.Bignum.X86.PublicRt

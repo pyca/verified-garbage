@@ -103,7 +103,7 @@ theorem tagCopy_ok {o aN tN : Nat} (ho : o = 0 ∨ o = 112) {m₀ : Mem} {s : St
       .mov .ebx (.mem (at_ .esi 28)), .store (at_ .ebp o) .eax, .store (at_ .ebp (o + 4)) .ecx,
       .store (at_ .ebp (o + 8)) .edx, .store (at_ .ebp (o + 12)) .ebx, .mov .ebx (.reg .ebp),
       .alu .add .ebx (imm o), .mov .edi (imm 1), .mov .eax (slot ctxO), .mov .edx (.reg .esi)]) s (TagMid Ctx St W SP o aN tN m₀) := by
-  have ho' : o + 16 ≤ 128 := by omega
+  have ho' : o + 16 ≤ 128 := by omega_using [ho]
   generalize hw0 : s.mem.readW (w64 St + BitVec.ofNat 64 16) 32 = w0
   generalize hw1 : s.mem.readW (w64 St + BitVec.ofNat 64 20) 32 = w1
   generalize hw2 : s.mem.readW (w64 St + BitVec.ofNat 64 24) 32 = w2
@@ -119,29 +119,29 @@ theorem tagCopy_ok {o aN tN : Nat} (ho : o = 0 ∨ o = 112) {m₀ : Mem} {s : St
   have f₄ : Frame [⟨w64 W + BitVec.ofNat 64 o, 16⟩] s.mem M := by rw [← hM]; exact Cmac.frame_store4 _ _ _ _ _
   have sK : ∀ {q}, 128 ≤ q → q + 4 ≤ 2560 → slotv M W q = slotv s.mem W q := fun h₁ h₂ =>
     slot_frame f₄ fun r hr => by
-      simp only [List.mem_singleton] at hr; subst hr; exact Lay.w_w (.inr (by omega)) (by omega) (by omega)
+      simp only [List.mem_singleton] at hr; subst hr; exact Lay.w_w (.inr (by omega_using [ho, h₁])) (by omega_using [h₂]) (by omega_using [ho])
   have dS : ∀ {a k : Nat}, a + k ≤ 80 → ∀ r ∈ [(⟨w64 W + BitVec.ofNat 64 o, 16⟩ : Region)],
       (⟨w64 St + BitVec.ofNat 64 a, k⟩ : Region).Disjoint r := fun hak r hr => by
     simp only [List.mem_singleton] at hr; subst hr
     rcases ho with rfl | rfl
     · exact L.st_w hak (.inl (by decide))
     · exact L.st_w hak (.inr ⟨by decide, by decide⟩)
-  have eW := L.aW (o := o) (by omega)
+  have eW := L.aW (o := o) (by omega_using [ho])
   have eS : w64 (St + BitVec.ofNat 32 0) = w64 St := by rw [L.aS (by decide)]; exact BitVec.add_zero _
   refine ⟨⟨by regs []; exact (sK (q := 144) (by decide) (by decide)).trans hctx,
     by regs [he.esi], by regs [he.ebp], by regs [], by regs [he.ebp],
     by regs [he.esi], by regs [he.esp], he.ctxR, he.stW, he.wW, by simp only [mem_setReg, mem_arithFlags, mem_setMem]; exact (sK (q := 144) (by decide) (by decide)).trans hctx,
-    by have := L.fs; omega, by rw [L.nW (by omega)]; have := L.fw; omega,
+    by have := L.fs; omega_using [this], by rw [L.nW (by omega_using [ho])]; have := L.fw; omega_using [ho, this],
     ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩, ?_, ?_, ?_, ?_⟩
   · exact (by simpa using he.stC (d := 0) (n := 16) (by decide) : Covers [⟨w64 St, 16⟩] s.wr)
-  · rw [eW]; exact (he.wC (d := o) (n := 16 * 1) (by omega) : Covers _ s.wr)
+  · rw [eW]; exact (he.wC (d := o) (n := 16 * 1) (by omega_using [ho]) : Covers _ s.wr)
   · rw [eW]; have := dS (a := 0) (k := 16) (by decide) _ (List.mem_singleton_self _); simpa using this
   · exact L.cs.sub_right (Region.sub_prefix (by decide))
-  · rw [eW]; exact L.ctx_w (a := 0) (n := 256) (d := o) (k := 16 * 1) (by decide) (by omega) |> fun h => by simpa using h
+  · rw [eW]; exact L.ctx_w (a := 0) (n := 256) (d := o) (k := 16 * 1) (by decide) (by omega_using [ho]) |> fun h => by simpa using h
   · simpa using L.stk_st (a := 0) (n := 16) (by decide)
-  · rw [eW]; exact L.stk_w (by omega)
+  · rw [eW]; exact L.stk_w (by omega_using [ho])
   · simpa using (L.st_w (a := 0) (n := 16) (by decide) (.inr ⟨by decide, by decide⟩)).symm
-  · rw [eW]; exact Lay.w_w (.inr (by omega)) (by decide) (by omega)
+  · rw [eW]; exact Lay.w_w (.inr (by omega_using [ho])) (by decide) (by omega_using [ho])
   · simp only [mem_setReg, mem_arithFlags, mem_setMem]
     rw [← hM, blockAt, Cmac.bytesAt_store4, ← hw0, ← hw1, ← hw2, ← hw3, Cmac.le4_readW, Cmac.le4_readW,
       Cmac.le4_readW, Cmac.le4_readW, ← hacc, blockAt]
@@ -154,7 +154,7 @@ theorem tagCopy_ok {o aN tN : Nat} (ho : o = 0 ∨ o = 112) {m₀ : Mem} {s : St
   · simp only [mem_setReg, mem_arithFlags, mem_setMem]
     rw [ciph_frame f₄ (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
-      exact L.ctx_w (a := 0) (n := 256) (d := o) (k := 16) (by decide) (by omega) |> fun h => by simpa using h),
+      exact L.ctx_w (a := 0) (n := 256) (d := o) (k := 16) (by decide) (by omega_using [ho]) |> fun h => by simpa using h),
       hc]
   · simp only [mem_setReg, mem_arithFlags, mem_setMem]
     exact hf.trans (f₄.sub fun r hr => by
@@ -209,7 +209,7 @@ theorem tag_pc {o al ah tl th : Nat} (ho : o = 0 ∨ o = 112) (hc : LensAt 16 al
     · exact Pc.taint [.esi, .ebp] hw hr (by taint_decide)
   refine Pc.mono (Pc.of (I := CtrReady Ctx St W SP St (W + BitVec.ofNat 32 o) 1) (fun _ h => ctrW_ok L rfl h)
     (ctrW_ct L rfl) _ fun _ _ h => h.ready) (fun _ _ h => h) fun m₀ s' ⟨s, h, g⟩ => ?_
-  have eW := L.aW (o := o) (by omega)
+  have eW := L.aW (o := o) (by omega_using [ho])
   have eS : w64 St = w64 St := rfl
   have go := g.out
   rw [eW, blocksAt_one, blocksAt_one, h.ciph] at go

@@ -116,7 +116,7 @@ theorem preP_of {H : Spec.Mgf1.Hash} {hs gs : List FnTable} {s : State} (h : (ve
     wn, we, wd, wg, wsc, wp, wth, wtg, ⟨k1, k2⟩, e1, e2, gk, hs, hp, hl⟩ := h
   have hl := hl H hH
   rw [hl] at hrd ds kd wd
-  exact ⟨sp1, by omega, hrd, hwr, ns, es, ds, gs, sp, sth, stg, sa, kn, ke, kd, kg, ksc, kp, kth, ktg, ka, wn, we,
+  exact ⟨sp1, by omega_using [sp2], hrd, hwr, ns, es, ds, gs, sp, sth, stg, sa, kn, ke, kd, kg, ksc, kp, kth, ktg, ka, wn, we,
     wd, wg, wsc, wp, wth, wtg, k1, k2, e1, e2, gk, hs, hp⟩
 
 /-- The tables, as the contract gives them: the hash function's one of `hs`
@@ -174,7 +174,7 @@ variable {D : Nat} {s : State} (P : PreP D s)
 include P
 
 theorem scLen : oRsa ≤ (stackArg s 3).toNat * 8 := by
-  have := P.hs; unfold Spec.RsaPss.publicScratchWords at this; unfold oRsa; omega
+  have := P.hs; unfold Spec.RsaPss.publicScratchWords at this; unfold oRsa; omega_using [this]
 
 theorem sc_sub : Region.Sub (SC Sp s) (scR s) := Region.sub_prefix (scLen P)
 
@@ -182,7 +182,7 @@ theorem PreP.fits : Fits Sp s where
   sp1 := P.sp1
   sc := ⟨scR s, by rw [P.hwr]; simp, rfl, scLen P⟩
   ksc := P.ksc.sub_right (sc_sub P)
-  wS := by show (stackArg s 2).toNat + oRsa ≤ 2 ^ 64; have := P.wsc; have := scLen P; omega
+  wS := by show (stackArg s 2).toNat + oRsa ≤ 2 ^ 64; have := P.wsc; have := scLen P; omega_arith
 
 end
 

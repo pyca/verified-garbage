@@ -60,7 +60,7 @@ theorem mrA_ok {s0 v : State} {B : BitVec 32} {Z w N o x y Y i : Nat} (I : MulIn
     (ho : o < N) (hN : N ≤ 256) :
     WP isa (.block (ptr .r0 o ++ ([.ldr .r2 .r8 sJ] : List Instr))) v fun u => Ws u B Z w N ∧
       u.gpr .r0 = B + BitVec.ofNat 32 (arr w o) ∧ u.gpr .r2 = BitVec.ofNat 32 (4 * i) := by
-  refine ptr_ok I.ws (r := .r0) (by decide) (j := o) (by omega) fun u1 p1 r1 m1 h1 => ?_
+  refine ptr_ok I.ws (r := .r0) (by decide) (j := o) (by omega_using [ho, hN]) fun u1 p1 r1 m1 h1 => ?_
   refine wp_ldrSlot h1 (d := sJ) (by decide) fun u2 U2 => WP.block_nil ⟨h1.of_upd U2 (by decide) (by decide)
     (by decide), by rw [U2.other _ (by decide), p1], ?_⟩
   rw [U2.gpr, m1, ← I.J]; exact (ofNat_toNat32 _).symm
@@ -109,7 +109,7 @@ theorem mulLo_ct {B : BitVec 32} {Z w N o x y : Nat} {n : Option Nat} (T : MulTa
   let I (k : Nat) (s t : State) : Prop := ∃ i, k = rowsN n w - i ∧ i < rowsN n w ∧
     MulInv σ₁ s B Z w N o x y (num σ₁.mem B w y) i ∧ MulInv σ₂ t B Z w N o x y (num σ₂.mem B w y) i
   refine (RelCT.loop (Q := fun _ _ => True) I (fun k => ?_) (rowsN n w)).mono
-    (fun s t h => ⟨0, by omega, by omega, h.1, h.2⟩) fun _ _ h => h
+    (fun s t h => ⟨0, by omega_using [], by omega_using [hR1], h.1, h.2⟩) fun _ _ h => h
   refine (RelCT.exists_ (P := fun i s t => k = rowsN n w - i ∧ i < rowsN n w ∧
     MulInv σ₁ s B Z w N o x y (num σ₁.mem B w y) i ∧ MulInv σ₂ t B Z w N o x y (num σ₂.mem B w y) i)
     fun i => ?_).mono (fun s t h => h) fun _ _ h => h
@@ -150,7 +150,7 @@ theorem mulLo_ct {B : BitVec 32} {Z w N o x y : Nat} {n : Option Nat} (T : MulTa
   · change some (!s.z) = some true at e
     rw [z₁] at e
     have hne : ¬i + 1 = rowsN n w := fun h' => by simp [h'] at e
-    exact ⟨rowsN n w - (i + 1), by omega, i + 1, rfl, by omega, I₁, I₂⟩
+    exact ⟨rowsN n w - (i + 1), by omega_using [hk, hi], i + 1, rfl, by omega_using [hi, hne], I₁, I₂⟩
 
 end VG.Proof.Rsa.Arm.KeyDiv
 
@@ -169,8 +169,8 @@ theorem estA_facts {v : State} {B : BitVec 32} {Z w N r j : Nat} (h : Ws v B Z w
   have fr := h.arr_fit hr
   simp only [S] at fr
   rw [estA]
-  refine topPtr_ok h (r := .r10) (t := .r0) (by decide) (by decide) (by decide) (j := r) (i := 3) (by omega)
-    (by omega) (by decide) (by omega) fun u1 p1 r1 m1 h1 => ?_
+  refine topPtr_ok h (r := .r10) (t := .r0) (by decide) (by decide) (by decide) (j := r) (i := 3) (by omega_using [hr, hN])
+    (by omega_using [hdw]) (by decide) (by omega_using [fr]) fun u1 p1 r1 m1 h1 => ?_
   refine wp_ldrSlot h1 (d := sJ) (by decide) fun u2 U2 => WP.block_nil ⟨h1.of_upd U2 (by decide) (by decide)
     (by decide), ?_, by rw [U2.other _ (by decide), p1]⟩
   rw [U2.gpr, m1, ← hJ]; exact (ofNat_toNat32 _).symm
@@ -182,8 +182,8 @@ theorem ptr2J_facts {v : State} {B : BitVec 32} {Z w N a b j : Nat} (h : Ws v B 
       u.gpr .r0 = B + BitVec.ofNat 32 (arr w a) ∧ u.gpr .r10 = B + BitVec.ofNat 32 (arr w b) ∧
       u.gpr .r1 = BitVec.ofNat 32 (4 * j) := by
   rw [List.append_assoc]
-  refine ptr_ok h (r := .r0) (by decide) (j := a) (by omega) fun u1 p1 r1 m1 h1 => ?_
-  refine ptr_ok h1 (r := .r10) (by decide) (j := b) (by omega) fun u2 p2 r2 m2 h2 => ?_
+  refine ptr_ok h (r := .r0) (by decide) (j := a) (by omega_using [ha, hN]) fun u1 p1 r1 m1 h1 => ?_
+  refine ptr_ok h1 (r := .r10) (by decide) (j := b) (by omega_using [hb, hN]) fun u2 p2 r2 m2 h2 => ?_
   refine wp_ldrSlot h2 (d := sJ) (by decide) fun u3 U3 => WP.block_nil ⟨h2.of_upd U3 (by decide) (by decide)
     (by decide), by rw [U3.other _ (by decide), r2.gpr _ (by decide), p1], by rw [U3.other _ (by decide), p2], ?_⟩
   rw [U3.gpr, m2, m1, ← hJ]; exact (ofNat_toNat32 _).symm
@@ -193,7 +193,7 @@ theorem ptrJ_facts {v : State} {B : BitVec 32} {Z w N a j : Nat} (h : Ws v B Z w
     (hN : N ≤ 256) (hJ : slot v.mem B sJ = 4 * j) :
     WP isa (.block (ptr .r0 a ++ ([.ldr .r1 .r8 sJ] : List Instr))) v fun u => Ws u B Z w N ∧
       u.gpr .r0 = B + BitVec.ofNat 32 (arr w a) ∧ u.gpr .r1 = BitVec.ofNat 32 (4 * j) := by
-  refine ptr_ok h (r := .r0) (by decide) (j := a) (by omega) fun u1 p1 r1 m1 h1 => ?_
+  refine ptr_ok h (r := .r0) (by decide) (j := a) (by omega_using [ha, hN]) fun u1 p1 r1 m1 h1 => ?_
   refine wp_ldrSlot h1 (d := sJ) (by decide) fun u2 U2 => WP.block_nil ⟨h1.of_upd U2 (by decide) (by decide)
     (by decide), by rw [U2.other _ (by decide), p1], ?_⟩
   rw [U2.gpr, m1, ← hJ]; exact (ofNat_toNat32 _).symm
@@ -313,22 +313,22 @@ theorem step_ct {B : BitVec 32} {Z w N a r m t nm u j : Nat} {top qo : Option Na
     have := W.wle
     have fr := W.fit64 hr
     simp only [S] at fr
-    have a := wp_seq_and (rest := R4) (mulSubW_ok W hr hnm hrn hN c16 (by omega) cJ hj) h
+    have a := wp_seq_and (rest := R4) (mulSubW_ok W hr hnm hrn hN c16 (by omega_using [hdw]) cJ hj) h
     rw [mulSubW_eq, WP.seq_iff] at a
     have sl : ∀ {v : State} {e : Nat}, e + 4 ≤ 160 → (e + 4 ≤ sC ∨ sC + 4 ≤ e) →
         Outs (State.addr B) [(arr w r + 4 * j, 4 * (w / 2 + 1)), (sC, 4)] x.mem v.mem →
         slot v.mem B e = slot x.mem B e := fun {v e} he hC O => Outs.slot O (fun y hy => by
           simp only [List.mem_cons, List.not_mem_nil, or_false] at hy
           rcases hy with rfl | rfl
-          · exact Or.inl (by dsimp only; omega)
-          · exact hC) (by omega)
+          · exact Or.inl (by dsimp only; omega_using [r160, he])
+          · exact hC) (by omega_using [he])
     refine wp_and (ptrJ_facts W hr hN cJ) (WP.mono a fun y hy => WP.mono hy
       fun v ⟨⟨W', O, _, C, _⟩, q⟩ => ⟨⟨⟨W', ?_, ?_⟩, ?_⟩, q⟩)
     · rw [sl (by decide) (by decide) O]; exact c16
     · rw [sl (by decide) (by decide) O]; exact cJ
     · rw [C]; have := msTop_lt (w / 2) (val32 x.mem (State.addr B) (arr w r + 4 * j) (w / 2 + 1))
         (val32 x.mem (State.addr B) (arr w nm) (w / 2)) (slot x.mem B sQ)
-      omega
+      omega_using [this]
   refine RelCT.seq (RelCT.seq (piece [.r7, .r8, .r9] T.winA bnd_regs (fM F₁) (fM F₂))
     (piece (Q₁ := fun v => SP v ∧ WP isa R4 v F₁) (Q₂ := fun v => SP v ∧ WP isa R4 v F₂)
       [.r0, .r1, .r7, .r8, .r9] T.msB win_regs (fun s h => h.2) (fun s h => h.2))) ?_
@@ -341,15 +341,15 @@ theorem step_ct {B : BitVec 32} {Z w N a r m t nm u j : Nat} {top qo : Option Na
     have := W.wle
     have fr := W.fit64 hr
     simp only [S] at fr
-    have a := wp_seq_and (rest := .block tailB) (addBackW_ok W hr hm hrm hN (by omega) cJ hj hc hq) h
+    have a := wp_seq_and (rest := .block tailB) (addBackW_ok W hr hm hrm hN (by omega_using [hdw]) cJ hj hc hq) h
     rw [addBackW_eq, WP.seq_iff] at a
     have sl : ∀ {v : State} {e : Nat}, e + 4 ≤ 160 →
         Outs (State.addr B) ((arr w r + 4 * j, 4 * (w / 2 + 1)) :: qRanges w j qo) x.mem v.mem →
         slot v.mem B e = slot x.mem B e := fun {v e} he O => Outs.slot O (fun y hy => by
           rcases List.mem_cons.mp hy with rfl | hy
-          · exact Or.inl (by dsimp only; omega)
-          · have := qRanges_hdr y hy; simp only [VG.Impl.Rsa.Arm.Keys.hdr] at this; exact Or.inl (by omega))
-        (by omega)
+          · exact Or.inl (by dsimp only; omega_using [r160, he])
+          · have := qRanges_hdr y hy; simp only [VG.Impl.Rsa.Arm.Keys.hdr] at this; exact Or.inl (by omega_using [he, this]))
+        (by omega_using [he])
     refine wp_and (ptrJ_facts W hr hN cJ) (WP.mono a fun y hy => WP.mono hy
       fun v ⟨⟨W', O, _, _, _⟩, q⟩ => ⟨W', ?_, ?_, q⟩)
     · rw [sl (by decide) O]; exact c16
@@ -375,7 +375,7 @@ theorem divWG_ct {B : BitVec 32} {Z w N a r m t nm u : Nat} {top qo : Option Nat
     (hw6 : 6 ≤ w) :
     RelCT isa (fun s t' => (DivPre B Z w N m s a top ∧ QZ s.mem B w qo) ∧ (DivPre B Z w N m t' a top ∧
       QZ t'.mem B w qo)) (divW a r m t nm u top qo) fun _ _ => True := by
-  have hdw : 3 ≤ w / 2 := by omega
+  have hdw : 3 ≤ w / 2 := by omega_using [hw6]
   refine (RelCT.exists_ (P := fun (p : State × State) s t' => (s = p.1 ∧ DivPre B Z w N m p.1 a top ∧
     QZ p.1.mem B w qo) ∧ (t' = p.2 ∧ DivPre B Z w N m p.2 a top ∧ QZ p.2.mem B w qo)) fun p => ?_).mono
     (fun s t' h => ⟨(s, t'), ⟨rfl, h.1⟩, rfl, h.2⟩) fun _ _ h => h
@@ -388,7 +388,7 @@ theorem divWG_ct {B : BitVec 32} {Z w N a r m t nm u : Nat} {top qo : Option Nat
   by_cases hT : TopOk top w (num σ₁.mem B w a)
   swap
   · exact RelCT.of_false fun s t' h => hT h.1.2.1.2.2.2.2.2
-  have hj1 := (hT.facts (by simp only [num]; exact val32_lt _ _ _ _) (by omega)).1
+  have hj1 := (hT.facts (by simp only [num]; exact val32_lt _ _ _ _) (by omega_using [hw6])).1
   have fP : ∀ σ s, (s = σ ∧ DivPre B Z w N m σ a top ∧ QZ σ.mem B w qo) →
       WP isa (prep a r m nm top) s (Inv σ (jStart top w)) := by
     rintro σ s ⟨rfl, ⟨W, c16, hMl, hT0, z0, htop⟩, hq0⟩
@@ -448,15 +448,15 @@ theorem divWG_ct {B : BitVec 32} {Z w N a r m t nm u : Nat} {top qo : Option Nat
       exact ⟨⟨x0₁, z₁, I₁⟩, ⟨x0₂, z₂, I₂⟩⟩
     · rw [c₁] at e
       have : n ≠ 1 := fun hne => by simp [hne] at e
-      exact ⟨n - 1, by omega, by omega, ⟨x0₁, z₁, I₁⟩, ⟨x0₂, z₂, I₂⟩⟩
+      exact ⟨n - 1, by omega_using [hn], by omega_using [hn, this], ⟨x0₁, z₁, I₁⟩, ⟨x0₂, z₂, I₂⟩⟩
   refine RelCT.seq (RelCT.loop (Q := fun s t' => Inv σ₁ 0 s ∧ Inv σ₂ 0 t') I body (jStart top w) |>.mono
-    (fun s t' h => ⟨by omega, h.1, h.2⟩) fun _ _ h => h) ?_
+    (fun s t' h => ⟨by omega_using [hj1], h.1, h.2⟩) fun _ _ h => h) ?_
   -- The last step.
   refine (RelCT.exists_ (P := fun (q : (State × Nat) × (State × Nat)) s t' =>
       DivSt q.1.1 s B Z w N r m t nm u q.1.2 (num σ₁.mem B w m) (num σ₁.mem B w a) 0 qo ∧
       DivSt q.2.1 t' B Z w N r m t nm u q.2.2 (num σ₂.mem B w m) (num σ₂.mem B w a) 0 qo) fun q => ?_).mono
     (fun s t' ⟨⟨x0, z, h₁⟩, ⟨x0', z', h₂⟩⟩ => ⟨((x0, z), (x0', z')), h₁, h₂⟩) fun _ _ h => h
-  exact (stepI (G₁ := fun _ => True) (G₂ := fun _ => True) (by omega)).mono
+  exact (stepI (G₁ := fun _ => True) (G₂ := fun _ => True) (by omega_using [])).mono
     (fun s t' h => ⟨⟨h.1, WP.mono (stepD_ok h.1 hr hm ht hnm hu hN hrt hru htu hmr hmt hmu hnr htn hnu hr0 ht0 hu0
       hdw hq) fun _ _ => trivial⟩, h.2, WP.mono (stepD_ok h.2 hr hm ht hnm hu hN hrt hru htu hmr hmt hmu hnr htn hnu
       hr0 ht0 hu0 hdw hq) fun _ _ => trivial⟩) fun _ _ _ => trivial

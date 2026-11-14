@@ -51,7 +51,7 @@ theorem Layout.params_apart {K : TCombCfg} (h : Layout K) :
   all_goals have geom : Impl.Weierstrass.Point.oAt K.L.M.n+72*K.L.M.n≤x ∧
       x+8*K.L.M.n≤Impl.Weierstrass.Point.ownAt K.L.M.n :=
     lay_cases K.L.M.n h.n3 h.n6 (by decide) (by decide) (by decide) (by decide) x hx
-  all_goals simp only <;> omega
+  all_goals simp only <;> omega_arith
 
 theorem Inputs.keep {K : TCombCfg} {base T : Addr} {ws : List (BitVec 64)} {k a b : Nat}
     {s t : State} {rs : List Reg} (i : Inputs K base T ws k a b s)
@@ -71,13 +71,13 @@ theorem Inputs.keep {K : TCombCfg} {base T : Addr} {ws : List (BitVec 64)} {k a 
     apply mem.wordsVal (h.params_apart x hx)
     have fit : x+8*K.L.M.n≤4096 := by
       exact lay_cases K.L.M.n h.n3 h.n6 (by decide) (by decide) (by decide) (by decide) x hx
-    omega
+    omega_using [fit]
   refine ⟨i.scr.of_rest keep r12,i.far.of_rest keep,
     i.table.of_frame (by rw [keep.rd,keep.wr]) frame (by simpa only [List.mem_singleton,forall_eq] using hd),
     by rw [syms]; exact i.symbol,?_,?_,?_,?_⟩
-  · rw [mem.wordsVal h.zero_apart (by have hl := lay_nums h.n3 h.n6; omega),i.zero]
+  · rw [mem.wordsVal h.zero_apart (by have hl := lay_nums h.n3 h.n6; omega_using [low, hl]),i.zero]
   · intro j hj
-    rw [coarse.byte (fun w hw => .inr (by have := bounded w hw; omega)) (by omega),i.bits j hj]
+    rw [coarse.byte (fun w hw => .inr (by have := bounded w hw; omega_using [hb, this])) (by omega_using [hend, hj]),i.bits j hj]
   · rw [params _ (by simp),i.coeffA]
   · rw [params _ (by simp),i.coeffB]
 

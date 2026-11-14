@@ -30,7 +30,7 @@ theorem half_writeSlice {s : State} {v : Vector (BitVec 128) 8} (half : Fin 2)
   simp only [writeSlice,halfStores,List.foldl_map,halfWrite]
   congr 1
   funext m j
-  rw [hb ⟨4*half.val+j.val,by omega⟩]
+  rw [hb ⟨4*half.val+j.val,by omega_using []⟩]
 
 theorem halfStore_ok (half : Fin 2) {s : State} {rest : List Instr} {Q : State → Prop}
     {v : Vector (BitVec 128) 8} (hb : Bank s (regs 7) v)
@@ -44,10 +44,10 @@ theorem halfStore_ok (half : Fin 2) {s : State} {rest : List Instr} {Q : State �
   refine store_many_ok (halfStores half) .x2 ?_ ?_ fun t hm => ?_
   · intro p hp
     obtain ⟨j,_,rfl⟩ := List.mem_map.mp hp
-    omega
+    omega_using []
   · intro p hp
     obtain ⟨j,_,rfl⟩ := List.mem_map.mp hp
-    simpa only [hc.wr,hc.gpr] using hw ⟨4*half.val+j.val,by omega⟩
+    simpa only [hc.wr,hc.gpr] using hw ⟨4*half.val+j.val,by omega_using []⟩
   · rw [half_writeSlice half hb',hc.gpr,hc.mem] at hm
     refine k t ⟨mid,hc,hm⟩ ?_
     intro j
@@ -92,8 +92,8 @@ theorem halfValues_both (v : Vector (BitVec 128) 8) (q : BitVec 128) :
   simp only [halfValues, canonicalValues, Vector.getElem_ofFn, Fin.isValue, Fin.val_zero, Fin.val_one,
     Nat.mul_zero, Nat.zero_add, Nat.zero_le, true_and, Nat.mul_one]
   by_cases h : j < 4
-  · simp only [h, ite_true, show ¬(4 ≤ j ∧ j < 8) by omega, ite_false]
-  · simp only [h, ite_false, show 4 ≤ j ∧ j < 8 by omega, and_self, ite_true]
+  · simp only [h, ite_true, show ¬(4 ≤ j ∧ j < 8) by omega_using [h], ite_false]
+  · simp only [h, ite_false, show 4 ≤ j ∧ j < 8 by omega_using [hj, h], and_self, ite_true]
 
 /-- The two halves of a bank write the whole bank. -/
 theorem halfWrite_halves (c : Vector (BitVec 128) 8) (p : Addr) (m : Mem) :

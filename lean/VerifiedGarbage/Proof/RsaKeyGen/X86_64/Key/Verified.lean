@@ -75,7 +75,7 @@ theorem EG.after {M : KIn → State → Prop} (hM : HdrStab M) {I : KIn} {s t : 
   have h256 := hw.h256
   have fw : ∀ i < 32, word t.mem I.B (8 * i) = word s.mem I.B (8 * i) := fun i hi => frm_word hf h256 hi
   exact ⟨hw.congr hf (fun r hr' => by rw [List.mem_singleton.mp hr']; exact Or.inl (by omega)) k hr,
-    ha.congr fun i hi => fw i (by omega), k.2.2.trans hW, hM I s t hm fw⟩
+    ha.congr fun i hi => fw i (by omega_using [hi]), k.2.2.trans hW, hM I s t hm fw⟩
 
 /-- `zeroOut`'s loop's registers. -/
 def zoVal (ptr : Addr) (len : Nat) : Reg → BitVec 64
@@ -94,7 +94,7 @@ theorem zeroOutK_ct {M : KIn → State → Prop} (hM : HdrStab M) {sPtr sLen : N
       obtain ⟨hp, hl, -⟩ := hA I s.mem ha L
       rw [he] at hp hl
       have hl' : ∀ i < 32, InRegions (s.rd ++ s.wr) (off I.B (8 * i)) 8 := fun i hi =>
-        hw.scr.ld (by have := hw.h256; omega)
+        hw.scr.ld (by have := hw.h256; omega_using [hi, this])
       refine WP.mono (WP.keep [.rsi, .rcx, .rax] (Q := fun t => t.gpr .rsi = ptr p.q ∧
         t.gpr .rcx = BitVec.ofNat 64 (len p.q)) (by
         xrun [State.ea, hdr, hw.rdi, hdrOff, hl' sPtr hP, hl' sLen hL]
@@ -107,7 +107,7 @@ theorem zeroOutK_ct {M : KIn → State → Prop} (hM : HdrStab M) {sPtr sLen : N
       obtain ⟨I, he, hw, ha, hW, L, O, hm⟩ := h
       obtain ⟨hp, hl, ho, hl1, hlw⟩ := hA I s.mem ha L
       have hw2 := hw.w2
-      refine WP.mono (zeroOut_ok hw.scr hw.rdi hw.h256 hP hL hp hl hl1 (by omega)
+      refine WP.mono (zeroOut_ok hw.scr hw.rdi hw.h256 hP hL hp hl hl1 (by omega_using [hlw, hw2])
         ⟨fun i hi => by rw [hW]; exact O.wr _ ho i hi, O.sep _ ho⟩) fun t ⟨_, hx, k⟩ => ?_
       obtain ⟨a, b, c, d⟩ := EG.after hM hw ha hW hm (frm_scr (O.sep _ ho) hx) k (by decide)
       exact ⟨I, he, a, b, c, L, O, d⟩
@@ -126,7 +126,7 @@ theorem storeBlkK_ok {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w) {j sPtr
           have hdi₃ : s₃.gpr .rdi = B := ((k₂.trans k₃).gpr (by decide)).trans h.rdi
           have hs₃ := h.scr.congr (k₂.trans k₃).2.2
           have hl₃ : ∀ i < 32, InRegions (s₃.rd ++ s₃.wr) (off B (8 * i)) 8 := fun i hi =>
-            hs₃.ld (by have := h.h256; omega)
+            hs₃.ld (by have := h.h256; omega_using [hi, this])
           xrun [State.ea, hdr, hdi₃, hdrOff, m₃, m₂, hl₃ sPtr hP, hl₃ sLen hL, hl₃ kOk (by decide), hp, hl]) rfl)
       fun _ ⟨⟨hsi, hcx⟩, k₄⟩ => ⟨(k₄.gpr (by decide)).trans hbx, hsi, hcx,
         ((k₂.trans k₃).trans k₄ |>.gpr (by decide)).trans h.rdi⟩))
@@ -156,37 +156,37 @@ theorem storeAK_ct {j sPtr sLen : Nat} (hj : j < 16) (hP : sPtr < 32) (hL : sLen
         (O.sep _ ho)) fun t ⟨_, _, ht, hf, k⟩ => ?_
       have h256 := hw.h256
       have fw : ∀ i < 32, word t.mem I.B (8 * i) = word s.mem I.B (8 * i) := fun i hi => frm_word hf h256 hi
-      exact ⟨I, he, ht, ha.congr fun i hi => fw i (by omega), k.2.2.trans hW, L, O, c, (fw _ (by decide)).trans hm⟩
+      exact ⟨I, he, ht, ha.congr fun i hi => fw i (by omega_using [hi]), k.2.2.trans hW, L, O, c, (fw _ (by decide)).trans hm⟩
 
 /-! ## The outputs' places -/
 
 theorem outN : OutHdr kNo kNl KQ.pN (fun q => 2 * q.pl) := fun I _ ha L =>
-  ⟨ha.no, ha.nl, by simp [outsL, KIn.pub], by have := L.pl1; simp only [KIn.pub]; omega,
-    by simp only [KIn.pub]; rw [L.W]; have := L.pl8; omega⟩
+  ⟨ha.no, ha.nl, by simp [outsL, KIn.pub], by have := L.pl1; simp only [KIn.pub]; omega_using [this],
+    by simp only [KIn.pub]; rw [L.W]; have := L.pl8; omega_using [this]⟩
 
 theorem outD : OutHdr kDo kNl KQ.pD (fun q => 2 * q.pl) := fun I _ ha L =>
-  ⟨ha.dd, ha.nl, by simp [outsL, KIn.pub], by have := L.pl1; simp only [KIn.pub]; omega,
-    by simp only [KIn.pub]; rw [L.W]; have := L.pl8; omega⟩
+  ⟨ha.dd, ha.nl, by simp [outsL, KIn.pub], by have := L.pl1; simp only [KIn.pub]; omega_using [this],
+    by simp only [KIn.pub]; rw [L.W]; have := L.pl8; omega_using [this]⟩
 
 theorem outP : OutHdr kPp kPl KQ.pP KQ.pl := fun I _ ha L =>
-  ⟨ha.pp, ha.pl, by simp [outsL, KIn.pub], by have := L.pl1; simp only [KIn.pub]; omega,
-    by simp only [KIn.pub]; rw [L.W]; have := L.pl8; omega⟩
+  ⟨ha.pp, ha.pl, by simp [outsL, KIn.pub], by have := L.pl1; simp only [KIn.pub]; omega_using [this],
+    by simp only [KIn.pub]; rw [L.W]; have := L.pl8; omega_using [this]⟩
 
 theorem outQ : OutHdr kQp kPl KQ.pQ KQ.pl := fun I _ ha L =>
-  ⟨ha.qp, ha.pl, by simp [outsL, KIn.pub], by have := L.pl1; simp only [KIn.pub]; omega,
-    by simp only [KIn.pub]; rw [L.W]; have := L.pl8; omega⟩
+  ⟨ha.qp, ha.pl, by simp [outsL, KIn.pub], by have := L.pl1; simp only [KIn.pub]; omega_using [this],
+    by simp only [KIn.pub]; rw [L.W]; have := L.pl8; omega_using [this]⟩
 
 theorem outDp : OutHdr kDp kPl KQ.pDp KQ.pl := fun I _ ha L =>
-  ⟨ha.dp, ha.pl, by simp [outsL, KIn.pub], by have := L.pl1; simp only [KIn.pub]; omega,
-    by simp only [KIn.pub]; rw [L.W]; have := L.pl8; omega⟩
+  ⟨ha.dp, ha.pl, by simp [outsL, KIn.pub], by have := L.pl1; simp only [KIn.pub]; omega_using [this],
+    by simp only [KIn.pub]; rw [L.W]; have := L.pl8; omega_using [this]⟩
 
 theorem outDq : OutHdr kDq kPl KQ.pDq KQ.pl := fun I _ ha L =>
-  ⟨ha.dq, ha.pl, by simp [outsL, KIn.pub], by have := L.pl1; simp only [KIn.pub]; omega,
-    by simp only [KIn.pub]; rw [L.W]; have := L.pl8; omega⟩
+  ⟨ha.dq, ha.pl, by simp [outsL, KIn.pub], by have := L.pl1; simp only [KIn.pub]; omega_using [this],
+    by simp only [KIn.pub]; rw [L.W]; have := L.pl8; omega_using [this]⟩
 
 theorem outQi : OutHdr kQi kPl KQ.pQi KQ.pl := fun I _ ha L =>
-  ⟨ha.qi, ha.pl, by simp [outsL, KIn.pub], by have := L.pl1; simp only [KIn.pub]; omega,
-    by simp only [KIn.pub]; rw [L.W]; have := L.pl8; omega⟩
+  ⟨ha.qi, ha.pl, by simp [outsL, KIn.pub], by have := L.pl1; simp only [KIn.pub]; omega_using [this],
+    by simp only [KIn.pub]; rw [L.W]; have := L.pl8; omega_using [this]⟩
 
 /-! ## The zeros and the stores -/
 
@@ -330,7 +330,7 @@ theorem front_zf {I : KIn} {m₀ : Mem} {t : State} (F : Front I m₀ t) :
   refine ⟨⟨ok, hok⟩, ?_⟩
   rw [hzf]
   refine congrArg (fun b => some (!b)) ?_
-  have hW : 8 * I.pl = 16 * I.pl / 2 := by omega
+  have hW : 8 * I.pl = 16 * I.pl / 2 := by omega_using []
   have hst : I.st = 2 ↔ ∃ d, Spec.Rsa.inverse I.E I.L = some d ∧ d ≤ 2 ^ (8 * I.pl) := by
     simp only [KIn.st]
     constructor

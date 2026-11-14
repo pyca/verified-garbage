@@ -78,7 +78,7 @@ theorem select_ok (d : Direction) {p : Nat} (hp : 1 ≤ p ∧ p ≤ 3) (s : Stat
     · intro h2
       have hp3 : p ≠ 3 := by simpa using h3
       have hp2 : p ≠ 2 := by simpa using h2
-      exact branch t₂ 1 (by omega) rfl rfl rfl hg₂
+      exact branch t₂ 1 (by omega_using [hp, hp3, hp2]) rfl rfl rfl hg₂
 
 /-- The registers a pass keeps. -/
 def passKept : List Reg := [.r2, .r3, .r4, .r5, .r29, .r30, .r31]
@@ -136,7 +136,7 @@ theorem pass_ok (d : Direction) {p : Nat} (hp : 1 ≤ p ∧ p ≤ 3)
   have hp₃ : s₃.gpr .r19 = BitVec.ofNat 64 p :=
     (regs₃ .r19 (by decide)).trans ((hs₂.regs .r19 (by decide)).trans
       ((hs.regs .r19 (by decide) (by decide) (by decide) (by decide)).trans hpasses))
-  obtain ⟨hsub, hzero⟩ := countDown_rules p (by omega) hp.1
+  obtain ⟨hsub, hzero⟩ := countDown_rules p (by omega_using [hp]) hp.1
   refine WP.of_runBlock ⟨s₄, by simp only [runBoxes_append, run₃, Option.bind_some, run₄], ?_⟩
   refine ⟨?_, ?_, rd₄.trans (rd₃.trans (hs₂.rd.trans hs.rd)),
     wr₄.trans (wr₃.trans (hs₂.wr.trans hs.wr)), ?_, ?_, ?_, ?_⟩

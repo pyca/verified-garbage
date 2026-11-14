@@ -60,7 +60,7 @@ theorem blockRestore_ok (original s : State) (hsaved : Saved original s)
 
 theorem savedSlot_work_disjoint (s : State) (i : Nat) (hi : i < 7) :
     (⟨s.gpr .rdx + BitVec.ofNat 64 (8 * i), 8⟩ : Region).Disjoint (workRegion s) :=
-  Offset.disjoint (s.gpr .rdx) (by omega) (by omega) (by decide)
+  Offset.disjoint (s.gpr .rdx) (by omega_using [hi]) (by omega_using [hi]) (by decide)
 
 theorem Saved.congr {original s t : State} (hs : Saved original s)
     (hbase : t.gpr .rdx = s.gpr .rdx) (hf : Frame [workRegion s] s.mem t.mem) :

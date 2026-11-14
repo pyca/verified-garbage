@@ -48,8 +48,8 @@ theorem ecbTaint_wf (dir : Dir) (s : State) (hs : (ecbX86_64 dir).pre s) : Taint
   refine ⟨fun _ => ?_, ?_⟩
   · rw [hwr]
     refine ⟨?_, ?_, ?_⟩
-    · exact List.Forall₂.cons (by change 0 ≤ 16 * (s.gpr .rcx).toNat; omega)
-        (List.Forall₂.cons (by change 8 * slots ≤ 8 * slots; omega) List.Forall₂.nil)
+    · exact List.Forall₂.cons (by change 0 ≤ 16 * (s.gpr .rcx).toNat; omega_using [])
+        (List.Forall₂.cons (by change 8 * slots ≤ 8 * slots; omega_using []) List.Forall₂.nil)
     · exact List.Pairwise.cons
         (fun r hr => by obtain rfl := List.mem_singleton.mp hr; exact dDS)
         (List.Pairwise.cons (by simp) List.Pairwise.nil)
@@ -57,8 +57,8 @@ theorem ecbTaint_wf (dir : Dir) (s : State) (hs : (ecbX86_64 dir).pre s) : Taint
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
       · change 16 * (s.gpr .rcx).toNat ≤ 2 ^ 64
-        have := (s.gpr .rdx).isLt; omega
-      · change 8 * slots ≤ 2 ^ 64; omega
+        have := (s.gpr .rdx).isLt; omega_arith
+      · change 8 * slots ≤ 2 ^ 64; omega_using [fitB]
   · intro p hp
     simp only [ecbTaint, List.mem_singleton] at hp
     subst p

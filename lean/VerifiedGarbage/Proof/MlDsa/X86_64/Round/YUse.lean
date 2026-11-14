@@ -98,8 +98,8 @@ theorem msN_two {d x : Nat} (hd : d = 16 ∨ d = 44) (hx : x ≤ d) :
       msN 44 (msN 44 (x + 44 - 1)) = (x + 44 - 1) % 44 ∧ msN 44 (msN 44 (x + 44)) = (x + 44) % 44)) = true := by
     decide
   rcases hd with rfl | rfl
-  · exact of_decide_eq_true (List.all_eq_true.mp t16 x (List.mem_range.mpr (by omega)))
-  · exact of_decide_eq_true (List.all_eq_true.mp t44 x (List.mem_range.mpr (by omega)))
+  · exact of_decide_eq_true (List.all_eq_true.mp t16 x (List.mem_range.mpr (by omega_using [hx])))
+  · exact of_decide_eq_true (List.all_eq_true.mp t44 x (List.mem_range.mpr (by omega_using [hx])))
 
 theorem uhL_toNat {g : Nat} (h : g ∈ gamma2s) (hv : BitVec 32) {a : BitVec 32} (ha : a.toNat < q) :
     (uhL g hv a).toNat = (if hv ≠ 0 then (if hbF g a.toNat * (2 * g) < a.toNat then

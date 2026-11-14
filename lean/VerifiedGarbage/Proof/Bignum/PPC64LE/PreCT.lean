@@ -116,13 +116,13 @@ theorem T01 {d : PD} {s : State} (h : C0 d s) : WP isa (.block (Precompute.save 
 theorem T12 {d : PD} {s : State} (h : C1 d s) : WP isa loadN s (C2 d) := by
   have hb := h.base
   have hwd : d.w = (d.k + 7) / 8 := rfl
-  have hw1 : 8 ≤ d.w := by have := hb.k64; omega
+  have hw1 : 8 ≤ d.w := by have := hb.k64; omega_using [hwd, this]
   have e0 : slot d.w 0 = hdrBytes := by simp [slot]
   have e8 : slot d.w 8 = hdrBytes + 8 * (8 * (d.w + 2)) := rfl
   have hh : hdrBytes = 256 := rfl
   have hZ := hb.hZ
   refine WP.mono (loadN_ok (dA := slot d.w 0) hb.scr hb.r10 (by rw [hb.r12]; simp) hb.r6 hb.r11
-    (by have := hb.k64; omega) (by omega) (by have := hb.k1024; omega) (by omega) (by omega) h.rd h.sep)
+    (by have := hb.k64; omega_using [this]) (by omega_using [hwd]) (by have := hb.k1024; omega_using [hwd, this]) (by omega_using [e0, hh]) (by omega_using [e0, e8, hZ]) h.rd h.sep)
     fun t ⟨hv, out, k⟩ => ⟨hb.keep k, by rw [hv, h.bytesAt], by rw [k.rd, k.wr]; exact h.rd, fun i hi => ?_⟩
   rw [← h.bytes i hi]
   refine out _ (Or.inr ?_)
@@ -135,16 +135,16 @@ theorem T23 {d : PD} {s : State} (h : C2 d s) : WP isa (.block check1) s (C3 d) 
   have hl := hb.len
   have hk := hb.k64
   refine WP.mono (check1_ok (N := d.N) (nb := d.nb) (by rw [hb.r12]; simp) hb.r6 hk hl hrd
-    fun i hi => hby i (by omega)) fun t ⟨⟨i0, i15, i18, im⟩, k⟩ =>
-    ⟨hb.keep k, by rw [im]; exact hv, by rw [i15, getD_of_lt (by omega)], i18,
-      by rw [i0, getD_of_lt (by omega)]⟩
+    fun i hi => hby i (by omega_using [hl, hi])) fun t ⟨⟨i0, i15, i18, im⟩, k⟩ =>
+    ⟨hb.keep k, by rw [im]; exact hv, by rw [i15, getD_of_lt (by omega_using [hl, hk])], i18,
+      by rw [i0, getD_of_lt (by omega_using [hl, hk])]⟩
 
 theorem T34 {d : PD} {s : State} (h : C3 d s) : WP isa check2 s (C4 d) := by
   obtain ⟨hb, hv, h15, h18, h0⟩ := h
   have hl := hb.len
   have hk := hb.k64
-  refine WP.mono (check2_ok (nb := d.nb) hb.r6 hk hb.k1024 hl (by rw [h0, getD_of_lt (by omega)])
-    (by rw [h15, getD_of_lt (by omega)]) h18) fun t ⟨a, m, k⟩ =>
+  refine WP.mono (check2_ok (nb := d.nb) hb.r6 hk hb.k1024 hl (by rw [h0, getD_of_lt (by omega_using [hl, hk])])
+    (by rw [h15, getD_of_lt (by omega_using [hl, hk])]) h18) fun t ⟨a, m, k⟩ =>
     ⟨hb.keep k, by rw [m]; exact hv, a⟩
 
 theorem TA {d : PD} {s : State} (h : C4 d s ∧ s.gpr .r0 = 0) :
@@ -154,19 +154,19 @@ theorem TA {d : PD} {s : State} (h : C4 d s ∧ s.gpr .r0 = 0) :
   have hf := valid_facts hval hb.k64
   have hnw := hb.scr.nowrap
   have hwd : d.w = (d.k + 7) / 8 := rfl
-  have hw1 : 8 ≤ d.w := by have := hb.k64; omega
-  have hw' : d.w < 2 ^ 31 := by have := hb.k1024; omega
+  have hw1 : 8 ≤ d.w := by have := hb.k64; omega_using [hwd, this]
+  have hw' : d.w < 2 ^ 31 := by have := hb.k1024; omega_using [hwd, this]
   have e : ∀ j, slot d.w j = hdrBytes + j * (8 * (d.w + 2)) := fun _ => rfl
   have e0 := e 0; have e1 := e 1; have e4 := e 4; have e8 := e 8
   have hZ := hb.hZ
   rw [← hwd] at hf
-  refine WP.seq (WP.mono (r2Fast_ok hb.scr hb.r9 hb.r10 hb.r5 hb.r11 (by omega) hw' hZ
+  refine WP.seq (WP.mono (r2Fast_ok hb.scr hb.r9 hb.r10 hb.r5 hb.r11 (by omega_using [hw1]) hw' hZ
     (by rw [hv]; exact hf.2.2) (by rw [hv]; exact hf.1)) fun s₃ ⟨_, _, k₃⟩ => ?_)
   have g : ∀ r ∈ [Reg.r19, .r10, .r5, .r11, .r21], s₃.gpr r = s.gpr r := fun r hr =>
     k₃.gpr r (by revert r hr; decide)
   refine WP.seq (WP.mono (write_ok (P := d.P) (dN := slot d.w 0) (dX := slot d.w 1) (hb.scr.congr k₃.wr)
     (hb.pre.congr k₃.wr) (by rw [g .r19 (by decide), hb.r19]; simp) (by rw [g .r10 (by decide), hb.r10])
-    (by rw [g .r5 (by decide), hb.r5]) (by rw [g .r11 (by decide), hb.r11]) (by omega) hw' (by omega) (by omega)
+    (by rw [g .r5 (by decide), hb.r5]) (by rw [g .r11 (by decide), hb.r11]) (by omega_using [hw1]) hw' (by omega_using [e0, e8, hZ]) (by omega_using [e1, e8, hZ])
     (Nat.le_refl _) hb.hPS) fun s₄ ⟨_, k₄⟩ => ?_)
   refine WP.mono (WP.keep [.r3] (Q := fun _ => True) (by prun; exact ⟨_, rfl⟩) (by decide)) fun t ⟨_, k₅⟩ => ?_
   show t.gpr .r21 = d.S
@@ -176,9 +176,9 @@ theorem TB {d : PD} {s : State} (h : C4 d s ∧ s.gpr .r0 ≠ 0) :
     WP isa (.seq zeroPre (.block [.li .r3 0])) s (C5 d) := by
   obtain ⟨⟨hb, -, -⟩, -⟩ := h
   have hwd : d.w = (d.k + 7) / 8 := rfl
-  have hw1 : 8 ≤ d.w := by have := hb.k64; omega
-  have hw' : d.w < 2 ^ 31 := by have := hb.k1024; omega
-  refine WP.seq (WP.mono (zeroPre_ok hb.pre (by rw [hb.r19]; simp) hb.r11 (by omega) hw' (Nat.le_refl _))
+  have hw1 : 8 ≤ d.w := by have := hb.k64; omega_using [hwd, this]
+  have hw' : d.w < 2 ^ 31 := by have := hb.k1024; omega_using [hwd, this]
+  refine WP.seq (WP.mono (zeroPre_ok hb.pre (by rw [hb.r19]; simp) hb.r11 (by omega_using [hw1]) hw' (Nat.le_refl _))
     fun s₃ ⟨_, k₃⟩ => ?_)
   refine WP.mono (WP.keep [.r3] (Q := fun _ => True) (by prun; exact ⟨_, rfl⟩) (by decide)) fun t ⟨_, k₄⟩ => ?_
   show t.gpr .r21 = d.S

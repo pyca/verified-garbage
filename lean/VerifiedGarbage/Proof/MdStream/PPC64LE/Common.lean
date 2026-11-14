@@ -42,7 +42,7 @@ structure Dims (P : Params) : Prop where
   B : P.B = 64 ∨ P.B = 128
   L : 0 < P.L ∧ P.L ≤ 16
 
-theorem Dims.pos {P : Params} (hd : Dims P) : 0 < P.B := by rcases hd.B with h | h <;> omega
+theorem Dims.pos {P : Params} (hd : Dims P) : 0 < P.B := by rcases hd.B with h | h <;> omega_using [h]
 
 /-- The shift count of the block size. -/
 theorem Dims.log {P : Params} (hd : Dims P) :
@@ -66,15 +66,15 @@ theorem Dims.shl {P : Params} (hd : Dims P) {a : Nat} (h : P.B * a < 2 ^ 64) :
 /-- `x &&& (B - 1)`. -/
 theorem Dims.and {P : Params} (hd : Dims P) (x : BitVec 64) :
     x &&& BitVec.ofNat 64 (P.B - 1) = BitVec.ofNat 64 (x.toNat % P.B) := by
-  have := and_mask (n := Impl.MdStream.PPC64LE.lg P) (by have := hd.log; omega) x
+  have := and_mask (n := Impl.MdStream.PPC64LE.lg P) (by have := hd.log; omega_using [this]) x
   rwa [hd.log.2.2] at this
 
 /-- The block size fits `li`'s immediate. -/
 theorem Dims.B_lt {P : Params} (hd : Dims P) : P.B < 2 ^ 15 := by
-  rcases hd.B with h | h <;> omega
+  rcases hd.B with h | h <;> omega_using [h]
 
 theorem Dims.mod {P : Params} (hd : Dims P) (n : Nat) : n % 2 ^ 64 % P.B = n % P.B := by
-  rcases hd.B with h | h <;> rw [h] <;> omega
+  rcases hd.B with h | h <;> rw [h] <;> omega_using []
 
 /-! ## Saving the caller's registers -/
 
@@ -117,20 +117,20 @@ theorem saveMem_frame (hd : Dims P) (m : Mem) (b : Addr) (g : Reg → BitVec 64)
     Frame [⟨b, P.so + 48⟩] m (saveMem P m b g) := by
   have := hd.so
   have c : ∀ d : Nat, d + 8 ≤ P.so + 48 → (⟨b, P.so + 48⟩ : Region).Contains (b + BitVec.ofNat 64 d) (64 / 8) :=
-    fun d hd => contains_offset hd (by omega)
+    fun d hd => contains_offset hd (by omega_using [this, hd])
   simp only [saveMem]
-  exact (((((Frame.refl _ _).writeW (List.mem_singleton_self _) _ (c _ (by omega))).writeW
-    (List.mem_singleton_self _) _ (c _ (by omega))).writeW (List.mem_singleton_self _) _
-    (c _ (by omega))).writeW (List.mem_singleton_self _) _ (c _ (by omega))).writeW
-    (List.mem_singleton_self _) _ (c _ (by omega)) |>.writeW (List.mem_singleton_self _) _
-    (c _ (by omega))
+  exact (((((Frame.refl _ _).writeW (List.mem_singleton_self _) _ (c _ (by omega_using []))).writeW
+    (List.mem_singleton_self _) _ (c _ (by omega_using []))).writeW (List.mem_singleton_self _) _
+    (c _ (by omega_using []))).writeW (List.mem_singleton_self _) _ (c _ (by omega_using []))).writeW
+    (List.mem_singleton_self _) _ (c _ (by omega_using [])) |>.writeW (List.mem_singleton_self _) _
+    (c _ (by omega_using []))
 
 /-- The saved registers are outside the part of the scratch space the
 compression function uses. -/
 theorem saved_offset (hd : Dims P) {p : Reg × Nat} (hp : p ∈ saved P) : P.so ≤ p.2 ∧ p.2 + 8 ≤ P.so + 48 := by
   have := hd.so
   simp only [saved, List.mem_cons, List.not_mem_nil, or_false] at hp
-  rcases hp with rfl | rfl | rfl | rfl | rfl | rfl <;> dsimp only <;> omega
+  rcases hp with rfl | rfl | rfl | rfl | rfl | rfl <;> dsimp only <;> omega_using []
 
 /-- Saving `r26`–`r31` with the scratch pointer in `b`. -/
 theorem save_ok (hd : Dims P) {b : Reg} (hb : b ≠ .r0) {rest : List Instr} {s : State} {Q : State → Prop}
@@ -141,17 +141,17 @@ theorem save_ok (hd : Dims P) {b : Reg} (hb : b ≠ .r0) {rest : List Instr} {s 
   have := hd.so
   rw [save_eq]
   simp only [List.cons_append, List.nil_append]
-  refine wp_std (by omega) rfl (hin _ (by omega) (by omega)) (fun s₁ g₁ => ?_) hb
-  refine wp_std (by omega) (by rw [g₁.gpr]) (by rw [g₁.wr]; exact hin _ (by omega) (by omega))
+  refine wp_std (by omega_using [this]) rfl (hin _ (by omega_using []) (by omega_using [])) (fun s₁ g₁ => ?_) hb
+  refine wp_std (by omega_using [this]) (by rw [g₁.gpr]) (by rw [g₁.wr]; exact hin _ (by omega_using []) (by omega_using []))
     (fun s₂ g₂ => ?_) hb
-  refine wp_std (by omega) (by rw [g₂.gpr, g₁.gpr])
-    (by rw [g₂.wr, g₁.wr]; exact hin _ (by omega) (by omega)) (fun s₃ g₃ => ?_) hb
-  refine wp_std (by omega) (by rw [g₃.gpr, g₂.gpr, g₁.gpr])
-    (by rw [g₃.wr, g₂.wr, g₁.wr]; exact hin _ (by omega) (by omega)) (fun s₄ g₄ => ?_) hb
-  refine wp_std (by omega) (by rw [g₄.gpr, g₃.gpr, g₂.gpr, g₁.gpr])
-    (by rw [g₄.wr, g₃.wr, g₂.wr, g₁.wr]; exact hin _ (by omega) (by omega)) (fun s₅ g₅ => ?_) hb
-  refine wp_std (by omega) (by rw [g₅.gpr, g₄.gpr, g₃.gpr, g₂.gpr, g₁.gpr])
-    (by rw [g₅.wr, g₄.wr, g₃.wr, g₂.wr, g₁.wr]; exact hin _ (by omega) (by omega)) (fun s₆ g₆ => ?_) hb
+  refine wp_std (by omega_using [this]) (by rw [g₂.gpr, g₁.gpr])
+    (by rw [g₂.wr, g₁.wr]; exact hin _ (by omega_using []) (by omega_using [])) (fun s₃ g₃ => ?_) hb
+  refine wp_std (by omega_using [this]) (by rw [g₃.gpr, g₂.gpr, g₁.gpr])
+    (by rw [g₃.wr, g₂.wr, g₁.wr]; exact hin _ (by omega_using []) (by omega_using [])) (fun s₄ g₄ => ?_) hb
+  refine wp_std (by omega_using [this]) (by rw [g₄.gpr, g₃.gpr, g₂.gpr, g₁.gpr])
+    (by rw [g₄.wr, g₃.wr, g₂.wr, g₁.wr]; exact hin _ (by omega_using []) (by omega_using [])) (fun s₅ g₅ => ?_) hb
+  refine wp_std (by omega_using [this]) (by rw [g₅.gpr, g₄.gpr, g₃.gpr, g₂.gpr, g₁.gpr])
+    (by rw [g₅.wr, g₄.wr, g₃.wr, g₂.wr, g₁.wr]; exact hin _ (by omega_using []) (by omega_using [])) (fun s₆ g₆ => ?_) hb
   refine k s₆ (by rw [g₆.gpr, g₅.gpr, g₄.gpr, g₃.gpr, g₂.gpr, g₁.gpr])
     (by rw [g₆.rd, g₅.rd, g₄.rd, g₃.rd, g₂.rd, g₁.rd]) (by rw [g₆.wr, g₅.wr, g₄.wr, g₃.wr, g₂.wr, g₁.wr])
     (by rw [g₆.sp, g₅.sp, g₄.sp, g₃.sp, g₂.sp, g₁.sp]) ?_
@@ -170,25 +170,25 @@ theorem restore_ok (hd : Dims P) {s : State} {scr : Addr} (h27 : s.gpr .r27 = sc
   have v : ∀ r d, (r, d) ∈ saved P → s.mem.readW (scr + BitVec.ofNat 64 d) 64 = g r :=
     fun r d h => hsv (r, d) h
   rw [restore_eq]
-  refine wp_ld (by omega) (by rw [h27]) (hin _ (by omega) (by omega)) fun s₁ u₁ => ?_
-  refine wp_ld (by omega) (by rw [u₁.other _ (by decide), h27])
-    (by rw [u₁.rd, u₁.wr]; exact hin _ (by omega) (by omega)) fun s₂ u₂ => ?_
-  refine wp_ld (by omega) (by rw [u₂.other _ (by decide), u₁.other _ (by decide), h27])
-    (by rw [u₂.rd, u₂.wr, u₁.rd, u₁.wr]; exact hin _ (by omega) (by omega)) fun s₃ u₃ => ?_
-  refine wp_ld (by omega)
+  refine wp_ld (by omega_using [this]) (by rw [h27]) (hin _ (by omega_using []) (by omega_using [])) fun s₁ u₁ => ?_
+  refine wp_ld (by omega_using [this]) (by rw [u₁.other _ (by decide), h27])
+    (by rw [u₁.rd, u₁.wr]; exact hin _ (by omega_using []) (by omega_using [])) fun s₂ u₂ => ?_
+  refine wp_ld (by omega_using [this]) (by rw [u₂.other _ (by decide), u₁.other _ (by decide), h27])
+    (by rw [u₂.rd, u₂.wr, u₁.rd, u₁.wr]; exact hin _ (by omega_using []) (by omega_using [])) fun s₃ u₃ => ?_
+  refine wp_ld (by omega_using [this])
     (by rw [u₃.other _ (by decide), u₂.other _ (by decide), u₁.other _ (by decide), h27])
-    (by rw [u₃.rd, u₃.wr, u₂.rd, u₂.wr, u₁.rd, u₁.wr]; exact hin _ (by omega) (by omega))
+    (by rw [u₃.rd, u₃.wr, u₂.rd, u₂.wr, u₁.rd, u₁.wr]; exact hin _ (by omega_using []) (by omega_using []))
     fun s₄ u₄ => ?_
-  refine wp_ld (by omega)
+  refine wp_ld (by omega_using [this])
     (by rw [u₄.other _ (by decide), u₃.other _ (by decide), u₂.other _ (by decide),
       u₁.other _ (by decide), h27])
-    (by rw [u₄.rd, u₄.wr, u₃.rd, u₃.wr, u₂.rd, u₂.wr, u₁.rd, u₁.wr]; exact hin _ (by omega) (by omega))
+    (by rw [u₄.rd, u₄.wr, u₃.rd, u₃.wr, u₂.rd, u₂.wr, u₁.rd, u₁.wr]; exact hin _ (by omega_using []) (by omega_using []))
     fun s₅ u₅ => ?_
-  refine wp_ld (by omega)
+  refine wp_ld (by omega_using [this])
     (by rw [u₅.other _ (by decide), u₄.other _ (by decide), u₃.other _ (by decide),
       u₂.other _ (by decide), u₁.other _ (by decide), h27])
     (by rw [u₅.rd, u₅.wr, u₄.rd, u₄.wr, u₃.rd, u₃.wr, u₂.rd, u₂.wr, u₁.rd, u₁.wr]
-        exact hin _ (by omega) (by omega))
+        exact hin _ (by omega_using []) (by omega_using []))
     fun s₆ u₆ => WP.block_nil ?_
   have m5 : s₅.mem = s.mem := by rw [u₅.mem, u₄.mem, u₃.mem, u₂.mem, u₁.mem]
   refine k s₆ (fun p hp => ?_) (fun r hr => ?_) (by rw [u₆.mem, m5]) (by rw [u₆.rd, u₅.rd, u₄.rd,

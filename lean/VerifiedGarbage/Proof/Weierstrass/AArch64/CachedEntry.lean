@@ -30,15 +30,15 @@ theorem entrySources_live {a : Nat} (ha : 1≤a) (ha8 : a≤8) : ∀ x∈[(Jacob
     simp only [List.mem_cons,List.not_mem_nil,or_false] at hx
     rcases hx with rfl | rfl | rfl | rfl | rfl
     · apply List.mem_append_left; apply List.mem_append_right
-      exact List.mem_map.mpr ⟨3*(a-1),List.mem_range.mpr (by omega),by simp only [Jacobian.tablePt,cfg_K]; omega⟩
+      exact List.mem_map.mpr ⟨3*(a-1),List.mem_range.mpr (by omega),by simp only [Jacobian.tablePt,cfg_K]; omega_using []⟩
     · apply List.mem_append_left; apply List.mem_append_right
-      exact List.mem_map.mpr ⟨3*(a-1)+1,List.mem_range.mpr (by omega),by simp only [Jacobian.tablePt,cfg_K]; omega⟩
+      exact List.mem_map.mpr ⟨3*(a-1)+1,List.mem_range.mpr (by omega_using [ha8]),by simp only [Jacobian.tablePt,cfg_K]; omega_using []⟩
     · apply List.mem_append_left; apply List.mem_append_right
-      exact List.mem_map.mpr ⟨3*(a-1)+2,List.mem_range.mpr (by omega),by simp only [Jacobian.tablePt,cfg_K]; omega⟩
+      exact List.mem_map.mpr ⟨3*(a-1)+2,List.mem_range.mpr (by omega_using [ha8]),by simp only [Jacobian.tablePt,cfg_K]; omega_using []⟩
     · apply List.mem_append_right
-      exact List.mem_map.mpr ⟨2*(a-1),List.mem_range.mpr (by omega),by omega⟩
+      exact List.mem_map.mpr ⟨2*(a-1),List.mem_range.mpr (by omega_using [ha8]),by omega_using []⟩
     · apply List.mem_append_right
-      exact List.mem_map.mpr ⟨2*(a-1)+1,List.mem_range.mpr (by omega),by omega⟩
+      exact List.mem_map.mpr ⟨2*(a-1)+1,List.mem_range.mpr (by omega_using [ha8]),by omega_using []⟩
 
 def EntryPost (C : Curve) (base : Addr) (size : Nat) (P : Point C)
     (V : List Nat) (s t : State) : Prop :=
@@ -62,9 +62,9 @@ theorem entry_ok {C : Curve} {base : Addr} {size u v j : Nat}
         negPt (mul (nafMagnitude (FastNaf.byte 5 v j)) Q) else mul (nafMagnitude (FastNaf.byte 5 v j)) Q)
         (jointLive cfg) s) := by
   let a := (nafMagnitude (FastNaf.byte 5 v j)+1)/2
-  have ha : 1≤a := by dsimp [a]; omega
-  have ha8 : a≤8 := by dsimp [a]; omega
-  have he : 2*a-1=nafMagnitude (FastNaf.byte 5 v j) := by dsimp [a]; omega
+  have ha : 1≤a := by dsimp [a]; omega_using [hmag]
+  have ha8 : a≤8 := by dsimp [a]; omega_using [hmag15]
+  have he : 2*a-1=nafMagnitude (FastNaf.byte 5 v j) := by dsimp [a]; omega_using [hodd]
   have ht := entrySources_live ha ha8
   rw [CachedJac.entry]
   apply WP.seq
@@ -79,10 +79,10 @@ theorem entry_ok {C : Curve} {base : Addr} {size u v j : Nat}
     rcases hr with rfl | rfl | rfl <;> simp [clob])
   have cb2 : tmv C K.M.n base b (6000+64*(a-1))=
       tmv C K.M.n base b (Jacobian.tablePt K a).z*tmv C K.M.n base b (Jacobian.tablePt K a).z := by
-    simpa only [cfg_K,VG.Impl.Weierstrass.CachedJac.tableZ2,Nat.sub_add_cancel ha] using sb.cache2 (a-1) (by omega)
+    simpa only [cfg_K,VG.Impl.Weierstrass.CachedJac.tableZ2,Nat.sub_add_cancel ha] using sb.cache2 (a-1) (by omega_using [ha8])
   have cb3 : tmv C K.M.n base b (6032+64*(a-1))=
       tmv C K.M.n base b (Jacobian.tablePt K a).z*(tmv C K.M.n base b (Jacobian.tablePt K a).z*tmv C K.M.n base b (Jacobian.tablePt K a).z) := by
-    have h := sb.cache3 (a-1) (by omega)
+    have h := sb.cache3 (a-1) (by omega_using [ha8])
     simp only [cfg_K,VG.Impl.Weierstrass.CachedJac.tableZ2,VG.Impl.Weierstrass.CachedJac.tableZ3,Nat.sub_add_cancel ha] at h
     rw [h,cb2]; grind
   refine WP.mono (entryLoad_ok hL.lay hL.aligned hsize ib b2 ha ha8 entry_slots ht cb2 cb3
@@ -90,11 +90,11 @@ theorem entry_ok {C : Curve} {base : Addr} {size u v j : Nat}
   rw [he] at jd
   have kp := kb'.trans kd
   have sd := hs.keep (kp.mono entry_work) (fun r hr => by
-    have := hL.stableBounds r hr; have := hi.scr.nowrap; omega) hL.stableSep
+    have := hL.stableBounds r hr; have := hi.scr.nowrap; omega_arith) hL.stableSep
   have d19 : d.gpr .x19=BitVec.ofNat 64 j := by
     rw [kp.gpr _ (by decide),h19]
   apply WP.seq
-  refine WP.mono (nafSignRead_ok id.scr (by decide) (by change 1824+j<size; omega) d19
+  refine WP.mono (nafSignRead_ok id.scr (by decide) (by change 1824+j<size; omega_using [hsize, hj]) d19
     (sd.peer.bits j hj)) fun e ⟨e3,ke⟩ => ?_
   have ee : tmv C K.M.n base e=tmv C K.M.n base d := by funext x; unfold tmv; rw [ke.mem]
   have ie := id.of_keeps ke (by decide)

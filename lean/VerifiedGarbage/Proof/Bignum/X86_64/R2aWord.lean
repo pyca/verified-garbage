@@ -35,11 +35,11 @@ theorem storeX_ok {s : State} {B : Addr} {Z e j k : Nat} {src : Reg} (hs : Scr s
 /-- The high half of a product of two words is at most `2^64 - 2`. -/
 theorem hi_le {lo hi a b : Nat} (ha : a < 2 ^ 64) (hb : b < 2 ^ 64) (h : lo + 2 ^ 64 * hi = a * b) :
     hi ≤ 2 ^ 64 - 2 := by
-  have : a * b ≤ (2 ^ 64 - 1) * (2 ^ 64 - 1) := Nat.mul_le_mul (by omega) (by omega)
-  have : 2 ^ 64 * hi ≤ (2 ^ 64 - 1) * (2 ^ 64 - 1) := by omega
+  have : a * b ≤ (2 ^ 64 - 1) * (2 ^ 64 - 1) := Nat.mul_le_mul (by omega_using [ha]) (by omega_using [hb])
+  have : 2 ^ 64 * hi ≤ (2 ^ 64 - 1) * (2 ^ 64 - 1) := by omega_using [h, this]
   by_contra hc
   have : 2 ^ 64 * (2 ^ 64 - 1) ≤ 2 ^ 64 * hi := Nat.mul_le_mul_left _ (by omega)
-  omega
+  omega_arith
 
 /-- Word `k` of a tile at word `j`: `t[j + k] + 2^64 (hiN + OF + CF) = prev + hiP + OF + CF + q̂ mc[j + k]`,
 the word of `x` read before the store into `next`. -/
@@ -100,7 +100,7 @@ theorem word_ok {s : State} {B : Addr} {Z ex ec j k : Nat} {prev next hiP hiN : 
     rw [prev₃, r11₃] at e₄
     rw [hiP₁] at e₂
     have := hi_le (s.gpr .rdx).isLt (word s.mem B (ec + 8 * j + 8 * k)).isLt e₁
-    omega
+    omega_using [e₁, e₂, e₄]
   · rw [hg, hiN₄]; exact hi_le (s.gpr .rdx).isLt (word s.mem B (ec + 8 * j + 8 * k)).isLt e₁
   · rw [hg, k₄.gpr (by simp [Ne.symm d8]), e₃, hm₂]
   · refine ⟨fun r hr => ?_, hrd.trans (k₄.2.2.1.trans (k₃.2.2.1.trans (k₂.2.2.1.trans k₁.2.2.1))),

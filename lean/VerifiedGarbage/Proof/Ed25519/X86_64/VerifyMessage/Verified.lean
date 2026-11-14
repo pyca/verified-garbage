@@ -30,7 +30,7 @@ theorem satMem_held : ∀ i < 2048,
     satMem.readW (0x100000 + BitVec.ofNat 64 (8 * i)) 64 = Impl.Ed25519.X86_64.baseOddWords.getD i 0 := by
   unfold satMem
   intro i hi
-  exact constMem_held _ _ (by rw [baseOddWords_length]; omega) i (by rw [baseOddWords_length]; exact hi)
+  exact constMem_held _ _ (by rw [baseOddWords_length]; omega_using []) i (by rw [baseOddWords_length]; exact hi)
 
 def satState : State where
   gpr r := match r with

@@ -34,24 +34,24 @@ theorem fb_eq (s : State) : fb s = kb s + BitVec.ofNat 64 Impl.Rsa.PPC64LE.Priv.
 theorem fb_toNat {s : State} (h : DPre pc s) : (fb s).toNat + frameBytes = s.sp.toNat := by
   have := h.sp1
   simp only [fb, BitVec.toNat_sub, BitVec.toNat_ofNat]; unfold stackBytes frameBytes at *
-  unfold Impl.Rsa.PPC64LE.Priv.frameBytes at *; omega
+  unfold Impl.Rsa.PPC64LE.Priv.frameBytes at *; omega_using [this]
 
 theorem kb_toNat {s : State} (h : DPre pc s) : (kb s).toNat + stackBytes = s.sp.toNat := by
   have := h.sp1
   simp only [kb, BitVec.toNat_sub, BitVec.toNat_ofNat]; unfold stackBytes frameBytes at *
-  unfold Impl.Rsa.PPC64LE.Priv.frameBytes at *; omega
+  unfold Impl.Rsa.PPC64LE.Priv.frameBytes at *; omega_using [this]
 
 /-- A region of our frame is in the stack the function uses. -/
 theorem frame_sub (s : State) {d n : Nat} (h : d + n ≤ frameBytes) :
     Region.Sub ⟨fb s + BitVec.ofNat 64 d, n⟩ (kR s) := by
   rw [fb_eq, Offset.add_add]
-  exact Offset.sub_base _ (by unfold stackBytes; omega)
+  exact Offset.sub_base _ (by unfold stackBytes; omega_using [h])
 
 theorem frame_contains (s : State) {d n : Nat} (h : d + n ≤ frameBytes) :
     (kR s).Contains (fb s + BitVec.ofNat 64 d) n := by
   rw [fb_eq, Offset.add_add]
-  exact Offset.contains_base _ (by unfold stackBytes; omega)
-    (by unfold frameBytes Impl.Rsa.PPC64LE.Priv.frameBytes at *; omega)
+  exact Offset.contains_base _ (by unfold stackBytes; omega_using [h])
+    (by unfold frameBytes Impl.Rsa.PPC64LE.Priv.frameBytes at *; omega_using [h])
 
 /-- The callee's frame is in the stack the function uses. -/
 theorem callee_sub (s : State) :
@@ -59,14 +59,14 @@ theorem callee_sub (s : State) :
       Impl.Rsa.PPC64LE.Priv.frameBytes⟩ (kR s) := by
   rw [fb_eq, BitVec.add_sub_cancel]
   have := Offset.sub_base (kb s) (d := 0) (n := Impl.Rsa.PPC64LE.Priv.frameBytes) (k := stackBytes)
-    (by unfold stackBytes; omega)
+    (by unfold stackBytes; omega_using [])
   rwa [BitVec.add_zero] at this
 
 /-- The local variable space is writable. -/
 theorem in_fr (s : State) (rs : List Region) {d n : Nat} (h₁ : 32 ≤ d) (h : d + n ≤ frameBytes) :
     InRegions (fr s :: rs) (fb s + BitVec.ofNat 64 d) n :=
-  ⟨_, List.mem_cons_self .., Offset.contains _ h₁ (by unfold frameBytes at *; omega)
-    (by unfold frameBytes; omega)⟩
+  ⟨_, List.mem_cons_self .., Offset.contains _ h₁ (by unfold frameBytes at *; omega_using [h])
+    (by unfold frameBytes; omega_using [])⟩
 
 theorem in_fr' (s : State) (rd rs : List Region) {d n : Nat} (h₁ : 32 ≤ d) (h : d + n ≤ frameBytes) :
     InRegions (rd ++ fr s :: rs) (fb s + BitVec.ofNat 64 d) n := by
@@ -77,20 +77,20 @@ theorem in_fr' (s : State) (rd rs : List Region) {d n : Nat} (h₁ : 32 ≤ d) (
 theorem stackArgAddr_fb (s : State) (j : Nat) :
     stackArgAddr s j = fb s + BitVec.ofNat 64 (arg j) := by
   have e : BitVec.ofNat 64 (arg j) = BitVec.ofNat 64 frameBytes + BitVec.ofNat 64 (32 + 8 * (8 + j)) := by
-    rw [BitVec.ofNat_add_ofNat]; unfold arg; congr 1; omega
+    rw [BitVec.ofNat_add_ofNat]; unfold arg; congr 1; omega_using []
   rw [stackArgAddr, e, ← BitVec.add_assoc, BitVec.sub_add_cancel]
 
 theorem stackArgAddr_eq (s : State) (j : Nat) :
     stackArgAddr s j = stackArgAddr s 0 + BitVec.ofNat 64 (8 * j) := by
   simp only [stackArgAddr, Nat.add_zero]
-  rw [BitVec.add_assoc, BitVec.ofNat_add_ofNat, show 32 + 8 * 8 + 8 * j = 32 + 8 * (8 + j) by omega]
+  rw [BitVec.add_assoc, BitVec.ofNat_add_ofNat, show 32 + 8 * 8 + 8 * j = 32 + 8 * (8 + j) by omega_using []]
 
 theorem lt_args {j : Nat} (hj : j < 15) : j < if pc then 17 else 15 := by
-  cases pc <;> simp only [Bool.false_eq_true, ↓reduceIte] <;> omega
+  cases pc <;> simp only [Bool.false_eq_true, ↓reduceIte] <;> omega_using [hj]
 
 theorem in_aR {s : State} {j : Nat} (hj : j < if pc then 17 else 15) : (aR pc s).Contains (stackArgAddr s j) 8 := by
   rw [stackArgAddr_eq s j]
   cases pc <;> simp only [aR, Bool.false_eq_true, ↓reduceIte] at hj ⊢ <;>
-    exact Offset.contains_base _ (by omega) (by omega)
+    exact Offset.contains_base _ (by omega_using [hj]) (by omega_using [hj])
 
 end VG.Proof.RsaPkcs1Enc.PPC64LE.Dec

@@ -109,7 +109,7 @@ theorem aSeed_eq (pk : List Byte) (r s : Nat) :
 
 theorem pA_eq (e : Nat) : pA (e / 8) (e % 8) = pB (20 + e) := by
   show pB (20 + 8 * (e / 8) + e % 8) = pB (20 + e)
-  rw [show 20 + 8 * (e / 8) + e % 8 = 20 + e by omega]
+  rw [show 20 + 8 * (e / 8) + e % 8 = 20 + e by omega_using []]
 
 section
 variable (p : Params)
@@ -142,7 +142,7 @@ include hF he
 theorem sa_st1 : VP p (SA p · e) (SA1 p e) (.block (st8 (oSB + 32) (e % 8))) :=
   st8_piece (Y := YV p) (oSB + 32) (e % 8) (by lvd) (ht := .block []) (by kernel_rfl)
     (fun _ _ _ h => h.vb.ctx) fun s₀ s s' hp h h' m' =>
-      ⟨h.keep hp (N := 0) (by omega) (by lvd) (fun j hj => by lvd) (by lvd) (by lvd)
+      ⟨h.keep hp (N := 0) (by omega_using []) (by lvd) (fun j hj => by lvd) (by lvd) (by lvd)
         (fun r s hb => by have := hb.1; have := hb.2; lv hF) (m' ▸ frW8 (Y := YV p)) h',
         by rw [m']; exact st8_bytes _ _ _ _ _⟩
 
@@ -150,10 +150,10 @@ theorem sa_st2 : VP p (SA1 p e) (SA2 p e) (.block (st8 (oSB + 33) (e / 8))) :=
   st8_piece (Y := YV p) (oSB + 33) (e / 8) (by lvd) (ht := .block []) (by kernel_rfl)
     (fun _ _ _ h => h.1.vb.ctx) fun s₀ s s' hp h h' m' => by
       have fr : Frame (FR s₀ [sb (oSB + 33) 1] 0) s.mem s'.mem := m' ▸ frW8 (Y := YV p)
-      refine ⟨h.1.keep hp (N := 0) (by omega) (by lvd) (fun j hj => by lvd) (by lvd) (by lvd)
+      refine ⟨h.1.keep hp (N := 0) (by omega_using []) (by lvd) (fun j hj => by lvd) (by lvd) (by lvd)
         (fun r s hb => by have := hb.1; have := hb.2; lv hF) fr h', ?_⟩
-      have k32 := keepBytes hp (N := 0) (stkV (by omega)) (b := sb oSB 32) (by lvd) fr
-      have k1 := keepBytes hp (N := 0) (stkV (by omega)) (b := sb (oSB + 32) 1) (by lvd) fr
+      have k32 := keepBytes hp (N := 0) (stkV (by omega_using [])) (b := sb oSB 32) (by lvd) fr
+      have k1 := keepBytes hp (N := 0) (stkV (by omega_using [])) (b := sb (oSB + 32) 1) (by lvd) fr
       rw [show (34 : Nat) = 32 + (1 + 1) from rfl, bytes_cat hp _ (l₁ := 32) (by lvd) (by lvd),
         bytes_cat hp _ (l₁ := 1) (l₂ := 1) (by lvd) (by lvd), k32, k1, h.1.rho, h.2, aSeed_eq, m']
       exact congrArg (fun x => vRho (vPk p s₀) ++ ([BitVec.ofNat 8 (e % 8)] ++ x)) (st8_bytes _ _ _ _ _)
@@ -167,11 +167,11 @@ theorem sa_rej : VP p (SA2 p e) (SA3 p e)
     (fun s₀ s₀' s s' _ _ hq h h' => by rw [h.2, h'.2, (inputs_pub hq).1])
     fun s₀ s s' hp h h' fr red out => by
       obtain ⟨A, hA, hG⟩ := h.1.ex
-      refine ⟨h.1.vb.keep hp (N := 80) (by omega) (by lvd) (fun j hj => by lvd) fr h',
-        by rw [keepBytes hp (N := 80) (stkV (by omega)) (by lvd) fr]; exact h.1.rho,
-        ⟨A, fun r s hb => keepPolyD hp (stkV (by omega)) (by have := hb.1; have := hb.2; lv hF) fr (hA r s hb), ?_⟩,
+      refine ⟨h.1.vb.keep hp (N := 80) (by omega_using []) (by lvd) (fun j hj => by lvd) fr h',
+        by rw [keepBytes hp (N := 80) (stkV (by omega_using [])) (by lvd) fr]; exact h.1.rho,
+        ⟨A, fun r s hb => keepPolyD hp (stkV (by omega_using [])) (by have := hb.1; have := hb.2; lv hF) fr (hA r s hb), ?_⟩,
         red, by rw [← h.2]; exact out⟩
-      rw [acc_keepV hp (N := 80) (by omega) (by lvd) fr]; exact hG
+      rw [acc_keepV hp (N := 80) (by omega_using []) (by lvd) fr]; exact hG
 
 include hel in
 theorem sa_mask : VP p (SA3 p e) (SA p · (e + 1)) (maskA oACC (oP (20 + e))) := by
@@ -190,10 +190,10 @@ theorem sa_mask : VP p (SA3 p e) (SA p · (e + 1)) (maskA oACC (oP (20 + e))) :=
   obtain ⟨-, aiff⟩ := Proof.MlDsa.KeyGen.acc_and a01 r01
   have fr' : Frame (FR s₀ [sb oACC 4, pB (20 + e)] 0) s.mem s'.mem := fr2 fr
   have ea : accV s₀ s' = accV s₀ s &&& s.gpr .eax := ha
-  have hr : e / 8 < p.k := by omega
+  have hr : e / 8 < p.k := by omega_using [he]
   have hq : 8 * (e / 8) + e % 8 = e := Nat.div_add_mod e 8
-  refine ⟨h.vb.keep hp (N := 0) (by omega) (by lvd) (fun j hj => by lvd) fr' h',
-    by rw [keepBytes hp (N := 0) (stkV (by omega)) (by lvd) fr']; exact h.rho,
+  refine ⟨h.vb.keep hp (N := 0) (by omega_using []) (by lvd) (fun j hj => by lvd) fr' h',
+    by rw [keepBytes hp (N := 0) (stkV (by omega_using [])) (by lvd) fr']; exact h.rho,
     fun r s => if r = e / 8 ∧ s = e % 8 then polyAt s'.mem (Buf.addr s₀ (pB (20 + e))) else A r s,
     fun r s hb => ?_, ?_⟩
   · dsimp only
@@ -207,10 +207,10 @@ theorem sa_mask : VP p (SA3 p e) (SA p · (e + 1)) (maskA oACC (oP (20 + e))) :=
     · rw [ifn hrs]
       have hb' : Before p e r s := ⟨hb.1, by
         have := hb.2
-        rcases (by omega : 8 * r + s < e ∨ 8 * r + s = e) with h | h
+        rcases (by omega_using [this] : 8 * r + s < e ∨ 8 * r + s = e) with h | h
         · exact h
         · exact absurd ⟨by omega, by omega⟩ hrs⟩
-      exact keepPolyD hp (stkV (by omega)) (by have := hb'.1; have := hb'.2; lv hF) fr' (hA r s hb')
+      exact keepPolyD hp (stkV (by omega_using [])) (by have := hb'.1; have := hb'.2; lv hF) fr' (hA r s hb')
   · rw [ea]
     rcases hG with ⟨h1, b, hb⟩ | ⟨h0, hn⟩
     · rcases h.out with ⟨ho, b', hb'⟩ | ⟨ho, hn⟩
@@ -223,7 +223,7 @@ theorem sa_mask : VP p (SA3 p e) (SA p · (e + 1)) (maskA oACC (oP (20 + e))) :=
         · rw [ifn hrs]
           refine Proof.MlDsa.Verify.rejNTTPoly_mono (Proof.MlDsa.Verify.bmax_left b b').rejNTT (hb r s ⟨hb₁.1, ?_⟩)
           have := hb₁.2
-          rcases (by omega : 8 * r + s < e ∨ 8 * r + s = e) with h | h
+          rcases (by omega_using [this] : 8 * r + s < e ∨ 8 * r + s = e) with h | h
           · exact h
           · exact absurd ⟨by omega, by omega⟩ hrs
       · rw [ho, h1]
@@ -251,8 +251,8 @@ theorem aRow_piece {r : Nat} (hr : r < p.k) : VP p (SA p · (8 * r)) (SA p · (8
   have hl := hF.l
   unfold aRow
   refine (seqR_piece (I := fun e => (SA p · e)) p.ℓ (8 * r) fun e h₁ h₂ =>
-    aOne_piece hP hF (by omega) (by omega)).mono (fun _ _ _ h => h) fun _ _ _ h => h.congr fun r' s hs => ?_
-  omega
+    aOne_piece hP hF (by omega_using [hr, hl, h₂]) (by omega_using [h₁, h₂])).mono (fun _ _ _ h => h) fun _ _ _ h => h.congr fun r' s hs => ?_
+  omega_using [hl, hs]
 
 end
 

@@ -76,7 +76,7 @@ theorem r2_ct {base : BitVec 32} {len w : Nat} {P : State → Prop} {regions : L
       doubleLoop (fun _ _ => True) := by
     intro s t tr1 tr2 u v h e1 e2
     have hw : 2 ≤ w := h.2.1.1.1.width ▸ h.2.1.1.1.layout.1
-    exact doubleLoop_ct (by omega) (by omega) s t tr1 tr2 u v ⟨h.2.1.1.1, h.2.2.1.1, h.1⟩ e1 e2
+    exact doubleLoop_ct (by omega_using [hw]) (by omega_using [countFits]) s t tr1 tr2 u v ⟨h.2.1.1.1, h.2.2.1.1, h.1⟩ e1 e2
   have loopCT := (relCT_keep_sp loop (fun _ _ h => h.1)).wp
     (fun s t h => ⟨loopPost s h.2.1, loopPost t h.2.2⟩)
   unfold VG.Impl.Bignum.Arm.SharedR2.r2

@@ -15,7 +15,7 @@ open VG VG.X86 VG.X86.Wp VG.Proof.Mont.X86 VG.Impl.RsaKeyGen.X86.LowPair
 theorem mask_pair (lo hi : BitVec 32) :
     cmask (decide ((lo ||| hi).toNat < 1)) = if lo = 0#32 ∧ hi = 0#32 then BitVec.allOnes 32 else 0#32 := by
   have zero : (lo ||| hi).toNat < 1 ↔ lo = 0#32 ∧ hi = 0#32 := by
-    rw [show (lo ||| hi).toNat < 1 ↔ (lo ||| hi).toNat = 0 by omega,
+    rw [show (lo ||| hi).toNat < 1 ↔ (lo ||| hi).toNat = 0 by omega_using [],
       show (lo ||| hi).toNat = 0 ↔ lo ||| hi = 0#32 from @BitVec.toNat_inj 32 (lo ||| hi) (0#32), BitVec.or_eq_zero_iff]
   rw [show decide ((lo ||| hi).toNat < 1) = decide (lo = 0#32 ∧ hi = 0#32) from decide_eq_decide.mpr zero]
   by_cases h : lo = 0#32 ∧ hi = 0#32 <;> simp [cmask, h]

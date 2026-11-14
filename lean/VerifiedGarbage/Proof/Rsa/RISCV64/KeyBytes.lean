@@ -112,10 +112,10 @@ theorem load_ok {s : State} {B P : Addr} {Z w N j L : Nat} {src len : Reg} (h : 
       refine tout _ (Or.inr ?_)
       have := (off P i - B).isLt
       by_contra hc
-      exact hsep i (by omega) (off P i) (by simp only [ofs] at hc ⊢; omega) rfl
+      exact hsep i (by omega_using [hi]) (off P i) (by simp only [ofs] at hc ⊢; omega) rfl
     refine ⟨⟨?_, by gsimp, ?_, ?_, ?_, ?_⟩, by gsimp⟩
-    · gsimp; rw [keys_sub1 (a := arr w j + L - 1 - i) _ (by omega),
-        show arr w j + L - 1 - i - 1 = arr w j + L - 1 - (i + 1) by omega]
+    · gsimp; rw [keys_sub1 (a := arr w j + L - 1 - i) _ (by omega_using [hha, h256, hi]),
+        show arr w j + L - 1 - i - 1 = arr w j + L - 1 - (i + 1) by omega_using []]
     · gsimp; exact tout.trans (hw1.mono (o' := arr w j) (n' := 8 * w) (by omega_arith) (by omega_arith))
     · intro c hc
       gsimp
@@ -172,7 +172,7 @@ theorem storeBytes_ok {s : State} {B O : Addr} {Z w N j L : Nat} {dst len : Reg}
         u.gpr .t4 = s.gpr .t4 ∧ u.mem = s.mem) ∧ Keep [.t0, .t1, .t3] (s.write .t1 (off B (arr w j))) u := by
     refine WP.keep _ ?_ (by rfl) (by rfl)
     brun [mov, add_ofNat_zero', hd, hl, hl1, hd1, hl0, off_add]
-    exact keys_sub1 _ (by omega)
+    exact keys_sub1 _ (by omega_using [hL])
   refine WP.mono hb fun s₃ ⟨⟨j1, j0, j3, j4, jm⟩, k₃⟩ => ?_
   have k₀ : Keep [.t0, .t1, .t3] s s₃ := ((Keep.write _ _ _).trans k₃).mono (by decide)
   let Inv : Nat → State → Prop := fun i t =>
@@ -197,7 +197,7 @@ theorem storeBytes_ok {s : State} {B O : Addr} {Z w N j L : Nat} {dst len : Reg}
     brun [t1, t0, t4, h4, (h.scr.congr tk.2.2).ld (d := arr w j + L - 1 - i) (n := 1) (by omega_arith),
       (by rw [tk.2.2]; exact hO i hi : InRegions t.wr (off O i) 1), mask_byte64]
   refine WP.mono hst fun t' ⟨⟨l1, l0, l3, lm⟩, lk⟩ => ⟨⟨?_, l0, ?_, ?_, Keep.trans' tk lk⟩, l3⟩
-  · rw [l1, keys_sub1 _ (by omega), show arr w j + L - 1 - i - 1 = arr w j + L - 1 - (i + 1) by omega]
+  · rw [l1, keys_sub1 _ (by omega_using [hha, h256, hi]), show arr w j + L - 1 - i - 1 = arr w j + L - 1 - (i + 1) by omega_using []]
   · have hw1 := write1_outside t.mem O (d := i) (if b then t.mem.read (off B (arr w j + L - 1 - i)) 1 else 0)
       (by omega_arith)
     rw [lm]; exact (tout.mono (o' := 0) (n' := i + 1) (by omega_arith) (by omega_arith)).trans

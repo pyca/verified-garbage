@@ -42,7 +42,7 @@ theorem psLoop_vp : VP (PsI P P.pl) psLoop (PsI P 0) := by
     · rw [h₁.2.2.1, h₂.2.2.1]
     · rw [h₁.2.2.2.1, h₂.2.2.2.1]
     · rw [h₁.2.2.2.2.1, h₂.2.2.2.2.1]
-  · rw [show P.pl - 1 + 1 = P.pl by have := h.1.1.pl8; omega]; exact h
+  · rw [show P.pl - 1 + 1 = P.pl by have := h.1.1.pl8; omega_using [this]]; exact h
 
 theorem sep_vp : VP (PsI P 0) (.block sep) (G4 P) :=
   VP.taint [.r0] sep_taint (fun _ _ _ _ h₁ h₂ r hr => by

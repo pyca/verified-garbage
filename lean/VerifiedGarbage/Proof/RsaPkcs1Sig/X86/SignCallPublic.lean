@@ -39,8 +39,8 @@ theorem privateCall_pub {g : Geometry} {bs1 bs2 : Fin 8 → List Byte} {s t : St
     sa (by decide : 17 < 20), ta (by decide : 17 < 20), sa (by decide : 18 < 20), ta (by decide : 18 < 20),
     sa (by decide : 19 < 20), ta (by decide : 19 < 20),
     privateArgument, Geometry.argument, Nat.reduceAdd, Nat.reduceLT, Nat.reduceEqDiff, ite_true, ite_false, true_and, and_true]
-  rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := hs.valid.maxLength; omega : g.length < 2 ^ 32)]
-  have ef : g.exponentLength < 2 ^ 32 := by have := hs.valid.exponentFits; have := hs.valid.maxLength; omega
+  rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := hs.valid.maxLength; omega_using [this] : g.length < 2 ^ 32)]
+  have ef : g.exponentLength < 2 ^ 32 := by have := hs.valid.exponentFits; have := hs.valid.maxLength; omega_arith
   rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt ef]
   have bytesN := (hs.callBytes 0).trans (nb.trans (ht.callBytes 0).symm)
   have bytesE := (hs.callBytes 1).trans (eb.trans (ht.callBytes 1).symm)

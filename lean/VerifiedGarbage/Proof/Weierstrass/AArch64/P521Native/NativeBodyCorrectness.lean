@@ -261,7 +261,7 @@ open VG.Proof.Mont.AArch64.P521Square (fieldPrime)
   have entries : ∀j,1≤j → j≤16 → Rep C (Fin.ofNat C.p (wordsVal m table (lookupEntryOffset j) 9))
       (Fin.ofNat C.p (wordsVal m table (lookupEntryOffset j+72) 9)) 1 (mul j P) := by
     intro j lo hi
-    have row := rows (j-1) (by omega)
+    have row := rows (j-1) (by omega_using [hi])
     simpa only [lookupEntryOffset,Nat.sub_add_cancel lo] using row
   have digit := window_affine_repA law m table k 0 yBound entries
   rw [←window_affine_at_eq] at digit
@@ -631,7 +631,7 @@ private theorem output_post {r : Option (List Byte)} {z bytes : List Byte} {ret 
   have entries : ∀j,1≤j → j≤16 → Rep config.C (Fin.ofNat config.C.p (wordsVal front.mem (s.sp-3456#64) (lookupEntryOffset j) 9))
       (Fin.ofNat config.C.p (wordsVal front.mem (s.sp-3456#64) (lookupEntryOffset j+72) 9)) 1 (mul j P) := by
     intro j lo hi
-    have row := (arith.affine (j-1) (by omega)).1
+    have row := (arith.affine (j-1) (by omega_using [hi])).1
     simpa only [lookupEntryOffset,Nat.sub_add_cancel lo] using row
   have current (hd : d<config.C.n) : InvJ config.C (pointAt config.C mid.mem (s.gpr .x3) 1072).1
       (pointAt config.C mid.mem (s.gpr .x3) 1072).2.1 (pointAt config.C mid.mem (s.gpr .x3) 1072).2.2
@@ -646,8 +646,8 @@ private theorem output_post {r : Option (List Byte)} {z bytes : List Byte} {ret 
   have rows : ∀i,i<16 → Rep config.C (Fin.ofNat config.C.p (wordsVal mid.mem (s.sp-3456#64) (216*i) 9))
       (Fin.ofNat config.C.p (wordsVal mid.mem (s.sp-3456#64) (216*i+72) 9)) 1 (mul (i+1) P) := by
     intro i hi
-    rw [WindowPhaseFrame.table window.frame pre.table_scratch.symm _ (by omega),
-      WindowPhaseFrame.table window.frame pre.table_scratch.symm _ (by omega)]
+    rw [WindowPhaseFrame.table window.frame pre.table_scratch.symm _ (by omega_using [hi]),
+      WindowPhaseFrame.table window.frame pre.table_scratch.symm _ (by omega_using [hi])]
     exact (arith.affine i hi).1
   have result (hd : d<config.C.n) : Rep config.C (finishSumAt config.C mid.mem (s.gpr .x3) (s.sp-3456#64) k).1
       (finishSumAt config.C mid.mem (s.gpr .x3) (s.sp-3456#64) k).2.1

@@ -36,7 +36,7 @@ theorem pointSign_ok {s : State} {b : BitVec 32} (hc : Ctx b s)
   rw [BitVec.toNat_and, show (1 : BitVec 32).toNat = 1 from rfl, Nat.and_one_is_mod, u1.gpr]
   have he : (s.mem.readW (State.addr b + BitVec.ofNat 64 FR) 32).toNat =
       limb s.mem (State.addr b) FR 0 := rfl
-  rw [he, ← parity_limb hl, Nat.mod_eq_of_lt (by omega)]
+  rw [he, ← parity_limb hl, Nat.mod_eq_of_lt (by omega_using [])]
 
 theorem encodeSign_ok {s : State} {b : BitVec 32} (hc : Ctx b s)
     (hl : Lim s.mem (State.addr b) FR) (x y : Nat) (hy : y < 2 ^ 255)
@@ -46,7 +46,7 @@ theorem encodeSign_ok {s : State} {b : BitVec 32} (hc : Ctx b s)
   have hR : FR = 1472 := rfl
   have hy' : val16 (limb s.mem (State.addr b) FR) 15 +
       2 ^ 240 * limb s.mem (State.addr b) FR 15 = y := hv
-  have hb : limb s.mem (State.addr b) FR 15 < 32768 := by omega
+  have hb : limb s.mem (State.addr b) FR 15 < 32768 := by omega_using [hy, hy']
   refine ldr0_ok hc (by decide) fun s1 u1 => wp_dp (op2_reg _ _) fun s2 u2 => ?_
   have hr2 : Rest [.r3] s s2 := (u1.rest (by decide)).trans (u2.rest (by decide))
   have he : (s2.gpr .r3).toNat = limb s.mem (State.addr b) FR 15 + (x % 2) * 32768 := by
@@ -55,13 +55,13 @@ theorem encodeSign_ok {s : State} {b : BitVec 32} (hc : Ctx b s)
     rw [u1.other .r10 (by decide), u1.gpr]
     have hread : (s.mem.readW (State.addr b + BitVec.ofNat 64 (FR + 60)) 32).toNat =
         limb s.mem (State.addr b) FR 15 := rfl
-    rw [toNat_add_lt (by rw [hread, hs]; omega), hread, hs]
+    rw [toNat_add_lt (by rw [hread, hs]; omega_using [hb]), hread, hs]
   refine str0_ok (hc.of_rest hr2 (by decide)) (by decide) fun t ht => WP.block_nil ?_
   have hm : t.mem = s.mem.writeW (State.addr b + BitVec.ofNat 64 (FR + 60)) (s2.gpr .r3) := by
     rw [ht.mem, u2.mem, u1.mem]
   have epre : ∀ k < 15, limb t.mem (State.addr b) FR k = limb s.mem (State.addr b) FR k := by
     intro k hk
-    rw [limb, hm, wd_write_other _ _ _ (by omega) (by omega) (by omega)]
+    rw [limb, hm, wd_write_other _ _ _ (by omega_using [hk]) (by omega_using [hR, hk]) (by omega_using [hR])]
     rfl
   have elast : limb t.mem (State.addr b) FR 15 =
       limb s.mem (State.addr b) FR 15 + (x % 2) * 32768 := by
@@ -73,11 +73,11 @@ theorem encodeSign_ok {s : State} {b : BitVec 32} (hc : Ctx b s)
   · intro k hk
     rcases Nat.lt_or_ge k 15 with hk' | hk'
     · rw [epre k hk']; exact hl k hk
-    · rw [show k = 15 by omega, elast]; omega
+    · rw [show k = 15 by omega_using [hk, hk'], elast]; omega_using [hb]
   · rw [V, val16_succ, val16_congr epre, elast]
     change val16 (limb s.mem (State.addr b) FR) 15 +
       2 ^ 240 * (limb s.mem (State.addr b) FR 15 + (x % 2) * 32768) = _
-    omega
+    omega_using [hy']
 
 theorem pointEncode_ok {s : State} {base : BitVec 32} (hc : Ctx base s) (hl : AllLim s.mem base) :
     WP isa pointEncode s fun t => IKeep base s t ∧ Lim t.mem (State.addr base) FR ∧

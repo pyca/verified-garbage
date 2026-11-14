@@ -42,7 +42,7 @@ theorem toBytes_add (len a y : Nat) :
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow]
   have e : a * 2 ^ (8 * len) = (a * 2 ^ (8 * (len - i - 1)) * 2 ^ 8) * 2 ^ (8 * i) := by
-    rw [Nat.mul_assoc, Nat.mul_assoc, ← Nat.pow_add, ← Nat.pow_add]; congr 2; omega
+    rw [Nat.mul_assoc, Nat.mul_assoc, ← Nat.pow_add, ← Nat.pow_add]; congr 2; omega_using [hi]
   rw [e, Nat.add_comm, Nat.add_mul_div_right _ _ (Nat.two_pow_pos _), Nat.add_mul_mod_self_right]
 
 theorem ofBytes_single (b : Byte) : Spec.Weierstrass.ofBytes [b] = b.toNat := by
@@ -59,8 +59,8 @@ theorem ofBytes_lt : ∀ l : List Byte, Spec.Weierstrass.ofBytes l < 2 ^ (8 * l.
     rw [show b :: l = [b] ++ l from rfl, ofBytes_append, ofBytes_single, pow256,
       List.length_append, List.length_singleton, Nat.mul_add, Nat.pow_add, Nat.mul_one]
     have : b.toNat * 2 ^ (8 * l.length) + 2 ^ (8 * l.length) ≤ 2 ^ 8 * 2 ^ (8 * l.length) := by
-      rw [← Nat.succ_mul]; exact Nat.mul_le_mul_right _ (by omega)
-    omega
+      rw [← Nat.succ_mul]; exact Nat.mul_le_mul_right _ (by omega_using [])
+    omega_arith
 
 theorem toBytes_ofBytes : ∀ (l : List Byte), Spec.Weierstrass.toBytes l.length (Spec.Weierstrass.ofBytes l) = l
   | [] => rfl
@@ -81,7 +81,7 @@ theorem toBytes_mod (len x : Nat) : Spec.Weierstrass.toBytes len x = Spec.Weiers
 /-- A number below `2^(8 len)` is the number of its `len` bytes. -/
 theorem ofBytes_toBytes : ∀ (len x : Nat), x < 2 ^ (8 * len) →
     Spec.Weierstrass.ofBytes (Spec.Weierstrass.toBytes len x) = x
-  | 0, x, h => by simp only [Nat.mul_zero, Nat.pow_zero] at h; simp [Spec.Weierstrass.toBytes, Spec.Weierstrass.ofBytes]; omega
+  | 0, x, h => by simp only [Nat.mul_zero, Nat.pow_zero] at h; simp [Spec.Weierstrass.toBytes, Spec.Weierstrass.ofBytes]; omega_using [h]
   | len + 1, x, h => by
     rw [toBytes_succ, show BitVec.ofNat 8 (x >>> (8 * len)) :: Spec.Weierstrass.toBytes len x =
         [BitVec.ofNat 8 (x >>> (8 * len))] ++ Spec.Weierstrass.toBytes len x from rfl, ofBytes_append,
@@ -89,7 +89,7 @@ theorem ofBytes_toBytes : ∀ (len x : Nat), x < 2 ^ (8 * len) →
     simp only [Spec.Weierstrass.toBytes, List.length_map, List.length_reverse, List.length_range, pow256,
       BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow]
     have h₁ : x / 2 ^ (8 * len) < 2 ^ 8 := by
-      rw [Nat.div_lt_iff_lt_mul (Nat.two_pow_pos _), ← Nat.pow_add, show 8 + 8 * len = 8 * (len + 1) by omega]
+      rw [Nat.div_lt_iff_lt_mul (Nat.two_pow_pos _), ← Nat.pow_add, show 8 + 8 * len = 8 * (len + 1) by omega_using []]
       exact h
     rw [Nat.mod_eq_of_lt h₁, Nat.mul_comm]
     exact Nat.div_add_mod x _
@@ -100,11 +100,11 @@ theorem toBytes_pad (k len x : Nat) (hx : x < 2 ^ (8 * len)) :
   induction k with
   | zero => simp
   | succ k ih =>
-    rw [show k + 1 + len = (k + len) + 1 by omega, toBytes_succ, ih, List.replicate_succ, List.cons_append]
+    rw [show k + 1 + len = (k + len) + 1 by omega_using [], toBytes_succ, ih, List.replicate_succ, List.cons_append]
     refine congrArg (· :: _) ?_
     apply BitVec.eq_of_toNat_eq
     rw [BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow,
-      Nat.div_eq_of_lt (Nat.lt_of_lt_of_le hx (Nat.pow_le_pow_right (by omega) (by omega)))]
+      Nat.div_eq_of_lt (Nat.lt_of_lt_of_le hx (Nat.pow_le_pow_right (by omega_using []) (by omega_using [])))]
     rfl
 
 /-- A number with zero bytes before it. -/
@@ -130,7 +130,7 @@ theorem ofBytes_append_zeros (l : List Byte) (k : Nat) :
 /-- `rlen` is `R` when `n` has more than `8 (R - 1)` bits, and at most `8 R`. -/
 theorem rlenR {C : Spec.Weierstrass.Curve} {R : Nat} (h₁ : Spec.Ecdsa.nBits C ≤ 8 * R)
     (h₂ : 8 * R < Spec.Ecdsa.nBits C + 8) : Spec.Ecdsa.Rfc6979.rlen C = R := by
-  rw [Spec.Ecdsa.Rfc6979.rlen]; omega
+  rw [Spec.Ecdsa.Rfc6979.rlen]; omega_using [h₁, h₂]
 
 /-- A hash of at least `R` bytes is the number of its leftmost `R`, shifted
 right by the bits of them beyond `nBits`. -/
@@ -144,24 +144,24 @@ theorem hashToInt_takeR {C : Spec.Weierstrass.Curve} {R : Nat} (h₁ : Spec.Ecds
     rw [ofBytes_append, hd, pow256]
   rw [Spec.Ecdsa.hashToInt]
   by_cases hQ : 8 * h.length ≤ Spec.Ecdsa.nBits C
-  · have hR : h.length = R := by omega
+  · have hR : h.length = R := by omega_using [h₁, hl, hQ]
     simp only [hQ, ite_true]
-    rw [show h.take R = h from List.take_of_length_le (by omega),
-      show 8 * R - Spec.Ecdsa.nBits C = 0 by omega, Nat.shiftRight_zero]
+    rw [show h.take R = h from List.take_of_length_le (by omega_using [h₁, hQ]),
+      show 8 * R - Spec.Ecdsa.nBits C = 0 by omega_using [hl, hQ], Nat.shiftRight_zero]
   · simp only [hQ, ite_false]
     rw [key, show 8 * h.length - Spec.Ecdsa.nBits C = 8 * (h.length - R) + (8 * R - Spec.Ecdsa.nBits C) by
-      omega, Nat.shiftRight_add, Nat.shiftRight_eq_div_pow (_ + _),
+      omega_using [h₁, hl], Nat.shiftRight_add, Nat.shiftRight_eq_div_pow (_ + _),
       Nat.add_comm, Nat.add_mul_div_right _ _ (Nat.two_pow_pos _),
       Nat.div_eq_of_lt (by have := ofBytes_lt (h.drop R); rwa [hd] at this), Nat.zero_add]
 
 /-- A hash of `D` bytes, fewer than `n` has bits, is its number, below `n`. -/
 theorem hashToInt_short {C : Spec.Weierstrass.Curve} {h : List Byte} (hl : 8 * h.length < Spec.Ecdsa.nBits C)
     (hn : C.n ≠ 0) : Spec.Ecdsa.hashToInt C h = Spec.Weierstrass.ofBytes h ∧ Spec.Weierstrass.ofBytes h < C.n := by
-  refine ⟨by rw [Spec.Ecdsa.hashToInt]; simp only [show 8 * h.length ≤ Spec.Ecdsa.nBits C by omega, ite_true],
+  refine ⟨by rw [Spec.Ecdsa.hashToInt]; simp only [show 8 * h.length ≤ Spec.Ecdsa.nBits C by omega_using [hl], ite_true],
     Nat.lt_of_lt_of_le (ofBytes_lt h) ?_⟩
   have h₁ : 2 ^ C.n.log2 ≤ C.n := (Nat.le_log2 hn).mp (Nat.le_refl _)
   have h₂ : Spec.Ecdsa.nBits C = C.n.log2 + 1 := rfl
-  exact Nat.le_trans (Nat.pow_le_pow_right (by omega) (by omega)) h₁
+  exact Nat.le_trans (Nat.pow_le_pow_right (by omega_using []) (by omega_using [hl, h₂])) h₁
 
 /-- `bits2octets` of such a hash: zero bytes, then the hash. -/
 theorem bits2octets_short {C : Spec.Weierstrass.Curve} {R : Nat} (h₁ : Spec.Ecdsa.nBits C ≤ 8 * R)
@@ -170,7 +170,7 @@ theorem bits2octets_short {C : Spec.Weierstrass.Curve} {R : Nat} (h₁ : Spec.Ec
     Spec.Ecdsa.Rfc6979.bits2octets C h = List.replicate (R - h.length) 0 ++ h := by
   obtain ⟨e₁, e₂⟩ := hashToInt_short hl hn
   rw [Spec.Ecdsa.Rfc6979.bits2octets, Spec.Ecdsa.Rfc6979.int2octets, Spec.Ecdsa.Rfc6979.bits2int, rlenR h₁ h₂,
-    e₁, Nat.mod_eq_of_lt e₂, show R = (R - h.length) + h.length by omega, toBytes_pad _ _ _ (ofBytes_lt h),
+    e₁, Nat.mod_eq_of_lt e₂, show R = (R - h.length) + h.length by omega_using [h₁, hl], toBytes_pad _ _ _ (ofBytes_lt h),
     toBytes_ofBytes, Nat.add_sub_cancel]
 
 /-! ## For a curve whose `n` has `8 Q` bits -/
@@ -187,15 +187,15 @@ theorem hashToInt_takeQ {C : Spec.Weierstrass.Curve} {Q : Nat} (hq : Spec.Ecdsa.
     rw [ofBytes_append, hd, pow256]
   rw [Spec.Ecdsa.hashToInt, hq]
   by_cases hQ : h.length = Q
-  · rw [show h.take Q = h from List.take_of_length_le (by omega), hQ]; simp
-  · simp only [show ¬ 8 * h.length ≤ 8 * Q by omega, ite_false]
-    rw [key, show 8 * h.length - 8 * Q = 8 * (h.length - Q) by omega, Nat.shiftRight_eq_div_pow,
+  · rw [show h.take Q = h from List.take_of_length_le (by omega_using [hQ]), hQ]; simp
+  · simp only [show ¬ 8 * h.length ≤ 8 * Q by omega_using [hl, hQ], ite_false]
+    rw [key, show 8 * h.length - 8 * Q = 8 * (h.length - Q) by omega_using [], Nat.shiftRight_eq_div_pow,
       Nat.add_comm, Nat.add_mul_div_right _ _ (Nat.two_pow_pos _),
       Nat.div_eq_of_lt (by have := ofBytes_lt (h.drop Q); rwa [hd] at this), Nat.zero_add]
 
 theorem rlenQ {C : Spec.Weierstrass.Curve} {Q : Nat} (hq : Spec.Ecdsa.nBits C = 8 * Q) :
     Spec.Ecdsa.Rfc6979.rlen C = Q := by
-  rw [Spec.Ecdsa.Rfc6979.rlen, hq]; omega
+  rw [Spec.Ecdsa.Rfc6979.rlen, hq]; omega_using []
 
 /-- A number below `2^K < 2N` modulo `N`: itself if subtracting `N` borrows,
 the difference `D` if not. -/
@@ -204,13 +204,13 @@ theorem mod_mathK (X N D K : Nat) (c : Bool) (hsum : D + N = X + 2 ^ K * c.toNat
   cases c
   · simp only [Bool.toNat_false, Nat.mul_zero, Nat.add_zero] at hsum
     simp only [Bool.false_eq_true, ite_false]
-    have hge : N ≤ X := by omega
-    have hlt : X - N < N := by omega
+    have hge : N ≤ X := by omega_using [hsum]
+    have hlt : X - N < N := by omega_using [hX, hN]
     rw [Nat.mod_eq_sub_mod hge, Nat.mod_eq_of_lt hlt]
-    omega
+    omega_using [hsum]
   · simp only [Bool.toNat_true, Nat.mul_one] at hsum
     simp only [ite_true]
-    have hlt : X < N := by omega
+    have hlt : X < N := by omega_using [hD, hsum]
     rw [Nat.mod_eq_of_lt hlt]
 
 /-- A number below `2N` modulo `N`, as `mod_mathK`, from a subtraction of
@@ -220,13 +220,13 @@ theorem mod_math2 (X N D K : Nat) (c : Bool) (hsum : D + N = X + 2 ^ K * c.toNat
   cases c
   · simp only [Bool.toNat_false, Nat.mul_zero, Nat.add_zero] at hsum
     simp only [Bool.false_eq_true, ite_false]
-    have hge : N ≤ X := by omega
-    have hlt : X - N < N := by omega
+    have hge : N ≤ X := by omega_using [hsum]
+    have hlt : X - N < N := by omega_using [hX]
     rw [Nat.mod_eq_sub_mod hge, Nat.mod_eq_of_lt hlt]
-    omega
+    omega_using [hsum]
   · simp only [Bool.toNat_true, Nat.mul_one] at hsum
     simp only [ite_true]
-    have hlt : X < N := by omega
+    have hlt : X < N := by omega_using [hD, hsum]
     rw [Nat.mod_eq_of_lt hlt]
 
 /-! ## At P-256 -/
@@ -235,6 +235,6 @@ theorem nBits_p256 : Spec.Ecdsa.nBits Spec.P256.curve = 256 := by
   have h₁ : 255 ≤ Spec.P256.curve.n.log2 := (Nat.le_log2 (by decide +kernel)).mpr (by decide +kernel)
   have h₂ : Spec.P256.curve.n.log2 < 256 := (Nat.log2_lt (by decide +kernel)).mpr (by decide +kernel)
   show Spec.P256.curve.n.log2 + 1 = 256
-  omega
+  omega_using [h₁, h₂]
 
 end VG.Proof.Ecdsa.Rfc6979

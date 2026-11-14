@@ -51,7 +51,7 @@ theorem matrixFour_piece {P : Prims} {S : Nat} (hP : PrimsOk P S) {p : Params} (
     fun _ h => (⟨_,h.1⟩ : ∃ W,PostB S x _ W)
   exact RelCT.seq (RelCT.two (fun _ _ h => h.1)
     (rej4At_tr hP.rej4 (kgOk p) hc (fun _ _ h => ⟨h.1.lx,h.1.ly,h.2,h.1.same⟩))
-    (fun x y h => ⟨ok x h.1.lx,ok y h.1.ly⟩)) (matrixTail_tr (by omega) (by simp))
+    (fun x y h => ⟨ok x h.1.lx,ok y h.1.ly⟩)) (matrixTail_tr (by omega_using [hg, hkl]) (by simp))
 
 theorem matrixTwo_seeds {p : Params} {σ : State} {e : Nat} {s : State} (h : GS p σ e 2 s) :
     bytesAt s.mem (pa s (sc oSA4)) 68=
@@ -83,7 +83,7 @@ theorem matrixTwo_piece {S : Nat} (hS : S<2^64) {cd : Prog isa} {nm : String}
     fun _ h => (⟨_,h.1⟩ : ∃ W,PostB S x _ W)
   exact RelCT.seq (RelCT.two (fun _ _ h => h.1)
     (rej2At_tr C (kgOk p) hc (fun _ _ h => ⟨h.1.lx,h.1.ly,h.2,h.1.same⟩))
-    (fun x y h => ⟨ok x h.1.lx,ok y h.1.ly⟩)) (matrixTail_tr (by omega) (by simp))
+    (fun x y h => ⟨ok x h.1.lx,ok y h.1.ly⟩)) (matrixTail_tr (by omega_using [he, hkl]) (by simp))
 
 theorem matrixPrefixes_piece {p : Params} (hF : PFacts p) {S : Nat} :
     Piece p S (KSamp p · 0 0) (fun σ s => KSamp p σ 0 0 s ∧ MatrixPrefixes p σ 4 s)
@@ -108,7 +108,7 @@ theorem matrixNonces_piece {p : Params} (hF : PFacts p) {S e n : Nat}
       (fun σ s => GS p σ e n s ∧ MatrixPrefixes p σ 4 s)
       (seqR (fun j => .block (setSR p e j)) 0 n) := by
   exact Piece.mono (Piece.seqR (I := fun j σ s => GS p σ e j s ∧ MatrixPrefixes p σ 4 s)
-    n 0 (fun j _ hj => matrixNonce_piece hF (by omega) (by omega)))
+    n 0 (fun j _ hj => matrixNonce_piece hF (by omega_using [he, hj]) (by omega_using [hn, hj])))
     (fun _ _ _ h => ⟨⟨h.1,fun _ hj => False.elim (Nat.not_lt_zero _ hj)⟩,h.2⟩)
     (fun _ _ _ h => by simpa only [Nat.zero_add] using h)
 
@@ -137,20 +137,20 @@ theorem matrixWith_piece {P : Prims} {S : Nat} (hP : PrimsOk P S) {cd : Prog isa
       (seqR (VG.Impl.MlDsa.AArch64.KeyGen.Optimized.matrixGroup P p) 0 (p.k*p.ℓ/4)) := by
     simpa only [Nat.zero_add,Nat.mul_zero,Nat.mul_add,Nat.mul_one] using
       Piece.seqR (I := fun g σ s => KSamp p σ (4*g) 0 s ∧ MatrixPrefixes p σ 4 s)
-        (p.k*p.ℓ/4) 0 (fun g _ hg => matrixGroup_piece hP hF (by omega))
+        (p.k*p.ℓ/4) 0 (fun g _ hg => matrixGroup_piece hP hF (by omega_using [hg]))
   have tail : Piece p S
       (fun σ s => KSamp p σ (4*(p.k*p.ℓ/4)) 0 s ∧ MatrixPrefixes p σ 4 s)
       (KSamp p · (p.k*p.ℓ) 0)
       (if p.k*p.ℓ%4=2 then VG.Impl.MlDsa.AArch64.KeyGen.Optimized.matrixTwo cd p (4*(p.k*p.ℓ/4))
         else seqR (expA P p) (4*(p.k*p.ℓ/4)) (p.k*p.ℓ%4)) := by
     rcases hm with hm | hm
-    · rw [VG.Proof.MlDsa.KeyGen.ifn (by omega),hm]
+    · rw [VG.Proof.MlDsa.KeyGen.ifn (by omega_using [hm]),hm]
       refine ⟨fun _ _ _ h => WP.block_nil ?_,RelCT.block_nil (fun _ _ _ => True.intro)⟩
-      simpa only [show 4*(p.k*p.ℓ/4)=p.k*p.ℓ by omega] using h.1
+      simpa only [show 4*(p.k*p.ℓ/4)=p.k*p.ℓ by omega_using [hm]] using h.1
     · rw [VG.Proof.MlDsa.KeyGen.ifp hm]
-      exact Piece.mono (matrixTwoPhase_piece hP.s64 C hF (by omega))
+      exact Piece.mono (matrixTwoPhase_piece hP.s64 C hF (by omega_using [hm]))
         (fun _ _ _ h => h) (fun _ _ _ h => by
-          simpa only [show 4*(p.k*p.ℓ/4)+2=p.k*p.ℓ by omega] using h.1)
+          simpa only [show 4*(p.k*p.ℓ/4)+2=p.k*p.ℓ by omega_using [hm]] using h.1)
   exact Piece.mono (Piece.seq (matrixPrefixes_piece hF) (Piece.seq groups tail))
     (fun _ _ _ h => KSamp.zero h.1 h.2) (fun _ _ _ h => h)
 

@@ -61,14 +61,14 @@ abbrev encWr (sp out scr : BitVec 32) (K sl : Nat) : List Region :=
 theorem EncArgs.arg (h : EncArgs s out n e msg ps scr pre K el ml pl sl rl) (rd wr : List Region) {i : Nat}
     (hi : i < 14) :
     VG.X86.arg (s.callEntry.withRegions rd wr) i = (encArgv out n e msg ps scr pre K el ml pl sl rl).getD i 0 := by
-  rw [arg_withRegions, arg_callEntry (by have := h.sp; omega) (by have := h.fit; omega)]
+  rw [arg_withRegions, arg_callEntry (by have := h.sp; omega_using [this]) (by have := h.fit; omega_using [hi, this])]
   exact h.args i hi
 
 theorem EncArgs.k32 (h : EncArgs s out n e msg ps scr pre K el ml pl sl rl) : K < 2 ^ 32 := by
-  have := h.kv.2; omega
+  have := h.kv.2; omega_using [this]
 
 theorem EncArgs.rl32 (h : EncArgs s out n e msg ps scr pre K el ml pl sl rl) : rl < 2 ^ 32 := by
-  have := h.kv.2; rw [h.rlK]; simp only [Spec.Rsa.precomputedWords, Spec.Rsa.modulusWords]; omega
+  have := h.kv.2; rw [h.rlK]; simp only [Spec.Rsa.precomputedWords, Spec.Rsa.modulusWords]; omega_using [this]
 
 theorem enc_pre (h : EncArgs s out n e msg ps scr pre K el ml pl sl rl)
     (dW : ∀ w ∈ encWr (s.gpr .esp) out scr K sl, ∀ r ∈ encRd n e msg ps pre K el ml pl rl, w.Disjoint r)
@@ -81,13 +81,13 @@ theorem enc_pre (h : EncArgs s out n e msg ps scr pre K el ml pl sl rl)
       (s.callEntry.withRegions (encRd n e msg ps pre K el ml pl rl) (encWr (s.gpr .esp) out scr K sl)) := by
   have k32 := h.k32
   have rl32 := h.rl32
-  have el32 : el < 2 ^ 32 := by have := h.elK; omega
-  have ml32 : ml < 2 ^ 32 := by have := h.mlK; omega
-  have pl32 : pl < 2 ^ 32 := by have := h.plK; omega
+  have el32 : el < 2 ^ 32 := by have := h.elK; omega_using [k32, this]
+  have ml32 : ml < 2 ^ 32 := by have := h.mlK; omega_using [k32, this]
+  have pl32 : pl < 2 ^ 32 := by have := h.plK; omega_using [k32, this]
   have a := fun {i} (hi : i < 14) => h.arg (encRd n e msg ps pre K el ml pl rl) (encWr (s.gpr .esp) out scr K sl) hi
   have hsp := h.sp
   have hfit := h.fit
-  have e4 : (s.gpr .esp - 4).toNat = (s.gpr .esp).toNat - 4 := sub_toNat (k := 4) (by omega)
+  have e4 : (s.gpr .esp - 4).toNat = (s.gpr .esp).toNat - 4 := sub_toNat (k := 4) (by omega_using [hsp])
   sig_pre [Proof.RsaPkcs1Enc.encryptPrecomputedContract, Proof.RsaPkcs1Enc.encryptPrecomputedSig, abi, argSlots,
     argVal, argBytes, stackBelow]
   simp only [a (by decide : 0 < 14), a (by decide : 1 < 14), a (by decide : 2 < 14), a (by decide : 3 < 14),
@@ -95,10 +95,10 @@ theorem enc_pre (h : EncArgs s out n e msg ps scr pre K el ml pl sl rl)
     a (by decide : 8 < 14), a (by decide : 9 < 14), a (by decide : 10 < 14), a (by decide : 11 < 14),
     a (by decide : 12 < 14), a (by decide : 13 < 14),
     encArgv, List.getD_cons_zero, List.getD_cons_succ, BitVec.toNat_ofNat, Nat.reducePow,
-    Nat.mod_eq_of_lt (show K < 4294967296 by omega), Nat.mod_eq_of_lt (show el < 4294967296 by omega),
-    Nat.mod_eq_of_lt (show ml < 4294967296 by omega), Nat.mod_eq_of_lt (show pl < 4294967296 by omega),
-    Nat.mod_eq_of_lt (show rl < 4294967296 by omega),
-    Nat.mod_eq_of_lt (show sl < 4294967296 by have := h.sl32; omega),
+    Nat.mod_eq_of_lt (show K < 4294967296 by omega_using [k32]), Nat.mod_eq_of_lt (show el < 4294967296 by omega_using [el32]),
+    Nat.mod_eq_of_lt (show ml < 4294967296 by omega_using [ml32]), Nat.mod_eq_of_lt (show pl < 4294967296 by omega_using [pl32]),
+    Nat.mod_eq_of_lt (show rl < 4294967296 by omega_using [rl32]),
+    Nat.mod_eq_of_lt (show sl < 4294967296 by have := h.sl32; omega_using [this]),
     argAddr_withRegions, argAddr_callEntry, Nat.mul_zero, BitVec.add_zero, e4]
   have wr := fun {w r : Region} (hw : w ∈ encWr (s.gpr .esp) out scr K sl)
     (hr : r ∈ encRd n e msg ps pre K el ml pl rl) => dW w hw r hr
@@ -114,12 +114,12 @@ theorem enc_pre (h : EncArgs s out n e msg ps scr pre K el ml pl sl rl)
       x.toNat + k ≤ 2 ^ 32 := by
     intro x k hx
     have := fi hx
-    rwa [BitVec.toNat_setWidth, Nat.mod_eq_of_lt (by have := x.isLt; omega)] at this
+    rwa [BitVec.toNat_setWidth, Nat.mod_eq_of_lt (by have := x.isLt; omega_using [])] at this
   have ret : Region.Sub ⟨(s.gpr .esp - 4).setWidth 64, 4⟩ (below (s.gpr .esp) (encStack + 4)) :=
     below_sub (by decide) h.sp
   have low : Region.Sub ⟨(s.gpr .esp - 4).setWidth 64 - BitVec.ofNat 64 encStack, encStack⟩
       (below (s.gpr .esp) (encStack + 4)) := by
-    rw [← Taint.sub_setWidth (by omega)]
+    rw [← Taint.sub_setWidth (by omega_using [hsp, e4])]
     exact below_inner (by decide) h.sp
   repeat' apply And.intro
   all_goals first
@@ -144,7 +144,7 @@ theorem enc_pub {s₁ s₂ : State} (h₁ : EncArgs s₁ out n e msg ps scr pre 
       (s₂.callEntry.withRegions rd wr) := by
   have rl32 := h₁.rl32
   have k32 := h₁.k32
-  have el32 : el < 2 ^ 32 := by have := h₁.elK; omega
+  have el32 : el < 2 ^ 32 := by have := h₁.elK; omega_using [k32, this]
   have a₁ := fun {i} (hi : i < 14) => h₁.arg rd wr hi
   have a₂ := fun {i} (hi : i < 14) => h₂.arg rd wr hi
   sig_pub [Proof.RsaPkcs1Enc.encryptPrecomputedContract, Proof.RsaPkcs1Enc.encryptPrecomputedSig, abi, argSlots,
@@ -163,20 +163,20 @@ theorem enc_pub {s₁ s₂ : State} (h₁ : EncArgs s₁ out n e msg ps scr pre 
   have ret := fun {sx : State} (hx : 4 ≤ (sx.gpr .esp).toNat) =>
     (Frame.refl [⟨(sx.gpr .esp - 4).setWidth 64, 4⟩] sx.mem).writeW (List.mem_singleton_self _) (sx.unknowns 0)
       (Region.contains_self _ _)
-  have ret₁ := ret (sx := s₁) (by have := h₁.sp; omega)
-  have ret₂ := ret (sx := s₂) (by have := h₂.sp; omega)
+  have ret₁ := ret (sx := s₁) (by have := h₁.sp; omega_using [this])
+  have ret₂ := ret (sx := s₂) (by have := h₂.sp; omega_using [this])
   rw [← hsp] at ret₂ ⊢
   have dq : ∀ {x : BitVec 32} {k : Nat}, (below (s₁.gpr .esp) (encStack + 4)).Disjoint ⟨x.setWidth 64, k⟩ →
       ∀ r ∈ [(⟨(s₁.gpr .esp - 4).setWidth 64, 4⟩ : Region)], (⟨x.setWidth 64, k⟩ : Region).Disjoint r := by
     intro x k hd r hr
     simp only [List.mem_singleton] at hr; subst hr
     exact (hd.sub_left (below_sub (a := 4) (by decide) h₁.sp)).symm
-  rw [Proof.RsaPkcs1Sig.wordsAt_frame' ret₁ (dq hdp) (by omega),
-    Proof.RsaPkcs1Sig.wordsAt_frame' ret₂ (dq hdp) (by omega),
-    Proof.RsaPkcs1Sig.bytesAt_frame ret₁ (dq hde) (by omega),
-    Proof.RsaPkcs1Sig.bytesAt_frame ret₂ (dq hde) (by omega),
-    Proof.RsaPkcs1Sig.bytesAt_frame ret₁ (dq hdn) (by omega),
-    Proof.RsaPkcs1Sig.bytesAt_frame ret₂ (dq hdn) (by omega), hp, he, hn]
+  rw [Proof.RsaPkcs1Sig.wordsAt_frame' ret₁ (dq hdp) (by omega_using [rl32]),
+    Proof.RsaPkcs1Sig.wordsAt_frame' ret₂ (dq hdp) (by omega_using [rl32]),
+    Proof.RsaPkcs1Sig.bytesAt_frame ret₁ (dq hde) (by omega_using [el32]),
+    Proof.RsaPkcs1Sig.bytesAt_frame ret₂ (dq hde) (by omega_using [el32]),
+    Proof.RsaPkcs1Sig.bytesAt_frame ret₁ (dq hdn) (by omega_using [k32]),
+    Proof.RsaPkcs1Sig.bytesAt_frame ret₂ (dq hdn) (by omega_using [k32]), hp, he, hn]
 
 /-- The call's result: what it writes to `out` and returns. -/
 theorem enc_post {s t : State} (h : EncArgs s out n e msg ps scr pre K el ml pl sl rl) {rd wr : List Region}
@@ -191,18 +191,18 @@ theorem enc_post {s t : State} (h : EncArgs s out n e msg ps scr pre K el ml pl 
   have a := fun {i} (hi : i < 14) => h.arg rd wr hi
   have k32 := h.k32
   have rl32 := h.rl32
-  have el32 : el < 2 ^ 32 := by have := h.elK; omega
-  have ml32 : ml < 2 ^ 32 := by have := h.mlK; omega
-  have pl32 : pl < 2 ^ 32 := by have := h.plK; omega
+  have el32 : el < 2 ^ 32 := by have := h.elK; omega_using [k32, this]
+  have ml32 : ml < 2 ^ 32 := by have := h.mlK; omega_using [k32, this]
+  have pl32 : pl < 2 ^ 32 := by have := h.plK; omega_using [k32, this]
   sig_post [Proof.RsaPkcs1Enc.encryptPrecomputedContract, Proof.RsaPkcs1Enc.encryptPrecomputedSig, abi, argSlots,
     argVal, argBytes] at hp
   simp only [a (by decide : 0 < 14), a (by decide : 2 < 14), a (by decide : 3 < 14),
     a (by decide : 4 < 14), a (by decide : 5 < 14), a (by decide : 6 < 14), a (by decide : 7 < 14),
     a (by decide : 8 < 14), a (by decide : 9 < 14), a (by decide : 12 < 14), a (by decide : 13 < 14),
     encArgv, List.getD_cons_zero, List.getD_cons_succ, BitVec.toNat_ofNat, Nat.reducePow,
-    Nat.mod_eq_of_lt (show K < 4294967296 by omega), Nat.mod_eq_of_lt (show el < 4294967296 by omega),
-    Nat.mod_eq_of_lt (show ml < 4294967296 by omega), Nat.mod_eq_of_lt (show pl < 4294967296 by omega),
-    Nat.mod_eq_of_lt (show rl < 4294967296 by omega)] at hp
+    Nat.mod_eq_of_lt (show K < 4294967296 by omega_using [k32]), Nat.mod_eq_of_lt (show el < 4294967296 by omega_using [el32]),
+    Nat.mod_eq_of_lt (show ml < 4294967296 by omega_using [ml32]), Nat.mod_eq_of_lt (show pl < 4294967296 by omega_using [pl32]),
+    Nat.mod_eq_of_lt (show rl < 4294967296 by omega_using [rl32])] at hp
   rw [BitVec.setWidth_append_eq_right] at hp
   exact hp
 

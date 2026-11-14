@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.MlDsa.AArch64.PreparedKey.Prepare
 public import VerifiedGarbage.Proof.MlDsa.PreparedKey.Values
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # Each preparation slice decodes the specified secret polynomial -/
 
@@ -22,20 +23,20 @@ theorem secret_value (p : Params) (key : List Byte) {i : Nat}
   have hlen : secretLen p = VG.Proof.MlDsa.Sign.lenS p := rfl
   by_cases h1 : i < p.ℓ
   · rw [secret_s1 p key h1]
-    simp only [secretPiece, ite_eq_left (show i < p.ℓ + p.k by omega), hlen]
+    simp only [secretPiece, ite_eq_left (show i < p.ℓ + p.k by omega_using [h1]), hlen]
     rfl
   · by_cases h2 : i < p.ℓ + p.k
-    · have hj : i - p.ℓ < p.k := by omega
-      have he : p.ℓ + (i - p.ℓ) = i := by omega
+    · have hj : i - p.ℓ < p.k := by omega_using [h1, h2]
+      have he : p.ℓ + (i - p.ℓ) = i := by omega_using [h1]
       rw [← he, secret_s2 p key hj]
-      simp only [secretPiece, ite_eq_left (show p.ℓ + (i - p.ℓ) < p.ℓ + p.k by omega), hlen]
+      simp only [secretPiece, ite_eq_left (show p.ℓ + (i - p.ℓ) < p.ℓ + p.k by omega_using [h1, h2]), hlen]
       unfold VG.Proof.MlDsa.Sign.s2F
       rw [Nat.mul_add]
-      congr 5 <;> omega
-    · have hj : i - (p.ℓ + p.k) < p.k := by omega
-      have he : p.ℓ + p.k + (i - (p.ℓ + p.k)) = i := by omega
+      congr 5 <;> omega_using []
+    · have hj : i - (p.ℓ + p.k) < p.k := by omega_using [hi, h1]
+      have he : p.ℓ + p.k + (i - (p.ℓ + p.k)) = i := by omega_using [h2]
       rw [← he, secret_t0 p key hj]
-      simp only [secretPiece, ite_eq_right (show ¬ p.ℓ + p.k + (i - (p.ℓ + p.k)) < p.ℓ + p.k by omega), hlen]
+      simp only [secretPiece, ite_eq_right (show ¬ p.ℓ + p.k + (i - (p.ℓ + p.k)) < p.ℓ + p.k by omega_using []), hlen]
       unfold VG.Proof.MlDsa.Sign.t0F
       have hoff : 128 + VG.Proof.MlDsa.Sign.lenS p * (p.ℓ + p.k) +
           416 * (p.ℓ + p.k + (i - (p.ℓ + p.k)) - p.ℓ - p.k) =
@@ -43,7 +44,7 @@ theorem secret_value (p : Params) (key : List Byte) {i : Nat}
             32 * d * (i - (p.ℓ + p.k)) := by
         rw [Nat.mul_add]
         simp only [d]
-        omega
+        omega_using []
       rw [hoff]
       rfl
 

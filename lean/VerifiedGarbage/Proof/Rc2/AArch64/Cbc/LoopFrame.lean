@@ -33,7 +33,7 @@ theorem loopFrame_slice {s s' : State} {n m i : Nat} {a b : Mem}
   · refine ⟨dataR s n, by simp [loopWrites], ?_⟩
     change Region.Sub ⟨s'.gpr .x1, 8 * m⟩ ⟨s.gpr .x1, 8 * n⟩
     rw [ptr]
-    exact Offset.sub_base _ (by omega)
+    exact Offset.sub_base _ (by omega_using [bound])
   · refine ⟨⟨s.gpr .x2, 264⟩, by simp [loopWrites], ?_⟩
     rw [buf]; exact fun _ h => h
 
@@ -53,9 +53,9 @@ theorem BodyPost.tailData {d : Spec.Rc2.Direction} {s s' : State} {n : Nat}
     (h : BodyPost d s (n + 1) s') (hp : StepPre s (n + 1)) (bound : 8 * (n + 1) ≤ 2 ^ 64) :
     Spec.Rc2.blocksAt s'.mem (s.gpr .x1 + 8) n = Spec.Rc2.blocksAt s.mem (s.gpr .x1 + 8) n := by
   have sub : Region.Sub ⟨s.gpr .x1 + 8, 8 * n⟩ (dataR s (n + 1)) :=
-    Offset.sub_base _ (by change 8 + 8 * n ≤ 8 * (n + 1); omega)
+    Offset.sub_base _ (by change 8 + 8 * n ≤ 8 * (n + 1); omega_using [])
   have sep : (Region.mk (s.gpr .x1 + 8) (8 * n)).Disjoint (dataR s) :=
-    Offset.disjoint_base _ (d := 8) (n := 8 * n) (k := 8) (by decide) (by omega)
+    Offset.disjoint_base _ (d := 8) (n := 8 * n) (k := 8) (by decide) (by omega_using [bound])
   apply blocksAt_frame h.mem
   simpa only [stepWrites, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq] using
     And.intro ((hp.ivData.sub_right sub).symm) (And.intro sep
@@ -65,9 +65,9 @@ theorem firstBlock_frame {d : Spec.Rc2.Direction} {s s' : State} {n : Nat} {m : 
     (h : BodyPost d s (n + 1) s') (hp : StepPre s (n + 1)) (bound : 8 * (n + 1) ≤ 2 ^ 64)
     (frame : Frame (loopWrites s' n) s'.mem m) :
     Spec.Rc2.blockAt m (s.gpr .x1) = Spec.Rc2.blockAt s'.mem (s.gpr .x1) := by
-  have first : Region.Sub (dataR s) (dataR s (n + 1)) := Region.sub_prefix (by change 8 ≤ 8 * (n + 1); omega)
+  have first : Region.Sub (dataR s) (dataR s (n + 1)) := Region.sub_prefix (by change 8 ≤ 8 * (n + 1); omega_using [])
   have sep : (dataR s).Disjoint ⟨s.gpr .x1 + 8, 8 * n⟩ :=
-    Offset.base_disjoint _ (e := 8) (n := 8 * n) (k := 8) (by decide) (by omega)
+    Offset.base_disjoint _ (e := 8) (n := 8 * n) (k := 8) (by decide) (by omega_using [bound])
   apply blockAt_frame frame
   have iv := h.reg .x23 (by decide) (by decide) (by decide)
   have buf := h.reg .x2 (by decide) (by decide) (by decide)

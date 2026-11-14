@@ -28,7 +28,7 @@ def mask16 : BitVec 128 := ofVWords 65535 65535 65535 65535
 
 theorem vword_mask16 {b : Nat} (hb : b < 4) : vword mask16 b = 65535 := by
   rw [mask16, vword_ofVWords _ _ _ _ hb]
-  rcases (by omega : b = 0 ∨ b = 1 ∨ b = 2 ∨ b = 3) with rfl | rfl | rfl | rfl <;> rfl
+  rcases (by omega_using [hb] : b = 0 ∨ b = 1 ∨ b = 2 ∨ b = 3) with rfl | rfl | rfl | rfl <;> rfl
 
 /-- A reverse mix, on registers given as variables: the word `w`, the words
 before it `a3`, `a2`, `a1`, the temporaries `t`, `u`, `v`. -/
@@ -110,9 +110,9 @@ theorem rmixCode_ok {s : State} {w a1 a2 a3 t u v : VReg} (hr : MixRegs w a1 a2 
   let s₇ := s₆.setV t (VArr.s4.map2 (fun _ x y => x - y) (s₆.v t) (s₆.v u))
   let s₈ := s₇.setV w (VArr.s4.map2 (fun _ x y => x - y) (s₇.v t) (s₇.v v))
   have ok1 : VShiftOp.ushr.ok VArr.s4.esize sh = true := by
-    simp [VShiftOp.ok, VArr.esize]; omega
+    simp [VShiftOp.ok, VArr.esize]; omega_using [h1, h2]
   have ok2 : VShiftOp.sli.ok VArr.s4.esize (16 - sh) = true := by
-    simp [VShiftOp.ok, VArr.esize]; omega
+    simp [VShiftOp.ok, VArr.esize]; omega_using []
   refine ⟨s₈, ?_, fun b hb => ?_, fun r h1 h2 h3 h4 => ?_,
     by simp only [s₈, s₇, s₆, s₅, s₄, s₃, s₂, s₁, gpr_setV],
     by simp only [s₈, s₇, s₆, s₅, s₄, s₃, s₂, s₁, mem_setV],

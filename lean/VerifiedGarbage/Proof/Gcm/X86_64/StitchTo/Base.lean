@@ -39,14 +39,14 @@ open VG.Spec.Gcm (Block blockAt)
 theorem blockAt_writeW_lane2 (m : Mem) (a : Addr) (v : BitVec 256) {l : Nat} (hl : l < 2) :
     blockAt (m.writeW a v) (a + BitVec.ofNat 64 (16 * l)) =
       XBinOp.eval .pshufb (v.extractLsb' (128 * l) 128) revMask := by
-  have e := readW_writeW_inside m a v (k := 16 * l) (n := 16) (by omega) (by decide)
-  rw [show 8 * (16 * l) = 128 * l by omega] at e
+  have e := readW_writeW_inside m a v (k := 16 * l) (n := 16) (by omega_using [hl]) (by decide)
+  rw [show 8 * (16 * l) = 128 * l by omega_using []] at e
   rw [blockAt_eq, e]
 
 /-- Lane `l` of a 32-byte load. -/
 theorem load256_lane (m : Mem) (a : Addr) {l : Nat} (hl : l < 2) :
     (m.readW a 256).extractLsb' (128 * l) 128 = m.readW (a + BitVec.ofNat 64 (16 * l)) 128 := by
-  rcases (by omega : l = 0 ∨ l = 1) with rfl | rfl
+  rcases (by omega_using [hl] : l = 0 ∨ l = 1) with rfl | rfl
   · simpa using load256_lo m a
   · simpa using load256_hi m a
 
@@ -54,7 +54,7 @@ theorem load256_lane (m : Mem) (a : Addr) {l : Nat} (hl : l < 2) :
 theorem ymm_lane2 (s : State) (r : XReg) {l : Nat} (hl : l < 2) :
     (s.ymm r).extractLsb' (128 * l) 128 = s.lane r l := by
   rw [State.ymm_eq]
-  rcases (by omega : l = 0 ∨ l = 1) with rfl | rfl
+  rcases (by omega_using [hl] : l = 0 ∨ l = 1) with rfl | rfl
   · exact VG.Proof.Aes.X86_64.Vaes.extract_lo _ _
   · exact VG.Proof.Aes.X86_64.Vaes.extract_hi _ _
 

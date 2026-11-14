@@ -67,8 +67,8 @@ theorem exitA_ok {bits : Nat} {σ s t : State} (h : CIn bits σ) (o : BOut bits 
   have inWs : ∀ d, d + 8 ≤ (σ.gpr .r4).toNat * 8 → InRegions (t.rd ++ t.wr) (σ.gpr .r3 + BitVec.ofNat 64 d) 8 :=
     fun d hd => ⟨_, List.mem_append_right _ hwsW, by
       simp only [Region.Contains, Offset.add_sub_cancel_left, BitVec.toNat_ofNat]
-      rw [Nat.mod_eq_of_lt (by omega)]; omega⟩
-  have hkw : 32 ≤ keyWords bits := by unfold keyWords; omega
+      rw [Nat.mod_eq_of_lt (by omega_using [hfw, hd])]; omega_using [hd]⟩
+  have hkw : 32 ≤ keyWords bits := by unfold keyWords; omega_using []
   rw [restore_eq, WP.block_append_iff]
   have r31 := o.r31
   generalize hB : wsB σ = B at hsc hnw r31
@@ -77,14 +77,14 @@ theorem exitA_ok {bits : Nat} {σ s t : State} (h : CIn bits σ) (o : BOut bits 
       u.gpr .r9 = B - BitVec.ofNat 64 552 ∧ u.mem = t.mem) ?_ (by decide))
     fun u ⟨⟨u3, u5, u9, um⟩, ku⟩ => ?_
   · simp only [ldh, hStat, hUsed, keyOff]
-    prun [r31, hsc.ld (d := 160) (n := 8) (by omega), hsc.ld (d := 152) (n := 8) (by omega)]
+    prun [r31, hsc.ld (d := 160) (n := 8) (by omega_using [hkw]), hsc.ld (d := 152) (n := 8) (by omega_using [hkw])]
     done
   have u9' : u.gpr .r9 = σ.gpr .r3 := by
     rw [u9, ← hB]; simp only [wsB]; exact BitVec.add_sub_cancel _ _
   rw [WP.block_append_iff]
   refine WP.mono (Q := fun (v : State) => v.lr = σ.lr ∧ (∀ r, r ≠ .r0 → v.gpr r = u.gpr r) ∧ v.mem = u.mem ∧
       v.rd = u.rd ∧ v.wr = u.wr ∧ v.sp = u.sp) ?_ fun v ⟨vlr, vg, vm, vrd, vwr, vsp⟩ => ?_
-  · have hin := inWs saveOff (by simp only [saveOff, keyOff] at hsz ⊢; omega)
+  · have hin := inWs saveOff (by simp only [saveOff, keyOff] at hsz ⊢; omega_using [hsz])
     simp only [saveOff] at hin ⊢
     refine WP.cons (exec_load_d (by decide) (by decide) (by rw [u9', ku.rd, ku.wr]; exact hin)) ?_
     refine WP.cons exec_mtlr (WP.block_nil ⟨?_, fun r hr => ?_, rfl, rfl, rfl, rfl⟩)
@@ -98,7 +98,7 @@ theorem exitA_ok {bits : Nat} {σ s t : State} (h : CIn bits σ) (o : BOut bits 
     refine WP.mono (Spill.restore_wp (b := .r9) (B := σ.gpr .r3) (by decide) (by rw [vg _ (by decide)]; exact u9')
       tail_fits tail_restorable (fun p hp => by
         rw [vrd, vwr, ku.rd, ku.wr]
-        exact inWs _ (by have := tail_in p hp; simp only [saveOff, keyOff] at *; omega))
+        exact inWs _ (by have := tail_in p hp; simp only [saveOff, keyOff] at *; omega_using [hsz, this]))
       (by rw [vm, um]; exact svd.sub fun p hp => List.mem_of_mem_tail hp)) fun f hf => ?_
     have o3 : f.gpr .r3 = u.gpr .r3 := (hf.other _ (by rw [tail_regs]; decide)).trans (vg _ (by decide))
     have o5 : f.gpr .r5 = u.gpr .r5 := (hf.other _ (by rw [tail_regs]; decide)).trans (vg _ (by decide))
@@ -115,17 +115,17 @@ theorem exit_ok {bits : Nat} {σ s t : State} (h : CIn bits σ) (o : BOut bits �
   have hst := status_le (res bits σ)
   unfold exit
   refine WP.seq (WP.mono (exitA_ok h o svd) fun f ⟨fa, f3, f5, f7, fm, fwr⟩ => ?_)
-  refine WP.ite _ (eval_zero_ofNat f .r3 (by omega) f3) (fun hz => ?_) (fun hz => ?_)
+  refine WP.ite _ (eval_zero_ofNat f .r3 (by omega_using [hst]) f3) (fun hz => ?_) (fun hz => ?_)
   · have h0 : Proof.Dsa.ProbablePrime.status (res bits σ) = 0 := by simpa using hz
     exact WP.block_nil ⟨fa, f3, by rw [fm]; exact Frame.refl _ _, fun b rest hr => by
       rw [status_eq_zero h0] at hr; cases hr⟩
   · have hU : InRegions f.wr (f.gpr .r7 + BitVec.ofNat 64 0) 8 := ⟨cU σ, by rw [fwr, o.wr, h.wr]; simp, by
-      rw [f7]; simp only [Region.Contains, BitVec.add_zero, BitVec.sub_self, BitVec.toNat_zero]; omega⟩
+      rw [f7]; simp only [Region.Contains, BitVec.add_zero, BitVec.sub_self, BitVec.toNat_zero]; omega_using []⟩
     refine WP.cons (exec_store_d (by decide) (by decide) hU) (WP.block_nil ⟨?_, f3, ?_, fun b rest hr => ?_⟩)
     · exact fa
     · rw [f7, fm, BitVec.add_zero]
       exact (Frame.refl _ _).writeW List.mem_cons_self _ (by
-        simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; omega)
+        simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; omega_using [])
     · simp only [Spec.Rsa.wordsAt, List.range_one, List.map_cons, List.map_nil, Nat.mul_zero, BitVec.add_zero]
       rw [f7, Mem.readW_writeW_self64, f5, o.used b rest hr]
 

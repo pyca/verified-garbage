@@ -37,7 +37,7 @@ theorem slot_kept {rs : List Region} {m m' : Mem} (hf : Frame rs m m') {W : Addr
     (hd : ∀ r ∈ rs, (⟨W + BitVec.ofNat 64 216, 40⟩ : Region).Disjoint r) {d : Nat} (h₁ : 216 ≤ d)
     (h₂ : d + 8 ≤ 256) : m'.readW (W + BitVec.ofNat 64 d) 64 = m.readW (W + BitVec.ofNat 64 d) 64 :=
   hf.readW (r := ⟨W + BitVec.ofNat 64 d, 8⟩) (Region.contains_self _ _)
-    (fun r hr => (hd r hr).sub_left (Offset.sub _ h₁ (by omega))) (by decide)
+    (fun r hr => (hd r hr).sub_left (Offset.sub _ h₁ (by omega_using [h₂]))) (by decide)
 
 section
 variable {Ctx St W SP : Addr} (L : Lay Ctx St W)
@@ -169,7 +169,7 @@ theorem front_ok (v : GcmImpl) {s₀ : State} {k : Reg → BitVec 64} {H : Block
       rcases hr with rfl | rfl | rfl
       · exact haad.st
       · exact haad.w.sub_right (Lay.wSub (by decide))
-      · exact haad.w.sub_right (Lay.wSub (by decide))) (by omega)] at this
+      · exact haad.w.sub_right (Lay.wSub (by decide))) (by omega_using [hlt])] at this
     exact this
   · rw [r₄.mem]; exact f₃
   · rw [r₄.rd, rd₃, r₂.rd, rd₁]

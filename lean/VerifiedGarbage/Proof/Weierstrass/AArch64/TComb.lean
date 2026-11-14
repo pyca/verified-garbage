@@ -462,7 +462,7 @@ theorem tentry_ok {publicLookup : Bool} {K : TCombCfg} {C : Curve} {base : Addr}
     have := hL.bits
     have := hL.kbytes
     unfold TCombCfg.zw at *
-    omega
+    omega_arith
   have hwb : K.bits + K.w ≤ 4096 := by
     have := hL.bitsw
     omega_using [hwi, this]
@@ -491,7 +491,7 @@ theorem TblMem.of_unch {s s' : State} {T : Addr} {ws : List (BitVec 64)} {base :
     (hU : Unch base W s.mem s'.mem) (hW : ∀ w ∈ W, w.1 + w.2 ≤ size)
     (hout : ∀ i < ws.length, ∀ b < 8, size ≤ ofs base (T + BitVec.ofNat 64 (8 * i) + BitVec.ofNat 64 b)) :
     TblMem s' T ws :=
-  h.unch hrd fun i hi b hb => hU _ fun w hw => Or.inr (by have := hW w hw; have := hout i hi b hb; omega)
+  h.unch hrd fun i hi b hb => hU _ fun w hw => Or.inr (by have := hW w hw; have := hout i hi b hb; omega_arith)
 
 /-- What the comb reads and never writes, at the start: the curve's `a` and
 `3b`, zero, the table of the scalar's bits (`kbytes` bytes, the rest of its
@@ -549,7 +549,7 @@ theorem tcombW_ro {K : TCombCfg} {size : Nat} (hL : TCombLay K size) {x : Nat}
 theorem combW_bits {K : TCombCfg} {size : Nat} (hL : TCombLay K size) {t : Nat} (ht : t < K.w * K.J) :
     ∀ w ∈ combW K.toComb, K.bits + t + 1 ≤ w.1 ∨ w.1 + w.2 ≤ K.bits + t := by
   have : K.w * K.J ≤ K.kbytes + 8 * K.zw := by unfold TCombCfg.zw; have := hL.kbytes; omega_using []
-  intro w hw; have := hL.bits_w w hw; omega
+  intro w hw; have := hL.bits_w w hw; omega_arith
 
 /-- An iteration. -/
 theorem tstep_ok {publicLookup : Bool} {K : TCombCfg} {C : Curve} {base : Addr} {size k : Nat} {T : Addr}

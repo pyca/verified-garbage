@@ -155,7 +155,7 @@ theorem data_entry (hs : (modeContract post).pre s) : Proof.Modes.chunksAt 16 (e
     Proof.Modes.chunksAt 16 s.mem (s.gpr .r6) (s.gpr .r7).toNat := by
   have h := hs
   obtain ⟨-, -, -, -, -, -, -, dDS, -, -, fD, -⟩ := h
-  exact Proof.Modes.PPC64LE.chunksAt_frame (entry_frame s) (extra_apart dDS) (by omega)
+  exact Proof.Modes.PPC64LE.chunksAt_frame (entry_frame s) (extra_apart dDS) (by omega_using [fD])
 
 theorem key_entry (hs : (modeContract post).pre s) (R : Nat) (hR : R = 18 ∨ R = 24) :
     schedWords (entry s).mem (s.gpr .r3) R = schedWords s.mem (s.gpr .r3) R := by
@@ -164,7 +164,7 @@ theorem key_entry (hs : (modeContract post).pre s) (R : Nat) (hR : R = 18 ∨ R 
   simp only [schedWords]
   refine List.map_congr_left fun i hi => ?_
   have hi := List.mem_range.mp hi
-  have hl : 8 * i + 8 ≤ 272 := by simp only [Spec.Camellia.scheduleLength] at hi; omega
+  have hl : 8 * i + 8 ≤ 272 := by simp only [Spec.Camellia.scheduleLength] at hi; omega_using [hR, hi]
   exact Proof.Camellia.wordAt_frame (entry_frame s) fun r hr =>
     (extra_apart dKS r hr).sub_left (VG.Offset.sub_base _ hl)
 
@@ -186,7 +186,7 @@ theorem seqPre_of (hs : (modeContract post).pre s) {M : Mode} (c : Impl.Modes.PP
     by rw [eV, entry_rd, entry_wr, hwr]; simp, fun _ => by rw [eV, entry_wr, hwr]; simp,
     by rw [e16]; simpa [P, entry_gpr] using fV, by rw [eD, entry_wr, hwr]; simp,
     by rw [hstep]; simpa [Dp, N, entry_gpr] using fD, by rw [eD, eS]; exact dDS,
-    by rw [eV, eS]; exact dVS, fun _ => by rw [eV, eD]; exact dVD, ⟨by omega, by rw [e16]; omega⟩,
+    by rw [eV, eS]; exact dVS, fun _ => by rw [eV, eD]; exact dVD, ⟨by omega_using [hstep], by rw [e16]; omega_using [hstep]⟩,
     hL⟩
 
 theorem keyArgs_of (hs : (modeContract post).pre s) {M : Mode} (c : Impl.Modes.PPC64LE.Core) (hT : c.total = modeSlots)
@@ -225,9 +225,9 @@ theorem run_wrapped (hs : (modeContract post).pre s) {c : Impl.Modes.PPC64LE.Cor
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl
     · rw [eS]; exact VG.Offset.disjoint_base _ (by simp [extraSlot_eq, hsl, slots_eq])
-        (by rw [modeSlots_eq] at hfit; rw [extraSlot_eq]; omega)
+        (by rw [modeSlots_eq] at hfit; rw [extraSlot_eq]; omega_using [])
     · rw [eS]; exact VG.Offset.disjoint _ (.inr (by simp [extraSlot_eq, hsl, slots_eq]))
-        (by rw [modeSlots_eq] at hfit; rw [extraSlot_eq]; omega) (by rw [modeSlots_eq] at hfit; simp [hsl, slots_eq])
+        (by rw [modeSlots_eq] at hfit; rw [extraSlot_eq]; omega_using []) (by rw [modeSlots_eq] at hfit; simp [hsl, slots_eq])
     · have e : Proof.Modes.PPC64LE.dataRegion (Dp (entry s)) M.step (N (entry s)) = ⟨s.gpr .r6, 16 * (s.gpr .r7).toNat⟩ := by
         simp [Proof.Modes.PPC64LE.dataRegion, Dp, N, entry_gpr, hstep]
       rw [e]

@@ -86,20 +86,20 @@ structure TEnt (E : Env) (ta tb : F5 T) (x y' z : Fin pN) : Prop where
 theorem zaddu1g_v0 (r c : F5 T) (E : Env) :
     vI E 0 (Id.run (zaddu1g tops r c)) = vI E 0 r - vI E 3 c + 80 * pI := by
   glue_simp [zaddu1g]
-  omega
+  omega_using []
 
 theorem zaddu1g_v1 (r c : F5 T) (E : Env) :
     vI E 1 (Id.run (zaddu1g tops r c)) = vI E 1 r - vI E 2 r + 80 * pI := by
   glue_simp [zaddu1g]
-  omega
+  omega_using []
 
 theorem zaddu1g_v2 (r c : F5 T) (E : Env) : vI E 2 (Id.run (zaddu1g tops r c)) = vI E 2 c + 80 * pI := by
   glue_simp [zaddu1g]
-  omega
+  omega_using []
 
 theorem zaddu1g_v3 (r c : F5 T) (E : Env) : vI E 3 (Id.run (zaddu1g tops r c)) = vI E 0 r + 96 * pI := by
   glue_simp [zaddu1g]
-  omega
+  omega_using []
 
 /-- `[C, D, z₃, y₁]`, before the carry. -/
 abbrev zn1g (q1 r : F5 T) : F5 T := Id.run (fblend tops q1 (Id.run (fperm tops r 1 1 1 1)) 8)
@@ -111,21 +111,21 @@ theorem zn1g_v (q1 r : F5 T) (E : Env) : vI E 0 (zn1g q1 r) = vI E 0 q1 ∧ vI E
 theorem zaddu5g_v0 (q2 n1 : F5 T) (E : Env) :
     vI E 0 (Id.run (zaddu5g tops q2 n1)) = vI E 0 q2 - vI E 1 q2 + 80 * pI := by
   glue_simp [zaddu5g]
-  omega
+  omega_using []
 
 theorem zaddu5g_v1 (q2 n1 : F5 T) (E : Env) :
     vI E 1 (Id.run (zaddu5g tops q2 n1)) = vI E 1 q2 + 2 * vI E 0 q2 - vI E 1 n1 + 80 * pI := by
   glue_simp [zaddu5g]
-  omega
+  omega_using []
 
 theorem zaddu5g_v2 (q2 n1 : F5 T) (E : Env) : vI E 2 (Id.run (zaddu5g tops q2 n1)) = vI E 2 q2 + 80 * pI := by
   glue_simp [zaddu5g]
-  omega
+  omega_using []
 
 theorem zaddu5g_v3 (q2 n1 : F5 T) (E : Env) :
     vI E 3 (Id.run (zaddu5g tops q2 n1)) = vI E 1 n1 - vI E 3 q2 - vI E 1 q2 + 96 * pI := by
   glue_simp [zaddu5g]
-  omega
+  omega_using []
 
 /-- `A` in every lane. -/
 abbrev zpa (q3 : F5 T) : F5 T := Id.run (fperm tops q3 0 0 0 0)
@@ -133,27 +133,27 @@ abbrev zpa (q3 : F5 T) : F5 T := Id.run (fperm tops q3 0 0 0 0)
 theorem zaddu7v_v0 (q3 : F5 T) (E : Env) :
     vI E 0 (Id.run (zaddu7v tops q3 (zpa q3))) = vI E 2 q3 + 80 * pI := by
   glue_simp [zaddu7v, zpa]
-  omega
+  omega_using []
 
 theorem zaddu7v_v3 (q3 : F5 T) (E : Env) :
     vI E 3 (Id.run (zaddu7v tops q3 (zpa q3))) = 2 * (vI E 1 q3 - vI E 0 q3) + 96 * pI := by
   glue_simp [zaddu7v, zpa]
-  omega
+  omega_using []
 
 theorem zaddu7r_v0 (q3 q2 : F5 T) (E : Env) :
     vI E 0 (Id.run (zaddu7r tops q3 q2 (zpa q3))) = vI E 0 q2 + 80 * pI := by
   glue_simp [zaddu7r, zpa]
-  omega
+  omega_using []
 
 theorem zaddu7r_v1 (q3 q2 : F5 T) (E : Env) :
     vI E 1 (Id.run (zaddu7r tops q3 q2 (zpa q3))) = vI E 0 q3 + 80 * pI := by
   glue_simp [zaddu7r, zpa]
-  omega
+  omega_using []
 
 theorem zaddu7r_v2 (q3 q2 : F5 T) (E : Env) :
     vI E 2 (Id.run (zaddu7r tops q3 q2 (zpa q3))) = vI E 1 q3 - vI E 0 q3 + 80 * pI := by
   glue_simp [zaddu7r, zpa]
-  omega
+  omega_using []
 
 /-! ### The stages of the next entry -/
 
@@ -460,7 +460,7 @@ theorem zaddu_s6 {s₀ : State} (hc : Ctx par s₀) (hB : EnvOK s₀ (bndsOf (za
   generalize L.getD 0 zero5 = q3, L.getD 1 zero5 = n2, L.getD 2 zero5 = q2, L.getD 3 zero5 = n1 at h hL
   subst hL
   obtain ⟨a1, ev, zzz3, zz3, x3, w1, z3⟩ := h
-  have nb : Nb ≤ 2 ^ 259 := by simp only [Nb]; omega
+  have nb : Nb ≤ 2 ^ 259 := by simp only [Nb]; omega_using []
   have v0 := zaddu7v_v0 q3 (envOf s₀)
   have v3 := zaddu7v_v3 q3 (envOf s₀)
   have r0 := zaddu7r_v0 q3 q2 (envOf s₀)
@@ -537,7 +537,7 @@ theorem zp_zadduF {F : Type} [Lean.Grind.CommRing F] (p : ZP F) :
 /-- The points after an entry's block are those the next one starts from. -/
 theorem ZOut.chain {E : Env} {ta tb r c : F5 T} {p : ZP (Fin pN)} (h : ZOut E ta tb r c p) :
     ChainOk E r c ⟨p.W1, p.A1, p.x3, p.Ev - p.A1, p.z3⟩ :=
-  ⟨h.x1, h.y1, h.y2, h.z.mono (by simp only [Nb]; omega), h.x2⟩
+  ⟨h.x1, h.y1, h.y2, h.z.mono (by simp only [Nb]; omega_using []), h.x2⟩
 
 /-! ### `2 Q` and `Q` with one `Z` -/
 
@@ -555,9 +555,9 @@ theorem Val.sqrE {E : Env} {k : Nat} {a : F5 T} {x : Fin pN} (h : Ent E k a x) :
   refine ⟨?_, ?_, ?_⟩
   · have := Int.mul_nonneg a0 a0
     simp only [pI] at h2
-    omega
+    omega_using [h0, h2, this]
   · simp only [pI, Sq] at h2 hp ⊢
-    omega
+    omega_using [h1, h2, hp]
   · have e : D (vI E k (Id.run (sqrCore tops a))) = D (vI E k a) * D (vI E k a) := by
       rw [← pN_eq] at h2
       exact dec_mont unitR h2
@@ -594,43 +594,43 @@ macro "u_ring" "[" hs:Lean.Parser.Tactic.simpLemma,* "]" : tactic =>
 
 theorem dblu2g_v0 (sq ta : F5 T) (E : Env) : vI E 0 (Id.run (dblu2g tops sq ta)) = vI E 1 ta + 80 * pI := by
   glue_simp [dblu2g]
-  omega
+  omega_using []
 
 theorem dblu2g_v1 (sq ta : F5 T) (E : Env) : vI E 1 (Id.run (dblu2g tops sq ta)) = vI E 3 sq + 80 * pI := by
   glue_simp [dblu2g]
-  omega
+  omega_using []
 
 theorem dblu2g_v2 (sq ta : F5 T) (E : Env) :
     vI E 2 (Id.run (dblu2g tops sq ta)) = 6 * (vI E 1 sq - vI E 0 sq) + 80 * pI := by
   glue_simp [dblu2g]
-  omega
+  omega_using []
 
 theorem dblu2g_v3 (sq ta : F5 T) (E : Env) : vI E 3 (Id.run (dblu2g tops sq ta)) = vI E 3 sq + 96 * pI := by
   glue_simp [dblu2g]
-  omega
+  omega_using []
 
 theorem dblu4g_v0 (q2 : F5 T) (E : Env) :
     vI E 0 (Id.run (dblu4g tops q2)) = 12 * vI E 0 q2 - vI E 2 q2 + 80 * pI := by
   glue_simp [dblu4g]
-  omega
+  omega_using []
 
 theorem dblu4g_v1 (q2 : F5 T) (E : Env) : vI E 1 (Id.run (dblu4g tops q2)) = 4 * vI E 0 q2 + 80 * pI := by
   glue_simp [dblu4g]
-  omega
+  omega_using []
 
 theorem dblu5r_v0 (q3 q2 : F5 T) (E : Env) :
     vI E 0 (Id.run (dblu5r tops q3 q2)) = vI E 2 q2 - 8 * vI E 0 q2 + 80 * pI := by
   glue_simp [dblu5r]
-  omega
+  omega_using []
 
 theorem dblu5r_v1 (q3 q2 : F5 T) (E : Env) :
     vI E 1 (Id.run (dblu5r tops q3 q2)) = vI E 0 q3 - 4 * vI E 1 q2 + 80 * pI := by
   glue_simp [dblu5r]
-  omega
+  omega_using []
 
 theorem dblu5r_v2 (q3 q2 : F5 T) (E : Env) : vI E 2 (Id.run (dblu5r tops q3 q2)) = 4 * vI E 1 q2 + 80 * pI := by
   glue_simp [dblu5r]
-  omega
+  omega_using []
 
 /-- After the first stage: `sq = [zz², XX, _, YY]`. -/
 structure UCut1 (E : Env) (sq ta : F5 T) (p : DP (Fin pN)) : Prop where
@@ -868,13 +868,13 @@ theorem tabG_ok {s₀ : State} (hc : Ctx par s₀) (hB : EnvOK s₀ stB) :
   have k8 := fconst_car cEighth 0 0 0 (envOf s₀) (k := 0) (by decide) (by rw [p0]; decide +kernel)
   rw [p0] at k0 k8
   rw [p2] at k2
-  have nb : Nb ≤ 2 ^ 259 := by simp only [Nb]; omega
+  have nb : Nb ≤ 2 ^ 259 := by simp only [Nb]; omega_using []
   have a0 : Ent (envOf s₀) 0 tabGA (D (cQuarter : Nat)) := Lim.blendR (by decide) (by decide) (k0.mono nb)
   have a1 : Ent (envOf s₀) 1 tabGA (D (4 * wv (envOf s₀) (.ld .rcx 0))) :=
-    Lim.blendL (by decide) (by decide) ⟨xc, by rw [xv]; omega, by rw [xv]⟩
+    Lim.blendL (by decide) (by decide) ⟨xc, by rw [xv]; omega_using [xh], by rw [xv]⟩
   have a2 : Ent (envOf s₀) 2 tabGA (D (cHalf : Nat)) := Lim.blendR (by decide) (by decide) (k2.mono nb)
   have a3 : Ent (envOf s₀) 3 tabGA (D (4 * wv (envOf s₀) (.ld .rdx 0))) :=
-    Lim.blendL (by decide) (by decide) ⟨yc, by rw [yv]; omega, by rw [yv]⟩
+    Lim.blendL (by decide) (by decide) ⟨yc, by rw [yv]; omega_using [yh], by rw [yv]⟩
   have b0 : Ent (envOf s₀) 0 (Id.run (fconst tops cEighth 0 0 0)) (D (cEighth : Nat)) := k8.mono nb
   rw [tabGPieces_flat]
   refine WP.mono (cut_step' tabG_chk0 hc hB tabG_iv0 tabG_ov0

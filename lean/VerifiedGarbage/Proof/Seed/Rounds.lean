@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Spec.Seed
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # Sixteen rounds
@@ -45,7 +46,7 @@ theorem roundsN_congr {k₁ k₂ : Nat → Word × Word} :
   intro n q h
   induction n with
   | zero => exact (rfl : roundsN k₁ 0 q = q).trans (rfl : q = roundsN k₂ 0 q)
-  | succ n ih => rw [roundsN_succ, roundsN_succ, h n (by omega), ih fun j hj => h j (by omega)]
+  | succ n ih => rw [roundsN_succ, roundsN_succ, h n (by omega_using []), ih fun j hj => h j (by omega_using [hj])]
 
 theorem crypt_congr {k₁ k₂ : Nat → Word × Word} (h : ∀ j < 16, k₁ j = k₂ j)
     (b : Block) : crypt k₁ b = crypt k₂ b := by

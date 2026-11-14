@@ -39,9 +39,9 @@ theorem B_cases : h.B = 64 ∨ h.B = 128 := h.ok.sizes.B
 theorem N_le : h.N ≤ 64 := h.ok.sizes.N.2.1
 theorem D_le : h.D ≤ h.N := h.ok.sizes.D.2.1
 theorem D_pos : 0 < h.D := h.ok.sizes.D.1
-theorem so_le : h.H.so ≤ 512 := by have := h.ok.sizes.so; have := h.ok.sizes.W; omega
-theorem B_le : h.B ≤ 128 := by rcases h.B_cases with e | e <;> omega
-theorem B_ge : 64 ≤ h.B := by rcases h.B_cases with e | e <;> omega
+theorem so_le : h.H.so ≤ 512 := by have := h.ok.sizes.so; have := h.ok.sizes.W; omega_arith
+theorem B_le : h.B ≤ 128 := by rcases h.B_cases with e | e <;> omega_using [e]
+theorem B_ge : 64 ≤ h.B := by rcases h.B_cases with e | e <;> omega_using [e]
 theorem S_eq : h.H.S = h.N + h.B := h.ok.sizes.S
 theorem L_le : h.L ≤ 16 := h.L16
 theorem NL : h.N + h.L ≤ h.B := h.NLB
@@ -75,7 +75,7 @@ theorem sbb_zero (x : BitVec 32) :
   · have h1 : decide (x.toNat < (1 : BitVec 32).toNat) = false := by
       have e : (1 : BitVec 32).toNat = 1 := rfl
       rw [e, decide_eq_false_iff_not]
-      intro h'; exact h (BitVec.eq_of_toNat_eq (by show x.toNat = 0; omega))
+      intro h'; exact h (BitVec.eq_of_toNat_eq (by show x.toNat = 0; omega_using [h']))
     simp only [h1, h, Bool.false_eq_true, ↓reduceIte]
 
 theorem zmask_xor {a b : Nat} (ha : a < 2 ^ 32) (hb : b < 2 ^ 32) :
@@ -109,25 +109,25 @@ theorem wbuf {o n : Nat} (h : o + n ≤ oRsa) (hn : 0 < n) : WBuf L (scr + BitVe
   obtain ⟨k, hk, hR⟩ := hg.sub
   have fit := hg.fit
   unfold oRsa at h hk fit
-  refine ⟨by rw [hg.scr_lt (by unfold oRsa; omega)]; omega, by omega, ⟨_, List.mem_cons_of_mem _ hR, ?_⟩⟩
-  rw [hg.scrA (by unfold oRsa; omega)]
-  exact Offset.contains_base _ (by omega) (by omega)
+  refine ⟨by rw [hg.scr_lt (by unfold oRsa; omega_using [h])]; omega_using [h, fit], by omega_using [h], ⟨_, List.mem_cons_of_mem _ hR, ?_⟩⟩
+  rw [hg.scrA (by unfold oRsa; omega_using [h, hn])]
+  exact Offset.contains_base _ (by omega_using [h, hk]) (by omega_using [h])
 
 theorem rbuf {o n : Nat} (h : o + n ≤ oRsa) (hn : 0 < n) : RBuf L (scr + BitVec.ofNat 32 o) n := (hg.wbuf h hn).rbuf
 
 theorem byteAt_scr {o i : Nat} (h : o + i < oRsa) : byteAt (scr + BitVec.ofNat 32 o) i = sa scr (o + i) := by
-  rw [byteAt, hg.scrA (by omega), sa, BitVec.add_assoc, BitVec.ofNat_add_ofNat]
+  rw [byteAt, hg.scrA (by omega_using [h]), sa, BitVec.add_assoc, BitVec.ofNat_add_ofNat]
 
 /-- A slot's address. -/
 theorem aFr {σ : State} (ok : L.Ok σ) : ∀ d, d + 4 ≤ frameBytes → VG.X86.addr L.B d = L.fr d :=
-  fun d hd => ok.addrB (by rw [hg.F]; simp only [Lay.A]; omega)
+  fun d hd => ok.addrB (by rw [hg.F]; simp only [Lay.A]; omega_using [hd])
 
 /-- An argument's address. -/
 theorem aArg {σ : State} (ok : L.Ok σ) : ∀ j, j < L.argv.length →
     VG.X86.addr L.B (Impl.RsaPkcs1Sig.X86.argOff frameBytes j) = L.argA j :=
   fun j hj => by
     rw [Lay.argA, hg.F]
-    exact ok.addrB (by rw [hg.F]; simp only [Lay.A, Impl.RsaPkcs1Sig.X86.argOff]; omega)
+    exact ok.addrB (by rw [hg.F]; simp only [Lay.A, Impl.RsaPkcs1Sig.X86.argOff]; omega_using [hj])
 
 end Geo
 
@@ -199,36 +199,36 @@ theorem padY_eq {B L : Nat} (hB : 0 < B) (hLB : L < B) (msg lenB : List Byte) {i
   generalize hfb : (msg.length + L) / B = fb at hlt hge hi
   have hdiv : i / B ≤ fb := by
     have := (Nat.div_lt_iff_lt_mul hB).mpr (show i < (fb + 1) * B by rw [Nat.mul_comm]; exact hi)
-    omega
+    omega_using [this]
   have hmod := Nat.div_add_mod i B
   have hmodl := Nat.mod_lt i hB
   have e2 : B * (fb + 1) = B * fb + B := Nat.mul_succ _ _
   rw [Nat.mul_comm] at hge
   simp only [padY, RsaPss.padded, RsaPss.lastBlk, hfb, lenBlk]
   by_cases h1 : i < msg.length
-  · rw [ite_eq_left h1, ite_eq_right (by omega)]
+  · rw [ite_eq_left h1, ite_eq_right (by omega_using [h1])]
     by_cases h3 : i / B = fb
     · have e1 : B * (i / B) = B * fb := by rw [h3]
-      rw [ite_eq_left h3, ite_eq_left (by omega), or_zero, or_zero]
+      rw [ite_eq_left h3, ite_eq_left (by omega_using [hB, hLB, hfb, hlt, hge, hi, hdiv, hmod, hmodl, e2, h1, h3, e1]), or_zero, or_zero]
     · rw [ite_eq_right h3, or_zero, or_zero]
-  · rw [ite_eq_right h1, getD_ge (by omega), zero_or]
+  · rw [ite_eq_right h1, getD_ge (by omega_using [h1]), zero_or]
     by_cases h2 : i = msg.length
     · rw [ite_eq_left h2, ite_eq_left h2]
       by_cases h3 : i / B = fb
       · have e1 : B * (i / B) = B * fb := by rw [h3]
-        rw [ite_eq_left h3, ite_eq_left (by omega), or_zero]
+        rw [ite_eq_left h3, ite_eq_left (by omega_using [hB, hLB, hfb, hlt, hge, hi, hdiv, hmod, hmodl, e2, h1, h2, h3, e1]), or_zero]
       · rw [ite_eq_right h3, or_zero]
     · rw [ite_eq_right h2, ite_eq_right h2, zero_or]
       by_cases h3 : i / B = fb
       · rw [ite_eq_left h3]
         have e1 : B * (i / B) = B * fb := by rw [h3]
-        have hm : i % B = i - B * fb := by omega
+        have hm : i % B = i - B * fb := by omega_using [hB, hLB, hfb, hlt, hge, hi, hdiv, hmod, hmodl, e2, h1, h2, h3, e1]
         by_cases h4 : B * fb + B - L ≤ i ∧ i < B * fb + B
-        · rw [ite_eq_right (by omega), ite_eq_left h4]
-          congr 1; omega
-        · rw [ite_eq_right h4, ite_eq_left (by omega)]
+        · rw [ite_eq_right (by omega_using [hB, hLB, hfb, hlt, hge, hi, hdiv, hmod, hmodl, e2, h1, h2, h3, e1, hm, h4]), ite_eq_left h4]
+          congr 1; omega_using [hB, hLB, hfb, hlt, hge, hi, hdiv, hmod, hmodl, e2, h1, h2, h3, e1, hm, h4]
+        · rw [ite_eq_right h4, ite_eq_left (by omega_using [hB, hLB, hfb, hlt, hge, hi, hdiv, hmod, hmodl, e2, h1, h2, h3, e1, hm, h4])]
       · rw [ite_eq_right h3, ite_eq_right (by
           intro ⟨h5, _⟩
-          exact h3 (Nat.le_antisymm hdiv ((Nat.le_div_iff_mul_le hB).mpr (by rw [Nat.mul_comm]; omega))))]
+          exact h3 (Nat.le_antisymm hdiv ((Nat.le_div_iff_mul_le hB).mpr (by rw [Nat.mul_comm]; omega_arith))))]
 
 end VG.Proof.RsaPss.X86

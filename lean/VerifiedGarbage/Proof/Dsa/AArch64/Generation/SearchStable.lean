@@ -20,7 +20,7 @@ theorem SearchMemory.stable {p : SearchPlan} {W : Nat → BitVec 64} :
     right
     have hn := ha ⟨p.C, 24⟩ (by simp)
     change ¬ ofs p.C a < 24 at hn
-    omega
+    omega_using [hn]
   obtain ⟨V, R⟩ := h.rep
   have Rt := rep_of_disjoint_frame R ff
     (by intro r hr; rcases List.mem_singleton.mp hr with rfl; exact p.frameControl)

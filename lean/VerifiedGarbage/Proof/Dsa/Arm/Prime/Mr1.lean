@@ -74,22 +74,22 @@ theorem mr_facts {σ : State} (pre : In P σ) (hm : EM P σ) :
   have sz := pre.sizes
   obtain ⟨hodd, hlo, -⟩ := cv_shape (σ := σ) pre
   have h3 : 3 < cv P σ := by
-    have : 2 ^ 2 ≤ 2 ^ (P.bits - 1) := Nat.pow_le_pow_right (by decide) (by omega)
-    omega
+    have : 2 ^ 2 ≤ 2 ^ (P.bits - 1) := Nat.pow_le_pow_right (by decide) (by omega_using [sz])
+    omega_using [hlo, this]
   refine ⟨?_, ?_, by unfold Nt; rw [resP_eq pre]⟩
   · unfold res resP
     rw [VG.Proof.Dsa.Generation.probablePrime_large h3 hodd, pre.bl]
     unfold EM compv at hm
     rw [hm]; rfl
-  · rw [VG.Proof.Dsa.Generation.witness_width (n := P.bits) (by omega) hodd pre.bl]
+  · rw [VG.Proof.Dsa.Generation.witness_width (n := P.bits) (by omega_using [sz]) hodd pre.bl]
     rfl
 
 theorem lt_bit {x k : Nat} (hx : x < 2 ^ 31) (hk : k < 2 ^ 31) :
     ((BitVec.ofNat 32 x - BitVec.ofNat 32 k) >>> 31).toNat = VG.Proof.Rsa.b2n (decide (x < k)) := by
   rw [BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow, BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat,
-    Nat.mod_eq_of_lt (a := x) (by omega), Nat.mod_eq_of_lt (a := k) (by omega)]
+    Nat.mod_eq_of_lt (a := x) (by omega_using [hx]), Nat.mod_eq_of_lt (a := k) (by omega_using [hk])]
   unfold VG.Proof.Rsa.b2n
-  by_cases h : x < k <;> simp [h] <;> omega
+  by_cases h : x < k <;> simp [h] <;> omega_arith
 
 /-- `str r, [r8, #d]` of a header word, keeping `MS`. -/
 theorem KS.strM {σ s : State} {A : Nat → Nat} {live : List Nat} {V : Nat → Nat} {ls : List Nat}
@@ -99,8 +99,8 @@ theorem KS.strM {σ s : State} {A : Nat → Nat} {live : List Nat} {V : Nat → 
       t.gpr = s.gpr → WP isa (.block rest) t Q) :
     WP isa (.block (.str r .r8 d :: rest)) s Q :=
   h.str hw hd fun t ht hwt mt => k t ht hwt (m.of_keep h.pre (js := []) (ds := [d])
-    (by rw [mt.mem]; exact keep_write _ _ (by simp) (by have := hd.1; simp only [hdr] at this; omega))
-    (by simp) (by simp; have := hd.1; omega) mt.sp mt.rd mt.wr (h.sp.trans h.pre.sp)) mt.gpr
+    (by rw [mt.mem]; exact keep_write _ _ (by simp) (by have := hd.1; simp only [hdr] at this; omega_using [this]))
+    (by simp) (by simp; have := hd.1; omega_using [this]) mt.sp mt.rd mt.wr (h.sp.trans h.pre.sp)) mt.gpr
 
 /-- `KS.ldr` with `MS`. -/
 theorem KS.ldrM {σ s : State} {A : Nat → Nat} {live : List Nat} {V : Nat → Nat} {ls : List Nat}

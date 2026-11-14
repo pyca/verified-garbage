@@ -108,7 +108,7 @@ theorem pubS_ofP {tsH tsG : List FnTable} {s₁ s₂ : State} (h : (signPSpec ts
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
     exacts [g0.symm, g1.symm, g2.symm, g3.symm, g4.symm, g5.symm, g6.symm, g7.symm]
-  · rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 ∨ i = 8 ∨ i = 9 ∨ i = 10 ∨
+  · rcases (by omega_using [hi] : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 ∨ i = 8 ∨ i = 9 ∨ i = 10 ∨
       i = 11 ∨ i = 12 ∨ i = 13 ∨ i = 14 ∨ i = 15) with
       rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
     exacts [a0.symm, a1.symm, a2.symm, a3.symm, a4.symm, a5.symm, a6.symm, a7.symm, a8.symm, a9.symm, a10.symm,
@@ -209,7 +209,7 @@ theorem signP_pre_of {tsH tsG : List FnTable} {dl : Nat} (hdl : dl ≤ 64) {s : 
     Spec.MdHashTable.param, Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Spec.MdHashTable.dataWords,
     Abi.withTables, Sig.wordIndex, abi, argRegs, Sg.stackArgs_eighteen, List.append_eq, Sig.tableRegion, List.range,
     List.range.loop]
-  have hdl' : (BitVec.ofNat 64 dl).toNat = dl := by rw [BitVec.toNat_ofNat]; omega
+  have hdl' : (BitVec.ofNat 64 dl).toNat = dl := by rw [BitVec.toNat_ofNat]; omega_using [hdl]
   have hA : ∀ j, stackArgAddr s j = 0x10000 + BitVec.ofNat 64 (8 * j) := fun j => by
     simp only [stackArgAddr, hsp]
   simp only [ha 0 (by decide), ha 1 (by decide), ha 2 (by decide), ha 3 (by decide), ha 4 (by decide),
@@ -230,8 +230,8 @@ theorem signP_pre_of {tsH tsG : List FnTable} {dl : Nat} (hdl : dl ≤ 64) {s : 
     | with_reducible assumption
     | (simp only [Spec.Rsa.lenValid]; decide)
     | (rw [hdl']; rfl)
-    | (rw [hdl']; apply Region.disjoint_of_sep; simp [Region.sep]; omega)
-    | (rw [hdl']; simp; omega)
+    | (rw [hdl']; apply Region.disjoint_of_sep; simp [Region.sep]; omega_using [hdl])
+    | (rw [hdl']; simp; omega_using [hdl])
     | exact hk
     | skip
 
@@ -257,7 +257,7 @@ theorem signP_sat_of {v : MVar} (hv : v ∈ vs) {w : MVar} (hw : w ∈ gs) (hl :
         (MdHashTable.RISCV64.held_tableOf (withTabs_heldH (vs := vs) (gs := gs) (v := v) (w := w)
           (signPSatBase dl))).2
       cases hH.symm.trans hA
-      rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega), hlen])
+      rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hdl]), hlen])
     (key_pre_of fun a ha => by
       have h3 : a.toNat < 0x300000 := by
         simp only [keyIn, Bool.or_eq_true, Bool.and_eq_true, Nat.ble_eq, Nat.blt_eq] at ha; omega

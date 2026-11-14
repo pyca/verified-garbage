@@ -26,7 +26,7 @@ theorem toM_linear (a b c d : Nat) (hb : b<m) :
       Fin.ofNat m c*toM m R a-Fin.ofNat m d*toM m R b := by
   rw [toM_add,toM_scale,toM_scale]
   have h : toM m R (m-b)= -toM m R b := by
-    have hh := toM_sub (m:=m) (R:=R) (A:=0) (B:=b) (by omega)
+    have hh := toM_sub (m:=m) (R:=R) (A:=0) (B:=b) (by omega_using [hb])
     simp only [Nat.zero_add,toM_mod,toM_zero] at hh
     grind
   rw [h]
@@ -34,7 +34,7 @@ theorem toM_linear (a b c d : Nat) (hb : b<m) :
 
 theorem toM_linear41 (a b : Nat) (hb : b<m) :
     toM m R ((4*a+m-b)%m)=4*toM m R a-toM m R b := by
-  rw [toM_sub (by omega),toM_scale]
+  rw [toM_sub (by omega_using [hb]),toM_scale]
   rfl
 end
 
@@ -49,11 +49,11 @@ theorem inv_keep_unused {Sl : Nat → Prop} (layout : Lay M 8192 Sl)
   have hg : ProgKeep M base [o] s t := ⟨hk.gpr,hk.rd,hk.wr,hk.sp,fun x hx ht => hk.mem x (hx o (by simp)) ht⟩
   have he (x : Nat) (hx : x∈V) : wordsVal t.mem base x M.n=wordsVal s.mem base x M.n := by
     exact opKeep_wordsVal hk (layout.apart x o (hi.sl x hx) ho (by intro h; subst x; exact hv hx))
-      (layout.tmp x (hi.sl x hx)) (by have := layout.le x (hi.sl x hx); omega)
+      (layout.tmp x (hi.sl x hx)) (by have := layout.le x (hi.sl x hx); omega_using [this])
   refine ⟨hg.scr hi.scr,?_,hi.sl,fun x hx => by rw [he x hx]; exact hi.lt x hx,
     fun x hx => by rw [he x hx]; exact hi.val x hx⟩
   have hm := hi.mod
   refine ⟨hm.n0,hm.n10,hm.mo,hm.tmp,hm.sep,?_,hm.inv,hm.red,hm.call⟩
-  rw [opKeep_wordsVal hk (layout.mo o ho).symm hm.sep (by have := hm.mo; omega)]
+  rw [opKeep_wordsVal hk (layout.mo o ho).symm hm.sep (by have := hm.mo; omega_using [this])]
   exact hm.val
 end VG.Proof.P256.EcdhDouble

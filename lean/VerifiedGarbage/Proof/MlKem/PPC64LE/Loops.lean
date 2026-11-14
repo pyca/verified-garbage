@@ -29,7 +29,7 @@ open VG.Spec.Sha3 (bytesAt)
 theorem setWidth_byte (b : Byte) : (b.setWidth 64).setWidth 8 = b := by
   apply BitVec.eq_of_toNat_eq
   have := b.isLt
-  rw [BitVec.toNat_setWidth, BitVec.toNat_setWidth, Nat.mod_eq_of_lt (by omega : b.toNat < 2 ^ 64),
+  rw [BitVec.toNat_setWidth, BitVec.toNat_setWidth, Nat.mod_eq_of_lt (by omega_using [] : b.toNat < 2 ^ 64),
     Nat.mod_eq_of_lt this]
 
 /-! ## `copy` -/
@@ -66,8 +66,8 @@ theorem copy_step {S D : Addr} {len : Nat} {s₀ : State} (hlen : len < 2 ^ 64)
     {k : Nat} (hk : k < len) {s : State} (h : CopyInv S D len s₀ k s) :
     WP isa (.block copyBody) s fun s' =>
       CopyInv S D len s₀ (k + 1) s' ∧ (s'.gpr .r5 != 0) = decide (k + 1 ≠ len) := by
-  have cS : (⟨S, len⟩ : Region).Contains (S + BitVec.ofNat 64 k) 1 := Offset.contains_base _ (by omega) (by omega)
-  have cD : (⟨D, len⟩ : Region).Contains (D + BitVec.ofNat 64 k) 1 := Offset.contains_base _ (by omega) (by omega)
+  have cS : (⟨S, len⟩ : Region).Contains (S + BitVec.ofNat 64 k) 1 := Offset.contains_base _ (by omega_using [hk]) (by omega_using [hlen, hk])
+  have cD : (⟨D, len⟩ : Region).Contains (D + BitVec.ofNat 64 k) 1 := Offset.contains_base _ (by omega_using [hk]) (by omega_using [hlen, hk])
   have h3 := h.r3; have h4 := h.r4
   rw [Nat.one_mul] at h3 h4
   refine WP.mono (copyBody_ok h3 h4 h.r5 (by rw [h.rd, h.wr]; exact cr _ _ ⟨_, List.mem_singleton_self _, cS⟩)
@@ -78,12 +78,12 @@ theorem copy_step {S D : Addr} {len : Nat} {s₀ : State} (hlen : len < 2 ^ 64)
   · rw [r4]; simpa using ptr_succ D 1 k
   · rw [r5]; exact count_sub hk
   · rw [m]; exact h.frame.writeW (List.mem_singleton_self _) _ cD
-  · rw [m, byte_writeW8 _ _ (by omega) (by omega)]
+  · rw [m, byte_writeW8 _ _ (by omega_using [hlen, hk]) (by omega_using [hlen, hk, ht])]
     have hsrc : s.mem (S + BitVec.ofNat 64 k) = s₀.mem (S + BitVec.ofNat 64 k) :=
       h.frame _ fun r hr => by rw [List.mem_singleton] at hr; subst hr; exact hd _ cS
     by_cases e : t = k
     · subst e; rw [ite_eq_left rfl, hsrc]
-    · rw [ite_eq_right e]; exact h.bytes t (by omega)
+    · rw [ite_eq_right e]; exact h.bytes t (by omega_using [ht, e])
   · rw [r5, count_sub hk]; exact count_nz hk hlen
 
 /-- `len` bytes copied from `S` to `D`, with the pointers and the count set
@@ -122,7 +122,7 @@ theorem copyL {L : Lay} {s : State} (hL : L.Ok) {sb db : Reg} {so dO len i j : N
       Kept (L.RL [(j, dO, len)]) s s' ∧ bytesAt s'.mem (L.A j dO) len = bytesAt s.mem (L.A i so) len := by
   refine WP.seq (WP.mono (copy_setup hsb hdb hse hde hle) fun s₁ ⟨o₁, g3, g4, g5⟩ => ?_)
   rw [gs] at g3; rw [gd] at g4
-  refine WP.mono (copy_loop (by omega) hl0 (Lay.disj hL hs)
+  refine WP.mono (copy_loop (by omega_using [hle]) hl0 (Lay.disj hL hs)
     (by rw [o₁.rd, o₁.wr]; exact Lay.covers ri (sepB_bounds hs).2)
     (by rw [o₁.wr]; exact Lay.covers wj (sepB_bounds (sepB_symm hs)).2) g3 g4 g5)
     fun s' ⟨cs, rd, wr, sp, fr, hb⟩ => ⟨(o₁.kept _).trans ⟨cs, sp, rd, wr, fr⟩, ?_⟩
@@ -180,7 +180,7 @@ theorem zeroPoly_ok {L : Lay} {s : State} (hc : Ctx L s) {off : Nat} (hoff : off
       ite_eq_left (by rw [VG.Proof.MlKem.n_eq] at ht; exact ht), zero,
       getElem!_pos (Vector.replicate n (0 : Zq)) t ht, Vector.getElem_replicate]
     rfl
-  have ho : off < 32768 := by omega
+  have ho : off < 32768 := by omega_using [hoff]
   have e31 := hc.r31
   refine WP.seq ?_
   prun [ho, e31]

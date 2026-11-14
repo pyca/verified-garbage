@@ -148,7 +148,7 @@ theorem call_rel (F : OpenFn M) {c₁ c₂ : State} (hc₁ : Ready σ₁ c₁) (
       hP]
   · obtain ⟨b₀, b₁, b₂, b₃⟩ := xa₁
     obtain ⟨c₀, c₁', c₂', c₃⟩ := xa₂
-    have : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 := by omega
+    have : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 := by omega_using [hi]
     rcases this with rfl | rfl | rfl | rfl
     · rw [b₀, c₀, Dst, Dst, a2]
     · rw [b₁, c₁', a1]

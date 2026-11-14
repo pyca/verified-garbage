@@ -26,19 +26,19 @@ open VG.Proof.Ffdh
 
 theorem sample_width {N : Nat} (positive : 0<N) : ScalarWidth.width N=(N+7)/8 := by
  unfold ScalarWidth.width
- omega
+ omega_using [positive]
 
 theorem sample_headBits {N : Nat} (positive : 0<N) : ScalarWidth.headBits N=(N-1)%8+1 := by
  unfold ScalarWidth.headBits
  rw [sample_width positive]
- omega
+ omega_using [positive]
 
 theorem sample_mask {N : Nat} (positive : 0<N) : (sampleMask N).setWidth 8=ScalarWidth.mask N := by
  unfold sampleMask ScalarWidth.mask
  rw [sample_headBits positive]
  apply BitVec.eq_of_toNat_eq
  simp only [BitVec.toNat_setWidth,BitVec.toNat_ofNat]
- omega
+ omega_using []
 
 end VG.Proof.Ffdh.AArch64.Cached
 end
@@ -65,9 +65,9 @@ theorem sampleDraw_bytes {s t : State} {rp xp : Addr} {rb : List Byte} {k ld : N
  · intro i hi _
    have bound : i<k := by simpa only [Spec.Rsa.bytesAt,List.length_map,List.length_range] using hi
    simp only [Spec.Rsa.bytesAt,List.getElem_map,List.getElem_range]
-   rw [inv.bytes i bound,KeyScalar.cut_get _ (length ▸ inside) (by omega : i<rb.length)]
+   rw [inv.bytes i bound,KeyScalar.cut_get _ (length ▸ inside) (by omega_using [length, bound] : i<rb.length)]
    unfold VG.Proof.Ffdh.AArch64.GenerateKey.cb
-   simp only [List.getD_eq_getElem?_getD,List.getElem?_eq_getElem (by omega : i<rb.length),Option.getD_some]
+   simp only [List.getD_eq_getElem?_getD,List.getElem?_eq_getElem (by omega_using [length, bound] : i<rb.length),Option.getD_some]
 
 theorem sampleDraw_ok {s : State} {rp xp : Addr} {rb : List Byte} {k N : Nat}
  (positive : 0<k) (size : k<2^31) (widthPositive : 0<N) (widthFit : N≤8*k) (length : rb.length=k)
@@ -81,15 +81,15 @@ theorem sampleDraw_ok {s : State} {rp xp : Addr} {rb : List Byte} {k N : Nat}
  WP isa (countLoop .x14 VG.Impl.Ffdh.AArch64.Domain.GenerateKey.cutBody) s fun t =>
  Spec.Rsa.os2ip (Spec.Rsa.bytesAt t.mem xp k)=Spec.Rsa.os2ip rb%2^N ∧
  VG.Proof.Ffdh.AArch64.GenerateKey.CInv s rp xp rb (k-(N+7)/8) (sampleMask N) k t := by
- have inside : k-(N+7)/8<k := by omega
- refine WP.mono (VG.Proof.Ffdh.AArch64.GenerateKey.cut_ok (by omega) size inside random output
+ have inside : k-(N+7)/8<k := by omega_using [positive, widthPositive]
+ refine WP.mono (VG.Proof.Ffdh.AArch64.GenerateKey.cut_ok (by omega_using [positive]) size inside random output
   index skip mask allOnes zero count readable bytes writable separate) ?_
  intro t inv
  refine ⟨?_,inv⟩
  rw [sampleDraw_bytes inv length inside,sample_mask widthPositive]
  have width := sample_width widthPositive
  rw [←width]
- have cut := ScalarWidth.cut_value (bits:=N) (by omega : 0<rb.length) (by omega : N≤8*rb.length)
+ have cut := ScalarWidth.cut_value (bits:=N) (by omega_using [positive, length] : 0<rb.length) (by omega_using [widthFit, length] : N≤8*rb.length)
  rw [length] at cut
  exact cut
 
@@ -119,18 +119,18 @@ theorem sample_ok {s : State} {B xp rp : Addr} {Z w k N : Nat} {mi : BitVec 64} 
  Spec.Rsa.os2ip (Spec.Rsa.bytesAt t.mem xp k)=Spec.Rsa.os2ip rb%2^N ∧
  (∀ q,ofs B q<Z→t.mem q=(s.mem.writeW (off B (8*sMask)) (sampleMask N)) q) ∧
  Frame [⟨B,Z⟩,⟨xp,k⟩] s.mem t.mem ∧ Keep mmRegs s t := by
- have room256 : 256≤Z := by dsimp only [slot,hdrBytes] at room;omega
+ have room256 : 256≤Z := by dsimp only [slot,hdrBytes] at room;omega_using [room]
  unfold Generate.sample
  rw [WP.seq_iff]
  refine WP.mono (sampleMask_ok good.scr room256 good.x0 bitsPositive bitsBound bits) ?_
  rintro a ⟨maskA,maskHeaderA,memA,frameA,restA⟩
  have goodA := good_after_header good (by decide) (by decide) frameA restA ((restA.gpr .x0 (by decide)).trans good.x0)
- have inscrA : InScr B Z s.mem a.mem := InScr.of_outside frameA (by have := hdr_lt_slot w 8 (show sMask<32 by decide);omega)
+ have inscrA : InScr B Z s.mem a.mem := InScr.of_outside frameA (by have := hdr_lt_slot w 8 (show sMask<32 by decide);omega_using [room, this])
  rw [WP.seq_iff]
  have headerA (i : Nat) (hi : i<32) (different : i≠sMask) : word a.mem B (8*i)=word s.mem B (8*i) :=
   header_other frameA (by decide) hi different
  have subtract : BitVec.ofNat 64 k-BitVec.ofNat 64 ((N+7)/8)=BitVec.ofNat 64 (k-(N+7)/8) :=
-  BitVec.ofNat_sub_ofNat_of_le k ((N+7)/8) (by omega) (by omega)
+  BitVec.ofNat_sub_ofNat_of_le k ((N+7)/8) (by omega_using [bitsBound]) (by omega_using [width])
  refine WP.mono (WP.keep [.x1,.x2,.x7,.x10,.x11,.x13,.x14] (Q:=fun b =>
   b.gpr .x1=rp ∧ b.gpr .x2=xp ∧ b.gpr .x10=0#64 ∧ b.gpr .x11=BitVec.ofNat 64 (k-(N+7)/8) ∧
   b.gpr .x13=255#64 ∧ b.gpr .x7=0#64 ∧ b.gpr .x14=BitVec.ofNat 64 k ∧ b.mem=a.mem) ?_ rfl rfl rfl) ?_
@@ -144,33 +144,33 @@ theorem sample_ok {s : State} {B xp rp : Addr} {Z w k N : Nat} {mi : BitVec 64} 
    have sourceB := (source.congrK inscrA restA).congrK (fun q _ =>by rw [memB]) restB
    refine WP.mono (sampleDraw_ok positive size bitsPositive width rbLength ptrB outB indexB skipB
     ((restB.gpr .x12 (by decide)).trans maskA) onesB zeroB countB
-    (fun i hi =>sourceB.rd i (by omega)) (fun i hi =>(src_source sourceB).bytes i (by omega))
+    (fun i hi =>sourceB.rd i (by omega_using [rbLength, hi])) (fun i hi =>(src_source sourceB).bytes i (by omega_using [rbLength, hi]))
     (fun i hi =>by rw [total.wr];exact writable i hi) separate) ?_
    rintro t ⟨valueT,inv⟩
    have sameScratch (q : Addr) (hq : ofs B q<Z) : t.mem q=a.mem q := by
     rw [inv.frame q ?_,memB]
     intro i hi eq
     have sep : k≤ofs xp q := le_ofs_of_sep outside hq
-    rw [eq,show ofs xp (xp+BitVec.ofNat 64 i)=i from Mem.sub_ofNat_toNat _ (by omega)] at sep
-    omega
+    rw [eq,show ofs xp (xp+BitVec.ofNat 64 i)=i from Mem.sub_ofNat_toNat _ (by omega_using [size, hi])] at sep
+    omega_using [room, positive, size, bitsPositive, bitsBound, width, rbLength, bits, bytes, length, x, random, room256, maskA, maskHeaderA, subtract, ptrB, outB, indexB, skipB, onesB, zeroB, countB, valueT, hq, hi, sep]
    have rest : Keep mmRegs s t := (total.trans inv.keep).mono (by simp [mmRegs])
    have goodT : Good t B Z w mi :=
     ⟨good.scr.congr rest.wr,(rest.gpr .x0 (by simp [mmRegs])).trans good.x0,
-     (workspace_word (by have := good.scr.nowrap;omega) sameScratch (by have := hdr_lt_slot w 8 (show sW<32 by decide);omega)).trans goodA.hdr.hw,
-     (workspace_word (by have := good.scr.nowrap;omega) sameScratch (by have := hdr_lt_slot w 8 (show sMinv<32 by decide);omega)).trans goodA.hdr.hminv,
-     fun i hi =>(workspace_word (by have := good.scr.nowrap;omega) sameScratch (by have := hdr_lt_slot w 8 (show sArr i<32 by unfold sArr;omega);omega)).trans (goodA.hdr.harr i hi)⟩
+     (workspace_word (by have := good.scr.nowrap;omega_using [this]) sameScratch (by have := hdr_lt_slot w 8 (show sW<32 by decide);omega_using [room, this])).trans goodA.hdr.hw,
+     (workspace_word (by have := good.scr.nowrap;omega_using [this]) sameScratch (by have := hdr_lt_slot w 8 (show sMinv<32 by decide);omega_using [room, this])).trans goodA.hdr.hminv,
+     fun i hi =>(workspace_word (by have := good.scr.nowrap;omega_using [this]) sameScratch (by have := hdr_lt_slot w 8 (show sArr i<32 by unfold sArr;omega_using [hi]);omega_using [room, this])).trans (goodA.hdr.harr i hi)⟩
    have outsideX : Outside xp 0 k b.mem t.mem := by
     intro q hq
     apply inv.frame q
     intro i hi eq
     subst q
-    rw [show ofs xp (xp+BitVec.ofNat 64 i)=i from Mem.sub_ofNat_toNat _ (by omega)] at hq
-    omega
+    rw [show ofs xp (xp+BitVec.ofNat 64 i)=i from Mem.sub_ofNat_toNat _ (by omega_using [size, hi])] at hq
+    omega_using [room, positive, size, bitsPositive, bitsBound, width, rbLength, bits, bytes, length, x, random, room256, maskA, maskHeaderA, subtract, ptrB, outB, indexB, skipB, onesB, zeroB, countB, valueT, hi, hq]
    have frameMask : Frame [⟨B,Z⟩,⟨xp,k⟩] s.mem a.mem := outside_frame_member (ptr:=B) (k:=Z)
-    (fun q h =>inscrA q (by omega)) (by simp)
+    (fun q h =>inscrA q (by omega_using [h])) (by simp)
    have frameOutput : Frame [⟨B,Z⟩,⟨xp,k⟩] a.mem t.mem := by
     rw [←memB];exact outside_frame_member outsideX (by simp)
-   exact ⟨goodT,sampleDraw_bytes inv rbLength (by omega),valueT,
+   exact ⟨goodT,sampleDraw_bytes inv rbLength (by omega_using [positive, bitsPositive]),valueT,
     fun q hq =>(sameScratch q hq).trans (by rw [memA]),frameMask.trans frameOutput,rest⟩
 
 end VG.Proof.Ffdh.AArch64.Cached

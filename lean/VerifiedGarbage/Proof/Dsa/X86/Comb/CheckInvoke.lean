@@ -20,10 +20,10 @@ def checkInvoke : CheckInvoke keyInvariant where
   correct := by
     intro s₀ t A R C
     obtain ⟨reads,writes⟩ := CheckCall.call_covers A R
-    have low : 112≤(t.gpr .esp).toNat := by have := CheckCall.esp_toNat A R; have := rLow_toNat A; have := A.stackLow; omega
+    have low : 112≤(t.gpr .esp).toNat := by have := CheckCall.esp_toNat A R; have := rLow_toNat A; have := A.stackLow; omega_arith
     let v := (allocated 4 t).withRegions (CheckCall.callRd s₀) (CheckCall.callWr s₀)
     have args (i : Nat) (hi : i<6) : arg v i=CheckCall.callVal s₀ (t.gpr .esp) i := by
-      rw [allocated_arg R (by omega)]
+      rw [allocated_arg R (by omega_using [hi])]
       exact C i hi
     have body : WP isa checkParameters v fun u => abiPreserved v u ∧
         (u.gpr .eax).toNat=(if CheckCall.callResult s₀ t then 1 else 0) ∧

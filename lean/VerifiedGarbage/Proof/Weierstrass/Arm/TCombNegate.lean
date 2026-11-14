@@ -46,8 +46,8 @@ theorem negate_ok (K : TCombCfg) {s : State} {base : Addr} {m : Nat} (positive :
     exact lay_cases K.L.M.n h.n3 h.n6 (by decide) (by decide) (by decide) (by decide)
   have fm : Mont.ModOk K.F.k K.F.m := by rw [hn,hm]; exact hM
   refine WP.seq (WP.mono (VG.Proof.Weierstrass.Arm.Mont.subCall_ok fm hs hf
-    (by rw [hn]; omega) (by rw [hn]; omega) (by rw [hn]; exact qfit)
-    (by rw [hn,hm,hz]; omega) (by rw [hn,hm]; exact hy)) fun u ⟨ku,yu⟩ => ?_)
+    (by rw [hn]; omega_using [hl, hneg]) (by rw [hn]; omega_using [hl, hzero]) (by rw [hn]; exact qfit)
+    (by rw [hn,hm,hz]; omega_using [hy]) (by rw [hn,hm]; exact hy)) fun u ⟨ku,yu⟩ => ?_)
   rw [hn,hm,hz,Nat.zero_add] at yu
   have ou := Outs.unch ku.mem
   rw [hn] at ou
@@ -59,12 +59,12 @@ theorem negate_ok (K : TCombCfg) {s : State} {base : Addr} {m : Nat} (positive :
     by_cases hp : positive <;> simp [hp]
   refine WP.mono (selField_ok hsv (decide (¬positive)) msk
     (o := K.Q.y) (a := K.Q.y) (b := K.neg) (n := K.L.M.n)
-    (by simp only [TCombCfg.Q,ptAt]; omega) (by simp only [TCombCfg.Q,ptAt]; omega)
-    (by omega) (.inl (Nat.le_refl _)) (.inr (by
+    (by simp only [TCombCfg.Q,ptAt]; omega_using [hl]) (by simp only [TCombCfg.Q,ptAt]; omega_using [hl])
+    (by omega_using [hl, hneg]) (.inl (Nat.le_refl _)) (.inr (by
       have b : Impl.Weierstrass.Point.oAt K.L.M.n≤K.Q.y := by
         simp only [TCombCfg.Q,ptAt]
         exact lay_cases K.L.M.n h.n3 h.n6 (by decide) (by decide) (by decide) (by decide)
-      omega))) fun t ⟨yt,kt,ot⟩ => ?_
+      omega_using [hneg, b]))) fun t ⟨yt,kt,ot⟩ => ?_
   have qold : ∀ x ∈ [K.Q.x,K.Q.y,K.Q.z],
       wordsVal v.mem base x K.L.M.n=wordsVal s.mem base x K.L.M.n := by
     intro x hx
@@ -75,11 +75,11 @@ theorem negate_ok (K : TCombCfg) {s : State} {base : Addr} {m : Nat} (positive :
         simp only [TCombCfg.Q,ptAt] at hx
         exact lay_cases K.L.M.n h.n3 h.n6 (by decide) (by decide) (by decide) (by decide) x hx
       simp only [List.mem_cons,List.not_mem_nil,or_false,forall_eq_or_imp,forall_eq]
-      exact ⟨.inr (by omega),.inl geom.2⟩
+      exact ⟨.inr (by omega_using [hneg, geom]),.inl geom.2⟩
     · have geom : x+8*K.L.M.n≤4096 := by
         simp only [TCombCfg.Q,ptAt] at hx
         exact lay_cases K.L.M.n h.n3 h.n6 (by decide) (by decide) (by decide) (by decide) x hx
-      omega
+      omega_using [geom]
   refine ⟨ku.rest.trans ((kv.keep.mono (by simp [VG.Proof.Weierstrass.Arm.Mont.callClob,VG.Proof.Mont.Arm.clob])).trans
     (kt.mono (by simp [VG.Proof.Weierstrass.Arm.Mont.callClob,VG.Proof.Mont.Arm.clob]))),?_,?_,?_,?_,?_⟩
   · have ov : Unch base [(K.neg,8*K.L.M.n),(VG.Impl.Weierstrass.Arm.Mont.own K.L.M.n,64*K.L.M.n)] s.mem v.mem := by
@@ -100,19 +100,19 @@ theorem negate_ok (K : TCombCfg) {s : State} {base : Addr} {m : Nat} (positive :
     have qy : Impl.Weierstrass.Point.oAt K.L.M.n≤K.Q.y := by
       simp only [TCombCfg.Q,ptAt]
       exact lay_cases K.L.M.n h.n3 h.n6 (by decide) (by decide) (by decide) (by decide)
-    rw [ot.wordsVal (.inl (Nat.le_trans lowx qy)) (by omega),kv.mem]
+    rw [ot.wordsVal (.inl (Nat.le_trans lowx qy)) (by omega_using [hl, lowx]),kv.mem]
     apply ou.wordsVal
     · simp only [List.mem_cons,List.not_mem_nil,or_false,forall_eq_or_imp,forall_eq]
       exact ⟨negx.symm,.inl (Nat.le_trans lowx below)⟩
-    · omega
-  · rw [ot.wordsVal (by simp only [TCombCfg.Q,ptAt,Impl.Weierstrass.Point.elemBytes]; omega)
-      (by simp only [TCombCfg.Q,ptAt,Impl.Weierstrass.Point.elemBytes]; omega),qold _ (by simp)]
+    · omega_using [hl, lowx]
+  · rw [ot.wordsVal (by simp only [TCombCfg.Q,ptAt,Impl.Weierstrass.Point.elemBytes]; omega_using [])
+      (by simp only [TCombCfg.Q,ptAt,Impl.Weierstrass.Point.elemBytes]; omega_using [hl]),qold _ (by simp)]
   · rw [yt,kv.mem,yu]
     have qo := qold K.Q.y (by simp)
     rw [kv.mem] at qo
     rw [qo]
     by_cases hp : positive <;> simp [hp]
-  · rw [ot.wordsVal (by simp only [TCombCfg.Q,ptAt,Impl.Weierstrass.Point.elemBytes]; omega)
-      (by simp only [TCombCfg.Q,ptAt,Impl.Weierstrass.Point.elemBytes]; omega),qold _ (by simp)]
+  · rw [ot.wordsVal (by simp only [TCombCfg.Q,ptAt,Impl.Weierstrass.Point.elemBytes]; omega_using [])
+      (by simp only [TCombCfg.Q,ptAt,Impl.Weierstrass.Point.elemBytes]; omega_using [hl]),qold _ (by simp)]
 
 end VG.Proof.Weierstrass.Arm.TComb

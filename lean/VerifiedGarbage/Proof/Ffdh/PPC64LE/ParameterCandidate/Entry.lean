@@ -58,17 +58,17 @@ theorem save_step {B : Addr} {n : Nat} {s₀ : State} (h11 : s₀.gpr .r11 = off
     rw [h.wr, hw, off_add]; exact hin k hk
   apply WP.of_runBlock
   simp only [runBlock_cons, runStep_some, runBlock_nil,
-    exec_store_d (show Reg.r11 ≠ .r0 by decide) (show 8 * k < 2 ^ 15 ∧ (8 * k) % 4 = 0 by omega) hout,
+    exec_store_d (show Reg.r11 ≠ .r0 by decide) (show 8 * k < 2 ^ 15 ∧ (8 * k) % 4 = 0 by omega_using [hk]) hout,
     Option.some.injEq, exists_eq_left', hw, off_add]
-  have hW := writeW_outside s.mem B (d := 8 * n - 160 + 8 * k) (s.gpr (Impl.Ffdh.PPC64LE.ParameterCandidate.saved k)) (by omega)
-  refine ⟨h.gpr, h.rd, h.wr, h.sp, h.lr, h.out.trans (hW.mono (by omega) (by omega)), fun i hi => ?_, ?_⟩
+  have hW := writeW_outside s.mem B (d := 8 * n - 160 + 8 * k) (s.gpr (Impl.Ffdh.PPC64LE.ParameterCandidate.saved k)) (by omega_using [hn, hk])
+  refine ⟨h.gpr, h.rd, h.wr, h.sp, h.lr, h.out.trans (hW.mono (by omega_using []) (by omega_using [hk])), fun i hi => ?_, ?_⟩
   · rcases Nat.lt_succ_iff_lt_or_eq.mp hi with hi | rfl
     · simp only [word, off]
-      rw [rw_off _ _ _ (by omega) (by omega) (by omega)]
+      rw [rw_off _ _ _ (by omega_using [hi]) (by omega_using [hn, hk]) (by omega_arith)]
       exact h.saved i hi
     · simp only [word, off]; rw [rw_self, h.gpr]
   · simp only [word, off] at h ⊢
-    rw [rw_off _ _ _ (by omega) (by omega) (by omega)]
+    rw [rw_off _ _ _ (by omega_using [hk]) (by omega_using [hn, hk]) (by omega_using [hn])]
     exact h.lrW
 
 theorem map_flatMap {α β : Type} (g : α → β) (l : List α) : l.map g = l.flatMap fun i => [g i] := by
@@ -82,7 +82,7 @@ theorem saves_ok {B : Addr} {n : Nat} {s₀ : State} (h11 : s₀.gpr .r11 = off 
     WP isa (.block ((List.range 18).map fun i => .store .d (Impl.Ffdh.PPC64LE.ParameterCandidate.saved i) .r11 (8 * i))) s₀ (SV B n s₀ 18) := by
   rw [map_flatMap]
   exact wp_range_flatMap (M := isa) (SV B n s₀) (fun k s hk h => save_step h11 hn160 hn hin hk h) 18
-    (Nat.le_refl _) s₀ ⟨rfl, rfl, rfl, rfl, rfl, Outside.refl _ _ _ _, fun _ h => absurd h (by omega), rfl⟩
+    (Nat.le_refl _) s₀ ⟨rfl, rfl, rfl, rfl, rfl, Outside.refl _ _ _ _, fun _ h => absurd h (by omega_using []), rfl⟩
 
 /-- The header's stores. -/
 def hdrW (m : Mem) (B : Addr) (r12 r3 r4 r5 r6 r7 r8 r9 : BitVec 64) : Mem :=

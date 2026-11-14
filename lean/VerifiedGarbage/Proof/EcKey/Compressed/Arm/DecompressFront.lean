@@ -54,8 +54,8 @@ theorem DecompressFront.frame {c : Cfg} (hc : CfgOk c) {s₀ s t : State}
       sv c (ptr s₀ .r2) t i = sv c (ptr s₀ .r2) s i := sv_unch U h7 hn hi (ha i hm)
   have ew {i : Nat} (hi : i < 45) (hm : i ∈ [E, D, R2P, W2, FLAG]) :
       t.mem.readW (off (ptr s₀ .r2) (c.sl i)) 32 = s.mem.readW (off (ptr s₀ .r2) (c.sl i)) 32 :=
-    Unch.readW32 U (fun w hw => by have := ha i hm w hw; omega)
-      (by have := sl_le c h7 hi; omega)
+    Unch.readW32 U (fun w hw => by have := ha i hm w hw; omega_using [h0, this])
+      (by have := sl_le c h7 hi; omega_using [hn, this])
   refine ⟨F.scr.of_rest K (by decide), F.far.of_rest K, F.fixed.unch h7 hn hW U,
     (K.gpr _ (by decide)).trans F.out, (e (by decide) (by simp)).trans F.x,
     (ew (by decide) (by simp)).trans F.tag, (e (by decide) (by simp)).trans F.r2,
@@ -74,7 +74,7 @@ theorem decompressFront_ok {c : Cfg} (hc : CfgOk c) {s₀ : State}
   have h0 := hc.n0
   have hd : Region.Disjoint ⟨ptr s₀ .r1, 1 + c.C.len⟩ ⟨ptr s₀ .r2, size⟩ :=
     hp.disjoint.sub_right (by simpa using Region.sub_prefix (by decide : size ≤ 8192))
-  refine WP.seq (WP.mono (setup_ok hc (input_setup hp (by omega))) fun s₁ S => ?_)
+  refine WP.seq (WP.mono (setup_ok hc (input_setup hp (by omega_using []))) fun s₁ S => ?_)
   change SetupPost c Impl.EcKey.Compressed.Arm.args s₀ (ptr s₀ .r2) s₁ at S
   have F₁ := setup_fixed S
   have hn := S.scr.nowrap
@@ -86,13 +86,13 @@ theorem decompressFront_ok {c : Cfg} (hc : CfgOk c) {s₀ : State}
     (by rw [hr1]; exact hd) F₁.mp S.flag) fun s₂ ⟨hs₂, K₂, U₂, r2₂, bp₂, x₂, tag₂, flag₂⟩ => ?_)
   have F₂ := F₁.unch h7 hn (fixedOk_slW (l := [R2P, BP, E, D, FLAG]) (by decide)) U₂
   have lead : s₁.mem (ptr s₀ .r1) = s₀.mem (ptr s₀ .r1) := by
-    have e := keep_of_disjoint' W₁ hd (by decide) (i := 0) (by omega) (by have := hc.len_hi; omega)
+    have e := keep_of_disjoint' W₁ hd (by decide) (i := 0) (by omega_using []) (by have := hc.len_hi; omega_using [h7, this])
     simpa only [BitVec.add_zero] using e
   have x₂' : sv c (ptr s₀ .r2) s₂ E = keyX c s₀ := by
     rw [x₂, hr1]
     congr 1
-    exact bytesAt_keep W₁ (hd.sub_left (Offset.sub_base _ (d := 1) (by omega))) (by decide)
-      (by have := hc.len_hi; omega)
+    exact bytesAt_keep W₁ (hd.sub_left (Offset.sub_base _ (d := 1) (by omega_using []))) (by decide)
+      (by have := hc.len_hi; omega_using [h7, this])
   rw [hr1, lead] at tag₂ flag₂
   refine WP.seq (WP.mono (rhs_ok hc hs₂ (S.far.of_rest K₂) (modP_of hc F₂.mp) r2₂ F₂.ap bp₂)
     fun s₃ R => ?_)
@@ -103,8 +103,8 @@ theorem decompressFront_ok {c : Cfg} (hc : CfgOk c) {s₀ : State}
     sv_unch R.unch h7 hn hi (apart_slWk h7 hi hw)
   have ew {i : Nat} (hi : i < 45) (hw : i ∉ [Impl.Ecdh.Arm.QXM, Impl.Ecdh.Arm.W1, W2, Impl.Ecdh.Arm.W3, TMP]) :
       s₃.mem.readW (off (ptr s₀ .r2) (c.sl i)) 32 = s₂.mem.readW (off (ptr s₀ .r2) (c.sl i)) 32 :=
-    Unch.readW32 R.unch (fun w hw' => by have := apart_slWk h7 hi hw w hw'; omega)
-      (by have := sl_le c h7 hi; omega)
+    Unch.readW32 R.unch (fun w hw' => by have := apart_slWk h7 hi hw w hw'; omega_using [h0, this])
+      (by have := sl_le c h7 hi; omega_using [hn, this])
   apply h s₃
   refine ⟨R.scr, (S.far.of_rest K₂).of_rest R.rest, F₃,
     (R.rest.gpr _ (by decide)).trans ((K₂.gpr _ (by decide)).trans S.lr),

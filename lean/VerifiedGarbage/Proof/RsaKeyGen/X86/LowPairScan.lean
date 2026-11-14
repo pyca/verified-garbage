@@ -23,8 +23,8 @@ theorem steps_ok {s : State} {base : Addr} {size src start count : Nat} (scratch
   induction count generalizing s start with
   | zero => exact WP.block_nil ⟨rfl, rfl, Keeps.refl _ _⟩
   | succ count ih =>
-    refine WP.seq (WP.mono (step_ok scratch (by omega)) fun a ⟨V, M, K⟩ => ?_)
-    refine WP.mono (ih (scratch.of_keeps K (by decide)) (by omega)) fun t ⟨Vt, Mt, Kt⟩ => ?_
+    refine WP.seq (WP.mono (step_ok scratch (by omega_using [fit])) fun a ⟨V, M, K⟩ => ?_)
+    refine WP.mono (ih (scratch.of_keeps K (by decide)) (by omega_using [fit])) fun t ⟨Vt, Mt, Kt⟩ => ?_
     exact ⟨by rw [Vt, M, V]; rfl, Mt.trans M, K.trans Kt⟩
 
 theorem scan_ok {s : State} {base : Addr} {size src count : Nat} (scratch : Scr s base size)
@@ -34,7 +34,7 @@ theorem scan_ok {s : State} {base : Addr} {size src count : Nat} (scratch : Scr 
       t.mem = s.mem ∧ Keeps [.eax, .ecx, .edx, .ebx, .esi] s t := by
   refine WP.seq (wp_movS rfl fun a A _ => wp_movS rfl fun b B _ => WP.block_nil ?_)
   have K : Keeps [.ebx, .esi] s b := (A.keeps.mono (by decide)).widen B.keeps
-  refine WP.mono (steps_ok (scratch.of_keeps K (by decide)) (by omega)) fun t ⟨V, M, Kt⟩ => ?_
+  refine WP.mono (steps_ok (scratch.of_keeps K (by decide)) (by omega_using [fit])) fun t ⟨V, M, Kt⟩ => ?_
   rw [B.mem, A.mem, B.gpr, B.other .ebx (by decide), A.gpr] at V
   exact ⟨V, M.trans (B.mem.trans A.mem), (K.mono (by decide)).trans Kt⟩
 

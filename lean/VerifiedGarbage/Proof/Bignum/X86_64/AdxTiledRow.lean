@@ -16,7 +16,7 @@ open VG.Proof.Bignum.X86_64.AdxRect8 (rawBase)
 open VG.Impl.Bignum.X86_64.AdxRect8 (carryOffset)
 
 private theorem combine {X Y Z P C Q D : Nat}
-    (h : Y+P*C=X+D) (t : Z+Q=Y+P*C) : Z+Q=X+D := by omega
+    (h : Y+P*C=X+D) (t : Z+Q=Y+P*C) : Z+Q=X+D := by omega_using [h, t]
 
 theorem row_ok {s : State} {B : Addr} {Z w a b i n q : Nat} {mi : BitVec 64}
     (hs : Scr s B Z) (hd : s.gpr .rdi = B) (hh : Hdr s.mem B w mi)
@@ -31,22 +31,22 @@ theorem row_ok {s : State} {B : Addr} {Z w a b i n q : Nat} {mi : BitVec 64}
         wv s.mem B (rawBase w) (2*w)+(2 : Nat)^(64*i)*wv s.mem B (slot w a+8*i) 8*wv s.mem B (slot w b) w) ∧
       Hdr t.mem B w mi ∧ Frm B (ranges w) s.mem t.mem ∧ Keep mmRegs s t := by
   have nowrap := hs.nowrap
-  have Z64 : slot w 8 ≤ (2 : Nat)^64 := by omega
-  have rawZ : rawBase w+16*w ≤ Z := by unfold rawBase slot aAcc at *; omega
+  have Z64 : slot w 8 ≤ (2 : Nat)^64 := by omega_using [hZ, nowrap]
+  have rawZ : rawBase w+16*w ≤ Z := by unfold rawBase slot aAcc at *; omega_using [hZ]
   unfold AdxTiledProduct.row
   refine WP.seq (WP.mono (rowInit_ok hs hd hZ) fun u ⟨cu,ju,ou,ku⟩ => ?_)
   have fu : Frm B (ranges w) s.mem u.mem := by
     intro x hx
     apply ou x
     have := hx (8*sFn 12,32) (by simp [ranges])
-    simp only [sFn] at *; omega
+    simp only [sFn] at *; omega_using [this]
   have iu : word u.mem B (8*sFn 12) = BitVec.ofNat 64 i := by
     rw [ou.word (by decide) (by decide)]; exact hidx
   have rawU : wv u.mem B (rawBase w) (2*w) = wv s.mem B (rawBase w) (2*w) :=
-    ou.wv (by unfold rawBase slot hdrBytes sFn; omega) (by omega)
+    ou.wv (by unfold rawBase slot hdrBytes sFn; omega_using []) (by omega_using [nowrap, rawZ])
   refine WP.seq (WP.mono (AdxRect8.row_ok (hs.congr ku.2.2) ((ku.gpr (by decide)).trans hd)
-    (frame_hdr hh fu) (frame_ops hv fu) pa pb hZ hw (by omega) ha hb ha1 ha2 hb1 hb2
-    (by omega : w=0+8*n) hn iu ju (by rw [cu]; rfl)) fun v hv => ?_)
+    (frame_hdr hh fu) (frame_ops hv fu) pa pb hZ hw (by omega_using [hTail]) ha hb ha1 ha2 hb1 hb2
+    (by omega_using [hwN] : w=0+8*n) hn iu ju (by rw [cu]; rfl)) fun v hv => ?_)
   have fv : Frm B (ranges w) u.mem v.mem := by
     intro x hx
     apply hv.frame x
@@ -54,9 +54,9 @@ theorem row_ok {s : State} {B : Addr} {Z w a b i n q : Nat} {mi : BitVec 64}
     simp only [AdxRect8.rowRanges,List.mem_cons,List.not_mem_nil,or_false] at hr
     have hr0 := hx (rawBase w,16*w) (by simp [ranges])
     have hr1 := hx (8*sFn 12,32) (by simp [ranges])
-    rcases hr with rfl | rfl | rfl <;> simp only [] <;> simp only [carryOffset,sFn] at * <;> omega
+    rcases hr with rfl | rfl | rfl <;> simp only [] <;> simp only [carryOffset,sFn] at * <;> omega_arith
   have ptr : v.gpr .rsi = off B (rawBase w+8*(i+w)) := by
-    have p := hv.endPtr.resolve_left (by omega)
+    have p := hv.endPtr.resolve_left (by omega_using [hn])
     simpa only [Nat.add_zero,← hwN] using p
   refine WP.seq (WP.mono (tail_ok hv.scr hv.rdi hv.hdr hZ hw hTail hv.indexI ptr)
     fun x ⟨⟨c,eq⟩,ox,kx⟩ => ?_)
@@ -64,27 +64,27 @@ theorem row_ok {s : State} {B : Addr} {Z w a b i n q : Nat} {mi : BitVec 64}
   have f : Frm B (ranges w) s.mem x.mem := (fu.trans fv).trans fx
   have hx : Hdr x.mem B w mi := frame_hdr hh f
   have ix : word x.mem B (8*sFn 12) = BitVec.ofNat 64 i := by
-    rw [ox.word (by unfold rawBase slot hdrBytes sFn; omega) (by decide)]
+    rw [ox.word (by unfold rawBase slot hdrBytes sFn; omega_using []) (by decide)]
     exact hv.indexI
   have rowEq := hv.val
-  simp only [Nat.add_zero,show 8*(n+1)=w+8 by omega,show 8*n=w from hwN.symm] at rowEq
-  rw [rawU,input_preserved ha ha1 ha2 (by omega) Z64 fu,
-    input_preserved hb hb1 hb2 (by omega : 0+w ≤ w) Z64 fu] at rowEq
+  simp only [Nat.add_zero,show 8*(n+1)=w+8 by omega_using [hwN],show 8*n=w from hwN.symm] at rowEq
+  rw [rawU,input_preserved ha ha1 ha2 (by omega_using [hTail]) Z64 fu,
+    input_preserved hb hb1 hb2 (by omega_using [] : 0+w ≤ w) Z64 fu] at rowEq
   have val : wv x.mem B (rawBase w) (2*w)+2^(128*w)*c =
       wv s.mem B (rawBase w) (2*w)+2^(64*i)*wv s.mem B (slot w a+8*i) 8*wv s.mem B (slot w b) w := by
-    rw [show i+(w+8)=i+w+8 by omega] at rowEq
+    rw [show i+(w+8)=i+w+8 by omega_using []] at rowEq
     exact combine rowEq eq
   refine WP.mono (nextRow_ok (hv.scr.congr kx.2.2) ((kx.gpr (by decide)).trans hv.rdi)
-    hx hZ (by omega) (by omega) ix) fun t ⟨mt,zt,kt⟩ => ?_
+    hx hZ (by omega) (by omega_using [hw]) ix) fun t ⟨mt,zt,kt⟩ => ?_
   have ot : Outside B (8*sFn 12) 8 x.mem t.mem := by
     rw [mt]; exact writeW_outside _ _ _ (by decide)
   have ft : Frm B (ranges w) x.mem t.mem := by
     intro y hy
     apply ot y
-    have := hy (8*sFn 12,32) (by simp [ranges]); omega
+    have := hy (8*sFn 12,32) (by simp [ranges]); omega_using [this]
   refine ⟨zt,?_,⟨c,?_⟩,frame_hdr hx ft,f.trans ft,(((ku.trans hv.keep).trans kx).trans kt).mono (by decide)⟩
   · rw [mt,word_writeW_self]
-  · rw [ot.wv (by unfold rawBase slot hdrBytes sFn; omega) (by omega : rawBase w+8*(2*w) ≤ 2^64)]
+  · rw [ot.wv (by unfold rawBase slot hdrBytes sFn; omega_using []) (by omega_using [nowrap, rawZ] : rawBase w+8*(2*w) ≤ 2^64)]
     exact val
 
 end VG.Proof.Bignum.X86_64.AdxTiledProduct

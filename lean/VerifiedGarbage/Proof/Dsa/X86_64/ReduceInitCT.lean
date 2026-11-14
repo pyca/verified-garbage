@@ -43,7 +43,7 @@ theorem reduceInit_ct : RelCT isa (Two LinkedPre) (.block (Arithmetic.reduceInit
       fun t ⟨ha, hk⟩ => ⟨(hk.gpr (by decide)).trans hc.rdi, ha⟩
     xrun [State.ea, hdr, hc.rdi, hdrOff, hc.link,
       hc.good.scr.ld (show 8 * Crt.sLink + 8 ≤ slot p.wx 8 by
-        have := hdr_lt_slot p.wx 8 (show Crt.sLink < 32 by decide); omega)]
+        have := hdr_lt_slot p.wx 8 (show Crt.sLink < 32 by decide); omega_using [this])]
   exact two_taint [.rdi, .rax]
     (pins_of (fun p r => if r = .rdi then off p.B p.o else p.B) (by
       intro p s h r hr

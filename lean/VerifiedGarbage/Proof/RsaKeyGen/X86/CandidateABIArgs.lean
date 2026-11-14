@@ -16,7 +16,7 @@ namespace VG.Proof.RsaKeyGen.X86.Candidate
 open VG VG.X86 VG.Proof.Mont VG.Proof.Mont.X86
 
 theorem call_argument (s : State) (i : Nat) (index : i < 11) : (callEnvironment s).argument i = arg s i := by
-  have cases : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 ∨ i = 8 ∨ i = 9 ∨ i = 10 := by omega
+  have cases : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 ∨ i = 8 ∨ i = 9 ∨ i = 10 := by omega_using [index]
   rcases cases with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
     simp only [Environment.argument, callEnvironment, BitVec.ofNat_toNat, BitVec.setWidth_eq]
 
@@ -24,22 +24,22 @@ theorem CallLayout.argumentOffset {s : State} (A : CallLayout s) {i : Nat} (inde
     argAddr s i = off (argAddr s 0) (4 * i) := by
   have fit := A.argsFit
   change addr (s.gpr .esp) (4 + 4 * i) = off (addr (s.gpr .esp) 4) (4 * i)
-  rw [addr_eq (by omega), addr_eq (by omega)]
+  rw [addr_eq (by omega_using [index, fit]), addr_eq (by omega_using [fit])]
   exact (Offset.add_add _ _ _).symm
 
 theorem CallLayout.pushedArgument {s : State} (A : CallLayout s) {i : Nat} (index : i < 11) :
     readSrc (Compact.entered s) (.mem (VG.Impl.RsaKeyGen.X86.CandidateArgs.arg i)) = some (arg s i) := by
-  have fit : 16 ≤ (s.gpr .esp).toNat := by have := A.low; omega
+  have fit : 16 ≤ (s.gpr .esp).toNat := by have := A.low; omega_using [this]
   have F := pushed_frame (rs := Compact.savedRegisters) (s := s) (by decide) fit
   have separate : (⟨argAddr s 0, 44⟩ : Region).Disjoint (below (s.gpr .esp) 16) := by
     change (⟨addr (s.gpr .esp) 4, 44⟩ : Region).Disjoint (below (s.gpr .esp) 16)
-    rw [addr_eq (by have := A.argsFit; omega)]
+    rw [addr_eq (by have := A.argsFit; omega_using [this])]
     unfold below
     rw [Taint.sub_setWidth fit]
     exact Offset.disjoint_below _ (by decide)
   have contains : (⟨argAddr s 0, 44⟩ : Region).Contains (argAddr s i) 4 := by
     rw [A.argumentOffset index]
-    exact Offset.contains_base _ (by omega) (by omega)
+    exact Offset.contains_base _ (by omega_using [index]) (by omega_using [index])
   have word := F.readW (w := 32) contains (by intro r mem; obtain rfl := List.mem_singleton.mp mem; exact separate) (by decide)
   change (Compact.entered s).load32 ((Compact.entered s).ea (VG.Impl.Mont.X86.Compact.arg i)) = _
   rw [Compact.argument_address]
@@ -57,16 +57,16 @@ theorem entry_arguments {s : State} (h : contract.pre s) :
   have A := call_layout h
   have v := call_valid h
   have space : 256 ≤ (callEnvironment s).size := v.geometry.headerFit
-  refine ⟨⟨?_, ?_⟩, by omega, rfl, ?_, ?_, v.argsFit, v.argsFar, ?_⟩
+  refine ⟨⟨?_, ?_⟩, by omega_using [space], rfl, ?_, ?_, v.argsFit, v.argsFar, ?_⟩
   · change (callEnvironment s).workspaceRegion ∈ below (s.gpr .esp) 16 :: s.wr
     exact List.mem_cons_of_mem _ (A.writeMember (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ List.mem_cons_self)))
   · change ((arg s 9).setWidth 64).toNat + 8 * (arg s 10).toNat ≤ 2 ^ 32
     rw [BitVec.toNat_setWidth, Nat.mod_eq_of_lt (Nat.lt_trans (arg s 9).isLt (by decide))]
     exact A.workspaceFit
-  · refine ⟨by have := v.low; omega, ?_⟩
+  · refine ⟨by have := v.low; omega_using [this], ?_⟩
     rcases v.workspaceStack with left | right
     · exact Or.inl left
-    · exact Or.inr (by omega)
+    · exact Or.inr (by omega_using [right])
   · rw [Compact.entered, pushed_esp]
     rfl
   · intro i index

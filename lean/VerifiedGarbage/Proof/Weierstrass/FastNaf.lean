@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Weierstrass.Naf5
 public import VerifiedGarbage.Proof.Weierstrass.FastNaf7
 public import VerifiedGarbage.Proof.Weierstrass.FastNaf9
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-! Shared interface for the public verification NAF widths: five and seven, whose digits are
 bytes (`Width`), and nine, whose digits are stored as sixteen-bit words (`word`). -/
@@ -177,8 +178,8 @@ theorem next_even (w n : Nat) (hn : n%2=0) : next w n=n/2 := by
   split <;> (try split) <;> rfl
 
 theorem next_double (w n : Nat) : next w (2*n)=n := by
-  rw [next_even w _ (by omega)]
-  omega
+  rw [next_even w _ (by omega_using [])]
+  omega_using []
 
 theorem residual_add (w k j i : Nat) : residual w k (j+i)=residual w (residual w k j) i := by
   induction i with
@@ -189,16 +190,16 @@ theorem residual_pow (w n e i : Nat) (hi : i≤e) :
     residual w (2^e*n) i=2^(e-i)*n := by
   induction e generalizing i with
   | zero =>
-    have hi0 : i=0 := by omega
+    have hi0 : i=0 := by omega_using [hi]
     subst i
     rw [residual_zero]
   | succ e ih =>
     cases i with
     | zero => rw [residual_zero,Nat.sub_zero]
     | succ i =>
-      rw [show i+1=1+i from by omega,residual_add,residual_succ,residual_zero,
+      rw [show i+1=1+i from by omega_using [],residual_add,residual_succ,residual_zero,
         Nat.pow_succ,show 2^e*2*n=2*(2^e*n) from by simp only [Nat.mul_assoc,Nat.mul_left_comm],next_double,
-        ih i (by omega),show e+1-(1+i)=e-i from by omega]
+        ih i (by omega_using [hi]),show e+1-(1+i)=e-i from by omega_using []]
 
 theorem next_odd {w : Nat} (hw : Width w) (n : Nat) (hn : n%2≠0) :
     next w n=2^(w-1)*((n+2^(w-1))/2^w) := by
@@ -210,19 +211,19 @@ theorem residual_skip {w : Nat} (hw : Width w) (k j : Nat)
     (hn : residual w k j%2≠0) :
     residual w k (j+w)=(residual w k j+2^(w-1))/2^w := by
   have hw0 : 0<w := by rcases hw with rfl | rfl <;> decide
-  rw [show j+w=j+1+(w-1) from by omega,residual_add,residual_succ,next_odd hw _ hn,
-    residual_pow w _ (w-1) (w-1) (by omega),Nat.sub_self,Nat.pow_zero,Nat.one_mul]
+  rw [show j+w=j+1+(w-1) from by omega_using [hw0],residual_add,residual_succ,next_odd hw _ hn,
+    residual_pow w _ (w-1) (w-1) (by omega_using []),Nat.sub_self,Nat.pow_zero,Nat.one_mul]
 
 theorem residual_skip_between {w : Nat} (hw : Width w) (k j i : Nat)
     (hn : residual w k j%2≠0) (hi : 0<i) (hiw : i≤w) :
     residual w k (j+i)=2^(w-i)*((residual w k j+2^(w-1))/2^w) := by
-  rw [show j+i=j+1+(i-1) from by omega,residual_add,residual_succ,next_odd hw _ hn,
-    residual_pow w _ (w-1) (i-1) (by omega),show w-1-(i-1)=w-i from by omega]
+  rw [show j+i=j+1+(i-1) from by omega_using [hi],residual_add,residual_succ,next_odd hw _ hn,
+    residual_pow w _ (w-1) (i-1) (by omega_using [hiw]),show w-1-(i-1)=w-i from by omega_using [hi]]
 
 theorem byte_skip_zero {w : Nat} (hw : Width w) (k j i : Nat)
     (hn : residual w k j%2≠0) (hi : 0<i) (hiw : i<w) : byte w k (j+i)=0 := by
-  rw [byte_zero_iff,magnitude_zero_iff,residual_skip_between hw k j i hn hi (by omega)]
-  have he : w-i=(w-i-1)+1 := by omega
+  rw [byte_zero_iff,magnitude_zero_iff,residual_skip_between hw k j i hn hi (by omega_using [hiw])]
+  have he : w-i=(w-i-1)+1 := by omega_using [hiw]
   rw [he,Nat.pow_succ]
   simp only [Nat.mul_mod,Nat.mod_self,Nat.mul_zero,Nat.zero_mul,Nat.zero_mod]
 
@@ -237,7 +238,7 @@ theorem byte_of_zero (w k j : Nat) (hz : residual w k j=0) : byte w k j=0 := by
 
 theorem residual_zero_geB {w B k j : Nat} (hk : k<2^B) (hj : B+1≤j) :
     residual w k j=0 := by
-  rw [show j=(B+1)+(j-(B+1)) from by omega]
+  rw [show j=(B+1)+(j-(B+1)) from by omega_using [hj]]
   exact residual_of_zero w k (B+1) (residual_zero_top w hk) _
 
 theorem residual_zero_ge {w k j : Nat} (hk : k<2^256) (hj : 257≤j) :
@@ -256,18 +257,18 @@ theorem next_odd9 (n : Nat) (hn : n%2≠0) : next 9 n=2^8*((n+2^8)/2^9) := by
 
 theorem residual_skip9 (k j : Nat) (hn : residual 9 k j%2≠0) :
     residual 9 k (j+9)=(residual 9 k j+2^8)/2^9 := by
-  rw [show j+9=j+1+8 from by omega,residual_add 9 k (j+1) 8,residual_succ 9 k j,next_odd9 _ hn,
-    residual_pow 9 _ 8 8 (by omega),Nat.sub_self,Nat.pow_zero,Nat.one_mul]
+  rw [show j+9=j+1+8 from by omega_using [],residual_add 9 k (j+1) 8,residual_succ 9 k j,next_odd9 _ hn,
+    residual_pow 9 _ 8 8 (by omega_using []),Nat.sub_self,Nat.pow_zero,Nat.one_mul]
 
 theorem residual_skip_between9 (k j i : Nat) (hn : residual 9 k j%2≠0) (hi : 0<i) (hiw : i≤9) :
     residual 9 k (j+i)=2^(9-i)*((residual 9 k j+2^8)/2^9) := by
-  rw [show j+i=j+1+(i-1) from by omega,residual_add 9 k (j+1) (i-1),residual_succ 9 k j,next_odd9 _ hn,
-    residual_pow 9 _ 8 (i-1) (by omega),show 8-(i-1)=9-i from by omega]
+  rw [show j+i=j+1+(i-1) from by omega_using [hi],residual_add 9 k (j+1) (i-1),residual_succ 9 k j,next_odd9 _ hn,
+    residual_pow 9 _ 8 (i-1) (by omega_using [hiw]),show 8-(i-1)=9-i from by omega_using [hi]]
 
 theorem magnitude_skip_zero9 (k j i : Nat) (hn : residual 9 k j%2≠0) (hi : 0<i) (hiw : i<9) :
     magnitude 9 k (j+i)=0 := by
-  rw [magnitude_zero_iff,residual_skip_between9 k j i hn hi (by omega)]
-  have he : 9-i=(9-i-1)+1 := by omega
+  rw [magnitude_zero_iff,residual_skip_between9 k j i hn hi (by omega_using [hiw])]
+  have he : 9-i=(9-i-1)+1 := by omega_using [hiw]
   rw [he,Nat.pow_succ]
   simp only [Nat.mul_mod,Nat.mod_self,Nat.mul_zero,Nat.zero_mul,Nat.zero_mod]
 

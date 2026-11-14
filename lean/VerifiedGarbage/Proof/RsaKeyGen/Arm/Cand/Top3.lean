@@ -27,14 +27,14 @@ variable {s t : State}
 theorem CIn.argSub (h : CIn s) {i : Nat} (hi : i < 7) : Region.Sub ⟨stackArgAddr s i, 4⟩ (cA s) := by
   have := h.spHi
   have e : stackArgAddr s i = stackArgAddr s 0 + BitVec.ofNat 64 (4 * i) := by
-    simp only [stackArgAddr, Nat.mul_zero, BitVec.add_zero]; exact addr_add (by omega)
-  rw [e]; exact Offset.sub_base _ (by omega)
+    simp only [stackArgAddr, Nat.mul_zero, BitVec.add_zero]; exact addr_add (by omega_using [hi, this])
+  rw [e]; exact Offset.sub_base _ (by omega_using [hi])
 
 /-- The body's start, after the push and the entry. -/
 theorem in_c (h : CIn s) (sp : t.sp = (mkP s).sp) (rd : t.rd = s.rd) (wr : t.wr = xRegs s)
     (mem : t.mem = (pcPushed s).mem.writeW (off (State.addr (mkP s).sp) 48) (s.gpr .r0)) : In (mkP s) t := by
   have spLo := h.spLo; have spHi := h.spHi
-  have spN : (mkP s).sp.toNat = s.sp.toNat - 56 := FrameStack.sub_toNat' (by omega)
+  have spN : (mkP s).sp.toNat = s.sp.toNat - 56 := FrameStack.sub_toNat' (by omega_using [spLo])
   have hk := h.valid
   simp only [Spec.RsaKeyGen.primeLenValid] at hk
   have rdm : ∀ r ∈ [cE s, cP s, cR s, cA s], r ∈ t.rd ++ t.wr := fun r hr =>
@@ -49,7 +49,7 @@ theorem in_c (h : CIn s) (sp : t.sp = (mkP s).sp) (rd : t.rd = s.rd) (wr : t.wr 
   have w48 : Frame [⟨off (State.addr (mkP s).sp) 48, 4⟩] (pcPushed s).mem t.mem := by
     rw [mem]; exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ _)
   have fwSaved : ∀ p ∈ [(Reg.r1, 4), (Reg.r2, 8), (Reg.r3, 12)], fw t.mem (mkP s) p.2 = s.gpr p.1 := fun p hp => by
-    have hs := pc_push_saved s (by omega) p (by
+    have hs := pc_push_saved s (by omega_using [spLo]) p (by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hp
       rcases hp with rfl | rfl | rfl <;> simp [pcAllSaved])
     rw [← hs]
@@ -59,13 +59,13 @@ theorem in_c (h : CIn s) (sp : t.sp = (mkP s).sp) (rd : t.rd = s.rd) (wr : t.wr 
     have : p.2 + 4 ≤ 48 := by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hp
       rcases hp with rfl | rfl | rfl <;> decide
-    exact Offset.disjoint _ (.inl this) (by omega) (by decide)
-  have bE := h.bytesT mem (R := cE s) h.Fe (by have := h.fe; show (stackArg s 0).toNat ≤ _; omega)
-  have bP := h.bytesT mem (R := cP s) h.Fp (by have := h.fp; show (stackArg s 2).toNat ≤ _; omega)
-  have bR := h.bytesT mem (R := cR s) h.Fr (by have := h.fr; show (stackArg s 4).toNat ≤ _; omega)
+    exact Offset.disjoint _ (.inl this) (by omega_using [this]) (by decide)
+  have bE := h.bytesT mem (R := cE s) h.Fe (by have := h.fe; show (stackArg s 0).toNat ≤ _; omega_using [])
+  have bP := h.bytesT mem (R := cP s) h.Fp (by have := h.fp; show (stackArg s 2).toNat ≤ _; omega_using [])
+  have bR := h.bytesT mem (R := cR s) h.Fr (by have := h.fr; show (stackArg s 4).toNat ≤ _; omega_using [])
   have a0 := h.argAddr (i := 0) (by decide)
   simp only [Nat.mul_zero, Nat.add_zero] at a0
-  refine ⟨sp, by omega, by omega, wr, ⟨cE s, rdm _ (by simp), Region.contains_self _ _⟩,
+  refine ⟨sp, by omega_using [spLo, spN], by omega_using [spHi, spN], wr, ⟨cE s, rdm _ (by simp), Region.contains_self _ _⟩,
     ⟨cP s, rdm _ (by simp), Region.contains_self _ _⟩, ⟨cR s, rdm _ (by simp), Region.contains_self _ _⟩,
     ⟨cA s, rdm _ (by simp), by rw [a0]; exact Region.contains_self _ _⟩, hk.1, hk.2.1, hk.2.2, h.el1, h.el2, h.plv,
     h.scr, h.fo, h.fu, h.fe, h.fp, h.fr, BitVec.isLt _, h.fS,
@@ -94,13 +94,13 @@ theorem entry_ok (h : CIn s) :
     WP isa (.block entry) (sx s) fun t => In (mkP s) t ∧ t.sp = (mkP s).sp ∧ t.rd = s.rd ∧ t.wr = xRegs s ∧
       t.mem = (pcPushed s).mem.writeW (off (State.addr (mkP s).sp) 48) (s.gpr .r0) := by
   have spLo := h.spLo; have spHi := h.spHi
-  have spN : (mkP s).sp.toNat = s.sp.toNat - 56 := FrameStack.sub_toNat' (by omega)
+  have spN : (mkP s).sp.toNat = s.sp.toNat - 56 := FrameStack.sub_toNat' (by omega_using [spLo])
   unfold entry
   refine wp_stackAddr (r := .r12) (d := 0) (by decide) fun u1 h1 => ?_
   refine wp_str (a := off (State.addr (mkP s).sp) 48) (by decide) ?_ ⟨(mkP s).rFr, by rw [h1.wr]; simp [xRegs],
     Offset.contains_base _ (by decide) (by decide)⟩ fun t m => WP.block_nil ?_
   · rw [h1.gpr, BitVec.add_zero]
-    exact addr_add (by show (mkP s).sp.toNat + 48 < 2 ^ 32; omega)
+    exact addr_add (by show (mkP s).sp.toNat + 48 < 2 ^ 32; omega_using [spN])
   · have e0 : u1.gpr .r0 = s.gpr .r0 := by rw [h1.other _ (by decide)]; rfl
     have mt : t.mem = (pcPushed s).mem.writeW (off (State.addr (mkP s).sp) 48) (s.gpr .r0) := by
       rw [m.mem, h1.mem, e0]; rfl

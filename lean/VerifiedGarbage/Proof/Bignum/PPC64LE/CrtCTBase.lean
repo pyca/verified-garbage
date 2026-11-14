@@ -124,7 +124,7 @@ theorem loadS_L1 {d : List (BitVec 64) × List (BitVec 64) × List Byte} {s : St
   show Region.Contains _ (s.sp + BitVec.ofNat 64 (32 + 8 * (8 + 8))) 8
   rw [show s.sp + BitVec.ofNat 64 (32 + 8 * (8 + 8)) = (s.sp + BitVec.ofNat 64 (32 + 8 * (8 + 0))) +
     BitVec.ofNat 64 64 by rw [BitVec.add_assoc]; rfl]
-  exact Offset.contains_base _ (by omega) (by omega)
+  exact Offset.contains_base _ (by omega_using []) (by omega_using [])
 
 theorem front_rel : RelCT isa (Two (C0 pc)) (.block (Crt.save ++ argsG pc ++ setupX)) (Two (LF pc)) := by
   refine two_post ?_ fun _ _ h => WP.mono (front_okG pc _ (preG_core h.1)) fun t ht => ⟨_, h, ht.1⟩

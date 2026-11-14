@@ -50,8 +50,8 @@ theorem cutBody_ok {s : State} {rp xp : Addr} {j ld k : Nat} {b : Byte} {msk : B
       t.gpr .r10 = off rp (j + 1) ∧ t.gpr .r11 = off xp (j + 1) ∧
       t.gpr .rcx = BitVec.ofNat 64 (j + 1) ∧ t.gpr .r14 = BitVec.ofNat 64 (k - (j + 1)) ∧
       t.zf = some (decide (j + 1 = k))) ∧ Keep [.rax, .rdx, .rbx, .r10, .r11, .rcx, .r14] s t := by
-  have hj64 : j < 2 ^ 64 := by omega
-  have hld64 : ld < 2 ^ 64 := by omega
+  have hj64 : j < 2 ^ 64 := by omega_using [hj, hk]
+  have hld64 : ld < 2 ^ 64 := by omega_using [hk, hld]
   have hcmp : decide ((BitVec.ofNat 64 j).toNat < (BitVec.ofNat 64 ld).toNat) = decide (j < ld) := by
     rw [BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hj64, Nat.mod_eq_of_lt hld64]
   have heq : (BitVec.ofNat 64 j == BitVec.ofNat 64 ld) = decide (j = ld) := by
@@ -71,7 +71,7 @@ theorem cutBody_ok {s : State} {rp xp : Addr} {j ld k : Nat} {b : Byte} {msk : B
   · apply congrArg (s.mem.writeW (off xp j))
     simp only [decide_eq_true_eq]
     by_cases he : j = ld
-    · simp only [ite_eq_left he, ite_eq_right (show ¬ j < ld by omega)]
+    · simp only [ite_eq_left he, ite_eq_right (show ¬ j < ld by omega_using [he])]
       simp [BitVec.setWidth_and]
     · simp only [ite_eq_right he]
       by_cases hl : j < ld <;> simp [hl, BitVec.setWidth_and]
@@ -80,16 +80,16 @@ theorem cutBody_ok {s : State} {rp xp : Addr} {j ld k : Nat} {b : Byte} {msk : B
   · simp only [off, BitVec.add_assoc, ofNat_add_one]
   · apply BitVec.eq_of_toNat_eq
     simp only [BitVec.toNat_sub, BitVec.toNat_ofNat, show (1 : BitVec 64).toNat = 1 from rfl]
-    omega
+    omega_using [hj]
   · apply Bool.eq_iff_iff.mpr
     simp only [beq_iff_eq, decide_eq_true_iff]
     constructor
     · intro h
       have := congrArg BitVec.toNat h
       simp only [BitVec.toNat_ofNat, show (1 : BitVec 64).toNat = 1 from rfl] at this
-      omega
+      omega_using [hk, this]
     · intro h
-      rw [show k - j = 1 by omega]
+      rw [show k - j = 1 by omega_using [h]]
       rfl
 
 /-- The loop invariant records the written prefix and preserves every other byte. -/
@@ -119,7 +119,7 @@ theorem cutStep_ok {s₀ t : State} {rp xp : Addr} {rb : List Byte} {ld j : Nat}
     rw [h.keep.2.1, h.keep.2.2]; exact hrd j hj
   have hwr' : InRegions t.wr (off xp j) 1 := by rw [h.keep.2.2]; exact hwr j hj
   have hb' : t.mem (off rp j) = rb.getD j 0 := by
-    rw [h.frame _ (fun i hi => hsep j hj i (by omega))]; exact hb j hj
+    rw [h.frame _ (fun i hi => hsep j hj i (by omega_using [hj, hi]))]; exact hb j hj
   refine WP.mono (cutBody_ok hj hk hld h.ptrR h.ptrX h.cx
     ((h.keep.gpr (by decide)).trans h8) ((h.keep.gpr (by decide)).trans h9)
     h.count hrd' hwr' hb') fun u ⟨⟨hm, hrp, hxp, hcx, hcount, hz⟩, k⟩ => ?_
@@ -129,11 +129,11 @@ theorem cutStep_ok {s₀ t : State} {rp xp : Addr} {rb : List Byte} {ld j : Nat}
     by_cases he : i = j
     · subst he
       rw [ite_eq_left rfl]
-    · rw [ite_eq_right (out_ne (by omega) (by omega) he)]
-      exact h.bytes i (by omega)
+    · rw [ite_eq_right (out_ne (by omega_using [hk, hj, hi]) (by omega_using [hk, hj]) he)]
+      exact h.bytes i (by omega_using [hi, he])
   · intro a ha
-    rw [hm, WriteBytes.writeW8_apply, ite_eq_right (ha j (by omega))]
-    exact h.frame a (fun i hi => ha i (by omega))
+    rw [hm, WriteBytes.writeW8_apply, ite_eq_right (ha j (by omega_using []))]
+    exact h.frame a (fun i hi => ha i (by omega_using [hi]))
 
 /-- Cut all random octets with a fixed trip count determined by the public width. -/
 theorem cut_ok {s : State} {rp xp : Addr} {rb : List Byte} {ld : Nat} {msk : BitVec 64}
@@ -146,7 +146,7 @@ theorem cut_ok {s : State} {rp xp : Addr} {rb : List Byte} {ld : Nat} {msk : Bit
     (hb : ∀ i < rb.length, s.mem (off rp i) = rb.getD i 0)
     (hsep : ∀ i < rb.length, ∀ l < rb.length, off rp i ≠ off xp l) :
     WP isa (.loop (.block cutBody) .ne) s (CutInv s rp xp rb ld msk rb.length) :=
-  wp_upto (a := 0) (by omega) (CutInv s rp xp rb ld msk)
+  wp_upto (a := 0) (by omega_using [hk1]) (CutInv s rp xp rb ld msk)
     (fun j _ hj t ht => cutStep_ok hk hj hld h8 h9 hrd hwr hb hsep ht)
     (fun _ h => h) ⟨Keep.refl _ _, by rw [hrp]; simp, by rw [hxp]; simp,
       hcx, by simpa only [Nat.sub_zero] using h14, fun i hi => by omega, fun _ _ => rfl⟩
@@ -162,7 +162,7 @@ theorem CutInv.outside {s t : State} {B rp xp : Addr} {Z : Nat} {rb : List Byte}
   intro i hi he
   have hh : Z ≤ ofs B (off xp i) := ho.sep i hi
   rw [← he] at hh
-  omega
+  omega_using [ha, ha64, hh]
 
 /-- The cut loop preserves a disjoint input, including a previously zeroed y. -/
 theorem CutInv.src_keep {s t : State} {B rp xp ip : Addr} {Z : Nat} {rb bs : List Byte}

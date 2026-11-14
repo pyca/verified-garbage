@@ -31,24 +31,24 @@ theorem bases_ok (s : State) {base : BitVec 32} {size w o a b : Nat} {arr : Nat 
   unfold MontFn.bases
   simp only [List.append_assoc]
   rw [WP.block_append_iff]
-  refine WP.mono (loadArray_ok s .r10 .r2 ws (by omega) ptr po (header.array o ho)) ?_
+  refine WP.mono (loadArray_ok s .r10 .r2 ws (by omega_using [fit, ho]) ptr po (header.array o ho)) ?_
   rintro s1 ⟨o1, m1, k1⟩
   have w1 := ws.congr k1.wr
   have p1 := (k1.gpr .r0 (by decide)).trans ptr
   rw [WP.block_append_iff]
-  refine WP.mono (loadArray_ok s1 .r8 .r3 w1 (by omega) p1
+  refine WP.mono (loadArray_ok s1 .r8 .r3 w1 (by omega_using [fit, ha]) p1
     ((k1.gpr .r3 (by decide)).trans pa) (by rw [m1]; exact header.array a ha)) ?_
   rintro s2 ⟨a2, m2, k2⟩
   have w2 := w1.congr k2.wr
   have p2 := (k2.gpr .r0 (by decide)).trans p1
   rw [WP.block_append_iff]
-  refine WP.mono (loadArray_ok s2 .r9 .r12 w2 (by omega) p2
+  refine WP.mono (loadArray_ok s2 .r9 .r12 w2 (by omega_using [fit, hb]) p2
     ((k2.gpr .r12 (by decide)).trans ((k1.gpr .r12 (by decide)).trans pb))
     (by rw [m2, m1]; exact header.array b hb)) ?_
   rintro s3 ⟨b3, m3, k3⟩
   have w3 := w2.congr k3.wr
   have p3 := (k3.gpr .r0 (by decide)).trans p2
-  refine WP.mono (basesTail_ok s3 (tmp := arr 3) (acc := arr 2) (mod := arr 0) (w := w) (inv := inv) w3 (by omega) p3
+  refine WP.mono (basesTail_ok s3 (tmp := arr 3) (acc := arr 2) (mod := arr 0) (w := w) (inv := inv) w3 (by omega_using [fit]) p3
     ((k3.gpr .r8 (by decide)).trans a2) b3
     ((k3.gpr .r10 (by decide)).trans ((k2.gpr .r10 (by decide)).trans o1)) ?_ ?_ ?_ ?_ ?_) ?_
   · rw [m3, m2, m1]; exact header.array 3 (by decide)

@@ -23,12 +23,12 @@ theorem minus_ok {s : State} {B : Addr} {Z o w wx m amount : Nat} {minv : BitVec
   refine WP.mono (minusCore_ok hc.good (Nat.le_refl _) hw hw' ha (by rw [hm.modulus]; exact ham))
     fun t ⟨ht, hf, hk⟩ => ?_
   have harr : Arrays (off B o) wx [aY] s.mem t.mem :=
-    Arrays.of_outside (List.mem_singleton_self aY) hf (Nat.le_refl _) (by omega)
+    Arrays.of_outside (List.mem_singleton_self aY) hf (Nat.le_refl _) (by omega_using [])
   have hct := arrays_context hc harr (by decide) hk
   have hz := hc.good.scr.nowrap
   have hn := (harr.wv_of_not_mem (show aN < 8 by decide) (by decide) hz).trans hm.modulus
   have hi : ((word t.mem (off B o) (slot wx aN)).toNat * minv.toNat + 1) % 2 ^ 64 = 0 := by
-    rw [harr.word0_of_not_mem (by decide) (by decide) hz (by omega)]
+    rw [harr.word0_of_not_mem (by decide) (by decide) hz (by omega_using [hw])]
     exact hm.inverse
   rw [hm.modulus] at ht
   exact ⟨hct, ⟨hct.good, hn, hi⟩, ht, arrays_work harr (by decide), hk⟩

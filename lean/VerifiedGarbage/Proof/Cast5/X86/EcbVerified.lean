@@ -52,9 +52,9 @@ theorem τEcb_wf {up : Bool} {s : State} (h : (ecbX up).pre s) : VG.X86.Taint.Wf
     · simp only [toNat_setWidth]; exact h.fitS
   · simp only [hw, List.mem_cons, List.not_mem_nil, or_false]
     rintro r (rfl | rfl)
-    · exact VG.X86.Taint.frame_disjoint (n := 20) (by have := h.spfit; omega)
+    · exact VG.X86.Taint.frame_disjoint (n := 20) (by have := h.spfit; omega_using [this])
         (by rw [Nat.mul_comm]; exact h.dRD) (by rw [Nat.mul_comm]; exact h.dAD)
-    · exact VG.X86.Taint.frame_disjoint (n := 20) (by have := h.spfit; omega) h.dRS h.dAS
+    · exact VG.X86.Taint.frame_disjoint (n := 20) (by have := h.spfit; omega_using [this]) h.dRS h.dAS
   · intro p hp
     simp only [τEcb, List.mem_singleton] at hp
     subst hp
@@ -85,10 +85,10 @@ theorem τEcb_agree {up : Bool} {s₁ s₂ : State} (h₁ : (ecbX up).pre s₁) 
   · rw [h₁.wrEq, h₂.wrEq, args 2 (by decide), args 3 (by decide), args 4 (by decide)]
   · simp only [τEcb] at hk
     rw [show VG.X86.Taint.depth τEcb.stk = 0 from rfl, Nat.zero_add]
-    rw [VG.X86.Taint.argByte_eq (by have := h₁.spfit; omega) h4 hk,
-      VG.X86.Taint.argByte_eq (by have := h₂.spfit; omega) h4 hk,
+    rw [VG.X86.Taint.argByte_eq (by have := h₁.spfit; omega_using [this]) h4 hk,
+      VG.X86.Taint.argByte_eq (by have := h₂.spfit; omega_using [this]) h4 hk,
       Mem.readW_byte s₁.mem _ (Nat.mod_lt _ (by decide)), Mem.readW_byte s₂.mem _ (Nat.mod_lt _ (by decide))]
-    exact congrArg _ (args ((k - 4) / 4) (by omega))
+    exact congrArg _ (args ((k - 4) / 4) (by omega_using [hk]))
   · simp only [List.mem_singleton] at hn
     subst hn
     exact sy
@@ -124,9 +124,9 @@ theorem ecbSatMem_held : ∀ i < s1234.length,
     apply Mem.readW_congr
     intro j hj
     have e : ((0x100000 : Addr) + BitVec.ofNat 64 (8 * i) + BitVec.ofNat 64 j - 0x100000).toNat = 8 * i + j := by
-      rw [Offset.add_add, Offset.add_sub_cancel_left, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+      rw [Offset.add_add, Offset.add_sub_cancel_left, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hi, hj])]
     unfold ecbSatMem
-    rw [e, ite_eq_left (show 8 * i + j < 4096 by omega)]
+    rw [e, ite_eq_left (show 8 * i + j < 4096 by omega_using [hi, hj])]
   exact hm.trans (constMem_held 0x100000 s1234 (by rw [s1234_length]; decide) i (by rw [s1234_length]; exact hi))
 
 /-- A state satisfying the ECB functions' precondition. -/
@@ -148,7 +148,7 @@ theorem sat_arg (j : Nat) (hj : j < 5) : arg ecbSat j = satArgs.readW (argAddr e
   change ecbSatMem _ = _
   unfold ecbSatMem
   have : ∀ j < 5, ∀ b < 4, ¬ (argAddr ecbSat j + BitVec.ofNat 64 b - 0x100000).toNat < 4096 := by decide
-  rw [ite_eq_right (this j hj b (by omega))]
+  rw [ite_eq_right (this j hj b (by omega_using [hb]))]
 
 theorem ecb_sat (up : Bool) :
     (Proof.Cast5.ecbRoundsContract (X86.abi.withConsts ecbConsts) (if up then .encrypt else .decrypt) 4).pre ecbSat := by
@@ -233,7 +233,7 @@ theorem ecb_implies (up : Bool) :
       Abi.withConsts] at h
     obtain ⟨hsp, hsy, h0, h1, h2, h3, h4⟩ := h
     refine ⟨hsp, fun i hi => ?_, hsy⟩
-    rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 by omega) with rfl | rfl | rfl | rfl | rfl
+    rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 by omega_using [hi]) with rfl | rfl | rfl | rfl | rfl
     · exact h0
     · exact h1
     · exact h2

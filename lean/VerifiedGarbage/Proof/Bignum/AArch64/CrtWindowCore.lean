@@ -20,8 +20,8 @@ theorem TableCtx.base {s : State} {P : Addr} {w : Nat} {mi : BitVec 64} {X Xc : 
   refine ⟨h.good, ?_, h.n, h.inv, h.x⟩
   simpa [off] using
     h.scrT.sub (o := 0) (n := slot w 8 + tabBytes w)
-      (by unfold tabBytes CrtWindowFive.tabBytes32; omega)
-      (by unfold slot hdrBytes; omega)
+      (by unfold tabBytes CrtWindowFive.tabBytes32; omega_using [])
+      (by unfold slot hdrBytes; omega_using [])
 
 /-- An internal proof interface, retaining the current write set and ABI
 obligations. It is not a new public specification or trusted declaration. -/
@@ -47,8 +47,8 @@ theorem selection_keeps_y {P : Addr} {w : Nat} {m m' : Mem}
   exact hf.wv_eq (fun r hr => by
     simp only [selRanges, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
-    · simp only; omega
-    · simp only [Crt.sEnt, sFn]; have := hdr_lt_slot w aY (show 31 < 32 by decide); omega
-    · simp only [Crt.sJ, sFn]; have := hdr_lt_slot w aY (show 31 < 32 by decide); omega) (by omega)
+    · simp only; omega_using [hs]
+    · simp only [Crt.sEnt, sFn]; have := hdr_lt_slot w aY (show 31 < 32 by decide); omega_using [this]
+    · simp only [Crt.sJ, sFn]; have := hdr_lt_slot w aY (show 31 < 32 by decide); omega_using [this]) (by omega_using [hn, hy])
 
 end VG.Proof.Bignum.AArch64.WindowFive

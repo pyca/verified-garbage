@@ -132,8 +132,8 @@ theorem Inv.done {cs : CoreSpec c} {s₀ : State} {B D : Addr} {n st : Nat} {W :
     {k : cs.Key} {F : StepFn} {c0 : List Byte} {xs : List (List Byte)} {s : State}
     (hI : Inv cs s₀ B D n st W n₀ d k F c0 xs n s) (hxs : xs.length = n) : Done (c := c) s₀ B D n st F c0 xs s := by
   refine ⟨hI.b, hI.keep, hI.rd, hI.wr, ?_, ?_, hI.frame⟩
-  · rw [hI.data, List.take_of_length_le (by omega), List.drop_of_length_le (by omega), List.append_nil]
-  · rw [hI.chn, List.take_of_length_le (by omega)]
+  · rw [hI.data, List.take_of_length_le (by omega_using [hxs]), List.drop_of_length_le (by omega_using [hxs]), List.append_nil]
+  · rw [hI.chn, List.take_of_length_le (by omega_using [hxs])]
 
 /-! ## Areas -/
 
@@ -418,7 +418,7 @@ theorem Inv.input {cs : CoreSpec c} {s₀ : State} {B D : Addr} {n st : Nat} {W 
 theorem ofNat_pred64 {k : Nat} (h : 1 ≤ k) : BitVec.ofNat 64 k - BitVec.ofNat 64 1 = BitVec.ofNat 64 (k - 1) := by
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat, BitVec.toNat_ofNat]
-  omega
+  omega_using [h]
 
 theorem ofNat_sub64 {a b : Nat} (h : b ≤ a) : BitVec.ofNat 64 a - BitVec.ofNat 64 b = BitVec.ofNat 64 (a - b) := by
   apply BitVec.eq_of_toNat_eq
@@ -427,9 +427,9 @@ theorem ofNat_sub64 {a b : Nat} (h : b ≤ a) : BitVec.ofNat 64 a - BitVec.ofNat
   by_cases hb : b < 2 ^ 64
   · rw [Nat.mod_eq_of_lt hb]
     by_cases ha : a < 2 ^ 64
-    · rw [Nat.mod_eq_of_lt ha]; omega
-    · omega
-  · omega
+    · rw [Nat.mod_eq_of_lt ha]; omega_using [h, hb]
+    · omega_using [h, hb]
+  · omega_using [h]
 
 /-- What the instructions `ex` after a step's count do: change only `r8`,
 establishing `X`. -/

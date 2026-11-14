@@ -42,14 +42,14 @@ theorem sampleFirst_retained (s : State) {p : Inputs} {l : ScalarLayout p} {slot
       Frame [⟨State.addr l.start, 1⟩] s.mem t.mem ∧ Rest [.r0, .r1, .r2, .r3, .lr] s t := by
   have lead := l.lead_lt
   have addr : State.addr l.start = off (State.addr p.privateValue) l.lead :=
-    VG.Arm.addr_add (by have := output.fits; omega)
+    VG.Arm.addr_add (by have := output.fits; omega_using [lead, this])
   have sub : (⟨State.addr l.start, 1⟩ : Region).Sub ⟨State.addr p.privateValue, p.k⟩ := by
     rw [addr]
-    exact Offset.sub_base _ (by omega)
-  have destBuf := output.slice (d := l.lead) (n := 1) (by decide) (by omega)
+    exact Offset.sub_base _ (by omega_using [lead])
+  have destBuf := output.slice (d := l.lead) (n := 1) (by decide) (by omega_using [lead])
   have read : InRegions (s.rd ++ s.wr) (State.addr (p.entropy + BitVec.ofNat 32 l.lead)) 1 := by
-    rw [VG.Arm.addr_add (by have := entropy.fits; omega)]
-    exact CallLay.inRegions_sub entropy.readable (by omega) (by have := entropy.fits; omega)
+    rw [VG.Arm.addr_add (by have := entropy.fits; omega_using [size, lead, this])]
+    exact CallLay.inRegions_sub entropy.readable (by omega_using [size, lead]) (by have := entropy.fits; omega_using [this])
   refine WP.mono (sampleFirst_ok s h source dest read destBuf.writable
     ((stackSep.sub_right sub).sub_left (Offset.sub_base _ (by decide)))) ?_
   rintro t ⟨⟨mem, dstT, srcT, countT⟩, rest⟩
@@ -63,17 +63,17 @@ theorem sampleFirst_retained (s : State) {p : Inputs} {l : ScalarLayout p} {slot
     subst r
     simpa only [size] using entropySep.sub_right sub)
   refine ⟨context, entropyT, ?_, ?_, ?_, ?_, frame, rest⟩
-  · have byte := entropy.byte l.lead (by omega)
+  · have byte := entropy.byte l.lead (by omega_using [size, lead])
     rw [mem, VG.WriteBytes.writeW8_apply]
-    rw [VG.Arm.addr_add (a := p.entropy) (k := l.lead) (by have := entropy.fits; omega)]
+    rw [VG.Arm.addr_add (a := p.entropy) (k := l.lead) (by have := entropy.fits; omega_using [size, lead, this])]
     simp only [ite_true, off] at *
     rw [byte]
-    simp only [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem (by omega : l.lead < rb.length), Option.getD_some]
+    simp only [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem (by omega_using [size, lead] : l.lead < rb.length), Option.getD_some]
   · rw [dstT, ScalarLayout.start, BitVec.ofNat_add, BitVec.add_assoc]
     rfl
   · rw [srcT, BitVec.ofNat_add, BitVec.add_assoc]
     rfl
   · rw [countT]
-    exact Offset.ofNat_sub_ofNat (by have := l.width_bounds; omega : 1 ≤ l.width)
+    exact Offset.ofNat_sub_ofNat (by have := l.width_bounds; omega_using [this] : 1 ≤ l.width)
 
 end VG.Proof.Ffdh.Arm

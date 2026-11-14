@@ -91,7 +91,7 @@ theorem zeroBytesBody_ok {advance : Bool} {s0 s : State} {src dst : BitVec 32} {
   rw [← inv.rest.wr] at write
   refine WP.mono (zeroByteStep_ok advance s _ addr write ((inv.rest.gpr .r2 (by simp)).trans zero)) ?_
   rintro t ⟨mem, dest, source, count, zeroFlag, rest⟩
-  refine ⟨⟨by omega, ?_, ?_, ?_, ?_, ?_, inv.rest.trans rest⟩, ?_⟩
+  refine ⟨⟨by omega_using [hi], ?_, ?_, ?_, ?_, ?_, inv.rest.trans rest⟩, ?_⟩
   · rw [source, inv.source, BitVec.add_assoc]
     cases advance
     · simp
@@ -102,23 +102,23 @@ theorem zeroBytesBody_ok {advance : Bool} {s0 s : State} {src dst : BitVec 32} {
     rw [← BitVec.ofNat_add]
   · rw [count, inv.count]
     change BitVec.ofNat 32 (n - i) - BitVec.ofNat 32 1 = _
-    rw [BitVec.ofNat_sub_ofNat_of_le _ _ (by decide) (by omega)]
+    rw [BitVec.ofNat_sub_ofNat_of_le _ _ (by decide) (by omega_using [hi])]
     congr 1
   · intro j hj
     rw [mem, VG.WriteBytes.writeW8_apply]
     by_cases same : j = i
     · subst j; simp only [ite_true] <;> rfl
     · have different : State.addr (dst + BitVec.ofNat 32 j) ≠ State.addr (dst + BitVec.ofNat 32 i) :=
-        fun h => same (ctx.distinct j (by omega) i hi h)
+        fun h => same (ctx.distinct j (by omega_using [hi, hj]) i hi h)
       rw [ite_eq_right different]
-      exact inv.zeroed j (by omega)
+      exact inv.zeroed j (by omega_using [hj, same])
   · intro a ha
-    rw [mem, VG.WriteBytes.writeW8_apply, ite_eq_right (ha i (by omega))]
-    exact inv.outside a fun j hj => ha j (by omega)
+    rw [mem, VG.WriteBytes.writeW8_apply, ite_eq_right (ha i (by omega_using []))]
+    exact inv.outside a fun j hj => ha j (by omega_using [hj])
   · rw [zeroFlag, inv.count]
     change (BitVec.ofNat 32 (n - i) - BitVec.ofNat 32 1 == 0) = _
-    rw [BitVec.ofNat_sub_ofNat_of_le _ _ (by decide) (by omega), ofNat_beq_zero (by have := ctx.countFits; omega)]
-    simp only [show n - i - 1 = 0 ↔ i + 1 = n by omega]
+    rw [BitVec.ofNat_sub_ofNat_of_le _ _ (by decide) (by omega_using [hi]), ofNat_beq_zero (by have := ctx.countFits; omega_using [this])]
+    simp only [show n - i - 1 = 0 ↔ i + 1 = n by omega_using [hi]]
 
 theorem zeroBytes_ok (advance : Bool) (s : State) {src dst : BitVec 32} {n : Nat}
     (ctx : MaskCtx s dst n) (positive : 0 < n) (zero : s.gpr .r2 = 0)
@@ -129,7 +129,7 @@ theorem zeroBytes_ok (advance : Bool) (s : State) {src dst : BitVec 32} {n : Nat
   refine WP.loop (M := isa) inv ?_ n s ?_
   · intro k t h
     obtain ⟨i, hik, hk, hi⟩ := h
-    refine WP.mono (zeroBytesBody_ok ctx hi (by omega) zero) ?_
+    refine WP.mono (zeroBytesBody_ok ctx hi (by omega_using [hik, hk]) zero) ?_
     rintro u ⟨hu, hz⟩
     by_cases last : i + 1 = n
     · left
@@ -137,11 +137,11 @@ theorem zeroBytes_ok (advance : Bool) (s : State) {src dst : BitVec 32} {n : Nat
       change some (!u.z) = some false
       simp only [hz, last, decide_true, Bool.not_true]
     · right
-      refine ⟨?_, k - 1, by omega, i + 1, by omega, by omega, hu⟩
+      refine ⟨?_, k - 1, by omega_using [hk], i + 1, by omega_using [hik, hk], by omega_using [hik, hk, last], hu⟩
       change some (!u.z) = some true
       simp only [hz, last, decide_false, Bool.not_false]
-  · refine ⟨0, by omega, positive, ?_⟩
-    exact ⟨by omega, by simpa using source, by simpa using dest, by simpa using count,
+  · refine ⟨0, by omega_using [], positive, ?_⟩
+    exact ⟨by omega_using [], by simpa using source, by simpa using dest, by simpa using count,
       by intro j hj; omega, by intros; rfl, Rest.refl _ _⟩
 
 end VG.Proof.Ffdh.Arm

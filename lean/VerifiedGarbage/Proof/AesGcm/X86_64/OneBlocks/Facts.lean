@@ -36,7 +36,7 @@ theorem oneFrame_B {W D SP : Addr} {n k : Nat} (hk : k ≤ n) {m m' : Mem}
     · exact ⟨_, List.mem_cons_self .., fun _ h => h⟩
     · exact ⟨⟨W + BitVec.ofNat 64 192, 32⟩, by simp, Offset.sub _ (by decide) (by decide)⟩
     · exact ⟨⟨W + BitVec.ofNat 64 240, 2320⟩, by simp, fun _ h => h⟩
-    · exact ⟨⟨D, n⟩, by simp, Offset.sub_base D (by omega)⟩
+    · exact ⟨⟨D, n⟩, by simp, Offset.sub_base D (by omega_using [hk])⟩
     · exact ⟨below SP 24, by simp, below_sub (by decide) (by decide)⟩
 
 theorem obFrame_B {W D SP : Addr} {n : Nat} {m m' : Mem}
@@ -47,7 +47,7 @@ theorem obFrame_B {W D SP : Addr} {n : Nat} {m m' : Mem}
     · exact ⟨⟨W + BitVec.ofNat 64 192, 32⟩, by simp, Offset.sub _ (by decide) (by decide)⟩
     · exact ⟨⟨W, 128⟩, by simp, by rw [add_ofNat_assoc]; exact Offset.sub_base W (by decide)⟩
     · exact ⟨⟨W, 128⟩, by simp, by rw [add_ofNat_assoc]; exact Offset.sub_base W (by decide)⟩
-    · exact ⟨⟨D, n⟩, by simp, Region.sub_prefix (by omega)⟩
+    · exact ⟨⟨D, n⟩, by simp, Region.sub_prefix (by omega_using [])⟩
     · exact ⟨⟨W + BitVec.ofNat 64 240, 2320⟩, by simp, Offset.sub _ (by decide) (by decide)⟩
     · exact ⟨below SP 24, by simp, fun _ h => h⟩
 
@@ -65,11 +65,11 @@ theorem kept_oneFrameB {D : Addr} {n d : Nat} (hD : (⟨D, n⟩ : Region).Disjoi
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl | rfl
-  · simpa using L.w_w (a := d) (n := 8) (d := 0) (k := 128) (.inr (by omega)) (by omega) (by decide)
-  · exact L.w_w (by omega) (by omega) (by decide)
-  · exact L.w_w (.inl (by omega)) (by omega) (by decide)
-  · exact (hD.sub_right (Lay.wSub (by omega))).symm
-  · exact (t_w.sub_right (Lay.wSub (by omega))).symm
+  · simpa using L.w_w (a := d) (n := 8) (d := 0) (k := 128) (.inr (by omega_using [h])) (by omega_using [h]) (by decide)
+  · exact L.w_w (by omega_using [h]) (by omega_using [h]) (by decide)
+  · exact L.w_w (.inl (by omega_using [h])) (by omega_using [h]) (by decide)
+  · exact (hD.sub_right (Lay.wSub (by omega_using [h]))).symm
+  · exact (t_w.sub_right (Lay.wSub (by omega_using [h]))).symm
 
 theorem saved_oneFrameB {D : Addr} {n : Nat} (hD : (⟨D, n⟩ : Region).Disjoint ⟨W, 2560⟩)
     (t_w : (below SP 24).Disjoint ⟨W, 2560⟩) : ∀ r ∈ oneFrameB W D SP n, (savedR W).Disjoint r := by
@@ -103,12 +103,12 @@ theorem st_obFrame {D : Addr} {n d k : Nat} (h : (d + k ≤ 16) ∨ (32 ≤ d �
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rw [add_ofNat_assoc]
   rcases hr with rfl | rfl | rfl | rfl | rfl | rfl
-  · exact L.w_w (.inl (by omega)) (by omega) (by decide)
-  · rw [add_ofNat_assoc]; exact L.w_w (by omega) (by omega) (by decide)
-  · rw [add_ofNat_assoc]; exact L.w_w (by omega) (by omega) (by decide)
-  · exact ((hD.sub_left (Region.sub_prefix (by omega))).sub_right (Lay.wSub (by omega))).symm
-  · exact L.w_w (.inl (by omega)) (by omega) (by decide)
-  · exact (t_w.sub_right (Lay.wSub (by omega))).symm
+  · exact L.w_w (.inl (by omega_using [h])) (by omega_using [h]) (by decide)
+  · rw [add_ofNat_assoc]; exact L.w_w (by omega_using [h]) (by omega_using [h]) (by decide)
+  · rw [add_ofNat_assoc]; exact L.w_w (by omega_using [h]) (by omega_using [h]) (by decide)
+  · exact ((hD.sub_left (Region.sub_prefix (by omega_using []))).sub_right (Lay.wSub (by omega_using [h]))).symm
+  · exact L.w_w (.inl (by omega_using [h])) (by omega_using [h]) (by decide)
+  · exact (t_w.sub_right (Lay.wSub (by omega_using [h]))).symm
 
 /-- What `seal` and `open` know after `oneBlocks`, from what it did to the
 whole blocks (`ho`, `hc`) and the accumulator (`hy`, over `Z`). -/
@@ -140,15 +140,15 @@ theorem ob_facts {R : Nat} {D : Addr} {n : Nat} {s s₃ : State} {M : Gcm.X86_64
   refine ⟨fB, rounds_frame fB (kept_oneFrameB L hD h.t_w (.inl ⟨by decide, by decide⟩)) h.rounds,
     by rw [blockAt_frame fB (fun r hr => (dC r hr).sub_left (Lay.ctxSub (by decide))), hH], hc₃,
     by simpa using blockAt_frame fr (st_obFrame L (d := 0) (k := 16) (.inl (by decide)) hD h.t_w),
-    by rw [cw.1, hc₃], cw.2, Proof.Gcm.absorb_whole habs hx hZ (by rw [hy]), bytesAt_frame fr (fun r hr => ?_) (by omega)⟩
-  have hs : Region.Sub ⟨D + BitVec.ofNat 64 (16 * (n / 16)), n - 16 * (n / 16)⟩ ⟨D, n⟩ := Offset.sub_base D (by omega)
+    by rw [cw.1, hc₃], cw.2, Proof.Gcm.absorb_whole habs hx hZ (by rw [hy]), bytesAt_frame fr (fun r hr => ?_) (by omega_using [])⟩
+  have hs : Region.Sub ⟨D + BitVec.ofNat 64 (16 * (n / 16)), n - 16 * (n / 16)⟩ ⟨D, n⟩ := Offset.sub_base D (by omega_using [])
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl | rfl | rfl
   · exact (hD.sub_left hs).sub_right (Lay.wSub (by decide))
   · rw [add_ofNat_assoc]; exact (hD.sub_left hs).sub_right (Lay.wSub (by decide))
   · rw [add_ofNat_assoc]; exact (hD.sub_left hs).sub_right (Lay.wSub (by decide))
   · simpa using Offset.disjoint D (d := 16 * (n / 16)) (n := n - 16 * (n / 16)) (e := 0) (k := n / 16 * 16)
-      (.inr (by omega)) (by omega) (by omega)
+      (.inr (by omega_using [])) (by omega_using [hlt]) (by omega_using [hlt])
   · exact (hD.sub_left hs).sub_right (Lay.wSub (by decide))
   · exact (h.t_d.sub_right hs).symm
 

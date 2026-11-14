@@ -29,7 +29,7 @@ variable {pc : Bool}
 abbrev emR (s : State) : Region := ⟨fb s + BitVec.ofNat 64 oEM, (s.gpr .r6).toNat⟩
 
 theorem em_sub {s : State} (h : SPre pc s) : Region.Sub (emR s) (kR s) :=
-  frame_sub s (by have := h.k2; unfold oEM frameBytes; omega)
+  frame_sub s (by have := h.k2; unfold oEM frameBytes; omega_using [this])
 
 /-- The hash value. -/
 abbrev hashOf (s : State) : List Byte := Spec.Rsa.bytesAt s.mem (s.gpr .r10) (stackArg s 0).toNat
@@ -41,7 +41,7 @@ abbrev encOut (s : State) : Option (List Byte) :=
 /-- A byte of `EM` is in the local variable space. -/
 theorem em_in {s : State} (h : SPre pc s) (rs : List Region) {i : Nat} (hi : i < (s.gpr .r6).toNat) :
     InRegions (fr s :: rs) (fb s + BitVec.ofNat 64 oEM + BitVec.ofNat 64 i) 1 := by
-  rw [Offset.add_add]; exact in_fr s rs (by unfold oEM; omega) (by have := h.k2; unfold oEM frameBytes; omega)
+  rw [Offset.add_add]; exact in_fr s rs (by unfold oEM; omega_using []) (by have := h.k2; unfold oEM frameBytes; omega_using [hi, this])
 
 theorem bytes_of_frame {s : State} {rs : List Region} {m : Mem} (hf : Frame rs s.mem m) {p : Addr}
     {len : Nat} (hd : ∀ r ∈ rs, Region.Disjoint ⟨p, len⟩ r) (hl : len ≤ 2 ^ 64) :
@@ -55,13 +55,13 @@ theorem AtEnc.epre {s t : State} (h : SPre pc s) (A : AtEnc s t) :
   · rw [A.r4, A.wr]; exact em_in h _ hi
   · rw [A.r7, A.rd, h.hrd]
     rw [A.r8] at hj
-    exact ⟨dR s, List.mem_append_left _ (by simp), Offset.contains_base _ (by omega) (by have := h.wd; omega)⟩
+    exact ⟨dR s, List.mem_append_left _ (by simp), Offset.contains_base _ (by omega_using [hj]) (by have := h.wd; omega_using [hj])⟩
   · rw [A.r8] at hj
     rw [A.r7, A.r4] at e
     have c1 : (dR s).Contains (s.gpr .r10 + BitVec.ofNat 64 j) 1 :=
-      Offset.contains_base _ (by omega) (by have := h.wd; omega)
+      Offset.contains_base _ (by omega_using [hj]) (by have := h.wd; omega_using [hj])
     have c2 : (kR s).Contains (s.gpr .r10 + BitVec.ofNat 64 j) 1 := by
-      rw [e, Offset.add_add]; exact frame_contains s (by have := h.k2; unfold oEM frameBytes; omega)
+      rw [e, Offset.add_add]; exact frame_contains s (by have := h.k2; unfold oEM frameBytes; omega_using [hi, this])
     exact h.kd _ c2 c1
 
 theorem encodeId_len {x : BitVec 32} {H em : List Byte} {k : Nat} (h : encodeId x H k = some em) :
@@ -87,7 +87,7 @@ structure AtAft (s u : State) : Prop extends Fr s u where
 theorem below_em {s : State} (h : SPre pc s) {d : Nat} (hd : d + 8 ≤ oEM) {r : Region} (hr : r ∈ [emR s]) :
     Region.Disjoint ⟨fb s + BitVec.ofNat 64 d, 8⟩ r := by
   rw [List.mem_singleton.mp hr]
-  exact Offset.disjoint _ (.inl hd) (by unfold oEM at hd; omega) (by have := h.k2; unfold oEM; omega)
+  exact Offset.disjoint _ (.inl hd) (by unfold oEM at hd; omega_using [hd]) (by have := h.k2; unfold oEM; omega_using [this])
 
 theorem enc_ok {s t : State} (h : SPre pc s) (A : AtEnc s t) :
     WP isa Impl.RsaPkcs1Sig.PPC64LE.encode t (AtAft s) := by
@@ -95,7 +95,7 @@ theorem enc_ok {s t : State} (h : SPre pc s) (A : AtEnc s t) :
   have hH : Spec.Rsa.bytesAt t.mem (t.gpr .r7) (t.gpr .r8).toNat = hashOf s := by
     rw [A.r7, A.r8]
     exact bytes_of_frame A.mem (fun r hr => by rw [List.mem_singleton.mp hr]; exact h.kd.symm)
-      (by have := h.wd; omega)
+      (by have := h.wd; omega_using [])
   refine WP.mono (encode_ok (A.epre h)) fun u ⟨kp, eo⟩ => ?_
   rw [hH] at eo
   have hf : Frame [emR s] t.mem u.mem ∧ (match encOut s with
@@ -112,12 +112,12 @@ theorem enc_ok {s t : State} (h : SPre pc s) (A : AtEnc s t) :
       simp only [EOut] at eo
       rw [A.r4] at eo
       refine ⟨eo.2 ▸ VG.WriteBytes.writeBytes_frame _ _ _ (by rw [hl]; exact Region.contains_self _ _), eo.1, ?_⟩
-      rw [eo.2, ← hl]; exact Proof.RsaPkcs1Sig.bytesAt_writeBytes _ _ _ (by omega)
+      rw [eo.2, ← hl]; exact Proof.RsaPkcs1Sig.bytesAt_writeBytes _ _ _ (by omega_using [hl])
   obtain ⟨hf, he⟩ := hf
   refine ⟨⟨kp.sp.trans A.sp, kp.rd.trans A.rd, kp.wr.trans A.wr, kp.lr.trans A.lr,
     fun r hr => (kp.gpr r (by revert r; decide)).trans (A.hi r hr),
     A.mem.trans (hf.sub fun r hr => by rw [List.mem_singleton.mp hr]; exact ⟨_, List.mem_singleton_self _, em_sub h⟩),
-    A.sv.frame hf fun p hp r hr => below_em h (by have := saved_offs p hp; unfold oSave oEM at *; omega) hr, ?_⟩,
+    A.sv.frame hf fun p hp r hr => below_em h (by have := saved_offs p hp; unfold oSave oEM at *; omega_using [this]) hr, ?_⟩,
     (kp.gpr _ (by decide)).trans A.r12, (kp.gpr _ (by decide)).trans A.r26, (kp.gpr _ (by decide)).trans A.r27,
     (kp.gpr _ (by decide)).trans A.r28, (kp.gpr _ (by decide)).trans A.r29, (kp.gpr _ (by decide)).trans A.r30, he⟩
   rw [hf.readW (Region.contains_self _ _) (fun r hr => below_em h (by decide) hr) (by decide)]; exact A.ls

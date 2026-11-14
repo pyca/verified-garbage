@@ -44,7 +44,7 @@ theorem base_ok {t : State} {B : Addr} {w : Nat} {rd : Reg} (hrd : rd ≠ .r0) (
       (k1.gpr .r29 (by simpa using Ne.symm hrd29)).trans h29]
     refine ⟨_, rfl, ⟨?_, m1⟩, (k1.trans (Keep.write _ _ _)).mono (by simp)⟩
     rw [gpr_write, ite_eq_left_iff.mpr fun e => absurd rfl e, off_add, show slot w (j + 1) = slot w j + 8 * (w + 2) by
-      unfold slot; rw [Nat.add_mul, Nat.one_mul]; omega]
+      unfold slot; rw [Nat.add_mul, Nat.one_mul]; omega_using []]
 
 /-- A call (`bl`) of code that keeps `LR`: the code runs from the state the
 call enters it in (`State.callEntry`), and returns. -/

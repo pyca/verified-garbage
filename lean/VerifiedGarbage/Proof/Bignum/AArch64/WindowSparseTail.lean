@@ -29,14 +29,14 @@ theorem rowTail_ok {s : State} {B : Addr} {Z k i a : Nat} {minv : BitVec 64}
       Outside B (productBase k) (8*(16*(i+1))) s.mem t.mem ∧ Keep rowTailRegs s t := by
   have hP : productBase k+8*(16*(i+1)) ≤ Z := by
     unfold productBase slot Public.aAcc at *
-    omega
+    omega_using [hZ, hi]
   unfold SquareEightRaw.rowTail
   rw [List.append_assoc]
   apply WP.block_append
-  refine WP.mono (outputPtr_ok hs h0 hH hZ ha (by omega) h8 true) fun u ⟨⟨hu16, _, hum⟩, ku⟩ => ?_
+  refine WP.mono (outputPtr_ok hs h0 hH hZ ha (by omega_using [hk, hi]) h8 true) fun u ⟨⟨hu16, _, hum⟩, ku⟩ => ?_
   apply WP.block_append
   refine WP.mono (finishCarry_full (hs.congr ku.wr) hu16 ((ku.gpr _ (by decide)).trans h7)
-    hP (by omega)) fun v ⟨hvv, hvo, kv⟩ => ?_
+    hP (by omega_using [])) fun v ⟨hvv, hvo, kv⟩ => ?_
   have huv := ku.trans kv
   have hp := ProductEight.rowEnd_ok ((huv.gpr _ (by decide)).trans h8)
   refine WP.mono (WP.keep [.x8, .x12] (Q := fun t =>
@@ -44,13 +44,13 @@ theorem rowTail_ok {s : State} {B : Addr} {Z k i a : Nat} {minv : BitVec 64}
         t.mem = v.mem ∧ t.c = v.c)
     (by brun [(huv.gpr .x8 (by decide)).trans h8]) rfl rfl rfl)
     fun t ⟨⟨ht8, ht12, htm, htc⟩, kt⟩ => ?_
-  refine ⟨?_, ht8.trans (congrArg (off B) (by omega)),
+  refine ⟨?_, ht8.trans (congrArg (off B) (by omega_using [])),
     ht12.trans (congrArg (· - BitVec.ofNat 64 1) (huv.gpr _ (by decide))), ?_,
     (huv.trans kt).mono (by decide)⟩
   · rw [htm, htc]
     simpa only [hum, ku.gpr .x10 (by decide)] using hvv
   · intro x hx
     exact (congrArg (fun m : Mem => m x) htm).trans
-      (((hvo.mono (by omega) (by omega)) x hx).trans (congrArg (fun m : Mem => m x) hum))
+      (((hvo.mono (by omega_using []) (by omega_using [])) x hx).trans (congrArg (fun m : Mem => m x) hum))
 
 end VG.Proof.Bignum.AArch64.WindowSparse

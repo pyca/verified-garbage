@@ -54,19 +54,19 @@ theorem data_part {s : State} {B D : BitVec 32} {g j : Nat} (h : CfbFill.Pre B D
     Covers [⟨dataAddr D j, 16⟩] s.wr :=
   (Covers.of_sub fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr
-    exact ⟨⟨State.addr D, 16 * g⟩, List.mem_singleton_self _, 16 * j, rfl, by change 16 * j + 16 ≤ 16 * g; omega⟩).trans h.wd
+    exact ⟨⟨State.addr D, 16 * g⟩, List.mem_singleton_self _, 16 * j, rfl, by change 16 * j + 16 ≤ 16 * g; omega_using [hj]⟩).trans h.wd
 
 theorem copy_plain_wp {s : State} {B D : BitVec 32} {g j : Nat}
     (h : CfbFill.Pre B D g s) (hg : g ≤ 8) (hj : j < g) :
     WP isa (.block ((List.range 4).flatMap (copyWord .r6 sb (16 * j) (4 * tailSlot + 16 * j)))) s
       (CopyPost s (dataAddr D j) (bufferAddr B j)) := by
   apply copyBlock_wp
-  exact ⟨by rw [h.data], by rw [h.base], by rw [h.data]; have := h.fitD; omega,
-    by rw [h.base]; have := h.fitB; rw [total_eq, tailSlot] at *; omega,
-    by change 16 * j + 16 ≤ 4096; omega, by change 4 * tailSlot + 16 * j + 16 ≤ 4096; rw [tailSlot]; omega,
+  exact ⟨by rw [h.data], by rw [h.base], by rw [h.data]; have := h.fitD; omega_using [hj, this],
+    by rw [h.base]; have := h.fitB; rw [total_eq, tailSlot] at *; omega_using [hg, hj, this],
+    by change 16 * j + 16 ≤ 4096; omega_using [hg, hj], by change 4 * tailSlot + 16 * j + 16 ≤ 4096; rw [tailSlot]; omega_using [hg, hj],
     by decide, by decide, by decide, by decide, data_part h hj,
-    Covers.right (workspace_part h.hw (4 * tailSlot + 16 * j) 16 (by rw [tailSlot, total_eq]; omega)),
-    (h.sep.sub_left (Offset.sub_base _ (by omega))).sub_right (Offset.sub_base _ (by rw [tailSlot, total_eq]; omega))⟩
+    Covers.right (workspace_part h.hw (4 * tailSlot + 16 * j) 16 (by rw [tailSlot, total_eq]; omega_using [hg, hj])),
+    (h.sep.sub_left (Offset.sub_base _ (by omega_using [hj]))).sub_right (Offset.sub_base _ (by rw [tailSlot, total_eq]; omega_using [hg, hj]))⟩
 
 theorem xor_prev_wp {s : State} {B D : BitVec 32} {g j : Nat}
     (h : CfbFill.Pre B D g s) (hg : g ≤ 8) (hj : j < g) :
@@ -79,18 +79,18 @@ theorem xor_prev_wp {s : State} {B D : BitVec 32} {g j : Nat}
     simp only [↓reduceIte, prevAddr]
     apply xorN_block
     exact ⟨by rw [h.data, BitVec.add_zero]; simp only [dataAddr, Nat.mul_zero, BitVec.add_zero], by rw [h.base],
-      by rw [h.data]; have := h.fitD; omega,
-      by rw [h.base]; have := h.fitB; change B.toNat + 1512 ≤ 2 ^ 32 at this; change B.toNat + 1492 + 16 ≤ 2 ^ 32; omega,
+      by rw [h.data]; have := h.fitD; omega_using [hj, this],
+      by rw [h.base]; have := h.fitB; change B.toNat + 1512 ≤ 2 ^ 32 at this; change B.toNat + 1492 + 16 ≤ 2 ^ 32; omega_using [this],
       by decide, by decide, by decide, by decide, by decide, by decide, data_part h hj,
       Covers.right (workspace_part h.hw 1492 16 (by decide)),
-      (h.sep.sub_left (Offset.sub_base _ (by omega))).sub_right CfbFill.counter_frame⟩
+      (h.sep.sub_left (Offset.sub_base _ (by omega_using [hj]))).sub_right CfbFill.counter_frame⟩
   · simp only [he, ↓reduceIte, prevAddr]
     apply xorN_block
-    exact ⟨by rw [h.data], by rw [h.data], by rw [h.data]; have := h.fitD; omega,
-      by rw [h.data]; have := h.fitD; omega,
-      by change 16 * j + 16 ≤ 4096; omega, by change 16 * (j - 1) + 16 ≤ 4096; omega,
-      by decide, by decide, by decide, by decide, data_part h hj, Covers.right (data_part h (j := j - 1) (by omega)),
-      Offset.disjoint _ (.inr (by omega)) (by omega) (by omega)⟩
+    exact ⟨by rw [h.data], by rw [h.data], by rw [h.data]; have := h.fitD; omega_using [hj, this],
+      by rw [h.data]; have := h.fitD; omega_using [hj, this],
+      by change 16 * j + 16 ≤ 4096; omega_using [hg, hj], by change 16 * (j - 1) + 16 ≤ 4096; omega_using [hg, hj],
+      by decide, by decide, by decide, by decide, data_part h hj, Covers.right (data_part h (j := j - 1) (by omega_using [hj])),
+      Offset.disjoint _ (.inr (by omega_using [he])) (by omega_using [hg, hj]) (by omega_using [hg, hj])⟩
 
 theorem step_wp {s : State} {B D : BitVec 32} {g j : Nat}
     (h : CfbFill.Pre B D g s) (hg : g ≤ 8) (hj : j < g) :
@@ -109,9 +109,9 @@ theorem step_wp {s : State} {B D : BitVec 32} {g j : Nat}
     simp only [List.mem_singleton] at hr; subst hr
     by_cases he : j = 0
     · simp only [prevAddr, he, ↓reduceIte]
-      exact ((h.sep.sub_left (Offset.sub_base _ (by omega))).sub_right CfbFill.counter_frame).symm
+      exact ((h.sep.sub_left (Offset.sub_base _ (by omega_using [hj]))).sub_right CfbFill.counter_frame).symm
     · simp only [prevAddr, he, ↓reduceIte]
-      exact Offset.disjoint _ (.inl (by omega)) (by omega) (by omega)
+      exact Offset.disjoint _ (.inl (by omega_using [he])) (by omega_using [hg, hj]) (by omega_using [hg, hj])
   refine WP.mono (xor_prev_wp p hg hj) fun s₂ ⟨x, out⟩ => ?_
   refine ⟨⟨fun r h9 h10 => (x.regs r h9 h10).trans (c.regs r h9 h10), x.rd.trans c.rd,
     x.wr.trans c.wr, x.sp.trans c.sp, c.frame.trans x.frame⟩, ?_⟩
@@ -132,17 +132,17 @@ theorem out_kept {s : State} {m' : Mem} {B D : BitVec 32} {g j k : Nat}
     apply bytes_frame hf
     intro r hr
     simp only [List.mem_singleton] at hr; subst hr
-    exact ((h.sep.sub_left (Offset.sub_base _ (by omega))).sub_right
-      (Offset.sub_base _ (by rw [tailSlot, total_eq]; omega))).symm
+    exact ((h.sep.sub_left (Offset.sub_base _ (by omega_using [hj]))).sub_right
+      (Offset.sub_base _ (by rw [tailSlot, total_eq]; omega_using [hg, hj, hk]))).symm
   have prv : bytesAt m' (prevAddr B D k) 16 = bytesAt s.mem (prevAddr B D k) 16 := by
     apply bytes_frame hf
     intro r hr
     simp only [List.mem_singleton] at hr; subst hr
     by_cases he : k = 0
     · simp only [prevAddr, he, ↓reduceIte]
-      exact ((h.sep.sub_left (Offset.sub_base _ (by omega))).sub_right CfbFill.counter_frame).symm
+      exact ((h.sep.sub_left (Offset.sub_base _ (by omega_using [hj]))).sub_right CfbFill.counter_frame).symm
     · simp only [prevAddr, he, ↓reduceIte]
-      exact Offset.disjoint _ (.inl (by omega)) (by omega) (by omega)
+      exact Offset.disjoint _ (.inl (by omega_using [hk])) (by omega_using [hg, hj, hk]) (by omega_using [hg, hj])
   rw [buf, prv]
 
 theorem prefix_wp {s : State} {B D : BitVec 32} {g j : Nat}
@@ -153,18 +153,18 @@ theorem prefix_wp {s : State} {B D : BitVec 32} {g j : Nat}
     refine WP.mono (step_wp h hg hj) fun s' ⟨e, out⟩ => ⟨⟨e.regs, e.rd, e.wr, e.sp, ?_⟩, ?_⟩
     · simpa only [dataAddr, Nat.mul_zero, BitVec.add_zero] using e.frame
     · intro k hk
-      have he : k = 0 := by omega
+      have he : k = 0 := by omega_using [hk]
       subst k
       exact out
   | succ j ih =>
     refine WP.seq (WP.mono (step_wp h hg hj) fun s₁ ⟨e, out⟩ => ?_)
-    refine WP.mono (ih (e.pre h) (by omega)) fun s₂ ⟨e', blocks⟩ => ?_
+    refine WP.mono (ih (e.pre h) (by omega_using [hj])) fun s₂ ⟨e', blocks⟩ => ?_
     have f₁ : Frame [⟨State.addr D, 16 * (j + 1 + 1)⟩] s.mem s₁.mem := e.frame.sub fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
-      exact ⟨⟨State.addr D, 16 * (j + 1 + 1)⟩, List.mem_singleton_self _, Offset.sub_base _ (by omega)⟩
+      exact ⟨⟨State.addr D, 16 * (j + 1 + 1)⟩, List.mem_singleton_self _, Offset.sub_base _ (by omega_using [])⟩
     have f₂ : Frame [⟨State.addr D, 16 * (j + 1 + 1)⟩] s₁.mem s₂.mem := e'.frame.sub fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
-      exact ⟨⟨State.addr D, 16 * (j + 1 + 1)⟩, List.mem_singleton_self _, Region.sub_prefix (by omega)⟩
+      exact ⟨⟨State.addr D, 16 * (j + 1 + 1)⟩, List.mem_singleton_self _, Region.sub_prefix (by omega_using [])⟩
     refine ⟨⟨fun r h9 h10 => (e'.regs r h9 h10).trans (e.regs r h9 h10), e'.rd.trans e.rd,
       e'.wr.trans e.wr, e'.sp.trans e.sp, f₁.trans f₂⟩, ?_⟩
     intro k hk
@@ -172,9 +172,9 @@ theorem prefix_wp {s : State} {B D : BitVec 32} {g j : Nat}
     · subst k
       rw [bytes_frame (P := dataAddr D (j + 1)) e'.frame (fun r hr => ?_), out]
       simp only [List.mem_singleton] at hr; subst hr
-      exact Offset.disjoint_base _ (by omega) (by omega)
-    · rw [blocks k (by omega)]
-      exact out_kept h hg hj (by omega) e.frame
+      exact Offset.disjoint_base _ (by omega_using []) (by omega_using [hg, hj])
+    · rw [blocks k (by omega_using [hk, he])]
+      exact out_kept h hg hj (by omega_using [hk, he]) e.frame
 
 theorem choose_wp {s : State} {B D : BitVec 32} {g j m : Nat}
     (h : CfbFill.Pre B D g s) (hg : g ≤ 8) (hj : j < g) (hm : g ≤ j + m) :
@@ -182,7 +182,7 @@ theorem choose_wp {s : State} {B D : BitVec 32} {g j m : Nat}
   induction m generalizing j s with
   | zero => omega
   | succ m ih =>
-    have jj : j < 8 := by omega
+    have jj : j < 8 := by omega_using [hg, hj]
     let sc := subFlags s (s.gpr .r11) (BitVec.ofNat 32 (j + 1))
     have pc : CfbFill.Pre B D g sc := ⟨h.base, h.data, h.group, h.fitB, h.fitD, h.hw, h.wd, h.sep⟩
     refine WP.seq (WP.of_runBlock ⟨sc, CfbFill.compare_run s j jj, ?_⟩)
@@ -192,10 +192,10 @@ theorem choose_wp {s : State} {B D : BitVec 32} {g j m : Nat}
       rw [eq] at p
       exact p
     · have ne : j + 1 ≠ g := by simpa using he
-      exact ih pc (by omega) (by omega)
+      exact ih pc (by omega_using [hj, ne]) (by omega_using [hm])
 
 theorem xor_wp {s : State} {B D : BitVec 32} {g : Nat}
     (h : CfbFill.Pre B D g s) (hg : 1 ≤ g) (hg8 : g ≤ 8) :
-    WP isa (BatchCbc.chooseXor 0 8) s (prefixPost s B D g) := choose_wp h hg8 (by omega) hg8
+    WP isa (BatchCbc.chooseXor 0 8) s (prefixPost s B D g) := choose_wp h hg8 (by omega_using [hg]) hg8
 
 end VG.Proof.Sm4.Arm.CbcReverse

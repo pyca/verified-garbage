@@ -90,14 +90,14 @@ theorem line_ok {i j k n : Nat} (hs : LSide i j k n = true) {v : Vector Word 16}
   obtain ⟨hi, hj, hk, h1, h2⟩ := hs
   have ne : ∀ {a b}, a < 16 → b < 16 → a ≠ b → wreg a ≠ wreg b := fun ha hb hab e =>
     hab (wreg_inj ha hb e)
-  refine WP.mono (line_regs (wreg_ne_x1 hi) (show 32 - n < 32 by omega) s _ _ _ (h.holds i hi) (h.holds j hj)
+  refine WP.mono (line_regs (wreg_ne_x1 hi) (show 32 - n < 32 by omega_using [h1]) s _ _ _ (h.holds i hi) (h.holds j hj)
     (h.holds k hk)) fun s' ⟨ha, hr, hm, hrd, hwr⟩ =>
     ⟨fun m hm' => ?_, hm.trans h.mem, hrd.trans h.rd, hwr.trans h.wr, fun r hw hx => ?_⟩
   · rw [stepN_get v n hi hj hk m hm']
     by_cases e : i = m
     · subst e
       simp only [ite_true]
-      rw [ha, rotateLeft_eq _ (by omega) (by omega)]
+      rw [ha, rotateLeft_eq _ (by omega_using [h1]) (by omega_using [h2])]
     · simp only [e, ite_false]
       rw [hr _ (ne hm' hi (Ne.symm e)) (wreg_ne_x1 hm')]
       exact h.holds m hm'

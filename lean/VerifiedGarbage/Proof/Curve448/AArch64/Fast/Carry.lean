@@ -1,5 +1,6 @@
 module
 public import VerifiedGarbage.Proof.X448.Wide.Limbs
+import VerifiedGarbage.Proof.Framework.Omega
 
 
 /-!
@@ -66,7 +67,7 @@ theorem out_val (r : Nat → Nat) :
   have hp : P = radix ^ 8 - radix ^ 4 - 1 := by decide +kernel
   simp only [valN, out, Nat.zero_add, Nat.add_zero, Nat.reduceAdd, Nat.pow_zero, Nat.one_mul] at hl hh ⊢
   simp only [hp, radix, Nat.reducePow] at hl hh h0 h4 ⊢
-  omega
+  omega_using [hl, hh]
 
 /-- The value modulo `p`. -/
 theorem out_mod (r : Nat → Nat) : valN (out r) 8 % P = valN r 8 % P := by

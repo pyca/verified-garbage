@@ -43,17 +43,17 @@ theorem finish_used_ok {E : Environment} (v : E.Valid) {c status : Nat} {s : Sta
   refine WP.mono (CandidateFinish.used_ok S.1.scratch S.1.header S.1.usedWrite S.1.usedEq rfl)
     fun t ⟨statusEq, memory, O, K⟩ => ?_
   refine ⟨⟨statusEq, ?_, ?_⟩, used_frame O, K.mono (by unfold WitnessStep.clob; decide)⟩
-  · exact (VG.Proof.Bignum.scratch_bytes O (by have := v.outFit; omega) v.outUsed).trans S.2
+  · exact (VG.Proof.Bignum.scratch_bytes O (by have := v.outFit; omega_using [this]) v.outUsed).trans S.2
   · rw [memory, Mem.readW_writeW_self64]
 
 theorem finish_none_ok {E : Environment} (v : E.Valid) {c : Nat} {s : State} (S : FinishReady E c s) :
     WP isa VG.Impl.RsaKeyGen.X86.CandidateFinish.none s fun t =>
       Outputs E 0 0 (List.replicate E.length 0) t ∧
       MutableFrame E s.mem t.mem ∧ Keeps WitnessStep.clob s t := by
-  refine WP.mono (CandidateFinish.none_ok S.1.scratch (by have := S.1.header; omega) S.1.usedWrite S.1.usedEq)
+  refine WP.mono (CandidateFinish.none_ok S.1.scratch (by have := S.1.header; omega_using [this]) S.1.usedWrite S.1.usedEq)
     fun t ⟨statusEq, memory, O, K⟩ => ?_
   refine ⟨⟨statusEq, ?_, ?_⟩, used_frame O, K.mono (by unfold WitnessStep.clob; decide)⟩
-  · exact (VG.Proof.Bignum.scratch_bytes O (by have := v.outFit; omega) v.outUsed).trans S.2
+  · exact (VG.Proof.Bignum.scratch_bytes O (by have := v.outFit; omega_using [this]) v.outUsed).trans S.2
   · rw [memory, Mem.readW_writeW_self64]
 
 theorem finish_prime_ok {E : Environment} (v : E.Valid) {c : Nat} {s : State} (S : FinishReady E c s) :

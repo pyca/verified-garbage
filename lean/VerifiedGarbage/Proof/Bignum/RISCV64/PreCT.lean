@@ -178,13 +178,13 @@ theorem T01 {d : PD} {s : State} (h : C0 d s) : WP isa (.block (Precompute.save 
 theorem T12 {d : PD} {s : State} (h : C1 d s) : WP isa loadN s (C2 d) := by
   have hb := h.base
   have hwd : d.w = (d.k + 7) / 8 := rfl
-  have hw1 : 8 ≤ d.w := by have := hb.k64; omega
+  have hw1 : 8 ≤ d.w := by have := hb.k64; omega_using [hwd, this]
   have e0 : slot d.w 0 = hdrBytes := by simp [slot]
   have e8 : slot d.w 8 = hdrBytes + 8 * (8 * (d.w + 2)) := rfl
   have hh : hdrBytes = 256 := rfl
   have hZ := hb.hZ
   refine WP.mono (loadN_ok (dA := slot d.w 0) hb.scr hb.a7 (by rw [hb.s7]; simp) hb.s8 hb.t0
-    (by have := hb.k64; omega) (by omega) (by have := hb.k1024; omega) (by omega) (by omega) (by omega)
+    (by have := hb.k64; omega_using [this]) (by omega_using [hwd]) (by have := hb.k1024; omega_using [hwd, this]) (by omega_using [e0, hh]) (by omega_using [e0, hh]) (by omega_using [e0, e8, hZ])
     h.rd h.sep)
     fun t ⟨hv, out, k⟩ => ⟨hb.keep k, by rw [hv, h.bytesAt], by rw [k.2.1, k.2.2]; exact h.rd, fun i hi => ?_⟩
   rw [← h.bytes i hi]
@@ -198,16 +198,16 @@ theorem T23 {d : PD} {s : State} (h : C2 d s) : WP isa (.block check1) s (C3 d) 
   have hl := hb.len
   have hk := hb.k64
   refine WP.mono (check1_ok (N := d.N) (nb := d.nb) (by rw [hb.s7]; simp) hb.s8 hk hl hrd
-    fun i hi => hby i (by omega)) fun t ⟨⟨i0, i4, im⟩, k⟩ =>
-    ⟨hb.keep k, by rw [im]; exact hv, by rw [i4, getD_of_lt (by omega)],
-      by rw [i0, getD_of_lt (by omega)]⟩
+    fun i hi => hby i (by omega_using [hl, hi])) fun t ⟨⟨i0, i4, im⟩, k⟩ =>
+    ⟨hb.keep k, by rw [im]; exact hv, by rw [i4, getD_of_lt (by omega_using [hl, hk])],
+      by rw [i0, getD_of_lt (by omega_using [hl, hk])]⟩
 
 theorem T34 {d : PD} {s : State} (h : C3 d s) : WP isa check2 s (C4 d) := by
   obtain ⟨hb, hv, h4, h0⟩ := h
   have hl := hb.len
   have hk := hb.k64
-  refine WP.mono (check2_ok (nb := d.nb) hb.s8 hk hb.k1024 hl (by rw [h0, getD_of_lt (by omega)])
-    (by rw [h4, getD_of_lt (by omega)])) fun t ⟨a, m, k⟩ =>
+  refine WP.mono (check2_ok (nb := d.nb) hb.s8 hk hb.k1024 hl (by rw [h0, getD_of_lt (by omega_using [hl, hk])])
+    (by rw [h4, getD_of_lt (by omega_using [hl, hk])])) fun t ⟨a, m, k⟩ =>
     ⟨hb.keep k, by rw [m]; exact hv, a⟩
 
 /-- The top word is the number's quotient by `2^(64 (w - 1))`. -/
@@ -221,16 +221,16 @@ theorem TL {d : PD} {s : State} (h : C4 d s ∧ s.gpr .s0 = 0) : WP isa lz s (C6
   have hval := h0.mp hz
   have hf := VG.Proof.Bignum.valid_facts hval hb.k64
   have hwd : d.w = (d.k + 7) / 8 := rfl
-  have hw1 : 8 ≤ d.w := by have := hb.k64; omega
+  have hw1 : 8 ≤ d.w := by have := hb.k64; omega_using [hwd, this]
   have e : ∀ j, slot d.w j = hdrBytes + j * (8 * (d.w + 2)) := fun _ => rfl
   have e0 := e 0; have e8 := e 8
   have hZ := hb.hZ
   rw [← hwd] at hf
   have hN : 2 ^ (64 * (d.w - 1)) ≤ wordsVal s.mem d.S (slot d.w 0) d.w := by rw [hv]; exact hf.2.2
-  refine WP.mono (lz_ok hb.scr hb.a7 hb.t0 (by omega) (VG.Proof.Bignum.RISCV64.slot_al8 _ 0) (by omega) (topW_pos (by omega) hN))
+  refine WP.mono (lz_ok hb.scr hb.a7 hb.t0 (by omega_using [hw1]) (VG.Proof.Bignum.RISCV64.slot_al8 _ 0) (by omega_using [e0, e8, hZ]) (topW_pos (by omega_using [hw1]) hN))
     fun t ⟨⟨ha, _, _, hm⟩, k⟩ => ⟨hb.keep k, by rw [hm]; exact hv, hval, ?_⟩
   rw [ha, show (Mont.word s.mem d.S (slot d.w 0 + 8 * (d.w - 1))).toNat = topW s.mem d.S d.w from rfl,
-    topW_eq (by omega), hv]
+    topW_eq (by omega_using [hw1]), hv]
 
 theorem TA {d : PD} {s : State} (h : C6 d s) :
     WP isa (.seq r2Words (.seq write (.block [.li .a0 1]))) s (C5 d) := by
@@ -238,22 +238,22 @@ theorem TA {d : PD} {s : State} (h : C6 d s) :
   have hf := VG.Proof.Bignum.valid_facts hval hb.k64
   have hnw := hb.scr.nowrap
   have hwd : d.w = (d.k + 7) / 8 := rfl
-  have hw1 : 8 ≤ d.w := by have := hb.k64; omega
-  have hw' : d.w < 2 ^ 31 := by have := hb.k1024; omega
+  have hw1 : 8 ≤ d.w := by have := hb.k64; omega_using [hwd, this]
+  have hw' : d.w < 2 ^ 31 := by have := hb.k1024; omega_using [hwd, this]
   have e : ∀ j, slot d.w j = hdrBytes + j * (8 * (d.w + 2)) := fun _ => rfl
   have e0 := e 0; have e1 := e 1; have e4 := e 4; have e8 := e 8
   have hh : hdrBytes = 256 := rfl
   have hZ := hb.hZ
   rw [← hwd] at hf
   refine WP.seq (WP.mono (r2Words_ok hb.scr hb.a2 hb.a6 hb.a7 hb.t0
-    (by rw [hz, topW_eq (by omega), hv]) (by omega) (by have := hb.k1024; omega) (by omega)
+    (by rw [hz, topW_eq (by omega_using [hw1]), hv]) (by omega_using [hw1]) (by have := hb.k1024; omega_using [hwd, this]) (by omega_using [e4, e8, hZ])
     (by rw [hv]; exact hf.2.2) (by rw [hv]; exact hf.1)) fun s₃ ⟨_, k₃⟩ => ?_)
   have g : ∀ r ∈ [Reg.s5, .a7, .a2, .t0, .s6], s₃.gpr r = s.gpr r := fun r hr =>
     k₃.gpr (by revert r hr; decide)
   refine WP.seq (WP.mono (write_ok (P := d.P) (dN := slot d.w 0) (dX := slot d.w 1) (hb.scr.congr k₃.2.2)
     (hb.pre.congr k₃.2.2) (by rw [g .s5 (by decide), hb.s5]; simp) (by rw [g .a7 (by decide), hb.a7])
-    (by rw [g .a2 (by decide), hb.a2]) (by rw [g .t0 (by decide), hb.t0]) (by omega) hw'
-    (by simp [slot, hdrBytes]) (by simp only [slot, hdrBytes]; omega) (by omega) (by omega)
+    (by rw [g .a2 (by decide), hb.a2]) (by rw [g .t0 (by decide), hb.t0]) (by omega_using [hw1]) hw'
+    (by simp [slot, hdrBytes]) (by simp only [slot, hdrBytes]; omega_using []) (by omega_using [e0, e8, hZ]) (by omega_using [e1, e8, hZ])
     (Nat.le_refl _) hb.hPS) fun s₄ ⟨_, k₄⟩ => ?_)
   refine WP.mono (WP.keep [.a0] (Q := fun _ => True) (by brun [exec_li]; exact ⟨_, rfl⟩) (by rfl) (by rfl))
     fun t ⟨_, k₅⟩ => ?_
@@ -264,9 +264,9 @@ theorem TB {d : PD} {s : State} (h : C4 d s ∧ s.gpr .s0 ≠ 0) :
     WP isa (.seq zeroPre (.block [.li .a0 0])) s (C5 d) := by
   obtain ⟨⟨hb, -, -⟩, -⟩ := h
   have hwd : d.w = (d.k + 7) / 8 := rfl
-  have hw1 : 8 ≤ d.w := by have := hb.k64; omega
-  have hw' : d.w < 2 ^ 31 := by have := hb.k1024; omega
-  refine WP.seq (WP.mono (zeroPre_ok hb.pre (by rw [hb.s5]; simp) hb.t0 (by omega) hw' (Nat.le_refl _))
+  have hw1 : 8 ≤ d.w := by have := hb.k64; omega_using [hwd, this]
+  have hw' : d.w < 2 ^ 31 := by have := hb.k1024; omega_using [hwd, this]
+  refine WP.seq (WP.mono (zeroPre_ok hb.pre (by rw [hb.s5]; simp) hb.t0 (by omega_using [hw1]) hw' (Nat.le_refl _))
     fun s₃ ⟨_, k₃⟩ => ?_)
   refine WP.mono (WP.keep [.a0] (Q := fun _ => True) (by brun [exec_li]; exact ⟨_, rfl⟩) (by rfl) (by rfl))
     fun t ⟨_, k₄⟩ => ?_

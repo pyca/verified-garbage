@@ -31,12 +31,12 @@ private theorem build_ok {P : Point64.Ops} (hP : Point64.PointOk P) {s : State} 
   induction n with
   | zero =>
     refine WP.block_nil ⟨KeepW.refl _ _, hd, hA, hp, fun i hi => ?_⟩
-    have he : i = 0 := by omega
+    have he : i = 0 := by omega_using [hi]
     subst i
     exact h0
   | succ n ih =>
     rw [build]
-    refine WP.seq (WP.mono (ih (by omega)) fun s1 ⟨k1, d1, a1, p1, t1⟩ => ?_)
+    refine WP.seq (WP.mono (ih (by omega_using [hn])) fun s1 ⟨k1, d1, a1, p1, t1⟩ => ?_)
     refine WP.seq (WP.mono (hP.add (k1.scr hs) d1) fun s2 ⟨k2, e2⟩ => ?_)
     rw [WP.block_append_iff]
     refine WP.mono (accept_ok (k2.scr (k1.scr hs))) fun s3 ⟨k3, p3, f3⟩ => ?_
@@ -57,10 +57,10 @@ private theorem build_ok {P : Point64.Ops} (hP : Point64.PointOk P) {s : State} 
     · intro i hi
       by_cases he : i = n + 1
       · subst i; rw [pu]; exact p3'
-      · have hi' : i ≤ n := by omega
+      · have hi' : i ≤ n := by omega_using [hi, he]
         rw [show tablePoint u.mem base i = tablePoint s3.mem base i from
-          pointAt_outside ou (by simp only [tabOffset, TAB]; omega) (by simp only [tabOffset]; omega),
-          tablePoint_keep k3 i (by omega), tablePoint_keep k2 i (by omega)]
+          pointAt_outside ou (by simp only [tabOffset, TAB]; omega_using [hn, hi]) (by simp only [tabOffset]; omega_using [he]),
+          tablePoint_keep k3 i (by omega_using [hn, hi]), tablePoint_keep k2 i (by omega_using [hn, hi])]
         exact t1 i hi'
 
 /-- The precomputed table preserves the scalar bits, saved registers, decoded `R`, and checks. -/
@@ -86,6 +86,6 @@ theorem table_ok {P : Point64.Ops} (hP : Point64.PointOk P) {s : State} {base : 
     rw [p3, e2, e1, ← hp]; simp (disch := decide) only [pt, Function.update_of_ne]
   refine WP.mono (build_ok hP (k3.scr (k2.scr (k1.scr hs))) ds az aa pp tt 16 (by decide))
     fun u ⟨ku, du, _, _, tu⟩ => ?_
-  exact ⟨((KeepW.of_keep (k1.trans k2)).trans k3).trans ku, du, fun i hi => tu i (by omega)⟩
+  exact ⟨((KeepW.of_keep (k1.trans k2)).trans k3).trans ku, du, fun i hi => tu i (by omega_using [hi])⟩
 
 end VG.Proof.Ed448.X86_64.Window

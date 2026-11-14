@@ -59,30 +59,30 @@ theorem copy_run (s : State) (hr : InRegions (s.rd ++ s.wr) (s.gpr .a0 + s.gpr .
   rrun [hr, hw, lo8_ext]
 
 theorem ext_lt (b : BitVec 8) : (b.setWidth 64).toNat < 256 := by
-  rw [BitVec.toNat_setWidth]; have := b.isLt; omega
+  rw [BitVec.toNat_setWidth]; have := b.isLt; omega_using []
 
 theorem ext_and (a : BitVec 8) (y : BitVec 64) : a.setWidth 64 &&& y = (a &&& y.setWidth 8).setWidth 64 := by
   apply BitVec.eq_of_getLsbD_eq; intro i hi
   simp only [BitVec.getLsbD_and, BitVec.getLsbD_setWidth]
   by_cases h : i < 8
   · simp [h, hi]
-  · simp [h, BitVec.getLsbD_of_ge a i (by omega)]
+  · simp [h, BitVec.getLsbD_of_ge a i (by omega_using [h])]
 
 theorem ext_xor (a b : BitVec 8) : a.setWidth 64 ^^^ b.setWidth 64 = (a ^^^ b).setWidth 64 := by
   apply BitVec.eq_of_getLsbD_eq; intro i hi
   simp only [BitVec.getLsbD_xor, BitVec.getLsbD_setWidth]
   by_cases h : i < 8
   · simp [h, hi]
-  · simp [BitVec.getLsbD_of_ge a i (by omega), BitVec.getLsbD_of_ge b i (by omega)]
+  · simp [BitVec.getLsbD_of_ge a i (by omega_using [h]), BitVec.getLsbD_of_ge b i (by omega_using [h])]
 
 theorem ext_add (a b : BitVec 8) : ((a.setWidth 64 + b.setWidth 64) <<< 56) >>> 56 = (a + b).setWidth 64 := by
   apply BitVec.eq_of_toNat_eq
   have ha := a.isLt; have hb := b.isLt
   simp only [BitVec.toNat_ushiftRight, BitVec.toNat_shiftLeft, BitVec.toNat_add, BitVec.toNat_setWidth,
     Nat.shiftLeft_eq, Nat.shiftRight_eq_div_pow]
-  rw [Nat.mod_eq_of_lt (show a.toNat < 2 ^ 64 by omega), Nat.mod_eq_of_lt (show b.toNat < 2 ^ 64 by omega),
-    Nat.mod_eq_of_lt (show a.toNat + b.toNat < 2 ^ 64 by omega)]
-  omega
+  rw [Nat.mod_eq_of_lt (show a.toNat < 2 ^ 64 by omega_using []), Nat.mod_eq_of_lt (show b.toNat < 2 ^ 64 by omega_using []),
+    Nat.mod_eq_of_lt (show a.toNat + b.toNat < 2 ^ 64 by omega_using [])]
+  omega_using []
 
 /-- The registers the steps of key expansion write. -/
 abbrev keyTemps : List Reg := [.a7, .a5, .a6, .t0, .t1, .t2, .t3]

@@ -85,7 +85,7 @@ theorem preR_of {s : State} (h : (Spec.RsaPkcs1Sig.recoverPrecomputedContract ab
     stackArgs_five, List.append_eq, List.range, List.range.loop] at h
   obtain ⟨sp1, sp2, hrd, hwr, on, oe, og, os, op, oa, ns, es, gs, sp, sa, ko, kn, ke, kg, ks, kp, ka, wo, wn, we,
     wg, ws, wp, ⟨k1, k2⟩, e1, e2, hh, hs, hp⟩ := h
-  exact ⟨sp1, by omega, hrd, hwr, on, oe, og, os, op, oa, ns, es, gs, sp, sa, ko, kn, ke, kg, ks, kp, ka, wo, wn,
+  exact ⟨sp1, by omega_using [sp2], hrd, hwr, on, oe, og, os, op, oa, ns, es, gs, sp, sa, ko, kn, ke, kg, ks, kp, ka, wo, wn,
     we, wg, ws, wp, k1, k2, e1, e2, hh, hs, hp⟩
 
 /-- The hash's length, at least one octet. -/

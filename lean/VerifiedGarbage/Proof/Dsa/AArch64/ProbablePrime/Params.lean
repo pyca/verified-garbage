@@ -38,7 +38,7 @@ abbrev wsRegion (s : State) : Region := ⟨s.gpr .x0, (s.gpr .x1).toNat * 8⟩
 
 theorem ws_sub {bits : Nat} {s : State} (A : PrimeABI bits s) {d n : Nat} (h : d + n ≤ domainCheck) :
     Region.Sub ⟨off (s.gpr .x0) d, n⟩ (wsRegion s) :=
-  Offset.sub_base _ (by have := A.size; omega)
+  Offset.sub_base _ (by have := A.size; omega_using [h, this])
 
 def params {bits : Nat} (hb : Supported bits) {s : State} (A : PrimeABI bits s) : PrimeParams where
   B := off (s.gpr .x0) arithmetic
@@ -60,15 +60,15 @@ def params {bits : Nat} (hb : Supported bits) {s : State} (A : PrimeABI bits s) 
   drawMin := by rcases hb with rfl | rfl | rfl | rfl | rfl <;> decide
   lenWords := by rcases hb with rfl | rfl | rfl | rfl | rfl <;> decide
   predBits := by
-    rw [VG.Proof.Dsa.Generation.predecessor_bits (by have := hb.le; omega) A.odd A.bits]
+    rw [VG.Proof.Dsa.Generation.predecessor_bits (by have := hb.le; omega_using [this]) A.odd A.bits]
     rcases hb with rfl | rfl | rfl | rfl | rfl <;> decide
   drawWidth := by
-    rw [VG.Proof.Dsa.Generation.witness_width (by have := hb.le; omega) A.odd A.bits]
+    rw [VG.Proof.Dsa.Generation.witness_width (by have := hb.le; omega_using [this]) A.odd A.bits]
     rcases hb with rfl | rfl | rfl | rfl | rfl <;> decide
   odd := A.odd
   n3 := by
-    have h := ((bitLength_iff_bounds (by have := hb.le; omega)).mp A.bits).1
-    have h4 : 2 ^ 2 ≤ 2 ^ (bits - 1) := Nat.pow_le_pow_right (by decide) (by have := hb.le; omega)
+    have h := ((bitLength_iff_bounds (by have := hb.le; omega_using [this])).mp A.bits).1
+    have h4 : 2 ^ 2 ≤ 2 ^ (bits - 1) := Nat.pow_le_pow_right (by decide) (by have := hb.le; omega_using [this])
     exact Nat.le_trans (by decide) (Nat.le_trans h4 h)
   checksMax := by rcases hb with rfl | rfl | rfl | rfl | rfl <;> decide
   randMax := by rw [bytesAt_length]; exact (s.gpr .x3).isLt

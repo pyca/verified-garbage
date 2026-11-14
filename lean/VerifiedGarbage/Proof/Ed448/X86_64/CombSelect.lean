@@ -54,13 +54,13 @@ theorem mask_ok {s : State} {base : Addr} (hs : Scr s base) {t i : Nat}
       (∀ r, r ∉ [Reg.rax, .rdx, .rcx] → u.gpr r = s.gpr r) ∧
       u.mem = s.mem ∧ u.rd = s.rd ∧ u.wr = s.wr := by
   have ia : InRegions (s.rd ++ s.wr) (off base (BITS + t)) 1 :=
-    ⟨_, List.mem_append_right _ hs.wr, contains_sc (by simp only [BITS]; omega)⟩
+    ⟨_, List.mem_append_right _ hs.wr, contains_sc (by simp only [BITS]; omega_using [ht])⟩
   have ib : InRegions (s.rd ++ s.wr) (off base (BITS + 114 + t)) 1 :=
-    ⟨_, List.mem_append_right _ hs.wr, contains_sc (by simp only [BITS]; omega)⟩
+    ⟨_, List.mem_append_right _ hs.wr, contains_sc (by simp only [BITS]; omega_using [ht])⟩
   have ic : InRegions (s.rd ++ s.wr) (off base (BITS + 228 + t)) 1 :=
-    ⟨_, List.mem_append_right _ hs.wr, contains_sc (by simp only [BITS]; omega)⟩
+    ⟨_, List.mem_append_right _ hs.wr, contains_sc (by simp only [BITS]; omega_using [ht])⟩
   have id : InRegions (s.rd ++ s.wr) (off base (BITS + 342 + t)) 1 :=
-    ⟨_, List.mem_append_right _ hs.wr, contains_sc (by simp only [BITS]; omega)⟩
+    ⟨_, List.mem_append_right _ hs.wr, contains_sc (by simp only [BITS]; omega_using [ht])⟩
   apply WP.of_runBlock
   simp only [combMask, runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, readSrc32,
     execAlu, State.load8, State.setReg32, ea_set .rax _ _ (by decide) (by decide), ea_set .rdx _ _ (by decide) (by decide), ea_flags, ea_bitsAt hs.rdi hb, ia, ib, ic, id, ba, bb, bc, bd,
@@ -81,8 +81,8 @@ theorem Bits.keep {base : Addr} {k : Nat} {s u : State} (h : Bits base k s) (f :
   intro t ht
   have hout : ofs base (off base (BITS + t)) < 64 ∨
       64 + 1584 ≤ ofs base (off base (BITS + t)) := by
-    rw [VG.Proof.X448.X86_64.ofs_off' base (by simp only [BITS]; omega)]
-    right; simp only [BITS]; omega
+    rw [VG.Proof.X448.X86_64.ofs_off' base (by simp only [BITS]; omega_using [ht])]
+    right; simp only [BITS]; omega_using []
   rw [f.mem _ hout]
   exact h t ht
 
@@ -90,14 +90,14 @@ theorem mask_bits_ok {s : State} {base : Addr} (hs : Scr s base) {k t i : Nat}
     (ht : t < 114) (hi : i < 16) (hb : s.gpr .rbx = BitVec.ofNat 64 t) (bs : Bits base k s) :
     WP isa (.block (combMask i)) s fun u =>
       u.gpr .rcx = mask (decide (Proof.Ed448.Comb.digit k t = i)) ∧ Keep base s u ∧ u.mem = s.mem := by
-  have bb := bs (t + 114) (by omega)
-  have bc := bs (t + 228) (by omega)
-  have bd := bs (t + 342) (by omega)
-  rw [show BITS + (t + 114) = BITS + 114 + t by omega] at bb
-  rw [show BITS + (t + 228) = BITS + 228 + t by omega] at bc
-  rw [show BITS + (t + 342) = BITS + 342 + t by omega] at bd
+  have bb := bs (t + 114) (by omega_using [ht])
+  have bc := bs (t + 228) (by omega_using [ht])
+  have bd := bs (t + 342) (by omega_using [ht])
+  rw [show BITS + (t + 114) = BITS + 114 + t by omega_using []] at bb
+  rw [show BITS + (t + 228) = BITS + 228 + t by omega_using []] at bc
+  rw [show BITS + (t + 342) = BITS + 342 + t by omega_using []] at bd
   refine WP.mono (mask_ok hs ht hi hb (Nat.mod_lt _ (by decide)) (Nat.mod_lt _ (by decide))
-    (Nat.mod_lt _ (by decide)) (Nat.mod_lt _ (by decide)) (bs t (by omega)) bb bc bd)
+    (Nat.mod_lt _ (by decide)) (Nat.mod_lt _ (by decide)) (bs t (by omega_using [ht])) bb bc bd)
     fun u ⟨cu, gu, mu, ru, wu⟩ => ⟨cu, ⟨fun r hr => gu r ?_, ru, wu, ?_⟩, mu⟩
   · intro h
     have hm : ∀ r ∈ [Reg.rax, .rdx, .rcx], r ∈ clob := by decide

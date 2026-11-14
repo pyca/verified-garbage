@@ -25,14 +25,14 @@ theorem buffer_bounds {base:Addr} {m m':Mem} {o n:Nat} (h:Outside base o n m m')
     (ho:2880≤o) (hb:BEnv m base) : BEnv m' base:=by
   intro i j hj
   have hi:=i.isLt
-  rw [h.limbs (Or.inl (by simp only [slot];omega)) (by simp only [slot];omega) (by omega)]
+  rw [h.limbs (Or.inl (by simp only [slot];omega_using [ho])) (by simp only [slot];omega_using []) (by omega_using [hj])]
   exact hb i j hj
 
 theorem buffer_table {base:Addr} {m m':Mem} {o n:Nat} (h:Outside base o n m m')
     (ho:o+n≤TAB ∨ TAB+1536≤o) {P:Spec.Ed448.Point} (ht:OddTabOk m base P 8) : OddTabOk m' base P 8:=by
   have hm:∀ e<8,∀ w<24,Window.tw m' base e w=Window.tw m base e w:=by
     intro e he w hw
-    exact h.word (by omega) (by simp only [TAB];omega)
+    exact h.word (by omega_using [ho, he, hw]) (by simp only [TAB];omega_using [he, hw])
   intro e he
   refine ⟨?_,fun w hw => ?_⟩
   · rw [Window.TPt_of_tw (hm e he)]
@@ -45,7 +45,7 @@ theorem buffer_xbounds {base:Addr} {m m':Mem} {o n:Nat} (h:Outside base o n m m'
     (hx:∀ e<8,∀ w<8,(Window.tw m base e w).toNat<VG.Proof.Curve448.AArch64.Fast.Mb) :
     ∀ e<8,∀ w<8,(Window.tw m' base e w).toNat<VG.Proof.Curve448.AArch64.Fast.Mb:=by
   intro e he w hw
-  rw [Window.tw,h.word (by omega) (by simp only [TAB];omega)]
+  rw [Window.tw,h.word (by omega_using [ho, he, hw]) (by simp only [TAB];omega_using [he, hw])]
   exact hx e he w hw
 
 theorem buffer_bytes {base:Addr} {m m':Mem} {o n d k:Nat} (h:Outside base o n m m')
@@ -55,7 +55,7 @@ theorem buffer_bytes {base:Addr} {m m':Mem} {o n d k:Nat} (h:Outside base o n m 
   apply List.map_congr_left
   intro i hi
   have hi':i<k:=List.mem_range.mp hi
-  exact h _ (by rw [VG.Proof.X448.AArch64.ofs_off base (by omega)];omega)
+  exact h _ (by rw [VG.Proof.X448.AArch64.ofs_off base (by omega_using [hd, hi'])];omega_using [ho, hi'])
 
 theorem buffer_baseTable {base p:Addr} {s t:State} {o n:Nat} (h:Outside base o n s.mem t.mem)
     (ho:o+n≤8192) (hr:t.rd++t.wr=s.rd++s.wr) (ht:BaseTableAt s base p) : BaseTableAt t base p:=by
@@ -66,6 +66,6 @@ theorem buffer_baseTable {base p:Addr} {s t:State} {o n:Nat} (h:Outside base o n
   have he:p+BitVec.ofNat 64 (8*i)+BitVec.ofNat 64 j=p+BitVec.ofNat 64 (8*i+j):=
     Offset.add_add _ _ _
   rw [he]
-  exact h _ (Or.inr (Nat.le_trans ho (ht.far _ (by omega))))
+  exact h _ (Or.inr (Nat.le_trans ho (ht.far _ (by omega_using [hi, hj]))))
 
 end VG.Proof.Ed448.AArch64.Sparse

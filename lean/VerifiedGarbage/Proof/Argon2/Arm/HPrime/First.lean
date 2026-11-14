@@ -30,10 +30,10 @@ open VG.Proof.Blake2.Arm.Stream (wp_adds wp_adc)
 theorem le64_beq {x : Nat} (h₁ : 1 ≤ x) (h₂ : x < 2 ^ 32) :
     ((BitVec.ofNat 32 x - 1) >>> 6 - 0 == 0) = decide (x ≤ 64) := by
   rw [show (1 : BitVec 32) = BitVec.ofNat 32 1 from rfl, MdStream.Arm.sub_ofNat h₁, show ∀ y : BitVec 32, y - 0 = y from fun y => BitVec.sub_zero y,
-    MdStream.Arm.ofNat_shr (by omega), ofNat_beq_zero (by omega)]
+    MdStream.Arm.ofNat_shr (by omega_using [h₂]), ofNat_beq_zero (by omega_using [h₂])]
   by_cases h : x ≤ 64
-  · simp only [h, decide_true, decide_eq_true_eq]; omega
-  · simp only [h, decide_false, decide_eq_false_iff_not]; omega
+  · simp only [h, decide_true, decide_eq_true_eq]; omega_using [h]
+  · simp only [h, decide_false, decide_eq_false_iff_not]; omega_using [h]
 
 /-- The comparisons with 64 of the bytes left (in `r8`). -/
 theorem cmpLeft_ok {s : State} {x : Nat} (hx : s.gpr .r8 = BitVec.ofNat 32 x) (h₁ : 1 ≤ x) (h₂ : x < 2 ^ 32) :
@@ -78,7 +78,7 @@ theorem choose_ok {s : State} (_b : Body s₀ s) (o : Out s₀ s []) :
   · have : ol s₀ ≤ 64 := by simpa using h
     rw [u₄.gpr, r8₃, Nat.min_eq_left this]
   · exact k₃.trans (Keeps.same (fun r hr => u₄.other r (kept_ne r hr).2.1) u₄.sp u₄.mem u₄.rd u₄.wr)
-  · have : 64 ≤ ol s₀ := by simp at h; omega
+  · have : 64 ≤ ol s₀ := by simp at h; omega_using [h]
     rw [u₄.gpr, Nat.min_eq_right this]; rfl
   · exact k₃.trans (Keeps.same (fun r hr => u₄.other r (kept_ne r hr).2.1) u₄.sp u₄.mem u₄.rd u₄.wr)
 
@@ -106,12 +106,12 @@ include hp
 theorem F0.keeps {s t : State} (h : F0 s₀ s) (k : Keeps (scr s₀) (sp₀ s₀) s t) : F0 s₀ t := by
   refine ⟨h.body.keeps hp k, h.out.keeps hp k, ?_⟩
   have hif := hp.in_fits
-  have := k.bytes (R := inR s₀) (by simp; omega)
+  have := k.bytes (R := inR s₀) (by simp; omega_using [hif])
     (hp.in_scr.sub_right (Region.sub_prefix (by decide))) hp.stk_in.symm
   simp only at this
   rw [this, h.input]
 
-theorem nF_pos : 1 ≤ nF s₀ := by have := hp.ol_pos; simp only [nF]; omega
+theorem nF_pos : 1 ≤ nF s₀ := by have := hp.ol_pos; simp only [nF]; omega_using [this]
 
 theorem first_choose {s : State} (h : F0 s₀ s) :
     WP isa chooseLength s fun t => F0 s₀ t ∧ t.gpr .r1 = BitVec.ofNat 32 (nF s₀) :=
@@ -136,7 +136,7 @@ theorem first_fixed {s : State}
     WP isa (absorbFixed 832 4) s fun t => F0 s₀ t ∧
       Repr b (Spec.Blake2.init b (nF s₀) 0) t.mem (P s₀) (Spec.Argon2.le32 (ol s₀)) := by
   have hs := hp.scr_fits
-  refine (absorbFixed_ok (h.1.body.ctx hp) (offset := 832) (size := 4) (by decide) (by decide) (by omega)
+  refine (absorbFixed_ok (h.1.body.ctx hp) (offset := 832) (size := 4) (by decide) (by decide) (by omega_using [hs])
     (by decide) (by decide) (by decide) (pfx_cov hp h.1.body) (hp.stk_scr.sub_right (Offset.sub_base _ (by decide)))
     h.2).mono fun t ⟨r, k⟩ => ⟨h.1.keeps hp k, ?_⟩
   rw [show BitVec.ofNat 64 832 = (832 : Addr) from rfl, h.1.body.pfx] at r
@@ -173,7 +173,7 @@ theorem first_input {s : State}
       exact ⟨inR s₀, by simp, 0, by simp, by simp⟩
   refine (update_ok (F₄.body.ctx hp) (h0 := Spec.Blake2.init Spec.Blake2.b (nF s₀) 0) r9 r10 hif hDc
     (hp.in_scr.sub_right (Region.sub_prefix (by decide))) hp.stk_in (by rw [m₄]; exact h.2) cnt₄
-    (by rw [Proof.Argon2.le32_length]; omega)).mono fun s₅ ⟨r₅, cs₅, rd₅, wr₅, sp₅, f₅⟩ => ?_
+    (by rw [Proof.Argon2.le32_length]; omega_using [hif])).mono fun s₅ ⟨r₅, cs₅, rd₅, wr₅, sp₅, f₅⟩ => ?_
   rw [F₄.input] at r₅
   refine ⟨F₄.keeps hp (Keeps.of_call cs₅ sp₅ rd₅ wr₅ f₅ fun r hr => ?_), r₅⟩
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -212,11 +212,11 @@ theorem first_finish {s : State}
     rw [u₃.gpr, u₃.other _ (by decide), u₂.gpr, u₂.other _ (by decide), u₁.gpr, c₂, r6, List.length_append,
       Proof.Argon2.le32_length]
     simp only [inB, bytesAt, List.length_map, List.length_range]
-    rw [show 4 + inl s₀ = inl s₀ + 4 by omega]
+    rw [show 4 + inl s₀ = inl s₀ + 4 by omega_using []]
     exact count4 _ hil
   refine (finalize_ok (F₃.body.ctx hp) (by rw [m₃]; exact h.2) cnt
     (by simp only [List.length_append, Proof.Argon2.le32_length, inB, bytesAt, List.length_map,
-      List.length_range]; omega)).mono ?_
+      List.length_range]; omega_using [hif])).mono ?_
   rintro t ⟨d, cs, rd, wr, sp, f⟩
   refine ⟨F₃.keeps hp (Keeps.of_call cs sp rd wr f fun r hr => ?_), ?_⟩
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr

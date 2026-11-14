@@ -95,9 +95,9 @@ theorem frame_sub {s : State} {N : Nat} (hN : 16 ≤ N) :
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.toNat_sub, BitVec.toNat_add, BitVec.toNat_ofNat]
     rw [show (16 : BitVec 64).toNat = 16 from rfl]
-    omega
+    omega_using [hN]
   rw [e]
-  exact Offset.sub_base _ (by omega)
+  exact Offset.sub_base _ (by omega_using [hN])
 
 /-- The bytes of a region apart from the stack below the stack pointer, after
 the push. -/

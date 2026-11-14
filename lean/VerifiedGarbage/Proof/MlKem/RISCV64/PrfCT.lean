@@ -53,9 +53,9 @@ theorem prfBody_ct {K : KemLay} (hK : K.WF) {L : Lay} (withNtt : Bool) {N₁ N :
   refine RelCT.seq (R := fun a b => PS L N a ∧ PS L N b)
     (relct_wp (taint_block [.s11] (fun a b hab => hab.1.1.sp_eq hab.2.1) (fun a b hab r hr => by
       rw [List.mem_singleton] at hr; subst hr; rw [hab.1.1.s11, hab.2.1.s11]) (by taint_decide))
-      fun a b hab => ⟨WP.mono (sb6_ok hab.1.1 (by omega) hab.1.2) fun s' ⟨k', _⟩ =>
+      fun a b hab => ⟨WP.mono (sb6_ok hab.1.1 (by omega_using [hN, hN₁, k4]) hab.1.2) fun s' ⟨k', _⟩ =>
           ⟨k'.ctx (by decide) hab.1.1, by rw [k'.cs .s6 (by decide) (by decide), hab.1.2]⟩,
-        WP.mono (sb6_ok hab.2.1 (by omega) hab.2.2) fun s' ⟨k', _⟩ =>
+        WP.mono (sb6_ok hab.2.1 (by omega_using [hN, hN₁, k4]) hab.2.2) fun s' ⟨k', _⟩ =>
           ⟨k'.ctx (by decide) hab.2.1, by rw [k'.cs .s6 (by decide) (by decide), hab.2.2]⟩⟩) ?_
   -- `PRF`
   have hh : ∀ s, PS L N s → WP isa (hash 136 0x1f [⟨.s11, oSigma, 33⟩] [⟨.s11, oPrf, 128⟩]) s (PS L N) :=
@@ -69,7 +69,7 @@ theorem prfBody_ct {K : KemLay} (hK : K.WF) {L : Lay} (withNtt : Bool) {N₁ N :
   let F : State → Prop := fun s => PS L N s ∧ s.gpr .a0 = L.ptr 0 + BitVec.ofNat 64 oPrf ∧
     s.gpr .a1 = L.ptr 0 + BitVec.ofNat 64 (oPoly (K.k + N))
   have ha : ∀ s, PS L N s → WP isa (.block (.addi .a0 .s11 oPrf :: slotAt .a1 .s6 K.k)) s F :=
-    fun s h => WP.mono (cbdArgs_ok hK (by omega) h.1.s11 h.2) fun s' ⟨o', g3, g4⟩ =>
+    fun s h => WP.mono (cbdArgs_ok hK (by omega_using [hN, hN₁]) h.1.s11 h.2) fun s' ⟨o', g3, g4⟩ =>
       ⟨⟨h.1.only o', by rw [o'.cs .s6 (by decide), h.2]⟩, g3, g4⟩
   refine RelCT.seq (R := fun a b => F a ∧ F b)
     (relct_wp (relct_noMem (by rfl)) fun a b hab => ⟨ha a hab.1, ha b hab.2⟩) ?_
@@ -88,7 +88,7 @@ theorem prfBody_ct {K : KemLay} (hK : K.WF) {L : Lay} (withNtt : Bool) {N₁ N :
       s.gpr .a1 = L.ptr 0 + BitVec.ofNat 64 K.oNtt
     have hn : ∀ s, PS L N s → WP isa (.block (slotAt .a0 .s6 K.k ++ polyAddr .a1 K.jNtt)) s
         fun s' => G s' ∧ Ctx L s' := fun s h =>
-      WP.mono (nttArgs_ok hK (by omega) h.1.s11 h.2) fun s' ⟨o', g3, g4⟩ =>
+      WP.mono (nttArgs_ok hK (by omega_using [hN, hN₁]) h.1.s11 h.2) fun s' ⟨o', g3, g4⟩ =>
         ⟨⟨rfl, g3, g4⟩, h.1.only o'⟩
     exact RelCT.seq (R := fun a b => (G a ∧ Ctx L a) ∧ (G b ∧ Ctx L b))
       (relct_wp (relct_noMem (by rfl)) fun a b hab => ⟨hn a hab.1, hn b hab.2⟩)
@@ -103,18 +103,18 @@ theorem prfLoop_ct {K : KemLay} (hK : K.WF) {L : Lay} (withNtt : Bool) {N₀ N�
   refine RelCT.seq (R := fun a b => PrfInv K L withNtt σ₁ N₀ N₁ s₀₁ 0 a ∧ PrfInv K L withNtt σ₂ N₀ N₁ s₀₂ 0 b)
     (relct_wp (relct_noMem (by rfl)) fun a b hab => ⟨?_, ?_⟩)
     (RelCT.mono (relct_loop_nz (I₁ := PrfInv K L withNtt σ₁ N₀ N₁ s₀₁)
-      (I₂ := PrfInv K L withNtt σ₂ N₀ N₁ s₀₂) (N := N₁ - N₀) (by omega) fun t ht => ?_)
+      (I₂ := PrfInv K L withNtt σ₂ N₀ N₁ s₀₂) (N := N₁ - N₀) (by omega_using [h01]) fun t ht => ?_)
       (fun _ _ h => h) fun _ _ _ => trivial)
   · rw [hab.1]
-    exact WP.mono (li6_ok (by omega)) fun s₁ ⟨k₁, g₁, m₁⟩ =>
+    exact WP.mono (li6_ok (by omega_using [h01, hN₁, k4])) fun s₁ ⟨k₁, g₁, m₁⟩ =>
       ⟨k₁.mono (fun _ h => absurd h List.not_mem_nil), by rw [g₁, Nat.add_zero], by rw [m₁]; exact hσ₁,
-        fun N h1 h2 => absurd h2 (by omega)⟩
+        fun N h1 h2 => absurd h2 (by omega_using [h1])⟩
   · rw [hab.2]
-    exact WP.mono (li6_ok (by omega)) fun s₁ ⟨k₁, g₁, m₁⟩ =>
+    exact WP.mono (li6_ok (by omega_using [h01, hN₁, k4])) fun s₁ ⟨k₁, g₁, m₁⟩ =>
       ⟨k₁.mono (fun _ h => absurd h List.not_mem_nil), by rw [g₁, Nat.add_zero], by rw [m₁]; exact hσ₂,
-        fun N h1 h2 => absurd h2 (by omega)⟩
+        fun N h1 h2 => absurd h2 (by omega_using [h1])⟩
   -- one iteration: the body's timing from where it runs, and each run by correctness
-  exact relct_wp (RelCT.mono (prfBody_ct hK (N := N₀ + t) withNtt (by omega) hN₁) (fun a b hab =>
+  exact relct_wp (RelCT.mono (prfBody_ct hK (N := N₀ + t) withNtt (by omega_using [ht]) hN₁) (fun a b hab =>
       ⟨⟨hab.1.kx.ctx (by decide) hc₁, hab.1.s6⟩, ⟨hab.2.kx.ctx (by decide) hc₂, hab.2.s6⟩⟩) fun _ _ h => h)
     fun a b hab => ⟨prfStep_ok hK hc₁ withNtt hN₁ ht hab.1, prfStep_ok hK hc₂ withNtt hN₁ ht hab.2⟩
 

@@ -129,20 +129,20 @@ theorem crtP_view {a s t : State} (S : SibP a s) (h : J1P s t) :
   obtain ⟨⟨he, hargs, hdi, hsi, hdx, hcx, h8, h9⟩, h96, h104⟩ := h
   obtain ⟨hp, hf⟩ := preFP_of S.1
   have e12 : stackArg (t.callEntry.withRegions (crtRdP s) (crtWr s)) 12 = stackArg s 14 :=
-    (stackArg_entry he.rsp _ _ (by omega)).trans h96
+    (stackArg_entry he.rsp _ _ (by omega_using [])).trans h96
   have e13 : stackArg (t.callEntry.withRegions (crtRdP s) (crtWr s)) 13 = stackArg s 15 :=
-    (stackArg_entry he.rsp _ _ (by omega)).trans h104
+    (stackArg_entry he.rsp _ _ (by omega_using [])).trans h104
   have rcx : (t.callEntry.withRegions (crtRdP s) (crtWr s)).gpr .rcx = s.gpr .rcx := by
     simp only [State.withRegions_gpr, State.callEntry_gpr _ (show Reg.rcx ≠ .rsp by decide), hcx]
   refine ⟨?_, fun i hi => ?_, ?_, ?_, ?_, ?_⟩
   · rw [entry_regs, hdi, hsi, hdx, hcx, h8, h9, he.rsp, S.fb, S.gpr (r := .rcx) (by decide),
       S.gpr (r := .rdx) (by decide), S.arg (by decide)]
-  · rw [stackArg_entry he.rsp _ _ (by omega), hargs i hi, S.arg (by omega)]
+  · rw [stackArg_entry he.rsp _ _ (by omega_using [hi]), hargs i hi, S.arg (by omega_using [hi])]
   · rw [e12]; exact S.2.2.1.symm
   · rw [e13]; exact S.2.2.2.1.symm
   · simp only [State.withRegions_gpr, State.callEntry_gpr _ (show Reg.rdx ≠ .rsp by decide),
       State.callEntry_gpr _ (show Reg.rcx ≠ .rsp by decide), hdx, hcx]
-    rw [he.entryBytes _ _ hp.dKn hp.dOn hp.dns.symm (by have := hp.wN; omega), S.n]
+    rw [he.entryBytes _ _ hp.dKn hp.dOn hp.dns.symm (by have := hp.wN; omega_using []), S.n]
   · simp only [Spec.Rsa.privatePrecomputedLeak, rcx, e12]
     rw [he.entryWordsP hf, S.pre]
 
@@ -194,7 +194,7 @@ theorem pdP_view {a s t : State} (S : SibP a s) (h : J5P s t) :
   have hk2 := hp.k2
   have hpwl := preWords_le hp
   have hcxN : (BitVec.ofNat 64 (Spec.Rsa.precomputedWords (s.gpr .rcx).toNat)).toNat =
-      Spec.Rsa.precomputedWords (s.gpr .rcx).toNat := by rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt (by omega)
+      Spec.Rsa.precomputedWords (s.gpr .rcx).toNat := by rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt (by omega_using [hpwl])
   have rcx := S.gpr (r := .rcx) (by decide)
   have a14 : stackArg s 14 = stackArg a 14 := S.2.2.1.symm
   refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
@@ -209,7 +209,7 @@ theorem pdP_view {a s t : State} (S : SibP a s) (h : J5P s t) :
     rw [he.entryWordsP hf, S.pre]
   · simp only [State.withRegions_gpr, State.callEntry_gpr _ (show Reg.r8 ≠ .rsp by decide),
       State.callEntry_gpr _ (show Reg.r9 ≠ .rsp by decide), h8, h9]
-    rw [he.entryBytes _ _ hp.dKe hp.dOe hp.des.symm (by have := hp.wE; omega), S.e]
+    rw [he.entryBytes _ _ hp.dKe hp.dOe hp.des.symm (by have := hp.wE; omega_using []), S.e]
 
 theorem pdP_ct (P : PublicImpl) (name : String) :
     RelCT isa (Two (AtP J5P)) (.call name (P.code)) fun _ _ => True := by
@@ -262,7 +262,7 @@ theorem pdArgsP_two : RelCT isa (Two (AtP J2)) (.block pdArgsP) (Two (AtP J5P)) 
       have hw : ∀ {d : Nat}, d < 4 → word t₃.mem (fb s) (8 * d) =
           [off (fb s) oM, s.gpr .rcx, stackArg s 12, stackArg s 13].getD d 0 := fun {d} hd => by
         rw [hm₃]
-        rcases (show d = 0 ∨ d = 1 ∨ d = 2 ∨ d = 3 by omega) with rfl | rfl | rfl | rfl
+        rcases (show d = 0 ∨ d = 1 ∨ d = 2 ∨ d = 3 by omega_using [hd]) with rfl | rfl | rfl | rfl
         · simp (disch := decide) only [word_wo, word_self0, Nat.mul_zero]
           rfl
         · simp (disch := decide) only [word_wo, word_writeW_self, Nat.mul_one]; rfl

@@ -76,12 +76,12 @@ theorem pubArgs_ok {s u : State} (L : Lay u (fb s) (stackArg s 6)) {V : Nat → 
   simp only [Bignum.word] at hs
   have G' := L.geo
   have e : ∀ k, 21 ≤ k → k ≤ 26 → W k = encW s k := hW
-  have w21 : W 21 = s.gpr .rdi := (e 21 (by omega) (by omega)).trans (by simp [encW, upd])
-  have w22 : W 22 = s.gpr .rdx := (e 22 (by omega) (by omega)).trans (by simp [encW, upd])
-  have w23 : W 23 = s.gpr .rcx := (e 23 (by omega) (by omega)).trans (by simp [encW, upd])
-  have w24 : W 24 = s.gpr .r8 := (e 24 (by omega) (by omega)).trans (by simp [encW, upd])
-  have w25 : W 25 = s.gpr .r9 := (e 25 (by omega) (by omega)).trans (by simp [encW, upd])
-  have w26 : W 26 = stackArg s 7 := (e 26 (by omega) (by omega)).trans (by simp [encW, upd])
+  have w21 : W 21 = s.gpr .rdi := (e 21 (by omega_using []) (by omega_using [])).trans (by simp [encW, upd])
+  have w22 : W 22 = s.gpr .rdx := (e 22 (by omega_using []) (by omega_using [])).trans (by simp [encW, upd])
+  have w23 : W 23 = s.gpr .rcx := (e 23 (by omega_using []) (by omega_using [])).trans (by simp [encW, upd])
+  have w24 : W 24 = s.gpr .r8 := (e 24 (by omega_using []) (by omega_using [])).trans (by simp [encW, upd])
+  have w25 : W 25 = s.gpr .r9 := (e 25 (by omega_using []) (by omega_using [])).trans (by simp [encW, upd])
+  have w26 : W 26 = stackArg s 7 := (e 26 (by omega_using []) (by omega_using [])).trans (by simp [encW, upd])
   have R1 := (((R.wf G' (k := 0) (by decide) (off (stackArg s 6) oEm)).wf G' (k := 1) (by decide) (s.gpr .rcx)).wf G'
     (k := 2) (by decide) (off (stackArg s 6) oRsa)).wf G' (k := 3) (by decide) (stackArg s 7 - 1024)
   have z : off (fb s) (8 * 0) = fb s := BitVec.add_zero _
@@ -118,9 +118,9 @@ theorem stackArg_entry {t : State} {F : Addr} (hsp : t.gpr .rsp = F) (hF : 8 ≤
     stackArg (t.callEntry.withRegions rd wr) i = t.mem.readW (off F (8 * i)) 64 := by
   have hb : F - 8 + BitVec.ofNat 64 (8 * (i + 1)) = off F (8 * i) := by
     simp only [off]
-    rw [show 8 * (i + 1) = 8 + 8 * i by omega, BitVec.ofNat_add, ← BitVec.add_assoc,
+    rw [show 8 * (i + 1) = 8 + 8 * i by omega_using [], BitVec.ofNat_add, ← BitVec.add_assoc,
       show (8 : BitVec 64) = BitVec.ofNat 64 8 from rfl, BitVec.sub_add_cancel]
-  have hsep := Offset.sep (F - 8) (d := 8 * (i + 1)) (n := 8) (e := 0) (k := 8) (by omega) (by omega) (by omega)
+  have hsep := Offset.sep (F - 8) (d := 8 * (i + 1)) (n := 8) (e := 0) (k := 8) (by omega_using []) (by omega_using [hF, hi]) (by omega_using [])
   rw [show F - 8 + BitVec.ofNat 64 0 = F - 8 from BitVec.add_zero _, hb] at hsep
   simp only [stackArg, stackArgAddr, State.withRegions_mem, State.withRegions_gpr, State.callEntry_rsp,
     State.callEntry_mem, hsp, hb]
@@ -142,19 +142,19 @@ theorem rsa_toNat {s : State} (hp : EPre H s) :
       (off (stackArg s 6) oRsa).toNat = (stackArg s 6).toNat + oRsa := by
   have := hp.hsl; have := hp.wS; have := hp.k1
   constructor
-  · rw [BitVec.toNat_sub, show (1024 : BitVec 64).toNat = 1024 from rfl]; omega
-  · simp only [off, BitVec.toNat_add, BitVec.toNat_ofNat]; unfold oRsa; omega
+  · rw [BitVec.toNat_sub, show (1024 : BitVec 64).toNat = 1024 from rfl]; omega_arith
+  · simp only [off, BitVec.toNat_add, BitVec.toNat_ofNat]; unfold oRsa; omega_arith
 
 theorem rsa_sub {s : State} (hp : EPre H s) : Region.Sub (rsaR s) (scrR s) := by
   have ⟨h1, h2⟩ := rsa_toNat hp
   have := hp.hsl
   simp only [rsaR, scrR]
   rw [h1]
-  exact Offset.sub_base _ (by unfold oRsa; omega)
+  exact Offset.sub_base _ (by unfold oRsa; omega_using [this])
 
 theorem em_sub {s : State} (hp : EPre H s) : Region.Sub ⟨off (stackArg s 6) oEm, (s.gpr .rcx).toNat⟩ (scrR s) := by
   have := hp.hsl; have := hp.k2
-  exact Offset.sub_base _ (by unfold oEm; omega)
+  exact Offset.sub_base _ (by unfold oEm; omega_arith)
 
 theorem pub_covers {s t : State} (hp : EPre H s) (hrd : t.rd = s.rd) (hwr : t.wr = [frR s, outR s, scrR s]) :
     Covers (pubRd s ++ pubWr s) (t.rd ++ t.wr) ∧ Covers (pubWr s) t.wr := by
@@ -165,8 +165,8 @@ theorem pub_covers {s t : State} (hp : EPre H s) (hrd : t.rd = s.rd) (hwr : t.wr
     simp only [pubWr, rsaR, List.mem_cons, List.not_mem_nil, or_false] at hr
     rw [hwr]
     rcases hr with rfl | rfl
-    · exact ⟨outR s, by simp, 0, z _, by simp only [outR]; omega⟩
-    · exact ⟨scrR s, by simp, oRsa, rfl, by simp only [scrR]; rw [r1]; unfold oRsa; omega⟩
+    · exact ⟨outR s, by simp, 0, z _, by simp only [outR]; omega_using [hsi]⟩
+    · exact ⟨scrR s, by simp, oRsa, rfl, by simp only [scrR]; rw [r1]; unfold oRsa; omega_using [hsl]⟩
   have cr : Covers (rdL H s) (t.rd ++ t.wr) := by rw [hrd]; exact hp.hrd.left
   refine ⟨Covers.append_left (Covers.of_forall fun r hr => ?_) cw.right, cw⟩
   simp only [pubRd, List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -175,9 +175,9 @@ theorem pub_covers {s t : State} (hp : EPre H s) (hrd : t.rd = s.rd) (hwr : t.wr
   · exact (Covers.of_mem (by intro r hr; rw [List.mem_singleton.mp hr]; simp [rdL])).trans cr
   · refine Covers.of_sub fun r hr => ?_
     rw [List.mem_singleton.mp hr]
-    exact ⟨scrR s, List.mem_append_right _ (by rw [hwr]; simp), oEm, rfl, by simp only [scrR]; unfold oEm; omega⟩
+    exact ⟨scrR s, List.mem_append_right _ (by rw [hwr]; simp), oEm, rfl, by simp only [scrR]; unfold oEm; omega_using [hsl]⟩
   · refine Covers.of_sub fun r hr => ?_
     rw [List.mem_singleton.mp hr]
-    exact ⟨frR s, List.mem_append_right _ (by rw [hwr]; simp), 0, z _, by dsimp only; unfold frameBytes; omega⟩
+    exact ⟨frR s, List.mem_append_right _ (by rw [hwr]; simp), 0, z _, by dsimp only; unfold frameBytes; omega_using []⟩
 
 end VG.Proof.RsaOaep.X86_64

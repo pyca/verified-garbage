@@ -57,7 +57,7 @@ theorem Base.pk {v : VD} {s : State} (B : Base v s) (h : KV v) : PK v := by
   have hy : 3 * v.L.pl + v.L.ql ≤ v.kn := Nat.le_of_eq hkn.symm
   simp only [B.p, B.q, B.g, B.y hy] at sz qo po g1 y1 d gq yq
   have bd : 1 < v.p ∧ 255 < v.q ∧ v.q < v.p := VG.Proof.Dsa.supported_bounds sz
-  exact ⟨⟨⟨⟨sz, po, qo⟩, (pmod_iff (p := v.p) (q := v.q) (by omega) (by omega)).mp d⟩, g1, gq⟩, y1, yq⟩
+  exact ⟨⟨⟨⟨sz, po, qo⟩, (pmod_iff (p := v.p) (q := v.q) (by omega_using [bd]) (by omega_using [bd])).mp d⟩, g1, gq⟩, y1, yq⟩
 
 /-- On entry. -/
 def PV0 (v : VD) (s : State) : Prop := vpContract.pre s ∧ vdOf s = v

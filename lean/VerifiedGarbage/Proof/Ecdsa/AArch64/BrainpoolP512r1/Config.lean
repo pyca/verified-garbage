@@ -26,11 +26,11 @@ theorem brainpoolp512r1_nBits : Spec.Ecdsa.nBits brainpoolp512r1.C = 512 := by
     (Nat.le_log2 (by decide +kernel)).mpr (by decide +kernel)
   have h2 : Spec.BrainpoolP512r1.curve.n.log2 < 512 :=
     (Nat.log2_lt (by decide +kernel)).mpr (by decide +kernel)
-  omega
+  omega_using [h1, h2]
 
 /-- No bit of a hash of `64` bytes is dropped. -/
 theorem brainpoolp512r1_sh : brainpoolp512r1.sh = 0 := by
-  have := brainpoolp512r1_nBits; have : brainpoolp512r1.C.len = 64 := rfl; unfold Cfg.sh; omega
+  have := brainpoolp512r1_nBits; have : brainpoolp512r1.C.len = 64 := rfl; unfold Cfg.sh; omega_arith
 
 theorem brainpoolp512r1_ok (hI : Weierstrass.AArch64.InvSounds) : BaseCfgOk brainpoolp512r1 where
   n0 := by decide

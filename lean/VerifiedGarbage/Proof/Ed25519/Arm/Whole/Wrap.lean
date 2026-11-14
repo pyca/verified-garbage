@@ -45,7 +45,7 @@ theorem base_top {s : State} (h : 280 ≤ s.sp.toNat) : (base s).toNat + 280 = s
   change (s.sp - 280#32).toNat + 280 = s.sp.toNat
   rw [BitVec.toNat_sub_of_le (by change 280 ≤ s.sp.toNat; exact h)]
   change s.sp.toNat - 280 + 280 = s.sp.toNat
-  omega
+  omega_using [h]
 
 theorem base_addr {s : State} (h : 280 ≤ s.sp.toNat) :
     State.addr (base s) = State.addr s.sp - 280 := by
@@ -64,7 +64,7 @@ theorem entered_wr {s : State} (h : 280 ≤ s.sp.toNat) :
     ⟨State.addr (s.sp - 4#32 - 4#32 - 24#32), 24⟩ ::
     ⟨State.addr (s.sp - 4#32 - 4#32), 4⟩ :: ⟨State.addr (s.sp - 4#32), 4⟩ :: s.wr = _
   rw [entered_sp, ← base_args, ← base_pad, ← base_lr,
-    addr_add (by omega), addr_add (by omega), addr_add (by omega)]
+    addr_add (by omega_using [hb]), addr_add (by omega_using [hb]), addr_add (by omega_using [hb])]
   rfl
 
 theorem entered_mem {s : State} (h : 280 ≤ s.sp.toNat) :
@@ -74,7 +74,7 @@ theorem entered_mem {s : State} (h : 280 ≤ s.sp.toNat) :
   have hs := s.sp.isLt
   change (s.mem.writeW (State.addr (s.sp - 4#32)) (s.gpr .lr)).writeW
     (State.addr (s.sp - 4#32 - 4#32)) (s.gpr .r12) = _
-  rw [← base_pad, ← base_lr, addr_add (by omega), addr_add (by omega)]
+  rw [← base_pad, ← base_lr, addr_add (by omega_using [hb]), addr_add (by omega_using [hb])]
   rfl
 
 end VG.Proof.Ed25519.Arm.Whole
@@ -121,12 +121,12 @@ theorem input_entered {s : State} {j : Nat} (hs : 280 ≤ s.sp.toNat)
     have hb := base_top hs
     have ae : State.addr (s.sp + BitVec.ofNat 32 (4 * (j - 4))) =
         State.addr (base s) + BitVec.ofNat 64 (280 + 4 * (j - 4)) := by
-      rw [← e, entered_sp, addr_add (by omega)]
+      rw [← e, entered_sp, addr_add (by omega_using [ht, hb])]
     refine (entered_frame hs).readW (r := ⟨State.addr (s.sp + BitVec.ofNat 32 (4 * (j - 4))), 4⟩)
       (Region.contains_self _ _) ?_ (by decide)
     rintro r hr
     rw [List.mem_singleton.mp hr, ae]
-    exact Offset.disjoint_base _ (by omega) (by omega)
+    exact Offset.disjoint_base _ (by omega_using []) (by omega_using [_hj])
 
 theorem saved_words {s p : State} {n j : Nat} (hs : 280 ≤ s.sp.toNat)
     (hn : n ≤ 6) (ht : s.sp.toNat + 4 * (n - 4) ≤ 2 ^ 32)
@@ -134,11 +134,11 @@ theorem saved_words {s p : State} {n j : Nat} (hs : 280 ≤ s.sp.toNat)
     p.mem.readW (State.addr (base s) + BitVec.ofNat 64 (248 + 4 * j)) 32 = originalWord s j := by
   have h := hp.words j hj
   rw [entered_sp] at h
-  refine h.trans (input_entered hs (by omega) ?_)
+  refine h.trans (input_entered hs (by omega_using [hn, hj]) ?_)
   by_cases h4 : j < 4
   · have hi := s.sp.isLt
-    omega
-  · omega
+    omega_using [ht, hj]
+  · omega_using [ht, hj]
 
 /-- Widen permissions around a body while retaining its precise write frame. -/
 theorem narrow {c : Prog isa} {s : State} {rd wr : List Region} {P Q : State → Prop}
@@ -226,26 +226,26 @@ theorem wrap_ok {body : Prog isa} (hn : body.noFrames = true) {s : State} {n : N
         Ctx (base s) s.gpr p.mem (bodyRd s) s.wr u ∧ P p.mem u.mem (u.gpr .r0)) :
     WP isa (wrap n body) s fun t => abiPreserved s t ∧
       ∃ m, Frame [stack s] s.mem m ∧ P m t.mem (t.gpr .r0) := by
-  refine WP.frame (by decide) (by change 4 ≤ s.sp.toNat; omega) (by decide) ?_
+  refine WP.frame (by decide) (by change 4 ≤ s.sp.toNat; omega_using [hsp]) (by decide) ?_
   refine WP.frame (by decide) ?_ (by decide) ?_
   · change 4 ≤ (s.sp - 4#32).toNat
-    rw [BitVec.toNat_sub_of_le (by change 4 ≤ s.sp.toNat; omega)]
+    rw [BitVec.toNat_sub_of_le (by change 4 ≤ s.sp.toNat; omega_using [hsp])]
     change 4 ≤ s.sp.toNat - 4
-    omega
+    omega_using [hsp]
   · refine WP.alloc (by decide) ?_ ?_
     · change 24 ≤ (s.sp - 4#32 - 4#32).toNat
       rw [BitVec.sub_sub]
       change 24 ≤ (s.sp - 8#32).toNat
-      rw [BitVec.toNat_sub_of_le (by change 8 ≤ s.sp.toNat; omega)]
+      rw [BitVec.toNat_sub_of_le (by change 8 ≤ s.sp.toNat; omega_using [hsp])]
       change 24 ≤ s.sp.toNat - 8
-      omega
+      omega_using [hsp]
     · refine WP.alloc (by decide) ?_ ?_
       · change 248 ≤ (s.sp - 4#32 - 4#32 - 24#32).toNat
         simp only [BitVec.sub_sub]
         change 248 ≤ (s.sp - 32#32).toNat
-        rw [BitVec.toNat_sub_of_le (by change 32 ≤ s.sp.toNat; omega)]
+        rw [BitVec.toNat_sub_of_le (by change 32 ≤ s.sp.toNat; omega_using [hsp])]
         change 248 ≤ s.sp.toNat - 32
-        omega
+        omega_using [hsp]
       · refine WP.seq (WP.mono (enter_save hcount hsp htop hr) fun p hp => ?_)
         refine narrow (hb p hp) ?_ ?_ ?_ hn
         · refine Covers.of_sub fun r hR => ?_
@@ -278,7 +278,7 @@ theorem wrap_ok {body : Prog isa} (hn : body.noFrames = true) {s : State} {n : N
             by_cases hl : r = .lr
             · subst r
               rw [finish_lr, State.withRegions_sp, hc.sp,
-                addr_add (by have hb := base_top hsp; have hi := s.sp.isLt; omega)]
+                addr_add (by have hb := base_top hsp; have hi := s.sp.isLt; omega_using [hb])]
               exact lr
             · rw [finish_gpr _ (by intro h; subst r; simp [preserved] at hR) hl]
               exact hc.cs r hR hl

@@ -39,11 +39,11 @@ theorem slot_succ (w j : Nat) : slot w j + 8 * (w + 2) = slot w (j + 1) := by
 /-- The table's entries, and `aE`, end within the working space. -/
 theorem tab_fits {w Z j : Nat} (hEZ : slot w aE + 8 * (w + 2) ≤ Z) (hj : j < 16) :
     slot w (aT0 + j) + 8 * (w + 2) ≤ Z := by
-  have := slot_lt (w := w) (show aT0 + j < aE by unfold aT0 aE; omega); omega
+  have := slot_lt (w := w) (show aT0 + j < aE by unfold aT0 aE; omega_using [hj]); omega_using [hEZ, this]
 
 /-- An entry is apart from `aXm`. -/
 theorem tab_sep_xm (w : Nat) {j : Nat} : slot w aXm + 8 * w ≤ slot w (aT0 + j) := by
-  have := slot_lt (w := w) (show aXm < aT0 + j by unfold aXm aT0; omega); omega
+  have := slot_lt (w := w) (show aXm < aT0 + j by unfold aXm aT0; omega_using []); omega_using [this]
 
 /-- After `j` entries of `mrSel`'s loop. -/
 structure SelJ (s₀ : State) (B : Addr) (Z w d : Nat) (j : Nat) (t : State) : Prop where
@@ -73,7 +73,7 @@ theorem selHeadW_ok {t : State} {B : Addr} {w d j : Nat} (hd : d < 16) (hj : j <
       Keep [.x3, .x4, .x14, .x15, .x16, .x17] t t' := by
   refine WP.keep _ ?_ (by decide) (by decide) (by decide +kernel)
   brun [h9, h10, h7, h8, h2, h12, h13, subs_one_c, csel_mask', Bool.not_not,
-    ofNat64_xor_eq (show j < 2 ^ 64 by omega) (show d < 2 ^ 64 by omega)]
+    ofNat64_xor_eq (show j < 2 ^ 64 by omega_using [hj]) (show d < 2 ^ 64 by omega_using [hd])]
 
 /-- The next entry: `x2` up a stride, `x10 := j + 1`, `x3 := j + 1 − 16`. -/
 theorem selNextW_ok {t : State} {B : Addr} {w j : Nat} (hj : j < 16)
@@ -86,8 +86,8 @@ theorem selNextW_ok {t : State} {B : Addr} {w j : Nat} (hj : j < 16)
   brun [h10, h2, h11, off_add, slot_succ, ofNat_add_ofNat]
   refine ⟨by rw [Nat.add_assoc], ?_⟩
   simp only [BitVec.toNat_sub, BitVec.toNat_ofNat]
-  rw [Nat.mod_eq_of_lt (show j + 1 < 2 ^ 64 by omega)]
-  omega
+  rw [Nat.mod_eq_of_lt (show j + 1 < 2 ^ 64 by omega_using [hj])]
+  omega_using [hj]
 
 /-- Entry `j` of the selection. -/
 theorem selStepW_ok {s₀ t : State} {B : Addr} {Z w d j : Nat} (hEZ : slot w aE + 8 * (w + 2) ≤ Z)
@@ -100,18 +100,18 @@ theorem selStepW_ok {s₀ t : State} {B : Addr} {Z w d j : Nat} (hEZ : slot w aE
   have hT := tab_fits hEZ hj
   have hX := tab_sep_xm w (j := j)
   have hXZ : slot w aXm + 8 * (w + 2) ≤ Z := by
-    have := slot_lt (w := w) (show aXm < aT0 + j by unfold aXm aT0; omega); omega
+    have := slot_lt (w := w) (show aXm < aT0 + j by unfold aXm aT0; omega_using []); omega_using [hT, hX]
   simp only [seqs]
   refine WP.seq (WP.mono (selHeadW_ok hd hj hI.x9 hI.x10 hI.x7 hI.x8 hI.x2 hI.x12 hI.x13)
     fun t₁ ⟨⟨h15, h14, h16, h17, hm₁⟩, k₁⟩ => ?_)
-  refine WP.seq (WP.mono (selLoop_ok (hI.scr.congr k₁.wr) h16 h17 h14 h15 (by omega) (by omega) (by omega)
-    (by omega) (Or.inl hX)) fun t₂ ⟨hv₂, o₂, k₂⟩ => ?_)
+  refine WP.seq (WP.mono (selLoop_ok (hI.scr.congr k₁.wr) h16 h17 h14 h15 (by omega_using [hw]) (by omega_using [hw']) (by omega_using [hT])
+    (by omega_using [hT, hX]) (Or.inl hX)) fun t₂ ⟨hv₂, o₂, k₂⟩ => ?_)
   have k12 := k₁.trans k₂
   refine WP.mono (selNextW_ok hj ((k12.gpr .x10 (by decide)).trans hI.x10) ((k12.gpr .x2 (by decide)).trans hI.x2)
     ((k12.gpr .x11 (by decide)).trans hI.x11)) fun t' ⟨⟨h2', h10', h3', hm'⟩, k'⟩ => ⟨?_, h3'⟩
   rw [hm₁] at hv₂ o₂
   have hT₀ : wv t.mem B (slot w (aT0 + j)) w = wv s₀.mem B (slot w (aT0 + j)) w :=
-    hI.out.wv (by omega) (by omega)
+    hI.out.wv (by omega_using [hX]) (by omega_using [hn, hT])
   refine ⟨hI.scr.congr ((k12.trans k').wr), (hI.keep.trans (k12.trans k')).mono (by decide), h2',
     (k12.trans k' |>.gpr .x7 (by decide)).trans hI.x7, (k12.trans k' |>.gpr .x8 (by decide)).trans hI.x8,
     (k12.trans k' |>.gpr .x9 (by decide)).trans hI.x9, h10',
@@ -123,7 +123,7 @@ theorem selStepW_ok {s₀ t : State} {B : Addr} {Z w d j : Nat} (hEZ : slot w aE
     exact hI.out x hx
   · rw [hm', hv₂]
     rcases Nat.lt_succ_iff_lt_or_eq.mp hdj with hlt | rfl
-    · rw [decide_eq_false (by omega)]; exact hI.val hlt
+    · rw [decide_eq_false (by omega_using [hlt])]; exact hI.val hlt
     · rw [decide_eq_true rfl]; exact hT₀
 
 /-- The selection's head: the bases, the digit and the masks' constants. -/
@@ -146,14 +146,14 @@ theorem selInitW_ok {s : State} {B : Addr} {Z w d : Nat} (h : Ws s B Z w) (hG : 
       t.gpr .x10 = BitVec.ofNat 64 0 ∧ t.gpr .x7 = BitVec.setWidth 64 0#16 ∧
       t.gpr .x8 = BitVec.setWidth 64 0#16 - 1#64 ∧ t.mem = s₃.mem) (by
     brun [(k13.gpr .x0 (by decide)).trans h.x0, hdr_enc (show kG < 32 by decide),
-      (hs.congr k13.wr).ld (d := 8 * kG) (by simp only [kG]; omega), (by rw [m₃, m₂, m₁]; exact hG :
+      (hs.congr k13.wr).ld (d := 8 * kG) (by simp only [kG]; omega_using [h256]), (by rw [m₃, m₂, m₁]; exact hG :
         word s₃.mem B (8 * kG) = BitVec.ofNat 64 d)])
     (by decide) (by decide) (by decide +kernel)) fun t ⟨⟨h9, h10, h7, h8, hm⟩, k⟩ => ?_
   have k' := k13.trans k
   refine ⟨hs.congr k'.wr, k'.mono (by decide), (k₃.trans k |>.gpr .x2 (by decide)).trans (by rw [h2]; rfl), h7, h8, h9,
     h10, (k₂.trans k₃ |>.trans k |>.gpr .x11 (by decide)).trans h11,
     (k₂.trans k₃ |>.trans k |>.gpr .x12 (by decide)).trans h12, (k.gpr .x13 (by decide)).trans h13, ?_,
-    fun h0 => absurd h0 (by omega)⟩
+    fun h0 => absurd h0 (by omega_using [])⟩
   rw [hm, m₃, m₂, m₁]; exact Outside.refl _ _ _ _
 
 /-- `mrSel`: `[aXm] := T_d` for the digit `d` in `kG`. -/

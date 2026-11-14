@@ -45,22 +45,22 @@ theorem pro_J0 {s : State}
     (h8 : s.gpr .r8 = BitVec.ofNat 64 P.len) (hk : Keep [.rbx, .rbp, .r12, .rcx, .r8] σ s) : J0 P σ s := by
   have sep : ∀ a b, 2024 ≤ a → a + 8 ≤ b → b + 8 ≤ 2048 →
       Mem.Sep (P.at' a) (64 / 8) (P.at' b) (64 / 8) := fun a b h1 h2 h3 =>
-    Offset.sep _ (.inl h2) (by omega) (by omega)
+    Offset.sep _ (.inl h2) (by omega_using [h2, h3]) (by omega_using [h3])
   have sep' : ∀ a b, 2024 ≤ b → b + 8 ≤ a → a + 8 ≤ 2048 →
       Mem.Sep (P.at' a) (64 / 8) (P.at' b) (64 / 8) := fun a b h1 h2 h3 =>
-    Offset.sep _ (.inr h2) (by omega) (by omega)
+    Offset.sep _ (.inr h2) (by omega_using [h3]) (by omega_using [h2, h3])
   have hin : ∀ a, a + 8 ≤ 2048 → P.scrR.Contains (P.at' a) (64 / 8) := fun a ha => contains_scr ha
   refine ⟨⟨hk.2.1, hk.2.2, hbx, hbp, h12, hk.gpr (by decide), fun r hr => hk.gpr (by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl <;> decide), ?_, ?_⟩, hcx, h8⟩
-  · rw [hm, Mem.readW_writeW_sep (sep 2024 2040 (by omega) (by omega) (by omega)) (by decide),
-      Mem.readW_writeW_sep (sep 2024 2032 (by omega) (by omega) (by omega)) (by decide), Mem.readW_writeW_self64,
-      Mem.readW_writeW_sep (sep 2032 2040 (by omega) (by omega) (by omega)) (by decide), Mem.readW_writeW_self64,
+  · rw [hm, Mem.readW_writeW_sep (sep 2024 2040 (by omega_using []) (by omega_using []) (by omega_using [])) (by decide),
+      Mem.readW_writeW_sep (sep 2024 2032 (by omega_using []) (by omega_using []) (by omega_using [])) (by decide), Mem.readW_writeW_self64,
+      Mem.readW_writeW_sep (sep 2032 2040 (by omega_using []) (by omega_using []) (by omega_using [])) (by decide), Mem.readW_writeW_self64,
       Mem.readW_writeW_self64]
     exact ⟨rfl, rfl, rfl⟩
   · rw [hm]
-    exact (((Frame.refl _ _).writeW (by simp) _ (hin 2024 (by omega))).writeW (by simp) _
-      (hin 2032 (by omega))).writeW (by simp) _ (hin 2040 (by omega))
+    exact (((Frame.refl _ _).writeW (by simp) _ (hin 2024 (by omega_using []))).writeW (by simp) _
+      (hin 2032 (by omega_using []))).writeW (by simp) _ (hin 2040 (by omega_using []))
 
 /-- The epilogue: `rbx`, `rbp` and `r12` restored. -/
 theorem epi_ok {s : State} (he : Env P σ s) :
@@ -69,12 +69,12 @@ theorem epi_ok {s : State} (he : Env P σ s) :
   refine WP.keep _ ?_ (Proof.MlKem.X86_64.writesOnly_of (by decide))
   have e := he.saved
   unfold epi
-  xrun [he.rbx, inScrRd hp he (a := 2024) (n := 8) (by omega), inScrRd hp he (a := 2032) (n := 8) (by omega),
-    inScrRd hp he (a := 2040) (n := 8) (by omega), e.1, e.2.1, e.2.2]
+  xrun [he.rbx, inScrRd hp he (a := 2024) (n := 8) (by omega_using []), inScrRd hp he (a := 2032) (n := 8) (by omega_using []),
+    inScrRd hp he (a := 2040) (n := 8) (by omega_using []), e.1, e.2.1, e.2.2]
 
 omit hp in
 theorem ret_below (sp : Addr) : Region.Disjoint ⟨sp, 8⟩ (below sp 16) :=
-  (Offset.base_disjoint_below sp (n := 16) (k := 8) (by omega))
+  (Offset.base_disjoint_below sp (n := 16) (k := 8) (by omega_using []))
 
 /-- The calling convention's obligations, at the end of a sampling function:
 the callee-saved registers restored and the return address not written. -/
@@ -105,10 +105,10 @@ theorem ret_val {x : BitVec 64} {j : Nat} (hx : x = BitVec.ofNat 64 j) (hj : j �
     (x >>> 8).setWidth 32 = if j = 256 then 1 else 0 := by
   subst hx
   apply BitVec.eq_of_toNat_eq
-  rw [BitVec.toNat_setWidth, shr_toNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := j) (by omega)]
+  rw [BitVec.toNat_setWidth, shr_toNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := j) (by omega_using [hj])]
   split
   · subst j; rfl
-  · rw [Nat.div_eq_of_lt (by omega)]; rfl
+  · rw [Nat.div_eq_of_lt (by omega_arith)]; rfl
 
 /-- The end of a sampling function that returns whether `j` (in `rdi`) is 256. -/
 theorem retEpi_ok {s : State} (he : Env P σ s) {j : Nat} (hdi : s.gpr .rdi = BitVec.ofNat 64 j) (hj : j ≤ 256) :
@@ -133,12 +133,12 @@ theorem ea_aJ (s : State) {aP : Addr} {j : Nat} (hbp : s.gpr .rbp = aP) (hdi : s
   congr 1
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_mul, BitVec.toNat_ofNat]
-  omega
+  omega_using []
 
 theorem ofNat64_succ {j : Nat} (_h : j + 1 < 2 ^ 64) : BitVec.ofNat 64 j + 1 = BitVec.ofNat 64 (j + 1) := by
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_add, BitVec.toNat_ofNat, BitVec.toNat_ofNat, show (1 : BitVec 64).toNat = 1 from rfl]
-  omega
+  omega_using []
 
 theorem ofNat64_toNat {j : Nat} (h : j < 2 ^ 64) : (BitVec.ofNat 64 j).toNat = j := by
   rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt h]

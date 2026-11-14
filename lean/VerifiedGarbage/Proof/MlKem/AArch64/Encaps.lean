@@ -97,21 +97,21 @@ theorem pre_of (hP : P.Wf) {s₀ : State} (h : (encapsAArch64 P).pre s₀) : Pre
   obtain ⟨rd0, rd1, wr, d02, d03, d04, d12, d13, d14, d23, d24, d34, sp16, k0, k1, k2, k3, k4⟩ := h
   refine ⟨by
     intro b hb
-    have hb' : b = 0 ∨ b = 1 := by change b < 2 at hb; omega
+    have hb' : b = 0 ∨ b = 1 := by change b < 2 at hb; omega_using [hb]
     rcases hb' with rfl | rfl
     · exact rd0
     · exact rd1, by rw [wr]; rfl, ⟨fun b hb c hc hbc hw => ?_, fun b hb => ?_, fun b hb => ?_⟩, sp16,
     by enk, by enk, rfl, hP⟩
   · have e : ∀ {x y : Region}, x.Disjoint y → y.Disjoint x := fun h => h.symm
     simp only [enL] at hb hc hw
-    rcases (by omega : b = 0 ∨ b = 1 ∨ b = 2 ∨ b = 3 ∨ b = 4) with rfl | rfl | rfl | rfl | rfl <;>
-    rcases (by omega : c = 0 ∨ c = 1 ∨ c = 2 ∨ c = 3 ∨ c = 4) with rfl | rfl | rfl | rfl | rfl <;>
+    rcases (by omega_using [hb] : b = 0 ∨ b = 1 ∨ b = 2 ∨ b = 3 ∨ b = 4) with rfl | rfl | rfl | rfl | rfl <;>
+    rcases (by omega_using [hc] : c = 0 ∨ c = 1 ∨ c = 2 ∨ c = 3 ∨ c = 4) with rfl | rfl | rfl | rfl | rfl <;>
     first | exact absurd rfl hbc | exact absurd hw (by decide) | assumption | exact e ‹_›
   · simp only [enL] at hb
-    rcases (by omega : b = 0 ∨ b = 1 ∨ b = 2 ∨ b = 3 ∨ b = 4) with rfl | rfl | rfl | rfl | rfl <;>
+    rcases (by omega_using [hb] : b = 0 ∨ b = 1 ∨ b = 2 ∨ b = 3 ∨ b = 4) with rfl | rfl | rfl | rfl | rfl <;>
       simp only [enL, List.getD_cons_zero, List.getD_cons_succ] <;> lom
   · simp only [enL] at hb
-    rcases (by omega : b = 0 ∨ b = 1 ∨ b = 2 ∨ b = 3 ∨ b = 4) with rfl | rfl | rfl | rfl | rfl <;> assumption
+    rcases (by omega_using [hb] : b = 0 ∨ b = 1 ∨ b = 2 ∨ b = 3 ∨ b = 4) with rfl | rfl | rfl | rfl | rfl <;> assumption
 
 /-- `ek`. -/
 abbrev ekE (P : KemLay) (s₀ : State) : List Byte := bytesAt s₀.mem (kA s₀ 0) P.ekLen
@@ -267,7 +267,7 @@ theorem ekT_eq (s₀ : State) : ∀ j < P.k,
     decode12 (bytesAt s₀.mem (kA s₀ ((enL P).slot 0) + BitVec.ofNat 64 (0 + 384 * j)) 384) = ekT (ekE P s₀) j :=
   fun j hj => by
     rw [ekT, bytesAt_slice _ _ (show 384 * j + 384 ≤ P.ekLen by
-      have := mul_succ_le (a := 384) hj; simp only [KemLay.ekLen]; omega),
+      have := mul_succ_le (a := 384) hj; simp only [KemLay.ekLen]; omega_using [hj]),
       Nat.zero_add]
     rfl
 
@@ -430,8 +430,8 @@ theorem setupTaint768 : SetupTaint lay768 := by
   intro i hi j hj
   change i < 3 at hi
   change j < 3 at hj
-  rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2) with rfl | rfl | rfl <;>
-  rcases (by omega : j = 0 ∨ j = 1 ∨ j = 2) with rfl | rfl | rfl <;>
+  rcases (by omega_using [hi] : i = 0 ∨ i = 1 ∨ i = 2) with rfl | rfl | rfl <;>
+  rcases (by omega_using [hj] : j = 0 ∨ j = 1 ∨ j = 2) with rfl | rfl | rfl <;>
   exact ⟨_, by taint_decide⟩
 
 theorem taints768 : EnTaints lay768 keccak := ⟨keccak.mlkemEnATaint, keccak.mlkemEnCTaint, setupTaint768⟩

@@ -58,31 +58,31 @@ theorem finish_ok [VG.Proof.Gcm.PPC64LE.GhashLaw] [VG.Proof.Gcm.PPC64LE.Vpmsum.F
     rw [hH]
     apply hab.congr
     · exact blockAt_frame hf (fun r hr => by rw [List.mem_singleton] at hr; subst r; exact hst 16 16 (by decide))
-    · apply bytesAt_frame hf _ (by omega)
+    · apply bytesAt_frame hf _ (by omega_using [])
       intro r hr
       rw [List.mem_singleton] at hr
       subst r
-      exact hst 32 _ (by omega)
+      exact hst 32 _ (by omega_using [])
   have hdata : ∀ r ∈ [⟨sp+96,8⟩], (⟨V .r27,16*((V .r23).toNat/16)⟩ : Region).Disjoint r := by
     intro r hr
     rw [List.mem_singleton] at hr
     subst r
-    exact lay.slotData.symm.sub_left (Region.sub_prefix (by omega))
+    exact lay.slotData.symm.sub_left (Region.sub_prefix (by omega_using []))
   have hsource : ∀ r ∈ [⟨sp+96,8⟩], (⟨S,16*(count/16)⟩ : Region).Disjoint r := by
     intro r hr
     rw [List.mem_singleton] at hr
     subst r
-    exact lay.slotSource.symm.sub_left (Region.sub_prefix (by omega))
+    exact lay.slotSource.symm.sub_left (Region.sub_prefix (by omega_using []))
   have hp : Input.blocks u.mem S (V .r27) (V .r23).toNat count=
       Input.blocks s.mem S (V .r27) (V .r23).toNat count := by
     rw [Input.blocks,Input.blocks,Input.blocksAt_frame hf hsource,Input.blocksAt_frame hf hdata]
   have htail : Spec.Aes.bytesAt u.mem (V .r27+BitVec.ofNat 64 (16*((V .r23).toNat/16))) ((V .r23).toNat%16)=
       Spec.Aes.bytesAt s.mem (V .r27+BitVec.ofNat 64 (16*((V .r23).toNat/16))) ((V .r23).toNat%16) := by
-    apply bytesAt_frame hf _ (by omega)
+    apply bytesAt_frame hf _ (by omega_using [])
     intro r hr
     rw [List.mem_singleton] at hr
     subst r
-    exact lay.slotData.symm.sub_left (Offset.sub_base _ (by omega))
+    exact lay.slotData.symm.sub_left (Offset.sub_base _ (by omega_using []))
   refine WP.seq (WP.mono (WP.with_rdwr (whole_ok L he hd lay hR hv)) fun t ⟨hw,rdt,wrt,_⟩ => ?_)
   have mid := whole_done L hdU lay.bound hv hw habU
   refine WP.mono (finishWhole_ok L mid (hd.of_eq rdt wrt) hR hv ha hn) fun z hz => ?_

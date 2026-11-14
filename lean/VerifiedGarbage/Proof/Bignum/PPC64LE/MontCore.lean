@@ -243,9 +243,9 @@ theorem tailWith_ok {R : Prog isa} {rr out : List Reg} (hR : RoundsSpecW rr R)
     (by rw [g₂' .r10 (by decide), i10]) (by rw [g₂' .r11 (by decide), i11]) j4
     (by rw [m0₂, e22]; exact mont_newton64 _ _ hinv') w22.symm hw2 hw' (by unfold slot; omega_arith) (by omega_arith)
     (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith) hz
-    (by rw [v₂ hb hb2, v₂ (by omega) (by decide), wv, wv]; exact hB))
+    (by rw [v₂ hb hb2, v₂ (by omega_using [hn]) (by decide), wv, wv]; exact hB))
     fun s₃' ⟨⟨tlt, teq, out₃, r22₃⟩, k₃'⟩ => ?_)
-  rw [v₂ (by omega) (by decide)] at tlt teq
+  rw [v₂ (by omega_using [hn]) (by decide)] at tlt teq
   rw [v₂ ha ha2, v₂ hb hb2] at teq
   refine finishW_ok hout hs hn ho ho2 ho3 hw2 hw' hZ i5 i8 i9 i10 i11 _i12 hinv tlt teq
     ((out₂.trans out₃).mono (Nat.le_refl _) (by omega_arith)) (by rw [r22₃, e22])
@@ -343,8 +343,8 @@ theorem tail8W_ok {s : State} {B : Addr} {Z w : Nat} (hs : Scr s B Z)
     have sa := sl a ha
     have sb := sl b hb
     have s3 := sl 3 (by omega_arith)
-    have hxa : B.toNat + slot w a < 2 ^ 64 := by omega
-    have hxb : B.toNat + slot w b < 2 ^ 64 := by omega
+    have hxa : B.toNat + slot w a < 2 ^ 64 := by omega_using [hnw, sa]
+    have hxb : B.toNat + slot w b < 2 ^ 64 := by omega_using [hnw, sb]
     have hab : a = b := slot_inj (off_inj hxa hxb (by rw [← i6, ← i7]; exact e67))
     subst hab
     have ha3 : a ≠ 3 := fun h => n69 (by rw [i6, i9, h])

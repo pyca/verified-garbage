@@ -59,8 +59,8 @@ theorem montCallArithmetic_ok (s : State) {base : BitVec 32} {len w o a b : Nat}
         calc
           s.gpr .r3 = (s.gpr .r3 - s.gpr .r12) + s.gpr .r12 := (BitVec.sub_add_cancel _ _).symm
           _ = s.gpr .r12 := by rw [hz]; exact BitVec.zero_add _
-      have aw : a < 2 ^ 32 := by have := ha.1; omega
-      have bw : b < 2 ^ 32 := by have := hb.1; omega
+      have aw : a < 2 ^ 32 := by have := ha.1; omega_using [this]
+      have bw : b < 2 ^ 32 := by have := hb.1; omega_using [this]
       have natEq := congrArg BitVec.toNat eq'
       simpa only [BitVec.toNat_ofNat, Nat.mod_eq_of_lt aw, Nat.mod_eq_of_lt bw] using natEq
     subst b

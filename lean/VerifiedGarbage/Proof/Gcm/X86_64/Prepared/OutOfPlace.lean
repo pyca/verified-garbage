@@ -81,7 +81,7 @@ theorem setupPTo_ok {s₀ : State} (hp : SPreTo CtxMode.prepared s₀) :
   rw [← List.append_assoc, WP.block_append_iff]
   exact WP.mono (setupTTo_ok hp l0 l1 g₁ m₁ rd₁ wr₁) fun _ hR => WP.mono (setupZTo_ok hR) fun _ hR' =>
     ⟨_, hR', fun k hk l hl => by
-      rw [show 16 - 4 * k - l = 16 - 2 * (2 * k + l / 2) - l % 2 by omega]
-      exact pw _ (by omega) _ (by omega)⟩
+      rw [show 16 - 4 * k - l = 16 - 2 * (2 * k + l / 2) - l % 2 by omega_using []]
+      exact pw _ (by omega_using [hk, hl]) _ (by omega_using [])⟩
 
 end VG.Proof.Gcm.X86_64.StitchZRTo

@@ -93,17 +93,17 @@ theorem jointGenerator_unch {c : Joint.Cfg} {C : Curve} {base T : Addr} {size : 
       word s.mem (T+BitVec.ofNat 64 (128*(a-1))) (8*i) := by
     apply Mem.readW_congr
     intro b hb
-    have ho := h.outside a ha ha32 i hi b (by omega)
+    have ho := h.outside a ha ha32 i hi b (by omega_using [hb])
     apply hu
-    intro w hm; have := hw w hm; dsimp only [off]; exact Or.inr (by omega)
+    intro w hm; have := hw w hm; dsimp only [off]; exact Or.inr (by omega_using [ho, this])
   have val (a o : Nat) (ha : 1≤a) (ha32 : a≤jointGRows c) (ho : o=0 ∨ o=32) :
       wordsVal t.mem (T+BitVec.ofNat 64 (128*(a-1))) o 4=
       wordsVal s.mem (T+BitVec.ofNat 64 (128*(a-1))) o 4 := by
     apply wordsVal_of_words₂
     intro i hi
     rcases ho with rfl | rfl
-    · simpa only [Nat.zero_add] using wordeq a i ha ha32 (by omega)
-    · have e := wordeq a (4+i) ha ha32 (by omega)
+    · simpa only [Nat.zero_add] using wordeq a i ha ha32 (by omega_using [hi])
+    · have e := wordeq a (4+i) ha ha32 (by omega_using [hi])
       simpa only [Nat.mul_add] using e
   refine ⟨?_,?_,h.outside,?_,?_⟩
   · rw [hsym]; exact h.symbol
@@ -259,7 +259,7 @@ theorem allocatedAfterTable_relCT (raw : RawCorrect) (hc : CfgOk p256) (hC : Law
           (.seq (Joint.run cfg P256Allocated.ops) (Jacobian.jacFinish cfg.K))))
       (AArch64.Taint.Agree (Taint.ofRegs [.x0])) := by
   have hm : UnitMod p256.C.p (2^(64*cfg.K.M.n)) := unitMod_pow_two hc.p_odd _
-  have one : cfg.K.one<p256.C.p := Nat.mod_lt _ (by have := hc.p_ge; omega)
+  have one : cfg.K.one<p256.C.p := Nat.mod_lt _ (by have := hc.p_ge; omega_using [this])
   have cache : RelCT isa (AllocatedTablePair base Q u v a b) (.block [])
       (JointCachePair p256.C base T P Q u v) := by
     apply RelCT.block_nil

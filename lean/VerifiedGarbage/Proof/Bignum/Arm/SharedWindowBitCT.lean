@@ -38,8 +38,8 @@ theorem bit_ct {M1 M2 x1 x2 A1 A2 p1 p2 q V1 V2 : Nat} (fits : arrAt w 16 ≤ 8 
     refine WP.mono (windowJoin_ok s h.1.1 h.1.2.1 h.1.2.2) ?_
     rintro v ⟨power, table, bound, digit, _, zV, _, frame, rest⟩
     have short := h.1.1.short
-    have : 2 ^ (q + 1) ≤ 2 ^ 3 := Nat.pow_le_pow_right (n := 2) (by decide) (by omega)
-    exact ⟨zV, ⟨power, table, by omega, digit⟩, K.stable frame rest h.2⟩
+    have : 2 ^ (q + 1) ≤ 2 ^ 3 := Nat.pow_le_pow_right (n := 2) (by decide) (by omega_using [short])
+    exact ⟨zV, ⟨power, table, by omega_using [bound, this], digit⟩, K.stable frame rest h.2⟩
   have squared (s : State) {M x A p V : Nat} (h : WinByte base len w M x A p q V s ∧ P s) :
       WP isa (K.op 6 6 6) s fun u => WinByte base len w M x (2 * A) p q V u ∧ P u := by
     refine WP.mono (sharedWindowSquare_ok K s h.1.1 h.2 h.1.2.2) ?_
@@ -72,7 +72,7 @@ theorem round_ct {M1 M2 x1 x2 A1 A2 p1 p2 q V1 V2 : Nat} (fits : arrAt w 16 ≤ 
     have size : 204 ≤ 8 * len := by
       have := h.layout.2.2.1
       simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at this
-      omega
+      omega_using [this]
     exact WP.mono (expShift_ok s h.workspace size h.ptr (V := (s.mem.readW
       (VG.Proof.Mont.off (State.addr base) 200) 32).toNat) (by rw [BitVec.ofNat_toNat, BitVec.setWidth_eq]))
       fun _ k => (k.2.gpr .r0 (by simp)).trans h.ptr
@@ -96,17 +96,17 @@ theorem bits_ct {M1 M2 x1 x2 E1 E2 v1 v2 n : Nat}
     obtain ⟨j, jk, hk, hs, ht, sp⟩ := h
     obtain ⟨⟨A1, p1, state1, sum1⟩, byte1, count1⟩ := hs.1
     obtain ⟨⟨A2, p2, state2, sum2⟩, byte2, count2⟩ := ht.1
-    have hp : 2 ^ j ≤ 128 := Nat.pow_le_pow_right (by decide) (by omega : j ≤ 7)
-    have fit1 : v1 * 2 ^ j < 2 ^ 32 := by have := Nat.mul_le_mul_left v1 hp; omega
-    have fit2 : v2 * 2 ^ j < 2 ^ 32 := by have := Nat.mul_le_mul_left v2 hp; omega
+    have hp : 2 ^ j ≤ 128 := Nat.pow_le_pow_right (by decide) (by omega_using [jk, hk] : j ≤ 7)
+    have fit1 : v1 * 2 ^ j < 2 ^ 32 := by have := Nat.mul_le_mul_left v1 hp; omega_using [hv1, this]
+    have fit2 : v2 * 2 ^ j < 2 ^ 32 := by have := Nat.mul_le_mul_left v2 hp; omega_using [hv2, this]
     have ct := relCT_keep_sp (round_ct K ct (base := base) (M1 := M1) (M2 := M2) (x1 := x1) (x2 := x2)
       (A1 := A1) (A2 := A2) (p1 := p1) (p2 := p2) (q := (n + j) % 3) (V1 := v1 * 2 ^ j) (V2 := v2 * 2 ^ j)
       fits) (fun _ _ h => h.2.2)
     obtain ⟨trace, sp'⟩ := ct s t tr1 tr2 u z ⟨⟨⟨state1, fit1, byte1⟩, hs.2⟩, ⟨⟨state2, fit2, byte2⟩, ht.2⟩, sp⟩ e1 e2
     obtain ⟨_, _, run1, ⟨⟨A1', p1', next1, sumN1⟩, byteN1, countN1, zero1, _, pn1, _, _⟩⟩ :=
-      sharedWindowRound_ok K s state1 hs.2 fit1 (c := 8 - j) (by omega) (by omega) byte1 count1
+      sharedWindowRound_ok K s state1 hs.2 fit1 (c := 8 - j) (by omega_using [jk, hk]) (by omega_using []) byte1 count1
     obtain ⟨_, _, run2, ⟨⟨A2', p2', next2, sumN2⟩, byteN2, countN2, zero2, _, pn2, _, _⟩⟩ :=
-      sharedWindowRound_ok K t state2 ht.2 fit2 (c := 8 - j) (by omega) (by omega) byte2 count2
+      sharedWindowRound_ok K t state2 ht.2 fit2 (c := 8 - j) (by omega_using [jk, hk]) (by omega_using []) byte2 count2
     obtain ⟨-, rfl⟩ := Exec.det e1 run1
     obtain ⟨-, rfl⟩ := Exec.det e2 run2
     refine ⟨trace, ?_, fun _ => trivial, ?_⟩
@@ -116,16 +116,16 @@ theorem bits_ct {M1 M2 x1 x2 E1 E2 v1 v2 n : Nat}
       have notLast : j + 1 ≠ 8 := by
         intro last
         change some (!_) = some true at again
-        simp only [zero1, show 8 - j = 1 by omega, decide_true, Bool.not_true, Option.some.injEq,
+        simp only [zero1, show 8 - j = 1 by omega_using [last], decide_true, Bool.not_true, Option.some.injEq,
           Bool.false_eq_true] at again
       have expEq (E v : Nat) : 2 * (E * 2 ^ j + v / 2 ^ (8 - j)) + v * 2 ^ j / 128 % 2 =
           E * 2 ^ (j + 1) + v / 2 ^ (8 - (j + 1)) := by
-        rw [Nat.mul_add, Nat.add_assoc, bit_step (by omega), show 7 - j = 8 - (j + 1) by omega,
+        rw [Nat.mul_add, Nat.add_assoc, bit_step (by omega_using [jk, hk]), show 7 - j = 8 - (j + 1) by omega_using [],
           Nat.pow_succ, Nat.mul_comm 2 (E * 2 ^ j), Nat.mul_assoc]
       rw [sum1, expEq] at sumN1
       rw [sum2, expEq] at sumN2
       rw [Nat.mod_add_mod] at next1 next2
-      refine ⟨k - 1, by omega, j + 1, by omega, by omega, ⟨⟨⟨A1', p1', next1, sumN1⟩, ?_, ?_⟩, pn1⟩,
+      refine ⟨k - 1, by omega_using [hk], j + 1, by omega_using [jk, hk], by omega_using [jk, hk, notLast], ⟨⟨⟨A1', p1', next1, sumN1⟩, ?_, ?_⟩, pn1⟩,
         ⟨⟨⟨A2', p2', next2, sumN2⟩, ?_, ?_⟩, pn2⟩, sp'⟩
       · rw [byteN1, Nat.pow_succ, ← Nat.mul_assoc, Nat.mul_two]
       · rw [countN1]; congr 1

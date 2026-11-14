@@ -105,7 +105,7 @@ def callPublic {bits : Nat} (hb : Supported bits) {s : State} (A : PrimeABI bits
       change ⟨frameSp s, 56⟩ :: s.wr = _; rw [A.wr]
     rw [hw]
     refine ⟨⟨frameSp s, 56⟩, ⟨s.gpr .r8, 8⟩, (s.gpr .rsi).toNat * 8, rfl,
-      by have := A.size; have : domainCheck = 40960 := rfl; omega, ?_, ?_⟩
+      by have := A.size; have : domainCheck = 40960 := rfl; omega_arith, ?_, ?_⟩
     · have hs := frame_stack_sub s (d := 0) (n := 56) (by decide)
       simp only [off, BitVec.add_zero] at hs
       refine .cons ?_ (.cons ?_ (.cons ?_ .nil))
@@ -122,7 +122,7 @@ def callPublic {bits : Nat} (hb : Supported bits) {s : State} (A : PrimeABI bits
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl
       · exact (by decide : (56 : Nat) ≤ 2 ^ 64)
-      · have := A.wsBound; change (s.gpr .rsi).toNat * 8 ≤ 2 ^ 64; omega
+      · have := A.wsBound; change (s.gpr .rsi).toNat * 8 ≤ 2 ^ 64; omega_using [this]
       · exact (by decide : (8 : Nat) ≤ 2 ^ 64)
   base := rfl
   width := by change words bits ≤ 48; rcases hb with rfl | rfl | rfl | rfl | rfl <;> decide
@@ -131,8 +131,8 @@ def callPublic {bits : Nat} (hb : Supported bits) {s : State} (A : PrimeABI bits
     rcases hb with rfl | rfl | rfl | rfl | rfl <;> decide
   large := by
     change 8161 < candidateOf bits s
-    have hlow := ((bitLength_iff_bounds (by have := hb.le; omega)).mp A.bits).1
-    have h2 : 2 ^ 159 ≤ 2 ^ (bits - 1) := Nat.pow_le_pow_right (by decide) (by have := hb.le; omega)
+    have hlow := ((bitLength_iff_bounds (by have := hb.le; omega_using [this])).mp A.bits).1
+    have h2 : 2 ^ 159 ≤ 2 ^ (bits - 1) := Nat.pow_le_pow_right (by decide) (by have := hb.le; omega_using [this])
     have : (8161 : Nat) < 2 ^ 159 := by decide
     exact Nat.lt_of_lt_of_le this (Nat.le_trans h2 hlow)
   policy := by
@@ -148,7 +148,7 @@ def bytesPublic {bits : Nat} (hb : Supported bits) {s : State} (A : PrimeABI bit
 
 theorem PrimeABI.toNat_r9 {bits : Nat} (hb : Supported bits) {s : State} (A : PrimeABI bits s) :
     (s.gpr .r9).toNat = bits := by
-  rw [A.width, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := hb.le; omega)]
+  rw [A.width, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := hb.le; omega_using [this])]
 
 theorem bytesPublic_eq {bits : Nat} (hb : Supported bits) {s₁ s₂ : State} (A₁ : PrimeABI bits s₁)
     (A₂ : PrimeABI bits s₂) (hv : view s₁ = view s₂) : bytesPublic hb A₁ = bytesPublic hb A₂ := by

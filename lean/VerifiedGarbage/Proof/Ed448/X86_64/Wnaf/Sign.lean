@@ -65,7 +65,7 @@ theorem negateSelected_ok {s : State} {base : Addr} (hs : Scr s base) {o t : Nat
     fun x ⟨_, vx, kx⟩ => ?_
   rw [WP.block_append_iff]
   have hmx : x.mem (off base (o + t)) = CodeByte d := by
-    rw [kx.2.1, ksw.mem _ (Or.inr (by rw [ofs_off' base (by omega)]; omega))]
+    rw [kx.2.1, ksw.mem _ (Or.inr (by rw [ofs_off' base (by omega_using [hb])]; omega_using [ho]))]
     exact hm
   refine WP.mono (signFlag_ok ((ksw.scr hs).of_keeps kx (by decide)) hb hd
     ((kx.1 _ (by decide)).trans ((ksw.gpr _ (by decide)).trans hr)) hmx) fun y ⟨zy, ky⟩ => ?_

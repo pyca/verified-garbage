@@ -21,6 +21,6 @@ theorem trialLoop_ok (s : State) {n divisor inverse : Nat}
         next * 2 ^ (16 * j) % divisor = trialValue s.mem (s.gpr .r0) n % divisor ∧
         t.gpr .r1 = 0 ∧ t.mem = s.mem ∧ Rest [.r0, .r1, .r2, .r5, .r6, .r7] s t := by
   simpa only [Nat.zero_add] using trialLoop_from_ok s (initial:=0) positive fits count read
-    (by simpa using acc) (by have := divBound.1; omega) divValue divBound invValue invCorrect
+    (by simpa using acc) (by have := divBound.1; omega_using [divBound]) divValue divBound invValue invCorrect
 
 end VG.Proof.Ffdh.Arm.ParameterCandidate

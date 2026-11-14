@@ -84,8 +84,8 @@ theorem validate_ok {s : State} {S L : BitVec 32}
     simp only [ite_true, reduceCtorEq, ite_false, e5, e2]
     rw [flag_zero]
     have e1 : decide (64 ≤ L.toNat) = !decide (L.toNat < 64) := by
-      rw [← decide_not]; exact decide_eq_decide.mpr (by omega)
-    have e2 : decide (L.toNat ≤ 1024) = decide (L.toNat < 1025) := decide_eq_decide.mpr (by omega)
+      rw [← decide_not]; exact decide_eq_decide.mpr (by omega_using [])
+    have e2 : decide (L.toNat ≤ 1024) = decide (L.toNat < 1025) := decide_eq_decide.mpr (by omega_using [])
     rw [e1, e2]
     rfl
   · rw [f.mem, a9.mem, a8.mem, a7.mem, f6.mem, a5.mem, a4.mem, f3.mem, a0.mem, a2.mem, a1.mem]
@@ -104,13 +104,13 @@ theorem readW64_split (m : Mem) (a : Addr) :
   rw [BitVec.getLsbD_append]
   split
   · simp [*]
-  · simp [show i - 32 < 32 by omega]; congr 1; omega
+  · simp [show i - 32 < 32 by omega_using [hi]]; congr 1; omega_arith
 
 /-- A 32-bit word through a 32-bit store at another word offset of `B`. -/
 theorem read_write_ne (m : Mem) (B : Addr) {i j : Nat} (hi : i < 8) (hj : j < 8) (h : i ≠ j) (v : BitVec 32) :
     (m.writeW (B + BitVec.ofNat 64 (4 * j)) v).readW (B + BitVec.ofNat 64 (4 * i)) 32 =
       m.readW (B + BitVec.ofNat 64 (4 * i)) 32 :=
-  Mem.readW_writeW_sep (Offset.sep B (by omega) (by omega) (by omega)) (by decide)
+  Mem.readW_writeW_sep (Offset.sep B (by omega_using [h]) (by omega_using [hi]) (by omega_using [hj])) (by decide)
 
 theorem read_write_eq (m : Mem) (B : Addr) (j : Nat) (v : BitVec 32) :
     (m.writeW (B + BitVec.ofNat 64 (4 * j)) v).readW (B + BitVec.ofNat 64 (4 * j)) 32 = v :=
@@ -129,7 +129,7 @@ theorem stored_words (m : Mem) (B : Addr) (k sv w r : BitVec 32) :
       M.readW (B + BitVec.ofNat 64 (8 * i)) 64 =
         M.readW (B + BitVec.ofNat 64 (4 * j)) 32 ++ M.readW (B + BitVec.ofNat 64 (4 * k)) 32 := by
     rw [readW64_split, Offset.add_add, ← hj, ← hk]
-    congr 4 <;> omega
+    congr 4 <;> omega_using []
   change [(stored m B k sv w r).readW (B + BitVec.ofNat 64 (8 * 0)) 64,
     (stored m B k sv w r).readW (B + BitVec.ofNat 64 (8 * 1)) 64,
     (stored m B k sv w r).readW (B + BitVec.ofNat 64 (8 * 2)) 64,
@@ -144,7 +144,7 @@ variable {is : List Instr} {Q : State → Prop} {S : BitVec 32}
 theorem ea_word {u : State} (hc : u.gpr .ecx = S) (fit : S.toNat + 32 ≤ 2 ^ 32) {j : Nat} (hj : j < 8) :
     u.ea (at_ .ecx (4 * j)) = S.setWidth 64 + BitVec.ofNat 64 (4 * j) := by
   change addr (u.gpr .ecx) (4 * j) = _
-  rw [hc, addr_eq (by omega)]
+  rw [hc, addr_eq (by omega_using [fit, hj])]
 
 /-- `store [ecx + 4j], eax`. -/
 theorem store_ok {u : State} (hc : u.gpr .ecx = S) (fit : S.toNat + 32 ≤ 2 ^ 32) {j : Nat} (hj : j < 8)
@@ -212,7 +212,7 @@ theorem words_ok {s : State} {S : BitVec 32} {ks ss ws rs : Src} {K Sv W R V : B
 theorem stored_frame (m : Mem) (B : Addr) (k sv w r : BitVec 32) :
     Frame [⟨B, 128⟩] m (stored m B k sv w r) := by
   have c (j : Nat) (hj : j < 8) : (⟨B, 128⟩ : Region).Contains (B + BitVec.ofNat 64 (4 * j)) (32 / 8) :=
-    Offset.contains_base B (by omega) (by omega)
+    Offset.contains_base B (by omega_using [hj]) (by omega_using [hj])
   have h := Frame.refl [⟨B, 128⟩] m
   exact ((((((((h.writeW (List.mem_singleton_self _) k (c 0 (by decide))).writeW (List.mem_singleton_self _)
     sv (c 2 (by decide))).writeW (List.mem_singleton_self _) w (c 4 (by decide))).writeW
@@ -237,7 +237,7 @@ theorem abi_of {s : State} (h : (Spec.Ffdh.keyInitContract abi).pre s) : ABI s :
 
 theorem ABI.read {s : State} (A : ABI s) {i : Nat} (hi : i < 2) :
     readSrc s (.mem (PublicFn.argument i)) = some (arg s i) :=
-  (VG.Proof.Dsa.X86.stackArgument_of (count := 2) (by have := A.stackBound; omega) hi
+  (VG.Proof.Dsa.X86.stackArgument_of (count := 2) (by have := A.stackBound; omega_using [this]) hi
     (by rw [A.rd]; exact List.mem_append_left _ (List.mem_singleton_self _)) A.outArgs.symm).readSrc
 
 theorem code_ok {s : State} (A : ABI s) :
@@ -250,8 +250,8 @@ theorem code_ok {s : State} (A : ABI s) :
   have hw {u : State} (hu : u.wr = s.wr) (j : Nat) (hj : j < 8) :
       InRegions u.wr ((arg s 0).setWidth 64 + BitVec.ofNat 64 (4 * j)) 4 :=
     ⟨_, by rw [hu, A.wr]; exact List.mem_singleton_self _,
-      Offset.contains_base _ (by omega) (by omega)⟩
-  have fit : (arg s 0).toNat + 32 ≤ 2 ^ 32 := by have := A.outBound; omega
+      Offset.contains_base _ (by omega_using [hj]) (by omega_using [hj])⟩
+  have fit : (arg s 0).toNat + 32 ≤ 2 ^ 32 := by have := A.outBound; omega_using [this]
   unfold code
   refine WP.seq (WP.mono (validate_ok (A.read (by decide)) (A.read (by decide))) fun u ⟨hc, hz, hm, k⟩ => ?_)
   refine WP.ite _ hz (fun hb => ?_) fun hb => ?_
@@ -291,7 +291,7 @@ theorem correct (s : State) (h : (Spec.Ffdh.keyInitContract abi).pre s) :
         apply BitVec.eq_of_toNat_eq
         rw [BitVec.toNat_append, BitVec.toNat_ofNat]
         simp only [BitVec.toNat_ofNat, Nat.zero_mod, Nat.zero_shiftLeft, Nat.zero_or]
-        exact (Nat.mod_eq_of_lt (by have := (arg s 1).isLt; omega)).symm
+        exact (Nat.mod_eq_of_lt (by have := (arg s 1).isLt; omega_using [])).symm
       refine ⟨rfl, ?_⟩
       rw [w]
       rfl
@@ -308,14 +308,14 @@ theorem args_out {s : State} (A : ABI s) : ArgsOut 2 s := by
   obtain rfl := List.mem_singleton.mp hr
   intro a ha hb
   let j := (a - (s.gpr .esp).setWidth 64).toNat
-  have hj : j < 12 := by change j + 1 ≤ 12 at ha; omega
+  have hj : j < 12 := by change j + 1 ≤ 12 at ha; omega_using [ha]
   have he : (s.gpr .esp).setWidth 64 + BitVec.ofNat 64 j = a := by
     change (s.gpr .esp).setWidth 64 + BitVec.ofNat 64 (a - (s.gpr .esp).setWidth 64).toNat = a
     rw [BitVec.ofNat_toNat, BitVec.setWidth_eq, BitVec.add_comm, BitVec.sub_add_cancel]
-  have a0 : argAddr s 0 = (s.gpr .esp).setWidth 64 + BitVec.ofNat 64 4 := addr_eq (by have := A.stackBound; omega)
+  have a0 : argAddr s 0 = (s.gpr .esp).setWidth 64 + BitVec.ofNat 64 4 := addr_eq (by have := A.stackBound; omega_using [this])
   by_cases h : j < 4
-  · exact A.retOut a (by rw [← he]; exact Offset.contains_base _ (by omega) (by omega)) hb
-  · exact A.outArgs a hb (by rw [a0, ← he]; exact Offset.contains _ (by omega) (by omega) (by decide))
+  · exact A.retOut a (by rw [← he]; exact Offset.contains_base _ (by omega_using [h]) (by omega_using [])) hb
+  · exact A.outArgs a hb (by rw [a0, ← he]; exact Offset.contains _ (by omega_using [h]) (by omega_using [hj]) (by decide))
 
 theorem constantTime : ConstantTime isa (Spec.Ffdh.keyInitContract abi).pre
     (Spec.Ffdh.keyInitContract abi).pub code := by
@@ -325,7 +325,7 @@ theorem constantTime : ConstantTime isa (Spec.Ffdh.keyInitContract abi).pre
   obtain ⟨SP, a0, a1⟩ := H
   refine agree_argTaint (k := 2) (fun _ h => nomatch h) SP (args_out (abi_of hs)) (args_out (abi_of ht)) ?_
   intro i hi
-  rcases (show i = 0 ∨ i = 1 by omega) with rfl | rfl
+  rcases (show i = 0 ∨ i = 1 by omega_using [hi]) with rfl | rfl
   · exact a0
   · exact a1
 

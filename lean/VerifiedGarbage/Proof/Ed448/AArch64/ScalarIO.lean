@@ -40,11 +40,11 @@ theorem saveRegs_ok {s : State} {base : Addr} (b : Reg) (hb : s.gpr b = base)
       Outside base 0 64 s.mem t.mem ∧ Saved base s.gpr t.mem := by
   refine WP.mono (strs_ok b saved s hb fun p hp => ?_) fun t ht => ?_
   · obtain ⟨h8, hl⟩ := saved_ok p hp
-    exact ⟨h8, by omega, _, hw, contains_sc (by omega)⟩
+    exact ⟨h8, by omega_using [hl], _, hw, contains_sc (by omega_using [hl])⟩
   · subst ht
     refine ⟨rfl, rfl, rfl, rfl,
-      wrs_outside _ _ _ (by omega) _ fun p hp => ⟨Nat.zero_le _, (saved_ok p hp).2⟩,
-      fun p hp => word_wrs _ _ _ _ saved_sep (fun q hq => by have := (saved_ok q hq).2; omega) p hp⟩
+      wrs_outside _ _ _ (by omega_using []) _ fun p hp => ⟨Nat.zero_le _, (saved_ok p hp).2⟩,
+      fun p hp => word_wrs _ _ _ _ saved_sep (fun q hq => by have := (saved_ok q hq).2; omega_using [this]) p hp⟩
 
 /-- The registers `saved` holds. -/
 def savedRegs : List Reg := saved.map (·.1)
@@ -56,7 +56,7 @@ theorem restoreRegs_ok {s : State} {base : Addr} (hb : s.gpr .x2 = base)
   refine WP.mono (ldrs_ok .x2 saved s hb (fun p hp => ?_) (by decide)) fun t ⟨ht, kt⟩ =>
     ⟨fun p hp => (ht p hp).trans (hsv p hp), kt⟩
   obtain ⟨h8, hl⟩ := saved_ok p hp
-  exact ⟨h8, by omega, ⟨_, List.mem_append_right _ hw, contains_sc (by omega)⟩,
+  exact ⟨h8, by omega_using [hl], ⟨_, List.mem_append_right _ hw, contains_sc (by omega_using [hl])⟩,
     (by decide : ∀ p ∈ saved, p.1 ≠ .x2) p hp⟩
 
 /-! ## The constants -/
@@ -101,7 +101,7 @@ theorem consts_ok (s : State) :
 theorem toNat_byte (b : Byte) : ((b.setWidth 32).setWidth 64).toNat = b.toNat := by
   simp only [BitVec.toNat_setWidth]
   have := b.isLt
-  omega
+  omega_using []
 
 theorem decode_two (m : Mem) (p : Addr) :
     decodeLE (bytesAt m p 2) = (m p).toNat + 256 * (m (p + 1)).toNat := by
@@ -135,7 +135,7 @@ theorem init114_ok (s : State)
     rw [BitVec.toNat_add, BitVec.toNat_shiftLeft, toNat_byte, toNat_byte, Nat.shiftLeft_eq]
     have z : (BitVec.setWidth Size.x.bits (0 : BitVec 16) <<< (16 * 0)).toNat = 0 := by decide
     rw [Ed25519.AArch64.read_byte, Ed25519.AArch64.read_byte, z]
-    omega
+    omega_using []
   · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
     simp only [RegUpd.gpr_write, hr.1, hr.2.1, hr.2.2.1, hr.2.2.2.1, hr.2.2.2.2.1, hr.2.2.2.2.2.1,
       hr.2.2.2.2.2.2.1, hr.2.2.2.2.2.2.2.1, hr.2.2.2.2.2.2.2.2, ite_false]
@@ -147,7 +147,7 @@ theorem readW_write_byte (m : Mem) (q : Addr) {d e : Nat} (h : d + 8 ≤ e) (he 
     (m.write (q + BitVec.ofNat 64 e) 1 v).readW (q + BitVec.ofNat 64 d) 64 =
       m.readW (q + BitVec.ofNat 64 d) 64 := by
   simp only [Mem.readW]
-  rw [Mem.read_write_sep (Offset.sep q (Or.inl h) (by omega) (by omega)) (by decide)]
+  rw [Mem.read_write_sep (Offset.sep q (Or.inl h) (by omega_using [h, he]) (by omega_using [he])) (by decide)]
 
 theorem write_byte_self (m : Mem) (a : Addr) (v : BitVec (8 * 1)) : m.write a 1 v a = v := by
   simp only [Mem.write, BitVec.sub_self, BitVec.toNat_zero, Nat.zero_lt_one, ite_true, Nat.mul_zero]
@@ -182,15 +182,15 @@ theorem outStore_ok {s : State} {q : Addr} (hq : s.gpr .x0 = q) (hw : (⟨q, 57�
   rw [WP.block_append_iff]
   refine WP.mono (strs_ok .x0 outWords s hq fun p hp => ?_) fun a ha => ?_
   · obtain ⟨h8, hl⟩ := outWords_ok p hp
-    exact ⟨h8, by omega, _, hw, Offset.contains_base q (by omega) (by omega)⟩
+    exact ⟨h8, by omega_using [hl], _, hw, Offset.contains_base q (by omega_using [hl]) (by omega_using [hl])⟩
   subst ha
   have hb : InRegions s.wr (q + BitVec.ofNat 64 56) 1 :=
-    ⟨_, hw, Offset.contains_base q (d := 56) (n := 1) (by omega) (by omega)⟩
+    ⟨_, hw, Offset.contains_base q (d := 56) (n := 1) (by omega_using []) (by omega_using [])⟩
   refine WP.mono (zeroByte_ok hq hb) fun t ⟨mt, gt, rdt, wrt, spt⟩ => ?_
   refine ⟨?_, ?_, gt, rdt, wrt, spt⟩
   · rw [mt, decode57]
     have hw' : ∀ p ∈ outWords, word (wrs s.mem q s.gpr outWords) q p.2 = s.gpr p.1 :=
-      word_wrs _ _ _ _ outWords_sep fun p hp => by have := (outWords_ok p hp).2; omega
+      word_wrs _ _ _ _ outWords_sep fun p hp => by have := (outWords_ok p hp).2; omega_using [this]
     have w0 := hw' (.x5, 0) (by decide)
     have w1 := hw' (.x6, 8) (by decide)
     have w2 := hw' (.x7, 16) (by decide)
@@ -203,8 +203,8 @@ theorem outStore_ok {s : State} {q : Addr} (hq : s.gpr .x0 = q) (hw : (⟨q, 57�
     rw [rem_eq]
   · rw [mt]
     exact (wrs_frame q s.gpr outWords s.mem (Frame.refl _ _) fun p hp =>
-      Offset.contains_base q (by have := (outWords_ok p hp).2; omega)
-        (by have := (outWords_ok p hp).2; omega)).write
-      (List.mem_singleton_self _) _ (Offset.contains_base q (d := 56) (n := 1) (by omega) (by omega))
+      Offset.contains_base q (by have := (outWords_ok p hp).2; omega_using [this])
+        (by have := (outWords_ok p hp).2; omega_using [this])).write
+      (List.mem_singleton_self _) _ (Offset.contains_base q (d := 56) (n := 1) (by omega_using []) (by omega_using []))
 
 end VG.Proof.Ed448.AArch64

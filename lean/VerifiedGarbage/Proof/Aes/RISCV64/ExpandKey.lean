@@ -73,12 +73,12 @@ theorem scr512 (X : Addr) {d n : Nat} (h : d + n + 7 ≤ 512) :
     Region.Sub ⟨X + BitVec.ofNat 64 (pad X) + BitVec.ofNat 64 d, n⟩ ⟨X, 512⟩ := by
   rw [Offset.add_add]
   have := pad_lt X
-  exact Offset.sub_base X (by omega)
+  exact Offset.sub_base X (by omega_using [h, this])
 
 theorem scr512_base (X : Addr) {n : Nat} (h : n + 7 ≤ 512) :
     Region.Sub ⟨X + BitVec.ofNat 64 (pad X), n⟩ ⟨X, 512⟩ := by
   have := pad_lt X
-  exact Offset.sub_base X (by omega)
+  exact Offset.sub_base X (by omega_using [h, this])
 
 theorem bsKs_slots : ∀ p ∈ bsKs, 52 ≤ p.1 ∧ p.1 < 58 := by decide
 
@@ -164,18 +164,18 @@ theorem xor32_byte (x : BitVec 64) (y : BitVec 32) {t : Nat} (ht : t < 4) :
 
 theorem sext32_low (v : BitVec 32) {i : Nat} (hi : i < 32) : (sext32 v).getLsbD i = v.getLsbD i := by
   rw [sext32, BitVec.getLsbD_signExtend]
-  simp [hi, show i < 64 by omega]
+  simp [hi, show i < 64 by omega_using [hi]]
 
 theorem rot_byte' (x c : BitVec 64) {t : Nat} (ht : t < 4) :
     ((sext32 (x.setWidth 32 <<< 24) ^^^ sext32 (x.setWidth 32 >>> 8)) ^^^ c).extractLsb' (8 * t) 8 =
       ((((x.setWidth 32).rotateRight 8).setWidth 64) ^^^ c).extractLsb' (8 * t) 8 := by
   apply BitVec.eq_of_getLsbD_eq; intro j hj
-  have h32 : 8 * t + j < 32 := by omega
+  have h32 : 8 * t + j < 32 := by omega_using [ht, hj]
   have hr : (x.setWidth 32 >>> 8 ^^^ x.setWidth 32 <<< 24) = (x.setWidth 32).rotateRight 8 :=
     ByteLoad.rotr_shifts _ (by decide)
   simp only [BitVec.getLsbD_extractLsb', BitVec.getLsbD_xor, sext32_low _ h32, BitVec.getLsbD_setWidth,
     ← hr]
-  simp only [hj, show 8 * t + j < 64 by omega, decide_true, Bool.true_and]
+  simp only [hj, show 8 * t + j < 64 by omega_using [ht, hj], decide_true, Bool.true_and]
   cases (x.setWidth 32 >>> 8).getLsbD (8 * t + j) <;> cases (x.setWidth 32 <<< 24).getLsbD (8 * t + j) <;> rfl
 
 theorem rot_byte (x c : BitVec 64) {t : Nat} (ht : t < 4) :
@@ -382,8 +382,8 @@ theorem slot_mid (b : Addr) {k : Nat} (h1 : 40 ≤ k) (h2 : k < 58) :
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl
-  · exact Offset.disjoint_base (d := 8 * k) b (by omega) (by omega)
-  · exact Offset.disjoint (d := 8 * k) (e := 8 * 58) b (by omega) (by omega) (by omega)
+  · exact Offset.disjoint_base (d := 8 * k) b (by omega_using [h1]) (by omega_using [h2])
+  · exact Offset.disjoint (d := 8 * k) (e := 8 * 58) b (by omega_using [h2]) (by omega_using [h2]) (by omega_using [])
 
 theorem masks_mid {m m' : Mem} {b : Addr} (hf : Frame [⟨b, 320⟩, ⟨rcAddr b, 8⟩] m m')
     (h : MasksAt m b bsKs) : MasksAt m' b bsKs := by
@@ -399,8 +399,8 @@ theorem saved_mid {m m' : Mem} {b : Addr} {g : Reg → BitVec 64}
   refine h.frame_in savedOffs_range hf fun r hr => ?_
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl
-  · exact Offset.disjoint_base b (by omega) (by omega)
-  · exact Offset.disjoint (e := 8 * 58) b (by omega) (by omega) (by omega)
+  · exact Offset.disjoint_base b (by omega_using []) (by omega_using [])
+  · exact Offset.disjoint (e := 8 * 58) b (by omega_using []) (by omega_using []) (by omega_using [])
 
 /-- `SUBWORD(ROTWORD(temp)) ⊕ Rcon`, and the next round constant. -/
 theorem rot_wp {s₀ : State} {S X : Addr} {g : Reg → BitVec 64} {kl : List Byte} {nk i : Nat}
@@ -973,7 +973,7 @@ theorem prologue_wp {s₀ : State} {S X P : Addr} {K : Nat} (hs : CSetup s₀ S 
   have hscr₂ : Scr s₂ X 512 := ⟨by rw [wr₂, u₁.wr]; exact hs.scr, hb₂⟩
   rw [saveRegs_eq]
   refine Spill.save_ok (rest := []) hscr₂.al savedOffs_ho (fun p hp => ⟨_, hscr₂.wr,
-    hscr₂.contains (by have := savedOffs_range p hp; omega) (by decide)⟩) (WP.block_nil ?_)
+    hscr₂.contains (by have := savedOffs_range p hp; omega_using [this]) (by decide)⟩) (WP.block_nil ?_)
   generalize hS' : ({ s₂ with mem := Spill.saveMem s₂.mem (s₂.gpr sb) s₂.gpr savedOffs } : State) = s₂'
   have g₂' : s₂'.gpr = s₂.gpr := by rw [← hS']
   have mm₂ : s₂'.mem = Spill.saveMem s₂.mem (s₂.gpr sb) s₂.gpr savedOffs := by rw [← hS']
@@ -998,7 +998,7 @@ theorem prologue_wp {s₀ : State} {S X P : Addr} {K : Nat} (hs : CSetup s₀ S 
     simp only [ksRegions, List.mem_map] at hr
     obtain ⟨⟨k, v⟩, hk, rfl⟩ := hr
     have := bsKs_slots _ hk
-    exact ⟨⟨X, 512⟩, by simp, scr512 X (d := 8 * k) (by simp only at this ⊢; omega)⟩
+    exact ⟨⟨X, 512⟩, by simp, scr512 X (d := 8 * k) (by simp only at this ⊢; omega_using [this])⟩
   have fr : Frame [⟨S, 240⟩, ⟨X, 512⟩] s₀.mem s₄.mem := by
     rw [u₄.mem]
     have f02 : Frame [⟨S, 240⟩, ⟨X, 512⟩] s₀.mem s₂'.mem := fun x hx =>
@@ -1024,7 +1024,7 @@ theorem prologue_wp {s₀ : State} {S X P : Addr} {K : Nat} (hs : CSetup s₀ S 
     obtain ⟨⟨k, v⟩, hk, rfl⟩ := hr
     have := bsKs_slots _ hk
     simp only at this ⊢
-    exact Offset.disjoint (e := 8 * k) (rb X) (by omega) (by omega) (by omega)
+    exact Offset.disjoint (e := 8 * k) (rb X) (by omega_using [this]) (by omega_using []) (by omega_using [this])
 
 /-! ## The whole function -/
 
@@ -1054,7 +1054,7 @@ theorem ek_correct {s₀ : State} (hp : Proof.Aes.expandKeyRISCV64.pre s₀) :
   refine WP.mono (Spill.restore_wp (B := rb X) (align_al X) h₄.a5 savedOffs_ho
     savedOffs_restorable (fun p hp => ⟨_, List.mem_append_right _ hscr₄.wr, by
       rw [← h₄.a5]
-      exact hscr₄.contains (by have := savedOffs_range p hp; omega) (by decide)⟩) h₄.saved)
+      exact hscr₄.contains (by have := savedOffs_range p hp; omega_using [this]) (by decide)⟩) h₄.saved)
     fun s₅ rs₅ => ?_
   refine ⟨fun r hr => ?_, ?_, ?_⟩
   · have hr' : r ∈ savedOffs.map Prod.fst := by rw [savedOffs_regs]; exact hr

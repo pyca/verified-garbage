@@ -93,14 +93,14 @@ namespace VG.Proof.Dsa.AArch64
 open VG
 
 theorem decodeBE_last_parity (bs : List Byte) (hn : 0 < bs.length) :
-    Spec.Dsa.decodeBE bs % 2 = (bs[bs.length - 1]'(by omega)).toNat % 2 := by
+    Spec.Dsa.decodeBE bs % 2 = (bs[bs.length - 1]'(by omega_using [hn])).toNat % 2 := by
   have hne : bs ≠ [] := by intro h; simp only [h, List.length_nil, Nat.lt_irrefl] at hn
   have he := VG.Proof.Dsa.decodeBE_last_mod_two bs.dropLast (bs.getLast hne)
   rw [List.dropLast_concat_getLast hne, List.getLast_eq_getElem] at he
   exact he
 
 def shapeAccepted (p q : List Byte) (hp : 0 < p.length) (hq : 0 < q.length) : Bool :=
-  shapeValid p q (p[p.length - 1]'(by omega)) (q[q.length - 1]'(by omega))
+  shapeValid p q (p[p.length - 1]'(by omega_using [hp])) (q[q.length - 1]'(by omega_using [hq]))
 
 theorem shapeAccepted_spec (p q : List Byte) (hp : 0 < p.length) (hq : 0 < q.length) :
     shapeAccepted p q hp hq = decide (

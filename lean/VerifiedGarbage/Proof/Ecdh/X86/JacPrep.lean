@@ -27,8 +27,8 @@ theorem jwinPrep_ok (h4 : c.n = 4) {s : State} {base : Addr}
       Unch base [(3520, 120), (Impl.Ecdh.X86.Cfg.windowBits, 320)] s.mem u.mem := by
   have hi : K<45 := by decide
   have hn := hs.nowrap
-  have hv : c.sl K + 32 ≤ 3520 := by rw [sl_eq, h4]; omega
-  have hvsize : c.sl K + 32 ≤ size := by change _ ≤ 8192; omega
+  have hv : c.sl K + 32 ≤ 3520 := by rw [sl_eq, h4]; omega_using [hi]
+  have hvsize : c.sl K + 32 ≤ size := by change _ ≤ 8192; omega_using [hv]
   unfold Impl.Ecdh.X86.Cfg.jwinPrep
   simp only [List.append_assoc]
   refine WP.seq (WP.block_append (WP.mono (copy_ok 8 hs (o := 3520) (by decide) hvsize (Or.inr hv))
@@ -42,14 +42,14 @@ theorem jwinPrep_ok (h4 : c.n = 4) {s : State} {base : Addr}
       simpa only [wordsVal, Nat.mul_zero, Nat.add_zero] using v₂
     change wordsVal s₂.mem base 3520 4 + 2 ^ 256 * (word s₂.mem base 3552).toNat = _
     rw [top, Nat.mul_zero, Nat.add_zero, wordsVal_eq_val32,
-      O₂.val32 (by omega) (by decide), v₁]
+      O₂.val32 (by omega_using []) (by decide), v₁]
     change _ = wordsVal s.mem base (c.sl K) c.n
     rw [wordsVal_eq_val32, h4]
   have hs₂ := hs₁.of_keeps k₂ (by decide)
   refine WP.block_append (WP.mono (setConst_ok hs₂ (n := 5) (o := 3560) (x := JacWinCfg.offset 52)
     (by decide) (by decide +kernel)) fun s₄ ⟨vb, k₃, O₃⟩ => ?_)
   have va : wordsVal s₄.mem base 3520 5 = sv c base s K :=
-    (O₃.wordsVal (by omega) (by decide)).trans padded
+    (O₃.wordsVal (by omega_using []) (by decide)).trans padded
   have k₄ := (k₁.trans k₂).trans k₃
   have O₄ : Outside base 3520 120 s.mem s₄.mem :=
     ((O₁.mono (by decide) (by decide)).trans (O₂.mono (by decide) (by decide))).trans
@@ -86,6 +86,6 @@ theorem jwinPrep_ok (h4 : c.n = 4) {s : State} {base : Addr}
     (by decide) (by decide) (by decide) (by decide)) fun u ⟨bits, ku, Ou⟩ => ?_
   refine ⟨fun t ht => ?_, (k₄.trans k₅).mono (by decide) |>.trans ku,
     ((O₄.trans (O₅.mono (by decide) (by decide))).unch).trans (Ou.unch)⟩
-  rw [bits t (by omega), value]
+  rw [bits t (by omega_using [ht]), value]
 
 end VG.Proof.Ecdh.X86

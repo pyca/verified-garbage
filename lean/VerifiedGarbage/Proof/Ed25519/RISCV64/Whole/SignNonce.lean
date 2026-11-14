@@ -119,7 +119,7 @@ theorem signNonce_ok (C : ShaOK) (B : BaseOk) {s t : State} (hp : SignPre sl s) 
     · exact .inr (.inr (.inr (.inr (.inr ⟨128, 64, by decide, rfl⟩))))
     · exact .inr (.inl (by rw [h₄.sp])))
   have dg : bytesAt t₅.mem (s.gpr .a6 + BitVec.ofNat 64 128) 64 = Spec.Sha512.sha512 (P ++ msgB s) :=
-    hd₅ _ r₄ (by rw [List.length_append, hPl, msgB_length]; omega)
+    hd₅ _ r₄ (by rw [List.length_append, hPl, msgB_length]; omega_using [hlen])
       (by rw [h₄.regs _ (by decide), List.length_append, hPl, msgB_length, cnt_eq]; rfl)
   -- The nonce: `scalar_reduce`.
   have sF : Region.Disjoint ⟨s.gpr .a6 + BitVec.ofNat 64 64, 32⟩ ⟨s.gpr .a6 + BitVec.ofNat 64 128, 64⟩ :=
@@ -172,7 +172,7 @@ theorem signNonce_ok (C : ShaOK) (B : BaseOk) {s t : State} (hp : SignPre sl s) 
   have wd₈ : ∀ q < 64 * 96, t₈.mem.readW (s.syms combSym + BitVec.ofNat 64 (8 * q)) 64 =
       Impl.Ed25519.RISCV64.combWord q := fun q hq => by
     rw [← hp.words q hq, k₈.mem]
-    exact h₇.frame.readW (r := TBL (s.syms combSym)) (Offset.contains_base _ (by omega) (by omega)) hp.tW
+    exact h₇.frame.readW (r := TBL (s.syms combSym)) (Offset.contains_base _ (by omega_using [hq]) (by omega_using [hq])) hp.tW
       (by decide)
   refine WP.call (k := baseRV) B (rd := [⟨s.gpr .a6 + BitVec.ofNat 64 64, 32⟩, TBL (s.syms combSym)])
     (wr := [⟨s.gpr .a0, 32⟩, ⟨s.gpr .a5, 8192⟩])

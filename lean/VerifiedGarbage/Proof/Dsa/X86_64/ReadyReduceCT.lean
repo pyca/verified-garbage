@@ -29,7 +29,7 @@ def ReadyReducePublic.call {d : Nat} (p : ReadyReducePublic d) (a : Operand) : C
   lower := (ModulusSide.q.bounds p.layout).1
   fits := (ModulusSide.q.bounds p.layout).2.1
   upper := by change outerWords < 2 ^ 30; decide
-  greater := by have := p.greater; omega
+  greater := by have := p.greater; omega_using [this]
   odd := p.odd
   greater255 := p.greater
   lengthBound := p.lengthBound

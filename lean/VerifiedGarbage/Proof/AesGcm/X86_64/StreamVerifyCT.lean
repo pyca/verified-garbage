@@ -75,7 +75,7 @@ theorem verifyCheck_rel (hN : 272 ≤ N) (T : TagCall v N) {R t : Nat} (h1 : 1 �
     WP.mono (recv_ok h.1 hbx h1 h16 hsi hTr (dTW.sub_right (Lay.wSub (Lay.leN hN))) (Lay.leN hN) L.nlt) fun s' ⟨he', _, f, _⟩ => by
       have d : ∀ d, 176 ≤ d → d + 8 ≤ 256 → ∀ r ∈ [(⟨W + BitVec.ofNat 64 256, 16⟩ : Region)],
           (⟨W + BitVec.ofNat 64 d, 8⟩ : Region).Disjoint r := fun d h₁ h₂ r hr => by
-        simp only [List.mem_singleton] at hr; subst hr; exact L.w_w (.inl (by omega)) (by omega) (Lay.leN hN)
+        simp only [List.mem_singleton] at hr; subst hr; exact L.w_w (.inl (by omega_using [h₂])) (by omega_using [hN, h₂]) (Lay.leN hN)
       exact ⟨⟨he', rounds_frame f (d 176 (by decide) (by decide)) h.2.1,
         by rw [f.readW (r := ⟨_, 8⟩) (Region.contains_self _ _) (d 184 (by decide) (by decide)) (by decide), h.2.2.1],
         by rw [f.readW (r := ⟨_, 8⟩) (Region.contains_self _ _) (d 192 (by decide) (by decide)) (by decide), h.2.2.2]⟩,
@@ -91,7 +91,7 @@ theorem verifyCheck_rel (hN : 272 ≤ N) (T : TagCall v N) {R t : Nat} (h1 : 1 �
   -- `finTag` keeps the tag length.
   have hT : ∀ s, VerS Ctx St W SP R aL tL (BitVec.ofNat 64 t) N s → WP isa (finTag v.callees 0) s fun s' =>
       Env Ctx St W SP s' N ∧ s'.mem.readW (W + BitVec.ofNat 64 224) 64 = BitVec.ofNat 64 t := fun s ⟨h, ht⟩ =>
-    WP.mono (finTag_ok v L (by omega) T (.inl rfl) h.1 h.2.1 h.2.2.1 h.2.2.2
+    WP.mono (finTag_ok v L (by omega_using [hN]) T (.inl rfl) h.1 h.2.1 h.2.2.1 h.2.2.2
       (x := List.replicate ((if tL = 0 then aL.toNat else tL.toNat) % 16) 0) (by simp)) fun _ ⟨he', _, f, _⟩ =>
       ⟨he', by
         rw [f.readW (r := ⟨W + BitVec.ofNat 64 224, 8⟩) (Region.contains_self _ _) (fun r hr => by
@@ -102,7 +102,7 @@ theorem verifyCheck_rel (hN : 272 ≤ N) (T : TagCall v N) {R t : Nat} (h1 : 1 �
           · simpa using L.w_w (a := 224) (n := 8) (d := 0) (k := 16) (.inr (by decide)) (Lay.leN hN) (Lay.leN hN)
           · exact L.w_hi (by decide) (Lay.leN hN)
           · exact (L.stk_w (Lay.leN hN)).symm) (by decide), ht]⟩
-  have b := rel_wp ((finTag_rel v L (by omega) T (R := R) (aL := aL) (tL := tL) (.inl rfl)).mono
+  have b := rel_wp ((finTag_rel v L (by omega_using [hN]) T (R := R) (aL := aL) (tL := tL) (.inl rfl)).mono
       (P' := fun s₁ s₂ => True ∧ VerS Ctx St W SP R aL tL (BitVec.ofNat 64 t) N s₁ ∧
         VerS Ctx St W SP R aL tL (BitVec.ofNat 64 t) N s₂) (fun _ _ h => ⟨h.2.1.1, h.2.2.1⟩) fun _ _ h => h)
     (fun _ _ h => h.2) hT hT
@@ -201,7 +201,7 @@ theorem streamVerify_rel (v : GcmImpl) {N gs : Nat} [G : GhFits v N gs] (T : Tag
     · exact RelCT.of_false fun _ _ h => by have := h.1.2.1.2.symm.trans h.2; simp [hok] at this
     have hb : 1 ≤ t ∧ t ≤ 16 := by
       simp only [Spec.Gcm.tagLenOk, Bool.and_eq_true, decide_eq_true_eq] at hok
-      omega
+      omega_using [hok]
     have hc : ∀ s, VerT (Ctx := Ctx) (St := St) (W := W) (SP := SP) (N := N) R (s₀.gpr .rcx) (s₀.gpr .r8) t Tp s →
         WP isa (.seq recv (.seq (finTag v.callees 0) (.seq (.block [.mov .rbx (.mem (at_ .r15 tlO))]) (cmp 0)))) s
           (Env Ctx St W SP · N) := fun s ⟨⟨h, hm⟩, hbx, hsi, hTr⟩ =>

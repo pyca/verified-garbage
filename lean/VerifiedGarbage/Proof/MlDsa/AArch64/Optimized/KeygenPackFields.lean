@@ -35,11 +35,11 @@ theorem fields_ok (d c : Nat) (hd : d≤20) (hc : c≤8) (s : State)
   refine wp_range_flatMap (M:=isa) I (fun j t hj ht=>?_) c (Nat.le_refl _) s
     ⟨Keep.refl _ _,rfl,rfl,rfl⟩
   rcases ht with ⟨hk,hv,hm,ha⟩
-  refine WP.mono (field_ok d j hd (by omega) t ?_) fun u ⟨⟨⟨hu9,hum⟩,hu⟩,huv⟩ => ?_
+  refine WP.mono (field_ok d j hd (by omega_using [hc, hj]) t ?_) fun u ⟨⟨⟨hu9,hum⟩,hu⟩,huv⟩ => ?_
   · intro hf
-    have hprod : d*(j+1)≤d*c := Nat.mul_le_mul_left d (by omega)
+    have hprod : d*(j+1)≤d*c := Nat.mul_le_mul_left d (by omega_using [hj])
     rw [Nat.mul_succ] at hprod
-    simpa only [hk.wr,hk.get .x2] using hw (d*j/64*8) (by omega)
+    simpa only [hk.wr,hk.get .x2] using hw (d*j/64*8) (by omega_using [hf, hprod])
   · refine ⟨(hk.trans hu).mono,huv.trans hv,?_,?_⟩
     · rw [hum,hk.get .x2,hv,hm,ha]
       rfl
@@ -51,8 +51,8 @@ theorem fieldsRun_values (d : Nat) (out : Addr) (v w : Nat → BitVec 64) (s : F
   induction n with
   | zero => rfl
   | succ n ih =>
-    rw [fieldsRun,fieldsRun,ih (by intro j hj; exact h j (by omega))]
-    simp only [fieldStep,h n (by omega)]
+    rw [fieldsRun,fieldsRun,ih (by intro j hj; exact h j (by omega_using [hj]))]
+    simp only [fieldStep,h n (by omega_using [])]
 
 theorem fieldsRun_acc_irrel (d : Nat) (hd : d≤20) (out : Addr) (v : Nat → BitVec 64)
     (m : Mem) (a b : BitVec 64) {n : Nat} (hn : 0<n) :
@@ -62,10 +62,10 @@ theorem fieldsRun_acc_irrel (d : Nat) (hd : d≤20) (out : Addr) (v : Nat → Bi
   | succ n ih =>
     by_cases h : n=0
     · subst n
-      have h64 : ¬64≤d := by omega
-      have h64' : ¬64<d := by omega
+      have h64 : ¬64≤d := by omega_using [hd]
+      have h64' : ¬64<d := by omega_using [hd]
       simp only [fieldsRun,fieldStep,fieldMem,fieldAcc,joined,Nat.mul_zero,Nat.zero_mod,
         Nat.zero_add,h64,h64',↓reduceIte]
-    · rw [fieldsRun,fieldsRun,ih (by omega)]
+    · rw [fieldsRun,fieldsRun,ih (by omega_using [h])]
 
 end VG.Proof.MlDsa.AArch64.Optimized.KeygenPack

@@ -26,7 +26,7 @@ theorem tablePrep_ok {base : Addr} {P Q : Point C} {s : State}
       PointAt base t resultPt (pair P Q ((previous d)%4) ((previous d)/4)) ∧
       PointAt base t entry (if d%4=0 then Q else P) := by
   have hp : previous d < d := previous_lt h1
-  have hp15 : previous d ≤ 15 := by omega
+  have hp15 : previous d ≤ 15 := by omega_using [h15, hp]
   let A := pair P Q ((previous d)%4) ((previous d)/4)
   have prep : WP isa (.block (if previous d=0 then infinity else copyPt 4 resultPt (tablePt (previous d)))) s
       fun t => Changes base loopWork s t ∧ Inputs base P Q t ∧ PointAt base t resultPt A := by
@@ -38,8 +38,8 @@ theorem tablePrep_ok {base : Addr} {P Q : Point C} {s : State}
       have e : A=.infinity := by dsimp only [A]; rw [hz]; exact pair_zero P Q
       rw [e]; exact p
     · rw [ite_eq_right hz]
-      refine WP.mono (copy_point hi.scr (load_layout (by omega) hp15)
-        (ht (previous d) (by omega) (by omega))) fun t ⟨k,p,_⟩ => ?_
+      refine WP.mono (copy_point hi.scr (load_layout (by omega_using [hz]) hp15)
+        (ht (previous d) (by omega_using [hz]) (by omega_using [hp]))) fun t ⟨k,p,_⟩ => ?_
       have W := k.mono resultWork_sub
       exact ⟨W,hi.unch (W.mono loopWork_sub),p⟩
   have code : tablePrep d = .block ((if previous d=0 then infinity else copyPt 4 resultPt (tablePt (previous d))) ++

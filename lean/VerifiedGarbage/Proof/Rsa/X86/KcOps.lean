@@ -123,9 +123,9 @@ theorem Stg.ltA_ok {g : Geo} {s0 s : State} {A : Nat → Nat} {live : List Nat} 
   have hb' := borrow_iff (P := 2 ^ (32 * g.w)) v1 (val32_lt _ _ _ _) b1
   rw [h.arrs.get ha, h.arrs.get hb] at hb'
   by_cases hlt : A a < A b
-  · have : (t1.gpr .ebx).toNat = 1 := by have := hb'.not.mpr (by omega); omega
+  · have : (t1.gpr .ebx).toNat = 1 := by have := hb'.not.mpr (by omega_using [hlt]); omega_using [b1, this]
     simp [hlt, this]
-  · have : (t1.gpr .ebx).toNat = 0 := hb'.mpr (by omega)
+  · have : (t1.gpr .ebx).toNat = 0 := hb'.mpr (by omega_using [hlt])
     simp [hlt, this]
 
 /-- `eqA a b`: the mask and'ed with `[a] = [b]`. -/

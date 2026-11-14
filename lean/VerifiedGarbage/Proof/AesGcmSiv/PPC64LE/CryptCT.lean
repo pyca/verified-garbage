@@ -70,12 +70,12 @@ private theorem cryptChunk_rel {c : Cx} (L : Lay c) {σ₁ σ₂ : State} (E₁ 
     RelCT isa (Eq2 σ₁ σ₂) cryptChunk TT := by
   have hn := L.n_lt
   generalize hkd : min ((c.n - 16 * j) / 16) 64 = k
-  have hk1 : 1 ≤ k := by omega
-  have hk : k ≤ 64 := by omega
+  have hk1 : 1 ≤ k := by omega_using [hj, hkd]
+  have hk : k ≤ 64 := by omega_using [hkd]
   unfold cryptChunk
   refine rel_seqR (rel_env [.r24] E₁ E₂ hsp (by simp [h24₁, h24₂]) ⟨_, by taint_decide⟩)
-    (Runs.of_wp (chunkLen_wp (m := c.n - 16 * j) (by omega) h24₁))
-    (Runs.of_wp (chunkLen_wp (m := c.n - 16 * j) (by omega) h24₂)) fun τ₁ τ₂ u₁ u₂ => ?_
+    (Runs.of_wp (chunkLen_wp (m := c.n - 16 * j) (by omega_using [hn]) h24₁))
+    (Runs.of_wp (chunkLen_wp (m := c.n - 16 * j) (by omega_using [hn]) h24₂)) fun τ₁ τ₂ u₁ u₂ => ?_
   rw [hkd] at u₁ u₂
   have F₁ := E₁.of_pk (PK.ofUpd u₁)
   have F₂ := E₂.of_pk (PK.ofUpd u₂)
@@ -114,15 +114,15 @@ theorem crypt_rel {c : Cx} (L : Lay c) {σ₁ σ₂ : State} (E₁ : Env c σ₁
   have mid : ∀ {σ τ : State}, Env c σ → HeadPost c σ τ → Runs (.ite (.zero .d .r11) (.block [])
       (.loop cryptChunk (.nonzero .d .r11))) τ fun ρ => PK τ ρ ∧ ρ.gpr .r23 = c.D + BitVec.ofNat 64 (16 * (c.n / 16)) ∧
         ρ.gpr .r24 = BitVec.ofNat 64 (c.n - 16 * (c.n / 16)) := fun {σ τ} E H => by
-    refine Runs.of_wp (WP.ite (decide (c.n / 16 = 0)) (eval_zero H.r11 (by omega)) (fun ht => ?_) (fun hf => ?_))
+    refine Runs.of_wp (WP.ite (decide (c.n / 16 = 0)) (eval_zero H.r11 (by omega_using [hn])) (fun ht => ?_) (fun hf => ?_))
     · have h0 : c.n / 16 = 0 := by simpa using ht
       exact WP.block_nil ⟨PK.refl _, by rw [H.r23, h0, Nat.mul_zero, BitVec.add_zero],
         by rw [H.r24, h0, Nat.mul_zero, Nat.sub_zero]⟩
     · have h0 : c.n / 16 ≠ 0 := by simpa using hf
-      exact WP.mono (blocks_wp L (E.of_pk H.pk) (Proof.Cmac.bytesAt_length σ.mem c.D c.n) (by omega) H.r23 H.r24
+      exact WP.mono (blocks_wp L (E.of_pk H.pk) (Proof.Cmac.bytesAt_length σ.mem c.D c.n) (by omega_using [h0]) H.r23 H.r24
         H.ctr H.data H.ciph) fun ρ B => ⟨B.pk, B.r23, B.r24⟩
   refine rel_seqR ?_ (mid E₁ H₁) (mid E₂ H₂) fun ρ₁ ρ₂ ⟨pk₁, r23₁, r24₁⟩ ⟨pk₂, r23₂, r24₂⟩ => ?_
-  · refine rel_ite (eval_zero H₁.r11 (by omega)) (eval_zero H₂.r11 (by omega)) (fun _ => ?_) (fun hf => ?_)
+  · refine rel_ite (eval_zero H₁.r11 (by omega_using [hn])) (eval_zero H₂.r11 (by omega_using [hn])) (fun _ => ?_) (fun hf => ?_)
     · exact rel_env [] F₁ F₂ hsp₁ (by simp) ⟨_, by taint_decide⟩
     have h0 : c.n / 16 ≠ 0 := by simpa using hf
     refine (RelCT.loop (Q := TT) (fun k (a b : State) => ∃ j, k = c.n / 16 - j ∧ j < c.n / 16 ∧
@@ -133,7 +133,7 @@ theorem crypt_rel {c : Cx} (L : Lay c) {σ₁ σ₂ : State} (E₁ : Env c σ₁
         (fun k => ?_) (c.n / 16 - 0)).mono
       (fun a b hab => by
         obtain ⟨rfl, rfl⟩ := hab
-        exact ⟨0, rfl, by omega,
+        exact ⟨0, rfl, by omega_using [h0],
           ⟨PK.refl _, by rw [H₁.r23, Nat.mul_zero, BitVec.add_zero], by rw [H₁.r24, Nat.mul_zero, Nat.sub_zero],
             H₁.ctr, by rw [H₁.data, Nat.mul_zero, GcmSiv.ctrPart_zero], Frame.refl _ _⟩,
           ⟨PK.refl _, by rw [H₂.r23, Nat.mul_zero, BitVec.add_zero], by rw [H₂.r24, Nat.mul_zero, Nat.sub_zero],
@@ -150,18 +150,18 @@ theorem crypt_rel {c : Cx} (L : Lay c) {σ₁ σ₂ : State} (E₁ : Env c σ₁
       (Runs.of_wp (cryptChunk_wp L hxl₁ hj G₁ P₁ hc₁))
       (Runs.of_wp (cryptChunk_wp L hxl₂ hj G₂ P₂ hc₂))).mono
       (fun _ _ h => h) fun a' b' ⟨⟨Q₁, r11₁⟩, ⟨Q₂, r11₂⟩⟩ => ?_
-    have ev₁ := eval_nonzero r11₁ (by omega)
-    have ev₂ := eval_nonzero r11₂ (by omega)
+    have ev₁ := eval_nonzero r11₁ (by omega_using [hn])
+    have ev₂ := eval_nonzero r11₂ (by omega_using [hn])
     refine ⟨by rw [ev₁, ev₂], fun _ => trivial, fun ht => ⟨c.n / 16 - (j + min ((c.n - 16 * j) / 16) 64), ?_,
       j + min ((c.n - 16 * j) / 16) 64, rfl, ?_, Q₁, Q₂⟩⟩
-    · rw [ev₁] at ht; simp at ht; omega
-    · rw [ev₁] at ht; simp at ht; omega
+    · rw [ev₁] at ht; simp at ht; omega_using [hk, hj]
+    · rw [ev₁] at ht; simp at ht; omega_using [ht]
   · have G₁ := F₁.of_pk pk₁
     have G₂ := F₂.of_pk pk₂
     have hsp₂ : ρ₁.sp = ρ₂.sp := by rw [pk₁.sp, pk₂.sp, hsp₁]
-    have q24₁ : ρ₁.gpr .r24 = BitVec.ofNat 64 (c.n % 16) := by rw [r24₁]; congr 1; omega
-    have q24₂ : ρ₂.gpr .r24 = BitVec.ofNat 64 (c.n % 16) := by rw [r24₂]; congr 1; omega
-    refine rel_ite (eval_zero q24₁ (by omega)) (eval_zero q24₂ (by omega)) (fun _ => ?_) (fun _ => ?_)
+    have q24₁ : ρ₁.gpr .r24 = BitVec.ofNat 64 (c.n % 16) := by rw [r24₁]; congr 1; omega_using []
+    have q24₂ : ρ₂.gpr .r24 = BitVec.ofNat 64 (c.n % 16) := by rw [r24₂]; congr 1; omega_using []
+    refine rel_ite (eval_zero q24₁ (by omega_using [])) (eval_zero q24₂ (by omega_using [])) (fun _ => ?_) (fun _ => ?_)
     · exact rel_env [] G₁ G₂ hsp₂ (by simp) ⟨_, by taint_decide⟩
     unfold cryptTail
     refine rel_seqR (tag_rel L G₁ G₂ hsp₂ (o := 240) (by decide)) (Runs.of_wp (tag_wp L G₁ (o := 240) (by decide)))

@@ -52,10 +52,10 @@ theorem adv_ok {s₀ : State} {u : State} {h c : Nat} (hc : c < nb s₀)
   refine ⟨?_, ?_, fun r h9 h11 => ?_, rfl, rfl, rfl, rfl, rfl⟩
   · rw [gpr_write_of_ne _ _ _ (by decide), gpr_write_self, BitVec.setWidth_eq]
     simp only [State.read, BitVec.setWidth_eq, hx9]
-    rw [Offset.add_add_eq _ (show 128 * h + 128 = 128 * (h + 1) by omega)]
+    rw [Offset.add_add_eq _ (show 128 * h + 128 = 128 * (h + 1) by omega_using [])]
   · rw [gpr_write_self, BitVec.setWidth_eq]
     simp only [State.read, BitVec.setWidth_eq, gpr_write_of_ne _ _ _ (show Reg.x11 ≠ Reg.x9 by decide), hx11]
-    rw [Offset.ofNat_sub_ofNat (by omega), show nb s₀ - c - 1 = nb s₀ - (c + 1) by omega]
+    rw [Offset.ofNat_sub_ofNat (by omega_using [hc]), show nb s₀ - c - 1 = nb s₀ - (c + 1) by omega_using []]
   · rw [gpr_write_of_ne _ _ _ h11, gpr_write_of_ne _ _ _ h9]
 
 /-- The destination's pointer past the batch, out of place. -/
@@ -80,8 +80,8 @@ theorem body_ok {s₀ : State} {to : Bool} (hp : KPreM s₀ to) (gh : Gh8Ok) {hb
     (hhb : ∀ j < 8, blockAt s.mem (dp s₀ + BitVec.ofNat 64 (16 * (8 * h + j))) = hb (8 * h + j)) :
     WP isa (.block (parts (rounds s₀) o ++ storesAt (outReg to) o ++ adv to)) s
       (LInv s₀ to hb (c + 1) (h + 1)) := by
-  have ho' : o ≤ 128 := by omega
-  have ho16 : o % 16 = 0 := by omega
+  have ho' : o ≤ 128 := by omega_using [ho]
+  have ho16 : o % 16 = 0 := by omega_using [hho]
   have hout : s.gpr (outReg to) + BitVec.ofNat 64 o = op s₀ to + BitVec.ofNat 64 (128 * c) := by
     cases to with
     | false =>
@@ -115,11 +115,11 @@ theorem body_ok {s₀ : State} {to : Bool} (hp : KPreM s₀ to) (gh : Gh8Ok) {hb
     fun u' ⟨x9', x11', g', v', m', sp', rd', wr'⟩ => ?_
   have gall : ∀ r, r ≠ .x9 → r ≠ .x11 → (to = true → r ≠ .x15) → u'.gpr r = u.gpr r :=
     fun r h9 h11 h15 => by rw [g' r h9 h11, g₂ r h15, g₁]
-  refine ⟨by omega, x9', ?_, x11', fun ht => ?_, fun r hr => ?_, ?_, ?_, by rw [m', m₂]; exact d₁, ?_, ?_, ?_, ?_⟩
+  refine ⟨by omega_using [hc], x9', ?_, x11', fun ht => ?_, fun r hr => ?_, ?_, ?_, by rw [m', m₂]; exact d₁, ?_, ?_, ?_, ?_⟩
   · simp only [State.read] at x10t ⊢
     rw [gall _ (by decide) (by decide) (fun _ => by decide), ou.gpr]; exact x10t
   · rw [g' _ (by decide) (by decide), x15₂ ht, g₁, gu _ (by decide) (by decide), hI.xo ht,
-      Offset.add_add_eq _ (show 128 * c + 128 = 128 * (c + 1) by omega)]
+      Offset.add_add_eq _ (show 128 * c + 128 = 128 * (c + 1) by omega_using [])]
   · obtain ⟨hrk, hr15⟩ := kRegsT_not hr
     simp only [kRegs, List.mem_cons, List.not_mem_nil, or_false, not_or] at hrk
     rw [gall r hrk.1 hrk.2.2.1 hr15, gu r hrk.2.1 hrk.2.2.2.1, hI.gpr r hr]

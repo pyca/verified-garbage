@@ -97,14 +97,14 @@ theorem iter_ct (R : RoundImpl) (n : Nat) :
     simp only [Option.some.injEq, decide_eq_false_iff_not] at ev
     rw [rB_len]
     split at ev
-    · omega
+    · omega_arith
     · exact absurd rfl ev
   · refine (two_post (Ψ := LT n) (two_taint _ pins_LM (by taint_decide)) fun ⟨a, k⟩ s ⟨s0, q, C, ha, hm⟩ =>
       WP.mono (tailS hm) fun t ht => ⟨s0, q, C, ha, ht⟩).mono (fun _ _ h => h) ?_
     rintro s₁ s₂ ⟨⟨a, k⟩, ⟨s0, q, C, ha, ht⟩, ⟨s0', q', C', ha', ht'⟩, hsp⟩
     have hm := mc_agree C C' ha ha'
     rcases ht with ⟨hc, ev, ha1, hi1⟩ | ⟨hc, ev, -⟩ <;> rcases ht' with ⟨hc', ev', ha1', hi1'⟩ | ⟨hc', ev', -⟩
-    · refine ⟨by rw [ev, ev'], fun _ => trivial, fun _ => ⟨n - 1, by have := hc.2.2; omega, (a, k + 1),
+    · refine ⟨by rw [ev, ev'], fun _ => trivial, fun _ => ⟨n - 1, by have := hc.2.2; omega_using [this], (a, k + 1),
         ⟨s0, q, C, ha1, hi1⟩, ⟨s0', q', C', ha1', hi1'⟩, hsp⟩⟩
     · exact absurd (hm.mp hc) hc'
     · exact absurd (hm.mpr hc') hc
@@ -127,12 +127,12 @@ theorem LCtx.mrAt0 {a : CD} {s0 q : State} (C : LCtx a s0 q) :
     MrAt (candOf s0) (VG.Proof.RsaKeyGen.checksW (cw s0)) (lA s0) (lM s0) (8 * cw s0) (rB s0) 0 (n0 s0) := by
   have P := C.t3.lin
   have hw4 := C.t3.prep.env.hw
-  obtain ⟨_, _, hwb⟩ := VG.Proof.RsaKeyGen.cand_bits (by omega : 1 ≤ cw s0) P.shape
+  obtain ⟨_, _, hwb⟩ := VG.Proof.RsaKeyGen.cand_bits (by omega_using [hw4] : 1 ≤ cw s0) P.shape
   have hrl := rB_len s0
   have h8 := C.t3.tc.h8
-  have hc := VG.Proof.RsaKeyGen.primalityTest_cand (by omega) P.shape ((rB s0).drop (8 * cw s0))
+  have hc := VG.Proof.RsaKeyGen.primalityTest_cand (by omega_using [hw4]) P.shape ((rB s0).drop (8 * cw s0))
   rw [← P.hch] at hc
-  exact VG.Proof.RsaKeyGen.mrAt_zero hc hwb (by omega) (by omega)
+  exact VG.Proof.RsaKeyGen.mrAt_zero hc hwb (by omega_using [hw4]) (by omega_using [hrl, h8])
 
 theorem n0_eq {a : CD} {s0 s0' q q' : State} (C : LCtx a s0 q) (C' : LCtx a s0' q') : n0 s0 = n0 s0' := by
   have hw : cw s0 = cw s0' := by simp only [cw, C.krel.oL_eq C'.krel]

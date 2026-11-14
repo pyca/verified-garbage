@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Divstep.BatchBasic
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # Divsteps in batches
@@ -30,23 +31,23 @@ theorem mstep_rel {t : MSt} {k : Nat} {f₀ g₀ : Int} (hf : t.f % 2 = 1) (h : 
   split
   · rename_i hc
     simp only
-    have e : 2 * ((t.g - t.f) / 2) = t.g - t.f := Int.mul_ediv_cancel' (by omega)
+    have e : 2 * ((t.g - t.f) / 2) = t.g - t.f := Int.mul_ediv_cancel' (by omega_using [hf, hc])
     constructor
     · rw [Int.pow_succ]; rw [Int.mul_right_comm, h2, Int.add_mul]; simp only [Int.mul_assoc, Int.mul_comm]
-    · rw [Int.pow_succ, Int.mul_assoc, e]; rw [Int.mul_sub, h2, h1]; simp only [Int.sub_mul]; omega
+    · rw [Int.pow_succ, Int.mul_assoc, e]; rw [Int.mul_sub, h2, h1]; simp only [Int.sub_mul]; omega_using []
   · rename_i hc
     simp only
     rcases Int.emod_two_eq_zero_or_one t.g with hg | hg
     · rw [hg]
-      have e : 2 * ((t.g + 0 * t.f) / 2) = t.g := by rw [Int.zero_mul, Int.add_zero]; exact Int.mul_ediv_cancel' (by omega)
+      have e : 2 * ((t.g + 0 * t.f) / 2) = t.g := by rw [Int.zero_mul, Int.add_zero]; exact Int.mul_ediv_cancel' (by omega_using [hg])
       constructor
       · rw [Int.pow_succ]; rw [Int.mul_right_comm, h1, Int.add_mul]; simp only [Int.mul_assoc, Int.mul_comm]
       · rw [Int.pow_succ, Int.mul_assoc, e]; simpa using h2
     · rw [hg]
-      have e : 2 * ((t.g + 1 * t.f) / 2) = t.g + t.f := by rw [Int.one_mul]; exact Int.mul_ediv_cancel' (by omega)
+      have e : 2 * ((t.g + 1 * t.f) / 2) = t.g + t.f := by rw [Int.one_mul]; exact Int.mul_ediv_cancel' (by omega_using [hf, hg])
       constructor
       · rw [Int.pow_succ]; rw [Int.mul_right_comm, h1, Int.add_mul]; simp only [Int.mul_assoc, Int.mul_comm]
-      · rw [Int.pow_succ, Int.mul_assoc, e]; rw [Int.mul_add, h2, h1]; simp only [Int.add_mul, Int.one_mul]; omega
+      · rw [Int.pow_succ, Int.mul_assoc, e]; rw [Int.mul_add, h2, h1]; simp only [Int.add_mul, Int.one_mul]; omega_using []
 
 /-- `n` steps from the identity: `2^n f_n = u f + v g`, `2^n g_n = q f + r g`. -/
 theorem msteps_mat {d f g : Int} (hf : f % 2 = 1) (n : Nat) :
@@ -67,20 +68,20 @@ theorem mstep_bnd {t : MSt} {n : Nat} (h : t.bnd n) : (mstep t).bnd (n + 1) := b
     rcases hb with rfl | rfl <;> simp
   have twice (x : Int) : |2*x| = 2*|x| := by
     by_cases hx : 0 ≤ x
-    · rw [abs_of_nonneg hx, abs_of_nonneg (by omega)]
-    · rw [abs_of_neg (by omega : x < 0), abs_of_neg (by omega : 2*x < 0)]; omega
+    · rw [abs_of_nonneg hx, abs_of_nonneg (by omega_using [hx])]
+    · rw [abs_of_neg (by omega_using [hx] : x < 0), abs_of_neg (by omega_using [hx] : 2*x < 0)]; omega_using []
   have hg := Int.emod_two_eq_zero_or_one t.g
   unfold mstep MSt.bnd
   rw [Int.pow_succ]
   split
   · simp only
     refine ⟨?_, ?_⟩
-    · rw [twice, twice]; omega
+    · rw [twice, twice]; omega_using [h2]
     · have hq := abs_add_le t.q (-t.u); have hr := abs_add_le t.r (-t.v)
       simp only [← sub_eq_add_neg, abs_neg] at hq hr; omega
   · simp only
     refine ⟨?_, ?_⟩
-    · rw [twice, twice]; omega
+    · rw [twice, twice]; omega_using [h1]
     · have := abs_add_le t.q (t.g % 2 * t.u); have := abs_add_le t.r (t.g % 2 * t.v)
       have := hb _ hg t.u; have := hb _ hg t.v; omega
 
@@ -100,14 +101,14 @@ theorem mstep_cong {t t' : MSt} {k : Nat} (ht : t.f % 2 = 1) (h : t.cong t' (k +
   have hg2 : t.g % 2 = t'.g % 2 := by
     have := congrArg (· % 2) hg
     simp only [Int.emod_emod_of_dvd _ (show (2 : Int) ∣ 2 ^ (k + 1) by
-      exact dvd_pow_self 2 (by omega))] at this
+      exact dvd_pow_self 2 (by omega_using []))] at this
     exact this
   have hf2 : t.f % 2 = t'.f % 2 := by
     have := congrArg (· % 2) hf
     simp only [Int.emod_emod_of_dvd _ (show (2 : Int) ∣ 2 ^ (k + 1) by
-      exact dvd_pow_self 2 (by omega))] at this
+      exact dvd_pow_self 2 (by omega_using []))] at this
     exact this
-  have hk : (2 : Int) ^ k ∣ 2 ^ (k + 1) := pow_dvd_pow 2 (by omega)
+  have hk : (2 : Int) ^ k ∣ 2 ^ (k + 1) := pow_dvd_pow 2 (by omega_using [])
   have hfk : t.f % 2 ^ k = t'.f % 2 ^ k := by
     rw [← Int.emod_emod_of_dvd t.f hk, ← Int.emod_emod_of_dvd t'.f hk, hf]
   unfold mstep MSt.cong
@@ -116,14 +117,14 @@ theorem mstep_cong {t t' : MSt} {k : Nat} (ht : t.f % 2 = 1) (h : t.cong t' (k +
   · rename_i hc
     refine ⟨rfl, by rw [hq], by rw [hr], by rw [hq, hu], by rw [hr, hv], ?_, ?_⟩
     · rw [← Int.emod_emod_of_dvd t.g hk, ← Int.emod_emod_of_dvd t'.g hk, hg]
-    · refine half_cong ?_ (by omega) (by omega)
+    · refine half_cong ?_ (by omega_using [ht, hg2, hc]) (by omega_using [ht, hf2, hc])
       rw [Int.sub_emod, hg, hf, ← Int.sub_emod]
   · refine ⟨rfl, by rw [hu], by rw [hv], by rw [hq, hu], by rw [hr, hv], hfk, ?_⟩
     rcases Int.emod_two_eq_zero_or_one t'.g with h0 | h0
     · simp only [h0, Int.zero_mul, Int.add_zero]
-      exact half_cong hg (by omega) (by omega)
+      exact half_cong hg (by omega_using [hg2, h0]) (by omega_using [h0])
     · simp only [h0, Int.one_mul]
-      refine half_cong ?_ (by omega) (by omega)
+      refine half_cong ?_ (by omega_using [ht, hg2, h0]) (by omega_using [ht, hf2, h0])
       rw [Int.add_emod, hg, hf, ← Int.add_emod]
 
 /-- `n ≤ N` steps on `f`, `g` modulo `2^N` give the same `d` and matrix. -/
@@ -132,8 +133,8 @@ theorem msteps_cong {t t' : MSt} {N : Nat} (ht : t.f % 2 = 1) (h : t.cong t' N) 
   | 0, _ => by simpa [msteps] using h
   | n + 1, hn => by
     rw [msteps_succ, msteps_succ]
-    have := msteps_cong ht h n (by omega)
-    rw [show N - n = (N - (n + 1)) + 1 by omega] at this
+    have := msteps_cong ht h n (by omega_using [hn])
+    rw [show N - n = (N - (n + 1)) + 1 by omega_using [hn]] at this
     exact mstep_cong (msteps_f_odd ht n) this
 
 end VG.Proof.Divstep

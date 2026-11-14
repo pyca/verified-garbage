@@ -90,7 +90,7 @@ def WorkspacePublic.child (p : WorkspacePublic) (isP : Bool) : ChildPublic where
     have hl := p.lengths
     change (if isP then p.pBytes else p.qBytes).length < 2 ^ 31
     cases isP <;> simp only [Bool.false_eq_true, ↓reduceIte] <;>
-      rcases hl with ⟨h1, h2⟩ | ⟨h1, h2 | h2 | h2⟩ | ⟨h1, h2⟩ <;> omega
+      rcases hl with ⟨h1, h2⟩ | ⟨h1, h2 | h2 | h2⟩ | ⟨h1, h2⟩ <;> omega_arith
   width := rfl
 
 def workspaceOperand (isP : Bool) : Operand :=
@@ -139,7 +139,7 @@ theorem workspaceChild_ct (isP : Bool) : RelCT isa (Two WorkspaceStage)
       · exact Nat.le_trans this.2 (show pWorkspace ≤ qWorkspace by decide)
       · exact this.2
     · exact Or.inr (Nat.le_trans (by decide) (VG.Proof.Dsa.field_bounds f).1)
-    · have := c.offset; omega
+    · have := c.offset; omega_using [this]
   · apply InScr.of_frm hf
     intro r hr
     simp only [initRanges, List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -148,7 +148,7 @@ theorem workspaceChild_ct (isP : Bool) : RelCT isa (Two WorkspaceStage)
     · have hh := c.hi
       change c.x.o + slot c.x.wx 8 ≤ p.extent
       change c.x.o + slot c.x.wx 8 + tabBytes c.x.wx ≤ p.extent at hh
-      omega
+      omega_using [hh]
 
 theorem workspaces_ct : RelCT isa (Two (fun (p : WorkspacePublic) s => ShapeContext p.toShapePublic s))
     SignVerify.workspaces (fun _ _ => True) := by

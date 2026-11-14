@@ -22,8 +22,8 @@ theorem generatorOutputRange_ok {p : GeneratorPlan} {W : Nat → BitVec 64} {s :
       t.gpr .rax = mask (decide (1 < p.value)) ∧ GeneratorMemory p W t ∧
       Spec.Rsa.bytesAt t.mem (off p.B g) p.len = Spec.Dsa.encodeBE p.len p.value ∧
       Frame p.changed s.mem t.mem ∧ Keep (.rdi :: mmRegs) s t := by
-  have hn : p.len < 2 ^ 64 := by rcases p.width with hh | hh | hh <;> omega
-  have hlt : p.value < Spec.Dsa.decodeBE p.pb := VG.Proof.Dsa.powMod_lt _ _ (by have := p.pPositive; omega)
+  have hn : p.len < 2 ^ 64 := by rcases p.width with hh | hh | hh <;> omega_using [hh]
+  have hlt : p.value < Spec.Dsa.decodeBE p.pb := VG.Proof.Dsa.powMod_lt _ _ (by have := p.pPositive; omega_using [this])
   have hfit : p.value < 256 ^ p.len := Nat.lt_trans hlt (p.pLength ▸ VG.Proof.Dsa.decodeBE_lt p.pb)
   have hdecode := VG.Proof.Dsa.decodeBE_encodeBE hfit
   have src : Src s p.A p.Z (off p.B g) (Spec.Dsa.encodeBE p.len p.value) := by

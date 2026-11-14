@@ -146,7 +146,7 @@ theorem mulPiece {F G : State → State → Prop} (hpre : ∀ σ s, F σ s → S
     obtain ⟨eB, eZ, eW⟩ := p.geom
     exact RelCT.exists_ (P := fun (_ : 16 ≤ cvW σ₁ ∧ cvW σ₁ % 2 = 0) s t => (SA σ₁ s ∧ BalCv σ₁) ∧
         (SA σ₂ t ∧ BalCv σ₂)) (fun hw => (VG.Proof.Rsa.Arm.KeyDiv.mulLo_ct mulW_taint (by decide) (by decide)
-      (by decide) (by decide) (by decide) (by decide) (by decide) hw.2 (by omega)).mono
+      (by decide) (by decide) (by decide) (by decide) (by decide) hw.2 (by omega_using [hw])).mono
       (fun s t h => ⟨h.1.1.mulPre h.1.2, by rw [eB, eZ, eW]; exact h.2.1.mulPre h.2.2⟩) fun _ _ h => h)
       |>.mono (fun s t h => ⟨⟨h.1.1.base.pre.w16.1, h.1.2.2.2⟩, h⟩) fun _ _ h => h) hpre hw
 
@@ -168,7 +168,7 @@ theorem divPieceW {r : Nat} (T : VG.Proof.Rsa.Arm.KeyDiv.DivTaint aD r aDD aDQ a
       (fun hw => (VG.Proof.Rsa.Arm.KeyDiv.divW_ct T (by decide) hr'.1 (by decide) (by decide) (by decide)
         (by decide) (by decide) hr'.2.1 hr'.2.2.1 hr'.2.2.2.1 (by decide) (Ne.symm hr'.2.2.2.2.2.1) (by decide)
         (by decide) (Ne.symm hr'.2.2.2.2.1) (by decide) (by decide) (by decide) hr'.2.2.2.2.2.2 (by decide)
-        (by decide) (by decide) (by omega)).mono
+        (by decide) (by decide) (by omega_using [hw])).mono
         (fun s t h => ⟨h.1.2, by rw [eB, eZ, eW]; exact h.2.2⟩) fun _ _ h => h)
       |>.mono (fun s t h => ⟨h.1.1, h⟩) fun _ _ h => h
   · obtain ⟨X₁, hs, hM, hMl⟩ := hpre σ s h
@@ -199,7 +199,7 @@ theorem midW_ct [VG.Proof.Rsa.Arm.Keys.InvLaw] {um : Bool} :
     fun _ _ h => WP.mono (chunkW_ok h.1.1 h.2 h.1.2) fun _ h' => ⟨h', h.2⟩) ?_
   refine RelCT.seq (divPieceW (M := fun σ => 2 * (cvP σ / 2)) (G := fun σ s => (SW σ (xW σ) s ∧
       num s.mem (cvB σ) (cvW σ) aDR2 = cvD σ % fP σ) ∧ BalCv σ) divW2_taint (by decide)
-    (fun _ _ h => ⟨_, h.1.1, h.1.2, Nat.lt_of_le_of_lt (by omega) h.2.p_lt⟩)
+    (fun _ _ h => ⟨_, h.1.1, h.1.2, Nat.lt_of_le_of_lt (by omega_using []) h.2.p_lt⟩)
     fun _ _ h => WP.mono (div2W_ok h.1.1 h.2 h.1.2) fun _ h' => ⟨h', h.2⟩) ?_
   refine RelCT.seq (piece (G := fun σ s => (SW σ (xW σ) s ∧ num s.mem (cvB σ) (cvW σ) aDR2 = cvD σ % fP σ ∧
       num s.mem (cvB σ) (cvW σ) aDD = fQ σ) ∧ BalCv σ)
@@ -210,7 +210,7 @@ theorem midW_ct [VG.Proof.Rsa.Arm.Keys.InvLaw] {um : Bool} :
       rintro r (rfl | rfl | rfl) <;> first | exact e7 | exact e8 | exact e9)
     fun _ _ h => WP.mono (setQW_ok h.1.1 h.2 h.1.2) fun _ h' => ⟨h', h.2⟩) ?_
   exact divPieceW (M := fun σ => 2 * (cvQ σ / 2)) divW3_taint (by decide)
-    (fun _ _ h => ⟨_, h.1.1, h.1.2.2, Nat.lt_of_le_of_lt (by omega) h.2.q_lt⟩)
+    (fun _ _ h => ⟨_, h.1.1, h.1.2.2, Nat.lt_of_le_of_lt (by omega_using []) h.2.q_lt⟩)
     fun _ _ h => div3W_ok h.1.1 h.2 h.1.2.1 h.1.2.2
 
 /-- The stages of the valid branch. -/
@@ -331,7 +331,7 @@ theorem cv_contract_ct [VG.Proof.Rsa.Arm.Keys.InvLaw] {um : Bool} :
     match i, hi with
     | 0, _ => a0 | 1, _ => a1 | 2, _ => a2 | 3, _ => a3 | 4, _ => a4 | 5, _ => a5
     | 6, _ => a6 | 7, _ => a7 | 8, _ => a8 | 9, _ => a9 | 10, _ => a10 | 11, _ => a11
-    | _ + 12, h => absurd h (by omega)
+    | _ + 12, h => absurd h (by omega_using [])
   exact (code_ct (um := um) s t tr1 tr2 u v ⟨s, t, ⟨sp, nb, p0, p1, p2, p3, args⟩, ⟨rfl, is⟩, ⟨rfl, it⟩⟩ e1 e2).1
 
 end VG.Proof.Rsa.Arm.CrtValues

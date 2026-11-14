@@ -74,9 +74,9 @@ theorem wRegs_vp {L : Nat} (hL : L = G.pLen) (hlq : G.pLen = 128 ∨ G.pLen = 25
   refine VP.taint [] ⟨VG.Taint.hintOfSize VG.Arm.taint 256 (Taint.ofRegs []) (.block (wRegs 128)), rfl⟩
     (fun _ _ _ _ _ _ r hr => absurd hr (by simp)) fun σ s ⟨h, x⟩ => ?_
   subst hL
-  have w96 : G.pLen / 4 < 256 := by omega
+  have w96 : G.pLen / 4 < 256 := by omega_using [hlq]
   refine wp_mov (op2_imm (encodable_lt w96)) fun s₁ u₁ => ?_
-  refine VG.Proof.Rsa.Arm.KeyCheck.stride_ok (w := G.w) (by simp only [GP.w]; omega) u₁.gpr fun t e7 R m => ?_
+  refine VG.Proof.Rsa.Arm.KeyCheck.stride_ok (w := G.w) (by simp only [GP.w]; omega_using [hlq]) u₁.gpr fun t e7 R m => ?_
   refine WP.block_nil ⟨h t (m.trans u₁.mem) (R.sp.trans u₁.sp) (R.rd.trans u₁.rd) (R.wr.trans u₁.wr)
     (by rw [R.gpr _ (by decide), u₁.other _ (by decide)]) e7 (by rw [R.gpr _ (by decide), u₁.gpr]), x⟩
 
@@ -93,16 +93,16 @@ theorem divHdr_vp {q r d t : Nat} (cert : Cert7 (.block (divHdr q r d t))) (hq :
     rw [hv16] at e
     apply BitVec.eq_of_toNat_eq
     rw [← show slot s.mem G.KB 16 = (s.mem.readW (off (State.addr G.KB) 16) 32).toNat from rfl, e,
-      BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := hw.wle; omega)]
+      BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := hw.wle; omega_using [this])]
   refine h.ksOp (js := []) (ds := [0, 4, 8, 12]) (P := fun u => DivHdr u.mem G.KB G.w q r d t) rfl
     (by rw [← List.append_nil (divHdr q r d t)]
-        exact VG.Proof.Rsa.Arm.CrtValues.divHdr_ok hw hq hr (by simp only [nArrs] at hd; omega) ht cnt fun u w k v R => WP.block_nil ⟨w, k, v, R⟩)
+        exact VG.Proof.Rsa.Arm.CrtValues.divHdr_ok hw hq hr (by simp only [nArrs] at hd; omega_using [hd]) ht cnt fun u w k v R => WP.block_nil ⟨w, k, v, R⟩)
     fun u k v R f => ⟨⟨?_, x⟩, ?_, v⟩
   · have sl : ∀ e ∈ c.kls, slot u.mem G.KB e = c.KV e := fun e he => by
       have h16' := hkls e he
       have ap : ∀ d' ∈ [0, 4, 8, 12], e + 4 ≤ d' ∨ d' + 4 ≤ e := by
         simp only [List.mem_cons, List.not_mem_nil, or_false]
-        rintro d' (rfl | rfl | rfl | rfl) <;> omega
+        rintro d' (rfl | rfl | rfl | rfl) <;> omega_using [h16']
       rw [k.slot (h.kslOk e he).1 ap]
       exact h.ksl e he
     exact h.of_ks R f (h.arrs.keep k hw (fun j hj => ⟨h.liveOk j hj, by simp⟩) (by simp [hdr])) h.liveOk sl
@@ -110,7 +110,7 @@ theorem divHdr_vp {q r d t : Nat} (cert : Cert7 (.block (divHdr q r d t))) (hq :
   · have := hw.wle
     show w32 u.mem _ _ = 0
     rw [show arr G.w d + 4 * G.w = arr G.w d + 4 * G.w from rfl,
-      k.word (j := d) (i := G.w) (by simp only [S]; omega) (by simp) (by simp [hdr]) (hw.fit64 hd)]
+      k.word (j := d) (i := G.w) (by simp only [S]; omega_using []) (by simp) (by simp [hdr]) (hw.fit64 hd)]
     exact top
 
 /-- The stage after the division. -/
@@ -163,7 +163,7 @@ theorem div_vp {q r d t : Nat} (hq : q < nArrs) (hr : r < nArrs) (hd : d < nArrs
     rw [VG.Proof.Rsa.Arm.Keys.upd_ne _ _ ejq]
     have jl : j ∈ c.live := by rcases hj with rfl | rfl | hj <;> first | exact absurd rfl ejq | exact absurd rfl ejr | exact hj
     have ejt : j ≠ t := fun e => htL (e ▸ jl)
-    rw [k.num (by simp only [List.mem_cons, List.not_mem_nil, or_false]; rintro k' (rfl | rfl | rfl) <;> omega)
+    rw [k.num (by simp only [List.mem_cons, List.not_mem_nil, or_false]; rintro k' (rfl | rfl | rfl) <;> omega_arith)
       (by simp) (hw.fit64 (h.liveOk j jl))]
     exact h.arrs.get jl
   · simp only [List.mem_cons] at hj

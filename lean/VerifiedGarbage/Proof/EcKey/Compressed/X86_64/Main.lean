@@ -26,7 +26,7 @@ theorem compress_key (c : Cfg) (s : State) :
     if KeyOk c s then some (BitVec.ofNat 8 (2 + keyY c s % 2) :: toBytes c.C.len (keyX c s)) else none := by
   have hlen : (Spec.Ecdsa.bytesAt s.mem (s.gpr .rsi) (1 + 2 * c.C.len)).length = 2 * c.C.len + 1 := by
     rw [length_bytesAt]
-    omega
+    omega_using []
   have hhead : (Spec.Ecdsa.bytesAt s.mem (s.gpr .rsi) (1 + 2 * c.C.len)).head? =
       some (s.mem (s.gpr .rsi)) := by rw [peer_bytes]; rfl
   have hx : ofBytes (((Spec.Ecdsa.bytesAt s.mem (s.gpr .rsi) (1 + 2 * c.C.len)).drop 1).take c.C.len) =
@@ -44,7 +44,7 @@ theorem compress_key (c : Cfg) (s : State) :
       exact ⟨h4, hx, hy, he⟩
   change Spec.EcKey.compressPublicKey c.C
     (Spec.Ecdsa.bytesAt s.mem (s.gpr .rsi) (2 * c.C.len + 1)) = _
-  rw [show 2 * c.C.len + 1 = 1 + 2 * c.C.len by omega, compress_eq hlen hhead hx hy]
+  rw [show 2 * c.C.len + 1 = 1 + 2 * c.C.len by omega_using [], compress_eq hlen hhead hx hy]
   simp only [hv]
 
 theorem compress_correct (c : Cfg) (hc : BaseCfgOk c)
@@ -55,7 +55,7 @@ theorem compress_correct (c : Cfg) (hc : BaseCfgOk c)
       abiPreserved s s' ∧ (compressContract c.C).post s s' := by
   obtain ⟨hrd, hwr, hpo, hpw, how, hro, hrw, hfit, hwfit⟩ := hs
   have hp : Pre c s :=
-    ⟨by rw [hrd, show 1 + 2 * c.C.len = 2 * c.C.len + 1 by omega]; simp,
+    ⟨by rw [hrd, show 1 + 2 * c.C.len = 2 * c.C.len + 1 by omega_using []]; simp,
       by rw [hwr]; simp, by simpa only [Nat.add_comm] using hpw, hwfit⟩
   have hrun : WP isa (Impl.EcKey.Compressed.X86_64.compress c).inline s fun s' =>
       (compressContract c.C).post s s' ∧ ∀ r ∈ Cfg.saved.map Prod.fst, s'.gpr r = s.gpr r := by
@@ -103,7 +103,7 @@ theorem compress_post_patch (C : Curve) (s b : State) (hv : Mem) (u : Nat → Bi
     (compressContract C).post s (b.patch (hole (s.gpr .rsp)) hv u) := by
   have hn : C.len + 1 ≤ 2 ^ 64 := by
     obtain ⟨_, _, _, _, _, _, _, hf, _⟩ := hs
-    omega
+    omega_using [hf]
   have hb := Clear.wr_bytes hc (p := s.gpr .rdi) (n := C.len + 1)
     (by rw [hs.2.1]; simp) hn
   simpa only [compressContract, State.patch_gpr, VG.X86_64.EcKey.bytesAt_patch hb] using hp

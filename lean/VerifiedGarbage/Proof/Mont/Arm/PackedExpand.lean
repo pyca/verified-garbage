@@ -28,30 +28,30 @@ def expandSteps (acc dst k : Nat) : List Instr :=
         (digitAt .r12 acc k ++ [.str .r7 .r12 (dst + 4 * k)]) := by
       simp only [expandSteps, List.range_succ, List.flatMap_append, List.flatMap_singleton]
     rw [eq]
-    refine VG.Proof.X25519.Arm.WP.append (expandSteps_ok hs h6 src fit k (by omega))
+    refine VG.Proof.X25519.Arm.WP.append (expandSteps_ok hs h6 src fit k (by omega_using [hk]))
       fun u ⟨out, digs, val, rest⟩ => ?_
     have hu := hs.of_rest rest (by decide)
     refine digitAt_ok hu (K := 0) (by simp) (Nat.zero_add _)
-      (by rw [rest.gpr _ (by decide)]; exact h6) (by omega) fun v uv => ?_
+      (by rw [rest.gpr _ (by decide)]; exact h6) (by omega_using [src, fit, hk]) fun v uv => ?_
     have hv := hu.of_rest (uv.rest (ws := [.r7]) (by simp)) (by decide)
-    refine wp_str (hv.off_lt (by omega)) (hv.ea (by omega)) (hv.write (by omega)) fun t vt => WP.block_nil ?_
+    refine wp_str (hv.off_lt (by omega_using [fit, hk])) (hv.ea (by omega_using [fit, hk])) (hv.write (by omega_using [fit, hk])) fun t vt => WP.block_nil ?_
     have old : pdig u.mem base acc k = pdig s.mem base acc k := by
       unfold pdig hdig
-      rw [out.w32 (by omega) (by omega)]
+      rw [out.w32 (by omega_using [src, hk]) (by omega_using [src, fit, hk, hn])]
     have pdlt : pdig s.mem base acc k < 2 ^ 16 := hdig_lt _ _
     have mem : t.mem = u.mem.writeW (off base (dst + 4 * k)) (BitVec.ofNat 32 (pdig s.mem base acc k)) := by
       rw [vt.mem, uv.mem, uv.gpr, old]
     have wr := writeW32_outside u.mem base (d := dst + 4 * k)
-      (BitVec.ofNat 32 (pdig s.mem base acc k)) (by omega)
+      (BitVec.ofNat 32 (pdig s.mem base acc k)) (by omega_using [fit, hk, hn])
     rw [← mem] at wr
-    have low := wr.dval (d := dst) (k := k) (by omega) (by omega)
+    have low := wr.dval (d := dst) (k := k) (by omega_using []) (by omega_using [fit, hk, hn])
     have top : w32 t.mem base (dst + 4 * k) = pdig s.mem base acc k := by
-      rw [mem, w32_write_self, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
-    refine ⟨(out.mono (Nat.le_refl _) (by omega)).trans (wr.mono (by omega) (by omega)), ?_, ?_,
+      rw [mem, w32_write_self, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [pdlt])]
+    refine ⟨(out.mono (Nat.le_refl _) (by omega_using [])).trans (wr.mono (by omega_using []) (by omega_using [])), ?_, ?_,
       rest.trans ((uv.rest (by simp)).trans (vt.rest _))⟩
     · intro j hj
       rcases Nat.lt_succ_iff_lt_or_eq.mp hj with hj | rfl
-      · rw [wr.w32 (by omega) (by omega)]; exact digs j hj
+      · rw [wr.w32 (by omega_using [hj]) (by omega_arith)]; exact digs j hj
       · rw [top]; exact pdlt
     · rw [dval, low, top, val, pval]
 

@@ -33,7 +33,7 @@ theorem byType_ok (s : State) (f : Nat → List Instr) {t : Nat} (ht : t < 3)
     {Q : State → Prop} (hQ : ∀ u, Keep [tmp] s u → u.mem = s.mem → WP isa (.block (f t)) u Q) :
     WP isa (byType f) s Q := by
   unfold byType
-  rcases (show t = 0 ∨ t = 1 ∨ t = 2 by omega) with rfl | rfl | rfl
+  rcases (show t = 0 ∨ t = 1 ∨ t = 2 by omega_using [ht]) with rfl | rfl | rfl
   · exact WP.ite true (by rw [eval_zero, hv]; rfl) (fun _ => hQ _ (Keep.refl _ _) rfl)
       (fun h => absurd h (by decide))
   · refine WP.ite false (by rw [eval_zero, hv]; rfl) (fun h => absurd h (by decide)) (fun _ => ?_)
@@ -54,7 +54,7 @@ theorem mix_ok (s : State) {t : Nat} (ht : t < 3) {kmw d : Spec.Cast5.Word}
     (hv : s.mem.readW (s.gpr km) 32 = kmw) :
     WP isa (.block (Impl.Cast5.PPC64LE.mix t)) s fun u =>
       lo (u.gpr vI) = Proof.Cast5.mix t kmw d ∧ Keep [vI] s u ∧ u.mem = s.mem := by
-  rcases (show t = 0 ∨ t = 1 ∨ t = 2 by omega) with rfl | rfl | rfl <;>
+  rcases (show t = 0 ∨ t = 1 ∨ t = 2 by omega_using [ht]) with rfl | rfl | rfl <;>
   · unfold Impl.Cast5.PPC64LE.mix
     c5run [hin, hv]
     refine ⟨?_, ⟨fun r hr => by simp only [List.mem_singleton] at hr; simp only [hr, ite_false], rfl, rfl⟩⟩
@@ -70,11 +70,11 @@ theorem rotMask_eq (k : BitVec 64) {b : Nat} (hb : b < 64) :
     rw [BitVec.getLsbD_ushiftRight, BitVec.getLsbD_shiftLeft]
     by_cases h0 : i = 0
     · subst h0
-      have e1 : 63 - (63 - b) = b := by omega
+      have e1 : 63 - (63 - b) = b := by omega_using [hb]
       rw [Nat.add_zero, e1, decide_eq_true (show 63 < 64 by decide),
-        decide_eq_false (show ¬ 63 < 63 - b by omega)]
+        decide_eq_false (show ¬ 63 < 63 - b by omega_using [])]
       cases k.getLsbD b <;> decide
-    · rw [decide_eq_false (show ¬ 63 + i < 64 by omega), Bool.false_and]
+    · rw [decide_eq_false (show ¬ 63 + i < 64 by omega_using [h0]), Bool.false_and]
       have : ∀ c : Bool, (if c then 1#64 else 0#64).getLsbD i = false := fun c => by
         cases c <;> simp [BitVec.getLsbD_one, h0]
       exact (this _).symm
@@ -89,19 +89,19 @@ theorem rotateStep_ok (s : State) {b : Nat} (hb : b < 5) {a : BitVec 32} {k : Bi
       lo (u.gpr vI) = a.rotateLeft (2 ^ b * (k.toNat / 2 ^ b % 2)) ∧ u.gpr vKr = k ∧
       Keep [msk, tmp, wd, vI] s u ∧ u.mem = s.mem := by
   have hn : 32 - 2 ^ b < 32 := by
-    rcases (show b = 0 ∨ b = 1 ∨ b = 2 ∨ b = 3 ∨ b = 4 by omega) with h | h | h | h | h <;>
+    rcases (show b = 0 ∨ b = 1 ∨ b = 2 ∨ b = 3 ∨ b = 4 by omega_using [hb]) with h | h | h | h | h <;>
       subst h <;> decide
   have hr : a.rotateRight (32 - 2 ^ b) = a.rotateLeft (2 ^ b) :=
     Proof.Cast5.rotateRight_eq_rotateLeft a (Nat.pow_pos (by decide)) (by
-      rcases (show b = 0 ∨ b = 1 ∨ b = 2 ∨ b = 3 ∨ b = 4 by omega) with h | h | h | h | h <;>
+      rcases (show b = 0 ∨ b = 1 ∨ b = 2 ∨ b = 3 ∨ b = 4 by omega_using [hb]) with h | h | h | h | h <;>
         subst h <;> decide)
   unfold rotateStep
-  c5run [hK, hn, show 63 - b < 64 by omega]
+  c5run [hK, hn, show 63 - b < 64 by omega_using []]
   refine ⟨?_, ⟨fun r hr => ?_, rfl, rfl⟩⟩
   swap
   · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
     simp only [hr.1, hr.2.1, hr.2.2.1, hr.2.2.2, ite_false]
-  rw [rotMask_eq k (by omega)]
+  rw [rotMask_eq k (by omega_using [hb])]
   simp only [lo_xor, lo_and, lo_ext, hI]
   rw [hr]
   have hb' : k.getLsbD b = (k.toNat / 2 ^ b % 2 == 1) := by
@@ -139,7 +139,7 @@ theorem rotate_ok (s : State) {a kr : BitVec 32} (hI : lo (s.gpr vI) = a)
   refine WP.mono (rotateStep_ok t₃ (by decide) a₃ k₃) fun t₄ ⟨a₄, k₄, p₄, m₄⟩ => ?_
   refine WP.mono (rotateStep_ok t₄ (by decide) a₄ k₄) fun t₅ ⟨a₅, _, p₅, m₅⟩ => ?_
   have hk : (kr.setWidth 64).toNat = kr.toNat := by
-    rw [BitVec.toNat_setWidth]; exact Nat.mod_eq_of_lt (by have := kr.isLt; omega)
+    rw [BitVec.toNat_setWidth]; exact Nat.mod_eq_of_lt (by have := kr.isLt; omega_using [])
   refine ⟨?_, ((((p₀.trans p₁).trans p₂).trans p₃).trans p₄).trans p₅ |>.mono fun r hr => ?_,
     by rw [m₅, m₄, m₃, m₂, m₁, m₀]⟩
   · rw [a₅]
@@ -147,7 +147,7 @@ theorem rotate_ok (s : State) {a kr : BitVec 32} (hI : lo (s.gpr vI) = a)
     rw [← BitVec.rotateLeft_mod_eq_rotateLeft]
     congr 1
     simp only [Nat.reducePow, Nat.div_one, Nat.one_mul]
-    omega
+    omega_using []
   · simp only [List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hr ⊢
     rcases hr with ((((h | h | h | h | h) | h | h | h | h) | h | h | h | h) | h | h | h | h) | h | h | h | h <;>
       simp only [h, true_or, or_true]
@@ -160,8 +160,8 @@ theorem idxOf_byte (i : BitVec 32) {k : Nat} (hk : k < 4) :
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_ofNat]
   simp only [Spec.Cast5.byte, BitVec.toNat_setWidth, BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow, idxOf]
-  rcases (show k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3 by omega) with rfl | rfl | rfl | rfl <;>
-    simp only [Nat.reduceSub, Nat.reduceMul, Nat.reducePow] <;> omega
+  rcases (show k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3 by omega_using [hk]) with rfl | rfl | rfl | rfl <;>
+    simp only [Nat.reduceSub, Nat.reduceMul, Nat.reducePow] <;> omega_using []
 
 theorem and255_toNat (x : BitVec 64) : (x &&& 255#64).toNat = x.toNat % 256 := by
   rw [BitVec.toNat_and, show (255#64).toNat = 2 ^ 8 - 1 from rfl, Nat.and_two_pow_sub_one_eq_mod]
@@ -174,11 +174,11 @@ theorem spread_ok (s : State) {i : BitVec 32} (hI : lo (s.gpr vI) = i) (h255 : s
   refine ⟨fun k hk => ?_, ⟨fun r hr => ?_, rfl, rfl⟩⟩
   · have hi : i.toNat = (s.gpr .r28).toNat % 2 ^ 32 := by
       rw [← hI, BitVec.toNat_setWidth]
-    rcases (show k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3 by omega) with rfl | rfl | rfl | rfl <;>
+    rcases (show k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3 by omega_using [hk]) with rfl | rfl | rfl | rfl <;>
       simp only [idxReg_0, idxReg_1, idxReg_2, idxReg_3, reduceCtorEq, ↓reduceIte, and255_toNat,
         BitVec.toNat_setWidth, BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow, idxOf, Nat.reduceMul,
         Nat.reducePow, hi] <;>
-      omega
+      omega_using []
   · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
     simp only [hr.1, hr.2.1, hr.2.2.1, hr.2.2.2, ite_false]
 
@@ -186,7 +186,7 @@ theorem comb_ok (s : State) {t : Nat} (ht : t < 3) :
     WP isa (.block (Impl.Cast5.PPC64LE.comb t)) s fun u =>
       lo (u.gpr vI) = Proof.Cast5.comb t (lo (s.gpr .r21)) (lo (s.gpr .r20)) (lo (s.gpr .r19))
         (lo (s.gpr .r18)) ∧ Keep [vI] s u ∧ u.mem = s.mem := by
-  rcases (show t = 0 ∨ t = 1 ∨ t = 2 by omega) with rfl | rfl | rfl <;>
+  rcases (show t = 0 ∨ t = 1 ∨ t = 2 by omega_using [ht]) with rfl | rfl | rfl <;>
   · unfold Impl.Cast5.PPC64LE.comb
     c5run
     refine ⟨?_, ⟨fun r hr => by simp only [List.mem_singleton] at hr; simp only [hr, ite_false], rfl, rfl⟩⟩
@@ -216,7 +216,7 @@ theorem next_ok (s : State) (up : Bool) {t : Nat} (ht : t < 3) (hv : s.gpr typ =
   cases up <;>
   refine WP.mono (WP.keep [tmp, typ, left] (Q := fun u => u.gpr typ = BitVec.ofNat 64 (nextT _ t) ∧
     u.gpr left = s.gpr left - 1#64 ∧ u.mem = s.mem) ?_ (by decide)) fun u ⟨⟨a, b, c⟩, k⟩ => ⟨a, b, k, c⟩ <;>
-  unfold next <;> rcases (show t = 0 ∨ t = 1 ∨ t = 2 by omega) with rfl | rfl | rfl <;>
+  unfold next <;> rcases (show t = 0 ∨ t = 1 ∨ t = 2 by omega_using [ht]) with rfl | rfl | rfl <;>
     simp only [Bool.false_eq_true, ↓reduceIte]
   · refine WP.seq (WP.ite true (by rw [eval_zero, hv]; rfl) (fun _ => ?_) (fun h => absurd h (by decide)))
     c5run

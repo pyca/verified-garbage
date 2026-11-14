@@ -41,12 +41,12 @@ theorem selectSetup_ok (K : TCombCfg) {s : State} {base : Addr} {size j : Nat}
       u₃.gpr,u₂.gpr,u₂.other .r11 (by decide),u₁.other .r11 (by decide),gj,← BitVec.ofNat_mul]
   rw [List.append_assoc,setConst_eq]
   refine VG.Proof.X25519.Arm.WP.append
-    (constSteps_ok hs₄ (o := K.Q.x) (x := 0) (2*K.L.M.n) (by omega))
+    (constSteps_ok hs₄ (o := K.Q.x) (x := 0) (2*K.L.M.n) (by omega_using [ho]))
     fun s₅ ⟨vx,k₅,Ox⟩ => ?_
   have hs₅ := hs₄.of_rest k₅ (by decide)
   rw [setConst_eq]
   refine VG.Proof.X25519.Arm.WP.append
-    (constSteps_ok hs₅ (o := K.Q.y) (x := 0) (2*K.L.M.n) (by rw [hy]; omega))
+    (constSteps_ok hs₅ (o := K.Q.y) (x := 0) (2*K.L.M.n) (by rw [hy]; omega_using [ho]))
     fun s₆ ⟨vy,k₆,Oy⟩ => ?_
   refine wp_mov (op2_imm (by decide)) fun s₇ u₇ => WP.block_nil ?_
   have mem₇ : s₇.mem=s₆.mem := u₇.mem
@@ -57,12 +57,12 @@ theorem selectSetup_ok (K : TCombCfg) {s : State} {base : Addr} {size j : Nat}
   · intro i hi
     rw [mem₇]
     by_cases hx : i<2*K.L.M.n
-    · rw [Oy.w32 (by rw [hy]; omega) (by omega),vx i hx]
+    · rw [Oy.w32 (by rw [hy]; omega_using [hx]) (by omega_using [ho, hn, hi]),vx i hx]
       simp only [Nat.zero_shiftRight,Nat.zero_mod]
-    · have hyi : i-2*K.L.M.n<2*K.L.M.n := by omega
-      rw [show K.Q.x+4*i=K.Q.y+4*(i-2*K.L.M.n) by rw [hy]; omega,vy _ hyi]
+    · have hyi : i-2*K.L.M.n<2*K.L.M.n := by omega_using [hi]
+      rw [show K.Q.x+4*i=K.Q.y+4*(i-2*K.L.M.n) by rw [hy]; omega_using [hx],vy _ hyi]
       simp only [Nat.zero_shiftRight,Nat.zero_mod]
   · rw [mem₇,← mem₄]
-    exact (Ox.mono (Nat.le_refl _) (by omega)).trans (Oy.mono (by rw [hy]; omega) (by rw [hy]; omega))
+    exact (Ox.mono (Nat.le_refl _) (by omega_using [])).trans (Oy.mono (by rw [hy]; omega_using []) (by rw [hy]; omega_using []))
 
 end VG.Proof.Weierstrass.Arm.TComb

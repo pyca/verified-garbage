@@ -63,7 +63,7 @@ theorem clampBits_ok {s : State} {base : Addr} (hs : Scr s base) :
         if q < 3 ∨ q = 255 then 0 else if q = 254 then 1 else s.mem (off base (768 + q)) := by
   have _hcap : workSize true = 8192 := rfl
   have hw : ∀ d, 768 ≤ d → d < 1024 → InRegions s.wr (off base d) 1 := fun d h1 h2 =>
-    ⟨_, hs.wr, Offset.contains_base _ (by omega) (by omega)⟩
+    ⟨_, hs.wr, Offset.contains_base _ (by omega_using [_hcap, h2]) (by omega_using [h2])⟩
   have hx0 := hs.x0
   have e768 : base + 768#64 = off base 768 := rfl
   have e769 : base + 769#64 = off base 769 := rfl
@@ -86,13 +86,13 @@ theorem clampBits_ok {s : State} {base : Addr} (hs : Scr s base) :
   · have : r ≠ .x9 := fun h => hc (by subst h; decide)
     simp only [RegUpd.gpr_write, this, ite_false]
   · dsimp only [RegUpd.mem_write]
-    rw [write1_outside _ _ (by decide) (by omega), write1_outside _ _ (by decide) (by omega),
-      write1_outside _ _ (by decide) (by omega), write1_outside _ _ (by decide) (by omega),
-      write1_outside _ _ (by decide) (by omega)]
-  · have he : 768 + q < 2 ^ 64 := by omega
+    rw [write1_outside _ _ (by decide) (by omega_using [hp]), write1_outside _ _ (by decide) (by omega_using [hp]),
+      write1_outside _ _ (by decide) (by omega_using [hp]), write1_outside _ _ (by decide) (by omega_using [hp]),
+      write1_outside _ _ (by decide) (by omega_using [hp])]
+  · have he : 768 + q < 2 ^ 64 := by omega_using [hq]
     rw [write1_off _ _ (by decide) he, write1_off _ _ (by decide) he, write1_off _ _ (by decide) he,
       write1_off _ _ (by decide) he, write1_off _ _ (by decide) he]
-    split_ifs <;> first | rfl | decide | (exfalso; omega)
+    split_ifs <;> first | rfl | decide | (exfalso; omega_arith)
 
 /-! ## The u-coordinate -/
 
@@ -133,7 +133,7 @@ theorem engine_ok [VG.Proof.Ed25519.AArch64.Divstep.Sound] {s : State} {base k T
     have h := Edwards.decodeScalar25519_shift hk
     rw [Nat.shiftRight_eq_div_pow] at h
     have := (Nat.div_eq_zero_iff_lt (by positivity)).mp h
-    omega
+    omega_using [h]
   have cb : ∀ q < 256, c.mem (off base (768 + q)) = BitVec.ofNat 8 ((decodeScalar25519 kb / 2 ^ q) % 2) := by
     intro q hq
     rw [cbits q hq, clamped_bit hk hq]
@@ -142,9 +142,9 @@ theorem engine_ok [VG.Proof.Ed25519.AArch64.Divstep.Sound] {s : State} {base k T
     · rfl
     · exact bbits q (by simpa using hq)
   have htc : TblAt c base T := htb.of_far (by rw [kbc.rd, kbc.wr, kab.rd, kab.wr])
-    (fun x hx => (powersKeep_outside (kab.trans kbc)) x (Or.inr (by omega)))
+    (fun x hx => (powersKeep_outside (kab.trans kbc)) x (Or.inr (by omega_using [hx])))
   have hc : ∀ q < 3, (decodeScalar25519 kb / 2 ^ q) % 2 = 0 := fun q hq => by
-    rw [clamped_bit hk (by omega)]
+    rw [clamped_bit hk (by omega_using [hq])]
     simp only [hq, true_or, ↓reduceIte]
   refine WP.seq (WP.mono (combMultiplyClamped_ok hsc htc (by rw [syc, syb]; exact hT) hS hc cb)
     fun d ⟨dp, kd⟩ => ?_)

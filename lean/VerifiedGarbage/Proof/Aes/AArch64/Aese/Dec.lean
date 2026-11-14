@@ -103,9 +103,9 @@ theorem dround_ok' {regs : List VReg} (hr : BlockRegs regs) {nr : Nat} {w : List
     (hj1 : 1 < j) (hm : 1 ≤ m) {s : State} (hK : DKeys nr w s) (hI : DInv regs nr w x m s) :
     WP isa (.block (drnd regs k)) s fun s' => DInv regs nr w x (m + 1) s' ∧ VFrame regs s s' := by
   subst e
-  refine dround_ok hr (by omega) (hr.dreg j) ?_ hI
-  rw [dkey, ite_eq_right (by omega), show nr - m = j by omega]
-  exact hK.mid j (by omega) (by omega)
+  refine dround_ok hr (by omega_using [hj, hj1]) (hr.dreg j) ?_ hI
+  rw [dkey, ite_eq_right (by omega_using [hm]), show nr - m = j by omega_using [hj]]
+  exact hK.mid j (by omega_using [hj1]) (by omega_using [hj, hm])
 
 /-- Two middle rounds, with round keys `j` and `j − 1`. -/
 theorem dtwo_ok {regs : List VReg} (hr : BlockRegs regs) {nr : Nat} {w : List Byte}
@@ -115,8 +115,8 @@ theorem dtwo_ok {regs : List VReg} (hr : BlockRegs regs) {nr : Nat} {w : List By
     WP isa (.block (drnd regs k₁ ++ drnd regs k₂)) s fun s' =>
       DInv regs nr w x (m + 2) s' ∧ VFrame regs s s' := by
   rw [WP.block_append_iff]
-  refine WP.mono (dround_ok' hr j e₁ hj (by omega) hm hK hI) fun s₁ ⟨hI₁, hf₁⟩ => ?_
-  exact WP.mono (dround_ok' hr (j - 1) e₂ (by omega) (by omega) (by omega) (hK.of_frame hf₁ hr) hI₁)
+  refine WP.mono (dround_ok' hr j e₁ hj (by omega_using [hj1]) hm hK hI) fun s₁ ⟨hI₁, hf₁⟩ => ?_
+  exact WP.mono (dround_ok' hr (j - 1) e₂ (by omega_using [hj, hj1]) (by omega_using [hj1]) (by omega_using []) (hK.of_frame hf₁ hr) hI₁)
     fun s₂ ⟨hI₂, hf₂⟩ => ⟨hI₂, hf₁.trans hf₂⟩
 
 /-- The middle rounds with round keys `9 … 2`. -/
@@ -129,11 +129,11 @@ theorem drounds_ok {regs : List VReg} (hr : BlockRegs regs) {nr : Nat} {w : List
   | zero => rw [List.range_zero, List.flatMap_nil]; exact WP.block_nil ⟨hI, VFrame.refl _ _⟩
   | succ k ih =>
     rw [List.range_succ, List.flatMap_append, WP.block_append_iff]
-    refine WP.mono (ih (by omega)) fun s₁ ⟨hI₁, hf₁⟩ => ?_
+    refine WP.mono (ih (by omega_using [hk])) fun s₁ ⟨hI₁, hf₁⟩ => ?_
     simp only [List.flatMap_cons, List.flatMap_nil, List.append_nil]
-    refine WP.mono (dround_ok' hr (9 - k) (by simp [Impl.Aes.AArch64.Aese.dreg, show 9 - k ≠ 13 by omega])
-      (by omega) (by omega) (by omega) (hK.of_frame hf₁ hr) hI₁) fun s' ⟨hI', hf'⟩ => ⟨?_, hf₁.trans hf'⟩
-    rw [show nr - 9 + (k + 1) = nr - 9 + k + 1 by omega]; exact hI'
+    refine WP.mono (dround_ok' hr (9 - k) (by simp [Impl.Aes.AArch64.Aese.dreg, show 9 - k ≠ 13 by omega_using []])
+      (by omega_using [hnr, hk]) (by omega_using [hk]) (by omega_using [hnr]) (hK.of_frame hf₁ hr) hI₁) fun s' ⟨hI', hf'⟩ => ⟨?_, hf₁.trans hf'⟩
+    rw [show nr - 9 + (k + 1) = nr - 9 + k + 1 by omega_using []]; exact hI'
 
 /-- The middle rounds with round keys `Nr − 1 … 10`. -/
 theorem dmid_ok {regs : List VReg} (hr : BlockRegs regs) {nr : Nat} {w : List Byte}
@@ -155,7 +155,7 @@ theorem dmid_ok {regs : List VReg} (hr : BlockRegs regs) {nr : Nat} {w : List By
       WP.ite true (by simp only [AArch64.eval, State.read, hx7]; decide)
         (fun _ => WP.block_nil ⟨hI, VFrame.refl _ _⟩) (fun h => absurd h (by decide))
     refine WP.seq (WP.mono h₁ fun s₁ ⟨hI₁, hf₁⟩ => ?_)
-    exact WP.mono (dtwo_ok hr 11 rfl rfl (by omega) (by omega) (by omega) (hK.of_frame hf₁ hr) hI₁)
+    exact WP.mono (dtwo_ok hr 11 rfl rfl (by omega_using []) (by omega_using []) (by omega_using []) (hK.of_frame hf₁ hr) hI₁)
       fun s' ⟨hI', hf'⟩ => ⟨hI', hf₁.trans hf'⟩
   · refine WP.ite false (by simp only [AArch64.eval, State.read, hx6]; decide)
       (fun h => absurd h (by decide)) fun _ => ?_
@@ -165,9 +165,9 @@ theorem dmid_ok {regs : List VReg} (hr : BlockRegs regs) {nr : Nat} {w : List By
         (fun s' => DInv regs 14 w x 3 s' ∧ VFrame regs s s') :=
       WP.ite false (by simp only [AArch64.eval, State.read, hx7]; decide)
         (fun h => absurd h (by decide))
-        (fun _ => dtwo_ok hr 13 rfl rfl (by omega) (by omega) (by omega) hK hI)
+        (fun _ => dtwo_ok hr 13 rfl rfl (by omega_using []) (by omega_using []) (by omega_using []) hK hI)
     refine WP.seq (WP.mono h₁ fun s₁ ⟨hI₁, hf₁⟩ => ?_)
-    exact WP.mono (dtwo_ok hr 11 rfl rfl (by omega) (by omega) (by omega) (hK.of_frame hf₁ hr) hI₁)
+    exact WP.mono (dtwo_ok hr 11 rfl rfl (by omega_using []) (by omega_using []) (by omega_using []) (hK.of_frame hf₁ hr) hI₁)
       fun s' ⟨hI', hf'⟩ => ⟨hI', hf₁.trans hf'⟩
 
 theorem dlast_run (b : VReg) (s : State) (hb16 : b ≠ .v16) :
@@ -180,7 +180,7 @@ theorem dlast_ok {regs : List VReg} (hr : BlockRegs regs) {nr : Nat} {w : List B
     {x : VReg → Spec.Aes.State} {s : State} (hK : DKeys nr w s) (hI : DInv regs nr w x (nr - 1) s) :
     WP isa (.block (dlast regs)) s fun s' =>
       (∀ b ∈ regs, st (s'.v b) = invCipher nr w (x b)) ∧ VFrame regs s s' := by
-  have hnr : 2 ≤ nr := by rcases hK.rounds with h | h | h <;> omega
+  have hnr : 2 ≤ nr := by rcases hK.rounds with h | h | h <;> omega_using [h]
   have h17 : .v17 ∉ regs := fun h' => (hr.2 _ h').2.1 rfl
   have h16 : ∀ b ∈ regs, b ≠ .v16 := fun b h' => (hr.2 _ h').1
   have e : ∀ (rs : List VReg) (s : State), rs.Nodup → .v17 ∉ rs → (∀ b ∈ rs, b ≠ .v16) →
@@ -209,24 +209,24 @@ theorem dlast_ok {regs : List VReg} (hr : BlockRegs regs) {nr : Nat} {w : List B
         rw [hfr.v r hr.2]; simp [State.setV, hr.1]
   refine WP.mono (e regs s hr.1 h17 h16) fun s' ⟨hv, hf⟩ => ⟨fun b hb => ?_, hf⟩
   have hk1 : KeyIs (s.v .v17) (dkey nr w (nr - 1)) := by
-    rw [dkey, ite_eq_right (by omega), show nr - (nr - 1) = 1 by omega]
-    exact hK.mid 1 (by omega) (by omega)
+    rw [dkey, ite_eq_right (by omega_using [hnr]), show nr - (nr - 1) = 1 by omega_using [hnr]]
+    exact hK.mid 1 (by omega_using []) (by omega_using [hnr])
   rw [hv b hb, dlast_st hk1 hK.k0 (hI b hb), invCipher_eq]
 
 theorem aesDec_ok {regs : List VReg} (hr : BlockRegs regs) {nr : Nat} {w : List Byte} {s : State}
     (hK : DKeys nr w s) :
     WP isa (aesDec regs) s fun s' =>
       (∀ b ∈ regs, st (s'.v b) = invCipher nr w (st (s.v b))) ∧ VFrame regs s s' := by
-  have hnr : 10 ≤ nr := by rcases hK.rounds with h | h | h <;> omega
+  have hnr : 10 ≤ nr := by rcases hK.rounds with h | h | h <;> omega_using [h]
   let x : VReg → Spec.Aes.State := fun b => st (s.v b)
   have hI₀ : DInv regs nr w x 0 s := fun b _ => by simp [dkey, invMid, x]
-  refine WP.seq (WP.mono (dround_ok hr (m := 0) (by omega) hr.v30 (by simpa [dkey] using hK.last) hI₀)
+  refine WP.seq (WP.mono (dround_ok hr (m := 0) (by omega_using [hnr]) hr.v30 (by simpa [dkey] using hK.last) hI₀)
     fun s₁ ⟨hI₁, hf₁⟩ => ?_)
   refine WP.seq (WP.mono (dmid_ok hr (hK.of_frame hf₁ hr) hI₁) fun s₂ ⟨hI₂, hf₂⟩ => ?_)
   rw [WP.block_append_iff]
-  refine WP.mono (drounds_ok hr hnr 8 (by omega) (hK.of_frame (hf₁.trans hf₂) hr) hI₂)
+  refine WP.mono (drounds_ok hr hnr 8 (by omega_using []) (hK.of_frame (hf₁.trans hf₂) hr) hI₂)
     fun s₃ ⟨hI₃, hf₃⟩ => ?_
-  rw [show nr - 9 + 8 = nr - 1 by omega] at hI₃
+  rw [show nr - 9 + 8 = nr - 1 by omega_using [hnr]] at hI₃
   exact WP.mono (dlast_ok hr (hK.of_frame (hf₁.trans (hf₂.trans hf₃)) hr) hI₃)
     fun s' ⟨hv, hf'⟩ => ⟨hv, hf₁.trans (hf₂.trans (hf₃.trans hf'))⟩
 

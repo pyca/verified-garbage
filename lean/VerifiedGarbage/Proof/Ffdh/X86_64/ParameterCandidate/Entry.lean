@@ -152,7 +152,7 @@ theorem candidateEntry_ok {s : State} {B : Addr} (hB : stackArg s 1 = B)
   rw [← hm] at h0 h1 h2 h3 h4 h5 hO hL hU hBits hG hR hPtr hLeft hUsed hStatus hf
   refine ⟨hdi, ?_, ?_, hPtr, hLeft, hUsed, hStatus, hf, k⟩
   · intro i hi
-    rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 by omega) with rfl | rfl | rfl | rfl | rfl | rfl
+    rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 by omega_using [hi]) with rfl | rfl | rfl | rfl | rfl | rfl
     exacts [h0, h1, h2, h3, h4, h5]
   · intro p hp
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hp

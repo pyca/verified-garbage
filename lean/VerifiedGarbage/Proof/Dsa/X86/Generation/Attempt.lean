@@ -76,11 +76,11 @@ theorem atRanges_apart {g : Geo} (G : GeoOk g) {E : Env} (v : E.Valid) (hp : E.p
       rcases G.lengths with ⟨_, h⟩ | ⟨_, h⟩ | ⟨_, h⟩ <;> rw [h] <;> decide
     simp only [qRanges, qPre, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at h
     rcases h with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
-      simp only [sState, sHScr, sPk, sPP, fRes, fUsed, fUsedOut, fOut, fWitLen, hdr] <;> omega
+      simp only [sState, sHScr, sPk, sPP, fRes, fUsed, fUsedOut, fOut, fWitLen, hdr] <;> omega_arith
   · exact ppRanges_apart G v o h
   · exact gRanges_apart G v o h
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at h
-    rcases h with rfl | rfl | rfl | rfl <;> simp only [sChk, fStatus, fHs, fHsLen, fOut, fWitLen, hdr] <;> omega
+    rcases h with rfl | rfl | rfl | rfl <;> simp only [sChk, fStatus, fHs, fHsLen, fOut, fWitLen, hdr] <;> omega_arith
 
 /-- The window's result: the generator over its candidates, and the
 parameters' validation. -/
@@ -141,7 +141,7 @@ theorem hList_window {E : Env} {u : Nat} (hl : E.witT.length = E.witLen) :
   congr 2
   simp only [Env.hT, Env.window]
   rw [List.take_eq_take_iff, List.length_drop, hl, Spec.Dsa.generatorAttempts]
-  omega
+  omega_using []
 
 theorem AKeep.mem {E : Env} {g : Geo} {s t t' : State} (K : AKeep E g s t) (hm : t'.mem = t.mem)
     (edi : t'.gpr .edi = t.gpr .edi) (sp : t'.gpr .esp = t.gpr .esp) (rd : t'.rd = t.rd) (wr : t'.wr = t.wr)
@@ -175,8 +175,8 @@ theorem AKeep.word {E : Env} {g : Geo} {s t : State} (K : AKeep E g s t) (G : Ge
     simp only [sState, sHScr, sX, sPk, sPP, ppWords, arr, aTmp, aH, sChk, fRes, fUsed, fUsedOut, fP, fCounter,
       fOffset, fH, fHLeft, fG, fLo, fStatus, fHs, fHsLen, hdr] at hd₁ hd₂ ⊢
     repeat' apply And.intro
-    all_goals omega
-  exact Env.Chg.word v K.chg (by simp only [fUsed, hdr] at hd₂; omega)
+    all_goals omega_arith
+  exact Env.Chg.word v K.chg (by simp only [fUsed, hdr] at hd₂; omega_using [hd₂, sz])
     fun o ho => ⟨(Aat o ho).1, key o ho⟩
 
 /-- The cursor's word, which no range of a seed holds. -/
@@ -194,8 +194,8 @@ theorem AKeep.cur {E : Env} {g : Geo} {s t : State} (K : AKeep E g s t) (G : Geo
     simp only [sState, sHScr, sX, sPk, sPP, ppWords, arr, aTmp, aH, sChk, fRes, fUsed, fUsedOut, fP, fCounter,
       fOffset, fH, fHLeft, fG, fLo, fStatus, fHs, fHsLen, fC, hdr]
     repeat' apply And.intro
-    all_goals omega
-  exact Env.Chg.word v K.chg (by simp only [fC, hdr]; omega) fun o ho => ⟨(Aat o ho).1, key o ho⟩
+    all_goals omega_using []
+  exact Env.Chg.word v K.chg (by simp only [fC, hdr]; omega_using [sz]) fun o ho => ⟨(Aat o ho).1, key o ho⟩
 
 /-- After the window's block: `fHs` := `rand + u`, `fHsLen` := the octets of
 `rand` after `u`, and CF whether they are fewer than the window's. -/
@@ -222,10 +222,10 @@ theorem gWinBlock_ok {g : Geo} (G : GeoOk g) {E : Env} (v : E.Valid) {s : State}
   have wl := v.witLen32
   have ap : E.Apart [(fHs, 4), (fHsLen, 4)] := fun o ho => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at ho
-    rcases ho with rfl | rfl <;> simp only [fHs, fHsLen, fOut, fUsedP, fWitLen, hdr] <;> omega
-  refine ld_ok B.scr (d := fUsed) (by simp only [fUsed, hdr]; omega) fun t₁ u₁ =>
+    rcases ho with rfl | rfl <;> simp only [fHs, fHsLen, fOut, fUsedP, fWitLen, hdr] <;> omega_using [sz]
+  refine ld_ok B.scr (d := fUsed) (by simp only [fUsed, hdr]; omega_using [sz]) fun t₁ u₁ =>
     ld_ok (Scr.of_eq B.scr (u₁.other _ (by decide)) (u₁.other _ (by decide)) u₁.wr) (d := fWit)
-      (by simp only [fWit, hdr]; omega) fun t₂ u₂ => wp_add fun t₃ u₃ _ => ?_
+      (by simp only [fWit, hdr]; omega_using [sz]) fun t₂ u₂ => wp_add fun t₃ u₃ _ => ?_
   have hs₃ : Scr t₃ E.base E.size := Scr.of_eq B.scr (by rw [u₃.other _ (by decide), u₂.other _ (by decide),
     u₁.other _ (by decide)]) (by rw [u₃.other _ (by decide), u₂.other _ (by decide), u₁.other _ (by decide)])
     (by rw [u₃.wr, u₂.wr, u₁.wr])
@@ -234,16 +234,16 @@ theorem gWinBlock_ok {g : Geo} (G : GeoOk g) {E : Env} (v : E.Valid) {s : State}
   have eax₃ : t₃.gpr .eax = (E.wit + BitVec.ofNat 64 u).setWidth 32 := by
     rw [u₃.gpr, u₂.gpr, u₂.other _ (by decide), u₁.gpr, u₁.mem, B.witW, hU, ptr_add]
   have m₃ : t₃.mem = s.mem := by rw [u₃.mem, u₂.mem, u₁.mem]
-  refine st_ok hs₃ (d := fHs) (by simp only [fHs, hdr]; omega) fun t₄ M₄ => ?_
+  refine st_ok hs₃ (d := fHs) (by simp only [fHs, hdr]; omega_using [sz]) fun t₄ M₄ => ?_
   have hs₄ := Scr.of_eq hs₃ (by rw [M₄.gpr]) (by rw [M₄.gpr]) M₄.wr
-  refine ld_ok hs₄ (d := fWitLen) (by simp only [fWitLen, hdr]; omega) fun t₅ u₅ => wp_sub fun t₆ u₆ _ => ?_
+  refine ld_ok hs₄ (d := fWitLen) (by simp only [fWitLen, hdr]; omega_using [sz]) fun t₅ u₅ => wp_sub fun t₆ u₆ _ => ?_
   have hs₆ : Scr t₆ E.base E.size := Scr.of_eq hs₄ (by rw [u₆.other _ (by decide), u₅.other _ (by decide)])
     (by rw [u₆.other _ (by decide), u₅.other _ (by decide)]) (by rw [u₆.wr, u₅.wr])
   have eax₆ : t₆.gpr .eax = BitVec.ofNat 32 (E.witLen - u) := by
     rw [u₆.gpr, u₅.gpr, u₅.other _ (by decide), M₄.gpr, ecx₃, M₄.mem, m₃,
-      word_store_other v _ (by simp only [fWitLen, hdr]; omega) (by simp only [fHs, hdr]; omega)
-        (by simp only [fWitLen, fHs, hdr]; omega), B.witLenW, sub_ofNat hu]
-  refine st_ok hs₆ (d := fHsLen) (by simp only [fHsLen, hdr]; omega) fun t₇ M₇ =>
+      word_store_other v _ (by simp only [fWitLen, hdr]; omega_using [sz]) (by simp only [fHs, hdr]; omega_using [sz])
+        (by simp only [fWitLen, fHs, hdr]; omega_using []), B.witLenW, sub_ofNat hu]
+  refine st_ok hs₆ (d := fHsLen) (by simp only [fHsLen, hdr]; omega_using [sz]) fun t₇ M₇ =>
     wp_cmpi fun t₈ f₈ c₈ _ => WP.block_nil ?_
   have m₈ : t₈.mem = (s.mem.writeW (off E.base fHs) ((E.wit + BitVec.ofNat 64 u).setWidth 32)).writeW
       (off E.base fHsLen) (BitVec.ofNat 32 (E.witLen - u)) := by
@@ -262,12 +262,12 @@ theorem gWinBlock_ok {g : Geo} (G : GeoOk g) {E : Env} (v : E.Valid) {s : State}
     rw [f₈.gpr, M₇.gpr, u₆.other _ (by decide), u₅.other _ (by decide), M₄.gpr, u₃.other _ (by decide),
       u₂.other _ (by decide), u₁.other _ (by decide)]
   refine ⟨B.keep v C₈ ap edi₈ esp₈ rd₈ wr₈ sy₈, C₈, rd₈, wr₈, sy₈, edi₈, esp₈, ?_, ?_, ?_⟩
-  · rw [m₈, word_store_other v _ (by simp only [fHs, hdr]; omega) (by simp only [fHsLen, hdr]; omega)
-      (by simp only [fHs, fHsLen, hdr]; omega), Mem.readW_writeW_self32]
+  · rw [m₈, word_store_other v _ (by simp only [fHs, hdr]; omega_using [sz]) (by simp only [fHsLen, hdr]; omega_using [sz])
+      (by simp only [fHs, fHsLen, hdr]; omega_using []), Mem.readW_writeW_self32]
     rfl
   · rw [m₈, Mem.readW_writeW_self32]
   · show t₈.cf = _
-    rw [c₈, M₇.gpr, eax₆, toNat_ofNat_lt (by omega), toNat_ofNat_lt (by omega)]
+    rw [c₈, M₇.gpr, eax₆, toNat_ofNat_lt (by omega_using [wl]), toNat_ofNat_lt (by omega_using [bd])]
 
 /-- The window's words: `fHs` := `rand + u`, `fHsLen` := the window's length. -/
 theorem gWindow_ok {g : Geo} (G : GeoOk g) {E : Env} (v : E.Valid) (hp : E.pLen = g.pLen) {s : State}
@@ -282,33 +282,33 @@ theorem gWindow_ok {g : Geo} (G : GeoOk g) {E : Env} (v : E.Valid) (hp : E.pLen 
   refine WP.ite _ W.cf (fun h => WP.block_nil ⟨W.base, W.chg, W.rd, W.wr, W.syms, W.hs, ?_⟩) (fun h => ?_)
   · rw [W.len]
     simp only [Env.window, hp]
-    rw [Nat.min_eq_left (by have := of_decide_eq_true h; omega)]
-  · refine stImm_end W.base.scr (o := fHsLen) (v := 128 * g.pLen) (by simp only [fHsLen, hdr]; omega)
+    rw [Nat.min_eq_left (by have := of_decide_eq_true h; omega_using [this])]
+  · refine stImm_end W.base.scr (o := fHsLen) (v := 128 * g.pLen) (by simp only [fHsLen, hdr]; omega_using [sz])
       fun t₉ g₉ m₉ rd₉ wr₉ sy₉ => ?_
     have C₉ : E.Chg [(fHs, 4), (fHsLen, 4)] s.mem t₉.mem := by
       rw [m₉]; exact W.chg.store (d := fHsLen) (n := 4) (by simp) (by decide) _
     have ap : E.Apart [(fHs, 4), (fHsLen, 4)] := fun o ho => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at ho
-      rcases ho with rfl | rfl <;> simp only [fHs, fHsLen, fOut, fUsedP, fWitLen, hdr] <;> omega
+      rcases ho with rfl | rfl <;> simp only [fHs, fHsLen, fOut, fUsedP, fWitLen, hdr] <;> omega_using [sz]
     refine ⟨B.keep v C₉ ap (by rw [g₉ _ (by decide), W.edi]) (by rw [g₉ _ (by decide), W.esp])
       (by rw [rd₉, W.rd]) (by rw [wr₉, W.wr]) (by rw [sy₉, W.syms]), C₉, by rw [rd₉, W.rd], by rw [wr₉, W.wr],
       by rw [sy₉, W.syms], ?_, ?_⟩
-    · rw [m₉, word_store_other v _ (by simp only [fHs, hdr]; omega) (by simp only [fHsLen, hdr]; omega)
-        (by simp only [fHs, fHsLen, hdr]; omega), W.hs]
+    · rw [m₉, word_store_other v _ (by simp only [fHs, hdr]; omega_using [sz]) (by simp only [fHsLen, hdr]; omega_using [sz])
+        (by simp only [fHs, fHsLen, hdr]; omega_using []), W.hs]
     · rw [m₉, Mem.readW_writeW_self32]
       simp only [Env.window, hp]
-      rw [Nat.min_eq_right (by have := of_decide_eq_false h; omega)]
+      rw [Nat.min_eq_right (by have := of_decide_eq_false h; omega_using [this])]
 
 /-- The candidates read: `fUsed` := `fH − rand`. -/
 theorem gUsed_wp {E : Env} {s : State} (hs : Scr s E.base E.size) (hsz : 73728 ≤ E.size) :
     WP isa (.block Geo.gUsed) s fun t => (∃ x : BitVec 32, t.mem = s.mem.writeW (off E.base fUsed) x) ∧
       t.gpr .edi = s.gpr .edi ∧ t.gpr .esp = s.gpr .esp ∧ t.rd = s.rd ∧ t.wr = s.wr ∧ t.syms = s.syms := by
-  refine ld_ok hs (d := fH) (by simp only [fH, hdr]; omega) fun t₈ u₈ =>
+  refine ld_ok hs (d := fH) (by simp only [fH, hdr]; omega_using [hsz]) fun t₈ u₈ =>
     ld_ok (Scr.of_eq hs (u₈.other _ (by decide)) (u₈.other _ (by decide)) u₈.wr) (d := fWit)
-      (by simp only [fWit, hdr]; omega) fun t₉ u₉ => wp_sub fun t₁₀ u₁₀ _ =>
+      (by simp only [fWit, hdr]; omega_using [hsz]) fun t₉ u₉ => wp_sub fun t₁₀ u₁₀ _ =>
     st_ok (Scr.of_eq hs (by rw [u₁₀.other _ (by decide), u₉.other _ (by decide), u₈.other _ (by decide)])
       (by rw [u₁₀.other _ (by decide), u₉.other _ (by decide), u₈.other _ (by decide)])
-      (by rw [u₁₀.wr, u₉.wr, u₈.wr])) (d := fUsed) (by simp only [fUsed, hdr]; omega) fun t₁₁ M₁₁ =>
+      (by rw [u₁₀.wr, u₉.wr, u₈.wr])) (d := fUsed) (by simp only [fUsed, hdr]; omega_using [hsz]) fun t₁₁ M₁₁ =>
     WP.block_nil ⟨⟨_, by rw [M₁₁.mem, u₁₀.mem, u₉.mem, u₈.mem]⟩,
       by rw [M₁₁.gpr, u₁₀.other _ (by decide), u₉.other _ (by decide), u₈.other _ (by decide)],
       by rw [M₁₁.gpr, u₁₀.other _ (by decide), u₉.other _ (by decide), u₈.other _ (by decide)],

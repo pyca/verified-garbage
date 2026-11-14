@@ -74,22 +74,22 @@ theorem add2g_snd (q1 u : F5 T) (c : T) : (Id.run (add2g tops q1 u c)).2 = Id.ru
 theorem add2g_v0 (q1 u : F5 T) (c : T) (E : Env) :
     vI E 0 (Id.run (add2g tops q1 u c)).1 = vI E 0 u + 20 * pI := by
   glue_simp [add2g]
-  omega
+  omega_using []
 
 theorem add2g_v1 (q1 u : F5 T) (c : T) (E : Env) {neg : Bool} (hs : SgnOk E c neg) :
     vI E 1 (Id.run (add2g tops q1 u c)).1 = if neg then 3 * pI - vI E 3 q1 else vI E 3 q1 + 3 * pI := by
   glue_simp [add2g, vI_fsel _ hs.b, vI_fneg, hs.s1]
-  cases neg <;> simp <;> omega
+  cases neg <;> simp <;> omega_using []
 
 theorem add2g_v2 (q1 u : F5 T) (c : T) (E : Env) {neg : Bool} (hs : SgnOk E c neg) :
     vI E 2 (Id.run (add2g tops q1 u c)).1 = vI E 1 q1 - vI E 0 q1 + 3 * pI := by
   glue_simp [add2g, vI_fsel _ hs.b, vI_fneg, hs.s2]
-  omega
+  omega_using []
 
 theorem add2g_v3 (q1 u : F5 T) (c : T) (E : Env) {neg : Bool} (hs : SgnOk E c neg) :
     vI E 3 (Id.run (add2g tops q1 u c)).1 = vI E 2 q1 := by
   glue_simp [add2g, vI_fsel _ hs.b, vI_fneg, hs.s3]
-  omega
+  omega_using []
 
 theorem add3g_fst (al n3 tb : F5 T) : (Id.run (add3g tops al n3 tb)).1 =
     Id.run (fblend tops (Id.run (fblend tops tb n3 2)) (Id.run (fperm tops al 2 2 2 2)) 12) := rfl
@@ -99,19 +99,19 @@ theorem add3g_snd (al n3 tb : F5 T) : (Id.run (add3g tops al n3 tb)).2 = Id.run 
 theorem add4g_v0 (q2 pu1 : F5 T) (E : Env) :
     vI E 0 (Id.run (add4g tops q2 pu1)) = vI E 1 q2 - vI E 0 q2 + 2 * pI := by
   glue_simp [add4g]
-  omega
+  omega_using []
 
 theorem add4g_v1 (q2 pu1 : F5 T) (E : Env) : vI E 1 (Id.run (add4g tops q2 pu1)) = 2 * vI E 3 q2 := by
   glue_simp [add4g]
-  omega
+  omega_using []
 
 theorem add4g_v2 (q2 pu1 : F5 T) (E : Env) : vI E 2 (Id.run (add4g tops q2 pu1)) = vI E 2 pu1 := by
   glue_simp [add4g]
-  omega
+  omega_using []
 
 theorem add4g_v3 (q2 pu1 : F5 T) (E : Env) : vI E 3 (Id.run (add4g tops q2 pu1)) = vI E 2 q2 := by
   glue_simp [add4g]
-  omega
+  omega_using []
 
 theorem add5g_fst (be ph : F5 T) : (Id.run (add5g tops be ph)).1 = Id.run (fblend tops be ph 8) := rfl
 
@@ -121,27 +121,27 @@ theorem add5g_snd (be ph : F5 T) :
 theorem add6g_v0 (q : F5 T) (E : Env) :
     vI E 0 (Id.run (add6g tops q)) = 12 * vI E 2 q + 4 * vI E 3 q - vI E 0 q + 2 * pI := by
   glue_simp [add6g]
-  omega
+  omega_using []
 
 theorem add6g_v1 (q : F5 T) (E : Env) : vI E 1 (Id.run (add6g tops q)) = vI E 1 q := by
   glue_simp [add6g]
-  omega
+  omega_using []
 
 theorem add6g_v2 (q : F5 T) (E : Env) : vI E 2 (Id.run (add6g tops q)) = vI E 3 q := by
   glue_simp [add6g]
-  omega
+  omega_using []
 
 theorem add6g_v3 (q : F5 T) (E : Env) :
     vI E 3 (Id.run (add6g tops q)) = vI E 0 q - 8 * vI E 2 q - 4 * vI E 3 q + 13 * pI := by
   glue_simp [add6g]
-  omega
+  omega_using []
 
 theorem add7g_eq (ga be de : F5 T) : Id.run (add7g tops ga be de) =
     Id.run (fblend tops (Id.run (fblend tops ga be 1)) (Id.run (fperm tops de 0 0 0 0)) 4) := rfl
 
 theorem add7u_v0 (q4 : F5 T) (E : Env) : vI E 0 (Id.run (add7u tops q4)) = 2 * (vI E 0 q4 - 4 * vI E 2 q4) := by
   glue_simp [add7u]
-  omega
+  omega_using []
 
 /-! ### What is known between the stages -/
 

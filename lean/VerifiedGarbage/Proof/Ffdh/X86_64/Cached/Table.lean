@@ -44,7 +44,7 @@ def OutScr (B : Addr) (Z : Nat) (m m' : Mem) : Prop := ∀ x, ofs B x < Z → m'
 
 theorem OutScr.word_eq {B : Addr} {Z : Nat} {m m' : Mem} (h : OutScr B Z m m') {d : Nat} (hd : d + 8 ≤ Z)
     (hn : B.toNat + Z ≤ 2 ^ 64) : Bignum.word m' B d = Bignum.word m B d :=
-  Mem.readW_congr fun i hi => h _ (by rw [ofs_off B (d := d) (i := i) (by omega)]; omega)
+  Mem.readW_congr fun i hi => h _ (by rw [ofs_off B (d := d) (i := i) (by omega_using [hd, hn, hi])]; omega_using [hd, hi])
 
 /-- The working space at an offset `o`: its words are unchanged too. -/
 theorem OutScr.wordAt {B : Addr} {Z : Nat} {m m' : Mem} (h : OutScr B Z m m') {o d : Nat}
@@ -52,11 +52,11 @@ theorem OutScr.wordAt {B : Addr} {Z : Nat} {m m' : Mem} (h : OutScr B Z m m') {o
   have e : ∀ m : Mem, Bignum.word m (off B o) d = Bignum.word m B (o + d) := fun m => by
     simp only [Bignum.word, off, BitVec.add_assoc, BitVec.ofNat_add_ofNat]
   rw [e, e]
-  exact OutScr.word_eq h (by omega) hn
+  exact OutScr.word_eq h (by omega_using [hd]) hn
 
 theorem OutScr.wvAt {B : Addr} {Z : Nat} {m m' : Mem} (h : OutScr B Z m m') {o d n : Nat}
     (hd : o + d + 8 * n ≤ Z) (hn : B.toNat + Z ≤ 2 ^ 64) : wv m' (off B o) d n = wv m (off B o) d n :=
-  wv_congr fun i hi => OutScr.wordAt h (by omega) hn
+  wv_congr fun i hi => OutScr.wordAt h (by omega_using [hd, hi]) hn
 
 /-- The working space is as it was, so is the inner workspace's context. -/
 theorem SubCtx.of_outScr {s t : State} {B : Addr} {Z o w wx : Nat} {mi : BitVec 64}
@@ -69,18 +69,18 @@ theorem SubCtx.of_outScr {s t : State} {B : Addr} {Z o w wx : Nat} {mi : BitVec 
   have h8w := hdr_lt_slot w 8 (show 31 < 32 by decide)
   have hT : 0 ≤ tabBytes wx := Nat.zero_le _
   have hw : ∀ i < 32, word t.mem (off B o) (8 * i) = word s.mem (off B o) (8 * i) := fun i hi' =>
-    OutScr.wordAt hm (by have := hdr_lt_slot wx 8 hi'; omega) hn
+    OutScr.wordAt hm (by have := hdr_lt_slot wx 8 hi'; omega_using [hi, this]) hn
   have hw0 : ∀ i < 32, word t.mem B (8 * i) = word s.mem B (8 * i) := fun i hi' =>
-    OutScr.word_eq hm (by have := hdr_lt_slot w 8 hi'; omega) hn
+    OutScr.word_eq hm (by have := hdr_lt_slot w 8 hi'; omega_using [hi, h8, hi']) hn
   refine ⟨⟨?_, h.scr.nowrap⟩, by rw [hdi]; exact h.rdi, ⟨?_, ?_, fun j hj => ?_⟩, ?_, ?_, fun j hj => ?_,
     h.lo, h.hi⟩
   · rw [hwr]; exact h.scr.wr
   · rw [hw _ (by decide)]; exact h.hdr.hw
   · rw [hw _ (by decide)]; exact h.hdr.hminv
-  · rw [hw _ (by unfold sArr; omega)]; exact h.hdr.harr j hj
+  · rw [hw _ (by unfold sArr; omega_using [hj])]; exact h.hdr.harr j hj
   · rw [hw _ (by decide)]; exact h.link
   · rw [hw0 _ (by decide)]; exact h.nw
-  · rw [hw0 _ (by unfold sArr; omega)]; exact h.narr j hj
+  · rw [hw0 _ (by unfold sArr; omega_using [hj])]; exact h.narr j hj
 
 /-- The context's `n` words at `cp`: writable, outside the working space. -/
 structure CtxRegion (s : State) (B : Addr) (Z : Nat) (cp : Addr) (n : Nat) : Prop where
@@ -120,7 +120,7 @@ theorem row_congr {m m' : Mem} {cp : Addr} {w j : Nat}
 theorem row_outside {m m' : Mem} {cp : Addr} {w j o n : Nat} (h : Outside cp o n m m')
     (hj : 24 + 8 * w * j + 8 * w ≤ o ∨ o + n ≤ 24 + 8 * w * j) (hn : 24 + 8 * w * (j + 1) ≤ 2 ^ 64) :
     row m' cp w j = row m cp w j :=
-  row_congr fun i hi => h.word (by rw [Nat.mul_add] at hn; omega) (by rw [Nat.mul_add] at hn; omega)
+  row_congr fun i hi => h.word (by rw [Nat.mul_add] at hn; omega_using [hj, hi]) (by rw [Nat.mul_add] at hn; omega_using [hn, hi])
 
 /-- A row copied from `w` words of value `V`. -/
 theorem row_of_words {m m' : Mem} {cp S : Addr} {w j e : Nat}
@@ -166,8 +166,8 @@ theorem rowPtr_ok {s : State} {B : Addr} {Z o w wx : Nat} {mi : BitVec 64} {cp :
   refine WP.mono (WP.keep [.rbx, .r12] (Q := fun t => t.gpr .rbx = off cp (24 + 8 * wx * j) ∧
       t.gpr .r12 = BitVec.ofNat 64 wx ∧ t.mem = s.mem) (by
     unfold rowPtr
-    xrun [State.ea, hdr, hg.rdi, hdrOff, hg.scr.ld (d := 8 * sW) (by omega),
-      hg.scr.ld (d := 8 * iCtx) (by omega), hg.hdr.hw, hctx, hax, execImul, imul_low]
+    xrun [State.ea, hdr, hg.rdi, hdrOff, hg.scr.ld (d := 8 * sW) (by omega_using [hW]),
+      hg.scr.ld (d := 8 * iCtx) (by omega_using [hC]), hg.hdr.hw, hctx, hax, execImul, imul_low]
     exact rowAddr cp j wx) rfl) fun t ⟨h, k⟩ => ⟨h.1, h.2.1, h.2.2, k⟩
 
 /-- The value of a row that holds `toWords V w`, for `V < 2^(64 w)`. -/
@@ -193,7 +193,7 @@ theorem storeRow_ok {s : State} {B : Addr} {Z o w : Nat} {mi : BitVec 64} {cp : 
   have hg := hc.good
   have hn := hc.scr.nowrap
   have hi := hc.hi
-  have hA := hdr_lt_slot w 8 (show sArr a < 32 by unfold sArr; omega)
+  have hA := hdr_lt_slot w 8 (show sArr a < 32 by unfold sArr; omega_using [ha])
   have hsa := slot_le (w := w) ha
   have hcn := hR.nowrap
   have e8 : 8 * w * j = 8 * (w * j) := Nat.mul_assoc _ _ _
@@ -204,25 +204,25 @@ theorem storeRow_ok {s : State} {B : Addr} {Z o w : Nat} {mi : BitVec 64} {cp : 
   have hg₁ : Good s₁ (off B o) (slot w 8) w mi :=
     ⟨hg.scr.congr k₁.2.2, (k₁.gpr (by decide)).trans hg.rdi, by rw [hm₁]; exact hg.hdr⟩
   refine WP.mono (WP.keep [.rsi] (Q := fun t => t.gpr .rsi = off (off B o) (slot w a) ∧ t.mem = s₁.mem)
-    (by xrun [State.ea, hdr, hg₁.rdi, hdrOff, hg₁.scr.ld (d := 8 * sArr a) (by omega), hg₁.hdr.harr a ha]) rfl)
+    (by xrun [State.ea, hdr, hg₁.rdi, hdrOff, hg₁.scr.ld (d := 8 * sArr a) (by omega_using [hA]), hg₁.hdr.harr a ha]) rfl)
     fun s₂ ⟨⟨hsi, hm₂⟩, k₂⟩ => ?_
   have k12 := k₁.trans k₂
   refine WP.mono (copyWords_ok hsi ((k₂.gpr (by decide)).trans hbx) ((k₂.gpr (by decide)).trans h12) hw
-    (by omega) (by rw [Nat.mul_add] at hj; omega)
-    (fun i hi' => by rw [k12.2.1, k12.2.2]; exact hg.scr.ld (by omega))
-    (fun i hi' => by rw [k12.2.2, rowOff]; exact hR.wr _ (by rw [Nat.mul_add] at hj; omega))
+    (by omega_using [hw']) (by rw [Nat.mul_add] at hj; omega_using [hj, hcn, e8])
+    (fun i hi' => by rw [k12.2.1, k12.2.2]; exact hg.scr.ld (by omega_using [hsa, hi']))
+    (fun i hi' => by rw [k12.2.2, rowOff]; exact hR.wr _ (by rw [Nat.mul_add] at hj; omega_using [hj, hi']))
     (fun i hi' b hb => Or.inr (by
       have hx : ofs B (off (off B o) (slot w a + 8 * i) + BitVec.ofNat 64 b) < Z := by
         rw [show off (off B o) (slot w a + 8 * i) = off B (o + (slot w a + 8 * i)) by
-          simp only [off, BitVec.add_assoc, BitVec.ofNat_add_ofNat], ofs_off B (by omega)]
-        omega
+          simp only [off, BitVec.add_assoc, BitVec.ofNat_add_ofNat], ofs_off B (by omega_using [hn, hi, hsa, hi', hb])]
+        omega_using [hi, hsa, hi', hb]
       have := hR.apart hx
       rw [Nat.mul_add] at hj
-      omega)))
+      omega_using [hj, e8, this])))
     fun t ⟨_, hd, ho, k₃⟩ => ?_
   rw [hm₂, hm₁] at hd ho
   have hsep : ∀ x, ofs B x < Z → t.mem x = s.mem x := fun x hx =>
-    ho x (Or.inr (by have := hR.apart hx; rw [Nat.mul_add] at hj; omega))
+    ho x (Or.inr (by have := hR.apart hx; rw [Nat.mul_add] at hj; omega_using [hj, e8, this]))
   exact ⟨row_of_words hd, ho, hsep, (k12.trans k₃).mono (by decide)⟩
 
 /-- Row `j`, of value `V`, to array `a`'s `w` words, changing only those. -/
@@ -237,7 +237,7 @@ theorem loadRow_ok {s : State} {B : Addr} {Z o w : Nat} {mi : BitVec 64} {cp : A
   have hg := hc.good
   have hn := hc.scr.nowrap
   have hi := hc.hi
-  have hA := hdr_lt_slot w 8 (show sArr a < 32 by unfold sArr; omega)
+  have hA := hdr_lt_slot w 8 (show sArr a < 32 by unfold sArr; omega_using [ha])
   have hsa := slot_le (w := w) ha
   have hcn := hR.nowrap
   have e8 : 8 * w * j = 8 * (w * j) := Nat.mul_assoc _ _ _
@@ -249,26 +249,26 @@ theorem loadRow_ok {s : State} {B : Addr} {Z o w : Nat} {mi : BitVec 64} {cp : A
     ⟨hg.scr.congr k₁.2.2, (k₁.gpr (by decide)).trans hg.rdi, by rw [hm₁]; exact hg.hdr⟩
   refine WP.mono (WP.keep [.rsi, .rbx] (Q := fun t => t.gpr .rsi = off cp (24 + 8 * w * j) ∧
       t.gpr .rbx = off (off B o) (slot w a) ∧ t.mem = s₁.mem)
-    (by xrun [State.ea, hdr, hg₁.rdi, hdrOff, hbx, hg₁.scr.ld (d := 8 * sArr a) (by omega),
+    (by xrun [State.ea, hdr, hg₁.rdi, hdrOff, hbx, hg₁.scr.ld (d := 8 * sArr a) (by omega_using [hA]),
       hg₁.hdr.harr a ha]) rfl)
     fun s₂ ⟨⟨hsi, hbx₂, hm₂⟩, k₂⟩ => ?_
   have k12 := k₁.trans k₂
   refine WP.mono (copyWords_ok hsi hbx₂ ((k₂.gpr (by decide)).trans h12) hw
-    (by omega) (by omega)
-    (fun i hi' => by rw [k12.2.1, k12.2.2, rowOff]; exact hR.rd _ (by rw [Nat.mul_add] at hj; omega))
-    (fun i hi' => by rw [k12.2.2]; exact hg.scr.st (by omega))
+    (by omega_using [hw']) (by omega_using [hn, hi, hsa])
+    (fun i hi' => by rw [k12.2.1, k12.2.2, rowOff]; exact hR.rd _ (by rw [Nat.mul_add] at hj; omega_using [hj, hi']))
+    (fun i hi' => by rw [k12.2.2]; exact hg.scr.st (by omega_using [hsa, hi']))
     (fun i hi' b hb => Or.inr (by
       have hx : 8 * n ≤ 24 + 8 * w * j + 8 * i + b → False := fun h => by
-        rw [Nat.mul_add] at hj; omega
-      have hb' : 24 + 8 * w * j + 8 * i + b < 8 * n := by rw [Nat.mul_add] at hj; omega
+        rw [Nat.mul_add] at hj; omega_using [hctx, hax, ha, hj, hw, hw', hV, hn, hi, hA, hsa, hcn, e8, hbx, h12, hsi, hbx₂, hi', hb, h]
+      have hb' : 24 + 8 * w * j + 8 * i + b < 8 * n := by rw [Nat.mul_add] at hj; omega_using [hj, e8, hi', hb]
       have := hR.out (d := 24 + 8 * w * j + 8 * i + b) hb'
       rw [show off cp (24 + 8 * w * j + 8 * i + b) =
           off cp (24 + 8 * w * j + 8 * i) + BitVec.ofNat 64 b by
         simp only [off, BitVec.add_assoc, BitVec.ofNat_add_ofNat]] at this
-      rcases ofs_rebase B (off cp (24 + 8 * w * j + 8 * i) + BitVec.ofNat 64 b) (o := o) (by omega)
+      rcases ofs_rebase B (off cp (24 + 8 * w * j + 8 * i) + BitVec.ofNat 64 b) (o := o) (by omega_using [hn, hi, hA])
         with ⟨_, e⟩ | ⟨h, _⟩
-      · rw [e]; omega
-      · omega
+      · rw [e]; omega_using [hi, hsa, this]
+      · omega_arith
 )))
     fun t ⟨hv, _, ho, k₃⟩ => ?_
   rw [hm₂, hm₁] at hv ho
@@ -300,7 +300,7 @@ theorem wordsAt_rows (m : Mem) (cp : Addr) (w : Nat) :
   rw [h3]
   refine congrArg (_ ++ ·) (flatMap_congr' fun j _ => List.map_congr_left fun i _ => ?_)
   simp only [Function.comp_apply, Bignum.word, off]
-  rw [rowOff, show 3 + (w * j + i) = 3 + w * j + i by omega]
+  rw [rowOff, show 3 + (w * j + i) = 3 + w * j + i by omega_using []]
 
 /-- The context's words from its parts. -/
 theorem ctx_words {m : Mem} {cp : Addr} {w : Nat} {h₀ h₁ h₂ : BitVec 64} {r₀ r₁ : List (BitVec 64)}
@@ -375,7 +375,7 @@ theorem innerR_ok (w : Nat) : ∀ r ∈ innerR w, 8 * 17 ≤ r.1 ∧ r.1 + r.2 �
     (r.1 + r.2 ≤ slot w aR2 ∨ slot w aR2 + 8 * (w + 2) ≤ r.1) := by
   intro r hr
   simp only [innerR, List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl <;> simp only [slot, hdrBytes, aX, aXm, aN, aOne, aR2] <;> omega
+  rcases hr with rfl | rfl | rfl <;> simp only [slot, hdrBytes, aX, aXm, aN, aOne, aR2] <;> omega_using []
 
 /-- `ModCtx` after a change of only `innerR`. -/
 theorem _root_.VG.Proof.Ffdh.X86_64.ModCtx.of_inner {s t : State} {B : Addr} {Z o w : Nat} {mi : BitVec 64} {X : Nat}
@@ -384,9 +384,9 @@ theorem _root_.VG.Proof.Ffdh.X86_64.ModCtx.of_inner {s t : State} {B : Addr} {Z 
   have hGn := h.sub.good.scr.nowrap
   have sR := slot_le (w := w) (show aR2 < 8 by decide)
   have eR : wv t.mem (off B o) (slot w aR2) w = wv s.mem (off B o) (slot w aR2) w :=
-    hf.wv_eq (fun r hr => by have := (innerR_ok w r hr).2.2.2.2; omega) (by omega)
+    hf.wv_eq (fun r hr => by have := (innerR_ok w r hr).2.2.2.2; omega_using [this]) (by omega_using [hGn, sR])
   exact ⟨h.sub.of_frm hf (fun r hr => ⟨(innerR_ok w r hr).1, (innerR_ok w r hr).2.1⟩) hwr hdi,
-    h.xv.of_frmA hGn (by have := h.w2; omega) hf (fun r hr => ⟨(innerR_ok w r hr).2.2.1, (innerR_ok w r hr).2.2.2.1⟩),
+    h.xv.of_frmA hGn (by have := h.w2; omega_using [this]) hf (fun r hr => ⟨(innerR_ok w r hr).2.2.1, (innerR_ok w r hr).2.2.2.1⟩),
     by rw [eR]; exact h.r2l, by rw [eR]; exact h.r2, h.odd, h.x1, h.wide, h.w2, h.w28⟩
 
 /-- A frame of fewer bytes. -/
@@ -395,7 +395,7 @@ theorem Frm.cover {B : Addr} {rs rs' : List (Nat × Nat)} {m m' : Mem} (h : Frm 
   h x fun r hr => by
     obtain ⟨r', hr', h1, h2⟩ := hc r hr
     have := hx r' hr'
-    omega
+    omega_using [h1, h2, this]
 
 /-- `ModCtx` when the working space is unchanged. -/
 theorem _root_.VG.Proof.Ffdh.X86_64.ModCtx.of_outScr {s t : State} {B : Addr} {Z o w : Nat} {mi : BitVec 64} {X : Nat}
@@ -407,20 +407,20 @@ theorem _root_.VG.Proof.Ffdh.X86_64.ModCtx.of_outScr {s t : State} {B : Addr} {Z
   have sO := slot_le (w := w) (show aOne < 8 by decide)
   have sR := slot_le (w := w) (show aR2 < 8 by decide)
   have eR : wv t.mem (off B o) (slot w aR2) w = wv s.mem (off B o) (slot w aR2) w :=
-    OutScr.wvAt hm (by omega) hn
+    OutScr.wvAt hm (by omega_using [hi, sR]) hn
   refine ⟨SubCtx.of_outScr h.sub hm hwr hdi, ⟨?_, ?_, ?_⟩, by rw [eR]; exact h.r2l, by rw [eR]; exact h.r2, h.odd, h.x1,
     h.wide, h.w2, h.w28⟩
-  · rw [OutScr.wvAt hm (by omega) hn]; exact h.xv.n
-  · rw [OutScr.wordAt hm (by have := h.w2; omega) hn]; exact h.xv.inv
-  · rw [OutScr.wvAt hm (by omega) hn]; exact h.xv.one
+  · rw [OutScr.wvAt hm (by omega_using [hi, sN]) hn]; exact h.xv.n
+  · rw [OutScr.wordAt hm (by have := h.w2; omega_using [hi, sN]) hn]; exact h.xv.inv
+  · rw [OutScr.wvAt hm (by omega_using [hi, sO]) hn]; exact h.xv.one
 
 theorem Env.of_outScr {T : TabP} {s t : State} (h : Env T s) (hm : OutScr T.B T.Z s.mem t.mem)
     (hrd : t.rd = s.rd) (hwr : t.wr = s.wr) (hdi : t.gpr .rdi = s.gpr .rdi) : Env T t := by
   have hn := h.mc.sub.scr.nowrap
   have hi := h.mc.sub.hi
   have h8 := hdr_lt_slot T.w 8 (show 31 < 32 by decide)
-  exact ⟨h.mc.of_outScr hm hwr hdi, by rw [OutScr.wordAt hm (by unfold iCtx sFn; omega) hn]; exact h.ctx,
-    by rw [OutScr.wordAt hm (by unfold iRows sFn; omega) hn]; exact h.rows, h.reg.congr hrd hwr⟩
+  exact ⟨h.mc.of_outScr hm hwr hdi, by rw [OutScr.wordAt hm (by unfold iCtx sFn; omega_using [hi, h8]) hn]; exact h.ctx,
+    by rw [OutScr.wordAt hm (by unfold iRows sFn; omega_using [hi, h8]) hn]; exact h.rows, h.reg.congr hrd hwr⟩
 
 /-- A change of only `innerR`, inside the working space. -/
 theorem Env.of_inner {T : TabP} {s t : State} (h : Env T s) (hf : Frm (off T.B T.o) (innerR T.w) s.mem t.mem)
@@ -434,7 +434,7 @@ theorem inScr_of_inner {T : TabP} {s t : State} (h : Env T s) {rs : List (Nat ×
     (hf : Frm (off T.B T.o) rs s.mem t.mem) (hr : ∀ r ∈ rs, r.1 + r.2 ≤ slot T.w 8) :
     InScr T.B T.Z s.mem t.mem ∧ (∀ i < 32, word t.mem T.B (8 * i) = word s.mem T.B (8 * i)) := by
   obtain ⟨h1, h2⟩ := VG.Proof.Ffdh.X86_64.child_frm h.mc.sub h.mc.wide hf
-    (fun r hr' => by have := hr r hr'; unfold tabBytes; omega)
+    (fun r hr' => by have := hr r hr'; unfold tabBytes; omega_using [this])
   exact ⟨h2, h1⟩
 
 /-- A row is unchanged by a change inside the working space. -/
@@ -445,7 +445,7 @@ theorem row_of_inScr {T : TabP} {s t : State} (h : Env T s) (hm : InScr T.B T.Z 
       simp only [off, BitVec.add_assoc, BitVec.ofNat_add_ofNat]
     rw [e]
     have e8 : 8 * T.w * j = 8 * (T.w * j) := Nat.mul_assoc _ _ _
-    exact h.reg.out (by rw [Nat.mul_add] at hj; omega))
+    exact h.reg.out (by rw [Nat.mul_add] at hj; omega_using [hj, hi, hb, e8]))
 
 /-- A word of the context is unchanged by a change inside the working space. -/
 theorem ctxWord_of_inScr {T : TabP} {s t : State} (h : Env T s) (hm : InScr T.B T.Z s.mem t.mem) {i : Nat}
@@ -454,14 +454,14 @@ theorem ctxWord_of_inScr {T : TabP} {s t : State} (h : Env T s) (hm : InScr T.B 
     have e : off T.cp (8 * i) + BitVec.ofNat 64 b = off T.cp (8 * i + b) := by
       simp only [off, BitVec.add_assoc, BitVec.ofNat_add_ofNat]
     rw [e]
-    exact h.reg.out (by omega))
+    exact h.reg.out (by omega_using [hi, hb]))
 
 theorem Only.of_inScr {T : TabP} {m m' : Mem} (h : InScr T.B T.Z m m') : Only T m m' :=
   fun x hx _ => h x hx
 
 theorem Only.of_outScr_outside {T : TabP} {s : State} {m' : Mem} {o n : Nat}
     (h : Outside T.cp o n s.mem m') (hn : o + n ≤ 8 * T.n) : Only T s.mem m' :=
-  fun x _ hc => h x (Or.inr (by omega))
+  fun x _ hc => h x (Or.inr (by omega_using [hn, hc]))
 
 /-- The ranges of `mm`'s writes are in `innerR`. -/
 theorem mm_cover (w : Nat) {out : Nat} (ho : out = aX ∨ out = aXm ∨ out = aY) :
@@ -470,17 +470,17 @@ theorem mm_cover (w : Nat) {out : Nat} (ho : out = aX ∨ out = aXm ∨ out = aY
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl
-  · exact ⟨(slot w aX, 3 * (8 * (w + 2))), by simp [innerR], by simp only [slot, aX, aAcc]; omega,
-      by simp only [slot, aX, aAcc]; omega⟩
-  · exact ⟨(slot w aX, 3 * (8 * (w + 2))), by simp [innerR], by simp only [slot, aX, aTmp]; omega,
-      by simp only [slot, aX, aTmp]; omega⟩
+  · exact ⟨(slot w aX, 3 * (8 * (w + 2))), by simp [innerR], by simp only [slot, aX, aAcc]; omega_using [],
+      by simp only [slot, aX, aAcc]; omega_using []⟩
+  · exact ⟨(slot w aX, 3 * (8 * (w + 2))), by simp [innerR], by simp only [slot, aX, aTmp]; omega_using [],
+      by simp only [slot, aX, aTmp]; omega_using []⟩
   · rcases ho with rfl | rfl | rfl
-    · exact ⟨(slot w aX, 3 * (8 * (w + 2))), by simp [innerR], by simp only [slot]; omega,
-        by simp only [slot]; omega⟩
-    · exact ⟨(slot w aXm, 2 * (8 * (w + 2))), by simp [innerR], by simp only [slot]; omega,
-        by simp only [slot]; omega⟩
-    · exact ⟨(slot w aXm, 2 * (8 * (w + 2))), by simp [innerR], by simp only [slot, aXm, aY]; omega,
-        by simp only [slot, aXm, aY]; omega⟩
+    · exact ⟨(slot w aX, 3 * (8 * (w + 2))), by simp [innerR], by simp only [slot]; omega_using [],
+        by simp only [slot]; omega_using []⟩
+    · exact ⟨(slot w aXm, 2 * (8 * (w + 2))), by simp [innerR], by simp only [slot]; omega_using [],
+        by simp only [slot]; omega_using []⟩
+    · exact ⟨(slot w aXm, 2 * (8 * (w + 2))), by simp [innerR], by simp only [slot, aXm, aY]; omega_using [],
+        by simp only [slot, aXm, aY]; omega_using []⟩
 
 /-- What a step keeps outside the inner workspace and the context. -/
 structure Kept (T : TabP) (s t : State) : Prop where
@@ -515,7 +515,7 @@ theorem mm_env (Mo : Mont) {T : TabP} {s : State} (he : Env T s) {out a b : Nat}
   have hout : out < 8 := by rcases ho with rfl | rfl | rfl <;> decide
   have ho₁ : out ≠ aAcc := by rcases ho with rfl | rfl | rfl <;> decide
   have ho₂ : out ≠ aTmp := by rcases ho with rfl | rfl | rfl <;> decide
-  refine WP.mono (Mo.mm_ok hc.sub.good (Nat.le_refl _) (by omega) (by omega) hout ha hb ho₁ ho₂ ha₁ hb₁
+  refine WP.mono (Mo.mm_ok hc.sub.good (Nat.le_refl _) (by omega_using [hw2]) (by omega_using [hw28]) hout ha hb ho₁ ho₂ ha₁ hb₁
     hc.xv.inv (by rw [hc.xv.n]; exact hbl) ha₂ hb₂) fun t ⟨_, hl, hv, ha', k⟩ => ?_
   rw [hc.xv.n] at hl hv
   have hf : Frm (off T.B T.o) [(slot T.w aAcc, 8 * (T.w + 2)), (slot T.w aTmp, 8 * (T.w + 2)),
@@ -535,10 +535,10 @@ theorem mm_env (Mo : Mont) {T : TabP} {s : State} (he : Env T s) {out a b : Nat}
       · exact Or.inl (hdr_lt_slot T.w aAcc h2)
       · exact Or.inl (hdr_lt_slot T.w aTmp h2)
       · exact Or.inl (hdr_lt_slot T.w out h2))
-      (by have := hdr_lt_slot T.w 8 (show i < 32 from h2); omega)
+      (by have := hdr_lt_slot T.w 8 (show i < 32 from h2); omega_using [h2])
   refine ⟨he.of_inner (Frm.cover hf (mm_cover T.w ho)) k.2.1 k.2.2 (k.gpr (by decide))
       (hd _ (by decide) (by decide)) (hd _ (by decide) (by decide)), hl, hv, ha',
-    fun j hj => row_of_inScr he hin hj, hd, ⟨Only.of_inScr hin, hout', fun i hi => ctxWord_of_inScr he hin (by unfold TabP.n; omega)⟩,
+    fun j hj => row_of_inScr he hin hj, hd, ⟨Only.of_inScr hin, hout', fun i hi => ctxWord_of_inScr he hin (by unfold TabP.n; omega_using [hi])⟩,
     k⟩
 
 /-- A row of the context in its environment. -/
@@ -555,20 +555,20 @@ theorem store_env {T : TabP} {s : State} (he : Env T s) {j a : Nat} (hax : s.gpr
   have hn := hc.sub.scr.nowrap
   have hcn := he.reg.nowrap
   have hfit : 3 + T.w * (j + 1) ≤ T.n := by
-    unfold TabP.n; have := Nat.mul_le_mul_left T.w (show j + 1 ≤ 34 by omega); omega
-  refine WP.mono (storeRow_ok hc.sub he.ctx hax ha he.reg hfit (by have := hc.w2; omega) hc.w28)
+    unfold TabP.n; have := Nat.mul_le_mul_left T.w (show j + 1 ≤ 34 by omega_using [hj]); omega_using [this]
+  refine WP.mono (storeRow_ok hc.sub he.ctx hax ha he.reg hfit (by have := hc.w2; omega_using [this]) hc.w28)
     fun t ⟨hrow, ho, hos, k⟩ => ?_
   have e8 : 8 * T.w * j = 8 * (T.w * j) := Nat.mul_assoc _ _ _
   refine ⟨he.of_outScr hos k.2.1 k.2.2 (k.gpr (by decide)), hrow, fun j' hne hj' => ?_, hos,
-    ⟨Only.of_outScr_outside ho (by unfold TabP.n at hfit ⊢; rw [Nat.mul_add] at hfit; omega),
-      fun i hi => OutScr.word_eq hos (by have := hdr_lt_slot T.w 8 hi; have := hc.sub.lo; have := hc.sub.hi; omega) hn,
-      fun i hi => ho.word (by omega) (by omega)⟩, k⟩
+    ⟨Only.of_outScr_outside ho (by unfold TabP.n at hfit ⊢; rw [Nat.mul_add] at hfit; omega_using [hfit, e8]),
+      fun i hi => OutScr.word_eq hos (by have := hdr_lt_slot T.w 8 hi; have := hc.sub.lo; have := hc.sub.hi; omega_arith) hn,
+      fun i hi => ho.word (by omega_using [hi]) (by omega_using [hi])⟩, k⟩
   have e8' : 8 * T.w * j' = 8 * (T.w * j') := Nat.mul_assoc _ _ _
   rcases Nat.lt_or_gt_of_ne hne with h | h
-  · have : T.w * (j' + 1) ≤ T.w * j := Nat.mul_le_mul_left _ (by omega)
-    exact row_outside ho (Or.inl (by rw [Nat.mul_add] at this; omega)) (by unfold RowFits TabP.n at hj'; unfold TabP.n at hcn; have : 8 * T.w * (j' + 1) = 8 * (T.w * (j' + 1)) := Nat.mul_assoc _ _ _; omega)
-  · have : T.w * (j + 1) ≤ T.w * j' := Nat.mul_le_mul_left _ (by omega)
-    exact row_outside ho (Or.inr (by rw [Nat.mul_add] at this; omega)) (by unfold RowFits TabP.n at hj'; unfold TabP.n at hcn; have : 8 * T.w * (j' + 1) = 8 * (T.w * (j' + 1)) := Nat.mul_assoc _ _ _; omega)
+  · have : T.w * (j' + 1) ≤ T.w * j := Nat.mul_le_mul_left _ (by omega_using [h])
+    exact row_outside ho (Or.inl (by rw [Nat.mul_add] at this; omega_using [e8, e8', this])) (by unfold RowFits TabP.n at hj'; unfold TabP.n at hcn; have : 8 * T.w * (j' + 1) = 8 * (T.w * (j' + 1)) := Nat.mul_assoc _ _ _; omega_using [hcn, hj', this])
+  · have : T.w * (j + 1) ≤ T.w * j' := Nat.mul_le_mul_left _ (by omega_using [h])
+    exact row_outside ho (Or.inr (by rw [Nat.mul_add] at this; omega_using [e8, e8', this])) (by unfold RowFits TabP.n at hj'; unfold TabP.n at hcn; have : 8 * T.w * (j' + 1) = 8 * (T.w * (j' + 1)) := Nat.mul_assoc _ _ _; omega_using [hcn, hj', this])
 
 /-- Row `j`, of value `V`, to array `a` in the table's environment. -/
 theorem load_env {T : TabP} {s : State} (he : Env T s) {j a V : Nat} (hax : s.gpr .rax = BitVec.ofNat 64 j)
@@ -585,31 +585,31 @@ theorem load_env {T : TabP} {s : State} (he : Env T s) {j a V : Nat} (hax : s.gp
   have ha8 : a < 8 := by rcases ha with rfl | rfl | rfl <;> decide
   have hsa := slot_le (w := T.w) ha8
   have hfit : 3 + T.w * (j + 1) ≤ T.n := by
-    unfold TabP.n; have := Nat.mul_le_mul_left T.w (show j + 1 ≤ 34 by omega); omega
-  refine WP.mono (loadRow_ok hc.sub he.ctx hax ha8 he.reg hfit (by have := hc.w2; omega) hc.w28 hrow hV)
+    unfold TabP.n; have := Nat.mul_le_mul_left T.w (show j + 1 ≤ 34 by omega_using [hj]); omega_using [this]
+  refine WP.mono (loadRow_ok hc.sub he.ctx hax ha8 he.reg hfit (by have := hc.w2; omega_using [this]) hc.w28 hrow hV)
     fun t ⟨hv, ho, k⟩ => ?_
   have hf : Frm (off T.B T.o) [(slot T.w a, 8 * (T.w + 2))] s.mem t.mem :=
-    Frm.of_outside (ho.mono (o' := slot T.w a) (n' := 8 * (T.w + 2)) (Nat.le_refl _) (by omega)) (by simp)
+    Frm.of_outside (ho.mono (o' := slot T.w a) (n' := 8 * (T.w + 2)) (Nat.le_refl _) (by omega_using [])) (by simp)
   obtain ⟨hin, hout⟩ := inScr_of_inner he hf (fun r hr => by rw [List.mem_singleton.mp hr]; exact hsa)
   have hd : ∀ i, i < 32 → word t.mem (off T.B T.o) (8 * i) = word s.mem (off T.B T.o) (8 * i) :=
     fun i hi => hf.word_eq (fun r hr => by rw [List.mem_singleton.mp hr]; exact Or.inl (hdr_lt_slot T.w a hi))
-      (by have := hdr_lt_slot T.w 8 hi; omega)
+      (by have := hdr_lt_slot T.w 8 hi; omega_using [hi])
   have hcov : ∀ r ∈ [(slot T.w a, 8 * (T.w + 2))], ∃ r' ∈ innerR T.w, r'.1 ≤ r.1 ∧ r.1 + r.2 ≤ r'.1 + r'.2 := by
     intro r hr
     rw [List.mem_singleton.mp hr]
     rcases ha with rfl | rfl | rfl
-    · exact ⟨(slot T.w aX, 3 * (8 * (T.w + 2))), by simp [innerR], by simp only [slot]; omega,
-        by simp only [slot]; omega⟩
-    · exact ⟨(slot T.w aXm, 2 * (8 * (T.w + 2))), by simp [innerR], by simp only [slot]; omega,
-        by simp only [slot]; omega⟩
-    · exact ⟨(slot T.w aXm, 2 * (8 * (T.w + 2))), by simp [innerR], by simp only [slot, aXm, aY]; omega,
-        by simp only [slot, aXm, aY]; omega⟩
+    · exact ⟨(slot T.w aX, 3 * (8 * (T.w + 2))), by simp [innerR], by simp only [slot]; omega_using [],
+        by simp only [slot]; omega_using []⟩
+    · exact ⟨(slot T.w aXm, 2 * (8 * (T.w + 2))), by simp [innerR], by simp only [slot]; omega_using [],
+        by simp only [slot]; omega_using []⟩
+    · exact ⟨(slot T.w aXm, 2 * (8 * (T.w + 2))), by simp [innerR], by simp only [slot, aXm, aY]; omega_using [],
+        by simp only [slot, aXm, aY]; omega_using []⟩
   refine ⟨he.of_inner (Frm.cover hf hcov) k.2.1 k.2.2 (k.gpr (by decide)) (hd _ (by decide)) (hd _ (by decide)),
     hv, fun b hb hne => hf.wv_eq (fun r hr => by
-      rw [List.mem_singleton.mp hr]; have := slot_sep (w := T.w) hne; simp only; omega)
-      (by have := slot_le (w := T.w) hb; omega),
+      rw [List.mem_singleton.mp hr]; have := slot_sep (w := T.w) hne; simp only; omega_using [this])
+      (by have := slot_le (w := T.w) hb; omega_using [hGn, this]),
     fun j' hj' => row_of_inScr he hin hj', hd,
-    ⟨Only.of_inScr hin, hout, fun i hi => ctxWord_of_inScr he hin (by unfold TabP.n; omega)⟩, k⟩
+    ⟨Only.of_inScr hin, hout, fun i hi => ctxWord_of_inScr he hin (by unfold TabP.n; omega_using [hi])⟩, k⟩
 
 /-- A store to an inner counter slot (not the context's pointer or row count). -/
 theorem slot_env {T : TabP} {s : State} (he : Env T s) {i : Nat} (hi : 19 ≤ i) (hi' : i < 32) {t : State}
@@ -621,23 +621,23 @@ theorem slot_env {T : TabP} {s : State} (he : Env T s) {i : Nat} (hi : 19 ≤ i)
       (∀ j', RowFits T j' → row t.mem T.cp T.w j' = row s.mem T.cp T.w j') ∧ Kept T s t := by
   have hc := he.mc
   have hGn := hc.sub.good.scr.nowrap
-  have ho := writeW_outside s.mem (off T.B T.o) (d := 8 * i) v (by omega)
+  have ho := writeW_outside s.mem (off T.B T.o) (d := 8 * i) v (by omega_using [hi'])
   rw [← hm] at ho
   have hf : Frm (off T.B T.o) [(8 * i, 8)] s.mem t.mem := Frm.of_outside ho (by simp)
   obtain ⟨hin, hout⟩ := inScr_of_inner he hf (fun r hr => by
-    rw [List.mem_singleton.mp hr]; have := hdr_lt_slot T.w 0 hi'; simp only [slot] at this ⊢; omega)
+    rw [List.mem_singleton.mp hr]; have := hdr_lt_slot T.w 0 hi'; simp only [slot] at this ⊢; omega_using [this])
   have hcov : ∀ r ∈ [(8 * i, 8)], ∃ r' ∈ innerR T.w, r'.1 ≤ r.1 ∧ r.1 + r.2 ≤ r'.1 + r'.2 := by
     intro r hr; rw [List.mem_singleton.mp hr]
-    exact ⟨(8 * 17, 8 * 15), by simp [innerR], by simp only; omega, by simp only; omega⟩
+    exact ⟨(8 * 17, 8 * 15), by simp [innerR], by simp only; omega_using [hi], by simp only; omega_using [hi']⟩
   have hd : ∀ i', i' < 32 → i' ≠ i → word t.mem (off T.B T.o) (8 * i') = word s.mem (off T.B T.o) (8 * i') :=
-    fun i' h1 h2 => ho.word (by omega) (by have := hdr_lt_slot T.w 8 h1; omega)
-  refine ⟨he.of_inner (Frm.cover hf hcov) hrd hwr hdi (hd _ (by decide) (by unfold iCtx sFn; omega))
-      (hd _ (by decide) (by unfold iRows sFn; omega)), by rw [hm]; exact word_writeW_self _ _ _ _, hd,
+    fun i' h1 h2 => ho.word (by omega_using [h2]) (by have := hdr_lt_slot T.w 8 h1; omega_using [h1])
+  refine ⟨he.of_inner (Frm.cover hf hcov) hrd hwr hdi (hd _ (by decide) (by unfold iCtx sFn; omega_using [hi]))
+      (hd _ (by decide) (by unfold iRows sFn; omega_using [hi])), by rw [hm]; exact word_writeW_self _ _ _ _, hd,
     fun b hb => hf.wv_eq (fun r hr => by
-      rw [List.mem_singleton.mp hr]; have := hdr_lt_slot T.w b hi'; simp only; omega)
-      (by have := slot_le (w := T.w) hb; omega),
+      rw [List.mem_singleton.mp hr]; have := hdr_lt_slot T.w b hi'; simp only; omega_using [this])
+      (by have := slot_le (w := T.w) hb; omega_using [hGn, this]),
     fun j' hj' => row_of_inScr he hin hj',
-    ⟨Only.of_inScr hin, hout, fun i hi => ctxWord_of_inScr he hin (by unfold TabP.n; omega)⟩⟩
+    ⟨Only.of_inScr hin, hout, fun i hi => ctxWord_of_inScr he hin (by unfold TabP.n; omega_using [hi])⟩⟩
 
 /-! ## The table's values -/
 
@@ -665,8 +665,8 @@ theorem TabP.entry_one (T : TabP) : T.entry 1 = T.G * T.R % T.P := by
 theorem TabP.entry_tooth (T : TabP) {j : Nat} (hj : j < 4) :
     T.entry (2 ^ (j + 1)) = T.M (Spec.Rsa.FixedBaseComb.exponent T.bits (2 ^ j) * 2 ^ T.rows) := by
   unfold TabP.entry
-  rw [VG.Proof.Rsa.FixedBaseComb.exponent_tooth _ _ (by omega),
-    VG.Proof.Rsa.FixedBaseComb.exponent_tooth _ _ (by omega), ← Nat.pow_add, Nat.succ_mul]
+  rw [VG.Proof.Rsa.FixedBaseComb.exponent_tooth _ _ (by omega_using [hj]),
+    VG.Proof.Rsa.FixedBaseComb.exponent_tooth _ _ (by omega_using [hj]), ← Nat.pow_add, Nat.succ_mul]
 
 theorem TabP.entry_add (T : TabP) {j i : Nat} (hj : j < 5) (hi : i < 2 ^ j) :
     T.entry (2 ^ j + i) = T.M (Spec.Rsa.FixedBaseComb.exponent T.bits i + Spec.Rsa.FixedBaseComb.exponent T.bits (2 ^ j)) := by

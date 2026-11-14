@@ -163,10 +163,10 @@ theorem substitute_run (s : State) (hc : Constants s) (hm : Masks s) (ht : Table
   have word : (g.v .v0).extractLsb' 0 64 = substituted (s.gpr .x10) := by
     apply low64_eq_packed
     intro j hj
-    rw [gb j (by omega),fe,eb j (by omega),dc,cb j (by omega),bb j (by omega)]
+    rw [gb j (by omega_using [hj]),fe,eb j (by omega_using [hj]),dc,cb j (by omega_using [hj]),bb j (by omega_using [hj])]
     have aj : vbyte (a.v .v0) j = byte (s.gpr .x10) j := by
       rw [show a.v .v0 = ofVDwords (s.gpr .x10) (s.gpr .x10) from rfl,
-        dup_byte _ j (by omega),Nat.mod_eq_of_lt hj]
+        dup_byte _ j (by omega_using [hj]),Nat.mod_eq_of_lt hj]
     rw [aj]
     exact substituted_byte _ j hj
   let t := g.write .x .x10 ((g.v .v0).extractLsb' 0 64)

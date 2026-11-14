@@ -52,7 +52,7 @@ theorem psum_le {f : Nat → Nat} (hf : ∀ k, f k < 2 ^ 32) : ∀ k, psum f k �
     have := psum_le hf k
     have := hf k
     simp only [psum, Nat.succ_mul]
-    omega
+    omega_arith
 
 theorem psum_eq_zero {f : Nat → Nat} : ∀ {k : Nat}, psum f k = 0 ↔ ∀ j < k, f j = 0
   | 0 => by simp [psum]
@@ -60,7 +60,7 @@ theorem psum_eq_zero {f : Nat → Nat} : ∀ {k : Nat}, psum f k = 0 ↔ ∀ j <
     rw [psum, Nat.add_eq_zero_iff, psum_eq_zero]
     exact ⟨fun ⟨h1, h2⟩ j hj => by
       rcases Nat.lt_succ_iff_lt_or_eq.mp hj with hj | rfl
-      exacts [h1 j hj, h2], fun h => ⟨fun j hj => h j (by omega), h k (by omega)⟩⟩
+      exacts [h1 j hj, h2], fun h => ⟨fun j hj => h j (by omega_using [hj]), h k (by omega_using [])⟩⟩
 
 theorem wp_or {s : State} {is : List Instr} {Q : State → Prop} {d n m : Reg}
     (k : ∀ s', Upd s s' d (s.gpr n ||| s.gpr m) → WP isa (.block is) s' Q) :
@@ -82,13 +82,13 @@ theorem wordsZero_ok {s : State} (hc : Ctx b s) {o : Nat} (ho : o + 32 ≤ 4096)
     ⟨u1.rest (by decide), u1.mem, by rw [u1.gpr]; rfl⟩) fun t ⟨hr, hm, h5⟩ => ⟨hr, hm, ?_⟩
   · have ht : Ctx b t := hc.of_rest hr (by decide)
     unfold sumLimb
-    refine lw0_ok ht (d := o + 4 * k) (by omega) fun s2 u2 => wp_add fun s3 u3 => WP.block_nil ⟨?_, ?_, ?_⟩
+    refine lw0_ok ht (d := o + 4 * k) (by omega_using [ho, hk]) fun s2 u2 => wp_add fun s3 u3 => WP.block_nil ⟨?_, ?_, ?_⟩
     · exact hr.trans ((u2.rest (by decide)).trans (u3.rest (by decide)))
     · rw [u3.mem, u2.mem, hm]
     · have hle := psum_le (fun j => limb_lt s.mem b o j) k
       have hl := limb_lt s.mem b o k
       have e7 : (s2.gpr .r7).toNat = limb s.mem b o k := by rw [u2.gpr, toNat_ext32, hm]; rfl
-      rw [u3.gpr, u2.other _ (by decide), toNat_add_lt (by rw [h5, e7]; omega), h5, e7]
+      rw [u3.gpr, u2.other _ (by decide), toNat_add_lt (by rw [h5, e7]; omega_using [hk, hle, hl]), h5, e7]
       rfl
   · have hz : t.gpr .r5 = 0 ↔ (t.gpr .r5).toNat = 0 :=
       ⟨fun h => by rw [h]; rfl, fun h => BitVec.eq_of_toNat_eq (by rw [h]; rfl)⟩
@@ -104,13 +104,13 @@ theorem wordsEqual_ok {s : State} (hc : Ctx b s) {a c : Nat} (ha : a + 32 ≤ 40
     (fun k t => Rest [.r5, .r7, .r8] s t ∧ t.mem = s.mem ∧
       (t.gpr .r5 = 0 ↔ ∀ j < k, limb s.mem b a j = limb s.mem b c j))
     (fun k t hk ⟨hr, hm, h5⟩ => ?_) 8 (Nat.le_refl _) s1
-    ⟨u1.rest (by decide), u1.mem, by rw [u1.gpr]; exact ⟨fun _ j hj => absurd hj (by omega), fun _ => rfl⟩⟩)
+    ⟨u1.rest (by decide), u1.mem, by rw [u1.gpr]; exact ⟨fun _ j hj => absurd hj (by omega_using []), fun _ => rfl⟩⟩)
     fun t ⟨hr, hm, h5⟩ => ⟨hr, hm, ?_⟩
   · have ht : Ctx b t := hc.of_rest hr (by decide)
     unfold equalLimb
-    refine lw0_ok ht (d := a + 4 * k) (by omega) fun s2 u2 => ?_
+    refine lw0_ok ht (d := a + 4 * k) (by omega_using [ha, hk]) fun s2 u2 => ?_
     have hc2 : Ctx b s2 := ht.of_rest (u2.rest (ws := [.r7]) (by decide)) (by decide)
-    refine lw0_ok hc2 (d := c + 4 * k) (by omega) fun s3 u3 => wp_xor fun s4 u4 => wp_or fun s5 u5 =>
+    refine lw0_ok hc2 (d := c + 4 * k) (by omega_using [hc', hk]) fun s3 u3 => wp_xor fun s4 u4 => wp_or fun s5 u5 =>
       WP.block_nil ⟨?_, ?_, ?_⟩
     · exact hr.trans ((u2.rest (by decide)).trans ((u3.rest (by decide)).trans
         ((u4.rest (by decide)).trans (u5.rest (by decide)))))
@@ -124,7 +124,7 @@ theorem wordsEqual_ok {s : State} (hc : Ctx b s) {a c : Nat} (ha : a + 32 ≤ 40
         ⟨fun h => by rw [← toNat_ext32 x, ← toNat_ext32 y, h], fun h => by
           apply BitVec.eq_of_toNat_eq; rw [toNat_ext32, toNat_ext32, h]⟩
       rw [e]
-      refine ⟨fun ⟨h1, h2⟩ j hj => ?_, fun h => ⟨fun j hj => h j (by omega), h k (by omega)⟩⟩
+      refine ⟨fun ⟨h1, h2⟩ j hj => ?_, fun h => ⟨fun j hj => h j (by omega_using [hj]), h k (by omega_using [])⟩⟩
       rcases Nat.lt_succ_iff_lt_or_eq.mp hj with hj | rfl
       exacts [h1 j hj, h2]
   · rw [h5, V, V, val32_eq_iff (fun k _ => limb_lt _ _ _ _) (fun k _ => limb_lt _ _ _ _)]
@@ -136,7 +136,7 @@ theorem fieldZero_ok {s : State} (hc : Ctx b s) (a : Slot) :
   have hX := FR_eq
   unfold fieldZero
   refine WP.seq (WP.mono (freeze_ok hc a) fun s1 ⟨r1, f1, _, v1⟩ => ?_)
-  refine WP.mono (wordsZero_ok (hc.of_rest r1 (by decide)) (o := FR) (by omega)) fun t ⟨r2, m2, h2⟩ =>
+  refine WP.mono (wordsZero_ok (hc.of_rest r1 (by decide)) (o := FR) (by omega_using [hX])) fun t ⟨r2, m2, h2⟩ =>
     ⟨r1.trans (r2.mono (by decide)), (by rw [m2]; exact f1), (by rw [h2, v1])⟩
 
 theorem fe_sub_eq_zero (x y : Spec.X25519.Fe) : x - y = 0 ↔ x = y := by
@@ -145,9 +145,9 @@ theorem fe_sub_eq_zero (x y : Spec.X25519.Fe) : x - y = 0 ↔ x = y := by
   have hy := y.isLt
   show (P - y.val + x.val) % P = 0 ↔ _
   by_cases hxy : y.val ≤ x.val
-  · rw [show P - y.val + x.val = (x.val - y.val) + P by omega, Nat.add_mod_right, Nat.mod_eq_of_lt (by omega)]
-    omega
-  · rw [Nat.mod_eq_of_lt (by omega)]; omega
+  · rw [show P - y.val + x.val = (x.val - y.val) + P by omega_using [hxy], Nat.add_mod_right, Nat.mod_eq_of_lt (by omega_using [])]
+    omega_using [hxy]
+  · rw [Nat.mod_eq_of_lt (by omega_using [hxy])]; omega_using [hxy]
 
 theorem fieldEqual_ok {s : State} (hc : Ctx b s) (a c : Slot) :
     WP isa (fieldEqual a c) s fun t =>
@@ -158,10 +158,10 @@ theorem fieldEqual_ok {s : State} (hc : Ctx b s) (a c : Slot) :
   refine WP.seq (WP.mono (fieldCode_ok _ hc) fun s1 ⟨k1, e1⟩ => ?_)
   refine WP.mono (fieldZero_ok (k1.ctx hc) 21) fun t ⟨r2, f2, h2⟩ => ⟨⟨k1.rest.trans (r2.mono (by decide)),
     k1.frame.trans (f2.sub fun r hr => ⟨_, List.mem_singleton_self _, by
-      rw [List.mem_singleton.mp hr]; exact Offset.sub b (by omega) (by omega)⟩)⟩, ?_, ?_⟩
+      rw [List.mem_singleton.mp hr]; exact Offset.sub b (by omega_using [hX]) (by omega_using [hX])⟩)⟩, ?_, ?_⟩
   · have ek : env t.mem b = env s1.mem b := funext fun i => env_keep f2 i fun r hr => by
       have := slot_range i
-      rw [List.mem_singleton.mp hr]; exact Offset.disjoint _ (.inl (by omega)) (by omega) (by omega)
+      rw [List.mem_singleton.mp hr]; exact Offset.disjoint _ (.inl (by omega_using [hX, this])) (by omega_using [this]) (by omega_using [hX])
     rw [ek, e1]
   · have e21 : env s1.mem b 21 = env s.mem b a - env s.mem b c := by
       rw [e1]; simp only [evalOps, List.foldl, evalOp, Function.update_self]

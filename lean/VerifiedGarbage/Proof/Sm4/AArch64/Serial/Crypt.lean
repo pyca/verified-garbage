@@ -54,7 +54,7 @@ theorem crypt_wp {s : State} {B : Addr} {k : Spec.Sm4.Schedule}
     intro i hi
     rw [brd,bwr,ard,awr,bbase]
     exact ⟨_,List.mem_append_right _ hs.wr,VG.Offset.contains_base B
-      (by omega : 768+4*i+4 ≤ 3264) (by omega)⟩
+      (by omega_using [hi] : 768+4*i+4 ≤ 3264) (by omega_using [hi])⟩
   obtain ⟨c,ce,cw,cg,cm,crd,cwr,_,cvec⟩ := loads_run b 4 (by decide) br
   refine WP.of_runBlock ⟨c,ce,?_⟩
   have ck : ∀ r, r ∉ written → c.gpr r = b.gpr r := by
@@ -68,7 +68,7 @@ theorem crypt_wp {s : State} {B : Addr} {k : Spec.Sm4.Schedule}
     intro i hi
     rw [crd,cwr,brd,bwr,ard,awr,cbase]
     exact ⟨_,List.mem_append_right _ hs.wr,VG.Offset.contains_base B
-      (by omega : 256+4*i+4 ≤ 3264) (by omega)⟩
+      (by omega_using [hi] : 256+4*i+4 ≤ 3264) (by omega_using [hi])⟩
   obtain ⟨d,de,dw,dc,dt,dg,dm,drd,dwr,_⟩ :=
     rounds_run c 32 (by decide) cc ct cr
   refine WP.of_runBlock ⟨d,de,?_⟩
@@ -93,17 +93,17 @@ theorem crypt_wp {s : State} {B : Addr} {k : Spec.Sm4.Schedule}
   have dr : ∀ i < 4, InRegions d.wr (d.gpr .x5+BitVec.ofNat 64 (768+4*i)) 4 := by
     intro i hi
     rw [dwr,cwr,bwr,awr,dbase]
-    exact ⟨_,hs.wr,VG.Offset.contains_base B (by omega : 768+4*i+4 ≤ 3264) (by omega)⟩
+    exact ⟨_,hs.wr,VG.Offset.contains_base B (by omega_using [hi] : 768+4*i+4 ≤ 3264) (by omega_using [hi])⟩
   obtain ⟨e,ee,ew,eg,ef,erd,ewr,_,_⟩ := stores_run d 4 (by decide) dr
   refine WP.of_runBlock ⟨e,ee,?_⟩
   have ek : ∀ r, r ∉ written → e.gpr r = d.gpr r := by
     intro r hr
-    exact eg r (fun j hj he => hr (he ▸ wordReg_mem (3-j) (by omega)))
+    exact eg r (fun j hj he => hr (he ▸ wordReg_mem (3-j) (by omega_using [])))
   have output : Spec.Aes.bytesAt e.mem (B+BitVec.ofNat 64 768) 16 = (VG.Proof.Sm4.outBlock z).toList := by
     apply stored_bytes
     intro i hi
     rw [VG.Offset.add_add]
-    rw [← dbase,ew i hi,dwords (3-i) (by omega)]
+    rw [← dbase,ew i hi,dwords (3-i) (by omega_using [])]
   have frame : Frame [bufRegion core B] s.mem e.mem := by
     change Frame [⟨B+BitVec.ofNat 64 768,16⟩] s.mem e.mem
     simpa only [dbase,dmem] using ef

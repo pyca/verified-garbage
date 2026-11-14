@@ -131,7 +131,7 @@ theorem mulFnG_ok {n m W : Nat} (hM : ModOkG n m) {s : State} (hp : Pre n W s)
     intro d e hd he
     show InRegions _ (off (off (s.gpr .x0) e) d) 8
     rw [off_off]
-    have := hs₄.ld (d := e + d) (by have := hd; have := he; omega)
+    have := hs₄.ld (d := e + d) (by have := hd; have := he; omega_arith)
     rwa [hs₄.x0] at this
   have hpa : Ptr s₄ raG (off (s.gpr .x0) (arg s .x2)) (8 * n) :=
     ⟨by rw [gk raG (by simp), ga, x0₂, off0, g2], fun d hd => hP d _ hd ha, by omega_using [hmo2]⟩

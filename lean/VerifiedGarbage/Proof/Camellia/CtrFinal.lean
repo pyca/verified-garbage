@@ -4,6 +4,7 @@ public import VerifiedGarbage.Spec.Camellia.CtrFinal
 public import VerifiedGarbage.Proof.Framework.Scratch
 public import VerifiedGarbage.Proof.Camellia.Scratch
 import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Omega
 
 -- separate module: shared by the final function's proofs of every target.
 
@@ -74,7 +75,7 @@ theorem ctrFinalPostOut_local (pb : Nat) : ∀ vs m m₁ m₂ r, vs.length = (ct
     dsimp only [Curry.apply, ctrFinalPostSk, ArgWord.ofRaw, Spec.Ctr.CryptFinal] at h ⊢
     have := Nat.mod_le len.toNat (2 ^ pb)
     intro hR
-    rw [bytesAt_congr' fun i hi => hd i (by rw [BitVec.toNat_setWidth] at hi; omega), bytesAt_congr' hc]
+    rw [bytesAt_congr' fun i hi => hd i (by rw [BitVec.toNat_setWidth] at hi; omega_using [this, hi]), bytesAt_congr' hc]
     exact h hR
 
 /-- `Spec.Camellia.ctrFinalPre` reads no memory. -/
@@ -107,7 +108,7 @@ theorem ctrFinalPost_local (pb : Nat) : ∀ vs m₁ m₂ m' r, vs.length = (ctrF
     have := Nat.mod_le len.toNat (2 ^ pb)
     intro hR
     rw [subkeysAt_congr (by rcases hR with h' | h' <;> rw [h'] <;> decide) hk,
-      bytesAt_congr' fun i hi => hd i (by rw [BitVec.toNat_setWidth] at hi; omega), bytesAt_congr' hc]
+      bytesAt_congr' fun i hi => hd i (by rw [BitVec.toNat_setWidth] at hi; omega_using [this, hi]), bytesAt_congr' hc]
     exact h hR
 
 end VG.Proof.Camellia

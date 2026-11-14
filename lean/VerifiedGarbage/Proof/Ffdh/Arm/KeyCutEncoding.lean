@@ -5,6 +5,7 @@ public import VerifiedGarbage.Spec.Rsa.Contract
 public import VerifiedGarbage.Proof.Mont.Words
 import VerifiedGarbage.Proof.Dsa.Generation.Memory
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-! Reconstruct the exact scalar encoding from the prefix, masked byte, and suffix. -/
 
@@ -18,7 +19,7 @@ theorem keyCutEncoding {m : Mem} {dst : Addr} {rb : List Byte} {ld : Nat} {mask 
     (firstByte : m (off dst ld) = rb.getD ld 0 &&& mask)
     (suffixBytes : Spec.Rsa.bytesAt m (off dst (ld + 1)) (rb.length - (ld + 1)) = rb.drop (ld + 1)) :
     Spec.Rsa.bytesAt m dst rb.length = VG.Proof.Ffdh.KeyScalar.cut rb ld mask := by
-  have splitLength : rb.length = ld + (1 + (rb.length - (ld + 1))) := by omega
+  have splitLength : rb.length = ld + (1 + (rb.length - (ld + 1))) := by omega_using [bound]
   rw [splitLength, VG.Proof.Dsa.Generation.bytesAt_append,
     VG.Proof.Dsa.Generation.bytesAt_append, prefixBytes]
   have one : Spec.Rsa.bytesAt m (off dst ld) 1 = [rb.getD ld 0 &&& mask] := by

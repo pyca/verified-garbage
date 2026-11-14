@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.Square
+import VerifiedGarbage.Proof.Framework.Omega
 
 @[expose] public section
 
@@ -50,7 +51,7 @@ theorem cross_add (r : Nat) (f : Nat → Nat) (m n : Nat) :
   | zero => simp only [Nat.add_zero,cross,value,Nat.mul_zero]
   | succ n ih =>
     rw [Nat.add_succ,cross,ih,value_add,cross,value,Nat.pow_add,
-      show 2*m=m+m by omega,Nat.pow_add]
+      show 2*m=m+m by omega_using [],Nat.pow_add]
     grind
 
 end VG.Proof.Bignum.Triangular

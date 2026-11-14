@@ -260,7 +260,7 @@ theorem candidateEntered_ok (v : RoundImpl) {s : State} {p : CandidateParams}
     · exact ⟨_, by simp [candidateEnteredRegions], fun _ h => h⟩
     · exact ⟨_, by simp [candidateEnteredRegions], fun _ h => h⟩
     · refine ⟨⟨State.addr s.sp, 72⟩, by simp [candidateEnteredRegions], ?_⟩
-      rw [VG.Arm.addr_add (by have := h.locals.nowrap; omega)]
+      rw [VG.Arm.addr_add (by have := h.locals.nowrap; omega_using [this])]
       exact Offset.sub_base _ (by decide : 40 + 28 ≤ 72)
   exact ⟨(changed.mono (by simp [candidateEnteredRegions])).trans bodyFrame, status, count, bytes⟩
 

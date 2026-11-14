@@ -40,7 +40,7 @@ theorem public_step {p : Params}
   refine WP.mono (publicPoly_ok h.lay hc hi') fun t ⟨ht, h24, hpoly⟩ => ?_
   have hslice : bytesAt s.mem (pa s (.x25, 32 + 320 * i)) 320 =
       (key.drop (32 + 320 * i)).take 320 := by
-    rw [← h.source, MlKem.bytesAt_slice _ _ (by have := (KeyGen.pfacts hp).pk; omega)]
+    rw [← h.source, MlKem.bytesAt_slice _ _ (by have := (KeyGen.pfacts hp).pk; omega_using [hi, this])]
     simp only [pa, BitVec.add_zero]
   rw [hslice] at hpoly
   refine ⟨h.lay.post ht, ?_, h24.trans h.x24, ?_, ?_, ?_⟩
@@ -65,14 +65,14 @@ theorem public_step {p : Params}
     · subst j
       rw [ht.pa (p := (.x26, p.pkLen + 1024 * i)) (show Reg.x26 ∈ keptRegs by decide)]
       exact hpoly
-    · exact h.lay.keepPoly ht (public_keep_prior hp hi (by omega)) (h.polys j (by omega))
+    · exact h.lay.keepPoly ht (public_keep_prior hp hi (by omega_using [hj, he])) (h.polys j (by omega_using [hj, he]))
 
 theorem public_polys {p : Params}
     (hp : p = mlDsa44 ∨ p = mlDsa65 ∨ p = mlDsa87)
     {σ s : State} {key : List Byte} (h : PublicInv p σ key 0 s) :
     WP isa (seqR (publicPoly p) 0 p.k) s (PublicInv p σ key p.k) := by
   simpa only [Nat.zero_add] using seqR_ok p.k 0
-    (fun i _ hi s h => public_step hp (by omega) h) s h
+    (fun i _ hi s h => public_step hp (by omega_using [hi]) h) s h
 
 theorem public_body {p : Params}
     (hp : p = mlDsa44 ∨ p = mlDsa65 ∨ p = mlDsa87) (s : State)
@@ -86,7 +86,7 @@ theorem public_body {p : Params}
       [((.x26, 0), p.pkLen)] (.x25, 0) p.pkLen = true := by
     simp only [keepB, List.all_cons, List.all_nil, Bool.and_true, sep25_26, in25,
       Bool.and_eq_true, decide_eq_true_eq]
-    omega
+    omega_using []
   have hinit : PublicInv p s (bytesAt s.mem (pa s (.x25, 0)) p.pkLen) 0 u := by
     refine ⟨L.post hu, hu.mono (by simp [publicWrites]), h24, L.keepBytes hu hkeep, ?_, ?_⟩
     · rwa [hu.pa (p := (.x26, 0)) (by decide)]

@@ -173,14 +173,14 @@ theorem SPre.of {s₀ : State} (h : subkeysX86_64.pre s₀) :
     SPre s₀ (s₀.gpr .rdi) (s₀.gpr .rdx) (s₀.gpr .rcx) (s₀.gpr .rsi).toNat ⟨s₀.gpr .rcx, 2176⟩ :=
   let ⟨a, b, c, d, e, f, g, h, i, j, k, _, m⟩ := h
   ⟨rfl, rfl, rfl, rfl, a, b, c, d, e, f, g, h, i, j, k,
-    fun _ h₂ => Offset.contains_base _ (by omega) (by omega), m⟩
+    fun _ h₂ => Offset.contains_base _ (by omega_using [h₂]) (by omega_using [h₂]), m⟩
 
 theorem SPre.ofF {s₀ : State} (h : subkeysX86_64F.pre s₀) :
     SPre s₀ (s₀.gpr .rdi) (s₀.gpr .rdx) (s₀.gpr .rcx) (s₀.gpr .rsi).toNat
       ⟨s₀.gpr .rcx + BitVec.ofNat 64 2048, 32⟩ :=
   let ⟨a, b, c, d, e, f, g, h, i, j, k, _, m⟩ := h
   ⟨rfl, rfl, rfl, rfl, a, b, c, d, e, f, g, h, i, j, k,
-    fun h₁ h₂ => Offset.contains _ h₁ (by omega) (by decide), m⟩
+    fun h₁ h₂ => Offset.contains _ h₁ (by omega_using [h₂]) (by decide), m⟩
 
 /-- An access within a region, as a region, lies in it. -/
 theorem sub_of_contains {Z : Region} {p : Addr} {n : Nat} (h : Z.Contains p n) : Region.Sub ⟨p, n⟩ Z :=
@@ -188,7 +188,7 @@ theorem sub_of_contains {Z : Region} {p : Addr} {n : Nat} (h : Z.Contains p n) :
     simp only [Region.Contains] at ha h ⊢
     rw [show a - Z.base = (a - p) + (p - Z.base) by rw [Offset.sub_add_sub_cancel], BitVec.toNat_add]
     have := Nat.mod_le ((a - p).toNat + (p - Z.base).toNat) (2 ^ 64)
-    omega
+    omega_using [h, ha]
 
 section
 variable {s₀ : State} {W K S : Addr} {R : Nat} {Z : Region} (hp : SPre s₀ W K S R Z)

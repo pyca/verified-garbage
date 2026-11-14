@@ -487,11 +487,11 @@ theorem sLoop_vp {g : Geo} {HO : HashOk g.G} {n : Nat} (O : GenOk G g HO n) :
         cRes G (cOut G (sCount G G.k0 0 0)) = sW G ∧ cOk G (cOut G (sCount G G.k0 0 0))) := by
   have hN := sCount_gt G G.k0 0 0
   generalize hNN : sCount G G.k0 0 0 = N at hN ⊢
-  refine VP.mono (F := sInv G HO N X (N - 1 + 1)) ?_ (fun σ s h => ⟨⟨by omega,
-    by rw [show N - (N - 1 + 1) = 0 by omega]; exact hNN,
-    by rw [show N - (N - 1 + 1) = 0 by omega]; simp [sPos, sW, Spec.Entropy.Result.consume],
-    by rw [show N - (N - 1 + 1) = 0 by omega]; simp [sPos], by rw [show N - (N - 1 + 1) = 0 by omega]; exact O.k0⟩,
-    by rw [show N - (N - 1 + 1) = 0 by omega]; exact h⟩) fun _ _ h => h
+  refine VP.mono (F := sInv G HO N X (N - 1 + 1)) ?_ (fun σ s h => ⟨⟨by omega_using [hN],
+    by rw [show N - (N - 1 + 1) = 0 by omega_using []]; exact hNN,
+    by rw [show N - (N - 1 + 1) = 0 by omega_using []]; simp [sPos, sW, Spec.Entropy.Result.consume],
+    by rw [show N - (N - 1 + 1) = 0 by omega_using []]; simp [sPos], by rw [show N - (N - 1 + 1) = 0 by omega_using []]; exact O.k0⟩,
+    by rw [show N - (N - 1 + 1) = 0 by omega_using []]; exact h⟩) fun _ _ h => h
   exact VP.loop (I := sInv G HO N X) (fun r => (sBody_vp O r).mono (fun _ _ h => h)
     fun σ s ⟨e, h0, hp⟩ => ⟨e, fun z => h0 z, hp⟩) _
 

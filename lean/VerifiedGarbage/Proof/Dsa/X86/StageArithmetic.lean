@@ -82,11 +82,11 @@ theorem stageProduct_ok {base : Addr} {size pLen qLen p q output : Nat} {s : Sta
       StageResult base s t output qLen (operandValue s base a qLen * operandValue s base b qLen % q) := by
   have L := M.lengths
   have A := M.aligned
-  have N : (qLen + 7) / 8 ≤ 48 := by omega
+  have N : (qLen + 7) / 8 ≤ 48 := by omega_using [L]
   have C := VG.Proof.Dsa.X86.Layout.context_bound N
   have low : 14720 ≤ output := ho
-  refine WP.mono (coreProduct_ok M.scr M.saved M.room M.extent rfl (by omega) (by omega) (by omega) M.qReady Ra Rb M.qValue
-    (by have := M.qLarge; omega) M.qOdd (Nat.le_trans hb M.extent) (by omega)) fun t ⟨V, O, K⟩ => ?_
+  refine WP.mono (coreProduct_ok M.scr M.saved M.room M.extent rfl (by omega_using [L]) (by omega_using [L]) (by omega_using [A]) M.qReady Ra Rb M.qValue
+    (by have := M.qLarge; omega_using [this]) M.qOdd (Nat.le_trans hb M.extent) (by omega_using [C, low])) fun t ⟨V, O, K⟩ => ?_
   have F : StageResult base s t output qLen (operandValue s base a qLen * operandValue s base b qLen % q) :=
     ⟨StageFrame.of_stackFrame K (by intro reg hr; exact hr) O N, V⟩
   exact ⟨M.keep (F.toStageFrame.run (.inl ⟨ho, hb⟩)) F.keeps (by decide) (by decide), F⟩
@@ -100,11 +100,11 @@ theorem stageProductP_ok {base : Addr} {size pLen qLen p q output : Nat} {s : St
       StageResult base s t output pLen (operandValue s base a pLen * operandValue s base b pLen % p) := by
   have L := M.lengths
   have A := M.aligned
-  have N : (pLen + 7) / 8 ≤ 48 := by omega
+  have N : (pLen + 7) / 8 ≤ 48 := by omega_using [L]
   have C := VG.Proof.Dsa.X86.Layout.context_bound N
   have low : 14720 ≤ output := ho
-  refine WP.mono (coreProductMod_ok M.scr M.saved M.room M.extent rfl (by omega) (by omega) (by omega) M.pReady Ra Rb M.pValue
-    M.pLarge M.pOdd (Nat.le_trans hb M.extent) (by omega)) fun t ⟨V, O, K⟩ => ?_
+  refine WP.mono (coreProductMod_ok M.scr M.saved M.room M.extent rfl (by omega_using [L]) (by omega_using [L]) (by omega_using [A]) M.pReady Ra Rb M.pValue
+    M.pLarge M.pOdd (Nat.le_trans hb M.extent) (by omega_using [C, low])) fun t ⟨V, O, K⟩ => ?_
   have F : StageResult base s t output pLen (operandValue s base a pLen * operandValue s base b pLen % p) :=
     ⟨StageFrame.of_stackFrame K (by intro reg hr; exact hr) O N, V⟩
   exact ⟨M.keep (F.toStageFrame.run (.inl ⟨ho, hb⟩)) F.keeps (by decide) (by decide), F⟩
@@ -119,11 +119,11 @@ theorem stageSum_ok {base : Addr} {size pLen qLen p q output : Nat} {s : State} 
       StageResult base s t output qLen ((operandValue s base a qLen + operandValue s base b qLen) % q) := by
   have L := M.lengths
   have A := M.aligned
-  have N : (qLen + 7) / 8 ≤ 48 := by omega
+  have N : (qLen + 7) / 8 ≤ 48 := by omega_using [L]
   have C := VG.Proof.Dsa.X86.Layout.context_bound N
   have low : 14720 ≤ output := ho
-  refine WP.mono (coreSum_ok M.scr M.saved rfl (by omega) (by omega) (by omega) M.qReady Ra Rb M.qValue
-    (by have := M.qLarge; omega) M.qOdd ha hbb (Nat.le_trans hb M.extent) (by omega)) fun t ⟨V, O, K⟩ => ?_
+  refine WP.mono (coreSum_ok M.scr M.saved rfl (by omega_using [L]) (by omega_using [L]) (by omega_using [A]) M.qReady Ra Rb M.qValue
+    (by have := M.qLarge; omega_using [this]) M.qOdd ha hbb (Nat.le_trans hb M.extent) (by omega_using [C, low])) fun t ⟨V, O, K⟩ => ?_
   have F : StageResult base s t output qLen ((operandValue s base a qLen + operandValue s base b qLen) % q) :=
     ⟨StageFrame.of_frame K (by intro reg hr; exact hr) O N, V⟩
   exact ⟨M.keep (F.toStageFrame.run (.inl ⟨ho, hb⟩)) F.keeps (by decide) (by decide), F⟩
@@ -138,11 +138,11 @@ theorem stageReduce_ok {base : Addr} {size pLen qLen p q output len : Nat} {s : 
       Moduli base size pLen qLen p q t ∧ StageResult base s t output qLen (operandValue s base input len % q) := by
   have L := M.lengths
   have A := M.aligned
-  have N : (qLen + 7) / 8 ≤ 48 := by omega
+  have N : (qLen + 7) / 8 ≤ 48 := by omega_using [L]
   have C := VG.Proof.Dsa.X86.Layout.context_bound N
   have low : 14720 ≤ output := ho
-  refine WP.mono (coreReduce_ok hsrc M.scr M.saved M.room M.extent rfl (by omega) (by omega) (by omega) M.qReady
-    Ri Rs hi M.qValue M.qLarge M.qOdd (Nat.le_trans hb M.extent) (by omega)) fun t ⟨V, O, K⟩ => ?_
+  refine WP.mono (coreReduce_ok hsrc M.scr M.saved M.room M.extent rfl (by omega_using [L]) (by omega_using [L]) (by omega_using [A]) M.qReady
+    Ri Rs hi M.qValue M.qLarge M.qOdd (Nat.le_trans hb M.extent) (by omega_using [C, low])) fun t ⟨V, O, K⟩ => ?_
   have F : StageResult base s t output qLen (operandValue s base input len % q) :=
     ⟨StageFrame.of_stackFrame K (by intro reg hr; exact hr) O N, V⟩
   exact ⟨M.keep (F.toStageFrame.run (.inl ⟨ho, hb⟩)) F.keeps (by decide) (by decide), F⟩

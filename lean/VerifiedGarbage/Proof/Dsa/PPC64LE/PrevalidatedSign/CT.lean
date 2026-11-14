@@ -82,7 +82,7 @@ theorem svdOf_eq {s t : State} (hs : sContract.pre s) (hp : sContract.pub s t) :
   obtain ⟨e, -⟩ := List.append_inj' hl rfl
   simp only [Spec.Dsa.publicBytesLeak, bytesAt_take] at e
   have e := map_toNat_inj e
-  rw [← h5, ← h6, ← h7, ← h9, Nat.min_eq_right (by omega)] at e
+  rw [← h5, ← h6, ← h7, ← h9, Nat.min_eq_right (by omega_using [hkl])] at e
   simp only [svdOf, slayOf, ← h3, ← h5, ← h7, ← h8, ← h9, ← h10, ← a0, ← a1, ← a2, e]
 
 theorem psign_ct : ConstantTime isa spContract.pre spContract.pub PrevalidatedSign.sign :=

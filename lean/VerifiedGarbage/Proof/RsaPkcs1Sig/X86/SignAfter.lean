@@ -81,7 +81,7 @@ theorem afterEnc_ok (v : CrtImpl) {g : Geometry} {bs : Fin 8 → List Byte} {s :
     refine WP.seq (WP.mono (callArgs_ok hc) ?_)
     rintro a ⟨ha, args, F, K⟩
     have retained : Spec.Rsa.bytesAt a.mem (byteAddr g.temporary) g.length = em := by
-      exact (VG.Proof.Rsa.rsa_bytes_frame F (by have := h.valid.maxLength; omega)
+      exact (VG.Proof.Rsa.rsa_bytes_frame F (by have := h.valid.maxLength; omega_using [this])
         (by intro r hr; obtain rfl := List.mem_singleton.mp hr; exact hc.temporaryArgs)).trans bytes
     refine WP.seq (WP.mono (private_call v ha args retained) ?_)
     rintro b ⟨hb, Fb, Kb, out⟩
@@ -89,7 +89,7 @@ theorem afterEnc_ok (v : CrtImpl) {g : Geometry} {bs : Fin 8 → List Byte} {s :
     rintro t ⟨ht, _, ax, Ft, Kt⟩
     have output : Spec.Rsa.bytesAt t.mem (byteAddr g.output) g.length =
         Spec.Rsa.bytesAt b.mem (byteAddr g.output) g.length :=
-      VG.Proof.Rsa.rsa_bytes_frame Ft (by have := h.valid.maxLength; omega)
+      VG.Proof.Rsa.rsa_bytes_frame Ft (by have := h.valid.maxLength; omega_using [this])
         (by intro r hr; obtain rfl := List.mem_singleton.mp hr
             exact (h.valid.stackOutput.sub_left h.valid.innerSub).symm)
     refine ⟨ht, ?_, ?_, (C.keeps clobbers).trans ((K.mono (by decide)).trans

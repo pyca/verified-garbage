@@ -24,7 +24,7 @@ theorem random_calleeFrame_sub (extra : Nat) (s : State) :
   rw [random_frameBase extra s]
   unfold off
   rw [BitVec.add_sub_cancel]
-  exact Region.sub_prefix (by omega)
+  exact Region.sub_prefix (by omega_using [])
 
 /-- The callee cannot overwrite any byte of the wrapper's private frame. -/
 theorem random_call_frameBytes {extra : Nat} {s : State} {m m' : Mem} (h : RandomSignABI extra s)
@@ -39,7 +39,7 @@ theorem random_call_frameBytes {extra : Nat} {s : State} {m m' : Mem} (h : Rando
   rcases hr with rfl | rfl | rfl
   · exact h.stackOut.sub_left (random_frame_sub h)
   · exact h.stackScratch.sub_left (random_frame_sub h)
-  · exact Offset.base_disjoint_below _ (by unfold Random.frameBytes; omega)
+  · exact Offset.base_disjoint_below _ (by unfold Random.frameBytes; omega_using [hl])
 
 /-- Whole-word reads of the retained private frame are unchanged. -/
 theorem random_frame_words {B : Addr} {m m' : Mem}
@@ -50,7 +50,7 @@ theorem random_frame_words {B : Addr} {m m' : Mem}
   have he : off B d + BitVec.ofNat 64 i = off B (d + i) := by
     simp only [off, BitVec.ofNat_add, BitVec.add_assoc]
   rw [he]
-  exact h _ (by omega)
+  exact h _ (by omega_using [hd, hi])
 
 /-- An input disjoint from the output, scratch, and reserved stack is retained. -/
 theorem random_call_inputBytes {extra : Nat} {s : State} {m m' : Mem} {p : Addr} {n : Nat}
@@ -81,7 +81,7 @@ theorem random_callEntry_bytes {s : State} {B p : Addr} {n : Nat} (hsp : s.gpr .
   rw [State.callEntry_mem, hsp]
   apply Mem.write_apply
   apply hsep
-  rw [Mem.sub_ofNat_toNat _ (by omega)]
+  rw [Mem.sub_ofNat_toNat _ (by omega_using [hn, hi'])]
   exact hi'
 
 /-- Preserve a source through the callee and subsequent private-frame writes. -/

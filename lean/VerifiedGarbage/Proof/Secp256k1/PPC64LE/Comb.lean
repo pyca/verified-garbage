@@ -105,6 +105,6 @@ table). -/
 theorem combSatMem_held : ∀ i < secp256k1CombWords.length,
     combSatMem.readW (0x100000 + BitVec.ofNat 64 (8 * i)) 64 = secp256k1CombWords.getD i 0 := by
   unfold combSatMem
-  exact constMem_held _ _ (by rw [comb_words_length]; omega)
+  exact constMem_held _ _ (by rw [comb_words_length]; omega_using [])
 
 end VG.Proof.Secp256k1.PPC64LE

@@ -130,7 +130,7 @@ theorem lay_ok {p : Params} {σ : State} (hp : Pre p σ) : OkW (lay p σ) Wb := 
   have es : (⟨σ.sp - BitVec.ofNat 64 1168, 1168⟩ : Region) = below σ.sp 1168 := rfl
   refine ⟨fun i hi => ?_, fun i hi j hj hij hw => ?_⟩
   · simp only [lay, sizes, List.length_cons, List.length_nil] at hi
-    rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4) with rfl | rfl | rfl | rfl | rfl
+    rcases (by omega_using [hi] : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4) with rfl | rfl | rfl | rfl | rfl
     · exact hp.f_c
     · show (σ.sp - BitVec.ofNat 64 1168).toNat + 1168 ≤ 2 ^ 64
       have := hp.stk; have := σ.sp.isLt; bv_omega
@@ -138,8 +138,8 @@ theorem lay_ok {p : Params} {σ : State} (hp : Pre p σ) : OkW (lay p σ) Wb := 
     · exact hp.f_p
     · exact hp.f_t
   · simp only [lay, sizes, List.length_cons, List.length_nil] at hi hj
-    rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4) with rfl | rfl | rfl | rfl | rfl <;>
-    rcases (by omega : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4) with rfl | rfl | rfl | rfl | rfl <;>
+    rcases (by omega_using [hi] : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4) with rfl | rfl | rfl | rfl | rfl <;>
+    rcases (by omega_using [hj] : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4) with rfl | rfl | rfl | rfl | rfl <;>
     simp only [Lay.buf, lay, sizes, Lay.size, List.getD_cons_zero, List.getD_cons_succ] <;>
     first
       | exact absurd rfl hij
@@ -217,7 +217,7 @@ theorem pro_ok {p : Params} (hC : Chk p) {σ : State} (hp : Pre p σ) :
       rw [saveR_lay p σ]
       exact disjW' (i := 3) (o := 0) (l := p.pkLen) (j := 0) (o' := 1288) (l' := 80) hL
         (by rw [lay_sizes]; exact hC.sav_pk) (.inr (.inl (by decide))))
-      (by obtain ⟨-, -, h⟩ := hC.pk; omega)
+      (by obtain ⟨-, -, h⟩ := hC.pk; omega_using [h])
 
 theorem pro_piece {p : Params} (hC : Chk p) :
     Piece (Pre p) Pub (fun σ s => s = σ) (KC p) (.block pro) :=
@@ -239,7 +239,7 @@ def K (i : Nat) : Bool := i != 2
 theorem hK : ∀ i < 5, ∀ j < 5, i ≠ j → 2 ≤ i → 2 ≤ j → K i = true → K j = true → i ∈ Wb ∨ j ∈ Wb :=
   fun i _ j _ hij _ _ hi hj => by
     simp only [K, bne_iff_ne, ne_eq] at hi hj
-    simp only [Wb, List.mem_cons, List.not_mem_nil, or_false]; omega
+    simp only [Wb, List.mem_cons, List.not_mem_nil, or_false]; omega_arith
 
 theorem hashLay_sizes (p : Params) (σ s : State) :
     (hashLay (lay p σ) s K).sizes = [scrLen p, 1168, 0, p.pkLen, 64] := rfl
@@ -255,7 +255,7 @@ theorem trPieces {p : Params} (hC : Chk p) {σ s : State} (hs : Site (lay p σ) 
   rcases hpc with rfl | rfl
   · exact pieceS hs rfl (show (0 : Nat) < 32768 by decide) (by decide) (by decide)
       (by rw [hashLay_sizes]; exact hC.p1) (.inr rfl) fun h => absurd h (by decide)
-  · exact pieceS hs rfl (show (1024 : Nat) < 32768 by decide) h2 (by dsimp only; omega)
+  · exact pieceS hs rfl (show (1024 : Nat) < 32768 by decide) h2 (by dsimp only; omega_using [h1])
       (by rw [hashLay_sizes]; exact hC.p2) (.inr rfl) fun h => absurd h (by decide)
 
 /-- After the sponge: `tr = H(pk, 64)`. -/
@@ -282,7 +282,7 @@ theorem trHash_ok {p : Params} (hC : Chk p) {σ s : State} (h : KC p σ s) :
     refine ⟨hs.kept k', k'.rd.trans h.rd, k'.wr.trans h.wr, k'.sp.trans h.sp,
       fun r hr hs' => (k'.cs r hr).trans (h.pres r hr hs'),
       h.sav.keep k'.frame (by rw [saveR_lay p σ]; exact hd hC.w_sav), ?_⟩
-    rw [Proof.MlKem.bytesAt_frame k'.frame (hd hC.w_pk) (by obtain ⟨-, -, h⟩ := hC.pk; omega)]; exact h.pk
+    rw [Proof.MlKem.bytesAt_frame k'.frame (hd hC.w_pk) (by obtain ⟨-, -, h⟩ := hC.pk; omega_using [h])]; exact h.pk
   · have o₃ : bytesAt s'.mem ((lay p σ).A 4 0) 64 = _ := o'
     rw [o₃]
     simp only [List.map_cons, List.map_nil, List.flatten_cons, List.flatten_nil, List.append_nil, Lay.pb,

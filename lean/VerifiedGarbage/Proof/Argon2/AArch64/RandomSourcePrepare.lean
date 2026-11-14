@@ -33,9 +33,9 @@ theorem borrow_lt (a b : Nat) :
     (if decide (b ≤ a) = true then (0 : Addr) else -1) =
       Divide.mask (decide (a < b)) := by
   by_cases h : a < b
-  · simp only [show ¬b ≤ a by omega, decide_false, Bool.false_eq_true,
+  · simp only [show ¬b ≤ a by omega_using [h], decide_false, Bool.false_eq_true,
       ite_false, h, decide_true, Divide.mask, ite_true]
-  · simp only [show b ≤ a by omega, decide_true, ite_true,
+  · simp only [show b ≤ a by omega_using [h], decide_true, ite_true,
       h, decide_false, Divide.mask, Bool.false_eq_true, ite_false]
 
 theorem kind_ok (s : State) (hr : InRegions (s.rd ++ s.wr) (off (s.gpr .x19) 112) 8) :
@@ -152,7 +152,7 @@ theorem Done.frame_word {s t : State} {p : Params} {pass lane slice index : Nat}
     · exact ((h.layout.matrixFrame.sub_left currentSub).symm).sub_left sub
     · exact h.layout.frameWork.sub_left sub
     · exact h.layout.frameStack.sub_left sub
-    · exact Offset.disjoint _ separate (by omega) (by decide)) (by decide)
+    · exact Offset.disjoint _ separate (by omega_using [bound]) (by decide)) (by decide)
 
 theorem Done.retains {s t : State} {p : Params} {pass lane slice index : Nat}
     (h : Ready p pass lane slice index s) (done : Done s t p pass lane slice index) :
@@ -327,7 +327,7 @@ theorem Selected.frame_word {s t : State} {p : Params} {pass lane slice : Nat}
     rcases hr with rfl | rfl | rfl
     · exact layout.frameWork.sub_left sub
     · exact layout.frameStack.sub_left sub
-    · exact Offset.disjoint _ separate (by omega) (by decide)) (by decide)
+    · exact Offset.disjoint _ separate (by omega_using [bound]) (by decide)) (by decide)
 
 theorem Selected.words {s t : State} {p : Params} {pass lane slice old : Nat}
     (ready : Ready p pass lane slice old s) (h : Selected s t p pass lane slice) :
@@ -424,7 +424,7 @@ structure Invariant (p : Params) (pass lane slice old : Nat) (s : State) : Prop 
 theorem wanted_bound (s : State) : wanted s < 2 ^ 64 := by
   unfold wanted
   have := (s.gpr .x23).isLt
-  omega
+  omega_using []
 
 theorem Invariant.ready {p : Params} {pass lane slice old : Nat} {s : State}
     (h : Invariant p pass lane slice old s) : Ready p pass lane slice old s := by

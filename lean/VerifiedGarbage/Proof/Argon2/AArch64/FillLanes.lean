@@ -59,9 +59,9 @@ theorem loop_ok (count : Nat) (s : State) (p : Params) (pass lane slice : Nat)
       refine ⟨_, a, .loopExit run ?_, done.finished last⟩
       simp only [done.cf, last, Nat.lt_irrefl, decide_false]
     | succ n =>
-      have active : lane + 1 < p.lanes := by omega
+      have active : lane + 1 < p.lanes := by omega_using [endLane]
       obtain ⟨restTrace, t, restRun, finished⟩ := ih a (lane + 1) (done.next active)
-        (Proof.Argon2.segment p pass lane slice 0 p.segmentLen state) done.represented (by omega) (by omega)
+        (Proof.Argon2.segment p pass lane slice 0 p.segmentLen state) done.represented (by omega_using []) (by omega_using [endLane])
       refine ⟨_, t, .loopNext run ?_ restRun, finished.prepend done⟩
       simp only [done.cf, active, decide_true]
 

@@ -56,7 +56,7 @@ theorem crtExpRanges_widen5 (wx : Nat) :
   · exact ⟨_, by simp [crtExpRanges5, crtExpRanges], Nat.le_refl _, Nat.le_refl _⟩
   · exact ⟨_, by simp [crtExpRanges5, crtExpRanges], Nat.le_refl _, Nat.le_refl _⟩
   · exact ⟨(slot wx 8, tabBytes wx 32), by simp [crtExpRanges5, crtExpRanges], Nat.le_refl _,
-      by unfold tabBytes; omega⟩
+      by unfold tabBytes; omega_using []⟩
   · exact ⟨r, crtExpRanges_sub5 wx r (crtWinRanges_sub wx r hr), Nat.le_refl _, Nat.le_refl _⟩
 
 /-- `expLoop` by windows of 4 bits, its table of 16 read with SSE2. -/

@@ -47,10 +47,10 @@ theorem prune_words (d₀ d₁ d₂ d₃ : BitVec 64) :
   have c₂ : (2 ^ 62 - 1) % 2 ^ 64 = 2 ^ 62 - 1 := by decide
   have c₃ : (2 ^ 62) % 2 ^ 64 = 2 ^ 62 := by decide
   rw [BitVec.toNat_or, BitVec.toNat_and, BitVec.toNat_and, BitVec.toNat_ofNat, BitVec.toNat_ofNat,
-    BitVec.toNat_ofNat, c₁, c₂, c₃, and_sub8 _ 64 (by omega), and_sub8 _ 254 (by omega),
-    Nat.and_two_pow_sub_one_eq_mod, or_two_pow (Nat.mod_lt _ (by omega)), or_two_pow (by omega)]
+    BitVec.toNat_ofNat, c₁, c₂, c₃, and_sub8 _ 64 (by omega_using []), and_sub8 _ 254 (by omega_using []),
+    Nat.and_two_pow_sub_one_eq_mod, or_two_pow (Nat.mod_lt _ (by omega_using [])), or_two_pow (by omega_using [])]
   simp only [show (2 : Nat) ^ (254 - 3) = 2 ^ 251 from rfl, show (2 : Nat) ^ (64 - 3) = 2 ^ 61 from rfl]
-  omega
+  omega_using []
 
 end VG.Proof.Ed25519.AArch64.PublicKey
 end
@@ -80,8 +80,8 @@ theorem pruneWord_ok {s : State} {k : Nat} (hk : k < 4)
     WP isa (.block (pruneWord k)) s fun t => Step s t ∧
       t.mem = s.mem.writeW (s.sp + BitVec.ofNat 64 (32 + 8 * k))
         (pruneValue k (s.mem.readW (s.sp + BitVec.ofNat 64 (192 + 8 * k)) 64)) := by
-  have ho : (192 + 8 * k) % 8 = 0 ∧ 192 + 8 * k < 32768 := by omega
-  have hs : 32 + 8 * k < 4096 := by omega
+  have ho : (192 + 8 * k) % 8 = 0 ∧ 192 + 8 * k < 32768 := by omega_using [hk]
+  have hs : 32 + 8 * k < 4096 := by omega_using [hk]
   apply WP.of_runBlock
   by_cases h0 : k = 0
   · subst k
@@ -136,32 +136,32 @@ theorem prunePrefix_ok {s : State} (hw : (⟨s.sp, 256⟩ : Region) ∈ s.wr) :
   | 0, _ => WP.block_nil ⟨.refl s, Frame.refl _ _, fun _ h => by omega⟩
   | n + 1, hn => by
     rw [List.range_succ, List.flatMap_append, List.flatMap_singleton, WP.block_append_iff]
-    refine WP.mono (prunePrefix_ok hw n (by omega)) fun u hu => ?_
+    refine WP.mono (prunePrefix_ok hw n (by omega_using [hn])) fun u hu => ?_
     have ur : InRegions (u.rd ++ u.wr) (u.sp + BitVec.ofNat 64 (192 + 8 * n)) 8 := by
       rw [hu.step.sp, hu.step.wr]
-      exact ⟨_, List.mem_append_right _ hw, Offset.contains_base _ (by omega) (by omega)⟩
+      exact ⟨_, List.mem_append_right _ hw, Offset.contains_base _ (by omega_using [hn]) (by omega_using [hn])⟩
     have uw : InRegions u.wr (u.sp + BitVec.ofNat 64 (32 + 8 * n)) 8 := by
       rw [hu.step.sp, hu.step.wr]
-      exact ⟨_, hw, Offset.contains_base _ (by omega) (by omega)⟩
-    refine WP.mono (pruneWord_ok (by omega) ur uw) fun t ⟨kt, mt⟩ => ?_
+      exact ⟨_, hw, Offset.contains_base _ (by omega_using [hn]) (by omega_using [hn])⟩
+    refine WP.mono (pruneWord_ok (by omega_using [hn]) ur uw) fun t ⟨kt, mt⟩ => ?_
     rw [hu.step.sp] at mt
     have same : u.mem.readW (s.sp + BitVec.ofNat 64 (192 + 8 * n)) 64 =
         s.mem.readW (s.sp + BitVec.ofNat 64 (192 + 8 * n)) 64 := by
       apply hu.frame.readW (Region.contains_self _ _) _ (by decide)
       simp only [List.mem_singleton]
       rintro r rfl
-      exact Offset.disjoint _ (e := 32) (k := 32) (by omega) (by omega) (by decide)
+      exact Offset.disjoint _ (e := 32) (k := 32) (by omega_using []) (by omega_using [hn]) (by decide)
     rw [same] at mt
     refine ⟨hu.step.trans kt, ?_, fun j hj => ?_⟩
     · rw [mt]
       exact hu.frame.writeW (List.mem_singleton_self _) _
-        (Offset.contains _ (e := 32) (k := 32) (by omega) (by omega) (by decide))
+        (Offset.contains _ (e := 32) (k := 32) (by omega_using []) (by omega_using [hn]) (by decide))
     · rw [mt]
       by_cases hjn : j = n
       · subst j; exact Mem.readW_writeW_self64 _ _ _
       · rw [Mem.readW_writeW_sep ?_ (by decide)]
-        · exact hu.words j (by omega)
-        · exact Offset.sep _ (by omega) (by omega) (by omega)
+        · exact hu.words j (by omega_using [hj, hjn])
+        · exact Offset.sep _ (by omega_using [hjn]) (by omega_using [hn, hj]) (by omega_using [hn])
 
 theorem decode_words (m : Mem) (p : Addr) :
     Spec.Ed25519.decodeLE (Spec.Ed25519.bytesAt m p 32) =

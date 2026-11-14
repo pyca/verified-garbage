@@ -32,13 +32,13 @@ theorem putWs32_byte {a : Addr} : ∀ {p : Addr} {ws : List (BitVec 64)} {m : Me
   | _, [], _, _, _ => rfl
   | p, w :: ws, m, ha, hp => by
     simp only [List.length_cons] at hp
-    have h4 := add4_toNat (p := p) (by omega)
+    have h4 := add4_toNat (p := p) (by omega_using [hp])
     simp only [putWs32]
-    rw [putWs32_byte (by rw [h4]; omega) (by rw [h4]; omega)]
+    rw [putWs32_byte (by rw [h4]; omega_using [ha]) (by rw [h4]; omega_using [hp])]
     refine Mem.write_apply fun h => ?_
     rw [BitVec.toNat_sub] at h
     have := a.isLt
-    omega
+    omega_using [ha, hp, h]
 
 /-- The memory: the key, the arguments that differ from `satState`'s, and its. -/
 def memP (a : Addr) : Byte :=
@@ -65,7 +65,7 @@ theorem withTableP_key (vs : List TVar) (w : TVar) :
   have hlt : a.toNat < 0x48C0 := by
     simp only [keyIn, Bool.or_eq_true, Bool.and_eq_true, Nat.ble_eq, Nat.blt_eq] at ha; omega
   simp only [withTable]
-  rw [putWs32_byte (by show a.toNat < 0x300000; omega) (twL_room vs w)]
+  rw [putWs32_byte (by show a.toNat < 0x300000; omega_using [hlt]) (twL_room vs w)]
   show memP a = keyMem a
   simp only [memP, ha, Bool.cond_true]
 

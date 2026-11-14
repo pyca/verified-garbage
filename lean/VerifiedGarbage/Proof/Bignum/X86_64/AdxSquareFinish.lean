@@ -30,36 +30,36 @@ theorem finishV_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64}
       Arrays B w [aAcc, o] s.mem t.mem ∧ Keep mmRegs s t := by
   have hn := hs.nowrap
   have sl : ∀ j < 8, slot w j + 8 * (w + 2) ≤ Z := fun j hj => Nat.le_trans (slot_le hj) hZ
-  have hAT : slot w aAcc + 8 * (w + 2) = slot w aTmp := by unfold slot aAcc aTmp; omega
+  have hAT : slot w aAcc + 8 * (w + 2) = slot w aTmp := by unfold slot aAcc aTmp; omega_using []
   have hTs := sl aTmp (by decide)
-  have sNX : slot w aN + 8 * (w + 2) ≤ slot w aAcc := by unfold slot aN aAcc; omega
+  have sNX : slot w aN + 8 * (w + 2) ≤ slot w aAcc := by unfold slot aN aAcc; omega_using []
   have soX : slot w o + 8 * (w + 2) ≤ slot w aAcc ∨ slot w aTmp + 8 * (w + 2) ≤ slot w o := by
-    have := slot_sep (w := w) ho1; have := slot_sep (w := w) ho2; unfold slot aAcc aTmp at *; omega
+    have := slot_sep (w := w) ho1; have := slot_sep (w := w) ho2; unfold slot aAcc aTmp at *; omega_arith
   unfold Adx.finish
   refine WP.seq (WP.mono (finishBasesV_ok hs hdi hH hZ (hv.at po) (hv.lt po)) fun s₁ ⟨h12, h8, hsi, hbx, hm₁, k₁⟩ => ?_)
-  refine WP.seq (WP.mono (subMod_ok (hs.congr k₁.2.2) h8 ((k₁.gpr (by decide)).trans h10) hsi h12 (by omega) hw
-    (by omega) (by have := sl aN (by decide); omega) (by omega) (by omega) (by omega))
+  refine WP.seq (WP.mono (subMod_ok (hs.congr k₁.2.2) h8 ((k₁.gpr (by decide)).trans h10) hsi h12 (by omega_using [hw1]) hw
+    (by omega_using [hTs]) (by have := sl aN (by decide); omega_using [hAT, hTs, sNX]) (by omega_using [hAT, hTs]) (by omega_using [hAT]) (by omega_using [sNX]))
     fun s₂ ⟨c, lt, hbp, hlt, hD, ho₂, k₂⟩ => ?_)
   rw [hm₁] at hlt hD ho₂
   have k12 := k₁.trans k₂
   refine WP.mono (selectAcc_ok (hs.congr k12.2.2) ((k₂.gpr (by decide)).trans h8) ((k₂.gpr (by decide)).trans hsi)
-    ((k₂.gpr (by decide)).trans hbx) ((k₂.gpr (by decide)).trans h12) hbp (by omega) hw (by omega) (by omega)
-    (by have := sl o ho; omega) (by omega) (by omega)) fun t ⟨hv, hot, kt⟩ => ?_
-  have hT₂ : wv s₂.mem B (slot w aTmp) w = wv s.mem B (slot w aTmp) w := ho₂.wv (by omega) (by omega)
+    ((k₂.gpr (by decide)).trans hbx) ((k₂.gpr (by decide)).trans h12) hbp (by omega_using [hw1]) hw (by omega_using [hTs]) (by omega_using [hAT, hTs])
+    (by have := sl o ho; omega_using [this]) (by omega_using [hAT, soX]) (by omega_using [hAT, soX])) fun t ⟨hv, hot, kt⟩ => ?_
+  have hT₂ : wv s₂.mem B (slot w aTmp) w = wv s.mem B (slot w aTmp) w := ho₂.wv (by omega_using [hAT]) (by omega_using [hn, hTs])
   refine ⟨?_, ?_, (k12.trans kt).mono (by decide)⟩
   · rw [hv, hT₂, hlt, wv_top2]
     have h := VG.Proof.Bignum.csub_result (Tl := wv s.mem B (slot w aTmp) w)
       (Tw := (word s.mem B (slot w aTmp + 8 * w)).toNat)
       (Tw1 := (word s.mem B (slot w aTmp + 8 * w + 8)).toNat) (D := wv s₂.mem B (slot w aAcc) w)
       (m := wv s.mem B (slot w aN) w) (R := 2 ^ (64 * w)) (c := c.toNat)
-      (by have := wv_lt s.mem B (slot w aN) w; omega) (wv_lt _ _ _ _) (Bool.toNat_le c) (wv_lt _ _ _ _)
+      (by have := wv_lt s.mem B (slot w aN) w; omega_using [this]) (wv_lt _ _ _ _) (Bool.toNat_le c) (wv_lt _ _ _ _)
       (by rw [← wv_top2]; exact hTlt) hD
     rw [← h]
     by_cases h : (word s.mem B (slot w aTmp + 8 * w)).toNat < c.toNat <;> simp [h]
   · intro x hx
     have h1 := hx aAcc (by simp)
     have h2 := hx o (by simp)
-    exact (hot x (by omega)).trans (ho₂ x (by omega))
+    exact (hot x (by omega_using [h2])).trans (ho₂ x (by omega_using [h1]))
 
 /-- Reduce the result below `2 m` by the existing constant-time subtraction
 and selection. -/
@@ -71,7 +71,7 @@ theorem finish_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64}
     WP isa (Adx.finish o) s fun t =>
       wv t.mem B (slot w o) w = wv s.mem B (slot w aTmp) (w + 2) % wv s.mem B (slot w aN) w ∧
       Arrays B w [aAcc, o] s.mem t.mem ∧ Keep mmRegs s t :=
-  finishV_ok hs hdi hH hZ hw1 hw h10 (hH.ops (ps := [(o, o)]) (by simp; omega)) (List.mem_singleton_self _)
+  finishV_ok hs hdi hH hZ hw1 hw h10 (hH.ops (ps := [(o, o)]) (by simp; omega_using [ho])) (List.mem_singleton_self _)
     ho ho1 ho2 hTlt
 
 end VG.Proof.Bignum.X86_64.AdxSquare

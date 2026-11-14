@@ -21,8 +21,8 @@ theorem exponentLoop_relCT (ep : BitVec 32) (eb : List Byte)
     (fun k s t => ∃ j, j + k = eb.length ∧ 0 < k ∧
       ExponentState ep eb j k s ∧ ExponentState ep eb j k t) ?_ k
   intro n s t tr ur sf tf ⟨j, Eq, Pos, S, T⟩ E F
-  have hj : j < eb.length := by omega
-  have hn : n < 2 ^ 32 := by omega
+  have hj : j < eb.length := by omega_using [Eq, Pos]
+  have hn : n < 2 ^ 32 := by omega_using [countFit, Eq]
   obtain ⟨S', Zs⟩ := wp_result (S.step fit hj Pos hn) E
   obtain ⟨T', Zt⟩ := wp_result (T.step fit hj Pos hn) F
   refine ⟨exponentByte_trace S T fit hj E F, ?_, fun _ => trivial, ?_⟩
@@ -34,6 +34,6 @@ theorem exponentLoop_relCT (ep : BitVec 32) (eb : List Byte)
       change sf.zf.map not = some true at Continue
       simp only [Zs, h, decide_true, Option.map_some, Bool.not_true] at Continue
       cases Continue
-    exact ⟨n - 1, by omega, j + 1, by omega, by omega, S', T'⟩
+    exact ⟨n - 1, by omega_using [Pos], j + 1, by omega_using [Eq, Pos], by omega_using [Pos, ne], S', T'⟩
 
 end VG.Proof.Bignum.X86

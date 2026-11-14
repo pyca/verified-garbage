@@ -36,7 +36,7 @@ theorem vcall4_piece {P : Prims} {S : Nat} (hP : PrimsOk P S) {p : Params} (hF :
   have tail : RelCT isa (VTwo p S) (.seq (.block and24) (VG.Impl.MlDsa.AArch64.Optimized.MatrixMask.code (aP (4*g)) 1024)) fun _ _ => True := by
     refine RelCT.seq (VTwo.step (fun _ _ h => h) (block_nomem_tr fun i hi _ => by
       simp only [and24,List.mem_singleton] at hi; subst hi; rfl) ?_)
-      (taintRel [.x28] (fun _ _ h => VTwo.x28 h) (matrixMask_taint (4*g) (by omega) 1024 (by simp)))
+      (taintRel [.x28] (fun _ _ h => VTwo.x28 h) (matrixMask_taint (4*g) (by omega_using [hg, hkl]) 1024 (by simp)))
     have f := fun z => WP.mono (and24_ok z) fun z' ⟨o,_⟩ =>
       (⟨[],postB_of_keep o.keep (by decide) (by rw [o.mem]; exact Frame.refl _ _)⟩ : ∃ W,PostB S z z' W)
     exact fun x y _ => ⟨f x,f y⟩
@@ -48,7 +48,7 @@ theorem expA4_vpiece {P : Prims} {S : Nat} (hP : PrimsOk P S) {p : Params} (hF :
     {g : Nat} (hg : 4*g+4 ≤ p.k*p.ℓ) : VPiece p S (VA p · (4*g)) (VA p · (4*g+4)) (VG.Impl.MlDsa.AArch64.Verify.OptimizedSamples.expA4 P p g) := by
   unfold VG.Impl.MlDsa.AArch64.Verify.OptimizedSamples.expA4
   refine VPiece.seq (VPiece.mono
-    (VPiece.seqR (I := fun j σ s => VS p σ (4*g) j s) 4 0 (fun j _ hj => vslot_piece hF hg (by omega)))
+    (VPiece.seqR (I := fun j σ s => VS p σ (4*g) j s) 4 0 (fun j _ hj => vslot_piece hF hg (by omega_using [hj])))
       (fun _ _ _ h => ⟨h,fun _ h => False.elim (Nat.not_lt_zero _ h)⟩)
       (fun _ _ _ h => by simpa using h)) (vcall4_piece hP hF hg)
 

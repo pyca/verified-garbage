@@ -38,7 +38,7 @@ theorem bWords_ok {s : State} {W : Addr} {size : Nat} (hs : CScr s W size) (h24 
   have dd : ∀ k, |(Divstep.msteps k T0).d| ≤ 2 ^ 30 + 2 * k := fun k => by
     have := Divstep.msteps_d T0 k
     omega_arith
-  have hT : 0 + 24 ≤ size := by omega
+  have hT : 0 + 24 ≤ size := by omega_using [h24]
   rw [VG.Impl.Rsa.X86_64.Keys.Inv.bWords]
   simp only [List.append_assoc]
   rw [WP.block_append_iff]

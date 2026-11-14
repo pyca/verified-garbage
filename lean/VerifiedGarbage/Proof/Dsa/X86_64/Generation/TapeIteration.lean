@@ -58,7 +58,7 @@ theorem tapeIteration_ok {slots : TapeSlots} {width total used : Nat} {F S : Add
   · refine WP.ite true (by simp [eval, hcf, exhausted]) (fun _ => ?_) (fun he => Bool.noConfusion he)
     refine WP.mono (tapeExhausted_ok Lu Ru) fun t ⟨hz, Lt, Rt, ft, kt⟩ => ?_
     exact Or.inl ⟨by simpa [eval] using hz, done u t V W hiu exhausted Lu Ru Lt Rt ft kt⟩
-  · have available : width ≤ total - used := by omega
+  · have available : width ≤ total - used := by omega_using [exhausted]
     refine WP.ite false (by simp [eval, hcf, exhausted]) (fun he => Bool.noConfusion he) (fun _ => ?_)
     refine WP.seq (WP.mono (chunkTake_ok Lu Ru slots hb hu hp hu14 hp14 hw hused)
       fun v ⟨Lv, Rv, fv, kv⟩ => ?_)
@@ -67,7 +67,7 @@ theorem tapeIteration_ok {slots : TapeSlots} {width total used : Nat} {F S : Add
     refine WP.mono (tapeStatus_ok Lw Rw) fun t ⟨hz, hmt, kt⟩ => ?_
     by_cases retry : Ww 19 = 3
     · have hit : I (used + width) t := stable _ (by simpa only [retry, ite_true, ite_false] using outcome) hmt (kt.mono (by decide))
-      exact Or.inr ⟨by simp [eval, hz, retry], hit, by omega⟩
+      exact Or.inr ⟨by simp [eval, hz, retry], hit, by omega_using [hle, exhausted]⟩
     · have hqt : Q t := finish (by simpa only [retry, ite_true, ite_false] using outcome) hmt (kt.mono (by decide))
       exact Or.inl ⟨by simp only [eval, hz, beq_eq_false_iff_ne.mpr retry], hqt⟩
 

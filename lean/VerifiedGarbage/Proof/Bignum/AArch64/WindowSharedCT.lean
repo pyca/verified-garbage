@@ -37,7 +37,7 @@ structure GuardPre (p : XPub) (s : State) : Prop where
 theorem guard_post (p : XPub) (s : State) (h : RawWindowPre p s) :
     WP isa (.block VG.Impl.Rsa.AArch64.WindowShared.guard) s (GuardPre p) := by
   obtain ⟨mi,X,Xc,v,hc,ht,hy,hw,hw',hv,hn⟩ := h
-  refine WP.mono (BlockedRedc.guard_ok hc.good.scr hc.good.x0 hc.good.hdr (Nat.le_refl _) (by omega))
+  refine WP.mono (BlockedRedc.guard_ok hc.good.scr hc.good.x0 hc.good.hdr (Nat.le_refl _) (by omega_using [hw']))
     fun t ⟨⟨hm,h3,h4⟩,kt⟩ => ?_
   have hf : Frm (off p.B p.o) (crtWinRanges p.wx) s.mem t.mem := by rw [hm]; exact Frm.refl _ _ _
   exact ⟨⟨mi,X,Xc,v,hc.of_win hf kt.wr (kt.gpr .x0 (by decide)),hm ▸ ht,hm ▸ hy,hw,hw',hv,hm ▸ hn⟩,h3,h4⟩
@@ -47,12 +47,12 @@ theorem guard_fast {p : XPub} {s : State} (h : GuardPre p s)
     (h4 : isa.eval (.zero .x .x4) s = some true) : FastPre p s := by
   obtain ⟨mi,X,Xc,v,hc,ht,hy,hw,hw',hv,hn⟩ := h.raw
   rw [eval_nonzero,h.width,ne_zero_iff,BitVec.toNat_ofNat,
-    Nat.mod_eq_of_lt (show p.wx/16 < 2^64 by omega)] at h3
+    Nat.mod_eq_of_lt (show p.wx/16 < 2^64 by omega_using [hw'])] at h3
   rw [eval_zero,h.rem,eq_zero_iff,BitVec.toNat_ofNat,
-    Nat.mod_eq_of_lt (show p.wx%8 < 2^64 by omega)] at h4
+    Nat.mod_eq_of_lt (show p.wx%8 < 2^64 by omega_using [])] at h4
   have hh3 := of_decide_eq_true (Option.some.inj h3)
   have hh4 := of_decide_eq_true (Option.some.inj h4)
-  exact ⟨mi,X,Xc,v,hc,ht,by omega,hw',hh4,hv,hn⟩
+  exact ⟨mi,X,Xc,v,hc,ht,by omega_using [hh3],hw',hh4,hv,hn⟩
 
 theorem code_ct : RelCT isa (Two RawWindowPre) code (fun _ _ => True) := by
   unfold code VG.Impl.Rsa.AArch64.WindowShared.code

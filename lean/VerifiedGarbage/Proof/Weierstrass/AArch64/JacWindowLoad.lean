@@ -36,34 +36,34 @@ theorem jacWords_ok {s : State} {base : Addr} {size src dst n : Nat}
   | k+1,hk => by
     have hn := hs.nowrap
     rw [List.range_succ,List.flatMap_append,List.flatMap_singleton,WP.block_append_iff]
-    refine WP.mono (jacWords_ok hs hp hd hd8 hsrc hap k (by omega)) fun s₁ ⟨e₁,k₁,O₁⟩ => ?_
+    refine WP.mono (jacWords_ok hs hp hd hd8 hsrc hap k (by omega_using [hk])) fun s₁ ⟨e₁,k₁,O₁⟩ => ?_
     have hs₁ := hs.of_keepRegs k₁ (by decide)
     rw [← List.singleton_append,WP.block_append_iff]
     have ha : off base src + BitVec.ofNat 64 (8*k) = off base (src+8*k) := by
       simp [off,BitVec.add_assoc,BitVec.ofNat_add_ofNat]
     have hr : InRegions (s₁.rd ++ s₁.wr) (off base src + BitVec.ofNat 64 (8*k)) 8 := by
       rw [ha]
-      exact ⟨_,List.mem_append_right _ hs₁.wr,hs₁.contains (by omega) (by decide)⟩
+      exact ⟨_,List.mem_append_right _ hs₁.wr,hs₁.contains (by omega_using [hsrc, hk]) (by decide)⟩
     refine WP.mono (direct_load (by rw [k₁.gpr _ (by decide),hp])
-      (o := 8*k) (by have := hs.enc; omega) hr) fun s₂ ⟨e₂,k₂,_⟩ => ?_
+      (o := 8*k) (by have := hs.enc; omega_using [hd, hk, this]) hr) fun s₂ ⟨e₂,k₂,_⟩ => ?_
     have hs₂ := hs₁.of_keeps k₂ (by decide)
-    refine WP.mono (st_ok hs₂ (d := dst+8*k) (by omega) (by omega) .x4) fun t et => ?_
+    refine WP.mono (st_ok hs₂ (d := dst+8*k) (by omega_using [hd, hk]) (by omega_using [hd8]) .x4) fun t et => ?_
     have mt : t.mem = s₂.mem.writeW (off base (dst+8*k)) (s₂.gpr .x4) := by rw [et]
     have kt : KeepRegs [] s₂ t := by subst et; exact ⟨fun _ _ => rfl,rfl,rfl,rfl⟩
     have O₂ : Outside base (dst+8*k) 8 s₂.mem t.mem := by
-      rw [mt]; exact writeW_outside _ _ _ (by omega)
+      rw [mt]; exact writeW_outside _ _ _ (by omega_using [hd, hk, hn])
     have old : word s₁.mem (off base src) (8*k) = word s.mem base (src+8*k) := by
       simp only [word, off, BitVec.add_assoc, BitVec.ofNat_add_ofNat]
       change word s₁.mem base (src+8*k) = _
-      exact O₁.word (by omega) (by omega)
+      exact O₁.word (by omega_using [hap, hk]) (by omega_using [hsrc, hk, hn])
     refine ⟨fun i hi => ?_,k₁.trans ((Keeps.regs k₂).trans (kt.mono (by simp))),?_⟩
     · rcases Nat.lt_or_ge i k with h | h
-      · rw [O₂.word (by omega) (by omega),k₂.mem,e₁ i h]
-      · obtain rfl : i = k := by omega
+      · rw [O₂.word (by omega_using [h]) (by omega_using [hd, hk, hn, hi]),k₂.mem,e₁ i h]
+      · obtain rfl : i = k := by omega_using [hi, h]
         rw [mt,word_writeW_self,e₂,old]
-    · refine (O₁.mono (Nat.le_refl _) (by omega)).trans ?_
+    · refine (O₁.mono (Nat.le_refl _) (by omega_using [])).trans ?_
       rw [← k₂.mem]
-      exact O₂.mono (by omega) (by omega)
+      exact O₂.mono (by omega_using []) (by omega_using [])
 
 /-- Address calculation for magnitudes 1 through 16. -/
 theorem jacAddress_ok (K : WinCfg) {s : State} {base : Addr} {a : Nat}
@@ -94,8 +94,8 @@ theorem jacWords_coord {m m' : Mem} {base : Addr} {dst src c : Nat}
     wordsVal m' base (dst+32*c) 4 = wordsVal m base (src+32*c) 4 := by
   apply wordsVal_of_words₂
   intro i hi
-  have he := h (4*c+i) (by omega)
-  simpa only [show dst+8*(4*c+i) = dst+32*c+8*i by omega,
-    show src+8*(4*c+i) = src+32*c+8*i by omega] using he
+  have he := h (4*c+i) (by omega_using [hc, hi])
+  simpa only [show dst+8*(4*c+i) = dst+32*c+8*i by omega_using [],
+    show src+8*(4*c+i) = src+32*c+8*i by omega_using []] using he
 
 end VG.Proof.Weierstrass.AArch64

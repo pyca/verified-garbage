@@ -79,8 +79,8 @@ theorem passes_ok (d : Direction) {s₀ : State}
     rw [e, ← keyAt_pass s₀.mem S d hp hr]; rfl
   have words' : ∀ x < 64, words s' x = chain d (scheduleAt s₀.mem S) (3 - p + 1) (words s₀) x := by
     intro x hx
-    rw [q.words x hx, pairs_keys_congr 8 (fun r hr => keys r (by omega))]
-    simp only [chain, show 3 - (3 - p) = p by omega]
+    rw [q.words x hx, pairs_keys_congr 8 (fun r hr => keys r (by omega_using [hr]))]
+    simp only [chain, show 3 - (3 - p) = p by omega_using [hp]]
     exact swapW_congr (pairs_congr _ 8 hs.words) x hx
   have gpr' : ∀ r, PassRegs r → s'.gpr r = s₀.gpr r := fun r hr => (q.gpr r hr).trans (g r hr)
   have frame' : Frame [spillR s₀, stateR s₀] s₀.mem s'.mem := by
@@ -96,8 +96,8 @@ theorem passes_ok (d : Direction) {s₀ : State}
     show s'.zf.map (!·) = some false
     rw [q.zf, cntv]; rfl
   · right
-    refine ⟨?_, p - 1, by omega, ⟨q.room, q.ones, q.rd.trans hs.rd, q.wr.trans hs.wr, by omega,
-      by omega, ?_, ?_, gpr', frame'⟩⟩
+    refine ⟨?_, p - 1, by omega_using [hp], ⟨q.room, q.ones, q.rd.trans hs.rd, q.wr.trans hs.wr, by omega_using [hp, h1],
+      by omega_using [hp], ?_, ?_, gpr', frame'⟩⟩
     · show s'.zf.map (!·) = some true
       rw [q.zf, cntv]
       have : (BitVec.ofNat 64 (p - 1) == 0) = false := by
@@ -106,10 +106,10 @@ theorem passes_ok (d : Direction) {s₀ : State}
         have := congrArg BitVec.toNat h0
         have z : (0 : BitVec 64).toNat = 0 := rfl
         simp only [BitVec.toNat_ofNat] at this
-        rw [z, Nat.mod_eq_of_lt (by omega)] at this
-        omega
+        rw [z, Nat.mod_eq_of_lt (by omega_using [hp])] at this
+        omega_using [hp, h1, this]
       rw [this]; rfl
-    · rw [show 3 - (p - 1) = 3 - p + 1 by omega]; exact words'
+    · rw [show 3 - (p - 1) = 3 - p + 1 by omega_using [hp]]; exact words'
     · rw [q.count, cntv]
 
 end VG.Proof.TripleDes.X86_64.BitslicedAvx2

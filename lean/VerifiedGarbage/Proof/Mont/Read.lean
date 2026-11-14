@@ -23,7 +23,7 @@ theorem read_toNat_succ (m : Mem) (a : Addr) (n : Nat) :
     (m.read a (n + 1)).toNat = (m a).toNat + 2 ^ 8 * (m.read (a + 1) n).toNat := by
   show (m.read (a + 1) n ++ m a).toNat = _
   rw [BitVec.toNat_append, ← Nat.shiftLeft_add_eq_or_of_lt (m a).isLt, Nat.shiftLeft_eq, Nat.mul_comm]
-  omega
+  omega_using []
 
 theorem read_toNat_add (m : Mem) (n : Nat) : ∀ (p : Nat) (a : Addr),
     (m.read a (n + p)).toNat = (m.read a p).toNat + 2 ^ (8 * p) * (m.read (a + BitVec.ofNat 64 p) n).toNat
@@ -31,8 +31,8 @@ theorem read_toNat_add (m : Mem) (n : Nat) : ∀ (p : Nat) (a : Addr),
   | p + 1, a => by
     rw [show n + (p + 1) = n + p + 1 from rfl, read_toNat_succ, read_toNat_add m n p (a + 1), read_toNat_succ,
       show a + 1 + BitVec.ofNat 64 p = a + BitVec.ofNat 64 (p + 1) by
-        rw [BitVec.add_assoc]; congr 1; apply BitVec.eq_of_toNat_eq; simp; omega,
-      show 8 * (p + 1) = 8 + 8 * p by omega, Nat.pow_add]
+        rw [BitVec.add_assoc]; congr 1; apply BitVec.eq_of_toNat_eq; simp; omega_using [],
+      show 8 * (p + 1) = 8 + 8 * p by omega_using [], Nat.pow_add]
     grind
 
 /-- The `k` words at `base + d` are its `8k` bytes. -/

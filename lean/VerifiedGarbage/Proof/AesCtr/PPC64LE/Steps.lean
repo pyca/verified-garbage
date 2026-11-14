@@ -61,16 +61,16 @@ theorem sel_min (a b : BitVec 64) (ha : a.toNat < 2 ^ 63) (hb : b.toNat < 2 ^ 63
   · have e : (a - b) >>> 63 = 1#64 := by
       apply BitVec.eq_of_toNat_eq
       rw [BitVec.toNat_ushiftRight, BitVec.toNat_sub, Nat.shiftRight_eq_div_pow]
-      have : (2 ^ 64 - b.toNat + a.toNat) % 2 ^ 64 = 2 ^ 64 - b.toNat + a.toNat := Nat.mod_eq_of_lt (by omega)
-      rw [this]; simp only [BitVec.toNat_ofNat]; omega
+      have : (2 ^ 64 - b.toNat + a.toNat) % 2 ^ 64 = 2 ^ 64 - b.toNat + a.toNat := Nat.mod_eq_of_lt (by omega_using [h])
+      rw [this]; simp only [BitVec.toNat_ofNat]; omega_using [hb, h]
     simp only [h, ↓reduceIte]
     rw [e, show (0#64 : BitVec 64) - 1#64 = BitVec.allOnes 64 by decide, BitVec.and_allOnes,
       BitVec.xor_comm a b, ← BitVec.xor_assoc, BitVec.xor_self, BitVec.zero_xor]
   · have e : (a - b) >>> 63 = 0#64 := by
       apply BitVec.eq_of_toNat_eq
       rw [BitVec.toNat_ushiftRight, BitVec.toNat_sub, Nat.shiftRight_eq_div_pow]
-      have : (2 ^ 64 - b.toNat + a.toNat) % 2 ^ 64 = a.toNat - b.toNat := by omega
-      rw [this]; simp only [BitVec.toNat_ofNat]; omega
+      have : (2 ^ 64 - b.toNat + a.toNat) % 2 ^ 64 = a.toNat - b.toNat := by omega_using [h]
+      rw [this]; simp only [BitVec.toNat_ofNat]; omega_using [ha]
     simp only [h, ↓reduceIte]
     rw [e, show (0#64 : BitVec 64) - 0#64 = 0#64 by decide, BitVec.and_zero, BitVec.xor_zero]
 
@@ -83,22 +83,22 @@ theorem carry_bit (L : BitVec 64) :
     Nat.shiftRight_eq_div_pow, Nat.shiftRight_eq_div_pow]
   simp only [BitVec.toNat_ofNat]
   by_cases h : 2 ^ 64 ≤ L.toNat + 2 ^ 32
-  · have e₁ : (L.toNat + 2 ^ 32 % 2 ^ 64) % 2 ^ 64 = L.toNat + 2 ^ 32 - 2 ^ 64 := by omega
-    rw [e₁, show (L.toNat + 2 ^ 32 - 2 ^ 64) / 2 ^ 32 = 0 by omega]
-    omega
-  · have e₁ : (L.toNat + 2 ^ 32 % 2 ^ 64) % 2 ^ 64 = L.toNat + 2 ^ 32 := by omega
+  · have e₁ : (L.toNat + 2 ^ 32 % 2 ^ 64) % 2 ^ 64 = L.toNat + 2 ^ 32 - 2 ^ 64 := by omega_using [h]
+    rw [e₁, show (L.toNat + 2 ^ 32 - 2 ^ 64) / 2 ^ 32 = 0 by omega_using []]
+    omega_using [h]
+  · have e₁ : (L.toNat + 2 ^ 32 % 2 ^ 64) % 2 ^ 64 = L.toNat + 2 ^ 32 := by omega_using [h]
     rw [e₁]
-    have : 1 ≤ (L.toNat + 2 ^ 32) / 2 ^ 32 := by omega
-    have : (L.toNat + 2 ^ 32) / 2 ^ 32 < 2 ^ 32 := by omega
-    omega
+    have : 1 ≤ (L.toNat + 2 ^ 32) / 2 ^ 32 := by omega_using []
+    have : (L.toNat + 2 ^ 32) / 2 ^ 32 < 2 ^ 32 := by omega_using [h]
+    omega_using [h]
 
 /-- `2³² − c`, for a 32-bit `c`. -/
 theorem rem_toNat (c : BitVec 32) : (1#64 <<< 32 - c.setWidth 64).toNat = 2 ^ 32 - c.toNat := by
   have hc := c.isLt
-  have h1 : (c.setWidth 64).toNat = c.toNat := by simp [BitVec.toNat_setWidth]; omega
+  have h1 : (c.setWidth 64).toNat = c.toNat := by simp [BitVec.toNat_setWidth]; omega_using []
   have h2 : (1#64 <<< 32).toNat = 2 ^ 32 := by decide
   rw [BitVec.toNat_sub, h1, h2]
-  omega
+  omega_using []
 
 /-- The blocks of the call: `min left (2³² − c)`, with `c` the last 32 bits
 of the counter block, in `r10` and in the slot at `S + 2048`. -/
@@ -141,15 +141,15 @@ theorem count_wp {s : State} {Q S : Addr} {left : Nat} {rest : List Instr} {Φ :
       u₈.other .r18 (by decide), u₈.other .r10 (by decide), u₇.other .r18 (by decide), u₇.other .r10 (by decide),
       u₆.other .r18 (by decide), u₆.other .r10 (by decide), h18₅, hrem]
     have hl' : (BitVec.ofNat 64 left).toNat = left := by
-      rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt (by omega)
+      rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt (by omega_using [hl])
     have hr := rem_toNat c
-    rw [sel_min (BitVec.ofNat 64 left) (1#64 <<< 32 - c.setWidth 64) (by rw [hl']; omega)
-      (by rw [hr]; omega), hl', hr]
+    rw [sel_min (BitVec.ofNat 64 left) (1#64 <<< 32 - c.setWidth 64) (by rw [hl']; omega_using [hl])
+      (by rw [hr]; omega_using []), hl', hr]
     by_cases h : left < 2 ^ 32 - c.toNat
     · simp only [h, ↓reduceIte]; rw [Nat.min_eq_left (Nat.le_of_lt h)]
-    · simp only [h, ↓reduceIte]; rw [Nat.min_eq_right (show 2 ^ 32 - c.toNat ≤ left by omega)]
+    · simp only [h, ↓reduceIte]; rw [Nat.min_eq_right (show 2 ^ 32 - c.toNat ≤ left by omega_using [h])]
       apply BitVec.eq_of_toNat_eq
-      rw [hr, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := c.isLt; omega)]
+      rw [hr, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := c.isLt; omega_using [])]
   refine wp_std (a := S + BitVec.ofNat 64 2048) (by decide) (by decide)
     (by show s₁₂.gpr .r19 + BitVec.ofNat 64 2048 = _
         rw [g₁₂ .r19 (by decide) (by decide) (by decide) (by decide), h19])
@@ -191,10 +191,10 @@ theorem adv_wp {s : State} {Q S P : Addr} {left m : Nat} {Φ : State → Prop}
       u₂.other _ (by decide), u₂.other _ (by decide), u₁.other _ (by decide), h17, r9₁]
     congr 1
     apply BitVec.eq_of_toNat_eq
-    have hm' : m < 2 ^ 64 := by omega
+    have hm' : m < 2 ^ 64 := by omega_using [h16m]
     rw [BitVec.toNat_shiftLeft, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hm',
       Nat.shiftLeft_eq]
-    omega
+    omega_using []
   · rw [u₆.gpr, mem₅, rev32_eq]
   · rw [u₆.other _ h9, u₅.other _ h10, u₄.other _ h17, u₃.other _ h9, u₂.other _ h18, u₁.other _ h9]
   · rw [u₆.mem, mem₅]

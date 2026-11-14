@@ -49,19 +49,19 @@ theorem MulReady.width {g : Geometry} (v : g.Valid) {capacity b : Nat} {p : BitV
     {s : State} (S : MulReady g capacity b p s) : Proof.Rsa.Mont.wOf (mulEntry g s).mem g.W = g.w := by
   obtain ⟨c, M, _⟩ := S.modulus
   have far := S.far.sub_right (below_sub (by decide : 24 ≤ 80) S.low)
-  have frame := mulEntry_frame (by have := S.low; omega) S.context.ws.nowrap far
+  have frame := mulEntry_frame (by have := S.low; omega_using [this]) S.context.ws.nowrap far
   exact (M.keep v frame (by simp) (by simp)).width
 
 
 theorem MulReady.publicInputs {g : Geometry} (v : g.Valid) {capacity b : Nat} {p : BitVec 32}
     {s t : State} (S : MulReady g capacity b p s) (T : MulReady g capacity b p t) :
     (Proof.Rsa.Mont.mulContract abi 56).pub (mulEntry g s) (mulEntry g t) := by
-  have sa := fun {i} (hi : i < 5) => mulEntry_arg S.args (by have := S.low; omega) hi
-  have ta := fun {i} (hi : i < 5) => mulEntry_arg T.args (by have := T.low; omega) hi
+  have sa := fun {i} (hi : i < 5) => mulEntry_arg S.args (by have := S.low; omega_using [this]) hi
+  have ta := fun {i} (hi : i < 5) => mulEntry_arg T.args (by have := T.low; omega_using [this]) hi
   have bound : g.W.toNat < 2 ^ 32 := by
     have := S.context.ws.nowrap
     have := v.headerFit
-    omega
+    omega_arith
   have ptr : (BitVec.ofNat 32 g.W.toNat).setWidth 64 = g.W := by
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]

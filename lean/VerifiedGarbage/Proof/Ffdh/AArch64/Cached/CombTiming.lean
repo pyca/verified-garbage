@@ -36,7 +36,7 @@ theorem powerInit_ct (M : Mont) : RelCT isa (Two CombReady)
    (const_ct 7 1 (by decide) (by taint_decide) (by taint_decide))) ?_)
   (two_map combWs (fun _ _ h => h) (M.ct (by simp [MmUse,Public.aY,Public.aR2,Public.aOne])))
  rintro q s ⟨bs,h,_⟩
- exact WP.mono (const_ok h.good q.p.room (by have := q.p.positive;omega) q.p.width
+ exact WP.mono (const_ok h.good q.p.room (by have := q.p.positive;omega_using [this]) q.p.width
   (by decide : 7<8) (by decide : 1<2^16)) fun _ ⟨good,_,_,_⟩ => ⟨q.p.mi,good,q.p.room⟩
 
 theorem comb_ct (M : Mont) : RelCT isa (Two CombReady) (Comb.code M.mm) (fun _ _ => True) := by

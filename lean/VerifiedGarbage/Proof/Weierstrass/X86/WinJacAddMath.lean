@@ -4,6 +4,7 @@ import VerifiedGarbage.Proof.Weierstrass.WinJacMath
 public import VerifiedGarbage.Proof.Weierstrass.JacAdd
 public import VerifiedGarbage.Proof.Weierstrass.PrimeOrder
 public import VerifiedGarbage.Proof.Weierstrass.Window5
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-! The two branchless selections make each nonexceptional window addition total. -/
 
@@ -19,7 +20,7 @@ theorem winPt_ne {C : Curve} (hO : PrimeOrder C) {P : Point C} (hP : onCurve C P
     (hP0 : P≠.infinity) (hn : 17≤C.n) {v j : Nat} (ha : magH 16 (Window5.nib v j)≠0) :
     Window5.winPt C P v j≠.infinity := by
   have hb : magH 16 (Window5.nib v j)≤16 := magH_le (Nat.mod_lt _ (by decide))
-  have hm := Window5.mul_ne_infinity hO hP hP0 (by omega : 1≤magH 16 (Window5.nib v j)) (by omega)
+  have hm := Window5.mul_ne_infinity hO hP hP0 (by omega_using [ha] : 1≤magH 16 (Window5.nib v j)) (by omega_using [hn, hb])
   rw [Window5.winPt_mag]
   split
   · cases hp : mul (magH 16 (Window5.nib v j)) P with
@@ -51,10 +52,10 @@ theorem add_result_ok {C : Curve} (hC : Law C) (ha : AM3 C) (hO : PrimeOrder C)
       rw [(hR.z_zero_iff hC).mp rz] at he
       rw [←he]; exact hE
     next rz =>
-      have ez : E.2.2≠0 := fun he => winPt_ne hO hP hP0 (by omega) hz ((hE.z_zero_iff hC).mp he)
+      have ez : E.2.2≠0 := fun he => winPt_ne hO hP hP0 (by omega_using [hn17]) hz ((hE.z_zero_iff hC).mp he)
       have he1 : 1≤Window5.winE (k+16*Window5.geom J) J (j+1) := by
         by_contra he1
-        have he0 : Window5.winE (k+16*Window5.geom J) J (j+1)=0 := by omega
+        have he0 : Window5.winE (k+16*Window5.geom J) J (j+1)=0 := by omega_using [he1]
         apply rz
         apply (hR.z_zero_iff hC).mpr
         rw [he0,Nat.mul_zero,Window5.mul_zero_pt]

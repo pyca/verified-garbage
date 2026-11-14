@@ -43,17 +43,17 @@ theorem args19_disjoint {s : State} (top : (s.gpr .esp).toNat + 80 ≤ 2 ^ 32) {
     (h18 : Region.Disjoint ⟨VG.Proof.Dsa.X86.stackAddress s preArg, 4⟩ r) :
     Region.Disjoint ⟨(s.gpr .esp).setWidth 64, 80⟩ r := by
   have sa : VG.Proof.Dsa.X86.stackAddress s preArg = (s.gpr .esp).setWidth 64 + BitVec.ofNat 64 76 :=
-    addr_eq (by simp only [preArg]; omega)
+    addr_eq (by simp only [preArg]; omega_using [top])
   rw [sa] at h18
   intro a ha hr
   simp only [Region.Contains] at ha
   by_cases h : (a - (s.gpr .esp).setWidth 64).toNat < 76
-  · exact h76 a (by simp only [Region.Contains]; omega) hr
+  · exact h76 a (by simp only [Region.Contains]; omega_using [h]) hr
   · refine h18 a ?_ hr
     simp only [Region.Contains]
     rw [Offset.sub_add_eq, Offset.toNat_sub_ofNat]
     have := (a - (s.gpr .esp).setWidth 64).isLt
-    omega
+    omega_using [ha, h]
 
 section
 variable {s t : State} {base : Addr} {bytes len : Nat} {args : Nat → BitVec 32} {sp : BitVec 32}
@@ -76,7 +76,7 @@ theorem agreeP {s₁ s₂ : State} (h₁ : In Ex base bytes len args s₁) (h₂
     refine congrArg _ (show arg s₁ _ = arg s₂ _ from ?_)
     rcases Nat.lt_or_ge ((k - 4) / 4) 18 with hl | hg
     · exact (h₁.stack _ hl).value.trans (h₂.stack _ hl).value.symm
-    · rw [show (k - 4) / 4 = preArg by simp only [preArg]; omega]
+    · rw [show (k - 4) / 4 = preArg by simp only [preArg]; omega_using [hk, hg]]
       exact P₁.arg.value.trans P₂.arg.value.symm
 
 /-- Argument 18 apart from every writable region. -/
@@ -122,7 +122,7 @@ theorem preparePre_relCT {c : Ctx} {i : Nat} (hi : i ≤ 1) (fits : 8 * preW arg
       (Both (WSt Ex base bytes len args sp c [3, 4] 0)) := by
   have hc : PCheck (preparePre c i) := by
     have H := prepPChecks
-    rcases (by omega : i = 0 ∨ i = 1) with rfl | rfl <;> cases c
+    rcases (by omega_using [hi] : i = 0 ∨ i = 1) with rfl | rfl <;> cases c
     exacts [H.2.2.1, H.1, H.2.2.2, H.2.1]
   exact PublicRt.relCT_both (VG.RelCT.taint (A := sseTaint) τP (fun _ _ h =>
       agreeP h.1.1.1 h.2.1.1 h.1.2.1 h.2.2.1 (argsOkP_of h.1.1.2.1 h.1.2.1 h.1.2.2)
@@ -138,7 +138,7 @@ variable {s t : State} {base : Addr} {bytes len : Nat} {args : Nat → BitVec 32
 theorem PreR2.keepO {i p : Nat} (P : PreR2 s base bytes len args i p) {regs : List Reg} (K : Keeps regs s t)
     (spn : .esp ∉ regs) (O : Outside base 0 bytes s.mem t.mem) (fit : bytes ≤ 2 ^ 64) :
     PreR2 t base bytes len args i p := by
-  have F := VG.Proof.Bignum.outside_frame O (by omega)
+  have F := VG.Proof.Bignum.outside_frame O (by omega_using [fit])
   simp only [BitVec.add_zero] at F
   exact P.keep K spn F (fun r hr => by rw [List.mem_singleton.mp hr]; exact (P.apart_sub fun _ h => h).1)
     (fun r hr => by rw [List.mem_singleton.mp hr]; exact (P.apart_sub fun _ h => h).2)
@@ -479,7 +479,7 @@ theorem PreAll.keepBody {m₀ : Mem} (h : RIn base bytes len args s) (A : PreAll
 
 theorem PreAll.get {m₀ : Mem} (A : PreAll base bytes len args m₀ s) {j : Nat} (hj : j < 2) :
     PreR2 s base bytes len args j (safeM (componentValue m₀ args (6 + 2 * j))) ∧ PreOut s args len j := by
-  rcases (by omega : j = 0 ∨ j = 1) with rfl | rfl
+  rcases (by omega_using [hj] : j = 0 ∨ j = 1) with rfl | rfl
   exacts [⟨A.p0, A.o0⟩, ⟨A.p1, A.o1⟩]
 
 /-- The factors' steps with `pre` after `j` of them. -/
@@ -507,21 +507,21 @@ theorem stepP_relCT {j : Nat} (hj : j < 2) (hc : SizedChecks) (hlo : 64 ≤ len)
     (hl : (args (7 + 2 * j)).toNat < len) :
     RelCT isa (Both (StP base bytes len args sp j)) (factorStep (some j)) (Both (StP base bytes len args sp (j + 1))) := by
   have lb := len_le_bc len
-  have e6 : (if j = 1 then 8 else 6) = 6 + 2 * j := by rcases (by omega : j = 0 ∨ j = 1) with rfl | rfl <;> rfl
-  have e7 : (if j = 1 then 9 else 7) = 7 + 2 * j := by rcases (by omega : j = 0 ∨ j = 1) with rfl | rfl <;> rfl
-  have fitW : 8 * preW args j ≤ bc len .wide := fitG_of (i := j) (c := .wide) hlo (by omega)
+  have e6 : (if j = 1 then 8 else 6) = 6 + 2 * j := by rcases (by omega_using [hj] : j = 0 ∨ j = 1) with rfl | rfl <;> rfl
+  have e7 : (if j = 1 then 9 else 7) = 7 + 2 * j := by rcases (by omega_using [hj] : j = 0 ∨ j = 1) with rfl | rfl <;> rfl
+  have fitW : 8 * preW args j ≤ bc len .wide := fitG_of (i := j) (c := .wide) hlo (by omega_using [hl, lb])
   have conv : ∀ {t}, StP base bytes len args sp j t →
       PowP (CrtExtra base bytes len args) base bytes len args sp 10 j (args (7 + 2 * j)).toNat t := by
     intro t ⟨R, m₀, s₀, h₀, c, I, A⟩
     have G := A.get hj
-    refine powP_of R h₀ I G.1 G.2 A.w (k := 6 + 2 * j) ?_ ?_ (by rw [show 6 + 2 * j + 1 = 7 + 2 * j by omega]) ?_
+    refine powP_of R h₀ I G.1 G.2 A.w (k := 6 + 2 * j) ?_ ?_ (by rw [show 6 + 2 * j + 1 = 7 + 2 * j by omega_using []]) ?_
     · rw [I.f₁, e6]
     · rw [I.l₁, e7]
     · exact fun hle => fitG_of (i := j) (c := .half) hlo hle
   have tr : RelCT isa (Both (StP base bytes len args sp j)) (factorStep (some j)) fun _ _ => True := by
     unfold factorStep
     exact VG.RelCT.seq ((powerP_relCT (Ex := CrtExtra base bytes len args) (base := base) (bytes := bytes)
-      (len := len) (args := args) (sp := sp) (by omega) fitW hc.p rhChecks.1 (by decide) (by decide) (by decide)
+      (len := len) (args := args) (sp := sp) (by omega_using [hj]) fitW hc.p rhChecks.1 (by decide) (by decide) (by decide)
       (by decide) (by decide) (by decide)).mono (fun _ _ h => ⟨_, conv h.1, conv h.2⟩) fun _ _ h => h)
       (VG.RelCT.taint (A := taint) τA (fun _ _ h => h.1.agree h.2) hc.swaps)
   have step : ∀ {t}, StP base bytes len args sp j t → WP isa (factorStep (some j)) t (StP base bytes len args sp (j + 1)) := by
@@ -552,7 +552,7 @@ theorem sizedP_relCT' (sp : BitVec 32) (hlo : 64 ≤ len) (h7 : (args 7).toNat <
       PreAll base bytes len args s.mem s) (CrtRt.sized true) fun _ _ => True := by
   have hc := sizedChecks
   have lb := len_le_bc len
-  have fitW : 8 * preW args 0 ≤ bc len .wide := fitG_of (i := 0) (c := .wide) hlo (by show (args 7).toNat ≤ _; omega)
+  have fitW : 8 * preW args 0 ≤ bc len .wide := fitG_of (i := 0) (c := .wide) hlo (by show (args 7).toNat ≤ _; omega_using [h7, lb])
   have conv2 : ∀ {t}, StP base bytes len args sp 2 t →
       PowP (CrtExtra base bytes len args) base bytes len args sp 10 0 (args 7).toNat t := by
     intro t ⟨R, m₀, s₀, h₀, c, I, A⟩

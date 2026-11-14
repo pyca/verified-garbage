@@ -45,7 +45,7 @@ theorem start_using_ok (hash : FixedHash.HashFn)
     · rcases h₁.mem with hm | hf
       · simpa only [hm] using Frame.refl [R (kA s₀) (deL P).sc (SV P) 48] s₀.mem
       · exact hf
-    · exact cov_w₀ hp ⟨hp.scw,hp.scb⟩ (hp.fs (by omega))
+    · exact cov_w₀ hp ⟨hp.scw,hp.scb⟩ (hp.fs (by omega_using []))
   refine WP.seq (WP.mono (fused_m_ok hp hc tr₁ ⟨h₁.kb,h₁.x24,fun _ hj => by omega⟩ gt ct
     (by simpa only [hs] using ha)) fun s₂ ⟨kb₂,x₂,m₂⟩ => ?_)
   exact a_tail_using hash hash_ok hp kb₂ x₂ m₂

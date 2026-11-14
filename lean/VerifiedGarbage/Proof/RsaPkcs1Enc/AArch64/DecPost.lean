@@ -31,7 +31,7 @@ theorem sub_trans {a b c : Region} (h₁ : Region.Sub a b) (h₂ : Region.Sub b 
   fun x hx => h₂ x (h₁ x hx)
 
 theorem Lay.Ok.sc_sub {L : Lay} (hL : L.Ok) : Region.Sub L.SC L.SCR :=
-  Region.sub_prefix (by have := hL.s8192; unfold scrBytes; omega)
+  Region.sub_prefix (by have := hL.s8192; unfold scrBytes; omega_using [this])
 
 /-- What a step after the private-key operation may write. -/
 def Safe (L : Lay) (r : Region) : Prop :=
@@ -64,18 +64,18 @@ theorem Post.step (hL : L.Ok) (hc : Post L g vv m₀ R EM t) (hrd : t'.rd = t.rd
     hcx.frame.trans (hf.sub fun r hr => ?_)⟩, ?_, ?_⟩
   · rcases hs X hX with h | h | ⟨d', h₁, h₂, hb⟩
     · exact hL.kept_buf hd (.inr (.inr (sub_trans h hL.sc_sub)))
-    · exact (hL.fr_low (by unfold keptOff at hd; omega)).sub_right h
+    · exact (hL.fr_low (by unfold keptOff at hd; omega_using [hd])).sub_right h
     · obtain ⟨b, n⟩ := X
       simp only at hb h₂; subst hb
       unfold keptOff at hd; unfold oI at h₁; unfold frameBytes at h₂
-      exact hL.fr_sep (by omega) (by omega) (by omega)
+      exact hL.fr_sep (by omega_using [hd, h₁, h₂]) (by omega_using [hd]) (by omega_using [h₂])
   · rcases hs r hr with h | h | ⟨d', h₁, h₂, hb⟩
     · exact ⟨L.SCR, by simp, sub_trans h hL.sc_sub⟩
     · exact ⟨L.STK, by simp, sub_trans h Lay.Ok.low_stk⟩
     · obtain ⟨b, n⟩ := r
       simp only at hb h₂; subst hb
       unfold frameBytes at h₂
-      exact ⟨L.STK, by simp, Lay.Ok.sub_stk (by omega)⟩
+      exact ⟨L.STK, by simp, Lay.Ok.sub_stk (by omega_using [h₂])⟩
   · rw [hf.readW (Region.contains_self _ _) (fun X hX => ?_) (by decide)]
     · exact hc.r
     · rcases hs X hX with h | h | ⟨d', h₁, h₂, hb⟩
@@ -84,16 +84,16 @@ theorem Post.step (hL : L.Ok) (hc : Post L g vv m₀ R EM t) (hrd : t'.rd = t.rd
       · obtain ⟨b, n⟩ := X
         simp only at hb h₂; subst hb
         unfold oI at h₁; unfold frameBytes at h₂
-        exact hL.fr_sep (by unfold oR; omega) (by decide) (by omega)
+        exact hL.fr_sep (by unfold oR; omega_using [h₁]) (by decide) (by omega_using [h₂])
   · rw [← hc.em]
-    refine bytesAt_eq fun i hi => hf.bytes (R := L.OUT) (fun X hX => ?_) (by show L.k.toNat ≤ 2 ^ 64; omega) hi
+    refine bytesAt_eq fun i hi => hf.bytes (R := L.OUT) (fun X hX => ?_) (by show L.k.toNat ≤ 2 ^ 64; omega_using []) hi
     rcases hs X hX with h | h | ⟨d', h₁, h₂, hb⟩
     · exact hL.oS.sub_right (sub_trans h hL.sc_sub)
     · exact hL.kO.symm.sub_right (sub_trans h Lay.Ok.low_stk)
     · obtain ⟨b, n⟩ := X
       simp only at hb h₂; subst hb
       unfold frameBytes at h₂
-      exact (hL.kO.sub_left (Lay.Ok.sub_stk (by omega))).symm
+      exact (hL.kO.sub_left (Lay.Ok.sub_stk (by omega_using [h₂]))).symm
 
 /-- Code that changes only registers but the callee-saved ones keeps `Post`. -/
 theorem Post.regs (hc : Post L g vv m₀ R EM t) (hrd : t'.rd = t.rd) (hwr : t'.wr = t.wr) (hsp : t'.sp = t.sp)
@@ -109,7 +109,7 @@ theorem Post.after (hL : L.Ok) (hP : 16 ≤ L.P) (hc : Post L g vv m₀ R EM t) 
     rcases List.mem_append.mp hr with hr | hr
     · exact .inl (hs r hr)
     · rw [List.mem_singleton.mp hr, hc.ctx.sp]
-      exact .inr (.inl (Offset.sub_below _ hP (by have := hL.pQ; omega)))
+      exact .inr (.inl (Offset.sub_below _ hP (by have := hL.pQ; omega_using [hP])))
 
 end
 
@@ -123,8 +123,8 @@ abbrev scA (L : Lay) (a : Nat) : Addr := L.scr + BitVec.ofNat 64 a
 
 theorem scD (hL : L.Ok) {a n b m : Nat} (h : a + n ≤ b ∨ b + m ≤ a) (ha : a + n ≤ scrBytes) (hb : b + m ≤ scrBytes) :
     Region.Disjoint ⟨scA L a, n⟩ ⟨scA L b, m⟩ :=
-  Offset.disjoint L.scr h (by have := hL.bS; have := hL.s8192; unfold scrBytes at ha; omega)
-    (by have := hL.bS; have := hL.s8192; unfold scrBytes at hb; omega)
+  Offset.disjoint L.scr h (by have := hL.bS; have := hL.s8192; unfold scrBytes at ha; omega_using [ha])
+    (by have := hL.bS; have := hL.s8192; unfold scrBytes at hb; omega_using [hb])
 
 theorem scSub {a n : Nat} (ha : a + n ≤ scrBytes) : Region.Sub ⟨scA L a, n⟩ L.SC :=
   Offset.sub_base _ ha
@@ -132,7 +132,7 @@ theorem scSub {a n : Nat} (ha : a + n ≤ scrBytes) : Region.Sub ⟨scA L a, n�
 /-- The 16 bytes below the frame miss `scratch`. -/
 theorem stkD (hL : L.Ok) (hP : 16 ≤ L.P) {a m : Nat} (ha : a + m ≤ scrBytes) :
     (below L.Q 16).Disjoint ⟨scA L a, m⟩ :=
-  (hL.kS.sub_left (sub_trans (Offset.sub_below _ hP (by have := hL.pQ; omega)) Lay.Ok.low_stk)).sub_right
+  (hL.kS.sub_left (sub_trans (Offset.sub_below _ hP (by have := hL.pQ; omega_using [hP])) Lay.Ok.low_stk)).sub_right
     (sub_trans (scSub ha) hL.sc_sub)
 
 theorem scCov (hL : L.Ok) {g : Reg → BitVec 64} {vv : VReg → BitVec 128} {m₀ : Mem} {t : State}
@@ -140,7 +140,7 @@ theorem scCov (hL : L.Ok) {g : Reg → BitVec 64} {vv : VReg → BitVec 128} {m�
   Covers.of_sub fun r hr => by
     rw [List.mem_singleton.mp hr]
     exact ⟨L.SCR, by rw [hc.wr]; simp, a, rfl, by
-      have := hL.s8192; unfold scrBytes at ha; dsimp only; omega⟩
+      have := hL.s8192; unfold scrBytes at ha; dsimp only; omega_using [ha, this]⟩
 
 end
 

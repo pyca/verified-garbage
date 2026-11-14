@@ -31,7 +31,7 @@ theorem ofNat_sub_ofNat_eq_zero {a b : Nat} (ha : a < 2 ^ 64) (hb : b < 2 ^ 64) 
   · have hne : BitVec.ofNat 64 a - BitVec.ofNat 64 b ≠ 0 := fun e => h (by
       have h' := congrArg BitVec.toNat e
       simp [BitVec.toNat_sub] at h'
-      omega)
+      omega_using [ha, hb, h'])
     rw [beq_eq_false_iff_ne.mpr hne, decide_eq_false h]
 
 /-- `cond`: `x10 = 0` exactly for at most 16 bytes of additional data and a
@@ -48,25 +48,25 @@ theorem cond_ok {s : State} {al nl : Nat} (h5 : s.gpr .x5 = BitVec.ofNat 64 al) 
   refine WP.seq (WP.of_runBlock ⟨s₁, run₁, ?_⟩)
   refine WP.seq (WP.mono (Q := fun (s₂ : State) => s₂.gpr .x10 = BitVec.ofNat 64 (if al ≤ 16 then 0 else 1) ∧
       Regs [.x9, .x10] s s₂)
-    (WP.ite (decide (al / 2 ^ 4 = 0)) (eval_zero x9₁ (by omega)) (fun ht => ?_) (fun hf => ?_))
+    (WP.ite (decide (al / 2 ^ 4 = 0)) (eval_zero x9₁ (by omega_using [hal])) (fun ht => ?_) (fun hf => ?_))
     fun s₂ ⟨x10₂, r₂⟩ => ?_)
-  · have : al < 16 := by have := of_decide_eq_true ht; omega
-    exact WP.block_nil ⟨by rw [x10₁, ite_eq_left (by omega)], r₁⟩
-  · have h16 : 16 ≤ al := by have := of_decide_eq_false hf; omega
+  · have : al < 16 := by have := of_decide_eq_true ht; omega_using [this]
+    exact WP.block_nil ⟨by rw [x10₁, ite_eq_left (by omega_using [this])], r₁⟩
+  · have h16 : 16 ≤ al := by have := of_decide_eq_false hf; omega_using [this]
     obtain ⟨s₂, run₂, x9₂, r₂⟩ : ∃ s₂, runBlock isa [.subImm .x .x9 .x5 16] s₁ = some s₂ ∧
         s₂.gpr .x9 = BitVec.ofNat 64 (al - 16) ∧ Regs [.x9] s₁ s₂ := by
       refine ⟨_, by arun [], ?_⟩
       exact ⟨by simp [gpr_write, r₁.others .x5 (by decide), h5, ofNat_sub h16 hal], ⟨by others_tac, rfl, rfl, rfl, rfl⟩⟩
     refine WP.seq (WP.of_runBlock ⟨s₂, run₂, ?_⟩)
-    refine WP.ite (decide (al - 16 = 0)) (eval_zero x9₂ (by omega)) (fun ht => ?_) (fun hf => ?_)
-    · have : al = 16 := by have := of_decide_eq_true ht; omega
-      exact WP.block_nil ⟨by rw [r₂.others _ (by decide), x10₁, ite_eq_left (by omega)], r₁.trans r₂⟩
-    · have : al ≠ 16 := by have := of_decide_eq_false hf; omega
+    refine WP.ite (decide (al - 16 = 0)) (eval_zero x9₂ (by omega_using [hal])) (fun ht => ?_) (fun hf => ?_)
+    · have : al = 16 := by have := of_decide_eq_true ht; omega_using [h16, this]
+      exact WP.block_nil ⟨by rw [r₂.others _ (by decide), x10₁, ite_eq_left (by omega_using [this])], r₁.trans r₂⟩
+    · have : al ≠ 16 := by have := of_decide_eq_false hf; omega_using [this]
       obtain ⟨s₃, run₃, x10₃, r₃⟩ : ∃ s₃, runBlock isa [imm .x10 1] s₂ = some s₃ ∧
           s₃.gpr .x10 = BitVec.ofNat 64 1 ∧ Regs [.x10] s₂ s₃ := by
         refine ⟨_, by arun [], ?_⟩
         exact ⟨by simp [gpr_write], ⟨by others_tac, rfl, rfl, rfl, rfl⟩⟩
-      exact WP.of_runBlock ⟨s₃, run₃, by rw [x10₃]; simp [show ¬ al ≤ 16 by omega], (r₁.trans r₂).trans r₃⟩
+      exact WP.of_runBlock ⟨s₃, run₃, by rw [x10₃]; simp [show ¬ al ≤ 16 by omega_using [h16, this]], (r₁.trans r₂).trans r₃⟩
   obtain ⟨s₃, run₃, x9₃, r₃⟩ : ∃ s₃, runBlock isa [.subImm .x .x9 .x24 12] s₂ = some s₃ ∧
       s₃.gpr .x9 = BitVec.ofNat 64 nl - BitVec.ofNat 64 12 ∧ Regs [.x9] s₂ s₃ := by
     refine ⟨_, by arun [], ?_⟩

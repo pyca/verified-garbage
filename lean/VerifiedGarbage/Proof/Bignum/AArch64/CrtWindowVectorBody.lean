@@ -42,7 +42,7 @@ theorem blocked_ok {s : State} {P : Addr} {w v : Nat} {mi : BitVec 64} {X Xc : N
     WP isa (VG.Impl.Rsa.AArch64.WindowSelectVector.blocked 32) s fun t =>
       TableCtx t P w mi X Xc ∧ wv t.mem P (slot w Crt.aT) w = wv s.mem P (slot w (8 + v)) w ∧
       Frm P (selRanges w) s.mem t.mem ∧ Keep mmRegs s t := by
-  have hcount : 64 * (w / 8) = 8 * w := by omega
+  have hcount : 64 * (w / 8) = 8 * w := by omega_using [hd]
   have he : slot w 8 + 8 * (w + 2) * v = slot w (8 + v) := by
     simp only [slot, Nat.add_mul, Nat.mul_comm v, Nat.add_assoc]
   rw [blocked_eq]
@@ -58,7 +58,7 @@ theorem blocked_ok {s : State} {P : Addr} {w v : Nat} {mi : BitVec 64} {X Xc : N
     have ho := hI.frame
     rw [hm₀,hcount] at ho
     exact Frm.of_outside (ho.mono (o' := slot w Crt.aT) (n' := 8 * (w + 2))
-      (by omega) (by omega)) (by simp [selRanges])
+      (by omega_using []) (by omega_using [])) (by simp [selRanges])
   refine WP.mono (finish_ok hI.ctx hw' hI.tab hI.stride) fun t ⟨hm,kt⟩ => ?_
   have o₁ := writeW_outside u.mem P (d := 8 * Crt.sEnt)
     (off P (slot w 8 + 32 * (8 * (w + 2)))) (by decide)
@@ -69,8 +69,8 @@ theorem blocked_ok {s : State} {P : Addr} {w v : Nat} {mi : BitVec 64} {X Xc : N
     (Frm.of_outside o₁ (by simp [selRanges])).trans (Frm.of_outside o₂ (by simp [selRanges]))
   refine ⟨hI.ctx.of_win (ff.mono (selRanges_sub w)) kt.wr (kt.gpr .x0 (by decide)), ?_,
     fb.trans ff, ((k₀.trans hI.keep).trans kt).mono (by decide)⟩
-  rw [o₂.wv (by have := hdr_lt_slot w Crt.aT (show Crt.sJ < 32 by decide); omega) (by omega),
-    o₁.wv (by have := hdr_lt_slot w Crt.aT (show Crt.sEnt < 32 by decide); omega) (by omega)]
+  rw [o₂.wv (by have := hdr_lt_slot w Crt.aT (show Crt.sJ < 32 by decide); omega_using [this]) (by omega_using [hn, hT]),
+    o₁.wv (by have := hdr_lt_slot w Crt.aT (show Crt.sEnt < 32 by decide); omega_using [this]) (by omega_using [hn, hT])]
   exact hval
 
 end VG.Proof.Bignum.AArch64.WindowVector

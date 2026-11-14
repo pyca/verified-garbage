@@ -226,10 +226,10 @@ theorem lay_ok {s : State} (h : verifyMessageLocal.pre s) : (lay s).Ok := by
   have ck := Whole.ck_sub s
   refine ⟨?_,?_,?_,kc.sub_left fr,np,nm,ns,nc,Whole.base_16 hb,?_,kc.sub_left ck,fit⟩
   · change (s.sp-336#64).toNat+304≤2^64
-    rw [BitVec.toNat_sub_of_le (by change 336≤s.sp.toNat; omega)]
+    rw [BitVec.toNat_sub_of_le (by change 336≤s.sp.toNat; omega_using [hb])]
     have hs := s.sp.isLt
     change s.sp.toNat-336+304≤2^64
-    omega
+    omega_using []
   · simp only [Lay.inputs,List.mem_cons,List.not_mem_nil,or_false]
     rintro r (rfl | rfl | rfl | rfl | rfl)
     · exact pc
@@ -261,14 +261,14 @@ theorem entry_ctx {s p : State} (h : verifyMessageLocal.pre s) (hp : Whole.Saved
 theorem entry_args {s p : State} (h : verifyMessageLocal.pre s) (hp : Whole.Saved (Whole.entered s) 6 p) :
     Arguments (lay s) p.mem := by
   refine ⟨fun j hj => ?_, fun i hi => ?_⟩
-  · have hw := Whole.saved_words hp (j := j) (by omega)
-    have he : j=0 ∨ j=1 ∨ j=2 ∨ j=3 ∨ j=4 := by omega
+  · have hw := Whole.saved_words hp (j := j) (by omega_using [hj])
+    have he : j=0 ∨ j=1 ∨ j=2 ∨ j=3 ∨ j=4 := by omega_using [hj]
     rcases he with rfl | rfl | rfl | rfl | rfl <;> exact hw
   · obtain ⟨_,_,_,_,_,_,_,_,_,_,_,_,_,_,held,fit,dj⟩ := h
     have hf := Whole.saved_frame hp
     rw [← held i hi]
     refine hf.readW (r := ⟨s.syms Impl.Ed25519.AArch64.bSym,1920⟩)
-      (Offset.contains_base _ (by omega) (by omega)) (fun r hr => ?_) (by decide)
+      (Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi])) (fun r hr => ?_) (by decide)
     rw [List.mem_singleton.mp hr]
     exact (dj (below s.sp 352) (by simp)).sub_right (below_sub (by decide) (by decide))
 

@@ -34,15 +34,15 @@ theorem ReadOnly.after_frame {source table : BitVec 32} {w M g N : Nat} {bs : Li
     ReadOnly source table w M g N bs regions t := by
   have entryFits (digit : Nat) (hd : digit<32) (j : Nat) (hj : j<2*w) :
       8*w*digit+4*j+4≤32*(8*w) := by
-    have last := Nat.mul_le_mul_left (8*w) (show digit+1≤32 by omega)
-    have limb := Nat.mul_le_mul_left 4 (show j+1≤2*w by omega)
+    have last := Nat.mul_le_mul_left (8*w) (show digit+1≤32 by omega_using [hd])
+    have limb := Nat.mul_le_mul_left 4 (show j+1≤2*w by omega_using [hj])
     rw [Nat.mul_add,Nat.mul_one] at last
-    omega
+    omega_using [hj, last]
   refine ⟨⟨h.exponent.fits,?_,?_⟩,⟨h.entries.positive,h.entries.fits,?_,?_⟩,
     h.sourceSeparate,h.tableSeparate⟩
   · rw [rest.rd,rest.wr]; exact h.exponent.readable
   · intro j hj
-    exact (frame.bytes h.sourceSeparate (by change bs.length≤2^64; have := h.exponent.fits; omega) hj).trans (h.exponent.bytes j hj)
+    exact (frame.bytes h.sourceSeparate (by change bs.length≤2^64; have := h.exponent.fits; omega_using [this]) hj).trans (h.exponent.bytes j hj)
   · rw [rest.rd,rest.wr]; exact h.entries.readable
   · intro digit hd
     rw [←h.entries.values digit hd]
@@ -53,7 +53,7 @@ theorem ReadOnly.after_frame {source table : BitVec 32} {w M g N : Nat} {bs : Li
     exact Offset.contains_base _ (entryFits digit hd j hj) (by
       have := entryFits digit hd j hj
       have := h.entries.fits
-      omega)
+      omega_arith)
 
 end VG.Proof.Bignum.Arm.CombExp
 end

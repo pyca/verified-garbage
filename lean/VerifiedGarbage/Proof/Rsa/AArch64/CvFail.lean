@@ -31,14 +31,14 @@ theorem zeroOut_ok {s : State} {B : Addr} {Z : Nat} (hs : Scr s B Z) (h0 : s.gpr
       (∀ i < len, t.mem (op + BitVec.ofNat 64 i) = 0) ∧
       (∀ x, (∀ j < len, x ≠ op + BitVec.ofNat 64 j) → t.mem x = s.mem x) ∧ Keep [.x1, .x2, .x3] s t := by
   have hn := hs.nowrap
-  have hl : ∀ i < 32, InRegions (s.rd ++ s.wr) (off B (8 * i)) 8 := fun i hi => hs.ld (by omega)
+  have hl : ∀ i < 32, InRegions (s.rd ++ s.wr) (off B (8 * i)) 8 := fun i hi => hs.ld (by omega_using [hZ, hi])
   unfold zeroOut
   refine WP.seq (WP.mono (WP.keep [.x1, .x2, .x3] (Q := fun t => t.gpr .x1 = op + BitVec.ofNat 64 0 ∧
       t.gpr .x2 = BitVec.ofNat 64 len ∧ t.gpr .x3 = 0 ∧ t.mem = s.mem) (by
     brun [h0, hdr_enc hP, hdr_enc hL, hl sPtr hP, hl sLen hL, hO, hK]) rfl rfl rfl)
     fun s₁ ⟨⟨h1, h2, h3, hm₁⟩, k₁⟩ => ?_)
-  refine WP.mono (wp_countdown (N := len) (by omega) (by omega) (BInv s₁ op)
-    (fun j hj t hI _ => bStep_ok (by omega) h3 (fun i hi => by rw [k₁.wr]; exact o.wr i hi) hj hI)
+  refine WP.mono (wp_countdown (N := len) (by omega_using [hk']) (by omega_using [hk1]) (BInv s₁ op)
+    (fun j hj t hI _ => bStep_ok (by omega_using [hk']) h3 (fun i hi => by rw [k₁.wr]; exact o.wr i hi) hj hI)
     ⟨Keep.refl _ _, h1, fun i hi => absurd hi (Nat.not_lt_zero _), fun _ _ => rfl⟩ h2) fun t hI => ?_
   exact ⟨hI.bytes, fun x hx => by rw [hI.frame x hx, hm₁], (k₁.trans hI.keep).mono (by decide)⟩
 
@@ -60,7 +60,7 @@ theorem cvFail_ok {s : State} {B : Addr} {Z : Nat} (hs : Scr s B Z) (h0 : s.gpr 
   have fw : ∀ {m m' : Mem} {op : Addr} {len : Nat}, (∀ j < len, Z ≤ ofs B (op + BitVec.ofNat 64 j)) →
       (∀ x, (∀ j < len, x ≠ op + BitVec.ofNat 64 j) → m' x = m x) → ∀ i < 32, word m' B (8 * i) = word m B (8 * i) :=
     fun hsep hx i hi => (frm_scr hsep hx).word_eq (fun r hr => by
-      rw [List.mem_singleton.mp hr]; exact Or.inl (by omega)) (by omega)
+      rw [List.mem_singleton.mp hr]; exact Or.inl (by omega)) (by omega_using [hi])
   unfold fail
   simp only [seqs]
   refine WP.seq (WP.mono (zeroOut_ok hs h0 hZ (by decide) (by decide) ha.dp ha.pl hpl1 hpl2 oDp)

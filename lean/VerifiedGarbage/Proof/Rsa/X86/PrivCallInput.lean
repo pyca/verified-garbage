@@ -22,22 +22,22 @@ theorem PrivContext.callTemporary {g : PrivGeometry} {bs : Fin 8 → List Byte} 
     (h : PrivContext g bs s) :
     Spec.Rsa.bytesAt s.callEntry.mem (byteAddr g.temporary) g.length =
       Spec.Rsa.bytesAt s.mem (byteAddr g.temporary) g.length := by
-  apply rsa_bytes_frame h.callFrame (by have := h.valid.maxLength; omega)
+  apply rsa_bytes_frame h.callFrame (by have := h.valid.maxLength; omega_using [this])
   intro r hr
   obtain rfl := List.mem_singleton.mp hr
   apply (h.valid.calleeInner.sub_right ?_).symm
   rw [PrivGeometry.temporary, h.valid.offsetAddr (by decide)]
-  exact Offset.sub_base _ (by have := h.valid.maxLength; simp only [candidateOffset, VG.Impl.Rsa.X86.PrivChecked.frameBytes]; omega)
+  exact Offset.sub_base _ (by have := h.valid.maxLength; simp only [candidateOffset, VG.Impl.Rsa.X86.PrivChecked.frameBytes]; omega_using [this])
 
 theorem PrivContext.callPrecomputation {g : PrivGeometry} {bs : Fin 8 → List Byte} {s : State}
     (h : PrivContext g bs s) :
     Spec.Rsa.wordsAt s.callEntry.mem (byteAddr g.precomputation) (2 * Spec.Rsa.modulusWords g.length) =
       Spec.Rsa.wordsAt s.mem (byteAddr g.precomputation) (2 * Spec.Rsa.modulusWords g.length) := by
-  apply wordsAt_frame h.callFrame (by have := h.valid.maxLength; simp only [Spec.Rsa.modulusWords]; omega)
+  apply wordsAt_frame h.callFrame (by have := h.valid.maxLength; simp only [Spec.Rsa.modulusWords]; omega_using [this])
   intro r hr
   obtain rfl := List.mem_singleton.mp hr
   apply (h.valid.calleeInner.sub_right ?_).symm
   rw [PrivGeometry.precomputation, h.valid.offsetAddr (by decide)]
-  exact Offset.sub_base _ (by have := h.valid.maxLength; simp only [precomputeOffset, VG.Impl.Rsa.X86.PrivChecked.frameBytes, Spec.Rsa.modulusWords]; omega)
+  exact Offset.sub_base _ (by have := h.valid.maxLength; simp only [precomputeOffset, VG.Impl.Rsa.X86.PrivChecked.frameBytes, Spec.Rsa.modulusWords]; omega_using [this])
 
 end VG.Proof.Rsa.X86.PrivChecked

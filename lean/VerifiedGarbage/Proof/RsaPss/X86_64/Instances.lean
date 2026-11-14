@@ -88,21 +88,21 @@ theorem mdFns_safe {vs : List MdHash} (hs : ∀ w ∈ vs, Shape w) : MdFnsSafe (
 theorem hFns_safe (vs : List MdHash) : FnsSafe (HashTable.X86_64.fnsOf vs) where
   init q hq := by
     obtain ⟨w, -, rfl⟩ := List.mem_map.mp hq
-    exact ⟨allSafe w.K.iSp w.K.iMx, by dsimp only; rw [w.K.iXD]; omega⟩
+    exact ⟨allSafe w.K.iSp w.K.iMx, by dsimp only; rw [w.K.iXD]; omega_using []⟩
   upd q hq := by
     obtain ⟨w, -, rfl⟩ := List.mem_map.mp hq
     refine ⟨allSafe (spAll_of (RsaOaep.X86_64.SpSafe.of_noSp w.ok.updSp)) w.ok.updMx, ?_⟩
     dsimp only
     rw [x86_64Depth_noSp w.ok.updSp]
     have := w.ok.updDepth
-    omega
+    omega_using [this]
   fin q hq := by
     obtain ⟨w, -, rfl⟩ := List.mem_map.mp hq
     refine ⟨allSafe (spAll_of (RsaOaep.X86_64.SpSafe.of_noSp w.ok.finSp)) w.ok.finMx, ?_⟩
     dsimp only
     rw [x86_64Depth_noSp w.ok.finSp]
     have := w.ok.finDepth
-    omega
+    omega_using [this]
 
 theorem link_valid {H : Impl.Pbkdf2.Md.X86_64.Hash} (hH : HashOK H) (l : MgfLink H hH) : Proof.Mgf1.Valid l.G :=
   ⟨by rw [l.len]; exact hH.hD0, fun x => by

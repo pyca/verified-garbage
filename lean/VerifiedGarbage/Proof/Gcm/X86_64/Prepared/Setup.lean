@@ -30,25 +30,25 @@ theorem cvtRun_ok {s₀ : State} {lo np : Nat} (hp : SPrePrepared s₀ lo np) (h
         YFrame cvtRegs s s'
   | 0, _, s, _, _, _, _ => by
     rw [List.range_zero, List.flatMap_nil]
-    exact WP.block_nil ⟨fun k hk => absurd hk (by omega), YFrame.refl _ _⟩
+    exact WP.block_nil ⟨fun k hk => absurd hk (by omega_using []), YFrame.refl _ _⟩
   | n+1, hn, s, hdi, hm, hrd, hwr => by
     rw [List.range_succ, List.flatMap_append, WP.block_append_iff]
-    refine WP.mono (cvtRun_ok hp h8 n (by omega) s hdi hm hrd hwr) fun s₁ ⟨p₁, f₁⟩ => ?_
+    refine WP.mono (cvtRun_ok hp h8 n (by omega_using [hn]) s hdi hm hrd hwr) fun s₁ ⟨p₁, f₁⟩ => ?_
     simp only [List.flatMap_cons, List.flatMap_nil, List.append_nil]
     have hin : InRegions (s₁.rd ++ s₁.wr)
         (s₁.gpr .rdi + BitVec.ofInt 64 ((240 + 16*(15-2*n) : Nat) : Int)) 32 := by
       rw [f₁.rd, f₁.wr, f₁.gpr, hrd, hwr, hdi]
-      exact in_sub_int hp.k_in (by omega)
+      exact in_sub_int hp.k_in (by omega_using [])
     refine WP.mono (loadPair_ok (15-2*n) (preg16 n) s₁ hin) fun s' ⟨v, z⟩ => ?_
     have f := z.yframe
     refine ⟨fun k hk l hl => ?_, f₁.trans (f.mono fun r hr => ?_)⟩
     · by_cases hkn : k = n
       · subst k
         rw [v l hl, f₁.mem, hm, f₁.gpr, hdi,
-          pair_values hp.pow (by omega) (by omega) hl]
-        congr 2; omega
-      · rw [f.lane _ (fun h => hkn (preg16_inj k (by omega) n (by omega) (List.mem_singleton.mp h))) l hl]
-        exact p₁ k (by omega) l hl
+          pair_values hp.pow (by omega_using [h8]) (by omega_using [hn]) hl]
+        congr 2; omega_using [hn]
+      · rw [f.lane _ (fun h => hkn (preg16_inj k (by omega_using [hn, hk]) n (by omega_using [hn]) (List.mem_singleton.mp h))) l hl]
+        exact p₁ k (by omega_using [hk, hkn]) l hl
     · have e := List.mem_singleton.mp hr
       subst r
       exact preg16_mem n
@@ -94,7 +94,7 @@ theorem setupP_ok {s₀ : State} (hp : SPrePrepared s₀) :
   rw [WP.block_append_iff]
   exact WP.mono (setupT_ok hp.base l0 l1 g₁ m₁ rd₁ wr₁) fun _ hR => WP.mono (StitchZ.setupZ_ok hR) fun _ hR' =>
     ⟨_, hR', fun k hk l hl => by
-      rw [show 16 - 4 * k - l = 16 - 2 * (2 * k + l / 2) - l % 2 by omega]
-      exact pw _ (by omega) _ (by omega)⟩
+      rw [show 16 - 4 * k - l = 16 - 2 * (2 * k + l / 2) - l % 2 by omega_using []]
+      exact pw _ (by omega_using [hk, hl]) _ (by omega_using [])⟩
 
 end VG.Proof.Gcm.X86_64.StitchZR

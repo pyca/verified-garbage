@@ -38,12 +38,12 @@ theorem key_body_correct (s : State) (hs : keyContract.pre s) :
   have writes : ∀ i < 4, InRegions s.wr (addr32 (arg s 4) + BitVec.ofNat 64 (4 * i)) 4 := by
     intro i hi
     rw [hwr]
-    exact ⟨⟨addr32 (arg s 4), 512⟩, by simp, Offset.contains_base _ (by omega) (by omega)⟩
+    exact ⟨⟨addr32 (arg s 4), 512⟩, by simp, Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi])⟩
   have argRead (st : State) (rd : st.rd = s.rd) (wr : st.wr = s.wr)
       (sp : st.gpr .esp = s.gpr .esp) : ∀ i < 5, InRegions (st.rd ++ st.wr) (argAddr st i) 4 := by
     intro i hi
     have fit : (st.gpr .esp).toNat + 24 ≤ 2 ^ 32 := by rw [sp]; exact spFit
-    rw [argAddr_eq st i (by omega), sp, rd, wr, hrd, hwr]
+    rw [argAddr_eq st i (by omega_using [hi, fit]), sp, rd, wr, hrd, hwr]
     exact ⟨⟨argAddr s 0, 20⟩, by simp, argContains s spFit i hi⟩
   rw [expandKey]
   apply WP.seq
@@ -53,7 +53,7 @@ theorem key_body_correct (s : State) (hs : keyContract.pre s) :
   apply WP.seq
   rw [WP.block_append_iff, keySave_eq]
   apply WP.mono (saveCode_ok s₀ .eax savedReg 4 (by decide)
-    (by rw [scratch₀]; omega) (by rw [keep₀.wr, scratch₀]; exact writes))
+    (by rw [scratch₀]; omega_using [scratchFit]) (by rw [keep₀.wr, scratch₀]; exact writes))
   intro s₁ h₁
   have sp₁ : s₁.gpr .esp = s.gpr .esp := by rw [h₁.1]; exact gpr₀ .esp (by decide)
   have savedFrame : Frame [⟨addr32 (arg s 4), 512⟩] s.mem s₁.mem := by
@@ -78,17 +78,17 @@ theorem key_body_correct (s : State) (hs : keyContract.pre s) :
   have source₂ : Spec.Rc2.bytesAt s₂.mem (addr32 (s₂.gpr .ebp)) (arg s 1).toNat =
       Spec.Rc2.bytesAt s.mem (addr32 (arg s 0)) (arg s 1).toNat := by
     rw [key₂]
-    exact bytesAt_frame scratchFrame (by simpa using keyScratch) (by omega)
+    exact bytesAt_frame scratchFrame (by simpa using keyScratch) (by omega_using [])
   have read₂ : ∀ i < (arg s 1).toNat,
       InRegions (s₂.rd ++ s₂.wr) (addr32 (s₂.gpr .ebp) + BitVec.ofNat 64 i) 1 := by
     intro i hi
     rw [rd₂, wr₂, key₂, hrd, hwr]
     exact ⟨⟨addr32 (arg s 0), (arg s 1).toNat⟩, by simp,
-      Offset.contains_base _ (by omega) (by omega)⟩
+      Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi])⟩
   have write₂ : ∀ i < 128, InRegions s₂.wr (addr32 (s₂.gpr .edi) + BitVec.ofNat 64 i) 1 := by
     intro i hi
     rw [wr₂, ptr₂, hwr]
-    exact ⟨⟨addr32 (arg s 3), 128⟩, by simp, Offset.contains_base _ (by omega) (by omega)⟩
+    exact ⟨⟨addr32 (arg s 3), 128⟩, by simp, Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi])⟩
   have lanes₂ : InRegions s₂.wr (addr32 (s₂.gpr .edi)) 16 := by
     rw [wr₂, ptr₂, hwr]
     exact ⟨⟨addr32 (arg s 3), 128⟩, by simp, by simp [Region.Contains]⟩
@@ -140,20 +140,20 @@ theorem key_body_correct (s : State) (hs : keyContract.pre s) :
     intro i hi
     rw [rd₅, wr₅, base₅, hrd, hwr]
     have bound := List.mem_range.mp hi
-    exact ⟨⟨addr32 (arg s 4), 512⟩, by simp, Offset.contains_base _ (by omega) (by omega)⟩
+    exact ⟨⟨addr32 (arg s 4), 512⟩, by simp, Offset.contains_base _ (by omega_using [bound]) (by omega_using [bound])⟩
   have stored : ∀ i ∈ List.range 4,
       s₅.mem.readW (addr32 (s₅.gpr .eax) + BitVec.ofNat 64 (4 * i)) 32 = s.gpr (savedReg i) := by
     intro i hi
     have bound := List.mem_range.mp hi
     rw [keep₅.mem, base₅, outFrame.readW (r := ⟨addr32 (arg s 4), 512⟩)
-      (Offset.contains_base _ (by omega) (by omega)) (by simpa using outScratch.symm) (by decide),
+      (Offset.contains_base _ (by omega_using [bound]) (by omega_using [bound])) (by simpa using outScratch.symm) (by decide),
       keep₂.mem, h₁.2.2.2, scratch₀]
     rw [saveMem_read _ _ _ 4 (by decide) i bound]
     exact gpr₀ _ (by
       have sep : ∀ i ∈ List.range 4, savedReg i ≠ .eax := by decide
       exact sep i hi)
   rw [keyRestore_eq]
-  apply WP.mono (restoreCode_ok s₅ .eax savedReg (List.range 4) s.gpr (by rw [base₅]; omega)
+  apply WP.mono (restoreCode_ok s₅ .eax savedReg (List.range 4) s.gpr (by rw [base₅]; omega_using [scratchFit])
     (by decide) (by decide) scratchRead stored)
   intro s₆ h₆
   constructor

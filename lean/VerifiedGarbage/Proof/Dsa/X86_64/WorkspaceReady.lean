@@ -23,11 +23,11 @@ theorem workspace_field {B : Addr} {wp wq : Nat} {mem mem' : Mem}
   simp only [workspaceRanges, initRanges, List.cons_append, List.nil_append,
     List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl | rfl
-  · right; omega
-  · right; omega
+  · right; omega_using [hb]
+  · right; omega_using [hb]
   · exact Or.inl hb.2
-  · right; omega
-  · left; omega
+  · right; omega_using [hb]
+  · left; omega_using [hb, hpq]
 
 theorem workspace_outside {L : ExecutionLayout} {mem mem' : Mem}
     (hf : Frm L.base (workspaceRanges L.pWords L.qWords) mem mem') :
@@ -42,7 +42,7 @@ theorem workspace_outside {L : ExecutionLayout} {mem mem' : Mem}
   intro range hr
   simp only [workspaceRanges, initRanges, List.cons_append, List.nil_append,
     List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl | rfl | rfl <;> simp only at * <;> omega
+  rcases hr with rfl | rfl | rfl | rfl | rfl <;> simp only at * <;> omega_arith
 
 theorem workspacesReady_ok {L : ExecutionLayout} {s : State} {pb qb : List Byte}
     (hs : Scr s L.base usedBytes) (hdi : s.gpr .rdi = L.base)

@@ -6,6 +6,7 @@ public import VerifiedGarbage.Proof.AesEcb.Wipe
 public import VerifiedGarbage.Proof.Framework.PostMono
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.Omega
 
 -- separate module: every target's CBC proofs share it
 
@@ -41,7 +42,7 @@ theorem blocksAt_congr {m₁ m₂ : Mem} {p : Addr} {n : Nat}
   refine List.map_congr_left fun j hj => bytesAt_congr fun i hi => ?_
   have hj := List.mem_range.mp hj
   rw [BitVec.add_assoc, ← BitVec.ofNat_add]
-  exact h _ (by omega)
+  exact h _ (by omega_using [hi, hj])
 
 /-! ## The contracts -/
 
@@ -108,7 +109,7 @@ theorem encPost_local (pb : Nat) : ∀ vs m₁ m₂ m' x, vs.length = (aesSig.wo
       (encrypt (aes key) (Spec.Aes.bytesAt m₂ c 16) (blocksAt m₂ d (e.setWidth pb).toNat))
   have hd := agree_of hb.2.2.1
   rw [bytesAt_congr (agree_of hb.2.1),
-    blocksAt_congr fun i hi => hd i (by have := n_le (pb := pb) e; omega)]
+    blocksAt_congr fun i hi => hd i (by have := n_le (pb := pb) e; omega_using [hi, this])]
   exact h key ((keySchedule_congr (agree_of hb.1)).mp hk)
 
 theorem decPost_local (pb : Nat) : ∀ vs m₁ m₂ m' x, vs.length = (aesSig.words pb).length →
@@ -125,7 +126,7 @@ theorem decPost_local (pb : Nat) : ∀ vs m₁ m₂ m' x, vs.length = (aesSig.wo
     Spec.Aes.bytesAt m' c 16 = next (Spec.Aes.bytesAt m₂ c 16) (blocksAt m₂ d (e.setWidth pb).toNat)
   have hd := agree_of hb.2.2.1
   rw [bytesAt_congr (agree_of hb.2.1),
-    blocksAt_congr fun i hi => hd i (by have := n_le (pb := pb) e; omega)]
+    blocksAt_congr fun i hi => hd i (by have := n_le (pb := pb) e; omega_using [hi, this])]
   exact h key ((keySchedule_congr (agree_of hb.1)).mp hk)
 
 theorem encPost_out (pb : Nat) : ∀ vs m m₁ m₂ x, vs.length = (aesSig.words pb).length →
@@ -147,7 +148,7 @@ theorem encPost_out (pb : Nat) : ∀ vs m m₁ m₂ x, vs.length = (aesSig.words
       (encrypt (aes key) (Spec.Aes.bytesAt m c 16) (blocksAt m d (e.setWidth pb).toNat))
   have hd := agree_of (hb.2.2.1 hpw.2.2.1)
   rw [bytesAt_congr (agree_of (hb.2.1 hpw.2.1.2)),
-    blocksAt_congr fun i hi => hd i (by have := n_le (pb := pb) e; omega)]
+    blocksAt_congr fun i hi => hd i (by have := n_le (pb := pb) e; omega_using [hi, this])]
   exact h key hk
 
 theorem decPost_out (pb : Nat) : ∀ vs m m₁ m₂ x, vs.length = (aesSig.words pb).length →
@@ -168,7 +169,7 @@ theorem decPost_out (pb : Nat) : ∀ vs m m₁ m₂ x, vs.length = (aesSig.words
     Spec.Aes.bytesAt m₂ c 16 = next (Spec.Aes.bytesAt m c 16) (blocksAt m d (e.setWidth pb).toNat)
   have hd := agree_of (hb.2.2.1 hpw.2.2.1)
   rw [bytesAt_congr (agree_of (hb.2.1 hpw.2.1.2)),
-    blocksAt_congr fun i hi => hd i (by have := n_le (pb := pb) e; omega)]
+    blocksAt_congr fun i hi => hd i (by have := n_le (pb := pb) e; omega_using [hi, this])]
   exact h key hk
 
 /-- With the whole of `scratch` zero on return, `scrubbedPost`. -/
@@ -320,17 +321,17 @@ theorem tailPost_out (pb : Nat) (w : Nat) (P : aesSig.Post pb)
         Curry.apply (aesSig.words pb) (tailPost pb w P) vs m m₂ x := by
   intro vs m m₁ m₂ x hlen hpw hag h
   have hP' := hP vs m m₁ m₂ x hlen hpw fun b hb hbA a ha =>
-    hag b hb a ha fun hp => hbA a ha (Region.sub_prefix (by simp only [Elem.size]; omega) a hp)
+    hag b hb a ha fun hp => hbA a ha (Region.sub_prefix (by simp only [Elem.size]; omega_using [hw]) a hp)
   obtain ⟨a, b, c, d, e, f, rfl⟩ := vs_eq hlen
   have hs := hag _ (by rw [bufs_eq]; exact List.mem_cons_of_mem _ (List.mem_cons_of_mem _
     (List.mem_cons_of_mem _ (List.mem_singleton_self _))))
   refine ⟨hP' h.1, fun i hi hl => ?_⟩
-  have hi64 : i < 2 ^ 64 := by omega
+  have hi64 : i < 2 ^ 64 := by omega_using [hl]
   rw [← h.2 i hi hl]
-  refine (hs _ (Offset.contains_base _ (by omega) hi64) fun hc => ?_).symm
+  refine (hs _ (Offset.contains_base _ (by omega_using [hl]) hi64) fun hc => ?_).symm
   simp only [Region.Contains, List.getD_cons_succ, List.getD_cons_zero] at hc
   rw [Mem.sub_ofNat_toNat f hi64] at hc
-  omega
+  omega_using [hi, hc]
 
 /-- With `scratch` unchanged from `w` on and zero before, `scrubbedPost`. -/
 theorem wipedTail (pb : Nat) (w : Nat) (P : aesSig.Post pb) : ∀ vs m m' x,
@@ -345,7 +346,7 @@ theorem wipedTail (pb : Nat) (w : Nat) (P : aesSig.Post pb) : ∀ vs m m' x,
   replace hz : Spec.Zeroize.bytesAt m' f w = Spec.Zeroize.zeros w := hz
   refine ⟨h1, fun y hy => ?_⟩
   replace hy : (⟨f, 2176⟩ : Region).Contains y 1 := hy
-  have hi : (y - f).toNat < 2176 := by simp only [Region.Contains] at hy; omega
+  have hi : (y - f).toNat < 2176 := by simp only [Region.Contains] at hy; omega_using [hy]
   have hy' : f + BitVec.ofNat 64 (y - f).toNat = y := by
     rw [BitVec.ofNat_toNat, BitVec.setWidth_eq, BitVec.add_comm, BitVec.sub_add_cancel]
   by_cases hl : (y - f).toNat < w
@@ -370,7 +371,7 @@ theorem scrubbed_of_prefix' {m m' : Mem} {p : Addr} {w len : Nat}
       m' (p + BitVec.ofNat 64 i) = m (p + BitVec.ofNat 64 i) ∨ m' (p + BitVec.ofNat 64 i) = 0) :
     Spec.Zeroize.scrubbed m m' p len := by
   intro a ha
-  have hi : (a - p).toNat < len := by simp only [Region.Contains] at ha; omega
+  have hi : (a - p).toNat < len := by simp only [Region.Contains] at ha; omega_using [ha]
   have ea : p + BitVec.ofNat 64 (a - p).toNat = a := by
     rw [BitVec.ofNat_toNat, BitVec.setWidth_eq, BitVec.add_comm, BitVec.sub_add_cancel]
   by_cases hw : (a - p).toNat < w
@@ -404,7 +405,7 @@ theorem tailZPost_local (pb : Nat) {P : aesSig.Post pb} (w : Nat)
   refine ⟨hP [a, b, c, d, e, f] m₁ m₂ m' x hlen hb hp, fun i h1 h2 => ?_⟩
   rw [bufs_eq] at hb
   simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq] at hb
-  have e₂ := (agree_of hb.2.2.2 i (by omega)).symm
+  have e₂ := (agree_of hb.2.2.2 i (by omega_using [h2])).symm
   show m' (f + BitVec.ofNat 64 i) = m₂ (f + BitVec.ofNat 64 i) ∨ m' (f + BitVec.ofNat 64 i) = 0
   rw [← e₂]
   exact ht i h1 h2
@@ -429,10 +430,10 @@ theorem tailZPost_out (pb : Nat) {P : aesSig.Post pb} {w : Nat} (hw : w ≤ 2176
   refine ⟨hP [a, b, c, d, e, f] m m₁ m₂ x hlen hpw
     (fun r hr hrd y hy => hb r hr y hy fun hc => hrd y hy (Region.sub_prefix hw y hc)) hp, fun i h1 h2 => ?_⟩
   have hc : (⟨f, 2176⟩ : Region).Contains (f + BitVec.ofNat 64 i) 1 :=
-    Offset.contains_base _ (by omega) (by omega)
+    Offset.contains_base _ (by omega_using [h2]) (by omega_using [h2])
   have hn : ¬ (⟨f, w⟩ : Region).Contains (f + BitVec.ofNat 64 i) 1 := by
     simp only [Region.Contains, BitVec.add_comm f, BitVec.add_sub_cancel, BitVec.toNat_ofNat]
-    omega
+    omega_using [h1, h2]
   show m₂ (f + BitVec.ofNat 64 i) = m (f + BitVec.ofNat 64 i) ∨ m₂ (f + BitVec.ofNat 64 i) = 0
   rw [← hb (⟨f, 2176⟩, true) (by rw [bufs_eq]; simp) _ hc hn]
   exact ht i h1 h2

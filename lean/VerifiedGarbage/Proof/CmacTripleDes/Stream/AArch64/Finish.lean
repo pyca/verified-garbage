@@ -67,7 +67,7 @@ theorem finishPre_ok {s₀ : State} {St O S : Addr} (hp : HPre s₀ St O S) :
       s₁.sp = s₀.sp ∧ s₁.mem = copyCv s₀.mem O St ∧ s₁.rd = s₀.rd ∧ s₁.wr = s₀.wr := by
   have hw := hp.wSt
   have r₁ : InRegions (s₀.rd ++ s₀.wr) (s₀.gpr .x0 + BitVec.ofNat 64 400) 8 := by
-    rw [hp.rd, hp.wr, hp.x0]; exact ⟨⟨St, 416⟩, by simp, Offset.contains_base _ (by decide) (by omega)⟩
+    rw [hp.rd, hp.wr, hp.x0]; exact ⟨⟨St, 416⟩, by simp, Offset.contains_base _ (by decide) (by omega_using [])⟩
   have w₁ : InRegions s₀.wr (s₀.gpr .x2 + BitVec.ofNat 64 0) 8 := by
     rw [hp.wr, hp.x2, BitVec.add_zero]; exact ⟨⟨O, 8⟩, by simp, Region.contains_self _ _⟩
   refine ⟨_, by
@@ -95,7 +95,7 @@ theorem HPre.fargs {s₀ s : State} {St O S : Addr} {L : Nat} (hp : HPre s₀ St
     (x3 : s.gpr .x3 = BitVec.ofNat 64 L) (x4 : s.gpr .x4 = S) (rd : s.rd = s₀.rd) (wr : s.wr = s₀.wr) :
     FArgs s St O (St + BitVec.ofNat 64 408) S L := by
   have hw := hp.wSt
-  have pSt : Region.Sub ⟨St + BitVec.ofNat 64 408, L⟩ ⟨St, 416⟩ := Offset.sub_base St (by omega)
+  have pSt : Region.Sub ⟨St + BitVec.ofNat 64 408, L⟩ ⟨St, 416⟩ := Offset.sub_base St (by omega_using [hL])
   exact
   { x0 := x0, x1 := x1, x2 := x2, x3 := x3, x4 := x4, len := hL
     kst := hp.st_o.sub_left (Region.sub_prefix (by decide))
@@ -103,9 +103,9 @@ theorem HPre.fargs {s₀ s : State} {St O S : Addr} {L : Nat} (hp : HPre s₀ St
     pst := hp.st_o.sub_left pSt
     ps := hp.st_s.sub_left pSt
     sts := hp.o_s
-    wrapK := by omega
+    wrapK := by omega_using [hw]
     wrapSt := hp.wO
-    wrapP := by rw [toNat_add_lt St hw (by decide)]; omega
+    wrapP := by rw [toNat_add_lt St hw (by decide)]; omega_using [hL, hw]
     wrapS := hp.wS
     reads := by
       rw [rd, wr, hp.rd, hp.wr]
@@ -113,7 +113,7 @@ theorem HPre.fargs {s₀ s : State} {St O S : Addr} {L : Nat} (hp : HPre s₀ St
       simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl
       · exact ⟨⟨St, 416⟩, by simp, 0, by simp, by simp⟩
-      · exact ⟨⟨St, 416⟩, by simp, 408, rfl, by simp; omega⟩
+      · exact ⟨⟨St, 416⟩, by simp, 408, rfl, by simp; omega_using [hL]⟩
       · exact ⟨⟨O, 8⟩, by simp, 0, by simp, by simp⟩
       · exact ⟨⟨S, 640⟩, by simp, 0, by simp, by simp⟩
     writes := by

@@ -126,7 +126,7 @@ theorem within_base (p : Addr) {n k : Nat} (h : n ≤ k) : Within ⟨p, n⟩ ⟨
 /-- A region of the frame's local variable space. -/
 theorem within_fr (B : Addr) {d n : Nat} (h₁ : 128 ≤ d) (h₂ : d + n ≤ 688) :
     Within ⟨B + BitVec.ofNat 64 d, n⟩ ⟨B + BitVec.ofNat 64 128, 560⟩ :=
-  ⟨d - 128, by rw [BitVec.add_assoc, BitVec.ofNat_add_ofNat, Nat.add_sub_cancel' h₁], by simp only; omega⟩
+  ⟨d - 128, by rw [BitVec.add_assoc, BitVec.ofNat_add_ofNat, Nat.add_sub_cancel' h₁], by simp only; omega_using [h₁, h₂]⟩
 
 theorem covers_of {rs rs' : List Region} (h : ∀ r ∈ rs, ∃ R ∈ rs', Within r R) : Covers rs rs' :=
   Covers.of_sub fun r hr => by
@@ -174,27 +174,27 @@ theorem stk_OUT (h : L.Ok) {d n : Nat} (h₁ : d + n ≤ 736) :
 /-- The 96 bytes the calls use, apart from `scratch`. -/
 theorem low_scr (h : L.Ok) {e k : Nat} (h₂ : e + k ≤ 8192) :
     Region.Disjoint ⟨L.B, 96⟩ ⟨L.scr + BitVec.ofNat 64 e, k⟩ :=
-  (h.kc.sub_left (Region.sub_prefix (by omega))).sub_right (Offset.sub_base _ h₂)
+  (h.kc.sub_left (Region.sub_prefix (by omega_using []))).sub_right (Offset.sub_base _ h₂)
 
 /-- The frame's pointers are apart from every safe region. -/
 theorem ptrs_safe (h : L.Ok) {r : Region} (hs : Safe L r) :
     Region.Disjoint ⟨L.B + BitVec.ofNat 64 272, 56⟩ r := by
   have := h.nB
   rcases hs with hs | hs | hs | hs
-  · exact (h.stk_OUT (by omega)).sub_right hs
-  · exact (h.stk_SCR (by omega)).sub_right hs
-  · exact (Offset.disjoint_base _ (by omega) (by omega)).sub_right hs
-  · exact (Offset.disjoint _ (by omega) (by omega) (by omega)).sub_right hs
+  · exact (h.stk_OUT (by omega_using [])).sub_right hs
+  · exact (h.stk_SCR (by omega_using [])).sub_right hs
+  · exact (Offset.disjoint_base _ (by omega_using []) (by omega_using [])).sub_right hs
+  · exact (Offset.disjoint _ (by omega_using []) (by omega_using []) (by omega_using [])).sub_right hs
 
 /-- Our return address is apart from every safe region. -/
 theorem lr_safe (h : L.Ok) {r : Region} (hs : Safe L r) :
     Region.Disjoint ⟨L.B + BitVec.ofNat 64 720, 16⟩ r := by
   have := h.nB
   rcases hs with hs | hs | hs | hs
-  · exact (h.stk_OUT (by omega)).sub_right hs
-  · exact (h.stk_SCR (by omega)).sub_right hs
-  · exact (Offset.disjoint_base _ (by omega) (by omega)).sub_right hs
-  · exact (Offset.disjoint _ (by omega) (by omega) (by omega)).sub_right hs
+  · exact (h.stk_OUT (by omega_using [])).sub_right hs
+  · exact (h.stk_SCR (by omega_using [])).sub_right hs
+  · exact (Offset.disjoint_base _ (by omega_using []) (by omega_using [])).sub_right hs
+  · exact (Offset.disjoint _ (by omega_using []) (by omega_using []) (by omega_using [])).sub_right hs
 
 end Lay.Ok
 
@@ -229,8 +229,8 @@ theorem Safe.sub_frame {dn : Nat} {L : Lay dn} {r : Region} (h : Safe L r) :
   rcases h with h | h | h | h
   · exact ⟨_, by simp, h⟩
   · exact ⟨_, by simp, h⟩
-  · exact ⟨L.STK, by simp, fun a ha => Region.sub_prefix (base := L.B) (by omega) a (h a ha)⟩
-  · exact ⟨L.STK, by simp, fun a ha => Offset.sub_base L.B (by omega) a (h a ha)⟩
+  · exact ⟨L.STK, by simp, fun a ha => Region.sub_prefix (base := L.B) (by omega_using []) a (h a ha)⟩
+  · exact ⟨L.STK, by simp, fun a ha => Offset.sub_base L.B (by omega_using []) a (h a ha)⟩
 
 namespace Ctx
 
@@ -246,15 +246,15 @@ theorem keep (hL : L.Ok) (hc : Ctx L g lr m₀ t) (hrd : t'.rd = t.rd) (hwr : t'
   have keep : ∀ d, 272 ≤ d → d + 8 ≤ 328 →
       t'.mem.readW (L.B + BitVec.ofNat 64 d) 64 = t.mem.readW (L.B + BitVec.ofNat 64 d) 64 :=
     fun d h₁ h₂ => hf.readW (r := ⟨L.B + BitVec.ofNat 64 272, 56⟩)
-      (Offset.contains _ h₁ (by omega) (by omega)) (fun r hr => hL.ptrs_safe (hs r hr)) (by decide)
+      (Offset.contains _ h₁ (by omega_using [h₂]) (by omega_using [])) (fun r hr => hL.ptrs_safe (hs r hr)) (by decide)
   have keepLr : t'.mem.readW (L.B + BitVec.ofNat 64 720) 64 = t.mem.readW (L.B + BitVec.ofNat 64 720) 64 :=
     hf.readW (r := ⟨L.B + BitVec.ofNat 64 720, 16⟩)
-      (Offset.contains _ (Nat.le_refl _) (by omega) (by omega)) (fun r hr => hL.lr_safe (hs r hr)) (by decide)
+      (Offset.contains _ (Nat.le_refl _) (by omega_using []) (by omega_using [])) (fun r hr => hL.lr_safe (hs r hr)) (by decide)
   exact ⟨hrd.trans hc.rd, hwr.trans hc.wr, hsp.trans hc.sp, fun r hr => (hcs r hr).trans (hc.cs r hr),
-    (keep 272 (by omega) (by omega)).trans hc.pScr, (keep 280 (by omega) (by omega)).trans hc.pDg,
-    (keep 288 (by omega) (by omega)).trans hc.pD, (keep 296 (by omega) (by omega)).trans hc.pOut,
-    (keep 304 (by omega) (by omega)).trans hc.pDl, (keep 312 (by omega) (by omega)).trans hc.pBl,
-    (keep 320 (by omega) (by omega)).trans hc.pTab,
+    (keep 272 (by omega_using []) (by omega_using [])).trans hc.pScr, (keep 280 (by omega_using []) (by omega_using [])).trans hc.pDg,
+    (keep 288 (by omega_using []) (by omega_using [])).trans hc.pD, (keep 296 (by omega_using []) (by omega_using [])).trans hc.pOut,
+    (keep 304 (by omega_using []) (by omega_using [])).trans hc.pDl, (keep 312 (by omega_using []) (by omega_using [])).trans hc.pBl,
+    (keep 320 (by omega_using []) (by omega_using [])).trans hc.pTab,
     keepLr.trans hc.lr, hc.frame.trans (hf.sub fun r hr => (hs r hr).sub_frame), by rw [hsy]; exact hc.tabOk,
     by rw [hsy]; exact hc.tabMem, fun n hn => by rw [hsy]; exact hc.fsy n hn,
     fun c hc' => by rw [hsy]; exact hc.csy c hc', hc.held⟩
@@ -274,7 +274,7 @@ theorem d_byte (hL : L.Ok) (hc : Ctx L g lr m₀ t) {i : Nat} (hi : i < L.q) :
     rcases hr with rfl | rfl | rfl
     · exact hL.od.symm
     · exact hL.dc
-    · exact hL.kd.symm) (by show L.q ≤ 2 ^ 64; have := hL.nd; omega) hi
+    · exact hL.kd.symm) (by show L.q ≤ 2 ^ 64; have := hL.nd; omega_using [this]) hi
 
 /-- A byte of `digest`, as on entry. -/
 theorem dg_byte (hL : L.Ok) (hc : Ctx L g lr m₀ t) {i : Nat} (hi : i < dn) :
@@ -285,12 +285,12 @@ theorem dg_byte (hL : L.Ok) (hc : Ctx L g lr m₀ t) {i : Nat} (hi : i < dn) :
     rcases hr with rfl | rfl | rfl
     · exact hL.og.symm
     · exact hL.gc
-    · exact hL.kg.symm) (by show dn ≤ 2 ^ 64; have := hL.ng; omega) hi
+    · exact hL.kg.symm) (by show dn ≤ 2 ^ 64; have := hL.ng; omega_using [this]) hi
 
 /-- The table's words, as on entry. -/
 theorem tabWord (hL : L.Ok) (hc : Ctx L g lr m₀ t) {o : Nat} (ho : o + 8 ≤ 48) :
     t.mem.readW (L.tab + BitVec.ofNat 64 o) 64 = m₀.readW (L.tab + BitVec.ofNat 64 o) 64 :=
-  hc.frame.readW (r := L.TAB) (Offset.contains_base _ ho (by have := hL.nt; omega)) (fun r hr => by
+  hc.frame.readW (r := L.TAB) (Offset.contains_base _ ho (by have := hL.nt; omega_using [ho])) (fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
     · exact hL.tout
@@ -299,31 +299,31 @@ theorem tabWord (hL : L.Ok) (hc : Ctx L g lr m₀ t) {o : Nat} (ho : o + 8 ≤ 4
 
 theorem inFr (hc : Ctx L g lr m₀ t) {d n : Nat} (h₁ : 128 ≤ d) (h₂ : d + n ≤ 688) :
     InRegions (t.rd ++ t.wr) (L.B + BitVec.ofNat 64 d) n :=
-  ⟨L.FR, by rw [hc.rd, hc.wr]; simp, Offset.contains _ h₁ (by omega) (by omega)⟩
+  ⟨L.FR, by rw [hc.rd, hc.wr]; simp, Offset.contains _ h₁ (by omega_using [h₂]) (by omega_using [])⟩
 
 theorem inFrW (hc : Ctx L g lr m₀ t) {d n : Nat} (h₁ : 128 ≤ d) (h₂ : d + n ≤ 688) :
     InRegions t.wr (L.B + BitVec.ofNat 64 d) n :=
-  ⟨L.FR, by rw [hc.wr]; simp, Offset.contains _ h₁ (by omega) (by omega)⟩
+  ⟨L.FR, by rw [hc.wr]; simp, Offset.contains _ h₁ (by omega_using [h₂]) (by omega_using [])⟩
 
 theorem inScr (hc : Ctx L g lr m₀ t) {o n : Nat} (h : o + n ≤ 8192) :
     InRegions (t.rd ++ t.wr) (L.scr + BitVec.ofNat 64 o) n :=
-  ⟨L.SCR, by rw [hc.rd, hc.wr]; simp, Offset.contains_base _ h (by omega)⟩
+  ⟨L.SCR, by rw [hc.rd, hc.wr]; simp, Offset.contains_base _ h (by omega_using [h])⟩
 
 theorem inScrW (hc : Ctx L g lr m₀ t) {o n : Nat} (h : o + n ≤ 8192) :
     InRegions t.wr (L.scr + BitVec.ofNat 64 o) n :=
-  ⟨L.SCR, by rw [hc.wr]; simp, Offset.contains_base _ h (by omega)⟩
+  ⟨L.SCR, by rw [hc.wr]; simp, Offset.contains_base _ h (by omega_using [h])⟩
 
 theorem inTab (hL : L.Ok) (hc : Ctx L g lr m₀ t) {o : Nat} (h : o + 8 ≤ 48) :
     InRegions (t.rd ++ t.wr) (L.tab + BitVec.ofNat 64 o) 8 :=
-  ⟨L.TAB, by rw [hc.rd, hc.wr]; simp, Offset.contains_base _ h (by have := hL.nt; omega)⟩
+  ⟨L.TAB, by rw [hc.rd, hc.wr]; simp, Offset.contains_base _ h (by have := hL.nt; omega_using [h])⟩
 
 theorem inD (hc : Ctx L g lr m₀ t) {o n : Nat} (h : o + n ≤ L.q) (ho : o ≤ 128) :
     InRegions (t.rd ++ t.wr) (L.d + BitVec.ofNat 64 o) n :=
-  ⟨L.D, by rw [hc.rd, hc.wr]; simp, Offset.contains_base _ h (by omega)⟩
+  ⟨L.D, by rw [hc.rd, hc.wr]; simp, Offset.contains_base _ h (by omega_using [ho])⟩
 
 theorem inDg (hc : Ctx L g lr m₀ t) {o n : Nat} (h : o + n ≤ dn) (ho : o ≤ 128) :
     InRegions (t.rd ++ t.wr) (L.dg + BitVec.ofNat 64 o) n :=
-  ⟨L.DG, by rw [hc.rd, hc.wr]; simp, Offset.contains_base _ h (by omega)⟩
+  ⟨L.DG, by rw [hc.rd, hc.wr]; simp, Offset.contains_base _ h (by omega_using [ho])⟩
 
 /-- Regions within the buffers and the frame are permitted. -/
 theorem covers (hc : Ctx L g lr m₀ t) {rs : List Region}
@@ -369,7 +369,7 @@ theorem held_now (hL : L.Ok) (hc : Ctx L g lr m₀ t) : Abi.constsHeld t.mem t.s
   obtain ⟨hn, tO, tS, tK, -⟩ := hL.tables ⟨L.sy c.1, 8 * c.2.length⟩
     (List.mem_map_of_mem (f := fun c => (⟨L.sy c.1, 8 * c.2.length⟩ : Region)) hc')
   simp only at hn
-  rw [hc.frame.readW (r := ⟨L.sy c.1, 8 * c.2.length⟩) (Offset.contains_base _ (by omega) (by omega))
+  rw [hc.frame.readW (r := ⟨L.sy c.1, 8 * c.2.length⟩) (Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi, hn]))
     (fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl
@@ -423,7 +423,7 @@ theorem lay_ok {I : Proof.Ecdsa.Rfc6979.Instance} {w : HVar} {f : Fns} {ns : Lis
     show (s.sp - BitVec.ofNat 64 736).toNat + 736 ≤ 2 ^ 64
     change 736 ≤ s.sp.toNat at hsp
     rw [Offset.toNat_sub_ofNat s.sp _]
-    omega
+    omega_using [hsp]
   exact ⟨od, og, oc, dc, gc, ko, kd, kg, kc, no, nd, ng, nc, nB, nt, tout, tsc, tstk.symm,
     fun T hT => by
       obtain ⟨t1, t2, t3, t4, t5⟩ := tbl T (by

@@ -55,7 +55,7 @@ theorem sharedTail_ok (M : Mont) (R : VG.Proof.MillerRabin.AArch64.Kernel) {s : 
   have hEw : ∀ r ∈ [(slot w aE, 8 * (w + 1))], ∀ d, d + 8 * w ≤ slot w aE → d + 8 * w ≤ r.1 ∨ r.1 + r.2 ≤ d :=
     fun r hr d hd => by simp only [List.mem_singleton] at hr; subst hr; exact Or.inl hd
   have hbel : ∀ {j : Nat}, j < 16 → slot w j + 8 * w ≤ slot w aE := fun {j} hj => by
-    have := VG.Proof.Rsa.slot_lt (w := w) (show j < aE by unfold aE; omega); omega_arith
+    have := VG.Proof.Rsa.slot_lt (w := w) (show j < aE by unfold aE; omega_using [hj]); omega_arith
   have hN0 := hbel (show aN < 16 by decide)
   have hR10 := hbel (show aR1 < 16 by decide)
   have hRm0 := hbel (show aRm1 < 16 by decide)

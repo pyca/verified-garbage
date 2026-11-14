@@ -69,7 +69,7 @@ theorem encryptTo_xdepth : (BlocksTo.encrypt B.enc (st.map (·.enc)) aligned (en
   have e := B.encXd
   simp only [BlocksTo.encrypt, BlocksTo.tail, BlocksTo.copyBlocks, Code.x86_64Depth, X86_64.Instr.frameBytes,
     List.length_cons, List.length_nil, headTo_xdepth st, Nat.max_le]
-  omega
+  omega_using [e]
 
 theorem encryptToM_correct (s : State) (hs : (Proof.AesGcm.encryptBlocksToX86_64M M).pre s) :
     ∃ t s', Exec isa (BlocksTo.encrypt B.enc (st.map (·.enc)) aligned (encFullTo st)) s t s' ∧ abiPreserved s s' ∧

@@ -24,12 +24,12 @@ theorem privateFn_ok (v : CrtImpl) (s : State) {g : PrivGeometry} {bs : Fin 8 �
       Spec.Rsa.writtenOutcome t.mem (byteAddr g.output) g.length (t.gpr .eax)
         (Spec.Rsa.privateChecked (bs 0) (bs 1) (bs 2) (bs 3) (bs 4) (bs 5) (bs 6) (bs 7)) := by
   have stackFit : 16 ≤ (s.gpr .esp).toNat := by
-    have := h.stackFit; unfold stackBytes at this; omega
+    have := h.stackFit; unfold stackBytes at this; omega_using [this]
   have allocation : VG.Impl.Rsa.X86.PrivChecked.frameBytes ≤ ((pushed savedRegisters s).gpr .esp).toNat := by
     rw [pushed_esp, show 4 * savedRegisters.length = 16 from rfl, sub_toNat stackFit]
     have := h.stackFit
     simp only [stackBytes, VG.Impl.Rsa.X86.PrivChecked.frameBytes] at *
-    omega
+    omega_using [this]
   unfold privCode code
   refine WP.frame (rs := savedRegisters) (by decide) (by decide) (by decide) stackFit
     (privateInner_noSp v) ?_
@@ -47,7 +47,7 @@ theorem privateFn_ok (v : CrtImpl) (s : State) {g : PrivGeometry} {bs : Fin 8 �
   have fit : ((pushed savedRegisters s).gpr .esp).toNat + 16 ≤ 2 ^ 32 := by
     rw [pushed_esp, show 4 * savedRegisters.length = 16 from rfl, sub_toNat stackFit]
     have := (s.gpr .esp).isLt
-    omega
+    omega_using []
   have read (d : Nat) (hd : d + 4 ≤ 16) :
       InRegions ((freed VG.Impl.Rsa.X86.PrivChecked.frameBytes u).rd ++
         (freed VG.Impl.Rsa.X86.PrivChecked.frameBytes u).wr)
@@ -59,8 +59,8 @@ theorem privateFn_ok (v : CrtImpl) (s : State) {g : PrivGeometry} {bs : Fin 8 �
     rw [show (s.gpr .esp - 16) = (pushed savedRegisters s).gpr .esp from (pushed_esp savedRegisters s).symm]
     change (⟨byteAddr ((pushed savedRegisters s).gpr .esp), 16⟩ : Region).Contains
       (byteAddr ((pushed savedRegisters s).gpr .esp + BitVec.ofNat 32 d)) 4
-    rw [byteAddr_add (by omega : ((pushed savedRegisters s).gpr .esp).toNat + d < 2 ^ 32)]
-    exact Offset.contains_base _ hd (by omega)
+    rw [byteAddr_add (by omega_using [fit, hd] : ((pushed savedRegisters s).gpr .esp).toNat + d < 2 ^ 32)]
+    exact Offset.contains_base _ hd (by omega_using [hd])
   refine WP.mono (restore_ok (freed VG.Impl.Rsa.X86.PrivChecked.frameBytes u)
     (read 4 (by decide)) (read 8 (by decide)) (read 0 (by decide))) ?_
   rintro t ⟨edi, ebp, esi, memT, restT⟩

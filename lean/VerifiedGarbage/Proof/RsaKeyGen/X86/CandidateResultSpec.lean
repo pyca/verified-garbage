@@ -21,7 +21,7 @@ theorem filtered_outputs_eq {E : Environment} (e : Nat) (p : Option Nat) (entrop
     (enough : E.length ≤ entropy.length) (s : State) :
     FilteredOutputs E e p entropy s ↔ StepOutputs E entropy
       (VG.Proof.RsaKeyGen.afterDraw (8 * E.length) e p (candidateValue E entropy) (entropy.drop E.length)) s := by
-  have count : entropy.length - (entropy.length - E.length) = E.length := by omega
+  have count : entropy.length - (entropy.length - E.length) = E.length := by omega_using [enough]
   unfold FilteredOutputs SieveOutputs ExponentOutputs VG.Proof.RsaKeyGen.afterDraw
   cases close : Spec.RsaKeyGen.tooClose (8 * E.length) p (candidateValue E entropy)
   · cases composite : Spec.RsaKeyGen.obviouslyComposite (8 * E.length) (candidateValue E entropy)
@@ -40,7 +40,7 @@ theorem candidate_outputs_eq {E : Environment} (v : E.Valid) (eBytes pBytes entr
     FilteredOutputs E (Spec.Rsa.os2ip eBytes) (Spec.RsaKeyGen.otherPrime pBytes) entropy s ↔
       StepOutputs E entropy (Spec.RsaKeyGen.candidateOp E.length eBytes pBytes entropy) s := by
   unfold Spec.RsaKeyGen.candidateOp
-  rw [VG.Proof.RsaKeyGen.candidateStep_eq E.length _ _ _ (by have := v.length; unfold Spec.RsaKeyGen.primeLenValid at this; omega)]
+  rw [VG.Proof.RsaKeyGen.candidateStep_eq E.length _ _ _ (by have := v.length; unfold Spec.RsaKeyGen.primeLenValid at this; omega_using [this])]
   rw [VG.Proof.RsaKeyGen.ite_t enough]
   simpa only [candidateValue, VG.Proof.RsaKeyGen.seg, List.drop_zero] using
     filtered_outputs_eq (E := E) (Spec.Rsa.os2ip eBytes) (Spec.RsaKeyGen.otherPrime pBytes) entropy enough s

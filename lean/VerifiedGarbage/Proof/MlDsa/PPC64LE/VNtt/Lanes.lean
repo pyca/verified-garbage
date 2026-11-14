@@ -46,7 +46,7 @@ theorem shoup_bounds {q b z : Nat} (hq : 0 < q) (hb : b < 2^32) :
       _ < (hi * 2^32 + 2^32) * q + 2^32 * q := Nat.add_lt_add m1 m2
       _ = (hi * q + 2 * q) * 2^32 := by
         rw [Nat.add_mul, Nat.add_mul, Nat.mul_right_comm hi (2^32) q, Nat.mul_assoc 2 q,
-          Nat.mul_comm q (2^32)]; omega
+          Nat.mul_comm q (2^32)]; omega_using []
 
 /-- Reduce `r < 2q` to `r mod q`: `min(r, r − q)`. -/
 theorem minu_sub {r qv : BitVec 32} (hq : 0 < qv.toNat) (hr : r.toNat < 2 * qv.toNat) (h2 : 2 * qv.toNat ≤ 2^32) :
@@ -56,9 +56,9 @@ theorem minu_sub {r qv : BitVec 32} (hq : 0 < qv.toNat) (hr : r.toNat < 2 * qv.t
   have hs := BitVec.toNat_sub r qv
   by_cases h : r.toNat < qv.toNat
   · rw [Nat.mod_eq_of_lt h, ite_eq_left (by omega)]
-  · rw [ite_eq_right (by omega), hs, show r.toNat % qv.toNat = r.toNat - qv.toNat from by
-      rw [Nat.mod_eq_sub_mod (by omega), Nat.mod_eq_of_lt (by omega)]]
-    omega
+  · rw [ite_eq_right (by omega_using [hs, h]), hs, show r.toNat % qv.toNat = r.toNat - qv.toNat from by
+      rw [Nat.mod_eq_sub_mod (by omega_using [h]), Nat.mod_eq_of_lt (by omega_using [hr])]]
+    omega_using [h]
 
 /-- The Shoup product of one word lane: with `hi` the high word of `b·z'`,
 `b·z − hi·q` modulo 2³², then `min` with that minus `q`. -/
@@ -72,17 +72,17 @@ theorem shoup_lane (b hi qv zv zpv : BitVec 32) (hq : 0 < qv.toNat) (hq2 : 2 * q
     rw [BitVec.toNat_sub, BitVec.toNat_mul, BitVec.toNat_mul, hhi]
     generalize b.toNat * zv.toNat = x at l u ⊢
     generalize h0 * qv.toNat = y at l u ⊢
-    omega
-  rw [minu_sub hq (by omega) hq2, hr,
-    show b.toNat * zv.toNat = (b.toNat * zv.toNat - h0 * qv.toNat) + h0 * qv.toNat by omega,
+    omega_using [hq2, l, u]
+  rw [minu_sub hq (by omega_using [hq, u, hr]) hq2, hr,
+    show b.toNat * zv.toNat = (b.toNat * zv.toNat - h0 * qv.toNat) + h0 * qv.toNat by omega_using [l],
     Nat.add_mul_mod_self_right, Nat.add_sub_cancel]
 
 /-- `a + t` reduced: `min(s, s − q)`. -/
 theorem minu_add_lane {a t qv : BitVec 32} (hq : 0 < qv.toNat) (hq2 : 2 * qv.toNat ≤ 2^32)
     (ha : a.toNat < qv.toNat) (ht : t.toNat < qv.toNat) :
     (minu32 (a + t) (a + t - qv)).toNat = (a.toNat + t.toNat) % qv.toNat := by
-  have hs : (a + t).toNat = a.toNat + t.toNat := by rw [BitVec.toNat_add]; omega
-  rw [minu_sub hq (by omega) hq2, hs]
+  have hs : (a + t).toNat = a.toNat + t.toNat := by rw [BitVec.toNat_add]; omega_using [hq2, ha, ht]
+  rw [minu_sub hq (by omega_using [ha, ht, hs]) hq2, hs]
 
 /-- `a − t` reduced: `min(d, d + q)`. -/
 theorem minu_sub_lane {a t qv : BitVec 32} (hq2 : 2 * qv.toNat ≤ 2^32)
@@ -92,12 +92,12 @@ theorem minu_sub_lane {a t qv : BitVec 32} (hq2 : 2 * qv.toNat ≤ 2^32)
   have hd := BitVec.toNat_sub a t
   have hd2 := BitVec.toNat_add (a - t) qv
   by_cases h : t.toNat ≤ a.toNat
-  · rw [ite_eq_left (by omega), hd]
+  · rw [ite_eq_left (by omega_using [hq2, ha, hd, hd2, h]), hd]
     rw [show (a.toNat + (qv.toNat - t.toNat)) % qv.toNat = a.toNat - t.toNat from by
-      rw [Nat.mod_eq_sub_mod (by omega), Nat.mod_eq_of_lt (by omega)]; omega]
-    omega
-  · rw [ite_eq_right (by omega), hd2, hd, Nat.mod_eq_of_lt (by omega : a.toNat + (qv.toNat - t.toNat) < qv.toNat)]
-    omega
+      rw [Nat.mod_eq_sub_mod (by omega_using [h]), Nat.mod_eq_of_lt (by omega_using [ha])]; omega_using [ha]]
+    omega_using [h]
+  · rw [ite_eq_right (by omega_using [ht, hd, hd2, h]), hd2, hd, Nat.mod_eq_of_lt (by omega_using [ha, h] : a.toNat + (qv.toNat - t.toNat) < qv.toNat)]
+    omega_using [hq2, ha, ht]
 
 open VG.Spec.MlDsa (q Zq)
 open VG.Proof.MlDsa.Arith (val_add' val_sub' val_mul val_lt)

@@ -28,9 +28,9 @@ theorem failureHead_ok {s : State} {base : Addr} {size : Nat}
       t.gpr .ecx = pointerValue base s (.input .qLen) + pointerValue base s (.input .qLen) ∧
       t.gpr .eax = 0 ∧ Keeps [.esi, .ecx, .eax] s t := by
   have bound : 8256 ≤ size := hz
-  refine wp_movS (readSrc_sc hs (d := Layout.field .out) (by change 8228 ≤ size; omega)) fun s1 U1 _ => ?_
+  refine wp_movS (readSrc_sc hs (d := Layout.field .out) (by change 8228 ≤ size; omega_using [bound])) fun s1 U1 _ => ?_
   refine wp_movS (readSrc_sc (hs.of_keeps U1.keeps (by decide))
-    (d := Layout.field .qLen) (by change 8236 ≤ size; omega)) fun s2 U2 _ => ?_
+    (d := Layout.field .qLen) (by change 8236 ≤ size; omega_using [bound])) fun s2 U2 _ => ?_
   refine wp_addS rfl fun s3 U3 _ => ?_
   refine wp_movS rfl fun s4 U4 _ => WP.block_nil ⟨?_, ?_, U4.gpr, ?_⟩
   · rw [U4.other _ (by decide), U3.other _ (by decide), U2.other _ (by decide), U1.gpr]

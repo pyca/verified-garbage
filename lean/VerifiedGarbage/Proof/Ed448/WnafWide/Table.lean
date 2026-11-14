@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Ed448.PublicTable
 public import VerifiedGarbage.Proof.X448.BaseTable
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-! Every public verification entry is the stated odd multiple of B. -/
 
@@ -29,7 +30,7 @@ private theorem checkRow_ok (b p : Point) (c a : EPoint dZ) (hb : Rep b c) (h : 
     cases i with
     | zero => rw [List.getD_cons_zero, zero_nsmul, zero_add]; exact hq
     | succ i =>
-      have hh := ih _ _ (pointAdd_rep hq hb) hc.2 i (by simp only [List.length_cons] at hi; omega)
+      have hh := ih _ _ (pointAdd_rep hq hb) hc.2 i (by simp only [List.length_cons] at hi; omega_using [hi])
       rw [List.getD_cons_succ, succ_nsmul, add_assoc, add_comm c a]
       exact hh
 

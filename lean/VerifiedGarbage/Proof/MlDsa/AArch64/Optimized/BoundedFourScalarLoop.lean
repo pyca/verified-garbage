@@ -86,7 +86,7 @@ theorem ScalarInv.stream {σ s : State} {η done : Nat} {p q : Addr} {L : List Z
     (h : ScalarInv σ η p q L X done s) (hy : ScalarLayout σ p q X) {i : Nat} (hi : i<X.length) :
     s.mem (q+BitVec.ofNat 64 i)=X[i]! := by
   rw [h.frame.bytes (R := ⟨q,X.length⟩) (fun r hr=>by
-    rw [List.mem_singleton.mp hr]; exact hy.apart) (by change X.length≤2^64; have:=hy.short; omega) hi]
+    rw [List.mem_singleton.mp hr]; exact hy.apart) (by change X.length≤2^64; have:=hy.short; omega_using [this]) hi]
   exact hy.stream i hi
 
 theorem scalarGuard_ok {s : State} {r n : Nat}
@@ -125,13 +125,13 @@ theorem scalarStep_ok {σ s : State} {η done : Nat} (hη : η=2∨η=4)
   rw [he] at htoutput htremaining htstored
   have ht5 : t.gpr .x5=BitVec.ofNat 64 (X.length-(done+1)) := by
     rw [htbytes,hi.bytes]
-    have hh:=BitVec.ofNat_sub_ofNat_of_le (w := 64) (X.length-done) 1 (by decide) (by omega)
+    have hh:=BitVec.ofNat_sub_ofNat_of_le (w := 64) (X.length-done) 1 (by decide) (by omega_using [hd])
     change BitVec.ofNat 64 (X.length-done)-1#64=_
-    simpa only [show X.length-done-1=X.length-(done+1) by omega] using hh
+    simpa only [show X.length-done-1=X.length-(done+1) by omega_using []] using hh
   refine WP.mono (scalarGuard_ok htremaining ht5) fun u ⟨hu,h8⟩=>?_
   have hk : Keep parserRegs σ u :=
     ((hi.keep.trans htkeep).trans hu.keep).mono (by decide)
-  refine ⟨by omega,(hi.consts.keep htkeep (by decide)).keep hu.keep (by decide),hk,?_,?_,?_,?_,?_,?_,h8⟩
+  refine ⟨by omega_using [hd],(hi.consts.keep htkeep (by decide)).keep hu.keep (by decide),hk,?_,?_,?_,?_,?_,?_,h8⟩
   · rw [hu.mem]; exact hi.frame.trans htframe
   · rw [hu.mem]; exact htstored
   · rw [hu.get .x2,htinput,hi.input,BitVec.add_assoc,BitVec.ofNat_add]
@@ -164,17 +164,17 @@ theorem scalarGuard_nonzero {σ s : State} {η done : Nat} {p q : Addr}
     (hi : ScalarInv σ η p q L X done s) :
     isa.eval (.nonzero .x .x8) s=some (decide (done<X.length ∧ (parsed η L X done).length<256)) := by
   have hr : 256-(parsed η L X done).length≤256 := Nat.sub_le _ _
-  have hn : X.length-done≤272 := by have:=hy.short; omega
+  have hn : X.length-done≤272 := by have:=hy.short; omega_using [this]
   have hp : (256-(parsed η L X done).length)*(X.length-done)<2^64 := by
     have:=Nat.mul_le_mul hr hn
-    omega
+    omega_using [this]
   rw [eval_nonzero,hi.guard,ne_zero_iff,BitVec.toNat_ofNat,Nat.mod_eq_of_lt hp]
   congr 1
   apply decide_eq_decide.mpr
   rw [Nat.mul_ne_zero_iff]
   have:=hi.bound
   have:=parsed_bound (η := η) (X := X) hl done
-  omega
+  omega_using []
 
 theorem scalarGuard_zero {σ s : State} {η done : Nat} {p q : Addr}
     {L : List Zq} {X : List Byte} (hl : L.length≤256) (hy : ScalarLayout σ p q X)
@@ -187,11 +187,11 @@ theorem scalarGuard_zero {σ s : State} {η done : Nat} {p q : Addr}
   have hb:=parsed_bound (η := η) (X := X) hl done
   have hd:=hi.bound
   by_cases he : done=X.length ∨ (parsed η L X done).length=256
-  · have hn : ¬(done<X.length ∧ (parsed η L X done).length<256) := by omega
+  · have hn : ¬(done<X.length ∧ (parsed η L X done).length<256) := by omega_using [he]
     simp only [decide_eq_false hn] at h
     have hz : s.gpr .x8=0 := by simpa using h
     simp [hz,he]
-  · have hn : done<X.length ∧ (parsed η L X done).length<256 := by omega
+  · have hn : done<X.length ∧ (parsed η L X done).length<256 := by omega_using [hb, hd, he]
     simp only [decide_eq_true hn] at h
     have hz : s.gpr .x8≠0 := by simpa using h
     simp only [decide_eq_false he,Option.some.injEq,beq_eq_false_iff_ne]
@@ -210,11 +210,11 @@ theorem scalarLoop_ok {σ s : State} {η done : Nat} (hη : η=2∨η=4)
   refine WP.mono (scalarStep_ok hη hl hy hu hd) fun v hv=>?_
   have he:=scalarGuard_nonzero hl hy hv
   by_cases hc : d+1<X.length ∧ (parsed η L X (d+1)).length<256
-  · exact .inr ⟨by rw [he,decide_eq_true hc],X.length-(d+1),by omega,d+1,rfl,hv,hc⟩
+  · exact .inr ⟨by rw [he,decide_eq_true hc],X.length-(d+1),by omega_using [hd],d+1,rfl,hv,hc⟩
   · refine .inl ⟨by rw [he,decide_eq_false hc],d+1,hv,?_⟩
     have:=hv.bound
     have:=parsed_bound (η := η) (X := X) hl (d+1)
-    omega
+    omega_using [hd, hc, this]
 
 theorem scalarPhase_ok {σ s : State} {η done : Nat} (hη : η=2∨η=4)
     {p q : Addr} {L : List Zq} {X : List Byte} (hl : L.length≤256)
@@ -226,8 +226,8 @@ theorem scalarPhase_ok {σ s : State} {η done : Nat} (hη : η=2∨η=4)
   · exact WP.ite true (by rw [he,decide_eq_true hc])
       (fun _=>WP.block_nil_iff.mpr ⟨done,hi,hc⟩) (fun h=>nomatch h)
   · exact WP.ite false (by rw [he,decide_eq_false hc]) (fun h=>nomatch h)
-      (fun _=>scalarLoop_ok hη hl hy hi (by have:=hi.bound; omega)
-        (by have:=parsed_bound (η := η) (X := X) hl done; omega))
+      (fun _=>scalarLoop_ok hη hl hy hi (by have:=hi.bound; omega_using [hc, this])
+        (by have:=parsed_bound (η := η) (X := X) hl done; omega_using [hc, this]))
 
 end VG.Proof.MlDsa.AArch64.Optimized.BoundedFour
 

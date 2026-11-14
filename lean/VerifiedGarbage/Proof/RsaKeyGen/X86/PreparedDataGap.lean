@@ -25,16 +25,16 @@ theorem Data.keepHeader {g : Geometry} (v : g.Valid) {s t : State} {c capacity d
     S.ready.caller.keepOuts K sp outs
       (by intro r mem; obtain rfl := List.mem_singleton.mp mem; have := v.headerFit; omega),
     S.ready.scratch.of_keeps K base sp⟩, ?_, ?_, ?_, ?_, ?_, ?_⟩
-  · exact (O.val32 (Or.inr (by have := v.arrayHeader 4; omega))
-      (by have := S.ready.scratch.nowrap; have := v.arrayFit (j := 4) (by decide); omega)).trans S.r2
-  · exact (O.val32 (Or.inr (by have := v.arrayHeader 9; omega))
-      (by have := S.ready.scratch.nowrap; have := v.arrayFit (j := 9) (by decide); omega)).trans S.one
-  · exact (O.val32 (Or.inr (by have := v.arrayHeader 10; omega))
-      (by have := S.ready.scratch.nowrap; have := v.arrayFit (j := 10) (by decide); omega)).trans S.minusOne
-  · exact (O.val32 (Or.inr (by have := v.arrayHeader 27; omega))
-      (by have := S.ready.scratch.nowrap; have := v.arrayFit (j := 27) (by decide); omega)).trans S.exponent
-  · exact (O.word (Or.inr (by have := v.arrayHeader 27; omega))
-      (by have := S.ready.scratch.nowrap; have := Prepared.paddedFit v (j := 27) (by decide); omega)).trans S.marker
+  · exact (O.val32 (Or.inr (by have := v.arrayHeader 4; omega_using [hi, this]))
+      (by have := S.ready.scratch.nowrap; have := v.arrayFit (j := 4) (by decide); omega_arith)).trans S.r2
+  · exact (O.val32 (Or.inr (by have := v.arrayHeader 9; omega_using [hi, this]))
+      (by have := S.ready.scratch.nowrap; have := v.arrayFit (j := 9) (by decide); omega_arith)).trans S.one
+  · exact (O.val32 (Or.inr (by have := v.arrayHeader 10; omega_using [hi, this]))
+      (by have := S.ready.scratch.nowrap; have := v.arrayFit (j := 10) (by decide); omega_arith)).trans S.minusOne
+  · exact (O.val32 (Or.inr (by have := v.arrayHeader 27; omega_using [hi, this]))
+      (by have := S.ready.scratch.nowrap; have := v.arrayFit (j := 27) (by decide); omega_arith)).trans S.exponent
+  · exact (O.word (Or.inr (by have := v.arrayHeader 27; omega_using [hi, this]))
+      (by have := S.ready.scratch.nowrap; have := Prepared.paddedFit v (j := 27) (by decide); omega_arith)).trans S.marker
   · exact (O.word (Or.inr hi) (by decide)).trans S.stride
 
 theorem Data.keepGap {g : Geometry} (v : g.Valid) {s t : State} {c capacity d : Nat} {p : BitVec 32}
@@ -48,11 +48,11 @@ theorem storeGap_ok {g : Geometry} (v : g.Valid) {s : State} {c capacity d : Nat
     WP isa (.block [.store (sc d) .eax]) s fun t =>
       Data g c capacity p t ∧ t.mem.readW (off g.W d) 32 = s.gpr .eax ∧
       Outside g.W d 4 s.mem t.mem ∧ Keeps [] s t := by
-  have fit : d + 4 ≤ g.L := Nat.le_trans (by omega) v.headerFit
-  refine wp_storeS (S.ready.scratch.ea (by omega)) (S.ready.scratch.write fit) fun t T => WP.block_nil ?_
+  have fit : d + 4 ≤ g.L := Nat.le_trans (by omega_using [hi]) v.headerFit
+  refine wp_storeS (S.ready.scratch.ea (by omega_using [fit])) (S.ready.scratch.write fit) fun t T => WP.block_nil ?_
   have O : Outside g.W d 4 s.mem t.mem := by
     rw [T.mem]
-    exact writeW32_outside _ _ _ (by have := S.ready.scratch.nowrap; omega)
+    exact writeW32_outside _ _ _ (by have := S.ready.scratch.nowrap; omega_using [hi])
   exact ⟨S.keepGap v lo hi O (T.keeps []) (by decide) (by decide),
     by rw [T.mem, Mem.readW_writeW_self32], O, T.keeps []⟩
 

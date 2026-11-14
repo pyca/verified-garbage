@@ -45,10 +45,10 @@ def nbOf (c L : Nat) : Nat := if leftOf c L = 0 then 0 else (leftOf c L - 1) / 1
 def restOf (c L : Nat) : Nat := leftOf c L - 16 * nbOf c L
 
 theorem f_le (c L : Nat) : fOf c L ≤ L ∧ fOf c L + held c ≤ 16 := by
-  have := held_le c; unfold fOf; omega
+  have := held_le c; unfold fOf; omega_using [this]
 
 theorem nb_le (c L : Nat) : fOf c L + 16 * nbOf c L + restOf c L = L := by
-  have := f_le c L; unfold restOf nbOf leftOf; split <;> omega
+  have := f_le c L; unfold restOf nbOf leftOf; split <;> omega_using [this]
 
 /-! ## Arithmetic on registers -/
 
@@ -68,9 +68,9 @@ theorem nb16_bv {x : Nat} (hx : 0 < x) (hx' : x < 2 ^ 64) :
       BitVec.ofNat 64 (16 * ((x - 1) / 16)) := by
   apply BitVec.eq_of_toNat_eq
   have e : (BitVec.ofNat 64 x - BitVec.ofNat 64 1).toNat = x - 1 := by
-    rw [BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat]; omega
+    rw [BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat]; omega_using [hx, hx']
   rw [BitVec.toNat_sub, and15, e, BitVec.toNat_ofNat]
-  omega
+  omega_using []
 
 /-! ## Saving the registers -/
 
@@ -161,15 +161,15 @@ theorem clamp_wp {s : State} {L : Nat} (hL : L < 2 ^ 64) (h4 : s.gpr .s4 = BitVe
   refine WP.seq (wp_srl (by decide) fun s₁ u₁ => WP.block_nil ?_)
   have x2 : s₁.gpr .t2 = BitVec.ofNat 64 (L / 16) := by
     rw [u₁.gpr, h4, shr_ofNat hL]
-  have ev := eval_zero_ofNat s₁ .t2 (by omega) x2
+  have ev := eval_zero_ofNat s₁ .t2 (by omega_using [hL]) x2
   by_cases hl : L < 16
-  · have e : L / 16 = 0 := by omega
+  · have e : L / 16 = 0 := by omega_using [hl]
     refine WP.ite true (by rw [ev, e]; rfl) (fun _ => ?_) (fun h => by cases h)
     unfold Impl.AesCbc.RISCV64.mov
     refine wp_mv fun s₂ u₂ => WP.block_nil ⟨?_, fun r h => by rw [u₂.other _ h, u₁.other _ h],
       by rw [u₂.mem, u₁.mem], by rw [u₂.rd, u₁.rd], by rw [u₂.wr, u₁.wr]⟩
     rw [u₂.gpr, u₁.other _ (by decide), h4, Nat.min_eq_left (Nat.le_of_lt hl)]
-  · have e : L / 16 ≠ 0 := by omega
+  · have e : L / 16 ≠ 0 := by omega_using [hl]
     refine WP.ite false (by rw [ev]; simp [e]) (fun h => by cases h) fun _ => ?_
     refine wp_li (imm := 16) (by decide) fun s₂ u₂ => WP.block_nil ⟨?_, fun r h => by rw [u₂.other _ h, u₁.other _ h],
       by rw [u₂.mem, u₁.mem], by rw [u₂.rd, u₁.rd], by rw [u₂.wr, u₁.wr]⟩
@@ -195,11 +195,11 @@ theorem fill_wp {s : State} {St D : Addr} {c L : Nat} (hL : L < 2 ^ 64)
   have x4₄ : s₄.gpr .t4 = BitVec.ofNat 64 (if min L 16 < 16 - held c then 1 else 0) := by
     rw [u₄.gpr, u₃.other _ (by decide), u₂.other _ (by decide), x2₁, u₃.gpr, u₂.gpr, u₂.other _ (by decide),
       x1₁, Offset.ofNat_sub_ofNat hh]
-    exact sltu_ofNat (by omega) (by omega)
+    exact sltu_ofNat (by omega_using []) (by omega_using [])
   have g₄ (r : Reg) (a : r ≠ .t3) (b : r ≠ .t4) : s₄.gpr r = s₁.gpr r := by
     rw [u₄.other _ b, u₃.other _ a, u₂.other _ a]
-  have hf : fOf c L = min (min L 16) (16 - held c) := by unfold fOf; omega
-  have ev := eval_zero_ofNat s₄ .t4 (k := if min L 16 < 16 - held c then 1 else 0) (by split <;> omega) x4₄
+  have hf : fOf c L = min (min L 16) (16 - held c) := by unfold fOf; omega_using []
+  have ev := eval_zero_ofNat s₄ .t4 (k := if min L 16 < 16 - held c then 1 else 0) (by split <;> omega_using []) x4₄
   refine WP.seq (WP.mono (Q := fun (s₅ : State) => s₅.gpr .t2 = BitVec.ofNat 64 (fOf c L) ∧
     (∀ r, r ≠ .t2 → s₅.gpr r = s₄.gpr r) ∧ s₅.mem = s₄.mem ∧ s₅.rd = s₄.rd ∧ s₅.wr = s₄.wr) ?_
     fun s₅ h₅ => ?_)
@@ -245,7 +245,7 @@ theorem chain1_wp {s : State} {St D S : Addr} {f L : Nat} (hf : f ≤ L) (hL : L
       Offset.ofNat_sub_ofNat hf]
   have g₃ (r : Reg) (a : r ≠ .s3) (b : r ≠ .s4) (c : r ≠ .a4) : s₃.gpr r = s.gpr r := by
     rw [u₃.other _ c, u₂.other _ b, u₁.other _ a]
-  have ev := eval_zero_ofNat s₃ .s4 (k := L - f) (by omega) x4₃
+  have ev := eval_zero_ofNat s₃ .s4 (k := L - f) (by omega_using [hL]) x4₃
   refine WP.seq (WP.mono (Q := fun (s₄ : State) => s₄.gpr .a4 = BitVec.ofNat 64 (if L - f = 0 then 0 else 1) ∧
     (∀ r, r ≠ .a4 → s₄.gpr r = s₃.gpr r) ∧ s₄.mem = s₃.mem ∧ s₄.rd = s₃.rd ∧ s₄.wr = s₃.wr) ?_
     fun s₄ h₄ => ?_)
@@ -308,7 +308,7 @@ theorem chain2_wp {s : State} {x : Nat} (hx : x < 2 ^ 64) (h4 : s.gpr .s4 = BitV
         wp_sub fun s₄ u₄ => WP.block_nil ⟨?_, fun r a b => ?_, ?_, ?_, ?_⟩
       · rw [u₄.gpr, u₃.gpr, u₃.other _ (by decide), u₂.gpr, u₁.other _ (by decide), h4]
         simp only [h0, ↓reduceIte]
-        exact nb16_bv (by omega) hx
+        exact nb16_bv (by omega_using [h0]) hx
       · rw [u₄.other _ a, u₃.other _ b, u₂.other _ a]
       · rw [u₄.mem, u₃.mem, u₂.mem]
       · rw [u₄.rd, u₃.rd, u₂.rd]
@@ -321,7 +321,7 @@ theorem chain2_wp {s : State} {x : Nat} (hx : x < 2 ^ 64) (h4 : s.gpr .s4 = BitV
       WP.block_nil ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, fun r hr a => ?_, ?_, ?_, ?_⟩
     · simp (disch := decide) only [u₈.other, u₇.other, u₆.other, u₅.other, u₄.other, u₃.other, x5₂]
     · simp (disch := decide) only [u₈.other, u₇.other, u₆.other, u₅.other, u₄.other, u₃.gpr, x5₂]
-      exact (shr_ofNat (by split <;> omega)).trans (by congr 1; omega)
+      exact (shr_ofNat (by split <;> omega_arith)).trans (by congr 1; omega_using [])
     · simp (disch := decide) only [u₈.other, u₇.other, u₆.other, u₅.other, u₄.gpr, u₃.other, g]
     · simp (disch := decide) only [u₈.other, u₇.other, u₆.other, u₅.gpr, u₄.other, u₃.other, g]
     · simp (disch := decide) only [u₈.other, u₇.other, u₆.gpr, u₅.other, u₄.other, u₃.other, g]

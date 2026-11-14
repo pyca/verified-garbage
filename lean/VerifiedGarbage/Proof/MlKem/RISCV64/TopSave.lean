@@ -47,7 +47,7 @@ abbrev saveR (P : Addr) : Region := ⟨P + BitVec.ofNat 64 1288, 80⟩
 
 theorem saveR_contains (P : Addr) {o : Nat} (h₁ : 1288 ≤ o) (h₂ : o + 8 ≤ 1368) :
     (saveR P).Contains (P + BitVec.ofNat 64 o) 8 :=
-  Offset.contains _ h₁ (by omega) (by decide)
+  Offset.contains _ h₁ (by omega_using [h₂]) (by decide)
 
 /-- `TopSaved` through a change of memory apart from where they are saved. -/
 theorem TopSaved.keep {m m' : Mem} {P : Addr} {s₀ : State} (h : TopSaved m P s₀) {rs : List Region}
@@ -72,7 +72,7 @@ theorem topEnd_eq : topEnd = [mov .a0 .s4, .load .d .ra .s11 1360, .load .d .s3 
 /-- A doubleword at an offset of an aligned pointer is aligned. -/
 theorem al8 {P : Addr} (hP : P.toNat % 8 = 0) {o : Nat} (ho : o % 8 = 0) :
     (P + BitVec.ofNat 64 o).toNat % 8 = 0 := by
-  rw [BitVec.toNat_add, BitVec.toNat_ofNat]; omega
+  rw [BitVec.toNat_add, BitVec.toNat_ofNat]; omega_using [hP, ho]
 
 /-- A doubleword store, as `sd` makes it. -/
 theorem write8_eq (m : Mem) (a : Addr) (v : BitVec 64) : m.write a 8 v = m.writeW a v := rfl

@@ -43,12 +43,12 @@ theorem call_ok {s : State} {base : Addr} {size n m : Nat}
     have vals : ∀ d k, d + 4 * k ≤ size → val32 mem base d k = val32 s.mem base d k :=
       fun _ _ hd => Pow.frame_val32 room hs.nowrap F hd
     refine ⟨?_, ?_, ?_⟩
-    · rw [wordsVal_eq_val32, vals _ _ (by simp only [contextBytes, slot, stride] at hz ⊢; omega),
+    · rw [wordsVal_eq_val32, vals _ _ (by simp only [contextBytes, slot, stride] at hz ⊢; omega_using [hz]),
         ← wordsVal_eq_val32, hv]
     · rw [wordsVal_eq_val32, wordsVal_eq_val32]
-      exact vals _ _ (by simp only [contextBytes, slot, stride] at hz ⊢; omega)
+      exact vals _ _ (by simp only [contextBytes, slot, stride] at hz ⊢; omega_using [hz])
     · rw [wordsVal_eq_val32, wordsVal_eq_val32]
-      exact vals _ _ (by simp only [contextBytes, slot, stride] at hz ⊢; omega)
+      exact vals _ _ (by simp only [contextBytes, slot, stride] at hz ⊢; omega_using [hz])
   · intro v E _ ⟨M, A, B⟩
     exact WP.mono (body_ok E hz hn hn48 M hm1 hodd) fun w ⟨V, O, R, Rd, Wr⟩ =>
       ⟨by rw [V, A, B], Pow.OutsS.of_outs O, R, Rd, Wr⟩

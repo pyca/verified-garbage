@@ -30,18 +30,18 @@ theorem val32_eq_iff (m : Mem) (W : Addr) (x y N : Nat) :
       simp only [val32]
       change _ at hx hy
       unfold w32 at *
-      omega
+      omega_using []
     rw [split, ih]
     constructor
     · rintro ⟨lo, hi⟩ i hiN
       cases i with
       | zero => simpa using BitVec.eq_of_toNat_eq lo
-      | succ i => simpa [Nat.mul_add, Nat.add_assoc, Nat.add_left_comm, Nat.add_comm] using hi i (by omega)
+      | succ i => simpa [Nat.mul_add, Nat.add_assoc, Nat.add_left_comm, Nat.add_comm] using hi i (by omega_using [hiN])
     · intro h
       refine ⟨?_, fun i hi => ?_⟩
-      · have := congrArg BitVec.toNat (h 0 (by omega))
+      · have := congrArg BitVec.toNat (h 0 (by omega_using []))
         simpa [w32] using this
-      · simpa [Nat.mul_add, Nat.add_assoc, Nat.add_left_comm, Nat.add_comm] using h (i + 1) (by omega)
+      · simpa [Nat.mul_add, Nat.add_assoc, Nat.add_left_comm, Nat.add_comm] using h (i + 1) (by omega_using [hi])
 
 theorem eqLoop_ok {s : State} {W : Addr} {Z x y N : Nat} (hw : Ws s W Z)
     (hN : 0 < N) (hx : x + 4 * N ≤ Z) (hy : y + 4 * N ≤ Z)
@@ -60,10 +60,10 @@ theorem eqLoop_ok {s : State} {W : Addr} {Z x y N : Nat} (hw : Ws s W Z)
       by simp [hc]⟩) fun u ⟨K, m, p, _, _, e⟩ => ⟨m, e.trans (val32_eq_iff _ _ _ _ _).symm, K, p⟩
   rintro j t hj ⟨K, m, p, b, n, e⟩
   have ht := hw.of_keeps K
-  refine wp_movS (readSrc_ptr ht p (d := 0) (by omega)) fun s1 U1 _ => ?_
+  refine wp_movS (readSrc_ptr ht p (d := 0) (by omega_using [hx, hj])) fun s1 U1 _ => ?_
   have ht1 := ht.of_keeps U1.keeps
   have b1 : PtrAt s1 W .ebx (y + 4 * j) := by rw [PtrAt, U1.other _ (by decide)]; exact b
-  refine wp_logicS (.inr rfl) (readSrc_ptr ht1 b1 (d := 0) (by omega)) fun s2 U2 => ?_
+  refine wp_logicS (.inr rfl) (readSrc_ptr ht1 b1 (d := 0) (by omega_using [hy, hj])) fun s2 U2 => ?_
   refine wp_orS rfl fun s3 U3 => wp_addS rfl fun s4 U4 _ => wp_addS rfl fun s5 U5 _ =>
     wp_subZ rfl fun s6 U6 z6 => WP.block_nil ?_
   have K3 : Keeps [.eax, .ecx] t s3 :=
@@ -90,9 +90,9 @@ theorem eqLoop_ok {s : State} {W : Addr} {Z x y N : Nat} (hw : Ws s W Z)
     · rintro ⟨old, last⟩ i hi
       by_cases eq : i = j
       · simpa [eq] using last
-      · exact old i (by omega)
+      · exact old i (by omega_using [hi, eq])
     · intro all
-      exact ⟨fun i hi => all i (by omega), all j (by omega)⟩
+      exact ⟨fun i hi => all i (by omega_using [hi]), all j (by omega_using [])⟩
   · rw [z6, U5.other _ (by decide), U4.other _ (by decide), K3.1 _ (by decide), cz]
 
 theorem eqArrays_ok {L : Lay} {s : State} {W : Addr} {Z len N a b : Nat}
@@ -107,9 +107,9 @@ theorem eqArrays_ok {L : Lay} {s : State} {W : Addr} {Z len N a b : Nat}
   unfold eqArrays
   refine WP.seq ?_
   simp only [List.append_assoc]
-  refine arrPtr_ok (lenSrc h) h.lenLe h.edi (by decide) (by decide) (by omega) fun s1 K1 m1 p1 _ => ?_
+  refine arrPtr_ok (lenSrc h) h.lenLe h.edi (by decide) (by decide) (by omega_using [fa, nw]) fun s1 K1 m1 p1 _ => ?_
   have h1 := h.keep K1 (by decide) (by decide) (by rw [m1]; exact Outside.refl _ _ _ _)
-  refine arrPtr_ok (lenSrc h1) h1.lenLe h1.edi (by decide) (by decide) (by omega) fun s2 K2 m2 p2 _ => ?_
+  refine arrPtr_ok (lenSrc h1) h1.lenLe h1.edi (by decide) (by decide) (by omega_using [fb, nw]) fun s2 K2 m2 p2 _ => ?_
   have h2 := h1.keep K2 (by decide) (by decide) (by rw [m2]; exact Outside.refl _ _ _ _)
   refine bytesB_ok (r := .edx) (lenSrc h2) h2.lenLe fun s3 K3 m3 n3 => ?_
   refine wp_movS rfl fun s4 U4 _ => WP.block_nil ?_
@@ -119,7 +119,7 @@ theorem eqArrays_ok {L : Lay} {s : State} {W : Addr} {Z len N a b : Nat}
   have m4 : s4.mem = s.mem := by rw [U4.mem, m3, m2, m1]
   have h4 := h.keep K4 (by decide) (by decide) (by rw [m4]; exact Outside.refl _ _ _ _)
   refine WP.mono (eqLoop_ok h4.rt (x := arr (kw len) a) (y := arr (kw len) b)
-    h.kw_pos (by omega) (by omega)
+    h.kw_pos (by omega_using [fa]) (by omega_using [fb])
     (by rw [PtrAt, U4.other _ (by decide), K3.1 _ (by decide), K2.1 _ (by decide)]; exact p1)
     (by rw [PtrAt, U4.other _ (by decide), K3.1 _ (by decide)]; exact p2)
     U4.gpr (by rw [U4.other _ (by decide)]; exact n3)) fun u ⟨m, e, K, _⟩ => ?_

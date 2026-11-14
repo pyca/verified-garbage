@@ -60,6 +60,6 @@ theorem generator_body_ok (M : Mont)
     rw [ite_eq_left h19]
     rw [ite_eq_right accepted, Nat.mul_succ] at cnt
     exact ⟨Wu, mem, h20,
-      by simpa only [accepted, ite_false] using rem, by omega, frame, rd, wr⟩
+      by simpa only [accepted, ite_false] using rem, by omega_using [cnt], frame, rd, wr⟩
 
 end VG.Proof.Dsa.AArch64.Generation

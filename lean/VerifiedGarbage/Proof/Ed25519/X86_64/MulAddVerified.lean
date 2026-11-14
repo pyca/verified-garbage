@@ -100,7 +100,7 @@ theorem mulAddSetup_ok {s : State} (hs : MulAddPre s) :
     intro d hd
     refine ⟨⟨s.gpr .rdx, 32⟩, ?_, ?_⟩
     · rw [k₂.2.2.1, rd₁, hs.rd]; simp
-    · rw [g₂ .rdx (by decide)]; exact Offset.contains_base _ hd (by omega)
+    · rw [g₂ .rdx (by decide)]; exact Offset.contains_base _ hd (by omega_using [hd])
   rw [WP.block_append_iff]
   refine WP.mono (copyScalar_ok hp₂ hw₂ .rdx (by decide) hr₂ 64 (by decide))
     fun s₃ ⟨v₃, g₃, rd₃, wr₃, o₃⟩ => ?_
@@ -112,7 +112,7 @@ theorem mulAddSetup_ok {s : State} (hs : MulAddPre s) :
     intro d hd
     refine ⟨⟨s.gpr .rcx, 32⟩, ?_, ?_⟩
     · rw [rd₃, k₂.2.2.1, rd₁, hs.rd]; simp
-    · rw [rcx₃]; exact Offset.contains_base _ hd (by omega)
+    · rw [rcx₃]; exact Offset.contains_base _ hd (by omega_using [hd])
   rw [WP.block_append_iff]
   refine WP.mono (copyScalar_ok hp₃ hw₃ .rcx (by decide) hr₃ 96 (by decide))
     fun s₄ ⟨v₄, g₄, rd₄, wr₄, o₄⟩ => ?_
@@ -123,7 +123,7 @@ theorem mulAddSetup_ok {s : State} (hs : MulAddPre s) :
     intro d hd
     refine ⟨⟨s.gpr .rsi, 32⟩, ?_, ?_⟩
     · rw [rd₄, rd₃, k₂.2.2.1, rd₁, hs.rd]; simp
-    · rw [rsi₄]; exact Offset.contains_base _ hd (by omega)
+    · rw [rsi₄]; exact Offset.contains_base _ hd (by omega_using [hd])
   refine WP.mono (loadWords_ok s₄ .rsi (by decide) hr₄) fun t ⟨vt, kt⟩ => ?_
   refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · rw [kt.1 _ (by decide), g₄ _ (by decide)]; exact hp₃
@@ -194,12 +194,12 @@ theorem scalarMulAdd_correct {s : State} (hs : MulAddPre s) :
   have rdi₅ : s₅.gpr .rdi = s.gpr .r8 := by rw [k₅.1 _ (by decide), g₄ _ (by decide), rdi₃]
   have mem₅ : s₅.mem = s₃.mem.writeW (off (s.gpr .r8) 48) (s₃.gpr .rbx) := by rw [k₅.2.1, m₄]
   have o₅ : Outside (s.gpr .r8) 48 8 s₃.mem s₅.mem := by
-    rw [mem₅]; exact writeW_outside _ _ _ (by omega)
+    rw [mem₅]; exact writeW_outside _ _ _ (by omega_using [])
   have wr₅ : s₅.wr = s.wr := by rw [k₅.2.2.2, wr₄, wr₃, wr₂]
   have read₅ : ∀ k < 8, InRegions (s₅.rd ++ s₅.wr) (s₅.gpr .rsi + BitVec.ofNat 64 (8 * k)) 8 := by
     intro k hk
     refine ⟨⟨s.gpr .r8, 8192⟩, List.mem_append_right _ (wr₅ ▸ hw), ?_⟩
-    rw [rsi₅, Offset.add_add]; exact Offset.contains_base _ (by omega) (by omega)
+    rw [rsi₅, Offset.add_add]; exact Offset.contains_base _ (by omega_using [hk]) (by omega_using [hk])
   have fm₅ : Frame [⟨s.gpr .r8, 8192⟩] s.mem s₅.mem := by
     have fm₂ : Frame [⟨s.gpr .r8, 8192⟩] s.mem s₂.mem := by rw [k₂.2.1]; exact h₁.frame
     exact (fm₂.trans (scratchFrame o₃ (by decide))).trans (scratchFrame o₅ (by decide))
@@ -241,7 +241,7 @@ theorem scalarMulAdd_correct {s : State} (hs : MulAddPre s) :
   · have ft : Frame [⟨s.gpr .r8, 8192⟩, ⟨s.gpr .rdi, 32⟩] s.mem t.mem := by
       rw [mt]
       have c : ∀ d, d + 8 ≤ 32 → (⟨s.gpr .rdi, 32⟩ : Region).Contains (off (s.gpr .rdi) d) (64 / 8) :=
-        fun d hd => Offset.contains_base _ hd (by omega)
+        fun d hd => Offset.contains_base _ hd (by omega_using [hd])
       have hm : (⟨s.gpr .rdi, 32⟩ : Region) ∈ [⟨s.gpr .r8, 8192⟩, ⟨s.gpr .rdi, 32⟩] := by simp
       exact ((((fm₈.mono (by simp)).writeW hm _ (c 0 (by decide))).writeW hm _
         (c 8 (by decide))).writeW hm _ (c 16 (by decide))).writeW hm _ (c 24 (by decide))

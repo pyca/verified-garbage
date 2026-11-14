@@ -26,7 +26,7 @@ def combGeneratorRow (n : Nat) {C : Curve} {w J H : Nat} {tbl : List (List (Nat�
     Nat.mod_lt _ (Nat.pos_of_ne_zero (NeZero.ne C.p))⟩
   point a ha hb _ := by
     rw [toM_mont hm,toM_mont hm]
-    have hp := hT.entry 0 hJ (a-1) (by omega)
+    have hp := hT.entry 0 hJ (a-1) (by omega_using [hH, hb])
     simp only [Nat.mul_zero,Nat.pow_zero,Nat.mul_one,Nat.sub_add_cancel ha] at hp
     rw [hp]
     exact InvJ.affine hC _ _
@@ -45,7 +45,7 @@ theorem combGenerator_coordinates {n : Nat} {C : Curve} {w J a : Nat} {tbl : Lis
     wordsVal s.mem (off T (16*n*(a-1))) 0 n=(combAt tbl 0 (a-1)).1*2^(64*n)%C.p ∧
     wordsVal s.mem (off T (16*n*(a-1))) (8*n) n=(combAt tbl 0 (a-1)).2*2^(64*n)%C.p := by
   have he := tbl_entry (n:=n) (R:=2^(64*n)) (p:=C.p) (H:=2^(w-1)) (J:=J)
-    ht hT.len hT.lenH (j:=0) (m:=a-1) hJ (by omega)
+    ht hT.len hT.lenH (j:=0) (m:=a-1) hJ (by omega_using [ha, hb])
     (Nat.lt_trans (Nat.mod_lt _ (Nat.pos_of_ne_zero (NeZero.ne C.p))) hp)
     (Nat.lt_trans (Nat.mod_lt _ (Nat.pos_of_ne_zero (NeZero.ne C.p))) hp)
   rw [wordsVal_addr,wordsVal_addr,Nat.add_zero]
@@ -66,21 +66,21 @@ theorem jointGenerator_of_table {c : Joint.Cfg} {C : Curve} {J size : Nat}
     rw [hlen]
     exact Nat.le_mul_of_pos_left _ hJ
   intro a ha hb _
-  have coords := combGenerator_coordinates hp hT hJ ht ha (by omega)
+  have coords := combGenerator_coordinates hp hT hJ ht ha (by omega_using [hH, hb])
   have hk : 16*c.K.M.n*(a-1)=16*(c.K.M.n*(a-1)) := Nat.mul_assoc ..
   have hka : c.K.M.n*(a-1)+c.K.M.n≤c.K.M.n*2^(w-1) := by
-    rw [← Nat.mul_succ]; exact Nat.mul_le_mul_left _ (by omega)
+    rw [← Nat.mul_succ]; exact Nat.mul_le_mul_left _ (by omega_using [hH, hb])
   have hl2 : 2^(w-1)*(2*c.K.M.n)=2*(c.K.M.n*2^(w-1)) := by
     rw [Nat.mul_comm (2^(w-1)),Nat.mul_assoc,Nat.mul_comm c.K.M.n]
   refine ⟨hsym,?_,?_,coords.1,coords.2⟩
   · intro i hi
     simp only [off,Offset.add_add]
     obtain ⟨r,hr,hreg⟩ := ht.rd
-    exact ⟨r,hr,Region.contains_off hreg (by omega)⟩
+    exact ⟨r,hr,Region.contains_off hreg (by omega_using [hlen', hk, hka, hl2, hi])⟩
   · intro i hi b hb'
-    have ho := hout (2*(c.K.M.n*(a-1))+2*i+b/8) (by omega) (b%8) (by omega)
+    have ho := hout (2*(c.K.M.n*(a-1))+2*i+b/8) (by omega_using [hlen', hka, hl2, hi, hb']) (b%8) (by omega_using [])
     simp only [off,Offset.add_add] at ho ⊢
-    have he : 16*c.K.M.n*(a-1)+16*i+b=8*(2*(c.K.M.n*(a-1))+2*i+b/8)+b%8 := by omega
+    have he : 16*c.K.M.n*(a-1)+16*i+b=8*(2*(c.K.M.n*(a-1))+2*i+b/8)+b%8 := by omega_using [hk]
     rw [he]
     exact ho
 

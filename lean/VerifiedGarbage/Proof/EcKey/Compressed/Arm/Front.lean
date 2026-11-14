@@ -40,13 +40,13 @@ open VG.Proof.Mont VG.Proof.Mont.Arm VG.Proof.Weierstrass VG.Proof.Weierstrass.A
   have hf := hp.pk_fit
   have hi : ∀ e, e + 4 ≤ c.C.len → InRegions (s.rd ++ s.wr) (ptr s .r1 + BitVec.ofNat 64 e) 4 := by
     intro e he
-    exact ⟨_, hp.pk, Offset.contains_base _ (by omega) (by omega)⟩
+    exact ⟨_, hp.pk, Offset.contains_base _ (by omega_using [hlen, he]) (by omega_using [hlen, hf, he])⟩
   have hd : Region.Disjoint ⟨ptr s .r1, c.C.len⟩ ⟨ptr s .r2, size⟩ :=
-    (hp.disjoint.sub_left (by simpa using Offset.sub_base (ptr s .r1) (d := 0) (by omega : 0 + c.C.len ≤ len))).sub_right
+    (hp.disjoint.sub_left (by simpa using Offset.sub_base (ptr s .r1) (d := 0) (by omega_using [hlen] : 0 + c.C.len ≤ len))).sub_right
       (by simpa using Offset.sub_base (ptr s .r2) (d := 0) (by decide : size ≤ 8192))
   refine ⟨.inl rfl, by simp [argsOk], ?_, hp.ws, hi, hi, hi, hd, hd, hd,
-    by change (s.gpr .r1).toNat + c.C.len ≤ 2 ^ 32; omega, by change (s.gpr .r1).toNat + c.C.len ≤ 2 ^ 32; omega,
-    by change (s.gpr .r1).toNat + c.C.len ≤ 2 ^ 32; omega, hp.ws_fit⟩
+    by change (s.gpr .r1).toNat + c.C.len ≤ 2 ^ 32; omega_using [hlen, hf], by change (s.gpr .r1).toNat + c.C.len ≤ 2 ^ 32; omega_using [hlen, hf],
+    by change (s.gpr .r1).toNat + c.C.len ≤ 2 ^ 32; omega_using [hlen, hf], hp.ws_fit⟩
   intro h
   cases h
 
@@ -105,7 +105,7 @@ open VG.Proof.X25519.Arm (Rest)
   have h7 := hc.n10
   have hd : Region.Disjoint ⟨ptr s₀ .r1, 1 + 2 * c.C.len⟩ ⟨ptr s₀ .r2, size⟩ :=
     hp.disjoint.sub_right (by simpa using Offset.sub_base (ptr s₀ .r2) (d := 0) (by decide : 0 + size ≤ 8192))
-  refine WP.seq (WP.mono (VG.Proof.Ecdsa.Arm.setup_ok hc (input_setup hp (by omega))) fun s₂ S => ?_)
+  refine WP.seq (WP.mono (VG.Proof.Ecdsa.Arm.setup_ok hc (input_setup hp (by omega_using []))) fun s₂ S => ?_)
   change SetupPost c Impl.EcKey.Compressed.Arm.args s₀ (ptr s₀ .r2) s₂ at S
   have F₂ := setup_fixed S
   have hn := S.scr.nowrap
@@ -121,14 +121,14 @@ open VG.Proof.X25519.Arm (Rest)
   have x₃' : sv c (ptr s₀ .r2) s₃ E = keyX c s₀ := by
     rw [x₃, r1₂]
     congr 1
-    exact bytesAt_keep W₂ (hd.sub_left (Offset.sub_base _ (d := 1) (by omega))) (by decide) (by have := hc.len_hi; omega)
+    exact bytesAt_keep W₂ (hd.sub_left (Offset.sub_base _ (d := 1) (by omega_using []))) (by decide) (by have := hc.len_hi; omega_using [h7, this])
   have y₃' : sv c (ptr s₀ .r2) s₃ QY = keyY c s₀ := by
     rw [y₃, r1₂]
     congr 1
-    exact bytesAt_keep W₂ (hd.sub_left (Offset.sub_base _ (d := 1 + c.C.len) (by omega)))
-      (by decide) (by have := hc.len_hi; omega)
+    exact bytesAt_keep W₂ (hd.sub_left (Offset.sub_base _ (d := 1 + c.C.len) (by omega_using [])))
+      (by decide) (by have := hc.len_hi; omega_using [h7, this])
   have lead₂ : s₂.mem (ptr s₀ .r1) = s₀.mem (ptr s₀ .r1) := by
-    have e := keep_of_disjoint' W₂ hd (by decide) (i := 0) (by have := hc.len8; omega) (by have := hc.len_hi; omega)
+    have e := keep_of_disjoint' W₂ hd (by decide) (i := 0) (by have := hc.len8; omega_using []) (by have := hc.len_hi; omega_using [h7, this])
     simpa only [BitVec.add_zero] using e
   have flag₃ : flagW c (ptr s₀ .r2) s₃ =
       mask32 ((s₀.mem (ptr s₀ .r1) = 4 ∧ keyX c s₀ < c.C.p) ∧ keyY c s₀ < c.C.p) := by

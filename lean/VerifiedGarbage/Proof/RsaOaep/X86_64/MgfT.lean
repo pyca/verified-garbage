@@ -526,7 +526,7 @@ theorem mgfXorT_ok (hgi : FnsGood f.init) (hgu : FnsGood f.upd) (hgf : FnsGood f
   have J0 := J1.step hwr1 L1.rsp f0 s0
   have I0' := mgfI_rebase I0 hrd1 hwr1 (keep_cs' k1 (cs_disj _ (by decide)))
   have A' : MArgs (upd (upd W 35 p) 36 (BitVec.ofNat 64 G.D)) S src srcLen dst dstLen :=
-    A.of_eq fun k h1 h2 => by simp only [upd]; rw [ifn (by omega), ifn (by omega)]
+    A.of_eq fun k h1 h2 => by simp only [upd]; rw [ifn (by omega_using [h2]), ifn (by omega_using [h2])]
   refine WP.loop (M := isa) (fun n w => ∃ c, n = dstLen - c * G.D ∧ c * G.D < dstLen ∧
       MgfI u F S V (upd (upd W 35 p) 36 (BitVec.ofNat 64 G.D)) (Spec.Mgf1.mgf1 Gs (srcB V src srcLen) dstLen) dst
         dstLen G.D c w ∧ TJ u F w)

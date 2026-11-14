@@ -25,7 +25,7 @@ theorem inputs_ok (b : VReg) (bs : List VReg) (s : State)
       Fr [] (b::bs) s t := by
   rw [inputs, WP.block_cons_iff]
   refine ⟨s.setV b (s.v .v31), by simp [isa, exec, VOp.eval, BitVec.or_self], ?_⟩
-  refine WP.mono (ldData_ok bs 0 (s.setV b (s.v .v31)) (List.nodup_cons.mp hnd).2 (by omega)
+  refine WP.mono (ldData_ok bs 0 (s.setV b (s.v .v31)) (List.nodup_cons.mp hnd).2 (by omega_using [hlen])
     (fun k hk => by simpa only [State.setV, Nat.zero_add] using hin k hk)) fun t ⟨hv,hf⟩ => ?_
   refine ⟨?_, ?_, ⟨?_, ?_, hf.sp, hf.mem, hf.rd, hf.wr⟩⟩
   · rw [hf.v _ (List.nodup_cons.mp hnd).1]

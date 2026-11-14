@@ -57,8 +57,8 @@ theorem signBit_ok {s : State} {base : Addr} (hs : Scr s base) :
     rw [hv.gpr]; change (u.gpr .r9 &&& 1#32).toNat = _
     rw [BitVec.toNat_and, show (1#32).toNat = 2 ^ 1 - 1 from rfl, Nat.and_two_pow_sub_one_eq_mod, hu.gpr]
     rfl
-  rw [ht.gpr, VG.Proof.X25519.Arm.toNat_shl, h1, Nat.mod_eq_of_lt (by omega)]
-  omega
+  rw [ht.gpr, VG.Proof.X25519.Arm.toNat_shl, h1, Nat.mod_eq_of_lt (by omega_using [])]
+  omega_using []
 
 /-- The value of slot 1 mod 2 is its limb 0's. -/
 theorem fe_mod2 (m : Mem) (base : Addr) : fe m base X2 % 2 = limbs m base X2 0 % 2 := by
@@ -84,9 +84,9 @@ theorem bytes56_write {m : Mem} {q : Addr} (v : Byte) :
   simp only [List.mem_range] at hi
   simp only [Mem.writeW]
   apply Mem.write_apply
-  rw [Offset.lt_iff _ q (by omega), Offset.add_sub_cancel_left, BitVec.toNat_ofNat,
-    Nat.mod_eq_of_lt (by omega)]
-  omega
+  rw [Offset.lt_iff _ q (by omega_using []), Offset.add_sub_cancel_left, BitVec.toNat_ofNat,
+    Nat.mod_eq_of_lt (by omega_using [hi])]
+  omega_using [hi]
 
 def encodeFields : List FieldOp := [.mul 4 1 21, .mul 1 0 21]
 
@@ -98,10 +98,10 @@ theorem encodeFields_impl :
 theorem far57 {base q : Addr} (hd : (⟨q, 57⟩ : Region).Disjoint ⟨base, 8192⟩) {i : Nat}
     (hi : i < 8192) : 57 ≤ ofs q (off base i) := by
   refine Nat.le_of_not_lt fun h => hd _ ?_
-    (Offset.contains_base base (d := i) (n := 1) (k := 8192) (by omega) (by omega))
+    (Offset.contains_base base (d := i) (n := 1) (k := 8192) (by omega_using [hi]) (by omega_using [hi]))
   simp only [Region.Contains]
   change ofs q (off base i) + 1 ≤ 57
-  omega
+  omega_using [h]
 
 /-- The registers the encoding may change. -/
 def encRegs : List Reg := [.r1, .r2, .r3, .r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12, .lr]
@@ -116,7 +116,7 @@ theorem baseEncode_ok {s : State} {base q : Addr} (hs : Scr s base) (hb : Bounde
       Frame [⟨base, 8192⟩, ⟨q, 57⟩] s.mem t.mem := by
   have hfar56 : ∀ j < 8192, 56 ≤ ofs q (off base j) := fun j hj => Nat.le_trans (by decide) (far57 hd hj)
   have hw56 : ∀ j < 57, InRegions s.wr (off q j) 1 := fun j hj =>
-    ⟨_, hw, Offset.contains_base _ (by omega) (by omega)⟩
+    ⟨_, hw, Offset.contains_base _ (by omega_using [hj]) (by omega_using [hj])⟩
   unfold baseEncode
   refine WP.seq (WP.mono (invert_ok hs hb) fun s₁ ⟨k₁, b₁, e₁⟩ => ?_)
   have hs₁ := k₁.scr hs
@@ -168,12 +168,12 @@ theorem baseEncode_ok {s : State} {base q : Addr} (hs : Scr s base) (hb : Bounde
   have wr₆ : s₆.wr = s.wr := by
     rw [k₆.2.2, k₅.regs.2.2, k₄.2.2, k₃.2.2, k₂.regs.2.2, k₁.regs.2.2]
   refine VG.Proof.X25519.Arm.WP.append (output_ok (p := q) hs₆ by₆ (by rw [r12₆]; exact hq)
-    (by rw [r12₆]; omega) (fun j hj => by rw [wr₆]; exact hw56 j (by omega)) hfar56)
+    (by rw [r12₆]; omega_using [hfit]) (fun j hj => by rw [wr₆]; exact hw56 j (by omega_using [hj])) hfar56)
     fun s₇ ⟨v₇, o₇, k₇⟩ => ?_
   have r8₇ : s₇.gpr .r9 = s₄.gpr .r9 := by
     rw [k₇.1 _ (by decide), k₆.1 _ (by decide), k₅.regs.1 _ (by decide)]
   refine VG.Proof.X25519.Arm.wp_strb (a := q + BitVec.ofNat 64 56) (by decide)
-    (by rw [k₇.1 _ (by decide), r12₆]; rw [VG.Arm.addr_add (by omega), hq])
+    (by rw [k₇.1 _ (by decide), r12₆]; rw [VG.Arm.addr_add (by omega_using [hfit]), hq])
     (by rw [k₇.2.2, wr₆]; exact hw56 56 (by decide)) fun s₈ u₈ => ?_
   -- The saved registers.
   have sv₂ : Saved base g s₂.mem := (sv.outside2 k₁.mem (by decide) (by decide)).outside2 k₂.mem
@@ -183,12 +183,12 @@ theorem baseEncode_ok {s : State} {base q : Addr} (hs : Scr s base) (hb : Bounde
   have o₈ : Outside q 0 57 s₆.mem s₈.mem := by
     refine (o₇.mono (by decide) (by decide)).trans fun x hx => ?_
     rw [u₈.mem]
-    exact writeW8_outside _ _ _ (d := 56) (by decide) (by omega)
+    exact writeW8_outside _ _ _ (d := 56) (by decide) (by omega_using [hx])
   have w₈ : ∀ d, d + 4 ≤ 8192 → word s₈.mem base d = word s₆.mem base d := fun d hd4 =>
     Mem.readW_congr fun i hi => by
       rw [Offset.add_add]
-      exact o₈ _ (Or.inr (far57 hd (i := d + i) (by omega)))
-  have sv₈ : Saved base g s₈.mem := fun i hi => (w₈ _ (by omega)).trans (sv₆ i hi)
+      exact o₈ _ (Or.inr (far57 hd (i := d + i) (by omega_using [hd4, hi])))
+  have sv₈ : Saved base g s₈.mem := fun i hi => (w₈ _ (by omega_using [hi])).trans (sv₆ i hi)
   refine VG.Proof.X25519.Arm.wp_mov (VG.Proof.X25519.Arm.op2_reg _ _) fun s₉ u₉ => ?_
   have hs₉ : Scr s₉ base := (hs₆.of_keeps (k₇.trans (rest_keeps (u₈.rest clob))) (by decide)).of_upd u₉
     (by decide) (by decide)

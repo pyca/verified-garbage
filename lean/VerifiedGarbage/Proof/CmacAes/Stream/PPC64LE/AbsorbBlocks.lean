@@ -43,10 +43,10 @@ def nbOf (c L : Nat) : Nat := if leftOf c L = 0 then 0 else (leftOf c L - 1) / 1
 def restOf (c L : Nat) : Nat := leftOf c L - 16 * nbOf c L
 
 theorem f_le (c L : Nat) : fOf c L ≤ L ∧ fOf c L + held c ≤ 16 := by
-  have := held_le c; unfold fOf; omega
+  have := held_le c; unfold fOf; omega_using [this]
 
 theorem nb_le (c L : Nat) : fOf c L + 16 * nbOf c L + restOf c L = L := by
-  have := f_le c L; unfold restOf nbOf leftOf; split <;> omega
+  have := f_le c L; unfold restOf nbOf leftOf; split <;> omega_using [this]
 
 /-! ## Arithmetic on registers -/
 
@@ -56,7 +56,7 @@ theorem lsr63 {m k : Nat} (hm : m ≤ 16) (hk : k ≤ 16) :
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_ushiftRight, BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat,
     Nat.shiftRight_eq_div_pow]
-  split <;> simp only [BitVec.toNat_ofNat] <;> omega
+  split <;> simp only [BitVec.toNat_ofNat] <;> omega_arith
 
 /-- `16 nb` for the data left `x > 0`, as `subi 1; and 15; sub` computes it. -/
 theorem nb16_bv {x : Nat} (hx : 0 < x) (hx' : x < 2 ^ 64) :
@@ -64,9 +64,9 @@ theorem nb16_bv {x : Nat} (hx : 0 < x) (hx' : x < 2 ^ 64) :
       BitVec.ofNat 64 (16 * ((x - 1) / 16)) := by
   apply BitVec.eq_of_toNat_eq
   have e : (BitVec.ofNat 64 x - BitVec.ofNat 64 1).toNat = x - 1 := by
-    rw [BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat]; omega
+    rw [BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat]; omega_using [hx, hx']
   rw [BitVec.toNat_sub, and15, e, BitVec.toNat_ofNat]
-  omega
+  omega_using []
 
 /-! ## Saving the registers -/
 
@@ -78,7 +78,7 @@ theorem abs_bound : ∀ p ∈ saved, 2176 ≤ p.2 ∧ p.2 + 8 ≤ 2232 := by dec
 /-- Saving the registers changes only their slots. -/
 theorem absMem_frame (s₀ : State) (S : Addr) :
     Frame [⟨S + BitVec.ofNat 64 2176, 56⟩] s₀.mem (absMem s₀ S) :=
-  Spill.saveMem_frame (lo := 2176) (n := 56) abs_bound (by omega) _ _ _
+  Spill.saveMem_frame (lo := 2176) (n := 56) abs_bound (by omega_using []) _ _ _
 
 /-- What `save` leaves. -/
 structure Saved₁ (s₀ : State) (S : Addr) (s : State) : Prop where
@@ -153,15 +153,15 @@ theorem clamp_wp {s : State} {L : Nat} (hL : L < 2 ^ 64) (h17 : s.gpr .r17 = Bit
   refine WP.seq (wp_lsr (by decide) fun s₁ u₁ => wp_nil ?_)
   have x10 : s₁.gpr .r10 = BitVec.ofNat 64 (L / 16) := by
     rw [u₁.gpr, h17, shr_ofNat hL]
-  have ev := eval_zero_ofNat s₁ .r10 (by omega) x10
+  have ev := eval_zero_ofNat s₁ .r10 (by omega_using [hL]) x10
   by_cases hl : L < 16
-  · have e : L / 16 = 0 := by omega
+  · have e : L / 16 = 0 := by omega_using [hl]
     refine WP.ite true (by rw [ev, e]; rfl) (fun _ => ?_) (fun h => by cases h)
     unfold Impl.AesCbc.PPC64LE.mov
     refine wp_mr fun s₂ u₂ => wp_nil ⟨?_, fun r h => by rw [u₂.other _ h, u₁.other _ h],
       by rw [u₂.mem, u₁.mem], by rw [u₂.rd, u₁.rd], by rw [u₂.wr, u₁.wr]⟩
     rw [u₂.gpr, u₁.other _ (by decide), h17, Nat.min_eq_left (Nat.le_of_lt hl)]
-  · have e : L / 16 ≠ 0 := by omega
+  · have e : L / 16 ≠ 0 := by omega_using [hl]
     refine WP.ite false (by rw [ev]; simp [e]) (fun h => by cases h) fun _ => ?_
     refine wp_li (by decide) fun s₂ u₂ => wp_nil ⟨?_, fun r h => by rw [u₂.other _ h, u₁.other _ h],
       by rw [u₂.mem, u₁.mem], by rw [u₂.rd, u₁.rd], by rw [u₂.wr, u₁.wr]⟩
@@ -188,11 +188,11 @@ theorem fill_wp {s : State} {St D : Addr} {c L : Nat} (hL : L < 2 ^ 64)
   have x11₅ : s₅.gpr .r11 = BitVec.ofNat 64 (if min L 16 < 16 - held c then 1 else 0) := by
     rw [u₅.gpr, u₄.gpr, u₃.other _ (by decide), u₂.other _ (by decide), x10₁, u₃.gpr, u₂.gpr,
       u₂.other _ (by decide), x9₁, Offset.ofNat_sub_ofNat hh]
-    exact lsr63 (by omega) (by omega)
+    exact lsr63 (by omega_using []) (by omega_using [])
   have g₅ (r : Reg) (a : r ≠ .r11) (b : r ≠ .r12) : s₅.gpr r = s₁.gpr r := by
     rw [u₅.other _ a, u₄.other _ a, u₃.other _ b, u₂.other _ b]
-  have hf : fOf c L = min (min L 16) (16 - held c) := by unfold fOf; omega
-  have ev := eval_zero_ofNat s₅ .r11 (k := if min L 16 < 16 - held c then 1 else 0) (by split <;> omega) x11₅
+  have hf : fOf c L = min (min L 16) (16 - held c) := by unfold fOf; omega_using []
+  have ev := eval_zero_ofNat s₅ .r11 (k := if min L 16 < 16 - held c then 1 else 0) (by split <;> omega_using []) x11₅
   refine WP.seq (WP.mono (Q := fun (s₆ : State) => s₆.gpr .r12 = BitVec.ofNat 64 (fOf c L) ∧
     (∀ r, r ≠ .r12 → s₆.gpr r = s₅.gpr r) ∧ s₆.mem = s₅.mem ∧ s₆.rd = s₅.rd ∧ s₆.wr = s₅.wr) ?_
     fun s₆ h₆ => ?_)
@@ -238,7 +238,7 @@ theorem chain1_wp {s : State} {St D S : Addr} {f L : Nat} (hf : f ≤ L) (hL : L
       Offset.ofNat_sub_ofNat hf]
   have g₃ (r : Reg) (a : r ≠ .r16) (b : r ≠ .r17) (c : r ≠ .r7) : s₃.gpr r = s.gpr r := by
     rw [u₃.other _ c, u₂.other _ b, u₁.other _ a]
-  have ev := eval_zero_ofNat s₃ .r17 (k := L - f) (by omega) x17₃
+  have ev := eval_zero_ofNat s₃ .r17 (k := L - f) (by omega_using [hL]) x17₃
   refine WP.seq (WP.mono (Q := fun (s₄ : State) => s₄.gpr .r7 = BitVec.ofNat 64 (if L - f = 0 then 0 else 1) ∧
     (∀ r, r ≠ .r7 → s₄.gpr r = s₃.gpr r) ∧ s₄.mem = s₃.mem ∧ s₄.rd = s₃.rd ∧ s₄.wr = s₃.wr) ?_
     fun s₄ h₄ => ?_)
@@ -302,7 +302,7 @@ theorem chain2_wp {s : State} {x : Nat} (hx : x < 2 ^ 64) (h17 : s.gpr .r17 = Bi
       · rw [u₅.gpr, u₄.gpr, u₄.other _ (by decide), u₃.gpr, u₃.other _ (by decide), u₂.gpr,
           u₁.other _ (by decide), h17]
         simp only [h0, ↓reduceIte]
-        exact nb16_bv (by omega) hx
+        exact nb16_bv (by omega_using [h0]) hx
       · rw [u₅.other _ a, u₄.other _ b, u₃.other _ b, u₂.other _ a]
       · rw [u₅.mem, u₄.mem, u₃.mem, u₂.mem]
       · rw [u₅.rd, u₄.rd, u₃.rd, u₂.rd]
@@ -315,7 +315,7 @@ theorem chain2_wp {s : State} {x : Nat} (hx : x < 2 ^ 64) (h17 : s.gpr .r17 = Bi
       wp_nil ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, fun r hr a => ?_, ?_, ?_, ?_⟩
     · simp (disch := decide) only [u₈.other, u₇.other, u₆.other, u₅.other, u₄.other, u₃.other, x18₂]
     · simp (disch := decide) only [u₈.other, u₇.other, u₆.other, u₅.other, u₄.other, u₃.gpr, x18₂]
-      exact (shr_ofNat (by split <;> omega)).trans (by congr 1; omega)
+      exact (shr_ofNat (by split <;> omega_arith)).trans (by congr 1; omega_using [])
     · simp (disch := decide) only [u₈.other, u₇.other, u₆.other, u₅.other, u₄.gpr, u₃.other, g]
     · simp (disch := decide) only [u₈.other, u₇.other, u₆.other, u₅.gpr, u₄.other, u₃.other, g]
     · simp (disch := decide) only [u₈.other, u₇.other, u₆.gpr, u₅.other, u₄.other, u₃.other, g]

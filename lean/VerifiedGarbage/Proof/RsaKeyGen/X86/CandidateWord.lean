@@ -22,10 +22,10 @@ theorem forceWord_ok {s : State} {base : Addr} {size offset : Nat} (mask : BitVe
   refine wp_movS (readSrc_sc scratch fit) fun a A _ => wp_orS rfl fun b B => ?_
   have K : Keeps [.eax] s b := A.keeps.trans B.keeps
   have Sb := scratch.of_keeps K (by decide)
-  refine wp_storeS (Sb.ea (by omega)) (Sb.write fit) fun t T => WP.block_nil ?_
+  refine wp_storeS (Sb.ea (by omega_using [fit])) (Sb.write fit) fun t T => WP.block_nil ?_
   refine ⟨?_, ?_, K.widen (T.keeps [])⟩
   · rw [T.mem, w32_write_self, B.gpr, A.gpr, BitVec.toNat_or]
   · rw [T.mem, B.mem, A.mem]
-    exact writeW32_outside _ _ _ (by have := scratch.nowrap; omega)
+    exact writeW32_outside _ _ _ (by have := scratch.nowrap; omega_using [fit, this])
 
 end VG.Proof.RsaKeyGen.X86.CandidateBits

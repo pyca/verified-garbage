@@ -44,7 +44,7 @@ theorem numAt_d4 (m : Mem) (W : Addr) (o : BitVec 32) : numAt m W o 4 = d4 m (W 
 /-- A byte of the working space outside a range of it. -/
 theorem byte_out {W : Addr} {i e k : Nat} (hi : i + 1 ≤ 8192) (he : e + k ≤ 8192) (h : i < e ∨ e + k ≤ i) :
     ¬ (⟨W + BitVec.ofNat 64 e, k⟩ : Region).Contains (W + BitVec.ofNat 64 i) 1 := fun hc =>
-  Offset.disjoint W (d := i) (n := 1) (e := e) (k := k) (by omega) (by omega) (by omega) _
+  Offset.disjoint W (d := i) (n := 1) (e := e) (k := k) (by omega_using [h]) (by omega_using [hi]) (by omega_using [he]) _
     (Region.contains_self _ _) hc
 
 /-- The regions the functions write keep every byte the contracts do. -/
@@ -55,8 +55,8 @@ theorem keeps_of_frame {W : Addr} {o : BitVec 32} (ho : o.toNat + 32 ≤ 3840) {
   refine hf _ fun r hr => ?_
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl
-  · exact byte_out (by omega) (by omega) (by omega)
-  · exact byte_out (by omega) (by omega) hoi
+  · exact byte_out (by omega_using [hi]) (by omega_using []) (by omega_using [hown])
+  · exact byte_out (by omega_using [hi]) (by omega_using [ho]) hoi
 
 theorem p_eq : p256p.m = P := by decide
 

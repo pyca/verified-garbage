@@ -56,7 +56,7 @@ theorem workspaceGlobalFrame {g : Geometry} {rs : List (Nat × Nat)} {m m' : Mem
     by_contra bad
     apply nc
     change ofs g.W x + 1 ≤ g.L
-    omega
+    omega_using [bad]
   apply O
   intro r mem
   exact Or.inr (Nat.le_trans (fit r mem) bound)

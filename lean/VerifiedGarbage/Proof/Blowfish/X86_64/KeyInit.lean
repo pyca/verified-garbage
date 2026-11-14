@@ -28,7 +28,7 @@ open VG VG.X86_64 VG.X86_64.RegUpd VG.Impl.Blowfish.X86_64 VG.Spec.Blowfish VG.P
 def SchedW (S : Addr) (t : State) : Prop := ∀ off n, off + n ≤ 4168 → InRegions t.wr (S + BitVec.ofNat 64 off) n
 
 theorem SchedW.of_mem {S : Addr} {t : State} (h : (⟨S, 4168⟩ : Region) ∈ t.wr) : SchedW S t :=
-  fun off n hon => ⟨_, h, Offset.contains_base S hon (by omega)⟩
+  fun off n hon => ⟨_, h, Offset.contains_base S hon (by omega_using [hon])⟩
 
 theorem exec_store64 {s : State} {m : MemOp} {r : Reg} (h : InRegions s.wr (s.ea m) 8) :
     exec (.store m r) s = some { s with mem := s.mem.writeW (s.ea m) (s.gpr r) } := by
@@ -55,13 +55,13 @@ theorem initSteps_run {S : Addr} {t : State} (hS : t.gpr .rdx = S) (hW : SchedW 
       t' = { t with gpr := t'.gpr, mem := t'.mem }
   | 0, _ => ⟨t, rfl, fun i hi => by omega, Frame.refl _ _, fun _ _ => rfl, rfl⟩
   | k + 1, hk => by
-    obtain ⟨u, r, d, f, g, e⟩ := initSteps_run hS hW k (by omega)
+    obtain ⟨u, r, d, f, g, e⟩ := initSteps_run hS hW k (by omega_using [hk])
     let u₁ := u.setReg .r11 (Impl.Blowfish.initWord k)
     have ea : u₁.ea (mem .rdx (8 * k)) = S + BitVec.ofNat 64 (8 * k) := by
       rw [ea_mem]; simp only [u₁, gpr_setReg_of_ne _ _ (show Reg.rdx ≠ Reg.r11 by decide)]
       rw [g .rdx (by decide), hS]
     have hw : InRegions u₁.wr (u₁.ea (mem .rdx (8 * k))) 8 := by
-      rw [ea, show u₁.wr = t.wr by simp only [u₁, wr_setReg]; rw [e]]; exact hW _ _ (by omega)
+      rw [ea, show u₁.wr = t.wr by simp only [u₁, wr_setReg]; rw [e]]; exact hW _ _ (by omega_using [hk])
     let u₂ : State := { u₁ with mem := u₁.mem.writeW (u₁.ea (mem .rdx (8 * k))) (u₁.gpr .r11) }
     have m₂ : u₂.mem = u.mem.writeW (S + BitVec.ofNat 64 (8 * k)) (Impl.Blowfish.initWord k) := by
       simp only [u₂, ea]; simp only [u₁, mem_setReg, gpr_setReg_self]
@@ -70,11 +70,11 @@ theorem initSteps_run {S : Addr} {t : State} (hS : t.gpr .rdx = S) (hW : SchedW 
         runBlock_cons, exec_store64 hw, runStep_some, runBlock_nil]
     · rw [m₂]
       rcases Nat.lt_succ_iff_lt_or_eq.mp hi with hi | rfl
-      · rw [Mem.readW_writeW_sep (Offset.sep S (by omega) (by omega) (by omega)) (by decide)]
+      · rw [Mem.readW_writeW_sep (Offset.sep S (by omega_using [hi]) (by omega_arith) (by omega_using [hk])) (by decide)]
         exact d i hi
       · exact Mem.readW_writeW_self64 _ _ _
     · rw [m₂]
-      exact f.writeW (List.mem_singleton_self _) _ (Offset.contains_base S (by omega) (by omega))
+      exact f.writeW (List.mem_singleton_self _) _ (Offset.contains_base S (by omega_using [hk]) (by omega_using [hk]))
     · simp only [u₂, u₁, gpr_setReg_of_ne _ _ h]; exact g g' h
     · exact GM.trans e (by simp only [u₂, u₁, State.setReg])
 

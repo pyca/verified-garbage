@@ -36,14 +36,14 @@ theorem keyLoad2_ok {s : State} {d : Reg} (hd : d ≠ .x14) {k : Nat} (hk : k �
       t.sp = s.sp := by
   let W0 := s.mem.readW (s.gpr .x0 + BitVec.ofNat 64 k) 32
   let W1 := s.mem.readW (s.gpr .x0 + BitVec.ofNat 64 (k + 4)) 32
-  obtain ⟨s1, e1, u1⟩ := step_w s (.ldr .w .x14 .x0 k) .x14 W0 (exec_ldr_w ⟨hk4, by omega⟩ hr)
+  obtain ⟨s1, e1, u1⟩ := step_w s (.ldr .w .x14 .x0 k) .x14 W0 (exec_ldr_w ⟨hk4, by omega_using [hk]⟩ hr)
   obtain ⟨s2, e2, u2⟩ := step_w s1 (.rev32 .x14 .x14) .x14 (rev32 (s1.read .w .x14)) rfl
   obtain ⟨s3, e3, u3⟩ := step_x s2 (.lsl .x .x14 .x14 32) .x14 (s2.read .x .x14 <<< 32)
     (by simp only [exec, show 32 < Size.x.bits by decide, ite_true])
   have x0₃ : s3.gpr .x0 = s.gpr .x0 := by rw [u3.other (by decide), u2.other (by decide), u1.other (by decide)]
   have m3 : s3.mem = s.mem := by rw [u3.mem, u2.mem, u1.mem]
   obtain ⟨s4, e4, u4⟩ := step_w s3 (.ldr .w d .x0 (k + 4)) d W1
-    (by rw [exec_ldr_w ⟨by omega, by omega⟩ (by rw [x0₃, u3.rd, u3.wr, u2.rd, u2.wr, u1.rd, u1.wr]; exact hr'), x0₃, m3])
+    (by rw [exec_ldr_w ⟨by omega_using [hk4], by omega_using [hk]⟩ (by rw [x0₃, u3.rd, u3.wr, u2.rd, u2.wr, u1.rd, u1.wr]; exact hr'), x0₃, m3])
   obtain ⟨s5, e5, u5⟩ := step_w s4 (.rev32 d d) d (rev32 (s4.read .w d)) rfl
   obtain ⟨s6, e6, u6⟩ := step_x s5 (orrR d d .x14) d (s5.gpr d ||| s5.gpr .x14)
     (by simp [orrR, exec, State.read])
@@ -56,7 +56,7 @@ theorem keyLoad2_ok {s : State} {d : Reg} (hd : d ≠ .x14) {k : Nat} (hk : k �
     rw [u4.self, setWidth_setWidth_32, u2.self]
     simp only [State.read, Size.bits]
     rw [u1.self, setWidth_setWidth_32,
-      wordAt_blockAt _ _ (by omega), wordAt_blockAt _ _ (by omega), BitVec.or_comm]
+      wordAt_blockAt _ _ (by omega_using [hk]), wordAt_blockAt _ _ (by omega_using [hk]), BitVec.or_comm]
     have := BitVec.setWidth_append_eq_shiftLeft_setWidth_or (w'' := 64) (b := byteRev32 W0) (b' := byteRev32 W1)
     rw [BitVec.setWidth_eq] at this
     rw [this]

@@ -40,7 +40,7 @@ theorem crt_selectPower_input (s : State) {g : CrtGeometry} {bs : Fin 7 → List
   have eq := h.selected.1.workspace_eq_after_base ws member frame
   have flag := acceptance_after_base_save frame rest
   have modulus := eq.number h.selected.1.buffers.context.arraysFit (by decide : 0 < 8)
-  exact ⟨sharedT, ⟨⟨readyT, by have := sharedT.stack.nowrap; omega, sharedT.stack.read (by decide),
+  exact ⟨sharedT, ⟨⟨readyT, by have := sharedT.stack.nowrap; omega_using [this], sharedT.stack.read (by decide),
     by rw [flag]; exact h.bit, by rw [flag, modulus]; exact h.valid⟩,
     sharedT.power_sources i exponent member⟩, by rw [modulus]; exact h.prime⟩
 

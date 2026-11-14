@@ -26,7 +26,7 @@ theorem supported_scans (p q : List Byte) :
   have hq1 := significant_width q (n := 20) (by decide)
   have hq2 := significant_width q (n := 28) (by decide)
   have hq3 := significant_width q (n := 32) (by decide)
-  have e : ∀ {a k : Nat}, 8 * a = 8 * k ↔ a = k := fun {_ _} => by omega
+  have e : ∀ {a k : Nat}, 8 * a = 8 * k ↔ a = k := fun {_ _} => by omega_using []
   -- Each width the predicate names is a scan's byte count and top bit, so
   -- after rewriting the goal is propositional (and `omega` would split on
   -- every `↔`).
@@ -49,7 +49,7 @@ theorem subgroup_scan_width {p q : List Byte}
   have hq2 := significant_width q (n := 28) (by decide)
   have hq3 := significant_width q (n := 32) (by decide)
   unfold Spec.Dsa.supportedSizes at h hs
-  omega
+  omega_using [h, hs, hq1, hq2]
 
 /-- Only the last encoded byte determines whether a modulus is odd. -/
 theorem decodeBE_last_mod_two (front : List Byte) (last : Byte) :

@@ -193,7 +193,7 @@ theorem random_sample_init_ready {C : RandomContext} {used draws : Nat} {s t : S
     exact (InScr.of_outside hd (by decide)).trans (InScr.of_outside hs (by decide))
   have hw (d : Nat) (hd' : d + 8 ≤ 160 ∨ 168 ≤ d) (hs' : d + 8 ≤ 192) :
       word t.mem C.B d = word s.mem C.B d := by
-    rw [hm, hs.word (Or.inl hs') (by omega), hd.word hd' (by omega)]
+    rw [hm, hs.word (Or.inl hs') (by omega_using [hs']), hd.word hd' (by omega_using [hs'])]
   refine ⟨⟨h.scr.congr hk.wr, hk.sp.trans h.sp,
     (hw _ (by decide) (by decide)).trans h.rand, (hw _ (by decide) (by decide)).trans h.randLen,
     (hw _ (by decide) (by decide)).trans h.usedWord, (hw _ (by decide) (by decide)).trans h.width,
@@ -209,9 +209,9 @@ theorem random_sample_init_ready {C : RandomContext} {used draws : Nat} {s t : S
   · intro i hi
     have ho : ofs C.B (off C.B (200 + i)) = 200 + i := by
       have he : off C.B (200 + i) + BitVec.ofNat 64 0 = off C.B (200 + i) := BitVec.add_zero _
-      simpa only [he, Nat.add_zero] using ofs_off C.B (d := 200 + i) (i := 0) (by have := C.qlen; omega)
-    rw [hm, hs _ (by rw [ho]; right; unfold Random.oStatus; omega),
-      hd _ (by rw [ho]; right; unfold Random.oDraws; omega)]
+      simpa only [he, Nat.add_zero] using ofs_off C.B (d := 200 + i) (i := 0) (by have := C.qlen; omega_using [hi, this])
+    rw [hm, hs _ (by rw [ho]; right; unfold Random.oStatus; omega_using []),
+      hd _ (by rw [ho]; right; unfold Random.oDraws; omega_using [])]
     exact h.padding i hi
   · rw [hm, word_writeW_self]
 

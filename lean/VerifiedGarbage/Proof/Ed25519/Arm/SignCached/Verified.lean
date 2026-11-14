@@ -31,13 +31,13 @@ def reduce_ready (hL : L.Ok) {d : Nat} (hd : d + 32 ≤ 184) (ha : ReduceArgs L 
       List.not_mem_nil, or_false]
     rintro r (rfl | rfl | rfl)
     · exact .inl (digestWithin L)
-    · exact .inl (fieldWithin L (by omega))
+    · exact .inl (fieldWithin L (by omega_using [hd]))
     · exact .inr (scratch_covered L)
   have ws : ∀ r ∈ reduceWr L d, Whole.Within r L.FR ∨ ∃ R ∈ L.outputs, Whole.Within r R := by
     apply writes
     simp only [reduceWr, List.mem_cons, List.not_mem_nil, or_false]
     rintro r (rfl | rfl)
-    · exact .inl (fieldWithin L (by omega))
+    · exact .inl (fieldWithin L (by omega_using [hd]))
     · exact .inr (.inr (scratchWithin L))
   exact ⟨reduceRd L, reduceWr L d, reduce_pre hL hd ha, cov, ws⟩
 
@@ -192,7 +192,7 @@ theorem finalize_ct (hL : L.Ok) (ha : Arguments L m₁) (hb : Arguments L m₂)
     RelCT isa (Two L g₁ g₂ m₁ m₂ fun _ => True) (finalize n b)
       (Two L g₁ g₂ m₁ m₂ fun _ => True) := by
   have hv : Whole.valid (if b then .caller 4 n else .const n) := by
-    cases b <;> simp [Whole.valid] <;> omega
+    cases b <;> simp [Whole.valid] <;> omega_using [hn]
   have hvall : ∀ p : Reg × Value, p ∈ [(.r0, .caller 5 0),
       (.r2, if b then .caller 4 n else .const n), (.r3, .const 0)] → Whole.valid p.2 := by
     simp only [List.mem_cons, List.not_mem_nil, or_false]
@@ -374,7 +374,7 @@ theorem reduce_ct (hL : L.Ok) (ha : Arguments L m₁) (hb : Arguments L m₂)
     (d : Nat) (hd : d + 32 ≤ 184) :
     RelCT isa (Two L g₁ g₂ m₁ m₂ fun _ => True) (reduce d)
       (Two L g₁ g₂ m₁ m₂ fun _ => True) := by
-  have hv : Whole.valid (.frame d) := by change d < 256; omega
+  have hv : Whole.valid (.frame d) := by change d < 256; omega_using [hd]
   have hvall : ∀ p : Reg × Value, p ∈ [(.r0, .frame d), (.r1, .frame 184), (.r2, .caller 5 0)] → Whole.valid p.2 := by
     simp only [List.mem_cons, List.not_mem_nil, or_false]
     rintro p (rfl | rfl | rfl)
@@ -505,7 +505,7 @@ theorem lay_ok {s : State} (h : (signLocalWith n key post).pre s) : (lay n s).Ok
   · have he := Whole.base_top (s := s) hb
     have hs := s.sp.isLt
     change (Whole.base s).toNat + 272 ≤ 2 ^ 32
-    omega
+    omega_using [he]
   · simp only [Lay.inputs, List.mem_cons, List.not_mem_nil, or_false]
     rintro r (rfl | rfl | rfl | rfl | rfl | rfl)
     · exact os
@@ -552,7 +552,7 @@ theorem entry_args {s p : State} (h : (signLocalWith n key post).pre s)
     (hp : Whole.Saved (Whole.entered s) 6 p) : Arguments (lay n s) p.mem := by
   intro j hj
   have hw := Whole.saved_words (entry_below h) (by decide : 6 ≤ 6) (entry_top h) hp hj
-  have he : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4 ∨ j = 5 := by omega
+  have he : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4 ∨ j = 5 := by omega_using [hj]
   rcases he with rfl | rfl | rfl | rfl | rfl | rfl <;>
     simpa only [Whole.originalWord, Impl.Ed25519.Arm.Whole.argReg, Nat.reduceLT, ite_true, ite_false,
       Nat.reduceSub, Nat.mul_zero, BitVec.add_zero, Lay.value, lay,
@@ -562,9 +562,9 @@ theorem entry_read {s : State} (h : (signLocalWith n key post).pre s) : ∀ j < 
     InRegions (s.rd ++ s.wr) (State.addr (s.sp + BitVec.ofNat 32 (4*(j-4)))) 4 := by
   intro j hj h4
   have ht := entry_top h
-  rw [addr_add (by omega)]
+  rw [addr_add (by omega_using [hj, ht])]
   exact ⟨⟨State.addr s.sp,8⟩, List.mem_append_left _ (by rw [h.1]; simp),
-    Offset.contains_base _ (by omega) (by omega)⟩
+    Offset.contains_base _ (by omega_using [hj]) (by omega_using [hj])⟩
 
 theorem entry_input {s : State} (h : (signLocalWith n key post).pre s) {m : Mem}
     (hf : Frame [Whole.stack s] s.mem m) {r : Region} (hr : r ∈ s.rd) (hn : r.len ≤ 2 ^ 64) :
@@ -594,7 +594,7 @@ theorem entry_tbl {s p : State} (h : (signLocalWith n key post).pre s) (hp : Who
   obtain ⟨_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, hw, _, _, tstk⟩ := h
   rw [← hw j hj]
   refine hf.readW (r := TBL (s.syms VG.Impl.Ed25519.Arm.combSym))
-    (Offset.contains_base _ (by omega) (by omega)) ?_ (by decide)
+    (Offset.contains_base _ (by omega_using [hj]) (by omega_using [hj])) ?_ (by decide)
   intro r hr
   rw [List.mem_singleton.mp hr, stack_eq hb]
   exact tstk
@@ -640,9 +640,9 @@ theorem sat_key : Spec.Ed25519.bytesAt satMem 0x3000 32 = satKey := by
     have hi' : i < 32 := by simpa only [Spec.Ed25519.bytesAt, List.length_map, List.length_range] using hi
     have ha : ((0x3000 : Addr) + BitVec.ofNat 64 i).toNat = 0x3000 + i := by
       change (0x3000 + i % 2 ^ 64) % 2 ^ 64 = 0x3000 + i
-      omega
+      omega_using [hi']
     simp only [Spec.Ed25519.bytesAt, List.getElem_map, List.getElem_range, satMem, ha,
-      show ¬ 0x3000 + i < 0x3000 from by omega, ite_false, show 0x3000 + i < 0x3020 from by omega, ite_true, Nat.add_sub_cancel_left,
+      show ¬ 0x3000 + i < 0x3000 from by omega_using [], ite_false, show 0x3000 + i < 0x3020 from by omega_using [hi'], ite_true, Nat.add_sub_cancel_left,
       List.getElem?_eq_getElem hj, Option.getD_some]
 
 end VG.Proof.Ed25519.Arm.SignCached

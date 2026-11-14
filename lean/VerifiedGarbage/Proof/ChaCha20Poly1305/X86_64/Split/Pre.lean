@@ -72,7 +72,7 @@ theorem PTs_small {s₀ : State} (hs : L s₀ ≤ 960) (m : Mem) :
   simp only [PTs, bytesAt]
   exact List.map_congr_left fun k hk => by
     have := List.mem_range.mp hk
-    rw [ite_eq_right fun h => by omega]
+    rw [ite_eq_right fun h => by omega_using [hm, this, h]]
 
 /-- The stack arguments `src` and `src_len` survive a frame apart from them. -/
 theorem arg_frame {s₀ : State} {j : Nat} (hj : j = 2 ∨ j = 3) {rs : List Region} {m m' : Mem}
@@ -80,7 +80,7 @@ theorem arg_frame {s₀ : State} {j : Nat} (hj : j = 2 ∨ j = 3) {rs : List Reg
     m'.readW (stackArgAddr s₀ j) 64 = m.readW (stackArgAddr s₀ j) 64 := by
   refine hf.readW ?_ hd (by decide)
   rcases hj with rfl | rfl
-  · simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; omega
+  · simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; omega_using []
   · show (arg2R s₀).Contains (s₀.gpr .rsp + BitVec.ofNat 64 (8 * (3 + 1))) (64 / 8)
     rw [show s₀.gpr .rsp + BitVec.ofNat 64 (8 * (3 + 1)) = s₀.gpr .rsp + BitVec.ofNat 64 (8 * (2 + 1)) +
       BitVec.ofNat 64 8 by rw [BitVec.add_assoc, ← BitVec.ofNat_add]]
@@ -89,11 +89,11 @@ theorem arg_frame {s₀ : State} {j : Nat} (hj : j = 2 ∨ j = 3) {rs : List Reg
 /-- A byte of `src` is not in the context. -/
 theorem SPre.nctx {s₀ : State} (hT : SPre s₀) {k a n : Nat} (hk : k < SL s₀) (ha : a + n ≤ 1696) :
     ¬ (sub s₀ a n).Contains (sp s₀ + BitVec.ofNat 64 k) 1 :=
-  fun hc => hT.s_c _ (Offset.contains_base _ (by omega) (by have := hT.wrap_s; omega)) (sub_ctx s₀ ha _ hc)
+  fun hc => hT.s_c _ (Offset.contains_base _ (by omega_using [hk]) (by have := hT.wrap_s; omega_using [hk, this])) (sub_ctx s₀ ha _ hc)
 
 /-- A byte of `src` is not in the data. -/
 theorem SPre.ndR {s₀ : State} (hT : SPre s₀) {k : Nat} (hk : k < SL s₀) :
     ¬ (dR s₀).Contains (sp s₀ + BitVec.ofNat 64 k) 1 :=
-  fun hc => hT.s_d _ (Offset.contains_base _ (by omega) (by have := hT.wrap_s; omega)) hc
+  fun hc => hT.s_d _ (Offset.contains_base _ (by omega_using [hk]) (by have := hT.wrap_s; omega_using [hk, this])) hc
 
 end VG.Proof.ChaCha20Poly1305.X86_64.Split

@@ -9,6 +9,7 @@ public import VerifiedGarbage.Spec.Rsa.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Spec.Rsa.RecoverDet
 meta import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # `vg_rsa_recover_primes_det` on PPC64LE: the contract the proofs are written against
@@ -122,7 +123,7 @@ theorem rdP_pre {s : State} (h : rdP.pre s) : rvPre s := by
   obtain ⟨a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20, a21, a22,
     a23, a24, ⟨l1, l2⟩, a26, a27, a28, a29, a30, a31, a32⟩ := h
   exact ⟨a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20, a21, a22,
-    a23, a24, ⟨l1, l2⟩, a26, a27, a28, by omega, a30, a31, a32⟩
+    a23, a24, ⟨l1, l2⟩, a26, a27, a28, by omega_using [l1, a29], a30, a31, a32⟩
 
 theorem rd_implies : rdP.Implies (Spec.Rsa.recoverPrimesDetContract abi) where
   pre := by

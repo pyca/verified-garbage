@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.ChaCha20.Keystream
 public import VerifiedGarbage.Spec.ChaCha20Poly1305
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # Facts about the ChaCha20-Poly1305 specification
@@ -23,7 +24,7 @@ theorem readW32 (m : Mem) (a : Addr) :
   have e1 : a + 1 + 1 = a + 2 := by rw [BitVec.add_assoc]; rfl
   have e3 : a + 2 + 1 = a + 3 := by rw [BitVec.add_assoc]; rfl
   simp only [Mem.readW, Mem.read, BitVec.getLsbD_setWidth, BitVec.getLsbD_append, e1, e3]
-  have : i - 8 - 8 - 8 < 8 := by omega
+  have : i - 8 - 8 - 8 < 8 := by omega_using [hi]
   simp [this, hi]
 
 /-- Word `j` of the bytes in memory is the 32-bit word there. -/
@@ -31,7 +32,7 @@ theorem wordLE_bytesAt (m : Mem) (p : Addr) {n j : Nat} (h : 4 * j + 4 ≤ n) :
     wordLE (Spec.ChaCha20.bytesAt m p n) j = m.readW (p + BitVec.ofNat 64 (4 * j)) 32 := by
   have g : ∀ k < n, (Spec.ChaCha20.bytesAt m p n).getD k 0 = m (p + BitVec.ofNat 64 k) := by
     intro k hk; simp [Spec.ChaCha20.bytesAt, hk]
-  rw [wordLE, g _ (by omega), g _ (by omega), g _ (by omega), g _ (by omega), readW32]
+  rw [wordLE, g _ (by omega_using [h]), g _ (by omega_using [h]), g _ (by omega_using [h]), g _ (by omega_using [h]), readW32]
   have e : ∀ k, p + BitVec.ofNat 64 (4 * j) + BitVec.ofNat 64 k = p + BitVec.ofNat 64 (4 * j + k) := by
     intro k; rw [BitVec.add_assoc, ← BitVec.ofNat_add]
   rw [show (3 : Addr) = BitVec.ofNat 64 3 from rfl, show (2 : Addr) = BitVec.ofNat 64 2 from rfl,

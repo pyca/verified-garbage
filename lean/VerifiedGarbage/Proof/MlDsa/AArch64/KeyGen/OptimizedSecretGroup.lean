@@ -24,8 +24,8 @@ open VG.Proof.MlDsa.KeyGen (Small seedS bmax)
 
 theorem small_toRq_inj {η : Nat} (hη : η≤4) {a b : IPoly}
     (ha : Small η a) (hb : Small η b) (he : toRq a=toRq b) : a=b := by
-  have ea:=VG.Proof.MlDsa.KeyGen.modPm_toRq (f := a) (fun c hc=>by have:=ha c hc; omega)
-  have eb:=VG.Proof.MlDsa.KeyGen.modPm_toRq (f := b) (fun c hc=>by have:=hb c hc; omega)
+  have ea:=VG.Proof.MlDsa.KeyGen.modPm_toRq (f := a) (fun c hc=>by have:=ha c hc; omega_arith)
+  have eb:=VG.Proof.MlDsa.KeyGen.modPm_toRq (f := b) (fun c hc=>by have:=hb c hc; omega_arith)
   rw [←ea,←eb,he]
 
 def secretUpdate (r n : Nat) (old fresh : Nat→IPoly) (i : Nat) : IPoly :=
@@ -50,16 +50,16 @@ theorem good_group {p : Params} {σ : State} {r n : Nat} (hr : r+n≤p.ℓ+p.k)
         unfold secretUpdate
         by_cases h : r≤j
         · rw [ite_eq_left ⟨h,hj⟩]
-          have he : r+(j-r)=j := by omega
+          have he : r+(j-r)=j := by omega_using [h]
           have hh:=VG.Proof.MlDsa.KeyGen.rejBoundedPoly_mono
-            (VG.Proof.MlDsa.KeyGen.Bounds.le_max_right C B).rejBounded (hB (j-r) (by omega))
+            (VG.Proof.MlDsa.KeyGen.Bounds.le_max_right C B).rejBounded (hB (j-r) (by omega_using [hj, h]))
           simpa only [he] using hh
         · rw [ite_eq_right (fun hh=>h hh.1)]
           exact VG.Proof.MlDsa.KeyGen.rejBoundedPoly_mono
-            (VG.Proof.MlDsa.KeyGen.Bounds.le_max_left C B).rejBounded (hS j (by omega))
+            (VG.Proof.MlDsa.KeyGen.Bounds.le_max_left C B).rejBounded (hS j (by omega_using [h]))
     · exact Or.inr ⟨by rw [ite_eq_right (by simp [hv])],hfail⟩
   · exact Or.inr ⟨by rw [ite_eq_right (by simp [hret])],
-      VG.Proof.MlDsa.KeyGen.keyGenInternal_none_S (by omega) hfail⟩
+      VG.Proof.MlDsa.KeyGen.keyGenInternal_none_S (by omega_using [hr, hi]) hfail⟩
 
 
 /-- The fourth tail lane repeats lane zero; ordinary groups use all four. -/
@@ -67,7 +67,7 @@ def secretLane (n i : Nat) : Nat := if i<n then i else 0
 
 theorem secretLane_lt {n i : Nat} (hn : n=3∨n=4) : secretLane n i<n := by
   unfold secretLane
-  split <;> omega
+  split <;> omega_arith
 
 theorem groupOutcome_of_four {p : Params} (hη : p.η≤4) {σ : State}
     {r n : Nat} (hn : n=3∨n=4) {m : Mem} {seed : Addr} {out : Nat→Poly}
@@ -79,8 +79,8 @@ theorem groupOutcome_of_four {p : Params} (hη : p.η≤4) {σ : State}
       ret ((List.range 4).map out)) : GroupOutcome p σ r n fresh ret := by
   rcases ho with ⟨hret,B,hB⟩|⟨hret,hB⟩
   · refine Or.inl ⟨hret,B,fun i hi=>?_⟩
-    have hh:=(boundedFour_some_iff p.η B.rejBounded m seed out).mp hB i (by omega)
-    rw [hseed i (by omega),secretLane,ite_eq_left hi] at hh
+    have hh:=(boundedFour_some_iff p.η B.rejBounded m seed out).mp hB i (by omega_using [hn, hi])
+    rw [hseed i (by omega_using [hn, hi]),secretLane,ite_eq_left hi] at hh
     obtain ⟨x,hx,he⟩:=Option.map_eq_some_iff.mp hh
     have ex : x=fresh i := small_toRq_inj hη
       (VG.Proof.MlDsa.KeyGen.rejBoundedPoly_range hx) (hsmall i hi) (he.trans (hpoly i hi).symm)
@@ -114,7 +114,7 @@ theorem secretPoly_add (s : State) (p : Params) (r i : Nat) :
   rw [sc_add]
   congr 2
   unfold oP
-  omega
+  omega_using []
 
 theorem group_ok (c : Impl.Sha3.AArch64.Callee) {p : Params} (hF : PFacts p)
     {S : Nat} {σ : State} (hp : kgPre p S σ) {r n : Nat} (hn : n=3∨n=4)
@@ -122,23 +122,23 @@ theorem group_ok (c : Impl.Sha3.AArch64.Callee) {p : Params} (hF : PFacts p)
     WP isa (groupCode c p r n) s (KSamp p σ (p.k*p.ℓ) (r+n)) := by
   classical
   have hkl:=hF.kl; have hl:=hF.l; have hk:=hF.k; have hsc:=scr_eq p
-  have hη : p.η≤4 := by rcases hF.eta with h|h <;> omega
+  have hη : p.η≤4 := by rcases hF.eta with h|h <;> omega_using [h]
   unfold groupCode
-  refine WP.seq (WP.mono (secretSeeds_ok hF hp (by omega)
-    (fun i hi=>by have:=secretLane_lt (i := i) hn; omega) h) fun s1 h1=>?_)
+  refine WP.seq (WP.mono (secretSeeds_ok hF hp (by omega_using [hr])
+    (fun i hi=>by have:=secretLane_lt (i := i) hn; omega_using [hr, hl, hk, this]) h) fun s1 h1=>?_)
   have L1:=h1.ks.k1.kc.lay hF hp
-  refine WP.seq (WP.mono (boundedAt_layout hF L1 (by omega) c) fun s2 ⟨hP2,h24,hred,hsmall,hout⟩=>?_)
+  refine WP.seq (WP.mono (boundedAt_layout hF L1 (by omega_using [hn, hr]) c) fun s2 ⟨hP2,h24,hred,hsmall,hout⟩=>?_)
   have h2:=h1.ks.keep hF hp hP2 (by unfold k1Chk kcChk; lay)
     (fun k hk=>by lay) (fun k hk=>by lay) h24
   have L2:=h2.k1.kc.lay hF hp
   let fresh : Nat→IPoly := fun i=>if hi : i<n then
-    (hsmall i (by omega)).choose else Vector.replicate 256 0
+    (hsmall i (by omega_using [hn, hi])).choose else Vector.replicate 256 0
   have freshSpec : ∀i<n,toRq (fresh i)=polyAt s2.mem (pa s1 (sP p r)+BitVec.ofNat 64 (1024*i)) ∧
       Small p.η (fresh i) := by
     intro i hi
     dsimp only [fresh]
     rw [dite_eq_left hi]
-    exact ⟨(hsmall i (by omega)).choose_spec.1.symm,(hsmall i (by omega)).choose_spec.2⟩
+    exact ⟨(hsmall i (by omega_using [hn, hi])).choose_spec.1.symm,(hsmall i (by omega_using [hn, hi])).choose_spec.2⟩
   have ho : GroupOutcome p σ r n fresh ((s2.gpr .x0).setWidth 32) :=
     groupOutcome_of_four hη hn (fun i hi=>by rw [sc_add]; exact h1.done i hi)
       (fun i hi=>(freshSpec i hi).2) (fun i hi=>(freshSpec i hi).1) hout
@@ -151,15 +151,15 @@ theorem group_ok (c : Impl.Sha3.AArch64.Callee) {p : Params} (hF : PFacts p)
   · unfold secretUpdate
     by_cases hir : r≤i
     · rw [ite_eq_left ⟨hir,hi⟩]
-      have hei : r+(i-r)=i := by omega
-      have hp' := freshSpec (i-r) (by omega)
+      have hei : r+(i-r)=i := by omega_using [hir]
+      have hp' := freshSpec (i-r) (by omega_using [hn, hi])
       refine ⟨⟨?_,?_⟩,hp'.2⟩
       · rw [ht.mem,sc_pa hP3,sc_pa hP2]
-        simpa only [secretPoly_add,hei] using hred (i-r) (by omega)
+        simpa only [secretPoly_add,hei] using hred (i-r) (by omega_using [hn, hi])
       · rw [ht.mem,sc_pa hP3,sc_pa hP2]
         simpa only [secretPoly_add,hei] using hp'.1.symm
     · rw [ite_eq_right (fun hh=>hir hh.1)]
-      exact ⟨L2.keepPoly hP3 (by lay) (hS i (by omega)).1,(hS i (by omega)).2⟩
+      exact ⟨L2.keepPoly hP3 (by lay) (hS i (by omega_using [hir])).1,(hS i (by omega_using [hir])).2⟩
   · rw [hval,VG.Proof.MlDsa.KeyGen.and01 (good_01 hG)
       (VG.Proof.MlDsa.KeyGen.outcome_01 hout)]
     exact good_group hr hG ho

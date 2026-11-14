@@ -90,14 +90,14 @@ theorem hashes_ok {oc : Nat} (W : DcWfB L oc) {σ : State} (hp : (decapsK L).pre
   have k₁ := h.dc.step W hp hP₁.b W.h₁K
   have L₁ := k₁.lay W hp
   simp only [pieces, List.flatMap_cons, List.flatMap_nil, List.append_nil, h.m,
-    slice_of h.dc.dk (show 768 * L.k + 32 + 32 ≤ L.dkLen by omega), KeyGen.sha3Suffix6] at hb₁
+    slice_of h.dc.dk (show 768 * L.k + 32 + 32 ≤ L.dkLen by omega_using [hdk]), KeyGen.sha3Suffix6] at hb₁
   rw [← sha3_512_eq, ← hP₁.pa rbx_cs] at hb₁
   -- `J(z ‖ c)`.
   refine WP.mono (hash_ok (dcB_bases L) (ps := [((.rbp, 768 * L.k + 64), 32), ((.r14, 0), L.ctLen)]) (rate := 136)
     (out := sc oKB) (len := 32) W.h₂ (show 0x1f < 256 by decide) L₁) fun s₂ ⟨hP₂, hb₂⟩ => ?_
   have k₂ := k₁.step W hp hP₂.b W.h₂K
   simp only [pieces, List.flatMap_cons, List.flatMap_nil, List.append_nil, k₁.c,
-    slice_of k₁.dk (show 768 * L.k + 64 + 32 ≤ L.dkLen by omega), shakeSuffix31] at hb₂
+    slice_of k₁.dk (show 768 * L.k + 64 + 32 ≤ L.dkLen by omega_using [hdk]), shakeSuffix31] at hb₂
   rw [← J_eq, ← hP₂.pa rbx_cs] at hb₂
   have hG : bytesAt s₂.mem (pa s₂ (sc oG)) 64 = Spec.Sha3.sha3_512 (dcM' L σ ++ KPke.dkH L.p (dcDk L σ)) := by
     rw [L₁.keepBytes hP₂.b W.h₂G]; exact hb₁
@@ -108,7 +108,7 @@ theorem hashes_ok {oc : Nat} (W : DcWfB L oc) {σ : State} (hp : (decapsK L).pre
     have e' : (bytesAt s₂.mem (pa s₂ (sc oG)) 64).drop 32 = bytesAt s₂.mem (pa s₂ sigP) 32 := by
       rw [e, pa, pa, off_add]
     rw [← e', hG]; rfl
-  refine ⟨⟨⟨hp, k₂, hK, hb₂⟩, slice_of k₂.dk (show 384 * L.k + (384 * L.k + 32) ≤ L.dkLen by omega), ?_, hr⟩, ?_⟩
+  refine ⟨⟨⟨hp, k₂, hK, hb₂⟩, slice_of k₂.dk (show 384 * L.k + (384 * L.k + 32) ≤ L.dkLen by omega_using [hdk]), ?_, hr⟩, ?_⟩
   · rw [L₁.keepBytes hP₂.b W.h₂M, L₀.keepBytes hP₁.b W.h₁M]; exact h.m
   · rw [hP₂.cs .r15 (by decide), hP₁.cs .r15 (by decide), h.r15]
 
@@ -177,10 +177,10 @@ theorem post_of {oc : Nat} (W : DcWfB L oc) {σ s : State} (h : DEnd L σ s) {s'
 theorem decrypt_ok {A : Arith} (hA : ArithOk A) (W : DcWf L) {wc wd : List Nat} (K : KemCalls L wc wd) {σ : State}
     (hp : (decapsK L).pre σ) {s : State} (h : DC L σ s) (h15 : s.gpr .r15 = 1) : WP isa (decrypt L A) s (DM L σ) := by
   unfold decrypt
-  refine WP.seq (WP.mono (seqR_ok (I := fun k => DR L k 0 σ) L.k 0 (fun k _ hk s hs => u_ok A W K hp (by omega) hs) s
+  refine WP.seq (WP.mono (seqR_ok (I := fun k => DR L k 0 σ) L.k 0 (fun k _ hk s hs => u_ok A W K hp (by omega_using [hk]) hs) s
     (DR.zero h h15)) fun s₁ h₁ => ?_)
   rw [Nat.zero_add] at h₁
-  refine WP.seq (WP.mono (seqR_ok (I := fun k => DR L L.k k σ) L.k 0 (fun k _ hk s hs => s_ok hA W hp (by omega) hs) s₁ h₁)
+  refine WP.seq (WP.mono (seqR_ok (I := fun k => DR L L.k k σ) L.k 0 (fun k _ hk s hs => s_ok hA W hp (by omega_using [hk]) hs) s₁ h₁)
     fun s₂ h₂ => ?_)
   rw [Nat.zero_add] at h₂
   exact tail_ok hA W K hp h₂
@@ -215,12 +215,12 @@ theorem decrypt_tr {A : Arith} (hA : ArithOk A) (W : DcWf L) {wc wd : List Nat} 
     RelCT isa (R L fun σ s => DC L σ s ∧ s.gpr .r15 = 1) (decrypt L A) fun _ _ => True := by
   unfold decrypt
   refine RelCT.seq (RelCT.mono (seqR_tr (R := fun k => R L (DR L k 0)) L.k 0
-    fun k _ hk => relInv (fun σ s hp hs => u_ok A W K hp (by omega) hs) (u_tr A W K (by omega)))
+    fun k _ hk => relInv (fun σ s hp hs => u_ok A W K hp (by omega_using [hk]) hs) (u_tr A W K (by omega_using [hk])))
     (fun _ _ ⟨σ₁, σ₂, p₁, p₂, pub, h₁, h₂⟩ => ⟨σ₁, σ₂, p₁, p₂, pub, DR.zero h₁.1 h₁.2, DR.zero h₂.1 h₂.2⟩)
     fun _ _ h => h) ?_
   rw [Nat.zero_add]
   refine RelCT.seq (seqR_tr (R := fun k => R L (DR L L.k k)) L.k 0
-    fun k _ hk => relInv (fun σ s hp hs => s_ok hA W hp (by omega) hs) (s_tr hA W (by omega))) ?_
+    fun k _ hk => relInv (fun σ s hp hs => s_ok hA W hp (by omega_using [hk]) hs) (s_tr hA W (by omega_using [hk]))) ?_
   rw [Nat.zero_add]
   exact tail_tr hA W K
 

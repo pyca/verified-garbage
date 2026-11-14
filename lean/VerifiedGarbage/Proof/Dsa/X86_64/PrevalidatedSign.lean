@@ -53,12 +53,12 @@ theorem prevalidatedSignCompute_ok (M : Mont) (Sq : MontS) {L : ExecutionLayout}
       Spec.Rsa.bytesAt s5.mem (off L.base s) L.qLen = Spec.Dsa.encodeBE L.qLen (data.s L) ∧
       Outside L.base 128 (usedBytes - 128) s0.mem s5.mem ∧ Keep coreRegs s0 s5 := by
   obtain ⟨hql, hqu, _, _⟩ := L.widths
-  have hqm : qMinusTwo + L.qLen ≤ usedBytes := by unfold qMinusTwo usedBytes; omega
-  have hr : r + L.qLen ≤ usedBytes := by unfold r usedBytes; omega
-  have hs : s + L.qLen ≤ usedBytes := by unfold s usedBytes; omega
+  have hqm : qMinusTwo + L.qLen ≤ usedBytes := by unfold qMinusTwo usedBytes; omega_using [hqu]
+  have hr : r + L.qLen ≤ usedBytes := by unfold r usedBytes; omega_using [hqu]
+  have hs : s + L.qLen ≤ usedBytes := by unfold s usedBytes; omega_using [hqu]
   unfold PrevalidatedSign.compute
   refine WP.seq (WP.mono (readyMinus_ok h0 .q 2 (by decide)
-    (by change 2 ≤ L.subgroup; omega) qMinusTwo (by decide) hqm) fun s1 h1 => ?_)
+    (by change 2 ≤ L.subgroup; omega_using [hq]) qMinusTwo (by decide) hqm) fun s1 h1 => ?_)
   have hg1 := h1.external (by decide) hqm hg
   have hx1 := h1.external (by decide) hqm hx
   have hn1 := h1.external (by decide) hqm hn
@@ -66,7 +66,7 @@ theorem prevalidatedSignCompute_ok (M : Mont) (Sq : MontS) {L : ExecutionLayout}
   have hm1 := (h1.fields (by decide) hqm .mask).trans hm
   have hqm1 := h1.output (by decide) hqm
   refine WP.seq (WP.mono (readyRange_ok h1.ready .q Core.nonce (by trivial) hn1.active
-    (by rw [hnl]; omega) (by simp only [hnl, ModulusSide.words, ModulusSide.length]; exact Nat.le_refl _)
+    (by rw [hnl]; omega_using [hql]) (by simp only [hnl, ModulusSide.words, ModulusSide.length]; exact Nat.le_refl _)
     false hm1) fun s2 h2 => ?_)
   have hg2 := h2.preserve h1.ready (by decide) (by decide) (by simp [stablePointer, Core.generator]) hg1
   have hx2 := h2.preserve h1.ready (by decide) (by decide) (by simp [stablePointer, Core.privateScalar]) hx1
@@ -80,13 +80,13 @@ theorem prevalidatedSignCompute_ok (M : Mont) (Sq : MontS) {L : ExecutionLayout}
   have hr3 := h3.encodedLocal .q r (data.r L) (by decide) hr hr3bytes
   have hs3 := h3.encodedLocal .q s (data.s L) (by decide) hs hs3bytes
   refine WP.seq (WP.mono (readyZero_ok h3 (Core.scalar r) (by change r < 2 ^ 31; decide) hr3
-    (by simp only [encodeBE_length, ModulusSide.length]; omega)
-    (by simp only [encodeBE_length, ModulusSide.length]; omega) true hm3) fun s4 h4 => ?_)
+    (by simp only [encodeBE_length, ModulusSide.length]; omega_using [hql])
+    (by simp only [encodeBE_length, ModulusSide.length]; omega_using [hqu]) true hm3) fun s4 h4 => ?_)
   have hr4 := h4.preserve h3 (Nat.le_refl _) (by decide) (by trivial) hr3
   have hs4 := h4.preserve h3 (Nat.le_refl _) (by decide) (by trivial) hs3
   refine WP.mono (readyZero_ok h4.ready (Core.scalar s) (by change s < 2 ^ 31; decide) hs4
-    (by simp only [encodeBE_length, ModulusSide.length]; omega)
-    (by simp only [encodeBE_length, ModulusSide.length]; omega) true h4.mask) fun s5 h5 => ?_
+    (by simp only [encodeBE_length, ModulusSide.length]; omega_using [hql])
+    (by simp only [encodeBE_length, ModulusSide.length]; omega_using [hqu]) true h4.mask) fun s5 h5 => ?_
   have hr5 := h5.preserve h4.ready (Nat.le_refl _) (by decide) (by trivial) hr4
   have hs5 := h5.preserve h4.ready (Nat.le_refl _) (by decide) (by trivial) hs4
   refine ⟨h5.ready, ?_, ?_, ?_,
@@ -132,11 +132,11 @@ theorem prevalidatedSignBody_ok (M : Mont) (Sq : MontS) {L : ExecutionLayout} {s
   · rw [hr1, hs1] at hb
     exact hb
   · intro i hi
-    exact (hsave i hi).trans (hf1.word (Or.inl (by omega)) (by omega))
+    exact (hsave i hi).trans (hf1.word (Or.inl (by omega_using [hi])) (by omega_using [hi]))
   · intro x hx ho
     exact (hf x ho).trans (hf1 x (Or.inr (by
       have hu : 128 ≤ usedBytes := by decide
-      omega)))
+      omega_using [hx, hu])))
 
 /-- Validation of the packed key makes the signer's key checks true, so its
 acceptance is the prevalidated program's. -/

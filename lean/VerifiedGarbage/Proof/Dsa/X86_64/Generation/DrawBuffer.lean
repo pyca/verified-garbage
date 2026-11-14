@@ -42,7 +42,7 @@ theorem drawBuffer_ok {P : PrimeParams} {mi : BitVec 64} {used : Nat} {s : State
       simp only [List.mem_singleton] at hmem; subst r; simp [primeExtras])) hr
   have hzt : 256 ≤ P.Z := P.z256
   have hpt : PrimeState P mi (used + P.drawBytes) t := h.advance ht hused hft hk
-    (by simp only [List.mem_singleton, forall_eq]; change 208 ≤ P.Z; omega)
+    (by simp only [List.mem_singleton, forall_eq]; change 208 ≤ P.Z; omega_using [hzt])
     (by
       intro k hmem
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hmem

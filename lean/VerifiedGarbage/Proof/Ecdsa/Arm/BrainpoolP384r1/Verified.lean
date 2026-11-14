@@ -57,12 +57,12 @@ theorem brainpoolp384r1_nBits : 64 * brainpoolp384r1.n ≤ Spec.Ecdsa.nBits brai
   show 384 ≤ Spec.BrainpoolP384r1.curve.n.log2 + 1
   have : 383 ≤ Spec.BrainpoolP384r1.curve.n.log2 :=
     (Nat.le_log2 (by decide +kernel)).mpr (by decide +kernel)
-  omega
+  omega_using [this]
 
 /-- No bit of a hash of `48` bytes is dropped. -/
 theorem brainpoolp384r1_sh : brainpoolp384r1.sh = 0 := by
   have h : 64 * 6 ≤ Spec.Ecdsa.nBits brainpoolp384r1.C := brainpoolp384r1_nBits
-  show 8 * 48 - Spec.Ecdsa.nBits brainpoolp384r1.C = 0; omega
+  show 8 * 48 - Spec.Ecdsa.nBits brainpoolp384r1.C = 0; omega_using [h]
 
 theorem brainpoolp384r1_ok : CfgOk brainpoolp384r1 where
   n0 := by decide

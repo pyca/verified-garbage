@@ -393,7 +393,7 @@ theorem descentBody_ok {c : Cfg} (hc : BaseCfgOk c) {base : Addr} {s : State} {j
       rw [fieldAt, V.t, e₂ (by decide) (by decide), e₁ (by decide) (by decide)]
     have c₄ : fieldAt c base s₃ T1 = fieldAt c base s T1 * fieldAt c base s T1 := by
       rw [fieldAt, V.c, e₂ (by decide) (by decide), e₁ (by decide) (by decide)]
-    conv_rhs => rw [show j = j - 1 + 1 by omega, rootDescent]
+    conv_rhs => rw [show j = j - 1 + 1 by omega_using [hj], rootDescent]
     simp only [pow_eq_npow]
     rw [r₄, t₄, c₄, b₂]
 
@@ -426,7 +426,7 @@ theorem descentBody_ok {c : Cfg} (hc : BaseCfgOk c) {base : Addr} {s : State} {j
     change (v.v .v27).extractLsb' (64 * 0) 64 = _
     rw [hv]
     exact saved.trans hcounter
-  refine WP.mono (descentCounter_ok hj (by omega) counter) fun t ⟨ct, K⟩ => ?_
+  refine WP.mono (descentCounter_ok hj (by omega_using [hj']) counter) fun t ⟨ct, K⟩ => ?_
   refine ⟨R.scr.of_keeps K (by decide), ?_, ?_, ?_, ct, ?_⟩
   · have K₁ : KeepRegs (powClob c.n) s u := ⟨fun r _ => congrFun g r, rd, wr, sp⟩
     exact (K₁.trans R.keep).trans ((Keeps.regs K).mono (by simp [powClob]))

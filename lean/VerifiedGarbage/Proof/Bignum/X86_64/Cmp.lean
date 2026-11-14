@@ -52,16 +52,16 @@ theorem cmpStep_ok {s₀ : State} {B : Addr} {Z w eX eN : Nat}
     fun t₁ ⟨⟨hm, c', h₁, r, hr⟩, k₁⟩ => ?_
   · unfold cmpBody cfFromRbp cfToRbp
     xrun [State.ea, ix, addr0 tbx hI.r14, addr0 t10 hI.r14, hbp, cf_mask,
-      hI.scr.ld (show eX + 8 * j + 8 ≤ Z by omega), hI.scr.ld (show eN + 8 * j + 8 ≤ Z by omega)]
+      hI.scr.ld (show eX + 8 * j + 8 ≤ Z by omega_using [hX, hj]), hI.scr.ld (show eN + 8 * j + 8 ≤ Z by omega_using [hN, hj])]
     exact ⟨_, rfl, _, sbb_toNat _ _ _⟩
   have t₁14 : t₁.gpr .r14 = BitVec.ofNat 64 j := (k₁.gpr (by decide)).trans hI.r14
   have t₁12 : t₁.gpr .r12 = BitVec.ofNat 64 w := (k₁.gpr (by decide)).trans t12
-  refine WP.mono (count_ok t₁ t₁14 t₁12 (by omega) (by omega)) fun t' ⟨hz, h14, hm', k'⟩ => ⟨hz, ?_⟩
+  refine WP.mono (count_ok t₁ t₁14 t₁12 (by omega_using [hw, hj]) (by omega_using [hw])) fun t' ⟨hz, h14, hm', k'⟩ => ⟨hz, ?_⟩
   rw [hI.mem] at hr
   refine ⟨hI.scr.congr (k'.2.2.trans k₁.2.2), ((hI.keep.trans k₁).trans k').mono (by decide),
     by rw [hm', hm, hI.mem], h14, ⟨c', d + 2 ^ (64 * j) * r.toNat, (k'.gpr (by decide)).trans h₁, ?_, ?_⟩⟩
   · have := Nat.mul_le_mul_left (2 ^ (64 * j)) (show r.toNat + 1 ≤ 2 ^ 64 from r.isLt)
-    rw [pow64_succ]; rw [Nat.mul_add, Nat.mul_one] at this; omega
+    rw [pow64_succ]; rw [Nat.mul_add, Nat.mul_one] at this; omega_using [hd, this]
   · simp only [wv]
     rw [pow64_succ]
     grind
@@ -79,8 +79,8 @@ theorem cmpLoop_ok {s : State} {B : Addr} {Z w eX eN : Nat} (hs : Scr s B Z)
       CmpInv s B Z eX eN 0 t := fun t h14 hm k _ =>
     ⟨hs.congr k.2.2, k.mono (by decide), hm, h14,
       ⟨false, 0, (k.gpr (by decide)).trans hbp, Nat.one_pos, rfl⟩⟩
-  refine WP.mono (wordLoop_ok (start := 0) (N := w) (by omega) hw' (CmpInv s B Z eX eN) h0
-    (fun j _ hj t hI => cmpStep_ok hbx h10 h12 (by omega) hX hN hj hI)) fun t hI => ?_
+  refine WP.mono (wordLoop_ok (start := 0) (N := w) (by omega_using [hw]) hw' (CmpInv s B Z eX eN) h0
+    (fun j _ hj t hI => cmpStep_ok hbx h10 h12 (by omega_using [hw']) hX hN hj hI)) fun t hI => ?_
   obtain ⟨c, d, hc, hd, hval⟩ := hI.val
   exact ⟨by rw [hc, lt_of_borrow hd hval], hI.mem, hI.keep⟩
 

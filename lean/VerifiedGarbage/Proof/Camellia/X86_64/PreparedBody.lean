@@ -56,9 +56,9 @@ theorem halfRel_eq {Q : Nat → BitVec 64} {x : BitVec 64} (h : HalfRel Q fun _ 
     Q j = keyPlane x j := by
   apply BitVec.eq_of_getLsbD_eq
   intro p hp
-  have e1 := h (p % 8) (by omega) (p / 8) (by omega) j hj
-  have e2 := keyPlane_rel x (p % 8) (by omega) (p / 8) (by omega) j hj
-  rw [show 8 * (p / 8) + p % 8 = p by omega] at e1 e2
+  have e1 := h (p % 8) (by omega_using []) (p / 8) (by omega_using [hp]) j hj
+  have e2 := keyPlane_rel x (p % 8) (by omega_using []) (p / 8) (by omega_using [hp]) j hj
+  rw [show 8 * (p / 8) + p % 8 = p by omega_using []] at e1 e2
   rw [e1, e2]
 
 theorem keyEntry_eq (w : List (BitVec 64)) (g : Nat) (d : Dir) (e : Nat) :
@@ -89,7 +89,7 @@ theorem byte_of_readW (m : Mem) (a : Addr) {j : Nat} (hj : j < 8) :
 
 theorem word_byte_addr (B : Addr) (o : Nat) : B + BitVec.ofNat 64 o = wordAddr B (o / 8) + BitVec.ofNat 64 (o % 8) := by
   rw [wordAddr, VG.Offset.add_add]
-  congr 2; omega
+  congr 2; omega_using []
 
 theorem layout_table (R : Nat) : layout.table R = [(384, 40), (768, 64 * (8 * (R / 6) + 2))] := rfl
 theorem evenSlot_eq : evenSlot = 48 := rfl
@@ -101,17 +101,17 @@ theorem table_ranges (R o : Nat) :
   rw [layout_table, evenSlot_eq, m3Slot_eq, keySlot_eq]
   simp only [List.mem_cons, List.not_mem_nil, or_false]
   constructor
-  · rintro ⟨r, hr | hr, i, hi, rfl⟩ <;> subst hr <;> dsimp only at hi ⊢ <;> omega
+  · rintro ⟨r, hr | hr, i, hi, rfl⟩ <;> subst hr <;> dsimp only at hi ⊢ <;> omega_using [hi]
   · intro h
     rcases h with h | h
-    · exact ⟨_, .inl rfl, o - 384, by dsimp only; omega, by dsimp only; omega⟩
-    · exact ⟨_, .inr rfl, o - 768, by dsimp only; omega, by dsimp only; omega⟩
+    · exact ⟨_, .inl rfl, o - 384, by dsimp only; omega_using [h], by dsimp only; omega_using [h]⟩
+    · exact ⟨_, .inr rfl, o - 768, by dsimp only; omega_using [h], by dsimp only; omega_using [h]⟩
 
 theorem holds_of_words {R : Nat} {m : Mem} {B : Addr} {w : List (BitVec 64)} {d : Spec.Camellia.Direction}
     (h : TableWordsAt R m B w (ofSpecDir d)) : Proof.Camellia.Prepared.Holds layout m B R w d := by
   intro r hr i hi
   have hw := (table_ranges R (r.1 + i)).1 ⟨r, hr, i, hi, rfl⟩
-  rw [word_byte_addr, byte_of_readW m _ (by omega), h _ hw]
+  rw [word_byte_addr, byte_of_readW m _ (by omega_using []), h _ hw]
   rfl
 
 theorem words_of_holds {R : Nat} {m : Mem} {B : Addr} {w : List (BitVec 64)} {d : Spec.Camellia.Direction}
@@ -120,22 +120,22 @@ theorem words_of_holds {R : Nat} {m : Mem} {B : Addr} {w : List (BitVec 64)} {d 
   simp only [Mem.readW, BitVec.setWidth_eq]
   refine Mem.read_eq_of_bytes fun j hj => ?_
   obtain ⟨r, hr, i, hi, ho⟩ := (table_ranges R (8 * k + j)).2 (by
-    rw [show (8 * k + j) / 8 = k by omega]; exact hk)
+    rw [show (8 * k + j) / 8 = k by omega_using [hj]]; exact hk)
   have := h r hr i hi
-  rw [← ho, word_byte_addr, show (8 * k + j) / 8 = k by omega, show (8 * k + j) % 8 = j by omega] at this
+  rw [← ho, word_byte_addr, show (8 * k + j) / 8 = k by omega_using [hj], show (8 * k + j) % 8 = j by omega_using [hj]] at this
   rw [this]
   show (preparedWord R w (ofSpecDir d) ((8 * k + j) / 8)).extractLsb' (8 * ((8 * k + j) % 8)) 8 = _
-  rw [show (8 * k + j) / 8 = k by omega, show (8 * k + j) % 8 = j by omega]
+  rw [show (8 * k + j) / 8 = k by omega_using [hj], show (8 * k + j) % 8 = j by omega_using [hj]]
 
 theorem entryW_word (m : Mem) (B : Addr) (e j : Nat) :
     entryW m B e j = m.readW (wordAddr B (keySlot + 8 * e + j)) 64 := by
-  rw [entryW, wordAddr, show 8 * (keySlot + 8 * e + j) = 8 * keySlot + 64 * e + 8 * j by omega]
+  rw [entryW, wordAddr, show 8 * (keySlot + 8 * e + j) = 8 * keySlot + 64 * e + 8 * j by omega_using []]
 
 theorem preparedWord_entry (R : Nat) (w : List (BitVec 64)) (d : Dir) {e j : Nat} (hj : j < 8) :
     preparedWord R w d (keySlot + 8 * e + j) = keyPlane (keyEntry w (R / 6) d e) j := by
-  have hc : ¬ (keySlot + 8 * e + j < keySlot) := by omega
+  have hc : ¬ (keySlot + 8 * e + j < keySlot) := by omega_using []
   simp only [preparedWord, hc, ↓reduceIte]
-  rw [show (keySlot + 8 * e + j - keySlot) / 8 = e by omega, show (keySlot + 8 * e + j - keySlot) % 8 = j by omega]
+  rw [show (keySlot + 8 * e + j - keySlot) / 8 = e by omega_using [hj], show (keySlot + 8 * e + j - keySlot) % 8 = j by omega_using [hj]]
 
 theorem preparedWord_mask (R : Nat) (w : List (BitVec 64)) (d : Dir) {kv : Nat × BitVec 64}
     (hkv : kv ∈ layerMasks) : preparedWord R w d kv.1 = kv.2 := by
@@ -150,7 +150,7 @@ theorem readyAt_of_words {R : Nat} {m : Mem} {B : Addr} {w : List (BitVec 64)} {
     (h : TableWordsAt R m B w d) : ReadyAt d R m B w := by
   refine ⟨fun kv hkv => by rw [h _ (.inl (mask_in hkv)), preparedWord_mask R w d hkv], fun e he => ?_⟩
   refine (keyPlane_rel (keyEntry w (R / 6) d e)).congr fun j hj => ?_
-  rw [entryW_word, h _ (.inr (by omega)), preparedWord_entry R w d hj]
+  rw [entryW_word, h _ (.inr (by omega_using [he, hj])), preparedWord_entry R w d hj]
 
 theorem words_of_readyAt {R : Nat} {m : Mem} {B : Addr} {w : List (BitVec 64)} {d : Dir}
     (h : ReadyAt d R m B w) : TableWordsAt R m B w d := by
@@ -159,7 +159,7 @@ theorem words_of_readyAt {R : Nat} {m : Mem} {B : Addr} {w : List (BitVec 64)} {
   · have hkv : ∃ kv ∈ layerMasks, kv.1 = k := by
       rw [evenSlot_eq, m3Slot_eq] at hk
       simp only [layerMasks, List.mem_cons, List.not_mem_nil, or_false]
-      rcases (by omega : k = 48 ∨ k = 49 ∨ k = 50 ∨ k = 51 ∨ k = 52) with rfl | rfl | rfl | rfl | rfl
+      rcases (by omega_using [hk] : k = 48 ∨ k = 49 ∨ k = 50 ∨ k = 51 ∨ k = 52) with rfl | rfl | rfl | rfl | rfl
       · exact ⟨_, .inl rfl, rfl⟩
       · exact ⟨_, .inr (.inl rfl), rfl⟩
       · exact ⟨_, .inr (.inr (.inl rfl)), rfl⟩
@@ -168,8 +168,8 @@ theorem words_of_readyAt {R : Nat} {m : Mem} {B : Addr} {w : List (BitVec 64)} {
     obtain ⟨kv, hkv, rfl⟩ := hkv
     rw [h.1 kv hkv, preparedWord_mask R w d hkv]
   · obtain ⟨e, j, hj, rfl⟩ : ∃ e j, j < 8 ∧ k = keySlot + 8 * e + j :=
-      ⟨(k - keySlot) / 8, (k - keySlot) % 8, by omega, by omega⟩
-    have he : e < 8 * (R / 6) + 2 := by omega
+      ⟨(k - keySlot) / 8, (k - keySlot) % 8, by omega_using [], by omega_using [hk]⟩
+    have he : e < 8 * (R / 6) + 2 := by omega_using [hk]
     rw [← entryW_word, preparedWord_entry R w d hj]
     exact halfRel_eq (h.2 e he) hj
 
@@ -195,8 +195,8 @@ theorem save_saved {s : State} {b : Addr} (hw : (⟨b, 8 * slots⟩ : Region) �
       s'.rd = s.rd ∧ s'.wr = s.wr ∧ Frame [⟨wordAddr b savedSlot, 48⟩] s.mem s'.mem := by
   obtain ⟨s', e', v', f', g', rd', wr'⟩ := Proof.Modes.X86_64.stores_ok savedSlot sreg 6 s hb
     (fun i hi => ⟨_, hw, by
-      rw [wordAddr]; exact VG.Offset.contains_base b (by rw [savedSlot_eq, slots_eq]; omega) (by rw [savedSlot_eq]; omega)⟩)
-    (by rw [savedSlot_eq]; omega)
+      rw [wordAddr]; exact VG.Offset.contains_base b (by rw [savedSlot_eq, slots_eq]; omega_using [hi]) (by rw [savedSlot_eq]; omega_using [hi])⟩)
+    (by rw [savedSlot_eq]; omega_using [])
   exact ⟨s', by rw [saveRegs_eq]; exact e', v', g', rd', wr', f'⟩
 
 /-- The registers' restores read their slots. -/
@@ -207,7 +207,7 @@ theorem restore_loads {s₀ s : State} {b : Addr} (hw : (⟨b, 8 * slots⟩ : Re
   obtain ⟨s', e', v', o', m', rd', wr'⟩ := Proof.Modes.X86_64.loads_ok savedSlot sreg 6 s hb
     (fun i _ => sreg_ne_sb i) (by decide)
     (fun i hi => ⟨_, List.mem_append_right _ hw, by
-      rw [wordAddr]; exact VG.Offset.contains_base b (by rw [savedSlot_eq, slots_eq]; omega) (by rw [savedSlot_eq]; omega)⟩)
+      rw [wordAddr]; exact VG.Offset.contains_base b (by rw [savedSlot_eq, slots_eq]; omega_using [hi]) (by rw [savedSlot_eq]; omega_using [hi])⟩)
   exact ⟨s', by rw [restoreRegs_eq]; exact e', fun i hi => by rw [v' i hi, hs i hi], o', m', rd', wr'⟩
 
 /-- The entry of the postwhitening subkey, for `g` groups. -/

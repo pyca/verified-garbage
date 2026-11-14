@@ -33,7 +33,7 @@ def L (f : Nat → BitVec 32) : BitVec 128 := ofVWords (f 0) (f 1) (f 2) (f 3)
 
 theorem vword_L (f : Nat → BitVec 32) {k : Nat} (hk : k < 4) : vword (L f) k = f k := by
   rw [L, vword_ofVWords _ _ _ _ hk]
-  rcases (show k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3 by omega) with rfl | rfl | rfl | rfl <;> rfl
+  rcases (show k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3 by omega_using [hk]) with rfl | rfl | rfl | rfl <;> rfl
 
 theorem L_vword (x : BitVec 128) : L (vword x ·) = x := ofVWords_vword x
 
@@ -131,11 +131,11 @@ theorem tile_ok {s₀ s : State} {T : Addr} {idx : Nat → BitVec 32} {q : Nat} 
       T + BitVec.ofNat 64 (16 * (4 * q + e)) := by
     rw [hx10, BitVec.add_assoc, ← BitVec.ofNat_add]
     congr 2
-    omega
+    omega_using []
   have hr (e : Nat) (he : e < 4) :
       InRegions (s.rd ++ s.wr) (T + BitVec.ofNat 64 (16 * (4 * q + e))) 16 := by
     rw [hk.rd, hk.wr]
-    exact CallLay.inRegions_sub hT (by omega) (by decide)
+    exact CallLay.inRegions_sub hT (by omega_using [hq, he]) (by decide)
   unfold scanTile
   crun [ha 0, ha 1, ha 2, ha 3, hr 0 (by decide), hr 1 (by decide),
     hr 2 (by decide), hr 3 (by decide)]
@@ -170,7 +170,7 @@ theorem body_ok {s₀ s : State} {T : Addr} {idx : Nat → BitVec 32} {q : Nat} 
   rw [WP.block_append_iff]
   refine WP.mono (tile_ok hq hT hx10 h) fun t ⟨ht, hg⟩ => ?_
   crun
-  rw [hg, hx10, BitVec.add_assoc, ← BitVec.ofNat_add, show 64 * q + 64 = 64 * (q + 1) by omega]
+  rw [hg, hx10, BitVec.add_assoc, ← BitVec.ofNat_add, show 64 * q + 64 = 64 * (q + 1) by omega_using []]
   refine ⟨⟨ht.v0, ht.v1, ht.v2, ht.v3, ht.v16, ht.v17, ht.v18,
     ht.keep.trans ⟨fun r a b => ?_, fun _ _ _ _ _ _ _ _ _ _ => rfl, rfl, rfl, rfl, rfl⟩⟩, rfl, rfl⟩
   simp only [gpr_write_of_ne _ _ _ b, gpr_write_of_ne _ _ _ a]
@@ -229,6 +229,6 @@ theorem scan_ok (s : State) (sym : String) {idx : Nat → BitVec 32} (h0 : s.v .
       ⟨⟨hv, h10'⟩, h11'⟩)
     ⟨ht, by rw [h10]; exact (BitVec.add_zero _).symm⟩ h11) fun u ⟨hu, _⟩ => ⟨?_, hu.keep⟩
   rw [hu.v1]
-  exact L_congr fun k hk => by rw [acc, ite_eq_left (by have := hidx k hk; omega)]
+  exact L_congr fun k hk => by rw [acc, ite_eq_left (by have := hidx k hk; omega_using [this])]
 
 end VG.Proof.Cast5.AArch64

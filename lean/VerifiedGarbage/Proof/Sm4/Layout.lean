@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Sm4.Rounds
 public import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # Bitsliced SM4: bytes, words and blocks
@@ -24,7 +25,7 @@ theorem readW64_bit (m : Mem) (a : Addr) {i j : Nat} (hi : i < 8) (hj : j < 8) :
     (m.readW a 64).getLsbD (8 * i + j) = (m (a + BitVec.ofNat 64 i)).getLsbD j := by
   rw [← Mem.extractLsb'_read m a (n := 8) hi, BitVec.getLsbD_extractLsb']
   simp only [Mem.readW, BitVec.getLsbD_setWidth, hj, decide_true, Bool.true_and]
-  simp only [show 8 * i + j < 64 by omega, decide_true, Bool.true_and]
+  simp only [show 8 * i + j < 64 by omega_using [hi, hj], decide_true, Bool.true_and]
 
 theorem wordAt_eq (b : Block) (i k : Nat) :
     (wordAt b i).getLsbD k =
@@ -36,8 +37,8 @@ theorem getLsbD_wordAt (b : Block) (n : Nat) {i j : Nat} (hi : i < 4) (hj : j < 
     (wordAt b n).getLsbD (8 * (3 - i) + j) = (b.getD (n + i) 0).getLsbD j := by
   rw [wordAt_eq]
   simp only [BitVec.getLsbD_append]
-  rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 by omega) with rfl | rfl | rfl | rfl <;>
-  rcases (show j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4 ∨ j = 5 ∨ j = 6 ∨ j = 7 by omega) with
+  rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 by omega_using [hi]) with rfl | rfl | rfl | rfl <;>
+  rcases (show j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4 ∨ j = 5 ∨ j = 6 ∨ j = 7 by omega_using [hj]) with
     rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
   simp only [Nat.reduceMul, Nat.reduceSub, Nat.reduceAdd, Nat.reduceLT, ↓reduceIte, Nat.lt_irrefl, Nat.add_zero]
 
@@ -49,8 +50,8 @@ theorem getLsbD_outBlock (z : Nat → Word) {k j : Nat} (hk : k < 16) (hj : j < 
     simp [outBlock, Vector.getD, hk]
   rw [this, BitVec.getLsbD_setWidth, BitVec.getLsbD_ushiftRight]
   simp only [hj, decide_true, Bool.true_and]
-  rw [show 8 * (3 - k % 4) + j = j + 8 * (3 - k % 4) by omega]
-  rcases (show k / 4 = 0 ∨ k / 4 = 1 ∨ k / 4 = 2 ∨ k / 4 = 3 by omega) with h | h | h | h <;>
+  rw [show 8 * (3 - k % 4) + j = j + 8 * (3 - k % 4) by omega_using []]
+  rcases (show k / 4 = 0 ∨ k / 4 = 1 ∨ k / 4 = 2 ∨ k / 4 = 3 by omega_using [hk]) with h | h | h | h <;>
     rw [h] <;> rfl
 
 theorem getLsbD_outBlock' (z : Nat → Word) {k j : Nat} (hk : k < 16) (hj : j < 8) :
@@ -67,8 +68,8 @@ theorem blockAt_getD (m : Mem) (p : Addr) {i : Nat} (hi : i < 16) :
 theorem getLsbD_scheduleAt (m : Mem) (p : Addr) {i c j : Nat} (hi : i < 32) (hc : c < 4) (hj : j < 8) :
     ((scheduleAt m p)[i]'hi).getLsbD (8 * c + j) = (m (p + BitVec.ofNat 64 (4 * i + c))).getLsbD j := by
   simp only [scheduleAt, Vector.getElem_ofFn, List.range, List.range.loop, List.foldl]
-  rcases (show c = 0 ∨ c = 1 ∨ c = 2 ∨ c = 3 by omega) with rfl | rfl | rfl | rfl <;>
-  rcases (show j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4 ∨ j = 5 ∨ j = 6 ∨ j = 7 by omega) with
+  rcases (show c = 0 ∨ c = 1 ∨ c = 2 ∨ c = 3 by omega_using [hc]) with rfl | rfl | rfl | rfl <;>
+  rcases (show j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4 ∨ j = 5 ∨ j = 6 ∨ j = 7 by omega_using [hj]) with
     rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
   simp
 

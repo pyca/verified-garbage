@@ -203,10 +203,10 @@ structure CombScanLay (n tab dst mask size : Nat) : Prop where
 theorem CombScanLay.entry {n tab dst mask size : Nat} (_L : CombScanLay n tab dst mask size)
     {j : Nat} (hj : j < 32) :
     tab ≤ entry n tab j ∧ entry n tab j + 8*n ≤ tab+256*n := by
-  have H := Nat.mul_le_mul_left (8*n) (show j+1 ≤ 32 by omega)
+  have H := Nat.mul_le_mul_left (8*n) (show j+1 ≤ 32 by omega_using [hj])
   simp only [Nat.mul_add, Nat.mul_one] at H
   unfold VG.Impl.Mont.X86.Dynamic.entry
-  omega
+  omega_using [H]
 
 /-- One instruction iteration preserves every byte except its output word,
 returns the selected word, and advances the public pointer and loop flag. -/
@@ -224,19 +224,19 @@ theorem combScanStep_ok {s : State} {base : Addr} {size n tab dst mask index i :
   have out := L.output
   have masks := L.masks
   have nw := hs.nowrap
-  have width : 4*(2*n) < 2^32 := by have := hs.size_lt; omega
+  have width : 4*(2*n) < 2^32 := by have := hs.size_lt; omega_using [out, this]
   unfold VG.Impl.Mont.X86.Comb.scanStep
   refine WP.block_append (WP.mono (maskedLookup_ok
     (fun j => at_ .ebp (entry n tab j)) (fun j => sc (mask+4*j))
     (fun j => s.mem.readW (off base (entry n tab j+4*i)) 32) hx
-    (fun j hj => readSrc_at' hs hp (by have := L.entry hj; have := L.table; omega))
-    (fun j hj => (readSrc_sc hs (d := mask+4*j) (by omega)).trans (congrArg some (hm j hj)))
+    (fun j hj => readSrc_at' hs hp (by have := L.entry hj; have := L.table; omega_arith))
+    (fun j hj => (readSrc_sc hs (d := mask+4*j) (by omega_using [masks, hj])).trans (congrArg some (hm j hj)))
     (by intros; exact of_decide_eq_true rfl) (by intros; exact of_decide_eq_true rfl)) fun u ⟨M, V, K⟩ => ?_)
   have hu := hs.of_keeps K (by decide)
   have pu : u.gpr .ebp = u.gpr .edi + BitVec.ofNat 32 (4*i) := by
     rw [K.1 .ebp (by decide), K.1 .edi (by decide), hp]
-  refine wp_storeS (hu.ea_at' pu (d := dst) (by omega))
-    (hu.write (d := dst+4*i) (n := 4) (by omega)) fun v W => ?_
+  refine wp_storeS (hu.ea_at' pu (d := dst) (by omega_using [hi, out]))
+    (hu.write (d := dst+4*i) (n := 4) (by omega_using [hi, out])) fun v W => ?_
   refine wp_addS rfl fun v₁ U₁ _ => ?_
   refine wp_movS rfl fun v₂ U₂ _ => ?_
   refine wp_addS rfl fun v₃ U₃ _ => ?_
@@ -250,11 +250,11 @@ theorem combScanStep_ok {s : State} {base : Addr} {size n tab dst mask index i :
   have atEnd : v₃.gpr .eax = s.gpr .edi + BitVec.ofNat 32 (8*n) := by
     rw [U₃.gpr, U₂.gpr, U₁.other _ (by decide), W.gpr, K.1 .edi (by decide)]
   refine ⟨?_, ?_, ?_, ?_, Kt⟩
-  · rw [Mt, W.mem, M]; exact writeW32_outside _ _ _ (by omega)
+  · rw [Mt, W.mem, M]; exact writeW32_outside _ _ _ (by omega_using [hi, out, nw])
   · rw [Mt, W.mem, Mem.readW_writeW_self32, V]
   · rw [Kt.1 .edi (by decide), F.gpr, pt, row_ebp]
   · rw [pt, atEnd] at Z
-    simpa only [show 8*n = 4*(2*n) by omega, row_zf _ hi width] using Z
+    simpa only [show 8*n = 4*(2*n) by omega_using [], row_zf _ hi width] using Z
 
 /-- The complete scan copies exactly the selected table entry and preserves
 all other bytes, including all masks and every table entry. -/
@@ -285,7 +285,7 @@ theorem combScan_ok {s : State} {base : Addr} {size n tab dst mask index : Nat}
     · rw [U.mem]; exact Outside.refl _ _ _ _
     · rw [U.gpr, U.other .edi (by decide)]; exact (BitVec.add_zero _).symm
   refine WP.loop (M := isa) (fun m t => ∃ i, m = 2*n-i ∧ i < 2*n ∧ I i t)
-    ?_ (2*n) u ⟨0, rfl, by have := L.positive; omega, init⟩
+    ?_ (2*n) u ⟨0, rfl, by have := L.positive; omega_using [this], init⟩
   rintro m t ⟨i, rfl, hi, O, V, K, P⟩
   have ht := hs.of_keeps K (by decide)
   have mt : ∀ j < 32, t.mem.readW (off base (mask+4*j)) 32 =
@@ -293,17 +293,17 @@ theorem combScan_ok {s : State} {base : Addr} {size n tab dst mask index : Nat}
     intro j hj
     apply BitVec.eq_of_toNat_eq
     change w32 t.mem base (mask+4*j) = _
-    rw [O.w32 (by omega) (by omega)]
+    rw [O.w32 (by omega_using [mapart, hi, hj]) (by omega_using [masks, nw, hj])]
     exact congrArg BitVec.toNat (hm j hj)
   refine WP.mono (combScanStep_ok ht L hi hx P mt) fun v ⟨F, W, P', Z, K'⟩ => ?_
   have next : I (i+1) v := by
-    refine ⟨(O.mono (Nat.le_refl _) (by omega)).trans (F.mono (by omega) (by omega)), ?_,
+    refine ⟨(O.mono (Nat.le_refl _) (by omega_using [])).trans (F.mono (by omega_using []) (by omega_using [])), ?_,
       K.trans K', P'⟩
-    rw [val32_succ, val32_succ, F.val32 (by omega) (by omega), V]
+    rw [val32_succ, val32_succ, F.val32 (by omega_using []) (by omega_using [output, nw, hi]), V]
     have word : w32 v.mem base (dst+4*i) = w32 s.mem base (entry n tab index+4*i) := by
       change (v.mem.readW _ 32).toNat = _
       rw [W]
-      exact O.w32 (by omega) (by omega)
+      exact O.w32 (by omega_using [apart, ent, hi]) (by omega_using [table, ent, nw, hi])
     rw [word]
   by_cases done : i+1 = 2*n
   · refine .inl ⟨?_, ?_⟩
@@ -311,9 +311,9 @@ theorem combScan_ok {s : State} {base : Addr} {size n tab dst mask index : Nat}
     · rcases next with ⟨O', V', K'', _⟩
       rw [done] at O' V'
       refine ⟨?_, ?_, K''⟩
-      · simpa only [show 4*(2*n) = 8*n by omega] using O'
+      · simpa only [show 4*(2*n) = 8*n by omega_using []] using O'
       · simpa only [wordsVal_eq_val32] using V'
-  · refine .inr ⟨?_, 2*n-(i+1), by omega, i+1, rfl, by omega, next⟩
+  · refine .inr ⟨?_, 2*n-(i+1), by omega_using [hi], i+1, rfl, by omega_using [hi, done], next⟩
     simp only [eval, Z, done, decide_false, Option.map_some, Bool.not_false]
 
 /-- Mask preparation followed by the scan implements the complete private
@@ -334,6 +334,6 @@ theorem wordSelectBody_ok {s : State} {base : Addr} {size n tab dst mask : Nat}
   rw [V']
   have ent := L.entry hw
   have table := L.table
-  exact O.wordsVal (by omega) (by have := hs.nowrap; omega)
+  exact O.wordsVal (by omega_using [sep, ent]) (by have := hs.nowrap; omega_using [ent, table, this])
 
 end VG.Proof.Mont.X86.Dynamic

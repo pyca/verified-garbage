@@ -27,7 +27,7 @@ theorem context_add_ok {n size m o a b : Nat} {base : Addr} {s : State}
   refine WP.mono (VG.Proof.Mont.X86.Dynamic.add_ok h.scr h.modulus
     (context_opLay h.size_le ho ha hb ho2 ha2 hb2 ho1) hAB) fun t ⟨K, V, F, B⟩ => ?_
   refine ⟨h.keep ho0 K, K, V, ?_, B⟩
-  simpa only [contextMod, words, show 4 * (2 * n + 1) = 8 * n + 4 by omega] using F
+  simpa only [contextMod, words, show 4 * (2 * n + 1) = 8 * n + 4 by omega_using []] using F
 
 theorem doubles_ok {n size m : Nat} {base : Addr} : ∀ (k : Nat) {s : State},
     Context n m base size s → wordsVal s.mem base (slot n 6) n < m →
@@ -41,8 +41,8 @@ theorem doubles_ok {n size m : Nat} {base : Addr} : ∀ (k : Nat) {s : State},
     have m1 := h.gt_one
     refine WP.seq (WP.mono (context_add_ok h (o := 6) (a := 6) (b := 6)
       (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
-      (by omega)) fun u ⟨cu, Ku, Vu, _, Bu⟩ => ?_)
-    have hvu : wordsVal u.mem base (slot n 6) n < m := by rw [Vu]; exact Nat.mod_lt _ (by omega)
+      (by omega_using [hv])) fun u ⟨cu, Ku, Vu, _, Bu⟩ => ?_)
+    have hvu : wordsVal u.mem base (slot n 6) n < m := by rw [Vu]; exact Nat.mod_lt _ (by omega_using [hv])
     refine WP.mono (doubles_ok k cu hvu) fun t ⟨ct, Kt, Vt, Bt⟩ => ⟨ct, ?_, ?_, Bt.trans Bu⟩
     · exact ⟨fun r hr => (Kt.gpr r hr).trans (Ku.gpr r hr), Kt.rd.trans Ku.rd, Kt.wr.trans Ku.wr,
         Ku.mem.trans Kt.mem⟩
@@ -60,10 +60,10 @@ theorem reduceStep_ok {n size m : Nat} {base : Addr} {s : State}
   refine WP.seq (WP.mono (doubles_ok 8 h hv) fun u ⟨cu, Ku, Vu, Bu⟩ => ?_)
   have bu := context_slot_val h (o := 6) (i := 7) (by decide) (by decide) (by decide) (by decide) Ku
   have vu : wordsVal u.mem base (slot n 6) n < m := by
-    rw [Vu]; exact Nat.mod_lt _ (by have := h.gt_one; omega)
+    rw [Vu]; exact Nat.mod_lt _ (by have := h.gt_one; omega_using [hv])
   refine WP.mono (context_add_ok cu (o := 6) (a := 6) (b := 7)
     (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
-    (by rw [bu]; omega)) fun t ⟨ct, Kt, Vt, _, Bt⟩ => ?_
+    (by rw [bu]; omega_using [hb, vu])) fun t ⟨ct, Kt, Vt, _, Bt⟩ => ?_
   refine ⟨ct, ⟨fun r hr => (Kt.gpr r hr).trans (Ku.gpr r hr), Kt.rd.trans Ku.rd, Kt.wr.trans Ku.wr,
     Ku.mem.trans Kt.mem⟩, ?_, Bt.trans Bu⟩
   rw [Vt, Vu, bu, Nat.mod_add_mod]

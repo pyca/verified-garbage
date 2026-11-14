@@ -23,7 +23,7 @@ theorem countValue_stage {base : Addr} {s t : State} {o l : Nat} (St : Stage bas
     countValue base t Core.digestPrefix = countValue base s Core.digestPrefix :=
   countValue_keep St.mem (fun r hr => by
     simp only [arithRanges, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl <;> simp only <;> omega) (by simp only [CountOk, Core.digestPrefix]; decide)
+    rcases hr with rfl | rfl | rfl <;> simp only <;> omega_arith) (by simp only [CountOk, Core.digestPrefix]; decide)
 
 /-- The value of the first scalar. -/
 abbrev rValue (P Q G K : Nat) : Nat := G ^ K % P % Q

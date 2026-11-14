@@ -46,20 +46,20 @@ theorem vbyte_sldoi (n m : BitVec 128) {sh i : Nat} (hsh : sh < 16) (hi : i < 16
     apply BitVec.eq_of_getLsbD_eq; intro r hr
     simp only [vbyte, BitVec.getLsbD_extractLsb', BitVec.getLsbD_shiftLeft, BitVec.getLsbD_append, hr,
       decide_true, Bool.true_and]
-    simp only [show 128 + (8 * (15 - i) + r) < 128 + 128 by omega,
-      show ¬ 128 + (8 * (15 - i) + r) < 8 * sh by omega, show ¬ 128 + (8 * (15 - i) + r) - 8 * sh < 128 by omega,
+    simp only [show 128 + (8 * (15 - i) + r) < 128 + 128 by omega_using [hr],
+      show ¬ 128 + (8 * (15 - i) + r) < 8 * sh by omega_using [hsh], show ¬ 128 + (8 * (15 - i) + r) - 8 * sh < 128 by omega_using [hc],
       decide_true, decide_false, Bool.not_false, Bool.true_and, ite_false,
-      show 8 * (15 - i) + r < 128 by omega, Bool.true_and]
-    exact congrArg n.getLsbD (by omega)
+      show 8 * (15 - i) + r < 128 by omega_using [hr], Bool.true_and]
+    exact congrArg n.getLsbD (by omega_using [hc])
   · rw [ite_eq_right hc]
     apply BitVec.eq_of_getLsbD_eq; intro r hr
     simp only [vbyte, BitVec.getLsbD_extractLsb', BitVec.getLsbD_shiftLeft, BitVec.getLsbD_append, hr,
       decide_true, Bool.true_and]
-    simp only [show 128 + (8 * (15 - i) + r) < 128 + 128 by omega,
-      show ¬ 128 + (8 * (15 - i) + r) < 8 * sh by omega, show 128 + (8 * (15 - i) + r) - 8 * sh < 128 by omega,
+    simp only [show 128 + (8 * (15 - i) + r) < 128 + 128 by omega_using [hr],
+      show ¬ 128 + (8 * (15 - i) + r) < 8 * sh by omega_using [hsh], show 128 + (8 * (15 - i) + r) - 8 * sh < 128 by omega_using [hi, hc, hr],
       decide_true, decide_false, Bool.not_false, Bool.true_and, ite_true,
-      show 8 * (15 - i) + r < 128 by omega, Bool.true_and]
-    exact congrArg m.getLsbD (by omega)
+      show 8 * (15 - i) + r < 128 by omega_using [hr], Bool.true_and]
+    exact congrArg m.getLsbD (by omega_using [hsh, hi, hc])
 
 theorem vbyte_zero (i : Nat) : vbyte (0 : BitVec 128) i = 0#8 := by
   apply BitVec.eq_of_getLsbD_eq; intro r hr
@@ -79,14 +79,14 @@ theorem vbyte_pfx (x : BitVec 128) {i : Nat} (hi : i < 16) :
   rw [pfx, vbyte_xor, vbyte_xor, vbyte_shl _ (by decide) hi,
     vbyte_shl _ (by decide) hi]
   by_cases h8 : i + 8 < 16
-  · rw [ite_eq_left h8, ite_eq_left h8, vbyte_xor, vbyte_shl _ (by decide) (by omega),
-      show i + 8 + 4 = i + 12 by omega]
+  · rw [ite_eq_left h8, ite_eq_left h8, vbyte_xor, vbyte_shl _ (by decide) (by omega_using [h8]),
+      show i + 8 + 4 = i + 12 by omega_using []]
   · rw [ite_eq_right h8, ite_eq_right h8]
 
 /-- Bytes of `Rk` four apart: the same byte of the word before. -/
 theorem rk_byte {f : Nat → BitVec 32} {j : Nat} {v : BitVec 128} (h : Rk f j v) {c p : Nat}
     (hc : c < 4) (hp : p < 4) : vbyte v (4 * c + p) = (f (j + 3 - c)).extractLsb' (8 * (3 - p)) 8 := by
-  rw [h _ (by omega), kb, show (4 * c + p) / 4 = c by omega, show (4 * c + p) % 4 = p by omega]
+  rw [h _ (by omega_using [hc, hp]), kb, show (4 * c + p) / 4 = c by omega_using [hp], show (4 * c + p) % 4 = p by omega_using [hp]]
 
 theorem extract_pre (f : Nat → BitVec 32) (j k q : Nat) :
     (pre f j (k + 1)).extractLsb' q 8 = (pre f j k).extractLsb' q 8 ^^^ (f (j + k + 1)).extractLsb' q 8 := by
@@ -94,39 +94,39 @@ theorem extract_pre (f : Nat → BitVec 32) (j k q : Nat) :
 
 theorem pfx_byte {f : Nat → BitVec 32} {j : Nat} {v : BitVec 128} (h : Rk f j v) {i : Nat} (hi : i < 16) :
     vbyte (pfx v) i = (pre f j (3 - i / 4)).extractLsb' (8 * (3 - i % 4)) 8 := by
-  obtain ⟨c, p, hc, hp, rfl⟩ : ∃ c p, c < 4 ∧ p < 4 ∧ i = 4 * c + p := ⟨i / 4, i % 4, by omega, by omega, by omega⟩
-  rw [vbyte_pfx _ hi, show (4 * c + p) / 4 = c by omega, show (4 * c + p) % 4 = p by omega]
-  rcases (by omega : c = 0 ∨ c = 1 ∨ c = 2 ∨ c = 3) with rfl | rfl | rfl | rfl
-  · rw [ite_eq_left (by omega), ite_eq_left (by omega), ite_eq_left (by omega),
-      show 4 * 0 + p + 4 = 4 * 1 + p by omega, show 4 * 0 + p + 8 = 4 * 2 + p by omega,
-      show 4 * 0 + p + 12 = 4 * 3 + p by omega, rk_byte h (by decide) hp, rk_byte h (by decide) hp,
+  obtain ⟨c, p, hc, hp, rfl⟩ : ∃ c p, c < 4 ∧ p < 4 ∧ i = 4 * c + p := ⟨i / 4, i % 4, by omega_using [hi], by omega_using [], by omega_using []⟩
+  rw [vbyte_pfx _ hi, show (4 * c + p) / 4 = c by omega_using [hp], show (4 * c + p) % 4 = p by omega_using [hp]]
+  rcases (by omega_using [hc] : c = 0 ∨ c = 1 ∨ c = 2 ∨ c = 3) with rfl | rfl | rfl | rfl
+  · rw [ite_eq_left (by omega_using [hp]), ite_eq_left (by omega_using [hp]), ite_eq_left (by omega_using [hp]),
+      show 4 * 0 + p + 4 = 4 * 1 + p by omega_using [], show 4 * 0 + p + 8 = 4 * 2 + p by omega_using [],
+      show 4 * 0 + p + 12 = 4 * 3 + p by omega_using [], rk_byte h (by decide) hp, rk_byte h (by decide) hp,
       rk_byte h (by decide) hp, rk_byte h (by decide) hp, extract_pre, extract_pre, extract_pre]
-    simp only [pre, Nat.add_zero, show j + 3 - 0 = j + 2 + 1 by omega, show j + 3 - 1 = j + 1 + 1 by omega,
-      show j + 3 - 2 = j + 0 + 1 by omega, show j + 3 - 3 = j by omega]
+    simp only [pre, Nat.add_zero, show j + 3 - 0 = j + 2 + 1 by omega_using [], show j + 3 - 1 = j + 1 + 1 by omega_using [],
+      show j + 3 - 2 = j + 0 + 1 by omega_using [], show j + 3 - 3 = j by omega_using []]
     ac_rfl
-  · rw [ite_eq_left (by omega), ite_eq_left (by omega), ite_eq_right (by omega),
-      show 4 * 1 + p + 4 = 4 * 2 + p by omega, show 4 * 1 + p + 8 = 4 * 3 + p by omega,
+  · rw [ite_eq_left (by omega_using [hp]), ite_eq_left (by omega_using [hp]), ite_eq_right (by omega_using []),
+      show 4 * 1 + p + 4 = 4 * 2 + p by omega_using [], show 4 * 1 + p + 8 = 4 * 3 + p by omega_using [],
       rk_byte h (by decide) hp, rk_byte h (by decide) hp, rk_byte h (by decide) hp,
       show 3 - 1 = 1 + 1 by rfl, extract_pre, extract_pre, BitVec.xor_zero]
-    simp only [pre, show j + 3 - 1 = j + 1 + 1 by omega, show j + 3 - 2 = j + 0 + 1 by omega,
-      show j + 3 - 3 = j by omega, Nat.add_zero]
+    simp only [pre, show j + 3 - 1 = j + 1 + 1 by omega_using [], show j + 3 - 2 = j + 0 + 1 by omega_using [],
+      show j + 3 - 3 = j by omega_using [], Nat.add_zero]
     ac_rfl
-  · rw [ite_eq_left (by omega), ite_eq_right (by omega), show 4 * 2 + p + 4 = 4 * 3 + p by omega,
+  · rw [ite_eq_left (by omega_using [hp]), ite_eq_right (by omega_using []), show 4 * 2 + p + 4 = 4 * 3 + p by omega_using [],
       rk_byte h (by decide) hp, rk_byte h (by decide) hp, show 3 - 2 = 0 + 1 by rfl, extract_pre,
       BitVec.xor_zero]
-    simp only [pre, show j + 3 - 2 = j + 0 + 1 by omega, show j + 3 - 3 = j by omega]
+    simp only [pre, show j + 3 - 2 = j + 0 + 1 by omega_using [], show j + 3 - 3 = j by omega_using []]
     ac_rfl
-  · rw [ite_eq_right (by omega), ite_eq_right (by omega), rk_byte h (by decide) hp, BitVec.xor_zero,
+  · rw [ite_eq_right (by omega_using []), ite_eq_right (by omega_using []), rk_byte h (by decide) hp, BitVec.xor_zero,
       BitVec.xor_zero]
-    simp only [pre, show j + 3 - 3 = j by omega, show 3 - 3 = 0 by rfl]
+    simp only [pre, show j + 3 - 3 = j by omega_using [], show 3 - 3 = 0 by rfl]
 
 /-- The next four words, from `temp` in every word of `y`. -/
 theorem step_rk {f : Nat → BitVec 32} {j nk : Nat} {v y : BitVec 128} {t : BitVec 32} (h : Rk f j v)
     (hy : ∀ i < 16, vbyte y i = t.extractLsb' (8 * (3 - i % 4)) 8)
     (hnext : ∀ k < 4, f (j + nk + k) = t ^^^ pre f j k) : Rk f (j + nk) (pfx v ^^^ y) := by
   intro i hi
-  rw [vbyte_xor, pfx_byte h hi, hy i hi, kb, show j + nk + 3 - i / 4 = j + nk + (3 - i / 4) by omega,
-    hnext _ (by omega), extract_xor, BitVec.xor_comm]
+  rw [vbyte_xor, pfx_byte h hi, hy i hi, kb, show j + nk + 3 - i / 4 = j + nk + (3 - i / 4) by omega_using [hi],
+    hnext _ (by omega_using []), extract_xor, BitVec.xor_comm]
 
 /-- The recurrence, four words at a time: `w[j+nk]` is `w[j] ⊕ temp`, the
 next three `w[j+nk+k] = w[j+k] ⊕ w[j+nk+k−1]`. -/
@@ -135,8 +135,8 @@ theorem next_pre {f : Nat → BitVec 32} {j nk : Nat} {t : BitVec 32} (h0 : f (j
     ∀ k < 4, f (j + nk + k) = t ^^^ pre f j k
   | 0, _ => by rw [Nat.add_zero, h0, pre, BitVec.xor_comm]
   | k + 1, hk => by
-    rw [h (k + 1) (by omega) hk, show j + nk + (k + 1) - 1 = j + nk + k by omega, next_pre h0 h k (by omega), pre,
-      show j + (k + 1) = j + k + 1 by omega]
+    rw [h (k + 1) (by omega_using []) hk, show j + nk + (k + 1) - 1 = j + nk + k by omega_using [], next_pre h0 h k (by omega_using [hk]), pre,
+      show j + (k + 1) = j + k + 1 by omega_using []]
     ac_rfl
 
 /-! ## `temp` in every word -/
@@ -146,9 +146,9 @@ theorem bytes_cat (x : BitVec 32) :
   apply BitVec.eq_of_getLsbD_eq; intro i hi
   have hi' : i < 32 := hi
   simp only [BitVec.getLsbD_append, BitVec.getLsbD_extractLsb']
-  rcases (by omega : i < 8 ∨ (8 ≤ i ∧ i < 16) ∨ (16 ≤ i ∧ i < 24) ∨ 24 ≤ i) with h | h | h | h <;>
+  rcases (by omega_using [] : i < 8 ∨ (8 ≤ i ∧ i < 16) ∨ (16 ≤ i ∧ i < 24) ∨ 24 ≤ i) with h | h | h | h <;>
     simp (disch := omega) only [↓ite_eq_left, ↓ite_eq_right] <;>
-    (rw [decide_eq_true (by omega), Bool.true_and]; exact congrArg _ (by omega))
+    (rw [decide_eq_true (by omega_arith), Bool.true_and]; exact congrArg _ (by omega_arith))
 
 
 theorem rotr8_byte (x : BitVec 32) {q : Nat} (hq : q < 4) :
@@ -157,7 +157,7 @@ theorem rotr8_byte (x : BitVec 32) {q : Nat} (hq : q < 4) :
   obtain ⟨e0, e1, e2, e3⟩ := extract_cat (x.extractLsb' 24 8) (x.extractLsb' 16 8) (x.extractLsb' 8 8) (x.extractLsb' 0 8)
   obtain ⟨f0, f1, f2, f3⟩ := extract_cat (x.extractLsb' 0 8) (x.extractLsb' 24 8) (x.extractLsb' 16 8) (x.extractLsb' 8 8)
   rw [show x.rotateRight 8 = _ from (congrArg (·.rotateRight 8) e).trans (rot_cat _ _ _ _)]
-  rcases (by omega : q = 0 ∨ q = 1 ∨ q = 2 ∨ q = 3) with rfl | rfl | rfl | rfl
+  rcases (by omega_using [hq] : q = 0 ∨ q = 1 ∨ q = 2 ∨ q = 3) with rfl | rfl | rfl | rfl
   · exact f0
   · exact f1
   · exact f2
@@ -169,10 +169,10 @@ theorem rc_byte (c : BitVec 8) {q : Nat} (hq : q < 4) :
     apply BitVec.eq_of_getLsbD_eq; intro i hi
     simp only [BitVec.getLsbD_setWidth, BitVec.getLsbD_append, BitVec.getLsbD_zero]
     by_cases h : i < 8
-    · simp [h]; omega
-    · simp [h]; exact fun _ => BitVec.getLsbD_of_ge _ _ (by omega)]
+    · simp [h]; omega_using [hi]
+    · simp [h]; exact fun _ => BitVec.getLsbD_of_ge _ _ (by omega_using [h])]
   obtain ⟨e0, e1, e2, e3⟩ := extract_cat 0#8 0#8 0#8 c
-  rcases (by omega : q = 0 ∨ q = 1 ∨ q = 2 ∨ q = 3) with rfl | rfl | rfl | rfl
+  rcases (by omega_using [hq] : q = 0 ∨ q = 1 ∨ q = 2 ∨ q = 3) with rfl | rfl | rfl | rfl
   · exact e0
   · exact e1
   · exact e2
@@ -205,8 +205,8 @@ theorem hi_byte (c : BitVec 8) (u : BitVec 64) : vbyte (c.setWidth 64 ++ u) 7 = 
   apply BitVec.eq_of_getLsbD_eq; intro r hr
   simp only [vbyte, BitVec.getLsbD_extractLsb', BitVec.getLsbD_append, BitVec.getLsbD_setWidth, hr, decide_true,
     Bool.true_and]
-  simp (disch := omega) only [↓ite_eq_right]
-  rw [decide_eq_true (by omega), Bool.true_and]; exact congrArg _ (by omega)
+  simp (disch := omega_using []) only [↓ite_eq_right]
+  rw [decide_eq_true (by omega_using [hr]), Bool.true_and]; exact congrArg _ (by omega_using [])
 
 
 /-- The round constant in the low byte of every word: `vperm` of the GPR
@@ -224,7 +224,7 @@ theorem rc_splat (c : BitVec 8) (u : BitVec 64) {i : Nat} (hi : i < 16) :
 
 theorem rk_top {f : Nat → BitVec 32} {j : Nat} {v : BitVec 128} (h : Rk f j v) {p : Nat} (hp : p < 4) :
     vbyte v p = (f (j + 3)).extractLsb' (8 * (3 - p)) 8 := by
-  rw [h p (by omega), kb, Nat.div_eq_of_lt hp, Nat.mod_eq_of_lt hp, Nat.sub_zero]
+  rw [h p (by omega_using [hp]), kb, Nat.div_eq_of_lt hp, Nat.mod_eq_of_lt hp, Nat.sub_zero]
 
 
 theorem rot_temp {f : Nat → BitVec 32} {j : Nat} {t r : BitVec 128} {c : BitVec 8} (ht : Rk f j t)
@@ -236,7 +236,7 @@ theorem rot_temp {f : Nat → BitVec 32} {j : Nat} {t r : BitVec 128} {c : BitVe
   simp only [rotCtl_idx i hi]
   have hp : i % 4 < 4 := Nat.mod_lt _ (by decide)
   generalize i % 4 = p at hp ⊢
-  rw [extract_xor, rotr8_byte _ (by omega), rc_byte _ (by omega)]
+  rw [extract_xor, rotr8_byte _ (by omega_using []), rc_byte _ (by omega_using [])]
   have t0 := rk_top ht (p := 0) (by decide)
   have t1 := rk_top ht (p := 1) (by decide)
   have t2 := rk_top ht (p := 2) (by decide)
@@ -246,7 +246,7 @@ theorem rot_temp {f : Nat → BitVec 32} {j : Nat} {t r : BitVec 128} {c : BitVe
   have s2 := sub32_byte (f (j + 3)) (q := 2) (by decide)
   have s3 := sub32_byte (f (j + 3)) (q := 3) (by decide)
   simp only [Nat.reduceSub, Nat.reduceMul] at t0 t1 t2 t3 s0 s1 s2 s3
-  rcases (by omega : p = 0 ∨ p = 1 ∨ p = 2 ∨ p = 3) with rfl | rfl | rfl | rfl <;>
+  rcases (by omega_using [hp] : p = 0 ∨ p = 1 ∨ p = 2 ∨ p = 3) with rfl | rfl | rfl | rfl <;>
     simp [rotIdx, t0, t1, t2, t3, s0, s1, s2, s3]
 
 
@@ -257,7 +257,7 @@ theorem sub_temp {f : Nat → BitVec 32} {j : Nat} {t : BitVec 128} (ht : Rk f j
   rw [sboxV, vbyte_packed _ hi, vbyte_permSelf _ _ hi]
   simp only [subCtl_idx i hi]
   have hp : i % 4 < 4 := Nat.mod_lt _ (by decide)
-  rw [ite_eq_left (by omega), rk_top ht hp, sub32_byte _ (by omega)]
+  rw [ite_eq_left (by omega_using []), rk_top ht hp, sub32_byte _ (by omega_using [])]
 
 /-! ## The schedule in memory -/
 
@@ -275,18 +275,18 @@ theorem store_good {m : Mem} {S : Addr} {f : Nat → BitVec 32} {K : Nat} {v : B
     Good (m.write (S + BitVec.ofNat 64 (4 * K)) 16 v) S f (K + 4) := by
   intro l hl
   by_cases h : l < K
-  · rw [Mem.readW, Mem.read_write_sep (Offset.sep S (by omega) (by omega) (by omega)) (by decide)]
+  · rw [Mem.readW, Mem.read_write_sep (Offset.sep S (by omega_using [h]) (by omega_using [hK, hl]) (by omega_using [hK])) (by decide)]
     exact hg l h
   · apply VG.Proof.Aes.KeyWords.ext32
     intro q hq
     rw [← Mem.readW_byte _ _ hq, Offset.add_add, Mem.write,
       show S + BitVec.ofNat 64 (4 * l + q) = S + BitVec.ofNat 64 (4 * K) + BitVec.ofNat 64 (4 * (l - K) + q) by
-        rw [Offset.add_add]; exact congrArg (fun k => S + BitVec.ofNat 64 k) (by omega),
-      Mem.sub_ofNat_toNat _ (by omega), ite_eq_left (by omega)]
-    have e := hv (15 - (4 * (l - K) + q)) (by omega)
-    rw [vbyte, kb, show 15 - (15 - (4 * (l - K) + q)) = 4 * (l - K) + q by omega,
-      show (15 - (4 * (l - K) + q)) / 4 = 3 - (l - K) by omega, show (15 - (4 * (l - K) + q)) % 4 = 3 - q by omega,
-      show K + 3 - (3 - (l - K)) = l by omega, show 3 - (3 - q) = q by omega] at e
+        rw [Offset.add_add]; exact congrArg (fun k => S + BitVec.ofNat 64 k) (by omega_using [h]),
+      Mem.sub_ofNat_toNat _ (by omega_using [hl, hq]), ite_eq_left (by omega_using [hl, hq])]
+    have e := hv (15 - (4 * (l - K) + q)) (by omega_using [])
+    rw [vbyte, kb, show 15 - (15 - (4 * (l - K) + q)) = 4 * (l - K) + q by omega_using [hl, hq],
+      show (15 - (4 * (l - K) + q)) / 4 = 3 - (l - K) by omega_using [hq], show (15 - (4 * (l - K) + q)) % 4 = 3 - q by omega_using [hl, hq],
+      show K + 3 - (3 - (l - K)) = l by omega_using [hl, h], show 3 - (3 - q) = q by omega_using [hq]] at e
     exact e
 
 theorem sldoi8_self (x : BitVec 128) : x.extractLsb' 0 64 ++ x.extractLsb' 64 64 = swapDwords x := rfl

@@ -34,7 +34,7 @@ theorem prod_bound {f g : Nat → Nat} (hf : ∀ i < 8, f i < Ib) (hg : ∀ i < 
 
 theorem twoP_val : valN twoP 8 = 2 * P := by decide +kernel
 
-theorem twoP_le (i : Nat) : Mb ≤ twoP i := by simp only [twoP, Mb]; split <;> omega
+theorem twoP_le (i : Nat) : Mb ≤ twoP i := by simp only [twoP, Mb]; split <;> omega_using []
 
 theorem twoPW_toNat (i : Nat) : (twoPW i).toNat = twoP i := by
   simp only [twoPW, twoP, K2, K4]; split <;> rfl
@@ -50,24 +50,24 @@ theorem diff_val {f g : Nat → Nat} (hg : ∀ i < 8, g i < Mb) :
     apply valN_congr
     intro i hi
     have := hg i hi; have := twoP_le i
-    simp only [diffN]; omega
+    simp only [diffN]; omega_arith
   rw [this, Nat.add_mul_mod_self_right]
 
 theorem diff_bound {f g : Nat → Nat} (hf : ∀ i < 8, f i < Mb) : ∀ i < 8, diffN f g i < Ib := by
   intro i hi
   have := hf i hi
   simp only [diffN, twoP, Mb, Ib] at *
-  split <;> omega
+  split <;> omega_using [this]
 
 theorem diff_word (x y : BitVec 64) (i : Nat) (hx : x.toNat < Mb) (hy : y.toNat < Mb) :
     (x + twoPW i - y).toNat = x.toNat + twoP i - y.toNat := by
   have := twoP_le i
-  have h2 : twoP i < 2 ^ 58 := by simp only [twoP]; split <;> omega
+  have h2 : twoP i < 2 ^ 58 := by simp only [twoP]; split <;> omega_using []
   simp only [Mb] at hx hy this
   rw [BitVec.toNat_sub, BitVec.toNat_add, twoPW_toNat]
   have := y.isLt
   simp only [Nat.reducePow] at *
-  omega
+  omega_arith
 
 theorem sum_val (f g : Nat → Nat) :
     toFe (valN (fun i => f i + g i) 8) = toFe (valN f 8) + toFe (valN g 8) := by
@@ -75,17 +75,17 @@ theorem sum_val (f g : Nat → Nat) :
 
 theorem sum_bound {f g : Nat → Nat} (hf : ∀ i < 8, f i < Mb) (hg : ∀ i < 8, g i < Mb) :
     ∀ i < 8, f i + g i < Ib := by
-  intro i hi; have := hf i hi; have := hg i hi; simp only [Mb, Ib] at *; omega
+  intro i hi; have := hf i hi; have := hg i hi; simp only [Mb, Ib] at *; omega_arith
 
 theorem sum_word (x y : BitVec 64) (hx : x.toNat < Mb) (hy : y.toNat < Mb) :
     (x + y).toNat = x.toNat + y.toNat := by
   simp only [Mb] at hx hy
-  rw [BitVec.toNat_add, Nat.mod_eq_of_lt (by omega)]
+  rw [BitVec.toNat_add, Nat.mod_eq_of_lt (by omega_using [hx, hy])]
 
 theorem small_val (f g : Nat → Nat) :
     valN (smallVal f g) 8 + P * sc g 7 = valN f 8 + 39081 * valN g 8 := by
   have hs : ∀ i, sl f g i + radix * sc g i = f i + 39081 * g i := fun i => by
-    simp only [sl, sc]; have := Nat.mod_add_div (39081 * g i) radix; omega
+    simp only [sl, sc]; have := Nat.mod_add_div (39081 * g i) radix; omega_using [this]
   have h0 := hs 0; have h1 := hs 1; have h2 := hs 2; have h3 := hs 3
   have h4 := hs 4; have h5 := hs 5; have h6 := hs 6; have h7 := hs 7
   have hp : P = radix ^ 8 - radix ^ 4 - 1 := by decide +kernel
@@ -94,7 +94,7 @@ theorem small_val (f g : Nat → Nat) :
     show ¬ (3 = 4) by decide, show ¬ (5 = 4) by decide, show ¬ (6 = 4) by decide,
     show ¬ (7 = 4) by decide, Nat.zero_add, Nat.add_zero, Nat.pow_zero, Nat.one_mul]
   simp only [hp, radix, Nat.reducePow] at h0 h1 h2 h3 h4 h5 h6 h7 ⊢
-  omega
+  omega_using [h0, h1, h2, h3, h4, h5, h6, h7]
 
 theorem smallF (f g : Nat → Nat) :
     toFe (valN (smallVal f g) 8) = toFe (valN f 8) + a24 * toFe (valN g 8) := by
@@ -107,12 +107,12 @@ theorem small_bound {f g : Nat → Nat} (hf : ∀ i < 8, f i < Mb) (hg : ∀ i <
     ∀ i < 8, smallVal f g i < Ib := by
   intro i hi
   have hc : ∀ j < 8, sc g j < 2 ^ 20 := fun j hj => by
-    have := hg j hj; simp only [sc, Ib, radix] at *; omega
+    have := hg j hj; simp only [sc, Ib, radix] at *; omega_using [this]
   have := hf i hi
   have hl := Nat.mod_lt (39081 * g i) (show 0 < radix by decide)
   have := hc ((i + 7) % 8) (Nat.mod_lt _ (by decide))
   have := hc 7 (by decide)
   simp only [smallVal, sl, Mb, Ib, radix] at *
-  split <;> omega
+  split <;> omega_arith
 
 end VG.Proof.Curve448.AArch64.Fast

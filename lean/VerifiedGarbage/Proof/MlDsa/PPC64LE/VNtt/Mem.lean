@@ -37,15 +37,15 @@ theorem coeffAt_store (m : Mem) (p : Addr) {j : Nat} (hj : j + 4 ≤ 256) (v : B
   split
   · rename_i h
     rw [coeffAt_eq, show coeffAddr p i = coeffAddr p j + BitVec.ofNat 64 (4 * (i - j)) by
-      rw [coeffAddr_add, show j + (i - j) = i by omega]]
-    exact readW_store _ _ _ (by omega)
+      rw [coeffAddr_add, show j + (i - j) = i by omega_using [h]]]
+    exact readW_store _ _ _ (by omega_using [h])
   · have hw : m.write (coeffAddr p j) 16 (swapDwords v) = m.writeW (coeffAddr p j) (swapDwords v) := by
       simp only [Mem.writeW, BitVec.setWidth_eq]
     rw [hw]
-    exact Mem.readW_writeW_sep (Offset.sep p (by omega) (by omega) (by omega)) (by decide)
+    exact Mem.readW_writeW_sep (Offset.sep p (by omega_arith) (by omega_using [hi]) (by omega_using [hj])) (by decide)
 
 theorem vector_contains (p : Addr) {j : Nat} (hj : j + 4 ≤ 256) :
-    (polyRegion p).Contains (coeffAddr p j) 16 := Offset.contains_base p (by omega) (by omega)
+    (polyRegion p).Contains (coeffAddr p j) 16 := Offset.contains_base p (by omega_using [hj]) (by omega_using [hj])
 
 theorem frame_store2 {m m' : Mem} {p : Addr} (hf : Frame [polyRegion p] m m') {j j' : Nat}
     (hj : j + 4 ≤ 256) (hj' : j' + 4 ≤ 256) (x y : BitVec 128) :
@@ -64,10 +64,10 @@ theorem polyIs_store2 {m : Mem} {p : Addr} {P R : Poly} (hP : PolyIs m p P)
     have hi' : i < 256 := hi
     rw [coeffAt_store _ _ hj' _ hi', coeffAt_store _ _ hj _ hi']
     by_cases h1 : j' ≤ i ∧ i < j' + 4
-    · rw [ite_eq_left h1, hy _ (xor1_lt (by omega)), xor1_xor1, show j' + (i - j') = i by omega]
+    · rw [ite_eq_left h1, hy _ (xor1_lt (by omega_using [h1])), xor1_xor1, show j' + (i - j') = i by omega_using [h1]]
     · rw [ite_eq_right h1]
       by_cases h2 : j ≤ i ∧ i < j + 4
-      · rw [ite_eq_left h2, hx _ (xor1_lt (by omega)), xor1_xor1, show j + (i - j) = i by omega]
+      · rw [ite_eq_left h2, hx _ (xor1_lt (by omega_using [h2])), xor1_xor1, show j + (i - j) = i by omega_using [h2]]
       · rw [ite_eq_right h2, hR i hi' h2 h1, polyIs_toNat hP hi]
 
 end VG.Proof.MlDsa.PPC64LE.VNtt

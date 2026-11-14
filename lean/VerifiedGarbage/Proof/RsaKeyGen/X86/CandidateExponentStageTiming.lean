@@ -146,7 +146,7 @@ theorem drawn_used_trace {E : Environment} (v : E.Valid) {eBytes pBytes qBytes r
     RelCT isa (DrawnPair E eBytes pBytes qBytes rBytes sBytes)
       (VG.Impl.RsaKeyGen.X86.CandidateFinish.used status) (fun _ _ => True) := by
   exact (CandidateFinish.used_trace (base := E.base) (size := E.size)
-    (by have H : 256 ≤ E.size := v.geometry.headerFit; omega) status).mono (fun _ _ P =>
+    (by have H : 256 ≤ E.size := v.geometry.headerFit; omega_using [H]) status).mono (fun _ _ P =>
       ⟨P.left.input.scratch, P.right.input.scratch, P.left.input.usedPointer.trans P.right.input.usedPointer.symm⟩) (fun _ _ _ => trivial)
 
 theorem exponent_pair_trace {E : Environment} (v : E.Valid) {eBytes pBytes qBytes rBytes sBytes : List Byte}

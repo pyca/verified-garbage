@@ -80,11 +80,11 @@ theorem τE_wf {up : Bool} {s : State} (hs : (ecbC up).pre s) : VG.X86.Taint.Wf 
       forall_eq, List.Pairwise.nil, and_true]
     exact ⟨db, fun _ h => h.elim⟩
   · simp only [hwr, List.mem_cons, List.not_mem_nil, or_false]
-    rintro r (rfl | rfl) <;> simp only [BitVec.toNat_setWidth] <;> omega
+    rintro r (rfl | rfl) <;> simp only [BitVec.toNat_setWidth] <;> omega_arith
   · simp only [hwr, List.mem_cons, List.not_mem_nil, or_false]
     rintro r (rfl | rfl)
-    · exact VG.X86.Taint.frame_disjoint (n := 16) (by omega) rd ad
-    · exact VG.X86.Taint.frame_disjoint (n := 16) (by omega) rb ab
+    · exact VG.X86.Taint.frame_disjoint (n := 16) (by omega_using [fsp]) rd ad
+    · exact VG.X86.Taint.frame_disjoint (n := 16) (by omega_using [fsp]) rb ab
   · intro p hp
     simp only [τE, List.mem_cons, List.not_mem_nil, or_false] at hp
     rcases hp with rfl | rfl <;> refine ⟨by decide, ?_⟩ <;>
@@ -105,7 +105,7 @@ theorem ecb_agree {up : Bool} {s t : State} (hs : (ecbC up).pre s) (ht : (ecbC u
     rw [VG.X86.Taint.argByte_eq (fit _ hs) h4 hk, VG.X86.Taint.argByte_eq (fit _ ht) h4 hk,
       Mem.readW_byte s.mem _ (Nat.mod_lt _ (by decide)),
       Mem.readW_byte t.mem _ (Nat.mod_lt _ (by decide))]
-    exact congrArg _ (args ((k - 4) / 4) (by omega))
+    exact congrArg _ (args ((k - 4) / 4) (by omega_using [hk]))
 
 theorem ecb_ct (up : Bool) : ConstantTime isa (ecbC up).pre (ecbC up).pub (Impl.Blowfish.X86.ecb up) := by
   cases up
@@ -191,11 +191,11 @@ theorem τK_wf {s : State} (hs : keyC.pre s) : VG.X86.Taint.Wf τK s := by
       forall_eq, List.Pairwise.nil, and_true]
     exact ⟨sb, fun _ h => h.elim⟩
   · simp only [hwr, List.mem_cons, List.not_mem_nil, or_false]
-    rintro r (rfl | rfl) <;> simp only [BitVec.toNat_setWidth] <;> omega
+    rintro r (rfl | rfl) <;> simp only [BitVec.toNat_setWidth] <;> omega_arith
   · simp only [hwr, List.mem_cons, List.not_mem_nil, or_false]
     rintro r (rfl | rfl)
-    · exact VG.X86.Taint.frame_disjoint (n := 16) (by omega) rs as
-    · exact VG.X86.Taint.frame_disjoint (n := 16) (by omega) rb ab
+    · exact VG.X86.Taint.frame_disjoint (n := 16) (by omega_using [fsp]) rs as
+    · exact VG.X86.Taint.frame_disjoint (n := 16) (by omega_using [fsp]) rb ab
   · intro p hp
     simp only [τK, List.mem_cons, List.not_mem_nil, or_false] at hp
     rcases hp with rfl | rfl <;> refine ⟨by decide, ?_⟩ <;>
@@ -216,7 +216,7 @@ theorem expandKey_agree {s t : State} (hs : keyC.pre s) (ht : keyC.pre t) (hp : 
     rw [VG.X86.Taint.argByte_eq (fit _ hs) h4 hk, VG.X86.Taint.argByte_eq (fit _ ht) h4 hk,
       Mem.readW_byte s.mem _ (Nat.mod_lt _ (by decide)),
       Mem.readW_byte t.mem _ (Nat.mod_lt _ (by decide))]
-    exact congrArg _ (args ((k - 4) / 4) (by omega))
+    exact congrArg _ (args ((k - 4) / 4) (by omega_using [hk]))
 
 theorem expandKey_ct : ConstantTime isa keyC.pre keyC.pub Impl.Blowfish.X86.expandKey :=
   VG.Taint.constantTime (A := taint) τK (fun _ _ h₁ h₂ hp => expandKey_agree h₁ h₂ hp) (by taint_decide)

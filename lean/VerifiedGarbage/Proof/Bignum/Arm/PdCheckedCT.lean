@@ -49,7 +49,7 @@ theorem pdImport_ready (s : State) {base dst pp ep xp : BitVec 32} {len k eLen N
   refine WP.mono (pdImport_ok s h.input) ?_
   rintro t ⟨ready, modulus, r2, frame, rest⟩
   have ht := h.body.after_workspace frame rest ready.ptr
-  exact ⟨ht, ⟨ready, by have := ht.stack.nowrap; omega,
+  exact ⟨ht, ⟨ready, by have := ht.stack.nowrap; omega_using [this],
     ⟨_, ht.stack.frameWritable, Offset.contains_base _ (by decide) (by decide)⟩,
     ht.stack.separate.symm.sub_right (Offset.sub_base _ (by decide)),
     modulus.trans h.body.modulus, r2.trans h.body.r2⟩⟩

@@ -85,7 +85,7 @@ theorem hotField_all_ok {k : Kind} (cert : VerifyAllocated.Case k) (hk : k≠.do
     · obtain ⟨op,hop,rfl⟩ := List.mem_map.mp hv
       exact hslots op hop op.out (by simp)
   have hb := (show ∀ x,Sl x → x+32≤5464 from by decide +kernel) x hs
-  exact ⟨Or.inl hk,Or.inl (by omega)⟩
+  exact ⟨Or.inl hk,Or.inl (by omega_using [hi4, hb])⟩
 
  theorem add_ok {base : Addr} {V : List Nat} {E : Nat → Fe C} {s : State}
     (hi : Inv M base 8192 C.p Sl V E s) (hv : ∀x∈CachedField.inputs,x∈V)
@@ -222,13 +222,13 @@ theorem doubles_ok (hC : Law C) (ha : AM3 C) {base : Addr} {P Q : Point C} {k j 
     apply WP.seq
     refine WP.mono (double_state hC ha (hC.onCurve_mul hQ _) cb) fun d ⟨fd,cd⟩ => ?_
     have d19 := (fd.regs.gpr .x19 allocatedRegs_x19).trans b19
-    refine WP.mono (doubleCounter_ok d hq (by omega) hj d19) fun t ⟨t19,t4,kt⟩ => ?_
+    refine WP.mono (doubleCounter_ok d hq (by omega_using [hq5]) hj d19) fun t ⟨t19,t4,kt⟩ => ?_
     have ft : Frame base work d t := (AllocatedFrame.of_keeps kt).widenRegs (by decide)
     have ct := cd.of_keeps kt (by decide)
     have ep : add (mul (2^(4-q)) Q) (mul (2^(4-q)) Q)=mul (2^(4-(q-1))) Q := by
-      rw [hC.add_mul_mul hQ,show 4-(q-1)=(4-q)+1 by omega,Nat.pow_succ]
+      rw [hC.add_mul_mul hQ,show 4-(q-1)=(4-q)+1 by omega_using [hq, hq5],Nat.pow_succ]
       congr 1
-      omega
+      omega_using []
     rw [ep] at ct
     exact ⟨⟨(fb.trans (fd.widenRegs allocated_regs)).trans ft,ct,t19⟩,t4⟩
   · intro t ht
@@ -413,20 +413,20 @@ theorem step_ok (hC : Law C) (ha : AM3 C) (hO : PrimeOrder C)
   obtain ⟨⟨Q,hQ,hq,rs⟩,s19⟩ := hs
   unfold Impl.P256.EcdhJac.step
   apply WP.seq
-  refine WP.mono (decCounter_ok s hj (by omega) s19) fun a ⟨a19,ka⟩ => ?_
+  refine WP.mono (decCounter_ok s hj (by omega_using [hj52]) s19) fun a ⟨a19,ka⟩ => ?_
   have fa : Frame base work s a := (AllocatedFrame.of_keeps ka).widenRegs (by decide)
   have ra := rs.of_keeps ka (by decide)
   apply WP.seq
-  refine WP.mono (doubles_ok hC ha hQ (by omega) ra a19) fun b ⟨fb,rb,b19⟩ => ?_
+  refine WP.mono (doubles_ok hC ha hQ (by omega_using [hj52]) ra a19) fun b ⟨fb,rb,b19⟩ => ?_
   have qb : k<C.n → mul 32 Q=mul (32*Window5.winE (k+offset) 52 ((j-1)+1)) P := by
     intro hk
-    rw [hq hk,Window5.mul_mul hC hP,show j-1+1=j by omega]
+    rw [hq hk,Window5.mul_mul hC hP,show j-1+1=j by omega_using [hj]]
   apply WP.seq
   -- The digit, the selection's setup, the fifth doubling with the selection's
   -- rows, the store and the negation.
   rw [step_split,WP.block_append_iff]
   refine WP.mono (digitW_ok tc rb.field.scr (k:=k+offset) (j:=j-1) (N:=260)
-    (by decide) (by decide) (by change 5*(j-1)+5≤260; omega) (by decide) (by decide) b19 rb.fixed.bits)
+    (by decide) (by decide) (by change 5*(j-1)+5≤260; omega_using [hj52]) (by decide) (by decide) b19 rb.fixed.bits)
     fun u ⟨hu,ku⟩=>?_
   have fu : Frame base work b u := (AllocatedFrame.of_keeps ku).widenRegs (by decide)
   have ru := rb.of_keeps ku (by decide)
@@ -448,7 +448,7 @@ theorem step_ok (hC : Law C) (ha : AM3 C) (hO : PrimeOrder C)
   have s₂19 : s₂.gpr .x19=BitVec.ofNat 64 (j-1) := by
     rw [fd.regs.gpr _ allocatedRegs_x19,k₁.gpr _ (by decide),ku.gpr _ (by decide),b19]
   rw [← WP.block_append_iff,← List.append_assoc]
-  refine WP.mono (signedEntryV_ok (fun _ h => h) (by decide) r₂.field r₂.fixed r₂.table (by omega) s₂19
+  refine WP.mono (signedEntryV_ok (fun _ h => h) (by decide) r₂.field r₂.fixed r₂.table (by omega_using [hj52]) s₂19
     (by rw [v₂]; exact idx₁) (by rw [v₂]; exact inc₁)
     (by rw [v₂,mag₁,hmag]) (fun i hi=>by rw [v₂]; exact z₁ i hi)) fun e he => ?_
   have re := he.rstate r₂
@@ -465,7 +465,7 @@ theorem step_ok (hC : Law C) (ha : AM3 C) (hO : PrimeOrder C)
     rw [hd.same _ (by decide),hd.same _ (by decide),hd.same _ (by decide)]
     exact ⟨hp.jac,hp.z⟩
   refine WP.mono (masked_ok hC ha hO hP (hC.onCurve_mul hQ _) qb hd.state
-    (by omega) d19 hd.field ep hd.point) fun t ⟨ft,ht⟩ => ?_
+    (by omega_using [hj52]) d19 hd.field ep hd.point) fun t ⟨ft,ht⟩ => ?_
   exact ⟨((((((fa.trans fb).trans fu).trans f₁).trans f₂).trans he.frame).trans
     (hd.frame.widenRegs allocated_regs)).trans ft,ht⟩
 

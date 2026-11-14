@@ -98,13 +98,13 @@ theorem init_ok {sp workspace : BitVec 32} {size w : Nat} (v : (geometry sp work
   change 0 < 2 * w at wpos
   have nowrap := C.scratch.nowrap
   change (workspace.setWidth 64).toNat + size ≤ 2 ^ 32 at nowrap
-  rw [BitVec.toNat_setWidth, Nat.mod_eq_of_lt (by have := workspace.isLt; omega)] at nowrap
-  have header : 8 ≤ size := by have := slot5_lo w; omega
+  rw [BitVec.toNat_setWidth, Nat.mod_eq_of_lt (by have := workspace.isLt; omega_using [])] at nowrap
+  have header : 8 ≤ size := by have := slot5_lo w; omega_using [hn, wpos]
   unfold arrayInit
   simp only [List.append_assoc, List.cons_append, List.nil_append]
   refine savedPtr_ok C.scratch header len (by decide) (by decide) (by decide) fun a Ka Ma eaxA => ?_
   have Sa := C.scratch.of_keeps Ka (by decide)
-  refine wp_movS (readSrc_sc Sa (by change 4 + 4 ≤ size; omega)) fun b B _ => wp_addS rfl fun c D _ => wp_subS rfl fun d E _ => ?_
+  refine wp_movS (readSrc_sc Sa (by change 4 + 4 ≤ size; omega_using [header])) fun b B _ => wp_addS rfl fun c D _ => wp_subS rfl fun d E _ => ?_
   have Kd : Keeps [.eax, .edx] s d :=
     (((Ka.mono (by decide)).trans (B.keeps.mono (by decide))).trans (D.keeps.mono (by decide))).trans
       (E.keeps.mono (by decide))
@@ -124,13 +124,13 @@ theorem init_ok {sp workspace : BitVec 32} {size w : Nat} (v : (geometry sp work
     simp only [geometry, ArrayGeometry.pointer, BitVec.toNat_sub, BitVec.toNat_add, BitVec.toNat_ofNat, h4]
     have := workspace.isLt
     have := slot5_lo w
-    omega
+    omega_using [wpos]
   have count : f.gpr .edx = BitVec.ofNat 32 (2 * w) := by
     rw [G.gpr, F.gpr, E.other .edx (by decide), D.other .edx (by decide), lenB]
     apply BitVec.eq_of_toNat_eq
-    rw [BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega),
-      Nat.mod_eq_of_lt (by omega), Nat.shiftRight_eq_div_pow]
-    omega
+    rw [BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hw]),
+      Nat.mod_eq_of_lt (by omega_using [hw]), Nat.shiftRight_eq_div_pow]
+    omega_using []
   have Oe : Outside (sp.setWidth 64) 0 4 s.mem e.mem := by
     rw [F.mem, E.mem, D.mem, B.mem, Ma]
     exact writeW32_outside _ _ _ (by decide)
@@ -187,13 +187,13 @@ theorem framed_context {base : Addr} {size w candidate exponent : Nat} {s : Stat
   let g : ArrayGeometry := geometry (s.gpr .esp - 20#32) (s.gpr .edi) size w
   have baseEq : g.base = base := S.edi
   have lo := slot5_lo w
-  refine ⟨⟨by change 0 < 2 * w; omega, by change slot w 5 + 4 * (2 * w) ≤ size; omega,
-    by change 128 + 8 ≤ size; omega, by
+  refine ⟨⟨by change 0 < 2 * w; omega_using [width], by change slot w 5 + 4 * (2 * w) ≤ size; omega_using [space],
+    by change 128 + 8 ≤ size; omega_using [space, lo], by
     change (⟨g.base, size⟩ : Region).Disjoint ⟨(s.gpr .esp - 20#32).setWidth 64, 20⟩
     rw [baseEq]
-    exact VG.Proof.RsaKeyGen.X86.FilterStack.allocated_apart (by omega) S.nowrap
-      (by rcases separate with h | h; exact Or.inl h; exact Or.inr (by omega))⟩, ?_⟩
-  refine ⟨?_, VG.Proof.RsaKeyGen.X86.FilterStack.allocated_context (s := s) (by omega), ?_, ?_⟩
+    exact VG.Proof.RsaKeyGen.X86.FilterStack.allocated_apart (by omega_using [fit]) S.nowrap
+      (by rcases separate with h | h; exact Or.inl h; exact Or.inr (by omega_using [h]))⟩, ?_⟩
+  refine ⟨?_, VG.Proof.RsaKeyGen.X86.FilterStack.allocated_context (s := s) (by omega_using [fit]), ?_, ?_⟩
   · change Scr (allocFrame 20 s) g.base size
     rw [baseEq]; exact VG.Proof.RsaKeyGen.X86.FilterStack.allocated_scratch S fit separate
   · change val32 s.mem g.base (slot w 5) (2 * w) = candidate
@@ -215,20 +215,20 @@ theorem framed_ok {base : Addr} {size w candidate exponent : Nat} {s : State}
   let g : ArrayGeometry := geometry (s.gpr .esp - 20#32) (s.gpr .edi) size w
   have baseEq : g.base = base := S.edi
   have lo := slot5_lo w
-  have valid : g.Valid := ⟨by change 0 < 2 * w; omega, by change slot w 5 + 4 * (2 * w) ≤ size; omega,
-    by change 128 + 8 ≤ size; omega, by
+  have valid : g.Valid := ⟨by change 0 < 2 * w; omega_using [width], by change slot w 5 + 4 * (2 * w) ≤ size; omega_using [space],
+    by change 128 + 8 ≤ size; omega_using [space, lo], by
     change (⟨g.base, size⟩ : Region).Disjoint ⟨(s.gpr .esp - 20#32).setWidth 64, 20⟩
     rw [baseEq]
-    exact VG.Proof.RsaKeyGen.X86.FilterStack.allocated_apart (by omega) S.nowrap
-      (by rcases separate with h | h; exact Or.inl h; exact Or.inr (by omega))⟩
+    exact VG.Proof.RsaKeyGen.X86.FilterStack.allocated_apart (by omega_using [fit]) S.nowrap
+      (by rcases separate with h | h; exact Or.inl h; exact Or.inr (by omega_using [h]))⟩
   have C : ArrayContext g candidate exponent (allocFrame 20 s) := by
-    refine ⟨?_, VG.Proof.RsaKeyGen.X86.FilterStack.allocated_context (s := s) (by omega), ?_, ?_⟩
+    refine ⟨?_, VG.Proof.RsaKeyGen.X86.FilterStack.allocated_context (s := s) (by omega_using [fit]), ?_, ?_⟩
     · rw [baseEq]; exact VG.Proof.RsaKeyGen.X86.FilterStack.allocated_scratch S fit separate
     · change val32 s.mem g.base (slot w 5) (2 * w) = candidate
       rw [baseEq]; exact value
     · change exponentValue s.mem g.base 128 = exponent
       rw [baseEq]; exact eValue
-  refine WP.frameAlloc (by decide) (by decide) (by decide) (by omega) array_noSp ?_
+  refine WP.frameAlloc (by decide) (by decide) (by decide) (by omega_using [fit]) array_noSp ?_
   · refine WP.mono (array_ok valid C ePositive hw (by rw [allocFrame_mem, baseEq]; exact len))
       fun t ⟨T, result, O, K⟩ => ?_
     have Kout := VG.Proof.RsaKeyGen.X86.FilterStack.freed_keeps K (by decide)

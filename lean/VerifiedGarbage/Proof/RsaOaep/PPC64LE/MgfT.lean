@@ -76,7 +76,7 @@ theorem tcallT_ok {t : State} (h : Base S vf s t) (sy : t.syms = s.syms) {k : Na
     (hw : s.mem.readW (p + BitVec.ofNat 64 (8 * k)) 64 = s.syms n) {Q : State → Prop}
     (kk : ∀ t', Only [.r12] t t' → t'.syms = t.syms → WP isa (.call n c) t' Q) : WP isa (tcall j k ts) t Q := by
   show WP isa (.seq (.block (tword .r12 j k ++ [])) (Code.icalls .bctrl ts)) t Q
-  refine WP.seq (WP.of_syms (wp_tword T h (by omega) (by decide) fun t' o e => wp_nil fun sy' => ?_))
+  refine WP.seq (WP.of_syms (wp_tword T h (by omega_using [hk]) (by decide) fun t' o e => wp_nil fun sy' => ?_))
   refine WP.icalls_of_call (a := t'.gpr .r12) rfl ?_ (kk t' o sy')
   show ts.find? (fun q => t'.syms q.1 == t'.gpr .r12) = _
   rw [e, hw, sy', sy]; exact hf

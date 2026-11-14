@@ -35,17 +35,17 @@ theorem CallLayout.lengths (L : CallLayout) :
     128 ≤ L.pLen ∧ L.pLen ≤ 384 ∧ 20 ≤ L.qLen ∧ L.qLen ≤ 32 ∧ L.qLen ≤ L.pLen := by
   have H := L.widths
   unfold Spec.Dsa.lengthsValid at H
-  omega
+  omega_using [H]
 
 theorem CallLayout.aligned (L : CallLayout) : L.pLen % 4 = 0 ∧ L.qLen % 4 = 0 := by
   have H := L.widths
   unfold Spec.Dsa.lengthsValid at H
-  omega
+  omega_using [H]
 
 theorem CallLayout.saved (L : CallLayout) : Layout.saved ≤ L.size := by
   have H : 15712 ≤ L.size := L.extent
   change 8256 ≤ L.size
-  omega
+  omega_using [H]
 
 structure CallReady (L : CallLayout) (s : State) : Prop where
   sp : s.gpr .esp = L.sp

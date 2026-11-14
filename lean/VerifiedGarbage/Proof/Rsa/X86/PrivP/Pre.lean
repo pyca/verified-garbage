@@ -47,7 +47,7 @@ theorem PreCtx.after {g : PrivGeometry} {bs : Fin 8 → List Byte} {P : BitVec 3
       BitVec.ofNat 64 (VG.Impl.Rsa.X86.PrivChecked.frameBytes + 100) + BitVec.ofNat 64 d) 32 =
       s.mem.readW (byteAddr g.stack + BitVec.ofNat 64 (VG.Impl.Rsa.X86.PrivChecked.frameBytes + 100) +
         BitVec.ofNat 64 d) 32 := fun d hd =>
-    frame.readW (Offset.contains_base _ (by omega : d + 32 / 8 ≤ 8) (by omega)) H.argsSep (by decide)
+    frame.readW (Offset.contains_base _ (by omega_using [hd] : d + 32 / 8 ≤ 8) (by omega_using [hd])) H.argsSep (by decide)
   refine ⟨H.high, ?_, ?_, by rw [rest.2.1, rest.2.2]; exact H.argsRead, H.argsSep,
     by rw [rest.2.1, rest.2.2]; exact H.preRead, H.preFit, H.preSep, H.lenEq, ?_⟩
   · have w := word 0 (by decide)
@@ -56,7 +56,7 @@ theorem PreCtx.after {g : PrivGeometry} {bs : Fin 8 → List Byte} {P : BitVec 3
   · have w := word 4 (by decide)
     rw [Offset.add_add] at w
     rw [w]; exact H.len
-  · rw [VG.Proof.Rsa.wordsAt_frame frame (by have := H.preFit; omega) H.preSep]; exact H.key
+  · rw [VG.Proof.Rsa.wordsAt_frame frame (by have := H.preFit; omega_using [this]) H.preSep]; exact H.key
 
 section
 variable {g : PrivGeometry} {bs : Fin 8 → List Byte} {P : BitVec 32} {L : Nat}
@@ -66,7 +66,7 @@ theorem PreCtx.address {s : State} (h : PrivContext g bs s) (H : PreCtx g bs P L
     (hd : d < VG.Impl.Rsa.X86.PrivChecked.frameBytes + 20 + 88) :
     addr (s.gpr .esp) d = byteAddr g.stack + BitVec.ofNat 64 d := by
   rw [h.sp]
-  exact addr_eq (by have := H.high; omega)
+  exact addr_eq (by have := H.high; omega_using [hd, this])
 
 /-- `vg_rsa_private_crt_precomputed`'s arguments: `crtArgument`'s eighteen, then the primes' values
 `pre + 16 w` and their `pre_len - 2 w` words. -/
@@ -86,16 +86,16 @@ theorem preR2Args_ok (s : State) (h : PrivContext g bs s) (H : PreCtx g bs P L s
       Frame [⟨byteAddr g.stack + BitVec.ofNat 64 72, 8⟩] s.mem t.mem ∧ Keeps [.eax, .ecx] s t := by
   have hl := h.valid.maxLength
   have hlen := H.lenEq
-  have w32 : 16 * Spec.Rsa.modulusWords g.length < 2 ^ 32 := by simp only [Spec.Rsa.modulusWords]; omega
-  have L32 : L < 2 ^ 32 := by have := H.preFit; omega
+  have w32 : 16 * Spec.Rsa.modulusWords g.length < 2 ^ 32 := by simp only [Spec.Rsa.modulusWords]; omega_using [hl]
+  have L32 : L < 2 ^ 32 := by have := H.preFit; omega_using [this]
   have rd20 : InRegions (s.rd ++ s.wr) (addr (s.gpr .esp) (VG.Impl.Rsa.X86.PrivChecked.frameBytes + 20 + 4 * 20)) 4 := by
-    rw [H.address h (by omega)]
-    have := CallLay.inRegions_sub (off := 0) H.argsRead (l := 4) (by omega) (by decide)
+    rw [H.address h (by omega_using [])]
+    have := CallLay.inRegions_sub (off := 0) H.argsRead (l := 4) (by omega_using []) (by decide)
     simpa only [BitVec.ofNat_eq_ofNat, BitVec.add_zero, show VG.Impl.Rsa.X86.PrivChecked.frameBytes + 20 + 4 * 20 =
-      VG.Impl.Rsa.X86.PrivChecked.frameBytes + 100 by omega] using this
+      VG.Impl.Rsa.X86.PrivChecked.frameBytes + 100 by omega_using []] using this
   have rd21 : InRegions (s.rd ++ s.wr) (addr (s.gpr .esp) (VG.Impl.Rsa.X86.PrivChecked.frameBytes + 20 + 4 * 21)) 4 := by
-    rw [H.address h (by omega)]
-    have := CallLay.inRegions_sub (off := 4) H.argsRead (l := 4) (by omega) (by decide)
+    rw [H.address h (by omega_using [])]
+    have := CallLay.inRegions_sub (off := 4) H.argsRead (l := 4) (by omega_using []) (by decide)
     rw [Offset.add_add] at this
     exact this
   unfold preR2Args incoming stackAt
@@ -110,7 +110,7 @@ theorem preR2Args_ok (s : State) (h : PrivContext g bs s) (H : PreCtx g bs P L s
   refine wp_subS rfl fun u₆ U₆ _ => ?_
   have sp₆ : u₆.gpr .esp = s.gpr .esp := by rw [U₆.other _ (by decide), U₅.other _ (by decide), sp₄]
   have wr₆ : u₆.wr = s.wr := by rw [U₆.wr, U₅.wr, U₄.wr, U₃.wr, U₂.wr, U₁.wr]
-  refine wp_stm sp₆ (by rw [wr₆, H.address h (by decide)]; exact h.inner.write (by simp only [VG.Impl.Rsa.X86.PrivChecked.frameBytes]; omega)) fun u₇ U₇ => ?_
+  refine wp_stm sp₆ (by rw [wr₆, H.address h (by decide)]; exact h.inner.write (by simp only [VG.Impl.Rsa.X86.PrivChecked.frameBytes]; omega_using [])) fun u₇ U₇ => ?_
   refine wp_addS rfl fun u₈ U₈ _ => wp_addS rfl fun u₉ U₉ _ => wp_addS rfl fun u₁₀ U₁₀ _ => ?_
   have sp₁₀ : u₁₀.gpr .esp = s.gpr .esp := by
     rw [U₁₀.other _ (by decide), U₉.other _ (by decide), U₈.other _ (by decide), U₇.gpr, sp₆]
@@ -119,7 +119,7 @@ theorem preR2Args_ok (s : State) (h : PrivContext g bs s) (H : PreCtx g bs P L s
   refine wp_addS (readSrc_mem sp₁₀ (by rw [rw₁₀]; exact rd20)) fun u₁₁ U₁₁ _ => ?_
   have sp₁₁ : u₁₁.gpr .esp = s.gpr .esp := by rw [U₁₁.other _ (by decide), sp₁₀]
   have wr₁₁ : u₁₁.wr = s.wr := by rw [U₁₁.wr, U₁₀.wr, U₉.wr, U₈.wr, U₇.wr, wr₆]
-  refine wp_stm sp₁₁ (by rw [wr₁₁, H.address h (by decide)]; exact h.inner.write (by simp only [VG.Impl.Rsa.X86.PrivChecked.frameBytes]; omega)) fun t T => WP.block_nil ?_
+  refine wp_stm sp₁₁ (by rw [wr₁₁, H.address h (by decide)]; exact h.inner.write (by simp only [VG.Impl.Rsa.X86.PrivChecked.frameBytes]; omega_using [])) fun t T => WP.block_nil ?_
   -- The values.
   have a3 := h.argumentValue (j := 3) (by decide)
   simp only [PrivGeometry.argument] at a3
@@ -129,16 +129,16 @@ theorem preR2Args_ok (s : State) (h : PrivContext g bs s) (H : PreCtx g bs P L s
     have h7 : (7 : BitVec 32).toNat = 7 := rfl
     simp only [BitVec.toNat_add, BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow,
       Spec.Rsa.modulusWords, h7]
-    omega
+    omega_using [hl]
   have ecx₅ : u₅.gpr .ecx = BitVec.ofNat 32 L := by
-    rw [U₅.gpr, m₄, H.address h (by omega), show VG.Impl.Rsa.X86.PrivChecked.frameBytes + 20 + 4 * 21 =
-      VG.Impl.Rsa.X86.PrivChecked.frameBytes + 104 by omega]
+    rw [U₅.gpr, m₄, H.address h (by omega_using []), show VG.Impl.Rsa.X86.PrivChecked.frameBytes + 20 + 4 * 21 =
+      VG.Impl.Rsa.X86.PrivChecked.frameBytes + 104 by omega_using []]
     exact H.len
   have ecx₆ : u₆.gpr .ecx = BitVec.ofNat 32 (L - 2 * Spec.Rsa.modulusWords g.length) := by
     rw [U₆.gpr, ecx₅, U₅.other _ (by decide), eax₄]
     apply BitVec.eq_of_toNat_eq
     rw [BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat, BitVec.toNat_ofNat]
-    omega
+    omega_using [hlen]
   have m₇ : u₇.mem = s.mem.writeW (byteAddr g.stack + BitVec.ofNat 64 76)
       (BitVec.ofNat 32 (L - 2 * Spec.Rsa.modulusWords g.length)) := by
     rw [U₇.mem, U₆.mem, U₅.mem, m₄, H.address h (by decide), ecx₆]
@@ -146,18 +146,18 @@ theorem preR2Args_ok (s : State) (h : PrivContext g bs s) (H : PreCtx g bs P L s
     rw [U₁₀.gpr, U₉.gpr, U₈.gpr, U₇.gpr, U₆.other _ (by decide), U₅.other _ (by decide), eax₄]
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.toNat_add, BitVec.toNat_ofNat]
-    omega
+    omega_using []
   have m₁₀ : u₁₀.mem = u₇.mem := by rw [U₁₀.mem, U₉.mem, U₈.mem]
   have F₇ : Frame [⟨byteAddr g.stack + BitVec.ofNat 64 76, 4⟩] s.mem u₇.mem := by
     rw [m₇]; exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ _)
   have p₁₀ : u₁₀.mem.readW (addr (s.gpr .esp) (VG.Impl.Rsa.X86.PrivChecked.frameBytes + 20 + 4 * 20)) 32 = P := by
-    rw [m₁₀, H.address h (by omega), show VG.Impl.Rsa.X86.PrivChecked.frameBytes + 20 + 4 * 20 =
-      VG.Impl.Rsa.X86.PrivChecked.frameBytes + 100 by omega]
+    rw [m₁₀, H.address h (by omega_using []), show VG.Impl.Rsa.X86.PrivChecked.frameBytes + 20 + 4 * 20 =
+      VG.Impl.Rsa.X86.PrivChecked.frameBytes + 100 by omega_using []]
     rw [F₇.readW (r := ⟨byteAddr g.stack + BitVec.ofNat 64 (VG.Impl.Rsa.X86.PrivChecked.frameBytes + 100), 4⟩)
       (Region.contains_self _ _) (fun r hr => by
         obtain rfl := List.mem_singleton.mp hr
-        exact Offset.disjoint _ (.inr (by simp only [VG.Impl.Rsa.X86.PrivChecked.frameBytes]; omega))
-          (by simp only [VG.Impl.Rsa.X86.PrivChecked.frameBytes]; omega) (by omega)) (by decide)]
+        exact Offset.disjoint _ (.inr (by simp only [VG.Impl.Rsa.X86.PrivChecked.frameBytes]; omega_using []))
+          (by simp only [VG.Impl.Rsa.X86.PrivChecked.frameBytes]; omega_using []) (by omega_using [])) (by decide)]
     exact H.ptr
   have eax₁₁ : u₁₁.gpr .eax = P + BitVec.ofNat 32 (16 * Spec.Rsa.modulusWords g.length) := by
     rw [U₁₁.gpr, eax₁₀, p₁₀, BitVec.add_comm]
@@ -183,7 +183,7 @@ theorem preR2Args_ok (s : State) (h : PrivContext g bs s) (H : PreCtx g bs P L s
   have sub : ∀ r ∈ [(⟨byteAddr g.stack + BitVec.ofNat 64 72, 8⟩ : Region)], ∃ R ∈ bodyWrites g, r.Sub R := by
     intro r hr
     obtain rfl := List.mem_singleton.mp hr
-    exact ⟨g.innerRegion, by simp [bodyWrites], Offset.sub_base _ (by simp only [VG.Impl.Rsa.X86.PrivChecked.frameBytes]; omega)⟩
+    exact ⟨g.innerRegion, by simp [bodyWrites], Offset.sub_base _ (by simp only [VG.Impl.Rsa.X86.PrivChecked.frameBytes]; omega_using [])⟩
   exact ⟨h.after (F.sub sub) K (K.1 .esp (by decide)), H.after (F.sub sub) K, M, F, K⟩
 
 end
@@ -206,10 +206,10 @@ theorem crtArgsP_ok (s : State) (h : PrivContext g bs s) (H : PreCtx g bs P L s)
     rcases Nat.lt_or_ge j 18 with lt | ge
     · rw [F'.readW (r := ⟨byteAddr g.stack + BitVec.ofNat 64 (4 * j), 4⟩) (Region.contains_self _ _) (fun r hr => by
           obtain rfl := List.mem_singleton.mp hr
-          exact Offset.disjoint _ (.inl (by omega)) (by omega) (by decide)) (by decide), A j lt]
+          exact Offset.disjoint _ (.inl (by omega_using [lt])) (by omega_using [hj]) (by decide)) (by decide), A j lt]
       simp only [crtArgumentP, lt, ite_true]
     · rw [M]
-      rcases (by omega : j = 18 ∨ j = 19) with rfl | rfl
+      rcases (by omega_using [hj, ge] : j = 18 ∨ j = 19) with rfl | rfl
       · rw [show 4 * 18 = 72 from rfl, Mem.readW_writeW_self32]
         simp only [crtArgumentP]; rfl
       · rw [show 4 * 19 = 76 from rfl]
@@ -221,7 +221,7 @@ theorem crtArgsP_ok (s : State) (h : PrivContext g bs s) (H : PreCtx g bs P L s)
           (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ _)
         rw [F72.readW (r := ⟨byteAddr g.stack + BitVec.ofNat 64 76, 4⟩) (Region.contains_self _ _) (fun r hr => by
           obtain rfl := List.mem_singleton.mp hr
-          exact Offset.disjoint _ (.inr (by omega)) (by omega) (by omega)) (by decide), Mem.readW_writeW_self32]
+          exact Offset.disjoint _ (.inr (by omega_using [])) (by omega_using []) (by omega_using [])) (by decide), Mem.readW_writeW_self32]
         simp only [crtArgumentP]; rfl
   · refine (F.sub ?_).trans (F'.sub ?_)
     · intro r hr

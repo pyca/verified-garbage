@@ -76,12 +76,12 @@ bits of the S-boxes before it. -/
 theorem keyBits (K : BitVec 64) {j i : Nat} (hj : j < 8) (hi : i < 6) :
     (K.rotateRight 48 <<< (6 * j)).getLsbD (58 + i) = (K.setWidth 48).getLsbD (inBit j i) := by
   rw [BitVec.getLsbD_shiftLeft, BitVec.getLsbD_rotateRight, BitVec.getLsbD_setWidth]
-  have h1 : ¬ 58 + i < 6 * j := by omega
-  have h2 : ¬ 58 + i - 6 * j < 64 - 48 % 64 := by omega
-  have h3 : 58 + i - 6 * j - (64 - 48 % 64) = inBit j i := by unfold inBit; omega
-  have h4 : inBit j i < 48 := by unfold inBit; omega
+  have h1 : ¬ 58 + i < 6 * j := by omega_using [hj]
+  have h2 : ¬ 58 + i - 6 * j < 64 - 48 % 64 := by omega_using [hj]
+  have h3 : 58 + i - 6 * j - (64 - 48 % 64) = inBit j i := by unfold inBit; omega_using [hj]
+  have h4 : inBit j i < 48 := by unfold inBit; omega_using [hi]
   simp only [h1, decide_false, Bool.not_false, Bool.true_and, h2, ite_false, h3, h4, decide_true,
-    Bool.true_and, show 58 + i < 64 by omega, show 58 + i - 6 * j < 64 by omega]
+    Bool.true_and, show 58 + i < 64 by omega_using [hi], show 58 + i - 6 * j < 64 by omega_using [hi]]
 
 theorem stepsCode_ok (ρ : Role) (K : BitVec 64) {n : Nat} (hn : n ≤ 8) {s : State} (h : Room s)
     (hp : Ptrs ρ s) (hones : s.xmm ones = BitVec.allOnes 128) (hr : s.gpr .rax = K.rotateRight 48) :
@@ -94,20 +94,20 @@ theorem stepsCode_ok (ρ : Role) (K : BitVec 64) {n : Nat} (hn : n ≤ 8) {s : S
   | zero => exact ⟨s, runBlock_nil, fun _ _ => rfl, by simp [hr], fun _ _ _ => rfl, rfl, rfl, rfl,
       Frame.refl _ _⟩
   | succ n ih =>
-    obtain ⟨s₁, run₁, w₁, r₁, g₁, o₁, rd₁, wr₁, f₁⟩ := ih (by omega)
+    obtain ⟨s₁, run₁, w₁, r₁, g₁, o₁, rd₁, wr₁, f₁⟩ := ih (by omega_using [hn])
     have c₁ := g₁ .rcx (by decide) (by decide)
     have si₁ := g₁ .rsi (by decide) (by decide)
     have h₁ := h.congr c₁ si₁ wr₁
     have hp₁ : Ptrs ρ s₁ := hp.congr (g₁ _ (by decide) (by decide)) (g₁ _ (by decide) (by decide)) si₁
     obtain ⟨s₂, run₂, w₂, r₂, g₂, o₂, rd₂, wr₂, f₂⟩ :=
-      sboxStep_ok ρ (by omega : n < 8) h₁ hp₁ (by rw [o₁, hones]) (K.setWidth 48)
-        (fun i hi => by rw [r₁]; exact keyBits K (by omega) hi)
+      sboxStep_ok ρ (by omega_using [hn] : n < 8) h₁ hp₁ (by rw [o₁, hones]) (K.setWidth 48)
+        (fun i hi => by rw [r₁]; exact keyBits K (by omega_using [hn]) hi)
     refine ⟨s₂, ?_, fun x hx => ?_, ?_, fun r h1 h2 => (g₂ r h1 h2).trans (g₁ r h1 h2),
       o₂.trans o₁, rd₂.trans rd₁, wr₂.trans wr₁, ?_⟩
     · rw [stepsCode_succ]; exact runBlock_cat_some run₁ run₂
     · rw [w₂ x hx, steps_succ]
-      exact VG.Proof.TripleDes.Bitslice.step_congr ρ _ (by omega) w₁ (w₁ x hx)
-    · rw [r₂, r₁, ← BitVec.shiftLeft_add, show 6 * n + 6 = 6 * (n + 1) by omega]
+      exact VG.Proof.TripleDes.Bitslice.step_congr ρ _ (by omega_using [hn]) w₁ (w₁ x hx)
+    · rw [r₂, r₁, ← BitVec.shiftLeft_add, show 6 * n + 6 = 6 * (n + 1) by omega_using []]
     · rw [show spillR s₁ = spillR s by simp only [spillR, c₁],
         show stateR s₁ = stateR s by simp only [stateR, si₁]] at f₂
       exact f₁.trans f₂

@@ -110,12 +110,12 @@ theorem Env.ksFrame {s₀ u v : State} {P : Nat → Block} {off : Nat} (hoff : K
     h.frame.trans (hf.sub fun r hr => by
       simp only [List.mem_singleton] at hr; subst r
       exact ⟨pR s₀, by simp, Offset.sub_base _ (by omega_arith)⟩),
-    fun k hk => (ks_read hf ho (128 + 16 * k) 16 (by omega) (by omega)).trans (h.powers k hk),
-    (ks_read hf ho 768 16 (by omega) (by omega)).trans h.mask,
-    (ks_read hf ho 784 16 (by omega) (by omega)).trans h.poly,
-    (ks_read hf ho 800 8 (by omega) (by omega)).trans h.rounds,
-    (ks_read hf ho 808 8 (by omega) (by omega)).trans h.data,
-    (ks_read hf ho 816 8 (by omega) (by omega)).trans h.saved,
+    fun k hk => (ks_read hf ho (128 + 16 * k) 16 (by omega) (by omega_using [hk])).trans (h.powers k hk),
+    (ks_read hf ho 768 16 (by omega) (by omega_using [])).trans h.mask,
+    (ks_read hf ho 784 16 (by omega) (by omega_using [])).trans h.poly,
+    (ks_read hf ho 800 8 (by omega) (by omega_using [])).trans h.rounds,
+    (ks_read hf ho 808 8 (by omega) (by omega_using [])).trans h.data,
+    (ks_read hf ho 816 8 (by omega) (by omega_using [])).trans h.saved,
     by rw [hrd]; exact h.rd, by rw [hwr]; exact h.wr⟩
 
 theorem ksTail_ok {s₀ s : State} {lo : Nat} {P : Nat → Block} {c off : Nat} (hp : SPre s₀ lo) (hoff : KsOff off)

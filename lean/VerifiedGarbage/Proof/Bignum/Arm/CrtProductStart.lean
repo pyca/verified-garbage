@@ -224,9 +224,9 @@ structure CrtProductStart (base : BitVec 32) (size o a b m n : Nat) (s : State) 
 theorem WideProductCtx.narrow {s : State} {base : BitVec 32} {size o a b M N m n : Nat}
     (h : WideProductCtx s base size o a b M N) (hm : 0 < m) (hm' : m ≤ M) (hn : 0 < n) (hn' : n ≤ N) :
     WideProductCtx s base size o a b m n :=
-  ⟨h.workspace, hm, hn, h.headerFit, h.aHeader, h.bHeader, h.oHeader, by have := h.aFits; omega,
-    by have := h.bFits; omega, by have := h.outFits; omega, by have := h.separateA; omega,
-    by have := h.separateB; omega, h.stackRead, h.stackSep, h.saved⟩
+  ⟨h.workspace, hm, hn, h.headerFit, h.aHeader, h.bHeader, h.oHeader, by have := h.aFits; omega_using [hm', this],
+    by have := h.bFits; omega_using [hn', this], by have := h.outFits; omega_using [hm', hn', this], by have := h.separateA; omega_using [hm', hn', this],
+    by have := h.separateB; omega_using [hm', hn', this], h.stackRead, h.stackSep, h.saved⟩
 
 theorem crt_productArgsWith_ready (s : State) {base : BitVec 32} {size o a b cp cq w m n : Nat} {coefficient : Bool}
     {count : List Instr} (h : CrtProductInput base size o a b cp cq w s coefficient)
@@ -238,7 +238,7 @@ theorem crt_productArgsWith_ready (s : State) {base : BitVec 32} {size o a b cp 
   have outFit := h.outFits
   have beforeP := h.pBeforeOut
   have beforeQ := h.qBeforeOut
-  refine WP.mono (crt_productArgsWith_ok s h.workspace h.parentFit h.qHeader (by omega) (by omega)
+  refine WP.mono (crt_productArgsWith_ok s h.workspace h.parentFit h.qHeader (by omega_using [outFit, beforeP]) (by omega_using [outFit, beforeQ])
     h.ptr h.pLink h.qLink h.pArray h.qArray h.product hc) ?_
   rintro t ⟨memT, rest⟩
   have result := crtProductMem_ok s.mem (State.addr base)
@@ -250,9 +250,9 @@ theorem crt_productArgsWith_ready (s : State) {base : BitVec 32} {size o a b cp 
   have frame := outside_workspace outside (size := size) h.headerFit
   have ctx := (h.toWideProductCtx.narrow hm hm' hn hn').after_frame rest frame
   have zeroT : val32 t.mem (State.addr base) o (m + n + 2) = 0 := by
-    rw [outside.val32 (by have := h.oHeader; omega) (by have := h.workspace.nowrap; omega), zero]
+    rw [outside.val32 (by have := h.oHeader; omega_using [this]) (by have := h.workspace.nowrap; omega_using [hm', hn', outFit, this]), zero]
   refine ⟨⟨ctx, ?_⟩, outside, frame, rest⟩
-  refine ⟨by omega, (rest.gpr .r0 (by simp)).trans h.ptr, ?_, q, ?_, ?_, width,
+  refine ⟨by omega_using [], (rest.gpr .r0 (by simp)).trans h.ptr, ?_, q, ?_, ?_, width,
     Outs.refl _ _ _, ?_, Rest.refl _ _⟩
   · simpa only [Nat.mul_zero, Nat.add_zero] using p
   · simpa only [Nat.mul_zero, Nat.add_zero] using out

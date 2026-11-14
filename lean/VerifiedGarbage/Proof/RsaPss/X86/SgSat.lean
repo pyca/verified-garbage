@@ -35,24 +35,24 @@ theorem putWs_below {a : Addr} : ∀ {ws : List (BitVec 32)} {m : Mem} {p : Addr
   | [], _, _, _, _ => rfl
   | w :: ws, m, p, ha, hp => by
     have e : (p + 4).toNat = p.toNat + 4 := by
-      rw [BitVec.toNat_add]; simp only [List.length_cons] at hp; simp; omega
+      rw [BitVec.toNat_add]; simp only [List.length_cons] at hp; simp; omega_using [hp]
     simp only [putWs]
-    rw [putWs_below (by rw [e]; omega) (by rw [e]; simp only [List.length_cons] at hp; omega),
-      readW_sep32 (.inl ha) (by simp only [List.length_cons] at hp; omega) (by simp only [List.length_cons] at hp; omega)]
+    rw [putWs_below (by rw [e]; omega_using [ha]) (by rw [e]; simp only [List.length_cons] at hp; omega_using [hp]),
+      readW_sep32 (.inl ha) (by simp only [List.length_cons] at hp; omega_using [ha]) (by simp only [List.length_cons] at hp; omega_using [hp])]
 
 theorem putWs_at : ∀ {ws : List (BitVec 32)} {m : Mem} {p : Addr} {i : Nat}, i < ws.length →
     p.toNat + 4 * ws.length < 2 ^ 64 → (putWs m p ws).readW (p + BitVec.ofNat 64 (4 * i)) 32 = ws.getD i 0
   | [], _, _, _, hi, _ => absurd hi (Nat.not_lt_zero _)
   | w :: ws, m, p, i, hi, hp => by
     have e : (p + 4).toNat = p.toNat + 4 := by
-      rw [BitVec.toNat_add]; simp only [List.length_cons] at hp; simp; omega
+      rw [BitVec.toNat_add]; simp only [List.length_cons] at hp; simp; omega_using [hp]
     simp only [putWs, List.length_cons] at hi hp ⊢
     rcases i with _ | k
-    · rw [show p + BitVec.ofNat 64 (4 * 0) = p by simp, putWs_below (by rw [e]) (by rw [e]; omega),
+    · rw [show p + BitVec.ofNat 64 (4 * 0) = p by simp, putWs_below (by rw [e]) (by rw [e]; omega_using [hp]),
         Mem.readW_writeW_self32]; rfl
     · rw [show p + BitVec.ofNat 64 (4 * (k + 1)) = p + 4 + BitVec.ofNat 64 (4 * k) by
-          rw [BitVec.add_assoc, show (4 : Addr) = BitVec.ofNat 64 4 from rfl, BitVec.ofNat_add_ofNat]; congr 2; omega,
-        putWs_at (by omega) (by rw [e]; omega)]
+          rw [BitVec.add_assoc, show (4 : Addr) = BitVec.ofNat 64 4 from rfl, BitVec.ofNat_add_ofNat]; congr 2; omega_using [],
+        putWs_at (by omega_using [hi]) (by rw [e]; omega_using [hp])]
       rfl
 
 /-- The table of the words `ws`, written at `p`. -/
@@ -86,9 +86,9 @@ def withTabs (s : State) (vs : List MVar) (gs : List TVar) (w : MVar) (wg : TVar
 theorem withTabs_mem (s : State) (vs : List MVar) (gs : List TVar) (w : MVar) (wg : TVar) {a : Addr}
     (ha : a.toNat + 4 ≤ 0x300000) : (withTabs s vs gs w wg).mem.readW a 32 = s.mem.readW a 32 := by
   simp only [withTabs]
-  rw [putWs_below (by simp; omega) (by simp [FnTable.words, Proof.HashTable.X86.tableOf, Proof.MdHashTable.X86.tableOf, Spec.MdHashTable.dataOf,
+  rw [putWs_below (by simp; omega_using [ha]) (by simp [FnTable.words, Proof.HashTable.X86.tableOf, Proof.MdHashTable.X86.tableOf, Spec.MdHashTable.dataOf,
       Spec.HashTable.dataOf]),
-    putWs_below (by simp; omega) (by simp [FnTable.words, Proof.MdHashTable.X86.tableOf, Spec.MdHashTable.dataOf,
+    putWs_below (by simp; omega_using [ha]) (by simp [FnTable.words, Proof.MdHashTable.X86.tableOf, Spec.MdHashTable.dataOf,
       Spec.HashTable.dataOf])]
 
 theorem withTabs_arg (s : State) (vs : List MVar) (gs : List TVar) (w : MVar) (wg : TVar) {j : Nat}
@@ -104,7 +104,7 @@ theorem withTabs_heldH (s : State) (vs : List MVar) (gs : List TVar) (w : MVar) 
     simp [FnTable.words, Proof.MdHashTable.X86.tableOf, Spec.MdHashTable.dataOf, Spec.HashTable.dataOf]
   rw [hl] at hi
   simp only [withTabs]
-  rw [putWs_below (by rw [show (32 / 8 * i) = 4 * i from rfl]; simp; omega)
+  rw [putWs_below (by rw [show (32 / 8 * i) = 4 * i from rfl]; simp; omega_using [hi])
     (by simp [FnTable.words, Proof.HashTable.X86.tableOf, Proof.MdHashTable.X86.tableOf, Spec.MdHashTable.dataOf,
       Spec.HashTable.dataOf])]
   exact putWs_held (by simp [FnTable.words, Proof.MdHashTable.X86.tableOf, Spec.MdHashTable.dataOf,

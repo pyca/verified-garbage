@@ -50,12 +50,12 @@ theorem CrtShared.narrow_fits {s : State} {g : CrtGeometry} {bs : Fin 7 → List
     · exact ⟨h.buffers.pPositive, h.buffers.pShort⟩
     · exact ⟨h.buffers.qPositive, h.buffers.qShort⟩
   obtain ⟨two, le, fit, half⟩ := narrowWords_bounds (w := g.words) bounds.1 bounds.2 h.buffers.lengthValid.1 rfl
-  refine ⟨two, le, fit, bounds.1, by have := h.buffers.lengthValid.2; omega, ?_, half⟩
+  refine ⟨two, le, fit, bounds.1, by have := h.buffers.lengthValid.2; omega_using [valid, bounds], ?_, half⟩
   have arrays := h.buffers.context.arraysFit
   simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at arrays ⊢
   change _ ≤ g.words at le
   have := Nat.mul_le_mul_left 8 (Nat.add_le_add_right le 2)
-  omega
+  omega_using [arrays, le]
 
 theorem CrtShared.after_narrow {s t : State} {g : CrtGeometry} {bs : Fin 7 → List Byte} {rs : List Reg}
     (h : CrtShared g bs s)
@@ -87,7 +87,7 @@ theorem crt_selectedWidth_ready {s t : State} {g : CrtGeometry} {bs : Fin 7 → 
     (by intro r hr; simp only [List.mem_singleton] at hr; subst r; exact sep)
   have childSub := crt_region_sub_workspace h.buffers.workspace h.buffers.storageFits member
   have eq : WorkspaceEq (State.addr child) (8 * workspaceWords g.words) s.mem t.mem :=
-    WorkspaceEq.of_frame (by have := ws.nowrap; omega) frame
+    WorkspaceEq.of_frame (by have := ws.nowrap; omega_using [this]) frame
       (by intro r hr; simp only [List.mem_singleton] at hr; subst r; exact sep.sub_left childSub)
   have childLayout := layout.congr eq
   refine ⟨shared, ⟨⟨ws.congr rest.wr, childLayout.layout, childLayout.width, ptr⟩, ?_, ?_, ?_⟩⟩
@@ -110,8 +110,8 @@ theorem CrtShared.child {s : State} {g : CrtGeometry} {bs : Fin 7 → List Byte}
     s.mem.readW (off (State.addr g.base) slot) 32 = child := by
   have size := h.buffers.context.size
   rcases kind with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩
-  · exact ⟨by simp [crtRegions], h.buffers.context.p, h.p, h.buffers.context.sepPN, by omega, by decide, h.main.p⟩
-  · exact ⟨by simp [crtRegions], h.buffers.context.q, h.q, h.buffers.context.sepQN, by omega, by decide, h.main.q⟩
+  · exact ⟨by simp [crtRegions], h.buffers.context.p, h.p, h.buffers.context.sepPN, by omega_using [size], by decide, h.main.p⟩
+  · exact ⟨by simp [crtRegions], h.buffers.context.q, h.q, h.buffers.context.sepQN, by omega_using [size], by decide, h.main.q⟩
 
 /-- A workspace of the CRT storage is unchanged by writes to other regions of it and the stack. -/
 theorem CrtShared.eq_of_frame {s : State} {g : CrtGeometry} {bs : Fin 7 → List Byte} {base : BitVec 32}
@@ -122,7 +122,7 @@ theorem CrtShared.eq_of_frame {s : State} {g : CrtGeometry} {bs : Fin 7 → List
     (frame : Frame (⟨State.addr s.sp, 4⟩ :: regions) m m')
     (sep : ∀ r ∈ regions, (⟨State.addr base, 8 * workspaceWords g.words⟩ : Region).Disjoint r) :
     WorkspaceEq (State.addr base) (8 * workspaceWords g.words) m m' := by
-  apply WorkspaceEq.of_frame (by have := ws.nowrap; omega) frame
+  apply WorkspaceEq.of_frame (by have := ws.nowrap; omega_using [this]) frame
   intro r hr
   simp only [List.mem_cons] at hr
   rcases hr with rfl | hr

@@ -122,7 +122,7 @@ theorem call_rel (F : OpenSplitFn M) {c₁ c₂ : State} (hc₁ : Ready σ₁ c�
       hc₂.infr.rsp, hP]
   · obtain ⟨b₀, b₁, b₂, b₃, b₄, b₅, b₆⟩ := xa₁
     obtain ⟨c₀, c₁', c₂', c₃, c₄, c₅, c₆⟩ := xa₂
-    have : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 := by omega
+    have : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 := by omega_using [hi]
     rcases this with rfl | rfl | rfl | rfl | rfl | rfl | rfl
     · rw [b₀, c₀, Dst, Dst, a2]
     · rw [b₁, c₁', a1]

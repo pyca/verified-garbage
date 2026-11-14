@@ -47,14 +47,14 @@ theorem callE_sp (s t : State) : (callE pc s t).sp = t.sp := rfl
 theorem callE_stackArg {s t : State} (A : AtPriv pc s t) {i : Nat} (hi : i < nCallArgs pc) :
     stackArg (callE pc s t) i = psa s i := by
   show t.mem.readW (stackArgAddr (callE pc s t) i) 64 = _
-  rw [stackArgAddr, callE_sp, A.sp, show 32 + 8 * (8 + i) = 96 + 8 * i by omega]
+  rw [stackArgAddr, callE_sp, A.sp, show 32 + 8 * (8 + i) = 96 + 8 * i by omega_using []]
   exact A.psa i hi
 
 theorem callE_addr {s t : State} (A : AtPriv pc s t) : stackArgAddr (callE pc s t) 0 = pb s + BitVec.ofNat 64 96 := by
   rw [stackArgAddr, callE_sp, A.sp]
 
 theorem lt_nCall {i : Nat} (hi : i < 12) : i < nCallArgs pc := by
-  cases pc <;> simp only [nCallArgs, Bool.false_eq_true, ↓reduceIte] <;> omega
+  cases pc <;> simp only [nCallArgs, Bool.false_eq_true, ↓reduceIte] <;> omega_using [hi]
 
 theorem psa_subD (s : State) : Region.Sub (psaR pc s) (kD s) := by
   cases pc
@@ -75,22 +75,22 @@ variable {s : State} (P : PreD pc s)
 include P
 
 theorem em_sub : Region.Sub (emR s) (scR s) :=
-  Region.sub_prefix (by show kk s ≤ _; have := scLen P; have := P.k2; unfold kk oRsa at *; omega)
+  Region.sub_prefix (by show kk s ≤ _; have := scLen P; have := P.k2; unfold kk oRsa at *; omega_arith)
 
 theorem rs_sub : Region.Sub (rsR s) (scR s) := by
   have := P.hs; unfold Spec.RsaPss.scratchWords Spec.Rsa.scratchWords at this
-  exact Offset.sub_base _ (by unfold oRsa; omega)
+  exact Offset.sub_base _ (by unfold oRsa; omega_using [this])
 
 
 theorem em_rs : (emR s).Disjoint (rsR s) := by
   have h := Offset.disjoint_base (Sd s) (d := oRsa) (n := ((stackArg s 14).toNat - 1024) * 8) (k := kk s)
-    (by have := P.k2; unfold kk oRsa; omega) (by have := P.wsc; have := scLen P; unfold oRsa at *; omega)
+    (by have := P.k2; unfold kk oRsa; omega_using [this]) (by have := P.wsc; have := scLen P; unfold oRsa at *; omega_arith)
   exact h.symm
 
 theorem pb_toNat : (pb s).toNat = s.sp.toNat - 464 := by
   have sp1 := P.sp1
   rw [pb_eq, Offset.toNat_sub_ofNat, Nat.mod_eq_of_lt (a := frameBytes + privBytes) (by decide)]
-  unfold stackBytes at sp1; unfold frameBytes privBytes at *; omega
+  unfold stackBytes at sp1; unfold frameBytes privBytes at *; omega_using [sp1]
 
 theorem preP_at {t : State} (A : AtPriv pc s t) : Rsa.PPC64LE.Priv.PreP pc (callE pc s t) := by
   have hk := P.k2
@@ -100,7 +100,7 @@ theorem preP_at {t : State} (A : AtPriv pc s t) : Rsa.PPC64LE.Priv.PreP pc (call
   have sp1 := P.sp1
   have hpbt : (pb s).toNat = s.sp.toNat - 464 := by
     rw [pb_eq, Offset.toNat_sub_ofNat, Nat.mod_eq_of_lt (a := frameBytes + privBytes) (by decide)]
-    unfold stackBytes at sp1; unfold frameBytes privBytes at *; omega
+    unfold stackBytes at sp1; unfold frameBytes privBytes at *; omega_using [sp1]
   have g3 : (callE pc s t).gpr .r3 = Sd s := (callE_gpr (pc := pc) s t).trans A.r3
   have g4 : (callE pc s t).gpr .r4 = s.gpr .r7 := (callE_gpr (pc := pc) s t).trans A.r4
   have g5 : (callE pc s t).gpr .r5 = s.gpr .r6 := (callE_gpr (pc := pc) s t).trans A.r5
@@ -125,9 +125,9 @@ theorem preP_at {t : State} (A : AtPriv pc s t) : Rsa.PPC64LE.Priv.PreP pc (call
   have hQI : Rsa.PPC64LE.Priv.qiR (callE pc s t) = qiR s := by
     simp only [Rsa.PPC64LE.Priv.qiR, sa 8 (by decide), sa 9 (by decide)]; rfl
   have hl : 1024 ≤ (stackArg s 14).toNat := by
-    have := P.hs; unfold Spec.RsaPss.scratchWords Spec.Rsa.scratchWords at this; omega
+    have := P.hs; unfold Spec.RsaPss.scratchWords Spec.Rsa.scratchWords at this; omega_using [this]
   have w11 : (BitVec.ofNat 64 ((stackArg s 14).toNat - 1024)).toNat = (stackArg s 14).toNat - 1024 := by
-    rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := (stackArg s 14).isLt; omega)]
+    rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := (stackArg s 14).isLt; omega_using [])]
   have hS : Rsa.PPC64LE.Priv.sR (callE pc s t) = rsR s := by
     simp only [Rsa.PPC64LE.Priv.sR, sa 10 (by decide), sa 11 (by decide), psa, w11]
   have hA : Rsa.PPC64LE.Priv.aR pc (callE pc s t) = psaR pc s := by simp only [Rsa.PPC64LE.Priv.aR, callE_addr A]
@@ -153,10 +153,10 @@ theorem preP_at {t : State} (A : AtPriv pc s t) : Rsa.PPC64LE.Priv.PreP pc (call
     rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := oRsa) (by decide),
       Nat.mod_eq_of_lt (by
         have e : (Sd s).toNat = (stackArg s 13).toNat := rfl
-        have := P.wsc; have := P.hs; unfold Spec.RsaPss.scratchWords Spec.Rsa.scratchWords oRsa at *; omega)]
+        have := P.wsc; have := P.hs; unfold Spec.RsaPss.scratchWords Spec.Rsa.scratchWords oRsa at *; omega_arith)]
   have q1 : Impl.Rsa.PPC64LE.Priv.frameBytes ≤ (callE pc s t).sp.toNat := by
-    rw [hsp, hpbt]; rw [stackBytes_eq] at sp1; unfold Impl.Rsa.PPC64LE.Priv.frameBytes; omega
-  have q2 : (callE pc s t).sp.toNat + 192 ≤ 2 ^ 64 := by rw [hsp, hpbt]; have := P.sp2; split at this <;> omega
+    rw [hsp, hpbt]; rw [stackBytes_eq] at sp1; unfold Impl.Rsa.PPC64LE.Priv.frameBytes; omega_using [sp1]
+  have q2 : (callE pc s t).sp.toNat + 192 ≤ 2 ^ 64 := by rw [hsp, hpbt]; have := P.sp2; split at this <;> omega_using []
   have hkk : kk s = (s.gpr .r7).toNat := rfl
   refine ⟨q1, q2, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · simp only [Rsa.PPC64LE.Priv.rdL]
@@ -197,7 +197,7 @@ theorem preP_at {t : State} (A : AtPriv pc s t) : Rsa.PPC64LE.Priv.PreP pc (call
   · rw [hK, hQI]; exact P.kqi.sub_left kD'
   · rw [hK, hS]; exact (P.ks.sub_left kD').sub_right rss
   · rw [hK, hA]; exact ka
-  · rw [g3, g4]; show (stackArg s 13).toNat + _ ≤ _; have := P.wsc; have := scLen P; unfold oRsa at *; omega
+  · rw [g3, g4]; show (stackArg s 13).toNat + _ ≤ _; have := P.wsc; have := scLen P; unfold oRsa at *; omega_using [hk, wS]
   · rw [g5, g6]; exact P.wn
   · rw [g7, g8]; exact P.we
   · rw [g9, g10, ← P.oc]; exact P.wct
@@ -206,7 +206,7 @@ theorem preP_at {t : State} (A : AtPriv pc s t) : Rsa.PPC64LE.Priv.PreP pc (call
   · rw [sa 4 (by decide), s5]; exact P.wdp
   · rw [sa 6 (by decide), s7]; exact P.wdq
   · rw [sa 8 (by decide), s9]; exact P.wqi
-  · rw [sa 10 (by decide), s11, w11]; simp only [psa]; rw [wS]; have := P.wsc; unfold oRsa; omega
+  · rw [sa 10 (by decide), s11, w11]; simp only [psa]; rw [wS]; have := P.wsc; unfold oRsa; omega_using [hl, this]
   · rw [g6]; exact hk1
   · rw [g6]; exact hk
   · rw [g4, g6]
@@ -220,7 +220,7 @@ theorem preP_at {t : State} (A : AtPriv pc s t) : Rsa.PPC64LE.Priv.PreP pc (call
   · rw [s5, s1]; exact P.h4
   · rw [s9, s1]; exact P.h8
   · rw [s7, s3]; exact P.h6
-  · rw [g6, s11, w11]; have := P.hs; unfold Spec.RsaPss.scratchWords at this; omega
+  · rw [g6, s11, w11]; have := P.hs; unfold Spec.RsaPss.scratchWords at this; omega_using [this]
 
 end
 

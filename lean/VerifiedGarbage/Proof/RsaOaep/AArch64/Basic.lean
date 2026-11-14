@@ -65,10 +65,10 @@ structure Lay (t : State) (F S : Addr) : Prop where
   geo : Geo F S
 
 theorem cF (F : Addr) {d n : Nat} (h : d + n ≤ frameBytes) : Region.Contains ⟨F, frameBytes⟩ (off F d) n :=
-  Offset.contains_base F h (by unfold frameBytes at *; omega)
+  Offset.contains_base F h (by unfold frameBytes at *; omega_using [h])
 
 theorem cS (S : Addr) {o n : Nat} (h : o + n ≤ oRsa) : Region.Contains ⟨S, oRsa⟩ (off S o) n :=
-  Offset.contains_base S h (by unfold oRsa at *; omega)
+  Offset.contains_base S h (by unfold oRsa at *; omega_using [h])
 
 namespace Lay
 
@@ -95,7 +95,7 @@ theorem sld {o n : Nat} (h : o + n ≤ oRsa) : InRegions (t.rd ++ t.wr) (off S o
 theorem cov {o n : Nat} (h : o + n ≤ oRsa) : Covers [⟨off S o, n⟩] t.wr :=
   Covers.trans (Covers.of_sub fun r hr => by
     rw [List.mem_singleton.mp hr]
-    exact ⟨_, List.mem_singleton_self _, o, rfl, by simp only; omega⟩) L.sc
+    exact ⟨_, List.mem_singleton_self _, o, rfl, by simp only; omega_using [h]⟩) L.sc
 
 /-- `Lay` holds of a state with the same stack pointer and regions and the
 same slot of `scratch`. -/
@@ -114,7 +114,7 @@ end Lay
 /-- Two ranges of our working space that do not overlap. -/
 theorem sdis (S : Addr) {a n b k : Nat} (h : a + n ≤ b ∨ b + k ≤ a) (ha : a + n ≤ oRsa) (hb : b + k ≤ oRsa) :
     Region.Disjoint ⟨off S a, n⟩ ⟨off S b, k⟩ :=
-  Offset.disjoint S h (by unfold oRsa at ha; omega) (by unfold oRsa at hb; omega)
+  Offset.disjoint S h (by unfold oRsa at ha; omega_using [ha]) (by unfold oRsa at hb; omega_using [hb])
 
 /-! ## The working space and the frame, as functions -/
 
@@ -135,10 +135,10 @@ instance (rgs : List (Nat × Nat)) (o : Nat) : Decidable (inR rgs o) :=
 def regs (S : Addr) (rgs : List (Nat × Nat)) : List Region := rgs.map fun p => ⟨off S p.1, p.2⟩
 
 theorem Geo.dRS' {F S : Addr} (G : Geo F S) {o : Nat} (ho : o < oRsa) : ¬ (retR F).Contains (off S o) 1 :=
-  fun hc => G.dRS _ hc ((cS S (o := o) (n := 1) (by omega)).byte (by rw [BitVec.sub_self]; decide))
+  fun hc => G.dRS _ hc ((cS S (o := o) (n := 1) (by omega_using [ho])).byte (by rw [BitVec.sub_self]; decide))
 
 theorem Geo.cFw {F S : Addr} (_ : Geo F S) {k : Nat} (hk : k < nW) :
-    Region.Contains ⟨F, frameBytes⟩ (off F (8 * k)) 8 := cF F (by unfold nW frameBytes at *; omega)
+    Region.Contains ⟨F, frameBytes⟩ (off F (8 * k)) 8 := cF F (by unfold nW frameBytes at *; omega_using [hk])
 
 /-- What a callee or a block writing only within the ranges `rgs` of our
 working space and below the frame leaves. -/
@@ -156,8 +156,8 @@ theorem Rep.frame {m m' : Mem} {F S : Addr} {V : Nat → Byte} {W : Nat → BitV
         apply hn
         refine ⟨p, hp, ?_⟩
         have := hrg p hp
-        have := (Offset.lt_iff (off S o) S (d := p.1) (n := p.2) (by have := G.Sw; unfold oRsa at *; omega)).mp hc
-        rwa [off, Mem.sub_ofNat_toNat S (by unfold oRsa at *; omega)] at this
+        have := (Offset.lt_iff (off S o) S (d := p.1) (n := p.2) (by have := G.Sw; unfold oRsa at *; omega_arith)).mp hc
+        rwa [off, Mem.sub_ofNat_toNat S (by unfold oRsa at *; omega_using [ho])] at this
       · simp only [List.mem_singleton] at hr; subst hr
         exact G.dRS' ho hc
   fr k hk := by
@@ -166,9 +166,9 @@ theorem Rep.frame {m m' : Mem} {F S : Addr} {V : Nat → Byte} {W : Nat → BitV
     rcases List.mem_append.mp hr with hr | hr
     · obtain ⟨p, hp, rfl⟩ := List.mem_map.mp hr
       exact Region.Disjoint.sub_left (Region.Disjoint.sub_right G.dFS (Offset.sub_base S (hrg p hp)))
-        (Offset.sub_base F (by unfold nW frameBytes at *; omega))
+        (Offset.sub_base F (by unfold nW frameBytes at *; omega_using [hk]))
     · simp only [List.mem_singleton] at hr; subst hr
-      exact (G.dRF.sub_right (Offset.sub_base F (by unfold nW frameBytes at *; omega))).symm
+      exact (G.dRF.sub_right (Offset.sub_base F (by unfold nW frameBytes at *; omega_using [hk]))).symm
 
 /-- A byte written to memory. -/
 theorem write1_apply (m : Mem) (a x : Addr) (v : BitVec (8 * 1)) :
@@ -180,7 +180,7 @@ theorem write1_apply (m : Mem) (a x : Addr) (v : BitVec (8 * 1)) :
       have := BitVec.eq_of_toNat_eq (x := x - a) (y := 0) (by simpa using h)
       rw [← BitVec.sub_add_cancel x a, this]; exact BitVec.zero_add _)
     simp only [hx, ite_false]
-    exact ite_eq_right_iff.mpr fun h => absurd h (by omega)
+    exact ite_eq_right_iff.mpr fun h => absurd h (by omega_using [this])
 
 /-- A byte store to the working space. -/
 theorem Rep.wb {m : Mem} {F S : Addr} {V : Nat → Byte} {W : Nat → BitVec 64} (G : Geo F S)
@@ -190,10 +190,10 @@ theorem Rep.wb {m : Mem} {F S : Addr} {V : Nat → Byte} {W : Nat → BitVec 64}
     rw [write1_apply, upd]
     by_cases h : x = o
     · subst h; simp
-    · rw [ifn (Offset.add_ofNat_ne S (by unfold oRsa at *; omega) (by unfold oRsa at *; omega) h), ifn h,
+    · rw [ifn (Offset.add_ofNat_ne S (by unfold oRsa at *; omega_using [hx]) (by unfold oRsa at *; omega_using [ho]) h), ifn h,
         R.scr x hx]
   fr k hk := by
-    rw [word, Mem.readW, Mem.read_write_sep (Region.Disjoint.sep G.dFS (G.cFw hk) (cS S (o := o) (n := 1) (by omega)))
+    rw [word, Mem.readW, Mem.read_write_sep (Region.Disjoint.sep G.dFS (G.cFw hk) (cS S (o := o) (n := 1) (by omega_using [ho])))
       (by decide)]
     exact R.fr k hk
 
@@ -202,15 +202,15 @@ theorem Rep.wf {m : Mem} {F S : Addr} {V : Nat → Byte} {W : Nat → BitVec 64}
     (R : Rep m F S V W) {k : Nat} (hk : k < nW) (v : BitVec 64) :
     Rep (m.writeW (off F (8 * k)) v) F S V (upd W k v) where
   scr x hx := by
-    rw [Mem.writeW, Mem.write_apply (fun h => G.dFS _ ((G.cFw hk).byte h) ((cS S (o := x) (n := 1) (by omega)).byte
+    rw [Mem.writeW, Mem.write_apply (fun h => G.dFS _ ((G.cFw hk).byte h) ((cS S (o := x) (n := 1) (by omega_using [hx])).byte
       (by rw [BitVec.sub_self]; decide)))]
     exact R.scr x hx
   fr j hj := by
     by_cases h : j = k
     · subst h
       rw [word, Mem.readW_writeW_self64, upd, ifp rfl]
-    · rw [word, Mem.readW_writeW_sep (Offset.sep F (by unfold nW frameBytes at *; omega)
-        (by unfold nW frameBytes at *; have := G.Fw; omega) (by unfold nW frameBytes at *; have := G.Fw; omega))
+    · rw [word, Mem.readW_writeW_sep (Offset.sep F (by unfold nW frameBytes at *; omega_using [h])
+        (by unfold nW frameBytes at *; have := G.Fw; omega_using [hj]) (by unfold nW frameBytes at *; have := G.Fw; omega_using [hk]))
         (by decide), upd, ifn h]
       exact R.fr j hj
 
@@ -238,22 +238,22 @@ theorem byte64 (b : Byte) : BitVec.setWidth 64 (BitVec.setWidth 32 b) = b.setWid
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_setWidth]
   have := b.isLt
-  omega
+  omega_using []
 
 theorem byte_rt64 (b : Byte) : BitVec.setWidth 8 (BitVec.setWidth 32 (b.setWidth 64)) = b := by
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_setWidth]
   have := b.isLt
-  omega
+  omega_using []
 
 theorem byte_xor (x y : Byte) : BitVec.setWidth 8 (BitVec.setWidth 32 (x.setWidth 64 ^^^ y.setWidth 64)) = x ^^^ y := by
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_setWidth, BitVec.toNat_xor]
   have := x.isLt
   have := y.isLt
-  rw [Nat.mod_eq_of_lt (a := x.toNat) (by omega), Nat.mod_eq_of_lt (a := y.toNat) (by omega)]
-  have : x.toNat ^^^ y.toNat < 2 ^ 8 := Nat.xor_lt_two_pow (by omega) (by omega)
-  omega
+  rw [Nat.mod_eq_of_lt (a := x.toNat) (by omega_using []), Nat.mod_eq_of_lt (a := y.toNat) (by omega_using [])]
+  have : x.toNat ^^^ y.toNat < 2 ^ 8 := Nat.xor_lt_two_pow (by omega_using []) (by omega_using [])
+  omega_using [this]
 
 theorem rotateRight_zero (x : BitVec 64) : x.rotateRight 0 = x := by
   apply BitVec.eq_of_getLsbD_eq; intro i hi
@@ -284,16 +284,16 @@ theorem sbc_self (r a b : BitVec 64) :
     apply BitVec.eq_of_toNat_eq
     rw [BitVec.toNat_add, BitVec.toNat_not, BitVec.toNat_allOnes]
     have := r.isLt
-    rw [Nat.mod_eq_of_lt (by omega)]; omega
+    rw [Nat.mod_eq_of_lt (by omega_using [])]; omega_using []
   have hb : (~~~b).toNat = 2 ^ 64 - 1 - b.toNat := BitVec.toNat_not
   have := b.isLt
   rw [hn, hb]
   by_cases h : b.toNat ≤ a.toNat
   · rw [show decide (2 ^ 64 ≤ a.toNat + (2 ^ 64 - 1 - b.toNat) + true.toNat) = true by
-      simp only [Bool.toNat_true, decide_eq_true_eq]; omega]
+      simp only [Bool.toNat_true, decide_eq_true_eq]; omega_using [h]]
     simp only [h, ↓reduceIte]; rfl
   · rw [show decide (2 ^ 64 ≤ a.toNat + (2 ^ 64 - 1 - b.toNat) + true.toNat) = false by
-      simp only [Bool.toNat_true, decide_eq_false_iff_not]; omega]
+      simp only [Bool.toNat_true, decide_eq_false_iff_not]; omega_using [h]]
     simp only [h, ↓reduceIte]; rfl
 
 /-- The borrow of `x - 1`: all ones iff `x = 0`. -/
@@ -305,7 +305,7 @@ theorem sbc_one (r x : BitVec 64) :
   · subst h; rfl
   · have : (1 : BitVec 64).toNat ≤ x.toNat := by
       have : x.toNat ≠ 0 := fun e => h (BitVec.eq_of_toNat_eq e)
-      show 1 ≤ x.toNat; omega
+      show 1 ≤ x.toNat; omega_using [this]
     rw [ifp this, zM, ifn h]
 
 end VG.Proof.RsaOaep.AArch64

@@ -24,11 +24,11 @@ open VG VG.Arm VG.Impl.Ed25519.Arm VG.Proof.X25519.Arm
 theorem Ctx.ptr_nat {b : BitVec 32} {s : State} (hc : Ctx b s) {o : Nat} (ho : o < 8192) :
     (b + BitVec.ofNat 32 o).toNat = b.toNat + o := by
   have hb := hc.fit
-  rw [toNat_add_lt (by rw [toNat_imm (by omega)]; omega), toNat_imm (by omega)]
+  rw [toNat_add_lt (by rw [toNat_imm (by omega_using [ho])]; omega_using [ho, hb]), toNat_imm (by omega_using [ho])]
 
 theorem Ctx.ptr_addr {b : BitVec 32} {s : State} (hc : Ctx b s) {o : Nat} (ho : o < 8192) :
     State.addr (b + BitVec.ofNat 32 o) = State.addr b + BitVec.ofNat 64 o :=
-  addr_add (by have := hc.fit; omega)
+  addr_add (by have := hc.fit; omega_using [ho, this])
 
 structure TableKeep (b : BitVec 32) (o n : Nat) (s t : State) : Prop where
   rest : Rest [.r2, .r3] s t
@@ -54,14 +54,14 @@ theorem TableKeep.slot {b : BitVec 32} {s t : State} {o n : Nat}
   rw [ACC_eq] at hi
   refine limb_frame h.frame fun r hm k hk => ?_
   rw [List.mem_singleton.mp hm]
-  exact Offset.disjoint _ (by omega) (by omega) (by omega)
+  exact Offset.disjoint _ (by omega_using [hsep, hk]) (by omega_using [hi, hk]) (by omega_using [hn])
 
 theorem TableKeep.env {b : BitVec 32} {s t : State} {o n : Nat}
     (h : TableKeep b o n s t) (ho : 1632 ≤ o) (hn : o + n ≤ 8192) : env t.mem b = env s.mem b := by
   funext i
   have hi := slot_range i
   rw [ACC_eq] at hi
-  exact congrArg VG.Proof.X25519.toFe (val16_congr (h.slot hn i (.inl (by omega))))
+  exact congrArg VG.Proof.X25519.toFe (val16_congr (h.slot hn i (.inl (by omega_using [ho, hi]))))
 
 theorem TableKeep.lim {b : BitVec 32} {s t : State} {o n : Nat}
     (h : TableKeep b o n s t) (ho : 1632 ≤ o) (hn : o + n ≤ 8192)
@@ -69,7 +69,7 @@ theorem TableKeep.lim {b : BitVec 32} {s t : State} {o n : Nat}
   intro i k hk
   have hi := slot_range i
   rw [ACC_eq] at hi
-  rw [h.slot hn i (.inl (by omega)) k hk]
+  rw [h.slot hn i (.inl (by omega_using [ho, hi])) k hk]
   exact hl i k hk
 
 def tableF (m : Mem) (b : BitVec 32) (o : Nat) : Spec.X25519.Fe :=
@@ -80,19 +80,19 @@ theorem TableKeep.tableF {b : BitVec 32} {s t : State} {o n d : Nat}
     (hsep : d + 32 ≤ o ∨ o + n ≤ d) : tableF t.mem b d = tableF s.mem b d := by
   refine congrArg VG.Proof.X25519.toFe (packedV_frame h.frame fun r hm => ?_)
   rw [List.mem_singleton.mp hm]
-  exact Offset.disjoint _ hsep (by omega) (by omega)
+  exact Offset.disjoint _ hsep (by omega_using [hd]) (by omega_using [hn])
 
 theorem toTableQuarter_ok {s : State} {b : BitVec 32} (hc : Ctx b s) (hl : AllLim s.mem b)
     {o : Nat} (hp : s.gpr .r12 = b + BitVec.ofNat 32 o) (hlo : 1632 ≤ o)
     (ho : o + 128 ≤ 8192) (j : Nat) (hj : j < 4) :
     WP isa (.block (packField (64 + 64 * j) (32 * j))) s fun t =>
-      tableF t.mem b (o + 32 * j) = env s.mem b ⟨j, by omega⟩ ∧
+      tableF t.mem b (o + 32 * j) = env s.mem b ⟨j, by omega_using [hj]⟩ ∧
       TableKeep b (o + 32 * j) 32 s t := by
-  have ea := hc.ptr_addr (by omega : o < 8192)
-  refine WP.mono (packField_ok hc (by omega) (hl ⟨j, by omega⟩) (by omega) hp
-    (by rw [hc.ptr_nat (by omega)]; have := hc.fit; omega)
-    (fun i hi => by rw [ea, Offset.add_add]; exact in_base hc.wr (by omega) (by omega))
-    (by rw [ea, Offset.add_add]; exact Offset.disjoint _ (.inl (by omega)) (by omega) (by omega)))
+  have ea := hc.ptr_addr (by omega_using [ho] : o < 8192)
+  refine WP.mono (packField_ok hc (by omega_using [hj]) (hl ⟨j, by omega_using [hj]⟩) (by omega_using [hj]) hp
+    (by rw [hc.ptr_nat (by omega_using [ho])]; have := hc.fit; omega_using [ho, hj, this])
+    (fun i hi => by rw [ea, Offset.add_add]; exact in_base hc.wr (by omega_using [ho, hj, hi]) (by omega_using [ho, hj, hi]))
+    (by rw [ea, Offset.add_add]; exact Offset.disjoint _ (.inl (by omega_using [hlo, hj])) (by omega_using [hj]) (by omega_using [ho, hj])))
     fun t ⟨hr, hf, hv⟩ => ?_
   rw [ea, Offset.add_add] at hf hv
   exact ⟨congrArg VG.Proof.X25519.toFe hv, ⟨hr.mono (by decide), hf⟩⟩
@@ -101,22 +101,22 @@ theorem toTablePrefix_ok {s : State} {b : BitVec 32} (hc : Ctx b s) (hl : AllLim
     {o : Nat} (hp : s.gpr .r12 = b + BitVec.ofNat 32 o) (hlo : 1632 ≤ o)
     (ho : o + 128 ≤ 8192) (n : Nat) (hn : n ≤ 4) :
     WP isa (.block ((List.range n).flatMap fun j => packField (64 + 64 * j) (32 * j))) s fun t =>
-      (∀ j (hj : j < n), tableF t.mem b (o + 32 * j) = env s.mem b ⟨j, by omega⟩) ∧
+      (∀ j (hj : j < n), tableF t.mem b (o + 32 * j) = env s.mem b ⟨j, by omega_using [hn, hj]⟩) ∧
       TableKeep b o (32 * n) s t := by
   induction n generalizing s with
   | zero => exact WP.block_nil ⟨fun _ h => by omega, ⟨Rest.refl _ _, Frame.refl _ _⟩⟩
   | succ n ih =>
     rw [List.range_succ, List.flatMap_append, List.flatMap_cons, List.flatMap_nil,
       List.append_nil, WP.block_append_iff]
-    refine WP.mono (ih hc hl hp (by omega)) fun t ⟨hv, hk⟩ => ?_
-    refine WP.mono (toTableQuarter_ok (hk.ctx hc) (hk.lim hlo (by omega) hl)
-      ((hk.rest.gpr _ (by decide)).trans hp) hlo ho n (by omega)) fun u ⟨hu, ku⟩ => ?_
-    refine ⟨fun j hj => ?_, (hk.mono (by omega) (by omega)).trans (ku.mono (by omega) (by omega))⟩
+    refine WP.mono (ih hc hl hp (by omega_using [hn])) fun t ⟨hv, hk⟩ => ?_
+    refine WP.mono (toTableQuarter_ok (hk.ctx hc) (hk.lim hlo (by omega_using [ho, hn]) hl)
+      ((hk.rest.gpr _ (by decide)).trans hp) hlo ho n (by omega_using [hn])) fun u ⟨hu, ku⟩ => ?_
+    refine ⟨fun j hj => ?_, (hk.mono (by omega_using []) (by omega_using [])).trans (ku.mono (by omega_using []) (by omega_using []))⟩
     by_cases h : j < n
-    · rw [ku.tableF (by omega) (by omega) (.inl (by omega)), hv j h]
-    · have e : j = n := by omega
+    · rw [ku.tableF (by omega_using [ho, hn]) (by omega_using [ho, hn, hj]) (.inl (by omega_using [h])), hv j h]
+    · have e : j = n := by omega_using [hj, h]
       subst j
-      rw [hu, hk.env hlo (by omega)]
+      rw [hu, hk.env hlo (by omega_using [ho, hn])]
 
 def tablePoint (m : Mem) (b : BitVec 32) (o : Nat) : Spec.Ed25519.Point :=
   ⟨tableF m b o, tableF m b (o + 32), tableF m b (o + 64), tableF m b (o + 96)⟩
@@ -147,44 +147,44 @@ theorem fromTableQuarter_ok {s : State} {b : BitVec 32} (hc : Ctx b s) (hl : All
     {o : Nat} (hp : s.gpr .r12 = b + BitVec.ofNat 32 o) (hlo : 1632 ≤ o)
     (ho : o + 128 ≤ 8192) (j : Nat) (hj : j < 4) :
     WP isa (.block (unpackField (64 + 64 * j) (32 * j))) s fun t =>
-      env t.mem b ⟨j, by omega⟩ = tableF s.mem b (o + 32 * j) ∧ AllLim t.mem b ∧
+      env t.mem b ⟨j, by omega_using [hj]⟩ = tableF s.mem b (o + 32 * j) ∧ AllLim t.mem b ∧
       TableKeep b (64 + 64 * j) 64 s t := by
-  have ea := hc.ptr_addr (by omega : o < 8192)
-  refine WP.mono (unpackField_ok hc (by omega) (by omega) hp
-    (by rw [hc.ptr_nat (by omega)]; have := hc.fit; omega)
+  have ea := hc.ptr_addr (by omega_using [ho] : o < 8192)
+  refine WP.mono (unpackField_ok hc (by omega_using [hj]) (by omega_using [hj]) hp
+    (by rw [hc.ptr_nat (by omega_using [ho])]; have := hc.fit; omega_using [ho, hj, this])
     (fun i hi => by
       rw [ea, Offset.add_add]
-      exact in_base (List.mem_append_right _ hc.wr) (by omega) (by omega))
-    (by rw [ea, Offset.add_add]; exact Offset.disjoint _ (.inr (by omega)) (by omega) (by omega)))
+      exact in_base (List.mem_append_right _ hc.wr) (by omega_using [ho, hj, hi]) (by omega_using [ho, hj, hi]))
+    (by rw [ea, Offset.add_add]; exact Offset.disjoint _ (.inr (by omega_using [hlo, hj])) (by omega_using [ho, hj]) (by omega_using [hj])))
     fun t ⟨hr, hf, hlt, hv⟩ => ?_
   rw [ea, Offset.add_add] at hv
-  have hu := field_update ⟨j, by omega⟩ hl (frame_o16 hf) hlt
+  have hu := field_update ⟨j, by omega_using [hj]⟩ hl (frame_o16 hf) hlt
   exact ⟨congrArg VG.Proof.X25519.toFe hv, hu.1, ⟨hr, hf⟩⟩
 
 theorem fromTablePrefix_ok {s : State} {b : BitVec 32} (hc : Ctx b s) (hl : AllLim s.mem b)
     {o : Nat} (hp : s.gpr .r12 = b + BitVec.ofNat 32 o) (hlo : 1632 ≤ o)
     (ho : o + 128 ≤ 8192) (n : Nat) (hn : n ≤ 4) :
     WP isa (.block ((List.range n).flatMap fun j => unpackField (64 + 64 * j) (32 * j))) s fun t =>
-      (∀ j (hj : j < n), env t.mem b ⟨j, by omega⟩ = tableF s.mem b (o + 32 * j)) ∧
+      (∀ j (hj : j < n), env t.mem b ⟨j, by omega_using [hn, hj]⟩ = tableF s.mem b (o + 32 * j)) ∧
       AllLim t.mem b ∧ TableKeep b 64 (64 * n) s t := by
   induction n generalizing s with
   | zero => exact WP.block_nil ⟨fun _ h => by omega, hl, ⟨Rest.refl _ _, Frame.refl _ _⟩⟩
   | succ n ih =>
     rw [List.range_succ, List.flatMap_append, List.flatMap_cons, List.flatMap_nil,
       List.append_nil, WP.block_append_iff]
-    refine WP.mono (ih hc hl hp (by omega)) fun t ⟨hv, hlt, hk⟩ => ?_
+    refine WP.mono (ih hc hl hp (by omega_using [hn])) fun t ⟨hv, hlt, hk⟩ => ?_
     refine WP.mono (fromTableQuarter_ok (hk.ctx hc) hlt
-      ((hk.rest.gpr _ (by decide)).trans hp) hlo ho n (by omega)) fun u ⟨hu, hlu, ku⟩ => ?_
+      ((hk.rest.gpr _ (by decide)).trans hp) hlo ho n (by omega_using [hn])) fun u ⟨hu, hlu, ku⟩ => ?_
     refine ⟨fun j hj => ?_, hlu,
-      (hk.mono (by omega) (by omega)).trans (ku.mono (by omega) (by omega))⟩
+      (hk.mono (by omega_using []) (by omega_using [])).trans (ku.mono (by omega_using []) (by omega_using []))⟩
     by_cases h : j < n
-    · have he : env u.mem b ⟨j, by omega⟩ = env t.mem b ⟨j, by omega⟩ :=
-        congrArg VG.Proof.X25519.toFe (val16_congr (ku.slot (by omega) ⟨j, by omega⟩
-          (.inl (by simp only [offset]; omega))))
+    · have he : env u.mem b ⟨j, by omega_using [hn, hj]⟩ = env t.mem b ⟨j, by omega_using [hn, hj]⟩ :=
+        congrArg VG.Proof.X25519.toFe (val16_congr (ku.slot (by omega_using [hn]) ⟨j, by omega_using [hn, hj]⟩
+          (.inl (by simp only [offset]; omega_using [h]))))
       rw [he, hv j h]
-    · have e : j = n := by omega
+    · have e : j = n := by omega_using [hj, h]
       subst j
-      rw [hu, hk.tableF (by omega) (by omega) (.inr (by omega))]
+      rw [hu, hk.tableF (by omega_using [hn]) (by omega_using [ho, hn]) (.inr (by omega_using [hlo, hn]))]
 
 theorem pointFromTable_ok {s : State} {b : BitVec 32} (hc : Ctx b s) (hl : AllLim s.mem b)
     {o : Nat} (hp : s.gpr .r12 = b + BitVec.ofNat 32 o) (hlo : 1632 ≤ o)

@@ -30,10 +30,10 @@ theorem loadSbox_ok (s : State)
   refine WP.mono (VG.Proof.Sm4.AArch64.Serial.loads_ok s readable 16 (by decide))
     fun t ⟨ht,_,he⟩ => ⟨?_,he⟩
   intro k hk
-  rw [tbyte,ht _ (by omega)]
+  rw [tbyte,ht _ (by omega_using [hk])]
   change (s.mem.read _ 16).extractLsb' (8*(k%16)) 8 = _
-  rw [Mem.extractLsb'_read s.mem _ (by omega),VG.Offset.add_add,
-    show 16*(k/16)+k%16 = k by omega]
+  rw [Mem.extractLsb'_read s.mem _ (by omega_using []),VG.Offset.add_add,
+    show 16*(k/16)+k%16 = k by omega_using []]
   exact bytes k hk
 
 theorem maskConstants_run (s : State) :

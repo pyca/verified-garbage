@@ -78,8 +78,8 @@ theorem AdxIn.of_keep {d : CallData} {s t : State} (h : AdxIn d s) (hm : t.mem =
 
 /-- The tiled code, for a layout the size test admits. -/
 def adxLayout (d : CallData) (hZ : slot d.w 8 ≤ d.Z) (h : AlignOk d.w) : AdxTiledProduct.Layout :=
-  ⟨d.B, d.Z, d.w, d.w / 8, hZ, by unfold AlignOk at h; omega, by unfold AlignOk at h; omega,
-    by unfold AlignOk at h; omega⟩
+  ⟨d.B, d.Z, d.w, d.w / 8, hZ, by unfold AlignOk at h; omega_using [h], by unfold AlignOk at h; omega_using [h],
+    by unfold AlignOk at h; omega_using [h]⟩
 
 theorem goodV_of_mid {d : CallData} {s : State} (h : AdxMid d s) (hZ : slot d.w 8 ≤ d.Z) (hA : AlignOk d.w) :
     AdxTiledProduct.GoodV (adxOps d.o d.a d.b) (adxLayout d hZ hA) s := by

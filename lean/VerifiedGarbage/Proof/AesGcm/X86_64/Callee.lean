@@ -205,7 +205,7 @@ structure GhPost (s : State) (H Y D S : Addr) (n : Nat) (s' : State) : Prop wher
 
 theorem GhCall.pre {s : State} {H Y D S : Addr} {n : Nat} (h : GhCall s H Y D S n) :
     Proof.Gcm.ghashX86_64.pre (s.callEntry.withRegions [⟨H, 16⟩, ⟨D, 16 * n⟩] [⟨Y, 16⟩, ⟨S, 256⟩]) := by
-  have hn := toNat_ofNat_lt (show n < 2 ^ 64 by have := h.n_lt; omega)
+  have hn := toNat_ofNat_lt (show n < 2 ^ 64 by have := h.n_lt; omega_using [this])
   simp only [Proof.Gcm.ghashX86_64, State.withRegions_gpr, State.withRegions_rd, State.withRegions_wr,
     State.callEntry_rsp, State.callEntry_gpr s (by decide : Reg.rdi ≠ .rsp),
     State.callEntry_gpr s (by decide : Reg.rsi ≠ .rsp), State.callEntry_gpr s (by decide : Reg.rdx ≠ .rsp),
@@ -215,7 +215,7 @@ theorem GhCall.pre {s : State} {H Y D S : Addr} {n : Nat} (h : GhCall s H Y D S 
 
 theorem gh_call (g : GhashImpl) {s : State} {H Y D S : Addr} {n : Nat} (h : GhCall s H Y D S n) :
     WP isa (.call g.fn.name g.fn.code) s (GhPost s H Y D S n) := by
-  have hn := toNat_ofNat_lt (show n < 2 ^ 64 by have := h.n_lt; omega)
+  have hn := toNat_ofNat_lt (show n < 2 ^ 64 by have := h.n_lt; omega_using [this])
   refine WP.call (k := Proof.Gcm.ghashX86_64) g.ok g.nosp (by rw [g.depth]; decide)
     (rd := [⟨H, 16⟩, ⟨D, 16 * n⟩]) (wr := [⟨Y, 16⟩, ⟨S, 256⟩]) h.pre h.reads h.writes ?_
   intro s' hrd hwr hcs hf _ ⟨s₂, hm₂, _, hpost⟩
@@ -227,7 +227,7 @@ theorem gh_call (g : GhashImpl) {s : State} {H Y D S : Addr} {n : Nat} (h : GhCa
     h.rdi, h.rsi, h.rdx, h.rcx, hn, hm₂] at hpost
   have fE := callEntry_frame s
   rw [hpost, blockAt_frame fE (disj_below h.stkH), blockAt_frame fE (disj_below h.stkY),
-    blocksAt_frame fE (disj_below h.stkD) (by have := h.n_lt; omega)]
+    blocksAt_frame fE (disj_below h.stkD) (by have := h.n_lt; omega_using [this])]
 
 theorem gh_rel (g : GhashImpl) {P : State → State → Prop}
     (h : ∀ s₁ s₂, P s₁ s₂ → ∃ H Y D S : Addr, ∃ n : Nat,
@@ -270,7 +270,7 @@ structure GhPostF (s : State) (H Y D : Addr) (n : Nat) (s' : State) : Prop where
 
 theorem GhCallF.pre {s : State} {H Y D S : Addr} {n : Nat} (h : GhCallF s H Y D S n) :
     Proof.Gcm.ghashX86_64F.pre (s.callEntry.withRegions [⟨H, 16⟩, ⟨D, 16 * n⟩] [⟨Y, 16⟩]) := by
-  have hn := toNat_ofNat_lt (show n < 2 ^ 64 by have := h.n_lt; omega)
+  have hn := toNat_ofNat_lt (show n < 2 ^ 64 by have := h.n_lt; omega_using [this])
   simp only [Proof.Gcm.ghashX86_64F, State.withRegions_gpr, State.withRegions_rd, State.withRegions_wr,
     State.callEntry_rsp, State.callEntry_gpr s (by decide : Reg.rdi ≠ .rsp),
     State.callEntry_gpr s (by decide : Reg.rsi ≠ .rsp), State.callEntry_gpr s (by decide : Reg.rdx ≠ .rsp),
@@ -279,7 +279,7 @@ theorem GhCallF.pre {s : State} {H Y D S : Addr} {n : Nat} (h : GhCallF s H Y D 
 
 theorem gh_callF (g : GhashImpl) (f : GhashFree g.fn.code) {s : State} {H Y D S : Addr} {n : Nat}
     (h : GhCallF s H Y D S n) : WP isa (.call g.fn.name g.fn.code) s (GhPostF s H Y D n) := by
-  have hn := toNat_ofNat_lt (show n < 2 ^ 64 by have := h.n_lt; omega)
+  have hn := toNat_ofNat_lt (show n < 2 ^ 64 by have := h.n_lt; omega_using [this])
   refine WP.call (k := Proof.Gcm.ghashX86_64F) f.ok g.nosp (by rw [g.depth]; decide)
     (rd := [⟨H, 16⟩, ⟨D, 16 * n⟩]) (wr := [⟨Y, 16⟩]) h.pre h.reads h.writes ?_
   intro s' hrd hwr hcs hf _ ⟨s₂, hm₂, _, hpost⟩
@@ -291,7 +291,7 @@ theorem gh_callF (g : GhashImpl) (f : GhashFree g.fn.code) {s : State} {H Y D S 
     h.rdi, h.rsi, h.rdx, h.rcx, hn, hm₂] at hpost
   have fE := callEntry_frame s
   rw [hpost, blockAt_frame fE (disj_below h.stkH), blockAt_frame fE (disj_below h.stkY),
-    blocksAt_frame fE (disj_below h.stkD) (by have := h.n_lt; omega)]
+    blocksAt_frame fE (disj_below h.stkD) (by have := h.n_lt; omega_using [this])]
 
 theorem gh_relF (g : GhashImpl) (f : GhashFree g.fn.code) {P : State → State → Prop}
     (h : ∀ s₁ s₂, P s₁ s₂ → ∃ H Y D S : Addr, ∃ n : Nat,
@@ -344,13 +344,13 @@ structure CtrPost (s : State) (K C D S : Addr) (R n : Nat) (s' : State) : Prop w
   ctr : blockAt s'.mem C = Nat.repeat Spec.Gcm.inc32 n (blockAt s.mem C)
 
 theorem toNat_rounds {R : Nat} (hR : R = 10 ∨ R = 12 ∨ R = 14) : (BitVec.ofNat 64 R).toNat = R :=
-  toNat_ofNat_lt (by omega)
+  toNat_ofNat_lt (by omega_using [hR])
 
 theorem CtrCall.pre {s : State} {K C D S : Addr} {R n : Nat} (h : CtrCall s K C D S R n) :
     Proof.Aes.ctr32X86_64.pre
       (s.callEntry.withRegions [⟨K, 240⟩] [⟨C, 16⟩, ⟨D, 16 * n⟩, ⟨S, 2048⟩]) := by
   have hR := toNat_rounds h.rounds
-  have hn := toNat_ofNat_lt (show n < 2 ^ 64 by have := h.wrap; omega)
+  have hn := toNat_ofNat_lt (show n < 2 ^ 64 by have := h.wrap; omega_using [this])
   simp only [Proof.Aes.ctr32X86_64, State.withRegions_gpr, State.withRegions_rd,
     State.withRegions_wr, State.callEntry_rsp, State.callEntry_gpr s (by decide : Reg.rdi ≠ .rsp),
     State.callEntry_gpr s (by decide : Reg.rsi ≠ .rsp), State.callEntry_gpr s (by decide : Reg.rdx ≠ .rsp),
@@ -362,7 +362,7 @@ theorem CtrCall.pre {s : State} {K C D S : Addr} {R n : Nat} (h : CtrCall s K C 
 theorem ctr_call (v : Ctr32Impl) {s : State} {K C D S : Addr} {R n : Nat} (h : CtrCall s K C D S R n) :
     WP isa (.call v.callee.name v.callee.code) s (CtrPost s K C D S R n) := by
   have hR := toNat_rounds h.rounds
-  have hn := toNat_ofNat_lt (show n < 2 ^ 64 by have := h.wrap; omega)
+  have hn := toNat_ofNat_lt (show n < 2 ^ 64 by have := h.wrap; omega_using [this])
   refine WP.call (k := Proof.Aes.ctr32X86_64) v.ok v.nosp (by rw [v.depth]; decide)
     (rd := [⟨K, 240⟩]) (wr := [⟨C, 16⟩, ⟨D, 16 * n⟩, ⟨S, 2048⟩]) h.pre h.reads h.writes ?_
   intro s' hrd hwr hcs hf _ ⟨s₂, hm₂, _, hpost⟩
@@ -378,8 +378,8 @@ theorem ctr_call (v : Ctr32Impl) {s : State} {K C D S : Addr} {R n : Nat} (h : C
   have eK := bytesAt_frame fE (p := K) (n := 16 * (R + 1))
     (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
-      exact (h.stkK.sub_right (Region.sub_prefix hRb)).symm) (by omega)
-  rw [blockAt_frame fE (disj_below h.stkC), blocksAt_frame fE (disj_below h.stkD) (by have := h.wrap; omega),
+      exact (h.stkK.sub_right (Region.sub_prefix hRb)).symm) (by omega_using [hRb])
+  rw [blockAt_frame fE (disj_below h.stkC), blocksAt_frame fE (disj_below h.stkD) (by have := h.wrap; omega_using [this]),
     eK] at hdata
   rw [blockAt_frame fE (disj_below h.stkC)] at hctr
   exact ⟨hrd, hwr, hcs, by simpa using hf, hdata, hctr⟩
@@ -438,7 +438,7 @@ theorem CtrCallF.pre {s : State} {K C D S : Addr} {R n : Nat} (h : CtrCallF s K 
     Proof.Aes.X86_64.AesNi.ctr32X86_64F.pre
       (s.callEntry.withRegions [⟨K, 240⟩] [⟨C, 16⟩, ⟨D, 16 * n⟩]) := by
   have hR := toNat_rounds h.rounds
-  have hn := toNat_ofNat_lt (show n < 2 ^ 64 by have := h.wrap; omega)
+  have hn := toNat_ofNat_lt (show n < 2 ^ 64 by have := h.wrap; omega_using [this])
   simp only [Proof.Aes.X86_64.AesNi.ctr32X86_64F, State.withRegions_gpr, State.withRegions_rd,
     State.withRegions_wr, State.callEntry_rsp, State.callEntry_gpr s (by decide : Reg.rdi ≠ .rsp),
     State.callEntry_gpr s (by decide : Reg.rsi ≠ .rsp), State.callEntry_gpr s (by decide : Reg.rdx ≠ .rsp),
@@ -450,7 +450,7 @@ theorem ctr_callF (v : Ctr32Impl) (f : Proof.Aes.X86_64.Ctr32Free v.callee) {s :
     {R n : Nat} (h : CtrCallF s K C D S R n) :
     WP isa (.call v.callee.name v.callee.code) s (CtrPostF s K C D R n) := by
   have hR := toNat_rounds h.rounds
-  have hn := toNat_ofNat_lt (show n < 2 ^ 64 by have := h.wrap; omega)
+  have hn := toNat_ofNat_lt (show n < 2 ^ 64 by have := h.wrap; omega_using [this])
   refine WP.call (k := Proof.Aes.X86_64.AesNi.ctr32X86_64F) f.ok v.nosp (by rw [v.depth]; decide)
     (rd := [⟨K, 240⟩]) (wr := [⟨C, 16⟩, ⟨D, 16 * n⟩]) h.pre h.reads h.writes ?_
   intro s' hrd hwr hcs hf _ ⟨s₂, hm₂, _, hpost⟩
@@ -466,8 +466,8 @@ theorem ctr_callF (v : Ctr32Impl) (f : Proof.Aes.X86_64.Ctr32Free v.callee) {s :
   have eK := bytesAt_frame fE (p := K) (n := 16 * (R + 1))
     (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
-      exact (h.stkK.sub_right (Region.sub_prefix hRb)).symm) (by omega)
-  rw [blockAt_frame fE (disj_below h.stkC), blocksAt_frame fE (disj_below h.stkD) (by have := h.wrap; omega),
+      exact (h.stkK.sub_right (Region.sub_prefix hRb)).symm) (by omega_using [hRb])
+  rw [blockAt_frame fE (disj_below h.stkC), blocksAt_frame fE (disj_below h.stkD) (by have := h.wrap; omega_using [this]),
     eK] at hdata
   rw [blockAt_frame fE (disj_below h.stkC)] at hctr
   exact ⟨hrd, hwr, hcs, by simpa using hf, hdata, hctr⟩
@@ -532,7 +532,7 @@ theorem CtrToCall.pre {s : State} {K C D O S : Addr} {R n : Nat} (h : CtrToCall 
     Proof.Aes.X86_64.AesNi.ctr32ToX86_64.pre
       (s.callEntry.withRegions [⟨K, 240⟩, ⟨D, 16 * n⟩] [⟨C, 16⟩, ⟨O, 16 * n⟩, ⟨S, 2048⟩]) := by
   have hR := toNat_rounds h.rounds
-  have hn := toNat_ofNat_lt (show n < 2 ^ 64 by have := h.wrap; omega)
+  have hn := toNat_ofNat_lt (show n < 2 ^ 64 by have := h.wrap; omega_using [this])
   simp only [Proof.Aes.X86_64.AesNi.ctr32ToX86_64, State.withRegions_gpr, State.withRegions_rd,
     State.withRegions_wr, State.callEntry_rsp, State.callEntry_gpr s (by decide : Reg.rdi ≠ .rsp),
     State.callEntry_gpr s (by decide : Reg.rsi ≠ .rsp), State.callEntry_gpr s (by decide : Reg.rdx ≠ .rsp),
@@ -546,7 +546,7 @@ theorem ctrTo_call (v : Proof.Aes.X86_64.Ctr32ToImpl) {s : State} {K C D O S : A
     (h : CtrToCall s K C D O S R n) :
     WP isa (.call v.callee.name v.callee.code) s (CtrToPost s K C D O S R n) := by
   have hR := toNat_rounds h.rounds
-  have hn := toNat_ofNat_lt (show n < 2 ^ 64 by have := h.wrap; omega)
+  have hn := toNat_ofNat_lt (show n < 2 ^ 64 by have := h.wrap; omega_using [this])
   refine WP.call (k := Proof.Aes.X86_64.AesNi.ctr32ToX86_64) v.ok v.nosp (by rw [v.depth]; decide)
     (rd := [⟨K, 240⟩, ⟨D, 16 * n⟩]) (wr := [⟨C, 16⟩, ⟨O, 16 * n⟩, ⟨S, 2048⟩]) h.pre h.reads h.writes ?_
   intro s' hrd hwr hcs hf _ ⟨s₂, hm₂, _, hpost⟩
@@ -562,8 +562,8 @@ theorem ctrTo_call (v : Proof.Aes.X86_64.Ctr32ToImpl) {s : State} {K C D O S : A
   have eK := bytesAt_frame fE (p := K) (n := 16 * (R + 1))
     (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
-      exact (h.stkK.sub_right (Region.sub_prefix hRb)).symm) (by omega)
-  rw [blockAt_frame fE (disj_below h.stkC), blocksAt_frame fE (disj_below h.stkD) (by have := h.wrap; omega),
+      exact (h.stkK.sub_right (Region.sub_prefix hRb)).symm) (by omega_using [hRb])
+  rw [blockAt_frame fE (disj_below h.stkC), blocksAt_frame fE (disj_below h.stkD) (by have := h.wrap; omega_using [this]),
     eK] at hdata
   rw [blockAt_frame fE (disj_below h.stkC)] at hctr
   exact ⟨hrd, hwr, hcs, by simpa using hf, hdata, hctr⟩

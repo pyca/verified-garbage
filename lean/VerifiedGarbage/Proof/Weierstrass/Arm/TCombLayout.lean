@@ -73,6 +73,6 @@ theorem Layout.bounded {K : TCombCfg} (h : Layout K) :
   simp only [List.mem_cons,List.not_mem_nil,or_false,forall_eq_or_imp,forall_eq] at low
   simp only [writes,List.mem_cons,List.not_mem_nil,or_false]
   intro r hr
-  rcases hr with rfl|rfl|rfl|rfl|rfl <;> simp only [Nat.zero_le, true_and] <;> omega
+  rcases hr with rfl|rfl|rfl|rfl|rfl <;> simp only [Nat.zero_le, true_and] <;> omega_arith
 
 end VG.Proof.Weierstrass.Arm.TComb

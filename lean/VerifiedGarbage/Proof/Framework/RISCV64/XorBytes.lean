@@ -54,20 +54,20 @@ theorem xorBytes_ok {t u dst src : Reg} {n : Nat} (htd : t ≠ dst) (hts : t ≠
     (hsep : ∀ i < n, ¬ (⟨s.gpr dst, n⟩ : Region).Contains (s.gpr src + BitVec.ofNat 64 i) 1) :
     WP isa (.block (xorBytes t u dst src n)) s (XorI t u dst src n s n) := by
   refine wp_range_flatMap (M := isa) (XorI t u dst src n s) (fun k s₁ hk h => ?_) n
-    (Nat.le_refl _) s ⟨⟨fun _ _ _ => rfl, rfl, rfl, rfl⟩, fun _ h => absurd h (by omega),
+    (Nat.le_refl _) s ⟨⟨fun _ _ _ => rfl, rfl, rfl, rfl⟩, fun _ h => absurd h (by omega_using []),
       fun _ _ _ => rfl, Frame.refl _ _⟩
   have hdst : s₁.gpr dst = s.gpr dst := h.gpr _ (Ne.symm htd) (Ne.symm hud)
   have hsrc : s₁.gpr src = s.gpr src := h.gpr _ (Ne.symm hts) (Ne.symm hus)
   have hwk := hw k hk
   have hrk : InRegions (s.rd ++ s.wr) (s.gpr dst + BitVec.ofNat 64 k) 1 := by
     obtain ⟨r, hr, hc⟩ := hwk; exact ⟨r, List.mem_append_right _ hr, hc⟩
-  refine wp_lbu (a := s.gpr dst + BitVec.ofNat 64 k) (by omega) (by rw [hdst])
+  refine wp_lbu (a := s.gpr dst + BitVec.ofNat 64 k) (by omega_using [hn, hk]) (by rw [hdst])
     (by rw [h.rd, h.wr]; exact hrk) fun s₂ u₂ => ?_
-  refine wp_lbu (a := s.gpr src + BitVec.ofNat 64 k) (by omega)
+  refine wp_lbu (a := s.gpr src + BitVec.ofNat 64 k) (by omega_using [hn, hk])
     (by rw [u₂.other _ (Ne.symm hts), hsrc]) (by rw [u₂.rd, u₂.wr, h.rd, h.wr]; exact hr k hk)
     fun s₃ u₃ => ?_
   refine wp_xor fun s₄ u₄ => ?_
-  refine wp_sb (a := s.gpr dst + BitVec.ofNat 64 k) (by omega)
+  refine wp_sb (a := s.gpr dst + BitVec.ofNat 64 k) (by omega_using [hn, hk])
     (by rw [u₄.other _ (Ne.symm htd), u₃.other _ (Ne.symm hud), u₂.other _ (Ne.symm htd), hdst])
     (by rw [u₄.wr, u₃.wr, u₂.wr, h.wr]; exact hwk) fun s₅ g₅ => WP.block_nil ?_
   -- The bytes read: the destination's, not yet written, and the source's.
@@ -86,12 +86,12 @@ theorem xorBytes_ok {t u dst src : Reg} {n : Nat} (htd : t ≠ dst) (hts : t ≠
     by rw [g₅.sp, u₄.sp, u₃.sp, u₂.sp, h.sp]⟩, fun j hj => ?_, fun j hj hjn => ?_, ?_⟩
   · rw [hm]
     rcases Nat.lt_succ_iff_lt_or_eq.mp hj with hj | rfl
-    · rw [byte_writeW_ne _ _ _ (by omega) (by omega) (by omega)]; exact h.xored j hj
+    · rw [byte_writeW_ne _ _ _ (by omega_using [hn, hk]) (by omega_arith) (by omega_using [hj])]; exact h.xored j hj
     · simp only [WriteBytes.writeW8_apply, ite_true]
-  · rw [hm, byte_writeW_ne _ _ _ (by omega) (by omega) (by omega)]
-    exact h.rest j (by omega) hjn
+  · rw [hm, byte_writeW_ne _ _ _ (by omega_using [hn, hk]) (by omega_using [hn, hjn]) (by omega_using [hj])]
+    exact h.rest j (by omega_using [hj]) hjn
   · rw [hm]
     exact h.frame.writeW (List.mem_singleton_self _) _
-      (Offset.contains_base _ (by omega) (by omega))
+      (Offset.contains_base _ (by omega_using [hk]) (by omega_using [hn, hk]))
 
 end VG.RISCV64.Bytes

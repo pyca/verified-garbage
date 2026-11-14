@@ -39,8 +39,8 @@ theorem cW_cases {b : Byte} (hb : b.toNat ≠ 0) : ∃ j < 9, cW (b.setWidth 32)
   obtain ⟨-, h1, h2⟩ := params_table b.toNat b.isLt
   by_cases e : b.toNat = 1
   · exact ⟨8, by decide, by rw [h1 e]; rfl⟩
-  · obtain ⟨j, hj, -, -, he⟩ := h2 (by omega)
-    exact ⟨j, by omega, he⟩
+  · obtain ⟨j, hj, -, -, he⟩ := h2 (by omega_using [hb, e])
+    exact ⟨j, by omega_using [hj], he⟩
 
 theorem or0 (x y : BitVec 32) : (x ||| y = 0) ↔ (x = 0 ∧ y = 0) := BitVec.or_eq_zero_iff
 
@@ -51,7 +51,7 @@ theorem acc2_iff (P : EP) (τ : State) (hlo : lo P ≤ 1) (hb : (n0 P).toNat ≠
       emv P τ (lo P) &&& ~~~((cW ((n0 P).setWidth 32)).setWidth 8) = 0) ∧
       (lzF h P τ < dbN h P ∧ dbF h P τ (lzF h P τ) = 1 ∧ (P.any = 0 → dbN h P - lzF h P τ - 1 = P.slt)) := by
   have e0 : ((emv P τ 0).setWidth 32 &&& (0 - BitVec.ofNat 32 (lo P)) = 0) ↔ (lo P = 1 → emv P τ 0 = 0) := by
-    rcases (show lo P = 0 ∨ lo P = 1 by omega) with e | e <;> rw [e]
+    rcases (show lo P = 0 ∨ lo P = 1 by omega_using [hlo]) with e | e <;> rw [e]
     · simp
     · rw [show (0 : BitVec 32) - BitVec.ofNat 32 1 = BitVec.allOnes 32 by decide, BitVec.and_allOnes, zero_iff]
       simp
@@ -70,14 +70,14 @@ theorem acc2_iff (P : EP) (τ : State) (hlo : lo P ≤ 1) (hb : (n0 P).toNat ≠
     · simp only [anyW, ha, ite_true, show (0 : BitVec 32) - 1 = BitVec.allOnes 32 by decide, BitVec.and_allOnes,
         true_implies]
       have xz : ∀ x y : BitVec 32, x ^^^ y = 0 ↔ x = y := fun x y => BitVec.xor_eq_zero_iff
-      rw [xz, Offset.ofNat_sub_ofNat (w := 32) (by omega),
+      rw [xz, Offset.ofNat_sub_ofNat (w := 32) (by omega_using [hf]),
         show BitVec.ofNat 32 (dbN h P - lzF h P τ) - 1 = BitVec.ofNat 32 (dbN h P - lzF h P τ - 1) from
-          ofNat_pred (by omega)]
+          ofNat_pred (by omega_using [hf])]
       constructor
       · intro e
         have := congrArg BitVec.toNat e
         simp only [BitVec.toNat_ofNat] at this
-        rwa [Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt hsl] at this
+        rwa [Nat.mod_eq_of_lt (by omega_using [hdb]), Nat.mod_eq_of_lt hsl] at this
       · intro e; rw [e]
     · have az : ∀ x : BitVec 32, x &&& 0 = 0 := fun x => BitVec.and_zero
       simp only [anyW, ha, ite_false, show (1 : BitVec 32) - 1 = 0 by decide, az, false_implies]
@@ -87,8 +87,8 @@ theorem acc2_iff (P : EP) (τ : State) (hlo : lo P ≤ 1) (hb : (n0 P).toNat ≠
 
 theorem list_eq_iff {l₁ l₂ : List Byte} {n : Nat} (h₁ : l₁.length = n) (h₂ : l₂.length = n) :
     l₁ = l₂ ↔ ∀ i < n, l₁.getD i 0 = l₂.getD i 0 := by
-  refine ⟨fun e _ _ => by rw [e], fun e => List.ext_getElem (by omega) fun i a b => ?_⟩
-  have := e i (by omega)
+  refine ⟨fun e _ _ => by rw [e], fun e => List.ext_getElem (by omega_using [h₁, h₂]) fun i a b => ?_⟩
+  have := e i (by omega_using [h₁, a])
   simpa [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem a, List.getElem?_eq_getElem b] using this
 
 theorem HOk_iff (P : EP) (τ : State) (x : List Byte) : HOk h P τ x ↔ h.G.hash x = seedV h P τ := by
@@ -101,10 +101,10 @@ theorem M_eq {P : EP} {τ : State} (hf : lzF h P τ < dbN h P) (hs : P.any = 0 �
   by_cases ha : P.any = 0
   · rw [ite_eq_left ha, Mf]
     have hs := hs ha
-    refine congrArg (Spec.RsaPss.zeros 8 ++ digB h P τ ++ ·) (RsaPss.eq_range_map (by rw [List.length_drop, dbL_length]; omega)
+    refine congrArg (Spec.RsaPss.zeros 8 ++ digB h P τ ++ ·) (RsaPss.eq_range_map (by rw [List.length_drop, dbL_length]; omega_using [hs])
       fun i hi => ?_).symm
-    rw [List.getD_eq_getElem?_getD, List.getElem?_drop, ← List.getD_eq_getElem?_getD, dbL_getD h (by omega)]
-    congr 1; omega
+    rw [List.getD_eq_getElem?_getD, List.getElem?_drop, ← List.getD_eq_getElem?_getD, dbL_getD h (by omega_using [hs, hi])]
+    congr 1; omega_using [hf, hs]
   · rw [ite_eq_right ha, Ma]
     simp only [pzF, pzJ, hf, ite_true]
 

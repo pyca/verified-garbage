@@ -99,7 +99,7 @@ theorem tcall_ok {t : State} {F S : Addr} (L : Lay t F S) {V : Nat → Byte} {W 
     WP isa (tcall sTab j ts) t Q := by
   have h256 : InRegions (t.rd ++ t.wr) (F + BitVec.ofNat 64 256) 8 := L.ld (d := 256) (by decide)
   have r32 := R.rd8 (d := 256) (k := 32) rfl (by decide) hp
-  have hj' : 8 * j < 32768 := by omega
+  have hj' : 8 * j < 32768 := by omega_using [hj]
   refine WP.seq (WP.mono (Q := fun (t' : State) => Step F S [] t t' ∧ t'.mem = t.mem ∧ t'.syms = t.syms ∧
       t'.gpr .x0 = t.gpr .x0 ∧ t'.gpr .x1 = t.gpr .x1 ∧ t'.gpr .x2 = t.gpr .x2 ∧ t'.gpr .x3 = t.gpr .x3 ∧
       t'.gpr .x4 = t.gpr .x4 ∧ t'.gpr .x16 = t.syms n) ?_
@@ -471,7 +471,7 @@ theorem mgfXorT_ok {Gs : Spec.Mgf1.Hash} (hGh : ∀ x, Gs.hash x = hG.SH.H.hash 
   have I0' : MgfI u F S V (upd (upd W 32 p) 33 (BitVec.ofNat 64 G.D)) (Spec.Mgf1.mgf1 Gs (srcB V src srcLen) dstLen)
       dst dstLen G.D 0 v := ⟨I0.L, S1.trans I0.st, I0.rep⟩
   have A' : MArgs (upd (upd W 32 p) 33 (BitVec.ofNat 64 G.D)) S src srcLen dst dstLen :=
-    A.of_eq fun k h1 h2 => by simp only [upd]; rw [ifn (by omega), ifn (by omega)]
+    A.of_eq fun k h1 h2 => by simp only [upd]; rw [ifn (by omega_using [h2]), ifn (by omega_using [h2])]
   refine WP.loop (M := isa) (fun n w => ∃ c, n = dstLen - c * G.D ∧ c * G.D < dstLen ∧
       MgfI u F S V (upd (upd W 32 p) 33 (BitVec.ofNat 64 G.D)) (Spec.Mgf1.mgf1 Gs (srcB V src srcLen) dstLen) dst
         dstLen G.D c w ∧ w.syms = u.syms)

@@ -34,7 +34,7 @@ theorem fnBody_ct (round : Prog isa) (law : LoopLaw round) (ctLaw : LoopCTLaw ro
     · exact h.1.outIndex.trans h.2.outIndex.symm
     · exact h.1.aIndex.trans h.2.aIndex.symm
     · exact h.1.bIndex.trans h.2.bIndex.symm
-  exact (pair_posts ct (bases_ready ho ha hb)).seq (body_ct round law ctLaw (by omega) fit)
+  exact (pair_posts ct (bases_ready ho ha hb)).seq (body_ct round law ctLaw (by omega_using []) fit)
 
 
 end VG.Proof.Bignum.Arm.MontPipeline

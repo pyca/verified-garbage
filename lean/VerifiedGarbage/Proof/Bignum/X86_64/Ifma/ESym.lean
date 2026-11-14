@@ -60,7 +60,7 @@ theorem extract_cat (v : BitVec 256) : v.extractLsb' 128 128 ++ v.extractLsb' 0 
   rw [BitVec.getLsbD_append]
   by_cases h : j < 128
   · simp [h]
-  · simp [h, show j - 128 < 128 by omega, show 128 + (j - 128) = j by omega]
+  · simp [h, show j - 128 < 128 by omega_using [hj], show 128 + (j - 128) = j by omega_using [h]]
 
 theorem qv_setVy (s : State) (d r : VReg) (v : BitVec 256) (k : Nat) :
     qv (s.setVy d v) r k = if r = d then qword256 v k else qv s r k := by
@@ -126,16 +126,16 @@ theorem qword256_align (a b : BitVec 256) (n : BitVec 8) {k : Nat} (hk : k < 4) 
   apply BitVec.eq_of_getLsbD_eq; intro j hj
   simp only [alignQwords, Nat.mod_eq_of_lt hn, qword256, BitVec.getLsbD_extractLsb', hj, decide_true,
     Bool.true_and, BitVec.getLsbD_ushiftRight, Nat.zero_add]
-  rw [decide_eq_true (show 64 * k + j < 256 by omega), Bool.true_and, BitVec.getLsbD_append]
+  rw [decide_eq_true (show 64 * k + j < 256 by omega_using [hk, hj]), Bool.true_and, BitVec.getLsbD_append]
   split
   · rename_i h1
-    have hc : k + n.toNat < 4 := by omega
+    have hc : k + n.toNat < 4 := by omega_using [h1]
     simp only [hc, ite_true, BitVec.getLsbD_extractLsb', hj, decide_true, Bool.true_and]
-    exact congrArg _ (by omega)
+    exact congrArg _ (by omega_using [])
   · rename_i h1
-    have hc : ¬ k + n.toNat < 4 := by omega
+    have hc : ¬ k + n.toNat < 4 := by omega_using [hj, h1]
     simp only [hc, ite_false, BitVec.getLsbD_extractLsb', hj, decide_true, Bool.true_and]
-    exact congrArg _ (by omega)
+    exact congrArg _ (by omega_using [hj, h1])
 
 theorem qword256_madd (h : Bool) (dv av v : BitVec 256) {k : Nat} (hk : k < 4) :
     qword256 (madd52 h (lane256 dv 1) (lane256 av 1) (lane256 v 1) ++
@@ -384,8 +384,8 @@ theorem sstep_ok {lim : Reg → Nat} {s₀ : State} (hc : Ctx lim s₀) {σ σ' 
         rw [qword256_align _ _ _ hk hn]
         simp only [T.eval]
         split
-        · rw [hR b _ (by omega)]; rfl
-        · rw [hR a _ (by omega)]; rfl
+        · rw [hR b _ (by omega_arith)]; rfl
+        · rw [hR a _ (by omega_using [hn, hk])]; rfl
       · cases e
     · rename_i d a b n
       split at e
@@ -426,8 +426,8 @@ theorem sstep_ok {lim : Reg → Nat} {s₀ : State} (hc : Ctx lim s₀) {σ σ' 
     refine h.set fun k hk => ?_
     simp only [T.eval]
     have r1 := readW_extract s.mem (s₀.gpr b + BitVec.ofNat 64 o) (w := 256) (k := 8 * k)
-      (n := 8) (by omega)
-    rw [qword256, show 64 * k = 8 * (8 * k) by omega, r1, h.mem, BitVec.add_assoc, ← BitVec.ofNat_add]
+      (n := 8) (by omega_using [hk])
+    rw [qword256, show 64 * k = 8 * (8 * k) by omega_using [], r1, h.mem, BitVec.add_assoc, ← BitVec.ofNat_add]
   · rename_i hh d a m
     obtain ⟨⟨b, o⟩, hbo, e⟩ := Option.bind_eq_some_iff.1 e
     split at e
@@ -447,8 +447,8 @@ theorem sstep_ok {lim : Reg → Nat} {s₀ : State} (hc : Ctx lim s₀) {σ σ' 
     rw [← qv, ← qv, hR d k hk, hR a k hk]
     congr 1
     have r1 := readW_extract s.mem (s₀.gpr b + BitVec.ofNat 64 o) (w := 256) (k := 8 * k)
-      (n := 8) (by omega)
-    rw [qword256, show 64 * k = 8 * (8 * k) by omega, r1, h.mem, BitVec.add_assoc, ← BitVec.ofNat_add]
+      (n := 8) (by omega_using [hk])
+    rw [qword256, show 64 * k = 8 * (8 * k) by omega_using [], r1, h.mem, BitVec.add_assoc, ← BitVec.ofNat_add]
   · cases e
 
 /-- A block of instructions. -/

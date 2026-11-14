@@ -81,11 +81,11 @@ theorem FO.restore {o : COut} {t : State} (h : FO G o σ t) :
     have e2 : (σ.gpr .r9).toNat = G.scrLen := by rw [← h.hG]; rfl
     rw [e1, e2] at this
     simp only [Spec.Dsa.generationScratchWords] at this
-    omega
+    omega_using [this]
   have fit : G.scr.toNat + G.scrLen * 8 ≤ 2 ^ 64 := by have := h.pre.nC; rw [← h.hG]; exact this
   refine restore_ok' h.r28 h.saved h.lr h.sp fun o ho => ?_
   refine ⟨G.rScr, List.mem_append_right _ (by rw [h.wr, h.pre.wr, h.hG]; simp), Offset.contains_base _ ?_ ?_⟩ <;>
-    simp only [hEnd, fSave] at ho <;> omega
+    simp only [hEnd, fSave] at ho <;> omega_arith
 
 end
 
@@ -123,7 +123,7 @@ theorem zeroLoop_ok {t : State} {P : Addr} {N : Nat} (hN : 0 < N) (hN' : N < 2 ^
     rw [v₃.mem, v₂.mem, m₁.mem, h0, I.mem, List.replicate_succ', writeBytes_snoc _ _ _ _ (by simp; omega),
       List.length_replicate]
   · rw [v₃.gpr, v₂.other _ (by decide), m₁.gpr, I.r5, count_sub hk]
-    exact count_nz hk (by omega)
+    exact count_nz hk (by omega_using [hN'])
 
 /-! ## `out` -/
 
@@ -150,11 +150,11 @@ theorem outZero_vp {g : Geo} {c : Cfg} {F : State → State → Prop} (hF : ∀ 
       (fun _ _ _ _ _ _ _ h => absurd h (by simp)) fun σ s hs => ?_
     obtain ⟨h, x⟩ := hF σ s hs
     have hE := h.gi.hEnd_le
-    have n15 : 2 * G.pLen + G.qLen < 2 ^ 15 := by rcases h.gi.lens with ⟨a, b⟩ | ⟨a, b⟩ | ⟨a, b⟩ <;> omega
+    have n15 : 2 * G.pLen + G.qLen < 2 ^ 15 := by rcases h.gi.lens with ⟨a, b⟩ | ⟨a, b⟩ | ⟨a, b⟩ <;> omega_using [a, b]
     refine WP.cons (s' := s.write .r3 G.out) ?_ (WP.cons (s' := (s.write .r3 G.out).write .r5
       (BitVec.ofNat 64 (2 * G.pLen + G.qLen))) (exec_li n15) (WP.block_nil ?_))
     · rw [show ld .r3 fOut = .load .d .r3 .r28 fOut from rfl, exec_load_d (by decide) ⟨by decide, by decide⟩
-        (by rw [h.gi.r28]; exact h.gi.inRdWr (by simp only [hEnd, fSave, fOut] at hE ⊢; omega)), h.gi.r28,
+        (by rw [h.gi.r28]; exact h.gi.inRdWr (by simp only [hEnd, fSave, fOut] at hE ⊢; omega_using [hE])), h.gi.r28,
         show s.mem.readW (G.scr + BitVec.ofNat 64 fOut) 64 = G.out from h.gi.fixedV (by simp [fixedWords])]
     have k : BKeep [.r3, .r5] s ((s.write .r3 G.out).write .r5 (BitVec.ofNat 64 (2 * G.pLen + G.qLen))) :=
       (VG.Proof.Bignum.PPC64LE.Keep.write s .r3 _).trans (VG.Proof.Bignum.PPC64LE.Keep.write _ .r5 _)
@@ -170,11 +170,11 @@ theorem outZero_vp {g : Geo} {c : Cfg} {F : State → State → Prop} (hF : ∀ 
     have gi := h.gi
     have hol := gi.outLen
     have fit := gi.outFit
-    have hN : 0 < G.outLen := by rcases gi.lens with ⟨a, b⟩ | ⟨a, b⟩ | ⟨a, b⟩ <;> omega
-    have o15 : G.outLen < 2 ^ 15 := by rcases gi.lens with ⟨a, b⟩ | ⟨a, b⟩ | ⟨a, b⟩ <;> omega
+    have hN : 0 < G.outLen := by rcases gi.lens with ⟨a, b⟩ | ⟨a, b⟩ | ⟨a, b⟩ <;> omega_using [hol, a]
+    have o15 : G.outLen < 2 ^ 15 := by rcases gi.lens with ⟨a, b⟩ | ⟨a, b⟩ | ⟨a, b⟩ <;> omega_using [hol, a, b]
     refine WP.seq (WP.wr (exec_li (show 0 < 2 ^ 15 by decide)) fun t₁ u₁ sp₁ _ => WP.block_nil ?_)
-    refine WP.mono (zeroLoop_ok (t := t₁) (P := G.out) (N := G.outLen) hN (by omega) fit
-      (fun k hk => ⟨G.rOut, by rw [u₁.wr]; exact gi.outW, Offset.contains_base _ (by omega) (by omega)⟩)
+    refine WP.mono (zeroLoop_ok (t := t₁) (P := G.out) (N := G.outLen) hN (by omega_using [o15]) fit
+      (fun k hk => ⟨G.rOut, by rw [u₁.wr]; exact gi.outW, Offset.contains_base _ (by omega_using [hk]) (by omega_using [fit, hk])⟩)
       (by rw [u₁.other _ (by decide), t3]) (by rw [u₁.gpr]; rfl) (by rw [u₁.other _ (by decide), t5, hol]))
       fun u ⟨K, sp, m⟩ => ⟨t, ⟨h, x⟩, ?_, by rw [sp, sp₁], ?_, ?_⟩
     · refine ⟨fun r hr => ?_, by rw [K.2.1, u₁.rd], by rw [K.2.2, u₁.wr]⟩
@@ -183,7 +183,7 @@ theorem outZero_vp {g : Geo} {c : Cfg} {F : State → State → Prop} (hF : ∀ 
     · rw [m, u₁.mem]; exact writeBytes_frame _ _ _ (by rw [List.length_replicate]; exact Region.contains_self _ _)
     · rw [m, u₁.mem]
       have := bytesAt_writeBytes t.mem G.out (List.replicate G.outLen 0) (d := 0) (k := G.outLen)
-        (by simp) (by simp; omega)
+        (by simp) (by simp; omega_using [o15])
       rw [BitVec.add_zero] at this
       rw [this]; simp
 
@@ -204,7 +204,7 @@ theorem outCopy_vp {g : Geo} {c : Cfg} {a : Spec.Dsa.Params} {F : State → Stat
       (fun _ _ _ _ _ _ _ h => absurd h (by simp)) fun σ s hs => ?_
     obtain ⟨h, x⟩ := hF σ s hs
     have hE := h.gi.hEnd_le
-    have n15 : 2 * G.pLen + G.qLen < 2 ^ 15 := by rcases h.gi.lens with ⟨a, b⟩ | ⟨a, b⟩ | ⟨a, b⟩ <;> omega
+    have n15 : 2 * G.pLen + G.qLen < 2 ^ 15 := by rcases h.gi.lens with ⟨a, b⟩ | ⟨a, b⟩ | ⟨a, b⟩ <;> omega_using [a, b]
     simp only [List.cons_append, List.nil_append]
     refine WP.cons (s' := s.write .r3 (G.sa sPacked)) ?_ (WP.cons (s' := (s.write .r3 (G.sa sPacked)).write .r4 G.out)
       ?_ (WP.cons (s' := ((s.write .r3 (G.sa sPacked)).write .r4 G.out).write .r5
@@ -213,7 +213,7 @@ theorem outCopy_vp {g : Geo} {c : Cfg} {a : Spec.Dsa.Params} {F : State → Stat
     · have r28' : (s.write .r3 (G.sa sPacked)).gpr .r28 = G.scr := by
         rw [(Upd.write _ .r3 _).other .r28 (by decide), h.gi.r28]
       rw [show ld .r4 fOut = .load .d .r4 .r28 fOut from rfl, exec_load_d (by decide) ⟨by decide, by decide⟩
-        (by rw [r28']; exact h.gi.inRdWr (by simp only [hEnd, fSave, fOut] at hE ⊢; omega)), r28']
+        (by rw [r28']; exact h.gi.inRdWr (by simp only [hEnd, fSave, fOut] at hE ⊢; omega_using [hE])), r28']
       show some ((s.write .r3 (G.sa sPacked)).write .r4 (s.mem.readW (G.scr + BitVec.ofNat 64 fOut) 64)) = _
       rw [show s.mem.readW (G.scr + BitVec.ofNat 64 fOut) 64 = G.out from h.gi.fixedV (by simp [fixedWords])]
     have k : BKeep [.r3, .r4, .r5] s (((s.write .r3 (G.sa sPacked)).write .r4 G.out).write .r5
@@ -237,13 +237,13 @@ theorem outCopy_vp {g : Geo} {c : Cfg} {a : Spec.Dsa.Params} {F : State → Stat
     have big := gi.wBig
     have fit := gi.scrFit
     have ofit := gi.outFit
-    have hN : 0 < G.outLen := by rcases gi.lens with ⟨a, b⟩ | ⟨a, b⟩ | ⟨a, b⟩ <;> omega
-    have o15 : G.outLen < 2 ^ 15 := by rcases gi.lens with ⟨a, b⟩ | ⟨a, b⟩ | ⟨a, b⟩ <;> omega
+    have hN : 0 < G.outLen := by rcases gi.lens with ⟨a, b⟩ | ⟨a, b⟩ | ⟨a, b⟩ <;> omega_using [hol, a]
+    have o15 : G.outLen < 2 ^ 15 := by rcases gi.lens with ⟨a, b⟩ | ⟨a, b⟩ | ⟨a, b⟩ <;> omega_using [hol, a, b]
     have hpk : sPacked + G.outLen ≤ G.scrLen * 8 := by
-      have := (h.clOk _ hcl).2.2; simp only [hlen] at this; omega
-    refine WP.mono (copyLoop_ok (S := G.sa sPacked) (D := G.out) (len := G.outLen) (by omega) hN
-      (gi.out_scr.symm.sub_left (sw G hpk)) (fun i hi => by rw [GP.sa_add]; exact gi.inRdWr (by omega))
-      (fun i hi => ⟨G.rOut, gi.outW, Offset.contains_base _ (by omega) (by omega)⟩) t3 t4 (by rw [t5, hol]))
+      have := (h.clOk _ hcl).2.2; simp only [hlen] at this; omega_using [hol, this]
+    refine WP.mono (copyLoop_ok (S := G.sa sPacked) (D := G.out) (len := G.outLen) (by omega_using [o15]) hN
+      (gi.out_scr.symm.sub_left (sw G hpk)) (fun i hi => by rw [GP.sa_add]; exact gi.inRdWr (by omega_using [hpk, hi]))
+      (fun i hi => ⟨G.rOut, gi.outW, Offset.contains_base _ (by omega_using [hi]) (by omega_using [ofit, hi])⟩) t3 t4 (by rw [t5, hol]))
       fun u ⟨K, sp, f, b⟩ => ⟨t, ⟨h, x⟩, K.mono (by simp), sp, f, ?_⟩
     rw [b, hol, ← hlen]
     have e := h.sb _ hcl; dsimp only at e; exact e
@@ -275,7 +275,7 @@ theorem budget_ok {σ s : State} {c : Cfg} (h : SS G 176 σ c s) {v : Nat} (hv :
   · rw [u₃.gpr, u₂.other _ (by decide), u₂.gpr, u₁.gpr]
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.toNat_add, BitVec.toNat_shiftLeft, BitVec.toNat_ofNat, Nat.shiftLeft_eq]
-    omega
+    omega_using []
 
 /-- `results u v`: the result's words into the header, `used` from the header word `u`. -/
 theorem results_vp {d : Cfg} {u : Nat} {U A B : BitVec 64} {v : Nat} (hv : v < 2 ^ 15) (hU : u ∈ d.LS)
@@ -338,7 +338,7 @@ theorem ranOut_vp {g : Geo} (hL : g.pLen = G.pLen) {j c : Nat} (hc : c ≤ G.wit
   unfold Geo.ranOut
   rw [hL]
   generalize ha : G.witLen - c = av
-  have hav : av < 2 ^ 64 := by omega
+  have hav : av < 2 ^ 64 := by omega_using [h64, ha]
   -- The octets left, against the budget.
   refine VP.seq (G := fun σ s => St G d X σ s ∧ s.gpr .r3 = BitVec.ofNat 64 av ∧
       s.gpr .r4 = BitVec.ofNat 64 (32769 * G.pLen) ∧
@@ -356,19 +356,19 @@ theorem ranOut_vp {g : Geo} (hL : g.pLen = G.pLen) {j c : Nat} (hc : c ≤ G.wit
       rw [u₃.gpr, u₂.other _ (by decide), u₁.gpr, u₂.gpr, ← ha]
       apply BitVec.eq_of_toNat_eq
       simp only [BitVec.toNat_sub, BitVec.toNat_ofNat]
-      omega
+      omega_using [hc]
     refine budget_ok h₃ hp15 fun s₄ h₄ K₄ e₄ => ?_
     have e3' : s₄.gpr .r3 = BitVec.ofNat 64 av := by rw [K₄.gpr (by decide), e3]
     refine ltR_ok e3' e₄ fun t K m sp _ e => WP.block_nil ⟨⟨h₄.of_keep K m sp, x⟩, ?_, ?_, e.trans ?_⟩
     · rw [K.gpr (by decide), e3']
     · rw [K.gpr (by decide), e₄]
-    · rw [BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hav, Nat.mod_eq_of_lt (by omega)]
+    · rw [BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hav, Nat.mod_eq_of_lt (by omega_using [l])]
   by_cases hb : Spec.Dsa.parameterEntropy G.pLen ≤ av
   · -- Exhausted.
     rw [ite_eq_left_of_eq_true _ _ (eq_true hb)]
     refine VP.ite (fun σ₁ σ₂ s₁ s₂ h₁ h₂ => by rw [h₁.2.2.2, h₂.2.2.2])
       (VP.of_false fun σ s ⟨⟨_, _, _, e⟩, z⟩ => by
-        rw [e] at z; simp only [Spec.Dsa.parameterEntropy] at hb; simp at z; omega)
+        rw [e] at z; simp only [Spec.Dsa.parameterEntropy] at hb; simp at z; omega_arith)
       (zres_vp (by decide) hC hCv (by decide) (by decide) fun σ s h => h.1.1)
   rw [ite_eq_right_of_eq_false _ _ (eq_false hb)]
   simp only [Spec.Dsa.parameterEntropy, Nat.not_le] at hb
@@ -385,7 +385,7 @@ theorem ranOut_vp {g : Geo} (hL : g.pLen = G.pLen) {j c : Nat} (hc : c ≤ G.wit
     refine ltR_ok e3 e₁ fun t K m sp _ e => WP.block_nil ⟨⟨h₁.of_keep K m sp, x⟩, ?_, ?_, e.trans ?_⟩
     · rw [K.gpr (by decide), e3]
     · rw [K.gpr (by decide), e₁]
-    · rw [BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hav, Nat.mod_eq_of_lt (by omega)]
+    · rw [BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hav, Nat.mod_eq_of_lt (by omega_using [l])]
   refine VP.seq (G := fun σ s => St G d X σ s ∧ s.gpr .r3 = BitVec.ofNat 64 (max av (G.pLen * 2 ^ 8)))
     (VP.ite (fun σ₁ σ₂ s₁ s₂ h₁ h₂ => by rw [h₁.2.2.2, h₂.2.2.2])
       (rb_vp (fun σ s h => h.1.1) ⟨VG.Taint.hintOfSize VG.PPC64LE.taint 64 (Taint.ofRegs [.r28])
@@ -395,10 +395,10 @@ theorem ranOut_vp {g : Geo} (hL : g.pLen = G.pLen) {j c : Nat} (hc : c ≤ G.wit
   · have : av < G.pLen * 2 ^ 8 := by rw [e] at z; simpa using z
     rw [u.gpr, r4, BitVec.add_zero, Nat.max_eq_right (Nat.le_of_lt this)]
   · have : ¬av < G.pLen * 2 ^ 8 := by rw [e] at z; simpa using z
-    rw [r3, Nat.max_eq_left (by omega)]
+    rw [r3, Nat.max_eq_left (by omega_using [this])]
   -- Twice that, at most the budget.
   have hM : max av (G.pLen * 2 ^ 8) < 2 ^ 32 := by
-    rcases l with e | e | e <;> rw [e] at hb ⊢ <;> omega
+    rcases l with e | e | e <;> rw [e] at hb ⊢ <;> omega_using [hb]
   refine VP.seq (G := fun σ s => St G d X σ s ∧ s.gpr .r3 = BitVec.ofNat 64 (2 * max av (G.pLen * 2 ^ 8)) ∧
       s.gpr .r4 = BitVec.ofNat 64 (32769 * G.pLen) ∧
       isa.eval (.zero .d .r0) s = some (decide (2 * max av (G.pLen * 2 ^ 8) < 32769 * G.pLen)))
@@ -411,13 +411,13 @@ theorem ranOut_vp {g : Geo} (hL : g.pLen = G.pLen) {j c : Nat} (hc : c ≤ G.wit
       rw [u₁.gpr, r3]
       apply BitVec.eq_of_toNat_eq
       simp only [BitVec.toNat_add, BitVec.toNat_ofNat]
-      omega
+      omega_using []
     refine budget_ok h₁ hp15 fun s₂ h₂ K₂ e₂ => ?_
     have e3 : s₂.gpr .r3 = BitVec.ofNat 64 (2 * max av (G.pLen * 2 ^ 8)) := by rw [K₂.gpr (by decide), e1]
     refine ltR_ok e3 e₂ fun t K m sp _ e => WP.block_nil ⟨⟨h₂.of_keep K m sp, x⟩, ?_, ?_, e.trans ?_⟩
     · rw [K.gpr (by decide), e3]
     · rw [K.gpr (by decide), e₂]
-    · rw [BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega)]
+    · rw [BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [l, hb]), Nat.mod_eq_of_lt (by omega_using [l])]
   have hreq : VG.Proof.Dsa.Generation.parameterRequest G.pLen av =
       min (2 * max av (G.pLen * 2 ^ 8)) (32769 * G.pLen) := by
     simp only [VG.Proof.Dsa.Generation.parameterRequest, VG.Proof.Entropy.request, Spec.Dsa.parameterEntropy]
@@ -432,7 +432,7 @@ theorem ranOut_vp {g : Geo} (hL : g.pLen = G.pLen) {j c : Nat} (hc : c ≤ G.wit
   · have : 2 * max av (G.pLen * 2 ^ 8) < 32769 * G.pLen := by rw [e] at z; simpa using z
     rw [r3, hreq, Nat.min_eq_left (Nat.le_of_lt this)]
   · have : ¬2 * max av (G.pLen * 2 ^ 8) < 32769 * G.pLen := by rw [e] at z; simpa using z
-    rw [u.gpr, r4, BitVec.add_zero, hreq, Nat.min_eq_right (by omega)]
+    rw [u.gpr, r4, BitVec.add_zero, hreq, Nat.min_eq_right (by omega_using [this])]
   -- The words.
   refine VP.block_append (G := fun σ s => St G d X σ s ∧ s.gpr .r5 = BitVec.ofNat 64 j ∧
       s.gpr .r6 = BitVec.ofNat 64 (VG.Proof.Dsa.Generation.parameterRequest G.pLen av))
@@ -479,7 +479,7 @@ theorem wbf_of {o : COut} {σ t u₀ u : State} (ht : St G (dCfg G o) X σ t) (K
   have fit := gi.scrFit
   refine ⟨ht.1, (K'.gpr (by decide)).trans ((K.gpr (by decide)).trans gi.r28),
     by rw [sp', sp, gi.sp, ← gi.hG]; rfl, by rw [K'.2.1, K.2.1], by rw [K'.2.2, K.2.2], fun o' ho' => ?_⟩
-  have hs : Region.Sub (G.rs o' 8) G.rScr := sw G (by omega)
+  have hs : Region.Sub (G.rs o' 8) G.rScr := sw G (by omega_using [hE, ho'])
   have cS := pre.cS; have uC := pre.uC; have oC := pre.oC; rw [gi.hG] at cS uC oC
   rw [fw_frame f' (fun r hr => ?_), fw_frame f (fun r hr => ?_)]
   · simp only [List.mem_singleton] at hr; subst hr
@@ -505,7 +505,7 @@ theorem WBA.ldH {o : COut} {P : State → Prop} {σ u : State} (h : WBA G o X P 
   have e : u.mem.readW (G.sa o') 64 = v := (F.hdr o' ho).trans (hv t F.gi)
   refine WP.cons (s' := u.write r v) ?_ (k _ (Upd.write _ _ _) rfl)
   rw [show ld r o' = .load .d r .r28 o' from rfl, exec_load_d (by decide)
-    ⟨by simp only [hEnd, fSave] at ho; omega, by omega⟩ (by rw [F.r28, F.rd, F.wr]; exact F.gi.gi.inRdWr (by omega)),
+    ⟨by simp only [hEnd, fSave] at ho; omega_using [ho], by omega_using [h8]⟩ (by rw [F.r28, F.rd, F.wr]; exact F.gi.gi.inRdWr (by omega_using [ho, hE])),
     F.r28, e]
 
 theorem WBA.pub {o : COut} {P : State → Prop} : Pub G (WBA G o X P) := fun σ u h => by
@@ -542,7 +542,7 @@ theorem wbw_of {σ t : State} {c : Cfg} (h : SS G 176 σ c t) : WBW G σ := by
   refine ⟨⟨G.rSt, by rw [w]; simp, Offset.contains_base _ (show 0 + 8 ≤ 32 by decide) (by decide)⟩,
     ⟨G.rSt, by rw [w]; simp, Offset.contains_base _ (show 24 + 8 ≤ 32 by decide) (by decide)⟩,
     ⟨G.rUsed, by rw [w]; simp, Offset.contains_base _ (show 0 + 8 ≤ 8 by decide) (by decide)⟩,
-    Offset.disjoint _ (by decide) (by omega) (by omega), ?_, ?_⟩
+    Offset.disjoint _ (by decide) (by omega_using []) (by omega_using []), ?_, ?_⟩
   · exact (uS.symm.sub_left (Offset.sub_base (d := 0) (n := 8) (k := 32) _ (by decide))).sub_right
       (Offset.sub_base (d := 0) (n := 8) (k := 8) _ (by decide))
   · exact (uS.symm.sub_left (Offset.sub_base (d := 24) (n := 8) (k := 32) _ (by decide))).sub_right
@@ -576,7 +576,7 @@ theorem keepWord {o : COut} {P : State → Prop} {σ u : State} (h : WBA G o X P
   have eS : (σ.gpr .r10).toNat = G.stP.toNat := by rw [← gi.hG]; rfl
   have uS := pre.uS; have oS := pre.oS; have cS := pre.cS; have bS := pre.bS
   rw [gi.hG] at uS oS cS bS
-  have sub : Region.Sub ⟨G.stP + BitVec.ofNat 64 d, 8⟩ G.rSt := Offset.sub_base (k := 32) _ (by omega)
+  have sub : Region.Sub ⟨G.stP + BitVec.ofNat 64 d, 8⟩ G.rSt := Offset.sub_base (k := 32) _ (by omega_using [hd])
   rw [f'.readW (Region.contains_self _ _) (fun r hr => ?_) (by decide),
     f.readW (Region.contains_self _ _) (fun r hr => ?_) (by decide),
     gi.frame.readW (Region.contains_self _ _) (fun r hr => ?_) (by decide)]
@@ -588,8 +588,8 @@ theorem keepWord {o : COut} {P : State → Prop} {σ u : State} (h : WBA G o X P
     exact oS.symm.sub_left sub
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
-    · exact Offset.disjoint _ (by omega) (by omega) (by omega)
-    · exact Offset.disjoint _ (by omega) (by omega) (by omega)
+    · exact Offset.disjoint _ (by omega_using [hd]) (by omega_using [hd]) (by omega_using [])
+    · exact Offset.disjoint _ (by omega_using [hd]) (by omega_using [hd]) (by omega_using [])
     · exact (uS.symm.sub_left sub).sub_right (Offset.sub_base (d := 0) (n := 8) (k := 8) _ (by decide))
 
 /-- The last stage of the write-back: `FO`. -/
@@ -624,9 +624,9 @@ theorem fo_of {o : COut} {σ u : State}
       · exact ⟨G.rSt, by simp, Offset.sub_base (k := 32) _ (by decide)⟩
       · exact ⟨G.rUsed, by simp, Offset.sub_base (k := 8) _ (by decide)⟩
   refine ⟨⟨pre, gi.hG, F.sp.trans (by rw [← gi.hG]; rfl), by rw [F.rd, gi.rd], by rw [F.wr, gi.wr], F.r28,
-    fun i hi => by rw [F.hdr _ (by simp only [hEnd]; omega)]; exact gi.saved i hi,
+    fun i hi => by rw [F.hdr _ (by simp only [hEnd]; omega_using [hi])]; exact gi.saved i hi,
     by rw [F.hdr _ (by decide)]; exact gi.lr, hfr, ?_, pU, p0, k8, k16, p3, r3⟩, x⟩
-  rw [VG.Proof.Dsa.Generation.frame_bytesAt f' (fun r hr => ?_) (by omega)]
+  rw [VG.Proof.Dsa.Generation.frame_bytesAt f' (fun r hr => ?_) (by omega_using [nO, eO])]
   · exact ob
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl

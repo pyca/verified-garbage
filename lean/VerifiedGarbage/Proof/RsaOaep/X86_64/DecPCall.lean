@@ -97,7 +97,7 @@ theorem preDP_of {ts : List FnTable} {s : State} (h : (pdspec ts).pre s) : DPreT
     dKO dKM dKn dKe dKp dKq dKdp dKdq dKqi dKlb dKct dKs dKr dKtL dKt dKa
     wO wM wN wE wP wQ wDp wDq wQi wL wC wS wR wTL wT lv hsi hcl el1 el2 pl1 pl2 ql1 ql2 hdpl hqil hdql hsw hpl
   have sA : Region.Sub ⟨stackArgAddr s 0, 152⟩ (argsP s) := Region.sub_prefix (by decide)
-  refine ⟨⟨⟨sp1, by omega, fun r hr => ?_, ⟨168, by decide, by rw [hrd]; simp⟩, hwr, dOM, dOn, dOe, dOp, dOq,
+  refine ⟨⟨⟨sp1, by omega_using [sp2], fun r hr => ?_, ⟨168, by decide, by rw [hrd]; simp⟩, hwr, dOM, dOn, dOe, dOp, dOq,
     dOdp, dOdq, dOqi, dOlb, dOct, dOs, (dOa.symm.sub_left sA).symm, dMn, dMe, dMp, dMq, dMdp, dMdq, dMqi, dMlb,
     dMct, dMs, (dMa.symm.sub_left sA).symm, dns, des, dps, dqs, ddps, ddqs, dqis, dlbs, dcts,
     (dsa.symm.sub_left sA).symm, dRO, dRM, dRs, dKO, dKM, dKn, dKe, dKp, dKq, dKdp, dKdq, dKqi, dKlb, dKct, dKs,
@@ -115,13 +115,13 @@ theorem argP_in {s u : State} (hq : PreP s) (hrd : u.rd = s.rd) {j : Nat} (hj : 
     InRegions (u.rd ++ u.wr) (stackArgAddr s j) 8 := by
   refine ⟨argsP s, List.mem_append_left _ (by rw [hrd]; exact hq.hargs), ?_⟩
   show (stackArgAddr s j - stackArgAddr s 0).toNat + 8 ≤ 168
-  rw [stackArgAddr_j s j, BitVec.add_comm, BitVec.add_sub_cancel, BitVec.toNat_ofNat]; omega
+  rw [stackArgAddr_j s j, BitVec.add_comm, BitVec.add_sub_cancel, BitVec.toNat_ofNat]; omega_using [hj]
 
 theorem argP_val {s : State} (hq : PreP s) {m : Mem} (hf : FrD s m) {j : Nat} (hj : j < 21) :
     m.readW (stackArgAddr s j) 64 = stackArg s j :=
   hf.readW' (r := argsP s) (by
       show (stackArgAddr s j - stackArgAddr s 0).toNat + 8 ≤ 168
-      rw [stackArgAddr_j s j, BitVec.add_comm, BitVec.add_sub_cancel, BitVec.toNat_ofNat]; omega)
+      rw [stackArgAddr_j s j, BitVec.add_comm, BitVec.add_sub_cancel, BitVec.toNat_ofNat]; omega_using [hj])
     hq.dKa hq.dOa hq.dMa hq.dsa
 
 /-- A stack argument of `DPre`'s, in memory the code may leave. -/
@@ -129,7 +129,7 @@ theorem arg_valD {s : State} (hp : DPre s) {m : Mem} (hf : FrD s m) {j : Nat} (h
     m.readW (stackArgAddr s j) 64 = stackArg s j :=
   hf.readW' (r := ⟨stackArgAddr s 0, 152⟩) (by
       show (stackArgAddr s j - stackArgAddr s 0).toNat + 8 ≤ 152
-      rw [stackArgAddr_j s j, BitVec.add_comm, BitVec.add_sub_cancel, BitVec.toNat_ofNat]; omega)
+      rw [stackArgAddr_j s j, BitVec.add_comm, BitVec.add_sub_cancel, BitVec.toNat_ofNat]; omega_using [hj])
     hp.dKa hp.dOa hp.dMa hp.dsa
 
 /-- A stack argument to the frame's bytes at `d`. -/
@@ -141,7 +141,7 @@ theorem argSlotE_ok {s u : State} (hp : DPre s) (he : EnvD s u) {j d : Nat}
   have hF := fb_toNatD hp
   have := hp.sp2
   have hsc : Scr u (fb s) frameBytes :=
-    Scr.of_mem (by rw [he.wr]; exact List.mem_cons_self ..) (by unfold frameBytes at *; omega)
+    Scr.of_mem (by rw [he.wr]; exact List.mem_cons_self ..) (by unfold frameBytes at *; omega_using [hF])
   refine WP.mono (WP.keep [.rax] (Q := fun u' => u'.mem = u.mem.writeW (off (fb s) d) (stackArg s j)) ?_ rfl)
     fun u' ⟨hm, k⟩ => ⟨k, hm⟩
   rw [← argAddr] at hin hv
@@ -157,16 +157,16 @@ theorem Lay.of_envD {s t : State} (hp : DPre s) (he : EnvD s t) (hs : word t.mem
   have hk := hp.lv.1
   refine ⟨he.rsp, by rw [he.wr]; exact List.mem_cons_self .., ?_, ?_,
     ⟨⟨stackArg s 15, 0, (stackArg s 16).toNat * 8, by rw [he.wr]; simp [scrD], (BitVec.add_zero _).symm,
-      by unfold oRsa; omega, by have := hp.wS; omega⟩, G'.Sw⟩, hs, G'.dFS, G'.dRS⟩
-  · unfold decStack privStack at *; unfold frameBytes at *; omega
-  · unfold frameBytes at *; omega
+      by unfold oRsa; omega_using [hsl], by have := hp.wS; omega_using [this]⟩, G'.Sw⟩, hs, G'.dFS, G'.dRS⟩
+  · unfold decStack privStack at *; unfold frameBytes at *; omega_arith
+  · unfold frameBytes at *; omega_using [hF, this]
 
 /-- The frame's words at the call: `privW`, with `pre` and `pre_len` in
 words 14 and 15. -/
 def privWP (s : State) : Nat → BitVec 64 := upd (upd (privW s) 14 (stackArg s 19)) 15 (stackArg s 20)
 
 theorem privWP_lt {s : State} {i : Nat} (hi : i < 14) : privWP s i = privW s i := by
-  simp only [privWP, upd]; rw [ifn (by omega), ifn (by omega)]
+  simp only [privWP, upd]; rw [ifn (by omega_using [hi]), ifn (by omega_using [hi])]
 
 /-- The prologue, the arguments of `vg_rsa_private_checked_precomputed`, and
 `pre` and `pre_len` to the frame's words 14 and 15. -/
@@ -207,7 +207,7 @@ theorem wordsP_of_frame {s : State} (hq : PreP s) {m : Mem} (hf : FrD s m) :
   simp only [Spec.Rsa.wordsAt]
   refine List.map_congr_left fun i hi => ?_
   have hi := List.mem_range.mp hi
-  exact hf.readW' (r := preR s) (Offset.contains_base _ (by omega) (by omega)) hq.dKr hq.dOr hq.dMr hq.dsr
+  exact hf.readW' (r := preR s) (Offset.contains_base _ (by omega_using [hi]) (by omega_using [hl, hi])) hq.dKr hq.dOr hq.dMr hq.dsr
 
 /-- The memory at the call's entry. -/
 theorem frD_entry {s t : State} (he : EnvD s t) : FrD s t.callEntry.mem := by
@@ -295,9 +295,9 @@ theorem privDP_pre {s t : State} (hp : DPre s) (hq : PreP s) (h : DCall s (privW
   · rw [e15, e3, e5, g (by decide), h.rcx]; exact hq.hpl
   · simp only [State.withRegions_mem, g (show Reg.rdx ≠ .rsp by decide), g (show Reg.rcx ≠ .rsp by decide), h.rdx,
       h.rcx, e2, e3, e4, e5, e14, e15]
-    rw [b hp.dKn hp.dOn hp.dMn hp.dns (by have := hp.wN; omega),
-      b hp.dKp hp.dOp hp.dMp hp.dps (by have := hp.wP; omega),
-      b hp.dKq hp.dOq hp.dMq hp.dqs (by have := hp.wQ; omega),
+    rw [b hp.dKn hp.dOn hp.dMn hp.dns (by have := hp.wN; omega_using []),
+      b hp.dKp hp.dOp hp.dMp hp.dps (by have := hp.wP; omega_using []),
+      b hp.dKq hp.dOq hp.dMq hp.dqs (by have := hp.wQ; omega_using []),
       wordsP_of_frame hq fE]
     exact hq.key
 
@@ -311,7 +311,7 @@ theorem privDP_covers {s t : State} (hp : DPre s) (hq : PreP s) (h : DCall s (pr
   rcases hr with rfl | rfl
   · exact ⟨frR s, List.mem_append_right _ (by rw [h.he.wr]; exact List.mem_cons_self ..), 112, rfl,
       by show 112 + 16 ≤ frameBytes; decide⟩
-  · exact ⟨_, List.mem_append_left _ (by rw [h.he.rd]; exact hq.hpr), 0, z _, by dsimp only; omega⟩
+  · exact ⟨_, List.mem_append_left _ (by rw [h.he.rd]; exact hq.hpr), 0, z _, by dsimp only; omega_using []⟩
 
 /-- The call of `vg_rsa_private_checked_precomputed` for `c`. -/
 theorem privDP_call (c : CrtImpl) {s t : State} (hp : DPre s) (hq : PreP s) (h : DCall s (privWP s) t) :
@@ -333,7 +333,7 @@ theorem scrSlot_ok {s u : State} (hp : DPre s) (he : EnvD s u) :
   have hF := fb_toNatD hp
   have := hp.sp2
   have hsc : Scr u (fb s) frameBytes :=
-    Scr.of_mem (by rw [he.wr]; exact List.mem_cons_self ..) (by unfold frameBytes at *; omega)
+    Scr.of_mem (by rw [he.wr]; exact List.mem_cons_self ..) (by unfold frameBytes at *; omega_using [hF])
   have hin := hp.argIn he.rd (j := 15) (by decide)
   have hv := arg_valD hp he.fr (j := 15) (by decide)
   refine WP.mono (WP.keep [.r11] (Q := fun u' => u'.mem = u.mem.writeW (off (fb s) sScr) (stackArg s 15)) ?_ rfl)
@@ -369,7 +369,7 @@ theorem ArgsD_privWP (s : State) : ArgsD s (upd (privWP s) 14 (stackArg s 15)) :
   (ArgsD_privW s).of fun k hk => by
     rcases decKs_iff hk with rfl | ⟨h1, -⟩
     · simp [upd, privW, decW]
-    · simp only [privWP, upd]; rw [ifn (by omega), ifn (by omega), ifn (by omega)]
+    · simp only [privWP, upd]; rw [ifn (by omega_using [h1]), ifn (by omega_using [h1]), ifn (by omega_using [h1])]
 
 variable {vs : List MdHash} (hc : Coh vs)
 
@@ -388,7 +388,7 @@ theorem decP_correct (c : CrtImpl) (s : State) (h : (pdspec (tables vs)).pre s) 
   suffices hw : WP isa (decryptP (fnsOf vs) (privNameP c) (privCodeP c)) s
       fun s' => abiPreserved s s' ∧ (decK (tables vs)).post s s' by
     obtain ⟨t, s', he, hq⟩ := hw; exact ⟨t, s', he, hq⟩
-  refine wp_alloc (by have := hp.sp1; unfold decStack privStack at this; unfold frameBytes at *; omega) ?_
+  refine wp_alloc (by have := hp.sp1; unfold decStack privStack at this; unfold frameBytes at *; omega_using [this]) ?_
   unfold decBodyP Impl.Mgf1.X86_64.seqs Impl.Mgf1.X86_64.seqs Impl.Mgf1.X86_64.seqs
   refine WP.seq (X86_64.WP.mono_syms (decHeadP_ok hp hq) fun t0 h0 sy0 => ?_)
   refine WP.seq (X86_64.WP.mono_syms (privDP_call c hp hq h0) fun t1 ⟨he1, R1, hw1⟩ sy1 => ?_)

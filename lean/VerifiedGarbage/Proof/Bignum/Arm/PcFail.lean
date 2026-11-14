@@ -28,23 +28,23 @@ theorem pcFail_ok (s : State) {base dst src : BitVec 32} {len k : Nat}
         List.replicate (2 * Spec.Rsa.modulusWords k) 0 ∧
       Frame [⟨State.addr dst, 16 * Spec.Rsa.modulusWords k⟩] s.mem t.mem ∧ Rest roundClobbers s t := by
   let w := Spec.Rsa.modulusWords k
-  have hw : 0 < w := by simp only [w, Spec.Rsa.modulusWords]; omega
+  have hw : 0 < w := by simp only [w, Spec.Rsa.modulusWords]; omega_using [hk]
   rw [PcFn.fail, WP.seq_iff]
   refine WP.mono (pcFailArgs_ok s stack hk' count) ?_
   rintro u ⟨ptr, limbs, zero, mem, rest⟩
   rw [WP.seq_iff]
   refine WP.mono (zero_ok u (base := dst) (size := 16 * w) (o := 0) (n := 4 * w)
-    ⟨fit, by omega, by rw [rest.wr]; exact write⟩ (by omega) (by simpa using ptr) limbs zero) ?_
+    ⟨fit, by omega_using [], by rw [rest.wr]; exact write⟩ (by omega_using [hw]) (by simpa using ptr) limbs zero) ?_
   intro v inv
   have value := inv.value
   have frame := inv.frame
-  rw [mem, show 4 * (4 * w) = 16 * w by omega] at frame
+  rw [mem, show 4 * (4 * w) = 16 * w by omega_using []] at frame
   refine wp_mov (op2_imm (by decide)) fun t result => WP.block_nil ?_
   refine ⟨result.gpr, ?_, by rw [result.mem]; exact frame,
     (rest.mono (by decide)).trans
       ((inv.rest.mono (by decide)).trans (result.rest (by decide)))⟩
   apply wordsAt_zero_read
-  rw [result.mem, show 8 * (2 * Spec.Rsa.modulusWords k) = 4 * (4 * w) by dsimp [w]; omega]
+  rw [result.mem, show 8 * (2 * Spec.Rsa.modulusWords k) = 4 * (4 * w) by dsimp [w]; omega_using []]
   have read := read_eq_val32 v.mem (State.addr dst) (4 * w) 0
   simp only [BitVec.add_zero] at read
   exact read.trans value

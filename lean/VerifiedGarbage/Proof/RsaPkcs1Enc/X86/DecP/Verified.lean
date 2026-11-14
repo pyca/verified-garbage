@@ -40,7 +40,7 @@ theorem ok_narrow {P : EP} {pre : BitVec 32} {L : Nat} {σ : State} (h : (P.layP
   simp only [Lay.A, EP.argvP, List.length_cons, List.length_nil] at fit
   have args100 : Region.Sub P.lay.ARGS (P.layP pre L).ARGS := by
     simp only [Lay.ARGS, Lay.A, EP.argv, EP.argvP, List.length_cons, List.length_nil]
-    exact Region.sub_prefix (by omega)
+    exact Region.sub_prefix (by omega_using [])
   have subro : ∀ r ∈ P.ro, r ∈ (P.layP pre L).ro := by
     intro r hr
     simp only [EP.ro, List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -55,7 +55,7 @@ theorem ok_narrow {P : EP} {pre : BitVec 32} {L : Nat} {σ : State} (h : (P.layP
     ⟨_, Nat.le_refl _, List.mem_cons_of_mem _ (List.mem_cons_of_mem _
       (List.mem_append_right _ (List.mem_singleton_self _)))⟩, h.BC, ?_, fun r hr => h.stk r (sub r hr), h.ret, ?_, h.wrw,
     fun r hr => h.fits r (sub r hr), ?_⟩
-  · simp only [Lay.A, EP.argv, List.length_cons, List.length_nil]; omega
+  · simp only [Lay.A, EP.argv, List.length_cons, List.length_nil]; omega_using [fit]
   · intro w hw r hr
     rcases List.mem_append.mp hr with hr | hr
     · exact h.wro w hw r (List.mem_append_left _ (subro r hr))
@@ -64,8 +64,8 @@ theorem ok_narrow {P : EP} {pre : BitVec 32} {L : Nat} {σ : State} (h : (P.layP
   · intro j hj
     have hj' : j < 23 := by simpa only [EP.argv, List.length_cons, List.length_nil] using hj
     rw [show P.lay.argv.getD j 0 = (P.layP pre L).argv.getD j 0 by
-      rcases (show j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4 ∨ j = 5 ∨ j = 6 ∨ j = 7 ∨ j = 8 ∨ j = 9 ∨ j = 10 ∨ j = 11 ∨ j = 12 ∨ j = 13 ∨ j = 14 ∨ j = 15 ∨ j = 16 ∨ j = 17 ∨ j = 18 ∨ j = 19 ∨ j = 20 ∨ j = 21 ∨ j = 22 by omega) with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> rfl]
-    exact h.args j (by simp only [EP.argvP, List.length_cons, List.length_nil]; omega)
+      rcases (show j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4 ∨ j = 5 ∨ j = 6 ∨ j = 7 ∨ j = 8 ∨ j = 9 ∨ j = 10 ∨ j = 11 ∨ j = 12 ∨ j = 13 ∨ j = 14 ∨ j = 15 ∨ j = 16 ∨ j = 17 ∨ j = 18 ∨ j = 19 ∨ j = 20 ∨ j = 21 ∨ j = 22 by omega_using [hj']) with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> rfl]
+    exact h.args j (by simp only [EP.argvP, List.length_cons, List.length_nil]; omega_using [hj'])
 
 theorem ep_layP (s : State) (pre : BitVec 32) (L : Nat) :
     (ep s).layP pre L = layOf frameBytes ((ep s).argvP pre L) ((ep s).roP pre L) (ep s).rw s 3448 := rfl
@@ -154,10 +154,10 @@ theorem in_of_preP {s : State} (h : specP.pre s) :
       have : j < 25 := hj
       rcases (by omega_using [this] : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4 ∨ j = 5 ∨ j = 6 ∨ j = 7 ∨ j = 8 ∨ j = 9 ∨ j = 10 ∨ j = 11 ∨ j = 12 ∨ j = 13 ∨ j = 14 ∨ j = 15 ∨ j = 16 ∨ j = 17 ∨ j = 18 ∨ j = 19 ∨ j = 20 ∨ j = 21 ∨ j = 22 ∨ j = 23 ∨ j = 24) with
         rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp [ep, a1, a10, a16, a18, a20]
-  have hn := bytesE kN (by have := (arg s 4).isLt; omega)
-  have hp := bytesE kP (by have := (arg s 12).isLt; omega)
-  have hq := bytesE kQ (by have := (arg s 14).isLt; omega)
-  have he := bytesE kE (by have := (arg s 6).isLt; omega)
+  have hn := bytesE kN (by have := (arg s 4).isLt; omega_using [])
+  have hp := bytesE kP (by have := (arg s 12).isLt; omega_using [])
+  have hq := bytesE kQ (by have := (arg s 14).isLt; omega_using [])
+  have he := bytesE kE (by have := (arg s 6).isLt; omega_using [])
   refine ⟨ok, ⟨ok_narrow ok, kv, el1, elK, dl1, dlK, pl1, plK, ql1, qlK, slK, sl32, hn, he⟩,
     plen, ?_⟩
   have hw : Spec.Rsa.wordsAt (entered frameBytes s).mem ((arg s 23).setWidth 64) (arg s 24).toNat =
@@ -186,13 +186,13 @@ theorem specP_sp {s : State} (h : specP.pre s) :
   sig_pre [Spec.RsaPkcs1Enc.decryptPrecomputedContract, Spec.RsaPkcs1Enc.decryptPrecomputedSig,
     Spec.RsaPkcs1Enc.decryptSig, abi, argSlots, argVal, argBytes, stackBelow] at h
   obtain ⟨hsp, hsa, -⟩ := h
-  exact ⟨hsp, by omega⟩
+  exact ⟨hsp, by omega_using [hsa]⟩
 
 theorem code_okP (v : Backend) (c : CrtImpl) (w : CrtPImpl) {s : State} (h : specP.pre s) :
     WP isa (decryptCodeP v c w) s fun t => abiPreserved s t ∧ specP.post s t := by
   have hin := in_of_preP h
   obtain ⟨hs, hfit⟩ := specP_sp h
-  have hsp : 16 + frameBytes ≤ (s.gpr .esp).toNat := by simp only [stackBytes, frameBytes] at hs ⊢; omega
+  have hsp : 16 + frameBytes ≤ (s.gpr .esp).toNat := by simp only [stackBytes, frameBytes] at hs ⊢; omega_using [hs]
   have hb := (bodyP_vp (P := ep s) (pre := arg s 23) (L := (arg s 24).toNat) v c w).wp _ _ (entered_stateP h)
   refine WP.mono (wrap_ok (F := frameBytes) (by decide) (bodyP_noSp v c w) hsp hfit (W := (ep s).lay.W)
     (Q := fun r m => Res (ep s) (entered frameBytes s) m r) (fun r hr => ?_)

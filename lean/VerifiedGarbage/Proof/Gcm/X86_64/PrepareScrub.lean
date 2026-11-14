@@ -51,10 +51,10 @@ theorem agree_le (h : ∀ a, Region.Contains ⟨p, L⟩ a 1 → m₁ a = m₂ a)
   intro i hi
   refine (h _ ?_).symm
   by_cases hw : i < 2 ^ 64
-  · exact VG.Offset.contains_base _ (by omega) hw
+  · exact VG.Offset.contains_base _ (by omega_using [hn, hi]) hw
   · simp only [Region.Contains]
     have := (p + BitVec.ofNat 64 i - p).isLt
-    omega
+    omega_using [hn, hi, hw]
 
 theorem bytesAt_of (h : ∀ a, Region.Contains ⟨p, L⟩ a 1 → m₁ a = m₂ a) {d n : Nat} (hn : d + n ≤ L) :
     Spec.Aes.bytesAt m₂ (p + BitVec.ofNat 64 d) n = Spec.Aes.bytesAt m₁ (p + BitVec.ofNat 64 d) n := by
@@ -62,32 +62,32 @@ theorem bytesAt_of (h : ∀ a, Region.Contains ⟨p, L⟩ a 1 → m₁ a = m₂ 
   refine List.map_congr_left fun i hi => ?_
   have := List.mem_range.mp hi
   rw [VG.Offset.add_add]
-  exact agree_le h hn _ (by omega)
+  exact agree_le h hn _ (by omega_using [this])
 
 theorem readW_of (h : ∀ a, Region.Contains ⟨p, L⟩ a 1 → m₁ a = m₂ a) {d w : Nat} (hn : d + w / 8 ≤ L) :
     m₂.readW (p + BitVec.ofNat 64 d) w = m₁.readW (p + BitVec.ofNat 64 d) w :=
   Mem.readW_congr fun i hi => by
     rw [VG.Offset.add_add]
-    exact agree_le h hn _ (by omega)
+    exact agree_le h hn _ (by omega_using [hi])
 
 theorem ctxH_of (h : ∀ a, Region.Contains ⟨p, L⟩ a 1 → m₁ a = m₂ a) (hn : 256 ≤ L) :
     Spec.Gcm.ctxH m₂ p = Spec.Gcm.ctxH m₁ p := by
   simp only [Spec.Gcm.ctxH, Spec.Gcm.blockAt]
-  rw [show (240 : BitVec 64) = BitVec.ofNat 64 240 from rfl, bytesAt_of h (by omega)]
+  rw [show (240 : BitVec 64) = BitVec.ofNat 64 240 from rfl, bytesAt_of h (by omega_using [hn])]
 
 theorem powerCount_of (h : ∀ a, Region.Contains ⟨p, L⟩ a 1 → m₁ a = m₂ a) (hn : 1032 ≤ L) :
     Spec.Gcm.powerCount m₂ p = Spec.Gcm.powerCount m₁ p := by
   simp only [Spec.Gcm.powerCount]
-  rw [show (1024 : BitVec 64) = BitVec.ofNat 64 1024 from rfl, readW_of h (by omega)]
+  rw [show (1024 : BitVec 64) = BitVec.ofNat 64 1024 from rfl, readW_of h (by omega_using [hn])]
 
 theorem preparedRepr_of (h : ∀ a, Region.Contains ⟨p, L⟩ a 1 → m₁ a = m₂ a) (hn : 1032 ≤ L)
     (hr : Spec.Gcm.PreparedRepr m₁ p) : Spec.Gcm.PreparedRepr m₂ p := by
   obtain ⟨h16, h48⟩ := hr
   simp only [Spec.Gcm.PreparedRepr, powerCount_of h hn]
   refine ⟨fun hc k hk => ?_, fun hc k hk => ?_⟩
-  · rw [readW_of h (by omega), readW_of h (by omega), ctxH_of h (by omega)]
+  · rw [readW_of h (by omega_using [hn, hk]), readW_of h (by omega_using [hn, hk]), ctxH_of h (by omega_using [hn])]
     exact h16 hc k hk
-  · rw [readW_of h (by omega), readW_of h (by omega), ctxH_of h (by omega)]
+  · rw [readW_of h (by omega_using [hn, hk]), readW_of h (by omega_using [hn, hk]), ctxH_of h (by omega_using [hn])]
     exact h48 hc k hk
 
 end
@@ -121,7 +121,7 @@ theorem wipePreparedOut (stack : Nat) :
         unfold Spec.Gcm.wipePreparedLen; split
         · decide
         · split <;> decide
-      have := bytesAt_of hb (d := 0) (n := Spec.Gcm.wipePreparedLen m ctx) (by simp only [Elem.size]; omega)
+      have := bytesAt_of hb (d := 0) (n := Spec.Gcm.wipePreparedLen m ctx) (by simp only [Elem.size]; omega_using [hl])
       simp only [BitVec.add_zero] at this
       rw [this]
       exact h

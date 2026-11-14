@@ -112,7 +112,7 @@ theorem conditional_ct (base : Addr) (S K n o : Nat) (d : Int) (p : Prog isa)
 
 theorem addBase_ct (v : Impl.Ed448.X86_64.FieldVariant) (base : Addr) (S K n : Nat) (hn : n < 461) :
     RelCT isa (fun s u => Ctx base S K n s ∧ Ctx base S K n u) (addBase v.bodies) (fun _ _ => True) := by
-  apply conditional_ct base S K n SDIG (digitAt S n) _ (by simp only [SDIG]; omega)
+  apply conditional_ct base S K n SDIG (digitAt S n) _ (by simp only [SDIG]; omega_using [hn])
     (Proof.Ed448.Wnaf.digit_bounds _) (fun _ h => h.bs n hn)
   · exact RelCT.taint (A := taint) (Taint.ofRegs [.rdi, .rbx]) (fun _ _ h => ctx_agree h) (by taint_decide)
   cases v <;> exact relCT_sum (Taint.ofRegs [.rdi, .rbx, .r15])
@@ -120,7 +120,7 @@ theorem addBase_ct (v : Impl.Ed448.X86_64.FieldVariant) (base : Addr) (S K n : N
 
 theorem addKey_ct (v : Impl.Ed448.X86_64.FieldVariant) (base : Addr) (S K n : Nat) (hn : n < 461) :
     RelCT isa (fun s u => Ctx base S K n s ∧ Ctx base S K n u) (addKey v.field v.bodies) (fun _ _ => True) := by
-  apply conditional_ct base S K n KDIG (digitAt K n) _ (by simp only [KDIG]; omega)
+  apply conditional_ct base S K n KDIG (digitAt K n) _ (by simp only [KDIG]; omega_using [hn])
     (Proof.Ed448.Wnaf.digit_bounds _) (fun _ h => h.bk n hn)
   · exact RelCT.taint (A := taint) (Taint.ofRegs [.rdi, .rbx]) (fun _ _ h => ctx_agree h) (by taint_decide)
   cases v <;> exact relCT_sum (Taint.ofRegs [.rdi, .rbx, .r15])
@@ -182,17 +182,17 @@ theorem loop_ct (v : Impl.Ed448.X86_64.FieldVariant) (base : Addr) (S K : Nat) :
       (isa.eval .ne s = some true → ∃ m < n, I m s u) := by
     intro n s u tr1 tr2 s' u' hn ex1 ex2
     obtain ⟨hn0, hn1, hs, hu⟩ := hn
-    obtain ⟨m, rfl⟩ : ∃ m, n = m + 1 := ⟨n - 1, by omega⟩
-    obtain ⟨he, _⟩ := step_ct v base S K m (by omega) s u tr1 tr2 s' u' ⟨hs, hu⟩ ex1 ex2
-    obtain ⟨_, a, ea, ha⟩ := step_ctx v hs (by omega)
-    obtain ⟨_, b, eb, hb⟩ := step_ctx v hu (by omega)
+    obtain ⟨m, rfl⟩ : ∃ m, n = m + 1 := ⟨n - 1, by omega_using [hn0]⟩
+    obtain ⟨he, _⟩ := step_ct v base S K m (by omega_using [hn1]) s u tr1 tr2 s' u' ⟨hs, hu⟩ ex1 ex2
+    obtain ⟨_, a, ea, ha⟩ := step_ctx v hs (by omega_using [hn1])
+    obtain ⟨_, b, eb, hb⟩ := step_ctx v hu (by omega_using [hn1])
     obtain ⟨_, rfl⟩ := Exec.det ex1 ea
     obtain ⟨_, rfl⟩ := Exec.det ex2 eb
     have za : isa.eval .ne s' = some (!decide (m = 0)) := by simp only [eval, ha.2, Option.map_some]
     have zb : isa.eval .ne u' = some (!decide (m = 0)) := by simp only [eval, hb.2, Option.map_some]
     refine ⟨he, za.trans zb.symm, fun _ => trivial, fun hz => ?_⟩
-    have hp : 0 < m := by rw [za] at hz; simp only [Option.some.injEq, Bool.not_eq_true', decide_eq_false_iff_not] at hz; omega
-    exact ⟨m, by omega, hp, by omega, ha.1, hb.1⟩
+    have hp : 0 < m := by rw [za] at hz; simp only [Option.some.injEq, Bool.not_eq_true', decide_eq_false_iff_not] at hz; omega_using [hz]
+    exact ⟨m, by omega_using [], hp, by omega_using [hn1], ha.1, hb.1⟩
   exact (RelCT.loop I hstep 461).mono (fun _ _ h => ⟨by decide, by decide, h⟩) (fun _ _ h => h)
 
 def jointHead (v : Impl.Ed448.X86_64.FieldVariant) : Prog isa :=
@@ -212,22 +212,22 @@ theorem jointHead_ok (v : Impl.Ed448.X86_64.FieldVariant) {base : Addr} {S K : N
     fun b hB => ?_)
   have bkB : Window.Bits base KBITS K b := by
     intro i hi
-    rw [hB.mem _ (Or.inl (by rw [ofs_off' base (by simp only [KBITS]; omega)]; simp only [KBITS, SDIG]; omega))]
+    rw [hB.mem _ (Or.inl (by rw [ofs_off' base (by simp only [KBITS]; omega_using [hi])]; simp only [KBITS, SDIG]; omega_using [hi]))]
     exact bkA i hi
   refine WP.seq (WP.mono (recode_ok hB.scr (by decide) (by decide) (by decide) bkB hK) fun c hC => ?_)
   have sb : Digits base SDIG S b := hB.digits
   have sc : Digits base SDIG S c := by
     intro i hi
-    rw [hC.mem _ (Or.inl (by rw [ofs_off' base (by simp only [SDIG]; omega)]; simp only [SDIG, KDIG]; omega))]
+    rw [hC.mem _ (Or.inl (by rw [ofs_off' base (by simp only [SDIG]; omega_using [hi])]; simp only [SDIG, KDIG]; omega_using [hi]))]
     exact sb i hi
   have kc : Digits base KDIG K c := hC.digits
   refine WP.mono (initPoint_ok hC.scr) fun d hD => ?_
   refine ⟨hD.scr, hD.rbx, ?_, ?_, ?_⟩
   · intro i hi
-    rw [hD.mem _ (Or.inr (by rw [ofs_off' base (by simp only [SDIG]; omega)]; simp only [SDIG]; omega))]
+    rw [hD.mem _ (Or.inr (by rw [ofs_off' base (by simp only [SDIG]; omega_using [hi])]; simp only [SDIG]; omega_using []))]
     exact sc i hi
   · intro i hi
-    rw [hD.mem _ (Or.inr (by rw [ofs_off' base (by simp only [KDIG]; omega)]; simp only [KDIG]; omega))]
+    rw [hD.mem _ (Or.inr (by rw [ofs_off' base (by simp only [KDIG]; omega_using [hi])]; simp only [KDIG]; omega_using []))]
     exact kc i hi
   · rw [hD.d, hC.env (by decide), hB.env (by decide)]; exact da
 

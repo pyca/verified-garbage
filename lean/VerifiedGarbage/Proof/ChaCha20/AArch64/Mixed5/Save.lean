@@ -17,7 +17,7 @@ theorem read_saved (m : Mem) (p : Addr) (a b c : BitVec 64) (j : Fin 3) :
     (((m.writeW (p + BitVec.ofNat 64 256) a).writeW (p + BitVec.ofNat 64 264) b).writeW
       (p + BitVec.ofNat 64 272) c).readW (p + BitVec.ofNat 64 (256 + 8 * j)) 64 =
         [a,b,c].getD j a := by
-  have hj : j = 0 ∨ j = 1 ∨ j = 2 := by simp only [Fin.ext_iff]; omega
+  have hj : j = 0 ∨ j = 1 ∨ j = 2 := by simp only [Fin.ext_iff]; omega_using []
   rcases hj with rfl | rfl | rfl
   · change (((m.writeW (p + BitVec.ofNat 64 256) a).writeW (p + BitVec.ofNat 64 264) b).writeW
       (p + BitVec.ofNat 64 272) c).readW (p + BitVec.ofNat 64 256) 64 = a

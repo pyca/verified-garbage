@@ -332,7 +332,7 @@ theorem State.zlane_setV256 (s : State) (d r : XReg) (lo hi : BitVec 128) {i : N
   simp only [State.zlane, State.lane, State.setV]
   by_cases h : r = d
   · subst h
-    rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3) with rfl | rfl | rfl | rfl <;> simp
+    rcases (by omega_using [hi4] : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3) with rfl | rfl | rfl | rfl <;> simp
   · simp [h]
 
 theorem ZUpd.setV256 (s : State) (d : XReg) (lo hi : BitVec 128) :
@@ -356,8 +356,8 @@ theorem wp_vtblZ {d : XReg} {m : MemOp} {name : String} {ws : List (BitVec 64)} 
     WP isa (.block (.vmovdquTbl d m name ws :: is)) s Q := by
   refine WP.cons (s' := s.setV .l256 d (ws.getD (o + 1) 0 ++ ws.getD o 0) (ws.getD (o + 3) 0 ++ ws.getD (o + 2) 0))
     ?_ (k _ (ZUpd.setV256 _ _ _ _))
-  have h8 : 8 * o % 8 = 0 := by omega
-  have hd : 8 * o / 8 = o := by omega
+  have h8 : 8 * o % 8 = 0 := by omega_using []
+  have hd : 8 * o / 8 = o := by omega_using []
   simp only [exec, hb, ho, h8, hd, hl, and_self, ite_true, Nat.add_zero]
 
 theorem wp_vbin128Z {op : VBinOp} {d a b : XReg}
@@ -382,8 +382,8 @@ theorem wp_addTblZ {d : Reg} {m : MemOp} {name : String} {ws : List (BitVec 64)}
   let b := ws.getD o 0
   refine WP.cons (s' := (arithFlags s (a + b) (2 ^ 64 ≤ a.toNat + b.toNat) (addOverflow a b (a + b))).setReg d
     (a + b)) ?_ (k _ (GUpd.withFlags _ _ _ _ _ _ _) fun _ _ => rfl)
-  have h8 : 8 * o % 8 = 0 := by omega
-  have hd : 8 * o / 8 = o := by omega
+  have h8 : 8 * o % 8 = 0 := by omega_using []
+  have hd : 8 * o / 8 = o := by omega_using []
   simp only [exec, hb, ho, h8, hd, hl, and_self, ite_true, execAluW, a, b]
 
 end

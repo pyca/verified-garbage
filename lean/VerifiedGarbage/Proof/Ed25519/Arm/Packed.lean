@@ -30,7 +30,7 @@ theorem packedLimb_lt (m : Mem) (p : Addr) (k : Nat) : packedLimb m p k < 65536 
   have := (m (p + BitVec.ofNat 64 (2 * k))).isLt
   have := (m (p + BitVec.ofNat 64 (2 * k + 1))).isLt
   simp only [packedLimb, byteN]
-  omega
+  omega_using []
 
 theorem leNum_bytesAt2 (m : Mem) (p : Addr) :
     ∀ n, leNum (bytesAt m p (2 * n)) = val16 (packedLimb m p) n
@@ -38,7 +38,7 @@ theorem leNum_bytesAt2 (m : Mem) (p : Addr) :
   | n + 1 => by
     rw [show 2 * (n + 1) = 2 * n + 2 from rfl, bytesAt_add, leNum_append, leNum_bytesAt2 m p n,
       val16_succ, length_bytesAt, show (256 : Nat) ^ (2 * n) = 2 ^ (16 * n) by
-        rw [show (256 : Nat) = 2 ^ 8 from rfl, ← Nat.pow_mul]; congr 1; omega]
+        rw [show (256 : Nat) = 2 ^ 8 from rfl, ← Nat.pow_mul]; congr 1; omega_using []]
     congr 2
     rw [bytesAt_succ, bytesAt_succ, show bytesAt m (p + BitVec.ofNat 64 (2 * n) + 1 + 1) 0 = [] from rfl]
     simp only [leNum, packedLimb, byteN, Nat.mul_zero, Nat.add_zero]
@@ -56,14 +56,14 @@ theorem packedV_eq {m : Mem} {p : Addr} {f : Nat → Nat} (hl : ∀ k < 16, f k 
   intro k hk
   simp only [packedLimb, byteN, h0 k hk, h1 k hk, BitVec.toNat_ofNat]
   have := hl k hk
-  omega
+  omega_using [this]
 
 theorem packedV_frame {m m' : Mem} {p : Addr} {rs : List Region} (hf : Frame rs m m')
     (hd : ∀ r ∈ rs, (⟨p, 32⟩ : Region).Disjoint r) : packedV m' p = packedV m p := by
   apply val16_congr
   intro k hk
   simp only [packedLimb, byteN,
-    hf.bytes hd (by decide : 32 ≤ 2 ^ 64) (by omega : 2 * k < 32),
-    hf.bytes hd (by decide : 32 ≤ 2 ^ 64) (by omega : 2 * k + 1 < 32)]
+    hf.bytes hd (by decide : 32 ≤ 2 ^ 64) (by omega_using [hk] : 2 * k < 32),
+    hf.bytes hd (by decide : 32 ≤ 2 ^ 64) (by omega_using [hk] : 2 * k + 1 < 32)]
 
 end VG.Proof.Ed25519.Arm

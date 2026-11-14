@@ -41,11 +41,11 @@ theorem writeScalar_relCT (qLen input : Nat) (second : Bool) (base : Addr) (size
       pointerValue base s (.input .out) = pointerValue base t (.input .out))
       (SignVerify.writeScalar qLen input second) (VG.X86.Taint.Agree (workspaceTaint true)) := by
   let n := (qLen + 7) / 8
-  have N : n ≤ 48 := by dsimp [n]; omega
+  have N : n ≤ 48 := by dsimp [n]; omega_using [hmax]
   have B := slot_bound (n := n) (i := 5) (by decide)
   have C := VG.Proof.Dsa.X86.Layout.context_bound N
   have H : 8256 ≤ size := hz
-  have fit : slot n 5 + 8 * n ≤ size := by simp only [stride] at B; omega
+  have fit : slot n 5 + 8 * n ≤ size := by simp only [stride] at B; omega_using [B, C, H]
   unfold SignVerify.writeScalar
   dsimp only
   refine RelCT.seq (M := isa) (R := fun s t => Scr s base size ∧ Scr t base size ∧
@@ -55,11 +55,11 @@ theorem writeScalar_relCT (qLen input : Nat) (second : Bool) (base : Addr) (size
       have G := BitVec.eq_of_toNat_eq (S.edi_toNat.trans T.edi_toNat.symm)
       simp only [pointerValue, G]
     have trace := (coreLoad_relCT n qLen (slot n 5) (.local input) base size hz _ _ _ _ _ _ ⟨S, T, ptr⟩ E F).1
-    obtain ⟨_, K1, O1⟩ := wp_result (coreLoad_ok S hz fit h4 (by dsimp [n]; omega) hw4 A.toReadableComponent (A.slot (by decide))) E
-    obtain ⟨_, K2, O2⟩ := wp_result (coreLoad_ok T hz fit h4 (by dsimp [n]; omega) hw4 B.toReadableComponent (B.slot (by decide))) F
+    obtain ⟨_, K1, O1⟩ := wp_result (coreLoad_ok S hz fit h4 (by dsimp [n]; omega_using []) hw4 A.toReadableComponent (A.slot (by decide))) E
+    obtain ⟨_, K2, O2⟩ := wp_result (coreLoad_ok T hz fit h4 (by dsimp [n]; omega_using []) hw4 B.toReadableComponent (B.slot (by decide))) F
     exact ⟨trace, S.of_keeps K1 (by decide), T.of_keeps K2 (by decide),
-      (pointerValue_keep K1 (by decide) (slotOutside_whole O1 (by decide)) (by omega) (.input .out)).trans
-        (P.trans (pointerValue_keep K2 (by decide) (slotOutside_whole O2 (by decide)) (by omega) (.input .out)).symm)⟩
+      (pointerValue_keep K1 (by decide) (slotOutside_whole O1 (by decide)) (by omega_using [C]) (.input .out)).trans
+        (P.trans (pointerValue_keep K2 (by decide) (slotOutside_whole O2 (by decide)) (by omega_using [C]) (.input .out)).symm)⟩
   · refine RelCT.seq (R := VG.X86.Taint.Agree (workspaceTaint true)) ?_ (storeComponent_relCT qLen (slot n 5))
     apply RelCT.block_append
     exact RelCT.seq (outputPointer_relCT qLen second base size hz)

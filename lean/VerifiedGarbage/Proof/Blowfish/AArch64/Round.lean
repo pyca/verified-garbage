@@ -61,7 +61,7 @@ def SchedIn (s : State) (sch : Reg) : Prop :=
   ∀ off n, off + n ≤ 4168 → InRegions (s.rd ++ s.wr) (s.gpr sch + BitVec.ofNat 64 off) n
 
 theorem SchedIn.readable {s : State} {sch : Reg} (h : SchedIn s sch) : Readable s sch :=
-  fun off hoff => h off 16 (by omega)
+  fun off hoff => h off 16 (by omega_using [hoff])
 
 /-- The registers of the halves. -/
 def halfRegs : List VReg := [.v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11]
@@ -106,7 +106,7 @@ theorem xorHalf_run (s : State) {H S : Nat → VReg} (hinj : ∀ k < 4, ∀ k' <
     have hs : ∀ k < 4, ∀ k' < 4, ∀ u : State, (t k' u).v (S k) = u.v (S k) :=
       fun k hk k' hk' u => v_setV_of_ne _ _ (hS k hk k' hk')
     intro k hk
-    rcases (by omega : k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3) with rfl | rfl | rfl | rfl
+    rcases (by omega_using [hk] : k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3) with rfl | rfl | rfl | rfl
     · rw [hh 0 (by decide) 3 (by decide) (by decide), hh 0 (by decide) 2 (by decide) (by decide),
         hh 0 (by decide) 1 (by decide) (by decide)]
       exact v_setV_self _ _ _
@@ -147,9 +147,9 @@ theorem round_run {s : State} {sch : Reg} (hS : SchedIn s sch) (hc : Consts s) (
   let p := pEntry K i
   -- the P-array entry
   have hp : InRegions (s.rd ++ s.wr) (s.gpr .x5 + BitVec.ofNat 64 pOff) 4 := by
-    rw [hx5, Offset.add_add]; exact hS _ _ (by simp only [pOff]; omega)
+    rw [hx5, Offset.add_add]; exact hS _ _ (by simp only [pOff]; omega_using [hi])
   have hread : s.mem.readW (s.gpr .x5 + BitVec.ofNat 64 pOff) 32 = p := by
-    rw [hx5, Offset.add_add, show 4 * i + pOff = 4096 + 4 * i by simp only [pOff]; omega]
+    rw [hx5, Offset.add_add, show 4 * i + pOff = 4096 + 4 * i by simp only [pOff]; omega_using []]
     exact (pEntry_read _ _ hi).symm
   let s₁ := s.write .w .x6 (s.mem.readW (s.gpr .x5 + BitVec.ofNat 64 pOff) 32)
   let s₂ := s₁.setV .v0 (let w := (s₁.gpr .x6).setWidth 32; ofVWords w w w w)
@@ -161,8 +161,8 @@ theorem round_run {s : State} {sch : Reg} (hS : SchedIn s sch) (hc : Consts s) (
     simp only [s₂, v_setV_self]
     rw [vword_ofVWords _ _ _ _ hl]
     have : (s₁.gpr .x6).setWidth 32 = p := by
-      simp only [s₁, gpr_write_self, ← hread]; exact BitVec.setWidth_setWidth_of_le _ (by omega) |>.trans (by simp)
-    rcases (by omega : l = 0 ∨ l = 1 ∨ l = 2 ∨ l = 3) with rfl | rfl | rfl | rfl <;> exact this
+      simp only [s₁, gpr_write_self, ← hread]; exact BitVec.setWidth_setWidth_of_le _ (by omega_using []) |>.trans (by simp)
+    rcases (by omega_using [hl] : l = 0 ∨ l = 1 ∨ l = 2 ∨ l = 3) with rfl | rfl | rfl | rfl <;> exact this
   have o₂ : Only [.x6] [.v0] s s₂ := by
     refine ⟨rfl, fun r hr => ?_, fun r hr => ?_⟩
     · simp only [List.mem_singleton] at hr
@@ -176,7 +176,7 @@ theorem round_run {s : State} {sch : Reg} (hS : SchedIn s sch) (hc : Consts s) (
   have L₃ : ∀ n < 16, lane s₃.v L n = lane s.v L n ^^^ p := by
     intro n hn
     simp only [lane]
-    rw [v₃ _ (by omega), vword_xor, v0₂ _ (by omega), o₂.v _ (by simp; exact (hL _ (by omega)).2.2)]
+    rw [v₃ _ (by omega_using [hn]), vword_xor, v0₂ _ (by omega_using []), o₂.v _ (by simp; exact (hL _ (by omega_using [hn])).2.2)]
   -- the planes
   obtain ⟨s₄, r₄, v₄, o₄⟩ := planes_run s₃ L fun k hk => (hL k hk).1
   -- F
@@ -221,14 +221,14 @@ theorem round_run {s : State} {sch : Reg} (hS : SchedIn s sch) (hc : Consts s) (
       (VG.AArch64.Tbl.runBlock_cat_some (VG.AArch64.Tbl.runBlock_cat_some
         (VG.AArch64.Tbl.runBlock_cat_some r₂ r₃) r₄) r₅) r₆) r₇
   · intro n hn
-    have hk : n / 4 < 4 := by omega
+    have hk : n / 4 < 4 := by omega_using [hn]
     have nr : ∀ k < 4, L k ∉ [R 0, R 1, R 2, R 3] := fun k hk => by
       simp only [List.mem_cons, List.not_mem_nil, or_false, not_or]
       exact ⟨H.ne k hk 0 (by decide), H.ne k hk 1 (by decide), H.ne k hk 2 (by decide), H.ne k hk 3 (by decide)⟩
     simp only [lane] at L₃ ⊢
     rw [show s₇.v = s₆.v from rfl, o₆.v _ (nr _ hk), o₅.2 _ (hL _ hk).2.1, o₄.2 _ (hL _ hk).1, L₃ n hn]
   · intro n hn
-    have hk : n / 4 < 4 := by omega
+    have hk : n / 4 < 4 := by omega_using [hn]
     have nl : R (n / 4) ∉ [L 0, L 1, L 2, L 3] := by
       simp only [List.mem_cons, List.not_mem_nil, or_false, not_or]
       exact ⟨(H.ne 0 (by decide) _ hk).symm, (H.ne 1 (by decide) _ hk).symm,

@@ -107,12 +107,12 @@ theorem advance_pair {g : Geometry} (v : g.Valid) {capacity used randLen : Nat} 
         WitnessRound.Initial g capacity p (WitnessInput.geometryAt g rand used g.words) b ∧
         b.gpr .esi = rand + BitVec.ofNat 32 used := by
     obtain ⟨c, S, source, consumed, odd, large, shape, _, _, readable⟩ := I
-    refine WP.mono (advance_ok v S source consumed (by omega))
+    refine WP.mono (advance_ok v S source consumed (by omega_using [randLenFit, enough]))
       fun b ⟨B, ptr, _, _, K⟩ => ?_
     have readB : InRegions (b.rd ++ b.wr) (rand.setWidth 64) randLen := by
       rw [K.2.1, K.2.2]; exact readable
     exact ⟨⟨c, B, odd, large, shape, WitnessInput.context_okAt (used := used) (count := g.words) v B.ready.scratch
-      randFit (by unfold Geometry.words; omega) (by unfold Geometry.words; omega) (by unfold Geometry.words; omega)
+      randFit (by unfold Geometry.words; omega_using [positive]) (by unfold Geometry.words; omega_using []) (by unfold Geometry.words; omega_using [enough])
       readB separate,
       ptr, (WitnessInput.destination_pointer v B.ready.scratch).symm⟩, ptr⟩
   obtain ⟨U, sourceU⟩ := wp_result (post H.2.1) E
@@ -156,7 +156,7 @@ theorem body_trace {mont round : Prog isa} {montName roundName : String}
       WP isa (VG.Impl.RsaKeyGen.X86.WitnessRt.body montName mont roundName round) a (Context g) := by
     obtain ⟨c, S, source, consumed, odd, large, shape, roundsFit, uniformFit, readable⟩ := I
     exact WP.mono (body_ok montVerified montNoSp montStack roundVerified roundNoSp roundStack v
-      length S source consumed randFit randLenFit enough readable separate odd large (by rw [shape]; omega) roundsFit
+      length S source consumed randFit randLenFit enough readable separate odd large (by rw [shape]; omega_using []) roundsFit
       uniformFit fit far lengthFar) fun _ R => R.1.ready.context
   exact ⟨trace, wp_result (post H.2.1) E, wp_result (post H.2.2) G, agree⟩
 
@@ -177,7 +177,7 @@ theorem branchRt_raw {mont round : Prog isa} {montName roundName : String}
     by_contra short
     have bound := H.1.1.2.1.atLoop.used
     rw [v.entropyLength] at bound
-    have small : P.randLen - (P.start + P.bytes * k) < P.bytes := by omega
+    have small : P.randLen - (P.start + P.bytes * k) < P.bytes := by omega_using [short, bound]
     have condition := H.1.2.1
     rw [H.2, decide_eq_true small] at condition
     cases condition
@@ -244,7 +244,7 @@ theorem loopRt_trace {mont round : Prog isa} {montName roundName : String}
         rw [Eu] at done
         cases done
       · intro _
-        exact ⟨j, by omega, i + 1, j - 1, by omega, pair, U, Z⟩
+        exact ⟨j, by omega_using [], i + 1, j - 1, by omega_using [positiveU], pair, U, Z⟩
   exact run.mono (fun _ _ H => ⟨k, n, rfl, H⟩) (fun _ _ H => H)
 
 theorem initRt_pair {P : Parameters} (v : P.Valid) (Fx : Fixed P) {other : Nat} {entropy : Spec.RsaKeyGen.Rand}

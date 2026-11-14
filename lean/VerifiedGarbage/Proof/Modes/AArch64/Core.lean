@@ -200,7 +200,7 @@ def CoreSpec.toBlock {c : Core} (cs : CoreSpec c) (h : c.bw = 2) : BlockSpec c w
   KeyArgs := cs.KeyArgs
   Ready := cs.Ready
   cipher_len k b := by rw [h, cs.cipher_len]
-  layout := ⟨cs.layout.lgG_lt, by omega, by omega, by have := cs.layout.buf_le; rw [h]; omega, cs.layout.room,
+  layout := ⟨cs.layout.lgG_lt, by omega_using [h], by omega_using [h], by have := cs.layout.buf_le; rw [h]; omega_using [this], cs.layout.room,
     cs.layout.small, cs.layout.bufImm⟩
   keyRegs_ok := cs.keyRegs_ok
   regs_ok := cs.regs_ok
@@ -226,16 +226,16 @@ theorem preserved_of {s s' : State} (h₁ : ∀ i < 10, s'.gpr (Core.savedRegs.g
     ∀ r ∈ preserved, s'.gpr r = s.gpr r := fun r hr => by
   simp only [preserved, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
-  · exact h₁ 0 (by omega)
-  · exact h₁ 1 (by omega)
-  · exact h₁ 2 (by omega)
-  · exact h₁ 3 (by omega)
-  · exact h₁ 4 (by omega)
-  · exact h₁ 5 (by omega)
-  · exact h₁ 6 (by omega)
-  · exact h₁ 7 (by omega)
-  · exact h₁ 8 (by omega)
-  · exact h₁ 9 (by omega)
+  · exact h₁ 0 (by omega_using [])
+  · exact h₁ 1 (by omega_using [])
+  · exact h₁ 2 (by omega_using [])
+  · exact h₁ 3 (by omega_using [])
+  · exact h₁ 4 (by omega_using [])
+  · exact h₁ 5 (by omega_using [])
+  · exact h₁ 6 (by omega_using [])
+  · exact h₁ 7 (by omega_using [])
+  · exact h₁ 8 (by omega_using [])
+  · exact h₁ 9 (by omega_using [])
   · exact h₃ _ (by simp)
 
 end VG.Proof.Modes.AArch64

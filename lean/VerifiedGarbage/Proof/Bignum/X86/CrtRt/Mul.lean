@@ -37,7 +37,7 @@ theorem offIn_ok {s : State} {is : List Instr} {Q : State → Prop} {c : Ctx} {j
   apply BitVec.eq_of_toNat_eq
   have : j * t ≤ 28 * 2080 := Nat.mul_le_mul hj ht
   simp only [BitVec.toNat_add, BitVec.toNat_ofNat, numBase]
-  rw [Nat.mod_eq_of_lt (a := t) (by omega), Nat.mod_eq_of_lt (a := j * t) (by omega)]
+  rw [Nat.mod_eq_of_lt (a := t) (by omega_using [ht]), Nat.mod_eq_of_lt (a := j * t) (by omega_using [this])]
 
 theorem mulArgs_ok {f : State} {len : Nat} {c : Ctx} {o a b : Nat} {wsLen : BitVec 32}
     (hr1 : readSrc f (.mem (argAt 9 1)) = some (BitVec.ofNat 32 len))
@@ -89,11 +89,11 @@ theorem mulArgs_ok {f : State} {len : Nat} {c : Ctx} {o a b : Nat} {wsLen : BitV
     apply BitVec.eq_of_toNat_eq
     have e32 : (32 : BitVec 32).toNat = 32 := rfl
     simp only [BitVec.toNat_add, BitVec.toNat_ofNat, e32, st]
-    rw [Nat.mod_eq_of_lt (a := bc len c) (by omega)]
-    omega
+    rw [Nat.mod_eq_of_lt (a := bc len c) (by omega_using [hw])]
+    omega_using []
   have edx₁₁ : s₁₁.gpr .edx = BitVec.ofNat 32 (st len c) := by
     rw [m₁₁.gpr, u₁₀.other _ (by decide), m₉.gpr, u₈.other _ (by decide), edxS]
-  have hst : st len c ≤ 2080 := by simp only [st]; omega
+  have hst : st len c ≤ 2080 := by simp only [st]; omega_using [hw]
   refine offIn_ok (c := c) (j := 1) edx₁₁ hst (by decide) fun s₁₂ K₁₂ m₁₂ e₁₂ => ?_
   have K₁₂' : Keeps [.eax, .edx] f s₁₂ := K₁₁.trans (K₁₂.mono (by decide))
   obtain ⟨a₂₀, w₂₀⟩ := fr s₁₂ (K₁₂'.1 _ (by decide)) K₁₂'.2.2 20 (by decide)
@@ -118,7 +118,7 @@ theorem mulArgs_ok {f : State} {len : Nat} {c : Ctx} {o a b : Nat} {wsLen : BitV
     rw [u₆.gpr, u₅.gpr, edx₄]
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow]
-    rw [Nat.mod_eq_of_lt (a := bc len c) (by omega), Nat.mod_eq_of_lt (by omega)]
+    rw [Nat.mod_eq_of_lt (a := bc len c) (by omega_using [hw]), Nat.mod_eq_of_lt (by omega_using [hw])]
   have mem : g.mem = ((((((((f.mem.writeW (P + BitVec.ofNat 64 4) wsLen).writeW (P + BitVec.ofNat 64 0)
       (f.gpr .edi)).writeW (P + BitVec.ofNat 64 8) (BitVec.ofNat 32 (bc len c / 8))).writeW
       (P + BitVec.ofNat 64 12) (BitVec.ofNat 32 numBase)).writeW (P + BitVec.ofNat 64 16)
@@ -133,7 +133,7 @@ theorem mulArgs_ok {f : State} {len : Nat} {c : Ctx} {o a b : Nat} {wsLen : BitV
   refine ⟨K₁₈'.trans (mg.keeps _), ?_, ?_⟩
   · have fw : ∀ {m : Mem} (k : Nat) (v : BitVec 32), k + 4 ≤ 36 → Frame [⟨P, 36⟩] f.mem m →
         Frame [⟨P, 36⟩] f.mem (m.writeW (P + BitVec.ofNat 64 k) v) := fun k v hk F =>
-      F.writeW (List.mem_singleton_self _) v (Offset.contains_base _ hk (by omega))
+      F.writeW (List.mem_singleton_self _) v (Offset.contains_base _ hk (by omega_using [hk]))
     rw [mem]
     exact fw _ _ (by decide) <| fw _ _ (by decide) <| fw _ _ (by decide) <| fw _ _ (by decide) <|
       fw _ _ (by decide) <| fw _ _ (by decide) <| fw _ _ (by decide) <| fw _ _ (by decide) <|

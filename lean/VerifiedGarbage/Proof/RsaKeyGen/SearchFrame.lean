@@ -96,7 +96,7 @@ theorem frame_store_word (m : Mem) (B : Addr) (v : BitVec 64) {i j : Nat} (hi : 
     rw [ite_eq_left rfl]
     exact word_writeW_self _ _ _ _
   · rw [ite_eq_right he]
-    exact hdrStore_hdr _ _ _ (by omega) (by omega) (Ne.symm he)
+    exact hdrStore_hdr _ _ _ (by omega_using [hi]) (by omega_using [hj]) (Ne.symm he)
 
 theorem writeFrame_word (m : Mem) (B : Addr) (values : List (Nat × BitVec 64))
     (hvalues : ∀ e ∈ values, e.1 < 20) (j : Nat) (hj : j < 20) :
@@ -118,14 +118,14 @@ theorem writeFrame_frame (m : Mem) (B : Addr) (values : List (Nat × BitVec 64))
     have he := hvalues e (List.mem_cons_self ..)
     have hstore : Frame [⟨B, 160⟩] m (m.writeW (off B (8 * e.1)) e.2) :=
       Frame.writeW (Frame.refl _ _) (List.mem_singleton_self _) _
-        (Offset.contains_base _ (by omega) (by omega))
+        (Offset.contains_base _ (by omega_using [he]) (by omega_using [he]))
     exact hstore.trans (ih _ (fun x hx => hvalues x (List.mem_cons_of_mem _ hx)))
 
 /-- A read above a store of the frame sees what was there. -/
 theorem read_above_store (m : Mem) (B : Addr) (v : BitVec 64) {d e : Nat} (h : d + 8 ≤ e)
     (he : e + 8 ≤ 2 ^ 64) :
     (m.writeW (B + BitVec.ofNat 64 d) v).readW (B + BitVec.ofNat 64 e) 64 = m.readW (B + BitVec.ofNat 64 e) 64 :=
-  Mem.readW_writeW_sep (Offset.sep B (d := e) (n := 8) (e := d) (k := 8) (Or.inr h) he (by omega))
+  Mem.readW_writeW_sep (Offset.sep B (d := e) (n := 8) (e := d) (k := 8) (Or.inr h) he (by omega_using [h, he]))
     (by decide)
 
 end VG.Proof.RsaKeyGen.SearchFrame

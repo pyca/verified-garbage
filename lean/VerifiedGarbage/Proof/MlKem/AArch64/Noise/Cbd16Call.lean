@@ -40,7 +40,7 @@ theorem cbd16_call {s : State} {b f : Addr} (h0 : s.gpr .x0 = b) (h1 : s.gpr .x1
 theorem covers_prefix {b : Addr} {l l' : Nat} {X : List Region} (hl : l ≤ l') (h : Covers [⟨b, l'⟩] X) :
     Covers [⟨b, l⟩] X := fun a n ⟨r, hr, hc⟩ => by
   rw [List.mem_singleton.mp hr] at hc
-  exact h a n ⟨_, List.mem_singleton_self _, by simp only [Region.Contains] at hc ⊢; omega⟩
+  exact h a n ⟨_, List.mem_singleton_self _, by simp only [Region.Contains] at hc ⊢; omega_using [hl, hc]⟩
 
 /-- `cbdCall`: `SamplePolyCBD₂` of the 128 bytes at `b` into the polynomial at `f`, with
 16-bit coefficients. -/

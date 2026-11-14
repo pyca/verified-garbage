@@ -29,9 +29,9 @@ private theorem outputWrite {s : State} {ctx : BitVec 32} {d : Nat}
   rw [eq,BitVec.toNat_add,BitVec.toNat_ofNat]
   have hmod := Nat.mod_le ((State.addr ctx-r.base).toNat+d%2^64) (2^64)
   change (State.addr ctx-r.base).toNat+24≤r.len at contains
-  have dfit : d<2^64 := by omega
+  have dfit : d<2^64 := by omega_using [fit]
   rw [Nat.mod_eq_of_lt dfit] at *
-  omega
+  omega_using [fit, contains]
 
 def combHeaderWord (slot d : Nat) : List Instr :=
   [.ldrSp .r1 slot] ++ VG.Impl.Bignum.Arm.store64 .r1 .r2 .r4 d
@@ -41,7 +41,7 @@ private theorem zero_high_nat {N : Nat} (fit : N<2^32) :
   rw [zero_high_addr]
   apply BitVec.eq_of_toNat_eq
   simp only [State.addr,BitVec.toNat_setWidth,BitVec.toNat_ofNat]
-  omega
+  omega_using [fit]
 
 theorem combHeaderWord_ok (s : State) {base ctx : BitVec 32} {len slot d N : Nat}
     (locals : Locals base len s) (ws : OutputBuffer ctx 24 s)
@@ -59,10 +59,10 @@ theorem combHeaderWord_ok (s : State) {base ctx : BitVec 32} {len slot d N : Nat
   have highU : u.gpr .r2=0 := (restU.gpr .r2 (by simp)).trans zero
   have offset : off (State.addr ctx) d + BitVec.ofNat 64 4=off (State.addr ctx) (d+4) :=
     Offset.add_add _ _ _
-  refine WP.mono (store64_ok u .r1 .r2 .r4 d (off (State.addr ctx) d) (by omega)
-    (by rw [ptrU]; exact addr_add (by have := ws.fits; omega))
-    (by rw [ptrU,offset]; exact addr_add (by have := ws.fits; omega))
-    (outputWrite wsU (by omega)) (by rw [offset]; exact outputWrite wsU (by omega))) ?_
+  refine WP.mono (store64_ok u .r1 .r2 .r4 d (off (State.addr ctx) d) (by omega_using [dstFit])
+    (by rw [ptrU]; exact addr_add (by have := ws.fits; omega_using [dstFit, this]))
+    (by rw [ptrU,offset]; exact addr_add (by have := ws.fits; omega_using [dstFit, this]))
+    (outputWrite wsU (by omega_using [dstFit])) (by rw [offset]; exact outputWrite wsU (by omega_using [dstFit]))) ?_
   rintro t ⟨memT,restT⟩
   rw [highU,r1,source,zero_high_nat valueFit,memU] at memT
   refine ⟨memT,?_,restU.trans (restT.mono (by simp))⟩
@@ -93,13 +93,13 @@ theorem combHeader_ok (s : State) {base ctx : BitVec 32} {len N width d : Nat}
   have readStack {m m' : Mem} {slot : Nat} (fit : slot+4≤72)
       (frame : Frame [⟨State.addr ctx,24⟩] m m') :
       m'.readW (off (State.addr s.sp) slot) 32=m.readW (off (State.addr s.sp) slot) 32 :=
-    frame.readW (r := ⟨State.addr s.sp,72⟩) (Offset.contains_base _ fit (by omega))
+    frame.readW (r := ⟨State.addr s.sp,72⟩) (Offset.contains_base _ fit (by omega_using [fit]))
       (by intro r hr; rw [List.mem_singleton] at hr; subst r; exact separate) (by decide)
   change WP isa (.block ([.ldrSp .r4 4,.mov .r2 (.imm 0)] ++
     (combHeaderWord 16 0 ++ (combHeaderWord 20 8 ++ combHeaderWord 44 16)))) s _
   rw [WP.block_append_iff]
   refine wp_loadStack (a := off (State.addr s.sp) 4) (by decide)
-    (addr_add (by have := locals.space.nowrap; omega)) (locals.read (by decide)) fun a load => ?_
+    (addr_add (by have := locals.space.nowrap; omega_using [this])) (locals.read (by decide)) fun a load => ?_
   refine VG.Proof.X25519.Arm.wp_mov (VG.Proof.X25519.Arm.op2_imm (by decide)) fun u move => WP.block_nil ?_
   have restU : Rest [.r1,.r2,.r4] s u := (load.rest (by simp)).trans (move.rest (by simp))
   have memU : u.mem=s.mem := move.mem.trans load.mem

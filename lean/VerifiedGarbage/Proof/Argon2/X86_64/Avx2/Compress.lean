@@ -57,20 +57,20 @@ theorem eq_of_qwords {a b : BitVec 128} (h0 : qword a 0 = qword b 0) (h1 : qword
   · have := congrArg (·.getLsbD i) h0
     simpa [qword, h] using this
   · have := congrArg (·.getLsbD (i - 64)) h1
-    simp [qword, show i - 64 < 64 by omega] at this
-    rwa [show 64 + (i - 64) = i by omega] at this
+    simp [qword, show i - 64 < 64 by omega_using [hi]] at this
+    rwa [show 64 + (i - 64) = i by omega_using [h]] at this
 
 theorem qword_ext (Y : BitVec 256) (k : Nat) {i : Nat} (hi : i < 2) :
     qword (Y.extractLsb' (128 * k) 128) i = qword256 Y (2 * k + i) := by
   apply BitVec.eq_of_getLsbD_eq; intro j hj
   simp only [qword, qword256, BitVec.getLsbD_extractLsb', hj, decide_true, Bool.true_and,
-    decide_eq_true (show 64 * i + j < 128 by omega)]
-  congr 1; omega
+    decide_eq_true (show 64 * i + j < 128 by omega_using [hi, hj])]
+  congr 1; omega_using []
 
 theorem qword256_lo (z : BitVec 128) {i : Nat} (hi : i < 2) : qword256 (0#128 ++ z) i = qword z i := by
   apply BitVec.eq_of_getLsbD_eq; intro j hj
   simp only [qword, qword256, BitVec.getLsbD_extractLsb', hj, decide_true, Bool.true_and,
-    BitVec.getLsbD_append, show 64 * i + j < 128 by omega, ite_true]
+    BitVec.getLsbD_append, show 64 * i + j < 128 by omega_using [hi, hj], ite_true]
 
 theorem ext_zero_app (x : BitVec 64) : BitVec.extractLsb' 0 64 (0#64 ++ x) = x := by
   apply BitVec.eq_of_getLsbD_eq; intro j hj
@@ -80,13 +80,13 @@ theorem ext_zero_app (x : BitVec 64) : BitVec.extractLsb' 0 64 (0#64 ++ x) = x :
 theorem perm44 (lo hi : BitVec 64) {k : Nat} (hk : k < 2) :
     (permQwords (0#128 ++ (BitVec.extractLsb' 0 64 (0#64 ++ hi) ++ BitVec.extractLsb' 0 64 (0#64 ++ lo))) 0x44).extractLsb' (128 * k) 128 = hi ++ lo := by
   have e : ∀ i < 2, sel4 (0x44 : BitVec 8).toNat (2 * k + i) = i := by
-    intro i hi; rcases (by omega : k = 0 ∨ k = 1) with rfl | rfl <;>
-      rcases (by omega : i = 0 ∨ i = 1) with rfl | rfl <;> rfl
+    intro i hi; rcases (by omega_using [hk] : k = 0 ∨ k = 1) with rfl | rfl <;>
+      rcases (by omega_using [hi] : i = 0 ∨ i = 1) with rfl | rfl <;> rfl
   apply eq_of_qwords
-  · rw [qword_ext _ _ (by decide), qword256_perm _ _ (by omega), e 0 (by decide),
+  · rw [qword_ext _ _ (by decide), qword256_perm _ _ (by omega_using [hk]), e 0 (by decide),
       qword256_lo _ (by decide)]
     simp only [qword_app0, ext_zero_app]
-  · rw [qword_ext _ _ (by decide), qword256_perm _ _ (by omega), e 1 (by decide),
+  · rw [qword_ext _ _ (by decide), qword256_perm _ _ (by omega_using [hk]), e 1 (by decide),
       qword256_lo _ (by decide)]
     simp only [qword_app1, ext_zero_app]
 
@@ -113,7 +113,7 @@ theorem mask_ok {d : XReg} (hd : d ≠ .xmm13) (lo hi : BitVec 64) (s : State) :
   simp only [mask_eq, runBlock_cons, runStep_some, runBlock_nil, exec, Option.some.injEq,
     exists_eq_left']
   refine ⟨fun l hl => ?_, fun x h1 h2 l => ?_, ?_, fun r hr => ?_, ?_, ?_, ?_⟩
-  · rcases (by omega : l = 0 ∨ l = 1) with rfl | rfl <;>
+  · rcases (by omega_using [hl] : l = 0 ∨ l = 1) with rfl | rfl <;>
       simp only [VOp.exec, State.lane_setV256, State.lane_setV128, State.ymm_eq, RegUpd.gpr_setReg,
         lane_setReg, hd, ↓reduceIte, reduceCtorEq, VBinOp.sse, reduceXBinOpEval, qword]
     · exact perm44_0 lo hi
@@ -169,11 +169,11 @@ theorem initialized_all {m : Mem} {p : Addr} {r : Block} (h : Initialized m p r 
     blockAt m p = r ∧ working m p = r := by
   constructor
   · apply Vector.ext; intro i hi
-    have := (h ⟨i, hi⟩ (by simp only; omega)).1
+    have := (h ⟨i, hi⟩ (by simp only; omega_using [hi])).1
     rw [← blockAt_get m p ⟨i, hi⟩] at this
     exact this
   · apply Vector.ext; intro i hi
-    have := (h ⟨i, hi⟩ (by simp only; omega)).2
+    have := (h ⟨i, hi⟩ (by simp only; omega_using [hi])).2
     rw [← working_get m p ⟨i, hi⟩] at this
     exact this
 
@@ -225,7 +225,7 @@ theorem body_ok {s : State} {p x y out : Addr} (hs : Scratch s p) (hin : Inputs 
   rintro t ⟨hmt, hgt, hrt, hwt, hxt⟩
   refine ⟨?_, ?_, fun r hr => ?_, ?_, ?_, ?_⟩
   · apply Vector.ext; intro i hi
-    have e := hfin ⟨i, hi⟩ (by simp only; omega)
+    have e := hfin ⟨i, hi⟩ (by simp only; omega_using [hi])
     have ho3 := original_preserved (hf2.trans hf3)
     rw [horig] at ho3
     show (blockAt t.mem out)[(⟨i, hi⟩ : Fin 128)] =
@@ -251,14 +251,14 @@ abbrev mxR (p : Addr) : Region := ⟨off p 2048, 8⟩
 
 theorem mx_write {s : State} {p : Addr} (hs : Scratch s p) {d : Nat} (hd : 2048 ≤ d ∧ d ≤ 2052) :
     InRegions s.wr (off p d) 4 :=
-  hs.write (by omega)
+  hs.write (by omega_using [hd])
 
 theorem mx_read {s : State} {p : Addr} (hs : Scratch s p) {d : Nat} (hd : 2048 ≤ d ∧ d ≤ 2052) :
     InRegions (s.rd ++ s.wr) (off p d) 4 :=
-  hs.read (by omega)
+  hs.read (by omega_using [hd])
 
 theorem mx_contains (p : Addr) {d : Nat} (hd : 2048 ≤ d ∧ d ≤ 2052) : (mxR p).Contains (off p d) 4 :=
-  Offset.contains p (by omega) (by omega) (by omega)
+  Offset.contains p (by omega_using [hd]) (by omega_using [hd]) (by omega_using [])
 
 theorem save_ok {s : State} {p : Addr} (hs : Scratch s p) :
     WP isa (.block [.stmxcsr (at_ .rcx mxcsrOff), .mov32 .r11 (.mem (at_ .rcx mxcsrOff)),
@@ -314,7 +314,7 @@ theorem blockAt_mx {m m' : Mem} {p q : Addr} (hf : Frame [mxR p] m m')
   apply Vector.ext
   intro i hi
   have he : m'.readW (off q (8 * i)) 64 = m.readW (off q (8 * i)) 64 :=
-    hf.readW (r := ⟨q, 1024⟩) (Offset.contains_base q (by omega) (by omega))
+    hf.readW (r := ⟨q, 1024⟩) (Offset.contains_base q (by omega_using [hi]) (by omega_using [hi]))
       (fun r hr => (List.mem_singleton.mp hr) ▸ d1) (by decide)
   rw [← blockAt_get m' q ⟨i, hi⟩, ← blockAt_get m q ⟨i, hi⟩] at he
   exact he

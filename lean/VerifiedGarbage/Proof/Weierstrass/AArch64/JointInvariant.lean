@@ -39,7 +39,7 @@ def jointGByte (c : Joint.Cfg) (u i : Nat) : BitVec 8 :=
   if c.gw=9 then FastNaf.wbyte u i else FastNaf.byte 7 u i
 
 theorem jointGLen_le_span (c : Joint.Cfg) : jointGLen c≤jointGSpan c := by
-  unfold jointGLen jointGSpan; split <;> omega
+  unfold jointGLen jointGSpan; split <;> omega_using []
 
 def jointStableRanges (c : Joint.Cfg) : List (Nat × Nat) :=
   (jointStableFields c).map (·,8*c.K.M.n) ++ [(c.K.bits,257),(c.gBits,jointGLen c)]
@@ -72,21 +72,21 @@ theorem jointStable_table (c : Joint.Cfg) {a : Nat} (ha : 1≤a) (hb : a≤9)
   apply List.mem_append_right
   simp only [Jacobian.tablePt,List.mem_cons,List.not_mem_nil,or_false] at hx
   rcases hx with rfl | rfl | rfl
-  · exact List.mem_map.mpr ⟨3*(a-1),List.mem_range.mpr (by omega),by omega⟩
-  · exact List.mem_map.mpr ⟨3*(a-1)+1,List.mem_range.mpr (by omega),by omega⟩
-  · exact List.mem_map.mpr ⟨3*(a-1)+2,List.mem_range.mpr (by omega),by omega⟩
+  · exact List.mem_map.mpr ⟨3*(a-1),List.mem_range.mpr (by omega),by omega_using []⟩
+  · exact List.mem_map.mpr ⟨3*(a-1)+1,List.mem_range.mpr (by omega_using [hb]),by omega_using []⟩
+  · exact List.mem_map.mpr ⟨3*(a-1)+2,List.mem_range.mpr (by omega_using [hb]),by omega_using []⟩
 
 theorem jointStable_cache2 (c : Joint.Cfg) {i : Nat} (hi : i<8) :
     VG.Impl.Weierstrass.CachedJac.tableZ2 i∈jointStableFields c := by
   apply List.mem_append_right
-  exact List.mem_map.mpr ⟨2*i,List.mem_range.mpr (by omega),by
-    simp only [VG.Impl.Weierstrass.CachedJac.tableZ2]; omega⟩
+  exact List.mem_map.mpr ⟨2*i,List.mem_range.mpr (by omega_using [hi]),by
+    simp only [VG.Impl.Weierstrass.CachedJac.tableZ2]; omega_using []⟩
 
 theorem jointStable_cache3 (c : Joint.Cfg) {i : Nat} (hi : i<8) :
     VG.Impl.Weierstrass.CachedJac.tableZ3 i∈jointStableFields c := by
   apply List.mem_append_right
-  exact List.mem_map.mpr ⟨2*i+1,List.mem_range.mpr (by omega),by
-    simp only [VG.Impl.Weierstrass.CachedJac.tableZ3]; omega⟩
+  exact List.mem_map.mpr ⟨2*i+1,List.mem_range.mpr (by omega_using [hi]),by
+    simp only [VG.Impl.Weierstrass.CachedJac.tableZ3]; omega_using []⟩
 
 theorem JointStable.keep {c : Joint.Cfg} {C : Curve} {base : Addr} {Q : Point C} {u v : Nat}
     {s t : State} {W : List Nat} (h : JointStable c C base Q u v s)
@@ -107,14 +107,14 @@ theorem JointStable.keep {c : Joint.Cfg} {C : Curve} {base : Addr} {Q : Point C}
     apply hk.unch.byte
     · intro w hw
       have := hsep _ ho w hw
-      dsimp only at this ⊢; omega
-    · have := hb _ ho; dsimp only at this; omega
+      dsimp only at this ⊢; omega_using [hj, this]
+    · have := hb _ ho; dsimp only at this; omega_using [hj, this]
   refine ⟨⟨?_,?_,?_⟩,?_,?_,?_,?_⟩
   · rw [hw c.K.zero (by simp [jointStableFields]),h.peer.zero]
   · intro a ha hb
-    rw [hf _ (jointStable_table c ha (by omega) (by simp)),
-      hf _ (jointStable_table c ha (by omega) (by simp)),
-      hf _ (jointStable_table c ha (by omega) (by simp))]
+    rw [hf _ (jointStable_table c ha (by omega_using [hb]) (by simp)),
+      hf _ (jointStable_table c ha (by omega_using [hb]) (by simp)),
+      hf _ (jointStable_table c ha (by omega_using [hb]) (by simp))]
     exact h.peer.table a ha hb
   · intro j hj
     rw [hbits c.K.bits _ (by simp [jointStableRanges]) j hj]
@@ -124,11 +124,11 @@ theorem JointStable.keep {c : Joint.Cfg} {C : Curve} {base : Addr} {Q : Point C}
     exact h.generator j hj
   · rw [hf c.onep (by simp [jointStableFields]),h.one]
   · intro i hi
-    rw [hf _ (jointStable_cache2 c hi),hf _ (jointStable_table c (a:=i+1) (by omega) (by omega) (by simp))]
+    rw [hf _ (jointStable_cache2 c hi),hf _ (jointStable_table c (a:=i+1) (by omega_using []) (by omega_using [hi]) (by simp))]
     exact h.cache2 i hi
   · intro i hi
     rw [hf _ (jointStable_cache3 c hi),hf _ (jointStable_cache2 c hi),
-      hf _ (jointStable_table c (a:=i+1) (by omega) (by omega) (by simp))]
+      hf _ (jointStable_table c (a:=i+1) (by omega_using []) (by omega_using [hi]) (by simp))]
     exact h.cache3 i hi
 
 theorem JointStable.of_mem {c : Joint.Cfg} {C : Curve} {base : Addr} {Q : Point C} {u v : Nat}
@@ -181,13 +181,13 @@ theorem JointCore.of_write {c : Joint.Cfg} {C : Curve} {base : Addr} {size u v :
     have hxs := h.field.sl x (jointLive_R c x hx)
     unfold tmv
     rw [hk.unch.wordsVal (fun w hw' => ?_) (by
-      have := hL.lay.le x hxs; have := h.field.scr.nowrap; omega)]
+      have := hL.lay.le x hxs; have := h.field.scr.nowrap; omega_arith)]
     simp only [List.mem_append,List.mem_map,List.mem_singleton] at hw'
     rcases hw' with ⟨y,hy,rfl⟩ | rfl
     · exact hL.lay.apart x y hxs (hsl y hy) (fun he => hn x hx (he ▸ hy))
     · exact hL.lay.tmp x hxs
   refine ⟨hi.to_tmv,h.stable.keep (hk.mono hw) (fun r hr => by
-    have := hL.stableBounds r hr; have := h.field.scr.nowrap; omega) hL.stableSep,ht,?_⟩
+    have := hL.stableBounds r hr; have := h.field.scr.nowrap; omega_arith) hL.stableSep,ht,?_⟩
   rw [same _ (by simp),same _ (by simp),same _ (by simp)]
   exact h.point
 

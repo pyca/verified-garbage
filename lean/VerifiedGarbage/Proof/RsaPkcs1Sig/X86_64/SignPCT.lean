@@ -72,7 +72,7 @@ theorem leak_entry {s t : State} (hq : PreP s) (he : EnvC s t) (rd wr : List Reg
     frame_call he.mem (callEntry_frame he.rsp) fun r hr => by
       rw [List.mem_singleton.mp hr, below_kb]; exact .inl (Region.sub_prefix (by decide))
   have hle : Spec.Rsa.precomputedWords (s.gpr .rcx).toNat ≤ (stackArg s 16).toNat := by
-    rw [hq.hpl]; unfold Spec.Rsa.privatePrecomputedWords; omega
+    rw [hq.hpl]; unfold Spec.Rsa.privatePrecomputedWords; omega_using []
   simp only [Spec.Rsa.privatePrecomputedLeak, State.withRegions_mem]
   rw [← VG.Proof.Rsa.wordsAt_take _ _ hle, ← VG.Proof.Rsa.wordsAt_take _ _ hle, wordsP_of_frame hq hfE]
 
@@ -85,7 +85,7 @@ theorem callP_ct (v : CrtImpl) :
   obtain ⟨he₂, hw₂, hdi₂, hsi₂, hdx₂, hcx₂, h8₂, h9₂⟩ := j₂
   have hw14 : ∀ {s t : State}, (∀ i < 16, word t.mem (fb s) (8 * i) = callArgP s i) →
       ∀ i < 14, word t.mem (fb s) (8 * i) = callArg s i := fun hw i hi => by
-    rw [hw i (by omega)]; simp only [callArgP, hi, ↓reduceIte]
+    rw [hw i (by omega_using [hi])]; simp only [callArgP, hi, ↓reduceIte]
   obtain ⟨r₁, g₁, n₁, e₁⟩ := privView_of (rds := privRdP s₁) S₁ he₁ (hw14 hw₁) hdi₁ hsi₁ hdx₁ hcx₁ h8₁ h9₁
   obtain ⟨r₂, g₂, n₂, e₂⟩ := privView_of (rds := privRdP s₂) S₂ he₂ (hw14 hw₂) hdi₂ hsi₂ hdx₂ hcx₂ h8₂ h9₂
   obtain ⟨c₁, w₁⟩ := privP_covers S₁.1.1 S₁.2.1 he₁

@@ -5,6 +5,7 @@ import VerifiedGarbage.Proof.Dsa.SizeBounds
 import VerifiedGarbage.Proof.Dsa.Encoding
 import VerifiedGarbage.Proof.Dsa.Arithmetic
 import VerifiedGarbage.Proof.Dsa.Random
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # The domain check and key derivation as the checks the implementations make
 
@@ -32,17 +33,17 @@ theorem paramsBytes_eq (pLen qLen : Nat) (params : List Byte) :
 theorem encodeParams_paramsBytes {pLen qLen : Nat} {params : List Byte}
     (h : params.length = 2 * pLen + qLen) :
     Spec.Dsa.encodeParams pLen qLen (Spec.Dsa.paramsBytes pLen qLen params) = params := by
-  have h1 : (params.take pLen).length = pLen := by simp only [List.length_take]; omega
+  have h1 : (params.take pLen).length = pLen := by simp only [List.length_take]; omega_using [h]
   have h2 : ((params.drop pLen).take qLen).length = qLen := by
-    simp only [List.length_take, List.length_drop]; omega
+    simp only [List.length_take, List.length_drop]; omega_using [h]
   have h3 : ((params.drop (pLen + qLen)).take pLen).length = pLen := by
-    simp only [List.length_take, List.length_drop]; omega
+    simp only [List.length_take, List.length_drop]; omega_using [h]
   have e (bs : List Byte) (n : Nat) (h : bs.length = n) : Spec.Dsa.encodeBE n (Spec.Dsa.decodeBE bs) = bs :=
     h ▸ encodeBE_decodeBE bs
   rw [paramsBytes_eq, Spec.Dsa.encodeParams]
   dsimp only
   rw [e _ _ h1, e _ _ h2, e _ _ h3]
-  rw [List.take_of_length_le (l := params.drop (pLen + qLen)) (by simp only [List.length_drop]; omega),
+  rw [List.take_of_length_le (l := params.drop (pLen + qLen)) (by simp only [List.length_drop]; omega_using [h]),
     ← List.drop_drop, List.append_assoc, List.take_append_drop, List.take_append_drop]
 
 /-- The checks of a domain both functions make: the shape's, then the
@@ -175,8 +176,8 @@ theorem generateKeyBytes_eq {pLen qLen : Nat} {params rand : List Byte}
     have hq : (Spec.Dsa.paramsBytes pLen qLen params).q < 256 ^ qLen := by
       have := decodeBE_lt ((params.drop pLen).take qLen)
       rwa [show ((params.drop pLen).take qLen).length = qLen by
-        simp only [List.length_take, List.length_drop]; omega] at this
-    have hdec : Spec.Dsa.decodeBE (Spec.Dsa.encodeBE qLen x) = x := decodeBE_encodeBE (by omega)
+        simp only [List.length_take, List.length_drop]; omega_using [hpl]] at this
+    have hdec : Spec.Dsa.decodeBE (Spec.Dsa.encodeBE qLen x) = x := decodeBE_encodeBE (by omega_using [hr, hq])
     unfold Spec.Dsa.deriveKeyBytes Spec.Dsa.checkParametersBytes
     simp only [hl, hpl, hv, decide_true, beq_self_eq_true, Bool.and_self, Bool.not_true,
       encodeBE_length, bne_self_eq_false, Bool.or_false, Bool.false_eq_true, ↓reduceIte, hdec]

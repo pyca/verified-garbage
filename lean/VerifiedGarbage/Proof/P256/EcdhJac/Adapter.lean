@@ -41,7 +41,7 @@ theorem prep_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base 8192)
     (by decide) (by decide) (by decide) (by
       decide +kernel) (by
       have hb : offset+2^256<2^(64*(4+1)) := by decide +kernel
-      omega)) fun s₁ ⟨e₁,k₁,o₁⟩=>?_)
+      omega_using [hk, hb])) fun s₁ ⟨e₁,k₁,o₁⟩=>?_)
   have hs₁:=hs.of_keepRegs k₁ (x0_not_clob _)
   refine WP.mono (bits_ok hs₁ (n:=5) (src:=c.winK) (dst:=c.winBits)
     (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide))
@@ -65,14 +65,14 @@ theorem prep_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base 8192)
       c.sl VG.Impl.Ecdsa.AArch64.ONEP] at hx
     simp only [List.mem_cons,List.not_mem_nil,or_false] at hx
     rcases hx with rfl|rfl|rfl|rfl|rfl|rfl
-    · exact lt_of_eq_of_lt ft.ap (Nat.mod_lt _ (by have hh:=hc.p_ge; omega))
-    · exact lt_of_eq_of_lt ft.bm (Nat.mod_lt _ (by have hh:=hc.p_ge; omega))
+    · exact lt_of_eq_of_lt ft.ap (Nat.mod_lt _ (by have hh:=hc.p_ge; omega_using [hh]))
+    · exact lt_of_eq_of_lt ft.bm (Nat.mod_lt _ (by have hh:=hc.p_ge; omega_using [hh]))
     · exact lt_of_eq_of_lt ft.zero (by decide)
     · change wordsVal t.mem base K.P.x 4<C.p
       rw [hw K.P.x (by decide)]; exact hpx
     · change wordsVal t.mem base K.P.y 4<C.p
       rw [hw K.P.y (by decide)]; exact hpy
-    · exact lt_of_eq_of_lt ft.onep (Nat.mod_lt _ (by have hh:=hc.p_ge; omega))
+    · exact lt_of_eq_of_lt ft.onep (Nat.mod_lt _ (by have hh:=hc.p_ge; omega_using [hh]))
   · rw [hv _ (by decide),hv _ (by decide),hv _ (by decide)]; exact hrep
   · change toM c.C.p (2^(64*c.n)) (wordsVal t.mem base (c.sl VG.Impl.Ecdsa.AArch64.ONEP) c.n)=1
     rw [ft.onep]
@@ -80,7 +80,7 @@ theorem prep_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base 8192)
     rw [VG.Proof.Ecdsa.AArch64.toM_cmont hc]
     rfl
   · intro i hi
-    have hh:=b₂ i (by omega)
+    have hh:=b₂ i (by omega_using [hi])
     rw [e₁] at hh
     exact hh
 

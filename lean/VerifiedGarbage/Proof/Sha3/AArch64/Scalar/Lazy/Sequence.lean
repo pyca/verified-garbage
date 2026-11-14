@@ -29,8 +29,8 @@ theorem roundPrefix_ok (n : Nat) (hn : n ≤ 24) (A : Spec.Sha3.State) (s : Stat
   induction n with
   | zero => exact WP.block_nil ⟨hs, Keep.refl s⟩
   | succ n ih =>
-    have hlt : n < 24 := by omega
-    have hn' : n ≤ 24 := by omega
+    have hlt : n < 24 := by omega_using [hn]
+    have hn' : n ≤ 24 := by omega_using [hn]
     have hp : roundPrefix (n+1) = roundPrefix n ++ roundNat n := by
       simp only [roundPrefix, List.range_succ, List.flatMap_append, List.flatMap_singleton]
     rw [hp, WP.block_append_iff]

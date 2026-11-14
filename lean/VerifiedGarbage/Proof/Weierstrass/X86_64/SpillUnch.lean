@@ -29,9 +29,9 @@ theorem saveMem_unch (m : Mem) (base : Addr) (g : Reg → BitVec 64) {o L : Nat}
   rw [List.mem_singleton.mp hr] at hc
   have hx' := hx _ (List.mem_singleton_self _)
   simp only [Region.Contains] at hc
-  have := (Offset.lt_iff x base (d := o) (n := L) (by omega)).mp (by omega)
+  have := (Offset.lt_iff x base (d := o) (n := L) (by omega_using [hL])).mp (by omega_using [hc])
   simp only [ofs] at hx'
-  omega
+  omega_using [hx', this]
 
 /-- `saveMem` of slots each in one of the ranges `W` of `base` changes
 nothing else of the working space. -/

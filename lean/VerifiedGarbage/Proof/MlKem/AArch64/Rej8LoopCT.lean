@@ -24,7 +24,7 @@ theorem iters_relCT {w16 : Bool} {initial : List Zq} {N : Nat} {B : Nat → Byte
       (isa.eval (.nonzero .x .x5) s=some true → ∃m'<m,I m' s u)) := by
     intro m s u tr ur s' u' hp es eu
     obtain ⟨t,rfl,ht,htm,hp⟩ := hp
-    have ht4 : t+4≤N := by omega
+    have ht4 : t+4≤N := by omega_using [hm, ht, htm]
     obtain ⟨htr,hr⟩ := body_relCT ps pu hsp htab ht4 s u tr ur s' u' hp es eu
     refine ⟨htr,?_⟩
     rcases hr with hr|⟨rs,ru,xs,xu⟩
@@ -34,20 +34,20 @@ theorem iters_relCT {w16 : Bool} {initial : List Zq} {N : Nat} {B : Nat → Byte
         have hz' : N-(t+4)=0 := by
           rw [eval_nonzero,ne_zero_iff,hr.1.x5] at hz
           have hh := of_decide_eq_false (Option.some.inj hz)
-          omega
-        have he : t+4=N := by omega
+          omega_using [hh]
+        have he : t+4=N := by omega_using [hm, ht, htm, hz']
         rw [he] at hr
         exact ⟨⟨hr.1.acc,hr.1.keep,hr.2.2.1⟩,⟨hr.2.1.acc,hr.2.1.keep,hr.2.2.2⟩⟩
       · intro hz
         have hz' : N-(t+4)≠0 := by
           rw [eval_nonzero,ne_zero_iff,hr.1.x5] at hz
           exact of_decide_eq_true (Option.some.inj hz)
-        exact ⟨N-(t+4),by omega,t+4,rfl,by omega,by omega,hr⟩
+        exact ⟨N-(t+4),by omega_using [ht],t+4,rfl,by omega_using [hz'],by omega_using [htm],hr⟩
     · refine ⟨by rw [eval_nonzero,eval_nonzero,xs,xu],fun _ => ⟨rs,ru⟩,?_⟩
       intro hz
       rw [eval_nonzero,xs] at hz
       contradiction
   exact RelCT.mono (RelCT.loop I step N)
-    (fun _ _ h => ⟨0,by omega,hN,rfl,h⟩) (fun _ _ h => h)
+    (fun _ _ h => ⟨0,by omega_using [],hN,rfl,h⟩) (fun _ _ h => h)
 
 end VG.Proof.MlKem.AArch64.Rej8

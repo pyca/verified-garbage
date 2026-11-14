@@ -42,7 +42,7 @@ theorem State.zlaneH_setZH (s : State) (d r : HReg) (a b c e : BitVec 128)
     (s.setZH d a b c e).zlaneH r i = if r = d then pick4 a b c e i else s.zlaneH r i := by
   by_cases h : r = d
   · subst h
-    rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3) with rfl | rfl | rfl | rfl
+    rcases (by omega_using [hi] : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3) with rfl | rfl | rfl | rfl
     all_goals simp [State.zlaneH, State.setZH, pick4]
     all_goals
       apply BitVec.eq_of_getLsbD_eq

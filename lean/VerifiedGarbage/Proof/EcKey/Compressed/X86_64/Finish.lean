@@ -87,19 +87,19 @@ theorem finish_ok {c : Cfg} (hc : BaseCfgOk c) {base out : Addr} {s : State}
   have hF := sl_le c hc.n10 (i := FLAG) (by decide)
   have := hc.n0; have := hc.len8; have := hc.len_lo; have := hc.len_hi
   have htagd : Region.Disjoint ⟨base, size⟩ ⟨out, 1⟩ :=
-    hd.symm.sub_right (by simpa using Offset.sub_base out (d := 0) (n := 1) (by omega : 0 + 1 ≤ c.C.len + 1))
+    hd.symm.sub_right (by simpa using Offset.sub_base out (d := 0) (n := 1) (by omega_using [] : 0 + 1 ≤ c.C.len + 1))
   have hxd : Region.Disjoint ⟨base, size⟩ ⟨out + 1, c.C.len⟩ := by
-    exact hd.symm.sub_right (Offset.sub_base out (d := 1) (by omega))
+    exact hd.symm.sub_right (Offset.sub_base out (d := 1) (by omega_using []))
   rw [finish_eq, WP.block_append_iff]
-  refine WP.mono (movRcx_mem_ok hs (d := c.sl FLAG) (by omega)) fun s₁ ⟨e₁, k₁⟩ => ?_
+  refine WP.mono (movRcx_mem_ok hs (d := c.sl FLAG) (by omega_arith)) fun s₁ ⟨e₁, k₁⟩ => ?_
   have hs₁ := hs.of_keeps k₁ (by decide)
   have hrsi₁ : s₁.gpr .rsi = out := (k₁.1 _ (by decide)).trans hrsi
   rw [WP.block_append_iff]
-  refine WP.mono (tag_ok (c := c) hs₁ (by omega) (by
+  refine WP.mono (tag_ok (c := c) hs₁ (by omega_arith) (by
     rw [hrsi₁, k₁.2.2.2]
     exact ⟨_, hw, by
       simpa using Offset.contains_base out (d := 0) (n := 1)
-        (by omega : 0 + 1 ≤ c.C.len + 1) (by decide)⟩)) fun s₂ ⟨m₂, k₂⟩ => ?_
+        (by omega_using [] : 0 + 1 ≤ c.C.len + 1) (by decide)⟩)) fun s₂ ⟨m₂, k₂⟩ => ?_
   rw [hrsi₁, e₁, k₁.2.1, hf, tag_byte _ _ _ _ hc.n0 b] at m₂
   have O₂ : Outside out 0 1 s₁.mem s₂.mem := by
     rw [m₂, k₁.2.1]
@@ -112,21 +112,21 @@ theorem finish_ok {c : Cfg} (hc : BaseCfgOk c) {base out : Addr} {s : State}
   have hrcx₂ : s₂.gpr .rcx = if b then BitVec.allOnes 64 else 0 := by
     rw [k₂.gpr _ (by decide), e₁, hf]
   have x₂ : wordsVal s₂.mem base (c.sl E) c.n = sv c base s E := by
-    rw [U₂.wordsVal (fun w hw => by simp only [List.mem_singleton] at hw; subst hw; omega) (by omega),
+    rw [U₂.wordsVal (fun w hw => by simp only [List.mem_singleton] at hw; subst hw; omega_using [hE]) (by omega_using [hn, hE]),
       k₁.2.1]
   rw [WP.block_append_iff]
   refine WP.mono (storeBytes_ok hs₂ (dst := .rsi) (d := 1) (a := c.sl E) (by decide) (by decide) b
-    hrcx₂ hE (by omega) hc.len_lo hc.len_hi (by
+    hrcx₂ hE (by omega_arith) hc.len_lo hc.len_hi (by
       rw [hrsi₂, Offset.toNat_add_ofNat]
       simp only [show (1 : Nat) % 2 ^ 64 = 1 from rfl]
-      rw [Nat.mod_eq_of_lt (by omega)]
-      omega)
+      rw [Nat.mod_eq_of_lt (by omega_arith)]
+      omega_using [hfit])
     (by
       rw [hrsi₂]
       intro e m hem
       exact ⟨_, by rw [k₂.wr, k₁.2.2.2]; exact hw, by
         rw [Offset.add_add]
-        exact Offset.contains_base out (by omega) (by omega)⟩)
+        exact Offset.contains_base out (by omega_using [hem]) (by omega_using [hsz, hE, this, hem])⟩)
     (by
       rw [hrsi₂]
       exact hxd.sub_left (Offset.sub_base base hE))) fun s₃ ⟨e₃, k₃, O₃⟩ => ?_
@@ -138,7 +138,7 @@ theorem finish_ok {c : Cfg} (hc : BaseCfgOk c) {base out : Addr} {s : State}
   have lead : s₃.mem out = if b then BitVec.ofNat 8 (2 + sv c base s Impl.Ecdh.X86_64.QY % 2) else 0 := by
     have hb : Spec.Ecdsa.bytesAt s₃.mem out 1 = Spec.Ecdsa.bytesAt s₂.mem out 1 :=
       bytesAt_keep O₃ (Offset.base_disjoint out (e := 1) (n := c.C.len) (k := 1)
-        (by omega) (by omega)) (by omega) (by decide)
+        (by omega_using []) (by omega_using [hfit])) (by omega_using [hfit]) (by decide)
     have he : s₃.mem out = s₂.mem out := by simpa [Spec.Ecdsa.bytesAt] using hb
     rw [he, m₂, writeW8_self]
   rw [WP.block_append_iff]
@@ -156,9 +156,9 @@ theorem finish_ok {c : Cfg} (hc : BaseCfgOk c) {base out : Addr} {s : State}
     (by rw [hs₄.rdi]; exact hsv₄)) fun s₅ ⟨g₅, r₅, m₅, _, _⟩ => ?_
   · have := saved_lt p hp
     rw [hs₄.rdi]
-    exact ⟨_, List.mem_append_right _ hs₄.wr, hs₄.contains (by omega) (by decide)⟩
+    exact ⟨_, List.mem_append_right _ hs₄.wr, hs₄.contains (by omega_using [hsz, this]) (by decide)⟩
   refine ⟨?_, ?_, g₅⟩
-  · rw [m₅, k₄.2.1, show c.C.len + 1 = 1 + c.C.len by omega, bytesAt_add, e₃, x₂]
+  · rw [m₅, k₄.2.1, show c.C.len + 1 = 1 + c.C.len by omega_using [], bytesAt_add, e₃, x₂]
     have hb : Spec.Ecdsa.bytesAt s₃.mem out 1 = [s₃.mem out] := by simp [Spec.Ecdsa.bytesAt]
     rw [hb, lead]
     cases b <;> simp [Nat.add_comm, List.replicate_succ]

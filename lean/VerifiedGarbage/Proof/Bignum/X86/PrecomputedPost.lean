@@ -29,7 +29,7 @@ theorem precomputedFailure_post {s : State} {base : Addr} {bytes len : Nat} {arg
       Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s t := by
   have hl := h.lower
   have hu := h.upper
-  refine WP.mono (publicFailure_ok (by omega) (by omega) h.outFit
+  refine WP.mono (publicFailure_ok (by omega_using [hl]) (by omega_using [hu]) h.outFit
     ((h.stack 0 (by decide)).readSrc)
     (by rw [← h.outLen]; exact (h.stack 1 (by decide)).readSrc) h.outWrite)
     fun t ⟨Y, B, O, K⟩ => ?_
@@ -37,7 +37,7 @@ theorem precomputedFailure_post {s : State} {base : Addr} {bytes len : Nat} {arg
   · intro nB length key
     simp only [failed nB length key, Spec.Rsa.written]
     exact ⟨B, Y⟩
-  · have F := outside_frame O (by omega : 0 + len ≤ 2 ^ 64)
+  · have F := outside_frame O (by omega_using [hu] : 0 + len ≤ 2 ^ 64)
     simp only [BitVec.add_zero] at F
     exact F.mono (by simp [byteAddr])
 

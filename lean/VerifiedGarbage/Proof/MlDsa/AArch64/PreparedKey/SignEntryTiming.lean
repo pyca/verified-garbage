@@ -92,10 +92,10 @@ theorem selectedPairedSignLoop_tr (v : Proof.Sha3.AArch64.Permutation)
   apply pairedSignLoop_tr (keccak:=v) (prims_okWith (keccak:=v)) hp (selectedPairedChecks_tr hp)
   · have hd := (Message.pairedCommit_dle v hp).le
     change 16 * _ ≤ 16
-    omega
+    omega_using [hd]
   · have hd := (Message.pairedBall_dle v p).le
     change 16 * _ ≤ 16
-    omega
+    omega_using [hd]
 
 end VG.Proof.MlDsa.AArch64.Sign
 
@@ -327,7 +327,7 @@ theorem staticTable_reframe {S T : Nat} {name : String} {words : List (BitVec 64
   refine ⟨?_, by simpa only [hy] using h.fit, ?_, ?_, ?_, by simpa only [hy] using h.aligned⟩
   · intro i hi
     rw [hy, hf.readW (r := ⟨s.syms name, 3904⟩)
-      (Offset.contains_base _ (by omega) (by omega)) hd (by decide)]
+      (Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi])) hd (by decide)]
     exact h.held i hi
   · simpa only [hy, hr, hw] using h.readable
   · simpa only [hy, hw] using h.writable
@@ -342,7 +342,7 @@ theorem pairedRoots_reframe {S T : Nat} {s t : State} {W : List Region} (h : Pai
   refine ⟨?_, by simpa only [hy] using h.fit, ?_, ?_, ?_, by simpa only [hy] using h.aligned⟩
   · intro i hi
     rw [hy, hf.readW (r := ⟨s.syms "VG_MLDSA_INV_PAIR", 4096⟩)
-      (Offset.contains_base _ (by omega) (by omega)) hd (by decide)]
+      (Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi])) hd (by decide)]
     exact h.held i hi
   · simpa only [hy, hr, hw] using h.readable
   · simpa only [hy, hw] using h.writable
@@ -381,12 +381,12 @@ theorem sign_frame_guards {p : Params} {σ s : State} (pre : (signK p 48).pre σ
   obtain ⟨_, hwr, _, _, _, _, _, _, _, _, _, _, k4, k5, _, _, _, _, _, hstack⟩ := pre
   have hsub : Region.Sub (⟨s.sp - 16, 16⟩ : Region) (below σ.sp 48) := by
     have h1 := below_below σ.sp offset 16
-    have h2 := below_sub (sp := σ.sp) (a := 16 + offset) (b := 48) (by omega) (by decide)
+    have h2 := below_sub (sp := σ.sp) (a := 16 + offset) (b := 48) (by omega_using [ho]) (by decide)
     rw [hsp]
     exact fun a ha => h2 a (h1 a ha)
   refine ⟨?_, ?_⟩
-  · rw [hsp, toNat_sub_ofNat' (by omega)]
-    omega
+  · rw [hsp, toNat_sub_ofNat' (by omega_using [ho, hstack])]
+    omega_using [ho, hstack]
   · intro R hR
     rw [hw, hwr] at hR
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hR
@@ -430,7 +430,7 @@ theorem setup_sign_inputs {p : Params} (hp : Ok3 p) {σ s : State}
     rw [skOf, skOf, e0]
     exact MlKem.bytesAt_frame hframe (fun R hR => by
       obtain rfl := List.mem_singleton.mp hR
-      exact (k1.sub_left hsmall).symm) (by omega)
+      exact (k1.sub_left hsmall).symm) (by omega_using [n1])
   have hmu : muOf s = muOf σ := by
     rw [muOf, muOf, e1]
     exact MlKem.bytesAt_frame hframe (fun R hR => by
@@ -449,8 +449,8 @@ theorem setup_sign_inputs {p : Params} (hp : Ok3 p) {σ s : State}
       k4.sub_left hstack, k5.sub_left hstack, n1, n2, n3, n4, n5, ?_⟩
     rw [esp]
     change 16 ≤ (σ.sp - BitVec.ofNat 64 32).toNat
-    rw [toNat_sub_ofNat' (by omega)]
-    omega
+    rw [toNat_sub_ofNat' (by omega_using [hsp])]
+    omega_using [hsp]
   · exact ⟨staticTable_reframe roots.forward hframe (fun R hR => by
         obtain rfl := List.mem_singleton.mp hR
         exact roots.forward.stack.sub_right hsmall) er ew hy hstack,
@@ -481,7 +481,7 @@ open VG VG.AArch64 VG.Spec.MlDsa
 open VG.Proof.MlDsa.AArch64.Sign
 
 theorem common_frame_bounds {d : Nat} (hd : d ≤ 1) :
-    16 * (d + 1) + 16 < 2 ^ 64 ∧ 16 * d + 16 < 2 ^ 64 := by omega
+    16 * (d + 1) + 16 < 2 ^ 64 ∧ 16 * d + 16 < 2 ^ 64 := by omega_using [hd]
 
 theorem withCache_correct (v : VG.Proof.Sha3.AArch64.Permutation) {p : Params} (hp : Ok3 p)
     (σ : State) (hpre : (signWithCacheContract p (abi.withConsts pairedSignRootConsts) 48).pre σ) :
@@ -626,10 +626,10 @@ theorem selectedLoop_tr (v : VG.Proof.Sha3.AArch64.Permutation) {p : Params} (hp
     apply Cached.signLoop_tr (prims_okWith (keccak := v)) hp' (by decide)
     · have hd := (Message.cachedCommit_dle v hp').le
       change 16 * _ ≤ 16
-      omega
+      omega_using [hd]
     · have hd := (Message.pairedBall_dle v p).le
       change 16 * _ ≤ 16
-      omega
+      omega_using [hd]
   · exact selectedPairedSignLoop_tr v hp
 
 theorem afterInitialization_tr (v : VG.Proof.Sha3.AArch64.Permutation)
@@ -643,7 +643,7 @@ theorem afterInitialization_tr (v : VG.Proof.Sha3.AArch64.Permutation)
   unfold ifOk
   refine ifOkElse_tr (fun x y h => by rw [h.2.1])
     (RelCT.mono (optimizedOutput_tr (prims_okWith (keccak := v)) hp
-      (lo := -(q : Int) + 1) (hi := (q : Int) - 1) (by omega) (by omega)
+      (lo := -(q : Int) + 1) (hi := (q : Int) - 1) (by omega_using []) (by omega_using [])
       (E := fun _ _ => True)) ?_ (fun _ _ h => h))
     (RelCT.mono nil_tr (fun _ _ h => h) (fun _ _ _ => trivial))
   rintro x y ⟨⟨⟨⟨σ, τ, ps, pt, pub, _, hx, hy⟩, _⟩, eq, hj⟩, hne⟩
@@ -663,7 +663,7 @@ theorem rest_tr (v : VG.Proof.Sha3.AArch64.Permutation) {p : Params} (hp : Ok3 p
   have hd : 16 * (Impl.MlDsa.AArch64.PreparedKey.Sign.initialization v.callee
       (primsWith v.callee) p).aarch64Depth ≤ 16 := by
     have := (initialization_dle v p).le
-    omega
+    omega_using [this]
   refine RelCT.seq (R := PairedRS p 16 (LeakEq p 0) (PositiveIK p 16)) ?_
     (afterInitialization_tr v hp)
   exact RelCT.mono
@@ -1181,8 +1181,8 @@ theorem setup_verify_inputs (v : VG.Proof.Sha3.AArch64.Permutation) {p : Params}
       k3.sub_left hstack, k4.sub_left hstack, n1, n2, n3, n4⟩
     rw [esp]
     change 16 ≤ (σ.sp - BitVec.ofNat 64 32).toNat
-    rw [toNat_sub_ofNat' (by omega)]
-    omega
+    rw [toNat_sub_ofNat' (by omega_using [hsp])]
+    omega_using [hsp]
   · intro R hR
     rw [er]
     apply pre.2 R
@@ -1215,12 +1215,12 @@ theorem verify_frame_guards {p : Params} {σ s : State} (pre : vPre p 48 σ)
   obtain ⟨hstack, _, hwr, _, _, _, _, _, _, k4, _, _, _, _⟩ := hp
   have hsub : Region.Sub (⟨s.sp - 16, 16⟩ : Region) (below σ.sp 48) := by
     have h1 := below_below σ.sp offset 16
-    have h2 := below_sub (sp := σ.sp) (a := 16 + offset) (b := 48) (by omega) (by decide)
+    have h2 := below_sub (sp := σ.sp) (a := 16 + offset) (b := 48) (by omega_using [ho]) (by decide)
     rw [hsp]
     exact fun a ha => h2 a (h1 a ha)
   refine ⟨?_, ?_⟩
-  · rw [hsp, toNat_sub_ofNat' (by omega)]
-    omega
+  · rw [hsp, toNat_sub_ofNat' (by omega_using [ho, hstack])]
+    omega_using [ho, hstack]
   · intro R hR
     rw [hw, hwr] at hR
     obtain rfl := List.mem_singleton.mp hR
@@ -1549,9 +1549,9 @@ theorem prepared_public_cache_frame {p : Params} {m m' : Mem} {key : Addr} {W : 
     CachedPublicPolys p m' (key + BitVec.ofNat 64 p.pkLen)
       (VG.Spec.Sha3.bytesAt m' key p.pkLen) := by
   have hs : Region.Sub (⟨key, p.pkLen⟩ : Region) ⟨key, preparedPublicKeyBytes p⟩ :=
-    Region.sub_prefix (by simp only [preparedPublicKeyBytes]; omega)
+    Region.sub_prefix (by simp only [preparedPublicKeyBytes]; omega_using [])
   have hk := VG.Proof.MlKem.bytesAt_frame hf (fun R hR => (hd R hR).sub_left hs)
-    (by simp only [preparedPublicKeyBytes] at hb; omega)
+    (by simp only [preparedPublicKeyBytes] at hb; omega_using [hb])
   intro i hi
   change PolyIs m' ((key + BitVec.ofNat 64 p.pkLen) + BitVec.ofNat 64 (4 * n * i)) _
   rw [VG.Offset.add_add, hk]
@@ -1560,7 +1560,7 @@ theorem prepared_public_cache_frame {p : Params} {m m' : Mem} {key : Addr} {W : 
       change Region.Sub ⟨key + BitVec.ofNat 64 (p.pkLen + 4 * n * i), 1024⟩ _
       apply VG.Offset.sub_base key
       simp only [preparedPublicKeyBytes, n]
-      omega)) (VG.Proof.MlDsa.preparedPublicKey_iff.1 h i hi)
+      omega_using [hi])) (VG.Proof.MlDsa.preparedPublicKey_iff.1 h i hi)
 
 theorem prepared_secret_cache_frame {p : Params} {m m' : Mem} {key : Addr} {W : List Region}
     (h : PreparedSecretKey p m key) (hf : Frame W m m')
@@ -1569,9 +1569,9 @@ theorem prepared_secret_cache_frame {p : Params} {m m' : Mem} {key : Addr} {W : 
     CachedSecretPolys p m' (key + BitVec.ofNat 64 p.skLen)
       (VG.Spec.Sha3.bytesAt m' key p.skLen) := by
   have hs : Region.Sub (⟨key, p.skLen⟩ : Region) ⟨key, preparedSecretKeyBytes p⟩ :=
-    Region.sub_prefix (by simp only [preparedSecretKeyBytes]; omega)
+    Region.sub_prefix (by simp only [preparedSecretKeyBytes]; omega_using [])
   have hk := VG.Proof.MlKem.bytesAt_frame hf (fun R hR => (hd R hR).sub_left hs)
-    (by simp only [preparedSecretKeyBytes] at hb; omega)
+    (by simp only [preparedSecretKeyBytes] at hb; omega_using [hb])
   intro i hi
   change PolyIs m' ((key + BitVec.ofNat 64 p.skLen) + BitVec.ofNat 64 (4 * n * i)) _
   rw [VG.Offset.add_add, hk]
@@ -1580,7 +1580,7 @@ theorem prepared_secret_cache_frame {p : Params} {m m' : Mem} {key : Addr} {W : 
       change Region.Sub ⟨key + BitVec.ofNat 64 (p.skLen + 4 * n * i), 1024⟩ _
       apply VG.Offset.sub_base key
       simp only [preparedSecretKeyBytes, n]
-      omega)) (VG.Proof.MlDsa.preparedSecretKey_iff.1 h i hi)
+      omega_using [hi])) (VG.Proof.MlDsa.preparedSecretKey_iff.1 h i hi)
 
 def verifyEntryRd (p : Params) (s : State) : List Region :=
   [⟨s.gpr .x0, p.pkLen⟩, ⟨s.gpr .x1, 64⟩, ⟨s.gpr .x2, p.sigLen⟩,
@@ -1589,7 +1589,7 @@ def verifyEntryRd (p : Params) (s : State) : List Region :=
 theorem empty_disjoint (a : Addr) (r : Region) : (⟨a, 0⟩ : Region).Disjoint r := by
   intro x hx _
   simp only [Region.Contains] at hx
-  omega
+  omega_using [hx]
 
 theorem verify_empty_pre {p : Params} {σ s : State}
     (pre : (verifyContract p abi 64).pre σ)
@@ -1610,15 +1610,15 @@ theorem verify_empty_pre {p : Params} {σ s : State}
   have sn : 48 ≤ s.sp.toNat := by
     rw [esp]
     change 48 ≤ (σ.sp - BitVec.ofNat 64 16).toNat
-    rw [toNat_sub_ofNat' (by omega)]
-    omega
+    rw [toNat_sub_ofNat' (by omega_using [sp])]
+    omega_using [sp]
   sig_pre [verifyWithCacheContract, verifyWithCacheSig, verifySig, abi, VG.AArch64.argRegs]
   simp only [verifyEntryRd, h4, h5,
     e0, e1, e2, e3, show (0 : BitVec 64).toNat = 0 from rfl, Nat.add_zero]
   exact ⟨sn, True.intro, wr, d1, d2, d3, (empty_disjoint _ _).symm,
     k1.sub_left ks, k2.sub_left ks, k3.sub_left ks, k4.sub_left ks,
     (empty_disjoint _ _).symm, n1, n2, n3, n4,
-    by have := (σ.gpr .x0).isLt; omega, Or.inl True.intro⟩
+    by have := (σ.gpr .x0).isLt; omega_using [], Or.inl True.intro⟩
 
 theorem verify_prepared_pre {p : Params} (hp : Sign.Ok3 p) {σ s : State}
     (pre : (preparedVerifyContract p abi 64).pre σ)
@@ -1643,15 +1643,15 @@ theorem verify_prepared_pre {p : Params} (hp : Sign.Ok3 p) {σ s : State}
     exact below_below σ.sp 16 48
   have keyPrefix : Region.Sub (⟨σ.gpr .x0, p.pkLen⟩ : Region)
       ⟨σ.gpr .x0, preparedPublicKeyBytes p⟩ := Region.sub_prefix (by
-    simp only [preparedPublicKeyBytes]; omega)
+    simp only [preparedPublicKeyBytes]; omega_using [])
   have suffix : Region.Sub (⟨σ.gpr .x0 + BitVec.ofNat 64 p.pkLen, 1024 * p.k⟩ : Region)
       ⟨σ.gpr .x0, preparedPublicKeyBytes p⟩ := Offset.sub_base _ (by
-    simp only [preparedPublicKeyBytes, hn]; omega)
+    simp only [preparedPublicKeyBytes, hn]; omega_using [])
   have sn : 48 ≤ s.sp.toNat := by
     rw [esp]
     change 48 ≤ (σ.sp - BitVec.ofNat 64 16).toNat
-    rw [toNat_sub_ofNat' (by omega)]
-    omega
+    rw [toNat_sub_ofNat' (by omega_using [sp])]
+    omega_using [sp]
   have cache : CachedPublicPolys p s.mem (σ.gpr .x0 + BitVec.ofNat 64 p.pkLen)
       (Spec.Sha3.bytesAt s.mem (σ.gpr .x0) p.pkLen) := by
     apply prepared_public_cache_frame cached (W := [below σ.sp 16]) ?_ ?_ hb
@@ -1663,14 +1663,14 @@ theorem verify_prepared_pre {p : Params} (hp : Sign.Ok3 p) {σ s : State}
       exact (k1.sub_left (below_sub (by decide) (by decide))).symm
   have nkey : (σ.gpr .x0).toNat + p.pkLen ≤ 2 ^ 64 := by
     simp only [preparedPublicKeyBytes] at n1
-    omega
+    omega_using [n1]
   have nsuffix : (σ.gpr .x0 + BitVec.ofNat 64 p.pkLen).toNat + 1024 * p.k ≤ 2 ^ 64 := by
     have bound : (σ.gpr .x0 + BitVec.ofNat 64 p.pkLen).toNat ≤
         (σ.gpr .x0).toNat + p.pkLen := by
       rw [Offset.toNat_add_ofNat]
       exact (Nat.mod_le _ _).trans (Nat.add_le_add_left (Nat.mod_le _ _) _)
     simp only [preparedPublicKeyBytes, hn] at n1
-    omega
+    omega_using [bound, n1]
   sig_pre [verifyWithCacheContract, verifyWithCacheSig, verifySig, abi, VG.AArch64.argRegs]
   simp only [verifyEntryRd, h4, h5,
     e0, e1, e2, e3, BitVec.toNat_ofNat, Nat.mod_eq_of_lt small]
@@ -1705,8 +1705,8 @@ theorem sign_empty_pre {p : Params} {σ s : State}
   have sn : 48 ≤ s.sp.toNat := by
     rw [esp]
     change 48 ≤ (σ.sp - BitVec.ofNat 64 16).toNat
-    rw [toNat_sub_ofNat' (by omega)]
-    omega
+    rw [toNat_sub_ofNat' (by omega_using [sp])]
+    omega_using [sp]
   sig_pre [signWithCacheContract, signWithCacheSig, signSig, abi, VG.AArch64.argRegs]
   simp only [signEntryRd, h5, h6, e0, e1, e2, e3, e4,
     show (0 : BitVec 64).toNat = 0 from rfl, Nat.add_zero]
@@ -1714,7 +1714,7 @@ theorem sign_empty_pre {p : Params} {σ s : State}
     (empty_disjoint _ _).symm, (empty_disjoint _ _).symm,
     k1.sub_left ks, k2.sub_left ks, k3.sub_left ks, k4.sub_left ks, k5.sub_left ks,
     (empty_disjoint _ _).symm, n1, n2, n3, n4, n5,
-    by have := (σ.gpr .x0).isLt; omega, Or.inl True.intro⟩
+    by have := (σ.gpr .x0).isLt; omega_using [], Or.inl True.intro⟩
 
 theorem sign_prepared_pre {p : Params} (hp : Sign.Ok3 p) {σ s : State}
     (pre : (preparedSignContract p abi 64).pre σ)
@@ -1741,15 +1741,15 @@ theorem sign_prepared_pre {p : Params} (hp : Sign.Ok3 p) {σ s : State}
     exact below_below σ.sp 16 48
   have keyPrefix : Region.Sub (⟨σ.gpr .x0, p.skLen⟩ : Region)
       ⟨σ.gpr .x0, preparedSecretKeyBytes p⟩ := Region.sub_prefix (by
-    simp only [preparedSecretKeyBytes]; omega)
+    simp only [preparedSecretKeyBytes]; omega_using [])
   have suffix : Region.Sub (⟨σ.gpr .x0 + BitVec.ofNat 64 p.skLen, 1024 * (p.ℓ + 2 * p.k)⟩ : Region)
       ⟨σ.gpr .x0, preparedSecretKeyBytes p⟩ := Offset.sub_base _ (by
-    simp only [preparedSecretKeyBytes, hn]; omega)
+    simp only [preparedSecretKeyBytes, hn]; omega_using [])
   have sn : 48 ≤ s.sp.toNat := by
     rw [esp]
     change 48 ≤ (σ.sp - BitVec.ofNat 64 16).toNat
-    rw [toNat_sub_ofNat' (by omega)]
-    omega
+    rw [toNat_sub_ofNat' (by omega_using [sp])]
+    omega_using [sp]
   have cache : CachedSecretPolys p s.mem (σ.gpr .x0 + BitVec.ofNat 64 p.skLen)
       (Spec.Sha3.bytesAt s.mem (σ.gpr .x0) p.skLen) := by
     apply prepared_secret_cache_frame cached (W := [below σ.sp 16]) ?_ ?_ hb
@@ -1761,14 +1761,14 @@ theorem sign_prepared_pre {p : Params} (hp : Sign.Ok3 p) {σ s : State}
       exact (k1.sub_left (below_sub (by decide) (by decide))).symm
   have nkey : (σ.gpr .x0).toNat + p.skLen ≤ 2 ^ 64 := by
     simp only [preparedSecretKeyBytes] at n1
-    omega
+    omega_using [n1]
   have nsuffix : (σ.gpr .x0 + BitVec.ofNat 64 p.skLen).toNat + 1024 * (p.ℓ + 2 * p.k) ≤ 2 ^ 64 := by
     have bound : (σ.gpr .x0 + BitVec.ofNat 64 p.skLen).toNat ≤
         (σ.gpr .x0).toNat + p.skLen := by
       rw [Offset.toNat_add_ofNat]
       exact (Nat.mod_le _ _).trans (Nat.add_le_add_left (Nat.mod_le _ _) _)
     simp only [preparedSecretKeyBytes, hn] at n1
-    omega
+    omega_using [bound, n1]
   sig_pre [signWithCacheContract, signWithCacheSig, signSig, abi, VG.AArch64.argRegs]
   simp only [signEntryRd, h5, h6, e0, e1, e2, e3, e4, BitVec.toNat_ofNat, Nat.mod_eq_of_lt small]
   refine ⟨sn, True.intro, wr, d1.sub_left keyPrefix, d2.sub_left keyPrefix,
@@ -1832,7 +1832,7 @@ theorem verify_entry_covers {p : Params} {prepared : Bool} {σ s : State}
       · simpa using e0
       · cases prepared <;> simp [rawVerifyBytes, preparedPublicKeyBytes]
     · exact ⟨⟨σ.gpr .x1, 64⟩, by simp, 0, by simpa using e1, Nat.le_refl _⟩
-    · exact ⟨⟨σ.gpr .x2, p.sigLen⟩, by simp, 0, by simpa using e2, by change 0 + p.sigLen ≤ p.sigLen; omega⟩
+    · exact ⟨⟨σ.gpr .x2, p.sigLen⟩, by simp, 0, by simpa using e2, by change 0 + p.sigLen ≤ p.sigLen; omega_using []⟩
     · refine ⟨⟨σ.gpr .x0, rawVerifyBytes p prepared⟩, by simp,
         (if prepared then p.pkLen else 0), h4, ?_⟩
       rw [h5]
@@ -1841,7 +1841,7 @@ theorem verify_entry_covers {p : Params} {prepared : Bool} {σ s : State}
         exact Nat.zero_le _
       · have hm : (BitVec.ofNat 64 (1024 * p.k)).toNat ≤ 1024 * p.k := Nat.mod_le _ _
         simp only [rawVerifyBytes, ↓reduceIte, preparedPublicKeyBytes, n]
-        omega
+        omega_using [hm]
   · rw [o.wr]
     exact Covers.refl _
 
@@ -1858,7 +1858,7 @@ theorem save_input_bytes {r : Reg} {σ : State} {key : Addr} {len : Nat}
 theorem operation_call_bounds {code : Prog isa} (hd : Message.DLe 3 code) :
     16 * code.aarch64Depth + 16 < 2 ^ 64 ∧ 16 * code.aarch64Depth < 2 ^ 64 := by
   have bound := hd.le
-  omega
+  omega_using [bound]
 
 theorem verify_entry_correct {p : Params} (hp : Sign.Ok3 p) {name : String}
     {code : Prog isa} (hv : ∀ σ, (verifyWithCacheContract p abi 48).pre σ →
@@ -2556,11 +2556,11 @@ theorem public_preparation_preserves_roots {p : Params} (hp : Ok3 p) {m : Mem} {
     ∀ i < 488, t.mem.readW (base + BitVec.ofNat 64 (8 * i)) 64 =
       m.readW (base + BitVec.ofNat 64 (8 * i)) 64 := by
   have depth := prepare_public_depth hp
-  have bound : 16 * (Impl.MlDsa.AArch64.PreparedKey.preparePublic p).aarch64Depth < 2 ^ 64 := by omega
+  have bound : 16 * (Impl.MlDsa.AArch64.PreparedKey.preparePublic p).aarch64Depth < 2 ^ 64 := by omega_using [depth]
   have frame := Exec.frameSp he bound
   intro i hi
   apply frame.readW (r := ⟨base, 3904⟩)
-    (Offset.contains_base _ (by omega) (by omega)) ?_ (by decide)
+    (Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi])) ?_ (by decide)
   intro R hR
   simp only [prepWithTables, List.cons_append, List.nil_append, List.mem_cons,
     List.not_mem_nil, or_false] at hR
@@ -2571,7 +2571,7 @@ theorem public_preparation_preserves_roots {p : Params} (hp : Ok3 p) {m : Mem} {
     all_goals exact Region.disjoint_of_sep (by decide)
   · have hs : Region.Sub (below (0x1000000 : Addr)
         (16 * (Impl.MlDsa.AArch64.PreparedKey.preparePublic p).aarch64Depth))
-        (below (0x1000000 : Addr) 80) := below_sub (by omega) (by decide)
+        (below (0x1000000 : Addr) 80) := below_sub (by omega_using [depth]) (by decide)
     apply Region.Disjoint.sub_right _ hs
     rcases hb with rfl | rfl
     all_goals exact Region.disjoint_of_sep (by decide)
@@ -2832,7 +2832,7 @@ theorem sign_entry_covers {p : Params} {prepared : Bool} {σ s : State}
       · simpa using e0
       · cases prepared <;> simp [rawSignBytes, preparedSecretKeyBytes]
     · exact ⟨⟨σ.gpr .x1, 64⟩, by simp, 0, by simpa using e1, Nat.le_refl _⟩
-    · exact ⟨⟨σ.gpr .x2, 32⟩, by simp, 0, by simpa using e2, by change 0 + 32 ≤ 32; omega⟩
+    · exact ⟨⟨σ.gpr .x2, 32⟩, by simp, 0, by simpa using e2, by change 0 + 32 ≤ 32; omega_using []⟩
     · refine ⟨⟨σ.gpr .x0, rawSignBytes p prepared⟩, by simp,
         (if prepared then p.skLen else 0), h5, ?_⟩
       rw [h6]
@@ -2841,7 +2841,7 @@ theorem sign_entry_covers {p : Params} {prepared : Bool} {σ s : State}
         exact Nat.zero_le _
       · have hm : (BitVec.ofNat 64 (1024 * (p.ℓ + 2 * p.k))).toNat ≤ 1024 * (p.ℓ + 2 * p.k) := Nat.mod_le _ _
         simp only [rawSignBytes, ↓reduceIte, preparedSecretKeyBytes, n]
-        omega
+        omega_using [hm]
   · rw [o.wr]
     exact Covers.refl _
 
@@ -3176,11 +3176,11 @@ theorem secret_preparation_preserves_roots {p : Params} (hp : Ok3 p) {m : Mem} {
     ∀ i < 512, t.mem.readW (base + BitVec.ofNat 64 (8 * i)) 64 =
       m.readW (base + BitVec.ofNat 64 (8 * i)) 64 := by
   have depth := prepare_secret_depth hp
-  have bound : 16 * (Impl.MlDsa.AArch64.PreparedKey.prepareSecret p).aarch64Depth < 2 ^ 64 := by omega
+  have bound : 16 * (Impl.MlDsa.AArch64.PreparedKey.prepareSecret p).aarch64Depth < 2 ^ 64 := by omega_using [depth]
   have frame := Exec.frameSp he bound
   intro i hi
   apply frame.readW (r := ⟨base,4096⟩)
-    (Offset.contains_base _ (by omega) (by omega)) ?_ (by decide)
+    (Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi])) ?_ (by decide)
   intro R hR
   simp only [prepSecretWithTables, List.cons_append, List.nil_append, List.mem_cons,
     List.not_mem_nil, or_false] at hR
@@ -3191,7 +3191,7 @@ theorem secret_preparation_preserves_roots {p : Params} (hp : Ok3 p) {m : Mem} {
     all_goals exact Region.disjoint_of_sep (by decide)
   · have hs : Region.Sub (below (0x1000000 : Addr)
         (16 * (Impl.MlDsa.AArch64.PreparedKey.prepareSecret p).aarch64Depth))
-        (below (0x1000000 : Addr) 80) := below_sub (by omega) (by decide)
+        (below (0x1000000 : Addr) 80) := below_sub (by omega_using [depth]) (by decide)
     apply Region.Disjoint.sub_right _ hs
     rcases hb with rfl | rfl | rfl
     all_goals exact Region.disjoint_of_sep (by decide)
@@ -3332,8 +3332,8 @@ theorem raw_sign_sat {p : Params} (hp : Ok3 p) (prepared : Bool) :
     have pair := secret_preparation_preserves_roots hp he (base := 1056384) (.inr (.inr rfl))
     exact ⟨rawSignConstSat p true t.mem,
       rawSignConstSat_pre hp true t.mem
-        (fun i hi' => (forward i (by omega)).trans (hf i hi'))
-        (fun i hi' => (inverse i (by omega)).trans (hi i hi'))
+        (fun i hi' => (forward i (by omega_using [hi'])).trans (hf i hi'))
+        (fun i hi' => (inverse i (by omega_using [hi'])).trans (hi i hi'))
         (fun i hi' => (pair i hi').trans (hp' i hi')) (fun _ => cache)⟩
 
 theorem sign_entry_verified (v : Proof.Sha3.AArch64.Permutation) {p : Params} (hp : Ok3 p)

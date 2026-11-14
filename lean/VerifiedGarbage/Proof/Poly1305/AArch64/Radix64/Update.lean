@@ -252,7 +252,7 @@ theorem sign_sub {a b : Nat} (ha : a < 2 ^ 63) (hb : b < 2 ^ 63) :
     ((BitVec.ofNat 64 a - BitVec.ofNat 64 b) >>> 63 == 0) = decide (b ≤ a) := by
   have e : ((BitVec.ofNat 64 a - BitVec.ofNat 64 b) >>> 63).toNat = if b ≤ a then 0 else 1 := by
     rw [lsr_toNat, BitVec.toNat_sub, toNat_ofNat_lt (by omega_using [hb]), toNat_ofNat_lt (by omega_using [ha])]
-    split <;> omega
+    split <;> omega_arith
   by_cases h : b ≤ a
   · simp only [h, decide_true]
     simp only [h, ↓reduceIte] at e

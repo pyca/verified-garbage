@@ -49,7 +49,7 @@ theorem wv_succ_zero {m : Mem} {B : Addr} {e j : Nat} :
     have h1 : (word m B (e + 8 * j)).toNat = 0 := by
       rcases Nat.eq_zero_or_pos (word m B (e + 8 * j)).toNat with h0 | h0
       · exact h0
-      · exfalso; have := Nat.mul_pos this h0; omega
+      · exfalso; have := Nat.mul_pos this h0; omega_using [h, this]
     rw [h1, Nat.mul_zero, Nat.add_zero] at h
     exact ⟨h, h1⟩
   · rintro ⟨h1, h2⟩; rw [h1, h2]; rfl
@@ -147,8 +147,8 @@ theorem or2_ok {s : State} {B : Addr} {Z N eA eB : Nat} (hs : Scr s B Z)
 theorem shl_top (y : BitVec 64) {c : Nat} (hc : c < 64) :
     ((y <<< 1) <<< (63 - c)).toNat = 2 ^ (64 - c) * (y.toNat % 2 ^ c) := by
   rw [BitVec.toNat_shiftLeft, BitVec.toNat_shiftLeft, Nat.shiftLeft_eq, Nat.shiftLeft_eq,
-    Nat.mod_mul_mod, Nat.mul_assoc, ← Nat.pow_add, show 1 + (63 - c) = 64 - c by omega,
-    show (2 : Nat) ^ 64 = 2 ^ (64 - c) * 2 ^ c by rw [← Nat.pow_add]; congr 1; omega,
+    Nat.mod_mul_mod, Nat.mul_assoc, ← Nat.pow_add, show 1 + (63 - c) = 64 - c by omega_using [hc],
+    show (2 : Nat) ^ 64 = 2 ^ (64 - c) * 2 ^ c by rw [← Nat.pow_add]; congr 1; omega_using [hc],
     Nat.mul_comm, Nat.mul_mod_mul_left]
 
 /-- A word of `shrClBody`. -/
@@ -157,13 +157,13 @@ theorem shrCl_word (x y : BitVec 64) {c : Nat} (hc : c < 64) :
   rw [BitVec.toNat_add, BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow, shl_top y hc]
   apply Nat.mod_eq_of_lt
   have h1 : x.toNat / 2 ^ c < 2 ^ (64 - c) := by
-    rw [Nat.div_lt_iff_lt_mul (Nat.two_pow_pos _), ← Nat.pow_add, show 64 - c + c = 64 by omega]; exact x.isLt
+    rw [Nat.div_lt_iff_lt_mul (Nat.two_pow_pos _), ← Nat.pow_add, show 64 - c + c = 64 by omega_using [hc]]; exact x.isLt
   have h2 : y.toNat % 2 ^ c < 2 ^ c := Nat.mod_lt _ (Nat.two_pow_pos _)
   calc x.toNat / 2 ^ c + 2 ^ (64 - c) * (y.toNat % 2 ^ c) < 2 ^ (64 - c) + 2 ^ (64 - c) * (y.toNat % 2 ^ c) := by
-        omega
-    _ = 2 ^ (64 - c) * (y.toNat % 2 ^ c + 1) := by rw [Nat.mul_add, Nat.mul_one]; omega
+        omega_using [h1]
+    _ = 2 ^ (64 - c) * (y.toNat % 2 ^ c + 1) := by rw [Nat.mul_add, Nat.mul_one]; omega_using []
     _ ≤ 2 ^ (64 - c) * 2 ^ c := Nat.mul_le_mul_left _ h2
-    _ = 2 ^ 64 := by rw [← Nat.pow_add]; congr 1; omega
+    _ = 2 ^ 64 := by rw [← Nat.pow_add]; congr 1; omega_using [hc]
 
 structure ShrClInv (s₀ : State) (B : Addr) (Z eo eA c : Nat) (j : Nat) (t : State) : Prop where
   scr : Scr t B Z
@@ -211,9 +211,9 @@ theorem shrClStep_ok {s₀ : State} {B : Addr} {Z w eo eA c : Nat} (hc : c < 64)
   · rw [hm', hm, wv_writeW_top _ _ _ _ _ (by omega_arith), hr]
     have hv := hI.val
     rw [show wv s₀.mem B eA (j + 1) = wv s₀.mem B eA j + 2 ^ (64 * j) * (word s₀.mem B (eA + 8 * j)).toNat from rfl,
-      pow64_succ, show eA + 8 * (j + 1) = eA + 8 * j + 8 by omega]
+      pow64_succ, show eA + 8 * (j + 1) = eA + 8 * j + 8 by omega_using []]
     have h2 := Nat.div_add_mod (word s₀.mem B (eA + 8 * j)).toNat (2 ^ c)
-    have hP : (2 : Nat) ^ 64 = 2 ^ (64 - c) * 2 ^ c := by rw [← Nat.pow_add]; congr 1; omega
+    have hP : (2 : Nat) ^ 64 = 2 ^ (64 - c) * 2 ^ c := by rw [← Nat.pow_add]; congr 1; omega_using [hc]
     generalize (word s₀.mem B (eA + 8 * j)).toNat = x at h2 hv ⊢
     generalize (word s₀.mem B (eA + 8 * j + 8)).toNat % 2 ^ c = y
     generalize 2 ^ (64 * j) = P at hv ⊢

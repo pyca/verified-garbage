@@ -17,24 +17,24 @@ theorem maskWrite_good {s t : State} {B : Addr} {Z w : Nat} {minv : BitVec 64}
     (hg : Good s B Z w minv) (hf : Outside B Field.mask.offset 8 s.mem t.mem)
     (hk : Keep [.rax] s t) : Good t B Z w minv := by
   have he : ∀ i < 32, word t.mem B (8 * i) = word s.mem B (8 * i) := fun i hi =>
-    hf.word (Or.inl (by change 8 * i + 8 ≤ 360; omega)) (by omega)
+    hf.word (Or.inl (by change 8 * i + 8 ≤ 360; omega_using [hi])) (by omega_using [hi])
   exact ⟨hg.scr.congr hk.2.2, (hk.gpr (by decide)).trans hg.rdi,
     ⟨(he _ (by decide)).trans hg.hdr.hw, (he _ (by decide)).trans hg.hdr.hminv,
-      fun j hj => (he _ (by unfold sArr; omega)).trans (hg.hdr.harr j hj)⟩⟩
+      fun j hj => (he _ (by unfold sArr; omega_using [hj])).trans (hg.hdr.harr j hj)⟩⟩
 
 theorem maskWrite_child {mem mem' : Mem} {B : Addr} {o wx m : Nat} {minv : BitVec 64}
     (child : ChildReady mem B o wx m minv) (hf : Outside B Field.mask.offset 8 mem mem')
     (ho : 368 ≤ o) (hbound : o + slot wx 8 ≤ 2 ^ 64) : ChildReady mem' B o wx m minv := by
-  have hslot : 256 ≤ slot wx 8 := by unfold slot hdrBytes; omega
+  have hslot : 256 ≤ slot wx 8 := by unfold slot hdrBytes; omega_using []
   have he : ∀ d, o + d + 8 ≤ 2 ^ 64 → word mem' (off B o) d = word mem (off B o) d := by
     intro d hd
     rw [word_off, word_off]
-    exact hf.word (Or.inr (by change 368 ≤ o + d; omega)) hd
+    exact hf.word (Or.inr (by change 368 ≤ o + d; omega_using [ho])) hd
   have hN := slot_le (w := wx) (show aN < 8 by decide)
-  refine ⟨child.header.of_words (fun i hi => he _ (by omega)), ?_, ?_⟩
-  · rw [wv_congr (m := mem) (m' := mem') (fun i hi => he _ (by omega))]
+  refine ⟨child.header.of_words (fun i hi => he _ (by omega_using [hbound, hslot, hi])), ?_, ?_⟩
+  · rw [wv_congr (m := mem) (m' := mem') (fun i hi => he _ (by omega_using [hbound, hN, hi]))]
     exact child.modulus
-  · rw [he _ (by omega)]
+  · rw [he _ (by omega_using [hbound, hN])]
     exact child.inverse
 
 /-- The mask store leaves the parent and selected child ready for another call. -/
@@ -48,6 +48,6 @@ theorem accumulate_context {s : State} {B : Addr} {Z o w wx m : Nat} {minv paren
       Outside B Field.mask.offset 8 s.mem t.mem ∧ Keep [.rax] s t := by
   have hn := hg.scr.nowrap
   exact WP.mono (accumulate_ok hg.scr hg.rdi hZ ha hb) fun t ⟨ht, hf, hk⟩ =>
-    ⟨maskWrite_good hg hf hk, maskWrite_child child hf ho (by omega), ht, hf, hk⟩
+    ⟨maskWrite_good hg hf hk, maskWrite_child child hf ho (by omega_using [hhi, hn]), ht, hf, hk⟩
 
 end VG.Proof.Dsa.X86_64

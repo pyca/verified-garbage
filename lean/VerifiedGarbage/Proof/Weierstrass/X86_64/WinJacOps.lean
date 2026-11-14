@@ -37,7 +37,7 @@ theorem jw_T_ne :
   rw [hL.Tz3, hL.Tx, hL.Ty, hL.Tz, hL.Tz2]
   unfold jg
   refine ⟨?_, ?_, ?_, ?_, ?_, ?_⟩ <;> intro h <;> have := Nat.eq_of_mul_eq_mul_left
-    (show 0 < 8 * K.M.n by omega) (Nat.add_left_cancel h) <;> omega
+    (show 0 < 8 * K.M.n by omega_using [this]) (Nat.add_left_cancel h) <;> omega_arith
 
 end
 
@@ -123,13 +123,13 @@ theorem tblW_nodup : (tblW K).Nodup := by
   have hn0 := hL.n0
   have inj : ∀ a b : Nat, jg K (80 + a) = jg K (80 + b) → a = b := fun a b e => by
     unfold jg at e
-    have := Nat.eq_of_mul_eq_mul_left (show 0 < 8 * K.M.n by omega) (Nat.add_left_cancel e); omega
+    have := Nat.eq_of_mul_eq_mul_left (show 0 < 8 * K.M.n by omega_using [hn0]) (Nat.add_left_cancel e); omega_using [this]
   rw [tblW_eq hL, List.nodup_append]
   refine ⟨hL.nodup.sublist (.cons _ (.cons _ (.cons _ (.cons_cons _ (.cons_cons _ (.cons _ (.cons _
     (.refl _)))))))), List.Pairwise.map _ (fun a b hab e => hab (inj a b e)) List.nodup_range,
     fun a ha b hb e => ?_⟩
   obtain ⟨c, hc, rfl⟩ := List.mem_map.mp hb
-  exact hL.jg_ne (List.mem_append_right _ (tblW_other a ha)) (by have := List.mem_range.mp hc; omega) e
+  exact hL.jg_ne (List.mem_append_right _ (tblW_other a ha)) (by have := List.mem_range.mp hc; omega_using [this]) e
 
 theorem tblW_P : ∀ x ∈ [K.P.x, K.P.y, K.P.z], x ∉ tblW K := by
   intro x hx hw
@@ -140,7 +140,7 @@ theorem tblW_P : ∀ x ∈ [K.P.x, K.P.y, K.P.z], x ∉ tblW K := by
   rcases List.mem_append.mp hw with hw | hw
   · exact hL.ro x hro (tblW_other x hw)
   · obtain ⟨c, hc, rfl⟩ := List.mem_map.mp hw
-    exact hL.jg_ne (List.mem_append_left _ hro) (by have := List.mem_range.mp hc; omega) rfl
+    exact hL.jg_ne (List.mem_append_left _ hro) (by have := List.mem_range.mp hc; omega_using [this]) rfl
 
 theorem tblW_slots : ∀ x ∈ tblW K ++ [K.P.x, K.P.y, K.P.z], x ∈ jwSlots K := by
   intro x hx
@@ -149,7 +149,7 @@ theorem tblW_slots : ∀ x ∈ tblW K ++ [K.P.x, K.P.y, K.P.z], x ∈ jwSlots K 
   · rcases List.mem_append.mp hx with hx | hx
     · exact other_mem (tblW_other x hx)
     · obtain ⟨c, hc, rfl⟩ := List.mem_map.mp hx
-      exact jg_mem (by have := List.mem_range.mp hc; omega)
+      exact jg_mem (by have := List.mem_range.mp hc; omega_using [this])
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
     rcases hx with rfl | rfl | rfl <;> exact ro_mem (by jw_mem)
 

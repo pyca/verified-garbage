@@ -28,9 +28,9 @@ theorem restore_ok {s : State} {base : Addr} (hs : Scr s base) {g : Reg → BitV
     (Spill.restoreCode .eax [(.ebx, 0), (.esi, 4), (.ebp, 12), (.edi, 8)] ++ []) from rfl]
   refine wp_mov rfl fun t ht => ?_
   have hb : (t.gpr .eax).setWidth 64 = base := by rw [ht.gpr]; exact hs.edi
-  refine Spill.restore_ofNat_ok _ (n := 16) (by decide) (by rw [ht.gpr]; have := hs.nowrap; omega)
+  refine Spill.restore_ofNat_ok _ (n := 16) (by decide) (by rw [ht.gpr]; have := hs.nowrap; omega_using [this])
     (by decide) (fun p h => by
-      rw [hb, ht.rd, ht.wr]; exact hs.read (by have := savedSlots_bound p (by revert p h; decide); omega))
+      rw [hb, ht.rd, ht.wr]; exact hs.read (by have := savedSlots_bound p (by revert p h; decide); omega_using [this]))
     (by rw [hb, ht.mem]; exact hsv.sub (by decide)) fun u hu => WP.block_nil ⟨fun p h => hu.gpr p (by
       revert p h; decide), by rw [hu.mem, ht.mem], fun r hr => ?_, by rw [hu.rd, ht.rd], by rw [hu.wr, ht.wr]⟩
   simp only [restoreRegs, List.mem_cons, List.not_mem_nil, or_false, not_or] at hr

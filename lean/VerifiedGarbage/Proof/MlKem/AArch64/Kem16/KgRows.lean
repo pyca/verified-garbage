@@ -66,7 +66,7 @@ def rowGW (s₀ s : State) (fg : Nat × Nat) : Poly := polyAtW 16 s.mem (kA s₀
 
 /-- Entry `j` of row `i` is among the first `n`, once the first `i + 1` rows are. -/
 theorem lt_row {i j n : Nat} (hn : P.k * (i + 1) ≤ n) (hj : j < P.k) : P.k * i + j < n := by
-  rw [Nat.mul_succ] at hn; omega
+  rw [Nat.mul_succ] at hn; omega_using [hn, hj]
 
 theorem row_sumW {s₀ s : State} {mB : Mem} {v : BitVec 64} {n i : Nat}
     (hn : P.k * (i + 1) ≤ n) (h : TLW P s₀ mB v n i s) :
@@ -156,7 +156,7 @@ theorem fused_rowW {s₀ s : State} (hp : Pre P s₀) (hr : Noise.Room P)
   have tl₉ := tl₈.frame hp kb₉ x₉ f₉ fun r hr' => by
     rw [List.mem_singleton.mp hr']; exact apart_dk hp hi
   refine ⟨⟨tl₉.c,tl₉.sp,tl₉.dk,fun i' hi' => ?_⟩,?_⟩
-  · rcases (by omega : i'<i ∨ i'=i) with hi' | rfl
+  · rcases (by omega_using [hi'] : i'<i ∨ i'=i) with hi' | rfl
     · exact tl₉.ek i' hi'
     · refine ⟨?_,b₉⟩
       rw [bytesAt_frame f₉ (fun r hr' => by
@@ -221,18 +221,18 @@ theorem encode_stepW {s₀ s : State} (hp : Pre P s₀) (hr : Noise.Room P)
       rw [List.mem_singleton.mp hh]
       exact hp.args.rdisj (by decide) (by decide) (Noise.noise_fits hr hi) fd (.inl (by decide))) (h.errors i hi)
   · intro i hi
-    rcases (by omega : i<j ∨ i=j) with hi | rfl
+    rcases (by omega_using [hi] : i<j ∨ i=j) with hi | rfl
     · rw [bytesAt_frame ft (fun r hh => by
         rw [List.mem_singleton.mp hh]
-        exact hp.args.rdisj (by decide) (by decide) (by kl) fd (.inr (.inl (by omega)))) (by decide)]
+        exact hp.args.rdisj (by decide) (by decide) (by kl) fd (.inr (.inl (by omega_using [hi])))) (by decide)]
       exact h.dk i hi
     · exact bt
   · exact (h.frame.sub (fun r hh => by
       rw [List.mem_singleton.mp hh]
-      exact ⟨_,List.mem_singleton_self _,R.sub2 (by omega) (by omega)⟩)).trans
+      exact ⟨_,List.mem_singleton_self _,R.sub2 (by omega_using []) (by omega_using [])⟩)).trans
       (ft.sub (fun r hh => by
         rw [List.mem_singleton.mp hh]
-        exact ⟨_,List.mem_singleton_self _,R.sub2 (by omega) (by omega)⟩))
+        exact ⟨_,List.mem_singleton_self _,R.sub2 (by omega_using []) (by omega_using [])⟩))
 
 theorem encode_okW {s₀ s : State} (hp : Pre P s₀) (hr : Noise.Room P)
     {mB mN : Mem} {v : BitVec 64} {n : Nat} (h : EncodeInvW P s₀ mB mN v n 0 s) :

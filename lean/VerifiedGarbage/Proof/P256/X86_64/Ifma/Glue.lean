@@ -184,23 +184,23 @@ theorem tops_andl (a : T) {m : Nat} (hm : m < 16) :
 theorem andl_int (a : T) {m : Nat} (hm : m < 16) (E : Env) {k : Nat} (hk : k < 4) :
     (tops.andc a (K4.lanes m)).int E k = if m.testBit k then a.int E k else 0 := by
   rw [tops_andl a hm]
-  rcases (by omega : k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3) with rfl | rfl | rfl | rfl <;> simp only [T.int, pick4] <;> split <;>
+  rcases (by omega_using [hk] : k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3) with rfl | rfl | rfl | rfl <;> simp only [T.int, pick4] <;> split <;>
     simp_all [Int.emod_one]
 
 theorem vI_fadd (a b : F5 T) (E : Env) (k : Nat) : vI E k (fadd tops a b) = vI E k a + vI E k b := by
   simp only [fadd, F5.zipM, bind, pure, tops, vI, T.int, val5]
-  omega
+  omega_using []
 
 theorem vI_fsub (a b : F5 T) (E : Env) (k : Nat) : vI E k (fsub tops a b) = vI E k a - vI E k b := by
   simp only [fsub, F5.zipM, bind, pure, tops, vI, T.int, val5]
-  omega
+  omega_using []
 
 theorem vI_fshl (a : F5 T) (n : Nat) (E : Env) (k : Nat) :
     vI E k (fshl tops a n) = vI E k a * 2 ^ n := by
   by_cases h : n = 1
   · subst h
     simp only [fshl, F5.mapM, bind, pure, tops, vI, T.int, val5, ↓reduceIte]
-    omega
+    omega_using []
   · simp only [fshl, F5.mapM, bind, pure, tops, vI, T.int, val5, h, ↓reduceIte]
     generalize (2 : Int) ^ n = w
     grind
@@ -220,7 +220,7 @@ theorem vI_fmadd (acc b : F5 T) {m : Nat} (hm : m < 16) (E : Env) {k : Nat} (hk 
       x.int E k + if m.testBit k then y.int E k else 0 := by
     rw [← andl_int y hm E hk]; rfl
   simp only [fmadd, F5.zipM, bind, pure, vI, e, val5]
-  split <;> omega
+  split <;> omega_using []
 
 theorem vI_fmsub (acc b : F5 T) {m : Nat} (hm : m < 16) (E : Env) {k : Nat} (hk : k < 4) :
     vI E k (fmsub tops acc b m) = vI E k acc - if m.testBit k then vI E k b else 0 := by
@@ -228,7 +228,7 @@ theorem vI_fmsub (acc b : F5 T) {m : Nat} (hm : m < 16) (E : Env) {k : Nat} (hk 
       x.int E k - if m.testBit k then y.int E k else 0 := by
     rw [← andl_int y hm E hk]; rfl
   simp only [fmsub, F5.zipM, bind, pure, vI, e, val5]
-  split <;> omega
+  split <;> omega_using []
 
 theorem vI_fmrsub (acc a : F5 T) {m : Nat} (hm : m < 16) (E : Env) (k : Nat) :
     vI E k (fmrsub tops acc a m) = if m.testBit k then vI E k a - vI E k acc else vI E k acc := by
@@ -236,12 +236,12 @@ theorem vI_fmrsub (acc a : F5 T) {m : Nat} (hm : m < 16) (E : Env) (k : Nat) :
       if m.testBit k then y.int E k - x.int E k else x.int E k := by
     rw [tops_blend _ _ hm]; rfl
   simp only [fmrsub, F5.zipM, bind, pure, vI, e, val5]
-  split <;> omega
+  split <;> omega_using []
 
 theorem limbOf_val (v : Nat) :
     val5 (limbOf v 0 : Nat) (limbOf v 1 : Nat) (limbOf v 2 : Nat) (limbOf v 3 : Nat) (limbOf v 4 : Nat) = (v : Int) := by
   simp only [limbOf, val5, Nat.reduceEqDiff, ↓reduceIte, Nat.reduceMul]
-  omega
+  omega_using []
 
 theorem pN_eq : (pN : Int) = pI := by decide
 
@@ -249,17 +249,17 @@ theorem vI_fbias (a : F5 T) (k0 k1 k2 k3 : Nat) (E : Env) {k : Nat} (hk : k < 4)
     vI E k (fbias tops a k0 k1 k2 k3) = vI E k a + (pick4 k0 k1 k2 k3 k : Nat) * pI := by
   have e (x : T) (i : Nat) : (tops.addc x (biasK k0 k1 k2 k3 i)).int E k =
       x.int E k + (limbOf (pick4 k0 k1 k2 k3 k * pN) i : Nat) := by
-    rcases (by omega : k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3) with rfl | rfl | rfl | rfl <;> rfl
+    rcases (by omega_using [hk] : k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3) with rfl | rfl | rfl | rfl <;> rfl
   have := limbOf_val (pick4 k0 k1 k2 k3 k * pN)
   rw [Int.natCast_mul, pN_eq] at this
   simp only [fbias, bind, pure, vI, e]
   simp only [val5] at this ⊢
-  omega
+  omega_using [this]
 
 theorem vI_fneg (a : F5 T) (E : Env) (k : Nat) : vI E k (fneg tops a) = -vI E k a := by
   have z : ((0 : Nat) : Int) = 0 := rfl
   simp only [fneg, F5.mapM, bind, pure, tops, vI, T.int, pick4_same, z, val5]
-  omega
+  omega_using []
 
 theorem vI_fsel (c : T) (hc : blendOf c = none) (a b : F5 T) (E : Env) (k : Nat) :
     vI E k (fsel tops c a b) = if c.int E k = 0 then vI E k a else vI E k b := by
@@ -311,7 +311,7 @@ theorem norm_carried {s₀ : State} {B : Bnds} (hB : EnvOK s₀ B) (v : F5 T) {k
   obtain ⟨y, hy⟩ := iv_add_right h
   obtain ⟨x, hx, r0, r1⟩ := iv_sra hy
   obtain ⟨-, lo, hi⟩ := iv_ok hB (normY3 v) k x hk hx
-  have r3 : -2 ^ 63 ≤ (normY3 v).int (envOf s₀) k ∧ (normY3 v).int (envOf s₀) k < 2 ^ 63 := ⟨by omega, by omega⟩
+  have r3 : -2 ^ 63 ≤ (normY3 v).int (envOf s₀) k ∧ (normY3 v).int (envOf s₀) k < 2 ^ 63 := ⟨by omega_using [r0, lo], by omega_using [r1, hi]⟩
   simp only [normY3, T.int] at r3
   have := normI_carried r3 h0 h1
   rw [← norm_int] at this

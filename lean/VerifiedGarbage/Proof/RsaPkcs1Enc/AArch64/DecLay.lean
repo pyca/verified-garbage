@@ -151,24 +151,24 @@ theorem k1024 : L.k.toNat ≤ 1024 := h.kv.2
 
 /-- `scratch` holds 8192 bytes at least. -/
 theorem s8192 : 8192 ≤ L.sl.toNat * 8 := by
-  have := h.slk; have := h.k64; unfold Spec.Rsa.scratchWords at *; omega
+  have := h.slk; have := h.k64; unfold Spec.Rsa.scratchWords at *; omega_arith
 
 omit h in
 /-- A range in our stack is in `STK`. -/
 theorem sub_stk {d n : Nat} (hd : d + n ≤ 240) : Region.Sub ⟨L.Q + BitVec.ofNat 64 d, n⟩ L.STK := by
-  rw [Enc.q_add L.Q L.P d]; exact Offset.sub_base _ (by omega)
+  rw [Enc.q_add L.Q L.P d]; exact Offset.sub_base _ (by omega_using [hd])
 
 omit h in
-theorem low_stk : Region.Sub L.LOW L.STK := Region.sub_prefix (by omega)
+theorem low_stk : Region.Sub L.LOW L.STK := Region.sub_prefix (by omega_using [])
 
 /-- A range in our frames misses the stack the calls use. -/
 theorem fr_low {d n : Nat} (hd : d + n ≤ 360) : Region.Disjoint ⟨L.Q + BitVec.ofNat 64 d, n⟩ L.LOW :=
-  Offset.disjoint_below _ (by have := h.nQ; have := h.pQ; omega)
+  Offset.disjoint_below _ (by have := h.nQ; have := h.pQ; omega_arith)
 
 /-- Two ranges in our frames and arguments, apart. -/
 theorem fr_sep {d n d' n' : Nat} (hs : d + n ≤ d' ∨ d' + n' ≤ d) (h₁ : d + n ≤ 360) (h₂ : d' + n' ≤ 360) :
     Region.Disjoint ⟨L.Q + BitVec.ofNat 64 d, n⟩ ⟨L.Q + BitVec.ofNat 64 d', n'⟩ :=
-  Offset.disjoint _ hs (by have := h.nQ; omega) (by have := h.nQ; omega)
+  Offset.disjoint _ hs (by have := h.nQ; omega_using [h₁]) (by have := h.nQ; omega_using [h₂])
 
 /-- A range in our frames misses the writable buffers. -/
 theorem stk_buf {d n : Nat} (hd : d + n ≤ 240) {R : Region} (hR : InW L R) :
@@ -182,7 +182,7 @@ theorem stk_buf {d n : Nat} (hd : d + n ≤ 240) {R : Region} (hR : InW L R) :
 /-- A range in our stack arguments misses the writable buffers. -/
 theorem args_buf {d n : Nat} (h₁ : 240 ≤ d) (h₂ : d + n ≤ 360) {R : Region} (hR : InW L R) :
     Region.Disjoint ⟨L.Q + BitVec.ofNat 64 d, n⟩ R := by
-  have hs : Region.Sub ⟨L.Q + BitVec.ofNat 64 d, n⟩ L.ARGS := Offset.sub _ h₁ (by omega)
+  have hs : Region.Sub ⟨L.Q + BitVec.ofNat 64 d, n⟩ L.ARGS := Offset.sub _ h₁ (by omega_using [h₂])
   rcases hR with hR | hR | hR
   · exact (h.oA.symm.sub_left hs).sub_right hR
   · exact (h.mA.symm.sub_left hs).sub_right hR
@@ -227,23 +227,23 @@ theorem Kept.frame {L : Lay} {lr : BitVec 64} {m m' : Mem} {rs : List Region} (h
   have k : ∀ d, keptOff d →
       m'.readW (L.Q + BitVec.ofNat 64 d) 64 = m.readW (L.Q + BitVec.ofNat 64 d) 64 :=
     fun d hdd => hf.readW (Region.contains_self _ _) (hd d hdd) (by decide)
-  refine ⟨fun j hj => (k _ (by unfold keptOff; omega)).trans (hk.call j hj), ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_,
-    ?_, (k 224 (by unfold keptOff; omega)).trans hk.lr,
-    fun j hj => (k _ (by unfold keptOff; omega)).trans (hk.args j hj)⟩
-  exacts [(k oOut (by unfold keptOff oOut; omega)).trans hk.out, (k oML (by unfold keptOff oML; omega)).trans hk.ml,
-    (k oN (by unfold keptOff oN; omega)).trans hk.n, (k oK (by unfold keptOff oK; omega)).trans hk.k,
-    (k oE (by unfold keptOff oE; omega)).trans hk.e, (k oEl (by unfold keptOff oEl; omega)).trans hk.el,
-    (k oD (by unfold keptOff oD; omega)).trans hk.d, (k oDl (by unfold keptOff oDl; omega)).trans hk.dl,
-    (k oIn (by unfold keptOff oIn; omega)).trans hk.inp, (k oScr (by unfold keptOff oScr; omega)).trans hk.scr]
+  refine ⟨fun j hj => (k _ (by unfold keptOff; omega_using [hj])).trans (hk.call j hj), ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_,
+    ?_, (k 224 (by unfold keptOff; omega_using [])).trans hk.lr,
+    fun j hj => (k _ (by unfold keptOff; omega_using [hj])).trans (hk.args j hj)⟩
+  exacts [(k oOut (by unfold keptOff oOut; omega_using [])).trans hk.out, (k oML (by unfold keptOff oML; omega_using [])).trans hk.ml,
+    (k oN (by unfold keptOff oN; omega_using [])).trans hk.n, (k oK (by unfold keptOff oK; omega_using [])).trans hk.k,
+    (k oE (by unfold keptOff oE; omega_using [])).trans hk.e, (k oEl (by unfold keptOff oEl; omega_using [])).trans hk.el,
+    (k oD (by unfold keptOff oD; omega_using [])).trans hk.d, (k oDl (by unfold keptOff oDl; omega_using [])).trans hk.dl,
+    (k oIn (by unfold keptOff oIn; omega_using [])).trans hk.inp, (k oScr (by unfold keptOff oScr; omega_using [])).trans hk.scr]
 
 /-- A kept word misses a range in a writable buffer. -/
 theorem Lay.Ok.kept_buf {L : Lay} (h : L.Ok) {d : Nat} (hd : keptOff d) {R : Region} (hR : InW L R) :
     Region.Disjoint ⟨L.Q + BitVec.ofNat 64 d, 8⟩ R := by
   unfold keptOff at hd
   rcases hd with hd | hd | hd | hd
-  · exact h.stk_buf (by omega) hR
-  · exact h.stk_buf (by omega) hR
-  · exact h.stk_buf (by omega) hR
+  · exact h.stk_buf (by omega_using [hd]) hR
+  · exact h.stk_buf (by omega_using [hd]) hR
+  · exact h.stk_buf (by omega_using [hd]) hR
   · exact h.args_buf hd.1 hd.2 hR
 
 /-! ## Between the frames' pushes and pops -/
@@ -290,7 +290,7 @@ theorem store (hL : L.Ok) {rs : List Region} (hrd : t'.rd = t.rd) (hwr : t'.wr =
     · obtain ⟨b, n⟩ := R
       simp only at hb h₂; subst hb
       unfold keptOff at hd; unfold oR at h₁; unfold frameBytes at h₂
-      exact hL.fr_sep (by omega) (by omega) (by omega)
+      exact hL.fr_sep (by omega_using [hd, h₁, h₂]) (by omega_using [hd]) (by omega_using [h₂])
   · rcases hin r hr with (hw | hw | hw) | ⟨d', h₁, h₂, hb⟩
     · exact ⟨L.OUT, by simp, hw⟩
     · exact ⟨L.ML, by simp, hw⟩
@@ -298,13 +298,13 @@ theorem store (hL : L.Ok) {rs : List Region} (hrd : t'.rd = t.rd) (hwr : t'.wr =
     · obtain ⟨b, n⟩ := r
       simp only at hb h₂; subst hb
       unfold frameBytes at h₂
-      exact ⟨L.STK, by simp, Lay.Ok.sub_stk (by omega)⟩
+      exact ⟨L.STK, by simp, Lay.Ok.sub_stk (by omega_using [h₂])⟩
 
 theorem inFr {d n : Nat} (hd : d + n ≤ frameBytes) : InRegions t.wr (L.Q + BitVec.ofNat 64 d) n :=
-  ⟨L.FR, by rw [hc.wr]; simp, Offset.contains_base _ hd (by unfold frameBytes at hd; omega)⟩
+  ⟨L.FR, by rw [hc.wr]; simp, Offset.contains_base _ hd (by unfold frameBytes at hd; omega_using [hd])⟩
 
 theorem inFrR {d n : Nat} (hd : d + n ≤ frameBytes) : InRegions (t.rd ++ t.wr) (L.Q + BitVec.ofNat 64 d) n :=
-  ⟨L.FR, by rw [hc.rd, hc.wr]; simp, Offset.contains_base _ hd (by unfold frameBytes at hd; omega)⟩
+  ⟨L.FR, by rw [hc.rd, hc.wr]; simp, Offset.contains_base _ hd (by unfold frameBytes at hd; omega_using [hd])⟩
 
 end Ctx
 

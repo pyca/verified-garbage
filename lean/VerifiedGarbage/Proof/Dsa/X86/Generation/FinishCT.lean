@@ -33,7 +33,7 @@ theorem outPart_ct {g : Geo} {E : Env} (v : E.Valid) :
   have hb : ∀ (o : COut) t, Base E t ∧ SRes E g t.mem o → Base E t := fun _ _ h => h.1
   unfold Geo.outPart
   simp only [seqs]
-  refine cmpF_ct (o := fStatus) (v := 1) (by simp only [fStatus, hdr]; omega) (by decide) stOf hb
+  refine cmpF_ct (o := fStatus) (v := 1) (by simp only [fStatus, hdr]; omega_using [sz]) (by decide) stOf hb
     (fun o t h => h.2.status) (fun o => by rcases o with _ | _ | _ <;> simp [stOf]) ?_ ?_
   · -- p||q||g out.
     refine RelCT.seq (both_post (Ψ := fun _ t => ∀ r ∈ [Reg.esp, .edi, .ebx, .esi, .ecx],
@@ -43,7 +43,7 @@ theorem outPart_ct {g : Geo} {E : Env} (v : E.Valid) :
           (by decide +kernel) (by decide +kernel))) fun R t h => ?_)
       (both_agree _ _ (fun _ _ h => h) (tcheck _ _ (by decide +kernel)))
     have B := h.1.base hb
-    refine ld_ok B.scr (r := .ebx) (d := fOut) (by simp only [fOut, hdr]; omega) fun t₂ u₂ =>
+    refine ld_ok B.scr (r := .ebx) (d := fOut) (by simp only [fOut, hdr]; omega_using [sz]) fun t₂ u₂ =>
       scr_ok fun t₃ e₃ g₃ m₃ _ _ _ => wp_movi fun t₄ u₄ => WP.block_nil ?_
     have pins := base_pins B
     intro r hr
@@ -62,7 +62,7 @@ theorem outPart_ct {g : Geo} {E : Env} (v : E.Valid) :
           (by decide +kernel) (by decide +kernel))) fun R t h => ?_)
       (both_agree _ _ (fun _ _ h => h) (tcheck _ _ (by decide +kernel)))
     have B := h.1.base hb
-    refine ld_ok B.scr (r := .esi) (d := fOut) (by simp only [fOut, hdr]; omega) fun t₂ u₂ =>
+    refine ld_ok B.scr (r := .esi) (d := fOut) (by simp only [fOut, hdr]; omega_using [sz]) fun t₂ u₂ =>
       wp_movi fun t₃ u₃ => wp_movi fun t₄ u₄ => WP.block_nil ?_
     have pins := base_pins B
     intro r hr
@@ -91,7 +91,7 @@ theorem results_ct {E : Env} (v : E.Valid) {α : Type} {Φ : α → State → Pr
       (tcheckE _ _ (.block [.mov .ebx (.mem (sc 0))]) (by kernel_rfl) (by decide +kernel) (by decide +kernel)))
     fun a t h => ?_) ?_
   · have B := hb a t h
-    refine ld_ok B.scr (r := .ebx) (d := fStP) (by simp only [fStP, hdr]; omega) fun t₁ u₁ => WP.block_nil ?_
+    refine ld_ok B.scr (r := .ebx) (d := fStP) (by simp only [fStP, hdr]; omega_using [sz]) fun t₁ u₁ => WP.block_nil ?_
     refine ⟨B.regs u₁.mem (u₁.other _ (by decide)) (u₁.other _ (by decide)) u₁.rd u₁.wr u₁.syms, fun r hr => ?_⟩
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
@@ -106,20 +106,20 @@ theorem results_ct {E : Env} (v : E.Valid) {α : Type} {Φ : α → State → Pr
   · obtain ⟨B, P⟩ := h
     have b₀ : t.gpr .ebx = E.stP.setWidth 32 := P .ebx (by simp)
     have cS : ∀ d, d + 4 ≤ 32 → E.stRegion.Contains (E.stP + BitVec.ofNat 64 d) 4 :=
-      fun d h => Offset.contains_base _ h (by omega)
-    refine stB_ok (P := E.stP) (d := 0) b₀ (by omega) B.stW (cS 0 (by omega)) fun t₂ M₂ => ?_
-    refine stB_ok (P := E.stP) (d := 24) (by rw [M₂.gpr]; exact b₀) (by omega) (by rw [M₂.wr]; exact B.stW)
-      (cS 24 (by omega)) fun t₃ M₃ => wp_movi fun t₄ u₄ => ?_
+      fun d h => Offset.contains_base _ h (by omega_using [h])
+    refine stB_ok (P := E.stP) (d := 0) b₀ (by omega_using [sf]) B.stW (cS 0 (by omega_using [])) fun t₂ M₂ => ?_
+    refine stB_ok (P := E.stP) (d := 24) (by rw [M₂.gpr]; exact b₀) (by omega_using [sf]) (by rw [M₂.wr]; exact B.stW)
+      (cS 24 (by omega_using [])) fun t₃ M₃ => wp_movi fun t₄ u₄ => ?_
     have b₄ : t₄.gpr .ebx = E.stP.setWidth 32 := by rw [u₄.other _ (by decide), M₃.gpr, M₂.gpr, b₀]
-    refine stB_ok (P := E.stP) (d := 4) b₄ (by omega) (by rw [u₄.wr, M₃.wr, M₂.wr]; exact B.stW)
-      (cS 4 (by omega)) fun t₅ M₅ => ?_
-    refine stB_ok (P := E.stP) (d := 28) (by rw [M₅.gpr]; exact b₄) (by omega)
-      (by rw [M₅.wr, u₄.wr, M₃.wr, M₂.wr]; exact B.stW) (cS 28 (by omega)) fun t₆ M₆ => ?_
+    refine stB_ok (P := E.stP) (d := 4) b₄ (by omega_using [sf]) (by rw [u₄.wr, M₃.wr, M₂.wr]; exact B.stW)
+      (cS 4 (by omega_using [])) fun t₅ M₅ => ?_
+    refine stB_ok (P := E.stP) (d := 28) (by rw [M₅.gpr]; exact b₄) (by omega_using [sf])
+      (by rw [M₅.wr, u₄.wr, M₃.wr, M₂.wr]; exact B.stW) (cS 28 (by omega_using [])) fun t₆ M₆ => ?_
     have F₆ : Frame [E.stRegion] t.mem t₆.mem := by
       rw [M₆.mem, M₅.mem, u₄.mem, M₃.mem, M₂.mem]
-      exact ((((Frame.refl _ _).writeW List.mem_cons_self _ (cS 0 (by omega))).writeW List.mem_cons_self _
-        (cS 24 (by omega))).writeW List.mem_cons_self _ (cS 4 (by omega))).writeW List.mem_cons_self _
-        (cS 28 (by omega))
+      exact ((((Frame.refl _ _).writeW List.mem_cons_self _ (cS 0 (by omega_using []))).writeW List.mem_cons_self _
+        (cS 24 (by omega_using []))).writeW List.mem_cons_self _ (cS 4 (by omega_using []))).writeW List.mem_cons_self _
+        (cS 28 (by omega_using []))
     have edi₆ : t₆.gpr .edi = t.gpr .edi := by
       rw [M₆.gpr, M₅.gpr, u₄.other _ (by decide), M₃.gpr, M₂.gpr]
     have esp₆ : t₆.gpr .esp = t.gpr .esp := by
@@ -129,7 +129,7 @@ theorem results_ct {E : Env} (v : E.Valid) {α : Type} {Φ : α → State → Pr
       exact ⟨(v.stFar _ List.mem_cons_self).symm, (v.stFar _ (by simp)).symm, (v.stFar _ (by simp)).symm⟩) edi₆ esp₆
       (by rw [M₆.rd, M₅.rd, u₄.rd, M₃.rd, M₂.rd]) (by rw [M₆.wr, M₅.wr, u₄.wr, M₃.wr, M₂.wr])
       (by rw [M₆.syms, M₅.syms, u₄.syms, M₃.syms, M₂.syms])
-    refine ld_ok B₆.scr (r := .ebx) (d := fUsedP) (by simp only [fUsedP, hdr]; omega) fun t₇ u₇ => WP.block_nil ?_
+    refine ld_ok B₆.scr (r := .ebx) (d := fUsedP) (by simp only [fUsedP, hdr]; omega_using [sz]) fun t₇ u₇ => WP.block_nil ?_
     refine ⟨B₆.regs u₇.mem (u₇.other _ (by decide)) (u₇.other _ (by decide)) u₇.rd u₇.wr u₇.syms, fun r hr => ?_⟩
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
@@ -158,8 +158,8 @@ theorem ranOut_ct {g : Geo} (G : GeoOk g) {E : Env} (v : E.Valid) :
   have sz := v.size_ge
   have bd := G.bounds
   have wl := v.witLen32
-  have budget : g.budget < 2 ^ 32 := by simp only [Geo.budget]; omega
-  have lb : 256 * g.pLen < 2 ^ 32 := by omega
+  have budget : g.budget < 2 ^ 32 := by simp only [Geo.budget]; omega_using [bd]
+  have lb : 256 * g.pLen < 2 ^ 32 := by omega_using [bd]
   unfold Geo.ranOut
   simp only [seqs]
   -- The octets left, compared with the budget.
@@ -183,7 +183,7 @@ theorem ranOut_ct {g : Geo} (G : GeoOk g) {E : Env} (v : E.Valid) :
     refine wp_cmpi fun t₁ f₁ c₁ _ => WP.block_nil ⟨h.1.1.regs f₁.mem (by rw [f₁.gpr]) (by rw [f₁.gpr]) f₁.rd f₁.wr
       f₁.syms, by rw [f₁.gpr]; exact h.1.2.1, lt, ?_⟩
     show t₁.cf = _
-    rw [c₁, h.1.2.1, toNat_ofNat_lt (by omega), toNat_ofNat_lt lb]
+    rw [c₁, h.1.2.1, toNat_ofNat_lt (by omega_using [wl]), toNat_ofNat_lt lb]
   refine RelCT.seq (both_post (Ψ := fun (a : Nat × Nat) t => Base E t ∧
       t.gpr .eax = BitVec.ofNat 32 (max (E.witLen - a.2) (256 * g.pLen)) ∧ E.witLen - a.2 < g.budget)
     (both_ite (fun a => decide (E.witLen - a.2 < 256 * g.pLen)) (fun a t h => h.2.2.2)
@@ -192,8 +192,8 @@ theorem ranOut_ct {g : Geo} (G : GeoOk g) {E : Env} (v : E.Valid) :
       (RelCT.block_nil fun _ _ _ => trivial)) fun a t h => ?_) ?_
   · refine WP.ite _ h.2.2.2 (fun hl => wp_movi fun t₁ u₁ => WP.block_nil ⟨h.1.regs u₁.mem (u₁.other _ (by decide))
       (u₁.other _ (by decide)) u₁.rd u₁.wr u₁.syms, ?_, h.2.2.1⟩) (fun hl => WP.block_nil ⟨h.1, ?_, h.2.2.1⟩)
-    · rw [u₁.gpr, Nat.max_eq_right (by have := of_decide_eq_true hl; omega)]
-    · rw [h.2.1, Nat.max_eq_left (by have := of_decide_eq_false hl; omega)]
+    · rw [u₁.gpr, Nat.max_eq_right (by have := of_decide_eq_true hl; omega_using [this])]
+    · rw [h.2.1, Nat.max_eq_left (by have := of_decide_eq_false hl; omega_using [this])]
   -- Twice, at most the budget.
   refine RelCT.seq (both_post (Ψ := fun (a : Nat × Nat) t => Base E t ∧
       isa.eval .b t = some (decide (2 * max (E.witLen - a.2) (256 * g.pLen) < g.budget)))
@@ -201,14 +201,14 @@ theorem ranOut_ct {g : Geo} (G : GeoOk g) {E : Env} (v : E.Valid) :
   · rcases G.lengths with ⟨h₁, _⟩ | ⟨h₁, _⟩ | ⟨h₁, _⟩ <;> simp only [Geo.budget, h₁] <;>
       exact tcheck _ _ (by decide +kernel)
   · have mx : max (E.witLen - a.2) (256 * g.pLen) < 2 ^ 31 := by
-      have := h.2.2; simp only [Geo.budget] at this; omega
+      have := h.2.2; simp only [Geo.budget] at this; omega_using [bd, this]
     refine wp_add fun t₁ u₁ _ => wp_cmpi fun t₂ f₂ c₂ _ => WP.block_nil ⟨h.1.regs (by rw [f₂.mem, u₁.mem])
       (by rw [f₂.gpr, u₁.other _ (by decide)]) (by rw [f₂.gpr, u₁.other _ (by decide)]) (by rw [f₂.rd, u₁.rd])
       (by rw [f₂.wr, u₁.wr]) (by rw [f₂.syms, u₁.syms]), ?_⟩
     show t₂.cf = _
     have a₁ : t₁.gpr .eax = BitVec.ofNat 32 (2 * max (E.witLen - a.2) (256 * g.pLen)) := by
-      rw [u₁.gpr, h.2.1, ← BitVec.ofNat_add]; congr 1; omega
-    rw [c₂, a₁, toNat_ofNat_lt (by omega), toNat_ofNat_lt budget]
+      rw [u₁.gpr, h.2.1, ← BitVec.ofNat_add]; congr 1; omega_using []
+    rw [c₂, a₁, toNat_ofNat_lt (by omega_using [mx]), toNat_ofNat_lt budget]
   refine RelCT.seq (both_post (Ψ := fun _ t => Base E t)
     (both_ite (fun a => decide (2 * max (E.witLen - a.2) (256 * g.pLen) < g.budget)) (fun a t h => h.2)
       (RelCT.block_nil fun _ _ _ => trivial)
@@ -222,7 +222,7 @@ theorem ranOut_ct {g : Geo} (G : GeoOk g) {E : Env} (v : E.Valid) :
     (both_agree [.esp, .edi] (fun _ => baseVal E) (fun a t h => base_pins h) (tcheck _ _ (by decide +kernel)))
     fun a t h => ?_) (results_ct v (fun _ _ h => h) _ _)
   exact wp_mov fun t₁ u₁ => ld_ok (Scr.of_eq h.scr (u₁.other _ (by decide)) (u₁.other _ (by decide)) u₁.wr)
-    (r := .edx) (d := fSeedLeft) (by simp only [fSeedLeft, hdr]; omega) fun t₂ u₂ => WP.block_nil (h.regs
+    (r := .edx) (d := fSeedLeft) (by simp only [fSeedLeft, hdr]; omega_using [sz]) fun t₂ u₂ => WP.block_nil (h.regs
       (by rw [u₂.mem, u₁.mem]) (by rw [u₂.other _ (by decide), u₁.other _ (by decide)])
       (by rw [u₂.other _ (by decide), u₁.other _ (by decide)]) (by rw [u₂.rd, u₁.rd]) (by rw [u₂.wr, u₁.wr])
       (by rw [u₂.syms, u₁.syms]))
@@ -246,11 +246,11 @@ theorem finish_ct {g : Geo} (G : GeoOk g) {E : Env} (v : E.Valid) (hp : E.pLen =
         exact ⟨v.outScratch.symm, v.witFar.2.1, v.tableFar.2.1⟩) e p r w y,
         h.2.frame G v F fun r hr => by obtain rfl := List.mem_singleton.mp hr; exact v.outScratch.symm⟩) ?_
   have hb : ∀ (o : COut) t, Base E t ∧ SRes E g t.mem o → Base E t := fun _ _ h => h.1
-  refine cmpF_ct (o := fStatus) (v := 1) (by simp only [fStatus, hdr]; omega) (by decide) stOf hb
+  refine cmpF_ct (o := fStatus) (v := 1) (by simp only [fStatus, hdr]; omega_using [sz]) (by decide) stOf hb
     (fun o t h => h.2.status) stLt (zeroResults_ct v (fun o t h => h.1.base hb) _ _) ?_
   have hb₁ : ∀ (o : COut) t, (CmpAfter (fun o t => Base E t ∧ SRes E g t.mem o) o t ∧
       decide (stOf o = 1) = false) → Base E t := fun o t h => h.1.base hb
-  refine cmpF_ct (o := fStatus) (v := 2) (by simp only [fStatus, hdr]; omega) (by decide) stOf hb₁
+  refine cmpF_ct (o := fStatus) (v := 2) (by simp only [fStatus, hdr]; omega_using [sz]) (by decide) stOf hb₁
     (fun o t h => by obtain ⟨s, ⟨-, R⟩, m, -⟩ := h.1.elim; rw [m]; exact R.status) stLt ?_
     (zeroResults_ct v (fun o t h => h.1.base hb₁) _ _)
   refine both_map (fun o => (0, cOf o)) (fun o t h => ?_) (ranOut_ct G v)

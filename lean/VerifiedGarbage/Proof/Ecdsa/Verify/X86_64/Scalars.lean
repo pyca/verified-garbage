@@ -140,9 +140,9 @@ theorem mid_ok (hc : BaseCfgOk c) {s₀ : State} {base : Addr} {g : Reg → BitV
   have hnR := unitMod_pow_two hc.n_odd (64 * c.n)
   have hn3 := hc.n_ge
   have F := hF.fixed
-  have hf : c.sl FLAG + 8 ≤ size := by have := sl_le c h7 (i := FLAG) (by decide); omega
+  have hf : c.sl FLAG + 8 ≤ size := by have := sl_le c h7 (i := FLAG) (by decide); omega_using [h0, this]
   have hr2lt : ∀ {m : Mem}, wordsVal m base (c.sl R2N) c.n = 2 ^ (64 * c.n) * 2 ^ (64 * c.n) % c.C.n →
-      wordsVal m base (c.sl R2N) c.n < c.C.n := fun h => by rw [h]; exact Nat.mod_lt _ (by omega)
+      wordsVal m base (c.sl R2N) c.n < c.C.n := fun h => by rw [h]; exact Nat.mod_lt _ (by omega_using [hn3])
   rw [scalars_eq]
   -- The checks.
   refine WP.seq (WP.seq ?_)
@@ -209,11 +209,11 @@ theorem mid_ok (hc : BaseCfgOk c) {s₀ : State} {base : Addr} {g : Reg → BitV
     fun s₈ ⟨hs₈, M₈, g₈, rd₈, wr₈, U₈, v₈, lt₈, e₈⟩ sy₈ => ?_)
   have F₈ := F₇.unch h7 hn (fixedOk_slW (by decide)) U₈
   refine WP.seq (WP.mono_syms (mulNS_ok hc hs₈ M₈ (o := U) (a := UM) (b := ONE) (by decide)
-    (by decide) (by decide) (by decide) (by rw [show sv c base s₈ ONE = 1 from F₈.one]; omega) (by decide))
+    (by decide) (by decide) (by decide) (by rw [show sv c base s₈ ONE = 1 from F₈.one]; omega_using [hn3]) (by decide))
     fun s₉ ⟨hs₉, M₉, g₉, rd₉, wr₉, U₉, v₉, lt₉, e₉⟩ sy₉ => ?_)
   have F₉ := F₈.unch h7 hn (fixedOk_slW (by decide)) U₉
   refine WP.mono_syms (mulNS_ok hc hs₉ M₉ (o := V) (a := VM) (b := ONE) (by decide)
-    (by decide) (by decide) (by decide) (by rw [show sv c base s₉ ONE = 1 from F₉.one]; omega) (by decide))
+    (by decide) (by decide) (by decide) (by rw [show sv c base s₉ ONE = 1 from F₉.one]; omega_using [hn3, lt₃, e₃, lt₄, lt₅, e₅, lt₆, e₆, lt₇, e₇, lt₈, e₈, lt₉, e₉]) (by decide))
     fun s₁₀ ⟨hs₁₀, M₁₀, g₁₀, rd₁₀, wr₁₀, U₁₀, v₁₀, lt₁₀, e₁₀⟩ sy₁₀ => h s₁₀ ?_
   have F₁₀ := F₉.unch h7 hn (fixedOk_slW (by decide)) U₁₀
   -- What changed: the flag and `midW`.
@@ -279,7 +279,7 @@ theorem mid_ok (hc : BaseCfgOk c) {s₀ : State} {base : Addr} {g : Reg → BitV
       v₆ (by decide) (by decide) (by decide)]; exact lt₅,
     by rw [v₁₀ (by decide) (by decide) (by decide), v₉ (by decide) (by decide) (by decide),
       v₈ (by decide) (by decide) (by decide), v₇ (by decide) (by decide) (by decide)]; exact em₆⟩
-  · exact False.elim (h9 (by omega))
+  · exact False.elim (h9 (by omega_using [h7]))
   · rw [flag_unch_of U' h7 h0 hn (apart_append (apart_slW (by decide)) (apart_pwA (by decide)))]
     exact flag₂
   · refine unch_whole (hF.unch.trans UW) fun w hw => ?_

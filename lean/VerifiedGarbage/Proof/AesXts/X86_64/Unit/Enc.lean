@@ -66,7 +66,7 @@ theorem stealPre_wp {s : State} (hr12 : s.gpr .r12 = D s₀) (hrax : s.gpr .rax 
     simp only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc32, Option.map_some, State.setReg32], ?_⟩⟩
   refine h _ ?_ (by simp [gpr_setReg]) (fun r h₁ h₂ => ?_) (by rw [mem_setReg, mem₁]) (by rw [rd_setReg, rd₁])
     (by rw [wr_setReg, wr₁])
-  · rw [gpr_setReg_of_ne _ _ (by decide), rdx₁, hr12, hrax, last_eq _ hp.m_pos (by have := hp.m_lt; omega)]
+  · rw [gpr_setReg_of_ne _ _ (by decide), rdx₁, hr12, hrax, last_eq _ hp.m_pos (by have := hp.m_lt; omega_using [this])]
   · rw [gpr_setReg_of_ne _ _ h₂, g₁ r h₁]
 
 /-- After `split`, following the call on the whole blocks. -/
@@ -92,7 +92,7 @@ theorem encLast_wp {s : State} (h : SplitPost true s₀ (M s₀) s) (hB : B s₀
     (by rw [g₁ _ (by decide) (by decide), h.r8]) (fun i hi => by
       rw [wr₁']
       exact in_rw (r := dataR s₀) (by simp)
-        (hp.lb_sub _ (Offset.contains_base (L s₀) (d := i) (n := 1) (k := 16 + B s₀) (by omega) (by omega)))))
+        (hp.lb_sub _ (Offset.contains_base (L s₀) (d := i) (n := 1) (k := 16 + B s₀) (by omega_using [hi]) (by omega_using [hb, hi])))))
     fun s₂ ⟨mem₂, g₂, rd₂, wr₂⟩ => ?_
   obtain ⟨s₃, run₃, rdi₃, rsi₃, rdx₃, rcx₃, r8₃, r9₃, cs₃, mem₃, rd₃, wr₃⟩ := argsL_ok s₂ (o := tO) rfl
   refine WP.of_runBlock ⟨s₃, run₃, ?_⟩
@@ -126,18 +126,18 @@ theorem encLastCall_wp (v : XtsImpl) {s : State} (h : EncLast s₀ s) (hB : B s�
       rcases hr with rfl | rfl | rfl
       · exact hp.tl_blocks
       · exact hp.data_scr.sub_left hp.tl_sub
-      · exact hp.stk_data.symm.sub_left hp.tl_sub) (by omega)
+      · exact hp.stk_data.symm.sub_left hp.tl_sub) (by omega_using [hb])
   · rw [Proof.AesXts.Unit.crypt_one_of c.out,
       hp.sched_frame h.inv.frame (fun r hr => by simp at hr; rcases hr with rfl | rfl | rfl <;> simp), m₂,
       Proof.Cmac.bytesAt_frame sw (fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr
         exact (hp.data_scr.symm.sub_left (sub_trans t_sub s_sub)).sub_right hp.lb_sub) (by decide), htw]
-  · rw [call_keeps hp (X := ⟨D s₀, 16 * (M s₀ - 1)⟩) (blocks_sub (by omega)) hp.hd_l
-      (sub_trans t_sub s_sub) h.inv.rsp c (by dsimp only; have := hp.wrapD; omega), m₂]
+  · rw [call_keeps hp (X := ⟨D s₀, 16 * (M s₀ - 1)⟩) (blocks_sub (by omega_using [])) hp.hd_l
+      (sub_trans t_sub s_sub) h.inv.rsp c (by dsimp only; have := hp.wrapD; omega_using [this]), m₂]
     exact Proof.Cmac.bytesAt_frame sw (fun r hr => by
-      simp only [List.mem_singleton] at hr; subst hr; exact hp.hd_lb) (by dsimp only; have := hp.wrapD; omega)
+      simp only [List.mem_singleton] at hr; subst hr; exact hp.hd_lb) (by dsimp only; have := hp.wrapD; omega_using [this])
   · rw [call_keeps hp (X := ⟨L s₀ + 16, B s₀⟩) hp.tl_sub tl_l (sub_trans t_sub s_sub) h.inv.rsp c
-      (by dsimp only; omega), m₂]
+      (by dsimp only; omega_using [hb]), m₂]
 
 /-- The steal of encryption: `Cₘ` and `PP` swapped into place, and `PP`
 enciphered with the tweak of block `M`. -/
@@ -174,7 +174,7 @@ theorem argsAll_wp {s : State} (h : TwPost s₀ s) : WP isa (.block argsAll) s (
   obtain ⟨s₂, run₂, rdi₂, rsi₂, rdx₂, rcx₂, r8₂, r9₂, cs₂, mem₂, rd₂, wr₂⟩ := argsAll_ok s
   have h₂ := TwPost.keep hp h cs₂ mem₂ rd₂ wr₂
   exact WP.of_runBlock ⟨s₂, run₂, h₂, xpre_blocks hp h₂.inv.rd h₂.inv.wr h₂.inv.rsp (N := M s₀)
-    (by rw [len_eq s₀]; omega) (by rw [rdi₂, h.inv.rbx]) (by rw [rsi₂, h.inv.rbp, rsi_ofNat])
+    (by rw [len_eq s₀]; omega_using []) (by rw [rdi₂, h.inv.rbx]) (by rw [rsi₂, h.inv.rbp, rsi_ofNat])
     (by rw [rdx₂, h.inv.r15]) (by rw [rcx₂, h.inv.r12]) (by rw [r8₂, h.inv.r13]) (by rw [r9₂, h.inv.r15])⟩
 
 theorem splitAll_wp {enc : Bool} {N : Nat} {s : State} (h : AllPost enc s₀ N s) :
@@ -195,7 +195,7 @@ theorem encrypt_wp (v : XtsImpl) :
     WP isa (Impl.AesXts.X86_64Unit.encrypt v.xts) s₀ fun s' => gprPreserved s₀ s' ∧ (unitX86_64 true).post s₀ s' := by
   refine WP.seq (WP.mono (tweak_wp hp v.encOk v.encNosp v.encDepth) fun s₁ h₁ => ?_)
   refine WP.seq (WP.mono (argsAll_wp hp h₁) fun s₂ h₂ => ?_)
-  refine WP.seq (WP.mono (blocks_call hp true v.encOk v.encNosp v.encDepth (by rw [len_eq s₀]; omega) h₂.tw
+  refine WP.seq (WP.mono (blocks_call hp true v.encOk v.encNosp v.encDepth (by rw [len_eq s₀]; omega_using []) h₂.tw
     h₂.pre) fun s₃ h₃ => ?_)
   refine WP.seq (WP.mono (splitAll_wp hp h₃) fun s₄ h₄ => ?_)
   refine WP.seq (WP.mono (WP.ite (decide (B s₀ = 0)) h₄.zf (fun hb => WP.block_nil (whole_fin h₄.all (by simpa using hb)))

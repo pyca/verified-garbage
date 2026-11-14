@@ -122,7 +122,7 @@ theorem vidxSlot_ok {s u : State} (hp : Pre tsH tsG s) (L : Lay u (fb s) (stackA
   have G' := L.geo
   have hin : InRegions (u.rd ++ u.wr) (off (stackArg s 8) 40) 8 :=
     ⟨⟨stackArg s 8, 88⟩, List.mem_append_left _ (by rw [hrd, hp.hrdE]; simp),
-      Offset.contains_base _ (by omega) (by omega)⟩
+      Offset.contains_base _ (by omega_using []) (by omega_using [])⟩
   have R1 := R.wf G' (k := 47) (by decide) (s.mem.readW (off (stackArg s 8) 40) 64)
   rw [show off (fb s) (8 * 47) = off (fb s) sIdx from rfl] at R1
   refine WP.mono (WP.keep [.r11] (Q := fun u' => u'.mem = u.mem.writeW (off (fb s) sIdx)
@@ -156,7 +156,7 @@ theorem acc_out {lo : Nat} (hlo : lo ≤ 1) {x : List Byte} (hx : 1 ≤ x.length
     cases x with
     | nil => simp at hx
     | cons a t => exact ⟨a, t, rfl⟩
-  rcases (show lo = 0 ∨ lo = 1 by omega) with rfl | rfl
+  rcases (show lo = 0 ∨ lo = 1 by omega_using [hlo]) with rfl | rfl
   · cases ve <;> simp [accV, Spec.RsaPss.zeros]
   · by_cases ha : a = 0
     · subst ha; cases ve <;> simp [accV, Spec.RsaPss.zeros]
@@ -183,7 +183,7 @@ theorem vprep_ok {s u : State} (hp : Pre tsH tsG s) (L : Lay u (fb s) (stackArg 
   have hk1 := hp.k1; have hk2 := hp.k2
   rw [WP.block_append_iff]
   refine WP.mono (WP.keepIn (by decide) (by exact Nat.zero_le 16) (emBitsB_ok L R (k := (s.gpr .rsi).toNat)
-    (x := x) (by rw [h17, BitVec.ofNat_toNat, BitVec.setWidth_eq]) (by omega) hk2 hx h0 hax)) fun t ⟨⟨L3, k3, R3⟩, f3⟩ => ?_
+    (x := x) (by rw [h17, BitVec.ofNat_toNat, BitVec.setWidth_eq]) (by omega_using [hk1]) hk2 hx h0 hax)) fun t ⟨⟨L3, k3, R3⟩, f3⟩ => ?_
   have hM3 := vframe_keep hp.toVPre hw L.rsp hM f3
   exact WP.mono (WP.keepIn (by decide) (by exact Nat.zero_le 16) (pubArgsC_ok hp L3 R3 (k3.2.2.trans hw)
     (k3.2.1.trans hrd) hM3 (by simp [upd, h17]) (by simp [upd, h19]) (by simp [upd, h20])
@@ -362,7 +362,7 @@ theorem codeC_ok {f : MdFns} {g : Impl.Mgf1.X86_64.Table.Fns}
         (Spec.RsaPss.zeros k) with hx
     have hxl : x.length = k := by rw [← hbx, bytesAt_length]
     have hin : ∀ o, o < k → inR [(0, k)] o := fun o ho =>
-      ⟨_, List.mem_singleton_self _, by dsimp only; omega, by dsimp only; omega⟩
+      ⟨_, List.mem_singleton_self _, by dsimp only; omega_using [], by dsimp only; omega_using [ho]⟩
     have hb0 : V5 0 = x.getD 0 0 := by
       rw [← hbx, hV5]; dsimp only; rw [ifp (hin 0 (by omega_arith))]
       rw [List.getD_eq_getElem?_getD, Spec.Rsa.bytesAt, List.getElem?_map, List.getElem?_range (by omega_arith)]

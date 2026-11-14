@@ -30,7 +30,7 @@ theorem eqCheckK (h : KCtx s t B Z w minv N) :
       word t'.mem B (8 * sMask) = word t.mem B (8 * sMask) &&&
         mask (decide (wv t.mem B (slot w aAcc) (2 * w + 2) = N)) ∧
       Outside B (8 * sMask) 8 t.mem t'.mem :=
-  WP.mono (eqCheck_ok h.good h.hZ h.w1 (by have := h.w2; omega)) fun _ ⟨hv, ho, hk⟩ =>
+  WP.mono (eqCheck_ok h.good h.hZ h.w1 (by have := h.w2; omega_using [this])) fun _ ⟨hv, ho, hk⟩ =>
     ⟨h.msk ho hk, by rw [hv, h.n], ho⟩
 
 /-- `d < n`. -/
@@ -71,9 +71,9 @@ theorem pqN_ok (h : KCtx s t B Z w minv N) {b : Bool} (hm : word t.mem B (8 * sM
   -- `p` and `q` are their low `⌈len / 8⌉` words.
   have low : ∀ {bs : List Byte} {j : Nat}, wv t₂.mem B (slot w j) w = Spec.Rsa.os2ip bs → bs.length ≤ 8 * w →
       wv t₂.mem B (slot w j) ((bs.length + 7) / 8) = Spec.Rsa.os2ip bs := fun {bs j} v hk => by
-    rw [wv_low_of_lt (v := (bs.length + 7) / 8) (w := w) (by omega) (by
+    rw [wv_low_of_lt (v := (bs.length + 7) / 8) (w := w) (by omega_using [hk]) (by
       rw [v]; exact Nat.lt_of_lt_of_le (os2ip_lt bs) (by
-        rw [show (256 : Nat) = 2 ^ 8 from rfl, ← Nat.pow_mul]; exact Nat.pow_le_pow_right (by decide) (by omega))), v]
+        rw [show (256 : Nat) = 2 ^ 8 from rfl, ← Nat.pow_mul]; exact Nat.pow_le_pow_right (by decide) (by omega_using []))), v]
   refine wsa (by simp [mulPQ]) (by simp [VG.Impl.Rsa.X86_64.Crt.eqCheck])
     (WP.mono (mulPQK h₂ hpl hql hp1 hq1 hpk hqk) fun t₃ ⟨h₃, v₃, a₃⟩ => ?_)
   refine WP.mono (eqCheckK h₃) fun t₄ ⟨h₄, m₄, _⟩ => ⟨h₄, ?_⟩

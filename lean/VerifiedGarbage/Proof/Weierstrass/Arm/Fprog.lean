@@ -126,7 +126,7 @@ theorem ProgKeep.wordsVal {M : Mod} {base : Addr} {wk : Nat} {W : List Nat} {s s
     (hW : ∀ w ∈ W, y + 8 * M.n ≤ w ∨ w + 8 * M.n ≤ y) (ht : y + 8 * M.n ≤ M.tmp ∨ M.tmp + 8 * M.n ≤ y)
     (hk : y + 8 * M.n ≤ wk) :
     VG.Proof.Mont.wordsVal s'.mem base y M.n = VG.Proof.Mont.wordsVal s.mem base y M.n := by
-  refine Outs.wordsVal h.mem (fun r hr => ?_) (by omega)
+  refine Outs.wordsVal h.mem (fun r hr => ?_) (by omega_using [hn, hy])
   simp only [progW, List.mem_append, List.mem_map, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with ⟨w, hw, rfl⟩ | rfl | rfl
   · exact hW w hw
@@ -153,7 +153,7 @@ theorem Inv.update {M : Mod} {base : Addr} {size m wk : Nat} [NeZero m] {Sl : Na
   · have := hW.mo
     rw [hk.wordsVal hn hM.mo (fun w hw => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
-        subst hw; have := hL.mo w ho; omega) hM.sep hW.mo]
+        subst hw; have := hL.mo w ho; omega_using [this]) hM.sep hW.mo]
     exact hM.val
   · intro x hx
     rcases List.mem_cons.mp hx with rfl | hx
@@ -212,11 +212,11 @@ theorem fop_ok {M : Mod} {base : Addr} {size m wk : Nat} [NeZero m] {Sl : Nat �
     have hA := hI.lt a hR.1
     have hB := hI.lt b hR.2
     refine WP.mono (Mont.addCall_ok hF.ok hI.scr hI.far (fnSl hW hF hS.1) (fnSl hW hF hS.2.1) (fnSl hW hF hS.2.2)
-        (by rw [hk, hmm]; omega))
+        (by rw [hk, hmm]; omega_using [hA, hB]))
       fun s' ⟨K, heq⟩ => ?_
     rw [hk, hmm] at heq
     refine ⟨.of_call hF K, hI.update hL hW hS.1 (.of_call hF K) ?_ ?_⟩
-    · rw [heq]; exact Nat.mod_lt _ (by omega)
+    · rw [heq]; exact Nat.mod_lt _ (by omega_using [hA])
     · rw [heq, toM_add, hI.val a hR.1, hI.val b hR.2]
   | sub o a b =>
     simp only [FOp.out, FOp.ins, List.mem_cons, List.not_mem_nil, or_false,
@@ -228,8 +228,8 @@ theorem fop_ok {M : Mod} {base : Addr} {size m wk : Nat} [NeZero m] {Sl : Nat �
       fun s' ⟨K, heq⟩ => ?_
     rw [hk, hmm] at heq
     refine ⟨.of_call hF K, hI.update hL hW hS.1 (.of_call hF K) ?_ ?_⟩
-    · rw [heq]; exact Nat.mod_lt _ (by omega)
-    · rw [heq, toM_sub (by omega), hI.val a hR.1, hI.val b hR.2]
+    · rw [heq]; exact Nat.mod_lt _ (by omega_using [hA])
+    · rw [heq, toM_sub (by omega_using [hB]), hI.val a hR.1, hI.val b hR.2]
 
 theorem progs_wp (p : Prog isa) (ps : List (Prog isa)) {s : State} {Q : State → Prop}
     (h : WP isa p s fun s' => WP isa (progs ps) s' Q) : WP isa (progs (p :: ps)) s Q := by

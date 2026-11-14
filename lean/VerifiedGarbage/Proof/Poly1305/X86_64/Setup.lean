@@ -193,8 +193,8 @@ theorem andNeg4_shift (x : BitVec 64) :
   by_cases h : i < 2
   · simp [h]
   · simp [h]
-    rw [show 2 + (i - 2) = i by omega, BitVec.getLsbD_eq_getElem hi]
-    simp; omega
+    rw [show 2 + (i - 2) = i by omega_using [h], BitVec.getLsbD_eq_getElem hi]
+    simp; omega_using [h]
 
 /-- `and` with `-4` clears the two low bits. -/
 theorem andNeg4_toNat (x : BitVec 64) :
@@ -202,8 +202,8 @@ theorem andNeg4_toNat (x : BitVec 64) :
   rw [andNeg4_shift, BitVec.toNat_shiftLeft, BitVec.toNat_ushiftRight, Nat.shiftLeft_eq,
     Nat.shiftRight_eq_div_pow]
   have := x.isLt
-  rw [Nat.mod_eq_of_lt (by omega)]
-  omega
+  rw [Nat.mod_eq_of_lt (by omega_using [])]
+  omega_using []
 
 set_option simprocs false in
 /-- Splitting the top word `t` (in `r15`) into `t mod 4` (in `rbp`) and

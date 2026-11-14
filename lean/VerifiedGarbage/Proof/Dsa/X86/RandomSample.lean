@@ -73,14 +73,14 @@ theorem sample_ok {s₀ t : State} (A : RandomSignABI s₀) {used d₀ : Nat} (S
   have ov₂ : Outs (rBase s₀) sampleRanges t.mem v₂.mem := by rw [mv₂]; exact ou.trans ov
   rcases hcase with ⟨stv, h2, Sv, rel, _⟩ | ⟨stv, out, _⟩
   · right
-    refine ⟨by simp only [eval, zv₂, uv₁.gpr, stv]; rfl, n - 1, by omega, used' + rWidth s₀, by omega, by omega,
+    refine ⟨by simp only [eval, zv₂, uv₁.gpr, stv]; rfl, n - 1, by omega_using [hn1], used' + rWidth s₀, by omega_using [h2], by omega_using [hn],
       Sv.mem A hv₂ mv₂, by rw [mv₂]; exact stv, rel S₀ used R, ov₂, kv₂⟩
   · have O := out S₀ used R
     have hz : (slot v.mem (rBase s₀) oStatus - 4 == 0) = false := by
       rw [O.status, show (4 : BitVec 32) = BitVec.ofNat 32 4 from rfl,
-        sub_beq (by have := sampleStatus_le S₀; omega) (by decide)]
+        sub_beq (by have := sampleStatus_le S₀; omega_using [this]) (by decide)]
       have := sampleStatus_le S₀
-      simp only [decide_eq_false_iff_not]; omega
+      simp only [decide_eq_false_iff_not]; omega_using [this]
     left
     refine ⟨by simp only [eval, zv₂, uv₁.gpr, hz], ?_⟩
     refine wp_movS (v := slot v₂.mem (rBase s₀) oStatus) (hv₂.rf.readSlot (by decide)) fun u uu _ =>

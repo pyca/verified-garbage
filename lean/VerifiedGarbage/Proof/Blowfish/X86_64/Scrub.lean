@@ -72,10 +72,10 @@ theorem agree_of {p : Addr} {L n : Nat} (h : ∀ a, Region.Contains ⟨p, L⟩ a
   intro i hi
   refine (h _ ?_).symm
   by_cases hw : i < 2 ^ 64
-  · exact VG.Offset.contains_base _ (by omega) hw
+  · exact VG.Offset.contains_base _ (by omega_using [hn, hi]) hw
   · simp only [Region.Contains]
     have := (p + BitVec.ofNat 64 i - p).isLt
-    omega
+    omega_using [hn, hi, hw]
 
 theorem blocksAt_of {p : Addr} {L n : Nat} (h : ∀ a, Region.Contains ⟨p, L⟩ a 1 → m₁ a = m₂ a)
     (hn : n * 8 ≤ L) : blocksAt m₂ p n = blocksAt m₁ p n := by
@@ -85,7 +85,7 @@ theorem blocksAt_of {p : Addr} {L n : Nat} (h : ∀ a, Region.Contains ⟨p, L�
   have := List.mem_range.mp hi
   congr 1
   funext j
-  have : 8 * i + j.val < n * 8 := by have := j.isLt; omega
+  have : 8 * i + j.val < n * 8 := by have := j.isLt; omega_arith
   rw [VG.Offset.add_add]
   exact h _ this
 

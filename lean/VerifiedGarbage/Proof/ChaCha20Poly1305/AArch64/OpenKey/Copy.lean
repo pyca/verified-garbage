@@ -29,12 +29,12 @@ theorem copyW_ok {s₀ s : State} (hp : APre e s₀) {k : Nat} (hk : k < 16) (hx
       s'.mem = s.mem.writeW (off (cx s₀) (640 + 4 * k)) (s.mem.readW (off (cx s₀) (64 + 4 * k)) 32) ∧
       (∀ r, r ≠ .x9 → s'.gpr r = s.gpr r) ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
   have o : InRegions s.wr (off (cx s₀) (640 + 4 * k)) 4 := by
-    rw [hwr]; exact hp.in_ctx (by omega)
+    rw [hwr]; exact hp.in_ctx (by omega_using [hk])
   have i : InRegions (s.rd ++ s.wr) (off (cx s₀) (64 + 4 * k)) 4 := by
-    rw [hrd, hwr]; exact hp.in_ctx' (by omega)
+    rw [hrd, hwr]; exact hp.in_ctx' (by omega_using [hk])
   unfold copyW
-  refine wp_ldr32 (a := off (cx s₀) (64 + 4 * k)) ⟨by omega, by omega⟩ (by rw [hx21]) i fun s₁ u₁ => ?_
-  refine wp_str32 (a := off (cx s₀) (640 + 4 * k)) ⟨by omega, by omega⟩
+  refine wp_ldr32 (a := off (cx s₀) (64 + 4 * k)) ⟨by omega_using [], by omega_using [hk]⟩ (by rw [hx21]) i fun s₁ u₁ => ?_
+  refine wp_str32 (a := off (cx s₀) (640 + 4 * k)) ⟨by omega_using [], by omega_using [hk]⟩
     (by rw [u₁.other _ (by decide), hx21]) (by rw [u₁.wr]; exact o) fun s₂ g₂ =>
       WP.block_nil ⟨?_, fun r hr => ?_, ?_, ?_⟩
   · rw [g₂.mem, u₁.gpr, u₁.mem, BitVec.setWidth_setWidth_of_le _ (by decide), BitVec.setWidth_eq]
@@ -61,28 +61,28 @@ theorem copyN_ok {s₀ s : State} (hp : APre e s₀) (hx21 : s.gpr .x21 = cx s�
   | 0, _ => WP.block_nil ⟨fun _ h => absurd h (Nat.not_lt_zero _), Frame.refl _ _, fun _ _ => rfl, rfl, rfl⟩
   | n + 1, hn => by
     rw [copyN_succ]
-    refine WP.block_append ((copyN_ok hp hx21 hrd hwr n (by omega)).mono fun s₁ h₁ => ?_)
-    refine (copyW_ok hp (k := n) (by omega) (by rw [h₁.gpr _ (by decide), hx21])
+    refine WP.block_append ((copyN_ok hp hx21 hrd hwr n (by omega_using [hn])).mono fun s₁ h₁ => ?_)
+    refine (copyW_ok hp (k := n) (by omega_using [hn]) (by rw [h₁.gpr _ (by decide), hx21])
       (by rw [h₁.rd, hrd]) (by rw [h₁.wr, hwr])).mono fun s₂ ⟨m₂, g₂, rd₂, wr₂⟩ => ?_
     -- The source word `n` is outside the copy written so far.
     have src : s₁.mem.readW (off (cx s₀) (64 + 4 * n)) 32 = s.mem.readW (off (cx s₀) (64 + 4 * n)) 32 := by
       refine h₁.frame.readW (r := sub s₀ (64 + 4 * n) 4) (Region.contains_self _ _) (fun r hr => ?_) (by decide)
       simp only [List.mem_singleton] at hr; subst hr
-      exact sub_disj s₀ (by omega) (by omega) (by omega)
+      exact sub_disj s₀ (by omega_using [hn]) (by omega_using [hn]) (by omega_using [])
     refine ⟨fun j hj => ?_, ?_, fun r hr => by rw [g₂ r hr, h₁.gpr r hr], by rw [rd₂, h₁.rd],
       by rw [wr₂, h₁.wr]⟩
     · rw [m₂, src]
       by_cases hjn : j = n
       · subst hjn; exact Mem.readW_writeW_self32 _ _ _
       · rw [Mem.readW_writeW_sep (by
-            rw [show off (cx s₀) (640 + 4 * j) = off (cx s₀) (4 * (160 + j)) by congr 1; omega,
-              show off (cx s₀) (640 + 4 * n) = off (cx s₀) (4 * (160 + n)) by congr 1; omega]
-            exact Offset.sep _ (by omega) (by omega) (by omega)) (by decide)]
-        exact h₁.word j (by omega)
+            rw [show off (cx s₀) (640 + 4 * j) = off (cx s₀) (4 * (160 + j)) by congr 1; omega_using [],
+              show off (cx s₀) (640 + 4 * n) = off (cx s₀) (4 * (160 + n)) by congr 1; omega_using []]
+            exact Offset.sep _ (by omega_using [hjn]) (by omega_using [hn, hj]) (by omega_using [hn])) (by decide)]
+        exact h₁.word j (by omega_using [hj, hjn])
     · rw [m₂]
       exact h₁.frame.writeW (List.mem_singleton_self _) _ (by
         show (sub s₀ 640 64).Contains (off (cx s₀) (640 + 4 * n)) 4
-        exact Offset.contains _ (e := 640) (k := 64) (by omega) (by omega) (by omega))
+        exact Offset.contains _ (e := 640) (k := 64) (by omega_using []) (by omega_using [hn]) (by omega_using []))
 
 theorem copy_eq : copy = copyN 16 := rfl
 

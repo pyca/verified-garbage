@@ -74,7 +74,7 @@ theorem k_in {bs wbs : List (Reg × Nat)} (hk : kChk bs wbs = true) :
 
 theorem kk16 {s s1 : State} (hsp : s1.gpr .rsp = s.gpr .rsp) {R : Region} (h : (below (s.gpr .rsp) 32).Disjoint R) :
     (below (s1.gpr .rsp) 16).Disjoint R := by
-  rw [hsp]; exact h.sub_left (below_sub (by omega) (by omega))
+  rw [hsp]; exact h.sub_left (below_sub (by omega_using []) (by omega_using []))
 
 section
 variable {rbs wbs : List (Reg × Nat)} {s : State} (L : Lay rbs wbs s) (hk : kChk (rbs ++ wbs) wbs = true)
@@ -88,7 +88,7 @@ theorem kabs_args {src : Ptr} {len pos : Nat} (hp : pieceChk (rbs ++ wbs) src le
   obtain ⟨⟨p1, p2⟩, p3⟩ := hp
   have hlen : len < 2 ^ 31 := by
     obtain ⟨n, hn, hl⟩ := inB_spec p3; have := (L.ok _ hn).1; omega
-  exact ⟨h1.r0, h1.r1, h1.r2, h1.r3, h1.r4, h1.r5, by decide, hpos, by omega, d1, L.disj p1, L.disj p2,
+  exact ⟨h1.r0, h1.r1, h1.r2, h1.r3, h1.r4, h1.r5, by decide, hpos, by omega_using [hlen], d1, L.disj p1, L.disj p2,
     kk16 h1.rsp k1, kk16 h1.rsp (L.stkD p3), kk16 h1.rsp k2⟩
 
 theorem kpad_args {pos : Nat} (hpos : pos < 136) {s1 : State} (h1 : Args (kpadArgs 136 pos 0x1f) s s1) :
@@ -104,7 +104,7 @@ theorem ksqz_args {out : Ptr} {len : Nat} (ho : outChk (rbs ++ wbs) wbs out len 
   obtain ⟨⟨⟨o1, o2⟩, o3⟩, _⟩ := ho
   have hlen : len < 2 ^ 31 := by
     obtain ⟨n, hn, hl⟩ := inB_spec o3; have := (L.ok _ hn).1; omega
-  exact ⟨h1.r0, h1.r1, h1.r2, h1.r3, h1.r4, h1.r5, by decide, by decide, by omega, (L.disj o1).symm, d1,
+  exact ⟨h1.r0, h1.r1, h1.r2, h1.r3, h1.r4, h1.r5, by decide, by decide, by omega_using [hlen], (L.disj o1).symm, d1,
     L.disj o2, kk16 h1.rsp k1, kk16 h1.rsp (L.stkD o3), kk16 h1.rsp k2⟩
 
 end
@@ -122,14 +122,14 @@ theorem kabs_aok {bs wbs : List (Reg × Nat)} (hS : LayOk bs) (hk : kChk bs wbs 
     obtain ⟨n, hn, hl⟩ := inB_spec hp.2; have := (hS _ hn).1; omega
   simp only [List.forall_mem_cons, List.not_mem_nil, false_implies, implies_true, and_true]
   exact ⟨⟨ptr_ok hS (k_in hk).1, by decide⟩, ⟨show 136 < 2 ^ 31 by decide, by decide⟩,
-    ⟨show pos < 2 ^ 31 by omega, by decide⟩, ⟨ptr_ok hS hp.2, by decide⟩, ⟨hlen, by decide⟩,
+    ⟨show pos < 2 ^ 31 by omega_using [hpos], by decide⟩, ⟨ptr_ok hS hp.2, by decide⟩, ⟨hlen, by decide⟩,
     ⟨ptr_ok hS (k_in hk).2, by decide⟩⟩
 
 theorem kpad_aok {bs wbs : List (Reg × Nat)} (hS : LayOk bs) (hk : kChk bs wbs = true) {pos : Nat} (hpos : pos < 136) :
     ∀ a ∈ kpadArgs 136 pos 0x1f, a.2.Ok ∧ a.1 ∈ argRegs := by
   simp only [List.forall_mem_cons, List.not_mem_nil, false_implies, implies_true, and_true]
   exact ⟨⟨ptr_ok hS (k_in hk).1, by decide⟩, ⟨show 136 < 2 ^ 31 by decide, by decide⟩,
-    ⟨show pos < 2 ^ 31 by omega, by decide⟩, ⟨show 0x1f < 2 ^ 31 by decide, by decide⟩,
+    ⟨show pos < 2 ^ 31 by omega_using [hpos], by decide⟩, ⟨show 0x1f < 2 ^ 31 by decide, by decide⟩,
     ⟨ptr_ok hS (k_in hk).2, by decide⟩⟩
 
 theorem ksqz_aok {bs wbs : List (Reg × Nat)} (hS : LayOk bs) (hk : kChk bs wbs = true) {out : Ptr} {len : Nat}

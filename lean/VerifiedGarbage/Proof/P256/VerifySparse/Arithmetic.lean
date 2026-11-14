@@ -47,6 +47,6 @@ theorem addFour_value (a b c d x y z w : BitVec 64) :
   have l3 := (Word64.addCarry d w (Word64.carryOut c z (Word64.carryOut b y (Word64.carryOut a x false)))).isLt
   simp only [Bool.toNat_false,Nat.add_zero] at h0
   unfold four
-  omega
+  omega_using [h0, h1, h2, h3]
 
 end VG.Proof.P256.VerifySparse

@@ -44,7 +44,7 @@ theorem pHashOne_ok {G : Impl.Pbkdf2.Md.X86_64.Stream} (hG : Calls.StreamOK G)
       Spec.Rsa.bytesAt t.mem dp len =
         Hs.hash (Spec.Dsa.encodeBE len (Spec.Dsa.decodeBE (Spec.Rsa.bytesAt s.mem rp len) + (offset + j))) := by
   unfold Impl.Dsa.X86_64.Generation.pHashOne
-  refine WP.seq (WP.mono (pSeedHash_ok hG hHh hsize (by omega) (by omega) hc L R A hrp hop hoff hrd hwr hsep hbuf)
+  refine WP.seq (WP.mono (pSeedHash_ok hG hHh hsize (by omega_using [hlen]) (by omega_using [hcount, hj]) hc L R A hrp hop hoff hrd hwr hsep hbuf)
     fun u ⟨Lu, rdu, wru, csu, hfu, ⟨V', Ru⟩, hb⟩ => ?_)
   refine WP.seq (WP.mono (hashCopyArgs_ok hlen hcount Lu Ru hhp) fun v ⟨hsi, hdi, hcx, hdx, hm, kv⟩ => ?_)
   rw [hdp] at hdi
@@ -54,7 +54,7 @@ theorem pHashOne_ok {G : Impl.Pbkdf2.Md.X86_64.Stream} (hG : Calls.StreamOK G)
     intro i hi
     rw [hdl] at hi
     rw [kv.2.1, kv.2.2, off_off]
-    exact Lu.sld8 (by dsimp only [oDig, oRsa]; omega)
+    exact Lu.sld8 (by dsimp only [oDig, oRsa]; omega_using [hlen, hi])
   have hbytes : ∀ i < digest.length, v.mem (off (off S oDig) i) = digest.getD i 0 := by
     intro i hi
     rw [hdl] at hi
@@ -69,7 +69,7 @@ theorem pHashOne_ok {G : Impl.Pbkdf2.Md.X86_64.Stream} (hG : Calls.StreamOK G)
       intro i hi k hk
       rw [hdl] at hi hk
       rw [off_off]
-      exact Ne.symm (hdbuf.scratch k hk (oDig + i) (by dsimp only [oDig, oRsa]; omega)))
+      exact Ne.symm (hdbuf.scratch k hk (oDig + i) (by dsimp only [oDig, oRsa]; omega_using [hlen, hi])))
   rw [hdl] at hcopy
   refine WP.mono hcopy fun t ⟨hout, hf, kt⟩ => ?_
   have Rv : Rep v.mem F S V' W := hm ▸ Ru
@@ -83,7 +83,7 @@ theorem pHashOne_ok {G : Impl.Pbkdf2.Md.X86_64.Stream} (hG : Calls.StreamOK G)
   · have hft : Frame [⟨dp, len⟩, ⟨op, len⟩, ⟨S, oRsa⟩, retR F] u.mem t.mem := by
       intro a ha
       rw [hf a (fun i hi => fun he => ha ⟨dp, len⟩ (by simp) (he ▸
-        Offset.contains_base dp (by omega) (by omega))), hm]
+        Offset.contains_base dp (by omega_using [hi]) (by omega_using [hlen, hi]))), hm]
     exact (hfu.mono (by simp)).trans hft
 
 end VG.Proof.Dsa.X86_64.Generation

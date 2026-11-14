@@ -37,7 +37,7 @@ theorem GeneratorSearchMemory.frame {p : GeneratorSearchPlan} {W W' : Nat → Bi
     (hw : ∀ k ∈ generatorSlots, W' k = W k)
     (hf : Frame p.core.changed s.mem t.mem) (hrd : t.rd = s.rd) (hwr : t.wr = s.wr) :
     GeneratorSearchMemory p W' t := by
-  have hn : p.core.len < 2 ^ 64 := by rcases p.core.width with hh | hh | hh <;> omega
+  have hn : p.core.len < 2 ^ 64 := by rcases p.core.width with hh | hh | hh <;> omega_using [hh]
   have fp : ∀ r ∈ p.core.changed, (⟨VG.Proof.Bignum.off p.core.B Impl.Dsa.Generation.Layout.p, p.core.pb.length⟩ : Region).Disjoint r := by
     rw [p.core.pLength]; exact p.core.pSeparate
   have fe : ∀ r ∈ p.core.changed, (⟨VG.Proof.Bignum.off p.core.B exponent, p.core.eb.length⟩ : Region).Disjoint r := by

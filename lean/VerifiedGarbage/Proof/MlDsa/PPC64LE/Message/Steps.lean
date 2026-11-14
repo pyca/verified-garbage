@@ -155,7 +155,7 @@ theorem hdrMem_bytes (m : Mem) (a : Addr) (c : Nat) :
   refine ⟨rfl, ?_⟩
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]
-  omega
+  omega_using []
 
 theorem hdrMem_frame (m : Mem) (a : Addr) (c : BitVec 64) : Frame [⟨a, 2⟩] m (hdrMem m a c) := by
   refine Frame.write (Frame.write (Frame.refl _ _) List.mem_cons_self _ ?_) List.mem_cons_self _ ?_
@@ -172,7 +172,7 @@ theorem hdr_ok {s : State} {f cr : Reg} (hf0 : f ≠ .r0) (hc0 : cr ≠ .r0) {o 
   simp only [List.cons_append, List.nil_append]
   refine wp_li (by decide) fun u₁ h₁ => ?_
   have g : u₁.gpr f = s.gpr f := h₁.other _ hf0
-  refine wp_stb hf0 (by omega) rfl (by rw [h₁.wr, g]; exact hw) fun u₂ h₂ => ?_
+  refine wp_stb hf0 (by omega_using [ho]) rfl (by rw [h₁.wr, g]; exact hw) fun u₂ h₂ => ?_
   refine wp_stb hf0 ho rfl (by rw [h₂.wr, h₁.wr, h₂.gpr, g]; exact hw1) fun u₃ h₃ => ?_
   refine k u₃ ?_ (by rw [h₃.rd, h₂.rd, h₁.rd]) (by rw [h₃.wr, h₂.wr, h₁.wr]) (by rw [h₃.sp, h₂.sp, h₁.sp])
     fun r hr => by rw [h₃.gpr, h₂.gpr, h₁.other _ hr]
@@ -197,7 +197,7 @@ theorem shr8_zero (x : BitVec 64) : (x >>> 8 == 0#64) = decide (x.toNat < 256) :
     intro e
     have := congrArg BitVec.toNat e
     rw [h] at this
-    exact hx (by simp at this; omega)
+    exact hx (by simp at this; omega_using [this])
 
 theorem eval_zero (s : State) (r : Reg) : isa.eval (.zero .d r) s = some (s.gpr r == 0#64) := by
   simp [eval, State.read, Size.bits]

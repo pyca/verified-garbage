@@ -30,13 +30,13 @@ theorem hashStep_ok {G : Impl.Pbkdf2.Md.AArch64.Hash} (hG : Calls.StreamOK G.str
     intro i hi
     rw [HashPlan.dest, off_off]
     apply hs.outputWrite
-    have hm := Nat.mul_le_mul_right p.len (show p.count - k + 1 ≤ p.count + 1 by omega)
+    have hm := Nat.mul_le_mul_right p.len (show p.count - k + 1 ≤ p.count + 1 by omega_using [])
     rw [Nat.add_mul, Nat.one_mul] at hm
-    omega
+    omega_using [hi, hm]
   have hsep : ∀ i < p.len, ∀ j < p.len, off p.seedPtr i ≠ off p.wrapped j := by
     intro i hi j hj he
-    have ha : Region.Contains ⟨p.seedPtr, p.len⟩ (off p.seedPtr i) 1 := Offset.contains_base _ (by omega) (by omega)
-    have hb : Region.Contains ⟨p.wrapped, p.len⟩ (off p.wrapped j) 1 := Offset.contains_base _ (by omega) (by omega)
+    have ha : Region.Contains ⟨p.seedPtr, p.len⟩ (off p.seedPtr i) 1 := Offset.contains_base _ (by omega_using [hi]) (by omega_using [hls, hi])
+    have hb : Region.Contains ⟨p.wrapped, p.len⟩ (off p.wrapped j) 1 := Offset.contains_base _ (by omega_using [hj]) (by omega_using [hls, hj])
     exact p.seed_wrap _ (he ▸ ha) hb
   refine WP.mono (pHashOne_ok hG hHh hsize p.width hd p.count_le hk
     (by omega_using [p.carry, hk]) rfl hs.layout R hs.hashArgs
@@ -67,12 +67,12 @@ theorem hashStep_ok {G : Impl.Pbkdf2.Md.AArch64.Hash} (hG : Calls.StreamOK G.str
     by_cases he : j = k
     · subst j
       simpa only [hs.seed, HashPlan.digest, HashPlan.dest] using hout
-    · have hjk : j < k := by omega
+    · have hjk : j < k := by omega_using [hj, he]
       rw [frame_bytesAt hf (by
         intro r hr
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl | rfl | rfl
-        · exact p.dest_disjoint (by omega) hk he
+        · exact p.dest_disjoint (by omega_using [hk, hj]) hk he
         · exact p.output_wrap.sub_left (p.dest_sub j)
         · exact p.output_scratch.sub_left (p.dest_sub j)
         · exact p.output_stack.sub_left (p.dest_sub j)) (by omega_using [p.size.2.1])]

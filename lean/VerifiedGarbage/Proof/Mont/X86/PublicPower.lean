@@ -65,7 +65,7 @@ theorem publicPower_ok {s : State} {base : Addr} {size m acc out : Nat} {M : Mod
       Outs base [(out,8*M.n),(M.tmp,8*M.n),(acc,accLen M)] s.mem t.mem ∧ Keeps powerClob s t := by
   unfold publicPower
   refine WP.seq (wp_movS (readSrc_sc hs (d := M.mo+4*(2*M.n-1))
-    (by have := hm.mo;have := hm.n0;omega)) fun u₁ U₁ _ => ?_)
+    (by have := hm.mo;have := hm.n0;omega_arith)) fun u₁ U₁ _ => ?_)
   refine wp_shr (by decide) fun u₂ U₂ _ => ?_
   refine wp_cmpS rfl fun w U₃ Z => WP.block_nil ?_
   have mem : w.mem=s.mem := U₃.mem.trans (U₂.mem.trans U₁.mem)
@@ -91,15 +91,15 @@ theorem publicPower_ok {s : State} {base : Addr} {size m acc out : Nat} {M : Mod
       rw [BitVec.toNat_ushiftRight,Nat.shiftRight_eq_div_pow] at h
       change _/2^31=1 at h
       change 2^31≤(s.mem.readW (off base (M.mo+4*(2*M.n-1))) 32).toNat
-      omega
+      omega_using [h]
     have full : 2^(64*M.n-1)<m :=
       high_seed_reduced hm.n0 (hm.val ▸ high_word_bound hm.n0 top) odd
     refine WP.mono (highPower_ok (hs.of_keeps K (by decide)) Mw hl apart full
-      (by omega) (by omega)) fun t ⟨V,_,T,O,L⟩ => ?_
+      (by omega_using []) (by omega_using [small])) fun t ⟨V,_,T,O,L⟩ => ?_
     apply finish t ?_ T O L
     simpa only [high_seed_doubled hm.n0] using V
   · intro _
     exact WP.mono (powerTwo_ok (hs.of_keeps K (by decide)) Mw hl apart positive
-      (by have := hm.n0;omega) (by omega)) fun t ⟨V,_,T,O,L⟩ => finish t V T O L
+      (by have := hm.n0;omega_using [this]) (by omega_using [small])) fun t ⟨V,_,T,O,L⟩ => finish t V T O L
 
 end VG.Proof.Mont.X86.Dynamic

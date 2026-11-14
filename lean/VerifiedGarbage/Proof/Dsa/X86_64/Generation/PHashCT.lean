@@ -91,14 +91,14 @@ theorem wrappedSeed_label {n k j : Nat} {H : Spec.Mgf1.Hash} {p : PHashPublic} {
     have he : Spec.Rsa.bytesAt s.mem p.plan.seedPtr p.plan.len = p.plan.seed := hs.seed
     rw [← he]
     simp [Spec.Rsa.bytesAt, off, List.getD_eq_getElem?_getD, hlen ▸ hi]
-  have hc := seedAdd_ok p.plan.seed (by omega) (show p.plan.offset + j < 2 ^ 32 by omega)
+  have hc := seedAdd_ok p.plan.seed (by omega_using [plen, hlen]) (show p.plan.offset + j < 2 ^ 32 by omega_using [hj, carry])
     hsi hdi hax
     (fun i hi => hs.seedRead i (hlen ▸ hi)) (fun i hi => hs.wrappedWrite i (hlen ▸ hi)) hb (by
       intro i hi l hl he
       have a : Region.Contains ⟨p.plan.seedPtr, p.plan.len⟩ (off p.plan.seedPtr i) 1 :=
-        Offset.contains_base _ (by omega) (by omega)
+        Offset.contains_base _ (by omega_using [hlen, hi]) (by omega_using [plen, hlen, hi])
       have b : Region.Contains ⟨p.plan.wrapped, p.plan.len⟩ (off p.plan.wrapped l) 1 :=
-        Offset.contains_base _ (by omega) (by omega)
+        Offset.contains_base _ (by omega_using [hlen, hl]) (by omega_using [plen, hlen, hl])
       exact p.plan.seed_wrap _ (he ▸ a) b)
   rw [hlen] at hc
   refine WP.mono hc fun t ⟨_, hf, hk⟩ => ?_

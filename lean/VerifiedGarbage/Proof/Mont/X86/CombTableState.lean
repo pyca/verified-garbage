@@ -28,7 +28,7 @@ theorem TableAt.outside {n context size m g bits d len : Nat} {base : Addr} {kno
   have ent := L.entry hj
   have bound := L.bound
   have nw := hs.nowrap
-  rw [O.wordsVal (by omega) (by omega)]
+  rw [O.wordsVal (by omega_using [sep, ent]) (by omega_using [ent, bound, nw])]
   exact T j hj hk
 
 theorem TableAt.outs {n context size m g bits : Nat} {base : Addr} {known : Nat → Prop} {s t : State}
@@ -40,7 +40,7 @@ theorem TableAt.outs {n context size m g bits : Nat} {base : Addr} {known : Nat 
   have ent := L.entry hj
   have bound := L.bound
   have nw := hs.nowrap
-  rw [wordsVal_eq_val32, O.val32 (by intro r hr; have := sep r hr; omega) (by omega), ← wordsVal_eq_val32]
+  rw [wordsVal_eq_val32, O.val32 (by intro r hr; have := sep r hr; omega_using [ent, this]) (by omega_using [ent, bound, nw]), ← wordsVal_eq_val32]
   exact T j hj hk
 
 theorem TableAt.op {n context size m g bits o : Nat} {base : Addr} {known : Nat → Prop} {s t : State}
@@ -52,7 +52,7 @@ theorem TableAt.op {n context size m g bits o : Nat} {base : Addr} {known : Nat 
   have ent := L.entry hj
   have apart := L.apart
   have bound := L.bound
-  rw [op_high C ho K (by omega) (by omega)]
+  rw [op_high C ho K (by omega_using [ent, apart]) (by omega_using [ent, bound])]
   exact T j hj hk
 
 theorem select_table_ok {n context size m g bits o : Nat} {base : Addr} {known : Nat → Prop} {s : State}
@@ -70,11 +70,11 @@ theorem select_table_ok {n context size m g bits o : Nat} {base : Addr} {known :
   have sep := slot_sep (n := n) ho0
   have cbound := C.size_le
   have head := slot_header n 9
-  refine WP.mono (publicSelect_ok C.scr L.positive (by change slot n 9 ≤ size at cbound; omega)
-    (by omega) (by omega) (.inl (by omega))) fun t ⟨O,V,K⟩ => ?_
-  refine ⟨C.outside_keep K (by decide) (by decide) O ?_ (by omega),
-    T.outside L C.scr O (.inl (by omega)), V.trans (T _ idx hk), O, K⟩
+  refine WP.mono (publicSelect_ok C.scr L.positive (by change slot n 9 ≤ size at cbound; omega_using [head, cbound])
+    (by omega_using [ent, bound]) (by omega_using [bound, out]) (.inl (by omega_using [ent, out]))) fun t ⟨O,V,K⟩ => ?_
+  refine ⟨C.outside_keep K (by decide) (by decide) O ?_ (by omega_using [header]),
+    T.outside L C.scr O (.inl (by omega_using [out])), V.trans (T _ idx hk), O, K⟩
   unfold stride at sep
-  omega
+  omega_using [sep]
 
 end VG.Proof.Mont.X86.Comb

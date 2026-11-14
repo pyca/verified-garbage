@@ -81,7 +81,7 @@ theorem maskStep_ok {σ s : State} {p : Addr} {v : BitVec 128} {j : Nat}
   refine WP.mono (maskGroup_ok (s := s) (by rw [hi.keep.rd,hi.keep.wr,hi.ptr]; exact hr j hj)
     (by rw [hi.keep.wr,hi.ptr]; exact hw j hj)) fun a ⟨ha,hm⟩=>?_
   refine WP.mono (maskAdvance_ok a) fun t ⟨⟨⟨hp,hc,hmem⟩,hk⟩,hv⟩=>?_
-  refine ⟨by omega,((hi.keep.trans ha.keep).trans hk).mono (by decide),?_,?_,?_,?_,?_⟩
+  refine ⟨by omega_using [hj],((hi.keep.trans ha.keep).trans hk).mono (by decide),?_,?_,?_,?_,?_⟩
   · intro r hn
     rw [hv,ha.vec r (by simpa using hn),hi.vec r hn]
   · rw [hmem,hm,hi.mem,hi.ptr,hi.mask]
@@ -92,7 +92,7 @@ theorem maskStep_ok {σ s : State} {p : Addr} {v : BitVec 128} {j : Nat}
     congr 1
   · rw [hc,ha.keep.get .x5,hi.count]
     change BitVec.ofNat 64 (64-j)-BitVec.ofNat 64 1=_
-    rw [BitVec.ofNat_sub_ofNat_of_le (64-j) 1 (by decide) (by omega)]
+    rw [BitVec.ofNat_sub_ofNat_of_le (64-j) 1 (by decide) (by omega_using [hj])]
     congr 1
   · rw [hv,ha.vec .v0 (by decide),hi.mask]
 

@@ -68,7 +68,7 @@ theorem subtractArgs_ok {g : Geometry} (v : g.Valid) {a : State} {q : BitVec 32}
   · rw [PtrAt, F.other .ebx (by decide), F5.other .ebx (by decide), L4.1 .ebx (by decide), L3.1 .ebx (by decide)]
     exact Q2
   · rw [PtrAt, F.other .edi (by decide), F5.gpr, L4.1 .eax (by decide)]; exact Q3
-  · rw [F.other .edx (by decide), F5.other .edx (by decide), D4, BitVec.toNat_ofNat]; omega
+  · rw [F.other .edx (by decide), F5.other .edx (by decide), D4, BitVec.toNat_ofNat]; omega_using [words, bound]
 
 section
 variable {g : Geometry} {capacity : Nat} {p : BitVec 32}
@@ -98,7 +98,7 @@ theorem subtract_trace (v : g.Valid) :
       subst eq
       have sp := S.caller.sp
       have St : StackContext (p - 20#32) (allocFrame 20 s) := by
-        rw [← sp]; exact VG.Proof.RsaKeyGen.X86.FilterStack.allocated_context (by rw [sp]; have := S.caller.low; omega)
+        rw [← sp]; exact VG.Proof.RsaKeyGen.X86.FilterStack.allocated_context (by rw [sp]; have := S.caller.low; omega_using [this])
       have C := S.context
       have Ci : Context g (allocFrame 20 s) :=
         ⟨⟨List.mem_cons_of_mem _ C.ws.wr, C.ws.nowrap⟩, by rw [PtrAt, allocFrame_gpr _ _ (by decide)]; exact C.base,
@@ -116,7 +116,7 @@ theorem subtract_trace (v : g.Valid) :
       · exact ptr_value S.edi
       · exact nat_at S.edx) reduceLoop_raw (fun s S =>
       WP.mono (VG.Proof.Bignum.X86.PublicRt.reduceLoop_ok S.ws (a := g.array 0) (m := g.array 9) (d := g.array 10)
-        (N := g.words) (by omega) fit0 fit9 fit10 (Or.inr (g.arrayBefore (by decide)))
+        (N := g.words) (by omega_using [many]) fit0 fit9 fit10 (Or.inr (g.arrayBefore (by decide)))
         (Or.inr (g.arrayBefore (by decide))) S.ebp S.ebx S.edi S.edx S.ecx) fun _ ⟨_, _, _, K⟩ =>
         S.stack.keep K (by decide))
   have restore := seg (X := StackContext (p - 20#32)) (Y := fun _ => True) (c := .block [.mov .edi (.mem (VG.Impl.Mont.X86.at_ .esp 0))])
@@ -140,7 +140,7 @@ theorem constants_trace {mont : Prog isa} {name : String}
     withRuns ((one_trace v).mono (fun _ _ ⟨⟨c, S, _⟩, ⟨d, T, _⟩⟩ => ⟨⟨c, S⟩, ⟨d, T⟩⟩) (fun _ _ H => H))
       fun s ⟨c, S, odd, positive, r2⟩ => WP.mono (one_ok v S) fun _ ⟨T, _, O, _⟩ =>
         ⟨c, T, odd, by
-          rw [O.val32 (Or.inl (g.arrayBefore (by decide))) (by have := S.scratch.nowrap; omega), r2]
+          rw [O.val32 (Or.inl (g.arrayBefore (by decide))) (by have := S.scratch.nowrap; omega_using [fit4, this]), r2]
           exact Nat.mod_lt _ positive⟩
   have mulT : RelCT isa (fun s t => OneSet g capacity p s ∧ OneSet g capacity p t) (VG.Impl.MillerRabin.X86.mulY name mont 4)
       (fun u z => Held g capacity p u ∧ Held g capacity p z) :=

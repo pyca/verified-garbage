@@ -3,6 +3,7 @@ public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTableLayout
 
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTableConstants
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.TableWords
+import VerifiedGarbage.Proof.Framework.Omega
 
 @[expose] public section
 
@@ -14,7 +15,7 @@ theorem value_lt (p : Nat × Bool) : value p < 2^32 := by
   have hb : z p.1*2^31/8380417 < 2^31 := by
     apply (Nat.div_lt_iff_lt_mul (by decide)).2
     simpa only [Nat.mul_comm] using Nat.mul_lt_mul_of_pos_right hz (show 0<2^31 by decide)
-  cases h : p.2 <;> simp only [value,bar,h,Bool.false_eq_true,ite_false,ite_true] <;> omega
+  cases h : p.2 <;> simp only [value,bar,h,Bool.false_eq_true,ite_false,ite_true] <;> omega_using [hz]
 
 theorem expandedVals_lt {i : Nat} (hi : i<976) : expandedVals[i]! < 2^32 := by
   rw [expanded_get hi]
@@ -35,11 +36,11 @@ theorem expandedWords_get {i : Nat} (hi : i<488) :
 theorem expandedWords_low {i : Nat} (hi : i<488) :
     (expandedWords[i]!).extractLsb' 0 32 = BitVec.ofNat 32 expandedVals[2*i]! := by
   rw [expandedWords_get hi]
-  exact TableConstants.pack_low _ _ (expandedVals_lt (by omega)) (expandedVals_lt (by omega))
+  exact TableConstants.pack_low _ _ (expandedVals_lt (by omega_using [hi])) (expandedVals_lt (by omega_using [hi]))
 
 theorem expandedWords_high {i : Nat} (hi : i<488) :
     (expandedWords[i]!).extractLsb' 32 32 = BitVec.ofNat 32 expandedVals[2*i+1]! := by
   rw [expandedWords_get hi]
-  exact TableConstants.pack_high _ _ (expandedVals_lt (by omega)) (expandedVals_lt (by omega))
+  exact TableConstants.pack_high _ _ (expandedVals_lt (by omega_using [hi])) (expandedVals_lt (by omega_using [hi]))
 
 end VG.Proof.MlDsa.AArch64.Optimized.InverseTable

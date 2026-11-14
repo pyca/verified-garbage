@@ -32,7 +32,7 @@ theorem factorsA_ok {I : RpIn} {m₀ : Mem} {c : Bool} {s : State} (h : G I m₀
     WP isa (seqs factorsA) s fun t => G I m₀ (vk I.k) c t ∧
       wv t.mem I.B (slot (vk I.k) nP) (vk I.k) = (b + y) % 2 ^ (64 * vk I.k) / 2 ∧
       wv t.mem I.B (slot (vk I.k) nQ) (vk I.k) = wsub (64 * vk I.k) b y / 2 := by
-  have hv1 : 1 ≤ vk I.k := by have := L.k1; simp only [vk]; omega
+  have hv1 : 1 ≤ vk I.k := by have := L.k1; simp only [vk]; omega_using []
   have hb32 := hb32_of h L
   have s4 := slot_lt (w := vk I.k) (show nY < 32 by decide)
   have s6 := slot_lt (w := vk I.k) (show nB < 32 by decide)
@@ -44,37 +44,37 @@ theorem factorsA_ok {I : RpIn} {m₀ : Mem} {c : Bool} {s : State} (h : G I m₀
   refine WP.seq (WP.mono (zeroA_ok g₁.ws (j := nP) (by decide)) fun s₂ ⟨z₂, o₂, _, _, _, k₂⟩ => ?_)
   have g₂ := g₁.out (by decide) (Nat.le_refl _) o₂ k₂ (by decide)
   have b₂ : wv s₂.mem I.B (slot (vk I.k) nB) (vk I.k) = b := by
-    rw [o₂.wv (rd_sep (by decide) (by omega) (by omega)) (by omega), m₁, hb]
+    rw [o₂.wv (rd_sep (by decide) (by omega_using []) (by omega_using [])) (by omega_using [hb32, s6]), m₁, hb]
   have y₂ : wv s₂.mem I.B (slot (vk I.k) nY) (vk I.k) = y := by
-    rw [o₂.wv (rd_sep (by decide) (by omega) (by omega)) (by omega), m₁, hy]
+    rw [o₂.wv (rd_sep (by decide) (by omega_using []) (by omega_using [])) (by omega_using [hb32, s4]), m₁, hy]
   refine WP.seq (WP.mono (addA_ok g₂.ws (o := nP) (a := nB) (b := nY) (by decide) (by decide) (by decide)
     (by decide) (by decide) (c := true) ((k₂.gpr .x15 (by decide)).trans h15)) fun s₃ ⟨v₃, _, o₃, k₃⟩ => ?_)
-  have g₃ := g₂.out (by decide) (by omega) o₃ k₃ (by decide)
+  have g₃ := g₂.out (by decide) (by omega_using []) o₃ k₃ (by decide)
   simp only [↓reduceIte] at v₃
   rw [b₂, y₂] at v₃
   refine WP.seq (WP.mono (halfA_ok g₃.ws (o := nP) (a := nP) (by decide) (by decide) (by
-    rw [o₃.word (.inr (by omega)) (by omega)]; exact (wv_eq_zero_iff _ _ _ _).mp z₂ (vk I.k) (by omega)))
+    rw [o₃.word (.inr (by omega_using [])) (by omega_using [hb32, s8])]; exact (wv_eq_zero_iff _ _ _ _).mp z₂ (vk I.k) (by omega_using [])))
     fun s₄ ⟨v₄, o₄, k₄⟩ => ?_)
-  have g₄ := g₃.out (by decide) (by omega) o₄ k₄ (by decide)
+  have g₄ := g₃.out (by decide) (by omega_using []) o₄ k₄ (by decide)
   rw [v₃] at v₄
   refine WP.seq (WP.mono (zeroA_ok g₄.ws (j := nQ) (by decide)) fun s₅ ⟨z₅, o₅, _, _, _, k₅⟩ => ?_)
   have g₅ := g₄.out (by decide) (Nat.le_refl _) o₅ k₅ (by decide)
   refine WP.seq (WP.mono (subA_ok g₅.ws (o := nQ) (a := nB) (b := nY) (by decide) (by decide) (by decide)
     (by decide) (by decide)) fun s₆ ⟨v₆, _, _, o₆, k₆⟩ => ?_)
-  have g₆ := g₅.out (by decide) (by omega) o₆ k₆ (by decide)
+  have g₆ := g₅.out (by decide) (by omega_using []) o₆ k₆ (by decide)
   have b₅ : wv s₅.mem I.B (slot (vk I.k) nB) (vk I.k) = b := by
-    rw [o₅.wv (rd_sep (by decide) (by omega) (by omega)) (by omega), o₄.wv (rd_sep (by decide) (by omega) (by omega)) (by omega),
-      o₃.wv (rd_sep (by decide) (by omega) (by omega)) (by omega), b₂]
+    rw [o₅.wv (rd_sep (by decide) (by omega_using []) (by omega_using [])) (by omega_using [hb32, s6]), o₄.wv (rd_sep (by decide) (by omega_using []) (by omega_using [])) (by omega_using [hb32, s6]),
+      o₃.wv (rd_sep (by decide) (by omega_using []) (by omega_using [])) (by omega_using [hb32, s6]), b₂]
   have y₅ : wv s₅.mem I.B (slot (vk I.k) nY) (vk I.k) = y := by
-    rw [o₅.wv (rd_sep (by decide) (by omega) (by omega)) (by omega), o₄.wv (rd_sep (by decide) (by omega) (by omega)) (by omega),
-      o₃.wv (rd_sep (by decide) (by omega) (by omega)) (by omega), y₂]
+    rw [o₅.wv (rd_sep (by decide) (by omega_using []) (by omega_using [])) (by omega_using [hb32, s4]), o₄.wv (rd_sep (by decide) (by omega_using []) (by omega_using [])) (by omega_using [hb32, s4]),
+      o₃.wv (rd_sep (by decide) (by omega_using []) (by omega_using [])) (by omega_using [hb32, s4]), y₂]
   rw [b₅, y₅] at v₆
   have q₆ := sub_wsub (wv_lt _ _ _ _) v₆
   refine WP.mono (halfA_ok g₆.ws (o := nQ) (a := nQ) (by decide) (by decide) (by
-    rw [o₆.word (.inr (by omega)) (by omega)]; exact (wv_eq_zero_iff _ _ _ _).mp z₅ (vk I.k) (by omega)))
-    fun t ⟨v₇, o₇, k₇⟩ => ⟨g₆.out (by decide) (by omega) o₇ k₇ (by decide), ?_, by rw [v₇, q₆]⟩
-  rw [o₇.wv (rd_sep (by decide) (by omega) (by omega)) (by omega), o₆.wv (rd_sep (by decide) (by omega) (by omega)) (by omega),
-    o₅.wv (rd_sep (by decide) (by omega) (by omega)) (by omega), v₄]
+    rw [o₆.word (.inr (by omega_using [])) (by omega_using [hb32, s9])]; exact (wv_eq_zero_iff _ _ _ _).mp z₅ (vk I.k) (by omega_using [])))
+    fun t ⟨v₇, o₇, k₇⟩ => ⟨g₆.out (by decide) (by omega_using []) o₇ k₇ (by decide), ?_, by rw [v₇, q₆]⟩
+  rw [o₇.wv (rd_sep (by decide) (by omega_using []) (by omega_using [])) (by omega_using [hb32, s8]), o₆.wv (rd_sep (by decide) (by omega_using []) (by omega_using [])) (by omega_using [hb32, s8]),
+    o₅.wv (rd_sep (by decide) (by omega_using []) (by omega_using [])) (by omega_using [hb32, s8]), v₄]
 
 /-- The stores of `p` (narrow array 8) and `q` (9), and the exit. -/
 theorem stores_ok {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w) {k el dl : Nat}
@@ -95,11 +95,11 @@ theorem stores_ok {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w) {k el dl :
   have hZ := h.hZ
   have sl : ∀ j < 16, slot w j + 8 * (w + 2) ≤ Z := fun j hj => h.sl hj
   have fw : ∀ {m m' : Mem}, Frm B [(Z, 2 ^ 64)] m m' → ∀ i < 32, word m' B (8 * i) = word m B (8 * i) :=
-    fun hf i hi => hf.word_eq (fun r hr => by rw [List.mem_singleton.mp hr]; exact Or.inl (by omega)) (by omega)
+    fun hf i hi => hf.word_eq (fun r hr => by rw [List.mem_singleton.mp hr]; exact Or.inl (by omega)) (by omega_using [hi])
   have fv : ∀ {m m' : Mem}, Frm B [(Z, 2 ^ 64)] m m' → ∀ j < 16, ∀ n ≤ w + 2,
       wv m' B (slot w j) n = wv m B (slot w j) n := fun hf j hj n hn' =>
-    hf.wv_eq (fun r hr => by rw [List.mem_singleton.mp hr]; have := sl j hj; exact Or.inl (by omega))
-      (by have := sl j hj; omega)
+    hf.wv_eq (fun r hr => by rw [List.mem_singleton.mp hr]; have := sl j hj; exact Or.inl (by omega_using [hn', this]))
+      (by have := sl j hj; omega_using [hn, hn', this])
   refine wp_seqs_append (by simp [storeA]) (by simp [storeA]) (WP.mono (storeA_ws h (by decide) (by decide)
     (by decide) ha.p ha.k hm hk1 hk2 oP.wr oP.sep) fun s₁ ⟨b₁, x₁, h₁, f₁, k₁⟩ => ?_)
   have hm₁ : word s₁.mem B (8 * Public.sMask) = mask c := by rw [fw f₁ _ (by decide)]; exact hm
@@ -115,7 +115,7 @@ theorem stores_ok {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w) {k el dl :
     exact List.map_congr_left fun i hi => by
       have hi' := List.mem_range.mp hi
       rw [x₂ _ (fun j hj => a i hi' j hj)]
-  · rw [fv f₁ _ (by decide) _ (by omega)] at b₂
+  · rw [fv f₁ _ (by decide) _ (by omega_using [hk2])] at b₂
     exact b₂
 
 end VG.Proof.Rsa.AArch64.Rd

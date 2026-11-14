@@ -49,9 +49,9 @@ theorem inW_wR (p : Prm) {d k : Nat}
     ∃ r' ∈ wR p, Region.Sub ⟨w64 p.W + BitVec.ofNat 64 d, k⟩ r' := by
   rcases h with h | h | h | h
   · exact ⟨wA p.W, by simp, Offset.sub_base _ h⟩
-  · exact ⟨wB p.W, by simp, Offset.sub _ (by omega) (by omega)⟩
-  · exact ⟨wV p.W, by simp, Offset.sub _ (by omega) (by omega)⟩
-  · exact ⟨wC p.W, by simp, Offset.sub _ (by omega) (by omega)⟩
+  · exact ⟨wB p.W, by simp, Offset.sub _ (by omega_using [h]) (by omega_using [h])⟩
+  · exact ⟨wV p.W, by simp, Offset.sub _ (by omega_using [h]) (by omega_using [h])⟩
+  · exact ⟨wC p.W, by simp, Offset.sub _ (by omega_using [h]) (by omega_using [h])⟩
 
 /-- The data, after a frame within `wR`. -/
 theorem data_wR {p : Prm} (L : Lay p) {m m' : Mem} (h : Frame (wR p) m m') :
@@ -63,7 +63,7 @@ theorem data_wR {p : Prm} (L : Lay p) {m m' : Mem} (h : Frame (wR p) m m') :
     · exact L.d_w.sub_right (Lay.wSub (by decide))
     · exact L.d_w.sub_right (Lay.wSub (by decide))
     · exact L.d_w.sub_right (Lay.wSub (by decide))
-    · exact L.bd.symm) (by have := L.dw; omega)
+    · exact L.bd.symm) (by have := L.dw; omega_using [this])
 
 /-- The key context is apart from what the pieces write. -/
 theorem k_mut {p : Prm} (L : Lay p) : ∀ r ∈ mutR p, (⟨w64 p.K, 256⟩ : Region).Disjoint r := by
@@ -82,8 +82,8 @@ theorem ctxCiph_mut {p : Prm} (L : Lay p) {m m' : Mem} (h : Frame (mutR p) m m')
     ctxCiph m' (w64 p.K) p.R = ctxCiph m (w64 p.K) p.R := by
   unfold ctxCiph
   have hb := L.rounds_le
-  rw [Proof.AesGcm.X86.bytesAt_frame h (fun r hr => (k_mut L r hr).sub_left (Region.sub_prefix (by omega)))
-    (by omega)]
+  rw [Proof.AesGcm.X86.bytesAt_frame h (fun r hr => (k_mut L r hr).sub_left (Region.sub_prefix (by omega_using [hb])))
+    (by omega_using [hb])]
 
 /-- What `nonce` leaves. -/
 structure NonceOk (p : Prm) (o : Block) (s s' : State) : Prop where
@@ -151,16 +151,16 @@ theorem nonce_ok (v : BlocksImpl) {p : Prm} (L : Lay p) {s : State} (E : Env p s
   · rw [P₃.o0, ktop, Proof.Ocb.offset0_eq]; rfl
   · rw [Proof.Ocb.blockAtMem_frame P₃.frame (fun r hr => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-        rcases hr with rfl | rfl | rfl <;> exact Lay.w_w (by simp only [ofsO, o0O, stO]; omega) (by omega) (by decide)),
+        rcases hr with rfl | rfl | rfl <;> exact Lay.w_w (by simp only [ofsO, o0O, stO]; omega_arith) (by omega_using [h₂]) (by decide)),
       Proof.Ocb.blockAtMem_frame P₂.frame (fun r hr => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl | rfl
-        · rw [a112]; exact Lay.w_w (by simp only [tmpO]; omega) (by omega) (by decide)
-        · exact Lay.w_w (by simp only [scrO]; omega) (by omega) (by decide)
-        · exact (L.bw' (by omega)).symm),
+        · rw [a112]; exact Lay.w_w (by simp only [tmpO]; omega_using [h₂]) (by omega_using [h₂]) (by decide)
+        · exact Lay.w_w (by simp only [scrO]; omega_using [h₂]) (by omega_using [h₂]) (by decide)
+        · exact (L.bw' (by omega_using [h₂])).symm),
       Proof.Ocb.blockAtMem_frame P₁.frame (fun r hr => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-        rcases hr with rfl | rfl <;> exact Lay.w_w (by simp only [tmpO, botO]; omega) (by omega) (by decide))]
+        rcases hr with rfl | rfl <;> exact Lay.w_w (by simp only [tmpO, botO]; omega_using [h₂]) (by omega_using [h₂]) (by decide))]
   · rw [P₃.gpr r h₁ h₂ h₃ h₄, P₂.gpr r h₁ h₂ h₃ h₄, P₁.gpr r h₁ h₃ h₄ h₅]
 
 end VG.Proof.AesOcb.X86

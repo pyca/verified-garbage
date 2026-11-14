@@ -21,13 +21,13 @@ theorem four_low_byte (x : BitVec 128) (e : Nat) :
     vbyte x (4*e)=(vword x e).setWidth 8 := by
   apply BitVec.eq_of_getLsbD_eq
   intro k hk
-  simp [vbyte,vword,hk,show k<32 by omega]
+  simp [vbyte,vword,hk,show k<32 by omega_using [hk]]
   congr 1
-  omega
+  omega_using []
 
 theorem four_table_word (v : VReg → BitVec 128) {i : Nat} (hi : i<16) :
     tableByte v .v0 (4*i)=(vword (v (regAt (i/4))) (i%4)).setWidth 8 := by
-  rcases (show i=0 ∨ i=1 ∨ i=2 ∨ i=3 ∨ i=4 ∨ i=5 ∨ i=6 ∨ i=7 ∨ i=8 ∨ i=9 ∨ i=10 ∨ i=11 ∨ i=12 ∨ i=13 ∨ i=14 ∨ i=15 by omega) with
+  rcases (show i=0 ∨ i=1 ∨ i=2 ∨ i=3 ∨ i=4 ∨ i=5 ∨ i=6 ∨ i=7 ∨ i=8 ∨ i=9 ∨ i=10 ∨ i=11 ∨ i=12 ∨ i=13 ∨ i=14 ∨ i=15 by omega_using [hi]) with
     rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl
   · simpa [tableByte,regAt,Nat.repeat,VReg.succ] using four_low_byte (v .v0) 0
   · simpa [tableByte,regAt,Nat.repeat,VReg.succ] using four_low_byte (v .v0) 1
@@ -50,7 +50,7 @@ theorem four_table_nibbles (v : VReg → BitVec 128) (f : Nat → BitVec 4)
     (h : ∀j<4,∀e<4,vword (v (regAt j)) e=(f (4*j+e)).setWidth 32) :
     ∀i<16,tableByte v .v0 (4*i)=(f i).setWidth 8 := by
   intro i hi
-  rw [four_table_word v hi,h _ (by omega) _ (by omega),show 4*(i/4)+i%4=i by omega]
+  rw [four_table_word v hi,h _ (by omega_using [hi]) _ (by omega_using []),show 4*(i/4)+i%4=i by omega_using []]
   simp
 
 theorem fourLoadShuffle_ok (signed : Bool) (s : State) (f : Nat → BitVec 4)
@@ -112,7 +112,7 @@ theorem fourStored_byte (x : BitVec 128) {i : Nat} (hi : i<8) :
     (x.extractLsb' 0 64).extractLsb' (8*i) 8=vbyte x i := by
   apply BitVec.eq_of_getLsbD_eq
   intro k hk
-  simp only [vbyte,BitVec.getLsbD_extractLsb',hk,show 8*i+k<64 by omega,
+  simp only [vbyte,BitVec.getLsbD_extractLsb',hk,show 8*i+k<64 by omega_using [hi, hk],
     decide_true,Bool.true_and,Nat.zero_add]
 
 theorem fourGroup_ok (signed : Bool) (s : State) (f : Nat → BitVec 4)

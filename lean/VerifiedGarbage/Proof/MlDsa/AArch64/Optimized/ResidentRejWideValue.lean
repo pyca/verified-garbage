@@ -73,11 +73,11 @@ private theorem bit_and_ite (P Q : Prop) [Decidable P] [Decidable Q] :
 private theorem all_succ (P : Nat → Prop) (n : Nat) :
     (∀j<n+1,P j) ↔ (∀j<n,P j) ∧ P n := by
   constructor
-  · intro h; exact ⟨fun j hj => h j (by omega),h n (by omega)⟩
+  · intro h; exact ⟨fun j hj => h j (by omega_using [hj]),h n (by omega_using [])⟩
   · rintro ⟨h,hn⟩ j hj
     by_cases he : j=n
     · subst j; exact hn
-    · exact h j (by omega)
+    · exact h j (by omega_using [hj, he])
 
 /-- Each accumulated lane bit describes the same lane in all preceding
 four-candidate probes. -/
@@ -125,7 +125,7 @@ theorem wideMask_all {s : State} (hc : Constants s) :
   rw [hh]
   constructor
   · rintro ⟨h0,h1,h2,h3⟩ e he
-    rcases (show e=0 ∨ e=1 ∨ e=2 ∨ e=3 by omega) with rfl | rfl | rfl | rfl
+    rcases (show e=0 ∨ e=1 ∨ e=2 ∨ e=3 by omega_using [he]) with rfl | rfl | rfl | rfl
     · exact h0
     · exact h1
     · exact h2

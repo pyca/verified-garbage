@@ -40,14 +40,14 @@ theorem Drawn.exponentInitial {E : Environment} (v : E.Valid) {eBytes pBytes ent
     CandidateExponent.Initial E.workspace E.p E.exponent E.size E.width (candidateValue E entropy)
       E.exponentLength (Spec.Rsa.os2ip eBytes) s := by
   refine ⟨D.input.scratch, D.input.stack, v.width_bounds.1, v.width_bounds.2, v.slotFit (by decide), D.candidate,
-    by have := candidate_large v entropy; omega, candidate_odd v entropy, D.input.exponent_eq,
-    D.input.exponentLength_eq v, by have := v.exponentLength.1; omega, v.exponentLength.2, v.exponentFit,
-    D.input.memory.exponentRead, v.readWorkspace List.mem_cons_self, ?_, by have := v.low; omega, ?_, ?_⟩
+    by have := candidate_large v entropy; omega_using [this], candidate_odd v entropy, D.input.exponent_eq,
+    D.input.exponentLength_eq v, by have := v.exponentLength.1; omega_using [this], v.exponentLength.2, v.exponentFit,
+    D.input.memory.exponentRead, v.readWorkspace List.mem_cons_self, ?_, by have := v.low; omega_using [this], ?_, ?_⟩
   · rw [D.input.memory.exponentBytes]
   · change E.p.toNat ≤ E.base.toNat ∨ E.base.toNat + E.size + 40 ≤ E.p.toNat
     rcases v.workspaceStack with h | h
     · exact Or.inl h
-    · exact Or.inr (by omega)
+    · exact Or.inr (by omega_using [h])
   · change s.mem.readW (off E.base (4 * 1)) 32 = _
     rw [D.input.header 1 (by decide), v.length_eq]; rfl
 

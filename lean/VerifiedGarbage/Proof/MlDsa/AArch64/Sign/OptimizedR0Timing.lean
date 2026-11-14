@@ -70,17 +70,17 @@ theorem optimizedR0_trace {p : Params} {S : Nat} (hp : Ok3 p) {t r : Nat} (hr : 
     · apply Response.subLowNormAt_tr (S := S) (inB_argOk hwr) (inB_argOk hcr) (inB_argOk hlr)
       intro x y ⟨L,⟨⟨σ,hx⟩,rx⟩,⟨⟨τ,hy⟩,ry⟩⟩
       have fx : Reduced x.mem (pa x (wP p r)) := by
-        have h := (hx.w 0 (by omega)).1
+        have h := (hx.w 0 (by omega_using [hr])).1
         simpa only [Nat.add_zero] using h
       have fy : Reduced y.mem (pa y (wP p r)) := by
-        have h := (hy.w 0 (by omega)).1
+        have h := (hy.w 0 (by omega_using [hr])).1
         simpa only [Nat.add_zero] using h
       exact ⟨subLowNormReady_layout L.lx hwr hcr hlr hww hwl hwc hwo hco fx rx hgb.1 hgb.2.1 hgb.2.2,
         subLowNormReady_layout L.ly hwr hcr hlr hww hwl hwc hwo hco fy ry hgb.1 hgb.2.1 hgb.2.2,
         L.pa (inB_bases hwr),L.pa (inB_bases hcr),L.pa (inB_bases hlr),L.sp⟩
     · rintro x L ⟨⟨σ,hx⟩,rx⟩
       have fx : Reduced x.mem (pa x (wP p r)) := by
-        have h := (hx.w 0 (by omega)).1
+        have h := (hx.w 0 (by omega_using [hr])).1
         simpa only [Nat.add_zero] using h
       exact WP.mono (subLowNormAt_layout L hwr hcr hlr
         (subLowNormReady_layout L hwr hcr hlr hww hwl hwc hwo hco fx rx hgb.1 hgb.2.1 hgb.2.2))

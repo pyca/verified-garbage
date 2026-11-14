@@ -53,7 +53,7 @@ theorem mask_lt {kv : Nat × BitVec 64} (hkv : kv ∈ keyMasks) : kv.1 < 64 := b
   simp [keyMasks] at hkv; rcases hkv with h | h | h <;> subst h <;> simp [evenSlot, oddSlot, grpSlot]
 
 theorem ok_sbox {s : State} (h : Ok layerCfg s) : Ok sboxCfg s where
-  slotIn k hk := h.slotIn k (by simp [sboxCfg, layerCfg, tableSlot] at hk ⊢; omega)
+  slotIn k hk := h.slotIn k (by simp [sboxCfg, layerCfg, tableSlot] at hk ⊢; omega_using [hk])
   extIn k hk := by simp [sboxCfg] at hk
   slots := by simp [sboxCfg]
   sep k _ j hj := by simp [sboxCfg] at hj
@@ -63,7 +63,7 @@ theorem slot_above {m m' : Mem} {b : Addr} {n k : Nat} (hf : Frame [⟨b, 8 * n�
     (hk' : k < 2 ^ 58) : m'.readW (wordAddr b k) 64 = m.readW (wordAddr b k) 64 :=
   hf.readW (r := ⟨wordAddr b k, 8⟩) (by simp only [Region.Contains]; simp) (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
-      exact VG.Offset.disjoint_base b (by omega) (by omega)) (by decide)
+      exact VG.Offset.disjoint_base b (by omega_using [hk]) (by omega_using [hk'])) (by decide)
 
 theorem stateIns_mem {x j i : Nat} (h : (j, i) ∈ stateIns x) : ∃ k < 32, j = 64 + k ∧ i = x + k := by
   simp only [stateIns, List.mem_map, List.mem_range, Prod.mk.injEq] at h
@@ -72,7 +72,7 @@ theorem stateIns_mem {x j i : Nat} (h : (j, i) ∈ stateIns x) : ∃ k < 32, j =
 
 theorem masks_in {s : State} (hm : MasksOk s) : ∀ kv ∈ keyMasks, kv.1 < layerCfg.slots ∧
     s.mem.readW (wordAddr (s.gpr layerCfg.base) kv.1) 64 = kv.2 := fun kv hkv =>
-  ⟨by have := mask_lt hkv; simp only [layerCfg, tableSlot]; omega, hm kv hkv⟩
+  ⟨by have := mask_lt hkv; simp only [layerCfg, tableSlot]; omega_using [this], hm kv hkv⟩
 
 theorem planes_eq (s : State) (w j : Nat) : planes s w j = slotW s (64 + (8 * w + j)) := by
   simp only [planes, stateSlot, Nat.add_assoc]

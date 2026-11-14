@@ -37,13 +37,13 @@ theorem trialPairStep_ok (s : State) {n acc offset divisor inverse : Nat}
     unfold trialDigitNat
     by_cases last : n=1
     · simp only [last,ite_true,show (0 : BitVec 32)=0#32 from rfl,BitVec.or_zero,Nat.add_zero,BitVec.toNat_setWidth]
-      exact Nat.mod_eq_of_lt (by have := (s.mem (State.addr (s.gpr .r0-1))).isLt;omega)
+      exact Nat.mod_eq_of_lt (by have := (s.mem (State.addr (s.gpr .r0-1))).isLt;omega_using [])
     · rw [ite_eq_right last,ite_eq_right last,trialDigit_value]
   have digitBound : trialDigitNat s.mem (s.gpr .r0) n<2^16 := by
     have lo := (s.mem (State.addr (s.gpr .r0-1))).isLt
     have hi := (s.mem (State.addr (s.gpr .r0-2))).isLt
     unfold trialDigitNat
-    split <;> omega
+    split <;> omega_using []
   simp only [List.cons_append,List.nil_append]
   refine wp_mov (op2_reg _ _) fun v save => ?_
   have kept : Rest [.r0,.r1,.r2,.r5,.r6,.r7,.r8] s v :=
@@ -72,8 +72,8 @@ theorem trialPairStep_ok (s : State) {n acc offset divisor inverse : Nat}
   · rw [flag,keepY.gpr .r1 (by simp),keepX.gpr .r1 (by simp),save.other .r1 (by decide),cnt]
     rw [show (0 : BitVec 32)=0#32 from rfl,BitVec.sub_zero]
     change (BitVec.ofNat 32 (n-min 2 n)==(0 : BitVec 32))=_
-    rw [ofNat_beq_zero (by omega : n-min 2 n<2^32)]
-    simp only [show n-min 2 n=0 ↔ n≤2 by omega]
+    rw [ofNat_beq_zero (by omega_using [fits] : n-min 2 n<2^32)]
+    simp only [show n-min 2 n=0 ↔ n≤2 by omega_using []]
   · rw [final.mem,memY,memX,save.mem,mem]
   · exact kept.trans ((keepX.mono (by simp)).trans ((keepY.mono (by simp)).trans (final.rest _)))
 

@@ -56,13 +56,13 @@ theorem group_wp {s : State} {B D : BitVec 32} {K : Spec.Sm4.Schedule} {n : Nat}
     exact (Covers.of_sub fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
       exact ⟨⟨State.addr D, 16 * n⟩, List.mem_singleton_self _, 0, by simp,
-        by change 0 + 16 ≤ 16 * n; omega⟩).trans wd
-  have sep₁ := sep.sub_left (Region.sub_prefix (show 16 ≤ 16 * n by omega))
-  have p₁ : CfbFill.Pre B D 1 s₁ := ⟨b₁, d₁, g₁, fitB, by omega,
+        by change 0 + 16 ≤ 16 * n; omega_using [hn]⟩).trans wd
+  have sep₁ := sep.sub_left (Region.sub_prefix (show 16 ≤ 16 * n by omega_using [hn]))
+  have p₁ : CfbFill.Pre B D 1 s₁ := ⟨b₁, d₁, g₁, fitB, by omega_using [hn, fitD],
     by rw [wr₁]; exact hw, wd₁, sep₁⟩
   refine WP.seq (WP.mono (SerialCbcCore.core_wp p₁ (by rw [m₁]; exact ht)) fun s₂ c => ?_)
   have p₂ : CfbFill.Pre B D 1 s₂ := ⟨(c.regs _ (by simp [sb])).trans b₁,
-    (c.regs _ (by simp)).trans d₁, (c.regs _ (by simp)).trans g₁, fitB, by omega,
+    (c.regs _ (by simp)).trans d₁, (c.regs _ (by simp)).trans g₁, fitB, by omega_using [hn, fitD],
     by rw [c.wr, wr₁]; exact hw, by rw [c.wr]; exact wd₁, sep₁⟩
   refine WP.seq (WP.mono (SerialCbcFill.copy_wp p₂) fun s₃ cp => ?_)
   have b₃ : s₃.gpr sb = B := (cp.regs _ (by decide) (by decide)).trans p₂.base

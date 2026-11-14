@@ -40,7 +40,7 @@ theorem loadCheck_ct : RelCT isa (Two (LPre aX arg argLen)) (Arithmetic.load aX 
   refine two_post (loadArr_ct (by decide) (by taint_decide) (by taint_decide)) ?_
   intro p s ⟨minv, bs, hc, hw2, hwx, hw30, ha, hp', hl', hp, hl, hlen, hs, h1, h31, hfit⟩
   exact WP.mono (load_ok hc hw2 hwx hw30 ha hp' hl' hp hl hs h1 h31 hfit)
-    fun t ⟨ht, _⟩ => ⟨minv, ht, hw2, by omega⟩
+    fun t ⟨ht, _⟩ => ⟨minv, ht, hw2, by omega_using [hwx, hw30]⟩
 
 theorem loadedRange_trace (aboveOne : Bool) : RelCT isa (Two LoadedCheck)
     (Checks.rangeMask aboveOne) (fun _ _ => True) := by
@@ -83,7 +83,7 @@ theorem leaveAccumulate_ct : RelCT isa (Two LinkedPre)
   · intro p s ⟨minv, hc⟩
     xrun [Crt.leave, State.ea, hdr, hc.rdi, hdrOff, hc.link,
       hc.good.scr.ld (show 8 * Crt.sLink + 8 ≤ slot p.wx 8 by
-        have := hdr_lt_slot p.wx 8 (show Crt.sLink < 32 by decide); omega)]
+        have := hdr_lt_slot p.wx 8 (show Crt.sLink < 32 by decide); omega_using [this])]
   exact two_taint [.rdi] (pins_of (fun p _ => p.B) (by
     intro p s h r hr
     obtain rfl := List.mem_singleton.mp hr

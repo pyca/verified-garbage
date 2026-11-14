@@ -155,7 +155,7 @@ theorem finish_ok (s a : State) (p : Spec.Argon2.Params) (pass lane slice index 
       < 2 ^ 64 := by
     have small := bounds.sum_bound (s.gpr .rdi)
     have q := bounds.laneLength_bound
-    omega
+    omega_using [small, q]
   have sumNat : (b.gpr .rdi).toNat =
       windowStart p pass slice + relativeValue p pass lane slice index (s.gpr .rdi) := by
     rw [sumWord, word_nat _ sumBound]
@@ -409,11 +409,11 @@ theorem previous_nat (column q : Nat) (positive : 0 < q) (bound : column < q) :
     (if column = 0 then q else column) - 1 = (column + q - 1) % q := by
   by_cases zero : column = 0
   · simp only [zero, ite_true, Nat.zero_add]
-    exact (Nat.mod_eq_of_lt (by omega : q - 1 < q)).symm
+    exact (Nat.mod_eq_of_lt (by omega_using [positive] : q - 1 < q)).symm
   · simp only [zero, ite_false]
-    have sub : column + q - 1 - q = column - 1 := by omega
-    rw [Nat.mod_eq_sub_mod (by omega : q ≤ column + q - 1), sub,
-      Nat.mod_eq_of_lt (by omega : column - 1 < q)]
+    have sub : column + q - 1 - q = column - 1 := by omega_using []
+    rw [Nat.mod_eq_sub_mod (by omega_using [zero] : q ≤ column + q - 1), sub,
+      Nat.mod_eq_of_lt (by omega_using [bound] : column - 1 < q)]
 
 theorem previous_word_nat (column q : Nat) (positive : 0 < q) (qBound : q < 2 ^ 64)
     (bound : column < q) :
@@ -431,10 +431,10 @@ theorem previous_word_nat (column q : Nat) (positive : 0 < q) (qBound : q < 2 ^ 
   by_cases h : column = 0
   · simp only [h, ite_true]
     rw [show (1 : Addr) = BitVec.ofNat 64 1 from rfl,
-      Offset.ofNat_sub_ofNat positive, Nat.zero_add, Nat.mod_eq_of_lt (by omega : q - 1 < q)]
+      Offset.ofNat_sub_ofNat positive, Nat.zero_add, Nat.mod_eq_of_lt (by omega_using [positive] : q - 1 < q)]
   · simp only [h, ite_false]
     rw [show (1 : Addr) = BitVec.ofNat 64 1 from rfl,
-      Offset.ofNat_sub_ofNat (by omega : 1 ≤ column),
+      Offset.ofNat_sub_ofNat (by omega_using [h] : 1 ≤ column),
       ← previous_nat _ q positive bound, ite_eq_right h]
 
 theorem code_nat_ok (s : State) (slice segment index q : Nat)
@@ -594,7 +594,7 @@ theorem code_nat_ok (s : State) (p : Spec.Argon2.Params) (pass lane slice index 
     rw [col, position.laneLength]
     have positive := Proof.Argon2.segmentLen_ge_two p bounds.lanesPositive bounds.memoryMinimum
     have q := Proof.Argon2.laneLen_segments p bounds.lanesPositive
-    exact FillColumn.previous_word_nat _ _ (by omega)
+    exact FillColumn.previous_word_nat _ _ (by omega_using [positive, q])
       (Nat.lt_trans bounds.laneLength_bound (by decide))
       (Proof.Argon2.column_lt p bounds.lanesPositive bounds.sliceBound bounds.indexBound)
   refine ⟨?_, ?_, ?_, keeps⟩

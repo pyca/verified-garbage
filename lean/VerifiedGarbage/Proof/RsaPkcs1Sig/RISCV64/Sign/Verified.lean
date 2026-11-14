@@ -108,7 +108,7 @@ theorem pubS_of {s₁ s₂ : State} (h : (Spec.RsaPkcs1Sig.signContract RISCV64.
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl
     exacts [h3.symm, h4.symm, h5.symm, h6.symm, h7.symm, h8.symm, h10.symm]
   · simp only [nA, Bool.false_eq_true, ↓reduceIte] at hi
-    rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 ∨ i = 8 ∨ i = 9 ∨
+    rcases (by omega_using [hi] : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 ∨ i = 8 ∨ i = 9 ∨
       i = 10 ∨ i = 11 ∨ i = 12) with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
     exacts [a0.symm, a1.symm, a2.symm, a3.symm, a4.symm, a5.symm, a6.symm, a7.symm, a8.symm, a9.symm, a10.symm,
       a11.symm, a12.symm]
@@ -172,13 +172,13 @@ theorem priv_facts {a s₁ s₂ t₁ t₂ : State} {em₁ em₂ : List Byte} (h�
         Spec.Rsa.bytesAt s.mem (s.gpr .a2) (s.gpr .a3).toNat := fun h A => by
     rw [callE_gpr, callE_gpr, A.a2, A.a3]
     exact bytes_of_frame A.mem (fun r hr => by rw [List.mem_singleton.mp hr]; exact h.kn.symm)
-      (by have := h.wn; omega)
+      (by have := h.wn; omega_using [])
   have he : ∀ {s t : State} {em : List Byte}, SPre pc s → AtCall pc s t em →
       Spec.Rsa.bytesAt (callE pc s t).mem ((callE pc s t).gpr .a4) ((callE pc s t).gpr .a5).toNat =
         Spec.Rsa.bytesAt s.mem (s.gpr .a4) (s.gpr .a5).toNat := fun h A => by
     rw [callE_gpr, callE_gpr, A.a4, A.a5]
     exact bytes_of_frame A.mem (fun r hr => by rw [List.mem_singleton.mp hr]; exact h.ke.symm)
-      (by have := h.we; omega)
+      (by have := h.we; omega_using [])
   refine ⟨by rw [show (callE pc s₁ t₁).sp = fb s₁ from A₁.sp,
       show (callE pc s₂ t₂).sp = fb s₂ from A₂.sp, fb_same h₁ h₂], fun r hr => ?_, fun i hi => ?_,
     by rw [hn h₁.pre A₁, hn h₂.pre A₂, h₁.pub.n, h₂.pub.n], by rw [he h₁.pre A₁, he h₂.pre A₂, h₁.pub.e, h₂.pub.e]⟩
@@ -202,14 +202,14 @@ theorem pre_leak {s t : State} {em : List Byte} (X : PreX s) (A : AtCall true s 
         ((callE true s t).gpr .a3).toNat =
       Spec.Rsa.privatePrecomputedLeak s.mem (stackArg s 13) (s.gpr .a3).toNat := by
   have pwl : Spec.Rsa.precomputedWords (s.gpr .a3).toNat ≤ (stackArg s 14).toNat := by
-    rw [X.pl]; unfold Spec.Rsa.privatePrecomputedWords; omega
+    rw [X.pl]; unfold Spec.Rsa.privatePrecomputedWords; omega_using []
   simp only [Spec.Rsa.privatePrecomputedLeak, callE_stackArg A (i := 12) (by decide),
     callE_gpr (pc := true) s t (r := .a3), A.a3]
   congr 1
   have subPre : Region.Sub ⟨stackArg s 13, 8 * Spec.Rsa.precomputedWords (s.gpr .a3).toNat⟩ (preR s) :=
-    fun _ hx => by simp only [Region.Contains] at hx ⊢; omega
+    fun _ hx => by simp only [Region.Contains] at hx ⊢; omega_using [pwl, hx]
   exact VG.Proof.Rsa.RISCV64.Priv.words_of_frame A.mem (fun r hr => by
-    rw [List.mem_singleton.mp hr]; exact X.kP.symm.sub_left subPre) (by have := X.wP; omega)
+    rw [List.mem_singleton.mp hr]; exact X.kP.symm.sub_left subPre) (by have := X.wP; omega_using [pwl, this])
 
 theorem priv_rel :
     RelCT isa (Two fun a t => ∃ s em, E pc a s ∧ AtCall pc s t em) (privCall pc) fun _ _ => True := by

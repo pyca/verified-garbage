@@ -80,15 +80,15 @@ theorem upperWord_step {s : State} {A B : Spec.Sha3.State} {m : Mem} {p : Addr} 
     (hin : InRegions (s.rd++s.wr) (p+BitVec.ofNat 64 (8*j)) 8) :
     WP isa (.block [.ldr .x .x7 .x4 (8*j),.vop (.ins .d2 (vreg j) 1 .x7)]) s fun t =>
       RegKeep [.x7] s t ∧ t.mem=m ∧ Pairs t A (seedPrefix B m p (j+1)) := by
-  refine WP.mono (upperWord_ok ⟨by omega,by omega⟩ (by rw [h4]; exact hin))
+  refine WP.mono (upperWord_ok ⟨by omega_using [],by omega_using [hj]⟩ (by rw [h4]; exact hin))
     fun t ⟨hk,hmt,hv,ht⟩ => ⟨hk,hmt.trans hm,?_⟩
   intro i hi
   by_cases he : i=j
   · subst i
-    rw [ht,hp j (by omega),upper_pair,hm,h4,seedPrefix_get _ _ _ _ _ (by omega),ite_eq_left (by omega)]
-  · have hij : vreg i≠vreg j := by rw [ne_eq,vreg_inj i (by omega) j (by omega)]; exact he
+    rw [ht,hp j (by omega_using [hj]),upper_pair,hm,h4,seedPrefix_get _ _ _ _ _ (by omega_using [hj]),ite_eq_left (by omega_using [])]
+  · have hij : vreg i≠vreg j := by rw [ne_eq,vreg_inj i (by omega_using [hi]) j (by omega_using [hj])]; exact he
     rw [hv _ hij,hp i hi,seedPrefix_get _ _ _ _ _ hi,seedPrefix_get _ _ _ _ _ hi]
-    have hc : (i<j)↔(i<j+1) := by omega
+    have hc : (i<j)↔(i<j+1) := by omega_using [he]
     simp only [hc]
 
 /-- All eight seed words are loaded without disturbing the commitment. -/
@@ -146,7 +146,7 @@ theorem insertHigh_ok {s : State} {A B : Spec.Sha3.State} {j : Nat} {r : Reg}
   by_cases he : i=j
   · subst i
     rw [ht.v,hp j hj,upper_pair,replaceWord_get _ _ _ _ hj,ite_eq_left rfl]
-  · have hij : vreg i≠vreg j := by rw [ne_eq,vreg_inj i (by omega) j (by omega)]; exact he
+  · have hij : vreg i≠vreg j := by rw [ne_eq,vreg_inj i (by omega_using [hi]) j (by omega_using [hj])]; exact he
     rw [ht.get _ hij,hp i hi,replaceWord_get _ _ _ _ hi,ite_eq_right he]
 
 end VG.Proof.MlDsa.AArch64.Sign.CommitTail
@@ -178,8 +178,8 @@ theorem clearPrefix_step (B : Spec.Sha3.State) (j : Nat) :
     replaceWord_get _ _ _ _ hi,clearPrefix_get _ _ _ hi,clearPrefix_get _ _ _ hi]
   by_cases he : i=8+j
   · subst i
-    rw [ite_eq_left rfl,ite_eq_left (by omega)]
-  · have hc : (8≤i ∧ i<8+j)↔(8≤i ∧ i<8+(j+1)) := by omega
+    rw [ite_eq_left rfl,ite_eq_left (by omega_using [])]
+  · have hc : (8≤i ∧ i<8+j)↔(8≤i ∧ i<8+(j+1)) := by omega_using [he]
     simp only [he,ite_false,hc]
 
 /-- Clears the unused second-lane seed words, preserving the first stream. -/
@@ -192,11 +192,11 @@ theorem clearHigh_ok {s : State} {A B : Spec.Sha3.State} (hp : Pairs s A B)
     apply Vector.ext
     intro i hi
     simp only [clearPrefix,Vector.getElem_ofFn,Fin.getElem_fin,Nat.add_zero]
-    rw [ite_eq_right (by omega)]
+    rw [ite_eq_right (by omega_using [])]
   rw [List.map_eq_flatMap]
   refine wp_range_flatMap (M:=isa) I (fun j t hj ht => ?_) 17 (Nat.le_refl _) s ?_
   · rcases ht with ⟨hk,hm,hp⟩
-    refine WP.mono (insertHigh_ok (by omega) hp) fun u ⟨hk',hm',hp'⟩ => ?_
+    refine WP.mono (insertHigh_ok (by omega_using [hj]) hp) fun u ⟨hk',hm',hp'⟩ => ?_
     refine ⟨(hk.trans hk').mono (by simp),hm'.trans hm,?_⟩
     rw [hk.gpr .x7 (by simp),h7,clearPrefix_step] at hp'
     exact hp'

@@ -120,7 +120,7 @@ theorem inverseSetup_ok {s : State} {B : Addr} {Z n N : Nat} {w : Width} {src mo
   have Hu := shrinkRt (hu.runtime hw) bound
   have bankProof := inverseBank_ok Hu
     (by simpa only [kw_words h.width] using input)
-    (by simpa only [kw_words h.width] using modulus) (by omega)
+    (by simpa only [kw_words h.width] using modulus) (by omega_using [odd])
     (by simpa only [kw_words h.width] using zero aZero (by decide) (by decide) (by decide))
     (by simpa only [kw_words h.width] using zero 2 (by decide) (by decide) (by decide))
     (by simpa only [kw_words h.width] using zero 3 (by decide) (by decide) (by decide))
@@ -130,7 +130,7 @@ theorem inverseSetup_ok {s : State} {B : Addr} {Z n N : Nat} {w : Width} {src mo
     (by
       intro j hj
       have small := (by decide : ∀ j ∈ ([1, 2, aNM] : List Nat), j < 15) j hj
-      omega)
+      omega_using [bound, small])
     (by simp)
   have bankV := ready.initial
   simp only [bank, Prod.mk.injEq] at bankV

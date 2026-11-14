@@ -48,18 +48,18 @@ section
 variable {P : KP} {σ s t : State}
 
 theorem oArr_lt (i : Nat) (hi : i < 7) : oArr i < nArr := by
-  rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6) with
+  rcases (by omega_using [hi] : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6) with
     rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide
 
 theorem oArr_mem (i : Nat) (hi : i < 7) : oArr i ∈ LK := by
-  rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6) with
+  rcases (by omega_using [hi] : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6) with
     rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide
 
 /-- Memory of the working space through a step that writes only an output. -/
 theorem w32_frameK {m m' : Mem} {R : Region} (f : Frame [R] m m') (hR : R.Disjoint P.rS)
     (hZ : P.Z ≤ 2 ^ 64) {d : Nat} (hd : d + 4 ≤ P.Z) : w32 m' (State.addr P.B) d = w32 m (State.addr P.B) d := by
   simp only [w32]
-  rw [f.readW (r := P.rS) (Offset.contains_base _ hd (by omega)) (fun r hr => by
+  rw [f.readW (r := P.rS) (Offset.contains_base _ hd (by omega_using [hZ, hd])) (fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr; exact hR.symm) (by decide)]
 
 theorem num_frameK {m m' : Mem} {R : Region} (f : Frame [R] m m') (hR : R.Disjoint P.rS) (pre : In P σ)
@@ -67,12 +67,12 @@ theorem num_frameK {m m' : Mem} {R : Region} (f : Frame [R] m m') (hR : R.Disjoi
   have fz := pre.fitZ hj
   have hZ := pre.Z_le
   have hS : S P.W = 4 * (P.W + 2) := rfl
-  exact val32_congr fun i hi => w32_frameK f hR (by omega) (by omega)
+  exact val32_congr fun i hi => w32_frameK f hR (by omega_using [hZ]) (by omega_using [fz, hS, hi])
 
 /-- The stage of the key, as the stores' start. -/
 theorem KF.ss {E : State → Prop} (h : KF P E σ s) : SS P E 0 σ s :=
   ⟨h.1, h.2.1.bo, h.2.2, fun i hi => h.2.1.arrs _ (oArr_mem i hi),
-    by rw [h.2.1.sl sMask (by simp)]; simp only [upd_self], fun _ h => absurd h (by omega)⟩
+    by rw [h.2.1.sl sMask (by simp)]; simp only [upd_self], fun _ h => absurd h (by omega_using [])⟩
 
 /-- Output `i` written from its array under the mask. -/
 theorem store_vp {E : State → Prop} (i : Nat) (hi : i < 7) (cert : SCert (oArr i)) :
@@ -82,7 +82,7 @@ theorem store_vp {E : State → Prop} (i : Nat) (hi : i < 7) (cert : SCert (oArr
     ?_ ?_
   · show VP _ (.block ([(Reg.r10, oFw i), (Reg.r11, oFl i)].map fun p => Instr.ldrSp p.1 p.2)) _
     have fw4 : oFw i + 4 ≤ 112 ∧ oFw i % 4 = 0 := by
-      rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6) with
+      rcases (by omega_using [hi] : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6) with
         rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide
     have fl4 : oFl i + 4 ≤ 112 ∧ oFl i % 4 = 0 := by unfold oFl; split <;> decide
     refine VP.ldrSp (fun σ₁ σ₂ s₁ s₂ h₁ h₂ => ?_) fun σ s h => ?_
@@ -113,11 +113,11 @@ theorem store_vp {E : State → Prop} (i : Nat) (hi : i < 7) (cert : SCert (oArr
       h.bo.frame.trans (ft.mono fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr; exact List.mem_cons_of_mem _ (oR_mem i hi))⟩, hwt,
       fun i' hi' => by rw [num_frameK ft (pre.oS i hi) pre (oArr_lt i' hi')]; exact h.arrs i' hi', ?_, fun k hk => ?_⟩
-    · rw [← h.mask]; exact w32_frameK ft (pre.oS i hi) (by have := pre.Z_le; omega) (Nat.le_trans (by decide) pre.hdr_Z)
-    · rcases (by omega : k < i ∨ k = i) with hk' | rfl
+    · rw [← h.mask]; exact w32_frameK ft (pre.oS i hi) (by have := pre.Z_le; omega_using [this]) (Nat.le_trans (by decide) pre.hdr_Z)
+    · rcases (by omega_using [hk] : k < i ∨ k = i) with hk' | rfl
       · rw [VG.Proof.Rsa.Arm.CrtValues.bytes_frame ft (fun r hr => by
-          simp only [List.mem_singleton] at hr; subst hr; exact pre.oO k i (by omega) hi (by omega))
-          (by have := pre.oFit k (by omega); omega)]
+          simp only [List.mem_singleton] at hr; subst hr; exact pre.oO k i (by omega_using [hi, hk]) hi (by omega_using [hk']))
+          (by have := pre.oFit k (by omega_using [hi, hk]); omega_using [this])]
         exact h.outs k hk'
       · rw [bt, hm, h.arrs k hi]
         unfold oExp

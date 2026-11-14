@@ -132,7 +132,7 @@ theorem kEntry_ok {s : State} {B : Addr} (hB : stackArg s 3 = B)
     hs (i := 0) hEl (by decide) (by decide) (by decide) (by decide) (by decide) (by decide),
     hs (i := 0) hP (by decide) (by decide) (by decide) (by decide) (by decide) (by decide), ?_, ?_, ?_, ?_,
     (((k₁.trans k₂).trans k₃).trans k).mono (by decide)⟩
-  · rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 by omega) with rfl | rfl | rfl | rfl | rfl | rfl
+  · rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 by omega_using [hi]) with rfl | rfl | rfl | rfl | rfl | rfl
     · exact hs (i := 9) h0 (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
     · exact hs (i := 9) h1 (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
     · exact hs (i := 9) h2 (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)

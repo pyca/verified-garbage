@@ -50,7 +50,7 @@ theorem maskW_eq {s0 : State} (hm : Spec.Rsa.modulusValid (cvN s0) (cvK s0) = tr
     simp only [e, ↓reduceIte, maskOf, VG.Proof.Rsa.CrtValues.maskOf, b, c]
   · have r : ¬(cvP s0 % 2 = 1 ∧ cvN s0 / cvP s0 = cvQ s0 ∧ cvN s0 % cvP s0 = 0) := fun h => e ((pq_iff hN).mp h)
     simp only [e, ↓reduceIte, maskOf, VG.Proof.Rsa.CrtValues.maskOf]
-    rw [decide_eq_false (by omega), decide_eq_false (fun ⟨a, b, c, _⟩ => r ⟨a, b, c⟩)]
+    rw [decide_eq_false (by omega_using []), decide_eq_false (fun ⟨a, b, c, _⟩ => r ⟨a, b, c⟩)]
 
 /-- Under the mask, a balanced key's remainders by words are those modulo `p - 1` and `q - 1`. -/
 theorem remW_eq {s0 : State} (hm : Spec.Rsa.modulusValid (cvN s0) (cvK s0) = true) (hB : BalCv s0)
@@ -63,7 +63,7 @@ theorem remW_eq {s0 : State} (hm : Spec.Rsa.modulusValid (cvN s0) (cvK s0) = tru
       decide_eq_true_eq] at hc
     by_contra n
     simp [n] at hc
-  obtain ⟨-, a, b⟩ := VG.Proof.Rsa.top_words hm rfl (by simp only [cvW] at w16; omega) hp hq e
+  obtain ⟨-, a, b⟩ := VG.Proof.Rsa.top_words hm rfl (by simp only [cvW] at w16; omega_using [w16]) hp hq e
   exact ⟨VG.Proof.Rsa.fixT_of_ge a, VG.Proof.Rsa.fixT_of_ge b⟩
 
 theorem valid_ok [VG.Proof.Rsa.Arm.Keys.InvLaw] {um : Bool} {s0 s : State} (h : Base s0 s)

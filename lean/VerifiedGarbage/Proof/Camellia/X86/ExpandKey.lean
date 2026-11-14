@@ -59,19 +59,19 @@ def expandKeyX86 : Contract X86.isa where
 theorem ekArg_eq (s : State) (hfit : (s.gpr .esp).toNat + 20 ≤ 2 ^ 32) (i : Nat) (hi : i < 4) :
     argAddr s i = (s.gpr .esp).setWidth 64 + BitVec.ofNat 64 (4 + 4 * i) := by
   have hs := setWidth_toNat (s.gpr .esp)
-  exact addr_eq (by omega)
+  exact addr_eq (by omega_using [hfit, hi])
 
 /-- Argument `i` is in the arguments' region. -/
 theorem ekArg_contains (s : State) (hfit : (s.gpr .esp).toNat + 20 ≤ 2 ^ 32) {i : Nat} (hi : i < 4) :
     (⟨argAddr s 0, 16⟩ : Region).Contains (argAddr s i) 4 := by
   have hs := setWidth_toNat (s.gpr .esp)
   rw [ekArg_eq s hfit i hi, ekArg_eq s hfit 0 (by decide)]
-  exact VG.Offset.contains _ (by omega) (by omega) (by omega)
+  exact VG.Offset.contains _ (by omega_using []) (by omega_using [hi]) (by omega_using [])
 
 theorem ekArg_sub (s : State) (hfit : (s.gpr .esp).toNat + 20 ≤ 2 ^ 32) {i : Nat} (hi : i < 4) :
     Region.Sub ⟨argAddr s i, 4⟩ ⟨argAddr s 0, 16⟩ := by
   rw [ekArg_eq s hfit i hi, ekArg_eq s hfit 0 (by decide)]
-  exact VG.Offset.sub _ (by omega) (by omega)
+  exact VG.Offset.sub _ (by omega_using []) (by omega_using [hi])
 
 /-- `mov eax, [esp + 4 + 4 i]; cmp eax, 16`. -/
 theorem cmpArg16_ok (s : State) (i : Nat) (ha : InRegions (s.rd ++ s.wr) (s.ea (argOp i)) 4) :
@@ -105,7 +105,7 @@ theorem stores_wp {s₈ : State} {b S : BitVec 32} {len : Nat} {key : List Byte}
     (hlen : 8 * Spec.Camellia.scheduleLength (Spec.Camellia.rounds len) = 8 * ks.length)
     (hks' : ks = if key.length = 16 then Impl.Camellia.subkeys128 else Impl.Camellia.subkeys256) :
     WP isa (.block (storeSubkeys ks)) s₈ (StoresPost s₈ S len key) := by
-  obtain ⟨s₉, e₉, b₉, f₉, g₉, rd₉, wr₉⟩ := stores_ok (X := valNum key) ks 0 s₈ hb hw hS hks (by omega) hX
+  obtain ⟨s₉, e₉, b₉, f₉, g₉, rd₉, wr₉⟩ := stores_ok (X := valNum key) ks 0 s₈ hb hw hS hks (by omega_using [hkl]) hX
   refine WP.of_runBlock ⟨s₉, e₉, ⟨?_, ?_, g₉, rd₉, wr₉⟩⟩
   · rw [hlen, schedule_of_stores (vs := keyVals key) (H := fun v => hiW ((keyVals key).getD v 0))
       (L := fun v => loW ((keyVals key).getD v 0)) (fun k hk => (hks k hk).1) (fun v _ => ⟨rfl, rfl⟩)
@@ -124,7 +124,7 @@ theorem stores_wp {s₈ : State} {b S : BitVec 32} {len : Nat} {key : List Byte}
   · exact f₉.sub fun r hr => ⟨_, List.mem_singleton_self _, by
       simp only [List.mem_singleton] at hr; subst hr
       simp only [Nat.mul_zero]
-      exact VG.Offset.sub_base _ (by omega)⟩
+      exact VG.Offset.sub_base _ (by omega_using [hkl])⟩
 
 /-! ## The function -/
 
@@ -165,7 +165,7 @@ theorem ekHead_wp {s₀ : State} (hp : expandKeyX86.pre s₀) {c : Prog isa} {Q 
   have esp₁ : s₁.gpr .esp = s₀.gpr .esp := g₁ _ (by decide) (by decide)
   have hkey : Spec.Camellia.bytesAt s₁.mem (K.setWidth 64) len = Spec.Camellia.bytesAt s₀.mem (K.setWidth 64) len :=
     Proof.Camellia.bytesAt_congr fun i hi => f₁.bytes (R := ⟨K.setWidth 64, len⟩)
-      (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact dKB) (by simp only; omega) hi
+      (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact dKB) (by simp only; omega_using []) hi
   -- `KL` and `KR`.
   have hl₁ : LoadPre s₁ b K len :=
     { base := b₁, scr := ⟨by rw [wr₁]; exact hw.mem, fitB⟩, rd := by rw [rd₁, hrd]; simp [K, len],
@@ -186,8 +186,8 @@ theorem ekHead_wp {s₀ : State} (hp : expandKeyX86.pre s₀) {c : Prog isa} {Q 
     refine ⟨⟨by rw [hb₃, wr₃, h₂.wr, wr₁]; exact hw.mem, by rw [hb₃]; exact fitB⟩, by decide,
       fun i hi => (sigma_rel (sigE i)).congr fun j hj => ?_⟩
     show slotW s₃ (keySlot + 16 * i + j) = _
-    rw [hs₃, h₂.keep _ (by rw [keySlot_eq, slots_eq]; omega)
-      (.inr (by rw [keySlot_eq, klSlot_eq]; omega))]
+    rw [hs₃, h₂.keep _ (by rw [keySlot_eq, slots_eq]; omega_using [hi, hj])
+      (.inr (by rw [keySlot_eq, klSlot_eq]; omega_using []))]
     exact ent₁ i hi j hj
   -- `KA` and `KB`.
   let key := Spec.Camellia.bytesAt s₁.mem (K.setWidth 64) len
@@ -208,15 +208,15 @@ theorem ekHead_wp {s₀ : State} (hp : expandKeyX86.pre s₀) {c : Prog isa} {Q 
     rw [hc.keep _ (by decide) (by decide), o₃ _ (by decide), h₂.regs _ (by decide) (by decide), esp₁]
   refine ⟨hb₄, esp₄, ⟨by rw [hc.wr, wr₃, h₂.wr, wr₁]; exact hw.mem, fitB⟩, fun v hv => ?_, fun i hi => ?_, ?_,
     by rw [hc.rd, rd₃, h₂.rd, rd₁], by rw [hc.wr, wr₃, h₂.wr, wr₁]⟩
-  · rcases (show v = 0 ∨ v = 1 ∨ v = 2 ∨ v = 3 by omega) with rfl | rfl | rfl | rfl
+  · rcases (show v = 0 ∨ v = 1 ∨ v = 2 ∨ v = 3 by omega_using [hv]) with rfl | rfl | rfl | rfl
     · exact h₄.kl
     · exact h₄.kr
     · have := h₄.ka; rw [hka.1] at this; exact this
     · have := h₄.kb; rw [hka.2] at this; exact this
-  · have := hc.slot (by rw [hb₃]; exact fitB) (k := savedSlot + i) (by rw [savedSlot_eq, slots_eq]; omega)
-      (by rw [savedSlot_eq, keySlot_eq]; omega) (by rw [savedSlot_eq, grpSlot_eq]; omega)
-    rw [slotW, slotW, hb₄, hb₃, m₃, h₂.keep _ (by rw [savedSlot_eq, slots_eq]; omega)
-      (.inr (by rw [savedSlot_eq, klSlot_eq]; omega))] at this
+  · have := hc.slot (by rw [hb₃]; exact fitB) (k := savedSlot + i) (by rw [savedSlot_eq, slots_eq]; omega_using [hi])
+      (by rw [savedSlot_eq, keySlot_eq]; omega_using []) (by rw [savedSlot_eq, grpSlot_eq]; omega_using [hi])
+    rw [slotW, slotW, hb₄, hb₃, m₃, h₂.keep _ (by rw [savedSlot_eq, slots_eq]; omega_using [hi])
+      (.inr (by rw [savedSlot_eq, klSlot_eq]; omega_using []))] at this
     rw [this]
     exact sv₁ i hi
   · have f₃ : Frame [⟨b.setWidth 64, 4 * slots⟩] s₃.mem s₄.mem := by
@@ -269,7 +269,7 @@ theorem ekTail_wp {s₀ s : State} (hp : expandKeyX86.pre s₀)
     (argIn (rd₂.trans (rd₁.trans h.rd)) (wr₂.trans (wr₁.trans h.wr)) esp₂ 1 (by decide))
   have hz₃ : s₃.zf = some (decide (len = 16)) := by
     rw [z₃, ea_arg esp₂, m₂, argR F₁ 1 (by decide), show arg s₀ 1 = BitVec.ofNat 32 len by simp [len],
-      show (16 : BitVec 32) = BitVec.ofNat 32 16 from rfl, ofNat32_sub_beq (by omega) (by decide)]
+      show (16 : BitVec 32) = BitVec.ofNat 32 16 from rfl, ofNat32_sub_beq (by omega_using []) (by decide)]
   have hb₃ : s₃.gpr sb = b := by rw [o₃ _ (by decide), o₂ _ (by decide), hb₁]
   have hm₃ : s₃.mem = s₁.mem := by rw [m₃, m₂]
   have wr₃' : s₃.wr = s₀.wr := by rw [wr₃, wr₂, wr₁, h.wr]
@@ -289,7 +289,7 @@ theorem ekTail_wp {s₀ s : State} (hp : expandKeyX86.pre s₀)
     (WP.ite (decide (len = 16)) ((eval_e s₃).trans hz₃) (fun h16 => ?_) (fun h16 => ?_))
     fun s₅ h₅ => ?_)
   · have h16 : len = 16 := by simpa using h16
-    exact stores_wp hb₃ hw₃ hS₃ hk128 (by rw [subkeys_length.1]; omega) hX₃
+    exact stores_wp hb₃ hw₃ hS₃ hk128 (by rw [subkeys_length.1]; omega_using []) hX₃
       (by rw [h16, subkeys_length.1]; rfl) (by rw [hkl, ite_eq_left h16])
   · have h16 : len ≠ 16 := by simpa using h16
     exact stores_wp hb₃ hw₃ hS₃ hk256 (by rw [subkeys_length.2]) hX₃
@@ -298,8 +298,8 @@ theorem ekTail_wp {s₀ s : State} (hp : expandKeyX86.pre s₀)
   -- The epilogue.
   have hb₅ : s₅.gpr sb = b := by rw [h₅.regs _ (by decide) (by decide), hb₃]
   have hsv : Saved s₀ b s₅.mem := fun i hi => by
-    rw [hS₃.slot hfit h₅.frame (fun _ h => h) (by rw [savedSlot_eq, slots_eq]; omega), hm₃,
-      k₁ (savedSlot + i) (by rw [savedSlot_eq, slots_eq]; omega) (saved_not_rev i hi)]
+    rw [hS₃.slot hfit h₅.frame (fun _ h => h) (by rw [savedSlot_eq, slots_eq]; omega_using [hi]), hm₃,
+      k₁ (savedSlot + i) (by rw [savedSlot_eq, slots_eq]; omega_using [hi]) (saved_not_rev i hi)]
     exact h.saved i hi
   obtain ⟨s₆, e₆, rg₆, o₆, m₆, -, -⟩ := restore_ok (s₀ := s₀) (b := b)
     (.exact (by rw [h₅.wr, wr₃', hwr]; simp [b]) hfit) hb₅ hsv

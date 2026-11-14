@@ -44,7 +44,7 @@ theorem drawCopy_ct (len drawBytes : Nat) {hc : VG.Taint.Hint VG.AArch64.Taint.T
     exact hs.1.ready.ws.x0.trans ht.1.ready.ws.x0.symm
   · intro p s h
     have hlen : len ≤ drawBytes := by rw [← h.2.1, ← h.2.2]; exact p.prime.lenDraw
-    have hd : drawBytes < 4096 := by rw [← h.2.2]; have := p.prime.drawMax; omega
+    have hd : drawBytes < 4096 := by rw [← h.2.2]; have := p.prime.drawMax; omega_using [this]
     exact WP.mono (drawCopyArgs_ok h.1.ready.ws hlen hd h.1.rand h.1.used h.1.ptr)
       fun t ⟨_, h12, h2, h9, _, _⟩ => ⟨h12, h2, h9⟩
   · exact two_taint [.x12, .x2, .x9] (by

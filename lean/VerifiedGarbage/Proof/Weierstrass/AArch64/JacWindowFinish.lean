@@ -39,8 +39,8 @@ theorem jacFinishLayout {K : WinCfg} {size : Nat} (hL : JacWinLay K size) (hJ : 
   · rw [TCombCfg.toComb_J]; change 1≤52 ∧ 52≤4096; decide
   · rw [TCombCfg.toComb_J]
     change K.bits+4*52≤size
-    have := hL.bits; omega
-  · change K.bits+3<4096; omega
+    have := hL.bits; omega_using [this]
+  · change K.bits+3<4096; omega_using [hBits]
   · intro w hw
     change w ∈ jacLoopWrites K at hw
     rw [TCombCfg.toComb_J]
@@ -48,8 +48,8 @@ theorem jacFinishLayout {K : WinCfg} {size : Nat} (hL : JacWinLay K size) (hJ : 
     simp only [jacLoopWrites,List.mem_append,List.mem_map,List.mem_singleton] at hw
     rcases hw with ⟨y,hy,rfl⟩ | rfl
     · have ht := hL.bits_w y (List.mem_append_left _ hy)
-      dsimp only; rw [hL.n]; omega
+      dsimp only; rw [hL.n]; omega_using [ht]
     · have ht := hL.bits_tmp
-      dsimp only; rw [hL.n]; omega
+      dsimp only; rw [hL.n]; omega_using [ht]
 
 end VG.Proof.Weierstrass.AArch64

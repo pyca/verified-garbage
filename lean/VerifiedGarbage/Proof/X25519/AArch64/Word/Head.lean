@@ -48,7 +48,7 @@ theorem loadBit_ok {base : Addr} {s : State} (hs : Scratch s base) {i kt : Nat}
   have hr : InRegions (t.rd ++ t.wr) (t.gpr .x8 + BitVec.ofNat 64 bitOffset) 1 := by
     rw [ha, bitAddress]
     exact ⟨⟨base,4096⟩, List.mem_append_right _ (hk.wr ▸ hs.wr),
-      Offset.contains_base base (d := bitOffset+i) (n := 1) (by have := bitOffset_lt; omega) (by have := bitOffset_lt; omega)⟩
+      Offset.contains_base base (d := bitOffset+i) (n := 1) (by have := bitOffset_lt; omega_using [hi, this]) (by have := bitOffset_lt; omega_using [hi, this])⟩
   apply WP.of_runBlock
   have he := VG.Proof.X25519.AArch64.exec_ldrb (s := t) (t := .x2) (n := .x8)
     (off := bitOffset) (by decide) hr
@@ -56,7 +56,7 @@ theorem loadBit_ok {base : Addr} {s : State} (hs : Scratch s base) {i kt : Nat}
   have hv : ((t.mem.read (t.gpr .x8 + BitVec.ofNat 64 bitOffset) 1).setWidth 32).setWidth 64 =
       BitVec.ofNat 64 kt := by
     rw [ha, bitAddress, VG.Proof.X25519.AArch64.read1_toNat, hk.mem, hb]
-    rcases (by omega : kt=0 ∨ kt=1) with rfl | rfl <;> rfl
+    rcases (by omega_using [hkt] : kt=0 ∨ kt=1) with rfl | rfl <;> rfl
   simp only [runBlock_nil, Option.some.injEq, exists_eq_left']
   refine ⟨?_, ?_, (hk.mono (by decide)).trans ?_⟩
   · rw [RegUpd.gpr_write_of_ne _ _ _ (by decide), ht]

@@ -88,7 +88,7 @@ theorem setup_ok {s : State} (hp : UPre s) :
     rw [show a.wr = s.wr from rfl, hp.wr]
     rcases hr with rfl | rfl
     · exact ⟨dataR s, by simp, hc⟩
-    · exact ⟨scrR s, by simp, by simp only [Region.Contains] at *; omega⟩
+    · exact ⟨scrR s, by simp, by simp only [Region.Contains] at *; omega_using [hc]⟩
   have hc : Covers (u.rd ++ u.wr) (a.rd ++ a.wr) :=
     Covers.append (Covers.of_mem (by
       intro r hr

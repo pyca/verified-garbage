@@ -25,14 +25,14 @@ theorem part_pad {m src : Mem} {p a b : Addr} (h : PartAt m p src a b 4) :
     rw [read_write16]
     simp (disch := omega) only [ite_true,ite_eq_right]
   · have hs20 : Mem.Sep (wordAddr p i) 16 (wordAddr p 20) 16 :=
-      Offset.sep p (d := 16*i) (e := 16*20) (n := 16) (k := 16) (by omega) (by omega) (by omega)
+      Offset.sep p (d := 16*i) (e := 16*20) (n := 16) (k := 16) (by omega_using [h20]) (by omega_using [hi]) (by omega_using [])
     rw [Mem.read_write_sep hs20 (by decide)]
     by_cases h4 : i = 4
     · subst i
       rw [read_write16]
       simp (disch := omega) only [ite_true,ite_eq_right]
     · have hs4 : Mem.Sep (wordAddr p i) 16 (wordAddr p 4) 16 :=
-        Offset.sep p (d := 16*i) (e := 16*4) (n := 16) (k := 16) (by omega) (by omega) (by omega)
+        Offset.sep p (d := 16*i) (e := 16*4) (n := 16) (k := 16) (by omega_using [h4]) (by omega_using [hi]) (by omega_using [])
       rw [Mem.read_write_sep hs4 (by decide),h i hi]
       by_cases hl : i < 4
       · simp only [ite_eq_left hl]
@@ -43,7 +43,7 @@ theorem part_pad {m src : Mem} {p a b : Addr} (h : PartAt m p src a b 4) :
 theorem seed_byte_frame {m m' : Mem} {p a : Addr} (hf : Frame [pairR p] m m')
     (hd : (seedR a).Disjoint (pairR p)) {j : Nat} (hj : j < 34) :
     m' (a+BitVec.ofNat 64 j) = m (a+BitVec.ofNat 64 j) :=
-  hf _ (fun r hr => by rw [List.mem_singleton.mp hr]; exact hd _ (Offset.contains_base a (by omega) (by omega)))
+  hf _ (fun r hr => by rw [List.mem_singleton.mp hr]; exact hd _ (Offset.contains_base a (by omega_using [hj]) (by omega_using [hj])))
 
 theorem tailWord_frame {m m' : Mem} {p a : Addr} (hf : Frame [pairR p] m m')
     (hd : (seedR a).Disjoint (pairR p)) : tailWord m' a = tailWord m a := by

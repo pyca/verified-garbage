@@ -28,7 +28,7 @@ theorem terminal_ok (s : State) (status : Nat) (hs : status < 256) :
         Rest [.r9, .r10, .r11] s t := by
   refine withRest_all [.r9, .r10, .r11] ?_ (by rfl) (by rfl)
   unfold terminal
-  ffrun [VG.Proof.Ffdh.Arm.encodable_byte (v := BitVec.ofNat 32 status) (by rw [BitVec.toNat_ofNat]; omega)]
+  ffrun [VG.Proof.Ffdh.Arm.encodable_byte (v := BitVec.ofNat 32 status) (by rw [BitVec.toNat_ofNat]; omega_using [hs])]
 
 /-- Exhausted: zeros at `out`, after `used` octets. -/
 theorem exhausted_ok {p : SearchPublic} {o s : State} {used : Nat} (h : SearchBase p o s)
@@ -66,8 +66,8 @@ theorem carry_eval {s : State} {b : Bool} {P : Prop} [Decidable P] (h : (!b) = d
 
 theorem not_decide_le (a b : Nat) : (!decide (a ≤ b)) = decide (b < a) := by
   by_cases h : a ≤ b
-  · rw [decide_eq_true h, decide_eq_false (by omega)]; rfl
-  · rw [decide_eq_false h, decide_eq_true (by omega)]; rfl
+  · rw [decide_eq_true h, decide_eq_false (by omega_using [h])]; rfl
+  · rw [decide_eq_false h, decide_eq_true (by omega_using [h])]; rfl
 
 theorem raise_ok {s : State} {a b : Nat} (ha : a < 2 ^ 32) (hb : b < 2 ^ 32)
     (h0 : s.gpr .r0 = BitVec.ofNat 32 a) (h2 : s.gpr .r2 = BitVec.ofNat 32 b) :
@@ -85,10 +85,10 @@ theorem raise_ok {s : State} {a b : Nat} (ha : a < 2 ^ 32) (hb : b < 2 ^ 32)
   refine WP.ite _ he (fun hl => ?_) (fun hl => ?_)
   · have hl := of_decide_eq_true hl
     ffrun [k2, hm]
-    congr 1; omega
+    congr 1; omega_using [hl]
   · have hl := of_decide_eq_false hl
     refine WP.block_nil ⟨?_, hm⟩
-    rw [k0]; congr 1; omega
+    rw [k0]; congr 1; omega_using [hl]
 
 theorem cap_ok {s : State} {a c : Nat} (ha : a < 2 ^ 32) (hc : c < 2 ^ 32)
     (h0 : s.gpr .r0 = BitVec.ofNat 32 a) (h1 : s.gpr .r1 = BitVec.ofNat 32 c) :
@@ -106,10 +106,10 @@ theorem cap_ok {s : State} {a c : Nat} (ha : a < 2 ^ 32) (hc : c < 2 ^ 32)
   refine WP.ite _ he (fun hl => ?_) (fun hl => ?_)
   · have hl := of_decide_eq_true hl
     refine WP.block_nil ⟨?_, hm⟩
-    rw [k0]; congr 1; omega
+    rw [k0]; congr 1; omega_using [hl]
   · have hl := of_decide_eq_false hl
     ffrun [k1, hm]
-    congr 1; omega
+    congr 1; omega_using [hl]
 
 theorem shl32' (L k : Nat) (h : L * 2 ^ k < 2 ^ 32) :
     BitVec.ofNat 32 L <<< k = BitVec.ofNat 32 (L * 2 ^ k) := by
@@ -129,17 +129,17 @@ theorem request_ok {s : State} {L left : Nat} (hL : L ≤ 512) (hleft : left ≤
   unfold request
   refine WP.seq (WP.mono (withRest_all (c := .block [.mov .r2 (.shifted .r5 .lsl 4)]) [.r2]
     (Q := fun t => t.gpr .r2 = BitVec.ofNat 32 (16 * L) ∧ t.mem = s.mem)
-    (by ffrun [h5, shl32' L 4 (by omega), show L * 2 ^ 4 = 16 * L by omega]) (by rfl) (by rfl))
+    (by ffrun [h5, shl32' L 4 (by omega_using [hL]), show L * 2 ^ 4 = 16 * L by omega_using []]) (by rfl) (by rfl))
     fun u ⟨⟨h2, hm⟩, k⟩ => ?_)
-  refine WP.seq (WP.mono (raise_ok (a := left) (b := 16 * L) (by omega) (by omega)
+  refine WP.seq (WP.mono (raise_ok (a := left) (b := 16 * L) (by omega_using [hL, hleft]) (by omega_using [hL])
     ((k.gpr .r0 (by decide)).trans h0) h2) fun u2 ⟨⟨h0', hm2⟩, k2⟩ => ?_)
   refine WP.seq (WP.mono (withRest_all (c := .block [.dp .add .r0 .r0 (.reg .r0)]) [.r0]
     (Q := fun t => t.gpr .r0 = BitVec.ofNat 32 (2 * max left (16 * L)) ∧ t.mem = u2.mem)
-    (by ffrun [h0', add_ofNat32, show max left (16 * L) + max left (16 * L) = 2 * max left (16 * L) by omega])
+    (by ffrun [h0', add_ofNat32, show max left (16 * L) + max left (16 * L) = 2 * max left (16 * L) by omega_using []])
     (by rfl) (by rfl)) fun u3 ⟨⟨h03, hm3⟩, k3⟩ => ?_)
   have h13 : u3.gpr .r1 = BitVec.ofNat 32 (32769 * L) :=
     (k3.gpr .r1 (by decide)).trans ((k2.gpr .r1 (by decide)).trans ((k.gpr .r1 (by decide)).trans h1))
-  refine WP.seq (WP.mono (cap_ok (by omega) (by omega) h03 h13) fun u4 ⟨⟨h04, hm4⟩, k4⟩ => ?_)
+  refine WP.seq (WP.mono (cap_ok (by omega_using [hL, hleft]) (by omega_using [hL]) h03 h13) fun u4 ⟨⟨h04, hm4⟩, k4⟩ => ?_)
   refine WP.mono (withRest_all (c := .block [.mov .r10 (.reg .r0), .mov .r11 (.imm 0)]) [.r10, .r11]
     (Q := fun t => t.gpr .r10 = BitVec.ofNat 32 (min (2 * max left (16 * L)) (32769 * L)) ∧ t.gpr .r11 = 0 ∧
       t.mem = u4.mem) (by ffrun [h04]) (by rfl) (by rfl)) fun t ⟨⟨h10, h11, hmt⟩, kt⟩ => ?_
@@ -166,8 +166,8 @@ theorem arg_read (h : SearchBase p o s) {j : Nat} (hj : j < 8) :
   refine ⟨inArgs o, List.mem_append_left _ (by rw [h.rd, h.input.rd]; simp [inReads]), ?_⟩
   have e : stackArgAddr o j = stackArgAddr o 0 + BitVec.ofNat 64 (4 * j) := by
     simp only [stackArgAddr, Nat.mul_zero, BitVec.add_zero]
-    exact VG.Arm.addr_add (by rw [← h.input.sp_eq]; omega)
-  rw [e]; exact Offset.contains_base _ (by omega) (by omega)
+    exact VG.Arm.addr_add (by rw [← h.input.sp_eq]; omega_using [hj, top])
+  rw [e]; exact Offset.contains_base _ (by omega_using [hj]) (by omega_using [hj])
 
 theorem arg_value (h : SearchBase p o s) {j : Nat} (hj : j < 8) :
     s.mem.readW (stackArgAddr o j) 32 = stackArg o j :=
@@ -216,19 +216,19 @@ theorem short_ok {p : SearchPublic} {o s : State} {used k : Nat} (h : SearchBase
   · unfold arg
     have c : pushBytes + 0 + 4 * 4 < 4096 := by decide
     ffrun [h.arg_addr 4, h.arg_read (j := 4) (by decide), h.arg_value (j := 4) (by decide), randLen_arg hi, h8,
-      h.r5, BitVec.ofNat_sub_ofNat_of_le _ _ (show used < 2 ^ 32 by omega) hu, shl32' p.len 15 (by omega),
-      add_ofNat32, show p.len * 2 ^ 15 + p.len = 32769 * p.len by omega, c]
+      h.r5, BitVec.ofNat_sub_ofNat_of_le _ _ (show used < 2 ^ 32 by omega_using [hu, hl, rl]) hu, shl32' p.len 15 (by omega_using [hl]),
+      add_ofNat32, show p.len * 2 ^ 15 + p.len = 32769 * p.len by omega_using [], c]
     change some (BitVec.ofNat 32 (p.randLen - used) - BitVec.ofNat 32 (32769 * p.len) == 0) = _
-    rw [sub_eq_beq (by omega) (by omega)]
+    rw [sub_eq_beq (by omega_using [hl, rl]) (by omega_using [hl])]
   have hu' := h.keep k' hm
   have h8' : u.gpr .r8 = BitVec.ofNat 32 used := (k'.gpr .r8 (by decide)).trans h8
   refine WP.ite _ he (fun hz => ?_) (fun hz => ?_)
   · have hz := of_decide_eq_true hz
-    rw [ite_eq_left_of_eq_true _ _ (by unfold primeEntropy; exact eq_true (by omega))]
+    rw [ite_eq_left_of_eq_true _ _ (by unfold primeEntropy; exact eq_true (by omega_using [hz]))]
     exact exhausted_ok hu' h8' hu tr
   · have hz := of_decide_eq_false hz
-    rw [ite_eq_right_of_eq_false _ _ (by unfold primeEntropy; exact eq_false (by omega))]
-    refine WP.mono (request_ok hl.2.1 (by omega) h0 h1 ((k'.gpr .r5 (by decide)).trans h.r5))
+    rw [ite_eq_right_of_eq_false _ _ (by unfold primeEntropy; exact eq_false (by omega_using [rl, hz]))]
+    refine WP.mono (request_ok hl.2.1 (by omega_using [rl]) h0 h1 ((k'.gpr .r5 (by decide)).trans h.r5))
       fun t ⟨⟨h10, h11, hmt⟩, kt⟩ => ⟨hu'.keep kt hmt, (kt.gpr .r8 (by decide)).trans h8',
         (kt.gpr .r9 (by decide)).trans ((k'.gpr .r9 (by decide)).trans h9), h10, h11,
         by rw [hmt, hm]; exact hout, hu, hk, by

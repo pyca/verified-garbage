@@ -180,7 +180,7 @@ theorem rest : RestOk 1 (VG.Proof.RsaPss.X86_64.fb a) a.wr := by
     exact (hp.dKs.sub_left (frame_sub a))
   · rw [hp.hwr]; intro r hr
     rw [List.mem_singleton.mp hr]
-    have := hp.wS; dsimp only; omega
+    have := hp.wS; dsimp only; omega_using [this]
 
 end VSib
 
@@ -193,10 +193,10 @@ def K5 : List Nat := [8, 9, 10, 11, 12, 13, 14, 17, 21, 25, 26, 35, 36, 37, 38]
 def KM : List Nat := [8, 9, 10, 11, 12, 13, 14, 17, 21, 23, 24, 25, 26, 35, 36, 37, 38]
 
 theorem km_k5 {k : Nat} (h : k ∈ KM) (h23 : k ≠ 23) (h24 : k ≠ 24) : k ∈ K5 := by
-  simp only [KM, K5, List.mem_cons, List.not_mem_nil, or_false] at h ⊢; omega
+  simp only [KM, K5, List.mem_cons, List.not_mem_nil, or_false] at h ⊢; omega_using [h23, h24, h]
 
 theorem km_lt {k : Nat} (h : k ∈ KM) : k < nW := by
-  simp only [KM, List.mem_cons, List.not_mem_nil, or_false] at h; unfold nW frameBytes; omega
+  simp only [KM, List.mem_cons, List.not_mem_nil, or_false] at h; unfold nW frameBytes; omega_using [h]
 
 /-- A run, with entry state `s`, between two pieces: its frame, its public
 words `ks` (`vw`), the registers `rs`, and what else is true of its working

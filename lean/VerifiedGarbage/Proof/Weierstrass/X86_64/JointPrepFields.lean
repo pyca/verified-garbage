@@ -32,7 +32,7 @@ theorem Inv.of_unch {M : Mod} {base : Addr} {size m : Nat} [NeZero m]
     (hf : ∀ x∈V,∀ w∈W,x+8*M.n≤w.1 ∨ w.1+w.2≤x)
     (hm : ∀ w∈W,M.mo+8*M.n≤w.1 ∨ w.1+w.2≤M.mo) : Inv M base size m Sl V E t := by
   have same (x : Nat) (hx : x∈V) : wordsVal t.mem base x M.n=wordsVal s.mem base x M.n :=
-    hu.wordsVal (hf x hx) (by have := hb x hx; have := h.scr.nowrap; omega)
+    hu.wordsVal (hf x hx) (by have := hb x hx; have := h.scr.nowrap; omega_arith)
   exact ⟨hs,h.mod.unch hu hm h.scr.nowrap,h.sl,
     fun x hx => (same x hx) ▸ h.lt x hx,fun x hx => by rw [same x hx]; exact h.val x hx⟩
 

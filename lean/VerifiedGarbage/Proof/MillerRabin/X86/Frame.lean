@@ -144,25 +144,25 @@ theorem Entry.framed {s : State} (E : Entry s) :
     WP isa (code montName montCode) s fun t => abiPreserved s t ∧ Result s t := by
   unfold code
   refine WP.frame (rs := Compact.savedRegisters) (by decide) (by decide) (by decide)
-    (by change 16 ≤ _; have := E.stackFit; omega) inner_noSp ?_
+    (by change 16 ≤ _; have := E.stackFit; omega_using [this]) inner_noSp ?_
   refine WP.seq (WP.mono E.body fun t ⟨R, K, F⟩ => ?_)
   have sp : t.gpr .esp = (entered s).gpr .esp := K.1 .esp (by decide)
   have fit : ((entered s).gpr .esp).toNat + 16 ≤ 2 ^ 32 := by
     rw [entered, Compact.entered, pushed_esp]
     change (s.gpr .esp - 16#32).toNat + 16 ≤ 2 ^ 32
-    rw [sub_toNat (by have := E.stackFit; omega)]
+    rw [sub_toNat (by have := E.stackFit; omega_using [this])]
     have := (s.gpr .esp).isLt
-    omega
+    omega_using []
   have read (i : Nat) (index : i < 4) :
       readSrc t (.mem (at_ .esp (4 * i))) = some
-        (s.gpr (Compact.savedRegisters[3 - i]'(by change 3 - i < 4; omega))) := by
+        (s.gpr (Compact.savedRegisters[3 - i]'(by change 3 - i < 4; omega_using []))) := by
     have access : InRegions (t.rd ++ t.wr) (addr (t.gpr .esp) (4 * i)) 4 := by
       rw [K.2.1, K.2.2, sp, entered, Compact.entered, pushed_wr]
       refine ⟨below (s.gpr .esp) 16, List.mem_append_right _ List.mem_cons_self, ?_⟩
       rw [← savedRegion_eq]
       change (savedRegion s).Contains (addr ((entered s).gpr .esp) (4 * i)) 4
-      rw [addr_eq (by omega)]
-      exact Offset.contains_base _ (by omega) (by omega)
+      rw [addr_eq (by omega_using [fit, index])]
+      exact Offset.contains_base _ (by omega_using [index]) (by omega_using [index])
     change t.load32 (addr (t.gpr .esp) (4 * i)) = _
     rw [State.load32, ite_eq_left access, sp, E.saved_read F index]
   refine WP.mono (Compact.restore_ok (read 0 (by decide)) (read 1 (by decide)) (read 2 (by decide))) ?_

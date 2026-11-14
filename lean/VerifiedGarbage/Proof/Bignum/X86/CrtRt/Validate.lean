@@ -31,8 +31,8 @@ theorem val32_low {m : Mem} {base : Addr} {d a b v : Nat} (h : val32 m base d (a
   have hl := val32_lt m base d a
   have : val32 m base (d + 4 * a) b = 0 := by
     by_contra hne
-    have : 2 ^ (32 * a) ≤ 2 ^ (32 * a) * val32 m base (d + 4 * a) b := Nat.le_mul_of_pos_right _ (by omega)
-    omega
+    have : 2 ^ (32 * a) ≤ 2 ^ (32 * a) * val32 m base (d + 4 * a) b := Nat.le_mul_of_pos_right _ (by omega_using [hne])
+    omega_using [h, hv, this]
   rw [this, Nat.mul_zero, Nat.add_zero] at h
   exact h
 
@@ -54,13 +54,13 @@ theorem accept_ok (h : In Ex base bytes len args s) {a c : Bool} (ha : w32 s.mem
   have nbs : numBase = 3336 := rfl
   unfold CrtRt.need at nb
   unfold accept
-  refine wp_movS (readSrc_sc h.scratch (d := accOff) (by omega)) fun u₁ a₁ _ => ?_
+  refine wp_movS (readSrc_sc h.scratch (d := accOff) (by omega_using [nb, ao, nbs])) fun u₁ a₁ _ => ?_
   refine wp_logicS (.inl rfl) rfl fun u₂ a₂ => ?_
   have K₂ : Keeps [.eax] s u₂ := a₁.keeps.trans a₂.keeps
   have h₂ := h.regs K₂ (by rw [a₂.mem, a₁.mem])
-  refine wp_storeS (h₂.scratch.ea (d := accOff) (by omega)) (h₂.scratch.write (d := accOff) (n := 4)
-    (by omega)) fun u₃ m₃ => WP.block_nil ⟨?_, ?_, K₂.trans (m₃.keeps _)⟩
-  · rw [m₃.mem, a₂.mem, a₁.mem]; exact writeW32_outside _ _ _ (by omega)
+  refine wp_storeS (h₂.scratch.ea (d := accOff) (by omega_using [nb, ao, nbs])) (h₂.scratch.write (d := accOff) (n := 4)
+    (by omega_using [nb, ao, nbs])) fun u₃ m₃ => WP.block_nil ⟨?_, ?_, K₂.trans (m₃.keeps _)⟩
+  · rw [m₃.mem, a₂.mem, a₁.mem]; exact writeW32_outside _ _ _ (by omega_using [ao])
   · have e : s.mem.readW (off base accOff) 32 = cmask a := BitVec.eq_of_toNat_eq ha
     rw [m₃.mem, w32_write_self, a₂.gpr]
     simp only [ite_true]
@@ -69,7 +69,7 @@ theorem accept_ok (h : In Ex base bytes len args s) {a c : Bool} (ha : w32 s.mem
 theorem valR_fit (h : In Ex base bytes len args s) : ∀ p ∈ valR len, p.1 + p.2 ≤ bytes := by
   have pf := h.prod_fit
   intro p hp; simp only [valR, List.mem_cons, List.not_mem_nil, or_false] at hp
-  rcases hp with rfl | rfl | rfl | rfl <;> simp only [accOff, multOff, prodOff, mulAOff, numBase] at * <;> omega
+  rcases hp with rfl | rfl | rfl | rfl <;> simp only [accOff, multOff, prodOff, mulAOff, numBase] at * <;> omega_using [pf]
 
 /-- The acceptance keeps everything from the slots up. -/
 theorem valR_keep (h : In Ex base bytes len args s) {sp : BitVec 32} {m m' : Mem}
@@ -78,7 +78,7 @@ theorem valR_keep (h : In Ex base bytes len args s) {sp : BitVec 32} {m m' : Mem
   have pf := h.prod_fit
   refine frameR_val32 F R h.scratch.nowrap hk ?_ (valR_fit h)
   intro p hp; simp only [valR, List.mem_cons, List.not_mem_nil, or_false] at hp
-  rcases hp with rfl | rfl | rfl | rfl <;> simp only [accOff, multOff, prodOff, mulAOff, numBase] at * <;> omega
+  rcases hp with rfl | rfl | rfl | rfl <;> simp only [accOff, multOff, prodOff, mulAOff, numBase] at * <;> omega_arith
 
 theorem validate_ok (h : In Ex base bytes len args s) {n p q x qi : Nat}
     (hn : val32 s.mem base (lo len (.slot .wide 9)) (2 * cwc len .wide) = n) (hnb : n < 2 ^ (32 * cwc len .wide))

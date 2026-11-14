@@ -79,19 +79,19 @@ theorem final_state {base : Addr} {s₀ s t : State} {g : Reg → BitVec 64} {P 
   have same (i : Nat) (hle : cfg.sl i+64 ≤ 8192)
       (hap : ∀ w ∈ work,cfg.sl i+64 ≤ w.1 ∨ w.1+w.2 ≤ cfg.sl i) :
       sv cfg base t i=sv cfg base s i :=
-    h.mem.wordsVal hap (by omega)
+    h.mem.wordsVal hap (by omega_using [hn8, hle])
   have r := same RM' (by decide) (by decide)
   have k := same K (by decide) (by decide)
   refine ⟨h.scr hM.scr,h.wr.trans hM.wr,h.rd.trans hM.rd,
     hM.fixed.unch hc.n10 hn (by unfold FixedOk work loopWork addWork entryWork; decide) h.mem,?_,?_,?_,?_,?_,?_,?_⟩
-  · rw [h.mem.word (by decide) (by omega)]
+  · rw [h.mem.word (by decide) (by omega_using [flagBound])]
     exact hM.flag
   · rw [r]; exact hM.rm_lt
   · rw [r]; exact hM.rm
   · exact hp.1 _ (by decide)
   · exact (hM.unch.trans h.mem).cover (by
       intro w hw
-      refine ⟨(0,8192),by simp,by omega,?_⟩
+      refine ⟨(0,8192),by simp,by omega_using [],?_⟩
       rcases List.mem_append.mp hw with hw | hw
       · rw [List.mem_singleton.mp hw]
       · have hd : ∀ w ∈ work,w.1+w.2 ≤ 8192 := by decide

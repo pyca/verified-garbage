@@ -32,7 +32,7 @@ macro_rules
 
 /-- The address of doubleword `k` of the table at `P`, which does not wrap around. -/
 theorem row_addr {P : BitVec 32} (hP : P.toNat + 256 ≤ 2 ^ 32) {k : Nat} (hk : k < 64) :
-    addr P (4 * k) = P.setWidth 64 + BitVec.ofNat 64 (4 * k) := addr_of_fit (by omega)
+    addr P (4 * k) = P.setWidth 64 + BitVec.ofNat 64 (4 * k) := addr_of_fit (by omega_using [hP, hk])
 
 /-! ## Visiting the doublewords -/
 
@@ -88,15 +88,15 @@ theorem gather_steps (s₀ : State) (idx : Byte) (hbp : s₀.gpr .ebp = idx.setW
   | succ n ih =>
     intro s h
     rw [flatMap_succ, WP.block_append_iff]
-    refine WP.mono (ih (by omega) s h) fun t ht => ?_
+    refine WP.mono (ih (by omega_using [hn]) s h) fun t ht => ?_
     obtain ⟨h11, h9', hdi, hm, hrd, hwr⟩ := ht
     have hq : InRegions (t.rd ++ t.wr) (addr (t.gpr .edi) (4 * n)) 4 := by
-      rw [hrd, hwr, hdi, row_addr hfit (by omega)]
-      exact region_offset _ _ _ _ _ (by omega) (by omega) hr
-    refine WP.mono (gather_step t idx (by omega) (h9'.trans hbp) hq) fun u hu => ?_
+      rw [hrd, hwr, hdi, row_addr hfit (by omega_using [hn])]
+      exact region_offset _ _ _ _ _ (by omega_using [hn]) (by omega_using [hn]) hr
+    refine WP.mono (gather_step t idx (by omega_using [hn]) (h9'.trans hbp) hq) fun u hu => ?_
     obtain ⟨u11, u9, udi, um, urd, uwr⟩ := hu
     refine ⟨?_, u9.trans h9', udi.trans hdi, um.trans hm, urd.trans hrd, uwr.trans hwr⟩
-    rw [u11, h11, hdi, hm, row_addr hfit (by omega), gather_succ]
+    rw [u11, h11, hdi, hm, row_addr hfit (by omega_using [hn]), gather_succ]
 
 /-! ## Picking the byte of the doubleword -/
 
@@ -124,9 +124,9 @@ theorem pick_steps (s₀ : State) (idx : Byte) (q : BitVec 32) (hbp : s₀.gpr .
   | succ n ih =>
     intro s h
     rw [flatMap_succ, WP.block_append_iff]
-    refine WP.mono (ih (by omega) s h) fun t ht => ?_
+    refine WP.mono (ih (by omega_using [hn]) s h) fun t ht => ?_
     obtain ⟨hax, h11, h9', hdi, hm, hrd, hwr⟩ := ht
-    refine WP.mono (pick_step t idx (by omega) (h9'.trans hbp)) fun u hu => ?_
+    refine WP.mono (pick_step t idx (by omega_using [hn]) (h9'.trans hbp)) fun u hu => ?_
     obtain ⟨uax, u11, u9, udi, um, urd, uwr⟩ := hu
     refine ⟨?_, ?_, u9.trans h9', udi.trans hdi, um.trans hm, urd.trans hrd, uwr.trans hwr⟩
     · rw [uax, hax, h11, pick_succ]
@@ -151,7 +151,7 @@ theorem lookup_core (s : State) (idx : Byte) (hbp : s.gpr .ebp = idx.setWidth 32
   obtain ⟨u11, u9, udi, um, urd, uwr⟩ := hu
   let q := s.mem.readW ((s.gpr .edi).setWidth 64 + BitVec.ofNat 64 (4 * (idx.toNat / 4))) 32
   have hq : u.gpr .ecx = q := by
-    rw [u11]; unfold gather; rw [ite_eq_left (by omega)]
+    rw [u11]; unfold gather; rw [ite_eq_left (by omega_using [])]
   rw [WP.block_append_iff]
   have h1 : WP isa (.block [.mov .eax (imm 0)]) u (PInv s q (idx.toNat % 4) 0) := by
     rrun [PInv, pick, hq, u9, udi, um, urd, uwr, Nat.mul_zero, BitVec.ushiftRight_zero,

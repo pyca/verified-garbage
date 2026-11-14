@@ -46,7 +46,7 @@ theorem windowScan_product (V : Nat → BitVec 32) (A : Nat → Nat) (c w : Nat)
       (windowResult V A c w F).1 := by
   unfold windowScanA windowResult squareValues Word32.mwin
   rw [setAt_other _ _ (by decide : aY ≠ aX), setAt_self, setAt_self,
-    setAt_other _ _ (by unfold aTable aY; omega : aTable + windowDigit V ≠ aY)]
+    setAt_other _ _ (by unfold aTable aY; omega_using [] : aTable + windowDigit V ≠ aY)]
   rfl
 
 theorem windowProduct_value (V : Nat → BitVec 32) (A : Nat → Nat) (c w : Nat) (F : Bool)

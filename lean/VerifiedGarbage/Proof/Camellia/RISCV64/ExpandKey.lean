@@ -35,7 +35,7 @@ open VG.Proof.Camellia (hiW loW)
 
 theorem entryW_slot (s : State) (i j : Nat) : entryW s.mem (s.gpr sb) i j = slotW s (keySlot + 8 * i + j) := by
   simp only [entryW, slotW, wordAddr]
-  rw [show 8 * (keySlot + 8 * i + j) = 8 * keySlot + 64 * i + 8 * j by omega]
+  rw [show 8 * (keySlot + 8 * i + j) = 8 * keySlot + 64 * i + 8 * j by omega_using []]
 
 /-- What the subkeys' stores leave: the schedule's bytes. -/
 structure StoresPost (s₈ : State) (S : Addr) (len : Nat) (key : List Byte) (s : State) : Prop where
@@ -60,14 +60,14 @@ theorem stores_wp {s₈ : State} {S : Addr} {len : Nat} {key : List Byte} {ks : 
     (hks' : ks = if key.length = 16 then Impl.Camellia.subkeys128 else Impl.Camellia.subkeys256) :
     WP isa (.block (storeSubkeys ks)) s₈ (StoresPost s₈ S len key) := by
   obtain ⟨s₉, e₉, b₉, f₉, g₉, rd₉, wr₉⟩ := storeSubkeys_ok ks hv 0 s₈ (fun i hi => ⟨_, hw, by
-    rw [hS]; exact VG.Offset.contains_base _ (by omega) (by omega)⟩) (by omega)
+    rw [hS]; exact VG.Offset.contains_base _ (by omega_using [hks, hi]) (by omega_using [hks, hi])⟩) (by omega_using [hks])
   refine WP.of_runBlock ⟨s₉, e₉, ⟨?_, ?_, g₉, rd₉, wr₉⟩⟩
   · rw [hlen, schedule_of_stores (H := fun v => s₈.gpr (hiReg v)) (L := fun v => s₈.gpr (loReg v)) hv hg (by rw [← hS]; exact b₉), Spec.Camellia.scheduleBytes,
       Proof.Camellia.scheduleWords_expandKey, ← hks']
   · rw [hS] at f₉
     exact f₉.sub fun r hr => ⟨_, List.mem_singleton_self _, by
       simp only [List.mem_singleton] at hr; subst hr
-      exact VG.Offset.sub_base S (by omega)⟩
+      exact VG.Offset.sub_base S (by omega_using [hks])⟩
 
 theorem expandKey_wp {s₀ : State} (hp : expandKeyRISCV64.pre s₀) :
     WP isa expandKey s₀ fun s' => (∀ i < 12, s'.gpr (sreg i) = s₀.gpr (sreg i)) ∧
@@ -90,9 +90,9 @@ theorem expandKey_wp {s₀ : State} (hp : expandKeyRISCV64.pre s₀) :
       Spec.Camellia.bytesAt s₀.mem (s₀.gpr .a0) (s₀.gpr .a1).toNat := by
     rw [r3₁]
     refine Proof.Camellia.bytesAt_congr fun i hi => f₁.bytes (R := ⟨s₀.gpr .a0, (s₀.gpr .a1).toNat⟩)
-      (fun r hr => ?_) (by simp only; omega) hi
+      (fun r hr => ?_) (by simp only; omega_using []) hi
     simp only [List.mem_singleton] at hr; subst hr
-    exact dKB.sub_right (Region.sub_prefix (by omega))
+    exact dKB.sub_right (Region.sub_prefix (by omega_using []))
   -- `KL` and `KR`.
   refine WP.seq (WP.mono (loadKey_wp (len := (s₀.gpr .a1).toNat) (s := s₁)
     ⟨by rw [b₁]; exact hal, by rw [b₁, wr₁]; exact hwB, by rw [r3₁, rd₁]; exact hrK, by rw [r3₁, b₁]; exact dKB,
@@ -124,9 +124,9 @@ theorem expandKey_wp {s₀ : State} (hp : expandKeyRISCV64.pre s₀) :
     · rw [hb₄, wr₄']; exact hwB
     · rw [hb₄]; exact fitB
     · have := mask_lt hkv
-      rw [hlow _ (by omega) (Or.inl (by omega))]; exact mk₁ kv hkv
+      rw [hlow _ (by omega_using [hE, hS, this]) (Or.inl (by omega_using [hl', hE, this]))]; exact mk₁ kv hkv
     · refine sigmas_rel (m := s₄.mem) (b := s₄.gpr sb) (fun i hi j hj => ?_) i hi
-      rw [entryW_slot, hlow _ (by omega) (Or.inr (by omega)), ← entryW_slot, b₁]
+      rw [entryW_slot, hlow _ (by omega_using [hK, hS, hi, hj]) (Or.inr (by omega_using [hr', hK])), ← entryW_slot, b₁]
       exact ent₁ i hi j hj
     · rw [AtEntry, a₄, hb₄, hb₂]; simp
   -- `KA` and `KB`.
@@ -142,7 +142,7 @@ theorem expandKey_wp {s₀ : State} (hp : expandKeyRISCV64.pre s₀) :
     [(Spec.Camellia.klkr key).1, (Spec.Camellia.klkr key).2,
       (Spec.Camellia.kakb (Spec.Camellia.klkr key).1 (Spec.Camellia.klkr key).2).1,
       (Spec.Camellia.kakb (Spec.Camellia.klkr key).1 (Spec.Camellia.klkr key).2).2] (fun v hv => by
-      rcases (show v = 0 ∨ v = 1 ∨ v = 2 ∨ v = 3 by omega) with rfl | rfl | rfl | rfl
+      rcases (show v = 0 ∨ v = 1 ∨ v = 2 ∨ v = 3 by omega_using [hv]) with rfl | rfl | rfl | rfl
       · exact h₅.kl hpre
       · exact h₅.kr hpre
       · have := h₅.ka (by decide); rw [hKA'] at this; exact this
@@ -157,7 +157,7 @@ theorem expandKey_wp {s₀ : State} (hp : expandKeyRISCV64.pre s₀) :
     rw [z₈, o₆ _ (hnv _ (by simp)) (by decide), r6₅]
     conv => lhs; rw [show s₀.gpr .a1 = BitVec.ofNat 64 (s₀.gpr .a1).toNat by
       rw [BitVec.ofNat_toNat, BitVec.setWidth_eq]]
-    rw [VG.Offset.ofNat_sub_ofNat_beq (by omega) (by decide)]
+    rw [VG.Offset.ofNat_sub_ofNat_beq (by omega_using []) (by decide)]
   refine WP.seq (WP.of_runBlock ⟨s₈, by rw [runBlock_append', e₆, Option.bind_some, e₈], ?_⟩)
   -- The subkeys.
   have hx2₈ : s₈.gpr .a2 = s₀.gpr .a2 := by
@@ -178,7 +178,7 @@ theorem expandKey_wp {s₀ : State} (hp : expandKeyRISCV64.pre s₀) :
       (fun h16 => ?_))
     fun s₉ h₉ => ?_)
   · have h16 : (s₀.gpr .a1).toNat = 16 := by simpa using h16
-    exact stores_wp hx2₈ hwS₈ subkeys_lt4.1 (by rw [subkeys_length.1]; omega) hg₈
+    exact stores_wp hx2₈ hwS₈ subkeys_lt4.1 (by rw [subkeys_length.1]; omega_using []) hg₈
       (by rw [h16, subkeys_length.1]; rfl) (by rw [hklen, ite_eq_left h16])
   · have h16 : (s₀.gpr .a1).toNat ≠ 16 := by simpa using h16
     exact stores_wp hx2₈ hwS₈ subkeys_lt4.2 (by rw [subkeys_length.2]) hg₈
@@ -191,15 +191,15 @@ theorem expandKey_wp {s₀ : State} (hp : expandKeyRISCV64.pre s₀) :
     intro k h1 h2
     rw [h₉.frame.readW (Region.contains_self _ _) (fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr
-        exact (dSB.sub_right (by rw [wordAddr]; exact VG.Offset.sub_base _ (by omega))).symm) (by decide)]
-    have := h₅.keep k (by omega) (by omega) (Or.inl (by omega))
-    rw [hs₄, sl₂ k (by omega) (Or.inl (by omega))] at this
+        exact (dSB.sub_right (by rw [wordAddr]; exact VG.Offset.sub_base _ (by omega_using [hE, hS, h2]))).symm) (by decide)]
+    have := h₅.keep k (by omega_using [h1]) (by omega_using [hE, hS, h2]) (Or.inl (by omega_using [hW, hE, h2]))
+    rw [hs₄, sl₂ k (by omega_using [hE, hS, h2]) (Or.inl (by omega_using [hl', hE, h2]))] at this
     simp only [slotW, hb₅, b₁] at this
     rw [m₈, m₆]
     exact this
   obtain ⟨s₁₀, e₁₀, rg₁₀, -, m₁₀, -, -⟩ := restore_ok (s₀ := s₀) (b := s₀.gpr .a3)
     (by rw [h₉.wr, wr₈, wr₆, wr₅]; exact hwB) hb₉ hal (fun i hi => by
-      rw [hSB _ (by omega) (by omega)]; exact sv₁ i hi)
+      rw [hSB _ (by omega_using []) (by omega_using [hi])]; exact sv₁ i hi)
   refine WP.of_runBlock ⟨s₁₀, e₁₀, rg₁₀, ?_⟩
   show Spec.Camellia.bytesAt s₁₀.mem (s₀.gpr .a2) _ = _
   rw [hkey, m₁₀, ← h₉.bytes]

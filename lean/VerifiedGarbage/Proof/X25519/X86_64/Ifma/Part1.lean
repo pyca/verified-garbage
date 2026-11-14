@@ -48,15 +48,15 @@ theorem Kept.vm {base : Addr} {s s' : State} (h : vm s s' = s') (hm : s'.mem = s
 
 theorem lanes_keep {s s' : State} {r0 : Nat} (h : ∀ r < 16, r0 ≤ r → r < r0 + 5 → ∀ l < 4, qw s' (xr r) l = qw s (xr r) l)
     (hr : r0 + 5 ≤ 16) : ∀ l < 4, ∀ i < 5, lanes s' r0 l i = lanes s r0 l i := fun l hl i hi => by
-  simp only [lanes]; rw [h (r0 + i) (by omega) (by omega) (by omega) l hl]
+  simp only [lanes]; rw [h (r0 + i) (by omega_using [hr, hi]) (by omega_using []) (by omega_using [hi]) l hl]
 
-theorem le_kbv {x : Nat} (i : Nat) (h : x < 2 ^ 61) : x ≤ kbv i := by simp only [kbv]; split <;> omega
+theorem le_kbv {x : Nat} (i : Nat) (h : x < 2 ^ 61) : x ≤ kbv i := by simp only [kbv]; split <;> omega_using [h]
 
 theorem pu_lt (b : Bool) {l : Nat} (hl : l < 4) : pu b l < 4 := by
-  cases b <;> rcases (by omega : l = 0 ∨ l = 1 ∨ l = 2 ∨ l = 3) with rfl | rfl | rfl | rfl <;> decide
+  cases b <;> rcases (by omega_using [hl] : l = 0 ∨ l = 1 ∨ l = 2 ∨ l = 3) with rfl | rfl | rfl | rfl <;> decide
 
 theorem pv_lt (b : Bool) {l : Nat} (hl : l < 4) : pv b l < 4 := by
-  cases b <;> rcases (by omega : l = 0 ∨ l = 1 ∨ l = 2 ∨ l = 3) with rfl | rfl | rfl | rfl <;> decide
+  cases b <;> rcases (by omega_using [hl] : l = 0 ∨ l = 1 ∨ l = 2 ∨ l = 3) with rfl | rfl | rfl | rfl <;> decide
 
 /-- The lane of the ladder's state that the swap `b` puts in lane `l`. -/
 def swl (b : Bool) (l : Nat) : Nat := if b then l ^^^ 2 else l
@@ -102,7 +102,7 @@ theorem part1_ok {s : State} {base : Addr} {x1 : Nat → Nat} (hs : Scr s base) 
     (((Kept.vm v₁ m₁).trans (Kept.vm v₂ m₂)).trans (Kept.vm v₃ m₃)).trans (Kept.vm v₄ m₄)
   -- the values of the lanes
   have fU : ∀ l < 4, fe5 (lanes s₂ 0 l) = fe5 (fun i => sumDiff (lanes s 0) l i) := fun l hl => by
-    rw [fe5_congr (fun i hi => (u₂ l hl i hi).1), fe5_carry _ (by have := (u₁ l hl 4 (by decide)).2; omega)]
+    rw [fe5_congr (fun i hi => (u₂ l hl i hi).1), fe5_carry _ (by have := (u₁ l hl 4 (by decide)).2; omega_using [this])]
     exact fe5_congr fun i hi => (u₁ l hl i hi).1
   have hle : ∀ l < 4, ∀ i < 5, lanes s 0 l i ≤ kbv i := fun l hl i hi => le_kbv i (hy l hl i hi)
   have f0 : fe5 (fun i => sumDiff (lanes s 0) 0 i) = fe5 (lanes s 0 0) - fe5 (lanes s 0 1) :=

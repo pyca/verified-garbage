@@ -97,7 +97,7 @@ theorem tword_twoM {α : Type} {Φ : α → State → Prop} {an : α → State} 
       (by rw [o.rd, b.rd]; exact let ⟨R, hR, hc⟩ := T.tR k hk; ⟨R, List.mem_append_left _ hR, hc⟩)
       (fun u₂ o₂ e₂ => wp_nil fun sy₂ => ⟨t, h, (o.trans o₂).mono fun r hr => by
         simp only [List.mem_append, List.mem_singleton, or_self] at hr ⊢; exact hr, sy₂.trans sy, by
-          rw [e₂, o.mem, b.readW_apart (T.tK k hk) (T.tS k hk), hv P p]⟩) (by decide) (by omega))
+          rw [e₂, o.mem, b.readW_apart (T.tK k hk) (T.tS k hk), hv P p]⟩) (by decide) (by omega_using [hk]))
 
 include X A in
 /-- The call of the table's function `k`, among `ts`, which reaches `n` in
@@ -109,7 +109,7 @@ theorem tcall_twoM {α : Type} {Φ : α → State → Prop} {an : α → State} 
     (hcall : RelCT isa (Two fun x u => ∃ t, Φ x t ∧ Only [.r12] t u ∧ u.syms = t.syms) (.call n c)
       fun _ _ => True) :
     RelCT isa (Two Φ) (tcall j k ts) fun _ _ => True := by
-  refine RelCT.seq (tword_twoM X A hb (k := k) (by omega) (v := fun a => a.syms n)
+  refine RelCT.seq (tword_twoM X A hb (k := k) (by omega_using [hk]) (v := fun a => a.syms n)
     fun P p => (hn P p).2.1.trans (hn P p).2.2) ?_
   cases ts with
   | nil =>
@@ -171,15 +171,15 @@ theorem comp_ct {cn : String} {cc : Prog isa} (hc : CalleeOk md cc)
       State.callEntry_gpr _ (show Reg.r3 ∉ linkRegs by decide), State.callEntry_gpr _ (show Reg.r4 ∉ linkRegs by decide),
       State.callEntry_gpr _ (show Reg.r5 ∉ linkRegs by decide), State.callEntry_gpr _ (show Reg.r6 ∉ linkRegs by decide),
       A.h3, A.h4, A.h5, A.h6, hB1]
-    exact ⟨trivial, trivial, sdis (.inl (by omega)) (by omega) (by omega), sdis (.inr (by omega)) (by omega) (by omega),
-      sdis (.inr (by omega)) (by omega) (by omega)⟩
+    exact ⟨trivial, trivial, sdis (.inl (by omega_arith)) (by omega_arith) (by omega_using [hR, hW, this]), sdis (.inr (by omega_arith)) (by omega_arith) (by omega_arith),
+      sdis (.inr (by omega_using [hY, hW, this])) (by omega_arith) (by omega_using [hR, hW, this])⟩
   have cov : ∀ {s t : State} {b : Nat}, CompArgs S vf P s t b →
       Covers ([⟨off (S s) (oY + b), P.B⟩] ++ [⟨off (S s) oSt, P.N⟩, ⟨off (S s) oW, P.so⟩]) (t.rd ++ t.wr) ∧
         Covers [⟨off (S s) oSt, P.N⟩, ⟨off (S s) oW, P.so⟩] t.wr := fun {s t b} A => by
     have := A.hb; have := A.hN; have := A.hso
     have hcw : Covers [⟨off (S s) oSt, P.N⟩, ⟨off (S s) oW, P.so⟩] t.wr := by
-      rw [A.base.wr]; exact Covers.pair (sc_cov A.F (by omega)) (sc_cov A.F (by omega))
-    exact ⟨Covers.append_left (Covers.right (by rw [A.base.wr]; exact sc_cov A.F (by omega))) (Covers.right hcw), hcw⟩
+      rw [A.base.wr]; exact Covers.pair (sc_cov A.F (by omega_arith)) (sc_cov A.F (by omega_using [hR, hW, this]))
+    exact ⟨Covers.append_left (Covers.right (by rw [A.base.wr]; exact sc_cov A.F (by omega_arith))) (Covers.right hcw), hcw⟩
   refine ⟨_, _, _, _, pre A₁, pre A₂, ?_, (cov A₁).1, (cov A₁).2, (cov A₂).1, (cov A₂).2⟩
   simp only [compressK, State.withRegions_gpr, State.withRegions_sp, State.callEntry_sp]
   simp only [State.callEntry_gpr _ (show Reg.r3 ∉ linkRegs by decide), State.callEntry_gpr _ (show Reg.r4 ∉ linkRegs by decide),
@@ -212,13 +212,13 @@ theorem dig_ct {dn : String} {dc : Prog isa}
     simp only [digestK, State.withRegions_gpr, State.withRegions_rd, State.withRegions_wr,
       State.callEntry_gpr _ (show Reg.r3 ∉ linkRegs by decide), State.callEntry_gpr _ (show Reg.r4 ∉ linkRegs by decide),
       A.h3, A.h4]
-    exact ⟨trivial, trivial, sdis (.inr (by omega)) (by omega) (by omega)⟩
+    exact ⟨trivial, trivial, sdis (.inr (by omega_using [hDg, hSl, this])) (by omega_using [hR, hSl, this]) (by omega_using [hR, hDg, this])⟩
   have cov : ∀ {s t : State}, DigArgs S vf P s t →
       Covers ([⟨off (S s) oSel, P.N⟩] ++ [⟨off (S s) oDig, P.N⟩]) (t.rd ++ t.wr) ∧
         Covers [⟨off (S s) oDig, P.N⟩] t.wr := fun {s t} A => by
     have := A.hN
-    have hcw : Covers [⟨off (S s) oDig, P.N⟩] t.wr := by rw [A.base.wr]; exact sc_cov A.F (by omega)
-    exact ⟨Covers.append_left (Covers.right (by rw [A.base.wr]; exact sc_cov A.F (by omega))) (Covers.right hcw), hcw⟩
+    have hcw : Covers [⟨off (S s) oDig, P.N⟩] t.wr := by rw [A.base.wr]; exact sc_cov A.F (by omega_using [hR, hDg, this])
+    exact ⟨Covers.append_left (Covers.right (by rw [A.base.wr]; exact sc_cov A.F (by omega_using [hR, hSl, this]))) (Covers.right hcw), hcw⟩
   refine ⟨_, _, _, _, pre A₁, pre A₂, ?_, (cov A₁).1, (cov A₁).2, (cov A₂).1, (cov A₂).2⟩
   simp only [digestK, State.withRegions_gpr, State.withRegions_sp, State.callEntry_sp]
   simp only [State.callEntry_gpr _ (show Reg.r3 ∉ linkRegs by decide), State.callEntry_gpr _ (show Reg.r4 ∉ linkRegs by decide)]

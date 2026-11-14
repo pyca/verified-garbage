@@ -39,7 +39,7 @@ theorem montMulY_correct (s : State) (hs : montMulK.pre s) :
   obtain ⟨t, s', he, hk, hf, hq⟩ := YMul.fn_ok hs (core := montMulCore) (Fv := fun x y _ => montMulV x y)
     (fun s hc _ => montMulCore_ok hc) lane_montMulCore
     (fun i hi x y z hx hy _ e he => by
-      rw [montMul_get _ _ (by rw [n_eq]; omega)]
+      rw [montMul_get _ _ (by rw [n_eq]; omega_using [hi, he])]
       exact montMul_lane hx hy he)
     (by decide +kernel)
   exact ⟨t, s', he, abiPreserved_of_ctl (by decide +kernel) he (gprPreserved_of hk (by decide) hf
@@ -50,9 +50,9 @@ theorem montMulAddY_correct (s : State) (hs : montMulAddK.pre s) :
   obtain ⟨t, s', he, hk, hf, hq⟩ := YMul.fn_ok hs (core := montMulAddCore) (Fv := montMulAddV)
     (fun s hc _ => montMulAddCore_ok hc) lane_montMulAddCore
     (fun i hi x y z hx hy hz e he => by
-      rw [Proof.MlDsa.montgomeryMultiplyAddNTT, add_get _ _ (by rw [n_eq]; omega), montMul_get _ _ (by rw [n_eq]; omega)]
+      rw [Proof.MlDsa.montgomeryMultiplyAddNTT, add_get _ _ (by rw [n_eq]; omega_using [hi, he]), montMul_get _ _ (by rw [n_eq]; omega_using [hi, he])]
       exact montMulAdd_lane hx hy (c := fun e => (polyAt s.mem (s.gpr .rdi))[4 * i + e]!)
-        (fun e he => by rw [hz e he, polyAt_val hs.2.2.2.2.2.2.2.1 (by rw [n_eq]; omega)]) he)
+        (fun e he => by rw [hz e he, polyAt_val hs.2.2.2.2.2.2.2.1 (by rw [n_eq]; omega_using [hi, he])]) he)
     (by decide +kernel)
   exact ⟨t, s', he, abiPreserved_of_ctl (by decide +kernel) he (gprPreserved_of hk (by decide) hf
     (by simpa using hs.2.2.2.2.1)), hq⟩

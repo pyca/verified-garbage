@@ -44,31 +44,31 @@ theorem diagonal_ok {s : State} {B : Addr} {Z A eb k : Nat}
       t.gpr .x16 = off B A ∧ t.gpr .x11 = off B eb ∧
       t.gpr .x14 = BitVec.ofNat 64 k ∧ t.gpr .x5 = 0 ∧ t.mem = s.mem ∧ t.c = false)
     (by
-      brun [h8, h9, h12, h7, Square.shr2_ofNat (show 4*k < 2 ^ 64 by omega)]
+      brun [h8, h9, h12, h7, Square.shr2_ofNat (show 4*k < 2 ^ 64 by omega_using [hk])]
       congr 1
-      omega) rfl rfl rfl) fun u ⟨⟨h16, h11, h14, h5, hm, hc⟩, ku⟩ => ?_)
+      omega_using []) rfl rfl rfl) fun u ⟨⟨h16, h11, h14, h5, hm, hc⟩, ku⟩ => ?_)
   have u7 := (ku.gpr .x7 (by decide)).trans h7
   have h0 : DiagInv u B Z A eb 0 u :=
     ⟨hs.congr ku.wr, Keep.refl _ _, by rw [h16]; rfl, by rw [h11]; rfl,
       Outside.refl _ _ _ _, by simp [wv, carry, h5, hc, diagonalValue, VG.Proof.Bignum.Square.diagonal]⟩
-  refine WP.seq (WP.mono (wp_countdown (N := k) (by omega) hk0 (fun j => DiagInv u B Z A eb (4*j))
-    (fun j hj t hI _ => diagonalBlockStep_ok u7 hj (by omega) hb (by omega) hI) h0 h14)
+  refine WP.seq (WP.mono (wp_countdown (N := k) (by omega_using [hk]) hk0 (fun j => DiagInv u B Z A eb (4*j))
+    (fun j hj t hI _ => diagonalBlockStep_ok u7 hj (by omega_using [hA]) hb (by omega_using [sb]) hI) h0 h14)
     fun v hI => ?_)
   have v7 := (hI.keep.gpr .x7 (by decide)).trans u7
   refine WP.mono (WP.keep [.x5] (Q := fun t =>
       t.mem = v.mem.writeW (off B (A+16*(4*k))) (carryWord v))
-    (by brun [v7, carryWord, hI.x16, hI.scr.st (show A+16*(4*k)+8 ≤ Z by omega), add_zero64])
+    (by brun [v7, carryWord, hI.x16, hI.scr.st (show A+16*(4*k)+8 ≤ Z by omega_using [hA]), add_zero64])
     rfl rfl rfl) fun t ⟨htm, kt⟩ => ?_
   refine ⟨?_, ?_, (kt.gpr .x16 (by decide)).trans hI.x16, ((ku.trans hI.keep).trans kt).mono (by decide)⟩
   · have hv := hI.val
     rw [hm] at hv
-    rw [htm, show A+16*(4*k) = A+8*(2*(4*k)) by omega,
-      wv_writeW_top _ B A (2*(4*k)) _ (by omega), carryWord_nat]
-    simpa only [show 64*(2*(4*k)) = 128*(4*k) by omega] using hv
+    rw [htm, show A+16*(4*k) = A+8*(2*(4*k)) by omega_using [],
+      wv_writeW_top _ B A (2*(4*k)) _ (by omega_using [hA, hn]), carryWord_nat]
+    simpa only [show 64*(2*(4*k)) = 128*(4*k) by omega_using []] using hv
   · have ho := hI.out
     rw [hm] at ho
     rw [htm]
-    exact (ho.mono (o' := A) (n' := 16*(4*k)+8) (Nat.le_refl _) (by omega)).trans
-      ((writeW_outside v.mem B (carryWord v) (d := A+16*(4*k)) (by omega)).mono (by omega) (by omega))
+    exact (ho.mono (o' := A) (n' := 16*(4*k)+8) (Nat.le_refl _) (by omega_using [])).trans
+      ((writeW_outside v.mem B (carryWord v) (d := A+16*(4*k)) (by omega_using [hA, hn])).mono (by omega_using []) (by omega_using []))
 
 end VG.Proof.Bignum.AArch64.DiagonalChain

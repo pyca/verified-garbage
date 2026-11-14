@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Mont.Words32
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-! Compare numbers whose words are stored at different bases and offsets. -/
 
@@ -13,6 +14,6 @@ theorem val32_congr_at {m m' : Mem} {base base' : Addr} {d d' : Nat} :
   | 0,_ => rfl
   | k+1,h => by
     rw [val32_succ,val32_succ,h k (Nat.lt_succ_self _),
-      val32_congr_at fun i hi => h i (by omega)]
+      val32_congr_at fun i hi => h i (by omega_using [hi])]
 
 end VG.Proof.Mont

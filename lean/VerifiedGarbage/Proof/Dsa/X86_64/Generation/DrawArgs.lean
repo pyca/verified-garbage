@@ -27,9 +27,9 @@ theorem drawCopyArgs_ok {s : State} {B rp op : Addr} {Z w len drawBytes used : N
       t.mem = s.mem.writeW (off B (8 * kUsed)) (BitVec.ofNat 64 (used + drawBytes)) ∧
       Keep [.r15, .rsi, .rax, .rdi, .rcx, .rdx] s t := by
   have hld : ∀ i < 32, InRegions (s.rd ++ s.wr) (off B (8 * i)) 8 := fun i hi =>
-    hg.scr.ld (by have := hdr_lt_slot w 8 hi; omega)
+    hg.scr.ld (by have := hdr_lt_slot w 8 hi; omega_using [hZ, this])
   have hst : InRegions s.wr (off B (8 * kUsed)) 8 :=
-    hg.scr.st (by have := hdr_lt_slot w 8 (show kUsed < 32 by decide); omega)
+    hg.scr.st (by have := hdr_lt_slot w 8 (show kUsed < 32 by decide); omega_using [hZ, this])
   have hout : word (s.mem.writeW (off B (8 * kUsed)) (BitVec.ofNat 64 (used + drawBytes))) B (8 * kOut) = op :=
     (hdrStore_hdr s.mem B _ (by decide : kUsed < 32) (by decide : kOut < 32) (by decide)).trans hop
   have hlen' : word (s.mem.writeW (off B (8 * kUsed)) (BitVec.ofNat 64 (used + drawBytes))) B (8 * kUsedP) =
@@ -49,6 +49,6 @@ theorem drawCopyArgs_ok {s : State} {B rp op : Addr} {Z w len drawBytes used : N
     simp only [BitVec.sub_eq_add_neg, BitVec.add_assoc]
   · apply BitVec.eq_of_toNat_eq
     simp only [BitVec.toNat_shiftLeft, BitVec.toNat_ofNat, Nat.shiftLeft_eq]
-    omega
+    omega_using []
 
 end VG.Proof.Dsa.X86_64.Generation

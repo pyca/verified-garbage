@@ -40,14 +40,14 @@ theorem zeroBuffer_ok (advance : Bool) (s : State) {src dst : BitVec 32} {n : Na
         intro j hj
         have hj' : j < n := List.mem_range.mp hj
         have value := inv.zeroed j hj'
-        rw [addr_add (by omega)] at value
+        rw [addr_add (by omega_using [destFits, hj'])] at value
         exact value
       _ = List.replicate n 0 := by simp only [List.map_const', List.length_range]
   · intro a ha
     apply inv.outside a
     intro j hj he
     apply ha ⟨State.addr dst, n⟩ (by simp)
-    rw [he, addr_add (by omega)]
-    exact Offset.contains_base _ (by omega) (by omega)
+    rw [he, addr_add (by omega_using [destFits, hj])]
+    exact Offset.contains_base _ (by omega_using [hj]) (by omega_using [fits, hj])
 
 end VG.Proof.Ffdh.Arm

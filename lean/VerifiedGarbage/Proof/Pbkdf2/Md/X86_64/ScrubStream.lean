@@ -93,7 +93,7 @@ theorem hmacFinOut (I : Spec.Hmac.Instance) (hD : I.S.digestBytes < 2 ^ 64) (sta
     simp only [Spec.Hmac.finalizeSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
       forall_eq_or_imp, forall_eq, Elem.size, Nat.mul_one] at hb
     have ho : ∀ i < I.S.digestBytes, m₂ (out + BitVec.ofNat 64 i) = m₁ (out + BitVec.ofNat 64 i) :=
-      fun i hi => (hb.2.2 _ (Offset.contains_base _ (by omega) (by omega))).symm
+      fun i hi => (hb.2.2 _ (Offset.contains_base _ (by omega_using [hi]) (by omega_using [hD, hi]))).symm
     intro k0 text h1 h2 hri hc hro
     show Spec.Sha256.bytesAt m₂ out I.S.digestBytes = _
     rw [Sha256.Stream.bytesAt_congr ho]
@@ -185,12 +185,12 @@ theorem initCodeS_ok (v : MdHash) {lv : VecLevel} (hne : lv ≠ .evex) (hS : v.I
         ((Spec.Hmac.initSig v.I.S).retBits 64) := by
   have s := scrubAllCode_ok (A := abi) ScrubAbi.plain (sig := Spec.Hmac.initSig v.I.S)
     (pre := Spec.Hmac.initPre v.I.S abi.ptrBits) (post := Spec.Hmac.initPost v.I.S abi.ptrBits) (wa := true)
-    (leak := none) hne v.hmacShortF v.hmacShortFSp hd₁ (by omega) h8₁ hl₁ hrb (hmacInitOut v.I v.reprLocal hS _)
+    (leak := none) hne v.hmacShortF v.hmacShortFSp hd₁ (by omega_using [hst, hn]) h8₁ hl₁ hrb (hmacInitOut v.I v.reprLocal hS _)
   have l := scrubAllCode_ok (A := abi) ScrubAbi.plain (sig := Spec.Hmac.initSig v.I.S)
     (post := Spec.Hmac.initPost v.I.S abi.ptrBits) (wa := true)
     (leak := none) hne v.hmacAnyF v.hmacAnyFSp hd₂ hst h8₂ hl₂ hrb (hmacInitAnyOut v.I v.reprLocal hS _)
-  exact ⟨initEntry_verified s.1 l.1 (by omega) hn v.hBlock v.hmacInitF.2.2,
-    initEntry_noResidue s.2 l.2 (by omega) hn v.hBlock⟩
+  exact ⟨initEntry_verified s.1 l.1 (by omega_using []) hn v.hBlock v.hmacInitF.2.2,
+    initEntry_noResidue s.2 l.2 (by omega_using []) hn v.hBlock⟩
 
 theorem initCodeS_spSafe (v : MdHash) (lv : VecLevel) :
     (initCodeS lv v.H v.I).all (fun i => !isa.writesSp i) = true := by

@@ -95,7 +95,7 @@ theorem head_ok {M : Mode} (v : BlocksImpl) {s₀ : State} (hp : UPre s₀) {k :
   have b₃ : s₃.gpr .ebx = Iv s₀ := u₃.gpr
   have i₃ : s₃.gpr .esi = D32 s₀ k := by rw [u₃.other _ (by decide), esi₂]
   refine xor4_ok (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
-    (by rw [i₃, qN]; omega) (by rw [b₃]; omega) (by rw [i₃, qN]; omega)
+    (by rw [i₃, qN]; omega_using [hk, hdf]) (by rw [b₃]; omega_using [hiv]) (by rw [i₃, qN]; omega_using [hk, hdf])
     (by rw [i₃, add0, hd, u₃.rd, u₃.wr, rwl]; exact covBlk hk (by simp))
     (by rw [b₃, add0, u₃.rd, u₃.wr, rwl]; exact covIv (by simp))
     (by rw [i₃, add0, hd, u₃.wr, w₂]; exact covBlk hk (by simp)) fun s₄ g₄ => hq s₄ ?_
@@ -139,7 +139,7 @@ theorem linv_succ {M : Mode} {s₀ : State} (hp : UPre s₀) {k : Nat} (hk : k <
     · exact ⟨scrR s₀, by simp, Region.sub_prefix (by decide)⟩
     · exact ⟨stkR s₀, by simp, fun _ h => h⟩)
   have hl' : (outK M s₀ k).length = k := by
-    rw [outK, Mode.length_out]; simp [Spec.Cbc.blocksAt]; omega
+    rw [outK, Mode.length_out]; simp [Spec.Cbc.blocksAt]; omega_using [hk]
   refine WP.mono (advance_wp hp hk (by rw [g₆ _ (by decide) (by decide), x.esi])
     (by rw [g₆ _ (by decide) (by decide), x.esp]) (hp.args_of bigOf)
     (by rw [rd₆, wr₆, x.rd, x.wr])) fun s₇ ⟨esi₇, esp₇, _, mem₇, rd₇, wr₇, zf₇⟩ => ⟨?_, zf₇⟩
@@ -166,12 +166,12 @@ theorem encBody_ok (v : BlocksImpl) : BodyOk (cfbMode true) (body v.enc encPost)
   have hiv := hp.iv_fit
   rw [encPost_eq]
   refine head_ok v hp hk h _ fun s₄ x => ?_
-  refine zero4_ok (by decide) (by rw [x.ebx]; omega) (by rw [x.ebx, add0, x.wr, hp.wr]; exact covIv (by simp))
+  refine zero4_ok (by decide) (by rw [x.ebx]; omega_using [hiv]) (by rw [x.ebx, add0, x.wr, hp.wr]; exact covIv (by simp))
     fun s₅ g₅ m₅ rd₅ wr₅ => ?_
   have b₅ : s₅.gpr .ebx = Iv s₀ := by rw [g₅ _ (by decide), x.ebx]
   have i₅ : s₅.gpr .esi = D32 s₀ k := by rw [g₅ _ (by decide), x.esi]
   refine xor4_ok (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
-    (by rw [b₅]; omega) (by rw [i₅, qN]; omega) (by rw [b₅]; omega)
+    (by rw [b₅]; omega_using [hiv]) (by rw [i₅, qN]; omega_using [hk, hdf]) (by rw [b₅]; omega_using [hiv])
     (by rw [b₅, add0, rd₅, wr₅, x.regs]; exact covIv (by simp))
     (by rw [i₅, add0, hd, rd₅, wr₅, x.regs]; exact covBlk hk (by simp))
     (by rw [b₅, add0, wr₅, x.wr, hp.wr]; exact covIv (by simp)) fun s₆ g₆ => ?_
@@ -205,7 +205,7 @@ theorem decBody_ok (v : BlocksImpl) : BodyOk (cfbMode false) (body v.enc decPost
   rw [decPost_eq]
   refine head_ok v hp hk h _ fun s₄ x => ?_
   refine xor4_ok (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
-    (by rw [x.ebx]; omega) (by rw [x.esi, qN]; omega) (by rw [x.ebx]; omega)
+    (by rw [x.ebx]; omega_using [hiv]) (by rw [x.esi, qN]; omega_using [hk, hdf]) (by rw [x.ebx]; omega_using [hiv])
     (by rw [x.ebx, add0, x.regs]; exact covIv (by simp))
     (by rw [x.esi, add0, hd, x.regs]; exact covBlk hk (by simp))
     (by rw [x.ebx, add0, x.wr, hp.wr]; exact covIv (by simp)) fun s₆ g₆ => ?_

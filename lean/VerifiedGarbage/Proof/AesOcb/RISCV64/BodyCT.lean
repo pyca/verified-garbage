@@ -316,7 +316,7 @@ theorem body_rel (enc : Bool) {σ₁ σ₂ : State} (E₁ : Env V₁ sp σ₁) (
   refine RelCT.assoc (rel_seq ?_ W₁ W₂ fun τ₁ τ₂ ⟨F₁, _, _, T₁⟩ ⟨F₂, _, _, T₂⟩ => ?_)
   · refine rel_seq (rel_env E₁ E₂ hV [] (by agree_rv64 []) ⟨_, by taint_decide⟩) (bodyHead_ok E₁ hn h11)
       (bodyHead_ok E₂ hn h11₂) fun u₁ u₂ ⟨t1₁, U₁, k₁⟩ ⟨t1₂, U₂, k₂⟩ => ?_
-    refine rel_ite (eval_zero t1₁ (by omega)) (eval_zero t1₂ (by omega)) (fun _ => rel_skip) fun h0 => ?_
+    refine rel_ite (eval_zero t1₁ (by omega_using [hn])) (eval_zero t1₂ (by omega_using [hn])) (fun _ => rel_skip) fun h0 => ?_
     have hm0 : 0 < n / 16 := Nat.pos_of_ne_zero (of_decide_eq_false h0)
     have hu₁ : u₁.mem.readW (V₁ .s0 + BitVec.ofNat 64 dataO) 64 = D := by rw [k₁.mem, hS₁]
     have hu₂ : u₂.mem.readW (V₂ .s0 + BitVec.ofNat 64 dataO) 64 = D := by rw [k₂.mem, hS₂]
@@ -331,7 +331,7 @@ theorem body_rel (enc : Bool) {σ₁ σ₂ : State} (E₁ : Env V₁ sp σ₁) (
         (hD₁.of_eq k₁.rd k₁.wr) (hD₂.of_eq k₂.rd k₂.wr) hm0 l₁' l₂'
   refine rel_seq (rel_env F₁ F₂ hV [] (by agree_rv64 []) ⟨_, by taint_decide⟩) (bodyTail_ok L F₁ hn h11 T₁)
     (bodyTail_ok L₂ F₂ hn h11₂ T₂) fun w₁ w₂ ⟨s4₁, s5₁, g₁, k₁⟩ ⟨s4₂, s5₂, g₂, k₂⟩ => ?_
-  exact rel_ite (eval_zero s5₁ (by omega)) (eval_zero s5₂ (by omega)) (fun _ => rel_skip) fun _ =>
+  exact rel_ite (eval_zero s5₁ (by omega_using [])) (eval_zero s5₂ (by omega_using [])) (fun _ => rel_skip) fun _ =>
     rest_rel L hV hR hs3 enc (F₁.others g₁ k₁.sp k₁.rd k₁.wr) (F₂.others g₂ k₂.sp k₂.rd k₂.wr)
       (by rw [s4₁, s4₂]) (by rw [s5₁, s5₂])
 

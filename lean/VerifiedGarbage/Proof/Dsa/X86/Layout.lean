@@ -13,7 +13,7 @@ open VG.Impl.Dsa.Layout VG.Impl.Dsa.X86.Layout VG.Impl.Mont.X86.Dynamic
 
 theorem context_bound {n : Nat} (hn : n ≤ 48) : contextBytes n ≤ 7048 := by
   simp only [contextBytes, slot, stride]
-  omega
+  omega_using [hn]
 
 theorem field_bounds (f : Field) : 8192 ≤ field f ∧ field f + 4 ≤ saved := by
   cases f <;> decide

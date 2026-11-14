@@ -72,9 +72,9 @@ theorem initPre_ok {s₀ : State} {St Kp S : Addr} {KL : Nat} (hp : IPre s₀ St
       s₁.gpr .rdx = St ∧ s₁.gpr .rcx = S ∧ (∀ r ∈ calleeSaved, s₁.gpr r = s₀.gpr r) ∧
       s₁.mem = zeroCv s₀.mem St ∧ s₁.rd = s₀.rd ∧ s₁.wr = s₀.wr := by
   have hKL : s₀.gpr .rdx = BitVec.ofNat 64 KL :=
-    BitVec.eq_of_toNat_eq (by rw [hp.rdx, toNat_ofNat (by rcases hp.klen with h | h <;> omega)])
+    BitVec.eq_of_toNat_eq (by rw [hp.rdx, toNat_ofNat (by rcases hp.klen with h | h <;> omega_using [h])])
   have w : InRegions s₀.wr (St + BitVec.ofNat 64 400) 8 := by
-    rw [hp.wr]; exact ⟨⟨St, 416⟩, by simp, Offset.contains_base _ (by decide) (by have := hp.wSt; omega)⟩
+    rw [hp.wr]; exact ⟨⟨St, 416⟩, by simp, Offset.contains_base _ (by decide) (by have := hp.wSt; omega_using [])⟩
   refine ⟨_, by
     simp only [initPre, runBlock_cons, runStep_some, runBlock_nil, at_, exec, readSrc, readSrc32,
       State.setReg32, State.store64, State.ea, offset_nat, Option.map_some, gpr_setReg, wr_setReg,
@@ -105,7 +105,7 @@ theorem init_wp {s₀ : State} (h0 : initX86_64.pre s₀) :
       retO := by rw [rsp₁]; exact hp.ret_st.sub_right oSt
       retS := by rw [rsp₁]; exact hp.ret_s
       wrapK := hp.wK
-      wrapO := by omega
+      wrapO := by omega_using [hw]
       wrapS := hp.wS
       reads := by
         rw [rd₁, wr₁, hp.rd, hp.wr]
@@ -142,7 +142,7 @@ theorem init_wp {s₀ : State} (h0 : initX86_64.pre s₀) :
       exact f₁.bytes (R := ⟨Kp, KL⟩) (fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr
         exact hp.st_k.symm.sub_right (Offset.sub_base St (by decide)))
-        (by show KL ≤ 2 ^ 64; have := hp.wK; omega)
+        (by show KL ≤ 2 ^ 64; have := hp.wK; omega_using [this])
         (List.mem_range.mp hi)
     have hlen : (Spec.TripleDes.bytesAt s₀.mem Kp KL).length = KL := by simp [Spec.TripleDes.bytesAt]
     obtain ⟨hs, hk⟩ := h₂.out

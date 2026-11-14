@@ -37,7 +37,7 @@ theorem crtEntry_eq : Crt.entry = ([.mov .r11 (.mem { base := .rsp, disp := 88 }
 
 theorem stackArgAddr_disp (s : State) (j : Nat) :
     s.gpr .rsp + BitVec.ofInt 64 (8 * ((j + 1 : Nat) : Int)) = stackArgAddr s j := by
-  rw [show (8 * ((j + 1 : Nat) : Int)) = ((8 * (j + 1) : Nat) : Int) by omega, BitVec.ofInt_natCast]
+  rw [show (8 * ((j + 1 : Nat) : Int)) = ((8 * (j + 1) : Nat) : Int) by omega_using [], BitVec.ofInt_natCast]
   rfl
 
 /-- One stack argument into the header. -/
@@ -63,7 +63,7 @@ theorem crtPairs_ok {s : State} {B : Addr} : ∀ (ps : List (Nat × Nat)) (t : S
       (hsep _ ho) (by rw [hwr]; exact hw)) fun t₁ ⟨hm, k⟩ => ?_
     refine WP.mono (crtPairs_ok ps t₁ (fun q hq => hps q (List.mem_cons_of_mem _ hq))
       (by rw [k.gpr (by decide)]; exact h11) (by rw [k.gpr (by decide)]; exact hsp) (k.2.1.trans hrd)
-      (k.2.2.trans hwr) (by rw [hm]; exact Outside.store_hdr ho (by omega) (by decide) _))
+      (k.2.2.trans hwr) (by rw [hm]; exact Outside.store_hdr ho (by omega_using [hi]) (by decide) _))
       fun t' ⟨hm', k'⟩ => ⟨by rw [hm', hm]; rfl, (k.trans k').mono (by decide)⟩
 
 /-- The header after the stores from registers. -/
@@ -145,7 +145,7 @@ theorem crtEntry_ok {s : State} {B : Addr} (hB : stackArg s 10 = B)
       (stackArg s 2) (stackArg s 3) (stackArg s 4) (stackArg s 6) (stackArg s 8)
   refine ⟨hdi, fun i hi => ?_, hO, hN, hK, hI, hP, hPl, hQ, hQl, hDp, hDq, hQi, ho,
     ((k₁.trans k₂).trans k₃).mono (by decide)⟩
-  rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 by omega) with rfl | rfl | rfl | rfl | rfl | rfl
+  rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 by omega_using [hi]) with rfl | rfl | rfl | rfl | rfl | rfl
   · exact h0
   · exact h1
   · exact h2

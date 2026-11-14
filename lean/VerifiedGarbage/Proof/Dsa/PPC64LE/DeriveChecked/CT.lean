@@ -68,7 +68,7 @@ theorem w_rangeG {v : VD} {s : State} (h : PP KM v s) :
     WP isa (.seq (.block ptrG) Derive.rangeElem) s (CC KM (ERange fun L => L.pl + L.ql) v) := by
   obtain ⟨B, r2, -, ⟨ip, p0, ptop, p8, qf⟩, kv⟩ := h
   have hL := B.ok
-  have hov : v.L.pl + v.L.ql + v.L.pl ≤ v.kn := by have := B.kn; omega
+  have hov : v.L.pl + v.L.ql + v.L.pl ≤ v.kn := by have := B.kn; omega_using [this]
   refine WP.seq (WP.mono (ptrG_ok B.regs) fun t ⟨⟨a12, a6, m1⟩, k1⟩ => ?_)
   have B1 := B.step k1 (by rw [m1]; exact Outside.refl _ _ _ _)
   refine WP.mono (rangeElem_ok (p := v.p) hL (ip.keep k1 (by decide))

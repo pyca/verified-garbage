@@ -749,20 +749,20 @@ theorem dctx_of {s₀ : State} (hp : XPre s₀) {j : Nat} {s : State}
     Quad.DCtx (winS s₀ j) (win s₀ j) (Wn s₀ j) s :=
   ⟨fun d h => by
       show addr (s.gpr .esi) d = _
-      rw [hsi]; exact ptr_add2 _ (by have := hp.s_fit; have := P_le s₀ j; have := Wn_le s₀ j; omega),
+      rw [hsi]; exact ptr_add2 _ (by have := hp.s_fit; have := P_le s₀ j; have := Wn_le s₀ j; omega_arith),
    fun d h => by
       show addr (s.gpr .edx) d = _
-      rw [hdx]; exact ptr_add2 _ (by have := hp.d_fit; have := P_le s₀ j; have := Wn_le s₀ j; omega),
+      rw [hdx]; exact ptr_add2 _ (by have := hp.d_fit; have := P_le s₀ j; have := Wn_le s₀ j; omega_arith),
    fun off n h => ⟨sR s₀, by rw [hr, hw, hp.rd]; simp, by
       have := L_lt s₀
       have := P_le s₀ j
       have := Wn_le s₀ j
-      rw [Offset.add_add]; exact contains_ofNat (by omega) (by lit_omega)⟩,
+      rw [Offset.add_add]; exact contains_ofNat (by omega_arith) (by lit_omega)⟩,
    fun off n h => ⟨dR s₀, by rw [hw, hp.wr]; simp, by
       have := L_lt s₀
       have := P_le s₀ j
       have := Wn_le s₀ j
-      rw [Offset.add_add]; exact contains_ofNat (by omega) (by lit_omega)⟩⟩
+      rw [Offset.add_add]; exact contains_ofNat (by omega_arith) (by lit_omega)⟩⟩
 
 theorem ctr_ctr (S : CState) (a b : Nat) : ctr (ctr S a) b = ctr S (a + b) := by
   simp only [ctr, Vector.set_set, Vector.getElem_set_self, BitVec.ofNat_add, BitVec.add_assoc]
@@ -780,9 +780,9 @@ theorem slots_sub (s₀ : State) : Region.Sub (slotsR (bp s₀)) (bR s₀) := Re
 theorem ctrR_sub (s₀ : State) : Region.Sub (ctrR (bp s₀)) (bR s₀) := Offset.sub_base _ (by decide)
 theorem stash_sub (s₀ : State) : Region.Sub (Quad.stashR (bp s₀)) (bR s₀) := Region.sub_prefix (by decide)
 theorem dW_sub (s₀ : State) (j : Nat) : Region.Sub (dW (win s₀ j) (Wn s₀ j)) (dR s₀) :=
-  Offset.sub_base _ (by have := P_le s₀ j; have := Wn_le s₀ j; omega)
+  Offset.sub_base _ (by have := P_le s₀ j; have := Wn_le s₀ j; omega_arith)
 theorem sW_sub (s₀ : State) (j : Nat) : Region.Sub (dW (winS s₀ j) (Wn s₀ j)) (sR s₀) :=
-  Offset.sub_base _ (by have := P_le s₀ j; have := Wn_le s₀ j; omega)
+  Offset.sub_base _ (by have := P_le s₀ j; have := Wn_le s₀ j; omega_arith)
 
 theorem qR_frame (s₀ : State) (j : Nat) : ∀ r ∈ qR s₀ j, ∃ r' ∈ frameR s₀, Region.Sub r r' := by
   intro r hr
@@ -935,7 +935,7 @@ theorem Q4.outside {s₀ : State} (hp : XPre s₀) {j : Nat} {s s₃ : State} (h
   · exact (hp.d_b.sub_right (ctrR_sub s₀)) _ hin
   · simp only [Region.Contains]
     rw [Offset.sub_toNat' _ (by lit_omega) (by lit_omega)]
-    split <;> omega
+    split <;> omega_arith
   · exact (hp.d_b.sub_right (stash_sub s₀)) _ hin
 
 /-- More than 256 bytes left: the counter advanced by 4, and the data by 256 bytes. -/
@@ -1106,7 +1106,7 @@ theorem last_ok {s₀ : State} (hp : XPre s₀) {j : Nat} (hj : P s₀ j + 65 �
       simp only [Region.Contains] at hcon
       have : 0 < n % 16 := by omega_using [hcon]
       rw [eX _ hd (by omega_using [this]), Offset.sub_toNat' _ (by lit_omega) (by lit_omega)] at hcon
-      split at hcon <;> omega
+      split at hcon <;> omega_arith
   have hD : Dst s₀ (P s₀ (j + 4)) s'.mem := fun k hk => by
     rw [hm', ite_eq_left (by omega_using [hP4, hk])]
     by_cases ha : k < P s₀ j
@@ -1284,7 +1284,7 @@ theorem tail_ok {s₀ : State} (hp : XPre s₀) {j : Nat} (hj : P s₀ j < L s�
       simp only [List.mem_singleton] at hr; subst hr
       simp only [Region.Contains] at hcon
       rw [eX _ hd, Offset.sub_toNat' _ (by lit_omega) (by lit_omega)] at hcon
-      split at hcon <;> omega
+      split at hcon <;> omega_arith
     rw [e, m₈, h₄.data k hk, ite_eq_left ha]
   · obtain ⟨t, rfl⟩ : ∃ t, k = P s₀ j + t := ⟨k - P s₀ j, by omega_using [ha]⟩
     have h3 := h'.data t (by omega_using [hk])

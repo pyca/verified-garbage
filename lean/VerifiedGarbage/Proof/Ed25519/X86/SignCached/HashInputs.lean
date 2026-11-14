@@ -44,11 +44,11 @@ theorem message_input (hL : L.Ok) : Input L L.msg L.len :=
 theorem point_input (hL : L.Ok) : Input L L.out 32 :=
   Input.external ⟨L.OUT, by simp [Lay.outputs], 0, by simp, by change 0 + 32 ≤ 64; decide⟩
     (hL.oc.sub_left (Region.sub_prefix (by decide)))
-    (hL.ko.sub_right (Region.sub_prefix (by decide))) hL (by change L.out.toNat + 32 ≤ 2 ^ 32; have := hL.no; omega)
+    (hL.ko.sub_right (Region.sub_prefix (by decide))) hL (by change L.out.toNat + 32 ≤ 2 ^ 32; have := hL.no; omega_using [this])
 
 theorem prefix_input (hL : L.Ok) : Input L (L.E + 64) 32 := by
   have ea : (L.E + 64).setWidth 64 = L.E.setWidth 64 + 64 :=
-    addr_eq (x := L.E) (k := 64) (by have := hL.top; omega)
+    addr_eq (x := L.E) (k := 64) (by have := hL.top; omega_using [this])
   have hin : Whole.Within ⟨(L.E + 64).setWidth 64, (32 : BitVec 32).toNat⟩ L.FR :=
     ⟨64, ea, by change 64 + 32 ≤ 256; decide⟩
   refine ⟨.inl hin, hL.kc.sub_left (fun p hp => Whole.frame_sub L.E p (hin.sub p hp)), ?_, ?_, ?_⟩
@@ -58,7 +58,7 @@ theorem prefix_input (hL : L.Ok) : Input L (L.E + 64) 32 := by
   · rw [ea]
     exact Offset.disjoint_base _ (d := 64) (n := 32) (k := 24) (by decide) (by decide)
   · rw [BitVec.toNat_add, show (64 : BitVec 32).toNat = 64 from rfl,
-      Nat.mod_eq_of_lt (by have := hL.top; omega)]
-    have := hL.top; change L.E.toNat + 64 + 32 ≤ 2 ^ 32; omega
+      Nat.mod_eq_of_lt (by have := hL.top; omega_using [this])]
+    have := hL.top; change L.E.toNat + 64 + 32 ≤ 2 ^ 32; omega_using [this]
 
 end VG.Proof.Ed25519.X86.SignCached

@@ -29,16 +29,16 @@ def Extras (m : Mem) (c : Addr) (f : Nat → Spec.Cast5.Word) : Prop :=
 theorem Extras.write {m : Mem} {c : Addr} {f : Nat → Spec.Cast5.Word} (h : Extras m c f) {d w : Nat}
     (v : BitVec w) (hd : d + w / 8 ≤ extraOff) :
     Extras (m.writeW (c + BitVec.ofNat 64 d) v) c f := fun j hj => by
-  rw [Mem.readW_writeW_sep (Offset.sep c (by unfold extraOff at *; omega) (by unfold extraOff; omega)
-    (by unfold extraOff at *; omega)) (by decide)]
+  rw [Mem.readW_writeW_sep (Offset.sep c (by unfold extraOff at *; omega_using [hd]) (by unfold extraOff; omega_using [hj])
+    (by unfold extraOff at *; omega_using [hd])) (by decide)]
   exact h j hj
 
 /-- `Extras` after a write elsewhere. -/
 theorem Extras.write_disj {m : Mem} {c : Addr} {f : Nat → Spec.Cast5.Word} (h : Extras m c f) {a : Addr}
     {w : Nat} (v : BitVec w) (hd : Region.Disjoint ⟨c, 64⟩ ⟨a, w / 8⟩) :
     Extras (m.writeW a v) c f := fun j hj => by
-  rw [Mem.readW_writeW_sep (hd.sep (Offset.contains_base c (by unfold extraOff; omega)
-    (by unfold extraOff; omega)) (Region.contains_self _ _)) (by decide)]
+  rw [Mem.readW_writeW_sep (hd.sep (Offset.contains_base c (by unfold extraOff; omega_using [hj])
+    (by unfold extraOff; omega_using [hj])) (Region.contains_self _ _)) (by decide)]
   exact h j hj
 
 end VG.Proof.Cast5.X86_64

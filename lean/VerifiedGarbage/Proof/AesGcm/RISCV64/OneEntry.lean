@@ -71,8 +71,8 @@ theorem one1At_wp {s₀ : State} {off tagO : Nat} {W T : Addr} (hoff : off = 8 �
     WP isa (.block (oneEntryAt off tagO)) s₀ (SO1 W T s₀) := by
   simp only [oneEntryAt, List.cons_append, List.nil_append]
   refine Steps.wp_addSp (imm := 0) (by decide) fun sA uA => ?_
-  refine Steps.wp_ld (off := off) (a := s₀.sp + BitVec.ofNat 64 off) (by omega) (by rw [uA.gpr, add_ofNat_zero])
-    (Spill.al8 (by omega) (by omega)) (by rw [uA.rd, uA.wr]; exact hWi) fun sB uB => ?_
+  refine Steps.wp_ld (off := off) (a := s₀.sp + BitVec.ofNat 64 off) (by omega_using [hoff]) (by rw [uA.gpr, add_ofNat_zero])
+    (Spill.al8 (by omega_using [hsa]) (by omega_using [hoff])) (by rw [uA.rd, uA.wr]; exact hWi) fun sB uB => ?_
   have b12 : sB.gpr .t1 = W := by rw [uB.gpr, uA.mem, hWv]
   rw [WP.block_append_iff]
   refine WP.mono (save_ok (b := .t1) (by rw [b12, uB.wr, uA.wr]; exact hW) (by rw [b12]; exact hWa))
@@ -123,10 +123,10 @@ theorem one1At_wp {s₀ : State} {off tagO : Nat} {W T : Addr} (hoff : off = 8 �
         (List.mem_singleton_self _) _ (Offset.contains _ (by decide) (by decide) (by decide))).writeW
         (List.mem_singleton_self _) _ (Offset.contains _ (by decide) (by decide) (by decide))
   have dS : ∀ {d : Nat}, 232 ≤ d → d + 8 ≤ 248 → (savedR W).Disjoint ⟨W + BitVec.ofNat 64 d, 8⟩ :=
-    fun h₁ h₂ => Offset.disjoint _ (.inl (by omega)) (by omega) (by omega)
-  refine Steps.wp_ld (off := tagO) (a := s₀.sp + BitVec.ofNat 64 tagO) (by omega)
+    fun h₁ h₂ => Offset.disjoint _ (.inl (by omega_using [h₁])) (by omega_using []) (by omega_using [h₂])
+  refine Steps.wp_ld (off := tagO) (a := s₀.sp + BitVec.ofNat 64 tagO) (by omega_using [htag])
     (by rw [u₁₃.gpr, u₁₂.sp, m₁₁.sp, u₁₀.sp, m₉.sp, k₈.2.2.1, add_ofNat_zero])
-    (Spill.al8 (by omega) (by omega)) (by rw [rd₁₃, wr₁₃]; exact hTi) fun s₁₄ u₁₄ => WP.block_nil ?_
+    (Spill.al8 (by omega_using [hsa]) (by omega_using [htag])) (by rw [rd₁₃, wr₁₃]; exact hTi) fun s₁₄ u₁₄ => WP.block_nil ?_
   refine ⟨⟨by rw [u₁₄.rd, rd₁₃], by rw [u₁₄.wr, wr₁₃], by rw [u₁₄.sp, sp₁₃]⟩, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_,
     ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · rw [u₁₄.mem, m₁₃, ← hM]

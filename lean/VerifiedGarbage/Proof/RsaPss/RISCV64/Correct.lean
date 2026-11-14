@@ -62,15 +62,15 @@ variable {Gs Hs : Spec.Mgf1.Hash} {V : Nat → Byte} {em : List Byte} {lN E : Na
 theorem vH_getD (hfE : Hs.len + 2 ≤ E) (hV : ∀ i < E, V (lN + i) = em.getD i 0) {i : Nat} (hi : i < Hs.len) :
     (vH Hs em (E - Hs.len - 1)).getD i 0 = V (lN + (E - Hs.len - 1) + i) := by
   simp only [vH, List.getD_eq_getElem?_getD, List.getElem?_take, ifp hi, List.getElem?_drop]
-  rw [← List.getD_eq_getElem?_getD, Nat.add_assoc, hV _ (by omega)]
+  rw [← List.getD_eq_getElem?_getD, Nat.add_assoc, hV _ (by omega_using [hfE, hi])]
 
 theorem vH_length (hE : em.length = E) (hfE : Hs.len + 2 ≤ E) : (vH Hs em (E - Hs.len - 1)).length = Hs.len := by
-  simp only [vH, List.length_take, List.length_drop, hE]; omega
+  simp only [vH, List.length_take, List.length_drop, hE]; omega_using [hfE]
 
 theorem srcB_vH (hE : em.length = E) (hfE : Hs.len + 2 ≤ E) (hV : ∀ i < E, V (lN + i) = em.getD i 0) :
     srcB (v1 V lN c (lN + E)) (lN + (E - Hs.len - 1)) Hs.len = vH Hs em (E - Hs.len - 1) := by
   refine (eq_range_map (vH_length hE hfE) fun i hi => ?_).symm
-  rw [vH_getD hfE hV hi, v1, ifn (by omega)]
+  rw [vH_getD hfE hV hi, v1, ifn (by omega_using [hfE, hi])]
 
 theorem wR_eq (hGv : Valid Gs) (hc : c = (0xFF : Byte) >>> z) (hE : em.length = E) (hfE : Hs.len + 2 ≤ E)
     (hV : ∀ i < E, V (lN + i) = em.getD i 0) {j : Nat} (hj : j < E - Hs.len - 1) :
@@ -81,16 +81,16 @@ theorem wR_eq (hGv : Valid Gs) (hc : c = (0xFF : Byte) >>> z) (hE : em.length = 
   let mk := Spec.Mgf1.mgf1 Gs (vH Hs em (E - Hs.len - 1)) (E - Hs.len - 1)
   have hm : mixV (v1 V lN c (lN + E)) (Spec.Mgf1.mgf1 Gs (srcB (v1 V lN c (lN + E)) (lN + (E - Hs.len - 1)) Hs.len)
       (E - Hs.len - 1)) lN (E - Hs.len - 1) (lN + j) = em.getD j 0 ^^^ mk.getD j 0 := by
-    rw [srcB_vH hE hfE hV, mixV, ifp ⟨by omega, by omega⟩, v1, ifn (by omega), hV _ (by omega),
+    rw [srcB_vH hE hfE hV, mixV, ifp ⟨by omega_using [], by omega_using [hj]⟩, v1, ifn (by omega_using [hj]), hV _ (by omega_using [hj]),
       Nat.add_sub_cancel_left]
   have hx : (Spec.Mgf1.xorBytes (em.take (E - Hs.len - 1)) mk).getD j 0 = em.getD j 0 ^^^ mk.getD j 0 := by
-    rw [xorBytes_getD (by rw [List.length_take, hE]; omega) (by simp only [mk]; omega), ht hj]
+    rw [xorBytes_getD (by rw [List.length_take, hE]; omega_using [hj]) (by simp only [mk]; omega_using [hj, hmk]), ht hj]
   show (if lN + j = lN then _ &&& c else _) = _
   rw [vDb₂, clearTop_getD]
   by_cases e : j = 0
   · subst e
     rw [ifp (Nat.add_zero lN), ifp rfl, hm, ← hx, hc]
-  · rw [ifn (by omega), ifn e, hm, ← hx]
+  · rw [ifn (by omega_using [e]), ifn e, hm, ← hx]
 
 end
 
@@ -101,7 +101,7 @@ variable {Gs Hs : Spec.Mgf1.Hash} (hGv : Valid Gs) {V : Nat → Byte} {em mh : L
 
 include hGv hc hE hfE hV in
 theorem db_eq : vDb₂ Gs Hs em (E - Hs.len - 1) z = (List.range (E - Hs.len - 1)).map (wR Gs V Hs.len lN (E - Hs.len - 1) c (lN + E)) := by
-  refine eq_range_map (by simp [vDb₂, VG.Proof.RsaPss.clearTop_length, xorBytes_length, mgf1_length hGv, hE]; omega)
+  refine eq_range_map (by simp [vDb₂, VG.Proof.RsaPss.clearTop_length, xorBytes_length, mgf1_length hGv, hE]; omega_using [])
     fun j hj => (wR_eq hGv hc hE hfE hV hj).symm
 
 include hGv hc hE hfE hV in
@@ -125,20 +125,20 @@ theorem mR_eq (hmh : mh.length = Hs.len) {any saltLen : BitVec 64}
     fun j hj => by rw [← hdb, ← wR_eq hGv hc hE hfE hV hj]; rfl
   have hd : ∀ j < E - Hs.len - 1 - lz db - 1, (db.drop (lz db + 1)).getD j 0 =
       dbV Gs (v1 V lN c (lN + E)) lN (E - Hs.len - 1) Hs.len c (lN + (j + (lz db + 1))) := fun j hj => by
-    rw [hw _ (by omega)]
+    rw [hw _ (by omega_using [hj])]
     simp only [List.getD_eq_getElem?_getD, List.getElem?_drop]
-    congr 2; omega
-  have hdd : (db.drop (lz db + 1)).length = E - Hs.len - 1 - lz db - 1 := by rw [List.length_drop, hdl]; omega
+    congr 2; omega_using []
+  have hdd : (db.drop (lz db + 1)).length = E - Hs.len - 1 - lz db - 1 := by rw [List.length_drop, hdl]; omega_using []
   rw [mR]
   split
   · rename_i h0
     have h1 := hsl h0
-    rw [mFix, h1, show E - Hs.len - 1 - 1 - lz db = E - Hs.len - 1 - lz db - 1 by omega]
+    rw [mFix, h1, show E - Hs.len - 1 - 1 - lz db = E - Hs.len - 1 - lz db - 1 by omega_using []]
     refine congrArg (List.replicate 8 0 ++ mh ++ ·) (eq_range_map hdd fun j hj => ?_).symm
-    rw [hd j (by omega)]; congr 1; omega
+    rw [hd j (by omega_using [hj])]; congr 1; omega_using [hlz]
   · rw [mAny, hp, slR, hp]
     refine congrArg (List.replicate 8 0 ++ mh ++ ·) (eq_range_map hdd fun j hj => ?_).symm
-    rw [hd j (by omega), ifp (by omega)]
+    rw [hd j (by omega_using [hj]), ifp (by omega_using [hj])]
 
 end
 
@@ -171,9 +171,9 @@ theorem res_iff {any saltLen : BitVec 64} {sLen : Option Nat} (hs : sLen = if an
   have hl := lzr_eq hGv hc hE hfE hV
   have hw : ∀ j < E - Hs.len - 1, wR Gs V Hs.len lN (E - Hs.len - 1) c (lN + E) j =
       (vDb₂ Gs Hs em (E - Hs.len - 1) z).getD j 0 := fun j hj => wR_eq hGv hc hE hfE hV hj
-  have hk1 : lN + E - 1 = lN + (E - 1) := by omega
-  have hV0 : V lN = em.getD 0 0 := hV 0 (by omega)
-  have hVk : V (lN + E - 1) = em.getD (E - 1) 0 := by rw [hk1]; exact hV _ (by omega)
+  have hk1 : lN + E - 1 = lN + (E - 1) := by omega_using [hfE]
+  have hV0 : V lN = em.getD 0 0 := hV 0 (by omega_using [hfE])
+  have hVk : V (lN + E - 1) = em.getD (E - 1) 0 := by rw [hk1]; exact hV _ (by omega_using [hfE])
   have hnot : ~~~c = ~~~((0xFF : Byte) >>> z) := by rw [hc]
   -- The hash compared, as lists.
   have hcmp : ∀ M : List Byte, (∀ i < Hs.len, V (lN + (E - Hs.len - 1) + i) = (Hs.hash M).getD i 0) ↔
@@ -195,7 +195,7 @@ theorem res_iff {any saltLen : BitVec 64} {sLen : Option Nat} (hs : sLen = if an
     · rw [ifn h]; simp [h]
   have hsl : lz (vDb₂ Gs Hs em (E - Hs.len - 1) z) < E - Hs.len - 1 →
       slR Gs V Hs.len lN (E - Hs.len - 1) c (lN + E) = E - Hs.len - 1 - 1 - lz (vDb₂ Gs Hs em (E - Hs.len - 1) z) :=
-    fun h => by unfold slR posR; rw [hl, ifp h]; omega
+    fun h => by unfold slR posR; rw [hl, ifp h]; omega_using []
   have hsv : (sLen = none ∨ sLen = some (E - Hs.len - 1 - 1 - lz (vDb₂ Gs Hs em (E - Hs.len - 1) z))) ↔
       (any = 0 → saltLen.toNat = E - Hs.len - 1 - 1 - lz (vDb₂ Gs Hs em (E - Hs.len - 1) z)) := by
     rw [hs]; split
@@ -209,7 +209,7 @@ theorem res_iff {any saltLen : BitVec 64} {sLen : Option Nat} (hs : sLen = if an
     · rename_i h0
       rw [BitVec.xor_eq_zero_iff]
       constructor
-      · intro e _; rw [← e, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+      · intro e _; rw [← e, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hE64])]
       · intro e; rw [← e h0, BitVec.ofNat_toNat, BitVec.setWidth_eq]
     · rename_i h0; exact ⟨fun _ e => absurd e h0, fun _ => rfl⟩
   unfold Res accR accW EncOk₂
@@ -270,7 +270,7 @@ theorem verify_bytes₂ (Gs Hs : Spec.Mgf1.Hash) (hG : Proof.Mgf1.Valid Gs) {n�
       (lo = 1 → ((Spec.Rsa.publicOpChecked (n₀ :: rest) eB sB).getD (zeros (n₀ :: rest).length)).getD 0 0 = 0) ∧
       EncOk₂ Gs Hs mHash (((Spec.Rsa.publicOpChecked (n₀ :: rest) eB sB).getD (zeros (n₀ :: rest).length)).drop lo)
         emLen (8 * emLen - emBits) sLen := by
-  have hlo' : (n₀ :: rest).length - emLen = lo := by omega
+  have hlo' : (n₀ :: rest).length - emLen = lo := by omega_using [hk]
   unfold verify
   simp only [hb, he, hs, beq_self_eq_true, Bool.true_and, hlo']
   cases hp : Spec.Rsa.publicOpChecked (n₀ :: rest) eB sB with
@@ -283,9 +283,9 @@ theorem verify_bytes₂ (Gs Hs : Spec.Mgf1.Hash) (hG : Proof.Mgf1.Valid Gs) {n�
   | some x =>
     have hx := Proof.RsaPss.publicOpChecked_length' hp
     simp only [Option.getD_some, Bool.and_eq_true, beq_iff_eq]
-    rw [← he, Proof.RsaPss.verifyEncoding_bytes₂ Gs Hs hG hm (by rw [List.length_drop, hx]; omega) (by omega), he]
+    rw [← he, Proof.RsaPss.verifyEncoding_bytes₂ Gs Hs hG hm (by rw [List.length_drop, hx]; omega_using [he, hk]) (by omega_using [he, hfit]), he]
     refine and_congr_left fun _ => ?_
-    rcases (show lo = 0 ∨ lo = 1 by omega) with rfl | rfl
+    rcases (show lo = 0 ∨ lo = 1 by omega_using [hlo]) with rfl | rfl
     · simp [zeros]
     · obtain ⟨b, xs, rfl⟩ := List.exists_cons_of_ne_nil (show x ≠ [] from fun h => by simp [h] at hx)
       simp [zeros]
@@ -315,7 +315,7 @@ theorem anyL_eq (s : State) : anyL s = 0 ↔ (stackArg s 1).setWidth 32 = 0 := b
     have := (stackArg s 1).isLt
     simp only [anyL, BitVec.toNat_ushiftRight, BitVec.toNat_shiftLeft, BitVec.toNat_setWidth, Nat.shiftLeft_eq,
       Nat.shiftRight_eq_div_pow]
-    omega
+    omega_using []
   constructor <;> intro h <;> apply BitVec.eq_of_toNat_eq
   · rw [← e, h]; rfl
   · rw [e, h]; rfl
@@ -353,7 +353,7 @@ include hk
 theorem nB_cons : ∃ rest : List Byte, Spec.Rsa.bytesAt s.mem (s.gpr .a0) (kk s) = s.mem (s.gpr .a0) :: rest ∧
     rest.length = kk s - 1 := by
   obtain ⟨rest, h, hl⟩ := bytesAt_cons s.mem (s.gpr .a0) (kk s - 1)
-  rw [show kk s - 1 + 1 = kk s by omega] at h
+  rw [show kk s - 1 + 1 = kk s by omega_using [hk]] at h
   exact ⟨rest, h, hl⟩
 
 theorem zero_false (h0 : s.mem (s.gpr .a0) = 0) : vOut Hs Gs s = false := by
@@ -364,7 +364,7 @@ theorem zero_false (h0 : s.mem (s.gpr .a0) = 0) : vOut Hs Gs s = false := by
 theorem emLen_eq (h0 : s.mem (s.gpr .a0) ≠ 0) {rest : List Byte} (hr : rest.length = kk s - 1) :
     Spec.RsaPss.emLength (Spec.RsaPss.bitLength (Spec.Rsa.os2ip (s.mem (s.gpr .a0) :: rest)) - 1) =
       kk s - loN s := by
-  rw [Proof.RsaPss.emLength_eq rest h0, hr, loN]; split <;> omega
+  rw [Proof.RsaPss.emLength_eq rest h0, hr, loN]; split <;> omega_arith
 
 theorem short_false (h0 : s.mem (s.gpr .a0) ≠ 0)
     (h : kk s - loN s < Hs.len + (Spec.RsaPss.expectedSaltLen (stackArg s 0) ((stackArg s 1).setWidth 32)).getD 0 + 2) :
@@ -384,32 +384,32 @@ theorem res_vOut {Hs Gs : Spec.Mgf1.Hash} (hGv : Proof.Mgf1.Valid Gs) (hHv : Pro
     Res Gs (view m (Sp s)) Hs.len (loN s) (kk s - loN s - Hs.len - 1) (cB s) (kk s) (mh Hs.len s) (anyL s)
       (stackArg s 0) Hs ↔ vOut Hs Gs s = true := by
   have hk1 : 64 ≤ kk s := P.k1; have hk2 : kk s ≤ 1024 := P.k2
-  have hl1 : loN s ≤ 1 := by unfold loN; split <;> omega
-  obtain ⟨rest, hn, hr⟩ := nB_cons (show 1 ≤ kk s by omega)
-  have hE := emLen_eq (by omega) h0 hr
+  have hl1 : loN s ≤ 1 := by unfold loN; split <;> omega_using []
+  obtain ⟨rest, hn, hr⟩ := nB_cons (show 1 ≤ kk s by omega_using [hem])
+  have hE := emLen_eq (by omega_using [hem]) h0 hr
   have hM := Proof.RsaPss.mask_eq rest h0
   have hx : (Spec.Rsa.publicOpChecked (s.mem (s.gpr .a0) :: rest) (Spec.Rsa.bytesAt s.mem (s.gpr .a2) (s.gpr .a3).toNat)
       (Spec.Rsa.bytesAt s.mem (s.gpr .a6) (kk s))).getD (Spec.RsaPss.zeros (s.mem (s.gpr .a0) :: rest).length) =
       emOf s := by
-    rw [emOf, hn, Spec.RsaPss.zeros, List.length_cons, hr, show kk s - 1 + 1 = kk s by omega]
+    rw [emOf, hn, Spec.RsaPss.zeros, List.length_cons, hr, show kk s - 1 + 1 = kk s by omega_using [hem]]
   generalize hB : Spec.RsaPss.bitLength (Spec.Rsa.os2ip (s.mem (s.gpr .a0) :: rest)) - 1 = eb at hE hM
   generalize hEg : Spec.RsaPss.emLength eb = E at hE hM
   have hc : cB s = (0xFF : Byte) >>> (8 * E - eb) := by rw [hM]; rfl
   have hV : ∀ i < E, view m (Sp s) (loN s + i) = ((emOf s).drop (loN s)).getD i 0 := fun i hi => by
     show m (off (Sp s) (loN s + i)) = _
     rw [List.getD_eq_getElem?_getD, List.getElem?_drop, ← List.getD_eq_getElem?_getD, ← hm,
-      bytesAt_getD _ _ (by omega), show off (Sp s) 0 + BitVec.ofNat 64 (loN s + i) = off (off (Sp s) 0) (loN s + i)
+      bytesAt_getD _ _ (by omega_using [hE, hi]), show off (Sp s) 0 + BitVec.ofNat 64 (loN s + i) = off (off (Sp s) 0) (loN s + i)
       from rfl, off_off, Nat.zero_add]
   have hV0 : view m (Sp s) 0 = (emOf s).getD 0 0 := by
-    rw [← hm, bytesAt_getD _ _ (by omega), BitVec.add_zero]; rfl
-  have hEl : ((emOf s).drop (loN s)).length = E := by rw [List.length_drop, emOf_length]; omega
-  rw [show kk s - loN s - Hs.len - 1 = E - Hs.len - 1 by omega, show kk s = loN s + E by omega,
-    res_iff (E := E) hGv hHv hc hEl (by omega) hV (bytesAt_length _ _ _) (sLen_eq s) (by omega), vOut, hn,
-    verify_bytes₂ Gs Hs hGv (bytesAt_length _ _ _) (by rw [bytesAt_length, List.length_cons, hr]; omega)
-      hB hEg (by rw [List.length_cons, hr]; omega) hl1 ?_, hx, hV0]
+    rw [← hm, bytesAt_getD _ _ (by omega_using [hem]), BitVec.add_zero]; rfl
+  have hEl : ((emOf s).drop (loN s)).length = E := by rw [List.length_drop, emOf_length]; omega_using [hE]
+  rw [show kk s - loN s - Hs.len - 1 = E - Hs.len - 1 by omega_using [hE], show kk s = loN s + E by omega_using [hem, hE],
+    res_iff (E := E) hGv hHv hc hEl (by omega_using [hem, hE]) hV (bytesAt_length _ _ _) (sLen_eq s) (by omega_using [hk2, hE]), vOut, hn,
+    verify_bytes₂ Gs Hs hGv (bytesAt_length _ _ _) (by rw [bytesAt_length, List.length_cons, hr]; omega_using [hem])
+      hB hEg (by rw [List.length_cons, hr]; omega_using [hem, hE]) hl1 ?_, hx, hV0]
   rw [sLen_eq]; split
-  · rename_i h; have := hfit h; simp only [Option.getD_some]; omega
-  · simp only [Option.getD_none]; omega
+  · rename_i h; have := hfit h; simp only [Option.getD_some]; omega_using [hE, this]
+  · simp only [Option.getD_none]; omega_using [hem, hE]
 
 /-! ## The tables, after the public operation -/
 
@@ -420,13 +420,13 @@ include P
 omit P in
 theorem tabSub {p : Addr} {n k : Nat} (hk : 8 * k + 8 ≤ n * 8) :
     Region.Sub ⟨p + BitVec.ofNat 64 (8 * k), 8⟩ (Sig.tableRegion 64 p n) :=
-  Offset.sub_base p (by show 8 * k + 8 ≤ n * (64 / 8); omega)
+  Offset.sub_base p (by show 8 * k + 8 ≤ n * (64 / 8); omega_using [hk])
 
 /-- The stack argument `j` is apart from the stack and the working space. -/
 theorem arg_dis {j : Nat} (hj : j < 8) : ∀ r ∈ [kR s, scR s], Region.Disjoint ⟨stackArgAddr s j, 8⟩ r := by
   intro r hr
   have hs : Region.Sub ⟨stackArgAddr s j, 8⟩ (aR s) := by
-    rw [stackArgAddr_eq]; exact Offset.sub_base _ (by omega)
+    rw [stackArgAddr_eq]; exact Offset.sub_base _ (by omega_using [hj])
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl
   · exact (P.ka.sub_right hs).symm
@@ -436,7 +436,7 @@ theorem arg_dis {j : Nat} (hj : j < 8) : ∀ r ∈ [kR s, scR s], Region.Disjoin
 theorem tabH_dis : ∀ k < 5, ∀ r ∈ [kR s, scR s],
     Region.Disjoint ⟨stackArg s 6 + BitVec.ofNat 64 (8 * k), 8⟩ r := by
   intro k hk r hr
-  have hs := tabSub (p := stackArg s 6) (n := 11) (k := k) (by omega)
+  have hs := tabSub (p := stackArg s 6) (n := 11) (k := k) (by omega_using [hk])
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl
   · exact (P.kth.sub_right hs).symm
@@ -446,7 +446,7 @@ theorem tabH_dis : ∀ k < 5, ∀ r ∈ [kR s, scR s],
 theorem tabG_dis : ∀ k < 7, ∀ r ∈ [kR s, scR s],
     Region.Disjoint ⟨stackArg s 7 + BitVec.ofNat 64 (8 * k), 8⟩ r := by
   intro k hk r hr
-  have hs := tabSub (p := stackArg s 7) (n := 11) (k := k) (by omega)
+  have hs := tabSub (p := stackArg s 7) (n := 11) (k := k) (by omega_using [hk])
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl
   · exact (P.ktg.sub_right hs).symm
@@ -485,12 +485,12 @@ theorem lay_reE {H : Hash} (hH : HashOK H) (hHl : Hs.len = H.D) {m : Mem} (hf : 
     have e : (s.gpr .a1).toNat = kk s := rfl
     have := P.k2
     rw [reE_lo P hf, lo_eq h0, show (if (s.mem (s.gpr .a0)).toNat = 1 then 1 else 0) = loN s from rfl,
-      ← ofNat_toNat (s.gpr .a1), Offset.ofNat_sub_ofNat (by omega), Offset.ofNat_sub_ofNat (by omega),
-      show (s.gpr .a1).toNat - loN s - (Hs.len + 1) = kk s - loN s - Hs.len - 1 by omega]
+      ← ofNat_toNat (s.gpr .a1), Offset.ofNat_sub_ofNat (by omega_using [hem, e]), Offset.ofNat_sub_ofNat (by omega_using [hem, e]),
+      show (s.gpr .a1).toNat - loN s - (Hs.len + 1) = kk s - loN s - Hs.len - 1 by omega_using [e]]
   hc := by rw [cm_reE P hf, cm_eq h0]; rfl
-  l1 := by unfold loN; split <;> omega
-  d1 := by omega
-  hk := by show _ = kk s; omega
+  l1 := by unfold loN; split <;> omega_using []
+  d1 := by omega_using [hem]
+  hk := by show _ = kk s; omega_using [hem]
   k2 := P.k2
   D0 := by rw [hHl]; exact hH.hD0
   D64 := by rw [hHl]; exact hH.hD64
@@ -528,9 +528,9 @@ theorem n0_ne {t : State} (E : Entered Hs.len s t) (hz : (t.gpr .t1 == 0) = fals
 theorem lo_N (h0 : s.mem (s.gpr .a0) ≠ 0) : s.gpr .a1 - lo s = BitVec.ofNat 64 (kk s - loN s) := by
   have hk1 : 64 ≤ kk s := P.k1
   have ek : (s.gpr .a1).toNat = kk s := rfl
-  have hl1 : loN s ≤ 1 := by unfold loN; split <;> omega
+  have hl1 : loN s ≤ 1 := by unfold loN; split <;> omega_using []
   rw [lo_eq h0, show (if (s.mem (s.gpr .a0)).toNat = 1 then 1 else 0) = loN s from rfl, ← ofNat_toNat (s.gpr .a1),
-    Offset.ofNat_sub_ofNat (by omega)]
+    Offset.ofNat_sub_ofNat (by omega_using [hk1, ek, hl1])]
 
 /-- `chkEm`: whether `emLen < hLen + 2`. -/
 theorem chkEm_ok {H : Hash} (hHl : Hs.len = H.D) (hD64 : Hs.len ≤ 64) {t : State} (E : Entered Hs.len s t)
@@ -543,7 +543,7 @@ theorem chkEm_ok {H : Hash} (hHl : Hs.len = H.D) (hD64 : Hs.len ≤ 64) {t : Sta
   have k₃ : Only [.a0] t t₃ := (o₁.trans (o₂.trans o₃)).mono
   refine ⟨E.only P k₃, ?_⟩
   rw [e₃, e₂, e₁, E.base.pk, E.base.plo, lo_N P h0, ← hHl]
-  exact ne_zero_ltBit (by omega) (by omega)
+  exact ne_zero_ltBit (by omega_using [hk2]) (by omega_using [hD64])
 
 /-- `chkSalt`: whether the salt length expected is more than `emLen - hLen - 2`. -/
 theorem chkSalt_ok {H : Hash} (hHl : Hs.len = H.D) (hD64 : Hs.len ≤ 64) {t : State} (E : Entered Hs.len s t)
@@ -559,7 +559,7 @@ theorem chkSalt_ok {H : Hash} (hHl : Hs.len = H.D) (hD64 : Hs.len ≤ 64) {t : S
   rw [e₁₀, o₉.get .a0, e₉, e₈, o₈.get .a1, e₇, o₇.get .a1, e₆, o₆.get .a1, e₅, o₅.get .a1, E.base.pk, E.base.plo,
     lo_N P h0, h1, ← hHl, Offset.ofNat_sub_ofNat hem, BitVec.or_comm]
   have := msgBit (x := kk s - loN s - (Hs.len + 2)) (y := (if anyL s = 0 then stackArg s 0 else 0).toNat)
-    (by omega) (BitVec.isLt _)
+    (by omega_using [hk2]) (BitVec.isLt _)
   rwa [ofNat_toNat] at this
 
 section
@@ -579,7 +579,7 @@ theorem main_done {t : State} (B : Before Hs.len s t) (sy : t.syms = s.syms) (h0
   have hS := reE_Sp P c₂.mem
   have hSC : SC Sp (reE s t₂.mem) = SC Sp s := by simp only [SC, hS]
   have hmh : mh Hs.len (reE s t₂.mem) = mh Hs.len s :=
-    VG.Proof.RsaOaep.RISCV64.bytes_entry c₂.mem P.kd P.ds.symm (by have := hH.hD64; omega)
+    VG.Proof.RsaOaep.RISCV64.bytes_entry c₂.mem P.kd P.ds.symm (by have := hH.hD64; omega_using [hHl, this])
   have hany : anyL (reE s t₂.mem) = anyL s := by unfold anyL; rw [reE_args P c₂.mem 1 (by decide)]
   have e6 : p = stackArg s 6 := T.arg.symm
   have e7 : pg = stackArg s 7 := TG.arg.symm
@@ -600,33 +600,33 @@ theorem checks_done {t : State} (E : Entered Hs.len s t) (sy : t.syms = s.syms) 
     WP isa (checks H M.be f g) t (Done Hs Gs s) := by
   have hk1 : 64 ≤ kk s := P.k1
   have hD64 : Hs.len ≤ 64 := hHl ▸ hH.hD64
-  refine WP.ite _ (eval_zero _ _) (fun hz => fail_ok P E.base (zero_false Hs Gs (by omega) (n0_eq E hz)))
+  refine WP.ite _ (eval_zero _ _) (fun hz => fail_ok P E.base (zero_false Hs Gs (by omega_using [hk1]) (n0_eq E hz)))
     (fun hz => ?_)
   have h0 := n0_ne E hz
   -- `emLen < hLen + 2`.
   refine WP.seq (WP.mono_syms (chkEm_ok P hHl hD64 E h0) fun t₃ ⟨E₃, r3⟩ y₃ => ?_)
-  refine WP.ite _ (eval_nonzero _ _) (fun hc => fail_ok P E₃.base (short_false Hs Gs (by omega) h0 ?_))
+  refine WP.ite _ (eval_nonzero _ _) (fun hc => fail_ok P E₃.base (short_false Hs Gs (by omega_using [hk1]) h0 ?_))
     (fun hc => ?_)
-  · rw [r3] at hc; simp at hc; omega
-  have hem : Hs.len + 2 ≤ kk s - loN s := by rw [r3] at hc; simp at hc; omega
+  · rw [r3] at hc; simp at hc; omega_using [hc]
+  have hem : Hs.len + 2 ≤ kk s - loN s := by rw [r3] at hc; simp at hc; omega_using [hc]
   -- The salt length expected.
   refine WP.seq (WP.mono_syms (expLen_ok E₃.xs) fun t₄ ⟨o₄, e₄⟩ y₄ => ?_)
   refine WP.seq (WP.mono_syms (chkSalt_ok P hHl hD64 (E₃.only P o₄) h0 hem e₄) fun t₁₀ ⟨E₁₀, r3'⟩ y₁₀ => ?_)
-  refine WP.ite _ (eval_nonzero _ _) (fun hc => fail_ok P E₁₀.base (short_false Hs Gs (by omega) h0 ?_))
+  refine WP.ite _ (eval_nonzero _ _) (fun hc => fail_ok P E₁₀.base (short_false Hs Gs (by omega_using [hk1]) h0 ?_))
     (fun hc => ?_)
   · rw [r3'] at hc
     rw [sLen_eq]
     by_cases ha : anyL s = 0
-    · rw [ifp ha] at hc ⊢; simp only [Option.getD_some]; simp at hc; omega
+    · rw [ifp ha] at hc ⊢; simp only [Option.getD_some]; simp at hc; omega_using [hc]
     · rw [ifn ha] at hc; simp at hc
   have hfit : anyL s = 0 → (stackArg s 0).toNat + 1 ≤ kk s - loN s - Hs.len - 1 := fun ha => by
-    rw [r3', ifp ha] at hc; simp at hc; omega
+    rw [r3', ifp ha] at hc; simp at hc; omega_using [hem, hc]
   exact main_done P hH hF T hHh hHl hHv hG hGF TG hGh hGl hGv E₁₀.before (y₁₀.trans (y₄.trans (y₃.trans sy))) h0
     hem hfit
 
 /-- The code for the hash function `H`, in its frame. -/
 theorem code_ok : WP isa (verifyFor H M.be f g) s (Post Hs Gs s) := by
-  refine WP.alloc (by decide) (by have := P.sp1; unfold frameBytes; unfold stackBytes at this; omega) ?_
+  refine WP.alloc (by decide) (by have := P.sp1; unfold frameBytes; unfold stackBytes at this; omega_using [this]) ?_
   refine WP.seq (WP.mono_syms (entry_ok P hHl.symm (hHl ▸ hH.hD64)) fun t E y => WP.seq (WP.mono
     (checks_done P hH hF T hHh hHl hHv hG hGF TG hGh hGl hGv E (y.trans rfl)) fun t' ⟨sv, res⟩ =>
       WP.mono (restore_ok sv (fb_al8 P)) fun w ⟨habi, h3, _⟩ => ⟨habi, fun hc => ?_⟩))

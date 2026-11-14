@@ -57,7 +57,7 @@ theorem slots_of_words {s₀₁ s₀₂ s₁ s₂ : State} {ws : List Nat} {sl :
   intro x hx
   obtain ⟨h0, hj⟩ := hc x hx
   refine ⟨h0, fun k h₁ h₂ => hw _ ?_⟩
-  have := hj (k - x.2.1) (by omega)
+  have := hj (k - x.2.1) (by omega_using [h₁, h₂])
   rwa [Nat.add_sub_cancel' h₁] at this
 
 /-- A relation proved for each pair of related states. -/
@@ -171,7 +171,7 @@ theorem hcall_rel {P : State → State → Prop}
   rw [eW] at w₂
   have hn₁ : 4 * hregs.length ≤ s₁.sp.toNat := by
     have := T.hp₁.sp_lo
-    simp only [List.length_cons, List.length_nil]; rw [i₁.sp, E_nat T.hp₁]; omega
+    simp only [List.length_cons, List.length_nil]; rw [i₁.sp, E_nat T.hp₁]; omega_using [this]
   have hn₂ : 4 * hregs.length ≤ s₂.sp.toNat := by rw [← hsp]; exact hn₁
   refine frameCall_rel (rs := hregs) (t := .r12) (by decide) (k := HPrime.hPrimeArm) HPrime.hPrime_verified.1
     HPrime.hPrime_verified.2.1 (hRd s₁) (hWr s₀₁ s₁) fun a b ⟨ha, hb⟩ => ?_

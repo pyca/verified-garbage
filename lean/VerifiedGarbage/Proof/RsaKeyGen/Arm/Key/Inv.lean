@@ -92,7 +92,7 @@ theorem St.pinverse [VG.Proof.Rsa.Arm.Keys.InvLaw] {L0 : List Nat} (hZ : aZero �
         (1 :: 3 :: aNM :: aM :: L0) V LS) := by
   refine VP.of_ct (fun σ₁ σ₂ => inverse_cert σ₁ σ₂) fun σ s ⟨e, h, hw⟩ => ?_
   obtain ⟨vZ, vNM, vodd, v1, e1, e2, e3⟩ := hv σ s ⟨e, h, hw⟩
-  refine WP.mono (inverse_ok' hw (by decide) (by decide) (by have := h.pre.wge; omega)) fun t ⟨ht, k, r, v⟩ => ⟨e, ?_, ht⟩
+  refine WP.mono (inverse_ok' hw (by decide) (by decide) (by have := h.pre.wge; omega_using [this])) fun t ⟨ht, k, r, v⟩ => ⟨e, ?_, ht⟩
   have g : ∀ j ∈ aNM :: 3 :: 2 :: 1 :: 0 :: aM :: L0, num s.mem P.B P.W j = A σ j := fun j hj => h.arrs j hj
   have bk := v (by rw [g aNM (by simp), g aM (by simp)]; exact vNM) (by rw [g aZero (by simp [hZ])]; exact vZ)
     (by rw [g aM (by simp)]; exact vodd) (by rw [g aM (by simp)]; exact v1)

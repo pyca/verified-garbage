@@ -270,7 +270,7 @@ theorem dec12At_tr {A : Arith} (hA : ArithOk A) {p q : Ptr} (hq : NA q) :
 
 theorem sw32_64' (d : Nat) (hd : d < 2 ^ 32) : ((BitVec.ofNat 64 d).setWidth 32).toNat = d := by
   rw [BitVec.toNat_setWidth, BitVec.toNat_ofNat]
-  omega
+  omega_using [hd]
 
 /-- A verified implementation `c`, named `n`, of the compression for the
 widths `ws` (`vg_mlkem_compress_encode`, `vg_mlkem1024_compress_encode`). -/
@@ -312,8 +312,8 @@ theorem ceGlue_ok (f out : Ptr) (d : Nat) (ho : f.2 < 2 ^ 31 ∧ out.2 < 2 ^ 31)
   have o2 : out.1 ≠ .rdi := fun e => hout (by rw [e]; decide)
   refine WP.keep _ ?_ (by rfl)
   unfold lea
-  xrun [sx_ofNat ho.1, sx_ofNat ho.2, o1, o2, sw_ofNat (show d < 2 ^ 32 by omega),
-    sw_ofNat (show 32 * d < 2 ^ 32 by omega), List.cons_append, List.nil_append]
+  xrun [sx_ofNat ho.1, sx_ofNat ho.2, o1, o2, sw_ofNat (show d < 2 ^ 32 by omega_using [hd]),
+    sw_ofNat (show 32 * d < 2 ^ 32 by omega_using [hd]), List.cons_append, List.nil_append]
 
 theorem cePre {ws : List Nat} (hle : ∀ d ∈ ws, d ≤ 11) {f out : Ptr} {d : Nat} {s s1 : State} (h : CEH ws f out d s)
     (hv : s1.gpr .rdi = pa s f ∧ s1.gpr .rsi = BitVec.ofNat 64 d ∧ s1.gpr .rdx = pa s out ∧
@@ -324,7 +324,7 @@ theorem cePre {ws : List Nat} (hle : ∀ d ∈ ws, d ≤ 11) {f out : Ptr} {d : 
   simp only [compressEncodeWK, dArg, State.withRegions_gpr, State.withRegions_rd, State.withRegions_wr,
     State.withRegions_mem, ce_gpr' s1 (by decide : Reg.rdi ≠ .rsp), ce_gpr' s1 (by decide : Reg.rsi ≠ .rsp),
     ce_gpr' s1 (by decide : Reg.rdx ≠ .rsp), ce_gpr' s1 (by decide : Reg.rcx ≠ .rsp), hv.1, hv.2.1, hv.2.2.1, hv.2.2.2,
-    ofNat_toNat' (show 32 * d < 2 ^ 64 by omega), sw32_64' d (by omega)]
+    ofNat_toNat' (show 32 * d < 2 ^ 64 by omega_using [hd]), sw32_64' d (by omega_using [hd])]
   refine ⟨trivial, trivial, h.dj, ret_disj s1 (by rw [hsp]; exact h.kF), ret_disj s1 (by rw [hsp]; exact h.kO),
     h.dw, trivial, ?_⟩
   rw [ce_reduced s1 (by rw [hsp]; exact h.kF), hm]; exact h.red
@@ -341,7 +341,7 @@ theorem ceCall_ok {n : String} {c : Prog isa} {ws : List Nat} (I : CEImpl n c ws
   simp only [compressEncodeWK, dArg, State.withRegions_gpr, State.withRegions_mem,
     ce_gpr' s1 (by decide : Reg.rdi ≠ .rsp), ce_gpr' s1 (by decide : Reg.rsi ≠ .rsp),
     ce_gpr' s1 (by decide : Reg.rdx ≠ .rsp), ce_gpr' s1 (by decide : Reg.rcx ≠ .rsp), hV.1, hV.2.1, hV.2.2.1,
-    hV.2.2.2, hm₂, ofNat_toNat' (show 32 * d < 2 ^ 64 by omega), sw32_64' d (by omega),
+    hV.2.2.2, hm₂, ofNat_toNat' (show 32 * d < 2 ^ 64 by omega_using [hd]), sw32_64' d (by omega_using [hd]),
     ce_polyAt s1 (by rw [hsp]; exact h.kF), hm] at hq
   exact hq
 
@@ -386,8 +386,8 @@ theorem ddGlue_ok (b f : Ptr) (d : Nat) (ho : b.2 < 2 ^ 31 ∧ f.2 < 2 ^ 31) (hd
   have o3 : f.1 ≠ .rdx := fun e => hf (by rw [e]; decide)
   refine WP.keep _ ?_ (by rfl)
   unfold lea
-  xrun [sx_ofNat ho.1, sx_ofNat ho.2, o1, o2, o3, sw_ofNat (show d < 2 ^ 32 by omega),
-    sw_ofNat (show 32 * d < 2 ^ 32 by omega), List.cons_append, List.nil_append]
+  xrun [sx_ofNat ho.1, sx_ofNat ho.2, o1, o2, o3, sw_ofNat (show d < 2 ^ 32 by omega_using [hd]),
+    sw_ofNat (show 32 * d < 2 ^ 32 by omega_using [hd]), List.cons_append, List.nil_append]
 
 theorem ddPre {ws : List Nat} (hle : ∀ d ∈ ws, d ≤ 11) {b f : Ptr} {d : Nat} {s s1 : State} (h : DDH ws b f d s)
     (hv : s1.gpr .rdi = pa s b ∧ s1.gpr .rsi = BitVec.ofNat 64 (32 * d) ∧ s1.gpr .rdx = BitVec.ofNat 64 d ∧
@@ -398,7 +398,7 @@ theorem ddPre {ws : List Nat} (hle : ∀ d ∈ ws, d ≤ 11) {b f : Ptr} {d : Na
   simp only [decodeDecompressWK, dArg, State.withRegions_gpr, State.withRegions_rd, State.withRegions_wr,
     ce_gpr' s1 (by decide : Reg.rdi ≠ .rsp), ce_gpr' s1 (by decide : Reg.rsi ≠ .rsp),
     ce_gpr' s1 (by decide : Reg.rdx ≠ .rsp), ce_gpr' s1 (by decide : Reg.rcx ≠ .rsp), hv.1, hv.2.1, hv.2.2.1, hv.2.2.2,
-    ofNat_toNat' (show 32 * d < 2 ^ 64 by omega), sw32_64' d (by omega)]
+    ofNat_toNat' (show 32 * d < 2 ^ 64 by omega_using [hd]), sw32_64' d (by omega_using [hd])]
   exact ⟨trivial, trivial, h.dj, ret_disj s1 (by rw [hsp]; exact h.kB), ret_disj s1 (by rw [hsp]; exact h.kF),
     h.dw, trivial⟩
 
@@ -414,8 +414,8 @@ theorem ddCall_ok {n : String} {c : Prog isa} {ws : List Nat} (I : DDImpl n c ws
   simp only [decodeDecompressWK, dArg, State.withRegions_gpr, State.withRegions_mem,
     ce_gpr' s1 (by decide : Reg.rdi ≠ .rsp), ce_gpr' s1 (by decide : Reg.rsi ≠ .rsp),
     ce_gpr' s1 (by decide : Reg.rdx ≠ .rsp), ce_gpr' s1 (by decide : Reg.rcx ≠ .rsp), hV.1, hV.2.1, hV.2.2.1,
-    hV.2.2.2, hm₂, ofNat_toNat' (show 32 * d < 2 ^ 64 by omega), sw32_64' d (by omega),
-    ce_bytesAt s1 (n := 32 * d) (by omega) (by rw [hsp]; exact h.kB), hm] at hq
+    hV.2.2.2, hm₂, ofNat_toNat' (show 32 * d < 2 ^ 64 by omega_using [hd]), sw32_64' d (by omega_using [hd]),
+    ce_bytesAt s1 (n := 32 * d) (by omega_using [hd]) (by rw [hsp]; exact h.kB), hm] at hq
   exact hq
 
 theorem ddCall_tr {n : String} {c : Prog isa} {ws : List Nat} (I : DDImpl n c ws) {b f : Ptr} {d : Nat} (hf : NA f) :
@@ -439,7 +439,7 @@ theorem ddCall_tr {n : String} {c : Prog isa} {ws : List Nat} (I : DDImpl n c ws
         k2.gpr (r := .rsp) (by decide), e3, and_self]
 
 theorem widths_lt {d : Nat} (h : d ∈ compressWidths) : d ≤ 11 := by
-  simp only [compressWidths, List.mem_cons, List.not_mem_nil, or_false] at h; omega
+  simp only [compressWidths, List.mem_cons, List.not_mem_nil, or_false] at h; omega_using [h]
 
 /-- `vg_mlkem_compress_encode` and `vg_mlkem_decode_decompress`. -/
 theorem ceImpl : CEImpl "vg_mlkem_compress_encode" compressEncode compressWidths :=
@@ -542,7 +542,7 @@ theorem sampleAt_ok {a : Ptr} (hna : NA a) {s : State} (h : SampH a s) : WP isa 
   · rw [k3.gpr (by simpa using h15'), hcs r hr, k.gpr (argRegs_cs r hr)]
   · rw [hm3, ← hm, ← hsp]
     rw [sample_depth] at hf
-    exact Frame.below_mono hf (by omega) (by omega)
+    exact Frame.below_mono hf (by omega_using []) (by omega_using [])
   · rw [h15, hcs .r15 (by decide), k.gpr (by decide), hpost.1]
   · rw [hm3]; exact hpost.2
 

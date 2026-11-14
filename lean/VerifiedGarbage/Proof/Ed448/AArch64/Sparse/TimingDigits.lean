@@ -70,7 +70,7 @@ theorem jointDigits_ct (hA:AffineOk) (base tbl sp:Addr) (S K:Nat) :
       refine WP.mono (incCounter_ok hc.counter) fun t ⟨t19,tk,tm⟩ => hc.regsOnly tk tm (by decide) t19
     apply (seq_same (RelCT.taint (A:=taintS [baseSym]) (Taint.ofRegs [.x3,.x19])
       (fun _ _ h => timingCtx_agree h) (by taint_decide)) hw
-      (jointLoop_ct hA base tbl sp S K (i+1) (by omega) (by omega))).mono
+      (jointLoop_ct hA base tbl sp S K (i+1) (by omega_using []) (by omega_using [hi]))).mono
       (fun _ _ h => h.2) (fun _ _ h => h)
   · exact RelCT.of_false (fun _ _ h => hi h.1)
 

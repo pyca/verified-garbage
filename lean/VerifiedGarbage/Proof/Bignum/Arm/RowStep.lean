@@ -53,9 +53,9 @@ theorem add_cross_value (lo hi m : BitVec 32)
   have shr := toNat_shr m 16
   by_cases hc : 2 ^ 32 ≤ lo.toNat + (m <<< 16).toNat
   · simp only [hc, ite_true, BitVec.toNat_add, show (1 : BitVec 32).toNat = 1 from rfl]
-    omega
+    omega_using [h, shl, shr, hc]
   · simp only [hc, ite_false, BitVec.toNat_add, show (0 : BitVec 32).toNat = 0 from rfl]
-    omega
+    omega_using [h, shl, shr, hc]
 
 /-- `addCross r`: `r4:r3 += 2¹⁶ r`, exactly. -/
 theorem addCross_ok (s : State) (r : Reg) (h3 : r ≠ .r3)
@@ -114,8 +114,8 @@ theorem partials_value (x y : BitVec 32) :
     (x.toNat % 65536) * (y.toNat % 65536) + (x.toNat / 65536) * (y.toNat / 65536) * 2 ^ 32 +
       (x.toNat / 65536) * (y.toNat % 65536) * 2 ^ 16 + (x.toNat % 65536) * (y.toNat / 65536) * 2 ^ 16 =
         x.toNat * y.toNat := by
-  have hx : x.toNat = x.toNat % 65536 + x.toNat / 65536 * 65536 := by omega
-  have hy : y.toNat = y.toNat % 65536 + y.toNat / 65536 * 65536 := by omega
+  have hx : x.toNat = x.toNat % 65536 + x.toNat / 65536 * 65536 := by omega_using []
+  have hy : y.toNat = y.toNat % 65536 + y.toNat / 65536 * 65536 := by omega_using []
   generalize x.toNat % 65536 = a0 at hx ⊢
   generalize x.toNat / 65536 = a1 at hx ⊢
   generalize y.toNat % 65536 = b0 at hy ⊢
@@ -148,34 +148,34 @@ theorem rowProduct_ok (s : State) (x : BitVec 32)
   have hx := x.isLt
   have hy := y.isLt
   have lt (a b : Nat) (ha : a < 65536) (hb : b < 65536) : a * b < 2 ^ 32 :=
-    Nat.lt_of_lt_of_le (Nat.mul_lt_mul_of_lt_of_le ha (Nat.le_of_lt hb) (by omega)) (by decide)
+    Nat.lt_of_lt_of_le (Nat.mul_lt_mul_of_lt_of_le ha (Nat.le_of_lt hb) (by omega_using [])) (by decide)
   have v00 : (s2.gpr .r3).toNat = x.toNat % 65536 * (y.toNat % 65536) := by
     rw [p00, frame1.regs .r1 (by decide), toNat_mul_lt] <;>
       rw [← frame1.regs .r1 (by decide), ← frame2.regs .r1 (by decide), ha0, hb0]
-    exact lt _ _ (by omega) (by omega)
+    exact lt _ _ (by omega_using []) (by omega_using [])
   have v10 : (s2.gpr .r5).toNat = x.toNat / 65536 * (y.toNat % 65536) := by
     rw [p10, frame1.regs .r10 (by decide), toNat_mul_lt] <;>
       rw [← frame1.regs .r10 (by decide), ← frame2.regs .r10 (by decide), ha1, hb0]
-    exact lt _ _ (by omega) (by omega)
+    exact lt _ _ (by omega_using []) (by omega_using [])
   have v01 : (s2.gpr .r7).toNat = x.toNat % 65536 * (y.toNat / 65536) := by
     rw [p01, frame1.regs .r1 (by decide), toNat_mul_lt] <;>
       rw [← frame1.regs .r1 (by decide), ← frame2.regs .r1 (by decide), ha0, hb1]
-    exact lt _ _ (by omega) (by omega)
+    exact lt _ _ (by omega_using []) (by omega_using [])
   have v11 : (s2.gpr .r4).toNat = x.toNat / 65536 * (y.toNat / 65536) := by
     rw [p11, frame1.regs .r10 (by decide), toNat_mul_lt] <;>
       rw [← frame1.regs .r10 (by decide), ← frame2.regs .r10 (by decide), ha1, hb1]
-    exact lt _ _ (by omega) (by omega)
+    exact lt _ _ (by omega_using []) (by omega_using [])
   have total := partials_value x y
   have bound : x.toNat * y.toNat < 2 ^ 64 :=
-    Nat.lt_of_lt_of_le (Nat.mul_lt_mul_of_lt_of_le hx (Nat.le_of_lt hy) (by omega)) (by decide)
+    Nat.lt_of_lt_of_le (Nat.mul_lt_mul_of_lt_of_le hx (Nat.le_of_lt hy) (by omega_using [])) (by decide)
   apply WP.block_append_iff.mpr
   refine WP.mono (addCross_ok s2 .r5 (by decide)
-    (by rw [v00, v11, v10]; omega)) ?_
+    (by rw [v00, v11, v10]; omega_using [total, bound])) ?_
   rintro s3 ⟨sum3, frame3⟩
   have r7 : (s3.gpr .r7).toNat = x.toNat % 65536 * (y.toNat / 65536) := by
     rw [frame3.regs .r7 (by decide), v01]
   refine WP.mono (addCross_ok s3 .r7 (by decide)
-    (by rw [sum3, v00, v11, v10, r7]; omega)) ?_
+    (by rw [sum3, v00, v11, v10, r7]; omega_using [ha0, ha1, hb0, hb1, hx, hy, v00, v10, v01, v11, total, bound, r7])) ?_
   rintro s4 ⟨sum4, frame4⟩
   refine ⟨?_, ?_⟩
   · rw [sum4, sum3, v00, v11, v10, r7]
@@ -223,7 +223,7 @@ theorem rowStepAt_ok (s : State) (k : Nat) (hk : k < 4096) (a b : Addr) (x : Bit
   have hb := mac_bound x (s.mem.readW b 32) (s.mem.readW a 32) (s.gpr .r11)
   rw [WP.seq_iff]
   apply WP.block_append_iff.mpr
-  refine WP.mono (addWord_ok s3 .r5 (by rw [prod3, acc3]; omega)) ?_
+  refine WP.mono (addWord_ok s3 .r5 (by rw [prod3, acc3]; omega_using [hb])) ?_
   rintro s4 ⟨sum4, frame4⟩
   have carry4 : s4.gpr .r11 = s.gpr .r11 := (frame4.regs .r11 (by decide)).trans carry3
   refine WP.mono (addCarry_ok s4 (by rw [sum4, prod3, acc3, carry4]; exact hb)) ?_

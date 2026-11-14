@@ -41,7 +41,7 @@ theorem pad_bytes (m : Mem) (P : Addr) (xs : List Byte) (hx : xs.length ≤ 16) 
     bytesAt (writeBytes ((m.writeW P (0 : BitVec 64)).writeW (P + BitVec.ofNat 64 8) (0 : BitVec 64)) P xs) P 16 =
       xs ++ zeros (16 - xs.length) := by
   have h := bytesAt_writeBytes_at ((m.writeW P (0 : BitVec 64)).writeW (P + BitVec.ofNat 64 8) (0 : BitVec 64)) P
-    (o := 0) (n := 16) xs (by omega) (by decide)
+    (o := 0) (n := 16) xs (by omega_using [hx]) (by decide)
   rw [BitVec.add_zero] at h
   rw [h, Proof.Cmac.bytesAt_store2, Proof.Cmac.le8_zero, List.take_zero, List.nil_append, Nat.zero_add]
   show xs ++ (Spec.Cmac.zeros 16).drop xs.length = _
@@ -50,8 +50,8 @@ theorem pad_bytes (m : Mem) (P : Addr) (xs : List Byte) (hx : xs.length ≤ 16) 
 theorem le8_inj {a b : BitVec 64} (h : le8 a = le8 b) : a = b := by
   apply BitVec.eq_of_getLsbD_eq; intro i hi
   have e := congrArg (fun l => (l.getD (i / 8) 0).getLsbD (i % 8)) h
-  simp only [Proof.Cmac.getD_le8 _ (show i / 8 < 8 by omega), BitVec.getLsbD_extractLsb',
-    show i % 8 < 8 by omega, decide_true, Bool.true_and, show 8 * (i / 8) + i % 8 = i by omega] at e
+  simp only [Proof.Cmac.getD_le8 _ (show i / 8 < 8 by omega_using [hi]), BitVec.getLsbD_extractLsb',
+    show i % 8 < 8 by omega_using [], decide_true, Bool.true_and, show 8 * (i / 8) + i % 8 = i by omega_using []] at e
   exact e
 
 /-- Two blocks are equal iff the OR of the XORs of their words is 0. -/
@@ -118,12 +118,12 @@ theorem recv_ok {s : State} (he : Env K W SP s) {t : Nat} (hbx : s.gpr .rbx = Bi
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl <;> exact hg₁ _ (by decide) (by decide) (by decide)) hrd₁ hwr₁
   have lp : LoopPre s₁ T (W + BitVec.ofNat 64 256) t :=
-    ⟨hsi₁, hdi, hcx, h1, by omega, by rw [hrd₁, hwr₁]; exact hT, he₁.perm.wC (by omega),
+    ⟨hsi₁, hdi, hcx, h1, by omega_using [h16], by rw [hrd₁, hwr₁]; exact hT, he₁.perm.wC (by omega_using [h16]),
       dW.sub_right (Region.sub_prefix h16)⟩
   refine WP.mono (copyTag_ok s₁ lp) fun s₂ ⟨hm₂, hg₂, hrd₂, hwr₂⟩ => ?_
   have fz : Frame [⟨W + BitVec.ofNat 64 256, 16⟩] s.mem s₁.mem := by rw [hm₁]; exact zero16_frame _ _
   have hR : bytesAt s₁.mem T t = bytesAt s.mem T t :=
-    bytesAt_frame fz (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact dW) (by omega)
+    bytesAt_frame fz (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact dW) (by omega_using [h16])
   have hlen := length_bytesAt s₁.mem T t
   refine ⟨he₁.keep (fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr

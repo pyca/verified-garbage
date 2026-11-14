@@ -38,9 +38,9 @@ theorem keep_word {W : Nat → BitVec 32} {i : Nat} {v v' : BitVec 32} (hW : W i
     rw [h p hp, xorBits_cons, xorBits_nil, Bool.xor_false, bitOf_word _ _ _ hp, hW]
 
 theorem ok_sbox {s : State} (h : Ok layerCfg s) : Ok sboxCfg s where
-  slotIn k hk := h.slotIn k (by simp [sboxCfg, layerCfg, tailSlot] at hk ⊢; omega)
+  slotIn k hk := h.slotIn k (by simp [sboxCfg, layerCfg, tailSlot] at hk ⊢; omega_using [hk])
   extIn k hk := by simp [sboxCfg] at hk
-  fit := by have := h.fit; simp [sboxCfg, layerCfg, tailSlot] at this ⊢; omega
+  fit := by have := h.fit; simp [sboxCfg, layerCfg, tailSlot] at this ⊢; omega_using [this]
   sep k _ j hj := by simp [sboxCfg] at hj
 
 theorem ok_lin {s : State} (h : Ok layerCfg s) : Ok linCfg s where
@@ -63,13 +63,13 @@ theorem runBlock_app (a b : List Instr) (s : State) :
 theorem slot_above {m m' : Mem} {b : BitVec 32} {n k : Nat} (hf : Frame [⟨b.setWidth 64, 4 * n⟩] m m')
     (hk : n ≤ k) (hfit : b.toNat + 4 * k + 4 ≤ 2 ^ 32) :
     m'.readW (wordAddr b k) 32 = m.readW (wordAddr b k) 32 := by
-  have e : wordAddr b k = b.setWidth 64 + BitVec.ofNat 64 (4 * k) := addr_eq (by omega)
+  have e : wordAddr b k = b.setWidth 64 + BitVec.ofNat 64 (4 * k) := addr_eq (by omega_using [hfit])
   rw [e]
   exact hf.readW (r := ⟨b.setWidth 64 + BitVec.ofNat 64 (4 * k), 4⟩) (Region.contains_self _ _) (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
       have : (b.setWidth 64).toNat = b.toNat := by
-        rw [BitVec.toNat_setWidth, Nat.mod_eq_of_lt (by have := b.isLt; omega)]
-      exact VG.Offset.disjoint_base _ (by omega) (by omega)) (by decide)
+        rw [BitVec.toNat_setWidth, Nat.mod_eq_of_lt (by have := b.isLt; omega_using [])]
+      exact VG.Offset.disjoint_base _ (by omega_using [hk]) (by omega_using [hfit])) (by decide)
 
 /-- A frame of the slots keeps the external words. -/
 theorem frame_ext {c : Cfg} {s : State} {m' : Mem} (hok : Ok c s) (hf : Frame [slotRegion c s] s.mem m')
@@ -81,13 +81,13 @@ theorem frame_ext {c : Cfg} {s : State} {m' : Mem} (hok : Ok c s) (hf : Frame [s
   have hfit := hok.fit
   simp only [slotRegion, Region.Contains] at hc
   have hb : ((s.gpr c.base).setWidth 64).toNat = (s.gpr c.base).toNat := by
-    rw [BitVec.toNat_setWidth, Nat.mod_eq_of_lt (by have := (s.gpr c.base).isLt; omega)]
+    rw [BitVec.toNat_setWidth, Nat.mod_eq_of_lt (by have := (s.gpr c.base).isLt; omega_using [])]
   have hi' : i < 4 := by simpa using hi
   generalize hx : wordAddr (s.gpr c.ext) j + BitVec.ofNat 64 i = x at hc
-  have hk : (x - (s.gpr c.base).setWidth 64).toNat / 4 < c.slots := by omega
+  have hk : (x - (s.gpr c.base).setWidth 64).toNat / 4 < c.slots := by omega_using [hc]
   have hsep := hok.sep _ hk j hj x
-  rw [wordAddr, addr_eq (by omega)] at hsep
-  refine hsep ?_ (by rw [← hx, Mem.sub_ofNat_toNat _ (by omega)]; exact hi')
+  rw [wordAddr, addr_eq (by omega_using [hfit, hc])] at hsep
+  refine hsep ?_ (by rw [← hx, Mem.sub_ofNat_toNat _ (by omega_using [hi])]; exact hi')
   generalize (s.gpr c.base).setWidth 64 = B at *
   bv_omega_arith
 
@@ -104,8 +104,8 @@ theorem xorBits_sel (W YL SR : Nat → BitVec 32) (hS : ∀ i < 8, W i = SR i) (
     congr 1
     simp only [selG, W32.ySel]
     split
-    · rw [Nat.add_assoc, bitOf_word _ _ _ (by omega), hY j hj]
-    · rw [Nat.add_assoc, bitOf_word _ _ _ (by omega), hS _ (W32.outSrc_lt hj)]
+    · rw [Nat.add_assoc, bitOf_word _ _ _ (by omega_arith), hY j hj]
+    · rw [Nat.add_assoc, bitOf_word _ _ _ (by omega_using [hb, hc]), hS _ (W32.outSrc_lt hj)]
 
 /-- The two rounds of a pair: `D2 ^= F(D1, k)` with the first entry at
 `kp`, `D1 ^= F(D2, k)` with the second. -/

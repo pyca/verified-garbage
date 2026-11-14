@@ -45,10 +45,10 @@ structure Power (p : Parameters) (E : Nat) (s : State) : Prop extends ModState p
 theorem ModState.after_arrays {p : Parameters} {s t : State} {js : List Nat}
  (h : ModState p s) (good : Good t p.B p.Z p.w p.mi) (frame : Arrays p.B p.w js s.mem t.mem)
  (zero : 0∉js) (one : 7∉js) (r2 : 4∉js) : ModState p t := by
- have nowrap : p.B.toNat+slot p.w 8≤2^64 := by have := h.good.scr.nowrap;have := p.room;omega
+ have nowrap : p.B.toNat+slot p.w 8≤2^64 := by have := h.good.scr.nowrap;have := p.room;omega_arith
  refine ⟨good,?_,?_,?_,?_⟩
  · exact (frame.wv_of_not_mem (by decide) zero nowrap).trans h.modulus
- · rw [frame.word0_of_not_mem (by decide) zero nowrap (by have := p.positive;omega)]
+ · rw [frame.word0_of_not_mem (by decide) zero nowrap (by have := p.positive;omega_using [this])]
    exact h.inverse
  · exact (frame.wv_of_not_mem (by decide) one nowrap).trans h.one
  · exact (frame.wv_of_not_mem (by decide) r2 nowrap).trans h.r2
@@ -56,28 +56,28 @@ theorem ModState.after_arrays {p : Parameters} {s t : State} {js : List Nat}
 theorem ModState.after_header {p : Parameters} {s t : State} {i : Nat}
  (h : ModState p s) (good : Good t p.B p.Z p.w p.mi)
  (frame : Outside p.B (8*i) 8 s.mem t.mem) (hi : i<32) : ModState p t := by
- have nowrap : slot p.w 8≤2^64 := by have := h.good.scr.nowrap;have := p.room;omega
+ have nowrap : slot p.w 8≤2^64 := by have := h.good.scr.nowrap;have := p.room;omega_arith
  have below (j : Nat) : 8*i+8≤slot p.w j := hdr_lt_slot _ _ hi
  refine ⟨good,?_,?_,?_,?_⟩
- · exact (frame.wv (Or.inr (below 0)) (by have := slot_le (w:=p.w) (by decide : 0<8);omega)).trans h.modulus
- · rw [frame.word (Or.inr (below 0)) (by have := slot_le (w:=p.w) (by decide : 0<8);omega)]
+ · exact (frame.wv (Or.inr (below 0)) (by have := slot_le (w:=p.w) (by decide : 0<8);omega_using [nowrap, this])).trans h.modulus
+ · rw [frame.word (Or.inr (below 0)) (by have := slot_le (w:=p.w) (by decide : 0<8);omega_using [nowrap, this])]
    exact h.inverse
- · exact (frame.wv (Or.inr (below 7)) (by have := slot_le (w:=p.w) (by decide : 7<8);omega)).trans h.one
- · exact (frame.wv (Or.inr (below 4)) (by have := slot_le (w:=p.w) (by decide : 4<8);omega)).trans h.r2
+ · exact (frame.wv (Or.inr (below 7)) (by have := slot_le (w:=p.w) (by decide : 7<8);omega_using [nowrap, this])).trans h.one
+ · exact (frame.wv (Or.inr (below 4)) (by have := slot_le (w:=p.w) (by decide : 4<8);omega_using [nowrap, this])).trans h.r2
 
 theorem Power.after_arrays {p : Parameters} {E : Nat} {s t : State} {js : List Nat}
  (h : Power p E s) (good : Good t p.B p.Z p.w p.mi) (frame : Arrays p.B p.w js s.mem t.mem)
  (zero : 0∉js) (one : 7∉js) (r2 : 4∉js) (y : 6∉js) : Power p E t := by
- have nowrap : p.B.toNat+slot p.w 8≤2^64 := by have := h.good.scr.nowrap;have := p.room;omega
+ have nowrap : p.B.toNat+slot p.w 8≤2^64 := by have := h.good.scr.nowrap;have := p.room;omega_arith
  have same := frame.wv_of_not_mem (by decide : 6<8) y nowrap
  exact ⟨h.toModState.after_arrays good frame zero one r2,by rw [same];exact h.bound,by rw [same];exact h.value⟩
 
 theorem Power.after_header {p : Parameters} {E : Nat} {s t : State} {i : Nat}
  (h : Power p E s) (good : Good t p.B p.Z p.w p.mi)
  (frame : Outside p.B (8*i) 8 s.mem t.mem) (hi : i<32) : Power p E t := by
- have nowrap : slot p.w 8≤2^64 := by have := h.good.scr.nowrap;have := p.room;omega
+ have nowrap : slot p.w 8≤2^64 := by have := h.good.scr.nowrap;have := p.room;omega_arith
  have same : wv t.mem p.B (slot p.w 6) p.w=wv s.mem p.B (slot p.w 6) p.w :=
-  frame.wv (Or.inr (hdr_lt_slot _ _ hi)) (by have := slot_le (w:=p.w) (by decide : 6<8);omega)
+  frame.wv (Or.inr (hdr_lt_slot _ _ hi)) (by have := slot_le (w:=p.w) (by decide : 6<8);omega_using [nowrap, this])
  exact ⟨h.toModState.after_header good frame hi,by rw [same];exact h.bound,by rw [same];exact h.value⟩
 
 /-- One genuine Montgomery square doubles the encoded exponent. -/
@@ -97,7 +97,7 @@ theorem power_product (M : Mont) {p : Parameters} {E F : Nat} {s : State} (h : P
  (selected : wv s.mem p.B (slot p.w 5) p.w=Spec.Rsa.powMod p.G F p.P*2^(64*p.w)%p.P) :
  WP isa (M.mm 6 6 5) s fun t =>
  Power p (E+F) t ∧ Arrays p.B p.w [2,3,6] s.mem t.mem ∧ Keep mmRegs s t := by
- have bound5 : wv s.mem p.B (slot p.w 5) p.w<p.P := by rw [selected];exact Nat.mod_lt _ (by have := p.modulusPositive;omega)
+ have bound5 : wv s.mem p.B (slot p.w 5) p.w<p.P := by rw [selected];exact Nat.mod_lt _ (by have := p.modulusPositive;omega_using [this])
  refine WP.mono (crtMmN_ok M h.good p.room p.positive p.width (by decide : 6<8)
   (by decide : 6<8) (by decide : 5<8) (by decide) (by decide) (by decide) (by decide) (by decide)
   h.modulus h.inverse bound5) ?_

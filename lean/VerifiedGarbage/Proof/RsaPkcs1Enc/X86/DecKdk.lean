@@ -31,9 +31,9 @@ variable {P : EP}
 
 theorem blockKey_length {key : List Byte} (h : key.length ≤ 64) :
     (Spec.Hmac.blockKey Spec.Hmac.sha256 key).length = 64 := by
-  have : ¬ 64 < key.length := by omega
+  have : ¬ 64 < key.length := by omega_using [h]
   simp only [Spec.Hmac.blockKey, Spec.Hmac.sha256, this, ite_false, List.length_append, List.length_replicate]
-  omega
+  omega_using [h]
 
 theorem hash_length (x : List Byte) : (Spec.Sha256.hash x).length = 32 := by
   rw [Proof.Sha256.hash_eq]; exact Proof.Sha256.md.digest_length _
@@ -73,7 +73,7 @@ theorem hfWs_scr {o : Nat} (ho : o + 32 ≤ 2576) : InScr P (hfWs P o) := fun r 
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl
   · exact ⟨sSt, 96, by decide, by decide, rfl⟩
-  · exact ⟨o, 32, by omega, by omega, rfl⟩
+  · exact ⟨o, 32, by omega_using [ho], by omega_using [ho], rfl⟩
   · exact ⟨sW, 104 * 8, by decide, by decide, rfl⟩
 
 /-- HMAC's `init` with the 32 bytes of key at `scratch + key`. -/
@@ -142,7 +142,7 @@ theorem macFin_vp (v : Backend) {o tl : Nat} (ho₁ : 192 ≤ o) (ho₂ : o + 32
     fun σ s h t a hp => by
       obtain ⟨hs, -, -, -, -, -, -, md, hk, ht, htl⟩ := hF σ s h
       refine hG σ s t h (Called.ofWhole a) ?_
-      exact hp _ _ (blockKey_length hk) (by rw [blockKey_length hk, ht]; omega) md.1
+      exact hp _ _ (blockKey_length hk) (by rw [blockKey_length hk, ht]; omega_using [htl]) md.1
         (by rw [ht]; exact Proof.Pbkdf2.Stream.X86.zero_append_ofNat htl) md.2
 
 /-! ## The blocks of arguments -/
@@ -231,7 +231,7 @@ theorem kdkUpdArgs_vp : VP (K2 P) (.block kdkUpdArgs) (K3 P) :=
     refine ⟨?_, ?_, ?_, ?_, ?_, ?_⟩ <;> first | trivial | rfl
 
 theorem dataINP {σ s : State} (hs : S P σ s) : DataOk P s P.inp P.K :=
-  { hlen := by have := hs.1.k1024; omega
+  { hlen := by have := hs.1.k1024; omega_using [this]
     cd := St.cov_ro hs (R := P.INP) (by simp)
     d_st := (hs.1.sr_ro (by decide) (by decide) (R := P.INP) (by simp)).symm
     d_sc := (hs.1.sr_ro (by decide) (by decide) (R := P.INP) (by simp)).symm
@@ -239,7 +239,7 @@ theorem dataINP {σ s : State} (hs : S P σ s) : DataOk P s P.inp P.K :=
     nd := by
       have := hs.1.ok.fits P.INP (by simp)
       simp only [BitVec.toNat_setWidth] at this
-      rwa [Nat.mod_eq_of_lt (by have := P.inp.isLt; omega)] at this }
+      rwa [Nat.mod_eq_of_lt (by have := P.inp.isLt; omega_using [])] at this }
 
 theorem kdkUpd_vp (v : Backend) : VP (K3 P) (callUpd v.F) (K4 P) :=
   macUpd_vp v (key := fun σ _ => dhV P σ) (fun _ _ h => by
@@ -276,7 +276,7 @@ theorem kdkFinArgs_vp : VP (K4 P) (.block kdkFinArgs) (K5 P) :=
     apply BitVec.eq_of_toNat_eq
     have e64 : (64 : BitVec 32).toNat = 64 := rfl
     simp only [BitVec.toNat_add, BitVec.toNat_ofNat, e64]
-    omega
+    omega_using []
 
 theorem kdkV_eq (P : EP) {σ : State} (h : In P σ) :
     kdkV P σ = Spec.Hmac.hmac Spec.Hmac.sha256 (dhV P σ) (cB P σ) := by
@@ -290,7 +290,7 @@ theorem kdkFin_vp (v : Backend) : VP (K5 P) (callHf v.F) (K6 P) :=
     (fun _ _ h => by
       obtain ⟨⟨hb, md⟩, a, b, c, e, f, g⟩ := h
       exact ⟨hb.1, a, b, c, e, f, g, md, by rw [hash_length]; decide, Proof.RsaPkcs1Sig.bytesAt_len _ _ _,
-        by have := hb.1.1.k1024; omega⟩)
+        by have := hb.1.1.k1024; omega_using [this]⟩)
     fun σ s t h c hk => by
       obtain ⟨⟨hb, -⟩, -⟩ := h
       exact ⟨c.base hb (by decide) (hfWs_scr (by decide)), by rw [hk, kdkV_eq P hb.1.1]⟩

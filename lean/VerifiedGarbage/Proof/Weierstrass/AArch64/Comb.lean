@@ -48,7 +48,7 @@ theorem testBit_three (k j : Nat) : k.testBit (4 * j + 3) = decide (8 ≤ nib k 
   have h1 := Bool.toNat_le (k.testBit (4 * j + 1))
   have h2 := Bool.toNat_le (k.testBit (4 * j + 2))
   cases h3 : k.testBit (4 * j + 3) <;> simp only [h3, Bool.toNat_true, Bool.toNat_false] at this <;>
-    simp only [decide_eq_true_eq, decide_eq_false_iff_not, Bool.false_eq, Bool.true_eq] <;> omega
+    simp only [decide_eq_true_eq, decide_eq_false_iff_not, Bool.false_eq, Bool.true_eq] <;> omega_arith
 
 theorem sign_byte (b : Bool) :
     ((((if b then 1 else 0 : BitVec 8)).setWidth 32).setWidth 64) - BitVec.ofNat 64 1 =
@@ -66,27 +66,27 @@ theorem signMask_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size
   rw [signMask, show ([.lsl .x .x16 .x19 2, .add .x .x16 .x0 .x16, .ldrb .x3 .x16 (bits + 3),
       .subImm .x .x3 .x3 1] : List Instr) = ([.lsl .x .x16 .x19 2, .add .x .x16 .x0 .x16] : List Instr) ++
       [.ldrb .x3 .x16 (bits + 3), .subImm .x .x3 .x3 1] from rfl, WP.block_append_iff]
-  refine WP.mono (combIndex_ok s hs (by omega) hx) fun a ⟨a16, ka⟩ => ?_
+  refine WP.mono (combIndex_ok s hs (by omega_using [hj, hN, hn]) hx) fun a ⟨a16, ka⟩ => ?_
   have hr : InRegions (a.rd ++ a.wr) (off base (bits + (4 * j + 3))) 1 :=
-    ⟨_, List.mem_append_right _ (ka.wr ▸ hs.wr), hs.contains (by omega) (by decide)⟩
+    ⟨_, List.mem_append_right _ (ka.wr ▸ hs.wr), hs.contains (by omega_using [hj, hN]) (by decide)⟩
   have he : a.gpr .x16 + BitVec.ofNat 64 (bits + 3) = off base (bits + (4 * j + 3)) := by
     rw [a16, BitVec.add_assoc, BitVec.ofNat_add_ofNat]
-    exact congrArg (off base) (by omega)
+    exact congrArg (off base) (by omega_using [])
   have hv : ((a.mem.read (off base (bits + (4 * j + 3))) 1).setWidth 32).setWidth 64 =
       (((if k.testBit (4 * j + 3) then 1 else 0 : BitVec 8)).setWidth 32).setWidth 64 := by
-    rw [read1_zext, ka.mem, hbits _ (by omega)]
+    rw [read1_zext, ka.mem, hbits _ (by omega_using [hj])]
     rfl
   apply WP.of_runBlock
   simp only [runBlock_cons, runStep_some, runBlock_nil, exec, read_x,
     State.load, addr, Size.bits, RegUpd.gpr_write, BitVec.setWidth_eq, Nat.mod_one,
-    show bits + 3 < 4096 * 1 by omega, show (1 : Nat) < 4096 by decide,
+    show bits + 3 < 4096 * 1 by omega_using [hb4], show (1 : Nat) < 4096 by decide,
     and_self, he, hr, hv, ite_true, Option.map_some, Option.bind_some,
     Option.some.injEq, exists_eq_left']
   refine ⟨?_, ⟨fun r hr => ?_, ka.mem, ka.rd, ka.wr, ka.sp⟩⟩
   · rw [sign_byte, testBit_three]
     by_cases h : 8 ≤ nib k j
-    · simp [h, show ¬ nib k j < 8 by omega]
-    · simp [h, show nib k j < 8 by omega]
+    · simp [h, show ¬ nib k j < 8 by omega_using [h]]
+    · simp [h, show nib k j < 8 by omega_using [h]]
   · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
     simp only [RegUpd.gpr_write, hr.1, ite_false]
     exact ka.gpr r (by simpa using hr.2)
@@ -145,8 +145,8 @@ theorem combW_mo {K : CombCfg} {size : Nat} (hL : CombLay K size) {m : Nat} {mem
   intro w hw
   simp only [combW, List.mem_append, List.mem_map, List.mem_singleton] at hw
   rcases hw with ⟨y, hy, rfl⟩ | rfl
-  · have := hL.lay.mo y (combWs_slots K y hy); dsimp only; omega
-  · have := hM.sep; dsimp only; omega
+  · have := hL.lay.mo y (combWs_slots K y hy); dsimp only; omega_using [this]
+  · have := hM.sep; dsimp only; omega_using [this]
 
 /-! ## The addition -/
 

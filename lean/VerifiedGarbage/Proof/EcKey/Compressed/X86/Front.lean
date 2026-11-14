@@ -50,7 +50,7 @@ open VG.Impl.Ecdh.X86 (QY R2P BP QXM QYM W0 W1 W2 W3 PY)
   have h7 := hc.n10
   have hd : Region.Disjoint ⟨ptr s₀ 1, 1 + 2 * c.C.len⟩ ⟨ptr s₀ 2, size⟩ :=
     hp.disjoint
-  refine WP.seq (WP.mono (VG.Proof.Ecdsa.X86.setup_ok hc (input_setup hp (by omega))) fun s₂ S => ?_)
+  refine WP.seq (WP.mono (VG.Proof.Ecdsa.X86.setup_ok hc (input_setup hp (by omega_using []))) fun s₂ S => ?_)
   change SetupPost c Impl.EcKey.Compressed.X86.args s₀ (ptr s₀ 2) s₂ at S
   have F₂ := setup_fixed S
   have hn := S.scr.nowrap
@@ -59,8 +59,8 @@ open VG.Impl.Ecdh.X86 (QY R2P BP QXM QYM W0 W1 W2 W3 PY)
     (by
       intro t hesp hrw W
       apply argLoad_ok (s₀ := s₀) (i := 1)
-      · exact ⟨_, hp.args, arg_containsN (k := 3) (by have := hp.sp_fit; omega) (by decide)⟩
-      · exact hp.args_sc.sub_left (arg_subN (k := 3) (by have := hp.sp_fit; omega) (by decide))
+      · exact ⟨_, hp.args, arg_containsN (k := 3) (by have := hp.sp_fit; omega_using [this]) (by decide)⟩
+      · exact hp.args_sc.sub_left (arg_subN (k := 3) (by have := hp.sp_fit; omega_using [this]) (by decide))
       · exact hesp.trans (S.keep.1 _ (by decide))
       · rw [hrw, S.keep.2.1, S.keep.2.2]
       · exact W₂.trans W)
@@ -70,14 +70,14 @@ open VG.Impl.Ecdh.X86 (QY R2P BP QXM QYM W0 W1 W2 W3 PY)
   have x₃' : sv c (ptr s₀ 2) s₃ E = keyX c s₀ := by
     rw [x₃]
     congr 1
-    exact bytesAt_keep W₂ (hd.sub_left (Offset.sub_base _ (d := 1) (by omega))) (by decide) (by have := hc.len_hi; omega)
+    exact bytesAt_keep W₂ (hd.sub_left (Offset.sub_base _ (d := 1) (by omega_using []))) (by decide) (by have := hc.len_hi; omega_using [h7, this])
   have y₃' : sv c (ptr s₀ 2) s₃ QY = keyY c s₀ := by
     rw [y₃]
     congr 1
-    exact bytesAt_keep W₂ (hd.sub_left (Offset.sub_base _ (d := 1 + c.C.len) (by omega)))
-      (by decide) (by have := hc.len_hi; omega)
+    exact bytesAt_keep W₂ (hd.sub_left (Offset.sub_base _ (d := 1 + c.C.len) (by omega_using [])))
+      (by decide) (by have := hc.len_hi; omega_using [h7, this])
   have lead₂ : s₂.mem (ptr s₀ 1) = s₀.mem (ptr s₀ 1) := by
-    have e := keep_of_disjoint' W₂ hd (by decide) (i := 0) (by have := hc.len8; omega) (by have := hc.len_hi; omega)
+    have e := keep_of_disjoint' W₂ hd (by decide) (i := 0) (by have := hc.len8; omega_using []) (by have := hc.len_hi; omega_using [h7, this])
     simpa only [BitVec.add_zero] using e
   have flag₃ : flagW c (ptr s₀ 2) s₃ =
       mask32 ((s₀.mem (ptr s₀ 1) = 4 ∧ keyX c s₀ < c.C.p) ∧ keyY c s₀ < c.C.p) := by

@@ -93,7 +93,7 @@ theorem environmentKeyGenerateMain_ok (prepare sample tail : Prog isa) (env : Sa
     rw [privateLength, scalarSize]
   rw [WP.seq_iff]
   refine WP.mono_syms (importAt_ok v 1 40 44 contextV.toContext stable (by simp [h40]) (by simp [h44]) readyV (by decide) (by decide)
-    scalarV (by rw [scalarSize]; have := p.minLength; omega) (by rw [scalarSize]; exact p.width.2.2.2.1) count) ?_
+    scalarV (by rw [scalarSize]; have := p.minLength; omega_using [this]) (by rw [scalarSize]; exact p.width.2.2.2.1) count) ?_
   rintro w ⟨contextW0, readyW, x, keepsW, frameW, restW⟩ symsW
   have contextW := contextV.after_workspace frameW restW contextW0.ptr (fun d hd => (stableSlots_at stable hd).1)
   have fits : arrAt p.w 8 ≤ 8 * p.len := readyW.width ▸ readyW.layout.2.2.1

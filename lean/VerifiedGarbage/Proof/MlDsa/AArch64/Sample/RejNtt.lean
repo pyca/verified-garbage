@@ -88,14 +88,14 @@ theorem zero_ok {σ s : State} (hp : rnK.pre σ) (h : J6 168 1008 (spOf σ) σ s
   WP.mono (zeroPoly_ok (fun i hi => inA (spOk hp) h.env.wr hi) h.env.x26) fun u ⟨k, z, f⟩ =>
     ⟨h.env.keepA (spOk hp) k f, by
       rw [MlKem.bytesAt_frame f (fun r hr => by
-        rw [List.mem_singleton.mp hr]; exact (a_scr' (spOk hp) (by omega)).symm) (by omega), h.out,
+        rw [List.mem_singleton.mp hr]; exact (a_scr' (spOk hp) (by omega_using [])).symm) (by omega_using []), h.out,
         (G_eq _ _).symm], z⟩
 
 theorem lpre {σ s : State} (hp : rnK.pre σ) (h : Z σ s) :
     RejNtt.LPre (X σ) ((spOf σ).at' 840) (σ.gpr .x1) s :=
   ⟨fun p hp' => by rw [← h.out, MlKem.bytesAt_getD _ _ hp'],
-    fun p hp' => by rw [at_add]; exact inScrRd (spOk hp) h.env.rd h.env.wr (by omega),
-    fun i hi => inA (spOk hp) h.env.wr hi, (a_scr' (spOk hp) (by omega)).symm,
+    fun p hp' => by rw [at_add]; exact inScrRd (spOk hp) h.env.rd h.env.wr (by omega_using [hp']),
+    fun i hi => inA (spOk hp) h.env.wr hi, (a_scr' (spOk hp) (by omega_using [])).symm,
     by rw [h.env.x25], h.env.x26⟩
 
 /-- After the loop. -/
@@ -121,7 +121,7 @@ theorem end_ok {σ s : State} (hp : rnK.pre σ) (h : LP σ s) :
     have one : (1#64 : BitVec 64).toNat = 1 := rfl
     rw [e₂, toNat_lsr, e₁, BitVec.toNat_sub, h.x4, one]
     simp only [VG.Spec.MlDsa.n, Nat.reducePow] at hl ⊢
-    split <;> omega
+    split <;> omega_arith
   have e1 := (h.env.keep (h₁.keep.trans h₂.keep) (by rw [h₂.mem, h₁.mem]))
   refine WP.mono (epi_ok (spOk hp) e1) fun s' ⟨abi, m, k⟩ => ⟨abi, ?_, fun hf => ?_⟩
   · rw [k.get .x0]

@@ -33,7 +33,7 @@ theorem initialValues_ok (backend : MontBackend) (s : State) {p : Inputs} {sp : 
         Frame [⟨State.addr p.base,8*p.len⟩,FrameStack.belowA s.sp 48] s.mem t.mem ∧ Rest roundClobbers s t := by
   rw [WP.seq_iff]
   refine WP.mono (importAt_ok s 1 56 32 h.context (by decide) (by decide) (by decide) h.ready
-    (by decide) (by decide) h.context.gBytes (by rw [p.gLength]; have := p.minLength; omega)
+    (by decide) (by decide) h.context.gBytes (by rw [p.gLength]; have := p.minLength; omega_using [this])
     (by rw [p.gLength]; exact p.width.2.2.2.1) (by change BitVec.ofNat 32 p.k=_; rw [p.gLength])) ?_
   rintro u ⟨_contextU,readyU,generator,keeps,frameU,restU⟩
   have frameU' : Frame [⟨State.addr p.base,8*p.len⟩,FrameStack.belowA s.sp 48] s.mem u.mem :=
@@ -47,9 +47,9 @@ theorem initialValues_ok (backend : MontBackend) (s : State) {p : Inputs} {sp : 
   have callU : TwoExp.CallReady p.base sp p.len u := ⟨memU.calls.stack,memU.fixed⟩
   have r2bound : numAt u.mem (State.addr p.base) p.w 4<p.P := by
     rw [r2U]
-    exact Nat.mod_lt _ (by rw [← modulusU]; have := readyU.modulus; omega)
+    exact Nat.mod_lt _ (by rw [← modulusU]; have := readyU.modulus; omega_using [this])
   have r2value : numAt u.mem (State.addr p.base) p.w 4%p.P=2^(64*p.w)*2^(64*p.w)%p.P := by
-    rw [r2U,Nat.mod_mod,← Nat.pow_add,show 64*p.w+64*p.w=128*p.w by omega]
+    rw [r2U,Nat.mod_mod,← Nat.pow_add,show 64*p.w+64*p.w=128*p.w by omega_using []]
   refine WP.mono (sharedWindowInit_ok K u readyU callU modulusU odd generator r2bound r2value) ?_
   rintro t ⟨exp,_headers,_call,frameT,restT⟩
   have localFrame : Frame [⟨State.addr p.base,8*p.len⟩,FrameStack.belowA u.sp 48] u.mem t.mem := by

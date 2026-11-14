@@ -23,7 +23,7 @@ open VG VG.X86_64
 theorem Clear.wr_miss {H : Region} {s : State} (hc : Clear H s) {p : Addr} {n : Nat} (hr : (⟨p, n⟩ : Region) ∈ s.wr)
     (hn : n ≤ 2 ^ 64) {i : Nat} (hi : i < n) : ¬ H.Contains (p + BitVec.ofNat 64 i) 1 :=
   hc _ (List.mem_append_right _ hr) _ (by
-    simp only [Region.Contains]; rw [Mem.sub_ofNat_toNat p (by omega)]; omega)
+    simp only [Region.Contains]; rw [Mem.sub_ofNat_toNat p (by omega_using [hn, hi])]; omega_using [hi])
 
 theorem bytesAt_overlay {H : Region} {hv m : Mem} {p : Addr} {n : Nat}
     (h : ∀ i < n, ¬ H.Contains (p + BitVec.ofNat 64 i) 1) :
@@ -42,7 +42,7 @@ theorem wordsAt_overlay {H : Region} {hv m : Mem} {p : Addr} {n : Nat}
   have hx' : x = p + BitVec.ofNat 64 (8 * i + (x - (p + BitVec.ofNat 64 (8 * i))).toNat) := by
     rw [← Offset.add_add, BitVec.ofNat_toNat, BitVec.setWidth_eq, BitVec.add_comm, BitVec.sub_add_cancel]
   rw [hx']
-  exact h _ (by omega)
+  exact h _ (by omega_using [hi, hx])
 
 theorem written_overlay {H : Region} {hv m : Mem} {out : Addr} {n : Nat} {r : BitVec 32} {v : Option (List Byte)}
     (h : ∀ i < n, ¬ H.Contains (out + BitVec.ofNat 64 i) 1) :
@@ -53,7 +53,7 @@ theorem written_overlay {H : Region} {hv m : Mem} {out : Addr} {n : Nat} {r : Bi
 theorem Clear.miss_wr {H : Region} {s : State} (hc : Clear H s) {p : Addr} {n : Nat}
     (hr : (⟨p, n⟩ : Region) ∈ s.wr) (hn : p.toNat + n ≤ 2 ^ 64) {k : Nat} (hk : k ≤ n) :
     ∀ i < k, ¬ H.Contains (p + BitVec.ofNat 64 i) 1 :=
-  fun _ hi => Clear.wr_miss hc hr (by omega) (by omega)
+  fun _ hi => Clear.wr_miss hc hr (by omega_using [hn]) (by omega_using [hk, hi])
 
 theorem patch_mem (b : State) (H : Region) (hv : Mem) (u : Nat → BitVec 64) :
     (b.patch H hv u).mem = overlay H hv b.mem := rfl

@@ -37,7 +37,7 @@ theorem classify_head {p : KeyPublic sampling} {original s : State} {used keys s
       t.gpr .r9 = BitVec.ofNat 32 (currentStatus p original used) ∧
       Frame [rControl p] s.mem t.mem := by
   have bound : currentStatus p original used < 4 := by
-    rcases currentStatus_cases p original used with eq | eq | eq <;> omega
+    rcases currentStatus_cases p original used with eq | eq | eq <;> omega_using [eq]
   have native : s.gpr .r0 = BitVec.ofNat 32 (currentStatus p original used) := by
     rw [← post.status, BitVec.ofNat_toNat, BitVec.setWidth_eq]
   rw [WP.block_append_iff]

@@ -45,22 +45,22 @@ theorem updateStep_int {t : MSt} {s : State} (hs : RowState t s)
   have e2 : BitVec.ofInt 64 2=(2 : BitVec 64) := by decide
   by_cases hg : t.g%2=1
   · by_cases hd0 : 0≤t.d
-    · have hn0 : ¬t.d<0 := by omega
+    · have hn0 : ¬t.d<0 := by omega_using [hd0]
       simp only [hg,hn0,decide_true,decide_false,Bool.not_false,
         Bool.and_true,Bool.false_eq_true,↓reduceIte] at ad af ag
       simp only [mstep,numerator,hg,hd0,and_self,↓reduceIte]
       refine ⟨?_,af,?_,hk⟩
-      · rw [show (2-t.d:Int)= -t.d+2 by omega,BitVec.ofInt_add,BitVec.ofInt_neg,e2]
+      · rw [show (2-t.d:Int)= -t.d+2 by omega_using [],BitVec.ofInt_add,BitVec.ofInt_neg,e2]
         exact ad
       · rw [ofInt_sub']
         simpa only [BitVec.sub_eq_add_neg] using ag
-    · have hdn : t.d<0 := by omega
+    · have hdn : t.d<0 := by omega_using [hd0]
       simp only [hg,hdn,decide_true,Bool.not_true,Bool.and_false,↓reduceIte] at ad af ag
       simp only [mstep,numerator,hg,hd0,false_and,↓reduceIte,one_mul]
       refine ⟨?_,af,?_,hk⟩
       · rw [BitVec.ofInt_add,e2,BitVec.add_comm]; exact ad
       · rw [BitVec.ofInt_add]; exact ag
-  · have hg0 : t.g%2=0 := by omega
+  · have hg0 : t.g%2=0 := by omega_using [hg]
     simp only [hg,decide_false,Bool.false_and,Bool.false_eq_true,↓reduceIte,add_zero] at ad af ag
     simp only [mstep,numerator,hg0,show ¬(0:Int)=1 by decide,and_false,↓reduceIte,zero_mul,add_zero]
     refine ⟨?_,af,ag,hk⟩

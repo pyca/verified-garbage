@@ -28,7 +28,7 @@ theorem crt_padModulus_ct {base : BitVec 32} {size len w d : Nat}
       (fun s t => P s ∧ P t) := by
     have ct : RelCT isa (fun (s t : State) => P s ∧ P t ∧ s.sp = t.sp) (clearWide 240)
         (fun _ _ => True) := (crt_clearWide_ct (base := base) (dst := base + BitVec.ofNat 32 d)
-      (size := size) (slot := 240) (w := w) (by omega) fit (by decide)).mono
+      (size := size) (slot := 240) (w := w) (by omega_using [fit]) fit (by decide)).mono
       (P' := fun (s t : State) => P s ∧ P t ∧ s.sp = t.sp)
       (fun _ _ h => ⟨⟨h.1.workspace, h.1.ptr, h.1.layout.nativeCount h.1.main, h.1.link⟩,
         ⟨h.2.1.workspace, h.2.1.ptr, h.2.1.layout.nativeCount h.2.1.main, h.2.1.link⟩, h.2.2⟩)

@@ -54,7 +54,7 @@ theorem finalize_raw_wp {s₀ : State} (h0 : finRawRISCV64.pre s₀) :
   generalize hS : s₀.gpr .a5 = S at hp
   generalize hL : (s₀.gpr .a4).toNat = L at hp
   generalize hR : (s₀.gpr .a1).toNat = R at hp
-  have hRb : 16 * (R + 1) ≤ 240 := by rcases hp.rounds with h | h | h <;> omega
+  have hRb : 16 * (R + 1) ≤ 240 := by rcases hp.rounds with h | h | h <;> omega_using [h]
   have sw := hp.scr_wrap
   refine WP.seq (WP.mono (finPre_wp hp) fun s₁ h₁ => ?_)
   refine WP.seq (WP.mono (blk_call (name := "vg_aes_encrypt_blocks") Proof.Aes.RISCV64.encryptBlocks_correct
@@ -65,8 +65,8 @@ theorem finalize_raw_wp {s₀ : State} (h0 : finRawRISCV64.pre s₀) :
     have hb := fin_bound p hp'
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
-    · exact hp.st_scr.symm.sub_left (svOf_sub S (by omega))
-    · exact svOf_ws S (by omega)
+    · exact hp.st_scr.symm.sub_left (svOf_sub S (by omega_using [hb]))
+    · exact svOf_ws S (by omega_using [hb])
   have hsv : Spill.Saved (svOf S) (finG s₀ S) finSaved s₂.mem :=
     ((Spill.saveMem_saved (by decide) s₀.mem (svOf S) _).frame h₁.frame fun p hp' r hr =>
       slotD p hp' r (by simp only [List.mem_singleton] at hr; subst hr; simp)).frame
@@ -98,7 +98,7 @@ theorem finalize_raw_wp {s₀ : State} (h0 : finRawRISCV64.pre s₀) :
     have hfm : Frame [⟨St, 16⟩, ⟨S, 2176⟩] s₀.mem s₁.mem :=
       FPre.fin_frame.trans (h₁.frame.mono (by simp))
     have sch : bytesAt s₁.mem W (16 * (R + 1)) = bytesAt s₀.mem W (16 * (R + 1)) := by
-      have := hp.key_frame hfm (d := 0) (n := 16 * (R + 1)) (by omega)
+      have := hp.key_frame hfm (d := 0) (n := 16 * (R + 1)) (by omega_using [hRb])
       rwa [BitVec.add_zero] at this
     rw [r₄.mem, RegUpd.mem_write, c.out, cipher_bytes, sch, h₁.st]
 
@@ -119,7 +119,7 @@ structure FRPost (s : State) (K St P S : Addr) (L R : Nat) (s' : State) : Prop w
 theorem fin_call_raw {s : State} {K St P S : Addr} {L R : Nat} (h : FArgs s K St P S L R) :
     WP isa Impl.CmacAes.Stream.RISCV64.finCall s (FRPost s K St P S L R) := by
   have hR := toNat_rounds h.rounds
-  have hL := toNat_ofNat (n := L) (by have := h.len; omega)
+  have hL := toNat_ofNat (n := L) (by have := h.len; omega_using [this])
   refine WP.call (k := finRawRISCV64) finalize_raw_correct h.pre h.reads h.writes ?_ finalize_noFrames
   intro s' hrd hwr hsp hf hsaved _ hpost
   refine ⟨hrd, hwr, hsp, hsaved, hf, ?_⟩

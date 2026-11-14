@@ -29,7 +29,7 @@ theorem keyPointerFrame_header {base : Addr} {m m' : Mem} (O : Outs base keyPoin
   apply O a
   intro pair hp
   simp only [keyPointerRanges, List.mem_cons, List.not_mem_nil, or_false] at hp
-  rcases hp with rfl | rfl | rfl | rfl <;> simp only [Layout.field] <;> omega
+  rcases hp with rfl | rfl | rfl | rfl <;> simp only [Layout.field] <;> omega_using [ha]
 
 theorem keyPointerFrame_field {base : Addr} {s t : State} {f : Field}
     (O : Outs base keyPointerRanges s.mem t.mem) (hf : f ∉ [.q, .g, .y, .x]) :
@@ -45,7 +45,7 @@ theorem keyPointerFrame_field {base : Addr} {s t : State} {f : Field}
       · exact field_separate (f := f) (other := .y) (by intro he; subst f; exact hf (by simp))
       · exact field_separate (f := f) (other := .x) (by intro he; subst f; exact hf (by simp))
     · have H : Layout.saved = 8256 := rfl
-      omega
+      omega_using [B, H]
   apply BitVec.eq_of_toNat_eq
   simpa only [val32, w32, pointerValue, Nat.mul_zero, Nat.add_zero] using H
 
@@ -54,7 +54,7 @@ theorem saved_header {base : Addr} {m m' : Mem} {regs : Reg → BitVec 32}
     Saved m' (off base) regs Entry.savedRegisters := by
   intro pair hp
   have B := saved_bounds hp
-  have H := O.val32 (d := pair.2) (k := 1) (.inr (by omega)) (by omega)
+  have H := O.val32 (d := pair.2) (k := 1) (.inr (by omega_using [B])) (by omega_using [B])
   have V : m'.readW (off base pair.2) 32 = m.readW (off base pair.2) 32 := by
     apply BitVec.eq_of_toNat_eq
     simpa only [val32, w32, Nat.mul_zero, Nat.add_zero] using H

@@ -23,7 +23,7 @@ theorem GenerationTapeMemory.slice {p : GenerationGeometry} {tape : GenerationTa
     (h : GenerationTapeMemory tape s) {used len : Nat} (room : used + len ≤ tape.bytes.length) :
     GenerationTapeMemory (tape.slice used len room) s := by
   have hl : ((tape.bytes.drop used).take len).length = len := by
-    simp only [List.length_take, List.length_drop]; omega
+    simp only [List.length_take, List.length_drop]; omega_using [room]
   refine ⟨?_, ?_⟩
   · apply Covers.trans (rs' := [⟨tape.ptr, tape.bytes.length⟩]) ?_ h.cover
     apply Covers.of_sub
@@ -32,6 +32,6 @@ theorem GenerationTapeMemory.slice {p : GenerationGeometry} {tape : GenerationTa
     exact ⟨⟨tape.ptr, tape.bytes.length⟩, by simp, used, rfl, by
       change used + ((tape.bytes.drop used).take len).length ≤ tape.bytes.length
       rw [hl]; exact room⟩
-  · exact source_octets (source_slice (h.source (d := 0) (n := usedBytes p.pLen) (by omega)) room)
+  · exact source_octets (source_slice (h.source (d := 0) (n := usedBytes p.pLen) (by omega_using [])) room)
 
 end VG.Proof.Dsa.X86_64.Generation

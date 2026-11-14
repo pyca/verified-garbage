@@ -89,13 +89,13 @@ theorem step_ok {z : Spec.Idea.Schedule} {a : Addr} {n : Nat} {m₀ : Mem} {o : 
   have hrd : t.rd = o.rd := hi.keep.rd
   have hwr : t.wr = o.wr := hi.keep.wr
   have hx0 : t.gpr .x0 = o.gpr .x0 := hi.keep.reg .x0 (by decide)
-  have hj : n - r < n := by have := hi.pos; have := hi.le; omega
+  have hj : n - r < n := by have := hi.pos; have := hi.le; omega_arith
   -- The block and the schedule.
   have hread : BlockRead t (a + BitVec.ofNat 64 (8 * (n - r))) := fun i hi' =>
     ⟨_, by rw [hrd, hwr]; exact List.mem_append_right _ hc.data,
-      block_contains hj (by omega) (by decide) hc.bound⟩
+      block_contains hj (by omega_using [hi']) (by decide) hc.bound⟩
   have hwrite : BlockWrite t (a + BitVec.ofNat 64 (8 * (n - r))) := fun i hi' =>
-    ⟨_, by rw [hwr]; exact hc.data, block_contains hj (by omega) (by decide) hc.bound⟩
+    ⟨_, by rw [hwr]; exact hc.data, block_contains hj (by omega_using [hi']) (by decide) hc.bound⟩
   have hk : KeyOk z t := by
     refine ⟨by rw [hx0, hrd, hwr]; exact ⟨_, hc.sched, Region.contains_self _ _⟩, ?_⟩
     rw [hx0, ← hc.z]
@@ -120,7 +120,7 @@ theorem step_ok {z : Spec.Idea.Schedule} {a : Addr} {n : Nat} {m₀ : Mem} {o : 
     rw [mem₂]
     refine hi.frame.trans (f₁.sub fun r hr => ⟨_, List.mem_singleton_self _, ?_⟩)
     simp only [List.mem_singleton] at hr; subst hr
-    exact Offset.sub_base a (by omega)
+    exact Offset.sub_base a (by omega_using [hj])
   have other (j : Nat) (hjn : j < n) (hne : j ≠ n - r) :
       Spec.Idea.blockAt t₂.mem (a + BitVec.ofNat 64 (8 * j)) =
         Spec.Idea.blockAt t.mem (a + BitVec.ofNat 64 (8 * j)) := by
@@ -134,36 +134,36 @@ theorem step_ok {z : Spec.Idea.Schedule} {a : Addr} {n : Nat} {m₀ : Mem} {o : 
     by_cases he : j = n - r
     · subst he
       rw [mem₂, b₁, hi.todo _ (Nat.le_refl _) hj]
-    · rw [other j (by omega) he]
-      exact hi.done j (by have := hi.pos; omega)
+    · rw [other j (by omega_using [hjr]) he]
+      exact hi.done j (by have := hi.pos; omega_using [hjr, he])
   have hx2 : t₂.gpr .x2 = BitVec.ofNat 64 (r - 1) := by
     rw [x2₂, g₁ .x2 (by decide), hi.x2]
     apply BitVec.eq_of_toNat_eq
     have := hi.pos; have := hi.le; have := hc.bound
     simp only [BitVec.toNat_sub, BitVec.toNat_ofNat, toNat_one]
-    omega
+    omega_using [hj]
   have hev : isa.eval (.nonzero .x .x2) t₂ = some (decide (r - 1 ≠ 0)) := by
     have := hi.le; have := hc.bound
     simp only [eval, State.read, Size.bits, BitVec.setWidth_eq, hx2, bne,
-      beq_zero, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show r - 1 < 2 ^ 64 by omega), decide_not]
+      beq_zero, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show r - 1 < 2 ^ 64 by omega_arith), decide_not]
   by_cases hlast : r = 1
   · subst hlast
     left
-    exact ⟨hev, keep₂, frame₂, fun j hjn => done₂ j (by omega)⟩
+    exact ⟨hev, keep₂, frame₂, fun j hjn => done₂ j (by omega_using [hjn])⟩
   · right
-    refine ⟨by rw [hev]; simp only [ne_eq, Option.some.injEq, decide_eq_true_eq]; omega,
-      r - 1, by have := hi.pos; omega, ?_⟩
-    refine ⟨by have := hi.pos; omega, by have := hi.le; omega, ?_, hx2, keep₂, frame₂, done₂, ?_⟩
+    refine ⟨by rw [hev]; simp only [ne_eq, Option.some.injEq, decide_eq_true_eq]; omega_using [hj, hlast],
+      r - 1, by have := hi.pos; omega_using [hj], ?_⟩
+    refine ⟨by have := hi.pos; omega_using [hj, hlast], by have := hi.le; omega_using [this], ?_, hx2, keep₂, frame₂, done₂, ?_⟩
     · rw [x1₂, g₁ .x1 (by decide), hi.x1, Offset.add_ofNat_add_ofNat]
       congr 2
       have := hi.pos; have := hi.le
-      omega
+      omega_using [hj, this]
     · intro j hj₁ hj₂
       have := hi.pos
       have := hi.le
-      have hne : j ≠ n - r := by omega
+      have hne : j ≠ n - r := by omega_using [hj, hj₁, this]
       rw [other j hj₂ hne]
-      exact hi.todo j (by omega) hj₂
+      exact hi.todo j (by omega_using [hj₁]) hj₂
 
 theorem loop_ok {z : Spec.Idea.Schedule} {a : Addr} {n : Nat} {m₀ : Mem} {o : State}
     (hc : LoopCtx z a n o) (hn : 1 ≤ n) (ho : o.gpr .x1 = a) (hx2 : o.gpr .x2 = BitVec.ofNat 64 n)
@@ -215,7 +215,7 @@ theorem ecb_wp (s : State) (hs : contract.pre s) :
     obtain ⟨s₁, h₁, m₁, e₁⟩ := setMask_run s
     refine ⟨s₁, h₁, ?_⟩
     have ctx : LoopCtx (Spec.Idea.scheduleAt s.mem (s.gpr .x0)) (s.gpr .x1) (s.gpr .x2).toNat s₁ := by
-      refine ⟨?_, ?_, ?_, ?_, by omega, m₁⟩
+      refine ⟨?_, ?_, ?_, ?_, by omega_using [hbound], m₁⟩
       · rw [e₁.reg .x0 (by decide), e₁.rd, e₁.wr, hrd]; simp
       · rw [e₁.wr, hwr]; simp
       · rw [e₁.reg .x0 (by decide), e₁.mem]

@@ -52,7 +52,7 @@ theorem vdOf_eq {s t : State} (hs : vContract.pre s) (hp : vContract.pub s t) : 
   obtain ⟨e, -⟩ := List.append_inj' hl rfl
   simp only [Spec.Dsa.publicBytesLeak, bytesAt_take] at e
   have e := map_toNat_inj e
-  rw [← h3, ← h4, ← h5, ← h6, Nat.min_eq_right (by omega)] at e
+  rw [← h3, ← h4, ← h5, ← h6, Nat.min_eq_right (by omega_using [hk])] at e
   simp only [vdOf, layOf, ← h3, ← h5, ← h6, ← h7, ← h9, ← h10, ← a0, ← a1, e]
 
 end VG.Proof.Dsa.PPC64LE

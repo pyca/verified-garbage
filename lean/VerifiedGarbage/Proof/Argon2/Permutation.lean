@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Argon2.Spec
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # Gathering and scattering Argon2 rows and columns -/
 
@@ -73,13 +74,13 @@ theorem rowIndex_injective (r : Fin 8) : Function.Injective (rowIndex r) := by
   have := congrArg Fin.val h
   apply Fin.ext
   simp only [rowIndex] at this
-  omega
+  omega_using [this]
 
 theorem colIndex_injective (c : Fin 8) : Function.Injective (colIndex c) := by
   intro a b h
   have := congrArg Fin.val h
   apply Fin.ext
   simp only [colIndex] at this
-  omega
+  omega_using [this]
 
 end VG.Proof.Argon2

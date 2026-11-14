@@ -55,7 +55,7 @@ theorem rounds_state_ok (M : Mont) (K : Kernel)
     · rw [h.base.sp]; exact hstack
   have hsave : CandidateSaved p s.mem t.mem := by
     intro j hj
-    exact hs j (by omega) (by omega) (by omega) (by omega) (by omega) (by omega)
+    exact hs j (by omega_using [hj]) (by omega_using [hj]) (by omega_using [hj]) (by omega_using [hj]) (by omega_using [hj]) (by omega_using [hj])
   have hb := h.base.keep hfr hsave kt ((kt.gpr (by decide)).trans h.base.sp)
   have htape : CandidateTape p (used + n) t := by
     refine ⟨hb, ?_, ?_, ?_, ht.usedWord⟩

@@ -76,7 +76,7 @@ theorem SchedulePublic.greater (p : SchedulePublic) (side : ModulusSide) : 1 < s
   · exact p.pGreater
   · change 1 < p.layout.subgroup
     have := p.qGreater
-    omega
+    omega_using [this]
 
 theorem SchedulePublic.odd (p : SchedulePublic) (side : ModulusSide) : side.value p.layout % 2 = 1 := by
   cases side
@@ -92,11 +92,11 @@ theorem SchedulePublic.fits (p : SchedulePublic) (side : ModulusSide) :
 theorem scalar_space {d : Nat} (hd : d + 32 ≤ usedBytes) (p : SchedulePublic) :
     d + p.layout.qLen ≤ usedBytes := by
   have := p.layout.widths.2.1
-  omega
+  omega_using [hd, this]
 
 theorem element_space {d : Nat} (hd : d + 384 ≤ usedBytes) (p : SchedulePublic) :
     d + p.layout.pLen ≤ usedBytes := by
   have := p.layout.widths.2.2.2
-  omega
+  omega_using [hd, this]
 
 end VG.Proof.Dsa.X86_64

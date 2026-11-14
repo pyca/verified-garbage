@@ -108,7 +108,7 @@ theorem body_vp (P : EP) (g : OHash) {f : Fns} (hT : ∀ σ, P.T σ → TabFacts
     (fne : f.init ≠ [] ∧ f.upd ≠ [] ∧ f.fin ≠ []) (c : PdImpl) :
     VP (Sy (S h P)) (encBody f c.name c.code) (Sy (Fin h g P)) := by
   show VP _ (.seq (.block (lenLoad 16)) (byLen (fun d => encTail (ofLen d) f c.name c.code) lens)) _
-  refine (VP.syms (len_vp h P hTL)).seq (byLen_vp (D := h.H.D) (by have := h.D_le; omega) (fun _ _ hs => hs.1.2)
+  refine (VP.syms (len_vp h P hTL)).seq (byLen_vp (D := h.H.D) (by have := h.D_le; omega_using [this]) (fun _ _ hs => hs.1.2)
     (fun σ s v ⟨⟨⟨hi, st⟩, r1⟩, sy⟩ => ⟨⟨⟨hi, st.regs rfl rfl rfl rfl⟩, r1⟩, sy⟩) ?_ h.lens lens_certs)
   show VP _ (encTail (ofLen h.H.D) f c.name c.code) _
   rw [encTail_D (G := ofLen h.H.D) (G' := h.H) rfl]

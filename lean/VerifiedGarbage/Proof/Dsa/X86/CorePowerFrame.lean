@@ -42,6 +42,6 @@ theorem decoded_exponent_fits (mem : Mem) (p : Addr) (len : Nat) :
   simp only [Spec.Rsa.bytesAt, List.length_map, List.length_range] at H
   have E : 256 ^ len = 2 ^ (8 * len) := by rw [Nat.pow_mul]
   rw [E] at H
-  exact Nat.lt_of_lt_of_le H (Nat.pow_le_pow_right (by decide) (by omega))
+  exact Nat.lt_of_lt_of_le H (Nat.pow_le_pow_right (by decide) (by omega_using []))
 
 end VG.Proof.Dsa.X86

@@ -50,7 +50,7 @@ theorem keep_outside {s : State} (h : Ws s B Z (kw len) N) {js ds : List Nat} {m
   simp only [VG.Proof.Rsa.X86.Keys.ranges, List.mem_append, List.mem_map] at hr
   rcases hr with ⟨j, hj', rfl⟩ | ⟨d, hd', rfl⟩
   · exact h.arr_fit (hj j hj')
-  · have := hd d hd'; dsimp only; omega
+  · have := hd d hd'; dsimp only; omega_using [head, this]
 
 /-- A `Keys` lemma on `RtWs`: what keeps `edi` and `esp` and writes in the workspace. -/
 theorem RtWs.lift {s : State} (h : RtWs L s B Z len N) {p : Prog isa} {rs : List Reg} {js ds : List Nat}
@@ -88,7 +88,7 @@ theorem eqS_ok {s : State} (h : RtWs L s B Z len N) {d a b t : Nat}
   refine WP.seq (WP.mono (storeSlot_ok h1 hT .ebx) fun u2 ⟨h2, k2, s2, r2⟩ => ?_)
   refine WP.seq (WP.mono (sub3_ok h2 ht hb ha) fun u3 ⟨h3, k3, v3, b3, r3⟩ => ?_)
   have head := h3.ws.hdr_le
-  refine wp_orS (readSrc_sc h3.ws.workspace (by unfold VG.Impl.Rsa.X86.Keys.sT VG.Impl.Rsa.X86.Keys.hdr at *; omega))
+  refine wp_orS (readSrc_sc h3.ws.workspace (by unfold VG.Impl.Rsa.X86.Keys.sT VG.Impl.Rsa.X86.Keys.hdr at *; omega_using [head]))
     fun s5 u5 => ?_
   refine wp_logicS (.inr rfl) rfl fun s6 u6 => ?_
   have h6 := h3.keep (u5.keeps.trans u6.keeps) (by decide) (by decide)
@@ -113,11 +113,11 @@ theorem eqS_ok {s : State} (h : RtWs L s B Z len N) {d a b t : Nat}
     have p1 := VG.Proof.Rsa.borrow_iff v1 (val32_lt _ _ _ _) b1
     have p3 := VG.Proof.Rsa.borrow_iff v3 (val32_lt _ _ _ _) b3
     by_cases eq : num s.mem B (kw len) a = num s.mem B (kw len) b
-    · have c1 := p1.mpr (by omega)
-      have c3 := p3.mpr (by omega)
+    · have c1 := p1.mpr (by omega_using [eq])
+      have c3 := p3.mpr (by omega_using [eq])
       simp [c1, c3, eq]
     · have c : ¬((u3.gpr .ebx).toNat = 0 ∧ (u1.gpr .ebx).toNat = 0) :=
-        fun hh => eq (by have := p1.mp hh.2; have := p3.mp hh.1; omega)
+        fun hh => eq (by have := p1.mp hh.2; have := p3.mp hh.1; omega_arith)
       simp only [c, eq, ↓reduceIte]
   · exact (r1.mono (by decide)).trans ((r2.mono (by decide)).trans ((r3.mono (by decide)).trans
       ((u5.keeps.mono (by decide)).trans ((u6.keeps.mono (by decide)).trans (r7.mono (by decide))))))
@@ -134,7 +134,7 @@ theorem addLow_ok {s : State} (h : RtWs L s B Z len N) {j sl : Nat} (hj : j < N)
   unfold addLow
   refine lowPtr_ok h hj fun u hu K m p => wp_movS (lowSrc hu hj p) fun v V _ => ?_
   have hv := hu.keep V.keeps (by decide) (by decide) (by rw [V.mem]; exact Outside.refl _ _ _ _)
-  refine wp_addS (readSrc_sc hv.ws.workspace (by unfold VG.Impl.Rsa.X86.Keys.hdr at hsl head; omega)) fun x X _ => ?_
+  refine wp_addS (readSrc_sc hv.ws.workspace (by unfold VG.Impl.Rsa.X86.Keys.hdr at hsl head; omega_using [hsl, head])) fun x X _ => ?_
   have KX : Keeps [.ecx] u x := V.keeps.trans X.keeps
   have hx := hu.keep KX (by decide) (by decide) (by rw [X.mem, V.mem]; exact Outside.refl _ _ _ _)
   refine WP.mono (storeLow_ok hx hj (by rw [PtrAt, KX.1 _ (by decide)]; exact p)) fun t ⟨ht, F, Vt, Kt, top⟩ => ?_
@@ -149,8 +149,8 @@ theorem addLow_ok {s : State} (h : RtWs L s B Z len N) {j sl : Nat} (hj : j < N)
     rw [Nat.mod_mod_of_dvd _ (by decide)]; exact even
   have lt : num s.mem B (kw len) j % 2 ^ 32 + slot s.mem B sl < 2 ^ 32 := by
     have := Nat.mod_lt (num s.mem B (kw len) j) (show 0 < 2 ^ 32 by decide)
-    omega
+    omega_using [even, bit]
   rw [Nat.mod_eq_of_lt lt]
-  omega
+  omega_using []
 
 end VG.Proof.Rsa.X86.KeyRt

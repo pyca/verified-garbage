@@ -99,9 +99,9 @@ theorem entry_layout_covers {bytes count : Nat} {σ s : State} (h : EntryPre byt
     rcases hb' with rfl | rfl | rfl <;> simp [keptRegs]
   · rw [hsp]
     change 16 ≤ (σ.sp - BitVec.ofNat 64 64).toNat
-    rw [toNat_sub_ofNat' (by have := h.stack; omega)]
+    rw [toNat_sub_ofNat' (by have := h.stack; omega_using [this])]
     have := h.stack
-    omega
+    omega_using [this]
 
 theorem entry_layout {bytes count : Nat} {σ s : State} (h : EntryPre bytes count σ)
     (hb : bytes < 2 ^ 32) (ho : bytes + 1024 * count < 2 ^ 32)
@@ -118,13 +118,13 @@ theorem frame_guards {bytes count : Nat} {σ s : State} (h : EntryPre bytes coun
     16 ≤ s.sp.toNat ∧ ∀ R ∈ s.wr, Region.Disjoint ⟨s.sp - 16, 16⟩ R := by
   have hs : Region.Sub (⟨s.sp - 16, 16⟩ : Region) (below σ.sp 80) := by
     have h1 := below_below σ.sp offset 16
-    have h2 := below_sub (sp := σ.sp) (a := 16 + offset) (b := 80) (by omega) (by decide)
+    have h2 := below_sub (sp := σ.sp) (a := 16 + offset) (b := 80) (by omega_using [ho]) (by decide)
     rw [hsp]
     exact fun a ha => h2 a (h1 a ha)
   refine ⟨?_, ?_⟩
-  · rw [hsp, toNat_sub_ofNat' (by have := h.stack; omega)]
+  · rw [hsp, toNat_sub_ofNat' (by have := h.stack; omega_using [ho, this])]
     have := h.stack
-    omega
+    omega_using [ho, this]
   · intro R hR
     rw [hr, h.wr] at hR
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hR
@@ -148,7 +148,7 @@ theorem push_source {bytes count : Nat} {σ s : State} (h : EntryPre bytes count
       VG.Spec.Sha3.bytesAt s.mem (σ.gpr .x0) bytes := by
   have hs : Region.Sub (⟨s.sp - 16, 16⟩ : Region) (below σ.sp 80) := by
     have h1 := below_below σ.sp offset 16
-    have h2 := below_sub (sp := σ.sp) (a := 16 + offset) (b := 80) (by omega) (by decide)
+    have h2 := below_sub (sp := σ.sp) (a := 16 + offset) (b := 80) (by omega_using [ho]) (by decide)
     rw [hsp]
     exact fun a ha => h2 a (h1 a ha)
   have hf : Frame [⟨s.sp - 16, 16⟩] s.mem (pushState r s).mem :=
@@ -156,7 +156,7 @@ theorem push_source {bytes count : Nat} {σ s : State} (h : EntryPre bytes count
   exact MlKem.bytesAt_frame hf (fun R hR => by
     simp only [List.mem_singleton] at hR
     subst R
-    exact (h.si.sub_left hs).symm) (by omega)
+    exact (h.si.sub_left hs).symm) (by omega_using [hb])
 
 theorem inner_source {bytes count : Nat} {σ : State} (h : EntryPre bytes count σ)
     (hb : bytes < 2 ^ 32) :

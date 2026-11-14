@@ -31,7 +31,7 @@ theorem attempts_guard {p : SPub} {original s : State} {used k : Nat}
   have a := h.access
   have hw := h.header (j := 0) (v := BitVec.ofNat 64 k) (by simp [SPub.headers])
   simp only [Bignum.word, off, Nat.mul_zero, BitVec.add_zero] at hw
-  have hk : k < 2 ^ 64 := by have := h.k_le; have := h.input.attempts_lt; omega
+  have hk : k < 2 ^ 64 := by have := h.k_le; have := h.input.attempts_lt; omega_arith
   refine WP.mono_syms (WP.keep [.r9] (Q := fun t =>
     isa.eval (.zero .d .r9) t = some (decide (k = 0)) ∧ t.mem = s.mem) ?_ (by decide))
     fun _ ⟨⟨he, hm⟩, kt⟩ hy => ⟨h.keep kt hm hy, he⟩
@@ -120,7 +120,7 @@ theorem search_iteration (c : Cand) {p : SPub} {original s : State}
     have hr : p.read used = (p.randLen - used) - rest.length := by simp only [SPub.read, hc]
     refine WP.mono (live_loop_guard hq.1 hq.2) fun z ⟨hz, hzl⟩ => Or.inr ⟨hz, _, ?_,
       used + p.read used, k - 1, rfl, hzl, ?_⟩
-    · omega
+    · omega_using [hn, hk]
     · rw [hr]; exact SPub.tail_reject hk h.rand_length hc
   · exact done q hq
 

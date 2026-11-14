@@ -39,10 +39,10 @@ theorem selectedPairedSignLoop_ok (v : Proof.Sha3.AArch64.Permutation)
     (checks:=Impl.MlDsa.AArch64.Sign.Optimized.pairedChecks p) _ _ _ h roots
   · have hd := (Message.pairedCommit_dle v hp).le
     change 16 * _ ≤ 16
-    omega
+    omega_using [hd]
   · have hd := (Message.pairedBall_dle v p).le
     change 16 * _ ≤ 16
-    omega
+    omega_using [hd]
   · intro σ s t hi ri h1
     exact positivePairedChecks_ok hp (by rcases hp with rfl|rfl|rfl <;> decide)
       (by decide) (by decide) ri hi h1
@@ -88,7 +88,7 @@ theorem copy_s1 {p : Params} {S : Nat} {σ s : State} {i : Nat}
   simp only [decChk, Bool.and_eq_true] at hd
   obtain ⟨⟨⟨hbu, _⟩, hid⟩, _⟩ := hd
   have hw := (rw_parts hbu).2.2
-  refine WP.mono (copy_secret_ok (by omega) hw hid h cache) fun t ⟨ht, hcache, hpoly⟩ => ?_
+  refine WP.mono (copy_secret_ok (by omega_using [hi]) hw hid h cache) fun t ⟨ht, hcache, hpoly⟩ => ?_
   rw [VG.Proof.MlDsa.PreparedKey.secret_s1 p (skOf p σ) hi] at hpoly
   exact ⟨⟨ht.im, ht.roots, ht.s1.snoc hpoly, ht.s2, ht.t0⟩, hcache⟩
 
@@ -101,7 +101,7 @@ theorem copy_s2 {p : Params} {S : Nat} {σ s : State} {i : Nat}
   simp only [decChk, Bool.and_eq_true] at hd
   obtain ⟨⟨⟨hbu, _⟩, hid⟩, _⟩ := hd
   have hw := (rw_parts hbu).2.2
-  refine WP.mono (copy_secret_ok (by omega) hw hid h cache) fun t ⟨ht, hcache, hpoly⟩ => ?_
+  refine WP.mono (copy_secret_ok (by omega_using [hi]) hw hid h cache) fun t ⟨ht, hcache, hpoly⟩ => ?_
   rw [VG.Proof.MlDsa.PreparedKey.secret_s2 p (skOf p σ) hi] at hpoly
   exact ⟨⟨ht.im, ht.roots, ht.s1, ht.s2.snoc hpoly, ht.t0⟩, hcache⟩
 
@@ -114,7 +114,7 @@ theorem copy_t0 {p : Params} {S : Nat} {σ s : State} {i : Nat}
   simp only [decChk, Bool.and_eq_true] at hd
   obtain ⟨⟨⟨hbu, _⟩, hid⟩, _⟩ := hd
   have hw := (rw_parts hbu).2.2
-  refine WP.mono (copy_secret_ok (by omega) hw hid h cache) fun t ⟨ht, hcache, hpoly⟩ => ?_
+  refine WP.mono (copy_secret_ok (by omega_using [hi]) hw hid h cache) fun t ⟨ht, hcache, hpoly⟩ => ?_
   rw [VG.Proof.MlDsa.PreparedKey.secret_t0 p (skOf p σ) hi] at hpoly
   exact ⟨⟨ht.im, ht.roots, ht.s1, ht.s2, ht.t0.snoc hpoly⟩, hcache⟩
 
@@ -125,15 +125,15 @@ theorem restoreSecrets_ok {p : Params} {S : Nat} {σ s : State}
   unfold Impl.MlDsa.AArch64.PreparedKey.Sign.restoreSecrets
   refine WP.seq (WP.mono (seqR_ok
     (I := fun i s => PositiveID p S σ i 0 0 s ∧ SecretCache p S σ s) p.ℓ 0
-    (fun i _ hi s hs => copy_s1 hc (by omega) hs.1 hs.2) s ⟨h, cache⟩) fun a ha => ?_)
+    (fun i _ hi s hs => copy_s1 hc (by omega_using [hi]) hs.1 hs.2) s ⟨h, cache⟩) fun a ha => ?_)
   simp only [Nat.zero_add] at ha
   refine WP.seq (WP.mono (seqR_ok
     (I := fun i s => PositiveID p S σ p.ℓ i 0 s ∧ SecretCache p S σ s) p.k 0
-    (fun i _ hi s hs => copy_s2 hc (by omega) hs.1 hs.2) a ha) fun b hb => ?_)
+    (fun i _ hi s hs => copy_s2 hc (by omega_using [hi]) hs.1 hs.2) a ha) fun b hb => ?_)
   simp only [Nat.zero_add] at hb
   simpa only [Nat.zero_add] using seqR_ok
     (I := fun i s => PositiveID p S σ p.ℓ p.k i s ∧ SecretCache p S σ s) p.k 0
-    (fun i _ hi s hs => copy_t0 hc (by omega) hs.1 hs.2) b hb
+    (fun i _ hi s hs => copy_t0 hc (by omega_using [hi]) hs.1 hs.2) b hb
 
 end VG.Proof.MlDsa.AArch64.PreparedKey
 
@@ -218,7 +218,7 @@ theorem selectedLoop_ok (v : VG.Proof.Sha3.AArch64.Permutation) {p : Params} (hp
     apply Cached.signLoop_concrete_ok (prims_okWith (keccak := v)) hp' _ h rp
     have hd := (Message.cachedCommit_dle v hp').le
     change 16 * _ ≤ 16
-    omega
+    omega_using [hd]
   · exact selectedPairedSignLoop_ok v hp h rp
 
 theorem afterInitialization_ok (v : VG.Proof.Sha3.AArch64.Permutation)
@@ -232,7 +232,7 @@ theorem afterInitialization_ok (v : VG.Proof.Sha3.AArch64.Permutation)
     obtain ⟨t, hlt, hrej, hsampled, hpass, hct, hz, hh⟩ := hb.pass h1
     have ready : AcceptedConversion p 16 σ (p.ℓ * t) (-(q : Int) + 1) ((q : Int) - 1) 0 b :=
       ⟨⟨⟨hb.k.d.im.st, hb.k.d.roots⟩, by intro j hj; omega, fun j _ hj => hz j hj, h1⟩, hct, hh⟩
-    refine WP.mono (optimizedOutput_ok (prims_okWith (keccak := v)) hp ready (by omega) (by omega) hpass)
+    refine WP.mono (optimizedOutput_ok (prims_okWith (keccak := v)) hp ready (by omega_using []) (by omega_using []) hpass)
       fun u ⟨hu, hbytes, hflag⟩ => ?_
     exact ⟨hu, .inr hflag,
       fun _ => by rw [hbytes]; exact signMu_max (paramsOk hp) hA hlt hrej hsampled hpass,
@@ -249,7 +249,7 @@ theorem rest_ok (v : VG.Proof.Sha3.AArch64.Permutation) {p : Params} (hp : Ok3 p
   have hd : 16 * (Impl.MlDsa.AArch64.PreparedKey.Sign.initialization v.callee
       (primsWith v.callee) p).aarch64Depth ≤ 16 := by
     have := (initialization_dle v p).le
-    omega
+    omega_using [this]
   refine WP.seq (WP.mono (WP.pairedRoots
     (initialization_ok (keccak := v) (prims_okWith (keccak := v)) hp h roots hcache)
     rp hd (by decide)) fun t ⟨ht, rt⟩ => afterInitialization_ok v hp ht rt)

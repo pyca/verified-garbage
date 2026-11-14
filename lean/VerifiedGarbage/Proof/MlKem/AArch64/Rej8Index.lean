@@ -22,7 +22,7 @@ theorem word_mod {x : BitVec 128} {mask : Nat} (hm : mask < 256)
   rw [← vword_lo x 0, ← BitVec.setWidth_eq_extractLsb' (by decide),
     BitVec.toNat_setWidth, BitVec.toNat_ofNat] at h
   have hb := packedCount_bound hm
-  simpa only [Nat.reducePow, Nat.mod_eq_of_lt (show packedCount mask < 65536 by omega)] using h
+  simpa only [Nat.reducePow, Nat.mod_eq_of_lt (show packedCount mask < 65536 by omega_using [hb])] using h
 
 theorem word_mask {x : BitVec 128} {mask : Nat} (hm : mask < 256)
     (hx : vhalf x 0 = BitVec.ofNat 16 (packedCount mask)) :
@@ -31,7 +31,7 @@ theorem word_mask {x : BitVec 128} {mask : Nat} (hm : mask < 256)
   have hw := (vword x 0).isLt
   have hl := word_mod hm hx
   have hp := packedCount_mask hm
-  omega
+  omega_using [hl, hp]
 
 theorem word_count {x : BitVec 128} {mask : Nat} (hm : mask < 256)
     (hx : vhalf x 0 = BitVec.ofNat 16 (packedCount mask)) :
@@ -42,7 +42,7 @@ theorem word_count {x : BitVec 128} {mask : Nat} (hm : mask < 256)
   have hl := word_mod hm hx
   have hp := packedCount_count hm
   have hn := accepted_length mask
-  omega
+  omega_using [hl, hp, hn]
 
 def indexCode : List Instr :=
  [.umov .w .x6 .v1 0,.movz .x .x7 255 0,.logic .and .x .x7 .x6 .x7,
@@ -67,8 +67,8 @@ theorem index_basic (s : State) {mask : Nat} (hm : mask < 256)
     exact word_mask hm hx
   have hs : d.gpr .x7=BitVec.ofNat 64 (16*mask) := by
     apply BitVec.eq_of_toNat_eq
-    rw [ed,toNat_lsl_n (by rw [h7]; omega),h7,BitVec.toNat_ofNat]
-    omega
+    rw [ed,toNat_lsl_n (by rw [h7]; omega_using [hm]),h7,BitVec.toNat_ofNat]
+    omega_using [hm]
   refine ⟨((((ha.trans hb).trans hc).trans hd).trans ht).mono (by decide), ?_, ?_⟩
   · rw [ht.get .x6,hd.get .x6,hc.get .x6,hb.get .x6,h6]
   · rw [et,hs,hd.get .x16,hc.get .x16,hb.get .x16,ha.get .x16]

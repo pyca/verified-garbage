@@ -26,7 +26,7 @@ theorem entry_arg {g : Geometry} {s : State} {capacity : Nat}
     (A : Arguments g capacity s) (fit : 12 ≤ (s.gpr .esp).toNat) {i : Nat} (index : i < 2) :
     arg (entry g s) i = BitVec.ofNat 32 (if i = 0 then g.W.toNat else capacity) := by
   rw [entry, arg_withRegions, callEntry_arg (rs := args) (s := s) fit (by decide : Reg.esp ∉ args) index]
-  have casesI : i = 0 ∨ i = 1 := by omega
+  have casesI : i = 0 ∨ i = 1 := by omega_using [index]
   rcases casesI with rfl | rfl <;>
     simp only [args, List.length_cons, List.length_nil, Nat.reduceAdd, Nat.reduceSub,
       List.getElem_cons_zero, List.getElem_cons_succ, ↓reduceIte, A.base, A.length] <;> rfl
@@ -42,7 +42,7 @@ theorem entry_frame {g : Geometry} {s : State}
     obtain rfl := List.mem_singleton.mp mem
     exact far
   · change g.L ≤ 2 ^ 64
-    omega
+    omega_using [nowrap]
   · exact index
 
 end VG.Proof.RsaKeyGen.X86.RoundCall

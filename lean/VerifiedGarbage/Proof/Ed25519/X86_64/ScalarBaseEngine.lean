@@ -31,7 +31,7 @@ theorem encodedValue_spec (p : Spec.Ed25519.Point) :
     Spec.Ed25519.encodePoint p = Spec.Ed25519.encodeLE 32 (encodedValue p) := rfl
 
 theorem powersKeep_outside {base : Addr} {s t : State} (h : PowersKeep base 56 7368 s t) :
-    Outside base 56 7368 s.mem t.mem := fun p hp => h.mem p (by omega) hp
+    Outside base 56 7368 s.mem t.mem := fun p hp => h.mem p (by omega_using [hp]) hp
 
 theorem scalarBaseInit_ok {s : State} {base : Addr} (hs : Scratch s base) :
     WP isa (.block (scalarBaseInit fld)) s fun t => Keep base s t ∧
@@ -73,7 +73,7 @@ theorem scalarBasePrepare_ok {s : State} {base k : Addr} (hs : Scratch s base) (
   have bbits : ∀ i < 16 * 16, b.mem (off base (768 + i)) =
       BitVec.ofNat 8 ((Spec.Ed25519.decodeLE (Spec.Ed25519.bytesAt s.mem k 32) / 2 ^ i) % 2) := by
     intro i hi
-    rw [kb.bit _ (by omega)]; exact abits i hi
+    rw [kb.bit _ (by omega_using [hi])]; exact abits i hi
   exact ⟨kap.trans (PowersKeep.of_keep kb), bp, bd, bbits, hscalar⟩
 
 /-- An engine of the base-point multiplication, from the scalar at `k`, with the comb's

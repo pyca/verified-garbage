@@ -27,9 +27,9 @@ open VG.Proof.MlDsa.KeyGen (dotK tK t1K t0K ifp ifn)
 open VG.Spec.Sha3 (bytesAt)
 
 theorem idx_lt {p : Params} {i j : Nat} (hi : i < p.k) (hj : j < p.ℓ) : p.ℓ * i + j < p.k * p.ℓ := by
-  have := Nat.mul_le_mul_left p.ℓ (show i + 1 ≤ p.k by omega)
+  have := Nat.mul_le_mul_left p.ℓ (show i + 1 ≤ p.k by omega_using [hi])
   rw [Nat.mul_succ, Nat.mul_comm p.ℓ p.k] at this
-  omega
+  omega_using [hj, this]
 
 /-- The `t` so far. -/
 abbrev tIs (p : Params) (g : (Nat → Poly) → (Nat → IPoly) → Poly) (A : Nat → Poly) (S : Nat → IPoly) (s : State) :
@@ -58,7 +58,7 @@ theorem modPm_t0 (t : Poly) :
   rw [Vector.map_map]
   refine Vector.map_congr_left fun c _ => ?_
   have := Proof.MlDsa.KeyGen.power2Round_snd c
-  exact Proof.MlDsa.KeyGen.modPm_ofInt (by omega) (by omega)
+  exact Proof.MlDsa.KeyGen.modPm_ofInt (by omega_using [this]) (by omega_using [this])
 
 theorem t1_bound {m : Mem} {q : Addr} {p : Params} {A : Nat → Poly} {S : Nat → IPoly} {i : Nat}
     (h1 : NatPolyIs m q (t1K p A S i)) : ∀ j < 256, (coeffAt m q j).toNat ≤ 1023 := fun j hj => by
@@ -107,8 +107,8 @@ end
 theorem chk_poly {p : Params} (hF : PFacts p) {i : Nat} (hi : i < p.k) {j : Nat} (hj : j < 3) :
     KRChk p (p.ℓ + p.k) p.ℓ i [(sc (oP (p.k * p.ℓ + p.ℓ + p.k + j)), 1024)] := by
   have := hF.k; have := hF.l; have := hF.kl
-  exact KRChk.x28 hF (by omega) (by omega) (.inr (by simp only [SV, oP]; omega))
-    (.inr (by simp only [oP]; omega)) (by rw [hF.scr]; simp only [oP]; omega)
+  exact KRChk.x28 hF (by omega_using []) (by omega_using [hi]) (.inr (by simp only [SV, oP]; omega_using []))
+    (.inr (by simp only [oP]; omega_using [])) (by rw [hF.scr]; simp only [oP]; omega_using [hj])
 
 theorem chk_t {p : Params} (hF : PFacts p) {i : Nat} (hi : i < p.k) : KRChk p (p.ℓ + p.k) p.ℓ i [(tP p, 1024)] := by
   have := chk_poly hF hi (j := 0) (by decide); rwa [Nat.add_zero] at this
@@ -116,8 +116,8 @@ theorem chk_t {p : Params} (hF : PFacts p) {i : Nat} (hi : i < p.k) : KRChk p (p
 theorem chk_inv {p : Params} (hF : PFacts p) {i : Nat} (hi : i < p.k) :
     KRChk p (p.ℓ + p.k) p.ℓ i [(tP p, 1024), (sc oSS, 1024)] := by
   have := hF.k; have := hF.l; have := hF.kl
-  exact (chk_t hF hi).append (ws₁ := [_]) (KRChk.x28 (o := oSS) (n := 1024) hF (by omega)
-    (by omega) (.inr (by decide)) (.inl (by decide)) (by rw [hF.scr]; simp only [oSS]; omega))
+  exact (chk_t hF hi).append (ws₁ := [_]) (KRChk.x28 (o := oSS) (n := 1024) hF (by omega_using [])
+    (by omega_using [hi]) (.inr (by decide)) (.inl (by decide)) (by rw [hF.scr]; simp only [oSS]; omega_using []))
 
 theorem chk_p2r {p : Params} (hF : PFacts p) {i : Nat} (hi : i < p.k) :
     KRChk p (p.ℓ + p.k) p.ℓ i [(t1P p, 1024), (t0P p, 1024)] :=
@@ -125,13 +125,13 @@ theorem chk_p2r {p : Params} (hF : PFacts p) {i : Nat} (hi : i < p.k) :
 
 theorem chk_sbp {p : Params} (hF : PFacts p) {i : Nat} (hi : i < p.k) :
     KRChk p (p.ℓ + p.k) p.ℓ i [((.x26, 32 + 320 * i), 320)] :=
-  KRChk.x26 hF (Nat.le_refl _) (Nat.le_of_lt hi) (Nat.le_refl _) (by rw [hF.pk]; omega)
+  KRChk.x26 hF (Nat.le_refl _) (Nat.le_of_lt hi) (Nat.le_refl _) (by rw [hF.pk]; omega_using [hi])
 
 theorem chk_bp {p : Params} (hF : PFacts p) {i : Nat} (hi : i < p.k) :
     KRChk p (p.ℓ + p.k) p.ℓ i [((.x27, oT0 p + 416 * i), 416)] := by
   have := hF.k; have := hF.l
-  exact KRChk.x27 hF (Nat.le_refl _) (Nat.le_of_lt hi) (by simp only [oT0]; omega) (.inr (by simp only [oT0]; omega))
-    (.inr (Nat.le_refl _)) (by rw [hF.sk]; omega)
+  exact KRChk.x27 hF (Nat.le_refl _) (Nat.le_of_lt hi) (by simp only [oT0]; omega_using []) (.inr (by simp only [oT0]; omega_using []))
+    (.inr (Nat.le_refl _)) (by rw [hF.sk]; omega_using [hi])
 
 theorem sbpOk_t1 : SbpOk 1023 320 := ⟨by decide, by decide, by decide⟩
 
@@ -150,10 +150,10 @@ theorem mul_ok {A : Nat → Poly} {S : Nat → IPoly} {R : BitVec 64} {s : State
       KR p σ A S R (p.ℓ + p.k) p.ℓ i s' ∧ tIs p (fun A S => dotK p A S i 1) A S s' := by
   have hl := hF.l
   have L := h.kc.lay hF hp
-  have hA := h.polyA hi (j := 0) (by omega)
-  have hc := mul_chk hF hi (j := 0) (by omega)
+  have hA := h.polyA hi (j := 0) (by omega_using [hl])
+  have hc := mul_chk hF hi (j := 0) (by omega_using [hl])
   rw [Nat.add_zero] at hA hc
-  have hS := h.polyS (j := 0) (by omega)
+  have hS := h.polyS (j := 0) (by omega_using [hl])
   refine WP.mono (mulAt_ok hP.s64 hP.mul L hc hA.1 hS.1) fun s' ⟨hP', x', hb⟩ => ?_
   refine ⟨h.keep hF hp hP' x' (chk_t hF hi), ?_⟩
   rw [tIs, hP'.pa (show Reg.x28 ∈ keptRegs by decide), Proof.MlDsa.KeyGen.dotK_one, ← hA.2, ← hS.2]
@@ -242,7 +242,7 @@ theorem bp_ok {A : Nat → Poly} {S : Nat → IPoly} {R : BitVec 64} {s : State}
   have hk' := h.keep hF hp hP' x' (chk_bp hF hi)
   refine ⟨hk'.kc, hk'.x24, hk'.good, hk'.small, hk'.aS, hk'.s2, hk'.s1, hk'.pk0, hk'.sk0, hk'.sk1, hk'.packs,
     fun i' hi' => ?_⟩
-  rcases (by omega : i' < i ∨ i' = i) with hi' | rfl
+  rcases (by omega_using [hi'] : i' < i ∨ i' = i) with hi' | rfl
   · exact hk'.rows i' hi'
   · refine ⟨by
       have hlen : lenS p = 96 ∨ lenS p = 128 := hF.eta.imp And.right And.right
@@ -265,17 +265,17 @@ include hP hF hi
 theorem mul_piece : Piece p S' (KRx p (p.ℓ + p.k) p.ℓ i) (RowI p i (tIs p fun A S => dotK p A S i 1))
     (mulAt P (tP p) (aP (p.ℓ * i)) (sP p 0)) := by
   have hl := hF.l
-  have hc := mul_chk hF hi (j := 0) (by omega)
+  have hc := mul_chk hF hi (j := 0) (by omega_using [hl])
   rw [Nat.add_zero] at hc
   refine ⟨fun _ _ hp ⟨A, S, R, h⟩ => WP.mono (mul_ok hP hF hp hi h) fun _ h => ⟨A, S, R, h⟩, ?_⟩
   refine rel_of (Q := fun x y => Two p S' x y ∧
     (Reduced x.mem (pa x (aP (p.ℓ * i))) ∧ Reduced x.mem (pa x (sP p 0))) ∧
     (Reduced y.mem (pa y (aP (p.ℓ * i))) ∧ Reduced y.mem (pa y (sP p 0)))) ?_
     fun _ _ _ _ p₁ p₂ pub ⟨_, _, _, h₁⟩ ⟨_, _, _, h₂⟩ => by
-      have a₁ := h₁.polyA hi (j := 0) (by omega); have a₂ := h₂.polyA hi (j := 0) (by omega)
+      have a₁ := h₁.polyA hi (j := 0) (by omega_using [hl]); have a₂ := h₂.polyA hi (j := 0) (by omega_using [hl])
       rw [Nat.add_zero] at a₁ a₂
-      exact ⟨kc_two hF p₁ p₂ pub h₁.kc h₂.kc, ⟨a₁.1, (h₁.polyS (j := 0) (by omega)).1⟩,
-        ⟨a₂.1, (h₂.polyS (j := 0) (by omega)).1⟩⟩
+      exact ⟨kc_two hF p₁ p₂ pub h₁.kc h₂.kc, ⟨a₁.1, (h₁.polyS (j := 0) (by omega_using [hl])).1⟩,
+        ⟨a₂.1, (h₂.polyS (j := 0) (by omega_using [hl])).1⟩⟩
   exact mulAt_tr hP.mul (kgOk p) hc fun x y h => ⟨h.1.lx, h.1.ly, h.2.1, h.2.2, h.1.same⟩
 
 theorem mulAdd_piece {j : Nat} (hj : j < p.ℓ) :

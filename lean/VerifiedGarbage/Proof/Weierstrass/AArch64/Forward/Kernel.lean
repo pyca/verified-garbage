@@ -43,9 +43,9 @@ private theorem ble_blt {β : Type} (x y : β) (key k : Nat) :
     Bool.rec (motive := fun _ => β) x y (Nat.ble k key)=Bool.rec y x (Nat.blt key k) := by
   rw [ble_dec,blt_dec]
   by_cases h : key<k
-  · have : ¬k≤key := by omega
+  · have : ¬k≤key := by omega_using [h]
     simp [h,this]
-  · have : k≤key := by omega
+  · have : k≤key := by omega_using [h]
     simp [h,this]
 
 namespace Tree
@@ -117,15 +117,15 @@ private theorem Op.ofCode_codeK (op : Op) : Op.ofCode op.codeK=op := by
     simp only [Op.codeK,Op.ofCode]
     rw [show (_+32*n)%32=_ from Nat.add_mul_mod_self_left _ 32 n]
     simp only []
-    rw [show (_+32*n)/32=n by omega]
+    rw [show (_+32*n)/32=n by omega_using []]
   | movz v n | movk v n =>
     have hv := v.isLt
     simp only [Op.codeK,Op.ofCode]
     rw [show (_+32*(v.toNat+65536*n))%32=_ from Nat.add_mul_mod_self_left _ 32 _]
     simp only []
-    rw [show (_+32*(v.toNat+65536*n))/32=v.toNat+65536*n by omega,
-      show (v.toNat+65536*n)%65536=v.toNat by omega,
-      show (v.toNat+65536*n)/65536=n by omega,BitVec.ofNat_toNat,BitVec.setWidth_eq]
+    rw [show (_+32*(v.toNat+65536*n))/32=v.toNat+65536*n by omega_using [],
+      show (v.toNat+65536*n)%65536=v.toNat by omega_using [],
+      show (v.toNat+65536*n)/65536=n by omega_using [],BitVec.ofNat_toNat,BitVec.setWidth_eq]
   | _ => rfl
 
 theorem Op.beq_codeK (a b : Op) : Nat.beq a.codeK b.codeK=decide (a=b) := by
@@ -347,10 +347,10 @@ noncomputable def inputK (nodes : Certificate) (i : Nat) : Bool :=
 theorem inputs_of_allBelow {nodes : Certificate} {size : Nat}
     (h : allBelow (inputK nodes) (size/8)=true) : Inputs nodes size := by
   intro off ha hb
-  have hi := of_allBelow h (off/8) (by omega)
+  have hi := of_allBelow h (off/8) (by omega_using [hb])
   unfold inputK at hi
   rw [Tree.lookupK_eq] at hi
-  have ho : 8*(off/8)=off := by omega
+  have ho : 8*(off/8)=off := by omega_using [ha]
   revert hi
   cases nodes.nodes.lookup (off/8+1) with
   | none => intro h; cases h

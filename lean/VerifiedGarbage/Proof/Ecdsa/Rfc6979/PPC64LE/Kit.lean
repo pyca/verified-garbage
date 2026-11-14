@@ -50,14 +50,14 @@ def Kit.ofStream (H : Hash) (hH : HashOK H) (I : Spec.Hmac.Instance) (hIS : I.S 
   dI := by
     have h₁ := sdepth_le_fdepth _ (Proof.Hmac.Stream.PPC64LE.InitLong.init_pf hH)
     have h₂ := Proof.Hmac.Stream.PPC64LE.InitLong.init_fdepth hH
-    omega
+    omega_using [h₁, h₂]
   dF := by
     have h₁ := sdepth_le_fdepth H.finalize (by
       simp [Hash.finalize, pushFrames, Instr.isPush, Proof.Hmac.Stream.PPC64LE.Finalize.finalizeMain_pf hH])
     have h₂ : H.finalize.fdepth ≤ 2 := by
       have := Proof.Hmac.Stream.PPC64LE.Finalize.finalizeMain_fdepth hH
       simp only [Hash.finalize, Code.fdepth, Nat.max_le]; omega
-    omega
+    omega_using [h₁, h₂]
   hScr := hScr
   hW := hW
   hS := hS

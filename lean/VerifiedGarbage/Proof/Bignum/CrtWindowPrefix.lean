@@ -15,8 +15,8 @@ theorem pre_append_drop (bs : List Byte) (i n : Nat) (h : i+n ≤ bs.length) :
   | zero => simp only [Nat.pow_zero,Nat.mul_one,pre_zero,Nat.add_zero]
   | succ n ih =>
     rw [← Nat.add_assoc] at h ⊢
-    rw [pre_succ (bs.drop i) (by simp only [List.length_drop]; omega),
-      pre_succ bs (by omega),← ih (by omega),Nat.pow_succ]
+    rw [pre_succ (bs.drop i) (by simp only [List.length_drop]; omega_using [h]),
+      pre_succ bs (by omega_using [h]),← ih (by omega_using [h]),Nat.pow_succ]
     simp only [List.getElem_drop]
     grind
 

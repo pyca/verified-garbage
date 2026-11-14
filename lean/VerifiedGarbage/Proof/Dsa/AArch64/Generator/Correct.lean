@@ -23,12 +23,12 @@ theorem keeps_of_frame (hb : Supported pLen) {s : State} (A : StageABI pLen s) {
   have hw := A.wsBound
   have qn := hb.q_le
   have pn : pLen ≤ 384 := by rcases hb with rfl | rfl | rfl <;> decide
-  have hc : (wsRegion s).Contains (s.gpr .x0 + BitVec.ofNat 64 i) 1 := Offset.contains_base _ (by omega) (by omega)
+  have hc : (wsRegion s).Contains (s.gpr .x0 + BitVec.ofNat 64 i) 1 := Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi, hw])
   have part : ∀ {e k : Nat}, (e, k) ∈ (Impl.Dsa.AArch64.Generator.layout pLen).scratch →
       e + k ≤ 2 ^ 64 → ¬ (⟨off (s.gpr .x0) e, k⟩ : Region).Contains (s.gpr .x0 + BitVec.ofNat 64 i) 1 := by
     intro e k he hek hx
     have h := hout (e, k) he
-    have hd := Offset.disjoint (s.gpr .x0) (d := i) (n := 1) (e := e) (k := k) (by simp only at h; omega) (by omega) hek
+    have hd := Offset.disjoint (s.gpr .x0) (d := i) (n := 1) (e := e) (k := k) (by simp only at h; omega_using [h]) (by omega_using [hi, hw]) hek
     exact hd _ (Region.contains_self _ _) hx
   apply hf
   intro r hr hx
@@ -37,10 +37,10 @@ theorem keeps_of_frame (hb : Supported pLen) {s : State} (A : StageABI pLen s) {
   · exact part (by simp [Impl.Dsa.AArch64.Generator.layout, Impl.Dsa.AArch64.Generator.scratch]) (by decide) hx
   · exact part (e := 0) (k := Impl.Dsa.Layout.activeBytes) (by simp [Impl.Dsa.AArch64.Generator.layout, Impl.Dsa.AArch64.Generator.scratch, parent])
       (by decide) (by simpa [off] using hx)
-  · exact part (by simp [Impl.Dsa.AArch64.Generator.layout, Impl.Dsa.AArch64.Generator.scratch]) (by unfold g; omega) hx
-  · exact part (by simp [Impl.Dsa.AArch64.Generator.layout, Impl.Dsa.AArch64.Generator.scratch]) (by unfold packed; omega) hx
+  · exact part (by simp [Impl.Dsa.AArch64.Generator.layout, Impl.Dsa.AArch64.Generator.scratch]) (by unfold g; omega_using [pn]) hx
+  · exact part (by simp [Impl.Dsa.AArch64.Generator.layout, Impl.Dsa.AArch64.Generator.scratch]) (by unfold packed; omega_using [qn, pn]) hx
   · exact part (by simp [Impl.Dsa.AArch64.Generator.layout, Impl.Dsa.AArch64.Generator.scratch]) (by decide) hx
-  · exact (A.stackWs.sub_left (frame_sub0 s (by unfold frameBytes; omega))) _ hx hc
+  · exact (A.stackWs.sub_left (frame_sub0 s (by unfold frameBytes; omega_using []))) _ hx hc
   · exact (A.stackWs.sub_left (frame_sub0 s (Nat.le_refl _))) _ hx hc
   · exact part (by simp [Impl.Dsa.AArch64.Generator.layout, Impl.Dsa.AArch64.Generator.scratch]) (by decide) hx
 
@@ -49,7 +49,7 @@ theorem correct (M : Mont) (hb : Supported pLen) (s : State) (pre : (contract pL
       (contract pLen).post s t := by
   have A := stageABI_of pre
   obtain ⟨trace, t, he, hpre, hst, hpk, hf⟩ := alloc_frame_ok (bytes := 272) (by decide)
-    (by have := A.stackLower; unfold stack at this; omega)
+    (by have := A.stackLower; unfold stack at this; omega_using [this])
     (Q := fun t => abiPreserved s t ∧
       t.gpr .x0 = BitVec.ofNat 64 (endCode pLen s + 4 * (pLen * readCount pLen s)) ∧
       (∀ a, result pLen s = some a →

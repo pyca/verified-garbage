@@ -22,7 +22,7 @@ theorem Stage.afterSlots {g : Geometry} (v : g.Valid) {capacity c : Nat} {p : Bi
     have h := scratch d known
     unfold scratchWord at h
     dsimp only
-    omega) (by
+    omega_using [h]) (by
     intro r mem
     obtain ⟨d, known, rfl⟩ := List.mem_map.mp mem
     exact Or.inr (Nat.le_trans (scratch_fit (scratch d known)) (v.arrayHeader 0)))

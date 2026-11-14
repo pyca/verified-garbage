@@ -55,7 +55,7 @@ theorem GenerationTapeMemory.source {p : GenerationGeometry} {tape : GenerationT
     Src s (off p.B d) n tape.ptr tape.bytes := by
   apply tape.source hd
   · intro i hi
-    exact h.cover _ _ ⟨⟨tape.ptr, tape.bytes.length⟩, by simp, Offset.contains_base _ (by omega) (by omega_using [hi, tape.size])⟩
+    exact h.cover _ _ ⟨⟨tape.ptr, tape.bytes.length⟩, by simp, Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi, tape.size])⟩
   · intro i hi
     have he := congrArg (fun bs : List Byte => bs[i]?) h.bytes
     simpa only [Spec.Rsa.bytesAt, List.getElem?_map, List.getElem?_range, hi, ↓reduceIte,

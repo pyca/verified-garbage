@@ -20,12 +20,12 @@ theorem read_fields_ok {K : JacWinCfg} {C : Curve} {base : Addr} {size wk v j : 
     WP isa (.block (K.tc.digit++K.select)) s fun t =>
       Entry K C base (mul (magH 16 (Window5.nib v j)) P) t ∧
       ProgKeep K.M base wk (coords K) s t ∧ t.gpr .esi=BitVec.ofNat 32 j := by
-  have hs : K.bits+260≤size := by have := hL.bits; have := hL.table; omega
+  have hs : K.bits+260≤size := by have := hL.bits; have := hL.table; omega_arith
   have bits : ∀ i<260,s.mem (off base (K.bits+i))=if v.testBit i then 1 else 0 := by
     intro i hi; rw [h.bits hL hi]; exact hb i hi
   rw [WP.block_append_iff]
   refine WP.mono (digit_ok K.tc h.scr (k:=v) (N:=260) (by change 1≤5; decide) (by change 5<9; decide)
-    (by change 5*j+5≤260; omega) hs hc bits) fun a ⟨_,ma,ka⟩ => ?_
+    (by change 5*j+5≤260; omega_using [hj]) hs hc bits) fun a ⟨_,ma,ka⟩ => ?_
   have kp : ProgKeep K.M base wk [] s a := keep_of_ckeeps (ka.mono (by decide))
   have ac := h.field hL hW kp (by simp)
   have ea : a.gpr .ebx=BitVec.ofNat 32 (magH 16 (Window5.nib v j)) := by

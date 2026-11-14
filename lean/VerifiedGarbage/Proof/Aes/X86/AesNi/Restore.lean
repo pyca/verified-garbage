@@ -36,11 +36,11 @@ theorem restoreCore_ok {to : Bool} {s₀ s : State} (hp : GPre to s₀) (saved :
   have sv : Saved s₀ s₃.mem := by
     rw [hm]
     exact saved.of_readW fun p h => Mem.readW_writeW_sep (hp.dCB.symm.sep
-      (scratch_contains hp (by have := savedRegs_bound p h; omega)) (ctr_contains hp (by decide))) (by decide)
+      (scratch_contains hp (by have := savedRegs_bound p h; omega_using [this])) (ctr_contains hp (by decide))) (by decide)
   refine Spill.restoreBase_ok _ (by decide) (fun p h => by
       have := savedRegs_bound p (by revert p h; decide)
       rw [e, u₃.rd, u₃.wr, u₂.rd, u₂.wr, u₁.rd, u₁.wr]
-      exact inRegions_wr (by rw [wr]; exact scratch_in hp (by omega)))
+      exact inRegions_wr (by rw [wr]; exact scratch_in hp (by omega_using [this])))
     (by rw [e]; exact sv.sub (by decide)) fun s' r' => WP.block_nil ⟨by rw [r'.mem, hm],
         r'.abi (by decide) (by decide) (by rw [u₃.gpr, u₂.other _ (by decide), u₁.other _ (by decide), esp])⟩
 
@@ -80,15 +80,15 @@ theorem restore_ok {to : Bool} {s₀ s : State} (hp : GPre to s₀) (i : Nat)
       rw [mem]
       change (s.mem.write (addr (ctrP s₀) 12) 4 (bswap (s.gpr .ebx))) (addr (ctrP s₀) k) = _
       rw [Mem.write_apply]
-      · rw [addr_eq (by have hc := hp.fC; omega)]
+      · rw [addr_eq (by have hc := hp.fC; omega_using [hk, hc])]
         exact frame.bytes (R := ctrR s₀) (fun r hr => by
           simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
           rcases hr with rfl | rfl
           · exact hp.dCD
-          · exact hp.dCB) (by change 16 ≤ 2 ^ 64; decide) (by change k < 16; omega)
-      · rw [addr_eq (by have hc := hp.fC; omega), addr_eq (by have hc := hp.fC; omega)]
+          · exact hp.dCB) (by change 16 ≤ 2 ^ 64; decide) (by change k < 16; omega_using [hk])
+      · rw [addr_eq (by have hc := hp.fC; omega_using [hk, hc]), addr_eq (by have hc := hp.fC; omega_using [hc])]
         exact (Offset.sep_base ((ctrP s₀).setWidth 64) (n := 12) (e := 12) (k := 4)
-          (by decide) (by decide)) _ (by rw [Mem.sub_ofNat_toNat _ (by omega)]; exact hk)
+          (by decide) (by decide)) _ (by rw [Mem.sub_ofNat_toNat _ (by omega_using [hk])]; exact hk)
     · rw [mem, Mem.readW_writeW_self32, low, ← VG.Proof.Aes.X86.icb_lo _ hp.fC]
   · unfold Spec.Gcm.blocksAt
     refine List.map_congr_left fun j hj => Proof.Gcm.blockAt_congr fun k hk => ?_
@@ -96,7 +96,7 @@ theorem restore_ok {to : Bool} {s₀ s : State} (hp : GPre to s₀) (i : Nat)
     rw [BitVec.add_assoc, ← BitVec.ofNat_add]
     exact fstore.bytes (R := dstR to s₀) (fun r hr => by
       simp only [List.mem_singleton] at hr
-      subst r; exact hp.dCD.symm) (by change 16 * nBlk s₀ ≤ 2 ^ 64; have hf := hp.fD; omega)
-      (by change 16 * j + k < 16 * nBlk s₀; omega)
+      subst r; exact hp.dCD.symm) (by change 16 * nBlk s₀ ≤ 2 ^ 64; have hf := hp.fD; omega_using [hf])
+      (by change 16 * j + k < 16 * nBlk s₀; omega_using [hk, bound])
 
 end VG.Proof.Aes.X86.AesNi

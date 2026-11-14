@@ -36,14 +36,14 @@ include hp
 omit hp in
 theorem hpre {n off count K : Nat} (hK : K < 4) (hbuf : 3 * (off + count) ≤ 168 * n)
     {s : State} (h : Batch σ n off count K s) : HPre σ K 1 off count s :=
-  ⟨h.sq.env, fun p hp' => by simpa using h.sq.buf K hK p (by omega),
+  ⟨h.sq.env, fun p hp' => by simpa using h.sq.buf K hK p (by omega_using [hbuf, hp']),
     by simpa only [Nat.mul_one, ite_eq_right (Nat.lt_irrefl K)] using h.j K hK,
     by simpa only [Nat.mul_one, ite_eq_right (Nat.lt_irrefl K)] using h.st K hK⟩
 
 /-- Save the count after one segment, preserving the other polynomials and squeeze state. -/
 theorem segmentEnd_ok {n off count K : Nat} (hn : n ≤ 3) (hK : K < 4) {s s₁ : State} (h : Batch σ n off count K s) (hA : GB σ s K 1 off count count s₁) :
     WP isa (.block [.store (at_ .rbx (oJ + 8 * K)) .rdi]) s₁ (Batch σ n off count (K + 1)) := by
-  have hin : InRegions s₁.wr (scr σ + BitVec.ofNat 64 (oJ + 8 * K)) 8 := in_scr hp hA.env.wr (by simp only [oJ]; omega)
+  have hin : InRegions s₁.wr (scr σ + BitVec.ofNat 64 (oJ + 8 * K)) 8 := in_scr hp hA.env.wr (by simp only [oJ]; omega_using [hK])
   refine WP.mono (WP.keep [] (Q := fun s' => s'.mem = s₁.mem.writeW (at' σ (oJ + 8 * K)) (s₁.gpr .rdi))
     (by xrun [hA.env.rbx, hin]) rfl) fun s₂ ⟨hm, k⟩ => ?_
   have hf₂ : Frame [jR σ] s₁.mem s₂.mem := by
@@ -58,22 +58,22 @@ theorem segmentEnd_ok {n off count K : Nat} (hn : n ≤ 3) (hK : K < 4) {s s₁ 
   · rw [hm]
     by_cases e : k = K
     · subst e
-      rw [Mem.readW_writeW_self64, hA.rdi, ite_eq_left (by omega), Nat.mul_one]
-    · rw [rd64_off (by simp only [oJ]; omega) (by simp only [oJ]; omega) (by omega), j_poly hp hK hA.fr hk, h.j k hk]
+      rw [Mem.readW_writeW_self64, hA.rdi, ite_eq_left (by omega_using []), Nat.mul_one]
+    · rw [rd64_off (by simp only [oJ]; omega_using [hk]) (by simp only [oJ]; omega_using [hK]) (by omega_using [e]), j_poly hp hK hA.fr hk, h.j k hk]
       congr 3
       by_cases hk' : k < K
-      · rw [ite_eq_left hk', ite_eq_left (by omega)]
-      · rw [ite_eq_right hk', ite_eq_right (by omega)]
+      · rw [ite_eq_left hk', ite_eq_left (by omega_using [hk'])]
+      · rw [ite_eq_right hk', ite_eq_right (by omega_using [e, hk'])]
   · have hL := Lt_length_le σ k (if k < K + 1 then 168 + off + count else 168 + off)
     refine stored_frame hf₂ (fun r hr => by rw [List.mem_singleton.mp hr]; exact poly_jR hp k hk) ?_ hL
     by_cases e : k = K
     · subst e
-      rw [ite_eq_left (by omega)]
+      rw [ite_eq_left (by omega_using [])]
       simpa only [Nat.mul_one] using hA.stored
     · have := st_poly hK hk e hA.fr (h.st k hk) (Lt_length_le σ k _)
       by_cases hk' : k < K
-      · rw [ite_eq_left hk'] at this; rwa [ite_eq_left (by omega)]
-      · rw [ite_eq_right hk'] at this; rwa [ite_eq_right (by omega)]
+      · rw [ite_eq_left hk'] at this; rwa [ite_eq_left (by omega_using [hk'])]
+      · rw [ite_eq_right hk'] at this; rwa [ite_eq_right (by omega_using [e, hk'])]
 
 theorem segment_ok {n off count K : Nat} (hn : n ≤ 3) (hK : K < 4)
     (hspan : off + count ≤ 168) (hpos : 0 < count) (h8 : count % 8 = 0) (hbuf : 3 * (off + count) ≤ 168 * n)
@@ -102,7 +102,7 @@ theorem squeeze_last_ok {fast : Bool} {s : State} (h : Batch σ 2 0 112 4 s) :
   · rw [hf.readW (Region.contains_self _ _) (fun r hr => by
       rw [List.mem_singleton.mp hr]
       exact (Offset.base_disjoint (scr σ) (k := oSave) (e := oJ + 8 * k) (n := 8)
-        (by simp only [oSave, oJ]; omega) (by simp only [oJ]; omega)).symm) (by decide), h.j k hk]
+        (by simp only [oSave, oJ]; omega_using []) (by simp only [oJ]; omega_using [hk])).symm) (by decide), h.j k hk]
     simp only [ite_eq_left hk, Nat.add_zero, ite_eq_right (Nat.not_lt_zero k)]
   · have st := stored_frame hf (fun r hr => by rw [List.mem_singleton.mp hr]; exact (low_poly hp hk).symm)
       (h.st k hk) (Lt_length_le σ k _)
@@ -112,14 +112,14 @@ theorem squeeze_last_ok {fast : Bool} {s : State} (h : Batch σ 2 0 112 4 s) :
 
 omit hp in
 theorem hpre0 {K : Nat} (hK : K < 4) {s : State} (h : P1 σ K s) : HPre σ K 0 0 168 s :=
-  ⟨h.sq.env, fun p hp' => by rw [h.sq.buf K hK p (by omega)],
-    by rw [h.j K hK, ite_eq_right (by omega)],
-    by have := h.st K hK; rw [ite_eq_right (by omega)] at this; exact this⟩
+  ⟨h.sq.env, fun p hp' => by rw [h.sq.buf K hK p (by omega_using [hp'])],
+    by rw [h.j K hK, ite_eq_right (by omega_using [])],
+    by have := h.st K hK; rw [ite_eq_right (by omega_using [])] at this; exact this⟩
 
 /-- `j` kept, after the first 168 candidates of seed `K`. -/
 theorem segment0End_ok {K : Nat} (hK : K < 4) {s s₁ : State} (h : P1 σ K s) (hA : GB σ s K 0 0 168 168 s₁) :
     WP isa (.block [.store (at_ .rbx (oJ + 8 * K)) .rdi]) s₁ (P1 σ (K + 1)) := by
-  have hin : InRegions s₁.wr (scr σ + BitVec.ofNat 64 (oJ + 8 * K)) 8 := in_scr hp hA.env.wr (by simp only [oJ]; omega)
+  have hin : InRegions s₁.wr (scr σ + BitVec.ofNat 64 (oJ + 8 * K)) 8 := in_scr hp hA.env.wr (by simp only [oJ]; omega_using [hK])
   refine WP.mono (WP.keep [] (Q := fun s' => s'.mem = s₁.mem.writeW (at' σ (oJ + 8 * K)) (s₁.gpr .rdi))
     (by xrun [hA.env.rbx, hin]) rfl) fun s₂ ⟨hm, k⟩ => ?_
   have hf₂ : Frame [jR σ] s₁.mem s₂.mem := by
@@ -134,22 +134,22 @@ theorem segment0End_ok {K : Nat} (hK : K < 4) {s s₁ : State} (h : P1 σ K s) (
   · rw [hm]
     by_cases e : k = K
     · subst e
-      rw [Mem.readW_writeW_self64, hA.rdi, ite_eq_left (by omega)]
-    · rw [rd64_off (by simp only [oJ]; omega) (by simp only [oJ]; omega) (by omega), j_poly hp hK hA.fr hk, h.j k hk]
+      rw [Mem.readW_writeW_self64, hA.rdi, ite_eq_left (by omega_using [])]
+    · rw [rd64_off (by simp only [oJ]; omega_using [hk]) (by simp only [oJ]; omega_using [hK]) (by omega_using [e]), j_poly hp hK hA.fr hk, h.j k hk]
       congr 3
       by_cases hk' : k < K
-      · rw [ite_eq_left hk', ite_eq_left (by omega)]
-      · rw [ite_eq_right hk', ite_eq_right (by omega)]
+      · rw [ite_eq_left hk', ite_eq_left (by omega_using [hk'])]
+      · rw [ite_eq_right hk', ite_eq_right (by omega_using [e, hk'])]
   · have hL := Lt_length_le σ k (if k < K + 1 then 168 else 0)
     refine stored_frame hf₂ (fun r hr => by rw [List.mem_singleton.mp hr]; exact poly_jR hp k hk) ?_ hL
     by_cases e : k = K
     · subst e
-      rw [ite_eq_left (by omega)]
+      rw [ite_eq_left (by omega_using [])]
       exact hA.stored
     · have := st_poly hK hk e hA.fr (h.st k hk) (Lt_length_le σ k _)
       by_cases hk' : k < K
-      · rw [ite_eq_left hk'] at this; rwa [ite_eq_left (by omega)]
-      · rw [ite_eq_right hk'] at this; rwa [ite_eq_right (by omega)]
+      · rw [ite_eq_left hk'] at this; rwa [ite_eq_left (by omega_using [hk'])]
+      · rw [ite_eq_right hk'] at this; rwa [ite_eq_right (by omega_using [e, hk'])]
 
 /-- The first 168 candidates of seed `K`. -/
 theorem segment0_ok {K : Nat} (hK : K < 4) {s : State} (h : P1 σ K s) : WP isa (segment K 0 168) s (P1 σ (K + 1)) :=

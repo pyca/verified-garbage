@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Framework.PowLit
 import Mathlib.Data.Int.Basic
 import Mathlib.Tactic.Linarith
 public import Mathlib.Tactic.NormNum
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-! Signed coefficient extraction for the 20/19-step packed divstep rows. -/
 
@@ -16,8 +17,8 @@ private theorem row_small {n a b : Nat} {u v : Int}
     -(2:Int)^n * 2^20 ≤ u*a+v*b ∧ u*a+v*b < (2:Int)^n*2^20 := by
   have ha0 : (0:Int) ≤ a := Nat.cast_nonneg a
   have hb0 : (0:Int) ≤ b := Nat.cast_nonneg b
-  have ha1 : (a:Int) ≤ 2^20-1 := by norm_num at ha ⊢; omega
-  have hb1 : (b:Int) ≤ 2^20-1 := by norm_num at hb ⊢; omega
+  have ha1 : (a:Int) ≤ 2^20-1 := by norm_num at ha ⊢; omega_using [ha]
+  have hb1 : (b:Int) ≤ 2^20-1 := by norm_num at hb ⊢; omega_using [hb]
   have hu := abs_nonneg u
   have hv := abs_nonneg v
   have u0 := neg_abs_le u
@@ -38,7 +39,7 @@ private theorem row_decompose {n a b : Nat} {u v : Int} (hn : n=19 ∨ n=20) :
       (u*a+v*b)/2^n-u*2^(41-n)-v*2^(62-n) := by
   simp only [mul_sub]
   rcases hn with rfl | rfl <;> norm_num
-  all_goals omega
+  all_goals omega_using []
 
 /-- The exact integer decomposition used by both signed extractions. -/
 theorem packed20_row {n a b : Nat} {u v : Int}
@@ -65,7 +66,7 @@ theorem packed20_extract_low {n a b : Nat} {u v : Int}
   dsimp only
   rw [hz]
   rcases hn with rfl | rfl <;> norm_num at *
-  all_goals omega
+  all_goals omega_using [hub, hh, hl, hu]
 
 /-- Recover the negated high coefficient with the signed arithmetic shift. -/
 theorem packed20_extract_high {n a b : Nat} {u v : Int}
@@ -78,6 +79,6 @@ theorem packed20_extract_high {n a b : Nat} {u v : Int}
   dsimp only
   rw [hz]
   rcases hn with rfl | rfl <;> norm_num at *
-  all_goals omega
+  all_goals omega_using [hub, hh, hl, hu]
 
 end VG.Proof.Divstep

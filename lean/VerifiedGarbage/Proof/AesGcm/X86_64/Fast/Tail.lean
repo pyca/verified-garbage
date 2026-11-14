@@ -115,7 +115,7 @@ theorem tail_ok (hF : ShortFacts) {ks : Prog isa} (hks : KsOk ks) {R : Nat} {D :
   have b24 : Region.Sub (below SP 24) (below SP 56) := below_sub (by decide) (by decide)
   have kc : (below SP 56).Disjoint ⟨Ctx, 256⟩ := kM.sub_right (Region.sub_prefix (CtxMode.preparedN np hpn).ge)
   have h : ObPre (CtxMode.preparedN np hpn) Ctx W SP R D n s :=
-    ⟨he, hR, hdat, hlen, hd, kc.sub_left b24, kw.sub_left b24, kd.sub_left b24, by omega, X⟩
+    ⟨he, hR, hdat, hlen, hd, kc.sub_left b24, kw.sub_left b24, kd.sub_left b24, by omega_using [sp], X⟩
   -- The total length put back.
   unfold Impl.AesGcm.X86_64.Fast.tail
   refine WP.seq (WP.mono (fixTlen_ok he haux) fun s₁ ⟨m₁, g₁, rd₁, wr₁⟩ => ?_)
@@ -124,13 +124,13 @@ theorem tail_ok (hF : ShortFacts) {ks : Prog isa} (hks : KsOk ks) {R : Nat} {D :
     rcases hr with rfl | rfl | rfl | rfl <;> exact g₁ _ (by decide)) rd₁ wr₁
   have fW : Frame [⟨W + BitVec.ofNat 64 192, 8⟩] s.mem s₁.mem := by
     rw [m₁]; exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _
-      (Offset.contains _ (Nat.le_refl _) (by decide) (by have := L.ww; omega))
+      (Offset.contains _ (Nat.le_refl _) (by decide) (by have := L.ww; omega_using []))
   have one : ∀ {p : Addr} {k : Nat}, (⟨p, k⟩ : Region).Disjoint ⟨W + BitVec.ofNat 64 192, 8⟩ →
       ∀ r ∈ [(⟨W + BitVec.ofNat 64 192, 8⟩ : Region)], (⟨p, k⟩ : Region).Disjoint r := fun hd r hr => by
     simp only [List.mem_singleton] at hr; subst hr; exact hd
   have wW : ∀ {d k : Nat}, d + k ≤ 192 ∨ 200 ≤ d → d + k ≤ 2560 →
       (⟨W + BitVec.ofNat 64 d, k⟩ : Region).Disjoint ⟨W + BitVec.ofNat 64 192, 8⟩ :=
-    fun h₁ h₂ => Offset.disjoint W h₁ (by have := L.ww; omega) (by have := L.ww; omega)
+    fun h₁ h₂ => Offset.disjoint W h₁ (by have := L.ww; omega_using [h₂]) (by have := L.ww; omega_using [])
   have rW : ∀ d, d + 8 ≤ 192 ∨ 200 ≤ d → d + 8 ≤ 2560 →
       s₁.mem.readW (W + BitVec.ofNat 64 d) 64 = s.mem.readW (W + BitVec.ofNat 64 d) 64 :=
     fun d h₁ h₂ => fW.readW (Region.contains_self _ _) (one (wW h₁ h₂)) (by decide)
@@ -153,19 +153,19 @@ theorem tail_ok (hF : ShortFacts) {ks : Prog isa} (hks : KsOk ks) {R : Nat} {D :
     have hm := Nat.mod_lt (a ++ zeros (padLen a.length)).length (show 16 > 0 by decide)
     refine ⟨by rw [bW Split.y_sub]; exact habs.1, ?_⟩
     rw [bytesAt_frame fW (one (stD.sub_left
-      (Offset.sub_base (W + BitVec.ofNat 64 16) (d := 32) (k := 80) (by omega)))) (by omega)]
+      (Offset.sub_base (W + BitVec.ofNat 64 16) (d := 32) (k := 80) (by omega_using [])))) (by omega_using [])]
     exact habs.2
   have dDW : (⟨D, n⟩ : Region).Disjoint ⟨W + BitVec.ofNat 64 192, 8⟩ := hD.sub_right (Lay.wSub (by decide))
   have ht₁ : bytesAt s₁.mem (D + BitVec.ofNat 64 (16 * 0)) n = bytesAt s.mem (D + BitVec.ofNat 64 (16 * 0)) n := by
     rw [show D + BitVec.ofNat 64 (16 * 0) = D by simp]
-    exact bytesAt_frame fW (one dDW) (by have := hd.ok.wrap; omega)
+    exact bytesAt_frame fW (one dDW) (by have := hd.ok.wrap; omega_using [h16])
   have hR₁ : RoundsAt s₁.mem W R := ⟨by rw [rW 176 (.inl (by decide)) (by decide)]; exact hR.1, hR.2⟩
   -- `H'` and `H'²`.
   have cov₁ := X.cov
   rw [← rd₁, ← wr₁] at cov₁
   have hX : VG.Proof.Gcm.X86_64.Stitch.PowersN np s₁.mem Ctx :=
     (CtxMode.preparedN np hpn).frame fW (one (X.cw.sub_right (Lay.wSub (by decide)))) X.w X.ok
-  have p0 := hX 0 (by have := hpn.1; omega)
+  have p0 := hX 0 (by have := hpn.1; omega_using [hpn])
   simp only [Nat.mul_zero, Nat.add_zero, Nat.zero_add] at p0
   have hH₁ : ctxH s₁.mem Ctx = H := by
     rw [ctxH_eq, blockAt_frame fW (one ((X.cw.sub_left (Offset.sub_base Ctx (show 240 + 16 ≤ 1024 by decide))).sub_right
@@ -177,7 +177,7 @@ theorem tail_ok (hF : ShortFacts) {ks : Prog isa} (hks : KsOk ks) {R : Nat} {D :
   have he₂ : Env Ctx (W + BitVec.ofNat 64 16) W SP s₂ := he₁.keep (fun g hg => o₂.gpr _ (by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hg
     rcases hg with rfl | rfl | rfl | rfl <;> decide)) o₂.rd o₂.wr
-  refine WP.mono (finRest_ok (q := 0) hks h (by omega) h16 f₁ hR₁ hc₁ hJ₁ (by rfl) hcb₁ ab₁ ht₁
+  refine WP.mono (finRest_ok (q := 0) hks h (by omega_using []) h16 f₁ hR₁ hc₁ hJ₁ (by rfl) hcb₁ ab₁ ht₁
     (by rw [m₁, Mem.readW_writeW_self64])
     (by rw [rW 200 (.inr (by decide)) (by decide), hdat]; simp)
     (by rw [rW 208 (.inr (by decide)) (by decide)]; exact hlen)
@@ -240,7 +240,7 @@ theorem fbody_ok (hF : ShortFacts) {ks : Prog isa} (hks : KsOk ks) (B : BlkFn (C
     fun s' ⟨e', rd', wr', f', hC, hT⟩ => ⟨e', rd'.trans rd, wr'.trans wr, m ▸ f', m ▸ hC, m ▸ hT⟩
   refine WP.ite (decide (n < 17)) (eval_b cf) (fun h => ?_) (fun h => ?_)
   · exact WP.mono (tail_ok L hF hks het hRt (by rw [m]; exact hdat) (by rw [m]; exact hlen)
-      (by have := of_decide_eq_true h; omega) hdt kw kd kM sp Xt (by rw [m]; exact hH) (by rw [m]; exact hcb)
+      (by have := of_decide_eq_true h; omega_using [this]) hdt kw kd kM sp Xt (by rw [m]; exact hH) (by rw [m]; exact hcb)
       (by rw [m]; exact hal) (by rw [m]; exact habs) (by rw [m]; exact haux)) post
   · exact WP.mono (body_ok L B hfin het hRt (by rw [m]; exact hdat) (by rw [m]; exact hlen) hdt kw kd kM sp Xt
       (by rw [m]; exact hH) (by rw [m]; exact hcb) (by rw [m]; exact hal) (by rw [m]; exact habs)

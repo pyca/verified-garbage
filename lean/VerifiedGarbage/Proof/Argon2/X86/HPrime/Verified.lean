@@ -52,7 +52,7 @@ theorem arg_in_rd {s : State} (hrd : s.rd = s₀.rd) {i : Nat} (hi : i < 5) :
   refine ⟨argR s₀, by simp [hrd, hp.rd], ?_⟩
   show Region.Contains ⟨addr (esp₀ s₀) (4 + 4 * 0), 20⟩ _ _
   rw [arg_addr hp hi, arg_addr hp (by decide)]
-  exact Offset.contains _ (by omega) (by omega) (by omega)
+  exact Offset.contains _ (by omega_using []) (by omega_using [hi]) (by omega_using [])
 
 theorem arg_frame {m : Mem} (f : Frame [scrR s₀] s₀.mem m) {i : Nat} (hi : i < 5) :
     m.readW (addr (esp₀ s₀) (4 + 4 * i)) 32 = arg s₀ i := by
@@ -128,11 +128,11 @@ theorem setup_ok : WP isa (.block setup) s₀ fun t => Body s₀ t ∧ Out s₀ 
   have R : ∀ (m : Mem) (v : BitVec 32) (d e : Nat), d + 4 ≤ 16384 → e + 4 ≤ 16384 →
       (d + 4 ≤ e ∨ e + 4 ≤ d) →
       (m.writeW (addr (scr s₀) e) v).readW (addr (scr s₀) d) 32 = m.readW (addr (scr s₀) d) 32 :=
-    fun m v d e hd he h => readW_writeW_addr m v (by omega) (by omega) h
+    fun m v d e hd he h => readW_writeW_addr m v (by omega_using [hs, hd]) (by omega_using [hs, he]) h
   have keep7 : ∀ d, d + 4 ≤ 16384 → (d + 4 ≤ 832 ∨ 864 ≤ d ∨ (836 ≤ d ∧ d + 4 ≤ 856)) →
       t.mem.readW (addr (scr s₀) d) 32 = t₅.mem.readW (addr (scr s₀) d) 32 := fun d hd h => by
-    rw [mt, R _ _ d 832 hd (by decide) (by omega), R _ _ d leftOff hd (by decide) (by simp only [leftOff]; omega),
-      m₇, R _ _ d outOff hd (by decide) (by simp only [outOff]; omega)]
+    rw [mt, R _ _ d 832 hd (by decide) (by omega_using [h]), R _ _ d leftOff hd (by decide) (by simp only [leftOff]; omega_using [h]),
+      m₇, R _ _ d outOff hd (by decide) (by simp only [outOff]; omega_using [h])]
   have m₅ : t₅.mem = ((s₀.mem.writeW (addr (scr s₀) 840) (s₀.gpr .ebx)).writeW (addr (scr s₀) 844)
       (s₀.gpr .esi)).writeW (addr (scr s₀) 848) (s₀.gpr .edi) := by
     rw [u₅.mem, u₄.mem, u₃.mem, u₂.mem, u₁.mem, u₃.gpr, u₂.gpr, u₁.other .ebx (by decide),
@@ -168,7 +168,7 @@ theorem correct : WP isa Impl.Argon2.X86.HPrime.code s₀ fun t => abiPreserved 
   refine WP.seq ((setup_ok hp).mono fun s₁ ⟨b₁, o₁, e₁, F₁⟩ => ?_)
   have hin : bytesAt s₁.mem ((inp s₀).setWidth 64) (inl s₀) = bytesAt s₀.mem ((inp s₀).setWidth 64) (inl s₀) :=
     Proof.Blake2.bytesAt_congr fun i hi => F₁.bytes (R := inR s₀) (fun r hr => by
-      simp only [List.mem_singleton] at hr; subst hr; exact hp.in_scr) (by simp; omega) hi
+      simp only [List.mem_singleton] at hr; subst hr; exact hp.in_scr) (by simp; omega_using [hif]) hi
   refine WP.seq ((first_ok hp ⟨b₁, o₁, e₁, hin⟩).mono fun s₂ ⟨⟨b₂, o₂, e₂, _⟩, d₂⟩ => ?_)
   refine WP.seq ((finish_ok hp b₂ o₂ d₂).mono fun s₃ ⟨b₃, e₃, h₃⟩ => ?_)
   unfold restore
@@ -198,7 +198,7 @@ theorem correct : WP isa Impl.Argon2.X86.HPrime.code s₀ fun t => abiPreserved 
     · exact hp.ret_scr
     · show Region.Disjoint _ ⟨(esp₀ s₀ - BitVec.ofNat 32 60).setWidth 64, 60⟩
       rw [Taint.sub_setWidth hp.esp_lo]
-      exact Offset.base_disjoint_below _ (by omega)
+      exact Offset.base_disjoint_below _ (by omega_using [])
   · show bytesAt t.mem _ _ = _
     rw [mt]; exact h₃
 
@@ -238,7 +238,7 @@ theorem wfS {s : State} (hp : Pre s) : VG.X86.Taint.Wf τS s := by
     fun _ h => (List.not_mem_nil h).elim, fun _ h => (List.not_mem_nil h).elim,
     fun _ => ⟨hs, ?_⟩, ?_⟩
   · simp only [hp.wr, List.mem_cons, List.not_mem_nil, or_false]
-    rintro r (rfl | rfl) <;> simp only [BitVec.toNat_setWidth] <;> omega
+    rintro r (rfl | rfl) <;> simp only [BitVec.toNat_setWidth] <;> omega_arith
   · simp only [hp.wr, List.mem_cons, List.not_mem_nil, or_false]
     rintro r (rfl | rfl)
     · exact VG.X86.Taint.frame_disjoint (n := 20) (by omega) hp.ret_out hp.arg_out
@@ -263,14 +263,14 @@ theorem agreeS {s₁ s₂ : State} (hp₁ : Pre s₁) (hp₂ : Pre s₂) (q : Sa
     rw [show VG.X86.Taint.depth τS.stk = 0 from rfl, Nat.zero_add]
     rw [VG.X86.Taint.argByte_eq (by have := hp₁.esp_hi; omega) h4 hk,
       VG.X86.Taint.argByte_eq (by have := hp₂.esp_hi; omega) h4 hk,
-      Mem.readW_byte s₁.mem _ (Nat.mod_lt _ (by omega)), Mem.readW_byte s₂.mem _ (Nat.mod_lt _ (by omega))]
-    exact congrArg _ (q.args _ (by omega)).symm
+      Mem.readW_byte s₁.mem _ (Nat.mod_lt _ (by omega_using [])), Mem.readW_byte s₂.mem _ (Nat.mod_lt _ (by omega_using []))]
+    exact congrArg _ (q.args _ (by omega_using [hk])).symm
 
 theorem setup_F0 {s₀ : State} (hp : Pre s₀) : WP isa (.block setup) s₀ (F0 s₀) := by
   have hif := hp.in_fits
   refine (setup_ok hp).mono fun t ⟨b, o, e, f⟩ => ⟨b, o, e, ?_⟩
   exact Proof.Blake2.bytesAt_congr fun i hi => f.bytes (R := inR s₀) (fun r hr => by
-    simp only [List.mem_singleton] at hr; subst hr; exact hp.in_scr) (by simp; omega) hi
+    simp only [List.mem_singleton] at hr; subst hr; exact hp.in_scr) (by simp; omega_using [hif]) hi
 
 theorem setup_rel {s₀ s₀' : State} (hp : Pre s₀) (hp' : Pre s₀') (q : Same s₀ s₀') :
     RelCT isa (fun t₁ t₂ => t₁ = s₀ ∧ t₂ = s₀') (.block setup) fun t₁ t₂ => F0 s₀ t₁ ∧ F0 s₀' t₂ :=
@@ -329,7 +329,7 @@ theorem first_rel :
           exact ⟨c, by rw [e₂, nE]⟩⟩) fun _ _ h => h)
     (fun _ h => first_init hp h) (fun _ h => first_init hp' h)) ?_
   refine RelCT.seq (rel_wp ((absorbFixed_rel (B := scr s₀) (E := esp₀ s₀) (offset := 832) (size := 4)
-      (by omega) (by decide) (by decide) (hp.stk_scr.sub_right (Offset.sub_base _ (by decide)))
+      (by omega_using [hs]) (by decide) (by decide) (hp.stk_scr.sub_right (Offset.sub_base _ (by decide)))
       fixed_check_832).mono (fun _ _ ⟨⟨f₁, _⟩, ⟨f₂, _⟩⟩ =>
         ⟨⟨f₁.body.ctx hp, pfx_cov hp f₁.body⟩, by
           have c := f₂.body.ctx hp'

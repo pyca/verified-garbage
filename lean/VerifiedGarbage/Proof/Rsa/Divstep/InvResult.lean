@@ -9,6 +9,7 @@ import Mathlib.Tactic.Ring
 import Mathlib.Algebra.Order.Ring.Abs
 import Mathlib.Algebra.Group.Int.Defs
 import Mathlib.Algebra.Order.Group.Unbundled.Abs
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # The result of a batched inverse
 
@@ -26,7 +27,7 @@ open VG.Proof.Divstep
 
 theorem corrected_range' {p : Int} (st : W32.IState) (B : Nat) (hp : 0 < p) :
     0 ≤ corrected p st B ∧ corrected p st B < p :=
-  ⟨Int.emod_nonneg _ (by omega), Int.emod_lt_of_pos _ hp⟩
+  ⟨Int.emod_nonneg _ (by omega_using [hp]), Int.emod_lt_of_pos _ hp⟩
 
 theorem corrected_cong' {p x : Int} {st : W32.IState} {B : Nat}
     (h : st.inv p x (2 ^ (2 * B))) : x * corrected p st B ≡ |st.f| [ZMOD p] := by
@@ -40,7 +41,7 @@ theorem corrected_cong' {p x : Int} {st : W32.IState} {B : Nat}
     rw [abs_of_neg sign]
     exact hm.trans h.1.neg.symm
   · rw [ite_eq_right sign] at hm
-    rw [abs_of_nonneg (by omega)]
+    rw [abs_of_nonneg (by omega_using [sign])]
     exact hm.trans (by simpa only [mul_assoc] using h.1.symm)
 
 theorem oddInput_cong' (p x : Nat) : (oddInput p x : Int) ≡ x [ZMOD (p : Int)] := by
@@ -58,7 +59,7 @@ theorem invRun_result' {p x iv n : Nat} (odd : p % 2 = 1) (large : 1 < p)
       (corrected p st B).toNat < p := by
   intro B st
   have done := invRun_done (inv := iv) odd pc xc
-  have pi : 0 < (p : Int) := by exact_mod_cast (by omega : 0 < p)
+  have pi : 0 < (p : Int) := by exact_mod_cast (by omega_using [odd] : 0 < p)
   have nonneg := corrected_range' st B pi
   have cast : ((corrected p st B).toNat : Int) = corrected p st B := Int.toNat_of_nonneg nonneg.1
   have io : (p : Int) % 2 = 1 := by exact_mod_cast odd
@@ -98,9 +99,9 @@ theorem normal_cast {p a : Nat} (f : Int) (ha : a < p) :
     (normal p a f : Int) = (if f < 0 then -(a : Int) else (a : Int)) % p := by
   unfold normal
   split
-  · rw [Int.natCast_emod, Int.ofNat_sub (by omega)]
+  · rw [Int.natCast_emod, Int.ofNat_sub (by omega_using [ha])]
     exact Int.neg_emod_eq_sub_emod.symm
-  · exact (Int.emod_eq_of_lt (by omega) (by exact_mod_cast ha)).symm
+  · exact (Int.emod_eq_of_lt (by omega_using []) (by exact_mod_cast ha)).symm
 
 /-- `6 (n + 1)` doublings of the normalized coefficient are the corrected one. -/
 theorem correction_eq' {p a n : Nat} {st : W32.IState} (ha : a < p) (sa : st.a = (a : Int)) :
@@ -109,8 +110,8 @@ theorem correction_eq' {p a n : Nat} {st : W32.IState} (ha : a < p) (sa : st.a =
   rw [doubled, Int.natCast_emod, Int.natCast_mul, Int.natCast_pow, normal_cast _ ha]
   unfold corrected
   rw [sa]
-  have exp : 2 * (3 * (n + 1)) = 6 * (n + 1) := by omega
-  rw [exp, Int.toNat_of_nonneg (Int.emod_nonneg _ (by omega))]
+  have exp : 2 * (3 * (n + 1)) = 6 * (n + 1) := by omega_using []
+  rw [exp, Int.toNat_of_nonneg (Int.emod_nonneg _ (by omega_using [ha]))]
   exact ((Int.mod_modEq _ _).mul_right _).eq
 
 end VG.Proof.Rsa.Divstep

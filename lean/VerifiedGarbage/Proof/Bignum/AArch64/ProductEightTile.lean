@@ -53,17 +53,17 @@ theorem offBlock_ok {s : State} {B : Addr} {Z eQ eT eN : Nat} {p : Bool}
   have hnw := hs.nowrap
   rewrite [offBlock_eq, List.append_assoc]
   apply WP.block_append
-  refine WP.mono (lowBlock_ok hs h8 h16 h17 h7 hQ (by omega) hN (by omega) (by omega))
+  refine WP.mono (lowBlock_ok hs h8 h16 h17 h7 hQ (by omega_using [hT]) hN (by omega_using [hQT]) (by omega_using [hNT]))
     fun a ⟨hal, _, ha16, hao, ka⟩ => ?_
   apply WP.block_append
-  refine WP.mono (finishBlock_ok (hs.congr ka.wr) ha16 (by omega)
+  refine WP.mono (finishBlock_ok (hs.congr ka.wr) ha16 (by omega_using [hT])
     ((ka.gpr .x10 (by decide)).trans h10) ((ka.gpr .x7 (by decide)).trans h7))
     fun b ⟨hbh, hbc, hbo, kb⟩ => ?_
   have kab := ka.trans kb
   refine WP.mono (nextOperand_ok ((kab.gpr .x17 (by decide)).trans h17))
     fun t ⟨⟨ht17, htm⟩, kt⟩ => ?_
-  have haHi := hao.wv (d := eT + 64) (k := 8) (by omega) (by omega)
-  have hbLo := hbo.wv (d := eT) (k := 8) (by omega) (by omega)
+  have haHi := hao.wv (d := eT + 64) (k := 8) (by omega_using []) (by omega_using [hT, hnw])
+  have hbLo := hbo.wv (d := eT) (k := 8) (by omega_using []) (by omega_using [hT, hnw])
   have hbFull := wv_radix_add b.mem B eT 8 8
   have hsFull := wv_radix_add s.mem B eT 8 8
   have hplain := combine hal (hbh.trans (congrArg
@@ -85,7 +85,7 @@ theorem offBlock_ok {s : State} {B : Addr} {Z eQ eT eN : Nat} {p : Bool}
         (congrArg (fun z => wv b.mem B eT 16 + ((2 ^ 64) ^ 8 * (2 ^ 64) ^ 8) * z)
           (congrArg BitVec.toNat ht10))).trans hplain'
   · exact Nat.le_trans (Nat.le_of_eq (congrArg BitVec.toNat ht10)) hbc
-  · have ho := (hao.mono (by omega) (by omega)).trans (hbo.mono (o' := eT) (n' := 128) (by omega) (by omega))
+  · have ho := (hao.mono (by omega_using []) (by omega_using [])).trans (hbo.mono (o' := eT) (n' := 128) (by omega_using []) (by omega_using []))
     intro x hx
     exact (congrArg (fun m : Mem => m x) htm).trans (ho x hx)
 

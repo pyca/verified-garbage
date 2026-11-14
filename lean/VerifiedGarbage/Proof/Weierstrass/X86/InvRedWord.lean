@@ -29,7 +29,7 @@ theorem row_bound {m : Mem} {base : Addr} {acc tmp modulus n : Nat}
   have P := product_bound m base tmp modulus n
   have E : 2 ^ (32 * (n + 2)) = 2 ^ 32 * 2 ^ (32 * (n + 1)) := pow32_succ (n + 1)
   rw [E]
-  omega
+  omega_using [h, P]
 
 end VG.Proof.Weierstrass.X86.Inv
 
@@ -57,12 +57,12 @@ theorem quotientWord_ok {s : State} {base : Addr} {size src dst : Nat} (minv : B
   have K : Keeps [.eax, .ecx, .edx] s s₃ :=
     ((U₁.keeps.mono (by decide)).trans (U₂.keeps.mono (by decide))).trans (U₃.keeps.mono (by decide))
   have hs₃ := hs.of_keeps K (by decide)
-  refine wp_storeS (hs₃.ea (by omega)) (hs₃.write hd) fun u U₄ => WP.block_nil ?_
+  refine wp_storeS (hs₃.ea (by omega_using [hd])) (hs₃.write hd) fun u U₄ => WP.block_nil ?_
   refine ⟨?_, K.trans (U₄.keeps _), ?_⟩
   · rw [U₄.mem, w32_write_self, U₃.eax, U₂.other _ (by decide), U₁.gpr, U₂.gpr,
       BitVec.toNat_ofNat]
   · rw [U₄.mem, U₃.mem, U₂.mem, U₁.mem]
-    exact writeW32_outside _ _ _ (by omega)
+    exact writeW32_outside _ _ _ (by omega_using [hd, hn])
 
 theorem addSignWord_ok {s : State} {base : Addr} {size dst : Nat}
     (hs : Scr s base size) (hd : dst + 4 ≤ size) :
@@ -75,11 +75,11 @@ theorem addSignWord_ok {s : State} {base : Addr} {size dst : Nat}
   refine wp_addS rfl fun s₂ U₂ _ => ?_
   have K := U₁.keeps.trans U₂.keeps
   have hs₂ := hs.of_keeps K (by decide)
-  refine wp_storeS (hs₂.ea (by omega)) (hs₂.write hd) fun u U₃ => WP.block_nil ?_
+  refine wp_storeS (hs₂.ea (by omega_using [hd])) (hs₂.write hd) fun u U₃ => WP.block_nil ?_
   refine ⟨?_, K.trans (U₃.keeps _), ?_⟩
   · rw [U₃.mem, w32_write_self, U₂.gpr, U₁.gpr, U₁.other _ (by decide), BitVec.toNat_add]
   · rw [U₃.mem, U₂.mem, U₁.mem]
-    exact writeW32_outside _ _ _ (by omega)
+    exact writeW32_outside _ _ _ (by omega_using [hd, hn])
 
 end VG.Proof.Weierstrass.X86.Inv
 

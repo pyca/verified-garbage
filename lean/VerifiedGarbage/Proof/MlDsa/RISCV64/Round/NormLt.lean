@@ -66,7 +66,7 @@ theorem ok_toNat {a b : BitVec 64} (ha : a.toNat < q) (_hb : b.toNat < 2 ^ 32) :
     ok a b = if a.toNat < b.toNat ∨ q - a.toNat < b.toNat then 1 else 0 := by
   rw [VG.Proof.MlDsa.Round.q_eq] at ha ⊢
   have e : (8380417 - a).toNat = 8380417 - a.toNat := by
-    rw [BitVec.toNat_sub, show (8380417 : BitVec 64).toNat = 8380417 from rfl]; omega
+    rw [BitVec.toNat_sub, show (8380417 : BitVec 64).toNat = 8380417 from rfl]; omega_using [ha]
   unfold ok
   simp only [BitVec.lt_def, e]
   by_cases h1 : a.toNat < b.toNat <;> by_cases h2 : 8380417 - a.toNat < b.toNat <;> simp [h1, h2]
@@ -134,11 +134,11 @@ theorem allOk_succ (s₀ : State) {i : Nat} (hi : i < 256) :
     AllOk s₀ (i + 1) ↔ AllOk s₀ i ∧ normZq (polyAt s₀.mem (Fp s₀))[i]! < (B s₀).toNat := by
   unfold AllOk
   constructor
-  · intro h; exact ⟨fun j hj => h j (by omega), h i (by omega)⟩
+  · intro h; exact ⟨fun j hj => h j (by omega_using [hj]), h i (by omega_using [])⟩
   · intro ⟨h, h'⟩ j hj
     by_cases e : j = i
     · subst e; exact h'
-    · exact h j (by omega)
+    · exact h j (by omega_using [hj, e])
 
 theorem inv_step {s₀ : State} (hp : Pre s₀) {i : Nat} (hi : i < 256) {s : State} (h : Inv s₀ i s) :
     WP isa (.block nlBody) s fun s' => Inv s₀ (i + 1) s' ∧ (s'.gpr .t1 != 0) = decide (i + 1 ≠ 256) := by
@@ -151,11 +151,11 @@ theorem inv_step {s₀ : State} (hp : Pre s₀) {i : Nat} (hi : i < 256) {s : St
   · have hv := polyAt_val hp.red (i := i) hi
     have ha : ((s.mem.readW (Fp s₀ + BitVec.ofNat 64 (4 * i)) 32).setWidth 64).toNat =
         ((polyAt s₀.mem (Fp s₀))[i]!).val := by
-      rw [h.mem, BitVec.toNat_setWidth, Nat.mod_eq_of_lt (by have := (coeffAt s₀.mem (Fp s₀) i).isLt; omega)]
+      rw [h.mem, BitVec.toNat_setWidth, Nat.mod_eq_of_lt (by have := (coeffAt s₀.mem (Fp s₀) i).isLt; omega_using [])]
       exact hv.symm
     have hb : (s.gpr .a1).toNat < 2 ^ 32 := by
       rw [h.r4, B, BitVec.toNat_ushiftRight, BitVec.toNat_shiftLeft, Nat.shiftLeft_eq, Nat.shiftRight_eq_div_pow]
-      omega
+      omega_using []
     rw [r9, ok_toNat (by rw [ha]; exact Fin.isLt _) hb, ha, h.r4]
     have e := allOk_succ s₀ hi
     rw [normZq_lt] at e
@@ -220,7 +220,7 @@ theorem verified : Verified RISCV64.target normLt (Proof.MlDsa.normLtContract RI
     have eb : (B s).toNat = ((s.gpr .a1).setWidth 32).toNat := by
       rw [B, BitVec.toNat_ushiftRight, BitVec.toNat_shiftLeft, Nat.shiftLeft_eq, Nat.shiftRight_eq_div_pow,
         BitVec.toNat_setWidth]
-      omega
+      omega_using []
     rw [eb] at e
     by_cases hc : AllOk s 256
     · rw [ite_eq_left hc, ite_eq_left (e.mp hc)]; rfl

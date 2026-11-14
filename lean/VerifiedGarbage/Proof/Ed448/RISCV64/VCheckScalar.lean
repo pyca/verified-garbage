@@ -40,8 +40,8 @@ theorem lt_L_iff (bs : List Byte) (h : bs.length = 57) :
     have h0 : (bs.getD 56 0).toNat = 0 := by
       by_contra hne
       have : 256 ^ 56 ≤ 256 ^ 56 * (bs.getD 56 0).toNat := Nat.le_mul_of_pos_right _ (Nat.pos_of_ne_zero hne)
-      omega
-    exact ⟨h0, by omega⟩
+      omega_arith
+    exact ⟨h0, by omega_using [hl]⟩
   · rintro ⟨h0, h1⟩
     rw [h0, Nat.mul_zero, Nat.add_zero]; exact h1
 
@@ -60,7 +60,7 @@ theorem checkS_ok {s : State} (hc : VCtx b s) :
   have hD : DY = 168 := rfl
   unfold checkS
   simp only [List.append_assoc, List.cons_append, List.nil_append]
-  refine WP.append (copyIn_ok hc.ctx (p := SGS) (by omega) (by omega) (by decide)) fun s1 h1 => ?_
+  refine WP.append (copyIn_ok hc.ctx (p := SGS) (by omega_using [hSS]) (by omega_using [hSS]) (by decide)) fun s1 h1 => ?_
   have hc1 : VCtx b s1 := hc.of_rest h1.rest (by decide) (by decide)
   refine wp_li (by decide) fun s2 u2 => ?_
   have hc2 : VCtx b s2 := hc1.of_rest (u2.rest (ws := [.a5]) (by decide)) (by decide) (by decide)
@@ -69,16 +69,16 @@ theorem checkS_ok {s : State} (hc : VCtx b s) :
   have hc3 : VCtx b s3 := hc2.of_rest hr3 (by decide) (by decide)
   refine WP.append (orBad_ok hc3 (r := .a5) (by decide)) fun s4 ⟨hr4, hf4, hb4⟩ => ?_
   have hc4 : VCtx b s4 := hc3.of_rest hr4 (by decide) (by decide)
-  refine wp_lbz (a := b + BitVec.ofNat 64 (SGS + 56)) (by omega) (by rw [hc4.ctx.a3])
-    (hc4.inR (by omega)) fun s5 u5 => ?_
+  refine wp_lbz (a := b + BitVec.ofNat 64 (SGS + 56)) (by omega_using [hSS]) (by rw [hc4.ctx.a3])
+    (hc4.inR (by omega_using [hSS])) fun s5 u5 => ?_
   have hc5 : VCtx b s5 := hc4.of_rest (u5.rest (ws := [.a4]) (by decide)) (by decide) (by decide)
   refine WP.mono (orBad_ok hc5 (r := .a4) (by decide)) fun t ⟨hrt, hft, hbt⟩ => ?_
   -- The frames.
   have fC : Frame [FA b] s.mem s1.mem := h1.frame.sub fun r hr => ⟨_, List.mem_singleton_self _, by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl <;> exact Offset.sub_base _ (by omega)⟩
+    rcases hr with rfl | rfl <;> exact Offset.sub_base _ (by omega_arith)⟩
   have fS : Frame [FA b] s2.mem s3.mem := hf3.sub fun r hr => ⟨_, List.mem_singleton_self _, by
-    rw [List.mem_singleton.mp hr]; exact Offset.sub_base _ (by omega)⟩
+    rw [List.mem_singleton.mp hr]; exact Offset.sub_base _ (by omega_using [hSD])⟩
   have f3 : Frame [FA b] s.mem s3.mem := fC.trans (by rw [u2.mem] at fS; exact fS)
   have hrt' : Rest [.a2, .a4, .a5, .a6] s t := (h1.rest.mono (by decide)).trans
     (((u2.rest (ws := [.a5]) (by decide)).mono (by decide)).trans ((hr3.mono (by decide)).trans
@@ -97,22 +97,22 @@ theorem checkS_ok {s : State} (hc : VCtx b s) :
       rw [← u5.mem]; exact hft.mono (by simp)
     have e := limb_frame (o := DK) f fun r hr k hk => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl | rfl <;> exact Offset.disjoint _ (by omega) (by omega) (by omega)
+      rcases hr with rfl | rfl | rfl | rfl <;> exact Offset.disjoint _ (by omega_arith) (by omega_using [hK, hk]) (by omega_arith)
     rw [FS, V, val32_congr e]; rfl
   · -- The checks.
     have b3 : bad s3.mem b = bad s.mem b := by
       unfold bad
       rw [f3.readW (Region.contains_self _ (64 / 8)) (fun r hr => by
-        rw [List.mem_singleton.mp hr]; exact Offset.disjoint_base _ (by omega) (by omega)) (by decide)]
+        rw [List.mem_singleton.mp hr]; exact Offset.disjoint_base _ (by omega_using [o1, o3]) (by omega_using [o3])) (by decide)]
     have hB : (s5.gpr .a4).toNat = (s.mem (b + BitVec.ofNat 64 (SGS + 56))).toNat := by
       rw [u5.gpr, toNat_imm (Nat.lt_trans (BitVec.isLt _) (by decide)), hf4 _ fun r hr => by
           rw [List.mem_singleton.mp hr]
-          exact fun h => Offset.disjoint b (d := SGS + 56) (n := 1) (e := BAD) (k := 8) (by omega)
-            (by omega) (by omega) _ (Region.contains_self _ _) h,
+          exact fun h => Offset.disjoint b (d := SGS + 56) (n := 1) (e := BAD) (k := 8) (by omega_using [o3, hSS])
+            (by omega_using [hSS]) (by omega_using [o3]) _ (Region.contains_self _ _) h,
         f3 _ fun r hr => by
           rw [List.mem_singleton.mp hr]
-          exact fun h => Offset.disjoint_base b (d := SGS + 56) (n := 1) (k := ACC + 112) (by omega)
-            (by omega) _ (Region.contains_self _ _) h]
+          exact fun h => Offset.disjoint_base b (d := SGS + 56) (n := 1) (k := ACC + 112) (by omega_using [o1, hSS])
+            (by omega_using [hSS]) _ (Region.contains_self _ _) h]
     have hV : V s2.mem b DY = yw s.mem b (SGS) := by
       rw [u2.mem]; exact val32_congr fun j hj => (h1.vals j hj).1
     obtain ⟨e56, eB⟩ := bytes57 (b := b) s.mem (SGS)
@@ -120,8 +120,8 @@ theorem checkS_ok {s : State} (hc : VCtx b s) :
       Nat.or_eq_zero_iff, Nat.or_eq_zero_iff]
     have : (if Spec.Ed448.L ≤ yw s.mem b (SGS) then 1 else 0) = 0 ↔ yw s.mem b (SGS) < Spec.Ed448.L := by
       by_cases h : Spec.Ed448.L ≤ yw s.mem b (SGS)
-      · rw [ite_eq_left h]; exact ⟨fun h' => absurd h' (by decide), fun h' => absurd h (by omega)⟩
-      · rw [ite_eq_right h]; exact ⟨fun _ => by omega, fun _ => rfl⟩
+      · rw [ite_eq_left h]; exact ⟨fun h' => absurd h' (by decide), fun h' => absurd h (by omega_using [h'])⟩
+      · rw [ite_eq_right h]; exact ⟨fun _ => by omega_using [h], fun _ => rfl⟩
     rw [this]
     exact ⟨fun ⟨⟨h1, h2⟩, h3⟩ => ⟨h1, h3, h2⟩, fun ⟨h1, h3, h2⟩ => ⟨⟨h1, h2⟩, h3⟩⟩
 

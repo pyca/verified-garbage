@@ -31,7 +31,7 @@ theorem coeffAt_writeW32 (m : Mem) (q : Addr) {i j : Nat} (hi : i < 256) (hj : j
   unfold coeffAt
   split
   · subst j; exact Mem.readW_writeW_self32 m _ v
-  · exact Mem.readW_writeW_sep (Offset.sep q (by omega) (by omega) (by omega)) (by decide)
+  · exact Mem.readW_writeW_sep (Offset.sep q (by omega_arith) (by omega_using [hi]) (by omega_using [hj])) (by decide)
 
 /-- The coefficients after masking with `-r`, for `r` 0 or 1. -/
 theorem and_mask {r : BitVec 32} (hr : r = 0 ∨ r = 1) (x : BitVec 32) : x &&& (0 - r) = if r = 1 then x else 0 := by
@@ -75,8 +75,8 @@ theorem mask_step {P M : BitVec 32} {s₀ : State} (fP : P.toNat + 1024 ≤ 2 ^ 
     {k : Nat} (hk : k < 256) {s : State} (h : MaskInv P M s₀ k s) :
     WP isa (.block maskBody) s fun s' => MaskInv P M s₀ (k + 1) s' ∧ s'.z = decide (k + 1 = 256) := by
   have eP : State.addr (P + BitVec.ofNat 32 (4 * k) + BitVec.ofNat 32 0) = State.addr P + BitVec.ofNat 64 (4 * k) := by
-    rw [addr_ptr _ _ _ (by omega)]; simp
-  have cP : (regA P 1024).Contains (State.addr P + BitVec.ofNat 64 (4 * k)) 4 := contains_off (by omega) (by omega)
+    rw [addr_ptr _ _ _ (by omega_using [fP, hk])]; simp
+  have cP : (regA P 1024).Contains (State.addr P + BitVec.ofNat 64 (4 * k)) 4 := contains_off (by omega_using [hk]) (by omega_using [hk])
   have ow : InRegions s.wr (State.addr (P + BitVec.ofNat 32 (4 * k) + BitVec.ofNat 32 0)) 4 := by
     rw [eP, h.wr]; exact cw _ _ ⟨_, List.mem_singleton_self _, cP⟩
   have ir : InRegions (s.rd ++ s.wr) (State.addr (P + BitVec.ofNat 32 (4 * k) + BitVec.ofNat 32 0)) 4 :=
@@ -95,8 +95,8 @@ theorem mask_step {P M : BitVec 32} {s₀ : State} (fP : P.toNat + 1024 ≤ 2 ^ 
       rw [ifp rfl, ifp (Nat.lt_succ_self _), ← this]; rfl
     · rw [ifn e, h.co t ht]
       by_cases htk : t < k
-      · rw [ifp htk, ifp (by omega)]
-      · rw [ifn htk, ifn (by omega)]
+      · rw [ifp htk, ifp (by omega_using [htk])]
+      · rw [ifn htk, ifn (by omega_using [e, htk])]
   · rw [z]; exact count_z (k := 1) hk (by decide) (by decide)
 
 theorem mask_loop {P M : BitVec 32} {s₀ : State} (fP : P.toNat + 1024 ≤ 2 ^ 32) (cw : Covers [regA P 1024] s₀.wr)

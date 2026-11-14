@@ -84,7 +84,7 @@ theorem selectIn_smallConst (x : State) (h : SelectIn g v x) :
   refine WP.mono (smallConstLayout_ok x 1 h.workspace h.layout h.width h.ptr
     (by decide : 7 < 8) (by decide) (by decide) h.stackRead h.stackSep h.saved) ?_
   rintro w ⟨_, _, _, outside7, frame7, rest7, ptrW⟩
-  exact ⟨(h.after_array (by decide : 7 ≠ 0) (outside_array_keeps outside7 (len := workspaceWords g.words) (by omega))
+  exact ⟨(h.after_array (by decide : 7 ≠ 0) (outside_array_keeps outside7 (len := workspaceWords g.words) (by omega_using [nNow]))
     frame7 rest7 ptrW).1, by rw [rest7.rd, rest7.wr, rest7.sp]; exact read, by rw [rest7.sp]; exact fit⟩
 
 theorem selectPart_ct :
@@ -97,7 +97,7 @@ theorem selectPart_ct :
       (fun _ _ => True) :=
     (loadStack_ct .r11 48).mono (fun _ _ h => h.2.2) (fun _ _ _ => trivial)
   have loadWP (s : State) (h : SelectIn g v s) : WP isa (.block [.ldrSp .r11 48]) s (SelectIn g v) := by
-    refine wp_loadStack (a := off (State.addr s.sp) 48) (by decide) (addr_add (by have := h.2.2; omega)) h.2.1
+    refine wp_loadStack (a := off (State.addr s.sp) 48) (by decide) (addr_add (by have := h.2.2; omega_using [this])) h.2.1
       fun t ld => WP.block_nil ?_
     exact ⟨h.1.of_mem ld.mem (ld.rest (by decide : Reg.r11 ∈ [Reg.r11]))
       (by rw [ld.other .r0 (by decide)]; exact h.1.ptr), by rw [ld.rd, ld.wr, ld.sp]; exact h.2.1,
@@ -174,7 +174,7 @@ theorem r2Copy_ct {bs1 bs2 : Fin 7 → List Byte} (hj : j = 1 ∨ j = 2) (ha : g
     obtain ⟨s0, h0, ready, _, _, _, rest⟩ := h
     have spNow := h0.shared.stack.nowrap
     exact ⟨ready, by rw [rest.rd, rest.wr, rest.sp]; exact h0.shared.stack.read (by decide),
-      by rw [rest.sp]; omega⟩
+      by rw [rest.sp]; omega_using [spNow]⟩
   rw [r2Copy]
   exact crt_seq_ct (r2CopyHead_ct hj) (fun s h => headWP s h) (fun s h => headWP s h)
     (crt_seq_ct copyCT (fun z h => copyWP z h) (fun z h => copyWP z h)
@@ -212,12 +212,12 @@ theorem r2Given_ct {bs1 bs2 : Fin 7 → List Byte} (hj : j = 1 ∨ j = 2) (ha : 
     have copyIn (s : State) {bs : Fin 7 → List Byte} (h : T bs s) : CopyIn g bs j v s := by
       have hv : 2 ≤ v := by have := h.1.2.1.layout.1; rw [h.1.2.1.width] at this; exact this
       refine ⟨h.1.1, h.1.2.1, ?_, h.1.2.2⟩
-      unfold Spec.Rsa.primeWords Spec.Rsa.modulusWords; omega
+      unfold Spec.Rsa.primeWords Spec.Rsa.modulusWords; omega_using [same, hv]
     exact (r2Copy_ct hj ha).mono (fun _ _ h => ⟨copyIn _ h.1, copyIn _ h.2.1, h.2.2⟩) (fun _ _ _ => trivial)
   · exact relCT_of_pre fun s _ h => (r2_ct (by
       obtain ⟨_, le, _, _, _, _, _⟩ := h.1.1.1.narrow_fits j hj
       have : g.words ≤ 128 := (crt_width_valid h.1.1.1.buffers.lengthValid).2.1
-      omega)).mono (fun _ _ h => ⟨h.1.1.2.1, h.2.1.1.2.1, h.2.2⟩) (fun _ _ _ => trivial)
+      omega_using [le, this])).mono (fun _ _ h => ⟨h.1.1.2.1, h.2.1.1.2.1, h.2.2⟩) (fun _ _ _ => trivial)
 
 theorem crt_narrowPrimeGiven_ct {bs1 bs2 : Fin 7 → List Byte} (hj : j = 1 ∨ j = 2) (ha : g.r2 = some a) :
     RelCT isa (fun s t => CrtPrimeIn g bs1 j s ∧ CrtPrimeIn g bs2 j t ∧ s.sp = t.sp)

@@ -33,9 +33,9 @@ open VG.Spec.Sha3 (bytesAt)
 
 theorem readW32_getLsbD (m : Mem) (a : Addr) {k : Nat} (hk : k < 32) :
     (m.readW a 32).getLsbD k = (m (a + BitVec.ofNat 64 (k / 8))).getLsbD (k % 8) := by
-  rw [← Mem.extractLsb'_read m a (n := 4) (j := k / 8) (by omega), BitVec.getLsbD_extractLsb']
-  simp only [Mem.readW, BitVec.getLsbD_setWidth, show k % 8 < 8 by omega, decide_true, Bool.true_and, hk]
-  congr 1; omega
+  rw [← Mem.extractLsb'_read m a (n := 4) (j := k / 8) (by omega_using [hk]), BitVec.getLsbD_extractLsb']
+  simp only [Mem.readW, BitVec.getLsbD_setWidth, show k % 8 < 8 by omega_using [], decide_true, Bool.true_and, hk]
+  congr 1; omega_using []
 
 /-- The two words at `a`, as a number: the first 8 bytes there. -/
 theorem readW_pair (m : Mem) (a : Addr) (L : List Byte) (h : ∀ k < 8, m (a + BitVec.ofNat 64 k) = L.getD k 0) :
@@ -45,16 +45,16 @@ theorem readW_pair (m : Mem) (a : Addr) (L : List Byte) (h : ∀ k < 8, m (a + B
   rw [Nat.add_comm, Nat.testBit_two_pow_mul_add _ (BitVec.isLt _), testBit_leNat]
   split
   · rename_i hk
-    rw [BitVec.testBit_toNat, readW32_getLsbD _ _ hk, h _ (by omega), List.getD_eq_getElem?_getD,
-      List.getD_eq_getElem?_getD, List.getElem?_take_of_lt (by omega)]
+    rw [BitVec.testBit_toNat, readW32_getLsbD _ _ hk, h _ (by omega_using [hk]), List.getD_eq_getElem?_getD,
+      List.getD_eq_getElem?_getD, List.getElem?_take_of_lt (by omega_using [hk])]
   · rename_i hk
     rw [BitVec.testBit_toNat]
     by_cases h64 : k < 64
-    · rw [readW32_getLsbD _ _ (by omega), add_ofNat_add, show 4 + (k - 32) / 8 = k / 8 by omega,
-        show (k - 32) % 8 = k % 8 by omega, h _ (by omega), List.getD_eq_getElem?_getD,
-        List.getD_eq_getElem?_getD, List.getElem?_take_of_lt (by omega)]
-    · rw [BitVec.getLsbD_of_ge _ _ (by omega), List.getD_eq_getElem?_getD,
-        List.getElem?_eq_none (by rw [List.length_take]; omega)]
+    · rw [readW32_getLsbD _ _ (by omega_using [h64]), add_ofNat_add, show 4 + (k - 32) / 8 = k / 8 by omega_using [hk],
+        show (k - 32) % 8 = k % 8 by omega_using [hk], h _ (by omega_using [h64]), List.getD_eq_getElem?_getD,
+        List.getD_eq_getElem?_getD, List.getElem?_take_of_lt (by omega_using [h64])]
+    · rw [BitVec.getLsbD_of_ge _ _ (by omega_using [h64]), List.getD_eq_getElem?_getD,
+        List.getElem?_eq_none (by rw [List.length_take]; omega_using [h64])]
       simp
 
 /-! ## The setup of the loop -/
@@ -77,27 +77,27 @@ include hp hτ
 theorem setup_ok {s : State} (h : ZDone σ s) :
     WP isa (.block (bSetup ++ ([.mov .r3 (.imm 264)] : List Instr))) s (BAt σ 0) := by
   have e6 := h.env.r6
-  have hA : State.addr (s.gpr .r6 + BitVec.ofNat 32 840) = (spOf σ).at' 840 := by rw [e6]; exact at_eq hp (by omega)
+  have hA : State.addr (s.gpr .r6 + BitVec.ofNat 32 840) = (spOf σ).at' 840 := by rw [e6]; exact at_eq hp (by omega_using [])
   have hC : State.addr (s.gpr .r6 + BitVec.ofNat 32 844) = (spOf σ).at' 840 + BitVec.ofNat 64 4 := by
-    rw [e6, at_eq hp (by omega), add_ofNat_add]
+    rw [e6, at_eq hp (by omega_using []), add_ofNat_add]
   have hC' : InRegions (s.rd ++ s.wr) ((spOf σ).at' 840 + BitVec.ofNat 64 4) 4 := by
-    rw [add_ofNat_add]; exact inScrRd hp h.env (by omega)
-  refine WP.mono (setup1_ok s hA hC (inScrRd hp h.env (by omega)) hC')
+    rw [add_ofNat_add]; exact inScrRd hp h.env (by omega_using [])
+  refine WP.mono (setup1_ok s hA hC (inScrRd hp h.env (by omega_using [])) hC')
     fun s' ⟨g1, g4, g2, g0, g3, g5, g6, m, rd, wr, sp⟩ => ?_
   have hSt : St σ 0 = (Vector.replicate n 0, i0 σ) := rfl
   refine ⟨h.env.same m g5 g6 rd wr sp, by rw [m]; exact h.out, by rw [g0, e6], ?_, ?_,
     by rw [g3], by rw [m, hSt]; exact h.st⟩
   · rw [g2, h.r7, hSt]
     apply BitVec.eq_of_toNat_eq
-    rw [BitVec.toNat_sub, toNat_ofNat32 (by omega), toNat_ofNat32 (by simp only [i0]; omega)]
+    rw [BitVec.toNat_sub, toNat_ofNat32 (by omega_using []), toNat_ofNat32 (by simp only [i0]; omega_using [])]
     have := (σ.gpr .r2).isLt
     simp only [i0, tau] at hτ ⊢
-    omega
+    omega_arith
   · show _ = _
     rw [g1, g4, hSt, Nat.sub_self, Nat.pow_zero, Nat.div_one]
     exact readW_pair _ _ _ fun k hk => by
       have := congrArg (fun L => L.getD k 0) h.out
-      rw [MlKem.bytesAt_getD _ _ (by omega)] at this
+      rw [MlKem.bytesAt_getD _ _ (by omega_using [hk])] at this
       exact this
 
 /-- The loop, from the zeroed polynomial. -/
@@ -132,7 +132,7 @@ theorem correct {σ : State} (hp : Pre σ) : WP isa Impl.MlDsa.Arm.Sample.sample
       ((ballFold (tau σ) (X σ)).2 = 256 →
         PolyIs s'.mem (State.addr (σ.gpr .r3)) (toRq (ballFold (tau σ) (X σ)).1)) ∧
       abiPreserved σ s' := by
-  have hτ : tau σ ≤ 256 := by have := hp.tau_le; omega
+  have hτ : tau σ ≤ 256 := by have := hp.tau_le; omega_using [this]
   exact WP.seq (WP.mono (pro_ball hp.ok rfl (by simp) rfl rfl rfl hp.arg) fun _ h1 =>
     WP.seq (WP.mono (sponge_ok hp.ok (rate := 136) (outlen := 272) (by decide) (by decide) (by decide) (by decide) h1)
       fun _ h2 => WP.seq (WP.mono (zero_ok hp.ok h2) fun _ h3 => WP.seq (WP.mono (loop_ok hp.ok hτ h3)

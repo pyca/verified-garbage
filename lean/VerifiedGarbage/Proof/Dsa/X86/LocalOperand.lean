@@ -16,7 +16,7 @@ theorem local_pointer {s : State} {base : Addr} {size offset len : Nat}
     (hs : Scr s base size) (hlen : 0 < len) (hb : offset + len ≤ size) :
     (pointerValue base s (.local offset)).setWidth 64 = off base offset := by
   unfold pointerValue
-  have H := addr_eq (x := s.gpr .edi) (k := offset) (by rw [hs.edi_toNat]; have := hs.nowrap; omega)
+  have H := addr_eq (x := s.gpr .edi) (k := offset) (by rw [hs.edi_toNat]; have := hs.nowrap; omega_using [hlen, hb, this])
   rw [hs.edi] at H
   exact H
 
@@ -24,20 +24,20 @@ theorem localReady {s : State} {base : Addr} {size offset len n : Nat}
     (hs : Scr s base size) (hlen : 0 < len) (hb : offset + len ≤ size) (hfar : contextBytes n ≤ offset) :
     OperandReady s base n (.local offset) len := by
   have nw := hs.nowrap
-  have ofit : offset < 2 ^ 32 := by omega
-  have pfit : base.toNat + offset < 2 ^ 32 := by omega
+  have ofit : offset < 2 ^ 32 := by omega_using [hlen, hb, nw]
+  have pfit : base.toNat + offset < 2 ^ 32 := by omega_using [hlen, hb, nw]
   have ptr := local_pointer hs hlen hb
   constructor
   · constructor
     · change (s.gpr .edi + BitVec.ofNat 32 offset).toNat + len ≤ 2 ^ 32
       rw [BitVec.toNat_add, BitVec.toNat_ofNat, hs.edi_toNat, Nat.mod_eq_of_lt ofit, Nat.mod_eq_of_lt pfit]
-      omega
+      omega_using [hb, nw]
     · intro d hd
       rw [ptr]
       change InRegions (s.rd ++ s.wr) (base + BitVec.ofNat 64 offset + BitVec.ofNat 64 d) 4
       rw [Offset.add_add]
-      exact hs.read (by omega)
+      exact hs.read (by omega_using [hb, hd])
   · rw [ptr]
-    exact Offset.disjoint_base base hfar (by omega)
+    exact Offset.disjoint_base base hfar (by omega_using [hb, nw])
 
 end VG.Proof.Dsa.X86

@@ -39,7 +39,7 @@ theorem corePower_relCT (prepare : Bool) (base : Addr) (size len bl output : Nat
     RelCT isa (PowerAgree prepare base size len bl modulus a b)
       (power prepare len bl modulus a b output) (fun _ _ => True) := by
   intro s t tr ur sf tf ⟨⟨⟨S,T,PM,PA,PB⟩,RS,RT,SP⟩,Pub,Priv⟩ E F
-  have hn : (len+7)/8≤48 := by omega
+  have hn : (len+7)/8≤48 := by omega_using [hmax]
   have ctx : contextBytes ((len+7)/8)≤size :=
     Nat.le_trans (VG.Proof.Dsa.X86.Layout.context_bound hn) (Nat.le_trans (by decide) hu)
   have table := table_layout sup

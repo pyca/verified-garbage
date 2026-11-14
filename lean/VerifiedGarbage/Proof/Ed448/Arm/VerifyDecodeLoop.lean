@@ -39,7 +39,7 @@ theorem VKeep.dframe {base : Addr} {s t : State} (h : VKeep base s t) : DFrame b
 theorem limbs_above {base : Addr} {m m' : Mem} (h : Outside2 base 32 2848 ACC 512 m m') {d : Nat}
     (hd : 2880 ≤ d) (hd' : d + 112 ≤ 3584) {i : Nat} (hi : i < 28) :
     limbs m' base d i = limbs m base d i :=
-  congrArg BitVec.toNat (h.word (Or.inr (by omega)) (Or.inl (by simp only [ACC]; omega)) (by omega))
+  congrArg BitVec.toNat (h.word (Or.inr (by omega_using [hd])) (Or.inl (by simp only [ACC]; omega_using [hd', hi])) (by omega_using [hd', hi]))
 
 /-- `R`'s place, from the slots. -/
 theorem stash_ok {s : State} {base : Addr} (hs : Scr s base) :
@@ -61,13 +61,13 @@ theorem stash_E {base : Addr} {m m' : Mem} (h : Outside base RX 224 m m') (i : I
     E m' base i = E m base i := by
   have := i.isLt
   show F m' base (slot i.val) = F m base (slot i.val)
-  exact congrArg Proof.X448.toFe (h.fe (d := slot i.val) (Or.inl (by simp only [RX, slot]; omega))
-    (by simp only [slot]; omega))
+  exact congrArg Proof.X448.toFe (h.fe (d := slot i.val) (Or.inl (by simp only [RX, slot]; omega_using []))
+    (by simp only [slot]; omega_using []))
 
 theorem stash_bounded {base : Addr} {m m' : Mem} (h : Outside base RX 224 m m') (hb : BoundedEnv m base) :
     BoundedEnv m' base := fun i j hj => by
   have := i.isLt
-  rw [h.limbs (Or.inl (by simp only [RX, slot]; omega)) (by simp only [slot]; omega) hj]
+  rw [h.limbs (Or.inl (by simp only [RX, slot]; omega_using [])) (by simp only [slot]; omega_using []) hj]
   exact hb i j hj
 
 /-- What an iteration's input needs: the point's bytes at `q`, readable and away from the
@@ -93,7 +93,7 @@ theorem DFrame.bytes {base q : Addr} {m m' : Mem} (h : DFrame base m m')
   simp only [bytesAt]
   exact List.map_congr_left fun j hj => by
     have := hf j (List.mem_range.mp hj)
-    exact h _ (Or.inr (by omega)) (Or.inr (by simp only [ACC]; omega))
+    exact h _ (Or.inr (by omega_using [this])) (Or.inr (by simp only [ACC]; omega_using [this]))
 
 /-- The end of an iteration: `r12 := r8`, `r8 := r0`, and `Z` set exactly when `r8` was `r0`. -/
 theorem vnext_ok (s : State) :
@@ -136,7 +136,7 @@ theorem vdecodeBody_ok (hR : RecoverOk) {s : State} {base q : Addr} (hs : Scr s 
   have byt1 : bytesAt s1.mem q 57 = bytesAt s.mem q 57 := by
     simp only [bytesAt]
     exact List.map_congr_left fun j hj => o1 _ (Or.inr (by
-      have := hin.far j (List.mem_range.mp hj); simp only [RX]; omega))
+      have := hin.far j (List.mem_range.mp hj); simp only [RX]; omega_using [this]))
   -- the decoding
   refine WP.seq (WP.mono (decode_ok hR hs1 (stash_bounded o1 hb) (p := .r12) (.inr rfl) in1.addr in1.fit
     in1.rd in1.far 6 7 (Or.inl ⟨rfl, rfl⟩) (by rw [e1]; exact h10) (by rw [e1]; exact h11))
@@ -152,12 +152,12 @@ theorem vdecodeBody_ok (hR : RecoverOk) {s : State} {base q : Addr} (hs : Scr s 
     by rw [tz, r8₂, r0₂], fun i hi => ?_, fun i hi => ?_, ?_, fun a ha => by rw [tm]; exact v2 a ha,
     fun i h6 h7 hi => ?_⟩
   · rw [tm]
-    exact Outside2.trans (show DFrame base s.mem s1.mem from fun p h1 _ => o1 p (by unfold RX; omega))
+    exact Outside2.trans (show DFrame base s.mem s1.mem from fun p h1 _ => o1 p (by unfold RX; omega_using [h1]))
       (VKeep.dframe k2)
   · rw [tm, limbs_above k2.mem (by decide) (by decide) hi]; exact x1 i hi
   · rw [tm, limbs_above k2.mem (by decide) (by decide) hi]; exact y1 i hi
   · rw [tk.1 _ (by decide), ← k1.1 .r10 (by decide)]; exact c2
-  · rw [tm, e2 i h6 h7 (by omega), e1]
+  · rw [tm, e2 i h6 h7 (by omega_using [hi]), e1]
 
 /-- A loop whose body runs twice. -/
 theorem WP.loop2 {M : ISA} {b : Prog M} {c : M.Cond} {s : M.State} {Q : M.State → Prop}
@@ -229,8 +229,8 @@ theorem copyFrom_ok {s : State} {base : Addr} (hs : Scr s base) (hb : BoundedEnv
     WP isa (.block (copy (slot o.val) a)) s fun t =>
       Keep base s t ∧ BoundedEnv t.mem base ∧
       E t.mem base = Function.update (E s.mem base) o (F s.mem base a) := by
-  have sep : slot o.val + 112 ≤ a := by have := o.isLt; simp only [slot]; omega
-  refine WP.mono (copy_ok hs (Nat.le_trans (slot_bound o) (by decide)) (by omega) (Or.inr (Or.inl sep)))
+  have sep : slot o.val + 112 ≤ a := by have := o.isLt; simp only [slot]; omega_using [ha1]
+  refine WP.mono (copy_ok hs (Nat.le_trans (slot_bound o) (by decide)) (by omega_using [ha2]) (Or.inr (Or.inl sep)))
     fun t ⟨tf, tm, tk⟩ => ?_
   have op : Op base (slot o.val) s t := ⟨tk, FieldMem.output tm⟩
   refine ⟨op.keep, bounded_update op.mem hb (fun i hi => ?_), ?_⟩

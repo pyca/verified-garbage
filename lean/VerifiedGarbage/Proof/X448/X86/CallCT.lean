@@ -75,7 +75,7 @@ abbrev entryOf (rs : List Reg) (s : State) (base : Addr) : State :=
 
 theorem entryOf_arg (hrs : .esp ∉ rs) (hl : rs.length ≤ 4) (hc : CallCtx s base) {i : Nat}
     (hi : i < rs.length) : arg (entryOf rs s base) i = s.gpr rs[rs.length - 1 - i] :=
-  callEntry_arg (by have := hc.sp; omega) hrs hi
+  callEntry_arg (by have := hc.sp; omega_using [hl, this]) hrs hi
 
 theorem entryOf_fnPre (hl : rs.length ≤ 4) (hs : Scr s base) (hc : CallCtx s base)
     (hw : arg (entryOf rs s base) 0 = s.gpr .edi) :
@@ -87,12 +87,12 @@ theorem entryOf_fnPre (hl : rs.length ≤ 4) (hs : Scr s base) (hc : CallCtx s b
   have a0 : argAddr (entryOf rs s base) 0 = (s.gpr .esp - BitVec.ofNat 32 (4 * rs.length)).setWidth 64 :=
     callEntry_argAddr0 rs s
   refine ⟨?_, by rw [a0]; rfl, by rw [ws]; rfl, ?_, ?_, ?_⟩
-  · rw [esp, sub_toNat (by omega)]; have := (s.gpr .esp).isLt; omega
+  · rw [esp, sub_toNat (by omega_using [hl, hE])]; have := (s.gpr .esp).isLt; omega_using [hl]
   · rw [ws, a0]
-    exact hc.sep.sub_right (below_sub (by omega) hE)
+    exact hc.sep.sub_right (below_sub (by omega_using [hl]) hE)
   · rw [ws, esp]
     refine (hc.sep.sub_right ?_).symm
-    refine fun x hx => below_inner (sp := s.gpr .esp) (a := 4) (k := 4 * rs.length) (b := 20) (by omega) hE x ?_
+    refine fun x hx => below_inner (sp := s.gpr .esp) (a := 4) (k := 4 * rs.length) (b := 20) (by omega_using [hl]) hE x ?_
     have e : s.gpr .esp - BitVec.ofNat 32 (4 * rs.length + 4) =
         s.gpr .esp - BitVec.ofNat 32 (4 * rs.length) - BitVec.ofNat 32 4 := by
       rw [BitVec.sub_sub, BitVec.ofNat_add]
@@ -102,9 +102,9 @@ theorem entryOf_fnPre (hl : rs.length ≤ 4) (hs : Scr s base) (hc : CallCtx s b
 
 theorem entryOf_mem (hrs : .esp ∉ rs) (hl : rs.length ≤ 4) (hc : CallCtx s base) :
     WsEq base s.mem (entryOf rs s base).mem :=
-  WsEq.of_frame hc ((callEntry_frame (by have := hc.sp; omega) hrs).sub fun r hr => by
+  WsEq.of_frame hc ((callEntry_frame (by have := hc.sp; omega_using [hl, this]) hrs).sub fun r hr => by
     rw [List.mem_singleton.mp hr]
-    exact ⟨callStk s, List.mem_singleton_self _, below_sub (by omega) hc.sp⟩)
+    exact ⟨callStk s, List.mem_singleton_self _, below_sub (by omega_using [hl]) hc.sp⟩)
 
 theorem entryOf_cov (hs : Scr s base) :
     Covers ([below (s.gpr .esp) (4 * rs.length)] ++ [⟨base, 8192⟩])
@@ -122,12 +122,12 @@ end
 theorem fits_slot {o : Nat} (h : Slot o) : Proof.X448.Field16.Fits (BitVec.ofNat 32 o) := by
   have : o + 112 ≤ 3584 := h
   show (BitVec.ofNat 32 o).toNat + 112 ≤ 3584
-  rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]; exact this
+  rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [this])]; exact this
 
 theorem limbs_slot {m : Mem} {base : Addr} {a : Nat} (h : Slot a) (hb : Bounded m base a) :
     Proof.X448.Field16.Limbs m base (BitVec.ofNat 32 a) := by
   have : a + 112 ≤ 3584 := h
-  rw [limbs_spec, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]; exact hb
+  rw [limbs_spec, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [this])]; exact hb
 
 /-- A binary function's precondition, at its call after the offsets' `mov`s. -/
 theorem callPre_bin {r : Nat → Nat → Nat → Prop} {s : State} {base : Addr} (hs : Scr s base)
@@ -151,8 +151,8 @@ theorem callPre_bin {r : Nat → Nat → Nat → Prop} {s : State} {base : Addr}
     · rw [a1]; exact fits_slot ho
     · rw [a2]; exact fits_slot ha
     · rw [a3]; exact fits_slot hb
-    · rw [hw, a2]; exact limbs_slot ha (w.bounded (by omega) ab)
-    · rw [hw, a3]; exact limbs_slot hb (w.bounded (by omega) bb)
+    · rw [hw, a2]; exact limbs_slot ha (w.bounded (by omega_using [ha']) ab)
+    · rw [hw, a3]; exact limbs_slot hb (w.bounded (by omega_using [hb']) bb)
   exact ⟨pre, entryOf_cov hs, entryOf_covw hs⟩
 
 /-- `vg_gf448_r16_mul_a24`'s precondition, at its call after the offsets' `mov`s. -/
@@ -173,7 +173,7 @@ theorem callPre_a24 {s : State} {base : Addr} (hs : Scr s base) (hc : CallCtx s 
     refine ⟨entryOf_fnPre (by decide) hs hc (av 0 (by decide)), ?_, ?_, ?_⟩
     · rw [a1]; exact fits_slot ho
     · rw [a2]; exact fits_slot ha
-    · rw [hw, a2]; exact limbs_slot ha (w.bounded (by omega) ab)
+    · rw [hw, a2]; exact limbs_slot ha (w.bounded (by omega_using [ha']) ab)
   exact ⟨pre, entryOf_cov hs, entryOf_covw hs⟩
 
 /-! ## Calls -/
@@ -291,7 +291,7 @@ theorem call2_tr {name : String} {body : Prog isa}
         · rw [ga.1, ga.2]
         · exact edi_eq f₁.scr f₂.scr
       have fit : 4 * [Reg.ecx, .eax, .edi].length + 4 ≤ (t₁.gpr .esp).toNat := by
-        have := f₁.ctx.sp; simp; omega
+        have := f₁.ctx.sp; simp; omega_using [this]
       have ae := fun i (hi : i < 3) => callEntry_arg_eq (by decide) fit (e₁.trans e₂.symm) hr hi
       exact ⟨by rw [State.withRegions_gpr, State.withRegions_gpr, callEntry_esp', callEntry_esp', e₁, e₂],
         ae 0 (by decide), ae 1 (by decide), ae 2 (by decide)⟩

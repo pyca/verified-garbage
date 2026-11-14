@@ -47,7 +47,7 @@ theorem scanJ_step (a : ScanPub) (j : Nat) (t : State) (hj : j < lead a.bs + 1) 
     WP isa (.block scanBody) t fun t' => isa.eval .ne t' = some (decide (j + 1 < lead a.bs + 1)) ∧
       (j + 1 < lead a.bs + 1 → ScanJ a (j + 1) t') ∧ (j + 1 = lead a.bs + 1 → ScanJ a (lead a.bs) t') := by
   obtain ⟨h1, h2, hne, hl, hsrc, h0⟩ := h
-  refine WP.mono (scanStep_ok (s₀ := t) hl hne hsrc.rd hsrc.val (j := j) (by omega)
+  refine WP.mono (scanStep_ok (s₀ := t) hl hne hsrc.rd hsrc.val (j := j) (by omega_using [hj])
     ⟨h1, h2, rfl, Keep.refl _ _⟩) fun t' ⟨⟨h1', h2', hm', k'⟩, hz⟩ => ?_
   have hs' : Src t' a.B a.Z a.p a.bs := hsrc.congr (by rw [hm']; exact InScr.refl _ _ _) k'.2.1 k'.2.2
   have h0' : t'.gpr .rdi = a.B := (k'.gpr (by decide)).trans h0
@@ -57,10 +57,10 @@ theorem scanJ_step (a : ScanPub) (j : Nat) (t : State) (hj : j < lead a.bs + 1) 
     congr 1
     rw [Bool.eq_iff_iff]
     simp only [Bool.not_eq_true', decide_eq_false_iff_not, decide_eq_true_iff]
-    omega
-  · rw [Nat.min_eq_left (by omega)] at h1' h2'
+    omega_using [hj]
+  · rw [Nat.min_eq_left (by omega_using [hlt])] at h1' h2'
     exact ⟨h1', h2', hne, hl, hs', h0'⟩
-  · rw [Nat.min_eq_right (by omega)] at h1' h2'
+  · rw [Nat.min_eq_right (by omega_using [he])] at h1' h2'
     exact ⟨h1', h2', hne, hl, hs', h0'⟩
 
 /-- `scan sp` leaks the same in runs on the same octets. -/
@@ -95,7 +95,7 @@ theorem scan_ct {sp : Nat} {hc₁ hc₂ : VG.Taint.Hint VG.X86_64.Taint.T}
       t.mem = s.mem)
     (by xrun [State.ea, hdr, hO.rdi, hdrOff, l1, l2, hp, hk])
     rfl)
-    fun t ⟨⟨h1, h2, hm⟩, k⟩ => ⟨by omega, by rw [h1]; simp, by rw [h2]; simp, hne, hl,
+    fun t ⟨⟨h1, h2, hm⟩, k⟩ => ⟨by omega_using [], by rw [h1]; simp, by rw [h2]; simp, hne, hl,
       hsrc.congr (by rw [hm]; exact InScr.refl _ _ _) k.2.1 k.2.2, (k.gpr (by decide)).trans hO.rdi⟩
 
 end VG.Proof.Ffdh.X86_64

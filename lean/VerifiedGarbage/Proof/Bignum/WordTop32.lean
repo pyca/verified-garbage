@@ -25,7 +25,7 @@ theorem val32_top3 (m : Mem) (base : Addr) (o k : Nat) :
     val32 m base o (k + 3) = val32 m base o k + 2 ^ (32 * k) * w32 m base (o + 4 * k) +
       2 ^ (32 * k) * 2 ^ 32 * (w32 m base (o + 4 * (k + 1)) + 2 ^ 32 * w32 m base (o + 4 * (k + 2))) := by
   rw [show k + 3 = k + 1 + 1 + 1 from rfl, val32_succ, val32_succ, val32_succ,
-    show 32 * (k + 1 + 1) = 32 * k + 32 + 32 by omega, show 32 * (k + 1) = 32 * k + 32 by omega,
+    show 32 * (k + 1 + 1) = 32 * k + 32 + 32 by omega_using [], show 32 * (k + 1) = 32 * k + 32 by omega_using [],
     Nat.pow_add, Nat.pow_add, show k + 1 + 1 = k + 2 from rfl]
   grind
 
@@ -33,7 +33,7 @@ theorem val32_top3 (m : Mem) (base : Addr) (o k : Nat) :
 theorem val32_top2 (m : Mem) (base : Addr) (o k : Nat) :
     val32 m base o (k + 2) = val32 m base o k + 2 ^ (32 * k) * (w32 m base (o + 4 * k) +
       2 ^ 32 * w32 m base (o + 4 * (k + 1))) := by
-  rw [show k + 2 = k + 1 + 1 from rfl, val32_succ, val32_succ, show 32 * (k + 1) = 32 * k + 32 by omega, Nat.pow_add]
+  rw [show k + 2 = k + 1 + 1 from rfl, val32_succ, val32_succ, show 32 * (k + 1) = 32 * k + 32 by omega_using [], Nat.pow_add]
   grind
 
 /-- The top word `a₁` of `x` shifted, `a₁ 2^z < 2^32`, for `2^z x < 2^(32 (k + 3))`. -/
@@ -41,12 +41,12 @@ theorem top_small {L k a1 a2 a3 z : Nat}
     (htop : (L + 2 ^ (32 * k) * a3 + 2 ^ (32 * k) * 2 ^ 32 * (a2 + 2 ^ 32 * a1)) * 2 ^ z < 2 ^ (32 * (k + 3))) :
     a1 * 2 ^ z < 2 ^ 32 := by
   have e : 2 ^ (32 * (k + 3)) = 2 ^ (32 * k) * 2 ^ 32 * 2 ^ 32 * 2 ^ 32 := by
-    rw [show 32 * (k + 3) = 32 * k + 32 + 32 + 32 by omega, Nat.pow_add, Nat.pow_add, Nat.pow_add]
+    rw [show 32 * (k + 3) = 32 * k + 32 + 32 + 32 by omega_using [], Nat.pow_add, Nat.pow_add, Nat.pow_add]
   rw [e] at htop
   have h2 : 2 ^ (32 * k) * 2 ^ 32 * 2 ^ 32 * (a1 * 2 ^ z) ≤
       (L + 2 ^ (32 * k) * a3 + 2 ^ (32 * k) * 2 ^ 32 * (a2 + 2 ^ 32 * a1)) * 2 ^ z := by
     have : 2 ^ (32 * k) * 2 ^ 32 * 2 ^ 32 * a1 ≤ L + 2 ^ (32 * k) * a3 + 2 ^ (32 * k) * 2 ^ 32 * (a2 + 2 ^ 32 * a1) := by
-      rw [Nat.mul_add (2 ^ (32 * k) * 2 ^ 32), Nat.mul_assoc (2 ^ (32 * k) * 2 ^ 32) (2 ^ 32)]; omega
+      rw [Nat.mul_add (2 ^ (32 * k) * 2 ^ 32), Nat.mul_assoc (2 ^ (32 * k) * 2 ^ 32) (2 ^ 32)]; omega_using []
     rw [← Nat.mul_assoc]; exact Nat.mul_le_mul_right _ this
   exact Nat.lt_of_mul_lt_mul_left (Nat.lt_of_le_of_lt h2 htop)
 
@@ -59,14 +59,14 @@ theorem top3_math {L k a a1 a2 a3 z : Nat} (hz : z ≤ 31) (hL : L < 2 ^ (32 * k
         (2 ^ (32 * k) * 2 ^ 32) := by
   have e : (a3 + 2 ^ 32 * a2 + 2 ^ 64 * a1) * 2 ^ z = a3 * 2 ^ z + 2 ^ 32 * (a2 * 2 ^ z) + 2 ^ 64 * (a1 * 2 ^ z) := by
     rw [Nat.add_mul, Nat.add_mul, Nat.mul_assoc, Nat.mul_assoc]
-  rw [shl_div (by omega) hL, e, Nat.mod_eq_of_lt h1]
+  rw [shl_div (by omega_using [hz]) hL, e, Nat.mod_eq_of_lt h1]
   have h2 := Nat.div_add_mod (a2 * 2 ^ z) (2 ^ 32)
   have h3 := Nat.div_add_mod (a3 * 2 ^ z) (2 ^ 32)
   generalize a * 2 ^ z / 2 ^ 32 = hA
   generalize a1 * 2 ^ z = A1 at *
   generalize a2 * 2 ^ z = A2 at *
   generalize a3 * 2 ^ z = A3 at *
-  omega
+  omega_using []
 
 /-- The top two words `u₂ 2^32 + u₁` of `2^z x`, from `x`'s top three words
 `a₁`, `a₂`, `a₃`, for `2^z x < 2^(32 (k + 3))`. -/
@@ -75,7 +75,7 @@ theorem top_math {L k a1 a2 a3 z : Nat} (hz : z ≤ 31) (hL : L < 2 ^ (32 * k))
     (a1 * 2 ^ z % 2 ^ 32 + a2 * 2 ^ z / 2 ^ 32) * 2 ^ 32 + (a2 * 2 ^ z % 2 ^ 32 + a3 * 2 ^ z / 2 ^ 32) =
       (L + 2 ^ (32 * k) * a3 + 2 ^ (32 * k) * 2 ^ 32 * (a2 + 2 ^ 32 * a1)) * 2 ^ z / 2 ^ (32 * (k + 1)) := by
   have hK := Nat.two_pow_pos (32 * k)
-  rw [show 32 * (k + 1) = 32 * k + 32 by omega, Nat.pow_add, shl_div (by omega) hL]
+  rw [show 32 * (k + 1) = 32 * k + 32 by omega_using [], Nat.pow_add, shl_div (by omega_using [hz]) hL]
   have h1 : a1 * 2 ^ z < 2 ^ 32 := top_small htop
   have hd := Nat.div_add_mod (a2 * 2 ^ z) (2 ^ 32)
   rw [Nat.mod_eq_of_lt h1]
@@ -102,12 +102,12 @@ theorem qhat_min {u2 u1 d : Nat} (hu : u2 ≤ d) (hu1 : u1 < 2 ^ 32) (hd : 0 < d
   · rw [ite_eq_left e, Nat.min_eq_right]
     rw [e, Nat.le_div_iff_mul_le hd]
     have : (2 ^ 32 - 1) * d ≤ 2 ^ 32 * d := Nat.mul_le_mul_right d (Nat.sub_le _ _)
-    rw [Nat.mul_comm d]; omega
+    rw [Nat.mul_comm d]; omega_using []
   · rw [ite_eq_right e, Nat.min_eq_left]
     have : (u2 * 2 ^ 32 + u1) / d < 2 ^ 32 := by
       rw [Nat.div_lt_iff_lt_mul hd]
-      have := Nat.mul_le_mul_right (2 ^ 32) (show u2 + 1 ≤ d by omega)
-      rw [Nat.add_mul, Nat.one_mul, Nat.mul_comm d] at this; omega
-    omega
+      have := Nat.mul_le_mul_right (2 ^ 32) (show u2 + 1 ≤ d by omega_using [hu, e])
+      rw [Nat.add_mul, Nat.one_mul, Nat.mul_comm d] at this; omega_using [hu, hu1, e]
+    omega_using [this]
 
 end VG.Proof.Bignum.WordTop32

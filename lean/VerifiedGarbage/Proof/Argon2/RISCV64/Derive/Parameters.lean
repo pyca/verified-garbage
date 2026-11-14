@@ -74,12 +74,12 @@ theorem parameters_ok {s : State} (h : Inv s₀ s) {is : List Instr} {Q : State 
   refine wp_sll (by decide) fun s₃ u₃ => ?_
   have i₃ := i₂.upd u₃
   have e₃ : (s₃.gpr .a2).toNat = 4 * lanesN s₀ := by
-    rw [u₃.gpr, u₂.gpr, shl_nat (by rw [toNat_ext32]; show lanesN s₀ * 4 < _; omega), toNat_ext32]
+    rw [u₃.gpr, u₂.gpr, shl_nat (by rw [toNat_ext32]; show lanesN s₀ * 4 < _; omega_using [hL]), toNat_ext32]
     show lanesN s₀ * 4 = _
-    omega
+    omega_using []
   refine wp_ldw hp i₃ (i := Impl.Argon2.RISCV64.Derive.memoryCostArg) (by decide) fun s₅ u₅ => ?_
   have i₅ := i₃.upd u₅
-  refine Divide.code_ok (D := 4 * lanesN s₀) (by omega) (by omega)
+  refine Divide.code_ok (D := 4 * lanesN s₀) (by omega_using [hL1]) (by omega_using [hL])
     (by rw [u₅.other _ (by decide), e₃]) fun s₆ c₆ _ k₆ => ?_
   have i₆ := i₅.divide k₆
   have c₆' : (s₆.gpr .a3).toNat = (prm s₀).segmentLen := by
@@ -91,12 +91,12 @@ theorem parameters_ok {s : State} (h : Inv s₀ s) {is : List Instr} {Q : State 
   refine wp_sll (by decide) fun s₈ u₈ => ?_
   have i₈ := i₇.upd u₈
   have e₈ : (s₈.gpr .a3).toNat = (prm s₀).laneLen := by
-    rw [u₈.gpr, g₇, shl_nat (by rw [c₆']; omega), c₆', hlane]; omega
+    rw [u₈.gpr, g₇, shl_nat (by rw [c₆']; omega_using [hm, hlane, hll]), c₆', hlane]; omega_using []
   refine wp_stloc i₈ (d := laneLenOff) (by decide) fun s₉ i₉ v₉ o₉ g₉ _ => ?_
   refine wp_sll (by decide) fun s₁₀ u₁₀ => ?_
   have i₁₀ := i₉.upd u₁₀
   have e₁₀ : (s₁₀.gpr .a3).toNat = (prm s₀).laneLen * 1024 := by
-    rw [u₁₀.gpr, g₉, shl_nat (by rw [e₈]; omega), e₈]
+    rw [u₁₀.gpr, g₉, shl_nat (by rw [e₈]; omega_using [hm, hll]), e₈]
   refine wp_stloc i₁₀ (d := strideOff) (by decide) fun s₁₁ i₁₁ v₁₁ o₁₁ _ _ =>
     k s₁₁ i₁₁ ⟨?_, ?_, ?_⟩
   · rw [o₁₁ _ (by decide) (by decide), lw_mem u₁₀.mem, o₉ _ (by decide) (by decide),

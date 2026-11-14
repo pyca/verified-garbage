@@ -73,11 +73,11 @@ theorem tables_frame128 {s t : State} (h : Tables s) (hk : TStk s)
   · rw [hs]; exact h.shuffle.frame hf sh
   · rw [hs]; intro i hi
     rw [hf.readW (r:=⟨s.syms "VG_MLKEM_GAMMA",512⟩)
-      (Offset.contains_base _ (by omega) (by omega)) ga (by decide)]
+      (Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi])) ga (by decide)]
     exact h.gamma i hi
   · rw [hs]; intro i hi
     rw [hf.readW (r:=⟨s.syms "VG_MLKEM_NTT16_ZETAS",512⟩)
-      (Offset.contains_base _ (by omega) (by omega)) fw (by decide)]
+      (Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi])) fw (by decide)]
     exact h.transforms.forward.1 i hi
 
 theorem WP.tables128 {s : State} {c : Prog isa} {Q : State→Prop}
@@ -86,7 +86,7 @@ theorem WP.tables128 {s : State} {c : Prog isa} {Q : State→Prop}
   obtain ⟨tr,t,he,hq⟩:=h
   refine ⟨tr,t,he,hq,?_⟩
   obtain ⟨hr,hw,hsp⟩:=VG.AArch64.Exec.rdwr he
-  have hf := Frame.below_mono (VG.AArch64.Exec.frameSp he (by omega)) (b:=128) (by omega) (by decide)
+  have hf := Frame.below_mono (VG.AArch64.Exec.frameSp he (by omega_using [hn])) (b:=128) (by omega_using [hn]) (by decide)
   exact tables_frame128 ht hk (VG.AArch64.Exec.syms he) hr hw hsp hf
 
 theorem mb_bW3 {L : Layout} {s₀ : State} (hp : Pre P L s₀) (hk : Stk128 P L s₀) :

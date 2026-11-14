@@ -97,7 +97,7 @@ theorem bodyFrom_ok (hL : L.Ok) {hash : Prog isa} {t : State} {E seed : List Byt
   refine List.map_congr_left fun i hi => ?_
   exact Frame.bytes (R := L.OUT) hf₄ (by
     intro r hr; simp only [List.mem_singleton] at hr; subst hr
-    exact (hL.stk_OUT (d := 16) (n := 32) (by omega)).symm) (by show (32 : Nat) ≤ 2 ^ 64; decide)
+    exact (hL.stk_OUT (d := 16) (n := 32) (by omega_using [])).symm) (by show (32 : Nat) ≤ 2 ^ 64; decide)
     (List.mem_range.mp hi)
 
 theorem pop_rsp (B : Addr) : B + BitVec.ofNat 64 16 + BitVec.ofNat 64 (8 * 7) = B + BitVec.ofNat 64 72 := by

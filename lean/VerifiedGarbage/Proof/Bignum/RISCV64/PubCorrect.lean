@@ -91,9 +91,9 @@ theorem sav_al {S : Addr} (hS : S.toNat % 8 = 0) (hn : S.toNat + 256 ≤ 2 ^ 64)
     show S + BitVec.ofNat 64 128 + BitVec.ofNat 64 (8 * i) = _
     rw [Offset.add_add]
   have h2 : (S + BitVec.ofNat 64 (128 + 8 * i)).toNat = S.toNat + (128 + 8 * i) := by
-    rw [BitVec.toNat_add, BitVec.toNat_ofNat]; omega
+    rw [BitVec.toNat_add, BitVec.toNat_ofNat]; omega_using [hn, hi]
   rw [e, h2]
-  omega
+  omega_using [hS]
 
 /-- `save` and `setup`: `Mid`, with the callee-saved registers saved. -/
 theorem front_ok {s : State} (h : fnContract.pre s) :

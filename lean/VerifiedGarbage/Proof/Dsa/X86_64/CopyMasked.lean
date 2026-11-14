@@ -45,7 +45,7 @@ theorem copyMasked_ok {s : State} {src out : Addr} {n : Nat} {valid : Bool}
       Keep [.rax, .rsi, .rdx, .rcx] s t := by
   refine WP.mono (wp_upto (a := 0) (N := n) h1 (CopyMaskedInv s src out n · valid) ?_ (fun t h => h)
     ⟨Keep.refl _ _, by simpa using hsi, by simpa using hdx, by simpa using hcx,
-      fun i hi => absurd hi (by omega), fun x _ => rfl⟩)
+      fun i hi => absurd hi (by omega_using []), fun x _ => rfl⟩)
     fun t ht => ⟨ht.bytes, ht.frame, ht.keep⟩
   intro j _ hj t ht
   have hrd : InRegions (t.rd ++ t.wr) (src + BitVec.ofNat 64 j) 1 := by
@@ -53,7 +53,7 @@ theorem copyMasked_ok {s : State} {src out : Addr} {n : Nat} {valid : Bool}
   have hwr : InRegions t.wr (out + BitVec.ofNat 64 j) 1 := by
     rw [ht.keep.2.2]; exact hw j hj
   have ht8 := (ht.keep.gpr (show Reg.r8 ∉ _ by decide)).trans h8
-  have hval := ht.frame (src + BitVec.ofNat 64 j) (fun i hi => hsep j hj i (by omega))
+  have hval := ht.frame (src + BitVec.ofNat 64 j) (fun i hi => hsep j hj i (by omega_using [hj, hi]))
   refine WP.mono (WP.keep [.rax, .rsi, .rdx, .rcx] (Q := fun u =>
     u.mem = t.mem.writeW (out + BitVec.ofNat 64 j) (if valid then s.mem (src + BitVec.ofNat 64 j) else (0 : Byte)) ∧
     u.gpr .rsi = src + BitVec.ofNat 64 (j + 1) ∧ u.gpr .rdx = out + BitVec.ofNat 64 (j + 1) ∧
@@ -62,18 +62,18 @@ theorem copyMasked_ok {s : State} {src out : Addr} {n : Nat} {valid : Bool}
   · unfold copyMaskedByte
     xrun [State.ea, at0, ht.rsi, ht.rdx, ht.rcx, ht8,
       show BitVec.ofInt 64 0 = 0#64 from rfl, BitVec.add_zero, hrd, hwr, masked_byte, hval,
-      ofNat64_pred (show 1 ≤ n - j by omega) (by omega), BitVec.add_assoc, ofNat_add_one,
-      ofNat64_beq_zero (show n - j - 1 < 2 ^ 64 by omega)]
-    exact ⟨by rw [show n - j - 1 = n - (j + 1) by omega], decide_eq_decide.mpr (by omega)⟩
+      ofNat64_pred (show 1 ≤ n - j by omega_using [hj]) (by omega_using [h64]), BitVec.add_assoc, ofNat_add_one,
+      ofNat64_beq_zero (show n - j - 1 < 2 ^ 64 by omega_using [h64])]
+    exact ⟨by rw [show n - j - 1 = n - (j + 1) by omega_using []], decide_eq_decide.mpr (by omega_using [hj])⟩
   · refine ⟨huz, (ht.keep.trans hku).mono (by decide), husi, hudx, hucx, ?_, ?_⟩
     · intro i hi
       rw [hum, writeW8_apply]
       by_cases hij : i = j
       · subst i; simp
-      · rw [ite_eq_right_of_eq_false _ _ (eq_false (out_ne (by omega) (by omega) hij))]
-        exact ht.bytes i (by omega)
+      · rw [ite_eq_right_of_eq_false _ _ (eq_false (out_ne (by omega_using [h64, hj, hi]) (by omega_using [h64, hj]) hij))]
+        exact ht.bytes i (by omega_using [hi, hij])
     · intro x hx
-      rw [hum, writeW8_apply, ite_eq_right_of_eq_false _ _ (eq_false (hx j (by omega)))]
-      exact ht.frame x fun i hi => hx i (by omega)
+      rw [hum, writeW8_apply, ite_eq_right_of_eq_false _ _ (eq_false (hx j (by omega_using [])))]
+      exact ht.frame x fun i hi => hx i (by omega_using [hi])
 
 end VG.Proof.Dsa.X86_64

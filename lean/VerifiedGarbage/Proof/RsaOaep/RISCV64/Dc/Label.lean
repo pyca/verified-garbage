@@ -89,13 +89,13 @@ theorem hashLabelT_ok {H : Hash} (hH : HashOK H) (hF : H.F ≤ 208) (hm : Frame 
   have hl : lR s ∈ s.rd := by rw [P.hrd]; simp
   have hb : Spec.Rsa.bytesAt t₇.mem (stackArg s 9) (stackArg s 10).toNat =
       Spec.Rsa.bytesAt m (stackArg s 9) (stackArg s 10).toNat :=
-    bytes_entry b₇.mem (P.kl.sub_left kR_sub) ((P.ls.symm).sub_left (sc_sub P)) (by have := P.wl; omega)
+    bytes_entry b₇.mem (P.kl.sub_left kR_sub) ((P.ls.symm).sub_left (sc_sub P)) (by have := P.wl; omega_using [])
   refine WP.seq (WP.mono (updT_ok PF T hH hF b₇ (y₇.trans y₂) (dat := stackArg s 9) (len := (stackArg s 10).toNat)
     (by rw [o₇.get .a0, o₆.get .a0, o₅.get .a0, e₄, o₃.get .s0, b₂.s0])
     (by rw [o₇.get .a2, e₆])
     (by rw [e₇])
     (Covers.left (by rw [b₇.rd]; exact Covers.of_mem fun r hr => by rw [List.mem_singleton.mp hr]; exact hl))
-    ((P.ls.sub_right (sc_sub P)).sub_right (sc_in (by omega)))
+    ((P.ls.sub_right (sc_sub P)).sub_right (sc_in (by omega_arith)))
     (P.kl.sub_left fun a ha => kR_sub a (cR_sub (withMem s m) a ha))) fun t₈ ⟨⟨b₈, g₈, s₈, r₈⟩, y₈⟩ => ?_)
   unfold Dec.labF argBase
   refine WP.seq (WP.of_syms (wp_addSp (imm := frameBytes) (fun t₉ o₉ e₉ => wp_addi (imm := oSt) fun t₁₀ o₁₀ e₁₀ => ?_)
@@ -119,7 +119,7 @@ theorem hashLabelT_ok {H : Hash} (hH : HashOK H) (hF : H.F ≤ 208) (hm : Frame 
   · have e : ∀ {a b : State}, a.mem = b.mem → ∀ rgs, Same (Sd s) a b rgs := fun e rgs => Same.of_mem e.symm rgs
     exact ((((((e o₁.mem.symm _).trans (s₂.mono (by simp))).trans (e k₇.mem.symm _)).trans
       (s₈.mono (by simp))).trans (e k₁₂.mem.symm _)).trans s')
-  · exact r' _ hr (by rw [bytesAt_length]; have := (stackArg s 10).isLt; omega)
+  · exact r' _ hr (by rw [bytesAt_length]; have := (stackArg s 10).isLt; omega_using [])
       (by rw [g1, bytesAt_length, BitVec.ofNat_toNat, BitVec.setWidth_eq])
 
 /-- `acc := EM[0] ∨ ⋁ (lHash'[i] ⊕ lHash[i])`, `lHash'` at `1 + D`, `lHash` at
@@ -139,13 +139,13 @@ theorem accLh_ok {H : Hash} {D : Nat} (hD : H.D = D) (hD0 : 0 < D) (hD64 : D ≤
       InRegions (u.rd ++ u.wr) (off (Sd s) o) 1 := fun hr hw _ ho => by
     rw [hr, hw, h.wr]; exact sc_inR PF ho _
   unfold accLh
-  refine WP.seq (wp_addi (imm := oEm + 1 + H.D) (h := by omega) fun t₁ o₁ e₁ =>
-    wp_addi (imm := oDig) (h := by omega) fun t₂ o₂ e₂ =>
+  refine WP.seq (wp_addi (imm := oEm + 1 + H.D) (h := by omega_using [hE, hD64]) fun t₁ o₁ e₁ =>
+    wp_addi (imm := oDig) (h := by omega_using [hDg]) fun t₂ o₂ e₂ =>
     wp_lbu (a := off (Sd s) 0) (by rw [o₂.get .s0, o₁.get .s0, h.s0, hE])
       (rdw (o₂.rd.trans o₁.rd) (o₂.wr.trans o₁.wr) (by decide)) fun t₃ o₃ e₃ =>
-    wp_li (imm := H.D) (by omega) fun t₄ o₄ e₄ => wp_nil ?_)
+    wp_li (imm := H.D) (by omega_using [hD64]) fun t₄ o₄ e₄ => wp_nil ?_)
   have k₄ : Only [.a4, .a5, .s5, .a6] t t₄ := (o₁.trans (o₂.trans (o₃.trans o₄))).mono
-  refine WP.mono (wp_countdown (cnt := .a6) (N := H.D) (by omega) hD0
+  refine WP.mono (wp_countdown (cnt := .a6) (N := H.D) (by omega_using [hD64]) hD0
     (fun i u => Only [.a4, .a5, .a6, .s5, .t1, .t2] t u ∧ u.gpr .a4 = off (Sd s) (1 + H.D + i) ∧
       u.gpr .a5 = off (Sd s) (oDig + i) ∧ u.gpr .s5 = accG (view t.mem (Sd s) 0)
         (fun i => view t.mem (Sd s) (1 + H.D + i)) (fun i => view t.mem (Sd s) (oDig + i)) i) ?_
@@ -156,9 +156,9 @@ theorem accLh_ok {H : Hash} {D : Nat} (hD : H.D = D) (hD0 : 0 < D) (hD64 : D ≤
   intro i hi u ⟨o, r4, r5, a⟩ _
   simp only [accBody, List.cons_append, List.nil_append]
   refine wp_lbu (a := off (Sd s) (1 + H.D + i)) (by rw [r4, BitVec.add_zero])
-    (rdw o.rd o.wr (by omega)) fun u₁ p₁ f₁ => ?_
+    (rdw o.rd o.wr (by omega_using [hRs, hD64, hi])) fun u₁ p₁ f₁ => ?_
   refine wp_lbu (a := off (Sd s) (oDig + i)) (by rw [p₁.get .a5, r5, BitVec.add_zero])
-    (rdw (p₁.rd.trans o.rd) (p₁.wr.trans o.wr) (by omega)) fun u₂ p₂ f₂ => ?_
+    (rdw (p₁.rd.trans o.rd) (p₁.wr.trans o.wr) (by omega_using [hDg, hRs, hD64, hi])) fun u₂ p₂ f₂ => ?_
   refine wp_xor fun u₃ p₃ f₃ => wp_or fun u₄ p₄ f₄ => wp_addi (imm := 1) fun u₅ p₅ f₅ =>
     wp_addi (imm := 1) fun u₆ p₆ f₆ => wp_subi (imm := 1) fun u₇ p₇ f₇ => wp_nil ⟨⟨?_, ?_, ?_, ?_⟩, ?_⟩
   · exact (o.trans (p₁.trans (p₂.trans (p₃.trans (p₄.trans (p₅.trans (p₆.trans p₇))))))).mono

@@ -37,7 +37,7 @@ theorem roundTail_test {p : RoundTailPublic} {s : State} (h : RoundTailState p s
   have hflagBound : kFlag < 32 := by decide
   refine WP.mono (WP.keep [.x3] (Q := fun t => t.gpr .x3 = mask p.pass) (by
     brun [h.1.x0, h.2, hdr_enc (show kFlag < 32 by decide),
-      h.1.scr.ld (show 8 * kFlag + 8 ≤ p.prime.Z by have := h.1.h256; omega)]) rfl rfl rfl)
+      h.1.scr.ld (show 8 * kFlag + 8 ≤ p.prime.Z by have := h.1.h256; omega_using [hflagBound, this])]) rfl rfl rfl)
     fun t ⟨h3, hk⟩ => ⟨(hk.gpr .x0 (by decide)).trans h.1.x0, h3⟩
 
 theorem roundTail_ct : RelCT isa (Two RoundTailState) Impl.Dsa.AArch64.Generation.roundTail (fun _ _ => True) := by

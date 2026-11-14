@@ -32,7 +32,7 @@ theorem storeRbx_ok {s : State} {base : Addr} (hs : Scr s base size) {d : Nat}
   refine ⟨?_, k, ?_⟩
   · rw [hm, word_writeW_self]
   · rw [hm]
-    exact writeW_outside _ _ _ (by have := hs.nowrap; omega)
+    exact writeW_outside _ _ _ (by have := hs.nowrap; omega_using [hd, this])
 
 theorem descentCounter_ok {c : Cfg} {base : Addr} {s : State} {j : Nat}
     (hs : Scr s base size) (hd : c.sl T2 + 8 ≤ size)
@@ -53,7 +53,7 @@ theorem descentCounter_ok {c : Cfg} {base : Addr} {s : State} {j : Nat}
   have hs₂ := (hs.of_keeps k₁ (by decide)).of_keeps k₂ (by decide)
   rw [WP.block_append_iff]
   refine WP.mono (storeRbx_ok hs₂ hd) fun s₃ ⟨hw₃, k₃, O₃⟩ => ?_
-  refine WP.mono (testRbx_ok s₃ (j := j - 1) (by omega) (by rw [k₃.gpr _ (by simp), hb₂])) fun s₄ ⟨hz₄, k₄⟩ => ?_
+  refine WP.mono (testRbx_ok s₃ (j := j - 1) (by omega_using [hj']) (by rw [k₃.gpr _ (by simp), hb₂])) fun s₄ ⟨hz₄, k₄⟩ => ?_
   refine ⟨by rw [k₄.2.1, hw₃, hb₂], hz₄,
     (((Keeps.regs k₁).trans (Keeps.regs k₂)).trans (k₃.mono (by simp))).trans
       ((Keeps.regs k₄).mono (by simp)), ?_⟩

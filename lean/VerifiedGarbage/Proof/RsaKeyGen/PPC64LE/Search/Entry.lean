@@ -67,7 +67,7 @@ theorem alloc_sp {p : SearchPublic} {s : State} (h : SearchInput p s) :
 
 theorem alloc_room {s : State} (h : stackUse ≤ s.sp.toNat) : 192 ≤ s.sp.toNat := by
   have : 192 ≤ stackUse := by decide
-  omega
+  omega_using [h, this]
 
 /-- The back chain of the search's frame and the frame's words: below the
 stack pointer. -/
@@ -84,7 +84,7 @@ theorem entry_frame {p : SearchPublic} {s : State} (h : SearchInput p s) (values
 /-- The stack arguments' addresses, from the frame's base. -/
 theorem arg_addr (sp : Addr) (k : Nat) :
     sp - BitVec.ofNat 64 160 + BitVec.ofNat 64 (256 + 8 * k) = sp + BitVec.ofNat 64 (32 + 8 * (8 + k)) := by
-  rw [show 256 + 8 * k = 160 + (32 + 8 * (8 + k)) by omega, BitVec.ofNat_add, ← BitVec.add_assoc,
+  rw [show 256 + 8 * k = 160 + (32 + 8 * (8 + k)) by omega_using [], BitVec.ofNat_add, ← BitVec.add_assoc,
     BitVec.sub_add_cancel]
 
 theorem args_contains (s : State) (k : Nat) (hk : k < 4) :
@@ -93,9 +93,9 @@ theorem args_contains (s : State) (k : Nat) (hk : k < 4) :
     unfold stackArgAddr
     rw [BitVec.add_assoc, ← BitVec.ofNat_add]
     congr 2
-    omega
+    omega_using []
   rw [e]
-  exact Offset.contains_base _ (by omega) (by omega)
+  exact Offset.contains_base _ (by omega_using [hk]) (by omega_using [hk])
 
 theorem input_args {p : SearchPublic} {s : State} (h : SearchInput p s) (k : Nat) (hk : k < 4) :
     InRegions (s.rd ++ s.wr) (s.sp + BitVec.ofNat 64 (32 + 8 * (8 + k))) 8 :=
@@ -228,8 +228,8 @@ theorem search_start {p : SearchPublic} {s t : State} (h : SearchInput p s)
   have hx4 : s.gpr .r4 = BitVec.ofNat 64 p.len := by
     rw [← h.2]; exact (BitVec.ofNat_toNat _ _).trans (BitVec.setWidth_eq _) |>.symm
   have hcap : (s.gpr .r4 <<< 15) + s.gpr .r4 = BitVec.ofNat 64 (primeEntropy p.len) := by
-    rw [hx4, SearchInit.shl_ofNat _ _ (by omega), SearchInit.add_ofNat]
-    unfold primeEntropy; congr 1; omega
+    rw [hx4, SearchInit.shl_ofNat _ _ (by omega_using [hL]), SearchInit.add_ofNat]
+    unfold primeEntropy; congr 1; omega_using []
   refine ⟨h, Nat.zero_le _, Nat.le_refl _, k.rd, k.wr.trans (alloc_wr h), ?_, hx, ?_, hy, ?_, ?_, ?_, ?_, hf₂, ?_⟩
   · show t.sp - 48 = p.sp - BitVec.ofNat 64 160 - 80
     rw [htsp, h.sp_eq, sp_240]

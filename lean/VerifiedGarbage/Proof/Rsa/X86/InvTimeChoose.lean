@@ -39,16 +39,16 @@ theorem fits {args : Nat → BitVec 32} {base : Addr} {size len P Q : Nat} {s : 
   change kw a = kw len at aw
   have eq : BitVec.ofNat 32 a = args 7 := Option.some.inj (arg.readSrc.symm.trans h.gate.nArg.readSrc)
   have ae := congrArg BitVec.toNat eq
-  rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)] at ae
+  rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [al])] at ae
   have nwl : VG.Proof.Rsa.X86.InvBatchRt.nw len = a / 8 := by
     have aw' := aw
     simp only [kw, Spec.Rsa.modulusWords] at aw'
-    simp only [VG.Proof.Rsa.X86.InvBatchRt.nw, kw, Spec.Rsa.modulusWords]; omega
+    simp only [VG.Proof.Rsa.X86.InvBatchRt.nw, kw, Spec.Rsa.modulusWords]; omega_using [m16, ae, aw']
   have hf : VG.Impl.Rsa.X86.Keys.hdr + VG.Impl.Rsa.X86.CrtValues.nArr * VG.Proof.Rsa.X86.Keys.S (kw len) ≤ size :=
     h.ws.ws.fits
   have ke := VG.Proof.Rsa.X86.InvBatchRt.kw_eq len
   simp only [VG.Impl.Rsa.X86.Keys.hdr, VG.Impl.Rsa.X86.CrtValues.nArr, VG.Proof.Rsa.X86.Keys.S] at hf
-  exact ⟨⟨by omega, by omega⟩, by omega, by omega⟩
+  exact ⟨⟨by omega_using [hf, ke], by omega_using [big, ae, nwl]⟩, by omega_using [m16, ae, nwl], by omega_using [al, nwl]⟩
 
 theorem setup_check :
     ∃ hint, (VG.Taint.check sseTaint τ VG.Impl.Rsa.X86.CrtValuesRt.callSetup hint).isSome = true :=

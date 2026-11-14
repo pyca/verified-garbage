@@ -78,18 +78,18 @@ theorem KeyOk.keep {z : Spec.Idea.Schedule} {rs : List Reg} {s s' : State} (h : 
 theorem KeyOk.slot {z : Spec.Idea.Schedule} {s : State} (h : KeyOk z s) {d : Nat} (hd : d + 4 ≤ 4 * slots) :
     InRegions s.wr (addr (s.gpr .esi) d) 4 := by
   obtain ⟨n, hn, hf, hr⟩ := h.wr
-  rw [addr_eq (by have := h.fit; simp only [slots] at *; omega)]
-  exact ⟨_, hr, Offset.contains_base _ (by omega) (by omega)⟩
+  rw [addr_eq (by have := h.fit; simp only [slots] at *; omega_using [hd, this])]
+  exact ⟨_, hr, Offset.contains_base _ (by omega_using [hd, hn]) (by omega_using [hd, hn, hf])⟩
 
 /-- Subkey `k`, read at its offset. -/
 theorem KeyOk.src {z : Spec.Idea.Schedule} {s : State} (h : KeyOk z s) {k : Nat} (hk : k < 52) :
     SrcOk s (.mem (at_ .esi (2 * k))) (s.mem.readW (addr (s.gpr .esi) (2 * k)) 32) ∧
       (s.mem.readW (addr (s.gpr .esi) (2 * k)) 32).setWidth 16 = z.getD k 0 := by
   refine ⟨fun t hm hrd hwr hg => ?_, ?_⟩
-  · have hin := h.slot (d := 2 * k) (by simp only [slots]; omega)
+  · have hin := h.slot (d := 2 * k) (by simp only [slots]; omega_using [hk])
     simp only [readSrc, State.ea, State.load32, at_, hg .esi (by decide), hrd, hwr, hm]
     exact ite_eq_left (by rw [← addr]; exact ⟨_, List.mem_append_right _ hin.choose_spec.1, hin.choose_spec.2⟩)
-  · rw [addr_eq (by have := h.fit; simp only [slots] at *; omega), subkey_lo32 _ _ hk, h.sched]
+  · rw [addr_eq (by have := h.fit; simp only [slots] at *; omega_using [hk, this]), subkey_lo32 _ _ hk, h.sched]
 
 theorem mulKey_run (z : Spec.Idea.Schedule) (k : Nat) (hk : k < 52) (s : State) (h : KeyOk z s) :
     ∃ s', runBlock isa (mulKey k) s = some s' ∧
@@ -148,8 +148,8 @@ theorem KeyOk.keepT {z : Spec.Idea.Schedule} {rs : List Reg} {s s' : State} (h :
   rw [e, ← h.sched]
   refine scheduleAt_congr (frame_bytes hk.frame ?_ (by decide))
   intro r hr; simp only [List.mem_singleton] at hr; subst hr
-  rw [addr_eq (by have := h.fit; simp only [t0Slot, slots] at *; omega)]
-  exact Offset.base_disjoint _ (by decide) (by have := h.fit; simp only [t0Slot, slots] at *; omega)
+  rw [addr_eq (by have := h.fit; simp only [t0Slot, slots] at *; omega_using [this])]
+  exact Offset.base_disjoint _ (by decide) (by have := h.fit; simp only [t0Slot, slots] at *; omega_using [])
 
 /-- The six subkeys of round `j`. -/
 abbrev rk (z : Spec.Idea.Schedule) (j i : Nat) : Spec.Idea.Word := z.getD (6 * j + i) 0
@@ -193,13 +193,13 @@ theorem round_run (j : Nat) (hj : j < 8) (b c : Reg)
   have hC : ∀ r ∈ [c], r ∈ roundWrites := fun r hr => hsub r (by simp at hr; simp [hr])
   -- X₁ ⊙ Z₁
   obtain ⟨s₁, h₁, v₁, e₁⟩ := mov_run .eax (.reg .ebx) _ s rfl
-  obtain ⟨s₂, h₂, v₂, e₂⟩ := mulKey_run z (6 * j) (by omega) s₁ (hk.keep e₁ (by decide))
+  obtain ⟨s₂, h₂, v₂, e₂⟩ := mulKey_run z (6 * j) (by omega_using [hj]) s₁ (hk.keep e₁ (by decide))
   obtain ⟨s₃, h₃, v₃, e₃⟩ := mov_run .ebx (.reg .edx) _ s₂ rfl
   -- X₄ ⊙ Z₄
   have e₀₃ : Keep [.eax, .ebx, .edx] s s₃ :=
     ((e₁.weaken (by decide)).trans (e₂.weaken (by decide))).trans (e₃.weaken (by decide))
   obtain ⟨s₄, h₄, v₄, e₄⟩ := mov_run .eax (.reg .ebp) _ s₃ rfl
-  obtain ⟨s₅, h₅, v₅, e₅⟩ := mulKey_run z (6 * j + 3) (by omega) s₄
+  obtain ⟨s₅, h₅, v₅, e₅⟩ := mulKey_run z (6 * j + 3) (by omega_using [hj]) s₄
     ((hk.keep e₀₃ (by decide)).keep e₄ (by decide))
   obtain ⟨s₆, h₆, v₆, e₆⟩ := mov_run .ebp (.reg .edx) _ s₅ rfl
   have e₀₆ : Keep [.eax, .ebx, .edx, .ebp] s s₆ :=
@@ -207,14 +207,14 @@ theorem round_run (j : Nat) (hj : j < 8) (b c : Reg)
       (e₆.weaken (by decide))
   have k₆ := hk.keep e₀₆ (by decide)
   -- X₂ ⊞ Z₂, X₃ ⊞ Z₃
-  obtain ⟨s₇, h₇, v₇, e₇⟩ := addKey_run z b (6 * j + 1) (by omega) s₆ k₆
-  obtain ⟨s₈, h₈, v₈, e₈⟩ := addKey_run z c (6 * j + 2) (by omega) s₇ (k₆.keep e₇ (by simpa using bs.symm))
+  obtain ⟨s₇, h₇, v₇, e₇⟩ := addKey_run z b (6 * j + 1) (by omega_using [hj]) s₆ k₆
+  obtain ⟨s₈, h₈, v₈, e₈⟩ := addKey_run z c (6 * j + 2) (by omega_using [hj]) s₇ (k₆.keep e₇ (by simpa using bs.symm))
   have e₆₈ : Keep [b, c] s₆ s₈ := (e₇.mono (by simp)).trans (e₈.mono (by simp))
   have k₈ := k₆.keep e₆₈ (by simp [bs.symm, cs.symm])
   -- t₀
   obtain ⟨s₉, h₉, v₉, e₉⟩ := mov_run .eax (.reg .ebx) _ s₈ rfl
   obtain ⟨s₁₀, h₁₀, v₁₀, e₁₀⟩ := alu_run .xor (by simp) .eax (.reg c) _ s₉ rfl
-  obtain ⟨s₁₁, h₁₁, v₁₁, e₁₁⟩ := mulKey_run z (6 * j + 4) (by omega) s₁₀
+  obtain ⟨s₁₁, h₁₁, v₁₁, e₁₁⟩ := mulKey_run z (6 * j + 4) (by omega_using [hj]) s₁₀
     ((k₈.keep e₉ (by decide)).keep e₁₀ (by decide))
   have e₈₁₁ : Keep [.eax, .edx] s₈ s₁₁ :=
     ((e₉.weaken (by decide)).trans (e₁₀.weaken (by decide))).trans e₁₁
@@ -228,7 +228,7 @@ theorem round_run (j : Nat) (hj : j < 8) (b c : Reg)
   obtain ⟨s₁₄, h₁₄, v₁₄, e₁₄⟩ := alu_run .xor (by simp) .eax (.reg .ebp) _ s₁₃ rfl
   obtain ⟨s₁₅, h₁₅, v₁₅, e₁₅⟩ := alu_run .add (by simp) .eax (.reg .edx) _ s₁₄ rfl
   have e₁₂₁₅ : Keep [.eax] s₁₂ s₁₅ := (e₁₃.trans e₁₄).trans e₁₅
-  obtain ⟨s₁₆, h₁₆, v₁₆, e₁₆⟩ := mulKey_run z (6 * j + 5) (by omega) s₁₅ (k₁₂.keep e₁₂₁₅ (by decide))
+  obtain ⟨s₁₆, h₁₆, v₁₆, e₁₆⟩ := mulKey_run z (6 * j + 5) (by omega_using [hj]) s₁₅ (k₁₂.keep e₁₂₁₅ (by decide))
   -- The outputs.
   have ht0 : readSrc s₁₆ (.mem (at_ .esi t0Slot)) = some (s₁₁.gpr .edx) := by
     have hin := k₁₁.slot (d := t0Slot) (by decide)

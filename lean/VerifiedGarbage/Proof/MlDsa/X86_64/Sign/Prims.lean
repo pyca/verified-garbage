@@ -78,10 +78,10 @@ structure PrimsOk (P : Prims) (D : Nat) where
 /-! ## The arguments of a call -/
 
 theorem sw32_ofNat {v : Nat} (h : v < 2 ^ 32) : (BitVec.setWidth 32 (BitVec.ofNat 64 v)).toNat = v := by
-  rw [BitVec.toNat_setWidth, BitVec.toNat_ofNat]; omega
+  rw [BitVec.toNat_setWidth, BitVec.toNat_ofNat]; omega_using [h]
 
 theorem toNat64 {v : Nat} (h : v < 2 ^ 32) : (BitVec.ofNat 64 v).toNat = v := by
-  rw [BitVec.toNat_ofNat]; omega
+  rw [BitVec.toNat_ofNat]; omega_using [h]
 
 /-- The setting of a call from a state in a layout: the stack pointer and
 memory as they were, and the layout. -/
@@ -123,7 +123,7 @@ theorem At.red {p : Ptr} (h : inB (rbs ++ wbs) p 1024 = true) (hD : 8 ≤ D) :
 
 theorem At.bytes {p : Ptr} {l : Nat} (h : inB (rbs ++ wbs) p l = true) (hD : 8 ≤ D) :
     bytesAt s1.callEntry.mem (pa s p) l = bytesAt s.mem (pa s p) l := by
-  rw [ce_bytesAt s1 (A.L.nwp h |> fun h' => by omega) (A.k1 h) hD A.L.dsm, A.mem]
+  rw [ce_bytesAt s1 (A.L.nwp h |> fun h' => by omega_using [h']) (A.k1 h) hD A.L.dsm, A.mem]
 
 theorem At.coeff {p : Ptr} (h : inB (rbs ++ wbs) p 1024 = true) (hD : 8 ≤ D) {i : Nat} (hi : i < 256) :
     coeffAt s1.callEntry.mem (pa s p) i = coeffAt s.mem (pa s p) i := by
@@ -134,15 +134,15 @@ theorem At.hint {p : Ptr} {k : Nat} (h : inB (rbs ++ wbs) p (1024 * k) = true) (
     hintAt (s1.mem.writeW (s1.gpr .rsp - 8) (s1.unknowns 0)) (pa s p) k = hintAt s.mem (pa s p) k := by
   rw [hintAt_congr (m := s.mem) fun x hx => ?_]
   rw [← A.mem]
-  exact ce_byte s1 (R := ⟨pa s p, 1024 * k⟩) (A.k1 h) hD A.L.dsm (show 1024 * k ≤ 2 ^ 64 by have := A.L.nwp h; omega) hx
+  exact ce_byte s1 (R := ⟨pa s p, 1024 * k⟩) (A.k1 h) hD A.L.dsm (show 1024 * k ≤ 2 ^ 64 by have := A.L.nwp h; omega_using [this]) hx
 
 theorem At.coeffs {p : Ptr} {len : Nat} (h : inB (rbs ++ wbs) p (len * 4) = true) (hD : 8 ≤ D) :
     (List.range len).map (fun i => (coeffAt (s1.mem.writeW (s1.gpr .rsp - 8) (s1.unknowns 0)) (pa s p) i).toNat) =
       (List.range len).map (fun i => (coeffAt s.mem (pa s p) i).toNat) := by
   rw [coeffs_congr (m := s.mem) fun x hx => ?_]
   rw [← A.mem]
-  exact ce_byte s1 (R := ⟨pa s p, len * 4⟩) (A.k1 h) hD A.L.dsm (show len * 4 ≤ 2 ^ 64 by have := A.L.nwp h; omega)
-    (show x < len * 4 by omega)
+  exact ce_byte s1 (R := ⟨pa s p, len * 4⟩) (A.k1 h) hD A.L.dsm (show len * 4 ≤ 2 ^ 64 by have := A.L.nwp h; omega_using [this])
+    (show x < len * 4 by omega_using [hx])
 
 theorem At.coeff' {p : Ptr} (h : inB (rbs ++ wbs) p 1024 = true) (hD : 8 ≤ D) {i : Nat} (hi : i < 256) :
     coeffAt (s1.mem.writeW (s1.gpr .rsp - 8) (s1.unknowns 0)) (pa s p) i = coeffAt s.mem (pa s p) i :=
@@ -188,7 +188,7 @@ theorem ipPre {t : Poly → Poly} {S : Nat} (hS : S + 8 ≤ D) {s s1 : State} (A
     (inPlaceContract X86_64.abi t S).pre (s1.callEntry.withRegions [] [pR (pa s f), pR (pa s (sc oPS))]) := by
   obtain ⟨_, _, i1, i2, d12, _, _⟩ := ipChk_spec hc
   obtain ⟨h1, h2⟩ := argsIn2 hA
-  have hD : 8 ≤ D := by omega
+  have hD : 8 ≤ D := by omega_using [hS]
   have hwf := ce_wfS (ws := [64, 64]) (by decide) hS (A.rsp ▸ A.L.sp) [] [pR (pa s f), pR (pa s (sc oPS))]
   sig_pre [inPlaceContract, inPlaceSig, X86_64.abi, VG.X86_64.argRegs]
   simp only [h1, h2, Arg.val]
@@ -205,7 +205,7 @@ theorem ipAt_ok {t : Poly → Poly} {n : String} {c : Prog isa} (C : Callee (fun
     WP isa (callP n c [.ptr f, .ptr (sc oPS)]) s fun s' => PPostB D s s' [(f, 1024), (sc oPS, 1024)] ∧
       (∀ r ∈ calleeSaved, s'.gpr r = s.gpr r) ∧ PolyIs s'.mem (pa s f) (t (polyAt s.mem (pa s f))) := by
   obtain ⟨w1, w2, i1, _, _, b1, o1⟩ := ipChk_spec hc
-  have hD : 8 ≤ D := by have := C.hS; omega
+  have hD : 8 ≤ D := by have := C.hS; omega_using [this]
   refine WP.mono (callP_ok C.ver.1 C.nosp C.depth L.dsm (by simp [Arg.ok, b1, o1]; decide)
     (fun s1 hA hm k => ipPre C.hS (At.of L hm k) hc hA hr) (Covers.right (Covers.cons (L.cW w1) (L.cW w2)))
     (Covers.cons (L.cW w1) (L.cW w2)))
@@ -258,7 +258,7 @@ theorem mulPre {S : Nat} (hS : S + 8 ≤ D) {s s1 : State} (A : At D rbs wbs s s
     (productContract P.montgomery X86_64.abi S).pre (s1.callEntry.withRegions [pR (pa s f), pR (pa s g)] [pR (pa s h)]) := by
   obtain ⟨_, i1, i2, i3, d12, d13, _⟩ := mulChk_spec hc
   obtain ⟨e1, e2, e3⟩ := argsIn3 hA
-  have hD : 8 ≤ D := by omega
+  have hD : 8 ≤ D := by omega_using [hS]
   have hwf := ce_wfS (ws := [64, 64, 64]) (by decide) hS (A.rsp ▸ A.L.sp) [pR (pa s f), pR (pa s g)] [pR (pa s h)]
   sig_pre [productContract, mulSig, X86_64.abi, VG.X86_64.argRegs]
   simp only [e1, e2, e3, Arg.val]
@@ -275,7 +275,7 @@ theorem mulAt_ok {P : Prims} (C : Callee (fun S => productContract P.montgomery 
       (∀ r ∈ calleeSaved, s'.gpr r = s.gpr r) ∧
       PolyIs s'.mem (pa s h) (product P.montgomery (polyAt s.mem (pa s f)) (polyAt s.mem (pa s g))) := by
   obtain ⟨w1, i1, i2, i3, _, _, ok⟩ := mulChk_spec hc
-  have hD : 8 ≤ D := by have := C.hS; omega
+  have hD : 8 ≤ D := by have := C.hS; omega_using [this]
   refine WP.mono (callP_ok C.ver.1 C.nosp C.depth L.dsm ok
     (fun s1 hA hm k => mulPre C.hS (At.of L hm k) hc hA rf rg)
     (Covers.append_left (Covers.cons (L.cR i2) (L.cR i3)) (Covers.right (L.cW w1))) (L.cW w1))
@@ -343,7 +343,7 @@ theorem dotPre {c S : Nat} (hS : S + 8 ≤ D) {s s1 : State} (A : At D rbs wbs s
       [pR (pa s h), pR (pa s (sc oPS))]) := by
   obtain ⟨w1, w2, i1, i2, i3, i4, d1, d2, d3, d4, d5, hfam, _⟩ := dotChk_spec hc
   obtain ⟨e1, e2, e3, e4⟩ := argsIn4 hA
-  have hD : 8 ≤ D := by omega
+  have hD : 8 ≤ D := by omega_using [hS]
   have hwf := ce_wfS (ws := [64, 64, 64, 64]) (by decide) hS (A.rsp ▸ A.L.sp)
     [⟨pa s f, c * 256 * 4⟩, ⟨pa s g, c * 256 * 4⟩] [pR (pa s h), pR (pa s (sc oPS))]
   sig_pre [dotInverseContract, dotInverseSig, X86_64.abi, VG.X86_64.argRegs]
@@ -370,7 +370,7 @@ theorem dotAt_ok {P : Prims} {c : Nat} (C : Callee (fun S => dotInverseContract 
       PolyIs s'.mem (pa s h) (nttInv (dotNTT (fun j => polyAt s.mem (pa s (famP f j)))
         (fun j => polyAt s.mem (pa s (famP g j))) c)) := by
   obtain ⟨w1, w2, i1, i2, i3, i4, _, _, _, _, _, hfam, ok⟩ := dotChk_spec hc
-  have hD : 8 ≤ D := by have := C.hS; omega
+  have hD : 8 ≤ D := by have := C.hS; omega_using [this]
   refine WP.mono (callP_ok C.ver.1 C.nosp C.depth L.dsm ok
     (fun s1 hA hm k => dotPre C.hS (At.of L hm k) hc hA rf rg)
     (Covers.append_left (Covers.cons (L.cR i3) (L.cR i4)) (Covers.right (Covers.cons (L.cW w1) (L.cW w2))))

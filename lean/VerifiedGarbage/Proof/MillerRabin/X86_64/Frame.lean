@@ -28,7 +28,7 @@ theorem core_keeps {B : Addr} {n w : Nat} {m m' : Mem}
   have h6a := ha 6 (by simp [Proof.MillerRabin.Round.extended])
   have h9a := ha 9 (by simp [Proof.MillerRabin.Round.extended])
   apply hf
-  simp only [ofs, Mem.sub_ofNat_toNat B (by omega : i < 2 ^ 64)]
+  simp only [ofs, Mem.sub_ofNat_toNat B (by omega_using [hn, hi, ht, h22h, h26h, h27h, h28h, h31h, h2a, h3a, h5a, h6a, h9a] : i < 2 ^ 64)]
   intro r hr
   simp only [coreRanges, tabRanges, VG.Proof.RsaKeyGen.X86_64.expRanges, winRanges, List.mem_append,
     List.mem_cons, List.not_mem_nil, or_false] at hr

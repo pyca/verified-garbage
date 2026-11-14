@@ -334,7 +334,7 @@ theorem fixed_ready {s t : State} {offset size : Nat} (ready : FinalizeReady s)
     UpdateReady t := by
   have k := h.keeps
   have len : (t.gpr .a3).toNat = size := by
-    rw [h.size, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+    rw [h.size, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hi])]
   refine ⟨(ready.keeps k).work, ?_, ?_, ?_⟩
   · apply Covers.of_sub
     intro r hr
@@ -343,9 +343,9 @@ theorem fixed_ready {s t : State} {offset size : Nat} (ready : FinalizeReady s)
     change offset + (t.gpr .a3).toNat ≤ 16384
     rw [len]; exact hi
   · rw [h.data, len, k.s4]
-    exact (Offset.base_disjoint _ (by omega) (by omega)).symm
+    exact (Offset.base_disjoint _ (by omega_using [lo]) (by omega_using [hi])).symm
   · rw [h.data, len, k.s4]
-    exact Offset.disjoint _ (d := offset) (n := size) (e := 192) (k := 576) (by omega) (by omega) (by decide)
+    exact Offset.disjoint _ (d := offset) (n := size) (e := 192) (k := 576) (by omega_using [lo]) (by omega_using [hi]) (by decide)
 
 theorem absorbFixed_keeps (s : State) (offset size : Nat)
     (ready : FinalizeReady s) (offsetBound : offset < 2048) (sizeBound : size < 2048) (lo : 768 ≤ offset) (hi : offset + size ≤ 16384) :

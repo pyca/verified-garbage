@@ -74,20 +74,20 @@ theorem signBody_ok {base : Addr} {size pLen qLen p q g y x k digestLen digest :
   · simpa only [Of, decide_eq_true_eq] using S2
 
   · intro a ha hb hstack
-    rw [Of, O2 a (by have C := VG.Proof.Dsa.X86.Layout.context_bound (by have := M.lengths; omega : (qLen + 7) / 8 ≤ 48); change 15712 ≤ ofs base a at ha; omega) hb]
+    rw [Of, O2 a (by have C := VG.Proof.Dsa.X86.Layout.context_bound (by have := M.lengths; omega_using [this] : (qLen + 7) / 8 ≤ 48); change 15712 ≤ ofs base a at ha; omega_using [C, ha]) hb]
     apply E1.mem a ?_ (.inr hstack)
     intro pair hp
     simp only [runRanges, List.mem_cons, List.not_mem_nil, or_false] at hp
     rcases hp with rfl | rfl | rfl <;>
       change 15712 ≤ ofs base a at ha <;> right <;> change _ ≤ ofs base a <;>
       simp only [VG.Impl.Mont.X86.Dynamic.contextBytes, VG.Impl.Mont.X86.Dynamic.slot,
-        VG.Impl.Mont.X86.Dynamic.stride, Layout.field, r, usedBytes] <;> omega
+        VG.Impl.Mont.X86.Dynamic.stride, Layout.field, r, usedBytes] <;> omega_using [ha]
 
   · intro regs saved
     rw [Of]
     exact O2.saved ha
-      (by have C := VG.Proof.Dsa.X86.Layout.context_bound (by have := M.lengths; omega : (qLen + 7) / 8 ≤ 48); omega)
-      (by have H : 15712 ≤ size := M.extent; omega)
-      (by have := M.scr.nowrap; omega) (E1.saved saved)
+      (by have C := VG.Proof.Dsa.X86.Layout.context_bound (by have := M.lengths; omega_using [this] : (qLen + 7) / 8 ≤ 48); omega_using [C])
+      (by have H : 15712 ≤ size := M.extent; omega_using [H])
+      (by have := M.scr.nowrap; omega_using [this]) (E1.saved saved)
 
 end VG.Proof.Dsa.X86

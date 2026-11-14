@@ -23,6 +23,6 @@ theorem exponent_mask_coefficient {m m' : Mem} {B : Addr} {n : Nat}
     List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl
   all_goals simp only [arr, S, aT1, aT2, hdr, kOk]
-  all_goals omega
+  all_goals omega_using []
 
 end VG.Proof.RsaKeyGen.X86.Key

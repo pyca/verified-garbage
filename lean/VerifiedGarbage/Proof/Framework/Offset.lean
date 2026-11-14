@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Framework.PlainSimp
 public import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # Byte ranges at offsets from a base address
@@ -38,25 +39,25 @@ theorem lt_iff (x p : Addr) {d n : Nat} (h : d + n ≤ 2 ^ 64) :
     (x - (p + BitVec.ofNat 64 d)).toNat < n ↔ d ≤ (x - p).toNat ∧ (x - p).toNat < d + n := by
   have := (x - p).isLt
   rcases Nat.eq_zero_or_pos n with rfl | hn
-  · simp only [Nat.not_lt_zero, false_iff, Nat.add_zero]; omega
-  rw [toNat_sub_add x p (by omega)]
+  · simp only [Nat.not_lt_zero, false_iff, Nat.add_zero]; omega_using []
+  rw [toNat_sub_add x p (by omega_using [h, hn])]
   constructor
   · intro h'
     by_cases hd : d ≤ (x - p).toNat
-    · rw [show 2 ^ 64 - d + (x - p).toNat = (x - p).toNat - d + 2 ^ 64 by omega, Nat.add_mod_right,
-        Nat.mod_eq_of_lt (by omega)] at h'
-      omega
-    · rw [Nat.mod_eq_of_lt (by omega)] at h'; omega
+    · rw [show 2 ^ 64 - d + (x - p).toNat = (x - p).toNat - d + 2 ^ 64 by omega_using [h, h'], Nat.add_mod_right,
+        Nat.mod_eq_of_lt (by omega_using [])] at h'
+      omega_using [h', hd]
+    · rw [Nat.mod_eq_of_lt (by omega_using [hd])] at h'; omega_using [h, h']
   · intro ⟨h₁, h₂⟩
-    rw [show 2 ^ 64 - d + (x - p).toNat = (x - p).toNat - d + 2 ^ 64 by omega, Nat.add_mod_right,
-      Nat.mod_eq_of_lt (by omega)]
-    omega
+    rw [show 2 ^ 64 - d + (x - p).toNat = (x - p).toNat - d + 2 ^ 64 by omega_using [h₁], Nat.add_mod_right,
+      Nat.mod_eq_of_lt (by omega_using [])]
+    omega_using [hn, h₂]
 
 /-- The distance from `p + d` to `p + e`. -/
 theorem sub_toNat (p : Addr) {d e : Nat} (h : d ≤ e) (he : e < 2 ^ 64) :
     (p + BitVec.ofNat 64 e - (p + BitVec.ofNat 64 d)).toNat = e - d := by
-  rw [toNat_sub_add _ _ (by omega), Mem.sub_ofNat_toNat p he,
-    show 2 ^ 64 - d + e = e - d + 2 ^ 64 by omega, Nat.add_mod_right, Nat.mod_eq_of_lt (by omega)]
+  rw [toNat_sub_add _ _ (by omega_using [h, he]), Mem.sub_ofNat_toNat p he,
+    show 2 ^ 64 - d + e = e - d + 2 ^ 64 by omega_using [h, he], Nat.add_mod_right, Nat.mod_eq_of_lt (by omega_using [he])]
 
 /-- The distance from `p + d` to `p + e`, either way round. -/
 theorem sub_toNat' (p : Addr) {d e : Nat} (hd : d < 2 ^ 64) (he : e < 2 ^ 64) :
@@ -64,8 +65,8 @@ theorem sub_toNat' (p : Addr) {d e : Nat} (hd : d < 2 ^ 64) (he : e < 2 ^ 64) :
       if d ≤ e then e - d else 2 ^ 64 + e - d := by
   rw [toNat_sub_add _ _ hd, Mem.sub_ofNat_toNat p he]
   split
-  · rw [show 2 ^ 64 - d + e = e - d + 2 ^ 64 by omega, Nat.add_mod_right, Nat.mod_eq_of_lt (by omega)]
-  · rw [Nat.mod_eq_of_lt (by omega)]; omega
+  · rw [show 2 ^ 64 - d + e = e - d + 2 ^ 64 by omega_arith, Nat.add_mod_right, Nat.mod_eq_of_lt (by omega_using [he])]
+  · rw [Nat.mod_eq_of_lt (by omega_arith)]; omega_using [hd]
 
 /-- Distinct offsets of `p` are distinct addresses. -/
 theorem add_ofNat_ne (p : Addr) {a b : Nat} (ha : a < 2 ^ 64) (hb : b < 2 ^ 64) (h : a ≠ b) :
@@ -85,14 +86,14 @@ theorem sep (p : Addr) {d n e k : Nat} (h : d + n ≤ e ∨ e + k ≤ d) (hd : d
   intro x h₁ h₂
   rw [lt_iff x p hd] at h₁
   rw [lt_iff x p he] at h₂
-  omega
+  omega_using [h, h₁, h₂]
 
 /-- `[p, p + n)` and `[p + e, p + e + k)` are separate if `n ≤ e`. -/
 theorem sep_base (p : Addr) {n e k : Nat} (h : n ≤ e) (he : e + k ≤ 2 ^ 64) :
     Mem.Sep p n (p + BitVec.ofNat 64 e) k := by
   intro x h₁ h₂
   rw [lt_iff x p he] at h₂
-  omega
+  omega_using [h, h₁, h₂]
 
 /-- Two regions at offsets of `p` that do not overlap. -/
 theorem disjoint (p : Addr) {d n e k : Nat} (h : d + n ≤ e ∨ e + k ≤ d) (hd : d + n ≤ 2 ^ 64)
@@ -114,12 +115,12 @@ theorem disjoint_below (p : Addr) {n d k : Nat} (h : n + d + k ≤ 2 ^ 64) :
     Region.Disjoint ⟨p + BitVec.ofNat 64 d, k⟩ ⟨p - BitVec.ofNat 64 n, n⟩ := by
   rw [show p + BitVec.ofNat 64 d = p - BitVec.ofNat 64 n + BitVec.ofNat 64 (n + d) by
     rw [BitVec.ofNat_add, ← BitVec.add_assoc, BitVec.sub_add_cancel]]
-  exact disjoint_base _ (Nat.le_add_right _ _) (by omega)
+  exact disjoint_base _ (Nat.le_add_right _ _) (by omega_using [h])
 
 /-- `[p, p + k)` lies above `[p - n, p)`. -/
 theorem base_disjoint_below (p : Addr) {n k : Nat} (h : n + k ≤ 2 ^ 64) :
     Region.Disjoint ⟨p, k⟩ ⟨p - BitVec.ofNat 64 n, n⟩ := by
-  have := disjoint_below p (n := n) (d := 0) (k := k) (by omega)
+  have := disjoint_below p (n := n) (d := 0) (k := k) (by omega_using [h])
   rwa [show p + BitVec.ofNat 64 0 = p from BitVec.add_zero p] at this
 
 /-- Two regions, the first below the second, are disjoint. -/
@@ -135,8 +136,8 @@ theorem disjoint_of_le {r₁ r₂ : Region} (h : r₁.base.toNat + r₁.len ≤ 
 theorem contains (p : Addr) {d n e k : Nat} (h₁ : e ≤ d) (h₂ : d + n ≤ e + k) (h₃ : e + k < 2 ^ 64) :
     (⟨p + BitVec.ofNat 64 e, k⟩ : Region).Contains (p + BitVec.ofNat 64 d) n := by
   simp only [Region.Contains]
-  rw [sub_toNat p h₁ (by omega)]
-  omega
+  rw [sub_toNat p h₁ (by omega_using [h₂, h₃])]
+  omega_using [h₁, h₂]
 
 /-- A range at an offset of `p` within a region at `p`. -/
 theorem contains_base (p : Addr) {d n k : Nat} (h : d + n ≤ k) (hd : d < 2 ^ 64) :
@@ -152,16 +153,16 @@ theorem sub_base (p : Addr) {d n k : Nat} (h : d + n ≤ k) :
   simp only [Region.Contains] at hx ⊢
   have := (x - p).isLt
   by_cases hk : k < 2 ^ 64
-  · rw [Nat.lt_iff_add_one_le.symm, lt_iff x p (by omega)] at hx
-    omega
-  · omega
+  · rw [Nat.lt_iff_add_one_le.symm, lt_iff x p (by omega_using [h, hk])] at hx
+    omega_using [h, hx]
+  · omega_using [hk]
 
 /-- `[p + d, p + d + n)` lies in `[p + e, p + e + k)`. -/
 theorem sub (p : Addr) {d n e k : Nat} (h₁ : e ≤ d) (h₂ : d + n ≤ e + k) :
     Region.Sub ⟨p + BitVec.ofNat 64 d, n⟩ ⟨p + BitVec.ofNat 64 e, k⟩ := by
   rw [show p + BitVec.ofNat 64 d = p + BitVec.ofNat 64 e + BitVec.ofNat 64 (d - e) by
     rw [BitVec.add_assoc, BitVec.ofNat_add_ofNat, Nat.add_sub_cancel' h₁]]
-  exact sub_base _ (by omega)
+  exact sub_base _ (by omega_using [h₁, h₂])
 
 /-! ## Ranges below a base
 
@@ -181,7 +182,7 @@ theorem sub_below (p : Addr) {a n b m : Nat} (h₁ : a ≤ b) (h₂ : b - a + n 
 /-- `[p - b, p - b + m)` contains `[p - a, p - a + n)`. -/
 theorem contains_below (p : Addr) {a n b m : Nat} (h₁ : a ≤ b) (h₂ : b - a + n ≤ m) (hb : b < 2 ^ 64) :
     (⟨p - BitVec.ofNat 64 b, m⟩ : Region).Contains (p - BitVec.ofNat 64 a) n := by
-  rw [sub_ofNat_eq p h₁]; exact contains_base _ h₂ (by omega)
+  rw [sub_ofNat_eq p h₁]; exact contains_base _ h₂ (by omega_using [hb])
 
 /-- `[p - a, p - a + n)` and `[p - b, p - b + k)` are separate if their
 offsets from `p - c` say so. -/

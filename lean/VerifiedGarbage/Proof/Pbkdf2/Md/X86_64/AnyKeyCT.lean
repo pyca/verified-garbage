@@ -119,8 +119,8 @@ theorem hashKey_rel : RelCT isa (fun s s' => KE (H := H) s₀ s ∧ KE (H := H) 
   have ini : ∀ {σ₀ s : State}, Pre (H := H) σ₀ → KE (H := H) σ₀ s →
       Covers [⟨A σ₀ H.stWO, H.S⟩] s.wr ∧ (below (s.gpr .rsp) 16).Disjoint ⟨A σ₀ H.stWO, H.S⟩ :=
     fun hp h => ⟨Covers.of_sub fun r hr => by
-        simp only [List.mem_singleton] at hr; subst hr; exact cov_part hp h.kr (by omega),
-      stk_sc hp h.kr (by omega) (part_sub (by omega))⟩
+        simp only [List.mem_singleton] at hr; subst hr; exact cov_part hp h.kr (by omega_using [hl, he]),
+      stk_sc hp h.kr (by omega_using []) (part_sub (by omega_using [hl, he]))⟩
   have c₂ := rel_wp (VG.Proof.Pbkdf2.Md.X86_64.Calls.init_rel hH.stream (st := A s₀ H.stWO)
       (P := fun s s' => (KE (H := H) s₀ s ∧ s.gpr .rdi = A s₀ H.stWO) ∧
         (KE (H := H) s₀' s' ∧ s'.gpr .rdi = A s₀' H.stWO))

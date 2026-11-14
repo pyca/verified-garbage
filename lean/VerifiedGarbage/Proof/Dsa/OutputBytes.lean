@@ -37,13 +37,13 @@ theorem shape_digest_width {p q : Nat} (H : shapeValid p q) :
     Spec.Dsa.bitLength q = 8 * (Spec.Dsa.bitLength q / 8) ∧ Spec.Dsa.bitLength q / 8 ≤ 32 := by
   have S := H.1
   unfold Spec.Dsa.supportedSizes at S
-  omega
+  omega_using [S]
 
 theorem bytesAt_prefix (mem : Mem) (ptr : Addr) (total count : Nat) :
     Spec.Rsa.bytesAt mem ptr (min total count) = (Spec.Rsa.bytesAt mem ptr total).take count := by
   apply List.ext_getElem
   · simp only [Spec.Rsa.bytesAt, List.length_take, List.length_map, List.length_range]
-    omega
+    omega_using []
   · intro i hi hj
     simp only [List.getElem_take, Spec.Rsa.bytesAt, List.getElem_map, List.getElem_range]
 

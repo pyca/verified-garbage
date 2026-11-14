@@ -35,20 +35,20 @@ theorem scalarBound_ok {s : State} {B ptr : Addr} {Z w k dl : Nat} {mi : BitVec 
   ⟨good.scr.congr restA.wr,(restA.gpr .x0 (by decide)).trans good.x0,memA ▸ good.hdr⟩
  have sourceA := source.congrK (fun x _ =>by rw [memA]) restA
  by_cases noQ : dl=2*k
- · have branch := boundNoQ_ok goodA room (by rw [words];omega) (by rw [words];omega)
+ · have branch := boundNoQ_ok goodA room (by rw [words];omega_using [positive]) (by rw [words];omega_using [size])
     (by rw [memA,modulus];exact odd)
    have condition : isa.eval (.zero .x .x3) a=some true := by rw [eval_zero,testA,noQ,Nat.sub_self];decide
    obtain ⟨tr,t,run,goodT,value,frame,rest⟩ := branch
    refine ⟨_,t,.iteT condition run,goodT,?_,?_,(restA.trans rest).mono (by simp [mmRegs])⟩
    · rw [memA,modulus] at value
      simpa only [Spec.Ffdh.scalarBound,Spec.Ffdh.domainOf,
-      ite_eq_right (by omega : ¬dom.length=3*k),Option.getD_none] using value
+      ite_eq_right (by omega_using [positive, domLength, noQ] : ¬dom.length=3*k),Option.getD_none] using value
    · rw [←memA];exact frame
- · have three : dl=3*k := by omega
+ · have three : dl=3*k := by omega_using [shape, noQ]
    have condition : isa.eval (.zero .x .x3) a=some false := by
     rw [eval_zero,testA,three]
     have nonzero : BitVec.ofNat 64 (3*k-2*k)≠0#64 := by
-     intro eq;have := congrArg BitVec.toNat eq;change (3*k-2*k)%2^64=0 at this;omega
+     intro eq;have := congrArg BitVec.toNat eq;change (3*k-2*k)%2^64=0 at this;omega_using [room, words, positive, size, shape, domLength, pointer, length, domainLength, modulus, odd, ptrA, lenA, testA, offsetA, noQ, three, eq, this]
     simp [nonzero]
    have body : WP isa (.seq (.block [.add .x .x1 .x1 .x4]) (load 5)) a fun t =>
     Good t B Z w mi ∧ wv t.mem B (slot w 5) w=Spec.Ffdh.scalarBound (Spec.Ffdh.domainOf k dom) ∧
@@ -61,11 +61,11 @@ theorem scalarBound_ok {s : State} {B ptr : Addr} {Z w k dl : Nat} {mi : BitVec 
        ⟨goodA.scr.congr restB.wr,(restB.gpr .x0 (by decide)).trans goodA.x0,memB ▸ goodA.hdr⟩
       have srcB := sourceA.congrK (fun x _ =>by rw [memB]) restB
       refine WP.mono (loadArray_ok goodB room words positive size (by decide : 5<8)
-       (src_take (src_drop srcB (2*k)) k) (by simp only [List.length_take,List.length_drop];omega)
+       (src_take (src_drop srcB (2*k)) k) (by simp only [List.length_take,List.length_drop];omega_using [shape, domLength, noQ])
        ptrB ((restB.gpr .x2 (by decide)).trans lenA)) ?_
       rintro t ⟨goodT,value,frame,restT⟩
       refine ⟨goodT,?_,?_,((restA.trans restB).trans restT).mono (by simp [mmRegs])⟩
-      · simpa only [Spec.Ffdh.scalarBound,Spec.Ffdh.domainOf,ite_eq_left (by omega : dom.length=3*k),Option.getD_some] using value
+      · simpa only [Spec.Ffdh.scalarBound,Spec.Ffdh.domainOf,ite_eq_left (by omega_using [shape, domLength, noQ] : dom.length=3*k),Option.getD_some] using value
       · rw [←memA,←memB];exact frame
    obtain ⟨tr,t,run,post⟩ := body
    exact ⟨_,t,.iteF condition run,post⟩

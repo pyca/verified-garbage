@@ -152,7 +152,7 @@ theorem openA1_ok (hMK : MulKey) {to : Bool} {O : Addr} {s₀ t : State}
         simp only [keptRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl | rfl | rfl <;> decide), Nat.zero_le _, by rw [r₃.others _ (by decide), h₂.x23]; simp,
       by rw [x24₃, Nat.sub_zero], x25₃, hdat₃, by rw [r₃.mem]; exact h₂.hH,
-      fun ha => by rw [r₃.mem]; simpa [bytesAt] using ha, .inr (by omega), by rw [r₃.mem]; exact Frame.refl _ _⟩
+      fun ha => by rw [r₃.mem]; simpa [bytesAt] using ha, .inr (by omega_using [hx₁0]), by rw [r₃.mem]; exact Frame.refl _ _⟩
   refine WP.mono (WP.with_rdwr (absSeg2_ok L (.inr rfl) hM)) fun s₆ ⟨h₆, rd₆, wr₆⟩ => ?_
   have F₂ : Frame [workR W] t.mem s₂.mem := h₂.frame.sub fun r hr => ⟨_, List.mem_cons_self .., by
     simp only [List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -211,7 +211,7 @@ theorem openRunA_relX (v : GcmImpl) (cl : Prog isa) (hMK : MulKey) {to : Bool} {
   have hexB : ∀ r ∈ ex, (⟨W + BitVec.ofNat 64 16 + BitVec.ofNat 64 32, 16⟩ : Region).Disjoint r := fun r hr =>
     (hexW r hr).sub_left (stW (by decide))
   have hexK : ∀ r ∈ ex, (keyR W).Disjoint r := fun r hr => (hexW r hr).sub_left (Lay.wSub (by decide))
-  have hDd : Region.Sub ⟨D + BitVec.ofNat 64 0, 16 * ((n - 0) / 16)⟩ ⟨D, n⟩ := Offset.sub_base D (by omega)
+  have hDd : Region.Sub ⟨D + BitVec.ofNat 64 0, 16 * ((n - 0) / 16)⟩ ⟨D, n⟩ := Offset.sub_base D (by omega_using [])
   refine rel_seq (hrel a₁.call a₂.call sY sS a₁.env.sp a₂.env.sp r₁ w₁ fr₁ r₂ w₂ fr₂ hDd)
     (WP.with_rdwr (absCall2WithX_ok L (.inr rfl) (Q := fun _ => True) hexH hexB a₁
       (WP.mono (hgh₁ _ a₁.call sY sS r₁ w₁ a₁.env.sp fr₁ hDd) fun _ g => ⟨g, trivial⟩)))
@@ -416,7 +416,7 @@ theorem openWithEX_ct (v : GcmImpl) (cl : Prog isa) (hMK : MulKey) {w : Nat} (hw
   · have hc : (σ₁.gpr .x5).toNat ≤ 16 ∧ (σ₁.gpr .x3).toNat = 12 := by
       by_contra hc; simp [hc] at ht
     have hgh₂ := @hgh σ₂
-    rw [exq, ← q0, ← qa w (by omega), ← q6, ← q7] at hgh₂
+    rw [exq, ← q0, ← qa w (by omega_using []), ← q6, ← q7] at hgh₂
     have regs : ∀ {u t : State}, (∀ r ∈ [Reg.x4, .x5, .x6, .x7], u.gpr r = σ₁.gpr r) →
         (∀ r ∈ [Reg.x4, .x5, .x6, .x7], t.gpr r = u.gpr r) →
         t.gpr .x4 = σ₁.gpr .x4 ∧ t.gpr .x5 = BitVec.ofNat 64 (σ₁.gpr .x5).toNat ∧ t.gpr .x6 = σ₁.gpr .x6 ∧

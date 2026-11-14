@@ -92,8 +92,8 @@ theorem winMid_ok {t : State} {P : Addr} {wx : Nat} {minv : BitVec 64} {X Xc V :
   refine WP.keep _ ?_ (by decide) (by decide) (by decide +kernel)
   brun [winMid, hc.good.x0, hdr_enc (show Crt.sV < 32 by decide), hdr_enc (show Crt.sNib < 32 by decide),
     hc.ld (i := Crt.sV) (by decide), hc.st (i := Crt.sV) (by decide), hc.st (i := Crt.sNib) (by decide), hV,
-    shl_ofNat (show V * 2 ^ 4 < 2 ^ 64 by omega), nibMask V (by omega)]
-  rw [show V * 2 ^ 4 = 16 * V by omega]
+    shl_ofNat (show V * 2 ^ 4 < 2 ^ 64 by omega_using [hV']), nibMask V (by omega_using [hV'])]
+  rw [show V * 2 ^ 4 = 16 * V by omega_using []]
 
 theorem expWin_eq (mul : Nat → Nat → Nat → Prog isa) : expWin mul =
     [mul aY aY aY, mul aY aY aY, mul aY aY aY, mul aY aY aY, .block winMid] ++
@@ -256,7 +256,7 @@ theorem zext_byte (m : Mem) (a : Addr) :
   simp only [Mem.read, BitVec.toNat_setWidth, BitVec.toNat_append, BitVec.toNat_ofNat]
   have := (m a).isLt
   simp
-  omega
+  omega_using []
 
 /-- The byte's head: the byte into `sV`, and the window count 2. -/
 def byteHead : List Instr :=

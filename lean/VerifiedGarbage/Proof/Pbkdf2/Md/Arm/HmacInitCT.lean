@@ -147,7 +147,7 @@ theorem ct (hc : Checks H) : RelCT isa (fun s s' => s = s₀ ∧ s' = s₀') H.h
     rel_agree (argTaint [.r0, .r1, .r2, .r3] 4) (fun s s' e e' => by
         rw [e, e']
         refine agree_argTaint (fun r hr => ?_) hq.sp (aw hp) (aw hp')
-          (argMem_of (j := 1) hq.sp hp.spf fun i hi => by rw [show i = 0 by omega]; exact hq.a0)
+          (argMem_of (j := 1) hq.sp hp.spf fun i hi => by rw [show i = 0 by omega_using [hi]]; exact hq.a0)
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl | rfl | rfl
         · exact hq.r0

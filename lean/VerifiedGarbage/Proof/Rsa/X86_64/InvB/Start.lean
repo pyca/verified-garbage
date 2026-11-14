@@ -577,7 +577,7 @@ theorem start_ok {s : State} {B : Addr} {Z w n iU iM : Nat} (h : Ws s B Z w) (hZ
     have e0 : wv t.mem B (slot w aP) n = pOf (wv s.mem B (slot w iM) n) := by
       rw [Pt n (by omega_arith)]; exact wv_lowK P₉ hp_lt (by omega_arith)
     rw [wv, e0] at e1
-    have h0 : 2 ^ (64 * n) * (word t.mem B (slot w aP + 8 * n)).toNat = 0 := by omega
+    have h0 : 2 ^ (64 * n) * (word t.mem B (slot w aP + 8 * n)).toNat = 0 := by omega_using [e1]
     have h2 := (Nat.mul_eq_zero.mp h0).resolve_left (Nat.two_pow_pos _).ne'
     exact BitVec.eq_of_toNat_eq h2
   case cF =>

@@ -43,16 +43,16 @@ theorem val32_lt (m : Mem) (base : Addr) (d k : Nat) : val32 m base d k < 2 ^ (3
     have h2 := ih (d + 4)
     have : 2 ^ 32 * (val32 m base (d + 4) k + 1) ≤ 2 ^ 32 * 2 ^ (32 * k) := Nat.mul_le_mul_left _ h2
     rw [Nat.mul_succ] at this
-    omega
+    omega_using [h1, h2]
 
 theorem val32_append (m : Mem) (base : Addr) (d j k : Nat) :
     val32 m base d (j + k) = val32 m base d j + 2 ^ (32 * j) * val32 m base (d + 4 * j) k := by
   induction j generalizing d with
   | zero => simp only [val32, Nat.zero_add, Nat.mul_zero, Nat.pow_zero, Nat.one_mul, Nat.add_zero]
   | succ j ih =>
-    rw [Nat.add_right_comm, val32, ih, val32, pow32_succ, show d + 4 + 4 * j = d + 4 * (j + 1) by omega,
+    rw [Nat.add_right_comm, val32, ih, val32, pow32_succ, show d + 4 + 4 * j = d + 4 * (j + 1) by omega_using [],
       Nat.mul_add, Nat.mul_assoc]
-    omega
+    omega_using []
 
 /-- The last word of a number. -/
 theorem val32_succ (m : Mem) (base : Addr) (d k : Nat) :
@@ -64,7 +64,7 @@ theorem val32_congr {m m' : Mem} {base : Addr} {d : Nat} :
       val32 m' base d k = val32 m base d k
   | 0, _ => rfl
   | k + 1, h => by
-    rw [val32_succ, val32_succ, h k (Nat.lt_succ_self _), val32_congr fun j hj => h j (by omega)]
+    rw [val32_succ, val32_succ, h k (Nat.lt_succ_self _), val32_congr fun j hj => h j (by omega_using [hj])]
 
 /-- A 64-bit word is two 32-bit words. -/
 theorem word_eq_w32 (m : Mem) (base : Addr) (d : Nat) :
@@ -72,7 +72,7 @@ theorem word_eq_w32 (m : Mem) (base : Addr) (d : Nat) :
   rw [word, Rc2.Word32.read64_pair, BitVec.toNat_append,
     ← Nat.shiftLeft_add_eq_or_of_lt (m.readW (off base d) 32).isLt, Nat.shiftLeft_eq, Offset.add_add]
   simp only [w32, off]
-  omega
+  omega_using []
 
 /-- `n` 64-bit words are `2n` 32-bit words. -/
 theorem wordsVal_eq_val32 (m : Mem) (base : Addr) (d n : Nat) :
@@ -80,9 +80,9 @@ theorem wordsVal_eq_val32 (m : Mem) (base : Addr) (d n : Nat) :
   induction n generalizing d with
   | zero => rfl
   | succ n ih =>
-    rw [wordsVal, ih, word_eq_w32, show 2 * (n + 1) = 2 + 2 * n by omega, val32_append, val32, val32,
-      val32, show d + 8 = d + 4 * 2 by omega, show (2 : Nat) ^ (32 * 2) = 2 ^ 64 by decide]
-    omega
+    rw [wordsVal, ih, word_eq_w32, show 2 * (n + 1) = 2 + 2 * n by omega_using [], val32_append, val32, val32,
+      val32, show d + 8 = d + 4 * 2 by omega_using [], show (2 : Nat) ^ (32 * 2) = 2 ^ 64 by decide]
+    omega_using []
 
 /-! ## Stores -/
 
@@ -90,7 +90,7 @@ theorem wordsVal_eq_val32 (m : Mem) (base : Addr) (d n : Nat) :
 theorem w32_write_ne {m : Mem} {base : Addr} {size o d : Nat} (hn : base.toNat + size ≤ 2 ^ 32)
     (ho : o + 4 ≤ size) (hd : d + 4 ≤ size) (hsep : d + 4 ≤ o ∨ o + 4 ≤ d) (v : BitVec 32) :
     w32 (m.writeW (off base o) v) base d = w32 m base d := by
-  rw [w32, Mem.readW_writeW_sep (Offset.sep base hsep (by omega) (by omega)) (by decide)]
+  rw [w32, Mem.readW_writeW_sep (Offset.sep base hsep (by omega_using [hn, hd]) (by omega_using [hn, ho])) (by decide)]
 
 /-- A 32-bit store at offset `o` is read back. -/
 theorem w32_write_self (m : Mem) (base : Addr) (o : Nat) (v : BitVec 32) :
@@ -103,20 +103,20 @@ theorem writeW32_outside (m : Mem) (base : Addr) {d : Nat} (v : BitVec 32) (h : 
   intro x hx
   simp only [Mem.writeW]
   apply Mem.write_apply
-  rw [Offset.lt_iff x base (by omega)]
+  rw [Offset.lt_iff x base (by omega_using [h])]
   simp only [ofs] at hx
-  omega
+  omega_using [hx]
 
 /-- A word at an offset outside the bytes that changed. -/
 theorem Outside.w32 {base : Addr} {o n : Nat} {m m' : Mem}
     (h : Outside base o n m m') {d : Nat} (hd : d + 4 ≤ o ∨ o + n ≤ d) (hd' : d + 4 ≤ 2 ^ 64) :
     w32 m' base d = w32 m base d :=
-  congrArg BitVec.toNat (Mem.readW_congr fun i hi => h _ (by rw [ofs_off base (by omega)]; omega))
+  congrArg BitVec.toNat (Mem.readW_congr fun i hi => h _ (by rw [ofs_off base (by omega_using [hd', hi])]; omega_using [hd, hi]))
 
 theorem Outside.val32 {base : Addr} {o n : Nat} {m m' : Mem} (h : Outside base o n m m')
     {d k : Nat} (hd : d + 4 * k ≤ o ∨ o + n ≤ d) (hd' : d + 4 * k ≤ 2 ^ 64) :
     val32 m' base d k = val32 m base d k :=
-  val32_congr fun j hj => h.w32 (by omega) (by omega)
+  val32_congr fun j hj => h.w32 (by omega_using [hd, hj]) (by omega_using [hd', hj])
 
 /-! ## Memory outside several ranges -/
 
@@ -145,6 +145,6 @@ theorem Outs.val32 {base : Addr} {rs : List (Nat × Nat)} {m m' : Mem} (h : Outs
     val32 m' base d k = val32 m base d k :=
   val32_congr fun j hj => congrArg BitVec.toNat (Mem.readW_congr fun i hi => h _ fun r hr => by
     have := hd r hr
-    rw [ofs_off base (by omega)]; omega)
+    rw [ofs_off base (by omega_using [hd', hj, hi])]; omega_using [hj, hi, this])
 
 end VG.Proof.Mont

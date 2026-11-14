@@ -97,7 +97,7 @@ theorem decTArgs_ok {s : State} {P B : BitVec 64} {i : Nat} (hi : i < 2048) (h11
       s'.gpr .a1 = P + BitVec.ofNat 64 (oPoly i) := by
   rw [← List.append_nil (slotAt .a1 .s6 0)]
   refine wp_atMul (by decide) (by decide) (by decide) fun s₁ u₁ =>
-    wp_slotAt (i := i) (by decide) (by omega) (by decide) (by rw [u₁.other _ (by decide) (by decide), h6])
+    wp_slotAt (i := i) (by decide) (by omega_using [hi]) (by decide) (by rw [u₁.other _ (by decide) (by decide), h6])
       fun s₂ u₂ => WP.block_nil ⟨⟨fun r hr => ?_, by rw [u₂.mem, u₁.mem], by rw [u₂.rd, u₁.rd],
         by rw [u₂.wr, u₁.wr], by rw [u₂.sp, u₁.sp]⟩, ?_, ?_⟩
   · obtain ⟨n0, n1, n2, -, -, -⟩ := pres_ne hr
@@ -131,7 +131,7 @@ theorem decT_step {L : Lay} {i o : Nat} {s₀ : State} (hc : Ctx L s₀) (h30 : 
   have hc' := h.kx.ctx (by decide) hc
   obtain ⟨c_sub, c_sep⟩ := decT_slots hK j hj
   have g30 : s.gpr .s10 = L.A i o := by rw [h.kx.cs .s10 (by decide) (by decide), h30]
-  refine WP.seq (WP.mono (decTArgs_ok (by omega) hc'.s11 g30 h.s6) fun s₁ ⟨o₁, a3, a4⟩ => ?_)
+  refine WP.seq (WP.mono (decTArgs_ok (by omega_using [hj, k4]) hc'.s11 g30 h.s6) fun s₁ ⟨o₁, a3, a4⟩ => ?_)
   rw [ptr_add] at a3
   have hc₁ := hc'.only o₁
   have hsj : sepAll L.sizes (i, o + 384 * j, 384) [(0, 2048, 1024 * K.k)] = true :=
@@ -353,7 +353,7 @@ theorem muArgs_ok (hK : K.WF) {s : State} {P M : BitVec 64} (h11 : s.gpr .s11 = 
   rw [← List.append_nil (polyAddr .a3 (3 * K.k + 1))]
   simp only [List.cons_append, List.nil_append]
   refine wp_mv fun s₁ h₁ => wp_li (by decide) fun s₂ h₂ => wp_li (by decide) fun s₃ h₃ =>
-    wp_polyAddr (by omega) (by decide) fun s₄ h₄ => WP.block_nil
+    wp_polyAddr (by omega_using [k4]) (by decide) fun s₄ h₄ => WP.block_nil
       ⟨(updOnly h₁ (by decide)).trans ((updOnly h₂ (by decide)).trans ((updOnly h₃ (by decide)).trans
         (updOnly h₄ (by decide)))), ?_, ?_, ?_, ?_⟩
   · rw [h₄.other _ (by decide), h₃.other _ (by decide), h₂.other _ (by decide), h₁.gpr, h9]

@@ -50,7 +50,7 @@ theorem put6w_held {m : Mem} {ws : List (BitVec 64)} (hl : ws.length = 6) :
   intro i hi
   rw [hl] at hi
   simp only [put6w, Nat.reduceDiv]
-  rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 by omega) with rfl | rfl | rfl | rfl | rfl | rfl
+  rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 by omega_using [hi]) with rfl | rfl | rfl | rfl | rfl | rfl
   · rw [Proof.HashTable.readW_sep32, Proof.HashTable.readW_sep32, Proof.HashTable.readW_sep32,
       Proof.HashTable.readW_sep32, Proof.HashTable.readW_sep32, Mem.readW_writeW_self32] <;> decide
   · rw [Proof.HashTable.readW_sep32, Proof.HashTable.readW_sep32, Proof.HashTable.readW_sep32,
@@ -72,7 +72,7 @@ theorem put6w_below {m : Mem} {a : Addr} {w : Nat} (hw : w / 8 ≤ 8) (ha : a.to
   have h5 : (0x300000 + BitVec.ofNat 64 (4 * 5) : Addr).toNat = 0x300014 := by decide
   simp only [put6w]
   rw [readW_sepW, readW_sepW, readW_sepW, readW_sepW, readW_sepW, readW_sepW]
-  all_goals first | (simp only [h0, h1, h2, h3, h4, h5]; omega) | omega
+  all_goals first | (simp only [h0, h1, h2, h3, h4, h5]; omega_arith) | omega_arith
 
 /-- The stack arguments, at `0x9000`. -/
 def put2w (m : Mem) (w₀ w₁ : BitVec 32) : Mem := (m.writeW 0x9000 w₀).writeW 0x9004 w₁
@@ -83,8 +83,8 @@ theorem put2w_above {m : Mem} {a : Addr} {w : Nat} (hw : w / 8 ≤ 8) (ha : 0x90
   have e₀ : (0x9000 : Addr).toNat = 0x9000 := by decide
   have e₄ : (0x9004 : Addr).toNat = 0x9004 := by decide
   simp only [put2w]
-  rw [readW_sepW (.inr (by rw [e₄]; omega)) ha' (by decide) (by omega),
-    readW_sepW (.inr (by rw [e₀]; omega)) ha' (by decide) (by omega)]
+  rw [readW_sepW (.inr (by rw [e₄]; omega_using [ha])) ha' (by decide) (by omega_using [hw]),
+    readW_sepW (.inr (by rw [e₀]; omega_using [ha])) ha' (by decide) (by omega_using [hw])]
 
 /-- The functions of `vs` at distinct addresses, and every other symbol at `0x100000`. -/
 def symT (vs : List HVar) (n : String) : BitVec 32 :=
@@ -152,7 +152,7 @@ theorem sat_nil {T : Spec.Ecdsa.Rfc6979.TableInstance} {vs : List HVar} {w : HVa
   have hG : Spec.HmacTable.hashAt 32 (satT vs w (fun _ => 0) T.ecdsa.curve.len []).mem
       (State.addr (0x300000 : BitVec 32)) = some w.G :=
     hashAt_tableOf (by decide) (held_tableOf (by decide) (satT_held vs w _ _ _)).2.1
-  have hDn : (BitVec.ofNat 32 w.F.H.D).toNat = w.F.H.D := by rw [BitVec.toNat_ofNat]; omega
+  have hDn : (BitVec.ofNat 32 w.F.H.D).toNat = w.F.H.D := by rw [BitVec.toNat_ofNat]; omega_using [hD]
   have hsp : (satT vs w (fun _ => 0) T.ecdsa.curve.len []).sp = 0x9000 := rfl
   have hsy : (satT vs w (fun _ => 0) T.ecdsa.curve.len []).syms = symT vs := rfl
   sig_pre [Spec.Ecdsa.Rfc6979.TableInstance.signContract, Spec.Ecdsa.Rfc6979.TableInstance.signSig,
@@ -188,7 +188,7 @@ theorem sat_one {T : Spec.Ecdsa.Rfc6979.TableInstance} {vs : List HVar} {w : HVa
   have hG : Spec.HmacTable.hashAt 32 (satT vs w m₀ T.ecdsa.curve.len [⟨0x100000, 8 * W.length⟩]).mem
       (State.addr (0x300000 : BitVec 32)) = some w.G :=
     hashAt_tableOf (by decide) (held_tableOf (by decide) (satT_held vs w _ _ _)).2.1
-  have hDn : (BitVec.ofNat 32 w.F.H.D).toNat = w.F.H.D := by rw [BitVec.toNat_ofNat]; omega
+  have hDn : (BitVec.ofNat 32 w.F.H.D).toNat = w.F.H.D := by rw [BitVec.toNat_ofNat]; omega_using [hD]
   have hsp : (satT vs w m₀ T.ecdsa.curve.len [⟨0x100000, 8 * W.length⟩]).sp = 0x9000 := rfl
   have hsy : (satT vs w m₀ T.ecdsa.curve.len [⟨0x100000, 8 * W.length⟩]).syms = symT vs := rfl
   have hsym : symT vs n = 0x100000 := by simp only [symT, hna, ite_false]

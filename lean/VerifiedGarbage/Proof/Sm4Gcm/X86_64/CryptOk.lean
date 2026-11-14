@@ -153,8 +153,8 @@ theorem cwCall_of {D : Addr} {n j nb : Nat} {s₂ : State} (he₂ : Env Ctx St W
     CtrCall s₂ Ctx (St + BitVec.ofNat 64 48) (D + BitVec.ofNat 64 j) nb := by
   have hdj := (hd.drop hj).take (k := 16 * nb) h16
   have hk := he₂.rsp
-  refine ⟨hdi, hsi, hdx, hcx, by rw [hk]; exact L.sp, by have := L.lay.cw; omega,
-    by have := L.lay.sw; rw [BitVec.toNat_add, BitVec.toNat_ofNat]; omega, hdj.dw.ok.wrap,
+  refine ⟨hdi, hsi, hdx, hcx, by rw [hk]; exact L.sp, by have := L.lay.cw; omega_using [this],
+    by have := L.lay.sw; rw [BitVec.toNat_add, BitVec.toNat_ofNat]; omega_using [this], hdj.dw.ok.wrap,
     (L.lay.cs.sub_left (Region.sub_prefix (by decide))).sub_right (Lay.stSub (by decide)),
     hdj.dw.ctx.sub_left (Region.sub_prefix (by decide)),
     (hdj.dw.ok.st.sub_right (Lay.stSub (by decide))).symm, ?_, ?_, ?_, ?_, ?_⟩
@@ -311,8 +311,8 @@ theorem cryptTail_ok {icb : Block} {P : Nat} {D : Addr} {n : Nat} {m₀ : Mem} {
       rw [ciph_frame fz (fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr; exact L.lay.cs.sub_right (Lay.stSub (by decide))), hc]
     have hcall : CtrCall s₂ Ctx (St + BitVec.ofNat 64 48) (St + BitVec.ofNat 64 64) 1 := by
-      refine ⟨hdi, hsi, hdx, hcx, by rw [hk]; exact L.sp, by have := L.lay.cw; omega,
-        by have := L.lay.sw; rw [BitVec.toNat_add, BitVec.toNat_ofNat]; omega,
+      refine ⟨hdi, hsi, hdx, hcx, by rw [hk]; exact L.sp, by have := L.lay.cw; omega_using [this],
+        by have := L.lay.sw; rw [BitVec.toNat_add, BitVec.toNat_ofNat]; omega_using [this],
         by have := L.lay.sw; rw [BitVec.toNat_add, BitVec.toNat_ofNat]; omega_arith,
         (L.lay.cs.sub_left (Region.sub_prefix (by decide))).sub_right (Lay.stSub (by decide)),
         (L.lay.cs.sub_left (Region.sub_prefix (by decide))).sub_right (Lay.stSub (by decide)),

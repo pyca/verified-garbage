@@ -23,7 +23,7 @@ theorem loopRound_ok (M : Mont) (K : Kernel) {P : PrimeParams} {s₀ s : State}
         (isa.eval (.zero .x .x3) t = some true ∧ ∃ uni', PrimeLoopState P s₀ res (i + 1) uni' (used + P.drawBytes) t) := by
   let wt := Spec.RsaKeyGen.witness (P.N - 1) (Spec.Rsa.os2ip ((P.rand.drop used).take P.drawBytes))
   have hr := VG.Proof.RsaKeyGen.mrLoop_step P.N P.checks (Spec.Rsa.splitTwos (P.N - 1)).1
-    (Spec.Rsa.splitTwos (P.N - 1)).2 P.drawBytes P.rand i uni used h.go P.drawWidth (by have := P.drawMin; omega)
+    (Spec.Rsa.splitTwos (P.N - 1)).2 P.drawBytes P.rand i uni used h.go P.drawWidth (by have := P.drawMin; omega_using [this])
   have hut : (if wt.2 then 1 else 0) = wt.2.toNat := by cases wt.2 <;> rfl
   change primeRest P i uni used = if used + P.drawBytes ≤ P.rand.length then
     if Proof.MillerRabin.Round.round P.N wt.1 then primeRest P (i + 1) (uni + if wt.2 then 1 else 0) (used + P.drawBytes)
@@ -51,16 +51,16 @@ theorem loopRound_ok (M : Mont) (K : Kernel) {P : PrimeParams} {s₀ s : State}
       have hkuni := (hcount hpass).2
       have hbound : P.drawBytes * (i + 1 - 1) ≤ used + P.drawBytes := by
         rw [Nat.add_sub_cancel]
-        conv_lhs => rw [show i = (i - 1) + 1 by have := h.i1; omega, Nat.mul_add, Nat.mul_one]
+        conv_lhs => rw [show i = (i - 1) + 1 by have := h.i1; omega_using [this], Nat.mul_add, Nat.mul_one]
         exact Nat.add_le_add_right h.countBound _
       have hb : wt.2.toNat ≤ 1 := by cases wt.2 <;> decide
       refine Or.inr ⟨by simpa [hgo] using hz, uni + wt.2.toNat, ht,
-        by rw [hm]; exact hki, by rw [hm]; exact hkuni, hroom, by omega, hbound,
-        by have := h.uniformBound; omega, ?_, hres.symm, hf, hk⟩
+        by rw [hm]; exact hki, by rw [hm]; exact hkuni, hroom, by omega_using [], hbound,
+        by have := h.uniformBound; omega_using [hb, this], ?_, hres.symm, hf, hk⟩
       change i + 1 ≤ 16 ∨ uni + wt.2.toNat < P.checks
-      omega
+      omega_using [hgo]
     · have hnot : ¬ (i + 1 ≤ Spec.RsaKeyGen.blindedChecks ∨ uni + wt.2.toNat < P.checks) := by
-        change ¬ (i + 1 ≤ 16 ∨ uni + wt.2.toNat < P.checks); omega
+        change ¬ (i + 1 ≤ 16 ∨ uni + wt.2.toNat < P.checks); omega_using [hgo]
       have hdone := VG.Proof.RsaKeyGen.mrLoop_done P.N P.checks (Spec.Rsa.splitTwos (P.N - 1)).1
         (Spec.Rsa.splitTwos (P.N - 1)).2 (P.rand.drop (used + P.drawBytes)) (i + 1) (uni + wt.2.toNat) hnot
       change primeRest P (i + 1) (uni + wt.2.toNat) (used + P.drawBytes) = _ at hdone

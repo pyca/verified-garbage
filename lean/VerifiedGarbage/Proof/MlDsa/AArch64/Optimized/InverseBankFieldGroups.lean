@@ -29,27 +29,27 @@ theorem innerRegBlock_get (w : Poly) {base gap u t : Nat} (hgap : 0<gap)
   induction t generalizing i with
   | zero =>
     simp only [innerRegBlock,List.range_zero,List.foldl_nil,Nat.add_zero]
-    rw [ite_eq_right (by omega),ite_eq_right (by omega)]
+    rw [ite_eq_right (by omega_using []),ite_eq_right (by omega_using [])]
   | succ t ih =>
     rw [innerRegBlock,foldl_range_succ]
     change (blockN bflyInv (innerRegBlock w base gap u z t) (4*gap) z (innerLoc u (base+t) 0) 4)[innerLoc u i e]! = _
-    rw [blockN_bflyInv_get' _ (by omega) (by omega) (by unfold innerLoc n; omega) (by unfold innerLoc n; omega)]
+    rw [blockN_bflyInv_get' _ (by omega_using [hgap]) (by omega_using [hgap]) (by unfold innerLoc n; omega_using [hb, hu, ht]) (by unfold innerLoc n; omega_using [hu, he, hi])]
     by_cases ha : i=base+t
     · subst i
-      rw [ite_eq_left (by unfold innerLoc; omega),
-        show innerLoc u (base+t) e+4*gap=innerLoc u (base+t+gap) e by unfold innerLoc; omega,
-        ih (by omega) hi, ih (by omega) (by omega)]
+      rw [ite_eq_left (by unfold innerLoc; omega_using [he]),
+        show innerLoc u (base+t) e+4*gap=innerLoc u (base+t+gap) e by unfold innerLoc; omega_using [],
+        ih (by omega_using [ht]) hi, ih (by omega_using [ht]) (by omega_using [hb, ht])]
       simp (disch := omega) only [ite_eq_left,ite_eq_right]
     · by_cases hd : i=base+t+gap
       · subst i
-        rw [ite_eq_right (by unfold innerLoc; omega),ite_eq_left (by unfold innerLoc; omega),
-          show innerLoc u (base+t+gap) e-4*gap=innerLoc u (base+t) e by unfold innerLoc; omega,
-          ih (by omega) hi,ih (by omega) (by omega)]
+        rw [ite_eq_right (by unfold innerLoc; omega_using [hgap]),ite_eq_left (by unfold innerLoc; omega_using [he]),
+          show innerLoc u (base+t+gap) e-4*gap=innerLoc u (base+t) e by unfold innerLoc; omega_using [],
+          ih (by omega_using [ht]) hi,ih (by omega_using [ht]) (by omega_using [hb, ht])]
         simp (disch := omega) only [ite_eq_left,ite_eq_right]
         rw [Nat.add_sub_cancel]
-      · rw [ite_eq_right (by unfold innerLoc; omega),ite_eq_right (by unfold innerLoc; omega),ih (by omega) hi]
-        have h1 : (base≤i ∧ i<base+t) ↔ (base≤i ∧ i<base+(t+1)) := by omega
-        have h2 : (base+gap≤i ∧ i<base+gap+t) ↔ (base+gap≤i ∧ i<base+gap+(t+1)) := by omega
+      · rw [ite_eq_right (by unfold innerLoc; omega_using [he, ha]),ite_eq_right (by unfold innerLoc; omega_using [he, hd]),ih (by omega_using [ht]) hi]
+        have h1 : (base≤i ∧ i<base+t) ↔ (base≤i ∧ i<base+(t+1)) := by omega_using [ha]
+        have h2 : (base+gap≤i ∧ i<base+gap+t) ↔ (base+gap≤i ∧ i<base+gap+(t+1)) := by omega_using [hd]
         simp only [h1,h2]
 
 def innerRegGroupSchedule (u base gap rootIndex : Nat) : List Op :=

@@ -35,7 +35,7 @@ theorem prepare_ok (hc : CfgOk p521) (hC : Law p521.C) {base : Addr} {s : State}
       rcases hw with rfl|rfl
       · exact Or.inl h.1
       · exact Or.inl h.2) (by
-        have h := sl_le p521 h7 hi; omega)
+        have h := sl_le p521 h7 hi; omega_using [hn, h])
   have tv : ∀ {i}, i < 45 → i ≠ TMP → tmv p521.C p521.n base s₂ (p521.sl i) = tmv p521.C p521.n base s (p521.sl i) :=
     fun hi hT => by
       show toM _ _ (sv p521 base s₂ _) = toM _ _ (sv p521 base s _); rw [e₂ hi hT]

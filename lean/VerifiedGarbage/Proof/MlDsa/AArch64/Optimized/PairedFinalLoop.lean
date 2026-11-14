@@ -28,18 +28,18 @@ theorem final_tableReady {s : State} {p : Addr}
     (h : PairedTable.Words s.mem p)
     (hr : ∀off,off+16≤4096 → InRegions (s.rd++s.wr) (p+BitVec.ofNat 64 off) 16)
     (hx : s.gpr .x1=p+BitVec.ofNat 64 3840) (i : Fin 7) : RootReady s (32*i.val) (finalZ i.val) := by
-  refine ⟨by omega,by omega,?_,?_,fun e _ => Inverse.finalZ_range i.val e,?_,?_⟩
+  refine ⟨by omega_using [],by omega_using [],?_,?_,fun e _ => Inverse.finalZ_range i.val e,?_,?_⟩
   · rw [hx,BitVec.add_assoc,← BitVec.ofNat_add]
-    exact hr _ (by omega)
+    exact hr _ (by omega_using [])
   · rw [hx,BitVec.add_assoc,← BitVec.ofNat_add]
-    exact hr _ (by omega)
+    exact hr _ (by omega_using [])
   · intro e he
     rw [hx,BitVec.add_assoc,← BitVec.ofNat_add]
-    rw [(h.tail (j:=i.val) (by omega) he).1,tailRoot_final i]
+    rw [(h.tail (j:=i.val) (by omega_using []) he).1,tailRoot_final i]
     exact (BitVec.ofInt_natCast ..).symm
   · intro e he
     rw [hx,BitVec.add_assoc,← BitVec.ofNat_add,← Nat.add_assoc]
-    rw [(h.tail (j:=i.val) (by omega) he).2,tailRoot_final i]
+    rw [(h.tail (j:=i.val) (by omega_using []) he).2,tailRoot_final i]
     exact reciprocal_nat _
 
 theorem scale_tableReady {s : State} {p : Addr}
@@ -109,7 +109,7 @@ theorem finalLoop_ok (hint : Bool) {s : State} {table : Addr}
     have hm := congrArg CheckData.mem hdata
     have fm : Frame [⟨s.gpr .x15,2048⟩] s.mem t.mem := by
       change Frame _ _ (dataAt t).mem
-      rw [hdata]; exact finalPass_frame _ _ _ _ _ _ (by omega)
+      rw [hdata]; exact finalPass_frame _ _ _ _ _ _ (by omega_using [hu])
     have ht' := tableWords_frame ht fm (by simpa only [List.mem_singleton,forall_eq] using hd)
     have rt : ∀off,off+16≤4096 → InRegions (t.rd++t.wr) (table+BitVec.ofNat 64 off) 16 := by
       simpa only [hf.rd,hf.wr] using hrt
@@ -122,9 +122,9 @@ theorem finalLoop_ok (hint : Bool) {s : State} {table : Addr}
       have hab := (CallFrame.ofStep ha).trans (CallFrame.ofKeep hbk hbv)
       have hsb : CallFrame finalGprs finalCheckRegs s b := (hf.trans hab).mono (by simp [finalGprs]) (by simp)
       refine ⟨⟨hsb,?_,?_,?_,?_⟩,?_⟩
-      · rw [hb2,ha.gpr,h2,show 16*(u+1)=16*u+16 by omega,BitVec.ofNat_add,BitVec.add_assoc]; rfl
-      · rw [hb15,ha.gpr,h15,show 16*(u+1)=16*u+16 by omega,BitVec.ofNat_add,BitVec.add_assoc]; rfl
-      · rw [hb16,ha.gpr,h16,show 16*(u+1)=16*u+16 by omega,BitVec.ofNat_add,BitVec.add_assoc]; rfl
+      · rw [hb2,ha.gpr,h2,show 16*(u+1)=16*u+16 by omega_using [],BitVec.ofNat_add,BitVec.add_assoc]; rfl
+      · rw [hb15,ha.gpr,h15,show 16*(u+1)=16*u+16 by omega_using [],BitVec.ofNat_add,BitVec.add_assoc]; rfl
+      · rw [hb16,ha.gpr,h16,show 16*(u+1)=16*u+16 by omega_using [],BitVec.ofNat_add,BitVec.add_assoc]; rfl
       · have hba : dataAt b=dataAt a := by unfold dataAt; rw [hbm,hbv]
         rw [hba,had]
         unfold finalCheckData rawPairAt

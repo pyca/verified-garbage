@@ -68,10 +68,10 @@ theorem outerOutLoop_ok {s : State} {z : Nat → Int} (hconst : Hoisted s z)
       · exact ⟨ht₁.range,by simpa only [hvec₂] using ht₁.q,
           by simpa only [hvec₂] using ht₁.roots⟩
       · rw [hp₂,hk₁.get .x2,hp]
-        rw [show 16*(u+1)=16*u+16 by omega,BitVec.ofNat_add,BitVec.add_assoc]
+        rw [show 16*(u+1)=16*u+16 by omega_using [],BitVec.ofNat_add,BitVec.add_assoc]
         rfl
       · rw [hs₂,hk₁.get .x11,hsr]
-        rw [show 16*(u+1)=16*u+16 by omega,BitVec.ofNat_add,BitVec.add_assoc]
+        rw [show 16*(u+1)=16*u+16 by omega_using [],BitVec.ofNat_add,BitVec.add_assoc]
         rfl
       · rw [hm₂,hv₁.mem]
         simp only [outerSliceMem,hm,hp,hsr,outerOutPassMem,outerOutMemStep]
@@ -151,9 +151,9 @@ theorem outerOutPass_frame {m : Mem} {p src : Addr} {r : Region} {z : Nat → In
   induction N with
   | zero => exact Frame.refl _ _
   | succ N ih =>
-    have hf := ih (fun u hu i => hc u (by omega) i)
+    have hf := ih (fun u hu i => hc u (by omega_using [hu]) i)
     simp only [outerOutPassMem,outerOutMemStep]
-    exact writeBank_frame _ _ _ (by simp) (hc N (by omega)) hf
+    exact writeBank_frame _ _ _ (by simp) (hc N (by omega_using [])) hf
 
 def outGprs : List Reg := .x11::nttGprs
 

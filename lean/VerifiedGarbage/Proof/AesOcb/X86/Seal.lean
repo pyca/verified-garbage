@@ -70,10 +70,10 @@ theorem seal_wp (v : BlocksImpl) {s : State} (h : sealPre s) :
     (by rw [rd₆, wr₆]; exact covers_left F.env.perm.w) L.ww S₆ hret) fun s₇ ⟨ab, m₇, _, _, _⟩ => ⟨ab, ?_⟩
   have hd : bytesAt s₆.mem (w64 (prmOf s).D) (prmOf s).n = bytesAt s₅.mem (w64 (prmOf s).D) (prmOf s).n :=
     Proof.AesGcm.X86.bytesAt_frame f₆ (fun r hr => by
-      simp only [List.mem_singleton] at hr; subst hr; exact L.t_d.symm) (by have := L.dw; omega)
+      simp only [List.mem_singleton] at hr; subst hr; exact L.t_d.symm) (by have := L.dw; omega_using [this])
   have ht : bytesAt s₆.mem (w64 (prmOf s).T) (prmOf s).tl = bytesAt s₅.mem (w64 (prmOf s).W) (prmOf s).tl := by
     have := bytesAt_writeBytes_self s₅.mem (w64 (prmOf s).T) (bytesAt s₅.mem (w64 (prmOf s).W) (prmOf s).tl)
-      (by rw [length_bytesAt]; have := L.tl16; omega)
+      (by rw [length_bytesAt]; have := L.tl16; omega_using [this])
     rw [length_bytesAt] at this
     rw [m₆]; exact this
   show _ = (bytesAt s₇.mem (w64 (prmOf s).D) (prmOf s).n, bytesAt s₇.mem (w64 (prmOf s).T) (prmOf s).tl)
@@ -103,7 +103,7 @@ theorem open_wp (v : BlocksImpl) {s : State} (h : openPre s) :
   have f₆ : Frame [⟨w64 p.W, p.tl⟩] s₅.mem s₆.mem := by rw [m₆]; exact writeBytes_frame' _ (length_bytesAt _ _ _)
   have F₆ : Frame (mutR p) s₅.mem s₆.mem := frame_toMut f₆ fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr
-    exact ⟨wA p.W, by simp, Region.sub_prefix (by omega)⟩
+    exact ⟨wA p.W, by simp, Region.sub_prefix (by omega_using [ht])⟩
   have E₆ : Env p s₆ := F.env.mut L (by rw [g₆ _ (by decide) (by decide) (by decide) (by decide), F.env.ebp])
     (by rw [g₆ _ (by decide) (by decide) (by decide) (by decide), F.env.esp]) rd₆ wr₆ F₆
   -- The comparison.
@@ -140,21 +140,21 @@ theorem open_wp (v : BlocksImpl) {s : State} (h : openPre s) :
   -- The values.
   have tg₆ : bytesAt s₆.mem (w64 p.W) p.tl = bytesAt s.mem (w64 p.T) p.tl := by
     have := bytesAt_writeBytes_self s₅.mem (w64 p.W) (bytesAt s₅.mem (w64 p.T) p.tl)
-      (by rw [length_bytesAt]; omega)
+      (by rw [length_bytesAt]; omega_using [ht])
     rw [length_bytesAt] at this
     rw [m₆, this]
-    exact bytes_front L.t_w L.bt L.t_d (by omega) F.frame
+    exact bytes_front L.t_w L.bt L.t_d (by omega_using [ht]) F.frame
   have t2₆ : bytesAt s₆.mem (w64 p.W + BitVec.ofNat 64 t2O) p.tl = bytesAt s₅.mem (w64 p.W + BitVec.ofNat 64 t2O) p.tl :=
     Proof.AesGcm.X86.bytesAt_frame f₆ (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
-      simpa using Lay.w_w (W := p.W) (a := t2O) (n := p.tl) (d := 0) (k := p.tl) (.inr (by simp only [t2O]; omega))
-        (by simp only [t2O]; omega) (by omega)) (by omega)
+      simpa using Lay.w_w (W := p.W) (a := t2O) (n := p.tl) (d := 0) (k := p.tl) (.inr (by simp only [t2O]; omega_using [ht]))
+        (by simp only [t2O]; omega_using [ht]) (by omega_using [ht])) (by omega_using [ht])
   have d₇ : bytesAt s₇.mem (w64 p.D) p.n = bytesAt s₅.mem (w64 p.D) p.n := by
     rw [Proof.AesGcm.X86.bytesAt_frame f₇ (fun r hr => by
-        simp only [List.mem_singleton] at hr; subst hr; exact L.d_w' (by decide)) (by have := L.dw; omega),
+        simp only [List.mem_singleton] at hr; subst hr; exact L.d_w' (by decide)) (by have := L.dw; omega_using [this]),
       Proof.AesGcm.X86.bytesAt_frame f₆ (fun r hr => by
-        simp only [List.mem_singleton] at hr; subst hr; exact L.d_w.sub_right (Region.sub_prefix (by omega)))
-        (by have := L.dw; omega)]
+        simp only [List.mem_singleton] at hr; subst hr; exact L.d_w.sub_right (Region.sub_prefix (by omega_using [ht])))
+        (by have := L.dw; omega_using [this])]
   have ok₈ : slotv s₈.mem p.W okO = slotv s₇.mem p.W okO :=
     f₈.readW (r := ⟨w64 p.W + BitVec.ofNat 64 okO, 4⟩) (Region.contains_self _ _) (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact (L.d_w' (by decide)).symm) (by decide)
@@ -162,7 +162,7 @@ theorem open_wp (v : BlocksImpl) {s : State} (h : openPre s) :
       bytesAt s₆.mem (w64 p.W + BitVec.ofNat 64 t2O) p.tl) then bytesAt s₇.mem (w64 p.D) p.n else zeros p.n := by
     have hlm := length_mask s₇.mem (w64 p.D) (decide (bytesAt s₆.mem (w64 p.W) p.tl =
       bytesAt s₆.mem (w64 p.W + BitVec.ofNat 64 t2O) p.tl)) p.n
-    have := bytesAt_writeBytes_self s₇.mem (w64 p.D) _ (by rw [hlm]; have := L.dw; omega)
+    have := bytesAt_writeBytes_self s₇.mem (w64 p.D) _ (by rw [hlm]; have := L.dw; omega_using [this])
     rw [hlm] at this
     rw [m₈]; exact this
   have eax : s₁₀.gpr .eax = if decide (bytesAt s₆.mem (w64 p.W) p.tl =

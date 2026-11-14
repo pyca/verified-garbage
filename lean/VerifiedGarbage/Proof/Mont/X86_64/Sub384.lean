@@ -81,6 +81,6 @@ theorem sub384_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) 
     rw [hl, hW] at hR₂ hR₅
     subst hm
     cases c <;> cases c' <;> simp only [Bool.toNat_false, Bool.toNat_true, Nat.mul_zero,
-      Nat.mul_one, Nat.add_zero, Bool.false_eq_true, ite_false, ite_true] at e₂ e₅ <;> omega
+      Nat.mul_one, Nat.add_zero, Bool.false_eq_true, ite_false, ite_true] at e₂ e₅ <;> omega_arith
 
 end VG.Proof.Mont.X86_64

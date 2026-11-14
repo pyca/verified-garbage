@@ -93,7 +93,7 @@ theorem preE_of {s : State} (h : (Proof.RsaPkcs1Enc.encryptPrecomputedContract a
     stackArgs_six, List.append_eq, List.range, List.range.loop] at h
   obtain ⟨sp1, sp2, hrd, hwr, on, oe, om, ops, osc, op, oa, ns, es, ms, pss, sp, sa, ko, kn, ke, km, kps, ksc, kp,
     ka, wo, wn, we, wm, wps, wsc, wp, ⟨k1, k2⟩, ok, e1, e2, ml, pl, hs, hp⟩ := h
-  exact ⟨sp1, by omega, hrd, hwr, on, oe, om, ops, osc, op, oa, ns, es, ms, pss, sp, sa, ko, kn, ke, km, kps, ksc,
+  exact ⟨sp1, by omega_using [sp2], hrd, hwr, on, oe, om, ops, osc, op, oa, ns, es, ms, pss, sp, sa, ko, kn, ke, km, kps, ksc,
     kp, ka, wo, wn, we, wm, wps, wsc, wp, k1, k2, ok, e1, e2, ml, pl, hs, hp⟩
 
 end VG.Proof.RsaPkcs1Enc.PPC64LE.Enc

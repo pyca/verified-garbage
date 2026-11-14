@@ -37,7 +37,7 @@ theorem outside_bytesAt {base : Addr} {o n : Nat} {m m' : Mem} (h : Outside base
   simp only [Spec.Rsa.bytesAt]
   refine List.map_congr_left fun i hi => ?_
   simp only [List.mem_range] at hi
-  exact h _ (by rw [ofs_off base (by omega)]; omega)
+  exact h _ (by rw [ofs_off base (by omega_using [hd', hi])]; omega_using [hd, hi])
 
 /-- A frame of one range of `scratch` changes nothing outside it. -/
 theorem outside_of_frame {base : Addr} {d len : Nat} {m m' : Mem} (F : Frame [⟨off base d, len⟩] m m')
@@ -48,14 +48,14 @@ theorem outside_of_frame {base : Addr} {d len : Nat} {m m' : Mem} (F : Frame [�
   have I := Offset.lt_iff x base fit
   change ¬ ((x - off base d).toNat + 1 ≤ len)
   change (x - off base d).toNat < len ↔ d ≤ ofs base x ∧ ofs base x < d + len at I
-  omega
+  omega_using [hx, I]
 
 theorem add_no_carry {a b k : Nat} {c : Bool} (h : a + 2 ^ k * c.toNat = b) (hb : b < 2 ^ k) : a = b := by
-  cases c <;> simp only [Bool.toNat_false, Bool.toNat_true, Nat.mul_zero, Nat.mul_one, Nat.add_zero] at h <;> omega
+  cases c <;> simp only [Bool.toNat_false, Bool.toNat_true, Nat.mul_zero, Nat.mul_one, Nat.add_zero] at h <;> omega_arith
 
 theorem sub_no_borrow {a r x k : Nat} {c : Bool} (h : a + r = x + 2 ^ k * c.toNat) (ha : a < 2 ^ k)
     (hr : r ≤ x) : a = x - r := by
-  cases c <;> simp only [Bool.toNat_false, Bool.toNat_true, Nat.mul_zero, Nat.mul_one, Nat.add_zero] at h <;> omega
+  cases c <;> simp only [Bool.toNat_false, Bool.toNat_true, Nat.mul_zero, Nat.mul_one, Nat.add_zero] at h <;> omega_arith
 
 /-- `k + 1` words whose value fits in `k` are that value in `k`. -/
 theorem val32_low {m : Mem} {base : Addr} {d k v : Nat} (h : val32 m base d (k + 1) = v) (hv : v < 2 ^ (32 * k)) :
@@ -65,8 +65,8 @@ theorem val32_low {m : Mem} {base : Addr} {d k v : Nat} (h : val32 m base d (k +
   have hm : 2 ^ (32 * k) * val32 m base (d + 4 * k) 1 = 0 := by
     rcases Nat.eq_zero_or_pos (val32 m base (d + 4 * k) 1) with h0 | h0
     · rw [h0, Nat.mul_zero]
-    · have := Nat.mul_le_mul_left (2 ^ (32 * k)) h0; omega
-  omega
+    · have := Nat.mul_le_mul_left (2 ^ (32 * k)) h0; omega_using [h, hv, this]
+  omega_using [h, hm]
 
 /-- The division's arrays. -/
 def divGeo (base : Addr) (size n : Nat) : VG.Proof.Rsa.X86.Div.Geometry :=

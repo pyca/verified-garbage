@@ -62,11 +62,11 @@ theorem recodePair_ok {s:State} {base:Addr} {P:Spec.Ed448.Point} {S K:Nat}
       (buffer_bytes ha.mem (Or.inl (by decide)) (by decide))
   refine WP.seq (WP.mono_syms (VG.Proof.Ed448.AArch64.bitsAt_disjoint_ok bs bs.x3
     (src:=.x3) (so:=KB) (d1:=0) (d2:=BITS) (by decide) (by decide) (by decide) (by decide) (by decide)
-    (fun q hq => bs.read (by simp only [KB];omega))
+    (fun q hq => bs.read (by simp only [KB];omega_using [hq]))
     (fun q hq => Or.inl (by
-      rw [VG.Proof.X448.AArch64.ofs_off' base (by simp only [KB];omega)]
+      rw [VG.Proof.X448.AArch64.ofs_off' base (by simp only [KB];omega_using [hq])]
       simp only [KB,BITS]
-      omega))) fun c ⟨cg,cr,cw,co,cd⟩ csy => ?_)
+      omega_using [hq]))) fun c ⟨cg,cr,cw,co,cd⟩ csy => ?_)
   have ck:Keeps (.x8::VG.Proof.Ed448.AArch64.bitAtRegs) b c:=⟨cg,cr,cw⟩
   have cs:Scr c base:=bs.of_keeps ck (by decide)
   have cko:Outside base BITS 464 b.mem c.mem:=co.mono (by decide) (by decide)
@@ -97,10 +97,10 @@ theorem recodePair_ok {s:State} {base:Addr} {P:Spec.Ed448.Point} {S K:Nat}
   have ds:∀ i<464,d.mem (off base (SDIG+i))=BitVec.ofInt 8 (digitAt true S i):=by
     intro i hi
     rw [hd.mem _ (Or.inr (by
-      rw [VG.Proof.X448.AArch64.ofs_off' base (by simp only [SDIG];omega)]
-      simp only [BITS,SDIG];omega)),cko _ (Or.inr (by
-      rw [VG.Proof.X448.AArch64.ofs_off' base (by simp only [SDIG];omega)]
-      simp only [BITS,SDIG];omega)),bd i hi]
+      rw [VG.Proof.X448.AArch64.ofs_off' base (by simp only [SDIG];omega_using [hi])]
+      simp only [BITS,SDIG];omega_using [])),cko _ (Or.inr (by
+      rw [VG.Proof.X448.AArch64.ofs_off' base (by simp only [SDIG];omega_using [hi])]
+      simp only [BITS,SDIG];omega_using [])),bd i hi]
     exact ha.digits i hi
   refine ⟨hd.scr,db,dt,dx,bt,ds,hd.digits,?_,?_,?_,?_⟩
   · rw [hd.keep.1 _ (by decide),ck.1 _ (by decide),bk.1 _ (by decide),ha.keep.1 _ (by decide)]

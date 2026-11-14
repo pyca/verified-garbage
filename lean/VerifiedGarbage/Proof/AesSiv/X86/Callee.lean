@@ -50,8 +50,8 @@ abbrev StOk (y : Nat) : Prop := y + 16 ≤ 256 ∨ (2432 ≤ y ∧ y + 16 ≤ 25
 theorem stOk_scr {W : BitVec 32} {y : Nat} (h : StOk y) :
     (⟨w64 W + BitVec.ofNat 64 y, 16⟩ : Region).Disjoint ⟨w64 W + BitVec.ofNat 64 256, 2176⟩ := by
   rcases h with h | h
-  · exact Lay.w_w (.inl h) (by omega) (by decide)
-  · exact Lay.w_w (.inr (by omega)) (by omega) (by decide)
+  · exact Lay.w_w (.inl h) (by omega_using [h]) (by decide)
+  · exact Lay.w_w (.inr (by omega_using [h])) (by omega_using [h]) (by decide)
 
 /-! ## Data for a call -/
 
@@ -66,10 +66,10 @@ structure Src (W SP : BitVec 32) (s : State) (Q : BitVec 32) (k : Nat) : Prop wh
 /-- Bytes of `W` below 256 as data. -/
 theorem srcW {C W SP : BitVec 32} {s : State} (L : Lay C W SP) (P : Perm C W s) {t k : Nat} (hk : t + k ≤ 256) :
     Src W SP s (W + BitVec.ofNat 32 t) k where
-  rd := by rw [L.aW (o := t) (by omega)]; exact covers_left (P.wC (by omega))
-  wrap := by rw [L.nW (o := t) (by omega)]; have := L.fw; omega
-  qs := by rw [L.aW (o := t) (by omega)]; exact Lay.w_w (.inl (by omega)) (by omega) (by decide)
-  stk := by rw [L.aW (o := t) (by omega)]; exact L.stk_w' (by omega)
+  rd := by rw [L.aW (o := t) (by omega_using [hk])]; exact covers_left (P.wC (by omega_using [hk]))
+  wrap := by rw [L.nW (o := t) (by omega_using [hk])]; have := L.fw; omega_using [hk, this]
+  qs := by rw [L.aW (o := t) (by omega_using [hk])]; exact Lay.w_w (.inl (by omega_using [hk])) (by omega_using [hk]) (by decide)
+  stk := by rw [L.aW (o := t) (by omega_using [hk])]; exact L.stk_w' (by omega_using [hk])
 
 /-- A buffer as data. -/
 theorem srcBuf {W SP : BitVec 32} {s : State} {Q : BitVec 32} {k : Nat} (h : Buf W SP s Q k) : Src W SP s Q k :=
@@ -98,23 +98,23 @@ theorem uargs {C W SP : BitVec 32} {s : State} (L : Lay C W SP) (E : Env C W SP 
   wc := by
     rw [L.sW (o := y) (by omega)]
     simpa using L.c_w' (a := 0) (n := 240) (d := y) (k := 16) (by decide) (by omega)
-  ws := by rw [L.sW (o := 256) (by omega)]; simpa using L.c_w' (a := 0) (n := 240) (d := 256) (k := 2176) (by decide) (by decide)
+  ws := by rw [L.sW (o := 256) (by omega_using [])]; simpa using L.c_w' (a := 0) (n := 240) (d := 256) (k := 2176) (by decide) (by decide)
   dc := by rw [L.sW (o := y) (by omega)]; exact hqy
-  ds := by rw [L.sW (o := 256) (by omega)]; exact hq.qs
-  cs := by rw [L.sW (o := y) (by omega), L.sW (o := 256) (by omega)]; exact stOk_scr hy
+  ds := by rw [L.sW (o := 256) (by omega_using [])]; exact hq.qs
+  cs := by rw [L.sW (o := y) (by omega), L.sW (o := 256) (by omega_using [])]; exact stOk_scr hy
   bW := by rw [E.esp]; simpa using L.stk_c' (a := 0) (n := 240) (by decide)
   bD := by rw [E.esp]; exact hq.stk
   bC := by rw [E.esp, L.sW (o := y) (by omega)]; exact L.stk_w' (by omega)
-  bS := by rw [E.esp, L.sW (o := 256) (by omega)]; exact L.stk_w' (by decide)
-  fW := by have := L.fc; omega
+  bS := by rw [E.esp, L.sW (o := 256) (by omega_using [])]; exact L.stk_w' (by decide)
+  fW := by have := L.fc; omega_using [this]
   fC := by rw [L.nW (o := y) (by omega)]; have := L.fw; omega
   fD := hq.wrap
-  fS := by rw [L.nW (o := 256) (by omega)]; have := L.fw; omega
+  fS := by rw [L.nW (o := 256) (by omega_using [])]; have := L.fw; omega_using [this]
   reads := by
     refine covers_cons ?_ (covers_cons hq.rd covers_nil)
     simpa using E.perm.cC (d := 0) (n := 240) (by decide)
   writes := by
-    rw [L.sW (o := y) (by omega), L.sW (o := 256) (by omega)]
+    rw [L.sW (o := y) (by omega), L.sW (o := 256) (by omega_using [])]
     exact covers_cons (E.perm.wC (by omega)) (covers_cons (E.perm.wC (by decide)) covers_nil)
 
 /-- A call of `vg_cmac_aes_update`, with its arguments (`uargs`). -/
@@ -133,7 +133,7 @@ theorem updCall_ok (v : Ctr32Impl) {C W SP : BitVec 32} {s : State} (L : Lay C W
   refine WP.mono (Proof.CmacAes.Stream.X86.upd_call v (uargs L E hR hy hq hqy hn eax ecx edx ebx esi edi))
     fun s' h => ⟨E.keep (h.saved _ (by decide)) (h.saved _ (by decide)) h.rd h.wr, h.rd, h.wr, h.saved, ?_, ?_⟩
   · have f := h.frame
-    rw [L.sW (o := y) (by omega), L.sW (o := 256) (by omega), E.esp] at f
+    rw [L.sW (o := y) (by omega), L.sW (o := 256) (by omega_using []), E.esp] at f
     exact f
   · have o := h.out
     rw [L.sW (o := y) (by omega)] at o
@@ -176,23 +176,23 @@ theorem fargs {C W SP : BitVec 32} {s : State} (L : Lay C W SP) (E : Env C W SP 
   kst := by
     rw [L.sW (o := y) (by omega)]
     simpa using L.c_w' (a := 0) (n := 272) (d := y) (k := 16) (by decide) (by omega)
-  ks := by rw [L.sW (o := 256) (by omega)]; simpa using L.c_w' (a := 0) (n := 272) (d := 256) (k := 2176) (by decide) (by decide)
+  ks := by rw [L.sW (o := 256) (by omega_using [])]; simpa using L.c_w' (a := 0) (n := 272) (d := 256) (k := 2176) (by decide) (by decide)
   pst := by rw [L.sW (o := y) (by omega)]; exact hpy
-  ps := by rw [L.sW (o := 256) (by omega)]; exact hp.qs
-  sts := by rw [L.sW (o := y) (by omega), L.sW (o := 256) (by omega)]; exact stOk_scr hy
+  ps := by rw [L.sW (o := 256) (by omega_using [])]; exact hp.qs
+  sts := by rw [L.sW (o := y) (by omega), L.sW (o := 256) (by omega_using [])]; exact stOk_scr hy
   bK := by rw [E.esp]; simpa using L.stk_c' (a := 0) (n := 272) (by decide)
   bP := by rw [E.esp]; exact hp.stk
   bSt := by rw [E.esp, L.sW (o := y) (by omega)]; exact L.stk_w' (by omega)
-  bS := by rw [E.esp, L.sW (o := 256) (by omega)]; exact L.stk_w' (by decide)
-  fK := by have := L.fc; omega
+  bS := by rw [E.esp, L.sW (o := 256) (by omega_using [])]; exact L.stk_w' (by decide)
+  fK := by have := L.fc; omega_using [this]
   fSt := by rw [L.nW (o := y) (by omega)]; have := L.fw; omega
   fP := hp.wrap
-  fS := by rw [L.nW (o := 256) (by omega)]; have := L.fw; omega
+  fS := by rw [L.nW (o := 256) (by omega_using [])]; have := L.fw; omega_using [this]
   reads := by
     refine covers_cons ?_ (covers_cons hp.rd covers_nil)
     simpa using E.perm.cC (d := 0) (n := 272) (by decide)
   writes := by
-    rw [L.sW (o := y) (by omega), L.sW (o := 256) (by omega)]
+    rw [L.sW (o := y) (by omega), L.sW (o := 256) (by omega_using [])]
     exact covers_cons (E.perm.wC (by omega)) (covers_cons (E.perm.wC (by decide)) covers_nil)
 
 /-- A call of `vg_cmac_aes_finalize`, with its arguments (`fargs`): the state
@@ -215,7 +215,7 @@ theorem finCall_ok (v : Ctr32Impl) {C W SP : BitVec 32} {s : State} (L : Lay C W
   refine WP.mono (finr_call v (fargs L E hR hy hl hp hpy eax ecx edx ebx esi edi))
     fun s' h => ⟨E.keep (h.saved _ (by decide)) (h.saved _ (by decide)) h.rd h.wr, h.rd, h.wr, h.saved, ?_, ?_⟩
   · have f := h.frame
-    rw [L.sW (o := y) (by omega), L.sW (o := 256) (by omega), E.esp] at f
+    rw [L.sW (o := y) (by omega), L.sW (o := 256) (by omega_using []), E.esp] at f
     exact f
   · have o := h.out
     rw [L.sW (o := y) (by omega)] at o
@@ -262,12 +262,12 @@ theorem Dst.of_eq {C W SP : BitVec 32} {s s' : State} {D : BitVec 32} {k c : Nat
 /-- A block of `W` below 256 as `vg_aes_ctr32_to`'s data. -/
 theorem dstW {C W SP : BitVec 32} {s : State} (L : Lay C W SP) (P : Perm C W s) {c q : Nat} (hc : c + 16 ≤ 256)
     (hq : q + 16 ≤ 256) (hqc : q + 16 ≤ c ∨ c + 16 ≤ q) : Dst C W SP s (W + BitVec.ofNat 32 q) 16 c where
-  wr := by rw [L.aW (o := q) (by omega)]; exact P.wC (by omega)
-  wrap := by rw [L.nW (o := q) (by omega)]; have := L.fw; omega
-  dk := by rw [L.aW (o := q) (by omega)]; exact L.c_w.sub_right (Lay.wSub (by omega))
-  dc := by rw [L.aW (o := q) (by omega)]; exact Lay.w_w hqc (by omega) (by omega)
-  ds := by rw [L.aW (o := q) (by omega)]; exact Lay.w_w (.inl (by omega)) (by omega) (by decide)
-  stk := by rw [L.aW (o := q) (by omega)]; exact L.stk_w' (by omega)
+  wr := by rw [L.aW (o := q) (by omega_using [hq])]; exact P.wC (by omega_using [hq])
+  wrap := by rw [L.nW (o := q) (by omega_using [hq])]; have := L.fw; omega_using [hq, this]
+  dk := by rw [L.aW (o := q) (by omega_using [hq])]; exact L.c_w.sub_right (Lay.wSub (by omega_using [hq]))
+  dc := by rw [L.aW (o := q) (by omega_using [hq])]; exact Lay.w_w hqc (by omega_using [hq]) (by omega_using [hc])
+  ds := by rw [L.aW (o := q) (by omega_using [hq])]; exact Lay.w_w (.inl (by omega_using [hq])) (by omega_using [hq]) (by decide)
+  stk := by rw [L.aW (o := q) (by omega_using [hq])]; exact L.stk_w' (by omega_using [hq])
 
 /-- The arguments of `vg_aes_ctr32_to`: `K2`'s schedule at `C + 272`, the
 counter block at `W + c`, `n` blocks at `D`, and the working space at
@@ -281,25 +281,25 @@ theorem cargs {C W SP : BitVec 32} {s : State} (L : Lay C W SP) (P : Perm C W s)
     CtrCall s (C + BitVec.ofNat 32 272) (W + BitVec.ofNat 32 c) D (W + BitVec.ofNat 32 256) R n := by
   have hsp := L.sp
   have b32 : Region.Sub (below SP 32) (below SP 60) := below_sub60 (by decide) hsp
-  refine ⟨eax, ecx, edx, ebx, edi, ebp, hR, by rw [esp]; omega, ?_, ?_, ?_, ?_, ?_, hD.ds.sub_right ?_, ?_, ?_, ?_,
+  refine ⟨eax, ecx, edx, ebx, edi, ebp, hR, by rw [esp]; omega_using [hsp], ?_, ?_, ?_, ?_, ?_, hD.ds.sub_right ?_, ?_, ?_, ?_,
     ?_, ?_, ?_, hD.wrap, ?_, ?_, ?_⟩
-  · rw [L.aC (o := 272) (by omega), L.aW (o := c) (by omega)]; exact L.c_w' (by decide) (by omega)
-  · rw [L.aC (o := 272) (by omega)]; exact hD.dk.sub_left (Lay.cSub (by decide))
-  · rw [L.aC (o := 272) (by omega), L.aW (o := 256) (by omega)]; exact L.c_w' (by decide) (by decide)
-  · rw [L.aW (o := c) (by omega)]; exact hD.dc.symm
-  · rw [L.aW (o := c) (by omega), L.aW (o := 256) (by omega)]
-    exact Lay.w_w (.inl (by omega)) (by omega) (by decide)
-  · rw [L.aW (o := 256) (by omega)]; exact fun _ h => h
-  · rw [esp, L.aC (o := 272) (by omega)]; exact (L.stk_c' (by decide)).sub_left b32
-  · rw [esp, L.aW (o := c) (by omega)]; exact (L.stk_w' (by omega)).sub_left b32
+  · rw [L.aC (o := 272) (by omega_using []), L.aW (o := c) (by omega_using [hc])]; exact L.c_w' (by decide) (by omega_using [hc])
+  · rw [L.aC (o := 272) (by omega_using [])]; exact hD.dk.sub_left (Lay.cSub (by decide))
+  · rw [L.aC (o := 272) (by omega_using []), L.aW (o := 256) (by omega_using [])]; exact L.c_w' (by decide) (by decide)
+  · rw [L.aW (o := c) (by omega_using [hc])]; exact hD.dc.symm
+  · rw [L.aW (o := c) (by omega_using [hc]), L.aW (o := 256) (by omega_using [])]
+    exact Lay.w_w (.inl (by omega_using [hc])) (by omega_using [hc]) (by decide)
+  · rw [L.aW (o := 256) (by omega_using [])]; exact fun _ h => h
+  · rw [esp, L.aC (o := 272) (by omega_using [])]; exact (L.stk_c' (by decide)).sub_left b32
+  · rw [esp, L.aW (o := c) (by omega_using [hc])]; exact (L.stk_w' (by omega_using [hc])).sub_left b32
   · rw [esp]; exact hD.stk.sub_left b32
-  · rw [esp, L.aW (o := 256) (by omega)]; exact (L.stk_w' (by decide)).sub_left b32
-  · rw [L.nC (o := 272) (by omega)]; have := L.fc; omega
-  · rw [L.nW (o := c) (by omega)]; have := L.fw; omega
-  · rw [L.nW (o := 256) (by omega)]; have := L.fw; omega
-  · rw [L.aC (o := 272) (by omega)]; exact P.cC (by decide)
-  · rw [L.aW (o := c) (by omega), L.aW (o := 256) (by omega)]
-    exact covers_cons (P.wC (by omega)) (covers_cons hD.wr (covers_cons (P.wC (by decide)) covers_nil))
+  · rw [esp, L.aW (o := 256) (by omega_using [])]; exact (L.stk_w' (by decide)).sub_left b32
+  · rw [L.nC (o := 272) (by omega_using [])]; have := L.fc; omega_using [this]
+  · rw [L.nW (o := c) (by omega_using [hc])]; have := L.fw; omega_using [hc, this]
+  · rw [L.nW (o := 256) (by omega_using [])]; have := L.fw; omega_using [this]
+  · rw [L.aC (o := 272) (by omega_using [])]; exact P.cC (by decide)
+  · rw [L.aW (o := c) (by omega_using [hc]), L.aW (o := 256) (by omega_using [])]
+    exact covers_cons (P.wC (by omega_using [hc])) (covers_cons hD.wr (covers_cons (P.wC (by decide)) covers_nil))
 
 /-- A call of `vg_aes_ctr32_to` on `n` blocks at `D`, from the counter block at
 `W + c`, under `K2`. -/
@@ -337,7 +337,7 @@ theorem ctrCall_ok (v : Ctr32Impl) {C W SP : BitVec 32} {s : State} (L : Lay C W
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl <;> (cregs []; rw [P.saved _ (by decide)]; cregs [])
   · have f := P.frame
-    rw [L.aW (o := c) (by omega), L.aW (o := 256) (by omega)] at f
+    rw [L.aW (o := c) (by omega_using [hc]), L.aW (o := 256) (by omega_using [])] at f
     cmems []
     refine f.sub fun r hr => ?_
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -348,11 +348,11 @@ theorem ctrCall_ok (v : Ctr32Impl) {C W SP : BitVec 32} {s : State} (L : Lay C W
     · refine ⟨below SP 60, by simp, ?_⟩
       simpa [gpr_setReg_of_ne, E.esp] using b32
   · have o := P.out
-    rw [L.aW (o := c) (by omega), L.aC (o := 272) (by omega)] at o
+    rw [L.aW (o := c) (by omega_using [hc]), L.aC (o := 272) (by omega_using [])] at o
     cmems []
     exact o
   · have o := P.ctr
-    rw [L.aW (o := c) (by omega)] at o
+    rw [L.aW (o := c) (by omega_using [hc])] at o
     cmems []
     exact o
 

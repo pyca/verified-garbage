@@ -29,15 +29,15 @@ theorem crtArgs_prefix_ok (n : Nat) (hn : n ≤ 17) (s : State) {g : PrivGeometr
   | zero =>
     refine WP.block_nil ⟨h, ?_, Frame.refl _ _, Keeps.refl _ _⟩
     intro j hj
-    have : j = 0 := by omega
+    have : j = 0 := by omega_using [hj]
     subst j
     simpa only [crtArgument, ite_true, Nat.mul_zero, BitVec.add_zero] using first
   | succ n ih =>
     rw [List.range_succ, List.flatMap_append, List.flatMap_singleton, WP.block_append_iff]
-    refine WP.mono (ih (by omega) s h first) ?_
+    refine WP.mono (ih (by omega_using [hn]) s h first) ?_
     rintro u ⟨hu, copied, F, K⟩
     refine WP.mono (copyArgument_ok u hu (i := if n + 1 < 4 then n + 1 else n + 3)
-      (by split <;> omega) (by omega : n + 1 < 18)) ?_
+      (by split <;> omega_using [hn]) (by omega_using [hn] : n + 1 < 18)) ?_
     rintro t ⟨ht, M, F', K'⟩
     refine ⟨ht, ?_, F.trans (F'.sub ?_), K.trans K'⟩
     · intro j hj
@@ -45,11 +45,11 @@ theorem crtArgs_prefix_ok (n : Nat) (hn : n ≤ 17) (s : State) {g : PrivGeometr
       · subst j
         rw [M, Mem.readW_writeW_self32]
         simp only [crtArgument, Nat.add_eq_zero_iff, Nat.one_ne_zero, and_false, ite_false]
-      · rw [outgoing_word_preserved (by omega) (by omega) same F']
-        exact copied j (by omega)
+      · rw [outgoing_word_preserved (by omega_using [hn, hj]) (by omega_using [hn]) same F']
+        exact copied j (by omega_using [hj, same])
     · intro r hr
       obtain rfl := List.mem_singleton.mp hr
-      exact ⟨_, List.mem_singleton_self _, Offset.sub_base _ (by omega)⟩
+      exact ⟨_, List.mem_singleton_self _, Offset.sub_base _ (by omega_using [hn])⟩
 
 theorem crtArgs_ok (s : State) {g : PrivGeometry} {bs : Fin 8 → List Byte}
     (h : PrivContext g bs s) :

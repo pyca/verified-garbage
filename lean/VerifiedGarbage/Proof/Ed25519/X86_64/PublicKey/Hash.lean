@@ -105,7 +105,7 @@ theorem within_base (p : Addr) {n k : Nat} (h : n ≤ k) : Within ⟨p, n⟩ ⟨
 
 theorem within_stk (B : Addr) {d n : Nat} (h₁ : 16 ≤ d) (h₂ : d + n ≤ 72) :
     Within ⟨B + BitVec.ofNat 64 d, n⟩ ⟨B + BitVec.ofNat 64 16, 56⟩ :=
-  ⟨d - 16, by rw [BitVec.add_assoc, BitVec.ofNat_add_ofNat, Nat.add_sub_cancel' h₁], by simp only; omega⟩
+  ⟨d - 16, by rw [BitVec.add_assoc, BitVec.ofNat_add_ofNat, Nat.add_sub_cancel' h₁], by simp only; omega_using [h₁, h₂]⟩
 
 namespace Lay.Ok
 
@@ -137,7 +137,7 @@ theorem below_call_sub (B : Addr) {m : Nat} (hm : m ≤ 16) :
     rw [Offset.sub_ofNat_eq (B + BitVec.ofNat 64 16) (a := m) (b := 16) hm, BitVec.add_sub_cancel]
   show Region.Sub ⟨B + BitVec.ofNat 64 16 - BitVec.ofNat 64 m, m⟩ _
   rw [this]
-  exact Offset.sub_base _ (by omega)
+  exact Offset.sub_base _ (by omega_using [hm])
 
 /-! ## Between the frame's push and pop -/
 
@@ -185,7 +185,7 @@ theorem call_ok {L : Lay} (hL : L.Ok) {g : Reg → BitVec 64} {mx : BitVec 32} {
     rcases hwsub r hr with h | h
     · exact ⟨_, by simp, h⟩
     · exact ⟨_, by simp, h⟩
-  refine WP.of_syms (WP.call_mx hv hsp (by omega) hpre hcov hcovw fun s' hrd hwr hcs hf hg hpost hmx hsy => ?_)
+  refine WP.of_syms (WP.call_mx hv hsp (by omega_using [hd]) hpre hcov hcovw fun s' hrd hwr hcs hf hg hpost hmx hsy => ?_)
   have hf' : Frame (wr ++ [⟨L.B, 16⟩]) t.mem s'.mem := by
     refine Frame.sub hf fun r hr => ?_
     rcases List.mem_append.mp hr with hr | hr
@@ -200,16 +200,16 @@ theorem call_ok {L : Lay} (hL : L.Ok) {g : Reg → BitVec 64} {mx : BitVec 32} {
     intro d h₁ h₂ r hr
     rcases List.mem_append.mp hr with hr | hr
     · rcases hwsub r hr with h | h
-      · exact (hL.ko.sub_left (Offset.sub_base _ (by omega))).sub_right h.sub
-      · exact (hL.kc.sub_left (Offset.sub_base _ (by omega))).sub_right h.sub
+      · exact (hL.ko.sub_left (Offset.sub_base _ (by omega_using [h₂]))).sub_right h.sub
+      · exact (hL.kc.sub_left (Offset.sub_base _ (by omega_using [h₂]))).sub_right h.sub
     · simp only [List.mem_singleton] at hr; subst hr
-      exact Offset.disjoint_base _ (by omega) (by omega)
+      exact Offset.disjoint_base _ (by omega_using [h₁]) (by omega_using [h₂])
   have keep : ∀ d, 48 ≤ d → d + 8 ≤ 72 →
       s'.mem.readW (L.B + BitVec.ofNat 64 d) 64 = t.mem.readW (L.B + BitVec.ofNat 64 d) 64 :=
     fun d h₁ h₂ => hf'.readW (Region.contains_self _ _) (hdisj d h₁ h₂) (by decide)
   refine hQ s' ⟨hrd.trans hc.rd, hwr.trans hc.wr, ?_, fun r hr hr' => (hcs r hr).trans (hc.cs r hr hr'),
-    hmx.trans hc.mx, (keep 48 (by omega) (by omega)).trans hc.pScr,
-    (keep 56 (by omega) (by omega)).trans hc.pSeed, (keep 64 (by omega) (by omega)).trans hc.pOut,
+    hmx.trans hc.mx, (keep 48 (by omega_using []) (by omega_using [])).trans hc.pScr,
+    (keep 56 (by omega_using []) (by omega_using [])).trans hc.pSeed, (keep 64 (by omega_using []) (by omega_using [])).trans hc.pOut,
     hc.frame.trans (Frame.sub hf' fun r hr => ?_), hsy.symm ▸ hc.sym, hc.held⟩ hf' hg hpost
   · rw [hcs .rsp (by simp [calleeSaved]), hc.rsp]
   · rcases List.mem_append.mp hr with hr | hr
@@ -218,7 +218,7 @@ theorem call_ok {L : Lay} (hL : L.Ok) {g : Reg → BitVec 64} {mx : BitVec 32} {
       · exact ⟨_, by simp, h.sub⟩
     · simp only [List.mem_singleton] at hr; subst hr
       refine ⟨L.STK, by simp, ?_⟩
-      have := Offset.sub_base L.B (d := 0) (n := 16) (k := 72) (by omega)
+      have := Offset.sub_base L.B (d := 0) (n := 16) (k := 72) (by omega_using [])
       simpa using this
 
 /-! ## The contract -/
@@ -299,23 +299,23 @@ theorem add_add (p : Addr) (a b : Nat) :
 
 theorem sx32 {n : Nat} (h : n < 2 ^ 31) : (BitVec.ofNat 32 n).signExtend 64 = BitVec.ofNat 64 n := by
   have hm : (BitVec.ofNat 32 n).msb = false := by
-    rw [BitVec.msb_eq_decide]; simp only [BitVec.toNat_ofNat, decide_eq_false_iff_not]; omega
+    rw [BitVec.msb_eq_decide]; simp only [BitVec.toNat_ofNat, decide_eq_false_iff_not]; omega_using [h]
   rw [BitVec.signExtend_eq_setWidth_of_msb_false hm]
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_setWidth, BitVec.toNat_ofNat, BitVec.toNat_ofNat]
-  omega
+  omega_using [h]
 
 theorem zx32 {n : Nat} (h : n < 2 ^ 32) : (BitVec.ofNat 32 n).setWidth 64 = BitVec.ofNat 64 n := by
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_setWidth, BitVec.toNat_ofNat, BitVec.toNat_ofNat]
-  omega
+  omega_using [h]
 
 /-- Byte `i` of a region the return address of a call misses, on entry to the callee. -/
 theorem ce_byte (t : State) {R : Region} (hd : (below (t.gpr .rsp) 8).Disjoint R)
     (hR : R.len ≤ 2 ^ 64) {i : Nat} (hi : i < R.len) :
     t.callEntry.mem (R.base + BitVec.ofNat 64 i) = t.mem (R.base + BitVec.ofNat 64 i) :=
   Frame.bytes (rs := [below (t.gpr .rsp) 8])
-    (Frame.writeW (Frame.refl _ _) (List.mem_singleton_self _) _ (below_call _ (by omega) (by omega)))
+    (Frame.writeW (Frame.refl _ _) (List.mem_singleton_self _) _ (below_call _ (by omega_using []) (by omega_using [])))
     (by simpa using hd.symm) hR hi
 
 namespace Ctx
@@ -339,15 +339,15 @@ theorem ret (hc : Ctx L g mx m₀ t) : below (t.gpr .rsp) 8 = ⟨L.B + BitVec.of
 
 theorem inFr (hc : Ctx L g mx m₀ t) {d : Nat} (h₁ : 16 ≤ d) (h₂ : d + 8 ≤ 72) :
     InRegions (t.rd ++ t.wr) (L.B + BitVec.ofNat 64 d) 8 :=
-  ⟨L.FR, by rw [hc.rd, hc.wr]; simp, Offset.contains _ h₁ (by omega) (by omega)⟩
+  ⟨L.FR, by rw [hc.rd, hc.wr]; simp, Offset.contains _ h₁ (by omega_using [h₂]) (by omega_using [])⟩
 
 theorem inFrW (hc : Ctx L g mx m₀ t) {d : Nat} (h₁ : 16 ≤ d) (h₂ : d + 8 ≤ 72) :
     InRegions t.wr (L.B + BitVec.ofNat 64 d) 8 :=
-  ⟨L.FR, by rw [hc.wr]; simp, Offset.contains _ h₁ (by omega) (by omega)⟩
+  ⟨L.FR, by rw [hc.wr]; simp, Offset.contains _ h₁ (by omega_using [h₂]) (by omega_using [])⟩
 
 theorem inScr (hc : Ctx L g mx m₀ t) {o : Nat} (h : o + 8 ≤ 8192) :
     InRegions (t.rd ++ t.wr) (L.scr + BitVec.ofNat 64 o) 8 :=
-  ⟨L.SCR, by rw [hc.rd, hc.wr]; simp, Offset.contains_base _ h (by omega)⟩
+  ⟨L.SCR, by rw [hc.rd, hc.wr]; simp, Offset.contains_base _ h (by omega_using [h])⟩
 
 end Ctx
 
@@ -361,7 +361,7 @@ theorem push_base (sp : Addr) :
 
 theorem push_slot (sp : Addr) (j : Nat) (hj : j < 3) :
     sp - BitVec.ofNat 64 (8 * (j + 1)) = sp - BitVec.ofNat 64 72 + BitVec.ofNat 64 (64 - 8 * j) := by
-  have : 8 * (j + 1) < 2 ^ 64 := by omega
+  have : 8 * (j + 1) < 2 ^ 64 := by omega_using [hj]
   bv_omega
 
 theorem pushed_syms_eq (s : State) (rs : List Reg) : (pushed rs s).syms = s.syms := pushRegs_syms s rs
@@ -369,13 +369,13 @@ theorem pushed_syms_eq (s : State) (rs : List Reg) : (pushed rs s).syms = s.syms
 theorem push_ctx {n : Nat} {key : State → Prop} {post : State → State → Prop} {s : State}
     (h : (pkLocalWith n key post).pre s) :
     Ctx (lay n s) s.gpr s.mxcsr s.mem (pushed pushRs s) := by
-  have hn : 8 * pushRs.length ≤ (s.gpr .rsp).toNat := by show 8 * 7 ≤ _; have := h.1; omega
+  have hn : 8 * pushRs.length ≤ (s.gpr .rsp).toNat := by show 8 * 7 ≤ _; have := h.1; omega_using [this]
   obtain ⟨hf, hw⟩ := pushRegs_mem s pushRs (by decide) hn
   have hw' : ∀ j (hj : j < 3), (pushed pushRs s).mem.readW
-      ((lay n s).B + BitVec.ofNat 64 (64 - 8 * j)) 64 = s.gpr (pushRs[j]'(by show j < 7; omega)) := fun j hj => by
-    rw [← hw j (by show j < 7; omega)]; simp only [lay]; rw [push_slot _ j hj]; rfl
+      ((lay n s).B + BitVec.ofNat 64 (64 - 8 * j)) 64 = s.gpr (pushRs[j]'(by show j < 7; omega_using [hj])) := fun j hj => by
+    rw [← hw j (by show j < 7; omega_using [hj])]; simp only [lay]; rw [push_slot _ j hj]; rfl
   refine ⟨by rw [pushed_rd, h.2.1]; rfl, ?_, ?_, fun r _ hr => pushed_gpr _ _ hr, by rw [pushed_mxcsr],
-    hw' 2 (by omega), hw' 1 (by omega), hw' 0 (by omega), ?_, congrFun (pushed_syms_eq s pushRs) combSym,
+    hw' 2 (by omega_using []), hw' 1 (by omega_using []), hw' 0 (by omega_using []), ?_, congrFun (pushed_syms_eq s pushRs) combSym,
     h.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.1⟩
   · rw [pushed_wr, h.2.2.1]; simp only [List.length_cons, List.length_nil, lay]; rw [push_base]
   · rw [pushed_rsp]; simp only [List.length_cons, List.length_nil, lay]; rw [push_base]
@@ -384,7 +384,7 @@ theorem push_ctx {n : Nat} {key : State → Prop} {post : State → State → Pr
     refine ⟨(lay n s).STK, by simp, ?_⟩
     simp only [List.length_cons, List.length_nil]
     rw [push_base]
-    exact Offset.sub_base _ (by omega)
+    exact Offset.sub_base _ (by omega_using [])
 
 /-! ## `init` -/
 

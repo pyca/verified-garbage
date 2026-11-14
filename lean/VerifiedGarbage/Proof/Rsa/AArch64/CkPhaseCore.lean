@@ -39,7 +39,7 @@ def CkIn.Gd (I : CkIn) : Prop :=
 /-- A number of `len ≤ k` bytes fits in `w` words. -/
 theorem lt_w {bs : List Byte} {k : Nat} (hl : bs.length ≤ k) : Spec.Rsa.os2ip bs < 2 ^ (64 * wk k) :=
   Nat.lt_of_lt_of_le (os2ip_lt bs) (Nat.le_trans (Nat.pow_le_pow_right (by decide) hl)
-    (Nat.le_trans (pow256_le_wk k) (Nat.pow_le_pow_right (by decide) (by simp only [wk]; omega))))
+    (Nat.le_trans (pow256_le_wk k) (Nat.pow_le_pow_right (by decide) (by simp only [wk]; omega_using []))))
 
 /-- Between the phases. -/
 def KS (I : CkIn) (m₀ : Mem) (c : Bool) (s : State) : Prop :=
@@ -81,7 +81,7 @@ theorem phPQ_ok {I : CkIn} {m₀ : Mem} {s : State} {c : Bool} (h : KS I m₀ c 
 /-- The low word of `[aE]` is `e`, below `2^64`. -/
 theorem e_word {I : CkIn} {m : Mem} (hE : I.av m aE = I.E) (hE64 : I.E < 2 ^ 64) :
     (word m I.B (slot (wW I.cap) aE)).toNat = I.E := by
-  rw [← wv_mod64 m I.B (slot (wW I.cap) aE) (n := wW I.cap) (by simp only [wW]; omega), show wv m I.B (slot (wW I.cap) aE) (wW I.cap) = I.E
+  rw [← wv_mod64 m I.B (slot (wW I.cap) aE) (n := wW I.cap) (by simp only [wW]; omega_using []), show wv m I.B (slot (wW I.cap) aE) (wW I.cap) = I.E
     from hE, Nat.mod_eq_of_lt hE64]
 
 end VG.Proof.Rsa.AArch64

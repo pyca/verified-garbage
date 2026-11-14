@@ -57,7 +57,7 @@ theorem MemEq.read {rs : List Region} {m₁ m₂ : Mem} (h : MemEq rs m₁ m₂)
     (hi : InRegions rs a n) (hn : n < 2 ^ 64) : m₁.read a n = m₂.read a n := by
   obtain ⟨r, hr, hc⟩ := hi
   exact Mem.read_congr fun i hi' =>
-    h _ ⟨r, hr, hc.byte (by rw [Mem.sub_ofNat_toNat a (by omega)]; exact hi')⟩
+    h _ ⟨r, hr, hc.byte (by rw [Mem.sub_ofNat_toNat a (by omega_using [hn, hi'])]; exact hi')⟩
 
 theorem MemEq.writeW {rs : List Region} {m₁ m₂ : Mem} (h : MemEq rs m₁ m₂) (a : Addr) {w : Nat}
     (v : BitVec w) : MemEq rs (m₁.writeW a v) (m₂.writeW a v) := fun x hx => by

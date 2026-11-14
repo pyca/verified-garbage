@@ -44,7 +44,7 @@ theorem attempts_ok (S : Signer) {s₀ : State} (h : rsContract.pre s₀) (hv : 
     WP.mono (attempt_ok S h hv hq hi) fun t' ⟨e, ho, hc⟩ => ?_) a t ⟨u, hi⟩
   by_cases h4 : randomSignAttemptStatus (inpOf (rlOf s₀) s₀.mem) u n = 4
   · obtain ⟨hn, hi'⟩ := hc h4
-    exact .inr ⟨by rw [e, decide_eq_true h4], n - 1, by omega, _, hi'⟩
+    exact .inr ⟨by rw [e, decide_eq_true h4], n - 1, by omega_using [hn], _, hi'⟩
   · exact .inl ⟨by rw [e, decide_eq_false h4], ho h4⟩
 
 /-- The specification's result is the attempts'. -/
@@ -70,7 +70,7 @@ theorem zeroLoopA_ok {s : State} {dst : Addr} {N : Nat} (hN : 0 < N) (hN' : N < 
   refine WP.mono (wp_countdown (body := .block ([.store .b .a0 .t4 0, .addi .t4 .t4 1] ++
       ([.addi .t5 .t5 (-1)] : List Instr)))
     (cnt := .t5) (N := N) hN' hN Inv (fun i hi t ⟨t4, tout, tb, tk⟩ hc => ?_)
-    ⟨by rw [h4, off, BitVec.add_zero], Outside.refl _ _ _ _, fun _ h => absurd h (by omega), Keep.refl _ _⟩ h5)
+    ⟨by rw [h4, off, BitVec.add_zero], Outside.refl _ _ _ _, fun _ h => absurd h (by omega_using []), Keep.refl _ _⟩ h5)
     fun t ⟨_, tout, tb, tk⟩ => ⟨⟨?_, tout⟩, tk⟩
   · have t0 : t.gpr .a0 = 0 := (tk.gpr (by decide)).trans h0
     have hw : InRegions t.wr (off dst i) 1 := by rw [tk.2.2]; exact ho i hi
@@ -80,13 +80,13 @@ theorem zeroLoopA_ok {s : State} {dst : Addr} {N : Nat} (hN : 0 < N) (hN' : N < 
       brun [t4, t0, hw, add_ofNat_zero]
     refine WP.mono hst fun t' e => ?_
     subst e
-    have hw1 := write1_outside t.mem dst (d := i) ((0 : BitVec 64).setWidth 8) (by omega)
+    have hw1 := write1_outside t.mem dst (d := i) ((0 : BitVec 64).setWidth 8) (by omega_using [hN', hi])
     refine ⟨⟨by gsimp, ?_, ?_, ?_⟩, by gsimp⟩
-    · gsimp; exact (tout.mono (Nat.le_refl _) (by omega)).trans (hw1.mono (by omega) (by omega))
+    · gsimp; exact (tout.mono (Nat.le_refl _) (by omega_using [])).trans (hw1.mono (by omega_using []) (by omega_using []))
     · intro i' hi'
       gsimp
       rcases Nat.lt_succ_iff_lt_or_eq.mp hi' with hi' | rfl
-      · rw [hw1 _ (by rw [ofs_off0 dst (by omega)]; omega)]; exact tb i' hi'
+      · rw [hw1 _ (by rw [ofs_off0 dst (by omega_arith)]; omega_using [hi'])]; exact tb i' hi'
       · rw [write1_self]; rfl
     · exact Keep.trans' tk ((((Keep.mem _ _).trans (Keep.write _ _ _)).trans (Keep.write _ _ _)).mono (by decide))
   · rw [Spec.Rsa.bytesAt]
@@ -130,7 +130,7 @@ theorem finish_ok {s₀ t : State} {R : Spec.Dsa.RandomSignResult} (h : rsContra
         R.signature.getD (List.replicate (2 * (rlOf s₀).ql) 0) → P t₂) →
       WP isa (.ite (.zero .a0) (.block []) (zeroOut (lenQ .t5 ++ [.add .t5 .t5 .t5]))) t₁ P := by
     intro P hP
-    refine WP.ite (decide (R.status = 1)) (by rw [Steps.eval_zero, a0, h10, sub1_beq _ (by omega)])
+    refine WP.ite (decide (R.status = 1)) (by rw [Steps.eval_zero, a0, h10, sub1_beq _ (by omega_using [hst])])
       (fun hs => ?_) (fun hs => ?_)
     · simp only [decide_eq_true_eq] at hs
       exact WP.block_nil (hP t₁ hc₁ (Keep.refl _ _) (by rw [m1]; exact hsig hs))
@@ -139,18 +139,18 @@ theorem finish_ok {s₀ t : State} {R : Spec.Dsa.RandomSignResult} (h : rsContra
       obtain ⟨i64, l64⟩ := hc₁.word hL rfl (d := 64) (by decide) (by decide)
       have o64 := hc₁.out
       simp only [oOut] at o64
-      have e2 := lenQ_eq (pl := (rlOf s₀).pl) (ql := (rlOf s₀).ql) (by omega) (by omega)
+      have e2 := lenQ_eq (pl := (rlOf s₀).pl) (ql := (rlOf s₀).ql) (by omega_using [hp]) (by omega_using [hq])
       refine WP.seq (WP.mono (wp_sp (WP.keep [.t3, .t4, .t5, .a0] (Q := fun t₂ => t₂.gpr .a0 = 0 ∧
         t₂.gpr .t4 = (rlOf s₀).out ∧ t₂.gpr .t5 = BitVec.ofNat 64 (2 * (rlOf s₀).ql) ∧ t₂.mem = t₁.mem)
         (by
           brun [lenQ, hc₁.sp, hc₁.s2, e2, exec_addSp (show 0 < 2048 by decide), BitVec.add_zero, oOut, i64, l64,
             o64, exec_li_zero, ← BitVec.ofNat_add]
-          congr 1; omega) (by decide) (by rfl)))
+          congr 1; omega_using []) (by decide) (by rfl)))
         fun t₂ ⟨⟨⟨b0, b4, b5, m2⟩, k2⟩, sp2⟩ => ?_)
       have ho : ∀ i < 2 * (rlOf s₀).ql, InRegions t₂.wr (off (rlOf s₀).out i) 1 := fun i hi =>
         ⟨(rlOf s₀).outR, by rw [k2.2.2, hc₁.wr, hwr]; simp,
-          VG.Offset.contains_base _ (by omega) (by omega)⟩
-      refine WP.mono (wp_sp (zeroLoopA_ok (by omega) (by omega) ho hL.nwOut b0 b4 b5))
+          VG.Offset.contains_base _ (by omega_using [hi]) (by omega_using [hq, hi])⟩
+      refine WP.mono (wp_sp (zeroLoopA_ok (by omega_using [hq]) (by omega_using [hq]) ho hL.nwOut b0 b4 b5))
         fun t₃ ⟨⟨⟨z3, o3⟩, k3⟩, sp3⟩ => ?_
       have k23 := k2.trans k3
       refine hP t₃ (hc₁.step hL (sp3.trans sp2) k23.2.1 k23.2.2
@@ -159,7 +159,7 @@ theorem finish_ok {s₀ t : State} {R : Spec.Dsa.RandomSignResult} (h : rsContra
         intro x hx
         refine o3 x ?_
         by_contra hc'
-        exact hx _ (List.mem_cons_self ..) (by simp only [Region.Contains, ofs] at hc' ⊢; omega)
+        exact hx _ (List.mem_cons_self ..) (by simp only [Region.Contains, ofs] at hc' ⊢; omega_using [hc'])
       · rw [z3, hnone hs]; rfl
   refine WP.seq (hout _ fun t₂ hc₂ k2 o2 => ?_)
   have c5 : t₂.gpr .s5 = BitVec.ofNat 64 R.used := (k2.1 _ (by decide)).trans ((k1.1 _ (by decide)).trans h5)
@@ -191,17 +191,17 @@ theorem finish_ok {s₀ t : State} {R : Spec.Dsa.RandomSignResult} (h : rsContra
       rw [m4, Mem.readW_writeW_sep (Region.Disjoint.sep (RL.Ok.frame_disj (d := d) (n := 8) hL.dFU hd)
         (Region.contains_self _ _) huR) (by decide)]
   have hsw : SaveW t₄ (rlOf s₀).F := fun i hi =>
-    frame_word hL rfl (by rw [k4.2.2, hc₃.wr]) (by simp only [oSave, frameBytes]; omega)
-      (by simp only [oSave]; omega)
+    frame_word hL rfl (by rw [k4.2.2, hc₃.wr]) (by simp only [oSave, frameBytes]; omega_using [hi])
+      (by simp only [oSave]; omega_using [])
   refine WP.mono (restoreRegs_ok t₄ (sp4.trans hc₃.sp) hsw (v := fun i => if i < 12 then s₀.gpr (cs i) else s₀.gpr .ra)
-    (fun i hi => by rw [ite_eq_left hi]; exact (fw _ (by simp only [oSave, frameBytes]; omega)).trans (hc₃.sav i hi))
+    (fun i hi => by rw [ite_eq_left hi]; exact (fw _ (by simp only [oSave, frameBytes]; omega_using [hi])).trans (hc₃.sav i hi))
     ((fw _ (by decide)).trans hc₃.ra)) fun t₅ ⟨r5, ra5, o5, m5, rd5, wr5, sp5⟩ => ?_
   refine ⟨?_, ?_, ?_, fun i hi => by rw [r5 i hi, ite_eq_left hi], ra5, sp5.trans (sp4.trans hc₃.sp),
     rd5.trans (k4.2.1.trans hc₃.rd), wr5.trans (k4.2.2.trans hc₃.wr)⟩
   · rw [o5 .a0 (by decide) (by decide) (by decide)]; exact a4
   · rw [m5, m4, bytes_frame (rs := [(rlOf s₀).usedR]) (Frame.refl _ _ |>.writeW (List.mem_singleton_self _) _ huR)
-      (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact hL.dOU) (by omega)]
-    rw [bytes_outside (o3.mono (by omega) (by simp only [oNonce, frameBytes]; omega)) hL.dFO (by omega)]
+      (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact hL.dOU) (by omega_using [hq])]
+    rw [bytes_outside (o3.mono (by omega_using []) (by simp only [oNonce, frameBytes]; omega_using [])) hL.dFO (by omega_using [hq])]
     exact o2
   · rw [m5, m4, Mem.readW_writeW_self64]
 
@@ -223,7 +223,7 @@ theorem fin_post {s₀ t : State} (h : rsContract.pre s₀) (hf : Fin s₀ (rsRe
   · simp only [freed, hf.sp, RL.F, rlOf]
     exact BitVec.sub_add_cancel _ _
   · simp only [freed]
-    rw [hf.a0, BitVec.setWidth_ofNat_of_le (by decide), BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+    rw [hf.a0, BitVec.setWidth_ofNat_of_le (by decide), BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hst])]
   · simp only [freed]
     have e0 : s₀.gpr .a0 = (rlOf s₀).out := rfl
     have e1 : (s₀.gpr .a1).toNat = 2 * (rlOf s₀).ql := hol
@@ -268,24 +268,24 @@ theorem randomSignWith_correct (S : Signer) (s₀ : State) (h : rsContract.pre s
       t₃.gpr .s10 = BitVec.ofNat 64 0) (by brun [exec_li_zero]; rfl) (by decide) (by rfl)))
       fun t₃ ⟨⟨⟨m3, a10⟩, k3⟩, sp3⟩ => ?_
     have hd : (randomSignDraw (inpOf (rlOf s₀) s₀.mem) 0) = ⟨none, 0, [4]⟩ := by
-      rw [draw_eq hL, show (128 : Nat) = 127 + 1 from rfl, Spec.Dsa.Random.sample, ite_eq_left (show qOf s₀ ≤ 1 by omega)]
+      rw [draw_eq hL, show (128 : Nat) = 127 + 1 from rfl, Spec.Dsa.Random.sample, ite_eq_left (show qOf s₀ ≤ 1 by omega_using [hq])]
     obtain ⟨-, rst, ru⟩ := (RandomSignResultRel.refl (inpOf (rlOf s₀) s₀.mem) 0 8 :
       RandomSignResultRel (inpOf (rlOf s₀) s₀.mem) 0 (resOf s₀) 0 (7 + 1)).sample_none
       (show (randomSignDraw (inpOf (rlOf s₀) s₀.mem) 0).scalar = none by rw [hd])
     rw [hd] at rst ru
     refine hfin t₃ (sc.ctx.step hL sp3 k3.2.1 k3.2.2 (fun r hr => k3.1 r (by revert r hr; decide))
       (by rw [m3]; exact Frame.refl _ _)) ?_ ?_ fun h1 => absurd (rst ▸ h1) (by decide)
-    · rw [k3.1 _ (by decide), c5]; congr 1; simp only [resOf] at ru ⊢; omega
+    · rw [k3.1 _ (by decide), c5]; congr 1; simp only [resOf] at ru ⊢; omega_using [ru]
     · rw [a10, rst]; rfl
   · -- q > 1: the attempts.
     simp only [decide_eq_false_iff_not, Decidable.not_not] at hq
-    refine WP.mono (attempts_ok S h hv hq 8 0 t₂ ⟨sc, c5, by omega, (k2.1 _ (by decide)).trans he.s6, by decide,
+    refine WP.mono (attempts_ok S h hv hq 8 0 t₂ ⟨sc, c5, by omega_using [], (k2.1 _ (by decide)).trans he.s6, by decide,
       by decide, fun j hj => ?_, RandomSignResultRel.refl _ _ _⟩) fun t₃ ao => hfin t₃ ao.sc.ctx ao.s5 ao.s10 ao.out
     rw [m2]
     have hE : (eOf s₀).Ok := seOf_ok hL s₀.mem hq
     have := hE.Wq
     have := hL.ql
     have e2 : (eOf s₀).ql = (rlOf s₀).ql := rfl
-    exact he.nonce j (by omega)
+    exact he.nonce j (by omega_using [hj, this])
 
 end VG.Proof.Dsa.RISCV64.RS

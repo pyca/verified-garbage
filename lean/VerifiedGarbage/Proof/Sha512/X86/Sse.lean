@@ -37,7 +37,7 @@ theorem qword_append_0 (h l : BitVec 64) : qword (h ++ l) 0 = l := by
 theorem qword_append_1 (h l : BitVec 64) : qword (h ++ l) 1 = h := by
   apply BitVec.eq_of_getLsbD_eq; intro i hi'
   simp only [qword, BitVec.getLsbD_extractLsb', BitVec.getLsbD_append, Nat.mul_one, hi', decide_true,
-    Bool.true_and, show ¬64 + i < 64 by omega, ite_false, Nat.add_sub_cancel_left]
+    Bool.true_and, show ¬64 + i < 64 by omega_using [], ite_false, Nat.add_sub_cancel_left]
 
 theorem q_psrlq (a : BitVec 128) (n : BitVec 8) :
     qword (XShiftOp.eval .psrlq a n) 0 = if 63 < n.toNat then 0 else qword a 0 >>> n.toNat := by
@@ -97,7 +97,7 @@ theorem q_punpckldq_movd (l h : BitVec 32) :
     decide_true, Bool.true_and, Nat.mul_zero, Nat.zero_add, Nat.mul_one]
   by_cases h1 : i < 32
   · simp only [h1, ite_true, decide_true, Bool.true_and]
-  · simp only [h1, ite_false, show i - 32 < 32 by omega, ite_true, decide_true, Bool.true_and]
+  · simp only [h1, ite_false, show i - 32 < 32 by omega_using [hi], ite_true, decide_true, Bool.true_and]
 
 theorem extractLsb'_qword (x : BitVec 128) : x.extractLsb' 0 64 = qword x 0 := rfl
 
@@ -110,24 +110,24 @@ theorem qword_readW (m : Mem) (a : Addr) {j : Nat} (hj : j < 2) :
   apply BitVec.eq_of_getLsbD_eq; intro i hi
   simp only [qword, BitVec.getLsbD_extractLsb', Mem.readW, BitVec.getLsbD_setWidth, hi, decide_true,
     Bool.true_and]
-  rw [getLsbD_read _ _ (by omega), getLsbD_read _ _ (by omega)]
+  rw [getLsbD_read _ _ (by omega_using [hj, hi]), getLsbD_read _ _ (by omega_using [hi])]
   rw [show a + BitVec.ofNat 64 ((64 * j + i) / 8) = a + BitVec.ofNat 64 (8 * j) + BitVec.ofNat 64 (i / 8) by
-    rw [show (64 * j + i) / 8 = 8 * j + i / 8 by omega, BitVec.ofNat_add, BitVec.add_assoc]]
-  rw [decide_eq_true (by omega), Bool.true_and]; exact congrArg _ (by omega)
+    rw [show (64 * j + i) / 8 = 8 * j + i / 8 by omega_using [], BitVec.ofNat_add, BitVec.add_assoc]]
+  rw [decide_eq_true (by omega_using [hj, hi]), Bool.true_and]; exact congrArg _ (by omega_using [])
 
 theorem readW_writeW128_q (m : Mem) (a : Addr) (v : BitVec 128) {j : Nat} (hj : j < 2) :
     (m.writeW a v).readW (a + BitVec.ofNat 64 (8 * j)) 64 = qword v j := by
   apply BitVec.eq_of_getLsbD_eq; intro i hi
   simp only [qword, BitVec.getLsbD_extractLsb', Mem.readW, BitVec.getLsbD_setWidth, hi, decide_true,
     Bool.true_and]
-  rw [getLsbD_read _ _ (by omega)]
+  rw [getLsbD_read _ _ (by omega_using [hi])]
   simp only [Mem.writeW, Mem.write]
   rw [show a + BitVec.ofNat 64 (8 * j) + BitVec.ofNat 64 (i / 8) - a = BitVec.ofNat 64 (8 * j + i / 8) by
     rw [BitVec.add_assoc, ← BitVec.ofNat_add, Offset.add_sub_cancel_left]]
-  rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
-  simp only [show 8 * j + i / 8 < 128 / 8 by omega, ite_true, BitVec.getLsbD_extractLsb', BitVec.getLsbD_setWidth]
-  rw [decide_eq_true (by omega), decide_eq_true (by omega), Bool.true_and, Bool.true_and]
-  exact congrArg _ (by omega)
+  rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hj, hi])]
+  simp only [show 8 * j + i / 8 < 128 / 8 by omega_using [hj, hi], ite_true, BitVec.getLsbD_extractLsb', BitVec.getLsbD_setWidth]
+  rw [decide_eq_true (by omega_using []), decide_eq_true (by omega_using [hj, hi]), Bool.true_and, Bool.true_and]
+  exact congrArg _ (by omega_using [])
 
 /-! ## A round -/
 

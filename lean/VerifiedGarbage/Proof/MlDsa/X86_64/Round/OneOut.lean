@@ -92,14 +92,14 @@ theorem oneOut_ok {s₀ : State} {ins : List Reg} {gr oa : Reg} {clob : List Reg
       have hg' : g = g32 ∨ g = g88 := by
         rcases mem_gamma2s hg with e | e <;> rw [e] at hge <;> subst hge <;> decide
       refine WP.mono (hbody g hg' s (fun p hp' => by
-          rw [ha p (List.mem_cons_of_mem _ hp')]; exact hI.inR hL hp' (by omega))
-        (by rw [ha _ List.mem_cons_self]; exact hI.inW hL List.mem_cons_self (by omega)))
+          rw [ha p (List.mem_cons_of_mem _ hp')]; exact hI.inR hL hp' (by omega_using []))
+        (by rw [ha _ List.mem_cons_self]; exact hI.inW hL List.mem_cons_self (by omega_using [])))
         fun s' ⟨⟨hm', hc', hz'⟩, hk'⟩ => ⟨⟨?_, hc', hz', trivial⟩, hk'⟩
       rw [hm', ha _ List.mem_cons_self]
       refine congrArg (Mem.writeW _ _ <| F g ·) (List.map_congr_left fun p hp' => ?_)
-      rw [ha p (List.mem_cons_of_mem _ hp'), hI.read hL hp' (by omega), hm, hp p hp']
+      rw [ha p (List.mem_cons_of_mem _ hp'), hI.read hL hp' (by omega_using []), hm, hp p hp']
     · refine ⟨fun k hk => ?_, ?_⟩
-      · rw [← h10, hI.done .r10 List.mem_cons_self k (by omega) hk, hge]
+      · rw [← h10, hI.done .r10 List.mem_cons_self k (by omega_using []) hk, hge]
       · have := hI.frame
         rw [hm, List.map_singleton, h10] at this
         exact this

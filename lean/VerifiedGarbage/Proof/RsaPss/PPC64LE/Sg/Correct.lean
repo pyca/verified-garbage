@@ -52,7 +52,7 @@ theorem n0_eq {s t : State} (E : Entered s t) (hz : (t.gpr .r9 == 0) = true) : s
   apply BitVec.eq_of_toNat_eq
   have := congrArg BitVec.toNat h
   simp only [n0, BitVec.toNat_setWidth, BitVec.toNat_ofNat] at this
-  rw [Nat.mod_eq_of_lt (by have := (s.mem (s.gpr .r5)).isLt; omega)] at this
+  rw [Nat.mod_eq_of_lt (by have := (s.mem (s.gpr .r5)).isLt; omega_using [])] at this
   simpa using this
 
 theorem n0_ne {s t : State} (E : Entered s t) (hz : (t.gpr .r9 == 0) = false) : s.mem (s.gpr .r5) ≠ 0 :=
@@ -83,22 +83,22 @@ theorem checks_done (X : pc = true → PreXS s) {t : State} (E : Entered s t) (s
     WP isa (checks H f g pc) t (Done pc Gs Gm s) := by
   have hk1 : 64 ≤ kk s := P.k1
   have hD64 : H.D ≤ 64 := hH.hD64
-  refine WP.ite _ (eval_zero _ _) (fun hz => fail_done P E.base (signOut_zero Gs Gm (by omega) (n0_eq E hz)))
+  refine WP.ite _ (eval_zero _ _) (fun hz => fail_done P E.base (signOut_zero Gs Gm (by omega_using [hk1]) (n0_eq E hz)))
     (fun hz => ?_)
   have h0 := n0_ne E hz
   refine WP.seq (WP.mono_syms (chkEm_ok P hD64 E h0) fun t₃ ⟨E₃, r3⟩ y₃ => ?_)
-  refine WP.ite _ (eval_nonzero _ _) (fun hc => fail_done P E₃.base (signOut_long Gs Gm (by omega) h0 ?_))
+  refine WP.ite _ (eval_nonzero _ _) (fun hc => fail_done P E₃.base (signOut_long Gs Gm (by omega_using [hk1]) h0 ?_))
     (fun hc => ?_)
-  · rw [r3] at hc; simp at hc; omega
-  have hem : H.D + 2 ≤ kk s - loN s := by rw [r3] at hc; simp at hc; omega
+  · rw [r3] at hc; simp at hc; omega_using [hGl, hc]
+  have hem : H.D + 2 ≤ kk s - loN s := by rw [r3] at hc; simp at hc; omega_using [hc]
   refine WP.seq (WP.mono_syms (chkSalt_ok P hD64 E₃ h0 hem) fun t₄ ⟨E₄, r3'⟩ y₄ => ?_)
-  refine WP.ite _ (eval_nonzero _ _) (fun hc => fail_done P E₄.base (signOut_long Gs Gm (by omega) h0 ?_))
+  refine WP.ite _ (eval_nonzero _ _) (fun hc => fail_done P E₄.base (signOut_long Gs Gm (by omega_using [hk1]) h0 ?_))
     (fun hc => ?_)
-  · rw [r3'] at hc; simp at hc; omega
-  have hfit : Gs.len + (stackArg s 11).toNat + 2 ≤ kk s - loN s := by rw [r3'] at hc; simp at hc; omega
+  · rw [r3'] at hc; simp at hc; omega_using [hGl, hc]
+  have hfit : Gs.len + (stackArg s 11).toNat + 2 ≤ kk s - loN s := by rw [r3'] at hc; simp at hc; omega_using [hGl, hem, hc]
   refine signEnc_ok P hH hGl hG Tg hGmh hGml hGmv T hGh E₄ (y₄.trans (y₃.trans sy)) h0 hfit fun t' b' _ hb => ?_
   refine WP.mono (priv_ok P X b' hb) fun u ⟨sv, _, hw⟩ => ⟨sv, fun hy => ?_⟩
-  rw [signOut_eq Gs Gm hHv hGmv (by omega) h0 hfit]
+  rw [signOut_eq Gs Gm hHv hGmv (by omega_using [hk1]) h0 hfit]
   exact hw hy
 
 theorem body_ok (X : pc = true → PreXS s) {u : State} (hu : Only [.r11, .r12] (allocated frameBytes s) u)
@@ -114,8 +114,8 @@ the index `i`, whose code is for `H`'s digest length. -/
 theorem sign_ok (X : pc = true → PreXS s) {i : Nat}
     (hidx : s.mem.readW (stackArg s 14 + BitVec.ofNat 64 40) 64 = BitVec.ofNat 64 i)
     (hi : i ∈ idxs) (hD : (shapeOf i).1.D = H.D) : WP isa (signG f g pc) s (Post pc Gs Gm s) := by
-  have hi8 : i < 8 := by simp only [idxs, List.mem_cons, List.not_mem_nil, or_false] at hi; omega
-  refine WP.alloc (by decide) (by have := P.sp1; have := stackBytes_ge pc; unfold frameBytes; omega) ?_
+  have hi8 : i < 8 := by simp only [idxs, List.mem_cons, List.not_mem_nil, or_false] at hi; omega_using [hi]
+  refine WP.alloc (by decide) (by have := P.sp1; have := stackBytes_ge pc; unfold frameBytes; omega_arith) ?_
   show WP isa (.seq (.block (tword .r11 hArg 5 ++ [])) _) _ _
   refine WP.seq (WP.of_syms (twordA_ok (j := hArg) (k := 5) (p := stackArg s 14) (by decide) (by decide)
     ⟨aR pc s, by rw [P.hrd]; simp, in_aR (by decide)⟩
@@ -123,7 +123,7 @@ theorem sign_ok (X : pc = true → PreXS s) {i : Nat}
     rfl ⟨tHR s, by rw [P.hrd]; simp, Offset.contains_base _ (by decide) (by decide)⟩
     ((P.kth.sub_left kR_sub).sub_right (tab_sub (n := 11) (show 5 < 11 by decide))).symm fun u o e => wp_nil fun y => ?_))
   rw [show 8 * 5 = 40 from rfl, hidx] at e
-  refine byIdx_ok (D := i) (by omega)
+  refine byIdx_ok (D := i) (by omega_using [hi8])
     (F := fun u' => Only [.r11, .r12] (allocated frameBytes s) u' ∧ u'.syms = s.syms ∧
       u'.gpr .r11 = BitVec.ofNat 64 i)
     (fun _ h => h.2.2) (fun u₁ u₂ ⟨o₁, y₁, e₁⟩ o y => ⟨(o₁.trans o).mono, y.trans y₁, by rw [o.get .r11]; exact e₁⟩)

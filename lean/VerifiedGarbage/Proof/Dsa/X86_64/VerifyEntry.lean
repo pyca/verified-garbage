@@ -58,12 +58,12 @@ theorem verifyEntry_ok {s0 : State} {B sp digest digestLen : Addr} {Z : Nat}
   have hr2 : ∀ j, 1 ≤ j → j ≤ 2 → InRegions (s2.rd ++ s2.wr) (off sp (8 * j)) 8 := by
     intro j hj1 hj2
     rw [hk12.2.1, hk12.2.2]
-    exact hr j hj1 (by omega)
+    exact hr j hj1 (by omega_using [hj2])
   have hstack (j : Nat) (hj1 : 1 ≤ j) (hj2 : j ≤ 2) : word s2.mem sp (8 * j) = word s0.mem sp (8 * j) := by
-    rw [entry_stack_frame hf2 (Nat.le_trans (by decide) hZ) (hsep j hj1 (by omega)), hmem1]
+    rw [entry_stack_frame hf2 (Nat.le_trans (by decide) hZ) (hsep j hj1 (by omega_using [hj2])), hmem1]
   rw [WP.block_append_iff]
   refine WP.mono (verifyFields_ok (hs.congr hk12.2.2) ((hk2.gpr (by decide)).trans h11)
-    ((hreg .rsp (by decide)).trans hsp) hZ hr2 (fun j h1 h2 => hsep j h1 (by omega))
+    ((hreg .rsp (by decide)).trans hsp) hZ hr2 (fun j h1 h2 => hsep j h1 (by omega_using [h2]))
     ((hstack 1 (by decide) (by decide)).trans hd) ((hstack 2 (by decide) (by decide)).trans hdl))
     fun s3 ⟨hmem3, hk3⟩ => ?_
   rw [hreg .rdi (by decide), hreg .rdx (by decide), hreg .rcx (by decide), hreg .r8 (by decide)] at hmem3
@@ -88,7 +88,7 @@ theorem verifyEntry_ok {s0 : State} {B sp digest digestLen : Addr} {Z : Nat}
     hptr.1, hptr.2.1, hptr.2.2.1, hptr.2.2.2, ?_, ?_, ?_, (hk123.trans hk4).mono (by decide)⟩
   · exact ⟨(hsame .out (by decide)).trans hunused.1, (hsame .nonce (by decide)).trans hunused.2⟩
   · intro i hi
-    exact ((hf4.word (Or.inl (by omega)) (by omega)).trans (entry_saved_frame hf3 hi)).trans
+    exact ((hf4.word (Or.inl (by omega_using [hi])) (by omega_using [hi])).trans (entry_saved_frame hf3 hi)).trans
       ((hsaved i hi).trans (hk1.gpr (by simpa using saved_ne_r11 hi)))
   · have hwide2 : Outside B 0 pWorkspace s0.mem s2.mem := by
       rw [← hmem1]

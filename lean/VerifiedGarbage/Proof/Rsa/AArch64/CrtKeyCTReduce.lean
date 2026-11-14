@@ -185,7 +185,7 @@ theorem ckGuard_ct : RelCT isa (Two GK) (.block (wordGuard sPlen sQlen)) (Two GK
     (by taint_decide) fun p s h => ?_)
   all_goals obtain ⟨I, m₀, c, rfl, h', L, hm⟩ := id h
   · have hl : ∀ i < 32, InRegions (s.rd ++ s.wr) (off I.B (8 * i)) 8 := fun i hi =>
-      h'.ws.scr.ld (by have := h'.ws.h256; omega)
+      h'.ws.scr.ld (by have := h'.ws.h256; omega_using [hi, this])
     refine WP.mono (WP.keep [.x13, .x14, .x15, .x16] (Q := fun t => t.gpr .x16 = I.pN) (by
       brun [h'.ws.x0, hdr_enc (show Public.sN < 32 by decide), hdr_enc (show Public.sK < 32 by decide),
         hdr_enc (show sPlen < 32 by decide), hdr_enc (show sQlen < 32 by decide), hl Public.sN (by decide),
@@ -195,7 +195,7 @@ theorem ckGuard_ct : RelCT isa (Two GK) (.block (wordGuard sPlen sQlen)) (Two GK
     rcases hr with rfl | rfl
     · exact (k.gpr .x0 (by decide)).trans h'.ws.x0
     · exact h16
-  · have hn0 : 0 < I.nb.length := by rw [L.nl]; have := L.k1; omega
+  · have hn0 : 0 < I.nb.length := by rw [L.nl]; have := L.k1; omega_using [this]
     have hb : s.mem.read I.pN 1 = ckGbyte I.pub := by
       refine read1_eq ?_
       have := h'.n.val 0 hn0
@@ -238,18 +238,18 @@ theorem wmodOne_ckct {top lenL : List Instr} (C Ln : CkP → Nat)
     have hk2 := L.k2
     have pl2 := L.pl2
     have ql2 := L.ql2
-    obtain ⟨g16, -, -, -⟩ := guard_zero (k := I.k) (pl := I.pl) (ql := I.ql) (by omega) (by omega) (by omega) hg
+    obtain ⟨g16, -, -, -⟩ := guard_zero (k := I.k) (pl := I.pl) (ql := I.ql) (by omega_using [hk2]) (by omega_using [hk2, pl2]) (by omega_using [hk2, ql2]) hg
     have eW : wW I.cap = 2 * wk I.k + 2 := by rw [L.capk]
-    have hw8 : 8 ≤ wk I.k := by unfold wk; omega
-    have hwm : (wW I.cap - 2) / 4 = wk I.k / 2 := by rw [eW]; unfold wk; omega
-    have hW := ckWm_ok (wW I.cap) (by omega) (by rw [eW]; unfold wk; omega)
-    have hxb := ckXb_ok I.B (wW I.cap) (by rw [eW]; unfold wk; omega) (by rw [eW]; unfold wk; omega)
+    have hw8 : 8 ≤ wk I.k := by unfold wk; omega_using [hk1]
+    have hwm : (wW I.cap - 2) / 4 = wk I.k / 2 := by rw [eW]; unfold wk; omega_using []
+    have hW := ckWm_ok (wW I.cap) (by omega_using [eW]) (by rw [eW]; unfold wk; omega_using [hk2])
+    have hxb := ckXb_ok I.B (wW I.cap) (by rw [eW]; unfold wk; omega_using [g16]) (by rw [eW]; unfold wk; omega_using [hk2])
     rw [hwm] at hW hxb
     obtain ⟨hL', l1, l2⟩ := hL _ s h
     dsimp only [CkIn.pub] at hL' l1 l2
     exact WP.mono (wdiv_ok h'.ws (iX := aA) (iM := aM) (iR := aRem) (iT := aT) (by decide) (by decide) (by decide)
-      (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) hW hL' hxb (by omega) (by omega)
-      (by omega) l2) fun t ⟨_, ft, kt, _⟩ => ⟨I, m₀, c, rfl, h'.step ft (fun r hr => by
+      (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) hW hL' hxb (by omega_using [hw8]) (by omega_using [eW])
+      (by omega_using [l1]) l2) fun t ⟨_, ft, kt, _⟩ => ⟨I, m₀, c, rfl, h'.step ft (fun r hr => by
         simp only [ar, List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl <;> exact Mut.ofSlot _ _ _) (fun r hr => by
         simp only [ar, List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -258,7 +258,7 @@ theorem wmodOne_ckct {top lenL : List Instr} (C Ln : CkP → Nat)
         rw [ft.word_eq (fun r hr => by
           simp only [ar, List.mem_cons, List.not_mem_nil, or_false] at hr
           rcases hr with rfl | rfl <;> dsimp only <;>
-            exact .inl (hdr_lt_slot _ _ (show Public.sMask < 32 by decide))) (by unfold Public.sMask sFn; omega)]
+            exact .inl (hdr_lt_slot _ _ (show Public.sMask < 32 by decide))) (by unfold Public.sMask sFn; omega_using [])]
         exact hm⟩
   · -- `reduceTop`.
     exact (reduceTop_ckct C hT hC (by taint_decide) (by taint_decide) tHi tLo tCnt (by taint_decide)

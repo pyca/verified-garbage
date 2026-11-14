@@ -22,11 +22,11 @@ open VG.Proof.MlKem.AArch64
 theorem maskGuard {σ s : State} {p : Addr} {v : BitVec 128} {j : Nat}
     (hi : MaskInv σ s p v j) :
     isa.eval (.nonzero .x .x5) s=some (decide (j<64)) := by
-  rw [eval_nonzero,hi.count,ne_zero_iff,BitVec.toNat_ofNat,Nat.mod_eq_of_lt (by omega)]
+  rw [eval_nonzero,hi.count,ne_zero_iff,BitVec.toNat_ofNat,Nat.mod_eq_of_lt (by omega_using [])]
   congr 1
   apply decide_eq_decide.mpr
   have:=hi.bound
-  omega
+  omega_using []
 
 theorem maskLoop_ok {σ s : State} {p : Addr} {v : BitVec 128} {j : Nat}
     (hi : MaskInv σ s p v j) (hj : j<64)
@@ -40,8 +40,8 @@ theorem maskLoop_ok {σ s : State} {p : Addr} {v : BitVec 128} {j : Nat}
   refine WP.mono (maskStep_ok hi hj hr hw) fun t ht=>?_
   have hg:=maskGuard ht
   by_cases hn : j+1<64
-  · exact .inr ⟨by rw [hg,decide_eq_true hn],64-(j+1),by omega,j+1,rfl,ht,hn⟩
-  · have he : j+1=64 := by omega
+  · exact .inr ⟨by rw [hg,decide_eq_true hn],64-(j+1),by omega_using [hj],j+1,rfl,ht,hn⟩
+  · have he : j+1=64 := by omega_using [hj, hn]
     exact .inl ⟨by rw [hg,decide_eq_false hn],by rw [←he]; exact ht⟩
 
 end VG.Proof.MlDsa.AArch64.Optimized.BoundedFour
@@ -69,7 +69,7 @@ theorem maskScalar_ok (s : State) (hx : (s.gpr .x4).toNat≤256) :
   refine VG.Proof.MlDsa.AArch64.Arith.WP.keep _ ?_ (by rfl) (hv := rfl)
   unfold maskScalar
   arun
-  have h:=ResidentRej.smallFlag_status (s.gpr .x4) (by omega)
+  have h:=ResidentRej.smallFlag_status (s.gpr .x4) (by omega_using [hx])
   rw [h]
   by_cases hz : s.gpr .x4=0#64
   · simp only [ite_eq_left hz]
@@ -87,7 +87,7 @@ theorem maskFooter_ok (s : State) {k : Nat} (hk : k<4) :
   apply WP.keepV (by rfl)
   refine VG.Proof.MlDsa.AArch64.Arith.WP.keep _ ?_ (by rfl) (hv := rfl)
   unfold maskFooter
-  have hb : 1024*k<4096 := by omega
+  have hb : 1024*k<4096 := by omega_using [hk]
   arun [hb]
 
 
@@ -101,7 +101,7 @@ theorem maskLoadScalar_ok {s : State} {k : Nat} (hk : k<4) {b : Addr}
         t.mem=s.mem) ∧Keep [.x4,.x6] s t) ∧t.v=s.v := by
   apply WP.keepV (by rfl)
   unfold maskLoadScalar
-  refine wp_ldrx (by omega) (by rw [hb]; rfl) hr fun a ha h4=>?_
+  refine wp_ldrx (by omega_using [hk]) (by rw [hb]; rfl) hr fun a ha h4=>?_
   refine WP.mono (maskScalar_ok a (by rw [h4]; exact hx)) fun t ⟨⟨⟨hv,hm⟩,ht⟩,_⟩=>?_
   exact ⟨⟨by rw [hv,h4],hm.trans ha.mem⟩,(ha.keep.trans ht).mono (by decide)⟩
 

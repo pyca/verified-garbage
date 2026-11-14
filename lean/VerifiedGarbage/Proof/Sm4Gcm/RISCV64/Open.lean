@@ -502,7 +502,7 @@ theorem openEntry_wp {s₀ : State} (h : openPre s₀) :
       (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact hLd) (by decide)]
     rfl
   refine Steps.wp_ld (off := 0) (a := s₀.sp + BitVec.ofNat 64 0) (by decide)
-    (by rw [uA.gpr, h1.keeps.sp, add_ofNat_zero]) (Spill.al8 (by have := hstk.1; omega) (by decide)) hi fun s₂ u₂ => WP.block_nil ?_
+    (by rw [uA.gpr, h1.keeps.sp, add_ofNat_zero]) (Spill.al8 (by have := hstk.1; omega_using [this]) (by decide)) hi fun s₂ u₂ => WP.block_nil ?_
   exact ⟨h1.keep (fun r _ ht hr => by rw [u₂.other r hr, uA.other r ht])
     ⟨by rw [u₂.mem, uA.mem], by rw [u₂.rd, uA.rd], by rw [u₂.wr, uA.wr], by rw [u₂.sp, uA.sp]⟩,
     by rw [u₂.gpr, hv]⟩

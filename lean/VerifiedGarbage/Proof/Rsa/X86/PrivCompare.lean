@@ -41,7 +41,7 @@ theorem compareBody_ok {s0 s : State} {a b : BitVec 32} {n i : Nat}
   refine WP.mono (compareStep_ok s _ _ (by change byteAddr (s.gpr .esi + 0) = _; rw [inv.first]; simp)
     (by change byteAddr (s.gpr .edi + 0) = _; rw [inv.second]; simp) ra rb) ?_
   rintro t ⟨mem, first, second, acc, count, zero, rest⟩
-  refine ⟨⟨by omega, ?_, ?_, ?_, ?_, mem.trans inv.mem, inv.rest.trans rest⟩, ?_⟩
+  refine ⟨⟨by omega_using [hi], ?_, ?_, ?_, ?_, mem.trans inv.mem, inv.rest.trans rest⟩, ?_⟩
   · rw [first, inv.first, BitVec.add_assoc]
     change a + (BitVec.ofNat 32 i + BitVec.ofNat 32 1) = _
     rw [← BitVec.ofNat_add]
@@ -50,7 +50,7 @@ theorem compareBody_ok {s0 s : State} {a b : BitVec 32} {n i : Nat}
     rw [← BitVec.ofNat_add]
   · rw [count, inv.count]
     change BitVec.ofNat 32 (n - i) - BitVec.ofNat 32 1 = _
-    rw [BitVec.ofNat_sub_ofNat_of_le _ _ (by decide) (by omega)]
+    rw [BitVec.ofNat_sub_ofNat_of_le _ _ (by decide) (by omega_using [hi])]
     congr 1
   · rw [acc, show (0 : BitVec 32) = 0#32 from rfl, BitVec.or_eq_zero_iff, ← show (0 : BitVec 32) = 0#32 from rfl,
       byte_xor_zero32, inv.equal, inv.mem]
@@ -58,13 +58,13 @@ theorem compareBody_ok {s0 s : State} {a b : BitVec 32} {n i : Nat}
     · rintro ⟨before, atI⟩ j hj
       by_cases eq : j = i
       · subst j; exact atI
-      · exact before j (by omega)
+      · exact before j (by omega_using [hj, eq])
     · intro all
-      exact ⟨fun j hj => all j (by omega), all i (by omega)⟩
+      exact ⟨fun j hj => all j (by omega_using [hj]), all i (by omega_using [])⟩
   · rw [zero, inv.count]
     change some (BitVec.ofNat 32 (n - i) - BitVec.ofNat 32 1 == 0) = _
-    rw [BitVec.ofNat_sub_ofNat_of_le _ _ (by decide) (by omega), ofNat_beq_zero (by have := ctx.countFits; omega)]
-    simp only [show n - i - 1 = 0 ↔ i + 1 = n by omega]
+    rw [BitVec.ofNat_sub_ofNat_of_le _ _ (by decide) (by omega_using [hi]), ofNat_beq_zero (by have := ctx.countFits; omega_using [this])]
+    simp only [show n - i - 1 = 0 ↔ i + 1 = n by omega_using [hi]]
 
 theorem compareBytes_ok (s : State) {a b : BitVec 32} {n : Nat}
     (ctx : CompareCtx s a b n) (hn : 0 < n)
@@ -75,7 +75,7 @@ theorem compareBytes_ok (s : State) {a b : BitVec 32} {n : Nat}
   refine WP.loop (M := isa) inv ?_ n s ?_
   · intro k t h
     obtain ⟨i, hik, hk, hi⟩ := h
-    refine WP.mono (compareBody_ok ctx hi (by omega)) ?_
+    refine WP.mono (compareBody_ok ctx hi (by omega_using [hik, hk])) ?_
     rintro u ⟨hu, zero⟩
     by_cases he : i + 1 = n
     · left
@@ -83,10 +83,10 @@ theorem compareBytes_ok (s : State) {a b : BitVec 32} {n : Nat}
       change u.zf.map not = some false
       simp only [zero, he, decide_true, Option.map_some, Bool.not_true]
     · right
-      refine ⟨?_, k - 1, by omega, i + 1, by omega, by omega, hu⟩
+      refine ⟨?_, k - 1, by omega_using [hk], i + 1, by omega_using [hik, hk], by omega_using [hik, hk, he], hu⟩
       change u.zf.map not = some true
       simp only [zero, he, decide_false, Option.map_some, Bool.not_false]
-  · refine ⟨0, by omega, hn, ?_⟩
-    exact ⟨by omega, by simpa using ha, by simpa using hb, by simpa using hc,
+  · refine ⟨0, by omega_using [], hn, ?_⟩
+    exact ⟨by omega_using [], by simpa using ha, by simpa using hb, by simpa using hc,
       by simp [hz], rfl, Keeps.refl _ _⟩
 end VG.Proof.Rsa.X86.PrivChecked

@@ -23,7 +23,7 @@ theorem exportArrayTail_ok (s : State) {base : BitVec 32} {size w : Nat}
   unfold exportArrayTail
   refine wp_mov (op2_reg _ _) fun u h => ?_
   refine wp_ldr (a := off (State.addr base) 48) (by decide)
-    (by rw [h.other .r0 (by decide), ptr]; exact addr_add (by have := ws.nowrap; omega))
+    (by rw [h.other .r0 (by decide), ptr]; exact addr_add (by have := ws.nowrap; omega_using [fit, this]))
     (by rw [h.rd, h.wr]; exact ws.read fit) fun v j => ?_
   refine wp_mov (op2_lsl (by decide)) fun z l => ?_
   refine wp_mov (op2_reg _ _) fun t q => WP.block_nil ?_
@@ -44,9 +44,9 @@ theorem exportArrayArgs_ok (s : State) {base : BitVec 32} {size w o : Nat}
       t.gpr .lr = BitVec.ofNat 32 (8 * w) ∧ t.gpr .r5 = base ∧
       t.mem = s.mem ∧ Rest [.r0, .r1, .r2, .r5, .lr] s t := by
   rw [exportArrayArgs, WP.block_append_iff]
-  refine WP.mono (loadArray_ok s .r1 .r2 ws (by omega) ptr index (header.array o ho)) ?_
+  refine WP.mono (loadArray_ok s .r1 .r2 ws (by omega_using [fit, ho]) ptr index (header.array o ho)) ?_
   rintro u ⟨array, mem, rest⟩
-  refine WP.mono (exportArrayTail_ok u (ws.congr rest.wr) (by omega)
+  refine WP.mono (exportArrayTail_ok u (ws.congr rest.wr) (by omega_using [fit])
     ((rest.gpr .r0 (by decide)).trans ptr) (by rw [mem]; exact header.count)) ?_
   rintro t ⟨count, saved, out, memT, keep⟩
   exact ⟨out.trans (rest.gpr .r4 (by decide)), (keep.gpr .r1 (by decide)).trans array,

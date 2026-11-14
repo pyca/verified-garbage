@@ -32,8 +32,8 @@ theorem loadOne_ok {s : State} {B p : Addr} {Z o w wx m sp sl : Nat} {minv : Bit
       t.gpr .rax = mask (decide (Spec.Dsa.decodeBE bytes = 1)) ∧
       Frm (off B o) (workRanges wx) s.mem t.mem ∧ Keep mmRegs s t := by
   refine WP.seq (WP.mono (load_mod_ok hc hm hw2 hwx hw30 (by decide) (by decide) hsp hsl
-    hp hl hs h1 (by omega) hfit) fun u ⟨hcu, hmu, hv, _, hf, hk⟩ => ?_)
-  refine WP.seq (WP.mono (oneScan_ok hcu.good (Nat.le_refl _) hw2 (by omega))
+    hp hl hs h1 (by omega_using [hw48, hfit]) hfit) fun u ⟨hcu, hmu, hv, _, hf, hk⟩ => ?_)
+  refine WP.seq (WP.mono (oneScan_ok hcu.good (Nat.le_refl _) hw2 (by omega_using [hw48]))
     fun v ⟨hv15, hvm, hkv⟩ => ?_)
   rw [hv] at hv15
   refine WP.mono (zeroMask_ok .r15 false) fun t ⟨ht, htm, hkt⟩ => ?_

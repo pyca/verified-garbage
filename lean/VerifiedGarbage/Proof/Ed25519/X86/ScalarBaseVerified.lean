@@ -80,7 +80,7 @@ theorem scalarBaseTail_ct (s₀ t₀ : State) (hs : BaseRegions s₀) (ht : Base
       · rw [h.1.2.2.1, hp.2.2.2.1, h.2.2.2.1, hp.2.2.2.2]) (fun _ _ h => h)
   have mw (u s : State) (h : BaseCTReady u s) : WP isa combMultiply s (Saved u (arg u 2)) := by
     refine WP.mono (combMultiply_ok (S := baseScalar u) h.2.1.ctx.ctx (by simpa using h.2.1.bound)
-      (fun q hq => by rw [h.2.1.bits q (by omega), scalarBit_nat]) h.2.1.d h.2.2.1 h.2.2.2.1 h.2.2.2.2)
+      (fun q hq => by rw [h.2.1.bits q (by omega_using [hq]), scalarBit_nat]) h.2.1.d h.2.2.1 h.2.2.2.1 h.2.2.2.2)
       fun t ⟨_, kt⟩ => ?_
     exact h.1.mulkeep h.2.1.ctx.ctx.fit kt
   have mul := ctWithRuns mulct (fun s t h => ⟨mw s₀ s h.1, mw t₀ t h.2⟩)
@@ -129,7 +129,7 @@ theorem scalarBaseBody_correct {s : State} (h : BodyPre s) :
   rw [scalarBaseBody]
   refine WP.seq (WP.mono (scalarBaseStart_ok h) fun c ⟨hc, mc, pc, tc⟩ => ?_)
   refine WP.seq (WP.mono (combMultiply_ok (S := baseScalar s) mc.ctx.ctx (by simpa using mc.bound)
-    (fun q hq => by rw [mc.bits q (by omega), scalarBit_nat]) mc.d pc tc.1 tc.2) fun d ⟨pd, kd⟩ => ?_)
+    (fun q hq => by rw [mc.bits q (by omega_using [hq]), scalarBit_nat]) mc.d pc tc.1 tc.2) fun d ⟨pd, kd⟩ => ?_)
   have hd := hc.mulkeep hp.fit kd
   refine WP.seq (WP.mono (pointEncode_value (hd.ctx hp.fit hp.wr hp.stk)) fun e ⟨ke, ve⟩ => ?_)
   have he := hd.ikeep hp.fit ke

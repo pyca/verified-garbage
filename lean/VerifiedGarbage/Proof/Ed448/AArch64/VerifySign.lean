@@ -31,8 +31,8 @@ open VG.Impl.X448.AArch64 (ld st slot X2)
 theorem orStep_ok {s : State} {base : Addr} (hs : Scr s base) {n : Nat} (hn : n < 16) :
     WP isa (.block ([ld .x4 (X2 + 8 * n), .logic .orr .x .x5 .x5 .x4] : List Instr)) s fun t =>
       t.gpr .x5 = s.gpr .x5 ||| word s.mem base (X2 + 8 * n) ∧ t.mem = s.mem ∧ Keeps [.x4, .x5] s t := by
-  have r1 := hs.read (d := X2 + 8 * n) (n := 8) (by simp only [X2, slot]; omega)
-  have e1 : (X2 + 8 * n) % 8 = 0 ∧ X2 + 8 * n < 4096 * 8 := by simp only [X2, slot]; omega
+  have r1 := hs.read (d := X2 + 8 * n) (n := 8) (by simp only [X2, slot]; omega_using [hn])
+  have e1 : (X2 + 8 * n) % 8 = 0 ∧ X2 + 8 * n < 4096 * 8 := by simp only [X2, slot]; omega_using [hn]
   apply WP.of_runBlock
   simp only [ld, runBlock_cons, runStep_some, runBlock_nil, exec, addr, Size.bytes, Size.bits,
     State.load, State.read, e1, and_self, BitVec.setWidth_eq, hs.x3, r1,
@@ -71,7 +71,7 @@ theorem orWords_ok {s : State} {base : Addr} (hs : Scr s base) :
       rcases Nat.lt_succ_iff_lt_or_eq.mp hj with hj | rfl
       · exact h1 j hj
       · exact h2
-    · intro h; exact ⟨fun j hj => h j (by omega), h n (by omega)⟩
+    · intro h; exact ⟨fun j hj => h j (by omega_using [hj]), h n (by omega_using [])⟩
   refine WP.mono (wp_range_flatMap (M := isa) (N := 16) inv step 16 (by decide) t0
     ⟨⟨fun _ _ h => absurd h (Nat.not_lt_zero _), fun _ => z0⟩, m0, VG.Proof.X448.AArch64.Keeps.refl _ _⟩)
     fun u ⟨uv, um, uk⟩ => ⟨uv, um, (k0.mono (by decide)).trans uk⟩
@@ -91,11 +91,11 @@ theorem valN_zero_iff {f : Nat → Nat} : VG.Proof.X448.valN f 16 = 0 ↔ ∀ j 
   · intro h j hj
     by_contra hne
     have : 0 < VG.Proof.X448.valN f 16 := by
-      rw [show (16 : Nat) = (j + 1) + (15 - j) by omega, VG.Proof.X448.valN_split, VG.Proof.X448.valN]
+      rw [show (16 : Nat) = (j + 1) + (15 - j) by omega_using [hj], VG.Proof.X448.valN_split, VG.Proof.X448.valN]
       have : 0 < VG.Proof.X448.radix ^ j * f j :=
         Nat.mul_pos (Nat.pow_pos (by decide)) (Nat.pos_of_ne_zero hne)
-      omega
-    omega
+      omega_using [this]
+    omega_using [h, this]
   · intro h
     rw [VG.Proof.X448.valN_congr (g := fun _ => 0) h]
     clear h
@@ -106,7 +106,7 @@ theorem valN_zero_iff {f : Nat → Nat} : VG.Proof.X448.valN f 16 = 0 ↔ ∀ j 
 
 theorem zeroSign_val (z : Bool) {sb : Nat} (hsb : sb < 2) :
     ((if z then (1 : BitVec 64) else 0) &&& BitVec.ofNat 64 sb = 0) ↔ ¬ (z = true ∧ sb = 1) := by
-  rcases (by omega : sb = 0 ∨ sb = 1) with rfl | rfl <;> cases z <;> decide
+  rcases (by omega_using [hsb] : sb = 0 ∨ sb = 1) with rfl | rfl <;> cases z <;> decide
 
 /-! ## `-x` swapped in -/
 
@@ -116,11 +116,11 @@ theorem negMask_val (w : BitVec 64) {sb : Nat} (hsb : sb < 2) :
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.toNat_and, BitVec.toNat_ofNat, show (1 : BitVec 64).toNat = 2 ^ 1 - 1 from rfl,
       Nat.and_two_pow_sub_one_eq_mod]
-    omega
+    omega_using []
   rw [hw]
   have h2 : w.toNat % 2 < 2 := Nat.mod_lt _ (by decide)
   generalize w.toNat % 2 = a at h2 ⊢
-  rcases (by omega : a = 0 ∨ a = 1) with rfl | rfl <;> rcases (by omega : sb = 0 ∨ sb = 1) with rfl | rfl <;> decide
+  rcases (by omega_using [h2] : a = 0 ∨ a = 1) with rfl | rfl <;> rcases (by omega_using [hsb] : sb = 0 ∨ sb = 1) with rfl | rfl <;> decide
 
 theorem negMask_ok {s : State} {base : Addr} (hs : Scr s base) {sb : Nat} (hsb : sb < 2)
     (h17 : s.gpr .x17 = BitVec.ofNat 64 sb) :

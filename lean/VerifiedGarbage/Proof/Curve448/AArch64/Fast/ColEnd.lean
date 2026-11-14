@@ -26,7 +26,7 @@ theorem extr56 (lo hi : BitVec 64) :
     Nat.shiftLeft_eq, Nat.shiftRight_eq_div_pow]
   simp only [pair]
   congr 2
-  omega
+  omega_using []
 
 /-- Add the carry `c`: `ZERO` holds zero. -/
 theorem carryIn_ok (s : State) (a : Acc) (c : Reg) (h₁ : a.lo ≠ a.hi) (h₂ : a.lo ≠ ZERO)
@@ -66,7 +66,7 @@ theorem stage_ok {s : State} {base : Addr} (hs : Scr s base) (t : Reg) (a : Acc)
   · simp only [RegUpd.mem_write, BitVec.setWidth_eq, write8_eq, hv]
   · simp only [RegUpd.gpr_write, ite_true, Ne.symm h₁, Ne.symm h₂, ite_false]
     rw [BitVec.setWidth_eq, extr56, Nat.mod_eq_of_lt (by
-      have := hlt; unfold accVal at this; omega)]
+      have := hlt; unfold accVal at this; omega_using [this])]
     rfl
   · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hq
     simp only [RegUpd.gpr_write, hq.1, hq.2, ite_false]

@@ -112,7 +112,7 @@ def CandidateReturn (p : CandidateParams) (answer : Option (Bool × List Byte)) 
 theorem witnessResultStatus_bound (answer : Option (Bool × List Byte)) : witnessResultStatus answer ≤ 2 := by
   cases answer with
   | none => decide
-  | some pair => obtain ⟨pass, rest⟩ := pair; cases pass <;> simp only [witnessResultStatus] <;> omega
+  | some pair => obtain ⟨pass, rest⟩ := pair; cases pass <;> simp only [witnessResultStatus] <;> omega_using []
 
 theorem CandidateReturn.trans_pre {s u t : State} {p : CandidateParams} {answer : Option (Bool × List Byte)}
     {rs : List Reg} (post : CandidateReturn p answer u t)
@@ -139,7 +139,7 @@ private theorem candidateReturn_of_result {s : State} {p : CandidateParams} {use
       have tailEq := suffix pass tail ha
       change Spec.Rsa.wordsAt t.mem (State.addr p.usedPtr) 1 = [BitVec.ofNat 64 (p.bytes.length - tail.length)]
       rw [tailEq, List.length_drop]
-      have usedEq : p.bytes.length - (p.bytes.length - used) = used := by have := h.consumedBound; omega
+      have usedEq : p.bytes.length - (p.bytes.length - used) = used := by have := h.consumedBound; omega_using [this]
       rw [usedEq]
       cases pass <;> simpa [ha, witnessResultStatus] using words
   · cases ha : answer with

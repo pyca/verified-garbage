@@ -104,7 +104,7 @@ theorem linv_succ {M : Mode} {s₀ : State} (hp : UPre s₀) {k : Nat} (hk : k <
     obtain ⟨-, -, -, -, -, h9, h10⟩ := preserved_ne hr
     rw [keep₅ r h17 h18, g₄ r h9 h10, a.g r hr]
   have hl' : (outK M s₀ k).length = k := by
-    rw [outK, Mode.length_out]; simp [Spec.Cbc.blocksAt]; omega
+    rw [outK, Mode.length_out]; simp [Spec.Cbc.blocksAt]; omega_using [hk]
   refine ⟨?_, ?_, ?_, r17₅, r18₅, ?_, fun r hr hv => ?_, ?_, ?_, ?_, ?_, ?_⟩
   · rw [g .r14 (by decide) (by decide) (by decide), h.r14]
   · rw [g .r15 (by decide) (by decide) (by decide), h.r15]

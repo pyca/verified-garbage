@@ -61,7 +61,7 @@ theorem withTable_addr (s : State) (vs : List MdHash) (w : MdHash) (j : Nat) :
 theorem withTable_arg (s : State) (vs : List MdHash) (w : MdHash) {j : Nat}
     (hj : (stackArgAddr s j).toNat + 8 ≤ 0x300000) : stackArg (withTable s vs w) j = stackArg s j :=
   putWs_out (m := s.mem) (a := stackArgAddr s j) (ws := twL vs w) (.inl (by simpa using hj)) (twL_room vs w)
-    (by omega)
+    (by omega_using [hj])
 
 /-- `w`'s table at `0x300000`, in any memory `putWs` writes it to, with
 `vs`' functions at the addresses `symsOf` gives them: a statement about the

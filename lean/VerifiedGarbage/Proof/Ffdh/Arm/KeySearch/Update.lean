@@ -29,7 +29,7 @@ theorem KeyLive.advance_fields {p : KeyPublic sampling} {original s : State} {us
   have w11 := h.field (j := 11) (by simp [headerIndices])
   have rem : BitVec.ofNat 32 (p.randLen - used) - BitVec.ofNat 32 p.len =
       BitVec.ofNat 32 (p.randLen - (used + p.len)) := by
-    rw [Offset.ofNat_sub_ofNat (by omega : p.len ≤ p.randLen - used), Nat.sub_sub]
+    rw [Offset.ofNat_sub_ofNat (by omega_using [room] : p.len ≤ p.randLen - used), Nat.sub_sub]
   apply (slots_fields _ _ _ _ _ _).mpr
   intro j hj
   rw [lowWord_writeLow _ _ _ (by simp [advanceValues]) j (headerIndices_bound hj), h.field hj]
@@ -61,7 +61,7 @@ theorem KeyLive.scalar_fields {p : KeyPublic sampling} {original s : State} {use
   intro j hj
   rw [lowWord_writeLow _ _ _ (by simp [scalarValues]) j (headerIndices_bound hj), h.field hj]
   have sub : BitVec.ofNat 32 scalars - 1#32 = BitVec.ofNat 32 (scalars - 1) :=
-    Offset.ofNat_sub_ofNat (by omega : 1 ≤ scalars)
+    Offset.ofNat_sub_ofNat (by omega_using [positive] : 1 ≤ scalars)
   simp only [headerIndices, List.mem_cons, List.not_mem_nil, or_false] at hj
   rcases hj with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
   all_goals simp [lowValue, scalarValues, KeyPublic.field, w1, sub]
@@ -73,7 +73,7 @@ theorem KeyLive.reject_scalar {p : KeyPublic sampling} {original s : State} {use
   refine WP.mono_syms (rejectedScalar_ok s h.controller) ?_
   rintro t ⟨mem, rest⟩ syms
   refine ⟨h.update rest syms (by decide) (scalarValues s.mem p.control) (by simp [scalarValues]) (by simp [scalarValues])
-    mem h.used_le h.keys_le (by have := h.scalars_le; omega) ?_, ?_⟩
+    mem h.used_le h.keys_le (by have := h.scalars_le; omega_using [this]) ?_, ?_⟩
   · rw [mem]; exact h.scalar_fields positive
   · rw [mem, lowWord_writeLow _ _ _ (by simp [scalarValues]) 14 (by decide)]
     simp [scalarValues, lowValue]
@@ -88,7 +88,7 @@ theorem KeyLive.public_fields {p : KeyPublic sampling} {original s : State} {use
   intro j hj
   rw [lowWord_writeLow _ _ _ (by simp [publicValues]) j (headerIndices_bound hj), h.field hj]
   have sub : BitVec.ofNat 32 keys - 1#32 = BitVec.ofNat 32 (keys - 1) :=
-    Offset.ofNat_sub_ofNat (by omega : 1 ≤ keys)
+    Offset.ofNat_sub_ofNat (by omega_using [positive] : 1 ≤ keys)
   simp only [headerIndices, List.mem_cons, List.not_mem_nil, or_false] at hj
   rcases hj with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
   all_goals simp [lowValue, publicValues, KeyPublic.field, w0, sub]
@@ -100,7 +100,7 @@ theorem KeyLive.reject_public {p : KeyPublic sampling} {original s : State} {use
   refine WP.mono_syms (rejectedPublic_ok s h.controller) ?_
   rintro t ⟨mem, rest⟩ syms
   refine ⟨h.update rest syms (by decide) (publicValues s.mem p.control) (by simp [publicValues]) (by simp [publicValues])
-    mem h.used_le (by have := h.keys_le; omega) (by decide) ?_, ?_⟩
+    mem h.used_le (by have := h.keys_le; omega_using [this]) (by decide) ?_, ?_⟩
   · rw [mem]; exact h.public_fields positive
   · rw [mem, lowWord_writeLow _ _ _ (by simp [publicValues]) 14 (by decide)]
     simp [publicValues, lowValue]

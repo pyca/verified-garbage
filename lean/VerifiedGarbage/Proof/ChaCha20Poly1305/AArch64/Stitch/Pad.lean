@@ -192,7 +192,7 @@ theorem bulkPad_ok {R a : Nat} (s : State) (hp : PadPre s) (ha : Acc R a s) :
       (s.gpr .x27 + BitVec.ofNat 64 256) (16 * (1 + 5 * 3)) (16 * (2 + 5 * 2)) e := by
     refine ⟨hcp, by rw [he.x20, e0, hp.x3], fun u _ _ h27 => ?_, fun u _ _ h27 => ?_,
       fun w h20 _ => ?_, fun w h20 _ => ?_, hcp.src,
-      fun d h => hblk d (by omega), fun d h => ?_, hk _ (.inl rfl), hk _ (.inr rfl), ?_, ?_,
+      fun d h => hblk d (by omega_using [h]), fun d h => ?_, hk _ (.inl rfl), hk _ (.inr rfl), ?_, ?_,
       by decide, by decide, ?_⟩
     · rw [exec_addImm_x (by decide)]
       simp only [State.read, BitVec.setWidth_eq, h27, e27, BitVec.add_zero]
@@ -204,7 +204,7 @@ theorem bulkPad_ok {R a : Nat} (s : State) (hp : PadPre s) (ha : Acc R a s) :
     · rw [exec_subImm_x (by decide)]
       simp only [State.read, BitVec.setWidth_eq, h20, e27, show 16 * (2 + 5 * 2) = 192 from rfl]
       rw [BitVec.add_assoc, ← BitVec.ofNat_add, BitVec.add_sub_cancel]
-    · rw [BitVec.add_assoc, ← BitVec.ofNat_add]; exact hblk _ (by omega)
+    · rw [BitVec.add_assoc, ← BitVec.ofNat_add]; exact hblk _ (by omega_using [h])
     · simpa only [BitVec.add_zero] using hwin 0 256 (by decide)
     · exact hwin 256 192 (by decide)
     · intro r hr
@@ -324,7 +324,7 @@ theorem bulkPad_ok {R a : Nat} (s : State) (hp : PadPre s) (ha : Acc R a s) :
   · have hwe (d n : Nat) (h : d + n ≤ 448) :
         bytesAt e.mem (s.gpr .x27 + BitVec.ofNat 64 d) n = bytesAt s.mem (s.gpr .x27 + BitVec.ofNat 64 d) n :=
       bytesAt_frame he.frame (hdis_enter _ ((hp.win _ (by simp)).sub_left (Offset.sub_base _ h)))
-        (by omega)
+        (by omega_using [h])
     have hwe0 := hwe 0 256 (by decide)
     rw [BitVec.add_zero] at hwe0
     rw [show 16 * (1 + 5 * 3) = 256 from rfl, show 16 * (2 + 5 * 2) = 192 from rfl, hwe0,

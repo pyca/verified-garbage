@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourMath
+import VerifiedGarbage.Proof.Framework.Omega
 
 @[expose] public section
 
@@ -16,9 +17,9 @@ theorem parsed_bound {η : Nat} {L : List Zq} {X : List Byte} (hL : L.length≤2
 
 theorem take_two {X : List Byte} {done : Nat} (h : done+2≤X.length) :
     X.take (done+2)=X.take done++[X[done]!,X[done+1]!] := by
-  rw [show done+2=(done+1)+1 by omega,List.take_succ_eq_append_getElem (by omega),
-    List.take_succ_eq_append_getElem (by omega),List.append_assoc]
-  simp only [getElem!_pos X done (by omega),getElem!_pos X (done+1) (by omega)]
+  rw [show done+2=(done+1)+1 by omega_using [],List.take_succ_eq_append_getElem (by omega_using [h]),
+    List.take_succ_eq_append_getElem (by omega_using [h]),List.append_assoc]
+  simp only [getElem!_pos X done (by omega_using [h]),getElem!_pos X (done+1) (by omega_using [h])]
   rfl
 
 theorem parsed_two {η : Nat} (hη : η=2∨η=4) {L : List Zq} {X : List Byte} {done : Nat}

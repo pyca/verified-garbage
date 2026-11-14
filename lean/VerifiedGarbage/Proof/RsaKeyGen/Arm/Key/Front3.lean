@@ -78,13 +78,13 @@ theorem St.pcntDown {n : Nat} (hc : sHc ∈ LS) (hn : n + 1 < 2 ^ 32) (hv : ∀ 
       rw [u2.gpr, u1.gpr, hv σ e]
       apply BitVec.eq_of_toNat_eq
       rw [BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat, show (1 : BitVec 32).toNat = 1 from rfl]
-      omega
+      omega_using []
     refine h2.strz hw2 (by decide) fun t ht hwt zt => WP.block_nil ⟨⟨e, ?_, hwt⟩, ?_⟩
-    · rwa [e2, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)] at ht
+    · rwa [e2, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hn])] at ht
     · rw [zt, z2, u1.gpr, hv σ e, show (1 : BitVec 32) = BitVec.ofNat 32 1 from rfl,
-        BitVec.ofNat_sub_ofNat_of_le _ _ (by decide) (by omega)]
+        BitVec.ofNat_sub_ofNat_of_le _ _ (by decide) (by omega_using [])]
       rw [Bool.eq_iff_iff, beq_iff_eq, decide_eq_true_iff, ← BitVec.toNat_inj, BitVec.toNat_ofNat,
-        Nat.mod_eq_of_lt (by omega)]
+        Nat.mod_eq_of_lt (by omega_using [hn])]
       simp
 
 end
@@ -127,12 +127,12 @@ theorem halvingStart_vp {E : State → Prop} {c : Prog isa} {G : State → State
   have qm1 : ∀ σ : State, A1 P σ aQm = qm P σ := fun σ => by
     simp (config := {decide := true}) only [A1, upd, ↓reduceIte]
   have b8 : ∀ σ : State, pm P σ < 2 ^ (32 * P.W - 1) := fun σ =>
-    Nat.lt_of_lt_of_le (pm_lt P σ) (Nat.pow_le_pow_right (by decide) (by simp only [KP.W]; omega))
+    Nat.lt_of_lt_of_le (pm_lt P σ) (Nat.pow_le_pow_right (by decide) (by simp only [KP.W]; omega_using []))
   refine VP.seq (St.pmulFrom myQm_taint mxPm_taint maZero_taint fMa_taint St.pcnt8 (n := 8 * P.K)
-    (fun σ pre => by have := pre.k1; have := pre.k2; omega)
+    (fun σ pre => by have := pre.k1; have := pre.k2; omega_arith)
     (by simp) (by simp) (by simp) (by simp) (by simp) (by decide) (by decide) (by decide) (by simp)
     fun σ _ => ⟨z1 σ, by rw [z1, m1]; exact Nat.two_pow_pos _, by rw [pm1, m1]; exact b8 σ, by
-      rw [m1, Nat.mul_comm, ← Nat.pow_succ]; exact Nat.pow_le_pow_right (by decide) (by simp only [KP.W]; omega)⟩) ?_
+      rw [m1, Nat.mul_comm, ← Nat.pow_succ]; exact Nat.pow_le_pow_right (by decide) (by simp only [KP.W]; omega_using [])⟩) ?_
   refine VP.seq (St.pcopy uPm_taint (by decide) (by simp) (by decide)) ?_
   refine VP.seq (St.pcopy vQm_taint (by decide) (by simp) (by decide)) ?_
   refine VP.seq ?_ hc
@@ -141,13 +141,13 @@ theorem halvingStart_vp {E : State → Prop} {c : Prog isa} {G : State → State
   · have phi : (0 + qm P σ % 2 ^ (8 * P.K) * pm P σ) % 2 ^ (32 * P.W - 1) = pm P σ * qm P σ := by
       rw [Nat.zero_add, Nat.mod_eq_of_lt (qm_lt P σ), Nat.mul_comm]
       refine Nat.mod_eq_of_lt (Nat.lt_of_lt_of_le (phi_lt P σ) (Nat.pow_le_pow_right (by decide) ?_))
-      simp only [KP.W]; omega
+      simp only [KP.W]; omega_using []
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hj
     rcases hj with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl |
       rfl | rfl | rfl <;>
       simp (config := {decide := true}) only [AH, hk, upd, ↓reduceIte, Nat.sub_self, halveIter, pm1, qm1, z1, m1, phi]
   · simp only [List.mem_singleton] at hd; subst hd
-    rw [upd_self, upd_self, Nat.mod_eq_of_lt (by have := h.2.1.pre.k2; omega)]
+    rw [upd_self, upd_self, Nat.mod_eq_of_lt (by have := h.2.1.pre.k2; omega_using [this])]
 
 /-- One step of the halving, with `n + 1` left. -/
 theorem halfStep_vp {E : State → Prop} (n : Nat) :
@@ -169,11 +169,11 @@ theorem halfStep_vp {E : State → Prop} (n : Nat) :
     fun _ _ => by rw [upd_self]; exact b2n_le' _) ?_
   refine VP.seq (St.phalfSel tF_taint t2F_taint sF_taint (by simp) (by decide) (by decide) (by decide) (by simp)
     fun _ _ => by rw [upd_self]; exact b2n_le' _) ?_
-  refine (St.pcntDown (n := n) (by simp) (by omega) fun _ _ => by
+  refine (St.pcntDown (n := n) (by simp) (by omega_arith) fun _ _ => by
     simp (config := {decide := true}) only [upd, ↓reduceIte]).mono (fun _ _ h => h) fun σ s ⟨h, z⟩ => ?_
   have st : St P E (fun σ => AH P σ (8 * P.K - n)) LH (fun _ => upd (fun _ => 0) sHc n) [sHc] σ s := by
     refine h.mono (fun j hj => ⟨by mem_sub, ?_⟩) (fun d hd => ⟨by simp only [List.mem_singleton] at hd; simp [hd], ?_⟩)
-    · have e : 8 * P.K - n = (8 * P.K - (n + 1)) + 1 := by omega
+    · have e : 8 * P.K - n = (8 * P.K - (n + 1)) + 1 := by omega_arith
       rw [e]
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hj
       rcases hj with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl |
@@ -185,19 +185,19 @@ theorem halfStep_vp {E : State → Prop} (n : Nat) :
         unfold halveStep
         by_cases hu : u % 2 = 0 <;> by_cases hv : v % 2 = 0 <;> simp [hu, hv, b2n]
     · simp only [List.mem_singleton] at hd; subst hd; simp only [upd_self]
-  refine ⟨?_, fun h0 => ⟨?_, by omega⟩, fun hp => ⟨st, by omega⟩⟩
-  · show some (!s.z) = _; rw [z]; simp only [Option.some.injEq]; by_cases h0 : n = 0 <;> simp [h0] <;> omega
+  refine ⟨?_, fun h0 => ⟨?_, by omega_using []⟩, fun hp => ⟨st, by omega_arith⟩⟩
+  · show some (!s.z) = _; rw [z]; simp only [Option.some.injEq]; by_cases h0 : n = 0 <;> simp [h0] <;> omega_using [h0]
   · subst h0; exact st
 
 /-- `φ` and its halving. -/
 theorem halving_vp {E : State → Prop} : VP (S1 P E) halving (S2 P E) := by
-  refine VP.of_imp (p := 1 ≤ 8 * P.K) (fun _ _ h => by have := h.2.1.pre.k1; omega) fun hk => ?_
+  refine VP.of_imp (p := 1 ≤ 8 * P.K) (fun _ _ h => by have := h.2.1.pre.k1; omega_using [this]) fun hk => ?_
   have e : halving = seqs [mulFrom aF aPm aQm aZero cnt8, copy aU aPm, copy aV aQm,
       .seq (.block (cnt8 ++ [.str .r6 .r8 sHc])) (.loop halfStep .ne)] := rfl
   rw [e]
   refine halvingStart_vp ?_
   have l := VP.loop (I := fun c => IH P E c) (fun n => halfStep_vp n) (8 * P.K - 1)
-  rw [show 8 * P.K - 1 + 1 = 8 * P.K by omega] at l
+  rw [show 8 * P.K - 1 + 1 = 8 * P.K by omega_using [hk]] at l
   refine l.mono (fun _ _ h => h) fun σ s h => ?_
   exact h.1.mono (fun j hj => ⟨hj, by rw [Nat.sub_zero]⟩) (fun d hd => absurd hd (by simp))
 

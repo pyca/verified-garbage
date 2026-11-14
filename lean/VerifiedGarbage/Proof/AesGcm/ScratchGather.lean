@@ -6,6 +6,7 @@ import VerifiedGarbage.Proof.AesGcm.ScratchP
 import VerifiedGarbage.Proof.Framework.Scratch
 public import VerifiedGarbage.Spec.Gcm.OutOfPlace
 import VerifiedGarbage.Proof.AesGcm.Scratch
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # AES-GCM one-shot encryption out of place, from a list of slices: the conditions read only the buffers
@@ -147,11 +148,11 @@ theorem post_local {cl : Nat} (hcl : 256 ≤ cl) {m₁ m₂ m' : Mem}
   have := Nat.mod_le cnt.toNat (2 ^ pb)
   have := Nat.mod_le nl.toNat (2 ^ pb)
   have := Nat.mod_le al.toNat (2 ^ pb)
-  have hle : (cnt.setWidth pb).toNat ≤ cnt.toNat := by rw [BitVec.toNat_setWidth]; omega
+  have hle : (cnt.setWidth pb).toNat ≤ cnt.toNat := by rw [BitVec.toNat_setWidth]; omega_arith
   rw [gatheredLen_congr_le hle hl] at hg
-  rw [ctxCiph_congr (le15 hr) fun i hi => hc i (by omega), ctxH_congr fun i hi => hc i (by omega),
-    bytesAt_congr (n := (nl.setWidth pb).toNat) fun i hi => hn i (by rw [BitVec.toNat_setWidth] at hi; omega),
-    bytesAt_congr (n := (al.setWidth pb).toNat) fun i hi => ha i (by rw [BitVec.toNat_setWidth] at hi; omega),
+  rw [ctxCiph_congr (le15 hr) fun i hi => hc i (by omega_using [hcl, hi]), ctxH_congr fun i hi => hc i (by omega_using [hcl, hi]),
+    bytesAt_congr (n := (nl.setWidth pb).toNat) fun i hi => hn i (by rw [BitVec.toNat_setWidth] at hi; omega_arith),
+    bytesAt_congr (n := (al.setWidth pb).toNat) fun i hi => ha i (by rw [BitVec.toNat_setWidth] at hi; omega_using [this, hi]),
     gathered_congr_le hle hl]
   exact h hr hg
 

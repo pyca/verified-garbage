@@ -26,9 +26,9 @@ theorem exponentAdvance_ok (s : State) {c : Nat} (hc : 0 < c) (hc' : c < 2 ^ 32)
   have value : u.gpr .lr - (1 : BitVec 32) = BitVec.ofNat 32 (c - 1) := by
     rw [a.other .lr (by decide), count]
     change BitVec.ofNat 32 c - BitVec.ofNat 32 1 = _
-    exact BitVec.ofNat_sub_ofNat_of_le _ _ (by decide) (by omega)
+    exact BitVec.ofNat_sub_ofNat_of_le _ _ (by decide) (by omega_using [hc])
   exact ⟨by rw [b.other .r1 (by decide), a.gpr]; rfl, b.gpr.trans value,
-    by rw [zero, value, ofNat_beq_zero (by omega)]; exact decide_eq_decide.mpr (by omega),
+    by rw [zero, value, ofNat_beq_zero (by omega_using [hc'])]; exact decide_eq_decide.mpr (by omega_using [hc]),
     b.mem.trans a.mem, (a.rest (by decide)).trans (b.rest (by decide))⟩
 
 theorem exponentByte_ok (s : State) {p : BitVec 32} {x c : Nat} {b : Byte}

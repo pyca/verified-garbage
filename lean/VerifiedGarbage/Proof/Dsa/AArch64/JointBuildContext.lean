@@ -31,9 +31,9 @@ theorem joint_arrays_entry {P : Addr} {w j : Nat} {xs : List Nat} {m m' : Mem}
   · intro k hk
     right
     have h1 := slot_le (w := w) (hxs k hk)
-    have h2 := slot_mono w (show 8 ≤ 8 + j by omega)
-    omega
-  · have := ent_le w hj; omega
+    have h2 := slot_mono w (show 8 ≤ 8 + j by omega_using [])
+    omega_using [h1, h2]
+  · have := ent_le w hj; omega_using [hn, this]
 
 /-- Copying a base array keeps the modulus, header, table, and other arrays. -/
 theorem jointCopy_ok {t : State} {P : Addr} {w n : Nat} {minv : BitVec 64}
@@ -42,16 +42,16 @@ theorem jointCopy_ok {t : State} {P : Addr} {w n : Nat} {minv : BitVec 64}
     WP isa (seqs (Crt.copyArr o a)) t fun u => JointCtx u P w n minv ∧
       wv u.mem P (slot w o) w = wv t.mem P (slot w a) w ∧
       Arrays P w [o] t.mem u.mem ∧ Keep mmRegs t u := by
-  refine WP.mono (copyArr_ok hc.mod.good (Nat.le_refl _) (by omega) (by omega) ho ha hoa)
+  refine WP.mono (copyArr_ok hc.mod.good (Nat.le_refl _) (by omega_using [hw]) (by omega_using [hw']) ho ha hoa)
     fun u ⟨hv, hf, hk⟩ => ?_
   have hfa : Arrays P w [o] t.mem u.mem := Arrays.of_outside (List.mem_singleton_self o) hf
-    (Nat.le_refl _) (by omega)
+    (Nat.le_refl _) (by omega_using [])
   have hn := hc.mod.good.scr.nowrap
   have hg : Good u P (slot w 8) w minv := ⟨hc.mod.good.scr.congr hk.wr,
     (hk.gpr .x0 (by decide)).trans hc.mod.good.x0, hfa.hdr hc.mod.good.hdr⟩
   refine ⟨⟨⟨hg, ?_, ?_⟩, hc.scrT.congr hk.wr⟩, hv, hfa, hk⟩
   · exact (hfa.wv_of_not_mem (by decide) (by simpa using Ne.symm hon) hn).trans hc.mod.modulus
-  · rw [hfa.word0_of_not_mem (by decide) (by simpa using Ne.symm hon) hn (by omega)]
+  · rw [hfa.word0_of_not_mem (by decide) (by simpa using Ne.symm hon) hn (by omega_using [hw])]
     exact hc.mod.inverse
 
 /-- A selected-backend product also preserves the complete table. -/
@@ -63,7 +63,7 @@ theorem jointProduct_ok (M : Mont) {t : State} {P : Addr} {w n : Nat} {minv : Bi
       wv u.mem P (slot w o) w * 2 ^ (64 * w) % n =
         wv t.mem P (slot w a) w * wv t.mem P (slot w b) w % n ∧
       Arrays P w [aAcc, aTmp, o] t.mem u.mem ∧ Keep mmRegs t u :=
-  WP.mono (mont_step M hc.mod (Nat.le_refl _) hw (by omega) huse hb)
+  WP.mono (mont_step M hc.mod (Nat.le_refl _) hw (by omega_using [hw']) huse hb)
     fun u ⟨hc', hl, hv, hf, hk⟩ => ⟨⟨hc', hc.scrT.congr hk.wr⟩, hl, hv, hf, hk⟩
 
 end VG.Proof.Dsa.AArch64

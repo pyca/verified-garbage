@@ -108,8 +108,8 @@ theorem scan_ok {H : Hash} {D : Nat} (hD : H.D = D) (hD64 : D ≤ 64) (hk : 2 * 
   subst hD
   unfold scan tArgs
   simp only [List.cons_append, List.nil_append]
-  refine WP.seq (wp_addi (imm := oEm + 1 + 2 * H.D) (h := by unfold oEm; omega) fun t₁ o₁ e₁ =>
-    wp_subi (imm := 2 * H.D + 1) (h := by omega) fun t₂ o₂ e₂ =>
+  refine WP.seq (wp_addi (imm := oEm + 1 + 2 * H.D) (h := by unfold oEm; omega_using [hD64]) fun t₁ o₁ e₁ =>
+    wp_subi (imm := 2 * H.D + 1) (h := by omega_using [hD64]) fun t₂ o₂ e₂ =>
     wp_li (imm := 0) (by decide) fun t₃ o₃ e₃ => wp_li (imm := 0) (by decide) fun t₄ o₄ e₄ =>
     wp_subi (imm := 1) fun t₅ o₅ e₅ => wp_li (imm := 0) (by decide) fun t₆ o₆ e₆ => wp_nil ?_)
   have k₆ : Only [.a1, .a2, .a3, .a4, .s6] t t₆ := (o₁.trans (o₂.trans (o₃.trans (o₄.trans (o₅.trans o₆))))).mono
@@ -123,15 +123,15 @@ theorem scan_ok {H : Hash} {D : Nat} (hD : H.D = D) (hD64 : D ≤ 64) (hk : 2 * 
     · rw [o₆.get .a4, e₅, e₄]; rfl
     · rw [e₆]; rfl
     · rw [k₆.get .s5]; rfl
-  refine WP.seq (WP.mono (wp_countdown (cnt := .a2) (N := kk s - (2 * H.D + 1)) (by omega) (by omega)
+  refine WP.seq (WP.mono (wp_countdown (cnt := .a2) (N := kk s - (2 * H.D + 1)) (by omega_using [ek]) (by omega_using [hk])
     (fun i u => ScanI f (t.gpr .s5) (off (Sd s) (1 + 2 * H.D)) i u ∧
       Only [.t3, .a1, .a2, .a3, .a4, .t1, .t2, .a7, .s5, .s6] t₆ u) ?_
     ⟨I0, Only.refl _ _⟩ (by rw [o₆.get .a2, o₅.get .a2, o₄.get .a2, o₃.get .a2, e₂, o₁.get .s1, Base.dk h,
-      sub_k (by omega)])) fun u ⟨I, o⟩ => ?_)
+      sub_k (by omega_using [ek, hk])])) fun u ⟨I, o⟩ => ?_)
   · intro i hi u ⟨I, o⟩ _
     simp only [scanBody, List.cons_append, List.nil_append]
     refine wp_lbu (a := off (Sd s) (1 + 2 * H.D + i)) (by rw [I.a1, BitVec.add_zero, off_off])
-      (by rw [o.rd, o.wr, k₆.rd, k₆.wr, h.wr]; exact sc_inR PF (by omega) _) fun u₁ p₁ f₁ => ?_
+      (by rw [o.rd, o.wr, k₆.rd, k₆.wr, h.wr]; exact sc_inR PF (by omega_using [hRs, hk2, ek, hi]) _) fun u₁ p₁ f₁ => ?_
     refine wp_subi (imm := 1) fun u₂ p₂ f₂ => wp_srl fun u₃ p₃ f₃ => wp_li (imm := 1) (by decide) fun u₄ p₄ f₄ =>
       wp_xor fun u₅ p₅ f₅ => wp_subi (imm := 1) fun u₆ p₆ f₆ => wp_srl fun u₇ p₇ f₇ => wp_or fun u₈ p₈ f₈ =>
       wp_subi (imm := 1) fun u₉ p₉ f₉ => wp_and fun u₁₀ p₁₀ f₁₀ => wp_or fun u₁₁ p₁₁ f₁₁ =>

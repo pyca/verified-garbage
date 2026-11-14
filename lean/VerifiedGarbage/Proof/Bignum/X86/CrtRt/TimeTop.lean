@@ -113,7 +113,7 @@ end
 theorem args_apart {s : State} (A : TopABI s) {r : Region}
     (hret : Region.Disjoint ⟨(s.gpr .esp).setWidth 64, 4⟩ r) (hargs : Region.Disjoint ⟨argAddr s 0, 72⟩ r) :
     Region.Disjoint ⟨(s.gpr .esp).setWidth 64, 76⟩ r :=
-  VG.X86.Taint.frame_disjoint (n := 72) (by have := A.abi.stackBound; omega) hret hargs
+  VG.X86.Taint.frame_disjoint (n := 72) (by have := A.abi.stackBound; omega_using [this]) hret hargs
 
 theorem operation_trace {s t : State} (A : TopABI s) (B : TopABI t)
     (args : ∀ i < 18, arg s i = arg t i) (SP : s.gpr .esp = t.gpr .esp)
@@ -159,8 +159,8 @@ theorem operation_trace {s t : State} (A : TopABI s) (B : TopABI t)
           have D := args_apart B B.abi.retScratch B.abi.scratchArgs.symm
           simp only [argumentPointer, ← A8, ← A9, ← SP] at D
           exact D
-      have Ns := scratch_bytes Os (by have := A.abi.lengths.2; omega) (Is.apart 2 (by decide))
-      have Nt := scratch_bytes Ov (by have := A.abi.lengths.2; omega) (Iv.apart 2 (by decide))
+      have Ns := scratch_bytes Os (by have := A.abi.lengths.2; omega_using []) (Is.apart 2 (by decide))
+      have Nt := scratch_bytes Ov (by have := A.abi.lengths.2; omega_using []) (Iv.apart 2 (by decide))
       have NN : Spec.Rsa.bytesAt u.mem (byteAddr (arg s 2)) (arg s 3).toNat =
           Spec.Rsa.bytesAt v.mem (byteAddr (arg s 2)) (arg s 3).toNat := by
         rw [Ns, Nt]

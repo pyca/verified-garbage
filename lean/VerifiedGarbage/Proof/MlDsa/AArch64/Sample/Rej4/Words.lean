@@ -25,7 +25,7 @@ def PartAt (m : Mem) (p : Addr) (src : Mem) (a b : Addr) (n : Nat) : Prop :=
     if i < n then ofVDwords (src.readW (seedAddr a i) 64) (src.readW (seedAddr b i) 64) else 0
 
 theorem seed_contains (p : Addr) {j : Nat} (hj : j < 4) :
-    (seedR p).Contains (seedAddr p j) 8 := Offset.contains_base p (by omega) (by omega)
+    (seedR p).Contains (seedAddr p j) 8 := Offset.contains_base p (by omega_using [hj]) (by omega_using [hj])
 
 /-- Absorb the first 32 bytes of both seeds into corresponding packed lanes. -/
 theorem seedWords_ok {s : State} {p a b : Addr}
@@ -54,16 +54,16 @@ theorem seedWords_ok {s : State} {p a b : Addr}
     (t.mem.readW (seedAddr a k) 64) (t.mem.readW (seedAddr b k) 64)) at hm
   rw [hra,hrb] at hm
   refine ⟨(ht.trans hu).mono (by simp),?_,?_⟩
-  · rw [hm]; exact hf.write (List.mem_singleton_self _) _ (pair_contains p (by omega))
+  · rw [hm]; exact hf.write (List.mem_singleton_self _) _ (pair_contains p (by omega_using [hk]))
   · intro i hi
     rw [hm]
     by_cases he : i = k
     · subst i
-      rw [read_write16,ite_eq_left (by omega)]
+      rw [read_write16,ite_eq_left (by omega_using [])]
     · have hs : Mem.Sep (wordAddr p i) 16 (wordAddr p k) 16 :=
-        Offset.sep p (d := 16*i) (e := 16*k) (n := 16) (k := 16) (by omega) (by omega) (by omega)
+        Offset.sep p (d := 16*i) (e := 16*k) (n := 16) (k := 16) (by omega_using [he]) (by omega_using [hi]) (by omega_using [hk])
       rw [Mem.read_write_sep hs (by decide),hvals i hi]
       by_cases hl : i < k
-      · rw [ite_eq_left hl,ite_eq_left (by omega)]
-      · rw [ite_eq_right hl,ite_eq_right (by omega)]
+      · rw [ite_eq_left hl,ite_eq_left (by omega_using [hl])]
+      · rw [ite_eq_right hl,ite_eq_right (by omega_using [he, hl])]
 end VG.Proof.MlDsa.AArch64.Sample.Rej4

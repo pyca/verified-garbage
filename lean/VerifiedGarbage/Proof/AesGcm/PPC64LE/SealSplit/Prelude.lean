@@ -105,7 +105,7 @@ theorem ok (s : State) (cfg : Config s) :
   refine WP.mono (save_ok (headState s) (by
     intro p hp
     have ho : ∀ p ∈ sourceSaved, p.2+8≤2560 := by decide
-    exact cfg.workCovers _ _ ⟨_,List.mem_singleton_self _,Offset.contains_base _ (ho p hp) (by have := ho p hp; omega)⟩))
+    exact cfg.workCovers _ _ ⟨_,List.mem_singleton_self _,Offset.contains_base _ (ho p hp) (by have := ho p hp; omega_using [this])⟩))
     fun u hu => ?_
   subst u
   exact config_ok _ (fun off ho => cfg.reads off (by

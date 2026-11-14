@@ -69,9 +69,9 @@ theorem foBlk_ok {s : State} (h : Inv s₀ s) :
   have r7 : s₅.gpr .r7 = scrP s₀ := by
     rw [u₅.gpr, u₄.other _ (by decide), u₃.other _ (by decide), u₂.other _ (by decide), u₁.other _ (by decide),
       h.r31]; simp
-  refine ⟨⟨i₅, r7, ⟨memR s₀, by simp, 0, by rw [si]; simp, by rw [ax]; show 0 + 1024 ≤ blocksN s₀ * 1024; omega⟩,
-    ⟨outR s₀, by simp, 0, by rw [di]; simp, by rw [cx]; show 0 + outL s₀ ≤ outL s₀; omega⟩,
-    by rw [ax]; decide, by rw [cx]; exact ⟨by show 1 ≤ outL s₀; omega, tl⟩⟩, si, ax, di, cx⟩
+  refine ⟨⟨i₅, r7, ⟨memR s₀, by simp, 0, by rw [si]; simp, by rw [ax]; show 0 + 1024 ≤ blocksN s₀ * 1024; omega_using [b1]⟩,
+    ⟨outR s₀, by simp, 0, by rw [di]; simp, by rw [cx]; show 0 + outL s₀ ≤ outL s₀; omega_using []⟩,
+    by rw [ax]; decide, by rw [cx]; exact ⟨by show 1 ≤ outL s₀; omega_using [tg], tl⟩⟩, si, ax, di, cx⟩
 
 end
 
@@ -93,7 +93,7 @@ theorem reduce_rel {M₁ M₂ : Array Block} :
   have hN₂ : lanesN s₀₂ = N := by rw [← le, hN]
   refine (RelCT.loop (Q := fun _ _ => True) (fun n s₁ s₂ => ∃ l, n = N - l ∧ l < N ∧
       RI s₀₁ M₁ l s₁ ∧ RI s₀₂ M₂ l s₂) ?step N).mono (fun s₁ s₂ h => ?init) fun _ _ h => h
-  case init => exact ⟨0, by omega, hl1, h.1, h.2⟩
+  case init => exact ⟨0, by omega_using [], hl1, h.1, h.2⟩
   intro n s₁ s₂ t₁ t₂ s₁' s₂' ⟨l, hn, hl, g₁, g₂⟩ e₁ e₂
   have body : RelCT isa (fun s₁ s₂ => RI s₀₁ M₁ l s₁ ∧ RI s₀₂ M₂ l s₂)
       (.block (Impl.Argon2.PPC64LE.Derive.reduceLane ++ Impl.Argon2.PPC64LE.Derive.advanceBy laneOff
@@ -109,7 +109,7 @@ theorem reduce_rel {M₁ M₂ : Array Block} :
   refine ⟨ht, c₁.trans c₂.symm, fun _ => trivial, fun hc => ?_⟩
   have e₀ : some (!decide (l + 1 = N)) = some true := c₁.symm.trans hc
   have e : l + 1 ≠ N := by simpa using e₀
-  exact ⟨N - (l + 1), by omega, l + 1, rfl, by omega, k₁, k₂⟩
+  exact ⟨N - (l + 1), by omega_using [hn, hl], l + 1, rfl, by omega_using [hl, e], k₁, k₂⟩
 
 /-- `finalOutput` leaks the same trace in two runs. -/
 theorem finalOutput_rel :

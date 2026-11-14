@@ -1,6 +1,7 @@
 module
 
 import VerifiedGarbage.Proof.Framework.PowLit
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # Bit `j` of a byte, as code extracts it
@@ -21,10 +22,10 @@ theorem bitByte (w : Nat) (hw : 8 ≤ w) (b : BitVec 8) (j : Nat) :
   have h8 : 2 ^ 8 ≤ 2 ^ w := Nat.pow_le_pow_right (by decide) hw
   have hb := b.isLt
   have h1 : (1 : BitVec w).toNat = 1 := by
-    show (BitVec.ofNat w 1).toNat = 1; rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt (by omega)
+    show (BitVec.ofNat w 1).toNat = 1; rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt (by omega_using [h8])
   simp only [BitVec.toNat_setWidth, BitVec.toNat_and, BitVec.toNat_ushiftRight, h1, BitVec.toNat_ofNat,
     Nat.and_one_is_mod]
-  rw [Nat.mod_eq_of_lt (by omega : b.toNat < 2 ^ w)]
+  rw [Nat.mod_eq_of_lt (by omega_using [h8] : b.toNat < 2 ^ w)]
 
 theorem ofNat_bit (b : BitVec 8) (j : Nat) :
     BitVec.ofNat 8 ((b.toNat >>> j) &&& 1) = if b.getLsbD j then 1 else 0 := by

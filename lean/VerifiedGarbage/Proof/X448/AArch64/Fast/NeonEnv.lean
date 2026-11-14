@@ -30,11 +30,11 @@ theorem mul2_word {m m' : Mem} {base : Addr} {o₁ o₂ : Nat}
     (h1 : d + 8 ≤ o₁ ∨ o₁ + 64 ≤ d) (h2 : d + 8 ≤ o₂ ∨ o₂ + 64 ≤ d) (h3 : d + 8 ≤ NA) :
     word m' base d = word m base d := by
   have hNA : NA = 4096 := rfl
-  exact (Mem.readW_congr fun i hi => (hF _ (by rw [ofs_off base (by omega)]; omega)
-    (by rw [ofs_off base (by omega)]; omega) (by rw [ofs_off base (by omega)]; omega)).symm).symm
+  exact (Mem.readW_congr fun i hi => (hF _ (by rw [ofs_off base (by omega_using [h3, hNA, hi])]; omega_using [h1, hi])
+    (by rw [ofs_off base (by omega_using [h3, hNA, hi])]; omega_using [h2, hi]) (by rw [ofs_off base (by omega_using [h3, hNA, hi])]; omega_using [h3, hi])).symm).symm
 
 theorem slot_neon (i : Index) : slot i.val % 16 = 0 ∧ slot i.val + 64 ≤ NA := by
-  have := i.isLt; have hNA : NA = 4096 := rfl; simp only [slot]; omega
+  have := i.isLt; have hNA : NA = 4096 := rfl; simp only [slot]; omega_using [hNA]
 
 theorem mul2E {s : State} {base : Addr} (hs : Scr s base) (hb : BEnv s.mem base) (o₁ a₁ b₁ o₂ a₂ b₂ : Index)
     (h12 : o₁ ≠ o₂) :
@@ -52,11 +52,11 @@ theorem mul2E {s : State} {base : Addr} (hs : Scr s base) (hb : BEnv s.mem base)
     have n1 : i ≠ o₁ := fun e => hi (by simp [e])
     have n2 : i ≠ o₂ := fun e => hi (by simp [e])
     have := slot_sep64 n1; have := slot_sep64 n2; have := (slot_neon i).2
-    exact congrArg BitVec.toNat (mul2_word fr (by omega) (by omega) (by omega))
+    exact congrArg BitVec.toNat (mul2_word fr (by omega_arith) (by omega_arith) (by omega_using [hj, this]))
   refine ⟨⟨⟨fun r _ => congrFun g r, r, w⟩, fun p hp hq => fr p ?_ ?_ ?_⟩, fun i => ?_, m1, m2, same, ?_⟩
-  · have := o₁.isLt; simp only [slot]; omega
-  · have := o₂.isLt; simp only [slot]; omega
-  · omega
+  · have := o₁.isLt; simp only [slot]; omega_using [hp]
+  · have := o₂.isLt; simp only [slot]; omega_using [hp]
+  · omega_using [hNA, hACC, hq]
   · by_cases e1 : i = o₁
     · subst e1; exact fun j hj => Nat.lt_of_lt_of_le (m1 j hj) VG.Proof.Curve448.AArch64.Fast.Mb_le_Ib
     by_cases e2 : i = o₂

@@ -24,7 +24,7 @@ theorem keygen_q_valid {extra : Nat} {s : State} (h : GenerateKeyABI extra s) (h
   simp only [Bool.and_eq_true, decide_eq_true_eq] at hc
   have hb := (VG.Proof.Dsa.supported_bounds hc.2.1).2.1
   rw [keygen_q_decode]
-  omega
+  omega_using [hb]
 
 /-- The sampler's draw, from the start of the tape. -/
 abbrev keygenDraw (s : State) : Spec.Dsa.Random.Sample :=
@@ -62,12 +62,12 @@ theorem KeygenState.of_ready {extra : Nat} {s t u : State} {h : GenerateKeyABI e
     KeygenState h used u := by
   have fits : ∀ r ∈ randomWriteRanges, r.1 + r.2 ≤ Random.frameBytes := by decide
   have hf : InScr (randomBase s) Random.frameBytes t.mem u.mem := InScr.of_frm hr.frame fits
-  refine ⟨hr.scr, hr.sp, ht.saved.congr fun d _ hd => hr.frame.word_eq ?_ (by omega), hr.usedWord,
+  refine ⟨hr.scr, hr.sp, ht.saved.congr fun d _ hd => hr.frame.word_eq ?_ (by omega_using [hd]), hr.usedWord,
     hk.2.1.trans ht.rd, hk.2.2.trans ht.wr, ht.params.congrK hf hk, ht.rand.congrK hf hk,
     fun r hc hn => (hk.gpr (random_saved_not_volatile hc)).trans (ht.callee r hc hn), hmx.trans ht.mxcsr⟩
   intro r hm
   simp only [randomWriteRanges, List.mem_cons, List.not_mem_nil, or_false] at hm
-  rcases hm with rfl | rfl <;> dsimp only <;> omega
+  rcases hm with rfl | rfl <;> dsimp only <;> omega_using [hd]
 
 theorem keygen_prepare {extra : Nat} {s t : State} {h : GenerateKeyABI extra s}
     (ht : KeygenState h 0 t) (hQ : word t.mem (randomBase s) Random.oQ = s.gpr .rcx + s.gpr .r9)

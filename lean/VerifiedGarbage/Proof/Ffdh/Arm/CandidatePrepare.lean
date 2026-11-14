@@ -46,7 +46,7 @@ theorem candidatePrepareChoice_ok (s : State) {base src : BitVec 32} {len k : Na
       rw [BitVec.toNat_and,BitVec.toNat_ofNat]
       change (k % 2^32) &&& (2^3-1) = _
       rw [Nat.and_two_pow_sub_one_eq_mod]
-      omega
+      omega_using []
     apply Bool.eq_iff_iff.mpr
     simp only [beq_iff_eq, decide_eq_true_eq]
     constructor

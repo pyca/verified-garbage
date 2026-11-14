@@ -27,11 +27,11 @@ structure PolicyRecordAt (B rec : Addr) (g : Policy.Group) (s : State) : Prop wh
 
 theorem PolicyRecordAt.separate {B rec : Addr} {g : Policy.Group} {s : State}
  (h : PolicyRecordAt B rec g s) : ∀ b<4,8*sBits+8≤ofs B (rec+BitVec.ofNat 64 b) :=
- fun b hb => h.outside b (by omega)
+ fun b hb => h.outside b (by omega_using [hb])
 
 theorem policyDomain_length (g : Policy.Group) : g.domain.length=3*g.len := by
  simp only [Policy.Group.domain,List.length_append,VG.Proof.Rsa.i2osp_length]
- omega
+ omega_using []
 
 theorem PolicyRecordAt.after_mem {B rec : Addr} {g : Policy.Group} {s t : State} {rs : List Reg}
  (h : PolicyRecordAt B rec g s) (mem : t.mem=s.mem) (rest : Keep rs s t) : PolicyRecordAt B rec g t :=
@@ -47,7 +47,7 @@ theorem sub_zero_iff {a b : Nat} (ha : a<2^64) (hb : b<2^64) :
  · intro eq
    have number := congrArg BitVec.toNat eq
    simp only [BitVec.toNat_sub,BitVec.toNat_ofNat,Nat.mod_eq_of_lt ha,Nat.mod_eq_of_lt hb] at number
-   omega
+   omega_using [ha, hb, number]
  · rintro rfl
    exact BitVec.sub_self _
 

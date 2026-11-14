@@ -49,10 +49,10 @@ theorem stepPre_ok {s : State} {base : Addr} (hs : Scr s base) {t : Nat} (ht : t
     have e1 : (1 : BitVec 32).signExtend 64 = BitVec.ofNat 64 1 := by decide
     rw [hb, e1, BitVec.ofNat_add, BitVec.add_sub_cancel]
   have hin : InRegions (s.rd ++ s.wr) (off base (BITS + t)) 1 :=
-    ⟨_, List.mem_append_right _ hs.wr, contains_sc (by simp only [BITS]; omega)⟩
-  have hw : InRegions s.wr (off base SWAP) 8 := ⟨_, hs.wr, contains_sc (by simp only [SWAP]; omega)⟩
+    ⟨_, List.mem_append_right _ hs.wr, contains_sc (by simp only [BITS]; omega_using [ht])⟩
+  have hw : InRegions s.wr (off base SWAP) 8 := ⟨_, hs.wr, contains_sc (by simp only [SWAP]; omega_using [])⟩
   have hr : InRegions (s.rd ++ s.wr) (off base SWAP) 8 :=
-    ⟨_, List.mem_append_right _ hs.wr, contains_sc (by simp only [SWAP]; omega)⟩
+    ⟨_, List.mem_append_right _ hs.wr, contains_sc (by simp only [SWAP]; omega_using [])⟩
   apply WP.of_runBlock
   simp only [stepPre, runBlock_cons, runStep_some, exec, readSrc, execAlu, State.load8,
     RegUpd.rd_setReg, RegUpd.wr_setReg, RegUpd.mem_setReg, RegUpd.rd_arithFlags,
@@ -69,7 +69,7 @@ theorem stepPre_ok {s : State} {base : Addr} (hs : Scr s base) {t : Nat} (ht : t
     exists_eq_left', State.setReg32]
   have e0 : BitVec.setWidth 64 (0 : BitVec 32) = 0 := rfl
   have ek : BitVec.setWidth 64 (BitVec.ofNat 8 kt) = BitVec.ofNat 64 kt := by
-    rcases (by omega : kt = 0 ∨ kt = 1) with rfl | rfl <;> rfl
+    rcases (by omega_using [hk] : kt = 0 ∨ kt = 1) with rfl | rfl <;> rfl
   refine ⟨trivial, by rw [e0]; exact mask_xor sw0 hsw kt hk, fun r hr => ?_, trivial, trivial,
     by rw [ek], rfl, rfl⟩
   simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
@@ -92,10 +92,10 @@ theorem bitCmp_ok {s : State} {base : Addr} (hs : Scr s base) {t : Nat} (ht : t 
     have e1 : (1 : BitVec 32).signExtend 64 = BitVec.ofNat 64 1 := by decide
     rw [hb, e1, BitVec.ofNat_add, BitVec.add_sub_cancel]
   have hin : InRegions (s.rd ++ s.wr) (off base (BITS + t)) 1 :=
-    ⟨_, List.mem_append_right _ hs.wr, contains_sc (by simp only [BITS]; omega)⟩
-  have hw : InRegions s.wr (off base SWAP) 8 := ⟨_, hs.wr, contains_sc (by simp only [SWAP]; omega)⟩
+    ⟨_, List.mem_append_right _ hs.wr, contains_sc (by simp only [BITS]; omega_using [ht])⟩
+  have hw : InRegions s.wr (off base SWAP) 8 := ⟨_, hs.wr, contains_sc (by simp only [SWAP]; omega_using [])⟩
   have hr : InRegions (s.rd ++ s.wr) (off base SWAP) 8 :=
-    ⟨_, List.mem_append_right _ hs.wr, contains_sc (by simp only [SWAP]; omega)⟩
+    ⟨_, List.mem_append_right _ hs.wr, contains_sc (by simp only [SWAP]; omega_using [])⟩
   apply WP.of_runBlock
   simp only [bitCmp, runBlock_cons, runStep_some, exec, readSrc, execAlu, State.load8,
     RegUpd.rd_setReg, RegUpd.wr_setReg, RegUpd.mem_setReg, RegUpd.rd_arithFlags,
@@ -111,7 +111,7 @@ theorem bitCmp_ok {s : State} {base : Addr} (hs : Scr s base) {t : Nat} (ht : t 
     hswap', ite_true, ite_false, reduceCtorEq, Option.map_some, Option.bind_some,
     Option.some.injEq, exists_eq_left']
   have ek : BitVec.setWidth 64 (BitVec.ofNat 8 kt) = BitVec.ofNat 64 kt := by
-    rcases (by omega : kt = 0 ∨ kt = 1) with rfl | rfl <;> rfl
+    rcases (by omega_using [hk] : kt = 0 ∨ kt = 1) with rfl | rfl <;> rfl
   refine ⟨trivial, by rw [cmp_eq kt hk sw0 hsw], fun r hr => ?_, trivial, trivial, by rw [ek]⟩
   simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
   simp only [hr.1, hr.2, ite_false]
@@ -294,7 +294,7 @@ theorem cmp3_eq (n : Nat) (hn : n < 255) :
     rw [BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat] at h2
     have h0 : (0 : BitVec 64).toNat = 0 := rfl
     rw [h0] at h2
-    omega
+    omega_using [hn, h, h2]
 
 /-- The slots of the ladder's variables after an iteration (with the word
 `swap`, slot 20, written in between) are those of `ladderStep`: whichever point
@@ -313,8 +313,8 @@ theorem stepEnv_eval (e : Env) (st : Spec.X25519.Ladder) (k : Nat) (u : Spec.X25
       (Spec.X25519.ladderStep k u st t).z3 := by
   have hb := bit_le k t
   rw [ladderStep_eq]
-  rcases (by omega : st.swap = 0 ∨ st.swap = 1) with hs | hs <;>
-    rcases (by omega : bit k t = 0 ∨ bit k t = 1) with hk | hk <;>
+  rcases (by omega_using [hsw] : st.swap = 0 ∨ st.swap = 1) with hs | hs <;>
+    rcases (by omega_using [hb] : bit k t = 0 ∨ bit k t = 1) with hk | hk <;>
     simp only [hs, hk, env1, env2, opMul, opAdd, opSub, opA24Add, opMux, Function.update_apply,
       Spec.X25519.cswap, h2, h3, h4, h5, h6, ↓reduceIte, decide_true, decide_false,
       Fin.reduceEq, Nat.reduceXor, reduceCtorEq] <;>
@@ -333,22 +333,22 @@ theorem step_ok {s₀ s : State} {base : Addr} {k : Nat} {u : Spec.X25519.Fe} {n
   have hs1 := K1.scr hs
   have hbit : s1.mem (off base (BITS + n)) = BitVec.ofNat 8 (bit k n) := by
     have hx : ofs base (off base (BITS + n)) = BITS + n :=
-      ofs_off' base (by simp only [BITS]; omega)
-    rw [K1.mem _ (by rw [hx]; simp only [BITS]; omega),
-      hi.mem _ (by rw [hx]; simp only [BITS]; omega)]
+      ofs_off' base (by simp only [BITS]; omega_using [hn])
+    rw [K1.mem _ (by rw [hx]; simp only [BITS]; omega_using []),
+      hi.mem _ (by rw [hx]; simp only [BITS]; omega_using [])]
     exact hbits n hn
   have hswap : word s1.mem base SWAP = BitVec.ofNat 64 (ladderAfter k u (n + 1)).swap := by
-    rw [K1.mem.word (by simp only [SWAP]; omega) (by simp only [SWAP]; omega)]; exact hi.swap
-  have hsw := ladderAfter_swap_le k u (n := n + 1) (by omega)
+    rw [K1.mem.word (by simp only [SWAP]; omega_using []) (by simp only [SWAP]; omega_using [])]; exact hi.swap
+  have hsw := ladderAfter_swap_le k u (n := n + 1) (by omega_using [hn])
   rw [WP.block_append_iff]
   refine WP.mono (bitCmp_ok hs1 hn ((K1.gpr _ (by decide)).trans hi.rbx)
-    (by have := bit_le k n; omega) (by omega) hbit hswap)
+    (by have := bit_le k n; omega_using [this]) (by omega_using [hsw]) hbit hswap)
     fun s2 ⟨b2, z2, g2, rd2, wr2, mem2⟩ => ?_
   have hs2 : Scr s2 base := ⟨(g2 _ (by decide)).trans hs1.rdi, wr2 ▸ hs1.wr, hs1.nowrap⟩
   have o8 : Outside base 640 8 s1.mem s2.mem := by
-    rw [mem2]; exact writeW_outside _ _ _ (by omega)
+    rw [mem2]; exact writeW_outside _ _ _ (by omega_using [])
   have e2 : E s2.mem base = Function.update (E s1.mem base) 20 (F s2.mem base (32 * 20)) :=
-    E_update (o := 20) (o8.mono (by omega) (by omega))
+    E_update (o := 20) (o8.mono (by omega_using []) (by omega_using []))
   rw [WP.block_append_iff]
   refine WP.mono (ops2_ok hf hs2 z2) fun s3 ⟨K3, e3, bz2, bz3⟩ => ?_
   have hs3 := K3.scr hs2
@@ -369,9 +369,9 @@ theorem step_ok {s₀ s : State} {base : Addr} {k : Nat} {u : Spec.X25519.Fe} {n
   · rw [RegUpd.rd_arithFlags, K3.rd, rd2, K1.rd, hi.rd]
   · rw [RegUpd.wr_arithFlags, K3.wr, wr2, K1.wr, hi.wr]
   · rw [RegUpd.mem_arithFlags]
-    exact hi.mem.trans ((K1.mem.mono (by omega) (by omega)).trans
-      ((o8.mono (by omega) (by omega)).trans (K3.mem.mono (by omega) (by omega))))
-  · rw [RegUpd.mem_arithFlags, K3.mem.word (by simp only [SWAP]; omega) (by simp only [SWAP]; omega),
+    exact hi.mem.trans ((K1.mem.mono (by omega_using []) (by omega_using [])).trans
+      ((o8.mono (by omega_using []) (by omega_using [])).trans (K3.mem.mono (by omega_using []) (by omega_using []))))
+  · rw [RegUpd.mem_arithFlags, K3.mem.word (by simp only [SWAP]; omega_using []) (by simp only [SWAP]; omega_using []),
       mem2, ladderAfter_step k u hn]
     simp only [X86_64.word, Mem.readW_writeW_self64]
     rfl
@@ -388,13 +388,13 @@ theorem loop_ok {s₀ : State} {base : Addr} {k : Nat} {u : Spec.X25519.Fe}
     (Q := fun s' => LInv base k u s₀ s' 3)
     (fun m (s : State) => 4 ≤ m ∧ m ≤ 255 ∧ LInv base k u s₀ s m) ?_ n s ⟨h1, h2, hi⟩
   intro m s ⟨h1, h2, hi⟩
-  obtain ⟨m, rfl⟩ : ∃ m', m = m' + 1 := ⟨m - 1, by omega⟩
-  refine WP.mono (step_ok hf (by omega) hbits hi) fun s' ⟨hi', hz⟩ => ?_
+  obtain ⟨m, rfl⟩ : ∃ m', m = m' + 1 := ⟨m - 1, by omega_using [h1]⟩
+  refine WP.mono (step_ok hf (by omega_using [h2]) hbits hi) fun s' ⟨hi', hz⟩ => ?_
   simp only [eval, hz, Option.map_some]
   by_cases hm : m = 3
   · subst hm; exact .inl ⟨rfl, hi'⟩
-  · refine .inr ⟨by simp only [decide_eq_false hm, Bool.not_false], m, by omega,
-      by omega, by omega, hi'⟩
+  · refine .inr ⟨by simp only [decide_eq_false hm, Bool.not_false], m, by omega_using [],
+      by omega_using [h1, hm], by omega_using [h2], hi'⟩
 
 /-- What a ladder leaves (`ladder`'s, or `vg_x25519_ifma`'s): the slots
 `x2, z2, x3, z3` (3–6) and the word `swap` hold the ladder's final state,
@@ -425,7 +425,7 @@ theorem LPost.of {base : Addr} {k : Nat} {u : Spec.X25519.Fe} {s₀ s : State} (
     (x3 : E s.mem base 5 = (ladderAfter k u 0).x3) (z3 : E s.mem base 6 = (ladderAfter k u 0).z3)
     (swap : word s.mem base SWAP = BitVec.ofNat 64 (ladderAfter k u 0).swap) :
     LPost base k u s₀ s :=
-  ⟨scr, gpr, rd, wr, mem, _, by have := ladderAfter_swap_le k u (n := 0) (by omega); omega, swap,
+  ⟨scr, gpr, rd, wr, mem, _, by have := ladderAfter_swap_le k u (n := 0) (by omega_using []); omega_using [this], swap,
     by rw [x2, x3], by rw [z2, z3]⟩
 
 /-- What a ladder starts from: the bits of `k` in `BITS`, `x1 = u` and the
@@ -540,7 +540,7 @@ theorem tailPre_ok {s : State} {base : Addr} (hs : Scr s base) {sw : Nat} (hsw :
     WP isa (.block ([.mov .rax (.mem (sc SWAP)), .alu .cmp .rax (.imm 0)] : List Instr)) s
       fun s' => s'.zf = some (decide (sw = 0)) ∧ s'.mem = s.mem ∧ Keep base s s' := by
   have hr : InRegions (s.rd ++ s.wr) (off base SWAP) 8 :=
-    ⟨_, List.mem_append_right _ hs.wr, contains_sc (by simp only [SWAP]; omega)⟩
+    ⟨_, List.mem_append_right _ hs.wr, contains_sc (by simp only [SWAP]; omega_using [])⟩
   have hw' : s.mem.readW (off base SWAP) 64 = BitVec.ofNat 64 sw := hw
   apply WP.of_runBlock
   simp only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, execAlu, State.load64, ea_sc,
@@ -555,7 +555,7 @@ theorem clrSwap_ok {s : State} {base : Addr} (hs : Scr s base) :
     WP isa (.block ([.mov32 .rax (.imm 0), .store (sc SWAP) .rax] : List Instr)) s fun s' =>
       s'.mem = s.mem.writeW (off base SWAP) (BitVec.ofNat 64 0) ∧
       (∀ r, r ≠ .rax → s'.gpr r = s.gpr r) ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
-  have hw : InRegions s.wr (off base SWAP) 8 := ⟨_, hs.wr, contains_sc (by simp only [SWAP]; omega)⟩
+  have hw : InRegions s.wr (off base SWAP) 8 := ⟨_, hs.wr, contains_sc (by simp only [SWAP]; omega_using [])⟩
   apply WP.of_runBlock
   simp only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc32, State.setReg32,
     State.store64, ea_sc, RegUpd.gpr_setReg, RegUpd.wr_setReg, RegUpd.mem_setReg, RegUpd.rd_setReg,
@@ -566,11 +566,11 @@ theorem clrSwap_ok {s : State} {base : Addr} (hs : Scr s base) :
 
 theorem E_out {base : Addr} {o n : Nat} {m m' : Mem} (h : Outside base o n m m') (i : Fin 128)
     (hi : 32 * i.val + 32 ≤ o ∨ o + n ≤ 32 * i.val) : E m' base i = E m base i := by
-  simp only [E, F]; rw [h.fe hi (by omega)]
+  simp only [E, F]; rw [h.fe hi (by omega_using [])]
 
 theorem cswap_fst' {sw : Nat} (hsw : sw < 2) (a b : Spec.X25519.Fe) :
     (Spec.X25519.cswap sw a b).1 = if decide (sw = 0) then a else b := by
-  rcases (by omega : sw = 0 ∨ sw = 1) with rfl | rfl <;> rfl
+  rcases (by omega_using [hsw] : sw = 0 ∨ sw = 1) with rfl | rfl <;> rfl
 
 include hf in
 /-- `tail`, from the state after bit 3, for a scalar whose bits 2, 1, 0 are
@@ -579,10 +579,10 @@ theorem tail_ok {s₀ s : State} {base : Addr} {k : Nat} {u : Spec.X25519.Fe}
     (hi : LInv base k u s₀ s 3) (h0 : bit k 0 = 0) (h1 : bit k 1 = 0) (h2 : bit k 2 = 0) :
     WP isa (.block (tail fld)) s (LPost base k u s₀) := by
   have hs := hi.scr
-  have hsw := ladderAfter_swap_le k u (n := 3) (by omega)
+  have hsw := ladderAfter_swap_le k u (n := 3) (by omega_using [])
   simp only [tail, List.append_assoc]
   rw [WP.block_append_iff]
-  refine WP.mono (tailPre_ok hs (by omega) hi.swap) fun s1 ⟨z1, m1, K1⟩ => ?_
+  refine WP.mono (tailPre_ok hs (by omega_using [hsw]) hi.swap) fun s1 ⟨z1, m1, K1⟩ => ?_
   have hs1 := K1.scr hs
   rw [WP.block_append_iff]
   refine WP.mono (muxEB hs1 3 5 3 ⟨by decide, by decide⟩ z1) fun s2 ⟨K2, e2, o2, _, z2⟩ => ?_
@@ -608,17 +608,17 @@ theorem tail_ok {s₀ s : State} {base : Addr} {k : Nat} {u : Spec.X25519.Fe}
   have hs6 := K6.scr hs5
   refine WP.mono (clrSwap_ok hs6) fun s7 ⟨m7, g7, rd7, wr7⟩ => ?_
   have o7 : Outside base 640 8 s6.mem s7.mem := by
-    rw [m7]; exact writeW_outside _ _ _ (by omega)
+    rw [m7]; exact writeW_outside _ _ _ (by omega_using [])
   have K := K1.trans (K2.trans (K3.trans (K4.trans (K5.trans K6))))
   -- The point chosen, then doubled three times.
   have c3 : E s3.mem base 3 = (Spec.X25519.cswap (ladderAfter k u 3).swap
       (ladderAfter k u 3).x2 (ladderAfter k u 3).x3).1 := by
     rw [e3, opMux, Function.update_of_ne (by decide), e2, opMux, Function.update_self,
-      cswap_fst' (by omega), m1, hi.x2, hi.x3]
+      cswap_fst' (by omega_using [hsw]), m1, hi.x2, hi.x3]
   have c4 : E s3.mem base 4 = (Spec.X25519.cswap (ladderAfter k u 3).swap
       (ladderAfter k u 3).z2 (ladderAfter k u 3).z3).1 := by
     rw [e3, opMux, Function.update_self, e2, opMux, Function.update_of_ne (by decide),
-      Function.update_of_ne (by decide), cswap_fst' (by omega), m1, hi.z2, hi.z3]
+      Function.update_of_ne (by decide), cswap_fst' (by omega_using [hsw]), m1, hi.z2, hi.z3]
   obtain ⟨a2, b2', w2⟩ := ladderStep_zero k u (ladderAfter k u 3) 2 h2
   obtain ⟨a1, b1', w1⟩ := ladderStep_zero k u (ladderAfter k u 2) 1 h1
   obtain ⟨a0, b0, w0⟩ := ladderStep_zero k u (ladderAfter k u 1) 0 h0
@@ -657,7 +657,7 @@ theorem ladder_post {s : State} {base : Addr} {k : Nat} {u : Spec.X25519.Fe} (h 
       State.setReg32, Option.some.injEq, exists_eq_left', RegUpd.gpr_setReg_self]
     exact ⟨rfl, fun r hr => by simp only [RegUpd.gpr_setReg, hr, ite_false], rfl, rfl, rfl⟩)
     fun s' ⟨hb, g, m, rd, wr⟩ => ?_)
-  refine WP.seq (WP.mono (loop_ok hf h.bits 255 s' (by omega) (by omega)
+  refine WP.seq (WP.mono (loop_ok hf h.bits 255 s' (by omega_using []) (by omega_using [])
     ⟨⟨by rw [g _ (by decide)]; exact h.scr.rdi, by rw [wr]; exact h.scr.wr, h.scr.nowrap⟩,
       fun r _ hr => g r hr, hb, rd, wr, by rw [m]; exact Outside.refl _ _ _ _, by rw [m, h.x1],
       by rw [m, h.x2]; rfl, by rw [m, h.z2]; rfl, by rw [m, h.x3]; rfl, by rw [m, h.z3]; rfl,

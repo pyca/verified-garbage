@@ -75,7 +75,7 @@ theorem leakP_entry {s t : State} (hq : DPreP s) (h : CallAt s t) (rd wr : List 
     frame_call (frame_of_outside h.out) (callEntry_frame h.rsp) fun r hr => by
       rw [List.mem_singleton.mp hr]; exact ⟨stkR s, List.mem_cons_self .., below_sub s (by decide)⟩
   have hle : Spec.Rsa.precomputedWords (s.gpr .r8).toNat ≤ (stackArg s 18).toNat := by
-    rw [hq.hpl]; unfold Spec.Rsa.privatePrecomputedWords; omega
+    rw [hq.hpl]; unfold Spec.Rsa.privatePrecomputedWords; omega_using []
   simp only [Spec.Rsa.privatePrecomputedLeak, State.withRegions_mem]
   rw [← VG.Proof.Rsa.wordsAt_take _ _ hle, ← VG.Proof.Rsa.wordsAt_take _ _ hle, wordsP_of_frame hq hfE]
 

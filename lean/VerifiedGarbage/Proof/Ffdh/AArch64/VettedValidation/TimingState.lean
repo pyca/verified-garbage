@@ -41,7 +41,7 @@ structure Ready (q : Public) (s : State) : Prop where
 def loopPublic (q : Public) : PolicyLoopPublic :=
   ⟨⟨q.B,q.words.toNat*8,q.ptr,q.table,q.dom,
     ⟨256,225,Spec.Ffdh.modp2048Prime⟩,q.k.toNat,q.room,q.shape,
-    by have :=q.small;omega,by have :=q.large;omega⟩,
+    by have :=q.small;omega_using [this],by have :=q.large;omega_using [this]⟩,
     Policy.groups.tail,4095,by decide,by decide⟩
 
 theorem entry_ready {q : Public} {s : State} (h : Ready q s) :

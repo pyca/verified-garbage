@@ -60,7 +60,7 @@ theorem block_frame {m m' : Mem} {rs : List Region} (hf : Frame rs m m')
   apply Vector.ext
   intro i hi
   have read : m'.readW (off p (8 * i)) 64 = m.readW (off p (8 * i)) 64 :=
-    hf.readW (r := ⟨p, 1024⟩) (Offset.contains_base p (by omega) (by omega)) sep (by decide)
+    hf.readW (r := ⟨p, 1024⟩) (Offset.contains_base p (by omega_using [hi]) (by omega_using [hi])) sep (by decide)
   rw [← blockAt_get m' p ⟨i, hi⟩, ← blockAt_get m p ⟨i, hi⟩] at read
   exact read
 
@@ -88,7 +88,7 @@ theorem prepared_of_setup (s a b : State) (h : Ready s)
   have unchanged (d : Nat) (sep : d + 8 ≤ 16 ∨ 24 ≤ d) (bound : d + 8 ≤ 272) :
       b.mem.readW (off (b.gpr .rbp) d) 64 = s.mem.readW (off (s.gpr .rbp) d) 64 := by
     rw [bm, g .rbp (by decide)]
-    exact Mem.readW_writeW_sep (Offset.sep _ sep (by omega) (by decide)) (by decide)
+    exact Mem.readW_writeW_sep (Offset.sep _ sep (by omega_using [bound]) (by decide)) (by decide)
   have work' : b.gpr .rcx = work s := by
     rw [scratch, regs, mem]
     exact Mem.readW_writeW_sep (Offset.sep _ (by decide) (by decide) (by decide)) (by decide)

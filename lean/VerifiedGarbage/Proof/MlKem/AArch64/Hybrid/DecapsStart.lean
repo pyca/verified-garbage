@@ -84,7 +84,7 @@ theorem startJ_ok {s₀ sQ : State} (hp : Pre P (deL P) s₀) (h8 : 8 * (P.ctLen
       bytesAt s₁.mem (sA (deL P) s₀ o) l = bytesAt sQ.mem (sA (deL P) s₀ o) l := fun f h => by
     refine bytesAt_frame k₁.frame (fun r hr => ?_) (by lom)
     rw [List.mem_singleton.mp hr, VG.Proof.MlKem.AArch64.STr, e28']
-    exact sdisj hp f (by lom) (.inr (by simp only [KEM.ST]; omega))
+    exact sdisj hp f (by lom) (.inr (by simp only [KEM.ST]; omega_using [h]))
   have z₁' : stateAt s₁.mem (kA s₀ (deL P).sc) = Spec.Sha3.zero := by
     rw [kbA.x28, show KEM.ST = 0 from rfl, ptr_zero] at z₁; exact z₁
   have x24₁ : s₁.gpr .x24 = 1 := by rw [k₁.cs _ (by decide) (by decide), hA.x24]
@@ -160,11 +160,11 @@ def decapsAArch64S (P : KemLay) : Contract AArch64.isa where
 theorem preSD {s : State} (h : (decapsAArch64S P).pre s) : (decapsAArch64 P).pre s ∧ Stk128 P (deL P) s := by
   obtain ⟨rd, wr, d02, d03, d12, d13, d23, sp128, k0, k1, k2, k3⟩ := h
   have sub : Region.Sub ⟨s.sp - 16, 16⟩ (frame s.sp) := below_sub (by decide) (by decide)
-  refine ⟨⟨rd, wr, d02, d03, d12, d13, d23, by omega,
+  refine ⟨⟨rd, wr, d02, d03, d12, d13, d23, by omega_using [sp128],
     k0.sub_left sub, k1.sub_left sub, k2.sub_left sub, k3.sub_left sub⟩, sp128, ?_⟩
   intro b hb
   have hb : b < 4 := hb
-  rcases (by omega : b = 0 ∨ b = 1 ∨ b = 2 ∨ b = 3) with rfl | rfl | rfl | rfl
+  rcases (by omega_using [hb] : b = 0 ∨ b = 1 ∨ b = 2 ∨ b = 3) with rfl | rfl | rfl | rfl
   · exact k0
   · exact k1
   · exact k2

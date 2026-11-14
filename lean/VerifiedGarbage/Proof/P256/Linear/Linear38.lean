@@ -33,7 +33,7 @@ theorem linear38_ok {s : State} {base : Addr} {size o a b : Nat}
   rw [linear38_eq,List.append_assoc,WP.block_append_iff]
   refine WP.mono (form38_ok hs ha hb ha8 hb8 hB) fun s1 ⟨e1,z1,k1⟩ => ?_
   rw [WP.block_append_iff]
-  have hn : regsVal s1 [.x3,.x4,.x5,.x6,.x7]<21*p := by rw [e1]; omega
+  have hn : regsVal s1 [.x3,.x4,.x5,.x6,.x7]<21*p := by rw [e1]; omega_using [hA]
   refine WP.mono (correction_ok s1 z1 hn) fun s2 ⟨e2,k2⟩ => ?_
   have hs2 := (hs.of_keeps k1 (by decide)).of_keeps k2 (by decide)
   refine WP.mono (stores_ok [.x3,.x4,.x5,.x6] hs2 ho ho8 (by decide)) fun t ⟨et,kt,ot⟩ => ?_

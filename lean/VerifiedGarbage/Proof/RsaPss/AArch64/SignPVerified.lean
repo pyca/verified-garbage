@@ -43,7 +43,7 @@ abbrev signPCK (vs : List MdHash) (K : Nat) : Contract isa :=
 theorem preSP_of {tsH tsG : List FnTable} {K : Nat} {s : State}
     (h : (Spec.RsaPss.signPrecomputedMdTableContract (signPAbi tsH tsG) (stk K)).pre s) :
     PreS tsH tsG K s ∧ PreXS K s := by
-  have e : stk K = (frameBytes + K - 1) + 1 := by unfold stk frameBytes; omega
+  have e : stk K = (frameBytes + K - 1) + 1 := by unfold stk frameBytes; omega_using []
   rw [e] at h
   sig_pre [Spec.RsaPss.signPrecomputedMdTableContract, Spec.RsaPss.signPrecomputedMdTableSig,
     Spec.MdHashTable.param, Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Spec.MdHashTable.dataWords,
@@ -57,11 +57,11 @@ theorem preSP_of {tsH tsG : List FnTable} {K : Nat} {s : State}
   obtain ⟨k1, k2⟩ := _ob1
   rw [← e] at sp1 ko kn ke kp kq kdp kdq kqi kdg ksl ks kpr ktH ktG ka
   have a128 : Region.Sub (aR s) (aR2 s) := Region.sub_prefix (by decide)
-  refine ⟨⟨sp1, by omega, tabH, tabG, hsy, ?_, by rw [hwr]; simp, by rw [hwr]; simp, on, oe,
+  refine ⟨⟨sp1, by omega_using [sp2], tabH, tabG, hsy, ?_, by rw [hwr]; simp, by rw [hwr]; simp, on, oe,
     op, oq, odp, odq, oqi, odg, osl, os, otH, otG, oa.sub_right a128, ns, es, ps, qs, dps, dqs, qis, dgs, sls, stH,
     stG, sa.sub_right a128, ko, kn, ke, kp, kq, kdp, kdq, kqi, kdg, ksl, ks, ktH, ktG, ka.sub_right a128, wo, wn, we,
     wp, wq, wdp, wdq, wqi, wdg, wsl, ws, wtH, wtG, k1, k2, ol, e1, e2, p1, p2, q1, q2, hdp, hqi, hdq,
-    by unfold Spec.RsaPss.scratchWords Spec.Rsa.scratchWords at hs; omega, h⟩,
+    by unfold Spec.RsaPss.scratchWords Spec.Rsa.scratchWords at hs; omega_using [hs], h⟩,
     ⟨Covers.of_mem fun r hr => by
       rw [hrd]; simp only [List.mem_cons, List.not_mem_nil, or_false] at hr; rcases hr with rfl | rfl <;> simp [prR, aR2],
       sp2, oa, sa, ka, opr, spr, kpr, wpr, prl, key⟩⟩
@@ -111,7 +111,7 @@ theorem pubSP_of {tsH tsG : List FnTable} {K : Nat} {s₁ s₂ : State}
     | 4, _ => exact a4.symm | 5, _ => exact a5.symm | 6, _ => exact a6.symm | 7, _ => exact a7.symm
     | 8, _ => exact a8.symm | 9, _ => exact a9.symm | 10, _ => exact a10.symm | 11, _ => exact a11.symm
     | 12, _ => exact a12.symm | 13, _ => exact a13.symm | 14, _ => exact a14.symm | 15, _ => exact a15.symm
-    | n + 16, h => exact absurd h (by omega)
+    | n + 16, h => exact absurd h (by omega_using [])
   · exact hw.symm
 
 theorem PubX.refl (s : State) : PubX s s := ⟨rfl, rfl, rfl⟩

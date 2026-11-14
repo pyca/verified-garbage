@@ -27,7 +27,7 @@ open VG.Proof.MlDsa.Sample
 open VG.Spec.MlDsa (Zq q)
 
 theorem bw32 (c : Byte) : (BitVec.setWidth 32 (BitVec.setWidth 64 c)).toNat = c.toNat := by
-  rw [BitVec.toNat_setWidth, toNat_setWidth64_8, Nat.mod_eq_of_lt (by have := c.isLt; omega)]
+  rw [BitVec.toNat_setWidth, toNat_setWidth64_8, Nat.mod_eq_of_lt (by have := c.isLt; omega_using [])]
 
 /-- The value of the bytes `b₀, b₁, b₂`, as the code computes it. -/
 def rnw (b₀ b₁ b₂ : Byte) : BitVec 32 :=
@@ -41,13 +41,13 @@ theorem rnw_toNat (b₀ b₁ b₂ : Byte) : (rnw b₀ b₁ b₂).toNat = rnZ b�
   have h1 := b₁.isLt
   have h2 := Nat.mod_lt b₂.toNat (show 128 > 0 by decide)
   have r2 := rotr_toNat (BitVec.setWidth 32 (BitVec.setWidth 64 b₂) &&& 127) (r := 16) (by decide)
-    (by rw [e2]; omega)
-  have r1 := rotr_toNat (BitVec.setWidth 32 (BitVec.setWidth 64 b₁)) (r := 24) (by decide) (by rw [bw32]; omega)
+    (by rw [e2]; omega_using [])
+  have r1 := rotr_toNat (BitVec.setWidth 32 (BitVec.setWidth 64 b₁)) (r := 24) (by decide) (by rw [bw32]; omega_using [])
   rw [e2] at r2
   rw [bw32] at r1
   rw [rnw, BitVec.toNat_add, BitVec.toNat_add, r2, r1, bw32, rnZ]
   rw [show 32 - 16 = 16 from rfl, show 32 - 24 = 8 from rfl]
-  omega
+  omega_using []
 
 theorem rnLoad_ok (s : State) (h0 : InRegions (s.rd ++ s.wr) (s.gpr .rsi) 1)
     (h1 : InRegions (s.rd ++ s.wr) (s.gpr .rsi + BitVec.ofNat 64 1) 1)
@@ -93,7 +93,7 @@ theorem store_next {s : State} {aP : Addr} {L : List Zq} (hbp : s.gpr .rbp = aP)
   have hz : zw (Fin.ofNat q v.toNat) = v := by
     apply BitVec.eq_of_toNat_eq
     rw [zw_toNat, Fin.val_ofNat, Nat.mod_eq_of_lt hq]
-  refine ⟨by rw [hdi', hdi, List.length_append, List.length_singleton]; exact ofNat64_succ (by omega), ?_,
+  refine ⟨by rw [hdi', hdi, List.length_append, List.length_singleton]; exact ofNat64_succ (by omega_using [hL]), ?_,
     by rw [hm]; exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (coeff_contains _ hL), k⟩
   have := stored_snoc hst hL (Fin.ofNat q v.toNat)
   rw [hz] at this
@@ -144,7 +144,7 @@ theorem rnMid_ok (s : State) {aP : Addr} {L : List Zq} (hbp : s.gpr .rbp = aP)
       s'.gpr .rdi = BitVec.ofNat 64 (rnMid L ((s.gpr .r8).setWidth 32).toNat).length ∧
         Stored s'.mem aP (rnMid L ((s.gpr .r8).setWidth 32).toNat) ∧ Frame [pR aP] s.mem s'.mem ∧
         Keep [.rdi] s s' := by
-  have hl : (s.gpr .rdi).toNat = L.length := by rw [hdi, ofNat64_toNat (by omega)]
+  have hl : (s.gpr .rdi).toNat = L.length := by rw [hdi, ofNat64_toNat (by omega_using [hL])]
   refine WP.ite (decide (L.length < 256)) (by rw [← hl]; exact hcf) (fun hb => ?_) (fun hb => ?_)
   · simp only [decide_eq_true_eq] at hb
     rw [rnMid, ifT hb]

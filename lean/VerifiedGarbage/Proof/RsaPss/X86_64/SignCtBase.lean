@@ -87,8 +87,8 @@ theorem n0 : s.mem (s.gpr .rdx) = a.mem (a.gpr .rdx) := by
   have := congrArg (fun l => l.getD 0 0) h.nB
   have hk := h.ps.k1
   have hk' := h.pa.k1
-  simpa [Spec.Rsa.bytesAt, List.getD_eq_getElem?_getD, List.getElem?_range (show 0 < (s.gpr .rcx).toNat by omega),
-    List.getElem?_range (show 0 < (a.gpr .rcx).toNat by omega)] using this
+  simpa [Spec.Rsa.bytesAt, List.getD_eq_getElem?_getD, List.getElem?_range (show 0 < (s.gpr .rcx).toNat by omega_using [hk]),
+    List.getElem?_range (show 0 < (a.gpr .rcx).toNat by omega_using [hk'])] using this
 
 end SSib
 
@@ -174,7 +174,7 @@ theorem rest : RestOk 2 (VG.Proof.RsaPss.X86_64.fb a) a.wr := by
   · rw [hp.hwr]; intro r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     have := hp.wO; have := hp.wS
-    rcases hr with rfl | rfl <;> dsimp only <;> omega
+    rcases hr with rfl | rfl <;> dsimp only <;> omega_arith
 
 end SSib
 

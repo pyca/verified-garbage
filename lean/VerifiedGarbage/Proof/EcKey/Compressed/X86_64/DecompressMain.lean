@@ -79,9 +79,9 @@ theorem decompressStart_ok {c : Cfg} (hc : BaseCfgOk c) {s₀ : State} (hp : Dec
         InRegions (s₀.rd ++ s₀.wr) (s₀.gpr .rsi + 1 + BitVec.ofNat 64 e) 8 := by
       intro e he
       rw [BitVec.add_assoc, show (1 : BitVec 64) = BitVec.ofNat 64 1 from rfl, BitVec.ofNat_add_ofNat]
-      exact ⟨_, hp.pk, Offset.contains_base _ (by omega) (by omega)⟩
+      exact ⟨_, hp.pk, Offset.contains_base _ (by omega_using [he]) (by omega_arith)⟩
     have hd : Region.Disjoint ⟨s₀.gpr .rsi + 1, c.C.len⟩ ⟨s₀.gpr .rdx, size⟩ :=
-      hp.disjoint.sub_left (Offset.sub_base _ (d := 1) (by omega))
+      hp.disjoint.sub_left (Offset.sub_base _ (d := 1) (by omega_using []))
     exact ⟨by rw [k₁.2.2.2, r8]; exact hp.ws,
       by rw [rcx, rw₁]; exact hin, by rw [rsi, rw₁]; exact hin,
       by rw [rdx, rw₁]; exact hin, by rw [rsi, r8]; exact hd,
@@ -158,7 +158,7 @@ theorem rhs_ok {c : Cfg} (hc : BaseCfgOk c) {base : Addr} {s : State}
   have hpR := unitMod_pow_two hc.p_odd (64 * c.n)
   rw [rhsOps_eq, fprogB_cons_iff]
   refine WP.mono (slMulP_ok h7 hs hM (o := QXM) (a := E) (b := R2P) (by decide) (by decide)
-    (by decide) (by decide) (by rw [hr2]; exact Nat.mod_lt _ (by have := hc.p_ge; omega)))
+    (by decide) (by decide) (by rw [hr2]; exact Nat.mod_lt _ (by have := hc.p_ge; omega_using [this])))
     fun s₁ ⟨k₁, lt₁, e₁⟩ => ?_
   have hs₁ := k₁.scr hs
   have hM₁ := hM.keep (j := MP) (by decide) rfl rfl rfl rfl h7 hn k₁ (by decide) (by decide)
@@ -182,10 +182,10 @@ theorem rhs_ok {c : Cfg} (hc : BaseCfgOk c) {base : Addr} {s : State}
       · exact lt₁
       · show sv c base s₁ AP < _
         rw [a₁]
-        exact Nat.mod_lt _ (by have := hc.p_ge; omega)
+        exact Nat.mod_lt _ (by have := hc.p_ge; omega_using [lt₁])
       · show sv c base s₁ BP < _
         rw [b₁]
-        exact Nat.mod_lt _ (by have := hc.p_ge; omega)
+        exact Nat.mod_lt _ (by have := hc.p_ge; omega_using [lt₁])
   refine WP.mono (fprogB_ok hL hpR _ I (fun op hop x hx => ?_)
     (readsOk_rename c.sl rhsTail_reads)) fun s₂ ⟨PK, I₂⟩ => ?_
   · obtain ⟨op₀, hop₀, rfl⟩ := List.mem_map.mp hop
@@ -265,8 +265,8 @@ theorem DecompressFront.frame {c : Cfg} (hc : BaseCfgOk c) {s₀ s t : State}
       sv c (s₀.gpr .rdx) t i = sv c (s₀.gpr .rdx) s i := sv_unch U h7 hn hi (ha i hm)
   have ew {i : Nat} (hi : i < 45) (hm : i ∈ [E, D, R2P, W2, FLAG]) :
       word t.mem (s₀.gpr .rdx) (c.sl i) = word s.mem (s₀.gpr .rdx) (c.sl i) :=
-    U.word (fun w hw => by have := ha i hm w hw; omega)
-      (by have := sl_le c h7 hi; omega)
+    U.word (fun w hw => by have := ha i hm w hw; omega_using [h0, this])
+      (by have := sl_le c h7 hi; omega_using [hn, h0, this])
   refine ⟨F.scr.of_keepRegs K (rdi_not_powClob _), F.fixed.unch h7 hn hW U, F.original,
     (K.gpr _ (rsi_not_powClob _)).trans F.out,
     (e (by decide) (by simp)).trans F.x, (ew (by decide) (by simp)).trans F.tag,
@@ -295,8 +295,8 @@ theorem decompressFront_ok {c : Cfg} (hc : BaseCfgOk c) {s₀ : State} (hp : Dec
   have x₁ : sv c (s₀.gpr .rdx) s₁ E = keyX c s₀ :=
     (sv_unch U₁ h7 hn (by decide) (apart_slW (by decide))).trans S.x
   have lead : s.mem (s₀.gpr .rsi) = s₀.mem (s₀.gpr .rsi) := by
-    have e := keep_of_disjoint' S.outside hp.disjoint (by omega) (i := 0) (by omega)
-      (by have := hc.len_hi; omega)
+    have e := keep_of_disjoint' S.outside hp.disjoint (by omega_using [hn]) (i := 0) (by omega_using [])
+      (by have := hc.len_hi; omega_using [h7, this])
     simpa only [BitVec.add_zero] using e
   rw [lead, S.x] at flag₁
   rw [lead] at tag₁
@@ -312,7 +312,7 @@ theorem decompressFront_ok {c : Cfg} (hc : BaseCfgOk c) {s₀ : State} (hp : Dec
   · exact (R.unch.word (fun w hw => by
       have := apart_slW (c := c) (by decide : D ∉ [QXM, W1, W2, W3, TMP]) w hw
       have := hc.n0
-      omega) (by have := sl_le c h7 (i := D) (by decide); omega)).trans tag₁
+      omega_arith) (by have := sl_le c h7 (i := D) (by decide); omega_using [h0, hn, this])).trans tag₁
   · simpa only [x₁] using R.val
   · rw [flag_unch R.unch h7 hc.n0 hn (by decide), flag₁]
   · rw [R.rd, k₁.rd, S.rd]
@@ -364,7 +364,7 @@ theorem selectRoot_ok {c : Cfg} (hc : BaseCfgOk c) {base : Addr} {s : State}
     (.block (opCode c.MP' (.sub (c.sl W0) (c.sl ZERO) (c.sl QY)) ++
       Impl.EcKey.Compressed.X86_64.parityMask c ++ sel c.n (c.sl QY) (c.sl QY) (c.sl W0)))) s _
   refine WP.seq (WP.mono (slMulP_ok h7 hs hM (o := QY) (a := ACC) (b := ONE)
-    (by decide) (by decide) (by decide) (by decide) (by rw [hOne]; omega))
+    (by decide) (by decide) (by decide) (by decide) (by rw [hOne]; omega_using [hp3]))
     fun s₁ ⟨k₁, lt₁, e₁⟩ => ?_)
   have hs₁ := k₁.scr hs
   have hM₁ := hM.keep (j := MP) (by decide) rfl rfl rfl rfl h7 hn k₁ (by decide) (by decide)
@@ -380,7 +380,7 @@ theorem selectRoot_ok {c : Cfg} (hc : BaseCfgOk c) {base : Addr} {s : State}
     (o := W0) (a := ZERO) (b := QY) (by decide)
   rw [List.append_assoc, WP.block_append_iff]
   refine WP.mono (sub_ok hs₁ hM₁ hW hZ hY ha.1 ha.2.1 ha.2.2.1 ha.2.2.2
-    (by change sv c base s₁ ZERO < c.C.p; rw [zero₁]; omega)
+    (by change sv c base s₁ ZERO < c.C.p; rw [zero₁]; omega_using [hp3])
     lt₁) fun s₂ ⟨k₂, e₂⟩ => ?_
   change sv c base s₂ W0 = (sv c base s₁ ZERO + c.C.p - sv c base s₁ QY) % c.C.p at e₂
   have hs₂ := k₂.scr hs₁
@@ -389,7 +389,7 @@ theorem selectRoot_ok {c : Cfg} (hc : BaseCfgOk c) {base : Addr} {s : State}
     sv_keep (MP'_n c) rfl h7 hn k₂ (by decide) (by decide) (by decide)
   have negLt : sv c base s₂ W0 < c.C.p := by
     rw [e₂]
-    exact Nat.mod_lt _ (by omega)
+    exact Nat.mod_lt _ (by omega_using [hp3])
   have negVal : Fin.ofNat c.C.p (sv c base s₂ W0) = -(Fin.ofNat c.C.p (sv c base s₁ QY)) := by
     apply Fin.ext
     simp only [Fin.val_ofNat, Fin.neg_def]
@@ -401,18 +401,18 @@ theorem selectRoot_ok {c : Cfg} (hc : BaseCfgOk c) {base : Addr} {s : State}
   have tag₂ : word s₂.mem base (c.sl D) = word s.mem base (c.sl D) :=
     U₁₂.word (fun w hw => by
       have := apart_slW (c := c) (by decide : D ∉ [QY, W0, TMP]) w hw
-      omega) (by have := hs.nowrap; omega)
+      omega_using [h0, this]) (by have := hs.nowrap; omega_using [h0, hn, hD])
   rw [WP.block_append_iff]
-  refine WP.mono (parityMask_ok hs₂ h0 (by omega) (by omega)) fun s₃ ⟨mask₃, k₃⟩ => ?_
+  refine WP.mono (parityMask_ok hs₂ h0 (by omega_using [h0, hY]) (by omega_using [h0, hD])) fun s₃ ⟨mask₃, k₃⟩ => ?_
   have hs₃ := hs₂.of_keeps k₃ (by decide)
   refine WP.mono (sel_ok (decide (sv c base s₂ QY % 2 ≠ (word s₂.mem base (c.sl D)).toNat % 2)) c.n hs₃
     (by simpa only [mask, decide_eq_true_eq] using mask₃)
     hY hY hW (Or.inl (Nat.le_refl _))
-    (by have := sl_apart c (i := QY) (j := W0) (by decide); omega)) fun s₄ ⟨e₄, k₄, O₄⟩ => ?_
+    (by have := sl_apart c (i := QY) (j := W0) (by decide); omega_using [this])) fun s₄ ⟨e₄, k₄, O₄⟩ => ?_
   have hs₄ := hs₃.of_keepRegs k₄ (by decide)
   have hM₄ : ModOkW c.MP' size c.C.p s₄.mem base := modP_of hc (by
     rw [O₄.wordsVal (d := c.sl MP) (k := c.n)
-      (sl_apart c (i := MP) (j := QY) (by decide)) (by omega), k₃.2.1]
+      (sl_apart c (i := MP) (j := QY) (by decide)) (by omega_using [hn, hMP]), k₃.2.1]
     exact hM₂.val)
   have e₄' : sv c base s₄ QY =
       if sv c base s₂ QY % 2 ≠ (word s₂.mem base (c.sl D)).toNat % 2 then
@@ -586,9 +586,9 @@ theorem decompress_correct (c : Cfg) (hc : BaseCfgOk c)
     intro g t F
     refine WP.seq (WP.mono (decompressMiddle_ok hc hroot F) fun u U => ?_)
     refine WP.mono (decompressFinish_ok hc U.scr U.out
-      (by rw [U.wr, hwr, show 1 + 2 * c.C.len = 2 * c.C.len + 1 by omega]; simp)
+      (by rw [U.wr, hwr, show 1 + 2 * c.C.len = 2 * c.C.len + 1 by omega_using []]; simp)
       (by simpa only [Nat.add_comm] using how)
-      (by omega) U.saved
+      (by omega_using [hfit]) U.saved
       (decide (CompressedAccept c root s)) (by simp only [U.flag, mask, decide_eq_true_eq]))
       fun s' ⟨hout, hret, hsave, _⟩ => ?_
     refine ⟨?_, fun r hr => (hsave r hr).trans (U.original r hr)⟩

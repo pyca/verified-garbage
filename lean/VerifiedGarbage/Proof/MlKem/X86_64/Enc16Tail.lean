@@ -32,13 +32,13 @@ theorem encCt_eq {L : Kem} {m : Mem} {aP tP rP mP : Addr} {a : Nat → Nat → P
     simp only [vecAtW, List.map_map]
     refine List.map_congr_left fun j hj => ?_
     simp only [Function.comp, encY]
-    rw [show 32 * 16 * j = 512 * j by omega, hR j (by have := List.mem_range.mp hj; omega)]
+    rw [show 32 * 16 * j = 512 * j by omega_using [], hR j (by have := List.mem_range.mp hj; omega_using [this])]
   have eE : vecAtW 16 m (rP + BitVec.ofNat 64 (512 * L.k)) L.k = (List.range L.k).map fun i => cbd r (L.k + i) := by
     simp only [vecAtW]
     refine List.map_congr_left fun j hj => ?_
-    rw [w16_off, ← Nat.mul_add, hR _ (by have := List.mem_range.mp hj; omega)]
+    rw [w16_off, ← Nat.mul_add, hR _ (by have := List.mem_range.mp hj; omega_using [this])]
   have e2 : polyAtW 16 m (rP + BitVec.ofNat 64 (1024 * L.k)) = cbd r (2 * L.k) := by
-    rw [show 1024 * L.k = 512 * (2 * L.k) by omega, hR _ (by omega)]
+    rw [show 1024 * L.k = 512 * (2 * L.k) by omega_using [], hR _ (by omega_using [])]
   simp only [encCt]
   rw [matAtW_eq hA, hT, hM, eY, eE, e2, KPke.decodeVec_take, KPke.mulMatTVec_matrix, List.map_map,
     KPke.addVec_map, KPke.dot_eq_dotK, KPke.ct, KPke.catK_eq, List.flatMap_map]

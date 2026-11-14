@@ -54,7 +54,7 @@ structure ChunkReady (a b : Addr) (c : Spec.MlDsa.IPoly) (i : Nat) (w : BitVec 6
       ∃tr u,Exec isa Impl.MlDsa.AArch64.Optimized.Ball.loop (s.withRegions rd wr) tr u := by
     obtain ⟨tr,u,he,_⟩ := chunk_ok (τ := τ) (h := h) (s₀ := s.withRegions rd wr) hlen hmax hi
       ⟨hs.parser.x26,hs.parser.x9,hs.parser.x10,hs.parser.x11,hs.parser.x12,hs.parser.x15,hs.parser.stored⟩ hs.x2 hs.x5 hs.buf
-      (fun j hj => in_rd (in_regions (List.mem_singleton_self _) (Offset.contains_base _ (by omega) (by omega))))
+      (fun j hj => in_rd (in_regions (List.mem_singleton_self _) (Offset.contains_base _ (by omega_using [hj]) (by omega_using [hmax, hj]))))
       (fun j hj => in_regions (List.mem_singleton_self _) (coeff_contains _ hj)) hsep hsign
     exact ⟨tr,u,he⟩
   refine RelCT.narrow rd wr

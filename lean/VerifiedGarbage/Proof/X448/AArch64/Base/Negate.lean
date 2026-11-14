@@ -52,7 +52,7 @@ theorem nib_neg (k i : Nat) : decide (nib k i < 8) = decide ((k / 2 ^ (4 * i + 3
   have h2 := Nat.mod_lt (k / 2 ^ (4 * i + 2)) (show 2 > 0 by decide)
   have h3 := Nat.mod_lt (k / 2 ^ (4 * i + 3)) (show 2 > 0 by decide)
   apply decide_eq_decide.mpr
-  omega
+  omega_using []
 
 private theorem index3_fact : ∀ j < 57, BitVec.ofNat 64 j <<< 3 = BitVec.ofNat 64 (8 * j) := by
   decide +kernel
@@ -65,17 +65,17 @@ theorem signLoad_ok {s : State} {base : Addr} (hs : Scr s base) {n k j i o : Nat
       t.gpr .x6 = VG.Proof.X448.AArch64.mask (decide (nib k i < 8)) ∧ Keeps [.x6] s t ∧
         t.mem = s.mem := by
   have hr : InRegions (s.rd ++ s.wr) (off base (BITS + (4 * i + 3))) 1 :=
-    ⟨_, List.mem_append_right _ hs.wr, contains_sc (by simp only [BITS]; omega)⟩
+    ⟨_, List.mem_append_right _ hs.wr, contains_sc (by simp only [BITS]; omega_using [hn, hi])⟩
   have he : base + BitVec.ofNat 64 (8 * j) + BitVec.ofNat 64 (o + 3) = off base (BITS + (4 * i + 3)) := by
     simp only [off]
     rw [BitVec.add_assoc, ← BitVec.ofNat_add]
-    exact congrArg (base + ·) (congrArg (BitVec.ofNat 64) (by omega))
+    exact congrArg (base + ·) (congrArg (BitVec.ofNat 64) (by omega_using [hoi]))
   have hv := bit_mask _ (Nat.mod_lt (k / 2 ^ (4 * i + 3)) (show 2 > 0 by decide))
-  rw [← nib_neg, ← bit_eq, ← hb _ (by omega)] at hv
+  rw [← nib_neg, ← bit_eq, ← hb _ (by omega_using [hi])] at hv
   apply WP.of_runBlock
   simp only [runBlock_cons, runStep_some, runBlock_nil, exec, State.read, State.load, addr, Size.bits,
     show (3 : Nat) < 64 from by decide, show (1 : Nat) < 4096 from by decide,
-    show o + 3 < 4096 * 1 by omega, Nat.mod_one, and_self,
+    show o + 3 < 4096 * 1 by omega_using [ho], Nat.mod_one, and_self,
     RegUpd.gpr_write, RegUpd.mem_write, RegUpd.rd_write, RegUpd.wr_write, BitVec.setWidth_eq,
     hc, index3_fact j hj, hs.x3, he, hr, read1_eq, hv,
     ite_true, ite_false, reduceCtorEq, Option.map_some, Option.bind_some, Option.some.injEq,
@@ -85,15 +85,15 @@ theorem signLoad_ok {s : State} {base : Addr} (hs : Scr s base) {n k j i o : Nat
   simp only [RegUpd.gpr_write, hr, ite_false]
 
 theorem ofs_off0 (base : Addr) {d : Nat} (h : d < 2 ^ 64) : VG.Proof.X448.AArch64.ofs base (off base d) = d := by
-  have := VG.Proof.X448.AArch64.ofs_off base (d := d) (i := 0) (by omega)
+  have := VG.Proof.X448.AArch64.ofs_off base (d := d) (i := 0) (by omega_using [h])
   simpa only [BitVec.add_zero, Nat.add_zero] using this
 
 /-- The scalar's bits are outside the slots and the products' working space. -/
 theorem Bits.of_fkeep {base : Addr} {n k : Nat} {s t : State} (hn : n ≤ 57) (hs : Scr s base)
     (h : Bits n base k s.mem) (hk : FKeep base s t) : Bits n base k t.mem := fun q hq => by
   have hn := hs.nowrap
-  rw [hk.mem _ (by rw [ofs_off0 base (by simp only [BITS]; omega)]; simp only [BITS]; omega)
-    (by rw [ofs_off0 base (by simp only [BITS]; omega)]; simp only [BITS, ACC]; omega)]
+  rw [hk.mem _ (by rw [ofs_off0 base (by simp only [BITS]; omega_arith)]; simp only [BITS]; omega_using [])
+    (by rw [ofs_off0 base (by simp only [BITS]; omega_arith)]; simp only [BITS, ACC]; omega_arith)]
   exact h q hq
 
 /-- `0 - x` into slot 10. -/

@@ -53,11 +53,11 @@ abbrev keyLeak (s₀ : State) : List Nat :=
 theorem pre_kl {s₀ : State} (h : rsContract.pre s₀) : (rlOf s₀).kl = (s₀.gpr .r7).toNat := by
   obtain ⟨-, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -,
     -, -, hkl, -⟩ := h
-  simp only [RL.kl, rlOf]; omega
+  simp only [RL.kl, rlOf]; omega_using [hkl]
 
 theorem bytesAt_take (m : Mem) (p : Addr) {n k : Nat} (h : n ≤ k) :
     (Spec.Rsa.bytesAt m p k).take n = Spec.Rsa.bytesAt m p n := by
-  have := VG.Proof.Dsa.bytesAt_slice m p (offset := 0) (len := n) (total := k) (by omega)
+  have := VG.Proof.Dsa.bytesAt_slice m p (offset := 0) (len := n) (total := k) (by omega_using [h])
   rwa [List.drop_zero, show p + BitVec.ofNat 64 0 = p from BitVec.add_zero p] at this
 
 /-- What the public data fix: the call's data, the key's public octets, and
@@ -92,10 +92,10 @@ theorem qb_eq {s₁ s₂ : State} (h₁ : rsContract.pre s₁) (eL : rlOf s₁ =
   have hq := hL.ql
   simp only [keyLeak, Spec.Dsa.publicBytesLeak, ← eL] at ek
   have e := (List.map_inj_right (fun x y h => BitVec.eq_of_toNat_eq h)).mp ek
-  rw [bytesAt_take _ _ (by simp only [RL.kl]; omega), bytesAt_take _ _ (by simp only [RL.kl]; omega)] at e
+  rw [bytesAt_take _ _ (by simp only [RL.kl]; omega_using []), bytesAt_take _ _ (by simp only [RL.kl]; omega_using [])] at e
   have := VG.Proof.Dsa.bytesAt_slice s₁.mem (rlOf s₁).key (offset := (rlOf s₁).pl) (len := (rlOf s₁).ql)
-    (total := 3 * (rlOf s₁).pl + (rlOf s₁).ql) (by omega)
-  rw [e, VG.Proof.Dsa.bytesAt_slice s₂.mem (rlOf s₁).key (by omega)] at this
+    (total := 3 * (rlOf s₁).pl + (rlOf s₁).ql) (by omega_using [])
+  rw [e, VG.Proof.Dsa.bytesAt_slice s₂.mem (rlOf s₁).key (by omega_using [])] at this
   exact this.symm
 
 /-! ## The frame and the scan of q -/
@@ -143,7 +143,7 @@ theorem q_in {s₀ t : State} (h : rsContract.pre s₀) (hc : Ctx (rlOf s₀) s�
   intro i hi
   rw [hc.rd, off_off]
   exact ⟨(rlOf s₀).keyR, List.mem_append_left _ (by rw [hrd]; exact List.mem_cons_self ..),
-    VG.Offset.contains_base _ (by omega) (by omega)⟩
+    VG.Offset.contains_base _ (by omega_using [hp, ekl, hi]) (by omega_using [hq, hp, hi])⟩
 
 /-- The significant octets of q, which `sigLen` counts. -/
 theorem sig_eq {s₀ t u : State} (h : rsContract.pre s₀) (hc : Ctx (rlOf s₀) s₀ t) (hm : u.mem = t.mem) :
@@ -164,8 +164,8 @@ theorem prepareQ_st {s₁ s₂ t₁ t₂ : State} (h₁ : rsContract.pre s₁) (
   have e12 : u₁.gpr .r12 = u₂.gpr .r12 := by rw [a12, b12, eL]
   have e6 : u₁.gpr .r6 = u₂.gpr .r6 := by rw [a6, b6, eL]
   refine SameTrace.seq (st_taint [.r12, .r6] usp ⟨e12, e6⟩ (by taint_decide))
-    (sigLen_ok a12 a6 (by omega) (by omega) fun i hi => by rw [k1.rd, k1.wr]; exact q_in h₁ c₁ i (by omega))
-    (sigLen_ok b12 b6 (by omega) (by omega) fun i hi => by rw [k2.rd, k2.wr]; exact q_in h₂ c₂ i (by omega))
+    (sigLen_ok a12 a6 (by omega_using [hq₁]) (by omega_using [hq₁]) fun i hi => by rw [k1.rd, k1.wr]; exact q_in h₁ c₁ i (by omega_using [hi]))
+    (sigLen_ok b12 b6 (by omega_using [hq₂]) (by omega_using [hq₂]) fun i hi => by rw [k2.rd, k2.wr]; exact q_in h₂ c₂ i (by omega_using [hi]))
     fun v₁ v₂ ⟨⟨x16, n1⟩, kv1⟩ ⟨⟨y16, n2⟩, kv2⟩ => ?_
   rw [sig_eq h₁ c₁ m1] at x16
   rw [sig_eq h₂ c₂ m2, ← eL, ← eq] at y16
@@ -212,8 +212,8 @@ theorem leak_eq {s₀ w : State} (h : rsContract.pre s₀) (A : Args (rlOf s₀)
   have hq := hL.ql
   obtain ⟨-, -, -, g5, g6, g7, -, g9, -⟩ := narrow_vals A (signRd (rlOf s₀)) (signWr (rlOf s₀))
   rw [sres_eq h A, g5, g6, g7, g9, BitVec.toNat_ofNat, BitVec.toNat_ofNat, BitVec.toNat_ofNat,
-    Nat.mod_eq_of_lt (a := (rlOf s₀).pl) (by omega), Nat.mod_eq_of_lt (a := (rlOf s₀).ql) (by omega),
-    Nat.mod_eq_of_lt (a := (rlOf s₀).kl) (by simp only [RL.kl]; omega)]
+    Nat.mod_eq_of_lt (a := (rlOf s₀).pl) (by omega_using [hp]), Nat.mod_eq_of_lt (a := (rlOf s₀).ql) (by omega_using [hq]),
+    Nat.mod_eq_of_lt (a := (rlOf s₀).kl) (by simp only [RL.kl]; omega_using [hp, hq])]
   show Spec.Dsa.publicBytesLeak _ _ (Spec.Rsa.bytesAt w.mem _ _) ++ _ = _
   rw [A.ctx.key]
 
@@ -285,7 +285,7 @@ theorem attempt_st {s₁ s₂ x₁ x₂ : State} {a u : Nat} (h₁ : rsContract.
   have env₁ := A₁.sc.env h₁ hq
   have env₂ := A₂.sc.env h₂ hq₂
   have env₂' : SEnv (eOf s₁) (randOf (rlOf s₂) s₂.mem) x₂ := eE ▸ env₂
-  obtain ⟨a', rfl⟩ : ∃ a', a = a' + 1 := ⟨a - 1, by have := A₁.ha1; omega⟩
+  obtain ⟨a', rfl⟩ : ∃ a', a = a' + 1 := ⟨a - 1, by have := A₁.ha1; omega_using [this]⟩
   have tD : (randomSignDraw (inpOf (rlOf s₁) s₁.mem) u).trace = (randomSignDraw (inpOf (rlOf s₂) s₂.mem) u).trace := by
     rw [← VG.Proof.Dsa.random_sign_trace_draw _ u a', ← VG.Proof.Dsa.random_sign_trace_draw _ u a', ht]
   have dq₁ : Spec.Dsa.Random.sample (qOf s₁) 128 ((randOf (rlOf s₁) s₁.mem).drop u) =
@@ -317,10 +317,10 @@ theorem attempt_st {s₁ s₂ x₁ x₂ : State} {a u : Nat} (h₁ : rsContract.
   have hst₂ := sampleStatus_le (randomSignDraw (inpOf (rlOf s₂) s₂.mem) u)
   have ev₁ : isa.eval (.zero .d .r3) z₁ =
       some (decide (sampleStatus (randomSignDraw (inpOf (rlOf s₁) s₁.mem) u) = 1)) := by
-    rw [VG.PPC64LE.eval_zero, a3, so₁.r31, sub1_beq _ (by omega)]
+    rw [VG.PPC64LE.eval_zero, a3, so₁.r31, sub1_beq _ (by omega_using [hst₁])]
   have ev₂ : isa.eval (.zero .d .r3) z₂ =
       some (decide (sampleStatus (randomSignDraw (inpOf (rlOf s₂) s₂.mem) u) = 1)) := by
-    rw [VG.PPC64LE.eval_zero, b3, so₂.r31, sub1_beq _ (by omega)]
+    rw [VG.PPC64LE.eval_zero, b3, so₂.r31, sub1_beq _ (by omega_using [hst₂])]
   refine SameTrace.ite (by rw [ev₁, ev₂, eSt]) (fun hc => ?_) (fun _ => by exact st_taint [] zsp trivial (by taint_decide))
   rw [ev₁, Option.some.injEq, decide_eq_true_eq] at hc
   obtain ⟨k₁, hk₁⟩ := Option.isSome_iff_exists.mp (sampleStatus_some.mp hc)
@@ -387,7 +387,7 @@ theorem attempts_st {s₁ s₂ : State} (h₁ : rsContract.pre s₁) (h₂ : rsC
     (WP.of_seq (attempt_ok h₂ hq₂ A₂)) fun y₁ y₂ e₁ e₂ => by
       exact st_taint [] (by rw [e₁, e₂, xsp]) trivial (by taint_decide), _, _, attempt_ok h₁ hq A₁,
     attempt_ok h₂ hq₂ A₂, fun t₁ t₂ ⟨ev₁, _, c₁⟩ ⟨ev₂, _, c₂⟩ => ?_⟩
-  obtain ⟨n', rfl⟩ : ∃ n', n = n' + 1 := ⟨n - 1, by have := A₁.ha1; omega⟩
+  obtain ⟨n', rfl⟩ : ∃ n', n = n' + 1 := ⟨n - 1, by have := A₁.ha1; omega_using [this]⟩
   obtain ⟨eU, eS, eSt⟩ := draw_agree h₁ h₂ eL ek ht
   have hst := VG.Proof.Dsa.random_sign_attempt_status_agree ht eS eSt
   refine ⟨by rw [ev₁, ev₂, hst], fun hc => ?_⟩
@@ -395,7 +395,7 @@ theorem attempts_st {s₁ s₂ : State} (h₁ : rsContract.pre s₁) (h₂ : rsC
   obtain ⟨hn, i₁⟩ := c₁ hc
   obtain ⟨-, i₂⟩ := c₂ (hst ▸ hc)
   rw [Nat.add_sub_cancel] at i₁ i₂
-  refine ⟨n', by omega, _, i₁, eU ▸ i₂, ?_⟩
+  refine ⟨n', by omega_using [], _, i₁, eU ▸ i₂, ?_⟩
   have := VG.Proof.Dsa.random_sign_attempt_next_trace ht hc (hst ▸ hc)
   rw [← eU] at this
   exact this
@@ -414,14 +414,14 @@ theorem att_init {s₀ t₁ t₂ : State} (h : rsContract.pre s₀) (hq : 1 < qO
     (k2 : Keep (([.r6, .r12] : List Reg) ++ prepRegs) t₁ t₂) :
     AttInv s₀ 8 0 t₂ := by
   have hL := rlOf_ok h
-  refine ⟨sc, (k2.gpr _ (by decide)).trans he.r25, by omega, (k2.gpr _ (by decide)).trans he.r26, by decide,
+  refine ⟨sc, (k2.gpr _ (by decide)).trans he.r25, by omega_using [], (k2.gpr _ (by decide)).trans he.r26, by decide,
     by decide, fun j hj => ?_, VG.Proof.Dsa.RandomSignResultRel.refl _ _ _⟩
   rw [m2]
   have hE : (eOf s₀).Ok := seOf_ok hL s₀.mem hq
   have := hE.Wq
   have := hL.ql
   have e2 : (eOf s₀).ql = (rlOf s₀).ql := rfl
-  exact he.nonce j (by omega)
+  exact he.nonce j (by omega_using [hj, this])
 
 theorem randomSign_ct : ConstantTime isa rsContract.pre rsContract.pub Impl.Dsa.PPC64LE.RandomSign.code := by
   refine SameTrace.constantTime fun s₁ s₂ h₁ h₂ hp => ?_

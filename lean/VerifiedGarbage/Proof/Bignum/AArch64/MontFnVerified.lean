@@ -39,8 +39,8 @@ open VG.Proof.Rsa.Mont (numAt wOf wordAt Layout Operand Keeps arrAt aM minvWord)
 theorem read_eq_wv (m : Mem) (B : Addr) (d : Nat) : ∀ k, (m.read (off B d) (8 * k)).toNat = wv m B d k
   | 0 => by simp [Mem.read, wv]
   | k + 1 => by
-    rw [show 8 * (k + 1) = 8 + 8 * k by omega, Proof.Mont.read_toNat_add, read_eq_wv m B d k, wv,
-      Offset.add_add, show 8 * (8 * k) = 64 * k by omega]
+    rw [show 8 * (k + 1) = 8 + 8 * k by omega_using [], Proof.Mont.read_toNat_add, read_eq_wv m B d k, wv,
+      Offset.add_add, show 8 * (8 * k) = 64 * k by omega_using []]
     congr 2
 
 theorem numAt_eq (m : Mem) (B : Addr) (w j : Nat) : numAt m B w j = wv m B (slot w j) w := by

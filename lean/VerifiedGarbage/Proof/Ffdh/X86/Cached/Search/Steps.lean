@@ -68,9 +68,9 @@ theorem zeroStep_ok {s₀ t : State} {P : BitVec 32} {n k : Nat} (hR : (⟨P.set
       fun u => ZInv s₀ P n (k + 1) u ∧ u.zf = some (decide (n - (k + 1) = 0)) := by
   have hp : t.ea (at_ .edx 0) = P.setWidth 64 + BitVec.ofNat 64 k := by
     show (t.gpr .edx + BitVec.ofNat 32 0).setWidth 64 = _
-    rw [BitVec.add_zero, I.edx]; exact addr_eq (by omega)
+    rw [BitVec.add_zero, I.edx]; exact addr_eq (by omega_using [hb, hk])
   have hw : InRegions t.wr (P.setWidth 64 + BitVec.ofNat 64 k) 1 :=
-    ⟨_, by rw [I.keeps.2.2]; exact hR, Offset.contains_base _ (by omega) (by omega)⟩
+    ⟨_, by rw [I.keeps.2.2]; exact hR, Offset.contains_base _ (by omega_using [hk]) (by omega_using [hb, hk])⟩
   refine wp_store8 hp hw fun u₁ m₁ => wp_addi fun u₂ v₂ => wp_subi fun u₃ v₃ _ z₃ => WP.block_nil ?_
   have hv : (t.gpr (Reg8.al).reg).setWidth 8 = 0 := by show (t.gpr .eax).setWidth 8 = 0; rw [I.eax]; rfl
   rw [hv] at m₁
@@ -80,20 +80,20 @@ theorem zeroStep_ok {s₀ t : State} {P : BitVec 32} {n k : Nat} (hR : (⟨P.set
     rw [v₃.mem, v₂.mem, m₁.mem]
   have fr : Frame [⟨P.setWidth 64, n⟩] t.mem u₃.mem := by
     rw [mem₃]; exact Frame.writeW (Frame.refl _ _) (List.mem_singleton_self _) _
-      (Offset.contains_base _ (by omega) (by omega))
+      (Offset.contains_base _ (by omega_using [hk]) (by omega_using [hb, hk]))
   refine ⟨⟨?_, ?_, ?_, I.frame.trans fr, fun i hi => ?_, I.keeps.trans kk⟩, ?_⟩
   · rw [v₃.other _ (by decide), v₂.gpr, m₁.gpr, I.edx, BitVec.add_assoc,
       show (1 : BitVec 32) = BitVec.ofNat 32 1 from rfl, BitVec.ofNat_add_ofNat]
-  · rw [v₃.gpr, v₂.other _ (by decide), m₁.gpr, I.ecx, ofNat_pred (by omega)]; rfl
+  · rw [v₃.gpr, v₂.other _ (by decide), m₁.gpr, I.ecx, ofNat_pred (by omega_using [hk])]; rfl
   · rw [v₃.other _ (by decide), v₂.other _ (by decide), m₁.gpr, I.eax]
   · rw [mem₃, byte_write]
     by_cases hik : i = k
     · subst hik; simp
-    · rw [ite_eq_right (Offset.add_ofNat_ne _ (by omega) (by omega) hik)]
-      exact I.zero i (by omega)
+    · rw [ite_eq_right (Offset.add_ofNat_ne _ (by omega_using [hb, hk, hi]) (by omega_using [hb, hk]) hik)]
+      exact I.zero i (by omega_using [hi, hik])
   · rw [z₃, v₂.other _ (by decide), m₁.gpr, I.ecx, show (1 : BitVec 32) = BitVec.ofNat 32 1 from rfl,
-      sub_beq (by omega) (by decide)]
-    exact congrArg some (decide_eq_decide.mpr (by omega))
+      sub_beq (by omega_using [hn]) (by decide)]
+    exact congrArg some (decide_eq_decide.mpr (by omega_using [hk]))
 
 /-- `p_len` zeros at the pointer `P` in the state's word at `d`. -/
 theorem zeroOut_ok {s : State} {S P : BitVec 32} {d n : Nat} (hesi : s.gpr .esi = S)
@@ -124,10 +124,10 @@ theorem zeroOut_ok {s : State} {S P : BitVec 32} {d n : Nat} (hesi : s.gpr .esi 
     · intro i h₁ _
       simp only [Spec.Rsa.bytesAt, List.getElem_map, List.getElem_range, List.getElem_replicate]
       simp only [Spec.Rsa.bytesAt, List.length_map, List.length_range] at h₁
-      exact J.zero i (by omega)
+      exact J.zero i (by omega_using [he, h₁])
   · right
-    exact ⟨by simp only [eval, z, he, decide_false, Option.map_some, Bool.not_false], _, by omega,
-      k + 1, rfl, by omega, J⟩
+    exact ⟨by simp only [eval, z, he, decide_false, Option.map_some, Bool.not_false], _, by omega_using [hk],
+      k + 1, rfl, by omega_using [he], J⟩
 
 end VG.Proof.Ffdh.X86.Cached.Search
 
@@ -251,7 +251,7 @@ theorem St.zeroOne {o s : State} {ds : List Nat} {f : Nat → BitVec 32} (h : St
   have hp := A.pLen
   unfold Spec.Ffdh.pLenValid at hp
   refine WP.mono (zeroOut_ok h.esi (h.rIn hd4) (h.rIn (by decide)) ((h.words.get hdd).trans hdP)
-    ((h.words.get hdl).trans hl) (by rw [h.wr]; exact hin) (by omega) hb (by omega)) fun t ⟨F, Z, K⟩ => ?_
+    ((h.words.get hdl).trans hl) (by rw [h.wr]; exact hin) (by omega_using [hp]) hb (by omega_using [])) fun t ⟨F, Z, K⟩ => ?_
   refine ⟨⟨A, K.2.1.trans h.rd, K.2.2.trans h.wr, by rw [K.1 _ (by decide), h.esp],
       by rw [K.1 _ (by decide), h.esi], fun q hq hne => ?_, h.frame.trans (F.mono fun r hr => ?_),
       h.words.frame A.sBound hA F fun r hr => ?_⟩, Z, F, fun r hr => K.1 _ fun hm => hr (by simp at hm; omega)⟩
@@ -282,7 +282,7 @@ theorem St.zeroOutputs {o s : State} {ds : List Nat} {f : Nat → BitVec 32} (h 
   have ys : (stR (arg o 12)).Disjoint ⟨(arg o 2).setWidth 64, (arg o 7).toNat⟩ := by
     rw [← yR_eq A]; exact A.ys.symm
   refine WP.seq (WP.mono (zeroOut_ok h.esi (h.rIn (by decide)) (h.rIn (by decide)) ((h.words.get hdx).trans hx)
-    ((h.words.get hdl).trans hl) (by rw [h.wr]; exact xin) (by omega) xb (by omega)) fun t ⟨F, Z, K⟩ => ?_)
+    ((h.words.get hdl).trans hl) (by rw [h.wr]; exact xin) (by omega_using [hp]) xb (by omega_using [])) fun t ⟨F, Z, K⟩ => ?_)
   have ht : St o ds f t := by
     refine ⟨A, K.2.1.trans h.rd, K.2.2.trans h.wr, by rw [K.1 _ (by decide), h.esp],
       by rw [K.1 _ (by decide), h.esi], fun q hq hne => ?_, h.frame.trans (F.mono fun r hr => ?_),
@@ -291,7 +291,7 @@ theorem St.zeroOutputs {o s : State} {ds : List Nat} {f : Nat → BitVec 32} (h 
     · simp only [List.mem_singleton] at hr; subst hr; exact List.mem_append_left _ xin
     · simp only [List.mem_singleton] at hr; subst hr; exact xs
   refine WP.mono (zeroOut_ok ht.esi (ht.rIn (by decide)) (ht.rIn (by decide)) ((ht.words.get hdy).trans hy)
-    ((ht.words.get hdl).trans hl) (by rw [ht.wr]; exact yin) (by omega) yb (by omega)) fun u ⟨F', Z', K'⟩ => ?_
+    ((ht.words.get hdl).trans hl) (by rw [ht.wr]; exact yin) (by omega_using [hp]) yb (by omega_using [])) fun u ⟨F', Z', K'⟩ => ?_
   refine ⟨⟨A, K'.2.1.trans ht.rd, K'.2.2.trans ht.wr, by rw [K'.1 _ (by decide), ht.esp],
       by rw [K'.1 _ (by decide), ht.esi], fun q hq hne => ?_, ht.frame.trans (F'.mono fun r hr => ?_),
       ht.words.frame hS hA F' fun r hr => ?_⟩, ?_, Z', ?_, fun r hr => ?_⟩
@@ -299,7 +299,7 @@ theorem St.zeroOutputs {o s : State} {ds : List Nat} {f : Nat → BitVec 32} (h 
   · simp only [List.mem_singleton] at hr; subst hr; exact List.mem_append_left _ yin
   · simp only [List.mem_singleton] at hr; subst hr; exact ys
   · rw [bytes_frame F' (fun r hr => by
-      simp only [List.mem_singleton] at hr; subst hr; rw [← xR_eq A, ← yR_eq A]; exact A.xy) (by omega)]
+      simp only [List.mem_singleton] at hr; subst hr; rw [← xR_eq A, ← yR_eq A]; exact A.xy) (by omega_using [])]
     exact Z
   · rw [K'.1 _ (by decide), K.1 _ (by decide)]
   · rw [K'.1 _ (fun hm => hr (by simp at hm; omega)), K.1 _ (fun hm => hr (by simp at hm; omega))]

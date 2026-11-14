@@ -39,9 +39,9 @@ theorem Entry.marker {s : State} (E : Entry s) :
     change Proof.Rsa.Mont.arrAt (geometry s).w 28 ≤ lenOf s at arrays
     unfold Geometry.array Geometry.words Proof.Rsa.Mont.arrAt Proof.Rsa.Mont.hdrBytes
     unfold Proof.Rsa.Mont.arrAt Proof.Rsa.Mont.hdrBytes at arrays
-    omega
+    omega_using [arrays]
   rw [E.pushed_read fit]
-  rw [show 4 * (geometry s).words = 8 * (geometry s).w by unfold Geometry.words; omega]
+  rw [show 4 * (geometry s).words = 8 * (geometry s).w by unfold Geometry.words; omega_using []]
   exact E.prepared.2.2.2.2.2.2.2
 
 end VG.Proof.MillerRabin.X86

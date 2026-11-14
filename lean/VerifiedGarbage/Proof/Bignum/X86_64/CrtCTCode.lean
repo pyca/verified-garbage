@@ -142,8 +142,8 @@ theorem crtEntryWith_ct {α : Type} {f : α → CCPub} {Rel : α → State → P
     have hk2 := hpre.k2
     have hZq := hpre.z
     have h8 := hdr_lt_slot (((f p).m.k + 7) / 8) 8 (show 31 < 32 by decide)
-    have hZ : 8 * 32 ≤ (f p).m.Z := by unfold offQ at hZq; omega
-    have hl : ∀ i < 32, InRegions (t.rd ++ t.wr) (off (f p).m.B (8 * i)) 8 := fun i hi => hpre.scr.ld (by omega)
+    have hZ : 8 * 32 ≤ (f p).m.Z := by unfold offQ at hZq; omega_using [hZq, h8]
+    have hl : ∀ i < 32, InRegions (t.rd ++ t.wr) (off (f p).m.B (8 * i)) 8 := fun i hi => hpre.scr.ld (by omega_using [hZ, hi])
     refine WP.mono (WP.keep [.rsi, .rcx, .rax] (Q := fun t' => t'.gpr .rsi = (f p).m.op ∧
         t'.gpr .rcx = BitVec.ofNat 64 (f p).m.k) (by
       xrun [State.ea, hdr, hpre.rdi, hdrOff, hl sOut (by decide), hl sK (by decide), hpre.hO, hpre.hK]) rfl)

@@ -98,9 +98,9 @@ theorem GBytes.of_unch {base : Addr} {u j : Nat} {s t : State} {W : List (Nat×N
  GBytes base u j t := by
  have hb : P384Joint.KG.bits=3152 := rfl
  have e : ∀i<770,t.mem (off base (P384Joint.KG.bits+i))=FastNaf.wbyte u i := fun i hi => by
-  rw [hu.byte (fun w hw' => by have := hw w hw'; omega) (by omega)]
+  rw [hu.byte (fun w hw' => by have := hw w hw'; omega_using [hi, this]) (by omega_using [hb, hi])]
   exact bytes i hi
- exact ⟨e _ (by omega),e _ (by omega)⟩
+ exact ⟨e _ (by omega_using [hj]),e _ (by omega_using [hj])⟩
 
 theorem fixedStep_of_source {C : Curve} {base T : Addr} {P G : Point C} {s₀ : State} {u v : Nat}
  (hL : NafLay P384Joint.K 8192) (hp : UnitMod C.p (2^(64*P384Joint.K.M.n)))
@@ -147,7 +147,7 @@ theorem window_source_ok {C : Curve} {base T : Addr} {u v : Nat} (hL : NafLay P3
    rw [ua.byte (by
      intro w hw
      have he := generator_apart w hw
-     omega) (by omega)]
+     omega_using [hj, he]) (by omega_using [hj, hb])]
    exact bytes j hj
  · unfold tmv
    rw [ua.wordsVal (by decide) (by decide)]

@@ -38,10 +38,10 @@ theorem argumentCopyAt_ok (s : State) {base value : BitVec 32} {offset d bytes :
       t.mem = s.mem.writeW (off (State.addr s.sp) d) value ∧ Rest [.r9] s t := by
   refine withRest_all [.r9] ?_ (by rfl) (by rfl)
   have address : State.addr (s.sp + BitVec.ofNat 32 d) = off (State.addr s.sp) d :=
-    VG.Arm.addr_add (by have := stack.nowrap; omega)
+    VG.Arm.addr_add (by have := stack.nowrap; omega_using [fit, this])
   have sourceAddress : State.addr (base + BitVec.ofNat 32 offset) = off (State.addr base) offset :=
-    VG.Arm.addr_add (by have := h.space.nowrap; omega)
-  ffrun [(by omega : offset < 4096), small, h.ptr, sourceAddress, h.space.read sourceFit,
+    VG.Arm.addr_add (by have := h.space.nowrap; omega_using [sourceFit, this])
+  ffrun [(by omega_using [sourceFit] : offset < 4096), small, h.ptr, sourceAddress, h.space.read sourceFit,
     stackBase, address, stack.write fit, source]
 
 theorem argumentStore_ok (s : State) {value : BitVec 32} {d bytes : Nat} (r : Reg)
@@ -51,7 +51,7 @@ theorem argumentStore_ok (s : State) {value : BitVec 32} {d bytes : Nat} (r : Re
       t.mem = s.mem.writeW (off (State.addr s.sp) d) value ∧ Rest [] s t := by
   refine withRest_all [] ?_ (by rfl) (by rfl)
   have address : State.addr (s.sp + BitVec.ofNat 32 d) = off (State.addr s.sp) d :=
-    VG.Arm.addr_add (by have := stack.nowrap; omega)
+    VG.Arm.addr_add (by have := stack.nowrap; omega_using [fit, this])
   ffrun [small, stackBase, address, stack.write fit, source]
 
 end VG.Proof.Ffdh.Arm.KeySearch

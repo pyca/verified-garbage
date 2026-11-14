@@ -46,11 +46,11 @@ theorem val32_zero_split {m : Mem} {base : Addr} {d j k : Nat} (h : val32 m base
     val32 m base d j = 0 ∧ val32 m base (d + 4 * j) k = 0 := by
   rw [val32_append] at h
   have positive : 0 < 2 ^ (32 * j) := Nat.two_pow_pos _
-  refine ⟨by omega, ?_⟩
+  refine ⟨by omega_using [h], ?_⟩
   rcases Nat.eq_zero_or_pos (val32 m base (d + 4 * j) k) with zero | pos
   · exact zero
   · have := Nat.mul_le_mul_left (2 ^ (32 * j)) pos
-    omega
+    omega_using [h, positive, this]
 
 theorem transferPadded_ok (s : State) {base src : BitVec 32} {len slen w v o a : Nat}
     (h : TransferPaddedInput base src len slen w v o s) (ho : o < 8) (ha : a < 8) :
@@ -63,13 +63,13 @@ theorem transferPadded_ok (s : State) {base src : BitVec 32} {len slen w v o a :
   have narrower := h.narrower
   have arraysFit : arrAt w 8 ≤ 8 * len := dst.width ▸ dst.layout.2.2.1
   have bound := Nat.le_trans (array_end_le ho) arraysFit
-  have small : 128 ≤ 8 * len := by simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at arraysFit; omega
+  have small : 128 ≤ 8 * len := by simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at arraysFit; omega_using [arraysFit]
   let output := base + BitVec.ofNat 32 (arrAt w o)
-  have outAddr : State.addr output = off (State.addr base) (arrAt w o) := addr_add (by omega)
+  have outAddr : State.addr output = off (State.addr base) (arrAt w o) := addr_add (by omega_using [nowrap, bound])
   have outNat : output.toNat = base.toNat + arrAt w o := by
     simp only [output, BitVec.toNat_add, BitVec.toNat_ofNat,
-      Nat.mod_eq_of_lt (by omega : arrAt w o < 2 ^ 32),
-      Nat.mod_eq_of_lt (by omega : base.toNat + arrAt w o < 2 ^ 32)]
+      Nat.mod_eq_of_lt (by omega_using [nowrap, bound] : arrAt w o < 2 ^ 32),
+      Nat.mod_eq_of_lt (by omega_using [nowrap, bound] : base.toNat + arrAt w o < 2 ^ 32)]
   have header := nativeHeader_of_layout s.mem base nowrap (Nat.le_refl _) dst.layout
   rw [dst.width] at header
   rw [transferArray, WP.seq_iff]
@@ -77,20 +77,20 @@ theorem transferPadded_ok (s : State) {base src : BitVec 32} {len slen w v o a :
   rintro u ⟨ptrU, outputU, indexU, memU, restU⟩
   have write : InRegions u.wr (State.addr output) (8 * v) := by
     rw [restU.wr, outAddr]
-    exact ⟨_, dst.workspace.writable, Offset.contains_base _ (by omega) (by omega)⟩
+    exact ⟨_, dst.workspace.writable, Offset.contains_base _ (by omega_using [narrower, bound]) (by omega_using [outNat])⟩
   have sep : Region.Disjoint ⟨State.addr src, 8 * slen⟩ ⟨State.addr output, 8 * v⟩ := by
     apply h.separate.sub_right
     rw [outAddr]
-    exact Offset.sub_base _ (by omega)
+    exact Offset.sub_base _ (by omega_using [narrower, bound])
   rw [WP.seq_iff]
   refine WP.mono (exportArray_ok u (h.source.congr restU.wr)
     (by rw [memU]; exact h.layout.layout) (w := v) (by rw [memU]; exact h.layout.width)
-    ha (by rw [outNat]; omega) write sep ptrU indexU outputU) ?_
+    ha (by rw [outNat]; omega_using [nowrap, narrower, bound]) write sep ptrU indexU outputU) ?_
   rintro z ⟨value, frameZ, _, _, restZ⟩
   rw [memU, outAddr] at value frameZ
-  have outside := frame_array_outside (by omega : arrAt w o + 8 * v < 2 ^ 64) frameZ
-  have frame := outside_workspace outside (size := 8 * len) (by omega)
-  have keeps := outside_array_prefix_keeps outside (by omega : 8 * len < 2 ^ 64) (by omega : 8 * v ≤ 8 * (w + 2))
+  have outside := frame_array_outside (by omega_using [nowrap, narrower, bound] : arrAt w o + 8 * v < 2 ^ 64) frameZ
+  have frame := outside_workspace outside (size := 8 * len) (by omega_using [narrower, bound])
+  have keeps := outside_array_prefix_keeps outside (by omega_using [nowrap] : 8 * len < 2 ^ 64) (by omega_using [narrower] : 8 * v ≤ 8 * (w + 2))
   have rest : Rest roundClobbers s z := (restU.mono (by decide)).trans restZ
   refine WP.mono (restoreBase_ok z (by rw [rest.rd, rest.wr, rest.sp]; exact dst.stackRead)
     (saved_base_kept frame dst.stackSep dst.saved rest.sp)) ?_
@@ -100,11 +100,11 @@ theorem transferPadded_ok (s : State) {base src : BitVec 32} {len slen w v o a :
   have restAll := rest.trans (restT.mono (by decide))
   refine ⟨dst.after_array keepsT frameT restAll ptrT, ?_, keepsT, frameT, restAll⟩
   have zero := h.cleared
-  rw [show 2 * w + 2 = 2 * v + ((2 * w - 2 * v) + 2) by omega] at zero
+  rw [show 2 * w + 2 = 2 * v + ((2 * w - 2 * v) + 2) by omega_using [narrower]] at zero
   have high := (val32_zero_split (val32_zero_split zero).2).1
-  rw [numAt_native, memT, show 2 * w = 2 * v + (2 * w - 2 * v) by omega, val32_append,
-    outside.val32 (d := arrAt w o + 4 * (2 * v)) (Or.inr (by omega)) (by omega), high,
-    Nat.mul_zero, Nat.add_zero, ← read_eq_val32, show 4 * (2 * v) = 8 * v by omega, value]
+  rw [numAt_native, memT, show 2 * w = 2 * v + (2 * w - 2 * v) by omega_using [narrower], val32_append,
+    outside.val32 (d := arrAt w o + 4 * (2 * v)) (Or.inr (by omega_using [])) (by omega_using [nowrap, narrower, bound]), high,
+    Nat.mul_zero, Nat.add_zero, ← read_eq_val32, show 4 * (2 * v) = 8 * v by omega_using [], value]
   rfl
 
 end VG.Proof.Bignum.Arm

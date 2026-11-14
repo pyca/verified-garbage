@@ -97,7 +97,7 @@ theorem codeG_correct {pc : Bool} (s : State) (h : PreP pc s) (hcrt : CrtOk pc s
         rcases hr with rfl | rfl | rfl
         · exact h.ki.symm
         · exact h.oi.symm
-        · exact h.is) (by have := h.wi; rw [h.h10] at this; omega)
+        · exact h.is) (by have := h.wi; rw [h.h10] at this; omega_using [])
     refine final_ok (Proof.Rsa.bytesAt_length' _ _ _) (Proof.Rsa.bytesAt_length' _ _ _) L.crt (fun ws hw => L.pub ws hw (hv ws hw)) ?_ hout
     rw [cmpAcc_eq_zero, ← hx, Proof.Rsa.bytesAt_eq_iff]
 

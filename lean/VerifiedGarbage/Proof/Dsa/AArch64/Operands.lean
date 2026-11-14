@@ -55,7 +55,7 @@ theorem pointer_ok {s : State} {B : Addr} {Z : Nat} (hs : Scr s B Z)
       congr 1
       apply BitVec.eq_of_toNat_eq
       simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]
-      omega
+      omega_using [hp]
     | signatureS =>
       unfold Core.pointer pointerValue Core.field
       brun [hdi, field_enc Field.signature, field_enc Field.qLen, fieldAddress, hl Field.signature, hl Field.qLen]
@@ -80,16 +80,16 @@ theorem operand_ok {s : State} {B : Addr} {Z : Nat} (hs : Scr s B Z)
   have hpMax : pWorkspace < 2 ^ 64 := by decide
   have hw : word (u.mem.writeW (off B (8 * sp)) (pointerValue s.mem B a.pointer)) B a.length.offset =
       word s.mem B a.length.offset := by
-    rw [(writeW_outside u.mem B (pointerValue s.mem B a.pointer) (by omega)).word
-      (Or.inr (by omega)) (by omega), hum]
+    rw [(writeW_outside u.mem B (pointerValue s.mem B a.pointer) (by omega_using [hsp])).word
+      (Or.inr (by omega_using [hsp, hbounds])) (by omega_using [hbounds, hpMax]), hum]
   refine WP.mono (WP.keep [.x3, .x4] (Q := fun t =>
     t.mem = (u.mem.writeW (off B (8 * sp)) (pointerValue s.mem B a.pointer)).writeW
       (off B (8 * sl)) (word s.mem B a.length.offset)) ?_ rfl rfl rfl)
     fun t ⟨htm, hkt⟩ => ⟨by rw [hum] at htm; exact htm, (hku.trans hkt).mono (by decide)⟩
   unfold Core.field
   brun [field_enc a.length, hdu, hdr_enc hsp, hdr_enc hsl, hua, fieldAddress, hw,
-    hsu.st (show 8 * sp + 8 ≤ Z by omega),
-    hsu.ld (show a.length.offset + 8 ≤ Z by omega),
-    hsu.st (show 8 * sl + 8 ≤ Z by omega)]
+    hsu.st (show 8 * sp + 8 ≤ Z by omega_using [hZ, hsp, hbounds]),
+    hsu.ld (show a.length.offset + 8 ≤ Z by omega_using [hZ, hbounds]),
+    hsu.st (show 8 * sl + 8 ≤ Z by omega_using [hZ, hsl, hbounds])]
 
 end VG.Proof.Dsa.AArch64

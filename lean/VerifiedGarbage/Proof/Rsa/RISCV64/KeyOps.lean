@@ -354,14 +354,14 @@ theorem clr_eq (x : BitVec 64) : x &&& BitVec.ofInt 64 (-2) = (x >>> 1) <<< 1 :=
   simp only [BitVec.getElem_and, BitVec.getElem_not, BitVec.getElem_shiftLeft, BitVec.getElem_ushiftRight]
   by_cases h : i = 0
   · subst h; simp
-  · simp [h, show 1 + (i - 1) = i by omega, BitVec.getLsbD_eq_getElem hi]
+  · simp [h, show 1 + (i - 1) = i by omega_using [h], BitVec.getLsbD_eq_getElem hi]
 
 theorem or_one_eq (x : BitVec 64) : x ||| 1#64 = (x >>> 1) <<< 1 ||| 1#64 := by
   apply BitVec.eq_of_getElem_eq; intro i hi
   simp only [BitVec.getElem_or, BitVec.getElem_shiftLeft, BitVec.getElem_ushiftRight]
   by_cases h : i = 0
   · subst h; simp
-  · simp [h, show 1 + (i - 1) = i by omega, BitVec.getLsbD_eq_getElem hi]
+  · simp [h, show 1 + (i - 1) = i by omega_using [h], BitVec.getLsbD_eq_getElem hi]
 
 theorem or_one_toNat (x : BitVec 64) : (x ||| 1#64).toNat = x.toNat / 2 * 2 + 1 := by
   have hd : (x >>> 1) <<< 1 &&& 1#64 = 0 := by

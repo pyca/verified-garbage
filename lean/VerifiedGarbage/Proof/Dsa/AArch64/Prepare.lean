@@ -25,7 +25,7 @@ theorem constantRanges_work (w : Nat) : ∀ r ∈ constantRanges w,
   have h4 := slot_le (w := w) (show aR2 < 8 by decide)
   simp only [constantRanges, r2Ranges, List.mem_cons, List.not_mem_nil, or_false]
   rintro _ (rfl | rfl | rfl | rfl | rfl) <;>
-    simp only [slot, hdrBytes, aOne, aAcc, aTmp, aR2, sCnt, sFn] at * <;> omega
+    simp only [slot, hdrBytes, aOne, aAcc, aTmp, aR2, sCnt, sFn] at * <;> omega_using []
 
 theorem constantRanges_modulus (w : Nat) : ∀ r ∈ constantRanges w,
     slot w aN + 8 * (w + 2) ≤ r.1 ∨ r.1 + r.2 ≤ slot w aN := by
@@ -54,16 +54,16 @@ theorem prepare_ok (M : Mont) {s : State} {B : Addr} {Z o w wx m : Nat} {minv : 
   have hz := hc.good.scr.nowrap
   have hslot := slot_le (w := wx) (show aN < 8 by decide)
   have hmctx : ModCtx t (off B o) (slot wx 8) wx minv m := ⟨ht,
-    (hf.wv_eq (fun r hr => by have := hsep r hr; omega) (by omega)).trans hn,
-    by rw [hf.word_eq (fun r hr => by have := hsep r hr; omega) (by omega)]; exact hinv⟩
+    (hf.wv_eq (fun r hr => by have := hsep r hr; omega_using [this]) (by omega_using [hz, hslot])).trans hn,
+    by rw [hf.word_eq (fun r hr => by have := hsep r hr; omega_using [this]) (by omega_using [hz, hslot])]; exact hinv⟩
   refine ⟨hct, hmctx, h1, h2, ?_, hk⟩
   intro x hx
   apply hf x
   intro r hr
   have hb := constantRanges_work wx r hr
   have h := hx (136, slot wx 8 + tabBytes wx - 136) (List.mem_singleton_self _)
-  have : 256 ≤ slot wx 8 := by unfold slot hdrBytes; omega
-  omega
+  have : 256 ≤ slot wx 8 := by unfold slot hdrBytes; omega_using []
+  omega_using [hb, h]
 
 /-- Load one operand while retaining the modulus context and all other arrays. -/
 theorem load_mod_ok {s : State} {B : Addr} {Z o w wx m : Nat} {minv : BitVec 64}
@@ -88,7 +88,7 @@ theorem load_mod_ok {s : State} {B : Addr} {Z o w wx m : Nat} {minv : BitVec 64}
   have hnot : aN ∉ [j] := by simpa using Ne.symm hjn
   have hn := (ha.wv_of_not_mem (show aN < 8 by decide) hnot hnZ).trans hm.modulus
   have hi : ((word t.mem (off B o) (slot wx aN)).toNat * minv.toNat + 1) % 2 ^ 64 = 0 := by
-    rw [ha.word0_of_not_mem (by decide) hnot hnZ (by omega)]
+    rw [ha.word0_of_not_mem (by decide) hnot hnZ (by omega_using [hw2])]
     exact hm.inverse
   refine ⟨ht, ⟨ht.good, hn, hi⟩, hv, ?_, arrays_work ha (by simpa using hj), hk⟩
   intro i hi hij

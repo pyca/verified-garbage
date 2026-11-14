@@ -38,15 +38,15 @@ theorem words_ok (m₀ : Mem) (dest : Addr) (j : Nat) (hj : j < 8) (s : State)
     simp only [Impl.Argon2.AArch64.ClearBlock.words, List.range_succ, List.flatMap_append,
       List.flatMap_cons, List.flatMap_nil, List.append_nil]
     apply WP.block_append
-    refine (ih (by omega)).mono ?_
+    refine (ih (by omega_using [hn])).mono ?_
     rintro a ⟨memA, regs, rd, wr, mx⟩
     have at_ : off (a.gpr .x0) (8 * n) = dest + BitVec.ofNat 64 (8 * (16 * j + n)) := by
       rw [regs, pd]
-      exact Offset.add_add_eq dest (by omega)
+      exact Offset.add_add_eq dest (by omega_using [])
     have hw : InRegions a.wr (off (a.gpr .x0) (8 * n)) 8 := by
       rw [at_, wr]
-      exact write _ _ ⟨⟨dest, 1024⟩, by simp, Offset.contains_base _ (by omega) (by omega)⟩
-    refine (ClearBlock.word_ok a n (by omega) hw).mono ?_
+      exact write _ _ ⟨⟨dest, 1024⟩, by simp, Offset.contains_base _ (by omega_using [hj, hn]) (by omega_using [hj, hn])⟩
+    refine (ClearBlock.word_ok a n (by omega_using [hn]) hw).mono ?_
     rintro t ⟨memT, regsT, rdT, wrT, mxT⟩
     refine ⟨?_, regsT.trans regs, rdT.trans rd, wrT.trans wr, mxT.trans mx⟩
     rw [memT, at_, memA, regs, zero]
@@ -100,15 +100,15 @@ theorem body_ok (s₀ : State) (j : Nat) (hj : j < 8) (s : State) (h : Inv s₀ 
   rintro a ⟨memA, regsA, rdA, wrA, spA⟩
   refine (advance_ok a).mono ?_
   rintro t ⟨dst, cnt, regsT, mem, rd, wr, sp⟩
-  refine ⟨by omega, ?_, ?_, ?_, ?_, ?_, rd.trans (rdA.trans h.rd), wr.trans (wrA.trans h.wr),
+  refine ⟨by omega_using [hj], ?_, ?_, ?_, ?_, ?_, rd.trans (rdA.trans h.rd), wr.trans (wrA.trans h.wr),
     sp.trans (spA.trans h.sp)⟩
   · rw [dst, regsA, h.dest, show (128 : Addr) = BitVec.ofNat 64 128 from rfl]
-    exact Offset.add_add_eq _ (by omega)
+    exact Offset.add_add_eq _ (by omega_using [])
   · rw [cnt, regsA, h.count, show (1 : Addr) = BitVec.ofNat 64 1 from rfl,
-      Offset.ofNat_sub_ofNat (by omega)]
+      Offset.ofNat_sub_ofNat (by omega_using [hj])]
     congr 1
   · rw [regsT .x8 (by decide) (by decide), regsA]; exact h.zero
-  · rw [mem, memA, show 16 * (j + 1) = 16 * j + 16 by omega]
+  · rw [mem, memA, show 16 * (j + 1) = 16 * j + 16 by omega_using []]
   · intro r h0 h8 h9
     rw [regsT r h0 h9, regsA]
     exact h.regs r h0 h8 h9
@@ -127,15 +127,15 @@ theorem loop_ok (s₀ : State) (s : State) (h : Inv s₀ 0 s)
     rw [Bool.eq_iff_iff, bne_iff_ne, decide_eq_true_iff, ne_eq, ne_eq]
     refine not_congr ⟨fun eq => ?_, fun eq => by rw [eq]; rfl⟩
     have num := congrArg BitVec.toNat eq
-    simpa only [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega : 8 - (j + 1) < 2 ^ 64),
+    simpa only [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [] : 8 - (j + 1) < 2 ^ 64),
       show (0 : Addr).toNat = 0 from rfl] using num
   by_cases done : j + 1 = 8
   · refine .inl ⟨?_, done ▸ next⟩
-    simpa only [show 8 - (j + 1) = 0 by omega, ne_eq, not_true_eq_false, decide_false] using flag
-  · refine .inr ⟨?_, 8 - (j + 1), by omega, j + 1, rfl, by omega, next⟩
+    simpa only [show 8 - (j + 1) = 0 by omega_using [done], ne_eq, not_true_eq_false, decide_false] using flag
+  · refine .inr ⟨?_, 8 - (j + 1), by omega_using [hj], j + 1, rfl, by omega_using [hj, done], next⟩
     change eval (.nonzero .x .x9) t = some true
     rw [flag]
-    exact congrArg some (decide_eq_true (by omega : 8 - (j + 1) ≠ 0))
+    exact congrArg some (decide_eq_true (by omega_using [hj, done] : 8 - (j + 1) ≠ 0))
 
 theorem restore_ok (s : State) :
     WP isa (.block [.subImm .x .x0 .x0 1024]) s fun t =>

@@ -37,9 +37,9 @@ theorem fixedAddress_ok {s : State} {a : Nat} {T : Addr}
  refine ⟨?_,?_,rfl,rfl,rfl,rfl⟩
  · simp only [Nat.mul_zero,BitVec.shiftLeft_zero]
    change T + ((BitVec.ofNat 64 a - BitVec.ofNat 64 1) * BitVec.ofNat 64 192) = _
-   rw [BitVec.ofNat_sub_ofNat_of_le a 1 (by decide) (by omega),←BitVec.ofNat_mul]
+   rw [BitVec.ofNat_sub_ofNat_of_le a 1 (by decide) (by omega_using [ha]),←BitVec.ofNat_mul]
    congr 2
-   omega
+   omega_using []
  · intro r hr
    simp only [List.mem_cons,List.not_mem_nil,or_false,not_or] at hr
    simp only [RegUpd.gpr_write,hr.1,hr.2.1,hr.2.2,ite_false]

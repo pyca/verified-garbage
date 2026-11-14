@@ -38,7 +38,7 @@ theorem inc32_words (a b c d : BitVec 32) : inc32 (a ++ b ++ c ++ d) = a ++ b ++
   have h₁ : (a ++ b ++ c ++ d).extractLsb' 32 96 = a ++ b ++ c := by
     apply BitVec.eq_of_getLsbD_eq; intro i hi
     simp only [BitVec.getLsbD_extractLsb', BitVec.getLsbD_append, hi, decide_true, Bool.true_and]
-    simp only [show ¬ (32 + i < 32) by omega, ite_false, show 32 + i - 32 = i by omega]
+    simp only [show ¬ (32 + i < 32) by omega_using [], ite_false, show 32 + i - 32 = i by omega_using []]
   have h₂ : (a ++ b ++ c ++ d).extractLsb' 0 32 = d := by
     apply BitVec.eq_of_getLsbD_eq; intro i hi
     rw [BitVec.getLsbD_extractLsb', BitVec.getLsbD_append]; simp [hi]
@@ -48,7 +48,7 @@ theorem ww32 (x : BitVec 32) : (x.setWidth 64).setWidth 32 = x := by
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_setWidth]
   have := x.isLt
-  rw [Nat.mod_eq_of_lt (show x.toNat < 2 ^ 64 by omega), Nat.mod_eq_of_lt this]
+  rw [Nat.mod_eq_of_lt (show x.toNat < 2 ^ 64 by omega_using []), Nat.mod_eq_of_lt this]
 
 theorem bswap32_eq : X86_64.bswap32 = byteRev32 := rfl
 
@@ -327,7 +327,7 @@ theorem j0hash_ok {H : Block} {Np : Addr} {n : Nat} {s : State} (h : J0In Ctx St
     rcases hr with rfl | rfl
     · exact L.ctx_st (by decide) (by decide)
     · exact L.ctx_w (by decide) (Lay.leN hN)
-  have hiv : bytesAt s₁.mem Np n = bytesAt s.mem Np n := bytesAt_frame f₁ dD (by omega)
+  have hiv : bytesAt s₁.mem Np n = bytesAt s.mem Np n := bytesAt_frame f₁ dD (by omega_using [hlt])
   have hH₁ : blockAt s₁.mem (Ctx + BitVec.ofNat 64 240) = H := by rw [blockAt_frame f₁ dH, h.hH]
   have hY₁ : blockAt s₁.mem (St + BitVec.ofNat 64 0) = 0 := by
     rw [blockAt, bytesAt_frame fa (fun r hr => by

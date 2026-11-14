@@ -59,13 +59,13 @@ theorem ctW_slot (hg : Geo L scr) {T : Nat} (hT : T ≤ 2048) {d : Nat} (hd : d 
   have hB := h.B_le
   have hso := h.so_le
   obtain ⟨σ', ok⟩ := hg.ok
-  have hF : d + 4 ≤ L.F + 56 := by rw [hg.F]; unfold frameBytes at hd ⊢; omega
-  have hC : L.C ≤ 2 ^ 32 := by have := ok.B56; have := L.B.isLt; omega
+  have hF : d + 4 ≤ L.F + 56 := by rw [hg.F]; unfold frameBytes at hd ⊢; omega_using [hd]
+  have hC : L.C ≤ 2 ^ 32 := by have := ok.B56; have := L.B.isLt; omega_arith
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
   · exact hg.slot ok (by pomega) hF
-  · exact Lay.fr_low (by unfold frameBytes at hd; omega) hC
+  · exact Lay.fr_low (by unfold frameBytes at hd; omega_using [hd]) hC
   · exact hg.slot ok (by pomega) hF
   · exact hg.slot ok (by pomega) hF
   · exact hg.slot ok (by pomega) hF
@@ -198,15 +198,15 @@ theorem ctHash_vp (hg : Geo L scr) {f : MdFns} {dn : String} {j : Nat} {ai ac ad
   have hNL := h.NL
   have hDN := h.D_le
   have fit := hg.fit
-  have hB0 : 0 < h.B := by omega
-  have hLB : h.L < h.B := by have := h.D_pos; omega
+  have hB0 : 0 < h.B := by omega_using [hB64]
+  have hLB : h.L < h.B := by have := h.D_pos; omega_using [hB64, hL]
   obtain ⟨σ', ok⟩ := hg.ok
   have hIs : ∀ rs : List Region, (∀ r ∈ rs, r ∈ ctW h L scr (nbm * h.B)) →
       ∀ σ m m', Inv σ m → Frame rs m m' → Inv σ m' :=
     fun rs hs σ m m' hi hf => hI σ m m' hi (Frame.subset hf hs)
   have hq : ∀ σ, ((msg σ).length + h.L) / h.B < nbm := fun σ =>
-    (Nat.div_lt_iff_lt_mul hB0).2 (by have := hfit σ; omega)
-  have hℓ : ∀ σ, (msg σ).length < 2048 := fun σ => by have := hfit σ; omega
+    (Nat.div_lt_iff_lt_mul hB0).2 (by have := hfit σ; omega_using [this])
+  have hℓ : ∀ σ, (msg σ).length < 2048 := fun σ => by have := hfit σ; omega_using [hnb, this]
   let p := L.argv.getD j 0
   have tS : ∀ o n, o + n ≤ oRsa → (slotR L sTab).Disjoint (sR scr o n) := fun o n h' => sTab_sep hg h'
   have tB : (slotR L sTab).Disjoint (slotR L sBi) := Lay.fr_sep (by decide) (by decide) (by decide)
@@ -240,7 +240,7 @@ theorem ctHash_vp (hg : Geo L scr) {f : MdFns} {dn : String} {j : Nat} {ai ac ad
       (stateAt_keep h hf fun r hr => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
         subst hr; exact Geo.sep (by pomega) (by pomega) (by pomega)).trans he⟩)
-    fun σ => by have := hℓ σ; omega)).mono
+    fun σ => by have := hℓ σ; omega_using [this])).mono
       (fun σ s ⟨⟨hc, ⟨hi, ht⟩, he⟩, sy⟩ => ⟨⟨hc, ⟨⟨hi, ht⟩, he⟩, hsl σ _ hi.1⟩, sy⟩) fun _ _ h => h) ?_
   -- the padding
   refine VP.seq ((VP.syms (pad_vp h hg hnb hnb0 hfit (Inv := fun σ m => (Inv σ m ∧ m.readW (L.fr sTab) 32 = p) ∧
@@ -279,7 +279,7 @@ theorem ctHash_vp (hg : Geo L scr) {f : MdFns} {dn : String} {j : Nat} {ai ac ad
       intro r hr; simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       subst hr; simp) σ _ _ hi hf, fun i hi => ?_⟩, sy⟩
   have hl := h.md.digest_length (h.md.stateAt m₀ (sa scr oSel))
-  rw [hm, sa_writeBytes scr m₀ (by omega) (by pomega), he, h.ok.hash]
+  rw [hm, sa_writeBytes scr m₀ (by omega_using [hDN, hi, hl]) (by pomega), he, h.ok.hash]
   have hq1 : ((msg σ).length + h.L) / h.B + 1 ≤ nbm := hq σ
   have key : h.md.compressList h.ok.iv
       (ylist (fun i => padY h.B h.L (msg σ) (h.md.lenBytes (msg σ).length) i) (nbm * h.B))
@@ -290,7 +290,7 @@ theorem ctHash_vp (hg : Geo L scr) {f : MdFns} {dn : String} {j : Nat} {ai ac ad
     have hT : j < nbm * h.B := by
       have := Nat.mul_le_mul_left h.B hq1
       rw [Nat.mul_comm h.B nbm] at this
-      omega
+      omega_using [hj, this]
     rw [ylist_getD hT, padY_eq hB0 hLB _ _ hj, RsaPss.pad_getD h.md _ hB0 hLB hj]
   rw [key, List.getD_eq_getElem?_getD, List.getD_eq_getElem?_getD, List.getElem?_take_of_lt hi]
   rfl

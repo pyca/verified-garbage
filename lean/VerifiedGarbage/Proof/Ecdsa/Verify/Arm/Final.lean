@@ -52,7 +52,7 @@ theorem vfinish_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base siz
   have := hc.n0
   have hsz : size = 4096 := rfl
   rw [vfinish_eq]
-  refine wp_ldr (hs.off_lt (by omega)) (hs.ea (by omega)) (hs.read (d := c.sl FLAG) (n := 4) (by omega))
+  refine wp_ldr (hs.off_lt (by omega_using [hF, this])) (hs.ea (by omega_using [hF, this])) (hs.read (d := c.sl FLAG) (n := 4) (by omega_using [hF, this]))
     fun s₁ u₁ => ?_
   have hs₁ := hs.of_rest (u₁.rest (ws := [.r10]) (by simp)) (by decide)
   have hc₁ : s₁.gpr .r10 = mask32 (b = true) := by rw [u₁.gpr, ← flagW, hf]
@@ -60,7 +60,7 @@ theorem vfinish_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base siz
   have hs₂ := hs₁.of_rest (u₂.rest (ws := [.r0]) (by simp)) (by decide)
   have r0₂ : s₂.gpr .r0 = if b then 1 else 0 := by rw [u₂.gpr, dpVal, hc₁]; exact mask_bit b
   rw [restore_eq]
-  refine WP.mono (ldrs_ok hs₂ Cfg.saved (fun p hp => by have := saved_lt p hp; omega) saved_nodup
+  refine WP.mono (ldrs_ok hs₂ Cfg.saved (fun p hp => by have := saved_lt p hp; omega_using [hsz, this]) saved_nodup
     (fun p hp => (saved_r12 p hp).1)) fun s' ⟨m', K', V'⟩ =>
       ⟨by rw [m', u₂.mem, u₁.mem], by rw [K'.gpr _ (by decide), r0₂],
         fun rd hrd => by rw [V' rd hrd, u₂.mem, u₁.mem, hsv rd hrd], by rw [K'.sp, u₂.sp, u₁.sp]⟩
@@ -95,13 +95,13 @@ theorem vtail_ok (hc : CfgOk c) {s₀ : State} {base : Addr}
   have hp3 := hc.p_ge
   have hn3 := hc.n_ge
   have F := hP.fixed
-  have hf : c.sl FLAG + 4 ≤ size := by have := sl_le c h7 (i := FLAG) (by decide); omega
+  have hf : c.sl FLAG + 4 ≤ size := by have := sl_le c h7 (i := FLAG) (by decide); omega_using [h0, this]
   have henc : encodable (BitVec.ofNat 32 (64 * c.n)) = true := by
     have : ∀ n < 10, encodable (BitVec.ofNat 32 (64 * n)) = true := by decide
     exact this _ h7
   -- `Z^(p-2)`.
   refine WP.seq (WP.mono (pow_ok (P := c.powP) (e := c.C.p - 2) (powLayP hc) (powWkP hc) hc.fp hpR
-    (bitsAt_lt hc (j := 1) (by decide)) hP.scr hP.far (modP_of hc F.mp) hP.rz_lt F.onep hP.t₁ (show c.C.p - 2 < 2 ^ (64 * c.n) by have := hc.p_lt; omega) henc)
+    (bitsAt_lt hc (j := 1) (by decide)) hP.scr hP.far (modP_of hc F.mp) hP.rz_lt F.onep hP.t₁ (show c.C.p - 2 < 2 ^ (64 * c.n) by have := hc.p_lt; omega_using [this]) henc)
     fun s₁ ⟨K₁, U₁, lt₁, v₁⟩ => ?_)
   rw [powWxP_eq] at U₁
   have hs₁ := hP.scr.of_rest K₁ (by decide)
@@ -120,7 +120,7 @@ theorem vtail_ok (hc : CfgOk c) {s₀ : State} {base : Addr}
     sv_keep (MP'_n c) rfl h7 hn k₂ hi h₁ h₂
   -- `X = XM · 1`.
   have one₂ : sv c base s₂ ONE = 1 := (v₂ (by decide) (by decide) (by decide)).trans F₁.one
-  refine WP.seq (WP.mono (slMul_ok hc.fp (MP'_n c) h7 hs₂ hf₂ (o := X) (a := XM) (b := ONE) (by decide) (by decide) (by decide) (by rw [one₂]; omega)) fun s₃ ⟨k₃, lt₃, e₃⟩ => ?_)
+  refine WP.seq (WP.mono (slMul_ok hc.fp (MP'_n c) h7 hs₂ hf₂ (o := X) (a := XM) (b := ONE) (by decide) (by decide) (by decide) (by rw [one₂]; omega_using [hp3])) fun s₃ ⟨k₃, lt₃, e₃⟩ => ?_)
   have hs₃ := k₃.scr hs₂
   have hf₃ := hf₂.of_rest k₃.rest
   have v₃ : ∀ {i}, i < 45 → i ≠ X → i ≠ TMP → sv c base s₃ i = sv c base s₂ i := fun hi h₁ h₂ =>
@@ -139,7 +139,7 @@ theorem vtail_ok (hc : CfgOk c) {s₀ : State} {base : Addr}
   have r2₃ : sv c base s₃ R2N = 2 ^ (64 * c.n) * 2 ^ (64 * c.n) % c.C.n :=
     (v₃ (by decide) (by decide) (by decide)).trans ((v₂ (by decide) (by decide) (by decide)).trans
       ((e₁ (by decide) (by decide)).trans F.r2n))
-  refine WP.seq (WP.mono (slMul_ok hc.fn (MN'_n c) h7 hs₃ hf₃ (o := XN) (a := X) (b := R2N) (by decide) (by decide) (by decide) (by rw [r2₃]; exact Nat.mod_lt _ (by omega)))
+  refine WP.seq (WP.mono (slMul_ok hc.fn (MN'_n c) h7 hs₃ hf₃ (o := XN) (a := X) (b := R2N) (by decide) (by decide) (by decide) (by rw [r2₃]; exact Nat.mod_lt _ (by omega_using [hn3])))
     fun s₄ ⟨k₄, lt₄, e₄⟩ => ?_)
   have hs₄ := k₄.scr hs₃
   have hf₄ := hf₃.of_rest k₄.rest
@@ -155,8 +155,8 @@ theorem vtail_ok (hc : CfgOk c) {s₀ : State} {base : Addr}
   have v₅ : ∀ {i}, i < 45 → i ≠ W → i ≠ TMP → sv c base s₅ i = sv c base s₄ i := fun hi h₁ h₂ =>
     sv_keep (MN'_n c) rfl h7 hn k₅ hi h₁ h₂
   have w₅ : sv c base s₅ W = 0 ↔ Fin.ofNat c.C.n (sv c base s₃ X) = Fin.ofNat c.C.n (sigR c s₀) := by
-    have hlt : sv c base s₅ W < c.C.n := by rw [e₅]; exact Nat.mod_lt _ (by omega)
-    rw [← toM_eq_zero_iff hnR hlt, e₅, toM_sub (by rw [rm₄]; have := hP.rm_lt; omega), rm₄, hP.rm,
+    have hlt : sv c base s₅ W < c.C.n := by rw [e₅]; exact Nat.mod_lt _ (by omega_using [hn3])
+    rw [← toM_eq_zero_iff hnR hlt, e₅, toM_sub (by rw [rm₄]; have := hP.rm_lt; omega_using [this]), rm₄, hP.rm,
       toM_r2 hnR (by rw [e₄, r2₃])]
     constructor <;> intro h <;> grind
   -- What changed: `finW` and the accumulator.

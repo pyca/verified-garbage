@@ -20,7 +20,7 @@ theorem advance_ok (n : Nat) (hn : 3*n<4096) {s : State} :
   refine WP.mono (WP.keepV (Q := fun t => Only [.x2,.x5] s t ∧
     t.gpr .x2=s.gpr .x2+BitVec.ofNat 64 (3*n) ∧
     t.gpr .x5=s.gpr .x5-BitVec.ofNat 64 n) (by rfl)
-    (wp_addImm hn fun a ha ea => wp_subImm (by omega) fun t ht et => wp_nil ?_)) ?_
+    (wp_addImm hn fun a ha ea => wp_subImm (by omega_using [hn]) fun t ht et => wp_nil ?_)) ?_
   · exact ⟨(ha.trans ht).mono (by decide),by rw [ht.get .x2]; exact ea,
       by rw [et,ha.get .x5]⟩
   · intro t ⟨⟨hf,h2,h5⟩,hv⟩; exact ⟨hf,hv,h2,h5⟩

@@ -254,10 +254,10 @@ theorem privD_view {a s t : State} {W : Nat → BitVec 64} (S : DSib ts Xs a s) 
   · have hi' := List.mem_range.mp hi
     rw [privD_args hp h _ _ hi', privW_sib S hi']
   · rw [g (by decide), g (by decide), h.rdx, h.rcx, State.withRegions_mem,
-      FrD.bytes hfE hp.dKn hp.dOn hp.dMn hp.dns.symm (by have := hp.wN; omega)]
+      FrD.bytes hfE hp.dKn hp.dOn hp.dMn hp.dns.symm (by have := hp.wN; omega_using [])]
     exact S.2.2.2.1.symm
   · rw [g (by decide), g (by decide), h.r8, h.r9, State.withRegions_mem,
-      FrD.bytes hfE hp.dKe hp.dOe hp.dMe hp.des.symm (by have := hp.wE; omega)]
+      FrD.bytes hfE hp.dKe hp.dOe hp.dMe hp.des.symm (by have := hp.wE; omega_using [])]
     exact S.2.2.2.2.1.symm
 
 /-! ## `decMain` -/
@@ -299,11 +299,11 @@ theorem dme_of {src srcLen dst dstLen : Nat → Nat} {a s t : State} (S : DSib t
 
 theorem dfit_seed {D k : Nat} (hk : 2 * D + 2 ≤ k) (hk1 : k ≤ 1024) (hD : 0 < D) :
     MFit (oEm + 1 + D) (k - (D + 1)) (oEm + 1) D :=
-  ⟨by unfold oEm oSt; omega, by unfold oEm oSt; omega, by omega, by omega, by omega⟩
+  ⟨by unfold oEm oSt; omega_using [hk, hk1], by unfold oEm oSt; omega_using [hk, hk1], by omega_using [], by omega_using [hD], by omega_using [hk, hk1]⟩
 
 theorem dfit_db {D k : Nat} (hk : 2 * D + 2 ≤ k) (hk1 : k ≤ 1024) :
     MFit (oEm + 1) D (oEm + 1 + D) (k - (D + 1)) :=
-  ⟨by unfold oEm oSt; omega, by unfold oEm oSt; omega, by omega, by omega, by omega⟩
+  ⟨by unfold oEm oSt; omega_using [hk, hk1], by unfold oEm oSt; omega_using [hk, hk1], by omega_using [], by omega_using [hk], by omega_using [hk1]⟩
 
 /-- MGF1's public data from the anchor's: its `MQ`, the table, and the
 addresses of `w`'s functions. -/
@@ -372,7 +372,7 @@ theorem decMain_ct {w₁ w : MdHash} (hw₁ : w₁ ∈ vs) (hw : w ∈ vs) :
   refine RelCT.seq (d_post (J' := fun s t => (DWM s t (oEm + 1 + w₁.H.D) ((s.gpr .r8).toNat - (w₁.H.D + 1)) (oEm + 1)
       w₁.H.D ∧ 2 * w₁.H.D + 2 ≤ (s.gpr .r8).toNat) ∧ HS (tableOf w) s t)
     (d_taintF (fun _ _ _ h => h.1.1) [] [] (by decide) nopin ⟨_, dSeedArgs_taint w₁.H.D hD65⟩)
-    fun s t hs h => WP.mono_syms (dw_seedArgs (Hm := w₁.H.stream) (by omega) (by have := h.1.2; omega) h.1.1)
+    fun s t hs h => WP.mono_syms (dw_seedArgs (Hm := w₁.H.stream) (by omega_using [hz]) (by have := h.1.2; omega_using [hsD, this]) h.1.1)
       fun _ e sy => ⟨⟨e, h.1.2⟩, h.2.1, sy.trans h.2.2⟩) ?_
   refine RelCT.seq (d_post (J' := fun s t => DK w₁.H.D s t ∧ HS (tableOf w) s t)
       (two_map (fun a => mqtD w ⟨fb a, stackArg a 15, [outR a, mlR a, scrD a],
@@ -392,7 +392,7 @@ theorem decMain_ct {w₁ w : MdHash} (hw₁ : w₁ ∈ vs) (hw : w ∈ vs) :
   refine RelCT.seq (d_post (J' := fun s t => (DWM s t (oEm + 1) w₁.H.D (oEm + 1 + w₁.H.D)
       ((s.gpr .r8).toNat - (w₁.H.D + 1)) ∧ 2 * w₁.H.D + 2 ≤ (s.gpr .r8).toNat) ∧ HS (tableOf w) s t)
     (d_taintF (fun _ _ _ h => h.1.1) [] [] (by decide) nopin ⟨_, dDbArgs_taint w₁.H.D hD65⟩)
-    fun s t hs h => WP.mono_syms (dw_dbArgs (Hm := w₁.H.stream) (by omega) (by have := h.1.2; omega) h.1.1)
+    fun s t hs h => WP.mono_syms (dw_dbArgs (Hm := w₁.H.stream) (by omega_using [hz]) (by have := h.1.2; omega_using [hsD, this]) h.1.1)
       fun _ e sy => ⟨⟨e, h.1.2⟩, h.2.1, sy.trans h.2.2⟩) ?_
   refine RelCT.seq (d_post (J' := DK w₁.H.D) (two_map (fun a => mqtD w ⟨fb a, stackArg a 15,
       [outR a, mlR a, scrD a], oEm + 1, w₁.H.D, oEm + 1 + w₁.H.D, (a.gpr .r8).toNat - (w₁.H.D + 1)⟩ a)
@@ -413,7 +413,7 @@ theorem decMain_ct {w₁ w : MdHash} (hw₁ : w₁ ∈ vs) (hw : w ∈ vs) :
   refine RelCT.assoc ?_
   refine RelCT.seq (d_post (J' := DW) (c := tail1 w₁.H.stream)
     (d_taintF (fun _ _ _ h => h.1) [] [14, 23] (by decide) nopin ⟨_, tail1_taint w₁.H.D hD65⟩)
-    fun s t hs h => dw_tail1 (hs.1) (Hm := w₁.H.stream) hD0 (by omega) h.2 h.1) ?_
+    fun s t hs h => dw_tail1 (hs.1) (Hm := w₁.H.stream) hD0 (by omega_using [hz]) h.2 h.1) ?_
   -- `ok`, `out` and `*msg_len`.
   refine RelCT.assoc ?_
   refine RelCT.seq (d_post (J' := DW)
@@ -436,11 +436,11 @@ def JK (D : Nat) (s t : State) : Prop := DW s t ∧ t.cf = some (decide ((s.gpr 
 
 omit hc in
 theorem ArgsD_privW35 (s : State) : ArgsD s (upd (privW s) 35 (stackArg s 17)) :=
-  (ArgsD_privW s).of fun j hj => by have := decKs_iff hj; simp only [upd]; rw [ifn (by omega)]
+  (ArgsD_privW s).of fun j hj => by have := decKs_iff hj; simp only [upd]; rw [ifn (by omega_using [this])]
 
 omit hc in
 theorem ArgsD.upd35 {s : State} {W : Nat → BitVec 64} (h : ArgsD s W) : ArgsD s (upd W 35 (stackArg s 17)) :=
-  h.of fun j hj => by have := decKs_iff hj; simp only [upd]; rw [ifn (by omega)]
+  h.of fun j hj => by have := decKs_iff hj; simp only [upd]; rw [ifn (by omega_using [this])]
 
 omit hc in
 theorem JS.dw {s t : State} (h : JS s t) : DW s t :=
@@ -512,16 +512,16 @@ theorem decAfterTab_ct {w₁ w : MdHash} (hw₁ : w₁ ∈ vs) (hw : w ∈ vs) :
     have hk1 := hp.lv.1; have hk2 := hp.lv.2
     obtain ⟨-, -, -, w23, -⟩ := hA.upd35.w
     exact WP.mono_syms (wp_good (block_good _ rfl) (resK_ok (Hm := w₁.H.stream) L R (k := (s.gpr .r8).toNat)
-      (by rw [w23, BitVec.ofNat_toNat, BitVec.setWidth_eq]) (by omega) (by omega)))
+      (by rw [w23, BitVec.ofNat_toNat, BitVec.setWidth_eq]) (by omega_using [hk2]) (by omega_using [hz])))
       fun t2 ⟨⟨k2, L2, R2, hcf2⟩, sp2, mx2, f2⟩ sy => ⟨⟨⟨⟨⟨he.step k2.2.1 k2.2.2 sp2 (keep_cs3 k2 (by decide)) mx2 f2,
         L2, _, _, R2, hA.upd35.of fun j hj => by
-          simp only [upd]; rw [ifn (by have := decKs_iff hj; omega)]⟩, by rw [hcf2, hsD]⟩,
+          simp only [upd]; rw [ifn (by have := decKs_iff hj; omega_using [this])]⟩, by rw [hcf2, hsD]⟩,
         by rw [R2.fr 35 (by decide)]; simp [upd]⟩, hs'.1, sy.trans hs'.2⟩, hl⟩
   refine d_ite (fun s => some (decide ((s.gpr .r8).toNat < 2 * w₁.H.D + 2))) (fun s t h => h.1.1.1.2)
     (fun a s S => by rw [S.k]) (d_branch (J' := DW) (fun _ _ _ h _ => h.1.1.1.1) decFail_ct)
     (d_branch (J' := fun s t => (DK w₁.H.D s t ∧ HS (tableOf w) s t) ∧ HL (tableOf w₁) s ∧
         word t.mem (fb s) (8 * 35) = stackArg s 17)
-      (fun s t _ h e => ⟨⟨⟨h.1.1.1.1, by have := cf_false h.1.1.1.2 e; omega⟩, h.1.2⟩, h.2, h.1.1.2⟩)
+      (fun s t _ h e => ⟨⟨⟨h.1.1.1.1, by have := cf_false h.1.1.1.2 e; omega_using [this]⟩, h.1.2⟩, h.2, h.1.1.2⟩)
       (decMain_ct hc hw₁ hw))
 
 

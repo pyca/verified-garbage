@@ -246,7 +246,7 @@ theorem prefix_step (backend : Whole.Backend) (hc : Ctx L g v m₀ s) (hL : L.Ok
       Ctx L g v m₀ t ∧ Spec.Sha512.Repr Spec.Sha512.H0_512 t.mem L.scr
         (prev ++ Spec.Ed25519.bytesAt s.mem (L.value source) 32) := by
   apply update_ok backend hc hL ha (by simp)
-    (by simp [Whole.valid]; omega) (by simp [known]; exact hsource) (by simp [preserved])
+    (by simp [Whole.valid]; omega_using [hsource, hcount]) (by simp [known]; exact hsource) (by simp [preserved])
     (p := L.value source) (len := 32) (prev := prev) ?_ hd hi hr
   intro t hav
   have a0 := hav (.x0,.caller 4 0) (by simp)
@@ -359,7 +359,7 @@ theorem sig_prefix_same (hc : Ctx L g v m₀ s) (hL : L.Ok) :
     · exact hL.sc _ (by simp [Lay.inputs])
     · exact (hL.ks _ (by simp [Lay.inputs])).symm
     · exact (hL.ck _ (by simp [Lay.inputs])).symm)
-    (by change 64 ≤ 2 ^ 64; decide) (by change i < 64; have := List.mem_range.mp hi; omega)
+    (by change 64 ≤ 2 ^ 64; decide) (by change i < 64; have := List.mem_range.mp hi; omega_using [this])
 
 theorem input_sig (hL : L.Ok) : Region.Disjoint ⟨L.value 3,32⟩ L.SCR ∧
     ∃ R ∈ L.inputs, Whole.Within ⟨L.value 3,32⟩ R := by
@@ -394,7 +394,7 @@ theorem hash_ok (backend : Whole.Backend) (hc : Ctx L g v m₀ s)
     rw [List.length_append, bytes_length, bytes_length]
   refine WP.seq (WP.mono (message_step backend hw hL ha hpkl hpk) fun z ⟨hz,hmsg⟩ => ?_)
   rw [hw.input_bytes hL (r := L.MSG) (by simp [Lay.inputs])
-    (by have := L.len.isLt; change L.len.toNat≤2^64; omega)] at hmsg
+    (by have := L.len.isLt; change L.len.toNat≤2^64; omega_using [])] at hmsg
   have hlen : (hashInput L m₀).length = 64 + L.len.toNat := by
     simp only [hashInput, List.length_append, bytes_length]
   exact finalize_ok backend hz hL ha hlen hmsg
@@ -506,7 +506,7 @@ theorem extend_step (hc : Ctx L g v m₀ s) {digest : List Byte}
     have word (j : Nat) (hj : j < 4) : t.mem.readW (L.E + 160 + BitVec.ofNat 64 (8*j)) 64 = 0 := by
       have z := hz j hj
       have e : L.E + BitVec.ofNat 64 (8*(20+j)) = L.E + 160 + BitVec.ofNat 64 (8*j) := by
-        rw [show 8*(20+j)=160+8*j by omega, BitVec.ofNat_add, BitVec.add_assoc]
+        rw [show 8*(20+j)=160+8*j by omega_using [], BitVec.ofNat_add, BitVec.add_assoc]
         rfl
       rw [e] at z
       exact z
@@ -569,6 +569,6 @@ theorem body_depth (backend : Whole.Backend) : (body backend.code backend.suffix
   have he := Whole.depth_zero_of_noFrames equation_noFrames
   simp only [body,Impl.Ed25519.AArch64.VerifyMessage.hash,init,update,finalize,Impl.Ed25519.AArch64.Whole.callWith,
     Code.aarch64Depth, Nat.max_le,Impl.Sha512.AArch64.Stream.init,hr,he]
-  omega
+  omega_using [hu, hf]
 
 end VG.Proof.Ed25519.AArch64.VerifyMessage

@@ -44,7 +44,7 @@ theorem apply_step_table (s : State) (i j : Byte)
   · rw [hmem, write_byte, ite_eq_left rfl]
     have hne (idx : Byte) : s.gpr .rsi ≠ s.gpr .rdi + BitVec.ofNat 64 idx.toNat := by
       intro he
-      have hn := hs (s.gpr .rsi) (by rw [he, Mem.sub_ofNat_toNat _ (by omega)]; exact idx.isLt)
+      have hn := hs (s.gpr .rsi) (by rw [he, Mem.sub_ofNat_toNat _ (by omega_using [])]; exact idx.isLt)
       exact hn (by simp [BitVec.sub_self])
     rw [write_byte, ite_eq_right (hne _), write_byte, ite_eq_right (hne _)]
     have ht := table_swap s.mem (s.gpr .rdi) (i + 1#8)
@@ -63,9 +63,9 @@ theorem apply_step_tail (s : State) (i j : Byte) (n : Nat)
       bytesAt t.mem (s.gpr .rsi + 1#64) n = bytesAt s.mem (s.gpr .rsi + 1#64) n := by
   refine WP.mono (apply_step s i j hcx h8 hp hd) fun t ht => ?_
   rw [ht.1]
-  rw [bytes_write_sep _ _ _ _ _ (by omega)
-    (sep_symm (Offset.sep_base (s.gpr .rsi) (by decide) (by omega)))]
-  exact bytes_table_frame _ _ _ _ _ (by omega) (swap_frame _ _ _ _)
+  rw [bytes_write_sep _ _ _ _ _ (by omega_using [hn])
+    (sep_symm (Offset.sep_base (s.gpr .rsi) (by decide) (by omega_using [hn])))]
+  exact bytes_table_frame _ _ _ _ _ (by omega_using [hn]) (swap_frame _ _ _ _)
     (sep_symm (sep_tail hn hs))
 
 structure LoopPost (s : State) (ctx : Context) (n : Nat) (t : State) : Prop where
@@ -115,9 +115,9 @@ theorem apply_loop (n : Nat) (s : State) (ctx : Context)
       · exact hp0
   | succ n ih =>
     have hd1 : InRegions s.wr (s.gpr .rsi) 1 := by
-      have hh := region_offset _ _ _ 0 1 (by decide) (by omega) hd
+      have hh := region_offset _ _ _ 0 1 (by decide) (by omega_using []) hd
       simpa only [BitVec.add_zero] using hh
-    have hs1 : Mem.Sep (s.gpr .rdi) 256 (s.gpr .rsi) 1 := fun x hx hy => hs x hx (by omega)
+    have hs1 : Mem.Sep (s.gpr .rdi) 256 (s.gpr .rsi) 1 := fun x hx hy => hs x hx (by omega_using [hy])
     have hctx : ({ table := (contextAt s.mem (s.gpr .rdi)).table, i := ctx.i, j := ctx.j } :
         Context) = ctx := context_ext htable rfl rfl
     have hstep := apply_step_table s ctx.i ctx.j hcx h8 hp hd1 hs1
@@ -131,25 +131,25 @@ theorem apply_loop (n : Nat) (s : State) (ctx : Context)
       exact hh
     have htlen : t.gpr .rdx = BitVec.ofNat 64 (n + 1) := by
       rw [hcount, hlen]
-      exact Offset.ofNat_sub_ofNat (by omega)
+      exact Offset.ofNat_sub_ofNat (by omega_using [])
     have hpt : InRegions t.wr (t.gpr .rdi) 256 := by rw [hwr, hp0]; exact hp
     have hdt : InRegions t.wr (t.gpr .rsi) (n + 1) := by
       rw [hwr, hdptr]
-      exact region_offset _ _ _ 1 (n + 1) (by decide) (by omega) hd
+      exact region_offset _ _ _ 1 (n + 1) (by decide) (by omega_using []) hd
     have hst : Mem.Sep (t.gpr .rdi) 256 (t.gpr .rsi) (n + 1) := by
       rw [hp0, hdptr]
       exact sep_tail hn hs
     have htab' : (contextAt t.mem (t.gpr .rdi)).table = (step ctx).1.table := by
       rw [hp0]; exact htab
-    obtain ⟨tr', u, he', hu⟩ := ih t (step ctx).1 (by omega) htab' hti htj htlen hpt hdt hst
+    obtain ⟨tr', u, he', hu⟩ := ih t (step ctx).1 (by omega_using [hn]) htab' hti htj htlen hpt hdt hst
     refine ⟨_, u, .loopNext he ?_ he', ?_⟩
     · have hnz : BitVec.ofNat 64 (n + 1 + 1) - 1#64 ≠ 0#64 := by
-        rw [Offset.ofNat_sub_ofNat (by omega)]
+        rw [Offset.ofNat_sub_ofNat (by omega_using [])]
         intro hz0
         have hh := congrArg BitVec.toNat hz0
-        rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)] at hh
+        rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hn])] at hh
         change n + 1 + 1 - 1 = 0 at hh
-        omega
+        omega_using [hh]
       rw [hlen] at hz
       simp only [eval, hz, Option.map_some, beq_eq_false_iff_ne.mpr hnz, Bool.not_false]
     · have hresult : update ctx (bytesAt s.mem (s.gpr .rsi) (n + 1 + 1)) =
@@ -242,7 +242,7 @@ theorem apply_ok (s : State)
     have hda : InRegions a.wr (a.gpr .rsi) (n + 1) := by rw [haw, ha1, ← hnEq]; exact hd
     have hsa : Mem.Sep (a.gpr .rdi) 256 (a.gpr .rsi) (n + 1) := by
       rw [ha0, ha1, ← hnEq]
-      exact fun x hx hy => hs x (by omega) hy
+      exact fun x hx hy => hs x (by omega_using [hx]) hy
     have htable : (contextAt a.mem (a.gpr .rdi)).table = (contextAt s.mem (s.gpr .rdi)).table := by
       rw [ham, ha0]
     have hlen : a.gpr .rdx = BitVec.ofNat 64 (n + 1) := by
@@ -256,7 +256,7 @@ theorem apply_ok (s : State)
     have htab : (contextAt b.mem (b.gpr .rdi)).table =
         (update (contextAt s.mem (s.gpr .rdi)) (bytesAt a.mem (a.gpr .rsi) (n + 1))).1.table := by
       rw [hb.p]; exact hb.table
-    refine WP.mono (apply_finish b _ (s.gpr .rsi) (n + 1) (by omega) htab hb.i hb.j hpb hsb)
+    refine WP.mono (apply_finish b _ (s.gpr .rsi) (n + 1) (by omega_using [hnEq]) htab hb.i hb.j hpb hsb)
       fun t ⟨htc, htd, htm⟩ => ?_
     have hdata := hb.data
     rw [ha1, ham] at hdata
@@ -272,6 +272,6 @@ theorem apply_ok (s : State)
     have h2 : x ≠ s.gpr .rdi + 257#64 := by
       intro he; apply hx; rw [he, Mem.sub_ofNat_toNat _ (by decide)]; decide
     rw [write_byte, ite_eq_right h2, write_byte, ite_eq_right h1]
-    exact hf x (by omega) hy
+    exact hf x (by omega_using [hx]) hy
 
 end VG.Proof.Rc4.X86_64

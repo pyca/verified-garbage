@@ -43,7 +43,7 @@ theorem combPrecompute_environment (s : State)
     simp only [Spec.Ffdh.generationPrecomputedWords,Spec.Rsa.FixedBaseComb.precomputedWords,
       Spec.Rsa.precomputedWords,Spec.Rsa.FixedBaseComb.entries]
     change p.k ≤ (3+(2*p.w+32*p.w))*8
-    omega
+    omega_using [hw]
   have geometry := consts_singleton_regions (name := tableSym) (words := tableWords) hc
   have span : 8*tableWords.length = tableBytes.length := by rw [tableWords_length,tableBytes_length]
   have fit := hc.fit (name := tableSym) (ws := tableWords) List.mem_cons_self
@@ -55,9 +55,9 @@ theorem combPrecompute_environment (s : State)
     simp only [abi,stackBelow]
     exact List.mem_cons_self
   have localSub : (⟨State.addr (entered s).sp,72⟩ : Region).Sub (FrameStack.belowA s.sp 176) :=
-    fun a h => FrameStack.belowA_sub (by decide) stackFit a (locals_sub_reserved s (by omega) a h)
+    fun a h => FrameStack.belowA_sub (by decide) stackFit a (locals_sub_reserved s (by omega_using [stackFit]) a h)
   have savedSub : (⟨State.addr (pcPushed s).sp,56⟩ : Region).Sub (FrameStack.belowA s.sp 176) :=
-    fun a h => FrameStack.belowA_sub (by decide) stackFit a (saved_sub_reserved s (by omega) a h)
+    fun a h => FrameStack.belowA_sub (by decide) stackFit a (saved_sub_reserved s (by omega_using [stackFit]) a h)
   have writable (r : Region) (member : r ∈ (entered s).wr) :
       (⟨State.addr (s.syms tableSym),tableBytes.length⟩ : Region).Disjoint r := by
     change r ∈ (⟨State.addr (entered s).sp,72⟩ : Region)::⟨State.addr (pcPushed s).sp,56⟩::s.wr at member
@@ -67,7 +67,7 @@ theorem combPrecompute_environment (s : State)
     · exact reserved.sub_right savedSub
     · rw [←span]; exact geometry.2.1 r member
   apply VettedGroups.tableOfBytes (entered s) ((entered s).syms tableSym) groups fit (entered_read (consts_table_read hc))
-  · rw [VG.Proof.Rsa.rsa_bytes_frame (entered_frame s (by omega)) (by change tableBytes.length < 2^64; rw [tableBytes_length]; decide) (by
+  · rw [VG.Proof.Rsa.rsa_bytes_frame (entered_frame s (by omega_using [stackFit])) (by change tableBytes.length < 2^64; rw [tableBytes_length]; decide) (by
       intro r hr
       have eq := List.mem_singleton.mp hr
       subst r
@@ -88,11 +88,11 @@ theorem combPrecompute_environment (s : State)
     · rw [privateAlias,←output]
       apply (writable ⟨State.addr (s.gpr .r0),(s.gpr .r1).toNat*8⟩ (by
         apply List.mem_cons_of_mem; apply List.mem_cons_of_mem; rw [wr]; exact List.mem_cons_self)).sub_right
-      simpa only [off,BitVec.add_zero] using (Offset.sub_base (State.addr (s.gpr .r0)) (d:=0) (n:=p.k) (by omega))
+      simpa only [off,BitVec.add_zero] using (Offset.sub_base (State.addr (s.gpr .r0)) (d:=0) (n:=p.k) (by omega_using [small]))
     · rw [publicAlias,←output]
       apply (writable ⟨State.addr (s.gpr .r0),(s.gpr .r1).toNat*8⟩ (by
         apply List.mem_cons_of_mem; apply List.mem_cons_of_mem; rw [wr]; exact List.mem_cons_self)).sub_right
-      simpa only [off,BitVec.add_zero] using (Offset.sub_base (State.addr (s.gpr .r0)) (d:=0) (n:=p.k) (by omega))
+      simpa only [off,BitVec.add_zero] using (Offset.sub_base (State.addr (s.gpr .r0)) (d:=0) (n:=p.k) (by omega_using [small]))
     · rw [entered_sp]
       exact reserved.sub_right (FrameStack.belowA_inner (a:=48) (k:=128) (by decide) stackFit)
 

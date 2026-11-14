@@ -72,7 +72,7 @@ structure FPost (s : State) (K St P S : BitVec 32) (L R : Nat) (s' : State) : Pr
 theorem FArgs.pre {s : State} {K St P S : BitVec 32} {L R : Nat} (h : FArgs s K St P S L R) :
     Proof.CmacAes.Arm.finalizeArm.pre (view .r12 .lr s (fRd s K P L) (fWr St S)) := by
   have hR := toNat_rounds h.rounds
-  have hL : (BitVec.ofNat 32 L).toNat = L := by rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt (by have := h.len; omega)
+  have hL : (BitVec.ofNat 32 L).toNat = L := by rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt (by have := h.len; omega_using [this])
   have hb := view_blw (ra := .r12) (rb := .lr) (rd := fRd s K P L) (wr := fWr St S) h.hsp
   simp only [Proof.CmacAes.Arm.finalizeArm, view_arg0 h.hsp, view_arg1 h.hsp, view_argAddr h.hsp,
     view_gpr .r0 (by decide), view_gpr .r1 (by decide), view_gpr .r2 (by decide), view_gpr .r3 (by decide),
@@ -82,13 +82,13 @@ theorem FArgs.pre {s : State} {K St P S : BitVec 32} {L R : Nat} (h : FArgs s K 
   refine ⟨rfl, trivial, h.kst, h.ks, h.pst, h.ps, h.sts, (h.bst.sub_left slot_sub).symm,
     (h.bs.sub_left slot_sub).symm, h.bk.sub_left hb, h.bp.sub_left hb, h.bst.sub_left hb, h.bs.sub_left hb,
     h.fK, h.fSt, h.fP, h.fS, ?_, ?_, h.rounds, h.len⟩
-  · rw [view_sp, hspv]; omega
-  · rw [view_sp, hspv]; have := s.sp.isLt; omega
+  · rw [view_sp, hspv]; omega_using [this]
+  · rw [view_sp, hspv]; have := s.sp.isLt; omega_using []
 
 theorem fin_call {s : State} {K St P S : BitVec 32} {L R : Nat} (h : FArgs s K St P S L R) :
     WP isa Impl.AesSiv.Arm.finFrame s (FPost s K St P S L R) := by
   have hR := toNat_rounds h.rounds
-  have hL : (BitVec.ofNat 32 L).toNat = L := by rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt (by have := h.len; omega)
+  have hL : (BitVec.ofNat 32 L).toNat = L := by rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt (by have := h.len; omega_using [this])
   refine WP.frameCallF (k := Proof.CmacAes.Arm.finalizeRawArm) (fun _ hs => Proof.CmacAes.Arm.finalize_raw_wp hs)
     stackUse_finalize rfl h.hsp h.pre (cov_push h.hsp h.reads h.writes) (covW_push h.writes) (fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -101,13 +101,13 @@ theorem fin_call {s : State} {K St P S : BitVec 32} {L R : Nat} (h : FArgs s K S
       Spec.Aes.bytesAt (pushed [.r12, .lr] s).mem p k = Spec.Aes.bytesAt s.mem p k := fun hd hk =>
     Proof.Cmac.bytesAt_frame fP (fun r hr => by
       rw [List.mem_singleton] at hr; subst hr; exact (hd.sub_left slot_sub).symm) hk
-  have hRb : 16 * (R + 1) ≤ 272 := by rcases h.rounds with h' | h' | h' <;> omega
+  have hRb : 16 * (R + 1) ≤ 272 := by rcases h.rounds with h' | h' | h' <;> omega_using [h']
   simp only [Proof.CmacAes.Arm.finalizeRawArm, Proof.CmacAes.Arm.finalizeRaw, Proof.CmacAes.Arm.mn,
     Proof.CmacAes.Arm.ciph, Proof.CmacAes.Arm.ciphAt, Proof.CmacAes.Arm.W, Proof.CmacAes.Arm.R,
     Proof.CmacAes.Arm.St, Proof.CmacAes.Arm.Dp, Proof.CmacAes.Arm.N, view_arg0 h.hsp,
     view_gpr .r0 (by decide), view_gpr .r1 (by decide), view_gpr .r2 (by decide), view_gpr .r3 (by decide),
     h.r0, h.r1, h.r2, h.r3, h.r12, hR, hL, State.withRegions_mem, State.callEntry_mem] at hpost
-  have eK := keep (h.bk.sub_right (Region.sub_prefix hRb)) (by omega)
+  have eK := keep (h.bk.sub_right (Region.sub_prefix hRb)) (by omega_using [hR])
   have eK1 : Spec.Aes.bytesAt (pushed [.r12, .lr] s).mem (State.addr K + BitVec.ofNat 64 240) 16 =
       Spec.Aes.bytesAt s.mem (State.addr K + BitVec.ofNat 64 240) 16 :=
     keep (h.bk.sub_right (Offset.sub_base (State.addr K) (d := 240) (n := 16) (by decide))) (by decide)
@@ -115,7 +115,7 @@ theorem fin_call {s : State} {K St P S : BitVec 32} {L R : Nat} (h : FArgs s K S
       Spec.Aes.bytesAt s.mem (State.addr K + BitVec.ofNat 64 256) 16 :=
     keep (h.bk.sub_right (Offset.sub_base (State.addr K) (d := 256) (n := 16) (by decide))) (by decide)
   have eSt := keep h.bst (by decide)
-  have eP := keep h.bp (by have := h.len; omega)
+  have eP := keep h.bp (by have := h.len; omega_using [hL])
   rw [eK, eK1, eK2, eSt, eP] at hpost
   rw [hm]
   exact hpost
@@ -140,7 +140,7 @@ theorem fin_rel {K St P S sp₀ : BitVec 32} {L R : Nat} {Pr : State → State �
   rw [e₁] at c₁
   rw [e₂] at c₂
   have := h₁.hsp
-  refine ⟨e₁.trans e₂.symm, by omega, by have := h₂.hsp; omega, p₁, p₂, ?_, c₁, covW_push h₁.writes, c₂,
+  refine ⟨e₁.trans e₂.symm, by omega_using [this], by have := h₂.hsp; omega_using [this], p₁, p₂, ?_, c₁, covW_push h₁.writes, c₂,
     covW_push h₂.writes⟩
   simp only [Proof.CmacAes.Arm.finalizeArm, view_sp, view_arg0 h₁.hsp, view_arg1 h₁.hsp, view_arg0 h₂.hsp,
     view_arg1 h₂.hsp, view_gpr .r0 (by decide), view_gpr .r1 (by decide), view_gpr .r2 (by decide),

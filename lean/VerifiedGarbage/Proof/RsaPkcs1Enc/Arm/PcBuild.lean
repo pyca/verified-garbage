@@ -38,10 +38,10 @@ theorem top_sub_one (b : Byte) : (b.setWidth 32 - 1) >>> 31 = if b = 0 then 1 el
     apply BitVec.eq_of_toNat_eq
     rw [BitVec.toNat_ushiftRight, BitVec.toNat_sub, BitVec.toNat_setWidth, Nat.shiftRight_eq_div_pow]
     have e1 : (1 : BitVec 32).toNat = 1 := rfl
-    rw [e1, Nat.mod_eq_of_lt (a := b.toNat) (by omega)]
-    rw [show 2 ^ 32 - 1 + b.toNat = (b.toNat - 1) + 2 ^ 32 by omega, Nat.add_mod_right,
-      Nat.mod_eq_of_lt (by omega)]
-    rw [Nat.div_eq_of_lt (by omega)]; rfl
+    rw [e1, Nat.mod_eq_of_lt (a := b.toNat) (by omega_using [])]
+    rw [show 2 ^ 32 - 1 + b.toNat = (b.toNat - 1) + 2 ^ 32 by omega_using [h1], Nat.add_mod_right,
+      Nat.mod_eq_of_lt (by omega_using [])]
+    rw [Nat.div_eq_of_lt (by omega_using [])]; rfl
 
 theorem zf_snoc (bs : List Byte) (b : Byte) :
     zf (bs ++ [b]) = zf bs ||| (b.setWidth 32 - 1) >>> 31 := by
@@ -56,12 +56,12 @@ abbrev psB (P : EP) (σ : State) : List Byte := Spec.Rsa.bytesAt σ.mem (State.a
 abbrev enc (P : EP) (σ : State) : List Byte := Spec.RsaPkcs1Enc.encode (msgB P σ) (psB P σ)
 
 theorem enc_length (P : EP) (σ : State) : (enc P σ).length = P.pl + P.ml + 3 := by
-  simp only [enc, Spec.RsaPkcs1Enc.encode, List.length_append, bytesAt_length]; simp; omega
+  simp only [enc, Spec.RsaPkcs1Enc.encode, List.length_append, bytesAt_length]; simp; omega_using []
 
 theorem enc_getD_ps (P : EP) (σ : State) {i : Nat} (hi : i < P.pl) :
     (enc P σ).getD (2 + i) 0 = σ.mem (State.addr P.ps + BitVec.ofNat 64 i) := by
   simp only [enc, Spec.RsaPkcs1Enc.encode, List.append_assoc]
-  rw [getD_append_right _ _ _ (by simp), getD_append_left _ _ _ (by simp [bytesAt_length]; omega)]
+  rw [getD_append_right _ _ _ (by simp), getD_append_left _ _ _ (by simp [bytesAt_length]; omega_using [hi])]
   simp only [List.length_cons, List.length_nil, Nat.zero_add, Nat.reduceAdd, Nat.add_sub_cancel_left]
   exact bytesAt_getD hi 0
 
@@ -73,11 +73,11 @@ theorem enc_getD_sep (P : EP) (σ : State) : (enc P σ).getD (2 + P.pl) 0 = 0 :=
 theorem enc_getD_msg (P : EP) (σ : State) {i : Nat} (hi : i < P.ml) :
     (enc P σ).getD (3 + P.pl + i) 0 = σ.mem (State.addr P.msg + BitVec.ofNat 64 i) := by
   simp only [enc, Spec.RsaPkcs1Enc.encode, List.append_assoc]
-  rw [getD_append_right _ _ _ (by simp; omega),
-    getD_append_right _ _ _ (by simp [bytesAt_length]; omega),
-    getD_append_right _ _ _ (by simp [bytesAt_length]; omega)]
+  rw [getD_append_right _ _ _ (by simp; omega_using []),
+    getD_append_right _ _ _ (by simp [bytesAt_length]; omega_using []),
+    getD_append_right _ _ _ (by simp [bytesAt_length]; omega_using [])]
   simp only [List.length_cons, List.length_nil, bytesAt_length]
-  rw [show 3 + P.pl + i - (0 + 1 + 1) - P.pl - (0 + 1) = i by omega]
+  rw [show 3 + P.pl + i - (0 + 1 + 1) - P.pl - (0 + 1) = i by omega_using []]
   exact bytesAt_getD hi 0
 
 /-- `EM`'s first `n` bytes written. -/
@@ -88,7 +88,7 @@ def EMok (P : EP) (σ s : State) (n : Nat) : Prop :=
 
 theorem em_ne (P : EP) {i j : Nat} (hij : i ≠ j) (hi : oEM + i < 2 ^ 64) (hj : oEM + j < 2 ^ 64) :
     P.lay.fr (oEM + i) ≠ P.lay.fr (oEM + j) :=
-  Offset.add_ofNat_ne _ hi hj (by omega)
+  Offset.add_ofNat_ne _ hi hj (by omega_using [hij])
 
 /-- `EMok` after a byte stored at index `n`. -/
 theorem EMok.store {P : EP} {σ s : State} {n : Nat} (h : EMok P σ s n) {m : Mem} (hn : n < 1024)
@@ -99,13 +99,13 @@ theorem EMok.store {P : EP} {σ s : State} {n : Nat} (h : EMok P σ s n) {m : Me
   rw [WriteBytes.writeW8_apply]
   by_cases e : i = n
   · subst e; simp
-  · simp only [em_ne P e (by simp only [oEM]; omega) (by simp only [oEM]; omega), ↓reduceIte]
-    exact h i (by omega)
+  · simp only [em_ne P e (by simp only [oEM]; omega_using [hn, hi]) (by simp only [oEM]; omega_using [hn]), ↓reduceIte]
+    exact h i (by omega_using [hi, e])
 
 theorem EMok.zero {P : EP} {σ s : State} : EMok P σ s 0 := fun _ hi => absurd hi (Nat.not_lt_zero _)
 
 theorem EMok.mono {P : EP} {σ s : State} {n m : Nat} (h : EMok P σ s n) (hm : m ≤ n) : EMok P σ s m :=
-  fun i hi => h i (by omega)
+  fun i hi => h i (by omega_using [hm, hi])
 
 /-- `EMok` of memory that changed apart from `EM`'s first `n` bytes. -/
 theorem EMok.frame {P : EP} {σ s t : State} {n : Nat} (h : EMok P σ s n) {rs : List Region}
@@ -120,11 +120,11 @@ theorem wp_strbEM {P : EP} {σ s : State} (hs : S P σ s) {rt rb : Reg} {off n :
       WP isa (.block is) t Q) :
     WP isa (.block (.strb rt rb off :: is)) s Q := by
   have hk := hs.1.k1024
-  have hF : oEM + n + 1 ≤ P.lay.F := by show oEM + n + 1 ≤ frameBytes; simp only [oEM, frameBytes]; omega
+  have hF : oEM + n + 1 ≤ P.lay.F := by show oEM + n + 1 ≤ frameBytes; simp only [oEM, frameBytes]; omega_using [hn, hk]
   refine wp_strb hoff (a := P.lay.fr (oEM + n)) ?_ (hs.2.inFr hF)
     fun t u => k t ⟨hs.1, hs.2.frameW hF ?_ u.rd u.wr u.sp⟩ u.gpr u.mem
   · rw [hb]
-    exact hs.2.ok.addrB (by omega)
+    exact hs.2.ok.addrB (by omega_using [hF])
   · rw [u.mem]
     exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ _)
 
@@ -132,7 +132,7 @@ theorem setWidth_byte (b : Byte) : (b.setWidth 32).setWidth 8 = b := by
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_setWidth]
   have := b.isLt
-  omega
+  omega_using []
 
 theorem bytesAt_succ (m : Mem) (p : Addr) (j : Nat) :
     Spec.Rsa.bytesAt m p (j + 1) = Spec.Rsa.bytesAt m p j ++ [m (p + BitVec.ofNat 64 j)] := by

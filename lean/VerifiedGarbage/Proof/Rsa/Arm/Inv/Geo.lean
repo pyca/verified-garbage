@@ -60,15 +60,15 @@ theorem Gk.arr_fit {s : State} {B : BitVec 32} {Z W k N j : Nat} (h : Gk s B Z W
 
 theorem Gk.fit64 {s : State} {B : BitVec 32} {Z W k N j : Nat} (h : Gk s B Z W k N) (hj : j < N) :
     arr W j + S W ≤ 2 ^ 64 := by
-  have := h.arr_fit hj; have := h.nowrap; omega
+  have := h.arr_fit hj; have := h.nowrap; omega_arith
 
 theorem Gk.addr {s : State} {B : BitVec 32} {Z W k N d : Nat} (h : Gk s B Z W k N) (hd : d < Z) :
     State.addr (B + BitVec.ofNat 32 d) = off (State.addr B) d :=
-  VG.Arm.addr_add (by have := h.nowrap; omega)
+  VG.Arm.addr_add (by have := h.nowrap; omega_using [hd, this])
 
 theorem Gk.write {s : State} {B : BitVec 32} {Z W k N d : Nat} (h : Gk s B Z W k N) (hd : d + 4 ≤ Z) :
     InRegions s.wr (off (State.addr B) d) 4 :=
-  ⟨_, h.writable, Offset.contains_base _ hd (by have := h.nowrap; omega)⟩
+  ⟨_, h.writable, Offset.contains_base _ hd (by have := h.nowrap; omega_using [hd, this])⟩
 
 theorem Gk.read {s : State} {B : BitVec 32} {Z W k N d : Nat} (h : Gk s B Z W k N) (hd : d + 4 ≤ Z) :
     InRegions (s.rd ++ s.wr) (off (State.addr B) d) 4 := by
@@ -115,7 +115,7 @@ theorem Gk.subCtx {s : State} {B : BitVec 32} {Z W k N o a b L : Nat} (h : Gk s 
   have da := arr_disj (w := W) hoa
   have db := arr_disj (w := W) hob
   have hS : S W = 4 * (W + 2) := rfl
-  exact ⟨h.nowrap, by omega, by omega, by omega, by omega, by omega, h.writable⟩
+  exact ⟨h.nowrap, by omega_using [hL, fo, hS], by omega_using [hL, fa, hS], by omega_using [hL, fb, hS], by omega_using [hL, da, hS], by omega_using [hL, db, hS], h.writable⟩
 
 theorem Gk.selCtx {s : State} {B : BitVec 32} {Z W k N o a b L : Nat} (h : Gk s B Z W k N)
     (ho : o < N) (ha : a < N) (hb : b < N) (hL : L ≤ W + 2) :
@@ -124,13 +124,13 @@ theorem Gk.selCtx {s : State} {B : BitVec 32} {Z W k N o a b L : Nat} (h : Gk s 
   have fa := h.arr_fit ha
   have fb := h.arr_fit hb
   have hS : S W = 4 * (W + 2) := rfl
-  refine ⟨h.nowrap, by omega, by omega, by omega, ?_, ?_, h.writable⟩
+  refine ⟨h.nowrap, by omega_using [hL, fo, hS], by omega_using [hL, fa, hS], by omega_using [hL, fb, hS], ?_, ?_, h.writable⟩
   · by_cases e : o = a
     · exact .inr (.inr (by rw [e]))
-    · have := arr_disj (w := W) e; omega
+    · have := arr_disj (w := W) e; omega_using [hL, hS, this]
   · by_cases e : o = b
     · exact .inr (.inr (by rw [e]))
-    · have := arr_disj (w := W) e; omega
+    · have := arr_disj (w := W) e; omega_using [hL, hS, this]
 
 theorem Gk.rowCtx {s : State} {B : BitVec 32} {Z W k N o b L : Nat} (h : Gk s B Z W k N)
     (ho : o < N) (hb : b < N) (hob : o ≠ b) (hL : L ≤ W + 2) :
@@ -139,13 +139,13 @@ theorem Gk.rowCtx {s : State} {B : BitVec 32} {Z W k N o b L : Nat} (h : Gk s B 
   have fb := h.arr_fit hb
   have db := arr_disj (w := W) hob
   have hS : S W = 4 * (W + 2) := rfl
-  exact ⟨h.nowrap, by omega, by omega, by omega, h.writable⟩
+  exact ⟨h.nowrap, by omega_using [hL, fo, hS], by omega_using [hL, fb, hS], by omega_using [hL, db, hS], h.writable⟩
 
 theorem Gk.zeroCtx {s : State} {B : BitVec 32} {Z W k N o L : Nat} (h : Gk s B Z W k N)
     (ho : o < N) (hL : L ≤ W + 2) : ZeroCtx s B Z (arr W o) L := by
   have fo := h.arr_fit ho
   have hS : S W = 4 * (W + 2) := rfl
-  exact ⟨h.nowrap, by omega, ⟨_, h.writable, Region.contains_self _ _⟩⟩
+  exact ⟨h.nowrap, by omega_using [hL, fo, hS], ⟨_, h.writable, Region.contains_self _ _⟩⟩
 
 /-! ## Frames at a width -/
 
@@ -153,10 +153,10 @@ theorem Gk.zeroCtx {s : State} {B : BitVec 32} {Z W k N o L : Nat} (h : Gk s B Z
 theorem Keep.nk {B : BitVec 32} {W : Nat} {js ds : List Nat} {m m' : Mem}
     (h : Keep B W js ds m m') {j L : Nat} (hL : L ≤ W + 2) (hj : ∀ k ∈ js, k ≠ j)
     (hd : ∀ d ∈ ds, d + 4 ≤ hdr) (fit : arr W j + S W ≤ 2 ^ 64) : nk m' B W j L = nk m B W j L := by
-  refine Outs.val32 h (fun r hr => ?_) (by simp only [S] at fit; omega)
+  refine Outs.val32 h (fun r hr => ?_) (by simp only [S] at fit; omega_using [hL, fit])
   simp only [ranges, List.mem_append, List.mem_map] at hr
   rcases hr with ⟨k, hk, rfl⟩ | ⟨d, hd', rfl⟩
-  · have := arr_disj (w := W) (hj k hk); dsimp only; simp only [S] at *; omega
-  · have := hd d hd'; have : hdr ≤ arr W j := Nat.le_add_right _ _; dsimp only; omega
+  · have := arr_disj (w := W) (hj k hk); dsimp only; simp only [S] at *; omega_using [hL, this]
+  · have := hd d hd'; have : hdr ≤ arr W j := Nat.le_add_right _ _; dsimp only; omega_arith
 
 end VG.Proof.Rsa.Arm.Inv

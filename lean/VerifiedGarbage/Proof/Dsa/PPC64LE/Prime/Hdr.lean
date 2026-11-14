@@ -61,7 +61,7 @@ theorem Hdr.keep {bits : Nat} {ws R : Addr} {rl : BitVec 64} {m m' : Mem} (h : H
     (hw _ (by simp [hChecks])).trans h.checks, (hw _ (by simp [hTop])).trans h.top, (hw _ (by simp [hK])).trans h.k,
     (hw _ (by simp)).trans h.stride⟩
   refine (hw _ ?_).trans (h.arr j hj)
-  rcases (show j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4 ∨ j = 5 ∨ j = 6 ∨ j = 7 by omega) with
+  rcases (show j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4 ∨ j = 5 ∨ j = 6 ∨ j = 7 by omega_using [hj]) with
     rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp
 
 /-- After the entry. -/
@@ -80,7 +80,7 @@ theorem hdr_of {bits : Nat} {σ s : State} (ep : EntryPost bits σ s) :
     (sv .r20 _ (by decide)).trans hr.r20, (sv .r18 _ (by decide)).trans hr.r18, (sv .r17 _ (by decide)).trans hr.r17,
     (sv .r29 _ (by decide)).trans hr.r29⟩
   rw [sv (arrReg j) _ (by
-    rcases (show j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4 ∨ j = 5 ∨ j = 6 ∨ j = 7 by omega) with
+    rcases (show j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4 ∨ j = 5 ∨ j = 6 ∨ j = 7 by omega_using [hj]) with
       rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide), hr.arr j hj]
   show _ = σ.gpr .r3 + BitVec.ofNat 64 keyOff + BitVec.ofNat 64 (slot (words bits) j)
   rw [Offset.add_add]

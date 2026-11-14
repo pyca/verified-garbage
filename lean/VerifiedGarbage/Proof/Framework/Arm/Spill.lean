@@ -122,7 +122,7 @@ theorem save_slots_ok {b : Reg} {rest : List Instr} {lo hi : Nat} {l : List (Reg
     WP isa (.block (l.map (fun p => Instr.str p.1 b p.2) ++ rest)) s Q :=
   save_ok l s Q (fun p hp => by
     have := hs.bound hp
-    exact ⟨by omega, by omega, hin _ this.1 this.2.1⟩) k
+    exact ⟨by omega_using [this], by omega_using [hfit, this], hin _ this.1 this.2.1⟩) k
 
 /-- `save_slots_ok` for the code alone. -/
 theorem save_block_ok {b : Reg} {lo hi : Nat} {l : List (Reg × Nat)} (hs : Slots lo hi l) {s : State}
@@ -146,14 +146,14 @@ theorem saveMem_frame_of (B : Addr) (g : Reg → BitVec 32) {rs : List Region} {
 theorem saveMem_frame (m : Mem) (B : Addr) (g : Reg → BitVec 32) {L : Nat} (hL : L < 2 ^ 32)
     (l : List (Reg × Nat)) (hl : ∀ p ∈ l, p.2 + 4 ≤ L) : Frame [⟨B, L⟩] m (saveMem m B g l) :=
   saveMem_frame_of B g List.mem_cons_self m l fun p hp =>
-    Offset.contains_base B (hl p hp) (by have := hl p hp; omega)
+    Offset.contains_base B (hl p hp) (by have := hl p hp; omega_using [hL, this])
 
 /-- Saving changes only the slots' bytes `[lo, hi)`. -/
 theorem saveMem_frame_slots {lo hi : Nat} {l : List (Reg × Nat)} (hs : Slots lo hi l) (m : Mem) (B : Addr)
     (g : Reg → BitVec 32) : Frame [⟨B + BitVec.ofNat 64 lo, hi - lo⟩] m (saveMem m B g l) :=
   saveMem_frame_of B g List.mem_cons_self m l fun p hp => by
     have := hs.bound hp
-    exact Offset.contains B this.1 (by omega) (by omega)
+    exact Offset.contains B this.1 (by omega_using [this]) (by omega_using [this])
 
 /-- Saving the same values. -/
 theorem saveMem_congr (B : Addr) {g g' : Reg → BitVec 32} :
@@ -172,7 +172,7 @@ theorem saveMem_readW_sep (B : Addr) (g : Reg → BitVec 32) {d : Nat} (hd : d +
   | m, q :: l, h => by
     have hq := h q List.mem_cons_self
     refine (saveMem_readW_sep B g hd _ l fun q' hq' => h q' (List.mem_cons_of_mem _ hq')).trans ?_
-    exact Mem.readW_writeW_sep (Offset.sep B hq.2 (by omega) (by omega)) (by decide)
+    exact Mem.readW_writeW_sep (Offset.sep B hq.2 (by omega_using [hd]) (by omega_using [hq])) (by decide)
 
 /-- After saving, each slot holds its register. -/
 theorem saveMem_saved {lo hi : Nat} (B : Addr) (g : Reg → BitVec 32) :
@@ -182,10 +182,10 @@ theorem saveMem_saved {lo hi : Nat} (B : Addr) (g : Reg → BitVec 32) :
     intro q hq
     rcases List.mem_cons.mp hq with rfl | hq
     · have hp := hs.bound List.mem_cons_self
-      refine (saveMem_readW_sep B g (by omega) _ l fun q' hq' => ?_).trans
+      refine (saveMem_readW_sep B g (by omega_using [hp]) _ l fun q' hq' => ?_).trans
         (Mem.readW_writeW_self32 _ _ _)
       have := hs.bound (List.mem_cons_of_mem _ hq')
-      exact ⟨by omega, hs.head_sep hq'⟩
+      exact ⟨by omega_using [this], hs.head_sep hq'⟩
     · exact saveMem_saved B g _ l hs.tail q hq
 
 /-! ## Saved registers -/
@@ -198,7 +198,7 @@ theorem Saved.frame {m m' : Mem} {B : Addr} {g : Reg → BitVec 32} {lo hi : Nat
   intro p hp
   have := hs.bound hp
   refine (hf.readW (r := ⟨B + BitVec.ofNat 64 lo, hi - lo⟩)
-    (Offset.contains B this.1 (by omega) (by omega)) hd (by decide)).trans (h p hp)
+    (Offset.contains B this.1 (by omega_using [this]) (by omega_using [this])) hd (by decide)).trans (h p hp)
 
 /-- A register restored from its slot has its saved value. -/
 theorem Saved.restored {m : Mem} {B : Addr} {g : Reg → BitVec 32} {l : List (Reg × Nat)}
@@ -263,7 +263,7 @@ theorem restore_slots_ok {b : Reg} {rest : List Instr} {lo hi : Nat} {l : List (
     WP isa (.block (l.map (fun p => Instr.ldr p.1 b p.2) ++ rest)) s Q :=
   restoreList_ok l s Q hr.1 (fun p hp => by
       have := hs.bound hp
-      exact ⟨hr.ne hp, by omega, by omega, hin _ this.1 this.2.1⟩)
+      exact ⟨hr.ne hp, by omega_using [this], by omega_using [hfit, this], hin _ this.1 this.2.1⟩)
     fun s' ho => k s' (hsv.restored ho)
 
 /-- `restore_slots_ok` for the code alone. -/
@@ -320,7 +320,7 @@ theorem restoreBase_slots_ok {b : Reg} {rest : List Instr} {lo hi : Nat} {l : Li
     WP isa (.block ((l ++ [(b, d)]).map (fun p => Instr.ldr p.1 b p.2) ++ rest)) s Q :=
   restoreBase_ok hr (fun p hp => by
       have := hs.bound hp
-      exact ⟨by omega, by omega, hin _ this.1 this.2.1⟩)
+      exact ⟨by omega_using [this], by omega_using [hfit, this], hin _ this.1 this.2.1⟩)
     fun s' ho => k s' (hsv.restored ho)
 
 end VG.Arm.Spill

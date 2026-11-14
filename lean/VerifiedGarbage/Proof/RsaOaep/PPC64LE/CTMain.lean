@@ -141,8 +141,8 @@ theorem encMain_ct : RelCT isa (Two fun a t => ∃ s, PreT H.D G H f s ∧ PubT 
       (L := fun s => s.gpr .r9) (N := fun s => (s.gpr .r10).toNat) (by decide) (by decide) (by decide) (by decide)
       (by decide) (fun _ b => ⟨b.r19, by rw [b.r20, BitVec.ofNat_toNat, BitVec.setWidth_eq]⟩)
       (fun _ p => ⟨p.1.g _ (by decide), by rw [p.1.g .r10 (by decide)]⟩)
-      (fun P => ⟨by rw [P.1.hrd]; simp, (P.1.ls.sub_right (sc_sub P.1)).sub_right (sc_in (by omega)),
-        (P.1.ls.sub_right (sc_sub P.1)).sub_right (sc_in (by omega)), P.1.kl.sub_left (cR_sub _),
+      (fun P => ⟨by rw [P.1.hrd]; simp, (P.1.ls.sub_right (sc_sub P.1)).sub_right (sc_in (by omega_arith)),
+        (P.1.ls.sub_right (sc_sub P.1)).sub_right (sc_in (by omega_arith)), P.1.kl.sub_left (cR_sub _),
         BitVec.isLt _⟩)
       (fun h => lab2_taint h) (fun h => lab3_taint h)).mono
       (fun _ _ ⟨a, h₁, h₂⟩ => ⟨(a, 0), h₁.1, h₂.1⟩) fun _ _ h => h)
@@ -163,11 +163,11 @@ theorem encMain_ct : RelCT isa (Two fun a t => ∃ s, PreT H.D G H f s ∧ PubT 
     have k₄ : Only [.r24, .r25, .r26, .r27] t t₄ := (o₁.trans (o₂.trans (o₃.trans o₄))).mono
     show (MgfAT S vO (PreT H.D G H f) (PubT G H) 1 H.D (1 + H.D) ((a.gpr .r6).toNat - H.D - 1) a t₄ ∧
       MFit 1 H.D (1 + H.D) ((a.gpr .r6).toNat - H.D - 1)) ∧ HK H.D a
-    refine ⟨⟨⟨s, P, p, b.only P.1.fits k₄, y.trans sy, ?_, ?_, ?_, ?_⟩, ⟨by omega, by omega, .inl (by omega), by omega⟩⟩, hk⟩
+    refine ⟨⟨⟨s, P, p, b.only P.1.fits k₄, y.trans sy, ?_, ?_, ?_, ?_⟩, ⟨by omega_using [hD64], by omega_using [hD64, k2, ek], .inl (by omega_using []), by omega⟩⟩, hk⟩
     · rw [o₄.get .r24, o₃.get .r24, o₂.get .r24, e₁, b.r14, p.1.S, hE]
     · rw [o₄.get .r25, o₃.get .r25, e₂]
     · rw [o₄.get .r26, e₃, o₂.get .r14, o₁.get .r14, b.r14, p.1.S, hE, Nat.zero_add]
-    · rw [e₄, o₃.get .r15, o₂.get .r15, o₁.get .r15, b.r15, sub_k (by omega)]; congr 1; omega
+    · rw [e₄, o₃.get .r15, o₂.get .r15, o₁.get .r15, b.r15, sub_k (by omega)]; congr 1; omega_using [ek]
   refine two_seq (Ψ := Bk H.D G H f) ((mgf_any hG cG hGh hGl hGv q₁).mono (fun _ _ ⟨a, h₁, h₂⟩ => ⟨a, h₁.1, h₂.1⟩)
     fun _ _ h => h) (fun a t ⟨⟨⟨s, P, p, b, sy, h24, h25, h26, h27⟩, hf⟩, hk⟩ =>
     WP.mono (mgfXorT_ok P.1.fits hG P.2.1 hGh hGl hGv hf b sy (by rw [h24, p.1.S]) h25 (by rw [h26, p.1.S]) h27)
@@ -186,7 +186,7 @@ theorem encMain_ct : RelCT isa (Two fun a t => ∃ s, PreT H.D G H f s ∧ PubT 
       MFit (1 + H.D) ((a.gpr .r6).toNat - H.D - 1) 1 H.D) ∧ HK H.D a
     refine ⟨⟨⟨s, P, p, b.only P.1.fits k₄, y.trans sy, ?_, ?_, ?_, ?_⟩, ⟨by omega_arith, by omega_arith, .inr (by omega_arith), by omega_arith⟩⟩, hk⟩
     · rw [o₄.get .r24, o₃.get .r24, o₂.get .r24, e₁, b.r14, p.1.S, hE, Nat.zero_add]
-    · rw [o₄.get .r25, o₃.get .r25, e₂, o₁.get .r15, b.r15, sub_k (by omega)]; congr 1; omega
+    · rw [o₄.get .r25, o₃.get .r25, e₂, o₁.get .r15, b.r15, sub_k (by omega)]; congr 1; omega_using [ek]
     · rw [o₄.get .r26, e₃, o₂.get .r14, o₁.get .r14, b.r14, p.1.S, hE]
     · rw [e₄]
   refine two_seq (Ψ := Bk H.D G H f) ((mgf_any hG cG hGh hGl hGv q₂).mono (fun _ _ ⟨a, h₁, h₂⟩ => ⟨a, h₁.1, h₂.1⟩)
@@ -269,7 +269,7 @@ theorem code_ct (hl : H.D ∈ lens) :
   refine RelCT.seq hlen ?_
   -- The code for that length.
   refine RelCT.seq (two_post (Ψ := fun a t => ∃ s, PreT H.D G H f s ∧ PubT G H a s ∧ Saves s t)
-    (byLen_ct (D := H.D) (Φ := E₃) (by omega) (fun _ _ ⟨_, _, _, _, _, h3⟩ => h3)
+    (byLen_ct (D := H.D) (Φ := E₃) (by omega_using [hD64]) (fun _ _ ⟨_, _, _, _, _, h3⟩ => h3)
       (fun _ t₁ t₂ ⟨_, P₁, p₁, E₁, _⟩ ⟨_, P₂, p₂, E₂, _⟩ =>
         (E₁.base.agree ((oaepOk H.D).agree p₁.1)).1.trans (E₂.base.agree ((oaepOk H.D).agree p₂.1)).1.symm)
       (fun _ _ _ ⟨s, P, p, E, y, h3⟩ o y' => ⟨s, P, p, entered_only P.1 E o, y'.trans y, by rw [o.get .r3]; exact h3⟩)
@@ -278,7 +278,7 @@ theorem code_ct (hl : H.D ∈ lens) :
   · rw [checks_D (G := ofLen H.D) (G' := H) rfl]
     exact (checks_ct hH cH hG cG hGh hGl hGv).mono (fun _ _ ⟨a, ⟨s₁, P₁, p₁, E₁, y₁, _⟩, ⟨s₂, P₂, p₂, E₂, y₂, _⟩⟩ =>
       ⟨a, ⟨s₁, P₁, p₁, E₁, y₁⟩, ⟨s₂, P₂, p₂, E₂, y₂⟩⟩) fun _ _ h => h
-  · refine byLen_ok (D := H.D) (by omega)
+  · refine byLen_ok (D := H.D) (by omega_using [hD64])
       (F := fun u => Entered s u ∧ u.syms = s.syms ∧ u.gpr .r3 = BitVec.ofNat 64 H.D)
       (fun _ h => h.2.2) (fun u u' ⟨E', y', r3'⟩ o y => ⟨entered_only P.1 E' o, y.trans y',
         by rw [o.get .r3]; exact r3'⟩) ?_ hl (fun x hx => (lens_certs x hx).1) t ⟨E, y, h3⟩

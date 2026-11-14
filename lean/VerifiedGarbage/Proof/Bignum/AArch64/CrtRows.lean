@@ -161,7 +161,7 @@ theorem ceil8_bv {a : Nat} (ha : a < 2 ^ 60) :
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_ushiftRight, BitVec.toNat_add, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow,
     show (7#64).toNat = 7 from rfl]
-  rw [Nat.mod_eq_of_lt (by omega : a < 2 ^ 64), Nat.mod_eq_of_lt (by omega : a + 7 < 2 ^ 64),
-    Nat.mod_eq_of_lt (by omega : (a + 7) / 8 < 2 ^ 64)]
+  rw [Nat.mod_eq_of_lt (by omega_using [ha] : a < 2 ^ 64), Nat.mod_eq_of_lt (by omega_using [ha] : a + 7 < 2 ^ 64),
+    Nat.mod_eq_of_lt (by omega_using [ha] : (a + 7) / 8 < 2 ^ 64)]
 
 end VG.Proof.Bignum.AArch64

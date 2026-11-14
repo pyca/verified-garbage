@@ -72,7 +72,7 @@ private theorem searchMem_held (W : List (BitVec 64)) (length : W.length = 2218)
   refine ite_eq_left ?_
   rw [BitVec.add_assoc, BitVec.ofNat_add_ofNat, Offset.add_sub_cancel_left, BitVec.toNat_ofNat]
   rw [length] at hi
-  omega
+  omega_using [hi, hj]
 
 private theorem searchSat_arg (W : List (BitVec 64)) {i : Nat} (hi : i < 9) :
     stackArg (searchSat W) i = stackArg keySat i := by

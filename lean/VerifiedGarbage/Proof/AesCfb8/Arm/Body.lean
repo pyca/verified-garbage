@@ -62,7 +62,7 @@ theorem UPre.sv : State.addr (Sv32 s₀) = Sv s₀ := hp.scrA (by decide)
 
 theorem UPre.cByt {k : Nat} (hk : k < N s₀) : (dataR s₀).Contains (byt s₀ k) 1 := by
   have := hp.data_fit
-  exact Offset.contains_base _ (by omega) (by omega)
+  exact Offset.contains_base _ (by omega_using [hk]) (by omega_using [hk, this])
 
 theorem UPre.byt_iv {k : Nat} (hk : k < N s₀) : (⟨byt s₀ k, 1⟩ : Region).Disjoint (ivR s₀) :=
   hp.iv_data.symm.sub_left (UPre.data_sub hk)
@@ -77,7 +77,7 @@ theorem UPre.byt_b {k : Nat} (hk : k < N s₀) : (⟨byt s₀ k, 1⟩ : Region).
 theorem UPre.iv_sv : (ivR s₀).Disjoint ⟨Sv s₀, 16⟩ := hp.iv_scr.sub_right (UPre.scr_sub (by decide))
 
 theorem UPre.sv_scr : (⟨Sv s₀, 16⟩ : Region).Disjoint ⟨State.addr (S s₀), 2048⟩ :=
-  Offset.disjoint_base _ (by decide) (by have := hp.scr_fit; omega)
+  Offset.disjoint_base _ (by decide) (by have := hp.scr_fit; omega_using [])
 
 /-- The arguments of a call on the copy of the input block, with the working
 space at the start of the scratch buffer. -/
@@ -90,9 +90,9 @@ theorem UPre.blkCall {s : State}
   have hsc := hp.scr_fit
   have qN : (Sv32 s₀).toNat = (S s₀).toNat + 2048 := by
     rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := 2048) (by decide),
-      Nat.mod_eq_of_lt (by omega)]
+      Nat.mod_eq_of_lt (by omega_using [hsc])]
   refine ⟨r0, by rw [r1]; simp [R], r2, by rw [r3]; rfl, r12, hp.rounds, by rw [sp]; exact hp.sp8, hp.sch_fit,
-    by rw [qN]; omega, by omega, ?_, hp.sch_scr.sub_right (Region.sub_prefix (by decide)), ?_,
+    by rw [qN]; omega_using [hsc], by omega_using [hsc], ?_, hp.sch_scr.sub_right (Region.sub_prefix (by decide)), ?_,
     by rw [hb]; exact hp.b_sch, ?_, by rw [hb]; exact hp.b_scr.sub_right (Region.sub_prefix (by decide)), ?_, ?_⟩
   · rw [hd]; exact hp.sch_scr.sub_right (UPre.scr_sub (by decide))
   · rw [hd]; exact hp.sv_scr
@@ -133,8 +133,8 @@ theorem pre_wp {enc : Bool} {s₀ : State} (hp : UPre s₀) {k : Nat} {s : State
     rw [h.rd, h.wr, hp.rd, hp.wr]; rfl
   have w₀ : s.wr = [ivR s₀, dataR s₀, scrR s₀] := by rw [h.wr, hp.wr]
   rw [pre_eq]
-  refine copy_wp (by decide) (by decide) (by decide) (by decide) (by rw [h.r6]; omega)
-    (by rw [h.r10]; omega) (by rw [h.r6, add0, rw₀]; exact covIv (by simp))
+  refine copy_wp (by decide) (by decide) (by decide) (by decide) (by rw [h.r6]; omega_using [hiv])
+    (by rw [h.r10]; omega_using [hsc]) (by rw [h.r6, add0, rw₀]; exact covIv (by simp))
     (by rw [h.r10, w₀]; exact covSv (by simp)) fun s₁ g₁ => ?_
   have m₁ : s₁.mem = copy4Mem s.mem (Sv s₀) (State.addr (Iv s₀)) := by rw [g₁.mem, h.r10, h.r6, add0]
   refine wp_mov (op2_reg _ _) fun s₂ u₂ => wp_mov (op2_reg _ _) fun s₃ u₃ =>
@@ -225,9 +225,9 @@ theorem finish_wp {enc : Bool} {s₀ : State} (hp : UPre s₀) {k : Nat} (hk : k
   have r6 : s₃.gpr .r6 = Iv s₀ := by
     rw [g₃' _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide), h.r6]
   obtain ⟨s₄, run₄, g₄, sp₄, mem₄, rd₄, wr₄⟩ :=
-    shift_ok s₃ (Q := State.addr (Iv s₀)) (by rw [r6]) (by rw [r6]; omega) hc
-      (fun d n hd => by rw [rl]; exact ⟨ivR s₀, by simp, Offset.contains_base _ hd (by omega)⟩)
-      (fun d n hd => by rw [wl]; exact ⟨ivR s₀, by simp, Offset.contains_base _ hd (by omega)⟩)
+    shift_ok s₃ (Q := State.addr (Iv s₀)) (by rw [r6]) (by rw [r6]; omega_using [hiv]) hc
+      (fun d n hd => by rw [rl]; exact ⟨ivR s₀, by simp, Offset.contains_base _ hd (by omega_using [hd])⟩)
+      (fun d n hd => by rw [wl]; exact ⟨ivR s₀, by simp, Offset.contains_base _ hd (by omega_using [hd])⟩)
   rw [WP.block_append_iff]
   refine WP.of_runBlock ⟨s₄, run₄, ?_⟩
   refine wp_add (op2_imm (by decide)) fun s₅ u₅ => wp_subs (op2_imm (by decide)) fun s₆ u₆ z₆ => WP.block_nil ?_
@@ -238,7 +238,7 @@ theorem finish_wp {enc : Bool} {s₀ : State} (hp : UPre s₀) {k : Nat} (hk : k
     rw [u₅.other _ (by decide), g₄ _ (by decide) (by decide) (by decide) (by decide),
       g₃' _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide), h.r8]
   have dec : BitVec.ofNat 32 (N s₀ - k) - 1 = BitVec.ofNat 32 (N s₀ - (k + 1)) := by
-    rw [show (1 : BitVec 32) = BitVec.ofNat 32 1 from rfl, sub_ofNat (by omega)]; rfl
+    rw [show (1 : BitVec 32) = BitVec.ofNat 32 1 from rfl, sub_ofNat (by omega_using [hk])]; rfl
   have mem₆ : s₆.mem = s₄.mem := by rw [u₆.mem, u₅.mem]
   -- Memory.
   have fStep : Frame [⟨byt s₀ k, 1⟩, ivR s₀, ⟨State.addr (S s₀), 2064⟩, belowR s₀] s.mem s₆.mem := by
@@ -264,7 +264,7 @@ theorem finish_wp {enc : Bool} {s₀ : State} (hp : UPre s₀) {k : Nat} (hk : k
         · exact hp.iv_scr.sub_right (Region.sub_prefix (by decide))
         · exact hp.b_iv.symm) (by decide), h.iv]
   have hl : (outK s₀ enc k).length = k := by
-    rw [outK, length_cfb8, List.length_take, length_bs]; omega
+    rw [outK, length_cfb8, List.length_take, length_bs]; omega_using [hk]
   have iv_ne : iv0 s₀ ≠ [] := by simp [iv0, bytesAt]
   refine ⟨⟨?_, ?_, ?_, ?_, by rw [u₆.gpr, r8₅, dec], ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩, ?_⟩
   · rw [g _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
@@ -275,7 +275,7 @@ theorem finish_wp {enc : Bool} {s₀ : State} (hp : UPre s₀) {k : Nat} (hk : k
       (by decide), h.r6]
   · rw [u₆.other _ (by decide), u₅.gpr, g₄ _ (by decide) (by decide) (by decide) (by decide),
       g₃' _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide), h.r7,
-      show (1 : BitVec 32) = BitVec.ofNat 32 1 from rfl, Offset.add_add_eq _ (c := k + 1) (by omega)]
+      show (1 : BitVec 32) = BitVec.ofNat 32 1 from rfl, Offset.add_add_eq _ (c := k + 1) (by omega_using [])]
   · rw [g _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
       (by decide), h.r10]
   · rw [g _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
@@ -294,7 +294,7 @@ theorem finish_wp {enc : Bool} {s₀ : State} (hp : UPre s₀) {k : Nat} (hk : k
     simp only [outK, take_succ_bs s₀ hk, cfb8_snoc enc _ iv_ne, inKk]
   · rw [mem₆, mem₄, AesCfb8.shiftMem32_bytes, ivIn]
     simp only [inKk, take_succ_bs s₀ hk, inK_snoc enc _ iv_ne, ← hv]
-  · rw [z₆, r8₅, dec]; exact ofNat_beq_zero (by omega)
+  · rw [z₆, r8₅, dec]; exact ofNat_beq_zero (by omega_using [hdf])
 
 /-! ## One byte -/
 

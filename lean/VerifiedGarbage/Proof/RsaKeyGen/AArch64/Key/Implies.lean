@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.RsaKeyGen.Contract
 public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.Contract
 public import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # An RSA key from its primes on AArch64: the shared contract implies `keyA`
@@ -69,7 +70,7 @@ theorem key_implies : keyA.Implies (Proof.RsaKeyGen.keyContract abi) where
     refine ⟨?_, hsp, fun i hi => ?_, hl⟩
     · simp only [argRegs, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq]
       exact ⟨r0, r1, r2, r3, r4, r5, r6, r7⟩
-    · rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 ∨ i = 8 ∨ i = 9 by omega) with
+    · rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 ∨ i = 8 ∨ i = 9 by omega_using [hi]) with
         rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
       · exact a0
       · exact a1

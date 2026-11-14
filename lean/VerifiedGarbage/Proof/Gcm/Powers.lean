@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Gcm.Poly
 public import VerifiedGarbage.Spec.Gcm.Precomputed
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # GCM: the powers of the hash subkey, in the field
@@ -21,7 +22,7 @@ theorem gp_one : gp Spec.Gcm.one = 1 := by
   rw [coeff_gp, coeff_one]
   rcases k with _ | k
   · rfl
-  · simp only [BitVec.getMsbD, show ¬ (k + 1 < 1) by omega, decide_false, Bool.false_and]; rfl
+  · simp only [BitVec.getMsbD, show ¬ (k + 1 < 1) by omega_using [], decide_false, Bool.false_and]; rfl
 
 theorem φ_one : φ Spec.Gcm.one = 1 := by
   rw [φ, gp_one, map_one]

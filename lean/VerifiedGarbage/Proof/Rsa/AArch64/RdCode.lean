@@ -95,8 +95,8 @@ theorem rdCode_correct [GcdLaw gcdB] (s : State) (h : rdA.pre s) :
     (by rw [eval_zero, hz₂]; cases Spec.Rsa.modulusValid _ _ <;> rfl) (fun hb => ?_) (fun hb => ?_)
   · have hv : Spec.Rsa.modulusValid (rpIn s).N (s.gpr .x5).toNat = false := by simpa using hb
     have z : 128 * (s.gpr .x5).toNat ≤ (stackArg s 3).toNat * 8 := c.L.z
-    exact WP.mono (rpFail_ok hpre.scr hpre.x0 (show 8 * 32 ≤ (stackArg s 3).toNat * 8 by omega) hpre.args
-      (show 1 ≤ (s.gpr .x5).toNat by omega) (show (s.gpr .x5).toNat < 2 ^ 31 by omega) hpre.oP hpre.oQ hpre.a)
+    exact WP.mono (rpFail_ok hpre.scr hpre.x0 (show 8 * 32 ≤ (stackArg s 3).toNat * 8 by omega_using [hk1, z]) hpre.args
+      (show 1 ≤ (s.gpr .x5).toNat by omega_using [hk1]) (show (s.gpr .x5).toNat < 2 ^ 31 by omega_using [hk2]) hpre.oP hpre.oQ hpre.a)
       fun t ⟨z1, z2, hax, _, kt⟩ => ⟨abiPreserved_of_keep ((kk.trans kt).mono (by decide)), by
         show Spec.Rsa.writtenAll _ _ _ _
         have hnone : Spec.Rsa.primesKeyDet (rpIn s).nb (rpIn s).eb (rpIn s).db = none := by

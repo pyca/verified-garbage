@@ -137,14 +137,14 @@ theorem ciph_frame {rs : List Region} {m m' : Mem} (hf : Frame rs m m')
     ciphOf m' c R = ciphOf m c R := by
   have hRb : 16 * (R + 1) ≤ 256 := by rcases hR with rfl | rfl | rfl <;> decide
   simp only [ciphOf]
-  rw [bytesAt_frame hf (fun r hr => (hd r hr).sub_left (Region.sub_prefix hRb)) (by omega)]
+  rw [bytesAt_frame hf (fun r hr => (hd r hr).sub_left (Region.sub_prefix hRb)) (by omega_using [hR])]
 
 end
 
 /-- `[D, D + j)` and `[D + j, D + n)` are apart. -/
 theorem split_disj {D : Addr} {j n : Nat} (hj : j ≤ n) (hn : n < 2 ^ 64) :
     (⟨D, j⟩ : Region).Disjoint ⟨D + BitVec.ofNat 64 j, n - j⟩ := by
-  have := Offset.disjoint D (d := 0) (n := j) (e := j) (k := n - j) (.inl (by omega)) (by omega) (by omega)
+  have := Offset.disjoint D (d := 0) (n := j) (e := j) (k := n - j) (.inl (by omega_using [])) (by omega_using [hj, hn]) (by omega_using [hj, hn])
   simpa using this
 
 /-- What the code writes from byte `j` on, `l` bytes of the destination, is
@@ -155,14 +155,14 @@ theorem Alias.rest {o : Bool} {S D : Addr} {n : Nat} (ha : Alias o S D n) {j l :
   cases o
   · have e : S = D := ha
     subst e
-    exact Offset.disjoint S (.inl (by omega)) (by omega) (by omega)
+    exact Offset.disjoint S (.inl (by omega_using [])) (by omega_using [hl, hn]) (by omega_using [hl, hn])
   · have ha' : (⟨S, n⟩ : Region).Disjoint ⟨D, n⟩ := ha
-    exact (ha'.sub_left (Offset.sub_base _ (by omega))).sub_right (Offset.sub_base _ (by omega)) |>.symm
+    exact (ha'.sub_left (Offset.sub_base _ (by omega_using [hl]))).sub_right (Offset.sub_base _ (by omega_using [hl])) |>.symm
 
 /-- The source, part of the way: what is left of it. -/
 theorem Alias.rest_sub {S : Addr} {n j : Nat} (hj : j ≤ n) :
     Region.Sub ⟨S + BitVec.ofNat 64 j, n - j⟩ ⟨S, n⟩ :=
-  Offset.sub_base _ (by omega)
+  Offset.sub_base _ (by omega_using [hj])
 
 /-- The bytes done so far and the next ones. -/
 theorem done_append {m m₀ : Mem} {ciph : Block → Block} {icb : Block} {P : Nat} {S D : Addr} {j l : Nat}

@@ -53,9 +53,9 @@ theorem storeCandidateArray_ok {s : State} {B out : Addr} {Z w a ptr : Nat}
       (∀ x, (∀ i < 8 * w, x ≠ off out i) → t.mem x = s.mem x) ∧
       Ws t B Z w ∧ Frm B [(Z, 2 ^ 64)] s.mem t.mem ∧ Keep mmRegs s t := by
   refine WP.mono (storeA_ok h ha hptr (by decide : 17 < 32) (by decide : Public.sMask < 32)
-    hp hl hm (by have := h.w1; omega) (Nat.le_refl _) hout hsep)
+    hp hl hm (by have := h.w1; omega_using [this]) (Nat.le_refl _) hout hsep)
     fun t ⟨hb, hf, hwr, _, hk⟩ => ?_
-  have hw := words_outside_bytes (by have := h.scr.nowrap; omega : Z ≤ 2 ^ 64) hf hsep
+  have hw := words_outside_bytes (by have := h.scr.nowrap; omega_using [this] : Z ≤ 2 ^ 64) hf hsep
   have ht := workspace_of_words h hw hwr ((hk.gpr .x0 (by decide)).trans h.x0)
   have fr : Frm B [(Z, 2 ^ 64)] s.mem t.mem := by
     intro x hx
@@ -66,10 +66,10 @@ theorem storeCandidateArray_ok {s : State} {B out : Addr} {Z w a ptr : Nat}
     have hc := hx (Z, 2 ^ 64) (by simp)
     have hl : ofs B (off out i) < 2 ^ 64 := (off out i - B).isLt
     simp only [off] at ho hl
-    omega
+    omega_using [ho, hc, hl]
   refine ⟨?_, hf, ht, fr, hk.mono (by decide)⟩
   simpa only [Spec.Rsa.bytesAt, off, VG.Proof.Dsa.encodeBE_i2osp, ite_true,
-    show (8 * w + 7) / 8 = w by omega] using hb
+    show (8 * w + 7) / 8 = w by omega_using []] using hb
 
 theorem candidateStores_ok {s : State} {B pp ep : Addr} {Z w : Nat}
     (h : Ws s B Z w)
@@ -92,11 +92,11 @@ theorem candidateStores_ok {s : State} {B pp ep : Addr} {Z w : Nat}
   have uh : ∀ d, d + 8 ≤ Z → word u.mem B d = word s.mem B d := by
     intro d hd
     exact wu.word_eq (by simp only [List.mem_singleton]; rintro r rfl; exact Or.inl hd)
-      (by have := h.scr.nowrap; omega)
+      (by have := h.scr.nowrap; omega_using [hd, this])
   have hh := h.h256
   refine WP.mono (storeCandidateArray_ok hu (by decide : 0 < 16) (by decide : 21 < 32)
-    (by rw [uh 168 (by omega)]; exact he) (by rw [uh 136 (by omega)]; exact hl)
-    (by rw [uh (8 * Public.sMask) (by unfold Public.sMask sFn; omega)]; exact hm)
+    (by rw [uh 168 (by omega_using [hh])]; exact he) (by rw [uh 136 (by omega_using [hh])]; exact hl)
+    (by rw [uh (8 * Public.sMask) (by unfold Public.sMask sFn; omega_using [hh])]; exact hm)
     (fun i hi => by rw [ku.wr]; exact hew i hi) heo) fun t ⟨te, ft, ht, wt, kt⟩ => ?_
   refine ⟨?_, ?_, ht, ?_, wu.trans wt, (ku.trans kt).mono (by decide)⟩
   · rw [← up]
@@ -108,13 +108,13 @@ theorem candidateStores_ok {s : State} {B pp ep : Addr} {Z w : Nat}
       exact ft _ (fun j hj => hpe i hi j hj)
   · rw [te, wu.wv_eq (by
       simp only [List.mem_singleton]; rintro r rfl; left
-      have := h.sl (by decide : 0 < 16); omega)
-      (by have := h.sl (by decide : 0 < 16); have := h.scr.nowrap; omega)]
+      have := h.sl (by decide : 0 < 16); omega_using [this])
+      (by have := h.sl (by decide : 0 < 16); have := h.scr.nowrap; omega_arith)]
   · intro a ha
     rw [ft a (fun i hi heq => ha ⟨ep, 8 * w⟩ (by simp) (heq ▸
-      Offset.contains_base ep hi (by have := h.w2; omega))),
+      Offset.contains_base ep hi (by have := h.w2; omega_using [hi, this]))),
       fu a (fun i hi heq => ha ⟨pp, 8 * w⟩ (by simp) (heq ▸
-      Offset.contains_base pp hi (by have := h.w2; omega)))]
+      Offset.contains_base pp hi (by have := h.w2; omega_using [hi, this])))]
 
 /-- Complete candidate arithmetic from input byte buffers to saved p and
 exponent byte buffers. The only other writes are to the arithmetic arrays. -/
@@ -140,15 +140,15 @@ theorem candidateBuild_ok {s : State} {B xp qp pp ep : Addr} {Z w : Nat} {xb qb 
       Frame [⟨B, Z⟩, ⟨pp, 8 * w⟩, ⟨ep, 8 * w⟩] s.mem t.mem ∧ Keep mmRegs s t := by
   unfold Impl.Dsa.AArch64.Generation.candidateBuild
   refine WP.seq (WP.mono (candidateArithmetic_ok h hxp hxl hqp hql sx sq
-    (by rw [hwidth]; have := h.w1; omega) (by omega) hqposlen hqf hqpos hqfit)
+    (by rw [hwidth]; have := h.w1; omega_using [this]) (by omega_using [hwidth]) hqposlen hqf hqpos hqfit)
     fun u ⟨hu, up, ue, fu, ku⟩ => ?_)
   have uh : ∀ d, d + 8 ≤ 256 → word u.mem B d = word s.mem B d := by
     intro d hd
     exact fu.word_eq (by
       simp only [List.mem_cons, List.not_mem_nil, or_false]
       rintro r hr; rcases hr with rfl | rfl | rfl | rfl | rfl | rfl <;>
-        left <;> simp only [slot, hdrBytes] <;> omega)
-      (by have := h.scr.nowrap; have := h.h256; omega)
+        left <;> simp only [slot, hdrBytes] <;> omega_using [hd])
+      (by have := h.scr.nowrap; have := h.h256; omega_using [hd])
   refine WP.mono (candidateStores_ok hu (by rw [uh 160 (by decide)]; exact hp)
     (by rw [uh 168 (by decide)]; exact he) (by rw [uh 136 (by decide), hxl, hwidth])
     (by rw [uh (8 * Public.sMask) (by decide)]; exact hm)
@@ -170,7 +170,7 @@ theorem candidateBuild_ok {s : State} {B xp qp pp ep : Addr} {Z w : Nat} {xb qb 
     have hz := ha ⟨B, Z⟩ (by simp)
     change ¬ (a - B).toNat < Z at hz
     dsimp only [ofs]
-    omega
+    omega_using [hrz, hz]
   exact fs.trans (ft.mono (by simp))
 
 end VG.Proof.Dsa.AArch64.Generation

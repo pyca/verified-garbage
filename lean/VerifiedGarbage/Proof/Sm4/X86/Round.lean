@@ -87,9 +87,9 @@ theorem xorBits_terms (W S : Nat → BitVec 32) (hS : ∀ i < 8, W i = S i) (l :
     simp only [List.mem_map] at hwt; obtain ⟨sm, hsm, rfl⟩ := hwt; exact hl sm hsm
 
 theorem ok_sbox {s : State} (h : Ok layerCfg s) : Ok sboxCfg s where
-  slotIn k hk := h.slotIn k (by simp [sboxCfg, layerCfg, tableSlot] at hk ⊢; omega)
+  slotIn k hk := h.slotIn k (by simp [sboxCfg, layerCfg, tableSlot] at hk ⊢; omega_using [hk])
   extIn k hk := by simp [sboxCfg] at hk
-  fit := by have := h.fit; simp [sboxCfg, layerCfg, tableSlot] at this ⊢; omega
+  fit := by have := h.fit; simp [sboxCfg, layerCfg, tableSlot] at this ⊢; omega_using [this]
   sep k _ j hj := by simp [sboxCfg] at hj
 
 theorem ok_lin {s : State} (h : Ok layerCfg s) : Ok linCfg s where
@@ -112,13 +112,13 @@ theorem runBlock_app (a b : List Instr) (s : State) :
 theorem slot_above {m m' : Mem} {b : BitVec 32} {n k : Nat} (hf : Frame [⟨b.setWidth 64, 4 * n⟩] m m')
     (hk : n ≤ k) (hfit : b.toNat + 4 * k + 4 ≤ 2 ^ 32) :
     m'.readW (wordAddr b k) 32 = m.readW (wordAddr b k) 32 := by
-  have e : wordAddr b k = b.setWidth 64 + BitVec.ofNat 64 (4 * k) := addr_eq (by omega)
+  have e : wordAddr b k = b.setWidth 64 + BitVec.ofNat 64 (4 * k) := addr_eq (by omega_using [hfit])
   rw [e]
   exact hf.readW (r := ⟨b.setWidth 64 + BitVec.ofNat 64 (4 * k), 4⟩) (Region.contains_self _ _) (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
       have : (b.setWidth 64).toNat = b.toNat := by
-        rw [BitVec.toNat_setWidth, Nat.mod_eq_of_lt (by have := b.isLt; omega)]
-      exact VG.Offset.disjoint_base _ (by omega) (by omega)) (by decide)
+        rw [BitVec.toNat_setWidth, Nat.mod_eq_of_lt (by have := b.isLt; omega_using [])]
+      exact VG.Offset.disjoint_base _ (by omega_using [hk]) (by omega_using [hfit])) (by decide)
 
 /-- A round, with the round key at entry `a` of `kp`. -/
 theorem round_ok (l : Lin) {a b c d : Nat} (ha : a < 4)

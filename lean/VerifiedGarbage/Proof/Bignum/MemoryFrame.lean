@@ -21,7 +21,7 @@ theorem outside_frame {base : Addr} {d len : Nat} {m m' : Mem}
   change ¬ ((a - off base d).toNat + 1 ≤ len) at H
   change (a - off base d).toNat < len ↔ d ≤ ofs base a ∧ ofs base a < d + len at I
   apply O
-  omega
+  omega_using [H, I]
 
 theorem scratch_bytes {base p : Addr} {bytes len : Nat} {m m' : Mem}
     (O : Outside base 0 bytes m m') (fit : len ≤ 2 ^ 64)
@@ -32,8 +32,8 @@ theorem scratch_bytes {base p : Addr} {bytes len : Nat} {m m' : Mem}
   intro i hi
   have hl := List.mem_range.mp hi
   have H := sep (p + BitVec.ofNat 64 i)
-    (Offset.contains_base p (by omega) (by omega))
+    (Offset.contains_base p (by omega_using [hl]) (by omega_using [fit, hl]))
   change ¬ (ofs base (p + BitVec.ofNat 64 i) + 1 ≤ bytes) at H
-  exact O _ (.inr (by omega))
+  exact O _ (.inr (by omega_using [H]))
 
 end VG.Proof.Bignum

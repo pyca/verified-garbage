@@ -43,7 +43,7 @@ theorem Inv.of_progKeep {M : Mod} {base : Addr} {size m : Nat} [NeZero m]
     · exact hlt x hw
     · have hv : x ∈ V := (List.mem_append.mp hx).resolve_left hw
       have hb := hL.le x (hI.sl x hv)
-      rw [hk.unch.wordsVal (fun w hw' => ?_) (by omega)]
+      rw [hk.unch.wordsVal (fun w hw' => ?_) (by omega_using [hn, hb])]
       · exact hI.lt x hv
       · simp only [List.mem_append,List.mem_map,List.mem_singleton] at hw'
         rcases hw' with ⟨y,hy,rfl⟩ | rfl
@@ -58,7 +58,7 @@ theorem _root_.VG.Proof.Weierstrass.Unch.slot {M : Mod} {base : Addr} {size : Na
     {s t : State} {W : List Nat} (hL : Lay M size Sl) (hs : Scr s base size)
     (hk : Unch base (W.map (·,8*M.n)++[(M.tmp,8*M.n)]) s.mem t.mem) (hW : ∀ x∈W, Sl x) {x : Nat}
     (hx : Sl x) (hn : x∉W) : wordsVal t.mem base x M.n=wordsVal s.mem base x M.n := by
-  apply hk.wordsVal _ (by have := hL.le x hx; have := hs.nowrap; omega)
+  apply hk.wordsVal _ (by have := hL.le x hx; have := hs.nowrap; omega_arith)
   intro w hw
   simp only [List.mem_append,List.mem_map,List.mem_singleton] at hw
   rcases hw with ⟨y,hy,rfl⟩ | rfl

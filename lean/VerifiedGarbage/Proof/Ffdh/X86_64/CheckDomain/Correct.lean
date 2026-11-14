@@ -34,7 +34,7 @@ theorem cd_correct (M : Mont) (E : CrtExpL M) (R : R2Impl M)
   refine WP.seq (WP.mono (cd_body_ok M E R c) fun u ⟨hp, hdi, hf, hsaved, k₁⟩ => ?_)
   have hZ := c.hZ
   have hk := c.k1
-  refine WP.mono (exit_ok (c.scr.congr k₁.2.2) hdi (by omega) hsaved)
+  refine WP.mono (exit_ok (c.scr.congr k₁.2.2) hdi (by omega_using [hZ]) hsaved)
     fun t ⟨hRestore, hm, k₂⟩ => ⟨⟨?_, ?_⟩, ?_⟩
   · intro r hr
     simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr

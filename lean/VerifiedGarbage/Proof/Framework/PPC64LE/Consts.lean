@@ -148,7 +148,7 @@ theorem ConstsOk.mem_rd (h : ConstsOk K st s) (hc : (name, ws) ∈ K) :
 theorem ConstsOk.inRegions (h : ConstsOk K st s) (hc : (name, ws) ∈ K) {x w : Nat}
     (hx : x + w ≤ 8 * ws.length) (hw : 0 < w) (wr : List Region) :
     InRegions (s.rd ++ wr) (s.syms name + BitVec.ofNat 64 x) w :=
-  ⟨_, List.mem_append_left _ (h.mem_rd hc), Offset.contains_base _ hx (by have := h.fit hc; omega)⟩
+  ⟨_, List.mem_append_left _ (h.mem_rd hc), Offset.contains_base _ hx (by have := h.fit hc; omega_using [hx, hw, this])⟩
 
 /-- Word `i` of the table. -/
 theorem ConstsOk.readW (h : ConstsOk K st s) (hc : (name, ws) ∈ K) {i : Nat} (hi : i < ws.length) :

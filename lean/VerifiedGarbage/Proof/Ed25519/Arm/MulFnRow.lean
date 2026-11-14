@@ -47,7 +47,7 @@ variable {e : Nat} {b : BitVec 32}
 
 theorem addB (hfit : b.toNat + 4096 ≤ 2 ^ 32) {x d : Nat} (h : x + d < 4096) :
     State.addr (b + BitVec.ofNat 32 x + BitVec.ofNat 32 d) = State.addr b + BitVec.ofNat 64 (x + d) := by
-  rw [Offset.add_add]; exact addr_add (by omega)
+  rw [Offset.add_add]; exact addr_add (by omega_using [hfit, h])
 
 theorem mulSetup_ok {o x y : Nat} {s : State}
     (hc : CtxN e b s) (h1 : s.gpr .r1 = BitVec.ofNat 32 o) (h2 : s.gpr .r2 = BitVec.ofNat 32 x)
@@ -79,7 +79,7 @@ theorem mulSetup_ok {o x y : Nat} {s : State}
   · rw [hm7, ← (show s4.mem = s.mem by rw [u4.mem, u3.mem, u2.mem, u1.mem])]
     exact hf5.sub fun r hr => ⟨_, List.mem_singleton_self _, by
       rw [List.mem_singleton.mp hr]; exact Region.sub_prefix (by decide)⟩
-  · rw [accw, hm7]; unfold accw at hz; rw [hz k (by omega)]; decide
+  · rw [accw, hm7]; unfold accw at hz; rw [hz k (by omega_using [hk])]; decide
   · rw [hm7, val16_congr (g := fun _ => 0) (fun k hk => hz k hk), val16_zero_fn]
     exact (Nat.zero_mul _).symm
 

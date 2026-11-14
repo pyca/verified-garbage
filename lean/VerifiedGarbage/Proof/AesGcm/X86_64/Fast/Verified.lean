@@ -169,13 +169,13 @@ theorem splitMidR_xdepth : (v.splitMidR (v.withBlk B) T.fn).x86_64Depth ≤ 56 :
     have o := splitMid_xdepth v B T
     simp only [Fast.sel, Fast.run, Code.x86_64Depth, fastCond_xdepth, fastAad_xdepth, fastTail_xdepth,
       Nat.max_le] at t tp o ⊢
-    omega
+    omega_using [tp, o, t]
   · have t := tail_xdepth v B T
     have tp := splitPre_xdepth v T (Nat.max_le.mp t).1
     have o := splitMid_xdepth v B T
     simp only [Fast.sel, Fast.run, Code.x86_64Depth, fastCond_xdepth, fastAad_xdepth, fastTailA_xdepth,
       Nat.max_le] at t tp o ⊢
-    omega
+    omega_using [tp, o, t]
 
 theorem splitMidR_ok (hF : ShortFacts) (hz : ∀ n, v.onePass = some n → n = .z → np = 24) : MidOk (CtxMode.preparedN np hpn) (v.splitMidR (v.withBlk B) T.fn) := by
   unfold GcmImpl.splitMidR GcmImpl.splitPre; split <;> split
@@ -191,10 +191,10 @@ theorem splitMidR_ok (hF : ShortFacts) (hz : ∀ n, v.onePass = some n → n = .
   · exact Fast.sel_ok hF v B (prefixOk T) Short.finKsA_ksOk (splitFin_ok v hF) (splitMid_ok v B T hF)
 
 theorem splitMidR_rel (hF : ShortFacts) (hz : ∀ n, v.onePass = some n → n = .z → np = 24) : MidRel (CtxMode.preparedN np hpn) (v.splitMidR (v.withBlk B) T.fn) := by
-  have hq : ∀ n sl : Nat, sl ≤ n → 16 * (sl / 16) ≤ n := fun _ _ h => by omega
+  have hq : ∀ n sl : Nat, sl ≤ n → 16 * (sl / 16) ≤ n := fun _ _ h => by omega_using [h]
   have nq : ∀ n sl : Nat, sl ≤ n →
       16 * (if 1 ≤ sl / 256 ∧ sl / 256 < n / 256 then 16 * (n / 256) else sl / 16) ≤ n :=
-    fun n sl h => by split <;> omega
+    fun n sl h => by split <;> omega_arith
   unfold GcmImpl.splitMidR GcmImpl.splitPre; split <;> split
   · exact @Fast.sel_rel _ _ false v B _ _ (prefixSOk hF v.ctr rfl (OnePassName.ok hF .r nofun) T)
       (prefixSRel hF v.ctr rfl (OnePassName.ok hF .r nofun) (OnePassName.check _) T) nq hF _ Short.finKs_ksOk
@@ -226,7 +226,7 @@ theorem sealSplitR_spSafe :
 theorem sealSplitR_xdepth : (SealSplit.«seal» (v.splitMidR (v.withBlk B) T.fn)).x86_64Depth ≤ 56 := by
   have := splitMidR_xdepth v B T
   simp only [SealSplit.«seal», Code.x86_64Depth, tagOut, Nat.max_le]
-  omega
+  omega_using [this]
 
 theorem sealSplitR_correct (hF : ShortFacts) (hz : ∀ n, v.onePass = some n → n = .z → np = 24) (s : State)
     (hs : (Proof.AesGcm.sealSplitX86_64M (CtxMode.preparedN np hpn)).pre s) :

@@ -28,7 +28,7 @@ theorem unzip_wide (hi : Bool) (a b c d : BitVec 64) :
   apply vec_ext
   intro e he
   rw [vword_ofVWords _ _ _ _ he]
-  rcases (show e = 0 ∨ e = 1 ∨ e = 2 ∨ e = 3 by omega) with rfl | rfl | rfl | rfl <;>
+  rcases (show e = 0 ∨ e = 1 ∨ e = 2 ∨ e = 3 by omega_using [he]) with rfl | rfl | rfl | rfl <;>
     cases hi <;> ext i hi <;>
     simp +arith [VPermOp.eval, VArr.ofLanes, VArr.lanes, vword, ofVDwords,
       ofVWords, BitVec.getElem_extractLsb', BitVec.getLsbD_append, hi]
@@ -47,7 +47,7 @@ theorem map2_words (f : (w : Nat) → BitVec w → BitVec w → BitVec w)
   intro i hi
   rw [vword_map2 _ _ _ hi, vword_ofVWords _ _ _ _ hi,
     vword_ofVWords _ _ _ _ hi, vword_ofVWords _ _ _ _ hi]
-  rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 by omega) with rfl | rfl | rfl | rfl <;> rfl
+  rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 by omega_using [hi]) with rfl | rfl | rfl | rfl <;> rfl
 
 section
 variable {rest : List Instr} {s : State} {Q : State → Prop}
@@ -67,7 +67,7 @@ theorem csub_ok {d t : VReg} (hdt : d ≠ t := by decide)
   have := hlt e he
   change f e < 2*8380417 at this
   change min (f e) ((2^32 - 8380417 + f e) % 2^32) = f e % 8380417
-  omega
+  omega_using [this]
 
 /-- Seven instructions perform REDC on four independent lanes. -/
 theorem mont_ok {d z : VReg}

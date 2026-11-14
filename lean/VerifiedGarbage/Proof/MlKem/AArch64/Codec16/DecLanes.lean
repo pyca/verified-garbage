@@ -20,19 +20,19 @@ def decMask : BitVec 128 := ofVBytes fun j =>
 
 theorem dec_byte (x : BitVec 128) {e j : Nat} (he : e<4) (hj : j<4) :
     vbyte (tbl x decMask) (4*e+j) = if j<3 then vbyte x (3*e+j) else 0 := by
-  rw [tbl,vbyte_ofVBytes _ (by omega),decMask,vbyte_ofVBytes _ (by omega)]
-  simp only [show (4*e+j)%4=j by omega,show (4*e+j)/4=e by omega]
+  rw [tbl,vbyte_ofVBytes _ (by omega_using [he, hj]),decMask,vbyte_ofVBytes _ (by omega_using [he, hj])]
+  simp only [show (4*e+j)%4=j by omega_using [hj],show (4*e+j)/4=e by omega_using [hj]]
   by_cases h : j<3
-  · simp only [h,ite_true,BitVec.toNat_ofNat,Nat.mod_eq_of_lt (show 3*e+j<256 by omega),
-      show 3*e+j<16 by omega,ite_true]
+  · simp only [h,ite_true,BitVec.toNat_ofNat,Nat.mod_eq_of_lt (show 3*e+j<256 by omega_using [he, hj]),
+      show 3*e+j<16 by omega_using [he, hj],ite_true]
   · simp only [h,ite_false]
     rfl
 
 theorem word_bytes (x : BitVec 128) (e : Nat) :
     vword x e = vbyte x (4*e+3) ++ (vbyte x (4*e+2) ++ (vbyte x (4*e+1) ++ vbyte x (4*e))) := by
   rw [VG.Proof.MlKem.AArch64.Ntt16.vword_halves,Cbd16.half_bytes,Cbd16.half_bytes]
-  rw [show 2*(2*e+1)+1=4*e+3 by omega,show 2*(2*e+1)=4*e+2 by omega,
-    show 2*(2*e)+1=4*e+1 by omega,show 2*(2*e)=4*e by omega,BitVec.append_assoc]
+  rw [show 2*(2*e+1)+1=4*e+3 by omega_using [],show 2*(2*e+1)=4*e+2 by omega_using [],
+    show 2*(2*e)+1=4*e+1 by omega_using [],show 2*(2*e)=4*e by omega_using [],BitVec.append_assoc]
   rfl
 
 theorem dec_words (x : BitVec 128) {e : Nat} (he : e<4) :
@@ -40,7 +40,7 @@ theorem dec_words (x : BitVec 128) {e : Nat} (he : e<4) :
       (vbyte x (3*e)).toNat + 256*(vbyte x (3*e+1)).toNat + 65536*(vbyte x (3*e+2)).toNat := by
   rw [word_bytes]
   rw [dec_byte x he (by decide : 3<4),dec_byte x he (by decide : 2<4),
-    dec_byte x he (by decide : 1<4),show 4*e=4*e+0 by omega,dec_byte x he (by decide : 0<4)]
+    dec_byte x he (by decide : 1<4),show 4*e=4*e+0 by omega_using [],dec_byte x he (by decide : 0<4)]
   simp only [show ¬ (3<3) by decide,show 2<3 by decide,show 1<3 by decide,show 0<3 by decide,
     ite_false,ite_true,Nat.add_zero,BitVec.toNat_append]
   change (0 <<< 24 ||| ((vbyte x (3*e+2)).toNat <<< 16 |||
@@ -51,10 +51,10 @@ theorem dec_words (x : BitVec 128) {e : Nat} (he : e<4) :
     rw [Nat.shiftLeft_eq]
     have := (vbyte x (3*e)).isLt
     have := (vbyte x (3*e+1)).isLt
-    omega
+    omega_using []
   rw [← Nat.shiftLeft_add_eq_or_of_lt small]
   simp only [Nat.shiftLeft_eq]
-  omega
+  omega_using []
 
 def qvec : BitVec 128 := ofVWords 3329 3329 3329 3329
 def mask12 : BitVec 128 := ofVWords 4095 4095 4095 4095
@@ -88,6 +88,6 @@ theorem reduced_lanes {x : BitVec 128} {f : Nat → Nat} (hx : Lanes x f)
   apply (lanes_umin hx (lanes_sub hx hq)).congr
   intro e he
   have := hf e he
-  omega
+  omega_using [this]
 
 end VG.Proof.MlKem.AArch64.Codec16

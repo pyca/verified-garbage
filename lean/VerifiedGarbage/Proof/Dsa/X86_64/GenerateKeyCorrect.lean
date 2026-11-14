@@ -63,7 +63,7 @@ theorem keygen_shared_post {extra : Nat} {s t : State} (h : GenerateKeyABI extra
   sig_post [Spec.Dsa.generateKeyContract, Spec.Dsa.generateKeySig, abi, argRegs, stackArgs_five']
   have hb : (keygenResult s).status < 2 ^ 32 := by
     have := (keygen_result_bounds h).1
-    omega
+    omega_using [this]
   refine ⟨?_, ?_, ?_⟩
   · rw [hp.status]
     simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat, Nat.mod_mod_of_dvd _ (by decide : 2 ^ 32 ∣ 2 ^ 64),
@@ -85,8 +85,8 @@ theorem keygen_correct (v : Backend) (s : State)
   refine ⟨trace, t, he, ⟨hp.callee, ?_, hp.mxcsr⟩, keygen_shared_post h hp⟩
   have hd := keygen_depth v
   have hb := v.stackBound
-  have hf := Exec.stackFrame (SpSafe.of_all (keygen_sp v)) he (by omega)
-  have hfb := VG.X86_64.Frame.below_mono hf hd (by omega)
+  have hf := Exec.stackFrame (SpSafe.of_all (keygen_sp v)) he (by omega_using [hd, hb])
+  have hfb := VG.X86_64.Frame.below_mono hf hd (by omega_using [hb])
   apply hfb.readW (r := ⟨s.gpr .rsp, 8⟩) (Region.contains_self _ _) _ (by decide)
   intro r hr
   rcases List.mem_append.mp hr with hr | hr
@@ -98,6 +98,6 @@ theorem keygen_correct (v : Backend) (s : State)
     · exact h.retScratch
   · simp only [List.mem_singleton] at hr
     subst r
-    exact Offset.base_disjoint_below _ (by omega)
+    exact Offset.base_disjoint_below _ (by omega_using [hb])
 
 end VG.Proof.Dsa.X86_64

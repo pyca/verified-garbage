@@ -50,7 +50,7 @@ theorem finishTail_ok (s : State) :
     rw [show (65535 : BitVec 32).signExtend 64 = (65535 : BitVec 64) by decide, maskWord]
     congr 1
     apply BitVec.eq_of_getLsbD_eq; intro i hi
-    simp only [word, BitVec.getLsbD_setWidth, BitVec.getLsbD_extractLsb', decide_eq_true hi, decide_eq_true (show i < 64 by omega), Bool.true_and, Nat.mul_zero, Nat.zero_add]
+    simp only [word, BitVec.getLsbD_setWidth, BitVec.getLsbD_extractLsb', decide_eq_true hi, decide_eq_true (show i < 64 by omega_using [hi]), Bool.true_and, Nat.mul_zero, Nat.zero_add]
   · constructor
     · intro r hr
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr

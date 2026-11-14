@@ -48,7 +48,7 @@ theorem desc_agree {m₁ m₂ : Mem} {Src : Addr} {cnt : Nat}
   have e : Src + BitVec.ofNat 64 (a - Src).toNat = a := by
     rw [BitVec.ofNat_toNat, BitVec.setWidth_eq, BitVec.add_comm, BitVec.sub_add_cancel]
   rw [← e]
-  exact hd _ (by have := Nat.mul_le_mul_right 16 hi; omega)
+  exact hd _ (by have := Nat.mul_le_mul_right 16 hi; omega_using [hi, ha])
 
 section
 variable {e₁ e₂ : State} {Src Dst : Addr} {cnt L : Nat}
@@ -62,13 +62,13 @@ theorem gl_agree {i : Nat} (hi : i ≤ cnt) : gatheredLen 64 e₁.mem Src i = ga
 theorem desc_word {d : Nat} (h : d + 8 ≤ cnt * 16) :
     e₁.mem.readW (Src + BitVec.ofNat 64 d) 64 = e₂.mem.readW (Src + BitVec.ofNat 64 d) 64 :=
   Mem.readW_congr fun k hk => by
-    rw [Offset.add_ofNat_add_ofNat]; exact hd _ (by simp at hk; omega)
+    rw [Offset.add_ofNat_add_ofNat]; exact hd _ (by simp at hk; omega_using [h, hk])
 
-theorem sb_agree {i : Nat} (hi : i < cnt) : sb e₁.mem Src i = sb e₂.mem Src i := desc_word hd (by omega)
+theorem sb_agree {i : Nat} (hi : i < cnt) : sb e₁.mem Src i = sb e₂.mem Src i := desc_word hd (by omega_using [hi])
 
 theorem sl_agree {i : Nat} (hi : i < cnt) : sl e₁.mem Src i = sl e₂.mem Src i := by
   simp only [sl, Offset.add_ofNat_add_ofNat]
-  rw [desc_word hd (by omega)]
+  rw [desc_word hd (by omega_using [hi])]
 
 variable (h₁ : GatherPre e₁ Src Dst cnt L) (h₂ : GatherPre e₂ Src Dst cnt L) (hsp : e₁.sp = e₂.sp)
 include h₁ h₂ hsp
@@ -100,18 +100,18 @@ theorem gather_rel : RelCT isa (Eq2 e₁ e₂) gather TT := by
   have hpos : cnt ≠ 0 := by simpa using hf
   refine (RelCT.loop (Q := TT) (fun n u₁ u₂ => ∃ i, n = cnt - i ∧ i < cnt ∧
       GInv e₁ u₁ Src Dst cnt i ∧ GInv e₂ u₂ Src Dst cnt i) (fun n => ?_) (cnt - 0)).mono
-    (fun a b ⟨ha, hb⟩ => by subst ha hb; exact ⟨0, rfl, by omega, GInv.init h₁, GInv.init h₂⟩) fun _ _ h => h
+    (fun a b ⟨ha, hb⟩ => by subst ha hb; exact ⟨0, rfl, by omega_using [hpos], GInv.init h₁, GInv.init h₂⟩) fun _ _ h => h
   refine RelCT.exists_ fun i => ?_
   by_cases hin : n = cnt - i ∧ i < cnt
   · obtain ⟨rfl, hi⟩ := hin
     refine (body_rel hd h₁ h₂ hsp hi).mono (fun _ _ h => h.2.2) ?_
     rintro u₁ u₂ ⟨g₁, g₂⟩
-    have ev₁ := eval_nonzero (r := .x7) (a := cnt - (i + 1)) g₁.x7 (by omega)
-    have ev₂ := eval_nonzero (r := .x7) (a := cnt - (i + 1)) g₂.x7 (by omega)
+    have ev₁ := eval_nonzero (r := .x7) (a := cnt - (i + 1)) g₁.x7 (by omega_using [hc])
+    have ev₂ := eval_nonzero (r := .x7) (a := cnt - (i + 1)) g₂.x7 (by omega_using [hc])
     refine ⟨by rw [ev₁, ev₂], fun _ => trivial, fun ht => ?_⟩
     rw [ev₁] at ht
-    have : i + 1 < cnt := by simp at ht; omega
-    exact ⟨cnt - (i + 1), by omega, i + 1, rfl, this, g₁, g₂⟩
+    have : i + 1 < cnt := by simp at ht; omega_using [ht]
+    exact ⟨cnt - (i + 1), by omega_using [hi], i + 1, rfl, this, g₁, g₂⟩
   · exact RelCT.of_false fun _ _ h => hin ⟨h.1, h.2.1⟩
 
 end

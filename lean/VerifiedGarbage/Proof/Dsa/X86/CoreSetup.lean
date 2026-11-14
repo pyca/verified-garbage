@@ -25,7 +25,7 @@ theorem setupRanges_whole {n : Nat} {base : Addr} {s t : State}
   apply O x
   intro r hr
   simp only [setupRanges, List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl | rfl | rfl <;> omega
+  rcases hr with rfl | rfl | rfl | rfl | rfl <;> omega_arith
 
 theorem coreSetup_ok {s : State} {base : Addr} {size len n m : Nat} {modulus : Field}
     (hs : Scr s base size) (hz : VG.Impl.Dsa.X86.Layout.saved ≤ size)
@@ -38,19 +38,19 @@ theorem coreSetup_ok {s : State} {base : Addr} {size len n m : Nat} {modulus : F
       Context n m base size t ∧ wordsVal t.mem base (slot n 3) n = 1 ∧
       wordsVal t.mem base (slot n 4) n = 2 ^ (128 * n) % m ∧
       Outside base 0 (contextBytes n) s.mem t.mem ∧ Keeps powerClob s t := by
-  have hn0 : 0 < n := by omega
-  have hn48 : n ≤ 48 := by omega
+  have hn0 : 0 < n := by omega_using [hn, h4]
+  have hn48 : n ≤ 48 := by omega_using [hn, hmax]
   have cb := VG.Proof.Dsa.X86.Layout.context_bound hn48
   have hsaved : 8256 ≤ size := hz
   have b0 := slot_bound (n := n) (i := 0) (by decide)
   simp only [stride] at b0
   unfold Core.setup
   rw [← hn]
-  refine WP.seq (WP.mono (coreLoad_ok hs hz (by omega) h4 (by omega) hw4 hr hd)
+  refine WP.seq (WP.mono (coreLoad_ok hs hz (by omega_using [cb, hsaved, b0]) h4 (by omega_using [hn]) hw4 hr hd)
     fun u ⟨Vu, Ku, Ou⟩ => ?_)
-  refine WP.mono (contextSetup_ok (hs.of_keeps Ku (by decide)) hn0 (by omega) (by omega)
+  refine WP.mono (contextSetup_ok (hs.of_keeps Ku (by decide)) hn0 (by omega_using [hn48]) (by omega_using [cb, hsaved])
     (Vu.trans hm) hm1 hodd) fun t ⟨Ct, One, R2, Ot, Kt⟩ => ?_
   refine ⟨Ct, One, R2, ?_, (Ku.mono (by decide)).trans Kt⟩
-  exact (Ou.mono (o' := 0) (n' := contextBytes n) (by omega) (by omega)).trans (setupRanges_whole Ot)
+  exact (Ou.mono (o' := 0) (n' := contextBytes n) (by omega_using []) (by omega_using [b0])).trans (setupRanges_whole Ot)
 
 end VG.Proof.Dsa.X86

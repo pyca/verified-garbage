@@ -20,7 +20,7 @@ theorem entryScratch_ok {s : State} {sp B : Addr} (j : Nat) (hj : j < 4096) (hsp
       t.gpr .x11 = B ∧ t.mem = s.mem ∧ Keep [.x11] s t := by
   refine WP.mono (WP.keep [.x11] (Q := fun t => t.gpr .x11 = B ∧ t.mem = s.mem)
     ?_ rfl rfl rfl) fun t ⟨⟨hp, hm⟩, hk⟩ => ⟨hp, hm, hk⟩
-  have he : 8 * j % 8 = 0 ∧ 8 * j < 32768 := ⟨by omega, by omega⟩
+  have he : 8 * j % 8 = 0 ∧ 8 * j < 32768 := ⟨by omega_using [], by omega_using [hj]⟩
   brun [exec_ldrSp_x', hsp, he, hr, hb]
 
 end VG.Proof.Dsa.AArch64

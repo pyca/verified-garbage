@@ -59,24 +59,24 @@ theorem ghCall_mk {c st w sp k7 k8 : BitVec 32} (L : Lay c st w sp) {yo : Nat} (
     (hpk : (below sp).Disjoint ⟨State.addr P, 16 * n⟩) (hpr : Covers [⟨State.addr P, 16 * n⟩] (s.rd ++ s.wr)) :
     GhCall s (c + BitVec.ofNat 32 240) (st + BitVec.ofNat 32 yo) P (w + BitVec.ofNat 32 512) n := by
   have eH := L.cA (d := 240) (by decide)
-  have eY := L.stA (d := yo) (by omega)
+  have eY := L.stA (d := yo) (by omega_using [hyo])
   have eS := L.wA (d := 512) (by decide)
   have hk := he.sp
-  refine ⟨h0, h1, h2, h3, h12, by rw [hk]; exact L.sp8, by rw [L.cN (by decide)]; have := L.cw; omega,
-    by rw [L.stN (by omega)]; have := L.sw; omega, hfit, by rw [L.wN (by decide)]; have := L.ww; omega,
+  refine ⟨h0, h1, h2, h3, h12, by rw [hk]; exact L.sp8, by rw [L.cN (by decide)]; have := L.cw; omega_using [this],
+    by rw [L.stN (by omega_using [hyo])]; have := L.sw; omega_using [hyo, this], hfit, by rw [L.wN (by decide)]; have := L.ww; omega_using [this],
     ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
   all_goals simp only [eH, eY, eS, hk]
-  · exact L.ctx_st (by decide) (by omega)
+  · exact L.ctx_st (by decide) (by omega_using [hyo])
   · exact L.ctx_w (by decide) (by decide)
   · exact hpy
-  · exact L.st_w (by omega) (.inr ⟨by decide, by decide⟩)
+  · exact L.st_w (by omega_using [hyo]) (.inr ⟨by decide, by decide⟩)
   · exact hpw
   · exact L.stk_ctx (by decide)
-  · exact L.stk_st (by omega)
+  · exact L.stk_st (by omega_using [hyo])
   · exact hpk
   · exact L.stk_w (by decide)
   · exact covers_cons (he.perm.ctxC (by decide)) hpr
-  · exact covers_cons (he.perm.stC (by omega)) (he.perm.wC (by decide))
+  · exact covers_cons (he.perm.stC (by omega_using [hyo])) (he.perm.wC (by decide))
 
 /-- The call itself, from a state whose registers are its arguments, for
 `n` blocks at the 32-bit pointer `P`. -/
@@ -90,7 +90,7 @@ theorem ghCall_ok {c st w sp k7 k8 : BitVec 32} (L : Lay c st w sp) {yo : Nat} (
     (hpk : (below sp).Disjoint ⟨State.addr P, 16 * n⟩) (hpr : Covers [⟨State.addr P, 16 * n⟩] (s.rd ++ s.wr)) :
     WP isa ghFrame s (GhOut s c w sp (State.addr st + BitVec.ofNat 64 yo) (blocksAt s.mem (State.addr P) n)) := by
   have eH := L.cA (d := 240) (by decide)
-  have eY := L.stA (d := yo) (by omega)
+  have eY := L.stA (d := yo) (by omega_using [hyo])
   have eS := L.wA (d := 512) (by decide)
   have hc := ghCall_mk L hyo he h0 h1 h2 h3 h12 hfit hpy hpw hpk hpr
   refine WP.mono (gh_call hc) fun s' h => ⟨h.rd, h.wr, h.sp, h.saved, ?_, ?_⟩
@@ -135,7 +135,7 @@ theorem ghash1_ok {c st w sp k7 k8 : BitVec 32} (L : Lay c st w sp) {yo : Nat} (
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl <;> exact hkeep _ (by decide) (by decide) (by decide) (by decide) (by decide))
     hk.sp hk.rd hk.wr
-  refine WP.mono (ghCall_ok L hyo he₁ (P := P) (n := 1) h0 h1 (by rw [h2, hP]) h3 h12 (by omega)
+  refine WP.mono (ghCall_ok L hyo he₁ (P := P) (n := 1) h0 h1 (by rw [h2, hP]) h3 h12 (by omega_using [hfit])
     (by simpa using hpy) (by simpa using hpw) (by simpa using hpk)
     (by rw [hk.rd, hk.wr]; simpa using hpr)) fun s' h => ?_
   exact ⟨h.rd.trans hk.rd, h.wr.trans hk.wr, h.spk.trans hk.sp,

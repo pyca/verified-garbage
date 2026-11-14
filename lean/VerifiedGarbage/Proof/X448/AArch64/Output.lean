@@ -55,7 +55,7 @@ theorem output_word {m m' : Mem} {base p : Addr} {n d : Nat} (h : Outside p 0 n 
   apply Mem.readW_congr
   intro i hi
   rw [Offset.add_add]
-  exact h _ (Or.inr (Nat.le_trans (by omega : 0 + n ≤ 56) (hfar _ (by omega))))
+  exact h _ (Or.inr (Nat.le_trans (by omega_using [hn] : 0 + n ≤ 56) (hfar _ (by omega_using [hd, hi]))))
 
 theorem output_ok {s : State} {base p : Addr} (hs : Scr s base) (hb : Bounded s.mem base X2)
     (hp : s.gpr .x1 = p) (hw : ∀ j < 56, InRegions s.wr (off p j) 1)
@@ -69,13 +69,13 @@ theorem output_ok {s : State} {base p : Addr} (hs : Scr s base) (hb : Bounded s.
     intro n t hn ⟨tf, tm, tk⟩
     have eq : ∀ j < 16, limbs t.mem base X2 j = limbs s.mem base X2 j := by
       intro j hj
-      exact congrArg BitVec.toNat (output_word tm (by omega) (by simp only [X2, slot]; omega) hfar)
+      exact congrArg BitVec.toNat (output_word tm (by omega_using [hn]) (by simp only [X2, slot]; omega_using [hj]) hfar)
     have tb : Bounded t.mem base X2 := by intro j hj; rw [eq j hj]; exact hb j hj
     refine WP.mono (packPair_ok (hs.of_keeps tk (by decide)) tb hn ((tk.1 _ (by decide)).trans hp)
-      (by intro j hj; rw [tk.2.2]; exact hw _ (by omega))) fun u ⟨uv, um, uk⟩ => ?_
+      (by intro j hj; rw [tk.2.2]; exact hw _ (by omega_using [hn, hj]))) fun u ⟨uv, um, uk⟩ => ?_
     have pv : packed t.mem base n = packed s.mem base n := by
-      rw [packed, eq (2 * n) (by omega), eq (2 * n + 1) (by omega)]
-    refine ⟨?_, (tm.mono (by decide) (by omega)).trans (um.mono (by omega) (by omega)), tk.trans uk⟩
+      rw [packed, eq (2 * n) (by omega_using [hn]), eq (2 * n + 1) (by omega_using [hn])]
+    refine ⟨?_, (tm.mono (by decide) (by omega_using [])).trans (um.mono (by omega_using []) (by omega_using [])), tk.trans uk⟩
     intro i hi
     by_cases h : i = n
     · subst i; exact uv.trans pv
@@ -84,9 +84,9 @@ theorem output_ok {s : State} {base p : Addr} (hs : Scr s base) (hb : Bounded s.
         intro j hj
         have hj := List.mem_range.mp hj
         rw [Offset.add_add]
-        exact um _ (Or.inl (by rw [ofs_off' p (by omega)]; omega))
+        exact um _ (Or.inl (by rw [ofs_off' p (by omega_using [hn, hi, hj])]; omega_using [hi, h, hj]))
       change VG.Proof.X25519.leNum _ = _
-      rw [bytes]; exact tf i (by omega)
+      rw [bytes]; exact tf i (by omega_using [hi, h])
   refine WP.mono (wp_range_flatMap (M := isa) (N := 8) inv st 8 (by decide) s
     ⟨fun _ hi => by omega, Outside.refl _ _ _ _, Keeps.refl _ _⟩) fun t ⟨tf, tm, tk⟩ =>
     ⟨packed_bytes hb tf, tm, tk⟩

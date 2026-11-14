@@ -61,7 +61,7 @@ theorem rolled_sqs_ct_of (M : Mont) (n : Nat) (hn32 : n + 1 < 2 ^ 32)
       (Ψ := fun _ _ => True) (fun _ => n + 1) ?_ ?_
     exact loop.mono (by
       rintro s t ⟨L, hs, ht⟩
-      exact ⟨L, ⟨by omega, hs⟩, ⟨by omega, ht⟩⟩) (fun _ _ _ => trivial)
+      exact ⟨L, ⟨by omega_using [], hs⟩, ⟨by omega_using [], ht⟩⟩) (fun _ _ _ => trivial)
     · refine RelCT.seq (two_post (Ψ := fun (p : Lay × Nat) s =>
         p.2 < n + 1 ∧ R2SqCount (p.1, n + 1 - p.2) s)
         (two_map (fun p : Lay × Nat => (p.1, n + 1 - p.2))
@@ -79,8 +79,8 @@ theorem rolled_sqs_ct_of (M : Mont) (n : Nat) (hn32 : n + 1 < 2 ^ 32)
         ⟨sqPre_counter ht.1 hm hk, by rw [hm, word_writeW_self]⟩
       refine ⟨?_, ?_, fun _ => True.intro⟩
       · by_cases hnext : j + 1 < n + 1
-        · simp [eval, hz, hnext, show n + 1 - j - 1 ≠ 0 by omega]
-        · simp [eval, hz, hnext, show n + 1 - j - 1 = 0 by omega]
+        · simp [eval, hz, hnext, show n + 1 - j - 1 ≠ 0 by omega_using [hnext]]
+        · simp [eval, hz, hnext, show n + 1 - j - 1 = 0 by omega_using [hnext]]
       · intro _
         simpa only [Nat.sub_sub, Nat.add_comm j 1] using hu
 

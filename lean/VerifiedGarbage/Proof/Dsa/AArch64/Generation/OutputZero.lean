@@ -34,9 +34,9 @@ theorem outputZero_ok {s : State} {F S : Addr} {V : Nat → Byte} {W : Nat → B
   unfold Impl.Dsa.AArch64.Generation.outputZero
   refine WP.seq (WP.mono (zeroArgs_ok L R) fun u ⟨Lu, Ru, fu, ku⟩ => ?_)
   refine WP.seq (WP.mono (zeroOut_bytes_ok (op := W 6) (k := len) Lu Ru (by simp [upd]) (by simpa [upd] using hlen)
-    hl.1 (by omega) (fun i hi => by
+    hl.1 (by omega_using [hl]) (fun i hi => by
       rw [ku.wr]
-      exact ⟨⟨W 6, len⟩, hw, Offset.contains_base _ (by omega) (by omega)⟩))
+      exact ⟨⟨W 6, len⟩, hw, Offset.contains_base _ (by omega_using [hi]) (by omega_using [hl, hi])⟩))
     fun v ⟨zeros, fv, kv⟩ => ?_)
   refine WP.mono (WP.keep [.x0] (Q := fun t => t.gpr .x0 = 0 ∧ t.mem = v.mem)
     (by brun) rfl rfl rfl) fun t ⟨⟨hr, hm⟩, kt⟩ => ?_
@@ -54,7 +54,7 @@ theorem outputZero_ok {s : State} {F S : Addr} {V : Nat → Byte} {W : Nat → B
       intro i hi he
       apply ha ⟨W 6, len⟩ (by simp)
       rw [he]
-      exact Offset.contains_base _ (by omega) (by omega)
+      exact Offset.contains_base _ (by omega_using [hi]) (by omega_using [hl, hi])
     exact (fu.mono (by simp)).trans (ff.mono (by simp))
 
 end VG.Proof.Dsa.AArch64.Generation

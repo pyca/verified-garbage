@@ -43,7 +43,7 @@ theorem pair_ok {x y : BitVec 64} {off : Nat} (ho : off % 8 = 0 ∧ off ≤ 504)
     (MdStream.AArch64.WP.cons rfl (MdStream.AArch64.WP.cons rfl (MdStream.AArch64.WP.cons rfl
     (MdStream.AArch64.WP.cons rfl (MdStream.AArch64.WP.cons rfl ?_)))))))
   refine MdStream.AArch64.OneShot.wp_stpB ho (b := s.gpr .x0) (by simp [State.write])
-    (by simpa [State.write] using hout 0 (by omega)) (by simpa [State.write] using hout 8 (by omega))
+    (by simpa [State.write] using hout 0 (by omega_using [])) (by simpa [State.write] using hout 8 (by omega_using []))
     fun s' m => k s' (fun r h9 h10 => by rw [m.gpr]; simp [State.write, h9, h10]) (by rw [m.rd]; rfl)
       (by rw [m.wr]; rfl) (by rw [m.sp]; rfl) ?_
   rw [m.mem]
@@ -56,17 +56,17 @@ theorem initPairs_correct {s₀ : State} (iv : HashValue) (hp : (Proof.Sha512.in
   apply WP.withPreservedV (hc := by rfl)
   obtain ⟨-, hwr⟩ := hp
   have o : ∀ j, j + 8 ≤ 64 → InRegions s₀.wr (s₀.gpr .x0 + BitVec.ofNat 64 j) 8 :=
-    fun j hj => ⟨⟨s₀.gpr .x0, 192⟩, by simp [hwr], contains_offset (by omega) (by omega)⟩
+    fun j hj => ⟨⟨s₀.gpr .x0, 192⟩, by simp [hwr], contains_offset (by omega_using [hj]) (by omega_using [hj])⟩
   rw [initPairs_eq, ← List.append_nil (_ ++ pair iv[6] iv[7] 48)]
   simp only [List.append_assoc]
-  refine pair_ok (by decide) (fun j hj => o _ (by omega)) fun s1 g1 _ wr1 sp1 m1 => ?_
+  refine pair_ok (by decide) (fun j hj => o _ (by omega_using [hj])) fun s1 g1 _ wr1 sp1 m1 => ?_
   have k1 : s1.gpr .x0 = s₀.gpr .x0 := g1 _ (by decide) (by decide)
-  refine pair_ok (by decide) (fun j hj => by rw [wr1, k1]; exact o _ (by omega)) fun s2 g2 _ wr2 sp2 m2 => ?_
+  refine pair_ok (by decide) (fun j hj => by rw [wr1, k1]; exact o _ (by omega_using [hj])) fun s2 g2 _ wr2 sp2 m2 => ?_
   have k2 : s2.gpr .x0 = s₀.gpr .x0 := by rw [g2 _ (by decide) (by decide), k1]
-  refine pair_ok (by decide) (fun j hj => by rw [wr2, wr1, k2]; exact o _ (by omega))
+  refine pair_ok (by decide) (fun j hj => by rw [wr2, wr1, k2]; exact o _ (by omega_using [hj]))
     fun s3 g3 _ wr3 sp3 m3 => ?_
   have k3 : s3.gpr .x0 = s₀.gpr .x0 := by rw [g3 _ (by decide) (by decide), k2]
-  refine pair_ok (by decide) (fun j hj => by rw [wr3, wr2, wr1, k3]; exact o _ (by omega))
+  refine pair_ok (by decide) (fun j hj => by rw [wr3, wr2, wr1, k3]; exact o _ (by omega_using [hj]))
     fun s4 g4 _ _ sp4 m4 => WP.block_nil ?_
   have k4 : ∀ r, r ≠ .x9 → r ≠ .x10 → s4.gpr r = s₀.gpr r := fun r h9 h10 => by
     rw [g4 r h9 h10, g3 r h9 h10, g2 r h9 h10, g1 r h9 h10]

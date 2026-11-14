@@ -87,33 +87,33 @@ theorem firstDiv_ok {g : Geometry} {len : Nat} {s : State} (h : Start g len s) {
     · rw [same _ (by decide) (by decide), h.p]
     · rw [same _ (by decide) (by decide), h.q]
     · rw [same _ (by decide) (by decide), h.d]
-    · rw [K.word (by unfold S; omega) (by decide) (by decide) (fit _ (by decide)), h.ddTop]
+    · rw [K.word (by unfold S; omega_using []) (by decide) (by decide) (fit _ (by decide)), h.ddTop]
     · rw [same _ (by decide) (by decide), h.n]
     · exact et
     · intro j hj
       have fits : j < nArr := by
         simp only [zeroCk, List.mem_cons, List.not_mem_nil, or_false] at hj
-        unfold nArr; omega
+        unfold nArr; omega_using [hj]
       have notWritten : j ∉ [aDR2, aDR3] := by
         simp only [zeroCk, List.mem_cons, List.not_mem_nil, or_false] at hj
         simp only [aDR2, aDR3, List.mem_cons, List.not_mem_nil, or_false]
-        omega
+        omega_using [hj]
       rw [same j fits notWritten]
-      exact h.zeros j (by simp only [zeroCk, zeroC, List.mem_cons, List.not_mem_nil, or_false] at hj ⊢; omega)
+      exact h.zeros j (by simp only [zeroCk, zeroC, List.mem_cons, List.not_mem_nil, or_false] at hj ⊢; omega_using [hj])
     · rw [kt.slot (by decide) (by decide), eu]
       have w : mw v.mem g.base (kw len) aDQ (kw len - 1) = mw s.mem g.base (kw len) aDQ (kw len - 1) :=
-        kv.word (by unfold S; omega) (by simp) (by decide) (fit _ (by decide))
+        kv.word (by unfold S; omega_using []) (by simp) (by decide) (fit _ (by decide))
       rw [w]
   refine VG.Proof.Rsa.X86.WordRt.ifBalanced_ok hu (sl := sG) (by decide) eu ?_ ?_
   · intro hB u' hu' K' m'
     obtain ⟨h8, h2p, h2q, -, -⟩ := hB
     have kan : kw len = 2 * ((an + 7) / 8) := hkw ▸ rfl
-    have e8p : 8 * ap = 32 * (kw len / 2) := by omega
-    have e8q : 8 * aq = 32 * (kw len / 2) := by omega
+    have e8p : 8 * ap = 32 * (kw len / 2) := by omega_using [h8, h2p, kan]
+    have e8q : 8 * aq = 32 * (kw len / 2) := by omega_using [h8, h2q, kan]
     have lowP : val32 u'.mem g.base (arr (kw len) aP) (kw len / 2) = g.P := by
-      rw [m', VG.Proof.Rsa.X86.WordRt.val32_low_of_lt (n := kw len) (by omega) (by rw [pu', ← e8p]; exact hpB), pu']
+      rw [m', VG.Proof.Rsa.X86.WordRt.val32_low_of_lt (n := kw len) (by omega_using []) (by rw [pu', ← e8p]; exact hpB), pu']
     have lowQ : val32 u'.mem g.base (arr (kw len) aQ) (kw len / 2) = g.Q := by
-      rw [m', VG.Proof.Rsa.X86.WordRt.val32_low_of_lt (n := kw len) (by omega) (by rw [qu', ← e8q]; exact hqB), qu']
+      rw [m', VG.Proof.Rsa.X86.WordRt.val32_low_of_lt (n := kw len) (by omega_using []) (by rw [qu', ← e8q]; exact hqB), qu']
     refine WP.mono (VG.Proof.Rsa.X86.WordRt.mulHalf_ok hu' (o := aDR2) (a := aP) (b := aQ) (by decide) (by decide)
       (by decide) (by decide) (by decide) (by decide) (by decide)) fun t ⟨ht, kt, et, rt⟩ =>
         ⟨ht, by rw [← m']; exact kt, by rw [et, lowP, lowQ], (K'.mono (by decide)).trans rt⟩
@@ -151,7 +151,7 @@ theorem divP_ok {g : Geometry} {len : Nat} {s : State} (h : StD g len s) :
   refine ⟨⟨ht, ?_, ?_, ?_, ?_, ?_⟩, kt, rt.mono (by decide)⟩
   · rw [kt.num (by decide) (by decide) (fit _ (by decide)), h.q]
   · rw [kt.num (by decide) (by decide) (fit _ (by decide)), h.d]
-  · rw [kt.word (by unfold S; omega) (by decide) (by decide) (fit _ (by decide)), h.ddTop]
+  · rw [kt.word (by unfold S; omega_using []) (by decide) (by decide) (fit _ (by decide)), h.ddTop]
   · intro pos
     have positive : 0 < num s.mem g.base (kw len) aDD := by rw [h.dd]; exact pos
     have rem := (vt positive).2
@@ -180,7 +180,7 @@ theorem divQ_ok {g : Geometry} {len : Nat} {s : State} (h : StE g len s) :
   rw [wp_seqs_cons (List.cons_ne_nil _ _)]
   refine WP.mono (clrLow_ok hv (j := aDD) (by decide)) fun z ⟨hz, kz, vz, rz, topz⟩ => ?_
   have top : w32 z.mem g.base (arr (kw len) aDD + 4 * (kw len)) = 0 := by
-    rw [topz, topv, ku.word (by unfold S; omega) (by decide) (by decide) (fit _ (by decide)), h.ddTop]
+    rw [topz, topv, ku.word (by unfold S; omega_using []) (by decide) (by decide) (fit _ (by decide)), h.ddTop]
   refine WP.mono (div_ok hz (q := aDQ) (r := aDR3) (d := aDD) (t := aDT) (by decide) (by decide) (by decide) (by decide)
     (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) top) fun t ⟨ht, kt, rt, vt⟩ => ?_
   have K : Keep g.base (kw len) [aDQ, aDD, aDR3, aDT] [sCy, sQb] s.mem t.mem :=
@@ -310,7 +310,7 @@ theorem core_ok [VG.Proof.Rsa.X86.BatchLaw] {g : Geometry} {len : Nat} {s : Stat
       ((ka.mono (by decide) (by decide)).trans (kb.mono (by decide) (by decide)))).trans
       (kc.mono (ranges_sub (by decide) (by decide)))
   have Rc : Keeps [.eax, .ecx, .edx, .ebp, .ebx, .esi] s c := ra.trans ((rb.mono (by decide)).trans rc)
-  have nowrap : g.size ≤ 2 ^ 64 := by have := h.ws.ws.workspace.nowrap; omega
+  have nowrap : g.size ≤ 2 ^ 64 := by have := h.ws.ws.workspace.nowrap; omega_using [this]
   -- The guard, through the checks.
   have sc : slot c.mem g.base sG = slot a.mem g.base sG := by
     rw [outsS_slot kc gate.room (by decide) hc.ws.ws.hdr_le (by decide), kb.slot (by decide) (by decide)]
@@ -340,7 +340,7 @@ theorem core_ok [VG.Proof.Rsa.X86.BatchLaw] {g : Geometry} {len : Nat} {s : Stat
       rw [Mu]; exact Kc
     have hm : MLen u g.base g.size 9 (args 9).toNat :=
       ⟨by rw [BitVec.ofNat_toNat, BitVec.setWidth_eq]; exact arg9 u (Rc.trans (Ku.mono (by decide))) Ou, lens.1⟩
-    refine WP.mono (wordRems_ok (hc.mem hu Mu) hm h4 (by omega) fun hpq => ⟨(tops hpq).2.1, (tops hpq).2.2⟩)
+    refine WP.mono (wordRems_ok (hc.mem hu Mu) hm h4 (by omega_using [hroom]) fun hpq => ⟨(tops hpq).2.1, (tops hpq).2.2⟩)
       fun t ⟨ht, kt, rt⟩ => post t ht ?_ ((Ku.mono (by decide)).trans (rt.mono (by decide)))
     rw [← Mu]
     exact VG.Proof.RsaKeyGen.X86.KeyRuntime.OutsS.of_outs (kt.mono (by decide) (by decide))

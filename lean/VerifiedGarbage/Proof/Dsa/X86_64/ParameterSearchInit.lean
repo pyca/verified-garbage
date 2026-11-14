@@ -60,8 +60,8 @@ theorem words_ok {s : State} {B : Addr} {L : Nat} (scr : Scr s B 32) (hdi : s.gp
   have h15 := shl_ofNat L 15 (by omega_using [hL])
   have h9 := shl_ofNat L 9 (by omega_using [hL])
   have e32769 : BitVec.ofNat 64 (L * 2 ^ 15) + BitVec.ofNat 64 L = BitVec.ofNat 64 (32769 * L) := by
-    rw [add_ofNat]; congr 1; omega
-  have e512 : BitVec.ofNat 64 (L * 2 ^ 9) = BitVec.ofNat 64 (512 * L) := by congr 1; omega
+    rw [add_ofNat]; congr 1; omega_using []
+  have e512 : BitVec.ofNat 64 (L * 2 ^ 9) = BitVec.ofNat 64 (512 * L) := by congr 1; omega_using []
   unfold written words initWords
   have hw : BitVec.setWidth 64 (4096 : BitVec 32) = BitVec.ofNat 64 4096 := by decide
   xrun [State.ea, BitVec.ofInt_ofNat, hw, hdi, hsi, h15, h9, e32769, e512,
@@ -98,7 +98,7 @@ theorem eq_guard (s : State) (c : BitVec 32) (n : Nat) (hn : n < 2 ^ 31)
   simp only [beq_iff_eq, decide_eq_true_eq, BitVec.sub_eq_iff_eq_add]
   have hz : (0 : BitVec 64) + BitVec.ofNat 64 n = BitVec.ofNat 64 n := BitVec.zero_add _
   constructor
-  · intro h; rw [h, hz, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+  · intro h; rw [h, hz, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hn])]
   · intro h; rw [← h, BitVec.ofNat_toNat, BitVec.setWidth_eq]; exact (BitVec.zero_add _).symm
 
 /-! ## The whole initialization -/
@@ -115,7 +115,7 @@ private theorem words_post {t : State} {B : Addr} {L : Nat} {m : Mem} (scr : Scr
     (hdi : t.gpr .rdi = B) (hsi : t.gpr .rsi = BitVec.ofNat 64 L) (hm : t.mem = m)
     (hv : L = 128 ∨ L = 256 ∨ L = 384) :
     WP isa (.block initWords) t (InitPost L m B) := by
-  refine WP.mono (words_ok scr hdi hsi (by omega)) fun u ⟨ha, hu⟩ => ?_
+  refine WP.mono (words_ok scr hdi hsi (by omega_using [hv])) fun u ⟨ha, hu⟩ => ?_
   have hvalid : Spec.Dsa.generationPLenValid L = true := by
     rcases hv with rfl | rfl | rfl <;> rfl
   simp only [InitPost, hvalid, ↓reduceIte]
@@ -190,12 +190,12 @@ private theorem result_post {s t : State} (h : InitPost (s.gpr .rsi).toNat s.mem
     rw [ite_eq_left_of_eq_true _ _ (eq_true hv)]
     have hp : 0 < (s.gpr .rsi).toNat := by
       simp only [Spec.Dsa.generationPLenValid, Bool.or_eq_true, beq_iff_eq] at hv
-      omega
+      omega_using [hv]
     refine ⟨by rw [h.1]; rfl, 512 * (s.gpr .rsi).toNat, ?_, ?_⟩
     · rw [h.2, words, written_words]
       rfl
     · unfold Spec.Entropy.RequestValid Spec.Dsa.parameterEntropy
-      omega
+      omega_using [hp]
   · rename_i hv
     rw [ite_eq_right_of_eq_false _ _ (eq_false hv)]
     exact ⟨by rw [h.1]; rfl, by rw [h.2, written_words]; rfl⟩

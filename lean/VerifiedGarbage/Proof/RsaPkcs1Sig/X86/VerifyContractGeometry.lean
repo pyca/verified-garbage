@@ -34,7 +34,7 @@ theorem verifyGeometry_stack (s : State) :
 
 theorem verifyGeometry_stackNat (s : State) (fit : verifyStack ≤ (s.gpr .esp).toNat) :
     (verifyGeometry s).stack.toNat = (s.gpr .esp).toNat - 2128 := by
-  rw [verifyGeometry_stack, sub_toNat (by unfold verifyStack at fit; omega)]
+  rw [verifyGeometry_stack, sub_toNat (by unfold verifyStack at fit; omega_using [fit])]
 
 theorem verifyGeometry_wholeStack (s : State) (fit : verifyStack ≤ (s.gpr .esp).toNat) :
     (verifyGeometry s).wholeStack = ⟨(s.gpr .esp).setWidth 64 - BitVec.ofNat 64 verifyStack, verifyStack⟩ := by
@@ -49,8 +49,8 @@ theorem verifyGeometry_arguments (s : State) (fit : verifyStack ≤ (s.gpr .esp)
   unfold Geometry.argumentsRegion
   rw [verifyGeometry_stack]
   change (⟨(s.gpr .esp - BitVec.ofNat 32 2128).setWidth 64 + BitVec.ofNat 64 2132, 52⟩ : Region) = _
-  rw [Taint.sub_setWidth (by unfold verifyStack at fit; omega : 2128 ≤ (s.gpr .esp).toNat)]
+  rw [Taint.sub_setWidth (by unfold verifyStack at fit; omega_using [fit] : 2128 ≤ (s.gpr .esp).toNat)]
   have aa : argAddr s 0 = (s.gpr .esp).setWidth 64 + 4 :=
-    byteAddr_add (by omega : (s.gpr .esp).toNat + 4 < 2 ^ 32)
+    byteAddr_add (by omega_using [high] : (s.gpr .esp).toNat + 4 < 2 ^ 32)
   rw [aa, show BitVec.ofNat 64 2132 = BitVec.ofNat 64 2128 + 4 from rfl, ← BitVec.add_assoc, BitVec.sub_add_cancel]
 end VG.Proof.RsaPkcs1Sig.X86.Ver

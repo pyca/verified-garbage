@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.Arith.Mont
 import VerifiedGarbage.Proof.Framework.AArch64.Simd
+import VerifiedGarbage.Proof.Framework.Omega
 
 @[expose] public section
 
@@ -22,8 +23,8 @@ theorem product_nat (x z : BitVec 32) : (product x z).toNat = x.toNat * z.toNat 
   rw [product, BitVec.toNat_mul, BitVec.toNat_setWidth, BitVec.toNat_setWidth]
   have hx := x.isLt
   have hz := z.isLt
-  rw [Nat.mod_eq_of_lt (by omega : x.toNat < 2^64),
-    Nat.mod_eq_of_lt (by omega : z.toNat < 2^64)]
+  rw [Nat.mod_eq_of_lt (by omega_using [] : x.toNat < 2^64),
+    Nat.mod_eq_of_lt (by omega_using [] : z.toNat < 2^64)]
   exact Nat.mod_eq_of_lt (Nat.lt_of_lt_of_le (Nat.mul_lt_mul'' hx hz) (by decide))
 
 theorem multiplier_nat (p : BitVec 64) : (multiplier p).toNat = montM p.toNat := by
@@ -39,15 +40,15 @@ theorem redc_nat (p : BitVec 64) (hp : p.toNat < q * 2^32) :
   have hq : q = 8380417 := rfl
   have hm : ((multiplier p).setWidth 64 * BitVec.ofNat 64 q).toNat = montM p.toNat * q := by
     rw [BitVec.toNat_mul, BitVec.toNat_setWidth, multiplier_nat, BitVec.toNat_ofNat,
-      Nat.mod_eq_of_lt (by omega : montM p.toNat < 2^64), Nat.mod_eq_of_lt (by decide : q < 2^64)]
+      Nat.mod_eq_of_lt (by omega_using [hM] : montM p.toNat < 2^64), Nat.mod_eq_of_lt (by decide : q < 2^64)]
     exact Nat.mod_eq_of_lt (Nat.lt_of_lt_of_le
       (Nat.mul_lt_mul_of_pos_right hM (by decide)) (by decide))
   have ha : (p + (multiplier p).setWidth 64 * BitVec.ofNat 64 q).toNat = mont p.toNat * 2^32 := by
     rw [BitVec.toNat_add, hm, ← hsum]
-    exact Nat.mod_eq_of_lt (by rw [hq] at hR; omega)
+    exact Nat.mod_eq_of_lt (by rw [hq] at hR; omega_using [hR])
   rw [redc, BitVec.extractLsb'_toNat, ha, Nat.shiftRight_eq_div_pow,
     Nat.mul_div_cancel _ (by decide)]
-  exact Nat.mod_eq_of_lt (by rw [hq] at hR; omega)
+  exact Nat.mod_eq_of_lt (by rw [hq] at hR; omega_using [hR])
 
 theorem mont_word_nat (x z : BitVec 32) (hz : z.toNat < q) :
     (redc (product x z)).toNat = mont (x.toNat * z.toNat) := by

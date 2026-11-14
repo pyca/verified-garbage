@@ -192,7 +192,7 @@ theorem crypt_inv {s : State} (hs : streamCryptPre s) {m : Mem} (hf : Frame [sav
   exact ⟨ciph_frame hf (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact dcw.sub_right sW) hR,
     bytesAt_frame hf (fun r hr => by
-      simp only [List.mem_singleton] at hr; subst hr; exact ddw.sub_right sW) (by omega)⟩
+      simp only [List.mem_singleton] at hr; subst hr; exact ddw.sub_right sW) (by omega_using [])⟩
 
 theorem lay_of_crypt {s : State} (hs : streamCryptPre s) : Lay (s.gpr .x0) (s.gpr .x2) (s.gpr .x7) ∧
     (⟨s.gpr .x5, (s.gpr .x6).toNat⟩ : Region).Disjoint ⟨s.gpr .x2, 80⟩ := by

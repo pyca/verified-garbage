@@ -23,7 +23,7 @@ theorem random_sign_shared_post {extra : Nat} {s t : State} (h : RandomSignABI e
     have := randomSignLoop_status_le (randomInput s).pLen (randomInput s).qLen 8
       (randomInput s).key (randomInput s).digest ((randomInput s).rand.drop 0)
     change (randomSignRemaining (randomInput s) 0 8).status ≤ 2 at this
-    omega
+    omega_using [this]
   refine ⟨?_, ?_, ?_⟩
   · rw [hp.status]
     simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat, Nat.mod_mod_of_dvd _ (by decide : 2 ^ 32 ∣ 2 ^ 64),
@@ -45,8 +45,8 @@ theorem random_sign_correct (S : Signer) (s : State)
   refine ⟨trace, t, he, ⟨hp.callee, ?_, hp.mxcsr⟩, random_sign_shared_post h hp⟩
   have hd := random_sign_depth S
   have hb := S.stackBound
-  have hf := Exec.stackFrame (SpSafe.of_all (random_sign_sp S)) he (by omega)
-  have hfb := VG.X86_64.Frame.below_mono hf hd (by omega)
+  have hf := Exec.stackFrame (SpSafe.of_all (random_sign_sp S)) he (by omega_using [hd, hb])
+  have hfb := VG.X86_64.Frame.below_mono hf hd (by omega_using [hb])
   apply hfb.readW (r := ⟨s.gpr .rsp, 8⟩) (Region.contains_self _ _) _ (by decide)
   intro r hr
   rcases List.mem_append.mp hr with hr | hr
@@ -58,6 +58,6 @@ theorem random_sign_correct (S : Signer) (s : State)
     · exact h.retScratch
   · simp only [List.mem_singleton] at hr
     subst r
-    exact Offset.base_disjoint_below _ (by omega)
+    exact Offset.base_disjoint_below _ (by omega_using [hb])
 
 end VG.Proof.Dsa.X86_64

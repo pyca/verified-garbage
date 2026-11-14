@@ -57,10 +57,10 @@ theorem bytesAt114_len (m : Mem) (p : Addr) : (bytesAt m p 114).length = 57 + 57
 theorem far_bytes {base p : Addr} {n : Nat} {m m' : Mem} (h : Outside base 0 8192 m m')
     (hf : ∀ i < n, 8192 ≤ ofs base (p + BitVec.ofNat 64 i)) : bytesAt m' p n = bytesAt m p n := by
   simp only [bytesAt]
-  exact List.map_congr_left fun i hi => h _ (Or.inr (by have := hf i (List.mem_range.mp hi); omega))
+  exact List.map_congr_left fun i hi => h _ (Or.inr (by have := hf i (List.mem_range.mp hi); omega_using [this]))
 
 theorem outA {base : Addr} {o n : Nat} {m m' : Mem} (h : Outside base o n m m') (h1 : ACC ≤ o)
-    (h2 : o + n ≤ ACC + 512) : Outside2 base 64 2816 ACC 512 m m' := fun p _ hq => h p (by omega)
+    (h2 : o + n ≤ ACC + 512) : Outside2 base 64 2816 ACC 512 m m' := fun p _ hq => h p (by omega_using [h1, h2, hq])
 
 /-! ## The entry and the start -/
 
@@ -169,8 +169,8 @@ theorem BadUpd.zero {P : Prop} {b : BitVec 32} (h : BadUpd P 0 b) : (b = 0 ↔ P
 
 theorem bits_kept {base : Addr} {m m' : Mem} (h : DFrame base m m') :
     ∀ t < 456, m' (off base (VBITS + t)) = m (off base (VBITS + t)) := fun t ht =>
-  h _ (by rw [ofs_off' base (by simp only [VBITS]; omega)]; simp only [VBITS]; omega)
-    (by rw [ofs_off' base (by simp only [VBITS]; omega)]; simp only [VBITS, ACC]; omega)
+  h _ (by rw [ofs_off' base (by simp only [VBITS]; omega_using [ht])]; simp only [VBITS]; omega_using [])
+    (by rw [ofs_off' base (by simp only [VBITS]; omega_using [ht])]; simp only [VBITS, ACC]; omega_using [ht])
 
 /-- The link register's word, above `RY`, is kept by writes below `VBITS` or of the bits. -/
 theorem lr_kept {base : Addr} {m m' : Mem} (h : DFrame base m m') : word m' base LR = word m base LR :=
@@ -187,20 +187,20 @@ theorem verifyEquation_main (hR : RecoverOk) (hE : VerifyEqOk) {s : State} (h : 
   obtain ⟨ch, hch⟩ : ∃ p, State.addr (s.gpr .r2) = p := ⟨_, rfl⟩
   have hw₀ : (⟨base, 8192⟩ : Region) ∈ s.wr := by rw [h.wr, hbase]; simp
   have rpk : ∀ j < 57, InRegions (s.rd ++ s.wr) (pk + BitVec.ofNat 64 j) 1 := fun j hj =>
-    ⟨⟨pk, 57⟩, by rw [h.rd, hpk]; simp, Offset.contains_base _ (by omega) (by omega)⟩
+    ⟨⟨pk, 57⟩, by rw [h.rd, hpk]; simp, Offset.contains_base _ (by omega_using [hj]) (by omega_using [hj])⟩
   have rsg : ∀ j < 57, InRegions (s.rd ++ s.wr) (sig + BitVec.ofNat 64 j) 1 := fun j hj =>
-    ⟨⟨sig, 114⟩, by rw [h.rd, hsig]; simp, Offset.contains_base _ (by omega) (by omega)⟩
+    ⟨⟨sig, 114⟩, by rw [h.rd, hsig]; simp, Offset.contains_base _ (by omega_using [hj]) (by omega_using [hj])⟩
   have rS : ∀ j < 57, InRegions (s.rd ++ s.wr) (sig + BitVec.ofNat 64 57 + BitVec.ofNat 64 j) 1 :=
     fun j hj => ⟨⟨sig, 114⟩, by rw [h.rd, hsig]; simp,
-      by rw [Offset.add_add]; exact Offset.contains_base _ (by omega) (by omega)⟩
+      by rw [Offset.add_add]; exact Offset.contains_base _ (by omega_using [hj]) (by omega_using [hj])⟩
   have rch : ∀ j < 57, InRegions (s.rd ++ s.wr) (ch + BitVec.ofNat 64 j) 1 := fun j hj =>
-    ⟨⟨ch, 57⟩, by rw [h.rd, hch]; simp, Offset.contains_base _ (by omega) (by omega)⟩
+    ⟨⟨ch, 57⟩, by rw [h.rd, hch]; simp, Offset.contains_base _ (by omega_using [hj]) (by omega_using [hj])⟩
   have fpk : ∀ j < 57, 8192 ≤ ofs base (pk + BitVec.ofNat 64 j) := fun j hj =>
     far_ws (hpk ▸ hbase ▸ h.pk_ws) hj (by decide)
   have fsg : ∀ j < 57, 8192 ≤ ofs base (sig + BitVec.ofNat 64 j) := fun j hj =>
-    far_ws (hsig ▸ hbase ▸ h.sig_ws) (by omega) (by decide)
+    far_ws (hsig ▸ hbase ▸ h.sig_ws) (by omega_using [hj]) (by decide)
   have fS : ∀ j < 57, 8192 ≤ ofs base (sig + BitVec.ofNat 64 57 + BitVec.ofNat 64 j) := fun j hj => by
-    rw [Offset.add_add]; exact far_ws (hsig ▸ hbase ▸ h.sig_ws) (by omega) (by decide)
+    rw [Offset.add_add]; exact far_ws (hsig ▸ hbase ▸ h.sig_ws) (by omega_using [hj]) (by decide)
   have fch : ∀ j < 57, 8192 ≤ ofs base (ch + BitVec.ofNat 64 j) := fun j hj =>
     far_ws (hch ▸ hbase ▸ h.ch_ws) hj (by decide)
   obtain ⟨S, hS⟩ : ∃ S, decodeLE (bytesAt s.mem (sig + BitVec.ofNat 64 57) 57) = S := ⟨_, rfl⟩
@@ -231,7 +231,7 @@ theorem verifyEquation_main (hR : RecoverOk) (hE : VerifyEqOk) {s : State} (h : 
   have r123 : s3.gpr .r12 = s.gpr .r1 := by rw [r12s3, r122]
   -- `R` and `A`.
   have inR : DecIn s3 base sig .r12 :=
-    ⟨by rw [r123, hsig], by rw [r123]; have := h.f1; omega, by rw [rr3]; exact rsg, fsg⟩
+    ⟨by rw [r123, hsig], by rw [r123]; have := h.f1; omega_using [this], by rw [rr3]; exact rsg, fsg⟩
   have inA : DecIn s3 base pk .r8 := ⟨by rw [r83, hpk], by rw [r83]; exact h.f0, by rw [rr3]; exact rpk, fpk⟩
   refine WP.seq (WP.mono (vdecode_ok hR hs3 b3 inR inA h103 h113)
     fun s4 ⟨k4, f4, b4, c4, v4, w4, bx4, by4, e4⟩ => ?_)
@@ -240,7 +240,7 @@ theorem verifyEquation_main (hR : RecoverOk) (hE : VerifyEqOk) {s : State} (h : 
   rw [far_bytes O3 fpk] at v4
   have hs4 := hs3.of_keeps k4 (by decide)
   have O4 : Outside base 0 8192 s.mem s4.mem :=
-    O3.trans fun p hp => f4 p (by omega) (by simp only [ACC]; omega)
+    O3.trans fun p hp => f4 p (by omega_using [hp]) (by simp only [ACC]; omega_using [hp])
   -- `-A`.
   rw [show ([.sub (slot 6) (slot 0) (slot 6)] : List Op) = ([.sub 6 0 6] : List FieldOp).map FieldOp.impl
     from rfl]
@@ -251,8 +251,8 @@ theorem verifyEquation_main (hR : RecoverOk) (hE : VerifyEqOk) {s : State} (h : 
     rw [e5]; exact Function.update_of_ne hi _ _
   have k43 : ∀ i : Index, i.val = 0 ∨ i.val = 2 ∨ (8 ≤ i.val ∧ i.val ≤ 11) ∨ i.val = 21 →
       E s5.mem base i = E s3.mem base i := fun i hi => by
-    rw [k5' i (fun h => by subst h; omega), e4 i (fun h => by subst h; omega) (fun h => by subst h; omega)
-      (by omega)]
+    rw [k5' i (fun h => by subst h; omega_using [hi]), e4 i (fun h => by subst h; omega_using [hi]) (fun h => by subst h; omega_using [hi])
+      (by omega_using [hi])]
   -- The loop.
   have bits5 : ∀ t < 456, s5.mem (off base (VBITS + t)) = BitVec.ofNat 8 (pair2 S K t) := fun t ht => by
     rw [bits_kept ((Outside2.widen k5.mem).mono (by decide) (by decide)) t ht, bits_kept f4 t ht,

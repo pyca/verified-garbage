@@ -49,18 +49,18 @@ theorem reduceByte_ok (M : Mont) {s : State} {B p : Addr} {Z o w wx m acc : Nat}
   have hz := h.ctx.good.scr.nowrap
   have hslot := slot_le (w := wx) (show aX < 8 by decide)
   unfold Arithmetic.reduceByte seqs
-  refine WP.seq (WP.mono (reduceRead_context h.ctx h.modulus (by omega) h.pointer hr h.high)
+  refine WP.seq (WP.mono (reduceRead_context h.ctx h.modulus (by omega_using [hw]) h.pointer hr h.high)
     fun u ⟨hcu, hmu, hbyte, hkept, hhigh, hptr, hrem, hfu, hku⟩ => ?_)
   rw [hb] at hbyte
   have huy := (hkept aY (by decide) (by decide)).trans h.value
   have hur := (hkept aXm (by decide) (by decide)).trans h.multiplier
   refine WP.seq (WP.mono (reduceStep_ok M hcu.good (Nat.le_refl _) hw hw'
-    hmu.modulus hodd hmu.inverse huy h.reduced hbyte (by have := b.isLt; omega) hur)
+    hmu.modulus hodd hmu.inverse huy h.reduced hbyte (by have := b.isLt; omega_using [hm]) hur)
     fun v ⟨hgv, hv, hfv, hkv⟩ => ?_)
   have hcv := arrays_context hcu hfv (by decide) hkv
   have hn := (hfv.wv_of_not_mem (show aN < 8 by decide) (by decide) hz).trans hmu.modulus
   have hi : ((word v.mem (off B o) (slot wx aN)).toNat * minv.toNat + 1) % 2 ^ 64 = 0 := by
-    rw [hfv.word0_of_not_mem (by decide) (by decide) hz (by omega)]
+    rw [hfv.word0_of_not_mem (by decide) (by decide) hz (by omega_using [hw])]
     exact hmu.inverse
   have hmv : ModCtx v (off B o) (slot wx 8) wx minv m := ⟨hgv, hn, hi⟩
   have hvr := (hfv.wv_of_not_mem (show aXm < 8 by decide) (by decide) hz).trans hur
@@ -73,7 +73,7 @@ theorem reduceByte_ok (M : Mont) {s : State} {B p : Addr} {Z o w wx m acc : Nat}
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hj
         rcases hj with rfl | rfl | rfl <;> decide
       have := slot_sep (w := wx) hne
-      omega) (by omega)]
+      omega_using [hi, this]) (by omega_using [hz, hslot, hi])]
     exact hhigh i hi hne
   have hfw := hfu.trans (arrays_work hfv (by decide))
   have hkw := (hku.trans hkv).mono (show ∀ r ∈ mmRegs ++ mmRegs, r ∈ mmRegs by decide)
@@ -83,15 +83,15 @@ theorem reduceByte_ok (M : Mont) {s : State} {B p : Addr} {Z o w wx m acc : Nat}
   have hk := (hkw.trans hkt).mono (show ∀ r ∈ mmRegs ++ mmRegs, r ∈ mmRegs by decide)
   have htarr : ∀ j < 8, wv t.mem (off B o) (slot wx j) wx = wv v.mem (off B o) (slot wx j) wx := by
     intro j hj
-    exact hft.wv (Or.inr (by have := hdr_lt_slot wx j (show Crt.sRem < 32 by decide); omega))
-      (by have := slot_le (w := wx) hj; omega)
+    exact hft.wv (Or.inr (by have := hdr_lt_slot wx j (show Crt.sRem < 32 by decide); omega_using [this]))
+      (by have := slot_le (w := wx) hj; omega_using [hz, this])
   refine ⟨⟨hct, hmt, (htarr aXm (by decide)).trans hvr, ?_,
-    (htarr aY (by decide)).trans hv, Nat.mod_lt _ (by omega), ?_, ?_,
+    (htarr aY (by decide)).trans hv, Nat.mod_lt _ (by omega_using [hm]), ?_, ?_,
     source_tail (work_source h.ctx hf hk h.source)⟩, ?_, hf, hk⟩
   · intro i hi hne
-    rw [hft.word (Or.inr (by have := hdr_lt_slot wx aX (show Crt.sRem < 32 by decide); omega)) (by omega)]
+    rw [hft.word (Or.inr (by have := hdr_lt_slot wx aX (show Crt.sRem < 32 by decide); omega_using [this])) (by omega_using [hz, hslot, hi])]
     exact hvhigh i hi hne
-  · exact (hft.word (by unfold Crt.sSrc Crt.sRem sFn; omega) (by decide)).trans hvptr
+  · exact (hft.word (by unfold Crt.sSrc Crt.sRem sFn; omega_using []) (by decide)).trans hvptr
   · simpa only [List.length_cons, Nat.add_sub_cancel] using htrem
   · simpa only [List.length_cons, Nat.add_sub_cancel] using htz
 

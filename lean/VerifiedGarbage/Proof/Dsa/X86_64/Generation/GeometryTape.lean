@@ -55,9 +55,9 @@ theorem GenerationGeometry.part_bound (p : GenerationGeometry) {d n : Nat} (h : 
   have hb := p.arenaBound
   have hd : d < 2 ^ 64 := by
     have ht : usedBytes p.pLen < 2 ^ 64 := by rcases p.width with hh | hh | hh <;> rw [hh] <;> decide
-    omega
+    omega_using [h, ht]
   simp only [off, BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hd]
-  omega
+  omega_using [h, hb]
 
 theorem GenerationGeometry.frame_part (p : GenerationGeometry) {d n : Nat} (h : d + n ≤ usedBytes p.pLen) :
     (⟨p.F, frameBytes⟩ : Region).Disjoint (p.part d n) := p.frameArena.sub_right (p.part_sub h)
@@ -69,7 +69,7 @@ theorem GenerationGeometry.parts_disjoint (p : GenerationGeometry) {d n e k : Na
     (hd : d + n ≤ usedBytes p.pLen) (he : e + k ≤ usedBytes p.pLen)
     (h : d + n ≤ e ∨ e + k ≤ d) : (p.part d n).Disjoint (p.part e k) := by
   have hb := p.arenaBound
-  exact Offset.disjoint p.B h (by omega) (by omega)
+  exact Offset.disjoint p.B h (by omega_using [hd, hb]) (by omega_using [he, hb])
 
 theorem GenerationGeometry.frame_below (p : GenerationGeometry) :
     (⟨p.F, frameBytes⟩ : Region).Disjoint (below p.F 192) :=
@@ -81,8 +81,8 @@ theorem GenerationGeometry.frame_headers (p : GenerationGeometry) :
   intro k hk j hj
   apply (p.frame_part (d := arithmetic) (n := arithmeticBytes) (by
     rcases p.width with hh | hh | hh <;> rw [hh] <;> decide)).sep
-  · exact Offset.contains_base _ (by unfold frameBytes; omega) (by omega)
-  · exact Offset.contains_base _ (by unfold arithmeticBytes; omega) (by omega)
+  · exact Offset.contains_base _ (by unfold frameBytes; omega_using [hk]) (by omega_using [hk])
+  · exact Offset.contains_base _ (by unfold arithmeticBytes; omega_using [hj]) (by omega_using [hj])
 
 theorem GenerationGeometry.frame_outside (p : GenerationGeometry) :
     ∀ k < 37, ∀ i < 8, arithmeticBytes ≤ ofs (off p.B arithmetic) (off (off p.F (8 * k)) i) := by
@@ -90,7 +90,7 @@ theorem GenerationGeometry.frame_outside (p : GenerationGeometry) :
   rw [off_off]
   exact out_scr (p.frame_part (d := arithmetic) (n := arithmeticBytes) (by
     rcases p.width with hh | hh | hh <;> rw [hh] <;> decide))
-    (Offset.contains_base _ (by unfold frameBytes; omega) (by omega))
+    (Offset.contains_base _ (by unfold frameBytes; omega_using [hk, hi]) (by omega_using [hk, hi]))
 
 end VG.Proof.Dsa.X86_64.Generation
 end
@@ -122,17 +122,17 @@ def GenerationTape.slice {p : GenerationGeometry} (tape : GenerationTape p) (use
   bound := by
     have hb := tape.bound
     have hl : ((tape.bytes.drop used).take len).length = len := by
-      simp only [List.length_take, List.length_drop]; omega
+      simp only [List.length_take, List.length_drop]; omega_using [room]
     rw [hl]
     simp only [off, BitVec.toNat_add, BitVec.toNat_ofNat]
     omega_using [hb, room, tape.size]
   size := by simp only [List.length_take, List.length_drop]; omega_using [room, tape.size]
   arena := tape.arena.sub_left (Offset.sub_base _ (by
-    simp only [List.length_take, List.length_drop]; omega))
+    simp only [List.length_take, List.length_drop]; omega_using [room]))
   frame := tape.frame.sub_left (Offset.sub_base _ (by
-    simp only [List.length_take, List.length_drop]; omega))
+    simp only [List.length_take, List.length_drop]; omega_using [room]))
   stack := tape.stack.sub_left (Offset.sub_base _ (by
-    simp only [List.length_take, List.length_drop]; omega))
+    simp only [List.length_take, List.length_drop]; omega_using [room]))
 
 theorem GenerationTape.source {p : GenerationGeometry} (tape : GenerationTape p) {s : State}
     {d n : Nat} (hd : d + n ≤ usedBytes p.pLen)
@@ -140,6 +140,6 @@ theorem GenerationTape.source {p : GenerationGeometry} (tape : GenerationTape p)
     (hv : ∀ i (hi : i < tape.bytes.length), s.mem (off tape.ptr i) = tape.bytes[i]'hi) :
     Src s (off p.B d) n tape.ptr tape.bytes :=
   ⟨hr, hv, fun i hi => out_scr (tape.part hd)
-    (Offset.contains_base _ (by omega) (by omega_using [hi, tape.size]))⟩
+    (Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi, tape.size]))⟩
 
 end VG.Proof.Dsa.X86_64.Generation

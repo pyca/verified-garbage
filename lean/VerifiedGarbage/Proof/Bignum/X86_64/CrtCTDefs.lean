@@ -35,7 +35,7 @@ theorem GoodW.hl {L : Ws} {s : State} (h : GoodW L s) :
     ∀ i < 32, InRegions (s.rd ++ s.wr) (off L.B (8 * i)) 8 := fun i hi => by
   obtain ⟨_, hg, hZ⟩ := h
   have hn := hg.scr.nowrap
-  exact hg.scr.ld (by have := hdr_lt_slot L.w 8 hi; omega)
+  exact hg.scr.ld (by have := hdr_lt_slot L.w 8 hi; omega_using [hZ, this])
 
 theorem pins_of {α : Type} {Φ : α → State → Prop} {rs : List Reg} (f : α → Reg → BitVec 64)
     (h : ∀ a s, Φ a s → ∀ r ∈ rs, s.gpr r = f a r) : Pins Φ rs :=
@@ -59,7 +59,7 @@ theorem zeroArr_ct {j : Nat} (hj : j < 8) {hc : VG.Taint.Hint VG.X86_64.Taint.T}
   have hl := h.hl
   obtain ⟨_, hg, -⟩ := h
   exact WP.mono (WP.keep [.r8, .r12] (Q := fun t => t.gpr .r8 = off L.B (slot L.w j) ∧ t.gpr .r12 = BitVec.ofNat 64 L.w)
-    (by xrun [State.ea, hdr, hg.rdi, hdrOff, hl (sArr j) (by unfold sArr; omega), hl sW (by decide),
+    (by xrun [State.ea, hdr, hg.rdi, hdrOff, hl (sArr j) (by unfold sArr; omega_using [hj]), hl sW (by decide),
       hg.hdr.harr j hj, hg.hdr.hw]) rfl) fun _ h => h.1
 
 /-- `copyArr o a`, given that the taint analysis checks its header loads. -/
@@ -83,8 +83,8 @@ theorem copyArr_ct {o a : Nat} (ho : o < 8) (ha : a < 8) {hc : VG.Taint.Hint VG.
   obtain ⟨_, hg, -⟩ := h
   exact WP.mono (WP.keep [.r12, .rsi, .rbx] (Q := fun t => t.gpr .r12 = BitVec.ofNat 64 L.w ∧
       t.gpr .rsi = off L.B (slot L.w a) ∧ t.gpr .rbx = off L.B (slot L.w o))
-    (by xrun [State.ea, hdr, hg.rdi, hdrOff, hl (sArr a) (by unfold sArr; omega),
-      hl (sArr o) (by unfold sArr; omega), hl sW (by decide), hg.hdr.harr a ha, hg.hdr.harr o ho,
+    (by xrun [State.ea, hdr, hg.rdi, hdrOff, hl (sArr a) (by unfold sArr; omega_using [ha]),
+      hl (sArr o) (by unfold sArr; omega_using [ho]), hl sW (by decide), hg.hdr.harr a ha, hg.hdr.harr o ho,
       hg.hdr.hw]) rfl) fun _ h => h.1
 
 /-- `maskArr j`, given that the taint analysis checks its header loads. -/
@@ -106,7 +106,7 @@ theorem maskArr_ct {j : Nat} (hj : j < 8) {hc : VG.Taint.Hint VG.X86_64.Taint.T}
   obtain ⟨_, hg, -⟩ := h
   exact WP.mono (WP.keep [.r15, .r12, .rbx] (Q := fun t => t.gpr .r12 = BitVec.ofNat 64 L.w ∧
       t.gpr .rbx = off L.B (slot L.w j))
-    (by xrun [State.ea, hdr, hg.rdi, hdrOff, hl (sArr j) (by unfold sArr; omega), hl sW (by decide),
+    (by xrun [State.ea, hdr, hg.rdi, hdrOff, hl (sArr j) (by unfold sArr; omega_using [hj]), hl sW (by decide),
       hl sMaskX (by decide), hg.hdr.harr j hj, hg.hdr.hw]) rfl) fun _ h => h.1
 
 /-! ## The other pieces, as claims

@@ -40,7 +40,7 @@ theorem workspaces_ok {s : State} {B pp qp : Addr} {Z : Nat} {p q : List Byte}
   obtain ⟨hp2, hp48, hq2, hq48, hpLo, hpHi, hqHi, _⟩ := VG.Proof.Dsa.workspace_bounds hlens
   have hlengths : 1 ≤ p.length ∧ p.length < 2 ^ 31 ∧ 1 ≤ q.length ∧ q.length < 2 ^ 31 := by
     unfold Spec.Dsa.lengthsValid at hlens
-    omega
+    omega_using [hlens]
   have hparent : pWorkspace ≤ Z := Nat.le_trans (by decide) hZ
   unfold SignVerify.workspaces seqs
   refine WP.seq (WP.mono (parent_ok hs hdi hparent) fun u ⟨hgu, hfu, hku⟩ => ?_)
@@ -61,13 +61,13 @@ theorem workspaces_ok {s : State} {B pp qp : Addr} {Z : Nat} {p q : List Byte}
   have vfield (f : Field) : word v.mem B f.offset = word u.mem B f.offset :=
     init_word hfv (VG.Proof.Dsa.field_bounds f).2
       (Or.inr (Nat.le_trans (by decide) (VG.Proof.Dsa.field_bounds f).1)) (by decide)
-  have vqs := init_source hfv hkv (Nat.le_trans (by decide) hparent) (by omega) (usrc hqs)
+  have vqs := init_source hfv hkv (Nat.le_trans (by decide) hparent) (by omega_using [hZ, hpHi, hqHi]) (usrc hqs)
   have hqLo : slot outerWords 8 ≤ qWorkspace := by decide
   refine WP.mono (child_ok hgv hparent (by decide) hqLo (Nat.le_trans hqHi hZ)
     hq2 hq48 (by decide) ⟨.input .q, .qLen⟩ (by trivial)
     ((vfield .q).trans ((ufield .q).trans hq)) ((vfield .qLen).trans ((ufield .qLen).trans hql)) vqs
     hlengths.2.2.1 hlengths.2.2.2 rfl hqodd) fun t ⟨qmi, hgt, hqr, hft, hkt⟩ => ?_
-  have hprt := init_ready hft hpr (by decide) (by have := hs.nowrap; omega) (Or.inl (by omega))
+  have hprt := init_ready hft hpr (by decide) (by have := hs.nowrap; omega_using [hZ, hpHi, hqHi, this]) (Or.inl (by omega_using [hpHi]))
   exact ⟨pmi, qmi, hgt, hprt, hqr, (uf.append hfv).append hft,
     ((hku.trans hkv).trans hkt).mono (by decide)⟩
 

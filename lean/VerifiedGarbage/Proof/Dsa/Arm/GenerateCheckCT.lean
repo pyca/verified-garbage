@@ -51,7 +51,7 @@ theorem checkCtx {s t : State} {base : Addr} {size : Nat} (h : checkPre s)
   obtain ⟨wp, wq, qp, q32, q0, p128⟩ := width_of hv
   have v := hv
   unfold Spec.Dsa.lengthsValid at v
-  have big : 15712 < size := by rw [← hsz]; unfold Spec.Dsa.scratchWords at hsw; omega
+  have big : 15712 < size := by rw [← hsz]; unfold Spec.Dsa.scratchWords at hsw; omega_using [hsw, p128]
   obtain ⟨Ip, Iq, Ig⟩ := checkIn h hb hsz E
   refine ⟨⟨E.ws, big, wp, wq, qp, q32⟩, fun i hi => ?_⟩
   simp only [checkIns, List.mem_cons, List.not_mem_nil, or_false] at hi
@@ -93,12 +93,12 @@ theorem check_constantTime : ConstantTime isa checkArm.pre checkArm.pub Generate
   obtain ⟨_, _, wr₂, _, dSA₂, _, _, _, _, _⟩ := id h₂
   have v := hv
   unfold Spec.Dsa.lengthsValid at v
-  have hs16 : 128 * (s₁.gpr .r2).toNat ≤ (arg s₁ 1).toNat * 8 := by unfold Spec.Dsa.scratchWords at hsw; omega
+  have hs16 : 128 * (s₁.gpr .r2).toNat ≤ (arg s₁ 1).toNat * 8 := by unfold Spec.Dsa.scratchWords at hsw; omega_using [hsw]
   obtain ⟨wp, wq, qp, q32, q0, p128⟩ := width_of hv
   have hb₂ : State.addr (arg s₂ 0) = State.addr (arg s₁ 0) := by rw [a0]
   have hz₂ : (arg s₂ 1).toNat * 8 = (arg s₁ 1).toNat * 8 := by rw [a1]
   simp only [Generate.checkParameters, Core.sequence, List.foldr]
-  refine SameTrace.seq (SameTrace.of_relCT (entry_relCT 8 _ rfl) (agree_args (n := 2) hsp (by omega) ha
+  refine SameTrace.seq (SameTrace.of_relCT (entry_relCT 8 _ rfl) (agree_args (n := 2) hsp (by omega_using [sp₁]) ha
       (fun r hr => by
         rw [wr₁] at hr
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -107,19 +107,19 @@ theorem check_constantTime : ConstantTime isa checkArm.pre checkArm.pub Generate
         rw [wr₂] at hr
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
         subst hr; exact dSA₂.symm)))
-    (WP.mono (checkEntry_ok h₁) fun u I => Env.of_installed I (by omega))
+    (WP.mono (checkEntry_ok h₁) fun u I => Env.of_installed I (by omega_arith))
     (WP.mono (checkEntry_ok h₂) fun u I => by
-      have E := Env.of_installed I (by rw [hz₂]; omega)
+      have E := Env.of_installed I (by rw [hz₂]; omega_arith)
       rwa [hb₂, hz₂] at E)
     fun u₁ u₂ E₁ E₂ => ?_
-  refine genDispatch_trace Generate.checkSized _ E₁.ws E₂.ws (by omega) (by omega) (genWidths_mem hv) (by decide)
+  refine genDispatch_trace Generate.checkSized _ E₁.ws E₂.ws (by omega_arith) (by omega_arith) (genWidths_mem hv) (by decide)
     (by rw [E₁.field (d := 100) (v := s₁.gpr .r2) (by simp)]) (by rw [E₁.field (d := 104) (v := s₁.gpr .r3) (by simp)])
     (by rw [E₂.field (d := 100) (v := s₂.gpr .r2) (by simp), hr2])
     (by rw [E₂.field (d := 104) (v := s₂.gpr .r3) (by simp), hr3])
     fun t₁ t₂ R₁ M₁ R₂ M₂ => ?_
   have F₁ := E₁.of_mem R₁ (by decide) M₁
   have F₂ := E₂.of_mem R₂ (by decide) M₂
-  have hz : 4960 ≤ (arg s₁ 1).toNat * 8 := by omega
+  have hz : 4960 ≤ (arg s₁ 1).toNat * 8 := by omega_arith
   have C₁ := checkCtx h₁ rfl rfl F₁
   have C₂ := checkCtx h₂ hb₂ hz₂ F₂
   rw [← hr2, ← hr3] at C₂
@@ -132,13 +132,13 @@ theorem check_constantTime : ConstantTime isa checkArm.pre checkArm.pub Generate
   -- Both runs see the same domain.
   have key := fun {o l : Nat} (h : o + l ≤ (s₁.gpr .r1).toNat) => check_bytes hl hr0 hr1 (o := o) (l := l) h
   have Vp : checkVal s₂ (.input .p) = checkVal s₁ (.input .p) := by
-    have k := key (o := 0) (l := (s₁.gpr .r2).toNat) (by omega)
+    have k := key (o := 0) (l := (s₁.gpr .r2).toNat) (by omega_using [hpl])
     rw [BitVec.add_zero] at k
     simp only [checkVal]; rw [← hr0, ← hr2, k]
   have Vq : checkVal s₂ (.input .q) = checkVal s₁ (.input .q) := by
-    simp only [checkVal]; rw [← hr0, ← hr2, ← hr3, key (by omega)]
+    simp only [checkVal]; rw [← hr0, ← hr2, ← hr3, key (by omega_using [hpl])]
   have Vg : checkVal s₂ (.input .g) = checkVal s₁ (.input .g) := by
-    simp only [checkVal]; rw [← hr0, ← hr2, ← hr3, key (by omega)]
+    simp only [checkVal]; rw [← hr0, ← hr2, ← hr3, key (by omega_using [hpl])]
   have mp : (.input .p, (s₁.gpr .r2).toNat) ∈ checkIns (s₁.gpr .r2).toNat (s₁.gpr .r3).toNat := by simp [checkIns]
   have mq : (.input .q, (s₁.gpr .r3).toNat) ∈ checkIns (s₁.gpr .r2).toNat (s₁.gpr .r3).toNat := by simp [checkIns]
   have mg : (.input .g, (s₁.gpr .r2).toNat) ∈ checkIns (s₁.gpr .r2).toNat (s₁.gpr .r3).toNat := by simp [checkIns]
@@ -157,7 +157,7 @@ theorem check_constantTime : ConstantTime isa checkArm.pre checkArm.pub Generate
   have kee : ∀ r ∈ shapeRanges, r.1 + r.2 ≤ (arg s₁ 1).toNat * 8 ∧
       (r.1 + r.2 ≤ 64 ∨ 164 ≤ r.1 ∨ (112 ≤ r.1 ∧ r.1 + r.2 ≤ 128)) := fun r hr => by
     simp only [shapeRanges, List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl <;> simp only <;> omega
+    rcases hr with rfl | rfl | rfl <;> simp only <;> omega_using [hz]
   have G₁ := F₁.keep (checkFields_ok s₁) S₁ (by decide) O₁ kee
   have G₂ := F₂.keep (checkFields_ok s₂) S₂ (by decide) O₂ kee
   refine SameTrace.seq_ite (by rw [eval_eq, eval_eq, Z₁, Z₂, Pe, Qe]) (fun _ => ?_) (fun hf => ?_)

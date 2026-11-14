@@ -59,11 +59,11 @@ theorem signBody_ok (M : Mont) (Sq : MontS) {L : ExecutionLayout} {s0 : State} (
   · rw [hr1, hs1] at hb
     exact hb
   · intro i hi
-    exact (hsave i hi).trans (hf1.word (Or.inl (by omega)) (by omega))
+    exact (hsave i hi).trans (hf1.word (Or.inl (by omega_using [hi])) (by omega_using [hi]))
   · intro x hx ho
     exact (hf x ho).trans (hf1 x (Or.inr (by
       have hu : 128 ≤ usedBytes := by decide
-      omega)))
+      omega_using [hx, hu])))
 
 theorem signBody_spec (M : Mont) (Sq : MontS) {L : ExecutionLayout} {s0 : State} (h0 : Ready L s0)
     (data : SignValues) {yb qb key digest : List Byte} {n : Nat}

@@ -40,7 +40,7 @@ theorem searchAdvanceHead_ok {s : State} {B : Addr} {counter stride limit : Nat}
   have hlimit : (BitVec.ofNat 16 limit).setWidth 64 = BitVec.ofNat 64 limit := by
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]
-    omega
+    omega_using [hl]
   have hcount : s.mem.readW (B + 0#64) 64 = BitVec.ofNat 64 counter := h.count
   have hzero : InRegions (s.rd ++ s.wr) B 8 := by simpa only [off, BitVec.add_zero] using hld 0 (by decide)
   refine WP.mono (WP.keep [.x3, .x4, .x5, .x7] (Q := fun t => t.mem = m ∧
@@ -48,9 +48,9 @@ theorem searchAdvanceHead_ok {s : State} {B : Addr} {counter stride limit : Nat}
     unfold Impl.Dsa.AArch64.Generation.pSearchAdvanceHead
     brun [h.x0, hdr_enc (by decide : 0 < 32), hdr_enc (by decide : 1 < 32),
       hld 0 (by decide), hld 8 (by decide), hst 0 (by decide), hst 8 (by decide),
-      hcount, hzero, hinc, hload, exec_addImm_x' (show stride < 4096 by omega),
+      hcount, hzero, hinc, hload, exec_addImm_x' (show stride < 4096 by omega_using [hs]),
       ← BitVec.ofNat_add, hlimit, VG.Impl.RsaKeyGen.AArch64.Candidate.geFlag,
-      subs_ge (show counter + 1 < 2 ^ 64 by omega) (show limit < 2 ^ 64 by omega)]
+      subs_ge (show counter + 1 < 2 ^ 64 by omega_using [hc, hl]) (show limit < 2 ^ 64 by omega_using [hl])]
     constructor
     · simp [m, Nat.add_mul, Nat.add_assoc]
     · simp only [decide_eq_true_eq]

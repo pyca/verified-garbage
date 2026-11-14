@@ -178,7 +178,7 @@ theorem bstep {s₀ : State} (hp : Pre s₀) {m₁ : Mem} (hm : Setup s₀ m₁)
       (by decide), hm.tab _ hk, zetaTable_eq, zetas_getD hk,
       setWidth64_ofNat (by have := val_lt (zeta (256 / len - 1 - c)); omega_arith)]
   refine WP.seq (WP.mono (bpre_ok h.a1 h.a2 h.a7 (h.env.inRS hp cS)
-    (align4_add (by have := hp.alS; omega) _))
+    (align4_add (by have := hp.alS; omega_using [this]) _))
     fun s₁ ⟨r7, r4, r6, r11, r5, r10, r3, r8, r9, r12, kp, m, rd, wr, sp⟩ => WP.seq ?_)
   have R4 : s₁.gpr .a1 = S s₀ + BitVec.ofNat 64 (4 * (256 / len - 1 - (c + 1))) := by
     rw [r4, ptr_sub4 _ (by omega_arith), Nat.sub_sub]
@@ -333,8 +333,8 @@ theorem scale_store (x : Word) :
   have hq : x.val * 3303 % q < 2 ^ 32 := Nat.lt_of_lt_of_le (Nat.mod_lt _ (by decide)) (by decide)
   have hw : (w64 x * BitVec.ofNat 64 (3303 : Zq).val).toNat = x.val * 3303 := by
     rw [BitVec.toNat_mul, Lazy.w64_toNat, show (3303 : Zq).val = 3303 from rfl, BitVec.toNat_ofNat,
-      Nat.mod_eq_of_lt (by omega : 3303 < 2 ^ 64)]
-    exact Nat.mod_eq_of_lt (by omega)
+      Nat.mod_eq_of_lt (by omega_using [] : 3303 < 2 ^ 64)]
+    exact Nat.mod_eq_of_lt (by omega_using [])
   rw [BitVec.toNat_setWidth, redM_toNat, hw, Fin.val_ofNat, Nat.mod_eq_of_lt hq]
 
 /-- Words less than `128 q`, each multiplied by 3303 and reduced. -/

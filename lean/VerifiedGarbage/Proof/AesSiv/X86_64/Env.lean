@@ -92,7 +92,7 @@ theorem cov_off {rs : List Region} {r : Region} (hr : r ∈ rs) {off n : Nat} (h
 
 theorem cov_base {rs : List Region} {r : Region} (hr : r ∈ rs) {n : Nat} (h : n ≤ r.len) :
     Covers [⟨r.base, n⟩] rs := by
-  have := cov_off hr (off := 0) (n := n) (by omega)
+  have := cov_off hr (off := 0) (n := n) (by omega_using [h])
   rwa [Proof.CmacAes.X86_64.k0] at this
 
 /-- The PRF and the cipher of a key context outside a frame's regions. -/
@@ -100,7 +100,7 @@ theorem ctxMac_frame {rs : List Region} {m m' : Mem} (hf : Frame rs m m') {C : A
     (hd : ∀ r ∈ rs, (⟨C, 512⟩ : Region).Disjoint r) {R : Nat} (hR : 16 * (R + 1) ≤ 240) :
     Spec.Siv.ctxMac m' C R = Spec.Siv.ctxMac m C R := by
   unfold Spec.Siv.ctxMac Spec.Siv.schedCiph
-  rw [Proof.CmacAes.X86_64.bytesAt_frame hf (fun r hr => (hd r hr).sub_left (Region.sub_prefix (by omega))) (by omega),
+  rw [Proof.CmacAes.X86_64.bytesAt_frame hf (fun r hr => (hd r hr).sub_left (Region.sub_prefix (by omega_using [hR]))) (by omega_using [hR]),
     Proof.CmacAes.X86_64.bytesAt_frame hf (p := C + 240)
       (fun r hr => (hd r hr).sub_left (Offset.sub_base C (d := 240) (n := 16) (by decide))) (by decide),
     Proof.CmacAes.X86_64.bytesAt_frame hf (p := C + 256)
@@ -111,7 +111,7 @@ theorem ctxCiph_frame {rs : List Region} {m m' : Mem} (hf : Frame rs m m') {C : 
     Spec.Siv.ctxCiph m' C R = Spec.Siv.ctxCiph m C R := by
   unfold Spec.Siv.ctxCiph Spec.Siv.schedCiph
   rw [Proof.CmacAes.X86_64.bytesAt_frame hf (p := C + 272)
-    (fun r hr => (hd r hr).sub_left (Offset.sub_base C (d := 272) (n := 16 * (R + 1)) (by omega))) (by omega)]
+    (fun r hr => (hd r hr).sub_left (Offset.sub_base C (d := 272) (n := 16 * (R + 1)) (by omega_using [hR]))) (by omega_using [hR])]
 
 /-- The registers the taint analysis needs public around the calls. -/
 theorem regs_agree {s₀ s₀' a b : State} {C D P W : Addr} {R L : Nat} (hq : s₀.gpr .rsp = s₀'.gpr .rsp) (ha : Regs s₀ C D P W R L a)
@@ -146,7 +146,7 @@ theorem sP (_h : Env s₀ C D P W R L) {d n : Nat} (hd : d + n ≤ L) :
 
 theorem inW (h : Env s₀ C D P W R L) {s : State} (hwr : s.wr = s₀.wr) {d n : Nat} (hd : d + n ≤ 2560) :
     InRegions s.wr (W + BitVec.ofNat 64 d) n := by
-  rw [hwr]; exact ⟨_, h.workIn, Offset.contains_base W hd (by have := h.wW; omega)⟩
+  rw [hwr]; exact ⟨_, h.workIn, Offset.contains_base W hd (by have := h.wW; omega_using [hd])⟩
 
 theorem inRW (h : Env s₀ C D P W R L) {s : State} (hrd : s.rd = s₀.rd) (hwr : s.wr = s₀.wr) {d n : Nat}
     (hd : d + n ≤ 2560) : InRegions (s.rd ++ s.wr) (W + BitVec.ofNat 64 d) n := by
@@ -156,15 +156,15 @@ theorem inRW (h : Env s₀ C D P W R L) {s : State} (hrd : s.rd = s₀.rd) (hwr 
 
 theorem inRP (h : Env s₀ C D P W R L) {s : State} (hrd : s.rd = s₀.rd) (hwr : s.wr = s₀.wr) {d n : Nat}
     (hd : d + n ≤ L) : InRegions (s.rd ++ s.wr) (P + BitVec.ofNat 64 d) n := by
-  rw [hrd, hwr]; exact ⟨_, h.dataIn, Offset.contains_base P hd (by have := h.wP; have := h.lt; omega)⟩
+  rw [hrd, hwr]; exact ⟨_, h.dataIn, Offset.contains_base P hd (by have := h.wP; have := h.lt; omega_using [hd, this])⟩
 
 theorem inWP (h : Env s₀ C D P W R L) (hPw : (⟨P, L⟩ : Region) ∈ s₀.wr) {s : State} (hwr : s.wr = s₀.wr)
     {d n : Nat} (hd : d + n ≤ L) : InRegions s.wr (P + BitVec.ofNat 64 d) n := by
-  rw [hwr]; exact ⟨_, hPw, Offset.contains_base P hd (by have := h.wP; have := h.lt; omega)⟩
+  rw [hwr]; exact ⟨_, hPw, Offset.contains_base P hd (by have := h.wP; have := h.lt; omega_using [hd, this])⟩
 
 theorem inRD (h : Env s₀ C D P W R L) {s : State} (hrd : s.rd = s₀.rd) (hwr : s.wr = s₀.wr) {d n : Nat}
     (hd : d + n ≤ 16) : InRegions (s.rd ++ s.wr) (D + BitVec.ofNat 64 d) n := by
-  rw [hrd, hwr]; exact ⟨_, h.dIn, Offset.contains_base D hd (by have := h.wD; omega)⟩
+  rw [hrd, hwr]; exact ⟨_, h.dIn, Offset.contains_base D hd (by have := h.wD; omega_using [hd])⟩
 
 /-- A message for the CMAC functions: `n` bytes at `Q`, which miss the state at
 `W + o`, the working space of the functions called and the stack. -/
@@ -184,23 +184,23 @@ theorem srcData (h : Env s₀ C D P W R L) {o a n : Nat} (ho : o + 16 ≤ 2560) 
   wrap := by
     have := h.wP
     rcases Nat.eq_zero_or_pos n with rfl | hn
-    · have := (P + BitVec.ofNat 64 a).isLt; omega
-    · rw [toNat_add_lt P this (by omega)]; omega
+    · have := (P + BitVec.ofNat 64 a).isLt; omega_using []
+    · rw [toNat_add_lt P this (by omega_using [ha, hn])]; omega_using [ha, this]
   cov := cov_off h.dataIn ha
 
 theorem srcData₀ (h : Env s₀ C D P W R L) {o n : Nat} (ho : o + 16 ≤ 2560) (hn : n ≤ L) :
     Src s₀ W o P n := by
-  have := h.srcData (o := o) (a := 0) (n := n) ho (by omega)
+  have := h.srcData (o := o) (a := 0) (n := n) ho (by omega_using [hn])
   rwa [Proof.CmacAes.X86_64.k0] at this
 
 /-- Bytes of the working space below `W + 256`, apart from the state, as the message. -/
 theorem srcWork (h : Env s₀ C D P W R L) {o t n : Nat} (ho : o + 16 ≤ 256) (ht : t + n ≤ 256)
     (hs : t + n ≤ o ∨ o + 16 ≤ t) : Src s₀ W o (W + BitVec.ofNat 64 t) n where
-  qo := Offset.disjoint W hs (by omega) (by omega)
-  qs := Offset.disjoint W (by omega) (by omega) (by omega)
-  stk := h.stk_w.sub_right (h.sW (by omega))
-  wrap := by rw [toNat_add_lt W h.wW (by omega)]; have := h.wW; omega
-  cov := Covers.right (cov_off h.workIn (by simp; omega))
+  qo := Offset.disjoint W hs (by omega_using [ht]) (by omega_using [ho])
+  qs := Offset.disjoint W (by omega_using [ht]) (by omega_using [ht]) (by omega_using [])
+  stk := h.stk_w.sub_right (h.sW (by omega_using [ht]))
+  wrap := by rw [toNat_add_lt W h.wW (by omega_using [ht])]; have := h.wW; omega_using [ht, this]
+  cov := Covers.right (cov_off h.workIn (by simp; omega_using [ht]))
 
 /-- The arguments of `vg_cmac_aes_finalize`: the context as the key, the
 state at `W + o`, the message at `Q`, and the working space at `W + 256`. -/
@@ -218,27 +218,27 @@ theorem fargs (h : Env s₀ C D P W R L) {s : State} (hrd : s.rd = s₀.rd) (hwr
   r9 := r9
   rounds := h.rounds
   len := hn
-  kst := (h.c_w.sub_left (Region.sub_prefix (by decide))).sub_right (h.sW (by omega))
+  kst := (h.c_w.sub_left (Region.sub_prefix (by decide))).sub_right (h.sW (by omega_using [ho]))
   ks := (h.c_w.sub_left (Region.sub_prefix (by decide))).sub_right (h.sW (by decide))
   pst := hq.qo
   ps := hq.qs
-  sts := Offset.disjoint W (by omega) (by omega) (by omega)
+  sts := Offset.disjoint W (by omega_using [ho]) (by omega_using [ho]) (by omega_using [])
   stkK := by rw [hsp]; exact h.stk_c.sub_right (Region.sub_prefix (by decide))
   stkP := by rw [hsp]; exact hq.stk
-  stkSt := by rw [hsp]; exact h.stk_w.sub_right (h.sW (by omega))
+  stkSt := by rw [hsp]; exact h.stk_w.sub_right (h.sW (by omega_using [ho]))
   stkS := by rw [hsp]; exact h.stk_w.sub_right (h.sW (by decide))
-  wrapK := by have := h.wC; omega
-  wrapSt := by rw [toNat_add_lt W h.wW (by omega)]; have := h.wW; omega
+  wrapK := by have := h.wC; omega_using [this]
+  wrapSt := by rw [toNat_add_lt W h.wW (by omega_using [ho])]; have := h.wW; omega_using [ho, this]
   wrapP := hq.wrap
-  wrapS := by rw [toNat_add_lt W h.wW (by omega)]; have := h.wW; omega
+  wrapS := by rw [toNat_add_lt W h.wW (by omega_using [])]; have := h.wW; omega_using [this]
   reads := by
     rw [hrd, hwr]
     refine Covers.append_left (Covers.cons (cov_base h.ctxIn (by simp)) (Covers.cons hq.cov Covers.nil))
-      (Covers.cons (Covers.right (cov_off h.workIn (by simp; omega)))
+      (Covers.cons (Covers.right (cov_off h.workIn (by simp; omega_using [ho])))
         (Covers.cons (Covers.right (cov_off h.workIn (by simp))) Covers.nil))
   writes := by
     rw [hwr]
-    exact Covers.cons (cov_off h.workIn (by simp; omega)) (Covers.cons (cov_off h.workIn (by simp)) Covers.nil)
+    exact Covers.cons (cov_off h.workIn (by simp; omega_using [ho])) (Covers.cons (cov_off h.workIn (by simp)) Covers.nil)
 
 /-- The arguments of `vg_cmac_aes_update`: `K1`'s schedule, the state at
 `W + o`, `n` blocks at `Q`, and the working space at `W + 256`. -/
@@ -256,33 +256,33 @@ theorem uargs (h : Env s₀ C D P W R L) {s : State} (hrd : s.rd = s₀.rd) (hwr
   r9 := r9
   rounds := h.rounds
   hn := hn
-  wc := (h.c_w.sub_left (Region.sub_prefix (by decide))).sub_right (h.sW (by omega))
+  wc := (h.c_w.sub_left (Region.sub_prefix (by decide))).sub_right (h.sW (by omega_using [ho]))
   ws := (h.c_w.sub_left (Region.sub_prefix (by decide))).sub_right (h.sW (by decide))
   dc := hq.qo
   ds := hq.qs
-  cs := Offset.disjoint W (by omega) (by omega) (by omega)
+  cs := Offset.disjoint W (by omega_using [ho]) (by omega_using [ho]) (by omega_using [])
   stkW := by rw [hsp]; exact h.stk_c.sub_right (Region.sub_prefix (by decide))
   stkD := by rw [hsp]; exact hq.stk
-  stkC := by rw [hsp]; exact h.stk_w.sub_right (h.sW (by omega))
+  stkC := by rw [hsp]; exact h.stk_w.sub_right (h.sW (by omega_using [ho]))
   stkS := by rw [hsp]; exact h.stk_w.sub_right (h.sW (by decide))
-  wrapC := by rw [toNat_add_lt W h.wW (by omega)]; have := h.wW; omega
+  wrapC := by rw [toNat_add_lt W h.wW (by omega_using [ho])]; have := h.wW; omega_using [ho, this]
   wrapD := hq.wrap
-  wrapS := by rw [toNat_add_lt W h.wW (by omega)]; have := h.wW; omega
+  wrapS := by rw [toNat_add_lt W h.wW (by omega_using [])]; have := h.wW; omega_using [this]
   reads := by
     rw [hrd, hwr]
     refine Covers.append_left (Covers.cons (cov_base h.ctxIn (by simp)) (Covers.cons hq.cov Covers.nil))
-      (Covers.cons (Covers.right (cov_off h.workIn (by simp; omega)))
+      (Covers.cons (Covers.right (cov_off h.workIn (by simp; omega_using [ho])))
         (Covers.cons (Covers.right (cov_off h.workIn (by simp))) Covers.nil))
   writes := by
     rw [hwr]
-    exact Covers.cons (cov_off h.workIn (by simp; omega)) (Covers.cons (cov_off h.workIn (by simp)) Covers.nil)
+    exact Covers.cons (cov_off h.workIn (by simp; omega_using [ho])) (Covers.cons (cov_off h.workIn (by simp)) Covers.nil)
 
 theorem zero16_ok (h : Env s₀ C D P W R L) {s : State} (h15 : s.gpr .r15 = W) (hwr : s.wr = s₀.wr) {d : Nat}
     (hd : d + 16 ≤ 2560) :
     ∃ s', runBlock isa (zero16 .r15 d) s = some s' ∧ s'.mem = zero2 s.mem (W + BitVec.ofNat 64 d) ∧
       (∀ r, r ≠ .rax → s'.gpr r = s.gpr r) ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
-  have w₀ := h.inW hwr (d := d) (n := 8) (by omega)
-  have w₁ := h.inW hwr (d := d + 8) (n := 8) (by omega)
+  have w₀ := h.inW hwr (d := d) (n := 8) (by omega_using [hd])
+  have w₁ := h.inW hwr (d := d + 8) (n := 8) (by omega_using [hd])
   refine ⟨_, by
     simp (config := {decide := true}) only [zero16, runBlock_cons, runStep_some, runBlock_nil, at_, exec,
       readSrc32, State.store64, State.ea, State.setReg32, offset_nat, Option.map_some, gpr_setReg, mem_setReg,
@@ -314,18 +314,18 @@ theorem cargs (h : Env s₀ C D P W R L) {s : State} (hrd : s.rd = s₀.rd) (hwr
   wc := (h.c_w.sub_left (h.sC (by decide))).sub_right (h.sW (by decide))
   wd := (h.c_w.sub_left (h.sC (by decide))).sub_right (h.sW (by decide))
   ws := (h.c_w.sub_left (h.sC (by decide))).sub_right (h.sW (by decide))
-  cd := Offset.disjoint W (by omega) (by have := h.wW; omega) (by have := h.wW; omega)
-  cs := Offset.disjoint W (by omega) (by have := h.wW; omega) (by have := h.wW; omega)
-  ds := Offset.disjoint W (by omega) (by have := h.wW; omega) (by have := h.wW; omega)
+  cd := Offset.disjoint W (by omega_using []) (by have := h.wW; omega_using []) (by have := h.wW; omega_using [])
+  cs := Offset.disjoint W (by omega_using []) (by have := h.wW; omega_using []) (by have := h.wW; omega_using [])
+  ds := Offset.disjoint W (by omega_using []) (by have := h.wW; omega_using []) (by have := h.wW; omega_using [])
   stkW := by rw [hsp]; exact (h.stk_c.sub_right (h.sC (by decide))).sub_left (Offset.sub_below _ (by decide) (by
-    have := h.sp; omega))
+    have := h.sp; omega_using []))
   stkC := by rw [hsp]; exact (h.stk_w.sub_right (h.sW (by decide))).sub_left (Offset.sub_below _ (by decide) (by
-    have := h.sp; omega))
+    have := h.sp; omega_using []))
   stkD := by rw [hsp]; exact (h.stk_w.sub_right (h.sW (by decide))).sub_left (Offset.sub_below _ (by decide) (by
-    have := h.sp; omega))
+    have := h.sp; omega_using []))
   stkS := by rw [hsp]; exact (h.stk_w.sub_right (h.sW (by decide))).sub_left (Offset.sub_below _ (by decide) (by
-    have := h.sp; omega))
-  wrap := by rw [toNat_add_lt W h.wW (show 80 < 2560 by decide)]; have := h.wW; omega
+    have := h.sp; omega_using []))
+  wrap := by rw [toNat_add_lt W h.wW (show 80 < 2560 by decide)]; have := h.wW; omega_using [this]
   reads := by
     rw [hrd, hwr]
     refine Covers.append_left (Covers.cons (cov_off h.ctxIn (by simp)) Covers.nil)

@@ -103,9 +103,9 @@ theorem Stg.ltA_ok {g : Geo} {s0 s : State} {A : Nat → Nat} {live : List Nat} 
   have hb' := borrow_iff (P := 2 ^ (32 * g.w)) v1 (val32_lt _ _ _ _) b1
   rw [h.arrs.get ha, h.arrs.get hb] at hb'
   by_cases hlt : A a < A b
-  · have : (t1.gpr .r11).toNat = 1 := by have := (not_congr hb').mpr (by omega); omega
+  · have : (t1.gpr .r11).toNat = 1 := by have := (not_congr hb').mpr (by omega_using [hlt]); omega_using [b1, this]
     simp [hlt, this]
-  · have : (t1.gpr .r11).toNat = 0 := hb'.mpr (by omega)
+  · have : (t1.gpr .r11).toNat = 0 := hb'.mpr (by omega_using [hlt])
     simp [hlt, this]
 
 /-- `eqA a b`: the mask and'ed with `[a] = [b]`. -/
@@ -140,7 +140,7 @@ theorem cntW_ok {u : State} {B : BitVec 32} {Z w N : Nat} (h : Ws u B Z w N) :
   rw [up.gpr, h.r9]
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_shiftLeft, Nat.shiftLeft_eq, BitVec.toNat_ofNat, BitVec.toNat_ofNat]
-  omega
+  omega_using []
 
 /-- `mulA y x m cnt`: `[aA] := ([y] mod 2^k) [x] mod [m]`, `k` the count `cnt` sets. -/
 theorem Stg.mulA_ok {g : Geo} {s0 s : State} {A : Nat → Nat} {live : List Nat} {c : Bool}
@@ -198,7 +198,7 @@ theorem Stg.mulA_ok {g : Geo} {s0 s : State} {A : Nat → Nat} {live : List Nat}
       upd_ne (j := aY) _ _ (Ne.symm hym)]
   refine ⟨num t.mem g.B g.w aA, fun hlt hM => ?_, ?_⟩
   · rw [gZ, gA, gX, gM, gY] at v5
-    rw [v5 rfl (by omega) hlt hM, Nat.zero_add]
+    rw [v5 rfl (by omega_using [hlt]) hlt hM, Nat.zero_add]
   · refine h4.next ht k5 (by decide) (by decide) r5 r6opRegs_body ?_
       (fun j hj => (List.mem_cons.mp hj).elim (fun e => by rw [e]; decide) (h.live_lt j))
       (h4.vd_keep k5 (by decide) (by decide)) (h4.mask_keep k5 (by decide))

@@ -61,7 +61,7 @@ theorem samplePrefix_next (s : State) {p : Inputs} {l : ScalarLayout p} {slots :
     h.source h.dest h.count h.zero) ?_
   rintro t ⟨context, _, dest, source, frame, rest⟩
   have entropy := h.entropy.after_frame frame rest (by
-    simpa [size] using entropySep.sub_right (Region.sub_prefix (by have := l.lead_lt; omega)))
+    simpa [size] using entropySep.sub_right (Region.sub_prefix (by have := l.lead_lt; omega_using [this])))
   exact ⟨⟨context, entropy, h.outputs.after rest⟩, dest, source⟩
 
 theorem sampleFirst_next (s : State) {p : Inputs} {l : ScalarLayout p} {slots : List Nat} {rb : List Byte}

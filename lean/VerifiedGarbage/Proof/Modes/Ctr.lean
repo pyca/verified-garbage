@@ -48,7 +48,7 @@ theorem idx_lt {L j n : Nat} (hj : j < n) : L * j + L ≤ L * n := by
   rw [← Nat.mul_succ]; exact Nat.mul_le_mul_left _ hj
 
 theorem idx_div {L j u : Nat} (hu : u < L) : (L * j + u) / L = j := by
-  rw [Nat.mul_comm, Nat.add_comm, Nat.add_mul_div_right _ _ (by omega), Nat.div_eq_of_lt hu, Nat.zero_add]
+  rw [Nat.mul_comm, Nat.add_comm, Nat.add_mul_div_right _ _ (by omega_using [hu]), Nat.div_eq_of_lt hu, Nat.zero_add]
 
 theorem idx_mod {L j u : Nat} (hu : u < L) : (L * j + u) % L = u := by
   rw [Nat.mul_comm, Nat.add_comm, Nat.add_mul_mod_self_right, Nat.mod_eq_of_lt hu]
@@ -83,7 +83,7 @@ theorem ctrOut_getD {cipher : Spec.Cbc.Cipher} (hc : ∀ b, (cipher b).length = 
   have h1 : u < (bytesAt m₀ (D + BitVec.ofNat 64 (16 * j)) 16).length := by simp [bytesAt, hu]
   have h2 : u < (cipher (ofNat (V + j) 16)).length := by rw [hc]; exact hu
   have h3 : u < (ctrOut cipher m₀ D V j).length := by
-    simp only [ctrOut, Spec.Cbc.xor, List.length_zipWith]; omega
+    simp only [ctrOut, Spec.Cbc.xor, List.length_zipWith]; omega_using [h1, h2]
   rw [← List.getElem_eq_getD (h := h3) 0, ← List.getElem_eq_getD (h := h2) 0]
   simp only [ctrOut, Spec.Cbc.xor, List.getElem_zipWith]
   simp [bytesAt, VG.Offset.add_add]
@@ -106,7 +106,7 @@ theorem ctr_of_dinv {cipher : Spec.Cbc.Cipher} (hc : ∀ b, (cipher b).length = 
   rw [show (ctrOut cipher m₀ D (toNat t) j)[u] = (ctrOut cipher m₀ D (toNat t) j).getD u 0 from
     List.getElem_eq_getD 0, ctrOut_getD hc _ _ _ _ hu]
   simp only [bytesAt, List.getElem_map, List.getElem_range]
-  rw [VG.Offset.add_add, h _ (by omega), ite_eq_left (by omega), show (16 * j + u) / 16 = j by omega,
-    show (16 * j + u) % 16 = u by omega, ctrOut_getD hc _ _ _ _ hu]
+  rw [VG.Offset.add_add, h _ (by omega_using [hj, hu]), ite_eq_left (by omega_using [hj, hu]), show (16 * j + u) / 16 = j by omega_using [hu],
+    show (16 * j + u) % 16 = u by omega_using [hu], ctrOut_getD hc _ _ _ _ hu]
 
 end VG.Proof.Modes

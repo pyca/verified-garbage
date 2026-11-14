@@ -513,7 +513,7 @@ theorem tabBuild_ct (M : Mont) (n : Nat) (hn3 : 3 ≤ n) (hn32 : n ≤ 32) {hc :
     (Ψ := fun p s => 0 < n - 2 ∧ BldI n p 0 s)
     (tabPre_ct n hn3 hT) fun p s ⟨minv, X, Xc, hc, hXN, hY, hw, hw', hR⟩ =>
       WP.mono (tabPre_ok (Q := False) (x := 0) hc hn3 hn32 hw hw' hXN False.elim hY False.elim) fun t hI =>
-        ⟨by omega, s, minv, X, Xc, hI, hw, hw', hR, hXN⟩) ?_)
+        ⟨by omega_using [hn3], s, minv, X, Xc, hI, hw, hw', hR, hXN⟩) ?_)
   exact (two_loop (Φ := BldI n) (Ψ := fun _ _ => True) (fun _ => n - 2) (buildBody_ct M n)
     fun p i s hi ⟨t₀, minv, X, Xc, hI, hw, hw', hR, hXN⟩ =>
       WP.mono (buildStep_ok M hw hw' hR hXN False.elim hn32 hi hI) fun s' ⟨hz, hI'⟩ =>

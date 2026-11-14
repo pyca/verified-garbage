@@ -68,8 +68,8 @@ private theorem decrement_ok {p : RandomRetryPublic} {s : State} (h : RandomRetr
       t.gpr .rsp = p.B ∧ t.zf = some (decide (p.attempts = 1)) := by
   obtain ⟨hs, hsp, _, hn, hp, hb⟩ := h
   have hz : (BitVec.ofNat 64 (p.attempts - 1) == 0) = decide (p.attempts = 1) := by
-    rw [ofNat64_beq_zero (by omega)]
-    exact decide_eq_decide.mpr (by omega)
+    rw [ofNat64_beq_zero (by omega_using [hb])]
+    exact decide_eq_decide.mpr (by omega_using [hp])
   refine WP.mono (WP.keep [.rax] (Q := fun t => t.zf = some (decide (p.attempts = 1)))
     (by xrun [random_ea_sp, hsp, hs.ld (d := Random.oAttempts) (by decide),
       hs.st (d := Random.oAttempts) (by decide), hn, ofNat64_pred hp hb, hz]) rfl)

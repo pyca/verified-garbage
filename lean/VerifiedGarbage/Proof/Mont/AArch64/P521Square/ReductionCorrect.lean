@@ -33,14 +33,14 @@ theorem value_ones (n : Nat) : value (List.replicate n (~~~(0 : Word))) + 1 = 2^
     simp only [List.replicate_succ, value, Nat.mul_add, Nat.mul_one, Nat.pow_add]
     have he : (~~~(0 : Word)).toNat = 2^64-1 := rfl
     rw [he, Nat.mul_comm (2^(64*n)) (2^64)]
-    omega
+    omega_using [ih]
 
 theorem list9_split (xs : List Word) (h : xs.length = 9) :
     xs = xs.take 8 ++ [xs.getD 8 0] := by
-  have h8 : 8 < xs.length := by omega
+  have h8 : 8 < xs.length := by omega_using [h]
   have he := List.take_append_drop 8 xs
   rw [List.drop_eq_getElem_cons h8] at he
-  have hd : xs.drop 9 = [] := List.drop_eq_nil_iff.mpr (by omega)
+  have hd : xs.drop 9 = [] := List.drop_eq_nil_iff.mpr (by omega_using [h])
   simp only [hd] at he
   simpa only [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem h8, Option.getD_some] using he.symm
 
@@ -53,7 +53,7 @@ theorem maskLast_value (xs : List Word) (h : xs.length = 9) :
   rw [ht] at hb hv
   rw [value_append, ht]
   simp only [value, Nat.mul_zero, Nat.add_zero, mask9_value] at hv ⊢
-  omega
+  omega_using [hv, hb]
 
 theorem corrected_value (w : Nat → Word) (hu : inputValue w < fieldPrime*fieldPrime) :
     value (corrected (folded w).1 (folded w).2) = inputValue w % fieldPrime := by
@@ -75,15 +75,15 @@ theorem corrected_value (w : Nat → Word) (hu : inputValue w < fieldPrime*field
       inputValue w % fieldBase + inputValue w / fieldBase + 1 + montBase - fieldBase := by
     change _ + _ = _ at hf
     dsimp only [xs, c, montBase, fieldBase] at *
-    omega
+    omega_using [hf]
   have ew : value r.1 + 1 = value xs + c.toNat + montBase*(1-r.2.toNat) := by
     have hc := Bool.toNat_le r.2
     change value r.1 + 2^(64*9)*r.2.toNat = value xs + _ + c.toNat at ha
     dsimp only [montBase]
-    omega
+    omega_using [ho, hc, ha]
   have h := carry_correction (s := inputValue w % fieldBase + inputValue w / fieldBase)
     (v := value xs) (w := value r.1) (c := c.toNat) (b := 1-r.2.toNat) (fold_sum_bound hu) (Bool.toNat_le c)
-    (by omega : 1-r.2.toNat ≤ 1) (by rw [montBase_power]; exact hv)
+    (by omega_using [] : 1-r.2.toNat ≤ 1) (by rw [montBase_power]; exact hv)
     (by rw [montBase_power]; exact hw) ev ew
   rw [corrected, maskLast_value _ hr]
   exact h.1.trans (canonical_fold hu).2

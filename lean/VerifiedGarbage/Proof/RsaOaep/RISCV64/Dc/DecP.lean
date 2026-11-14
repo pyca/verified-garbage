@@ -112,7 +112,7 @@ theorem pubD_ofP {ts : List FnTable} {s₁ s₂ : State} (h : (decPSpec ts).pub 
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
     exacts [g0.symm, g1.symm, g2.symm, g3.symm, g4.symm, g5.symm, g6.symm, g7.symm]
-  · rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 ∨ i = 8 ∨ i = 9 ∨ i = 10 ∨
+  · rcases (by omega_using [hi] : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 ∨ i = 8 ∨ i = 9 ∨ i = 10 ∨
       i = 11 ∨ i = 12 ∨ i = 13 ∨ i = 14 ∨ i = 15 ∨ i = 16) with
       rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
     exacts [a0.symm, a1.symm, a2.symm, a3.symm, a4.symm, a5.symm, a6.symm, a7.symm, a8.symm, a9.symm, a10.symm,
@@ -191,11 +191,11 @@ theorem putWs_byte {m : Mem} {a : Addr} : ∀ {p : Addr} {ws : List (BitVec 64)}
   | _, [], _, _ => rfl
   | p, w :: ws, h, hp => by
     simp only [List.length_cons] at hp
-    have h8 := add8_toNat (p := p) (by omega)
+    have h8 := add8_toNat (p := p) (by omega_using [hp])
     simp only [putWs]
-    rw [putWs_byte (by rw [h8]; omega) (by rw [h8]; omega)]
+    rw [putWs_byte (by rw [h8]; omega_using [h]) (by rw [h8]; omega_using [hp])]
     have hne : ¬ (a - p).toNat < 64 / 8 := by
-      rw [BitVec.toNat_sub, Nat.mod_eq_of_lt (by omega)]; omega
+      rw [BitVec.toNat_sub, Nat.mod_eq_of_lt (by omega_using [h])]; omega_using [hp]
     simp only [Mem.writeW, Mem.write, hne, ↓reduceIte]
 
 theorem decPSat_key (vs : List MVar) (w : MVar) :
@@ -210,7 +210,7 @@ theorem decPSat_key (vs : List MVar) (w : MVar) :
     have h2 : (Nat.ble 0x10000 a.toNat && Nat.blt a.toNat 0x10098) = false := by
       rw [Bool.eq_false_iff]; intro h; simp only [Bool.and_eq_true, Nat.ble_eq] at h; omega
     show putWs decPMem 0x300000 (Proof.MdHashTable.RISCV64.twL vs w) a = keyMem a
-    rw [putWs_byte (by show a.toNat < 0x300000; omega) (Proof.MdHashTable.RISCV64.twL_room vs w)]
+    rw [putWs_byte (by show a.toNat < 0x300000; omega_using [hk]) (Proof.MdHashTable.RISCV64.twL_room vs w)]
     show (bif _ then _ else _) = _
     rw [h2, Bool.cond_false, ha, Bool.cond_true]
 

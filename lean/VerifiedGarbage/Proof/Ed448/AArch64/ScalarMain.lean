@@ -80,8 +80,8 @@ theorem scalarReduce_correct {s : State} (hs : scalarReduceLocal.pre s) :
   have rdw₂ : s₂.rd ++ s₂.wr = s.rd ++ s.wr := by rw [k₂.rd, k₂.wr, rd₁, wr₁]
   have inw : ∀ d n, d + n ≤ 114 → InRegions (s₂.rd ++ s₂.wr) (s₂.gpr .x1 + BitVec.ofNat 64 d) n :=
     fun d n h => ⟨⟨s.gpr .x1, 114⟩, by rw [rdw₂, hr]; simp,
-      by rw [x1₂]; exact Offset.contains_base _ h (by omega)⟩
-  refine WP.mono (init114_ok s₂ (inw 112 1 (by omega)) (inw 113 1 (by omega)))
+      by rw [x1₂]; exact Offset.contains_base _ h (by omega_using [h])⟩
+  refine WP.mono (init114_ok s₂ (inw 112 1 (by omega_using [])) (inw 113 1 (by omega_using [])))
     fun s₃ ⟨v₃, b₃, k₃⟩ => ?_
   have c₃ : Consts s₃ := c₂.of_keeps k₃ (by decide)
   have x1₃ : s₃.gpr .x1 = s.gpr .x1 := (k₃.gpr _ (by decide)).trans x1₂
@@ -94,10 +94,10 @@ theorem scalarReduce_correct {s : State} (hs : scalarReduceLocal.pre s) :
     have hlt := decodeLE_lt' (bytesAt s₂.mem (s₂.gpr .x1 + BitVec.ofNat 64 112) 2)
     rw [bytesAt_length] at hlt
     have : (256 : Nat) ^ 2 < L := by decide +kernel
-    exact (Nat.mod_eq_of_lt (by omega)).symm
+    exact (Nat.mod_eq_of_lt (by omega_using [hlt, this])).symm
   refine WP.mono (scalarLoop_ok s₃ c₃ (by decide) hi fun k hk => by
       rw [k₃.rd, k₃.wr, ← x1₂.trans x1₃.symm]
-      exact inw (8 * k) 8 (by omega)) fun s₄ ⟨v₄, k₄⟩ => ?_
+      exact inw (8 * k) 8 (by omega_using [hk])) fun s₄ ⟨v₄, k₄⟩ => ?_
   have x2₄ : s₄.gpr .x2 = s.gpr .x2 := by
     rw [k₄.gpr _ (by decide), k₃.gpr _ (by decide), k₂.gpr _ (by decide), g₁]
   have x0₄ : s₄.gpr .x0 = s.gpr .x0 := by

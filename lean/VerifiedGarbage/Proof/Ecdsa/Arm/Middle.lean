@@ -80,7 +80,7 @@ theorem midOps_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base size
   have one₁ : sv c base s₁ ONE = 1 :=
     (sv_keep (MP'_n c) rfl h7 hn k₁ (by decide) (by decide) (by decide)).trans hone
   -- `X = XM · 1`.
-  refine WP.seq (WP.mono (slMul_ok hc.fp (MP'_n c) h7 hs₁ hf₁ (o := X) (a := XM) (b := ONE) (by decide) (by decide) (by decide) (by omega)) fun s₂ ⟨k₂, lt₂, e₂⟩ => ?_)
+  refine WP.seq (WP.mono (slMul_ok hc.fp (MP'_n c) h7 hs₁ hf₁ (o := X) (a := XM) (b := ONE) (by decide) (by decide) (by decide) (by omega_using [hp3, one₁])) fun s₂ ⟨k₂, lt₂, e₂⟩ => ?_)
   have hs₂ := k₂.scr hs₁
   have hf₂ := hf₁.of_rest k₂.rest
   have kP₂ := kP₁.keepArm (j := MP) (by decide) rfl rfl rfl rfl h7 hn k₂ (by decide) (by decide)
@@ -92,7 +92,7 @@ theorem midOps_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base size
       toM c.C.p (2 ^ (64 * c.n)) (sv c base s RX) * toM c.C.p (2 ^ (64 * c.n)) (sv c base s ACC) := by
     rw [toM_one_mul hpR (by rw [e₂, one₁]), toM_mul hpR e₁]
   -- `RR = X mod n`.
-  refine WP.seq (WP.mono (slAdd_ok hc.fn (MN'_n c) h7 hs₂ hf₂ (o := RR) (a := X) (b := ZERO) (by decide) (by decide) (by decide) (by omega)) fun s₃ ⟨k₃, e₃⟩ => ?_)
+  refine WP.seq (WP.mono (slAdd_ok hc.fn (MN'_n c) h7 hs₂ hf₂ (o := RR) (a := X) (b := ZERO) (by decide) (by decide) (by decide) (by omega_using [hpn, lt₂, zero₂])) fun s₃ ⟨k₃, e₃⟩ => ?_)
   have hs₃ := k₃.scr hs₂
   have hf₃ := hf₂.of_rest k₃.rest
   have kP₃ := kP₂.keepArm (j := MP) (by decide) rfl rfl rfl rfl h7 hn k₃ (by decide) (by decide)
@@ -106,7 +106,7 @@ theorem midOps_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base size
       sv_keep (MP'_n c) rfl h7 hn k₂ (by decide) (by decide) (by decide),
       sv_keep (MP'_n c) rfl h7 hn k₁ (by decide) (by decide) (by decide)]
   -- `KM = K · R² mod n`.
-  refine WP.seq (WP.mono (slMul_ok hc.fn (MN'_n c) h7 hs₃ hf₃ (o := KM) (a := K) (b := R2N) (by decide) (by decide) (by decide) (by rw [r2₃]; exact Nat.mod_lt _ (by omega))) fun s₄ ⟨k₄, lt₄, e₄⟩ => h s₄ ?_)
+  refine WP.seq (WP.mono (slMul_ok hc.fn (MN'_n c) h7 hs₃ hf₃ (o := KM) (a := K) (b := R2N) (by decide) (by decide) (by decide) (by rw [r2₃]; exact Nat.mod_lt _ (by omega_using [hpn]))) fun s₄ ⟨k₄, lt₄, e₄⟩ => h s₄ ?_)
   have X₄ : sv c base s₄ X = sv c base s₂ X := by
     rw [sv_keep (MN'_n c) rfl h7 hn k₄ (by decide) (by decide) (by decide),
       sv_keep (MN'_n c) rfl h7 hn k₃ (by decide) (by decide) (by decide)]

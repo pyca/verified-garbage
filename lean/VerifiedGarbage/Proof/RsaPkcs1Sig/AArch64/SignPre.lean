@@ -108,7 +108,7 @@ structure PreS (K : Nat) (s : State) : Prop where
 
 theorem preS_of {K : Nat} {s : State}
     (h : (Spec.RsaPkcs1Sig.signContract abi (stk K)).pre s) : PreS K s := by
-  have e : stk K = (frameBytes + K - 1) + 1 := by unfold stk frameBytes; omega
+  have e : stk K = (frameBytes + K - 1) + 1 := by unfold stk frameBytes; omega_using []
   rw [e] at h
   sig_pre [Spec.RsaPkcs1Sig.signContract, Spec.RsaPkcs1Sig.signSig, abi, argRegs, stackArgs_thirteen,
     List.append_eq, List.range, List.range.loop] at h
@@ -124,7 +124,7 @@ theorem preS_of {K : Nat} {s : State}
   exact ⟨sp1, sp2, by rw [hrd]; exact Covers.refl _, by rw [hwr]; simp, by rw [hwr]; simp, on, oe, od, op, oq,
     odp, odq, oqi, os, oa, ns, es, ds, ps, qs, dps, dqs, qis, sa, ko, kn, ke, kd, kp, kq, kdp, kdq, kqi, ks, ka,
     wo, wn, we, wd, wp, wq, wdp, wdq, wqi, ws, k1, k2, ol, e1, e2, p1, p2, q1, q2, hdp, hqi, hdq,
-    by unfold Spec.Rsa.scratchWords at hs; omega⟩
+    by unfold Spec.Rsa.scratchWords at hs; omega_using [hs]⟩
 
 /-! ## The frame -/
 
@@ -136,8 +136,8 @@ abbrev kb (K : Nat) (s : State) : Addr := s.sp - BitVec.ofNat 64 (stk K)
 
 theorem fb_eq (K : Nat) (s : State) : fb s = kb K s + BitVec.ofNat 64 K := by
   unfold fb kb
-  rw [Offset.sub_ofNat_eq s.sp (show frameBytes ≤ stk K by unfold stk; omega)]
-  rw [show stk K - frameBytes = K by unfold stk; omega]
+  rw [Offset.sub_ofNat_eq s.sp (show frameBytes ≤ stk K by unfold stk; omega_using [])]
+  rw [show stk K - frameBytes = K by unfold stk; omega_using []]
 
 theorem off_fb (K : Nat) (s : State) (d : Nat) :
     fb s + BitVec.ofNat 64 d = kb K s + BitVec.ofNat 64 (K + d) := by
@@ -147,19 +147,19 @@ theorem kb_toNat {K : Nat} {s : State} (hp : PreS K s) :
     (kb K s).toNat + stk K = s.sp.toNat ∧ s.sp.toNat + 104 ≤ 2 ^ 64 := by
   have := hp.sp1; have := hp.sp2
   simp only [kb, BitVec.toNat_sub, BitVec.toNat_ofNat]
-  constructor <;> omega
+  constructor <;> omega_arith
 
 theorem fb_toNat {K : Nat} {s : State} (hp : PreS K s) : (fb s).toNat + frameBytes = s.sp.toNat := by
   have := hp.sp1
-  simp only [fb, BitVec.toNat_sub, BitVec.toNat_ofNat]; unfold stk at this; omega
+  simp only [fb, BitVec.toNat_sub, BitVec.toNat_ofNat]; unfold stk at this; omega_using [this]
 
 /-- A region of the frame is in the stack the function uses. -/
 theorem frame_sub (K : Nat) (s : State) {d n : Nat} (h : d + n ≤ frameBytes) :
     Region.Sub ⟨fb s + BitVec.ofNat 64 d, n⟩ (kR K s) := by
-  rw [off_fb K]; exact Offset.sub_base _ (by unfold stk; omega)
+  rw [off_fb K]; exact Offset.sub_base _ (by unfold stk; omega_using [h])
 
 theorem frame_sub0 (K : Nat) (s : State) : Region.Sub ⟨fb s, frameBytes⟩ (kR K s) := by
-  have := frame_sub K s (d := 0) (n := frameBytes) (by omega)
+  have := frame_sub K s (d := 0) (n := frameBytes) (by omega_using [])
   rwa [BitVec.add_zero] at this
 
 /-- The stack arguments, from the frame. -/
@@ -181,17 +181,17 @@ theorem keep_of_frame {K : Nat} {s : State} {R : Region} (hR : (kR K s).Disjoint
 theorem arg_in {K : Nat} {s : State} (hp : PreS K s) {rs : List Region} (hrd : Covers s.rd rs) {j : Nat}
     (hj : j < 13) : InRegions rs (stackArgAddr s j) 8 :=
   hrd _ _ <| hp.hrd _ _ ⟨aR s, by simp, by
-    rw [stackArgAddr_eq s j]; exact Offset.contains_base _ (by omega) (by omega)⟩
+    rw [stackArgAddr_eq s j]; exact Offset.contains_base _ (by omega_using [hj]) (by omega_using [hj])⟩
 
 /-- A stack argument, in memory changed only in the frame. -/
 theorem arg_frame {K : Nat} {s : State} (hp : PreS K s) {m : Mem} (h : Frame [⟨fb s, frameBytes⟩] s.mem m)
     {j : Nat} (hj : j < 13) : m.readW (stackArgAddr s j) 64 = stackArg s j :=
-  h.readW (r := aR s) (by rw [stackArgAddr_eq s j]; exact Offset.contains_base _ (by omega) (by omega))
+  h.readW (r := aR s) (by rw [stackArgAddr_eq s j]; exact Offset.contains_base _ (by omega_using [hj]) (by omega_using [hj]))
     (keep_of_frame hp.ka) (by decide)
 
 theorem in_frame (s : State) (rs : List Region) {d n : Nat} (h : d + n ≤ frameBytes) :
     InRegions (⟨fb s, frameBytes⟩ :: rs) (fb s + BitVec.ofNat 64 d) n :=
-  ⟨_, List.mem_cons_self .., Offset.contains_base _ h (by unfold frameBytes at h; omega)⟩
+  ⟨_, List.mem_cons_self .., Offset.contains_base _ h (by unfold frameBytes at h; omega_using [h])⟩
 
 theorem saved_offs : ∀ p ∈ saved, 112 ≤ p.2 ∧ p.2 + 8 ≤ 112 + 16 := by decide
 

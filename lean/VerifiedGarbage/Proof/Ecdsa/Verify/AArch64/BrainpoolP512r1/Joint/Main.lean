@@ -39,7 +39,7 @@ theorem verify_ok (hc : BaseCfgOk cfg) (hC : Law C) {s₀ : State} (hp : FrontPr
     ⟨fun r hr => (saved r hr).trans (hg r hr),?_⟩
   -- The arguments as the specification reads them.
   have hlen : (Spec.Ecdsa.bytesAt s₀.mem (s₀.gpr .x0) (1 + 2 * cfg.C.len)).length = 2 * cfg.C.len + 1 := by
-    rw [length_bytesAt]; omega
+    rw [length_bytesAt]; omega_using []
   have hb0 : (Spec.Ecdsa.bytesAt s₀.mem (s₀.gpr .x0) (1 + 2 * cfg.C.len)).head? = some (s₀.mem (s₀.gpr .x0)) := by
     rw [peer_bytes]; rfl
   have hxv : ofBytes (((Spec.Ecdsa.bytesAt s₀.mem (s₀.gpr .x0) (1 + 2 * cfg.C.len)).drop 1).take cfg.C.len) =
@@ -52,7 +52,7 @@ theorem verify_ok (hc : BaseCfgOk cfg) (hC : Law C) {s₀ : State} (hp : FrontPr
       P = .affine ⟨_, h.2.1⟩ ⟨_, h.2.2.1⟩ := fun h => by
     show peerPt cfg _ _ _ = _
     unfold peerPt; rw [dite_eq_left ⟨⟨⟨h.1, h.2.1⟩, h.2.2.1⟩, h.2.2.2⟩]
-  have h16 : 2 * cfg.C.len = cfg.C.len + cfg.C.len := by omega
+  have h16 : 2 * cfg.C.len = cfg.C.len + cfg.C.len := by omega_using []
   have hr : ofBytes ((Spec.Ecdsa.bytesAt s₀.mem (s₀.gpr .x2) (2 * cfg.C.len)).take cfg.C.len) = sigR cfg s₀ := by
     rw [h16, bytesAt_add, List.take_left' (length_bytesAt _ _ _)]
   have hs : ofBytes ((Spec.Ecdsa.bytesAt s₀.mem (s₀.gpr .x2) (2 * cfg.C.len)).drop cfg.C.len) = sigS cfg s₀ := by

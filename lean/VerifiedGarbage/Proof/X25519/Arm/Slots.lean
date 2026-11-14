@@ -81,7 +81,7 @@ theorem frame_FA (_hA : acc + 128 ≤ 4096) {o : Nat} (ho : 64 ≤ o ∧ o + 64 
     Frame [FA acc b] m m' := by
   refine hf.sub fun r hr => ⟨_, List.mem_singleton_self _, ?_⟩
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl <;> exact Offset.sub _ (by omega_using [ho]) (by omega)
+  rcases hr with rfl | rfl <;> exact Offset.sub _ (by omega_using [ho]) (by omega_arith)
 
 /-- `mul o x y` is a multiplication with its product at `acc`: `mul_ok`'s
 statement, which `mulAt acc` (`mulAt_mulOk`) and `vg_x25519_umaal`'s `mulUAt acc`
@@ -171,7 +171,7 @@ theorem cswapS (hA : acc + 128 ≤ 4096) {x y : Nat} {qs : List Nat} {v : Nat �
   refine WP.mono (cswap_ok (b := b) (by omega_using [hA, hx']) (by omega_using [hA, hy']) hxy hc hsw h9) fun s' h => ⟨h.rest, ?_, ?_⟩
   · refine h.frame.sub fun r hr => ⟨_, List.mem_singleton_self _, ?_⟩
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl <;> exact Offset.sub _ (by omega) (by omega)
+    rcases hr with rfl | rfl <;> exact Offset.sub _ (by omega_arith) (by omega_arith)
   · intro q hq''
     have hlx : ∀ k < 16, limb s'.mem (State.addr b) x k =
         sel sw (limb s.mem (State.addr b) x k) (limb s.mem (State.addr b) y k) := h.lx

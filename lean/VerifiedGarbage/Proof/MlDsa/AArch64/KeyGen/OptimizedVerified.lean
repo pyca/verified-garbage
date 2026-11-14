@@ -400,11 +400,11 @@ theorem keyGen_verified (v : Proof.Sha3.AArch64.Permutation) {p : Params}
   have hP := primitives_ok (keccak := v)
   have hdpre : 16*(prefixWith v.callee (primitives v.callee)
       Impl.MlDsa.AArch64.Optimized.ResidentRej.Two.code p).aarch64Depth≤16 := by
-    have h := (prefix_dle v hF).le; omega
+    have h := (prefix_dle v hF).le; omega_using [h]
   have hdpack : ∀j<p.ℓ+p.k,16*(packSecret (primitives v.callee) p j).aarch64Depth≤16 := by
-    intro j _; have h := (packSecret_dle v p j).le; omega
+    intro j _; have h := (packSecret_dle v p j).le; omega_using [h]
   have hdrow : ∀i<p.k,16*(row (primitives v.callee) p i).aarch64Depth≤16 := by
-    intro i _; have h := (row_dle v hp i).le; omega
+    intro i _; have h := (row_dle v hp i).le; omega_using [h]
   refine ⟨?_,?_,⟨keyGenSat p,keyGen_sat hp⟩⟩
   · intro s h
     obtain ⟨pre,roots⟩ := staticRoots_entry (by decide) h

@@ -45,7 +45,7 @@ theorem trialLoop_from_ok (s : State) {n divisor inverse initial : Nat}
       exact readable.advance keep (Nat.min_le_right 2 k)
     have kept : Rest loopRegs s t := rest.trans keep
     by_cases last : k ≤ 2
-    · have remZero : k - min 2 k = 0 := by omega
+    · have remZero : k - min 2 k = 0 := by omega_using [last]
       left
       refine ⟨?_, b, j + 1, bb, bv, ?_, ?_, mem.trans memory, kept⟩
       · change some (!t.z) = some false
@@ -54,7 +54,7 @@ theorem trialLoop_from_ok (s : State) {n divisor inverse initial : Nat}
       · rw [cnt', remZero]
         rfl
     · right
-      refine ⟨?_, k - min 2 k, by omega, j + 1, b, by omega, by omega,
+      refine ⟨?_, k - min 2 k, by omega_using [kp], j + 1, b, by omega_using [last], by omega_using [kfit],
         nextRead, cnt', bb, bv, congruence, mem.trans memory, kept⟩
       change some (!t.z) = some true
       simp only [flag, last, decide_false, Bool.not_false]

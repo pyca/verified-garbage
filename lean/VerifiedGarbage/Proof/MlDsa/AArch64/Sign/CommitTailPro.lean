@@ -35,21 +35,21 @@ theorem saveV_ok {s : State}
       ∀i<k,t.mem.read (s.gpr .x3+BitVec.ofNat 64 (16*i)) 16=s.v (vreg (8+i)))
     (fun k t hk ht => ?_) 8 (Nat.le_refl _) s
     ⟨RegKeep.refl _ _,rfl,Frame.refl _ _,fun _ h => by omega⟩
-  refine wp_strq ⟨by omega,by omega⟩ (by rw [ht.1.gpr .x3 (by simp)])
+  refine wp_strq ⟨by omega_using [],by omega_using [hk]⟩ (by rw [ht.1.gpr .x3 (by simp)])
     (by rw [ht.1.wr]; exact hout k hk) fun u hu => WP.block_nil_iff.mpr ?_
   have hm : u.mem=t.mem.write (s.gpr .x3+BitVec.ofNat 64 (16*k)) 16 (s.v (vreg (8+k))) := by
     rw [hu.mem,ht.2.1]
   refine ⟨(ht.1.trans (RegKeep.vmem hu)).mono (by simp),hu.v.trans ht.2.1,?_,?_⟩
   · rw [hm]
     exact ht.2.2.1.write (r:=⟨s.gpr .x3,128⟩) (by simp) _
-      (Offset.contains_base _ (by omega) (by omega))
+      (Offset.contains_base _ (by omega_using [hk]) (by omega_using [hk]))
   · intro i hi
     rw [hm]
     by_cases he : i=k
     · subst i; exact read_write16 _ _ _
     · rw [Mem.read_write_sep (Offset.sep (s.gpr .x3) (d:=16*i) (n:=16) (e:=16*k) (k:=16)
-        (by omega) (by omega) (by omega)) (by decide)]
-      exact ht.2.2.2 i (by omega)
+        (by omega_using [he]) (by omega_using [hk, hi]) (by omega_using [hk])) (by decide)]
+      exact ht.2.2.2 i (by omega_using [hi, he])
 
 end VG.Proof.MlDsa.AArch64.Sign.CommitTail
 
@@ -77,7 +77,7 @@ theorem saveG_ok {s : State}
       ∀i<k,t.mem.readW (s.gpr .x3+BitVec.ofNat 64 (128+8*i)) 64=s.gpr saved[i]!)
     (fun k t hk ht => ?_) 4 (Nat.le_refl _) s
     ⟨RegKeep.refl _ _,rfl,Frame.refl _ _,fun _ h => by omega⟩
-  refine wp_str ⟨by omega,by omega⟩ (by rw [ht.1.gpr .x3 (by simp)])
+  refine wp_str ⟨by omega_using [],by omega_using [hk]⟩ (by rw [ht.1.gpr .x3 (by simp)])
     (by rw [ht.1.wr]; exact hout k hk) fun u hu => WP.block_nil_iff.mpr ?_
   have hm : u.mem=t.mem.writeW (s.gpr .x3+BitVec.ofNat 64 (128+8*k)) (s.gpr saved[k]!) := by
     rw [hu.mem,ht.1.gpr _ (by simp)]
@@ -85,14 +85,14 @@ theorem saveG_ok {s : State}
   · rw [hm]
     exact ht.2.2.1.writeW (r:=⟨s.gpr .x3+128,32⟩) (by simp) _
       (Offset.contains (s.gpr .x3) (d:=128+8*k) (e:=128) (n:=8) (k:=32)
-        (by omega) (by omega) (by decide))
+        (by omega_using []) (by omega_using [hk]) (by decide))
   · intro i hi
     rw [hm]
     by_cases he : i=k
     · subst i; rw [Mem.readW_writeW_self64]
     · rw [Mem.readW_writeW_sep (Offset.sep (s.gpr .x3) (d:=128+8*i) (n:=8) (e:=128+8*k) (k:=8)
-        (by omega) (by omega) (by omega)) (by decide)]
-      exact ht.2.2.2 i (by omega)
+        (by omega_using [he]) (by omega_using [hk, hi]) (by omega_using [hk])) (by decide)]
+      exact ht.2.2.2 i (by omega_using [hi, he])
 
 end VG.Proof.MlDsa.AArch64.Sign.CommitTail
 
@@ -132,7 +132,7 @@ theorem pro_ok {s : State}
   have hsaved : Saved s b.mem := by
     refine ⟨?_,?_⟩
     · intro i hi
-      rw [hfb.read (r:=⟨s.gpr .x3,128⟩) (Offset.contains_base _ (by omega) (by omega))
+      rw [hfb.read (r:=⟨s.gpr .x3,128⟩) (Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi]))
         (by
           intro r hr
           rcases List.mem_singleton.mp hr with rfl

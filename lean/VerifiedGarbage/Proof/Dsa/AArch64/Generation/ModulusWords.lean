@@ -18,20 +18,20 @@ theorem ModulusReady.of_words {s t : State} {B : Addr} {Z w N : Nat}
   have hw := h.ws.w1
   have fixed (a : Nat) (ha : a < 16) : wv t.mem B (slot w a) w = wv s.mem B (slot w a) w := by
     have hb := h.ws.sl ha
-    exact wv_congr fun i hi => hm _ (by omega)
+    exact wv_congr fun i hi => hm _ (by omega_using [hb, hi])
   refine ⟨⟨h.ws.scr.congr hwr, h0,
-    (hm _ (by simp only [sW]; omega)).trans h.ws.hw,
-    (hm _ (by simp only [sStride, sFn]; omega)).trans h.ws.hS,
-    fun j hj => (hm _ (by simp only [sArr]; omega)).trans (h.ws.harr j hj),
+    (hm _ (by simp only [sW]; omega_using [h256])).trans h.ws.hw,
+    (hm _ (by simp only [sStride, sFn]; omega_using [h256])).trans h.ws.hS,
+    fun j hj => (hm _ (by simp only [sArr]; omega_using [h256, hj])).trans (h.ws.harr j hj),
     h.ws.hZ, h.ws.w1, h.ws.w2⟩, ?_, (fixed aN (by decide)).trans h.modulus,
     (fixed aOne (by decide)).trans h.one, (fixed aR2 (by decide)).trans h.r2,
     (fixed aR1 (by decide)).trans h.r1, (fixed aRm1 (by decide)).trans h.rm1, ⟨?_, ?_⟩⟩
-  · rw [hm _ (by have := h.ws.sl (show aN < 16 by decide); omega),
-      hm _ (by simp only [sMinv]; omega)]
+  · rw [hm _ (by have := h.ws.sl (show aN < 16 by decide); omega_using [this]),
+      hm _ (by simp only [sMinv]; omega_using [h256])]
     exact h.inverse
   · have he : wv t.mem B (slot w aE) w = wv s.mem B (slot w aE) w :=
-      wv_congr fun i hi => hm _ (by omega)
+      wv_congr fun i hi => hm _ (by omega_using [hEZ, hi])
     exact he.trans h.exponent.e
-  · exact (hm (slot w aE + 8 * w) (by omega)).trans h.exponent.l
+  · exact (hm (slot w aE + 8 * w) (by omega_using [hEZ])).trans h.exponent.l
 
 end VG.Proof.Dsa.AArch64.Generation

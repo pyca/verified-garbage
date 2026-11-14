@@ -30,15 +30,15 @@ theorem head_ok (s : State) {p : Inputs} {slots : List Nat}
   have ctxFit := environment.fit
   have words : 3 ≤ p.cachedWords := by
     rw [environment.canonical.1, Spec.Ffdh.generationPrecomputedWords]
-    omega
+    omega_using []
   have addr52 : State.addr (s.sp + BitVec.ofNat 32 52) = off (State.addr s.sp) 52 :=
-    VG.Arm.addr_add (by have := h.locals.space.nowrap; omega)
+    VG.Arm.addr_add (by have := h.locals.space.nowrap; omega_using [this])
   have addr8 : State.addr (p.cachedContext + BitVec.ofNat 32 8) = off (State.addr p.cachedContext) 8 :=
-    VG.Arm.addr_add (by have := environment.fit; omega)
+    VG.Arm.addr_add (by have := environment.fit; omega_using [ctxFit, words])
   have read0 : InRegions (s.rd ++ s.wr) (State.addr p.cachedContext) 4 := by
-    simpa only [BitVec.add_zero] using CallLay.inRegions_sub (off := 0) environment.readable (by omega) (by omega)
+    simpa only [BitVec.add_zero] using CallLay.inRegions_sub (off := 0) environment.readable (by omega_using [words]) (by omega_using [ctxFit])
   have read8 : InRegions (s.rd ++ s.wr) (off (State.addr p.cachedContext) 8) 4 :=
-    CallLay.inRegions_sub environment.readable (by omega) (by omega)
+    CallLay.inRegions_sub environment.readable (by omega_using [words]) (by omega_using [ctxFit])
   have n := environment.header32 0 (by decide)
   have width := environment.header32 1 (by decide)
   simp only [List.getD_cons_zero, BitVec.ofNat_eq_ofNat, Nat.mul_zero, BitVec.add_zero] at n

@@ -107,9 +107,9 @@ theorem r2P_ctX (M : Mont) : RelCT isa (Two (SX R3)) (seqs (r2At M.mm sWsP)) (Tw
   have hk2 := h.k2
   have hpl2 := h.pl2
   have hZq := h.z
-  exact ⟨minv, hr.nv, minv, mp, _, hr.good, by dsimp only [CrtPub.w]; omega, by dsimp only [CrtPub.w]; omega,
-    Nat.le_refl _, by dsimp only [CrtPub.w] at *; unfold offQ at hZq; unfold offP; omega,
-    by dsimp only; unfold wsWords; omega, wsWords_le (by dsimp only [CrtPub.w]; omega) (by dsimp only [CrtPub.w]; omega),
+  exact ⟨minv, hr.nv, minv, mp, _, hr.good, by dsimp only [CrtPub.w]; omega_using [hk1], by dsimp only [CrtPub.w]; omega_using [hk2],
+    Nat.le_refl _, by dsimp only [CrtPub.w] at *; unfold offQ at hZq; unfold offP; omega_using [hZq],
+    by dsimp only; unfold wsWords; omega_using [], wsWords_le (by dsimp only [CrtPub.w]; omega_using [hpl2]) (by dsimp only [CrtPub.w]; omega_using [hk1]),
     by decide, hr.wsP, hr.pws, hr.pxv, hP'.1, hP'.2⟩
 
 /-- `R_q² mod q`. -/
@@ -125,9 +125,9 @@ theorem r2Q_ctX (M : Mont) : RelCT isa (Two (SX RM)) (seqs (r2At M.mm sWsQ)) (Tw
   have hk2 := h.k2
   have hql2 := h.ql2
   have hZq := h.z
-  exact ⟨minv, hr.nv, minv, mq, _, hr.good, by dsimp only [CrtPub.w]; omega, by dsimp only [CrtPub.w]; omega,
-    by dsimp only; unfold offQ; omega, hZq,
-    by dsimp only; unfold wsWords; omega, wsWords_le (by dsimp only [CrtPub.w]; omega) (by dsimp only [CrtPub.w]; omega),
+  exact ⟨minv, hr.nv, minv, mq, _, hr.good, by dsimp only [CrtPub.w]; omega_using [hk1], by dsimp only [CrtPub.w]; omega_using [hk2],
+    by dsimp only; unfold offQ; omega_using [], hZq,
+    by dsimp only; unfold wsWords; omega_using [], wsWords_le (by dsimp only [CrtPub.w]; omega_using [hql2]) (by dsimp only [CrtPub.w]; omega_using [hk1]),
     by decide, hr.wsQ, hr.qws, hr.qxv, hQ'.1, hQ'.2⟩
 
 /-- `out`. -/
@@ -141,7 +141,7 @@ theorem out_ctX : RelCT isa (Two (SX RD)) (seqs out) fun _ _ => True := by
   have hpl2 := h.pl2
   have hql2 := h.ql2
   have hZq := h.z
-  have hP8 : 256 ≤ slot (wsWords q.c.pl) 8 := by unfold slot hdrBytes; omega
+  have hP8 : 256 ≤ slot (wsWords q.c.pl) 8 := by unfold slot hdrBytes; omega_using []
   have hout : word t.mem q.c.B (8 * sOut) = q.c.op := (hr.hfix sOut (by decide) (by decide)).trans h.hO
   have hwr' : (⟨q.c.op, q.L8⟩ : Region) ∈ t.wr := by rw [hr.keep.2.2]; exact hwr
   refine ⟨minv, mp, mq, hr.good, hout, hr.wsP, hr.wsQ, hr.pws, hr.qws, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_,
@@ -150,7 +150,7 @@ theorem out_ctX : RelCT isa (Two (SX RD)) (seqs out) fun _ _ => True := by
   all_goals try unfold offQ at *
   all_goals try unfold offP at *
   all_goals try unfold wsWords at *
-  all_goals omega
+  all_goals omega_arith
 
 /-- `main` leaks the same in runs that agree on the public data. -/
 theorem main_ct (M : Mont) : RelCT isa (Two (SX R0)) (PrivPre.main M.mm) fun _ _ => True := by

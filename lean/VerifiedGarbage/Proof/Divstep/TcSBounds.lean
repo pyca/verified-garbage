@@ -90,7 +90,7 @@ theorem invRunS_done {N B : Nat} (hN : N ≤ 62) {p m u : Nat} (hp : p % 2 = 1)
     have hxu : x ≡ (u : Int) [ZMOD p] := by
       rw [hx]; unfold Rsa.Divstep.oddInput
       split
-      · push_cast; exact Int.modEq_iff_dvd.mpr ⟨-1, by omega⟩
+      · push_cast; exact Int.modEq_iff_dvd.mpr ⟨-1, by omega_using []⟩
       · rw [Nat.add_zero]
     have hS' : (invRunS N p m x B).f ≡ (u : Int) * (invRunS N p m x B).a * 2 ^ ((64 - N) * B) [ZMOD p] :=
       hS.trans ((hxu.mul_right _).mul_right _)

@@ -50,9 +50,9 @@ theorem attemptEntry_ok {p : PConstructPlan} {H : Spec.Mgf1.Hash} {W : Nat → B
     have hn := ha ⟨p.hash.F, frameBytes⟩ (by simp)
     change ¬ ofs p.hash.F a < frameBytes at hn
     unfold frameBytes at hn
-    omega
+    omega_using [hn]
   have hqmax : p.qb.length < 2 ^ 64 := by
-    rw [p.qLength]; rcases p.hash.width with hh | hh <;> omega
+    rw [p.qLength]; rcases p.hash.width with hh | hh <;> omega_using [hh]
   refine ⟨⟨⟨Lt, ⟨V, ?_⟩, h.hashArgs.congr kt.rd kt.wr rfl rfl,
       (fun i hi => by rw [kt.rd, kt.wr]; exact h.seedRead i hi),
       (fun i hi => by rw [kt.wr]; exact h.wrappedWrite i hi),
@@ -66,6 +66,6 @@ theorem attemptEntry_ok {p : PConstructPlan} {H : Spec.Mgf1.Hash} {W : Nat → B
   · rw [h.words]; exact Rt
   · rw [VG.Proof.Dsa.Generation.frame_bytesAt ff (by
       intro r hr; rcases List.mem_singleton.mp hr with rfl; exact h.seedFrame)
-      (by rcases p.hash.width with hh | hh <;> omega), h.seed]
+      (by rcases p.hash.width with hh | hh <;> omega_using [hh]), h.seed]
 
 end VG.Proof.Dsa.AArch64.Generation

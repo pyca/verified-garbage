@@ -26,13 +26,13 @@ theorem addStep_ok {s : State} {base : Addr} (hs : Scr s base) {a b i : Nat}
         (BitVec.ofNat 32 (limbs s.mem base a i + limbs s.mem base b i)) ∧ Keeps fclob s t := by
   have ha' : a + 112 ≤ 3584 := ha
   have hb' : b + 112 ≤ 3584 := hb
-  refine loadP_ok hs hpa (by omega) (by omega) fun t ht => ?_
+  refine loadP_ok hs hpa (by omega_using [hi]) (by omega_using [hi, ha']) fun t ht => ?_
   have ts := hs.of_upd ht (by decide) (by decide)
-  refine loadP_ok ts (hpb.of_upd ht (by decide) (by decide)) (by omega) (by omega) fun u hu => ?_
+  refine loadP_ok ts (hpb.of_upd ht (by decide) (by decide)) (by omega_using [hi]) (by omega_using [hi, hb']) fun u hu => ?_
   have us := ts.of_upd hu (by decide) (by decide)
   refine wp_dp (op2_reg _ _) fun v hv => ?_
   have vs := us.of_upd hv (by decide) (by decide)
-  refine store_ok vs (by simp only [TMP]; omega) fun w hw => WP.block_nil ⟨?_, ?_⟩
+  refine store_ok vs (by simp only [TMP]; omega_using [hi]) fun w hw => WP.block_nil ⟨?_, ?_⟩
   · rw [hw.mem, hv.mem, hu.mem, ht.mem, hv.gpr]
     change s.mem.writeW _ (u.gpr .r3 + u.gpr .r2) = _
     rw [hu.other .r3 (by decide), ht.gpr, hu.gpr, ht.mem]
@@ -102,7 +102,7 @@ theorem add_ok {s : State} {base : Addr} (hs : Scr s base) {o a b : Nat}
     have h2 := bb i hi
     change limbs s.mem base a i + limbs s.mem base b i ≤ _
     simp only [radix] at h1 h2 ⊢
-    omega
+    omega_using [h1, h2]
   refine WP.mono (columns_normalize hs hpo ho fb (columns_ok hs (by decide : .r0 ∉ fclob ∧ .r6 ∉ fclob) fb ?_))
     fun t ⟨tk, tm, tb, tv⟩ => ⟨tk, tm, tb, ?_⟩
   · intro i hi t ts tm tk

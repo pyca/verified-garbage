@@ -17,5 +17,5 @@ theorem outs_cover {base : Addr} {rs rs' : List (Nat × Nat)} {m m' : Mem}
   intro r hr
   obtain ⟨t, ht, lo, hi⟩ := cover r hr
   have := hx t ht
-  omega
+  omega_using [lo, hi, this]
 end VG.Proof.Rsa

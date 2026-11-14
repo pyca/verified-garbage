@@ -79,7 +79,7 @@ theorem front_C1 {d : FD} {s : State} (h : C0 d s) : WP isa (.block (Impl.Miller
   generalize hZd : (s.gpr .r4).toNat * 8 = Z at hdis hnw
   generalize hwd : wOf s.mem B = w at hspace h4 h128 hinv
   have hZ : slot w 28 ≤ Z := by
-    rw [← hZd]; change slot w 28 ≤ 8 * (s.gpr .r4).toNat at hspace; omega
+    rw [← hZd]; change slot w 28 ≤ 8 * (s.gpr .r4).toNat at hspace; omega_using [hspace]
   have hs : Scr s B Z := Scr.of_mem (by rw [hwr, ← hBd, ← hZd]; simp) hnw
   have h0 := slot_lt (w := w) (show 0 < 28 by decide)
   have h0' : slot w 0 = 256 := by simp [slot, Impl.Bignum.hdrBytes]
@@ -87,13 +87,13 @@ theorem front_C1 {d : FD} {s : State} (h : C0 d s) : WP isa (.block (Impl.Miller
   refine WP.mono (Save.save_ok s hsin) fun s₁ hS => ?_
   have hout₁ := frame_outside (B := B) (Z := Z) hS.frame hdis
   have wd₁ : ∀ {d}, d + 8 ≤ Z → s₁.mem.readW (off B d) 64 = s.mem.readW (off B d) 64 :=
-    fun hd => hout₁.word (by omega) (by omega)
+    fun hd => hout₁.word (by omega_using [hd]) (by omega_using [hnw, hd])
   refine WP.mono (setup_ok (hs.congr hS.keep.wr) (by rw [hS.keep.gpr .r3 (by decide), hBd])
-    (by rw [wd₁ (by omega), ← hwd]; simp [wOf, VG.Proof.Rsa.Mont.wordAt, Proof.Rsa.Mont.wWord])
+    (by rw [wd₁ (by omega_using [hZ, h0, h0']), ← hwd]; simp [wOf, VG.Proof.Rsa.Mont.wordAt, Proof.Rsa.Mont.wWord])
     h4 h128 hZ (by
       rw [w32_eq_mod, w32_eq_mod]
       simp only [VG.Proof.Bignum.word]
-      rw [wd₁ (by omega), wd₁ (by omega)]
+      rw [wd₁ (by omega_using [hZ, h0]), wd₁ (by omega_using [hZ, h0, h0'])]
       exact VG.Proof.Bignum.Minv32.minv_low hinv)) fun s₂ ⟨⟨hm2, _⟩, k2⟩ => ?_
   exact ⟨hm2.h10, hm2.h11, hm2.h29, hm2.h31, (k2.gpr .r21 (by decide)).trans hS.r21⟩
 

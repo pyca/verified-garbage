@@ -72,13 +72,13 @@ theorem tw_readW (m : Mem) (Q : Addr) :
 theorem add_self (x : BitVec 64) : x + x = x <<< 1 := by
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_add, BitVec.toNat_shiftLeft, Nat.shiftLeft_eq]
-  omega
+  omega_using []
 
 theorem carry_self (x : BitVec 64) : decide (2 ^ 64 ≤ x.toNat + x.toNat) = x.msb := by
   rw [BitVec.msb_eq_decide]
   have := x.isLt
   simp only [decide_eq_decide]
-  omega
+  omega_using []
 
 theorem carry_self_c (x : BitVec 64) (c : Bool) :
     decide (2 ^ 64 ≤ x.toNat + x.toNat + c.toNat) = x.msb := by
@@ -86,7 +86,7 @@ theorem carry_self_c (x : BitVec 64) (c : Bool) :
   have := x.isLt
   have := c.toNat_le
   simp only [decide_eq_decide]
-  omega
+  omega_using [this]
 
 theorem shl_add_bit (x : BitVec 64) (c : Bool) :
     (x <<< 1) + (BitVec.ofBool c).setWidth 64 = (x <<< 1) ||| (if c then (1 : BitVec 64) else 0) := by
@@ -95,7 +95,7 @@ theorem shl_add_bit (x : BitVec 64) (c : Bool) :
   · apply BitVec.add_eq_or_of_and_eq_zero
     ext i hi
     simp
-    omega
+    omega_using []
 
 theorem mask_87 (x : BitVec 64) (c : Bool) :
     (x - x - (BitVec.ofBool c).setWidth 64) &&& BitVec.signExtend 64 (135 : BitVec 32) =

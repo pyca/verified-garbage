@@ -331,7 +331,7 @@ theorem all_ct : RelCT isa (fun a b => a = s₁ ∧ b = s₂) K.decaps fun _ _ =
           · exact pieceD hp h (.inr rfl) (by simp) (by show oMsg < 32768; decide)
               (by show (32 : Nat) < 32768; decide) (by show 0 < 32; decide) (by ddecide)
           · exact pieceD hp h (.inl rfl) (by simp)
-              (by show 768 * K.k + 32 < 32768; have := hK.k4; omega)
+              (by show 768 * K.k + 32 < 32768; have := hK.k4; omega_using [this])
               (by show (32 : Nat) < 32768; decide) (by show 0 < 32; decide) (by ddecide))
         (fun hp h p hp' => by
           rw [List.mem_singleton] at hp'; subst hp'
@@ -361,10 +361,10 @@ theorem all_ct : RelCT isa (fun a b => a = s₁ ∧ b = s₂) K.decaps fun _ _ =
           simp only [List.mem_cons, List.not_mem_nil, or_false] at hp'
           rcases hp' with rfl | rfl
           · exact pieceD hp h (.inl rfl) (by simp)
-              (by show 768 * K.k + 64 < 32768; have := hK.k4; omega)
+              (by show 768 * K.k + 64 < 32768; have := hK.k4; omega_using [this])
               (by show (32 : Nat) < 32768; decide) (by show 0 < 32; decide) (by ddecide)
           · exact pieceD hp h (.inr rfl) (by simp) (by show oCin < 32768; decide)
-              (by show K.ctLen < 32768; have := ct_le hK; omega) (ct_pos hK) (by ddecide))
+              (by show K.ctLen < 32768; have := ct_le hK; omega_using [this]) (ct_pos hK) (by ddecide))
         (fun hp h p hp' => by
           rw [List.mem_singleton] at hp'; subst hp'
           exact pieceD hp h (.inr rfl) (fun _ => rfl) (by show oKbar < 32768; decide)

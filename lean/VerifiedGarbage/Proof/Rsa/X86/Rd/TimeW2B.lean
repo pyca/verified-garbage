@@ -115,7 +115,7 @@ variable {g : Geo} {s : State} {n a c : Nat}
 theorem dw1_ok (h : DX g n a sC4 (4 * c) s) (ha1 : a ≤ 1024) (hc0 : 0 < c) (hc : c < wq a) :
     WP isa (seqs dw1) s (DWM g n a c) := by
   obtain ⟨⟨ha, hw⟩, s0, A, AW, V, h, hd, h1, hz, hn, hNW⟩ := h
-  have cW : c < g.W := by simp only [Geo.W, VG.Impl.Rsa.X86.Recover.wide]; simp only [Geo.w] at hw; omega
+  have cW : c < g.W := by simp only [Geo.W, VG.Impl.Rsa.X86.Recover.wide]; simp only [Geo.w] at hw; omega_using [hc, hw]
   simp only [seqs]
   refine WP.seq (WP.mono (h.orTopD (h.mlen ha ha1) (by simp) (by simp) hd hc0 (Nat.le_of_lt hc) hw)
     fun t₁ ⟨h₁, _⟩ => ?_)
@@ -131,14 +131,14 @@ theorem dw1_ok (h : DX g n a sC4 (4 * c) s) (ha1 : a ≤ 1024) (hc0 : 0 < c) (hc
 
 theorem dw2_ok (h : DWM g n a c s) (hc : c < wq a) : WP isa (seqs dw2) s (DX g n a sC4 (4 * c)) := by
   obtain ⟨⟨ha, hw⟩, s0, A, AW, V, h, ⟨hb, hd⟩, h1, hz, hn, hNW⟩ := h
-  have cW : c < g.W := by simp only [Geo.W, VG.Impl.Rsa.X86.Recover.wide]; simp only [Geo.w] at hw; omega
+  have cW : c < g.W := by simp only [Geo.W, VG.Impl.Rsa.X86.Recover.wide]; simp only [Geo.w] at hw; omega_using [hc, hw]
   simp only [seqs]
   refine WP.seq (WP.mono (h.moveUp_W (o := wT) (a := wNN) (c := c) (by decide) (by simp) (by decide) cW
     (by simp) hd (by decide)) fun t₅ ⟨h₅, _, _⟩ => ?_)
   refine WP.mono (h₅.sel_W (o := wNN) (a := wNN) (b := wT) (sl := sStg) (by decide) (by simp)
     (by simp) (by simp) hb (.inr (by decide)) (by decide)) fun t ⟨h₆, _⟩ => ?_
-  refine ⟨⟨ha, hw⟩, s0, A, _, _, h₆.mono (fun j hj => ⟨hj, rfl⟩) (fun j hj => ⟨by simp at hj ⊢; omega, rfl⟩)
-    (fun d hd => ⟨by simp at hd ⊢; omega, rfl⟩), hd, h1, hz, hn, ?_⟩
+  refine ⟨⟨ha, hw⟩, s0, A, _, _, h₆.mono (fun j hj => ⟨hj, rfl⟩) (fun j hj => ⟨by simp at hj ⊢; omega_using [hj], rfl⟩)
+    (fun d hd => ⟨by simp at hd ⊢; omega_using [hd], rfl⟩), hd, h1, hz, hn, ?_⟩
   simp only [upd_ne _ _ (show wN ≠ wNN by decide), upd_ne _ _ (show wN ≠ wT by decide), hNW]
 
 end
@@ -166,7 +166,7 @@ theorem c_wHalf : OkK [sC4] (.block halfC4) := ⟨_, by taint_decide⟩
 theorem wordStagesD_rel {g : Geo} (pg : PubG g) {n a : Nat} (ha1 : a ≤ 1024) :
     RelCT isa (Both (D0 g n a))
       (wordStagesL 128 (VG.Impl.Rsa.X86.WordModRt.width4 nl .eax) stageDWH) (Both (D0 g n a)) := by
-  have w4 : 4 * wq a < 2 ^ 32 := by simp only [wq]; omega
+  have w4 : 4 * wq a < 2 ^ 32 := by simp only [wq]; omega_using [ha1]
   have e : wordStagesL 128 (VG.Impl.Rsa.X86.WordModRt.width4 nl .eax) stageDWH =
     wordStagesL (2 ^ 7) (VG.Impl.Rsa.X86.WordModRt.width4 nl .eax) stageDWH := rfl
   rw [e]
@@ -178,7 +178,7 @@ theorem wordStagesD_rel {g : Geo} (pg : PubG g) {n a : Nat} (ha1 : a ≤ 1024) :
     (fun g' s h => let ⟨_, _, _, _, _, P⟩ := h.dvs; P.ws)
     (fun g' s t h k e r => ?_) (fun g' j t _ h => ?_) (fun g' j t _ h is Q k => ?_)
     (fun g' j t u _ h r m => ?_) (fun _ _ _ _ h _ => h) (fun g' j t _ h => ?_)
-    (fun g' j t u hj h k e r => ?_) (fun j _ hl => stageDW_rel pg ha1 (Nat.two_pow_pos j) (by omega))
+    (fun g' j t u hj h k e r => ?_) (fun j _ hl => stageDW_rel pg ha1 (Nat.two_pow_pos j) (by omega_using [hl]))
     c_wInit c_wLim c_wHalf
   · obtain ⟨ga, _, _, _, _, P⟩ := h.dvs
     exact DvS.dx ga (P.reslot k (by decide) (by decide) (by decide) e (r.mono (by decide)))
@@ -231,11 +231,11 @@ theorem db1_ok (h : DX g n a sB b s) (ha1 : a ≤ 1024) (hb : 0 < b) (hb32 : b <
   simp only [S] at fa
   simp only [seqs]
   refine WP.seq (VG.Proof.Rsa.X86.WordRt.topPtr_ok hW (h.mlen ha ha1) (j := wDD) (i := 1) (r := .esi) (t := .edx)
-    (by decide) (by decide) (by decide) (by decide) (by decide) hw1 (by rw [kw_wid]; change wq a ≤ g.W + 2; omega)
+    (by decide) (by decide) (by decide) (by decide) (by decide) hw1 (by rw [kw_wid]; change wq a ≤ g.W + 2; omega_using [hw, wW])
     fun u₁ U₁ m₁ p₁ _ => ?_)
   rw [kw_wid] at p₁
   change PtrAt u₁ g.B .esi (arr g.W wDD + 4 * wq a - 4 * 1) at p₁
-  refine wp_movS (readSrc_ptr (h.rt.rt.of_wr U₁.2.2) p₁ (d := 0) (by omega)) fun u₂ U₂ _ => WP.block_nil ?_
+  refine wp_movS (readSrc_ptr (h.rt.rt.of_wr U₁.2.2) p₁ (d := 0) (by omega_using [hw, fa, wW])) fun u₂ U₂ _ => WP.block_nil ?_
   have h₂ := h.of_rest (rs := opRegs) ((U₁.mono (by decide)).trans (U₂.keeps.mono (by decide)))
     (fun x hx => hx) (by rw [U₂.mem, m₁])
   refine WP.seq (WP.mono (topTest_ok h₂.ws (b := b) (by rw [h₂.sl _ (by simp), hd]) hb hb32)
@@ -276,7 +276,7 @@ theorem upBitsSel_rel {g : Geo} (pg : PubG g) {n a b j : Nat} (hj : j = wDD ∨ 
       (by simp) (by simp) (fun g' s h => ?_) (c_copyT j hj))
     (VG.RelCT.seq (R := Both (DBT g n a b b))
       (relTimesH (S := fun g' => DBC g' n a b) (Fin := fun g' => DBT g' n a b b)
-        (fun g' i => DBT g' n a b i) (fun g' i => DBT g' n a b i) hb (by omega)
+        (fun g' i => DBT g' n a b i) (fun g' i => DBT g' n a b i) hb (by omega_using [hb32])
         (fun _ h => h.p0 pg) (fun _ _ h => h.p0 pg) (fun _ h => h.onView) (fun _ _ h => h.onView)
         (fun g' s h => ?_) (fun g' s t h k e r => ?_) (fun g' i t _ h => ?_) (fun g' i t u _ h k e r => ?_)
         (fun i _ => leafDK (n := n) (a := a) (liveW := [wT, wDD, wNN, wN]) (ls := [sBc, sStg, sB, sLt, sOkDE])
@@ -293,7 +293,7 @@ theorem upBitsSel_rel {g : Geo} (pg : PubG g) {n a b j : Nat} (hj : j = wDD ∨ 
     exact ⟨k.ws, by rw [k.sl _ (by simp), hB]⟩
   · obtain ⟨ga, s0, A, AW, V, hK, ⟨hS, hB⟩, h1, hz, hn, hNW⟩ := h
     exact ⟨ga, s0, A, AW, _, hK.slot1 k (by decide) (r.mono (by decide)) e,
-      ⟨by rw [upd_ne _ _ (by decide)]; exact hS, by rw [upd_ne _ _ (by decide)]; exact hB, by rw [upd_self]; omega⟩,
+      ⟨by rw [upd_ne _ _ (by decide)]; exact hS, by rw [upd_ne _ _ (by decide)]; exact hB, by rw [upd_self]; omega_using []⟩,
       h1, hz, hn, hNW⟩
   · obtain ⟨_, _, _, _, V, k, ⟨_, _, hc⟩, _⟩ := h
     exact ⟨k.ws, by rw [k.sl _ (by simp), hc]⟩
@@ -309,13 +309,13 @@ theorem upBitsSel_rel {g : Geo} (pg : PubG g) {n a b j : Nat} (hj : j = wDD ∨ 
   · obtain ⟨ga, s0, A, AW, V, k, hH, h1, hz, hn, hNW⟩ := h
     refine WP.mono (k.add_W (o := wT) (a := wT) (b := wT) (by decide) (by simp) (by simp) (by decide))
       fun t ⟨kt, _⟩ => ?_
-    exact ⟨ga, s0, A, _, V, kt.mono (fun j hj => ⟨hj, rfl⟩) (fun j hj => ⟨by simp at hj ⊢; omega, rfl⟩)
+    exact ⟨ga, s0, A, _, V, kt.mono (fun j hj => ⟨hj, rfl⟩) (fun j hj => ⟨by simp at hj ⊢; omega_using [hj], rfl⟩)
       (fun d hd => ⟨hd, rfl⟩), hH, h1, hz, hn, by rw [upd_ne _ _ (by decide)]; exact hNW⟩
   · obtain ⟨ga, s0, A, AW, V, k, ⟨hS, hB, _⟩, h1, hz, hn, hNW⟩ := h
     refine WP.mono (k.sel_W (o := j) (a := j) (b := wT) (sl := sStg) (by rcases hj with rfl | rfl <;> decide)
       (by simp [hjW]) (by simp) (by simp) hS (.inr hjT) hl) fun t ⟨kt, _⟩ => ?_
-    exact ⟨ga, s0, A, _, V, kt.mono (fun j hj => ⟨hj, rfl⟩) (fun i hi => ⟨by simp at hi ⊢; omega, rfl⟩)
-      (fun d hd => ⟨by simp at hd ⊢; omega, rfl⟩), ⟨hS, hB⟩, h1, hz, hn, by rw [upd_ne _ _ hjN]; exact hNW⟩
+    exact ⟨ga, s0, A, _, V, kt.mono (fun j hj => ⟨hj, rfl⟩) (fun i hi => ⟨by simp at hi ⊢; omega_using [hi], rfl⟩)
+      (fun d hd => ⟨by simp at hd ⊢; omega_using [hd], rfl⟩), ⟨hS, hB⟩, h1, hz, hn, by rw [upd_ne _ _ hjN]; exact hNW⟩
 
 /-- A bit stage, related. -/
 theorem stageDB_rel {g : Geo} (pg : PubG g) {n a b : Nat} (ha1 : a ≤ 1024) (hb : 0 < b) (hb32 : b < 32)
@@ -349,14 +349,14 @@ theorem bitStagesD_rel {g : Geo} (pg : PubG g) {n a : Nat} (ha1 : a ≤ 1024) (h
   · obtain ⟨ga, s0, A, AW, V, hK, _, h1, hz, hn, hNW⟩ := h
     have P := hK.slot1 k (by decide) r e
     refine ⟨fun hj0 => ⟨ga, s0, A, AW, _, P.mono (fun i hi => ⟨hi, rfl⟩) (fun i hi => ⟨hi, rfl⟩)
-      (fun d hd => ⟨by simp at hd ⊢; omega, rfl⟩), ?_, h1, hz, hn, hNW⟩, fun hj0 => ⟨ga, s0, A, AW, _,
-      P.mono (fun i hi => ⟨hi, rfl⟩) (fun i hi => ⟨hi, rfl⟩) (fun d hd => ⟨by simp at hd ⊢; omega, rfl⟩),
+      (fun d hd => ⟨by simp at hd ⊢; omega_using [hd], rfl⟩), ?_, h1, hz, hn, hNW⟩, fun hj0 => ⟨ga, s0, A, AW, _,
+      P.mono (fun i hi => ⟨hi, rfl⟩) (fun i hi => ⟨hi, rfl⟩) (fun d hd => ⟨by simp at hd ⊢; omega_using [hd], rfl⟩),
       trivial, h1, hz, hn, hNW⟩⟩
     show upd V sB (2 ^ j / 2) sB = 2 ^ (j - 1)
     rw [upd_self, pow_pred hj0, Nat.mul_div_cancel_left _ (by decide)]
   · have : 2 ^ j ≤ 2 ^ 4 := Nat.pow_le_pow_right (by decide) hj
     simp only [Nat.reducePow] at this
-    omega
+    omega_using [this]
 
 /-! ### The start, the division and the end -/
 
@@ -393,7 +393,7 @@ theorem wdqB_ok (h : D0 g n a s) (ha1 : a ≤ 1024) (h4 : 4 ≤ wq a) (hw1 : wq 
     (by decide) (by decide) (by decide) h4 (by rw [kwW]; exact hw1))
     fun t₄ ⟨_, k₄, _, _, _, _, _, K₄⟩ => ?_
   rw [kwW] at k₄
-  have h₃n := h₃m.mono (liveW' := [wN]) (fun j hj => ⟨hj, rfl⟩) (fun j hj => ⟨by simp at hj ⊢; omega, rfl⟩)
+  have h₃n := h₃m.mono (liveW' := [wN]) (fun j hj => ⟨hj, rfl⟩) (fun j hj => ⟨by simp at hj ⊢; omega_using [hj], rfl⟩)
     (fun d hd => ⟨hd, rfl⟩)
   have h₄ : KS g s0 A₃ [aOne1, aZero, aN] (upd (upd AW₃ wNN (num t₄.mem g.B g.W wNN)) wRB
       (num t₄.mem g.B g.W wRB)) [wNN, wRB, wN] V₃ [sLt, sOkDE] t₄ :=
@@ -446,21 +446,21 @@ theorem c_dq4 : OkK [VG.Impl.Rsa.X86.WordModRt.oSteps] dq4 := ⟨_, by taint_dec
 /-- `divB`, related, from its start to its end. -/
 theorem divB_both {g : Geo} (pg : PubG g) {n a : Nat} (ha0 : 64 ≤ a) (ha1 : a ≤ 1024) (haw : wq a ≤ g.w) :
     RelCT isa (Both fun s => GA g a ∧ DA1 g n s) divB (Both (DB1 g n)) := by
-  have h4 : 16 ≤ wq a := by simp only [wq]; omega
-  have hwW : wq a ≤ g.W := by simp only [Geo.W, VG.Impl.Rsa.X86.Recover.wide]; simp only [Geo.w] at haw; omega
+  have h4 : 16 ≤ wq a := by simp only [wq]; omega_using [ha0]
+  have hwW : wq a ≤ g.W := by simp only [Geo.W, VG.Impl.Rsa.X86.Recover.wide]; simp only [Geo.w] at haw; omega_using [haw]
   rw [divB_eq]
   refine relSeqs (leafP (P := fun g' s => GA g' a ∧ DA1 g' n s) (Q := fun g' => D0 g' n a) (fun _ => 0) (by simp)
     (fun s h => let ⟨_, _, _, _, k, _⟩ := h.2; k.pre0 pg)
     (fun s h => let ⟨ga, _, _, _, _, k, r⟩ := h; ⟨ga, _, _, _, _, k.onView, r⟩) (by simp)
     (fun _ _ h => preB_ok h) c_preB) ?_
-  refine VG.RelCT.seq (wordStagesD_rel pg ha1) (VG.RelCT.seq (bitStagesD_rel pg ha1 (by omega))
+  refine VG.RelCT.seq (wordStagesD_rel pg ha1) (VG.RelCT.seq (bitStagesD_rel pg ha1 (by omega_using [h4]))
     (VG.RelCT.seq ?_ (leafDK (n := n) (a := a) (liveW := [wNN, wRB, wN]) (ls := [sLt, sOkDE])
       (H := fun _ => True) (Q := fun g' => DB1 g' n) pg (fun _ => 0) (by simp) (by simp)
       (fun _ _ h => endB_ok h) c_endB)))
   refine relWordDivQ (a := a) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
-    (by decide) (by decide) (by decide) (by omega) (by rw [kw_wid]; exact hwW) (fun _ h => h.p0 pg)
+    (by decide) (by decide) (by decide) (by omega_using [h4]) (by rw [kw_wid]; exact hwW) (fun _ h => h.p0 pg)
     (fun s h => let ⟨⟨ha, _⟩, _, _, _, _, k, _⟩ := h; k.mlen ha ha1)
-    (fun s h => wdqB_ok h ha1 (by omega) hwW) (fun s h => run_of (wdqB_ok h.onView ha1 (by omega) hwW))
+    (fun s h => wdqB_ok h ha1 (by omega_using [h4]) hwW) (fun s h => run_of (wdqB_ok h.onView ha1 (by omega_using [h4]) hwW))
     c_wdqPreB c_dqAB c_dq3B c_dq4
 
 /-- `divB`'s timing (`PLAN.md`, P7c). `n`'s bound is not needed: the stages and steps run their counts

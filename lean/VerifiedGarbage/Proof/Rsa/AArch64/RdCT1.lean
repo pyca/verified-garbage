@@ -206,7 +206,7 @@ theorem copyA_w {o b : Nat} (ho : o < 16) (hb : b < 16) (hob : o ≠ b)
   wsop (by simp only [copyA, List.append_assoc]) ht fun ⟨P, i⟩ s h => h.elim fun I m₀ c e g L _ => by
     subst e
     exact WP.mono (copyA_ok g.ws ho hb hob) fun t ⟨_, o', _, _, k⟩ =>
-      ⟨I, m₀, c, rfl, g.out ho (by omega) o' k (by decide), L, hXY _ s t h o' k⟩
+      ⟨I, m₀, c, rfl, g.out ho (by omega_using []) o' k (by decide), L, hXY _ s t h o' k⟩
 
 theorem setOneA_w {j : Nat} (hj : j < 16)
     (hXY : ∀ a s t, GC w X a s → Outside a.1.B (slot (w a.1.k) j) 8 s.mem t.mem →
@@ -219,9 +219,9 @@ theorem setOneA_w {j : Nat} (hj : j < 16)
     refine WP.mono (setOneA_ok g.ws hj) fun t ⟨hm, k⟩ => ?_
     have hw := g.ws
     have o := writeW_outside s.mem I.B (1 : BitVec 64) (d := slot (w I.k) j)
-      (by have := hw.sl hj; have := hw.scr.nowrap; omega)
+      (by have := hw.sl hj; have := hw.scr.nowrap; omega_arith)
     rw [← hm] at o
-    exact ⟨I, m₀, c, rfl, g.out hj (by omega) o k (by decide), L, hXY _ s t h o k⟩
+    exact ⟨I, m₀, c, rfl, g.out hj (by omega_using []) o k (by decide), L, hXY _ s t h o k⟩
 
 theorem eqA_w {b₁ b₂ : Nat} (h₁ : b₁ < 16) (h₂ : b₂ < 16)
     (hXY : ∀ a s t, GC w X a s → t.mem = s.mem → Keep [.x11, .x12, .x9, .x14, .x16, .x17, .x3, .x4] s t → Y a t)
@@ -282,7 +282,7 @@ theorem subA_w {o b₁ b₂ : Nat} (ho : o < 16) (h₁ : b₁ < 16) (h₂ : b₂
   wsop (by simp only [subA, seqs, List.append_assoc]) ht fun ⟨P, i⟩ s h => h.elim fun I m₀ c e g L _ => by
     subst e
     exact WP.mono (subA_ok g.ws ho h₁ h₂ d₁ d₂) fun t ⟨_, h15, h7, o', k⟩ =>
-      ⟨I, m₀, c, rfl, g.out ho (by omega) o' k (by decide), L, hXY _ s t h o' k ⟨_, h15⟩ h7⟩
+      ⟨I, m₀, c, rfl, g.out ho (by omega_using []) o' k (by decide), L, hXY _ s t h o' k ⟨_, h15⟩ h7⟩
 
 theorem addA_w {o b₁ b₂ : Nat} (ho : o < 16) (h₁ : b₁ < 16) (h₂ : b₂ < 16) (d₁ : o ≠ b₁) (d₂ : o ≠ b₂)
     (h15 : ∀ a s, GC w X a s → ∃ c, s.gpr .x15 = mask c)
@@ -298,7 +298,7 @@ theorem addA_w {o b₁ b₂ : Nat} (ho : o < 16) (h₁ : b₁ < 16) (h₂ : b₂
     exact h.elim fun I m₀ c e g L _ => by
       subst e
       exact WP.mono (addA_ok g.ws ho h₁ h₂ d₁ d₂ hc') fun t ⟨_, _, o', k⟩ =>
-        ⟨I, m₀, c, rfl, g.out ho (by omega) o' k (by decide), L, hXY _ s t h o' k⟩
+        ⟨I, m₀, c, rfl, g.out ho (by omega_using []) o' k (by decide), L, hXY _ s t h o' k⟩
 
 /-- `halfA o a`, with nothing about its result. -/
 theorem halfA_frm {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w) {o a : Nat} (ho : o < 16) (ha : a < 16) :
@@ -312,10 +312,10 @@ theorem halfA_frm {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w) {o a : Nat
   have sp : slot w o = slot w a ∨ slot w a + 8 * (w + 1) ≤ slot w o ∨ slot w o + 8 * w ≤ slot w a := by
     by_cases e : o = a
     · left; rw [e]
-    · right; have := slot_sep (w := w) e; omega
+    · right; have := slot_sep (w := w) e; omega_using [this]
   unfold halfA
   refine WP.seq (WP.mono (pairSet_ok h a o) fun t₁ ⟨⟨h16, h17, h14, m₁⟩, k₁⟩ => ?_)
-  refine WP.mono (shr_ok (h.scr.congr k₁.wr) h16 h17 h14 (by omega) (by omega) (by omega) (by omega) sp)
+  refine WP.mono (shr_ok (h.scr.congr k₁.wr) h16 h17 h14 (by omega_using [hw1]) (by omega_using [hw2]) (by omega_using [so]) (by omega_using [sa]) sp)
     fun t ⟨_, _, o₂, k₂⟩ => ⟨by rw [m₁] at o₂; exact o₂, (k₁.trans k₂).mono (by decide)⟩
 
 theorem halfA_w {o b : Nat} (ho : o < 16) (hb : b < 16)
@@ -328,7 +328,7 @@ theorem halfA_w {o b : Nat} (ho : o < 16) (hb : b < 16)
   wsop (by simp only [halfA, List.append_assoc]) ht fun ⟨P, i⟩ s h => h.elim fun I m₀ c e g L _ => by
     subst e
     exact WP.mono (halfA_frm g.ws ho hb) fun t ⟨o', k⟩ =>
-      ⟨I, m₀, c, rfl, g.out ho (by omega) o' k (by decide), L, hXY _ s t h o' k⟩
+      ⟨I, m₀, c, rfl, g.out ho (by omega_using []) o' k (by decide), L, hXY _ s t h o' k⟩
 
 theorem selA_w {o b : Nat} (ho : o < 16) (hb : b < 16) (hob : o ≠ b)
     (h15 : ∀ a s, GC w X a s → ∃ c, s.gpr .x15 = mask c)
@@ -343,7 +343,7 @@ theorem selA_w {o b : Nat} (ho : o < 16) (hb : b < 16) (hob : o ≠ b)
     exact h.elim fun I m₀ c e g L _ => by
       subst e
       exact WP.mono (selA_ok g.ws ho hb hob hc') fun t ⟨_, o', k⟩ =>
-        ⟨I, m₀, c, rfl, g.out ho (by omega) o' k (by decide), L, hXY _ s t h o' k⟩
+        ⟨I, m₀, c, rfl, g.out ho (by omega_using []) o' k (by decide), L, hXY _ s t h o' k⟩
 
 /-- The carry into `dblA`: from a state `cin` sees, with `x7 = 0` and the
 registers `dblA` does not write before it. -/
@@ -364,7 +364,7 @@ theorem dblA_w {b : Nat} (hb : b < 16) {cin : List Instr} (hcin : ∀ a s, GC w 
     exact h.elim fun I m₀ c e g L _ => by
       subst e
       exact WP.mono (dbl_ok g.ws hb hbc) fun t ⟨_, h7, o', k⟩ =>
-        ⟨I, m₀, c, rfl, g.out hb (by omega) o' k (by decide), L, hXY _ s t h o' k h7⟩
+        ⟨I, m₀, c, rfl, g.out hb (by omega_using []) o' k (by decide), L, hXY _ s t h o' k h7⟩
 
 end ops
 

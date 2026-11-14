@@ -54,7 +54,7 @@ theorem expHead_ok (M : Mont) {s : State} {B : Addr} {Z o w wx : Nat} {minv : Bi
     rw [o3.wv (by unfold Crt.sI sFn at *; omega_arith) (by omega_arith),
       o2.wv (by unfold Crt.sExpLen sFn at *; omega_arith) (by omega_arith),
       o1.wv (by unfold Crt.sExp sFn at *; omega_arith) (by omega_arith)]
-  refine WP.seq (WP.mono (tabBuild_ok M (Q := Q) (x := x) hc₁ hw2 (by omega) hR hxl hxc
+  refine WP.seq (WP.mono (tabBuild_ok M (Q := Q) (x := x) hc₁ hw2 (by omega_using [hwx, hw30]) hR hxl hxc
     (by rw [hYe₁]; exact hyl) (fun hq => by rw [hYe₁]; exact hyc hq))
     fun t₂ ⟨hc₂,ht₂,ye₂,hh₂,f₂,k₂⟩ => ?_)
   refine WP.mono (resetWindow_ok hc₂) fun t₃ ⟨hc₃,ye₃,nb₃,bc₃,f₃,k₃,hh₃⟩ => ?_

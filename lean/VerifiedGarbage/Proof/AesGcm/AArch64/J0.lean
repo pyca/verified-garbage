@@ -39,7 +39,7 @@ theorem inc32_words (a b c d : BitVec 32) : inc32 (a ++ b ++ c ++ d) = a ++ b ++
   have h₁ : (a ++ b ++ c ++ d).extractLsb' 32 96 = a ++ b ++ c := by
     apply BitVec.eq_of_getLsbD_eq; intro i hi
     simp only [BitVec.getLsbD_extractLsb', BitVec.getLsbD_append, hi, decide_true, Bool.true_and]
-    simp only [show ¬ (32 + i < 32) by omega, ite_false, show 32 + i - 32 = i by omega]
+    simp only [show ¬ (32 + i < 32) by omega_using [], ite_false, show 32 + i - 32 = i by omega_using []]
   have h₂ : (a ++ b ++ c ++ d).extractLsb' 0 32 = d := by
     apply BitVec.eq_of_getLsbD_eq; intro i hi
     rw [BitVec.getLsbD_extractLsb', BitVec.getLsbD_append]; simp [hi]
@@ -49,7 +49,7 @@ theorem ww32 (x : BitVec 32) : (x.setWidth 64).setWidth 32 = x := by
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_setWidth]
   have := x.isLt
-  rw [Nat.mod_eq_of_lt (show x.toNat < 2 ^ 64 by omega), Nat.mod_eq_of_lt this]
+  rw [Nat.mod_eq_of_lt (show x.toNat < 2 ^ 64 by omega_using []), Nat.mod_eq_of_lt this]
 
 theorem rev32_eq : AArch64.rev32 = byteRev32 := rfl
 
@@ -76,17 +76,17 @@ theorem j0_split (h : Block) (m : Mem) (Np : Addr) {n : Nat} (hn : n ≠ 12) :
   rw [Proof.Gcm.j0_eq h (by rw [length_bytesAt]; exact hn), length_bytesAt]
   congr 1
   rw [show bytesAt m Np n = bytesAt m Np (16 * (n / 16)) ++ bytesAt m (Np + BitVec.ofNat 64 (16 * (n / 16))) (n % 16)
-      by rw [← bytesAt_add]; congr 1; omega, List.append_assoc,
-    Proof.Gcm.blocks_append (by rw [length_bytesAt]; omega), ghash, Proof.Gcm.ghashFrom_append]
+      by rw [← bytesAt_add]; congr 1; omega_using [], List.append_assoc,
+    Proof.Gcm.blocks_append (by rw [length_bytesAt]; omega_using []), ghash, Proof.Gcm.ghashFrom_append]
   by_cases h0 : n % 16 = 0
   · rw [Proof.Gcm.padLen_of_mod h0]
     simp only [h0, ↓reduceIte]
     rw [show bytesAt m (Np + BitVec.ofNat 64 (16 * (n / 16))) 0 ++ zeros 0 = [] from rfl, Proof.Gcm.blocks_nil]
     rfl
   · simp only [h0, ↓reduceIte]
-    rw [show padLen n = 16 - n % 16 by simp only [padLen]; omega,
+    rw [show padLen n = 16 - n % 16 by simp only [padLen]; omega_using [h0],
       Proof.Gcm.blocks_single (bs := bytesAt m (Np + BitVec.ofNat 64 (16 * (n / 16))) (n % 16) ++ zeros (16 - n % 16))
-        (by rw [List.length_append, length_bytesAt, Proof.Gcm.length_zeros]; omega)]
+        (by rw [List.length_append, length_bytesAt, Proof.Gcm.length_zeros]; omega_using [])]
     rfl
 
 /-- The regions `j0` writes. -/
@@ -303,13 +303,13 @@ theorem j0Seg_ok {k : Reg → BitVec 64} {H : Block} {Np : Addr} {n : Nat} {s : 
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl <;> decide)) sp₁ rd₁ wr₁
   have fz : Frame [⟨St, 16⟩] s.mem s₁.mem := by rw [hm₁]; exact Proof.Cmac.frame_store2 _ _ _
-  have hdw := hd.take (k := 16 * (n / 16)) (by omega)
+  have hdw := hd.take (k := 16 * (n / 16)) (by omega_using [])
   refine ⟨he₁, h.kept.of_others og, x23₁, x25₁, hd.of_eq rd₁ wr₁, ?_, ?_, ?_, fz⟩
   · rw [blockAt_frame fz fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
       simpa using L.ctx_st (a := 240) (n := 16) (d := 0) (k := 16) (by decide) (by decide), h.hH]
   · rw [add_ofNat_zero, blockAt, hm₁, Proof.Cmac.bytesAt_store2, Proof.Cmac.le8_zero]; decide
-  · exact ghCall_of L (yo := 0) (.inl rfl) he₁ x0₁ x1₁ x2₁ x3₁ x4₁ (by have := hdw.lt; omega)
+  · exact ghCall_of L (yo := 0) (.inl rfl) he₁ x0₁ x1₁ x2₁ x3₁ x4₁ (by have := hdw.lt; omega_using [hlt])
       (by simpa using (hdw.st.sub_right (Lay.stSub (d := 0) (n := 16) (by decide))).symm)
       (hdw.w.sub_right (Lay.wSub (by decide))) (by rw [rd₁, wr₁]; exact hdw.rd)
 
@@ -328,13 +328,13 @@ theorem j0Call1_ok (v : GcmImpl) {k : Reg → BitVec 64} {H : Block} {Np : Addr}
     rcases hr with rfl | rfl
     · exact hd.st.sub_right (Lay.stSub (by decide))
     · exact hd.w.sub_right (Lay.wSub (by decide))
-  have hiv : bytesAt s.mem Np n = bytesAt m₀ Np n := bytesAt_frame h.frame dD (by have := hd.lt; omega)
+  have hiv : bytesAt s.mem Np n = bytesAt m₀ Np n := bytesAt_frame h.frame dD (by have := hd.lt; omega_using [this])
   refine ⟨g.env h.env, h.kept.of_saved g.saved, by rw [g.saved _ (by decide) (by decide), h.x23],
     by rw [g.saved _ (by decide) (by decide), h.x25], hd.of_eq g.rd g.wr, by rw [hH_gh L (.inl rfl) g, h.hH], ?_,
-    by rw [bytesAt_frame g.frame dD' (by have := hd.lt; omega), hiv], ?_⟩
+    by rw [bytesAt_frame g.frame dD' (by have := hd.lt; omega_using [this]), hiv], ?_⟩
   · rw [g.out, h.y0, h.hH, Proof.Gcm.blocksAt_eq]
     have e := congrArg (List.take (16 * (n / 16))) hiv
-    rw [bytesAt_take _ _ (by omega), bytesAt_take _ _ (by omega)] at e
+    rw [bytesAt_take _ _ (by omega_using []), bytesAt_take _ _ (by omega_using [])] at e
     rw [e]; rfl
   · refine (st_j0Frame (W := W) (d := 0) (k := 16) (by simpa using h.frame) (by decide)).trans
       (g.frame.sub fun r hr => ?_)
@@ -354,8 +354,8 @@ theorem j0hash_ok (v : GcmImpl) {k : Reg → BitVec 64} {H : Block} {Np : Addr} 
   have k27 : k .x27 = 0 := by rw [← h.kept .x27 (by decide), h.x27]
   refine WP.seq (WP.mono (j0Seg_ok L h) fun s₁ h₁ =>
     WP.seq (WP.mono (j0Call1_ok L v h₁) fun s₂ h₂ => ?_))
-  have hdr := h₂.data.drop (k := 16 * (n / 16)) (by omega)
-  rw [show n - 16 * (n / 16) = n % 16 by omega] at hdr
+  have hdr := h₂.data.drop (k := 16 * (n / 16)) (by omega_using [])
+  rw [show n - 16 * (n / 16) = n % 16 by omega_using []] at hdr
   refine WP.seq (WP.mono (padSeg_ok L (yo := 0) (.inl rfl) (P := Np + BitVec.ofNat 64 (16 * (n / 16)))
     h₂.env h₂.kept h₂.x25 (Nat.mod_lt _ (by decide))
     (by refine ⟨_, by arun [], ?_⟩; exact ⟨by simp [gpr_write, h₂.x23], ⟨by others_tac, rfl, rfl, rfl, rfl⟩⟩)
@@ -371,7 +371,7 @@ theorem j0hash_ok (v : GcmImpl) {k : Reg → BitVec 64} {H : Block} {Np : Addr} 
   have hP : bytesAt s₂.mem (Np + BitVec.ofNat 64 (16 * (n / 16))) (n % 16) =
       bytesAt s.mem (Np + BitVec.ofNat 64 (16 * (n / 16))) (n % 16) := by
     have e := congrArg (List.drop (16 * (n / 16))) h₂.iv
-    rw [bytesAt_drop _ _ (by omega), bytesAt_drop _ _ (by omega), show n - 16 * (n / 16) = n % 16 by omega] at e
+    rw [bytesAt_drop _ _ (by omega_using []), bytesAt_drop _ _ (by omega_using []), show n - 16 * (n / 16) = n % 16 by omega_using []] at e
     exact e
   refine ⟨h₆.env, h₆.kept, by rw [blockAt_frame h₆.frame (ctx_tFrame L (.inl rfl)), hH₄], ?_, ?_⟩
   · rw [← add_ofNat_zero St, h₆.out, h₄.out, hH₄, hH₂, a₄, b₄, h₂.y, hP, j0_split H s.mem Np hn]

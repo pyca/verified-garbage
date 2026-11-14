@@ -138,7 +138,7 @@ theorem decrypt_wp {c : Cx} {s : State} (Ar : Args c s) (hA : Ads c s.mem s) :
   · rw [m₁₃, u₁₂.mem, m₁₁, m₁₀, hV, hT, hP]
     have key : ∀ xs : List Byte, xs.length = c.n → bytesAt (writeBytes s₉.mem c.D xs) c.D c.n = xs := by
       intro xs hx
-      have := Proof.AesCcm.bytesAt_writeBytes_base s₉.mem c.D xs (n := c.n) (by omega) hn
+      have := Proof.AesCcm.bytesAt_writeBytes_base s₉.mem c.D xs (n := c.n) (by omega_using [hx]) hn
       rwa [hx, List.drop_eq_nil_of_le (by rw [Proof.Cmac.bytesAt_length]), List.append_nil] at this
     exact key _ (by rw [List.length_map, ← hP, Proof.Cmac.bytesAt_length])
 

@@ -59,7 +59,7 @@ theorem loadByte_ok {s₀ t : State} {j : Nat} (h : ScanAt j s₀ t) (hj : j < (
     WP isa (.block [.ldrb .r0 .r1 0]) t (ScanLoaded j s₀) := by
   obtain ⟨hr, S⟩ := h
   have hb := S.bytes
-  have hl : 0 < ((rQBytes s₀).drop j).length := by rw [List.length_drop]; omega
+  have hl : 0 < ((rQBytes s₀).drop j).length := by rw [List.length_drop]; omega_using [hj]
   refine wp_ldrb (a := State.addr (rQ s₀ + BitVec.ofNat 32 j) + BitVec.ofNat 64 0) (by decide)
     (by rw [BitVec.add_zero, S.r1, BitVec.add_zero]) (hb.rd 0 hl) fun u v => WP.block_nil ?_
   have hv := hb.val 0 hl
@@ -79,9 +79,9 @@ theorem scanStep_ok {s₀ t : State} (A : RandomABI s₀) {j : Nat} (h : ScanAt 
   obtain ⟨b, rest, hbr⟩ : ∃ b rest, (rQBytes s₀).drop j = b :: rest :=
     ⟨_, _, List.drop_eq_getElem_cons hj⟩
   have hrl : rest.length + 1 = (rQBytes s₀).length - j := by
-    have := congrArg List.length hbr; simp only [List.length_drop, List.length_cons] at this; omega
+    have := congrArg List.length hbr; simp only [List.length_drop, List.length_cons] at this; omega_using [this]
   rw [hbr] at S
-  refine WP.mono (significantByte_ok S (by omega)) fun u ⟨S', z, m, k⟩ => ?_
+  refine WP.mono (significantByte_ok S (by omega_using [hql, hrl])) fun u ⟨S', z, m, k⟩ => ?_
   have hb : b = (rQBytes s₀).getD j 0 := by
     rw [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem hj]
     have := congrArg List.head? hbr
@@ -93,8 +93,8 @@ theorem scanStep_ok {s₀ t : State} (A : RandomABI s₀) {j : Nat} (h : ScanAt 
   refine ⟨?_, hr.congr k (by rw [m]; exact Frame.refl _ _), ?_⟩
   · rw [eval_ne, z]
     by_cases h0 : rest.length = 0
-    · rw [decide_eq_true h0, decide_eq_false (by omega)]; rfl
-    · rw [decide_eq_false h0, decide_eq_true (by omega)]; rfl
+    · rw [decide_eq_true h0, decide_eq_false (by omega_using [hrl, h0])]; rfl
+    · rw [decide_eq_false h0, decide_eq_true (by omega_using [hrl, h0])]; rfl
   · rw [hd, show rQ s₀ + BitVec.ofNat 32 (j + 1) = rQ s₀ + BitVec.ofNat 32 j + 1 by
       rw [BitVec.add_assoc, BitVec.ofNat_add]; rfl]
     show ScanState u _ rest (scanNext (scanAfter (rQBytes s₀) j) ((rQBytes s₀).length - j)

@@ -143,9 +143,9 @@ theorem inv_step {out : Nat → BitVec 32} {s₀ : State} (hp : Pre s₀) {i : N
   have fF := hp.fitF
   have fG := hp.fitG
   have eF : State.addr (pf s₀ + BitVec.ofNat 32 (4 * i) + BitVec.ofNat 32 0) = coeffAddr (F s₀) i :=
-    addr_ptr _ _ _ (by omega)
+    addr_ptr _ _ _ (by omega_using [hi, fF])
   have eG : State.addr (pg s₀ + BitVec.ofNat 32 (4 * i) + BitVec.ofNat 32 0) = coeffAddr (G s₀) i :=
-    addr_ptr _ _ _ (by omega)
+    addr_ptr _ _ _ (by omega_using [hi, fG])
   have cF := coeff_contains (F s₀) (i := i) hi
   have cG := coeff_contains (G s₀) (i := i) hi
   refine WP.mono (hb h.r0 h.r1 h.r2 ?_ ?_ ?_) fun s' ⟨r0, r1, r2, z, m, rd, wr, sp, pres⟩ => ⟨⟨?_, ?_, ?_,
@@ -164,8 +164,8 @@ theorem inv_step {out : Nat → BitVec 32} {s₀ : State} (hp : Pre s₀) {i : N
     · subst hij; simp
     · rw [ite_eq_right hij]
       by_cases hj' : j < i
-      · rw [ite_eq_left hj', ite_eq_left (by omega)]
-      · rw [ite_eq_right hj', ite_eq_right (by omega)]
+      · rw [ite_eq_left hj', ite_eq_left (by omega_using [hj'])]
+      · rw [ite_eq_right hj', ite_eq_right (by omega_using [hij, hj'])]
   · rw [z]; exact count_z (k := 1) hi (by decide) (by decide)
 
 /-- The whole loop. -/
@@ -202,7 +202,7 @@ theorem reads {out : Nat → BitVec 32} {s₀ : State} (hp : Pre s₀) {i : Nat}
       s.mem.readW (State.addr (y + BitVec.ofNat 32 0)) 32 = coeffAt s₀.mem (G s₀) i := by
   have fF := hp.fitF
   have fG := hp.fitG
-  rw [← h0, ← h1, h.r0, h.r1, addr_ptr _ _ _ (by omega), addr_ptr _ _ _ (by omega)]
+  rw [← h0, ← h1, h.r0, h.r1, addr_ptr _ _ _ (by omega_using [hi, fF]), addr_ptr _ _ _ (by omega_using [hi, fG])]
   refine ⟨?_, ?_⟩
   · show coeffAt s.mem (F s₀) i = _
     rw [h.coeff i hi, ite_eq_right (Nat.lt_irrefl i)]
@@ -238,7 +238,7 @@ theorem sub_hb {s₀ : State} (hp : Pre s₀) : ∀ i < 256, ∀ s, Inv (subOut 
   refine (?_ : _ = subOut s₀ i) ▸ hs
   refine ofNat_val_eq ?_
   rw [fixS_sub (hp.redF i hi) (hp.redG i hi), sub_get _ _ hi, val_sub', polyAt_val hp.redF hi,
-    polyAt_val hp.redG hi, Nat.add_sub_assoc (by have := hp.redG i hi; omega)]
+    polyAt_val hp.redG hi, Nat.add_sub_assoc (by have := hp.redG i hi; omega_using [this])]
 
 /-- The loop's result: `f` is `out` of each coefficient. -/
 theorem polyIs_of_inv {out : Nat → BitVec 32} {s₀ s : State} {g : Poly}

@@ -26,7 +26,7 @@ theorem lv_slot (s : State) (k b : Nat) :
     lv s k b = ((slotW s (k + b / 2)) >>> (32 * (b % 2))).setWidth 32 := by
   have ha : laneA s k b = wordAddr (s.gpr sb) (k + b / 2) + BitVec.ofNat 64 (4 * (b % 2)) := by
     simp only [laneA, wordAddr, BitVec.add_assoc, BitVec.ofNat_add_ofNat]
-    congr 2; omega
+    congr 2; omega_using []
   rcases Nat.mod_two_eq_zero_or_one b with h | h
   · rw [lv, ha, h, show wordAddr (s.gpr sb) (k + b / 2) + BitVec.ofNat 64 (4 * 0) =
       wordAddr (s.gpr sb) (k + b / 2) by simp, Mem.readW_lo32 (a := wordAddr (s.gpr sb) (k + b / 2)) (v := slotW s (k + b / 2)) rfl]
@@ -55,12 +55,12 @@ theorem swap_check : check (names 64) swapCfg (fun _ => none) swapHalves swapEnv
 theorem ok_of_room {s : State} (h : Room s) {c : Cfg} (hb : c.base = sb) (hs : c.slots ≤ scratchSlots)
     (he : c.exts = 0) : Ok c s where
   slotIn k hk := h.wr (by
-      rw [hb]; exact Offset.contains_base _ (by unfold scratchSlots at hs ⊢; omega)
-        (by unfold scratchSlots at hs; omega))
+      rw [hb]; exact Offset.contains_base _ (by unfold scratchSlots at hs ⊢; omega_using [hs, hk])
+        (by unfold scratchSlots at hs; omega_using [hs, hk]))
   extIn k hk := by omega
   baseAl _ := by rw [hb]; exact h.1
   extAl h0 := by omega
-  slots := by unfold scratchSlots at hs; omega
+  slots := by unfold scratchSlots at hs; omega_using [hs]
   sep _ _ j hj := by omega
 
 theorem swap_writes (r : Reg) (h1 : r ≠ .t0) (h2 : r ≠ .t1) :
@@ -83,21 +83,21 @@ theorem swap_ok {s : State} (h : Room s) :
   have hsl : ∀ k a, k < 104 → e.slot k = some a → slotW s' k = slotW s a := by
     intro k a hk hka
     exact p.rel.slot k a hk hka
-  refine ⟨s', hs', fun w hw b hb => ?_, fun j hj => hsl j j (by omega) (hp.2 j hj), p.rd, p.wr, p.sp,
+  refine ⟨s', hs', fun w hw b hb => ?_, fun j hj => hsl j j (by omega_using [hj]) (hp.2 j hj), p.rd, p.wr, p.sp,
     fun r h1 h2 => p.other r ?_, ?_⟩
   · rw [lv_slot, lv_slot]
     refine congrArg (fun x : BitVec 64 => (x >>> (32 * (b % 2))).setWidth 32) ?_
-    rcases (show w = 0 ∨ w = 1 ∨ w = 2 ∨ w = 3 by omega) with rfl | rfl | rfl | rfl
-    · exact hsl _ _ (by simp [arrSlot]; omega) ((hp.1 (b / 2) (by omega)).1)
-    · rw [show arrSlot 1 + b / 2 = 72 + (8 + b / 2) by simp [arrSlot]; omega,
-        show arrSlot ((1 + 2) % 4) + b / 2 = 88 + (8 + b / 2) by simp [arrSlot]; omega]
-      exact hsl _ _ (by omega) ((hp.1 (8 + b / 2) (by omega)).1)
+    rcases (show w = 0 ∨ w = 1 ∨ w = 2 ∨ w = 3 by omega_using [hw]) with rfl | rfl | rfl | rfl
+    · exact hsl _ _ (by simp [arrSlot]; omega_using [hb]) ((hp.1 (b / 2) (by omega_using [hb])).1)
+    · rw [show arrSlot 1 + b / 2 = 72 + (8 + b / 2) by simp [arrSlot]; omega_using [],
+        show arrSlot ((1 + 2) % 4) + b / 2 = 88 + (8 + b / 2) by simp [arrSlot]; omega_using []]
+      exact hsl _ _ (by omega_using [hb]) ((hp.1 (8 + b / 2) (by omega_using [hb])).1)
     · rw [show arrSlot 2 + b / 2 = 88 + b / 2 by simp [arrSlot],
         show arrSlot ((2 + 2) % 4) + b / 2 = 72 + b / 2 by simp [arrSlot]]
-      exact hsl _ _ (by omega) ((hp.1 (b / 2) (by omega)).2)
-    · rw [show arrSlot 3 + b / 2 = 88 + (8 + b / 2) by simp [arrSlot]; omega,
-        show arrSlot ((3 + 2) % 4) + b / 2 = 72 + (8 + b / 2) by simp [arrSlot]; omega]
-      exact hsl _ _ (by omega) ((hp.1 (8 + b / 2) (by omega)).2)
+      exact hsl _ _ (by omega_using [hb]) ((hp.1 (b / 2) (by omega_using [hb])).2)
+    · rw [show arrSlot 3 + b / 2 = 88 + (8 + b / 2) by simp [arrSlot]; omega_using [],
+        show arrSlot ((3 + 2) % 4) + b / 2 = 72 + (8 + b / 2) by simp [arrSlot]; omega_using []]
+      exact hsl _ _ (by omega_using [hb]) ((hp.1 (8 + b / 2) (by omega_using [hb])).2)
   · rw [swap_writes r h1 h2]; decide
   · have := p.frame
     refine this.sub fun r hr => ?_

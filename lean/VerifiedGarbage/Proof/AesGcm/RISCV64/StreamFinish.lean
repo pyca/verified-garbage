@@ -37,7 +37,7 @@ open VG.Proof.Gcm (Absorbed)
 theorem lensBlock_mod (L c : Nat) : Proof.Gcm.lensBlock (L % 2 ^ 64) c = Proof.Gcm.lensBlock L c := by
   simp only [Proof.Gcm.lensBlock]
   rw [← Proof.Gcm.be64_mod (8 * (L % 2 ^ 64)), ← Proof.Gcm.be64_mod (8 * L)]
-  congr 2; omega
+  congr 2; omega_using []
 
 theorem toNat_of_eq {x : BitVec 64} {L : Nat} (h : x = BitVec.ofNat 64 L) : x.toNat = L % 2 ^ 64 := by
   rw [h, BitVec.toNat_ofNat]
@@ -52,10 +52,10 @@ theorem tagOut_ok {V : Reg → BitVec 64} {sp : Addr} {s : State} (he : Env V sp
   refine WP.mono (Bytes.copyBytes_ok (tmp := .t0) (src := .s0) (dst := .s9) (soff := 0) (doff := 0) (n := 16)
     (by decide) (by decide) (by decide) (by decide) (fun i hi => ?_) (fun i hi => ?_) (fun i hi hc => ?_))
     fun s' c => ⟨?_, ?_, c.gpr, ⟨c.rd, c.wr, c.sp⟩⟩
-  · rw [h31, Nat.zero_add]; exact he.perm.wR (d := i) (n := 1) (by omega)
-  · rw [h20, Nat.zero_add]; exact in_off hTw (d := i) (n := 1) (by omega) (by decide)
+  · rw [h31, Nat.zero_add]; exact he.perm.wR (d := i) (n := 1) (by omega_using [hi])
+  · rw [h20, Nat.zero_add]; exact in_off hTw (d := i) (n := 1) (by omega_using [hi]) (by decide)
   · rw [h20, h31, Nat.zero_add, add_ofNat_zero] at hc
-    exact hTd.symm _ (Offset.contains_base _ (by omega) (by omega)) hc
+    exact hTd.symm _ (Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi])) hc
   · simp only [bytesAt]
     refine List.map_congr_left fun i hi => ?_
     have := c.copied i (List.mem_range.mp hi)
@@ -132,7 +132,7 @@ theorem saved_tagFrame {sp : Addr} (hk : StkOk c st w sp) {o : Nat} (ho : o = 0 
   rcases hr with rfl | rfl | rfl | rfl | rfl
   · simpa using L.saved_st (d := 0) (k := 32) (by decide)
   · exact saved_w (by decide) (.inl (by decide))
-  · exact saved_w (by omega) (.inl (by omega))
+  · exact saved_w (by omega_using [ho]) (.inl (by omega_using [ho]))
   · exact saved_w (by decide) (.inr (by decide))
   · exact saved_below hk
 
@@ -160,7 +160,7 @@ theorem fin_out {s₀ s : State} {m₀ : Mem} {rs : List Region} (hf₀ : Frame 
       (ctxH s₀.mem (s₀.gpr .a0)) (ghashInput a ct) := by
     rw [h30]
     exact hab.congr (blockAt_frame hf₀ (dS (d := 16) (by decide)))
-      (bytesAt_frame hf₀ (dS (d := 32) (k := (ghashInput a ct).length % 16) (by omega)) (by omega))
+      (bytesAt_frame hf₀ (dS (d := 32) (k := (ghashInput a ct).length % 16) (by omega_using [])) (by omega_using []))
   rw [hf.out hab₀,
     h29, ciph_keep hf₀ hdc hR, h30,
     blockAt_frame hf₀ (by simpa using dS (d := 0) (k := 16) (by decide)), hj,

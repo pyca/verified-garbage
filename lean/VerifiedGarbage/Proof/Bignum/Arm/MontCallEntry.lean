@@ -37,7 +37,7 @@ structure CallInput (base : BitVec 32) (len w o a b : Nat) (s : State) : Prop wh
 theorem CallInput.pushed_eq {s : State} {base : BitVec 32} {len w o a b : Nat}
     (h : CallInput base len w o a b s) : WorkspaceEq (State.addr base) (8 * len) s.mem (callPushed s).mem := by
   have nowrap := h.workspace.nowrap
-  exact WorkspaceEq.of_frame (by omega) (FrameStack.pushed_frameA h.stackFit) (by
+  exact WorkspaceEq.of_frame (by omega_using [nowrap]) (FrameStack.pushed_frameA h.stackFit) (by
     intro r hr; simp only [List.mem_singleton] at hr; subst r; exact h.stackWorkspace.symm)
 
 theorem call_entry_ok (s : State) {base : BitVec 32} {len w o a b : Nat}
@@ -59,22 +59,22 @@ theorem call_entry_ok (s : State) {base : BitVec 32} {len w o a b : Nat}
   have fits : arrAt w 8 ≤ 8 * len := h.width ▸ h.layout.2.2.1
   have small : 64 ≤ 8 * len := by
     simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at fits
-    omega
+    omega_using [fits]
   have mFits := array_end_le (w := w) (j := 0) (k := 8) (by decide)
   refine ⟨⟨?_, ?_, ?_, ?_, ?_, ?_, ut.gpr.trans arg, ?_, ?_⟩, ut.mem, ut.rest (by simp)⟩
   · refine ⟨h.workspace.nowrap, ?_⟩
     rw [ut.wr]
     exact List.mem_cons_of_mem _ h.workspace.writable
   · rw [ut.mem]; exact eq.layout h.layout
-  · rw [ut.mem, eq.width (by omega), h.width]
+  · rw [ut.mem, eq.width (by omega_using [small]), h.width]
   · exact (ut.other .r0 (by decide)).trans h.ptr
   · exact (ut.other .r2 (by decide)).trans h.outIndex
   · exact (ut.other .r3 (by decide)).trans h.aIndex
   · rw [ut.mem]
     have modulus : word (callPushed s).mem (State.addr base) (arrAt w 0) =
-        word s.mem (State.addr base) (arrAt w 0) := eq.word (d := arrAt w 0) (bits := 64) (by omega)
+        word s.mem (State.addr base) (arrAt w 0) := eq.word (d := arrAt w 0) (bits := 64) (by omega_using [fits, mFits])
     rw [modulus]
-    have inv := eq.word (d := 56) (bits := 64) (by omega)
+    have inv := eq.word (d := 56) (bits := 64) (by omega_using [small])
     change wordAt (callPushed s).mem (State.addr base) Proof.Rsa.Mont.minvWord =
       wordAt s.mem (State.addr base) Proof.Rsa.Mont.minvWord at inv
     rw [inv]; exact h.inverse

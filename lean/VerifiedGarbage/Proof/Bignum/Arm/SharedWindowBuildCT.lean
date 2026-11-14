@@ -60,7 +60,7 @@ theorem tableBody_ct {M1 M2 x1 x2 j : Nat} (hj : j < 8) (fits : arrAt w 16 ≤ 8
   have op5 : Operand 5 := by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]
   have entryOf (s : State) {M x : Nat} (h : BuildInv base len w M x j s ∧ P s) :
       WP isa (A.op 1 1 5) s (EntryReady base len w j) := by
-    have size : 256 ≤ 8 * len := Nat.le_trans (by simp only [arrAt, Proof.Rsa.Mont.hdrBytes]; omega) h.1.fits
+    have size : 256 ≤ 8 * len := Nat.le_trans (by simp only [arrAt, Proof.Rsa.Mont.hdrBytes]; omega_using []) h.1.fits
     refine WP.mono (A.op_ok s 1 1 5 h.1.power.ready h.2 op1 op1 op5 (by decide)
       (by rw [h.1.power.modulus]; exact h.1.power.inputBound)) ?_
     rintro t ⟨ready, _, _, _, keeps, _, _, _⟩
@@ -83,10 +83,10 @@ theorem tableLoop_ct {M1 M2 x1 x2 : Nat} (fits : arrAt w 16 ≤ 8 * len) :
     intro k s t tr1 tr2 u z h e1 e2
     obtain ⟨j, jk, hk, hj, hs, ht, sp⟩ := h
     have c := relCT_keep_sp (tableBody_ct A ct (M1 := M1) (M2 := M2) (x1 := x1) (x2 := x2)
-      (j := j) (by omega) fits) (fun _ _ h => h.2.2)
+      (j := j) (by omega_using [jk, hk]) fits) (fun _ _ h => h.2.2)
     obtain ⟨trace, sp'⟩ := c s t tr1 tr2 u z ⟨hs, ht, sp⟩ e1 e2
-    obtain ⟨_, _, run1, next1, zero1, _, p1, _, _⟩ := sharedTableBody_ok A s hs.1 hs.2 hj (by omega)
-    obtain ⟨_, _, run2, next2, zero2, _, p2, _, _⟩ := sharedTableBody_ok A t ht.1 ht.2 hj (by omega)
+    obtain ⟨_, _, run1, next1, zero1, _, p1, _, _⟩ := sharedTableBody_ok A s hs.1 hs.2 hj (by omega_using [jk, hk])
+    obtain ⟨_, _, run2, next2, zero2, _, p2, _, _⟩ := sharedTableBody_ok A t ht.1 ht.2 hj (by omega_using [jk, hk])
     obtain ⟨-, rfl⟩ := Exec.det e1 run1
     obtain ⟨-, rfl⟩ := Exec.det e2 run2
     refine ⟨trace, ?_, fun _ => trivial, ?_⟩
@@ -97,7 +97,7 @@ theorem tableLoop_ct {M1 M2 x1 x2 : Nat} (fits : arrAt w 16 ≤ 8 * len) :
         intro last
         change some (!_) = some true at again
         simp only [zero1, last, decide_true, Bool.not_true, Option.some.injEq, Bool.false_eq_true] at again
-      exact ⟨k - 1, by omega, j + 1, by omega, by omega, by omega, ⟨next1, p1⟩, ⟨next2, p2⟩, sp'⟩
+      exact ⟨k - 1, by omega_using [hk], j + 1, by omega_using [jk, hk], by omega_using [jk, hk, notLast], by omega_using [hj], ⟨next1, p1⟩, ⟨next2, p2⟩, sp'⟩
   exact (RelCT.loop I step 6).mono (fun _ _ h => ⟨2, by decide, by decide, by decide, h.1, h.2.1, h.2.2⟩) (fun _ _ h => h)
 
 theorem tableBuild_ct {M1 M2 x1 x2 : Nat} (fits : arrAt w 16 ≤ 8 * len) :

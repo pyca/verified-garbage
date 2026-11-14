@@ -36,7 +36,7 @@ theorem Bs.fwEq {P : RP} {σ s : State} (h : Bs P σ s) {o : Nat} (ho : 4 ≤ o)
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl
   · exact pre.sF.symm.sub_left (Offset.sub_base _ ho')
-  · exact Offset.disjoint_base _ ho (by omega)
+  · exact Offset.disjoint_base _ ho (by omega_using [ho'])
 
 /-- `ldr t, [sp, #o]` of a frame word but word 0. -/
 theorem Bs.ldrSp {P : RP} {σ s : State} (h : Bs P σ s) {o : Nat} (ho : 4 ≤ o) (ho' : o + 4 ≤ 88)
@@ -46,14 +46,14 @@ theorem Bs.ldrSp {P : RP} {σ s : State} (h : Bs P σ s) {o : Nat} (ho : 4 ≤ o
   have pre := h.pre
   have spf := pre.spFit
   have ea : State.addr (s.sp + BitVec.ofNat 32 o) = off (State.addr P.sp) o := by
-    rw [h.sp, pre.sp]; exact addr_add (by omega)
-  refine wp_loadStack (by omega) ea ?_ fun s' u => k s' (by rw [← h.fwEq ho ho']; exact u)
+    rw [h.sp, pre.sp]; exact addr_add (by omega_using [ho', spf])
+  refine wp_loadStack (by omega_using [ho']) ea ?_ fun s' u => k s' (by rw [← h.fwEq ho ho']; exact u)
   rw [h.rd, h.wr]
-  rcases (by omega : o + 4 ≤ 56 ∨ 56 ≤ o) with c | c
+  rcases (by omega_using [h4] : o + 4 ≤ 56 ∨ 56 ≤ o) with c | c
   · exact ⟨⟨State.addr P.sp, 56⟩, List.mem_append_right _ (by rw [pre.wr]; simp),
-      Offset.contains_base _ c (by omega)⟩
-  · have read := CallLay.inRegions_sub pre.rdA (off := o - 56) (l := 4) (by omega) (by decide)
+      Offset.contains_base _ c (by omega_using [ho'])⟩
+  · have read := CallLay.inRegions_sub pre.rdA (off := o - 56) (l := 4) (by omega_using [ho']) (by decide)
     rwa [show off (State.addr P.sp) 56 + BitVec.ofNat 64 (o - 56) = off (State.addr P.sp) o by
-      simp only [off]; rw [Offset.add_add]; congr 2; omega] at read
+      simp only [off]; rw [Offset.add_add]; congr 2; omega_using [c]] at read
 
 end VG.Proof.Rsa.Arm.Recover

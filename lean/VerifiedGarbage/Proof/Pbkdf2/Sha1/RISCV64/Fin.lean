@@ -45,7 +45,7 @@ theorem setWidth_byte (w : Word) {s : Nat} (h : s + 8 ≤ 32) :
     (w.setWidth 64).extractLsb' s 8 = w.extractLsb' s 8 := by
   apply BitVec.eq_of_getLsbD_eq
   intro i hi
-  simp [hi, show s + i < 32 by omega, show s + i < 64 by omega]
+  simp [hi, show s + i < 32 by omega_using [h, hi], show s + i < 64 by omega_using [h, hi]]
 
 /-- A word, as `storeBE 4` stores it. -/
 theorem beBytes_word (w : Word) : beBytes 4 (w.setWidth 64) = wordBytes w := by
@@ -58,8 +58,8 @@ theorem beBytes_word (w : Word) : beBytes 4 (w.setWidth 64) = wordBytes w := by
 theorem digest_getD (x : HashValue) {k i : Nat} (hk : k < 5) (hi : i < 4) :
     (md.digest x).getD (4 * k + i) 0 = (wordBytes x[k]!).getD i 0 := by
   rw [digest_eq, getElem!_pos x k hk]
-  rcases (show k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3 ∨ k = 4 by omega) with rfl | rfl | rfl | rfl | rfl <;>
-  rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 by omega) with rfl | rfl | rfl | rfl <;>
+  rcases (show k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3 ∨ k = 4 by omega_using [hk]) with rfl | rfl | rfl | rfl | rfl <;>
+  rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 by omega_using [hi]) with rfl | rfl | rfl | rfl <;>
   simp [wordBytes]
 
 theorem digest_length (x : HashValue) : (md.digest x).length = 20 := md.digest_length x
@@ -96,18 +96,18 @@ theorem out_ok (s₁ : State) (y : HashValue) (hb : s₁.gpr B = sc s₀) (htp :
   have rd' : s.rd = s₀.rd := h.rd.trans hrd
   have wr' : s.wr = s₀.wr := h.wr.trans hwr
   rw [List.singleton_append]
-  refine wp_lw (a := sc s₀ + BitVec.ofNat 64 (tO + 4 * k)) (by simp only [tO]; omega) (by rw [hb'])
-    (fal s₀ (by simp only [tO]; omega)) (frd hp hz rd' wr' (by simp only [tO]; omega)) fun s₂ u₂ => ?_
+  refine wp_lw (a := sc s₀ + BitVec.ofNat 64 (tO + 4 * k)) (by simp only [tO]; omega_using [hk]) (by rw [hb'])
+    (fal s₀ (by simp only [tO]; omega_using [])) (frd hp hz rd' wr' (by simp only [tO]; omega_using [hk])) fun s₂ u₂ => ?_
   have hv : s₂.gpr T1 = (y[k]!).setWidth 64 := by
-    have e := fw_tR hp hz h.frame (d := tO + 4 * k) (by simp only [tO]; omega)
+    have e := fw_tR hp hz h.frame (d := tO + 4 * k) (by simp only [tO]; omega_using [hk])
     have e' := hy k hk
     simp only [fw] at e e'
     rw [u₂.gpr, e, e']
   have tp₂ : s₂.gpr TP = tp s₀ := by rw [u₂.other _ (by decide), htp']
   refine WP.mono (storeBE_ok (s := s₂) (v := T1) (tmp := KR) (n := TP) (off := 4 * k) (w := 4) (by decide)
-    (by decide) (by decide) (by decide) (by omega) fun j hj => ?_) fun s₃ e₃ => ?_
+    (by decide) (by decide) (by decide) (by omega_using [hk]) fun j hj => ?_) fun s₃ e₃ => ?_
   · rw [u₂.wr, wr', hp.wr, tp₂]
-    exact ⟨tR it s₀, by simp, Offset.contains_base _ (by simp only [it]; omega) (by omega)⟩
+    exact ⟨tR it s₀, by simp, Offset.contains_base _ (by simp only [it]; omega_using [hk, hj]) (by omega_using [hk, hj])⟩
   subst e₃
   have m₃ : (({ s₂ with mem := writeBytes s₂.mem (s₂.gpr TP + BitVec.ofNat 64 (4 * k)) (beBytes 4 (s₂.gpr T1)) } :
       State).write KR (s₂.gpr T1)).mem = writeBytes s.mem (tp s₀ + BitVec.ofNat 64 (4 * k)) (wordBytes y[k]!) := by
@@ -116,18 +116,18 @@ theorem out_ok (s₁ : State) (y : HashValue) (hb : s₁.gpr B = sc s₀) (htp :
   refine ⟨fun j hj => ?_, ?_, fun r h1 h2 => ?_, ?_, ?_, ?_⟩
   · rw [m₃]
     by_cases hin : 4 * k ≤ j ∧ j < 4 * k + 4
-    · obtain ⟨i, rfl⟩ : ∃ i, j = 4 * k + i := ⟨j - 4 * k, by omega⟩
-      rw [← Offset.add_add, writeBytes_at _ _ _ (by rw [wl]; omega) (by rw [wl]; decide),
-        digest_getD y hk (by omega)]
-      simp only [show 4 * k + i < 4 * (k + 1) by omega, ↓reduceIte]
+    · obtain ⟨i, rfl⟩ : ∃ i, j = 4 * k + i := ⟨j - 4 * k, by omega_using [hin]⟩
+      rw [← Offset.add_add, writeBytes_at _ _ _ (by rw [wl]; omega_using [hin]) (by rw [wl]; decide),
+        digest_getD y hk (by omega_using [hin])]
+      simp only [show 4 * k + i < 4 * (k + 1) by omega_using [hin], ↓reduceIte]
     · rw [writeBytes_other _ _ _ (by
-        rw [wl, Offset.lt_iff _ _ (by omega), Mem.sub_ofNat_toNat _ (by omega)]; exact hin), h.bytes j hj]
+        rw [wl, Offset.lt_iff _ _ (by omega_using [hk]), Mem.sub_ofNat_toNat _ (by omega_using [hj])]; exact hin), h.bytes j hj]
       by_cases hjk : j < 4 * k
-      · simp only [hjk, show j < 4 * (k + 1) by omega, ↓reduceIte]
-      · simp only [hjk, show ¬ j < 4 * (k + 1) by omega, ↓reduceIte]
+      · simp only [hjk, show j < 4 * (k + 1) by omega_using [hjk], ↓reduceIte]
+      · simp only [hjk, show ¬ j < 4 * (k + 1) by omega_using [hin, hjk], ↓reduceIte]
   · rw [m₃]
     exact h.frame.trans (VG.WriteBytes.writeBytes_frame _ _ _ (by
-      rw [wl]; exact Offset.contains_base _ (by simp only [it]; omega) (by omega)))
+      rw [wl]; exact Offset.contains_base _ (by simp only [it]; omega_using [hk]) (by omega_using [hk])))
   · rw [RegUpd.gpr_write_of_ne _ _ h2]
     show s₂.gpr r = _
     rw [u₂.other _ h1, h.gpr r h1 h2]
@@ -150,9 +150,9 @@ theorem fin_ok {R : HashValue} {s : State} (h : LI Wi s₀ R 0 s) :
   have sv₁ : Spill.Saved (sc s₀) s₀.gpr saved s₁.mem :=
     h.saved.frame h₁.frame fun q hq r hr => by
       simp only [List.mem_singleton] at hr; subst hr
-      exact hp.t_s.symm.sub_left (sc_sub (by have := hz.fits; have := saved_bound q hq; simp only [it] at *; omega))
+      exact hp.t_s.symm.sub_left (sc_sub (by have := hz.fits; have := saved_bound q hq; simp only [it] at *; omega_arith))
   refine WP.mono (Spill.restore_wp (b := B) (l := saved) (B := sc s₀) sc_al b₁ (by decide) (by decide)
-    (fun q hq => frd hp hz (h₁.rd.trans h.rd) (h₁.wr.trans h.wr) (by have := saved_bound q hq; omega)) sv₁)
+    (fun q hq => frd hp hz (h₁.rd.trans h.rd) (h₁.wr.trans h.wr) (by have := saved_bound q hq; omega_using [this])) sv₁)
     fun s₂ r₂ => ⟨⟨fun r hr => ?_, ?_, ?_⟩, ?_⟩
   · exact r₂.gpr_of (.inl (by revert r; decide))
   · rw [r₂.sp, h₁.sp, h.sp]
@@ -163,7 +163,7 @@ theorem fin_ok {R : HashValue} {s : State} (h : LI Wi s₀ R 0 s) :
     simp only [Spec.Sha256.bytesAt, List.length_map, List.length_range] at h₁'
     simp only [Spec.Sha256.bytesAt, List.getElem_map, List.getElem_range]
     rw [h₁.bytes j h₁']
-    simp only [show j < 4 * 5 by omega, ↓reduceIte, List.getD_eq_getElem?_getD, List.getElem?_eq_getElem h₂',
+    simp only [show j < 4 * 5 by omega_using [h₁'], ↓reduceIte, List.getD_eq_getElem?_getD, List.getElem?_eq_getElem h₂',
       Option.getD_some]
 
 end

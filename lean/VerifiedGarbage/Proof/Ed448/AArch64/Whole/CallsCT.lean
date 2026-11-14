@@ -62,7 +62,7 @@ theorem zeroSt_ct (hV : V.Ok) (hs : ScrOk V d scr) (h₁ : M m₁) (h₂ : M m�
   refine VG.Proof.Ed25519.AArch64.Whole.rel_wp ?_
     (fun _ h => WP.mono (zeroSt_ok hV hs h.1) fun _ hu => ⟨hu.1, trivial⟩)
     (fun _ h => WP.mono (zeroSt_ok hV hs h.1) fun _ hu => ⟨hu.1, trivial⟩)
-  refine (setupS_ct hV h₁ h₂ (args := [(.x15, .loc d 0)]) (by simp) (by simp [srcValid, hd.1]; omega) rfl
+  refine (setupS_ct hV h₁ h₂ (args := [(.x15, .loc d 0)]) (by simp) (by simp [srcValid, hd.1]; omega_using [hd]) rfl
     (by simp [preserved]) ht (fun _ => scr) fun _ hc _ p hp => ?_).seq ?_
   · rw [List.mem_singleton.mp hp, hs.loc hc, BitVec.add_zero]
   · refine RelCT.taint (A := taint) (Taint.ofRegs [.x15]) (fun a b h => ⟨two_sp h, fun r hr => ?_⟩)
@@ -119,7 +119,7 @@ theorem kabs_ct (v : Proof.Sha3.AArch64.Permutation) (hV : V.Ok) (hs : ScrOk V d
       hg (.x3, src) (by simp), hg (.x4, len) (by simp), hg (.x5, .loc d 256) (by simp), hsp⟩)
     (fun hm hc hp => WP.mono (kabs_ok v hV hs hc hvs hvl hvp hrs hrl (hdp hm hc hp) (hn hm hc hp)
       (hq hm hc hp) hql hnl hin dS dK kD) fun _ ⟨hu, _, _, hx⟩ =>
-        ⟨hu, BitVec.eq_of_toNat_eq (by rw [hx, toNat_ofNat64 (by omega)])⟩)
+        ⟨hu, BitVec.eq_of_toNat_eq (by rw [hx, toNat_ofNat64 (by omega_using [])])⟩)
   simp only [absArgs, List.mem_cons, List.not_mem_nil, or_false] at hp'
   rcases hp' with rfl | rfl | rfl | rfl | rfl | rfl
   · exact hq hm hc hp

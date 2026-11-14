@@ -54,7 +54,7 @@ theorem Stage.run {base : Addr} {s t : State} {output len : Nat} (St : Stage bas
     have h₂ := hx (116, 4) (by simp [runRanges])
     have h₃ := hx (256, 15456) (by simp [runRanges])
     simp only at h₁ h₂ h₃
-    rcases hr with rfl | rfl | rfl <;> simp only <;> omega⟩
+    rcases hr with rfl | rfl | rfl <;> simp only <;> omega_arith⟩
 
 theorem Stage.ws {base : Addr} {s t : State} {size output len : Nat} (St : Stage base s t output len)
     (hs : Ws s base size) : Ws t base size :=
@@ -64,20 +64,20 @@ theorem Stage.maskW {base : Addr} {s t : State} {output len : Nat} (St : Stage b
     (ho : 120 ≤ output) : maskW base t = maskW base s :=
   maskW_keep St.mem fun r hr => by
     simp only [arithRanges, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl <;> simp only <;> omega
+    rcases hr with rfl | rfl | rfl <;> simp only <;> omega_arith
 
 theorem Input.stage {base : Addr} {s t : State} {size output l : Nat} {p : Pointer} {len v : Nat}
     (I : Input s base size p len v) (St : Stage base s t output l) (hout : 116 ≤ output)
     (hz : 4960 ≤ size) (hz2 : size ≤ 2 ^ 32) (ho : output + l ≤ size) : Input t base size p len v := by
   have hO : ∀ r ∈ arithRanges ++ [(output, l)], r.1 + r.2 ≤ 64 ∨ 116 ≤ r.1 := fun r hr => by
     simp only [arithRanges, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl <;> simp only <;> omega
+    rcases hr with rfl | rfl | rfl <;> simp only <;> omega_arith
   have hz' : ∀ r ∈ arithRanges ++ [(output, l)], r.1 + r.2 ≤ size := fun r hr => by
     simp only [arithRanges, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl <;> simp only <;> omega
+    rcases hr with rfl | rfl | rfl <;> simp only <;> omega_arith
   have P := pointerValue_keep (St.rest.gpr .r12 (by decide)) St.mem hO I.ok
   refine ⟨I.toReady.keep_rest St.rest (O := St.mem) (hO := hO), by rw [P]; exact I.outside, ?_⟩
-  rw [operand, P, outs_bytes St.mem (by have := I.fits; omega) (fun r hr => by have := hz' r hr; omega)
+  rw [operand, P, outs_bytes St.mem (by have := I.fits; omega_using [this]) (fun r hr => by have := hz' r hr; omega_using [hz2, this])
     (fun r hr => I.outside.sub_right (Offset.sub_base base (hz' r hr)))]
   exact I.value
 
@@ -87,10 +87,10 @@ theorem Input.run {base : Addr} {s t : State} {size : Nat} {p : Pointer} {len v 
   have hO : ∀ r ∈ runRanges, r.1 + r.2 ≤ 64 ∨ 116 ≤ r.1 := by decide
   have hz' : ∀ r ∈ runRanges, r.1 + r.2 ≤ size := fun r hr => by
     simp only [runRanges, List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl | rfl <;> simp only <;> omega
+    rcases hr with rfl | rfl | rfl | rfl <;> simp only <;> omega_using [hz]
   have P := pointerValue_keep (Rn.rest.gpr .r12 (by decide)) Rn.mem hO I.ok
   refine ⟨I.toReady.keep_rest Rn.rest (O := Rn.mem) (hO := hO), by rw [P]; exact I.outside, ?_⟩
-  rw [operand, P, outs_bytes Rn.mem (by have := I.fits; omega) (fun r hr => by have := hz' r hr; omega)
+  rw [operand, P, outs_bytes Rn.mem (by have := I.fits; omega_using [this]) (fun r hr => by have := hz' r hr; omega_using [hz2, this])
     (fun r hr => I.outside.sub_right (Offset.sub_base base (hz' r hr)))]
   exact I.value
 
@@ -106,7 +106,7 @@ abbrev localVal (base : Addr) (s : State) (o len : Nat) : Nat :=
 
 theorem local_addr {s : State} {base : Addr} {size o : Nat} (hs : Ws s base size) (ho : o < size) :
     State.addr (pointerValue base s (.local o)) = off base o := by
-  have := hs.ea (r := .r12) (K := 0) (d := o) (BitVec.add_zero _).symm (by omega)
+  have := hs.ea (r := .r12) (K := 0) (d := o) (BitVec.add_zero _).symm (by omega_using [ho])
   rwa [Nat.zero_add] at this
 
 theorem local_operand {s : State} {base : Addr} {size o len : Nat} (hs : Ws s base size) (ho : o < size) :
@@ -116,30 +116,30 @@ theorem local_operand {s : State} {base : Addr} {size o len : Nat} (hs : Ws s ba
 theorem localReady {s : State} {base : Addr} {size o len : Nat} (hs : Ws s base size) (ho : 4960 ≤ o)
     (hol : o + len < size) (h16 : o < 2 ^ 16) : Ready s base (.local o) len := by
   have nw := hs.nowrap
-  have A := local_addr hs (o := o) (by omega)
+  have A := local_addr hs (o := o) (by omega_using [hol])
   refine ⟨h16, ?_, ?_, ?_⟩
-  · rw [pointerValue, BitVec.toNat_add, BitVec.toNat_ofNat, hs.wb_toNat, Nat.mod_eq_of_lt (by omega : o < 2 ^ 32),
-      Nat.mod_eq_of_lt (by omega)]
-    omega
+  · rw [pointerValue, BitVec.toNat_add, BitVec.toNat_ofNat, hs.wb_toNat, Nat.mod_eq_of_lt (by omega_using [h16] : o < 2 ^ 32),
+      Nat.mod_eq_of_lt (by omega_using [hol, nw])]
+    omega_using [hol, nw]
   · intro e k hek
     rw [A, off, Offset.add_add]
-    exact hs.read (by omega)
+    exact hs.read (by omega_using [hol, hek])
   · rw [A]
-    exact Offset.disjoint_base base ho (by omega)
+    exact Offset.disjoint_base base ho (by omega_using [hol, nw])
 
 theorem Stage.localVal_eq {base : Addr} {s t : State} {output l o len : Nat} (St : Stage base s t output l)
     (ho : 4960 ≤ o) (hb : o + len ≤ 2 ^ 32) (hol : output + l ≤ 2 ^ 32)
     (hsep : o + len ≤ output ∨ output + l ≤ o) : localVal base t o len = localVal base s o len := by
-  rw [Arm.localVal, Arm.localVal, outs_bytes St.mem (by omega)]
+  rw [Arm.localVal, Arm.localVal, outs_bytes St.mem (by omega_using [hb])]
   · intro r hr
     simp only [arithRanges, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl <;> simp only <;> omega
+    rcases hr with rfl | rfl | rfl <;> simp only <;> omega_arith
   · intro r hr
     simp only [arithRanges, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
-    · exact Offset.disjoint base (.inr (by omega)) (by omega) (by omega)
-    · exact Offset.disjoint base (.inr (by omega)) (by omega) (by omega)
-    · exact Offset.disjoint base hsep (by omega) (by omega)
+    · exact Offset.disjoint base (.inr (by omega_using [ho])) (by omega_using [hb]) (by omega_using [])
+    · exact Offset.disjoint base (.inr (by omega_using [ho])) (by omega_using [hb]) (by omega_using [])
+    · exact Offset.disjoint base hsep (by omega_using [hb]) (by omega)
 
 /-- A stored result's value. -/
 theorem localVal_of_bytes {base : Addr} {s : State} {o len v : Nat}
@@ -158,6 +158,6 @@ theorem KeepsLocals.trans {base : Addr} {s t u : State} {lo hi : Nat} (h₁ : Ke
 theorem Stage.keeps {base : Addr} {s t : State} {output l lo hi : Nat} (St : Stage base s t output l)
     (hlo : 4960 ≤ lo) (hhi : hi ≤ 2 ^ 32) (hol : output + l ≤ 2 ^ 32) (hsep : hi ≤ output ∨ output + l ≤ lo) :
     KeepsLocals base s t lo hi :=
-  fun _ _ h h' => St.localVal_eq (by omega) (by omega) hol (by omega)
+  fun _ _ h h' => St.localVal_eq (by omega_using [hlo, h]) (by omega_using [hhi, h']) hol (by omega_using [hsep, h, h'])
 
 end VG.Proof.Dsa.Arm

@@ -22,9 +22,9 @@ theorem nibble_value (a b : BitVec 8) (ha : a.toNat<16) (hb : b.toNat<16) :
   have hmod : (b.toNat <<< 4)%2^8=b.toNat <<< 4 := by
     apply Nat.mod_eq_of_lt
     rw [Nat.shiftLeft_eq]
-    omega
+    omega_using [hb]
   rw [hmod,or_shift_add 4 b.toNat ha]
-  omega
+  omega_using []
 
 /-- Four six-bit coefficients form exactly one 24-bit base-64 integer. -/
 theorem sixWord_value (a b c d : BitVec 8)
@@ -47,14 +47,14 @@ theorem nibble_digits (a b : BitVec 8) (ha : a.toNat<16) (hb : b.toNat<16) :
   apply BitVec.eq_of_toNat_eq
   rw [nibble_value a b ha hb]
   simp only [digits_cons,digits_nil,Nat.mul_zero,Nat.add_zero,BitVec.toNat_ofNat]
-  omega
+  omega_using [ha, hb]
 
 theorem sixWord_digits (a b c d : BitVec 8)
     (ha : a.toNat<64) (hb : b.toNat<64) (hc : c.toNat<64) (hd : d.toNat<64) :
     (sixWord a b c d).toNat=digits 6 [a.toNat,b.toNat,c.toNat,d.toNat] := by
   rw [sixWord_value a b c d ha hb hc hd]
   simp only [digits_cons,digits_nil,Nat.mul_zero,Nat.add_zero]
-  omega
+  omega_using []
 
 
 /-- Extracting a stored byte agrees with the byte of the specification's

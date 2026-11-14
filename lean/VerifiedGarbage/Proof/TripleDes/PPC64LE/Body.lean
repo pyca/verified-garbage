@@ -58,15 +58,15 @@ theorem blockBody_ok (keys : Nat → DesSchedule) (base : Addr) (s : State) (x :
       fun u ⟨hwu, hru, hsu, hpu, hzu⟩ => ?_
     have hdone : desCore (keys (passOf direction m).1) (passOf direction m).2
         (passesDone keys direction x (3 - m)) = passesDone keys direction x (3 - (m - 1)) := by
-      rw [show 3 - (m - 1) = 3 - m + 1 by omega, passesDone, show 3 - (3 - m) = m by omega]
+      rw [show 3 - (m - 1) = 3 - m + 1 by omega_using [hpos, hle], passesDone, show 3 - (3 - m) = m by omega_using [hle]]
     rw [hdone] at hwu
     by_cases hlast : m = 1
     · subst m
       refine Or.inl ⟨by rw [hzu]; rfl, ?_, hru, hst.trans hsu⟩
       rw [blockCore_passesDone]
       exact hwu
-    · refine Or.inr ⟨by rw [hzu]; simp [hlast], m - 1, by omega,
-        ⟨by omega, by omega, hpu, hwu, hru, hst.trans hsu⟩⟩
+    · refine Or.inr ⟨by rw [hzu]; simp [hlast], m - 1, by omega_using [hpos],
+        ⟨by omega_using [hpos, hlast], by omega_using [hle], hpu, hwu, hru, hst.trans hsu⟩⟩
   · exact ⟨(hregs .r14 (by decide)).trans hword.left, (hregs .r15 (by decide)).trans hword.right⟩
 
 end VG.Proof.TripleDes.PPC64LE

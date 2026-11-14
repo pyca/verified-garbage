@@ -47,9 +47,9 @@ theorem posCheck_ok {t : State} (h : Base Sp (vP D) s t) {a : Byte} {pos : Nat} 
   generalize hK : (s.gpr .r4).toNat = kN at hk hk2 ha
   refine wp_add fun t₁ o₁ e₁ => wp_subi fun t₂ o₂ e₂ => ?_
   have a₂ : t₂.gpr .r4 = off (Sp s) (kN - 1) := by
-    rw [e₂, e₁, h.r14, h.pk, ← ofNat_toNat (s.gpr .r4), hK, off_sub _ (by omega) (by omega)]
+    rw [e₂, e₁, h.r14, h.pk, ← ofNat_toNat (s.gpr .r4), hK, off_sub _ (by omega_using [hk]) (by omega_using [hK])]
   refine wp_lbz (a := off (Sp s) (kN - 1)) (by rw [a₂, BitVec.add_zero])
-    (by rw [o₂.rd, o₁.rd, o₂.wr, o₁.wr, h.wr]; exact sc_inR F (by unfold oRsa; omega) _) fun t₃ o₃ e₃ => ?_
+    (by rw [o₂.rd, o₁.rd, o₂.wr, o₁.wr, h.wr]; exact sc_inR F (by unfold oRsa; omega_using [hk2]) _) fun t₃ o₃ e₃ => ?_
   refine wp_li (by decide) fun t₄ o₄ e₄ => wp_xor fun t₅ o₅ e₅ => wp_or fun t₆ o₆ e₆ =>
     wp_sub fun t₇ o₇ e₇ => wp_subi fun t₈ o₈ e₈ => wp_nil ?_
   have k₈ : Only [.r4, .r24, .r3, .r9, .r25] t t₈ :=
@@ -59,7 +59,7 @@ theorem posCheck_ok {t : State} (h : Base Sp (vP D) s t) {a : Byte} {pos : Nat} 
       o₁.get .r9, h9, e₄, o₂.mem, o₁.mem, ← ha]; rfl
   · rw [e₈, e₇, o₆.get .r21, o₅.get .r21, o₄.get .r21, o₃.get .r21, o₂.get .r21, o₁.get .r21, h.pdb, L.hdb,
       o₆.get .r8, o₅.get .r8, o₄.get .r8, o₃.get .r8, o₂.get .r8, o₁.get .r8, h8,
-      Offset.ofNat_sub_ofNat (show pos ≤ dN by omega), Offset.ofNat_sub_ofNat (show 1 ≤ dN - pos by omega)]
+      Offset.ofNat_sub_ofNat (show pos ≤ dN by omega_using [hp]), Offset.ofNat_sub_ofNat (show 1 ≤ dN - pos by omega_using [hp])]
 
 /-- `lenCheck`: for a given salt length, the accumulator with the salt's
 length's difference from it. -/

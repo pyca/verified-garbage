@@ -34,16 +34,16 @@ theorem word_permD8 (m : Mem) (a : Addr) {l i : Nat} (hl : l < 2) (hi : i < 8) :
   have e : ∀ t k, k < 8 → word (m.readW (a + BitVec.ofNat 64 (16 * t)) 128) k =
       m.readW (a + BitVec.ofNat 64 (2 * (8 * t + k))) 16 := fun t k hk => by
     rw [word_readW _ _ hk, BitVec.add_assoc, ← BitVec.ofNat_add]
-    exact congrArg (fun x => m.readW (a + BitVec.ofNat 64 x) 16) (by omega)
+    exact congrArg (fun x => m.readW (a + BitVec.ofNat 64 x) 16) (by omega_using [])
   rcases lane01 hl with rfl | rfl
   · rw [ite_eq_left rfl, word_punpcklqdq (hi := hi)]
     split
-    · rw [e 0 i (by omega)]; exact congrArg (fun x => m.readW (a + BitVec.ofNat 64 x) 16) (by omega)
-    · rw [e 1 (i - 4) (by omega)]; exact congrArg (fun x => m.readW (a + BitVec.ofNat 64 x) 16) (by omega)
+    · rw [e 0 i (by omega_using [hi])]; exact congrArg (fun x => m.readW (a + BitVec.ofNat 64 x) 16) (by omega_arith)
+    · rw [e 1 (i - 4) (by omega_using [hi])]; exact congrArg (fun x => m.readW (a + BitVec.ofNat 64 x) 16) (by omega_arith)
   · rw [ite_eq_right (by decide), word_punpckhqdq (hi := hi)]
     split
-    · rw [e 0 (4 + i) (by omega)]; exact congrArg (fun x => m.readW (a + BitVec.ofNat 64 x) 16) (by omega)
-    · rw [e 1 i hi]; exact congrArg (fun x => m.readW (a + BitVec.ofNat 64 x) 16) (by omega)
+    · rw [e 0 (4 + i) (by omega_arith)]; exact congrArg (fun x => m.readW (a + BitVec.ofNat 64 x) 16) (by omega_arith)
+    · rw [e 1 i hi]; exact congrArg (fun x => m.readW (a + BitVec.ofNat 64 x) 16) (by omega_arith)
 
 /-- `rowLdY16`: the coefficients of block `b` of `F` (`u16`s at `fB + o j`),
 as pairs in `vbase`'s order. -/
@@ -57,9 +57,9 @@ theorem ld16_ok {o : Nat} {fB : Addr} {F : Poly} {b j : Nat} {s : State} (hb : b
   have ad : ∀ t, s.gpr .rsi + BitVec.ofNat 64 (o * j + 32 * t) =
       fB + BitVec.ofNat 64 (o * j) + BitVec.ofNat 64 (64 * b + 32 * t) := fun t => by
     rw [hrsi]; simp only [BitVec.add_assoc, ← BitVec.ofNat_add]
-    exact congrArg (fB + ·) (congrArg _ (by omega))
+    exact congrArg (fB + ·) (congrArg _ (by omega_using []))
   have r : ∀ t < 2, InRegions (s.rd ++ s.wr) (s.gpr .rsi + BitVec.ofNat 64 (o * j + 32 * t)) 32 := fun t ht => by
-    rw [ad]; exact CallLay.inRegions_sub rF (by omega) (by omega)
+    rw [ad]; exact CallLay.inRegions_sub rF (by omega_using [hb, ht]) (by omega_using [])
   simp only [rowLdY16]
   rw [show ∀ (a b c d : Instr), [a, b, c, d] = [a] ++ ([b] ++ ([c] ++ [d])) from fun _ _ _ _ => rfl]
   rw [WP.block_append_iff]
@@ -102,18 +102,18 @@ theorem ld16_ok {o : Nat} {fB : Addr} {F : Poly} {b j : Nat} {s : State} (hb : b
         i).toNat = (F[32 * b + 8 * ((8 * t + i) / 4) + 4 * l + (8 * t + i) % 4]!).val := fun t ht i hi => by
     rw [word_permD8 _ _ hl hi, BitVec.add_assoc, ← BitVec.ofNat_add,
       show 64 * b + 32 * t + 2 * (8 * (i / 4) + 4 * l + i % 4) =
-        2 * (32 * b + 8 * ((8 * t + i) / 4) + 4 * l + (8 * t + i) % 4) by omega,
-      ← coeffAtW16_eq, polyIsW_toNat hF (by rw [n_eq]; omega)]
+        2 * (32 * b + 8 * ((8 * t + i) / 4) + 4 * l + (8 * t + i) % 4) by omega_using [],
+      ← coeffAtW16_eq, polyIsW_toNat hF (by rw [n_eq]; omega_using [hb, hl, ht, hi])]
   rw [X, Y, lane0 0 (by decide), lane0 1 (by decide), lane1 0 (by decide), lane1 1 (by decide)]
   refine ⟨fun i hi => ⟨?_, ?_⟩, fun i hi => ⟨?_, ?_⟩⟩
-  · refine (cw 0 (by decide) (2 * i) (by omega)).trans (congrArg (fun k : Nat => (F[k]!).val) ?_)
-    unfold pairY; omega
-  · refine (cw 0 (by decide) (2 * i + 1) (by omega)).trans (congrArg (fun k : Nat => (F[k]!).val) ?_)
-    unfold pairY; omega
-  · refine (cw 1 (by decide) (2 * i) (by omega)).trans (congrArg (fun k : Nat => (F[k]!).val) ?_)
-    unfold pairY; omega
-  · refine (cw 1 (by decide) (2 * i + 1) (by omega)).trans (congrArg (fun k : Nat => (F[k]!).val) ?_)
-    unfold pairY; omega
+  · refine (cw 0 (by decide) (2 * i) (by omega_using [hi])).trans (congrArg (fun k : Nat => (F[k]!).val) ?_)
+    unfold pairY; omega_using []
+  · refine (cw 0 (by decide) (2 * i + 1) (by omega_using [hi])).trans (congrArg (fun k : Nat => (F[k]!).val) ?_)
+    unfold pairY; omega_using []
+  · refine (cw 1 (by decide) (2 * i) (by omega_using [hi])).trans (congrArg (fun k : Nat => (F[k]!).val) ?_)
+    unfold pairY; omega_using []
+  · refine (cw 1 (by decide) (2 * i + 1) (by omega_using [hi])).trans (congrArg (fun k : Nat => (F[k]!).val) ?_)
+    unfold pairY; omega_using []
 
 /-- The polynomials of `u16`s (`PolyIsW 16`), `o` bytes apart. -/
 def FRep.u16 (o : Nat) : FRep o where

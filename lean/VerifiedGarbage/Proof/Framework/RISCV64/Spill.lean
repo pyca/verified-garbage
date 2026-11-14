@@ -122,14 +122,14 @@ theorem saveMem_frame {l : List (Reg × Nat)} {lo n : Nat} (hl : ∀ p ∈ l, lo
     intro m' h
     have hd := hl (r, d) List.mem_cons_self
     exact ih (fun q hq => hl q (List.mem_cons_of_mem _ hq)) _
-      (h.writeW (List.mem_singleton_self _) _ (Offset.contains B hd.1 (by omega) hn))
+      (h.writeW (List.mem_singleton_self _) _ (Offset.contains B hd.1 (by omega_using [hd]) hn))
 
 /-- The saves write only the slots, within `[B, B + n)`. -/
 theorem saveMem_frame_base {l : List (Reg × Nat)} {n : Nat} (hl : ∀ p ∈ l, p.2 + 8 ≤ n)
     (hn : n < 2 ^ 64) (m : Mem) (B : Addr) (g : Reg → BitVec 64) :
     Frame [⟨B, n⟩] m (saveMem m B g l) := by
   have h := saveMem_frame (lo := 0) (n := n) (fun p hp => ⟨Nat.zero_le _, by
-    have := hl p hp; omega⟩) (by omega) m B g
+    have := hl p hp; omega_using [this]⟩) (by omega_using [hn]) m B g
   rwa [show B + BitVec.ofNat 64 0 = B from BitVec.add_zero B] at h
 
 theorem Saved.sub {B : Addr} {g : Reg → BitVec 64} {l l' : List (Reg × Nat)} {m : Mem}
@@ -156,7 +156,7 @@ theorem al8 {B : Addr} (hB : B.toNat % 8 = 0) {d : Nat} (hd : d % 8 = 0) :
     (B + BitVec.ofNat 64 d).toNat % 8 = 0 := by
   rw [BitVec.toNat_add, BitVec.toNat_ofNat]
   have := B.isLt
-  omega
+  omega_using [hB, hd]
 
 /-! ## Saving -/
 

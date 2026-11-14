@@ -40,7 +40,7 @@ theorem ebx_at {e x : BitVec 32} {len j : Nat} (h : x + BitVec.ofNat 32 (4 * j) 
   apply BitVec.eq_of_toNat_eq
   have := x.isLt; have := e.isLt
   simp only [BitVec.toNat_add, BitVec.toNat_ofNat] at h' ⊢
-  omega
+  omega_using [hj, h']
 
 /-- `[ebx]`, at `e` bytes into the component at `x`. -/
 theorem ea_ebx {t : State} {x : BitVec 32} {e : Nat} (he : t.gpr .ebx = x + BitVec.ofNat 32 e)
@@ -56,7 +56,7 @@ theorem ebx_down {x e : BitVec 32} {j : Nat} (h : x + BitVec.ofNat 32 (4 * j) = 
   apply BitVec.eq_of_toNat_eq
   have := x.isLt
   simp only [BitVec.toNat_add, BitVec.toNat_sub, BitVec.toNat_ofNat]
-  omega
+  omega_using []
 
 /-- Zero words from `[o + 4c]`. -/
 theorem zeroPadInline_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {o c K : Nat}
@@ -70,19 +70,19 @@ theorem zeroPadInline_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base
   | k + 1, hk => by
     have hn := hs.nowrap
     rw [List.range_succ, List.flatMap_append, List.flatMap_singleton]
-    refine WP.block_append (WP.mono (zeroPadInline_ok hs hK k (by omega)) fun s₁ ⟨e₁, k₁, O₁⟩ => ?_)
+    refine WP.block_append (WP.mono (zeroPadInline_ok hs hK k (by omega_using [hk])) fun s₁ ⟨e₁, k₁, O₁⟩ => ?_)
     have hs₁ := hs.of_keeps k₁ (by decide)
     refine wp_movS (v := 0) rfl fun s₂ u₂ _ => ?_
     have hs₂ := hs₁.of_keeps u₂.keeps (by decide)
-    refine wp_storeS (hs₂.ea (d := o + 4 * (c + k)) (by omega)) (hs₂.write (d := o + 4 * (c + k)) (n := 4) (by omega))
+    refine wp_storeS (hs₂.ea (d := o + 4 * (c + k)) (by omega_using [hK, hk])) (hs₂.write (d := o + 4 * (c + k)) (n := 4) (by omega_using [hK, hk]))
       fun s₃ m₃ => WP.block_nil ?_
     have O₂ : Outside base (o + 4 * (c + k)) 4 s₁.mem s₃.mem := by
-      rw [m₃.mem, u₂.mem]; exact writeW32_outside _ _ _ (by omega)
+      rw [m₃.mem, u₂.mem]; exact writeW32_outside _ _ _ (by omega_using [hK, hk, hn])
     refine ⟨fun j hj => ?_, k₁.trans (u₂.keeps.trans (m₃.keeps _)),
-      (O₁.mono (Nat.le_refl _) (by omega)).trans (O₂.mono (by omega) (by omega))⟩
+      (O₁.mono (Nat.le_refl _) (by omega_using [])).trans (O₂.mono (by omega_using []) (by omega_using []))⟩
     rcases Nat.lt_or_ge j k with h | h
-    · rw [O₂.w32 (by omega) (by omega), e₁ j h]
-    · obtain rfl : j = k := by omega
+    · rw [O₂.w32 (by omega_using [h]) (by omega_using [hK, hk, hn, hj]), e₁ j h]
+    · obtain rfl : j = k := by omega_using [hj, h]
       rw [m₃.mem, u₂.mem, w32_write_self, u₂.gpr]; rfl
 
 theorem zeroPad_ok {s : State} {base : Addr} {size o k : Nat}
@@ -92,20 +92,20 @@ theorem zeroPad_ok {s : State} {base : Addr} {size o k : Nat}
       Keeps [.eax, .ebp, .edx] s t ∧ Outside base o (4 * k) s.mem t.mem := by
   unfold zeroPad
   split
-  · have H := zeroPadInline_ok hs (o := o) (c := 0) (K := k) (by omega) k (Nat.le_refl _)
+  · have H := zeroPadInline_ok hs (o := o) (c := 0) (K := k) (by omega_using [hz]) k (Nat.le_refl _)
     simp only [Nat.zero_add, Nat.mul_zero, Nat.add_zero] at H
     exact WP.mono H fun _ ⟨V, K, O⟩ => ⟨V, K.mono (by decide), O⟩
-  · refine WP.mono (zerosW_ok hs (by omega) hz) fun t ⟨O, V, K⟩ => ⟨?_, K, O⟩
+  · refine WP.mono (zerosW_ok hs (by omega_arith) hz) fun t ⟨O, V, K⟩ => ⟨?_, K, O⟩
     intro j hj
     have h := val32_append t.mem base o j (k - j)
-    rw [Nat.add_sub_of_le (by omega), V] at h
-    have hk : k - j = (k - j - 1) + 1 := by omega
+    rw [Nat.add_sub_of_le (by omega_using [hj]), V] at h
+    have hk : k - j = (k - j - 1) + 1 := by omega_using [hj]
     rw [hk, val32] at h
     have H : 2 ^ (32 * j) * (w32 t.mem base (o + 4 * j) +
-        2 ^ 32 * val32 t.mem base (o + 4 * j + 4) (k - j - 1)) = 0 := by omega
+        2 ^ 32 * val32 t.mem base (o + 4 * j + 4) (k - j - 1)) = 0 := by omega_using [h]
     rcases Nat.mul_eq_zero.mp H with H | H
     · exact absurd H (Nat.pos_iff_ne_zero.mp (Nat.two_pow_pos _))
-    · omega
+    · omega_using [H]
 
 theorem loadComponent_ok {s : State} {base : Addr} {size len n out : Nat}
     (hs : Scr s base size) (ho : out + 8 * n ≤ size)

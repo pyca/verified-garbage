@@ -31,16 +31,16 @@ theorem generatorRange_ok {s : State} {B pp hp : Addr} {Z w : Nat} {pb hb : List
   refine WP.seq (WP.mono (decrementOdd_ok hv (by decide : 0 < 16) (by rw [vp]; exact hodd))
     fun z ⟨hz, zp, fz, kz⟩ => ?_)
   have zx : wv z.mem B (slot w 1) w = Spec.Rsa.os2ip hb := by
-    rw [fz.wv (Or.inr (by simp only [slot, hdrBytes]; omega))
-      (by have := h.sl (by decide : 1 < 16); have := h.scr.nowrap; omega), vx]
-  refine WP.mono (VG.Proof.Dsa.X86_64.rangeMask_ok hz.good.1 hz.good.2 h.w1 (by have := h.w2; omega) true)
+    rw [fz.wv (Or.inr (by simp only [slot, hdrBytes]; omega_using []))
+      (by have := h.sl (by decide : 1 < 16); have := h.scr.nowrap; omega_arith), vx]
+  refine WP.mono (VG.Proof.Dsa.X86_64.rangeMask_ok hz.good.1 hz.good.2 h.w1 (by have := h.w2; omega_using [this]) true)
     fun t ⟨htmask, hm, kt⟩ => ?_
   have ht : Ws t B Z w := hz.congr (by rw [hm]; exact Frm.refl B [] _)
     (by simp) kt (by decide)
   refine ⟨?_, ht, ?_, ((kv.trans kz).trans kt).mono (by decide)⟩
   · simpa only [VG.Impl.Bignum.X86_64.Public.aX, VG.Impl.Bignum.X86_64.Public.aN, ite_true, zx, zp, vp] using htmask
   · have fz' : Frm B [ar w 0, ar w 1] v.mem z.mem :=
-      Frm.of_outside (fz.mono (n' := 8 * (w + 2)) (Nat.le_refl _) (by omega)) (by simp [ar])
+      Frm.of_outside (fz.mono (n' := 8 * (w + 2)) (Nat.le_refl _) (by omega_using [])) (by simp [ar])
     rw [hm]
     exact fv.trans fz'
 

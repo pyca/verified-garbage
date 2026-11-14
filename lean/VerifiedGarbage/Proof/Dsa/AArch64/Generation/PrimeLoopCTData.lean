@@ -50,7 +50,7 @@ theorem iteration_public (M : Mont) (K : Kernel) {p : PrimeIterationPublic}
     hcf (fun hshort => ?_) (fun hroom => ?_))
   · have hs : ¬ p.draw.used + p.draw.prime.drawBytes ≤ p.draw.prime.rand.length := by
       simpa only [decide_eq_true_eq, Nat.not_le] using hshort
-    exact WP.seq_iff.mp (WP.mono (loopExhausted_ok hu (by omega)) fun _ ht => by
+    exact WP.seq_iff.mp (WP.mono (loopExhausted_ok hu (by omega_using [hs])) fun _ ht => by
       simpa only [PrimeIterationPublic.continues, decide_eq_false hs, Bool.false_and,
         Bool.false_eq_true, false_implies, and_true] using ht.1)
   · have hr : p.draw.used + p.draw.prime.drawBytes ≤ p.draw.prime.rand.length := by
@@ -117,8 +117,8 @@ theorem primeIteration_transition (M : Mont) (K : Kernel) {len drawBytes : Nat}
     have hsmall : p.nextUniform < 2 ^ 64 := by
       unfold PrimeIterationPublic.nextUniform
       have := hs.counter_bound.2
-      omega
-    have hsmall' : uni' < 2 ^ 64 := by have := hn.counter_bound.2; omega
+      omega_using [hb, this]
+    have hsmall' : uni' < 2 ^ 64 := by have := hn.counter_bound.2; omega_using [this]
     have he : uni' = p.nextUniform := by
       have hh := congrArg BitVec.toNat heq
       simpa only [BitVec.toNat_ofNat, Nat.mod_eq_of_lt hsmall, Nat.mod_eq_of_lt hsmall'] using hh

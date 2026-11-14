@@ -27,24 +27,24 @@ theorem code_ok {s : State} {base : Addr} {size n src out : Nat} (scratch : Scr 
     ∀ i < j, w32 t.mem base (out + 4 * i) =
       if choice then w32 s.mem base (src + 4 * i) / 2 +
         2 ^ 31 * (w32 s.mem base (src + 4 * i + 4) % 2) else w32 s.mem base (src + 4 * i)
-  refine wordLoop_ok P positive (by have := scratch.size_lt; omega)
+  refine wordLoop_ok P positive (by have := scratch.size_lt; omega_using [srcFit, this])
     (fun j t u ⟨K, O, V⟩ ⟨M, rd, wr, regs⟩ =>
       ⟨⟨fun r hr => (regs r (by simp_all) (by simp_all)).trans (K.1 r hr), rd.trans K.2.1, wr.trans K.2.2⟩,
         M ▸ O, M ▸ V⟩)
     ⟨Keeps.refl _ _, Outside.refl _ _ _ _, fun _ h => absurd h (Nat.not_lt_zero _)⟩ ?_ ?_
   · intro j hj t ⟨K, O, V⟩ pointer
     have St := scratch.of_keeps K (by decide)
-    refine WP.mono (step_ok (choice := choice) St pointer (by omega) (by omega) (by rw [K.1 .ecx (by decide)]; exact mask))
+    refine WP.mono (step_ok (choice := choice) St pointer (by omega_using [srcFit, hj]) (by omega_using [outFit, hj]) (by rw [K.1 .ecx (by decide)]; exact mask))
       fun u ⟨Ou, value, Ku⟩ => ?_
     have sameLo : w32 t.mem base (src + 4 * j) = w32 s.mem base (src + 4 * j) :=
-      O.w32 (by rcases sep with h | h | h <;> omega) (by have := scratch.nowrap; omega)
+      O.w32 (by rcases sep with h | h | h <;> omega_arith) (by have := scratch.nowrap; omega_using [srcFit, hj, this])
     have sameHi : w32 t.mem base (src + 4 * j + 4) = w32 s.mem base (src + 4 * j + 4) :=
-      O.w32 (by rcases sep with h | h | h <;> omega) (by have := scratch.nowrap; omega)
-    refine ⟨⟨K.widen Ku, (O.mono (by omega) (by omega)).trans (Ou.mono (by omega) (by omega)), ?_⟩,
+      O.w32 (by rcases sep with h | h | h <;> omega_arith) (by have := scratch.nowrap; omega_using [srcFit, hj, this])
+    refine ⟨⟨K.widen Ku, (O.mono (by omega_using []) (by omega_using [])).trans (Ou.mono (by omega_using []) (by omega_using [])), ?_⟩,
       Ku.1 .ebp (by decide), Ku.1 .edi (by decide)⟩
     intro i hi
     rcases Nat.lt_or_eq_of_le (Nat.le_of_lt_succ hi) with before | rfl
-    · rw [Ou.w32 (by omega) (by have := scratch.nowrap; omega)]
+    · rw [Ou.w32 (by omega_using [before]) (by have := scratch.nowrap; omega_using [outFit, hj, hi, this])]
       exact V i before
     · rw [value, sameLo, sameHi]
   · intro t ⟨K, O, V⟩
@@ -53,7 +53,7 @@ theorem code_ok {s : State} {base : Addr} {size n src out : Nat} (scratch : Scr 
     · exact val32_congr_at s.mem t.mem base n src out V
     · apply val32_halve_at s.mem t.mem base n src out
       intro i hi
-      rw [V i hi, show src + 4 * i + 4 = src + 4 * (i + 1) by omega]
+      rw [V i hi, show src + 4 * i + 4 = src + 4 * (i + 1) by omega_using []]
       by_cases last : i + 1 = n
       · rw [ite_eq_left last, last, top]
         rfl

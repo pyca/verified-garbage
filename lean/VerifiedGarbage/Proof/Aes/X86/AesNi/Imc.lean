@@ -64,32 +64,32 @@ include hs
 
 theorem ImcSetup.schIn {j : Nat} (hj : j ≤ 14) :
     InRegions (s₀.rd ++ s₀.wr) (addr (s₀.gpr .eax) (16 * j)) 16 :=
-  in_reg hs.sch hs.fitS (by omega) (by decide)
+  in_reg hs.sch hs.fitS (by omega_using [hj]) (by decide)
 
 theorem ImcSetup.scrIn {o : Nat} (ho : o + 16 ≤ 240) :
     InRegions s₀.wr (addr (s₀.gpr .edx) o) 16 :=
-  in_reg hs.scr hs.fitB (by omega) (by decide)
+  in_reg hs.scr hs.fitB (by omega_using [ho]) (by decide)
 
 /-- Writes to bytes 16 … 239 of the scratch buffer leave the schedule. -/
 theorem ImcSetup.sched {m m' : Mem} (hf : Frame [⟨addr (s₀.gpr .edx) 16, 224⟩] m m') {j : Nat} (hj : j ≤ 14) :
     m'.readW (addr (s₀.gpr .eax) (16 * j)) 128 = m.readW (addr (s₀.gpr .eax) (16 * j)) 128 :=
-  hf.readW (reg_contains hs.fitS (by omega) (by decide))
+  hf.readW (reg_contains hs.fitS (by omega_using [hj]) (by decide))
     (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
-      exact hs.sep.sub_right (part_sub_reg hs.fitB (by omega))) (by decide)
+      exact hs.sep.sub_right (part_sub_reg hs.fitB (by omega_using []))) (by decide)
 
 theorem ImcSetup.frameIn {m m' : Mem} {o : Nat} (ho₁ : 16 ≤ o) (ho : o + 16 ≤ 240) (v : BitVec 128)
     (hf : Frame [⟨addr (s₀.gpr .edx) 16, 224⟩] m m') :
     Frame [⟨addr (s₀.gpr .edx) 16, 224⟩] m (m'.writeW (addr (s₀.gpr .edx) o) v) :=
   hf.writeW (List.mem_singleton_self _) _
-    (part_contains hs.fitB (by omega) ho₁ (by omega) (by decide))
+    (part_contains hs.fitB (by omega_using []) ho₁ (by omega_using [ho]) (by decide))
 
 theorem imcKey_ok {S : List Nat} {s : State} (hI : ImcInv s₀ S s) {j : Nat} (hj1 : 1 ≤ j) (hj : j ≤ 13) :
     WP isa (.block (imcKey j)) s (ImcInv s₀ (j :: S)) := by
   have hin : InRegions (s.rd ++ s.wr) (s.ea (at_ .eax (16 * j))) 16 := by
-    rw [hI.rd, hI.wr, ea_at, hI.gpr]; exact hs.schIn (by omega)
+    rw [hI.rd, hI.wr, ea_at, hI.gpr]; exact hs.schIn (by omega_using [hj])
   have hout : InRegions s.wr (s.ea (at_ .edx (16 * j))) 16 := by
-    rw [hI.wr, ea_at, hI.gpr]; exact hs.scrIn (by omega)
+    rw [hI.wr, ea_at, hI.gpr]; exact hs.scrIn (by omega_using [hj])
   have ek : s.ea (at_ .eax (16 * j)) = addr (s₀.gpr .eax) (16 * j) := by rw [ea_at, hI.gpr]
   have es : s.ea (at_ .edx (16 * j)) = addr (s₀.gpr .edx) (16 * j) := by rw [ea_at, hI.gpr]
   apply WP.of_runBlock
@@ -99,19 +99,19 @@ theorem imcKey_ok {S : List Nat} {s : State} (hI : ImcInv s₀ S s) {j : Nat} (h
   rw [ek, es]
   refine ⟨hI.gpr, hI.rd, hI.wr, fun r hr => by simp only [xmm_setXmm, hr, ite_false]; exact hI.xmm r hr, ?_, fun j' hj' => ?_,
     fun j' hj' => ?_⟩
-  · exact hs.frameIn (by omega) (by omega) _ hI.frame
+  · exact hs.frameIn (by omega_using [hj1]) (by omega_using [hj]) _ hI.frame
   · rcases List.mem_cons.mp hj' with rfl | hj'
     · exact hj
     · exact hI.le j' hj'
-  · rw [hs.sched hI.frame (by omega)]
+  · rw [hs.sched hI.frame (by omega_using [hj])]
     rcases List.mem_cons.mp hj' with rfl | hj'
     · rw [Mem.readW_writeW_self _ _ 16 _ (by decide)]
     · by_cases he : j' = j
       · subst he; rw [Mem.readW_writeW_self _ _ 16 _ (by decide)]
       · have h13 := hI.le j' hj'
         rw [Mem.readW_writeW_sep (by
-            rw [addr_eq (by have := hs.fitB; omega), addr_eq (by have := hs.fitB; omega)]
-            exact Offset.sep _ (by omega) (by omega) (by omega)) (by decide), hI.keys j' hj']
+            rw [addr_eq (by have := hs.fitB; omega_using [h13, this]), addr_eq (by have := hs.fitB; omega_using [hj, this])]
+            exact Offset.sep _ (by omega_using [he]) (by omega_using [h13]) (by omega_using [hj])) (by decide), hI.keys j' hj']
 
 /-- Some round keys through `aesimc`, those of `js`. -/
 theorem imcRun_ok (js : List Nat) (hjs : ∀ j ∈ js, 1 ≤ j ∧ j ≤ 13) {S : List Nat} {s : State}
@@ -137,7 +137,7 @@ theorem copyLast_ok {S : List Nat} {s : State} (hI : ImcInv s₀ S s) {nr : Nat}
   have hin : InRegions (s.rd ++ s.wr) (s.ea (at_ .eax (16 * nr))) 16 := by
     rw [hI.rd, hI.wr, ea_at, hI.gpr]; exact hs.schIn hnr
   have hout : InRegions s.wr (s.ea (at_ .edx 224)) 16 := by
-    rw [hI.wr, ea_at, hI.gpr]; exact hs.scrIn (by omega)
+    rw [hI.wr, ea_at, hI.gpr]; exact hs.scrIn (by omega_using [])
   have ek : s.ea (at_ .eax (16 * nr)) = addr (s₀.gpr .eax) (16 * nr) := by rw [ea_at, hI.gpr]
   have es : s.ea (at_ .edx 224) = addr (s₀.gpr .edx) 224 := by rw [ea_at, hI.gpr]
   apply WP.of_runBlock
@@ -145,12 +145,12 @@ theorem copyLast_ok {S : List Nat} {s : State} (hI : ImcInv s₀ S s) {nr : Nat}
     isa, State.load128, State.store128, ea_setXmm, gpr_setXmm, mem_setXmm, rd_setXmm, wr_setXmm,
     xmm_setXmm, hin, hout, Option.map_some, Option.some.injEq, exists_eq_left']
   rw [ek, es]
-  refine ⟨⟨hI.gpr, hI.rd, hI.wr, fun r hr => by simp only [xmm_setXmm, hr, ite_false]; exact hI.xmm r hr, hs.frameIn (by omega) (by omega) _ hI.frame,
+  refine ⟨⟨hI.gpr, hI.rd, hI.wr, fun r hr => by simp only [xmm_setXmm, hr, ite_false]; exact hI.xmm r hr, hs.frameIn (by omega_using []) (by omega_using []) _ hI.frame,
     hI.le, fun j hj => ?_⟩, ?_⟩
   · have h13 := hI.le j hj
     rw [Mem.readW_writeW_sep (by
-        rw [addr_eq (by have := hs.fitB; omega), addr_eq (by have := hs.fitB; omega)]
-        exact Offset.sep _ (by omega) (by omega) (by omega)) (by decide), hI.keys j hj]
+        rw [addr_eq (by have := hs.fitB; omega_using [h13, this]), addr_eq (by have := hs.fitB; omega_using [this])]
+        exact Offset.sep _ (by omega_using [h13]) (by omega_using [h13]) (by omega_using [])) (by decide), hI.keys j hj]
   · rw [Mem.readW_writeW_self _ _ 16 _ (by decide), hs.sched hI.frame hnr]
 
 omit hs in
@@ -172,13 +172,13 @@ theorem imcKeys_ok {nr : Nat} (hnr : nr = 10 ∨ nr = 12 ∨ nr = 14)
     ((List.range 9).map (· + 1)).flatMap imcKey by simp [List.flatMap_map]]
   refine WP.mono (run _ (by decide) (ImcInv.refl s₀)) fun s₁ ⟨S₁, hI₁, hS₁⟩ => ?_
   have h9 : ∀ j, 1 ≤ j → j ≤ 9 → j ∈ S₁ := fun j h1 h2 => hS₁ j (.inl (by
-    simp only [List.mem_map, List.mem_range]; exact ⟨j - 1, by omega, by omega⟩))
+    simp only [List.mem_map, List.mem_range]; exact ⟨j - 1, by omega_using [h2], by omega_using [h1]⟩))
   refine WP.mono (cmpEcx_imc hI₁ 10) fun s₂ ⟨hz₂, hI₂⟩ => ?_
   rw [hc] at hz₂
   rcases hnr with rfl | rfl | rfl
   · refine WP.ite true (by simp [eval, hz₂]) (fun _ => ?_) (fun h => absurd h (by decide))
     exact WP.mono (copyLast_ok hs hI₂ (by decide)) fun s₃ ⟨hI₃, hl₃⟩ =>
-      ⟨S₁, hI₃, fun j h1 h2 => h9 j h1 (by omega), hl₃⟩
+      ⟨S₁, hI₃, fun j h1 h2 => h9 j h1 (by omega_using [h2]), hl₃⟩
   all_goals
     refine WP.ite false (by simp [eval, hz₂]) (fun h => absurd h (by decide)) fun _ => ?_
     refine WP.seq ?_
@@ -187,12 +187,12 @@ theorem imcKeys_ok {nr : Nat} (hnr : nr = 10 ∨ nr = 12 ∨ nr = 14)
     have h11 : ∀ j, 1 ≤ j → j ≤ 11 → j ∈ S₃ := fun j h1 h2 => hS₃ j (by
       by_cases h : j ≤ 9
       · exact .inr (h9 j h1 h)
-      · exact .inl (by simp; omega))
+      · exact .inl (by simp; omega_using [h2, h]))
     refine WP.mono (cmpEcx_imc hI₃ 12) fun s₄ ⟨hz₄, hI₄⟩ => ?_
     rw [hc] at hz₄
   · refine WP.ite true (by simp [eval, hz₄]) (fun _ => ?_) (fun h => absurd h (by decide))
     exact WP.mono (copyLast_ok hs hI₄ (by decide)) fun s₅ ⟨hI₅, hl₅⟩ =>
-      ⟨S₃, hI₅, fun j h1 h2 => h11 j h1 (by omega), hl₅⟩
+      ⟨S₃, hI₅, fun j h1 h2 => h11 j h1 (by omega_using [h2]), hl₅⟩
   · refine WP.ite false (by simp [eval, hz₄]) (fun h => absurd h (by decide)) fun _ => ?_
     rw [show imcKey 12 ++ imcKey 13 ++ copyLast 14 = [12, 13].flatMap imcKey ++ copyLast 14 by simp,
       WP.block_append_iff]
@@ -201,7 +201,7 @@ theorem imcKeys_ok {nr : Nat} (hnr : nr = 10 ∨ nr = 12 ∨ nr = 14)
       ⟨S₅, hI₆, fun j h1 h2 => hS₅ j (by
         by_cases h : j ≤ 11
         · exact .inr (h11 j h1 h)
-        · exact .inl (by simp; omega)), hl₆⟩
+        · exact .inl (by simp; omega_using [h2, h])), hl₆⟩
 
 /-- The round keys through `aesimc`, as decryption needs them. -/
 theorem dKeys_of_imc {s : State} {nr : Nat} {w : List Byte} (hK : Keys nr w s₀)
@@ -212,15 +212,15 @@ theorem dKeys_of_imc {s : State} {nr : Nat} {w : List Byte} (hK : Keys nr w s₀
     rw [ea_at, ea_at, hI.gpr]
   have hK' : Keys nr w s := ⟨hle, fun j hj => by rw [ek, hI.rd, hI.wr]; exact hK.keys j hj,
     fun j hj => by
-      rw [ek, ea_at, hs.sched hI.frame (by omega), ← ea_at]; exact hK.bytes j hj⟩
+      rw [ek, ea_at, hs.sched hI.frame (by omega_using [hle, hj]), ← ea_at]; exact hK.bytes j hj⟩
   refine ⟨hK', fun j h1 h2 => ⟨?_, ?_⟩, ⟨?_, fun i hi => ?_⟩⟩
-  · rw [hI.rd, hI.wr, ea_at, hI.gpr]; exact in_rd (hs.scrIn (by omega))
+  · rw [hI.rd, hI.wr, ea_at, hI.gpr]; exact in_rd (hs.scrIn (by omega_using [hle, h2]))
   · rw [ea_at, hI.gpr, hI.keys j (hS j h1 h2), st_aesimc]
     refine congrArg invMixColumns ?_
     apply st_ext; intro i hi
-    rw [getD_st _ hi, ← ea_at, hK.bytes j (by omega) i hi]
+    rw [getD_st _ hi, ← ea_at, hK.bytes j (by omega_using [h2]) i hi]
     simp [rkState, Vector.getD, hi]
-  · rw [hI.rd, hI.wr, ea_at, hI.gpr]; exact in_rd (hs.scrIn (by omega))
+  · rw [hI.rd, hI.wr, ea_at, hI.gpr]; exact in_rd (hs.scrIn (by omega_using []))
   · rw [ea_at, hI.gpr, hl, ← ea_at]; exact hK.bytes nr (Nat.le_refl _) i hi
 
 end

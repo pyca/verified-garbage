@@ -26,13 +26,13 @@ open VG.Spec.X25519 (P)
 theorem valAt_ofNat (m : Mem) (b : Addr) (i : Slot) :
     Proof.X25519.Field32.valAt m b (BitVec.ofNat 32 (offset i)) = V m b (offset i) := by
   have := slot_range i
-  rw [valAt_eq, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega), ← read_V, ← read_V, BitVec.add_zero]
+  rw [valAt_eq, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [this]), ← read_V, ← read_V, BitVec.add_zero]
 
 /-- `pow250`'s `Keeps₂`, from its frame. -/
 theorem keeps_pow {b : Addr} {m m' : Mem} (hf : Frame [PR b] m m') : Proof.X25519.Field32.Keeps₂ b m m' := by
   intro i hi hown
   simp only [Proof.X25519.Field32.wsBytes, Proof.X25519.Field32.eAt, Proof.X25519.Field32.ownEnd] at hi hown
-  exact hf _ fun r hr => by rw [List.mem_singleton.mp hr]; exact byte_out (by omega) (by omega) hown
+  exact hf _ fun r hr => by rw [List.mem_singleton.mp hr]; exact byte_out (by omega_using [hi]) (by omega_using []) hown
 
 /-- A power, as the contract states it. -/
 theorem val_of_env {m m' : Mem} {b : Addr} {i j : Slot} {e : Nat}

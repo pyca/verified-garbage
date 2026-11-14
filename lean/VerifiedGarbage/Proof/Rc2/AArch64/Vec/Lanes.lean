@@ -38,24 +38,24 @@ theorem vword_and (x y : BitVec 128) (c : Nat) : vword (x &&& y) c = vword x c &
 
 theorem vword_not (x : BitVec 128) {c : Nat} (hc : c < 4) : vword (~~~x) c = ~~~vword x c := by
   ext i hi
-  simp [vword, BitVec.getElem_extractLsb', BitVec.getElem_not, show 32 * c + i < 128 by omega]
+  simp [vword, BitVec.getElem_extractLsb', BitVec.getElem_not, show 32 * c + i < 128 by omega_using [hc, hi]]
 
 theorem setWidth16_sub (x y : BitVec 32) : (x - y).setWidth 16 = x.setWidth 16 - y.setWidth 16 := by
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_setWidth, BitVec.toNat_sub]
-  omega
+  omega_using []
 
 theorem setWidth16_and (x y : BitVec 32) : (x &&& y).setWidth 16 = x.setWidth 16 &&& y.setWidth 16 := by
   ext i hi; simp
 
 theorem setWidth16_not (x : BitVec 32) : (~~~x).setWidth 16 = ~~~(x.setWidth 16) := by
-  ext i hi; simp [show i < 32 by omega]
+  ext i hi; simp [show i < 32 by omega_using [hi]]
 
 theorem bit65535 (k : Nat) : (65535 : BitVec 32).getLsbD k = decide (k < 16) := by
   rw [show (65535 : BitVec 32) = BitVec.ofNat 32 (2 ^ 16 - 1) from rfl, BitVec.getLsbD_ofNat,
     Nat.testBit_two_pow_sub_one]
   by_cases h : k < 16
-  · simp [h, show k < 32 by omega]
+  · simp [h, show k < 32 by omega_using [h]]
   · simp [h]
 
 /-- Masking, shifting right by `s` and inserting the masked word shifted left
@@ -69,8 +69,8 @@ theorem ror_lane (x : BitVec 32) {s : Nat} (h1 : 1 ≤ s) (h2 : s < 16) :
     BitVec.getLsbD_ushiftRight, BitVec.getLsbD_shiftLeft, BitVec.getLsbD_allOnes,
     BitVec.getLsbD_rotateRight, hj, decide_true, Bool.true_and, Nat.mod_eq_of_lt h2, bit65535]
   by_cases hs : j < 16 - s
-  · simp (disch := omega) [hs, show j < 32 by omega, show s + j < 16 by omega]
-  · simp (disch := omega) [hs, show j < 32 by omega, show ¬ s + j < 16 by omega,
-      show j - (16 - s) < 16 by omega]
+  · simp (disch := omega) [hs, show j < 32 by omega_using [hj], show s + j < 16 by omega_using [hs]]
+  · simp (disch := omega) [hs, show j < 32 by omega_using [hj], show ¬ s + j < 16 by omega_using [hs],
+      show j - (16 - s) < 16 by omega_using [hj]]
 
 end VG.Proof.Rc2.AArch64.Vec

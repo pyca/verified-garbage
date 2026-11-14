@@ -35,8 +35,8 @@ theorem ror57 (x : BitVec 64) (h : x.toNat < 2 ^ 57) :
 
 theorem toNat_le_of_disjoint {R S : Region} (h : R.Disjoint S) (hS : 0 < S.len) : R.len < 2 ^ 64 := by
   refine Nat.lt_of_not_le fun hR => h S.base ?_ ?_
-  · simp only [Region.Contains]; have := (S.base - R.base).isLt; omega
-  · simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; omega
+  · simp only [Region.Contains]; have := (S.base - R.base).isLt; omega_using [hR]
+  · simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; omega_using [hS]
 
 namespace Lay.Ok
 
@@ -47,12 +47,12 @@ theorem blen_eq : L.blen.toNat = L.r.toNat * L.pp := (Nat.mul_div_cancel' (Nat.d
 theorem pp_pos : 0 < L.pp := h.valid.2.2.2.1
 /-- `b` is not the whole address space, since the stack is not in it. -/
 theorem blen_lt : L.blen.toNat * 128 < 2 ^ 64 :=
-  toNat_le_of_disjoint h.kb.symm (by show (0 : Nat) < 88; omega)
+  toNat_le_of_disjoint h.kb.symm (by show (0 : Nat) < 88; omega_using [])
 theorem r_le : L.r.toNat ≤ L.blen.toNat := by
   rw [h.blen_eq]; exact Nat.le_mul_of_pos_right _ h.pp_pos
 
-theorem blen57 : L.blen.toNat < 2 ^ 57 := by have := h.blen_lt; omega
-theorem r57 : L.r.toNat < 2 ^ 57 := by have := h.blen57; have := h.r_le; omega
+theorem blen57 : L.blen.toNat < 2 ^ 57 := by have := h.blen_lt; omega_using [this]
+theorem r57 : L.r.toNat < 2 ^ 57 := by have := h.blen57; have := h.r_le; omega_arith
 
 /-- `128 r p`, the length of `b`. -/
 theorem len_b : 128 * L.r.toNat * L.pp = L.blen.toNat * 128 := by
@@ -65,9 +65,9 @@ theorem ol1 : L.blen.toNat * 128 ≤ (2 ^ 32 - 1) * 32 := by
   have h₃ : L.pp * (128 * L.r.toNat) ≤ (2 ^ 32 - 1) * 32 / (128 * L.r.toNat) * (128 * L.r.toNat) :=
     Nat.mul_le_mul_right _ h₁
   rw [← h.len_b, Nat.mul_comm (128 * L.r.toNat)]
-  omega
+  omega_using [h₂, h₃]
 
-theorem slen17 : 17 ≤ L.slen.toNat := by have := h.slen; have := h.rpos; omega
+theorem slen17 : 17 ≤ L.slen.toNat := by have := h.slen; have := h.rpos; omega_arith
 
 end Lay.Ok
 
@@ -90,14 +90,14 @@ variable {L : Lay} {g : Reg → BitVec 64} {m₀ : Mem} {t t' : State} (hc : Ctx
 include hc
 
 theorem inFr {d : Nat} (h₁ : 32 ≤ d) (h₂ : d + 8 ≤ 88) : InRegions (t.rd ++ t.wr) (L.B + BitVec.ofNat 64 d) 8 :=
-  ⟨L.FR, by rw [hc.rd, hc.wr]; simp, Offset.contains _ h₁ (by omega) (by omega)⟩
+  ⟨L.FR, by rw [hc.rd, hc.wr]; simp, Offset.contains _ h₁ (by omega_using [h₂]) (by omega_using [])⟩
 
 theorem inFrW {d : Nat} (h₁ : 32 ≤ d) (h₂ : d + 8 ≤ 88) : InRegions t.wr (L.B + BitVec.ofNat 64 d) 8 :=
-  ⟨L.FR, by rw [hc.wr]; simp, Offset.contains _ h₁ (by omega) (by omega)⟩
+  ⟨L.FR, by rw [hc.wr]; simp, Offset.contains _ h₁ (by omega_using [h₂]) (by omega_using [])⟩
 
 theorem inArgs (hL : L.Ok) {d : Nat} (h₁ : 96 ≤ d) (h₂ : d + 8 ≤ 152) :
     InRegions (t.rd ++ t.wr) (L.B + BitVec.ofNat 64 d) 8 :=
-  ⟨L.ARGS, by rw [hc.rd, hc.wr]; simp, Offset.contains _ h₁ (by omega) (by have := hL.nB; omega)⟩
+  ⟨L.ARGS, by rw [hc.rd, hc.wr]; simp, Offset.contains _ h₁ (by omega_using [h₂]) (by have := hL.nB; omega_using [])⟩
 
 /-- Code that writes only caller-saved registers. -/
 theorem regs (hrd : t'.rd = t.rd) (hwr : t'.wr = t.wr) (hm : t'.mem = t.mem)
@@ -115,9 +115,9 @@ theorem store (hL : L.Ok) (hrd : t'.rd = t.rd) (hwr : t'.wr = t.wr)
     fun r hr hr' => (hg r hr).trans (hc.cs r hr hr'), hc.kept.frame hf fun d hd R hR => ?_,
     hc.frame.trans (Frame.sub hf fun r hr => ?_)⟩
   · simp only [List.mem_singleton] at hR; subst hR
-    exact Offset.disjoint _ (by omega) (by omega) (by omega)
+    exact Offset.disjoint _ (by omega_using [hd]) (by omega_using [hd]) (by omega_using [])
   · simp only [List.mem_singleton] at hr; subst hr
-    exact ⟨L.STK, by simp, Offset.sub_base _ (by omega)⟩
+    exact ⟨L.STK, by simp, Offset.sub_base _ (by omega_using [])⟩
 
 end Ctx
 
@@ -161,19 +161,19 @@ theorem w32 (B : Addr) (m : Mem) (a c : BitVec 64) :
     Frame [⟨B + BitVec.ofNat 64 32, 24⟩] m m' ∧ m'.readW (B + BitVec.ofNat 64 32) 64 = a ∧
       m'.readW (B + BitVec.ofNat 64 40) 64 = c := by
   refine ⟨((Frame.refl _ _).writeW (List.mem_singleton_self _) _
-    (Offset.contains _ (by omega) (by omega) (by omega))).writeW (List.mem_singleton_self _) _
-    (Offset.contains _ (by omega) (by omega) (by omega)), ?_, Mem.readW_writeW_self64 _ _ _⟩
-  rw [Mem.readW_writeW_sep (Offset.sep B (by omega) (by omega) (by omega)) (by decide),
+    (Offset.contains _ (by omega_using []) (by omega_using []) (by omega_using []))).writeW (List.mem_singleton_self _) _
+    (Offset.contains _ (by omega_using []) (by omega_using []) (by omega_using [])), ?_, Mem.readW_writeW_self64 _ _ _⟩
+  rw [Mem.readW_writeW_sep (Offset.sep B (by omega_using []) (by omega_using []) (by omega_using [])) (by decide),
     Mem.readW_writeW_self64]
 
 theorem pbk1Args_ok (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) (he : Entry L t) :
     WP isa (.block pbk1Args) t fun t' => Ctx L g m₀ t' ∧
       PbkArgs L L.salt L.sl L.b (BitVec.ofNat 64 (L.blen.toNat * 128)) t' ∧
       Frame [⟨L.B + BitVec.ofNat 64 32, 24⟩] t.mem t'.mem := by
-  have l96 := hc.inArgs hL (d := 96) (by omega) (by omega)
-  have l120 := hc.inArgs hL (d := 120) (by omega) (by omega)
-  have w32' := hc.inFrW (d := 32) (by omega) (by omega)
-  have w40 := hc.inFrW (d := 40) (by omega) (by omega)
+  have l96 := hc.inArgs hL (d := 96) (by omega_using []) (by omega_using [])
+  have l120 := hc.inArgs hL (d := 120) (by omega_using []) (by omega_using [])
+  have w32' := hc.inFrW (d := 32) (by omega_using []) (by omega_using [])
+  have w40 := hc.inFrW (d := 40) (by omega_using []) (by omega_using [])
   have r := ror57 _ (hL.blen57)
   apply WP.of_runBlock
   simp only [pbk1Args, times128, runBlock_cons, runStep_some, runBlock_nil, exec, execShift, readSrc,
@@ -191,15 +191,15 @@ theorem cur0_ok (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) :
     WP isa (.block cur0) t fun t' => Ctx L g m₀ t' ∧
       t'.mem.readW (L.B + BitVec.ofNat 64 48) 64 = L.b ∧
       Frame [⟨L.B + BitVec.ofNat 64 32, 24⟩] t.mem t'.mem := by
-  have l80 := hc.inFr (d := 80) (by omega) (by omega)
-  have w48 := hc.inFrW (d := 48) (by omega) (by omega)
+  have l80 := hc.inFr (d := 80) (by omega_using []) (by omega_using [])
+  have w48 := hc.inFrW (d := 48) (by omega_using []) (by omega_using [])
   apply WP.of_runBlock
   simp only [cur0, runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, State.load64,
     State.store64, ea_sp, RegUpd.gpr_setReg, RegUpd.rd_setReg, RegUpd.wr_setReg, RegUpd.mem_setReg,
     Option.map_some, reduceCtorEq, ite_false, ite_true, hc.rsp, add_add, Nat.reduceAdd, l80, w48,
     hc.kept.b, Option.some.injEq, exists_eq_left']
   have f : Frame [⟨L.B + BitVec.ofNat 64 32, 24⟩] t.mem (t.mem.writeW (L.B + BitVec.ofNat 64 48) L.b) :=
-    (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Offset.contains _ (by omega) (by omega) (by omega))
+    (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Offset.contains _ (by omega_using []) (by omega_using []) (by omega_using []))
   exact ⟨hc.store hL rfl rfl (by scrypt_cs_tac) f, Mem.readW_writeW_self64 _ _ _, f⟩
 
 /-- The arguments of a call of ROMix on the block at `cur`. -/
@@ -214,11 +214,11 @@ structure RomixArgs (L : Lay) (cur : Addr) (t : State) : Prop where
 theorem romixArgs_ok (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) {cur : Addr}
     (hcur : t.mem.readW (L.B + BitVec.ofNat 64 48) 64 = cur) :
     WP isa (.block romixArgs) t fun t' => Ctx L g m₀ t' ∧ t'.mem = t.mem ∧ RomixArgs L cur t' := by
-  have l48 := hc.inFr (d := 48) (by omega) (by omega)
-  have l72 := hc.inFr (d := 72) (by omega) (by omega)
-  have l104 := hc.inArgs hL (d := 104) (by omega) (by omega)
-  have l112 := hc.inArgs hL (d := 112) (by omega) (by omega)
-  have l120 := hc.inArgs hL (d := 120) (by omega) (by omega)
+  have l48 := hc.inFr (d := 48) (by omega_using []) (by omega_using [])
+  have l72 := hc.inFr (d := 72) (by omega_using []) (by omega_using [])
+  have l104 := hc.inArgs hL (d := 104) (by omega_using []) (by omega_using [])
+  have l112 := hc.inArgs hL (d := 112) (by omega_using []) (by omega_using [])
+  have l120 := hc.inArgs hL (d := 120) (by omega_using []) (by omega_using [])
   apply WP.of_runBlock
   simp only [romixArgs, runBlock_cons, runStep_some, runBlock_nil, exec, execAlu, readSrc,
     State.load64, ea_sp, RegUpd.gpr_setReg, RegUpd.rd_setReg, RegUpd.wr_setReg, RegUpd.mem_setReg,
@@ -235,11 +235,11 @@ theorem nextBlock_ok (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) {cur : Addr}
       t'.mem.readW (L.B + BitVec.ofNat 64 48) 64 = cur + BitVec.ofNat 64 (L.r.toNat * 128) ∧
       t'.zf = some (cur + BitVec.ofNat 64 (L.r.toNat * 128) -
         (BitVec.ofNat 64 (L.blen.toNat * 128) + L.b) == 0) := by
-  have l48 := hc.inFr (d := 48) (by omega) (by omega)
-  have w48 := hc.inFrW (d := 48) (by omega) (by omega)
-  have l72 := hc.inFr (d := 72) (by omega) (by omega)
-  have l80 := hc.inFr (d := 80) (by omega) (by omega)
-  have l96 := hc.inArgs hL (d := 96) (by omega) (by omega)
+  have l48 := hc.inFr (d := 48) (by omega_using []) (by omega_using [])
+  have w48 := hc.inFrW (d := 48) (by omega_using []) (by omega_using [])
+  have l72 := hc.inFr (d := 72) (by omega_using []) (by omega_using [])
+  have l80 := hc.inFr (d := 80) (by omega_using []) (by omega_using [])
+  have l96 := hc.inArgs hL (d := 96) (by omega_using []) (by omega_using [])
   have r₁ := ror57 _ (hL.r57)
   have r₂ := ror57 _ (hL.blen57)
   apply WP.of_runBlock
@@ -252,22 +252,22 @@ theorem nextBlock_ok (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) {cur : Addr}
     Option.some.injEq, exists_eq_left', show (1 ≤ 57 ∧ 57 ≤ 63) = True from by decide]
   have f : Frame [⟨L.B + BitVec.ofNat 64 32, 24⟩] t.mem
       (t.mem.writeW (L.B + BitVec.ofNat 64 48) (cur + BitVec.ofNat 64 (L.r.toNat * 128))) :=
-    (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Offset.contains _ (by omega) (by omega) (by omega))
+    (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Offset.contains _ (by omega_using []) (by omega_using []) (by omega_using []))
   exact ⟨hc.store hL rfl rfl (by scrypt_cs_tac) f, f, Mem.readW_writeW_self64 _ _ _, trivial⟩
 
 theorem pbk2Args_ok (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) :
     WP isa (.block pbk2Args) t fun t' => Ctx L g m₀ t' ∧
       PbkArgs L L.b (BitVec.ofNat 64 (L.blen.toNat * 128)) L.out L.ol t' ∧
       Frame [⟨L.B + BitVec.ofNat 64 32, 24⟩] t.mem t'.mem := by
-  have l56 := hc.inFr (d := 56) (by omega) (by omega)
-  have l64 := hc.inFr (d := 64) (by omega) (by omega)
-  have l80 := hc.inFr (d := 80) (by omega) (by omega)
-  have l96 := hc.inArgs hL (d := 96) (by omega) (by omega)
-  have l120 := hc.inArgs hL (d := 120) (by omega) (by omega)
-  have l136 := hc.inArgs hL (d := 136) (by omega) (by omega)
-  have l144 := hc.inArgs hL (d := 144) (by omega) (by omega)
-  have w32' := hc.inFrW (d := 32) (by omega) (by omega)
-  have w40 := hc.inFrW (d := 40) (by omega) (by omega)
+  have l56 := hc.inFr (d := 56) (by omega_using []) (by omega_using [])
+  have l64 := hc.inFr (d := 64) (by omega_using []) (by omega_using [])
+  have l80 := hc.inFr (d := 80) (by omega_using []) (by omega_using [])
+  have l96 := hc.inArgs hL (d := 96) (by omega_using []) (by omega_using [])
+  have l120 := hc.inArgs hL (d := 120) (by omega_using []) (by omega_using [])
+  have l136 := hc.inArgs hL (d := 136) (by omega_using []) (by omega_using [])
+  have l144 := hc.inArgs hL (d := 144) (by omega_using []) (by omega_using [])
+  have w32' := hc.inFrW (d := 32) (by omega_using []) (by omega_using [])
+  have w40 := hc.inFrW (d := 40) (by omega_using []) (by omega_using [])
   have r := ror57 _ (hL.blen57)
   apply WP.of_runBlock
   simp only [pbk2Args, times128, runBlock_cons, runStep_some, runBlock_nil, exec, execShift, readSrc,

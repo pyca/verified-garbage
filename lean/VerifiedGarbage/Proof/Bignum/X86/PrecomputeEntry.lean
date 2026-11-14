@@ -52,7 +52,7 @@ theorem precomputeEntry_ok {s : State} {base : Addr} {size : Nat} {ptr : BitVec 
     have H : ¬ InRegions [⟨base, size⟩] a 1 := by
       simp only [InRegions, List.mem_singleton, exists_eq_left, Region.Contains]
       change ¬ (ofs base a + 1 ≤ size)
-      omega
+      omega_using [ha]
     exact (F a (by intro reg hreg hcontains; exact H ⟨reg, hreg, hcontains⟩)).trans (congrFun U.mem a)
 
 end VG.Proof.Bignum.X86

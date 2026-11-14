@@ -42,7 +42,7 @@ theorem port_ok {E : Environment} {sp : BitVec 32} {m : Mem} {accept : Bool} {i 
       Frame E.outputs.writes s.mem t.mem ∧ Keeps [.eax, .ecx, .edx, .ebp, .ebx, .esi] s t := by
   have h := P.input
   refine WP.mono (writeArray_ok (p := E.outputs.pointer i) (len := E.outputs.length i) A.valid h.ws A.context
-    (outputIndex_bound hi) (Ne.symm (outputIndex_zero hi)) (by omega) (by omega) rfl
+    (outputIndex_bound hi) (Ne.symm (outputIndex_zero hi)) (by omega_using [hi]) (by omega_using [hi]) rfl
     (by simp only [VG.Proof.RsaKeyGen.X86.Key.OutputGeometry.length, BitVec.ofNat_toNat, BitVec.setWidth_eq]; rfl)
     (h.valid.lengthPositive i hi) (h.valid.lengthBound i hi) (h.valid.fit i hi)
     (h.writable i hi) (h.valid.scratchApart i hi) (A.apart i hi) P.zero accept P.mask)
@@ -54,14 +54,14 @@ theorem port_ok {E : Environment} {sp : BitVec 32} {m : Mem} {accept : Bool} {i 
     exact (header d hd).trans (P.header d hd)
   · intro j lower upper
     exact (other (outputIndex j) (outputIndex_bound upper)
-      (outputIndex_injective upper hi (by omega))).trans (P.pending j (by omega) upper)
+      (outputIndex_injective upper hi (by omega_using [lower]))).trans (P.pending j (by omega_using [lower]) upper)
   · intro j lower upper
     by_cases last : j = i
     · subst j
       unfold portResult
       rw [← P.pending i (Nat.le_refl _) hi]
       exact value
-    · exact (portFrame_other h hi upper (by omega) F).trans (P.done j (by omega) upper)
+    · exact (portFrame_other h hi upper (by omega_using [last]) F).trans (P.done j (by omega_using [lower, last]) upper)
 
 theorem ports_ok {E : Environment} {sp : BitVec 32} {m : Mem} {accept : Bool} {i count : Nat} {s : State}
     (P : ExportProgress E.outputs m accept i s) (A : OutputArgs E sp s) (bound : i + count ≤ 7) :
@@ -72,9 +72,9 @@ theorem ports_ok {E : Environment} {sp : BitVec 32} {m : Mem} {accept : Bool} {i
   | zero => exact WP.block_nil ⟨P, A, Frame.refl _ _, Keeps.refl _ _⟩
   | succ count ih =>
     unfold writePorts
-    refine WP.seq (WP.mono (port_ok P A (by omega)) fun u ⟨Pu, Au, Fu, Ku⟩ => ?_)
-    refine WP.mono (ih Pu Au (by omega)) fun t ⟨Pt, At, Ft, Kt⟩ => ?_
-    have index : i + 1 + count = i + (count + 1) := by omega
+    refine WP.seq (WP.mono (port_ok P A (by omega_using [bound])) fun u ⟨Pu, Au, Fu, Ku⟩ => ?_)
+    refine WP.mono (ih Pu Au (by omega_using [bound])) fun t ⟨Pt, At, Ft, Kt⟩ => ?_
+    have index : i + 1 + count = i + (count + 1) := by omega_using []
     rw [index] at Pt
     exact ⟨Pt, At, Fu.trans Ft, Ku.trans Kt⟩
 
@@ -94,19 +94,19 @@ theorem writeOutputs_ok {E : Environment} {sp : BitVec 32} {s : State} (h : Outp
   change Outside E.base (arr E.n aZero) (S E.n) s.mem u.mem at Ou
   change val32 u.mem E.base (arr E.n aZero) (E.n + 2) = 0 at zero
   have clear : Keep E.base E.n [aZero] [] s.mem u.mem :=
-    Keep.of_arr (d := 0) (by simpa only [Nat.add_zero] using Ou) (by unfold S; omega) (by simp)
+    Keep.of_arr (d := 0) (by simpa only [Nat.add_zero] using Ou) (by unfold S; omega_using []) (by simp)
   have header : ∀ d, d + 4 ≤ hdr → slot u.mem E.base d = slot s.mem E.base d :=
     fun d hd => clear.slot hd (by simp)
   have Pu : ExportProgress E.outputs s.mem accept 0 u := by
     refine ⟨h.after Hu.old Ku header, ?_, (header kOk (by decide)).trans mask, header, ?_, ?_⟩
     · change val32 u.mem E.base (arr E.n aZero) E.n = 0
-      have Z := VG.Proof.Rsa.KeyWorkspace.val32_zero_part zero (a := 0) (c := E.n) (by omega)
+      have Z := VG.Proof.Rsa.KeyWorkspace.val32_zero_part zero (a := 0) (c := E.n) (by omega_using [])
       simpa only [Nat.mul_zero, Nat.add_zero] using Z
     · intro i _ hi
       exact clear.num (by intro a ha; obtain rfl := List.mem_singleton.mp ha; exact outputIndex_zero hi)
         (by simp) (h.ws.fit64 (outputIndex_bound hi))
     · intro i hi
-      omega
+      omega_using [hi]
   have ownFrame := VG.Proof.Bignum.outside_frame Ou fit64
   have Fu : Frame E.outputs.writes s.mem u.mem := by
     apply ownFrame.sub
@@ -119,7 +119,7 @@ theorem writeOutputs_ok {E : Environment} {sp : BitVec 32} {s : State} (h : Outp
     exact A.context.separate.sub_right (Offset.sub_base E.base fits)), A.apart⟩
   refine WP.seq (WP.mono (ports_ok Pu Au (by decide : 0 + 7 ≤ 7)) fun v ⟨Pv, _, Fv, Kv⟩ => ?_)
   have head := Pv.input.ws.hdr_le
-  refine wp_movS (readSrc_sc Pv.input.ws.workspace (by unfold kStatus hdr at *; omega))
+  refine wp_movS (readSrc_sc Pv.input.ws.workspace (by unfold kStatus hdr at *; omega_using [head]))
     fun t T _ => WP.block_nil ?_
   refine ⟨Pv.input.ws.rest T.keeps, ?_, ?_, ?_,
     (Ku.mono (by decide)).trans (Kv.trans (T.keeps.mono (by decide)))⟩

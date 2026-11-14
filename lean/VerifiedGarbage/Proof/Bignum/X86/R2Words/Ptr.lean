@@ -22,7 +22,7 @@ open VG.Proof.Mont.X86.Rt VG.Proof.Bignum.X86.PublicRt VG.Impl.Bignum.X86.R2Word
 abbrev wp (len : Nat) : Nat := (len + 3) / 4
 
 theorem wp_le_nw {len : Nat} : 4 * wp len ≤ wb len := by
-  simp only [wp, wb, Spec.Rsa.modulusWords]; omega
+  simp only [wp, wb, Spec.Rsa.modulusWords]; omega_using []
 
 /-- `width4 r`: `r = 4 W'`. -/
 theorem width4_ok {s : State} {is : List Instr} {Q : State → Prop} {len : Nat} {r : Reg} {op : MemOp}
@@ -39,10 +39,10 @@ theorem width4_ok {s : State} {is : List Instr} {Q : State → Prop} {len : Nat}
   apply BitVec.eq_of_toNat_eq
   have h3 : (BitVec.ofNat 32 len + 3).toNat = len + 3 := by
     have e3 : (3 : BitVec 32).toNat = 3 := rfl
-    rw [BitVec.toNat_add, BitVec.toNat_ofNat, e3, Nat.mod_eq_of_lt (a := len) (by omega)]
-    omega
+    rw [BitVec.toNat_add, BitVec.toNat_ofNat, e3, Nat.mod_eq_of_lt (a := len) (by omega_using [hl])]
+    omega_using [hl]
   simp only [BitVec.toNat_add, BitVec.toNat_ushiftRight, h3, BitVec.toNat_ofNat, wp, Nat.shiftRight_eq_div_pow]
-  omega
+  omega_using []
 
 /-- `topPtr r j i t`: `r = edi + 256 + j B + 4 W' - 4 i`, `t = 4 W'`. -/
 theorem topPtr_ok {s : State} {is : List Instr} {Q : State → Prop} {base : Addr} {bytes len : Nat}
@@ -67,11 +67,11 @@ theorem topPtr_ok {s : State} {is : List Instr} {Q : State → Prop} {base : Add
   have hp₂ : PtrAt u₂ base r (numAt len j) := by rw [PtrAt, K₂.1 _ (by simp [hrt])]; exact p₁
   rw [PtrAt, U₄.gpr, U₃.gpr, e₂]
   have h4 : (BitVec.ofNat 32 (4 * wp len)).toNat = 4 * wp len := by
-    rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt (by simp only [wp]; omega)
+    rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt (by simp only [wp]; omega_using [hu])
   have hi4 : (BitVec.ofNat 32 (4 * i)).toNat = 4 * i := by
-    rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt (by simp only [numAt, numOff, wp] at hi hjw ⊢; omega)
+    rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt (by simp only [numAt, numOff, wp] at hi hjw ⊢; omega_using [hi, hu, hjw])
   rw [BitVec.toNat_sub, BitVec.toNat_add, hp₂, h4, hi4]
   have := base.isLt
-  omega
+  omega_using [hi, hi4]
 
 end VG.Proof.Bignum.X86.R2Words

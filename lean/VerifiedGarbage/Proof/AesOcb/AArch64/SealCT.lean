@@ -91,7 +91,7 @@ theorem pre_rel (v : BlocksImpl) {σ₁ σ₂ : State} {K W N A D : Addr} {R nl 
     (entry_ok L A₂.perm hW₂ htl₂ A₂.args A₂.argsW h0₂ h1₂ h2₂ h3₂ h4₂ h5₂ h6₂ h7₂) fun s₁ s₂ P₁ P₂ => ?_
   have E₂ := P₂.env
   rw [← qsp] at E₂
-  have ht : tl < 2 ^ 64 := by have := A₁.t16; omega
+  have ht : tl < 2 ^ 64 := by have := A₁.t16; omega_using [this]
   refine rel_seq (nonce_rel v L P₁.env E₂ A₁.rounds P₁.slots.nonce P₂.slots.nonce P₁.slots.nlen P₂.slots.nlen
       P₁.slots.tl P₂.slots.tl A₁.n1 A₁.n15 ht (A₁.nonce.of_eq P₁.rd P₁.wr) (A₂.nonce.of_eq P₂.rd P₂.wr))
     (nonce_ok v L P₁.env A₁.rounds P₁.slots.nonce P₁.slots.nlen P₁.slots.tl A₁.n1 A₁.n15 ht

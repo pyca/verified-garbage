@@ -31,11 +31,11 @@ def pBase (up : Bool) (i : Nat) : Nat := if up then 4096 + 4 * i else 4160 - 4 *
 abbrev slot (B : BitVec 32) (d : Nat) : Addr := B.setWidth 64 + BitVec.ofNat 64 d
 
 theorem addr_slot {B : BitVec 32} (h : B.toNat + 40 ≤ 2 ^ 32) {d : Nat} (hd : d < 40) :
-    addr B d = slot B d := addr_of_fit (by omega)
+    addr B d = slot B d := addr_of_fit (by omega_using [h, hd])
 
 theorem slot_sep (B : BitVec 32) {d e : Nat} (h : d + 4 ≤ e ∨ e + 4 ≤ d) (hd : d < 40) (he : e < 40) :
     Mem.Sep (slot B d) (32 / 8) (slot B e) (32 / 8) :=
-  Offset.sep _ h (by omega) (by omega)
+  Offset.sep _ h (by omega_using [hd]) (by omega_using [he])
 
 /-- What the block function needs: the working space (40 bytes) at `ebp`,
 writable and apart from the schedule and the schedule's address, which is at
@@ -60,7 +60,7 @@ theorem CipherEnv.slotR {sch : Nat} {S B : BitVec 32} {s : State} (E : CipherEnv
 /-- The working space's bytes are apart from the schedule's address. -/
 theorem CipherEnv.argSep {sch : Nat} {S B : BitVec 32} {s : State} (E : CipherEnv sch S B s) {d : Nat}
     (hd : d + 4 ≤ 40) : Mem.Sep (addr (s.gpr .esp) sch) 4 (slot B d) 4 :=
-  E.sepA.symm.sep (Region.contains_self _ _) (Offset.contains_base _ hd (by omega))
+  E.sepA.symm.sep (Region.contains_self _ _) (Offset.contains_base _ hd (by omega_using [hd]))
 
 theorem CipherEnv.frame {sch : Nat} {S B : BitVec 32} {s t : State} (E : CipherEnv sch S B s) {rs : List Reg}
     (h : Keep rs s t) (hsp : Reg.esp ∉ rs) (hbp : Reg.ebp ∉ rs)
@@ -114,7 +114,7 @@ theorem pBase_succ (S : BitVec 32) (up : Bool) {i : Nat} (hi : i < 16) :
       S + BitVec.ofNat 32 (pBase up (i + 1)) := by
   cases up
   · simp only [Bool.false_eq_true, ite_false, pBase]
-    exact (ofs_sub S (a := 4160 - 4 * i) (b := 4) (by omega)).trans (by congr 2)
+    exact (ofs_sub S (a := 4160 - 4 * i) (b := 4) (by omega_using [hi])).trans (by congr 2)
   · simp only [ite_true, pBase]
     exact (ofs_add S _ 4).trans (by congr 2)
 
@@ -122,8 +122,8 @@ theorem pBase_end (S : BitVec 32) (up : Bool) {i : Nat} (hi : i < 16) :
     (S - (S + BitVec.ofNat 32 (pBase up (i + 1))) - BitVec.ofNat 32 (2 ^ 32 - if up then pOff + 64 else pOff)
       == 0) = decide (i + 1 = 16) := by
   cases up <;> simp only [pBase, pOff, Bool.false_eq_true, ite_false, ite_true] <;>
-  · rw [ofs_neg, ofNat_sub_beq' (by omega) (by decide)]
-    congr 1; apply propext; omega
+  · rw [ofs_neg, ofNat_sub_beq' (by omega_using [hi]) (by decide)]
+    congr 1; apply propext; omega_arith
 
 theorem round_tail (u : State) (up : Bool) {sch : Nat} {B S : BitVec 32} {i : Nat} (hi : i < 16)
     (hb : u.gpr .ebp = B) (bfit : B.toNat + 40 ≤ 2 ^ 32) (w16 : InRegions u.wr (slot B 16) 4)
@@ -163,15 +163,15 @@ theorem round_tail (u : State) (up : Bool) {sch : Nat} {B S : BitVec 32} {i : Na
 theorem addr_P {S : BitVec 32} (fit : S.toNat + 4168 ≤ 2 ^ 32) (up : Bool) {i : Nat} (hi : i < 16) :
     addr (S + BitVec.ofNat 32 (pBase up i)) (pAt up) = S.setWidth 64 + BitVec.ofNat 64 (4096 + 4 * ord up i) := by
   unfold addr
-  rw [ofs_add, ← addr, addr_of_fit (by cases up <;> simp [pBase, pAt] <;> omega)]
-  congr 2; cases up <;> simp [pBase, pAt, ord] <;> omega
+  rw [ofs_add, ← addr, addr_of_fit (by cases up <;> simp [pBase, pAt] <;> omega_arith)]
+  congr 2; cases up <;> simp [pBase, pAt, ord] <;> omega_using [hi]
 
 /-- The bytes the block function writes: the halves, F and the P-array pointer. -/
 abbrev cRegion (B : BitVec 32) : List Region := [⟨slot B 16, 16⟩]
 
 theorem frame_slot {m m' : Mem} {B : BitVec 32} (h : Frame (cRegion B) m m') {d : Nat} (hd : 16 ≤ d)
     (hd' : d + 4 ≤ 32) (v : BitVec 32) : Frame (cRegion B) m (m'.writeW (slot B d) v) :=
-  h.writeW (List.mem_singleton_self _) _ (Offset.contains _ hd hd' (by omega))
+  h.writeW (List.mem_singleton_self _) _ (Offset.contains _ hd hd' (by omega_using []))
 
 theorem frame_wide {m m' : Mem} {B : BitVec 32} (h : Frame (cRegion B) m m') :
     Frame [⟨B.setWidth 64, 40⟩] m m' :=
@@ -195,13 +195,13 @@ theorem round_step {sch : Nat} {S B : BitVec 32} {s₀ : State} (E : CipherEnv s
   have Eu := I.env
   have fit := E.fit
   have bfit := E.bfit
-  have ho : ord up i < 18 := by cases up <;> simp [ord] <;> omega
+  have ho : ord up i < 18 := by cases up <;> simp [ord] <;> omega_arith
   let K := scheduleAt s₀.mem (S.setWidth 64)
   have hK : scheduleAt u.mem (S.setWidth 64) = K := E.sched (frame_wide I.frame)
   unfold round
   apply WP.seq
   refine WP.mono (WP.keep [.eax, .ebx, .ecx] (round_head u up (P := pEntry K (ord up i)) Eu.bp bfit
-    (Eu.slotW (by decide)) (Eu.slotR (by decide)) I.pp (addr_P fit up hi) (Eu.rd _ (by omega))
+    (Eu.slotW (by decide)) (Eu.slotR (by decide)) I.pp (addr_P fit up hi) (Eu.rd _ (by omega_using [ho]))
     (by rw [← pEntry_read _ _ ho, hK])) (by cases up <;> decide)) fun v ⟨vm, vk⟩ => ?_
   have fv : Frame (cRegion B) s₀.mem v.mem := by rw [vm]; exact frame_slot I.frame (by decide) (by decide) _
   have Ev : CipherEnv sch S B v := Eu.frame vk (by decide) (by decide) (by
@@ -238,7 +238,7 @@ theorem round_step {sch : Nat} {S B : BitVec 32} {s₀ : State} (E : CipherEnv s
     rw [xm]
     exact frame_wide (frame_slot (frame_slot (frame_slot (Frame.refl _ _) (by decide) (by decide) _)
       (by decide) (by decide) _) (by decide) (by decide) _))
-  refine ⟨⟨by omega, Ex, by rw [xm, Mem.readW_writeW_self32], ?_, (((I.keep.trans vk).trans wk).trans xk).mono (by decide), fx⟩, xz⟩
+  refine ⟨⟨by omega_using [hi], Ex, by rw [xm, Mem.readW_writeW_self32], ?_, (((I.keep.trans vk).trans wk).trans xk).mono (by decide), fx⟩, xz⟩
   have x16 : x.mem.readW (slot B 16) 32 = w.mem.readW (slot B 20) 32 ^^^ w.mem.readW (slot B 24) 32 := by
     rw [xm, Mem.readW_writeW_sep (slot_sep B (by decide) (by decide) (by decide)) (by decide),
       Mem.readW_writeW_self32]
@@ -269,7 +269,7 @@ theorem rounds_run {sch : Nat} {S B : BitVec 32} {s : State} (E : CipherEnv sch 
   · left
     exact ⟨by simp [e], e ▸ J'⟩
   · right
-    exact ⟨by simp [e], n - 1, by omega, i + 1, by omega, by omega, J'⟩
+    exact ⟨by simp [e], n - 1, by omega_using [hi, hn], i + 1, by omega_using [hi, e], by omega_using [hn], J'⟩
 
 /-- The addresses of the last P-array entries. -/
 theorem addr_last {S : BitVec 32} (fit : S.toNat + 4168 ≤ 2 ^ 32) (up : Bool) :
@@ -278,7 +278,7 @@ theorem addr_last {S : BitVec 32} (fit : S.toNat + 4168 ≤ 2 ^ 32) (up : Bool) 
         S.setWidth 64 + BitVec.ofNat 64 (4096 + 4 * ord up 17) := by
   constructor <;>
   · unfold addr
-    rw [ofs_add, ← addr, addr_of_fit (by cases up <;> simp [pBase, pAt] <;> omega)]
+    rw [ofs_add, ← addr, addr_of_fit (by cases up <;> simp [pBase, pAt] <;> omega_using [fit])]
     congr 2; cases up <;> simp [pBase, pAt, ord]
 
 theorem cipher_end (u : State) (up : Bool) {B Pp P₁₆ P₁₇ : BitVec 32} {a b : Addr} (hb : u.gpr .ebp = B)

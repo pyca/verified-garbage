@@ -49,7 +49,7 @@ theorem widen_ok {dP src : Addr} {F : Poly} {s : State} (hS : PolyIsW 16 s.mem s
       Keep.trans (⟨fun r _ => by rw [o0.gpr], o0.rd, o0.wr⟩ : Keep [] s w0) (o.keep) |>.mono (by simp),
       by rw [o.mxcsr, o0.mxcsr]⟩)
     (fun u hu w ⟨hP, h9', hdx', hf, hz', hx', hk', hm'⟩ => ?_))
-    fun w ⟨hP, _, _, hf, _, hx', hk', hm'⟩ => ⟨polyIs_of_toNat fun i hi => hP i (by rw [n_eq] at hi; omega),
+    fun w ⟨hP, _, _, hf, _, hx', hk', hm'⟩ => ⟨polyIs_of_toNat fun i hi => hP i (by rw [n_eq] at hi; omega_using [hi]),
       hf, hx', hk', hm'⟩
   have hS' : S16 w.mem src F := hS16.frame hf fun r hr => by
     rw [List.mem_singleton.mp hr]; exact hd.symm

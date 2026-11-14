@@ -126,7 +126,7 @@ theorem inB_sub {bs : List (R × Nat)} {r : R} {o L o' l : Nat} (h : inB bs (r, 
   split at h
   · rename_i n hn
     simp only [hn, decide_eq_true_eq] at h ⊢
-    omega
+    omega_using [h2, h]
   · cases h
 
 theorem sepB_sub {w : R → Bool} {bs : List (R × Nat)} {r : R} {o L o' l : Nat} {q : R × Nat} {k : Nat}
@@ -137,7 +137,7 @@ theorem sepB_sub {w : R → Bool} {bs : List (R × Nat)} {r : R} {o L o' l : Nat
   refine ⟨⟨inB_sub hp h2, hq⟩, ?_⟩
   rcases hs with hs | ⟨he, hs⟩
   · exact .inl hs
-  · exact .inr ⟨he, by omega⟩
+  · exact .inr ⟨he, by omega_using [h1, h2, hs]⟩
 
 theorem keepB_sub {kp w : R → Bool} {bs : List (R × Nat)} {ws : List ((R × Nat) × Nat)} {r : R} {o L o' l : Nat}
     (h : keepB kp w bs ws (r, o) L = true) (h1 : o ≤ o') (h2 : o' + l ≤ o + L) : keepB kp w bs ws (r, o') l = true := by
@@ -155,9 +155,9 @@ theorem sub_of_inB {g : R → Addr} {bs : List (R × Nat)} {p : R × Nat} {l : N
 theorem contains_trans {r : Region} {a : Addr} {n off l : Nat} (h : r.Contains a n) (hl : off + l ≤ n)
     (hn : n < 2 ^ 64) : r.Contains (a + BitVec.ofNat 64 off) l := by
   simp only [Region.Contains] at h ⊢
-  rw [Offset.add_sub_comm, BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := off) (by omega)]
+  rw [Offset.add_sub_comm, BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := off) (by omega_using [hl, hn])]
   have := Nat.mod_le ((a - r.base).toNat + off) (2 ^ 64)
-  omega
+  omega_using [h, hl]
 
 theorem inRegions_sub {X : List Region} {a : Addr} {n off l : Nat} (h : InRegions X a n) (hl : off + l ≤ n)
     (hn : n < 2 ^ 64) : InRegions X (a + BitVec.ofNat 64 off) l := by
@@ -196,7 +196,7 @@ theorem Lay.disj {p q : R × Nat} {l k : Nat} (h : sepB w (rbs ++ wbs) p l q k =
   · exact ((L.dj _ hn _ hm e hw).sub_left (Offset.sub_base _ hl)).sub_right (Offset.sub_base _ hk)
   · show Region.Disjoint ⟨g p.1 + _, l⟩ ⟨g q.1 + _, k⟩
     rw [← e]
-    exact Offset.disjoint _ hs (by simp only at sn; omega) (by simp only at sm; omega)
+    exact Offset.disjoint _ hs (by simp only at sn; omega_using [hl, sn]) (by simp only at sm; omega_using [hk, sm])
 
 theorem Lay.stkD {p : R × Nat} {l : Nat} (h : inB (rbs ++ wbs) p l = true) : sr.Disjoint ⟨addr g p, l⟩ := by
   obtain ⟨n, hn, hsub⟩ := sub_of_inB (g := g) h
@@ -207,9 +207,9 @@ theorem Lay.nwp {p : R × Nat} {l : Nat} (h : inB (rbs ++ wbs) p l = true) : (ad
   have h1 := L.nw _ hn
   have h2 := L.small _ hn
   simp only at h1 h2
-  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := p.2) (by omega)]
+  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := p.2) (by omega_using [hl, h2])]
   have := Nat.mod_le ((g p.1).toNat + p.2) (2 ^ 64)
-  omega
+  omega_using [hl, h1]
 
 theorem Lay.inR {p : R × Nat} {l : Nat} (h : inB (rbs ++ wbs) p l = true) : InRegions (rs ++ ws) (addr g p) l := by
   obtain ⟨n, hn, hl⟩ := inB_spec h

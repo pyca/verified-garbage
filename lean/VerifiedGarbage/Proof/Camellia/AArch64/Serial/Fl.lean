@@ -72,7 +72,7 @@ theorem flInput_run {s : State} {r : Reg} {k : Nat}
   let d := c.write .w .x12 (c.read .w r + (0 : BitVec 32))
   let t := d.write .x .x16 (d.read .x .x8 >>> 32)
   refine ⟨t,?_,?_,?_,?_,?_,?_,rfl,rfl,rfl,rfl,rfl⟩
-  · rw [flInput,runBlock_cons,exec_ldr_x ⟨by omega,by omega⟩ hread,runStep_some]
+  · rw [flInput,runBlock_cons,exec_ldr_x ⟨by omega_using [],by omega_using [hk]⟩ hread,runStep_some]
     rfl
   · simp only [t,d,c,b,a,gpr_write,State.read,Size.bits,BitVec.setWidth_eq,
       ↓reduceIte,reduceCtorEq]

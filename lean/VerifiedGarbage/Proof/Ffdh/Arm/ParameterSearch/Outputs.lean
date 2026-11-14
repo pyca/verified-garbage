@@ -24,8 +24,8 @@ theorem SearchLive.zero_output {p : SearchParams} {used remaining : Nat} {s : St
   simp only [searchValues] at pointer length
   have output : VG.Proof.Ffdh.Arm.OutputBuffer p.c.out p.c.length s :=
     ⟨p.c.outputFits, ⟨_, h.buffers.output.2, Region.contains_self _ _⟩⟩
-  refine WP.mono (zeroOut_ok s h.buffers.controller (by have := p.width_bounds; omega)
-    (by have := p.width_bounds; omega) pointer length output) ?_
+  refine WP.mono (zeroOut_ok s h.buffers.controller (by have := p.width_bounds; omega_using [this])
+    (by have := p.width_bounds; omega_using [this]) pointer length output) ?_
   rintro t ⟨bytes, frame, rest⟩
   exact ⟨h.after_call (rest.mono (by simp [searchClobbers])) (frame.mono (by simp [callChanges])),
     bytes, frame, rest⟩

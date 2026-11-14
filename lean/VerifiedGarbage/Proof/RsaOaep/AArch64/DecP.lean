@@ -155,7 +155,7 @@ theorem PreX.arg (hL : L.Ok) (hx : PreX L m₀) {t : State} (hc : Ctx L g vv m�
   have hpQ := hL.pQ
   have hn := hL.nQa
   have hal := hx.al
-  have hs : Region.Sub ⟨L.Q + BitVec.ofNat 64 d, 8⟩ L.ARGS := Offset.sub _ (by omega) (by omega)
+  have hs : Region.Sub ⟨L.Q + BitVec.ofNat 64 d, 8⟩ L.ARGS := Offset.sub _ (by omega_using [hd]) (by omega_using [hd, hal])
   refine hc.frame.readW (r := ⟨L.Q + BitVec.ofNat 64 d, 8⟩) (Region.contains_self _ _) ?_ (by decide)
   simp only [List.mem_cons, List.not_mem_nil, or_false]
   rintro r (rfl | rfl | rfl | rfl)
@@ -164,7 +164,7 @@ theorem PreX.arg (hL : L.Ok) (hx : PreX L m₀) {t : State} (hc : Ctx L g vv m�
   · exact (hL.sA.sub_right hs).symm
   · show Region.Disjoint _ ⟨L.Q - BitVec.ofNat 64 L.P, L.P + 288⟩
     rw [q_add L.Q L.P d]
-    exact Offset.disjoint_base _ (by omega) (by omega)
+    exact Offset.disjoint_base _ (by omega_using [hd]) (by omega_using [hd, hpQ, hn, hal])
 
 /-- Our stack arguments 17 and 18 to the frame's words 12 and 13. -/
 theorem preArgs_ok (hL : L.Ok) (hP : 16 ≤ L.P) (hx : PreX L m₀) {t : State} (hc : Ctx L g vv m₀ t)
@@ -187,10 +187,10 @@ theorem preArgs_ok (hL : L.Ok) (hP : 16 ≤ L.P) (hx : PreX L m₀) {t : State} 
     simp only [RegUpd.gpr_write, ite_true, Size.bits, BitVec.setWidth_eq]
   have inA : ∀ (u : State), u.rd = t.rd → u.wr = t.wr → ∀ d, d = 424 ∨ d = 432 →
       InRegions (u.rd ++ u.wr) (L.Q + BitVec.ofNat 64 d) 8 := fun u hu hw d hd =>
-    ⟨L.ARGS, by rw [hu, hw, hc.rd]; simp, Offset.contains _ (by omega) (by omega) (by omega)⟩
+    ⟨L.ARGS, by rw [hu, hw, hc.rd]; simp, Offset.contains _ (by omega_using [hd]) (by omega_using [hal, hd]) (by omega_using [hal])⟩
   have inF : ∀ (u : State), u.wr = t.wr → ∀ d, d + 8 ≤ frameBytes →
       InRegions u.wr (L.Q + BitVec.ofNat 64 d) 8 := fun u hw d hd =>
-    ⟨L.FR, by rw [hw, hc.wr]; simp, Offset.contains_base _ hd (by unfold frameBytes at hd; omega)⟩
+    ⟨L.FR, by rw [hw, hc.wr]; simp, Offset.contains_base _ hd (by unfold frameBytes at hd; omega_using [hd])⟩
   refine WP.mono (mv_step (j := 17) (d := 96) (by decide) (by decide)
     (by rw [RegUpd.sp_write, hc.sp]; exact inA _ (RegUpd.rd_write ..) (RegUpd.wr_write ..) 424 (.inl rfl))
     (by rw [x9]; exact inF _ (RegUpd.wr_write ..) 96 (by decide))) fun t₁ ⟨r₁, w₁, s₁, v₁, m₁, g₁⟩ => ?_
@@ -203,7 +203,7 @@ theorem preArgs_ok (hL : L.Ok) (hP : 16 ≤ L.P) (hx : PreX L m₀) {t : State} 
   have e17 : (t.write .x .x9 L.Q).mem.readW ((t.write .x .x9 L.Q).sp + BitVec.ofNat 64 (arg 17)) 64 = L.pre := by
     rw [RegUpd.mem_write, RegUpd.sp_write, hc.sp, show arg 17 = 424 from rfl, hx.arg hL hc (.inl rfl), hx.a17]
   have sep : Mem.Sep (L.Q + BitVec.ofNat 64 432) 8 (L.Q + BitVec.ofNat 64 96) 8 :=
-    Offset.sep _ (by omega) (by omega) (by omega)
+    Offset.sep _ (by omega_using []) (by omega_using []) (by omega_using [])
   have e18 : t₁.mem.readW (t₁.sp + BitVec.ofNat 64 (arg 18)) 64 = L.prl := by
     rw [m₁, x9, e17, sp₁, show arg 18 = 432 from rfl, RegUpd.mem_write,
       Mem.readW_writeW_sep sep (by decide), hx.arg hL hc (.inr rfl), hx.a18]
@@ -237,7 +237,7 @@ abbrev privRdP (L : DLay) : List Region :=
 
 theorem upd2 {W : Nat → BitVec 64} {a b : BitVec 64} {i : Nat} (hi : i < 12) :
     upd (upd W 12 a) 13 b i = W i := by
-  simp only [upd]; rw [ifn (by omega), ifn (by omega)]
+  simp only [upd]; rw [ifn (by omega_using [hi]), ifn (by omega_using [hi])]
 
 theorem pre_mem (hx : PreX L m₀) : (⟨L.pre, L.prl.toNat * 8⟩ : Region) ∈ L.X := by rw [hx.x]; simp
 
@@ -250,7 +250,7 @@ theorem PreX.words (hx : PreX L m₀) (hL : L.Ok) {t : State} (hc : Ctx L g vv m
   simp only [Spec.Rsa.wordsAt]
   refine List.map_congr_left fun i hi => ?_
   have hi := List.mem_range.mp hi
-  refine hc.frame.readW (r := ⟨L.pre, L.prl.toNat * 8⟩) (Offset.contains_base _ (by omega) (by omega)) ?_
+  refine hc.frame.readW (r := ⟨L.pre, L.prl.toNat * 8⟩) (Offset.contains_base _ (by omega_using [hn, hi]) (by omega_using [hn, this, hi])) ?_
     (by decide)
   simp only [List.mem_cons, List.not_mem_nil, or_false]
   rintro r (rfl | rfl | rfl | rfl)
@@ -273,7 +273,7 @@ theorem privP_pre (hL : L.Ok) {S : Nat} (hP : L.P = S + 1) (hx : PreX L m₀) {t
   have sa : ∀ i < 14, stackArg (t.callEntry.withRegions (privRdP L) (privWr L)) i = upd (upd W 12 L.pre) 13 L.prl i :=
     fun i hi => by rw [stackArg_ce, hc.sp]; exact R.fr i (by unfold nW frameBytes; omega_arith)
   have sw : ∀ i < 12, stackArg (t.callEntry.withRegions (privRdP L) (privWr L)) i = W i :=
-    fun i hi => (sa i (by omega)).trans (upd2 hi)
+    fun i hi => (sa i (by omega_using [hi])).trans (upd2 hi)
   have a0 := (sw 0 (by decide)).trans hA.p
   have a1 := (sw 1 (by decide)).trans (hA.args 0 (by decide))
   have a2 := (sw 2 (by decide)).trans (hA.args 1 (by decide))
@@ -368,7 +368,7 @@ theorem privP_call (c : PrivPChecked) (hL : L.Ok) (hP : L.P = c.stack) (hx : Pre
     (hc : Ctx L g vv m₀ t) (hr : Ready L t) {V : Nat → Byte} {W : Nat → BitVec 64}
     (R : Rep t.mem L.Q L.scr V (upd (upd W 12 L.pre) 13 L.prl)) (hA : CallArgs L W) :
     WP isa (.call c.name c.code) t (Called L g vv m₀ (upd (upd W 12 L.pre) 13 L.prl)) := by
-  obtain ⟨S, hS⟩ : ∃ S, c.stack = S + 1 := ⟨c.stack - 1, by have := c.pos; omega⟩
+  obtain ⟨S, hS⟩ : ∃ S, c.stack = S + 1 := ⟨c.stack - 1, by have := c.pos; omega_using [this]⟩
   have hP' : L.P = S + 1 := hP.trans hS
   have hnQ := hL.nQ
   have hdp : 16 * c.code.aarch64Depth ≤ S + 1 := hS ▸ c.depth
@@ -459,8 +459,8 @@ theorem fixScr_ok (hL : L.Ok) (hP : 16 ≤ L.P) {t : State} {W : Nat → BitVec 
     simp only [RegUpd.gpr_write, ite_true, Size.bits, BitVec.setWidth_eq]
   refine WP.mono (mv_step (j := 13) (d := 96) (by decide) (by decide)
     (by rw [RegUpd.sp_write, hc.sp, RegUpd.rd_write, RegUpd.wr_write]
-        exact ⟨L.ARGS, by rw [hc.rd]; simp, Offset.contains _ (by decide) (by unfold arg frameBytes; omega)
-          (by omega)⟩)
+        exact ⟨L.ARGS, by rw [hc.rd]; simp, Offset.contains _ (by decide) (by unfold arg frameBytes; omega_using [hal])
+          (by omega_using [hal'])⟩)
     (by rw [x9, RegUpd.wr_write]
         exact ⟨L.FR, by rw [hc.wr]; simp, Offset.contains_base _ (by decide) (by decide)⟩))
     fun u ⟨r₁, w₁, s₁, v₁, m₁, g₁⟩ => ?_
@@ -480,7 +480,7 @@ theorem fixScr_ok (hL : L.Ok) (hP : 16 ≤ L.P) {t : State} {W : Nat → BitVec 
   refine ⟨hc.step hL hP S fun r h => absurd h List.not_mem_nil, ⟨fun _ _ => rfl, R'.fr⟩, ?_⟩
   refine writtenOutcome_congr (bytesAt_eq fun i hi => ?_) (by rw [gu .x0 (by decide) (by decide)]) hcl.out
   rw [BitVec.add_zero]
-  exact R'.scr i (by unfold oRsa; omega)
+  exact R'.scr i (by unfold oRsa; omega_using [hk, hi])
 
 end
 
@@ -491,7 +491,7 @@ theorem slots_fix {L : DLay} {W : Nat → BitVec 64} {a b : BitVec 64} (hS : Slo
     simp only [upd]
     rcases h3 with rfl | h3
     · rw [ifp rfl]; exact hS.scr.symm
-    · rw [ifn (by omega), ifn (by omega), ifn (by omega)]
+    · rw [ifn (by omega_using [h3]), ifn (by omega_using [h3]), ifn (by omega_using [h3])]
 
 /-! ## The whole function -/
 

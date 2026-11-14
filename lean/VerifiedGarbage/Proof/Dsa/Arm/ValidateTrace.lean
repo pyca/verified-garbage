@@ -45,10 +45,10 @@ theorem range_trace {s₁ s₂ : State} {base : Addr} {size₁ size₂ len n : N
   unfold Validate.range
   dsimp only
   rw [← w.n_eq]
-  refine SameTrace.seq (load_trace hs₁ hs₂ (by omega) (by omega) Rq₁.ok hem)
+  refine SameTrace.seq (load_trace hs₁ hs₂ (by omega_using [hz₁]) (by omega_using [hz₂]) Rq₁.ok hem)
     (loadSlot_ok (i := 0) hs₁ hz₁ w (by decide) Rq₁) (loadSlot_ok (i := 0) hs₂ hz₂ w (by decide) Rq₂)
     fun u₁ u₂ ⟨w₁, _, R₁, O₁⟩ ⟨w₂, _, R₂, O₂⟩ => ?_
-  refine loadThen_trace w₁ w₂ (by omega) (by omega) Ri₁.ok (ptrEq_slot Ri₁.ok hei (by decide) n48 R₁ O₁ R₂ O₂)
+  refine loadThen_trace w₁ w₂ (by omega_using [hz₁]) (by omega_using [hz₂]) Ri₁.ok (ptrEq_slot Ri₁.ok hei (by decide) n48 R₁ O₁ R₂ O₂)
     (relCT_T10 ((RelCT.seq (Q := VG.Arm.Taint.Agree T0) (checkRange_relCT _ _ _ _) ?_).mono (fun _ _ h => h) fun _ _ _ => trivial))
   cases aboveOne
   · exact RelCT.block_nil fun _ _ h => h
@@ -59,7 +59,7 @@ theorem zero_trace {s₁ s₂ : State} {base : Addr} {size₁ size₂ len : Nat}
     (hp : PtrOk input) (hei : PtrEq base s₁ s₂ input) (want : Bool) :
     SameTrace isa (Validate.zero len input want) s₁ s₂ := by
   unfold Validate.zero
-  exact loadThen_trace hs₁ hs₂ (by omega) (by omega) hp hei
+  exact loadThen_trace hs₁ hs₂ (by omega_using [hz₁]) (by omega_using [hz₂]) hp hei
     (relCT_T10 ((checkZero_relCT _ _ _ want).mono (fun _ _ h => h) fun _ _ _ => trivial))
 
 theorem isOne_trace {s₁ s₂ : State} {base : Addr} {size₁ size₂ len : Nat} {input : Pointer}
@@ -67,7 +67,7 @@ theorem isOne_trace {s₁ s₂ : State} {base : Addr} {size₁ size₂ len : Nat
     (hp : PtrOk input) (hei : PtrEq base s₁ s₂ input) :
     SameTrace isa (Validate.isOne len input) s₁ s₂ := by
   unfold Validate.isOne
-  exact loadThen_trace hs₁ hs₂ (by omega) (by omega) hp hei
+  exact loadThen_trace hs₁ hs₂ (by omega_using [hz₁]) (by omega_using [hz₂]) hp hei
     (relCT_T10 ((RelCT.seq (setConst_relCT _ _ _) (relCT_T10 (equalAcc_relCT _ _ _))).mono
       (fun _ _ h => h) fun _ _ _ => trivial))
 

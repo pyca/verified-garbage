@@ -101,8 +101,8 @@ theorem mulQP256Ifma_ok (hI : Weierstrass.X86_64.InvSounds) (hL : Weierstrass.La
       have ht' : t < 256 := ht
       have h2 : bitsAt p256x.n 2 + 256 ≤ 5472 := by decide
       have hm : bitsAt p256x.n j ≤ bitsAt p256x.n 2 := by
-        unfold bitsAt; exact Nat.add_le_add_left (Nat.mul_le_mul_left _ (by omega)) _
-      exact Or.inl (by show bitsAt p256x.n j + t + 1 ≤ 5472; omega))
+        unfold bitsAt; exact Nat.add_le_add_left (Nat.mul_le_mul_left _ (by omega_using [hj])) _
+      exact Or.inl (by show bitsAt p256x.n j + t + 1 ≤ 5472; omega_using [ht', h2, hm]))
     (fun hP _ hkJ _ _ hs hM hF => Proof.P256.X86_64.Ifma.vwindowO_ok (evLay hI)
       (Weierstrass.unitMod_pow_two (p256x_ok hI).p_odd _) hL (p256x_ok hI).am3 hO (p256x_ok hI).p_lt
       (show p256x.mont 1 < p256x.C.p from Nat.mod_lt _ (by decide))

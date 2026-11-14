@@ -51,7 +51,7 @@ theorem reduceInit_ct : RelCT isa (Two LinkedPre) (.block (Arithmetic.reduceInit
     change WP isa (.block [ldh .x5 Crt.sLink]) s _
     drun [hc.x0, hdr_enc (show Crt.sLink < 32 by decide), hc.link,
       hc.good.scr.ld (show 8 * Crt.sLink + 8 ≤ slot p.wx 8 by
-        have := hdr_lt_slot p.wx 8 (show Crt.sLink < 32 by decide); omega)]
+        have := hdr_lt_slot p.wx 8 (show Crt.sLink < 32 by decide); omega_using [this])]
   exact two_taint [.x0, .x5]
     (pins_of (fun p r => if r = .x0 then off p.B p.o else p.B) (by
       intro p s h r hr

@@ -57,20 +57,20 @@ theorem sampleSuffix_ok (s : State) {p : Inputs} {l : ScalarLayout p} {slots : L
     have entropyT := entropy.after_frame frame rest (by simpa [size] using entropySep)
     refine ⟨context, entropyT, ?_, ?_, rest.mono (by simp)⟩
     · simp only [sampleSuffix, empty, Spec.Rsa.bytesAt, List.range_zero, List.map_nil]
-      exact (List.drop_eq_nil_iff.mpr (by omega)).symm
+      exact (List.drop_eq_nil_iff.mpr (by omega_using [size, empty])).symm
     · rw [mem]; exact Frame.refl _ _
-  · have positive : 0 < p.k - (l.lead + 1) := by omega
-    have out := output.slice positive (by omega : (l.lead + 1) + (p.k - (l.lead + 1)) ≤ p.k)
-    have inp := entropy.slice positive (by omega : (l.lead + 1) + (p.k - (l.lead + 1)) ≤ rb.length)
+  · have positive : 0 < p.k - (l.lead + 1) := by omega_using [empty]
+    have out := output.slice positive (by omega_using [lead] : (l.lead + 1) + (p.k - (l.lead + 1)) ≤ p.k)
+    have inp := entropy.slice positive (by omega_using [size, lead] : (l.lead + 1) + (p.k - (l.lead + 1)) ≤ rb.length)
     have inpSize : ((rb.drop (l.lead + 1)).take (p.k - (l.lead + 1))).length = p.k - (l.lead + 1) := by
       simp only [List.length_take, List.length_drop, size, Nat.min_self]
-    have inpAddr := VG.Arm.addr_add (a := p.entropy) (k := l.lead + 1) (by have := entropy.fits; omega)
-    have outAddr := VG.Arm.addr_add (a := p.privateValue) (k := l.lead + 1) (by have := output.fits; omega)
+    have inpAddr := VG.Arm.addr_add (a := p.entropy) (k := l.lead + 1) (by have := entropy.fits; omega_using [size, empty, this])
+    have outAddr := VG.Arm.addr_add (a := p.privateValue) (k := l.lead + 1) (by have := output.fits; omega_using [empty, this])
     have inpSub : (⟨State.addr (p.entropy + BitVec.ofNat 32 (l.lead + 1)), p.k - (l.lead + 1)⟩ : Region).Sub
-        ⟨State.addr p.entropy, p.k⟩ := by rw [inpAddr]; exact Offset.sub_base _ (by omega)
+        ⟨State.addr p.entropy, p.k⟩ := by rw [inpAddr]; exact Offset.sub_base _ (by omega_using [lead])
     have outSub : (⟨State.addr (p.privateValue + BitVec.ofNat 32 (l.lead + 1)), p.k - (l.lead + 1)⟩ : Region).Sub
-        ⟨State.addr p.privateValue, p.k⟩ := by rw [outAddr]; exact Offset.sub_base _ (by omega)
-    refine WP.mono (copyOptional_ok s (by have := p.maxLength; omega) (by simpa only [inpSize] using inp.fits) out.fits
+        ⟨State.addr p.privateValue, p.k⟩ := by rw [outAddr]; exact Offset.sub_base _ (by omega_using [lead])
+    refine WP.mono (copyOptional_ok s (by have := p.maxLength; omega_using [this]) (by simpa only [inpSize] using inp.fits) out.fits
       (by simpa only [inpSize] using inp.readable) out.writable ((entropySep.sub_left inpSub).sub_right outSub)
       source dest count) ?_
     rintro t ⟨bytes, frame, rest⟩
@@ -78,8 +78,8 @@ theorem sampleSuffix_ok (s : State) {p : Inputs} {l : ScalarLayout p} {slots : L
     have entropyT := entropy.after_frame frame rest (by simpa [size] using entropySep.sub_right outSub)
     refine ⟨context, entropyT, ?_, ?_, rest⟩
     · rw [outAddr, inpAddr] at bytes
-      rw [← VG.Proof.Dsa.bytesAt_slice s.mem (State.addr p.entropy) (by omega : (l.lead + 1) + (p.k - (l.lead + 1)) ≤ rb.length), entropy.bytes] at bytes
-      rw [List.take_of_length_le (by simp only [List.length_drop, size]; omega)] at bytes
+      rw [← VG.Proof.Dsa.bytesAt_slice s.mem (State.addr p.entropy) (by omega_using [size, lead] : (l.lead + 1) + (p.k - (l.lead + 1)) ≤ rb.length), entropy.bytes] at bytes
+      rw [List.take_of_length_le (by simp only [List.length_drop, size]; omega_using [])] at bytes
       exact bytes
     · simpa only [sampleSuffix, outAddr] using frame
 

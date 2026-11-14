@@ -23,7 +23,7 @@ theorem key_initial_words (m : Mem) (p : Addr) (nk off : Nat)
     (h : off + 4 ≤ nk) :
     ∀ j < 4, dword (m.readW (p + BitVec.ofNat 64 (4 * off)) 128) j = W m p nk (off + j) := by
   intro j hj
-  rw [dword_readW _ _ hj, W_lt (by omega),
-    show 4 * (off + j) = 4 * off + 4 * j by omega, BitVec.ofNat_add, BitVec.add_assoc]
+  rw [dword_readW _ _ hj, W_lt (by omega_using [h, hj]),
+    show 4 * (off + j) = 4 * off + 4 * j by omega_using [], BitVec.ofNat_add, BitVec.add_assoc]
 
 end VG.Proof.Aes.X86.AesNi

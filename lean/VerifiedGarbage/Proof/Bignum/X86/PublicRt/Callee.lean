@@ -171,23 +171,23 @@ theorem callee_pre {s g : State} {base : Addr} {bytes : Nat} (A : RtABI (calleeO
   have e : (calleeOf g base bytes).gpr .esp = s.gpr .esp - BitVec.ofNat 32 40 := by
     show g.callEntry.gpr .esp = _
     rw [State.callEntry_esp, hesp, BitVec.sub_sub]; rfl
-  have e40 : (s.gpr .esp - BitVec.ofNat 32 40).toNat = (s.gpr .esp).toNat - 40 := sub_toNat (by omega)
+  have e40 : (s.gpr .esp - BitVec.ofNat 32 40).toNat = (s.gpr .esp).toNat - 40 := sub_toNat (by omega_using [low])
   have e56 : ((calleeOf g base bytes).gpr .esp).setWidth 64 - 56#64 =
       (s.gpr .esp - BitVec.ofNat 32 40 - BitVec.ofNat 32 56).setWidth 64 := by
     rw [e]
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.toNat_sub, BitVec.toNat_setWidth, BitVec.toNat_ofNat]
-    omega
+    omega_using [low]
   have sub : Region.Sub ⟨((calleeOf g base bytes).gpr .esp).setWidth 64 - 56#64, 56⟩ (below (s.gpr .esp) 96) := by
     rw [e56]; exact below_inner (a := 56) (k := 40) (b := 96) (by decide) low
-  refine rtPre_of A (by rw [e, e40]; omega) (by rw [eW]; exact R.apart.sub_left sub) ?_
+  refine rtPre_of A (by rw [e, e40]; omega_using [low]) (by rw [eW]; exact R.apart.sub_left sub) ?_
   have argA : argAddr (calleeOf g base bytes) 0 = (g.gpr .esp).setWidth 64 := by
     show argAddr g.callEntry 0 = _
     rw [argAddr_callEntry]; simp
   have e96 : (s.gpr .esp - BitVec.ofNat 32 40 - BitVec.ofNat 32 56).toNat = (s.gpr .esp).toNat - 96 := by
-    rw [sub_toNat (by rw [e40]; omega), e40]; omega
-  have e36 : (s.gpr .esp - BitVec.ofNat 32 36).toNat = (s.gpr .esp).toNat - 36 := sub_toNat (by omega)
+    rw [sub_toNat (by rw [e40]; omega_using [low]), e40]; omega_using []
+  have e36 : (s.gpr .esp - BitVec.ofNat 32 36).toNat = (s.gpr .esp).toNat - 36 := sub_toNat (by omega_using [low])
   rw [argA, e56, hesp]
-  refine Region.disjoint_of_le (.inl ?_) ?_ ?_ <;> simp only [setWidth_toNat, e96, e36] <;> omega
+  refine Region.disjoint_of_le (.inl ?_) ?_ ?_ <;> simp only [setWidth_toNat, e96, e36] <;> omega_arith
 
 end VG.Proof.Bignum.X86.PublicRt

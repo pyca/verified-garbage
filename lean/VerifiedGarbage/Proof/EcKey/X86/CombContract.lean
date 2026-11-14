@@ -51,7 +51,7 @@ theorem pkComb_pre {s : State} (h : pkCombSpec.pre s) :
       ∀ r ∈ below (s.gpr .esp) 20 :: pkCombWr s,
         Region.Disjoint ⟨(s.syms "VG_P256_COMB").setWidth 64, 8 * p256W.length⟩ r
     refine ⟨held, ?_, ?_⟩
-    · simp only [BitVec.toNat_setWidth]; omega
+    · simp only [BitVec.toNat_setWidth]; omega_using [fit]
     · intro r hr
       simp only [pkCombWr, List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl

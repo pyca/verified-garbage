@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.Scratch
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # SM4-GCM on PPC64LE: two working spaces
@@ -41,7 +42,7 @@ theorem local_withScratch {α : Type} {pb : Nat} {sig : Sig} (nm : String) (e : 
     · subst h0; simp at hl
     · exact ⟨L, b, List.concat_eq_append ..⟩
   have hl' : vs'.length = (sig.words pb).length := by
-    rw [List.length_append, List.length_singleton] at hl; omega
+    rw [List.length_append, List.length_singleton] at hl; omega_using [hl]
   show R (Curry.apply _ (Curry.withScratch pb nm e n sig.params f) (vs' ++ [x]) m₁)
     (Curry.apply _ (Curry.withScratch pb nm e n sig.params f) (vs' ++ [x]) m₂)
   rw [Curry.apply_withScratch pb nm e n sig.params f vs' x hl']

@@ -40,8 +40,8 @@ structure Start (s₀ s : State) : Prop extends Setup s₀ s where
 
 theorem scratch_contains {to : Bool} {s : State} (hp : GPre to s) {d n : Nat} (h : d + n ≤ 2048) (hn : 0 < n := by decide) :
     (scrR s).Contains (addr (scrP s) d) n := by
-  rw [addr_eq (by have hf := hp.fB; omega)]
-  exact Offset.contains_base _ h (by omega)
+  rw [addr_eq (by have hf := hp.fB; omega_using [h, hn, hf])]
+  exact Offset.contains_base _ h (by omega_using [h])
 
 theorem scratch_in {to : Bool} {s : State} (hp : GPre to s) {d n : Nat} (h : d + n ≤ 2048)
     (hn : 0 < n := by decide) : InRegions s.wr (addr (scrP s) d) n :=
@@ -61,8 +61,8 @@ theorem Setup.setReg {s₀ s : State} (h : Setup s₀ s) (d : Reg) (v : BitVec 3
 
 theorem ctr_contains {to : Bool} {s : State} (hp : GPre to s) {d n : Nat} (h : d + n ≤ 16)
     (hn : 0 < n := by decide) : (ctrR s).Contains (addr (ctrP s) d) n := by
-  rw [addr_eq (by have hf := hp.fC; omega)]
-  exact Offset.contains_base _ h (by omega)
+  rw [addr_eq (by have hf := hp.fC; omega_using [h, hn, hf])]
+  exact Offset.contains_base _ h (by omega_using [h])
 
 
 end VG.Proof.Aes.X86.AesNi

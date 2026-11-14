@@ -51,7 +51,7 @@ theorem sdepth_initCode {H : Hash} (hH : HashOK H) (I : Spec.Hmac.Instance) (b :
     simp only [Hash.initLong, Code.fdepth]; omega
   simp only [initCode, Hash.initEntry, Code.iteCold, Impl.StackScratch.PPC64LE.withStackScratchWiped,
     Impl.StackScratch.PPC64LE.withStackScratch, sdepth, Instr.frameBytes, longFrame, Nat.max_le] at *
-  omega
+  omega_using [h48, hi, hid, hl, hld]
 
 /-- The facts about the functions `pbkdf2` calls, from their proofs. -/
 def okOf {H : Hash} (hH : HashOK H) {I : Spec.Hmac.Instance} {b : Nat} {itC : Prog isa} {itW : Nat}

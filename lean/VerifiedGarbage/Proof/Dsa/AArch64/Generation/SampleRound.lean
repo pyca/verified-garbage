@@ -118,7 +118,7 @@ theorem sampleRound_ok (M : Mont) (K : Kernel) {B p : Addr} {Z w N i uni ch : Na
     · simp only [testRanges, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq]
       rcases hk with rfl | rfl | rfl <;> constructor
       all_goals simp only [slot, hdrBytes, aX, kI, kElen, kUni, kP, kChecks, kE, kU, sFn] <;> omega_arith
-    · rcases hk with rfl | rfl | rfl <;> simp only [kI, kElen, kUni, kP, kChecks, kE, sFn] <;> omega
+    · rcases hk with rfl | rfl | rfl <;> simp only [kI, kElen, kUni, kP, kChecks, kE, sFn] <;> omega_using [hz]
     · exact hn
     · simpa using hout
   refine WP.seq (WP.mono (witnessRound_ok M K hu h4 h128 hEZ hodd hN hxu)

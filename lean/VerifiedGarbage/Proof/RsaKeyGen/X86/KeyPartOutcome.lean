@@ -37,7 +37,7 @@ theorem KeyReady.part_of {s t : State} {B : Addr} {n e p q : Nat}
     dsimp only
     have M : slot t.mem B kOk = 0 := by simpa only [empty, Nat.zero_ne_one, false_and, ite_false] using mask
     exact ⟨K.status.trans M, M⟩
-  · have unit : slot s.mem B kOk = 1 := by have H := R.bit; omega
+  · have unit : slot s.mem B kOk = 1 := by have H := R.bit; omega_using [empty, H]
     have inverse := R.inverse
     rw [unit, ite_eq_right (by decide : ¬(1 : Nat) = 0)] at inverse
     have large : ¬num s.mem B n aD ≤ 2 ^ (16 * n) := fun small => notSmall ⟨unit, small⟩
@@ -52,11 +52,11 @@ theorem KeyReady.part_of {s t : State} {B : Addr} {n e p q : Nat}
       have accepted : slot t.mem B kOk = 1 := by rw [M, ite_eq_left shape]
       refine ⟨K.status.trans accepted, accepted, ?_⟩
       have two : 2 ≤ 2 ^ (16 * n) :=
-        Nat.pow_le_pow_right (by decide : 0 < 2) (by omega : 1 ≤ 16 * n)
+        Nat.pow_le_pow_right (by decide : 0 < 2) (by omega_using [lower] : 1 ≤ 16 * n)
       have factors := VG.Proof.RsaKeyGen.primes_of_inverse
-        (Nat.le_trans (Nat.min_le_left p q) (Nat.le_max_left p q)) inverse (by omega)
-      have Pm : max p q - 1 ≠ 0 := by omega
-      have Qm : min p q - 1 ≠ 0 := by omega
+        (Nat.le_trans (Nat.min_le_left p q) (Nat.le_max_left p q)) inverse (by omega_using [boundP, notSmall, unit])
+      have Pm : max p q - 1 ≠ 0 := by omega_using [factors]
+      have Qm : min p q - 1 ≠ 0 := by omega_using [factors]
       have pFinal : num t.mem B n aPa = max p q := keptP.trans R.pValue
       have qFinal : num t.mem B n aQa = min p q := keptQ.trans R.qValue
       have dFinal : num t.mem B n aD = num s.mem B n aD := keptD

@@ -25,7 +25,7 @@ theorem double4_inv_ok {M : Mod} {base : Addr} {size m : Nat} [NeZero m] {Sl : N
   refine WP.mono (double4_ok hn hI.scr hI.mod hao hoo hlt) fun t ⟨hk,he⟩ => ?_
   refine ⟨hk,hI.update hL ho hk ?_ ?_⟩
   · rw [hn,he]
-    exact Nat.mod_lt _ (by have := NeZero.ne m; omega)
+    exact Nat.mod_lt _ (by have := NeZero.ne m; omega_using [hlt])
   · rw [hn,he,Nat.two_mul,toM_add]
     have hv := hI.val a ha
     rw [hn] at hv

@@ -36,7 +36,7 @@ theorem loop_ok {mont round : Prog isa} {montName roundName : String}
     fun t ⟨T, outcome, Wt, Ft, Kt⟩ => ?_
   rcases outcome with ⟨done, _, result⟩ | ⟨again, positive, next⟩
   · exact Or.inl ⟨done, T, result, Wa.trans Wt, Fa.trans Ft, Ka.trans Kt⟩
-  · exact Or.inr ⟨again, j, by omega, i + 1, j - 1, by omega, next, Wa.trans Wt, Fa.trans Ft, Ka.trans Kt⟩
+  · exact Or.inr ⟨again, j, by omega_using [], i + 1, j - 1, by omega_using [positive], next, Wa.trans Wt, Fa.trans Ft, Ka.trans Kt⟩
 
 theorem code_ok {mont round : Prog isa} {montName roundName : String}
     (montVerified : Verified target mont (Proof.Rsa.Mont.mulContract abi 56))

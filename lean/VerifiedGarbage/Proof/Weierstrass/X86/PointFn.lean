@@ -45,13 +45,13 @@ theorem enc_rIds {k : Nat} (hk3 : 3 ≤ k) (hk6 : k ≤ 6) (dbl : Bool) :
   intro x hx
   simp only [rIds, List.mem_cons, List.not_mem_nil, or_false] at hx
   cases dbl <;> rcases hx with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
-    simp only [enc, Nat.reduceLT, Nat.reduceEqDiff, ↓reduceIte, Nat.reduceSub, Nat.mul_zero, Nat.mul_one, Nat.add_zero, Bool.false_eq_true] <;> omega
+    simp only [enc, Nat.reduceLT, Nat.reduceEqDiff, ↓reduceIte, Nat.reduceSub, Nat.mul_zero, Nat.mul_one, Nat.add_zero, Bool.false_eq_true] <;> omega_using [this]
 
 /-- The slots `enc` gives are laid out as the program needs, and those it
 writes lie apart from the saved `lr` and within `O` or the own working
 space. -/
 theorem enc_lay {k : Nat} (hk3 : 3 ≤ k) (hk6 : k ≤ 6) (dbl : Bool) : LayR k 17 wIds (enc k dbl) := by
-  obtain rfl | rfl | rfl | rfl : k = 3 ∨ k = 4 ∨ k = 5 ∨ k = 6 := by omega
+  obtain rfl | rfl | rfl | rfl : k = 3 ∨ k = 4 ∨ k = 5 ∨ k = 6 := by omega_using [hk3, hk6]
   all_goals cases dbl <;> exact ⟨by decide, by decide⟩
 
 theorem enc_wIds {k : Nat} (hk3 : 3 ≤ k) (hk6 : k ≤ 6) (dbl : Bool) :
@@ -62,7 +62,7 @@ theorem enc_wIds {k : Nat} (hk3 : 3 ≤ k) (hk6 : k ≤ 6) (dbl : Bool) :
   intro w hw
   simp only [wIds, List.mem_cons, List.not_mem_nil, or_false] at hw
   rcases hw with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
-    simp only [enc, Impl.Weierstrass.X86.Point.tmpAt, Nat.reduceLT, Nat.reduceEqDiff, ↓reduceIte, Nat.reduceSub, Nat.mul_zero, Nat.mul_one, Nat.add_zero] <;> omega
+    simp only [enc, Impl.Weierstrass.X86.Point.tmpAt, Nat.reduceLT, Nat.reduceEqDiff, ↓reduceIte, Nat.reduceSub, Nat.mul_zero, Nat.mul_one, Nat.add_zero] <;> omega_using [this]
 
 /-- Changes within ranges are within any ranges that contain them. -/
 theorem outs_sub {base : Addr} {rs rs' : List (Nat × Nat)} {m m' : Mem} (h : Outs base rs m m')
@@ -70,14 +70,14 @@ theorem outs_sub {base : Addr} {rs rs' : List (Nat × Nat)} {m m' : Mem} (h : Ou
   fun x hx => h x fun r hr => by
     obtain ⟨r', hr', h1, h2⟩ := hs r hr
     have := hx r' hr'
-    omega
+    omega_using [h1, h2, this]
 
 /-- A 32-bit word apart from the ranges. -/
 theorem outs_readW32 {base : Addr} {W : List (Nat × Nat)} {m m' : Mem} (h : Outs base W m m')
     {d : Nat} (hd : ∀ w ∈ W, d + 4 ≤ w.1 ∨ w.1 + w.2 ≤ d) (hd' : d + 4 ≤ 2 ^ 64) :
     m'.readW (off base d) 32 = m.readW (off base d) 32 :=
   (Mem.readW_congr fun i hi => (h _ fun w hw' => by
-    rw [ofs_off base (by omega)]; have := hd w hw'; omega).symm).symm
+    rw [ofs_off base (by omega_using [hd', hi])]; have := hd w hw'; omega_using [hi, this]).symm).symm
 
 /-- The precondition of the function, on the state: the working space its
 argument, writable, apart from the argument, the return address and the
@@ -92,7 +92,7 @@ structure PrePt (k m : Nat) (dbl : Bool) (s : State) : Prop where
 /-- `[ws + d]`, through a register holding the argument. -/
 theorem addr_ws {s : State} {base : Addr} (hs : ArgP s base) {d : Nat} (hd : d < 8192) :
     addr (arg s 0) d = off base d := by
-  rw [addr_eq (by have := hs.arg_toNat; have := hs.nowrap; omega), hs.ws]
+  rw [addr_eq (by have := hs.arg_toNat; have := hs.nowrap; omega_arith), hs.ws]
 
 /-- The environment of the entry: what the numbers of the slots stand for. -/
 def E₀ (k m : Nat) [NeZero m] (dbl : Bool) (s : State) (x : Nat) : Fin m :=

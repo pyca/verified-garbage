@@ -29,7 +29,7 @@ open VG.Spec.MlDsa
 
 theorem mem_hintParams {ω k : Nat} (h : (ω, k) ∈ hintParams) : 4 ≤ k ∧ k ≤ 8 ∧ 55 ≤ ω ∧ ω ≤ 80 := by
   simp only [hintParams, List.mem_cons, Prod.mk.injEq, List.not_mem_nil, or_false] at h
-  omega
+  omega_using [h]
 
 /-- The sign bit of `x - y`, for `x` and `y` less than `2³¹`: whether `x < y`. -/
 theorem ltBit_val {x y : BitVec 32} (hx : x.toNat < 2 ^ 31) (hy : y.toNat < 2 ^ 31) :
@@ -41,8 +41,8 @@ theorem ltBit_z {x y : BitVec 32} (hx : x.toNat < 2 ^ 31) (hy : y.toNat < 2 ^ 31
     ((x - y) >>> 31 - 0 == 0) = decide (y.toNat ≤ x.toNat) := by
   rw [ltBit_val hx hy]
   split
-  · rw [decide_eq_false (by omega)]; rfl
-  · rw [decide_eq_true (by omega)]; rfl
+  · rw [decide_eq_false (by omega_arith)]; rfl
+  · rw [decide_eq_true (by omega_arith)]; rfl
 
 theorem sub_zero32 (x : BitVec 32) : x - 0 = x := BitVec.sub_zero x
 
@@ -64,7 +64,7 @@ theorem cmp_const {j c : Nat} (hj : j < 2 ^ 32) (hc : c < 2 ^ 32) :
 theorem setWidth8_ofNat (x : Nat) : (BitVec.ofNat 32 x).setWidth 8 = BitVec.ofNat 8 x := by
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]
-  omega
+  omega_using []
 
 /-- A byte, as `ldrb` loads it. -/
 theorem byte_toNat32 (b : Byte) : (b.setWidth 32).toNat = b.toNat := VG.Proof.MlKem.Arm.setWidth32_toNat b
@@ -97,15 +97,15 @@ theorem storeWords_readW (m : Mem) (a : BitVec 32) (vs : List (BitVec 32)) (h : 
         (Region.contains_self _ _) (fun r hr => by
           rw [List.mem_singleton] at hr; subst hr
           by_cases hv : vs.length = 0
-          · intro x _ h2; simp only [Region.Contains, hv] at h2; omega
-          rw [show (4 : BitVec 32) = BitVec.ofNat 32 4 from rfl, addr_ofNat a (by omega)]
-          exact Offset.base_disjoint _ (Nat.le_refl 4) (by have := addr_toNat' a; omega)) (by decide),
+          · intro x _ h2; simp only [Region.Contains, hv] at h2; omega_using [h2]
+          rw [show (4 : BitVec 32) = BitVec.ofNat 32 4 from rfl, addr_ofNat a (by omega_using [h, hv])]
+          exact Offset.base_disjoint _ (Nat.le_refl 4) (by have := addr_toNat' a; omega_using [h])) (by decide),
         Mem.readW_writeW_self32]
       rfl
     | succ j =>
       rw [show a + BitVec.ofNat 32 (4 * (j + 1)) = a + 4 + BitVec.ofNat 32 (4 * j) by
-        rw [show (4 : BitVec 32) = BitVec.ofNat 32 4 from rfl, ptr_add]; congr 2; omega]
-      exact ih _ _ (by bv_omega) (by omega)
+        rw [show (4 : BitVec 32) = BitVec.ofNat 32 4 from rfl, ptr_add]; congr 2; omega_using []]
+      exact ih _ _ (by bv_omega) (by omega_using [hi])
 
 /-- The region of the frame of `rs`. -/
 abbrev frameR (s : State) (rs : List Reg) : Region :=
@@ -138,8 +138,8 @@ theorem frameR_contains (rs : List Reg) {s : State} (h : 4 * rs.length ≤ s.sp.
     (frameR s rs).Contains (State.addr (s.sp - BitVec.ofNat 32 (4 * rs.length) + BitVec.ofNat 32 (4 * i))) 4 := by
   have := s.sp.isLt
   have e : (s.sp - BitVec.ofNat 32 (4 * rs.length)).toNat = s.sp.toNat - 4 * rs.length := by bv_omega
-  rw [addr_ofNat _ (by omega)]
-  exact Offset.contains_base _ (by omega) (by omega)
+  rw [addr_ofNat _ (by omega_using [h, hi, e])]
+  exact Offset.contains_base _ (by omega_using [hi]) (by omega_using [h, hi])
 
 /-- Word `i` of the frame, after the body changed memory only outside it. -/
 theorem frame_saved (rs : List Reg) {s : State} (h : 4 * rs.length ≤ s.sp.toNat) {m : Mem} {R : List Region}

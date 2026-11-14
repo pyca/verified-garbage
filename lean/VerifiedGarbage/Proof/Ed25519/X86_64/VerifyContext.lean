@@ -106,14 +106,14 @@ theorem VerifyContext.of_keep {s t : State} {base pk sig challenge : Addr}
 theorem VerifyContext.kRead8 {s : State} {base pk sig challenge : Addr}
     (h : VerifyContext s base pk sig challenge) :
     ∀ j < 8, InRegions (s.rd ++ s.wr) (off challenge (8 * j)) 8 :=
-  fun j _ => h.challengeRead8 _ (by omega)
+  fun j _ => h.challengeRead8 _ (by omega_arith)
 
 theorem VerifyContext.sRead8 {s : State} {base pk sig challenge : Addr}
     (h : VerifyContext s base pk sig challenge) :
     ∀ j < 4, InRegions (s.rd ++ s.wr) (off sig (32 + 8 * j)) 8 :=
   fun j _ => by
     rw [show off sig (32 + 8 * j) = off (off sig 32) (8 * j) from (Offset.add_add _ _ _).symm]
-    exact h.scalarRead _ (by omega)
+    exact h.scalarRead _ (by omega_arith)
 
 theorem verifyKeep_bytes {base p : Addr} {len : Nat} {s t : State}
     (h : VerifyKeep base s t) (hf : ∀ i < len, 8192 ≤ ofs base (off p i)) :

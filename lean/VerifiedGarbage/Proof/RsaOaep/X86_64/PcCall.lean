@@ -33,14 +33,14 @@ theorem arg_in {s t : State} (hp : PPre H s) (hrd : t.rd = s.rd) {j : Nat} (hj :
   apply (Covers.one hp.args).left
   refine ⟨_, List.mem_singleton_self _, ?_⟩
   rw [stackArgAddr_j s j]
-  exact Offset.contains_base _ (by omega) (by omega)
+  exact Offset.contains_base _ (by omega_using [hj]) (by omega_using [hj])
 
 theorem arg_keep {s : State} (hp : PPre H s) {m : Mem} (hf : FrE s m) {j : Nat} (hj : j < 10) :
     m.readW (off (fb s) (frameBytes + 8 + 8 * j)) 64 = stackArg s j := by
   rw [argAddr]
   refine hf.readW (r := argsR s) ?_ (fun r hr => ?_) (by decide)
   · rw [stackArgAddr_j s j]
-    exact Offset.contains_base _ (by omega) (by omega)
+    exact Offset.contains_base _ (by omega_using [hj]) (by omega_using [hj])
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
     · exact hp.argsStack
@@ -75,7 +75,7 @@ theorem call_pre {s t : State} (hp : PPre H s) (hsp : t.gpr .rsp = fb s)
   have hF := fb_toNat hp.toEPre
   have hsp1 := hp.sp1; have hsp2 := hp.sp2
   have hE : ∀ i, i < 4 → stackArg (t.callEntry.withRegions (callRd s) (pubWr s)) i = t.mem.readW (off (fb s) (8 * i)) 64 :=
-    fun i hi => stackArg_entry hsp (by unfold encStack frameBytes at *; omega) _ _ (by unfold frameBytes at *; omega)
+    fun i hi => stackArg_entry hsp (by unfold encStack frameBytes at *; omega_using [hF, hsp1]) _ _ (by unfold frameBytes at *; omega_using [hF, hi])
   have hA : stackArgAddr (t.callEntry.withRegions (callRd s) (pubWr s)) 0 = fb s := by
     simp only [stackArgAddr, State.withRegions_gpr, State.callEntry_rsp, hsp]
     rw [show 8 * (0 + 1) = 8 from rfl, show (8 : BitVec 64) = BitVec.ofNat 64 8 from rfl, BitVec.sub_add_cancel]
@@ -99,27 +99,27 @@ theorem call_pre {s t : State} (hp : PPre H s) (hsp : t.gpr .rsp = fb s)
     exact fun x h => ret_sub s x (Offset.sub_below (fb s) (a := 8) (n := 8) (b := 16) (m := 16) (by decide)
       (by decide) x h)
   have dRF : Region.Disjoint ⟨fb s - 8, 8⟩ ⟨fb s, 32⟩ := by
-    rw [e8]; exact (Offset.base_disjoint_below (fb s) (n := 8) (k := 32) (by omega)).symm
+    rw [e8]; exact (Offset.base_disjoint_below (fb s) (n := 8) (k := 32) (by omega_using [])).symm
   have dEmR : Region.Disjoint ⟨off (stackArg s 6) oEm, (s.gpr .rcx).toNat⟩ (rsaR s) := by
     simp only [rsaR]; rw [r1]
-    exact Offset.disjoint _ (.inl (by unfold oEm oRsa; omega)) (by unfold oEm; omega) (by unfold oRsa; omega)
+    exact Offset.disjoint _ (.inl (by unfold oEm oRsa; omega_using [hk2])) (by unfold oEm; omega_using []) (by unfold oRsa; omega_using [wS])
   have em := em_sub hp.toEPre
   have rs := rsa_sub hp.toEPre
   have dSo : (scrR s).Disjoint (outR s) := hp.d_out_scr.symm
   have dSk : (scrR s).Disjoint (stkR s) := hp.d_stk_scr.symm
   have hf8 : (fb s - 8).toNat = (fb s).toNat - 8 := by
-    rw [e8, BitVec.toNat_sub, BitVec.toNat_ofNat]; unfold encStack frameBytes at *; omega
+    rw [e8, BitVec.toNat_sub, BitVec.toNat_ofNat]; unfold encStack frameBytes at *; omega_using [hF, hsp1]
   have dOF : (outR s).Disjoint ⟨fb s, 32⟩ := hp.d_stk_out.symm.sub_right sF
-  refine ⟨by rw [hf8]; unfold frameBytes at *; omega, rfl, rfl,
+  refine ⟨by rw [hf8]; unfold frameBytes at *; omega_using [hF], rfl, rfl,
     by rw [hout]; exact hp.preOut.symm, by rw [hout]; exact hp.d_out_e, by rw [hout]; exact dSo.symm.sub_right em,
     by rw [hout]; exact dSo.symm.sub_right rs, by rw [hout]; exact dOF,
     hp.preScr.sub_right rs, hp.d_e_scr.sub_right rs, dEmR, (dSk.sub_right sF).sub_left rs,
     by rw [hout]; exact (hp.d_stk_out).sub_left sR, hp.preStack.symm.sub_left sR, hp.d_stk_e.sub_left sR,
     (dSk.symm.sub_left sR).sub_right em, (dSk.symm.sub_left sR).sub_right rs, dRF,
     by rw [← hsi']; exact hp.wO, hp.preWrap, hp.wE,
-    by simp only [off, BitVec.toNat_add, BitVec.toNat_ofNat]; unfold oEm; omega,
-    by rw [r1, r2]; unfold oRsa; omega,
-    ⟨hk1, hk2⟩, hp.preLen, trivial, hp.L1, hp.L2, by rw [r1]; unfold Spec.Rsa.publicScratchWords Spec.Rsa.modulusWords; omega⟩
+    by simp only [off, BitVec.toNat_add, BitVec.toNat_ofNat]; unfold oEm; omega_using [hsl, wS],
+    by rw [r1, r2]; unfold oRsa; omega_using [hsl, wS],
+    ⟨hk1, hk2⟩, hp.preLen, trivial, hp.L1, hp.L2, by rw [r1]; unfold Spec.Rsa.publicScratchWords Spec.Rsa.modulusWords; omega_using [hsl]⟩
 
 theorem call_covers {s t : State} (hp : PPre H s) (hrd : t.rd = s.rd) (hwr : t.wr = [frR s, outR s, scrR s]) :
     Covers (callRd s ++ pubWr s) (t.rd ++ t.wr) ∧ Covers (pubWr s) t.wr := by
@@ -140,8 +140,8 @@ theorem pre_words {s : State} {m : Mem} (hp : PPre H s) (hf : FrE s m) :
   apply List.map_congr_left
   intro i hi
   apply hf.readW (r := preR s) ?_ ?_ (by decide)
-  · exact Offset.contains_base _ (by have := List.mem_range.mp hi; omega)
-      (by have := hp.preWrap; have := List.mem_range.mp hi; omega)
+  · exact Offset.contains_base _ (by have := List.mem_range.mp hi; omega_using [this])
+      (by have := hp.preWrap; have := List.mem_range.mp hi; omega_arith)
   · intro r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
@@ -172,7 +172,7 @@ theorem call_ok (v : PublicImpl) {s t : State} (hp : PPre H s) (L : Lay t (fb s)
       t'.mxcsr.extractLsb' 6 10 = t.mxcsr.extractLsb' 6 10 ∧ FrE s t'.mem := by
   have hk2 := hp.k2; have hsl := hp.hsl
   obtain ⟨hc, hw⟩ := call_covers hp hrd hwr
-  have rd : ∀ i < 4, t.mem.readW (off (fb s) (8 * i)) 64 = W i := fun i hi => R.rd i rfl (by unfold nW frameBytes; omega)
+  have rd : ∀ i < 4, t.mem.readW (off (fb s) (8 * i)) 64 = W i := fun i hi => R.rd i rfl (by unfold nW frameBytes; omega_using [hi])
   have hpre := call_pre hp L.rsp ((rd 0 (by decide)).trans hw0) ((rd 1 (by decide)).trans hw1)
       ((rd 2 (by decide)).trans hw2) ((rd 3 (by decide)).trans hw3) hdi hsi hdx hcx h8 h9
   refine WP.call_mx (s := t) (k := ⟨pdContract.pre, pdChkContract.post, pdContract.pub⟩) (rd := callRd s)
@@ -181,8 +181,8 @@ theorem call_ok (v : PublicImpl) {s t : State} (hp : PPre H s) (L : Lay t (fb s)
   rw [v.depth, L.rsp] at hfr
   have hE : stackArg (t.callEntry.withRegions (callRd s) (pubWr s)) 0 = off (stackArg s 6) oEm := by
     have hF := fb_toNat hp.toEPre
-    rw [stackArg_entry L.rsp (by have := hp.sp1; unfold encStack frameBytes at *; omega) _ _
-      (by have := hp.sp2; unfold frameBytes at *; omega)]
+    rw [stackArg_entry L.rsp (by have := hp.sp1; unfold encStack frameBytes at *; omega_using [hF, this]) _ _
+      (by have := hp.sp2; unfold frameBytes at *; omega_using [hF])]
     exact (rd 0 (by decide)).trans hw0
   have hfe : Frame [below (fb s) 16] t.mem t.callEntry.mem := by
     rw [State.callEntry_mem, L.rsp]
@@ -195,10 +195,10 @@ theorem call_ok (v : PublicImpl) {s t : State} (hp : PPre H s) (L : Lay t (fb s)
     simp only [Spec.Rsa.bytesAt]
     refine List.map_congr_left fun i hi => ?_
     have hi' := List.mem_range.mp hi
-    rw [off_plus, ← R.scr _ (by unfold oEm oRsa; omega)]
+    rw [off_plus, ← R.scr _ (by unfold oEm oRsa; omega_using [hk2, hi'])]
     have := Frame.bytes hfe (R := ⟨off (stackArg s 6) (oEm + i), 1⟩) (fun r hr => by
       rw [List.mem_singleton.mp hr]
-      exact (L.dRS.sub_right (Offset.sub_base _ (by unfold oEm oRsa; omega))).symm)
+      exact (L.dRS.sub_right (Offset.sub_base _ (by unfold oEm oRsa; omega_using [hk2, hi']))).symm)
       (show 1 ≤ 2 ^ 64 by decide) (i := 0) (show 0 < 1 by decide)
     simp only [BitVec.add_zero] at this
     exact this
@@ -208,7 +208,7 @@ theorem call_ok (v : PublicImpl) {s t : State} (hp : PPre H s) (L : Lay t (fb s)
     State.callEntry_gpr _ (show Reg.rdx ≠ .rsp by decide), State.callEntry_gpr _ (show Reg.r8 ≠ .rsp by decide),
     State.callEntry_gpr _ (show Reg.r9 ≠ .rsp by decide), hdi, hsi, hdx, hcx, h8, h9, hE, hm₂,
     hg₂ .rax (by decide)] at hpost
-  rw [pre_words hp hfE, FrE.bytes hfE hp.d_stk_e hp.d_out_e hp.d_e_scr.symm (by have := hp.wE; omega), hem]
+  rw [pre_words hp hfE, FrE.bytes hfE hp.d_stk_e hp.d_out_e hp.d_e_scr.symm (by have := hp.wE; omega_using []), hem]
     at hpost
   refine ⟨fun hq => hpost _ (by simp [Spec.Rsa.bytesAt]) hq, hrd', hwr', hcs, hmx, FrE.step hf (ws := t.wr) hwr ?_⟩
   refine hfr.sub fun r hr => ?_

@@ -42,7 +42,7 @@ theorem inpW_byte (s : State) (k : Nat) :
     (inpW s (k / 4)).extractLsb' (8 * (k % 4)) 8 =
       if 64 * (k / 64) + 64 ≤ (s.gpr .r10).toNat then s.mem (s.gpr .r8 + BitVec.ofNat 64 k)
       else s.mem (s.gpr .rsi + BitVec.ofNat 64 k) := by
-  simp only [inpW, show k / 4 / 16 = k / 64 by omega]
+  simp only [inpW, show k / 4 / 16 = k / 64 by omega_using []]
   split
   · rw [byte_dword s.mem (s.gpr .r8)]
   · rw [byte_dword s.mem (s.gpr .rsi)]
@@ -58,12 +58,12 @@ theorem finishSel_ok {s : State} (hc : Ctx s) (hs : SelOk s) (hi : Incs s.mem (s
   obtain ⟨σ, hr, hm⟩ := finishSel_run
   refine WP.mono (runPieces_ok hc hs finishSel (SRel.init s) hr) fun s' h => ⟨fun k hk => ?_, h.frame, h.gpr,
     h.rd, h.wr⟩
-  have d := h.mem 2 (k / 4) (by decide) (by simp only [bsize]; omega)
-  rw [hm _ (by omega)] at d
+  have d := h.mem 2 (k / 4) (by decide) (by simp only [bsize]; omega_using [hk])
+  rw [hm _ (by omega_using [hk])] at d
   simp only [T.eval, regn, baseR] at d
-  rw [show k / 4 % 16 = k % 64 / 4 by omega, show k / 4 / 16 = k / 64 by omega] at d
+  rw [show k / 4 % 16 = k % 64 / 4 by omega_using [], show k / 4 / 16 = k / 64 by omega_using []] at d
   rw [byte_dword s'.mem, d, BitVec.extractLsb'_xor, inpW_byte,
-    serialize_getD _ (Nat.mod_lt _ (by decide)), outT_eval hz hi (by omega) (by omega),
-    show k % 64 % 4 = k % 4 by omega]
+    serialize_getD _ (Nat.mod_lt _ (by decide)), outT_eval hz hi (by omega_using []) (by omega_using [hk]),
+    show k % 64 % 4 = k % 4 by omega_using []]
 
 end VG.Proof.ChaCha20.X86_64.Avx512

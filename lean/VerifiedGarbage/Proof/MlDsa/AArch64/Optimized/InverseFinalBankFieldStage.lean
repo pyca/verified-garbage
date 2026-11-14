@@ -28,7 +28,7 @@ theorem stridedStageValues_field (i : Fin 7) (v : Vector (BitVec 128) 8) (w : Po
   rw [stridedStageOps,InverseTraversal.run_stridedRegGroup,
     InverseTraversal.stridedRegBlock_get _ (step_bounds i).1 (step_bounds i).2 hu (Nat.le_refl _) _ k.isLt he]
   rw [show 2*steps[i.val]!.1*steps[i.val]!.2+steps[i.val]!.1+steps[i.val]!.1=
-      2*steps[i.val]!.1*steps[i.val]!.2+2*steps[i.val]!.1 by omega]
+      2*steps[i.val]!.1*steps[i.val]!.2+2*steps[i.val]!.1 by omega_using []]
   change ofInt (_ : BitVec 32).toInt =
     if leftSide i.val k.val then
       w[InverseTraversal.stridedLoc u k.val e]! + w[InverseTraversal.stridedLoc u (k.val+steps[i.val]!.1) e]!

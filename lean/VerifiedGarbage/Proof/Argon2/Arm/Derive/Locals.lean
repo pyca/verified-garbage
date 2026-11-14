@@ -29,15 +29,15 @@ include hp
 
 theorem loc_addr {d : Nat} (hd : d < 256) :
     State.addr (E s₀ + BitVec.ofNat 32 d) = State.addr (E s₀) + BitVec.ofNat 64 d :=
-  addr_add (by have := E_hi hp; omega)
+  addr_add (by have := E_hi hp; omega_using [hd, this])
 
 /-- Another word of the frame, after a store to the locals. -/
 theorem lw_store {m : Mem} {d e : Nat} (hd : d + 4 ≤ 256) (he : e + 4 ≤ 256) (hde : d + 4 ≤ e ∨ e + 4 ≤ d)
     (v : BitVec 32) :
     (m.writeW (State.addr (E s₀ + BitVec.ofNat 32 d)) v).readW (State.addr (E s₀ + BitVec.ofNat 32 e)) 32 =
       m.readW (State.addr (E s₀ + BitVec.ofNat 32 e)) 32 := by
-  rw [loc_addr hp (by omega), loc_addr hp (by omega)]
-  exact MdStream.Arm.readW_writeW_save m _ v (by omega) (by omega) (by omega)
+  rw [loc_addr hp (by omega_using [hd]), loc_addr hp (by omega_using [he])]
+  exact MdStream.Arm.readW_writeW_save m _ v (by omega_using [he]) (by omega_using [hd]) (by omega_using [hde])
 
 theorem Inv.store_loc {s t : State} (h : Inv s₀ s) {d : Nat} (hd : d + 4 ≤ 144) {v : BitVec 32}
     (u : Mupd s t (s.mem.writeW (State.addr (E s₀ + BitVec.ofNat 32 d)) v)) :
@@ -45,11 +45,11 @@ theorem Inv.store_loc {s t : State} (h : Inv s₀ s) {d : Nat} (hd : d + 4 ≤ 1
   refine ⟨h.step u.sp (by rw [u.gpr]) u.rd u.wr ?_, ?_, fun e he hde => ?_⟩
   · rw [u.mem]
     exact (Frame.refl _ _).writeW (r := locR s₀) (by simp) v
-      (contains32 (by rw [loc_nat hp (d := d) (by omega)]; omega) (by rw [loc_nat hp (d := d) (by omega)]; omega))
+      (contains32 (by rw [loc_nat hp (d := d) (by omega_using [hd])]; omega_using []) (by rw [loc_nat hp (d := d) (by omega_using [hd])]; omega_using [hd]))
   · show t.mem.readW _ 32 = v
     rw [u.mem, Mem.readW_writeW_self32]
   · show t.mem.readW _ 32 = _
-    rw [u.mem, lw_store hp (by omega) he hde]
+    rw [u.mem, lw_store hp (by omega_using [hd]) he hde]
 
 /-- `str r, [r11, #d]` -/
 theorem wp_stloc {s : State} (h : Inv s₀ s) {d : Nat} (hd : d + 4 ≤ 144) {r : Reg} {is : List Instr}
@@ -58,7 +58,7 @@ theorem wp_stloc {s : State} (h : Inv s₀ s) {d : Nat} (hd : d + 4 ≤ 144) {r 
       lw s₀ t e = lw s₀ s e) → t.gpr = s.gpr → t.mem = s.mem.writeW (State.addr (E s₀ + BitVec.ofNat 32 d))
       (s.gpr r) → WP isa (.block is) t Q) :
     WP isa (.block (st d r :: is)) s Q :=
-  wp_str (by omega) (by rw [h.r11]) (loc_in hp h hd) fun t u =>
+  wp_str (by omega_using [hd]) (by rw [h.r11]) (loc_in hp h hd) fun t u =>
     let ⟨i, v, o⟩ := h.store_loc hp hd u
     k t i v o u.gpr u.mem
 
@@ -66,13 +66,13 @@ theorem wp_stloc {s : State} (h : Inv s₀ s) {d : Nat} (hd : d + 4 ≤ 144) {r 
 theorem wp_ldloc {s : State} (h : Inv s₀ s) {d : Nat} (hd : d + 4 ≤ 144) {r : Reg} {is : List Instr}
     {Q : State → Prop} (k : ∀ t, Upd s t r (lw s₀ s d) → WP isa (.block is) t Q) :
     WP isa (.block (ld r d :: is)) s Q :=
-  wp_ldr (by omega) (by rw [h.r11]) (loc_in' hp h hd) k
+  wp_ldr (by omega_using [hd]) (by rw [h.r11]) (loc_in' hp h hd) k
 
 /-- `ldr r, [r11, #argOff i]` -/
 theorem wp_ldarg {s : State} (h : Inv s₀ s) {i : Nat} (hi : i < 18) {r : Reg} {is : List Instr}
     {Q : State → Prop} (k : ∀ t, Upd s t r (arg s₀ i) → WP isa (.block is) t Q) :
     WP isa (.block (ld r (Impl.Argon2.Arm.Derive.argOff i) :: is)) s Q :=
-  wp_ldr (by simp only [Impl.Argon2.Arm.Derive.argOff, Impl.Argon2.Arm.Derive.locals]; omega) (by rw [h.r11])
+  wp_ldr (by simp only [Impl.Argon2.Arm.Derive.argOff, Impl.Argon2.Arm.Derive.locals]; omega_using [hi]) (by rw [h.r11])
     (h.arg_in hp hi) fun t u => k t (by have := h.arg hp hi; simp only [lw] at this; rw [this] at u; exact u)
 
 /-- The locals are outside the memory matrix, `scratch`, the output and the stack below them. -/
@@ -81,7 +81,7 @@ theorem loc_disj {d : Nat} (hd : d + 4 ≤ 144) :
       Region.Disjoint ⟨State.addr (E s₀ + BitVec.ofNat 32 d), 4⟩ r := by
   have := hp.sp_lo
   have hE := E_nat hp
-  have sub := frame_stk hp (d := d) (n := 4) (by omega)
+  have sub := frame_stk hp (d := d) (n := 4) (by omega_using [hd])
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl
@@ -89,9 +89,9 @@ theorem loc_disj {d : Nat} (hd : d + 4 ≤ 144) :
   · exact (hp.stk_all _ (by simp)).sub_left sub
   · exact (hp.stk_all _ (by simp)).sub_left sub
   · show Region.Disjoint _ ⟨State.addr (E s₀) - BitVec.ofNat 64 40, 40⟩
-    rw [← addr_sub' (by omega)]
-    exact disj32 (.inr (by rw [sub_toNat' (by omega), loc_nat hp (d := d) (by omega)]; omega))
-      (by rw [loc_nat hp (d := d) (by omega)]; have := E_hi hp; omega) (by rw [sub_toNat' (by omega)]; omega)
+    rw [← addr_sub' (by omega_using [this, hE])]
+    exact disj32 (.inr (by rw [sub_toNat' (by omega_using [this, hE]), loc_nat hp (d := d) (by omega_using [hd])]; omega_using [this, hE]))
+      (by rw [loc_nat hp (d := d) (by omega_using [hd])]; have := E_hi hp; omega_using [hd, hE]) (by rw [sub_toNat' (by omega_using [this, hE])]; omega_using [])
 
 /-- The locals are kept by writes outside them. -/
 theorem lw_keep {s t : State} {rs : List Region} (f : Frame rs s.mem t.mem)

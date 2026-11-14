@@ -36,7 +36,7 @@ theorem spec_sp {s : State} (h : spec.pre s) :
   sig_pre [Spec.RsaPkcs1Enc.decryptContract, Spec.RsaPkcs1Enc.decryptSig, abi, argSlots, argVal, argBytes,
     stackBelow] at h
   obtain ⟨hsp, hsa, -⟩ := h
-  exact ⟨hsp, by omega⟩
+  exact ⟨hsp, by omega_using [hsa]⟩
 
 theorem entered_state {s : State} (h : spec.pre s) :
     S (ep s) (entered frameBytes s) (entered frameBytes s) :=
@@ -46,7 +46,7 @@ theorem code_ok (v : Backend) (c : CrtImpl) {s : State} (h : spec.pre s) :
     WP isa (decryptCode v c) s fun t => abiPreserved s t ∧ spec.post s t := by
   have hin := in_of_pre h
   obtain ⟨hs, hfit⟩ := spec_sp h
-  have hsp : 16 + frameBytes ≤ (s.gpr .esp).toNat := by simp only [stackBytes, frameBytes] at hs ⊢; omega
+  have hsp : 16 + frameBytes ≤ (s.gpr .esp).toNat := by simp only [stackBytes, frameBytes] at hs ⊢; omega_using [hs]
   have hb := (body_vp (P := ep s) v c).wp _ _ (entered_state h)
   refine WP.mono (wrap_ok (F := frameBytes) (by decide) (body_noSp v c) hsp hfit (W := (ep s).lay.W)
     (Q := fun r m => Res (ep s) (entered frameBytes s) m r) (fun r hr => ?_)

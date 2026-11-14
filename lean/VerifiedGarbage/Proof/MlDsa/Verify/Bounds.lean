@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Spec.MlDsa
 import VerifiedGarbage.Proof.Sha3.Stream
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # ML-DSA: larger bounds give the same results
@@ -48,9 +49,9 @@ theorem bmax_right (b b' : Bounds) : BLe b' (bmax b b') :=
 
 theorem squeeze_take {rate : Nat} (hr : 0 < rate) (hr' : rate ≤ 200) (S : Spec.Sha3.State) {d d' : Nat}
     (h : d ≤ d') : (squeeze rate S d').take d = squeeze rate S d := by
-  refine List.ext_getElem (by simp [Proof.Sha3.length_squeeze hr hr']; omega) fun i h₁ h₂ => ?_
+  refine List.ext_getElem (by simp [Proof.Sha3.length_squeeze hr hr']; omega_using [h]) fun i h₁ h₂ => ?_
   rw [Proof.Sha3.length_squeeze hr hr'] at h₂
-  rw [List.getElem_take, Proof.Sha3.squeeze_getElem hr hr' _ h₂, Proof.Sha3.squeeze_getElem hr hr' _ (by omega)]
+  rw [List.getElem_take, Proof.Sha3.squeeze_getElem hr hr' _ h₂, Proof.Sha3.squeeze_getElem hr hr' _ (by omega_using [h, h₂])]
 
 theorem H_take (s : List Byte) {d d' : Nat} (h : d ≤ d') : (H s d').take d = H s d :=
   squeeze_take (by decide) (by decide) _ h
@@ -144,13 +145,13 @@ theorem sampleInBall_mono {τ bound bound' : Nat} (hb : bound ≤ bound') {ρ : 
   split at h
   · cases h
   · rename_i h8
-    rw [iteN (by omega)]
+    rw [iteN (by omega_using [hb, h8])]
     have e : H ρ bound' = H ρ bound ++ (H ρ bound').drop bound := by
       rw [← H_take ρ hb, List.take_append_drop]
     have e8 : (H ρ bound').take 8 = (H ρ bound).take 8 := by
-      rw [e, List.take_append_of_le_length (by rw [H_length]; omega)]
+      rw [e, List.take_append_of_le_length (by rw [H_length]; omega_using [h8])]
     have ed := congrArg (List.drop 8) e
-    rw [List.drop_append_of_le_length (by rw [H_length]; omega)] at ed
+    rw [List.drop_append_of_le_length (by rw [H_length]; omega_using [h8])] at ed
     rw [e8, ed]
     exact ballLoop_append _ _ _ _ _ _ _ h
 

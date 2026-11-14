@@ -62,7 +62,7 @@ theorem initWritten_words (m : Mem) (B : Addr) (a b : BitVec 64) :
 theorem imm64 {n : Nat} (hn : n < 65536) : (BitVec.ofNat 16 n).setWidth 64 = BitVec.ofNat 64 n := by
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]
-  omega
+  omega_using [hn]
 
 /-- `validate`: `x13` is 1 exactly for a width in `64..=1024`. -/
 theorem validate_ok (s : State) :
@@ -77,7 +77,7 @@ theorem validate_ok (s : State) :
   brun [hx, imm64 (show 64 < 65536 by decide), imm64 (show 1025 < 65536 by decide),
     imm64 (show 0 < 65536 by decide), imm64 (show 1 < 65536 by decide), subs_ge hl (show 64 < 2 ^ 64 by decide), subs_ge hl (show 1025 < 2 ^ 64 by decide)]
   split_ifs <;> simp only [decide_eq_true_eq] at * <;>
-    first | rfl | (exfalso; omega)
+    first | rfl | (exfalso; omega_arith)
 
 theorem clear_ok {s : State} {B : Addr} (scr : Scr s B 128) (h0 : s.gpr .x0 = B) :
     WP isa (.block clear) s fun t => t.gpr .x0 = 0 ∧ t.mem = initWritten s.mem B 0 0 := by

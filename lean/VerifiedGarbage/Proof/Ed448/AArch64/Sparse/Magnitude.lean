@@ -24,7 +24,7 @@ private theorem mag_fact : ∀ (n:Nat),n<255 →
 
 private theorem bounded_int {d:Int} (hd:-127≤d ∧ d≤127) :
     ∃ (n:Nat),n<255 ∧ d=(n:Int)-127 := by
-  refine ⟨(d+127).toNat,?_,?_⟩ <;> omega
+  refine ⟨(d+127).toNat,?_,?_⟩ <;> omega_using [hd]
 
 theorem encoded_zero {d:Int} (hd:-127≤d ∧ d≤127) :
     ((BitVec.ofInt 8 d).setWidth 64==0)=decide (d=0) := by

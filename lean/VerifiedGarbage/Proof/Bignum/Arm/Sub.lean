@@ -70,6 +70,6 @@ theorem subBorrow_ok (s : State) (hc : (s.gpr .r11).toNat ≤ 1) :
     by_cases h1 : (s.gpr .r2).toNat ≤ (s.gpr .r1).toNat <;>
       by_cases h2 : (s.gpr .r11).toNat ≤ (s.gpr .r1 - s.gpr .r2).toNat <;>
       simp only [h1, h2, decide_true, decide_false, ite_true, ite_false, Bool.false_eq_true] <;>
-      dsimp <;> simp only [BitVec.toNat_sub] at h2 ⊢ <;> omega
+      dsimp <;> simp only [BitVec.toNat_sub] at h2 ⊢ <;> omega_arith
 
 end VG.Proof.Bignum.Arm

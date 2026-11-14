@@ -35,7 +35,7 @@ theorem rev32b_read (m : Mem) (p : Addr) :
   apply vec_ext
   intro j hj
   rw [vword_rev32b _ hj, vword_read16 _ _ hj, vword_ofVWords _ _ _ _ hj]
-  rcases (show j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 by omega) with rfl | rfl | rfl | rfl <;> rfl
+  rcases (show j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 by omega_using [hj]) with rfl | rfl | rfl | rfl <;> rfl
 
 theorem writeW_rev32 (m : Mem) (a : Addr) (x : BitVec 32) :
     m.writeW a (rev32 x) = writeBytes m a (bytes32 true x) :=

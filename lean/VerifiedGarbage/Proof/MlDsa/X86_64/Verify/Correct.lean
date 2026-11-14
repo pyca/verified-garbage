@@ -55,7 +55,7 @@ theorem S2.flag {p : Params} (hp : p ∈ params) {σ : State} (hv : VPre p σ) {
   have L := hs.t.lay hp hv
   obtain ⟨_, _, kh, kz⟩ := parChk p hp
   exact ⟨hs.t.step hp hv hP (tChk_nil p hp), L.keepHint hP kh hs.hint,
-    fun i hi => L.keepPoly hP (kz i (by omega)) (hs.z i hi), by rw [e]; exact hs.r15⟩
+    fun i hi => L.keepPoly hP (kz i (by omega_using [hj, hi])) (hs.z i hi), by rw [e]; exact hs.r15⟩
 
 theorem S4.toSC {p : Params} {h : List (Vector Bool n)} {σ s : State} (hs : S4 p h σ s) {q : Bool}
     (h15 : s.gpr .r15 = flag (q = true)) :
@@ -113,7 +113,7 @@ theorem body_ok {P : Prims} (C : PrimsOk P) {p : Params} (hp : p ∈ params) {σ
     have S : S2 p h 0 σ s₂ := ⟨t₁.step hp hv hP₂ (tChk_nil p hp), (t₁.lay hp hv).keepHint hP₂ kh hH,
       fun _ h => absurd h (Nat.not_lt_zero _), by rw [e₂, h15₁]; exact flag_congr (by simp)⟩
     refine WP.seq (WP.mono (seqR_ok (I := fun i => S2 p h i σ) p.ℓ 0
-      (fun i _ hi st hst => zOne_ok C hp hv (by omega) hst) s₂ S) fun s₃ hs₃ => ?_)
+      (fun i _ hi st hst => zOne_ok C hp hv (by omega_using [hi]) hst) s₂ S) fun s₃ hs₃ => ?_)
     rw [Nat.zero_add] at hs₃
     refine ifOk_ok hs₃.r15 (fun s₄ hP₄ e₄ hn => ?_) fun s₄ hP₄ e₄ hn => ?_
     · refine WP.seq (WP.mono (samples_ok C hp hv (hs₃.flag hp hv (Nat.le_refl _) hP₄ e₄)

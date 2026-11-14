@@ -11,6 +11,7 @@ import Mathlib.Tactic.NormNum.Ineq
 import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Positivity
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # The hulls of the divstep bound: transitions
@@ -137,13 +138,13 @@ theorem Wpos_even {n : Nat} {x y : ℚ} (h : Wpos n x y) : Wpos (n + 1) (x / s) 
   have hs := s_ne
   unfold Wpos at h ⊢
   rcases Nat.lt_or_ge n 2 with hn | hn
-  · simp (disch := omega) only [ite_t] at h ⊢
+  · simp (disch := omega_using [hn]) only [ite_t] at h ⊢
     refine inP_congr h ?_ ?_ <;> rw [pow_succ] <;> field_simp
   · rcases Nat.lt_or_ge n 3 with hn' | hn'
-    · obtain rfl : n = 2 := by omega
-      simp (disch := omega) only [ite_t] at h; simp (disch := omega) only [ite_f]
+    · obtain rfl : n = 2 := by omega_using [hn, hn']
+      simp (disch := omega_using []) only [ite_t] at h; simp (disch := omega_using []) only [ite_f]
       refine inP_congr (H1_shrink h (t := c32) (by norm_num) (by norm_num)) ?_ ?_ <;> first | (field_simp; done) | (field_simp; ring)
-    · simp (disch := omega) only [ite_f] at h ⊢
+    · simp (disch := omega_arith) only [ite_f] at h ⊢
       refine inP_congr h ?_ ?_ <;> rw [pow_succ] <;> field_simp
 
 /-- An odd step from `i ≥ 0`: the swap, to `i = -n`. -/
@@ -153,23 +154,23 @@ theorem Wpos_odd {n : Nat} {x y : ℚ} (h : Wpos n x y) :
   unfold Wpos at h
   refine ⟨fun hn => ?_, fun hn => ?_⟩
   · subst hn
-    simp (disch := omega) only [ite_t, pow_zero, mul_one] at h
+    simp (disch := omega_using []) only [ite_t, pow_zero, mul_one] at h
     unfold Wpos
-    simp (disch := omega) only [ite_t, pow_zero, mul_one]
+    simp (disch := omega_using []) only [ite_t, pow_zero, mul_one]
     refine incl_at incl3_ok (x := x) (y := y) (by exact h) ?_ ?_ <;>
       simp only [incl3, LinMap.fx, LinMap.fy, LinMap.q] <;> push_cast <;> field_simp <;> ring
   · unfold Wneg
     rcases Nat.lt_or_ge n 2 with h2 | h2
-    · obtain rfl : n = 1 := by omega
+    · obtain rfl : n = 1 := by omega_using [hn, h2]
       simp (disch := omega) only [ite_t, pow_one] at h ⊢
       refine incl_at incl5_ok (x := x * s) (y := y * (2 * s)) (by exact h) ?_ ?_ <;>
         simp only [incl5, LinMap.fx, LinMap.fy, LinMap.q] <;> push_cast <;> field_simp <;> ring
     · rcases Nat.lt_or_ge n 3 with h3 | h3
-      · obtain rfl : n = 2 := by omega
-        simp (disch := omega) only [ite_t] at h
+      · obtain rfl : n = 2 := by omega_using [h2, h3]
+        simp (disch := omega_using []) only [ite_t] at h
         simp (disch := omega) only [ite_f]
         refine inP_congr h ?_ ?_ <;> field_simp <;> ring
-      · simp (disch := omega) only [ite_f] at h ⊢
+      · simp (disch := omega_arith) only [ite_f] at h ⊢
         refine inP_congr h ?_ ?_ <;> simp only [pow_succ, mul_pow] <;> first | (field_simp; done) | (field_simp; ring)
 
 /-- A step from `i = -j` to `i + 1` with `g` even. -/
@@ -180,26 +181,26 @@ theorem Wneg_even {j : Nat} {x y : ℚ} (h : Wneg j x y) :
   refine ⟨fun hj => ?_, fun hj => ?_⟩
   · subst hj
     simp only [↓reduceIte] at h
-    unfold Wpos; simp (disch := omega) only [ite_t, pow_zero, mul_one]
+    unfold Wpos; simp (disch := omega_using []) only [ite_t, pow_zero, mul_one]
     refine incl_at incl0_ok (x := x) (y := y) (by exact h) ?_ ?_ <;>
       simp only [incl0, LinMap.fx, LinMap.fy, LinMap.q] <;> push_cast <;> field_simp <;> ring
   · unfold Wneg
     rcases Nat.lt_or_ge j 3 with h3 | h3
-    · obtain rfl : j = 2 := by omega
+    · obtain rfl : j = 2 := by omega_using [hj, h3]
       simp (disch := omega) only [ite_f] at h ⊢
       refine incl_at inclN2_ok (x := (x - 2 * y) * s ^ 3) (y := 4 * x * s ^ 3) (by exact h) ?_ ?_ <;>
         simp only [inclN2, LinMap.fx, LinMap.fy, LinMap.q] <;> push_cast <;> field_simp <;> ring
-    · simp (disch := omega) only [ite_f] at h
+    · simp (disch := omega_arith) only [ite_f] at h
       rcases Nat.lt_or_ge j 4 with h4 | h4
-      · obtain rfl : j = 3 := by omega
+      · obtain rfl : j = 3 := by omega_using [h3, h4]
         simp (disch := omega) only [ite_f]
         refine incl_at inclN4scale_ok (x := c32 * (x - 2 * y) * s ^ (3 + 1))
           (y := c32 * x * s ^ (3 + 1) * 2 ^ 3) (by exact h) ?_ ?_ <;>
           simp only [inclN4scale, LinMap.fx, LinMap.fy, LinMap.q] <;> push_cast <;> field_simp <;> ring
-      · simp (disch := omega) only [ite_f]
-        obtain ⟨k, rfl⟩ : ∃ k, j = k + 4 := ⟨j - 4, by omega⟩
-        refine inP_congr (H1_shear h (m := k + 3) (by omega)).1 ?_ ?_ <;>
-          (simp only [show k + 4 - 1 = k + 3 from by omega, pow_succ]
+      · simp (disch := omega_arith) only [ite_f]
+        obtain ⟨k, rfl⟩ : ∃ k, j = k + 4 := ⟨j - 4, by omega_using [h4]⟩
+        refine inP_congr (H1_shear h (m := k + 3) (by omega_using [])).1 ?_ ?_ <;>
+          (simp only [show k + 4 - 1 = k + 3 from by omega_using [], pow_succ]
            first | (field_simp; done) | (field_simp; ring))
 
 /-- A step from `i = -j` to `i + 1` with `g` odd. -/
@@ -210,26 +211,26 @@ theorem Wneg_odd {j : Nat} {x y : ℚ} (h : Wneg j x y) :
   refine ⟨fun hj => ?_, fun hj => ?_⟩
   · subst hj
     simp only [↓reduceIte] at h
-    unfold Wpos; simp (disch := omega) only [ite_t, pow_zero, mul_one]
+    unfold Wpos; simp (disch := omega_using []) only [ite_t, pow_zero, mul_one]
     refine incl_at incl1_ok (x := x) (y := y) (by exact h) ?_ ?_ <;>
       simp only [incl1, LinMap.fx, LinMap.fy, LinMap.q] <;> push_cast <;> field_simp <;> ring
   · unfold Wneg
     rcases Nat.lt_or_ge j 3 with h3 | h3
-    · obtain rfl : j = 2 := by omega
+    · obtain rfl : j = 2 := by omega_using [hj, h3]
       simp (disch := omega) only [ite_f] at h ⊢
       refine incl_at inclN1_ok (x := (x - 2 * y) * s ^ 3) (y := 4 * x * s ^ 3) (by exact h) ?_ ?_ <;>
         simp only [inclN1, LinMap.fx, LinMap.fy, LinMap.q] <;> push_cast <;> field_simp <;> ring
-    · simp (disch := omega) only [ite_f] at h
+    · simp (disch := omega_arith) only [ite_f] at h
       rcases Nat.lt_or_ge j 4 with h4 | h4
-      · obtain rfl : j = 3 := by omega
+      · obtain rfl : j = 3 := by omega_using [h3, h4]
         simp (disch := omega) only [ite_f]
         refine incl_at inclN3scale_ok (x := c32 * (x - 2 * y) * s ^ (3 + 1))
           (y := c32 * x * s ^ (3 + 1) * 2 ^ 3) (by exact h) ?_ ?_ <;>
           simp only [inclN3scale, LinMap.fx, LinMap.fy, LinMap.q] <;> push_cast <;> field_simp <;> ring
-      · simp (disch := omega) only [ite_f]
-        obtain ⟨k, rfl⟩ : ∃ k, j = k + 4 := ⟨j - 4, by omega⟩
-        refine inP_congr (H1_shear h (m := k + 3) (by omega)).2 ?_ ?_ <;>
-          (simp only [show k + 4 - 1 = k + 3 from by omega, pow_succ]
+      · simp (disch := omega_arith) only [ite_f]
+        obtain ⟨k, rfl⟩ : ∃ k, j = k + 4 := ⟨j - 4, by omega_using [h4]⟩
+        refine inP_congr (H1_shear h (m := k + 3) (by omega_using [])).2 ?_ ?_ <;>
+          (simp only [show k + 4 - 1 = k + 3 from by omega_using [], pow_succ]
            first | (field_simp; done) | (field_simp; ring))
 
 end VG.Proof.Divstep

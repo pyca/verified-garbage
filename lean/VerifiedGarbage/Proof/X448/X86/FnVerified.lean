@@ -46,21 +46,21 @@ theorem toFe_sub_inv {a b c : Nat} (h : toFe c = toFe a - toFe b) : (c + b) % Sp
   generalize a % Spec.X448.P = x at *
   generalize b % Spec.X448.P = y at *
   rcases Nat.lt_or_ge (Spec.X448.P - y + x) Spec.X448.P with h1 | h1
-  · rw [Nat.mod_eq_of_lt h1, show Spec.X448.P - y + x + y = x + Spec.X448.P by omega, Nat.add_mod_right, Nat.mod_eq_of_lt hx]
-  · rw [show (Spec.X448.P - y + x) % Spec.X448.P = Spec.X448.P - y + x - Spec.X448.P by rw [Nat.mod_eq_sub_mod h1, Nat.mod_eq_of_lt (by omega)],
-      show Spec.X448.P - y + x - Spec.X448.P + y = x by omega, Nat.mod_eq_of_lt hx]
+  · rw [Nat.mod_eq_of_lt h1, show Spec.X448.P - y + x + y = x + Spec.X448.P by omega_using [hy], Nat.add_mod_right, Nat.mod_eq_of_lt hx]
+  · rw [show (Spec.X448.P - y + x) % Spec.X448.P = Spec.X448.P - y + x - Spec.X448.P by rw [Nat.mod_eq_sub_mod h1, Nat.mod_eq_of_lt (by omega_using [hx])],
+      show Spec.X448.P - y + x - Spec.X448.P + y = x by omega_using [hx, h1], Nat.mod_eq_of_lt hx]
 
 /-- What a field function changes preserves the calling convention. -/
 theorem FnOut.abi {c : Prog isa} (hc : NoSp c) (h0 : stackUse c = 0) {s s' : State} {tr : List Leak}
     (ex : Exec isa c s tr s') (hwr : ∀ r ∈ s.wr, Region.Disjoint ⟨(s.gpr .esp).setWidth 64, 4⟩ r)
     {base : Addr} {o : Nat} (h : FnOut base o s s') : abiPreserved s s' := by
   refine ⟨fun r hr => h.keeps.1 r (by revert r hr; decide), ?_⟩
-  have hf := VG.X86.Exec.frameSp ex hc (by omega)
+  have hf := VG.X86.Exec.frameSp ex hc (by omega_using [h0])
   rw [h0] at hf
   refine Mem.readW_congr fun k hk => hf _ fun r hr => ?_
   rcases List.mem_append.mp hr with hr | hr
-  · exact fun hc' => hwr r hr _ (by simp only [Region.Contains]; rw [Offset.add_sub_cancel_left]; simp only [BitVec.toNat_ofNat]; omega) hc'
-  · rw [List.mem_singleton.mp hr]; simp only [Region.Contains]; omega
+  · exact fun hc' => hwr r hr _ (by simp only [Region.Contains]; rw [Offset.add_sub_cancel_left]; simp only [BitVec.toNat_ofNat]; omega_using [hk]) hc'
+  · rw [List.mem_singleton.mp hr]; simp only [Region.Contains]; omega_using []
 
 theorem fnPre_ret {len : Nat} {s : State} (h : fnPre len s) :
     ∀ r ∈ s.wr, Region.Disjoint ⟨(s.gpr .esp).setWidth 64, 4⟩ r := by
@@ -113,7 +113,7 @@ def fnτ (len : Nat) : VG.X86.Taint.T := { regs := .ofList [.esp], flags := fals
 theorem fn_wf {len : Nat} {s : State} (h : fnPre len s) : VG.X86.Taint.Wf (fnτ len) s := by
   obtain ⟨hsp, _, hwr, hdis, hret, _⟩ := h
   refine VG.X86.Taint.Wf.entry rfl rfl ⟨fun h => absurd rfl h, fun _ h => (List.not_mem_nil h).elim,
-    fun _ h => (List.not_mem_nil h).elim, fun _ => ⟨by simp only [fnτ]; omega, ?_⟩,
+    fun _ h => (List.not_mem_nil h).elim, fun _ => ⟨by simp only [fnτ]; omega_using [hsp], ?_⟩,
     fun _ h => (List.not_mem_nil h).elim⟩
   rw [hwr]
   intro r hr
@@ -132,10 +132,10 @@ theorem fn_agree {len : Nat} {s₁ s₂ : State} (h₁ : fnPre len s₁) (h₂ :
     subst hr; exact hesp
   · simp only [fnτ] at hk
     rw [show VG.X86.Taint.depth (fnτ len).stk = 0 from rfl, Nat.zero_add]
-    rw [VG.X86.Taint.argByte_eq (n := 4 + len) (by have := h₁.1; omega) h4 hk,
-      VG.X86.Taint.argByte_eq (n := 4 + len) (by have := h₂.1; omega) h4 hk,
+    rw [VG.X86.Taint.argByte_eq (n := 4 + len) (by have := h₁.1; omega_using [this]) h4 hk,
+      VG.X86.Taint.argByte_eq (n := 4 + len) (by have := h₂.1; omega_using [this]) h4 hk,
       Mem.readW_byte s₁.mem _ (Nat.mod_lt _ (by decide)), Mem.readW_byte s₂.mem _ (Nat.mod_lt _ (by decide))]
-    exact congrArg _ (ha _ (by omega))
+    exact congrArg _ (ha _ (by omega_using [h4, hk]))
 
 theorem mulFn_check : ∃ h, (taint.check (fnτ 16) mulFn h).isSome = true := ⟨_, by taint_decide⟩
 
@@ -173,7 +173,7 @@ theorem bin_agree {r : Nat → Nat → Nat → Prop} (s₁ s₂ : State) (h₁ :
     (h₂ : (binX86 r).pre s₂) (hp : (binX86 r).pub s₁ s₂) : VG.X86.Taint.Agree (fnτ 16) s₁ s₂ := by
   obtain ⟨e, a0, a1, a2, a3⟩ := hp
   refine fn_agree h₁.1 h₂.1 e fun i hi => ?_
-  have : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 := by omega
+  have : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 := by omega_using [hi]
   rcases this with rfl | rfl | rfl | rfl
   exacts [a0, a1, a2, a3]
 
@@ -181,7 +181,7 @@ theorem a24_agree (s₁ s₂ : State) (h₁ : a24X86.pre s₁) (h₂ : a24X86.pr
     VG.X86.Taint.Agree (fnτ 12) s₁ s₂ := by
   obtain ⟨e, a0, a1, a2⟩ := hp
   refine fn_agree h₁.1 h₂.1 e fun i hi => ?_
-  have : i = 0 ∨ i = 1 ∨ i = 2 := by omega
+  have : i = 0 ∨ i = 1 ∨ i = 2 := by omega_using [hi]
   rcases this with rfl | rfl | rfl
   exacts [a0, a1, a2]
 

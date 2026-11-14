@@ -40,11 +40,11 @@ theorem toNat_lt {v : Nat} (hv : v < 2 ^ 64) : (BitVec.ofNat 64 v).toNat = v := 
 theorem and1 {v : Nat} (hv : v < 2 ^ 64) : BitVec.ofNat 64 v &&& BitVec.ofNat 64 1 = BitVec.ofNat 64 (v % 2) := by
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_and, toNat_lt hv, show (BitVec.ofNat 64 1).toNat = 1 from rfl, Nat.and_one_is_mod,
-    toNat_lt (by omega)]
+    toNat_lt (by omega_using [])]
 
 theorem shr1 {v : Nat} (hv : v < 2 ^ 64) : BitVec.ofNat 64 v >>> 1 = BitVec.ofNat 64 (v / 2) := by
   apply BitVec.eq_of_toNat_eq
-  rw [BitVec.toNat_ushiftRight, toNat_lt hv, toNat_lt (by omega), Nat.shiftRight_eq_div_pow]
+  rw [BitVec.toNat_ushiftRight, toNat_lt hv, toNat_lt (by omega_using [hv]), Nat.shiftRight_eq_div_pow]
 
 /-- The registers `lNtz` writes. -/
 abbrev ntzRegs : List Reg := [.r0, .r3, .r4, .r5, .r6, .r12]
@@ -110,7 +110,7 @@ theorem lNtzLoop_ok {W : Addr} {s : State} (h31 : s.gpr .r31 = W) (hw : Covers [
   have x12₁ : t₁.gpr .r12 = BitVec.ofNat 64 (i / 2 ^ j) := by rw [D₁.gpr _ (by decide), x12]
   refine cwp_lsr (by decide) fun t₂ u₂ => WP.block_nil ?_
   have x12₂ : t₂.gpr .r12 = BitVec.ofNat 64 (i / 2 ^ (j + 1)) := by rw [u₂.gpr, x12₁, shr1 hv, e]
-  refine WP.mono (low1_ok (by omega) x12₂) fun t₃ ⟨x5₃, x12₃, R₃⟩ => ?_
+  refine WP.mono (low1_ok (by omega_using [hv, e]) x12₂) fun t₃ ⟨x5₃, x12₃, R₃⟩ => ?_
   have fr' : Frame [⟨W + BitVec.ofNat 64 lO, 16⟩] s.mem t₃.mem := by
     rw [R₃.mem, u₂.mem]
     exact fun x hx => (D₁.frame x hx).trans (fr x hx)
@@ -126,14 +126,14 @@ theorem lNtzLoop_ok {W : Addr} {s : State} (h31 : s.gpr .r31 = W) (hw : Covers [
   have rd' : t₃.rd = s.rd := by rw [R₃.rd, u₂.rd, D₁.rd, rd]
   have wr' : t₃.wr = s.wr := by rw [R₃.wr, u₂.wr, D₁.wr, wr]
   have hntz' : ntz i = (j + 1) + ntz (i / 2 ^ (j + 1)) := by
-    rw [hntz, Proof.Ocb.ntz_even hpos hev, e]; omega
+    rw [hntz, Proof.Ocb.ntz_even hpos hev, e]; omega_using []
   by_cases hodd : i / 2 ^ (j + 1) % 2 = 0
   · right
-    refine ⟨(eval_zero x5₃ (by omega)).trans (by simp [hodd]), i / 2 ^ (j + 1), by rw [e]; omega, j + 1, rfl,
-      by rw [e]; omega, hodd, hntz', x12₃, fr', v', g', sp', lr', rd', wr'⟩
+    refine ⟨(eval_zero x5₃ (by omega_using [])).trans (by simp [hodd]), i / 2 ^ (j + 1), by rw [e]; omega_using [hpos], j + 1, rfl,
+      by rw [e]; omega_using [hpos, hev], hodd, hntz', x12₃, fr', v', g', sp', lr', rd', wr'⟩
   · left
-    refine ⟨(eval_zero x5₃ (by omega)).trans (by simp [hodd]), ⟨fr', ?_, g', sp', lr', rd', wr'⟩⟩
-    rw [v', hntz', Proof.Ocb.ntz_odd (by omega)]
+    refine ⟨(eval_zero x5₃ (by omega_using [])).trans (by simp [hodd]), ⟨fr', ?_, g', sp', lr', rd', wr'⟩⟩
+    rw [v', hntz', Proof.Ocb.ntz_odd (by omega_using [hodd])]
 
 theorem lNtz_ok {W : Addr} {s : State} (h31 : s.gpr .r31 = W) (hw : Covers [⟨W, 2560⟩] s.wr) {l : Block} {i : Nat}
     (hi : 0 < i) (hi' : i < 2 ^ 64) (h26 : s.gpr .r26 = BitVec.ofNat 64 i)
@@ -159,13 +159,13 @@ theorem lNtz_ok {W : Addr} {s : State} (h31 : s.gpr .r31 = W) (hw : Covers [⟨W
   have rd₂ : s₂.rd = s.rd := by rw [R₂.rd, u₁'.rd, B₁.rd]
   have wr₂ : s₂.wr = s.wr := by rw [R₂.wr, u₁'.wr, B₁.wr]
   have h31₂ : s₂.gpr .r31 = W := by rw [g₂ _ (by decide), h31]
-  refine WP.ite (decide (i % 2 = 0)) (eval_zero x5₂ (by omega)) (fun hb => ?_)
+  refine WP.ite (decide (i % 2 = 0)) (eval_zero x5₂ (by omega_using [])) (fun hb => ?_)
     (fun hb => WP.block_nil ⟨fr₂, ?_, g₂, sp₂, lr₂, rd₂, wr₂⟩)
   · have he : i % 2 = 0 := of_decide_eq_true hb
     exact WP.mono (lNtzLoop_ok h31₂ (by rw [wr₂]; exact hw) hi' (a := 0) (by simpa using hi) (by simpa using he)
       (by simp) (by simpa using x12₂) v₂) fun t P =>
         ⟨fr₂.trans P.frame, P.val, fun r hr => (P.gpr r hr).trans (g₂ r hr), P.sp.trans sp₂, P.lr.trans lr₂,
           P.rd.trans rd₂, P.wr.trans wr₂⟩
-  · rw [v₂, Proof.Ocb.ntz_odd (by simp at hb; omega)]
+  · rw [v₂, Proof.Ocb.ntz_odd (by simp at hb; omega_using [hb])]
 
 end VG.Proof.AesOcb.PPC64LE

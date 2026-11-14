@@ -51,17 +51,17 @@ theorem lowPass_all_fields {m : Mem} {work challenge secret out aux : Addr} {g :
   dsimp only
   intro j hj k hk
   have hkn : k<256 := hk
-  have hu : k%32/4<8 := by omega
-  have hi : k/64<4 := by omega
-  have hh : k%64/32<2 := by omega
-  have he : k%4<4 := by omega
+  have hu : k%32/4<8 := by omega_using []
+  have hi : k/64<4 := by omega_using [hkn]
+  have hh : k%64/32<2 := by omega_using []
+  have he : k%4<4 := by omega_using []
   have hv := lowPass_stored_field hu he hg (⟨j,hj⟩,⟨k/64,hi⟩) ⟨k%64/32,hh⟩ c
     (hscale _ he) hc hs ho ha hd hp hy flags count
   have hidx : lowCoeff (k%32/4) (⟨j,hj⟩,⟨k/64,hi⟩) ⟨k%64/32,hh⟩ (k%4)=k := by
     change 4*(k%32/4)+64*(k/64)+32*(k%64/32)+k%4=k
     have hm : k%64%32=k%32 := Nat.mod_mod_of_dvd k (by decide : 32∣64)
     have hm4 : k%32%4=k%4 := Nat.mod_mod_of_dvd k (by decide : 4∣32)
-    omega
+    omega_using []
   simpa only [hidx] using hv
 
 end VG.Proof.MlDsa.AArch64.Optimized.Paired
@@ -130,7 +130,7 @@ theorem lowEntry_frame {s : State} {m : Mem} (h : LowSpecPre s)
   intro j hj
   apply VG.Proof.MlDsa.Verify.reduced_frame hf _ (h.data j hj)
   intro r hr
-  exact (ho r hr).sub_left (Offset.sub_base _ (by omega))
+  exact (ho r hr).sub_left (Offset.sub_base _ (by omega_using [hj]))
 
 end VG.Proof.MlDsa.AArch64.Optimized.Paired
 
@@ -150,16 +150,16 @@ theorem lowCoverage (P : Nat → Nat → Prop) :
   constructor
   · intro hall j hj k hk
     have hkn : k<256 := hk
-    have hu : k%32/4<8 := by omega
-    have hi : k/64<4 := by omega
-    have hh : k%64/32<2 := by omega
-    have he : k%4<4 := by omega
+    have hu : k%32/4<8 := by omega_using []
+    have hi : k/64<4 := by omega_using [hkn]
+    have hh : k%64/32<2 := by omega_using []
+    have he : k%4<4 := by omega_using []
     have hv := hall _ he _ hu (⟨j,hj⟩,⟨k/64,hi⟩) ⟨k%64/32,hh⟩
     have hidx : lowCoeff (k%32/4) (⟨j,hj⟩,⟨k/64,hi⟩) ⟨k%64/32,hh⟩ (k%4)=k := by
       change 4*(k%32/4)+64*(k/64)+32*(k%64/32)+k%4=k
       have hm : k%64%32=k%32 := Nat.mod_mod_of_dvd k (by decide : 32∣64)
       have hm4 : k%32%4=k%4 := Nat.mod_mod_of_dvd k (by decide : 4∣32)
-      omega
+      omega_using []
     simpa only [hidx] using hv
   · intro hall e he u hu i h
     exact hall i.1.val i.1.isLt _ (lowCoeff_lt hu he i h)
@@ -259,7 +259,7 @@ theorem lowPass_norm_complete {m : Mem} {work challenge secret out aux : Addr} {
     (∀e<4,vword (lowPassData g work out aux c d 8).flags e=0) ↔
       normRq ((List.range 2).map fun j => pairedLowPoly g (pairedDifference m challenge secret out j))<B := by
   dsimp only
-  rw [pairedLow_norm_iff _ _ _ _ _ _ (by omega),←lowCoverage]
+  rw [pairedLow_norm_iff _ _ _ _ _ _ (by omega_using [hB]),←lowCoverage]
   apply forall_congr'
   intro e
   apply forall_congr'
@@ -351,7 +351,7 @@ theorem bound_width (w : BitVec 32) (hw : 1≤w.toNat) :
   conv => lhs; lhs; rw [he]
   rw [←BitVec.ofNat_add]
   congr 1
-  omega
+  omega_using []
 
 theorem preparedLow_constants {s a b u : State} (ha : Arguments s a)
     (hk : Keep [.x17,.x7] a b) (hl : LowSetup (Round.arg32 s .x5) b u)
@@ -528,11 +528,11 @@ theorem pairedLow_sat : (pairedLowContract (abi.withConsts pairedConsts)).pre lo
     intro j hj
     change PositiveReduced pairedSatMem (8192+BitVec.ofNat 64 (1024*j))
     rw [show (8192:BitVec 64)=BitVec.ofNat 64 8192 by rfl,←BitVec.ofNat_add]
-    exact pairedSat_positive (by omega)
+    exact pairedSat_positive (by omega_using [hj])
   · intro j hj
     change Reduced pairedSatMem (12288+BitVec.ofNat 64 (1024*j))
     rw [show (12288:BitVec 64)=BitVec.ofNat 64 12288 by rfl,←BitVec.ofNat_add]
-    exact pairedSat_reduced (by omega)
+    exact pairedSat_reduced (by omega_using [hj])
 
 end VG.Proof.MlDsa.AArch64.Optimized.Paired
 

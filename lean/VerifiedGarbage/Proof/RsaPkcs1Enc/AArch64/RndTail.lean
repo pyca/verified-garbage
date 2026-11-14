@@ -71,7 +71,7 @@ theorem zloop_ok {rz rp rc : Reg} (hpc : rp ≠ rc) (hzp : rz ≠ rp) (hzc : rz 
   refine Bytes.count_loop hn (ZInv rp rc p n t) (fun k hk u hu => ?_)
     ⟨rfl, rfl, rfl, rfl, Keeps.refl _ _, by rw [hp0, add_zero'], by rw [hc0, Nat.sub_zero],
       Frame.refl _ _, fun j hj => absurd hj (Nat.not_lt_zero _)⟩
-  have hc : (⟨p, n⟩ : Region).Contains (p + BitVec.ofNat 64 k) 1 := Offset.contains_base _ (by omega) (by omega)
+  have hc : (⟨p, n⟩ : Region).Contains (p + BitVec.ofNat 64 k) 1 := Offset.contains_base _ (by omega_using [hk]) (by omega_using [hn', hk])
   have hw : InRegions u.wr (u.gpr rp + BitVec.ofNat 64 0) 1 := by
     rw [add_zero', hu.ptr, hu.wr]; exact ⟨R, hRm, hRs _ hc⟩
   refine WP.mono (zbody_ok hpc hw) fun w hw' => ?_
@@ -85,7 +85,7 @@ theorem zloop_ok {rz rp rc : Reg} (hpc : rp ≠ rc) (hzp : rz ≠ rp) (hzc : rz 
     rw [hw'.other r hr.1 hr.2]; exact hu.keep r (by simp [hr.1, hr.2])
   · rw [hm]
     rcases Nat.lt_succ_iff_lt_or_eq.mp hj with hj | rfl
-    · rw [Bytes.write1_ne _ _ (Offset.add_ofNat_ne _ (by omega) (by omega) (by omega))]; exact hu.zero j hj
+    · rw [Bytes.write1_ne _ _ (Offset.add_ofNat_ne _ (by omega_arith) (by omega_using [hn', hk]) (by omega_using [hj]))]; exact hu.zero j hj
     · exact Bytes.write1_self _ _ _
 
 /-- The zero loop's bytes. -/
@@ -154,7 +154,7 @@ theorem written_random {m : Mem} {out : Addr} {k : Nat} {r : BitVec 32} {res : O
 abbrev psR (s : State) : Region := ⟨off (Q s) oBuf, 1024⟩
 
 theorem psR_sub {P : Nat} (s : State) : Region.Sub (psR s) (stkR P s) :=
-  frame_sub s (by unfold oBuf; omega)
+  frame_sub s (by unfold oBuf; omega_using [])
 
 /-- The status and the wipe of `PS`, after the call. -/
 theorem accTail_ok {P : Nat} {s u : State} (hp : RPre P s) {i : Nat} {pad : List Byte}
@@ -168,7 +168,7 @@ theorem accTail_ok {P : Nat} {s u : State} (hp : RPre P s) {i : Nat} {pad : List
   have hQ := Q_toNat hp
   refine WP.seq (WP.mono (status_ok h) fun w hw => ?_)
   have hR : ∃ R ∈ w.wr, Region.Sub (psR s) R :=
-    ⟨⟨Q s, frameBytes⟩, by rw [hw.wr, h.wr, entered_wr]; simp, Offset.sub_base _ (by unfold oBuf frameBytes; omega)⟩
+    ⟨⟨Q s, frameBytes⟩, by rw [hw.wr, h.wr, entered_wr]; simp, Offset.sub_base _ (by unfold oBuf frameBytes; omega_using [])⟩
   refine WP.mono (zloop_ok (rz := .x14) (rp := .x13) (rc := .x12) (by decide) (by decide) (by decide)
     (by decide) (by decide) hR hw.x14 hw.x13 hw.x12) fun x hx => ?_
   have hf : Frame [psR s] u.mem x.mem := by rw [← hw.mem]; exact hx.fr
@@ -183,7 +183,7 @@ theorem accTail_ok {P : Nat} {s u : State} (hp : RPre P s) {i : Nat} {pad : List
     ?_, ?_, fun hq => ?_⟩
   · rw [hf.readW (Region.contains_self _ _) (fun r hr => by
       rw [List.mem_singleton.mp hr]
-      exact Offset.disjoint _ (.inr (by unfold oBuf; omega)) (by omega) (by unfold oBuf; omega)) (by decide)]
+      exact Offset.disjoint _ (.inr (by unfold oBuf; omega_using [])) (by omega_using []) (by unfold oBuf; omega_using [])) (by decide)]
     exact h.lr
   · revert hr h30; revert r; decide
   · have ht0 : (tapeR s).Contains (s.gpr .x2) 8 := by
@@ -197,7 +197,7 @@ theorem accTail_ok {P : Nat} {s u : State} (hp : RPre P s) {i : Nat} {pad : List
     have h0 : (x.gpr .x0).setWidth 32 = 2 - (u.gpr .x0).setWidth 32 := by
       rw [hx.keep .x0 (by decide)]; exact hw.x0
     have hb := bytes_frame (p := s.gpr .x0) (n := kOf s) hf (by rw [e]; exact dK hp.dKo)
-      (by have := hp.k2; unfold kOf; omega)
+      (by have := hp.k2; unfold kOf; omega_using [])
     have hw0 := written_random (h.res hq)
     rw [h0]
     revert hw0

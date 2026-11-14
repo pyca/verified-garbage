@@ -38,17 +38,17 @@ theorem Persist.of_frame {base : Addr} {g gv b} {m m' : Mem} (h : Persist base g
       (4736 ≤ ofs base x ∧ ofs base x < 4864)) → m' x = m x) : Persist base g gv b m' := by
   have hw : ∀ d, (d + 8 ≤ 64 ∨ (2880 ≤ d ∧ d + 8 ≤ 3072)) → d + 8 ≤ 8192 → word m' base d = word m base d :=
     fun d hd hd' => Mem.readW_congr fun i hi => (hf _ (by
-      rw [VG.Proof.X448.AArch64.ofs_off base (by omega)]; omega)).symm |>.symm
+      rw [VG.Proof.X448.AArch64.ofs_off base (by omega_using [hd, hi])]; omega_using [hd, hi])).symm |>.symm
   have hV : VSAVE = 4736 := rfl
   have hS : SAVE = 2880 := rfl
   refine ⟨⟨(hw 0 (by decide) (by decide)).trans h.saved.1, (hw 8 (by decide) (by decide)).trans h.saved.2⟩,
-    fun k hk => (hw _ (by omega) (by omega)).trans (h.savedX k hk),
-    h.savedV.frame fun d h1 h2 => hf _ (by rw [ofs_off0' base (by omega)]; omega),
-    (hw LRS (by simp only [LRS]; omega) (by simp only [LRS]; omega)).trans h.lrs,
-    h.kb.of_frame fun i hi => hf _ (by rw [kb_ofs base hi]; simp only [KB]; omega)⟩
+    fun k hk => (hw _ (by omega_using [hS, hk]) (by omega_using [hS, hk])).trans (h.savedX k hk),
+    h.savedV.frame fun d h1 h2 => hf _ (by rw [ofs_off0' base (by omega_using [hV, h2])]; omega_using [hV, h1, h2]),
+    (hw LRS (by simp only [LRS]; omega_using []) (by simp only [LRS]; omega_using [])).trans h.lrs,
+    h.kb.of_frame fun i hi => hf _ (by rw [kb_ofs base hi]; simp only [KB]; omega_using [hi])⟩
 
 theorem Persist.outside2 {base : Addr} {g gv b} {m m' : Mem} (h : Persist base g gv b m)
     (hf : Outside2 base 64 2816 ACC 1152 m m') : Persist base g gv b m' :=
-  h.of_frame fun x hx => hf x (by omega) (by simp only [ACC]; omega)
+  h.of_frame fun x hx => hf x (by omega_using [hx]) (by simp only [ACC]; omega_using [hx])
 
 end VG.Proof.Ed448.AArch64.Window

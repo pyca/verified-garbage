@@ -25,19 +25,19 @@ private theorem byte_zext (b : BitVec 8) :
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]
   have h := b.isLt
-  omega
+  omega_using []
 
 theorem loadByte_ok {s : State} {base : Addr} (hs : Scr s base) {i j : Nat}
     (hi : i < 456) (hj : j < 8) (hp : s.gpr .x2 = off base i) (d : Reg) :
     WP isa (.block [.ldrb d .x2 (BITS+j)]) s fun u =>
       u.gpr d = BitVec.ofNat 64 (s.mem (off base (BITS+i+j))).toNat ∧
       Keeps [d] s u ∧ u.mem = s.mem := by
-  have enc : (BITS+j)%1=0 ∧ BITS+j<4096 := ⟨Nat.mod_one _,by simp only [BITS]; omega⟩
+  have enc : (BITS+j)%1=0 ∧ BITS+j<4096 := ⟨Nat.mod_one _,by simp only [BITS]; omega_using [hj]⟩
   have ea : off base i + BitVec.ofNat 64 (BITS+j) = off base (BITS+i+j) := by
     rw [off, off, Offset.add_add]
     congr 2
-    omega
-  have hr := hs.read (d := BITS+i+j) (n := 1) (by simp only [BITS]; omega)
+    omega_using []
+  have hr := hs.read (d := BITS+i+j) (n := 1) (by simp only [BITS]; omega_using [hi, hj])
   apply WP.of_runBlock
   simp only [runBlock_cons, runStep_some, runBlock_nil, exec, addr, enc, and_self,
     hp, ea, State.load, hr, read1_eq, ite_true, Option.map_some, Option.bind_some,
@@ -81,7 +81,7 @@ theorem readOne_ok {s : State} {base : Addr} (hs : Scr s base) {i j k a : Nat}
   rw [WP.block_append_iff]
   refine WP.mono (loadByte_ok hs hi hj hp .x5) fun t ⟨ht,hk,hm'⟩ => ?_
   have hbit : t.gpr .x5 = BitVec.ofNat 64 (bit k (i+j)) := by
-    rw [ht,hm,BitVec.toNat_ofNat,Nat.mod_eq_of_lt (by have := WnafWide.bit_lt k (i+j); omega)]
+    rw [ht,hm,BitVec.toNat_ofNat,Nat.mod_eq_of_lt (by have := WnafWide.bit_lt k (i+j); omega_using [this])]
   refine WP.mono (appendBit_ok ((hk.1 _ (by decide)).trans ha) hbit) fun u ⟨ua,uk,um⟩ => ?_
   exact ⟨ua,(uk.1 _ (by decide)).trans hbit,(hk.mono (by decide)).trans (uk.mono (by decide)),um.trans hm'⟩
 
@@ -103,8 +103,8 @@ theorem readLow_ok {n : Nat} (hn : n < 8) {s : State} {base : Addr} (hs : Scr s 
       simp only [readLow,readOne,List.range_succ,List.reverse_append,List.reverse_singleton,
         List.singleton_append,List.flatMap_cons]
     rw [he,WP.block_append_iff]
-    refine WP.mono (readOne_ok hs hi (by omega) hp (hm n (by omega)) ha) fun t ⟨ta,tb,tk,tm⟩ => ?_
-    refine WP.mono (ih (by omega) (hs.of_keeps tk (by decide))
+    refine WP.mono (readOne_ok hs hi (by omega_using [hn]) hp (hm n (by omega_using [hn])) ha) fun t ⟨ta,tb,tk,tm⟩ => ?_
+    refine WP.mono (ih (by omega_using [hn]) (hs.of_keeps tk (by decide))
       ((tk.1 _ (by decide)).trans hp) (fun j hj => by rw [tm]; exact hm j hj) ta)
       fun u ⟨ua,ub,uk,um⟩ => ?_
     refine ⟨?_,?_,tk.trans uk,um.trans tm⟩
@@ -147,7 +147,7 @@ theorem loadBits_ok (wide : Bool) {s : State} {base : Addr} (hs : Scr s base) {i
   refine WP.mono (loadByte_ok (hs.of_keeps ak (by decide)) hi hw ap .x4) fun b ⟨ba,bk,bm⟩ => ?_
   have head : b.gpr .x4=BitVec.ofNat 64 (bit k (i+(width wide-1))) := by
     rw [ba,am,hm _ hw,BitVec.toNat_ofNat,
-      Nat.mod_eq_of_lt (by have := WnafWide.bit_lt k (i+(width wide-1));omega)]
+      Nat.mod_eq_of_lt (by have := WnafWide.bit_lt k (i+(width wide-1));omega_using [this])]
   have kAB : Keeps [.x2,.x4,.x5] s b :=
     (ak.mono (by decide)).trans (bk.mono (by decide))
   refine WP.mono (readLow_ok (k:=k) hw (hs.of_keeps kAB (by decide)) hi
@@ -159,7 +159,7 @@ theorem loadBits_ok (wide : Bool) {s : State} {base : Addr} (hs : Scr s base) {i
     rw [ua]
     congr 1
     have hm := Nat.mul_comm (2^(width wide-1)) (bit k (i+(width wide-1)))
-    omega
+    omega_using [he, hm]
   · simpa only [hw0,ite_false] using ub
   · exact (uk.1 _ (by decide)).trans ((bk.1 _ (by decide)).trans ap)
 

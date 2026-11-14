@@ -32,7 +32,7 @@ theorem sq_le_iff (a x : Nat) : a * a ≤ x ↔ a ≤ isqrt x := by
   · intro h
     refine Nat.le_of_not_lt fun c => ?_
     have := Nat.mul_le_mul (show isqrt x + 1 ≤ a from c) (show isqrt x + 1 ≤ a from c)
-    omega
+    omega_using [hi, h, this]
   · intro h
     exact Nat.le_trans (Nat.mul_le_mul h h) lo
 
@@ -47,15 +47,15 @@ theorem fits_iff {s r P β : Nat} (t : Nat) :
     (2 * s * β + t) * t ≤ r * (β * β) + P ↔ t ≤ isqrt ((s * s + r) * (β * β) + P) - s * β ∧
       s * β ≤ isqrt ((s * s + r) * (β * β) + P) := by
   have e : (s * s + r) * (β * β) + P = s * s * (β * β) + (r * (β * β) + P) := by
-    rw [Nat.add_mul]; omega
+    rw [Nat.add_mul]; omega_using []
   have hsb : s * β ≤ isqrt ((s * s + r) * (β * β) + P) := by
-    rw [← sq_le_iff, e, show s * β * (s * β) = s * s * (β * β) by grind]; omega
+    rw [← sq_le_iff, e, show s * β * (s * β) = s * s * (β * β) by grind]; omega_using []
   rw [e] at hsb ⊢
   have := (sq_le_iff (s * β + t) (s * s * (β * β) + (r * (β * β) + P)))
   rw [sq_split] at this
   constructor
-  · intro h; exact ⟨by have := this.mp (by omega); omega, hsb⟩
-  · intro ⟨h, _⟩; have := this.mpr (by omega); omega
+  · intro h; exact ⟨by have := this.mp (by omega_using [h]); omega_arith, hsb⟩
+  · intro ⟨h, _⟩; have := this.mpr (by omega_using [hsb, h]); omega_arith
 
 /-- The digit is a digit (`IsDigit`). -/
 theorem isDigit_dig (s r P β : Nat) :
@@ -63,7 +63,7 @@ theorem isDigit_dig (s r P β : Nat) :
   refine ⟨(fits_iff _).mpr ⟨Nat.le_refl _, (fits_iff 0).mp (by simp) |>.2⟩, ?_⟩
   refine Nat.lt_of_not_le fun h => ?_
   have := ((fits_iff _).mp h).1
-  omega
+  omega_using [this]
 
 /-- A truncated quotient: dividing both `A` and `Bv` by `P` first, where the
 truncated divisor is at least `2^64` and the quotient below `2^64 + 1`, gives
@@ -71,10 +71,10 @@ the quotient or one more. -/
 theorem trunc_div {β A Bv P : Nat} (hP : 0 < P) (hD : β ≤ Bv / P) (hβ : 1 ≤ β)
     (hU : A / P < (β + 1) * (Bv / P)) :
     A / Bv ≤ A / P / (Bv / P) ∧ A / P / (Bv / P) ≤ A / Bv + 1 := by
-  have hD0 : 0 < Bv / P := by omega
+  have hD0 : 0 < Bv / P := by omega_arith
   have hB0 : 0 < Bv := by
     rcases Nat.eq_zero_or_pos Bv with h | h
-    · rw [h, Nat.zero_div] at hD; omega
+    · rw [h, Nat.zero_div] at hD; omega_arith
     · exact h
   have hdp : Bv / P * P ≤ Bv := Nat.div_mul_le_self Bv P
   have hdp' : Bv < (Bv / P + 1) * P := by
@@ -104,16 +104,16 @@ theorem trunc_div {β A Bv P : Nat} (hP : 0 < P) (hD : β ≤ Bv / P) (hβ : 1 �
     have ht1 : t * D ≤ U := by rw [← ht]; exact Nat.div_mul_le_self U D
     have htb : t ≤ β := by
       have : U / D < β + 1 := (Nat.div_lt_iff_lt_mul hD0).mpr hU
-      omega
+      omega_using [ht, this]
     -- `t Bv < t (D + 1) P = t D P + t P ≤ A + t P < (Q + 1) Bv + t P`.
-    have h1 : t * Bv < t * ((D + 1) * P) := Nat.mul_lt_mul_of_pos_left hdp' (by omega)
+    have h1 : t * Bv < t * ((D + 1) * P) := Nat.mul_lt_mul_of_pos_left hdp' (by omega_using [c])
     have h2 : t * ((D + 1) * P) = t * D * P + t * P := by grind
     have h3 : t * D * P ≤ A := Nat.le_trans (Nat.mul_le_mul_right _ ht1) hUP
-    have h4 : (Q + 2) * Bv ≤ t * Bv := Nat.mul_le_mul_right _ (by omega)
+    have h4 : (Q + 2) * Bv ≤ t * Bv := Nat.mul_le_mul_right _ (by omega_using [c])
     have h5 : t * P ≤ β * P := Nat.mul_le_mul_right _ htb
     have h6 : β * P ≤ D * P := Nat.mul_le_mul_right _ hD
     have h7 : (Q + 2) * Bv = (Q + 1) * Bv + Bv := by grind
-    omega
+    omega_arith
 
 theorem pow128 : (2 : Nat) ^ 128 = 2 ^ 64 * 2 ^ 64 := by decide
 
@@ -123,9 +123,9 @@ theorem div_le_div21 {U D a d1 β : Nat} (hd1 : 0 < d1) (hU : U < (a + 1) * β) 
   rw [Nat.le_div_iff_mul_le hd1]
   have h1 : U / D * D ≤ U := Nat.div_mul_le_self U D
   have h2 : U / D * (d1 * β) ≤ U / D * D := Nat.mul_le_mul_left _ hD
-  have h3 : U / D * d1 * β < (a + 1) * β := by rw [Nat.mul_assoc]; omega
+  have h3 : U / D * d1 * β < (a + 1) * β := by rw [Nat.mul_assoc]; omega_using [hU, h1, h2]
   have := Nat.lt_of_mul_lt_mul_right h3
-  omega
+  omega_using [this]
 
 /-- The 2-by-1 estimate from `u₂ u₁` by `d₁` is the 3-by-2 one (capped at
 `2^64 - 1`) or at most two more, for `d₁ ≥ 2^63`. -/
@@ -135,10 +135,10 @@ theorem est21 {u2 u1 u0 d1 d0 : Nat} (hu0 : u0 < 2 ^ 64) (hd0 : d0 < 2 ^ 64)
         min ((u2 * 2 ^ 64 + u1) / d1) (2 ^ 64 - 1) ∧
       min ((u2 * 2 ^ 64 + u1) / d1) (2 ^ 64 - 1) ≤
         min ((u2 * 2 ^ 128 + u1 * 2 ^ 64 + u0) / (d1 * 2 ^ 64 + d0)) (2 ^ 64 - 1) + 2 := by
-  have hd1 : 0 < d1 := by omega
-  have hD0 : 0 < d1 * 2 ^ 64 + d0 := by omega
+  have hd1 : 0 < d1 := by omega_using [hd]
+  have hD0 : 0 < d1 * 2 ^ 64 + d0 := by omega_using [hd]
   have ge : (u2 * 2 ^ 128 + u1 * 2 ^ 64 + u0) / (d1 * 2 ^ 64 + d0) ≤ (u2 * 2 ^ 64 + u1) / d1 :=
-    div_le_div21 (β := 2 ^ 64) hd1 (by rw [pow128]; omega) (by omega)
+    div_le_div21 (β := 2 ^ 64) hd1 (by rw [pow128]; omega_using [hu0]) (by omega_using [])
   by_cases hlt : u2 * 2 ^ 128 + u1 * 2 ^ 64 + u0 < d1 * 2 ^ 128 + d0 * 2 ^ 64 + 0
   · have e2 : 64 * (3 - 1) = 128 := rfl
     have e1 : 64 * (3 - 2) = 64 := rfl
@@ -153,10 +153,10 @@ theorem est21 {u2 u1 u0 d1 d0 : Nat} (hu0 : u0 < 2 ^ 64) (hd0 : d0 < 2 ^ 64)
     have hq : 2 ^ 64 ≤ (u2 * 2 ^ 128 + u1 * 2 ^ 64 + u0) / (d1 * 2 ^ 64 + d0) := by
       rw [Nat.le_div_iff_mul_le hD0]
       rw [pow128] at hlt ⊢
-      omega
-    rw [Nat.min_eq_right (show 2 ^ 64 - 1 ≤ (u2 * 2 ^ 128 + u1 * 2 ^ 64 + u0) / (d1 * 2 ^ 64 + d0) by omega),
-      Nat.min_eq_right (show 2 ^ 64 - 1 ≤ (u2 * 2 ^ 64 + u1) / d1 by omega)]
-    omega
+      omega_using [hlt]
+    rw [Nat.min_eq_right (show 2 ^ 64 - 1 ≤ (u2 * 2 ^ 128 + u1 * 2 ^ 64 + u0) / (d1 * 2 ^ 64 + d0) by omega_using [hq]),
+      Nat.min_eq_right (show 2 ^ 64 - 1 ≤ (u2 * 2 ^ 64 + u1) / d1 by omega_using [ge, hq])]
+    omega_using []
 
 /-- The truncations of a digit step, at step `k + 1` (the root `s` of `k + 1`
 words of `β = 2 H`, its top word normalized; `r ≤ 2 s`; the next pair `P`),
@@ -171,14 +171,14 @@ theorem est_bounds {β H Pk s r P : Nat} (hH : 2 * H = β) (h4 : 4 ≤ β) (hK :
       (r * (β * β) + P) / 2 / Pk < (β + 1) * (s * β / Pk) ∧
       isqrt ((s * s + r) * (β * β) + P) - s * β ≤ min ((r * (β * β) + P) / 2 / Pk / (s * β / Pk)) (β - 1) ∧
       min ((r * (β * β) + P) / 2 / Pk / (s * β / Pk)) (β - 1) ≤ isqrt ((s * s + r) * (β * β) + P) - s * β + 2 := by
-  have hβ0 : 0 < β := by omega
+  have hβ0 : 0 < β := by omega_using [h4]
   obtain ⟨lo, hi⟩ := isDigit_dig s r P β
   have hqβ : isqrt ((s * s + r) * (β * β) + P) - s * β < β := digit_lt hr hP lo
   generalize isqrt ((s * s + r) * (β * β) + P) - s * β = q at lo hi hqβ ⊢
   generalize hR : r * (β * β) + P = R at lo hi ⊢
   have hs0 : 0 < s := by
-    have : 0 < H * Pk := Nat.mul_pos (by omega) hK
-    omega
+    have : 0 < H * Pk := Nat.mul_pos (by omega_arith) hK
+    omega_arith
   -- `D`'s bounds and top word.
   have hDlo : H * β ≤ s * β / Pk := by
     rw [Nat.le_div_iff_mul_le hK]
@@ -192,7 +192,7 @@ theorem est_bounds {β H Pk s r P : Nat} (hH : 2 * H = β) (h4 : 4 ≤ β) (hK :
     rw [Nat.div_div_eq_div_mul, Nat.mul_comm Pk, ← Nat.div_div_eq_div_mul, Nat.mul_div_cancel _ hβ0]
   -- `R + 1 ≤ 2 s β² + β²`.
   have hRle : R + 1 ≤ 2 * s * (β * β) + β * β := by
-    rw [← hR]; have := Nat.mul_le_mul_right (β * β) hr; omega
+    rw [← hR]; have := Nat.mul_le_mul_right (β * β) hr; omega_arith
   have hR2 : R / 2 * 2 ≤ R := Nat.div_mul_le_self R 2
   -- `U`'s top word at most `D`'s.
   have hu2 : R / 2 / Pk / (β * β) ≤ s / Pk := by
@@ -204,7 +204,7 @@ theorem est_bounds {β H Pk s r P : Nat} (hH : 2 * H = β) (h4 : 4 ≤ β) (hK :
     have e3 : 2 * s * (β * β) = 2 * (s * (β * β)) := by grind
     rw [e1] at m1; rw [e3] at hRle
     have h1 : R / 2 / Pk * Pk < (s / Pk + 1) * (β * β) * Pk := by
-      rw [Nat.mul_right_comm]; omega
+      rw [Nat.mul_right_comm]; omega_arith
     have h2 := Nat.lt_of_mul_lt_mul_right h1
     exact Nat.le_of_lt_succ ((Nat.div_lt_iff_lt_mul (Nat.mul_pos hβ0 hβ0)).mpr h2)
   -- `U < (β + 1) D`.
@@ -219,7 +219,7 @@ theorem est_bounds {β H Pk s r P : Nat} (hH : 2 * H = β) (h4 : 4 ≤ β) (hK :
       have : H * β ≤ s * β := Nat.mul_le_mul_right _ hs
       have e4 : 2 * (H * β) = β * β := by rw [← Nat.mul_assoc, hH]
       rw [e]; rw [e3] at hRle
-      omega
+      omega_arith
     · -- `Pk ≥ β`: `2 U Pk ≤ 2 s β² + β² - 1 < 2 (β D Pk + β Pk) + β² ≤ 2 (β + 1) D Pk`.
       have hU1 : R / 2 / Pk * Pk ≤ R / 2 := Nat.div_mul_le_self _ _
       have hD1 : s * β < (s * β / Pk + 1) * Pk := by
@@ -243,26 +243,26 @@ theorem est_bounds {β H Pk s r P : Nat} (hH : 2 * H = β) (h4 : 4 ≤ β) (hK :
       rw [f3]
       rw [f1, f2] at h3
       rw [f4] at hRle
-      omega
+      omega_arith
   refine ⟨hDlo, hDhi, hd1, hu2, hUD, ?_, ?_⟩
   · -- The digit is at most the truncated quotient, and below `β`.
     have hd0 : 0 < 2 * s * β := Nat.mul_pos (Nat.mul_pos (by decide) hs0) hβ0
     have h1 := digit_le_div hd0 lo
     rw [show 2 * s * β = 2 * (s * β) by grind, ← Nat.div_div_eq_div_mul] at h1
     have ⟨t1, _⟩ := trunc_div (β := β) (A := R / 2) (Bv := s * β) hK (by
-      have : β ≤ H * β := Nat.le_mul_of_pos_left β (show 0 < H by omega)
-      omega) (by omega) hUD
-    exact Nat.le_min.mpr ⟨Nat.le_trans h1 t1, by omega⟩
+      have : β ≤ H * β := Nat.le_mul_of_pos_left β (show 0 < H by omega_arith)
+      omega_arith) (by omega_arith) hUD
+    exact Nat.le_min.mpr ⟨Nat.le_trans h1 t1, by omega_arith⟩
   · have hβs : β ≤ 2 * s := by
       have : H ≤ H * Pk := Nat.le_mul_of_pos_right H hK
-      omega
+      omega_arith
     have hd0 : 0 < 2 * s * β := Nat.mul_pos (Nat.mul_pos (by decide) hs0) hβ0
     have h1 := div_le_digit_succ hβs hd0 hqβ hi
     rw [show 2 * s * β = 2 * (s * β) by grind, ← Nat.div_div_eq_div_mul] at h1
     have ⟨_, t2⟩ := trunc_div (β := β) (A := R / 2) (Bv := s * β) hK (by
-      have : β ≤ H * β := Nat.le_mul_of_pos_left β (show 0 < H by omega)
-      omega) (by omega) hUD
-    exact Nat.le_trans (Nat.min_le_left _ _) (by omega)
+      have : β ≤ H * β := Nat.le_mul_of_pos_left β (show 0 < H by omega_arith)
+      omega_arith) (by omega_arith) hUD
+    exact Nat.le_trans (Nat.min_le_left _ _) (by omega_arith)
 
 /-! ## The corrections -/
 
@@ -270,11 +270,11 @@ theorem est_bounds {β H Pk s r P : Nat} (hH : 2 * H = β) (h4 : 4 ≤ β) (hK :
 theorem mul_cases (M z : Int) (hM : 0 ≤ M) : M * z = 0 ∨ M * z = M ∨ 2 * M ≤ M * z ∨ M * z ≤ -M := by
   rcases Int.lt_trichotomy z 0 with h | h | h
   · right; right; right
-    have : M * z ≤ M * (-1) := Int.mul_le_mul_of_nonneg_left (by omega) hM
+    have : M * z ≤ M * (-1) := Int.mul_le_mul_of_nonneg_left (by omega_using [h]) hM
     simpa using this
   · left; rw [h, Int.mul_zero]
   · rcases Int.lt_or_le z 2 with h2 | h2
-    · right; left; rw [show z = 1 by omega, Int.mul_one]
+    · right; left; rw [show z = 1 by omega_using [h, h2], Int.mul_one]
     · right; right; left
       have : M * 2 ≤ M * z := Int.mul_le_mul_of_nonneg_left h2 hM
       rw [Int.mul_comm] at this; exact this
@@ -305,15 +305,15 @@ theorem fix_inv {β M Y Ytop R q y1 w e t w' e' : Nat} {c' : Bool}
   generalize hP0 : (Y + q) * q = P0 at lo p1
   generalize hP1 : (Y + (q + 1)) * (q + 1) = P1 at hi p1 p2
   generalize hP2 : (Y + (q + 2)) * (q + 2) = P2 at hB p2
-  have cases : t = q ∨ t = q + 1 ∨ t = q + 2 := by omega
+  have cases : t = q ∨ t = q + 1 ∨ t = q + 2 := by omega_using [ht1, ht2]
   rcases cases with rfl | rfl | rfl
   · -- No correction: `T ≥ 0`, so `w = T < M / 2`.
     rw [hP0] at hz
     have hz0 : (M : Int) * z = 0 := by
-      rcases mul_cases M z (by omega) with h | h | h | h <;> omega
-    have hneg : ¬ M ≤ 2 * w := by omega
+      rcases mul_cases M z (by omega_using []) with h | h | h | h <;> omega_arith
+    have hneg : ¬ M ≤ 2 * w := by omega_using [hR, hz, hz0]
     simp only [hneg, ↓reduceIte, Nat.zero_add, decide_false, Bool.toNat_false, Nat.mul_zero, Nat.sub_zero] at hw' he' ⊢
-    have hc : c' = false := by cases c' <;> simp at hw' ⊢ <;> omega
+    have hc : c' = false := by cases c' <;> simp at hw' ⊢ <;> omega_arith
     subst hc
     simp only [Bool.toNat_false, Nat.mul_zero, Nat.add_zero] at hw'
     subst hw'
@@ -322,44 +322,44 @@ theorem fix_inv {β M Y Ytop R q y1 w e t w' e' : Nat} {c' : Bool}
   · -- `T(q + 1) < 0`: a correction to `q`.
     rw [hP1] at hz
     have hz1 : (M : Int) * z = M := by
-      rcases mul_cases M z (by omega) with h | h | h | h <;> omega
-    have hneg : M ≤ 2 * w := by omega
+      rcases mul_cases M z (by omega_using []) with h | h | h | h <;> omega_arith
+    have hneg : M ≤ 2 * w := by omega_using [hR, hw', hw'M, hwM, lo, hP1, hi, p1, hP2, hB, p2, hz, hz1]
     simp only [hneg, ↓reduceIte, decide_true, Bool.toNat_true, Nat.mul_one, Nat.add_sub_cancel] at hw' he' ⊢
     have he0 : e = y1 * β + 2 * (q + 1) - 1 := by
-      rw [he, show y1 * β + 2 * (q + 1) + β * β - 1 = (y1 * β + 2 * (q + 1) - 1) + β * β by omega,
-        Nat.add_mod_right, Nat.mod_eq_of_lt (by omega)]
+      rw [he, show y1 * β + 2 * (q + 1) + β * β - 1 = (y1 * β + 2 * (q + 1) - 1) + β * β by omega_using [],
+        Nat.add_mod_right, Nat.mod_eq_of_lt (by omega_arith)]
     rw [he0] at hw' he'
-    refine ⟨Nat.le_refl _, by omega, by omega, hw'M, ⟨z - c'.toNat, ?_⟩, ?_⟩
+    refine ⟨Nat.le_refl _, by omega_using [], by omega_using [hq], hw'M, ⟨z - c'.toNat, ?_⟩, ?_⟩
     · rw [hP0]
       have hw'' : (w' : Int) + M * c'.toNat = Ytop + (y1 * β + 2 * q + 1 : Nat) + w := by
-        rw [show y1 * β + 2 * (q + 1) - 1 = y1 * β + 2 * q + 1 by omega] at hw'
+        rw [show y1 * β + 2 * (q + 1) - 1 = y1 * β + 2 * q + 1 by omega_using []] at hw'
         exact_mod_cast hw'
       rw [hY] at p1
       rw [Int.mul_sub]
       push_cast at p1
-      omega
-    · rw [he']; congr 1; omega
+      omega_arith
+    · rw [he']; congr 1; omega_using []
   · -- `T(q + 2) < 0`: a correction to `q + 1`.
     rw [hP2] at hz
     have hz1 : (M : Int) * z = M := by
-      rcases mul_cases M z (by omega) with h | h | h | h <;> omega
-    have hneg : M ≤ 2 * w := by omega
+      rcases mul_cases M z (by omega_using []) with h | h | h | h <;> omega_arith
+    have hneg : M ≤ 2 * w := by omega_using [hB, hz, hz1]
     simp only [hneg, ↓reduceIte, decide_true, Bool.toNat_true, Nat.mul_one] at hw' he' ⊢
-    rw [show q + 2 - 1 = q + 1 by omega]
+    rw [show q + 2 - 1 = q + 1 by omega_using []]
     have he0 : e = y1 * β + 2 * (q + 2) - 1 := by
-      rw [he, show y1 * β + 2 * (q + 2) + β * β - 1 = (y1 * β + 2 * (q + 2) - 1) + β * β by omega,
-        Nat.add_mod_right, Nat.mod_eq_of_lt (by omega)]
+      rw [he, show y1 * β + 2 * (q + 2) + β * β - 1 = (y1 * β + 2 * (q + 2) - 1) + β * β by omega_using [],
+        Nat.add_mod_right, Nat.mod_eq_of_lt (by omega_arith)]
     rw [he0] at hw' he'
-    refine ⟨by omega, by omega, by omega, hw'M, ⟨z - c'.toNat, ?_⟩, ?_⟩
+    refine ⟨by omega_using [], by omega_using [], by omega_arith, hw'M, ⟨z - c'.toNat, ?_⟩, ?_⟩
     · rw [hP1]
       have hw'' : (w' : Int) + M * c'.toNat = Ytop + (y1 * β + 2 * q + 3 : Nat) + w := by
-        rw [show y1 * β + 2 * (q + 2) - 1 = y1 * β + 2 * q + 3 by omega] at hw'
+        rw [show y1 * β + 2 * (q + 2) - 1 = y1 * β + 2 * q + 3 by omega_using []] at hw'
         exact_mod_cast hw'
       rw [hY] at p2
       rw [Int.mul_sub]
       push_cast at p2
-      omega
-    · rw [he']; congr 1; omega
+      omega_arith
+    · rw [he']; congr 1; omega_using []
 
 /-- The window's top bit is set exactly where the candidate is above the digit. -/
 theorem fix_neg {β M Y R q y1 w e t : Nat}
@@ -371,14 +371,14 @@ theorem fix_neg {β M Y R q y1 w e t : Nat}
   generalize hP0 : (Y + q) * q = P0 at lo p1
   generalize hP1 : (Y + (q + 1)) * (q + 1) = P1 at hi p1 p2
   generalize hP2 : (Y + (q + 2)) * (q + 2) = P2 at hB p2
-  have cases : t = q ∨ t = q + 1 ∨ t = q + 2 := by omega
+  have cases : t = q ∨ t = q + 1 ∨ t = q + 2 := by omega_using [ht1, ht2]
   rcases cases with rfl | rfl | rfl
   · rw [hP0] at hz
-    rcases mul_cases M z (by omega) with h | h | h | h <;> omega
+    rcases mul_cases M z (by omega_using []) with h | h | h | h <;> omega_arith
   · rw [hP1] at hz
-    rcases mul_cases M z (by omega) with h | h | h | h <;> omega
+    rcases mul_cases M z (by omega_using []) with h | h | h | h <;> omega_arith
   · rw [hP2] at hz
-    rcases mul_cases M z (by omega) with h | h | h | h <;> omega
+    rcases mul_cases M z (by omega_using []) with h | h | h | h <;> omega_arith
 
 /-- At the digit: the window is the remainder `R - (Y + q) q`, and `E + 1` is
 `y₁ β + 2 q`. -/
@@ -388,21 +388,21 @@ theorem fix_final {β M Y R q y1 w e : Nat} (hy1 : y1 + 2 ≤ β) (lo : (Y + q) 
   have hββ : y1 * β + 2 * β ≤ β * β := by have := Nat.mul_le_mul_right β hy1; grind
   generalize hP0 : (Y + q) * q = P0 at lo hz ⊢
   have hMz : (M : Int) * z = 0 := by
-    rcases mul_cases M z (by omega) with h | h | h | h
+    rcases mul_cases M z (by omega_using []) with h | h | h | h
     · exact h
-    · exfalso; omega
-    · exfalso; omega
-    · exfalso; omega
-  refine ⟨by omega, ?_⟩
-  have hX : y1 * β + 2 * q < β * β := by omega
+    · exfalso; omega_using [hwM, lo, hz, h]
+    · exfalso; omega_using [hwM, lo, hz, h]
+    · exfalso; omega_using [hR, hz, h]
+  refine ⟨by omega_using [hz, hMz], ?_⟩
+  have hX : y1 * β + 2 * q < β * β := by omega_arith
   rw [he]
   generalize y1 * β + 2 * q = X at hX ⊢
   generalize β * β = BB at hX ⊢
   rcases Nat.eq_zero_or_pos X with h0 | h0
   · subst h0
-    rw [Nat.zero_add, Nat.mod_eq_of_lt (show BB - 1 < BB by omega), Nat.sub_add_cancel (show 1 ≤ BB by omega),
+    rw [Nat.zero_add, Nat.mod_eq_of_lt (show BB - 1 < BB by omega_using [hX]), Nat.sub_add_cancel (show 1 ≤ BB by omega_using [hX]),
       Nat.mod_self]
-  · rw [show X + BB - 1 = (X - 1) + BB by omega, Nat.add_mod_right, Nat.mod_eq_of_lt (show X - 1 < BB by omega),
+  · rw [show X + BB - 1 = (X - 1) + BB by omega_using [h0], Nat.add_mod_right, Nat.mod_eq_of_lt (show X - 1 < BB by omega_using [hX]),
       Nat.sub_add_cancel h0, Nat.mod_eq_of_lt hX]
 
 /-- A digit step's numbers, generic over the word `β`: `A = s² + r` (`A`'s
@@ -418,23 +418,23 @@ theorem step_arith {β H Pk s r P A R Y N Dd q : Nat} (hH : 2 * H = β) (h8 : 8 
       (Y + q) * q ≤ R ∧ R < (Y + (q + 1)) * (q + 1) ∧ q < β ∧
       2 * ((Y + (q + 2)) * (q + 2)) < β * β * (β * β) * Pk ∧
       isqrt (A * (β * β) + P) = s * β + q ∧ A * (β * β) + P - (s * β + q) * (s * β + q) = R - (Y + q) * q := by
-  obtain ⟨eDlo, eDhi, ed1, eu2, eUD, est1, est2⟩ := est_bounds hH (by omega) hK hK1 hs hs' hr hP
+  obtain ⟨eDlo, eDhi, ed1, eu2, eUD, est1, est2⟩ := est_bounds hH (by omega_using [h8]) hK hK1 hs hs' hr hP
   have hdig := isDigit_dig s r P β
   subst hA hR hY hN hD hq
   have hqβ := digit_lt hr hP hdig.1
   obtain ⟨st1, st2⟩ := step_inv (A := s * s + r) rfl hdig
   have hsq := sqrt_of_rem st1 st2
   generalize isqrt ((s * s + r) * (β * β) + P) - s * β = q at *
-  have hβ0 : 0 < β := by omega
+  have hβ0 : 0 < β := by omega_arith
   have hsK : s / Pk < β := (Nat.div_lt_iff_lt_mul hK).mpr hs'
   refine ⟨?_, (Nat.le_div_iff_mul_le hβ0).mpr eDlo, eDhi, ed1, by rw [ed1]; exact eu2, eUD, est1, est2,
-    hdig.1, hdig.2, hqβ, ?_, hsq, by omega⟩
-  · have : (r * (β * β) + P) / 2 / Pk / (β * β) < β := by omega
+    hdig.1, hdig.2, hqβ, ?_, hsq, by omega_arith⟩
+  · have : (r * (β * β) + P) / 2 / Pk / (β * β) < β := by omega_arith
     rw [Nat.div_lt_iff_lt_mul (Nat.mul_pos hβ0 hβ0)] at this
     have e1 : β * β * β = β * (β * β) := Nat.mul_assoc _ _ _
     have e2 : β * β * β = β * β * β := rfl
     have e3 : (β * β) * β = β * (β * β) := Nat.mul_comm _ _
-    omega
+    omega_arith
   · -- `(2 s β + q + 2) (q + 2) < 2 (β P_k) β (β + 1)`, and `4 β + 4 ≤ β²`.
     generalize hT : β * Pk = T at hs'
     have e1 : 2 * s * β + (q + 2) < 2 * T * β := by
@@ -442,16 +442,16 @@ theorem step_arith {β H Pk s r P A R Y N Dd q : Nat} (hH : 2 * H = β) (h8 : 8 
       rw [Nat.add_mul, Nat.one_mul] at this
       have : 2 * s * β = 2 * (s * β) := Nat.mul_assoc _ _ _
       have : 2 * T * β = 2 * (T * β) := Nat.mul_assoc _ _ _
-      omega
+      omega_arith
     have e2 : (2 * s * β + (q + 2)) * (q + 2) ≤ 2 * T * β * (β + 1) :=
-      Nat.mul_le_mul (Nat.le_of_lt e1) (by omega)
+      Nat.mul_le_mul (Nat.le_of_lt e1) (by omega_arith)
     have k1 : 4 * β + 4 < β * β := by
       have := Nat.mul_le_mul_right β h8
-      omega
+      omega_arith
     have k2 : T * β * (4 * β + 4) < T * β * (β * β) :=
-      Nat.mul_lt_mul_of_pos_left k1 (Nat.mul_pos (by omega) hβ0)
+      Nat.mul_lt_mul_of_pos_left k1 (Nat.mul_pos (by omega_using [hs']) hβ0)
     have e3 : β * β * (β * β) * Pk = T * β * (β * β) := by rw [← hT]; grind
     have e4 : 2 * (2 * T * β * (β + 1)) = T * β * (4 * β + 4) := by grind
-    omega
+    omega_arith
 
 end VG.Proof.Rsa.X86_64.Rd

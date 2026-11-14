@@ -36,7 +36,7 @@ theorem private_core_ok {n e m : Nat} {base : Addr} {s : State}
       Outs base (privateRanges n e) s.mem t.mem ∧ Keeps powerClob s t := by
   have L := table_layout h
   have T : TableAt n (context n) m (wordsVal s.mem base (slot n 5) n) (32*e) base (fun _ => True) s.mem :=
-    VG.Proof.Mont.X86.Comb.table_of_context (L := layout n e) (by omega)
+    VG.Proof.Mont.X86.Comb.table_of_context (L := layout n e) (by omega_using [hm])
       (hv ▸ wordsVal_lt s.mem base (slot n 0) n) H
   have size : contextBytes n≤(layout n e).size := by
     rcases h with ⟨rfl,rfl⟩|⟨rfl,rfl⟩|⟨rfl,rfl⟩|⟨rfl,rfl⟩|⟨rfl,rfl⟩ <;> decide

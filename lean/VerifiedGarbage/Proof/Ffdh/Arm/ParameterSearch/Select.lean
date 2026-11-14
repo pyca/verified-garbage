@@ -61,8 +61,8 @@ theorem selectNat_ok (maximum : Bool) (s : State) {x y : Nat}
     Nat.mod_eq_of_lt xFits, Nat.mod_eq_of_lt yFits] at value
   cases maximum <;> by_cases lt : x < y
   · simpa only [Bool.false_eq_true, ite_false, lt, ite_true, Nat.min_eq_left (Nat.le_of_lt lt)] using value
-  · simpa only [Bool.false_eq_true, ite_false, lt, Nat.min_eq_right (by omega : y ≤ x)] using value
+  · simpa only [Bool.false_eq_true, ite_false, lt, Nat.min_eq_right (by omega_using [lt] : y ≤ x)] using value
   · simpa only [ite_true, lt, Nat.max_eq_right (Nat.le_of_lt lt)] using value
-  · simpa only [ite_true, lt, ite_false, Nat.max_eq_left (by omega : y ≤ x)] using value
+  · simpa only [ite_true, lt, ite_false, Nat.max_eq_left (by omega_using [lt] : y ≤ x)] using value
 
 end VG.Proof.Ffdh.Arm.ParameterSearch

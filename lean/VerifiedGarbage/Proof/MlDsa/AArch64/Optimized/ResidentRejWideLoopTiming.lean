@@ -20,8 +20,8 @@ private theorem wide_public {σ τ s t : State} {b p : Addr} {n d : Nat}
   have hr {σ s : State} (hl : StreamLayout σ b p n) (h : ParseInv σ b p n L d s) :
       ∀j<4,InRegions (s.rd++s.wr) (s.gpr .x2+BitVec.ofNat 64 (12*j)) 16 := by
     intro j hj
-    rw [h.keep.rd,h.keep.wr,h.x2,Offset.add_add,show 3*d+12*j=3*(d+4*j) by omega]
-    exact hl.read16 _ (by omega)
+    rw [h.keep.rd,h.keep.wr,h.x2,Offset.add_add,show 3*d+12*j=3*(d+4*j) by omega_using []]
+    exact hl.read16 _ (by omega_using [hd, hj])
   have hp := ps.publicRegs hm hsp pt
   refine ⟨ps.constants,pt.constants,ps.candidates_eq hs ht hm pt hd,hr hs ps,hr ht pt,hp.1,?_⟩
   intro r hr'
@@ -46,7 +46,7 @@ theorem wideLoopStep_relCT {σ τ : State} {b p : Addr} {n d : Nat}
   have htr := (wideBody_relCT _ _ _ _ _ _ (wide_public hs ht hm hsp hd hp.1 hp.2.1) es et).1
   obtain ⟨_,a,ea,ha,h17a,hga⟩ := wideLoopStep_ok hs hp.1 hp.2.2.1 hd hc
   obtain ⟨_,b,eb,hb,h17b,hgb⟩ := wideLoopStep_ok ht hp.2.1 hp.2.2.2 hd
-    (by rw [← parsed_eq hm (by omega) L]; exact hc)
+    (by rw [← parsed_eq hm (by omega_using [hd]) L]; exact hc)
   obtain ⟨_,rfl⟩ := Exec.det es ea
   obtain ⟨_,rfl⟩ := Exec.det et eb
   refine ⟨htr,ha,hb,h17a,h17b,hga,?_⟩
@@ -70,13 +70,13 @@ theorem wideLoop_relCT {σ τ : State} {b p : Addr} {n d : Nat}
     intro m s t tr ur s' t' hp es et
     obtain ⟨j,hj,hc',hjmod,rfl,hp⟩ := hp
     obtain ⟨htrace,ha,hb,h17a,h17b,hga,heq⟩ := wideLoopStep_relCT hs ht hm hsp hj hc' _ _ _ _ _ _ hp es et
-    refine ⟨htrace,by rw [eval_nonzero,eval_nonzero,heq],fun _ => ⟨j+16,ha,hb,by omega⟩,?_⟩
+    refine ⟨htrace,by rw [eval_nonzero,eval_nonzero,heq],fun _ => ⟨j+16,ha,hb,by omega_using [hjmod]⟩,?_⟩
     intro hcontinue
     have hnext : 16≤256-(parsed σ b L (j+16)).length ∧ 16≤n-(j+16) := by
       by_contra hn
       rw [eval_nonzero,hga,ite_eq_right hn] at hcontinue
       contradiction
-    exact ⟨n-(j+16),by omega,j+16,by omega,by omega,by omega,rfl,ha,hb,h17a,h17b⟩
+    exact ⟨n-(j+16),by omega_using [hj],j+16,by omega_using [hnext],by omega_using [hnext],by omega_using [hjmod],rfl,ha,hb,h17a,h17b⟩
   exact (RelCT.loop I hstep (n-d)).mono
     (fun _ _ hp => ⟨d,hd,hc,rfl,rfl,hp⟩) (fun _ _ h => h)
 

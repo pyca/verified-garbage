@@ -41,8 +41,8 @@ theorem SPub.read_le {p : SPub} {original s : State} {used k : Nat} (h : SLive p
   have hu := h.used_le
   unfold SPub.read
   split
-  · omega
-  · omega
+  · omega_using [hu]
+  · omega_using [hu]
 
 theorem status_lt (r : Option (Option Nat × List Byte)) : candidateStatus r < 3 := by
   unfold candidateStatus; split <;> decide
@@ -71,7 +71,7 @@ theorem search_head {p : SPub} {original s : State} {used k : Nat}
   have hst := status_lt (p.cand used)
   have h0 : (s.gpr .x0).setWidth 32 = BitVec.ofNat 32 (candidateStatus (p.cand used)) := by
     apply BitVec.eq_of_toNat_eq
-    rw [hp.1, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+    rw [hp.1, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hst])]
   refine WP.mono (WP.keep [.x9, .x10, .x11, .x12] (Q := fun t =>
     (t.gpr .x9 = BitVec.ofNat 64 (candidateStatus (p.cand used)) ∧
       t.gpr .x10 = BitVec.ofNat 64 (p.read used) ∧
@@ -83,7 +83,7 @@ theorem search_head {p : SPub} {original s : State} {used k : Nat}
     refine ⟨?_, ?_⟩
     · apply BitVec.eq_of_toNat_eq
       simp only [BitVec.add_zero, BitVec.toNat_setWidth, BitVec.toNat_ofNat]
-      omega
+      omega_using [hst]
     · have : ∀ st < 3, ((BitVec.ofNat 32 st + BitVec.ofNat 32 0).setWidth 64 - BitVec.ofNat 64 1 == 0) =
           decide (st = 1) := by decide
       simp only [eval, State.read, RegUpd.gpr_write, ite_true, Size.bits, BitVec.setWidth_eq,
@@ -191,9 +191,9 @@ theorem ofNat_pred {n : Nat} (h0 : 0 < n) (h : n < 2 ^ 64) :
     BitVec.ofNat 64 n - BitVec.ofNat 64 1 = BitVec.ofNat 64 (n - 1) := by
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_sub_of_le (by
-    simp only [BitVec.le_def, BitVec.toNat_ofNat]; rw [Nat.mod_eq_of_lt h]; omega)]
+    simp only [BitVec.le_def, BitVec.toNat_ofNat]; rw [Nat.mod_eq_of_lt h]; omega_using [h0])]
   simp only [BitVec.toNat_ofNat]
-  omega
+  omega_using [h]
 
 theorem search_reject {p : SPub} {original s : State} {used k : Nat}
     (h : SLive p original used k s) (hk : k ≠ 0) (h10 : s.gpr .x10 = BitVec.ofNat 64 (p.read used)) :
@@ -208,7 +208,7 @@ theorem search_reject {p : SPub} {original s : State} {used k : Nat}
   simp only [Bignum.word, off, Nat.reduceMul] at hv10 hv11 hv12
   have hle := SPub.read_le h
   have hlen := h.input.randLen_lt
-  have hkl : k < 2 ^ 64 := by have := h.k_le; have := h.input.attempts_lt; omega
+  have hkl : k < 2 ^ 64 := by have := h.k_le; have := h.input.attempts_lt; omega_arith
   have e12 : BitVec.ofNat 64 used + BitVec.ofNat 64 (p.read used) =
       BitVec.ofNat 64 (used + p.read used) := by rw [← BitVec.ofNat_add]
   have e10 : p.rp + BitVec.ofNat 64 used + BitVec.ofNat 64 (p.read used) =
@@ -219,10 +219,10 @@ theorem search_reject {p : SPub} {original s : State} {used k : Nat}
     apply BitVec.eq_of_toNat_eq
     rw [BitVec.toNat_sub_of_le (by
       simp only [BitVec.le_def, BitVec.toNat_ofNat]
-      rw [Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega)]; omega)]
+      rw [Nat.mod_eq_of_lt (by omega_using [hle, hlen]), Nat.mod_eq_of_lt (by omega_using [hlen])]; omega_using [hle])]
     simp only [BitVec.toNat_ofNat]
-    rw [Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega)]
-    omega
+    rw [Nat.mod_eq_of_lt (by omega_using [hlen]), Nat.mod_eq_of_lt (by omega_using [hle, hlen]), Nat.mod_eq_of_lt (by omega_using [hlen])]
+    omega_using []
   have e0 := ofNat_pred (Nat.pos_of_ne_zero hk) hkl
   refine WP.mono (WP.keep [.x11, .x12, .x13, .x14, .x15] (Q := fun t =>
     t.mem = writeController s.mem p.control (rejectValues p (used + p.read used) (k - 1))) ?_
@@ -242,7 +242,7 @@ theorem search_reject {p : SPub} {original s : State} {used k : Nat}
       simp only [controllerValue, rejectValues, List.foldl_cons, List.foldl_nil, Nat.reduceEqDiff,
         ite_true, ite_false] <;>
       first | rfl | exact h.header (by simp [SPub.headers])
-  refine ⟨h.update hle (by have := h.k_le; omega) _ hb (by
+  refine ⟨h.update hle (by have := h.k_le; omega_using [this]) _ hb (by
       simp only [rejectValues, List.mem_cons, List.not_mem_nil, or_false]
       rintro _ (rfl | rfl | rfl | rfl | rfl) <;> dsimp only <;> decide) hm kt.mono hh, ?_⟩
   rw [show (112 : Nat) = 8 * 14 from rfl, hm, writeController_word _ _ _ hb 14 (by decide)]
@@ -272,32 +272,32 @@ theorem request_value {p : SPub} {original s : State} {used k : Nat} (h : SLive 
   have hrl := h.input.randLen_le
   have hb := h.input.bits_bounds
   have hE : parameterEntropy p.bits ≤ 32769 * 1024 := by
-    unfold parameterEntropy; omega
+    unfold parameterEntropy; omega_using [hb]
   refine WP.keep [.x10, .x11, .x12, .x13] ?_ (by decide) (by decide) (by decide +kernel)
   unfold request
   simp only [List.take_succ_cons, List.take_zero]
   brun [ldf, h.x19, hv2, hv6, hv11, a.ld 16 (by decide), a.ld 48 (by decide), a.ld 88 (by decide),
-    shift_ofNat, subs_ge (show p.randLen - used < 2 ^ 64 by omega) (show p.len * 2 ^ 8 < 2 ^ 64 by omega)]
+    shift_ofNat, subs_ge (show p.randLen - used < 2 ^ 64 by omega_using [hrl, hE]) (show p.len * 2 ^ 8 < 2 ^ 64 by omega_using [hlen])]
   unfold parameterRequest Entropy.request
   rw [← hl]
-  have hA : p.randLen - used ≤ parameterEntropy p.bits := by omega
+  have hA : p.randLen - used ≤ parameterEntropy p.bits := by omega_using [hrl]
   generalize p.randLen - used = A at *
   generalize parameterEntropy p.bits = E at *
   by_cases h1 : p.len * 2 ^ 8 ≤ A
   · simp only [h1, decide_true, ite_true, ← BitVec.ofNat_add,
-      subs_ge (show A + A < 2 ^ 64 by omega) (show E < 2 ^ 64 by omega)]
+      subs_ge (show A + A < 2 ^ 64 by omega_using [hE, hA]) (show E < 2 ^ 64 by omega_using [hE])]
     by_cases h2 : E ≤ A + A
     · simp only [h2, decide_true, ite_true]
-      congr 1; omega
+      congr 1; omega_using [h2]
     · simp only [h2, decide_false, Bool.false_eq_true, ite_false]
-      congr 1; omega
+      congr 1; omega_using [h1, h2]
   · simp only [h1, decide_false, Bool.false_eq_true, ite_false, ← BitVec.ofNat_add,
-      subs_ge (show p.len * 2 ^ 8 + p.len * 2 ^ 8 < 2 ^ 64 by omega) (show E < 2 ^ 64 by omega)]
+      subs_ge (show p.len * 2 ^ 8 + p.len * 2 ^ 8 < 2 ^ 64 by omega_using [hlen]) (show E < 2 ^ 64 by omega_using [hE])]
     by_cases h2 : E ≤ p.len * 2 ^ 8 + p.len * 2 ^ 8
     · simp only [h2, decide_true, ite_true]
-      congr 1; omega
+      congr 1; omega_using [h2]
     · simp only [h2, decide_false, Bool.false_eq_true, ite_false]
-      congr 1; omega
+      congr 1; omega_using [h1, h2]
 
 theorem search_request {p : SPub} {original s : State} {used k : Nat}
     (h : SLive p original used k s) (hk : k ≠ 0) (hc : p.cand used = none)
@@ -359,18 +359,18 @@ theorem short_guard {p : SPub} {original s : State} {used k : Nat} (h : SLive p 
   simp only [Bignum.word, off, Nat.reduceMul] at hv2 hv11
   have hr := h.input.randLen_lt
   have hE : parameterEntropy p.bits < 2 ^ 64 := by
-    have := h.input.bits_bounds; unfold parameterEntropy; omega
+    have := h.input.bits_bounds; unfold parameterEntropy; omega_using [this]
   refine WP.mono (WP.keep [.x10, .x11, .x12, .x13, .x14] (Q := fun t =>
     isa.eval (.zero .x .x12) t = some (decide (p.randLen - used < parameterEntropy p.bits)) ∧ t.mem = s.mem) ?_
     (by decide) (by decide) (by decide +kernel)) fun _ ⟨⟨he, hm⟩, k⟩ => ⟨⟨h.keep k hm, hm⟩, he⟩
   brun [ldf, h.x19, hv2, hv11, a.ld 16 (by decide), a.ld 88 (by decide), imm64 (show 0 < 65536 by decide),
-    imm64 (show 1 < 65536 by decide), subs_ge (show p.randLen - used < 2 ^ 64 by omega) hE]
+    imm64 (show 1 < 65536 by decide), subs_ge (show p.randLen - used < 2 ^ 64 by omega_using [hr]) hE]
   simp only [eval, State.read, RegUpd.gpr_write, ite_true, Size.bits, BitVec.setWidth_eq]
   by_cases hb : parameterEntropy p.bits ≤ p.randLen - used
-  · simp only [hb, decide_true, ite_true, show ¬p.randLen - used < parameterEntropy p.bits by omega,
+  · simp only [hb, decide_true, ite_true, show ¬p.randLen - used < parameterEntropy p.bits by omega_using [hb],
       decide_false]
     decide
-  · simp only [hb, decide_false, ite_false, show p.randLen - used < parameterEntropy p.bits by omega,
+  · simp only [hb, decide_false, ite_false, show p.randLen - used < parameterEntropy p.bits by omega_using [hb],
       decide_true, Bool.false_eq_true]
     decide
 
@@ -383,10 +383,10 @@ theorem search_short {p : SPub} {original s : State} {used k : Nat}
   refine WP.ite _ he ?_ ?_
   · intro hs
     have hs' := of_decide_eq_true hs
-    exact search_request hu hk hc (by omega) (by rw [hm]; exact hout)
+    exact search_request hu hk hc (by omega_using [hs']) (by rw [hm]; exact hout)
   · intro hs
     have hs' := of_decide_eq_false hs
-    rw [SPub.tail_short hk h.rand_length hc, ite_eq_left (by omega)]
+    rw [SPub.tail_short hk h.rand_length hc, ite_eq_left (by omega_using [hs'])]
     exact search_exhausted hu
 
 /-! ## The classification -/

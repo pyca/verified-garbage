@@ -22,7 +22,7 @@ theorem primeSetup_ok (M : Mont) {s : State} {B : Addr} {Z w N : Nat} {mi : BitV
     (hw48 : w ≤ 48) :
     WP isa (Impl.Dsa.X86_64.Generation.primeSetup M.mm) s fun t => ∃ mi', ModulusReady t B Z w mi' N ∧
       Frm B (modulusRanges w) s.mem t.mem ∧ Keep mmRegs s t := by
-  have hw : w < 2 ^ 31 := by have := hd.w128; omega
+  have hw : w < 2 ^ 31 := by have := hd.w128; omega_using [hw48]
   have hz64 : Z ≤ 2 ^ 64 := Nat.le_trans (Nat.le_add_left Z B.toNat) hg.scr.nowrap
   have hNread : slot w aN + 8 * w ≤ 2 ^ 64 := by
     have he := slot_le (w := w) (show aN < 8 by decide)
@@ -40,8 +40,8 @@ theorem primeSetup_ok (M : Mont) {s : State} {B : Addr} {Z w N : Nat} {mi : BitV
     omega_using [he, hz64]
   have hRm1read : slot w aRm1 + 8 * w ≤ 2 ^ 64 := by omega_using [hd.x, hz64]
   unfold Impl.Dsa.X86_64.Generation.primeSetup
-  refine WP.seq (WP.mono (primeR2_ok M hg hd.z (by have := hd.w4; omega) hw48 hn hodd hN1) fun u ⟨mi', hgu, hinv, hnu, hone, hr2, _, hf, ku⟩ => ?_)
-  refine WP.seq (WP.mono (prepareConstants_ok M hgu hd.z hd.x (by have := hd.w4; omega) hw hnu hinv hone hodd hN1 hr2)
+  refine WP.seq (WP.mono (primeR2_ok M hg hd.z (by have := hd.w4; omega_using [this]) hw48 hn hodd hN1) fun u ⟨mi', hgu, hinv, hnu, hone, hr2, _, hf, ku⟩ => ?_)
+  refine WP.seq (WP.mono (prepareConstants_ok M hgu hd.z hd.x (by have := hd.w4; omega_using [this]) hw hnu hinv hone hodd hN1 hr2)
     fun v ⟨hgv, hr1, hrm1, hf', kv⟩ => ?_)
   have hnv : wv v.mem B (slot w aN) w = N := by
     rw [hf'.wv_eq (by simp only [constantRanges]; rng_disj) hNread]

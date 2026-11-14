@@ -10,6 +10,7 @@ import Mathlib.Data.Sym.Sym2.Init
 import Mathlib.Tactic.ContinuousFunctionalCalculus
 import Mathlib.Tactic.Abel
 import Mathlib.Tactic.Positivity.Finset
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # The static odd multiples of `-B`
@@ -65,8 +66,8 @@ private theorem checkOdd_ok (b2 : Point) (c : EPoint dZ) (hb : Rep b2 c) (p : Po
       simp only [checkOdd, Bool.and_eq_true] at hc
       simp only [List.length_cons] at hm hl
       have := ih (pointAdd (affPt q) b2) (a + c) (pointAdd_rep (same_rep h hc.1.1) hb) qs hc.2
-        (by omega) (by omega)
-      rw [show 2 * (m + 1) = 2 * m + 1 + 1 by omega, List.getD_cons_succ, List.getD_cons_succ,
+        (by omega_using [hl]) (by omega_using [hm])
+      rw [show 2 * (m + 1) = 2 * m + 1 + 1 by omega_using [], List.getD_cons_succ, List.getD_cons_succ,
         show 2 * m + 1 + 1 + 1 = 2 * m + 1 + 1 + 1 from rfl, List.getD_cons_succ, List.getD_cons_succ,
         succ_nsmul, show a + (m • c + c) = a + c + m • c by abel]
       exact this
@@ -82,18 +83,18 @@ theorem baseOddCached_ok (e : Nat) (he : e < 128) :
       Rep q ((Recode.dec (e + 1)) • (-baseAff)) := by
   refine ⟨negPoint (affPt (baseOddAffine.getD e (0, 1))), rfl, ?_⟩
   have h := checkOdd_ok _ _ (pointAdd_rep basePoint_rep basePoint_rep) _ _ basePoint_rep _ odd_check
-    (by rw [baseOddAffine_length]) (e / 2) (by rw [baseOddAffine_length]; omega)
+    (by rw [baseOddAffine_length]) (e / 2) (by rw [baseOddAffine_length]; omega_using [he])
   rw [smul_neg]
   apply Rep.neg
   rcases Nat.even_or_odd' e with ⟨m, rfl | rfl⟩
-  · rw [show 2 * m / 2 = m by omega] at h
-    have hd : Recode.dec (2 * m + 1) = ((2 * m + 1 : Nat) : Int) := Recode.dec_odd (by omega)
+  · rw [show 2 * m / 2 = m by omega_using []] at h
+    have hd : Recode.dec (2 * m + 1) = ((2 * m + 1 : Nat) : Int) := Recode.dec_odd (by omega_using [])
     rw [hd, natCast_zsmul]
     convert h.1 using 1
     rw [add_smul, mul_smul, one_smul, two_smul, ← two_nsmul, two_nsmul, smul_add]; abel
-  · rw [show (2 * m + 1) / 2 = m by omega] at h
+  · rw [show (2 * m + 1) / 2 = m by omega_using []] at h
     have hd : Recode.dec (2 * m + 1 + 1) = -((2 * m + 1 : Nat) : Int) := by
-      rw [Recode.dec_even (by omega) (by omega)]; push_cast; ring
+      rw [Recode.dec_even (by omega_using []) (by omega_using [])]; push_cast; ring
     rw [hd, neg_smul, natCast_zsmul]
     convert h.2 using 2
     rw [add_smul, mul_smul, one_smul, two_smul, ← two_nsmul, two_nsmul, smul_add]; abel

@@ -60,11 +60,11 @@ def prod (y : Word) (z : Zq) : Nat := (barv (z64 z * w64 y)).toNat
 theorem z64_mul (y : Word) (z : Zq) : (z64 z * w64 y).toNat = z.val * y.val := by
   have hz : z.val < 8380417 := z.isLt
   have hy : y.val < 4294967296 := y.isLt
-  have e1 : z.val % 2 ^ 64 = z.val := Nat.mod_eq_of_lt (by omega)
-  have e2 : y.val % 2 ^ 64 = y.val := Nat.mod_eq_of_lt (by omega)
+  have e1 : z.val % 2 ^ 64 = z.val := Nat.mod_eq_of_lt (by omega_using [hz])
+  have e2 : y.val % 2 ^ 64 = y.val := Nat.mod_eq_of_lt (by omega_using [])
   rw [BitVec.toNat_mul, BitVec.toNat_ofNat, BitVec.toNat_ofNat, e1, e2]
-  have := Nat.mul_lt_mul_of_lt_of_le hz (Nat.le_of_lt hy) (by omega)
-  exact Nat.mod_eq_of_lt (by omega)
+  have := Nat.mul_lt_mul_of_lt_of_le hz (Nat.le_of_lt hy) (by omega_using [])
+  exact Nat.mod_eq_of_lt (by omega_using [this])
 
 theorem prod_lt (y : Word) (z : Zq) : prod y z < 2 * q := barv_lt _
 
@@ -80,24 +80,24 @@ theorem opB_values (x y : Word) (z : Zq) (hx : x.val < 15 * q) :
     (opB x y z).1.val = x.val + prod y z ∧ (opB x y z).2.val = x.val + 2 * q - prod y z := by
   have ht := prod_lt y z
   have hx' : (w64 x).toNat = x.val := by
-    rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt (by have := x.isLt; omega)
+    rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt (by have := x.isLt; omega_using [])
   simp only [opB, toW, Fin.val_ofNat]
   unfold prod at ht ⊢
   generalize barv (z64 z * w64 y) = T at ht ⊢
   rw [q_eq] at hx ht ⊢
   constructor
-  · rw [BitVec.toNat_add, hx', Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega)]
+  · rw [BitVec.toNat_add, hx', Nat.mod_eq_of_lt (by omega_using [hx, ht]), Nat.mod_eq_of_lt (by omega_using [ht])]
   · have e : (w64 x - T + 16760834).toNat = x.val + 16760834 - T.toNat := by
       generalize w64 x = X at hx' ⊢
       bv_omega
-    rw [e, Nat.mod_eq_of_lt (by omega)]
+    rw [e, Nat.mod_eq_of_lt (by omega_using [hx])]
 
 theorem opB_bound (x y : Word) (z : Zq) {b : Nat} (hb : b ≤ 15) (hx : x.val < b * q) :
     (opB x y z).1.val < (b + 2) * q ∧ (opB x y z).2.val < (b + 2) * q := by
   have hv := opB_values x y z (Nat.lt_of_lt_of_le hx (Nat.mul_le_mul_right q hb))
   have ht := prod_lt y z
   rw [hv.1, hv.2, Nat.add_mul]
-  omega
+  omega_using [hx, ht]
 
 theorem opB_residue (x y : Word) (z : Zq) (hx : x.val < 15 * q) :
     residue (opB x y z).1 = residue x + z * residue y ∧
@@ -118,7 +118,7 @@ theorem opB_residue (x y : Word) (z : Zq) (hx : x.val < 15 * q) :
     have ht' : prod y z < 2 * 8380417 := ht
     change (x.val + 2 * 8380417 - prod y z) % 8380417 =
       (8380417 - prod y z % 8380417 + x.val % 8380417) % 8380417
-    omega
+    omega_using [ht']
 
 /-! ## The inverse butterfly -/
 
@@ -134,9 +134,9 @@ theorem opIB_values (x y : Word) (z : Zq) (hx : x.val < 128 * q) (hy : y.val < 1
     (opIB x y z).1.val = x.val + y.val ∧ (opIB x y z).2.val = prodI x y z ∧
       prodI x y z < 2 * q ∧ prodI x y z % q = z.val * (x.val + 128 * q - y.val) % q := by
   have hx' : (w64 x).toNat = x.val := by
-    rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt (by have := x.isLt; omega)
+    rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt (by have := x.isLt; omega_using [])
   have hy' : (w64 y).toNat = y.val := by
-    rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt (by have := y.isLt; omega)
+    rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt (by have := y.isLt; omega_using [])
   have hz : z.val < 8380417 := z.isLt
   have hx2 : x.val < 128 * 8380417 := hx
   have hy2 : y.val < 128 * 8380417 := hy
@@ -145,17 +145,17 @@ theorem opIB_values (x y : Word) (z : Zq) (hx : x.val < 128 * q) (hy : y.val < 1
     generalize w64 y = Y at hy' ⊢
     bv_omega
   have hp : (z64 z * (w64 x - w64 y + 1072693376)).toNat = z.val * (x.val + 1072693376 - y.val) := by
-    have e1 : z.val % 2 ^ 64 = z.val := Nat.mod_eq_of_lt (by omega)
+    have e1 : z.val % 2 ^ 64 = z.val := Nat.mod_eq_of_lt (by omega_using [hz])
     rw [BitVec.toNat_mul, hd, BitVec.toNat_ofNat, e1]
-    have := Nat.mul_lt_mul_of_lt_of_le hz (show x.val + 1072693376 - y.val ≤ 2 ^ 31 by omega) (by omega)
-    exact Nat.mod_eq_of_lt (by omega)
+    have := Nat.mul_lt_mul_of_lt_of_le hz (show x.val + 1072693376 - y.val ≤ 2 ^ 31 by omega_using [hx2]) (by omega_using [])
+    exact Nat.mod_eq_of_lt (by omega_using [this])
   have hl := barv_lt (z64 z * (w64 x - w64 y + 1072693376))
   have hl2 : (barv (z64 z * (w64 x - w64 y + 1072693376))).toNat < 2 * 8380417 := hl
   refine ⟨?_, ?_, hl, ?_⟩
   · simp only [opIB, toW, Fin.val_ofNat]
-    rw [BitVec.toNat_add, hx', hy', Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega)]
+    rw [BitVec.toNat_add, hx', hy', Nat.mod_eq_of_lt (by omega_using [hx2, hy2]), Nat.mod_eq_of_lt (by omega_using [])]
   · simp only [opIB, toW, Fin.val_ofNat, prodI]
-    exact Nat.mod_eq_of_lt (by omega)
+    exact Nat.mod_eq_of_lt (by omega_using [hl2])
   · have := barv_mod (z64 z * (w64 x - w64 y + 1072693376))
     rw [hp] at this
     exact this
@@ -166,7 +166,7 @@ theorem opIB_bound (x y : Word) (z : Zq) {b : Nat} (hb : 1 ≤ b) (hb' : b ≤ 1
     (Nat.lt_of_lt_of_le hy (Nat.mul_le_mul_right q hb'))
   rw [hv.1, hv.2.1, Nat.mul_assoc]
   constructor
-  · omega
+  · omega_using [hx, hy]
   · exact Nat.lt_of_lt_of_le hv.2.2.1 (Nat.mul_le_mul_left 2 (Nat.le_mul_of_pos_left q hb))
 
 theorem opIB_residue (x y : Word) (z : Zq) (hx : x.val < 128 * q) (hy : y.val < 128 * q) :
@@ -182,7 +182,7 @@ theorem opIB_residue (x y : Word) (z : Zq) (hx : x.val < 128 * q) (hy : y.val < 
     change (opIB x y z).2.val % q = (z * (residue x - residue y)).val
     rw [hv.2.1, hv.2.2.2, Fin.val_mul, Fin.val_sub, residue, residue, Fin.val_ofNat, Fin.val_ofNat]
     have hl : (x.val + 128 * q - y.val) % q = (q - y.val % q + x.val % q) % q := by
-      rw [q_eq] at hx hy ⊢; omega
+      rw [q_eq] at hx hy ⊢; omega_using [hy]
     rw [Nat.mul_mod, hl, Nat.mul_mod z.val ((q - y.val % q + x.val % q) % q), Nat.mod_mod]
 
 /-! ## Layers -/
@@ -222,7 +222,7 @@ theorem len_facts {len : Nat} (hlen : len ∈ [1, 2, 4, 8, 16, 32, 64, 128]) :
       ∀ i < 256, (i % (2 * len) < len → i + len < 256) ∧ (¬ i % (2 * len) < len → len ≤ i) := by
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hlen
   rcases hlen with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> refine ⟨by decide, by decide, ?_⟩
-  all_goals intro i hi; omega
+  all_goals intro i hi; omega_using [hi]
 
 theorem nttLayer_eq (F : VG.Spec.MlDsa.Poly) (len : Nat) :
     Arith.nttLayer F len = Arith.layF (fun f len k st t => Arith.blockN Arith.bfly f len (zetas k) st t) F len
@@ -247,7 +247,7 @@ theorem layerB_rel {b : Nat} (hb : b ≤ 15) {F : Poly} {f : VG.Spec.MlDsa.Poly}
     exact ⟨(opB_bound _ _ _ hb h0.1).1, by
       rw [(opB_residue _ _ _ (Nat.lt_of_lt_of_le h0.1 (Nat.mul_le_mul_right q hb))).1, h0.2, h1.2]⟩
   · simp only [ite_eq_right h]
-    have h0 := hF (i - len) (by omega)
+    have h0 := hF (i - len) (by omega_using [hi])
     have h1 := hF i hi
     exact ⟨(opB_bound _ _ _ hb h0.1).2, by
       rw [(opB_residue _ _ _ (Nat.lt_of_lt_of_le h0.1 (Nat.mul_le_mul_right q hb))).2, h0.2, h1.2]⟩
@@ -269,7 +269,7 @@ theorem layerIB_rel {b : Nat} (hb : 1 ≤ b) (hb' : b ≤ 128) {F : Poly} {f : V
     exact ⟨(opIB_bound _ _ (-_) hb hb' h0.1 h1.1).1, by
       rw [opIBn, (opIB_residue _ _ _ (lt h0.1) (lt h1.1)).1, h0.2, h1.2]⟩
   · simp only [ite_eq_right h]
-    have h0 := hF (i - len) (by omega)
+    have h0 := hF (i - len) (by omega_using [hi])
     have h1 := hF i hi
     refine ⟨(opIB_bound _ _ (-_) hb hb' h0.1 h1.1).2, ?_⟩
     rw [opIBn, (opIB_residue _ _ _ (lt h0.1) (lt h1.1)).2, h0.2, h1.2]
@@ -296,7 +296,7 @@ theorem lp_lift {m : Mem} {p : Addr} {f : VG.Spec.MlDsa.Poly} (h : VG.Proof.MlDs
 /-- A word on 64 bits, loaded. -/
 theorem w64_load {v : BitVec 32} {x : Word} (h : v.toNat = x.val) : v.setWidth 64 = w64 x := by
   apply BitVec.eq_of_toNat_eq
-  rw [BitVec.toNat_setWidth, h, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := x.isLt; omega)]
+  rw [BitVec.toNat_setWidth, h, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := x.isLt; omega_using [])]
 
 /-- The low word of a value on 64 bits, stored. -/
 theorem toW_store (v : BitVec 64) : (v.setWidth 32).toNat = (toW v).val := by

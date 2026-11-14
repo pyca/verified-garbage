@@ -22,7 +22,7 @@ open VG.Spec.Sha3 (bytesAt)
 
 /-- Entry `e = k i + j` of a `k × k` matrix is `(i, j)`. -/
 theorem divmod_ij {k i j : Nat} (hj : j < k) : (k * i + j) / k = i ∧ (k * i + j) % k = j :=
-  ⟨by rw [Nat.mul_add_div (by omega), Nat.div_eq_of_lt hj, Nat.add_zero],
+  ⟨by rw [Nat.mul_add_div (by omega_using [hj]), Nat.div_eq_of_lt hj, Nat.add_zero],
     by rw [Nat.mul_add_mod, Nat.mod_eq_of_lt hj]⟩
 
 theorem ij_lt {k i j : Nat} (hi : i < k) (hj : j < k) : k * i + j < k * k :=
@@ -42,9 +42,9 @@ instance (k : Nat) (ρ : List Byte) (e : Nat) : Decidable (allOk k ρ e) := by u
 theorem allOk_succ {k : Nat} {ρ : List Byte} {e : Nat} :
     allOk k ρ (e + 1) ↔ allOk k ρ e ∧ (sampleNTT minIterations (matSeed ρ (e / k) (e % k))).isSome := by
   constructor
-  · intro h; exact ⟨fun e' he => h e' (by omega), h e (by omega)⟩
+  · intro h; exact ⟨fun e' he => h e' (by omega_using [he]), h e (by omega_using [])⟩
   · rintro ⟨h, hk⟩ e' he
-    rcases (by omega : e' < e ∨ e' = e) with he | rfl
+    rcases (by omega_using [he] : e' < e ∨ e' = e) with he | rfl
     · exact h e' he
     · exact hk
 
@@ -53,11 +53,11 @@ theorem allOk_add4 {k : Nat} {ρ : List Byte} {e : Nat} :
       (sampleNTT minIterations (matSeed ρ ((e + t) / k) ((e + t) % k))).isSome) = true := by
   simp only [List.all_eq_true, List.mem_range]
   constructor
-  · intro h; exact ⟨fun e' he => h e' (by omega), fun t ht => h (e + t) (by omega)⟩
+  · intro h; exact ⟨fun e' he => h e' (by omega_using [he]), fun t ht => h (e + t) (by omega_using [ht])⟩
   · rintro ⟨h, h4⟩ e' he
-    rcases (by omega : e' < e ∨ e ≤ e') with he' | he'
+    rcases (by omega_using [] : e' < e ∨ e ≤ e') with he' | he'
     · exact h e' he'
-    · have := h4 (e' - e) (by omega)
+    · have := h4 (e' - e) (by omega_using [he])
       rwa [Nat.add_sub_cancel' he'] at this
 
 theorem allOk_zero (k : Nat) (ρ : List Byte) : allOk k ρ 0 := fun _ h => absurd h (Nat.not_lt_zero _)
@@ -115,7 +115,7 @@ theorem MatB.single {L : Kem} {ρ : List Byte} {e : Nat} {rbs wbs : List (Reg ×
   refine ⟨?_, fun e' he' f hf => ?_⟩
   · rw [h15, hsb, and_acc h.r15]
     exact ite_congr (propext allOk_succ.symm) (fun _ => rfl) (fun _ => rfl)
-  · rcases (by omega : e' < e ∨ e' = e) with he' | rfl
+  · rcases (by omega_using [he'] : e' < e ∨ e' = e) with he' | rfl
     · exact Lx.keepPoly hP (kA e' he') (h.mat e' he' f hf)
     · rw [hP.pa rbx_bases]
       exact hres f (by rw [hsb]; exact hf)
@@ -134,11 +134,11 @@ theorem MatB.four {L : Kem} {ρ : List Byte} {e : Nat} {rbs wbs : List (Reg × N
   refine ⟨?_, fun e' he' f hf => ?_⟩
   · rw [h15, hsb, and_acc h.r15]
     exact ite_congr (propext allOk_add4.symm) (fun _ => rfl) (fun _ => rfl)
-  · rcases (by omega : e' < e ∨ e ≤ e') with he'' | he''
+  · rcases (by omega_using [] : e' < e ∨ e ≤ e') with he'' | he''
     · exact Lx.keepPoly hP (kA e' he'') (h.mat e' he'' f hf)
-    · have := hres (e' - e) (by omega) f (by rw [hsb, Nat.add_sub_cancel' he'']; exact hf)
+    · have := hres (e' - e) (by omega_using [he']) f (by rw [hsb, Nat.add_sub_cancel' he'']; exact hf)
       rw [hP.pa rbx_bases]
-      rwa [show oP (L.pA + e) + 1024 * (e' - e) = oP (L.pA + e') by simp only [oP]; omega] at this
+      rwa [show oP (L.pA + e) + 1024 * (e' - e) = oP (L.pA + e') by simp only [oP]; omega_using [he'']] at this
 
 theorem MatB.zero (L : Kem) (ρ : List Byte) {s : State} (h15 : s.gpr .r15 = 1) : MatB L ρ 0 s :=
   ⟨by rw [h15, ifp (allOk_zero _ _)], fun _ h => absurd h (Nat.not_lt_zero _)⟩
@@ -153,27 +153,27 @@ theorem ents_ok (L : Kem) (c : Callee4) {I : Nat → State → Prop}
     ∀ n e, e + n = L.k * L.k → (e % 4 = 0 ∨ 4 * (L.k * L.k / 4) ≤ e) → ∀ s, I e s → WP isa (L.ents c e n) s (I (e + n))
   | 0, e, _, _, s, hs => by simp only [Kem.ents]; exact WP.block_nil hs
   | 1, e, he, hq, s, hs => by
-    simp only [Kem.ents]; exact h1 e (by omega) (by omega) s hs
+    simp only [Kem.ents]; exact h1 e (by omega_using [he]) (by omega_using [he, hq]) s hs
   | 2, e, he, hq, s, hs => by
     simp only [Kem.ents]
-    exact WP.seq (WP.mono (h1 e (by omega) (by omega) s hs) fun s₁ h₁ =>
-      ents_ok L c h1 h4 1 (e + 1) (by omega) (by omega) s₁ h₁)
+    exact WP.seq (WP.mono (h1 e (by omega_using [he]) (by omega_using [he, hq]) s hs) fun s₁ h₁ =>
+      ents_ok L c h1 h4 1 (e + 1) (by omega_using [he]) (by omega_using [he, hq]) s₁ h₁)
   | 3, e, he, hq, s, hs => by
     simp only [Kem.ents]
-    refine WP.seq (WP.mono (h1 e (by omega) (by omega) s hs) fun s₁ h₁ => ?_)
-    have := ents_ok L c h1 h4 2 (e + 1) (by omega) (by omega) s₁ h₁
-    rwa [show e + 1 + 2 = e + 3 by omega] at this
+    refine WP.seq (WP.mono (h1 e (by omega_using [he]) (by omega_using [he, hq]) s hs) fun s₁ h₁ => ?_)
+    have := ents_ok L c h1 h4 2 (e + 1) (by omega_using [he]) (by omega_using [he, hq]) s₁ h₁
+    rwa [show e + 1 + 2 = e + 3 by omega_using []] at this
   | 4, e, he, hq, s, hs => by
     simp only [Kem.ents]
-    have := h4 (e / 4) (by omega) s (by rwa [show 4 * (e / 4) = e by omega])
-    rwa [show 4 * (e / 4) = e by omega] at this
+    have := h4 (e / 4) (by omega_using [he]) s (by rwa [show 4 * (e / 4) = e by omega_using [he, hq]])
+    rwa [show 4 * (e / 4) = e by omega_using [he, hq]] at this
   | n + 5, e, he, hq, s, hs => by
     simp only [Kem.ents]
-    have := h4 (e / 4) (by omega) s (by rwa [show 4 * (e / 4) = e by omega])
-    rw [show 4 * (e / 4) = e by omega] at this
+    have := h4 (e / 4) (by omega_using [he]) s (by rwa [show 4 * (e / 4) = e by omega_using [he, hq]])
+    rw [show 4 * (e / 4) = e by omega_using [he, hq]] at this
     refine WP.seq (WP.mono this fun s₁ h₁ => ?_)
-    have := ents_ok L c h1 h4 (n + 1) (e + 4) (by omega) (by omega) s₁ h₁
-    rwa [show e + 4 + (n + 1) = e + (n + 5) by omega] at this
+    have := ents_ok L c h1 h4 (n + 1) (e + 4) (by omega_using [he]) (by omega_using [hq]) s₁ h₁
+    rwa [show e + 4 + (n + 1) = e + (n + 5) by omega_using []] at this
 
 theorem samples_ok' (L : Kem) (c : Callee4) {I : Nat → State → Prop}
     (h1 : ∀ e < L.k * L.k, 4 * (L.k * L.k / 4) ≤ e → ∀ s, I e s →
@@ -181,7 +181,7 @@ theorem samples_ok' (L : Kem) (c : Callee4) {I : Nat → State → Prop}
     (h4 : ∀ q < L.k * L.k / 4, ∀ s, I (4 * q) s →
       WP isa (quad c L.k (4 * q) (pS (L.pA + 4 * q)) (pS L.pW)) s (I (4 * q + 4)))
     {s : State} (h : I 0 s) : WP isa (L.samples c) s (I (L.k * L.k)) := by
-  have := ents_ok L c h1 h4 (L.k * L.k) 0 (by omega) (by omega) s h
+  have := ents_ok L c h1 h4 (L.k * L.k) 0 (by omega_using []) (by omega_using []) s h
   rwa [Nat.zero_add] at this
 
 /-- `ents_ok`, for constant time. -/
@@ -191,25 +191,25 @@ theorem ents_tr (L : Kem) (c : Callee4) {R : Nat → State → State → Prop}
     (h4 : ∀ q < L.k * L.k / 4, RelCT isa (R (4 * q)) (quad c L.k (4 * q) (pS (L.pA + 4 * q)) (pS L.pW)) (R (4 * q + 4))) :
     ∀ n e, e + n = L.k * L.k → (e % 4 = 0 ∨ 4 * (L.k * L.k / 4) ≤ e) → RelCT isa (R e) (L.ents c e n) (R (e + n))
   | 0, e, _, _ => by simp only [Kem.ents]; exact nil_tr
-  | 1, e, he, hq => by simp only [Kem.ents]; exact h1 e (by omega) (by omega)
+  | 1, e, he, hq => by simp only [Kem.ents]; exact h1 e (by omega_using [he]) (by omega_using [he, hq])
   | 2, e, he, hq => by
     simp only [Kem.ents]
-    exact RelCT.seq (h1 e (by omega) (by omega)) (ents_tr L c h1 h4 1 (e + 1) (by omega) (by omega))
+    exact RelCT.seq (h1 e (by omega_using [he]) (by omega_using [he, hq])) (ents_tr L c h1 h4 1 (e + 1) (by omega_using [he]) (by omega_using [he, hq]))
   | 3, e, he, hq => by
     simp only [Kem.ents]
-    have := ents_tr L c h1 h4 2 (e + 1) (by omega) (by omega)
-    rw [show e + 1 + 2 = e + 3 by omega] at this
-    exact RelCT.seq (h1 e (by omega) (by omega)) this
+    have := ents_tr L c h1 h4 2 (e + 1) (by omega_using [he]) (by omega_using [he, hq])
+    rw [show e + 1 + 2 = e + 3 by omega_using []] at this
+    exact RelCT.seq (h1 e (by omega_using [he]) (by omega_using [he, hq])) this
   | 4, e, he, hq => by
     simp only [Kem.ents]
-    have := h4 (e / 4) (by omega)
-    rwa [show 4 * (e / 4) = e by omega] at this
+    have := h4 (e / 4) (by omega_using [he])
+    rwa [show 4 * (e / 4) = e by omega_using [he, hq]] at this
   | n + 5, e, he, hq => by
     simp only [Kem.ents]
-    have := h4 (e / 4) (by omega)
-    rw [show 4 * (e / 4) = e by omega] at this
-    have h' := ents_tr L c h1 h4 (n + 1) (e + 4) (by omega) (by omega)
-    rw [show e + 4 + (n + 1) = e + (n + 5) by omega] at h'
+    have := h4 (e / 4) (by omega_using [he])
+    rw [show 4 * (e / 4) = e by omega_using [he, hq]] at this
+    have h' := ents_tr L c h1 h4 (n + 1) (e + 4) (by omega_using [he]) (by omega_using [hq])
+    rw [show e + 4 + (n + 1) = e + (n + 5) by omega_using []] at h'
     exact RelCT.seq this h'
 
 theorem samples_tr' (L : Kem) (c : Callee4) {R : Nat → State → State → Prop}
@@ -217,7 +217,7 @@ theorem samples_tr' (L : Kem) (c : Callee4) {R : Nat → State → State → Pro
       RelCT isa (R e) (sampleIJ (pS (L.pA + e)) (e / L.k) (e % L.k)) (R (e + 1)))
     (h4 : ∀ q < L.k * L.k / 4, RelCT isa (R (4 * q)) (quad c L.k (4 * q) (pS (L.pA + 4 * q)) (pS L.pW)) (R (4 * q + 4))) :
     RelCT isa (R 0) (L.samples c) (R (L.k * L.k)) := by
-  have := ents_tr L c h1 h4 (L.k * L.k) 0 (by omega) (by omega)
+  have := ents_tr L c h1 h4 (L.k * L.k) 0 (by omega_using []) (by omega_using [])
   rwa [Nat.zero_add] at this
 
 namespace KeyGen
@@ -239,7 +239,7 @@ theorem gRho_ok {L : Kem} (W : KgWfB L) {σ : State} (hp : (keyGenK L).pre σ) {
     (h15 : s.gpr .r15 = 1) : WP isa (gRho L) s fun s' => KA L σ s' ∧ s'.gpr .r15 = 1 := by
   have L₀ := h.lay W hp
   unfold gRho
-  refine WP.seq (WP.mono (setB_okL L₀ (by decide) (by have := W.k; omega) (p := sc oNB) (v := L.k) W.nb)
+  refine WP.seq (WP.mono (setB_okL L₀ (by decide) (by have := W.k; omega_using [this]) (p := sc oNB) (v := L.k) W.nb)
     fun s₁ ⟨hP₁, hb₁⟩ => ?_)
   have h₁ := h.step W hp hP₁.b W.nbK
   have L₁ := h₁.lay W hp
@@ -297,7 +297,7 @@ theorem sample_step {L : Kem} (W : KgWf L) {σ : State} (hp : (keyGenK L).pre σ
   obtain ⟨⟨⟨⟨⟨hij, hkc⟩, kG⟩, kS⟩, kB⟩, kA⟩ := hc
   have hk := W.k
   have L₀ := h.a.kc.lay W hp
-  refine WP.mono (sampleIJ_ok L₀ (kgB_bases L) rbx_na (by have := div_lt_k he; omega) (by have := mod_lt_k he; omega) hij)
+  refine WP.mono (sampleIJ_ok L₀ (kgB_bases L) rbx_na (by have := div_lt_k he; omega_using [hk, this]) (by have := mod_lt_k he; omega_using [hk, this]) hij)
     fun s' ⟨hP, h15, hres⟩ => ⟨h.a.keep W hp hP hkc kG kS kB, h.m.single h.a.sb L₀ hP kA h15 hres⟩
 
 theorem quad_step (v : Sample4Impl) {L : Kem} (W : KgWf L) {σ : State} (hp : (keyGenK L).pre σ) {q : Nat}
@@ -308,7 +308,7 @@ theorem quad_step (v : Sample4Impl) {L : Kem} (W : KgWf L) {σ : State} (hp : (k
   obtain ⟨⟨⟨⟨⟨hq', hkc⟩, kG⟩, kS⟩, kB⟩, kA⟩ := hc
   have hk := W.k
   have L₀ := h.a.kc.lay W hp
-  refine WP.mono (quad_ok v L₀ (kgB_bases L) (by have : L.k * L.k ≤ 16 := Nat.mul_le_mul hk.2 hk.2; omega) hq')
+  refine WP.mono (quad_ok v L₀ (kgB_bases L) (by have : L.k * L.k ≤ 16 := Nat.mul_le_mul hk.2 hk.2; omega_using [hq, this]) hq')
     fun s' ⟨hP, h15, hres⟩ => ⟨h.a.keep W hp hP hkc kG kS kB, h.m.four h.a.sb L₀ hP kA h15 hres⟩
 
 theorem samples_ok (v : Sample4Impl) {L : Kem} (W : KgWf L) {σ : State} (hp : (keyGenK L).pre σ) {s : State}

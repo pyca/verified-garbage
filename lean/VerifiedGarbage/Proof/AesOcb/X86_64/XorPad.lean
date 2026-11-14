@@ -38,7 +38,7 @@ open VG.Proof.AesGcm.X86_64 (in_of_covers succ_ofNat bytesAt_succ)
 theorem xor_byte (a b : Byte) : ((a.setWidth 64 ^^^ b.setWidth 64).setWidth 8 : Byte) = a ^^^ b := by
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_setWidth, BitVec.toNat_xor]
-  rw [Nat.mod_eq_of_lt (a := a.toNat) (by have := a.isLt; omega), Nat.mod_eq_of_lt (a := b.toNat) (by have := b.isLt; omega)]
+  rw [Nat.mod_eq_of_lt (a := a.toNat) (by have := a.isLt; omega_using []), Nat.mod_eq_of_lt (a := b.toNat) (by have := b.isLt; omega_using [])]
   exact Nat.mod_eq_of_lt (Nat.xor_lt_two_pow a.isLt b.isLt)
 
 theorem ea_index_disp (s : State) {b i : Reg} {B : Addr} {j d : Nat} (hb : s.gpr b = B)
@@ -94,7 +94,7 @@ theorem xorPad_ok {K W SP : Addr} {s : State} (E : Env K W SP s) {P : Addr} {r :
   unfold xorPad
   refine WP.seq (WP.of_runBlock ⟨s₁, run₁, ?_⟩)
   have hT : ∀ j < r, InRegions (s.rd ++ s.wr) (W + BitVec.ofNat 64 112 + BitVec.ofNat 64 j) 1 := fun j hj => by
-    rw [Offset.add_add]; exact E.perm.wR (by omega)
+    rw [Offset.add_add]; exact E.perm.wR (by omega_using [hr', hj])
   refine WP.loop (M := isa) (c := .ne)
     (fun (k : Nat) (u : State) => ∃ j, k = r - j ∧ j < r ∧ u.gpr .rcx = BitVec.ofNat 64 j ∧
       u.mem = writeBytes s.mem P (Spec.Ocb.xor (bytesAt s.mem P j) (bytesAt s.mem (W + BitVec.ofNat 64 112) j)) ∧
@@ -107,29 +107,29 @@ theorem xorPad_ok {K W SP : Addr} {s : State} (E : Env K W SP s) {P : Addr} {r :
     (by rw [wr]; exact in_of_covers hP.wr hj hP.lt) (by rw [rd, wr]; exact hT j hj)
   refine WP.of_runBlock ⟨u', run', ?_⟩
   have fr : Frame [⟨P, j⟩] s.mem u.mem := by
-    rw [mem]; exact writeBytes_frame _ _ _ (by rw [length_xor_bytes]; exact contains_pre _ (by omega))
+    rw [mem]; exact writeBytes_frame _ _ _ (by rw [length_xor_bytes]; exact contains_pre _ (by omega_using []))
   have hq : u.mem (P + BitVec.ofNat 64 j) = s.mem (P + BitVec.ofNat 64 j) :=
     fr _ fun r hr hc => by
       simp only [List.mem_singleton] at hr; subst hr
-      simp only [Region.Contains, Mem.sub_ofNat_toNat P (show j < 2 ^ 64 by omega)] at hc; omega
+      simp only [Region.Contains, Mem.sub_ofNat_toNat P (show j < 2 ^ 64 by omega_using [hr', hj])] at hc; omega_using [hc]
   have hqT : u.mem (W + BitVec.ofNat 64 112 + BitVec.ofNat 64 j) = s.mem (W + BitVec.ofNat 64 112 + BitVec.ofNat 64 j) :=
     fr _ fun r hr hc => by
       simp only [List.mem_singleton] at hr; subst hr
       have hdis : (⟨P, r⟩ : Region).Disjoint ⟨W + BitVec.ofNat 64 112 + BitVec.ofNat 64 j, 1⟩ := by
-        rw [Offset.add_add]; exact hP.w.sub_right (Lay.wSub (by omega))
-      exact hdis.sub_left (Region.sub_prefix (by omega)) _ hc (Region.contains_self _ _)
+        rw [Offset.add_add]; exact hP.w.sub_right (Lay.wSub (by omega_using [hr', hj]))
+      exact hdis.sub_left (Region.sub_prefix (by omega_using [hj])) _ hc (Region.contains_self _ _)
   have hmem : u'.mem = writeBytes s.mem P (Spec.Ocb.xor (bytesAt s.mem P (j + 1)) (bytesAt s.mem (W + BitVec.ofNat 64 112) (j + 1))) := by
     rw [mem', hq, hqT, mem, bytesAt_succ, bytesAt_succ, xor_snoc _ _ (by simp [length_bytesAt]),
-      writeBytes_snoc _ _ _ _ (by rw [length_xor_bytes]; omega), length_xor_bytes]
+      writeBytes_snoc _ _ _ _ (by rw [length_xor_bytes]; omega_using [hr', hj]), length_xor_bytes]
   have hz : u'.zf = some (decide (j + 1 = r)) := by
-    rw [zf', Offset.ofNat_sub_ofNat_beq (by omega) (by omega)]
+    rw [zf', Offset.ofNat_sub_ofNat_beq (by omega_using [hr', hj]) (by omega_using [hr'])]
   have gg : ∀ r, r ≠ .rax → r ≠ .rdx → r ≠ .rcx → u'.gpr r = s.gpr r := fun r h₁ h₂ h₃ => by
     rw [g' r h₁ h₂ h₃, g r h₁ h₂ h₃]
   by_cases he : j + 1 = r
   · left
     exact ⟨(eval_ne hz).trans (by simp [he]), by rw [hmem, he], gg, by rw [rd', rd], by rw [wr', wr]⟩
   · right
-    exact ⟨(eval_ne hz).trans (by simp [he]), r - (j + 1), by omega, j + 1, rfl, by omega, rcx', hmem, gg,
+    exact ⟨(eval_ne hz).trans (by simp [he]), r - (j + 1), by omega_using [hj], j + 1, rfl, by omega_using [hj, he], rcx', hmem, gg,
       by rw [rd', rd], by rw [wr', wr]⟩
 
 end VG.Proof.AesOcb.X86_64

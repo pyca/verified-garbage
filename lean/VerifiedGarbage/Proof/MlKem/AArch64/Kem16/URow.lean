@@ -138,7 +138,7 @@ theorem fused_u_rowW {s₀ s : State} (hp : Pre P L s₀) (hr : Noise.Room P) (h
   have e₅ := e₄.frame hp kb₅ x₅ f₅ fun r hh => by
     rw [List.mem_singleton.mp hh]; exact far_ct hp A (Nat.le_refl _) (by lom)
   refine ⟨e₅.kb,e₅.x24,e₅.r,e₅.m,e₅.a,e₅.y,fun j hj => ?_,e₅.fr⟩
-  rcases (by omega : j<i ∨ j=i) with hj | rfl
+  rcases (by omega_using [hj] : j<i ∨ j=i) with hj | rfl
   · exact e₅.u j hj
   · rw [b₅,t₄.2]; rfl
 

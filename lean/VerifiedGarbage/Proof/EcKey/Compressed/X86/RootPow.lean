@@ -79,8 +79,8 @@ theorem rootPower_ok {c : Cfg} (hc : CfgOk c) {e j : Nat}
   have keep₂ {i : Nat} (hi : i < 45) (hiE : i ≠ EXPP) (hiT : i ≠ TMP) :
       sv c base s₂ i = sv c base s i := by
     have hsl := sl_le c h7 hi
-    rw [sv, O₂.wordsVal (Or.inl (sl_below_bits c hi j 0)) (by omega),
-      O₁.wordsVal (sl_apart c hiE) (by omega)]
+    rw [sv, O₂.wordsVal (Or.inl (sl_below_bits c hi j 0)) (by omega_using [hn, hsl]),
+      O₁.wordsVal (sl_apart c hiE) (by omega_using [hn, hsl])]
   have B₂ : wordsVal s₂.mem base (c.sl W2) c.n < c.C.p := by
     rw [show wordsVal s₂.mem base (c.sl W2) c.n = sv c base s₂ W2 from rfl,
       keep₂ (by decide) (by decide) (by decide)]
@@ -113,6 +113,6 @@ theorem rootThree_ok {c : Cfg} (hc : CfgOk c) (hp : c.C.p % 4 = 3)
         toM c.C.p (2 ^ (64 * c.n)) (sv c base s W2) ^ ((c.C.p + 1) / 4) := by
   simp only [Impl.EcKey.Compressed.X86.rootCandidate, hp, ↓reduceIte]
   exact rootPower_ok hc (by decide)
-    (by have := hc.p_lt; have := hc.p_ge; omega) hs _hM hB hO
+    (by have := hc.p_lt; have := hc.p_ge; omega_arith) hs _hM hB hO
 
 end VG.Proof.EcKey.Compressed.X86

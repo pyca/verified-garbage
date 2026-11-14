@@ -12,7 +12,7 @@ theorem full_coeffs {w16 : Bool} {m : Mem} {p : Addr} {L : List Zq}
     (h : Rej8.Scalar.CoeffsW w16 m p L) (hl : L.length=256) :
     CoeffsUpToW w16 m p L.length (Sample.cvW w16 L) (fun _=>0) := by
   intro i hi
-  have hh : i<L.length := by omega
+  have hh : i<L.length := by omega_using [hl, hi]
   rw [ite_eq_left hh]
   exact h i hh
 

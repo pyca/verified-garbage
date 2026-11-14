@@ -14,8 +14,8 @@ theorem absorbWord_state (m : Mem) (p a : Addr) {j : Nat} (hj : j+8≤200) :
  apply Proof.Sha3.AArch64.Stream.Absorb.stateAt_write_lane hj (bytesAt_length _ _ _)
  intro d hd
  rw [BitVec.extractLsb'_xor,Mem.readW,Mem.readW,BitVec.setWidth_eq,BitVec.setWidth_eq,
-   Mem.extractLsb'_read _ _ (show d<64/8 by omega),
-   Mem.extractLsb'_read _ _ (show d<64/8 by omega),BitVec.xor_comm,
+   Mem.extractLsb'_read _ _ (show d<64/8 by omega_using [hd]),
+   Mem.extractLsb'_read _ _ (show d<64/8 by omega_using [hd]),BitVec.xor_comm,
    BitVec.add_assoc,←BitVec.ofNat_add]
  congr 1
  simp only [bytesAt,List.getD_eq_getElem?_getD,List.getElem?_map,List.getElem?_range hd,

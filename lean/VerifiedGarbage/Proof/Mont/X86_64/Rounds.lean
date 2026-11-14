@@ -51,7 +51,7 @@ theorem zeros_ok (s : State) : ∀ ts : List Reg,
 theorem wins_sub_acc_lt : ∀ n < 7, ∀ i < n + 2, ∀ r ∈ wins n i, r ∈ acc n := by decide +kernel
 
 theorem wins_sub_acc {n : Nat} (hn : n < 7) (i : Nat) : ∀ r ∈ wins n i, r ∈ acc n := by
-  rw [wins_mod]; exact wins_sub_acc_lt n hn _ (Nat.mod_lt _ (by omega))
+  rw [wins_mod]; exact wins_sub_acc_lt n hn _ (Nat.mod_lt _ (by omega_using []))
 
 theorem acc_regs_lt : ∀ n < 7, ∀ r ∈ acc n, r ≠ .rax ∧ r ≠ .rcx ∧ r ≠ .rdx ∧ r ≠ .rbp ∧ r ≠ .rdi := by
   decide +kernel
@@ -68,11 +68,11 @@ theorem rounds_ok {M : Mod} (hn : M.n < 7) {a b m size : Nat}
           wordsVal s.mem base a k * wordsVal s.mem base b M.n + U * m) ∧
         regsVal s' (wins M.n k) < 2 * m ∧
         Keeps (.rax :: .rcx :: .rdx :: .rbp :: acc M.n) s s'
-  | 0, _, s, _, _, _, hB, h0 => WP.block_nil ⟨⟨0, by simp [h0, wordsVal]⟩, by rw [h0]; omega,
+  | 0, _, s, _, _, _, hB, h0 => WP.block_nil ⟨⟨0, by simp [h0, wordsVal]⟩, by rw [h0]; omega_using [hB],
       fun _ _ => rfl, rfl, rfl, rfl⟩
   | k + 1, hk, s, base, hs, hm, hB, h0 => by
     rw [List.range_succ, List.flatMap_append, List.flatMap_singleton, WP.block_append_iff]
-    refine WP.mono (rounds_ok hn ha hb hmo hinv hok k (by omega) hs hm hB h0)
+    refine WP.mono (rounds_ok hn ha hb hmo hinv hok k (by omega_using [hk]) hs hm hB h0)
       fun s₁ ⟨⟨U, eU⟩, hT, k₁⟩ => ?_
     have hmem : s₁.mem = s.mem := k₁.2.1
     have hs₁ := hs.of_keeps k₁ (by
@@ -84,7 +84,7 @@ theorem rounds_ok {M : Mod} (hn : M.n < 7) {a b m size : Nat}
       · exact absurd h (by decide)
       · exact absurd h (by decide)
       · exact (acc_regs_lt _ hn _ h).2.2.2.2 rfl)
-    refine WP.mono (round_ok hs₁ hn (i := k) (by omega) hb hmo (fun h => by rw [hmem]; exact hm h) hinv hok
+    refine WP.mono (round_ok hs₁ hn (i := k) (by omega_using [ha, hk]) hb hmo (fun h => by rw [hmem]; exact hm h) hinv hok
       (by rw [hmem]; exact hB) hT) fun s₂ ⟨⟨u, eu⟩, hT₂, k₂⟩ => ?_
     rw [hmem] at eu
     refine ⟨⟨U + 2 ^ (64 * k) * u, ?_⟩, hT₂, k₁.trans (k₂.mono fun q hq => ?_)⟩
@@ -96,7 +96,7 @@ theorem rounds_ok {M : Mod} (hn : M.n < 7) {a b m size : Nat}
             2 ^ (64 * k) * u * m := by rw [eu]; simp only [Nat.mul_add, Nat.mul_assoc]
         _ = (wordsVal s.mem base a k + 2 ^ (64 * k) * (word s.mem base (a + 8 * k)).toNat) *
             wordsVal s.mem base b M.n + (U + 2 ^ (64 * k) * u) * m := by
-            rw [eU, Nat.add_mul, Nat.add_mul]; omega
+            rw [eU, Nat.add_mul, Nat.add_mul]; omega_using []
         _ = _ := by rw [wordsVal_succ_top]
     · simp only [List.mem_cons] at hq ⊢
       rcases hq with h | h | h | h | h

@@ -134,14 +134,14 @@ theorem saved_after (m : Mem) (work : Addr) (v : VReg → BitVec 128) :
     have he' : i=j := Fin.ext he
     subst j
     exact hne rfl
-  exact Offset.sep work (by omega) (by omega) (by omega)
+  exact Offset.sep work (by omega) (by omega_using []) (by omega_using [])
 
 theorem saved_frame (m : Mem) (work : Addr) (v : VReg → BitVec 128) :
     Frame [⟨work+BitVec.ofNat 64 2048,128⟩] m (writeSlice (extraSlots 2048) work v m) := by
   refine writeSlice_frame _ _ _ _ _ ?_
   intro p hp
   obtain ⟨i,rfl⟩ := (extraSlots_mem _ _).mp hp
-  exact Offset.contains work (e := 2048) (by omega) (by omega) (by decide)
+  exact Offset.contains work (e := 2048) (by omega_using []) (by omega_using []) (by decide)
 
 theorem Saved.frame {m m' : Mem} {work : Addr} {v : VReg → BitVec 128}
     {rs : List Region} (h : Saved m work v) (hf : Frame rs m m')
@@ -149,7 +149,7 @@ theorem Saved.frame {m m' : Mem} {work : Addr} {v : VReg → BitVec 128}
   intro i
   have hc : (⟨work+BitVec.ofNat 64 2048,128⟩ : Region).Contains
       (work+BitVec.ofNat 64 (2048+16*i.val)) (128/8) :=
-    Offset.contains work (e := 2048) (by omega) (by omega) (by decide)
+    Offset.contains work (e := 2048) (by omega_using []) (by omega_using []) (by decide)
   have he := hf.readW hc hd (by decide : 128/8<2^64)
   have hr : m'.read (work+BitVec.ofNat 64 (2048+16*i.val)) 16 =
       m.read (work+BitVec.ofNat 64 (2048+16*i.val)) 16 := by
@@ -183,7 +183,7 @@ theorem restore_saved {s : State} {work : Addr} {v : VReg → BitVec 128}
   obtain ⟨i,rfl⟩ := hex
   have hh := hv (savedReg i,1920+16*i.val) ((extraSlots_mem _ _).mpr ⟨i,rfl⟩)
   rw [hx,BitVec.add_assoc,← BitVec.ofNat_add] at hh
-  have he : 128+(1920+16*i.val)=2048+16*i.val := by omega
+  have he : 128+(1920+16*i.val)=2048+16*i.val := by omega_using []
   simpa only [he,hs i] using hh
 
 theorem save_saved {s : State}

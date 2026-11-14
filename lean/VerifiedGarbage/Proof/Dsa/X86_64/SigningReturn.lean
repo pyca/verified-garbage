@@ -52,8 +52,8 @@ theorem signingRejected_ok {p : SigningInput} {original s : State} (h : SigningP
     shapeAccepted_false ha (Spec.Dsa.decodeBE p.components.g)
   have hnone := signBytes_invalid_shape (nonce := p.nonce) (digest := p.digest) hparams
   have hwidth : 1 ≤ p.qLen ∧ p.qLen ≤ 32 := by
-    have := p.lengths; unfold Spec.Dsa.lengthsValid at this; omega
-  refine WP.mono (signFailure_ok hs.scratch hs.rdi (by decide) rfl (by omega) (by omega)
+    have := p.lengths; unfold Spec.Dsa.lengthsValid at this; omega_using [this]
+  refine WP.mono (signFailure_ok hs.scratch hs.rdi (by decide) rfl (by omega_using [hwidth]) (by omega_using [hwidth])
     (hs.fields .out) (hs.fields .qLen)
     (fun i hi => by rw [hs.keep.2.2]; exact h.writable i hi) h.separate)
     fun t ⟨hout, hret, hsave, hframe, hk⟩ => ?_

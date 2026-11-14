@@ -62,7 +62,7 @@ theorem x25519BaseWith_correct (eng : Prog isa) (heng : UEngineOk eng)
   apply WP.seq
   refine WP.mono (heng hb ((gb _ (by decide)).trans (congrFun ga _))
     (fun q hq => ⟨⟨s.gpr .rsi, 32⟩, by rw [rb, ra, hr]; simp,
-      Offset.contains_base _ (by omega) (by omega)⟩)
+      Offset.contains_base _ (by omega_using [hq]) (by omega_using [hq])⟩)
     (fun q hq => farScratch hd hq (by decide)) tblb far) fun c ⟨kc, w, vc, xc⟩ => ?_
   have mc := powersKeep_outside kc
   have svc : Saved (s.gpr .rdx) s.gpr c.mem := svb.outside mc (by decide)
@@ -98,7 +98,7 @@ theorem x25519BaseWith_correct (eng : Prog isa) (heng : UEngineOk eng)
   · have ft : Frame [⟨s.gpr .rdx, 8192⟩, ⟨s.gpr .rdi, 32⟩] s.mem t.mem := by
       rw [mt]
       have hc : ∀ d, d + 8 ≤ 32 → (⟨s.gpr .rdi, 32⟩ : Region).Contains (off (s.gpr .rdi) d) (64 / 8) :=
-        fun d hd => Offset.contains_base _ hd (by omega)
+        fun d hd => Offset.contains_base _ hd (by omega_using [hd])
       have hm : (⟨s.gpr .rdi, 32⟩ : Region) ∈ [⟨s.gpr .rdx, 8192⟩, ⟨s.gpr .rdi, 32⟩] := by simp
       exact ((((fme.mono (by simp)).writeW hm _ (hc 0 (by decide))).writeW hm _
         (hc 8 (by decide))).writeW hm _ (hc 16 (by decide))).writeW hm _ (hc 24 (by decide))

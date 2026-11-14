@@ -34,8 +34,8 @@ theorem shift1 (x k i : Nat) (hki : k + i = 63) :
   refine ⟨?_, by rw [Nat.two_mul]; exact hsh⟩
   rw [← hb]
   by_cases h : 2 ^ 64 ≤ y + y
-  · rw [decide_eq_true h]; show _ = 1; omega
-  · rw [decide_eq_false h]; show _ = 0; omega
+  · rw [decide_eq_true h]; show _ = 1; omega_using [hy, h]
+  · rw [decide_eq_false h]; show _ = 0; omega_using [h]
 
 /-- The registers `modBits` writes. -/
 def mbRegs : List Reg := [.r0, .r3, .r4, .r6, .r7, .r8, .r9, .r15, .r16]

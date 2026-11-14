@@ -55,18 +55,18 @@ theorem prepare_ok (hR:VG.Proof.Ed448.RecoverOk) {s:State} {base:Addr} {S K:Nat}
   have pb:=pa.outside2 bk.mem
   refine WP.mono_syms (oddTable_ok (bk.scr F.scr) bb bx) fun c T csy => ?_
   have pc:Persist base s.gpr s.v (fun i => s.mem (s.gpr .x2+BitVec.ofNat 64 i)) c.mem:=
-    pb.of_frame fun x hx => T.mem x (by omega) (by simp only [ACC];omega)
-      (by simp only [RX];omega) (by simp only [RY,CAN];omega)
+    pb.of_frame fun x hx => T.mem x (by omega_using [hx]) (by simp only [ACC];omega_using [hx])
+      (by simp only [RX];omega_using [hx]) (by simp only [RY,CAN];omega_using [hx])
   have cbits:∀ i<456,c.mem (off base (BITS+i))=BitVec.ofNat 8 (WnafWide.bit S i):=by
     intro i hi
-    have ho:ofs base (off base (BITS+i))=BITS+i:=VG.Proof.X448.AArch64.ofs_off' base (by simp only [BITS];omega)
-    rw [T.mem _ (Or.inr (by rw [ho];simp only [BITS];omega))
-      (Or.inl (by rw [ho];simp only [BITS,ACC];omega))
-      (Or.inl (by rw [ho];simp only [BITS,RX];omega))
-      (Or.inl (by rw [ho];simp only [BITS,RY,CAN];omega)),
-      bk.mem _ (Or.inr (by rw [ho];simp only [BITS];omega))
-        (Or.inl (by rw [ho];simp only [BITS,ACC];omega))]
-    have hv:=F.bits i (by omega)
+    have ho:ofs base (off base (BITS+i))=BITS+i:=VG.Proof.X448.AArch64.ofs_off' base (by simp only [BITS];omega_using [hi])
+    rw [T.mem _ (Or.inr (by rw [ho];simp only [BITS];omega_using []))
+      (Or.inl (by rw [ho];simp only [BITS,ACC];omega_using [hi]))
+      (Or.inl (by rw [ho];simp only [BITS,RX];omega_using [hi]))
+      (Or.inl (by rw [ho];simp only [BITS,RY,CAN];omega_using [hi])),
+      bk.mem _ (Or.inr (by rw [ho];simp only [BITS];omega_using []))
+        (Or.inl (by rw [ho];simp only [BITS,ACC];omega_using [hi]))]
+    have hv:=F.bits i (by omega_using [hi])
     rw [VG.Proof.X448.AArch64.Base.bit_eq,←h.svalue] at hv
     exact hv
   have cbytes:bytesAt c.mem (off base KB) 57=bytesAt s.mem (s.gpr .x2) 57:=by
@@ -81,9 +81,9 @@ theorem prepare_ok (hR:VG.Proof.Ed448.RecoverOk) {s:State} {base:Addr} {S K:Nat}
     apply h.bt.of_far
     · rw [T.rd,T.wr,bk.regs.2.1,bk.regs.2.2,F.rd,F.wr]
     · intro x hx
-      rw [T.mem x (Or.inr (by omega)) (Or.inr (by simp only [ACC];omega))
-        (Or.inr (by simp only [RX];omega)) (Or.inr (by simp only [TAB];omega)),
-        bk.mem x (Or.inr (by omega)) (Or.inr (by simp only [ACC];omega)),F.mem x (Or.inr hx)]
+      rw [T.mem x (Or.inr (by omega_using [hx])) (Or.inr (by simp only [ACC];omega_using [hx]))
+        (Or.inr (by simp only [RX];omega_using [hx])) (Or.inr (by simp only [TAB];omega_using [hx])),
+        bk.mem x (Or.inr (by omega_using [hx])) (Or.inr (by simp only [ACC];omega_using [hx])),F.mem x (Or.inr hx)]
   exact ⟨T.scr,T.env,⟨_,T.tab⟩,T.xbound,cbt,cbits,by rw [cbytes];exact h.kvalue.symm⟩
 
 private theorem prepare_analysis : ∃ h,((taintS [baseSym]).check

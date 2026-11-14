@@ -17,7 +17,7 @@ theorem SearchBuffers.after_frame {p : SearchParams} {s t : State} {rs : List Re
     h.output.congr rest.wr, h.used.congr rest.wr, h.scratch.congr rest.wr,
     by rw [rest.rd, rest.wr]; exact h.tapeRead, ?_,
     by rw [rest.rd, rest.wr, rest.sp]; exact h.stack, by rw [rest.sp]; exact h.below, ?_⟩
-  · refine (rsa_bytes_frame changed (by have := p.c.tapeCount; omega) ?_).trans h.tapeBytes
+  · refine (rsa_bytes_frame changed (by have := p.c.tapeCount; omega_using [this]) ?_).trans h.tapeBytes
     intro r hr
     simp only [searchRegions, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl

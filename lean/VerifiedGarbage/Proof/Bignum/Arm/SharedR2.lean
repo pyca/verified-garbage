@@ -19,15 +19,15 @@ theorem sharedR2Square_ok {base : BitVec 32} {len w : Nat} {P : State → Prop} 
       P t ∧ Frame regions s.mem t.mem ∧ Rest roundClobbers s t := by
   have hw : 2 ≤ w := h.ready.width ▸ h.ready.layout.1
   have fits : arrAt w 8 ≤ 8 * len := h.ready.width ▸ h.ready.layout.2.2.1
-  have size : 256 ≤ 8 * len := by simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at fits; omega
+  have size : 256 ≤ 8 * len := by simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at fits; omega_using [fits]
   have op4 : Operand 4 := by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]
   have op7 : Operand 7 := by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]
-  have odd : m % 2 = 1 := h.modulus ▸ numAt_odd_of_inverse s.mem _ (by omega) h.ready.inverse
+  have odd : m % 2 = 1 := h.modulus ▸ numAt_odd_of_inverse s.mem _ (by omega_using [hw]) h.ready.inverse
   refine WP.mono (K.op_ok s 4 4 4 h.ready hp op4 op4 op4 (by decide) (by rw [h.modulus]; exact h.operand)) ?_
   rintro t ⟨ready, modulus, bound, value, keeps, pt, frame, rest⟩
   rw [h.modulus] at modulus bound value
   refine ⟨⟨ready, modulus, bound, r2_square_value odd h.value value, ?_, ?_⟩, pt, frame, rest⟩
-  · have := keeps_array_word (d := 0) (bits := 32) keeps fits op7 (by decide) (by omega)
+  · have := keeps_array_word (d := 0) (bits := 32) keeps fits op7 (by decide) (by omega_using [])
     simp only [Nat.add_zero] at this
     change (t.mem.readW (off (State.addr base) (arrAt w 7)) 32).toNat = 2
     rw [this]; exact h.two
@@ -47,7 +47,7 @@ theorem sharedR2Squares_ok {base : BitVec 32} {len w : Nat} {P : State → Prop}
   refine WP.mono (sharedR2Square_ok K s5 h5 p5) fun t ⟨h6, p6, f6, r6⟩ => ?_
   refine ⟨?_, p6, f1.trans (f2.trans (f3.trans (f4.trans (f5.trans f6)))),
     r1.trans (r2.trans (r3.trans (r4.trans (r5.trans r6))))⟩
-  have e : 2 * (2 * (2 * (2 * (2 * (2 * w))))) = 64 * w := by omega
+  have e : 2 * (2 * (2 * (2 * (2 * (2 * w))))) = 64 * w := by omega_using []
   rw [e] at h6
   exact h6
 
@@ -71,7 +71,7 @@ theorem sharedR2_ok {base : BitVec 32} {len w : Nat} {P : State → Prop} {regio
   refine WP.mono (sharedR2Squares_ok K v sq pV) ?_
   rintro t ⟨fin, pT, frameT, restT⟩
   have exact : numAt t.mem (State.addr base) w 4 = 2 ^ (128 * w) % numAt s.mem (State.addr base) w 0 := by
-    rw [← Nat.mod_eq_of_lt fin.operand, fin.value, show 64 * w + 64 * w = 128 * w by omega]
+    rw [← Nat.mod_eq_of_lt fin.operand, fin.value, show 64 * w + 64 * w = 128 * w by omega_using []]
   refine ⟨⟨fin.ready.workspace, fin.ready.layout, fin.ready.width, fin.ready.ptr, fin.ready.inverse,
       by rw [fin.modulus]; exact fin.operand, fin.two, fin.counter, fin.ready.stackRead,
       fin.ready.stackSep, fin.ready.saved⟩, exact, fin.modulus,

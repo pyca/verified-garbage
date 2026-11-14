@@ -63,7 +63,7 @@ def zstep (v : CState) : ZI → CState
   | .xor d a b => v.set (xidx d) (v[xidx a]'(xidx_lt a) ^^^ v[xidx b]'(xidx_lt b)) (xidx_lt d)
   | .rol d a n => v.set (xidx d) ((v[xidx a]'(xidx_lt a)).rotateLeft (n.toNat % 32)) (xidx_lt d)
 
-theorem div4_lt {j : Nat} (hj : j < 16) : j / 4 < 4 := by omega
+theorem div4_lt {j : Nat} (hj : j < 16) : j / 4 < 4 := by omega_using [hj]
 theorem mod4_lt (j : Nat) : j % 4 < 4 := Nat.mod_lt _ (by decide)
 
 theorem getElem_set_xidx (v : CState) (d r : XReg) (x : Word) :

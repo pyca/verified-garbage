@@ -15,11 +15,11 @@ open VG.Proof.Rsa.X86.KeyRt (kw)
 theorem done_frame {s t : State} (A : Entry s) (D : Done s t) {i : Nat} (hi : i < size s)
     (hw : ¬ Proof.RsaKeyGen.inverseWrites (len s) i) :
     t.mem (base s + BitVec.ofNat 64 i) = s.mem (base s + BitVec.ofNat 64 i) := by
-  have fit : 16 ≤ (s.gpr .esp).toNat := by have := A.low; omega
+  have fit : 16 ≤ (s.gpr .esp).toNat := by have := A.low; omega_using [this]
   have wsFit := A.wsFit
   have offset : ofs (base s) (base s + BitVec.ofNat 64 i) = i := by
     unfold ofs
-    exact Mem.sub_ofNat_toNat _ (by unfold size at *; omega)
+    exact Mem.sub_ofNat_toNat _ (by unfold size at *; omega_using [hi])
   have inner : t.mem (base s + BitVec.ofNat 64 i) = (Compact.entered s).mem (base s + BitVec.ofNat 64 i) := by
     apply D.keep
     intro r hr
@@ -33,12 +33,12 @@ theorem done_frame {s t : State} (A : Entry s) (D : Done s t) {i : Nat} (hi : i 
       refine ⟨j, ?_, ?_⟩
       · simp only [VG.Proof.Rsa.X86.Keys.invArrs, VG.Impl.Rsa.X86.Keys.aT1, VG.Impl.Rsa.X86.Keys.aT2,
           VG.Impl.Rsa.X86.Keys.aT3, VG.Impl.Rsa.X86.Keys.aT4, List.mem_cons, List.not_mem_nil, or_false] at hj
-        omega
+        omega_using [hj]
       · simp only [VG.Proof.Rsa.X86.Keys.arr, VG.Proof.Rsa.X86.Keys.S, VG.Impl.Rsa.X86.Keys.hdr, kw,
           Spec.Rsa.modulusWords] at c
         rw [Nat.add_mul, Nat.one_mul]
-        rw [show 4 * (2 * ((len s + 7) / 8) + 2) = 8 * ((len s + 7) / 8) + 8 by omega] at c
-        omega
+        rw [show 4 * (2 * ((len s + 7) / 8) + 2) = 8 * ((len s + 7) / 8) + 8 by omega_using []] at c
+        omega_using [c]
     · left
       simp only [VG.Proof.Rsa.X86.Keys.invSlots, VG.Impl.Rsa.X86.Keys.sOdd, VG.Impl.Rsa.X86.Keys.sB,
         VG.Impl.Rsa.X86.Keys.sC, List.mem_cons, List.not_mem_nil, or_false] at hd
@@ -52,7 +52,7 @@ theorem done_frame {s t : State} (A : Entry s) (D : Done s t) {i : Nat} (hi : i 
     rw [Taint.sub_setWidth fit]
     exact A.stackWs.sub_left (Offset.sub_below _ (by decide) (by decide))
   intro contains
-  exact frameWs _ contains (Offset.contains_base _ (by omega) (by omega))
+  exact frameWs _ contains (Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi, wsFit]))
 
 theorem correct (s : State) (h : contract.pre s) :
     ∃ trace t, Exec isa VG.Impl.RsaKeyGen.X86.Inverse.code s trace t ∧ abiPreserved s t ∧ contract.post s t := by

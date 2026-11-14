@@ -75,7 +75,7 @@ theorem sqDouble_ct :
     · simp only [List.mem_singleton] at hr; subst hr; exact hs.2.trans ht.2.symm
     · obtain ⟨⟨_, m0, inv, h⟩, p0⟩ := hs
       have := h.env.fits; have := h.env.nowrap
-      exact WP.mono (sqDoubleArgs_ok s (M := M) (n := n) h.env.workspace (by omega) (by omega) p0 h.md.count)
+      exact WP.mono (sqDoubleArgs_ok s (M := M) (n := n) h.env.workspace (by omega_arith) (by omega_arith) p0 h.md.count)
         fun t ⟨plr, p0, _⟩ => ⟨plr, p0⟩
   have C : RelCT isa (fun s t => P2 s ∧ P2 t) shiftLeft (fun _ _ => True) :=
     segCTEnd shiftLeft_ct fun s t hs ht => ⟨hs.2.trans ht.2.symm, hs.1.trans ht.1.symm⟩
@@ -100,7 +100,7 @@ theorem sqDiag_ct :
     · simp only [List.mem_singleton] at hr; subst hr; exact hs.2.trans ht.2.symm
     · obtain ⟨⟨_, m0, inv, h⟩, p0⟩ := hs
       have := h.env.fits
-      exact WP.mono (sqDiagArgs_ok s (M := M) (n := n) (a := a) h.env.workspace (by omega) p0 h.md.count
+      exact WP.mono (sqDiagArgs_ok s (M := M) (n := n) (a := a) h.env.workspace (by omega_using [this]) p0 h.md.count
         h.md.aPtr) fun t ⟨p12, plr, p0, _⟩ => ⟨p12, plr, p0⟩
   have C : RelCT isa (fun s t => P2 s ∧ P2 t) diagLoop (fun _ _ => True) :=
     segEnd diagLoop_cert fun s t hs ht r hr => by

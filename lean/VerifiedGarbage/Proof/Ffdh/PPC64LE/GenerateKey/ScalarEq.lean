@@ -25,7 +25,7 @@ theorem bptr_bnd (m : Mem) (D : Addr) {k L : Nat} (hL : L = 2 * k ∨ L = 3 * k)
   unfold bptr bnd
   rw [hl]
   by_cases hq : L = 3 * k
-  · rw [ite_eq_left hq, ite_eq_left hq, VG.Proof.Dsa.bytesAt_slice m D (by omega : 2 * k + k ≤ L)]
-  · rw [ite_eq_right hq, ite_eq_right hq, Proof.Ffdh.take_bytesAt m D (by omega)]
+  · rw [ite_eq_left hq, ite_eq_left hq, VG.Proof.Dsa.bytesAt_slice m D (by omega_using [hq] : 2 * k + k ≤ L)]
+  · rw [ite_eq_right hq, ite_eq_right hq, Proof.Ffdh.take_bytesAt m D (by omega_using [hL])]
 
 end VG.Proof.Ffdh.PPC64LE.GenerateKey

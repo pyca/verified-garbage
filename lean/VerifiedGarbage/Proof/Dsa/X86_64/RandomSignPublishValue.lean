@@ -28,7 +28,7 @@ theorem random_writeW_bytes {m : Mem} {p dst : Addr} {n : Nat} (v : BitVec 64)
   intro i hi
   apply Mem.write_apply
   apply hsep
-  rw [Mem.sub_ofNat_toNat _ (by have := List.mem_range.mp hi; omega)]
+  rw [Mem.sub_ofNat_toNat _ (by have := List.mem_range.mp hi; omega_using [hn, this])]
   exact List.mem_range.mp hi
 
 theorem random_publish_output {m : Mem} {B p : Addr} {n : Nat}
@@ -47,7 +47,7 @@ theorem random_publish_nonce_zero {m : Mem} {B : Addr}
     simp only [off, Random.oNonce, BitVec.ofNat_add, BitVec.add_assoc]
   have hout : ¬(off B (200 + i) - word m B Random.oUsedPtr).toNat < 8 := by
     apply hsep
-    rw [he, Mem.sub_ofNat_toNat _ (by omega)]
+    rw [he, Mem.sub_ofNat_toNat _ (by omega_using [hi])]
     exact hi
   exact (Mem.write_apply hout).trans (random_clear_byte _ _ i hi)
 

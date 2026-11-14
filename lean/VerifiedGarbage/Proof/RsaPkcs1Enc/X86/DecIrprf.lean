@@ -73,10 +73,10 @@ def RAM (P : EP) (hK : 64 ≤ P.K ∧ P.K ≤ 1024) : Prf P where
   xn := 256
   xv := clBlocks P
   vs_len := by decide
-  nb1 := by omega
-  nb_le := by omega
+  nb1 := by omega_using [hK]
+  nb_le := by omega_using [hK]
   dst_lo := by decide
-  dst_hi := by simp only [sAM]; omega
+  dst_hi := by simp only [sAM]; omega_using [hK]
   x_lo := by decide
   x_hi := by decide
   x_sep := .inl (by decide)
@@ -110,13 +110,13 @@ theorem b0_start {R : Prf P} {σ s t : State} (hb : Base P σ s) (st : P.lay.St 
     rcases hr with rfl | rfl
     · exact ⟨hs.1.safe_fr (by decide) (by simp only [oR, oI]; decide),
         (hs.1.fr_sc (by simp only [oI, frameBytes]; decide) (by decide)).symm,
-        (hs.1.fr_sc (by simp only [oI, frameBytes]; decide) (by have := R.x_hi; omega)).symm⟩
+        (hs.1.fr_sc (by simp only [oI, frameBytes]; decide) (by have := R.x_hi; omega_using [this])).symm⟩
     · exact ⟨hs.1.safe_fr (by decide) (by simp only [oR, oNB]; decide),
         (hs.1.fr_sc (by simp only [oNB, frameBytes]; decide) (by decide)).symm,
-        (hs.1.fr_sc (by simp only [oNB, frameBytes]; decide) (by have := R.x_hi; omega)).symm⟩
+        (hs.1.fr_sc (by simp only [oNB, frameBytes]; decide) (by have := R.x_hi; omega_using [this])).symm⟩
   refine ⟨⟨Nat.zero_le _, hb.frame st fr fun r hr => (sd r hr).1,
     (Proof.RsaPkcs1Sig.bytesAt_frame fr (fun r hr => (sd r hr).2.1) (by decide)).trans hk,
-    (Proof.RsaPkcs1Sig.bytesAt_frame fr (fun r hr => (sd r hr).2.2) (by have := R.x_hi; omega)).trans hx,
+    (Proof.RsaPkcs1Sig.bytesAt_frame fr (fun r hr => (sd r hr).2.2) (by have := R.x_hi; omega_using [this])).trans hx,
     ?_, by simp [Spec.Rsa.bytesAt]⟩, ?_⟩
   · rw [h, Mem.readW_writeW_self32]
   · rw [h, Lay.readW_fr_other _ _ _ (by decide) (by decide) (by decide), Mem.readW_writeW_self32]
@@ -139,7 +139,7 @@ theorem nb_val {K : Nat} (hK : K ≤ 1024) :
   rw [BitVec.ofNat_add_ofNat]
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow]
-  omega
+  omega_using [hK]
 
 theorem amInit_vp (hK : 64 ≤ P.K ∧ P.K ≤ 1024) : VP (CI P (RCL P) 8) (.block amInit) (B0 P (RAM P hK) 0) :=
   VP.taint [.esp] amInit_taint (sp_agree fun _ _ h => h.S) fun σ s h => by
@@ -170,7 +170,7 @@ theorem flatMap_blocks_length (kd lab : List Byte) (L : Nat) :
   | n + 1 => by
     rw [List.range_succ, List.flatMap_append, List.length_append, flatMap_blocks_length kd lab L n,
       List.flatMap_singleton, prfBlock, hmac_len]
-    omega
+    omega_using []
 
 theorem bytesAt_take (m : Mem) (p : Addr) {k n : Nat} (h : k ≤ n) :
     Spec.Rsa.bytesAt m p k = (Spec.Rsa.bytesAt m p n).take k := by
@@ -185,7 +185,7 @@ theorem ir_of {σ s : State} {hK : 64 ≤ P.K ∧ P.K ≤ 1024} (h : CI P (RAM P
   refine ⟨h.base, by rw [clV_eq]; exact h.x, ?_⟩
   have hb := h.blk
   simp only [RAM] at hb
-  rw [amV, Proof.RsaPkcs1Enc.irprf_eq, ascii_message, ← hb, ← bytesAt_take _ _ (by omega)]
+  rw [amV, Proof.RsaPkcs1Enc.irprf_eq, ascii_message, ← hb, ← bytesAt_take _ _ (by omega_using [])]
 
 theorem clLoop_vp (v : Backend) : VP (K6 P) (clLoop v.F) (CI P (RCL P) 8) :=
   clInit_vp.seq (loop_vp (R := RCL P) v certsCL)

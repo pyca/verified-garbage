@@ -313,7 +313,7 @@ theorem lcmPart_ok [InvLaw] (h : Ws s B Z w nArr) (ks : KS s.mem B w V F) {L : N
   have hb := VG.Proof.RsaKeyGen.halveIter_bounds (8 * L) (st := (V aPm, V aQm, V aPm * V aQm))
     (a := 2 ^ (8 * L)) (b := 2 ^ (8 * L)) (f := V aPm * V aQm + 1) ⟨hpm, hqm, Nat.lt_succ_self _⟩
   rw [hS] at hb
-  refine WP.seq (WP.mono (gcdUV_ok h1 k1 c1 c2 c3 hw10 (by omega) (by rw [r1.gpr .r22 (by decide)]; exact h22) hL' hL4
+  refine WP.seq (WP.mono (gcdUV_ok h1 k1 c1 c2 c3 hw10 (by omega_using [hw, hL4]) (by rw [r1.gpr .r22 (by decide)]; exact h22) hL' hL4
     (by omega_arith) (by omega_arith) (by rw [eu]; exact hb.1) (by rw [ev]; exact hb.2.1) (by rw [eu, ev]; exact LE.1))
     fun t2 ⟨h2, ⟨V2, F2, k2, o2, p2, e2⟩, f2, r2⟩ => ?_)
   refine WP.seq (WP.mono (copyE h2 k2 (o := aL) (a := aF)) fun t3 ⟨h3, k3, f3, r3⟩ => ?_)

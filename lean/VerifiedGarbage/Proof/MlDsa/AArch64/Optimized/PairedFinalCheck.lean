@@ -112,7 +112,7 @@ theorem checkRun_ok (hint : Bool) (js : List (Fin 2 × Fin 8))
     simp only [checkRunCode,List.flatMap_cons,List.append_assoc]
     have hn : (bankRegs op.1)[op.2.val]≠.v27 :=
       (show ∀p:Fin 2,∀j:Fin 8,(bankRegs p)[j.val]≠.v27 by decide) op.1 op.2
-    refine checkStep_ok hint _ hn (by constructor <;> omega)
+    refine checkStep_ok hint _ hn (by constructor <;> omega_using [])
       (hr op.1 op.2).1 (hr op.1 op.2).2.1 (hr op.1 op.2).2.2
       hc.q hc.bias hc.neg hc.zero fun a ha hda => ?_
     refine ih (hv.checkFrame ha) (hc.frame ha) ?_ fun t ht hdt => ?_

@@ -117,11 +117,11 @@ theorem minus4n_vp {f g : Nat × Nat × Nat → Nat × Nat × Nat} (hg : ProdF P
     exact pr_rows hg this _
   simp only [minus4n, seqs]
   refine WP.seq (h.toW hv fun s1 h1 hv1 _ => h1.clr11 hv1 fun s2 h2 hv2 z2 => WP.block_nil ?_)
-  refine WP.seq (WP.mono (h2.shl_W hv2 (j := wN) (by decide) (by omega) (by decide))
+  refine WP.seq (WP.mono (h2.shl_W hv2 (j := wN) (by decide) (by omega_using [z2]) (by decide))
     fun s3 ⟨h3, hv3, _, _⟩ => ?_)
   rw [z2] at h3
   refine WP.seq (h3.clr11 hv3 fun s4 h4 hv4 z4 => WP.block_nil ?_)
-  refine WP.seq (WP.mono (h4.shl_W hv4 (j := wN) (by decide) (by omega) (by decide))
+  refine WP.seq (WP.mono (h4.shl_W hv4 (j := wN) (by decide) (by omega_using [z4]) (by decide))
     fun s5 ⟨h5, hv5, _, _⟩ => ?_)
   rw [z4] at h5
   refine WP.seq (WP.mono (h5.sub_W hv5 (o := wR) (a := wA) (b := wN) (by decide) (by decide) (by decide)
@@ -156,7 +156,7 @@ open VG.Impl.Rsa.Arm.KeyDiv (sD sD1 sV)
 
 theorem sub32_le {w a b : Nat} (ha : a < 2 ^ (32 * w)) (hb : b ≤ a) : sub32 w a b = a - b := by
   unfold sub32
-  rw [show a + 2 ^ (32 * w) - b = (a - b) + 2 ^ (32 * w) by omega, Nat.add_mod_right, Nat.mod_eq_of_lt (by omega)]
+  rw [show a + 2 ^ (32 * w) - b = (a - b) + 2 ^ (32 * w) by omega_using [ha, hb], Nat.add_mod_right, Nat.mod_eq_of_lt (by omega_using [ha])]
 
 /-- The root, to `w` words, and the remainder. -/
 abbrev yV (P : RP) (f g : Nat × Nat × Nat → Nat × Nat × Nat) (σ : State) : Nat :=
@@ -184,15 +184,15 @@ theorem isqrt_one : isqrt 1 = 1 := by
   have h2 := isqrt_sq_le 1
   have : isqrt 1 ≤ 1 := by
     refine Nat.le_of_not_lt fun c => ?_
-    have := Nat.mul_le_mul (show 2 ≤ isqrt 1 by omega) (show 2 ≤ isqrt 1 by omega)
-    omega
-  omega
+    have := Nat.mul_le_mul (show 2 ≤ isqrt 1 by omega_using [c]) (show 2 ≤ isqrt 1 by omega_using [c])
+    omega_using [h2, this]
+  omega_using [h1, this]
 
 /-- The normalized `X` is a square exactly where `X` is. -/
 theorem square_norm (P : RP) (X : Nat) :
     nX P X - isqrt (nX P X) * isqrt (nX P X) = 0 ↔ X - isqrt X * isqrt X = 0 := by
   have e : ∀ x, x - isqrt x * isqrt x = 0 ↔ isqrt x * isqrt x = x := fun x => by
-    have := isqrt_sq_le x; omega
+    have := isqrt_sq_le x; omega_using [this]
   rw [e, e]
   simp only [nX]
   rw [Nat.mul_comm (xz X), VG.Proof.Bignum.SqrtRem.norm_square]
@@ -201,7 +201,7 @@ theorem square_norm (P : RP) (X : Nat) :
   · simp only [xz, h, ↓reduceIte]
 
 theorem topA_last (P : RP) (x : Nat) : topA P.W x (P.w + 1) = x := by
-  simp only [topA, show P.W - 2 * (P.w + 1) = 0 by simp only [RP.W]; omega, Nat.mul_zero, Nat.pow_zero,
+  simp only [topA, show P.W - 2 * (P.w + 1) = 0 by simp only [RP.W]; omega_using [], Nat.mul_zero, Nat.pow_zero,
     Nat.div_one]
 
 /-- The wide arrays of the digits. -/
@@ -215,7 +215,7 @@ theorem sqrt_vp {f g : Nat × Nat × Nat → Nat × Nat × Nat} {E : State → P
     VP (Dk P E (AM4 P f g) LM4 (AWM P f g) LWM (VM4 P f g) LSM P.w nArr) sqrt
       (Dk P E (AR P f g) LR (fun _ => upd (upd (fun _ => 0) wZ 0) wOne 1) [wOne, wZ] (VR P f g) LSR
         P.w nArr) := by
-  refine VP.of_imp (p := 1 ≤ P.w ∧ P.W ≤ 518) (fun σ s h => ⟨by have := h.2.1.sizes.w6a; simp only [RP.w]; omega,
+  refine VP.of_imp (p := 1 ≤ P.w ∧ P.W ≤ 518) (fun σ s h => ⟨by have := h.2.1.sizes.w6a; simp only [RP.w]; omega_using [],
     h.2.1.sizes.Wle⟩) fun ⟨w1, Wl⟩ => ?_
   have hW : P.W = 2 * P.w + 2 := rfl
   have xl : ∀ σ, AWM P f g σ wR < 2 ^ (32 * P.W) := fun σ => by simp only [AWM]; rd_up; exact sub32_lt _ _ _
@@ -226,7 +226,7 @@ theorem sqrt_vp {f g : Nat × Nat × Nat → Nat × Nat × Nat} {E : State → P
   refine (firstDigit_vp (by decide) (by decide) (by decide) (by decide) (fun σ _ => by simp only [AWM]; rd_up)
     (fun σ _ => by simp only [AWM]; rd_up)
     (fun σ _ => by rd_up; exact (nX_bounds (xl σ)).1) (fun σ _ => by rd_up; exact (nX_bounds (xl σ)).2.1)
-    (by omega)).seq ?_
+    (by omega_arith)).seq ?_
   refine sqInit_vp.seq ?_
   -- the digits
   let AWb : State → Nat → Nat := fun σ => upd (AWM P f g σ) wR (nX P (AWM P f g σ wR))
@@ -246,14 +246,14 @@ theorem sqrt_vp {f g : Nat × Nat × Nat → Nat × Nat × Nat} {E : State → P
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hd
     rcases hd with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
       simp only [Vb, DV, VN, AWb] <;> rd_up
-    · omega
+    · omega_arith
     · simp only [Nat.sub_self, Nat.mul_zero, Nat.pow_zero, Nat.div_one, Nat.mul_mod_left]
-    · omega
-    · omega
+    · omega_using [hW]
+    · omega_arith
   -- the root `D / 2`
   refine VP.seq (VP.mono (sqEnd_vp (by decide) (by decide)) (fun σ s h => h.2) fun _ _ h => h) ?_
   -- the finish
-  have hK0 : P.W / 2 - (P.w + 1) = 0 := by omega
+  have hK0 : P.W / 2 - (P.w + 1) = 0 := by omega_using [hW]
   refine VP.mono (sqFinish_vp (L := LM4) (LW := [wR, wS, wOne, wZ]) (LS := [sLz, sZ, sOk4, sExact, sLt, sOkDE])
     (v := fun σ => isqrt (nX P (AWM P f g σ wR))) (lz := fun σ => lzX P (AWM P f g σ wR))
     (z := fun σ => if AWM P f g σ wR = 0 then 1 else 0) (by decide) (by decide) (by decide) (by decide) (by decide)
@@ -262,11 +262,11 @@ theorem sqrt_vp {f g : Nat × Nat × Nat → Nat × Nat × Nat} {E : State → P
       simp only [DAW, Dv, AWb, sJ]; rd_up
       rw [topA_last, hK0, Nat.mul_zero, Nat.pow_zero, Nat.one_mul, Nat.mul_div_cancel_left _ (by decide)])
     (fun σ _ => by simp only [DV, Vb, VN]; rd_up) (fun σ _ => by simp only [DV, Vb, VN]; rd_up)
-    (fun σ _ => by split <;> omega) (fun σ _ => (nX_bounds (xl σ)).2.2)
+    (fun σ _ => by split <;> omega_using []) (fun σ _ => (nX_bounds (xl σ)).2.2)
     (fun σ _ => by
       have b := (nX_bounds (xl σ)).2.1
       have sq := isqrt_sq_le (nX P (AWM P f g σ wR))
-      have we : 32 * P.W = 32 * (P.W / 2) + 32 * (P.W / 2) := by omega
+      have we : 32 * P.W = 32 * (P.W / 2) + 32 * (P.W / 2) := by omega_using [hW]
       rw [we, Nat.pow_add] at b
       exact Nat.lt_of_not_le fun h => Nat.lt_irrefl _ (Nat.lt_of_le_of_lt (Nat.le_trans (Nat.mul_le_mul h h) sq) b)))
     (fun σ s ⟨e, h, hv⟩ => ⟨e, h.mono (fun j hj => ⟨hj, rfl⟩)
@@ -287,7 +287,7 @@ theorem sqrt_vp {f g : Nat × Nat × Nat → Nat × Nat × Nat} {E : State → P
   · simp only [LSR, List.mem_cons, List.not_mem_nil, or_false] at hd
     rcases hd with rfl | rfl | rfl | rfl | rfl <;> simp only [VR, DV, Vb, VN] <;> rd_up
     simp only [Rv, AWb, rJ, sJ, rmV]; rd_up
-    rw [topA_last, show P.W - 2 * (P.w + 1) = 0 by omega, Nat.mul_zero, Nat.pow_zero, Nat.mod_one, Nat.zero_add,
+    rw [topA_last, show P.W - 2 * (P.w + 1) = 0 by omega_using [hW], Nat.mul_zero, Nat.pow_zero, Nat.mod_one, Nat.zero_add,
       Nat.one_mul]
     by_cases c : xRV P f g σ - isqrt (xRV P f g σ) * isqrt (xRV P f g σ) = 0
     · simp only [AWM] at *; rd_up; simp only [(square_norm P _).mpr c, c, ↓reduceIte]
@@ -301,7 +301,7 @@ end
 theorem b2n_and' (p q : Bool) : b2n (decide (b2n p = 1 ∧ b2n q = 1)) = b2n (p && q) := by
   cases p <;> cases q <;> rfl
 
-theorem ite10_le (p : Prop) [Decidable p] : (if p then 1 else 0 : Nat) ≤ 1 := by split <;> omega
+theorem ite10_le (p : Prop) [Decidable p] : (if p then 1 else 0 : Nat) ≤ 1 := by split <;> omega_using []
 
 theorem ite_b2n (p : Prop) [Decidable p] : (if p then 1 else 0) = b2n (decide p) := by
   by_cases h : p <;> simp [h, b2n]
@@ -340,7 +340,7 @@ theorem factors_vp {f g : Nat × Nat × Nat → Nat × Nat × Nat} {E : State �
     intro d hd
     simp only [LSR, List.mem_cons, List.not_mem_nil, or_false] at hd
     rcases hd with rfl | rfl | rfl | rfl | rfl <;> simp only [VR, VM4, VB, VA, VG'] <;> rd_up <;>
-      first | (split <;> omega) | exact b2n_lt_one _ | (unfold b2n; split <;> omega)
+      first | (split <;> omega_using []) | exact b2n_lt_one _ | (unfold b2n; split <;> omega_using [])
   refine h6.andS hv6 (d := sMask) (a := sOkDE) (b := sLt) (by decide) (by decide) (bit _ (by decide))
     (bit _ (by decide)) (by decide) fun s7 h7 hv7 => ?_
   refine h7.andS hv7 (d := sMask) (a := sMask) (b := sExact) (by decide) (by decide)

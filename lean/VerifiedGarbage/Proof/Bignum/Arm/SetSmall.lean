@@ -30,23 +30,23 @@ theorem setSmall_ok (s : State) {base : BitVec 32} {size o n : Nat}
   intro u inv
   have addr : State.addr (u.gpr .r4 + BitVec.ofNat 32 0) = off (State.addr base) o := by
     rw [inv.rest.gpr .r4 (by simp), p4, Offset.add_add, Nat.add_zero]
-    exact addr_add (by omega)
+    exact addr_add (by omega_using [hn, nowrap, fits])
   have wr : InRegions u.wr (off (State.addr base) o) 4 := by
     rw [inv.rest.wr]
-    exact CallLay.inRegions_sub ctx.writable (by omega) (by omega)
+    exact CallLay.inRegions_sub ctx.writable (by omega_using [hn, fits]) (by omega_using [nowrap])
   refine wp_str (a := off (State.addr base) o) (by decide) addr wr fun t h => WP.block_nil ?_
   have mem : t.mem = u.mem.writeW (off (State.addr base) o) (s.gpr .r5) := by
     rw [h.mem, inv.rest.gpr .r5 (by simp)]
-  have outside := writeW32_outside u.mem (State.addr base) (d := o) (s.gpr .r5) (by omega)
+  have outside := writeW32_outside u.mem (State.addr base) (d := o) (s.gpr .r5) (by omega_using [nowrap, fits])
   rw [← mem] at outside
   have low : w32 t.mem (State.addr base) o = (s.gpr .r5).toNat := by
     rw [mem, w32_write_self]
   have tail : val32 u.mem (State.addr base) (o + 4) (n - 1) = 0 := by
     have z := inv.value
-    rw [show n = (n - 1) + 1 by omega, val32] at z
-    omega
-  refine ⟨?_, low, inv.outside.trans (outside.mono (Nat.le_refl _) (by omega)), inv.rest.trans (h.rest _)⟩
-  rw [show n = (n - 1) + 1 by omega, val32, low,
-    outside.val32 (d := o + 4) (k := n - 1) (by omega) (by omega), tail, Nat.mul_zero, Nat.add_zero]
+    rw [show n = (n - 1) + 1 by omega_using [hn], val32] at z
+    omega_using [z]
+  refine ⟨?_, low, inv.outside.trans (outside.mono (Nat.le_refl _) (by omega_using [hn])), inv.rest.trans (h.rest _)⟩
+  rw [show n = (n - 1) + 1 by omega_using [hn], val32, low,
+    outside.val32 (d := o + 4) (k := n - 1) (by omega_using []) (by omega_using [nowrap, fits]), tail, Nat.mul_zero, Nat.add_zero]
 
 end VG.Proof.Bignum.Arm

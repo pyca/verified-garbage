@@ -38,13 +38,13 @@ theorem copy_ok (s : State) (n : Nat) (hn : n ≤ 16)
   | succ n ih =>
     rw [copyCode, List.range_succ, List.flatMap_append, List.flatMap_cons, List.flatMap_nil,
       List.append_nil, WP.block_append_iff]
-    apply WP.mono (ih (by omega))
+    apply WP.mono (ih (by omega_using [hn]))
     intro s₁ h₁
     have hbase : s₁.gpr .rdx = s.gpr .rdx := h₁.reg .rdx (by decide)
     have readable : InRegions (s₁.rd ++ s₁.wr) (s₁.gpr .rdx + BitVec.ofNat 64 (8 * n)) 8 := by
-      rw [h₁.rd, h₁.wr, hbase]; exact hr n (by omega)
+      rw [h₁.rd, h₁.wr, hbase]; exact hr n (by omega_using [hn])
     have writable : InRegions s₁.wr (s₁.gpr .rdx + BitVec.ofNat 64 (256 + 8 * n)) 8 := by
-      rw [h₁.wr, hbase]; exact hw n (by omega)
+      rw [h₁.wr, hbase]; exact hw n (by omega_using [hn])
     obtain ⟨s₂, run₂, keep₂⟩ := VG.Proof.Rc2.X86_64.Cbc.copy64_ok s₁ .rdx .rdx
       (8 * n) (256 + 8 * n) (by decide) readable writable
     have source : s₁.mem.readW (s.gpr .rdx + BitVec.ofNat 64 (8 * n)) 64 =
@@ -53,7 +53,7 @@ theorem copy_ok (s : State) (n : Nat) (hn : n ≤ 16)
         (Region.contains_self _ _) _ (by decide)
       intro r h
       obtain rfl := List.mem_singleton.mp h
-      exact Offset.disjoint (s.gpr .rdx) (by omega) (by omega) (by decide)
+      exact Offset.disjoint (s.gpr .rdx) (by omega_using [hn]) (by omega_using [hn]) (by decide)
     have mem₂ : s₂.mem = s₁.mem.writeW (s.gpr .rdx + BitVec.ofNat 64 (256 + 8 * n))
         (s.mem.readW (s.gpr .rdx + BitVec.ofNat 64 (8 * n)) 64) := by
       have hm := keep₂.mem
@@ -65,12 +65,12 @@ theorem copy_ok (s : State) (n : Nat) (hn : n ≤ 16)
       rw [mem₂]
       by_cases he : i = n
       · subst i; exact Mem.readW_writeW_self64 _ _ _
-      · rw [Mem.readW_writeW_sep (Offset.sep (s.gpr .rdx) (by omega) (by omega) (by omega)) (by decide)]
-        exact h₁.keys i (by omega)
+      · rw [Mem.readW_writeW_sep (Offset.sep (s.gpr .rdx) (by omega_using [he]) (by omega_using [hn, hi]) (by omega_using [hn])) (by decide)]
+        exact h₁.keys i (by omega_using [hi, he])
     · rw [mem₂]
       apply h₁.frame.writeW (List.mem_singleton_self _) _
       have hc := Offset.contains_base (s.gpr .rdx + BitVec.ofNat 64 256)
-        (d := 8 * n) (n := 8) (k := 128) (by omega) (by omega)
+        (d := 8 * n) (n := 8) (k := 128) (by omega_using [hn]) (by omega_using [hn])
       rw [Offset.add_ofNat_add_ofNat] at hc
       exact hc
 

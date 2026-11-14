@@ -48,7 +48,7 @@ theorem generatorSearch_reset {len : Nat} {p : GeneratorSearchPlan} {s : State}
     change ¬ ofs p.core.F a < frameBytes at hn
     change 168 ≤ ofs p.core.F a
     unfold frameBytes at hn
-    omega
+    omega_using [hn]
   refine ⟨⟨upd W 20 0, hm.frame Lt ⟨V, Rt⟩ ?_ ff kt.rd kt.wr, by simp [upd, GeneratorSearchPlan.start]⟩, he⟩
   intro k hk
   simp only [generatorSlots, List.mem_cons, List.not_mem_nil, or_false] at hk

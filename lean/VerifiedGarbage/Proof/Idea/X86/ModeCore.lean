@@ -65,7 +65,7 @@ theorem sched_keep {B : BitVec 32} {m m' : Mem} {rs : List Region} (hf : Frame r
   · exact h.sub_left (Region.sub_prefix (by simp only [modeCore, coreSlots]; decide))
   · refine Region.Disjoint.sub_right ?_ h
     exact Offset.base_disjoint _ (by simp only [modeCore, bufSlot, slots]; decide)
-      (by simp only [modeCore, bufSlot, slots]; omega)
+      (by simp only [modeCore, bufSlot, slots]; omega_using [])
 
 theorem keyArgs_congr {s s' : State} {rs : List Region} {k : Spec.Idea.Schedule} (h : KeyArgs s rs k)
     (hesp : s'.gpr .esp = s.gpr .esp) (hrd : s'.rd = s.rd) (hwr : s'.wr = s.wr) (hf : Frame rs s.mem s'.mem) :
@@ -121,7 +121,7 @@ theorem prepare_wp {s : State} {B : BitVec 32} {rs : List Region} {k : Spec.Idea
 abbrev bufA (B : BitVec 32) : Addr := addr B (4 * bufSlot)
 
 theorem bufA_eq {B : BitVec 32} (hfit : B.toNat + 184 ≤ 2 ^ 32) :
-    bufA B = B.setWidth 64 + BitVec.ofNat 64 132 := addr_eq (by simp only [bufSlot, slots]; omega)
+    bufA B = B.setWidth 64 + BitVec.ofNat 64 132 := addr_eq (by simp only [bufSlot, slots]; omega_using [hfit])
 
 /-- `modeCrypt`: the buffer's block becomes `Spec.Idea.cryptBlock` of it, and
 nothing but `dataSlot`, `t₀`'s slot and the buffer is written. -/
@@ -135,7 +135,7 @@ theorem modeCrypt_run {k : Spec.Idea.Schedule} {B : BitVec 32} (s : State) (hB :
   have hA := bufA_eq hfit
   have hds : dataSlot = 108 := rfl
   have inB : ∀ d, d + 4 ≤ 184 → InRegions s.wr (B.setWidth 64 + BitVec.ofNat 64 d) 4 := fun d hd =>
-    ⟨_, hwr, Offset.contains_base _ hd (by omega)⟩
+    ⟨_, hwr, Offset.contains_base _ hd (by omega_using [hd])⟩
   -- The setup.
   obtain ⟨s₁, h₁, v₁, e₁⟩ := mov_run .esi (.reg .edi) _ s rfl
   obtain ⟨s₂, h₂, v₂, e₂⟩ := mov_run .eax (.reg .edi) _ s₁ rfl
@@ -146,27 +146,27 @@ theorem modeCrypt_run {k : Spec.Idea.Schedule} {B : BitVec 32} (s : State) (hB :
   have eax₃ : s₃.gpr .eax = B + BitVec.ofNat 32 (4 * bufSlot) := by
     rw [v₃, v₂, e₁.reg .edi (by decide), hB]; rfl
   obtain ⟨s₄, h₄, m₄, g₄, rd₄, wr₄⟩ := store_run .esi .eax dataSlot s₃ (by
-    rw [esi₃, e₀₃.wr, addr_eq (by rw [show dataSlot = 108 from rfl]; omega)]; exact inB _ (by decide))
+    rw [esi₃, e₀₃.wr, addr_eq (by rw [show dataSlot = 108 from rfl]; omega_using [hfit])]; exact inB _ (by decide))
   rw [esi₃, eax₃, e₀₃.mem] at m₄
   have f₄ : Frame [⟨addr B dataSlot, 4⟩] s.mem s₄.mem := by
     rw [m₄]; exact (Frame.refl _ _).writeW List.mem_cons_self _ (Region.contains_self _ _)
   have sched₄ : Spec.Idea.scheduleAt s₄.mem (B.setWidth 64) = k := by
     rw [scheduleAt_frame f₄ fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
-      rw [addr_eq (by rw [show dataSlot = 108 from rfl]; omega)]
-      exact Offset.base_disjoint _ (by decide) (by omega), hk]
+      rw [addr_eq (by rw [show dataSlot = 108 from rfl]; omega_using [hfit])]
+      exact Offset.base_disjoint _ (by decide) (by omega_using [hds]), hk]
   have blk₄ : Spec.Idea.blockAt s₄.mem (bufA B) = Spec.Idea.blockAt s.mem (bufA B) :=
     blockAt_congr (frame_bytes f₄ (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
-      rw [hA, addr_eq (by rw [show dataSlot = 108 from rfl]; omega)]
-      exact (Offset.disjoint _ (by decide) (by omega) (by omega))) (by decide))
+      rw [hA, addr_eq (by rw [show dataSlot = 108 from rfl]; omega_using [hfit])]
+      exact (Offset.disjoint _ (by decide) (by omega_using []) (by omega_using [hds]))) (by decide))
   have esi₄ : s₄.gpr .esi = B := by rw [g₄, esi₃]
   have hb : BlockAt k (B + BitVec.ofNat 32 (4 * bufSlot)) (bufA B) s₄ :=
-    { key := ⟨⟨46, by decide, by rw [esi₄]; omega, by rw [esi₄, wr₄, e₀₃.wr]; exact hwr⟩,
-        by rw [esi₄]; simp only [slots]; omega, by rw [esi₄]; exact sched₄⟩
+    { key := ⟨⟨46, by decide, by rw [esi₄]; omega_using [hfit], by rw [esi₄, wr₄, e₀₃.wr]; exact hwr⟩,
+        by rw [esi₄]; simp only [slots]; omega_using [hfit], by rw [esi₄]; exact sched₄⟩
       slot := by rw [esi₄, m₄, Mem.readW_writeW_self32]
       addr := rfl
-      fit := by simp only [BitVec.toNat_add, BitVec.toNat_ofNat, bufSlot, slots]; omega
+      fit := by simp only [BitVec.toNat_add, BitVec.toNat_ofNat, bufSlot, slots]; omega_using [hfit]
       rd0 := by
         rw [wr₄, e₀₃.wr, hA]
         exact let ⟨r, hr, hc⟩ := inB 132 (by decide); ⟨r, List.mem_append_right _ hr, hc⟩
@@ -189,11 +189,11 @@ theorem modeCrypt_run {k : Spec.Idea.Schedule} {B : BitVec 32} (s : State) (hB :
     (by rw [g₉, e₈.reg .ecx (by decide), x₇.ecx]) (by rw [g₉, e₈.reg .ebp (by decide), x₇.ebp])
   have esi₁₀ : s₁₀.gpr .esi = B := by rw [e₁₀.reg .esi (by decide), g₉, e₈.reg .esi (by decide), esi₇]
   obtain ⟨s₁₁, h₁₁, m₁₁, g₁₁, rd₁₁, wr₁₁⟩ := store_run .esi .ecx (4 * bufSlot + 4) s₁₀ (by
-    rw [esi₁₀, e₁₀.wr, wr₉, e₈.wr, e₄₇.wr, wr₄, e₀₃.wr, addr_eq (by simp only [bufSlot, slots]; omega)]
+    rw [esi₁₀, e₁₀.wr, wr₉, e₈.wr, e₄₇.wr, wr₄, e₀₃.wr, addr_eq (by simp only [bufSlot, slots]; omega_using [hfit])]
     exact inB 136 (by decide))
   obtain ⟨s₁₂, h₁₂, v₁₂, e₁₂⟩ := mov_run .edi (.reg .esi) _ s₁₁ rfl
   have a4 : addr B (4 * bufSlot + 4) = bufA B + BitVec.ofNat 64 4 := by
-    rw [hA, addr_eq (by simp only [bufSlot, slots]; omega), Offset.add_add]; rfl
+    rw [hA, addr_eq (by simp only [bufSlot, slots]; omega_using [hfit]), Offset.add_add]; rfl
   have hm : s₁₂.mem = (s₇.mem.writeW (bufA B + BitVec.ofNat 64 0) (s₈.gpr .ebx)).writeW
       (bufA B + BitVec.ofNat 64 4) (s₁₀.gpr .ecx) := by
     rw [e₁₂.mem, m₁₁, esi₁₀, e₁₀.mem, m₉, e₈.reg .esi (by decide), esi₇, e₈.mem, a4, BitVec.add_zero]
@@ -232,17 +232,17 @@ theorem crypt_wp {s : State} {B : BitVec 32} {k : Spec.Idea.Schedule}
     intro r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
-    · exact ⟨108, 4, by rw [show dataSlot = 108 from rfl, addr_eq (by omega)], by decide, by decide⟩
-    · exact ⟨104, 4, by rw [show t0Slot = 104 from rfl, addr_eq (by omega)], by decide, by decide⟩
+    · exact ⟨108, 4, by rw [show dataSlot = 108 from rfl, addr_eq (by omega_using [hfit])], by decide, by decide⟩
+    · exact ⟨104, 4, by rw [show t0Slot = 104 from rfl, addr_eq (by omega_using [hfit])], by decide, by decide⟩
     · exact ⟨132, 8, by rw [hA], by decide, by decide⟩
   refine WP.of_runBlock ⟨s', e, edi', esp', ?_, ?_, fun j hj => ?_, rd', wr'⟩
   · rw [scheduleAt_frame f fun r hr => by
       obtain ⟨d, n, rfl, h1, h2⟩ := hsub r hr
-      exact Offset.base_disjoint _ h1 (by omega), hr]
+      exact Offset.base_disjoint _ h1 (by omega_using [h2]), hr]
   · exact f.sub fun r hr => ⟨_, List.mem_cons_self, by
       obtain ⟨d, n, rfl, h1, h2⟩ := hsub r hr
-      exact Offset.sub_base _ (by simp only [modeCore, coreSlots, bufSlot, slots]; omega)⟩
-  · have hj0 : j = 0 := by simp only [modeCore] at hj; omega
+      exact Offset.sub_base _ (by simp only [modeCore, coreSlots, bufSlot, slots]; omega_using [h2])⟩
+  · have hj0 : j = 0 := by simp only [modeCore] at hj; omega_using [hj]
     subst hj0
     have ha : blkAddr modeCore B 0 = bufA B := by
       rw [hA]; simp only [blkAddr, slotA, modeCore, bufSlot, slots, Nat.mul_zero, BitVec.add_zero]
@@ -256,7 +256,7 @@ def modeCoreSpec : CoreSpec modeCore where
   Ready s B k := Spec.Idea.scheduleAt s.mem (B.setWidth 64) = k ∧ B.toNat + 4 * modeCore.total ≤ 2 ^ 32
   cipher_len _ _ := by simp [Spec.Idea.cipher, modeCore]
   layout := ⟨by simp only [modeCore]; decide, .inl rfl,
-    by simp only [modeCore, coreSlots, bufSlot]; omega, by simp only [modeCore]; omega⟩
+    by simp only [modeCore, coreSlots, bufSlot]; omega_using [], by simp only [modeCore]; omega_using []⟩
   keyArgs_congr h e r w _ f := keyArgs_congr h e r w f
   ready_frame h _ _ _ _ hf _ hd := ⟨by rw [sched_keep hf hd]; exact h.1, h.2⟩
   prepare_wp hB hs hR hk _ := WP.mono (prepare_wp hB hs hR hk) fun _ ⟨r, h⟩ => ⟨⟨r, hs.fit⟩, h⟩

@@ -37,7 +37,7 @@ theorem tabStep_ok (t : Nat → Nat) (b : Reg) (hb : b ≠ .x9) (i : Nat) (hi : 
   rw [WP.block_append_iff]
   refine WP.mono (movW_ok .x9 _ s) fun s₁ ⟨⟨h9, hm⟩, k₁⟩ => ?_
   have hb' : s₁.gpr b = s.gpr b := k₁.get b (by simpa using hb)
-  have ho : 4 * i % 4 = 0 ∧ 4 * i < 16384 := ⟨by omega, by omega⟩
+  have ho : 4 * i % 4 = 0 ∧ 4 * i < 16384 := ⟨by omega_using [], by omega_using [hi]⟩
   have hw₁ : InRegions s₁.wr (s₁.gpr b + BitVec.ofNat 64 (4 * i)) 4 := by rw [k₁.wr, hb']; exact hw
   refine WP.mono (WP.keep (c := .block [Instr.str .w .x9 b (4 * i)]) (s := s₁) []
     (Q := fun s' => s'.mem = s₁.mem.writeW (s₁.gpr b + BitVec.ofNat 64 (4 * i)) ((s₁.gpr .x9).setWidth 32))
@@ -55,18 +55,18 @@ theorem storeTab_ok (t : Nat → Nat) {b : Reg} (hb : b ≠ .x9) (s : State) (hw
     fun s' ⟨hk, hf, ht⟩ => ⟨ht, hf, hk⟩
   have hb' : s'.gpr b = s.gpr b := hk'.get b (by simpa using hb)
   refine WP.mono (tabStep_ok t b hb k hk s' (by
-      rw [hk'.wr, hb']; exact ⟨_, hw, coeff_contains _ (show k < 256 by omega)⟩))
+      rw [hk'.wr, hb']; exact ⟨_, hw, coeff_contains _ (show k < 256 by omega_using [hk])⟩))
     fun s'' ⟨hm', hk''⟩ => ⟨(hk'.trans hk'').mono, ?_, fun j hj => ?_⟩
   · rw [hm', hb']
-    exact hf.writeW (List.mem_singleton_self _) _ (coeff_contains _ (show k < 256 by omega))
-  · rw [hm', hb', ← coeffAddr, coeffAt_writeW _ _ (show j < 256 by omega) (show k < 256 by omega)]
+    exact hf.writeW (List.mem_singleton_self _) _ (coeff_contains _ (show k < 256 by omega_using [hk]))
+  · rw [hm', hb', ← coeffAddr, coeffAt_writeW _ _ (show j < 256 by omega_using [hk, hj]) (show k < 256 by omega_using [hk])]
     by_cases e : k = j
     · subst e; rw [ite_eq_left rfl]
-    · rw [ite_eq_right e]; exact ht j (by omega)
+    · rw [ite_eq_right e]; exact ht j (by omega_using [hj, e])
 
 /-- Writes elsewhere keep the table. -/
 theorem Tab.frame {t : Nat → Nat} {m m' : Mem} {p : Addr} {n : Nat} (h : Tab t m p n) {rs : List Region}
     (hf : Frame rs m m') (hd : ∀ r ∈ rs, (pR p).Disjoint r) (hn : n ≤ 256) : Tab t m' p n :=
-  fun k hk => by rw [coeffAt_frame hf hd (show k < 256 by omega)]; exact h k hk
+  fun k hk => by rw [coeffAt_frame hf hd (show k < 256 by omega_using [hn, hk])]; exact h k hk
 
 end VG.Proof.MlDsa.AArch64.Arith

@@ -90,8 +90,8 @@ theorem advance_ok (d c : Nat) (hd : d≤20) (hc : c≤8) (s : State) :
   apply VG.Proof.MlKem.AArch64.WP.keepV (by rfl)
   refine VG.Proof.MlDsa.AArch64.Arith.WP.keep _ ?_ (by rfl) (hv := rfl)
   unfold advance
-  have h4 : 4*c<4096 := by omega
-  have h8 : d*c/8<4096 := by omega
+  have h4 : 4*c<4096 := by omega_using [hc]
+  have h8 : d*c/8<4096 := by omega_using [hh]
   arun [exec,h4,h8]
   rfl
 
@@ -118,7 +118,7 @@ theorem smallWord_byte (G k n : Nat) {j : Nat} (hj : j<n) :
     (BitVec.ofNat (8*n) (G/2^(8*k))).extractLsb' (8*j) 8=byteOf G (k+j) := by
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.extractLsb'_toNat,BitVec.toNat_ofNat,Nat.shiftRight_eq_div_pow,
-    VG.Proof.MlKem.mod_pow_div_mod _ (by omega),Nat.div_div_eq_div_mul,←Nat.pow_add,←Nat.mul_add]
+    VG.Proof.MlKem.mod_pow_div_mod _ (by omega_using [hj]),Nat.div_div_eq_div_mul,←Nat.pow_add,←Nat.mul_add]
   rfl
 
 theorem written_small (G k n : Nat) (m : Mem) (out : Addr) :
@@ -194,19 +194,19 @@ theorem stream_written (G d c : Nat) (hd : d≤20) (hc : c≤8)
   dsimp only
   obtain ⟨hw,ha⟩ := fields_written G d hd m out a hc
   have hnz : d*c%64≠0 := by rcases ht with h|h|h|h|h <;> omega
-  have hdiv : d*c/8/8=d*c/64 := by omega
+  have hdiv : d*c/8/8=d*c/64 := by omega_using []
   have hacc : acc64 G d c=G/2^(8*(d*c/8/8*8)) := by
     rw [acc64,Nat.mod_eq_of_lt hG,hdiv]
     congr 2
-    omega
+    omega_using []
   rw [ha hnz,hacc]
   have htail := tail_written (d*c/8) (G/2^(8*(d*c/8/8*8))) ht
     (fieldsRun d out (fun j=>BitVec.ofNat 64 (G/2^(d*j)%2^d)) ⟨m,a⟩ c).mem out
   have htail' := htail.congr fun j _=>byteOf_div G (d*c/8/8*8) j
-  have hbase : d*c/8/8*8=8*(d*c/64) := by omega
+  have hbase : d*c/8/8*8=8*(d*c/64) := by omega_using []
   rw [hbase] at htail'
-  have hlength : 8*(d*c/64)+d*c/8%8=d*c/8 := by omega
-  have hh := written_append hw htail' (by have := Nat.mul_le_mul hd hc; omega)
+  have hlength : 8*(d*c/64)+d*c/8%8=d*c/8 := by omega_using []
+  have hh := written_append hw htail' (by have := Nat.mul_le_mul hd hc; omega_using [this])
   simpa only [hlength,hbase] using hh
 
 end VG.Proof.MlDsa.AArch64.Optimized.KeygenPack

@@ -21,7 +21,7 @@ theorem pair_bic (a b c d : BitVec 64) :
   simp only [ofVDwords,BitVec.getLsbD_and,BitVec.getLsbD_not,BitVec.getLsbD_append]
   by_cases h : i < 64
   · simp only [h,hi,decide_true,Bool.true_and,ite_true]
-  · simp only [h,hi,show i-64 < 64 by omega,decide_true,Bool.true_and,ite_false]
+  · simp only [h,hi,show i-64 < 64 by omega_using [hi],decide_true,Bool.true_and,ite_false]
 
 /-- One chi word, with all five row inputs still preserved in temporaries. -/
 theorem chiWord_ok {s : State} {x y : Nat} (hx : x < 5) (_hy : y < 5)
@@ -36,7 +36,7 @@ theorem chiWord_ok {s : State} {x y : Nat} (hx : x < 5) (_hy : y < 5)
   refine wp_vop (d := .v30) rfl fun s₁ h1 =>
     wp_vop (d := vreg (x+5*y)) rfl fun s₂ h2 =>
       WP.block_nil_iff.mpr ⟨(h1.chg.trans h2.chg).mono (by intro r hr; simpa using hr),?_⟩
-  rw [h2.v,h1.get _ (hn x hx),h1.v,hp x hx,hp ((x+2)%5) (by omega),hp ((x+1)%5) (by omega)]
+  rw [h2.v,h1.get _ (hn x hx),h1.v,hp x hx,hp ((x+2)%5) (by omega_using []),hp ((x+1)%5) (by omega_using [])]
   change ofVDwords (F x) (G x) ^^^
     (ofVDwords (F ((x+2)%5)) (G ((x+2)%5)) &&& ~~~(ofVDwords (F ((x+1)%5)) (G ((x+1)%5)))) = _
   rw [pair_bic,pair_xor]

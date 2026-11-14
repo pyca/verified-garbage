@@ -342,14 +342,14 @@ theorem firstKernel_access_ok {s : State} (ha : KernelAccess s)
       intro u hu i
       constructor
       · rw [BitVec.add_assoc,←BitVec.ofNat_add]
-        exact ha.common _ (by omega)
+        exact ha.common _ (by omega_using [hu])
       · intro p
         rw [BitVec.add_assoc,←BitVec.ofNat_add]
-        exact ha.secret _ (by omega))
+        exact ha.secret _ (by omega_using [hu]))
     (by
       intro u hu p i
       rw [BitVec.add_assoc,←BitVec.ofNat_add]
-      exact ha.workWrite _ (by omega))
+      exact ha.workWrite _ (by omega_using [hu]))
 
 end VG.Proof.MlDsa.AArch64.Optimized.Paired
 

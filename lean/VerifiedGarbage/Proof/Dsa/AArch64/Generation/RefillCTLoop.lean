@@ -154,7 +154,7 @@ theorem seeded_wp {pBytes : Nat} {P : LoopPub} {t : State}
   have room : c + Spec.Dsa.generationQLen pBytes ≤ (randTape h).bytes.length := by
     unfold ctxShort at hs
     change ¬ (randTape h).bytes.length - c < Spec.Dsa.generationQLen pBytes at hs
-    omega
+    omega_using [hq2, hs]
   refine WP.mono (seedStart_ok h hi c3 x0 room) fun t₃ ⟨room', W, hm, w1, w16, w10, seed, _⟩ => ?_
   refine ⟨⟨room', ⟨⟨W, hm, w1, w16, w10⟩, seed, rfl⟩, rfl⟩, ?_⟩
   intro a ha

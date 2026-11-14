@@ -35,7 +35,7 @@ private theorem encoded_top (m : Mem) (p : Addr) :
   have h0 := (m.readW (off p 0) 64).isLt
   have h1 := (m.readW (off p 8) 64).isLt
   have h2 := (m.readW (off p 16) 64).isLt
-  omega
+  omega_using []
 
 theorem loadSign_ok (s : State) (p : Addr) (hp : s.gpr .rdx = p)
     (hr : InRegions (s.rd ++ s.wr) (off p 24) 8) :
@@ -49,7 +49,7 @@ theorem loadSign_ok (s : State) (p : Addr) (hp : s.gpr .rdx = p)
   have hv : (s.mem.readW (off p 24) 64) >>> 63 =
       signWord (Spec.Ed25519.decodeLE (Spec.Ed25519.bytesAt s.mem p 32) / 2 ^ 255 == 1) := by
     have h : Spec.Ed25519.decodeLE (Spec.Ed25519.bytesAt s.mem p 32) / 2 ^ 255 = 0 ∨
-        Spec.Ed25519.decodeLE (Spec.Ed25519.bytesAt s.mem p 32) / 2 ^ 255 = 1 := by omega
+        Spec.Ed25519.decodeLE (Spec.Ed25519.bytesAt s.mem p 32) / 2 ^ 255 = 1 := by omega_using [hn]
     apply BitVec.eq_of_toNat_eq
     rw [encoded_top]
     rcases h with h | h <;> rw [h] <;> rfl

@@ -187,7 +187,7 @@ theorem beginM_ok {w16 : Bool} (L : KemLay) (S : Impl.MlKem.AArch64.Hybrid.HSrc)
           rcases hr with rfl | rfl | rfl
           · exact hh.lay.dEP
           · exact hh.aE.symm
-          · exact hh.bE.symm) (by have := hS.lim; omega), eu])
+          · exact hh.bE.symm) (by have := hS.lim; omega_using [this]), eu])
   exact WP.seq (WP.mono (WP.seq_iff.mp combined) fun u hu => WP.seq hu)
 
 end VG.Proof.MlKem.AArch64.Hybrid

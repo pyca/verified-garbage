@@ -26,24 +26,24 @@ def lz (T : Nat) : Nat := 31 - T.log2
 /-- `T 2^i` for `i ≤ lz T` fits a word, with its top bit set exactly when `i = lz T`. -/
 theorem shifted_bounds {T i : Nat} (hT : 0 < T) (hT' : T < 2 ^ 32) (hi : i ≤ lz T) :
     T * 2 ^ i < 2 ^ 32 ∧ (T * 2 ^ i / 2 ^ 31 = if i = lz T then 1 else 0) := by
-  have hL : T.log2 < 32 := (Nat.log2_lt (by omega)).mpr hT'
-  have h1 := Nat.log2_self_le (n := T) (by omega)
+  have hL : T.log2 < 32 := (Nat.log2_lt (by omega_using [hT])).mpr hT'
+  have h1 := Nat.log2_self_le (n := T) (by omega_using [hT])
   have h2 := Nat.lt_log2_self (n := T)
   unfold lz at hi ⊢
   have u : T * 2 ^ i < 2 ^ (T.log2 + 1 + i) := by rw [Nat.pow_add]; exact Nat.mul_lt_mul_of_pos_right h2 (Nat.two_pow_pos _)
   have l : 2 ^ (T.log2 + i) ≤ T * 2 ^ i := by rw [Nat.pow_add]; exact Nat.mul_le_mul_right _ h1
-  have p1 : 2 ^ (T.log2 + 1 + i) ≤ 2 ^ 32 := Nat.pow_le_pow_right (by decide) (by omega)
+  have p1 : 2 ^ (T.log2 + 1 + i) ≤ 2 ^ 32 := Nat.pow_le_pow_right (by decide) (by omega_using [hi, hL])
   refine ⟨Nat.lt_of_lt_of_le u p1, ?_⟩
   by_cases e : i = 31 - T.log2
   · simp only [e, ite_true]
-    have a : 2 ^ (T.log2 + (31 - T.log2)) = 2 ^ 31 := congrArg _ (by omega)
+    have a : 2 ^ (T.log2 + (31 - T.log2)) = 2 ^ 31 := congrArg _ (by omega_using [hL])
     have b : 2 ^ (T.log2 + 1 + (31 - T.log2)) = 2 * 2 ^ 31 := by
-      rw [show T.log2 + 1 + (31 - T.log2) = 31 + 1 by omega, Nat.pow_succ, Nat.mul_comm]
+      rw [show T.log2 + 1 + (31 - T.log2) = 31 + 1 by omega_using [hL], Nat.pow_succ, Nat.mul_comm]
     rw [e] at u l
-    rw [Nat.div_eq_iff (by decide)]; omega
+    rw [Nat.div_eq_iff (by decide)]; omega_using [u, l, a, b]
   · simp only [e, ite_false]
-    have : 2 ^ (T.log2 + 1 + i) ≤ 2 ^ 31 := Nat.pow_le_pow_right (by decide) (by omega)
-    exact Nat.div_eq_of_lt (by omega)
+    have : 2 ^ (T.log2 + 1 + i) ≤ 2 ^ 31 := Nat.pow_le_pow_right (by decide) (by omega_using [hi, e])
+    exact Nat.div_eq_of_lt (by omega_using [u, this])
 
 /-- A step of the doublings: `T 2^i` and `2^i` to `T 2^min(i + 1, z)` and `2^min(i + 1, z)`. -/
 theorem normStep_val {T i : Nat} (hT : 0 < T) (hT' : T < 2 ^ 32) (hi : i ≤ lz T) :
@@ -63,7 +63,7 @@ theorem normStep_val {T i : Nat} (hT : 0 < T) (hT' : T < 2 ^ 32) (hi : i ≤ lz 
   · simp only [e, ite_true, Nat.min_eq_right (Nat.le_succ _)]
     exact ⟨by simp, by simp⟩
   · simp only [e, ite_false, BitVec.and_allOnes, ← BitVec.ofNat_add]
-    rw [Nat.min_eq_left (by omega), Nat.pow_succ]
-    exact ⟨congrArg _ (by rw [← Nat.mul_assoc]; omega), congrArg _ (by omega)⟩
+    rw [Nat.min_eq_left (by omega_using [hi, e]), Nat.pow_succ]
+    exact ⟨congrArg _ (by rw [← Nat.mul_assoc]; omega_using []), congrArg _ (by omega_using [])⟩
 
 end VG.Proof.Bignum.NormMask32

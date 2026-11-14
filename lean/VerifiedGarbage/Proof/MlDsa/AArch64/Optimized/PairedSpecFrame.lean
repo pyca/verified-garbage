@@ -31,7 +31,7 @@ theorem pairedProduct_frame {rs : List Region} {m m' : Mem} {challenge secret : 
     pairedProduct m' challenge secret j=pairedProduct m challenge secret j := by
   have hp : ∀r∈rs,(⟨pairPolyPtr secret j,1024⟩:Region).Disjoint r := by
     intro r hr
-    exact (hs r hr).sub_left (Offset.sub_base secret (by omega))
+    exact (hs r hr).sub_left (Offset.sub_base secret (by omega_using [hj]))
   rw [pairedProduct,VG.Proof.MlDsa.Verify.polyAt_frame hf hc,
     VG.Proof.MlDsa.Verify.polyAt_frame hf hp]
   rfl
@@ -45,7 +45,7 @@ theorem pairedProductsReduced_frame {rs : List Region} {m m' : Mem} {challenge s
   intro j hj
   apply positiveReduced_frame hf _ (hp.2 j hj)
   intro r hr
-  exact (hs r hr).sub_left (Offset.sub_base secret (by omega))
+  exact (hs r hr).sub_left (Offset.sub_base secret (by omega_using [hj]))
 
 theorem pairedDifference_frame {rs : List Region} {m m' : Mem} {challenge secret out : Addr}
     (hf : Frame rs m m')
@@ -55,7 +55,7 @@ theorem pairedDifference_frame {rs : List Region} {m m' : Mem} {challenge secret
     pairedDifference m' challenge secret out j=pairedDifference m challenge secret out j := by
   have hp : ∀r∈rs,(⟨pairPolyPtr out j,1024⟩:Region).Disjoint r := by
     intro r hr
-    exact (ho r hr).sub_left (Offset.sub_base out (by omega))
+    exact (ho r hr).sub_left (Offset.sub_base out (by omega_using [hj]))
   rw [pairedDifference,VG.Proof.MlDsa.Verify.polyAt_frame hf hp,
     pairedProduct_frame hf hc hs hj]
   rfl

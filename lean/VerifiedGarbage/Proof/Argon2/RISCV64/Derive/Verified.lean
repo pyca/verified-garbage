@@ -165,7 +165,7 @@ theorem argPub_word {s : State} {i : Nat} (h : i ∉ intArgs) : argPub s i = arg
 theorem deriveFlat_pub {s₁ s₂ : State} (h : deriveFlat.pub s₁ s₂) : deriveRV.pub s₁ s₂ := by
   obtain ⟨⟨sp, refs⟩, e0, e1, e2, e3, e4, e5, e6, e7, e8, e9, e10, e11, e12, e13, e14, e15, e16, e17⟩ := h
   refine ⟨⟨sp, fun i hi => ?_⟩, refs⟩
-  rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 ∨ i = 8 ∨ i = 9 ∨
+  rcases (by omega_using [hi] : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 ∨ i = 8 ∨ i = 9 ∨
     i = 10 ∨ i = 11 ∨ i = 12 ∨ i = 13 ∨ i = 14 ∨ i = 15 ∨ i = 16 ∨ i = 17) with
     rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
   first

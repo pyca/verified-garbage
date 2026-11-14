@@ -31,8 +31,8 @@ theorem restoreG_ok {σ s : State} (hp : Pre σ) (he : Env σ s) :
     (fun k t hk ⟨ht,hvals⟩ => ?_) 9 (Nat.le_refl _) s
     ⟨Only.refl _ _,fun _ h => False.elim (Nat.not_lt_zero _ h)⟩
   have hin := in_scr_rd hp (ht.rd.trans he.rd) (ht.wr.trans he.wr)
-    (d := oSave+8*(k+1)) (n := 8) (by dsimp only [oSave]; omega)
-  refine wp_ldrx ⟨by dsimp only [oSave]; omega,by dsimp only [oSave]; omega⟩
+    (d := oSave+8*(k+1)) (n := 8) (by dsimp only [oSave]; omega_using [hk])
+  refine wp_ldrx ⟨by dsimp only [oSave]; omega_using [],by dsimp only [oSave]; omega_using [hk]⟩
     (by rw [ht.get .x19,he.x19]; rfl) hin fun u hu eu => WP.block_nil_iff.mpr ⟨?_,fun i hi => ?_⟩
   · exact (ht.trans hu).mono (by
       intro r hr
@@ -45,9 +45,9 @@ theorem restoreG_ok {σ s : State} (hp : Pre σ) (he : Env σ s) :
   · by_cases heq : i = k
     · subst i
       rw [eu,ht.mem]
-      exact he.savedG (k+1) (by omega)
+      exact he.savedG (k+1) (by omega_using [hk])
     · rw [hu.get (saved[i+1]!) (by
-        simp only [List.mem_singleton,saved_inj (i+1) (by omega) (k+1) (by omega)]
-        omega)]
-      exact hvals i (by omega)
+        simp only [List.mem_singleton,saved_inj (i+1) (by omega_using [hk, hi]) (k+1) (by omega_using [hk])]
+        omega_using [heq])]
+      exact hvals i (by omega_using [hi, heq])
 end VG.Proof.MlDsa.AArch64.Sample.Rej4

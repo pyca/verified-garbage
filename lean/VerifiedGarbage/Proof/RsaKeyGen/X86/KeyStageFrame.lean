@@ -32,7 +32,7 @@ theorem stage_mono {m m' : Mem} {B : Addr} {n : Nat} {js ks : List Nat}
 theorem stage_preserves_header {m m' : Mem} {B : Addr} {n d count : Nat} {js : List Nat}
     (bound : d + 4 * count ≤ kOk) (O : Outs B (stageRanges n js) m m') :
     val32 m' B d count = val32 m B d count := by
-  apply O.val32 _ (by unfold kOk at bound; omega)
+  apply O.val32 _ (by unfold kOk at bound; omega_using [bound])
   intro r hr
   rcases List.mem_append.mp hr with temp | output
   · simp only [exponentTemps, List.mem_cons, List.not_mem_nil, or_false] at temp
@@ -82,7 +82,7 @@ theorem stage_preserves_num {m m' : Mem} {B : Addr} {n j : Nat} {js : List Nat}
     (persistent : 15 ≤ j) (unchanged : j ∉ js) (fit : arr n j + S n ≤ 2 ^ 64)
     (O : Outs B (stageRanges n js) m m') : num m' B n j = num m B n j := by
   change val32 m' B (arr n j) n = val32 m B (arr n j) n
-  apply O.val32 _ (by unfold S at fit; omega)
+  apply O.val32 _ (by unfold S at fit; omega_using [fit])
   intro r hr
   rcases List.mem_append.mp hr with temp | output
   · simp only [exponentTemps, List.mem_cons, List.not_mem_nil, or_false] at temp
@@ -94,6 +94,6 @@ theorem stage_preserves_num {m m' : Mem} {B : Addr} {n j : Nat} {js : List Nat}
     have D := arr_disj (w := n) (show j ≠ a from fun E => unchanged (E ▸ ha))
     simp only at D ⊢
     unfold S at D ⊢
-    omega
+    omega_using [D]
 
 end VG.Proof.RsaKeyGen.X86.Key

@@ -35,13 +35,13 @@ theorem witness_lt {c x w : Nat} (hc : c % 2 = 1) (hb : Spec.RsaKeyGen.bitLength
     (hx : x < 2 ^ (64 * w)) : (Spec.RsaKeyGen.witness (c - 1) x).1 < c := by
   rw [VG.Proof.RsaKeyGen.witness_eq hc hb hx]
   have h0 : c - 1 ≠ 0 := fun e => by
-    rw [e] at hb; simp [Spec.RsaKeyGen.bitLength] at hb; omega
+    rw [e] at hb; simp [Spec.RsaKeyGen.bitLength] at hb; omega_using [hw, hb]
   have hl : (c - 1).log2 = 64 * w - 1 := by
-    unfold Spec.RsaKeyGen.bitLength at hb; simp only [h0, ↓reduceIte] at hb; omega
+    unfold Spec.RsaKeyGen.bitLength at hb; simp only [h0, ↓reduceIte] at hb; omega_using [hb]
   have hp : 2 ^ (64 * w - 1) ≤ c - 1 := hl ▸ Nat.log2_self_le h0
   split
-  · rename_i h; simp only [Bool.and_eq_true, decide_eq_true_eq] at h; omega
-  · have := Nat.mod_lt (x ||| 2) (Nat.two_pow_pos (64 * w - 1)); omega
+  · rename_i h; simp only [Bool.and_eq_true, decide_eq_true_eq] at h; omega_using [h]
+  · have := Nat.mod_lt (x ||| 2) (Nat.two_pow_pos (64 * w - 1)); omega_using [hp]
 
 /-- The header words `draw` changes, as numbers of words. -/
 def drWords : List Nat := [23, 26, 29, 30, 1, 20, 22, 19, 2]
@@ -135,53 +135,53 @@ theorem witS {sD s₁ : State} {B Ra : Addr} {L w c u I U ch : Nat} (h : DrIn sD
     rw [← Pre.val32_eq_wv, ← h.prep.n]
     exact o₁.val32 (fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl <;> simp only [hUsed, slot_lin] <;> omega)
-      (by rw [slot_lin]; omega)
+      rcases hr with rfl | rfl <;> simp only [hUsed, slot_lin] <;> omega_using [])
+      (by rw [slot_lin]; omega_using [hnw, hZ])
   have hU₁ : word s₁.mem B (8 * hUni) = BitVec.ofNat 64 U := by
     rw [o₁.word (fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl <;> simp only [hUsed, hUni, slot_lin] <;> omega)
-      (by simp only [hUni]; omega), h.uni]
+      rcases hr with rfl | rfl <;> simp only [hUsed, hUni, slot_lin] <;> omega_using [])
+      (by simp only [hUni]; omega_using []), h.uni]
   refine WP.mono (witness_ok e₁ h.h35 hc0 h.prep.odd h.cb h.cR hU₁) fun s₂ ⟨⟨a₂, u₂, e₂, o₂⟩, k₂⟩ => ?_
   rw [← Pre.val32_eq_wv, v₁] at a₂ u₂
   have hXc : (drX sD.mem Ra w c u).1 < c := by
-    refine witness_lt h.prep.odd h.cb (by omega) ?_
+    refine witness_lt h.prep.odd h.cb (by omega_using [hw4]) ?_
     rw [← v₁, Pre.val32_eq_wv]; exact VG.Proof.Bignum.wv_lt _ _ _ _
   have o₁₂ : Outs B (lwRanges w) sD.mem s₂.mem := by
     refine (o₁.cover (fun r hr => ?_)).trans (o₂.cover (fun r hr => ?_))
     · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
       · exact ⟨_, by simp [lwRanges], Nat.le_refl _, Nat.le_refl _⟩
-      · exact ⟨(slot w 4, 8 * (w + 2)), by simp [lwRanges], Nat.le_refl _, by simp only []; omega⟩
+      · exact ⟨(slot w 4, 8 * (w + 2)), by simp [lwRanges], Nat.le_refl _, by simp only []; omega_using []⟩
     · refine ⟨r, ?_, Nat.le_refl _, Nat.le_refl _⟩
       simp only [witRanges, List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl <;> simp [lwRanges]
   have ap : ∀ d, (d + 8 ≤ 256 ∧ (d + 8 ≤ 152 ∨ 160 ≤ d) ∧ (d + 8 ≤ 16 ∨ 24 ≤ d)) ∨ slot w 0 = d ∨
       slot w 27 + 8 * w = d → word s₂.mem B d = word sD.mem B d := by
     intro d hd
-    refine o₁₂.word (fun r hr => ?_) (by rcases hd with hd | rfl | rfl <;> rw [slot_lin] at * <;> omega)
+    refine o₁₂.word (fun r hr => ?_) (by rcases hd with hd | rfl | rfl <;> rw [slot_lin] at * <;> omega_arith)
     simp only [lwRanges, hUsed, hUni, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl <;>
-      rcases hd with hd | rfl | rfl <;> simp only [slot_lin] at * <;> omega
+      rcases hd with hd | rfl | rfl <;> simp only [slot_lin] at * <;> omega_arith
   have K₁₂ := k₁.trans k₂
   have p₂ : Prep s₂ B L w c := by
     refine h.prep.keep e₂ (fun d hd => ?_) (fun j hj => ?_)
     · refine ap d ?_
       rcases hd with rfl | rfl | rfl | rfl | ⟨j, hj, rfl⟩ | rfl | rfl
-      iterate 5 exact .inl (by omega)
+      iterate 5 exact .inl (by omega_arith)
       · exact .inr (.inl rfl)
       · exact .inr (.inr rfl)
-    · refine o₁₂.val32 (fun r hr => ?_) (by rcases hj with rfl | rfl | rfl | rfl | rfl <;> rw [slot_lin] <;> omega)
+    · refine o₁₂.val32 (fun r hr => ?_) (by rcases hj with rfl | rfl | rfl | rfl | rfl <;> rw [slot_lin] <;> omega_using [hnw, hZ])
       simp only [lwRanges, hUsed, hUni, List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl | rfl <;>
-        rcases hj with rfl | rfl | rfl | rfl | rfl <;> simp only [slot_lin] <;> omega
+        rcases hj with rfl | rfl | rfl | rfl | rfl <;> simp only [slot_lin] <;> omega_using []
   refine ⟨p₂, a₂, hXc, by rw [K₁₂.wr]; exact h.wr, by rw [K₁₂.sp]; exact h.sp, by rw [K₁₂.sp]; exact h.stk,
-    (ap _ (.inl (by simp only [hIdx]; omega))).trans h.idx, u₂,
-    (ap _ (.inl (by simp only [hChecks]; omega))).trans h.chk, ?_,
+    (ap _ (.inl (by simp only [hIdx]; omega_using []))).trans h.idx, u₂,
+    (ap _ (.inl (by simp only [hChecks]; omega_using []))).trans h.chk, ?_,
     fun d hd hk => ap d (.inl ⟨hd, hk 19 (by simp [drWords]), hk 2 (by simp [drWords])⟩), o₁₂, K₁₂⟩
   rw [o₂.word (fun r hr => by
     simp only [witRanges, hUni, List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl | rfl <;> simp only [hUsed, slot_lin] <;> omega) (by simp only [hUsed]; omega), u₁]
+    rcases hr with rfl | rfl | rfl | rfl <;> simp only [hUsed, slot_lin] <;> omega_using []) (by simp only [hUsed]; omega_using []), u₁]
 
 theorem roundS (R : RoundImpl) {sD s : State} {B Ra : Addr} {L w c u I U ch : Nat}
     (hD : DrIn sD B Ra L w c u I U ch) (h : PreRd sD B Ra L w c u I U ch s) :
@@ -191,13 +191,13 @@ theorem roundS (R : RoundImpl) {sD s : State} {B Ra : Addr} {L w c u I U ch : Na
   have hZ := e.hZ
   rw [slot_lin] at hZ
   refine WP.mono (round_ok R h.prep h.a4 h.ac h.sp h.stk h.idx h.uni h.chk hD.bI
-    (by have := hD.bU; split <;> omega) hD.bch) fun t ht => ?_
+    (by have := hD.bU; split <;> omega_using [this]) hD.bch) fun t ht => ?_
   have hd' : ∀ d, d + 8 ≤ 256 → (∀ k ∈ [23, 26, 29, 30, 1, 20, 22], d + 8 ≤ 8 * k ∨ 8 * k + 8 ≤ d) →
       word t.mem B d = word s.mem B d := ht.hdr
   refine ⟨ht.prep, ht.stat, ht.idx, ?_, ?_, fun d hd hk => ?_, ?_, ht.rd.trans h.keep.rd, ht.wr.trans h.keep.wr,
     ht.sp.trans h.keep.sp, fun r hr h1 h2 h3 h4 => ?_⟩
-  · rw [hd' _ (by simp only [hUni]; omega) (by simp only [hUni]; decide), h.uni]
-  · rw [hd' _ (by simp only [hUsed]; omega) (by simp only [hUsed]; decide), h.used]
+  · rw [hd' _ (by simp only [hUni]; omega_using []) (by simp only [hUni]; decide), h.uni]
+  · rw [hd' _ (by simp only [hUsed]; omega_using []) (by simp only [hUsed]; decide), h.used]
   · rw [hd' d hd (fun k hk' => hk k (by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hk'
       rcases hk' with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp [drWords])), h.hdr d hd hk]
@@ -205,7 +205,7 @@ theorem roundS (R : RoundImpl) {sD s : State} {B Ra : Addr} {L w c u I U ch : Na
     rw [h.keep.sp] at fr
     refine (Frame.mono (frame_of_outs h.outs (Z := 8 * L) (fun r hr => ?_)) (by simp)).trans fr
     simp only [lwRanges, hUsed, hUni, List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl | rfl | rfl <;> simp only [slot_lin] <;> omega
+    rcases hr with rfl | rfl | rfl | rfl | rfl <;> simp only [slot_lin] <;> omega_using [hZ]
   · rw [ht.cs r hr h1 h2, h.keep.gpr r (by simp [h3, h4])]
 
 theorem draw_ok (R : RoundImpl) {s : State} {B Ra : Addr} {L w c u I U ch : Nat}

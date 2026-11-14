@@ -40,7 +40,7 @@ theorem read_zero_bytes (m : Mem) (a : Addr) (n : Nat)
   induction n generalizing a with
   | zero => rfl
   | succ n ih =>
-    have z : m a = 0 := by simpa using zero 0 (by omega)
+    have z : m a = 0 := by simpa using zero 0 (by omega_using [])
     rw [read_toNat_succ, z, ih (a + 1)]
     · rfl
     · intro j hj
@@ -48,19 +48,19 @@ theorem read_zero_bytes (m : Mem) (a : Addr) (n : Nat)
         change a + BitVec.ofNat 64 1 + BitVec.ofNat 64 j = _
         rw [Offset.add_add, Nat.add_comm 1]
       rw [e]
-      exact zero _ (by omega)
+      exact zero _ (by omega_using [hj])
 
 /-- High zero padding does not change the integer read from a shorter byte string. -/
 theorem val32_zero_extension (m : Mem) (a : Addr) {n k : Nat} (fit : k ≤ 4 * n)
     (padding : ∀ j, k ≤ j → j < 4 * n → m (a + BitVec.ofNat 64 j) = 0) :
     val32 m a 0 n = (m.read a k).toNat := by
   rw [← read_eq_val32, show off a 0 = a by simp [off],
-    show 4 * n = (4 * n - k) + k by omega, read_toNat_add]
+    show 4 * n = (4 * n - k) + k by omega_using [fit], read_toNat_add]
   have z : (m.read (a + BitVec.ofNat 64 k) (4 * n - k)).toNat = 0 := by
     apply read_zero_bytes
     intro j hj
     rw [Offset.add_add]
-    exact padding _ (by omega) (by omega)
+    exact padding _ (by omega_using []) (by omega_using [hj])
   rw [z, Nat.mul_zero, Nat.add_zero]
 
 end VG.Proof.Bignum

@@ -73,7 +73,7 @@ theorem nonceBlock_ct {I : State → Prop} {p : Prm} (L : Lay p) (hI : ∀ s, I 
   · obtain ⟨s₂, run₂, E₂, lp, -⟩ := nonceHead_ok L (hI s hs)
     exact WP.of_runBlock ⟨s₂, run₂, E₂, lp⟩
   refine CT.seq (J := Env p) (copyLoop_ct (pin3 fun _ h => ⟨h.2.edi, h.2.edx, h.2.ecx⟩))
-    (fun s h => WP.mono (copyW_ok L h.1 (d := 128 - p.nl) (n := p.nl) (by have := L.nl15; omega) h.2) fun _ h' => h'.1) ?_
+    (fun s h => WP.mono (copyW_ok L h.1 (d := 128 - p.nl) (n := p.nl) (by have := L.nl15; omega_using [this]) h.2) fun _ h' => h'.1) ?_
   rw [← List.singleton_append (x := Instr.mov .ecx (slot nlO))]
   refine RelCT.block_append
     (CT.seq (J := fun s => s.gpr .ebp = p.W ∧ s.gpr .ecx = BitVec.ofNat 32 p.nl)

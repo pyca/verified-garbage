@@ -17,7 +17,7 @@ open VG.Impl.Sm4.AArch64.Serial
 theorem rotate_complement (x : BitVec 32) (r : Nat) (hr : 0 < r) (hr' : r < 32) :
     x.rotateRight (32-r) = x.rotateLeft r := by
   rw [BitVec.rotateRight_def,BitVec.rotateLeft_def,Nat.mod_eq_of_lt hr',
-    Nat.mod_eq_of_lt (show 32-r < 32 by omega),Nat.sub_sub_self (by omega : r ≤ 32)]
+    Nat.mod_eq_of_lt (show 32-r < 32 by omega_using [hr]),Nat.sub_sub_self (by omega_using [hr'] : r ≤ 32)]
   exact BitVec.or_comm _ _
 
 theorem linear_eq (x : BitVec 32) :

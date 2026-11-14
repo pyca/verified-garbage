@@ -42,20 +42,20 @@ theorem expandBits_ok {s1 : State} (hc : Ctx8 b s1) {x : Nat} (h7 : (s1.gpr .r7)
   have e7 : (s.gpr .r7).toNat = x := by rw [h.rest.gpr _ (by decide), h7]
   have hcs : Ctx8 b s := hc.of_rest h.rest (by decide)
   unfold expandBit
-  refine wp_lsl (by omega) fun s2 u2 => wp_lsr (by decide) fun s3 u3 => ?_
+  refine wp_lsl (by omega_using []) fun s2 u2 => wp_lsr (by decide) fun s3 u3 => ?_
   have e8 : (s3.gpr .r8).toNat = (x >>> k) &&& 1 := by
-    rw [u3.gpr, u2.gpr, bit_shift _ (by omega), e7]
-  refine wp_stb (a := b + BitVec.ofNat 64 (BITSB + k)) (by decide) (by omega)
+    rw [u3.gpr, u2.gpr, bit_shift _ (by omega_using [hk]), e7]
+  refine wp_stb (a := b + BitVec.ofNat 64 (BITSB + k)) (by decide) (by omega_using [hB, hk])
     (by rw [u3.other _ (by decide), u2.other _ (by decide), hcs.r6])
-    (by rw [u3.wr, u2.wr]; exact hcs.inW (by omega)) fun s4 u4 => WP.block_nil ⟨?_, ?_, fun j hj => ?_⟩
+    (by rw [u3.wr, u2.wr]; exact hcs.inW (by omega_using [hB, hk])) fun s4 u4 => WP.block_nil ⟨?_, ?_, fun j hj => ?_⟩
   · exact h.rest.trans ((u2.rest (by decide)).trans ((u3.rest (by decide)).trans (u4.rest _)))
   · rw [u4.mem, u3.mem, u2.mem]
     exact (h.frame.sub fun r hr => ⟨_, List.mem_singleton_self _, by
-      rw [List.mem_singleton.mp hr]; exact Region.sub_prefix (by omega)⟩).writeW
-      (List.mem_singleton_self _) _ (by rw [hB]; exact Offset.contains _ (by omega) (by omega) (by omega))
+      rw [List.mem_singleton.mp hr]; exact Region.sub_prefix (by omega_using [])⟩).writeW
+      (List.mem_singleton_self _) _ (by rw [hB]; exact Offset.contains _ (by omega_using []) (by omega_using []) (by omega_using [hk]))
   · rw [u4.mem, VG.WriteBytes.writeW8_apply, u3.mem, u2.mem]
     rcases Nat.lt_succ_iff_lt_or_eq.mp hj with hj | rfl
-    · rw [iteF (Offset.add_ofNat_ne _ (by omega) (by omega) (by omega))]; exact h.bits j hj
+    · rw [iteF (Offset.add_ofNat_ne _ (by omega_arith) (by omega_using [hB, hk]) (by omega_using [hj]))]; exact h.bits j hj
     · rw [iteT rfl]; exact stb_byte e8
 
 /-- The digit of batch `c`: bytes `2c` and `2c + 1` of the scalar at `r19`. -/
@@ -74,9 +74,9 @@ theorem batchBits_ok {s : State} (hc : Ctx8 b s) {c : Nat} (hcl : c < 32) (h26 :
     rw [u2.gpr, u1.other .r19 (by decide), h19, u1.gpr, h26]
     congr 1
     apply BitVec.eq_of_toNat_eq
-    rw [toNat_shl, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega),
-      Nat.mod_eq_of_lt (by omega)]
-    omega
+    rw [toNat_shl, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hcl]), Nat.mod_eq_of_lt (by omega_using [hcl]),
+      Nat.mod_eq_of_lt (by omega_using [hcl])]
+    omega_using []
   refine wp_lbz (a := p + BitVec.ofNat 64 (2 * c)) (by decide) (by decide) (by rw [e14, BitVec.add_zero])
     (by rw [u2.rd, u2.wr, u1.rd, u1.wr]; exact Nat.add_zero (2 * c) ▸ hin 0 (by decide)) fun s3 u3 => ?_
   refine wp_lbz (a := p + BitVec.ofNat 64 (2 * c + 1)) (by decide) (by decide)
@@ -91,11 +91,11 @@ theorem batchBits_ok {s : State} (hc : Ctx8 b s) {c : Nat} (hcl : c < 32) (h26 :
     rw [u6.gpr, u5.other _ (by decide), u4.other _ (by decide), u3.gpr, u5.gpr, u4.gpr, u2.mem, u1.mem, m3]
     rw [toNat_add_lt, BitVec.toNat_ofNat, toNat_shl, BitVec.toNat_ofNat]
     · simp only [digitAt]
-      rw [Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega)]
-      omega
-    · rw [BitVec.toNat_ofNat, toNat_shl, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega),
-        Nat.mod_eq_of_lt (by omega)]
-      omega
+      rw [Nat.mod_eq_of_lt (by omega_using []), Nat.mod_eq_of_lt (by omega_using []), Nat.mod_eq_of_lt (by omega_using [])]
+      omega_using []
+    · rw [BitVec.toNat_ofNat, toNat_shl, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using []), Nat.mod_eq_of_lt (by omega_using []),
+        Nat.mod_eq_of_lt (by omega_using [])]
+      omega_using []
   have hr6 : Rest [.r7, .r8, .r14] s s6 :=
     (u1.rest (by decide)).trans ((u2.rest (by decide)).trans ((u3.rest (by decide)).trans
       ((u4.rest (by decide)).trans ((u5.rest (by decide)).trans (u6.rest (by decide))))))

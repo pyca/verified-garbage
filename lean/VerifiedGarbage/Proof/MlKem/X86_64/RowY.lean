@@ -148,12 +148,12 @@ theorem toInt_setWidth16 {y : BitVec 32} (h1 : -32768 ≤ y.toInt) (h2 : y.toInt
   by_cases c : y.toNat < 2147483648
   · rw [ite_eq_left_of_eq_true _ _ (eq_true c)] at h1 h2 ⊢
     by_cases c2 : y.toNat % 65536 < 32768
-    · rw [ite_eq_left_of_eq_true _ _ (eq_true c2)]; omega
-    · rw [ite_eq_right_of_eq_false _ _ (eq_false c2)]; omega
+    · rw [ite_eq_left_of_eq_true _ _ (eq_true c2)]; omega_using [h2]
+    · rw [ite_eq_right_of_eq_false _ _ (eq_false c2)]; omega_using [h2, c2]
   · rw [ite_eq_right_of_eq_false _ _ (eq_false c)] at h1 h2 ⊢
     by_cases c2 : y.toNat % 65536 < 32768
-    · rw [ite_eq_left_of_eq_true _ _ (eq_true c2)]; omega
-    · rw [ite_eq_right_of_eq_false _ _ (eq_false c2)]; omega
+    · rw [ite_eq_left_of_eq_true _ _ (eq_true c2)]; omega_using [h1, c2]
+    · rw [ite_eq_right_of_eq_false _ _ (eq_false c2)]; omega_using [h1]
 
 /-- The doubleword `predD` leaves of `x`: `(x - (x q⁻¹ mod± 2¹⁶) q) / 2¹⁶`. -/
 def redD (x : BitVec 32) : BitVec 32 :=

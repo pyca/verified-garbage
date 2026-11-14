@@ -31,7 +31,7 @@ theorem front2_k [VG.Proof.Rsa.AArch64.InvLaw] {I : KIn} {s₀ s : State} (h : K
   have hk := h.ks
   have hZ := hk.hZ
   have hW := L.W
-  have hw8 : 8 * I.pl = 64 * (I.pl / 8) := by have := L.pl8; omega
+  have hw8 : 8 * I.pl = 64 * (I.pl / 8) := by have := L.pl8; omega_using [this]
   -- `L`.
   refine wp_seqs_append (by simp [lcmPart, phi, mulTo]) (by simp) (WP.mono (lcm_k hk hW h.vPm h.vQm
     (Nat.lt_of_le_of_lt (Nat.sub_le _ _) L.P_lt) (Nat.lt_of_le_of_lt (Nat.sub_le _ _) L.Q_lt))

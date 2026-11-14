@@ -129,10 +129,10 @@ theorem sealMainCode_ok (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ : State} (hp 
   · have hlo : 1 ≤ L s₁ := by
       have := (of_decide_eq_true h).1
       have : 1 ≤ Short.lo v.callee.sve := by cases v.callee.sve <;> decide
-      rw [L, ag.gpr .x5 (by decide) (by decide)]; simp only [L] at *; omega
+      rw [L, ag.gpr .x5 (by decide) (by decide)]; simp only [L] at *; omega_arith
     have h511 : L s₁ ≤ 511 := by
       have := (of_decide_eq_true h).2
-      rw [L, ag.gpr .x5 (by decide) (by decide)]; simp only [L] at *; omega
+      rw [L, ag.gpr .x5 (by decide) (by decide)]; simp only [L] at *; omega_using [this]
     exact WP.mono (Pad.sealRoute_ok v hp₁ hlo h511) fun _ h => Short.MainS.agree ag h
   · split
     · refine WP.seq (WP.mono (OpenKey.routeKey_ok v.callee.sve true s₁) fun s₂ ⟨ag₂, x9₂, x10₂⟩ => ?_)
@@ -145,7 +145,7 @@ theorem sealMainCode_ok (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ : State} (hp 
           (OpenKey.key_eval x10₂) (fun hk => ?_) (fun _ => ?_))
         · have hk' := of_decide_eq_true hk
           have h513 : 513 ≤ keyLo v.callee.sve true := by cases v.callee.sve <;> decide
-          exact WP.mono (SealKey.sealMain_ok v hp₂ (by omega) (by omega))
+          exact WP.mono (SealKey.sealMain_ok v hp₂ (by omega_using [hL₂, hk', h513]) (by omega_using [hL₂, hk']))
             fun _ h => Short.MainS.agree ag (Short.MainS.agree ag₂ h)
         · exact WP.mono (sealStitchedMain_ok v hp₂) fun _ h => Short.MainS.agree ag (Short.MainS.agree ag₂ h)
       · have hr := of_decide_eq_true h
@@ -157,7 +157,7 @@ theorem sealMainCode_ok (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ : State} (hp 
           have e1 := ag.gpr .x5 (by decide) (by decide)
           have e2 := ag₂.gpr .x5 (by decide) (by decide)
           simp only [L, e1, e2] at hr hn' ⊢
-          omega
+          omega_using [hlo, hs, hn', hr]
         exact WP.mono (sealWideMain_ok v hp₂ hL) fun _ h => Short.MainS.agree ag (Short.MainS.agree ag₂ h)
     · exact WP.mono (sealMain_ok v hp₁) fun _ h => Short.MainS.agree ag h
 
@@ -170,10 +170,10 @@ theorem openMainCode_ok (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ : State} (hp 
   · have hlo : 1 ≤ L s₁ := by
       have := (of_decide_eq_true h).1
       have : 1 ≤ Short.lo v.callee.sve := by cases v.callee.sve <;> decide
-      rw [L, ag.gpr .x5 (by decide) (by decide)]; simp only [L] at *; omega
+      rw [L, ag.gpr .x5 (by decide) (by decide)]; simp only [L] at *; omega_arith
     have h511 : L s₁ ≤ 511 := by
       have := (of_decide_eq_true h).2
-      rw [L, ag.gpr .x5 (by decide) (by decide)]; simp only [L] at *; omega
+      rw [L, ag.gpr .x5 (by decide) (by decide)]; simp only [L] at *; omega_using [this]
     exact WP.mono (OpenPad.openRoute_ok v hp₁ hlo h511) fun _ h => Short.MainO.agree ag h
   · split
     · refine WP.seq (WP.mono (OpenKey.routeKey_ok v.callee.sve false s₁) fun s₂ ⟨ag₂, x9₂, x10₂⟩ => ?_)
@@ -186,7 +186,7 @@ theorem openMainCode_ok (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ : State} (hp 
           (fun hk => ?_) (fun _ => ?_))
         · have hk' := of_decide_eq_true hk
           have h513 : 513 ≤ keyLo v.callee.sve false := by cases v.callee.sve <;> decide
-          exact WP.mono (OpenKey.openMain_ok v hp₂ (by omega) (by omega))
+          exact WP.mono (OpenKey.openMain_ok v hp₂ (by omega_using [hL₂, hk', h513]) (by omega_using [hL₂, hk']))
             fun _ h => Short.MainO.agree ag (Short.MainO.agree ag₂ h)
         · exact WP.mono (openStitchedMain_ok v hp₂) fun _ h => Short.MainO.agree ag (Short.MainO.agree ag₂ h)
       · have hr := of_decide_eq_true h
@@ -198,7 +198,7 @@ theorem openMainCode_ok (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ : State} (hp 
           have e1 := ag.gpr .x5 (by decide) (by decide)
           have e2 := ag₂.gpr .x5 (by decide) (by decide)
           simp only [L, e1, e2] at hr hn' ⊢
-          omega
+          omega_using [hlo, hs, hn', hr]
         exact WP.mono (openWideMain_ok v hp₂ hL) fun _ h => Short.MainO.agree ag (Short.MainO.agree ag₂ h)
     · exact WP.mono (openMain_ok v hp₁) fun _ h => Short.MainO.agree ag h
 
@@ -224,7 +224,7 @@ theorem saveData_ok {σ : State} (hp : preOpenAArch64 σ) :
       s.mem.readW (off (σ.gpr .x7) 1296) 64 = σ.gpr .x28 := by
   obtain ⟨-, -, -, -, -, hw, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, wc, -⟩ := hp
   have hc : ∀ d, 1280 ≤ d → d + 8 ≤ 1312 → (slotOf σ).Contains (off (σ.gpr .x7) d) 8 := fun d h1 h2 =>
-    Offset.contains (σ.gpr .x7) h1 (by omega) (by omega)
+    Offset.contains (σ.gpr .x7) h1 (by omega_using [h2]) (by omega_using [])
   have hin : slotOf σ ∈ σ.wr := by rw [hw]; simp
   refine VG.Proof.ChaCha20.AArch64.Xor.wp_str (a := off (σ.gpr .x7) 1280) (by decide) rfl
     ⟨_, hin, hc 1280 (Nat.le_refl _) (by decide)⟩ fun s₁ m₁ => ?_
@@ -301,7 +301,7 @@ theorem APre.ofOpen {σ s : State} (h : preOpenAArch64 σ) (hg : ∀ r, r ≠ .x
   · rcases qd with e | e
     · left; rw [eop, e]; exact g4.symm
     · right; rw [eo, edR]; exact e
-  · simp only [cx, g7]; omega
+  · simp only [cx, g7]; omega_using [wc]
   · simp only [ad, AL, g2, g3]; exact wa
   · rw [show dp s = σ.gpr .x4 from g4, eL]; exact wd
   · simp only [tp, g6]; exact wt
@@ -715,7 +715,7 @@ theorem toEntry_ok {σ : State} (ha : (⟨stackArgAddr σ 0, 16⟩ : Region) ∈
     have e : stackArgAddr σ 0 = σ.sp := by simp only [stackArgAddr, Nat.mul_zero, BitVec.add_zero]
     rw [← e]; exact ha
   have hin : ∀ d, d + 8 ≤ 16 → InRegions (σ.rd ++ σ.wr) (σ.sp + BitVec.ofNat 64 d) 8 := fun d hd =>
-    ⟨_, List.mem_append_left _ ha', Offset.contains_base _ hd (by omega)⟩
+    ⟨_, List.mem_append_left _ ha', Offset.contains_base _ hd (by omega_using [hd])⟩
   refine VG.Proof.ChaCha20.AArch64.Xor.wp_movS fun u₁ v₁ sp₁ w₁ => ?_
   refine wp_ldrSp64 (by decide) (by rw [v₁.rd, v₁.wr, sp₁]; exact hin 0 (by decide)) fun u₂ v₂ sp₂ w₂ => ?_
   refine wp_ldrSp64 (by decide) (by rw [v₂.rd, v₂.wr, v₁.rd, v₁.wr, sp₂, sp₁]; exact hin 8 (by decide))
@@ -1001,7 +1001,7 @@ theorem toWr_covers {s : State} (h : preToW s) : Covers (toWr s) s.wr := by
   refine Covers.of_sub fun r hr => ?_
   simp only [toWr, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl
-  · exact ⟨_, List.mem_cons_self .., 0, (BitVec.add_zero _).symm, by simp only [h75]; omega⟩
+  · exact ⟨_, List.mem_cons_self .., 0, (BitVec.add_zero _).symm, by simp only [h75]; omega_using []⟩
   · exact ⟨_, List.mem_cons_of_mem _ (List.mem_cons_self ..), 0, (BitVec.add_zero _).symm,
       show 0 + 1280 ≤ 1312 by decide⟩
   · exact ⟨_, List.mem_cons_of_mem _ (List.mem_cons_self ..), 1280, rfl, show 1280 + 32 ≤ 1312 by decide⟩

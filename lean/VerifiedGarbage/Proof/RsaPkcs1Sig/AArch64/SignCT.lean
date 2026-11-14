@@ -91,7 +91,7 @@ theorem pubS_of {S : Nat} {s₁ s₂ : State} (h : (Spec.RsaPkcs1Sig.signContrac
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl
     exacts [h0.symm, h1.symm, h2.symm, h3.symm, h4.symm, h5.symm, h7.symm]
-  · rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 ∨ i = 8 ∨ i = 9 ∨
+  · rcases (by omega_using [hi] : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 ∨ i = 8 ∨ i = 9 ∨
       i = 10 ∨ i = 11 ∨ i = 12) with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
     exacts [a0.symm, a1.symm, a2.symm, a3.symm, a4.symm, a5.symm, a6.symm, a7.symm, a8.symm, a9.symm,
       a10.symm, a11.symm, a12.symm]
@@ -174,11 +174,11 @@ theorem call_ct (c : PrivChecked) :
     · rw [c₁.x5, c₂.x5, e .x5 (by decide)]
     · rw [c₁.x6, c₂.x6, h₁.fb, h₂.fb]
     · rw [c₁.x7, c₂.x7, e .x3 (by decide)]
-  · rw [c₁.args i hi, c₂.args i hi, h₁.2.1.args (i + 1) (by omega), h₂.2.1.args (i + 1) (by omega)]
-  · rw [c₁.x2, c₁.x3, c₂.x2, c₂.x3, bytes_frame c₁.mem h₁.1.kn (by have := h₁.1.wn; omega),
-      bytes_frame c₂.mem h₂.1.kn (by have := h₂.1.wn; omega), h₁.2.1.bn, h₂.2.1.bn]
-  · rw [c₁.x4, c₁.x5, c₂.x4, c₂.x5, bytes_frame c₁.mem h₁.1.ke (by have := h₁.1.we; omega),
-      bytes_frame c₂.mem h₂.1.ke (by have := h₂.1.we; omega), h₁.2.1.be, h₂.2.1.be]
+  · rw [c₁.args i hi, c₂.args i hi, h₁.2.1.args (i + 1) (by omega_using [hi]), h₂.2.1.args (i + 1) (by omega_using [hi])]
+  · rw [c₁.x2, c₁.x3, c₂.x2, c₂.x3, bytes_frame c₁.mem h₁.1.kn (by have := h₁.1.wn; omega_using []),
+      bytes_frame c₂.mem h₂.1.kn (by have := h₂.1.wn; omega_using []), h₁.2.1.bn, h₂.2.1.bn]
+  · rw [c₁.x4, c₁.x5, c₂.x4, c₂.x5, bytes_frame c₁.mem h₁.1.ke (by have := h₁.1.we; omega_using []),
+      bytes_frame c₂.mem h₂.1.ke (by have := h₂.1.we; omega_using []), h₁.2.1.be, h₂.2.1.be]
 
 /-! ## After the encoding -/
 

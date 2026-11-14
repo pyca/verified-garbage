@@ -51,7 +51,7 @@ theorem verifyBody_ok (M : Mont) (Sq : MontS) {L : ExecutionLayout} {s0 : State}
     fun s1 ⟨h1, hm1, hf1, hk1⟩ => ?_)
   refine WP.mono (result_ok h1.scratch h1.parent.rdi (by decide) hm1)
     fun t ⟨ha, hsave, hmem, hk⟩ => ?_
-  exact ⟨ha, fun i hi => (hsave i hi).trans (hf1.word (Or.inl (by omega)) (by omega)),
+  exact ⟨ha, fun i hi => (hsave i hi).trans (hf1.word (Or.inl (by omega_using [hi])) (by omega_using [hi])),
     by rw [hmem]; exact hf1, (hk1.trans hk).mono (by decide)⟩
 
 theorem verifyBody_spec (M : Mont) (Sq : MontS) {L : ExecutionLayout} {s0 : State} (h0 : Ready L s0)

@@ -49,8 +49,8 @@ theorem restore_ok {s₀ : State} (hp : DPre s₀) {s : State} (h : Inv s₀ s) 
   have sub : ∀ p ∈ restoreSlots, p ∈ savedSlots ++ argSlots := by decide
   have bounds : ∀ p ∈ restoreSlots, p.2 + 8 ≤ 120 := by decide
   rw [show Impl.Argon2.RISCV64.Derive.restore = Spill.restoreCode .s3 restoreSlots from rfl]
-  refine WP.mono (Spill.restore_wp (b := .s3) (B := E s₀) (g := s₀.gpr) (by have := E_al hp; omega) h.s3
-    (by decide) (by decide) (fun p hp' => loc_in' h (by have := bounds p hp'; omega))
+  refine WP.mono (Spill.restore_wp (b := .s3) (B := E s₀) (g := s₀.gpr) (by have := E_al hp; omega_using [this]) h.s3
+    (by decide) (by decide) (fun p hp' => loc_in' h (by have := bounds p hp'; omega_using [this]))
     (fun p hp' => h.saved hp (sub p hp'))) fun t ut => ⟨⟨?_, ?_, fun r hr => ?_, ?_⟩, ut.mem⟩
   · rw [ut.sp, h.sp]
   · rw [ut.wr, h.wr]

@@ -165,7 +165,7 @@ theorem slot_sep (b : BitVec 32) {j k : Nat} (hj : b.toNat + 4 * j + 4 ≤ 2 ^ 3
     Mem.Sep (wordAddr b j) 4 (wordAddr b k) 4 := by
   intro x h₁ h₂
   simp only [wordAddr] at h₁ h₂
-  rw [addr_eq (by omega)] at h₁ h₂
+  rw [addr_eq (by omega_arith)] at h₁ h₂
   have hb : (b.setWidth 64).toNat = b.toNat := by
     rw [BitVec.toNat_setWidth, Nat.mod_eq_of_lt (by have := b.isLt; omega_using [])]
   have : j < k ∨ k < j := by omega_using [h]

@@ -179,8 +179,8 @@ theorem signPrecomputed_postOut (stack : Nat) :
       List.nil_append, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq] at hb
     have hol : outLen.toNat = nLen.toNat := hpre.2.1
     have hby : Spec.Rsa.bytesAt m₂ out nLen.toNat = Spec.Rsa.bytesAt m₁ out nLen.toNat :=
-      VG.Proof.Rsa.X86_64.bytesAt_agree (by simp only [Elem.size]; omega)
-        (by have := outLen.isLt; simp only [Elem.size]; omega) hb.1
+      VG.Proof.Rsa.X86_64.bytesAt_agree (by simp only [Elem.size]; omega_using [hol])
+        (by have := outLen.isLt; simp only [Elem.size]; omega_using []) hb.1
     replace h : Spec.Rsa.writtenOutcome m₁ out nLen.toNat r _ := h
     show Spec.Rsa.writtenOutcome m₂ out nLen.toNat r _
     revert h

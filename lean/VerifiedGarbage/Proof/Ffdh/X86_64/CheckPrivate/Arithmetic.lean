@@ -36,7 +36,7 @@ theorem work_ready (M : Mont) (R : R2Impl M) {p : KpP} {xb : List Byte} {mi : Bi
   have hc := h.mem.ctx hd
   refine WP.mono (r2_ctx M R hc h.xv hm h.base.k1 h.base.k2 h.base.hZ) fun t ⟨hc', hf, k⟩ => ?_
   have hr : ∀ r ∈ r2Ranges p.w, r.1 + r.2 ≤ slot p.w 8 + tabBytes p.w 32 :=
-    fun r hr => by have := r2Ranges_le p.w r hr; omega
+    fun r hr => by have := r2Ranges_le p.w r hr; omega_using [this]
   obtain ⟨hb, hi, hs⟩ := h.base.child hc hf hr k
   have hroom := room_k h.base.k1 h.base.hZ
   change inner p.w + slot p.w 8 + tabBytes p.w 32 ≤ p.Z at hroom
@@ -49,7 +49,7 @@ theorem ready_value (M : Mont) (E : CrtExpL M) {p : KpP} {xb : List Byte} {s : S
   obtain ⟨mi, hb, hc, hG⟩ := h
   have hgl : p.gb.length = p.k := by
     simp only [KpP.gb, List.length_take, List.length_drop, hb.doml]
-    rcases hb.dl with hd | hd <;> rw [hd] <;> omega
+    rcases hb.dl with hd | hd <;> rw [hd] <;> omega_using []
   have hg : Src s p.B p.Z (off p.dp p.k) p.gb := (hb.dom.drop p.k).take p.k
   refine WP.mono (pow_ok M E hc (bp := sG) (bl := sK) (ep := sX) (el := sXl)
     (pb := off p.dp p.k) (pe := p.xp) (bb := p.gb) (eb := xb) (by decide) (by decide) (by decide) (by decide)
@@ -71,7 +71,7 @@ theorem rangeRanges_ok (w : Nat) : ∀ r ∈ rangeRanges w, 8 * 17 ≤ r.1 ∧ r
   have hT0 := hdr_lt_slot w aTmp (show 31 < 32 by decide)
   have hF := hdr_lt_slot w 8 (show sF < 32 by decide)
   simp only [rangeRanges, List.mem_cons, List.not_mem_nil, or_false]
-  rintro r (rfl | rfl) <;> simp only <;> unfold sF sFn at * <;> omega
+  rintro r (rfl | rfl) <;> simp only <;> unfold sF sFn at * <;> omega_arith
 
 theorem value_checked {p : KpP} {xb : List Byte} {s : State} (h : Value p xb s) :
     WP isa (seqs (range aY)) s (StepPost p s (Checked p xb)) := by
@@ -80,18 +80,18 @@ theorem value_checked {p : KpP} {xb : List Byte} {s : State} (h : Value p xb s) 
   have hYle := slot_le (w := p.w) (show aY < 8 by decide)
   have hw := hc.w2
   have hw' := hc.w28
-  refine WP.mono (range_ok hc.sub.good (Nat.le_refl _) (by omega) (by omega)
+  refine WP.mono (range_ok hc.sub.good (Nat.le_refl _) (by omega_using [hw]) (by omega_using [hw'])
     (show aY < 8 by decide) (by decide) hc.xv.one) fun t ⟨ha, hF, hf, k⟩ => ?_
   rw [hy, hc.xv.n] at ha
-  obtain ⟨hb', hi, hs⟩ := hb.child hc.sub hf (fun r hr => by have := (rangeRanges_ok p.w r hr).2; omega) k
+  obtain ⟨hb', hi, hs⟩ := hb.child hc.sub hf (fun r hr => by have := (rangeRanges_ok p.w r hr).2; omega_using [this]) k
   have hc' := hc.sub.of_frm hf (rangeRanges_ok p.w) k.2.2 (k.gpr (by decide))
   have hy' : wv t.mem (off p.B (inner p.w)) (slot p.w aY) p.w = p.z xb := by
-    rw [hf.wv_eq (fun r hr => ?_) (by omega), hy]
+    rw [hf.wv_eq (fun r hr => ?_) (by omega_using [hn, hYle]), hy]
     have sTY := slot_sep (w := p.w) (show aTmp ≠ aY by decide)
     have hsY := hdr_lt_slot p.w aY (show sF < 32 by decide)
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
-    · simp only; omega
+    · simp only; omega_using [sTY]
     · exact Or.inr hsY
   exact ⟨⟨mi, hb', hc', hy', hF.trans ha⟩, hi, hs, k.mono (by decide)⟩
 

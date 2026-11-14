@@ -94,8 +94,8 @@ theorem callOf_ok {ops : List FieldOp} (hd : DestsOk ops) (hsp : NoSp (fnOf ops)
     congrArg VG.Proof.X25519.toFe (fe_frame fun k hk => wd_frame fs fun r hr => by
       rw [List.mem_singleton.mp hr]
       exact hdis.sub_left (by
-        rw [scR_eq]; exact sub_sub hfit (Nat.zero_le _) (by simp only [offset]; omega)
-          (by simp only [offset]; omega)))
+        rw [scR_eq]; exact sub_sub hfit (Nat.zero_le _) (by simp only [offset]; omega_using [hk])
+          (by simp only [offset]; omega_using [hk])))
   refine ⟨⟨hcs .esi (by decide), hcs .edi (by decide), hcs .esp (by decide), hrd, hwr⟩, ?_, ?_⟩
   · rw [← hm2]
     exact (fs.mono fun r hr => by
@@ -137,13 +137,13 @@ theorem pointAddCall_ok {s : State} {base : BitVec 32} (hs : Ctx base s)
   · have hi' := i.isLt
     apply congrArg VG.Proof.X25519.toFe
     refine fe_frame fun k hk => wd_frameS hs (rs := Point32.addW base) hf
-      (by simp only [offset]; omega) fun r hr => ?_
+      (by simp only [offset]; omega_using [hk]) fun r hr => ?_
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
-    · exact sub_disj (by simp only [offset]; omega) (by omega) (.inr (by simp only [offset]; omega))
-    · exact sub_disj (by simp only [offset]; omega) (by omega) (.inr (by simp only [offset]; omega))
-    · exact sub_disj (by simp only [offset]; omega) (by simp only [T]; omega)
-        (.inl (by simp only [offset, T]; omega))
+    · exact sub_disj (by simp only [offset]; omega_using [hfit, hk]) (by omega_using [hfit]) (.inr (by simp only [offset]; omega_using [hi]))
+    · exact sub_disj (by simp only [offset]; omega_using [hfit, hk]) (by omega_using [hfit]) (.inr (by simp only [offset]; omega_using [hi]))
+    · exact sub_disj (by simp only [offset]; omega_using [hfit, hk]) (by simp only [T]; omega_using [hfit])
+        (.inl (by simp only [offset, T]; omega_using [hk]))
 
 /-- A call of a function running `ops`, as the code that calls it states what it keeps. -/
 theorem callOf_keep {ops : List FieldOp} (hd : Point32.DestsOk ops) (hsp : NoSp (Point32.fnOf ops))
@@ -181,7 +181,7 @@ theorem affCall_ok {s : State} {base : BitVec 32} (hs : Ctx base s) (q : Spec.Ed
     have : ∀ op ∈ pointAddAffineOps, (fieldDest op).val < 16 := by decide
     have := this op hop
     rw [← h] at this
-    omega
+    omega_using [hi, this]
 
 /-- A call of `vg_ed25519_r32_double`: RFC 8032's double of the point in slots 0–3, and slots 16
 on as they were. -/
@@ -198,6 +198,6 @@ theorem doubleCall_ok {s : State} {base : BitVec 32} (hs : Ctx base s) :
   have : ∀ op ∈ pointDoubleRfcOps, (fieldDest op).val < 16 := by decide
   have := this op hop
   rw [← h] at this
-  omega
+  omega_using [hi, this]
 
 end VG.Proof.Ed25519.X86

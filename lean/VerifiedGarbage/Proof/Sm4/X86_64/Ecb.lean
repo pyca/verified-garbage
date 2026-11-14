@@ -70,12 +70,12 @@ theorem dataLoop_wp {s₀ : State} {b D : Addr} {n : Nat} {E : Nat → Spec.Sm4.
     {s : State} (hi : GInv s₀ b D n E 0 s) :
     WP isa (.loop Impl.Sm4.X86_64.group .ne) s (GDone s₀ b D n E) := by
   refine WP.loop (M := isa) (fun m s => ∃ k, m = n - 16 * k ∧ GInv s₀ b D n E k s) (fun m s hs => ?_) n s
-    ⟨0, by omega, hi⟩
+    ⟨0, by omega_using [], hi⟩
   obtain ⟨k, rfl, hk⟩ := hs
   refine WP.mono (dataGroup_wp hp hk) fun s' h => ?_
   rcases h with ⟨z, d⟩ | ⟨z, d⟩
   · exact .inl ⟨by simp [X86_64.eval, z], d⟩
-  · exact .inr ⟨by simp [X86_64.eval, z], n - 16 * (k + 1), by have := d.lt; have := hk.lt; omega,
+  · exact .inr ⟨by simp [X86_64.eval, z], n - 16 * (k + 1), by have := d.lt; have := hk.lt; omega_arith,
       k + 1, rfl, d⟩
 
 theorem sreg_ne (i : Nat) : sreg i ≠ .r9 ∧ sreg i ≠ .r8 ∧ sreg i ≠ .rdx := by
@@ -93,7 +93,7 @@ theorem prologue_ok {s₀ : State} {b : Addr} (hb : s₀.gpr .rcx = b) (hw : (�
   have hb₁ : s₁.gpr sb = b := by rw [o₁ _ (by decide), o₁b _ (by decide), r₁a, hb]
   obtain ⟨s₂, e₂, sv₂, g₂, rd₂, wr₂, f₂⟩ := save_ok (b := b) (by rw [wr₁, wr₁b, wr₁a]; exact hw) hb₁
   obtain ⟨s₃, e₃, v₃, -, g₃, rd₃, wr₃, f₃⟩ := setMasks_ok (b := b) keyMasks (by rw [g₂, hb₁])
-    (by rw [wr₂, wr₁, wr₁b, wr₁a]; exact hw) (fun kv hkv => by have := mask_lt hkv; rw [tableSlot_eq]; omega)
+    (by rw [wr₂, wr₁, wr₁b, wr₁a]; exact hw) (fun kv hkv => by have := mask_lt hkv; rw [tableSlot_eq]; omega_using [this])
     (by decide)
   have g₁ : ∀ r, r ≠ .r9 → r ≠ .r8 → r ≠ .rdx → s₁.gpr r = s₀.gpr r := fun r h1 h2 h3 => by
     rw [o₁ r h3, o₁b r h2, o₁a r h1]
@@ -109,13 +109,13 @@ theorem prologue_ok {s₀ : State} {b : Addr} (hb : s₀.gpr .rcx = b) (hw : (�
     rw [← g₁ _ n1 n2 n3, ← sv₂ i hi]
     refine f₃.readW (Region.contains_self _ _) (fun r hr => ?_) (by decide)
     simp only [List.mem_singleton] at hr; subst hr
-    exact VG.Offset.disjoint_base b (d := 8 * (savedSlot + i)) (by rw [tableSlot_eq, savedSlot_eq]; omega)
-      (by rw [savedSlot_eq]; omega)
+    exact VG.Offset.disjoint_base b (d := 8 * (savedSlot + i)) (by rw [tableSlot_eq, savedSlot_eq]; omega_using [])
+      (by rw [savedSlot_eq]; omega_using [hi])
   · have hm1 : s₁.mem = s₀.mem := by rw [m₁, m₁b, m₁a]
     rw [← hm1]
     refine f₂.trans (f₃.sub fun r hr => ⟨_, List.mem_singleton_self _, ?_⟩)
     simp only [List.mem_singleton] at hr; subst hr
-    exact Region.sub_prefix (by rw [tableSlot_eq, slots_eq]; omega)
+    exact Region.sub_prefix (by rw [tableSlot_eq, slots_eq]; omega_using [])
 
 theorem outF_spec (dir : Dir) (m : Mem) (sch : Spec.Sm4.Schedule) (D : Addr) (j : Nat) :
     outF m D (dirKeys dir sch) j = blockFn sch (specDir dir) (Spec.Sm4.blockAt m (D + BitVec.ofNat 64 (16 * j))) := by
@@ -150,7 +150,7 @@ theorem ecb_wp (dir : Dir) {s₀ : State} (hp : (ecbX86_64 dir).pre s₀) :
   have f₀₂ : Frame [⟨b, 8 * slots⟩] s₀.mem s₂.mem :=
     f₁.trans (k₂.frame.sub fun r hr => ⟨_, List.mem_singleton_self _, by
       simp only [List.mem_singleton] at hr; subst hr
-      exact Region.sub_prefix (by rw [tableEnd_eq, slots_eq]; omega)⟩)
+      exact Region.sub_prefix (by rw [tableEnd_eq, slots_eq]; omega_using [])⟩)
   have base₂ : s₂.gpr sb = b := k₂.pre.base
   have sc₂ : ScrOk s₀ b E s₂.mem := by
     refine ⟨k₂.masks.at base₂, fun e he => ?_, fun i hi => ?_⟩
@@ -160,8 +160,8 @@ theorem ecb_wp (dir : Dir) {s₀ : State} (hp : (ecbX86_64 dir).pre s₀) :
     · rw [← sv₁ i hi]
       refine k₂.frame.readW (Region.contains_self _ _) (fun r hr => ?_) (by decide)
       simp only [List.mem_singleton] at hr; subst hr
-      exact VG.Offset.disjoint_base b (d := 8 * (savedSlot + i)) (by rw [tableEnd_eq, savedSlot_eq]; omega)
-        (by rw [savedSlot_eq]; omega)
+      exact VG.Offset.disjoint_base b (d := 8 * (savedSlot + i)) (by rw [tableEnd_eq, savedSlot_eq]; omega_using [])
+        (by rw [savedSlot_eq]; omega_using [hi])
   have data₂ : ∀ i < 16 * n, s₂.mem (D + BitVec.ofNat 64 i) = s₀.mem (D + BitVec.ofNat 64 i) := fun i hi =>
     f₀₂.bytes (R := ⟨D, 16 * n⟩) (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact dDS)
       (by simp only; omega) hi
@@ -186,22 +186,22 @@ theorem ecb_wp (dir : Dir) {s₀ : State} (hp : (ecbX86_64 dir).pre s₀) :
       by rw [m₃]; exact fr₂, by rw [rd₃, rd₂], by rw [wr₃, wr₂]⟩
   · have hn0 : n ≠ 0 := by simpa using h0
     refine dataLoop_wp ⟨hwS, hwD, dDS, fitB, fitD⟩ ⟨by rw [g₃, base₂], by rw [g₃, rsp₂],
-      by rw [g₃, rdx₂]; simp, by rw [g₃, r8₂, Nat.mul_zero, Nat.sub_zero]; simp [n], by omega,
+      by rw [g₃, rdx₂]; simp, by rw [g₃, r8₂, Nat.mul_zero, Nat.sub_zero]; simp [n], by omega_using [hn0],
       by rw [g₃, k₂.rdi], by rw [m₃]; exact sc₂, fun i hi => ?_, by rw [m₃]; exact fr₂, by rw [rd₃, rd₂],
       by rw [wr₃, wr₂]⟩
-    rw [m₃, data₂ i hi, ite_eq_right (by omega)]
+    rw [m₃, data₂ i hi, ite_eq_right (by omega_using [])]
   -- The epilogue.
   obtain ⟨s₅, e₅, rg₅, o₅, f₅, rd₅, wr₅⟩ := restore_ok (by rw [d₄.wr]; exact hwS) d₄.base d₄.scr.saved
   refine WP.of_runBlock ⟨s₅, e₅, ⟨fun r hr => ?_, ?_⟩, ?_⟩
   · simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl
-    · exact rg₅ 0 (by omega)
-    · exact rg₅ 1 (by omega)
+    · exact rg₅ 0 (by omega_using [])
+    · exact rg₅ 1 (by omega_using [])
     · rw [o₅ _ (fun i hi => by unfold sreg; split <;> decide), d₄.rsp]
-    · exact rg₅ 2 (by omega)
-    · exact rg₅ 3 (by omega)
-    · exact rg₅ 4 (by omega)
-    · exact rg₅ 5 (by omega)
+    · exact rg₅ 2 (by omega_using [])
+    · exact rg₅ 3 (by omega_using [])
+    · exact rg₅ 4 (by omega_using [])
+    · exact rg₅ 5 (by omega_using [])
   · -- The return address is untouched.
     have fr : Frame [⟨b, 8 * slots⟩, ⟨D, 16 * n⟩] s₀.mem s₅.mem :=
       d₄.frame.trans (f₅.sub fun r hr => ⟨⟨b, 8 * slots⟩, List.mem_cons_self, by

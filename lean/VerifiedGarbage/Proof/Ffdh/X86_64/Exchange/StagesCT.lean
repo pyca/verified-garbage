@@ -95,7 +95,7 @@ theorem entry_ct : RelCT isa (Two CR) (.block VG.Impl.Ffdh.X86_64.Domain.Exchang
 theorem e1_dhp (p : ExP) (s : State) (h : E1 p s) : DHP p.d s := by
   obtain ⟨xb, hb, hd⟩ := h
   have := hb.hZ
-  exact ⟨hb.scr, hd, by change 256 ≤ p.Z; omega, hb.hdr (sDom, p.dp) (by simp [ExP.headers]),
+  exact ⟨hb.scr, hd, by change 256 ≤ p.Z; omega_using [this], hb.hdr (sDom, p.dp) (by simp [ExP.headers]),
     hb.hdr (sK, BitVec.ofNat 64 p.k) (by simp [ExP.headers])⟩
 
 theorem e1_ce (p : ExP) (s : State) (h : E1 p s) : WP isa (.block domHead) s (CE p) := by
@@ -130,7 +130,7 @@ theorem c2_ps0 (p : ExP) (s : State) (h : C2 p s) : PS0 sY sK sX sXl p.pw s := b
     (bp := sY) (bl := sK) (ep := sX) (el := sXl) (pb := p.yp) (pe := p.xp) (bb := p.yb) (eb := xb) (by decide) (by decide) (by decide) (by decide)
     (hb.hdr (sY, p.yp) (by simp [ExP.headers]))
     (by rw [hb.ylen]; exact hb.hdr (sK, BitVec.ofNat 64 p.k) (by simp [ExP.headers])) hb.y
-    (by rw [hb.ylen]; omega) (by rw [hb.ylen])
+    (by rw [hb.ylen]; omega_using [hk]) (by rw [hb.ylen])
     (hb.hdr (sX, p.xp) (by simp [ExP.headers]))
     (by rw [hb.xlen]; exact hb.hdr (sXl, BitVec.ofNat 64 p.xl) (by simp [ExP.headers]))
     hb.x (by rw [hb.xlen]; exact hb.xl1) (by rw [hb.xlen]; exact hb.xl2.trans hk')
@@ -144,7 +144,7 @@ theorem c3_good (p : ExP) (s : State) (h : C3 p s) : GoodW1 p.ws s := by
   obtain ⟨xb, ⟨mi, hb, hc⟩, _⟩ := h
   have hw := hc.w2
   have hw' := hc.w28
-  exact ⟨⟨mi, hc.sub.good, Nat.le_refl _⟩, by change 1 ≤ p.w; omega, by change p.w < 2 ^ 31; omega⟩
+  exact ⟨⟨mi, hc.sub.good, Nat.le_refl _⟩, by change 1 ≤ p.w; omega_using [hw], by change p.w < 2 ^ 31; omega_using [hw']⟩
 
 theorem c3_c4 (p : ExP) (s : State) (h : C3 p s) : WP isa (seqs (range aY)) s (C4 p) := by
   obtain ⟨xb, hh⟩ := h

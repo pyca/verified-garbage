@@ -88,18 +88,18 @@ theorem combStoreMemory_ok (s : State) {p : Inputs} {sp : BitVec 32} {digit o : 
   have hw := p.width.1
   have small : p.output.toNat + CombBuilder.entryOffset p digit < 2^32 := by
     have := h.output.fits
-    omega
+    omega_using [bound, hw, this]
   have address : State.addr (p.output + BitVec.ofNat 32 (CombBuilder.entryOffset p digit)) =
       off (State.addr p.output) (CombBuilder.entryOffset p digit) := addr_add small
   have address' : State.addr (p.output + BitVec.ofNat 32 (24+8*p.w*(digit+2))) =
       off (State.addr p.output) (CombBuilder.entryOffset p digit) := address
   have dstFit : (p.output + BitVec.ofNat 32 (CombBuilder.entryOffset p digit)).toNat + 8*p.w ≤ 2^32 := by
     simp only [BitVec.toNat_add,BitVec.toNat_ofNat,
-      Nat.mod_eq_of_lt (by omega : CombBuilder.entryOffset p digit < 2^32),Nat.mod_eq_of_lt small]
+      Nat.mod_eq_of_lt (by omega_using [small] : CombBuilder.entryOffset p digit < 2^32),Nat.mod_eq_of_lt small]
     have := h.output.fits
-    omega
+    omega_using [bound, this]
   have write := CallLay.inRegions_sub h.output.writable bound
-    (by have := h.output.fits; omega : CombBuilder.bytes p < 2^64)
+    (by have := h.output.fits; omega_using [this] : CombBuilder.bytes p < 2^64)
   have subset := CombBuilder.entry_sub p hd
   have sep := h.workspaceSeparate.sub_right subset
   have header := nativeHeader_of_layout s.mem p.base h.ready.workspace.nowrap (Nat.le_refl _) h.ready.layout

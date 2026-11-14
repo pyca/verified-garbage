@@ -46,18 +46,18 @@ theorem table_ok (T : List Nat) (hT : ∀ k < 128, T.getD k 0 < 65536) {b : Reg}
     ⟨Keep.refl _ _, Frame.refl _ _, fun j hj => absurd hj (Nat.not_lt_zero j)⟩
   have hbk : s.gpr b = s₀.gpr b := h.keep.get b (not_mem_one hb)
   refine wp_movz fun s₁ h₁ e₁ => wp_strw (a := s₀.gpr b + BitVec.ofNat 64 (4 * k))
-    ⟨by omega, by omega⟩ (by rw [h₁.get b (not_mem_one hb), hbk]) (by rw [h₁.wr, h.keep.wr]; exact hin k hk)
+    ⟨by omega_using [], by omega_using [hk]⟩ (by rw [h₁.get b (not_mem_one hb), hbk]) (by rw [h₁.wr, h.keep.wr]; exact hin k hk)
     fun s₂ h₂ => wp_nil ?_
   have v : (s₁.gpr .x9).setWidth 32 = BitVec.ofNat 32 (T.getD k 0) := by
     refine setWidth32_of_toNat ?_
     rw [e₁, toNat_imm, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (hT k hk)]
   refine ⟨(h.keep.trans (h₁.keep.trans h₂.keep)).mono, ?_, fun j hj => ?_⟩
   · rw [h₂.mem, h₁.mem]
-    exact h.frame.writeW (List.mem_singleton_self _) _ (contains_off (by omega) (by decide))
+    exact h.frame.writeW (List.mem_singleton_self _) _ (contains_off (by omega_using [hk]) (by decide))
   · rw [h₂.mem, h₁.mem, v]
     by_cases e : j = k
     · subst e; exact Mem.readW_writeW_self32 _ _ _
-    · rw [Mem.readW_writeW_sep (sep_off _ (by omega) (by omega) (by omega)) (by decide)]
-      exact h.tab j (by omega)
+    · rw [Mem.readW_writeW_sep (sep_off _ (by omega_using [e]) (by omega_using [hk, hj]) (by omega_using [hk])) (by decide)]
+      exact h.tab j (by omega_using [hj, e])
 
 end VG.Proof.MlKem.AArch64

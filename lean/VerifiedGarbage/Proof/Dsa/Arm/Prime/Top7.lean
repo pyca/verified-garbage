@@ -73,9 +73,9 @@ theorem inner_ct (v : RoundImpl) :
   intro a' b' tr1 tr2 u w hp e1 e2
   obtain ⟨a, b, ⟨s, t, ⟨hs, ht, sp, hP⟩, o1, o2⟩, pa, pb⟩ := hp
   have f1 : 56 ≤ a.sp.toNat := by rw [o1.rest.sp]; show 56 ≤ (s.sp - BitVec.ofNat 32 32).toNat
-                                  rw [sub_toNat' (by have := hs.spLo; omega)]; have := hs.spLo; omega
+                                  rw [sub_toNat' (by have := hs.spLo; omega_using [this])]; have := hs.spLo; omega_using [this]
   have f2 : 56 ≤ b.sp.toNat := by rw [o2.rest.sp]; show 56 ≤ (t.sp - BitVec.ofNat 32 32).toNat
-                                  rw [sub_toNat' (by have := ht.spLo; omega)]; have := ht.spLo; omega
+                                  rw [sub_toNat' (by have := ht.spLo; omega_using [this])]; have := ht.spLo; omega_using [this]
   have ea : pcPushed a = a' := Option.some.inj ((push_pushed (by decide) (by simpa using f1)).symm.trans pa)
   have eb : pcPushed b = b' := Option.some.inj ((push_pushed (by decide) (by simpa using f2)).symm.trans pb)
   subst a'; subst b'
@@ -109,8 +109,8 @@ theorem prime_ct (v : RoundImpl) :
   apply VG.Proof.Rsa.Arm.allocation_ct
   intro a b tr1 tr2 u w hp e1 e2
   obtain ⟨s, t, ⟨hs, ht, sp, hP⟩, pa, pb⟩ := hp
-  have ea : allocated 32 s = a := Option.some.inj ((alloc_push (by have := hs.spLo; omega)).symm.trans pa)
-  have eb : allocated 32 t = b := Option.some.inj ((alloc_push (by have := ht.spLo; omega)).symm.trans pb)
+  have ea : allocated 32 s = a := Option.some.inj ((alloc_push (by have := hs.spLo; omega_using [this])).symm.trans pa)
+  have eb : allocated 32 t = b := Option.some.inj ((alloc_push (by have := ht.spLo; omega_using [this])).symm.trans pb)
   subst a; subst b
   cases e1 with
   | seq pre1 fr1 =>

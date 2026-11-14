@@ -42,6 +42,6 @@ theorem canceled_flag (a : Word) :
   change decide (2 ^ 64 ≤ a.toNat + 18446744073709551614 + 1) =
     decide (2 ^ 64 ≤ a.toNat + (-a).toNat + 0)
   simp only [BitVec.toNat_neg, Nat.add_zero, decide_eq_decide]
-  omega
+  omega_using []
 
 end VG.Proof.Bignum.AArch64.BlockedRedcFast

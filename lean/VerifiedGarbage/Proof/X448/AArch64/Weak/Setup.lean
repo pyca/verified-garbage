@@ -31,7 +31,7 @@ theorem convert_ok {s : State} {base : Addr} (hs : Scr s base)
     let o : Index := ⟨n, hn⟩
     have ov : o.val = n := rfl
     have bo : VG.Proof.X448.AArch64.Bounded t.mem base (slot n) := by
-      intro j hj; rw [tr o (by omega) j hj]; exact hb o j hj
+      intro j hj; rw [tr o (by omega_using [ov]) j hj]; exact hb o j hj
     refine WP.mono (VG.Proof.Curve448.AArch64.fromLegacy_ok (tk.scr hs)
       (slot_bound o) (slot_aligned o) bo) fun u ⟨uk, ub, uv⟩ => ?_
     refine ⟨tk.trans (VG.Proof.X448.AArch64.Op.keep (o := o) uk), ?_, ?_⟩
@@ -42,18 +42,18 @@ theorem convert_ok {s : State} {base : Addr} (hs : Scr s base)
         change F u.mem base (slot n) = _
         have uv' : F u.mem base (slot n) = VG.Proof.X448.AArch64.F t.mem base (slot n) := uv
         rw [uv']
-        exact congrArg toFe (VG.Proof.X448.valN_congr (tr o (by omega)))
+        exact congrArg toFe (VG.Proof.X448.valN_congr (tr o (by omega_using [ov])))
       · have sep := slot_sep he
-        have before : i.val < n := by have := i.isLt; have hne : i.val ≠ n := fun e => he (Fin.ext e); omega
+        have before : i.val < n := by have := i.isLt; have hne : i.val ≠ n := fun e => he (Fin.ext e); omega_using [hi, hne]
         have old := tv i before
         refine ⟨?_, ?_⟩
         · intro j hj
-          rw [uk.mem.limbs sep (slot_bound i) (by omega : j < 16)]; exact old.1 j hj
+          rw [uk.mem.limbs sep (slot_bound i) (by omega_using [hj] : j < 16)]; exact old.1 j hj
         · exact (congrArg toFe (VG.Proof.Curve448.AArch64.field_fe uk.mem sep (slot_bound i))).trans old.2
     · intro i hi j hj
-      have he : i ≠ o := by intro e; subst i; change n + 1 ≤ n at hi; omega
+      have he : i ≠ o := by intro e; subst i; change n + 1 ≤ n at hi; omega_using [hi]
       rw [uk.mem.limbs (slot_sep he) (slot_bound i) hj]
-      exact tr i (by omega) j hj
+      exact tr i (by omega_using [hi]) j hj
   refine WP.mono (wp_range_flatMap (M := isa) (N := 22) inv step 22 (by decide) s
     ⟨Keep.refl _ _, fun i hi => by omega, fun _ _ _ _ => rfl⟩) fun t ⟨tk, tv, _⟩ => ?_
   exact ⟨tk, fun i => (tv i i.isLt).1, funext fun i => (tv i i.isLt).2⟩

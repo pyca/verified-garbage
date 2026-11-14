@@ -58,7 +58,7 @@ theorem bytes_of_words {m₁ m₂ : Mem} {p : Addr} {N : Nat}
   simp only [Region.Contains] at ha
   have hw : ∀ i < N, coeffAt m₁ p i = coeffAt m₂ p i := fun i hi =>
     BitVec.eq_of_toNat_eq (List.map_inj_left.mp h i (List.mem_range.mpr hi))
-  have hi : (a - p).toNat / 4 < N := by omega
+  have hi : (a - p).toNat / 4 < N := by omega_using [ha]
   have ht : (a - p).toNat % 4 < 4 := Nat.mod_lt _ (by decide)
   have ea : a = coeffAddr p ((a - p).toNat / 4) + BitVec.ofNat 64 ((a - p).toNat % 4) := by
     rw [coeffAddr, BitVec.add_assoc, BitVec.ofNat_add_ofNat, Nat.div_add_mod, BitVec.ofNat_toNat,
@@ -118,7 +118,7 @@ theorem memEq {a b : State} (ha : ZP s₁ a) (hb : ZP s₂ b) : Hint.MemEq ([hR 
     rw [show State.addr (pH s₂) = State.addr (pH s₁) by simp only [pH, h.r0], ← h.r1] at hl
     exact bytes_of_words hl hc
   · -- `y`: zeros.
-    have hlt : (x - State.addr (pY s₁)).toNat < pLen s₁ := by simp only [Region.Contains] at hc; omega
+    have hlt : (x - State.addr (pY s₁)).toNat < pLen s₁ := by simp only [Region.Contains] at hc; omega_using [hc]
     have ea : x = State.addr (pY s₁) + BitVec.ofNat 64 (x - State.addr (pY s₁)).toNat := by
       rw [BitVec.ofNat_toNat, BitVec.setWidth_eq, BitVec.add_comm, BitVec.sub_add_cancel]
     have e₁ : (bytesAt a.mem (State.addr (pY s₁)) (pLen s₁)).getD (x - State.addr (pY s₁)).toNat 0 =
@@ -239,7 +239,7 @@ theorem hintAt_congr {m m' : Mem} {p : Addr} {k : Nat}
   have hi := List.mem_range.mp hi
   congr 1; funext j
   have hj : j.val < 256 := j.isLt
-  rw [h _ (by omega)]
+  rw [h _ (by omega_using [hi, hj])]
 
 /-- The memory of the satisfying state: `len = 84` on the stack. -/
 def satMem : Mem := fun a => if a = 0x8000 then 84 else 0

@@ -77,15 +77,15 @@ theorem decompress_correct (c : Cfg) (hc : CfgOk c)
   obtain ⟨hrd, hwr, hpo, hpw, how, hfit, hpkfit, hwfit⟩ := hs
   have hp : InputPre c (1 + c.C.len) s :=
     ⟨by rw [hrd]; simp [Nat.add_comm], by rw [hwr]; simp,
-      by simpa only [Nat.add_comm] using hpw, by omega, hwfit⟩
+      by simpa only [Nat.add_comm] using hpw, by omega_using [hpkfit], hwfit⟩
   have hrun : WP isa (Impl.EcKey.Compressed.Arm.decompress c) s fun s' =>
       (decompressContract c.C root).post s s' ∧
       (∀ rd ∈ Cfg.saved, s'.gpr rd.1 = s.gpr rd.1) ∧ s'.sp = s.sp := by
     apply decompressFront_ok hc hp
     intro t F
     refine WP.seq (WP.mono (decompressMiddle_ok hc hroot F) fun u U => ?_)
-    refine WP.mono (decompressFinish_ok hc U.scr U.out (by omega)
-      (by rw [U.wr, hwr, show 1 + 2 * c.C.len = 2 * c.C.len + 1 by omega]; simp)
+    refine WP.mono (decompressFinish_ok hc U.scr U.out (by omega_using [hfit])
+      (by rw [U.wr, hwr, show 1 + 2 * c.C.len = 2 * c.C.len + 1 by omega_using []]; simp)
       (by simpa only [Nat.add_comm] using how.sub_right (Region.sub_prefix (by decide : size ≤ 8192)))
       U.saved (decide (CompressedAccept c root s)) (by simp only [U.flag, decide_eq_true_eq]))
       fun s' ⟨hout, hret, hsave, K, _⟩ => ?_

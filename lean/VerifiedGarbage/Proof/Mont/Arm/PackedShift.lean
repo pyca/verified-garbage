@@ -26,24 +26,24 @@ def shiftWords (acc k : Nat) : List Instr :=
         [.ldr .r5 .r12 (acc + 4 * k + 4), .str .r5 .r12 (acc + 4 * k)] := by
       simp only [shiftWords, List.range_succ, List.flatMap_append, List.flatMap_singleton]
     rw [eq]
-    refine VG.Proof.X25519.Arm.WP.append (shiftWords_ok hs k (by omega)) fun u ⟨out, val, rest⟩ => ?_
+    refine VG.Proof.X25519.Arm.WP.append (shiftWords_ok hs k (by omega_using [fit])) fun u ⟨out, val, rest⟩ => ?_
     have hu := hs.of_rest rest (by decide)
-    refine wp_ldr (hu.off_lt (by omega)) (hu.ea (by omega)) (hu.read (by omega)) fun v uv => ?_
+    refine wp_ldr (hu.off_lt (by omega_using [fit])) (hu.ea (by omega_using [fit])) (hu.read (by omega_using [fit])) fun v uv => ?_
     have hv := hu.of_rest (uv.rest (ws := [.r5]) (by simp)) (by decide)
-    refine wp_str (hv.off_lt (by omega)) (hv.ea (by omega)) (hv.write (by omega)) fun t vt => WP.block_nil ?_
+    refine wp_str (hv.off_lt (by omega_using [fit])) (hv.ea (by omega_using [fit])) (hv.write (by omega_using [fit])) fun t vt => WP.block_nil ?_
     have mem : t.mem = u.mem.writeW (off base (acc + 4 * k)) (u.mem.readW (off base (acc + 4 * k + 4)) 32) := by
       rw [vt.mem, uv.mem, uv.gpr]
     have wr := writeW32_outside u.mem base (d := acc + 4 * k)
-      (u.mem.readW (off base (acc + 4 * k + 4)) 32) (by omega)
+      (u.mem.readW (off base (acc + 4 * k + 4)) 32) (by omega_using [fit, hn])
     rw [← mem] at wr
-    have low := wr.val32 (d := acc) (k := k) (by omega) (by omega)
-    have source := out.w32 (d := acc + 4 * k + 4) (by omega) (by omega)
+    have low := wr.val32 (d := acc) (k := k) (by omega_using []) (by omega_using [fit, hn])
+    have source := out.w32 (d := acc + 4 * k + 4) (by omega_using []) (by omega_using [fit, hn])
     have top : w32 t.mem base (acc + 4 * k) = w32 u.mem base (acc + 4 * k + 4) := by
       rw [mem, w32_write_self]
-    refine ⟨(out.mono (Nat.le_refl _) (by omega)).trans (wr.mono (by omega) (by omega)), ?_,
+    refine ⟨(out.mono (Nat.le_refl _) (by omega_using [])).trans (wr.mono (by omega_using []) (by omega_using [])), ?_,
       rest.trans ((uv.rest (by simp)).trans (vt.rest _))⟩
     rw [val32_succ, val32_succ, low, top, source, val]
-    rw [show acc + 4 * k + 4 = acc + 4 + 4 * k by omega]
+    rw [show acc + 4 * k + 4 = acc + 4 + 4 * k by omega_using []]
 
  theorem shift_ok {s : State} {base : Addr} {size acc n : Nat}
     (hs : Scr s base size) (fit : acc + 4 * (n + 2) ≤ size) :
@@ -55,21 +55,21 @@ def shiftWords (acc k : Nat) : List Instr :=
   refine wp_mov (op2_imm (by decide)) fun v uv => ?_
   have k : Rest [.r5] s v := rest.trans (uv.rest (by simp))
   have hv := hs.of_rest k (by decide)
-  refine wp_str (hv.off_lt (by omega)) (hv.ea (by omega)) (hv.write (by omega)) fun t vt => WP.block_nil ?_
+  refine wp_str (hv.off_lt (by omega_using [fit])) (hv.ea (by omega_using [fit])) (hv.write (by omega_using [fit])) fun t vt => WP.block_nil ?_
   have mem : t.mem = u.mem.writeW (off base (acc + 4 * (n + 1))) (0 : BitVec 32) := by rw [vt.mem, uv.mem, uv.gpr]
   have hn := hs.nowrap
-  have wr := writeW32_outside u.mem base (d := acc + 4 * (n + 1)) 0 (by omega)
+  have wr := writeW32_outside u.mem base (d := acc + 4 * (n + 1)) 0 (by omega_using [fit, hn])
   rw [← mem] at wr
-  have low := wr.val32 (d := acc) (k := n + 1) (by omega) (by omega)
+  have low := wr.val32 (d := acc) (k := n + 1) (by omega_using []) (by omega_using [fit, hn])
   have top : w32 t.mem base (acc + 4 * (n + 1)) = 0 := by rw [mem, w32_write_self]; rfl
-  refine ⟨(out.mono (Nat.le_refl _) (by omega)).trans (wr.mono (by omega) (by omega)), ?_,
+  refine ⟨(out.mono (Nat.le_refl _) (by omega_using [])).trans (wr.mono (by omega_using []) (by omega_using [])), ?_,
     k.trans (vt.rest _)⟩
-  rw [show n + 2 = (n + 1) + 1 by omega, val32_succ, top, Nat.mul_zero, Nat.add_zero, low, val]
+  rw [show n + 2 = (n + 1) + 1 by omega_using [], val32_succ, top, Nat.mul_zero, Nat.add_zero, low, val]
   rw [val32]
   have h := (s.mem.readW (off base acc) 32).isLt
   change val32 s.mem base (acc + 4) (n + 1) =
     (w32 s.mem base acc + 2 ^ 32 * val32 s.mem base (acc + 4) (n + 1)) / 2 ^ 32
   dsimp only [w32] at *
-  omega
+  omega_using []
 
 end VG.Proof.Mont.Arm.Packed

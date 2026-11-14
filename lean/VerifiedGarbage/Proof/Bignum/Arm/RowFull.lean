@@ -39,7 +39,7 @@ theorem rowFull_ok (s : State) {base : BitVec 32} {size o b n : Nat}
   rw [rowFull, WP.seq_iff]
   refine WP.mono (row_ok s ctx hn hp0 hp12 hcount) ?_
   intro u inv
-  have tops := inv.outside.val32 (d := o + 4 * n) (k := 2) (by omega) (by omega)
+  have tops := inv.outside.val32 (d := o + 4 * n) (k := 2) (by omega_using []) (by omega_using [hspace, nowrap])
   have total : val32 u.mem (State.addr base) o n + 2 ^ (32 * n) *
       (val32 u.mem (State.addr base) (o + 4 * n) 2 + (u.gpr .r11).toNat) =
       val32 s.mem (State.addr base) o (n + 2) +
@@ -54,20 +54,20 @@ theorem rowFull_ok (s : State) {base : BitVec 32} {size o b n : Nat}
   have ahi : State.addr (u.gpr .r0 + BitVec.ofNat 32 4) =
       off (State.addr base) (o + 4 * n + 4) := by
     rw [inv.outPtr, Offset.add_add]
-    exact VG.Arm.addr_add (by omega)
-  refine WP.mono (rowCarry_ok u _ _ (row_addr ctx inv.outPtr (by omega)) ahi
-    (row_writable ctx inv.rest.wr (by omega)) (row_writable ctx inv.rest.wr (by omega)) ?_) ?_
+    exact VG.Arm.addr_add (by omega_using [hspace, nowrap])
+  refine WP.mono (rowCarry_ok u _ _ (row_addr ctx inv.outPtr (by omega_using [hspace])) ahi
+    (row_writable ctx inv.rest.wr (by omega_using [hspace])) (row_writable ctx inv.rest.wr (by omega_using [hspace])) ?_) ?_
   · simpa only [val32, Nat.mul_zero, Nat.zero_mul, Nat.add_zero, Nat.mul_comm, w32] using topfit
   · rintro t ⟨value, mem, keep⟩
     have nowrap' : (State.addr base).toNat + size ≤ 2 ^ 32 := by
-      simpa only [State.addr, BitVec.toNat_setWidth, Nat.mod_eq_of_lt (show base.toNat < 2 ^ 64 by have := base.isLt; omega)] using nowrap
+      simpa only [State.addr, BitVec.toNat_setWidth, Nat.mod_eq_of_lt (show base.toNat < 2 ^ 64 by have := base.isLt; omega_using [])] using nowrap
     obtain ⟨outside, whole⟩ := rowCarry_memory nowrap' hspace mem
     have vtop : (t.gpr .r3).toNat + 2 ^ 32 * (t.gpr .r4).toNat =
         val32 u.mem (State.addr base) (o + 4 * n) 2 + (u.gpr .r11).toNat := by
       simpa only [val32, Nat.mul_zero, Nat.zero_mul, Nat.add_zero, Nat.mul_comm, w32] using value
     refine ⟨?_, ?_, ?_, ?_⟩
     · rw [whole, vtop]; exact total
-    · exact (inv.outside.mono (Nat.le_refl _) (by omega)).trans (outside.mono (by omega) (by omega))
+    · exact (inv.outside.mono (Nat.le_refl _) (by omega_using [])).trans (outside.mono (by omega_using []) (by omega_using []))
     · exact (keep.gpr .r0 (by decide)).trans inv.outPtr
     · exact inv.rest.trans (keep.mono (by decide))
 

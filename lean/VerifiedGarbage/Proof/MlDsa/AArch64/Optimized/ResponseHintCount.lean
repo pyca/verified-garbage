@@ -23,7 +23,7 @@ theorem shift31_bound (x : BitVec 32) : (x >>> 31).toNat≤1 := by
   have h := x.isLt
   change _<4294967296 at h
   change _/2147483648≤1
-  omega
+  omega_using []
 
 /-- The final logical shift makes every hint a bit, even on rejected inputs. -/
 theorem hintWord_bit (B t h : BitVec 32) : (hintWord B t h).toNat≤1 :=

@@ -97,7 +97,7 @@ theorem sharedPrepare_ok (s : State) {base src : BitVec 32} {len k : Nat}
     ready.stackSep ready.saved ready.large ready.odd countFit) ?_
   rintro t ⟨done, modulus, r2, pt, frameT, restT⟩
   have bytes := rsa_bytes_frame (src := State.addr src) (k := k) frameU
-    (by have := h.maxLength; omega) (by simpa using h.separate)
+    (by have := h.maxLength; omega_using [this]) (by simpa using h.separate)
   rw [bytes] at modulus r2
   exact ⟨⟨done.workspace, done.layout, done.width, done.ptr, done.inverse,
       by rw [modulus]; exact h.large, done.stackRead, done.stackSep, done.saved⟩,

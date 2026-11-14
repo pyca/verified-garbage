@@ -53,7 +53,7 @@ theorem rounds_ok (M : Mont) (K : Kernel)
     exact hdrStore_hdr _ _ _ (by decide) hj (Ne.symm h18)
   have hfr : RoundFrame p (s.gpr .rsp) s.mem u.mem :=
     (DrawFrame.of_scr (InScr.of_frm hf (fun r hr => Nat.le_trans (hhi r hr) p.space_bounds.1))).round
-  refine WP.mono (roundsLoop_ok M K hu (hroom.congr hsp) hi hcu hpos (by omega) hc32)
+  refine WP.mono (roundsLoop_ok M K hu (hroom.congr hsp) hi hcu hpos (by omega_using []) hc32)
     fun t ⟨consumed, hcons, ht, hr, hs', hf', kt⟩ => ?_
   rw [hsp] at hf'
   exact ⟨consumed, hcons, ht, hr, hs.trans hs', hfr.trans hf', (k.trans kt).mono (by decide)⟩

@@ -23,7 +23,7 @@ open VG.Proof.X25519.Arm (toNat_imm)
 
 theorem code_ok (S : Signer) (name : String) {s₀ : State} (A : RandomABI s₀) (V : RValid S s₀) :
     WP isa (code name S.code) s₀ fun s' => ∃ u, Finished s₀ u ∧ s' = freed frameBytes u :=
-  WP.alloc ⟨by decide, by decide, by decide, by decide⟩ (by have := A.stackLow; unfold frameBytes; omega)
+  WP.alloc ⟨by decide, by decide, by decide, by decide⟩ (by have := A.stackLow; unfold frameBytes; omega_using [this])
     (WP.mono (body_ok S name A V) fun u hu => ⟨u, hu, rfl⟩)
 
 /-- `vg_dsa_sign_random` meets its contract. -/
@@ -42,11 +42,11 @@ theorem randomSign_correct (S : Signer) (name : String) (s : State)
   have hul : (rResult s).used < 2 ^ 32 := by
     have := rResult_used_le (s₀ := s)
     have : (rInput s).rand.length < 2 ^ 32 := by simp only [rInput, rBytes_length]; exact BitVec.isLt _
-    omega
+    omega_arith
   refine ⟨?_, hF.out, ?_⟩
   · rw [BitVec.setWidth_append_eq_right]
     show (u.gpr .r0).toNat = (rResult s).status
-    rw [hF.r0, toNat_imm (by omega)]
+    rw [hF.r0, toNat_imm (by omega_using [hle])]
   · show Spec.Rsa.wordsAt u.mem (State.addr (s.gpr .r2)) 1 = [BitVec.ofNat 64 (rResult s).used]
     simp only [Spec.Rsa.wordsAt, List.range_one, List.map_cons, List.map_nil, Nat.mul_zero]
     refine congrArg (· :: []) (BitVec.eq_of_toNat_eq ?_)
@@ -56,7 +56,7 @@ theorem randomSign_correct (S : Signer) (name : String) (s : State)
     rw [this, show (0 + 4 : Nat) = 4 from rfl]
     have lo : (u.mem.readW (State.addr (s.gpr .r2) + BitVec.ofNat 64 0) 32) = _ := hF.usedLo
     have hi : (u.mem.readW (State.addr (s.gpr .r2) + BitVec.ofNat 64 4) 32) = _ := hF.usedHi
-    rw [lo, hi, toNat_imm hul, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+    rw [lo, hi, toNat_imm hul, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hul])]
     rfl
 
 end VG.Proof.Dsa.Arm

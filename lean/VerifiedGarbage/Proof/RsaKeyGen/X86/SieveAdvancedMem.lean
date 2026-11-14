@@ -166,7 +166,7 @@ theorem stack_write_ne {m : Mem} {p : BitVec 32} {a b : Nat} {value : BitVec 32}
     (apart : b + 4 ≤ a ∨ a + 4 ≤ b) (aFit : a + 4 ≤ 20) (bFit : b + 4 ≤ 20) :
     (m.writeW (off (p.setWidth 64) a) value).readW (off (p.setWidth 64) b) 32 =
       m.readW (off (p.setWidth 64) b) 32 :=
-  Mem.readW_writeW_sep (Offset.sep _ apart (by omega) (by omega)) (by decide)
+  Mem.readW_writeW_sep (Offset.sep _ apart (by omega_using [bFit]) (by omega_using [aFit])) (by decide)
 
 theorem advancedMem_candidate (p : BitVec 32) (m : Mem) (q : Nat) (hit : Bool) :
     (advancedMem p m q hit).readW (off (p.setWidth 64) 0) 32 = m.readW (off (p.setWidth 64) 0) 32 := by

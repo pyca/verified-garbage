@@ -32,7 +32,7 @@ open VG.Proof.RsaPkcs1Sig.PPC64LE (Two two_alloc)
 
 theorem psa_pub {a s : State} (p : PubS pc a s) {i : Nat} (hi : i < nP pc) : psa s i = psa a i := by
   by_cases h12 : i < 12
-  · rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 ∨ i = 8 ∨ i = 9 ∨ i = 10 ∨
+  · rcases (by omega_using [h12] : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 ∨ i = 8 ∨ i = 9 ∨ i = 10 ∨
         i = 11) with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
       simp only [psa, Ss, p.g .r9 (by decide), p.g .r10 (by decide), p.args _ (by decide : (0 : Nat) < 16),
         p.args _ (by decide : (1 : Nat) < 16), p.args _ (by decide : (2 : Nat) < 16),
@@ -41,9 +41,9 @@ theorem psa_pub {a s : State} (p : PubS pc a s) {i : Nat} (hi : i < nP pc) : psa
         p.args _ (by decide : (7 : Nat) < 16), p.args _ (by decide : (12 : Nat) < 16),
         p.args _ (by decide : (13 : Nat) < 16)]
   · cases pc with
-    | false => exact absurd hi (by simp only [nP, Bool.false_eq_true, ↓reduceIte]; omega)
+    | false => exact absurd hi (by simp only [nP, Bool.false_eq_true, ↓reduceIte]; omega_using [h12])
     | true =>
-      rcases (by simp only [nP, ↓reduceIte] at hi; omega : i = 12 ∨ i = 13) with rfl | rfl
+      rcases (by simp only [nP, ↓reduceIte] at hi; omega_using [h12, hi] : i = 12 ∨ i = 13) with rfl | rfl
       · exact (p.pre rfl).1
       · exact (p.pre rfl).2.1
 
@@ -88,16 +88,16 @@ theorem priv_pub {D : Nat} {a u₁ u₂ : State} (h₁ : APriv pc D a u₁) (h�
       (hl : len ≤ 2 ^ 64) => bytes_at A (R := ⟨p, len⟩) hd hs hl
     rw [m, m, callE_gpr _ _ (r := .r5), callE_gpr _ _ (r := .r6), callE_gpr _ _ (r := .r5),
       callE_gpr _ _ (r := .r6), A₁.r5, A₁.r6, A₂.r5, A₂.r6,
-      hb P₁ A₁ P₁.kn ((P₁.ns.symm).sub_left (sc_sub P₁)) (by have := P₁.wn; omega),
-      hb P₂ A₂ P₂.kn ((P₂.ns.symm).sub_left (sc_sub P₂)) (by have := P₂.wn; omega), p₁.n, p₂.n]
+      hb P₁ A₁ P₁.kn ((P₁.ns.symm).sub_left (sc_sub P₁)) (by have := P₁.wn; omega_using []),
+      hb P₂ A₂ P₂.kn ((P₂.ns.symm).sub_left (sc_sub P₂)) (by have := P₂.wn; omega_using []), p₁.n, p₂.n]
   · have m : ∀ {s u : State}, (callE pc s u).mem = u.mem := fun {_ _} => rfl
     have hb := fun {s u : State} {em : List Byte} (P : PreS pc D s) (A : AtPriv pc s em u) {p : Addr} {len : Nat}
       (hd : (kS pc s).Disjoint ⟨p, len⟩) (hs : (VG.Proof.RsaOaep.PPC64LE.SC Ss s).Disjoint ⟨p, len⟩)
       (hl : len ≤ 2 ^ 64) => bytes_at A (R := ⟨p, len⟩) hd hs hl
     rw [m, m, callE_gpr _ _ (r := .r7), callE_gpr _ _ (r := .r8), callE_gpr _ _ (r := .r7),
       callE_gpr _ _ (r := .r8), A₁.r7, A₁.r8, A₂.r7, A₂.r8,
-      hb P₁ A₁ P₁.ke ((P₁.es.symm).sub_left (sc_sub P₁)) (by have := P₁.we; omega),
-      hb P₂ A₂ P₂.ke ((P₂.es.symm).sub_left (sc_sub P₂)) (by have := P₂.we; omega), p₁.e, p₂.e]
+      hb P₁ A₁ P₁.ke ((P₁.es.symm).sub_left (sc_sub P₁)) (by have := P₁.we; omega_using []),
+      hb P₂ A₂ P₂.ke ((P₂.es.symm).sub_left (sc_sub P₂)) (by have := P₂.we; omega_using []), p₁.e, p₂.e]
   · intro hpc
     subst hpc
     have hw : ∀ {s u : State} {em : List Byte} (P : PreS true D s) (X : PreXS s) (A : AtPriv true s em u),
@@ -106,18 +106,18 @@ theorem priv_pub {D : Nat} {a u₁ u₂ : State} (h₁ : APriv pc D a u₁) (h�
           (Spec.Rsa.wordsAt s.mem (stackArg s 16) (Spec.Rsa.precomputedWords (s.gpr .r6).toNat)).map (·.toNat) := by
       intro s u em P X A
       have pwl : Spec.Rsa.precomputedWords (s.gpr .r6).toNat ≤ (stackArg s 17).toNat := by
-        rw [X.pl]; unfold Spec.Rsa.privatePrecomputedWords; omega
+        rw [X.pl]; unfold Spec.Rsa.privatePrecomputedWords; omega_using []
       simp only [Spec.Rsa.privatePrecomputedLeak, callE_stackArg A (i := 12) (by decide), psa,
         callE_gpr s u (r := .r6), A.r6]
       congr 1
       have subPre : Region.Sub ⟨stackArg s 16, 8 * Spec.Rsa.precomputedWords (s.gpr .r6).toNat⟩ (preR s) :=
-        fun _ hx => by simp only [Region.Contains] at hx ⊢; omega
+        fun _ hx => by simp only [Region.Contains] at hx ⊢; omega_using [pwl, hx]
       exact VG.Proof.Rsa.PPC64LE.Priv.words_of_frame A.mem (fun r hr => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl
         · exact X.kP.symm.sub_left subPre
         · exact (X.sP.symm.sub_right (sc_sub P)).sub_left subPre)
-        (by have := X.wP; omega)
+        (by have := X.wP; omega_using [pwl, this])
     rw [hw P₁ (X₁ rfl) A₁, hw P₂ (X₂ rfl) A₂, (p₁.pre rfl).2.2, (p₂.pre rfl).2.2]
 
 theorem call_ct {D : Nat} : RelCT isa (Two (APriv pc D)) (privCall pc) fun _ _ => True := by

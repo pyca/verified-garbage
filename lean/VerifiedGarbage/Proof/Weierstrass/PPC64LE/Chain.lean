@@ -190,26 +190,26 @@ theorem odds_ok (hkS : S.k = k) (hmS : S.m = m) (hM : ModOk k m) (hL : ChainLay 
   | 0, _, _, St, Tt => WP.block_nil ⟨St, Tt⟩
   | j + 1, hj, s, St, Tt => by
     rw [VG.Impl.Weierstrass.PPC64LE.ChainCfg.odds]
-    refine WP.seq (WP.mono (odds_ok hkS hmS hM hL hm j (by omega) St Tt) fun t ⟨St', Tt'⟩ => ?_)
+    refine WP.seq (WP.mono (odds_ok hkS hmS hM hL hm j (by omega_using [hj]) St Tt) fun t ⟨St', Tt'⟩ => ?_)
     have hn := St'.ws.nowrap
-    have Ti := Tt'.1 j (by omega)
+    have Ti := Tt'.1 j (by omega_using [])
     obtain ⟨cv, w, m', k', d⟩ := S
     dsimp only at hkS hmS
     subst hkS hmS
-    refine WP.mono (mulCall_ok hM St'.ws (slot_own hL (i := j + 1) (by omega)) (slot_own hL (i := j) (by omega))
+    refine WP.mono (mulCall_ok hM St'.ws (slot_own hL (i := j + 1) (by omega_using [hj])) (slot_own hL (i := j) (by omega_using [hj]))
       (slot_own hL (i := 8) (Nat.le_refl _)) Tt'.2.1) fun u ⟨ku, ltu, eu⟩ => ?_
-    refine ⟨St'.call (Or.inr (slot_le hL (i := j + 1) (by omega))) ku, ?_⟩
+    refine ⟨St'.call (Or.inr (slot_le hL (i := j + 1) (by omega_using [hj]))) ku, ?_⟩
     have e : ∀ i ≤ 8, i ≠ j + 1 → wordsVal u.mem base (P.slot i) k' = wordsVal t.mem base (P.slot i) k' :=
       fun i hi hne => ku.unch.wordsVal (fun w hw => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
         rcases hw with rfl | rfl
         · exact slot_apart hL hne
         · exact .inl (slot_own hL hi)) (by have := slot_own hL hi; have := hL.fit; omega_arith)
-    refine ⟨fun i hi => ?_, by rw [e 8 (Nat.le_refl _) (by omega)]; exact Tt'.2.1,
-      by rw [e 8 (Nat.le_refl _) (by omega)]; exact Tt'.2.2⟩
+    refine ⟨fun i hi => ?_, by rw [e 8 (Nat.le_refl _) (by omega_using [hj])]; exact Tt'.2.1,
+      by rw [e 8 (Nat.le_refl _) (by omega_using [hj])]; exact Tt'.2.2⟩
     rcases Nat.lt_or_ge i (j + 1) with h' | h'
-    · rw [e i (by omega) (by omega)]; exact Tt'.1 i h'
-    · obtain rfl : i = j + 1 := by omega
+    · rw [e i (by omega_using [hj, hi]) (by omega_using [h'])]; exact Tt'.1 i h'
+    · obtain rfl : i = j + 1 := by omega_using [hi, h']
       refine ⟨ltu, ?_⟩
       rw [toM_mul hm eu, Ti.2, Tt'.2.2, ← Lean.Grind.Semiring.pow_add]
       congr 1
@@ -244,7 +244,7 @@ theorem table_ok (hkS : S.k = k) (hmS : S.m = m) (hM : ModOk k m) (hL : ChainLay
       · exact .inl (slot_own hL (i := 0) (by decide))) (by have := slot_own hL (i := 0) (by decide); omega_arith), e₁]
   have T₂ : TblC P k' base m' (bv P k' base m' s) 1 s₂ := by
     refine ⟨fun i hi => ?_, lt₂, ?_⟩
-    · obtain rfl : i = 0 := by omega
+    · obtain rfl : i = 0 := by omega_using [hi]
       rw [v0]
       exact ⟨hB, by rw [Nat.mul_zero, Nat.zero_add, Lean.Grind.Semiring.pow_one]⟩
     · rw [toM_mul hm (e₂.trans (by rw [b₁])), Lean.Grind.Semiring.pow_two]
@@ -273,7 +273,7 @@ theorem squares_ok (hkS : S.k = k) (hmS : S.m = m) (hM : ModOk k m) (hL : ChainL
       wordsVal t.mem base P.acc k < m ∧
       toM m (2 ^ (64 * k)) (wordsVal t.mem base P.acc k) = bv P k base m s₀ ^ (v * 2 ^ (j - i)))
     (fun i t hi => hi.2.2.1) (fun i t h1 h2 ⟨St, Tt, xt, lt, vt⟩ => ?_) (fun t ⟨St, Tt, _, lt, vt⟩ => ⟨St, Tt, lt, by
-      rw [vt, Nat.sub_zero]⟩) hj1 (by omega)
+      rw [vt, Nat.sub_zero]⟩) hj1 (by omega_using [hj])
     ⟨S₁, by unfold TblC; rw [m₁]; exact hT, c₁, by rw [m₁]; exact hlt,
       by rw [m₁, hv, Nat.sub_self, Nat.pow_zero, Nat.mul_one]⟩
   refine WP.seq (wp_decCounter h1 xt (WP.block_nil ?_))
@@ -292,7 +292,7 @@ theorem squares_ok (hkS : S.k = k) (hmS : S.m = m) (hM : ModOk k m) (hL : ChainL
   refine ⟨Su.call (Or.inl rfl) kw, Tt.acc hL (Nat.le_refl _) Uw, hx, ltw, ?_⟩
   rw [toM_mul hm (ew.trans (by rw [mu])), vt, ← Lean.Grind.Semiring.pow_add]
   congr 1
-  rw [← Nat.mul_add, ← Nat.two_mul, show j - (i - 1) = j - i + 1 by omega, Nat.pow_succ]
+  rw [← Nat.mul_add, ← Nat.two_mul, show j - (i - 1) = j - i + 1 by omega_using [h1, h2], Nat.pow_succ]
   grind
 
 /-- A step: `B^v` to `B^(v 2^j + d)`. -/
@@ -314,24 +314,24 @@ theorem step_ok (hkS : S.k = k) (hmS : S.m = m) (hM : ModOk k m) (hL : ChainLay 
     split
     · rename_i h0; subst h0
       exact WP.block_nil ⟨h, hT, hlt, by rw [hv, Nat.pow_zero, Nat.mul_one]⟩
-    · exact squares_ok hkS hmS hM hL hm (by omega) hj h hT hlt hv
+    · exact squares_ok hkS hmS hM hL hm (by omega_arith) hj h hT hlt hv
   refine WP.seq (WP.mono hsq fun s₁ ⟨S₁, T₁, lt₁, v₁⟩ => ?_)
   split
   · rename_i h0; subst h0
     exact WP.block_nil ⟨S₁, T₁, lt₁, by rw [v₁, Nat.add_zero]⟩
   · rename_i h0
     have hd' : d % 2 = 1 ∧ d ≤ 15 := hd.resolve_left h0
-    have hi : (d - 1) / 2 < 8 := by omega
+    have hi : (d - 1) / 2 < 8 := by omega_using [hd]
     have Ti := T₁.1 _ hi
     obtain ⟨cv, w, m', k', d'⟩ := S
     dsimp only at hkS hmS
     subst hkS hmS
-    refine WP.mono (mulCall_ok hM S₁.ws hL.acc hL.acc (slot_own hL (i := (d - 1) / 2) (by omega)) Ti.1)
+    refine WP.mono (mulCall_ok hM S₁.ws hL.acc hL.acc (slot_own hL (i := (d - 1) / 2) (by omega_using [hd])) Ti.1)
       fun s₂ ⟨k₂, lt₂, e₂⟩ => ?_
     refine ⟨S₁.call (Or.inl rfl) k₂, T₁.acc hL (Nat.le_refl _) k₂.unch, lt₂, ?_⟩
     rw [toM_mul hm e₂, v₁, Ti.2, ← Lean.Grind.Semiring.pow_add]
     congr 1
-    omega
+    omega_using [hd, h0]
 
 theorem steps_ok (hkS : S.k = k) (hmS : S.m = m) (hM : ModOk k m) (hL : ChainLay P k)
     (hm : UnitMod m (2 ^ (64 * k))) {base : Addr} {s₀ : State} :
@@ -364,18 +364,18 @@ theorem chainPow_ok (hkS : S.k = k) (hmS : S.m = m) (hM : ModOk k m) (hL : Chain
   have ho := own_lt k
   rw [VG.Impl.Weierstrass.PPC64LE.ChainCfg.pow, hL.n]
   refine WP.seq (WP.mono (table_ok hkS hmS hM hL hm hs hB) fun s₁ ⟨S₁, T₁⟩ => ?_)
-  have hi : (P.first - 1) / 2 < 8 := by have := hC.first; omega
-  have hle := slot_own hL (i := (P.first - 1) / 2) (by omega)
+  have hi : (P.first - 1) / 2 < 8 := by have := hC.first; omega_using [this]
+  have hle := slot_own hL (i := (P.first - 1) / 2) (by omega_using [hi])
   refine WP.seq (WP.mono (copy_ok k S₁.ws.ws S₁.ws.at3 (o := P.acc) (a := P.slot ((P.first - 1) / 2)) hL.acc4
     (slot_mod4 hL _) (by have := hL.acc; have := hL.fit; omega_arith) (by have := hL.fit; omega_arith)
-    ((slot_acc hL (i := (P.first - 1) / 2) (by omega)).symm.imp (fun h => by omega_arith) id))
+    ((slot_acc hL (i := (P.first - 1) / 2) (by omega_using [hi])).symm.imp (fun h => by omega_arith) id))
     fun s₂ ⟨e₂, k₂, O₂⟩ => ?_)
   have S₂ := S₁.copy (Or.inl rfl) k₂ O₂
   have T₂ : TblC P k base m (bv P k base m s) 8 s₂ :=
     T₁.acc hL (Nat.le_refl _) (O₂.unch.mono fun w hw => by simp at hw; simp [hw])
   have Ti := T₁.1 _ hi
   refine WP.mono (steps_ok hkS hmS hM hL hm P.steps hC.steps S₂ T₂ (by rw [e₂]; exact Ti.1)
-    (v := P.first) (by rw [e₂, Ti.2]; congr 1; have := hC.first; omega)) fun s₃ ⟨S₃, lt₃, v₃⟩ =>
+    (v := P.first) (by rw [e₂, Ti.2]; congr 1; have := hC.first; omega_using [this])) fun s₃ ⟨S₃, lt₃, v₃⟩ =>
     ⟨S₃.keep, S₃.unch, lt₃, by rw [v₃, hC.val]⟩
 
 end VG.Proof.Weierstrass.PPC64LE

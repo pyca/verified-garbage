@@ -123,7 +123,7 @@ theorem output_ok {s : State} (hk : St p D σ s) (hct : bytesAt s.mem (pa s (sc 
   unfold output
   refine WP.seq (WP.mono (outCopy_ok hc hk hct hz hh h15) fun s1 h1 => ?_)
   refine WP.seq (WP.mono (seqR_ok (I := fun r => OS p D σ κ r) p.ℓ 0
-    (fun r _ hr s h => WP.mono (packZ_ok hPO hc (by omega) h hpass) fun _ h => h.1) s1 h1.1) fun s2 h2 => ?_)
+    (fun r _ hr s h => WP.mono (packZ_ok hPO hc (by omega_using [hr]) h hpass) fun _ h => h.1) s1 h1.1) fun s2 h2 => ?_)
   rw [Nat.zero_add] at h2
   exact hpack_ok hPO hc h2 hpass
 

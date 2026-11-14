@@ -68,7 +68,7 @@ theorem preDP_of {ts : List FnTable} {s : State} (h : (decSpecP ts).pre s) : Pre
     mlq, mldp, mldq, mlqi, mll, mlct, mls, mlP, mltl, mlt, mla, ns, es, ps, qs, dps, dqs, qis, ls, cts, sP, stl, st,
     sa, ko, kml, kn, ke, kp, kq, kdp, kdq, kqi, kl, kct, ks, kP, ktl, kt, ka, wo, wml, wn, we, wp, wq, wdp, wdq, wqi,
     wl, wct, wsc, wP, wtl, wt, ⟨k1, k2⟩, ok, oc, e1, e2, p1, p2, q1, q2, h4, h8, h6, hs, hpl, hyp⟩ := h
-  exact ⟨⟨sp1, by simp only [↓reduceIte]; omega, hrd, hwr, oml, on, oe, op, oq, odp, odq, oqi, ol, oct, os, otl, ot,
+  exact ⟨⟨sp1, by simp only [↓reduceIte]; omega_using [sp2], hrd, hwr, oml, on, oe, op, oq, odp, odq, oqi, ol, oct, os, otl, ot,
     oa, mln, mle, mlp, mlq, mldp, mldq, mlqi, mll, mlct, mls, mltl, mlt, mla, ns, es, ps, qs, dps, dqs, qis, ls, cts,
     stl, st, sa, ko, kml, kn, ke, kp, kq, kdp, kdq, kqi, kl, kct, ks, ktl, kt, ka, wo, wml, wn, we, wp, wq, wdp, wdq,
     wqi, wl, wct, wsc, wtl, wt, k1, k2, ok, oc, e1, e2, p1, p2, q1, q2, h4, h8, h6, hs⟩,
@@ -153,7 +153,7 @@ theorem pubDP_of {ts : List FnTable} {s₁ s₂ : State} (h : (decSpecP ts).pub 
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
     exacts [h3.symm, h4.symm, h5.symm, h6.symm, h7.symm, h8.symm, h9.symm, h10.symm]
-  · rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 ∨ i = 8 ∨ i = 9 ∨ i = 10 ∨
+  · rcases (by omega_using [hi] : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 ∨ i = 8 ∨ i = 9 ∨ i = 10 ∨
       i = 11 ∨ i = 12 ∨ i = 13 ∨ i = 14 ∨ i = 15 ∨ i = 16) with
       rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
     exacts [a0.symm, a1.symm, a2.symm, a3.symm, a4.symm, a5.symm, a6.symm, a7.symm, a8.symm, a9.symm, a10.symm,
@@ -230,13 +230,13 @@ theorem putWs_below {m : Mem} {a : Addr} : ∀ {p : Addr} {ws : List (BitVec 64)
   | _, [], _, _ => rfl
   | p, w :: ws, h, hp => by
     simp only [List.length_cons] at hp
-    have h8 := Proof.HashTable.add8_toNat (p := p) (by omega)
+    have h8 := Proof.HashTable.add8_toNat (p := p) (by omega_using [hp])
     show Proof.HashTable.putWs (m.writeW p w) (p + 8) ws a = m a
-    rw [putWs_below (by omega) (by omega)]
+    rw [putWs_below (by omega_using [h, h8]) (by omega_using [hp, h8])]
     refine Mem.write_apply ?_
     rw [BitVec.toNat_sub]
     have := a.isLt
-    omega
+    omega_using [h, hp]
 
 section
 variable {vs : List MVar} {w : MVar}
@@ -246,7 +246,7 @@ theorem satP_key {a : Addr} (h : keyIn a.toNat = true) :
   have hb : a.toNat < 0x48C0 := by
     simp only [keyIn, Bool.or_eq_true, Bool.and_eq_true, Nat.ble_eq, Nat.blt_eq] at h; omega
   show Proof.HashTable.putWs decSatStateP.mem 0x300000 (Proof.MdHashTable.PPC64LE.twL vs w) a = _
-  rw [putWs_below (by show a.toNat < 0x300000; omega) (Proof.MdHashTable.PPC64LE.twL_room vs w)]
+  rw [putWs_below (by show a.toNat < 0x300000; omega_using [hb]) (Proof.MdHashTable.PPC64LE.twL_room vs w)]
   show (bif keyIn a.toNat then keyMem a else argMemP a.toNat) = keyMem a
   rw [h]
   exact Bool.cond_true

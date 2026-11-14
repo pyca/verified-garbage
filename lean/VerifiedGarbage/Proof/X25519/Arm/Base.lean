@@ -96,12 +96,12 @@ theorem clampBytes_ok {s : State} {b : BitVec 32} (hc : VG.Proof.Ed25519.Arm.Ctx
   have hfb := hc.fit
   let a : Nat → Addr := fun k => State.addr b + BitVec.ofNat 64 (SCAL + k)
   have ha : ∀ k, k < 32 → State.addr (s.gpr .r0 + BitVec.ofNat 32 (SCAL + k)) = a k := fun k hk => by
-    rw [hc.r0]; exact addr_add (by simp only [SCAL]; omega)
+    rw [hc.r0]; exact addr_add (by simp only [SCAL]; omega_using [hfb, hk])
   have hin : ∀ k, k < 32 → InRegions s.wr (a k) 1 := fun k hk =>
-    in_base hc.wr (by simp only [SCAL]; omega) (by simp only [SCAL]; omega)
+    in_base hc.wr (by simp only [SCAL]; omega_using [hk]) (by simp only [SCAL]; omega_using [hk])
   have ne : ∀ i k, i < 32 → k < 32 → i ≠ k → a i ≠ a k := fun i k hi hk hik he =>
     Offset.disjoint (State.addr b) (d := SCAL + i) (n := 1) (e := SCAL + k) (k := 1)
-      (by omega) (by simp only [SCAL]; omega) (by simp only [SCAL]; omega) _
+      (by omega_using [hik]) (by simp only [SCAL]; omega_using [hi]) (by simp only [SCAL]; omega_using [hk]) _
       (Region.contains_self _ _)
       (by change Region.Contains ⟨a k, 1⟩ (a i) 1; rw [he]; exact Region.contains_self _ _)
   have a0 : State.addr b + BitVec.ofNat 64 SCAL = a 0 := rfl
@@ -136,9 +136,9 @@ theorem clampBytes_ok {s : State} {b : BitVec 32} (hc : VG.Proof.Ed25519.Arm.Ctx
     ?_, ?_⟩
   · rw [mt]
     exact ((Frame.refl _ _).writeW (List.mem_singleton_self _) _
-      (Offset.contains _ (by simp only [SCAL]; omega) (by simp only [SCAL]; omega) (by simp only [SCAL]; omega))).writeW
+      (Offset.contains _ (by simp only [SCAL]; omega_using []) (by simp only [SCAL]; omega_using []) (by simp only [SCAL]; omega_using []))).writeW
       (List.mem_singleton_self _) _
-      (Offset.contains _ (by simp only [SCAL]; omega) (by simp only [SCAL]; omega) (by simp only [SCAL]; omega))
+      (Offset.contains _ (by simp only [SCAL]; omega_using []) (by simp only [SCAL]; omega_using []) (by simp only [SCAL]; omega_using []))
   · apply List.ext_getElem
     · simp [Spec.Ed25519.bytesAt, clampL]
     · intro i hi _
@@ -190,7 +190,7 @@ theorem prep_ok {s : State} {base ptr T : BitVec 32} (hc : VG.Proof.Ed25519.Arm.
   have hcv := kav.ctx hca
   have apartS : ∀ sl : Slot, ∀ k < 16, (⟨State.addr base + BitVec.ofNat 64 (offset sl + 4 * k), 4⟩ : Region).Disjoint
       (scalR base) := fun sl =>
-    slot_apart sl (.inr (by simp only [offset, SCAL]; have := sl.isLt; omega)) (by decide)
+    slot_apart sl (.inr (by simp only [offset, SCAL]; have := sl.isLt; omega_using [])) (by decide)
   have lv : AllLim v.mem base := fun sl =>
     (env_frame fv sl (apartS sl)).2 ((env_frame fu sl (apartS sl)).2 (al sl))
   have tsc : ∀ r ∈ [scalR base], (TBL T).Disjoint r := fun r hr => by
@@ -212,7 +212,7 @@ theorem prep_ok {s : State} {base ptr T : BitVec 32} (hc : VG.Proof.Ed25519.Arm.
     rw [Offset.add_add]
     exact cu n (List.mem_range.mp hn)
   have hpa : State.addr (base + BitVec.ofNat 32 SCAL) = State.addr base + BitVec.ofNat 64 SCAL :=
-    addr_add (by simp only [SCAL]; omega)
+    addr_add (by simp only [SCAL]; omega_using [hfb])
   exact ⟨(PointKeep.of_keep ak).trans kav, lv, tv, by rw [syv, syu, sya]; exact hsym, by rw [hpa, cv, hsc]⟩
 
 theorem engine_ok {s : State} {base ptr T : BitVec 32} (hc : VG.Proof.Ed25519.Arm.Ctx base s)
@@ -233,7 +233,7 @@ theorem engine_ok {s : State} {base ptr T : BitVec 32} (hc : VG.Proof.Ed25519.Ar
     have h := VG.Proof.X25519.Edwards.decodeScalar25519_shift hk
     rw [Nat.shiftRight_eq_div_pow] at h
     have := (Nat.div_eq_zero_iff_lt (by positivity)).mp h
-    omega
+    omega_using [h]
   refine WP.seq (WP.mono (combFrom_ok E I hS) fun x ⟨kx, lx, rx⟩ => ?_)
   have hcx := (kav.trans (kw.trans kx)).ctx hc
   rw [uEncode]
@@ -261,13 +261,13 @@ theorem x25519Base_correct {s : State} (h : ScalarBasePre s) :
   refine WP.seq (WP.mono_syms (scalarBaseSetup_ok h) fun u ⟨hcu, pu, su, ou, lu, ku, fu⟩ syu => ?_)
   have input : (⟨State.addr (s.gpr .r1), 32⟩ : Region) ∈ s.rd ++ s.wr := by rw [h.rd]; simp
   refine WP.seq (WP.mono (engine_ok hcu pu h.f1
-    (fun n hn => by rw [ku.rd, ku.wr]; exact in_base input (by omega) (by omega)) h.scalar_ws
+    (fun n hn => by rw [ku.rd, ku.wr]; exact in_base input (by omega_using [hn]) (by omega_using [hn])) h.scalar_ws
     (h.tbl_of (by rw [ku.rd, ku.wr]) fu) (by rw [syu]) h.tbl_ws)
     fun v ⟨kv, lv, vv⟩ => ?_)
   have sv : ScalarSaved (State.addr (s.gpr .r2)) s.gpr v.mem :=
     su.frame kv.frame fun r hr i hi => by
       simp only [pointRegions, List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl <;> exact Offset.disjoint _ (.inl (by omega)) (by omega) (by decide)
+      rcases hr with rfl | rfl <;> exact Offset.disjoint _ (.inl (by omega_using [hi])) (by omega_using [hi]) (by decide)
   have ov : v.mem.readW (State.addr (s.gpr .r2) + BitVec.ofNat 64 48) 32 = s.gpr .r0 :=
     (kv.word 48 (.inl rfl) (by decide)).trans ou
   refine WP.mono (scalarBaseFinish_ok (kv.ctx hcu) lv ov h.f0

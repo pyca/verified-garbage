@@ -38,9 +38,9 @@ theorem crypt_wp {s : State} {B : Addr} {k : Nat × List (BitVec 64)}
   have abase : a.gpr .x5 = B := (ag _ (by decide)).trans hB
   have ar : ∀ off ∈ [256,264,768,776], InRegions (a.rd ++ a.wr) (a.gpr .x5+BitVec.ofNat 64 off) 8 := by
     intro off hoff
-    have bound : off+8 ≤ 3344 := by simp only [List.mem_cons,List.not_mem_nil,or_false] at hoff; omega
+    have bound : off+8 ≤ 3344 := by simp only [List.mem_cons,List.not_mem_nil,or_false] at hoff; omega_using [hoff]
     rw [ard,awr,abase]
-    exact ⟨_,List.mem_append_right _ hs.wr,VG.Offset.contains_base B bound (by omega)⟩
+    exact ⟨_,List.mem_append_right _ hs.wr,VG.Offset.contains_base B bound (by omega_using [bound])⟩
   obtain ⟨c,ce,cv,cg,cm,crd,cwr,_,cvec⟩ := loadBlock_run a ar
   refine WP.of_runBlock ⟨c,ce,?_⟩
   have cbase : c.gpr .x5 = B := (cg _ (by decide)).trans abase
@@ -57,7 +57,7 @@ theorem crypt_wp {s : State} {B : Addr} {k : Nat × List (BitVec 64)}
     · intro j hj
       rw [crd',cwr',cbase]
       exact ⟨_,List.mem_append_right _ hs.wr,VG.Offset.contains_base B
-        (by omega : 256+8*j+8 ≤ 3344) (by omega)⟩
+        (by omega_using [hj] : 256+8*j+8 ≤ 3344) (by omega_using [hj])⟩
   have cx1 : c.gpr .x1 = BitVec.ofNat 64 k.1 :=
     (cg _ (by decide)).trans ((ag _ (by decide)).trans hx1)
   have ak : keyWord a = keyWord s := by

@@ -38,16 +38,16 @@ theorem random_copy_draw_ok {s : State} {B R : Addr} {used : Nat} {qBytes rand :
   have hnfit : n ≤ qBytes.length := VG.Proof.Dsa.significant_fits qBytes
   have hlen : ((rand.drop used).take n).length = n := by
     rw [List.length_take, List.length_drop]
-    omega
+    omega_using [hfull]
   have hslice := random_src_take (random_src_drop hrand used) n
   have hne : (rand.drop used).take n ≠ [] := by
     intro he
     rw [he, List.length_nil] at hlen
-    omega
+    omega_using [hpos, hlen]
   obtain ⟨b, tail, he⟩ := List.exists_cons_of_ne_nil hne
   rw [he] at hlen hslice
   have htlen : tail.length + 1 = n := hlen
-  have hbound : tail.length + 1 < 2 ^ 64 := by omega
+  have hbound : tail.length + 1 < 2 ^ 64 := by omega_using [hqlen, hnfit, htlen]
   have hdst : off B Random.oNonce + BitVec.ofNat 64 qBytes.length - BitVec.ofNat 64 (tail.length + 1) =
       off B (200 + qBytes.length - n) := by rw [htlen]; exact random_nonce_addr B hnfit
   have hwrite : ∀ i < tail.length + 1,
@@ -56,15 +56,15 @@ theorem random_copy_draw_ok {s : State} {B R : Addr} {used : Nat} {qBytes rand :
     have headdr : off B (200 + qBytes.length - n) + BitVec.ofNat 64 i =
         off B (200 + qBytes.length - n + i) := by simp only [off, BitVec.ofNat_add, BitVec.add_assoc]
     rw [headdr]
-    exact hs.st1 (by unfold Random.frameBytes; omega)
+    exact hs.st1 (by unfold Random.frameBytes; omega_using [hqlen, hnfit, htlen, hi])
   have hsep : ∀ i < tail.length + 1, ∀ j < tail.length + 1,
       R + BitVec.ofNat 64 used + BitVec.ofNat 64 i ≠
         off B (200 + qBytes.length - n) + BitVec.ofNat 64 j := by
     intro i hi j hj headdr
     have ho := hslice.out i hi
-    rw [headdr, random_nonce_offset B hnfit hqlen (by omega)] at ho
+    rw [headdr, random_nonce_offset B hnfit hqlen (by omega_using [htlen, hj])] at ho
     unfold Random.frameBytes at ho
-    omega
+    omega_using [hsp, hR, hu, hn, hl, hm, hqlen, hpos, hfull, hnfit, hlen, htlen, hbound, hi, hj, ho]
   refine WP.mono (random_copy_candidate_ok hs hsp hR hu
     (by rw [htlen]; exact hn) hl hm rfl hdst htlen hbound hslice.rd hwrite hsep hslice.val)
     fun t ⟨copied, hclen, hcv, hcdec, hcf, hck⟩ => ?_

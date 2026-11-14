@@ -42,7 +42,7 @@ theorem hA : State.addr (s.sp - 8) = State.addr s.sp - 8 := addr_sub' (k := 8) h
 theorem hA4 : State.addr (s.sp - 8 + BitVec.ofNat 32 4) = State.addr s.sp - 8 + 4 := by
   have := s.sp.isLt
   have e : (s.sp - 8).toNat = s.sp.toNat - 8 := BitVec.toNat_sub_of_le (by rw [BitVec.le_def]; exact hsp)
-  rw [addr_add (by rw [e]; omega), hA hsp]; rfl
+  rw [addr_add (by rw [e]; omega_using []), hA hsp]; rfl
 
 theorem amem : (pushed [.r12, .lr] s).mem =
     (s.mem.writeW (State.addr s.sp - 8) (s.gpr .r12)).writeW (State.addr s.sp - 8 + 4) (s.gpr .lr) := by
@@ -85,7 +85,7 @@ theorem cov {rd wr : List Region} (hr : Covers rd (s.rd ++ s.wr)) (hw : Covers w
           4 * [Reg.r12, Reg.lr].length⟩ : Region) = ⟨State.addr s.sp - 8, 8⟩ := by rw [e8, hA hsp]; rfl
       refine ⟨⟨State.addr s.sp - 8, 8⟩, List.mem_append_right _ (by rw [pushed_wr, eb]; exact List.mem_cons_self ..),
         ?_⟩
-      simp only [Region.Contains] at hc ⊢; omega
+      simp only [Region.Contains] at hc ⊢; omega_using [hc]
     · obtain ⟨r', hr'', hc'⟩ := hw x n' ⟨r, h', hc⟩
       exact ⟨r', List.mem_append_right _ (by rw [pushed_wr]; exact List.mem_cons_of_mem _ hr''), hc'⟩
 

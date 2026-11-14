@@ -15,16 +15,16 @@ theorem step_header32 {g : Geometry} (v : g.Valid) {s t : Mem}
     (F : WorkspaceFrame g (WitnessStep.ranges g) s t) {d : Nat} (index : d = 28 ∨ d = 32 ∨ d = 200) :
     w32 t g.W d = w32 s g.W d := by
   apply congrArg BitVec.toNat
-  apply F.read32 (by have := v.headerFit; omega)
+  apply F.read32 (by have := v.headerFit; omega_using [index, this])
   intro r mem
   simp only [WitnessStep.ranges, List.mem_append, List.mem_singleton] at mem
   rcases mem with (rfl | mem) | mem
-  · rcases index with rfl | rfl | rfl <;> omega
+  · rcases index with rfl | rfl | rfl <;> omega_using []
   · exact WitnessRound.ranges_apart32 (by rcases index with rfl | rfl | rfl <;> unfold WitnessRound.safeHeader <;> decide) r mem
   · simp only [WitnessCount.ranges, WitnessCount.nextRanges, List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at mem
     rcases index with rfl | rfl | rfl <;> rcases mem with (rfl | rfl) | rfl <;>
       simp only [VG.Impl.RsaKeyGen.X86.WitnessCount.roundsOffset, VG.Impl.RsaKeyGen.X86.WitnessCount.uniformOffset,
-        VG.Impl.RsaKeyGen.X86.WitnessCount.statusOffset] <;> omega
+        VG.Impl.RsaKeyGen.X86.WitnessCount.statusOffset] <;> omega_using []
 
 theorem StateAt.next {P : Parameters} (v : P.Valid) {s t : State} {k n : Nat} (S : StateAt P k n s)
     (T : Prepare.Data P.g P.candidate P.capacity P.p t)
@@ -43,8 +43,8 @@ theorem StateAt.next {P : Parameters} (v : P.Valid) {s t : State} {k n : Nat} (S
       simp only [List.singleton_append, List.mem_cons, List.not_mem_nil, or_false] at mem
       rcases mem with rfl | rfl
       · exact v.randSeparate
-      · exact v.randStackFar) (by have := v.randLenFit; omega)).trans S.entropy
+      · exact v.randStackFar) (by have := v.randLenFit; omega_using [this])).trans S.entropy
   · exact (BitVec.eq_of_toNat_eq (step_header32 v.geometry W (Or.inl rfl))).trans S.randPtr
-  · rw [used, Nat.mul_succ]; omega
+  · rw [used, Nat.mul_succ]; omega_using []
 
 end VG.Proof.RsaKeyGen.X86.MillerRabinLoop

@@ -37,7 +37,7 @@ abbrev pw (m : Mem) (R : Addr) (N k : Nat) : BitVec 64 := (Noise.seedState m R N
 theorem imm16_eq {v : Nat} (h : v < 65536) : (BitVec.ofNat 16 v).setWidth 64 = BitVec.ofNat 64 v := by
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]
-  rw [Nat.mod_eq_of_lt (by omega : v < 2 ^ 16), Nat.mod_eq_of_lt (by omega : v < 2 ^ 64)]
+  rw [Nat.mod_eq_of_lt (by omega_using [h] : v < 2 ^ 16), Nat.mod_eq_of_lt (by omega_using [h] : v < 2 ^ 64)]
 
 /-- What `prfWords` keeps after `k` words. -/
 def WInv (o st N : Nat) (s : State) (D R : Addr) (W : Region) (k : Nat) (t : State) : Prop :=
@@ -55,18 +55,18 @@ theorem store_step {dst : Reg} {o st N k : Nat} {s t : State} {D R : Addr} {W : 
     WP isa (.block [.str .x .x9 dst (o + st * k)]) t (WInv o st N s D R W (k + 1)) := by
   obtain ⟨kt, ft, wt, ot⟩ := hI
   have bnd : ∀ j < 25, o + st * j + 8 ≤ 32768 := fun j hj => by
-    have : st * j ≤ st * 24 := Nat.mul_le_mul_left _ (by omega)
-    omega
+    have : st * j ≤ st * 24 := Nat.mul_le_mul_left _ (by omega_using [hj])
+    omega_using [hlim, this]
   have hlt := bnd k hk
   refine wp_strx (a := D + BitVec.ofNat 64 (o + st * k)) ⟨by
-      rw [Nat.add_mod, ho, Nat.mul_mod, hs8]; simp, by omega⟩
+      rw [Nat.add_mod, ho, Nat.mul_mod, hs8]; simp, by omega_using [hlt]⟩
     (by rw [kt.get dst (by simpa using hd9), hD])
     (by rw [kt.wr]; exact hWin _ _ ⟨W, List.mem_singleton_self _, hW k hk⟩) fun u hu => wp_nil ?_
   have hm : u.mem = t.mem.writeW (D + BitVec.ofNat 64 (o + st * k)) (t.gpr .x9) := hu.mem
   have sep : ∀ j < k, Mem.Sep (D + BitVec.ofNat 64 (o + st * j)) 8 (D + BitVec.ofNat 64 (o + st * k)) 8 :=
     fun j hj => sep_off D (.inl (by
       have : st * j + st ≤ st * k := by rw [← Nat.mul_succ]; exact Nat.mul_le_mul_left _ hj
-      omega)) (by have := bnd j (by omega); omega) (by omega)
+      omega_using [hst, this])) (by have := bnd j (by omega_using [hk, hj]); omega_using [this]) (by omega_using [hlt])
   refine ⟨kt.trans hu.keep |>.mono (by simp), ?_, fun j hj => ?_, fun a ha => ?_⟩
   · rw [hm]; exact ft.writeW (List.mem_singleton_self _) _ (hW k hk)
   · rw [hm]
@@ -94,8 +94,8 @@ theorem prfWords_ok {dst : Reg} {o st N : Nat} (hN : N < 256) (hd9 : dst ≠ .x9
     have kt := hI.1
     have ft := hI.2.1
     have hc : (⟨R, 32⟩ : Region).Contains (R + BitVec.ofNat 64 (8 * k)) 8 :=
-      Offset.contains_base R (by omega) (by omega)
-    refine wp_ldrx (a := R + BitVec.ofNat 64 (8 * k)) ⟨by omega, by omega⟩
+      Offset.contains_base R (by omega_using [h4]) (by omega_using [hk])
+    refine wp_ldrx (a := R + BitVec.ofNat 64 (8 * k)) ⟨by omega_using [hsd], by omega_using [hsd', h4]⟩
       (by rw [kt.get .x28 (by decide), ← hR, ptr_add])
       (by rw [kt.rd, kt.wr]; exact hRin _ _ ⟨_, List.mem_singleton_self _, hc⟩) fun u hu e => ?_
     refine store_step hd9 hst ho hs8 hlim hk hD hW hWin ?_ ?_
@@ -119,7 +119,7 @@ theorem prfWords_ok {dst : Reg} {o st N : Nat} (hN : N < 256) (hd9 : dst ≠ .x9
     by_cases h4' : k = 4
     · rw [ite_eq_left h4']
       refine step _ _ (fun Q is u k => wp_movz k) ?_
-      rw [imm16_eq (by omega), pw, hget, ite_eq_right h4, ite_eq_left h4']
+      rw [imm16_eq (by omega_using [hN]), pw, hget, ite_eq_right h4, ite_eq_left h4']
     · rw [ite_eq_right h4']
       by_cases h16 : k = 16
       · rw [ite_eq_left h16]
@@ -141,7 +141,7 @@ theorem prfBlock_ok {N : Nat} (hN : N < 256) {s : State} {R : Addr} {sd : Nat}
       stateAt t.mem (s.gpr .x28) = Noise.seedState s.mem R N := by
   have hc : ∀ k < 25, (VG.Proof.Sha3.AArch64.Hybrid.X3.stR (s.gpr .x28)).Contains
       (s.gpr .x28 + BitVec.ofNat 64 (0 + 8 * k)) 8 := fun k hk =>
-    Offset.contains_base _ (by omega) (by omega)
+    Offset.contains_base _ (by omega_using [hk]) (by omega_using [hk])
   refine WP.mono (prfWords_ok (o := 0) (st := 8) hN (by decide) (by decide) (by decide) (by decide)
     (by decide) hsd hsd' rfl hR hc hWin hRW hRin) fun t ⟨kt, ft, wt, _⟩ => ⟨kt, ft, ?_⟩
   refine Vector.ext fun i hi => ?_
@@ -159,14 +159,14 @@ theorem reinitB_ok {N : Nat} (hN : N < 256) {s : State} {p R : Addr} {A B : Spec
     WP isa (.block (Impl.MlKem.AArch64.Kem16P.reinitB sd N)) s fun t =>
       Keep [.x9] s t ∧ Frame [pairR p] s.mem t.mem ∧ PairAt t.mem p A (Noise.seedState s.mem R N) := by
   have hc : ∀ k < 25, (pairR p).Contains (p + BitVec.ofNat 64 (8 + 16 * k)) 8 := fun k hk =>
-    Offset.contains_base _ (by omega) (by omega)
+    Offset.contains_base _ (by omega_using [hk]) (by omega_using [hk])
   refine WP.mono (prfWords_ok (o := 8) (st := 16) hN (by decide) (by decide) (by decide) (by decide)
     (by decide) hsd hsd' hp hR hc hWin hRW hRin) fun t ⟨kt, ft, wt, ot⟩ => ⟨kt, ft, fun i hi => ?_⟩
   have hlo : t.mem.readW (wordAddr p i) 64 = s.mem.readW (wordAddr p i) 64 :=
     ot _ fun j hj => sep_off p (by
       rcases Nat.lt_or_ge j i with h | h
-      · exact .inr (by omega)
-      · exact .inl (by omega)) (by omega) (by omega)
+      · exact .inr (by omega_using [h])
+      · exact .inl (by omega_using [h])) (by omega_using [hi]) (by omega_using [hj])
   have hhi : wordAddr p i + BitVec.ofNat 64 8 = p + BitVec.ofNat 64 (8 + 16 * i) := by
     rw [wordAddr, ptr_add, Nat.add_comm]
   rw [read16_dwords, hlo, hhi, wt i hi, pw]

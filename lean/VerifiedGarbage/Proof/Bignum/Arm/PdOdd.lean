@@ -25,7 +25,7 @@ theorem pdOdd_ok (s : State) {base : BitVec 32} {len w : Nat} {accepted : Bool}
       t.gpr .r11 = BitVec.ofNat 32 (accepted && decide (numAt s.mem (State.addr base) w 0 % 2 = 1)).toNat ∧
       t.z = !(accepted && decide (numAt s.mem (State.addr base) w 0 % 2 = 1)) ∧
       t.mem = s.mem ∧ Rest [.r1, .r11] s t := by
-  have positive : 0 < w := by have := h.width ▸ h.layout.1; omega
+  have positive : 0 < w := by have := h.width ▸ h.layout.1; omega_using [this]
   rw [pdOdd, WP.seq_iff]
   refine WP.mono (pdOddRead_ok s h fit read) ?_
   rintro u ⟨byte, saved, memU, restU⟩
@@ -36,7 +36,7 @@ theorem pdOdd_ok (s : State) {base : BitVec 32} {len w : Nat} {accepted : Bool}
   rw [byte, saved, flag, parity] at value zero
   have bit : BitVec.ofNat 32 accepted.toNat &&& BitVec.ofNat 32 (numAt s.mem (State.addr base) w 0 % 2) =
       BitVec.ofNat 32 (accepted && decide (numAt s.mem (State.addr base) w 0 % 2 = 1)).toNat := by
-    have cases : numAt s.mem (State.addr base) w 0 % 2 = 0 ∨ numAt s.mem (State.addr base) w 0 % 2 = 1 := by omega
+    have cases : numAt s.mem (State.addr base) w 0 % 2 = 0 ∨ numAt s.mem (State.addr base) w 0 % 2 = 1 := by omega_using []
     rcases cases with hh | hh <;> cases accepted <;> simp [hh]
   rw [bit] at value zero
   refine ⟨value, ?_, memT.trans memU, restU.trans restT⟩

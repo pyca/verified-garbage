@@ -38,7 +38,7 @@ theorem publicKeyCombBody_ok (hc : CfgOk c) (hC : Law c.C) (hT : CombTbls c)
   refine WP.seq (WP.mono (stage₁ hc hp.setup (rest := .block [])
     (Q := St₁ c Args.publicKey s₀ (ptr s₀ 2)) (fun _ h => WP.block_nil h)) fun s₁ S₁ => ?_)
   refine stage₂Comb hc hC hT hCo ham3 S₁ hTb hsp₁ hsp₂ fun s₂ S₂ => ?_
-  have h3 : (s₀.gpr .esp).toNat + 4 + 4 * 3 ≤ 2 ^ 32 := by have := hp.sp_fit; omega
+  have h3 : (s₀.gpr .esp).toNat + 4 + 4 * 3 ≤ 2 ^ 32 := by have := hp.sp_fit; omega_using [this]
   refine WP.mono (middle_ok hc S₂.toKeep S₂.acc_lt S₂.flag hsp₃
     ⟨_, by rw [hp.rd]; simp, arg_containsN h3 (by decide)⟩ (pkArgs_disj hp)
     hp.out_fit (by rw [hp.wr]; simp) hp.out_sc)
@@ -57,16 +57,16 @@ theorem publicKeyCombBody_ok (hc : CfgOk c) (hC : Law c.C) (hT : CombTbls c)
   by_cases hd : 1 ≤ dk c s₀ ∧ dk c s₀ < c.C.n
   · rw [ite_eq_left_of_eq_true _ _ (eq_true hd)]
     by_cases h0 : sv c (ptr s₀ 2) s₂ RZ = 0
-    · have hok : ok c (ptr s₀ 2) s₂ = false := decide_eq_false (by rw [hD]; omega)
+    · have hok : ok c (ptr s₀ 2) s₂ = false := decide_eq_false (by rw [hD]; omega_using [h0])
       rw [ite_eq_left_of_eq_true _ _ (eq_true (hz.mpr h0))]
       exact ⟨by rw [rax, hok]; rfl, by rw [bytes, hok]; rfl⟩
-    · have hok : ok c (ptr s₀ 2) s₂ = true := decide_eq_true (by rw [hD]; omega)
+    · have hok : ok c (ptr s₀ 2) s₂ = true := decide_eq_true (by rw [hD]; omega_using [hd, h0])
       rw [ite_eq_right_of_eq_false _ _ (eq_false (fun h => h0 (hz.mp h)))]
       refine ⟨by rw [rax, hok]; rfl, ?_⟩
       rw [bytes, hok]
       show _ = 4 :: (toBytes c.C.len xv ++ toBytes c.C.len yv)
       rfl
-  · have hok : ok c (ptr s₀ 2) s₂ = false := decide_eq_false (by rw [hD]; omega)
+  · have hok : ok c (ptr s₀ 2) s₂ = false := decide_eq_false (by rw [hD]; omega_using [hd])
     rw [ite_eq_right_of_eq_false _ _ (eq_false hd)]
     exact ⟨by rw [rax, hok]; rfl, by rw [bytes, hok]; rfl⟩
 

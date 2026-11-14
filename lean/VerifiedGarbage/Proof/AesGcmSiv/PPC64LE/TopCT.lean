@@ -148,11 +148,11 @@ theorem open_rel [VG.Proof.Gcm.PPC64LE.GhashLaw] {c : Cx} {σ₁ σ₂ : State} 
         (⟨c.W + BitVec.ofNat 64 d, 16⟩ : Region).Disjoint r := fun hd r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl | rfl
-      · exact L.w_w (.inl (by omega)) (by omega) (by decide)
-      · exact L.w_w (.inl (by omega)) (by omega) (by decide)
-      · exact L.w_w (.inl (by omega)) (by omega) (by decide)
-      · exact L.w_w (.inl (by omega)) (by omega) (by decide)
-      · exact (L.d_w' (by omega)).symm
+      · exact L.w_w (.inl (by omega_using [hd])) (by omega_using [hd]) (by decide)
+      · exact L.w_w (.inl (by omega_using [hd])) (by omega_using [hd]) (by decide)
+      · exact L.w_w (.inl (by omega_using [hd])) (by omega_using [hd]) (by decide)
+      · exact L.w_w (.inl (by omega_using [hd])) (by omega_using [hd]) (by decide)
+      · exact (L.d_w' (by omega_using [hd])).symm
     have a₄ : bytesAt s₄.mem (c.W + BitVec.ofNat 64 16) 16 = bytesAt s₃.mem (c.W + BitVec.ofNat 64 16) 16 :=
       bytesAt_keep C.frame (dC (by decide)) (by decide)
     exact ⟨by rw [blockAt_frame C.frame (dC (by decide)), K.hkey, a₄],

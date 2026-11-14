@@ -50,14 +50,14 @@ theorem sepAll_sub {sz : List Nat} {i o l o' l' : Nat} {W : List (Nat × Nat × 
     have := List.all_eq_true.mp h w hw
     obtain ⟨j, q, n⟩ := w
     simp only [sepB, Bool.and_eq_true, Bool.or_eq_true, decide_eq_true_eq, bne_iff_ne, ne_eq] at this ⊢
-    omega
+    omega_using [h1, h2, this]
 
 /-- A family of polynomials in consecutive slots of `scratch`, apart from what
 a part writes, is kept. -/
 theorem fam_keep {L : Lay} {Wb : List Nat} (hL : OkW L Wb) (h0 : 0 ∈ Wb) {W : List (Nat × Nat × Nat)} {m m' : Mem}
     (hf : Frame (L.RL W) m m') {b n : Nat} (h : sepAll L.sizes (0, oP b, 1024 * n) W = true) {F : Nat → Poly}
     (hp : ∀ j < n, PolyIs m (L.A 0 (oP (b + j))) (F j)) : ∀ j < n, PolyIs m' (L.A 0 (oP (b + j))) (F j) :=
-  fun j hj => polyIs_keepW hL hf (sepAll_sub h (by unfold oP; omega) (by unfold oP; omega)) h0 rfl (hp j hj)
+  fun j hj => polyIs_keepW hL hf (sepAll_sub h (by unfold oP; omega_using []) (by unfold oP; omega_using [hj])) h0 rfl (hp j hj)
 
 /-! ## What decoding left -/
 
@@ -113,13 +113,13 @@ theorem IK.keep {p : Params} {STK : Nat} {σ s s' : State} (h : IK p STK σ s) {
   have hL := h.sc.site.ok
   have hb : ∀ {b n : Nat}, s1Base p ≤ b → b + n ≤ s1Base p + nSec p →
       sepAll (slay2 p STK σ).sizes (0, oP b, 1024 * n) W = true := fun {b n} h1 h2 =>
-    sepAll_sub c2 (by unfold oP; omega) (by unfold oP; omega)
+    sepAll_sub c2 (by unfold oP; omega_using [h1]) (by unfold oP; omega_using [h2])
   have h0 : 0 ∈ sWb2 := by decide
   refine ⟨h.sc.keep hk c1, h.ok, ?_, by rw [bytes_keepW hL hk.frame c3 h0 (by decide)]; exact h.rpp,
-    fam_keep hL h0 hk.frame (hb (Nat.le_refl _) (by simp only [nSec]; omega)) h.s1,
-    fam_keep hL h0 hk.frame (hb (by simp only [s1Base, s2Base]; omega) (by simp only [s1Base, s2Base, nSec]; omega)) h.s2,
-    fam_keep hL h0 hk.frame (hb (by simp only [s1Base, t0Base]; omega) (by simp only [s1Base, t0Base, nSec]; omega)) h.t0⟩
-  exact fam_keep hL h0 hk.frame (hb (by simp only [s1Base, aBase]; omega) (by simp only [aBase, s1Base, nSec]; omega)) h.A
+    fam_keep hL h0 hk.frame (hb (Nat.le_refl _) (by simp only [nSec]; omega_using [])) h.s1,
+    fam_keep hL h0 hk.frame (hb (by simp only [s1Base, s2Base]; omega_using []) (by simp only [s1Base, s2Base, nSec]; omega_using [])) h.s2,
+    fam_keep hL h0 hk.frame (hb (by simp only [s1Base, t0Base]; omega_using []) (by simp only [s1Base, t0Base, nSec]; omega_using [])) h.t0⟩
+  exact fam_keep hL h0 hk.frame (hb (by simp only [s1Base, aBase]; omega_using []) (by simp only [aBase, s1Base, nSec]; omega_using [])) h.A
 
 /-! ## The head of an iteration -/
 
@@ -157,7 +157,7 @@ theorem IC.keep {p : Params} {STK : Nat} {σ : State} {t ny nyh nw nh : Nat} {s 
   obtain ⟨⟨⟨⟨c0, c1⟩, c2⟩, c3⟩, c4⟩ := hc
   have hL := h.l.k.sc.site.ok
   have h0 : 0 ∈ sWb2 := by decide
-  have hw1 : w1Len p * nh ≤ 2 ^ 64 := by have := h.w1b; omega
+  have hw1 : w1Len p * nh ≤ 2 ^ 64 := by have := h.w1b; omega_using [this]
   exact ⟨⟨h.l.k.keep hk c0, h27.trans h.l.r27, h25.trans h.l.r25, h.l.t_lt, h.l.rej⟩,
     fam_keep hL h0 hk.frame c1 h.y, fam_keep hL h0 hk.frame c2 h.yh, fam_keep hL h0 hk.frame c3 h.w,
     by rw [bytes_keepW hL hk.frame c4 h0 hw1]; exact h.w1, h.w1b⟩
@@ -184,7 +184,7 @@ theorem add_one_ne (a : Addr) : a ≠ a + 1 := by
   rw [BitVec.toNat_add] at this
   have e1 : (1 : BitVec 64).toNat = 1 := rfl
   rw [e1] at this
-  omega
+  omega_using [this]
 
 theorem bytes2_write (m : Mem) (a : Addr) (v w : Byte) :
     bytesAt ((m.writeW a v).writeW (a + 1) w) a 2 = [v, w] := by
@@ -218,7 +218,7 @@ theorem setKappa_ok {σ s : State} {t ny nyh nw nh r : Nat} (h : IC p STK σ t n
       s'.mem = (s.mem.writeW (sScr σ + BitVec.ofNat 64 (oMS + 64)) ((s.gpr .r27 + BitVec.ofNat 64 r).setWidth 8)).writeW
         (sScr σ + BitVec.ofNat 64 (oMS + 65)) (((s.gpr .r27 + BitVec.ofNat 64 r) >>> 8).setWidth 8) ∧
       s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp := by
-    have hr' : r < 2 ^ 15 := by omega
+    have hr' : r < 2 ^ 15 := by omega_using [hr, hl]
     have o64 : oMS + 64 < 2 ^ 15 := by decide
     have o65 : oMS + 65 < 2 ^ 15 := by decide
     have hn : Reg.r31 ≠ Reg.r0 := by decide
@@ -242,7 +242,7 @@ theorem setKappa_ok {σ s : State} {t ny nyh nw nh r : Nat} (h : IC p STK σ t n
       (VG.Offset.contains (sScr σ) (by decide) (by decide) (by decide))
   refine ⟨h.keep hk hc (cs .r25 (by decide)) (cs .r27 (by decide)), ?_⟩
   have hx : p.ℓ * t + r < 2 ^ 16 := by
-    have := Nat.mul_le_mul_left p.ℓ (show t ≤ 813 by omega); omega
+    have := Nat.mul_le_mul_left p.ℓ (show t ≤ 813 by omega_using [ht]); omega_using [hr, hl, this]
   show bytesAt s'.mem (sScr σ + BitVec.ofNat 64 (oMS + 64)) 2 = _
   rw [m, e65, bytes2_write, h.l.r27, ← BitVec.ofNat_add, kappa_bytes hx]
 
@@ -309,7 +309,7 @@ theorem mask_piece {t r : Nat} (hr : r < p.ℓ) :
     rw [Proof.MlKem.bytesAt_add, h.l.k.rpp, e2]
   rw [hms] at hq
   refine ⟨I.l, fun r' hr' => ?_, I.yh, I.w, I.w1, I.w1b⟩
-  rcases (by omega : r' < r ∨ r' = r) with h' | rfl
+  rcases (by omega_using [hr'] : r' < r ∨ r' = r) with h' | rfl
   exacts [I.y r' h', hq]
 
 omit hP hS in
@@ -323,7 +323,7 @@ theorem copyY_piece {t r : Nat} (hr : r < p.ℓ) :
     ⟨sptr_ok rfl (by slt hF), by ssep hF⟩ (by decide) (by slt hF) (by slt hF) (by decide) (by decide) (by ssep hF))
     fun s' ⟨k', b'⟩ => ⟨h.keep k' (by ssep hF [icChk, ikChk, sc2Chk, yBase, yhBase, wBase, s1Base, nSec])
       (k'.cs .r25 (by decide)) (k'.cs .r27 (by decide)), ?_⟩
-  exact Proof.MlDsa.Sign.polyIs_of_bytes b' (h.y r (by omega))
+  exact Proof.MlDsa.Sign.polyIs_of_bytes b' (h.y r (by omega_using []))
 
 theorem nttY_piece {t r : Nat} (hr : r < p.ℓ) :
     SPiece p STK (M3 p STK t r) (fun σ s => IC p STK σ t (r + 1) (r + 1) 0 0 s) (nttAt P (yhP p r)) := by
@@ -340,7 +340,7 @@ theorem nttY_piece {t r : Nat} (hr : r < p.ℓ) :
   have I := h.keep k' (by ssep hF [icChk, ikChk, sc2Chk, yBase, yhBase, wBase, s1Base, nSec])
     (k'.cs .r25 (by decide)) (k'.cs .r27 (by decide))
   refine ⟨I.l, I.y, fun r' hr' => ?_, I.w, I.w1, I.w1b⟩
-  rcases (by omega : r' < r ∨ r' = r) with h' | rfl
+  rcases (by omega_using [hr'] : r' < r ∨ r' = r) with h' | rfl
   · exact I.yh r' h'
   · have e : polyAt s.mem (lpa (slay2 p STK σ) (yhP p r')) = Yv p σ (p.ℓ * t) r' := hy.2
     rw [e] at hq
@@ -356,7 +356,7 @@ end
 /-! ## `w` -/
 
 theorem aVal_ij {p : Params} {σ : State} {i j : Nat} (hj : j < p.ℓ) : aVal p σ (p.ℓ * i + j) = Am p σ i j := by
-  have hl : 0 < p.ℓ := by omega
+  have hl : 0 < p.ℓ := by omega_using [hj]
   have e1 : (p.ℓ * i + j) / p.ℓ = i := by
     rw [Nat.add_comm, Nat.add_mul_div_left _ _ hl, Nat.div_eq_of_lt hj, Nat.zero_add]
   have e2 : (p.ℓ * i + j) % p.ℓ = j := by
@@ -369,7 +369,7 @@ theorem aP_ij (p : Params) (i j : Nat) : aP p i j = pS (aBase p + (p.ℓ * i + j
 
 theorem ij_lt {p : Params} {i j : Nat} (hi : i < p.k) (hj : j < p.ℓ) : p.ℓ * i + j < p.k * p.ℓ := by
   have := Nat.mul_le_mul_left p.ℓ (show i + 1 ≤ p.k from hi)
-  rw [Nat.mul_add, Nat.mul_one, Nat.mul_comm p.ℓ p.k] at this; omega
+  rw [Nat.mul_add, Nat.mul_one, Nat.mul_comm p.ℓ p.k] at this; omega_using [hj, this]
 
 /-- `∑_{j < m} Â[i, j] ŷ[j]`, summed from `j = 0` with `AddNTT`. -/
 abbrev wAcc (p : Params) (σ : State) (κ i m : Nat) : Poly :=
@@ -420,7 +420,7 @@ theorem ntw_m {σ : State} {i : Nat} (hi : i < p.k) : KeyGen.IpOk (slay2 p STK �
 theorem mulW_piece {t i : Nat} (hi : i < p.k) :
     SPiece p STK (fun σ s => IC p STK σ t p.ℓ p.ℓ i 0 s) (WA p STK t i 1) (mulAt P (wP p i) (aP p i 0) (yhP p 0)) := by
   have hk := hF.k; have hl := hF.l; have hkl := hF.kl
-  have h0 : 0 < p.ℓ := by omega
+  have h0 : 0 < p.ℓ := by omega_using [hl]
   rw [aP_ij]
   refine ⟨fun σ s _ h => ?_, rel_of (RelCT.exists_ fun σ => KeyGen.mul_tr hP.mul hS (mw_m hF (σ := σ) hi h0)
     (P := fun x y => Two (slay2 p STK σ) sWb2 STK x y ∧
@@ -483,7 +483,7 @@ theorem invW_piece {t i : Nat} (hi : i < p.k) :
   have I := h.keep k' (by ssep hF [icChk, ikChk, sc2Chk, yBase, yhBase, wBase, s1Base, nSec])
     (k'.cs .r25 (by decide)) (k'.cs .r27 (by decide))
   refine ⟨I.l, I.y, I.yh, fun i' hi' => ?_, I.w1, I.w1b⟩
-  rcases (by omega : i' < i ∨ i' = i) with h' | rfl
+  rcases (by omega_using [hi'] : i' < i ∨ i' = i) with h' | rfl
   · exact I.w i' h'
   · have e : polyAt s.mem (lpa (slay2 p STK σ) (wP p i')) = wAcc p σ (p.ℓ * t) i' p.ℓ := hw.2
     rw [e] at hq
@@ -495,9 +495,9 @@ theorem rowW_piece {t i : Nat} (hi : i < p.k) :
   have hl := hF.l
   unfold rowW
   refine (mulW_piece hP hF hS hi).seq ((Piece.mono (Piece.seqR (I := fun j => WA p STK t i j) (p.ℓ - 1) 1
-    fun j h1 h2 => mulAddW_piece hP hF hS hi (by omega)) (fun _ _ _ h => h) fun _ _ _ h => ?_).seq
+    fun j h1 h2 => mulAddW_piece hP hF hS hi (by omega_using [hl, h2])) (fun _ _ _ h => h) fun _ _ _ h => ?_).seq
     (invW_piece hP hF hS hi))
-  rwa [show 1 + (p.ℓ - 1) = p.ℓ by omega] at h
+  rwa [show 1 + (p.ℓ - 1) = p.ℓ by omega_using [hl]] at h
 
 end
 
@@ -540,7 +540,7 @@ omit hP hS in
 theorem w1_off {i : Nat} (hi : i < p.k) : w1Len p * i + w1Len p ≤ 1024 := by
   have hw := hF.w1
   have := Nat.mul_le_mul_left (w1Len p) (show i + 1 ≤ p.k from hi)
-  rw [Nat.mul_add, Nat.mul_one, Nat.mul_comm (w1Len p) p.k] at this; omega
+  rw [Nat.mul_add, Nat.mul_one, Nat.mul_comm (w1Len p) p.k] at this; omega_using [hw, this]
 
 omit hP hS in
 theorem sbpW_m {σ : State} {i : Nat} (hi : i < p.k) :
@@ -607,15 +607,15 @@ theorem ctPieces {σ s : State} (hs : Site (slay2 p STK σ) sWb2 STK s) :
   have hk := hF.k
   obtain ⟨w1a, w1b⟩ := hF.w1
   refine ⟨fun pc hpc => ?_, pieceS hs rfl (show oCT < 32768 by decide)
-    (show cLen p < 32768 by rcases hF.ct with e | e | e <;> omega)
-    (show 0 < cLen p by rcases hF.ct with e | e | e <;> omega)
+    (show cLen p < 32768 by rcases hF.ct with e | e | e <;> omega_using [e])
+    (show 0 < cLen p by rcases hF.ct with e | e | e <;> omega_using [e])
     (by rcases hF.ct with e | e | e <;> ssep hF [hashLay, Lay.size, e]) (.inl rfl)
     fun _ => show ix Reg.r31 ∈ sWb2 by decide⟩
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hpc
   rcases hpc with rfl | rfl
   · exact pieceS hs rfl (show (0 : Nat) < 32768 by decide) (show 64 < 32768 by decide) (by decide)
       (by ssep hF [hashLay, Lay.size]) (.inr rfl) fun h => absurd h (by decide)
-  · exact pieceS hs rfl (show oW1 < 32768 by decide) (show p.k * w1Len p < 32768 by omega) w1b
+  · exact pieceS hs rfl (show oW1 < 32768 by decide) (show p.k * w1Len p < 32768 by omega_using [w1a]) w1b
       (by rcases hF.w1l with e | ⟨e, _⟩ <;> ssep hF [hashLay, Lay.size, e]) (.inl rfl) fun h => absurd h (by decide)
 
 omit hP hS in
@@ -628,7 +628,7 @@ theorem ctHash_piece {t : Nat} :
     fun σ₁ _ _ _ _ _ pub h₁ h₂ => ⟨σ₁, sc2_twoL pub h₁.l.k.sc h₂.l.k.sc⟩⟩
   have hs := h.l.k.sc.site
   obtain ⟨hin, hq⟩ := ctPieces hF hs
-  have hc : cLen p ≤ 64 := by rcases hF.ct with e | e | e <;> omega
+  have hc : cLen p ≤ 64 := by rcases hF.ct with e | e | e <;> omega_using [e]
   have hb := h.w1b
   refine WP.mono (hashS hs kmu (rate := 136) (sfx := 0x1f) (by decide) (by decide) (by simp) hin hq)
     fun s' ⟨k', o'⟩ => ⟨h.keep k' (by ssep hF [icChk, ikChk, sc2Chk, yBase, yhBase, wBase, s1Base, nSec])
@@ -655,11 +655,11 @@ theorem commit_piece {t : Nat} :
     SPiece p STK (IL p STK · t) (ICd p STK t) (commit P p) := by
   unfold commit
   refine Piece.mono ((Piece.mono (Piece.seqR (I := fun r σ s => IC p STK σ t r r 0 0 s) p.ℓ 0
-    fun r _ hr => maskR_piece hP hF hS (by omega)) (fun _ _ _ h => h) fun _ _ _ h => by simpa using h).seq
+    fun r _ hr => maskR_piece hP hF hS (by omega_using [hr])) (fun _ _ _ h => h) fun _ _ _ h => by simpa using h).seq
     ((Piece.mono (Piece.seqR (I := fun i σ s => IC p STK σ t p.ℓ p.ℓ i 0 s) p.k 0
-      fun i _ hi => rowW_piece hP hF hS (by omega)) (fun _ _ _ h => h) fun _ _ _ h => by simpa using h).seq
+      fun i _ hi => rowW_piece hP hF hS (by omega_using [hi])) (fun _ _ _ h => h) fun _ _ _ h => by simpa using h).seq
     ((Piece.mono (Piece.seqR (I := fun i σ s => IC p STK σ t p.ℓ p.ℓ p.k i s) p.k 0
-      fun i _ hi => w1R_piece hP hF hS (by omega)) (fun _ _ _ h => h) fun _ _ _ h => by simpa using h).seq
+      fun i _ hi => w1R_piece hP hF hS (by omega_using [hi])) (fun _ _ _ h => h) fun _ _ _ h => by simpa using h).seq
       (ctHash_piece hF)))) (fun σ s _ h => ?_) fun _ _ _ h => h
   exact ⟨h, fun _ h => absurd h (Nat.not_lt_zero _), fun _ h => absurd h (Nat.not_lt_zero _),
     fun _ h => absurd h (Nat.not_lt_zero _), by simp only [Nat.mul_zero, List.range_zero, List.flatMap_nil]; rfl, by simp⟩

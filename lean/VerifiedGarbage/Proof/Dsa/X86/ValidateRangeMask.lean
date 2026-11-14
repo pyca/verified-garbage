@@ -45,7 +45,7 @@ theorem rangeMask_ok {s : State} {base : Addr} {size n : Nat}
   have b5 := slot_bound (n := n) (i := 5) (by decide)
   simp only [stride] at b0 b5
   refine WP.seq (WP.mono (VG.Proof.Dsa.X86.checkRange_ok n (Layout.field .mask) hs hn
-    (by omega) (by omega) (by change 8248 ≤ size; omega)) fun u ⟨Vu, Ku, Ou⟩ => ?_)
+    (by omega_using [cb, hsize, b5]) (by omega_using [cb, hsize, b0]) (by change 8248 ≤ size; omega_using [hsize])) fun u ⟨Vu, Ku, Ou⟩ => ?_)
   cases aboveOne with
   | false =>
     simp only [Bool.false_eq_true, ite_false]
@@ -54,12 +54,12 @@ theorem rangeMask_ok {s : State} {base : Addr} {size n : Nat}
     simp only [ite_true]
     refine WP.mono (lowerTwo_ok (hs.of_keeps Ku (by decide)) hz hn hn48) fun t ⟨Vt, Kt, Ot⟩ => ?_
     refine ⟨?_, Ku.trans (Kt.mono (by decide)), (Outs.of_outside Ou (by simp)).trans (validation_tmp_whole Ot (by decide))⟩
-    rw [Vt, Vu, Ou.wordsVal (.inl (by change slot n 5 + 8 * n ≤ 8244; omega)) (by omega),
+    rw [Vt, Vu, Ou.wordsVal (.inl (by change slot n 5 + 8 * n ≤ 8244; omega_using [cb, b5])) (by omega_using [cb, b5]),
       BitVec.and_assoc, mask32_and]
     have he : ((0 < wordsVal s.mem base (slot n 5) n ∧
         wordsVal s.mem base (slot n 5) n < wordsVal s.mem base (slot n 0) n) ∧
         2 ≤ wordsVal s.mem base (slot n 5) n) ↔
-      (1 < wordsVal s.mem base (slot n 5) n ∧ wordsVal s.mem base (slot n 5) n < wordsVal s.mem base (slot n 0) n) := by omega
+      (1 < wordsVal s.mem base (slot n 5) n ∧ wordsVal s.mem base (slot n 5) n < wordsVal s.mem base (slot n 0) n) := by omega_using []
     simp only [mask32, he]
 
 end VG.Proof.Dsa.X86

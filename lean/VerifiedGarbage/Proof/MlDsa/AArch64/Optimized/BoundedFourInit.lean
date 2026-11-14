@@ -113,7 +113,7 @@ theorem vectorSetup_eq (η : Nat) : vectorSetup η=
 theorem initWord_lane (x : BitVec 32) {e : Nat} (he : e<4) : vword (initWord x) e=x := by
   unfold initWord
   rw [VG.Proof.MlKem.AArch64.vword_ofVWords _ _ _ _ he]
-  rcases (show e=0∨e=1∨e=2∨e=3 by omega) with rfl|rfl|rfl|rfl <;> rfl
+  rcases (show e=0∨e=1∨e=2∨e=3 by omega_using [he]) with rfl|rfl|rfl|rfl <;> rfl
 
 private theorem weights_lane : ∀e<4,
     vword (ofVDwords 0x0000000200000001 0x0000000800000004) e=BitVec.ofNat 32 (2^e) := by decide

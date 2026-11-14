@@ -31,20 +31,20 @@ theorem candidate_header_frame {s t : State} {p : CandidateParams} {q : Bool}
   rw [List.mem_singleton] at hr
   subst r
   refine ⟨⟨State.addr (s.sp + 40#32), 28⟩, by simp [phaseRegions], ?_⟩
-  rw [VG.Arm.addr_add (by omega), VG.Arm.addr_add (by omega)]
+  rw [VG.Arm.addr_add (by omega_using [nowrap]), VG.Arm.addr_add (by omega_using [nowrap])]
   exact Offset.sub _ (by decide) (by decide)
 
 theorem CandidateContext.phase_output {s t : State} {p : CandidateParams} {q : Bool} {consumed : Nat}
     (h : CandidateContext p consumed s)
     (changed : Frame (phaseRegions (candidatePhase p q) s.sp) s.mem t.mem) :
     Spec.Rsa.bytesAt t.mem (State.addr p.out) p.length = Spec.Rsa.bytesAt s.mem (State.addr p.out) p.length := by
-  refine rsa_bytes_frame changed (by have fit : p.out.toNat + p.length ≤ 2 ^ 32 := p.outputFits; omega) ?_
+  refine rsa_bytes_frame changed (by have fit : p.out.toNat + p.length ≤ 2 ^ 32 := p.outputFits; omega_using [fit]) ?_
   intro r hr
   simp only [phaseRegions, candidatePhase, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl
   · exact p.outputScratch
   · exact h.belowOutput.symm
-  · rw [VG.Arm.addr_add (by have := h.saved.space.nowrap; omega)]
+  · rw [VG.Arm.addr_add (by have := h.saved.space.nowrap; omega_using [this])]
     exact h.stackOutput.symm.sub_right (Offset.sub_base _ (by decide : 40 + 28 ≤ 72))
 
 theorem CandidateContext.after_phase {s t : State} {p : CandidateParams} {q : Bool} {consumed next passed : Nat}

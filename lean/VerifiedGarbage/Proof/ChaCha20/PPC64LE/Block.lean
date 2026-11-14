@@ -71,22 +71,22 @@ include hp
 
 theorem in_st {k : Nat} (hk : k < 16) (ws : List Region) :
     InRegions (s₀.rd ++ ws) (st s₀ + BitVec.ofNat 64 (4 * k)) 4 :=
-  ⟨stR s₀, by simp [hp.rd], contains_off (by omega) (by omega)⟩
+  ⟨stR s₀, by simp [hp.rd], contains_off (by omega_using [hk]) (by omega_using [hk])⟩
 
 theorem out_out {k : Nat} (hk : k < 16) : InRegions s₀.wr (buf s₀ + BitVec.ofNat 64 (4 * k)) 4 :=
-  ⟨bufR s₀, by simp [hp.wr], contains_off (by omega) (by omega)⟩
+  ⟨bufR s₀, by simp [hp.wr], contains_off (by omega_using [hk]) (by omega_using [hk])⟩
 
 theorem in_sav {i : Nat} (hi : i < 8) (rs : List Region) :
     InRegions (rs ++ s₀.wr) (buf s₀ + BitVec.ofNat 64 (64 + 8 * i)) 8 :=
-  ⟨bufR s₀, by simp [hp.wr], contains_off (by omega) (by omega)⟩
+  ⟨bufR s₀, by simp [hp.wr], contains_off (by omega_using [hi]) (by omega_using [hi])⟩
 
 theorem out_sav {i : Nat} (hi : i < 8) : InRegions s₀.wr (buf s₀ + BitVec.ofNat 64 (64 + 8 * i)) 8 :=
-  ⟨bufR s₀, by simp [hp.wr], contains_off (by omega) (by omega)⟩
+  ⟨bufR s₀, by simp [hp.wr], contains_off (by omega_using [hi]) (by omega_using [hi])⟩
 
 /-- Reading the input state after writes to `buf` only. -/
 theorem read_st {m : Mem} (hf : Frame [bufR s₀] s₀.mem m) {k : Nat} (hk : k < 16) :
     m.readW (st s₀ + BitVec.ofNat 64 (4 * k)) 32 = (V s₀)[k] := by
-  rw [hf.readW (r := stR s₀) (contains_off (by omega) (by omega)) (by simpa using hp.buf_st.symm)
+  rw [hf.readW (r := stR s₀) (contains_off (by omega_using [hk]) (by omega_using [hk])) (by simpa using hp.buf_st.symm)
     (by decide)]
   simp only [V, stateAt, Vector.getElem_ofFn]
 
@@ -129,7 +129,7 @@ theorem not_words_r4 : ¬ Words .r4 := by
 
 theorem saved_words {i : Nat} (hi : i < 8) : Words (saved i) := by
   have key : ∀ i < 8, saved i = wreg (i + 8) := by decide
-  exact ⟨i + 8, by omega, key i hi⟩
+  exact ⟨i + 8, by omega_using [hi], key i hi⟩
 
 theorem saved_inj {i j : Nat} (hi : i < 8) (hj : j < 8) (h : saved i = saved j) : i = j := by
   have key : ∀ i < 8, ∀ j < 8, saved i = saved j → i = j := by decide
@@ -165,12 +165,12 @@ theorem save_step {s₀ : State} (hp : Pre s₀) {n : Nat} (hn : n < 8) {s : Sta
     rw [h.wr, hr4]; exact hp.out_sav hn
   apply WP.of_runBlock
   simp only [runBlock_cons, runStep_some, runBlock_nil,
-    exec_store_d (by decide) (show 64 + 8 * n < 2 ^ 15 ∧ (64 + 8 * n) % 4 = 0 by omega) hout,
+    exec_store_d (by decide) (show 64 + 8 * n < 2 ^ 15 ∧ (64 + 8 * n) % 4 = 0 by omega_using [hn]) hout,
     Option.some.injEq, exists_eq_left', hr4]
   refine ⟨h.gpr, h.rd, h.wr, h.frame.writeW (List.mem_singleton_self _) _ ?_, fun i hi => ?_⟩
   · simp only [Region.Contains]; bv_omega
   · rcases Nat.lt_succ_iff_lt_or_eq.mp hi with hi | rfl
-    · rw [Mem.readW_writeW_sep (sav_sep _ (by omega) hn (by omega)) (by decide)]
+    · rw [Mem.readW_writeW_sep (sav_sep _ (by omega_arith) hn (by omega_using [hi])) (by decide)]
       exact h.saved i hi
     · rw [Mem.readW_writeW_self64, h.gpr]
 
@@ -193,12 +193,12 @@ theorem load_step {s₀ : State} (hp : Pre s₀) {n : Nat} (hn : n < 16) {s : St
     rw [h.mem]; exact hp.read_st (Frame.refl _ _) hn
   apply WP.of_runBlock
   simp only [runBlock_cons, runStep_some, runBlock_nil,
-    exec_load_w (by decide) (show 4 * n < 2 ^ 15 by omega) hin, isa,
+    exec_load_w (by decide) (show 4 * n < 2 ^ 15 by omega_using [hn]) hin, isa,
     Option.some.injEq, exists_eq_left', hr3, hv]
   refine ⟨fun j hj hjn => ?_, h.mem, h.rd, h.wr, fun r hr => ?_⟩
   · simp only [State.write]
     rcases Nat.lt_succ_iff_lt_or_eq.mp hjn with hjn | rfl
-    · have e : wreg j ≠ wreg n := fun e => absurd (wreg_inj hj hn e) (by omega)
+    · have e : wreg j ≠ wreg n := fun e => absurd (wreg_inj hj hn e) (by omega_using [hjn])
       simp only [e, ite_false]; exact h.loaded j hj hjn
     · simp
   · have e : r ≠ wreg n := fun e => hr ⟨n, hn, e⟩
@@ -228,29 +228,29 @@ theorem add_step {s₀ : State} (hp : Pre s₀) {R : CState} {i : Nat} (hi : i <
     rw [h.wr, hr4]; exact hp.out_out hi
   have hv := hp.read_st (h.frame.sub fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr
-    exact ⟨bufR s₀, List.mem_singleton_self _, Region.sub_prefix (by omega)⟩) hi
+    exact ⟨bufR s₀, List.mem_singleton_self _, Region.sub_prefix (by omega_using [])⟩) hi
   have hr := h.rest i hi le_rfl
   have hne : wreg i ≠ .r0 := wreg_ne_r0 hi
   have n4 : Reg.r4 ≠ wreg i := fun e => not_words_r4 ⟨_, hi, e⟩
   have n40 : Reg.r4 ≠ .r0 := by decide
   apply WP.of_runBlock
   simp only [addWord, runBlock_cons, runStep_some,
-    exec_load_w (by decide) (show 4 * i < 2 ^ 15 by omega) hin, exec_add, isa, hr3, hv]
+    exec_load_w (by decide) (show 4 * i < 2 ^ 15 by omega_using [hi]) hin, exec_add, isa, hr3, hv]
   simp only [State.write, hne, ite_false, ite_true]
-  rw [exec_store_w (by decide) (show 4 * i < 2 ^ 15 by omega)
+  rw [exec_store_w (by decide) (show 4 * i < 2 ^ 15 by omega_using [hi])
     (by simpa [State.write, hne, n4, n40] using hout)]
   simp only [runStep_some, runBlock_nil, Option.some.injEq, exists_eq_left', ite_true, ite_false,
     hr4, n4, n40]
   have ho : (outR s₀).Contains (buf s₀ + BitVec.ofNat 64 (4 * i)) (32 / 8) :=
-    contains_off (by omega) (by omega)
+    contains_off (by omega_using [hi]) (by omega_using [hi])
   refine ⟨fun j hj hji => ?_, fun j hj hij => ?_, h.frame.writeW (List.mem_singleton_self _) _ ho,
     h.rd, h.wr, fun r hr' h0 => ?_⟩
   · rcases Nat.lt_succ_iff_lt_or_eq.mp hji with hji | rfl
-    · rw [readW_writeW_out _ _ _ hj hi (by omega)]; exact h.done j hj hji
+    · rw [readW_writeW_out _ _ _ hj hi (by omega_using [hji])]; exact h.done j hj hji
     · rw [Mem.readW_writeW_self32, lo32_add, hr, lo32_ext]
-  · have e1 : wreg j ≠ wreg i := fun e => absurd (wreg_inj hj hi e) (by omega)
+  · have e1 : wreg j ≠ wreg i := fun e => absurd (wreg_inj hj hi e) (by omega_using [hij])
     have e2 : wreg j ≠ .r0 := wreg_ne_r0 hj
-    simp only [e1, e2, ite_false]; exact h.rest j hj (by omega)
+    simp only [e1, e2, ite_false]; exact h.rest j hj (by omega_using [hij])
   · have e1 : r ≠ wreg i := fun e => hr' ⟨i, hi, e⟩
     simp only [e1, h0, ite_false]; exact h.keep r hr' h0
 
@@ -277,12 +277,12 @@ theorem restore_step {s₀ sB : State} (hp : Pre s₀) (hr4 : sB.gpr .r4 = buf s
     rw [h.mem]; exact hsav n hn
   apply WP.of_runBlock
   simp only [runBlock_cons, runStep_some, runBlock_nil,
-    exec_load_d (by decide) (show 64 + 8 * n < 2 ^ 15 ∧ (64 + 8 * n) % 4 = 0 by omega) hin,
+    exec_load_d (by decide) (show 64 + 8 * n < 2 ^ 15 ∧ (64 + 8 * n) % 4 = 0 by omega_using [hn]) hin,
     Option.some.injEq, exists_eq_left', hr4', hv]
   refine ⟨fun i hi => ?_, fun r hr => ?_, h.mem, h.rd, h.wr⟩
   · simp only [State.write]
     rcases Nat.lt_succ_iff_lt_or_eq.mp hi with hi | rfl
-    · have e : saved i ≠ saved n := fun e => absurd (saved_inj (by omega) hn e) (by omega)
+    · have e : saved i ≠ saved n := fun e => absurd (saved_inj (by omega_arith) hn e) (by omega_using [hi])
       simp only [e, ite_false]; exact h.restored i hi
     · simp
   · simp only [State.write, hr n hn, ite_false]; exact h.others r hr
@@ -303,7 +303,7 @@ theorem main_ok {s₁ : State} (hp : Pre s₁) :
       (∀ j (hj : j < 16), s'.mem.readW (buf s₁ + BitVec.ofNat 64 (4 * j)) 32 = (Rs s₁)[j] + (V s₁)[j]) ∧
       Frame [outR s₁] s₁.mem s'.mem ∧ s'.rd = s₁.rd ∧ s'.wr = s₁.wr ∧
       (∀ r, ¬ Words r → r ≠ .r0 → s'.gpr r = s₁.gpr r) := by
-  have hl₀ : LI s₁ 0 s₁ := ⟨fun _ _ h => absurd h (by omega), rfl, rfl, rfl, fun _ _ => rfl⟩
+  have hl₀ : LI s₁ 0 s₁ := ⟨fun _ _ h => absurd h (by omega_using []), rfl, rfl, rfl, fun _ _ => rfl⟩
   have hload : WP isa (.block load) s₁ (LI s₁ 16) := by
     unfold load
     exact wp_range_flatMap (M := isa) (LI s₁) (fun k s hk h => load_step hp hk h) 16 le_rfl s₁ hl₀
@@ -311,7 +311,7 @@ theorem main_ok {s₁ : State} (hp : Pre s₁) :
   have hh₂ : Holds (V s₁) s₂ := fun k hk => h₂.loaded k hk hk
   refine WP.seq (WP.mono (rounds_ok hh₂ 10) fun s₃ h₃ => ?_)
   have hf₃ : FI s₁ (Rs s₁) 0 s₃ :=
-    ⟨fun _ _ h => absurd h (by omega), fun j hj _ => h₃.holds j hj,
+    ⟨fun _ _ h => absurd h (by omega_using []), fun j hj _ => h₃.holds j hj,
       by rw [h₃.mem, h₂.mem]; exact Frame.refl _ _, h₃.rd.trans h₂.rd, h₃.wr.trans h₂.wr,
       fun r hr _ => (h₃.keep r hr).trans (h₂.keep r hr)⟩
   unfold finish
@@ -321,7 +321,7 @@ theorem main_ok {s₁ : State} (hp : Pre s₁) :
 theorem correct {s₀ : State} (hp : Pre s₀) :
     WP isa block s₀ fun s' =>
       (∀ r ∈ preserved, s'.gpr r = s₀.gpr r) ∧ Proof.ChaCha20.blockPPC64LE.post s₀ s' := by
-  have hs₀ : SI s₀ 0 s₀ := ⟨rfl, rfl, rfl, Frame.refl _ _, fun _ h => absurd h (by omega)⟩
+  have hs₀ : SI s₀ 0 s₀ := ⟨rfl, rfl, rfl, Frame.refl _ _, fun _ h => absurd h (by omega_using [])⟩
   have hsave : WP isa (.block save) s₀ (SI s₀ 8) := by
     unfold save
     exact wp_range_flatMap (M := isa) (SI s₀) (fun k s hk h => save_step hp hk h) 8 le_rfl s₀ hs₀
@@ -333,7 +333,7 @@ theorem correct {s₀ : State} (hp : Pre s₀) :
     apply Vector.ext
     intro j hj
     simp only [V, stateAt, Vector.getElem_ofFn, st, h₁.gpr]
-    rw [h₁.frame.readW (r := stR s₀) (contains_off (by omega) (by omega))
+    rw [h₁.frame.readW (r := stR s₀) (contains_off (by omega_using [hj]) (by omega_using [hj]))
       (by simpa using Region.Disjoint.sub_right hp.buf_st.symm (savR_sub s₀)) (by decide)]
   have hbuf : buf s₁ = buf s₀ := by simp only [buf, h₁.gpr]
   refine WP.seq (WP.mono (main_ok hp₁) fun s₃ ⟨hout, hf, hrd, hwr, hk⟩ => ?_)
@@ -345,7 +345,7 @@ theorem correct {s₀ : State} (hp : Pre s₀) :
         (by simpa using (outR_sav s₀).symm) (by decide)]
       exact h₁.saved i hi
   have hr₀ : RI' s₀ s₃ 0 s₃ :=
-    ⟨fun _ h => absurd h (by omega), fun _ _ => rfl, rfl, hrd.trans h₁.rd, hwr.trans h₁.wr⟩
+    ⟨fun _ h => absurd h (by omega_using []), fun _ _ => rfl, rfl, hrd.trans h₁.rd, hwr.trans h₁.wr⟩
   refine WP.mono (wp_range_flatMap (M := isa) (RI' s₀ s₃)
     (fun k s hk h => restore_step hp hr4 hsav hk h) 8 le_rfl s₃ hr₀) fun s' h => ⟨?_, ?_⟩
   · intro r hr

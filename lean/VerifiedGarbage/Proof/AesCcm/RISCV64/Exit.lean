@@ -34,7 +34,7 @@ theorem exit_wp {c : Cx} (L : Lay c) {s₀ s : State} (E : Env c s) (sv : Saved 
   rw [restore_code]
   refine WP.mono (restore_wp (b := .s1) (B := c.W) L.wal E.s1 (by decide) (by decide) (fun p hp => by
       have := savedL_bound p (restoreL_sub p hp)
-      exact E.perm.wR (by omega)) (sv.sub restoreL_sub)) fun s' R => ?_
+      exact E.perm.wR (by omega_using [this])) (sv.sub restoreL_sub)) fun s' R => ?_
   refine ⟨⟨fun r hr => ?_, by rw [R.sp, hsp], R.gpr (.ra, raO) List.mem_cons_self⟩, R.mem,
     R.other _ (by decide)⟩
   by_cases hs : r ∈ restoreL.map Prod.fst

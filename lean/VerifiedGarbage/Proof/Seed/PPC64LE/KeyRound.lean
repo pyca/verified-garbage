@@ -78,7 +78,7 @@ theorem keyRound_ok {j : Nat} (hj : j < 16) {s : State} (h : Room s) :
   have hb0 : 2 * j % 16 < 16 := Nat.mod_lt _ (by decide)
   have hb1 : (2 * j + 1) % 16 < 16 := Nat.mod_lt _ (by decide)
   have hd : gSlot (2 * j + 1) ≠ gSlot (2 * j) ∨ (2 * j + 1) % 16 ≠ 2 * j % 16 :=
-    gIn_apart _ (by omega) _ (by omega) (by omega)
+    gIn_apart _ (by omega_using [hj]) _ (by omega_using [hj]) (by omega_using [])
   let c := kcs.getD j 0
   obtain ⟨s1, e1, u1⟩ := step_x s (shrI .r9 .r6 32) .r9 (s.gpr .r6 >>> 32)
     (by rw [shrI, exec_lsr_d (by decide)])

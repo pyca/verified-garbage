@@ -70,7 +70,7 @@ theorem uz_y {a : State} (hz : UZ s₀ a) {m : Mem} (hm : Frame [uhR s₀] a.mem
     ∀ t < uLen s₀, m (State.addr (uY s₀) + BitVec.ofNat 64 t) = s₀.mem (State.addr (uY s₀) + BitVec.ofNat 64 t) := by
   intro t ht
   have fY := hp.fitY
-  have hc : (uyR s₀).Contains (State.addr (uY s₀) + BitVec.ofNat 64 t) 1 := Offset.contains_base _ (by omega) (by omega)
+  have hc : (uyR s₀).Contains (State.addr (uY s₀) + BitVec.ofNat 64 t) 1 := Offset.contains_base _ (by omega_using [ht]) (by omega_using [ht, fY])
   rw [hm _ fun r hr hc' => by
       rw [List.mem_singleton] at hr; subst hr; exact hp.d_yh _ hc hc',
     uz_frame hp hz _ fun r hr hc' => by
@@ -123,14 +123,14 @@ theorem harr_hintIs {s₀ : State} {m : Mem} {hA : Array (Vector Bool n)} (hh : 
 
 theorem ret_val (ω x : Nat) (hω : ω ≤ 80) (hx : x < 2 ^ 31) :
     (1 : BitVec 32) - ((BitVec.ofNat 32 ω - BitVec.ofNat 32 x) >>> 31) = if ω < x then 0 else 1 := by
-  rw [ltBit_val (by rw [toNat_ofNat32 (by omega)]; omega) (by rw [toNat_ofNat32 (by omega)]; omega),
-    toNat_ofNat32 (by omega), toNat_ofNat32 (by omega)]
+  rw [ltBit_val (by rw [toNat_ofNat32 (by omega_arith)]; omega_arith) (by rw [toNat_ofNat32 (by omega_using [hx])]; omega_using [hx]),
+    toNat_ofNat32 (by omega_arith), toNat_ofNat32 (by omega_using [hx])]
   split <;> rfl
 
 theorem fail_val {s₀ : State} (hp : UPre s₀) : (1 : BitVec 32) - ((uW s₀ - 256) >>> 31) = 0 := by
   obtain ⟨-, -, -, hω80, -, -⟩ := ufacts hp
   have e := ret_val (uω s₀) 256 hω80 (by decide)
-  rw [ite_pos' (by omega), BitVec.ofNat_toNat, BitVec.setWidth_eq] at e
+  rw [ite_pos' (by omega_arith), BitVec.ofNat_toNat, BitVec.setWidth_eq] at e
   exact e
 
 /-- The body of the frame: the result, the reloads of `r5`–`r7`, and the word

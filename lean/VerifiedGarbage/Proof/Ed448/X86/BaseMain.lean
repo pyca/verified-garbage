@@ -73,7 +73,7 @@ theorem BasePre.stk_ret {s : State} (h : BasePre s) : (stkR s).Disjoint (retR s)
   refine Region.disjoint_of_le (Or.inl ?_) ?_ ?_ <;> bv_omega
 
 theorem BasePre.args {s : State} (h : BasePre s) : Args s 3 2 :=
-  ⟨by rw [h.rd]; simp, by have := h.sp_fit; omega, by decide, by rw [h.wr]; simp, h.sc_fit,
+  ⟨by rw [h.rd]; simp, by have := h.sp_fit; omega_using [this], by decide, by rw [h.wr]; simp, h.sc_fit,
     h.args_sc, h.ret_sc⟩
 
 theorem initE (e : Env) (he : ∀ i : Index, e i = Proof.X448.toFe (initVal i.val)) :
@@ -120,7 +120,7 @@ theorem entry_stage {s₀ : State} (h : BasePre s₀) :
   have hs₂ := hs₁.of_keeps k₂ (by decide)
   have k02 : Keeps [.eax, .ebx, .ebp, .edi] s₀ s₂ := (k₁.mono (by decide)).trans (k₂.mono (by decide))
   have o02 : Outside (bsB s₀) 0 8192 s₀.mem s₂.mem :=
-    (o₁.mono (by omega) (by omega)).trans (o₂.mono (by omega) (by omega))
+    (o₁.mono (by omega_using []) (by omega_using [])).trans (o₂.mono (by omega_using []) (by omega_using []))
   unfold baseBits
   refine WP.seq (hA.load (i := 1) (k02.1 _ (by decide)) k02.2.1 k02.2.2 o02 (by decide)
     fun s₃ u₃ => WP.block_nil ?_)
@@ -135,12 +135,12 @@ theorem entry_stage {s₀ : State} (h : BasePre s₀) :
     intro i
     rw [← initSlots_E l₂ i]
     simp only [E, F]
-    rw [o₄.fe (Or.inl (by have := i.isLt; simp only [slot, BITS]; omega))
-      (by have := i.isLt; simp only [slot]; omega), u₃.mem]
+    rw [o₄.fe (Or.inl (by have := i.isLt; simp only [slot, BITS]; omega_using []))
+      (by have := i.isLt; simp only [slot]; omega_using []), u₃.mem]
   have b₄ : BoundedEnv s₄.mem (bsB s₀) := by
     intro i j hj
-    rw [o₄.limbs (d := slot i.val) (Or.inl (by have := i.isLt; simp only [slot, BITS]; omega))
-      (by have := i.isLt; simp only [slot]; omega) hj, u₃.mem]
+    rw [o₄.limbs (d := slot i.val) (Or.inl (by have := i.isLt; simp only [slot, BITS]; omega_using []))
+      (by have := i.isLt; simp only [slot]; omega_using []) hj, u₃.mem]
     exact initSlots_bounded l₂ i j hj
   obtain ⟨er, eq, ed⟩ := initE _ e₄
   have k04 : Keeps [.eax, .ebx, .ebp, .edi, .esi, .edx, .ecx] s₀ s₄ :=
@@ -148,7 +148,7 @@ theorem entry_stage {s₀ : State} (h : BasePre s₀) :
   have sp₄ : s₄.gpr .esp = s₀.gpr .esp := k04.1 _ (by decide)
   have hc₄ : CallCtx s₄ (bsB s₀) := ⟨by rw [sp₄]; exact h.sp_room, by
     simp only [callStk, sp₄]; rw [← stkR_below h.sp_room]; exact h.stk_sc.symm⟩
-  have o4w : Outside (bsB s₀) 0 8192 s₃.mem s₄.mem := o₄.mono (by omega) (by simp only [BITS]; omega)
+  have o4w : Outside (bsB s₀) 0 8192 s₃.mem s₄.mem := o₄.mono (by omega_using []) (by simp only [BITS]; omega_using [])
   rw [u₃.mem] at o4w
   have ws : (⟨bsB s₀, 8192⟩ : Region) ∈ s₀.wr ++ [below (s₀.gpr .esp) 20] := by
     rw [h.wr]; simp

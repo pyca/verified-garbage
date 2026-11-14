@@ -42,11 +42,11 @@ theorem FullJointFrame.word {base:Addr} {m m':Mem} (h:FullJointFrame base m m') 
     VG.Proof.X448.AArch64.word m' base d=VG.Proof.X448.AArch64.word m base d:=by
   apply Mem.readW_congr
   intro i hi
-  exact h _ (by rw [VG.Proof.X448.AArch64.ofs_off base (by omega)];omega)
-    (by rw [VG.Proof.X448.AArch64.ofs_off base (by omega)];omega)
-    (by rw [VG.Proof.X448.AArch64.ofs_off base (by omega)];omega)
-    (by rw [VG.Proof.X448.AArch64.ofs_off base (by omega)];omega)
-    (by rw [VG.Proof.X448.AArch64.ofs_off base (by omega)];omega)
+  exact h _ (by rw [VG.Proof.X448.AArch64.ofs_off base (by omega_using [hd, hi])];omega_using [h1, hi])
+    (by rw [VG.Proof.X448.AArch64.ofs_off base (by omega_using [hd, hi])];omega_using [h2, hi])
+    (by rw [VG.Proof.X448.AArch64.ofs_off base (by omega_using [hd, hi])];omega_using [h3, hi])
+    (by rw [VG.Proof.X448.AArch64.ofs_off base (by omega_using [hd, hi])];omega_using [h4, hi])
+    (by rw [VG.Proof.X448.AArch64.ofs_off base (by omega_using [hd, hi])];omega_using [h5, hi])
 
 structure FullJointOut (s:State) (base:Addr) (P:Spec.Ed448.Point) (S K:Nat) (t:State) : Prop where
   core : Core base t

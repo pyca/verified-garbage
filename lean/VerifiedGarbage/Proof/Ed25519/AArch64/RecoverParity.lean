@@ -26,10 +26,10 @@ theorem wordsZero_flag (a b c d : BitVec 64) :
   constructor
   · rintro ⟨⟨⟨rfl, rfl⟩, rfl⟩, rfl⟩; rfl
   · intro h
-    have ha : a.toNat = 0 := by omega
-    have hb : b.toNat = 0 := by omega
-    have hc : c.toNat = 0 := by omega
-    have hd : d.toNat = 0 := by omega
+    have ha : a.toNat = 0 := by omega_using [h]
+    have hb : b.toNat = 0 := by omega_using [h]
+    have hc : c.toNat = 0 := by omega_using [h]
+    have hd : d.toNat = 0 := by omega_using [h]
     exact ⟨⟨⟨BitVec.eq_of_toNat_eq ha, BitVec.eq_of_toNat_eq hb⟩,
       BitVec.eq_of_toNat_eq hc⟩, BitVec.eq_of_toNat_eq hd⟩
 
@@ -91,9 +91,9 @@ theorem parity_flag (w : BitVec 64) (b : Bool) :
   have hw : w &&& BitVec.ofNat 64 1 = BitVec.ofNat 64 (w.toNat % 2) := by
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.toNat_and, show (BitVec.ofNat 64 1).toNat = 1 from rfl,
-      Nat.and_one_is_mod, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show w.toNat % 2 < 2 ^ 64 by omega)]
+      Nat.and_one_is_mod, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show w.toNat % 2 < 2 ^ 64 by omega_using [])]
   rw [hw]
-  have h : w.toNat % 2 = 0 ∨ w.toNat % 2 = 1 := by omega
+  have h : w.toNat % 2 = 0 ∨ w.toNat % 2 = 1 := by omega_using []
   rcases h with h | h <;> rw [h] <;> cases b <;> decide
 
 theorem recoverParity_ok {s : State} (b : Bool) (hs : s.gpr .x1 = signWord b) :
@@ -101,7 +101,7 @@ theorem recoverParity_ok {s : State} (b : Bool) (hs : s.gpr .x1 = signWord b) :
       (t.gpr .x8 == 0) = (((val4 (s.gpr .x4) (s.gpr .x5) (s.gpr .x6) (s.gpr .x7) % 2 == 1) == b)) ∧
       Keeps [.x9, .x8] s t := by
   have hv : val4 (s.gpr .x4) (s.gpr .x5) (s.gpr .x6) (s.gpr .x7) % 2 = (s.gpr .x4).toNat % 2 := by
-    simp only [val4]; omega
+    simp only [val4]; omega_using []
   apply WP.of_runBlock
   simp only [recoverParity, runBlock_cons, runStep_some, runBlock_nil, exec, show 16 * 0 < Size.w.bits from by decide, ite_true, read_x,
     RegUpd.gpr_write, BitVec.setWidth_eq,

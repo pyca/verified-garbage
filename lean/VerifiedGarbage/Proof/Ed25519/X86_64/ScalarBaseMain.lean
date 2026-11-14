@@ -91,10 +91,10 @@ def scalarBaseLocal : Contract isa where
 theorem farScratch {base p : Addr} {n : Nat}
     (hd : (⟨p, n⟩ : Region).Disjoint ⟨base, 8192⟩) {i : Nat} (hi : i < n) (hn : n ≤ 2 ^ 64) :
     8192 ≤ ofs base (off p i) := by
-  refine Nat.le_of_not_lt fun h => hd _ (Offset.contains_base p (d := i) (n := 1) (k := n) (by omega) (by omega)) ?_
+  refine Nat.le_of_not_lt fun h => hd _ (Offset.contains_base p (d := i) (n := 1) (k := n) (by omega_using [hi]) (by omega_using [hi, hn])) ?_
   change (off p i - base).toNat + 1 ≤ 8192
   change (off p i - base).toNat < 8192 at h
-  omega
+  omega_using [h]
 
 /-- The comb's tables, from the contract: readable, held, and past the scratch at `rdx`. -/
 theorem scalarBaseLocal_tbl {s : State} (hs : scalarBaseLocal.pre s) :
@@ -127,7 +127,7 @@ theorem scalarBase_correct_of_engine (engine : Prog isa) (engine_ok : BaseEngine
   apply WP.seq
   refine WP.mono (engine_ok hb ((gb _ (by decide)).trans (congrFun ga _))
     (fun q hq => ⟨⟨s.gpr .rsi, 32⟩, by rw [rb, ra, hr]; simp,
-      Offset.contains_base _ (by omega) (by omega)⟩)
+      Offset.contains_base _ (by omega_using [hq]) (by omega_using [hq])⟩)
     (fun q hq => farScratch hd hq (by decide)) tblb far) fun c ⟨kc, vc⟩ => ?_
   have mc := powersKeep_outside kc
   have svc : Saved (s.gpr .rdx) s.gpr c.mem := svb.outside mc (by decide)
@@ -163,7 +163,7 @@ theorem scalarBase_correct_of_engine (engine : Prog isa) (engine_ok : BaseEngine
   · have ft : Frame [⟨s.gpr .rdx, 8192⟩, ⟨s.gpr .rdi, 32⟩] s.mem t.mem := by
       rw [mt]
       have hc : ∀ d, d + 8 ≤ 32 → (⟨s.gpr .rdi, 32⟩ : Region).Contains (off (s.gpr .rdi) d) (64 / 8) :=
-        fun d hd => Offset.contains_base _ hd (by omega)
+        fun d hd => Offset.contains_base _ hd (by omega_using [hd])
       have hm : (⟨s.gpr .rdi, 32⟩ : Region) ∈ [⟨s.gpr .rdx, 8192⟩, ⟨s.gpr .rdi, 32⟩] := by simp
       exact ((((fme.mono (by simp)).writeW hm _ (hc 0 (by decide))).writeW hm _
         (hc 8 (by decide))).writeW hm _ (hc 16 (by decide))).writeW hm _ (hc 24 (by decide))

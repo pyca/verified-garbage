@@ -68,14 +68,14 @@ structure UPost (s : State) (W C D S : Addr) (n : Nat) (s' : State) : Prop where
 
 theorem UArgs.pre {s : State} {W C D S : Addr} {n : Nat} (h : UArgs s W C D S n) :
     updateX86_64.pre (s.withRegions [⟨W, 384⟩, ⟨D, 8 * n⟩] [⟨C, 8⟩, ⟨S, 120⟩]) := by
-  have hN := toNat_ofNat (n := n) (by have := h.hn; omega)
+  have hN := toNat_ofNat (n := n) (by have := h.hn; omega_using [this])
   simp only [updateX86_64, State.withRegions_gpr, State.withRegions_rd, State.withRegions_wr, h.rdi,
     h.rsi, h.rdx, h.rcx, h.r8, hN]
   exact ⟨trivial, trivial, h.wc, h.ws, h.dc, h.ds, h.cs, h.retC, h.retS, h.wrapC, h.wrapD, h.wrapS⟩
 
 theorem upd_wp {s : State} {W C D S : Addr} {n : Nat} (h : UArgs s W C D S n) :
     WP isa Impl.CmacTripleDes.X86_64.update s (UPost s W C D S n) := by
-  have hN := toNat_ofNat (n := n) (by have := h.hn; omega)
+  have hN := toNat_ofNat (n := n) (by have := h.hn; omega_using [this])
   refine WP.inline (k := updateX86_64) Proof.CmacTripleDes.X86_64.update_correct h.pre h.reads h.writes
     (fun s' hrd hwr ha hf _ hpost => ⟨hrd, hwr, ha.1, hf, ?_⟩) (by lit_decide)
   simp only [updateX86_64, State.withRegions_gpr, State.withRegions_mem, h.rdi, h.rsi, h.rdx, h.rcx,
@@ -122,7 +122,7 @@ structure FPost (s : State) (K St P S : Addr) (L : Nat) (s' : State) : Prop wher
 
 theorem FArgs.pre {s : State} {K St P S : Addr} {L : Nat} (h : FArgs s K St P S L) :
     finalizeX86_64.pre (s.withRegions [⟨K, 400⟩, ⟨P, L⟩] [⟨St, 8⟩, ⟨S, 120⟩]) := by
-  have hL := toNat_ofNat (n := L) (by have := h.len; omega)
+  have hL := toNat_ofNat (n := L) (by have := h.len; omega_using [this])
   simp only [finalizeX86_64, State.withRegions_gpr, State.withRegions_rd, State.withRegions_wr, h.rdi,
     h.rsi, h.rdx, h.rcx, h.r8, hL]
   exact ⟨trivial, trivial, h.kst, h.ks, h.pst, h.ps, h.sts, h.retSt, h.retS, h.wrapK, h.wrapSt, h.wrapP,
@@ -130,7 +130,7 @@ theorem FArgs.pre {s : State} {K St P S : Addr} {L : Nat} (h : FArgs s K St P S 
 
 theorem fin_wp {s : State} {K St P S : Addr} {L : Nat} (h : FArgs s K St P S L) :
     WP isa Impl.CmacTripleDes.X86_64.finalize s (FPost s K St P S L) := by
-  have hL := toNat_ofNat (n := L) (by have := h.len; omega)
+  have hL := toNat_ofNat (n := L) (by have := h.len; omega_using [this])
   refine WP.inline (k := finalizeX86_64) Proof.CmacTripleDes.X86_64.finalize_correct h.pre h.reads
     h.writes (fun s' hrd hwr ha hf _ hpost => ⟨hrd, hwr, ha.1, hf, ?_⟩) (by lit_decide)
   simp only [finalizeX86_64, State.withRegions_gpr, State.withRegions_mem, h.rdi, h.rsi, h.rdx, h.rcx,
@@ -170,14 +170,14 @@ structure IPost (s : State) (Kp O S : Addr) (KL : Nat) (s' : State) : Prop where
 
 theorem IArgs.pre {s : State} {Kp O S : Addr} {KL : Nat} (h : IArgs s Kp O S KL) :
     initX86_64.pre (s.withRegions [⟨Kp, KL⟩] [⟨O, 400⟩, ⟨S, 120⟩]) := by
-  have hK := toNat_ofNat (n := KL) (by rcases h.klen with h | h <;> omega)
+  have hK := toNat_ofNat (n := KL) (by rcases h.klen with h | h <;> omega_using [h])
   simp only [initX86_64, State.withRegions_gpr, State.withRegions_rd, State.withRegions_wr, h.rdi,
     h.rsi, h.rdx, h.rcx, hK]
   exact ⟨trivial, trivial, h.ko, h.ks, h.os, h.retO, h.retS, h.wrapK, h.wrapO, h.wrapS, h.klen⟩
 
 theorem init_inline_wp {s : State} {Kp O S : Addr} {KL : Nat} (h : IArgs s Kp O S KL) :
     WP isa Impl.CmacTripleDes.X86_64.init s (IPost s Kp O S KL) := by
-  have hK := toNat_ofNat (n := KL) (by rcases h.klen with h | h <;> omega)
+  have hK := toNat_ofNat (n := KL) (by rcases h.klen with h | h <;> omega_using [h])
   refine WP.inline (k := initX86_64) Proof.CmacTripleDes.X86_64.init_correct h.pre h.reads h.writes
     (fun s' hrd hwr ha hf _ hpost => ⟨hrd, hwr, ha.1, hf, ?_⟩) (by lit_decide)
   simp only [initX86_64, State.withRegions_gpr, State.withRegions_mem, h.rdi, h.rsi, h.rdx, hK] at hpost

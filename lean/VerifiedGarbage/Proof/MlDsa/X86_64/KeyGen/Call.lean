@@ -120,7 +120,7 @@ theorem ceD2 {n : Nat} (hn : n + 1 ≤ 16) {q : Ptr} {l : Nat} (h : inB (kgB p) 
     Region.Disjoint ⟨s1.gpr .rsp - 8 - BitVec.ofNat 64 (n + 1), n + 1⟩ ⟨pa s q, l⟩ := by
   have := stk_disj s1 (R := ⟨pa s q, l⟩) (by rw [hsp]; exact L.stkD h)
   simp only [State.callEntry_rsp] at this
-  exact this.sub_left (below_sub hn (by omega))
+  exact this.sub_left (below_sub hn (by omega_using []))
 
 omit L in
 theorem ceWf (h24 : 24 ≤ (s.gpr .rsp).toNat) {n : Nat} (hn : n + 1 ≤ 16) : n + 1 ≤ (s1.gpr .rsp - 8).toNat := by
@@ -128,7 +128,7 @@ theorem ceWf (h24 : 24 ≤ (s.gpr .rsp).toNat) {n : Nat} (hn : n + 1 ≤ 16) : n
   have : (8 : BitVec 64).toNat = 8 := rfl
   rw [this]
   have := (s.gpr .rsp).isLt
-  omega
+  omega_using [h24, hn]
 
 omit L in
 theorem ceWf24 (h32 : 32 ≤ (s.gpr .rsp).toNat) : 24 ≤ (s1.gpr .rsp - 8).toNat := by
@@ -136,7 +136,7 @@ theorem ceWf24 (h32 : 32 ≤ (s.gpr .rsp).toNat) : 24 ≤ (s1.gpr .rsp - 8).toNa
   have : (8 : BitVec 64).toNat = 8 := rfl
   rw [this]
   have := (s.gpr .rsp).isLt
-  omega
+  omega_using [h32]
 
 theorem ceD24 {q : Ptr} {l : Nat} (h : inB (kgB p) q l = true) :
     Region.Disjoint (below (s1.gpr .rsp - 8) 24) ⟨pa s q, l⟩ := by
@@ -292,7 +292,7 @@ structure Site (p : Params) (s : State) : Prop where
   lay : Lay kgR (kgW p) s
   h32 : 32 ≤ (s.gpr .rsp).toNat
 
-theorem Site.h24 {p : Params} {s : State} (S : Site p s) : 24 ≤ (s.gpr .rsp).toNat := by have := S.h32; omega
+theorem Site.h24 {p : Params} {s : State} (S : Site p s) : 24 ≤ (s.gpr .rsp).toNat := by have := S.h32; omega_using [this]
 
 /-- The registers that hold the pointers of the layout. -/
 abbrev kgRegs : List Reg := [.rbx, .rbp, .r12, .r13]
@@ -786,7 +786,7 @@ theorem rej4At_ok {c : Prog isa} {sfx : String} (hc : Callee4 c) {s : State} (S 
       refine Proof.MlKem.bytesAt_congr fun i hi => ?_
       rw [BitVec.add_assoc, ← BitVec.ofNat_add]
       exact callEntry_bytes s1 (R := ⟨pa s (sc oSA4), 136⟩) (k16 s1 (by rw [hsp]; exact L.stkD i1))
-        (show 136 ≤ 2 ^ 64 by decide) (show 34 * k + i < 136 by omega)
+        (show 136 ≤ 2 ^ 64 by decide) (show 34 * k + i < 136 by omega_using [hk, hi])
   obtain ⟨hr, ho⟩ := hpost
   refine ⟨hr, ?_⟩
   rcases ho with ⟨h1', hb⟩ | ⟨h0, k, hk, hn⟩
@@ -820,10 +820,10 @@ end
 /-! ## Moves with immediates -/
 
 theorem w32_toNat {v : Nat} (h : v < 2 ^ 32) : (BitVec.setWidth 32 (BitVec.ofNat 64 v)).toNat = v := by
-  simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]; omega
+  simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]; omega_using [h]
 
 theorem w64_toNat {v : Nat} (h : v < 2 ^ 32) : (BitVec.ofNat 64 v).toNat = v := by
-  simp only [BitVec.toNat_ofNat]; omega
+  simp only [BitVec.toNat_ofNat]; omega_using [h]
 
 theorem glueRB_ok {a b c : Ptr} (v : Nat) (hv : v < 2 ^ 32) (ha : PtrOk a) (hb : PtrOk b) (hc : PtrOk c) (s : State) :
     WP isa (.block (lea .rdi a ++ imm .rsi v ++ lea .rdx b ++ lea .rcx c)) s fun s1 =>
@@ -862,7 +862,7 @@ variable {p : Params} {sd a : Ptr} {eta : Nat} (heta : eta = 2 ∨ eta = 4) (hsd
   (h3 : sepB (kgB p) a 1024 (sc oSS) 2048 = true)
   (w1 : inB (kgW p) a 1024 = true) (w2 : inB (kgW p) (sc oSS) 2048 = true)
 
-theorem eta_lt (heta : eta = 2 ∨ eta = 4) : eta < 2 ^ 32 := by omega
+theorem eta_lt (heta : eta = 2 ∨ eta = 4) : eta < 2 ^ 32 := by omega_using [heta]
 
 include heta h1 h2 h3 in
 theorem rejB_pre {stk : Nat} (hstk : stk ≤ 16) {s s1 : State} (S : Site p s)

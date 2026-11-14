@@ -61,7 +61,7 @@ theorem tabAddr_ok {s : State} {base : Addr} (hs : Scr s base) {e : Nat} (he : e
 def src (w : Nat) : Nat := slot (3 + w / 8) + 8 * (w % 8)
 
 theorem src_bounds {w : Nat} (hw : w < 24) : 448 ≤ src w ∧ src w + 8 ≤ 832 ∧ src w % 8 = 0 := by
-  simp only [src, slot]; omega
+  simp only [src, slot]; omega_using [hw]
 
 theorem tabStore_eq : tabStore =
     ([.lsl .x .x8 .x19 7, .lsl .x .x9 .x19 6, .add .x .x8 .x8 .x9, .add .x .x8 .x8 .x3] : List Instr) ++
@@ -89,26 +89,26 @@ theorem tabStore_ok {s : State} {base : Addr} (hs : Scr s base) {e : Nat} (he : 
   | succ k ih =>
     rw [List.range_succ, List.flatMap_append, List.flatMap_cons, List.flatMap_nil, List.append_nil,
       WP.block_append_iff]
-    refine WP.mono (ih (by omega)) fun t ⟨t1, t2, kt⟩ => ?_
+    refine WP.mono (ih (by omega_using [hk])) fun t ⟨t1, t2, kt⟩ => ?_
     have ht : Scr t base := hsa.of_keeps kt (by decide)
-    obtain ⟨s1, s2, s3⟩ := src_bounds (show k < 24 by omega)
+    obtain ⟨s1, s2, s3⟩ := src_bounds (show k < 24 by omega_using [hk])
     rw [show ([ld .x4 (src k), .str .x .x4 .x8 (TAB + 8 * k)] : List Instr) =
       [ld .x4 (src k)] ++ [.str .x .x4 .x8 (TAB + 8 * k)] from rfl, WP.block_append_iff]
-    refine WP.mono (VG.Proof.Curve448.AArch64.Fast.ld_ok ht .x4 s3 (by omega)) fun u ⟨u4, mu, ku⟩ => ?_
+    refine WP.mono (VG.Proof.Curve448.AArch64.Fast.ld_ok ht .x4 s3 (by omega_using [s2])) fun u ⟨u4, mu, ku⟩ => ?_
     have hsu : Scr u base := ht.of_keeps ku (by decide)
     have u8 : u.gpr .x8 = off base (192 * e) := by rw [ku.1 _ (by decide), kt.1 _ (by decide), a8]
-    refine WP.mono (strAt_ok hsu u8 (d := TAB + 8 * k) (by simp only [TAB]; omega) (by simp only [TAB]; omega)
-      (by simp only [TAB]; omega) .x4) fun v ⟨mv, kv⟩ => ⟨fun w hw => ?_, ?_, ?_⟩
+    refine WP.mono (strAt_ok hsu u8 (d := TAB + 8 * k) (by simp only [TAB]; omega_using [he, hk]) (by simp only [TAB]; omega_using [])
+      (by simp only [TAB]; omega_using [hk]) .x4) fun v ⟨mv, kv⟩ => ⟨fun w hw => ?_, ?_, ?_⟩
     · have hsrc : word t.mem base (src k) = word s.mem base (src k) := by
-        rw [t2.word (Or.inl (by simp only [TAB]; omega)) (by omega)]
-      rw [mv, VG.Proof.X448.AArch64.word_write_aligned _ _ (by simp only [TAB]; omega)
-        (by simp only [TAB]; omega) (by simp only [TAB]; omega) (by simp only [TAB]; omega), u4, mu]
+        rw [t2.word (Or.inl (by simp only [TAB]; omega_using [s2])) (by omega_using [s2])]
+      rw [mv, VG.Proof.X448.AArch64.word_write_aligned _ _ (by simp only [TAB]; omega_using [he, hk])
+        (by simp only [TAB]; omega_using [he, hk, hw]) (by simp only [TAB]; omega_using []) (by simp only [TAB]; omega_using []), u4, mu]
       by_cases hwk : w = k
-      · subst hwk; rw [ite_eq_left (by omega), hsrc]
-      · rw [ite_eq_right (by omega)]; exact t1 w (by omega)
+      · subst hwk; rw [ite_eq_left (by omega_using []), hsrc]
+      · rw [ite_eq_right (by omega_using [hwk])]; exact t1 w (by omega_using [hw, hwk])
     · rw [mv, mu]
-      exact t2.trans ((VG.Proof.X448.AArch64.writeW_outside _ _ _ (by simp only [TAB]; omega)).mono
-        (by omega) (by omega))
+      exact t2.trans ((VG.Proof.X448.AArch64.writeW_outside _ _ _ (by simp only [TAB]; omega_using [he, hk])).mono
+        (by omega_using []) (by omega_using [hk]))
     · exact (kt.trans (ku.mono (by decide))).trans (kv.mono (by decide))
 
 end VG.Proof.Ed448.AArch64.Window

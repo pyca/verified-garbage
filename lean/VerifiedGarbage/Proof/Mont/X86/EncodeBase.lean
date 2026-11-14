@@ -37,7 +37,7 @@ theorem encodeBase_ok {n size m : Nat} {base : Addr} {s : State}
   have Bu := context_slot_val C (i := 5) (by decide) (by decide) (by decide) (by decide) Ku
   refine WP.mono (context_mul_ok Cu (o := 5) (a := 5) (b := 4)
     (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
-    (by rw [Ru]; exact Nat.mod_lt _ (by have := C.gt_one; omega))) fun t ⟨Ct, Kt, ltt, Vt⟩ => ?_
+    (by rw [Ru]; exact Nat.mod_lt _ (by have := C.gt_one; omega_using [ltu]))) fun t ⟨Ct, Kt, ltt, Vt⟩ => ?_
   refine ⟨Ct, ?_, mont_encode C.coprime ltt (by rw [Vt, Ru, Bu]), ?_, (OpKeep.keeps Ku).trans (OpKeep.keeps Kt)⟩
   · rw [context_slot_val Cu (by decide) (by decide) (by decide) (by decide) Kt, Yu]
   · have frame {a b : State} {o : Nat} (ho : o = 5 ∨ o = 6)
@@ -46,7 +46,7 @@ theorem encodeBase_ok {n size m : Nat} {base : Addr} {s : State}
       intro r hr
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl <;> rcases ho with rfl | rfl <;>
-        simp [encodeRanges, contextMod, accLen, words] <;> omega)
+        simp [encodeRanges, contextMod, accLen, words] <;> omega_using [])
     exact (frame (.inr rfl) Ku).trans (frame (.inl rfl) Kt)
 
 end VG.Proof.Mont.X86.Dynamic

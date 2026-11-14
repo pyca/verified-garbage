@@ -53,10 +53,10 @@ theorem KX.inB {m0 m m' : Mem} {c K : Addr} {B : Region} {st : XZ} {ws : List Sp
   xz a i hi := by
     have := off_lt a
     rw [hf.bytes (R := ⟨c, 64⟩) (fun r hr => by rw [List.mem_singleton] at hr; subst hr; exact dC)
-      (show (64 : Nat) ≤ 2 ^ 64 by decide) (show off a + i < 64 by omega)]
+      (show (64 : Nat) ≤ 2 ^ 64 by decide) (show off a + i < 64 by omega_using [hi, this])]
     exact h.xz a i hi
   keys i hi := by
-    rw [hf.readW (r := ⟨K, 128⟩) (Offset.contains_base _ (by omega) (by omega))
+    rw [hf.readW (r := ⟨K, 128⟩) (Offset.contains_base _ (by omega_using [hws, hi]) (by omega_using [hws, hi]))
       (fun r hr => by rw [List.mem_singleton] at hr; subst hr; exact dK) (by decide)]
     exact h.keys i hi
   fr := h.fr.trans (hf.mono fun r hr => by
@@ -72,21 +72,21 @@ def gIdx (m : Mem) (p : Addr) (a b c d : Pos) : Nat → BitVec 32
   | _ => (m (p + BitVec.ofNat 64 (srcOff a))).setWidth 32
 
 theorem srcOff_lt {q : Pos} (hq : q.2 < 16) : srcOff q + 1 ≤ 48 := by
-  obtain ⟨a', i'⟩ := q; have := off_lt a'; simp only [srcOff] at hq ⊢; omega
+  obtain ⟨a', i'⟩ := q; have := off_lt a'; simp only [srcOff] at hq ⊢; omega_using [hq, this]
 
 theorem gather_ok (s : State) {S : BitVec 32} (hsi : s.gpr .esi = S) (hfit : S.toNat + 256 ≤ 2 ^ 32)
     (hw : InRegions s.wr (S.setWidth 64) 256) {a b c d : Pos} (ha : a.2 < 16) (hb : b.2 < 16) (hc : c.2 < 16)
     (hd : d.2 < 16) :
     WP isa (.block (gather a b c d)) s fun u =>
       u.xmm .xmm0 = L (gIdx s.mem (S.setWidth 64) a b c d) ∧ u.mem = s.mem := by
-  have ra := slot_rd (s := s) hfit hw (d := srcOff a) (n := 1) (by have := srcOff_lt ha; omega)
-  have rb := slot_rd (s := s) hfit hw (d := srcOff b) (n := 1) (by have := srcOff_lt hb; omega)
-  have rc := slot_rd (s := s) hfit hw (d := srcOff c) (n := 1) (by have := srcOff_lt hc; omega)
-  have rd := slot_rd (s := s) hfit hw (d := srcOff d) (n := 1) (by have := srcOff_lt hd; omega)
-  have ea := addr_off hfit (srcOff a) (by have := srcOff_lt ha; omega)
-  have eb := addr_off hfit (srcOff b) (by have := srcOff_lt hb; omega)
-  have ec := addr_off hfit (srcOff c) (by have := srcOff_lt hc; omega)
-  have ed := addr_off hfit (srcOff d) (by have := srcOff_lt hd; omega)
+  have ra := slot_rd (s := s) hfit hw (d := srcOff a) (n := 1) (by have := srcOff_lt ha; omega_using [this])
+  have rb := slot_rd (s := s) hfit hw (d := srcOff b) (n := 1) (by have := srcOff_lt hb; omega_using [this])
+  have rc := slot_rd (s := s) hfit hw (d := srcOff c) (n := 1) (by have := srcOff_lt hc; omega_using [this])
+  have rd := slot_rd (s := s) hfit hw (d := srcOff d) (n := 1) (by have := srcOff_lt hd; omega_using [this])
+  have ea := addr_off hfit (srcOff a) (by have := srcOff_lt ha; omega_using [this])
+  have eb := addr_off hfit (srcOff b) (by have := srcOff_lt hb; omega_using [this])
+  have ec := addr_off hfit (srcOff c) (by have := srcOff_lt hc; omega_using [this])
+  have ed := addr_off hfit (srcOff d) (by have := srcOff_lt hd; omega_using [this])
   unfold gather lanes
   crun [hsi, ra, rb, rc, rd]
   rw [lanes_eq, ea, eb, ec, ed]
@@ -108,35 +108,35 @@ theorem tail_ok (s : State) {S : BitVec 32} (hsi : s.gpr .esi = S) (hfit : S.toN
         s.mem.readW (S.setWidth 64 + BitVec.ofNat 64 (extraOff + 4 * (8 - l.extra.1))) 32) l.word ∧
       u.mem = s.mem.writeW (addr S 0) (L v) ∧ u.rd = s.rd ∧ u.wr = s.wr ∧ u.syms = s.syms := by
   have e (j : Nat) (hj : j < 4) : (s.mem.writeW (addr S 0) (L v)).readW (addr S (4 * j)) 32 = v j := by
-    rw [addr_off hfit (4 * j) (by omega), addr_off hfit 0 (by omega), BitVec.add_zero, rd_lane _ _ _ hj,
+    rw [addr_off hfit (4 * j) (by omega_using [hj]), addr_off hfit 0 (by omega_using []), BitVec.add_zero, rd_lane _ _ _ hj,
       dword_L _ hj]
   have e0 := e 0 (by decide)
   have e1 := e 1 (by decide)
   have e2 := e 2 (by decide)
   have e3 := e 3 (by decide)
   simp only [Nat.mul_zero, Nat.mul_one, Nat.reduceMul] at e0 e1 e2 e3
-  have hxo : extraOff + 4 * (8 - l.extra.1) + 4 ≤ 64 := by unfold extraOff; omega
+  have hxo : extraOff + 4 * (8 - l.extra.1) + 4 ≤ 64 := by unfold extraOff; omega_using [he]
   have ex : (s.mem.writeW (addr S 0) (L v)).readW (addr S (extraOff + 4 * (8 - l.extra.1))) 32 =
       s.mem.readW (S.setWidth 64 + BitVec.ofNat 64 (extraOff + 4 * (8 - l.extra.1))) 32 := by
-    rw [Mem.readW_writeW_sep (w := 32) (w' := 128) (slot_sep hfit (by omega) (by decide)
-      (by unfold extraOff; omega) (by decide) (by decide)) (by decide), addr_off hfit _ (by omega)]
+    rw [Mem.readW_writeW_sep (w := 32) (w' := 128) (slot_sep hfit (by omega_using [hxo]) (by decide)
+      (by unfold extraOff; omega_using []) (by decide) (by decide)) (by decide), addr_off hfit _ (by omega_using [hxo])]
   have r0 := slot_rd hfit hw (s := s) (d := 0) (n := 4) (by decide)
   have r4 := slot_rd hfit hw (s := s) (d := 4) (n := 4) (by decide)
   have r8 := slot_rd hfit hw (s := s) (d := 8) (n := 4) (by decide)
   have r12 := slot_rd hfit hw (s := s) (d := 12) (n := 4) (by decide)
-  have rx := slot_rd hfit hw (s := s) (d := extraOff + 4 * (8 - l.extra.1)) (n := 4) (by omega)
+  have rx := slot_rd hfit hw (s := s) (d := extraOff + 4 * (8 - l.extra.1)) (n := 4) (by omega_using [hxo])
   have w0 := slot_wr hfit hw (s := s) (d := 0) (n := 16) (by decide)
   unfold lineTail
   rcases hwd : l.word with _ | ⟨a, q⟩
   · crun [hsi, h1, r0, r4, r8, r12, rx, w0, e0, e1, e2, e3, ex, List.append_nil]
     simp only [withWord]
   · have hq4 := hq a q hwd
-    have hqo : off a + 4 * q + 4 ≤ 48 := by have := off_lt a; omega
-    have rq := slot_rd hfit hw (s := s) (d := off a + 4 * q) (n := 4) (by omega)
+    have hqo : off a + 4 * q + 4 ≤ 48 := by have := off_lt a; omega_using [hq4, this]
+    have rq := slot_rd hfit hw (s := s) (d := off a + 4 * q) (n := 4) (by omega_using [hqo])
     have sq : (s.mem.writeW (addr S 0) (L v)).readW (addr S (off a + 4 * q)) 32 =
         s.mem.readW (S.setWidth 64 + BitVec.ofNat 64 (off a + 4 * q)) 32 := by
-      rw [Mem.readW_writeW_sep (w := 32) (w' := 128) (slot_sep hfit (by omega) (by decide)
-        (by have := off_ge a; omega) (by decide) (by decide)) (by decide), addr_off hfit _ (by omega)]
+      rw [Mem.readW_writeW_sep (w := 32) (w' := 128) (slot_sep hfit (by omega_using [hqo]) (by decide)
+        (by have := off_ge a; omega_using [this]) (by decide) (by decide)) (by decide), addr_off hfit _ (by omega_using [hqo])]
     crun [hsi, h1, r0, r4, r8, r12, rx, rq, w0, e0, e1, e2, e3, ex, sq, bswap_eq]
     simp only [withWord]
 
@@ -144,12 +144,12 @@ theorem ofNat_setWidth8 (x : BitVec 8) : BitVec.ofNat 8 (x.setWidth 32).toNat = 
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_ofNat, BitVec.toNat_setWidth]
   have := x.isLt
-  omega
+  omega_using []
 
 theorem gIdx_lt (m : Mem) (p : Addr) (a b c d : Pos) {k : Nat} (_ : k < 4) :
     (gIdx m p a b c d k).toNat < 256 := by
   have (x : Byte) : (x.setWidth 32).toNat < 256 := by
-    rw [BitVec.toNat_setWidth]; have := x.isLt; omega
+    rw [BitVec.toNat_setWidth]; have := x.isLt; omega_using []
   match k with
   | 0 => exact this _
   | 1 => exact this _
@@ -209,22 +209,22 @@ theorem line_ok (s : State) {S : BitVec 32} {st : XZ} (h : LPre s S st) (l : Imp
   -- The bytes the tail reads: the scan's frame wrote only below `esp`.
   have hmem (d : Nat) (hd : d + 4 ≤ 256) : v.mem.readW (S.setWidth 64 + BitVec.ofNat 64 d) 32 =
       s.mem.readW (S.setWidth 64 + BitVec.ofNat 64 d) 32 :=
-    vf.readW (r := ⟨S.setWidth 64, 256⟩) (Offset.contains_base _ hd (by omega))
+    vf.readW (r := ⟨S.setWidth 64, 256⟩) (Offset.contains_base _ hd (by omega_using [hd]))
       (fun r hr => by rw [List.mem_singleton] at hr; subst hr; exact h.dS) (by decide)
   have hxz : HoldsXZ v.mem (S.setWidth 64) st := fun a i hi => by
     have := off_lt a
     rw [vf.bytes (R := ⟨S.setWidth 64, 256⟩) (fun r hr => by rw [List.mem_singleton] at hr; subst hr; exact h.dS)
-      (show (256 : Nat) ≤ 2 ^ 64 by decide) (show off a + i < 256 by omega)]
+      (show (256 : Nat) ≤ 2 ^ 64 by decide) (show off a + i < 256 by omega_using [hi, this])]
     exact h.xz a i hi
   refine ⟨?_, ⟨v.mem, _, vf, wm⟩, wrd.trans (vk.rd.trans uk.rd), wwr.trans (vk.wr.trans uk.wr),
     wsy.trans (vk.syms.trans usy), ⟨fun r hr => ?_, wrd.trans (vk.rd.trans uk.rd), wwr.trans (vk.wr.trans uk.wr)⟩⟩
-  · rw [wax, hmem _ (by unfold extraOff; omega), hx]
+  · rw [wax, hmem _ (by unfold extraOff; omega_using []), hx]
     simp only [tab5678, tableEnt, gIdx, ofNat_setWidth8, h.xz.pos ha, h.xz.pos hb, h.xz.pos hc, h.xz.pos hd]
     rcases hwd' : l.word with _ | ⟨a', q'⟩
     · simp only [withWord, lineVal, hwd']
     · have hq' := hq a' q' hwd'
       simp only [withWord, lineVal, hwd', ← hxz.quad a' hq', hmem _ (show off a' + 4 * q' + 4 ≤ 256 by
-        have := off_lt a'; omega)]
+        have := off_lt a'; omega_using [hq', this])]
   · have hr' := hr
     simp only [lineRegs, List.mem_cons, List.not_mem_nil, or_false, not_or] at hr'
     rw [wk.gpr r hr, vk.gpr r hr'.1 hr'.2.1 hr'.2.2.1, uk.gpr r hr]

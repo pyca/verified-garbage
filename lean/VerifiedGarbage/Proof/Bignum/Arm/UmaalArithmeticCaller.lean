@@ -27,11 +27,11 @@ theorem armStack_rowLocal (replacement : Prog isa)
   | seq a b iha ihb =>
     simp only [Code.substLocal]; split
     · simp [stack]
-    · simp only [FrameStack.armStack]; omega
+    · simp only [FrameStack.armStack]; omega_using [iha, ihb]
   | ite _ t e iht ihe =>
     simp only [Code.substLocal]; split
     · simp [stack]
-    · simp only [FrameStack.armStack]; omega
+    · simp only [FrameStack.armStack]; omega_using [iht, ihe]
   | loop b _ ih =>
     simp only [Code.substLocal]; split
     · simp [stack]
@@ -41,7 +41,7 @@ theorem armStack_rowLocal (replacement : Prog isa)
   | frame i _ _ ih =>
     simp only [Code.substLocal]; split
     · simp [stack]
-    · cases i <;> simp only [FrameStack.armStack] <;> omega
+    · cases i <;> simp only [FrameStack.armStack] <;> omega_using [ih]
 
 /-- Any verified call-free, frame-free row replacement supplies a caller decorator. -/
 def rowCaller (replacement : Prog isa) (sim : Sim row replacement)
@@ -83,11 +83,11 @@ theorem armStack_downLocal (c : Prog isa) :
   | seq a b iha ihb =>
     simp only [Code.substLocal]; split
     · simp [DownRowUmaal.codeU_stack]
-    · simp only [FrameStack.armStack]; omega
+    · simp only [FrameStack.armStack]; omega_using [iha, ihb]
   | ite _ t e iht ihe =>
     simp only [Code.substLocal]; split
     · simp [DownRowUmaal.codeU_stack]
-    · simp only [FrameStack.armStack]; omega
+    · simp only [FrameStack.armStack]; omega_using [iht, ihe]
   | loop b _ ih =>
     simp only [Code.substLocal]; split
     · simp [DownRowUmaal.codeU_stack]
@@ -97,7 +97,7 @@ theorem armStack_downLocal (c : Prog isa) :
   | frame i _ _ ih =>
     simp only [Code.substLocal]; split
     · simp [DownRowUmaal.codeU_stack]
-    · cases i <;> simp only [FrameStack.armStack] <;> omega
+    · cases i <;> simp only [FrameStack.armStack] <;> omega_using [ih]
 
 def downCaller : CallerTransform where
   code := Code.substLocal DownRow.code DownRow.codeU

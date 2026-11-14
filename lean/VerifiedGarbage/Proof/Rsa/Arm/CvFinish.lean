@@ -33,7 +33,7 @@ theorem num_frame {s0 : State} (pre : CvPre s0) {m m' : Mem} {R : Region} (hf : 
   have eZ : cvZ s0 = (stackArg s0 11).toNat * 8 := rfl
   have hS : S (cvW s0) = 4 * (cvW s0 + 2) := rfl
   refine val32_congr fun i hi => congrArg BitVec.toNat (hf.readW (r := rS s0)
-    (Offset.contains_base _ (by omega) (by omega)) (by simpa using hd.symm) (by decide))
+    (Offset.contains_base _ (by omega_using [fa, eZ, hS, hi]) (by omega_using [fa, eZ, hS, hi])) (by simpa using hd.symm) (by decide))
 
 theorem slot_frame' {s0 : State} (pre : CvPre s0) {m m' : Mem} {R : Region} (hf : Frame [R] m m')
     (hd : R.Disjoint (rS s0)) {e : Nat} (he : e + 4 ≤ hdr) :
@@ -42,7 +42,7 @@ theorem slot_frame' {s0 : State} (pre : CvPre s0) {m m' : Mem} {R : Region} (hf 
   have fS := pre.fS
   have eZ : cvZ s0 = (stackArg s0 11).toNat * 8 := rfl
   have hz : hdr ≤ cvZ s0 := Nat.le_trans (Nat.le_add_right _ _) this
-  exact congrArg BitVec.toNat (hf.readW (r := rS s0) (Offset.contains_base _ (by omega) (by simp only [hdr] at he; omega))
+  exact congrArg BitVec.toNat (hf.readW (r := rS s0) (Offset.contains_base _ (by omega_using [he, eZ, hz]) (by simp only [hdr] at he; omega_using [he]))
     (by simpa using hd.symm) (by decide))
 
 theorem ite_mask (c : Bool) {α : Type} (a b : α) : (if (if c then 1 else 0 : Nat) = 1 then a else b) = if c then a else b := by
@@ -87,9 +87,9 @@ theorem glue_ok {s0 s : State} {X₁ X₂ : Nat} (h : StM s0 X₁ X₂ s) :
   have d3 := b3.done
   have w16 := pre.w16
   have kb := pre.kb
-  have hkw : ∀ k, k < cvK s0 → k ≤ 4 * cvW s0 := fun k hk => by simp only [cvW] at *; omega
+  have hkw : ∀ k, k < cvK s0 → k ≤ 4 * cvW s0 := fun k hk => by simp only [cvW] at *; omega_using [hk]
   have mb : slot t3.mem (cvB s0) sMask ≤ 1 := by
-    rw [u3.mem, u2.mem, m1, mV]; split <;> omega
+    rw [u3.mem, u2.mem, m1, mV]; split <;> omega_using []
   unfold stores
   rw [wp_seqs_cons (List.cons_ne_nil _ _)]
   refine wp_ldrSp d3.rA_mem (by rw [d3.sp]; exact pre.sp48) (i := 5) (by decide) fun t4 u4 => WP.block_nil ?_
@@ -143,13 +143,13 @@ theorem glue_ok {s0 s : State} {X₁ X₂ : Nat} (h : StM s0 X₁ X₂ s) :
   · have lp := pre.pl2; have lq := pre.ql2
     have eDp : (⟨State.addr (s0.gpr .r0), cvPl s0⟩ : Region) = rDp s0 := by simp [rDp, reg, pre.dpLen]
     simp only [outDp]
-    rw [u12.mem, bytes_frame f11 (by rw [eDp]; simpa using pre.dpQi) (by omega), u10.mem, u9.mem,
-      bytes_frame f8 (by rw [eDp]; simpa using pre.dpDq) (by omega), u7.mem, u6.mem, o5, u4.mem, ms, ite_mask,
+    rw [u12.mem, bytes_frame f11 (by rw [eDp]; simpa using pre.dpQi) (by omega_using [kb, lp]), u10.mem, u9.mem,
+      bytes_frame f8 (by rw [eDp]; simpa using pre.dpDq) (by omega_using [kb, lp]), u7.mem, u6.mem, o5, u4.mem, ms, ite_mask,
       n3 _ (by decide)]
   · have lq := pre.ql2
     have eDq : (⟨State.addr (s0.gpr .r2), cvQl s0⟩ : Region) = rDq s0 := by simp [rDq, reg, pre.dqLen]
     simp only [outDq]
-    rw [u12.mem, bytes_frame f11 (by rw [eDq]; simpa using pre.dqQi) (by omega), u10.mem, u9.mem, o8,
+    rw [u12.mem, bytes_frame f11 (by rw [eDq]; simpa using pre.dqQi) (by omega_using [kb, lq]), u10.mem, u9.mem, o8,
       u7.mem, u6.mem, mb5, ms, ite_mask, num_frame pre f5 pre.dpS (by decide), u4.mem, n3 _ (by decide)]
   · simp only [outQi]
     rw [u12.mem, o11, u10.mem, u9.mem, mb8, ms, ite_mask, num_frame pre f8 pre.dqS (by decide), u7.mem, u6.mem,

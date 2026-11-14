@@ -71,7 +71,7 @@ theorem covers_prefix {p : Addr} {k n : Nat} {rs : List Region} (h : Covers [⟨
     Covers [⟨p, n⟩] rs := by
   intro a m ⟨r, hr, hc⟩
   simp only [List.mem_singleton] at hr; subst hr
-  exact h a m ⟨_, List.mem_singleton_self _, by simp only [Region.Contains] at hc ⊢; omega⟩
+  exact h a m ⟨_, List.mem_singleton_self _, by simp only [Region.Contains] at hc ⊢; omega_using [hn, hc]⟩
 
 /-- `save`, into a working space of at least the 176 bytes it reaches. -/
 theorem save_ok (s : State) (b : Reg) {W : Addr} {N : Nat} (hb : s.gpr b = W) (hw₀ : Covers [⟨W, N⟩] s.wr)
@@ -87,7 +87,7 @@ theorem save_ok (s : State) (b : Reg) {W : Addr} {N : Nat} (hb : s.gpr b = W) (h
   have w₆ := in_off hw (show 168 + 8 ≤ 176 by decide) (by decide)
   have sep : ∀ a d : Nat, a + 8 ≤ d ∨ d + 8 ≤ a → a + 8 ≤ 2560 → d + 8 ≤ 2560 →
       Mem.Sep (W + BitVec.ofNat 64 a) (64 / 8) (W + BitVec.ofNat 64 d) (64 / 8) :=
-    fun a d h ha hd => Offset.sep W h (by omega) (by omega)
+    fun a d h ha hd => Offset.sep W h (by omega_using [ha]) (by omega_using [hd])
   have s128_136 := sep 128 136 (by decide) (by decide) (by decide)
   have s128_144 := sep 128 144 (by decide) (by decide) (by decide)
   have s128_152 := sep 128 152 (by decide) (by decide) (by decide)
@@ -110,7 +110,7 @@ theorem save_ok (s : State) (b : Reg) {W : Addr} {N : Nat} (hb : s.gpr b = W) (h
     rcases hp with rfl | rfl | rfl | rfl | rfl | rfl <;>
       simp (disch := first | decide | with_reducible assumption) only [hb, Mem.readW_writeW_self64, Mem.readW_writeW_sep]
   · have c : ∀ d, 128 ≤ d → d + 8 ≤ 176 → (savedR W).Contains (W + BitVec.ofNat 64 d) (64 / 8) :=
-      fun d h₁ h₂ => Offset.contains _ h₁ (by omega) (by omega)
+      fun d h₁ h₂ => Offset.contains _ h₁ (by omega_using [h₂]) (by omega_using [])
     simp only [hb]
     exact ((((((Frame.refl _ _).writeW (List.mem_singleton_self _) _ (c 128 (by decide) (by decide))).writeW
       (List.mem_singleton_self _) _ (c 136 (by decide) (by decide))).writeW
@@ -193,7 +193,7 @@ theorem saved_absFrame {gs : Nat} (hg : gs = 0 ∨ 512 + gs ≤ N) {yo : Nat} (h
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl
-  · exact (L.st_w (by omega) (.inr ⟨by decide, L.le⟩)).symm
+  · exact (L.st_w (by omega_using [hyo]) (.inr ⟨by decide, L.le⟩)).symm
   · exact (L.st_w (by decide) (.inr ⟨by decide, L.le⟩)).symm
   · exact L.w_gh hg (by decide) L.le
   · exact (L.stk_w L.le).symm
@@ -221,7 +221,7 @@ theorem saved_tagFrame (hN : 184 ≤ N) {o : Nat} (ho : o = 0 ∨ o = 112) : ∀
   rcases hr with rfl | rfl | rfl | rfl | rfl
   · simpa using (L.st_w (a := 0) (n := 32) (by decide) (.inr ⟨by decide, (Lay.leN hN)⟩)).symm
   · exact L.w_w (.inr (by decide)) (Lay.leN hN) (Lay.leN hN)
-  · exact L.w_w (.inr (by omega)) (Lay.leN hN) (by omega)
+  · exact L.w_w (.inr (by omega_using [ho])) (Lay.leN hN) (by omega_using [hN, ho])
   · exact L.w_hi (by decide) (Lay.leN hN)
   · exact (L.stk_w (Lay.leN hN)).symm
 
@@ -239,7 +239,7 @@ theorem Lay.of {Ctx St W SP : Addr} {N : Nat} (cw : Ctx.toNat + 256 ≤ 2 ^ 64) 
     (kc : (below SP 8).Disjoint ⟨Ctx, 256⟩) (ks : (below SP 8).Disjoint ⟨St, 80⟩)
     (kw : (below SP 8).Disjoint ⟨W, N⟩) (hN : 176 ≤ N := by decide) (hN' : N < 2 ^ 64 := by decide) :
     Lay Ctx St W SP N :=
-  ⟨cw, sw, ww, cs, cW, sW.sub_right (Region.sub_prefix (by omega)), sW.sub_right (Lay.wSub (by omega)),
+  ⟨cw, sw, ww, cs, cW, sW.sub_right (Region.sub_prefix (by omega_using [hN])), sW.sub_right (Lay.wSub (by omega_using [hN])),
     kc, ks, kw, hN, hN'⟩
 
 theorem ofNat_lit (n : Nat) : (OfNat.ofNat n : Addr) = BitVec.ofNat 64 n := rfl

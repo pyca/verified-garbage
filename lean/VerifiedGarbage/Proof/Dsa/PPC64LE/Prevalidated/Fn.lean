@@ -29,7 +29,7 @@ theorem prevalidated_correct (s : State) (h : vpContract.pre s) :
   have hkl := hp.2.2.2.2.2.2.2.2.2.2.2.2.1
   have hK : KeyOk s.mem (layOf s) (s.gpr .r3) := by
     have e := validate_spec (m := s.mem) (L := layOf s) (key := s.gpr .r3) hv
-    rw [show 3 * (layOf s).pl + (layOf s).ql = (s.gpr .r4).toNat by simp only [layOf]; omega] at e
+    rw [show 3 * (layOf s).pl + (layOf s).ql = (s.gpr .r4).toNat by simp only [layOf]; omega_using [hkl]] at e
     exact of_decide_eq_true (e.symm.trans hval)
   unfold Prevalidated.verify
   exact verifyLike_ok (X := Prevalidated.setup) (V := True)

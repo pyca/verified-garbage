@@ -65,9 +65,9 @@ theorem entry_wp {s : State} {B : BitVec 32}
       InRegions s₁.wr (State.addr (s₁.gpr .r12) + BitVec.ofNat 64 d) 4 := by
     intro d hd hd'
     rw [u₁.wr, b₁]
-    exact hw _ _ ⟨_, List.mem_singleton_self _, Offset.contains_base _ (by rw [total_eq]; omega) (by omega)⟩
+    exact hw _ _ ⟨_, List.mem_singleton_self _, Offset.contains_base _ (by rw [total_eq]; omega_using [hd']) (by omega_using [hd'])⟩
   have saveWp := Spill.save_block_ok (b := .r12) mode_slots (s := s₁)
-    (by rw [b₁]; rw [total_eq] at fitB; omega) ws₁
+    (by rw [b₁]; rw [total_eq] at fitB; omega_using [fitB]) ws₁
   obtain ⟨t₂, s₂, he₂, g₂, rd₂, wr₂, m₂⟩ := saveWp
   have sp₂ := VG.Arm.Exec.sp he₂
   have saved₂ : Spill.Saved s₂.mem (State.addr B) s.gpr BatchCtr.modeSaved := by
@@ -107,10 +107,10 @@ theorem restore_wp {s : State} {B : BitVec 32} {g : Reg → BitVec 32} (hB : s.g
     rw [b₁]; exact hsv
   refine (WP.block_append_iff (M := isa) (l₁ := [movR .r12 sb]) (l₂ := BatchCtr.restore)).mpr (WP.of_runBlock ⟨restoreArgs s, restoreArgs_run s, ?_⟩)
   refine WP.mono (Spill.restore_block_ok (b := .r12) mode_slots mode_restorable (s := restoreArgs s)
-    (by rw [b₁]; rw [total_eq] at fitB; omega)
+    (by rw [b₁]; rw [total_eq] at fitB; omega_using [fitB])
     (fun d hd hd' => by
       rw [b₁]
-      exact Covers.right hw _ _ ⟨_, List.mem_singleton_self _, Offset.contains_base _ (by rw [total_eq]; omega) (by omega)⟩)
+      exact Covers.right hw _ _ ⟨_, List.mem_singleton_self _, Offset.contains_base _ (by rw [total_eq]; omega_using [hd']) (by omega_using [hd'])⟩)
     hs) fun s' ⟨hreg, _, hm, hrd, hwr, hsp⟩ => ?_
   refine ⟨Spill.restored_of hreg (fun r hr => ?_), hm, hrd, hwr, hsp⟩
   rw [mode_preserved]; exact hr

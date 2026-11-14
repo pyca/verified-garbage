@@ -11,7 +11,7 @@ namespace VG.Proof.Rsa
 theorem mod_of_lt_two {x M : Nat} (h : x < 2 * M) : x % M = if x < M then x else x - M := by
   split
   · exact Nat.mod_eq_of_lt (by assumption)
-  · rw [Nat.mod_eq_sub_mod (by omega), Nat.mod_eq_of_lt (by omega)]
+  · rw [Nat.mod_eq_sub_mod (by omega_arith), Nat.mod_eq_of_lt (by omega_using [h])]
 
 /-- The arithmetic of `addMod`: the negation of `b`, the sum, and the difference with `m`. -/
 theorem addMod_impl {P A Bv M N1 β1 T β2 U β3 : Nat} (hA : A < M) (hB : Bv < M) (hM : 2 * M ≤ P)
@@ -19,10 +19,10 @@ theorem addMod_impl {P A Bv M N1 β1 T β2 U β3 : Nat} (hA : A < M) (hB : Bv < 
     (h2 : T + N1 = A + P * β2) (hT : T < P) (hβ2 : β2 ≤ 1)
     (h3 : U + M = T + P * β3) (hU : U < P) (hβ3 : β3 ≤ 1) :
     (if β3 = 0 then U else T) = (A + Bv) % M := by
-  rw [mod_of_lt_two (by omega)]
-  rcases (by omega : β1 = 0 ∨ β1 = 1) with rfl | rfl <;>
-  rcases (by omega : β2 = 0 ∨ β2 = 1) with rfl | rfl <;>
-  rcases (by omega : β3 = 0 ∨ β3 = 1) with rfl | rfl <;>
+  rw [mod_of_lt_two (by omega_using [hA, hB])]
+  rcases (by omega_arith : β1 = 0 ∨ β1 = 1) with rfl | rfl <;>
+  rcases (by omega_arith : β2 = 0 ∨ β2 = 1) with rfl | rfl <;>
+  rcases (by omega_arith : β3 = 0 ∨ β3 = 1) with rfl | rfl <;>
   simp only [Nat.mul_zero, Nat.mul_one] at h1 h2 h3 <;> split <;> split <;> omega
 
 /-- One step's arithmetic. -/

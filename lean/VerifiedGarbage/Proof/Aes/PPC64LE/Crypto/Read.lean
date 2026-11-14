@@ -52,8 +52,8 @@ theorem read_step (ctr : Bool) {N k : Nat} (hN : N ≤ 8) (hk : k < N) {s₀ s :
     (hr : ∀ i < N, InRegions (s₀.rd ++ s₀.wr) (s₀.gpr .r6 + BitVec.ofNat 64 (16*i)) 16)
     (h : ReadInv ctr s₀ k s) :
     WP isa (.block (Impl.Aes.PPC64LE.Crypto.readBlock ctr (breg k))) s (ReadInv ctr s₀ (k+1)) := by
-  have hkn : k < 8 := by omega
-  have facts := batchFacts ⟨k, by omega⟩
+  have hkn : k < 8 := by omega_using [hN, hk]
+  have facts := batchFacts ⟨k, by omega_using [hkn]⟩
   have all := batchFacts ⟨8, by decide⟩
   have hbm : breg k ≠ mask := fun he => all.2.2.1 (he ▸ breg_mem hkn)
   have hzm : s.gpr .r0 = 0 := (h.effects.keep.gpr (by decide)).trans h0
@@ -66,7 +66,7 @@ theorem read_step (ctr : Bool) {N k : Nat} (hN : N ≤ 8) (hk : k < N) {s₀ s :
     rw [h.effects.keep.2.1, h.effects.keep.2.2, h.ptr]
     cases ctr
     · simpa only [Bool.false_eq_true, ite_false] using hr k hk
-    · simpa only [ite_true, Nat.mul_zero, BitVec.add_zero] using hr 0 (by omega)
+    · simpa only [ite_true, Nat.mul_zero, BitVec.add_zero] using hr 0 (by omega_using [hk])
   refine WP.mono (readBlock_ok ctr (breg k) s hbm (breg_counter hkn).1 (breg_counter hkn).2 hzm hmm hcc hin)
     fun t ⟨hv, hg6, hcb, hf⟩ => ?_
   have hnval : t.vpr (breg k) = readValue ctr s₀ k := by
@@ -82,7 +82,7 @@ theorem read_step (ctr : Bool) {N k : Nat} (hN : N ≤ 8) (hk : k < N) {s₀ s :
     · simp only [Bool.false_eq_true, ite_false]
       change s₀.gpr .r6 + BitVec.ofNat 64 (16*k) + BitVec.ofNat 64 16 = _
       rw [Offset.add_add]
-      exact congrArg (fun n => s₀.gpr .r6 + BitVec.ofNat 64 n) (by omega)
+      exact congrArg (fun n => s₀.gpr .r6 + BitVec.ofNat 64 n) (by omega_using [])
     · simp only [ite_true]
   · rw [hcb, h.counter]
     cases ctr
@@ -92,8 +92,8 @@ theorem read_step (ctr : Bool) {N k : Nat} (hN : N ≤ 8) (hk : k < N) {s₀ s :
     by_cases he : i = k
     · subst i
       exact hnval
-    · have hik : i < k := by omega
-      have hi8 : i < 8 := by omega
+    · have hik : i < k := by omega_using [hi, he]
+      have hi8 : i < 8 := by omega_using [hkn, hi]
       rw [hf.v (breg i) (by simp [breg_ne hi8 hkn he, (breg_counter hi8).1])]
       exact h.val i hik
 

@@ -41,8 +41,8 @@ theorem zeroOut_ok {s u : State} (h : SPre pc s) (A : AtAft s u) (h0 : u.gpr .a0
   have w5 : w.gpr .t5 = BitVec.ofNat 64 (s.gpr .a3).toNat := by rw [o₃.get .t5, e₂, o₁.get .s3, A.s3, ← gpr_ofNat]
   have hb : Buf w (s.gpr .a3).toNat := fun i hi => by
     rw [P.wr, A.wr, h.hwr, w1]
-    exact ⟨oR s, by simp, Offset.contains_base _ (by rw [h.h1]; omega) (by have := h.wo; omega)⟩
-  refine WP.mono (fillLoop_ok hb (by omega) (acc := []) (by omega) (by simp) (W_nil w) 0
+    exact ⟨oR s, by simp, Offset.contains_base _ (by rw [h.h1]; omega_using [hi]) (by have := h.wo; omega_using [hi])⟩
+  refine WP.mono (fillLoop_ok hb (by omega_using []) (acc := []) (by omega_using [hk1]) (by simp) (W_nil w) 0
     (by rw [e₃]; rfl) w5) fun v ⟨⟨_, hm, _⟩, hk2⟩ => ?_
   rw [List.nil_append, w1] at hm
   have hO : (oR s).Contains (s.gpr .a0) (List.replicate (s.gpr .a3).toNat (0 : Byte)).length := by
@@ -53,11 +53,11 @@ theorem zeroOut_ok {s u : State} (h : SPre pc s) (A : AtAft s u) (h0 : u.gpr .a0
       rw [List.mem_singleton.mp hr]; exact ⟨_, List.mem_cons_of_mem _ (List.mem_cons_self ..), fun _ h => h⟩))
     (A.sv.frame fo fun p hp r hr => by
       rw [List.mem_singleton.mp hr]
-      exact h.ko.sub_left (frame_sub s (by have := saved_offs p hp; unfold oRa frameBytes at *; omega))), ?_, ?_⟩
+      exact h.ko.sub_left (frame_sub s (by have := saved_offs p hp; unfold oRa frameBytes at *; omega_using [this]))), ?_, ?_⟩
   · rw [hk2.get .a0, P.get .a0]; exact h0
   · rw [hm, P.mem]
     have := Proof.RsaPkcs1Sig.bytesAt_writeBytes u.mem (s.gpr .a0) (List.replicate (s.gpr .a3).toNat (0 : Byte))
-      (by simp; omega)
+      (by simp; omega_using [])
     rwa [List.length_replicate] at this
 
 theorem wo_congr {m m' : Mem} {out : Addr} {k : Nat} {r : BitVec 32} {o : Spec.Rsa.Outcome}
@@ -79,19 +79,19 @@ theorem wipe_ok {s u : State} {em : List Byte} (h : SPre pc s) (R : AtRet s u em
   have w5 : w.gpr .t5 = BitVec.ofNat 64 (s.gpr .a3).toNat := by
     rw [o₄.get .t5, e₃, o₂.get .s3, o₁.get .s3, R.s3, ← gpr_ofNat]
   have hb : Buf w (s.gpr .a3).toNat := fun i hi => by rw [P.wr, R.wr, w1]; exact em_in h _ hi
-  refine WP.mono (fillLoop_ok hb (by omega) (acc := []) (by omega) (by simp) (W_nil w) 0
+  refine WP.mono (fillLoop_ok hb (by omega_using []) (acc := []) (by omega_using [hk1]) (by simp) (W_nil w) 0
     (by rw [e₄]; rfl) w5) fun v ⟨⟨_, hm, _⟩, hk2⟩ => ?_
   rw [List.nil_append, w1] at hm
   have hE : (emR s).Contains (fb s + BitVec.ofNat 64 oEM) (List.replicate (s.gpr .a3).toNat (0 : Byte)).length := by
     rw [List.length_replicate]; exact Region.contains_self _ _
   have fe : Frame [emR s] u.mem v.mem := by rw [hm, P.mem]; exact writeBytes_frame _ _ _ hE
-  have hf := R.frameMem (f := oEM) (n := (s.gpr .a3).toNat) (.inl (by decide)) (by unfold oEM frameBytes; omega) fe
+  have hf := R.frameMem (f := oEM) (n := (s.gpr .a3).toNat) (.inl (by decide)) (by unfold oEM frameBytes; omega_using [hk]) fe
   refine ⟨R.toMid.keep (S' := [oR s, sR s]) (P.keep.trans hk2) hf.1 hf.2, ?_⟩
   have hb : Spec.Rsa.bytesAt v.mem (s.gpr .a0) (s.gpr .a3).toNat =
       Spec.Rsa.bytesAt u.mem (s.gpr .a0) (s.gpr .a3).toNat :=
     bytes_of_frame (s := u) fe (fun r hr => by
       rw [List.mem_singleton.mp hr, show (⟨s.gpr .a0, (s.gpr .a3).toNat⟩ : Region) = oR s by simp only [oR, h.h1]]
-      exact (h.ko.sub_left (em_sub h)).symm) (by omega)
+      exact (h.ko.sub_left (em_sub h)).symm) (by omega_using [])
   show Spec.Rsa.writtenOutcome _ _ _ ((v.gpr .a0).setWidth 32) _
   rw [hk2.get .a0, P.get .a0]
   exact wo_congr hb R.out
@@ -156,7 +156,7 @@ theorem codeG_correct (s : State) (h : SPre pc s) (X : pc = true → PreX s) :
     ∃ tr t, Exec isa (codeG pc) s tr t ∧ abiPreserved s t ∧ fnPost s t := by
   show WP isa (codeG pc) s fun t => abiPreserved s t ∧ fnPost s t
   unfold codeG
-  refine WP.allocLe ⟨by decide, by decide, by decide⟩ (by have := h.sp1; unfold stackBytes at this; omega) ?_
+  refine WP.allocLe ⟨by decide, by decide, by decide⟩ (by have := h.sp1; unfold stackBytes at this; omega_using [this]) ?_
   unfold body
   refine WP.seq (WP.mono (setup_ok h) fun t₁ A => ?_)
   refine WP.seq (WP.mono (enc_ok h A) fun t₂ B => ?_)

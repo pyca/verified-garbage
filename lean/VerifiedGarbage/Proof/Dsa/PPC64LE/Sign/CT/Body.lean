@@ -61,7 +61,7 @@ theorem k9_checked {v : VD} {s : State} (h : K9 v s) (h3 : 3 * v.L.pl + v.L.ql �
   · unfold KeyOk
     rw [ep, eq, eg, ey]
     exact ⟨⟨km.1.1, km.1.2.2, km.1.2.1⟩, ⟨⟨hg.1.1, hg.1.2⟩, hy.1.1, hy.1.2⟩,
-      (pmod_iff (by omega) (by omega)).mpr km.2, hg.2, hy.2⟩
+      (pmod_iff (by omega_using [bd]) (by omega_using [bd])).mpr km.2, hg.2, hy.2⟩
   · have e : Spec.Dsa.bitLength (qOf s.mem v.L v.key) / 8 = v.qb := by
       rw [eq, VD.q, VG.Proof.Dsa.subgroup_scan_width (p := v.pB) (q := v.qB) km.1.1, Nat.mul_div_cancel_left _
         (by decide)]
@@ -78,7 +78,7 @@ theorem k9_mid {v : VD} {s : State} (h : K9 v s ∧ SG v) : WP isa spre s (Mid v
   obtain ⟨hK, hc⟩ := k9_checked hk9 (Nat.le_of_eq ekn.symm)
   have hx : Src s v.L v.key (3 * v.L.pl + 2 * v.L.ql) := by rw [← ekl]; exact B.hx
   have hn : Src s v.L v.sig v.L.ql := by rw [← esl]; exact B.hsg
-  have hd : v.d < 2 ^ 16 := by have := Nat.min_le_right v.dl 64; simp only [VD.d] at this ⊢; omega
+  have hd : v.d < 2 ^ 16 := by have := Nat.min_le_right v.dl 64; simp only [VD.d] at this ⊢; omega_using []
   refine WP.mono (spre_ok hL hK hc (Kept.refl _ _) hx hn hd B.hdg (B.hOut sg))
     fun t ⟨⟨Qt, Kt, ht, t12, t6⟩, kt⟩ => ?_
   refine ⟨⟨hL, Qt.regs, Qt.scr, B.hk.keep kt.rd kt.wr, B.hsg.keep kt.rd kt.wr, B.hdg.keep kt.rd kt.wr,
@@ -134,7 +134,7 @@ theorem zfront_ok {v : VD} {s : State} (h : Base v s) (sg : SG v) :
   have hZ := h.ok.z256
   rw [WP.block_append_iff, WP.block_append_iff]
   have hld : InRegions (s.rd ++ s.wr) (s.gpr .r21 + BitVec.ofNat 64 hOut) 8 := by
-    rw [h.regs.r21]; exact h.scr.ld (show hOut + 8 ≤ v.L.Z by simp only [hOut]; omega)
+    rw [h.regs.r21]; exact h.scr.ld (show hOut + 8 ≤ v.L.Z by simp only [hOut]; omega_using [hZ])
   refine WP.mono (WP.keep [.r16] (Q := fun u => u.gpr .r16 = v.o ∧ u.mem = s.mem)
     (by prun [exec_ld (by decide) hld]; rw [h.regs.r21]; exact h.hOut sg) (by decide)) fun s₁ ⟨⟨a16, _⟩, k1⟩ => ?_
   refine WP.mono (getQ_ok (h.regs.keep k1) .r17) fun s₂ ⟨⟨a17, _⟩, k2⟩ => ?_

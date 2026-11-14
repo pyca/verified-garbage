@@ -167,9 +167,9 @@ theorem pass_wp {ys : List (List Byte)} {x10 x11 : BitVec 64} (hN : 0 < N s₀) 
   by_cases hz : N s₀ - (k + 1) = 0
   · left
     refine ⟨by simp [eval, zf', hz], ?_⟩
-    rwa [show N s₀ = k + 1 by omega]
+    rwa [show N s₀ = k + 1 by omega_using [hk, hz]]
   · right
-    refine ⟨by simp [eval, zf', hz], N s₀ - (k + 1), by omega, k + 1, rfl, by omega, h'.1, h'.2⟩
+    refine ⟨by simp [eval, zf', hz], N s₀ - (k + 1), by omega_using [hk], k + 1, rfl, by omega_using [hz], h'.1, h'.2⟩
 
 omit hp in
 theorem movs_ok (s : State) :
@@ -289,7 +289,7 @@ theorem callArgs_wp {ys : List (List Byte)} {s : State}
     (by rw [rcx₂, r14₁, h.r11])
     (by rw [r8₂, g₁ _ (by decide) (by decide), h.r15]) hrsp hrd hwr, ?_⟩
   refine ⟨?_, ?_, ?_, r13₂, by rw [r14₂]; rfl, ?_, rfl, rfl, hrsp, hrd, hwr, by rw [hmem]; exact h.frame,
-    by rw [length_xored _ _ _ (by omega), hlen], ?_, by rw [hmem]; exact h.iv⟩
+    by rw [length_xored _ _ _ (by omega_using [hlen]), hlen], ?_, by rw [hmem]; exact h.iv⟩
   · rw [g .rbx (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide), h.rbx]
   · rw [g .rbp (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide), h.rbp]
   · rw [g .r12 (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide), h.r12]
@@ -358,10 +358,10 @@ theorem final_wp (enc : Bool) {x10 x11 : BitVec 64} {s : State}
                 simp only [List.mem_singleton] at hr; subst hr
                 exact UPre.dataBlk hj hp.iv_data.symm),
               h.data, xored_all _ h.len, xored_all _ hl, ce, outK, AesXts.xtsMode_out,
-              List.take_of_length_le (by omega), List.drop_of_length_le (by omega), List.append_nil]
+              List.take_of_length_le (by omega_using [hl]), List.drop_of_length_le (by omega_using [hl]), List.append_nil]
           iv := by
             rw [mem₁, Proof.Cmac.bytesAt_store2, ← tw, ht, chainK, AesXts.xtsMode_chain,
-              List.take_of_length_le (by omega), hl] }
+              List.take_of_length_le (by omega_using [hl]), hl] }
 
 /-- All the blocks. -/
 theorem batch_wp (enc : Bool) {f : Nat → List Byte → Spec.Aes.State → Spec.Aes.State}

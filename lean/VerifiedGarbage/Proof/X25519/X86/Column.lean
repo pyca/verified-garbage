@@ -184,11 +184,11 @@ theorem accMul2_ok {s : State} {src : Src} {y : BitVec 32} (hy : readSrc s src =
   generalize (BitVec.ofNat 32 ((s.gpr .eax).toNat * y.toNat / 2 ^ 32)) = hi at *
   have hl := lo.isLt; have hh := hi.isLt
   simp only [BitVec.toNat_add, toNat_zero32, Nat.add_zero, ofBool_toNat]
-  simp (disch := omega) only [carry_toNat]
+  simp (disch := omega_using []) only [carry_toNat]
   rw [← e]
   generalize lo.toNat = l at *
   generalize hi.toNat = h at *
-  omega
+  omega_using [hlt, e]
 
 open VG.X86.Wp in
 theorem readSrc_sc {x : BitVec 32} {s : State} (hc : Ctx W x s c) {d : Nat} (hd : d + 4 ≤ 4096) :

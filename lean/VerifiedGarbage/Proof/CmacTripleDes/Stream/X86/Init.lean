@@ -140,7 +140,7 @@ theorem initPre_wp {s₀ : State} (hp : IPre s₀) : WP isa (.block initPre) s�
   have e20 := hp.esp20
   refine wp_arg (s₀ := s₀) rfl (hp.arg_in (by decide)) rfl fun s₁ u₁ => ?_
   refine wp_store (a := (iSt s₀).setWidth 64 + BitVec.ofNat 64 400)
-    (by rw [ea_at', u₁.gpr]; exact addr_eq (by omega))
+    (by rw [ea_at', u₁.gpr]; exact addr_eq (by omega_using [fSt]))
     (by rw [u₁.wr, hp.wr]; exact ⟨istR s₀, by simp, Offset.contains_base _ (by decide) (by decide)⟩)
     fun s₂ v₂ => ?_
   have hm₂ : s₂.mem = iMem s₀ := by rw [v₂.mem, u₁.mem, u₁.other _ (by decide), iMem]
@@ -178,7 +178,7 @@ theorem initPre_wp {s₀ : State} (hp : IPre s₀) : WP isa (.block initPre) s�
     bO := by rw [esp₅]; exact hp.b_st.sub_right oSt
     bS := by rw [esp₅]; exact hp.b_s
     fK := hp.fK
-    fO := by omega
+    fO := by omega_using [fSt']
     fS := hp.fS
     reads := by
       rw [rd₅, wr₅, hp.rd, hp.wr]
@@ -255,21 +255,21 @@ theorem initPost_wp {s₀ s : State} (hp : IPre s₀) (h : IAft s₀ s) :
   have fSt' : (iSt s₀).toNat + 416 ≤ 2 ^ 32 := hp.fSt
   have rw₀ : s.rd ++ s.wr = s₀.rd ++ s₀.wr := by rw [h.rd, h.wr]
   have inSt (d : Nat) (hd : d + 4 ≤ 416) : InRegions s₀.wr ((iSt s₀).setWidth 64 + BitVec.ofNat 64 d) 4 := by
-    rw [hp.wr]; exact ⟨istR s₀, by simp, Offset.contains_base _ hd (by omega)⟩
+    rw [hp.wr]; exact ⟨istR s₀, by simp, Offset.contains_base _ hd (by omega_using [hd])⟩
   refine wp_arg (s₀ := s₀) h.esp (by rw [rw₀]; exact hp.arg_in (by decide)) (hp.keep h.frame (by decide))
     fun s₁ u₁ => ?_
   refine wp_movm (a := (iSt s₀).setWidth 64 + BitVec.ofNat 64 400)
-    (by rw [ea_at', u₁.gpr]; exact addr_eq (by omega))
+    (by rw [ea_at', u₁.gpr]; exact addr_eq (by omega_using [fSt]))
     (by
       rw [u₁.rd, u₁.wr, rw₀]
       obtain ⟨r, hr, hc⟩ := inSt 400 (by decide)
       exact ⟨r, List.mem_append_right _ hr, hc⟩) fun s₂ u₂ => wp_movi fun s₃ u₃ => ?_
   have eax₃ : s₃.gpr .eax = iSt s₀ := by rw [u₃.other _ (by decide), u₂.other _ (by decide), u₁.gpr]
   refine wp_store (a := (iSt s₀).setWidth 64 + BitVec.ofNat 64 400)
-    (by rw [ea_at', eax₃]; exact addr_eq (by omega))
+    (by rw [ea_at', eax₃]; exact addr_eq (by omega_using [fSt']))
     (by rw [u₃.wr, u₂.wr, u₁.wr, h.wr]; exact inSt 400 (by decide)) fun s₄ v₄ => ?_
   refine wp_store (a := (iSt s₀).setWidth 64 + BitVec.ofNat 64 400 + BitVec.ofNat 64 4)
-    (by rw [ea_at', v₄.gpr, eax₃, Offset.add_add]; exact addr_eq (by omega))
+    (by rw [ea_at', v₄.gpr, eax₃, Offset.add_add]; exact addr_eq (by omega_using [fSt']))
     (by rw [v₄.wr, u₃.wr, u₂.wr, u₁.wr, h.wr, Offset.add_add]; exact inSt 404 (by decide))
     fun s₅ v₅ => WP.block_nil ⟨fun r hr => ?_, ?_⟩
   · rw [v₅.gpr, v₄.gpr]
@@ -313,7 +313,7 @@ theorem init_wp {s₀ : State} (h0 : initX86.pre s₀) :
         (R := ikR s₀) (fun r hr => by
           simp only [List.mem_singleton] at hr; subst hr
           exact hp.st_k.symm.sub_right (Offset.sub_base _ (by decide)))
-        (by show iKL s₀ ≤ 2 ^ 64; have := hp.fK; omega) (List.mem_range.mp hi)
+        (by show iKL s₀ ≤ 2 ^ 64; have := hp.fK; omega_using [this]) (List.mem_range.mp hi)
     have hlen : (Spec.TripleDes.bytesAt s₀.mem ((iKp s₀).setWidth 64) (iKL s₀)).length = iKL s₀ := by
       simp [Spec.TripleDes.bytesAt]
     obtain ⟨hs, hk⟩ := h₂.out
@@ -327,7 +327,7 @@ theorem init_wp {s₀ : State} (h0 : initX86.pre s₀) :
     · rw [show (iSt s₀).setWidth 64 + 384 = (iSt s₀).setWidth 64 + BitVec.ofNat 64 384 from rfl,
         Proof.Cmac.bytesAt_frame fz (fun r hr => by
           simp only [List.mem_singleton] at hr; subst hr
-          exact Offset.disjoint _ (by omega) (by omega) (by omega)) (by decide)]
+          exact Offset.disjoint _ (by omega_using []) (by omega_using []) (by omega_using [])) (by decide)]
       exact hk
     · rw [show (iSt s₀).setWidth 64 + 400 = (iSt s₀).setWidth 64 + BitVec.ofNat 64 400 from rfl, m₃,
         zeroCv_bytes]

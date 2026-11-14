@@ -65,15 +65,15 @@ theorem GhArgs.call {Ctx St W SP : Addr} {N yo : Nat} {P : Addr} {n : Nat} {s : 
     GhCall s (Ctx + BitVec.ofNat 64 240) (St + BitVec.ofNat 64 yo) P (W + BitVec.ofNat 64 512) n := by
   have he := h.env
   have hk := he.rsp
-  refine ⟨h.rdi, h.rsi, h.rdx, h.rcx, h.r8, h.n_lt, L.ctx_st (by decide) (by omega), L.ctx_w (by decide) hN,
-    h.hpy, L.st_w (by omega) (.inr ⟨by decide, hN⟩), h.hpw, ?_, ?_, ?_, ?_, ?_, ?_⟩
+  refine ⟨h.rdi, h.rsi, h.rdx, h.rcx, h.r8, h.n_lt, L.ctx_st (by decide) (by omega_using [hyo]), L.ctx_w (by decide) hN,
+    h.hpy, L.st_w (by omega_using [hyo]) (.inr ⟨by decide, hN⟩), h.hpw, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · rw [hk]; exact L.stk_ctx (by decide)
-  · rw [hk]; exact L.stk_st (by omega)
+  · rw [hk]; exact L.stk_st (by omega_using [hyo])
   · rw [hk]; exact h.hpk
   · rw [hk]; exact L.stk_w hN
   · exact covers_cons (he.perm.ctxC (by decide)) (covers_cons h.hpr (covers_cons
-      (covers_left (he.perm.stC (by omega))) (covers_left (he.perm.wC hN L.nlt))))
-  · exact covers_cons (he.perm.stC (by omega)) (he.perm.wC hN L.nlt)
+      (covers_left (he.perm.stC (by omega_using [hyo]))) (covers_left (he.perm.wC hN L.nlt))))
+  · exact covers_cons (he.perm.stC (by omega_using [hyo])) (he.perm.wC hN L.nlt)
 
 /-- The call's arguments, without working space. -/
 theorem GhArgs.callF {Ctx St W SP : Addr} {N yo g : Nat} {P : Addr} {n : Nat} {s : State}
@@ -81,13 +81,13 @@ theorem GhArgs.callF {Ctx St W SP : Addr} {N yo g : Nat} {P : Addr} {n : Nat} {s
     GhCallF s (Ctx + BitVec.ofNat 64 240) (St + BitVec.ofNat 64 yo) P (W + BitVec.ofNat 64 512) n := by
   have he := h.env
   have hk := he.rsp
-  refine ⟨h.rdi, h.rsi, h.rdx, h.rcx, h.r8, h.n_lt, L.ctx_st (by decide) (by omega), h.hpy, ?_, ?_, ?_, ?_,
-    covers_cons (he.perm.stC (by omega)) covers_nil⟩
+  refine ⟨h.rdi, h.rsi, h.rdx, h.rcx, h.r8, h.n_lt, L.ctx_st (by decide) (by omega_using [hyo]), h.hpy, ?_, ?_, ?_, ?_,
+    covers_cons (he.perm.stC (by omega_using [hyo])) covers_nil⟩
   · rw [hk]; exact L.stk_ctx (by decide)
-  · rw [hk]; exact L.stk_st (by omega)
+  · rw [hk]; exact L.stk_st (by omega_using [hyo])
   · rw [hk]; exact h.hpk
   · exact covers_cons (he.perm.ctxC (by decide)) (covers_cons h.hpr (covers_cons
-      (covers_left (he.perm.stC (by omega))) covers_nil))
+      (covers_left (he.perm.stC (by omega_using [hyo]))) covers_nil))
 
 /-- How the functions with `N` bytes at `W` call `v`'s `vg_ghash`: with `g`
 bytes of working space at `W + 512` (`GhFits.base`, the 256 bytes every
@@ -105,7 +105,7 @@ class GhFits (v : GcmImpl) (N : Nat) (g : outParam Nat) : Prop where
 
 /-- Every implementation, with the 256 bytes at `W + 512`. -/
 theorem GhFits.base (v : GcmImpl) {N : Nat} (hN : 768 ≤ N) : GhFits v N 256 where
-  fit := .inr (by omega)
+  fit := .inr (by omega_using [hN])
   ok L hyo h := WP.mono (gh_call v.gh (h.call L hN hyo)) fun _ g =>
     ⟨g.rd, g.wr, g.saved, by rw [← h.env.rsp]; exact g.frame, g.out⟩
   rel L hyo hQ := gh_rel v.gh fun s₁ s₂ h => by

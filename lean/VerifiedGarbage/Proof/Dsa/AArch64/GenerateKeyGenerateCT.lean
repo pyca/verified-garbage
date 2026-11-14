@@ -32,7 +32,7 @@ theorem keygen_prepare_pre {extra : Nat} {s t : State} {h : GenerateKeyABI extra
     simpa only [keygenQBytes, keygenInput, ofNat_toNat64] using hh
   · change 0 < (keygenQBytes s).length
     rw [keygen_q_length h]
-    omega
+    omega_using [hl]
   · change (keygenQBytes s).length < 2 ^ 64
     rw [keygen_q_length h]
     exact (s.gpr .x6).isLt
@@ -48,10 +48,10 @@ theorem keygen_deriveArgs_step {extra : Nat} {s d : State} {h : GenerateKeyABI e
   have hq : (s.gpr .x6).toNat ≤ 32 := by
     have hl := h.lengths
     unfold Spec.Dsa.lengthsValid at hl
-    omega
+    omega_using [hl]
   exact ⟨hd.of_outgoing hargs (hke.mono (by decide)), ⟨hdi, hsi, hdx, hcx, h8, h9, h6, h7, hw⟩,
     random_outside_bytes hargs (show Random.oNonce + (s.gpr .x6).toNat ≤ 2 ^ 64 by
-      unfold Random.oNonce; omega) (Or.inr (show 0 + 8 ≤ Random.oNonce by decide))⟩
+      unfold Random.oNonce; omega_using [hq]) (Or.inr (show 0 + 8 ≤ Random.oNonce by decide))⟩
 
 theorem keygen_block_nil {a u : State} {tr : List Leak} (e : Exec isa (.block []) a tr u) :
     tr = [] ∧ u = a := by

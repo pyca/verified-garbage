@@ -49,8 +49,8 @@ theorem productBody_ct (backend : MontBackend) {p : Inputs} {sp : BitVec 32} {j 
           VG.Impl.Ffdh.Arm.CombPrecompute.productStore)) (fun _ _ => True) := by
   have loaded (s : State) (h : ProductBodyInput p sp j low s) :
       WP isa VG.Impl.Ffdh.Arm.CombPrecompute.productLoad s (Loaded p sp j low) := by
-    refine WP.mono (productLoad_ok (low:=low) (count:=2^j+low) s h.core h.power h.table (by omega)
-      (by have := Nat.two_pow_pos j; omega) (by rw [h.core.memory.fixed]; exact h.count.2)) ?_
+    refine WP.mono (productLoad_ok (low:=low) (count:=2^j+low) s h.core h.power h.table (by omega_using [bound])
+      (by have := Nat.two_pow_pos j; omega_using [this]) (by rw [h.core.memory.fixed]; exact h.count.2)) ?_
     rintro t ⟨core,power,selected,_,_,frame,_⟩
     have wide : Frame [⟨State.addr p.base,8*p.len⟩,FrameStack.belowA s.sp 48] s.mem t.mem := frame.mono (by simp)
     exact ⟨core,power,h.count.after_frame h.core.memory (product_body_arithmetic h.core.memory wide),selected⟩
@@ -119,7 +119,7 @@ theorem productsLoop_ct (backend : MontBackend) {p : Inputs} {sp : BitVec 32} {j
         (.seq (VG.Impl.Bignum.Arm.MontCall.op backend.name backend.mul 6 1 5)
           (.seq VG.Impl.Ffdh.Arm.CombPrecompute.productStore
             (.block VG.Impl.Ffdh.Arm.CombPrecompute.productNext)))) .ne) (fun _ _ => True) := by
-  have high : 2^j≤16 := Nat.pow_le_pow_right (n:=2) (i:=j) (j:=4) (by decide) (by omega)
+  have high : 2^j≤16 := Nat.pow_le_pow_right (n:=2) (i:=j) (j:=4) (by decide) (by omega_using [hj])
   let I := fun k s t => ∃low, low+k=2^j ∧ 0<k ∧
     ProductBodyInput p sp j low s ∧ ProductBodyInput p sp j low t ∧ s.sp=t.sp
   have step : ∀k, RelCT isa (I k)
@@ -131,13 +131,13 @@ theorem productsLoop_ct (backend : MontBackend) {p : Inputs} {sp : BitVec 32} {j
         (isa.eval .ne u=some true → ∃m<k,I m u v)) := by
     intro k s t tr1 tr2 u v h e1 e2
     obtain ⟨low,parts,positive,left,right,spEq⟩ := h
-    have bound : 2^j+low<32 := by omega
+    have bound : 2^j+low<32 := by omega_using [high, parts, positive]
     obtain ⟨trace,sp'⟩ := relCT_keep_sp (productRound_ct backend (p:=p) (sp:=sp) bound) (fun _ _ h => h.2.2)
       s t tr1 tr2 u v ⟨left,right,spEq⟩ e1 e2
     obtain ⟨_,_,run1,core1,power1,table1,count1,z1,_,_,_⟩ := product_round_ok backend s
-      left.core hj (by omega) left.power left.table bound left.count
+      left.core hj (by omega_using [parts, positive]) left.power left.table bound left.count
     obtain ⟨_,_,run2,core2,power2,table2,count2,z2,_,_,_⟩ := product_round_ok backend t
-      right.core hj (by omega) right.power right.table bound right.count
+      right.core hj (by omega_using [parts, positive]) right.power right.table bound right.count
     obtain ⟨_,rfl⟩ := Exec.det e1 run1
     obtain ⟨_,rfl⟩ := Exec.det e2 run2
     refine ⟨trace,?_,fun _ => trivial,?_⟩
@@ -148,9 +148,9 @@ theorem productsLoop_ct (backend : MontBackend) {p : Inputs} {sp : BitVec 32} {j
         intro eq
         change some (!u.z)=some true at again
         simp only [z1,eq,decide_true,Bool.not_true,Option.some.injEq,Bool.false_eq_true] at again
-      exact ⟨k-1,by omega,low+1,by omega,by omega,
+      exact ⟨k-1,by omega_using [positive],low+1,by omega_using [parts, positive],by omega_using [parts, positive, nz],
         ⟨core1,power1,table1,count1⟩,⟨core2,power2,table2,count2⟩,sp'⟩
   exact (RelCT.loop I step (2^j-start)).mono
-    (fun _ _ h => ⟨start,by omega,by omega,h.1,h.2.1,h.2.2⟩) (fun _ _ h => h)
+    (fun _ _ h => ⟨start,by omega_using [hstart],by omega_using [hstart],h.1,h.2.1,h.2.2⟩) (fun _ _ h => h)
 
 end VG.Proof.Ffdh.Arm.CombBuilder

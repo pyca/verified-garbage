@@ -40,11 +40,11 @@ theorem keygen_derive_call (v : Backend) {s t : State} (h : GenerateKeyABI v.sta
   have hb := v.stackBound
   refine WP.callFV v.deriveCheckedVerified.1
     (keygen_derive_checked_pre h hsp hw hdi hsi hdx hcx h8 h9 h6 h7 hparams hck) hc hcw
-    (fun u hur huw husp hf huc hv hp => ?_) (by omega)
+    (fun u hur huw husp hf huc hv hp => ?_) (by omega_using [hd, hb])
   sig_post [Spec.Dsa.deriveKeyDomainCheckedContract, Spec.Dsa.deriveKeySig, abi, argRegs, deriveStackArgs] at hp
   simp only [hdi, hsi, hdx, hcx, h8, h9, h6] at hp
   refine ⟨hur, huw, husp, huc, ?_, hp.1, hp.2, hv⟩
   rw [hsp] at hf
-  exact Frame.below_mono hf hd (by omega)
+  exact Frame.below_mono hf hd (by omega_using [hb])
 
 end VG.Proof.Dsa.AArch64

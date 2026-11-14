@@ -58,7 +58,7 @@ theorem body_ok (v : PublicImpl) {g : Geometry} {bs : Fin 5 → List Byte} {s : 
         VG.Proof.Rsa.wordsAt_frame Fargs (by
           have fit := h.valid.sourceFits 4
           change (g.sources 4).toNat + 8 * g.preLength ≤ 2 ^ 32 at fit
-          omega) (h.sourceSeparate 4)
+          omega_using [fit]) (h.sourceSeparate 4)
       have pre : Precomputed g bs a := by unfold Precomputed at cache ⊢; rw [words]; exact cache
       have result := checkedResult_eq (h.sources 0).length
         (by rw [(h.sources 3).length]; exact length) (out pre)

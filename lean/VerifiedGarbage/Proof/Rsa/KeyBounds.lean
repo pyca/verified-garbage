@@ -13,15 +13,15 @@ namespace VG.Proof.Rsa
 theorem fullExp_bound {e d x y L : Nat} (he : e < 2 ^ 33) (hx : 2 ≤ x)
     (hd : d < x * y) (hy : y < 2 ^ (64 * ((L + 7) / 8))) :
     e * d < 2 ^ (64 * ((L + 7) / 8 + 1)) * (x - 1) := by
-  have hx' : x ≤ 2 * (x - 1) := by omega
+  have hx' : x ≤ 2 * (x - 1) := by omega_using [hx]
   have hxy : x * y ≤ 2 * (x - 1) * y := Nat.mul_le_mul_right y hx'
-  have hed : e * d ≤ e * (2 * (x - 1) * y) := Nat.mul_le_mul_left e (by omega)
+  have hed : e * d ≤ e * (2 * (x - 1) * y) := Nat.mul_le_mul_left e (by omega_using [hd, hxy])
   have hey : e * y < 2 ^ 33 * 2 ^ (64 * ((L + 7) / 8)) := Nat.mul_lt_mul_of_lt_of_lt he hy
   have hsmall : 2 * (2 ^ 33 * 2 ^ (64 * ((L + 7) / 8))) ≤ 2 ^ (64 * ((L + 7) / 8 + 1)) := by
     rw [Nat.mul_add, Nat.mul_one, Nat.pow_add]
     simpa only [Nat.mul_assoc, Nat.mul_comm, Nat.mul_left_comm] using
       Nat.mul_le_mul_right (2 ^ (64 * ((L + 7) / 8))) (show 2 * 2 ^ 33 ≤ (2 : Nat) ^ 64 by decide)
-  have hpos : 0 < x - 1 := by omega
+  have hpos : 0 < x - 1 := by omega_using [hx]
   calc e * d ≤ (2 * (e * y)) * (x - 1) := by simpa only [Nat.mul_assoc, Nat.mul_comm, Nat.mul_left_comm] using hed
     _ < (2 * (2 ^ 33 * 2 ^ (64 * ((L + 7) / 8)))) * (x - 1) :=
       Nat.mul_lt_mul_of_pos_right (Nat.mul_lt_mul_of_pos_left hey (by decide)) hpos

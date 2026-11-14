@@ -36,7 +36,7 @@ theorem sampleRound_ready {len : Nat} {p : SamplePublic} {s : State}
   obtain ⟨⟨⟨mi, hs⟩, -⟩, hsp⟩ := h
   refine WP.mono (sampleWitness_ok hs p.prime.dims p.prime.odd
     (by rw [p.length]; exact p.prime.len2)
-    (by rw [p.length]; have := p.prime.lenDraw; have := p.prime.drawMax; omega)
+    (by rw [p.length]; have := p.prime.lenDraw; have := p.prime.drawMax; omega_arith)
     (by rw [p.length]; exact p.prime.lenWords)
     (by rw [p.length]; exact p.prime.predBits)) fun t ht => ?_
   have hst : t.gpr .rsp = p.prime.sp := (ht.2.2.2.2.gpr (by decide)).trans hsp

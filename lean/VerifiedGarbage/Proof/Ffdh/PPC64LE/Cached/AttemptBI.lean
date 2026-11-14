@@ -125,7 +125,7 @@ theorem cg_toBI {s : State} (h : cgContract.pre s) :
     rw [hctx.1]
     simp only [Spec.Ffdh.generationPrecomputedWords, Spec.Rsa.FixedBaseComb.precomputedWords,
       Spec.Rsa.precomputedWords, Spec.Rsa.FixedBaseComb.entries, Spec.Rsa.FixedBaseComb.teeth, Spec.Rsa.modulusWords]
-    omega
+    omega_using []
   have hctxw := hctx.2
   rw [hcl] at nwC hctxw dXC dYC dSC hrd
   refine WP.mono (cg_front hpre) fun s₁ ⟨hb, w8, w9, w10, w11, _, wc0, wc8, wc16, wc24, hby, k1⟩ => ⟨hb, ?_⟩
@@ -136,7 +136,7 @@ theorem cg_toBI {s : State} (h : cgContract.pre s) :
   have e0 := Domain.slot_eq (gcOf s).w 0
   have e28 := Domain.slot_eq (gcOf s).w 28
   refine WP.mono (loadP_ok hb.env hb.r21 hb.r28 rfl hk hk' (fun i hi => hb.rdD i (by
-      rcases hLk with h | h <;> omega)) (fun i hi => hb.sepD i (by rcases hLk with h | h <;> omega)))
+      rcases hLk with h | h <;> omega_using [hi, h])) (fun i hi => hb.sepD i (by rcases hLk with h | h <;> omega_using [hi, h])))
     fun s₂ ⟨⟨p2, c2, b2⟩, k2⟩ => ?_
   have hb2 := hb.keep k2 b2
   have k12 := k1.trans k2
@@ -148,9 +148,9 @@ theorem cg_toBI {s : State} (h : cgContract.pre s) :
   have hL' : (s.gpr .r8).toNat = 2 * (s.gpr .r9).toNat ∨ (s.gpr .r8).toNat = 3 * (s.gpr .r9).toNat := hLk
   have ep : (gcOf s).p = Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (s.gpr .r7) (s.gpr .r9).toNat) := by
     show Spec.Rsa.os2ip ((Spec.Rsa.bytesAt s.mem (s.gpr .r7) (s.gpr .r8).toNat).take (s.gpr .r9).toNat) = _
-    rw [Proof.Ffdh.take_bytesAt _ _ (by omega)]
+    rw [Proof.Ffdh.take_bytesAt _ _ (by omega_using [hL'])]
   have eD : Spec.Rsa.bytesAt s₁.mem (s.gpr .r7) (s.gpr .r9).toNat =
-      Spec.Rsa.bytesAt s.mem (s.gpr .r7) (s.gpr .r9).toNat := hby _ _ fun i hi => sepD i (by omega)
+      Spec.Rsa.bytesAt s.mem (s.gpr .r7) (s.gpr .r9).toNat := hby _ _ fun i hi => sepD i (by omega_using [hL', hi])
   rw [show (gcOf s).D = s.gpr .r7 from rfl, show (gcOf s).k = (s.gpr .r9).toNat from rfl, eD] at p2 c2
   refine ⟨⟨by show _ ↔ Spec.Rsa.modulusValid (gcOf s).p _ = true; rw [ep]; exact c2, hb2.r23⟩, fun hz => ?_⟩
   have hmodP := c2.mp hz
@@ -162,19 +162,19 @@ theorem cg_toBI {s : State} (h : cgContract.pre s) :
         Derive.bnd s.mem (s.gpr .r7) (s.gpr .r9).toNat (s.gpr .r8).toNat (gcOf s).p)) s₂
   rw [ep]
   have hlenD : (s.gpr .r9).toNat ≤ (cgDom s).length := by
-    rw [VG.Proof.Bignum.bytesAt_length]; rcases hL' with h | h <;> omega
+    rw [VG.Proof.Bignum.bytesAt_length]; rcases hL' with h | h <;> omega_using [h]
   have hmod := VG.Proof.Ffdh.domainValid_mod hdv
   have hpd : (cgA s).p = Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (s.gpr .r7) (s.gpr .r9).toNat) := by
-    rw [VG.Proof.Ffdh.domainOf_p _ _ (by rcases hL' with h | h <;> omega)]
+    rw [VG.Proof.Ffdh.domainOf_p _ _ (by rcases hL' with h | h <;> omega_using [nwX, nwY, nwR, nwC, hk64, hk1024, hxl, hyl, hrl, hsl, hcl, hlenD, h])]
   have hbits := genBits_facts hdv
   have hwv : Spec.Rsa.wordsAt s.mem (stackArg s 3) (3 + 34 * (((s.gpr .r9).toNat + 7) / 8)) =
       VG.Proof.Ffdh.generationValues (s.gpr .r9).toNat (cgDom s) := by
     have e := VG.Proof.Ffdh.generationPrecompute_eq hlenD hmod
     rw [hctxw] at e; exact Option.some.inj e
-  have sepCSi := sep_of_disjoint dSC.symm (by omega)
+  have sepCSi := sep_of_disjoint dSC.symm (by omega_using [nwX, nwY, nwR, nwC, hk64, hk1024, hxl, hyl, hrl, hsl, hcl, hL', hlenD, hbits])
   have hcm : ∀ i < 8 * (3 + 34 * (((s.gpr .r9).toNat + 7) / 8)), s₂.mem (stackArg s 3 + BitVec.ofNat 64 i) =
       s.mem (stackArg s 3 + BitVec.ofNat 64 i) := fun i hi =>
-    byte_of_bytesAt (hsep _ (8 * (3 + 34 * (((s.gpr .r9).toNat + 7) / 8))) fun j hj => sepCSi j (by omega)) hi
+    byte_of_bytesAt (hsep _ (8 * (3 + 34 * (((s.gpr .r9).toNat + 7) / 8))) fun j hj => sepCSi j (by omega_using [nwX, nwY, nwR, nwC, hk64, hk1024, hxl, hyl, hrl, hsl, hcl, hL', hlenD, hbits, hi, hj])) hi
   have hwv2 : Spec.Rsa.wordsAt s₂.mem (stackArg s 3) (3 + 34 * (((s.gpr .r9).toNat + 7) / 8)) =
       VG.Proof.Ffdh.generationValues (s.gpr .r9).toNat (cgDom s) := by rw [wordsAt_congr hcm, hwv]
   have hpk : Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (s.gpr .r7) (s.gpr .r9).toNat) < 256 ^ (s.gpr .r9).toNat := by
@@ -183,28 +183,28 @@ theorem cg_toBI {s : State} (h : cgContract.pre s) :
   have hf := modulus_facts hmodP
   have hpw : Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (s.gpr .r7) (s.gpr .r9).toNat) <
       2 ^ (64 * (((s.gpr .r9).toNat + 7) / 8)) := Nat.lt_of_lt_of_le hpk (by
-    rw [show (256 : Nat) = 2 ^ 8 from rfl, ← Nat.pow_mul]; exact Nat.pow_le_pow_right (by decide) (by omega))
-  obtain ⟨cb, cy, cr, -, -⟩ := ctx_facts hwv (by rw [hpd]; omega) (by rw [hpd]; exact hpw)
-  obtain ⟨-, -, -, cr2, cent⟩ := ctx_facts hwv2 (by rw [hpd]; omega) (by rw [hpd]; exact hpw)
+    rw [show (256 : Nat) = 2 ^ 8 from rfl, ← Nat.pow_mul]; exact Nat.pow_le_pow_right (by decide) (by omega_using []))
+  obtain ⟨cb, cy, cr, -, -⟩ := ctx_facts hwv (by rw [hpd]; omega_using [hf]) (by rw [hpd]; exact hpw)
+  obtain ⟨-, -, -, cr2, cent⟩ := ctx_facts hwv2 (by rw [hpd]; omega_using [hf]) (by rw [hpd]; exact hpw)
   rw [hpd] at cr2 cent
   have hg : (cgA s).g = Spec.Rsa.os2ip (Spec.Rsa.bytesAt s₂.mem (off (s.gpr .r7) (s.gpr .r9).toNat)
       (s.gpr .r9).toNat) := by
-    rw [VG.Proof.Ffdh.domainOf_g _ _ (by rcases hL' with h | h <;> omega), hsep _ _ fun i hi => by
-      rw [off_off']; exact sepD _ (by rcases hL' with h | h <;> omega)]
+    rw [VG.Proof.Ffdh.domainOf_g _ _ (by rcases hL' with h | h <;> omega_using [nwX, nwY, nwR, nwC, hk64, hk1024, hxl, hyl, hrl, hsl, hcl, hlenD, hbits, h]), hsep _ _ fun i hi => by
+      rw [off_off']; exact sepD _ (by rcases hL' with h | h <;> omega_using [nwX, nwY, nwR, nwC, hk64, hk1024, hxl, hyl, hrl, hsl, hcl, hlenD, hbits, hi, h])]
   rw [hg] at cent
   have hw2 : ∀ d, d + 8 ≤ 256 → word s₂.mem (stackArg s 1) d = word s₁.mem (stackArg s 1) d := fun d hd => by
     have b2' : Body (stackArg s 1) (gcOf s).w s₁.mem s₂.mem := b2
-    rw [Outside.word b2' (by omega) (by omega)]
+    rw [Outside.word b2' (by omega_using [e0, hd]) (by omega_using [hd])]
   have h4 : s.gpr .r4 = BitVec.ofNat 64 (s.gpr .r9).toNat := by
     rw [← hxl, BitVec.ofNat_toNat, BitVec.setWidth_eq]
   have eR : Spec.Rsa.bytesAt s₂.mem (s.gpr .r10) (s.gpr .r9).toNat =
-      Spec.Rsa.bytesAt s.mem (s.gpr .r10) (s.gpr .r9).toNat := hsep _ _ (sep_of_disjoint dRS (by omega))
+      Spec.Rsa.bytesAt s.mem (s.gpr .r10) (s.gpr .r9).toNat := hsep _ _ (sep_of_disjoint dRS (by omega_using []))
   have eb : Derive.bnd s₂.mem (s.gpr .r7) (s.gpr .r9).toNat (s.gpr .r8).toNat =
       Derive.bnd s.mem (s.gpr .r7) (s.gpr .r9).toNat (s.gpr .r8).toNat := by
     funext P
     unfold Derive.bnd
     by_cases hq : (s.gpr .r8).toNat = 3 * (s.gpr .r9).toNat
-    · rw [ite_eq_left hq, ite_eq_left hq, hsep _ _ fun i hi => by rw [off_off']; exact sepD _ (by omega)]
+    · rw [ite_eq_left hq, ite_eq_left hq, hsep _ _ fun i hi => by rw [off_off']; exact sepD _ (by omega_using [nwX, nwY, nwR, nwC, hk64, hk1024, hxl, hyl, hrl, hsl, hcl, hL', hlenD, hbits, hq, hi])]
     · rw [ite_eq_right hq, ite_eq_right hq]
   have g23 : s₂.gpr .r23 = stackArg s 1 := hb2.r23
   have e2 : Env s₂ (stackArg s 1) ((stackArg s 2).toNat * 8) (((s.gpr .r9).toNat + 7) / 8) := hb2.env
@@ -217,27 +217,27 @@ theorem cg_toBI {s : State} (h : cgContract.pre s) :
     hk := hk
     hk' := hk'
     hL := hL'
-    hX := by show word s₂.mem _ 64 = _; rw [hw2 64 (by omega), w8]; simp [off]
-    hXL := by show word s₂.mem _ 72 = _; rw [hw2 72 (by omega), w9, h4]
-    hO := by show word s₂.mem _ 80 = _; rw [hw2 80 (by omega), w10]; simp [off]
-    hR := by show word s₂.mem _ 88 = _; rw [hw2 88 (by omega), w11]; simp [off]
-    hbw := by show word s₂.mem _ 8 = _; rw [hw2 8 (by omega), wc8]; exact cb
-    hyw := by show word s₂.mem _ 16 = _; rw [hw2 16 (by omega), wc16]; exact cy
-    hRw := by show word s₂.mem _ 24 = _; rw [hw2 24 (by omega), wc24]; exact cr
-    hCw := by rw [show hCtx = 0 from rfl]; exact (hw2 0 (by omega)).trans wc0
-    hc := ⟨by have := nwC; unfold ctxWords; omega, fun d hd => by
+    hX := by show word s₂.mem _ 64 = _; rw [hw2 64 (by omega_using []), w8]; simp [off]
+    hXL := by show word s₂.mem _ 72 = _; rw [hw2 72 (by omega_using []), w9, h4]
+    hO := by show word s₂.mem _ 80 = _; rw [hw2 80 (by omega_using []), w10]; simp [off]
+    hR := by show word s₂.mem _ 88 = _; rw [hw2 88 (by omega_using []), w11]; simp [off]
+    hbw := by show word s₂.mem _ 8 = _; rw [hw2 8 (by omega_using []), wc8]; exact cb
+    hyw := by show word s₂.mem _ 16 = _; rw [hw2 16 (by omega_using []), wc16]; exact cy
+    hRw := by show word s₂.mem _ 24 = _; rw [hw2 24 (by omega_using []), wc24]; exact cr
+    hCw := by rw [show hCtx = 0 from rfl]; exact (hw2 0 (by omega_using [])).trans wc0
+    hc := ⟨by have := nwC; unfold ctxWords; omega_using [nwX, nwY, nwR, nwC, hk64, hk1024, hxl, hyl, hrl, hsl, hcl, hL', hlenD, hbits, this], fun d hd => by
         rw [k12.rd, k12.wr]
         exact ⟨⟨stackArg s 3, (3 + 34 * (((s.gpr .r9).toNat + 7) / 8)) * 8⟩,
           List.mem_append_left _ (by rw [hrd]; simp),
-          Offset.contains_base _ (by unfold ctxWords at hd; omega) (by unfold ctxWords at hd; omega)⟩,
+          Offset.contains_base _ (by unfold ctxWords at hd; omega_using [nwX, nwY, nwR, nwC, hk64, hk1024, hxl, hyl, hrl, hsl, hcl, hL', hlenD, hbits, hd]) (by unfold ctxWords at hd; omega_using [nwX, nwY, nwR, nwC, hk64, hk1024, hxl, hyl, hrl, hsl, hcl, hL', hlenD, hbits, hd])⟩,
       fun x hx => by
         have := Pub.sep_of_disjoint dSC.symm x (by
-          simp only [VG.Proof.Mont.ofs, VG.Proof.Bignum.ofs, ctxWords] at hx ⊢; omega)
-        simp only [VG.Proof.Mont.ofs, VG.Proof.Bignum.ofs] at this ⊢; omega⟩
+          simp only [VG.Proof.Mont.ofs, VG.Proof.Bignum.ofs, ctxWords] at hx ⊢; omega_using [nwX, nwY, nwR, nwC, hk64, hk1024, hxl, hyl, hrl, hsl, hcl, hL', hlenD, hbits, hx])
+        simp only [VG.Proof.Mont.ofs, VG.Proof.Bignum.ofs] at this ⊢; omega_using [this]⟩
     hsepCX := fun y hy => by
       have := Pub.sep_of_disjoint dXC.symm y (by
-        simp only [VG.Proof.Mont.ofs, VG.Proof.Bignum.ofs, ctxWords] at hy ⊢; omega)
-      simp only [VG.Proof.Mont.ofs, VG.Proof.Bignum.ofs] at this ⊢; omega
+        simp only [VG.Proof.Mont.ofs, VG.Proof.Bignum.ofs, ctxWords] at hy ⊢; omega_using [nwX, nwY, nwR, nwC, hk64, hk1024, hxl, hyl, hrl, hsl, hcl, hL', hlenD, hbits, hy])
+      simp only [VG.Proof.Mont.ofs, VG.Proof.Bignum.ofs] at this ⊢; omega_using [nwX, nwY, nwR, nwC, hk64, hk1024, hxl, hyl, hrl, hsl, hcl, hL', hlenD, hbits, this]
     hents := cent
     hr2 := cr2
     hb1 := hbits.1
@@ -246,14 +246,14 @@ theorem cg_toBI {s : State} (h : cgContract.pre s) :
     hsepD := sepD
     hrdR := by
       rw [k12.rd, k12.wr]
-      exact rd_of_mem (s := s) (D := s.gpr .r10) (L := (s.gpr .r9).toNat) (by rw [hrd]; simp) (by omega)
+      exact rd_of_mem (s := s) (D := s.gpr .r10) (L := (s.gpr .r9).toNat) (by rw [hrd]; simp) (by omega_using [])
     hx := Scr.of_mem (by rw [k12.wr, hwr]; simp) nwX
-    hsepX := sep_of_disjoint dXS (by omega)
+    hsepX := sep_of_disjoint dXS (by omega_using [])
     hsepBX := Pub.sep_of_disjoint dXS.symm
-    hsepRX := sep_of_disjoint dXR.symm (by omega)
-    hsepDX := sep_of_disjoint dXD.symm (by omega)
-    hsepXO := sep_of_disjoint dXY (by omega)
-    hsepOX := sep_of_disjoint dXY.symm (by omega)
+    hsepRX := sep_of_disjoint dXR.symm (by omega_using [])
+    hsepDX := sep_of_disjoint dXD.symm (by omega_using [])
+    hsepXO := sep_of_disjoint dXY (by omega_using [])
+    hsepOX := sep_of_disjoint dXY.symm (by omega_using [])
     ho := Scr.of_mem (by rw [k12.wr, hwr]; simp) nwY
     hsepO := Pub.sep_of_disjoint dYS
     hsepB := Pub.sep_of_disjoint dYS.symm

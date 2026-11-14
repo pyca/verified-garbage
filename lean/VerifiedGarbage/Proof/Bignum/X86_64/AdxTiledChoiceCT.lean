@@ -40,7 +40,7 @@ theorem alignedChoice_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} (
         wv s.mem B (slot w a) w * wv s.mem B (slot w b) w % wv s.mem B (slot w aN) w ∧
       Arrays B w [aAcc, aTmp, o] s.mem t.mem ∧ Keep mmRegs s t := by
   unfold AdxTiledProduct.alignedChoice
-  refine WP.seq (WP.mono (AdxSquare.redcTest_ok hs hdi hH hZ (by omega)) fun s₁ ⟨hz, hm₁, k₁⟩ => ?_)
+  refine WP.seq (WP.mono (AdxSquare.redcTest_ok hs hdi hH hZ (by omega_using [hw'])) fun s₁ ⟨hz, hm₁, k₁⟩ => ?_)
   have hs₁ := hs.congr k₁.2.2
   have hdi₁ : s₁.gpr .rdi = B := (k₁.gpr (by decide)).trans hdi
   rw [← hm₁] at hinv hB hH ⊢
@@ -55,7 +55,7 @@ theorem alignedChoice_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} (
     fun t ⟨h1, h2, h3, k⟩ => ⟨h1, h2, h3, (k₁.trans k).mono (by decide)⟩
   by_cases h8 : w%8=0
   · refine WP.ite true (by simp [eval,hz,h8]) (fun _ => WP.mono
-      (montMul_ok hs₁ hdi₁ hH hZ (by omega : w=8*(w/8)) (by omega) hw' (hH.ops3 ho ha hb) (.head _) (.tail _ (.head _)) (.tail _ (.tail _ (.head _))) ho ha hb ho1 ho2 ha1 ha2 hb1 hb2 hinv hB) post) (by simp)
+      (montMul_ok hs₁ hdi₁ hH hZ (by omega_using [h8] : w=8*(w/8)) (by omega_using [hw, h8]) hw' (hH.ops3 ho ha hb) (.head _) (.tail _ (.head _)) (.tail _ (.tail _ (.head _))) ho ha hb ho1 ho2 ha1 ha2 hb1 hb2 hinv hB) post) (by simp)
   · refine WP.ite false (by simp [eval,hz,h8]) (by simp) (fun _ =>
       WP.mono (fused_ok hs₁ hdi₁ hH hZ hsz.1 hsz.2.1 hw' ho ha hb ho1 ho2 ha1 ha2 hb1 hb2 hinv hB) post)
 
@@ -113,7 +113,7 @@ theorem aligned_ct {o a b : Nat} (ho : o<8) (ha : a<8) (hb : b<8)
   intro s t ts tt s' t' ⟨L,⟨⟨⟨mi,gs,hZ⟩,sz⟩,h8⟩,⟨⟨⟨mj,gt,_⟩,_⟩,_⟩⟩ es et
   have hw := sz.lt
   have hp := sz.2.1
-  let R : Layout := ⟨L.B,L.Z,L.w,L.w/8,hZ,hw,by omega,by omega⟩
+  let R : Layout := ⟨L.B,L.Z,L.w,L.w/8,hZ,hw,by omega_using [h8],by omega_using [h8, hp]⟩
   exact montMul_ct (ps := [(o,o),(a,a),(b,b)]) (.head _) (.tail _ (.head _)) (.tail _ (.tail _ (.head _))) ha hb ha1 ha2 hb1 hb2 hS hR hF
     _ _ _ _ _ _ ⟨R,⟨⟨mi,gs⟩,gs.hdr.ops3 ho ha hb⟩,⟨mj,gt⟩,gt.hdr.ops3 ho ha hb⟩ es et
 
@@ -129,7 +129,7 @@ theorem alignedChoice_ct {o a b : Nat} (ho : o<8) (ha : a<8) (hb : b<8)
   refine RelCT.seq (two_piece (Ψ := fun L s => AdxSquare.GW L s ∧ s.zf=some (decide (L.w%8=0)))
     [.rdi] AdxSquare.pins_gw (by taint_decide) ?_) ?_
   · intro L s ⟨⟨mi,hg,hZ⟩,sz⟩
-    exact WP.mono (AdxSquare.redcTest_ok hg.scr hg.rdi hg.hdr hZ (by have := sz.lt; omega))
+    exact WP.mono (AdxSquare.redcTest_ok hg.scr hg.rdi hg.hdr hZ (by have := sz.lt; omega_using [this]))
       fun _ ⟨z,m,k⟩ => ⟨⟨⟨mi,⟨hg.scr.congr k.2.2,(k.gpr (by decide)).trans hg.rdi,m ▸ hg.hdr⟩,hZ⟩,sz⟩,z⟩
   refine two_ite (fun L s t hs ht => by simp only [eval,hs.2,ht.2]) ?_ ?_
   · refine two_map id (fun L s ⟨⟨h,z⟩,e⟩ => ⟨h,?_⟩) (aligned_ct ho ha hb ha1 ha2 hb1 hb2 hS hT hF)

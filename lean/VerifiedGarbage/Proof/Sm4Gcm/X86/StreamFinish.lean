@@ -83,7 +83,7 @@ theorem finPre_of {s : State} (h : finPre s) : FinPre 8 7 s := by
   rw [ofNat_lit, below_eq sp] at k_c k_s k_w
   exact ⟨by rw [hrd, hwr]; exact covers_of_mem (by simp), by rw [hwr]; exact covers_of_mem (by simp),
     by rw [hwr]; exact covers_of_mem (by simp), by rw [hrd, hwr]; exact covers_of_mem (by simp), d_cs, d_cw, d_sw,
-    d_wa, r_s, r_w, k_c, k_s, k_w, fc, fs, fw, sp, by omega⟩
+    d_wa, r_s, r_w, k_c, k_s, k_w, fc, fs, fw, sp, by omega_using [fa]⟩
 
 /-- The tag `finish` writes. -/
 theorem finPre_tag {s : State} (h : finPre s) : Covers [⟨w64 (arg s 6), 16⟩] s.wr ∧
@@ -109,7 +109,7 @@ theorem verifyPre_of {s : State} (h : verifyPre s) : FinPre 9 8 s := by
   rw [ofNat_lit, below_eq sp] at k_c k_s k_w
   exact ⟨by rw [hrd, hwr]; exact covers_of_mem (by simp), by rw [hwr]; exact covers_of_mem (by simp),
     by rw [hwr]; exact covers_of_mem (by simp), by rw [hrd, hwr]; exact covers_of_mem (by simp), d_cs, d_cw, d_sw,
-    d_wa, r_s, r_w, k_c, k_s, k_w, fc, fs, fw, sp, by omega⟩
+    d_wa, r_s, r_w, k_c, k_s, k_w, fc, fs, fw, sp, by omega_using [fa]⟩
 
 /-- The tag `verify` reads. -/
 theorem verifyPre_tag {s : State} (h : verifyPre s) :
@@ -137,8 +137,8 @@ structure FinL (p : BitVec 32 × (Nat → BitVec 32)) : Prop where
 
 theorem FinPre.fl {nA w : Nat} {s : State} (h : FinPre nA w s) (hw : nA = w + 1) (h7 : 7 ≤ w)
     {p : BitVec 32 × (Nat → BitVec 32)} (hp : pubSw nA 6 s = p) : FinL p := by
-  have a : ∀ i, i < 6 → arg s i = p.2 i := fun i hi => pubSw_arg hp (by omega) (by omega) (by omega)
-  have aW : arg s w = p.2 6 := pubSw_W hp (by omega) hw
+  have a : ∀ i, i < 6 → arg s i = p.2 i := fun i hi => pubSw_arg hp (by omega_using [hw, h7, hi]) (by omega_using [hi]) (by omega_using [hw, h7, hi])
+  have aW : arg s w = p.2 6 := pubSw_W hp (by omega_using [hw, h7]) hw
   have esp := pubSw_esp hp
   have L := h.lay
   have r_s := h.r_s
@@ -173,19 +173,19 @@ theorem finEntry_pc (nA w : Nat) (hw : nA = w + 1) (h7 : 7 ≤ w) (ex : List (Na
   · subst s
     have h := hPre _ hpre
     have L := h.lay
-    have a : ∀ i, i < 6 → arg s₀ i = p.2 i := fun i hi => pubSw_arg hpub (by omega) (by omega) (by omega)
-    have aW : arg s₀ w = p.2 6 := pubSw_W hpub (by omega) hw
+    have a : ∀ i, i < 6 → arg s₀ i = p.2 i := fun i hi => pubSw_arg hpub (by omega_using [hw, h7, hi]) (by omega_using [hi]) (by omega_using [hw, h7, hi])
+    have aW : arg s₀ w = p.2 6 := pubSw_W hpub (by omega_using [hw, h7]) hw
     have esp := pubSw_esp hpub
     have rA : Covers [argsR (s₀.gpr .esp) nA] (s₀.rd ++ s₀.wr) := by rw [argsR_eq]; exact h.aR
     have aw : (argsR (s₀.gpr .esp) nA).Disjoint ⟨w64 (arg s₀ w), 2560⟩ := by rw [argsR_eq]; exact h.wa.symm
-    refine entry_ok (finKeeps ++ ex) [] (by omega) (by omega) hex hnd rfl rfl h.wW rA aw h.fa h.fw fun s₂ e => ?_
+    refine entry_ok (finKeeps ++ ex) [] (by omega_using [hw]) (by omega_using [hw, h7]) hex hnd rfl rfl h.wW rA aw h.fa h.fw fun s₂ e => ?_
     have he : Env (arg s₀ 0) (arg s₀ 1) (arg s₀ w) (s₀.gpr .esp) s₂ :=
       ⟨e.ebp, e.esi, e.esp, by rw [e.rd, e.wr]; exact h.cR, by rw [e.wr]; exact h.sW, by rw [e.wr]; exact h.wW,
         e.slots (0, ctxO) (by simp)⟩
     refine ⟨s₂, rfl, ⟨h, hpub, ?_, ?_, ?_, e.rd, e.wr⟩, fun q hq => by rw [← aW]; exact e.slots q (by simp [hq]),
       hpre⟩
-    · rw [← a 0 (by omega), ← a 1 (by omega), ← a 2 (by omega), ← a 3 (by omega), ← a 4 (by omega),
-        ← a 5 (by omega), ← aW, ← esp]
+    · rw [← a 0 (by omega_using []), ← a 1 (by omega_using []), ← a 2 (by omega_using []), ← a 3 (by omega_using []), ← a 4 (by omega_using []),
+        ← a 5 (by omega_using []), ← aW, ← esp]
       exact ⟨he, e.slots (2, alO) (by simp), e.slots (3, ahO) (by simp), e.slots (4, xlO) (by simp),
         e.slots (5, xhO) (by simp)⟩
     · rw [← aW]; exact e.saved
@@ -202,8 +202,8 @@ theorem finEntry_pc (nA w : Nat) (hw : nA = w + 1) (h7 : 7 ≤ w) (ex : List (Na
     subst s
     have h := hPre _ hpre
     have rA : Covers [argsR (s₀.gpr .esp) nA] (s₀.rd ++ s₀.wr) := by rw [argsR_eq]; exact h.aR
-    exact WP.mono (arg0_ok (argIn_of rA h.fa (by omega))) fun s' ⟨ax, sp⟩ =>
-      ⟨by rw [ax]; exact pubSw_W hpub (by omega) hw, by rw [sp]; exact pubSw_esp hpub⟩
+    exact WP.mono (arg0_ok (argIn_of rA h.fa (by omega_using [hw]))) fun s' ⟨ax, sp⟩ =>
+      ⟨by rw [ax]; exact pubSw_W hpub (by omega_using [hw, h7]) hw, by rw [sp]; exact pubSw_esp hpub⟩
 
 /-- Our caller's registers, outside the regions the tag is computed in. -/
 theorem saved_tagFrame {Ctx St W SP : BitVec 32} (L : Lay4 Ctx St W SP 1536) :
@@ -269,12 +269,12 @@ theorem slot_tagFrame {Ctx St W SP : BitVec 32} (L : Lay4 Ctx St W SP 1536) {m m
   refine slot_frame hf fun r hr => ?_
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl | rfl
-  · have := (L.st_w (a := 0) (n := 32) (d := o) (k := 4) (by decide) (.inr ⟨by omega, by omega⟩)).symm
+  · have := (L.st_w (a := 0) (n := 32) (d := o) (k := 4) (by decide) (.inr ⟨by omega_using [h₁], by omega_using [h₂]⟩)).symm
     rwa [BitVec.add_zero] at this
-  · exact Lay.w_w (d := 96) (k := 16) (.inr (by omega)) (by omega) (by decide)
-  · exact Lay.w_w (d := 0) (k := 16) (.inr (by omega)) (by omega) (by decide)
-  · exact Lay.w_w (d := 240) (k := 2320) (.inl (by omega)) (by omega) (by decide)
-  · exact (L.stk_w (by omega)).symm
+  · exact Lay.w_w (d := 96) (k := 16) (.inr (by omega_using [h₁])) (by omega_using [h₂]) (by decide)
+  · exact Lay.w_w (d := 0) (k := 16) (.inr (by omega_using [h₁])) (by omega_using [h₂]) (by decide)
+  · exact Lay.w_w (d := 240) (k := 2320) (.inl (by omega_using [h₂])) (by omega_using [h₂]) (by decide)
+  · exact (L.stk_w (by omega_using [h₂])).symm
 
 theorem streamFinish_pc (p : BitVec 32 × (Nat → BitVec 32)) :
     Pc (fun (s₀ : State) s => finPre s₀ ∧ pubSw 8 6 s₀ = p ∧ s = s₀) (streamFinish vg.callees)
@@ -322,7 +322,7 @@ theorem streamFinish_pc (p : BitVec 32 × (Nat → BitVec 32)) :
   · rcases List.mem_append.mp hr with hr | hr
     · exact ret_tagFrame FL r hr
     · simp only [List.mem_singleton] at hr; subst hr; exact rt
-  have hA : ∀ i, i < 6 → arg s₀ i = p.2 i := fun i hi => pubSw_arg h₁.pub (by omega) (by omega) (by omega)
+  have hA : ∀ i, i < 6 → arg s₀ i = p.2 i := fun i hi => pubSw_arg h₁.pub (by omega_using [hi]) (by omega_using [hi]) (by omega_using [hi])
   rw [hA 0 (by decide), hA 1 (by decide)] at hr
   rw [hA 2 (by decide), hA 3 (by decide)] at hl
   rw [hA 4 (by decide), hA 5 (by decide)] at ht

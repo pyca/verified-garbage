@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Ed448.WnafWide.Table
 public import VerifiedGarbage.Proof.X448.BaseAdd
 public import VerifiedGarbage.Proof.Ed448.WnafWide.Recoding
 import Mathlib.Tactic.Abel
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-! The joint signed loop represents both complete unreduced scalars. -/
 
@@ -19,7 +20,7 @@ def signedPoint (negative : Bool) (p : Point) : Point := if negative then negPoi
 
 theorem signed_abs (d : Int) :
     (if decide (d<0) then -(d.natAbs : Int) else d.natAbs)=d := by
-  by_cases hd:d<0 <;> simp only [hd,decide_true,decide_false,ite_true,Bool.false_eq_true,ite_false] <;> omega
+  by_cases hd:d<0 <;> simp only [hd,decide_true,decide_false,ite_true,Bool.false_eq_true,ite_false] <;> omega_using [hd]
 
 theorem signedPoint_rep {p : Point} {a : EPoint dZ} {n : Nat} (h:Rep p (n • a)) (b:Bool) :
     Rep (signedPoint b p) ((if b then -(n : Int) else n) • a) := by
@@ -36,9 +37,9 @@ theorem baseEntry_rep {d : Int} (hd:-127≤d ∧ d≤127) (ho:d=0 ∨ d.natAbs%2
   by_cases h0:d=0
   · subst d
     simpa only [baseEntry,ite_true,zero_smul] using identity_rep
-  · have ha:d.natAbs<128 := by omega
-    have he:2*(d.natAbs/2)+1=d.natAbs := by omega
-    have h:=publicTable_rep (d.natAbs/2) (by omega)
+  · have ha:d.natAbs<128 := by omega_using [hd]
+    have he:2*(d.natAbs/2)+1=d.natAbs := by omega_using [ho, h0]
+    have h:=publicTable_rep (d.natAbs/2) (by omega_using [hd])
     rw [he] at h
     have hsign:=signedPoint_rep h (decide (d<0))
     rw [signed_abs] at hsign
@@ -55,7 +56,7 @@ theorem oddPoint_rep {p : Point} {a : EPoint dZ} (h:Rep p a) (n:Nat) :
   | succ n ih =>
     have hh:=addPt_rep ih (double_rep h)
     rw [←two_nsmul,←add_nsmul] at hh
-    have he:2*n+1+2=2*(n+1)+1 := by omega
+    have he:2*n+1+2=2*(n+1)+1 := by omega_using []
     simpa only [oddPoint,he] using hh
 
 def keyEntry (p : Point) (d : Int) : Point :=
@@ -66,7 +67,7 @@ theorem keyEntry_rep {p : Point} {a : EPoint dZ} (h:Rep p a) {d : Int}
   by_cases h0:d=0
   · subst d
     simpa only [keyEntry,ite_true,zero_smul] using identity_rep
-  · have he:2*(d.natAbs/2)+1=d.natAbs := by omega
+  · have he:2*(d.natAbs/2)+1=d.natAbs := by omega_using [ho, h0]
     have hh:=oddPoint_rep h (d.natAbs/2)
     rw [he] at hh
     have hh':=signedPoint_rep hh (decide (d<0))
@@ -94,7 +95,7 @@ theorem round_rep {p q : Point} {a : EPoint dZ} {S K n : Nat}
       Impl.Ed448.WnafWide.digit true (residual true S n)<128 at hb
     change -127≤Impl.Ed448.WnafWide.digit true (residual true S n) ∧
       Impl.Ed448.WnafWide.digit true (residual true S n)≤127
-    omega
+    omega_using [hb]
   have he:=maybeAdd_rep (maybeAdd_rep (double_rep hp)
     (baseEntry_rep hb' (digit_zero_or_odd true _))) hq
   convert he using 1

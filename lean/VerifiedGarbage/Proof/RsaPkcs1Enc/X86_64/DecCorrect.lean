@@ -78,11 +78,11 @@ theorem result_ok {s : State} (hp : DPre s) {R : BitVec 64} {EM : List Byte} {m 
     obtain ⟨hr, hb⟩ := hres
     rw [hEM] at hb; subst hb
     have hok : okOf R = true := by simp [okOf, hr]
-    rw [decryptWith_of_ok (rsadp := fun C => Spec.Rsa.privateChecked (nB s) (eB s) C (pB s) (qB s) (dpB s) (dqB s) (qiB s)) (C := cB s) (dB := dB s) (k := (nB s).length) (by rw [hn]; exact hC) (by rw [hn]; omega) hO]
+    rw [decryptWith_of_ok (rsadp := fun C => Spec.Rsa.privateChecked (nB s) (eB s) C (pB s) (qB s) (dpB s) (dqB s) (qiB s)) (C := cB s) (dB := dB s) (k := (nB s).length) (by rw [hn]; exact hC) (by rw [hn]; omega_using [hkk1]) hO]
     have hEMl : EM.length = kOf s := by rw [← hEM, blen]
     have hal := altFold_le (kOf s) (clOf s) 128
     rw [← altLength_eq] at hal
-    obtain ⟨hL, hmap⟩ := sel_eq hEMl hAM (by omega) hal
+    obtain ⟨hL, hmap⟩ := sel_eq hEMl hAM (by omega_using [hkk1]) hal
     have hM : Spec.RsaPkcs1Enc.implicitDecode (dB s) (cB s) EM = (if Spec.RsaPkcs1Enc.valid EM then
         Spec.RsaPkcs1Enc.lastN (Spec.RsaPkcs1Enc.msgLength EM) EM
         else Spec.RsaPkcs1Enc.lastN (Spec.RsaPkcs1Enc.altLength (kOf s) (clOf s)) (amOf s)) := by
@@ -103,7 +103,7 @@ theorem result_ok {s : State} (hp : DPre s) {R : BitVec 64} {EM : List Byte} {m 
     rw [hO] at hres
     obtain ⟨hr, -⟩ := hres
     have hok : okOf R = false := by simp [okOf, hr]
-    rw [decryptWith_of_fault (rsadp := fun C => Spec.Rsa.privateChecked (nB s) (eB s) C (pB s) (qB s) (dpB s) (dqB s) (qiB s)) (C := cB s) (dB := dB s) (k := (nB s).length) (by rw [hn]; exact hC) (by rw [hn]; omega) hO]
+    rw [decryptWith_of_fault (rsadp := fun C => Spec.Rsa.privateChecked (nB s) (eB s) C (pB s) (qB s) (dpB s) (dqB s) (qiB s)) (C := cB s) (dB := dB s) (k := (nB s).length) (by rw [hn]; exact hC) (by rw [hn]; omega_using [hkk1]) hO]
     refine ⟨hr, ?_, ?_⟩
     · rw [hout]; simp [hok, outByte_false]
     · rw [hml, hok]; simp [bmask]
@@ -133,7 +133,7 @@ theorem ret_frame {s : State} (hp : DPre s) {m : Mem} (h : Frame (wrs s) s.mem m
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl
   · have := Offset.disjoint_below (s.gpr .rsp) (n := decStack) (d := 0) (k := 8)
-      (by unfold decStack frameBytes privStack; omega)
+      (by unfold decStack frameBytes privStack; omega_using [])
     simpa only [stkR, BitVec.ofNat_eq_ofNat, BitVec.add_zero] using this
   · exact hp.dRo
   · exact hp.dRm
@@ -147,7 +147,7 @@ theorem decWith_ok (v : Compress) {A : List Instr} {B : Prog isa} {s : State} (h
       t₂.mxcsr.extractLsb' 6 10 = (allocState frameBytes s).mxcsr.extractLsb' 6 10) :
     WP isa (.frame (.alloc frameBytes) (.seq (.block A) (.seq B (rest (HH v)))) (.free frameBytes)) s
       fun s' => abiPreserved s s' ∧ decK.post s s' := by
-  refine wp_alloc (by decide) (by decide) (by decide) (by have := hp.sp1; unfold decStack at this; omega) ?_
+  refine wp_alloc (by decide) (by decide) (by decide) (by have := hp.sp1; unfold decStack at this; omega_using [this]) ?_
   refine WP.seq (WP.mono hfront fun t₁ h₁ => WP.seq (WP.mono h₁ fun t₂ ⟨hpost, hcs, hmx₂⟩ => ?_))
   refine WP.mono_mx (rest_mx v) (rest_ok v hp hpost hcs) fun t₃ hF hmx₃ => ?_
   refine ⟨hF.rsp, by rw [hF.wr]; rfl, ⟨fun r hr => ?_, ret_frame hp hF.mem, ?_⟩, ?_⟩

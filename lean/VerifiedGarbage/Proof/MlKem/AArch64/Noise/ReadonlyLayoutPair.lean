@@ -102,66 +102,66 @@ theorem readonly_noisePair_layout {s : State} {L : KemLay} (wf : L.Wf) (room : R
       PolyIsW (cw true) t.mem (B+BitVec.ofNat 64 (outOff L kg (n+1)))
         (sampled s.mem (B+BitVec.ofNat 64 (seedOff kg)) (n+1) (transformed L kg (n+1))) := by
   have lim := layout_limits wf kg
-  have fit0 := outOff_fits wf room kg (by omega : n<2*L.k)
+  have fit0 := outOff_fits wf room kg (by omega_using [hn] : n<2*L.k)
   have fit1 := outOff_fits wf room kg hn
   have low0 := outOff_low wf room kg n
   have low1 := outOff_low wf room kg (n+1)
   change nttOff kg+1024≤outOff L kg n at low0
   change nttOff kg+1024≤outOff L kg (n+1) at low1
   have order := outOff_order wf room kg (Nat.lt_succ_self n)
-  have size : L.scl<2^64 := by omega
+  have size : L.scl<2^64 := by omega_using [lim]
   have iw {o l : Nat} (h : o+l≤L.scl) := inScratch hc h size
   have ir {o l : Nat} (h : o+l≤L.scl) : InRegions (s.rd++s.wr) (B+BitVec.ofNat 64 o) l :=
     by obtain ⟨r,hr,hc⟩ := iw h; exact ⟨r,List.mem_append_right _ hr,hc⟩
   have cw {o l : Nat} (h : o+l≤L.scl) := coversScratch hc h
   have sep {o l d k : Nat} (h : o+l≤d ∨ d+k≤o) (ho : o+l≤L.scl) (hd : d+k≤L.scl) :=
-    Offset.disjoint B h (by omega : o+l≤2^64) (by omega : d+k≤2^64)
+    Offset.disjoint B h (by omega_using [lim, ho] : o+l≤2^64) (by omega_using [lim, hd] : d+k≤2^64)
   have snorm (k : Nat) : B+BitVec.ofNat 64 (scratchOff kg)+BitVec.ofNat 64 k =
       B+BitVec.ofNat 64 (scratchOff kg+k) := by rw [BitVec.add_assoc,← BitVec.ofNat_add]
-  refine readonly_noisePair_ok kg (by have := wf.facts; omega) (by omega) (by omega)
+  refine readonly_noisePair_ok kg (by have := wf.facts; omega_using [hn, this]) (by omega_using [lim, fit0]) (by omega_using [lim, fit1])
     (by rw [hB]; rfl) (by rw [hB]; rfl) (by rw [hB]) (by rw [hB]) (by rw [hB]; rfl)
     (fun j hj => ?_) (fun j hj => ?_) (fun j hj => ?_) ?_ ?_ ?_ ht0 ht1 hfar
   · rw [BitVec.add_assoc,← BitVec.ofNat_add]
-    exact ir (by omega)
+    exact ir (by omega_using [lim, hj])
   · change InRegions s.wr (B+BitVec.ofNat 64 (scratchOff kg)+BitVec.ofNat 64 (16*j)) 16
-    rw [snorm]; exact iw (by omega)
-  · rw [snorm]; exact iw (by omega)
+    rw [snorm]; exact iw (by omega_using [lim, hj])
+  · rw [snorm]; exact iw (by omega_using [lim, hj])
   · change (Region.mk (B+BitVec.ofNat 64 (seedOff kg)) 32).Disjoint
       ⟨B+BitVec.ofNat 64 (scratchOff kg)+BitVec.ofNat 64 1800,48⟩
-    rw [snorm]; exact sep (Or.inl (by omega)) (by omega) (by omega)
-  · exact sep (Or.inl lim.2.1) (by omega) (by omega)
+    rw [snorm]; exact sep (Or.inl (by omega_using [lim])) (by omega_using [lim]) (by omega_using [lim])
+  · exact sep (Or.inl lim.2.1) (by omega_using [lim]) (by omega_using [lim])
   · constructor
     · intro i hi
       change InRegions (s.rd++s.wr) (B+BitVec.ofNat 64 (scratchOff kg)+BitVec.ofNat 64 (16*i)) 16
-      rw [snorm]; exact ir (by omega)
+      rw [snorm]; exact ir (by omega_using [lim, hi])
     · intro i hi
       change InRegions s.wr ((B+BitVec.ofNat 64 (scratchOff kg)+BitVec.ofNat 64 400)+BitVec.ofNat 64 (8*i)) 8
-      rw [snorm,BitVec.add_assoc,← BitVec.ofNat_add]; exact iw (by omega)
+      rw [snorm,BitVec.add_assoc,← BitVec.ofNat_add]; exact iw (by omega_using [lim, hi])
     · intro i hi
       change InRegions s.wr ((B+BitVec.ofNat 64 (scratchOff kg)+BitVec.ofNat 64 528)+BitVec.ofNat 64 (8*i)) 8
-      rw [snorm,BitVec.add_assoc,← BitVec.ofNat_add]; exact iw (by omega)
+      rw [snorm,BitVec.add_assoc,← BitVec.ofNat_add]; exact iw (by omega_using [lim, hi])
     · change Covers [⟨B+BitVec.ofNat 64 (scratchOff kg),400⟩,
         ⟨B+BitVec.ofNat 64 (scratchOff kg)+BitVec.ofNat 64 1536,136⟩] s.wr
-      rw [snorm]; exact coversTwo (cw (by omega)) (cw (by omega))
-    · intro i hi; rw [snorm]; exact ir (by omega)
+      rw [snorm]; exact coversTwo (cw (by omega_using [lim])) (cw (by omega_using [lim]))
+    · intro i hi; rw [snorm]; exact ir (by omega_using [lim, hi])
     · change Covers [⟨B+BitVec.ofNat 64 (scratchOff kg)+BitVec.ofNat 64 400,128⟩,
         ⟨B+BitVec.ofNat 64 (outOff L kg n),1024⟩] (s.rd++s.wr)
-      rw [snorm]; exact covers_rw' (coversTwo (cw (by omega)) (cw fit0))
+      rw [snorm]; exact covers_rw' (coversTwo (cw (by omega_using [lim])) (cw fit0))
     · change Covers [⟨B+BitVec.ofNat 64 (scratchOff kg)+BitVec.ofNat 64 528,128⟩,
         ⟨B+BitVec.ofNat 64 (outOff L kg (n+1)),1024⟩] (s.rd++s.wr)
-      rw [snorm]; exact covers_rw' (coversTwo (cw (by omega)) (cw fit1))
+      rw [snorm]; exact covers_rw' (coversTwo (cw (by omega_using [lim])) (cw fit1))
     · exact coversTwo (cw fit0) (cw lim.2.2.1)
     · exact coversTwo (cw fit1) (cw lim.2.2.1)
     · change (Region.mk (B+BitVec.ofNat 64 (scratchOff kg)+BitVec.ofNat 64 400) 128).Disjoint _
-      rw [snorm]; exact sep (Or.inl (by omega)) (by omega) fit0
+      rw [snorm]; exact sep (Or.inl (by omega_using [lim, low0])) (by omega_using [lim]) fit0
     · change (Region.mk (B+BitVec.ofNat 64 (scratchOff kg)+BitVec.ofNat 64 528) 128).Disjoint _
-      rw [snorm]; exact sep (Or.inl (by omega)) (by omega) fit1
+      rw [snorm]; exact sep (Or.inl (by omega_using [lim, low1])) (by omega_using [lim]) fit1
     · intro r hr; simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
       change (Region.mk (B+BitVec.ofNat 64 (scratchOff kg)+BitVec.ofNat 64 528) 128).Disjoint r
       rw [snorm]
       rcases hr with rfl | rfl
-      · exact sep (Or.inl (by omega)) (by omega) fit0
-      · exact sep (Or.inl (by omega)) (by omega) lim.2.2.1
+      · exact sep (Or.inl (by omega_using [lim, low0])) (by omega_using [lim]) fit0
+      · exact sep (Or.inl (by omega_using [lim])) (by omega_using [lim]) lim.2.2.1
     · exact sep (Or.inl order) fit0 fit1
     · exact sep (Or.inr low0) fit0 lim.2.2.1
     · exact sep (Or.inr low1) fit1 lim.2.2.1
@@ -169,8 +169,8 @@ theorem readonly_noisePair_layout {s : State} {L : KemLay} (wf : L.Wf) (room : R
       change (Region.mk (B+BitVec.ofNat 64 (scratchOff kg)+BitVec.ofNat 64 1800) 48).Disjoint r
       rw [snorm]
       rcases hr with rfl | rfl | rfl
-      · exact sep (Or.inl (by omega)) (by omega) fit0
-      · exact sep (Or.inl (by omega)) (by omega) fit1
-      · exact sep (Or.inl (by omega)) (by omega) lim.2.2.1
+      · exact sep (Or.inl (by omega_using [lim, low0])) (by omega_using [lim]) fit0
+      · exact sep (Or.inl (by omega_using [lim, low1])) (by omega_using [lim]) fit1
+      · exact sep (Or.inl (by omega_using [lim])) (by omega_using [lim]) lim.2.2.1
 
 end VG.Proof.MlKem.AArch64.Noise

@@ -34,7 +34,7 @@ theorem expBitTest_ok (s : State) {base : BitVec 32} {size V : Nat}
       t.mem = s.mem ∧ Rest [.r1] s t := by
   unfold expBitTest
   refine wp_ldr (a := off (State.addr base) 200) (by decide)
-    (by rw [ptr]; exact addr_add (by have := ws.nowrap; omega)) (ws.read (by omega)) fun u h => ?_
+    (by rw [ptr]; exact addr_add (by have := ws.nowrap; omega_using [fits, this])) (ws.read (by omega_using [fits])) fun u h => ?_
   refine wp_mov (op2_lsr (by decide)) fun v j => ?_
   refine wp_dp (op2_imm (by decide)) fun z l => ?_
   refine wp_subs (op2_imm (by decide)) fun t q zero => WP.block_nil ?_

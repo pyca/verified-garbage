@@ -122,7 +122,7 @@ theorem kcChk_one {p : Params} (hF : PFacts p) {r : Reg} {o n : Nat} (hr : r = .
   have hm : r ∈ [Reg.x25, .x26, .x27, .x28] := by rcases hr with rfl | rfl <;> decide
   simp only [kcChk, Bool.and_eq_true]
   exact ⟨keepB_one_diff (by rcases hr with rfl | rfl <;> decide) hm (by decide)
-      (inB_of_x28 (by simp only [SV]; omega)) hi,
+      (inB_of_x28 (by simp only [SV]; omega_using [hs])) hi,
     keepB_one_diff (by rcases hr with rfl | rfl <;> decide) hm (by decide) ((inB_x25 p 0 32).trans rfl) hi⟩
 
 /-- A write to `scratch` outside the saved registers and the polynomials. -/
@@ -146,7 +146,7 @@ theorem KRChk.x28 {p : Params} (hF : PFacts p) {np nj nr : Nat} (hnp : np ≤ p.
     fun h => keepB_one_diff (by decide) (by decide) (by decide) (inB_of_x27 h) hi
   have kc : kcChk p [((.x28, o), n)] = true := by
     simp only [kcChk, Bool.and_eq_true]
-    exact ⟨bx (by rw [hs]; simp only [SV]; omega) (by simp only [SV]; omega),
+    exact ⟨bx (by rw [hs]; simp only [SV]; omega_using []) (by simp only [SV]; omega_using [h1]),
       keepB_one_diff (by decide) (by decide) (by decide) ((inB_x25 p 0 32).trans rfl) hi⟩
   refine ⟨kc, fun e he => bx ?_ ?_, fun i hi' => bx ?_ ?_, fun j hj => bx ?_ ?_, b26 ?_, b27 ?_, b27 ?_,
     fun r hr' => b27 ?_, fun i hi' => ⟨b26 ?_, b27 ?_⟩⟩
@@ -286,8 +286,8 @@ theorem copies_ok {p : Params} (hF : PFacts p) {S' : Nat} {σ : State} (hp : kgP
     rw [kOf_eq, ← hHX₂, Proof.MlKem.bytesAt_slice _ _ (show 96 + 32 ≤ 128 by decide), sc_add]
   refine ⟨A, S, s.gpr .x24, ⟨h.k1.kc.step hF hp hP hc.1, h24, hG, fun r hr => (hS r hr).2,
     fun e he => L.keepPoly hP (hc.2.1 e he) (hA e he),
-    fun i hi => L.keepPoly hP (hc.2.2 _ (by omega)) (hS (p.ℓ + i) (by omega)).1,
-    fun j hj => by rw [ifn (Nat.not_lt_zero j)]; exact L.keepPoly hP (hc.2.2 j (by omega)) (hS j (by omega)).1,
+    fun i hi => L.keepPoly hP (hc.2.2 _ (by omega_using [hi])) (hS (p.ℓ + i) (by omega_using [hi])).1,
+    fun j hj => by rw [ifn (Nat.not_lt_zero j)]; exact L.keepPoly hP (hc.2.2 j (by omega_using [hj])) (hS j (by omega_using [hj])).1,
     ?_, ?_, ?_, fun _ h => absurd h (Nat.not_lt_zero _), fun _ h => absurd h (Nat.not_lt_zero _)⟩⟩
   · rw [L₂.keepBytes hP₃ (by layd), L₁.keepBytes hP₂ (by layd),
       hP₁.pa (show Reg.x26 ∈ keptRegs by decide), hb₁, e1]

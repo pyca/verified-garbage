@@ -285,17 +285,17 @@ theorem mkPre {σ : State} {C A P W T : Addr} {R N L : Nat}
   have sd : Region.Sub ⟨W + BitVec.ofNat 64 dOff, 16⟩ ⟨W, 2576⟩ := Offset.sub_base _ (by decide)
   have dw := Offset.disjoint_base W (d := dOff) (n := 16) (k := 2560) (by decide) (by decide)
   have wD : (W + BitVec.ofNat 64 dOff).toNat + 16 ≤ 2 ^ 64 := by
-    rw [toNat_add_lt _ wrW (show dOff < 2576 by decide)]; simp only [dOff]; omega
+    rw [toNat_add_lt _ wrW (show dOff < 2576 by decide)]; simp only [dOff]; omega_using [wrW]
   have inR {r : Region} (h : r ∈ σ.wr) : r ∈ σ.rd ++ σ.wr := List.mem_append_right _ h
   have env (Q : Addr) (n : Nat) (hQ : (⟨Q, n⟩ : Region) ∈ σ.rd ++ σ.wr) (qW : (⟨Q, n⟩ : Region).Disjoint ⟨W, 2576⟩)
       (rQ : (⟨σ.gpr .rsp, 8⟩ : Region).Disjoint ⟨Q, n⟩) (sQ : (below (σ.gpr .rsp) 16).Disjoint ⟨Q, n⟩)
       (wQ : Q.toNat + n ≤ 2 ^ 64) (hn : n < 2 ^ 64) : Env σ C (W + BitVec.ofNat 64 dOff) Q W R n :=
     ⟨hsp, hR, inC, inR inD, hQ, inW, cW.sub_right sw, (qW.sub_right sd).symm, dw, qW.sub_right sw, rC,
       rW.sub_right sd, rQ, rW.sub_right sw, sC, sW.sub_right sd, sQ, sW.sub_right sw, wrC, wD, wQ,
-      by omega, hn⟩
+      by omega_using [wrW], hn⟩
   have inArg {d : Nat} (hd : 8 ≤ d) (hd' : d + 8 ≤ 24) :
       InRegions (σ.rd ++ σ.wr) (σ.gpr .rsp + BitVec.ofNat 64 d) 8 :=
-    ⟨_, inArgs, Offset.contains _ (d := d) (n := 8) (e := 8) (k := 16) hd (by omega) (by decide)⟩
+    ⟨_, inArgs, Offset.contains _ (d := d) (n := 8) (e := 8) (k := 16) hd (by omega_using [hd']) (by decide)⟩
   exact ⟨⟨env P L (inR inP) pW rP sP wrP hL, rfl, cW.sub_right sd, cP, inP, inD, rdi, rsi, rdx, rcx, r8, r9,
     aW, inArg (d := 16) (by decide) (by decide), inA, wA.symm.sub_right sw, wA.symm.sub_right sd, sA, wrA,
     fun r hr => env r.base r.len (inL r hr) (wL r hr).symm (rL r hr) (sL r hr) (wrL r hr) (listed_len hr)⟩,
@@ -340,7 +340,7 @@ theorem encPre_of {s : State} (h : (Proof.AesSiv.encryptScratchContract X86_64.a
     (inWr wT) List.mem_cons_self
     (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ List.mem_cons_self))
     (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ List.mem_cons_self)))
-    cP cW pW pArgs pT wA wL wArgs tW hrc hrp hrT hrw rL sC sP sT sW sA sL hwC hwP hwT (by omega) wrA wrL
+    cP cW pW pArgs pT wA wL wArgs tW hrc hrp hrT hrw rL sC sP sT sW sA sL hwC hwP hwT (by omega_using [hwW]) wrA wrL
     (BitVec.isLt _)
   exact ⟨⟨e, t, wT⟩, hwr⟩
 
@@ -380,7 +380,7 @@ theorem decPre_of {s : State} (h : (Proof.AesSiv.decryptScratchContract X86_64.a
     (inRd (by rw [hrd]; exact List.mem_cons_of_mem _ List.mem_cons_self)) List.mem_cons_self
     (List.mem_cons_of_mem _ List.mem_cons_self)
     (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ List.mem_cons_self))
-    cP cW pW pArgs pT wA wL wArgs tW hrc hrp hrT hrw rL sC sP sT sW sA sL hwC hwP hwT (by omega) wrA wrL
+    cP cW pW pArgs pT wA wL wArgs tW hrc hrp hrT hrw rL sC sP sT sW sA sL hwC hwP hwT (by omega_using [hwW]) wrA wrL
     (BitVec.isLt _), hwr⟩
 
 /-- A run from a narrowed state is a run from the state. -/

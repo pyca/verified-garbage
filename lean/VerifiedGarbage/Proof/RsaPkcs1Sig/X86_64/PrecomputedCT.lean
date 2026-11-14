@@ -137,7 +137,7 @@ theorem pub_view {a s t : State} (S : Sib a s) (h : J1 s t) :
       rw [List.mem_singleton.mp hr]; exact .inl (below_sub s)), S.pre]
   · simp only [State.withRegions_gpr, State.callEntry_gpr _ (show Reg.r8 ≠ .rsp by decide),
       State.callEntry_gpr _ (show Reg.r9 ≠ .rsp by decide), h8, h9]
-    rw [entryBytes he _ _ hp.dKe hp.des.symm (by have := hp.wE; omega), S.e]
+    rw [entryBytes he _ _ hp.dKe hp.des.symm (by have := hp.wE; omega_using []), S.e]
 
 theorem call_ct (v : PublicImpl) : RelCT isa (Two (At J1)) (.call v.name v.code) fun _ _ => True := by
   refine RelCT.callEx (k := pdChkContract) v.ok v.ct fun t₁ t₂ ⟨a, ⟨s₁, S₁, j₁⟩, ⟨s₂, S₂, j₂⟩⟩ => ?_

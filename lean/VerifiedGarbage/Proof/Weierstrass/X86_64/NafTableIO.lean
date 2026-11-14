@@ -28,17 +28,17 @@ theorem nafPublicEntry_ok {K : WinCfg} {s : State} {base : Addr} {size a : Nat}
       (∀ j<3,wordsVal t.mem base (K.E.x+8*K.M.n*j) K.M.n=
         wordsVal s.mem base (K.tbl+24*K.M.n*((a-1)/2)+8*K.M.n*j) K.M.n) ∧
       KeepRegs [.rax,.rcx,.rdx] s t ∧ Outside base K.E.x (24*K.M.n) s.mem t.mem := by
-  have hi := Nat.mul_le_mul_left (24*K.M.n) (show (a-1)/2+1≤8 by omega)
+  have hi := Nat.mul_le_mul_left (24*K.M.n) (show (a-1)/2+1≤8 by omega_using [ha'])
   rw [Nat.mul_add,Nat.mul_one] at hi
-  have hn0 : 0<K.M.n := by omega
+  have hn0 : 0<K.M.n := by omega_using [hn]
   rw [Naf.publicEntry,List.append_assoc,WP.block_append_iff]
   refine WP.mono (nafIndex_ok s ha ha' h8) fun u ⟨iu,ku⟩ => ?_
   have su := hs.of_keeps ku (by decide)
   rw [WP.block_append_iff]
-  refine WP.mono (nafAddress_ok u su.rdi iu ht (by omega)) fun v ⟨av,kv⟩ => ?_
+  refine WP.mono (nafAddress_ok u su.rdi iu ht (by omega_using [hn])) fun v ⟨av,kv⟩ => ?_
   have sv := su.of_keeps kv (by decide)
   refine WP.mono (nafCopyPiecesAt_ok (a:=K.tbl+24*K.M.n*((a-1)/2)) (o:=K.E.x) (L:=24*K.M.n)
-    ((3*K.M.n+1)/2) v sv (by omega) (by omega) (by omega) (fun i _ => pieceOff_ok hn0 i)
+    ((3*K.M.n+1)/2) v sv (by omega_using [hT, hi]) (by omega_using [hE]) (by omega_using [hSep, hi]) (fun i _ => pieceOff_ok hn0 i)
     (fun i _ => by rw [ea_tblAt,av]; unfold off; rw [Offset.add_add])
     (fun i _ => by rw [ea_sc,sv.rdi])) fun t ⟨et,ot,gt,rt,wt⟩ => ?_
   refine ⟨fun j hj => ?_,⟨fun r hr => ?_,rt.trans (kv.2.2.1.trans ku.2.2.1),
@@ -57,9 +57,9 @@ theorem nafTableStore_ok {K : WinCfg} {s : State} {base : Addr} {size j : Nat}
       (∀ i<3,wordsVal t.mem base (K.tbl+24*K.M.n*j+8*K.M.n*i) K.M.n=
         wordsVal s.mem base (K.R.x+8*K.M.n*i) K.M.n) ∧
       KeepRegs [.rax,.rcx,.rdx] s t ∧ Outside base (K.tbl+24*K.M.n*j) (24*K.M.n) s.mem t.mem := by
-  have hi := Nat.mul_le_mul_left (24*K.M.n) (show j+1≤8 by omega)
+  have hi := Nat.mul_le_mul_left (24*K.M.n) (show j+1≤8 by omega_using [hj])
   rw [Nat.mul_add,Nat.mul_one] at hi
-  have hn0 : 0<K.M.n := by omega
+  have hn0 : 0<K.M.n := by omega_using [hn]
   rw [Naf.tableStore,List.append_assoc,WP.block_append_iff]
   refine WP.mono (show WP isa (.block [.mov .rax (.reg .rbx)]) s (fun u =>
       u.gpr .rax=BitVec.ofNat 64 j ∧ Keeps [.rax] s u) by
@@ -71,10 +71,10 @@ theorem nafTableStore_ok {K : WinCfg} {s : State} {base : Addr} {size j : Nat}
     simp only [RegUpd.gpr_setReg,hr,ite_false]) fun u ⟨iu,ku⟩ => ?_
   have su := hs.of_keeps ku (by decide)
   rw [WP.block_append_iff]
-  refine WP.mono (nafAddress_ok u su.rdi iu ht (by omega)) fun v ⟨av,kv⟩ => ?_
+  refine WP.mono (nafAddress_ok u su.rdi iu ht (by omega_using [hn])) fun v ⟨av,kv⟩ => ?_
   have sv := su.of_keeps kv (by decide)
   refine WP.mono (nafCopyPiecesAt_ok (a:=K.R.x) (o:=K.tbl+24*K.M.n*j) (L:=24*K.M.n)
-    ((3*K.M.n+1)/2) v sv (by omega) (by omega) (by omega) (fun i _ => pieceOff_ok hn0 i)
+    ((3*K.M.n+1)/2) v sv (by omega_using [hR]) (by omega_using [hT, hi]) (by omega_using [hSep, hi]) (fun i _ => pieceOff_ok hn0 i)
     (fun i _ => by rw [ea_sc,sv.rdi])
     (fun i _ => by rw [ea_tblAt,av]; unfold off; rw [Offset.add_add])) fun t ⟨et,ot,gt,rt,wt⟩ => ?_
   refine ⟨fun i hi => ?_,⟨fun r hr => ?_,rt.trans (kv.2.2.1.trans ku.2.2.1),

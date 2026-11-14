@@ -339,7 +339,7 @@ theorem tail_rel (B : BlkFn M) {q : Nat} :
   intro s₁ s₂ t₁ t₂ s₁' s₂' hP e₁ e₂
   obtain ⟨⟨-, ⟨M₁, z₁, r11₁, cx₁⟩, ⟨M₂, z₂, r11₂, cx₂⟩⟩, hz⟩ := hP
   have hlt : q < n s₀ := by
-    rw [hz] at z₁; simp only [Option.some.injEq, Bool.false_eq, decide_eq_false_iff_not] at z₁; omega
+    rw [hz] at z₁; simp only [Option.some.injEq, Bool.false_eq, decide_eq_false_iff_not] at z₁; omega_using [z₁]
   have hlt' : q < n s₀' := by rw [pb.en]; exact hlt
   -- The pointers of the copy.
   have b := rel_wp (rel_taint (P := fun s₁ s₂ =>

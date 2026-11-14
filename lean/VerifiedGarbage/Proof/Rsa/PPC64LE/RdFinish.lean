@@ -52,7 +52,7 @@ structure OutR (s0 : State) (O : Addr) (L : Nat) : Prop where
 /-- Memory in the working space is kept by a write outside it. -/
 theorem OutR.inside {s0 : State} {O : Addr} {L : Nat} (h : OutR s0 O L) {m m' : Mem} (o : Outside O 0 L m m') :
     ∀ x, ofs (rvB s0) x < rvZ s0 → m' x = m x := fun x hx =>
-  CrtValues.out_of_disjoint o h.disj (by simp only [Region.Contains, ofs] at hx ⊢; omega)
+  CrtValues.out_of_disjoint o h.disj (by simp only [Region.Contains, ofs] at hx ⊢; omega_using [hx])
 
 /-- Zeros to the `L` bytes at `O`, from the pointer in `rP` and the length in `rL`. -/
 theorem zeroOut_ok {s0 s : State} (h : RFin s0 s) {rP rL : Reg} (hrP : rP ≠ .r0) (hrL : rL ≠ .r0)
@@ -64,7 +64,7 @@ theorem zeroOut_ok {s0 s : State} (h : RFin s0 s) {rP rL : Reg} (hrP : rP ≠ .r
   refine WP.mono (CrtValues.mv2_ok (s := s) (d₁ := .r5) (d₂ := .r8) hrP hrL hrL5 (by decide))
     fun v ⟨⟨v5, v8, um⟩, kv⟩ => ?_
   refine WP.mono (Keys.zeroBytes_ok (v5.trans hO) (v8.trans hL) ho.l1 ho.l2
-    (fun c hc => ⟨_, by rw [kv.wr, h.wr]; exact ho.wr, Offset.contains_base _ (by omega) (by have := ho.nowrap; omega)⟩)
+    (fun c hc => ⟨_, by rw [kv.wr, h.wr]; exact ho.wr, Offset.contains_base _ (by omega_using [hc]) (by have := ho.nowrap; omega_using [hc, this])⟩)
     ho.nowrap) fun t ⟨tz, tout, kt⟩ => ?_
   have tout' : Outside O 0 L s.mem t.mem := fun x hx => (tout x hx).trans (congrFun um x)
   exact ⟨h.of_out (rs := [.r0, .r5, .r8]) (ho.inside tout') (kv.trans kt).mono, tz, tout', (kv.trans kt).mono⟩
@@ -73,12 +73,12 @@ theorem zeroOut_ok {s0 s : State} (h : RFin s0 s) {rP rL : Reg} (hrP : rP ≠ .r
 theorem out_p {s0 : State} (h : rvPre s0) : OutR s0 (s0.gpr .r3) (kK s0) := by
   obtain ⟨-, -, hwr, -, -, -, -, ps, -, -, -, -, -, -, -, -, -, -, wp, -, -, -, -, -, ⟨hk, hk'⟩, e4, -⟩ := h
   rw [e4] at ps wp
-  exact ⟨by rw [hwr]; simp [e4, kK], ps, wp, by simp only [kK]; omega, by simp only [kK]; omega⟩
+  exact ⟨by rw [hwr]; simp [e4, kK], ps, wp, by simp only [kK]; omega_using [hk], by simp only [kK]; omega_using [hk']⟩
 
 theorem out_q {s0 : State} (h : rvPre s0) : OutR s0 (s0.gpr .r5) (kK s0) := by
   obtain ⟨-, -, hwr, -, -, -, -, -, -, -, -, -, qs, -, -, -, -, -, -, wq, -, -, -, -, ⟨hk, hk'⟩, -, e6, -⟩ := h
   rw [e6] at qs wq
-  exact ⟨by rw [hwr]; simp [e6, kK], qs, wq, by simp only [kK]; omega, by simp only [kK]; omega⟩
+  exact ⟨by rw [hwr]; simp [e6, kK], qs, wq, by simp only [kK]; omega_using [hk], by simp only [kK]; omega_using [hk']⟩
 
 theorem pq_disj {s0 : State} (h : rvPre s0) :
     (⟨s0.gpr .r3, kK s0⟩ : Region).Disjoint ⟨s0.gpr .r5, kK s0⟩ := by
@@ -110,7 +110,7 @@ theorem fail_ok {s0 s : State} (h : RFin s0 s) (h21 : s.gpr .r21 = s0.gpr .r3) (
   refine WP.mono hb fun t ⟨⟨t3, tm⟩, kt⟩ => ⟨f2.of_out (fun x _ => congrFun tm x) kt, t3, fun c hc => ?_,
     fun c hc => by rw [tm]; exact v2 c hc, ((k1.trans k2).trans kt).mono⟩
   have cc : (⟨s0.gpr .r3, kK s0⟩ : Region).Contains (off (s0.gpr .r3) c) 1 :=
-    Offset.contains_base _ (by omega) (by have := op.nowrap; omega)
+    Offset.contains_base _ (by omega_using [hc]) (by have := op.nowrap; omega_using [hc, this])
   rw [tm, CrtValues.out_of_disjoint o2 dpq.symm cc]
   exact v1 c hc
 
@@ -275,19 +275,19 @@ theorem shr3_ofNat {L : Nat} (hL : L + 7 < 2 ^ 64) :
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow, BitVec.toNat_add, BitVec.toNat_ofNat,
     BitVec.toNat_ofNat, BitVec.toNat_ofNat]
-  omega
+  omega_using [hL]
 
 /-- The low `2 R` digits of a number below `2^(64 R)` are the number. -/
 theorem val32_low_words {m : Mem} {B : Addr} {d W R v : Nat} (hv : val32 m B d W = v) (hvR : v < 2 ^ (64 * R))
     (hR : 2 * R ≤ W) : wordsVal m B d R = v := by
   have e := val32_append m B d (2 * R) (W - 2 * R)
-  rw [show 2 * R + (W - 2 * R) = W by omega, hv, show 32 * (2 * R) = 64 * R by omega] at e
+  rw [show 2 * R + (W - 2 * R) = W by omega_using [hR], hv, show 32 * (2 * R) = 64 * R by omega_using []] at e
   rw [wordsVal_eq_val32]
   have := Nat.one_le_two_pow (n := 64 * R)
   rcases Nat.eq_zero_or_pos (val32 m B (d + 4 * (2 * R)) (W - 2 * R)) with h0 | h0
   · rw [h0, Nat.mul_zero, Nat.add_zero] at e; exact e.symm
   · have : 2 ^ (64 * R) ≤ 2 ^ (64 * R) * val32 m B (d + 4 * (2 * R)) (W - 2 * R) := Nat.le_mul_of_pos_right _ h0
-    omega
+    omega_using [hvR, e, this]
 
 /-- `prod`: `M = d e` in the array `wM` of the `W` view, by a row of words for each word of `e`. -/
 theorem prod_ok {s0 t : State} (h : LdD s0 t) :
@@ -329,9 +329,9 @@ theorem prod_ok {s0 t : State} (h : LdD s0 t) :
   have hR2 : 2 * (((s0.gpr .r10).toNat + 7) / 8) ≤ wW (kK s0) := by rw [hW]; omega_arith
   have bE' : eV s0 < 2 ^ (64 * (((s0.gpr .r10).toNat + 7) / 8)) :=
     Nat.lt_of_lt_of_le bE (Nat.pow_le_pow_right (by decide) (by omega_arith))
-  have eW2 : 2 * (wW (kK s0) / 2) = wW (kK s0) := by rw [hW]; omega
+  have eW2 : 2 * (wW (kK s0) / 2) = wW (kK s0) := by rw [hW]; omega_using []
   refine WP.mono (VG.Proof.Rsa.PPC64LE.Recover.mulW_ok w2' (by decide) (o := wM) (x := wE) (y := wD)
-    (by decide) (by decide) (by decide) (by decide) (by decide) (by rw [hW]; omega) a4 (by omega_arith) hR2)
+    (by decide) (by decide) (by decide) (by decide) (by decide) (by rw [hW]; omega_using []) a4 (by omega_arith) hR2)
     fun u ⟨wu, ku, val, kru⟩ => ?_
   have hDw : wordsVal t2.mem (rvB s0) (arr (wW (kK s0)) wD) (wW (kK s0) / 2) = dV s0 := by
     rw [wordsVal_eq_val32, eW2]; exact nD
@@ -341,12 +341,12 @@ theorem prod_ok {s0 t : State} (h : LdD s0 t) :
   · show val32 _ _ _ (wW (kK s0)) = _
     rw [show val32 u.mem (rvB s0) (arr (wW (kK s0)) wM) (wW (kK s0)) =
         wordsVal u.mem (rvB s0) (arr (wW (kK s0)) wM) (wW (kK s0) / 2) by rw [wordsVal_eq_val32, eW2],
-      val, show 64 * (wW (kK s0) / 2) = 32 * wW (kK s0) by omega,
+      val, show 64 * (wW (kK s0) / 2) = 32 * wW (kK s0) by omega_using [hW],
       Nat.mul_comm, Nat.mod_eq_of_lt]
     calc dV s0 * eV s0 < 2 ^ (8 * (PPC64LE.stackArg s0 1).toNat) * 2 ^ (8 * (s0.gpr .r10).toNat) :=
           Nat.mul_lt_mul'' bD bE
       _ = 2 ^ (8 * (PPC64LE.stackArg s0 1).toNat + 8 * (s0.gpr .r10).toNat) := (Nat.pow_add _ _ _).symm
-      _ ≤ 2 ^ (32 * wW (kK s0)) := Nat.pow_le_pow_right (by decide) (by omega)
+      _ ≤ 2 ^ (32 * wW (kK s0)) := Nat.pow_le_pow_right (by decide) (by omega_using [fitT])
   · rw [ku.num (by decide) (by simp) (fit wZ (by decide))]; exact nZ
 
 end VG.Proof.Rsa.PPC64LE.Recover

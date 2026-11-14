@@ -57,13 +57,13 @@ theorem ExternalAvailable.rebuild {L : ExecutionLayout} {a : Operand} {n : Nat} 
   · intro i hi
     rw [bytesAt_length] at hi
     rw [hk.2.1, hk.2.2, hptr]
-    exact hb.source.rd i (by omega)
+    exact hb.source.rd i (by omega_using [hl, hi])
   · intro i hi
     simp [Spec.Rsa.bytesAt]
   · intro i hi
     rw [bytesAt_length] at hi
     rw [hptr]
-    exact hb.source.out i (by omega)
+    exact hb.source.out i (by omega_using [hl, hi])
   · exact bytesAt_length _ _ _
 
 /-- The schedule's state, with derivation's extent and q's bytes. -/
@@ -95,8 +95,8 @@ theorem derivePow_ct (M : Mont) (Sq : MontS) : RelCT isa (Two DeriveSched)
   have ct := schedulePow_ct M Sq deriveInputs (fun p => deriveInputs_stable p) .p t2 Core.generator
     Core.privateScalar (fun p => p.layout.pLen) (fun p => p.layout.qLen) (by trivial) (by trivial)
     (by simp [stablePointer, Core.generator]) (by simp [stablePointer, Core.privateScalar])
-    (by intro p; have := p.layout.widths; omega) (fun _ => Nat.le_refl _)
-    (fun p => p.layout.widths.1) (by intro p; have := p.layout.widths; omega)
+    (by intro p; have := p.layout.widths; omega_using [this]) (fun _ => Nat.le_refl _)
+    (fun p => p.layout.widths.1) (by intro p; have := p.layout.widths; omega_using [this])
     (by decide) (by decide) hend (by taint_decide)
   refine two_post ((two_map (fun p => p) (fun p s h => ⟨h.1,
     (h.1.2.1 (Core.generator, p.layout.pLen) (by simp [deriveInputs])).active,

@@ -47,7 +47,7 @@ abbrev GQ (P : CP) (E : State → Prop) (n : Nat) (σ s : State) : Prop :=
 
 theorem go_iff (a b c : Nat) :
     (decide (a + 1 < 17) || decide (b < c)) = decide (a + 1 ≤ Spec.RsaKeyGen.blindedChecks ∨ b < c) := by
-  by_cases h1 : a + 1 < 17 <;> by_cases h2 : b < c <;> simp [h1, h2, Spec.RsaKeyGen.blindedChecks] <;> omega
+  by_cases h1 : a + 1 < 17 <;> by_cases h2 : b < c <;> simp [h1, h2, Spec.RsaKeyGen.blindedChecks] <;> omega_using [h1]
 
 section
 variable {P : CP} {E : State → Prop}
@@ -77,7 +77,7 @@ theorem tail_vp {n : Nat} (hE : ∀ σ, E σ → In P σ ∧ EM P σ) (hn : n �
     VP (fun σ s => St P (EK P E (Nt P - n) n) (AF P (Nt P - n)) LF
         (fun σ => upd (VF P (Nt P - n) σ) sF (rv P σ (Nt P - n))) (sF :: LSF) σ s ∧ MS P σ s)
       (seqs [.block (isOne sF), .ite .eq (.block onPass) (.block (setS sStat 3))]) (GQ P E n) := by
-  have hk1 : Nt P + 1 - n = Nt P - n + 1 := by omega
+  have hk1 : Nt P + 1 - n = Nt P - n + 1 := by omega_using [hn]
   simp only [seqs]
   refine VP.seq (St.pisOneM isOneF_taint (by simp) fun σ _ => by
     simp only [upd_self]; exact VG.Proof.Rsa.b2n_le _) ?_
@@ -108,9 +108,9 @@ theorem tail_vp {n : Nat} (hE : ∀ σ, E σ → In P σ ∧ EM P σ) (hn : n �
       have := (hE σ e).1.rlt
       have : Nt P - n + 1 ≤ P.rl / 24 := by
         rw [Nat.le_div_iff_mul_le (by decide)]
-        exact Nat.le_trans (Nat.mul_le_mul_left _ (show 24 ≤ P.D by omega))
-          (by rw [Nat.mul_comm, Nat.mul_succ]; omega)
-      refine ⟨by omega, by omega, by omega, by omega⟩
+        exact Nat.le_trans (Nat.mul_le_mul_left _ (show 24 ≤ P.D by omega_using [sz]))
+          (by rw [Nat.mul_comm, Nat.mul_succ]; omega_using [av])
+      refine ⟨by omega_arith, by omega_arith, by omega_arith, by omega_using [hc]⟩
     · obtain ⟨pre, hm⟩ := hE σ e
       obtain ⟨-, hwb, -⟩ := mr_facts pre hm
       have hpass : Spec.RsaKeyGen.mrIteration (cv P σ) (taP P σ) (tmP P σ) (dwit (cv P σ) P.D (rB P σ)
@@ -128,11 +128,11 @@ theorem tail_vp {n : Nat} (hE : ∀ σ, E σ → In P σ ∧ EM P σ) (hn : n �
         ⟨List.mem_cons_of_mem _ (List.mem_cons_of_mem _ hj),
           by simp only [AF, AW]; rw [upd_ne _ _ (by revert hj; revert j; decide),
           upd_ne _ _ (by revert hj; revert j; decide)]⟩
-      have hD : 0 < P.D := by have := pre.sizes; omega
+      have hD : 0 < P.D := by have := pre.sizes; omega_using [this]
       by_cases hg : goS (chP P) (dmrS (cv P σ) P.D (rB P σ) (Nt P - n + 1))
       · obtain ⟨hn0, mr'⟩ := VG.Proof.Dsa.Generation.dmrAt_next mr hwb hD (by rw [rB_length]; exact av) hpass hg
-        refine .inr ⟨hn0, by omega, by omega, by rw [hk1, show n - 1 = n - 1 from rfl]; exact
-          (show Nt P - n + 1 = Nt P + 1 - n by omega) ▸ mr', ?_, m⟩
+        refine .inr ⟨hn0, by omega_using [hn0], by omega_using [hn], by rw [hk1, show n - 1 = n - 1 from rfl]; exact
+          (show Nt P - n + 1 = Nt P + 1 - n by omega_using [hn]) ▸ mr', ?_, m⟩
         rw [hk1]
         refine ⟨e, h.mono hAF fun d hd => ⟨by revert hd; revert d; decide, ?_⟩, hw⟩
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hd
@@ -161,7 +161,7 @@ theorem tail_vp {n : Nat} (hE : ∀ σ, E σ → In P σ ∧ EM P σ) (hn : n �
           unfold usedQ; rw [hres']
           dsimp only
           rw [List.length_drop, rB_length]
-          omega
+          omega_using [av]
   · refine VP.ofImp (p := passQ P (Nt P - n) = false) (fun σ s h => ?_) fun hp => ?_
     · obtain ⟨e, mr, av⟩ := h.1.1.1.1
       have z := h.1.2
@@ -180,7 +180,7 @@ theorem tail_vp {n : Nat} (hE : ∀ σ, E σ → In P σ ∧ EM P σ) (hn : n �
       rw [hp, round_eq] at this
       exact this
     obtain ⟨-, -, -, -, vUsed, -⟩ := vF_vals (P := P) σ (Nt P - n)
-    obtain ⟨hn0, hres⟩ := VG.Proof.Dsa.Generation.dmrAt_fail mr hwb (by have := pre.sizes; omega)
+    obtain ⟨hn0, hres⟩ := VG.Proof.Dsa.Generation.dmrAt_fail mr hwb (by have := pre.sizes; omega_using [this])
       (by rw [rB_length]; exact av) hfail
     have hres' : resP P σ = some (false, (rB P σ).drop (P.D * (Nt P - n) + P.D)) := hres
     have hAF : ∀ j ∈ LB2, j ∈ LF ∧ AF P (Nt P - n) σ j = AB2 P σ j := fun j hj =>
@@ -196,7 +196,7 @@ theorem tail_vp {n : Nat} (hE : ∀ σ, E σ → In P σ ∧ EM P σ) (hn : n �
       unfold usedQ; rw [hres']
       dsimp only
       rw [List.length_drop, rB_length]
-      omega
+      omega_using [av]
 
 end
 

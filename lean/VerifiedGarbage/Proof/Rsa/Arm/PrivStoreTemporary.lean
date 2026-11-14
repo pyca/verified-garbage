@@ -22,7 +22,7 @@ theorem storeTemporary_ok (s : State) {g : PrivGeometry} {bs : Fin 8 → List By
   unfold storeTemporary
   refine wp_stackAddr (by decide) fun u a => ?_
   refine wp_str (a := off (State.addr g.stack) 8) (by decide)
-    (by rw [a.other .r12 (by decide), ptr]; exact addr_add (by simp only [frameBytes] at *; omega))
+    (by rw [a.other .r12 (by decide), ptr]; exact addr_add (by simp only [frameBytes] at *; omega_using [fit]))
     (by rw [a.wr]; exact h.inner.write (by decide)) fun t b => WP.block_nil ?_
   have mem : t.mem = s.mem.writeW (off (State.addr g.stack) 8) g.temporary := by
     rw [b.mem, a.gpr, a.mem, h.sp]; rfl

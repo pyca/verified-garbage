@@ -57,7 +57,7 @@ theorem saved_absFrame {yo : Nat} (hyo : yo = 0 ∨ yo = 16) : ∀ r ∈ absFram
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl
-  · exact (L.st_w (by omega) (.inr ⟨by decide, by decide⟩)).symm
+  · exact (L.st_w (by omega_using [hyo]) (.inr ⟨by decide, by decide⟩)).symm
   · exact (L.st_w (by decide) (.inr ⟨by decide, by decide⟩)).symm
   · exact L.w_w (.inl (by decide)) (by decide) (by decide)
 
@@ -65,7 +65,7 @@ theorem saved_tFrame {yo : Nat} (hyo : yo = 0 ∨ yo = 16) : ∀ r ∈ tFrame St
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl
-  · exact (L.st_w (by omega) (.inr ⟨by decide, by decide⟩)).symm
+  · exact (L.st_w (by omega_using [hyo]) (.inr ⟨by decide, by decide⟩)).symm
   · exact L.w_w (.inr (by decide)) (by decide) (by decide)
   · exact L.w_w (.inl (by decide)) (by decide) (by decide)
 
@@ -75,7 +75,7 @@ theorem saved_tagFrame {o : Nat} (ho : o = 0 ∨ o = 112) : ∀ r ∈ tagFrame S
   rcases hr with rfl | rfl | rfl | rfl
   · simpa using (L.st_w (a := 0) (n := 32) (by decide) (.inr ⟨by decide, by decide⟩)).symm
   · exact L.w_w (.inr (by decide)) (by decide) (by decide)
-  · exact L.w_w (.inr (by omega)) (by decide) (by omega)
+  · exact L.w_w (.inr (by omega_using [ho])) (by decide) (by omega_using [ho])
   · exact L.w_w (.inl (by decide)) (by decide) (by decide)
 
 theorem saved_j0Frame : ∀ r ∈ j0Frame St W, (savedR W).Disjoint r := by
@@ -111,7 +111,7 @@ theorem flush0_ok (v : GcmImpl) {yo : Nat} (hyo : yo = 0 ∨ yo = 16) {k : Reg �
     WP isa (flush v.callees yo) s (TOut Ctx St W SP k yo 0 (blockAt s.mem (St + BitVec.ofNat 64 yo)) s.mem) := by
   refine WP.seq (WP.mono (padSeg_ok L hyo (P := St + BitVec.ofNat 64 32) he hk h25 (by decide)
     (by refine ⟨_, by arun [], ?_⟩; exact ⟨by simp [gpr_write, he.x20], ⟨by others_tac, rfl, rfl, rfl, rfl⟩⟩)
-    (covers_left (he.perm.stC (by omega))) (L.st_w (by omega) (.inr ⟨by decide, by decide⟩))) fun s₁ h₁ => ?_)
+    (covers_left (he.perm.stC (by omega_using []))) (L.st_w (by omega_using []) (.inr ⟨by decide, by decide⟩))) fun s₁ h₁ => ?_)
   refine WP.mono (padCall_ok L hyo v h₁) fun s₂ h₂ => { h₂ with out := ?_ }
   rw [h₂.out]; rfl
 

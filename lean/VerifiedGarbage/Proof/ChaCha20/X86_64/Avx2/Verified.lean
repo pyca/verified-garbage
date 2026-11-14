@@ -36,11 +36,11 @@ theorem tinv_of {s₀ : State} {t : Nat} {s : State} (h : LInv s₀ t s) :
   r11 := h.r11
   rdx := h.rdx
   le := h.le
-  dvd := ⟨8 * t, by omega⟩
+  dvd := ⟨8 * t, by omega_using []⟩
   keep := h.keep
   rd := h.rd
   wr := h.wr
-  cnt := by rw [h.cnt, show 512 * t / 64 = 8 * t by omega]
+  cnt := by rw [h.cnt, show 512 * t / 64 = 8 * t by omega_using []]
   data := h.data
   x := ⟨h.consts, h.incs⟩
   frame := h.frame
@@ -56,7 +56,7 @@ theorem cmp385_ok {s₀ : State} {t : Nat} {s : State} (h : LInv s₀ t s) :
     State.setFlags, Option.bind_some, Option.some.injEq, exists_eq_left', se]
   refine ⟨⟨h.rdi, h.rcx, h.rsi, h.r11, h.rdx, h.le, h.keep, h.rd, h.wr, h.cnt, h.data, h.consts, h.incs,
     h.frame⟩, ?_⟩
-  rw [h.rdx, toNat_ofNat_lt (by omega)]
+  rw [h.rdx, toNat_ofNat_lt (by omega_using [hL])]
   rfl
 
 theorem xor_eq (vl : Bool) : Impl.ChaCha20.X86_64.Avx2.xorWith vl =
@@ -74,7 +74,7 @@ theorem correct (vl : Bool) {s₀ : State} (hp : TPre s₀) :
     fun s₂ ⟨t, ht, h₂⟩ => ?_)
   · refine WP.ite (decide (eL s₀ < 512)) (by simp [eval, hc]) (fun h => ?_) (fun h => ?_)
     · simp only [decide_eq_true_eq] at h
-      exact WP.block_nil (M := isa) ⟨0, by omega, h₁⟩
+      exact WP.block_nil (M := isa) ⟨0, by omega_using [h], h₁⟩
     · simp only [decide_eq_false_iff_not] at h
       let Inv : Nat → State → Prop := fun n s =>
         ∃ t, n = eL s₀ - 512 * t ∧ 512 ≤ eL s₀ - 512 * t ∧ LInv s₀ t s
@@ -85,14 +85,14 @@ theorem correct (vl : Bool) {s₀ : State} (hp : TPre s₀) :
         refine WP.mono (body_ok vl hp ht hI) fun s' ⟨h', hc'⟩ => ?_
         by_cases hl : eL s₀ - 512 * (t + 1) < 512
         · exact .inl ⟨by simp [eval, hc', hl], t + 1, hl, h'⟩
-        · exact .inr ⟨by simp [eval, hc', hl], eL s₀ - 512 * (t + 1), by omega, t + 1, rfl, by omega, h'⟩
-      exact WP.loop (M := isa) Inv hstep (eL s₀ - 512 * 0) s₁ ⟨0, rfl, by omega, h₁⟩
+        · exact .inr ⟨by simp [eval, hc', hl], eL s₀ - 512 * (t + 1), by omega_using [ht], t + 1, rfl, by omega_using [hl], h'⟩
+      exact WP.loop (M := isa) Inv hstep (eL s₀ - 512 * 0) s₁ ⟨0, rfl, by omega_using [h], h₁⟩
   · refine WP.seq (WP.mono (cmp385_ok h₂) fun s₃ ⟨h₃, c₃⟩ => ?_)
     refine WP.ite (decide (eL s₀ - 512 * t < 385)) (by simp [eval, c₃]) (fun hs => ?_) (fun hs => ?_)
     · simp only [decide_eq_true_eq] at hs
       exact Avx2Tail.tail_ok vl hp hs (tinv_of h₃)
     · simp only [decide_eq_false_iff_not] at hs
-      exact last8_ok vl hp (by omega) ht h₃
+      exact last8_ok vl hp (by omega_using [hs]) ht h₃
 
 theorem xorWith_to (vl : Bool)
     (hc : (Impl.ChaCha20.X86_64.Avx2.xorWith vl).allInstrs (fun i => !loadsMxcsr i) = true)

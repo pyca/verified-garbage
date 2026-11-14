@@ -67,16 +67,16 @@ theorem uhBody_ok (g : Nat) (s : State) (hM : s.gpr .x5 = BitVec.ofNat 64 (hbMul
 
 theorem csubM_toNat {m : Nat} (hm : m < 2 ^ 32) {v : BitVec 64} (hv : v.toNat < 2 ^ 32) :
     (csubM (BitVec.ofNat 64 m) v).toNat = if v.toNat < m then v.toNat else v.toNat - m := by
-  have hmv : (BitVec.ofNat 64 m).toNat = m := by rw [BitVec.toNat_ofNat]; omega
+  have hmv : (BitVec.ofNat 64 m).toNat = m := by rw [BitVec.toNat_ofNat]; omega_using [hm]
   unfold csubM
-  rw [sgn_sub (by omega) (by rw [hmv]; omega), hmv, BitVec.toNat_add, BitVec.toNat_mul, BitVec.toNat_sub, hmv]
+  rw [sgn_sub (by omega_using [hv]) (by rw [hmv]; omega_using [hm]), hmv, BitVec.toNat_add, BitVec.toNat_mul, BitVec.toNat_sub, hmv]
   by_cases h : v.toNat < m
   · rw [decide_eq_true h, ite_eq_left_of_eq_true _ _ (eq_true h)]
     simp only [bitV, Bool.toNat_true, BitVec.toNat_ofNat]
-    omega
+    omega_using [hm]
   · rw [decide_eq_false h, ite_eq_right_of_eq_false _ _ (eq_false h)]
     simp only [bitV, Bool.toNat_false, BitVec.toNat_ofNat]
-    omega
+    omega_using [h]
 
 theorem uhV_toNat {g : Nat} (hg : IsG g) {a h : BitVec 32} (ha : a.toNat < q) :
     ((uhV g (a.setWidth 64) (h.setWidth 64)).setWidth 32).toNat =

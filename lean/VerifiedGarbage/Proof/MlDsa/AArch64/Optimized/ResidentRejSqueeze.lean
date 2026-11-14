@@ -68,13 +68,13 @@ theorem fiveWith_ok (core : Core) {s : State} {p a b T : Addr} {rp ra rb : Reg} 
     intro r hr
     have he : r=pairR p := by simpa only [List.mem_singleton] using hr
     subst r
-    exact hpa.sub_left (Offset.sub_base a (by omega))
+    exact hpa.sub_left (Offset.sub_base a (by omega_using [hi]))
   · intro i hi
     refine (hv.outB i hi).keep (by decide) ht.2.2 ?_
     intro r hr
     have he : r=pairR p := by simpa only [List.mem_singleton] using hr
     subst r
-    exact hpb.sub_left (Offset.sub_base b (by omega))
+    exact hpb.sub_left (Offset.sub_base b (by omega_using [hi]))
   · have hfirst : Frame [⟨a,840⟩,⟨b,840⟩,pairR p,⟨T,384⟩] s.mem v.mem := by
       have h := hv.frame.mono (rs' := [⟨a,840⟩,⟨b,840⟩,pairR p,⟨T,384⟩]) (by
         intro r hr

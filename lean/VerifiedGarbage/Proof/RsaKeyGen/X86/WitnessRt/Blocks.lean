@@ -17,7 +17,7 @@ open VG.Impl.RsaKeyGen.X86.WitnessRt
 
 theorem fits {g : Geometry} (v : g.Valid) :
     g.array 6 + 4 * g.words ≤ g.L ∧ g.array 0 + 4 * g.words ≤ g.array 6 ∧ 8 ≤ g.words ∧ g.words = 2 * g.w :=
-  ⟨v.arrayFit (by decide), g.arrayBefore (by decide), by have := v.minWidth; unfold Geometry.words; omega, rfl⟩
+  ⟨v.arrayFit (by decide), g.arrayBefore (by decide), by have := v.minWidth; unfold Geometry.words; omega_using [this], rfl⟩
 
 /-- One of the first eight arrays' pointers, a load that leaves `edx`. -/
 theorem ptr_short {g : Geometry} (v : g.Valid) {s : State} (C : Context g s) (j : Nat) (index : j < 8)
@@ -27,7 +27,7 @@ theorem ptr_short {g : Geometry} (v : g.Valid) {s : State} (C : Context g s) (j 
   have head := v.headerFit
   unfold VG.Impl.MillerRabin.X86.ptr
   simp only [index, ↓reduceIte]
-  refine wp_movS (readSrc_ptr C.ws C.base (d := 64 + 8 * j) (by omega)) fun t T _ => WP.block_nil ⟨?_, T.mem, T.keeps⟩
+  refine wp_movS (readSrc_ptr C.ws C.base (d := 64 + 8 * j) (by omega_using [index, head])) fun t T _ => WP.block_nil ⟨?_, T.mem, T.keeps⟩
   rw [PtrAt, T.gpr, Nat.zero_add]
   exact C.pointers j index
 
@@ -38,12 +38,12 @@ theorem draw_ok {g : Geometry} (v : g.Valid) {s : State} (C : Context g s) :
   have bound := v.maxWidth
   have width := C.width
   unfold draw
-  refine wp_movS (readSrc_ptr C.ws C.base (d := 48) (by omega)) fun a A _ => wp_addS rfl fun b B _ =>
+  refine wp_movS (readSrc_ptr C.ws C.base (d := 48) (by omega_using [head])) fun a A _ => wp_addS rfl fun b B _ =>
     wp_addS rfl fun c C _ => wp_addS rfl fun t T _ => WP.block_nil ⟨?_, ?_, ?_⟩
   · apply BitVec.eq_of_toNat_eq
     have wv : (s.mem.readW (off g.W 48) 32).toNat = g.w := width
     rw [T.gpr, C.gpr, B.gpr, A.gpr, BitVec.toNat_add, BitVec.toNat_add, BitVec.toNat_add, wv, BitVec.toNat_ofNat]
-    omega
+    omega_using []
   · rw [T.mem, C.mem, B.mem, A.mem]
   · exact ((A.keeps.trans B.keeps).trans C.keeps).trans T.keeps
 
@@ -69,7 +69,7 @@ theorem term_ok {g : Geometry} (v : g.Valid) {s : State} (S : Scr s g.W g.L) (wi
         Keeps [.eax, .ecx] s t := by
   have head := v.headerFit
   unfold term
-  refine wp_movS (readSrc_sc S (d := 48) (by omega)) fun a A _ => wp_cmpCarry rfl fun b B carry =>
+  refine wp_movS (readSrc_sc S (d := 48) (by omega_using [head])) fun a A _ => wp_cmpCarry rfl fun b B carry =>
     wp_sbbS rfl carry fun d D _ => wp_andi fun e E => wp_addS rfl fun t T _ => WP.block_nil ⟨?_, ?_, ?_⟩
   · have less : (a.gpr .eax).toNat < (BitVec.ofNat 32 c).toNat ↔ g.w < c := by
       rw [A.gpr, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hc]
@@ -103,10 +103,10 @@ theorem checks_ok {g : Geometry} (v : g.Valid) {s : State} {c capacity : Nat} {p
   refine WP.block_append ?_
   refine wp_movS rfl fun a A _ => ?_
   have Sa := S.ready.scratch.of_keeps A.keeps (by decide)
-  refine wp_storeS (Sa.ea (by omega)) (Sa.write (by omega)) fun b B => ?_
+  refine wp_storeS (Sa.ea (by omega_using [head])) (Sa.write (by omega_using [head])) fun b B => ?_
   have Kb := A.keeps.widen (B.keeps [])
   have Sb := S.ready.scratch.of_keeps Kb (by decide)
-  refine wp_storeS (Sb.ea (by omega)) (Sb.write (by omega)) fun d D => wp_movS rfl fun e E _ => WP.block_nil ?_
+  refine wp_storeS (Sb.ea (by omega_using [head])) (Sb.write (by omega_using [head])) fun d D => wp_movS rfl fun e E _ => WP.block_nil ?_
   have Ke : Keeps [.eax, .ecx] s e := ((Kb.widen (D.keeps [])).mono (by decide)).widen E.keeps
   have Ob : Outside g.W 176 4 s.mem b.mem := by
     rw [B.mem, A.mem]
@@ -132,7 +132,7 @@ theorem checks_ok {g : Geometry} (v : g.Valid) {s : State} {c capacity : Nat} {p
   have Sl := Sj.of_keeps Kl (by decide)
   refine term_chain v Sl (by rw [Ml, Mj, Mi, Mh, Mf]; exact widthE) (by decide) fun n N Mn Kn => ?_
   have Sn := Sl.of_keeps Kn (by decide)
-  refine wp_storeS (Sn.ea (by omega)) (Sn.write (by omega)) fun t T => WP.block_nil ?_
+  refine wp_storeS (Sn.ea (by omega_using [head])) (Sn.write (by omega_using [head])) fun t T => WP.block_nil ?_
   have Mn' : n.mem = d.mem := by rw [Mn, Ml, Mj, Mi, Mh, Mf, Me]
   have Ot : Outside g.W 200 4 d.mem t.mem := by
     rw [T.mem, Mn']
@@ -149,7 +149,7 @@ theorem checks_ok {g : Geometry} (v : g.Valid) {s : State} {c capacity : Nat} {p
   · rw [T.mem, w32_write_self, N, Lr, J, I, H, F, ecxE, ← BitVec.ofNat_add, ← BitVec.ofNat_add, ← BitVec.ofNat_add,
       ← BitVec.ofNat_add, ← BitVec.ofNat_add, ← BitVec.ofNat_add, BitVec.toNat_ofNat, ← formula_eq g.w bound]
     unfold formula
-    split <;> split <;> split <;> split <;> split <;> split <;> omega
+    split <;> split <;> split <;> split <;> split <;> split <;> omega_using []
   · exact ((Outs.of_outside Ob (by simp [WitnessChecks.ranges])).trans
       (Outs.of_outside Od (by simp [WitnessChecks.ranges]))).trans (Outs.of_outside Ot (by simp [WitnessChecks.ranges]))
 
@@ -164,9 +164,9 @@ theorem available_ok {g : Geometry} (v : g.Valid) {s : State} {remaining used : 
   unfold available
   refine WP.block_append (WP.mono (draw_ok v C) fun a ⟨D, Ma, Ka⟩ => ?_)
   have Sa := S.of_keeps Ka (by decide)
-  refine wp_movS (readSrc_sc Sa (d := 32) (by omega)) fun b B _ => ?_
+  refine wp_movS (readSrc_sc Sa (d := 32) (by omega_using [head])) fun b B _ => ?_
   have Sb := Sa.of_keeps B.keeps (by decide)
-  refine wp_subS (readSrc_sc Sb (d := 152) (by omega)) fun d Dd _ => ?_
+  refine wp_subS (readSrc_sc Sb (d := 152) (by omega_using [head])) fun d Dd _ => ?_
   refine wp_cmpCarry rfl fun t T carry => WP.block_nil ⟨?_, by rw [T.mem, Dd.mem, B.mem, Ma], ?_⟩
   · have value : (d.gpr .eax).toNat = remaining - used := by
       rw [Dd.gpr, B.gpr, B.mem, Ma, BitVec.toNat_sub_of_le (by
@@ -175,7 +175,7 @@ theorem available_ok {g : Geometry} (v : g.Valid) {s : State} {remaining used : 
       rw [length, consumed]
     have edx : d.gpr .edx = BitVec.ofNat 32 (8 * g.w) := by
       rw [Dd.other .edx (by decide), B.other .edx (by decide)]; exact D
-    rw [carry, value, edx, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+    rw [carry, value, edx, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [wb])]
   · exact ((Ka.mono (by decide)).widen B.keeps).widen Dd.keeps |>.widen (T.keeps [])
 
 theorem advance_ok {g : Geometry} (v : g.Valid) {s : State} {c capacity used : Nat} {p rand : BitVec 32}
@@ -190,14 +190,14 @@ theorem advance_ok {g : Geometry} (v : g.Valid) {s : State} {c capacity used : N
   unfold advance
   refine WP.block_append (WP.mono (draw_ok v S.ready.context) fun a0 ⟨D, M0, K0⟩ => ?_)
   have S0 := S.ready.scratch.of_keeps K0 (by decide)
-  refine wp_movS (readSrc_sc S0 (by omega)) fun a A _ => ?_
+  refine wp_movS (readSrc_sc S0 (by omega_using [head])) fun a A _ => ?_
   have Sa := S0.of_keeps A.keeps (by decide)
-  refine wp_movS (readSrc_sc Sa (d := 152) (by omega)) fun b B _ =>
+  refine wp_movS (readSrc_sc Sa (d := 152) (by omega_using [head])) fun b B _ =>
     wp_addS rfl fun d Dd _ => wp_addS rfl fun e E _ => ?_
   have K : Keeps [.eax, .esi, .edx] s e :=
     ((((K0.mono (by decide)).widen A.keeps).widen B.keeps).widen Dd.keeps).widen E.keeps
   have Se := S.ready.scratch.of_keeps K (by decide)
-  refine wp_storeS (Se.ea (by omega)) (Se.write (by omega)) fun t T => WP.block_nil ?_
+  refine wp_storeS (Se.ea (by omega_using [head])) (Se.write (by omega_using [head])) fun t T => WP.block_nil ?_
   have Ot : Outside g.W 152 4 s.mem t.mem := by
     rw [T.mem, E.mem, Dd.mem, B.mem, A.mem, M0]
     exact writeW32_outside _ _ _ (by decide)
@@ -214,6 +214,6 @@ theorem advance_ok {g : Geometry} (v : g.Valid) {s : State} {c capacity used : N
     rw [T.mem, w32_write_self, E.gpr, Dd.other .eax (by decide), B.gpr, A.mem, M0, edxD,
       BitVec.toNat_add, BitVec.toNat_ofNat]
     change (w32 s.mem g.W 152 + (8 * g.w) % 2 ^ 32) % 2 ^ 32 = _
-    rw [consumed, Nat.mod_eq_of_lt (a := 8 * g.w) (by omega), Nat.mod_eq_of_lt fit]
+    rw [consumed, Nat.mod_eq_of_lt (a := 8 * g.w) (by omega_using [fit]), Nat.mod_eq_of_lt fit]
 
 end VG.Proof.RsaKeyGen.X86.WitnessRt

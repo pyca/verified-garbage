@@ -51,7 +51,7 @@ theorem writeScalar_ct (offset : Nat) (second : Bool) (ho : offset < 2 ^ 16)
     have hoff : (BitVec.ofNat 16 offset).setWidth 64 = BitVec.ofNat 64 offset := by
       apply BitVec.eq_of_toNat_eq
       simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]
-      omega
+      omega_using [ho]
     change WP isa (.block (scalarHead offset second)) s (ScalarOutRegs offset second p)
     unfold scalarHead
     rw [WP.block_append_iff]

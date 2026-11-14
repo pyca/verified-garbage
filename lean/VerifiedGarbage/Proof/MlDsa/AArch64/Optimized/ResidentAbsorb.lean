@@ -58,7 +58,7 @@ def PartAt (m : Mem) (p : Addr) (src : Mem) (a b : Addr) (n : Nat) : Prop :=
     if i < n then ofVDwords (src.readW (seedAddr a i) 64) (src.readW (seedAddr b i) 64) else 0
 
 theorem seed_contains (p : Addr) {j : Nat} (hj : j < 8) :
-    (seedR p).Contains (seedAddr p j) 8 := Offset.contains_base p (by omega) (by omega)
+    (seedR p).Contains (seedAddr p j) 8 := Offset.contains_base p (by omega_using [hj]) (by omega_using [hj])
 
 /-- Absorb the first 64 bytes of both seeds into corresponding packed lanes. -/
 theorem seedWords_ok {s : State} {p a b : Addr}
@@ -87,18 +87,18 @@ theorem seedWords_ok {s : State} {p a b : Addr}
     (t.mem.readW (seedAddr a k) 64) (t.mem.readW (seedAddr b k) 64)) at hm
   rw [hra,hrb] at hm
   refine ⟨(ht.trans hu).mono (by simp),?_,?_⟩
-  · rw [hm]; exact hf.write (List.mem_singleton_self _) _ (pair_contains p (by omega))
+  · rw [hm]; exact hf.write (List.mem_singleton_self _) _ (pair_contains p (by omega_using [hk]))
   · intro i hi
     rw [hm]
     by_cases he : i = k
     · subst i
-      rw [read_write16,ite_eq_left (by omega)]
+      rw [read_write16,ite_eq_left (by omega_using [])]
     · have hs : Mem.Sep (wordAddr p i) 16 (wordAddr p k) 16 :=
-        Offset.sep p (d := 16*i) (e := 16*k) (n := 16) (k := 16) (by omega) (by omega) (by omega)
+        Offset.sep p (d := 16*i) (e := 16*k) (n := 16) (k := 16) (by omega_using [he]) (by omega_using [hi]) (by omega_using [hk])
       rw [Mem.read_write_sep hs (by decide),hvals i hi]
       by_cases hl : i < k
-      · rw [ite_eq_left hl,ite_eq_left (by omega)]
-      · rw [ite_eq_right hl,ite_eq_right (by omega)]
+      · rw [ite_eq_left hl,ite_eq_left (by omega_using [hl])]
+      · rw [ite_eq_right hl,ite_eq_right (by omega_using [he, hl])]
 end VG.Proof.MlDsa.AArch64.Optimized.ResidentMask
 
 end
@@ -199,14 +199,14 @@ theorem part_pad {m src : Mem} {p a b : Addr} (h : PartAt m p src a b 8) :
     rw [read_write16]
     simp (disch := omega) only [ite_true,ite_eq_right]
   · have hs16 : Mem.Sep (wordAddr p i) 16 (wordAddr p 16) 16 :=
-      Offset.sep p (d := 16*i) (e := 16*16) (n := 16) (k := 16) (by omega) (by omega) (by omega)
+      Offset.sep p (d := 16*i) (e := 16*16) (n := 16) (k := 16) (by omega_using [h16]) (by omega_using [hi]) (by omega_using [])
     rw [Mem.read_write_sep hs16 (by decide)]
     by_cases h8 : i = 8
     · subst i
       rw [read_write16]
       simp (disch := omega) only [ite_true,ite_eq_right]
     · have hs4 : Mem.Sep (wordAddr p i) 16 (wordAddr p 8) 16 :=
-        Offset.sep p (d := 16*i) (e := 16*8) (n := 16) (k := 16) (by omega) (by omega) (by omega)
+        Offset.sep p (d := 16*i) (e := 16*8) (n := 16) (k := 16) (by omega_using [h8]) (by omega_using [hi]) (by omega_using [])
       rw [Mem.read_write_sep hs4 (by decide),h i hi]
       by_cases hl : i < 8
       · simp only [ite_eq_left hl]
@@ -217,7 +217,7 @@ theorem part_pad {m src : Mem} {p a b : Addr} (h : PartAt m p src a b 8) :
 theorem seed_byte_frame {m m' : Mem} {p a : Addr} (hf : Frame [pairR p] m m')
     (hd : (seedR a).Disjoint (pairR p)) {j : Nat} (hj : j < 66) :
     m' (a+BitVec.ofNat 64 j) = m (a+BitVec.ofNat 64 j) :=
-  hf _ (fun r hr => by rw [List.mem_singleton.mp hr]; exact hd _ (Offset.contains_base a (by omega) (by omega)))
+  hf _ (fun r hr => by rw [List.mem_singleton.mp hr]; exact hd _ (Offset.contains_base a (by omega_using [hj]) (by omega_using [hj])))
 
 theorem tailWord_frame {m m' : Mem} {p a : Addr} (hf : Frame [pairR p] m m')
     (hd : (seedR a).Disjoint (pairR p)) : tailWord m' a = tailWord m a := by
@@ -250,7 +250,7 @@ theorem absorbBody_ok {s : State} {p a b : Addr}
       Frame [pairR p] s.mem t.mem ∧ PairAt t.mem p (seedState s.mem a) (seedState s.mem b) := by
   unfold absorbBody
   rw [WP.block_append_iff]
-  refine WP.mono (seedWords_ok hp ha hb hina hinb (fun j hj => hw j (by omega)) hda hdb hz)
+  refine WP.mono (seedWords_ok hp ha hb hina hinb (fun j hj => hw j (by omega_using [hj])) hda hdb hz)
     fun s1 ⟨h1,hf1,hpart⟩ => ?_
   refine WP.mono (seedTail_ok ((h1.gpr .x2 (by decide)).trans hp) ((h1.gpr .x3 (by decide)).trans ha)
     ((h1.gpr .x4 (by decide)).trans hb)

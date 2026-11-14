@@ -35,7 +35,7 @@ theorem sl_zero (len : Nat) (c : Ctx) : sl len c 0 = numBase := by simp [lo]
 
 theorem sl_le {len : Nat} (c : Ctx) {i j : Nat} (hij : i < j) : sl len c i + st len c ≤ sl len c j := by
   have := Nat.mul_le_mul_right (st len c) hij
-  simp only [lo, Nat.succ_mul] at *; omega
+  simp only [lo, Nat.succ_mul] at *; omega_using [this]
 
 theorem zero_sub_cmask (c : Bool) : (0 : BitVec 32) - cmask c = BitVec.ofNat 32 c.toNat := by
   cases c <;> rfl

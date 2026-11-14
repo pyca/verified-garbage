@@ -83,8 +83,8 @@ theorem selR_ok {s : State} {base : Addr} (hw : WsReg s base) (z : Bool)
     WP isa (.block (sel 6 (p384.sl o) (p384.sl o) (p384.sl b))) s fun s' =>
       sv base s' o = (if z then sv base s b else sv base s o) ∧ Rest [.t0, .t1] s s' ∧
       Outside base (p384.sl o) (8 * 6) s.mem s'.mem := by
-  have h1 := slR o (by simp at ho ⊢; omega)
-  have h2 := slR b (by simp at hb ⊢; omega)
+  have h1 := slR o (by simp at ho ⊢; omega_using [ho])
+  have h2 := slR b (by simp at hb ⊢; omega_using [hb])
   have hsep : p384.sl o ≤ p384.sl b ∨ p384.sl b + 8 * 6 ≤ p384.sl o := by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at ho hb
     rcases ho with rfl | rfl | rfl <;> rcases hb with rfl | rfl <;> decide
@@ -276,8 +276,8 @@ theorem copySl_ok {s : State} {base : Addr} (hw : WsReg s base) {o a : Nat} (ho 
     (hsep : p384.sl o ≤ p384.sl a ∨ p384.sl a + 8 * 6 ≤ p384.sl o) :
     WP isa (.block (copy 6 (p384.sl o) (p384.sl a))) s fun s' =>
       sv base s' o = sv base s a ∧ Rest [.t0] s s' ∧ Unch base [(p384.sl o, 48)] s.mem s'.mem := by
-  have h1 : p384.sl o % 8 = 0 ∧ p384.sl o + 8 * 6 ≤ 4096 := by rw [sl_eq]; omega
-  have h2 : p384.sl a % 8 = 0 ∧ p384.sl a + 8 * 6 ≤ 4096 := by rw [sl_eq]; omega
+  have h1 : p384.sl o % 8 = 0 ∧ p384.sl o + 8 * 6 ≤ 4096 := by rw [sl_eq]; omega_using [ho]
+  have h2 : p384.sl a % 8 = 0 ∧ p384.sl a + 8 * 6 ≤ 4096 := by rw [sl_eq]; omega_using [ha]
   exact WP.mono (copy_ok 6 hw h1.1 h2.1 h1.2 h2.2 hsep) fun s' ⟨e, r, O⟩ => ⟨e, r, O.unch⟩
 
 theorem jointComb_ok (hL : Law W) {base : Addr} {s : State} {Q : Point W} (hp : JPre base s Q)
@@ -323,7 +323,7 @@ theorem jointComb_ok (hL : Law W) {base : Addr} {s : State} {Q : Point W} (hp : 
   -- `O` if `v = 0`, `P = R`, `K = u`.
   simp only [List.append_assoc]
   refine WP.seq (WP.block_append (Comb.WP.mono_syms (zeroR_ok hL hw₂ hc₂.zero hc₂.onep (a := VV) (.inr rfl) (P := mul (sv base s VV) Q)
-    (fun h0 => ptOk_of_result hL R₂ (by rw [v₂] at h0; omega) hv)) fun s₃ ⟨r₃, U₃, pR₃, bp₃⟩ sy₃ => ?_))
+    (fun h0 => ptOk_of_result hL R₂ (by rw [v₂] at h0; omega_using [h0]) hv)) fun s₃ ⟨r₃, U₃, pR₃, bp₃⟩ sy₃ => ?_))
   rw [v₂] at pR₃
   have pR₃' : PtOk base s₃ (p384.pt RX RY RZ) (mul (sv base s VV) Q) := by
     by_cases h0 : sv base s VV = 0
@@ -373,7 +373,7 @@ theorem jointComb_ok (hL : Law W) {base : Addr} {s : State} {Q : Point W} (hp : 
   -- `O` if `u = 0`.
   refine WP.seq (WP.mono (zeroR_ok hL hw₆ hc₆.zero hc₆.onep (a := UU) (.inl rfl)
     (P := mul (sv base s UU) (Spec.Weierstrass.G W))
-    (fun h0 => ptOk_of_result hL R₆ (by rw [u₆] at h0; omega) hu)) fun s₇ ⟨r₇, U₇, pR₇, bp₇⟩ => ?_)
+    (fun h0 => ptOk_of_result hL R₆ (by rw [u₆] at h0; omega_using [h0]) hu)) fun s₇ ⟨r₇, U₇, pR₇, bp₇⟩ => ?_)
   rw [u₆] at pR₇
   have pR₇' : PtOk base s₇ (p384.pt RX RY RZ) (mul (sv base s UU) (Spec.Weierstrass.G W)) := by
     by_cases h0 : sv base s UU = 0

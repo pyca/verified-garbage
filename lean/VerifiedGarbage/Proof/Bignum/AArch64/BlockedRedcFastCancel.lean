@@ -57,7 +57,7 @@ theorem cancelChains_ok {s : State} {B : Addr} {Z eN : Nat}
   rw [hhi] at hh
   have hx1 : (c.gpr .x1).toNat = b.c.toNat := by
     rw [hc1, BitVec.toNat_ofNat]
-    exact Nat.mod_eq_of_lt (by have := Bool.toNat_le b.c; omega)
+    exact Nat.mod_eq_of_lt (by have := Bool.toNat_le b.c; omega_using [this])
   have hv := shifted_value (zeroLow c)
   have hacc : accumulator (zeroLow c) = accumulator (zeroLow b) := by
     rw [zeroLow_accumulator, zeroLow_accumulator, keep_accumulator kc (by decide)]
@@ -101,8 +101,8 @@ theorem cancelRow_ok {s : State} {B : Addr} {Z eQ eN i : Nat}
   intro hinv
   have hmem : word a.mem B eN = word s.mem B eN :=
     (congrArg (fun m : Mem => word m B eN) haM).trans
-      ((writeW_outside s.mem B _ (by have := hs.nowrap; omega)).word
-        (by omega) (by have := hs.nowrap; omega))
+      ((writeW_outside s.mem B _ (by have := hs.nowrap; omega_using [hQ, this])).word
+        (by omega_using [hsep]) (by have := hs.nowrap; omega_using [hN, this]))
   have hinv' : ((word a.mem B eN).toNat * (a.gpr .x15).toNat + 1) % 2 ^ 64 = 0 := by
     rw [hmem, ka.gpr .x15 (by decide)]
     exact hinv

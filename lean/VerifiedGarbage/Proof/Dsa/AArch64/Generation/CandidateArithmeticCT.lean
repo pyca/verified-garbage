@@ -50,8 +50,8 @@ theorem candidateFirst_state {p : CandidatePublic} {s : State} (h : CandidateInp
   have hdr (d : Nat) (hd : d + 8 ≤ 256) : word t.mem p.B d = word s.mem p.B d := by
     apply hf.word_eq
     · simp only [List.mem_singleton]; rintro r rfl
-      left; simp only [slot, VG.Impl.Bignum.hdrBytes]; omega
-    · have := h.1.ws.h256; have := h.1.ws.scr.nowrap; omega
+      left; simp only [slot, VG.Impl.Bignum.hdrBytes]; omega_using [hd]
+    · have := h.1.ws.h256; have := h.1.ws.scr.nowrap; omega_using [hd]
   refine ⟨ht, (hdr 144 (by decide)).trans h.2.pointer, (hdr 152 (by decide)).trans h.2.length,
     h.2.source.congrK ?_ hk, h.2.positive, h.2.fits⟩
   intro a ha

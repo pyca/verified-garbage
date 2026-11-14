@@ -62,10 +62,10 @@ theorem fastPrepLoopOf_relCT {step : Prog isa} {n bits w : Nat} (hw : FastNaf.Wi
       (eval .b s=some true → ∃ n'<m,I n' s t)) := by
     intro m
     by_cases hm : 1≤m ∧ m≤64*n+1
-    · have hv := FastNaf.residual_boundB w (Nat.le_of_lt hk) (j:=64*n+1-m) (by omega)
+    · have hv := FastNaf.residual_boundB w (Nat.le_of_lt hk) (j:=64*n+1-m) (by omega_using [hm])
       have hv' : FastNaf.residual w k (64*n+1-m)≤2^(64*n) := Nat.le_trans hv
-        (Nat.pow_le_pow_right (by decide) (by omega))
-      refine (fastPrepStepOf_relCT hS hc hb (j:=64*n+1-m) (by omega) hv').mono
+        (Nat.pow_le_pow_right (by decide) (by omega_using []))
+      refine (fastPrepStepOf_relCT hS hc hb (j:=64*n+1-m) (by omega_using [hm]) hv').mono
         (P':=I m) (fun _ _ h => h.2.2) ?_
       intro s t ⟨hp,fs,ft⟩
       refine ⟨fs.trans ft.symm,fun _ => trivial,fun he => ?_⟩
@@ -74,11 +74,11 @@ theorem fastPrepLoopOf_relCT {step : Prog isa} {n bits w : Nat} (hw : FastNaf.Wi
         rw [fs] at he
         exact of_decide_eq_true (Option.some.inj he)
       have hd := fastDelta_bounds hw k (64*n+1-m)
-      refine ⟨m-fastDelta w k (64*n+1-m),by omega,by omega,by omega,?_⟩
-      rw [show 64*n+1-(m-fastDelta w k (64*n+1-m))=64*n+1-m+fastDelta w k (64*n+1-m) from by omega]
+      refine ⟨m-fastDelta w k (64*n+1-m),by omega_using [hm, hd],by omega_using [hn'],by omega_using [hm],?_⟩
+      rw [show 64*n+1-(m-fastDelta w k (64*n+1-m))=64*n+1-m+fastDelta w k (64*n+1-m) from by omega_using [hm, hn']]
       exact hp
     · exact RelCT.of_false (fun _ _ h => hm ⟨h.1,h.2.1⟩)
-  exact (RelCT.loop I step (64*n+1)).mono (fun _ _ h => ⟨by omega,by omega,by simpa only [Nat.sub_self] using h⟩)
+  exact (RelCT.loop I step (64*n+1)).mono (fun _ _ h => ⟨by omega_using [],by omega_using [],by simpa only [Nat.sub_self] using h⟩)
     (fun _ _ h => h)
 
 /-- The recoder's timing, of any step that does what `stepN` does. -/

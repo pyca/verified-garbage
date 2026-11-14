@@ -256,7 +256,7 @@ theorem opLay {n m : Nat} (hM : ModOk n m) {s : State} (hp : Pre n m s) :
     OpLay (mod n m) 4096 (own n) (s.gpr .r1).toNat (s.gpr .r2).toNat (s.gpr .r3).toNat := by
   have hown := own_le n hM.n9
   have := hM.n3; have := hp.o; have := hp.a; have := hp.b
-  refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;> simp only [mod, accLen, digits, moAt, tmpAt] <;> omega
+  refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;> simp only [mod, accLen, digits, moAt, tmpAt] <;> omega_arith
 
 /-- The entry's numbers are those of `s`. -/
 theorem Entered.val {n m : Nat} (hM : ModOk n m) {rb : Reg} {s s₁ : State} (E : Entered n m rb s s₁) {d : Nat}
@@ -308,8 +308,8 @@ theorem mulFn_ok {n m : Nat} (hM : ModOk n m) {s : State} (hp : Pre n m s)
         wordsVal s.mem (State.addr (s.gpr .r0)) (s.gpr .r2).toNat n *
           wordsVal s.mem (State.addr (s.gpr .r0)) (s.gpr .r3).toNat n % m)
       hM (by decide) hp fun s1 e => ?_
-    refine WP.mono (Packed.mulR_ok false e.scr e.mod rfl (by change 0 < n; omega)
-      (by change n < 128; omega) (opLay hM hp) e.ra e.rb e.ro
+    refine WP.mono (Packed.mulR_ok false e.scr e.mod rfl (by change 0 < n; omega_using [hn])
+      (by change n < 128; omega_using [hn]) (opLay hM hp) e.ra e.rb e.ro
       (by change wordsVal _ _ _ n < m; rw [e.val hM hp.b]; exact hb)) fun t ⟨keep, bound, value⟩ => ?_
     have eq : (mod n m).n = n := rfl
     rw [eq, e.val hM hp.a, e.val hM hp.b] at value
@@ -333,8 +333,8 @@ theorem mulFnU_ok {n m : Nat} (hM : ModOk n m) {s : State} (hp : Pre n m s)
         wordsVal s.mem (State.addr (s.gpr .r0)) (s.gpr .r3).toNat n % m)
     hM (by decide) hp fun s1 e => ?_
   have := hM.n3; have := hM.n9
-  refine WP.mono (Packed.mulR_ok true e.scr e.mod rfl (by change 0 < n; omega)
-    (by change n < 128; omega) (opLay hM hp) e.ra e.rb e.ro
+  refine WP.mono (Packed.mulR_ok true e.scr e.mod rfl (by change 0 < n; omega_arith)
+    (by change n < 128; omega_using [this]) (opLay hM hp) e.ra e.rb e.ro
     (by change wordsVal _ _ _ n < m; rw [e.val hM hp.b]; exact hb)) fun t ⟨keep, bound, value⟩ => ?_
   have eq : (mod n m).n = n := rfl
   rw [eq, e.val hM hp.a, e.val hM hp.b] at value

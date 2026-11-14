@@ -106,7 +106,7 @@ theorem tail_correct {s s1 : State} {pb : List Byte}
   have hwr6 : s6.wr = s.wr := by rw [hst6.rest.wr, hr2.wr, hr1.wr]
   have hc6 : Ctx (wsB s) s6 := hc5.of_rest hr6 (by decide)
   refine WP.mono (freeze_ok hc6 h3'
-    (fun k hk => in_base (len := 56) (by rw [hwr6]; exact hout) (by omega) (by omega)) (out_ws.sub_right hsub).symm)
+    (fun k hk => in_base (len := 56) (by rw [hwr6]; exact hout) (by omega_using [hk]) (by omega_using [hk])) (out_ws.sub_right hsub).symm)
     fun s7 ⟨hbytes, hr7, hf7, _⟩ => ?_
   refine ⟨?_, hc6.of_rest hr7 (by decide), ?_,
     (hr2.mono (by decide)).trans (hst6.rest.trans (hr7.mono (by decide)))⟩
@@ -171,7 +171,7 @@ theorem tailCall_correct {s s1 : State} {pb : List Byte}
       exact this q hq
     have e := VG.Proof.X448.RISCV64.limb_frame fs (o := q) fun r hr k hk => by
       rw [List.mem_singleton.mp hr]
-      exact Offset.disjoint (wsB s) (e := 2040) (.inl (by omega)) (by omega) (by decide)
+      exact Offset.disjoint (wsB s) (e := 2040) (.inl (by omega_using [hq', hk])) (by omega_using [hq', hk]) (by decide)
     rw [VG.Proof.X448.RISCV64.FS, VG.Proof.X448.RISCV64.V, val32_congr e]
     exact hS1 q hq
   have rc : Rest [.a2, .a3, .a4, .a5, .ra, .t0, .t1, .t2, .t3, .t4, .t5, .t6] s s2.callEntry := by

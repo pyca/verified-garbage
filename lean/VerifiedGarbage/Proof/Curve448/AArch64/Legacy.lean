@@ -33,7 +33,7 @@ theorem fromLegacy_ok {s : State} {base : Addr} (hs : Scr s base) {o : Nat}
   refine ⟨⟨(uk.mono (by decide)).trans tk,
     (FieldMem.work um (by decide) (by decide)).trans (.output tm)⟩, ?_, ?_⟩
   · intro i hi; rw [out i hi]
-    exact Nat.lt_trans (paired_bound hb i hi) (by simp only [weakBound]; omega)
+    exact Nat.lt_trans (paired_bound hb i hi) (by simp only [weakBound]; omega_using [])
   · apply congrArg VG.Proof.X448.toFe
     rw [show fe t.mem base o = VG.Proof.X448.Wide.valN (paired (limbs s.mem base o)) 8 from
       VG.Proof.X448.Wide.valN_congr out, paired_val]
@@ -42,8 +42,8 @@ theorem legacyEval_ok {s : State} {base : Addr} (hs : Scr s base) {o i : Nat}
     (ho : Slot o) (ho8 : o % 8 = 0) (hi : i < 8) :
     WP isa (.block (Impl.Curve448.AArch64.legacyEval o i)) s fun t =>
       pair (t.gpr .x4) (t.gpr .x5) = limbs s.mem base o i ∧ t.mem = s.mem ∧ Keeps clob s t := by
-  have l := hs.read (d := o + 8 * i) (n := 8) (by change o + 128 ≤ 3584 at ho; omega)
-  have oe : (o + 8 * i) % 8 = 0 ∧ o + 8 * i < 32768 := by change o + 128 ≤ 3584 at ho; omega
+  have l := hs.read (d := o + 8 * i) (n := 8) (by change o + 128 ≤ 3584 at ho; omega_using [hi, ho])
+  have oe : (o + 8 * i) % 8 = 0 ∧ o + 8 * i < 32768 := by change o + 128 ≤ 3584 at ho; omega_using [ho8, hi, ho]
   apply WP.of_runBlock
   simp only [Impl.Curve448.AArch64.legacyEval, ld, runBlock_cons, runStep_some, runBlock_nil, exec,
     addr, Size.bytes, Size.bits, Nat.reduceMul, Nat.reduceLT, BitVec.shiftLeft_zero,

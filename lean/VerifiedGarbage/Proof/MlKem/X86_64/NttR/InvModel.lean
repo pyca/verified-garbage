@@ -49,7 +49,7 @@ theorem LIW_succ (W : WPoly) {st : Nat} {o : Op} (h : invRules.ops[st]? = some o
   rfl
 
 theorem inv_ops_none {st : Nat} (h : 9 ≤ st) : invRules.ops[st]? = none :=
-  List.getElem?_eq_none (by simp only [invRules, List.length_cons, List.length_nil]; omega)
+  List.getElem?_eq_none (by simp only [invRules, List.length_cons, List.length_nil]; omega_using [h])
 
 /-- `vmont` with the precomputed `z q⁻¹` is `montW`, for any constant `z < q`. -/
 theorem mtW_eqN (b : BitVec 16) {z : Nat} (hz : z < 3329) :
@@ -58,9 +58,9 @@ theorem mtW_eqN (b : BitVec 16) {z : Nat} (hz : z < 3329) :
   have hm : BitVec.ofNat 16 z * VG.Proof.MlKem.X86_64.W.qinvW = BitVec.ofNat 16 (z * qinvN % 65536) := by
     apply BitVec.eq_of_toNat_eq
     have hq' : VG.Proof.MlKem.X86_64.W.qinvW.toNat = 62209 := by decide
-    rw [BitVec.toNat_mul, BitVec.toNat_ofNat, BitVec.toNat_ofNat, hq', Nat.mod_eq_of_lt (show z < 2 ^ 16 by omega)]
+    rw [BitVec.toNat_mul, BitVec.toNat_ofNat, BitVec.toNat_ofNat, hq', Nat.mod_eq_of_lt (show z < 2 ^ 16 by omega_using [hz])]
     simp only [qinvN]
-    omega
+    omega_using []
   rw [VG.Proof.MlKem.X86_64.W.montW, mtW, hq, lo_mul, lo_mul, lo_mul, BitVec.mul_assoc, hm]
 
 theorem zw_zeta (k : Nat) : zw (zeta k) = BitVec.ofNat 16 (zmTab k) := by rw [zw, zmTab_eq]
@@ -70,7 +70,7 @@ theorem zmTab_lt (k : Nat) : zmTab k < 3329 := by rw [zmTab_eq]; exact Nat.mod_l
 theorem invLen_pos {st len : Nat} (h : invRules.ops[st]? = some (.gs len)) :
     0 < len ∧ 2 * len * (128 / len) = 256 ∧ len ∈ [2, 4, 8, 16, 32, 64, 128] := by
   rcases Nat.lt_or_ge st 9 with hs | hs
-  · rcases (by omega : st = 0 ∨ st = 1 ∨ st = 2 ∨ st = 3 ∨ st = 4 ∨ st = 5 ∨ st = 6 ∨ st = 7 ∨ st = 8) with
+  · rcases (by omega_using [hs] : st = 0 ∨ st = 1 ∨ st = 2 ∨ st = 3 ∨ st = 4 ∨ st = 5 ∨ st = 6 ∨ st = 7 ∨ st = 8) with
       rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp only [invRules] at h <;> cases h <;> decide
   · rw [inv_ops_none hs] at h; cases h
 
@@ -79,7 +79,7 @@ theorem modelI (W : WPoly) (hW : ∀ p < 256, (W[p]!).toNat < 32768) : Model inv
     fun st p h hp => ?_, fun _ _ => rfl⟩
   · exfalso
     rcases Nat.lt_or_ge st 9 with hs | hs
-    · rcases (by omega : st = 0 ∨ st = 1 ∨ st = 2 ∨ st = 3 ∨ st = 4 ∨ st = 5 ∨ st = 6 ∨ st = 7 ∨ st = 8) with
+    · rcases (by omega_using [hs] : st = 0 ∨ st = 1 ∨ st = 2 ∨ st = 3 ∨ st = 4 ∨ st = 5 ∨ st = 6 ∨ st = 7 ∨ st = 8) with
         rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp [bflyOk, invRules] at hb
     · simp [bflyOk, inv_ops_none hs] at hb
   · unfold gsPairOk at h
@@ -89,8 +89,8 @@ theorem modelI (W : WPoly) (hW : ∀ p < 256, (W[p]!).toNat < 32768) : Model inv
       simp only [pairOk, Bool.and_eq_true, beq_iff_eq, decide_eq_true_eq] at h
       obtain ⟨⟨rfl, hm⟩, hp'⟩ := h
       simp only [LfI]
-      rw [LIW_succ W hop, stepI, layF_get (wBlk_ok invW) _ hl _ (by rw [hb]) (by omega),
-        ite_eq_left_of_eq_true _ _ (eq_true (show p < _ by rw [hb]; omega)), ite_eq_left_of_eq_true _ _ (eq_true hm)]
+      rw [LIW_succ W hop, stepI, layF_get (wBlk_ok invW) _ hl _ (by rw [hb]) (by omega_using [hp']),
+        ite_eq_left_of_eq_true _ _ (eq_true (show p < _ by rw [hb]; omega_using [hp'])), ite_eq_left_of_eq_true _ _ (eq_true hm)]
       rfl
     · cases h
   · unfold gsOk at h
@@ -103,11 +103,11 @@ theorem modelI (W : WPoly) (hW : ∀ p < 256, (W[p]!).toNat < 32768) : Model inv
           p + len - len = p := by
         have hm' := (invLen_pos hop).2.2
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hm'
-        rcases hm' with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> omega
+        rcases hm' with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> omega_using [hm]
       simp only [LfI]
       rw [LIW_succ W hop, stepI, layF_get (wBlk_ok invW) _ hl _ (by rw [hb]) hp',
-        ite_eq_left_of_eq_true _ _ (eq_true (show p + len < _ by rw [hb]; omega)),
-        ite_eq_right_of_eq_false _ _ (eq_false (show ¬ (p + len) % (2 * len) < len by omega)), hd.2.2, hd.1]
+        ite_eq_left_of_eq_true _ _ (eq_true (show p + len < _ by rw [hb]; omega_using [hp'])),
+        ite_eq_right_of_eq_false _ _ (eq_false (show ¬ (p + len) % (2 * len) < len by omega_using [hd])), hd.2.2, hd.1]
       simp only [invW, zw_zeta]
       exact mtW_eqN _ (zmTab_lt _)
     · cases h

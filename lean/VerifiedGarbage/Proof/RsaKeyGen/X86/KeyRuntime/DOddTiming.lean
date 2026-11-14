@@ -50,17 +50,17 @@ theorem dOdd_trace (B : Addr) (Z n e : Nat) (large : 3 ≤ e) (odd : e % 2 = 1) 
   have layout : VG.Proof.RsaKeyGen.X86.Key.InverseLayout Z 2 (arr n aV) kEv := by
     have fit := P.1.1.arr_fit (j := aV) (by decide)
     have head := P.1.1.hdr_le
-    refine ⟨?_, ?_, Or.inr (VG.Proof.RsaKeyGen.X86.Key.inverse_end_le (by have := P.1.1.size; omega)
+    refine ⟨?_, ?_, Or.inr (VG.Proof.RsaKeyGen.X86.Key.inverse_end_le (by have := P.1.1.size; omega_using [this])
       (by decide)), Or.inl (by decide)⟩
     · unfold S at fit
-      omega
+      omega_using [fit]
     · unfold kEv hdr at *
-      omega
+      omega_using [head]
   refine (?_ : RelCT isa _ dOdd _) s₁ s₂ tr₁ tr₂ t₁ t₂ P E₁ E₂
   unfold dOdd dOddPrepare seqs
   refine RelCT.seq (RelCT.seq (step_trace (Q := FromReady B Z n 32 .exponent (.fixed kEv)) dOdd_divide_public
     fun s ⟨h, E, L⟩ => WP.mono (arrayDivision_ok h (by decide) (by decide) (by decide) (by decide)
-      (by decide) (by decide) (by decide) (by decide) (by decide) (by rw [L]; omega))
+      (by decide) (by decide) (by decide) (by decide) (by decide) (by rw [L]; omega_using [large]))
       fun w ⟨hw, Ow, _, _, _⟩ => ?_) (RelCT.seq (inverseFrom_trace (N := 32) (by decide) (by decide)
         layout dOdd_setup_public) (public_trace dOdd_rest_public))) (public_trace dOdd_finish_public)
   have same := VG.Proof.RsaKeyGen.X86.Key.exponent_preserves_e (exponent_division_frame Ow)
@@ -70,6 +70,6 @@ theorem dOdd_trace (B : Addr) (Z n e : Nat) (large : 3 ≤ e) (odd : e % 2 = 1) 
     exact odd
   · change 1 < val32 w.mem B kEv 2
     rw [same, E]
-    omega
+    omega_using [large]
 
 end VG.Proof.RsaKeyGen.X86.KeyRuntime

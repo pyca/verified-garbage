@@ -47,13 +47,13 @@ theorem Work.child {p : KpP} {xb : List Byte} {mi : BitVec 64} {s t : State}
   have hw := room_k hk hZ
   change inner p.w + slot p.w 8 + tabBytes p.w 32 ≤ p.Z at hw
   have hn := hc.good.scr.nowrap
-  have hwl : 1 ≤ p.w := by unfold KpP.w; omega
-  obtain ⟨hb, hi, hs⟩ := h.base.child hc hf (fun r hr' => by have := (hr r hr').2; omega) k
-  obtain ⟨hh, _⟩ := child_frm hc hw hf (fun r hr' => by have := (hr r hr').2; omega)
+  have hwl : 1 ≤ p.w := by unfold KpP.w; omega_using [hk]
+  obtain ⟨hb, hi, hs⟩ := h.base.child hc hf (fun r hr' => by have := (hr r hr').2; omega_using [this]) k
+  obtain ⟨hh, _⟩ := child_frm hc hw hf (fun r hr' => by have := (hr r hr').2; omega_using [this])
   refine ⟨⟨hb, h.mem.of_child hf hr k.2.2, h.xv.of_frmA hn hwl hf (fun r hr' => ⟨hN r hr', hOne r hr'⟩),
     (hh _ (by decide)).trans h.hWs, (hh _ (by decide)).trans h.hG, (hh _ (by decide)).trans h.hQ, ?_⟩, hi, hs⟩
   have hx := slot_le (w := p.w) (show aXm < 8 by decide)
-  exact (hf.wv_eq (fun r hr' => by have := hXm r hr'; omega) (by omega)).trans h.x
+  exact (hf.wv_eq (fun r hr' => by have := hXm r hr'; omega_using [this]) (by omega_using [hn, hx])).trans h.x
 
 theorem Work.enter {p : KpP} {xb : List Byte} {mi : BitVec 64} {s : State} (h : Work p xb mi s)
     (hd : s.gpr .rdi = p.B) : WP isa (.block [enter]) s fun t =>
@@ -62,8 +62,8 @@ theorem Work.enter {p : KpP} {xb : List Byte} {mi : BitVec 64} {s : State} (h : 
   have hw := room_k hb.k1 hb.hZ
   have hk := hb.k1
   have hk' := hb.k2
-  have ew : 8 * p.w ≤ p.k + 7 ∧ p.k ≤ 8 * p.w := by unfold KpP.w; omega
-  refine WP.mono (enter_ok (Outer.of_mem h.mem hd hw (by omega) (by omega)) h.hWs)
+  have ew : 8 * p.w ≤ p.k + 7 ∧ p.k ≤ 8 * p.w := by unfold KpP.w; omega_using []
+  refine WP.mono (enter_ok (Outer.of_mem h.mem hd hw (by omega_using [hk, ew]) (by omega_using [hk', ew])) h.hWs)
     fun t ⟨hdi, hm, k⟩ => ⟨h.keep hm k, hdi, hm, k⟩
 
 end VG.Proof.Ffdh.X86_64.CheckPrivate

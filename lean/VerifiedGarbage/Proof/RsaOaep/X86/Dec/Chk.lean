@@ -37,7 +37,7 @@ theorem slot_em {P : EP} {σ : State} (hi : In P σ) {d : Nat} (hd : d + 4 ≤ f
   have hg := hi.geo
   obtain ⟨σ', ok⟩ := hg.ok
   have hK := hi.k1024
-  exact (hg.slot ok (o := oEm) (n := P.K) (by unfold oEm oRsa; omega) (by rw [hg.F]; unfold frameBytes at hd ⊢; omega)).symm
+  exact (hg.slot ok (o := oEm) (n := P.K) (by unfold oEm oRsa; omega_using [hK]) (by rw [hg.F]; unfold frameBytes at hd ⊢; omega_using [hd])).symm
 
 /-- After the check. -/
 abbrev C2 (D : Nat) (P : EP) (σ s : State) : Prop :=
@@ -57,11 +57,11 @@ theorem chk_vp (h : OHash) (P : EP) : VP (R2 P) (.block (decChk h.H)) (C2 h.H.D 
   refine wp_cmpi fun t3 f3 cf3 _ => WP.block_nil ⟨c2.fupd f3, hi, ?_, ?_, hk, ?_⟩
   · have fr : Frame [slotR P.lay sRes] s.mem t3.mem := by
       rw [f3.mem, u2.mem, m1.mem]; exact slot_frame _ _ _ _
-    exact sbytes_keep fr (slot_em hi (by decide)) (by unfold oEm; omega) he
+    exact sbytes_keep fr (slot_em hi (by decide)) (by unfold oEm; omega_using [hK]) he
   · rw [f3.mem, u2.mem, m1.mem, Mem.readW_writeW_self32, r0]
   · rw [cf3, u2.gpr]
     show some (decide ((BitVec.ofNat 32 P.K).toNat < (BitVec.ofNat 32 (2 * h.H.D + 2)).toNat)) = _
-    rw [toNat_ofNat_lt (by omega), toNat_ofNat_lt (by omega)]
+    rw [toNat_ofNat_lt (by omega_using [hK]), toNat_ofNat_lt (by omega_using [hD])]
 
 /-! ## When `k` is too short -/
 
@@ -92,11 +92,11 @@ abbrev Xf (D : Nat) (P : EP) (σ : State) (m : Mem) : Prop :=
 
 theorem out_slot {P : EP} {σ : State} (hi : In P σ) {d : Nat} (hd : d + 4 ≤ frameBytes) :
     (slotR P.lay d).Disjoint P.OUT :=
-  hi.ok.stk_fr (R := P.OUT) (.inr (by simp)) (d := d) (n := 4) (by show d + 4 ≤ frameBytes + 16; unfold frameBytes at hd ⊢; omega)
+  hi.ok.stk_fr (R := P.OUT) (.inr (by simp)) (d := d) (n := 4) (by show d + 4 ≤ frameBytes + 16; unfold frameBytes at hd ⊢; omega_using [hd])
 
 theorem ml_slot {P : EP} {σ : State} (hi : In P σ) {d : Nat} (hd : d + 4 ≤ frameBytes) :
     (slotR P.lay d).Disjoint P.ML :=
-  hi.ok.stk_fr (R := P.ML) (.inr (by simp)) (d := d) (n := 4) (by show d + 4 ≤ frameBytes + 16; unfold frameBytes at hd ⊢; omega)
+  hi.ok.stk_fr (R := P.ML) (.inr (by simp)) (d := d) (n := 4) (by show d + 4 ≤ frameBytes + 16; unfold frameBytes at hd ⊢; omega_using [hd])
 
 theorem out_ml {P : EP} {σ : State} (hi : In P σ) : P.OUT.Disjoint P.ML := by
   have := hi.ok.wrw
@@ -107,14 +107,14 @@ theorem out_ml {P : EP} {σ : State} (hi : In P σ) : P.OUT.Disjoint P.ML := by
 theorem ml_fit {P : EP} {σ : State} (hi : In P σ) : P.ml.toNat + 8 ≤ 2 ^ 32 := by
   have := hi.ok.fits P.ML (by simp)
   simp only [BitVec.toNat_setWidth] at this
-  rwa [Nat.mod_eq_of_lt (by have := P.ml.isLt; omega)] at this
+  rwa [Nat.mod_eq_of_lt (by have := P.ml.isLt; omega_using [])] at this
 
 theorem out_wbuf {P : EP} {σ : State} (hi : In P σ) : WBuf P.lay P.out P.K := by
   have hK := hi.k1024
   have hfo := hi.ok.fits P.OUT (by simp)
   simp only [BitVec.toNat_setWidth] at hfo
-  rw [Nat.mod_eq_of_lt (by have := P.out.isLt; omega)] at hfo
-  exact ⟨hfo, by omega, ⟨P.OUT, by simp, Region.contains_self _ _⟩⟩
+  rw [Nat.mod_eq_of_lt (by have := P.out.isLt; omega_using [])] at hfo
+  exact ⟨hfo, by omega_using [hK], ⟨P.OUT, by simp, Region.contains_self _ _⟩⟩
 
 theorem nB_length {P : EP} {σ : State} (hi : In P σ) : P.nB.length = P.K := by
   rw [← hi.nB, RsaPkcs1Sig.bytesAt_len]
@@ -141,14 +141,14 @@ theorem mlZero_wp {P : EP} {σ s : State} (hc : Ctx P.lay P.scr σ s) (hi : In P
     WP isa (.block ((mlZero ++ faultBit).drop 1)) s Q := by
   have fit := ml_fit hi
   have win : ∀ d, d + 4 ≤ 8 → InRegions s.wr (P.ml.setWidth 64 + BitVec.ofNat 64 d) 4 := fun d hd =>
-    ⟨P.ML, hc.st.inRw (by simp), Offset.contains_base _ hd (by omega)⟩
+    ⟨P.ML, hc.st.inRw (by simp), Offset.contains_base _ hd (by omega_using [hd])⟩
   simp only [mlZero, mi, List.cons_append, List.drop_succ_cons, List.drop_zero]
   refine wp_movi fun t1 u1 => ?_
   refine wp_storeS (a := P.ml.setWidth 64 + BitVec.ofNat 64 0)
-    (by show t1.ea ⟨.esi, 0⟩ = _; rw [ea_at, u1.other _ (by decide), si]; exact addr_eq (by omega))
+    (by show t1.ea ⟨.esi, 0⟩ = _; rw [ea_at, u1.other _ (by decide), si]; exact addr_eq (by omega_using []))
     (by rw [u1.wr]; exact win 0 (by decide)) fun t2 m2 => ?_
   refine wp_storeS (a := P.ml.setWidth 64 + BitVec.ofNat 64 4)
-    (by show t2.ea ⟨.esi, 4⟩ = _; rw [ea_at, m2.gpr, u1.other _ (by decide), si]; exact addr_eq (by omega))
+    (by show t2.ea ⟨.esi, 4⟩ = _; rw [ea_at, m2.gpr, u1.other _ (by decide), si]; exact addr_eq (by omega_using [fit]))
     (by rw [m2.wr, u1.wr]; exact win 4 (by decide)) fun t3 m3 => ?_
   have mm : t3.mem = (s.mem.writeW (P.ml.setWidth 64 + BitVec.ofNat 64 0) (BitVec.ofNat 32 0)).writeW
       (P.ml.setWidth 64 + BitVec.ofNat 64 4) (BitVec.ofNat 32 0) := by
@@ -195,7 +195,7 @@ theorem fail_vp (h g : OHash) (P : EP) :
     · simp (disch := decide) only [u3.other, u2.other, u1.gpr]; rfl
     · simp (disch := decide) only [u3.other, u2.gpr]; rfl
     · rw [u3.gpr]; rfl
-  refine VP.seq ((zero_vp (scr := P.scr) hb (by omega) (Inv := Xf h.H.D P)
+  refine VP.seq ((zero_vp (scr := P.scr) hb (by omega_using [hK]) (Inv := Xf h.H.D P)
     fun σ m m' hm hf => ⟨hm.1, hm.2.1, slot_keep hf (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact out_slot hm.1 (by decide)) hm.2.2.1, hm.2.2.2⟩).mono
     (fun σ s h => h) fun _ _ h => h) ?_
@@ -228,6 +228,6 @@ theorem fail_vp (h g : OHash) (P : EP) :
     rw [ax]
     have ec : (ctB P σ).length = P.nB.length := by rw [ctB_length, nB_length hi]
     rw [Res, Proof.RsaOaep.decrypt_eq ec, rV]
-    exact decOut_fail hk (by rw [h.glen]; omega) (Proof.RsaOaep.out_zero hz') hml
+    exact decOut_fail hk (by rw [h.glen]; omega_using [nf]) (Proof.RsaOaep.out_zero hz') hml
 
 end VG.Proof.RsaOaep.X86.Dec

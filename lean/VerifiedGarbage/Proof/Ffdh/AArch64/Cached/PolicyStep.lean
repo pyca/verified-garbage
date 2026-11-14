@@ -52,7 +52,7 @@ theorem policyStep_ok {s : State} {B src rec : Addr} {Z k N n : Nat} {dom : List
  have countValue : b.gpr .x7=BitVec.ofNat 64 (if matched then 1 else n) := by
   rw [countB,restA.gpr .x7 (by decide),count]
   split_ifs <;> rfl
- have countPos : 0<(if matched then 1 else n) := by split_ifs <;> omega
+ have countPos : 0<(if matched then 1 else n) := by split_ifs <;> omega_arith
  have rest := restA.trans restB
  refine WP.mono (policyRecordTail ((restB.gpr .x4 (by simp [choiceClobbers])).trans pointerA)
   countValue (by rw [rest.rd,rest.wr];exact record.readLen) lengthB record.lenFit countPos) ?_

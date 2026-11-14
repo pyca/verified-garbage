@@ -97,7 +97,7 @@ theorem pAdvance_vp {d : Cfg} {j off C : Nat} (hC : C < 2 ^ 15) (hCt : fCounter 
   · simp [e]
   · simp only [e, decide_false]
     refine beq_false_of_ne fun h' => e ?_
-    have := congrArg BitVec.toNat h'; simp only [BitVec.toNat_ofNat] at this; omega
+    have := congrArg BitVec.toNat h'; simp only [BitVec.toNat_ofNat] at this; omega_using [hj, l, this]
 
 /-- The code after a candidate. -/
 abbrev pTail (C : Nat) (L : Nat) : Prog isa :=
@@ -111,7 +111,7 @@ theorem ofNat64_beq {a b : Nat} (ha : a < 2 ^ 64) (hb : b < 2 ^ 64) :
   · subst e; simp
   · simp only [e, decide_false]
     refine beq_false_of_ne fun h' => e ?_
-    have := congrArg BitVec.toNat h'; simp only [BitVec.toNat_ofNat] at this; omega
+    have := congrArg BitVec.toNat h'; simp only [BitVec.toNat_ofNat] at this; omega_using [ha, hb, this]
 
 /-- After a candidate that is not p: the next counter, or `fP` := 2 after the last. -/
 theorem pCont_vp {d : Cfg} {j off C : Nat} (hC : C < 2 ^ 15) (hP : fP ∈ d.LS)
@@ -162,7 +162,7 @@ theorem pCont_vp {d : Cfg} {j off C : Nat} (hC : C < 2 ^ 15) (hP : fP ∈ d.LS)
 theorem pExit_vp {d : Cfg} {v C : Nat} (hP : fP ∈ d.LS) (hPv : d.V fP = BitVec.ofNat 64 v) (hv : v < 4) :
     VP (St G d X) (pTail C G.pLen) (fun σ s => St G d X σ s ∧ isa.eval (.zero .d .r0) s = some false) := by
   have ne : (BitVec.ofNat 64 v == BitVec.ofNat 64 4) = false := by
-    rw [ofNat64_beq (by omega) (by decide)]; simp; omega
+    rw [ofNat64_beq (by omega_using [hv]) (by decide)]; simp; omega_using [hv]
   refine VP.seq (G := fun σ s => St G d X σ s ∧ isa.eval (.zero .d .r0) s = some false)
     (cmpF_vp (c := fun _ => d) (x := BitVec.ofNat 64 v) (fun σ s h => h.1) (by decide) (by decide) (by decide)
       (fun σ s h => (h.1.gi.slotV hP).trans hPv) fun σ s t ⟨_, x⟩ h' _ e => ⟨⟨h', x⟩, by rw [e, ne]⟩) ?_
@@ -204,8 +204,8 @@ theorem pCount_gt (HO : HashOk Gh) (G : GP) (k u0 : Nat) : ∀ m j, j < pCount H
   | m + 1, j => by
     have := pCount_gt HO G k u0 m (j + 1)
     simp only [pCount]; split
-    · omega
-    · split <;> omega
+    · omega_using [this]
+    · split <;> omega_arith
 
 /-- The search's header words at counter `j`, with `u` witnesses read. -/
 abbrev pBase (c : Cfg) (HO : HashOk Gh) (G : GP) (k : Nat) : Cfg :=

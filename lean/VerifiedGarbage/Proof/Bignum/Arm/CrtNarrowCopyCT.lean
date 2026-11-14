@@ -67,7 +67,7 @@ theorem crt_fullSource_ct {g : CrtGeometry} {bs1 bs2 : Fin 7 → List Byte} {chi
   have wp (s : State) {bs : Fin 7 → List Byte} (h : CrtCopyCtx g bs child slot v s) :
       WP isa (.block [.ldrSp .r1 8]) s (Main bs) := by
     refine wp_loadStack (a := off (State.addr s.sp) 8) (by decide)
-      (addr_add (by have := h.shared.stack.nowrap; omega)) (h.shared.stack.read (by decide)) fun t a => WP.block_nil ?_
+      (addr_add (by have := h.shared.stack.nowrap; omega_using [this])) (h.shared.stack.read (by decide)) fun t a => WP.block_nil ?_
     exact ⟨h.of_regs a.mem (a.rest (ws := [.r1]) (by simp)) ((a.other .r0 (by decide)).trans h.ready.ptr),
       a.gpr.trans h.shared.savedMain⟩
   have first := load.wp (fun s t h => ⟨wp s h.1, wp t h.2.1⟩)
@@ -86,7 +86,7 @@ theorem crt_fullSource_ct {g : CrtGeometry} {bs1 bs2 : Fin 7 → List Byte} {chi
     have main := h.1.shared.buffers.context.main
     have slotFit := h.1.slotFit
     refine wp_ldr (a := off (State.addr g.base) slot) h.1.slotSmall
-      (by rw [h.2]; exact addr_add (by have := main.nowrap; omega)) (main.read h.1.slotFit) fun t a => WP.block_nil ?_
+      (by rw [h.2]; exact addr_add (by have := main.nowrap; omega_using [slotFit, this])) (main.read h.1.slotFit) fun t a => WP.block_nil ?_
     exact a.gpr.trans h.1.link
   have array : RelCT isa (fun s t => s.gpr .r1 = child ∧ t.gpr .r1 = child) (.block [.ldr .r1 .r1 (64 + 8 * j)])
       (fun _ _ => True) := by
@@ -198,7 +198,7 @@ theorem crt_copyHigh_ct {g : CrtGeometry} {bs1 bs2 : Fin 7 → List Byte} {child
   have loadWP (s : State) {bs : Fin 7 → List Byte} (h : CrtSourced g bs child slot v j s) :
       WP isa (.block [.ldrSp .r2 8]) s (Main bs) := by
     refine wp_loadStack (a := off (State.addr s.sp) 8) (by decide)
-      (addr_add (by have := h.1.shared.stack.nowrap; omega)) (h.1.shared.stack.read (by decide)) fun t a => WP.block_nil ?_
+      (addr_add (by have := h.1.shared.stack.nowrap; omega_using [this])) (h.1.shared.stack.read (by decide)) fun t a => WP.block_nil ?_
     exact ⟨⟨h.1.of_regs a.mem (a.rest (ws := [.r2]) (by simp)) ((a.other .r0 (by decide)).trans h.1.ready.ptr),
       (a.other .r1 (by decide)).trans h.2⟩, a.gpr.trans h.1.shared.savedMain⟩
   let Copying := fun s : State => (s.gpr .r0 = crtN g.base g.words + BitVec.ofNat 32 (arrAt v d) ∧
@@ -219,8 +219,8 @@ theorem crt_copyHigh_ct {g : CrtGeometry} {bs1 bs2 : Fin 7 → List Byte} {child
     have main := h.1.1.shared.buffers.context.main
     have size := h.1.1.shared.buffers.context.size
     have words : g.words ≤ 128 := (crt_width_valid h.1.1.shared.buffers.lengthValid).2.1
-    refine WP.mono (crt_highArgs_ok s h.1.1.ready hd h.2 (addr_add (by have := main.nowrap; omega))
-      (main.read (by omega)) (h.1.1.shared.main.toCrtLayoutState.nativeCount main) h.1.1.le (by omega)) ?_
+    refine WP.mono (crt_highArgs_ok s h.1.1.ready hd h.2 (addr_add (by have := main.nowrap; omega_using [size, this]))
+      (main.read (by omega_using [size])) (h.1.1.shared.main.toCrtLayoutState.nativeCount main) h.1.1.le (by omega_using [words])) ?_
     rintro t ⟨dst, _, src, count, z, _, _⟩
     exact ⟨⟨dst, by rw [src, h.1.2, Offset.add_add], count⟩, z⟩
   have branch : RelCT isa (fun s t => Copying s ∧ Copying t) (.ite .eq (.block []) copyBytes) (fun _ _ => True) := by

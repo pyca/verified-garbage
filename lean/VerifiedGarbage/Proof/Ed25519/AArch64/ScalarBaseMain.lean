@@ -103,10 +103,10 @@ def scalarBaseLocal : Contract isa where
 theorem farScr {base p : Addr} {n : Nat}
     (hd : (⟨p, n⟩ : Region).Disjoint ⟨base, 8192⟩) {i : Nat} (hi : i < n) (hn : n ≤ 2 ^ 64) :
     8192 ≤ ofs base (off p i) := by
-  refine Nat.le_of_not_lt fun h => hd _ (Offset.contains_base p (d := i) (n := 1) (k := n) (by omega) (by omega)) ?_
+  refine Nat.le_of_not_lt fun h => hd _ (Offset.contains_base p (d := i) (n := 1) (k := n) (by omega_using [hi]) (by omega_using [hi, hn])) ?_
   change (off p i - base).toNat + 1 ≤ 8192
   change (off p i - base).toNat < 8192 at h
-  omega
+  omega_using [h]
 
 theorem scalarBase_correct [VG.Proof.Ed25519.AArch64.Divstep.Sound] {s : State} (hs : scalarBaseLocal.pre s) :
     WP isa scalarBase s fun t => abiPreserved s t ∧ scalarBaseLocal.post s t := by
@@ -129,11 +129,11 @@ theorem scalarBase_correct [VG.Proof.Ed25519.AArch64.Divstep.Sound] {s : State} 
   apply WP.seq
   refine WP.mono (scalarBaseEngine_ok hb ((gb _ (by decide)).trans (congrFun ga _))
     (fun q hq => ⟨⟨s.gpr .x1, 32⟩, by rw [rb, ra, hr]; simp,
-      Offset.contains_base _ (by omega) (by omega)⟩)
+      Offset.contains_base _ (by omega_using [hq]) (by omega_using [hq])⟩)
     (fun q hq => farScr hd hq (by decide))
     (htb.of_far (by rw [rb, ra, wb, wa]) fun x hx => by
-      have h1 := mb x (Or.inr (by omega))
-      have h2 := ma x (Or.inr (by omega))
+      have h1 := mb x (Or.inr (by omega_using [hx]))
+      have h2 := ma x (Or.inr (by omega_using [hx]))
       rw [h1, h2])
     (by rw [syb, sya])) fun c ⟨kc, vc⟩ => ?_
   have mc := powersKeep_outside kc

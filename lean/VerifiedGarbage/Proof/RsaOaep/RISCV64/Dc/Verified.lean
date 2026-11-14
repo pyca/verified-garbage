@@ -129,8 +129,8 @@ theorem wp_argL {H : Hash} {x u : State} (L : LabX pc H x) {r : Reg} {j : Nat} {
     WP isa (.block (.load .d r .t6 (8 * j) :: is)) u Q := by
   obtain ⟨-, -, -, -, hA, hkA, hsA, hal, hsp⟩ := L
   have e : (stackArgAddr x j).toNat = x.sp.toNat + 8 * j := by
-    simp only [stackArgAddr, BitVec.toNat_add, BitVec.toNat_ofNat]; split at hsp <;> omega
-  refine wp_ld (a := stackArgAddr x j) (by rw [h6]; rfl) (by rw [e]; split at hsp <;> omega) ?_ (fun u' o e => k u' o ?_) ho
+    simp only [stackArgAddr, BitVec.toNat_add, BitVec.toNat_ofNat]; split at hsp <;> omega_using [hj, hsp]
+  refine wp_ld (a := stackArgAddr x j) (by rw [h6]; rfl) (by rw [e]; split at hsp <;> omega_using [hal]) ?_ (fun u' o e => k u' o ?_) ho
   · rw [hrd]; exact ⟨aR pc x, List.mem_append_left _ hA, in_aR hj⟩
   · rw [e, stackArg, hmu.readW (in_aR hj) (fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -174,7 +174,7 @@ theorem DXT.toL {G H : Hash} (hH : HashOK H) {f : Fns} {a t : State} (h : DXT pc
   show LabX pc H (bx s m (rcOf (privO s)))
   unfold LabX
   rw [a9, a10, h13, eSC]
-  exact ⟨by show lR s ∈ s.rd; rw [P.hrd]; simp, (P.ls.sub_right (sc_sub P)).sub_right (sc_in (by omega)),
+  exact ⟨by show lR s ∈ s.rd; rw [P.hrd]; simp, (P.ls.sub_right (sc_sub P)).sub_right (sc_in (by omega_arith)),
     P.kl.sub_left fun a ha => kR_sub a (Proof.RsaOaep.RISCV64.cR_sub (withMem s m) a ha), BitVec.isLt _,
     by show aR pc s ∈ s.rd; rw [P.hrd]; cases pc <;> simp, P.ka.sub_left kR_sub, P.sa.sub_left (sc_sub P), P.spal, P.sp2⟩
 
@@ -235,11 +235,11 @@ theorem seed_wp {G H : Hash} {f : Fns} (hD0 : 0 < H.D) (hD64 : H.D ≤ 64) {a t 
   have hk2 := kA_le h.1.dx
   have ek : kA a = (a.gpr .a4).toNat := rfl
   obtain ⟨-, r0, r1, -, -⟩ := h.1.dx.pins
-  refine WP.of_syms (wp_addi (imm := oEm + 1 + H.D) (h := by omega) fun t₁ o₁ e₁ =>
-    wp_subi (imm := H.D + 1) (h := by omega) fun t₂ o₂ e₂ => wp_addi (imm := oEm + 1) (h := by omega)
-    fun t₃ o₃ e₃ => wp_li (imm := H.D) (by omega) fun t₄ o₄ e₄ => wp_nil fun y => ?_)
+  refine WP.of_syms (wp_addi (imm := oEm + 1 + H.D) (h := by omega_using [hD64, hE]) fun t₁ o₁ e₁ =>
+    wp_subi (imm := H.D + 1) (h := by omega_using [hD64]) fun t₂ o₂ e₂ => wp_addi (imm := oEm + 1) (h := by omega_using [hE])
+    fun t₃ o₃ e₃ => wp_li (imm := H.D) (by omega_using [hD64]) fun t₄ o₄ e₄ => wp_nil fun y => ?_)
   have k₄ : Only [.s6, .s7, .s8, .s9] t t₄ := (o₁.trans (o₂.trans (o₃.trans o₄))).mono
-  refine ⟨⟨⟨h.1.only k₄ y, ?_, ?_, ?_, ?_⟩, ⟨by omega, by omega, .inr (by omega), by omega⟩⟩, hk⟩
+  refine ⟨⟨⟨h.1.only k₄ y, ?_, ?_, ?_, ?_⟩, ⟨by omega_using [hD64, hk2], by omega_using [hD64], .inr (by omega_using []), by omega_using [hD0]⟩⟩, hk⟩
   · rw [o₄.get .s6, o₃.get .s6, o₂.get .s6, e₁, r0, hE, Nat.zero_add]
   · rw [o₄.get .s7, o₃.get .s7, e₂, o₁.get .s1, r1, sub_k (by omega)]
   · rw [o₄.get .s8, e₃, o₂.get .s0, o₁.get .s0, r0, hE]
@@ -254,11 +254,11 @@ theorem db_wp {G H : Hash} {f : Fns} (hD64 : H.D ≤ 64) {a t : State} (h : DK p
   have hk2 := kA_le h.1.dx
   have ek : kA a = (a.gpr .a4).toNat := rfl
   obtain ⟨-, r0, r1, -, -⟩ := h.1.dx.pins
-  refine WP.of_syms (wp_addi (imm := oEm + 1) (h := by omega) fun t₁ o₁ e₁ => wp_li (imm := H.D) (by omega)
-    fun t₂ o₂ e₂ => wp_addi (imm := oEm + 1 + H.D) (h := by omega) fun t₃ o₃ e₃ =>
-    wp_subi (imm := H.D + 1) (h := by omega) fun t₄ o₄ e₄ => wp_nil fun y => ?_)
+  refine WP.of_syms (wp_addi (imm := oEm + 1) (h := by omega_using [hE]) fun t₁ o₁ e₁ => wp_li (imm := H.D) (by omega_using [hD64])
+    fun t₂ o₂ e₂ => wp_addi (imm := oEm + 1 + H.D) (h := by omega_using [hD64, hE]) fun t₃ o₃ e₃ =>
+    wp_subi (imm := H.D + 1) (h := by omega_using [hD64]) fun t₄ o₄ e₄ => wp_nil fun y => ?_)
   have k₄ : Only [.s6, .s7, .s8, .s9] t t₄ := (o₁.trans (o₂.trans (o₃.trans o₄))).mono
-  refine ⟨⟨⟨h.1.only k₄ y, ?_, ?_, ?_, ?_⟩, ⟨by omega, by omega, .inl (by omega), by omega⟩⟩, hk⟩
+  refine ⟨⟨⟨h.1.only k₄ y, ?_, ?_, ?_, ?_⟩, ⟨by omega_using [hD64], by omega_using [hD64, hk2], .inl (by omega_using []), by omega⟩⟩, hk⟩
   · rw [o₄.get .s6, o₃.get .s6, o₂.get .s6, e₁, r0, hE]
   · rw [o₄.get .s7, o₃.get .s7, e₂]
   · rw [o₄.get .s8, e₃, o₂.get .s0, o₁.get .s0, r0, hE, Nat.zero_add]
@@ -358,7 +358,7 @@ theorem decMain_ct : RelCT isa (Two (DK pc G H f H.D)) (decMain H f) fun _ _ => 
       ⟨⟨⟨s, m, P, T, p, y, hm, b', y'.trans sy⟩, hk⟩, ?_⟩
     obtain ⟨idx, he, hi⟩ := scan_idx (fun i => view t.mem (Sd s) (1 + 2 * H.D + i)) (t.gpr .s5)
       (kk s - (2 * H.D + 1))
-    exact ⟨idx, by rw [ea]; omega, i'.trans he⟩
+    exact ⟨idx, by rw [ea]; omega_using [hk', hi], i'.trans he⟩
   -- The buffer.
   refine two_seq (Ψ := DI pc G H f H.D) (clearBuf_taint (dk_pins (an := id) (fun _ _ h => h.1) [.s0]))
     (fun a t ⟨⟨⟨s, m, P, T, p, y, hm, b, sy⟩, hk⟩, idx, hi, h6⟩ => WP.mono_syms (clearBuf_ok P b)
@@ -445,7 +445,7 @@ theorem code_ct {f : Fns} (hl : H.D ∈ lens) :
   refine RelCT.seq hlen ?_
   -- The code for that length.
   refine RelCT.seq (two_post (Ψ := fun a u => ∃ s, PreD pc s ∧ PubD pc a s ∧ Saves s u)
-    (byLen_ct (D := H.D) (Φ := A₃) (by omega) (fun _ _ h => h.2)
+    (byLen_ct (D := H.D) (Φ := A₃) (by omega_using [hD64]) (fun _ _ h => h.2)
       (fun _ _ _ h₁ h₂ => h₁.1.dxt.dx.pins.1.trans h₂.1.dxt.dx.pins.1.symm)
       (fun _ _ _ ⟨h, r0⟩ o y => ⟨h.only o y, by rw [o.get .a0]; exact r0⟩) ?_ hl lens_certs)
     fun a v ⟨⟨s, P, T, p, g, A, sy⟩, h0⟩ => ?_)
@@ -461,7 +461,7 @@ theorem code_ct {f : Fns} (hl : H.D ∈ lens) :
     rw [eval_nonzero, h₁.r0] at c₁
     have hk : HK H.D a := by simp at c₁; omega
     exact ⟨a, ⟨h₁.dxt, hk⟩, ⟨h₂.dxt, hk⟩⟩
-  · refine byLen_ok (D := H.D) (by omega)
+  · refine byLen_ok (D := H.D) (by omega_using [hD64])
       (F := fun u => AfterPriv pc s u ∧ u.syms = s.syms ∧ u.gpr .a0 = BitVec.ofNat 64 H.D)
       (fun _ h => h.2.2) (fun u u' ⟨A', y', r0'⟩ o y => ⟨A'.only P o, y.trans y', by rw [o.get .a0]; exact r0'⟩)
       ?_ hl (fun x hx => (lens_certs x hx).1) v ⟨A, sy, h0⟩

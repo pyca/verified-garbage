@@ -35,7 +35,7 @@ theorem sized_ok {g : CallGeometry} {s : State} (h : Inputs g s) (len : Lengths 
   have keep' : Keep g.base (2 * g.n) (List.range nArr) bodySlots u.mem v.mem := by rw [← kwEq]; exact hv.keep
   have body := hu.keepBody keep' (fun j hj => List.mem_range.mp hj) (by decide)
   have iv := hu.after hv.rest (by decide) (by decide) (hu.scratchFrame full)
-  refine wp_movS (readSrc_sc iv.ws.workspace (by have := iv.ws.hdr_le; unfold sMask hdr at *; omega))
+  refine wp_movS (readSrc_sc iv.ws.workspace (by have := iv.ws.hdr_le; unfold sMask hdr at *; omega_using [this]))
     fun t T _ => WP.block_nil ?_
   refine ⟨iv.after T.keeps (by decide) (by decide) (by rw [T.mem]; exact Frame.refl _ _), ?_, ?_, ?_⟩
   · apply BitVec.eq_of_toNat_eq
@@ -63,7 +63,7 @@ theorem sized_wp {g : CallGeometry} {s : State} (h : Inputs g s) (len : Lengths 
   refine WP.mono (bodies_ok bu) fun v ⟨A, live, c, hv⟩ => ?_
   have full := VG.Proof.Rsa.X86.KeyRt.keep_outside bu.ws.ws hv.keep (fun j hj => List.mem_range.mp hj) (by decide)
   have iv := hu.after hv.rest (by decide) (by decide) (hu.scratchFrame full)
-  refine wp_movS (readSrc_sc iv.ws.workspace (by have := iv.ws.hdr_le; unfold sMask hdr at *; omega))
+  refine wp_movS (readSrc_sc iv.ws.workspace (by have := iv.ws.hdr_le; unfold sMask hdr at *; omega_using [this]))
     fun t T _ => WP.block_nil ?_
   exact iv.after T.keeps (by decide) (by decide) (by rw [T.mem]; exact Frame.refl _ _)
 

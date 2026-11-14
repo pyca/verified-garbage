@@ -61,7 +61,7 @@ theorem bytes_keep (h : In Ex base bytes len args s) {p : Addr} {n : Nat}
   rcases hr with rfl | ⟨q, hq, rfl⟩
   · exact hb40
   · have := fit q hq
-    exact apart.sub_right (Offset.sub_base _ (by omega))
+    exact apart.sub_right (Offset.sub_base _ (by omega_using [this]))
 
 /-- y into the wide slot 12. -/
 theorem loadY_ok (h : In Ex base bytes len args s) (Y : YGeo args base bytes len s.rd s.wr) :
@@ -73,7 +73,7 @@ theorem loadY_ok (h : In Ex base bytes len args s) (Y : YGeo args base bytes len
   have lb := len_le_bc len
   have lw := h.lower
   refine WP.mono (load_ok h (one_ok .wide) (slot_fit1 h (j := 12) (by decide)) (p := 8) (l := 9) (L := len)
-    (by decide) (by decide) Y.e9 (by omega) (by rw [cb1]; exact lb) f Y.rd Y.apart)
+    (by decide) (by decide) Y.e9 (by omega_using [lw]) (by rw [cb1]; exact lb) f Y.rd Y.apart)
     fun u ⟨V, O, K⟩ => ⟨by rw [cw1] at V; exact V, by rw [cb1] at O; exact O, K⟩
 
 /-- What the status is for a valid domain: `publicValid`. -/
@@ -105,15 +105,15 @@ theorem front_ok (h : In Ex base bytes len args s) (G : DomGeo args base bytes l
   have yf := Y.fit
   generalize hP : comp s.mem args len 0 = p
   generalize hY : yv s.mem args len = y
-  refine WP.seq (WP.mono (pSetup_ok h G.e3 (by omega)
-    (by have := VG.CallLay.inRegions_sub G.rd (off := 0) (l := len) (by omega) (by omega)
+  refine WP.seq (WP.mono (pSetup_ok h G.e3 (by omega_using [dl, fit])
+    (by have := VG.CallLay.inRegions_sub G.rd (off := 0) (l := len) (by omega_using [dl]) (by omega_using [fit])
         rwa [BitVec.add_zero] at this)
-    (G.apart.sub_left (Region.sub_prefix (by omega))))
+    (G.apart.sub_left (Region.sub_prefix (by omega_using [dl]))))
     fun u₁ ⟨I₁, F₁, k₁, V9, V14, V15, K₁⟩ => ?_)
   rw [argNum_comp, hP] at V9 V15
   have S₁ : Step Ex base bytes len args s u₁ := ⟨I₁, F₁, K₁⟩
   refine WP.seq (WP.mono (loadY_ok I₁ (Y.keep ⟨rfl, rfl⟩ K₁)) fun u₂ ⟨V₂, O₂, K₂⟩ => ?_)
-  rw [show yv u₁.mem args len = y by rw [yv, bytes_keep h Y.apart (by omega) hy40 F₁]; exact hY] at V₂
+  rw [show yv u₁.mem args len = y by rw [yv, bytes_keep h Y.apart (by omega_using [yf]) hy40 F₁]; exact hY] at V₂
   have S₂ : Step Ex base bytes len args u₁ u₂ := Step.slot I₁ (by decide) O₂ K₂
   have k₂ := kept_slot I₁ (a := 12) O₂
   refine WP.seq (WP.mono (rangeMask_ok S₂.inp (a := 12) (by decide)) fun u₃ ⟨I₃, e₃, O₃, K₃⟩ => ?_)
@@ -136,7 +136,7 @@ theorem body_ok (h : In Ex base bytes len args s) (G : DomGeo args base bytes le
   have dl := G.dl
   have fit := G.fit
   have lw := G.lower
-  have h2 : 2 * len ≤ dlen := by omega
+  have h2 : 2 * len ≤ dlen := by omega_using [dl]
   have hp := comp_p s.mem args h2
   have iffP := VG.Proof.Ffdh.publicValid_eq (Spec.Ffdh.domainOf len (domBytes s.mem args dlen)) (yv s.mem args len)
   rw [← hp] at iffP
@@ -151,12 +151,12 @@ theorem body_ok (h : In Ex base bytes len args s) (G : DomGeo args base bytes le
     rw [← comp_p s.mem args h2, hP] at mv
     unfold Spec.Rsa.modulusValid at mv
     simp only [Bool.and_eq_true, decide_eq_true_eq, beq_iff_eq] at mv
-    exact ⟨by have := Nat.two_pow_pos 511; have := mv.1.1.2; omega, mv.1.1.1⟩
+    exact ⟨by have := Nat.two_pow_pos 511; have := mv.1.1.2; omega_using [mv], mv.1.1.1⟩
   refine WP.gate Gt (fun bad => WP.mono (ret_res (base := base) (len := len)) fun t R => ⟨0, S.res R, ?_⟩)
     (fun good => ?_)
   · intro v
     obtain ⟨gt, odd⟩ := pv v
-    rw [pm1_of (by omega)] at bad
+    rw [pm1_of (by omega_using [gt])] at bad
     have : ¬ (1 < y ∧ y < p - 1) := fun ⟨a, b⟩ => bad ⟨b, a⟩
     have nv : Spec.Ffdh.publicValid ⟨Spec.Ffdh.domainOf len (domBytes s.mem args dlen), y⟩ = false := by
       cases e : Spec.Ffdh.publicValid ⟨Spec.Ffdh.domainOf len (domBytes s.mem args dlen), y⟩
@@ -167,7 +167,7 @@ theorem body_ok (h : In Ex base bytes len args s) (G : DomGeo args base bytes le
   have range : Spec.Ffdh.domainValid len (domBytes s.mem args dlen) = true → 1 < y ∧ y < p - 1 := by
     intro v
     obtain ⟨gt, odd⟩ := pv v
-    rw [pm1_of (by omega)] at good
+    rw [pm1_of (by omega_using [gt])] at good
     exact ⟨good.2, good.1⟩
   -- With y in range: is there a q?
   refine WP.seq (WP.mono (qTest_ok S.inp G.e3 G.e12 dl) fun u₅ ⟨z₅, m₅, K₅⟩ => ?_)
@@ -178,19 +178,19 @@ theorem body_ok (h : In Ex base bytes len args s) (G : DomGeo args base bytes le
   · intro v
     have e2 : dlen = 2 * len := by simpa using hb₅
     have nq : (Spec.Ffdh.domainOf len (domBytes s.mem args dlen)).q = none := by
-      rw [domBytes, e2]; exact VG.Proof.Ffdh.domainOf_q2 _ _ (by omega)
+      rw [domBytes, e2]; exact VG.Proof.Ffdh.domainOf_q2 _ _ (by omega_using [lw])
     have vv : Spec.Ffdh.publicValid ⟨Spec.Ffdh.domainOf len (domBytes s.mem args dlen), y⟩ = true :=
       iffP.mpr ⟨range v, fun q hq => by rw [nq] at hq; cases hq⟩
     simp only [expected, hY, vv, ↓reduceIte]
   -- q, and `y^q mod p`.
   have e3 : dlen = 3 * len := by
     have : ¬ dlen = 2 * len := by simpa using hb₅
-    omega
+    omega_using [dl, this]
   subst e3
   have G₅ := G.keep ⟨rfl, rfl⟩ S'.keeps
-  refine WP.seq (WP.mono (loadComp_ok S₅.inp G₅ (k := 2) (j := 11) (by decide) (by omega) (by decide))
+  refine WP.seq (WP.mono (loadComp_ok S₅.inp G₅ (k := 2) (j := 11) (by decide) (by omega_using []) (by decide))
     fun u₆ ⟨V₆, O₆, K₆⟩ => ?_)
-  rw [comp_keep h G hb40 S'.frame (by omega)] at V₆
+  rw [comp_keep h G hb40 S'.frame (by omega_using [])] at V₆
   have S₆ : Step Ex base bytes len args u₅ u₆ := Step.slot S₅.inp (by decide) O₆ K₆
   have k₆ := kept_slot S₅.inp (a := 11) O₆
   have nine₆ : sv u₆.mem base len .wide 9 = p := by rw [k₆.slot_eq, m₅, V9]

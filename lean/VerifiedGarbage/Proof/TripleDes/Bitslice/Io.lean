@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.TripleDes.Bitslice.Pass
 import VerifiedGarbage.Proof.TripleDes.Bitslice.Layout
 import VerifiedGarbage.Proof.TripleDes.Permutation
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # Into and out of the bitsliced state, for 64 blocks
@@ -27,10 +28,10 @@ theorem ipLane_bit {w : Nat} (W : Nat → BitVec w) (b : Nat) {t : Nat} (ht : t 
   simp only [ipLane, BitVec.getLsbD_append]
   by_cases h : t < 32
   · simp only [h, ite_true, half, getLsbD_ofBits, decide_true, Bool.true_and, rWord]
-  · have h' : t - 32 < 32 := by omega
+  · have h' : t - 32 < 32 := by omega_using [ht]
     simp only [h, ite_false, half, getLsbD_ofBits, h', decide_true, Bool.true_and, lWord]
     congr 3
-    omega
+    omega_using [h]
 
 theorem xor56_xor56 (a : Nat) : a ^^^ 56 ^^^ 56 = a := by
   rw [Nat.xor_assoc, Nat.xor_self, Nat.xor_zero]
@@ -52,7 +53,7 @@ theorem transpose_out (W : Nat → BitVec 64) (b : Nat) :
   intro j hj
   have hj' : j ^^^ 56 < 64 := Nat.xor_lt_two_pow (n := 6) hj (by decide)
   obtain ⟨lo, hi⟩ := fp_bounds _ hj'
-  have ht : 64 - fp.getD (63 - (j ^^^ 56)) 1 < 64 := by omega
+  have ht : 64 - fp.getD (63 - (j ^^^ 56)) 1 < 64 := by omega_using [lo]
   rw [permute_bit fp _ (by decide) _ hj', ipLane_bit _ _ ht, fp_ipWord _ hj', xor56_xor56]
   simp only [transposeW, getLsbD_ofBits, hj, decide_true, Bool.true_and]
 

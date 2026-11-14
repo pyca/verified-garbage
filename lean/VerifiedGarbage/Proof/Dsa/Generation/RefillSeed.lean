@@ -53,7 +53,7 @@ theorem generatorSearch_succ {p q pLen fuel : Nat} {rest : List Byte} (hr : pLen
         some (some (Spec.Dsa.powMod (Spec.Dsa.decodeBE (rest.take pLen)) ((p - 1) / q) p), rest.drop pLen)
       else Spec.Dsa.generatorSearch p q pLen fuel (rest.drop pLen) := by
   rw [Spec.Dsa.generatorSearch]
-  simp only [show ¬rest.length < pLen by omega, ↓reduceIte]
+  simp only [show ¬rest.length < pLen by omega_using [hr], ↓reduceIte]
   by_cases hh : (1 < Spec.Dsa.decodeBE (rest.take pLen) && Spec.Dsa.decodeBE (rest.take pLen) < p - 1) = true
   · by_cases hg : 1 < Spec.Dsa.powMod (Spec.Dsa.decodeBE (rest.take pLen)) ((p - 1) / q) p
     · have : generatorHit p q (Spec.Dsa.decodeBE (rest.take pLen)) = true := by
@@ -80,17 +80,17 @@ theorem generatorSearch_window {pLen : Nat} (hw : 0 < pLen) (p q : Nat) :
   | fuel + 1, rest => by
     by_cases hr : rest.length < pLen
     · have hc : windowCandidates pLen (fuel + 1) rest = [] := by
-        rw [windowCandidates, generationChunks_done (by simp only [List.length_take]; omega), List.map_nil]
+        rw [windowCandidates, generationChunks_done (by simp only [List.length_take]; omega_using [hr]), List.map_nil]
       rw [hc, generator_nil, Spec.Dsa.generatorSearch]
-      simp only [hr, ↓reduceIte, show ¬(fuel + 1) * pLen ≤ rest.length by rw [Nat.succ_mul]; omega]
+      simp only [hr, ↓reduceIte, show ¬(fuel + 1) * pLen ≤ rest.length by rw [Nat.succ_mul]; omega_using [hr]]
     · have hlen : pLen ≤ (rest.take ((fuel + 1) * pLen)).length := by
-        simp only [List.length_take]; rw [Nat.succ_mul]; omega
+        simp only [List.length_take]; rw [Nat.succ_mul]; omega_using [hr]
       have hc : windowCandidates pLen (fuel + 1) rest =
           Spec.Dsa.decodeBE (rest.take pLen) :: windowCandidates pLen fuel (rest.drop pLen) := by
         rw [windowCandidates, generationChunks_step hw hlen, List.map_cons, windowCandidates,
-          List.take_take, Nat.min_eq_left (by rw [Nat.succ_mul]; omega), List.drop_take,
-          show (fuel + 1) * pLen - pLen = fuel * pLen by rw [Nat.succ_mul]; omega]
-      rw [generatorSearch_succ (by omega), hc, generator_cons']
+          List.take_take, Nat.min_eq_left (by rw [Nat.succ_mul]; omega_using []), List.drop_take,
+          show (fuel + 1) * pLen - pLen = fuel * pLen by rw [Nat.succ_mul]; omega_using []]
+      rw [generatorSearch_succ (by omega_using [hr]), hc, generator_cons']
       by_cases hit : generatorHit p q (Spec.Dsa.decodeBE (rest.take pLen)) = true
       · simp only [hit, ite_true, generatorCount, Nat.mul_one]
       · simp only [hit, ite_false, Bool.false_eq_true, generatorCount]
@@ -98,13 +98,13 @@ theorem generatorSearch_window {pLen : Nat} (hw : 0 < pLen) (p q : Nat) :
         cases Spec.Dsa.generator p q (windowCandidates pLen fuel (rest.drop pLen)) with
         | some g =>
           simp only [List.drop_drop, Nat.mul_succ]
-          congr 3; omega
+          congr 3; omega_using []
         | none =>
           simp only [List.length_drop, List.drop_drop]
           by_cases hf : fuel * pLen ≤ rest.length - pLen
-          · simp only [hf, ↓reduceIte, show (fuel + 1) * pLen ≤ rest.length by rw [Nat.succ_mul]; omega]
-            congr 3; rw [Nat.succ_mul]; omega
-          · simp only [hf, ↓reduceIte, show ¬(fuel + 1) * pLen ≤ rest.length by rw [Nat.succ_mul]; omega]
+          · simp only [hf, ↓reduceIte, show (fuel + 1) * pLen ≤ rest.length by rw [Nat.succ_mul]; omega_using [hr, hf]]
+            congr 3; rw [Nat.succ_mul]; omega_using []
+          · simp only [hf, ↓reduceIte, show ¬(fuel + 1) * pLen ≤ rest.length by rw [Nat.succ_mul]; omega_using [hf]]
 
 /-- One seed after its own octets, with `rest` the tape after them: `q`'s
 test, the `p` search and, over the window after `p`'s witnesses, the

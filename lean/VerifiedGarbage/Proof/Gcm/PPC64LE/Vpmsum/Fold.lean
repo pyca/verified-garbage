@@ -102,14 +102,14 @@ theorem powers_ok (n : Nat) (hn : 0 < n) (hn8 : n ≤ 8) (s : State)
     · intro j hj
       by_cases hjk : j = k+1
       · subst j
-        rw [show k+1+1 = k+2 by omega, hv, hvals k (Nat.le_refl _), hf.v H (by decide)]
+        rw [show k+1+1 = k+2 by omega_using [], hv, hvals k (Nat.le_refl _), hf.v H (by decide)]
         rfl
-      · have hjk' : j ≤ k := by omega
-        have hj8 : j < 8 := by omega
+      · have hjk' : j ≤ k := by omega_using [hj, hjk]
+        have hj8 : j < 8 := by omega_using [hk7, hj]
         have f := power_free ⟨j,hj8⟩
         have hne : powerReg (j+1) ≠ powerReg (k+2) := by
           intro he
-          have he' := power_injective ⟨j,hj8⟩ ⟨k+1,by omega⟩ he
+          have he' := power_injective ⟨j,hj8⟩ ⟨k+1,by omega_using [hk7]⟩ he
           exact hjk he'
         rw [hu.v (powerReg (j+1)) (by simp [f.1, f.2.1, f.2.2.1, f.2.2.2.1,
           f.2.2.2.2.1, f.2.2.2.2.2, hne])]
@@ -123,10 +123,10 @@ theorem powers_ok (n : Nat) (hn : 0 < n) (hn8 : n ≤ 8) (s : State)
           try { simp [powerWritten] }
         exact power_written ⟨k,hk7⟩
   refine WP.mono (wp_range_flatMap (M := isa) I step (n-1) (Nat.le_refl _) s ?_) fun t ⟨hv,hf⟩ =>
-    ⟨fun j hj => hv j (by omega), hf⟩
+    ⟨fun j hj => hv j (by omega_using [hj]), hf⟩
   refine ⟨?_, VOnly.refl _ _⟩
   intro j hj
-  have hj0 : j = 0 := by omega
+  have hj0 : j = 0 := by omega_using [hj]
   subst j
   rfl
 
@@ -182,32 +182,32 @@ theorem packedKeys_ok (h : BitVec 128) (s : State)
   have step : ∀ k t, k < 4 → I k t → WP isa (.block (packKeyStep k)) t (I (k+1)) := by
     rintro k t hk ⟨hpacked,hplain,hf⟩
     have f := pair_key_free ⟨k,hk⟩
-    have fa := power_free ⟨7-2*k,by omega⟩
-    have ha : powerReg (8-2*k) ≠ A := by simpa only [show 7-2*k+1=8-2*k by omega] using fa.1
-    have hat : powerReg (8-2*k) ≠ T := by simpa only [show 7-2*k+1=8-2*k by omega] using fa.2.2.2.2.2
+    have fa := power_free ⟨7-2*k,by omega_using []⟩
+    have ha : powerReg (8-2*k) ≠ A := by simpa only [show 7-2*k+1=8-2*k by omega_using [hk]] using fa.1
+    have hat : powerReg (8-2*k) ≠ T := by simpa only [show 7-2*k+1=8-2*k by omega_using [hk]] using fa.2.2.2.2.2
     unfold packKeyStep
     refine WP.mono (packKeys_ok (powerReg (8-2*k)) (powerReg (7-2*k)) (keyLow k) (keyHigh k) t
       ha hat f.1.2.2.2.2 f.2.2.2.2) fun u ⟨hlo,hhi,hu⟩ => ?_
     have hpa : t.vpr (powerReg (8-2*k)) = keyValue h (7-2*k) := by
-      simpa only [show 7-2*k+1=8-2*k by omega] using hplain (7-2*k) (by omega)
+      simpa only [show 7-2*k+1=8-2*k by omega_using [hk]] using hplain (7-2*k) (by omega_using [hk])
     have hpb : t.vpr (powerReg (7-2*k)) = keyValue h (6-2*k) := by
-      simpa only [show 6-2*k+1=7-2*k by omega] using hplain (6-2*k) (by omega)
+      simpa only [show 6-2*k+1=7-2*k by omega_using [hk]] using hplain (6-2*k) (by omega_using [hk])
     refine ⟨?_, ?_, (hf.trans hu).weaken ?_⟩
     · intro j hj
       by_cases he : j=k
       · subst j
         exact ⟨hlo.trans (by rw [hpa,hpb]), hhi.trans (by rw [hpa,hpb])⟩
-      · have hjk : j < k := by omega
-        have fj := pair_key_free ⟨j,by omega⟩
-        have fd := pair_key_disjoint ⟨j,by omega⟩ ⟨k,hk⟩ he
+      · have hjk : j < k := by omega_using [hj, he]
+        have fj := pair_key_free ⟨j,by omega_using [hk, hj]⟩
+        have fd := pair_key_disjoint ⟨j,by omega_using [hk, hj]⟩ ⟨k,hk⟩ he
         have hlo' := hu.v (keyLow j) (by simp [fj.2.2.1, fj.1.2.2.2.2, fd.1, fd.2.1])
         have hhi' := hu.v (keyHigh j) (by simp [fj.2.2.2.1, fj.2.1.2.2.2.2, fd.2.2.1, fd.2.2.2])
         exact ⟨hlo'.trans (hpacked j hjk).1, hhi'.trans (hpacked j hjk).2⟩
     · intro j hj
-      have fj := power_free ⟨j,by omega⟩
-      have fd := pair_key_remaining ⟨j,by omega⟩ ⟨k,hk⟩ hj
+      have fj := power_free ⟨j,by omega_using [hj]⟩
+      have fd := pair_key_remaining ⟨j,by omega_using [hj]⟩ ⟨k,hk⟩ hj
       rw [hu.v (powerReg (j+1)) (by simp [fj.1, fj.2.2.2.2.2, fd.1, fd.2])]
-      exact hplain j (by omega)
+      exact hplain j (by omega_using [hj])
     · intro r hr
       simp only [List.mem_append] at hr
       rcases hr with hr | hr
@@ -297,7 +297,7 @@ theorem packedSave_ok (j : Nat) (hj : j < 4) (s : State) :
       refine ⟨?_, ⟨fun r hr => ?_, by simp only [gpr_writeV], by simp only [mem_writeV],
         by simp only [rd_writeV], by simp only [wr_writeV], by simp only [sp_writeV],
         by simp only [lr_writeV]⟩⟩
-      · simp only [savedProd, show j+1≠4 by omega, ite_false, accProd, prod, addProd,
+      · simp only [savedProd, show j+1≠4 by omega_using [h3], ite_false, accProd, prod, addProd,
           vpr_writeV, reduceCtorEq, ite_true, ite_false]
       · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
         simp only [vpr_writeV, hr.1, hr.2.1, hr.2.2.1, ite_false]
@@ -430,7 +430,7 @@ theorem loadedAt_frame {rs : List VReg} {s t : State} (j : Nat)
     loadedAt t (16*k) = loadedAt s (16*(2*j+k)) := by
   unfold loadedAt
   rw [hf.mem, hf.gpr, RegUpd.mem_write, RegUpd.gpr_write_self, Offset.add_add,
-    show 32*j+16*k=16*(2*j+k) by omega]
+    show 32*j+16*k=16*(2*j+k) by omega_using []]
 
 theorem packedKeys_frame {s t : State} (h : BitVec 128) (ptr : BitVec 64)
     (hk : PackedKeys h 4 s) (hf : VOnly bulkWritten (s.write .r5 ptr) t) : PackedKeys h 4 t := by
@@ -460,21 +460,21 @@ theorem pair_loop_step (h : BitVec 128) (base : State) (j : Nat) (hj : j < 4)
     exact hm
   have hsr0 : InRegions (s.rd ++ s.wr) (s.gpr .r5) 16 := by
     rw [hs.effects.rd, hs.effects.wr, hs.effects.gpr,
-      RegUpd.rd_write, RegUpd.wr_write, RegUpd.gpr_write_self, show 32*j=16*(2*j) by omega]
-    exact hr (2*j) (by omega)
+      RegUpd.rd_write, RegUpd.wr_write, RegUpd.gpr_write_self, show 32*j=16*(2*j) by omega_using []]
+    exact hr (2*j) (by omega_using [hj])
   have hsr1 : InRegions (s.rd ++ s.wr) (s.gpr .r5+16) 16 := by
     rw [hs.effects.rd, hs.effects.wr, hs.effects.gpr,
       RegUpd.rd_write, RegUpd.wr_write, RegUpd.gpr_write_self]
     change InRegions (base.rd ++ base.wr) (base.gpr .r5+BitVec.ofNat 64 (32*j)+BitVec.ofNat 64 16) 16
-    rw [Offset.add_add, show 32*j+16=16*(2*j+1) by omega]
-    exact hr (2*j+1) (by omega)
+    rw [Offset.add_add, show 32*j+16=16*(2*j+1) by omega_using []]
+    exact hr (2*j+1) (by omega_using [hj])
   refine WP.mono (packedPair_ok j hj h s hs0 hsm (packedKeys_frame h _ hk hs.effects) hsr0 hsr1)
     fun t ⟨ht,hf⟩ => ?_
   have he := (advanceVector hs.effects 32).trans hf
   rw [advance_at] at he
   have hoff : BitVec.ofNat 64 (32*j)+32=BitVec.ofNat 64 (32*(j+1)) := by
     change BitVec.ofNat 64 (32*j)+BitVec.ofNat 64 32 = _
-    rw [← BitVec.ofNat_add, show 32*j+32=32*(j+1) by omega]
+    rw [← BitVec.ofNat_add, show 32*j+32=32*(j+1) by omega_using []]
   rw [hoff] at he
   refine ⟨he.weaken (by simp), fun he => by omega, ?_⟩
   intro _
@@ -491,8 +491,8 @@ theorem pair_loop_step (h : BitVec 128) (base : State) (j : Nat) (hj : j < 4)
     simp only [pairSum_zero, zero_add, pairTerm, ite_true]
   · rw [ite_eq_right hj0, addProd_val, pairedProd_val]
     have hprev : (accProd s).val = pairSum h (base.vpr Y) (fun i => loadedAt base (16*i)) j := by
-      have he := hs.sum (by omega)
-      simpa only [savedProd, show j≠4 by omega, ite_false] using he
+      have he := hs.sum (by omega_using [hj0])
+      simpa only [savedProd, show j≠4 by omega_using [hj], ite_false] using he
     rw [hprev]
     simp only [pairTerm, hj0, ite_false]
 

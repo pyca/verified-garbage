@@ -65,7 +65,7 @@ structure FPre (s₀ : State) (W St P S : Addr) (L R : Nat) (Z : Region) : Prop 
 /-- The counter block in all of the scratch buffer. -/
 theorem cIn_all {S : Addr} (_sw : S.toNat + 2176 ≤ 2 ^ 64) {k n : Nat} (h : k + n ≤ 16) :
     (⟨S, 2176⟩ : Region).Contains (S + BitVec.ofNat 64 2048 + BitVec.ofNat 64 k) n := by
-  rw [Offset.add_add]; exact Offset.contains_base _ (by omega) (by omega)
+  rw [Offset.add_add]; exact Offset.contains_base _ (by omega_using [h]) (by omega_using [h])
 
 theorem FPre.of {s₀ : State} (h : finalizeX86_64.pre s₀) :
     FPre s₀ (s₀.gpr .rdi) (s₀.gpr .rdx) (s₀.gpr .rcx) (s₀.gpr .r9) (s₀.gpr .r8).toNat (s₀.gpr .rsi).toNat
@@ -74,7 +74,7 @@ theorem FPre.of {s₀ : State} (h : finalizeX86_64.pre s₀) :
   ⟨rfl, rfl, rfl, rfl, rfl, rfl, a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p,
     Offset.sub_base _ (by decide), cIn_all q, by
       have := Nat.mod_le ((s₀.gpr .r9).toNat + 2048 % 2 ^ 64) (2 ^ 64)
-      rw [BitVec.toNat_add, BitVec.toNat_ofNat]; omega, r, s⟩
+      rw [BitVec.toNat_add, BitVec.toNat_ofNat]; omega_using [q], r, s⟩
 
 /-- … and the whole buffer does not wrap around. -/
 theorem FPre.scr_wrap_of {s₀ : State} (h : finalizeX86_64.pre s₀) : (s₀.gpr .r9).toNat + 2176 ≤ 2 ^ 64 :=
@@ -85,7 +85,7 @@ theorem FPre.ofF {s₀ : State} (h : finalizeX86_64F.pre s₀) :
       ⟨s₀.gpr .r9 + BitVec.ofNat 64 2048, 16⟩ :=
   let ⟨a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s⟩ := h
   ⟨rfl, rfl, rfl, rfl, rfl, rfl, a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p,
-    fun _ h => h, fun hk => Offset.contains_base _ hk (by omega), q, r, s⟩
+    fun _ h => h, fun hk => Offset.contains_base _ hk (by omega_using [hk]), q, r, s⟩
 
 /-- The last block `Mₙ` (§6.2 step 4), from the key and the last bytes in `m`. -/
 abbrev mn (m : Mem) (W P : Addr) (L : Nat) : List Byte :=
@@ -113,7 +113,7 @@ theorem FPre.inScr {k n : Nat} (h : k + n ≤ 16) :
   rw [hp.wr]; exact in_rw (r := Z) (by simp) (hp.cIn h)
 
 theorem FPre.inScr0 {n : Nat} (h : n ≤ 16) : InRegions s₀.wr (S + BitVec.ofNat 64 2048) n := by
-  have := hp.inScr (k := 0) (n := n) (by omega)
+  have := hp.inScr (k := 0) (n := n) (by omega_using [h])
   rwa [show BitVec.ofNat 64 0 = 0#64 from rfl, BitVec.add_zero] at this
 
 /-- The first `n` bytes of the counter block are in `Z`. -/

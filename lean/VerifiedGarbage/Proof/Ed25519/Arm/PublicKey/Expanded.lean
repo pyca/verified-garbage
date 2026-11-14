@@ -37,7 +37,7 @@ theorem copy_src (hL : L.Ok) (h64 : L.seedLen = 64) :
     Whole.CopySrc L.E L.inputs L.outputs L.seed := by
   have hs : (⟨State.addr L.seed, 64⟩ : Region) = L.SEED := by rw [Lay.SEED, h64]
   refine ⟨by rw [hs]; simp [Lay.inputs], fun r hr => ?_, by have := hL.ns; rw [h64] at this; exact this,
-    by have := hL.top; omega⟩
+    by have := hL.top; omega_using [this]⟩
   rw [hs]
   simp only [Lay.outputs, List.cons_append, List.nil_append, List.mem_cons,
     List.not_mem_nil, or_false] at hr
@@ -207,9 +207,9 @@ theorem sat_digestE : Spec.Ed25519.bytesAt satMemE 0x2000 64 = satDigestE := by
     have hi' : i < 64 := by simpa only [Spec.Ed25519.bytesAt, List.length_map, List.length_range] using hi
     have ha : ((0x2000 : Addr) + BitVec.ofNat 64 i).toNat = 0x2000 + i := by
       change (0x2000 + i % 2 ^ 64) % 2 ^ 64 = 0x2000 + i
-      omega
+      omega_using [hi']
     simp only [Spec.Ed25519.bytesAt, List.getElem_map, List.getElem_range, satMemE, ha,
-      show ¬ 0x2000 + i < 0x2000 from by omega, ite_false,
+      show ¬ 0x2000 + i < 0x2000 from by omega_using [], ite_false,
       Nat.add_sub_cancel_left, List.getElem?_eq_getElem hj, Option.getD_some]
 
 /-- The witness's memory: `satMemE` below the tables, the tables from `0x100000`. -/
@@ -220,7 +220,7 @@ theorem satMemTE_frame : Frame [⟨0, 0x100000⟩] baseSatMem satMemTE := by
   have hn := hx _ (List.mem_singleton_self _)
   simp only [Region.Contains] at hn
   rw [show (x - 0 : Addr) = x from by simp] at hn
-  simp only [satMemTE, show ¬ x.toNat < 0x100000 by omega, ↓reduceIte]
+  simp only [satMemTE, show ¬ x.toNat < 0x100000 by omega_using [hn], ↓reduceIte]
 
 theorem satMemTE_held : ∀ i < 64 * 192,
     satMemTE.readW (0x100000 + BitVec.ofNat 64 (8 * i)) 64 = VG.Impl.Ed25519.Arm.combWords.getD i 0 := by
@@ -233,12 +233,12 @@ theorem satMemTE_held : ∀ i < 64 * 192,
   have e : (0x100000 + BitVec.ofNat 64 (8 * i) : Addr).toNat = 0x100000 + 8 * i := by
     rw [BitVec.toNat_add, BitVec.toNat_ofNat]
     change (0x100000 + 8 * i % 2 ^ 64) % 2 ^ 64 = _
-    omega
+    omega_using [hi]
   refine (Offset.disjoint_of_le (r₁ := ⟨0, 0x100000⟩) ?_ ?_).symm
   · change 0 + 0x100000 ≤ (0x100000 + BitVec.ofNat 64 (8 * i) : Addr).toNat
-    omega
+    omega_using [e]
   · change (0x100000 + BitVec.ofNat 64 (8 * i) : Addr).toNat + 8 ≤ 2 ^ 64
-    omega
+    omega_using [e]
 
 theorem satMemTE_digest : Spec.Ed25519.bytesAt satMemTE 0x2000 64 = satDigestE := by
   rw [← sat_digestE]
@@ -247,8 +247,8 @@ theorem satMemTE_digest : Spec.Ed25519.bytesAt satMemTE 0x2000 64 = satDigestE :
   have hi := List.mem_range.mp hi
   have e : ((0x2000 : Addr) + BitVec.ofNat 64 i).toNat = 0x2000 + i := by
     change (0x2000 + i % 2 ^ 64) % 2 ^ 64 = 0x2000 + i
-    omega
-  simp only [satMemTE, e, show 0x2000 + i < 0x100000 by omega, ↓reduceIte]
+    omega_using [hi]
+  simp only [satMemTE, e, show 0x2000 + i < 0x100000 by omega_using [hi], ↓reduceIte]
 
 def satStateE : State where
   gpr r := match r with | .r0 => 0x1000 | .r1 => 0x2000 | .r2 => 0x4000 | _ => 0

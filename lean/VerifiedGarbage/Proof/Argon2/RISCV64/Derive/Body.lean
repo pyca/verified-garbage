@@ -122,13 +122,13 @@ variable {s₀ : State} (hp : DPre s₀)
 include hp
 
 theorem E_toNat : (E s₀).toNat = s₀.sp.toNat - 320 :=
-  toNat_sub_ofNat' (by have := hp.sp_lo; omega)
+  toNat_sub_ofNat' (by have := hp.sp_lo; omega_using [this])
 
 theorem E_hi : (E s₀).toNat + 400 ≤ 2 ^ 64 := by
-  have := hp.sp_hi; have := hp.sp_lo; rw [E_toNat hp]; omega
+  have := hp.sp_hi; have := hp.sp_lo; rw [E_toNat hp]; omega_arith
 
 theorem E_al : (E s₀).toNat % 16 = 0 := by
-  rw [E_toNat hp]; have := hp.sp_al; have := hp.sp_lo; omega
+  rw [E_toNat hp]; have := hp.sp_al; have := hp.sp_lo; omega_arith
 
 omit hp in
 theorem stk_sub {d n : Nat} (h : d + n ≤ 320) : Region.Sub ⟨at' s₀ d, n⟩ (stkR0 s₀) :=
@@ -181,11 +181,11 @@ theorem frame_disj {d n : Nat} (h₁ : 72 ≤ d ∧ d + n ≤ 184) :
   intro r hr
   simp only [bodyW, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl | rfl
-  · exact stk_disj hp (by omega) _ (by simp)
-  · exact stk_disj hp (by omega) _ (by simp)
-  · exact stk_disj hp (by omega) _ (by simp)
-  · exact Offset.disjoint _ (by omega) (by omega) (by omega)
-  · exact Offset.disjoint _ (by omega) (by omega) (by omega)
+  · exact stk_disj hp (by omega_using [h₁]) _ (by simp)
+  · exact stk_disj hp (by omega_using [h₁]) _ (by simp)
+  · exact stk_disj hp (by omega_using [h₁]) _ (by simp)
+  · exact Offset.disjoint _ (by omega_using [h₁]) (by omega_using [h₁]) (by omega_using [])
+  · exact Offset.disjoint _ (by omega_using [h₁]) (by omega_using [h₁]) (by omega_using [])
 
 omit hp in
 theorem argR_eq : argR s₀ = ⟨at' s₀ 320, 80⟩ := by
@@ -196,7 +196,7 @@ theorem argR_eq : argR s₀ = ⟨at' s₀ 320, 80⟩ := by
 theorem arg_disj {d n : Nat} (h₁ : 320 ≤ d) (h₂ : d + n ≤ 400) :
     ∀ r ∈ bodyW s₀, Region.Disjoint ⟨at' s₀ d, n⟩ r := by
   have sub : Region.Sub ⟨at' s₀ d, n⟩ (argR s₀) := by
-    rw [argR_eq]; exact Offset.sub _ h₁ (by omega)
+    rw [argR_eq]; exact Offset.sub _ h₁ (by omega_using [h₂])
   have hi := E_hi hp
   intro r hr
   simp only [bodyW, List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -204,8 +204,8 @@ theorem arg_disj {d n : Nat} (h₁ : 320 ≤ d) (h₂ : d + n ≤ 400) :
   · exact (hp.ro_w _ (by simp) _ (by simp)).sub_left sub
   · exact (hp.ro_w _ (by simp) _ (by simp)).sub_left sub
   · exact (hp.ro_w _ (by simp) _ (by simp)).sub_left sub
-  · exact Offset.disjoint _ (by omega) (by omega) (by omega)
-  · exact Offset.disjoint _ (by omega) (by omega) (by omega)
+  · exact Offset.disjoint _ (by omega_using [h₁]) (by omega_using [h₂]) (by omega_using [])
+  · exact Offset.disjoint _ (by omega_using [h₁]) (by omega_using [h₂]) (by omega_using [])
 
 theorem Inv.slot {s : State} (h : Inv s₀ s) {d : Nat} (h₁ : 72 ≤ d) (h₂ : d + 8 ≤ 184) :
     s.mem.readW (at' s₀ d) 64 = (setupMem s₀).readW (at' s₀ d) 64 :=
@@ -216,13 +216,13 @@ slots. -/
 theorem Inv.saved {s : State} (h : Inv s₀ s) {r : Reg} {d : Nat}
     (hr : (r, d) ∈ savedSlots ++ argSlots) : lw s₀ s d = s₀.gpr r := by
   have := slots_in _ hr
-  rw [lw, h.slot hp (by simp only at this; omega) (by simp only at this; omega), setupMem_slot s₀ hr]
+  rw [lw, h.slot hp (by simp only at this; omega_using [this]) (by simp only at this; omega_using [this]), setupMem_slot s₀ hr]
 
 /-- The arguments, from the frame or the stack. -/
 theorem Inv.arg {s : State} (h : Inv s₀ s) {i : Nat} (hi : i < 18) :
     s.mem.readW (E s₀ + BitVec.ofNat 64 (argOff i)) 64 = arg s₀ i := by
   by_cases h8 : i < 8
-  · rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7) with
+  · rcases (by omega_using [h8] : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7) with
       rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
     · exact h.saved hp (r := .a0) (d := 120) (by decide)
     · exact h.saved hp (r := .a1) (d := 128) (by decide)
@@ -232,16 +232,16 @@ theorem Inv.arg {s : State} (h : Inv s₀ s) {i : Nat} (hi : i < 18) :
     · exact h.saved hp (r := .a5) (d := 160) (by decide)
     · exact h.saved hp (r := .a6) (d := 168) (by decide)
     · exact h.saved hp (r := .a7) (d := 176) (by decide)
-  · obtain ⟨k, rfl⟩ : ∃ k, i = 8 + k := ⟨i - 8, by omega⟩
+  · obtain ⟨k, rfl⟩ : ∃ k, i = 8 + k := ⟨i - 8, by omega_using [h8]⟩
     have ea : E s₀ + BitVec.ofNat 64 (argOff (8 + k)) = at' s₀ (320 + 8 * k) := by
       have e : argOff (8 + k) = 320 + 8 * k := by
-        simp only [argOff, locals]; rw [ite_eq_right_iff.mpr (by omega)]; omega
+        simp only [argOff, locals]; rw [ite_eq_right_iff.mpr (by omega_using [])]; omega_using []
       rw [e]
-    rw [ea, h.frame.readW (Region.contains_self _ _) (arg_disj hp (by omega) (by omega)) (by decide),
+    rw [ea, h.frame.readW (Region.contains_self _ _) (arg_disj hp (by omega_using []) (by omega_using [hi])) (by decide),
       (setupMem_frame s₀).readW (Region.contains_self _ _) (fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr
-        exact Offset.disjoint _ (by omega) (by omega) (by omega)) (by decide),
-      ← stackArg_eq, show 8 + k = k + 8 by omega]
+        exact Offset.disjoint _ (by omega_using []) (by omega_using [hi]) (by omega_using [])) (by decide),
+      ← stackArg_eq, show 8 + k = k + 8 by omega_using []]
     rfl
 
 theorem Inv.arg32 {s : State} (h : Inv s₀ s) {i : Nat} (hi : i < 18) :

@@ -42,13 +42,13 @@ theorem work_ok {s : State} {P : Addr} {w v : Nat} {mi : BitVec 64} {X Xc : Nat}
   have tu := ht.of_win fu hc.scrT.nowrap
   have read (j : Nat) (hj : slot w j+8*w ≤ slot w 8+CrtWindowFive.tabBytes32 w) :
       wv u.mem P (slot w j) w = wv s.mem P (slot w j) w :=
-    hout.wv (by have := hdr_lt_slot w j (show Crt.sBit < 32 by decide); omega)
-      (by have := hc.scrT.nowrap; omega)
+    hout.wv (by have := hdr_lt_slot w j (show Crt.sBit < 32 by decide); omega_using [this])
+      (by have := hc.scrT.nowrap; omega_using [hj, this])
   refine WP.mono (core_ok cu tu hw hw' hmod (by rw [hm,word_writeW_self]) hv
     (by rw [hm,hdrStore_hdr _ _ _ (by decide) (by decide) (by decide)]; exact hnib))
     fun t ⟨ct,yt,vt,ft,kt,hh⟩ => ?_
-  rw [read aY (by have := slot_le (w := w) (show aY < 8 by decide); omega),
-    read (8+v) (by have := CrtWindowFive.ent32_le w hv; omega)] at vt
+  rw [read aY (by have := slot_le (w := w) (show aY < 8 by decide); omega_using [this]),
+    read (8+v) (by have := CrtWindowFive.ent32_le w hv; omega_using [this])] at vt
   refine ⟨ct,yt,vt,fu.trans ft,(ku.trans kt).mono (by decide),?_⟩
   intro k hk he hj hb
   rw [hh k hk he hj hb,hm,hdrStore_hdr _ _ _ (by decide) hk (Ne.symm hb)]

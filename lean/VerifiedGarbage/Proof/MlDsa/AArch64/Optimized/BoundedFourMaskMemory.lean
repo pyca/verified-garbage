@@ -37,11 +37,11 @@ theorem maskRun_zero {m : Mem} {p : Addr} {n : Nat} (hn : n≤64) :
     have hp : p+BitVec.ofNat 64 (16*n)=coeffAddr p (4*n) := by
       unfold coeffAddr
       congr 2
-      omega
-    rw [hp,coeffAt_write16 _ _ (by omega) _ (by omega)]
+      omega_using []
+    rw [hp,coeffAt_write16 _ _ (by omega_using [hn]) _ (by omega_using [hn, hi])]
     split
     · simp [vword]
-    · exact ih (by omega) i (by omega)
+    · exact ih (by omega_using [hn]) i (by omega_arith)
 
 theorem maskRun_frame (m : Mem) (p : Addr) (v : BitVec 128) {n : Nat} (hn : n≤64) :
     Frame [polyR p] m (maskRun m p v n) := by
@@ -49,8 +49,8 @@ theorem maskRun_frame (m : Mem) (p : Addr) (v : BitVec 128) {n : Nat} (hn : n≤
   | zero=>exact Frame.refl _ _
   | succ n ih=>
     unfold maskRun maskMem
-    exact (ih (by omega)).write (List.mem_singleton_self _) _
+    exact (ih (by omega_using [hn])).write (List.mem_singleton_self _) _
       (by simpa only [BitVec.add_zero] using (Offset.contains p (d := 16*n) (e := 0) (n := 16) (k := 1024)
-        (by omega) (by omega) (by decide)))
+        (by omega_using []) (by omega_using [hn]) (by decide)))
 
 end VG.Proof.MlDsa.AArch64.Optimized.BoundedFour

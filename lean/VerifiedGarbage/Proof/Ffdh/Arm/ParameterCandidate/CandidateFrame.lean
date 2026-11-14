@@ -33,7 +33,7 @@ theorem CandidateContext.after_output {s t : State} {p : CandidateParams} {consu
   · intro r hr
     rw [List.mem_singleton] at hr
     subst r
-    rw [VG.Arm.addr_add (by have := h.saved.space.nowrap; omega)]
+    rw [VG.Arm.addr_add (by have := h.saved.space.nowrap; omega_using [this])]
     exact h.stackOutput.sub_left (Offset.sub_base _ (by decide : 40 + 4 ≤ 72))
 
 theorem CandidateContext.after_workspace {s t : State} {p : CandidateParams} {consumed : Nat} {rs : List Reg}
@@ -47,7 +47,7 @@ theorem CandidateContext.after_workspace {s t : State} {p : CandidateParams} {co
   · intro r hr
     rw [List.mem_singleton] at hr
     subst r
-    rw [VG.Arm.addr_add (by have := h.saved.space.nowrap; omega)]
+    rw [VG.Arm.addr_add (by have := h.saved.space.nowrap; omega_using [this])]
     exact h.stackScratch.sub_left (Offset.sub_base _ (by decide : 40 + 4 ≤ 72))
 
 theorem CandidateContext.after_aux {s t : State} {p : CandidateParams} {consumed d : Nat} {rs : List Reg}
@@ -59,13 +59,13 @@ theorem CandidateContext.after_aux {s t : State} {p : CandidateParams} {consumed
     rw [List.mem_singleton] at hr
     subst r
     refine ⟨⟨State.addr (s.sp + 40#32), 28⟩, by simp [candidateRegions], ?_⟩
-    rw [VG.Arm.addr_add (by have := h.saved.space.nowrap; omega), VG.Arm.addr_add (by have := h.saved.space.nowrap; omega)]
-    exact Offset.sub _ (by omega) (by omega)
+    rw [VG.Arm.addr_add (by have := h.saved.space.nowrap; omega_using [upper, this]), VG.Arm.addr_add (by have := h.saved.space.nowrap; omega_using [this])]
+    exact Offset.sub _ (by omega_using [lower]) (by omega_using [upper])
   · intro r hr
     rw [List.mem_singleton] at hr
     subst r
-    rw [VG.Arm.addr_add (by have := h.saved.space.nowrap; omega), VG.Arm.addr_add (by have := h.saved.space.nowrap; omega)]
-    exact Offset.disjoint _ (.inl lower) (by decide) (by omega)
+    rw [VG.Arm.addr_add (by have := h.saved.space.nowrap; omega_using [this]), VG.Arm.addr_add (by have := h.saved.space.nowrap; omega_using [upper, this])]
+    exact Offset.disjoint _ (.inl lower) (by decide) (by omega_using [upper])
 
 theorem CandidateContext.store_consumed {s t : State} {p : CandidateParams} {consumed next : Nat} {rs : List Reg}
     (h : CandidateContext p consumed s) (bound : next ≤ p.bytes.length)

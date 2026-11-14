@@ -38,7 +38,7 @@ theorem saveWord_ok {s : State} {j : Nat} (hj : j < 6)
       (State.addr (s.sp + BitVec.ofNat 32 (280 + 4 * (j - 4)))) 4) :
     WP isa (.block (saveWord j)) s fun t => EntryStep s t ∧
       t.mem = s.mem.writeW (State.addr (s.sp + BitVec.ofNat 32 (248 + 4 * j))) (inputWord s j) := by
-  have hs : 4 * j < 4096 := by omega
+  have hs : 4 * j < 4096 := by omega_using [hj]
   have ha : BitVec.ofNat 32 248 + BitVec.ofNat 32 (4 * j) = BitVec.ofNat 32 (248 + 4 * j) :=
     (BitVec.ofNat_add 248 (4 * j)).symm
   by_cases h4 : j < 4
@@ -50,8 +50,8 @@ theorem saveWord_ok {s : State} {j : Nat} (hj : j < 6)
     refine ⟨⟨rfl, rfl, rfl, ?_, rfl⟩, True.intro⟩
     intro r hn _
     simp only [RegUpd.gpr_setReg, hn, ite_false]
-  · have hl : 280 + 4 * (j - 4) < 4096 := by omega
-    have hr' := hr (by omega)
+  · have hl : 280 + 4 * (j - 4) < 4096 := by omega_using [hj]
+    have hr' := hr (by omega_using [h4])
     apply WP.of_runBlock
     simp only [saveWord, ite_false, List.cons_append, List.nil_append,
       runBlock_cons, runStep_some, runBlock_nil, exec, State.load32, State.store32,
@@ -76,9 +76,9 @@ theorem Saved.input_word {s t : State} {n j : Nat} (h : Saved s n t)
     refine h.frame.readW (r := ⟨State.addr (s.sp + BitVec.ofNat 32 (280 + 4 * (j - 4))), 4⟩)
       (Region.contains_self _ _) ?_ (by decide)
     rintro r hr
-    rw [List.mem_singleton.mp hr, addr_add (by omega)]
+    rw [List.mem_singleton.mp hr, addr_add (by omega_using [hf])]
     exact Offset.disjoint _ (d := 280 + 4 * (j - 4)) (e := 248)
-      (by omega) (by omega) (by omega)
+      (by omega_using []) (by omega_using [_hj]) (by omega_using [])
 
 theorem saveArgs_ok {s : State} : ∀ n ≤ 6,
     s.sp.toNat + 280 + 4 * (n - 4) ≤ 2 ^ 32 →
@@ -89,34 +89,34 @@ theorem saveArgs_ok {s : State} : ∀ n ≤ 6,
   | 0, _, _, _, _ => WP.block_nil ⟨.refl s, Frame.refl _ _, fun _ h => by omega⟩
   | n + 1, hn, hf, hw, hr => by
     rw [saveArgs, List.range_succ, List.flatMap_append, List.flatMap_singleton, WP.block_append_iff]
-    refine WP.mono (saveArgs_ok n (by omega) (by omega) hw (fun j hj => hr j (by omega))) fun u hu => ?_
+    refine WP.mono (saveArgs_ok n (by omega_using [hn]) (by omega_using [hf]) hw (fun j hj => hr j (by omega_using [hj]))) fun u hu => ?_
     have he : State.addr (u.sp + BitVec.ofNat 32 (248 + 4 * n)) =
         State.addr s.sp + BitVec.ofNat 64 (248 + 4 * n) := by
-      rw [hu.step.sp, addr_add (by omega)]
+      rw [hu.step.sp, addr_add (by omega_using [hf])]
     have uw : InRegions u.wr (State.addr (u.sp + BitVec.ofNat 32 (248 + 4 * n))) 4 := by
       rw [he, hu.step.wr]
-      exact ⟨_, hw, Offset.contains _ (e := 248) (k := 24) (by omega) (by omega) (by decide)⟩
+      exact ⟨_, hw, Offset.contains _ (e := 248) (k := 24) (by omega_using []) (by omega_using [hn]) (by decide)⟩
     have ur : 4 ≤ n → InRegions (u.rd ++ u.wr)
         (State.addr (u.sp + BitVec.ofNat 32 (280 + 4 * (n - 4)))) 4 := by
       intro h4
       rw [hu.step.sp, hu.step.rd, hu.step.wr]
-      exact hr n (by omega) h4
-    refine WP.mono (saveWord_ok (by omega) uw ur) fun t ⟨ht, mt⟩ => ?_
+      exact hr n (by omega_using []) h4
+    refine WP.mono (saveWord_ok (by omega_using [hn]) uw ur) fun t ⟨ht, mt⟩ => ?_
     have hi : inputWord u n = inputWord s n := by
       by_cases h4 : n < 4
       · simp only [inputWord, h4, ite_true]
         exact hu.step.regs _ (argReg_ne12 _) (argReg_neLR _)
-      · exact hu.input_word (by omega) (by omega)
+      · exact hu.input_word (by omega_using [hn]) (by omega_using [hf, h4])
     rw [he, hi] at mt
     refine ⟨hu.step.trans ht, ?_, fun j hj => ?_⟩
     · rw [mt]
       exact hu.frame.writeW (List.mem_singleton_self _) _
-        (Offset.contains _ (e := 248) (k := 24) (by omega) (by omega) (by decide))
+        (Offset.contains _ (e := 248) (k := 24) (by omega_using []) (by omega_using [hn]) (by decide))
     · rw [mt]
       by_cases hjn : j = n
       · subst j; exact Mem.readW_writeW_self32 _ _ _
       · rw [Mem.readW_writeW_sep ?_ (by decide)]
-        · exact hu.words j (by omega)
-        · exact Offset.sep _ (by omega) (by omega) (by omega)
+        · exact hu.words j (by omega_using [hj, hjn])
+        · exact Offset.sep _ (by omega_using [hjn]) (by omega_using [hn, hj]) (by omega_using [hn])
 
 end VG.Proof.Ed25519.Arm.Whole

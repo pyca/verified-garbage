@@ -63,7 +63,7 @@ structure CopyPost (src dst : Reg) (A B : Addr) (n : Nat) (s₀ s : State) : Pro
 
 theorem wAt_in {p : Addr} {i n : Nat} (hi : i < n) (hn : 8 * n < 2 ^ 64) :
     (⟨p, 8 * n⟩ : Region).Contains (wAt p i) 8 :=
-  Offset.contains_base p (by omega) (by omega)
+  Offset.contains_base p (by omega_using [hi]) (by omega_using [hi, hn])
 
 theorem copy_ok {src dst : Reg} (hsd : (src = .rsi ∧ dst = .rdi) ∨ (src = .rdi ∧ dst = .rsi))
     {A B : Addr} {n : Nat} {s₀ : State} (hpre : CopyPre A B n s₀) (s : State) (i : Nat)

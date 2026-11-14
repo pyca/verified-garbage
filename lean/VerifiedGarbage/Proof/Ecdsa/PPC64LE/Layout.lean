@@ -108,7 +108,7 @@ structure SetupPre (c : Cfg) (A : Args) (s : State) : Prop where
 /-- The words of a region are accessible. -/
 theorem inRegions_words {rs : List Region} {p : Addr} {len : Nat} (h : (⟨p, len⟩ : Region) ∈ rs)
     (hl : len ≤ 2 ^ 64) : ∀ d, d + 8 ≤ len → InRegions rs (p + BitVec.ofNat 64 d) 8 :=
-  fun _ hd => ⟨_, h, Offset.contains_base p hd (by omega)⟩
+  fun _ hd => ⟨_, h, Offset.contains_base p hd (by omega_using [hl, hd])⟩
 
 /-- The number in slot `i`. -/
 abbrev sv (c : Cfg) (base : Addr) (s : State) (i : Nat) : Nat := wordsVal s.mem base (c.sl i) c.n
@@ -164,7 +164,7 @@ theorem sl_lt (c : Cfg) {i j : Nat} (h : i < j) : c.sl i + 8 * c.n ≤ c.sl j :=
   rw [sl_eq, sl_eq]
   have := Nat.mul_le_mul_left (8 * c.n) h
   rw [Nat.mul_succ] at this
-  omega
+  omega_using [this]
 
 theorem sl_apart (c : Cfg) {i j : Nat} (h : i ≠ j) :
     c.sl i + 8 * c.n ≤ c.sl j ∨ c.sl j + 8 * c.n ≤ c.sl i := by
@@ -174,39 +174,39 @@ theorem sl_apart (c : Cfg) {i j : Nat} (h : i ≠ j) :
 
 /-- A slot is at a multiple of 4. -/
 theorem sl_al (c : Cfg) (i : Nat) : c.sl i % 4 = 0 := by
-  rw [sl_eq, Nat.mul_assoc 8]; omega
+  rw [sl_eq, Nat.mul_assoc 8]; omega_using []
 
 /-- A slot is below the functions' own working space. -/
 theorem sl_below_own (c : Cfg) (hn : c.n < 10) {i : Nat} (hi : i < 45) : c.sl i + 8 * c.n ≤ own c.n := by
   have := sl_lt c hi
   rw [sl_eq c 45] at this
   rw [own_eq]
-  omega
+  omega_using [hn, this]
 
 /-- The functions' own working space is below the tables. -/
 theorem own_below_bits (c : Cfg) (hn : c.n < 10) (j : Nat) : own c.n + 64 * c.n ≤ bitsAt c.n j := by
   rw [own_eq, bitsAt_eq]
-  omega
+  omega_using [hn]
 
 /-- A slot is below the tables. -/
 theorem sl_below_bits (c : Cfg) (hn : c.n < 10) {i : Nat} (hi : i < 45) (j t : Nat) :
     c.sl i + 8 * c.n ≤ bitsAt c.n j + t := by
   have := sl_below_own c hn hi
   have := own_below_bits c hn j
-  omega
+  omega_arith
 
 /-- Every slot is below byte 4096. -/
 theorem sl_le (c : Cfg) (hn : c.n < 10) {i : Nat} (hi : i < 45) : c.sl i + 8 * c.n ≤ 4096 := by
   have := sl_below_own c hn hi
   rw [own_eq] at this
-  omega
+  omega_using [this]
 
 /-- Every table is in the working space. -/
 theorem bitsAt_le (c : Cfg) (hn : c.n < 10) {j : Nat} (hj : j < 3) : bitsAt c.n j + 64 * c.n ≤ size := by
   rw [bitsAt_eq]
-  have : 64 * c.n * j ≤ 64 * c.n * 2 := Nat.mul_le_mul_left _ (by omega)
+  have : 64 * c.n * j ≤ 64 * c.n * 2 := Nat.mul_le_mul_left _ (by omega_using [hj])
   show _ ≤ 8192
-  omega
+  omega_using [hn, this]
 
 /-- Table `j` of the bits of slot `i`. -/
 theorem tbl_bits_ok {c : Cfg} (hc : CfgOk c) {s : State} {base : Addr} (hw : WsReg s base)
@@ -217,7 +217,7 @@ theorem tbl_bits_ok {c : Cfg} (hc : CfgOk c) {s : State} {base : Addr} (hw : WsR
       Kp bitsClob s s' ∧ Outside base (bitsAt c.n j) (64 * c.n) s.mem s'.mem := by
   have hb := bitsAt_le c hc.n10 hj
   have := sl_le c hc.n10 hi
-  exact bits_ok hw.ws hw.at3 hc.n0 (by omega) hb (Or.inl (sl_below_bits c hc.n10 hi j 0))
+  exact bits_ok hw.ws hw.at3 hc.n0 (by omega_using [this]) hb (Or.inl (sl_below_bits c hc.n10 hi j 0))
 
 /-! ## What every phase keeps -/
 
@@ -289,10 +289,10 @@ theorem Fixed.unch {base : Addr} {g : Reg → BitVec 64} {lr : BitVec 64} {m m' 
     (hW : FixedOk c W) (hu : Unch base W m m') : Fixed c base g lr m' := by
   have := hn
   have e : ∀ i, i < 12 → i ≠ TMP → wordsVal m' base (c.sl i) c.n = wordsVal m base (c.sl i) c.n :=
-    fun i hi hit => hu.wordsVal (fixed_apart hW hi hit) (by have := sl_le c h7 (i := i) (by omega); omega)
+    fun i hi hit => hu.wordsVal (fixed_apart hW hi hit) (by have := sl_le c h7 (i := i) (by omega_using [hi]); omega_using [this])
   have hlow : ∀ d, d + 8 ≤ 24 → word m' base d = word m base d := fun d hd =>
     hu.word (fun w hw => Or.inl (by rcases hW w hw with ⟨h1, -⟩ | h <;> [rw [h1, sl_eq]; rw [sl_eq] at h] <;>
-      omega)) (by omega)
+      omega_arith)) (by omega_using [hd])
   refine ⟨(e MP (by decide) (by decide)).trans h.mp, (e MN (by decide) (by decide)).trans h.mn,
     (e ZERO (by decide) (by decide)).trans h.zero, (e ONE (by decide) (by decide)).trans h.one,
     (e ONEP (by decide) (by decide)).trans h.onep, (e AP (by decide) (by decide)).trans h.ap,
@@ -313,7 +313,7 @@ theorem apart_tbl (h7 : c.n < 10) {i : Nat} (hi : i < 45) (j : Nat) :
     ∀ w ∈ [(bitsAt c.n j, 64 * c.n)], c.sl i + 8 * c.n ≤ w.1 ∨ w.1 + w.2 ≤ c.sl i := by
   intro w hw
   rw [List.mem_singleton.mp hw]
-  exact Or.inl (by have := sl_below_bits c h7 hi j 0; omega)
+  exact Or.inl (by have := sl_below_bits c h7 hi j 0; omega_using [this])
 
 theorem apart_own (h7 : c.n < 10) {i : Nat} (hi : i < 45) :
     ∀ w ∈ [(own c.n, 64 * c.n)], c.sl i + 8 * c.n ≤ w.1 ∨ w.1 + w.2 ≤ c.sl i := by
@@ -327,7 +327,7 @@ theorem apart_flag (h0 : 0 < c.n) {i : Nat} (hi : i ≠ FLAG) :
   rw [List.mem_singleton.mp hw]
   have := sl_apart c hi
   dsimp only
-  omega
+  omega_using [h0, this]
 
 theorem apart_append {W W' : List (Nat × Nat)} {x k : Nat}
     (h : ∀ w ∈ W, x + k ≤ w.1 ∨ w.1 + w.2 ≤ x) (h' : ∀ w ∈ W', x + k ≤ w.1 ∨ w.1 + w.2 ≤ x) :
@@ -339,14 +339,14 @@ theorem sv_unch {base : Addr} {W : List (Nat × Nat)} {m m' : Mem} (hu : Unch ba
     (h7 : c.n < 10) (hn : base.toNat + size ≤ 2 ^ 64) {i : Nat} (hi : i < 45)
     (hW : ∀ w ∈ W, c.sl i + 8 * c.n ≤ w.1 ∨ w.1 + w.2 ≤ c.sl i) :
     wordsVal m' base (c.sl i) c.n = wordsVal m base (c.sl i) c.n :=
-  hu.wordsVal hW (by have := sl_le c h7 hi; have := hn; omega)
+  hu.wordsVal hW (by have := sl_le c h7 hi; have := hn; omega_arith)
 
 /-- A byte of table `j` apart from what changed. -/
 theorem tbl_unch {base : Addr} {W : List (Nat × Nat)} {m m' : Mem} (hu : Unch base W m m')
     (h7 : c.n < 10) {j t : Nat} (hj : j < 3) (ht : t < 64 * c.n)
     (hW : ∀ w ∈ W, bitsAt c.n j + t + 1 ≤ w.1 ∨ w.1 + w.2 ≤ bitsAt c.n j + t) :
     m' (off base (bitsAt c.n j + t)) = m (off base (bitsAt c.n j + t)) :=
-  hu.byte hW (by have := bitsAt_le c h7 hj; simp only [size] at this; omega)
+  hu.byte hW (by have := bitsAt_le c h7 hj; simp only [size] at this; omega_using [ht, this])
 
 theorem tbl_apart_slW (h7 : c.n < 10) {l : List Nat} (hl : ∀ i ∈ l, i < 45) (j t : Nat) :
     ∀ w ∈ slW c l, bitsAt c.n j + t + 1 ≤ w.1 ∨ w.1 + w.2 ≤ bitsAt c.n j + t := by
@@ -359,14 +359,14 @@ theorem tbl_apart_own (h7 : c.n < 10) (j t : Nat) :
   intro w hw
   rw [List.mem_singleton.mp hw]
   have := own_below_bits c h7 j
-  exact Or.inr (by dsimp only; omega)
+  exact Or.inr (by dsimp only; omega_using [this])
 
 theorem tbl_apart_flag (h7 : c.n < 10) (h0 : 0 < c.n) (j t : Nat) :
     ∀ w ∈ [(c.sl FLAG, 8)], bitsAt c.n j + t + 1 ≤ w.1 ∨ w.1 + w.2 ≤ bitsAt c.n j + t := by
   intro w hw
   rw [List.mem_singleton.mp hw]
   have := sl_below_bits c h7 (i := FLAG) (by decide) j t
-  exact Or.inr (by dsimp only; omega)
+  exact Or.inr (by dsimp only; omega_using [h0, this])
 
 /-- Tables `j ≠ j'` are apart. -/
 theorem tbl_apart_tbl {j j' t : Nat} (hjj : j ≠ j') (ht : t < 64 * c.n) :
@@ -377,9 +377,9 @@ theorem tbl_apart_tbl {j j' t : Nat} (hjj : j ≠ j') (ht : t < 64 * c.n) :
   rcases Nat.lt_or_gt_of_ne hjj with h | h
   · have := Nat.mul_le_mul_left (64 * c.n) h
     rw [Nat.mul_succ] at this
-    omega
+    omega_using [ht, this]
   · have := Nat.mul_le_mul_left (64 * c.n) h
     rw [Nat.mul_succ] at this
-    omega
+    omega_using [this]
 
 end VG.Proof.Ecdsa.PPC64LE

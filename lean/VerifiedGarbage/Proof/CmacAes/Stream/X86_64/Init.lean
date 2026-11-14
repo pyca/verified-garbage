@@ -86,8 +86,8 @@ theorem IPre.of {s₀ : State} (h : initX86_64.pre s₀) :
     IPre s₀ (s₀.gpr .rdi) (s₀.gpr .rsi) (s₀.gpr .rcx) (s₀.gpr .rdx).toNat ⟨s₀.gpr .rcx, 2304⟩ :=
   let ⟨a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p⟩ := h
   ⟨rfl, rfl, rfl, rfl, a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p,
-    fun _ h₂ => Offset.contains_base _ (by omega) (by omega),
-    by rw [toNat_add_lt _ o (by decide)]; omega⟩
+    fun _ h₂ => Offset.contains_base _ (by omega_using [h₂]) (by omega_using [h₂]),
+    by rw [toNat_add_lt _ o (by decide)]; omega_using [o]⟩
 
 theorem IPre.zSub {s₀ : State} {St Kp S : Addr} {KL : Nat} {Z : Region} (hp : IPre s₀ St Kp S KL Z) {d n : Nat}
     (h₁ : 2048 ≤ d) (h₂ : d + n ≤ 2200) : Region.Sub ⟨S + BitVec.ofNat 64 d, n⟩ Z :=
@@ -539,7 +539,7 @@ theorem ICall.base (v : Ctr32Impl) :
     h.args.full ((hp.st_s.sub_left (Region.sub_prefix (by decide))).sub_right (Region.sub_prefix (by decide)))
       ((hp.st_s.sub_left (Offset.sub_base St (by decide))).sub_right (Region.sub_prefix (by decide)))
       (by rw [h.rsp]; exact hp.stk_s.sub_right (Region.sub_prefix (by decide)))
-      (by have := hp.wZ; simp only at this; omega)
+      (by have := hp.wZ; simp only at this; omega_using [this])
       (by
         rw [h.wr, hp.wr]
         exact Covers.of_sub fun r hr => by
@@ -628,7 +628,7 @@ theorem IPre.ofF {s₀ s₁ : State} (h : initX86_64F.pre s₀)
     by rw [rd]; exact b, by rw [wr]; exact c, d, e, f, by rw [sp]; exact g', by rw [sp]; exact h,
     by rw [sp]; exact i, by rw [sp]; exact j, by rw [sp]; exact k, by rw [sp]; exact l, m, n, o, p,
     fun h₁ h₂ => ?_, by rw [e0]; exact o⟩
-  rw [sub_add_ofNat _ h₁]; exact Offset.contains_base _ (by omega) (by omega)
+  rw [sub_add_ofNat _ h₁]; exact Offset.contains_base _ (by omega_using [h₁, h₂]) (by omega_using [h₂])
 
 theorem initF_wp (v : Ctr32Impl) (f : Proof.Aes.X86_64.Ctr32Free v.callee) {s₀ : State} (h0 : initX86_64F.pre s₀) :
     WP isa (initF ekF v.callee v.suffix) s₀ fun s' => gprPreserved s₀ s' ∧ initX86_64F.post s₀ s' := by

@@ -34,21 +34,21 @@ theorem step_ok {s0 s : State} {x q base : BitVec 32} {size acc b mod n start i 
   have progress := h.progress
   have ws := ctx.workspace.congr h.rest.wr
   rw [VG.Impl.Bignum.Arm.FiosPipelined.step,WP.seq_iff]
-  refine WP.mono (productAt_ok s next hn ws (by omega) (by omega) (by omega) h.bPtr h.outPtr) ?_
+  refine WP.mono (productAt_ok s next hn ws (by omega_using [offsetFits]) (by omega_using [hi, inf, progress]) (by omega_using [hi, outf, progress]) h.bPtr h.outPtr) ?_
   rintro u ⟨product,memU,restU⟩
-  have eB : b+4*(start+1)+(4*(i-start)+4)=b+4*(i+2) := by omega
-  have eT : acc+4*start+(4*(i-start)+4)+4=acc+4*(i+2) := by omega
-  have oldB := h.outside.w32 (d:=b+4*(i+2)) (by rcases ctx.accB with h|h <;> omega) (by omega)
-  have oldT := h.outside.w32 (d:=acc+4*(i+2)) (by omega) (by omega)
+  have eB : b+4*(start+1)+(4*(i-start)+4)=b+4*(i+2) := by omega_using [progress]
+  have eT : acc+4*start+(4*(i-start)+4)+4=acc+4*(i+2) := by omega_using [progress]
+  have oldB := h.outside.w32 (d:=b+4*(i+2)) (by rcases ctx.accB with h|h <;> omega_arith) (by omega_using [hi, nowrap, inf])
+  have oldT := h.outside.w32 (d:=acc+4*(i+2)) (by omega_using []) (by omega_using [hi, nowrap, outf])
   rw [eB,eT,h.scalar,oldB,oldT] at product
-  refine WP.mono (cancelAt_ok u pending hp (ws.congr restU.wr) (by omega) (by omega) (by omega)
+  refine WP.mono (cancelAt_ok u pending hp (ws.congr restU.wr) (by omega_using [offsetFits]) (by omega_using [hi, modf, progress]) (by omega_using [hi, outf, progress])
     ((restU.gpr .r4 (by rcases hn with rfl|rfl <;> decide)).trans h.mPtr)
     ((restU.gpr .r0 (by rcases hn with rfl|rfl <;> decide)).trans h.outPtr)) ?_
   rintro v ⟨cancel,memV,restV⟩
-  have eM : mod+4*(start+1)+4*(i-start)=mod+4*(i+1) := by omega
-  have eO : acc+4*start+4*(i-start)=acc+4*i := by omega
+  have eM : mod+4*(start+1)+4*(i-start)=mod+4*(i+1) := by omega_using [progress]
+  have eO : acc+4*start+4*(i-start)=acc+4*i := by omega_using [progress]
   rw [eO,memU] at memV
-  have oldM := h.outside.w32 (d:=mod+4*(i+1)) (by rcases ctx.accM with h|h <;> omega) (by omega)
+  have oldM := h.outside.w32 (d:=mod+4*(i+1)) (by rcases ctx.accM with h|h <;> omega_arith) (by omega_using [hi, nowrap, modf])
   rw [memU,eM,oldM,restU.gpr pending (by rcases regs with ⟨rfl,rfl⟩|⟨rfl,rfl⟩ <;> decide),
     restU.gpr .r2 (by rcases hn with rfl|rfl <;> decide),h.quotient,
     restU.gpr .r8 (by rcases hn with rfl|rfl <;> decide)] at cancel
@@ -57,16 +57,16 @@ theorem step_ok {s0 s : State} {x q base : BitVec 32} {size acc b mod n start i 
       x.toNat*w32 s0.mem (State.addr base) (b+4*(i+2))+(s.gpr .r7).toNat := by
     rw [restV.gpr next (by rcases regs with ⟨rfl,rfl⟩|⟨rfl,rfl⟩ <;> decide),
       restV.gpr .r7 (by rcases hp with rfl|rfl <;> decide)]
-    omega
+    omega_using [product]
   have nowrap' : (State.addr base).toNat+size≤2^32 := by
     simpa only [VG.Proof.X25519.Arm.addr_toNat] using nowrap
-  obtain ⟨writes,stored⟩ := store_prefix nowrap' (by omega) memV
+  obtain ⟨writes,stored⟩ := store_prefix nowrap' (by omega_using [hi, outf]) memV
   have outside : Outside (State.addr base) acc (4*(i+1)) s0.mem v.mem :=
-    (h.outside.mono (Nat.le_refl _) (by omega)).trans (writes.mono (by omega) (by omega))
+    (h.outside.mono (Nat.le_refl _) (by omega_using [])).trans (writes.mono (by omega_using []) (by omega_using []))
   have rest : Rest clobbers s v :=
     (restU.mono (by rcases hn with rfl|rfl <;> simp [clobbers])).trans
       (restV.mono (by rcases hp with rfl|rfl <;> simp [clobbers]))
-  refine ⟨by omega,by omega,?_,?_,?_,?_,?_,?_,outside,?_,?_⟩
+  refine ⟨by omega_using [hi],by omega_using [progress],?_,?_,?_,?_,?_,?_,outside,?_,?_⟩
   · rw [rest.gpr .r0 (by decide)];exact h.outPtr
   · rw [rest.gpr .r12 (by decide)];exact h.bPtr
   · rw [rest.gpr .r4 (by decide)];exact h.mPtr

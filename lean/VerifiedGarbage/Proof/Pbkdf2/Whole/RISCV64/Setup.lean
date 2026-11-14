@@ -68,10 +68,10 @@ theorem prologue_ok : WP isa (.block F.prologue) s₀ (Pro F s₀) := by
       rcases hq with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide)
     (fun q hq => by
       rw [t0, u₁.wr]
-      exact in_fr hp rfl (by have := saved_in q hq; omega) (by omega)) ?_
+      exact in_fr hp rfl (by have := saved_in q hq; omega_using [hl, this]) (by omega_using [hfr])) ?_
   refine wp_mv fun s₂ u₂ => wp_mv fun s₃ u₃ => wp_mv fun s₄ u₄ => wp_mv fun s₅ u₅ => wp_mv fun s₆ u₆ =>
     wp_mv fun s₇ u₇ => wp_mv fun s₈ u₈ => wp_mv fun s₉ u₉ =>
-    wp_addi (by simp only [Fns.st0O]; omega) fun s₁₀ u₁₀ => wp_addi (by omega) fun s₁₁ u₁₁ => WP.block_nil ?_
+    wp_addi (by simp only [Fns.st0O]; omega_using []) fun s₁₀ u₁₀ => wp_addi (by omega_using [hl, hfr]) fun s₁₁ u₁₁ => WP.block_nil ?_
   have mm : s₁₁.mem = Spill.saveMem s₁.mem s₀.sp s₁.gpr Fns.saved := by
     rw [u₁₁.mem, u₁₀.mem, u₉.mem, u₈.mem, u₇.mem, u₆.mem, u₅.mem, u₄.mem, u₃.mem, u₂.mem]
     show Spill.saveMem s₁.mem (s₁.gpr .t0) s₁.gpr Fns.saved = _
@@ -109,10 +109,10 @@ theorem prologue_ok : WP isa (.block F.prologue) s₀ (Pro F s₀) := by
     exact r _ (by decide)
   · rw [gg q (by revert q; decide), r q (by revert q hq; decide)]
   · rw [mm, u₁.mem]
-    refine ((Spill.saveMem_frame_base (n := 64) (fun p hp' => (saved_in p hp').2) (by omega) _ _ _).sub
+    refine ((Spill.saveMem_frame_base (n := 64) (fun p hp' => (saved_in p hp').2) (by omega_using []) _ _ _).sub
       fun r hr => ?_)
     simp only [List.mem_singleton] at hr; subst hr
-    exact ⟨frR F s₀, by simp, Region.sub_prefix (by omega)⟩
+    exact ⟨frR F s₀, by simp, Region.sub_prefix (by omega_using [hl])⟩
   · upd_simp [u₁₁.gpr, u₁₁.other, u₁₀.gpr, u₁₀.other, u₉.gpr, u₉.other, u₈.gpr, u₈.other, u₇.gpr, u₇.other,
       u₆.gpr, u₆.other, u₅.gpr, u₅.other, u₄.gpr, u₄.other, u₃.gpr, u₃.other, u₂.gpr, u₂.other]
     exact r _ (by decide)
@@ -155,14 +155,14 @@ variable {hF : FnsOK F} {s₀ : State}
 theorem States.keep {m m' : Mem} (h : States hF s₀ m) {rs : List Region} (hf : Frame rs m m')
     (hd : ∀ r ∈ rs, Region.Disjoint (sR s₀ Fns.st0O (2 * F.H.S)) r) : States hF s₀ m' := by
   have hz := sizes hF
-  have hS : F.H.S ≤ 256 := by have := hz.N; have := hz.B; rw [hz.S]; omega
+  have hS : F.H.S ≤ 256 := by have := hz.N; have := hz.B; rw [hz.S]; omega_arith
   refine ⟨hF.hH.congr m m' _ _ (fun i hi => ?_) h.1, hF.hH.congr m m' _ _ (fun i hi => ?_) h.2⟩
-  · exact hf.bytes (R := sR s₀ Fns.st0O F.H.S) (fun r hr => (hd r hr).sub_left (Region.sub_prefix (by omega)))
-      (by show F.H.S ≤ 2 ^ 64; omega) hi
-  · have := hf.bytes (R := sR s₀ Fns.st0O (2 * F.H.S)) (hd · ·) (by show 2 * F.H.S ≤ 2 ^ 64; omega)
-      (i := F.H.S + i) (by show F.H.S + i < 2 * F.H.S; omega)
+  · exact hf.bytes (R := sR s₀ Fns.st0O F.H.S) (fun r hr => (hd r hr).sub_left (Region.sub_prefix (by omega_using [])))
+      (by show F.H.S ≤ 2 ^ 64; omega_using [hS]) hi
+  · have := hf.bytes (R := sR s₀ Fns.st0O (2 * F.H.S)) (hd · ·) (by show 2 * F.H.S ≤ 2 ^ 64; omega_using [hS])
+      (i := F.H.S + i) (by show F.H.S + i < 2 * F.H.S; omega_using [hi])
     have e : sA s₀ Fns.st0O + BitVec.ofNat 64 (F.H.S + i) = sA s₀ F.st1O + BitVec.ofNat 64 i := by
-      rw [sA_add, sA_add, show Fns.st0O + (F.H.S + i) = F.st1O + i by simp only [Fns.st1O]; omega]
+      rw [sA_add, sA_add, show Fns.st0O + (F.H.S + i) = F.st1O + i by simp only [Fns.st1O]; omega_using []]
     rwa [e] at this
 
 end
@@ -184,11 +184,11 @@ theorem hi_args {s : State} (h : Pro F s₀ s) :
   have hz := sizes hF; have hl := layout (F := F)
   have hX := hz.X; have hfr := hz.frB
   have bsub : Region.Sub (below s.sp (F.H.ibytes + F.H.F)) (stk F s₀) := by
-    rw [h.kr.sp]; exact below_stk hp (by omega)
-  have p0 : Region.Sub (sR s₀ Fns.st0O F.H.S) (frR F s₀) := part_sub (by omega)
-  have p1 : Region.Sub (sR s₀ F.st1O F.H.S) (frR F s₀) := part_sub (by omega)
-  refine ⟨h.a0, h.a1, h.a2, by rw [h.a3], by rw [h.kr.sp]; exact hp.al, by rw [h.kr.sp]; have := hp.spX; omega,
-    part_disj (.inl (by omega)) (by omega) (by omega), (hp.f_pw.sub_left p0).symm,
+    rw [h.kr.sp]; exact below_stk hp (by omega_using [hX])
+  have p0 : Region.Sub (sR s₀ Fns.st0O F.H.S) (frR F s₀) := part_sub (by omega_using [hl])
+  have p1 : Region.Sub (sR s₀ F.st1O F.H.S) (frR F s₀) := part_sub (by omega_using [hl])
+  refine ⟨h.a0, h.a1, h.a2, by rw [h.a3], by rw [h.kr.sp]; exact hp.al, by rw [h.kr.sp]; have := hp.spX; omega_using [hX, this],
+    part_disj (.inl (by omega_using [hl])) (by omega_using [hl, hfr]) (by omega_using [hl, hfr]), (hp.f_pw.sub_left p0).symm,
     (hp.f_pw.sub_left p1).symm, (f_s hp).sub_left p0 |>.symm.sub_left bsub,
     (f_s hp).sub_left p1 |>.symm.sub_left bsub, hp.b_pw.sub_left bsub, ?_, ?_⟩
   · rw [h.kr.rd, h.kr.wr, hp.rd, hp.wr]
@@ -196,13 +196,13 @@ theorem hi_args {s : State} (h : Pro F s₀ s) :
     simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
     · exact ⟨pwR s₀, by simp, 0, by simp, by simp⟩
-    · exact ⟨frR F s₀, by simp, Fns.st0O, rfl, by show Fns.st0O + F.H.S ≤ F.frB; omega⟩
-    · exact ⟨frR F s₀, by simp, F.st1O, rfl, by show F.st1O + F.H.S ≤ F.frB; omega⟩
+    · exact ⟨frR F s₀, by simp, Fns.st0O, rfl, by show Fns.st0O + F.H.S ≤ F.frB; omega_using [hl]⟩
+    · exact ⟨frR F s₀, by simp, F.st1O, rfl, by show F.st1O + F.H.S ≤ F.frB; omega_using [hl]⟩
   · refine VG.Covers.of_sub fun r hr => ?_
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
-    · exact ⟨frR F s₀, fr_wr hp h.kr.wr, Fns.st0O, rfl, by show Fns.st0O + F.H.S ≤ F.frB; omega⟩
-    · exact ⟨frR F s₀, fr_wr hp h.kr.wr, F.st1O, rfl, by show F.st1O + F.H.S ≤ F.frB; omega⟩
+    · exact ⟨frR F s₀, fr_wr hp h.kr.wr, Fns.st0O, rfl, by show Fns.st0O + F.H.S ≤ F.frB; omega_using [hl]⟩
+    · exact ⟨frR F s₀, fr_wr hp h.kr.wr, F.st1O, rfl, by show F.st1O + F.H.S ≤ F.frB; omega_using [hl]⟩
 
 theorem hi_ok' {s : State} (h : Pro F s₀ s) : WP isa F.callHi s (Keyed hF s₀) := by
   have hz := sizes hF; have hl := layout (F := F)
@@ -211,9 +211,9 @@ theorem hi_ok' {s : State} (h : Pro F s₀ s) : WP isa F.callHi s (Keyed hF s₀
   have kr' := h.kr.call hp hz a.rd a.wr a.sp a.cs a.frame fun r hr => by
     simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
-    · exact .inl ⟨_, _, rfl, by simp only [Fns.st0O]; omega, by omega⟩
-    · exact .inl ⟨_, _, rfl, by omega, by omega⟩
-    · exact .inr (.inr ⟨_, by rw [h.kr.sp], by omega⟩)
+    · exact .inl ⟨_, _, rfl, by simp only [Fns.st0O]; omega_using [], by omega_using [hl]⟩
+    · exact .inl ⟨_, _, rfl, by omega_using [hl], by omega_using [hl]⟩
+    · exact .inr (.inr ⟨_, by rw [h.kr.sp], by omega_using [hX]⟩)
   rw [h.kr.pwBytes hp] at hI hO
   exact ⟨kr', by rw [a.cs _ (by decide), h.s4], by rw [a.cs _ (by decide), h.s5], hI, hO⟩
 

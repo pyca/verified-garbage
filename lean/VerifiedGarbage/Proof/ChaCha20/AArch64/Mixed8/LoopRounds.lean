@@ -63,7 +63,7 @@ theorem phase_loop_ok {blocks : Nat → CState} {v : CState} {s₀ s : State}
     have hu := hnext.writeCounter (b.gpr .x1 - BitVec.ofNat 64 1)
     have huc : u.gpr .x1 = BitVec.ofNat 64 (5 - (i + 1)) := by
       rw [RegUpd.gpr_write_self,BitVec.setWidth_eq,hbc,
-        Offset.ofNat_sub_ofNat (by omega : 1 ≤ 5 - i)]
+        Offset.ofNat_sub_ofNat (by omega_using [hi] : 1 ≤ 5 - i)]
       simp only [Nat.sub_sub]
     apply WP.block_cons_iff.mpr
     refine ⟨u,?_,WP.block_nil ?_⟩
@@ -76,11 +76,11 @@ theorem phase_loop_ok {blocks : Nat → CState} {v : CState} {s₀ s : State}
       · have hn : BitVec.ofNat 64 (5 - (i + 1)) ≠ 0 := by
           intro hz
           have hz' := congrArg BitVec.toNat hz
-          rw [BitVec.toNat_ofNat,Nat.mod_eq_of_lt (by omega : 5 - (i + 1) < 2 ^ 64)] at hz'
+          rw [BitVec.toNat_ofNat,Nat.mod_eq_of_lt (by omega_using [] : 5 - (i + 1) < 2 ^ 64)] at hz'
           change 5 - (i + 1) = 0 at hz'
-          omega
+          omega_using [hi, hl, hz']
         exact .inr ⟨by rw [he]; simpa using hn,
-          5 - (i + 1),by omega,i + 1,by omega,rfl,hu,huc⟩
+          5 - (i + 1),by omega_using [hi],i + 1,by omega_using [hi, hl],rfl,hu,huc⟩
   exact WP.loop (M := isa) Inv hstep 5 s ⟨0,by decide,rfl,h,hx⟩
 
 theorem counted_phase_ok {blocks : Nat → CState} {v : CState} {s : State} {restore : Reg}

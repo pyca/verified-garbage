@@ -41,7 +41,7 @@ theorem fn_keep {s : State} {base : Addr} (hs : Scratch s base) (ops : List Fiel
     WP isa (fn fld ops) s fun u => Keep base s u ∧ env u.mem base = evalOps ops (env s.mem base) :=
   WP.mono (fn_ok hs ops hk) fun _ ⟨hg, hrd, hwr, hv, hm⟩ =>
     ⟨⟨fun r hr => hg r (.inl hr), hrd, hwr, fun x hx => hm x fun op hop => by
-      have := hout op hop; omega⟩, hv⟩
+      have := hout op hop; omega_using [hx, this]⟩, hv⟩
 
 end Point64
 

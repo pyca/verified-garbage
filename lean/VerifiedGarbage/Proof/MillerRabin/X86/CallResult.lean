@@ -28,7 +28,7 @@ theorem mulPost {g : Geometry} {s t : State} {capacity b c : Nat}
     exact Nat.mod_eq_of_lt g.W.isLt
   sig_post [Proof.Rsa.Mont.mulContract, Proof.Rsa.Mont.sig, abi, argSlots, argVal, argBytes] at post
   simp only [a0, a1, a2, a3, a4, ptr, BitVec.toNat_ofNat, Nat.mod_eq_of_lt capBound,
-    Nat.mod_eq_of_lt (by omega : b < 2 ^ 32), M.width] at post
+    Nat.mod_eq_of_lt (by omega_using [bBound] : b < 2 ^ 32), M.width] at post
   obtain ⟨low, congruence, keeps⟩ := post
   refine ⟨?_, keeps⟩
   rw [VG.Proof.Mont.X86.Compact.numAt_val32, VG.Proof.Mont.X86.Compact.numAt_val32] at low

@@ -67,7 +67,7 @@ theorem load_ok {s₀ : State} (hp : Pre s₀) {s : State}
       compressBlocks (H₀ s₀) s₀.mem ((VG.Proof.Sha256.X86.bp s₀).setWidth 64) 0 := by
     apply stateAt_eq hp
     intro k hk
-    rw [hframe.readW (contains_sub (len := 32) (off := 4 * k) (by omega) (by omega)
+    rw [hframe.readW (contains_sub (len := 32) (off := 4 * k) (by omega_using [hk]) (by omega_using [hk])
       (hp.stAddr_eq hk)) (by simpa using hp.st_scr.sub_right (work_sub _)) (by decide),
       ← stateAt_get hp s.mem hk, hc.state]
   have hb₃ : s₃.gpr .ebx = st s₀ := by rw [hg₃, hg₂ _ (by decide), hb₁]

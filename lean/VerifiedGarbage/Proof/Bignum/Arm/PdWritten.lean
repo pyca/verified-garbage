@@ -33,7 +33,7 @@ theorem pdOutput_written {s t : State} {dst pp : BitVec 32} {k : Nat} {nb eb xb 
   · simp only [exponent, ite_true] at result
     rw [first, second] at result
     obtain ⟨odd, large, _⟩ := VG.Proof.Bignum.valid_facts valid hk
-    have positive : 0 < Spec.Rsa.os2ip nb := by omega
+    have positive : 0 < Spec.Rsa.os2ip nb := by omega_using [odd]
     have accepted : pdAccepted (Spec.Rsa.os2ip nb) (2 ^ (128 * Spec.Rsa.modulusWords k) % Spec.Rsa.os2ip nb) = true := by
       simp only [pdAccepted, decide_eq_true large, decide_eq_true (Nat.mod_lt _ positive), decide_eq_true odd, Bool.and_true]
     have bound : Spec.Rsa.os2ip nb < 2 ^ (8 * k) := by

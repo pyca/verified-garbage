@@ -130,20 +130,20 @@ theorem accumulateW_ok {s : State} {lo hi : Nat → Sums} {FE FO GE GO : Nat →
   have C₄ := ((c₁.trans c₂).trans c₃).trans c₄
   refine umlal_ok (hi := false) (by rw [C₄.get .v23]; exact a23)
     (by rw [C₄.get .v6]; exact hfe) (by rw [C₄.get .v20]; exact hgo)
-    (fun e he => by have := (blo e he).2.2; simp only [Nat.zero_add, Bool.false_eq_true, ite_false]; omega)
+    (fun e he => by have := (blo e he).2.2; simp only [Nat.zero_add, Bool.false_eq_true, ite_false]; omega_using [this])
     fun s₅ c₅ l₅ => ?_
   refine umlal_ok (hi := true) (by rw [c₅.get .v27, C₄.get .v27]; exact a27)
     (by rw [c₅.get .v6, C₄.get .v6]; exact hfe) (by rw [c₅.get .v20, C₄.get .v20]; exact hgo)
-    (fun e he => by have := (bhi e he).2.2; simp only [ite_true, Nat.add_comm 4 e] at this ⊢; omega)
+    (fun e he => by have := (bhi e he).2.2; simp only [ite_true, Nat.add_comm 4 e] at this ⊢; omega_using [this])
     fun s₆ c₆ l₆ => ?_
   have C₆ := (C₄.trans c₅).trans c₆
   refine umlal_ok (hi := false) (by rw [c₆.get .v23]; exact l₅)
     (by rw [C₆.get .v7]; exact hfo) (by rw [C₆.get .v19]; exact hge)
-    (fun e he => by have := (blo e he).2.2; simp only [Nat.zero_add, Bool.false_eq_true, ite_false]; omega)
+    (fun e he => by have := (blo e he).2.2; simp only [Nat.zero_add, Bool.false_eq_true, ite_false]; omega_using [this])
     fun s₇ c₇ l₇ => ?_
   refine umlal_ok (hi := true) (by rw [c₇.get .v27]; exact l₆)
     (by rw [c₇.get .v7, C₆.get .v7]; exact hfo) (by rw [c₇.get .v19, C₆.get .v19]; exact hge)
-    (fun e he => by have := (bhi e he).2.2; simp only [ite_true, Nat.add_comm 4 e] at this ⊢; omega)
+    (fun e he => by have := (bhi e he).2.2; simp only [ite_true, Nat.add_comm 4 e] at this ⊢; omega_using [this])
     fun s₈ c₈ l₈ => ?_
   have C₈ := (C₆.trans c₇).trans c₈
   refine k s₈ C₈.mono ⟨⟨?_, ?_, ?_⟩, ?_, ?_, ?_⟩
@@ -206,28 +206,28 @@ theorem fullTermW_ok {s : State} {bf bg : Reg} {fg : Nat × Nat} {lo hi : Nat �
   have hc₁ : VConsts s₁ := ⟨by rw [v₁]; exact hc.q, by rw [v₁]; exact hc.m⟩
   have ha₁ : AccumW s₁ lo hi := by simpa only [AccumW, Accum, v₁] using ha
   have nlo : ∀ e < 4, (advance lo F G e).Bounded (n + 1) := fun e he =>
-    (hlo e he).next (h.boundF _ (by omega)) (h.boundF _ (by omega)) (h.boundG _ (by omega))
-      (h.boundG _ (by omega))
+    (hlo e he).next (h.boundF _ (by omega_using [he])) (h.boundF _ (by omega_using [he])) (h.boundG _ (by omega_using [he]))
+      (h.boundG _ (by omega_using [he]))
   have nhi : ∀ e < 4, (advance hi (upper F) (upper G) e).Bounded (n + 1) := fun e he =>
-    (hhi e he).next (h.boundF _ (by omega)) (h.boundF _ (by omega)) (h.boundG _ (by omega))
-      (h.boundG _ (by omega))
+    (hhi e he).next (h.boundF _ (by omega_using [he])) (h.boundF _ (by omega_using [he])) (h.boundG _ (by omega_using [he]))
+      (h.boundG _ (by omega_using [he]))
   rw [List.append_assoc, ← List.append_nil accumulateW]
   refine loads_ok (fun i hi => by rw [h₁.rd, h₁.wr, e₁]; exact h.readF i hi)
     (fun i hi => by rw [h₁.rd, h₁.wr, e₂]; exact h.readG i hi) fun s₂ c₂ l0 l1 l4 l5 => ?_
   have f0 : HLanes (s₂.v .v0) F := by
     rw [l0, e₁, h₁.mem, ← BitVec.add_zero (s.gpr bf + BitVec.ofNat 64 fg.1 + s.gpr .x12),
       show (0#64 : BitVec 64) = BitVec.ofNat 64 (2 * 0) from rfl]
-    exact hlanes_coeffs _ _ 0 fun e he => by rw [Nat.zero_add]; exact h.valueF e (by omega)
+    exact hlanes_coeffs _ _ 0 fun e he => by rw [Nat.zero_add]; exact h.valueF e (by omega_using [he])
   have f1 : HLanes (s₂.v .v1) (upper F) := by
     rw [l1, e₁, h₁.mem, show BitVec.ofNat 64 16 = BitVec.ofNat 64 (2 * 8) from rfl]
-    exact hlanes_coeffs _ _ 8 fun e he => h.valueF (8 + e) (by omega)
+    exact hlanes_coeffs _ _ 8 fun e he => h.valueF (8 + e) (by omega_using [he])
   have g0 : HLanes (s₂.v .v4) G := by
     rw [l4, e₂, h₁.mem, ← BitVec.add_zero (s.gpr bg + BitVec.ofNat 64 fg.2 + s.gpr .x12),
       show (0#64 : BitVec 64) = BitVec.ofNat 64 (2 * 0) from rfl]
-    exact hlanes_coeffs _ _ 0 fun e he => by rw [Nat.zero_add]; exact h.valueG e (by omega)
+    exact hlanes_coeffs _ _ 0 fun e he => by rw [Nat.zero_add]; exact h.valueG e (by omega_using [he])
   have g1 : HLanes (s₂.v .v5) (upper G) := by
     rw [l5, e₂, h₁.mem, show BitVec.ofNat 64 16 = BitVec.ofNat 64 (2 * 8) from rfl]
-    exact hlanes_coeffs _ _ 8 fun e he => h.valueG (8 + e) (by omega)
+    exact hlanes_coeffs _ _ 8 fun e he => h.valueG (8 + e) (by omega_using [he])
   refine gatherW_ok f0 f1 g0 g1 fun s₃ c₃ fe fo ge go => ?_
   have ha₃ : AccumW s₃ lo hi := by
     obtain ⟨⟨a1, a2, a3⟩, a5, a6, a7⟩ := ha₁
@@ -236,19 +236,19 @@ theorem fullTermW_ok {s : State} {bf bg : Reg} {fg : Nat × Nat} {lo hi : Nat �
       by rw [c₃.get .v26, c₂.get .v26]; exact a6, by rw [c₃.get .v27, c₂.get .v27]; exact a7⟩
   have wl : ∀ e < 4, ∀ {x : Sums}, x.Bounded (n + 1) → x.even < 2 ^ 32 ∧ x.odd < 2 ^ 32 ∧ x.cross < 2 ^ 32 :=
     fun e _ x hx => by
-      have := hx.noWrap (by omega)
-      exact ⟨by omega, by omega, by omega⟩
+      have := hx.noWrap (by omega_using [hn])
+      exact ⟨by omega_using [this], by omega_using [this], by omega_using [this]⟩
   refine accumulateW_ok ha₃ fe fo ge go (fun e he => wl e he (nlo e he))
     (fun e he => wl e he (by
       have := nhi e he
       simp only [advance, upper] at this
-      rw [show 8 + 2 * e = 2 * (4 + e) by omega, show 8 + (2 * e + 1) = 2 * (4 + e) + 1 by omega] at this
+      rw [show 8 + 2 * e = 2 * (4 + e) by omega_using [], show 8 + (2 * e + 1) = 2 * (4 + e) + 1 by omega_using []] at this
       exact this)) fun s₄ c₄ a₄ => wp_nil ?_
   have eqhi : (fun e => (hi e).next (F (2 * (4 + e))) (F (2 * (4 + e) + 1)) (G (2 * (4 + e)))
       (G (2 * (4 + e) + 1))) = advance hi (upper F) (upper G) := by
     funext e
     simp only [advance, upper]
-    rw [show 8 + 2 * e = 2 * (4 + e) by omega, show 8 + (2 * e + 1) = 2 * (4 + e) + 1 by omega]
+    rw [show 8 + 2 * e = 2 * (4 + e) by omega_using [], show 8 + (2 * e + 1) = 2 * (4 + e) + 1 by omega_using []]
   rw [eqhi] at a₄
   have C := (c₂.trans c₃).trans c₄
   refine ⟨?_, hc₁.chg C, a₄⟩

@@ -65,7 +65,7 @@ theorem ret_post {s₀ t : State} {r : Nat} (hr : r < 65536) (hk : KX s₀ t)
     WP isa (ret r) t fun u => abiPreserved s₀ u ∧ kpContract.post s₀ u :=
   WP.mono (ret_ok t hr) fun u ⟨⟨h0, _⟩, k⟩ => ⟨abiPreserved_of_keep (keep_trans hk (k.mono (by decide))), fun hd => by
     show ((u.gpr .x0).setWidth 32).toNat = _
-    rw [h0, setWidth32_ofNat (by omega), hv hd]⟩
+    rw [h0, setWidth32_ofNat (by omega_using [hr]), hv hd]⟩
 
 theorem bit_false' {t : State} {P : Prop} [Decidable P] (h : isa.eval (.zero .x .x9) t = some (bit P == 0))
     (he : isa.eval (.zero .x .x9) t = some true) : ¬ P := by

@@ -29,15 +29,15 @@ theorem absorbFixed_ok (v : Backend) (s : State)
       Repr b h0 t.mem (s.gpr .x24) (bytesAt s.mem (s.gpr .x24 + BitVec.ofNat 64 offset) size) ∧
       Keeps s t := by
   unfold absorbFixed
-  refine WP.seq ((fixedArgs_ok s offset size offsetUpper (by omega)).mono fun u hu => ?_)
+  refine WP.seq ((fixedArgs_ok s offset size offsetUpper (by omega_using [sizeBound])).mono fun u hu => ?_)
   have p : u.gpr .x24 = s.gpr .x24 := hu.other _ (by decide) (by decide) (by decide)
   have sp := hu.sp
   have len : (u.gpr .x3).toNat = size := by
-    rw [hu.size, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+    rw [hu.size, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [sizeBound])]
   have wr : (⟨u.gpr .x24, 16384⟩ : Region) ∈ u.wr := by rw [p, hu.wr]; exact hwr
   have hr : Repr b h0 u.mem (u.gpr .x24) [] := by rw [hu.mem, p]; exact repr
   have hc : u.gpr .x1 = BitVec.ofNat 64 ([] : List Byte).length := hu.count
-  have hb : ([] : List Byte).length + (u.gpr .x3).toNat < 2 ^ 64 := by simp only [List.length_nil, Nat.zero_add, len]; omega
+  have hb : ([] : List Byte).length + (u.gpr .x3).toNat < 2 ^ 64 := by simp only [List.length_nil, Nat.zero_add, len]; omega_using [sizeBound]
   have cover : Covers [⟨u.gpr .x2, (u.gpr .x3).toNat⟩] (u.rd ++ u.wr) := by
     apply Covers.of_sub
     intro r hr
@@ -47,10 +47,10 @@ theorem absorbFixed_ok (v : Backend) (s : State)
     rw [len]; exact sizeBound
   have ds : (⟨u.gpr .x2, (u.gpr .x3).toNat⟩ : Region).Disjoint ⟨u.gpr .x24, 192⟩ := by
     rw [hu.data, len, p]
-    exact (Offset.base_disjoint _ (by omega) (by omega)).symm
+    exact (Offset.base_disjoint _ (by omega_using [offsetLower]) (by omega_using [sizeBound])).symm
   have dw : (⟨u.gpr .x2, (u.gpr .x3).toNat⟩ : Region).Disjoint ⟨u.gpr .x24 + 192, 576⟩ := by
     rw [hu.data, len, p]
-    exact Offset.disjoint _ (d := offset) (n := size) (e := 192) (k := 576) (by omega) (by omega) (by decide)
+    exact Offset.disjoint _ (d := offset) (n := size) (e := 192) (k := 576) (by omega_using [offsetLower]) (by omega_using [sizeBound]) (by decide)
   have sw : (below u.sp 16).Disjoint ⟨u.gpr .x24, 16384⟩ := by
     rw [sp, p]; exact stackWork
   have sd : (below u.sp 16).Disjoint ⟨u.gpr .x2, (u.gpr .x3).toNat⟩ := by

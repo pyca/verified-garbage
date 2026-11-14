@@ -28,7 +28,7 @@ def EncodedResult (E : Environment) (m : Mem) (t : State) : Prop :=
 theorem BodyOutcome.encoded {E : Environment} {m : Mem} {t : State} (v : E.Valid) (R : BodyOutcome E m t) :
     EncodedResult E m t := by
   have widths := v.widths
-  have bits : 16 * E.primeLength = 32 * E.n := by omega
+  have bits : 16 * E.primeLength = 32 * E.n := by omega_using [widths]
   unfold BodyOutcome WrittenCore at R
   rw [show E.outputs.n = E.n from rfl] at R
   unfold EncodedResult encodedOperation Proof.RsaKeyGen.keyOp

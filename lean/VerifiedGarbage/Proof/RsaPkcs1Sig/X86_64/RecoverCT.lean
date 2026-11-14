@@ -71,7 +71,7 @@ theorem Sib.arg {a s : State} (h : Sib a s) {i : Nat} (hi : 1 ≤ i) (hi' : i < 
   have := h.2.2.2.1
   simp only [List.cons.injEq] at this
   obtain ⟨h1, h2, h3, h4, -⟩ := this
-  rcases (show i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 by omega) with rfl | rfl | rfl | rfl
+  rcases (show i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 by omega_using [hi, hi']) with rfl | rfl | rfl | rfl
   · exact h1.symm
   · exact h2.symm
   · exact h3.symm

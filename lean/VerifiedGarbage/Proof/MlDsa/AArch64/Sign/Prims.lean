@@ -77,7 +77,7 @@ structure PrimsOk (P : Prims) (S : Nat) : Prop where
     (s'.gpr .x0).setWidth 32 = 1 →
     (sampleInBall ((s.gpr .x2).setWidth 32).toNat maxBounds.ball (bytesAt s.mem (s.gpr .x0) (s.gpr .x1).toNat)).isSome
 
-theorem PrimsOk.s64 {P : Prims} {S : Nat} (h : PrimsOk P S) : S < 2 ^ 64 := by have := h.sl; omega
+theorem PrimsOk.s64 {P : Prims} {S : Nat} (h : PrimsOk P S) : S < 2 ^ 64 := by have := h.sl; omega_using [this]
 
 section
 variable {D : Nat} {rbs wbs : List (Reg × Nat)}
@@ -205,7 +205,7 @@ theorem ballCall_ok {P : Prims} (hP : PrimsOk P D) {s : State} (L : Lay D rbs wb
         ((s'.gpr .x0).setWidth 32) (polyAt s'.mem (pa s c)) ∧
       ((s'.gpr .x0).setWidth 32 = 1 → (sampleInBall tau maxBounds.ball (bytesAt s.mem (pa s (sc oCT)) len)).isSome) := by
   have hl : len < 2 ^ 32 ∧ tau < 2 ^ 32 := by
-    simp only [ballParams, List.mem_cons, Prod.mk.injEq, List.not_mem_nil, or_false] at hp; omega
+    simp only [ballParams, List.mem_cons, Prod.mk.injEq, List.not_mem_nil, or_false] at hp; omega_using [hp]
   have hc' := hc
   simp only [ballChk, Bool.and_eq_true, and_assoc] at hc'
   obtain ⟨_, _, _, c4, c5, c6, _, _⟩ := hc'
@@ -215,12 +215,12 @@ theorem ballCall_ok {P : Prims} (hP : PrimsOk P D) {s : State} (L : Lay D rbs wb
   sig_post [sampleInBallContract, sampleInBallSig, AArch64.abi, VG.AArch64.argRegs] at hq
   rw [Args.r0 h1, Args.r1 h1, Args.r2 h1, Args.r3 h1, Args.mem h1] at hq
   simp only [Arg.val] at hq
-  rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega), imm32 hl.2] at hq
+  rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hl]), imm32 hl.2] at hq
   simp only [State.withRegions_gpr, State.withRegions_mem, State.callEntry_mem,
     State.callEntry_gpr _ (by decide : Reg.x0 ∉ linkRegs), State.callEntry_gpr _ (by decide : Reg.x1 ∉ linkRegs),
     State.callEntry_gpr _ (by decide : Reg.x2 ∉ linkRegs), Args.r0 h1, Args.r1 h1, Args.r2 h1, Args.mem h1,
     Arg.val] at hx
-  rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega), imm32 hl.2] at hx
+  rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hl]), imm32 hl.2] at hx
   exact ⟨hq.1, hq.2, hx⟩
 
 theorem ballCall_tr {P : Prims} (hP : PrimsOk P D) {len tau : Nat} {c : Ptr} (hp : (len, tau) ∈ ballParams)
@@ -282,14 +282,14 @@ theorem hintParams_lt {ω k : Nat} (h : (ω, k) ∈ hintParams) : ω < 2 ^ 32 �
 
 theorem hbpOk_of {ω k : Nat} (hp : (ω, k) ∈ hintParams) : HbpOk (256 * k) ω (ω + k) := by
   obtain ⟨h1, h2, h3⟩ := hintParams_lt hp
-  exact ⟨by rw [show ω + k - ω = k by omega]; exact hp, by omega, by rw [show ω + k - ω = k by omega], h3, h1, h2⟩
+  exact ⟨by rw [show ω + k - ω = k by omega_using []]; exact hp, by omega_using [], by rw [show ω + k - ω = k by omega_using []], h3, h1, h2⟩
 
 theorem hbpAt_ok {P : Prims} (hP : PrimsOk P D) {s : State} (L : Lay D rbs wbs s) {h y : Ptr} {ω k : Nat}
     (hp : (ω, k) ∈ hintParams) (hc : rwChk rbs wbs h (256 * k * 4) y (ω + k) = true)
     (hones : hintOnes (hintAt s.mem (pa s h) k) ≤ ω) :
     WP isa (hintBitPackAt P h (256 * k) ω y (ω + k)) s fun s' => PPostB D s s' [(y, ω + k)] ∧
       s'.gpr .x24 = s.gpr .x24 ∧ bytesAt s'.mem (pa s y) (ω + k) = hintBitPack ω k (hintAt s.mem (pa s h) k) := by
-  have ek : ω + k - ω = k := by omega
+  have ek : ω + k - ω = k := by omega_using []
   have := hbpAtK_ok L.s64 hP.hintBitPack L hc (hbpOk_of hp) (by rw [ek]; exact hones)
   rw [ek] at this
   exact this
@@ -302,7 +302,7 @@ theorem hbpAt_tr {P : Prims} (hP : PrimsOk P D) {h y : Ptr} {ω k : Nat} (hp : (
       (List.range (256 * k)).map (fun i => (coeffAt x.mem (pa x h) i).toNat) =
         (List.range (256 * k)).map (fun i => (coeffAt z.mem (pa z h) i).toNat))
       (hintBitPackAt P h (256 * k) ω y (ω + k)) fun _ _ => True := by
-  have ek : ω + k - ω = k := by omega
+  have ek : ω + k - ω = k := by omega_using []
   exact fun x z t₁ t₂ x' z' hq e₁ e₂ => hbpAtK_tr (Q := fun x z => LRel D rbs wbs x z ∧ hintOnes (hintAt x.mem (pa x h) k) ≤ ω ∧
       hintOnes (hintAt z.mem (pa z h) k) ≤ ω ∧
       (List.range (256 * k)).map (fun i => (coeffAt x.mem (pa x h) i).toNat) =

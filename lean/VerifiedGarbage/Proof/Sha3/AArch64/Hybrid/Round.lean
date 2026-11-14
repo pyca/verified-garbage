@@ -85,7 +85,7 @@ theorem round_ok {off r : Nat} (hr : r < 24) {s : State} {A B C : Spec.Sha3.Stat
       rw [RegUpd.v_write, show w.v .v0 = _ from hcw 0 (by decide), pair_xor]
     · rw [ite_eq_right h0, ite_eq_right h0, h2.get (vreg i) (by
         change ¬ vreg i = vreg 0
-        rw [vreg_inj i (by omega) 0 (by decide)]; exact h0), h1.get (vreg i)
+        rw [vreg_inj i (by omega_using [hi]) 0 (by decide)]; exact h0), h1.get (vreg i)
         ((show ∀ i < 25, vreg i ≠ .v26 by decide) i hi), RegUpd.v_write]
       exact hcw i hi
   · -- The scalar state: chi's lanes, then iota on lane 0.

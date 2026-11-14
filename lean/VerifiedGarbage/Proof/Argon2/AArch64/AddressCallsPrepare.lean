@@ -60,7 +60,7 @@ theorem field_ok (s : State) (i : Nat) (hi : i < 7)
       rintro t ⟨mem, regs, rd, wr, mx⟩
       exact ⟨mem, ⟨fun r _ _ => congrFun regs r, rd, wr⟩, mx⟩
     · simp only [two, ite_false]
-      refine (frameWord_ok s i (frameOffset i) (by omega) (offset_aligned i) (offset_bound i hi) hr hw).mono ?_
+      refine (frameWord_ok s i (frameOffset i) (by omega_using [hi]) (offset_aligned i) (offset_bound i hi) hr hw).mono ?_
       rintro t ⟨mem, regs, rd, wr, mx⟩
       exact ⟨mem, ⟨fun r h _ => regs r h, rd, wr⟩, mx⟩
 
@@ -101,7 +101,7 @@ theorem prefix_ok (n : Nat) (hn : n ≤ 7) (s : State)
     simp only [fields, List.range_succ, List.flatMap_append, List.flatMap_cons,
       List.flatMap_nil, List.append_nil]
     apply WP.block_append
-    refine (ih (by omega)).mono ?_
+    refine (ih (by omega_using [hn])).mono ?_
     rintro a ⟨mem, frame, keeps, mx⟩
     have dest : a.gpr .x0 = s.gpr .x0 := keeps.1 .x0 (by decide) (by decide)
     have read : InRegions (a.rd ++ a.wr) (off (a.gpr .x19) (frameOffset n)) 8 := by
@@ -110,16 +110,16 @@ theorem prefix_ok (n : Nat) (hn : n ≤ 7) (s : State)
     have writable : InRegions a.wr (off (a.gpr .x0) (8 * n)) 8 := by
       rw [dest, keeps.2.2]
       exact write _ _ ⟨⟨s.gpr .x0, 1024⟩, by simp,
-        Offset.contains_base _ (d := 8 * n) (n := 8) (k := 1024) (by omega) (by omega)⟩
-    refine (field_ok a n (by omega) read writable).mono ?_
+        Offset.contains_base _ (d := 8 * n) (n := 8) (k := 1024) (by omega_using [hn]) (by omega_using [hn])⟩
+    refine (field_ok a n (by omega_using [hn]) read writable).mono ?_
     rintro t ⟨mem', keeps', mx'⟩
-    have value' := value_kept keeps frame sep n (by omega)
+    have value' := value_kept keeps frame sep n (by omega_using [hn])
     refine ⟨?_, ?_, keeps.trans keeps', mx'.trans mx⟩
     · rw [mem', dest, value', mem]
       rfl
     · rw [mem', dest]
       exact frame.writeW (r := ⟨s.gpr .x0, 1024⟩) (by simp) _
-        (Offset.contains_base _ (by omega) (by omega))
+        (Offset.contains_base _ (by omega_using [hn]) (by omega_using [hn]))
 
 end VG.Proof.Argon2.AArch64.AddressHeader
 end
@@ -196,7 +196,7 @@ structure Cleared (s t : State) (offset : Nat) : Prop where
 theorem clearAt_ok (s : State) (h : Ready s) (offset : Nat) (bound : offset + 1024 ≤ 8192) :
     WP isa (clearAt offset) s (Cleared s · offset) := by
   unfold clearAt
-  refine WP.seq ((pointer_ok s offset (by omega) h.frameRead).mono ?_)
+  refine WP.seq ((pointer_ok s offset (by omega_using [bound]) h.frameRead).mono ?_)
   rintro a ⟨dest, keeps⟩
   have write : Covers [⟨a.gpr .x0, 1024⟩] a.wr := by
     rw [dest, keeps.wr]; exact work_cover s h offset 1024 bound
@@ -233,7 +233,7 @@ theorem Cleared.full_frame {s t : State} {offset : Nat} (h : Cleared s t offset)
 theorem frame_word {s t : State} (h : Ready s) (frame : Frame [⟨work s, 8192⟩] s.mem t.mem)
     (d : Nat) (bound : d + 8 ≤ 272) :
     t.mem.readW (off (s.gpr .x19) d) 64 = s.mem.readW (off (s.gpr .x19) d) 64 :=
-  frame.readW (r := ⟨s.gpr .x19, 272⟩) (Offset.contains_base _ bound (by omega))
+  frame.readW (r := ⟨s.gpr .x19, 272⟩) (Offset.contains_base _ bound (by omega_using [bound]))
     (by intro r hr; simp only [List.mem_singleton] at hr; subst r; exact h.frameWork) (by decide)
 
 end VG.Proof.Argon2.AArch64.AddressCalls

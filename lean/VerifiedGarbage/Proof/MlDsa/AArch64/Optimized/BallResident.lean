@@ -63,7 +63,7 @@ theorem secondPrefix_ok (v : Proof.Sha3.AArch64.Permutation) {P : Sp} {σ s : St
   unfold secondPrefix
   refine WP.seq (WP.block_append (M := isa) (l₁ := ([.str .x .x9 .x25 1800,.str .x .x10 .x25 1808,.str .x .x11 .x25 1816] : List VG.AArch64.Instr))
     (l₂ := args) (WP.mono (save_ok (s := s) (p := P.scr) he.x25 (fun d hd => inScr hp he.wr (by
-      rcases mem3 hd with rfl | rfl | rfl <;> omega))) fun t ⟨kt,ft,sv⟩ => ?_))
+      rcases mem3 hd with rfl | rfl | rfl <;> omega_using []))) fun t ⟨kt,ft,sv⟩ => ?_))
   have et := env_saved hp he kt ft
   have ct : VG.Proof.MlDsa.AArch64.Sample.Ball.CStored t.mem P.a c := stored_frame hparser.stored ft (by
     intro r hr; rcases mem3 hr with rfl|rfl|rfl <;> exact a_scr' hp (by decide))
@@ -80,7 +80,7 @@ theorem secondPrefix_ok (v : Proof.Sha3.AArch64.Permutation) {P : Sp} {σ s : St
     (by rw [ku.mem,st,kt.get .x0]; exact hn)
     (by exact ⟨by rw [ku.mem]; exact sv.r9,by rw [ku.mem]; exact sv.r10,by rw [ku.mem]; exact sv.r11⟩) (by simpa only [ku.mem] using ct)) fun t₂ ⟨et₂,sv₂,ct₂,ot₂⟩ => ?_)
   refine WP.mono (restore_ok et₂.x25 sv₂ (fun d hd => inScrRd hp et₂.rd et₂.wr (by
-    rcases mem3 hd with rfl | rfl | rfl <;> omega))) fun t₃ ⟨kr,rr⟩ => ?_
+    rcases mem3 hd with rfl | rfl | rfl <;> omega_using []))) fun t₃ ⟨kr,rr⟩ => ?_
   have er := et₂.keep kr.keep kr.mem
   have pr : Parser P.a c i w t₃ := ⟨er.x26,rr.x9.trans hparser.x9,
     by rw [rr.x10,hparser.x10],by rw [rr.x11,hparser.x11],rr.x12,rr.x15,by rw [kr.mem]; exact ct₂⟩
@@ -192,7 +192,7 @@ open VG.Proof.MlDsa.AArch64.Sample.Ball (spOf pub_eq W)
       obtain ⟨⟨σ₁,σ₂,_,_,hq,h₁,h₂,_⟩,_⟩ := hh
       exact agree_of (by rw [h₁.env.sp,h₂.env.sp,hq.2.2.2.2.2.1]) (by simp)) (by taint_decide)
   · intro s t ts tt u z ⟨⟨σ₁,σ₂,p₁,p₂,hq,h₁,h₂,h0⟩,_⟩ es et
-    have ht : tauOf σ₁≤64 := by have := (Sample.Ball.params p₁).2.2; omega
+    have ht : tauOf σ₁≤64 := by have := (Sample.Ball.params p₁).2.2; omega_using [this]
     have hg : 256-tauOf σ₁≤(ballFold (tauOf σ₁) (firstBytes σ₁)).2 := by
       simpa only [ballFold,Spec.MlDsa.n] using (bFold_ge (τ := tauOf σ₁) (h := signs (firstBytes σ₁)) (Vector.replicate 256 0,256-tauOf σ₁) ((firstBytes σ₁).drop 8))
     have hs₂ : SpOk (spOf σ₁) σ₂ := by rw [pub_eq hq]; exact Sample.Ball.spOk p₂
@@ -206,13 +206,13 @@ open VG.Proof.MlDsa.AArch64.Sample.Ball (spOf pub_eq W)
       (c := (ballFold (tauOf σ₁) (firstBytes σ₁)).1)
       (w := W (firstBytes σ₁) >>> ((ballFold (tauOf σ₁) (firstBytes σ₁)).2-(256-tauOf σ₁)))
       (Y := tailBytes σ₁)
-      (Sample.Ball.spOk p₁) hs₂ (bFold_le (by simp only [Spec.MlDsa.n]; omega) _)
+      (Sample.Ball.spOk p₁) hs₂ (bFold_le (by simp only [Spec.MlDsa.n]; omega_using []) _)
       (Proof.Sha3.length_squeezeFrom (by decide) (by decide) _ _ _)
       (fun j hj hjn => by
         rw [← BitVec.shiftRight_add]
         rw [show (ballFold (tauOf σ₁) (firstBytes σ₁)).2-(256-tauOf σ₁)+
-          (j-(ballFold (tauOf σ₁) (firstBytes σ₁)).2)=j-(256-tauOf σ₁) from by omega]
-        exact Sample.Ball.sign_bit (by omega) (by omega) hjn ht)
+          (j-(ballFold (tauOf σ₁) (firstBytes σ₁)).2)=j-(256-tauOf σ₁) from by omega_using [hg, hj]]
+        exact Sample.Ball.sign_bit (by omega_using [ht]) (by omega_using [hg, hj]) hjn ht)
       s t ts tt u z
       ⟨⟨h₁.env,h₁.parser,h₁.pos,h₁.next⟩,⟨e₂,pp₂,h₂.pos,nx₂⟩,
         by rw [h₁.env.sp,h₂.env.sp,hq.2.2.2.2.2.1],h0⟩ es et

@@ -152,7 +152,7 @@ theorem dispatch_ct {g1 g2 g3 : Geo} (G1 : GeoOk g1) (G2 : GeoOk g2) (G3 : GeoOk
   change ¬ pLenOf s = 128 at a
   change ¬ pLenOf s = 256 at b
   change pLenOf s = 384
-  rcases F.pLens with c | c | c <;> omega
+  rcases F.pLens with c | c | c <;> omega_arith
 
 /-- Two runs from inputs the contract makes public leak the same. -/
 theorem constantTime {g1 g2 g3 : Geo} (G1 : GeoOk g1) (G2 : GeoOk g2) (G3 : GeoOk g3) (h1 : g1.pLen = 128)

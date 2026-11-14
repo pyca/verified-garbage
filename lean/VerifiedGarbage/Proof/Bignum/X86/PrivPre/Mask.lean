@@ -33,7 +33,7 @@ theorem wordsAt_keep {m m' : Mem} {P : Addr} {n : Nat}
   have hi := List.mem_range.mp hi
   refine Mem.readW_congr fun k hk => ?_
   rw [Offset.add_add]
-  exact h _ (by omega)
+  exact h _ (by omega_using [hi, hk])
 
 theorem wordsAt_zeros {m : Mem} {P : Addr} {n : Nat}
     (h : ∀ i < 8 * n, m (P + BitVec.ofNat 64 i) = 0) :
@@ -88,9 +88,9 @@ theorem maskLoop_ok (A : PPABI s) (B : Body s t) (hedx : t.gpr .edx = arg s 0)
   have hl := A.preLength
   simp only [Spec.Rsa.privatePrecomputedWords, Spec.Rsa.precomputedWords, Spec.Rsa.primeWords] at hl
   have p0 : (argumentPointer s 0).toNat = (arg s 0).toNat := by
-    simp only [argumentPointer, BitVec.toNat_setWidth]; exact Nat.mod_eq_of_lt (by have := (arg s 0).isLt; omega)
+    simp only [argumentPointer, BitVec.toNat_setWidth]; exact Nat.mod_eq_of_lt (by have := (arg s 0).isLt; omega_using [])
   let N := (arg s 1).toNat * 8
-  have hN : 0 < N := by simp only [N]; omega
+  have hN : 0 < N := by simp only [N]; omega_using [hl]
   let I : Nat → State → Prop := fun j u =>
     Body s u ∧ Keeps [.eax, .edx, .ecx] t u ∧ u.gpr .edx = arg s 0 + BitVec.ofNat 32 j ∧
       (u.gpr .ecx).toNat = N - j ∧ Frame [⟨argumentPointer s 0, j⟩] t.mem u.mem ∧
@@ -109,27 +109,27 @@ theorem maskLoop_ok (A : PPABI s) (B : Body s t) (hedx : t.gpr .edx = arg s 0)
     apply BitVec.eq_of_toNat_eq
     have := (arg s 0).isLt
     simp only [BitVec.toNat_setWidth, BitVec.toNat_add, BitVec.toNat_ofNat, argumentPointer]
-    rw [Nat.mod_eq_of_lt (a := j) (by omega), Nat.mod_eq_of_lt (a := (arg s 0).toNat) (by omega)]
-    omega
+    rw [Nat.mod_eq_of_lt (a := j) (by omega_using [hecx, hj]), Nat.mod_eq_of_lt (a := (arg s 0).toNat) (by omega_using [])]
+    omega_using [pb, hj]
   have hw : InRegions v.wr (argumentPointer s 0 + BitVec.ofNat 64 j) 1 :=
-    ⟨preR s, by rw [Bv.wr, A.wr]; simp, Offset.contains_base _ (by omega) (by omega)⟩
+    ⟨preR s, by rw [Bv.wr, A.wr]; simp, Offset.contains_base _ (by omega_using [hj]) (by omega_using [hj])⟩
   have keepM : v.mem.readW (slot s (statusOffset + 4)) 32 = t.mem.readW (slot s (statusOffset + 4)) 32 :=
     slot_keep A (Fv.sub fun r hr => by
       obtain rfl := List.mem_singleton.mp hr
-      exact ⟨preR s, by simp, Region.sub_prefix (by omega)⟩) (by decide)
+      exact ⟨preR s, by simp, Region.sub_prefix (by omega_using [hj])⟩) (by decide)
   refine WP.mono (maskStep_ok A Bv ha hw) fun u ⟨Mu, Eu, Cu, Zu, Ku⟩ => ⟨⟨?_, Kv.trans Ku, ?_, ?_, ?_, ?_⟩, ?_⟩
   · refine Bv.next (Ku.1 _ (by decide)) Ku.2.1 Ku.2.2 ?_
     rw [Mu]
-    exact (Frame.refl _ _).writeW (r := preR s) (by simp) _ (Offset.contains_base _ (by omega) (by omega))
+    exact (Frame.refl _ _).writeW (r := preR s) (by simp) _ (Offset.contains_base _ (by omega_using [hj]) (by omega_using [hj]))
   · rw [Eu, Ev, BitVec.add_assoc, BitVec.ofNat_add]; rfl
   · rw [Cu, BitVec.toNat_sub, Cv, one]
     simp only [N]
-    omega
+    omega_using [hecx, hj]
   · rw [Mu]
     refine (Fv.sub fun r hr => ?_).trans ((Frame.refl _ _).writeW (List.mem_singleton_self _) _
-      (Offset.contains_base _ (by omega) (by omega)))
+      (Offset.contains_base _ (by omega_using []) (by omega_using [hj])))
     obtain rfl := List.mem_singleton.mp hr
-    exact ⟨_, List.mem_singleton_self _, Region.sub_prefix (by omega)⟩
+    exact ⟨_, List.mem_singleton_self _, Region.sub_prefix (by omega_using [])⟩
   · intro i hi
     rw [Mu]
     rcases Nat.lt_succ_iff_lt_or_eq.mp hi with hi | hij
@@ -137,31 +137,31 @@ theorem maskLoop_ok (A : PPABI s) (B : Body s t) (hedx : t.gpr .edx = arg s 0)
         ((Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ _))
         (R := ⟨argumentPointer s 0, j⟩) (fun r hr => by
           obtain rfl := List.mem_singleton.mp hr
-          exact Offset.base_disjoint _ (Nat.le_refl _) (by omega)) (by simp; omega) hi]
+          exact Offset.base_disjoint _ (Nat.le_refl _) (by omega_using [hj])) (by simp; omega_using [hj]) hi]
       exact Vv i hi
     · rw [hij]
       have e0 := Fv.bytes (R := ⟨argumentPointer s 0 + BitVec.ofNat 64 j, 1⟩) (fun r hr => by
           obtain rfl := List.mem_singleton.mp hr
-          exact Offset.disjoint_base _ (Nat.le_refl _) (by omega)) (by simp) (i := 0) Nat.zero_lt_one
+          exact Offset.disjoint_base _ (Nat.le_refl _) (by omega_using [hj])) (by simp) (i := 0) Nat.zero_lt_one
       simp only [BitVec.add_zero] at e0
       simp only [Mem.writeW, Mem.write, BitVec.sub_self, BitVec.toNat_zero, Nat.mul_zero]
       rw [e0, keepM]
       simp
   · rw [Zu]
     congr 1
-    have c1 : 1 ≤ (v.gpr .ecx).toNat := by rw [Cv]; simp only [N]; omega
+    have c1 : 1 ≤ (v.gpr .ecx).toNat := by rw [Cv]; simp only [N]; omega_using [hj]
     rw [Bool.eq_iff_iff, beq_iff_eq, decide_eq_true_iff]
     constructor
     · intro h
       have := congrArg BitVec.toNat h
       rw [BitVec.toNat_sub, Cv, one, zero] at this
       simp only [N] at this ⊢
-      omega
+      omega_using [hecx, this]
     · intro h
       apply BitVec.eq_of_toNat_eq
       rw [BitVec.toNat_sub, Cv, one, zero]
       simp only [N] at h ⊢
-      omega
+      omega_using [h]
 
 end
 end VG.Proof.Bignum.X86.PrivPre

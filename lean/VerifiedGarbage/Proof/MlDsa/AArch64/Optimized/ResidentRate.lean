@@ -115,9 +115,9 @@ theorem squeezePair_ok {s : State} {a b : Addr} {ra rb : Reg} {i : Nat}
   unfold Impl.MlDsa.AArch64.Optimized.Resident.squeezePair
   refine wp_vop (d := .v26) rfl fun s1 h1 => ?_
   refine wp_vop (d := .v27) rfl fun s2 h2 => ?_
-  refine wp_strq (t := .v26) (a := a+BitVec.ofNat 64 (16*i)) ⟨by omega,by omega⟩
+  refine wp_strq (t := .v26) (a := a+BitVec.ofNat 64 (16*i)) ⟨by omega_using [],by omega_using [hi]⟩
     (by rw [h2.gpr,h1.gpr,ha]) (by rw [h2.wr,h1.wr]; exact hwa) fun s3 h3 => ?_
-  refine wp_strq (t := .v27) (a := b+BitVec.ofNat 64 (16*i)) ⟨by omega,by omega⟩
+  refine wp_strq (t := .v27) (a := b+BitVec.ofNat 64 (16*i)) ⟨by omega_using [],by omega_using [hi]⟩
     (by rw [h3.gpr,h2.gpr,h1.gpr,hb]) (by rw [h3.wr,h2.wr,h1.wr]; exact hwb)
     fun t h4 => WP.block_nil_iff.mpr ⟨?_,?_⟩
   · refine ⟨fun r _ _ => ?_,fun r h26 h27 => ?_,?_,?_,?_⟩
@@ -128,7 +128,7 @@ theorem squeezePair_ok {s : State} {a b : Addr} {ra rb : Reg} {i : Nat}
     · exact h4.sp.trans (h3.sp.trans (h2.sp.trans h1.sp))
   · rw [h4.mem,h3.mem,h3.v,h2.v,h2.other .v26 (by decide),h1.v,
       h2.mem,h1.mem,trn1_dwords,trn2_dwords,
-      h1.other _ (stateReg_ne _ (by omega)).1,
+      h1.other _ (stateReg_ne _ (by omega_using [hi])).1,
       h1.other _ (stateReg_ne _ hi).1]
 /-- The odd final word reuses the established scalar pair-squeeze theorem. -/
 theorem squeezeLast_ok {s : State} {a b : Addr} {ra rb : Reg} {i : Nat}
@@ -173,9 +173,9 @@ theorem squeezePairs_ok {s : State} {a b : Addr} {ra rb : Reg} {n : Nat}
       SqueezeKeep s t ∧ Pairs t A B ∧ RatePairs t.mem a n A ∧ RatePairs t.mem b n B ∧
         Frame [⟨a,16*n⟩,⟨b,16*n⟩] s.mem t.mem := by
   have ac (i : Nat) (hi : i < n) : (Region.mk a (16*n)).Contains (a+BitVec.ofNat 64 (16*i)) 16 :=
-    Offset.contains_base a (by omega) (by omega)
+    Offset.contains_base a (by omega_using [hi]) (by omega_using [hn, hi])
   have bc (i : Nat) (hi : i < n) : (Region.mk b (16*n)).Contains (b+BitVec.ofNat 64 (16*i)) 16 :=
-    Offset.contains_base b (by omega) (by omega)
+    Offset.contains_base b (by omega_using [hi]) (by omega_using [hn, hi])
   refine WP.mono (wp_range_flatMap (M := isa)
     (fun k t => SqueezeKeep s t ∧ RatePairs t.mem a k A ∧ RatePairs t.mem b k B ∧
       Frame [⟨a,16*n⟩,⟨b,16*n⟩] s.mem t.mem)
@@ -183,32 +183,32 @@ theorem squeezePairs_ok {s : State} {a b : Addr} {ra rb : Reg} {n : Nat}
     ⟨SqueezeKeep.refl _,fun _ h => by omega,fun _ h => by omega,Frame.refl _ _⟩)
     (fun t h => ⟨h.1,h.1.pairs hp,h.2.1,h.2.2.1,h.2.2.2⟩)
   have hpt := ht.1.pairs hp
-  refine WP.mono (squeezePair_ok (by omega)
+  refine WP.mono (squeezePair_ok (by omega_using [hn, hk])
     ((ht.1.gpr ra ha6 ha7).trans ha) ((ht.1.gpr rb hb6 hb7).trans hb)
     (by rw [ht.1.wr]; exact hwa k hk) (by rw [ht.1.wr]; exact hwb k hk)) ?_
   intro u hu
   have hm : u.mem = (t.mem.write (a+BitVec.ofNat 64 (16*k)) 16 (ofVDwords A[2*k]! A[2*k+1]!)).write
       (b+BitVec.ofNat 64 (16*k)) 16 (ofVDwords B[2*k]! B[2*k+1]!) := by
-    rw [hu.2,hpt _ (by omega),hpt _ (by omega),vdword_ofVDwords_0,vdword_ofVDwords_0,
+    rw [hu.2,hpt _ (by omega_using [hn, hk]),hpt _ (by omega_using [hn, hk]),vdword_ofVDwords_0,vdword_ofVDwords_0,
       vdword_ofVDwords_1,vdword_ofVDwords_1]
   refine ⟨ht.1.trans hu.1,?_,?_,?_⟩
   · intro i hi
-    rw [hm,Mem.read_write_sep (hd.sep (ac i (by omega)) (bc k hk)) (by decide)]
+    rw [hm,Mem.read_write_sep (hd.sep (ac i (by omega_using [hk, hi])) (bc k hk)) (by decide)]
     by_cases he : i = k
     · subst i
       exact VG.Proof.Sha3.AArch64.Neon.read_write16 _ _ _
     · rw [Mem.read_write_sep (Offset.sep a (d := 16*i) (n := 16) (e := 16*k) (k := 16)
-        (by omega) (by omega) (by omega)) (by decide)]
-      exact ht.2.1 i (by omega)
+        (by omega_using [he]) (by omega_using [hn, hk, hi]) (by omega_using [hn, hk])) (by decide)]
+      exact ht.2.1 i (by omega_using [hi, he])
   · intro i hi
     rw [hm]
     by_cases he : i = k
     · subst i
       exact VG.Proof.Sha3.AArch64.Neon.read_write16 _ _ _
     · rw [Mem.read_write_sep (Offset.sep b (d := 16*i) (n := 16) (e := 16*k) (k := 16)
-        (by omega) (by omega) (by omega)) (by decide),
-        Mem.read_write_sep (hd.symm.sep (bc i (by omega)) (ac k hk)) (by decide)]
-      exact ht.2.2.1 i (by omega)
+        (by omega_using [he]) (by omega_using [hn, hk, hi]) (by omega_using [hn, hk])) (by decide),
+        Mem.read_write_sep (hd.symm.sep (bc i (by omega_using [hk, hi])) (ac k hk)) (by decide)]
+      exact ht.2.2.1 i (by omega_using [hi, he])
   · rw [hm]
     exact (ht.2.2.2.write (by simp) _ (ac k hk)).write (by simp) _ (bc k hk)
 end VG.Proof.MlDsa.AArch64.Optimized.Resident

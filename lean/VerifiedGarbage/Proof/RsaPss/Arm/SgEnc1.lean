@@ -65,7 +65,7 @@ theorem away3_slot {L : Lay} {d : Nat} (hd : d + 4 ≤ frameBytes)
   have e1 : sLo = 84 := rfl
   have e2 : sC = 108 := rfl
   have e3 : sDb = 88 := rfl
-  exact ⟨slotSep (by decide) hd (by omega), slotSep (by decide) hd (by omega), slotSep (by decide) hd (by omega)⟩
+  exact ⟨slotSep (by decide) hd (by omega_using [h₁]), slotSep (by decide) hd (by omega_using [h₁, e1, e3]), slotSep (by decide) hd (by omega_using [h₁, e1, e3])⟩
 
 theorem away3_ctW {L : Lay} {scr : BitVec 32} (hg : Geo L scr) {T : Nat} (hT : T ≤ 2048) :
     ∀ r ∈ ctW h L scr T, Away3 L r := fun r hr =>
@@ -81,7 +81,7 @@ theorem e0_of {P : EP} {σ s : State} (hc : C1 h P σ s) (e : isa.eval .ne s = s
   have hf : fits h P := of_decide_eq_true (z ▸ hz)
   refine ⟨hc, hi, hf, sc, sl, ?_⟩
   rw [sd, dbW_byte]
-  have : lo P ≤ 1 := by unfold lo; split <;> omega
+  have : lo P ≤ 1 := by unfold lo; split <;> omega_using []
   rw [Offset.ofNat_sub_ofNat (show lo P ≤ P.K by omega), Offset.ofNat_sub_ofNat (by omega)]
   congr 1
 
@@ -90,8 +90,8 @@ theorem dig_buf {P : EP} (hP : ∃ σ, In h.D P σ) : RBuf (P.lay h.D) P.dig h.D
   obtain ⟨σ, hi⟩ := hP
   have hf := hi.ok.fits (P.DIG h.D) (by simp)
   simp only [Proof.X25519.Arm.addr_toNat] at hf
-  have hD : h.D ≤ 64 := by have := h.D_le; have := h.N_le; omega
-  exact ⟨hf, by omega, ⟨P.DIG h.D, by simp, Region.contains_self _ _⟩⟩
+  have hD : h.D ≤ 64 := by have := h.D_le; have := h.N_le; omega_arith
+  exact ⟨hf, by omega_using [hD], ⟨P.DIG h.D, by simp, Region.contains_self _ _⟩⟩
 
 /-- `M'`. -/
 abbrev Mp (P : EP) (σ : State) : List Byte := Spec.RsaPss.zeros 8 ++ digB h P σ ++ saltB P σ
@@ -207,7 +207,7 @@ abbrev Kh (P : EP) (σ : State) (m : Mem) : Prop :=
     m.readW ((P.lay h.D).fr sNb) 32 = BitVec.ofNat 32 (nbS h P)
 
 theorem Mp_length (P : EP) (σ : State) : (Mp h P σ).length = P.sl + (8 + h.D) := by
-  simp only [Mp, List.length_append, RsaPss.zeros_length, digB, saltB, RsaPkcs1Sig.Arm.bytesAt_length]; omega
+  simp only [Mp, List.length_append, RsaPss.zeros_length, digB, saltB, RsaPkcs1Sig.Arm.bytesAt_length]; omega_using []
 
 /-- `M'`'s length and blocks. -/
 theorem lenSet_vp (P : EP) :
@@ -215,24 +215,24 @@ theorem lenSet_vp (P : EP) :
       (fun σ s => Ctx (P.lay h.D) P.scr σ s ∧ Kh h P σ s.mem ∧ Y2 h P σ s.mem) := by
   refine VP.blk (blkOk rfl) (fun _ _ _ _ h₁ h₂ => h₁.1.1.st.sp.trans h₂.1.1.st.sp.symm) fun σ s ⟨⟨hc, hk⟩, hy⟩ => ?_
   have hg := hk.1.geo
-  have hD : h.D ≤ 64 := by have := h.D_le; have := h.N_le; omega
+  have hD : h.D ≤ 64 := by have := h.D_le; have := h.N_le; omega_arith
   have hL := h.L_le
   have hB := h.B_ge
   have hsl := hk.1.sl32
-  have hsl2 : P.sl + h.D + 2 ≤ P.K := by have := hk.2.1.2; omega
+  have hsl2 : P.sl + h.D + 2 ≤ P.K := by have := hk.2.1.2; omega_using [this]
   have hK := hk.1.k1024
   obtain ⟨a18, r18, v18⟩ := argAt hk.1 hc.st (j := 19) (by decide)
   replace v18 : s.mem.readW ((P.lay h.D).fr (arg 19)) 32 = BitVec.ofNat 32 P.sl := v18
   have e1 : BitVec.ofNat 32 (P.sl + (8 + h.D) + h.L) >>> lgB h.sh = BitVec.ofNat 32 ((P.sl + (8 + h.D) + h.L) / h.B) := by
-    rw [VG.Proof.MdStream.Arm.ofNat_shr (by omega), h.pow_lg]
+    rw [VG.Proof.MdStream.Arm.ofNat_shr (by omega_using [hL, hsl2, hK]), h.pow_lg]
   have hw : WP isa (.block (lenSet h.sh 19)) s fun t =>
       t.mem = (s.mem.writeW ((P.lay h.D).fr sL) (BitVec.ofNat 32 (P.sl + (8 + h.D)))).writeW ((P.lay h.D).fr sNb)
         (BitVec.ofNat 32 (nbS h P)) ∧ t.rd = s.rd ∧ t.wr = s.wr ∧ t.sp = s.sp := by
     prun [lenSet, sp0, ld, st, mw, hc.st.sp, a18, r18, v18, arg_lt, slotAt hk.1 (d := sL) (by decide),
       slotAt hk.1 (d := sNb) (by decide), hc.st.inFr (d := sL) (n := 4) (by show sL + 4 ≤ frameBytes; decide),
       hc.st.inFr (d := sNb) (n := 4) (by show sNb + 4 ≤ frameBytes; decide),
-      movw_val (show 8 + dig h.sh < 2 ^ 16 by show 8 + h.D < 2 ^ 16; omega),
-      movw_val (show lenL h.sh < 2 ^ 16 by show h.L < 2 ^ 16; omega), BitVec.ofNat_add_ofNat, e1, h.lg_range,
+      movw_val (show 8 + dig h.sh < 2 ^ 16 by show 8 + h.D < 2 ^ 16; omega_using [hD]),
+      movw_val (show lenL h.sh < 2 ^ 16 by show h.L < 2 ^ 16; omega_using [hL]), BitVec.ofNat_add_ofNat, e1, h.lg_range,
       VG.Proof.Pbkdf2.Stream.Arm.ofNat_succ32, dpVal]
   refine WP.mono hw fun t ⟨m, rd, wr, sp⟩ => ?_
   have fr : Frame [slotR (P.lay h.D) sL, slotR (P.lay h.D) sNb] s.mem t.mem := by
@@ -264,24 +264,24 @@ theorem hash_vp {g : RsaOaep.Arm.OHash} {f : MdFns} {fg : Impl.RsaOaep.Arm.Fns} 
   by_cases hf : fits h P
   swap
   · exact VP.empty fun σ s h' => hf h'.1.2.1.1.2.1
-  have hD : h.D ≤ 64 := by have := h.D_le; have := h.N_le; omega
+  have hD : h.D ≤ 64 := by have := h.D_le; have := h.N_le; omega_arith
   have hL := h.L_le
   have hB := h.B_le
-  have hB0 : 0 < h.B := by have := h.B_ge; omega
-  have hsl2 : P.sl + h.D + 2 ≤ P.K := by have := hf.2; omega
+  have hB0 : 0 < h.B := by have := h.B_ge; omega_using [this]
+  have hsl2 : P.sl + h.D + 2 ≤ P.K := by have := hf.2; omega_using [this]
   have hK := hi₀.k1024
   have q1 := Nat.lt_mul_div_succ (P.sl + (8 + h.D) + h.L) hB0
   have q2 := Nat.mul_div_le (P.sl + (8 + h.D) + h.L) h.B
   have hT : nbS h P * h.B ≤ 2048 := by
     show ((P.sl + (8 + h.D) + h.L) / h.B + 1) * h.B ≤ 2048
-    rw [Nat.succ_mul, Nat.mul_comm]; omega
+    rw [Nat.succ_mul, Nat.mul_comm]; omega_using [hL, hB, hsl2, hK, q2]
   refine (ctHash_vp h hg (j := 22) (by simp) (arg_lt (by decide)) hi₀.htbl Q.fne (nbm := nbS h P) hT
     (Nat.succ_pos _) (msg := Mp h P) (fun σ => by
-      rw [Mp_length]; show _ ≤ ((P.sl + (8 + h.D) + h.L) / h.B + 1) * h.B; rw [Nat.mul_comm]; omega)
+      rw [Mp_length]; show _ ≤ ((P.sl + (8 + h.D) + h.L) / h.B + 1) * h.B; rw [Nat.mul_comm]; omega_using [q1])
     (Inv := Kh h P) (fun σ m m' hk hf' => ⟨hk.1.keep h hf' (away3_ctW h hg hT), slot_keep hf'
       (ctW_slot h hg hT (by decide) (by decide)) hk.2.1, slot_keep hf' (ctW_slot h hg hT (by decide) (by decide)) hk.2.2⟩)
     (fun σ m hk => hk.2.1) (fun σ m hk => hk.2.2) (fun σ m hk => Q.ht σ hk.1.1.htabT)).mono
-    (fun σ s ⟨⟨hc, hk, hy⟩, sy⟩ => ⟨⟨hc, hk, fun i hi => hy i (by omega)⟩, sy⟩)
+    (fun σ s ⟨⟨hc, hk, hy⟩, sy⟩ => ⟨⟨hc, hk, fun i hi => hy i (by omega_using [hT, hi])⟩, sy⟩)
     fun σ s ⟨⟨hc, hk, hd⟩, sy⟩ => ⟨⟨⟨hc, hk.1⟩, hd⟩, sy⟩
 
 end VG.Proof.RsaPss.Arm.Sg

@@ -30,29 +30,29 @@ theorem hornerAt_ok (K : TCombCfg) {v : Nat → Nat} (hv : ∀ i,v i≤1) :
   | k+1,d,s,hk,ho,hb => by
     rw [TCombCfg.hornerAt]
     refine VG.Proof.X25519.Arm.WP.append
-      (hornerAt_ok K hv k (d+1) s (by omega) (by omega) (fun i hi => by
-        rw [show K.L.bits%4096+(d+1)+i=K.L.bits%4096+d+(i+1) by omega,
-          show d+1+i=d+(i+1) by omega]
-        exact hb (i+1) (by omega))) fun s₁ ⟨v₁,k₁⟩ => ?_
+      (hornerAt_ok K hv k (d+1) s (by omega_using [hk]) (by omega_using [ho]) (fun i hi => by
+        rw [show K.L.bits%4096+(d+1)+i=K.L.bits%4096+d+(i+1) by omega_using [],
+          show d+1+i=d+(i+1) by omega_using []]
+        exact hb (i+1) (by omega_using [hi]))) fun s₁ ⟨v₁,k₁⟩ => ?_
     refine wp_dp (op2_reg _ _) fun s₂ u₂ => ?_
     have ptr₂ : s₂.gpr .r4=s.gpr .r4 := by
       rw [u₂.other .r4 (by decide),k₁.keep.gpr .r4 (by decide)]
     have mem₂ : s₂.mem=s.mem := u₂.mem.trans k₁.mem
     have rd₂ : s₂.rd ++ s₂.wr=s.rd ++ s.wr := by rw [u₂.rd,u₂.wr,k₁.keep.rd,k₁.keep.wr]
-    have h0 := hb 0 (by omega)
+    have h0 := hb 0 (by omega_using [])
     simp only [Nat.add_zero] at h0
-    refine wp_ldrb (by omega) rfl (by rw [ptr₂,rd₂]; exact h0.1) fun s₃ u₃ =>
+    refine wp_ldrb (by omega_using [ho]) rfl (by rw [ptr₂,rd₂]; exact h0.1) fun s₃ u₃ =>
       wp_dp (op2_reg _ _) fun s₄ u₄ => WP.block_nil ?_
     refine ⟨?_,⟨k₁.keep.trans ((u₂.rest (by simp)).trans ((u₃.rest (by simp)).trans (u₄.rest (by simp)))),
       by rw [u₄.mem,u₃.mem,mem₂]⟩⟩
     · rw [u₄.gpr,dpVal,u₃.other .r9 (by decide),u₂.gpr,dpVal,v₁,u₃.gpr,ptr₂,mem₂,h0.2]
       have hn := hornerVal_lt hv (d+1) k
       have hvd := hv d
-      have hp : 2^k < 2^31 := Nat.pow_lt_pow_right (by decide) (by omega)
+      have hp : 2^k < 2^31 := Nat.pow_lt_pow_right (by decide) (by omega_using [hk])
       apply BitVec.eq_of_toNat_eq
       simp only [BitVec.toNat_add,BitVec.toNat_ofNat,BitVec.toNat_setWidth,hornerVal]
-      rw [Nat.mod_eq_of_lt (by omega : hornerVal v (d+1) k<2^32),
-        Nat.mod_eq_of_lt (by omega : v d<2^8),Nat.mod_eq_of_lt (by omega : v d<2^32)]
-      omega
+      rw [Nat.mod_eq_of_lt (by omega_using [hn, hp] : hornerVal v (d+1) k<2^32),
+        Nat.mod_eq_of_lt (by omega_using [hvd] : v d<2^8),Nat.mod_eq_of_lt (by omega_using [hvd] : v d<2^32)]
+      omega_using []
 
 end VG.Proof.Weierstrass.Arm.TComb

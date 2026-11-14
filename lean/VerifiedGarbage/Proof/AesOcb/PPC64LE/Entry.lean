@@ -56,7 +56,7 @@ structure EntryPost (W T : Addr) (s₀ s : State) : Prop where
 theorem stackArg_eq' (s : State) (i : Nat) :
     stackArg s i = s.mem.readW (s.sp + BitVec.ofNat 64 (96 + 8 * i)) 64 := by
   show s.mem.readW (s.sp + BitVec.ofNat 64 (32 + 8 * (8 + i))) 64 = _
-  rw [show 32 + 8 * (8 + i) = 96 + 8 * i by omega]
+  rw [show 32 + 8 * (8 + i) = 96 + 8 * i by omega_using []]
 
 /-- `entry`. -/
 theorem entry_ok {s₀ : State} {W T : Addr} (L : Lay (s₀.gpr .r3) W) (hW : Covers [⟨W, 2560⟩] s₀.wr)
@@ -66,11 +66,11 @@ theorem entry_ok {s₀ : State} {W T : Addr} (L : Lay (s₀.gpr .r3) W) (hW : Co
     WP isa (.block entry) s₀ (EntryPost W T s₀) := by
   have hAi : ∀ {i : Nat}, i < 3 → InRegions (s₀.rd ++ s₀.wr) (s₀.sp + BitVec.ofNat 64 (96 + 8 * i)) 8 :=
     fun {i} hi => by
-      have := in_off hA (d := 8 * i) (n := 8) (by omega) (by decide)
+      have := in_off hA (d := 8 * i) (n := 8) (by omega_using [hi]) (by decide)
       rwa [Proof.AesGcm.PPC64LE.add_ofNat_assoc] at this
   have hAs : ∀ {i : Nat}, i < 3 → (⟨s₀.sp + BitVec.ofNat 64 (96 + 8 * i), 8⟩ : Region).Disjoint (savedR W) :=
     fun {i} hi => by
-      have := (hAW.sub_left (Offset.sub_base _ (d := 8 * i) (n := 8) (k := 24) (by omega))).sub_right
+      have := (hAW.sub_left (Offset.sub_base _ (d := 8 * i) (n := 8) (k := 24) (by omega_using [hi]))).sub_right
         (Lay.wSub (W := W) (d := 128) (n := 120) (by decide))
       rwa [Proof.AesGcm.PPC64LE.add_ofNat_assoc] at this
   simp only [entry, Impl.AesGcm.PPC64LE.openEntry, lsetup, List.append_assoc]

@@ -98,20 +98,20 @@ theorem windowEnd_ok {g : Geometry} (v : g.Valid) {s : State} (C : Context g s)
       w32 t.mem g.W sWindows = q - 1 ∧ t.zf = some (decide (q = 1)) ∧
       Outs g.W windowWrites s.mem t.mem ∧ Keeps [.eax, .ebx, .ecx, .edx] s t ∧ Context g t := by
   have header := v.headerFit
-  have fitF : sFlag + 4 ≤ g.L := by unfold sFlag; omega
+  have fitF : sFlag + 4 ≤ g.L := by unfold sFlag; omega_using [header]
   change WP isa (.block (windowEnd.take 12 ++ .store (slot sFlag) .ecx :: advanceWindow)) s _
   refine WP.block_append (WP.mono (windowBits_ok v C E1 E2 F eq1 eq2 flag)
     fun a ⟨AX, Flag, Ma, Ka⟩ => ?_)
   have Ca := C.keepMem Ka (by decide) Ma
-  refine wp_storeS (ea_ptr Ca.ws Ca.base (d := sFlag) (by omega))
-    (ws_write Ca.ws (y := 0 + sFlag) (n := 4) (by omega)) fun b B => ?_
+  refine wp_storeS (ea_ptr Ca.ws Ca.base (d := sFlag) (by omega_using [fitF]))
+    (ws_write Ca.ws (y := 0 + sFlag) (n := 4) (by omega_using [fitF])) fun b B => ?_
   have Of : Outside g.W sFlag 4 a.mem b.mem := by
     rw [B.mem, Nat.zero_add]
-    exact writeW32_outside _ _ _ (by have := C.ws.nowrap; omega)
+    exact writeW32_outside _ _ _ (by have := C.ws.nowrap; omega_using [fitF, this])
   have Cb := Ca.keepScalar (B.keeps []) (by decide) Of (by unfold scratchWord sFlag; simp)
   have oldCount : b.mem.readW (off g.W sWindows) 32 = BitVec.ofNat 32 q := by
     have unchanged := BitVec.eq_of_toNat_eq (Of.w32 (d := sWindows)
-      (by unfold sFlag sWindows; omega) (by unfold sWindows; decide))
+      (by unfold sFlag sWindows; omega_using []) (by unfold sWindows; decide))
     rw [unchanged, Ma, count]
   refine WP.mono (advanceWindow_ok v Cb q positive bound oldCount)
     fun t ⟨Value, Count, Z, Ot, Kt, Ct⟩ => ?_
@@ -171,7 +171,7 @@ theorem Data.windowEnd {g : Geometry} (v : g.Valid) {A : Nat → Nat} {Js : List
   have countWord : t.mem.readW (off g.W sWindows) 32 = BitVec.ofNat 32 (q - 1) := by
     apply BitVec.eq_of_toNat_eq
     change w32 t.mem g.W sWindows = _
-    rw [Count, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+    rw [Count, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [bound])]
   refine ⟨D.afterSlots v C [sFlag, sValue, sWindows] ?_ ?_ O, Z, O, K⟩
   · intro d mem
     simp only [List.mem_cons, List.not_mem_nil, or_false] at mem

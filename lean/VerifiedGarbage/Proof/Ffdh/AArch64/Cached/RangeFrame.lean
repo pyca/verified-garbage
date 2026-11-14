@@ -16,44 +16,44 @@ open VG.Proof.MlKem.AArch64 (Keep)
 theorem scalarRanges_le (w : Nat) : ∀ r∈scalarRanges w,r.1+r.2≤slot w 8 := by
  simp only [scalarRanges,List.mem_cons,List.not_mem_nil,or_false]
  rintro _ (rfl|rfl|rfl)
- all_goals dsimp only [slot,hdrBytes,sTmp];omega
+ all_goals dsimp only [slot,hdrBytes,sTmp];omega_using []
 
 theorem publicRangeRanges_le (w : Nat) : ∀ r∈publicRangeRanges w,r.1+r.2≤slot w 8 := by
  simp only [publicRangeRanges,List.mem_cons,List.not_mem_nil,or_false]
  rintro _ (rfl|rfl)
- all_goals dsimp only [slot,hdrBytes,sTmp];omega
+ all_goals dsimp only [slot,hdrBytes,sTmp];omega_using []
 
 theorem scalarFrame_header {B : Addr} {w i : Nat} {m m' : Mem}
  (frame : Frm B (scalarRanges w) m m') (inside : i<32) (different : i≠sTmp) :
  word m' B (8*i)=word m B (8*i) := by
- apply frame.word_eq _ (by omega)
+ apply frame.word_eq _ (by omega_using [inside])
  simp only [scalarRanges,List.mem_cons,List.not_mem_nil,or_false]
  rintro _ (rfl|rfl|rfl)
- all_goals dsimp only [slot,hdrBytes,sTmp] at *;omega
+ all_goals dsimp only [slot,hdrBytes,sTmp] at *;omega_arith
 
 theorem publicRangeFrame_header {B : Addr} {w i : Nat} {m m' : Mem}
  (frame : Frm B (publicRangeRanges w) m m') (inside : i<32) (different : i≠sTmp) :
  word m' B (8*i)=word m B (8*i) := by
- apply frame.word_eq _ (by omega)
+ apply frame.word_eq _ (by omega_using [inside])
  simp only [publicRangeRanges,List.mem_cons,List.not_mem_nil,or_false]
  rintro _ (rfl|rfl)
- all_goals dsimp only [slot,hdrBytes,sTmp] at *;omega
+ all_goals dsimp only [slot,hdrBytes,sTmp] at *;omega_arith
 
 theorem FieldInitial.after_scalarRange {p : Parameters} {s t : State}
  (field : FieldInitial p s) (good : Good t p.B p.Z p.w p.mi) (frame : Frm p.B (scalarRanges p.w) s.mem t.mem) : FieldInitial p t := by
- have nowrap : slot p.w 8≤2^64 := by have := field.good.scr.nowrap;have := p.room;omega
+ have nowrap : slot p.w 8≤2^64 := by have := field.good.scr.nowrap;have := p.room;omega_arith
  have same (j : Nat) (allowed : j=0 ∨ j=4) : wv t.mem p.B (slot p.w j) p.w=wv s.mem p.B (slot p.w j) p.w := by
   apply frame.wv_eq
   · simp only [scalarRanges,List.mem_cons,List.not_mem_nil,or_false]
     rintro _ (rfl|rfl|rfl)
-    all_goals rcases allowed with rfl|rfl <;> dsimp only [slot,hdrBytes,sTmp] <;>omega
-  · rcases allowed with rfl|rfl <;> dsimp only [slot,hdrBytes] at * <;>omega
+    all_goals rcases allowed with rfl|rfl <;> dsimp only [slot,hdrBytes,sTmp] <;>omega_using []
+  · rcases allowed with rfl|rfl <;> dsimp only [slot,hdrBytes] at * <;>omega_using [nowrap]
  have wordSame : word t.mem p.B (slot p.w 0)=word s.mem p.B (slot p.w 0) := by
   apply frame.word_eq
   · simp only [scalarRanges,List.mem_cons,List.not_mem_nil,or_false]
     rintro _ (rfl|rfl|rfl)
-    all_goals have := p.positive;dsimp only [slot,hdrBytes,sTmp];omega
-  · have := p.positive;dsimp only [slot,hdrBytes] at *;omega
+    all_goals have := p.positive;dsimp only [slot,hdrBytes,sTmp];omega_using []
+  · have := p.positive;dsimp only [slot,hdrBytes] at *;omega_using []
  refine ⟨good,(same 0 (by simp)).trans field.modulus,?_,(same 4 (by simp)).trans field.r2⟩
  rw [wordSame]
  exact field.inverse

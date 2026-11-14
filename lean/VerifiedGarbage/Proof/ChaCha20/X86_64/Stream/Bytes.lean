@@ -54,7 +54,7 @@ theorem xorBytes_ok {s : State} {D K : Addr} {c : Nat} (hp : BPre s D K c) :
     WP isa xorBytes s (BPost s D K c) := by
   have hc := hp.c_lt
   rw [xorBytes_eq]
-  refine WP.seq (WP.mono (XorBuf.xorBuf_ok (by decide) (by decide) hp.r14 hp.rsi hp.rdx (by omega)
+  refine WP.seq (WP.mono (XorBuf.xorBuf_ok (by decide) (by decide) hp.r14 hp.rsi hp.rdx (by omega_using [hc])
     hp.sep hp.wD hp.rK) fun s₂ h₂ => ?_)
   have hrdx : s₂.gpr .rdx = BitVec.ofNat 64 c := by rw [h₂.keep _ (by decide) (by decide) (by decide), hp.rdx]
   have hr14 : s₂.gpr .r14 = D := by rw [h₂.keep _ (by decide) (by decide) (by decide), hp.r14]

@@ -32,8 +32,8 @@ theorem mont_inverse (x : Nat) : mont x % q = x * 8265825 % q := by
 theorem montMul_lane {x y : BitVec 128} {a b : Nat → Zq} (hx : DLanes x a) (hy : DLanes y b)
     {i : Nat} (hi : i < 4) : (dword (montMulV x y) i).toNat = (a i * b i * montgomeryRInv).val := by
   have hzo : ZOdd y (shufDwords y 0xF5) := fun j hj => by
-    rw [dword_shufDwords _ _ (by omega)]
-    rcases (by omega : j = 0 ∨ j = 1) with rfl | rfl <;> rfl
+    rw [dword_shufDwords _ _ (by omega_using [hj])]
+    rcases (by omega_using [hj] : j = 0 ∨ j = 1) with rfl | rfl <;> rfl
   have hb : ∀ i < 4, (dword x i).toNat * (dword y i).toNat < q * 2 ^ 32 := fun i hi => by
     rw [hx i hi, hy i hi]
     exact Nat.lt_of_lt_of_le (Nat.mul_lt_mul_of_lt_of_le (val_lt (a i)) (Nat.le_of_lt (val_lt (b i)))

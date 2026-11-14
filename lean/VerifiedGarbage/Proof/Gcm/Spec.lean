@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Spec.Gcm
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # GCM: lemmas about the specification
@@ -62,6 +63,6 @@ theorem ofBytes_16 (b0 b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14 b15 : Byte
   have := b5.isLt; have := b6.isLt; have := b7.isLt; have := b8.isLt; have := b9.isLt
   have := b10.isLt; have := b11.isLt; have := b12.isLt; have := b13.isLt; have := b14.isLt
   have := b15.isLt
-  omega
+  omega_using []
 
 end VG.Proof.Gcm

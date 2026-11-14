@@ -28,7 +28,7 @@ theorem wordRead_ok (s : State) (k : Nat) (hb : s.gpr .x3 = BitVec.ofNat 64 (8 *
       t.gpr .x4 = s.mem.readW (s.gpr .x1 + BitVec.ofNat 64 (8 * k)) 64 ∧
       Keeps [.x3, .x4] s t := by
   have hn : s.gpr .x3 - BitVec.ofNat 64 8 = BitVec.ofNat 64 (8 * k) := by
-    rw [hb, show 8 * (k + 1) = 8 * k + 8 by omega, BitVec.ofNat_add, BitVec.add_sub_cancel]
+    rw [hb, show 8 * (k + 1) = 8 * k + 8 by omega_using [], BitVec.ofNat_add, BitVec.add_sub_cancel]
   apply WP.of_runBlock
   simp only [wordRead, runBlock_cons, runStep_some, runBlock_nil, exec, read_x, addr, State.load,
     Size.bytes, show (8 : Nat) < 4096 from by decide, show (0 : Nat) % 8 = 0 from rfl,
@@ -85,11 +85,11 @@ theorem scalarLoop_ok (s₀ : State) (hc : Consts s₀) {len n₀ : Nat} (hn : n
       rem t = decodeLE (bytesAt s₀.mem (s₀.gpr .x1) len) % L ∧ Keeps clob s₀ t := by
   apply WP.loop (fun n s => n ≤ n₀ ∧ LoopInv len s₀ n s) (n := n₀)
   · intro n s ⟨hnn, hi⟩
-    obtain ⟨k, rfl⟩ := Nat.exists_eq_succ_of_ne_zero (by have := hi.pos; omega : n ≠ 0)
+    obtain ⟨k, rfl⟩ := Nat.exists_eq_succ_of_ne_zero (by have := hi.pos; omega_using [this] : n ≠ 0)
     have hp : s.gpr .x1 = s₀.gpr .x1 := hi.keeps.gpr .x1 (by decide)
     have hcs : Consts s := hc.of_keeps hi.keeps constRegs_clob
     have hread : InRegions (s.rd ++ s.wr) (s.gpr .x1 + BitVec.ofNat 64 (8 * k)) 8 := by
-      rw [hi.keeps.rd, hi.keeps.wr, hp]; exact hr k (by omega)
+      rw [hi.keeps.rd, hi.keeps.wr, hp]; exact hr k (by omega_using [hnn])
     have hb := hi.bound
     have hv : rem s < L := by rw [hi.value]; exact Nat.mod_lt _ L_pos
     refine WP.mono (scalarWord_ok s hcs k hi.counter hread hv) fun t ⟨tb, tv, tk⟩ => ?_
@@ -103,8 +103,8 @@ theorem scalarLoop_ok (s₀ : State) (hc : Consts s₀) {len n₀ : Nat} (hn : n
       refine Or.inl ⟨by simp only [eval, read_x, tb, counter_test 0 (by decide),
         show decide ((0 : Nat) ≠ 0) = false from rfl], ?_, kt⟩
       simpa only [Nat.mul_zero, BitVec.add_zero, Nat.sub_zero] using vt
-    · exact Or.inr ⟨by simp only [eval, read_x, tb, counter_test k (by omega), decide_eq_true hk0],
-        k, by omega, by omega, ⟨by omega, by omega, tb, vt, kt⟩⟩
+    · exact Or.inr ⟨by simp only [eval, read_x, tb, counter_test k (by omega_using [hn, hnn]), decide_eq_true hk0],
+        k, by omega_using [], by omega_using [hnn], ⟨by omega_using [hk0], by omega_using [hb], tb, vt, kt⟩⟩
   · exact ⟨Nat.le_refl _, hi⟩
 
 end VG.Proof.Ed448.AArch64

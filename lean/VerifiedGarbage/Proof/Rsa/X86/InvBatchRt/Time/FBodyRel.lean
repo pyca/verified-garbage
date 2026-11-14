@@ -78,7 +78,7 @@ theorem relLoopF (F : Fits Z len) (K : Nat) :
   refine (relDouble F hk.1 hk.2).mono (fun _ _ h => h.1) fun s t ⟨hb, zs, zt⟩ => ?_
   have es : isa.eval .ne s = s.zf.map (!·) := rfl
   have et : isa.eval .ne t = t.zf.map (!·) := rfl
-  refine ⟨by rw [es, et, zs, zt], fun hf => ?_, fun ht => ⟨k - 1, by omega, hb, ?_, by omega⟩⟩
+  refine ⟨by rw [es, et, zs, zt], fun hf => ?_, fun ht => ⟨k - 1, by omega_using [hk], hb, ?_, by omega_using [hk]⟩⟩
   · rw [es, zs] at hf
     have h0 : k - 1 = 0 := by by_contra h0; simp_all
     rw [h0] at hb
@@ -107,22 +107,22 @@ theorem relInitF (F : Fits Z len) :
   unfold initF
   simp only [seqs]
   refine RelCT.seq (relSlots (by taint_decide)) ?_
-  refine RelCT.seq (relCopy (stable_true _) (by decide) (by omega) (by omega) (by omega) (by taint_decide)) ?_
+  refine RelCT.seq (relCopy (stable_true _) (by decide) (by omega_using [F1, r2]) (by omega_using [F1, r8]) (by omega_using [r2, r8]) (by taint_decide)) ?_
   refine RelCT.seq (relVirtualize (stable_true _) F2 F1 (by taint_decide)) ?_
-  refine RelCT.seq (relZeroWord (stable_true _) (by omega) (by taint_decide)) ?_
-  refine RelCT.seq (relCopy (stable_true _) (by decide) (by omega) (by omega) (by omega) (by taint_decide)) ?_
-  refine RelCT.seq (relZeroWord (stable_true _) (by omega) (by taint_decide)) ?_
-  refine RelCT.seq (relZeros (stable_true _) (fun _ hb => countN hb) (by omega) (by omega) (by taint_decide)) ?_
+  refine RelCT.seq (relZeroWord (stable_true _) (by omega_using [F1, r2, h21]) (by taint_decide)) ?_
+  refine RelCT.seq (relCopy (stable_true _) (by decide) (by omega_using [F1, r7]) (by omega_using [F1, r0]) (by omega_using [r0, r7]) (by taint_decide)) ?_
+  refine RelCT.seq (relZeroWord (stable_true _) (by omega_using [F1, r7, h71]) (by taint_decide)) ?_
+  refine RelCT.seq (relZeros (stable_true _) (fun _ hb => countN hb) (by omega_using []) (by omega_using [F1, r12]) (by taint_decide)) ?_
   refine RelCT.seq (relEvenMask (stable_true _) (by taint_decide)) ?_
-  refine RelCT.seq (relSelIn (stable_true _) (by decide) (by omega) (by omega) (by omega) (by taint_decide)) ?_
+  refine RelCT.seq (relSelIn (stable_true _) (by decide) (by omega_using [F1, r12]) (by omega_using [F1, r2]) (by omega_using [r2, r12]) (by taint_decide)) ?_
   refine RelCT.seq (relChainAdd (X := fun _ => True) (stable_true _) (fun _ _ => trivial) (by decide) rfl
-    (by omega) (by omega) (by omega) (.inl (Nat.le_refl _)) (by omega) (by taint_decide)) ?_
-  refine RelCT.seq (relScatter (by decide) (by omega) (by omega) (by omega) (by omega) ⟨_, by taint_decide⟩) ?_
-  refine RelCT.seq (relScatter (by decide) (by omega) (by omega) (by omega) (by omega) ⟨_, by taint_decide⟩) ?_
-  refine RelCT.seq (relZeros (stable_true _) (fun _ hb => countN hb) (by omega) (by omega) (by taint_decide)) ?_
-  refine RelCT.seq (relScatter (by decide) (by omega) (by omega) (by omega) (by omega) ⟨_, by taint_decide⟩) ?_
-  refine RelCT.seq (relScatter (by decide) (by omega) (by omega) (by omega) (by omega) ⟨_, by taint_decide⟩) ?_
-  refine RelCT.seq (relScatter (by decide) (by omega) (by omega) (by omega) (by omega) ⟨_, by taint_decide⟩) ?_
+    (by omega_using [F1, r7]) (by omega_using [F1, r7]) (by omega_using [F1, r12]) (.inl (Nat.le_refl _)) (by omega_using [r7, r12]) (by taint_decide)) ?_
+  refine RelCT.seq (relScatter (by decide) (by omega_using [F1, r4, f2]) (by omega_using [r4, eP]) (by omega_using [F1, r2]) (by omega_using [r2, r4]) ⟨_, by taint_decide⟩) ?_
+  refine RelCT.seq (relScatter (by decide) (by omega_using [F1, r4, f2]) (by omega_using [r4, eP]) (by omega_using [F1, r7]) (by omega_using [F2, r7, r4, f1, efs]) ⟨_, by taint_decide⟩) ?_
+  refine RelCT.seq (relZeros (stable_true _) (fun _ hb => countN hb) (by omega_using []) (by omega_using [F1, r3]) (by taint_decide)) ?_
+  refine RelCT.seq (relScatter (by decide) (by omega_using [F1, F2, r11, d2]) (by omega_using [r11, eP]) (by omega_using [F1, r3]) (by omega_using [r3, r11]) ⟨_, by taint_decide⟩) ?_
+  refine RelCT.seq (relScatter (by decide) (by omega_using [F1, F2, r11, d2]) (by omega_using [r11, eP]) (by omega_using [F1, r3]) (by omega_using [r3, r11]) ⟨_, by taint_decide⟩) ?_
+  refine RelCT.seq (relScatter (by decide) (by omega_using [F1, F2, r11, d2]) (by omega_using [r11, eP]) (by omega_using [F1, r2]) (by omega_using [r2, r11]) ⟨_, by taint_decide⟩) ?_
   refine RelCT.seq (relEOne F1 ⟨_, by taint_decide⟩) ?_
   refine RelCT.seq (relWinOne (stable_true _) F1 (by taint_decide)) ?_
   refine RelCT.seq (relInverse (stable_true _) F1 (by taint_decide)) ?_
@@ -156,30 +156,30 @@ theorem relFinishF (F : Fits Z len) :
   have efs : fgSz = 16 := rfl; have eds : deSz = 20 := rfl
   unfold finishF addIfNegF
   simp only [seqs]
-  refine RelCT.seq (relGather (by decide) (by omega) (by omega) (by omega) ⟨_, by taint_decide⟩) ?_
-  refine RelCT.seq (relGather (by decide) (by omega) (by omega) (by omega) ⟨_, by taint_decide⟩) ?_
-  refine RelCT.seq (relZeros (stable_true _) (fun _ hb => countN hb) (by omega) (by omega) (by taint_decide)) ?_
+  refine RelCT.seq (relGather (by decide) (by omega_using [F1, r4, f2]) (by omega_using [F1, r14]) (by omega_using [r14, r4, f1, efs]) ⟨_, by taint_decide⟩) ?_
+  refine RelCT.seq (relGather (by decide) (by omega_using [F1, F2, r11, d2]) (by omega_using [F1, r7]) (by omega_using [r7, r11]) ⟨_, by taint_decide⟩) ?_
+  refine RelCT.seq (relZeros (stable_true _) (fun _ hb => countN hb) (by omega_using []) (by omega_using [F1, r12, rt]) (by taint_decide)) ?_
   refine RelCT.seq (relChainSub (X := fun _ => True) (stable_true _) (fun _ _ => trivial) (by decide) rfl
-    (by omega) (by omega) (by omega) (.inl (Nat.le_refl _)) (.inr (by omega)) (by taint_decide)) ?_
-  refine RelCT.seq (relMaskAt (stable_true _) (by omega) (by taint_decide)) ?_
-  refine RelCT.seq (relSelIn (stable_true _) (by decide) (by omega) (by omega) (by omega) (by taint_decide)) ?_
+    (by omega_using [F1, r12, rt]) (by omega_using [F1, r12, rt]) (by omega_using [F1, r7]) (.inl (Nat.le_refl _)) (.inr (by omega_using [r7, r12, rt])) (by taint_decide)) ?_
+  refine RelCT.seq (relMaskAt (stable_true _) (by omega_using [F1, r14, h141]) (by taint_decide)) ?_
+  refine RelCT.seq (relSelIn (stable_true _) (by decide) (by omega_using [F1, r7]) (by omega_using [F1, r12, rt]) (by omega_using [r7, r12, rt]) (by taint_decide)) ?_
   refine RelCT.seq (RelCT.seq (relChainAdd (X := fun _ => True) (stable_true _) (fun _ _ => trivial) (by decide) rfl
-      (by omega) (by omega) (by omega) (.inr (by omega)) (.inr (by omega)) (by taint_decide))
-    (RelCT.seq (relMaskAt (stable_true _) (by omega) (by taint_decide))
-      (relSelIn (stable_true _) (by decide) (by omega) (by omega) (by omega) (by taint_decide)))) ?_
+      (by omega_using [F1, r12, rt]) (by omega_using [F1, r7]) (by omega_using [F1, r2, rmo]) (.inr (by omega_using [r7, r12, rt])) (.inr (by omega_using [r2, r12, rt, rmo])) (by taint_decide))
+    (RelCT.seq (relMaskAt (stable_true _) (by omega_using [F1, r7, h71']) (by taint_decide))
+      (relSelIn (stable_true _) (by decide) (by omega_using [F1, r7]) (by omega_using [F1, r12, rt]) (by omega_using [r7, r12, rt]) (by taint_decide)))) ?_
   refine RelCT.seq (RelCT.seq (relChainAdd (X := fun _ => True) (stable_true _) (fun _ _ => trivial) (by decide) rfl
-      (by omega) (by omega) (by omega) (.inr (by omega)) (.inr (by omega)) (by taint_decide))
-    (RelCT.seq (relMaskAt (stable_true _) (by omega) (by taint_decide))
-      (relSelIn (stable_true _) (by decide) (by omega) (by omega) (by omega) (by taint_decide)))) ?_
-  refine RelCT.seq (relCsub (src := a 7) (o := a 7) (stable_true _) F.toRoom rfl rfl (by omega) (by omega) (.inr (by omega))
-    (fun h => absurd rfl h) (.inl (by omega)) ⟨_, by taint_decide⟩ ⟨_, by taint_decide⟩ ⟨_, by taint_decide⟩) ?_
-  refine RelCT.seq (relZeros (stable_true _) (fun _ hb => countW hb) (by omega) (by omega) (by taint_decide)) ?_
+      (by omega_using [F1, r12, rt]) (by omega_using [F1, r7]) (by omega_using [F1, r2, rmo]) (.inr (by omega_using [r7, r12, rt])) (.inr (by omega_using [r2, r12, rt, rmo])) (by taint_decide))
+    (RelCT.seq (relMaskAt (stable_true _) (by omega_using [F1, r7, h71']) (by taint_decide))
+      (relSelIn (stable_true _) (by decide) (by omega_using [F1, r7]) (by omega_using [F1, r12, rt]) (by omega_using [r7, r12, rt]) (by taint_decide)))) ?_
+  refine RelCT.seq (relCsub (src := a 7) (o := a 7) (stable_true _) F.toRoom rfl rfl (by omega_using [F1, r7']) (by omega_using [F1, r7']) (.inr (by omega_using [r7', r12', rt']))
+    (fun h => absurd rfl h) (.inl (by omega_using [r7', r12', rt'])) ⟨_, by taint_decide⟩ ⟨_, by taint_decide⟩ ⟨_, by taint_decide⟩) ?_
+  refine RelCT.seq (relZeros (stable_true _) (fun _ hb => countW hb) (by omega_using [F2, ke]) (by omega_using [F1, ke, r1]) (by taint_decide)) ?_
   refine RelCT.seq (relChainSub (X := fun _ => True) (stable_true _) (fun _ _ => trivial) (by decide) rfl
-    (by omega) (by omega) (by omega) (.inl (Nat.le_refl _)) (.inl (by omega)) (by taint_decide)) ?_
-  refine RelCT.seq (relMaskAtNot (stable_true _) (by omega) (by taint_decide)) ?_
-  refine RelCT.seq (relSelIn (stable_true _) (by decide) (by omega) (by omega) (by omega) (by taint_decide)) ?_
-  refine RelCT.seq (relZeros (stable_true _) (fun _ hb => countW hb) (by omega) (by omega) (by taint_decide)) ?_
-  exact relCopy (stable_true _) (by decide) (by omega) (by omega) (by omega) (by taint_decide)
+    (by omega_using [F1, r1]) (by omega_using [F1, r1]) (by omega_using [F1, r14]) (.inl (Nat.le_refl _)) (.inl (by omega_using [r1, r14])) (by taint_decide)) ?_
+  refine RelCT.seq (relMaskAtNot (stable_true _) (by omega_using [F1, r14, h141]) (by taint_decide)) ?_
+  refine RelCT.seq (relSelIn (stable_true _) (by decide) (by omega_using [F1, r1]) (by omega_using [F1, r14]) (by omega_using [r1, r14]) (by taint_decide)) ?_
+  refine RelCT.seq (relZeros (stable_true _) (fun _ hb => countW hb) (by omega_using [F2, ke]) (by omega_using [F1, ke, r3]) (by taint_decide)) ?_
+  exact relCopy (stable_true _) (by decide) (by omega_using [F1, r3]) (by omega_using [F1, r7]) (by omega_using [r3, r7]) (by taint_decide)
 
 theorem relBody (F : Fits Z len) :
     RelCT isa (fun s t => Pre0 lay B Z len N args sp s ∧ Pre0 lay B Z len N args sp t) (body lay)
@@ -189,7 +189,7 @@ theorem relBody (F : Fits Z len) :
   unfold body
   simp only [seqs]
   refine RelCT.seq (relInitF F) ?_
-  refine RelCT.seq ((relLoopF F ((3 * nw len + 2) / 2)).mono (fun _ _ h => ⟨h, by omega, by omega⟩)
+  refine RelCT.seq ((relLoopF F ((3 * nw len + 2) / 2)).mono (fun _ _ h => ⟨h, by omega_using [], by omega_using [F4]⟩)
     fun _ _ h => h) ?_
   exact RelCT.seq (relBatchF F true) (relFinishF F)
 

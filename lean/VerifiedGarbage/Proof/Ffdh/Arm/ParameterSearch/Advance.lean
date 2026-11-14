@@ -28,7 +28,7 @@ theorem SearchLive.reject_head {p : SearchParams} {used remaining count : Nat} {
     rw [mem]; exact writeLow_frame _ _ _ fieldsBound
   refine ⟨?_, rest⟩
   refine SearchLive.after_control (nextUsed := used + count) (nextRemaining := remaining)
-    h (by decide) frame rest (by have := h.usedBound; omega) h.remainingBound ?_ ?_ ?_ ?_
+    h (by decide) frame rest (by have := h.usedBound; omega_using [bound, this]) h.remainingBound ?_ ?_ ?_ ?_
   · have same := fields_word s.mem p.control (rejectFields p used count) fieldsBound
       (j := 0) (by decide) (by simp [rejectFields])
     have address : off (State.addr p.control) 0 = State.addr p.control := by simp [off]
@@ -42,7 +42,7 @@ theorem SearchLive.reject_head {p : SearchParams} {used remaining count : Nat} {
   · intro j member
     have hj : j < 16 := by
       simp only [searchSlots, List.mem_cons, List.not_mem_nil, or_false] at member
-      omega
+      omega_using [member]
     rw [mem, lowWord_writeLow _ _ _ fieldsBound j hj, h.saved j member]
     simp only [searchSlots, List.mem_cons, List.not_mem_nil, or_false] at member
     rcases member with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
@@ -58,7 +58,7 @@ theorem SearchLive.decrement {p : SearchParams} {used remaining : Nat} {s : Stat
     rw [mem]; exact counter_store_frame _ _ _
   refine ⟨?_, rest⟩
   refine SearchLive.after_control (nextUsed := used) (nextRemaining := remaining - 1)
-    h (by decide) frame rest h.usedBound (by have := h.remainingBound; omega) ?_ ?_ ?_ ?_
+    h (by decide) frame rest h.usedBound (by have := h.remainingBound; omega_using [this]) ?_ ?_ ?_ ?_
   · rw [mem, Mem.readW_writeW_self64]
   · rw [mem, counter_store_word _ _ _ (j := 1) (by decide) (by decide)]
     exact h.width
@@ -67,7 +67,7 @@ theorem SearchLive.decrement {p : SearchParams} {used remaining : Nat} {s : Stat
   · intro j member
     have hj : 0 < j ∧ j < 16 := by
       simp only [searchSlots, List.mem_cons, List.not_mem_nil, or_false] at member
-      omega
+      omega_using [member]
     rw [mem, counter_store_low _ _ _ hj.1 hj.2]
     exact h.saved j member
 

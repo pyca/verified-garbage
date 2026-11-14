@@ -18,7 +18,7 @@ theorem val32_two (m : Mem) (base : Addr) (offset : Nat) :
 theorem append_pair (low high : BitVec 32) : (high ++ low).toNat = Mod64.pair low high := by
   rw [BitVec.toNat_append, ← Nat.shiftLeft_add_eq_or_of_lt low.isLt, Nat.shiftLeft_eq]
   unfold Mod64.pair
-  omega
+  omega_using []
 
 theorem val32_write_pair (m : Mem) (base : Addr) (offset : Nat) (low high : BitVec 32) :
     val32 (m.writeW (off base offset) (high ++ low)) base offset 2 = Mod64.pair low high := by

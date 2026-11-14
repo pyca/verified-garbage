@@ -31,8 +31,8 @@ open VG.Proof.MlKem.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64
 theorem arg_wo {s : State} (m : Mem) {d : Nat} (v : BitVec 64) (hd : d + 8 ≤ frameBytes) {j : Nat} (hj : j < 14) :
     (m.writeW (off (fb s) d) v).readW (stackArgAddr s j) 64 = m.readW (stackArgAddr s j) 64 := by
   rw [stackArgAddr_fb]
-  exact word_wo m (fb s) v (by unfold frameBytes at *; omega) (by unfold frameBytes at *; omega)
-    (by unfold frameBytes; omega)
+  exact word_wo m (fb s) v (by unfold frameBytes at *; omega_using [hd]) (by unfold frameBytes at *; omega_using [hd])
+    (by unfold frameBytes; omega_using [hj])
 
 /-- `2 ⌈k / 8⌉` from `k`. -/
 theorem preWords_val {x : BitVec 64} (hx : x.toNat ≤ 1024) :
@@ -42,17 +42,17 @@ theorem preWords_val {x : BitVec 64} (hx : x.toNat ≤ 1024) :
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_add, BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow,
     Spec.Rsa.precomputedWords, Spec.Rsa.modulusWords, show (7 : BitVec 64).toNat = 7 from rfl]
-  omega
+  omega_using [hx]
 
 /-! ## The call -/
 
 theorem preWords_le {s : State} (hp : PreF X s) : Spec.Rsa.precomputedWords (s.gpr .rcx).toNat ≤ 256 := by
-  have := hp.k2; unfold Spec.Rsa.precomputedWords Spec.Rsa.modulusWords; omega
+  have := hp.k2; unfold Spec.Rsa.precomputedWords Spec.Rsa.modulusWords; omega_using [this]
 
 /-- A region of the frame at `d`, apart from the return address of a call. -/
 theorem ret_disjoint (s : State) {d n : Nat} (h : d + n ≤ frameBytes) :
     (below (fb s) 8).Disjoint ⟨off (fb s) d, n⟩ := by
   rw [show below (fb s) 8 = ⟨kb s, 8⟩ by simp only [below]; rw [← fb_sub8]; rfl, fb_off]
-  exact Offset.base_disjoint _ (by omega) (by unfold frameBytes at h; omega)
+  exact Offset.base_disjoint _ (by omega_using []) (by unfold frameBytes at h; omega_using [h])
 
 end VG.Proof.Rsa.X86_64

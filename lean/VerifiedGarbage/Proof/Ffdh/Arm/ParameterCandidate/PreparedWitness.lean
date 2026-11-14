@@ -145,7 +145,7 @@ theorem preparedWitness_ok {s : State} {p : WitnessParams} {src : BitVec 32} {k 
   have bounds : ∀ d ∈ witnessSlots, d + 4 ≤ 60 := by
     intro d hd
     simp only [witnessSlots, List.mem_cons, List.not_mem_nil, or_false] at hd
-    omega
+    omega_using [hd]
   refine WP.mono (phasePrepared_saved_ok h.preparation h.space h.saved bounds h.stackScratch) ?_
   rintro t ⟨data, saved, changed, rest⟩
   rw [h.modulus, ← h.words] at data
@@ -158,14 +158,14 @@ theorem preparedWitness_ok {s : State} {p : WitnessParams} {src : BitVec 32} {k 
   · rw [rest.rd, rest.wr]; exact h.tapeRead
   · rw [rest.sp]; exact h.tapeStack
   · rw [rest.sp]; exact h.tapeBelow
-  · refine (rsa_bytes_frame changed (by have := h.tapeCount; omega) ?_).trans h.tapeBytes
+  · refine (rsa_bytes_frame changed (by have := h.tapeCount; omega_using [this]) ?_).trans h.tapeBytes
     intro r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
     · exact h.tapeScratch
-    · rw [VG.Arm.addr_add (by have := h.saved.space.nowrap; omega)]
+    · rw [VG.Arm.addr_add (by have := h.saved.space.nowrap; omega_using [this])]
       exact h.tapeStack.sub_right (Offset.sub_base _ (by decide : 60 + 4 ≤ 72))
-    · rw [VG.Arm.addr_add (by have := h.saved.space.nowrap; omega)]
+    · rw [VG.Arm.addr_add (by have := h.saved.space.nowrap; omega_using [this])]
       exact h.tapeStack.sub_right (Offset.sub_base _ (by decide : 64 + 4 ≤ 72))
 
 end VG.Proof.Ffdh.Arm.ParameterCandidate

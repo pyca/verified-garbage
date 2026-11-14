@@ -63,10 +63,10 @@ theorem tail_ct {w₁ : MdHash} (hw₁ : w₁ ∈ vs) {S : Nat} (hS : 15 ≤ S) 
     exact decFail_tr hS e _ _ _ _ _ _ ⟨hL, hP, ⟨c₁, V₁, W₁, R₁, S₁, trivial⟩, ⟨c₂, V₂, W₂, R₂, S₂, trivial⟩⟩ e₁ e₂
   · intro s₁ s₂ t₁ t₂ s₁' s₂' ⟨⟨e, hL, hP, ⟨_, taL, ta⟩, ⟨⟨c₁, V₁, W₁, R₁, S₁, x₁⟩, hh₁, hdL₁⟩,
       ⟨⟨c₂, V₂, W₂, R₂, S₂, x₂⟩, hh₂, hdL₂⟩⟩, hb⟩ e₁ e₂
-    have hP16 : 16 ≤ e.L.P := by omega
+    have hP16 : 16 ≤ e.L.P := by omega_using [hS, hP]
     have hkD : 2 * w₁.H.D + 2 ≤ e.L.k.toNat := by
       by_contra hk
-      rw [eval_nonzero, x₁.2, ifn (by omega)] at hb
+      rw [eval_nonzero, x₁.2, ifn (by omega_using [hk])] at hb
       exact absurd hb (by decide)
     have dx : ∀ {g vv m₀} {t : State} {W : Nat → BitVec 64}, Ctx e.L g vv m₀ t → Slots e.L W →
         DecX e.L.Q e.L.scr e.L.k.toNat e.L.lab e.L.labl.toNat e.L.out e.L.ml W t := fun hx hs =>

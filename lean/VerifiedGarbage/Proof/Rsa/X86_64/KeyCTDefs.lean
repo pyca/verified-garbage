@@ -101,7 +101,7 @@ theorem KK.hl {p : KPub} {t : State} (h : KK p t) : ∀ i < 32, InRegions (t.rd 
   have hn := c.good.scr.nowrap
   have hZ := c.hZ
   intro i hi
-  exact c.good.scr.ld (by have := hdr_lt_slot p.w 8 hi; omega)
+  exact c.good.scr.ld (by have := hdr_lt_slot p.w 8 hi; omega_using [hZ, this])
 
 /-- `KK` with the same memory and `rdi`. -/
 theorem KK.keep {p : KPub} {t t' : State} (h : KK p t) (hm : t'.mem = t.mem) (k : Keep mmRegs t t') : KK p t' := by
@@ -153,13 +153,13 @@ theorem zeroArrK_ok {p : KPub} {s : State} (h : KK p s) {j : Nat} (hj : j < 8) (
   have := c.w1
   have := c.w2
   have hl : ∀ i < 32, InRegions (s.rd ++ s.wr) (off p.B (8 * i)) 8 := fun i hi =>
-    c.good.scr.ld (by have := hdr_lt_slot p.w 8 hi; omega)
+    c.good.scr.ld (by have := hdr_lt_slot p.w 8 hi; omega_using [hZ, this])
   unfold VG.Impl.Rsa.X86_64.Crt.zeroArr
   refine WP.seq (WP.mono (WP.keep [.r8, .r12] (Q := fun t => t.gpr .r8 = off p.B (slot p.w j) ∧
       t.gpr .r12 = BitVec.ofNat 64 p.w ∧ t.mem = s.mem)
-    (by xrun [State.ea, hdr, c.good.rdi, hdrOff, hl (sArr j) (by unfold sArr; omega), hl sW (by decide),
+    (by xrun [State.ea, hdr, c.good.rdi, hdrOff, hl (sArr j) (by unfold sArr; omega_using [hj]), hl sW (by decide),
       c.good.hdr.harr j hj, c.good.hdr.hw]) rfl) fun s₁ ⟨⟨h8, h12, hm₁⟩, k₁⟩ => ?_)
-  refine WP.mono (zeroAccLoop_ok (c.good.scr.congr k₁.2.2) h8 h12 (by omega) (by omega)
+  refine WP.mono (zeroAccLoop_ok (c.good.scr.congr k₁.2.2) h8 h12 (by omega_arith) (by omega_using [this])
     (Nat.le_trans (slot_le hj) hZ)) fun t ⟨_, ho, k⟩ => ⟨⟨s₀, minv, N, c.arr
       (Arrays.of_outside (List.mem_singleton_self j) (by rw [hm₁] at ho; exact ho) (Nat.le_refl _) (Nat.le_refl _))
       (by simpa using hj) (by simpa using Ne.symm hjN) (by simpa using Ne.symm hj1) ((k₁.trans k).mono (by decide)),

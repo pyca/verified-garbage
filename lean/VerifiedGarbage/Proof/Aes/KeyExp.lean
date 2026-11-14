@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Spec.Aes
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # The key expansion, word by word
@@ -36,7 +37,7 @@ theorem expandWords_succ (key : List Byte) (nk i : Nat) :
       split <;> simp [ih]
   have h : ∀ (ws : List Word) (x : Word), ws.length = i → (ws ++ [x]).getD i [] = x := by
     intro ws x h
-    rw [List.getD_eq_getElem?_getD, List.getElem?_append_right (by omega), h, Nat.sub_self]
+    rw [List.getD_eq_getElem?_getD, List.getElem?_append_right (by omega_using [h]), h, Nat.sub_self]
     rfl
   unfold kw
   simp only [expandWords]
@@ -54,9 +55,9 @@ theorem expandWords_getD (key : List Byte) (nk : Nat) {i j : Nat} (h : j < i) :
   | succ i ih =>
     rw [expandWords_succ]
     by_cases hj : j < i
-    · rw [List.getD_eq_getElem?_getD, List.getElem?_append_left (by rw [expandWords_length]; omega),
+    · rw [List.getD_eq_getElem?_getD, List.getElem?_append_left (by rw [expandWords_length]; omega_using [hj]),
         ← List.getD_eq_getElem?_getD, ih hj]
-    · obtain rfl : j = i := by omega
+    · obtain rfl : j = i := by omega_using [h, hj]
       rw [List.getD_eq_getElem?_getD, List.getElem?_append_right (Nat.le_of_eq (expandWords_length ..)),
         expandWords_length, Nat.sub_self]
       rfl
@@ -75,10 +76,10 @@ theorem kw_step (key : List Byte) {nk i : Nat} (h0 : 0 < nk) (h : nk ≤ i) :
     kw key nk i = xorWord (kw key nk (i - nk)) (kTemp nk i (kw key nk (i - 1))) := by
   show (expandWords key nk (i + 1)).getD i [] = _
   rw [expandWords]
-  simp only [show ¬ i < nk by omega, ite_false]
+  simp only [show ¬ i < nk by omega_using [h], ite_false]
   rw [List.getD_eq_getElem?_getD, List.getElem?_append_right (Nat.le_of_eq (expandWords_length ..)),
-    expandWords_length, Nat.sub_self, expandWords_getD key nk (show i - 1 < i by omega),
-    expandWords_getD key nk (show i - nk < i by omega)]
+    expandWords_length, Nat.sub_self, expandWords_getD key nk (show i - 1 < i by omega_using [h0, h]),
+    expandWords_getD key nk (show i - nk < i by omega_using [h0, h])]
   rfl
 
 theorem xorWord_length (a b : Word) : (xorWord a b).length = min a.length b.length := by
@@ -101,14 +102,14 @@ theorem kw_length {key : List Byte} {nk : Nat} (hk : key.length = 4 * nk) (h0 : 
   induction i using Nat.strongRecOn with
   | ind i ih =>
     by_cases h : i < nk
-    · rw [kw_key key h]; simp [hk]; omega
-    · rw [kw_step key h0 (by omega), xorWord_length, ih _ (by omega), kTemp_length (ih _ (by omega))]
+    · rw [kw_key key h]; simp [hk]; omega_using [h]
+    · rw [kw_step key h0 (by omega_using [h]), xorWord_length, ih _ (by omega_using [h0, h]), kTemp_length (ih _ (by omega_using [h0, h]))]
       rfl
 
 theorem xorWord_getD {a b : Word} (ha : a.length = 4) (hb : b.length = 4) {t : Nat} (ht : t < 4) :
     (xorWord a b).getD t 0 = a.getD t 0 ^^^ b.getD t 0 := by
   simp only [xorWord, List.getD_eq_getElem?_getD, List.getElem?_zipWith]
-  rw [List.getElem?_eq_getElem (by omega), List.getElem?_eq_getElem (by omega)]
+  rw [List.getElem?_eq_getElem (by omega_using [ha, ht]), List.getElem?_eq_getElem (by omega_using [hb, ht])]
   rfl
 
 theorem subWord_getD {w : Word} {t : Nat} (ht : t < w.length) :
@@ -148,14 +149,14 @@ theorem flatten_expandWords {key : List Byte} {nk : Nat} (hk : key.length = 4 * 
   | zero => rfl
   | succ n ih =>
     rw [expandWords_succ, List.flatten_append, List.flatten_singleton,
-      ← ih fun k hk => hf k (by omega), show 4 * (n + 1) = 4 * n + 4 by omega, List.range_add,
+      ← ih fun k hk => hf k (by omega_using [hk]), show 4 * (n + 1) = 4 * n + 4 by omega_using [], List.range_add,
       List.map_append, List.map_map, word4 (kw_length hk h0 n)]
     refine congrArg (_ ++ ·) ?_
     simp only [List.range, List.range.loop, List.map_cons, List.map_nil, Function.comp]
-    rw [hf _ (by omega), hf _ (by omega), hf _ (by omega), hf _ (by omega)]
-    simp only [show (4 * n + 0) / 4 = n by omega, show (4 * n + 1) / 4 = n by omega,
-      show (4 * n + 2) / 4 = n by omega, show (4 * n + 3) / 4 = n by omega,
-      show (4 * n + 0) % 4 = 0 by omega, show (4 * n + 1) % 4 = 1 by omega,
-      show (4 * n + 2) % 4 = 2 by omega, show (4 * n + 3) % 4 = 3 by omega]
+    rw [hf _ (by omega_using []), hf _ (by omega_using []), hf _ (by omega_using []), hf _ (by omega_using [])]
+    simp only [show (4 * n + 0) / 4 = n by omega_using [], show (4 * n + 1) / 4 = n by omega_using [],
+      show (4 * n + 2) / 4 = n by omega_using [], show (4 * n + 3) / 4 = n by omega_using [],
+      show (4 * n + 0) % 4 = 0 by omega_using [], show (4 * n + 1) % 4 = 1 by omega_using [],
+      show (4 * n + 2) % 4 = 2 by omega_using [], show (4 * n + 3) % 4 = 3 by omega_using []]
 
 end VG.Proof.Aes

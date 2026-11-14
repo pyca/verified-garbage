@@ -20,20 +20,20 @@ theorem r2CountInit_ok (s : State) {base : BitVec 32} {size w : Nat}
       t.mem = s.mem.writeW (off (State.addr base) 208) (BitVec.ofNat 32 (65 * w)) ∧ Rest [.r1] s t := by
   have nowrap := ws.nowrap
   have a48 : State.addr (s.gpr .r0 + BitVec.ofNat 32 48) = off (State.addr base) 48 := by
-    rw [ptr]; exact addr_add (by omega)
+    rw [ptr]; exact addr_add (by omega_using [fits, nowrap])
   have a208 : State.addr (s.gpr .r0 + BitVec.ofNat 32 208) = off (State.addr base) 208 := by
-    rw [ptr]; exact addr_add (by omega)
+    rw [ptr]; exact addr_add (by omega_using [fits, nowrap])
   unfold r2CountInit
-  refine wp_ldr (a := off (State.addr base) 48) (by decide) a48 (ws.read (by omega)) fun s1 u1 => ?_
+  refine wp_ldr (a := off (State.addr base) 48) (by decide) a48 (ws.read (by omega_using [fits])) fun s1 u1 => ?_
   refine wp_dp (op2_lsl (by decide)) fun s2 u2 => ?_
   refine wp_str (a := off (State.addr base) 208) (by decide)
     (by rw [u2.other .r0 (by decide), u1.other .r0 (by decide)]; exact a208)
-    (by rw [u2.wr, u1.wr]; exact ws.write (by omega)) fun t u3 => WP.block_nil ?_
+    (by rw [u2.wr, u1.wr]; exact ws.write (by omega_using [fits])) fun t u3 => WP.block_nil ?_
   refine ⟨?_, (u1.rest (by simp)).trans ((u2.rest (by simp)).trans (u3.rest _))⟩
   rw [u3.mem, u2.mem, u1.mem, u2.gpr, dpVal, u1.gpr, width, BitVec.shiftLeft_eq_mul_twoPow]
   change s.mem.writeW _ (BitVec.ofNat 32 w + BitVec.ofNat 32 w * BitVec.ofNat 32 64) = _
   rw [← BitVec.ofNat_mul, ← BitVec.ofNat_add]
   congr 2
-  omega
+  omega_using []
 
 end VG.Proof.Bignum.Arm

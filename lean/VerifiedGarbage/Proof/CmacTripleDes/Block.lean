@@ -29,10 +29,10 @@ theorem vgetD {α : Type} {n : Nat} (xs : Vector α n) {i : Nat} (h : i < n) (d 
 /-- Bit `i` of a little-endian word is bit `i % 8` of its byte `i / 8`. -/
 theorem getLsbD_readW64 (m : Mem) (a : Addr) {i : Nat} (hi : i < 64) :
     (m.readW a 64).getLsbD i = (m (a + BitVec.ofNat 64 (i / 8))).getLsbD (i % 8) := by
-  rw [← Mem.extractLsb'_read m a (n := 8) (by omega), BitVec.getLsbD_extractLsb']
+  rw [← Mem.extractLsb'_read m a (n := 8) (by omega_using [hi]), BitVec.getLsbD_extractLsb']
   simp only [Mem.readW, BitVec.getLsbD_setWidth, hi, decide_true, Bool.true_and,
     show i % 8 < 8 from Nat.mod_lt _ (by decide)]
-  congr 1; omega
+  congr 1; omega_using []
 
 theorem getLsbD_bytes_prefix (f : Nat → Byte) (k i : Nat) (hi : i < 64) :
     ((List.range k).foldl (fun (out : BitVec 64) j => out ||| (f j).zeroExtend 64 <<< (8 * j)) 0).getLsbD i =
@@ -43,13 +43,13 @@ theorem getLsbD_bytes_prefix (f : Nat → Byte) (k i : Nat) (hi : i < 64) :
     rw [List.range_succ, List.foldl_append, List.foldl_cons, List.foldl_nil, BitVec.getLsbD_or, ih,
       BitVec.getLsbD_shiftLeft, BitVec.getLsbD_setWidth]
     by_cases h : i < 8 * k
-    · simp [h, show i < 8 * (k + 1) by omega]
+    · simp [h, show i < 8 * (k + 1) by omega_using [h]]
     · by_cases h' : i < 8 * (k + 1)
-      · have e : i / 8 = k := by omega
-        simp [h, h', hi, show i - 8 * k = i % 8 by omega, e, show i % 8 < 64 by omega]
+      · have e : i / 8 = k := by omega_using [h, h']
+        simp [h, h', hi, show i - 8 * k = i % 8 by omega_using [h, h'], e, show i % 8 < 64 by omega_using []]
       · simp only [h, h', decide_false, Bool.false_and, Bool.false_or, hi, decide_true,
           Bool.true_and]
-        rw [BitVec.getLsbD_of_ge _ _ (by omega)]
+        rw [BitVec.getLsbD_of_ge _ _ (by omega_using [h'])]
         simp
 
 /-- Slot `n` of the key schedule is the word at `p + 8 n`. -/
@@ -103,7 +103,7 @@ theorem split_append (r l : BitVec 32) : split (r ++ l) = (r, l) := by
   simp only [split, Prod.mk.injEq]
   constructor <;> apply BitVec.eq_of_getLsbD_eq <;> intro i hi
   · rw [BitVec.getLsbD_setWidth, BitVec.getLsbD_ushiftRight, BitVec.getLsbD_append,
-      ite_eq_right (by omega), Nat.add_sub_cancel_left, decide_eq_true hi, Bool.true_and]
+      ite_eq_right (by omega_using []), Nat.add_sub_cancel_left, decide_eq_true hi, Bool.true_and]
   · rw [BitVec.getLsbD_setWidth, BitVec.getLsbD_append, ite_eq_left hi, decide_eq_true hi, Bool.true_and]
 
 /-! ## TDEA -/
@@ -136,6 +136,6 @@ theorem tdes_eq (S : Schedule) (x : BitVec 64) :
 theorem passKeys_eq (S : Schedule) {p j : Nat} (hj : j < 16) :
     passKeys S p j = (S.getD (16 * p + if p % 2 = 1 then 15 - j else j) 0).setWidth 48 := by
   simp only [passKeys, keyOrder, componentSchedule]
-  split <;> split <;> simp_all <;> rw [vgetD _ (by omega), Vector.getElem_ofFn]
+  split <;> split <;> simp_all <;> rw [vgetD _ (by omega_arith), Vector.getElem_ofFn]
 
 end VG.Proof.CmacTripleDes

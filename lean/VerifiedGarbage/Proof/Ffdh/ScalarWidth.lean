@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Ffdh.KeyScalar
 import VerifiedGarbage.Proof.Bignum.Octets
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-! Scalar sampling at an arbitrary public maximum bit length, including zero. -/
 
@@ -17,22 +18,22 @@ def headBits (bits : Nat) : Nat := bits - 8 * (width bits - 1)
 
 def mask (bits : Nat) : Byte := BitVec.ofNat 8 (2 ^ headBits bits - 1)
 
-theorem width_pos (bits : Nat) : 0 < width bits := by unfold width; omega
+theorem width_pos (bits : Nat) : 0 < width bits := by unfold width; omega_using []
 
 theorem headBits_parts (bits : Nat) :
     headBits bits ≤ 8 ∧ 8 * (width bits - 1) + headBits bits = bits := by
   unfold headBits width
-  omega
+  omega_using []
 
 theorem width_le {bits k : Nat} (positive : 0 < k) (fits : bits ≤ 8 * k) :
-    width bits ≤ k := by unfold width; omega
+    width bits ≤ k := by unfold width; omega_using [positive, fits]
 
 theorem mask_toNat (bits : Nat) : (mask bits).toNat = 2 ^ headBits bits - 1 := by
   have limit : 2 ^ headBits bits ≤ 256 :=
     Nat.pow_le_pow_right (by decide) (headBits_parts bits).1
   have nonzero := Nat.one_le_two_pow (n := headBits bits)
   change (2 ^ headBits bits - 1) % 256 = _
-  exact Nat.mod_eq_of_lt (by omega)
+  exact Nat.mod_eq_of_lt (by omega_using [limit])
 
 /-- Public-width masking cuts the uniform entropy draw modulo precisely `2^bits`. -/
 theorem cut_value {r : List Byte} {bits : Nat} (nonempty : 0 < r.length)
@@ -43,8 +44,8 @@ theorem cut_value {r : List Byte} {bits : Nat} (nonempty : 0 < r.length)
   have parts := headBits_parts bits
   have value := KeyScalar.cut_value
     (n := r.length - width bits) (e := width bits) (j := headBits bits)
-    (by omega : r.length = r.length - width bits + width bits)
-    (by have := width_pos bits; omega) parts.1 (mask_toNat bits)
+    (by omega_using [size] : r.length = r.length - width bits + width bits)
+    (by have := width_pos bits; omega_using [this]) parts.1 (mask_toNat bits)
   rw [parts.2] at value
   exact value
 

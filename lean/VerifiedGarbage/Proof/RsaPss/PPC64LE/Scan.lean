@@ -40,7 +40,7 @@ theorem lz_append : ∀ (l : List Byte) (x : Byte),
     rw [List.cons_append, lz, lz, lz_append bs x, List.length_cons]
     have := VG.Proof.RsaPss.lz_le bs
     by_cases hb : b = 0 <;> by_cases h : lz bs = bs.length <;> by_cases hx : x = 0 <;>
-      simp only [hb, h, hx, ite_true, ite_false, Nat.add_right_cancel_iff] <;> (try split) <;> omega
+      simp only [hb, h, hx, ite_true, ite_false, Nat.add_right_cancel_iff] <;> (try split) <;> omega_arith
 
 theorem lzr_succ (w : Nat → Byte) (i : Nat) :
     lzr w (i + 1) = if lzr w i = i then (if w i = 0 then i + 1 else i) else lzr w i := by
@@ -86,27 +86,27 @@ theorem scan_step {w : Nat → Byte} {S : Addr} {lN i : Nat} {u u' : State} (I :
   by_cases e : lzr w i = i
   · have I7 := I.r7; have I8 := I.r8; have I9 := I.r9
     rw [ifp e] at I7
-    rw [ifn (by omega)] at I8 I9
+    rw [ifn (by omega_using [e])] at I8 I9
     by_cases z : w i = 0
     · rw [ifp z] at h11
       have h12' : u'.gpr .r12 = 0#64 := by rw [h12, h11, I7]; rfl
       refine ⟨r4', r6', ?_, ?_, ?_⟩ <;> rw [lzr_succ, ifp e, ifp z]
       · rw [ifp rfl, h7, I7, h11]; rfl
-      · rw [ifn (by omega), h8, I8, h12', BitVec.and_zero, BitVec.or_zero]
-      · rw [ifn (by omega), h9, I9, h12', BitVec.and_zero, BitVec.or_zero]
+      · rw [ifn (by omega_using []), h8, I8, h12', BitVec.and_zero, BitVec.or_zero]
+      · rw [ifn (by omega_using []), h9, I9, h12', BitVec.and_zero, BitVec.or_zero]
     · rw [ifn z] at h11
       have h12' : u'.gpr .r12 = BitVec.allOnes 64 := by rw [h12, h11, I7]; rfl
       refine ⟨r4', r6', ?_, ?_, ?_⟩ <;> rw [lzr_succ, ifp e, ifn z]
-      · rw [ifn (by omega), h7, I7, h11]; rfl
-      · rw [ifp (by omega), h8, I8, h12', BitVec.and_allOnes, I.r6]; simp
-      · rw [ifp (by omega), h9, I9, h12', BitVec.and_allOnes, hb, ← e]; simp
+      · rw [ifn (by omega_using []), h7, I7, h11]; rfl
+      · rw [ifp (by omega_using []), h8, I8, h12', BitVec.and_allOnes, I.r6]; simp
+      · rw [ifp (by omega_using []), h9, I9, h12', BitVec.and_allOnes, hb, ← e]; simp
   · have I7 := I.r7
     rw [ifn e] at I7
     have h12' : u'.gpr .r12 = 0#64 := by rw [h12, I7, BitVec.and_zero]
     refine ⟨r4', r6', ?_, ?_, ?_⟩ <;> rw [lzr_succ, ifn e]
-    · rw [ifn (by omega), h7, I7, BitVec.zero_and]
-    · rw [ifp (by omega), h8, I.r8, ifp (by omega), h12', BitVec.and_zero, BitVec.or_zero]
-    · rw [ifp (by omega), h9, I.r9, ifp (by omega), h12', BitVec.and_zero, BitVec.or_zero]
+    · rw [ifn (by omega_using [hl]), h7, I7, BitVec.zero_and]
+    · rw [ifp (by omega_using [hl]), h8, I.r8, ifp (by omega_using [hl, e]), h12', BitVec.and_zero, BitVec.or_zero]
+    · rw [ifp (by omega_using [hl]), h9, I.r9, ifp (by omega_using [hl, e]), h12', BitVec.and_zero, BitVec.or_zero]
 
 section
 variable {D lN dN : Nat} {c : Byte} {s : State} (L : Lay D s lN dN c)
@@ -133,13 +133,13 @@ theorem scan_ok {t : State} (h : Base Sp (vP D) s t) {w : Nat → Byte}
     · rw [o₇.get .r7, o₆.get .r7, e₅, e₄]; rfl
     · rw [o₇.get .r8, e₆]; rfl
     · rw [e₇]; rfl
-  refine WP.mono (wp_countdown (cnt := .r5) (N := dN) (by omega) (by omega)
+  refine WP.mono (wp_countdown (cnt := .r5) (N := dN) (by omega_using [hk]) (by omega_using [hd1])
     (fun i u => ScanI w (Sp s) lN i u ∧ Only [.r3, .r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12] t₇ u) ?_
     ⟨I0, Only.refl _ _⟩ (by rw [o₇.get .r5, o₆.get .r5, o₅.get .r5, o₄.get .r5, o₃.get .r5, e₂, o₁.get .r21, h.pdb, L.hdb]))
     fun u ⟨I, o⟩ => ?_
   · intro i hi u ⟨I, o⟩ hc
     refine wp_lbz (a := off (Sp s) (lN + i)) (by rw [I.r4, BitVec.add_zero])
-      (by rw [o.rd, o.wr, k₇.rd, k₇.wr, h.wr]; exact sc_inR F (by unfold oRsa; omega) _) fun u₁ p₁ f₁ => ?_
+      (by rw [o.rd, o.wr, k₇.rd, k₇.wr, h.wr]; exact sc_inR F (by unfold oRsa; omega_using [hk, hk2, hi]) _) fun u₁ p₁ f₁ => ?_
     refine wp_subi fun u₂ p₂ f₂ => wp_lsr fun u₃ p₃ f₃ => wp_subi fun u₄ p₄ f₄ => wp_and fun u₅ p₅ f₅ =>
       wp_and fun u₆ p₆ f₆ => wp_or fun u₇ p₇ f₇ => wp_and fun u₈ p₈ f₈ => wp_or fun u₉ p₉ f₉ =>
       wp_li (by decide) fun u₁₀ p₁₀ f₁₀ => wp_sub fun u₁₁ p₁₁ f₁₁ => wp_and fun u₁₂ p₁₂ f₁₂ =>

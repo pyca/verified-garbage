@@ -52,20 +52,20 @@ theorem product_round_ok (backend : MontBackend) (s : State) {p : Inputs} {sp : 
   rw [WP.seq_iff]
   refine WP.mono (productBody_ok backend s h hj hlow power table bound count) ?_
   rintro u ⟨core,pow,tableU,countU,headerU,frameU,restU⟩
-  have highFit : 2^j<2^32 := Nat.pow_lt_pow_right (by decide) (by omega)
-  have lowFit : low+1<2^32 := by omega
+  have highFit : 2^j<2^32 := Nat.pow_lt_pow_right (by decide) (by omega_using [hj])
+  have lowFit : low+1<2^32 := by omega_using [hlow, bound]
   refine WP.mono (productNext_state u core pow lowFit highFit countU.2 countU.1) ?_
   rintro t ⟨coreT,powT,highT,lowT,zero,frameT,restT⟩
   have ctxT := core.memory.controlContextEq (by decide) frameT
   have tableT : TablePrefix p (2^j+(low+1)) t.mem := by
     intro digit hd
-    rw [ctxT.read (entryOffset p digit) (8*p.w) (entry_bound p (by omega))]
+    rw [ctxT.read (entryOffset p digit) (8*p.w) (entry_bound p (by omega_using [bound, hd]))]
     apply tableU digit
-    omega
+    omega_using [hd]
   have header : WorkspaceEq (State.addr p.output) (24+16*p.w) s.mem t.mem := by
     refine ⟨?_⟩
     intro d n hd
-    exact (ctxT.read d n (by have := bytes_eq p; omega)).trans (headerU.read d n hd)
+    exact (ctxT.read d n (by have := bytes_eq p; omega_using [hd, this])).trans (headerU.read d n hd)
   have wholeU : Frame (productWrites p sp) s.mem u.mem := frameU.mono (by intro r hr; simp only [productBodyWrites,List.mem_cons,List.not_mem_nil,or_false] at hr; rcases hr with rfl|rfl|rfl <;> simp [productWrites])
   have wholeT : Frame (productWrites p sp) u.mem t.mem := frameT.sub (by
     intro r hr

@@ -35,7 +35,7 @@ theorem lastOr_length {bs : List Byte} (hne : bs ≠ []) (mask : Byte) :
   have hp := List.length_pos_iff.mpr hne
   simp only [lastOr, List.length_append, List.length_take, List.length_singleton,
     Nat.min_eq_left (Nat.sub_le bs.length 1)]
-  omega
+  omega_using [hp]
 
 theorem lastOr_value {bs : List Byte} (hne : bs ≠ []) (mask : Byte) :
     Spec.Rsa.os2ip (lastOr bs mask) = Spec.Rsa.os2ip bs ||| mask.toNat := by
@@ -69,8 +69,8 @@ theorem forcedWitnessBytes_getD {bs : List Byte} {i : Nat}
       Nat.min_eq_left (Nat.sub_le bs.length 1), Nat.sub_self, List.getElem?_cons_zero,
       ite_true, Nat.lt_irrefl]
     simp [cutOctets, List.getD_eq_getElem?_getD,
-      List.getElem?_eq_getElem (show bs.length - 2 + 1 < bs.length by omega), show bs.length - 1 = (bs.length - 2) + 1 by omega]
-  · have hit : i < bs.length - 1 := by omega
+      List.getElem?_eq_getElem (show bs.length - 2 + 1 < bs.length by omega_using [hlen]), show bs.length - 1 = (bs.length - 2) + 1 by omega_using [hlen]]
+  · have hit : i < bs.length - 1 := by omega_using [hi, he]
     simp only [List.getD_eq_getElem?_getD, List.getElem?_append, List.length_take, hc,
       Nat.min_eq_left (Nat.sub_le bs.length 1), hit, ite_true, List.getElem?_take, he, ite_false]
     cases i with
@@ -82,10 +82,10 @@ theorem forcedWitnessBytes_value {bs : List Byte} (hlen : 2 ≤ bs.length) :
   have hne : bs ≠ [] := by intro h; simp [h] at hlen
   have hcut : cutOctets bs 6 ≠ [] := by simp [cutOctets]
   have htwo : 2 < 2 ^ (8 * bs.length - 1) := by
-    have h := Nat.pow_le_pow_right (n := 2) (by decide) (show 2 ≤ 8 * bs.length - 1 by omega)
-    omega
+    have h := Nat.pow_le_pow_right (n := 2) (by decide) (show 2 ≤ 8 * bs.length - 1 by omega_using [hlen])
+    omega_using [h]
   rw [forcedWitnessBytes, lastOr_value hcut, cutOctets_value hne (by decide)
-    (show 8 * bs.length - 1 = 8 * (bs.length - 1) + 6 + 1 by omega), Nat.or_mod_two_pow,
+    (show 8 * bs.length - 1 = 8 * (bs.length - 1) + 6 + 1 by omega_using [hlen]), Nat.or_mod_two_pow,
     Nat.mod_eq_of_lt htwo]
   rfl
 

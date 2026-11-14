@@ -48,9 +48,9 @@ theorem operation_trace [VG.Proof.Rsa.X86.BatchLaw] {s t : State} (a : ABI s) (b
       have pair : Pair (caller s) u v :=
         ⟨hs, hv, (ks.1 _ (by decide)).trans (sp.trans (kt.1 _ (by decide)).symm)⟩
       have same : inputBytes (caller s) u.mem 0 = inputBytes (caller s) v.mem 0 := by
-        have ns := VG.Proof.Bignum.scratch_bytes os (by have := a.lengths.2; change (arg s 7).toNat ≤ _; omega)
+        have ns := VG.Proof.Bignum.scratch_bytes os (by have := a.lengths.2; change (arg s 7).toNat ≤ _; omega_using [])
           (a.inApart _ (a.inputMember 0) _ (by simp [CallGeometry.writes]))
-        have nt := VG.Proof.Bignum.scratch_bytes ot (by have := b.lengths.2; change (arg t 7).toNat ≤ _; omega)
+        have nt := VG.Proof.Bignum.scratch_bytes ot (by have := b.lengths.2; change (arg t 7).toNat ≤ _; omega_using [])
           (b.inApart _ (b.inputMember 0) _ (by simp [CallGeometry.writes]))
         change inputBytes (caller s) u.mem 0 = inputBytes (caller s) s.mem 0 at ns
         change inputBytes (caller t) v.mem 0 = inputBytes (caller t) t.mem 0 at nt
@@ -69,7 +69,7 @@ theorem operation_trace [VG.Proof.Rsa.X86.BatchLaw] {s t : State} (a : ABI s) (b
           have apart : ∀ r ∈ (caller s).writes, Region.Disjoint ⟨(u.gpr .esp).setWidth 64, 68⟩ r := by
             intro r hr
             rw [espu]
-            exact VG.X86.Taint.frame_disjoint (n := 64) (by have := a.stackBound; omega) (a.retApart r hr)
+            exact VG.X86.Taint.frame_disjoint (n := 64) (by have := a.stackBound; omega_using [this]) (a.retApart r hr)
               (a.argsApart r hr)
           have eq2 := (body_relCT (caller s) a.lengths_ok _ fit apart _ _ _ _ _ _ ⟨⟨pair, rfl⟩, same⟩ e2 f2).1
           obtain ⟨hx, _, _, kx⟩ := wp_result (body_ok hs a.lengths_ok) e2

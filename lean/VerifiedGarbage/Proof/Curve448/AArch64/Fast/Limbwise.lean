@@ -32,8 +32,8 @@ def Away (base : Addr) (outs : List Nat) (n : Nat) (x : Addr) : Prop :=
 
 theorem word_congr {base : Addr} {m m' : Mem} {d : Nat} (hd : d + 8 ≤ 8192)
     (h : ∀ x, d ≤ ofs base x → ofs base x < d + 8 → m' x = m x) : word m' base d = word m base d :=
-  (Mem.readW_congr fun i hi => (h _ (by rw [VG.Proof.X448.AArch64.ofs_off base (by omega)]; omega)
-    (by rw [VG.Proof.X448.AArch64.ofs_off base (by omega)]; omega)).symm).symm
+  (Mem.readW_congr fun i hi => (h _ (by rw [VG.Proof.X448.AArch64.ofs_off base (by omega_using [hd, hi])]; omega_using [])
+    (by rw [VG.Proof.X448.AArch64.ofs_off base (by omega_using [hd, hi])]; omega_using [hi])).symm).symm
 
 theorem limbs_loop {base : Addr} {body : Nat → List Instr} {outs : List Nat} {rs : List Reg}
     (P : State → Prop) (hP : ∀ t u, P t → Keeps rs t u → P u) (hrs : .x3 ∉ rs ∧ .x12 ∉ rs)
@@ -56,18 +56,18 @@ theorem limbs_loop {base : Addr} {body : Nat → List Instr} {outs : List Nat} {
     (by decide) s ⟨hs, hP0, fun _ _ _ h => absurd h (Nat.not_lt_zero _), fun _ _ => rfl, Keeps.refl _ _⟩)
     fun t ⟨_, _, tv, tm, tk⟩ => ⟨tv, fun x hx => tm x hx, tk⟩
   refine WP.mono (hstep n hn t ts tp (fun x hx => tm x fun o ho => by
-    have := hx o ho; omega)) fun u ⟨uv, um, uk⟩ => ⟨ts.of_keeps uk hrs, hP t u tp uk, ?_, ?_, tk.trans uk⟩
+    have := hx o ho; omega_using [hn, this])) fun u ⟨uv, um, uk⟩ => ⟨ts.of_keeps uk hrs, hP t u tp uk, ?_, ?_, tk.trans uk⟩
   · intro o ho i hi
     by_cases h : i = n
     · subst h; exact uv o ho
-    · rw [← tv o ho i (by omega)]
+    · rw [← tv o ho i (by omega_using [hi, h])]
       have ho64 := hw o ho
-      refine word_congr (by omega) fun x h1 h2 => um x fun o' ho' => ?_
+      refine word_congr (by omega_using [hn, hi, ho64]) fun x h1 h2 => um x fun o' ho' => ?_
       by_cases e : o' = o
-      · subst e; omega
+      · subst e; omega_using [hi, h, h2]
       · have := sep o ho o' ho' (Ne.symm e)
-        omega
+        omega_using [hn, hi, h1, h2, this]
   · intro x hx
-    rw [um x (fun o ho => by have := hx o ho; omega), tm x (fun o ho => by have := hx o ho; omega)]
+    rw [um x (fun o ho => by have := hx o ho; omega_using [this]), tm x (fun o ho => by have := hx o ho; omega_using [this])]
 
 end VG.Proof.Curve448.AArch64.Fast

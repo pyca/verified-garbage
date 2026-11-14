@@ -41,7 +41,7 @@ theorem hashOk : HashOk Impl.Sha512.PPC64LE.mdParams 64 (8 * Spec.Hmac.sha512I.s
     apply Vector.ext
     intro j hj
     simp only [Proof.Sha512.md, Spec.Sha512.stateAt, Vector.getElem_ofFn]
-    exact Hmac.Generic.Common.readW_reloc (n := 64) h (by omega)
+    exact Hmac.Generic.Common.readW_reloc (n := 64) h (by omega_using [hj])
   lenOk := show _ < 2 ^ 64 by decide
   link := ⟨rfl, rfl, rfl, fun _ _ _ h => h, fun m => (List.take_of_length_le (Nat.le_of_eq (Hmac.Generic.Common.finalHash_length _ m))).symm,
     by decide, by decide⟩

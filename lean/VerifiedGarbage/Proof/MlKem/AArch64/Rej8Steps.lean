@@ -104,9 +104,9 @@ theorem sampleStepCap_accept {L : List Zq} (h : L.length+2≤256) (a b c : Byte)
     sampleStepCap L a b c =
       acceptValue (acceptValue L (a.toNat+256*(b.toNat%16))) (b.toNat/16+16*c.toNat) := by
   have hn : n=256 := rfl
-  have hl : L.length≠n := by omega
+  have hl : L.length≠n := by omega_using [h, hn]
   have hlen := acceptValue_length L (a.toNat+256*(b.toNat%16))
-  have hroom : (acceptValue L (a.toNat+256*(b.toNat%16))).length<n := by omega
+  have hroom : (acceptValue L (a.toNat+256*(b.toNat%16))).length<n := by omega_using [h, hn, hlen]
   simp only [sampleStepCap,ite_eq_right hl,sampleStep,acceptValue] at *
   simp only [hroom,and_true]
 
@@ -131,13 +131,13 @@ theorem four_steps (L : List Zq) (B : Nat → Byte) (h : L.length+8≤256) :
   have h₅ : a₅.length≤a₄.length+1 := acceptValue_length _ _
   have h₆ : a₆.length≤a₅.length+1 := acceptValue_length _ _
   simp only [sampleAfter]
-  rw [sampleStepCap_accept (by omega : L.length+2≤256)]
+  rw [sampleStepCap_accept (by omega_using [h] : L.length+2≤256)]
   change sampleStepCap (sampleStepCap (sampleStepCap a₂ _ _ _) _ _ _) _ _ _ = _
-  rw [sampleStepCap_accept (by omega : a₂.length+2≤256)]
+  rw [sampleStepCap_accept (by omega_using [h, h₁, h₂] : a₂.length+2≤256)]
   change sampleStepCap (sampleStepCap a₄ _ _ _) _ _ _ = _
-  rw [sampleStepCap_accept (by omega : a₄.length+2≤256)]
+  rw [sampleStepCap_accept (by omega_using [h, h₁, h₂, h₃, h₄] : a₄.length+2≤256)]
   change sampleStepCap a₆ _ _ _ = _
-  rw [sampleStepCap_accept (by omega : a₆.length+2≤256)]
+  rw [sampleStepCap_accept (by omega_using [h, h₁, h₂, h₃, h₄, h₅, h₆] : a₆.length+2≤256)]
   rfl
 
 

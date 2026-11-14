@@ -44,7 +44,7 @@ theorem pCandidate_shaped {l n : Nat} (hl : 2 ≤ l)
   rw [hpow] at hcut
   dsimp only [Spec.Dsa.pCandidate]
   dsimp only [pDigest] at hcut
-  rw [hcut, VG.Proof.Ffdh.ParameterCandidate.candidate_low_high (by omega), pReduction_orOne]
+  rw [hcut, VG.Proof.Ffdh.ParameterCandidate.candidate_low_high (by omega_using [hl]), pReduction_orOne]
 
 /-- Taking only the bytes needed for the candidate before shaping is
 identical to shaping the full radix assembly. -/
@@ -52,6 +52,6 @@ theorem candidateOf_mod_width {l width : Nat} (hl : 1 ≤ l) (hw : l ≤ width) 
     Spec.Ffdh.candidateOf l (x % 2 ^ width) = Spec.Ffdh.candidateOf l x := by
   rw [VG.Proof.Ffdh.ParameterCandidate.candidate_low_high hl,
     VG.Proof.Ffdh.ParameterCandidate.candidate_low_high hl,
-    Nat.mod_mod_of_dvd _ (Nat.pow_dvd_pow 2 (by omega))]
+    Nat.mod_mod_of_dvd _ (Nat.pow_dvd_pow 2 (by omega_using [hw]))]
 
 end VG.Proof.Dsa.Generation

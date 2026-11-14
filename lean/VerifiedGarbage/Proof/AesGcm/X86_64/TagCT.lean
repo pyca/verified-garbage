@@ -49,7 +49,7 @@ theorem flush_rel : RelCT isa (EnvAgree Ctx St W SP [.rbx] · · N) (flush v.cal
     (fun _ _ h => h.1.2) (rel_taint ([.rbx] ++ [.r13, .r14, .r15, .rsp]) (fun _ _ h => h.1.1.1) ⟨_, by taint_decide⟩))
     ?_)
   refine (ghash1_rel v L hyo .r15 96 (.inr rfl) (by decide) (P := W + BitVec.ofNat 64 96)
-    (L.st_w (by omega) (.inr ⟨by decide, L.le⟩)) (L.w_gh G.fit (by decide) L.le)
+    (L.st_w (by omega_using [hyo]) (.inr ⟨by decide, L.le⟩)) (L.w_gh G.fit (by decide) L.le)
     (L.stk_w L.le) (gh1Check_r15_96 hyo) (F₁ := (Env Ctx St W SP · N)) (F₂ := (Env Ctx St W SP · N))
     fun s hs => ?_).mono (fun _ _ h => h.2) fun _ _ h => h
   have he : Env Ctx St W SP s N := hs.elim id id
@@ -65,7 +65,7 @@ theorem padTail_rel : RelCT isa (EnvAgree Ctx St W SP [.rbp, .r12] · · N) (pad
     (fun _ _ h => h.1.2) (rel_taint ([.rbp, .r12, .rcx] ++ [.r13, .r14, .r15, .rsp]) (fun _ _ h => h.1.1.1)
       ⟨_, by taint_decide⟩)) ?_)
   refine (ghash1_rel v L hyo .r15 96 (.inr rfl) (by decide) (P := W + BitVec.ofNat 64 96)
-    (L.st_w (by omega) (.inr ⟨by decide, L.le⟩)) (L.w_gh G.fit (by decide) L.le)
+    (L.st_w (by omega_using [hyo]) (.inr ⟨by decide, L.le⟩)) (L.w_gh G.fit (by decide) L.le)
     (L.stk_w L.le) (gh1Check_r15_96 hyo) (F₁ := (Env Ctx St W SP · N)) (F₂ := (Env Ctx St W SP · N))
     fun s hs => ?_).mono (fun _ _ h => h.2) fun _ _ h => h
   have he : Env Ctx St W SP s N := hs.elim id id
@@ -95,7 +95,7 @@ theorem lens_rel : RelCT isa (EnvAgree Ctx St W SP [.rbx, .rbp] · · N) (lens v
   refine RelCT.seq (rel_env (Ctx := Ctx) (St := St) (W := W) (SP := SP) (by decide) (fun _ _ h => ⟨h.1, h.2.1⟩)
     (rel_taint ([.rbx, .rbp] ++ [.r13, .r14, .r15, .rsp]) (fun _ _ h => h.regs) ⟨_, by taint_decide⟩)) ?_
   refine (ghash1_rel v L hyo .r15 96 (.inr rfl) (by decide) (P := W + BitVec.ofNat 64 96)
-    (L.st_w (by omega) (.inr ⟨by decide, L.le⟩)) (L.w_gh G.fit (by decide) L.le)
+    (L.st_w (by omega_using [hyo]) (.inr ⟨by decide, L.le⟩)) (L.w_gh G.fit (by decide) L.le)
     (L.stk_w L.le) (gh1Check_r15_96 hyo) (F₁ := (Env Ctx St W SP · N)) (F₂ := (Env Ctx St W SP · N))
     fun s hs => ?_).mono (fun _ _ h => h.2) fun _ _ h => h
   have he : Env Ctx St W SP s N := hs.elim id id

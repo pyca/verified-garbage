@@ -84,7 +84,7 @@ theorem equal_ok {g : Geometry} (v : g.Valid) {s : State} (C : Context g s)
   have cx : PtrAt d g.W .ecx (g.array b) := by
     rw [PtrAt, D.other .ecx (by decide), Kc.1 .ecx (by decide)]; exact Pb
   refine WP.seq (WP.mono (equalLoop_ok (C.ws.of_keeps keep)
-    (by have := v.minWidth; unfold Geometry.words; omega) (v.arrayFit aIndex) (v.arrayFit bIndex)
+    (by have := v.minWidth; unfold Geometry.words; omega_using [this]) (v.arrayFit aIndex) (v.arrayFit bIndex)
     bp cx (by rw [D.other .esi (by decide)]; exact Count) D.gpr) fun e ⟨Me, V, Ke⟩ => ?_)
   have Kall : Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s e :=
     (keep.mono (by decide)).trans (Ke.mono (by decide))

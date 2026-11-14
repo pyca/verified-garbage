@@ -44,7 +44,7 @@ theorem xf_len {a c : List Byte} {n : Nat} (hn : n ≠ 0) : (xf a c n).length % 
   · simp only [hc, and_false, ↓reduceIte, Proof.Gcm.ghashInput_of_ne hc, List.length_append,
       Proof.Gcm.length_zeros]
     have := Proof.Gcm.length_pad_mod a.length
-    omega
+    omega_using [this]
 
 theorem ghashInput_xf (a c e : List Byte) : ghashInput a (c ++ e) = xf a c e.length ++ e := by
   by_cases he : e = []
@@ -99,13 +99,13 @@ theorem flushStep_ok (v : GcmImpl) {k : Reg → BitVec 64} {H : Block} {s : Stat
       rw [xf, ite_eq_right]; intro h; exact hf ⟨h.1, by rw [h.2]; rfl⟩
     rw [hx]
     refine ha.congr ho.out ?_
-    refine bytesAt_frame ho.frame (fun r hr => ?_) (by omega)
+    refine bytesAt_frame ho.frame (fun r hr => ?_) (by omega_using [])
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     have hl : (ghashInput a c).length % 16 < 16 := Nat.mod_lt _ (by decide)
     rcases hr with rfl | rfl | rfl
-    · exact Offset.disjoint _ (.inr (by omega)) (by have := L.sw; omega) (by have := L.sw; omega)
-    · exact L.st_w (by omega) (.inr ⟨by decide, by decide⟩)
-    · exact L.st_w (by omega) (.inr ⟨by decide, by decide⟩)
+    · exact Offset.disjoint _ (.inr (by omega_using [])) (by have := L.sw; omega_using []) (by have := L.sw; omega_using [])
+    · exact L.st_w (by omega_using []) (.inr ⟨by decide, by decide⟩)
+    · exact L.st_w (by omega_using []) (.inr ⟨by decide, by decide⟩)
 
 end
 
@@ -124,16 +124,16 @@ theorem Absorbed.frame {m m' : Mem} {St : Addr} {H : Block} {x : List Byte} {rs 
     (ha : Absorbed m (St + BitVec.ofNat 64 16) (St + BitVec.ofNat 64 32) H x) :
     Absorbed m' (St + BitVec.ofNat 64 16) (St + BitVec.ofNat 64 32) H x := by
   have hl : x.length % 16 < 16 := Nat.mod_lt _ (by decide)
-  exact ha.congr (blockAt_frame hf fun r hr => (hd r hr).sub_left (Offset.sub _ (Nat.le_refl _) (by omega)))
-    (bytesAt_frame hf (fun r hr => (hd r hr).sub_left (Offset.sub _ (by omega) (by omega))) (by omega))
+  exact ha.congr (blockAt_frame hf fun r hr => (hd r hr).sub_left (Offset.sub _ (Nat.le_refl _) (by omega_using [])))
+    (bytesAt_frame hf (fun r hr => (hd r hr).sub_left (Offset.sub _ (by omega_using []) (by omega_using []))) (by omega_using []))
 
 /-- The counter block and the keystream block stay as they are, outside a frame. -/
 theorem Ctr.frame {m m' : Mem} {St : Addr} {ciph : Block → Block} {icb : Block} {n : Nat} {rs : List Region}
     (hf : Frame rs m m') (hd : ∀ r ∈ rs, (⟨St + BitVec.ofNat 64 48, 32⟩ : Region).Disjoint r)
     (hc : Ctr m (St + BitVec.ofNat 64 48) (St + BitVec.ofNat 64 64) ciph icb n) :
     Ctr m' (St + BitVec.ofNat 64 48) (St + BitVec.ofNat 64 64) ciph icb n :=
-  hc.congr (blockAt_frame hf fun r hr => (hd r hr).sub_left (Offset.sub _ (Nat.le_refl _) (by omega)))
-    (blockAt_frame hf fun r hr => (hd r hr).sub_left (Offset.sub _ (by omega) (by omega)))
+  hc.congr (blockAt_frame hf fun r hr => (hd r hr).sub_left (Offset.sub _ (Nat.le_refl _) (by omega_using [])))
+    (blockAt_frame hf fun r hr => (hd r hr).sub_left (Offset.sub _ (by omega_using []) (by omega_using [])))
 
 section
 variable {Ctx St W : Addr} (L : Lay Ctx St W)

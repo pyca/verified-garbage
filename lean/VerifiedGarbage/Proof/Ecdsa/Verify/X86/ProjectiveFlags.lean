@@ -63,7 +63,7 @@ theorem projectiveChecks_ok (hc : CfgOk c) {s : State} {base : Addr} (hs : Scr s
         (sv c base s W = 0 ∨ (sv c base s K < sv c base s MN ∧ sv c base s XN = 0)) then 1 else 0 := by
   have h0 := hc.n0
   have h7 := hc.n10
-  have hflag : c.sl FLAG + 4 ≤ size := by have := sl_le c h7 (i := FLAG) (by decide); omega
+  have hflag : c.sl FLAG + 4 ≤ size := by have := sl_le c h7 (i := FLAG) (by decide); omega_using [h0, this]
   rw [Impl.Ecdsa.Verify.X86.Cfg.projectiveChecks]
   simp only [List.append_assoc]
   refine WP.block_append (WP.mono (projectiveMatch_ok hc hs) fun s₁ ⟨e₁,k₁,m₁⟩ => ?_)
@@ -79,7 +79,7 @@ theorem projectiveChecks_ok (hc : CfgOk c) {s : State} {base : Addr} (hs : Scr s
   have saved₃ : ∀ rd ∈ Cfg.saved, s₃.mem.readW (off base rd.2) 32 = g rd.1 := by
     intro rd hr
     have bound : rd.2 + 4 ≤ 16 := by revert rd; decide
-    rw [Unch.readW32 U (fun w hw => by rw [List.mem_singleton.mp hw]; left; rw [sl_eq]; omega) (by omega)]
+    rw [Unch.readW32 U (fun w hw => by rw [List.mem_singleton.mp hw]; left; rw [sl_eq]; omega_using [bound]) (by omega_using [bound])]
     exact saved rd hr
   have z₂ : wordsVal s₂.mem base (c.sl RZ) c.n = sv c base s RZ := by
     rw [show wordsVal s₂.mem base (c.sl RZ) c.n = sv c base s₁ RZ from

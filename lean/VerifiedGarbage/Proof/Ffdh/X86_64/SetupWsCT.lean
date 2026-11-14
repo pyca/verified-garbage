@@ -40,19 +40,19 @@ private theorem m1_wn {sp sl : Nat} (hsl : sl < 32) (hne : sl ≠ sWs) (a : MPub
   have hroom := hO.room
   have hw28 := hO.w28
   have hw2 := hO.w2
-  have hwx : wsWords a.len ≤ a.w := by unfold wsWords; omega
-  have hsl8 : slot (wsWords a.len) 8 ≤ slot a.w 8 := by unfold slot hdrBytes; omega
+  have hwx : wsWords a.len ≤ a.w := by unfold wsWords; omega_using [hlenw, hw2]
+  have hsl8 : slot (wsWords a.len) 8 ≤ slot a.w 8 := by unfold slot hdrBytes; omega_using [hwx]
   unfold wsHead
   rw [WP.block_append_iff]
   refine WP.mono (WP.keep [.rdx] (Q := fun t => t.gpr .rdx = a.B ∧ t.mem = s.mem)
     (by xrun [hO.rdi]) rfl) fun s₁ ⟨⟨hdx, hm₁⟩, k₁⟩ => ?_
   refine WP.mono (wsEnd_ok (wx := a.w) (hO.scr.congr k₁.2.2) hdx (by rw [hm₁]; exact hO.hw)
-    (by rw [hm₁]; exact hO.harr _ (by decide)) (by omega)) fun t ⟨hax, hm₂, k₂⟩ => ?_
+    (by rw [hm₁]; exact hO.harr _ (by decide)) (by omega_using [hroom])) fun t ⟨hax, hm₂, k₂⟩ => ?_
   have K := k₁.trans k₂
   exact ⟨hO.scr.congr K.2.2, (K.gpr (by decide)).trans hO.rdi, hax,
-    by rw [hm₂, hm₁]; exact hlen, by decide, hsl, Ne.symm hne, by change a.len < 2 ^ 32; omega,
-    by change 256 ≤ inner a.w; unfold inner slot hdrBytes; omega,
-    by change inner a.w + slot (wsWords a.len) 8 ≤ a.Z; omega⟩
+    by rw [hm₂, hm₁]; exact hlen, by decide, hsl, Ne.symm hne, by change a.len < 2 ^ 32; omega_using [hlenw, hw28],
+    by change 256 ≤ inner a.w; unfold inner slot hdrBytes; omega_using [],
+    by change inner a.w + slot (wsWords a.len) 8 ≤ a.Z; omega_using [hroom, hsl8]⟩
 
 private def WS1 (sp sl : Nat) (a : MPub) (s : State) : Prop :=
   WN sWs sl a.wp s ∧ WP isa (seqs (wsNew sWs sl ++ ([.block [enter]] : List (Prog isa)))) s (M2 sp sl a)

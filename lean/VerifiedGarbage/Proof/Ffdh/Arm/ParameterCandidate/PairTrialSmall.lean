@@ -67,7 +67,7 @@ private theorem reducedFlag {acc value divisor j : Nat}
     (odd : divisor%2=1) (bound : acc<2*divisor) (db : divisor<8162)
     (congruence : acc*2^(16*j)%divisor=value%divisor) :
     ((BitVec.ofNat 32 acc==0)||(BitVec.ofNat 32 acc==BitVec.ofNat 32 divisor))=decide (value%divisor=0) := by
-  rw [ofNat_beq_zero (by omega : acc<2^32),ofNat_beq_eq (by omega : acc<2^32) (by omega : divisor<2^32),
+  rw [ofNat_beq_zero (by omega_using [bound, db] : acc<2^32),ofNat_beq_eq (by omega_using [bound, db] : acc<2^32) (by omega_using [db] : divisor<2^32),
     ←Bool.decide_or]
   apply Bool.eq_iff_iff.mpr
   simpa only [decide_eq_true_eq] using (trialDigit_divides odd bound congruence).symm
@@ -99,7 +99,7 @@ theorem trialPair_ok (s : State) (dst : BitVec 32) {n prime : Nat}
   have accA : w.gpr .r2=BitVec.ofNat 32 0 := (init.other .r2 (by decide)).trans zero
   have accB : w.gpr .r8=BitVec.ofNat 32 (VG.Impl.RsaKeyGen.tabEntry prime-1) := by
     rw [init.gpr,dpVal,div,divisor]
-    exact BitVec.ofNat_sub_ofNat_of_le _ 1 (by decide) (by omega)
+    exact BitVec.ofNat_sub_ofNat_of_le _ 1 (by decide) (by omega_using [facts])
   have divW : w.gpr .r3=BitVec.ofNat 32 (VG.Impl.RsaKeyGen.tabEntry prime) :=
     (init.other .r3 (by decide)).trans (div.trans divisor)
   have memW : w.mem=s.mem := init.mem.trans mem
@@ -110,7 +110,7 @@ theorem trialPair_ok (s : State) (dst : BitVec 32) {n prime : Nat}
     exact read i hi
   have inv : (w.gpr .r4).toNat=(VG.Proof.RsaKeyGen.ninv (BitVec.ofNat 32 (VG.Impl.RsaKeyGen.tabEntry prime))).toNat := by
     rw [init.other .r4 (by decide),inverse,divisor]
-  refine WP.seq (WP.mono (trialPairLoop_ok w positive fits cntW readable accA (by omega) accB (by omega)
+  refine WP.seq (WP.mono (trialPairLoop_ok w positive fits cntW readable accA (by omega_using [facts]) accB (by omega_using [facts])
     divW facts.2 inv (VG.Proof.RsaKeyGen.ninv_tab primeBound)) ?_)
   rintro v ⟨a,b,j,ab,bb,av,bv,congA,congB,_,memory,keep⟩
   have inputValue : trialValue w.mem (w.gpr .r0) n=Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (State.addr dst) n) := by

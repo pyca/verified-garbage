@@ -74,8 +74,8 @@ theorem n0 : s.mem (s.gpr .x0) = a.mem (a.gpr .x0) := by
   have hk := h.1.k1
   have e1 := h.gpr (r := .x1) (by decide)
   have := h.2.bn
-  rw [bytesAt_cons s.mem (s.gpr .x0) (k := (s.gpr .x1).toNat) (by omega),
-    bytesAt_cons a.mem (a.gpr .x0) (k := (a.gpr .x1).toNat) (by rw [← e1]; omega)] at this
+  rw [bytesAt_cons s.mem (s.gpr .x0) (k := (s.gpr .x1).toNat) (by omega_using [hk]),
+    bytesAt_cons a.mem (a.gpr .x0) (k := (a.gpr .x1).toNat) (by rw [← e1]; omega_using [hk])] at this
   exact (List.cons.inj this).1
 
 theorem any : anyV s = anyV a := by rw [anyV, anyV, h.2.a1]

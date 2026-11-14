@@ -39,7 +39,7 @@ theorem generatorRangeWorkspace_ct :
     RelCT isa (Two GeneratorRangeWorkspace) (Impl.Dsa.AArch64.Checks.rangeMask true)
       (fun _ _ => True) := by
   exact two_map (fun p : LoadPublic => (⟨p.B, p.Z, p.w⟩ : VG.Proof.Bignum.AArch64.Ws))
-    (fun _ _ h => ⟨⟨_, h.good⟩, h.w1, by dsimp only; have := h.w2; omega⟩)
+    (fun _ _ h => ⟨⟨_, h.good⟩, h.w1, by dsimp only; have := h.w2; omega_using [this]⟩)
     (VG.Proof.Dsa.AArch64.rangeMask_ct true)
 
 theorem generatorLoadPair_ready {p : GeneratorLoadPublic} {s : State}

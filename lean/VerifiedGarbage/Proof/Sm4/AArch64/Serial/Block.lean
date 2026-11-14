@@ -26,12 +26,12 @@ theorem readBE_word (m : Mem) (p : Addr) (i : Nat) (hi : i < 4) :
     rev32 (m.readW (p + BitVec.ofNat 64 (4*i)) 32) =
       Spec.Sm4.wordAt (Spec.Sm4.blockAt m p) (4*i) := by
   rw [rev32_readW,Spec.Sm4.wordAt]
-  rw [VG.Proof.Sm4.blockAt_getD _ _ (by omega),VG.Proof.Sm4.blockAt_getD _ _ (by omega),
-    VG.Proof.Sm4.blockAt_getD _ _ (by omega),VG.Proof.Sm4.blockAt_getD _ _ (by omega)]
+  rw [VG.Proof.Sm4.blockAt_getD _ _ (by omega_using [hi]),VG.Proof.Sm4.blockAt_getD _ _ (by omega_using [hi]),
+    VG.Proof.Sm4.blockAt_getD _ _ (by omega_using [hi]),VG.Proof.Sm4.blockAt_getD _ _ (by omega_using [hi])]
   have add1 (j : Nat) : p + BitVec.ofNat 64 (j+1) = p + BitVec.ofNat 64 j + 1 := by
     rw [BitVec.ofNat_add,BitVec.add_assoc]; rfl
-  simp only [show 4*i+2 = (4*i+1)+1 by omega,
-    show 4*i+3 = ((4*i+1)+1)+1 by omega,add1]
+  simp only [show 4*i+2 = (4*i+1)+1 by omega_using [],
+    show 4*i+3 = ((4*i+1)+1)+1 by omega_using [],add1]
 
 theorem loadWord_run {s : State} {r : Reg} {i : Nat} (hi : i < 4)
     (hread : InRegions (s.rd ++ s.wr) (s.gpr .x5 + BitVec.ofNat 64 (768+4*i)) 4) :
@@ -42,7 +42,7 @@ theorem loadWord_run {s : State} {r : Reg} {i : Nat} (hi : i < 4)
   let a := s.write .w r (s.mem.readW (s.gpr .x5 + BitVec.ofNat 64 (768+4*i)) 32)
   let b := a.write .w r (rev32 (a.read .w r))
   refine ⟨b,?_,?_,?_,rfl,rfl,rfl,rfl,rfl⟩
-  · rw [runBlock_cons,exec_ldr_w ⟨by omega,by omega⟩ hread,runStep_some,
+  · rw [runBlock_cons,exec_ldr_w ⟨by omega_using [],by omega_using [hi]⟩ hread,runStep_some,
       runBlock_cons,exec_rev32,runStep_some,runBlock_nil]
   · simp only [b,a,gpr_write_self,State.read,Size.bits,
       BitVec.setWidth_setWidth_of_le _ (by decide : 32 ≤ 64),BitVec.setWidth_eq]
@@ -57,14 +57,14 @@ theorem loads_run (s : State) (n : Nat) (hn : n ≤ 4)
       (∀ r, (∀ j < n, r ≠ wordReg j) → t.gpr r = s.gpr r) ∧
       t.mem = s.mem ∧ t.rd = s.rd ∧ t.wr = s.wr ∧ t.sp = s.sp ∧ t.v = s.v := by
   induction n with
-  | zero => exact ⟨s,rfl,fun _ h => absurd h (by omega),fun _ _ => rfl,rfl,rfl,rfl,rfl,rfl⟩
+  | zero => exact ⟨s,rfl,fun _ h => absurd h (by omega_using []),fun _ _ => rfl,rfl,rfl,rfl,rfl,rfl⟩
   | succ n ih =>
-    obtain ⟨a,ae,aw,ag,am,ard,awr,asp,avec⟩ := ih (by omega)
-    have ab : a.gpr .x5 = s.gpr .x5 := ag _ (fun j hj => (wordReg_ne_base j (by omega)).symm)
+    obtain ⟨a,ae,aw,ag,am,ard,awr,asp,avec⟩ := ih (by omega_using [hn])
+    have ab : a.gpr .x5 = s.gpr .x5 := ag _ (fun j hj => (wordReg_ne_base j (by omega_using [hn, hj])).symm)
     have ar : InRegions (a.rd ++ a.wr) (a.gpr .x5 + BitVec.ofNat 64 (768+4*n)) 4 := by
       rw [ard,awr,ab]
-      exact hread n (by omega)
-    obtain ⟨b,be,bv,bg,bm,brd,bwr,bsp,bvec⟩ := loadWord_run (r := wordReg n) (by omega) ar
+      exact hread n (by omega_using [hn])
+    obtain ⟨b,be,bv,bg,bm,brd,bwr,bsp,bvec⟩ := loadWord_run (r := wordReg n) (by omega_using [hn]) ar
     refine ⟨b,?_,?_,?_,bm.trans am,brd.trans ard,bwr.trans awr,bsp.trans asp,bvec.trans avec⟩
     · rw [List.range_succ,List.flatMap_append,List.flatMap_cons,List.flatMap_nil,List.append_nil,
         VG.Interleave.runBlock_append,ae,Option.bind_some,be]
@@ -72,10 +72,10 @@ theorem loads_run (s : State) (n : Nat) (hn : n ≤ 4)
       by_cases h : j = n
       · subst j
         simpa only [words,am,ab] using bv
-      · rw [words,bg _ (fun e => h (wordReg_inj _ (by omega) _ (by omega) e))]
-        exact aw j (by omega)
+      · rw [words,bg _ (fun e => h (wordReg_inj _ (by omega_using [hn, hj]) _ (by omega_using [hn]) e))]
+        exact aw j (by omega_using [hj, h])
     · intro r hr
-      exact (bg r (hr n (by omega))).trans (ag r (fun j hj => hr j (by omega)))
+      exact (bg r (hr n (by omega_using []))).trans (ag r (fun j hj => hr j (by omega_using [hj])))
 
 theorem storeWord_run {s : State} {r : Reg} {i : Nat} (hr : r ≠ .x5) (hi : i < 4)
     (hwrite : InRegions s.wr (s.gpr .x5 + BitVec.ofNat 64 (768+4*i)) 4) :
@@ -88,7 +88,7 @@ theorem storeWord_run {s : State} {r : Reg} {i : Nat} (hr : r ≠ .x5) (hi : i <
   have base : a.gpr .x5 = s.gpr .x5 := gpr_write_of_ne _ _ _ hr.symm
   refine ⟨t,?_,?_,?_,rfl,rfl,rfl,rfl⟩
   · rw [runBlock_cons,exec_rev32,runStep_some,runBlock_cons]
-    rw [exec_str_w ⟨by omega,by omega⟩ (by
+    rw [exec_str_w ⟨by omega_using [],by omega_using [hi]⟩ (by
       change InRegions a.wr (a.gpr .x5 + BitVec.ofNat 64 (768+4*i)) 4
       rw [base]; exact hwrite),runStep_some,runBlock_nil]
     rfl
@@ -112,17 +112,17 @@ theorem stores_run (s : State) (n : Nat) (hn : n ≤ 4)
       Frame [⟨s.gpr .x5+BitVec.ofNat 64 768,16⟩] s.mem t.mem ∧
       t.rd = s.rd ∧ t.wr = s.wr ∧ t.sp = s.sp ∧ t.v = s.v := by
   induction n with
-  | zero => exact ⟨s,rfl,fun _ h => absurd h (by omega),fun _ _ => rfl,Frame.refl _ _,rfl,rfl,rfl,rfl⟩
+  | zero => exact ⟨s,rfl,fun _ h => absurd h (by omega_using []),fun _ _ => rfl,Frame.refl _ _,rfl,rfl,rfl,rfl⟩
   | succ n ih =>
-    obtain ⟨a,ae,aw,ag,af,ard,awr,asp,avec⟩ := ih (by omega)
-    have ab : a.gpr .x5 = s.gpr .x5 := ag _ (fun j hj => (wordReg_ne_base (3-j) (by omega)).symm)
+    obtain ⟨a,ae,aw,ag,af,ard,awr,asp,avec⟩ := ih (by omega_using [hn])
+    have ab : a.gpr .x5 = s.gpr .x5 := ag _ (fun j hj => (wordReg_ne_base (3-j) (by omega_using [])).symm)
     have av : a.gpr (wordReg (3-n)) = s.gpr (wordReg (3-n)) := ag _ (fun j hj he => by
-      have := wordReg_inj (3-n) (by omega) (3-j) (by omega) he
-      omega)
+      have := wordReg_inj (3-n) (by omega_using []) (3-j) (by omega_using []) he
+      omega_using [hn, hj, this])
     have ar : InRegions a.wr (a.gpr .x5 + BitVec.ofNat 64 (768+4*n)) 4 := by
       rw [awr,ab]
-      exact hwrite n (by omega)
-    obtain ⟨b,be,bm,bg,brd,bwr,bsp,bvec⟩ := storeWord_run (wordReg_ne_base (3-n) (by omega)) (by omega) ar
+      exact hwrite n (by omega_using [hn])
+    obtain ⟨b,be,bm,bg,brd,bwr,bsp,bvec⟩ := storeWord_run (wordReg_ne_base (3-n) (by omega_using [])) (by omega_using [hn]) ar
     have bmem : b.mem = a.mem.writeW (s.gpr .x5 + BitVec.ofNat 64 (768+4*n)) (rev32 (words s (3-n))) := by
       simpa only [ab,av,words] using bm
     have bf : Frame [⟨s.gpr .x5 + BitVec.ofNat 64 (768+4*n),4⟩] a.mem b.mem := by
@@ -137,15 +137,15 @@ theorem stores_run (s : State) (n : Nat) (hn : n ≤ 4)
         rw [bmem,Mem.readW_writeW_self32]
       · rw [bf.readW (w := 32) (Region.contains_self _ _) (fun r hr => by
           simp only [List.mem_singleton] at hr; subst r
-          exact VG.Offset.disjoint (s.gpr .x5) (by omega) (by omega) (by omega)) (by decide)]
-        exact aw j (by omega)
+          exact VG.Offset.disjoint (s.gpr .x5) (by omega_using [h]) (by omega_using [hn, hj]) (by omega_using [hn])) (by decide)]
+        exact aw j (by omega_using [hj, h])
     · intro r hr
-      exact (bg r (hr n (by omega))).trans (ag r (fun j hj => hr j (by omega)))
+      exact (bg r (hr n (by omega_using []))).trans (ag r (fun j hj => hr j (by omega_using [hj])))
     · refine af.trans (bf.sub (fun r hr => ?_))
       simp only [List.mem_singleton] at hr; subst r
       refine ⟨_,List.mem_cons_self,?_⟩
       rw [← VG.Offset.add_add (s.gpr .x5) 768 (4*n)]
-      exact VG.Offset.sub_base _ (by omega : 4*n+4 ≤ 16)
+      exact VG.Offset.sub_base _ (by omega_using [hn] : 4*n+4 ≤ 16)
 
 theorem stored_bytes {m : Mem} {p : Addr} {z : Nat → BitVec 32}
     (h : ∀ i < 4, m.readW (p + BitVec.ofNat 64 (4*i)) 32 = rev32 (z (3-i))) :
@@ -156,12 +156,12 @@ theorem stored_bytes {m : Mem} {p : Addr} {z : Nat → BitVec 32}
   simp only [Spec.Aes.bytesAt,List.getElem_map,List.getElem_range,Vector.getElem_toList]
   apply BitVec.eq_of_getLsbD_eq
   intro j hj
-  have b := Mem.readW_byte m (p+BitVec.ofNat 64 (4*(i/4))) (i := i%4) (by omega)
-  rw [VG.Offset.add_add,show 4*(i/4)+i%4 = i by omega,h (i/4) (by omega)] at b
+  have b := Mem.readW_byte m (p+BitVec.ofNat 64 (4*(i/4))) (i := i%4) (by omega_using [])
+  rw [VG.Offset.add_add,show 4*(i/4)+i%4 = i by omega_using [],h (i/4) (by omega_using [hi16])] at b
   rw [b,BitVec.getLsbD_extractLsb',VG.Proof.Sm4.getLsbD_outBlock' z hi16 hj]
   simp only [hj,decide_true,Bool.true_and]
   change (byteRev32 (z (3-i/4))).getLsbD (8*(i%4)+j) = _
-  rw [byteRev32_getLsbD _ (by omega)]
-  congr 1 <;> omega
+  rw [byteRev32_getLsbD _ (by omega_using [hj])]
+  congr 1 <;> omega_using [hj]
 
 end VG.Proof.Sm4.AArch64.Serial

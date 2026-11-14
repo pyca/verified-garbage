@@ -213,8 +213,8 @@ theorem tbl_of {D : Nat} {P : EP} {σ : State} (hi : In D P σ) :
   simp only [Sig.tableRegion, Proof.X25519.Arm.addr_toNat] at hf
   refine ⟨P.TAB, by simp, fun o ho => ?_⟩
   show (⟨State.addr P.tab, 11 * (32 / 8)⟩ : Region).Contains (State.addr (P.tab + BitVec.ofNat 32 o)) 4
-  rw [VG.Arm.addr_add (by omega)]
-  exact Offset.contains_base _ (by omega) (by omega)
+  rw [VG.Arm.addr_add (by omega_using [hf, ho])]
+  exact Offset.contains_base _ (by omega_using [ho]) (by omega_using [ho])
 
 /-- `EM` masked, from `EM` before masking, with MGF1's hash function `g`,
 whose functions the table reaches (`hT`). -/

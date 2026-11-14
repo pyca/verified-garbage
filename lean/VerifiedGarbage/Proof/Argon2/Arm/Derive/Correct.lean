@@ -47,7 +47,7 @@ theorem body_ok : WP isa Impl.Argon2.Arm.Derive.body (entry s₀) fun t => BodyD
   rfl
 
 theorem correct : WP isa Impl.Argon2.Arm.Derive.derive s₀ fun t => abiPreserved s₀ t ∧ deriveArm.post s₀ t :=
-  frames_ok (by have := hp.sp_lo; omega) (body_ok hp) fun t u q m => by
+  frames_ok (by have := hp.sp_lo; omega_using [this]) (body_ok hp) fun t u q m => by
     show bytesAt u.mem _ _ = _
     rw [m]; exact q
 

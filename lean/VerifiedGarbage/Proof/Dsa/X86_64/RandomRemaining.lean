@@ -38,7 +38,7 @@ theorem random_remaining_accept {C : RandomContext} {used fuel : Nat}
     randomRemaining C used (fuel + 1) =
       ⟨some (randomNextCandidate C used), (VG.Proof.Dsa.significant C.qBytes).1, [1]⟩ := by
   have hs : Spec.Dsa.Random.drawBytes (Spec.Dsa.decodeBE C.qBytes) ≤ (C.rand.drop used).length := by
-    rw [VG.Proof.Dsa.random_drawBytes_scan, List.length_drop]; omega
+    rw [VG.Proof.Dsa.random_drawBytes_scan, List.length_drop]; omega_using [hfull]
   have hk' : 0 < Spec.Dsa.Random.candidate (Spec.Dsa.decodeBE C.qBytes)
       ((C.rand.drop used).take (Spec.Dsa.Random.drawBytes (Spec.Dsa.decodeBE C.qBytes))) ∧
       Spec.Dsa.Random.candidate (Spec.Dsa.decodeBE C.qBytes)
@@ -55,7 +55,7 @@ theorem random_remaining_reject {C : RandomContext} {used fuel : Nat}
       let next := randomRemaining C (used + (VG.Proof.Dsa.significant C.qBytes).1) fuel
       ⟨next.scalar, (VG.Proof.Dsa.significant C.qBytes).1 + next.used, 0 :: next.trace⟩ := by
   have hs : Spec.Dsa.Random.drawBytes (Spec.Dsa.decodeBE C.qBytes) ≤ (C.rand.drop used).length := by
-    rw [VG.Proof.Dsa.random_drawBytes_scan, List.length_drop]; omega
+    rw [VG.Proof.Dsa.random_drawBytes_scan, List.length_drop]; omega_using [hfull]
   have hk' : ¬ (0 < Spec.Dsa.Random.candidate (Spec.Dsa.decodeBE C.qBytes)
       ((C.rand.drop used).take (Spec.Dsa.Random.drawBytes (Spec.Dsa.decodeBE C.qBytes))) ∧
       Spec.Dsa.Random.candidate (Spec.Dsa.decodeBE C.qBytes)
@@ -76,7 +76,7 @@ theorem RandomResultRel.reject {C : RandomContext} {start used fuel : Nat} {resu
   · have hu := hr.consumption
     rw [he] at hu
     simp only at hu
-    omega
+    omega_using [hu]
   · rw [hr.status, he]
     exact sampleStatus_reject _ _ _ _
 

@@ -37,14 +37,14 @@ theorem movk_bit (x v : BitVec 64) {k i : Nat} (hk : k < 4) (hi : i < 64) :
     BitVec.getLsbD_setWidth, getLsbD_ffff, hi, decide_true, Bool.true_and]
   by_cases h : i / 16 = k
   · subst h
-    have h1 : ¬ i < 16 * (i / 16) := by omega
-    have h2 : i - 16 * (i / 16) < 16 := by omega
-    rw [getLsbD_half v h2, show 16 * (i / 16) + (i - 16 * (i / 16)) = i by omega]
-    simp [h1, h2, show i - 16 * (i / 16) < 64 by omega]
+    have h1 : ¬ i < 16 * (i / 16) := by omega_using []
+    have h2 : i - 16 * (i / 16) < 16 := by omega_using []
+    rw [getLsbD_half v h2, show 16 * (i / 16) + (i - 16 * (i / 16)) = i by omega_using []]
+    simp [h1, h2, show i - 16 * (i / 16) < 64 by omega_using []]
   · by_cases h1 : i < 16 * k
     · simp [h1, h]
-    · have h2 : ¬ (i - 16 * k < 16) := by omega
-      simp [h1, h2, h, BitVec.getLsbD_of_ge (half v k) (i - 16 * k) (by omega)]
+    · have h2 : ¬ (i - 16 * k < 16) := by omega_using [h, h1]
+      simp [h1, h2, h, BitVec.getLsbD_of_ge (half v k) (i - 16 * k) (by omega_using [h, h1])]
 
 theorem read_x'' (s : State) (r : Reg) : s.read .x r = s.gpr r := by
   simp only [State.read, BitVec.setWidth_eq]
@@ -61,7 +61,7 @@ theorem movks_ok (d : Reg) (v : BitVec 64) : ∀ (R : List Nat) (t : State), (�
     let t₁ := t.write .x d ((t.read .x d &&& ~~~((0xFFFF : BitVec 64) <<< (16 * k))) |||
       ((half v k).setWidth 64 <<< (16 * k)))
     have e₁ : exec (.movk .x d (half v k) k) t = some t₁ := by
-      simp only [exec, Size.bits, show 16 * k < 64 by omega, ite_true]; rfl
+      simp only [exec, Size.bits, show 16 * k < 64 by omega_using [hk], ite_true]; rfl
     have b₁ : ∀ i < 64, (t₁.gpr d).getLsbD i = if i / 16 = k then v.getLsbD i else (t.gpr d).getLsbD i := by
       intro i hi
       simp only [t₁, RegUpd.gpr_write_self, BitVec.setWidth_eq, read_x'']
@@ -83,14 +83,14 @@ theorem imm_ok (s : State) (d : Reg) (v : BitVec 64) :
       s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
   let t₀ := s.write .x d ((half v 0).setWidth 64 <<< (16 * 0))
   have e₀ : exec (.movz .x d (half v 0) 0) s = some t₀ := by
-    simp only [exec, Size.bits, show 16 * 0 < 64 by omega, ite_true]; rfl
+    simp only [exec, Size.bits, show 16 * 0 < 64 by omega_using [], ite_true]; rfl
   have b₀ : ∀ i < 64, (t₀.gpr d).getLsbD i = if i / 16 = 0 then v.getLsbD i else false := by
     intro i hi
     simp only [t₀, RegUpd.gpr_write_self, BitVec.setWidth_eq, Nat.mul_zero, BitVec.shiftLeft_zero,
       BitVec.getLsbD_setWidth]
     by_cases h : i / 16 = 0
-    · rw [show i = 16 * 0 + i by omega, getLsbD_half v (by omega)]; simp [h, hi]
-    · simp [h, BitVec.getLsbD_of_ge (half v 0) i (by omega)]
+    · rw [show i = 16 * 0 + i by omega_using [], getLsbD_half v (by omega_using [h])]; simp [h, hi]
+    · simp [h, BitVec.getLsbD_of_ge (half v 0) i (by omega_using [h])]
   obtain ⟨t', e', v', o', m', rd', wr'⟩ := movks_ok d v (([1, 2, 3] : List Nat).filter (half v · != 0)) t₀
     (fun k hk => by simp only [List.mem_filter, List.mem_cons, List.not_mem_nil, or_false] at hk; omega)
     (fun i hi hn => by
@@ -101,8 +101,8 @@ theorem imm_ok (s : State) (d : Reg) (v : BitVec 64) :
         have hz : half v (i / 16) = 0 := by
           simp only [List.mem_filter, List.mem_cons, List.not_mem_nil, or_false, bne_iff_ne, ne_eq,
             not_and, Decidable.not_not] at hn
-          exact hn (by omega)
-        rw [show i = 16 * (i / 16) + i % 16 by omega, ← getLsbD_half v (by omega), hz]; simp)
+          exact hn (by omega_using [hi, h])
+        rw [show i = 16 * (i / 16) + i % 16 by omega_using [], ← getLsbD_half v (by omega_using []), hz]; simp)
   refine ⟨t', ?_, v', fun r hr => ?_, by rw [m']; rfl, by rw [rd']; rfl, by rw [wr']; rfl⟩
   · simp only [imm, runBlock_cons, e₀, runStep_some]; exact e'
   · rw [o' r hr]; exact RegUpd.gpr_write_of_ne _ _ _ hr

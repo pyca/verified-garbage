@@ -80,14 +80,14 @@ theorem quadCount4_ok (s : State) {i j : Nat} (hi : i < 4096) (hj : 1 ≤ j) (hj
     rw [e]
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.toNat_sub, BitVec.toNat_ofNat]
-    omega
+    omega_using [hj]
   refine ⟨sub, ?_, fun r hr => ?_, rfl, rfl, rfl⟩
   · rw [sub]
     rw [e]
     congr 1
     simp only [BitVec.toNat_ofNat]
     apply propext
-    omega
+    omega_using [hi, hj']
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     simp only [RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, hr, ite_false]
 
@@ -103,7 +103,7 @@ theorem quadLoop4_ok {body : Prog isa} {Inv : Nat → State → Prop} {Q : State
   · refine Or.inl ⟨?_, hQ s' (by rw [hj] at hi'; exact hi')⟩
     show s'.cf.map (!·) = some false
     rw [hc, hj]; rfl
-  · refine Or.inr ⟨?_, j - 1, by omega, by omega, by omega, hi'⟩
+  · refine Or.inr ⟨?_, j - 1, by omega_using [h1], by omega_using [hj], by omega_using [h2], hi'⟩
     show s'.cf.map (!·) = some true
     rw [hc]; simp [hj]
 
@@ -165,8 +165,8 @@ theorem quadF_ok {K : WinCfg} {C : Curve} {base : Addr} {size k : Nat} (hL : Win
       clob_powClob) (unchR hFC pk₁)
     rw [hC.double hP] at J₁
     have ar : 2 * (2 ^ (4 - j) * e) = 2 ^ (4 - (j - 1)) * e := by
-      have hj4 : j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4 := by omega
-      rcases hj4 with rfl | rfl | rfl | rfl <;> simp <;> omega
+      have hj4 : j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4 := by omega_using [hj, hj']
+      rcases hj4 with rfl | rfl | rfl | rfl <;> simp <;> omega_using []
     rw [ar] at J₁
     have b' : st₁.gpr .rbx = BitVec.ofNat 64 (i + 4096 * j) := by
       rw [k₁.gpr _ (by decide), b]
@@ -335,7 +335,7 @@ theorem winStepF_ok {K : WinCfg} {C : Curve} {base : Addr} {size k : Nat} (hL : 
   have hbits₅ : ∀ t < 4 * K.J, s₅.mem (off base (K.bits + t)) = if k.testBit t then 1 else 0 :=
     fun t ht => by
       have := hL.bits
-      rw [S₅.unch.byte (fun w hw => by have := hL.bits_w w hw; omega_using [ht, this]) (by have := S₅.scr.nowrap; omega)]
+      rw [S₅.unch.byte (fun w hw => by have := hL.bits_w w hw; omega_using [ht, this]) (by have := S₅.scr.nowrap; omega_arith)]
       exact hF.bits t ht
   refine WP.seq (WP.mono (winEntryR_ok hL hX (RepA.infinity hC) RepA.negY (P := P) hpn hone_lt hone
     S₅.scr S₅.mod (i := j - 1) (by omega_using [hjn, hJ]) hx₅ hbits₅ hz₅ S₅.tbl) fun s₆ h₆ => WP.seq (WP.mono h₆

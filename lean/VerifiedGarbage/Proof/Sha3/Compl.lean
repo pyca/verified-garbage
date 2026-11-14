@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Sha3.Lanes
 public import VerifiedGarbage.Proof.Framework.Bitslice.Anf
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # Keccak-f[1600]: a round on complemented lanes, as polynomials
@@ -72,12 +73,12 @@ theorem eval_sA (hV : ∀ i (hi : i < 25), V i = A[i] ^^^ msk i) {i : Nat} (hi :
 
 theorem eval_sC (hV : ∀ i (hi : i < 25), V i = A[i] ^^^ msk i) {x : Nat} (hx : x < 5) :
     eval V (sC x) = C A x := by
-  simp only [sC, eval_pxor, eval_sA hV (show x < 25 by omega), eval_sA hV (show x + 5 < 25 by omega),
-    eval_sA hV (show x + 10 < 25 by omega), eval_sA hV (show x + 15 < 25 by omega),
-    eval_sA hV (show x + 20 < 25 by omega), C]
+  simp only [sC, eval_pxor, eval_sA hV (show x < 25 by omega_using [hx]), eval_sA hV (show x + 5 < 25 by omega_using [hx]),
+    eval_sA hV (show x + 10 < 25 by omega_using [hx]), eval_sA hV (show x + 15 < 25 by omega_using [hx]),
+    eval_sA hV (show x + 20 < 25 by omega_using [hx]), C]
 
 theorem eval_sD (hV : ∀ i (hi : i < 25), V i = A[i] ^^^ msk i) (x : Nat) : eval V (sD x) = D A x := by
-  simp only [sD, eval_pxor, eval_pror, eval_sC hV (Nat.mod_lt _ (by omega : 0 < 5)), D]
+  simp only [sD, eval_pxor, eval_pror, eval_sC hV (Nat.mod_lt _ (by omega_using [] : 0 < 5)), D]
 
 theorem eval_srotl (p : Poly) (k : Nat) : eval V (srotl p k) = rotl (eval V p) k := by
   unfold srotl rotl; split
@@ -86,13 +87,13 @@ theorem eval_srotl (p : Poly) (k : Nat) : eval V (srotl p k) = rotl (eval V p) k
 
 theorem eval_sB (hV : ∀ i (hi : i < 25), V i = A[i] ^^^ msk i) {x y : Nat} (hx : x < 5) (_hy : y < 5) :
     eval V (sB x y) = B A x y := by
-  have hj : piSrc x y < 25 := by simp only [piSrc]; omega
+  have hj : piSrc x y < 25 := by simp only [piSrc]; omega_using [hx]
   simp only [sB, eval_srotl, eval_pxor, eval_sA hV hj, eval_sD hV, B]
 
 theorem eval_sOut (hV : ∀ i (hi : i < 25), V i = A[i] ^^^ msk i) {rc : Lane} (hrc : V 25 = rc)
     {x y : Nat} (hx : x < 5) (hy : y < 5) : eval V (sOut x y) = out A rc x y := by
-  have h1 : (x + 1) % 5 < 5 := Nat.mod_lt _ (by omega)
-  have h2 : (x + 2) % 5 < 5 := Nat.mod_lt _ (by omega)
+  have h1 : (x + 1) % 5 < 5 := Nat.mod_lt _ (by omega_using [])
+  have h2 : (x + 2) % 5 < 5 := Nat.mod_lt _ (by omega_using [])
   have e : ∀ v : Lane, eval V (pxor (pand (pxor (sB ((x + 1) % 5) y) one) (sB ((x + 2) % 5) y)) (sB x y)) =
       (B A ((x + 1) % 5) y ^^^ 0xffffffffffffffff) &&& B A ((x + 2) % 5) y ^^^ B A x y := fun _ => by
     rw [eval_pxor, eval_pand, eval_pxor, eval_one, eval_sB hV h1 hy, eval_sB hV h2 hy, eval_sB hV hx hy]
@@ -105,7 +106,7 @@ theorem eval_sOut (hV : ∀ i (hi : i < 25), V i = A[i] ^^^ msk i) {rc : Lane} (
 
 theorem eval_specP (hV : ∀ i (hi : i < 25), V i = A[i] ^^^ msk i) {rc : Lane} (hrc : V 25 = rc)
     {j : Nat} (hj : j < 25) : eval V (specP j) = (cmpl (outState A rc))[j] := by
-  simp only [specP, eval_pxor, eval_sOut hV hrc (Nat.mod_lt _ (by omega : 0 < 5)) (by omega : j / 5 < 5),
+  simp only [specP, eval_pxor, eval_sOut hV hrc (Nat.mod_lt _ (by omega_using [] : 0 < 5)) (by omega_using [hj] : j / 5 < 5),
     eval_maskP, cmpl, outState, Vector.getElem_ofFn]
 
 end

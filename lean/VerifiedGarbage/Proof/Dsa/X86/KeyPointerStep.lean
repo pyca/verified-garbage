@@ -25,14 +25,14 @@ theorem addPointer_ok {s : State} {base : Addr} {size : Nat} (length dest : Fiel
   have B := VG.Proof.Dsa.X86.Layout.field_bounds dest
   have L := VG.Proof.Dsa.X86.Layout.field_bounds length
   unfold Entry.addPointer
-  refine wp_addS (readSrc_sc hs (by omega)) fun u su _ => ?_
+  refine wp_addS (readSrc_sc hs (by omega_using [hz, L])) fun u su _ => ?_
   have hu := hs.of_keeps su.keeps (by decide)
-  refine wp_storeS (hu.ea (by omega)) (hu.write (by omega)) fun t ut => WP.block_nil ⟨?_, ?_, ?_, ?_⟩
+  refine wp_storeS (hu.ea (by omega_using [hz, B])) (hu.write (by omega_using [hz, B])) fun t ut => WP.block_nil ⟨?_, ?_, ?_, ?_⟩
   · rw [ut.gpr, su.gpr]; rfl
   · change t.mem.readW (off base (Layout.field dest)) 32 = _
     rw [ut.mem, Mem.readW_writeW_self32, su.gpr]; rfl
   · exact su.keeps.trans (ut.keeps [.eax])
   · rw [ut.mem, su.mem]
-    exact writeW32_outside _ _ _ (by have := hs.nowrap; omega)
+    exact writeW32_outside _ _ _ (by have := hs.nowrap; omega_using [hz, B, this])
 
 end VG.Proof.Dsa.X86

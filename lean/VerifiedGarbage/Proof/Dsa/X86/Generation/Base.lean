@@ -57,7 +57,7 @@ theorem Chg.word (v : E.Valid) {os : List (Nat × Nat)} {m m' : Mem} (h : E.Chg 
   simp only [List.mem_append, List.mem_map, List.mem_singleton] at hr
   rcases hr with ⟨o, ho, rfl⟩ | rfl
   · have := hos o ho
-    exact Offset.disjoint E.base this.2.symm (by omega) (by omega)
+    exact Offset.disjoint E.base this.2.symm (by omega_using [hd, nw]) (by omega_using [nw, this])
   · exact v.scratchStack.sub_left (range_sub (o := (d, 4)) hd)
 
 /-- The bytes of a region apart from `scratch` and the stack. -/
@@ -92,14 +92,14 @@ theorem in_stack {os : List (Nat × Nat)} {r : Region} (h : Region.Sub r E.stack
 theorem Chg.store {os : List (Nat × Nat)} {m m' : Mem} (h : E.Chg os m m') {d n : Nat} (ho : (d, n) ∈ os)
     (hn : 4 ≤ n) (v : BitVec 32) : E.Chg os m (m'.writeW (off E.base d) v) :=
   Frame.writeW h (r := ⟨off E.base d, n⟩) (List.mem_append_left _ (List.mem_map.mpr ⟨_, ho, rfl⟩)) v
-    (by simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; omega)
+    (by simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; omega_using [hn])
 
 /-- A store of a byte into one of the ranges. -/
 theorem Chg.byte {os : List (Nat × Nat)} {m m' : Mem} (h : E.Chg os m m') {d n : Nat} (ho : (d, n) ∈ os)
     {i : Nat} (hi : i < n) (hn : n < 2 ^ 64) (b : Byte) :
     E.Chg os m (m'.writeW (off E.base d + BitVec.ofNat 64 i) b) :=
   Frame.writeW h (r := ⟨off E.base d, n⟩) (List.mem_append_left _ (List.mem_map.mpr ⟨_, ho, rfl⟩)) b
-    (Offset.contains_base _ (by omega) (by omega))
+    (Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi, hn]))
 
 /-- The bytes of a range of `scratch` apart from every range of a change. -/
 theorem Chg.scratch (v : E.Valid) {os : List (Nat × Nat)} {m m' : Mem} (h : E.Chg os m m') {d n : Nat}
@@ -109,12 +109,12 @@ theorem Chg.scratch (v : E.Valid) {os : List (Nat × Nat)} {m m' : Mem} (h : E.C
   simp only [Spec.Rsa.bytesAt]
   refine List.map_congr_left fun i hi => ?_
   simp only [List.mem_range] at hi
-  refine Frame.bytes h (R := ⟨off E.base d, n⟩) ?_ (by show n ≤ 2 ^ 64; omega) hi
+  refine Frame.bytes h (R := ⟨off E.base d, n⟩) ?_ (by show n ≤ 2 ^ 64; omega_using [hd, nw]) hi
   intro r hr
   simp only [List.mem_append, List.mem_map, List.mem_singleton] at hr
   rcases hr with ⟨o, ho, rfl⟩ | rfl
   · have := hos o ho
-    exact Offset.disjoint E.base (by omega) (by omega) (by omega)
+    exact Offset.disjoint E.base (by omega_using [this]) (by omega_using [hd, nw]) (by omega_using [nw, this])
   · exact v.scratchStack.sub_left (range_sub (o := (d, n)) hd)
 
 end Env
@@ -127,16 +127,16 @@ theorem frame_bytes {base : Addr} {m m' : Mem} {d n d' n' : Nat}
   simp only [Spec.Rsa.bytesAt]
   refine List.map_congr_left fun i hi => ?_
   simp only [List.mem_range] at hi
-  refine Frame.bytes F (R := ⟨off base d', n'⟩) ?_ (by show n' ≤ 2 ^ 64; omega) hi
+  refine Frame.bytes F (R := ⟨off base d', n'⟩) ?_ (by show n' ≤ 2 ^ 64; omega_using [hd']) hi
   intro r hr; simp only [List.mem_singleton] at hr; subst hr
-  exact Offset.disjoint base h.symm (by omega) (by omega)
+  exact Offset.disjoint base h.symm (by omega_using [hd']) (by omega_using [hd])
 
 /-- A store into a word of `scratch` leaves the words apart from it. -/
 theorem word_store_other {E : Env} (v : E.Valid) (m : Mem) {d e : Nat} (hd : d + 4 ≤ E.size) (he : e + 4 ≤ E.size)
     (h : d + 4 ≤ e ∨ e + 4 ≤ d) (x : BitVec 32) :
     (m.writeW (off E.base e) x).readW (off E.base d) 32 = m.readW (off E.base d) 32 := by
   have := v.scratchFit
-  exact Mem.readW_writeW_sep (Offset.sep E.base h (by omega) (by omega)) (by decide)
+  exact Mem.readW_writeW_sep (Offset.sep E.base h (by omega_using [hd, this]) (by omega_using [he, this])) (by decide)
 
 theorem Base.keep {E : Env} (v : E.Valid) {s t : State} (B : Base E s) {os : List (Nat × Nat)}
     (F : E.Chg os s.mem t.mem) (A : E.Apart os) (edi : t.gpr .edi = s.gpr .edi) (sp : t.gpr .esp = s.gpr .esp)
@@ -144,13 +144,13 @@ theorem Base.keep {E : Env} (v : E.Valid) {s t : State} (B : Base E s) {os : Lis
   have hos : ∀ o ∈ os, o.1 + o.2 ≤ E.size := fun o ho => (A o ho).1
   have word : ∀ d, d = fOut ∨ (fUsedP ≤ d ∧ d + 4 ≤ fWitLen + 4) →
       t.mem.readW (off E.base d) 32 = s.mem.readW (off E.base d) 32 :=
-    fun d h => Env.Chg.word v F (by have := v.room; simp only [fOut, fUsedP, fWitLen, hdr] at h; omega)
+    fun d h => Env.Chg.word v F (by have := v.room; simp only [fOut, fUsedP, fWitLen, hdr] at h; omega_using [h, this])
       fun o ho => ⟨(A o ho).1, by
         have := (A o ho).2
         simp only [fOut, fUsedP, fWitLen, hdr] at h this ⊢
-        omega⟩
+        omega_using [h, this]⟩
   have witEq : Spec.Rsa.bytesAt t.mem E.wit E.witLen = Spec.Rsa.bytesAt s.mem E.wit E.witLen :=
-    Env.Chg.bytesAt (R := E.witRegion) F v.witFar.1 v.witFar.2.2 hos (by have := v.witFit; simp only [Env.witRegion]; omega)
+    Env.Chg.bytesAt (R := E.witRegion) F v.witFar.1 v.witFar.2.2 hos (by have := v.witFit; simp only [Env.witRegion]; omega_using [this])
   refine ⟨Scr.of_eq B.scr edi sp wr, sp.trans B.sp, rd ▸ B.tapes, rd ▸ B.table, wr ▸ B.out, wr ▸ B.usedW,
     wr ▸ B.stW, sy ▸ B.syms, ?_, witEq.trans B.wit, (word fOut (.inl rfl)).trans B.outW,
     (word fUsedP (.inr (by decide))).trans B.usedPW, (word fStP (.inr (by decide))).trans B.stPW,
@@ -164,7 +164,7 @@ theorem Base.keep {E : Env} (v : E.Valid) {s t : State} (B : Base E s) {os : Lis
   simp only [B.syms]
   have := v.tableFit
   have len : i < 1024 := by simpa [VG.Impl.RsaKeyGen.TrialTable32.packed] using hi
-  refine Frame.readW F (r := E.tableRegion) (Offset.contains_base E.table (by omega) (by omega)) ?_ (by decide)
+  refine Frame.readW F (r := E.tableRegion) (Offset.contains_base E.table (by omega_using [len]) (by omega_using [len])) ?_ (by decide)
   exact Env.far_all v.tableFar.1 v.tableFar.2.2 hos
 
 /-- A state with the same memory, permissions and registers that `Base`
@@ -182,8 +182,8 @@ theorem Env.Chg.val32 {E : Env} (v : E.Valid) {os : List (Nat × Nat)} {m m' : M
     {d k : Nat} (hd : d + 4 * k ≤ E.size)
     (hos : ∀ o ∈ os, o.1 + o.2 ≤ E.size ∧ (o.1 + o.2 ≤ d ∨ d + 4 * k ≤ o.1)) :
     VG.Proof.Mont.val32 m' E.base d k = VG.Proof.Mont.val32 m E.base d k :=
-  VG.Proof.Mont.val32_congr fun j hj => congrArg BitVec.toNat (Env.Chg.word v h (by omega) fun o ho =>
-    ⟨(hos o ho).1, by rcases (hos o ho).2 with h | h <;> omega⟩)
+  VG.Proof.Mont.val32_congr fun j hj => congrArg BitVec.toNat (Env.Chg.word v h (by omega_using [hd, hj]) fun o ho =>
+    ⟨(hos o ho).1, by rcases (hos o ho).2 with h | h <;> omega_arith⟩)
 
 /-- A change within ranges is one within ranges around them. -/
 theorem Env.Chg.widen {E : Env} {os os' : List (Nat × Nat)} {m m' : Mem} (h : E.Chg os m m')
@@ -201,7 +201,7 @@ The same arguments, with the seeds or the `h` candidates another part of
 
 theorem Env.Valid.window {E : Env} (v : E.Valid) {u : Nat} (hu : u ≤ E.witLen) : (E.window u).Valid := by
   have := v.witFit
-  exact ⟨v.lengths, v.room, v.scratchFit, v.outFit, v.witFit, v.seedsIn, by simp only [Env.window]; omega, v.low,
+  exact ⟨v.lengths, v.room, v.scratchFit, v.outFit, v.witFit, v.seedsIn, by simp only [Env.window]; omega_using [hu], v.low,
     v.stackScratch, v.outScratch, v.witFar, v.outStack, v.scratchStack, v.tableFit, v.outPtr, v.witPtr, v.witLen32,
     v.tableFar, v.tableAligned, v.usedFit, v.stFit, v.usedFar, v.stFar, v.k0le⟩
 

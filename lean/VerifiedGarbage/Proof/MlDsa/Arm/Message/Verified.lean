@@ -87,11 +87,11 @@ theorem cachedSatMem_key {p : Params} (hp : p.pkLen < 0x7000) :
   intro i hi
   have he : ((0x1000 : Addr) + BitVec.ofNat 64 i).toNat = 0x1000 + i := by
     simp only [BitVec.toNat_add, BitVec.toNat_ofNat, BitVec.reduceToNat]
-    omega
+    omega_using [hp, hi]
   have ne : ∀ b : Addr, 0x8000 ≤ b.toNat → (0x1000 : Addr) + BitVec.ofNat 64 i ≠ b := fun b hb e => by
-    have := congrArg BitVec.toNat e; rw [he] at this; omega
+    have := congrArg BitVec.toNat e; rw [he] at this; omega_using [hp, hi, hb, this]
   simp only [cachedSatMem, he]
-  rw [ite_eq_right_of_eq_false _ _ (eq_false (by omega)), ite_eq_right_of_eq_false _ _ (eq_false (ne _ (by decide))),
+  rw [ite_eq_right_of_eq_false _ _ (eq_false (by omega_using [hp, hi])), ite_eq_right_of_eq_false _ _ (eq_false (ne _ (by decide))),
     ite_eq_right_of_eq_false _ _ (eq_false (ne _ (by decide))), ite_eq_right_of_eq_false _ _ (eq_false (ne _ (by decide)))]
 
 theorem cachedSatMem_digest {p : Params} (hp : p.pkLen < 0x7000) :
@@ -102,10 +102,10 @@ theorem cachedSatMem_digest {p : Params} (hp : p.pkLen < 0x7000) :
   intro i hi
   have he : ((0x8000 : Addr) + BitVec.ofNat 64 i).toNat = 0x8000 + i := by
     simp only [BitVec.toNat_add, BitVec.toNat_ofNat, BitVec.reduceToNat]
-    omega
-  simp only [cachedSatMem, he, show 0x8000 ≤ 0x8000 + i ∧ 0x8000 + i < 0x8040 by omega, true_and, ite_true,
+    omega_using [hi]
+  simp only [cachedSatMem, he, show 0x8000 ≤ 0x8000 + i ∧ 0x8000 + i < 0x8040 by omega_using [hi], true_and, ite_true,
     Nat.add_sub_cancel_left]
-  rw [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem (by omega), Option.getD_some]
+  rw [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem (by omega_using [hl, hi]), Option.getD_some]
 
 /-- A state satisfying the precondition of verification with a cached `tr`. -/
 def cachedSat (p : Params) : State where
@@ -206,9 +206,9 @@ theorem key_bytes {m : Mem} {f : Addr → BitVec 8} {len : Nat} (hl : len < 0x10
   intro i hi
   have he : ((0x200000 : Addr) + BitVec.ofNat 64 i).toNat = 0x200000 + i := by
     simp only [BitVec.toNat_add, BitVec.toNat_ofNat, BitVec.reduceToNat]
-    omega
+    omega_using [hl, hi]
   simp only [he]
-  rw [ite_eq_right_of_eq_false _ _ (eq_false (by omega))]
+  rw [ite_eq_right_of_eq_false _ _ (eq_false (by omega_using []))]
 
 /-- The arguments on the stack at `0x80000` depend only on the 16 bytes there. -/
 theorem stackArg_eq_of {s s' : State} (hsp : s.sp = 0x80000) (hsp' : s'.sp = 0x80000) {i : Nat} (hi : i < 4)
@@ -220,8 +220,8 @@ theorem stackArg_eq_of {s s' : State} (hsp : s.sp = 0x80000) (hsp' : s'.sp = 0x8
   have e : (State.addr ((0x80000 : BitVec 32) + BitVec.ofNat 32 (4 * i)) + BitVec.ofNat 64 j).toNat =
       0x80000 + 4 * i + j := by
     simp only [State.addr, BitVec.toNat_add, BitVec.toNat_setWidth, BitVec.toNat_ofNat, BitVec.reduceToNat]
-    omega
-  exact h _ (by rw [e]; omega) (by rw [e]; omega)
+    omega_using [hi, hj]
+  exact h _ (by rw [e]; omega_using []) (by rw [e]; omega_using [hi, hj])
 
 theorem preparedSignSat_arg {p : Params} {m : Mem} {i : Nat} (hi : i < 4) :
     stackArg (preparedSignSat p m) i = stackArg (preparedSignSat p (fun _ => 0)) i :=
@@ -299,23 +299,23 @@ theorem preparedCachedMem_key {p : Params} {m : Mem} {len : Nat} (hl : len < 0x1
   intro i hi
   have he : ((0x200000 : Addr) + BitVec.ofNat 64 i).toNat = 0x200000 + i := by
     simp only [BitVec.toNat_add, BitVec.toNat_ofNat, BitVec.reduceToNat]
-    omega
+    omega_using [hl, hi]
   simp only [preparedCachedMem, he]
-  rw [ite_eq_right_of_eq_false _ _ (eq_false (by omega)), ite_eq_right_of_eq_false _ _ (eq_false (by omega))]
+  rw [ite_eq_right_of_eq_false _ _ (eq_false (by omega_using [])), ite_eq_right_of_eq_false _ _ (eq_false (by omega_using []))]
 
 theorem preparedCachedMem_digest {p : Params} (hp : p.pkLen < 0x7000) {m : Mem}
     (hm : bytesAt m 0x200000 p.pkLen = bytesAt (fun _ => 0) 0x1000 p.pkLen) :
     bytesAt (preparedCachedMem p m) 0x8000 64 = pkTr (bytesAt (preparedCachedMem p m) 0x200000 p.pkLen) := by
-  rw [preparedCachedMem_key (by omega), hm]
+  rw [preparedCachedMem_key (by omega_using [hp]), hm]
   have hl : (pkTr (bytesAt (fun _ => 0) 0x1000 p.pkLen)).length = 64 := Proof.MlDsa.Verify.H_length _ _
   apply Proof.MlKem.bytesAt_eq hl
   intro i hi
   have he : ((0x8000 : Addr) + BitVec.ofNat 64 i).toNat = 0x8000 + i := by
     simp only [BitVec.toNat_add, BitVec.toNat_ofNat, BitVec.reduceToNat]
-    omega
-  simp only [preparedCachedMem, he, show 0x8000 ≤ 0x8000 + i ∧ 0x8000 + i < 0x8040 by omega, true_and, ite_true,
+    omega_using [hi]
+  simp only [preparedCachedMem, he, show 0x8000 ≤ 0x8000 + i ∧ 0x8000 + i < 0x8040 by omega_using [hi], true_and, ite_true,
     Nat.add_sub_cancel_left]
-  rw [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem (by omega), Option.getD_some]
+  rw [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem (by omega_using [hl, hi]), Option.getD_some]
 
 theorem preparedCachedSat_arg {p : Params} {m : Mem} {i : Nat} (hi : i < 4) :
     stackArg (preparedCachedSat p m) i = stackArg (preparedCachedSat p (fun _ => 0)) i :=

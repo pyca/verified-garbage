@@ -116,17 +116,17 @@ theorem decompressPeer_ok {c : Cfg} (hc : BaseCfgOk c) {base q : Addr} {s : Stat
   have hM := sl_le c h7 (i := MP) (by decide)
   have hF := sl_le c h7 (i := FLAG) (by decide)
   rw [decompressPeer_eq, WP.block_append_iff]
-  refine WP.mono (setConst_ok hs hR (Nat.lt_trans (Nat.mod_lt _ (by have := hc.p_ge; omega)) hc.p_lt))
+  refine WP.mono (setConst_ok hs hR (Nat.lt_trans (Nat.mod_lt _ (by have := hc.p_ge; omega_using [this])) hc.p_lt))
     fun s₁ ⟨e₁, k₁, O₁⟩ => ?_
   have hs₁ := hs.of_keepRegs k₁ (by decide)
   rw [WP.block_append_iff]
   refine WP.mono (setConst_ok hs₁ hB (show c.mont c.C.b < 2 ^ (64 * c.n) from
-    Nat.lt_trans (Nat.mod_lt _ (by have := hc.p_ge; omega)) hc.p_lt)) fun s₂ ⟨e₂, k₂, O₂⟩ => ?_
+    Nat.lt_trans (Nat.mod_lt _ (by have := hc.p_ge; omega_using [this])) hc.p_lt)) fun s₂ ⟨e₂, k₂, O₂⟩ => ?_
   have hs₂ := hs₁.of_keepRegs k₂ (by decide)
   have W₂ : Outside base 0 size s.mem s₂.mem :=
     (O₁.mono (Nat.zero_le _) hR).trans (O₂.mono (Nat.zero_le _) hB)
   have q₂ : s₂.mem q = s.mem q := by
-    have h := keep_of_disjoint' W₂ hd (by omega) (i := 0) (by omega) (by have := hc.len_hi; omega)
+    have h := keep_of_disjoint' W₂ hd (by omega_using [hn]) (i := 0) (by omega_using []) (by have := hc.len_hi; omega_using [h7, this])
     simpa only [BitVec.add_zero] using h
   rw [WP.block_append_iff]
   refine WP.mono (decompressTag_ok (c := c) (q := q) hs₂
@@ -134,40 +134,40 @@ theorem decompressPeer_ok {c : Cfg} (hc : BaseCfgOk c) {base q : Addr} {s : Stat
     (by
       exact ⟨_, by rw [k₂.rd, k₂.wr, k₁.rd, k₁.wr]; exact hin, by
         simpa using Offset.contains_base q (d := 0) (n := 1)
-          (by omega : 0 + 1 ≤ c.C.len + 1) (by decide)⟩) (by omega)) fun s₃ ⟨mask₃, tag₃, k₃, O₃⟩ => ?_
+          (by omega_using [] : 0 + 1 ≤ c.C.len + 1) (by decide)⟩) (by omega_using [h0, hD])) fun s₃ ⟨mask₃, tag₃, k₃, O₃⟩ => ?_
   rw [q₂] at mask₃ tag₃
   have hs₃ := hs₂.of_keepRegs k₃ (by decide)
   have U₃ : Unch base (slW c [R2P, BP, D]) s.mem s₃.mem :=
     unch_same (unch_same (slot_frame (by simp) (Nat.le_refl _) O₁)
-      (slot_frame (by simp) (Nat.le_refl _) O₂)) (slot_frame (by simp) (by omega) O₃)
+      (slot_frame (by simp) (Nat.le_refl _) O₂)) (slot_frame (by simp) (by omega_using [h0]) O₃)
   have flag₃ : word s₃.mem base (c.sl FLAG) = BitVec.allOnes 64 := by
-    rw [U₃.word (fun w hw => by have := apart_slW (c := c) (by decide : FLAG ∉ [R2P, BP, D]) w hw; omega)
-      (by omega), hf]
+    rw [U₃.word (fun w hw => by have := apart_slW (c := c) (by decide : FLAG ∉ [R2P, BP, D]) w hw; omega_using [h0, this])
+      (by omega_using [h0, hn, hF]), hf]
   rw [WP.block_append_iff]
-  refine WP.mono (andFlag_ok' c hs₃ (by omega)) fun s₄ ⟨flag₄, k₄, O₄⟩ => ?_
+  refine WP.mono (andFlag_ok' c hs₃ (by omega_using [h0, hF])) fun s₄ ⟨flag₄, k₄, O₄⟩ => ?_
   have hs₄ := hs₃.of_keepRegs k₄ (by decide)
   have U₄ : Unch base (slW c [R2P, BP, D, FLAG]) s.mem s₄.mem :=
     unch_same (U₃.mono (by
       intro w hw
       obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hw
       exact List.mem_map_of_mem (List.mem_append_left [FLAG] hi)))
-      (slot_frame (by simp) (by omega) O₄)
+      (slot_frame (by simp) (by omega_using [h0]) O₄)
   have keep₄ {i : Nat} (hi : i < 45) (hm : i ∉ [R2P, BP, D, FLAG]) :
       sv c base s₄ i = sv c base s i := sv_unch U₄ h7 hn hi (apart_slW hm)
-  refine WP.mono (checkLtP_ok c hs₄ h0 hE hM (by omega)) fun s₅ ⟨flag₅, k₅, O₅⟩ => ?_
+  refine WP.mono (checkLtP_ok c hs₄ h0 hE hM (by omega_using [h0, hF])) fun s₅ ⟨flag₅, k₅, O₅⟩ => ?_
   refine ⟨hs₄.of_keepRegs k₅ (by decide), ?_, ?_, ?_, ?_, ?_, ?_⟩
   · exact ((((k₁.mono (by simp)).trans (k₂.mono (by simp))).trans (k₃.mono (by simp))).trans
       (k₄.mono (by simp))).trans k₅
-  · exact unch_same U₄ (slot_frame (by simp) (by omega) O₅)
+  · exact unch_same U₄ (slot_frame (by simp) (by omega_using [h0]) O₅)
   · rw [sv, sv_flag O₅ h0 h7 hn (by decide) (by decide), sv_flag O₄ h0 h7 hn (by decide) (by decide),
-      sv_out (O₃.mono (Nat.le_refl _) (by omega : c.sl D + 8 ≤ c.sl D + 8 * c.n)) h7 hn (by decide) (by decide),
+      sv_out (O₃.mono (Nat.le_refl _) (by omega_using [h0] : c.sl D + 8 ≤ c.sl D + 8 * c.n)) h7 hn (by decide) (by decide),
       sv_out O₂ h7 hn (by decide) (by decide)]
     exact e₁
   · rw [sv, sv_flag O₅ h0 h7 hn (by decide) (by decide), sv_flag O₄ h0 h7 hn (by decide) (by decide),
-      sv_out (O₃.mono (Nat.le_refl _) (by omega : c.sl D + 8 ≤ c.sl D + 8 * c.n)) h7 hn (by decide) (by decide)]
+      sv_out (O₃.mono (Nat.le_refl _) (by omega_using [h0] : c.sl D + 8 ≤ c.sl D + 8 * c.n)) h7 hn (by decide) (by decide)]
     exact e₂
-  · rw [O₅.word (by have := sl_apart c (i := D) (j := FLAG) (by decide); omega) (by omega),
-      O₄.word (by have := sl_apart c (i := D) (j := FLAG) (by decide); omega) (by omega)]
+  · rw [O₅.word (by have := sl_apart c (i := D) (j := FLAG) (by decide); omega_using [h0, this]) (by omega_using [h0, hn, hD]),
+      O₄.word (by have := sl_apart c (i := D) (j := FLAG) (by decide); omega_using [h0, this]) (by omega_using [h0, hn, hD])]
     exact tag₃
   · rw [flag₅, flag₄, flag₃, mask₃, BitVec.allOnes_and,
       show wordsVal s₄.mem base (c.sl E) c.n = sv c base s₄ E from rfl,

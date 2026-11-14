@@ -51,9 +51,9 @@ theorem rotWord (x : BitVec 16) (n : Nat) (hn : 1 ≤ n) (hn' : n < 16) :
   simp only [BitVec.getLsbD_setWidth, BitVec.getLsbD_or, BitVec.getLsbD_ushiftRight,
     BitVec.getLsbD_shiftLeft, BitVec.getLsbD_rotateLeft, Nat.mod_eq_of_lt hn']
   by_cases h : j < n
-  · simp (disch := omega) [h, hj, show j + (16 - n) < 64 by omega, Nat.add_comm]
-  · simp (disch := omega) [h, hj, show j < 64 by omega, show j - n < 64 by omega,
-      show 16 - n + j < 64 by omega, BitVec.getLsbD_of_ge]
+  · simp (disch := omega) [h, hj, show j + (16 - n) < 64 by omega_using [hj], Nat.add_comm]
+  · simp (disch := omega) [h, hj, show j < 64 by omega_using [hj], show j - n < 64 by omega_using [hj],
+      show 16 - n + j < 64 by omega_using [hj], BitVec.getLsbD_of_ge]
 
 theorem mixWord2 (x k a b c : BitVec 16) :
     (x.setWidth 64 + k.setWidth 64 + (a.setWidth 64 &&& b.setWidth 64) +
@@ -78,8 +78,8 @@ theorem rotate16_ok (s : State) (r : Reg) (hr : r ≠ .x8) (hr9 : r ≠ .x9)
     (n : Nat) (hn : 1 ≤ n) (hn' : n < 16) :
     ∃ s', runBlock isa (rotate16 r n) s = some s' ∧
       s'.gpr r = (x.rotateLeft n).setWidth 64 ∧ Keep [r, .x8] s s' := by
-  have hleft : n < 64 := by omega
-  have hright : 16 - n < 64 := by omega
+  have hleft : n < 64 := by omega_using [hn']
+  have hright : 16 - n < 64 := by omega_using []
   refine ⟨_, by
     simp only [rotate16, runBlock_cons, runStep_some,
       runBlock_nil, exec, State.read, BitVec.setWidth_eq, hleft, hright, ite_true]
@@ -111,10 +111,10 @@ theorem mixInputs_ok (s : State) (i j : Nat) (hj : j < 64)
   have h₁ := wordReg_separate (i + 1)
   have h₂ := wordReg_separate (i + 2)
   have h₃ := wordReg_separate (i + 3)
-  have lo := CallLay.inRegions_sub readable (off := 2 * j) (l := 1) (by omega) (by decide)
-  have hi := CallLay.inRegions_sub readable (off := 2 * j + 1) (l := 1) (by omega) (by decide)
-  have loOff : 2 * j < 4096 := by omega
-  have hiOff : 2 * j + 1 < 4096 := by omega
+  have lo := CallLay.inRegions_sub readable (off := 2 * j) (l := 1) (by omega_using [hj]) (by decide)
+  have hi := CallLay.inRegions_sub readable (off := 2 * j + 1) (l := 1) (by omega_using [hj]) (by decide)
+  have loOff : 2 * j < 4096 := by omega_using [hj]
+  have hiOff : 2 * j + 1 < 4096 := by omega_using [hj]
   refine ⟨_, by
     simp (config := {decide := true}) only [mixInputs, loadKey,
       List.cons_append, List.nil_append, runBlock_cons, runStep_some, runBlock_nil,
@@ -291,7 +291,7 @@ theorem wordReg_offset_ne (i : Nat) (hi : i < 4) (d : Nat) (hd : 1 ≤ d) (hd' :
   rw [wordReg_mod (i + d)]
   intro he
   have := (wordReg_injective _ (Nat.mod_lt _ (by decide)) i hi).mp he
-  omega
+  omega_using [hd, hd', this]
 
 theorem keep_inputs {s s' : State} (h : Keep [.x4, .x5, .x6, .x7] s s') (i : Nat) :
     Keep (wordReg i :: temps) s s' := h.weaken (by
@@ -324,7 +324,7 @@ theorem reverseMix_ok (s : State) (v : Spec.Rc2.State) (hv : Words s v)
   have sep := wordReg_separate i
   have hn := rotation_bounds i
   obtain ⟨s₁, run₁, out₁, keep₁⟩ := rotate16_ok s (wordReg i) sep.1 (wordReg_ne9 i) hv.2 (v.getD i 0)
-    (hv.1 i hi) (16 - Spec.Rc2.rotation i) (by omega) (by omega)
+    (hv.1 i hi) (16 - Spec.Rc2.rotation i) (by omega_using [hn]) (by omega_using [hn])
   rw [rotateLeft_reverse _ _ hn.1 hn.2] at out₁
   refine WP.of_runBlock ⟨s₁, run₁, ?_⟩
   rw [WP.block_append_iff]
@@ -390,7 +390,7 @@ theorem indexWord (x : BitVec 16) :
     ((x.setWidth 64).setWidth 6).toNat = (x &&& 63).toNat := by
   simp only [BitVec.toNat_setWidth, BitVec.toNat_and]
   change x.toNat % 18446744073709551616 % 64 = x.toNat &&& (2 ^ 6 - 1)
-  rw [Nat.and_two_pow_sub_one_eq_mod, Nat.mod_eq_of_lt (show x.toNat < 18446744073709551616 by have := x.isLt; omega)]
+  rw [Nat.and_two_pow_sub_one_eq_mod, Nat.mod_eq_of_lt (show x.toNat < 18446744073709551616 by have := x.isLt; omega_using [])]
 
 def mashSpec (direction : Spec.Rc2.Direction) (k : Spec.Rc2.Schedule)
     (i : Nat) (v : Spec.Rc2.State) : Spec.Rc2.State :=

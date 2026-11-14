@@ -59,7 +59,7 @@ theorem fin_piece : Piece QPre QPub (fun s₀ s => BI s₀ 264 (S' s₀ 264) s) 
     by rw [o.mem]; exact h.poly, by rw [o.mem]; exact h.lo, by rw [o.mem]; exact h.hi⟩, ?_⟩
   rw [e]
   simp only [State.setReg, ite_true, h.edi]
-  exact eq_ofNat_of_toNat (by rw [toNat_shr, toNat_ofNat32 (show (S' s₀ 264).2 < 2 ^ 32 by omega)])
+  exact eq_ofNat_of_toNat (by rw [toNat_shr, toNat_ofNat32 (show (S' s₀ 264).2 < 2 ^ 32 by omega_using [hl])])
 
 theorem main_piece : Piece QPre QPub (fun s₀ s => s = P0 s₀) Fin
     (.seq (sponge 4 136 (.mem (argOp 1)) 272) <|
@@ -70,7 +70,7 @@ theorem main_piece : Piece QPre QPub (fun s₀ s => s = P0 s₀) Fin
 theorem piece : Piece QPre QPub (fun s₀ s => s = s₀) (fun s₀ s' => LeafPost (Fin s₀) s₀ s')
     Impl.MlDsa.X86.Sample.sampleInBall :=
   Piece.leaf L.W (NoSp.of_all (by decide +kernel))
-    (fun _ hp => ⟨by have := hp.1.sp; omega, by have := hp.1.sp'; omega⟩)
+    (fun _ hp => ⟨by have := hp.1.sp; omega_using [this], by have := hp.1.sp'; omega_using [this]⟩)
     (fun _ hp => hp.1.hW) (fun _ _ _ _ hq => hq.1.1)
     (main_piece.mono (fun _ _ _ h => h) fun _ _ _ h => ⟨⟨h.frame, h.esp, h.rd, h.wr⟩, h⟩)
 
@@ -80,7 +80,7 @@ theorem QPre.of {s₀ : State} (h : (Proof.MlDsa.sampleInBallContract X86.abi 56
   obtain ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, h14, h15, h16, h17, h18, h19, h20, h21, h22⟩ := h
   have hl : (arg s₀ 1).toNat < 136 := by
     simp only [Proof.MlDsa.ballParams, List.mem_cons, Prod.mk.injEq, List.not_mem_nil, or_false] at h22
-    omega
+    omega_using [h22]
   exact ⟨⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, h14, h15, h16, h17, h18, h19, h20, h21, hl⟩, h22⟩
 
 theorem S'_all (s₀ : State) : S' s₀ 264 = ballFold (τ s₀) (H (L.Msg s₀) 272) := by
@@ -117,7 +117,7 @@ theorem verified :
     rw [setWidth_append32, hax, hfin.eax, hm]
     have hl : (S' s₀ 264).2 ≤ 256 := st_le _ _ _
     have hp : Proof.MlDsa.PolyIs s.mem (L.aA s₀) (Spec.MlDsa.toRq (S' s₀ 264).1) :=
-      polyIs_of_coeffAt fun i hi => by rw [hfin.poly i (by simp only [n] at hi; omega), toRq_getElem! _ hi]
+      polyIs_of_coeffAt fun i hi => by rw [hfin.poly i (by simp only [n] at hi; omega_using [hi]), toRq_getElem! _ hi]
     rw [S'_all] at hl hp
     rw [S'_all]
     by_cases e : (ballFold (τ s₀) (H (L.Msg s₀) 272)).2 = 256
@@ -127,7 +127,7 @@ theorem verified :
         some (Proof.MlDsa.polyAt s.mem (L.aA s₀))
       rw [sampleInBall_some _ (by decide) e, hp.2]
       rfl
-    · rw [Nat.div_eq_of_lt (by omega)]
+    · rw [Nat.div_eq_of_lt (by omega_using [hl, e])]
       refine ⟨fun h => absurd (congrArg BitVec.toNat h) (by show ¬ (0 = 1); decide), .inr ⟨rfl, ?_⟩⟩
       show (Spec.MlDsa.sampleInBall (τ s₀) Spec.MlDsa.minBounds.ball (L.Msg s₀)).map Spec.MlDsa.toRq = none
       rw [sampleInBall_none _ (B := 272) (by decide) (by decide) e]

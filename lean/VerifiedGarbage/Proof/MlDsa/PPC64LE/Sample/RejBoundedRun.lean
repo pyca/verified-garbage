@@ -49,7 +49,7 @@ theorem init_ok {n : Nat} (hn : n ≤ 544) {s : State} (h : SJ n σ s) :
   obtain ⟨⟨s₀, h⟩, e27⟩ := h
   have g30 := h.j0.env.r30
   have g31 := h.j0.env.r31
-  have hn' : n < 32768 := by omega
+  have hn' : n < 32768 := by omega_using [hn]
   have hk : WP isa (.block (([.addi .r3 .r31 840, mov .r4 .r30, .li .r5 0, .li .r6 n] : List Instr) ++ loadQ)) s
       fun s' => s'.gpr .r3 = σ.gpr .r6 + BitVec.ofNat 64 (840 + 0) ∧ s'.gpr .r4 = σ.gpr .r5 ∧
         s'.gpr .r5 = BitVec.ofNat 64 0 ∧ s'.gpr .r6 = BitVec.ofNat 64 n ∧
@@ -77,15 +77,15 @@ theorem loop_ok {η : Nat} (hη : η = 2 ∨ η = 4) {n : Nat} (hn0 : 0 < n) (hn
   have ev : isa.eval (.nonzero .d .r12) s' =
       some (decide (i + 1 ≠ n ∧ (Lf η (X n σ) (i + 1)).length < 256)) := by rw [eval_nonzero, hz]
   by_cases hc : i + 1 ≠ n ∧ (Lf η (X n σ) (i + 1)).length < 256
-  · exact .inr ⟨by rw [ev, decide_eq_true hc], n - (i + 1), by omega, i + 1, by omega, rfl, hs', hc.2⟩
+  · exact .inr ⟨by rw [ev, decide_eq_true hc], n - (i + 1), by omega_using [hi], i + 1, by omega_using [hi, hc], rfl, hs', hc.2⟩
   · refine .inl ⟨by rw [ev, decide_eq_false hc], i + 1, ?_⟩
     have hle := rbFold_length_le (η := η) (a := []) (by simp) ((X n σ).take (i + 1))
-    rw [Lf_stop (show i + 1 ≤ n by omega) (by
+    rw [Lf_stop (show i + 1 ≤ n by omega_using [hi]) (by
       by_cases e : i + 1 = n
       · exact .inl e
       · have h1 := not_and.mp hc e
         have hle' : (Lf η (X n σ) (i + 1)).length ≤ 256 := hle
-        exact .inr (by omega))]
+        exact .inr (by omega_using [h1, hle']))]
     exact hs'
 
 omit hp in
@@ -129,7 +129,7 @@ theorem sel_ok (hη : etaOf σ = 2 ∨ etaOf σ = 4) {n : Nat} (hn0 : 0 < n) (hn
 theorem rbTry_ok (hη : etaOf σ = 2 ∨ etaOf σ = 4) {n : Nat} (hn0 : 0 < n) (hn : n ≤ 544) {s : State}
     (j0 : J0 (spOf σ) σ s) (e27 : s.gpr .r27 = zx (σ.gpr .r4)) :
     WP isa (rbTry n) s fun s' => ∃ t, Base σ (X n σ) t (Lf (etaOf σ) (X n σ) n) s' :=
-  WP.seq (WP.mono (sponge_ok hp (rate := 136) (outlen := n) (by decide) (by omega) j0) fun _ h =>
+  WP.seq (WP.mono (sponge_ok hp (rate := 136) (outlen := n) (by decide) (by omega_using [hn]) j0) fun _ h =>
     sel_ok hp hη hn0 hn ⟨⟨s, h⟩, (h.gp .r27 (by decide)).trans e27⟩)
 
 /-- The test of `j = 256`. -/

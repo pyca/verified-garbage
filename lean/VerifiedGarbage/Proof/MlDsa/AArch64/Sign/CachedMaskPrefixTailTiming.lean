@@ -112,8 +112,8 @@ theorem pairCached_ok {D : Nat}
     · show PolyIs _ _ _
       rw [hcP.pa (pS_bases _)]
       exact hy1
-  refine WP.seq (WP.mono (finishCached_ok (by omega) cf0 hC hy mc ckf0) fun d ⟨⟨hD,hyD⟩,md⟩ => ?_)
-  exact WP.mono (finishCached_ok (by omega) cf1 hD hyD md ckf1) fun _ hu => ⟨hu.1.1,hu.2⟩
+  refine WP.seq (WP.mono (finishCached_ok (by omega_using []) cf0 hC hy mc ckf0) fun d ⟨⟨hD,hyD⟩,md⟩ => ?_)
+  exact WP.mono (finishCached_ok (by omega_using []) cf1 hD hyD md ckf1) fun _ hu => ⟨hu.1.1,hu.2⟩
 
 
 theorem prefix_ok {P : Prims} {S : Nat} (hP : PrimsOk P S) {p : Params}
@@ -131,7 +131,7 @@ theorem prefix_ok {P : Prims} {S : Nat} (hP : PrimsOk P S) {p : Params}
     seqR_ok (I := fun j u => PositiveICm p S σ t (2*j) u ∧ (t=0 ∨ Mask p σ t u))
       (p.ℓ/2) 0 (fun j _ hj u hu => by
         simpa only [Nat.mul_add,Nat.mul_one] using
-          pairCached_ok hP.expandMaskPair (hc.1 j (by omega)) hu.1 hu.2 (hk j (by omega)))
+          pairCached_ok hP.expandMaskPair (hc.1 j (by omega_using [hj])) hu.1 hu.2 (hk j (by omega_using [hj])))
       s ⟨⟨h,fun _ h => by omega,fun _ h => by omega⟩,hm⟩
 
 end VG.Proof.MlDsa.AArch64.Sign.Cached
@@ -174,7 +174,7 @@ theorem prefix_tr {P : Prims} {S : Nat} (hP : PrimsOk P S) {p : Params}
     PositiveICm p S σ t (2*j) s ∧ (t=0 ∨ Mask p σ t s)) (p.ℓ/2) 0 (fun j _ hj => ?_))
     (fun _ _ h => h.mono (fun _ _ h => ⟨⟨h.1,fun _ h => by omega,fun _ h => by omega⟩,h.2⟩))
     (fun _ _ h => by simpa only [Nat.zero_add] using h)
-  simpa only [Nat.mul_add,Nat.mul_one] using pairCached_tr hP (hc.1 j (by omega)) (hk j (by omega)) (t := t) (E := E)
+  simpa only [Nat.mul_add,Nat.mul_one] using pairCached_tr hP (hc.1 j (by omega_using [hj])) (hk j (by omega_using [hj])) (t := t) (E := E)
 
 end VG.Proof.MlDsa.AArch64.Sign.Cached
 
@@ -244,7 +244,7 @@ theorem copyFinish_tr {p : Params} {S t : Nat} {E : State→State→Prop}
     have L := h.1.lrel (fun _ _ h=>h.1.l.st)
     obtain ⟨σ,τ,_,_,_,_,ix,iy⟩ := h.1
     exact ⟨⟨σ,ix.1.l.st,ix.1.l.k.d.roots⟩,⟨τ,iy.1.l.st,iy.1.l.k.d.roots⟩,
-      (ix.2 (p.ℓ-1) (by omega)).1,(iy.2 (p.ℓ-1) (by omega)).1,
+      (ix.2 (p.ℓ-1) (by omega_using [])).1,(iy.2 (p.ℓ-1) (by omega_using [])).1,
       L.regs .x28 (by decide),L.sp,h.2.1⟩
 
 private theorem assocBack {P Q : State→State→Prop} {a b c : Prog isa}

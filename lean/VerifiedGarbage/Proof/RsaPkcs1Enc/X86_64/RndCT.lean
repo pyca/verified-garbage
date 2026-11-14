@@ -94,7 +94,7 @@ theorem entry_view {s w : State} (hp : RPre s) {i : Nat} {ps : List Byte} (h : A
     Spec.Rsa.wordsAt E.mem (stackArg E 6) (stackArg E 7).toNat = preW s := by
   intro E
   have hE (j : Nat) (hj : j < 8) : stackArg E j = callArg s j :=
-    (stackArg_entry h.rsp _ _ (by omega)).trans (h.args j hj)
+    (stackArg_entry h.rsp _ _ (by omega_using [hj])).trans (h.args j hj)
   have hf := entry_frame h (callRd s) (callWr s)
   have g : ∀ r, r ≠ .rsp → E.gpr r = w.gpr r := fun r hr => by
     simp only [E, State.withRegions_gpr, State.callEntry_gpr _ hr]
@@ -104,9 +104,9 @@ theorem entry_view {s w : State} (hp : RPre s) {i : Nat} {ps : List Byte} (h : A
     simp only [E, State.withRegions_gpr, State.callEntry_rsp, h.rsp]
   · exact List.map_congr_left fun j hj => hE j (List.mem_range.mp hj)
   · rw [g .rdx (by decide), g .rcx (by decide), h.rdx, h.rcx]
-    exact bytes_apart (R := nR s) hf hp.dKn hp.dTn (by have := hp.wN; unfold nR; dsimp only; omega)
+    exact bytes_apart (R := nR s) hf hp.dKn hp.dTn (by have := hp.wN; unfold nR; dsimp only; omega_using [])
   · rw [g .r8 (by decide), g .r9 (by decide), h.r8, h.r9]
-    exact bytes_apart (R := eR s) hf hp.dKe hp.dTe (by have := hp.wE; unfold eR; dsimp only; omega)
+    exact bytes_apart (R := eR s) hf hp.dKe hp.dTe (by have := hp.wE; unfold eR; dsimp only; omega_using [])
   · rw [hE 6 (by decide), hE 7 (by decide)]
     exact words_apart hf hp.dKq hp.dTq hp.wQ
 
@@ -147,7 +147,7 @@ theorem call_ct (v : PublicImpl) : RelCT isa (Two ArgsPt) (.call (encName v) (en
     intro j h₁ _
     simp only [List.length_map, List.length_range] at h₁
     simp only [List.getElem_map, List.getElem_range]
-    exact ga j (by omega)
+    exact ga j (by omega_using [h₁])
   · rw [n₁, n₂, S₁.2.2.2.2.1.symm.trans S₂.2.2.2.2.1]
   · rw [e₁, e₂, S₁.2.2.2.2.2.1.symm.trans S₂.2.2.2.2.2.1]
   · rw [q₁, q₂, S₁.2.2.2.2.2.2.1.symm.trans S₂.2.2.2.2.2.2.1]
@@ -207,7 +207,7 @@ theorem rej_slots {s t₀ u : State} (hp : RPre s) (hb : Before s t₀) {i : Nat
     Slots s u.mem := by
   have hF := fb_toNat hp
   have w : ∀ {d : Nat}, d + 8 ≤ oBuf → word u.mem (fb s) d = word t₀.mem (fb s) d := fun hd =>
-    hI.out.word (.inl hd) (by unfold frameBytes oBuf at *; omega)
+    hI.out.word (.inl hd) (by unfold frameBytes oBuf at *; omega_using [hd])
   exact ⟨(w (by decide)).trans hb.slots.sOut, (w (by decide)).trans hb.slots.sTape,
     (w (by decide)).trans hb.slots.sN, (w (by decide)).trans hb.slots.sK, (w (by decide)).trans hb.slots.sE,
     (w (by decide)).trans hb.slots.sPs⟩
@@ -255,8 +255,8 @@ theorem wipeD_two : RelCT isa (Two RZ) wipeDrawn (Two RZ) := by
     refine WP.mono (wipeDrawn_ok hp hsp hwr hc hdx) fun u₂ ⟨f₂, k₂, hdx₂⟩ => ?_
     have bufD : ∀ {d : Nat}, d + 8 ≤ oBuf →
         (⟨off (fb s) d, 8⟩ : Region).Disjoint ⟨off (fb s) oBuf, (kept s (N a)).length⟩ :=
-      fun hd => Offset.disjoint (fb s) (.inl hd) (by unfold frameBytes oBuf at *; omega)
-        (by unfold frameBytes oBuf at *; omega)
+      fun hd => Offset.disjoint (fb s) (.inl hd) (by unfold frameBytes oBuf at *; omega_using [hd])
+        (by unfold frameBytes oBuf at *; omega_using [hc, hP])
     have w : ∀ {d : Nat}, d + 8 ≤ oBuf → word u₂.mem (fb s) d = word u.mem (fb s) d := fun hd =>
       f₂.readW (Region.contains_self _ _) (fun r hr => by rw [List.mem_singleton.mp hr]; exact bufD hd)
         (by decide)
@@ -345,14 +345,14 @@ theorem body_ct (v : PublicImpl) : RelCT isa (Two AllocPt) (body (encName v) (en
         N a = (stackArg s 4).toNat ∧ (kept s (N a)).length < psLen s := fun {s t₀ w} S I z e => by
       have hne : (kept s (N a)).length ≠ psLen s := by
         rw [eval_e z] at e; exact of_decide_eq_false (Option.some.inj e)
-      have hc : (kept s (N a)).length < psLen s := by have := I.hc; omega
+      have hc : (kept s (N a)).length < psLen s := by have := I.hc; omega_using [hne, this]
       refine ⟨?_, hc⟩
       have hle := VG.Proof.RsaPkcs1Enc.scanLen_le (psLen s) (randB s)
       rw [randB_length, S.scanEq] at hle
       by_contra hlt
       have := VG.Proof.RsaPkcs1Enc.lt_scanLen (n := psLen s) (rand := randB s) (i := N a) hc
         (by rw [randB_length]; omega)
-      rw [S.scanEq] at this; omega
+      rw [S.scanEq] at this; omega_using [this]
     obtain ⟨n₁, c₁⟩ := rej S₁ I₁ z₁ e₁
     obtain ⟨n₂, c₂⟩ := rej S₂ I₂ z₂ e₂
     exact ⟨a, ⟨s₁, t₁, S₁, B₁, I₁, n₁, c₁⟩, ⟨s₂, t₂, S₂, B₂, I₂, n₂, c₂⟩⟩

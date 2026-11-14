@@ -35,8 +35,8 @@ open VG.Impl.Scrypt.RISCV64 (mov)
 
 theorem toNat_le_of_disjoint {R S : Region} (h : R.Disjoint S) (hS : 0 < S.len) : R.len < 2 ^ 64 := by
   refine Nat.lt_of_not_le fun hR => h S.base ?_ ?_
-  · simp only [Region.Contains]; have := (S.base - R.base).isLt; omega
-  · simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; omega
+  · simp only [Region.Contains]; have := (S.base - R.base).isLt; omega_using [hR]
+  · simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; omega_using [hS]
 
 theorem lsl7 (x : BitVec 64) : x <<< 7 = BitVec.ofNat 64 (x.toNat * 128) := by
   apply BitVec.eq_of_toNat_eq
@@ -53,7 +53,7 @@ theorem pp_pos : 0 < L.pp := h.valid.2.2.2.1
 
 /-- `b` is not the whole address space, since the stack is not in it. -/
 theorem blen_lt : L.blen.toNat * 128 < 2 ^ 64 :=
-  toNat_le_of_disjoint h.kb.symm (by show (0 : Nat) < 1248; omega)
+  toNat_le_of_disjoint h.kb.symm (by show (0 : Nat) < 1248; omega_using [])
 
 /-- `128 r p`, the length of `b`. -/
 theorem len_b : 128 * L.r.toNat * L.pp = L.blen.toNat * 128 := by
@@ -66,7 +66,7 @@ theorem ol1 : L.blen.toNat * 128 ≤ (2 ^ 32 - 1) * 32 := by
   have h₃ : L.pp * (128 * L.r.toNat) ≤ (2 ^ 32 - 1) * 32 / (128 * L.r.toNat) * (128 * L.r.toNat) :=
     Nat.mul_le_mul_right _ h₁
   rw [← h.len_b, Nat.mul_comm (128 * L.r.toNat)]
-  omega
+  omega_using [h₂, h₃]
 
 end Lay.Ok
 
@@ -112,9 +112,9 @@ theorem store (hL : L.Ok) (hrd : t'.rd = t.rd) (hwr : t'.wr = t.wr) (hsp : t'.sp
     fun r hr hr' => (hg r hr).trans (hc.cs r hr hr'), hc.kept.frame hf fun d hd R hR => ?_,
     hc.frame.trans (Frame.sub hf fun r hr => ?_)⟩
   · simp only [List.mem_singleton] at hR; subst hR
-    exact Offset.disjoint _ (by omega) (by omega) (by omega)
+    exact Offset.disjoint _ (by omega) (by omega) (by omega_using [])
   · simp only [List.mem_singleton] at hr; subst hr
-    exact ⟨L.STK, by simp, Offset.sub_base _ (by omega)⟩
+    exact ⟨L.STK, by simp, Offset.sub_base _ (by omega_using [])⟩
 
 end Ctx
 
@@ -124,7 +124,7 @@ variable {L : Lay} {g : Reg → BitVec 64} {m₀ : Mem}
 /-- A doubleword of the frame or of our stack arguments is aligned. -/
 theorem fr_al (hL : L.Ok) {d : Nat} (hd : d % 8 = 0) :
     (L.B + BitVec.ofNat 64 (992 + d)).toNat % 8 = 0 :=
-  Spill.al8 (by have := hL.aB; omega) (by omega)
+  Spill.al8 (by have := hL.aB; omega_using [this]) (by omega_using [hd])
 
 /-- `ld r, d(s3)`, of the frame or of our stack arguments. -/
 theorem fld_wp (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) {r : Reg} {d : Nat} (o : Nat)
@@ -133,11 +133,11 @@ theorem fld_wp (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) {r : Reg} {d : Nat}
     WP isa (.block (fld r d :: is)) t Q := by
   subst ho
   have hnB := hL.nB
-  refine wp_ld (by omega) (by rw [hc.s3', fr_addr]) (fr_al hL h8) ?_ k
+  refine wp_ld (by omega_using [hd]) (by rw [hc.s3', fr_addr]) (fr_al hL h8) ?_ k
   rw [hc.rd, hc.wr]
   by_cases h256 : d + 8 ≤ 256
-  · exact ⟨L.FR, by simp, Offset.contains _ (by omega) (by omega) (by omega)⟩
-  · exact ⟨L.ARGS, by simp, Offset.contains _ (by omega) (by omega) (by omega)⟩
+  · exact ⟨L.FR, by simp, Offset.contains _ (by omega_using []) (by omega_using [h256]) (by omega_using [])⟩
+  · exact ⟨L.ARGS, by simp, Offset.contains _ (by omega_using [h8, h256]) (by omega_using [hd]) (by omega_using [])⟩
 
 /-- `sd r, d(s3)`, of the frame. -/
 theorem fsd_wp (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) {r : Reg} {d : Nat} (o : Nat)
@@ -147,9 +147,9 @@ theorem fsd_wp (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) {r : Reg} {d : Nat}
     WP isa (.block (.store .d r .s3 d :: is)) t Q := by
   subst ho
   have hnB := hL.nB
-  refine wp_sd (by omega) (by rw [hc.s3', fr_addr]) (fr_al hL h8) ?_ k
+  refine wp_sd (by omega_using [hd]) (by rw [hc.s3', fr_addr]) (fr_al hL h8) ?_ k
   rw [hc.wr]
-  exact ⟨L.FR, by simp, Offset.contains _ (by omega) (by omega) (by omega)⟩
+  exact ⟨L.FR, by simp, Offset.contains _ (by omega_using []) (by omega_using [hd]) (by omega_using [])⟩
 
 /-- The arguments of a call of PBKDF2 with the salt `salt` (`sl` bytes) and
 the output `out` (`ol` bytes): the password and `c = 1`. -/
@@ -388,9 +388,9 @@ theorem esd {L : Lay} (hL : L.Ok) {t : State} {rest : List Region} (h0 : t.gpr .
     WP isa (.block (.store .d r .t0 d :: is)) t Q := by
   subst ho
   have hnB := hL.nB
-  refine wp_sd (by omega) (by rw [h0, fr_addr]) (fr_al hL h8) ?_ k
+  refine wp_sd (by omega_using [hd]) (by rw [h0, fr_addr]) (fr_al hL h8) ?_ k
   rw [hw]
-  exact ⟨L.FR, by simp, Offset.contains _ (by omega) (by omega) (by omega)⟩
+  exact ⟨L.FR, by simp, Offset.contains _ (by omega_using []) (by omega_using [hd]) (by omega_using [])⟩
 
 theorem arg_addr (s : State) (i : Nat) :
     (lay s).B + BitVec.ofNat 64 (1248 + 8 * i) = stackArgAddr s i := by
@@ -466,7 +466,7 @@ theorem entry_ok {s : State} (h : scryptRV.pre s) :
       simp (disch := decide) only [readW_writeW_off, Mem.readW_writeW_self64, k0, k1, k3, k4] <;> rfl
   · rw [hm]
     refine Frame.sub (rs := [(lay s).STK]) ?_ fun r hr => ?_
-    · repeat refine Frame.writeW ?_ (List.mem_singleton_self _) _ (Offset.contains_base _ (by omega) (by omega))
+    · repeat refine Frame.writeW ?_ (List.mem_singleton_self _) _ (Offset.contains_base _ (by omega) (by omega_using []))
       exact Frame.refl _ _
     · simp only [List.mem_singleton] at hr; subst hr
       exact ⟨_, by simp, fun _ h => h⟩

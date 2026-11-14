@@ -4,6 +4,7 @@ public import VerifiedGarbage.Impl.Weierstrass.CoZ
 public import VerifiedGarbage.Proof.Weierstrass.JacCoZ
 public import VerifiedGarbage.Proof.Weierstrass.PrimeOrder
 import VerifiedGarbage.Proof.Weierstrass.WinJacMath
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # A table of odd multiples by co-Z arithmetic
@@ -46,7 +47,7 @@ theorem not_dvd_small {n : Nat} {x : Int} (h1 : -n < x) (h2 : x < n) (h0 : x ≠
     ¬ (n : Int) ∣ x := by
   rcases Int.lt_or_gt_of_ne h0 with h | h
   · intro hd
-    exact not_dvd_of_pos_lt (n := n) (x := -x) (by omega) (by omega) (Int.dvd_neg.mpr hd)
+    exact not_dvd_of_pos_lt (n := n) (x := -x) (by omega_using [h]) (by omega_using [h1]) (Int.dvd_neg.mpr hd)
   · exact not_dvd_of_pos_lt h h2
 
 section
@@ -55,7 +56,7 @@ include hC hO hn
 
 omit hC hn in
 theorem two_ne_zero_pt {P : Point C} (hP : onCurve C P = true) (hP0 : P ≠ .infinity) (h3 : 3 ≤ C.n) :
-    mul 2 P ≠ .infinity := mul_ne_infinity hO hP hP0 (by decide) (by omega)
+    mul 2 P ≠ .infinity := mul_ne_infinity hO hP hP0 (by decide) (by omega_using [h3])
 
 /-- `(2k+1)P` and `2P` at one `Z` are neither equal nor opposite. -/
 theorem coz_x {P : Point C} (hP : onCurve C P = true) (hP0 : P ≠ .infinity) {k : Nat} (hk : k ≤ 6)
@@ -70,11 +71,11 @@ theorem coz_x {P : Point C} (hP : onCurve C P = true) (hP0 : P ≠ .infinity) {k
     have h' : zmul ((2 * k + 1 : Nat) : Int) P = zmul (2 : Nat) P := by
       rw [zmul_natCast, zmul_natCast, he]
     have hd := zmul_dvd hC hO hP hP0 h'
-    exact not_dvd_small (n := C.n) (x := ((2 * k + 1 : Nat) : Int) - (2 : Nat)) (by omega)
-      (by omega) (by omega) hd
+    exact not_dvd_small (n := C.n) (x := ((2 * k + 1 : Nat) : Int) - (2 : Nat)) (by omega_using [hn])
+      (by omega_using [hn, hk]) (by omega_using []) hd
   · have he := h2.opposite hC (hC.onCurve_mul hP _) (hC.onCurve_mul hP _) h1 hz hz hx' hy
     rw [hC.add_mul_mul hP] at he
-    exact mul_ne_infinity hO hP hP0 (m := 2 * k + 1 + 2) (by omega) (by omega) he
+    exact mul_ne_infinity hO hP hP0 (m := 2 * k + 1 + 2) (by omega_using []) (by omega_using [hn, hk]) he
 
 /-- DBLU of the affine `P`: `2P` at `(8, 9, 10)`, `P` at `(5, 4)` with the same nonzero `Z`. -/
 theorem dblu_pts (ha : AM3 C) {P : Point C} (hP : onCurve C P = true) {e : Nat → Fe C}
@@ -87,7 +88,7 @@ theorem dblu_pts (ha : AM3 C) {P : Point C} (hP : onCurve C P = true) {e : Nat �
   rw [show add P P = mul 2 P by
     rw [show add P P = add (mul 1 P) (mul 1 P) by rw [mul_one_pt], hC.add_mul_mul hP]] at j2
   have hz : runOps dblu e 10 ≠ 0 := fun hh =>
-    two_ne_zero_pt hO hP hP0 (by omega) ((j2.z_zero_iff hC).mp hh)
+    two_ne_zero_pt hO hP hP0 (by omega_using [hn]) ((j2.z_zero_iff hC).mp hh)
   exact ⟨j2, hj.rescale hC hz hC.one_ne_zero h5 h4 (by grind only), hz⟩
 
 /-- ZADDU of `2P` and `(2k + 1)P` at one `Z`: `(2k + 3)P`, and `2P` at its new `Z`. -/
@@ -105,8 +106,8 @@ theorem zaddu_pts (ha : AM3 C) {P : Point C} (hP : onCurve C P = true) (hP0 : P 
   rw [← ht] at js jd
   have js' : InvJ C (runOps zaddu e 8) (runOps zaddu e 9) (runOps zaddu e 10)
       (mul (2 * (k + 1) + 1) P) := by
-    rw [show 2 * (k + 1) + 1 = 2 * k + 1 + 2 by omega]; exact js
-  exact ⟨js', jd, fun hh => mul_ne_infinity hO hP hP0 (m := 2 * (k + 1) + 1) (by omega) (by omega)
+    rw [show 2 * (k + 1) + 1 = 2 * k + 1 + 2 by omega_using []]; exact js
+  exact ⟨js', jd, fun hh => mul_ne_infinity hO hP hP0 (m := 2 * (k + 1) + 1) (by omega_using []) (by omega_using [hn, hk])
     ((js'.z_zero_iff hC).mp hh)⟩
 
 end

@@ -39,7 +39,7 @@ theorem fetchHead_ok {base : Addr} {s : State} (hs : Scr s base 8192) {d : Nat}
     change base+BitVec.ofNat 64 5280+BitVec.ofNat 64 ((d-1)*192)=
       base+BitVec.ofNat 64 (5280+192*(d-1))
     rw [BitVec.add_assoc,←BitVec.ofNat_add]
-    exact congrArg (base+·) (congrArg (BitVec.ofNat 64) (by omega))
+    exact congrArg (base+·) (congrArg (BitVec.ofNat 64) (by omega_using []))
   · simp only [List.mem_cons,List.not_mem_nil,or_false,not_or] at hr
     simp only [RegUpd.gpr_write,hr.1,hr.2.1,hr.2.2,ite_false]
 
@@ -55,8 +55,8 @@ theorem fetch_ok {base : Addr} {s : State} (hs : Scr s base 8192) {d : Nat}
   have ha : (tablePt d).x+192 ≤ 8192 := by
     have hb := (htab (tablePt d).z (by simp)).2.1
     change _+64 ≤ 8160 at hb
-    dsimp only [tablePt] at hb ⊢; omega
-  have hab : (tablePt d).x ≤ 8192 := by omega
+    dsimp only [tablePt] at hb ⊢; omega_using [hb]
+  have hab : (tablePt d).x ≤ 8192 := by omega_using [ha]
   have hsep : ∀ e ∈ coordinates entry,e+64 ≤ (tablePt d).x := by
     have hh : ∀ e ∈ coordinates entry,e+64 ≤ tableAt := by decide
     intro e he; exact Nat.le_trans (hh e he) (htab _ (by simp)).1
@@ -70,33 +70,33 @@ theorem fetch_ok {base : Addr} {s : State} (hs : Scr s base 8192) {d : Nat}
   have hs₁ := hs.of_keeps k₁ (by decide)
   rw [WP.block_append_iff]
   refine WP.mono (copyFrom_ok 8 hs₁ p₁ (a:=(tablePt d).x) (src:=0) (dst:=entry.x)
-    (by decide) (by omega) (by decide) (by decide) (Or.inl (by simpa using hsep _ (by simp))))
+    (by decide) (by omega_using [ha]) (by decide) (by decide) (Or.inl (by simpa using hsep _ (by simp))))
     fun s₂ ⟨x,k₂,u₂⟩ => ?_
   have hs₂ := hs₁.of_keepRegs k₂ (by decide)
   have p₂ := (k₂.gpr .x16 (by decide)).trans p₁
   rw [WP.block_append_iff]
   refine WP.mono (copyFrom_ok 8 hs₂ p₂ (a:=(tablePt d).x) (src:=64) (dst:=entry.y)
-    (by decide) (by omega) (by decide) (by decide) (Or.inl (by omega)))
+    (by decide) (by omega_using [ha]) (by decide) (by decide) (Or.inl (by omega_using [sepY])))
     fun s₃ ⟨y,k₃,u₃⟩ => ?_
   have hs₃ := hs₂.of_keepRegs k₃ (by decide)
   have p₃ := (k₃.gpr .x16 (by decide)).trans p₂
   refine WP.mono (copyFrom_ok 8 hs₃ p₃ (a:=(tablePt d).x) (src:=128) (dst:=entry.z)
-    (by decide) (by omega) (by decide) (by decide) (Or.inl (by omega)))
+    (by decide) (by omega_using [ha]) (by decide) (by decide) (Or.inl (by omega_using [sepZ])))
     fun t ⟨z,k₄,u₄⟩ => ?_
   have e_x : num base t entry.x = num base s (tablePt d).x := by
     change wordsVal t.mem base entry.x 8 = wordsVal s.mem base (tablePt d).x 8
-    rw [u₄.wordsVal (by decide) (by omega),
-      u₃.wordsVal (by decide) (by omega),x,k₁.mem]
+    rw [u₄.wordsVal (by decide) (by omega_using [ex_bound]),
+      u₃.wordsVal (by decide) (by omega_using [ex_bound]),x,k₁.mem]
     rfl
   have e_y : num base t entry.y = num base s (tablePt d).y := by
     change wordsVal t.mem base entry.y 8 = wordsVal s.mem base (tablePt d).y 8
-    rw [u₄.wordsVal (by decide) (by omega),y]
-    rw [u₂.wordsVal (Or.inr (by omega)) (by omega),k₁.mem]
+    rw [u₄.wordsVal (by decide) (by omega_using [ey_bound]),y]
+    rw [u₂.wordsVal (Or.inr (by omega_using [sepX])) (by omega_using [ha]),k₁.mem]
     rfl
   have e_z : num base t entry.z = num base s (tablePt d).z := by
     change wordsVal t.mem base entry.z 8 = wordsVal s.mem base (tablePt d).z 8
-    rw [z,u₃.wordsVal (Or.inr (by omega)) (by omega),
-      u₂.wordsVal (Or.inr (by omega)) (by omega),k₁.mem]
+    rw [z,u₃.wordsVal (Or.inr (by omega_using [sepY])) (by omega_using [ha]),
+      u₂.wordsVal (Or.inr (by omega_using [sepX])) (by omega_using [ha]),k₁.mem]
     rfl
   have kt : KeepRegs [.x2,.x4,.x16,.x17] s t :=
     ((((Keeps.regs k₁).mono (by decide)).trans (k₂.mono (by decide))).trans

@@ -25,16 +25,16 @@ theorem raw_ok {s : State} {B : Addr} {Z k : Nat} {minv : BitVec 64}
   have hn := hs.nowrap
   have hP : productBase k+8*(16*k+2) ≤ Z := by
     unfold productBase slot Public.aAcc at *
-    omega
+    omega_using [hZ]
   have hA : slot (8*k) a+64*k ≤ Z := by
     have := slot_le (w := 8*k) ha
-    omega
+    omega_using [hZ, this]
   have sep : slot (8*k) a+64*k ≤ productBase k ∨
       productBase k+8*(16*k+2) ≤ slot (8*k) a := by
     have := slot_sep (w := 8*k) ha1
     have := slot_sep (w := 8*k) ha2
     unfold productBase slot Public.aAcc Public.aTmp at *
-    omega
+    omega_arith
   have hp : WP isa (.seq (triangle a) VG.Impl.Bignum.AArch64.WideLoops.diagonal) s (fun t =>
       wv t.mem B (productBase k) (16*k) =
         wv s.mem B (slot (8*k) a) (8*k) * wv s.mem B (slot (8*k) a) (8*k) ∧
@@ -47,8 +47,8 @@ theorem raw_ok {s : State} {B : Addr} {Z k : Nat} {minv : BitVec 64}
             Square.crossValue s.mem B (slot (8*k) a) (8*k) := by
           apply Square.crossValue_congr
           intro j hj
-          exact ho.word (by omega) (by omega)
-        have hread := ho.wv (d := slot (8*k) a) (k := 8*k) (by omega) (by omega)
+          exact ho.word (by omega_using [sep, hj]) (by omega_using [hn, hA, hj])
+        have hread := ho.wv (d := slot (8*k) a) (k := 8*k) (by omega_using [sep]) (by omega_using [hn, hA])
         exact WP.mono (diagonal_finish_ok (hs.congr kv.wr) h8 h9 h12 h7 hk hk' hP hA sep
           (hv.trans hcross.symm)) fun t ⟨ht, hto, kt⟩ =>
             ⟨by simpa only [hread] using ht, ho.trans hto,
@@ -67,11 +67,11 @@ theorem raw_width_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64}
       Outside B (slot w Public.aAcc+16) (8*(2*w+2)) s.mem t.mem ∧
       t.gpr .x8 = off B (slot w Public.aAcc+16) ∧
       t.gpr .x12 = BitVec.ofNat 64 w ∧ t.gpr .x7 = 0 ∧ Keep regs s t := by
-  have he : w = 8*(w/8) := by omega
+  have he : w = 8*(w/8) := by omega_using [hmod]
   have hH' : Hdr s.mem B (8*(w/8)) minv := he ▸ hH
   have hZ' : slot (8*(w/8)) 8 ≤ Z := he ▸ hZ
-  have hlen : 16*(w/8) = 2*w := by omega
-  have hp := raw_ok hs h0 hH' hZ' (by omega) (by omega) ha ha1 ha2
+  have hlen : 16*(w/8) = 2*w := by omega_using [hmod]
+  have hp := raw_ok hs h0 hH' hZ' (by omega_using [hw]) (by omega_using [hw']) ha ha1 ha2
   simpa only [productBase, ← he, hlen] using hp
 
 end VG.Proof.Bignum.AArch64.WindowRaw

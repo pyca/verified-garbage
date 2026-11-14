@@ -61,7 +61,7 @@ theorem scalarRange_ct : RelCT isa (Two ScalarReady) Generate.scalarRange (fun _
        (less_ct (by decide : 1<8) (by decide : 5<8) (by taint_decide))) ?_)
       (two_taint [.x0] ?_ (by taint_decide))
      · rintro q s ⟨bs,h⟩
-       refine WP.mono (less_ok h.initial.good q.p.room (by have :=q.p.positive;omega) q.p.width
+       refine WP.mono (less_ok h.initial.good q.p.room (by have :=q.p.positive;omega_using [this]) q.p.width
         (by decide : 1<8) (by decide : 5<8)) ?_
        rintro t ⟨_,mem,rest⟩
        exact ⟨bs,h.after_mem mem rest ((rest.gpr .x0 (by simp [mmRegs])).trans h.initial.good.x0)⟩

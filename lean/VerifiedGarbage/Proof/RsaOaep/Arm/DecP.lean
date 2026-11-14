@@ -66,11 +66,11 @@ theorem argAtX {P : EP} {σ s : State} (hP : PreP P) (hi : In P σ) (hs : P.lay.
     InRegions (s.rd ++ s.wr) (P.lay.fr (arg j)) 4 ∧
     s.mem.readW (P.lay.fr (arg j)) 32 = P.lay.argv.getD j 0 := by
   have hl : j < P.lay.argv.length := by
-    simp only [EP.argv, hP.xa, List.length_append, List.length_cons, List.length_nil]; omega
+    simp only [EP.argv, hP.xa, List.length_append, List.length_cons, List.length_nil]; omega_using [hj]
   have hA := hi.ok.nargs
   simp only [EP.argv, hP.xa, List.length_append, List.length_cons, List.length_nil] at hA
   exact ⟨hi.ok.addrB (by
-      show arg j < frameBytes + 56 + P.A; unfold arg Impl.RsaPkcs1Sig.Arm.argOff frameBytes; split <;> omega),
+      show arg j < frameBytes + 56 + P.A; unfold arg Impl.RsaPkcs1Sig.Arm.argOff frameBytes; split <;> omega_using [hj, hA]),
     by rw [hs.rd, hs.wr]; exact hi.ok.arg_read hl, hs.arg hl⟩
 
 /-- `pre` and `pre_len` to the call's stack arguments 16 and 17. -/
@@ -114,10 +114,10 @@ theorem pa2_vp (P : EP) (hP : PreP P) :
   have rd0 : ∀ (u : State), u.sp = s.sp → ∀ i, i < 18 → stackArg u i = u.mem.readW (P.lay.fr (4 * i)) 32 := by
     intro u hu i hi'
     simp only [stackArg, stackArgAddr, hu, hc.st.sp]
-    rw [hc.aFr hg (4 * i) (by unfold frameBytes; omega)]
+    rw [hc.aFr hg (4 * i) (by unfold frameBytes; omega_using [hi'])]
   have keep : ∀ i, i < 16 → stackArg t i = stackArg s i := fun i hi' => by
-    rw [rd0 t sp i (by omega), rd0 s rfl i (by omega), m, Lay.readW_fr_other _ _ _ (by omega) (by omega) (by decide),
-      Lay.readW_fr_other _ _ _ (by omega) (by omega) (by decide)]
+    rw [rd0 t sp i (by omega_using [hi']), rd0 s rfl i (by omega_using [hi']), m, Lay.readW_fr_other _ _ _ (by omega_using [hi']) (by omega_using [hi']) (by decide),
+      Lay.readW_fr_other _ _ _ (by omega_using [hi']) (by omega_using [hi']) (by decide)]
   refine ⟨hc.st.write fr (fun r hr => ?_) rd wr sp, hi,
     { pa with
       r0 := t0.trans pa.r0, r1 := t1.trans pa.r1, r2 := t2.trans pa.r2, r3 := t3.trans pa.r3
@@ -140,7 +140,7 @@ theorem leak_st {P : EP} (hP : PreP P) {σ s : State} (hi : In P σ) (hs : P.lay
   have px := hi.pxT
   rw [hP.px] at px
   have le : Spec.Rsa.precomputedWords P.K ≤ P.prl := by
-    rw [hP.prlv, Spec.Rsa.privatePrecomputedWords]; omega
+    rw [hP.prlv, Spec.Rsa.privatePrecomputedWords]; omega_using []
   have rw := hs.ro_words (R := P.PRE) hP.mem (n := P.prl) rfl
   dsimp only at rw
   rw [← px.2]
@@ -171,7 +171,7 @@ theorem call_preP {P : EP} (hP : PreP P) {σ s : State} (hr : R1P P σ s) :
   simp only [EP.argv, hP.xa, List.length_append, List.length_cons, List.length_nil] at hA
   have q0 : State.addr P.B = P.lay.fr 0 := by simp
   have hPm := hP.mem
-  refine priv_preP pa a16 a17 hP.prl32 hs.sp hB (by simp only [frameBytes] at fit; omega) ?_ dIS ?_ ?_ hP.prlv
+  refine priv_preP pa a16 a17 hP.prl32 hs.sp hB (by simp only [frameBytes] at fit; omega_using [fit]) ?_ dIS ?_ ?_ hP.prlv
     (key_st hP hi hs)
   · intro w hw r hr
     simp only [privWr, List.mem_cons, List.not_mem_nil, or_false] at hw
@@ -224,7 +224,7 @@ theorem call_preP {P : EP} (hP : PreP P) {σ s : State} (hr : R1P P σ s) :
     have fs := fun {R : Region} (hR : R ∈ P.lay.ro ++ P.lay.rw) => ok.fits R hR
     have hg := hi.geo
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
-    · dsimp only; rw [Proof.X25519.Arm.addr_toNat, hg.scr_lt (by decide)]; unfold oEm; omega
+    · dsimp only; rw [Proof.X25519.Arm.addr_toNat, hg.scr_lt (by decide)]; unfold oEm; omega_using [hf, hs1, hK]
     · exact fs (by simp)
     · exact fs (by simp)
     · exact fs (by simp)
@@ -233,7 +233,7 @@ theorem call_preP {P : EP} (hP : PreP P) {σ s : State} (hr : R1P P σ s) :
     · exact fs (by simp)
     · exact fs (by simp)
     · exact fs (by simp)
-    · dsimp only; rw [Proof.X25519.Arm.addr_toNat, hg.scr_lt (Nat.le_refl _)]; unfold oRsa; omega
+    · dsimp only; rw [Proof.X25519.Arm.addr_toNat, hg.scr_lt (Nat.le_refl _)]; unfold oRsa; omega_using [hf, hs1]
     · exact fs (List.mem_append_left _ hPm)
 
 /-- After the call of `vg_rsa_private_checked_precomputed`: `R2` but for
@@ -258,10 +258,10 @@ theorem call_vpP (P : EP) (hP : PreP P) (v : Proof.Rsa.Arm.CrtImpl) :
       Covers.left (Covers.of_mem fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr; rw [hs.rd, ok.rd]; exact List.mem_append_left _ hR)
     have inS : ∀ {o n : Nat}, o + n ≤ P.scl * 8 → Covers [⟨State.addr P.scr + BitVec.ofNat 64 o, n⟩] s.wr :=
-      fun hon => Covers.one ⟨P.SCR, by rw [hs.wr, ok.wr]; simp, Offset.contains_base _ hon (by omega)⟩
+      fun hon => Covers.one ⟨P.SCR, by rw [hs.wr, ok.wr]; simp, Offset.contains_base _ hon (by omega_using [hf, hon])⟩
     have wr' : Covers (privWr (P.scr + BitVec.ofNat 32 oEm) (P.scr + BitVec.ofNat 32 oRsa) P.K (P.scl - 1024))
         s.wr := by
-      rw [privWr, e1, e2]; exact (inS (by unfold oEm; omega)).cons (inS (by unfold oRsa; omega))
+      rw [privWr, e1, e2]; exact (inS (by unfold oEm; omega_using [hs1, hK])).cons (inS (by unfold oRsa; omega_using [hs1]))
     refine ⟨Covers.append_left ((hro P.N (by simp)).cons ((hro P.E (by simp)).cons ?_)) wr'.right, wr'⟩
     refine (hro P.CT (by simp)).cons ((hro P.PP (by simp)).cons ((hro P.QQ (by simp)).cons ((hro P.DP (by simp)).cons
       ((hro P.DQ (by simp)).cons ((hro P.QI (by simp)).cons ((hro P.PRE hP.mem).cons (Covers.cons ?_ Covers.nil)))))))
@@ -313,7 +313,7 @@ theorem fix_vp (P : EP) : VP (R2P P) (.block fixScr) (R2 P) := by
     refine (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ _) _ fun r hr => ?_
     simp only [List.mem_singleton] at hr; subst hr
     have hK := hi.k1024
-    exact (hg.slot ok (o := i) (n := 1) (d := sS) (k := 4) (by unfold oRsa; omega)
+    exact (hg.slot ok (o := i) (n := 1) (d := sS) (k := 4) (by unfold oRsa; omega_using [hi', hK])
       (by rw [hg.F]; decide)).symm _ (by simpa [VG.Proof.RsaPss.Arm.sa] using Region.contains_self (VG.Proof.RsaPss.Arm.sa P.scr i) 1)
 
 variable (h : OHash)
@@ -325,7 +325,7 @@ theorem body_vpP (P : EP) (g : OHash) {f : Fns} (hT : ∀ σ, P.T σ → TabFact
     VP (Sy (S P)) (decBodyP f (Proof.Rsa.Arm.privNameP v) (Proof.Rsa.Arm.privCodeP v)) (Sy (Fin h.G g.G P)) := by
   have paP : VP (C0 P) (.block privArgsP) (R1P P) := VP.block_append (pa_vp P) (pa2_vp P hP)
   refine VP.cont5 (VP.syms ((start_vp P).seq (paP.seq ((call_vpP P hP v).seq ((fix_vp P).seq (len_vp h P hTL))))))
-    (byLen_vp (D := h.H.D) (by have := h.D_le; omega) (fun _ _ hs => hs.1.2)
+    (byLen_vp (D := h.H.D) (by have := h.D_le; omega_using [this]) (fun _ _ hs => hs.1.2)
       (fun σ s v ⟨⟨⟨hc, hi, he, r0, hk⟩, r1⟩, sy⟩ => ⟨⟨⟨hc.regs rfl rfl rfl rfl, hi, he, r0, hk⟩, r1⟩, sy⟩) ?_
       h.lens lens_certs)
   show VP _ (decTail (ofLen h.H.D) f) _
@@ -434,10 +434,10 @@ theorem in_of_preP {ts : List FnTable} {s : State} (h : (specP ts).pre s)
         Spec.Rsa.wordsAt s.mem (State.addr (stackArg s 21)) n := fun n hn =>
     wordsAt_frame hpush (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
-      exact (kPr.sub_left below).symm.sub_left (Region.sub_prefix (len' := (stackArg s 22).toNat * 8) (by omega)))
-      (by have := (stackArg s 22).isLt; omega)
+      exact (kPr.sub_left below).symm.sub_left (Region.sub_prefix (len' := (stackArg s 22).toNat * 8) (by omega_using [hn])))
+      (by have := (stackArg s 22).isLt; omega_using [hn])
   have le : Spec.Rsa.precomputedWords (stackArg s 0).toNat ≤ (stackArg s 22).toNat := by
-    rw [prl, Spec.Rsa.privatePrecomputedWords]; omega
+    rw [prl, Spec.Rsa.privatePrecomputedWords]; omega_using []
   refine ⟨
     { ok := ?_
       kv := kv, el1 := el1, elK := elK, pl1 := pl1, plK := plK, ql1 := ql1, qlK := qlK, slK := slK

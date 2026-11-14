@@ -32,13 +32,13 @@ def blockContract (d : Direction) : Contract isa where
 def selectedRound (d : Direction) (j : Nat) : Nat := if d = .encrypt then j else 15 - j
 
 theorem selectedRound_bound (d : Direction) (j : Nat) (hj : j < 16) : selectedRound d j < 16 := by
-  cases d <;> simp only [selectedRound, reduceCtorEq, ite_true, ite_false] <;> omega
+  cases d <;> simp only [selectedRound, reduceCtorEq, ite_true, ite_false] <;> omega_arith
 
 theorem keyAddr_component (base : BitVec 32) (c : Nat) (d : Direction) (j : Nat) :
     keyAddr (componentBase base c) d j = base + BitVec.ofNat 32 (8 * (16 * c + selectedRound d j)) := by
   unfold keyAddr componentBase selectedRound
   rw [Offset.add_ofNat_add_ofNat]
-  exact congrArg (fun n => base + BitVec.ofNat 32 n) (by omega)
+  exact congrArg (fun n => base + BitVec.ofNat 32 n) (by omega_using [])
 
 theorem keyWordAddress (base : BitVec 32) (fit : base.toNat + 384 ≤ 2 ^ 32)
     (c j t : Nat) (hc : c < 3) (hj : j < 16) (ht : t < 2) (d : Direction) :

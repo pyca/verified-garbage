@@ -44,11 +44,11 @@ theorem K2.keep {P : EP} {τ : State} {m m' : Mem} {rs : List Region} (hk : K2 h
     slot_keep hf (fun r hr => (ha r hr).2.2.1) b3, slot_keep hf (fun r hr => (ha r hr).2.2.2.1) b4⟩,
     fun i hi' => ?_, fun i hi' => ?_, slot_keep hf (fun r hr => (ha r hr).2.2.2.2.1) hp,
     slot_keep hf (fun r hr => (ha r hr).2.2.2.2.2.1) hac⟩
-  · have e := kb (lo P + i) (by omega)
+  · have e := kb (lo P + i) (by omega_using [hsum, hK, hi'])
     rw [← Nat.add_assoc] at e
     rw [e]; exact hd i hi'
-  · have e := kb (lo P + dbN h P + i) (by omega)
-    rw [show oEm + (lo P + dbN h P + i) = oEm + lo P + dbN h P + i by omega] at e
+  · have e := kb (lo P + dbN h P + i) (by omega_using [hsum, hK, hi'])
+    rw [show oEm + (lo P + dbN h P + i) = oEm + lo P + dbN h P + i by omega_using []] at e
     rw [e]; exact hh i hi'
 
 theorem away2_ctW {L : Lay} {scr : BitVec 32} (hg : Geo L scr) {T : Nat} (hT : T ≤ 2048) :
@@ -64,16 +64,16 @@ theorem away2_scr {L : Lay} {scr : BitVec 32} (hg : Geo L scr) {o n : Nat} (ho :
   exact ⟨hg.slot ok ho (by rw [hg.F]; decide), hg.slot ok ho (by rw [hg.F]; decide),
     hg.slot ok ho (by rw [hg.F]; decide), hg.slot ok ho (by rw [hg.F]; decide),
     hg.slot ok ho (by rw [hg.F]; decide), hg.slot ok ho (by rw [hg.F]; decide),
-    Geo.sep (by omega) (by decide) ho⟩
+    Geo.sep (by omega_using [he]) (by decide) ho⟩
 
 theorem away2_slot {L : Lay} {scr : BitVec 32} (hg : Geo L scr) {d : Nat} (hd : d + 4 ≤ frameBytes)
     (h₁ : d + 4 ≤ sC ∨ sC + 4 ≤ d) (h₂ : d + 4 ≤ sLo ∨ sLo + 4 ≤ d) (h₃ : d + 4 ≤ sDb ∨ sDb + 4 ≤ d)
     (h₄ : d + 4 ≤ sAny ∨ sAny + 4 ≤ d) (h₅ : d + 4 ≤ sPos ∨ sPos + 4 ≤ d) (h₆ : d + 4 ≤ sAcc ∨ sAcc + 4 ≤ d) :
     Away2 L scr (slotR L d) := by
   obtain ⟨σ', ok⟩ := hg.ok
-  exact ⟨slotSep (by decide) hd (by omega), slotSep (by decide) hd (by omega), slotSep (by decide) hd (by omega),
-    slotSep (by decide) hd (by omega), slotSep (by decide) hd (by omega), slotSep (by decide) hd (by omega),
-    (hg.slot ok (o := oEm) (n := 1024) (by decide) (by rw [hg.F]; omega)).symm⟩
+  exact ⟨slotSep (by decide) hd (by omega_using [h₁]), slotSep (by decide) hd (by omega_using [h₂]), slotSep (by decide) hd (by omega_using [h₃]),
+    slotSep (by decide) hd (by omega_using [h₄]), slotSep (by decide) hd (by omega_using [h₅]), slotSep (by decide) hd (by omega_using [h₆]),
+    (hg.slot ok (o := oEm) (n := 1024) (by decide) (by rw [hg.F]; omega_using [hd])).symm⟩
 
 theorem away2_ctWT {L : Lay} {scr : BitVec 32} (hg : Geo L scr) {T : Nat} (hT : T ≤ 2048) :
     ∀ r ∈ ctWT h L scr T, Away2 L scr r := fun r hr => by
@@ -98,7 +98,7 @@ theorem res_eq (x : BitVec 32) :
   by_cases e : x = 0
   · subst e; rfl
   · have : x.toNat ≠ 0 := fun h' => e (BitVec.eq_of_toNat_eq h')
-    rw [ite_eq_right e, ite_eq_right (by simp only [decide_eq_true_eq]; show ¬ x.toNat < 1; omega)]
+    rw [ite_eq_right e, ite_eq_right (by simp only [decide_eq_true_eq]; show ¬ x.toNat < 1; omega_using [this])]
     rfl
 
 /-- The hash of `M'`, with the hash function of the table at the argument
@@ -141,7 +141,7 @@ theorem tail_vp (P : EP) (hP : ∃ σ, In h.D P σ) {dn : String} {f : MdFns}
     (VP.taint [.esp, .ebp] h.certs.cmpArgs (sp_bp fun _ _ h => h.1) fun τ s ⟨hc, hk, hd⟩ => ?_)
     (VP.seq (G := fun τ s => Ctx (P.lay h.D) P.scr τ s ∧ X τ s.mem ∧
         (s.gpr .edx = 0 ↔ HOk h P τ (msg τ)))
-      ((cmpLoop_vp hg (oa := oDig) (ob := oEm + lo P + dbN h P) (n := h.D) hD0 (by omega) (by omega) (X := X)
+      ((cmpLoop_vp hg (oa := oDig) (ob := oEm + lo P + dbN h P) (n := h.D) hD0 (by omega_using [hD, e2, e3]) (by omega_using [hsum, hK, e1, e2]) (X := X)
         (f := fun τ i => (h.ok.hH.SH.H.hash (msg τ)).getD i 0) (g := fun τ i => (seedV h P τ).getD i 0)
         (fun τ m hx i hi => hx.2 i hi) (fun τ m hx i hi => hx.1.1.2.2.2.2.1 i hi)).mono
         (fun τ s ⟨⟨hc, hx⟩, si, di, cx, dx⟩ => ⟨hc, hx, si, di, cx, dx⟩)

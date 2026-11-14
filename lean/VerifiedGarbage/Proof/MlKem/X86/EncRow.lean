@@ -90,7 +90,7 @@ theorem B.keep {I : Inp} {k e : Nat} {s₀ s s' : State} (hp : TPre Y s₀) {bs 
   have ea : accE L Y s₀ s' = accE L Y s₀ s := keepW hp hM h₁ fr
   obtain ⟨k₁, k₂⟩ := keepS hp hM h₂ fr c h.toBase h.y
   refine ⟨k₁, k₂, ea ▸ h.acc, fun e₁ => h.ok (ea ▸ e₁), fun e₁ => h.fail (ea ▸ e₁), fun e₁ i hi => ?_⟩
-  rw [keepBytes hp hM (h₃ i (by omega)) fr]
+  rw [keepBytes hp hM (h₃ i (by omega_using [he, hi])) fr]
   exact h.c (ea ▸ e₁) i hi
 
 /-- Before entry `(i, j)`: and `u[i]` so far, if `0 < j`. -/
@@ -102,7 +102,7 @@ structure R (L : KemLay) (Y : Lay) (I : Inp) (i j : Nat) (s₀ s : State) : Prop
 theorem R.keep {I : Inp} {i j : Nat} (hi : i < L.p.k) {s₀ s s' : State} (hp : TPre Y s₀) {bs : List Buf}
     {M : Nat} (hM : M + 16 ≤ Y.stk) (hs : safe L Y bs = true) (hU : Y.apart (bU L Y.sc) bs = true)
     (fr : Frame (FR s₀ bs M) s.mem s'.mem) (h : R L Y I i j s₀ s) (c : Ctx Y s₀ s') : R L Y I i j s₀ s' := by
-  have k := h.toB.keep hp hM hs (by omega) fr c
+  have k := h.toB.keep hp hM hs (by omega_using [hi]) fr c
   have ea : accE L Y s₀ s' = accE L Y s₀ s :=
     keepW hp hM (by simp only [safe, Bool.and_eq_true] at hs; exact hs.1.1) fr
   refine ⟨k, fun hj => ⟨keepRed hp hM hU fr (h.u hj).1, fun e₁ => ?_⟩⟩
@@ -239,7 +239,7 @@ theorem sample_piece (hS : SOK L Y) {I : Inp} (hρ : RhoPub L Y lk I) (i j : Nat
       rcases h.out with ⟨e, _⟩ | ⟨_, e⟩
       · exact absurd e (by rw [e₂]; decide)
       · exact e
-  · rw [keepBytes hp k88 (q₂ i' (by omega)) fr']
+  · rw [keepBytes hp k88 (q₂ i' (by omega_using [hi, hi'])) fr']
     exact h.c (s₂ e₁).1 i' hi'
   · rw [polyAt_congr (Top.keep hp k88 q₃ fr')]
     exact (h.u hj).2 (s₂ e₁).1
@@ -257,11 +257,11 @@ structure S5 (L : KemLay) (Y : Lay) (I : Inp) (i j : Nat) (s₀ s : State) : Pro
 theorem entry0_piece (hS : SOK L Y) {I : Inp} (hρ : RhoPub L Y lk I) (i : Nat) (hi : i < L.p.k) :
     Piece (TPre Y) (TPub Y lk) (R L Y I i 0) (R L Y I i 1) (encEntry L Y.sc i 0) := by
   obtain ⟨m₁, -, -, -, -, a₁, -, -, o₁, -, -⟩ := EntOK.mul hS
-  have hk : 0 < L.p.k := by omega
+  have hk : 0 < L.p.k := by omega_using [hi]
   refine sample_piece hS hρ i 0 hi hk (mulC_piece (Y := Y) Y.sc L.eU Y.sc L.eA Y.sc 0 Y.sc L.eNS
     o₁ hS.le (by sc_taint) (fun _ _ _ h => ⟨h.ctx, h.red, (h.y 0 hk).1⟩)
     fun s₀ s s' hp h h' fr post => ?_)
-  have k := h.toB.keep hp hS.le m₁ (by omega) fr h'
+  have k := h.toB.keep hp hS.le m₁ (by omega_using [hi]) fr h'
   have ea : accE L Y s₀ s' = accE L Y s₀ s := keepW hp hS.le a₁ fr
   refine ⟨k, fun _ => ⟨post.1, fun e₁ => ?_⟩⟩
   rw [post.2, h.a (ea ▸ e₁), (h.y 0 hk).2]
@@ -274,18 +274,18 @@ theorem entry_piece (hS : SOK L Y) {I : Inp} (hρ : RhoPub L Y lk I) (i j : Nat)
   obtain ⟨-, m₂, m₃, m₄, m₅, -, a₂, a₃, -, o₂, o₃⟩ := EntOK.mul hS
   refine sample_piece hS hρ i (j + 1) hi hj (.seq (B := S5 L Y I i (j + 1))
     (mulC_piece (Y := Y) Y.sc L.eP Y.sc L.eA Y.sc (1024 * (j + 1)) Y.sc L.eNS (o₂ (j + 1) hj) hS.le
-      (by sc_taint) (fun _ _ _ h => ⟨h.ctx, h.red, (h.y (j + 1) (by omega)).1⟩)
+      (by sc_taint) (fun _ _ _ h => ⟨h.ctx, h.red, (h.y (j + 1) (by omega_using [hj])).1⟩)
       fun s₀ s s' hp h h' fr post => ?_) ?_)
-  · have k := h.toB.keep hp hS.le m₂ (by omega) fr h'
+  · have k := h.toB.keep hp hS.le m₂ (by omega_using [hi]) fr h'
     have ea : accE L Y s₀ s' = accE L Y s₀ s := keepW hp hS.le a₂ fr
     refine ⟨⟨k, fun hj' => ⟨keepRed hp hS.le m₄ fr (h.u hj').1, fun e₁ => ?_⟩,
       keepRed hp hS.le m₅ fr h.red, fun e₁ => ?_⟩, post.1, fun e₁ => ?_⟩
     · rw [polyAt_congr (Top.keep hp hS.le m₄ fr)]; exact (h.u hj').2 (ea ▸ e₁)
     · rw [polyAt_congr (Top.keep hp hS.le m₅ fr)]; exact h.a (ea ▸ e₁)
-    · rw [post.2, h.a (ea ▸ e₁), (h.y (j + 1) (by omega)).2]
+    · rw [post.2, h.a (ea ▸ e₁), (h.y (j + 1) (by omega_using [hj])).2]
   refine accC_piece add_verified add_nosp add_stack Y.sc L.eU Y.sc L.eP o₃ hS.le (by sc_taint)
     (fun _ _ _ h => ⟨h.ctx, (h.u (Nat.succ_pos _)).1, h.p.1⟩) fun s₀ s s' hp h h' fr post => ?_
-  have k := h.toB.keep hp hS.le m₃ (by omega) fr h'
+  have k := h.toB.keep hp hS.le m₃ (by omega_using [hi]) fr h'
   have ea : accE L Y s₀ s' = accE L Y s₀ s := keepW hp hS.le a₃ fr
   refine ⟨k, fun _ => ⟨post.1, fun e₁ => ?_⟩⟩
   rw [post.2, (h.u (Nat.succ_pos _)).2 (ea ▸ e₁), h.p.2 (ea ▸ e₁)]

@@ -142,7 +142,7 @@ theorem one_ne_zero32 : (1 : BitVec 32) ≠ 0 := by decide
 
 /-- A function of the polynomial arithmetic satisfies what the proofs of signing need of it. -/
 def calleeOf {k : Nat → Contract isa} {c : Prog isa} (h : FnOk k c) : Callee k signStack c :=
-  ⟨0, by decide, h.ver, h.nosp, by have := h.depth; unfold signStack; omega⟩
+  ⟨0, by decide, h.ver, h.nosp, by have := h.depth; unfold signStack; omega_using [this]⟩
 
 /-- The primitives, with the polynomial arithmetic of `v`, satisfy what the
 proofs of signing need of them. -/
@@ -187,11 +187,11 @@ def prims_okWith (v : ArithImpl) : PrimsOk (primsWith v.code) signStack where
   rej4 := ⟨24, by decide, v.ok.rej4.ver, v.ok.rej4.nosp, by
     have := v.ok.rej4.depth
     show 8 * (v.code.rej4.depth + 1) ≤ signStack
-    unfold signStack; omega⟩
+    unfold signStack; omega_using [this]⟩
   expandMask4 := ⟨24, by decide, v.ok.expandMask4.ver, v.ok.expandMask4.nosp, by
     have := v.ok.expandMask4.depth
     show 8 * (v.code.expandMask4.depth + 1) ≤ signStack
-    unfold signStack; omega⟩
+    unfold signStack; omega_using [this]⟩
   dotInv := fun c hc => calleeOf (v.ok.dotInv c hc)
   rej4Ret := by exact (fun s₁ s₂ t₁ t₂ s₁' s₂' ⟨h₁, h₂, hp⟩ e₁ e₂ =>
     ⟨v.ok.rej4.ver.2.1 s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hp e₁ e₂,

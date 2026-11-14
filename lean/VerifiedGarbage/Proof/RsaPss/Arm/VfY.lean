@@ -26,22 +26,22 @@ theorem away2_scr {L : Lay} {scr : BitVec 32} (hg : Geo L scr) {o n : Nat} (ho :
   obtain ⟨σ', ok⟩ := hg.ok
   exact ⟨hg.slot ok ho (by rw [hg.F]; decide), hg.slot ok ho (by rw [hg.F]; decide),
     hg.slot ok ho (by rw [hg.F]; decide), hg.slot ok ho (by rw [hg.F]; decide),
-    Geo.sep (by omega) (by decide) ho⟩
+    Geo.sep (by omega_using [he]) (by decide) ho⟩
 
 theorem away2_slot {L : Lay} {scr : BitVec 32} (hg : Geo L scr) {d : Nat} (hd : d + 4 ≤ frameBytes)
     (h₂ : d + 4 ≤ sLo ∨ sLo + 4 ≤ d) (h₃ : d + 4 ≤ sDb ∨ sDb + 4 ≤ d) (h₅ : d + 4 ≤ sPos ∨ sPos + 4 ≤ d) (h₆ : d + 4 ≤ sAcc ∨ sAcc + 4 ≤ d) :
     Away2 L scr (slotR L d) := by
   obtain ⟨σ', ok⟩ := hg.ok
-  exact ⟨slotSep (by decide) hd (by omega), slotSep (by decide) hd (by omega), slotSep (by decide) hd (by omega),
-    slotSep (by decide) hd (by omega),
-    (hg.slot ok (o := oEm) (n := 1024) (by decide) (by rw [hg.F]; omega)).symm⟩
+  exact ⟨slotSep (by decide) hd (by omega_using [h₂]), slotSep (by decide) hd (by omega_using [h₃]), slotSep (by decide) hd (by omega_using [h₅]),
+    slotSep (by decide) hd (by omega_using [h₆]),
+    (hg.slot ok (o := oEm) (n := 1024) (by decide) (by rw [hg.F]; omega_using [hd])).symm⟩
 
 theorem dig_buf {P : EP} (hP : ∃ σ, In h.D P σ) : RBuf (P.lay h.D) P.dig h.D := by
   obtain ⟨σ, hi⟩ := hP
   have hf := hi.ok.fits (P.DIG h.D) (by simp)
   simp only [Proof.X25519.Arm.addr_toNat] at hf
-  have hD : h.D ≤ 64 := by have := h.D_le; have := h.N_le; omega
-  exact ⟨hf, by omega, ⟨P.DIG h.D, by simp, Region.contains_self _ _⟩⟩
+  have hD : h.D ≤ 64 := by have := h.D_le; have := h.N_le; omega_arith
+  exact ⟨hf, by omega_using [hD], ⟨P.DIG h.D, by simp, Region.contains_self _ _⟩⟩
 
 /-- `Y`: 8 zero bytes and `mHash`. -/
 abbrev Y1 (P : EP) (τ : State) (m : Mem) : Prop :=

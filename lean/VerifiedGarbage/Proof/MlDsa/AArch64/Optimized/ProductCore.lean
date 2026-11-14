@@ -73,10 +73,10 @@ theorem productCore_ok (raw : Bool) {s : State}
   · simpa only [hka.rd,hka.wr,ha1] using hrt
   · intro u hu i
     simp only [hka.rd,hka.wr,ha13,ha14,BitVec.add_assoc,← BitVec.ofNat_add]
-    exact ⟨hra _ (by omega),hrb _ (by omega)⟩
+    exact ⟨hra _ (by omega_using [hu]),hrb _ (by omega_using [hu])⟩
   · intro u hu i
     simp only [hka.wr,ha0,BitVec.add_assoc,← BitVec.ofNat_add]
-    exact hw _ (by omega)
+    exact hw _ (by omega_using [hu])
   · have hb0' : b.gpr .x0=s.gpr .x0+1024 := by simpa only [ha0] using hb0
     have hb1' : b.gpr .x1=s.gpr .x1+3840 := by simpa only [ha1] using hb1
     have hmb' : b.mem=productPassMem s.mem (s.gpr .x0) (s.gpr .x13) (s.gpr .x14) 8 := by
@@ -97,16 +97,16 @@ theorem productCore_ok (raw : Bool) {s : State}
       rw [BitVec.add_assoc,← BitVec.ofNat_add]
       apply hrt
       simp only [List.mem_cons,List.not_mem_nil,or_false] at hoff
-      omega
+      omega_using [hoff]
     · have hc0' : c.gpr .x0=s.gpr .x0 := by rw [hc0,hb0']; bv_omega_arith
       have hc2' : c.gpr .x2=s.gpr .x0 := by rw [hc2,hb0']; bv_omega_arith
       refine WP.mono (productFinal_ok raw hfc hsc hc12 ?_ ?_) fun t ⟨hkt,hmt⟩ => ?_
       · intro u hu i
         simp only [hkc.rd,hkc.wr,hkb.rd,hkb.wr,hka.rd,hka.wr,hc2',BitVec.add_assoc,← BitVec.ofNat_add]
-        exact hr _ (by omega)
+        exact hr _ (by omega_using [hu])
       · intro u hu i
         simp only [hkc.wr,hkb.wr,hka.wr,hc2',BitVec.add_assoc,← BitVec.ofNat_add]
-        exact hw _ (by omega)
+        exact hw _ (by omega_using [hu])
       · refine ⟨(((hka.trans hkb).trans hkc).trans hkt).mono,?_,?_⟩
         · rw [hkt.get .x0 (by decide),hc0']
         · simpa only [multiplyInverseMem,hmc,hmb',hc2'] using hmt

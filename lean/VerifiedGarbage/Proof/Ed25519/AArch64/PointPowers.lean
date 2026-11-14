@@ -26,7 +26,7 @@ theorem TableFrame.trans {base : Addr} {o n : Nat} {m m' m'' : Mem}
 
 theorem TableFrame.mono {base : Addr} {o n o' n' : Nat} {m m' : Mem}
     (h : TableFrame base o n m m') (ho : o' ≤ o) (hn : o + n ≤ o' + n') :
-    TableFrame base o' n' m m' := fun p hp hq => h p hp (by omega)
+    TableFrame base o' n' m m' := fun p hp hq => h p hp (by omega_using [ho, hn, hq])
 
 theorem TableFrame.workspace {base : Addr} {o n : Nat} {m m' : Mem}
     (h : Outside base 64 704 m m') : TableFrame base o n m m' := fun p hp _ => h p hp
@@ -38,31 +38,31 @@ theorem TableFrame.word {base : Addr} {o n : Nat} {m m' : Mem}
     (h : TableFrame base o n m m') {d : Nat} (hd : 768 ≤ d)
     (hsep : d + 8 ≤ o ∨ o + n ≤ d) (hb : d + 8 < 2 ^ 64) :
     word m' base d = word m base d :=
-  (Mem.readW_congr fun i hi => (h _ (by rw [ofs_off base (by omega)]; omega)
-    (by rw [ofs_off base (by omega)]; omega)).symm).symm
+  (Mem.readW_congr fun i hi => (h _ (by rw [ofs_off base (by omega_using [hb, hi])]; omega_using [hd])
+    (by rw [ofs_off base (by omega_using [hb, hi])]; omega_using [hsep, hi])).symm).symm
 
 theorem TableFrame.field {base : Addr} {o n : Nat} {m m' : Mem}
     (h : TableFrame base o n m m') {d : Nat} (hd : 768 ≤ d)
     (hsep : d + 32 ≤ o ∨ o + n ≤ d) (hb : d + 32 < 2 ^ 64) :
     F m' base d = F m base d := by
   simp only [F, fe]
-  rw [h.word (by omega) (by omega) (by omega), h.word (by omega) (by omega) (by omega),
-    h.word (by omega) (by omega) (by omega), h.word (by omega) (by omega) (by omega)]
+  rw [h.word (by omega_using [hd]) (by omega_using [hsep]) (by omega_using [hb]), h.word (by omega_using [hd]) (by omega_using [hsep]) (by omega_using [hb]),
+    h.word (by omega_using [hd]) (by omega_using [hsep]) (by omega_using [hb]), h.word (by omega_using [hd]) (by omega_using [hsep]) (by omega_using [hb])]
 
 theorem TableFrame.point {base : Addr} {o n : Nat} {m m' : Mem}
     (h : TableFrame base o n m m') {d : Nat} (hd : 768 ≤ d)
     (hsep : d + 128 ≤ o ∨ o + n ≤ d) (hb : d + 128 < 2 ^ 64) :
     tablePoint m' base d = tablePoint m base d := by
   simp only [tablePoint]
-  rw [h.field (by omega) (by omega) (by omega), h.field (by omega) (by omega) (by omega),
-    h.field (by omega) (by omega) (by omega), h.field (by omega) (by omega) (by omega)]
+  rw [h.field (by omega_using [hd]) (by omega_using [hsep]) (by omega_using [hb]), h.field (by omega_using [hd]) (by omega_using [hsep]) (by omega_using [hb]),
+    h.field (by omega_using [hd]) (by omega_using [hsep]) (by omega_using [hb]), h.field (by omega_using [hd]) (by omega_using [hsep]) (by omega_using [hb])]
 
 theorem workspace_tablePoint {base : Addr} {m m' : Mem}
     (h : Outside base 64 704 m m') {d : Nat} (hd : 768 ≤ d) (hb : d + 128 < 2 ^ 64) :
     tablePoint m' base d = tablePoint m base d := by
   simp only [tablePoint]
-  rw [Outside_F h (by omega) (Or.inr (by omega)), Outside_F h (by omega) (Or.inr (by omega)),
-    Outside_F h (by omega) (Or.inr (by omega)), Outside_F h (by omega) (Or.inr (by omega))]
+  rw [Outside_F h (by omega_using [hb]) (Or.inr (by omega_using [hd])), Outside_F h (by omega_using [hb]) (Or.inr (by omega_using [hd])),
+    Outside_F h (by omega_using [hb]) (Or.inr (by omega_using [hd])), Outside_F h (by omega_using [hb]) (Or.inr (by omega_using [hd]))]
 
 structure PowersKeep (base : Addr) (o n : Nat) (s t : State) : Prop where
   gpr : ∀ r, r ≠ .x19 → r ≠ .x1 → r ∉ clob → t.gpr r = s.gpr r

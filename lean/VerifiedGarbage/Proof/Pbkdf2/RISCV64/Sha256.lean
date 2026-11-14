@@ -55,13 +55,13 @@ theorem callee : CalleeOk Proof.Sha256.md 80 Impl.Sha256.RISCV64.compress :=
 theorem hashOkW (Wi : Nat) (h₁ : 239 ≤ Wi) (h₂ : Wi ≤ 8192) :
     HashOk it Wi Spec.Hmac.sha256S Proof.Sha256.md Spec.Sha256.H0 where
   sizes := ⟨by decide, by decide, by decide, by decide, by decide, by decide, by decide, by decide, by decide,
-    by decide, by simp only [it]; omega, h₂⟩
+    by decide, by simp only [it]; omega_using [h₁], h₂⟩
   pad := by decide
   reloc m m' p q h := by
     apply Vector.ext
     intro j hj
     simp only [Proof.Sha256.md, Spec.Sha256.stateAt, Vector.getElem_ofFn]
-    exact Hmac.Generic.Common.readW_reloc (n := 32) h (by omega)
+    exact Hmac.Generic.Common.readW_reloc (n := 32) h (by omega_using [hj])
   out := Sha256Out.out_ok 8 (by decide)
   link := ⟨rfl, rfl, rfl, fun _ _ _ h => h, fun m => by
     show Spec.Sha256.hash m = _

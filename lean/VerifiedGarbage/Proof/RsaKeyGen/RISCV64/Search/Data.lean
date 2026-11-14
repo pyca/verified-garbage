@@ -105,7 +105,7 @@ theorem tab_fit (h : SearchInput p s) : (tabR s).base.toNat + (tabR s).len ≤ 2
 theorem tab_al (h : SearchInput p s) : (tabR s).base.toNat % 8 = 0 := by
   have := h.consts.aligned tab_mem
   show (s.syms _).toNat % 8 = 0
-  omega
+  omega_using [this]
 
 theorem tab_wr (h : SearchInput p s) {r : Region} (hr : r ∈ s.wr) : (tabR s).Disjoint r :=
   (h.consts.2.2.1 _ (tab_reg s)).2.1 r hr
@@ -137,7 +137,7 @@ theorem top (h : SearchInput p s) : p.sp.toNat + 32 ≤ 2 ^ 64 := by rw [h.sp_eq
 theorem F_toNat (h : SearchInput p s) : p.F.toNat = p.sp.toNat - 160 := by
   have : 496 ≤ p.sp.toNat := h.room
   have h160 : (BitVec.ofNat 64 160).toNat = 160 := rfl
-  rw [SearchPublic.F, BitVec.toNat_sub_of_le (by rw [BitVec.le_def, h160]; omega), h160]
+  rw [SearchPublic.F, BitVec.toNat_sub_of_le (by rw [BitVec.le_def, h160]; omega_using [this]), h160]
 
 /-- The frame is working space once allocated. -/
 theorem frame_scr (h : SearchInput p s) {t : State} (hw : t.wr = p.frame :: s.wr) : Scr t p.F 160 := by
@@ -145,7 +145,7 @@ theorem frame_scr (h : SearchInput p s) {t : State} (hw : t.wr = p.frame :: s.wr
   have : 496 ≤ p.sp.toNat := h.room
   have := h.top
   have := h.sp16
-  exact Scr.of_mem (by rw [hw]; exact List.mem_cons_self ..) (by omega) (by omega)
+  exact Scr.of_mem (by rw [hw]; exact List.mem_cons_self ..) (by omega_arith) (by omega_arith)
 
 /-- The regions the search (and its callee) may write, and its stack. -/
 def changes (s : State) : List Region := inWrites s ++ [below s.sp stackUse]
@@ -163,7 +163,7 @@ theorem bytes_frame (h : SearchInput p s) {r : Region} (hr : r ∈ inReads s) {m
   simp only [Spec.Rsa.bytesAt]
   refine List.map_congr_left fun i hi => ?_
   have hn := h.nowrap (List.mem_append_right _ hr)
-  exact hf.bytes (h.read_disjoint hr) (by omega) (List.mem_range.mp hi)
+  exact hf.bytes (h.read_disjoint hr) (by omega_using [hn]) (List.mem_range.mp hi)
 
 theorem random_frame (h : SearchInput p s) {m m' : Mem} (hf : Frame (changes s) m m') :
     Spec.Rsa.bytesAt m' p.rp p.randLen = Spec.Rsa.bytesAt m p.rp p.randLen := by
@@ -185,7 +185,7 @@ theorem tab_frame (h : SearchInput p s) {m' : Mem} (hf : Frame (changes s) s.mem
     m'.readW (s.syms Impl.RsaKeyGen.TrialTable32.symbol + BitVec.ofNat 64 (8 * i)) 64 =
       Impl.RsaKeyGen.TrialTable32.packed.getD i 0 := by
   rw [← h.tab_held i hi]
-  refine hf.readW (r := tabR s) (Offset.contains_base _ (by omega) (by have := h.tab_fit; omega))
+  refine hf.readW (r := tabR s) (Offset.contains_base _ (by omega_using [hi]) (by have := h.tab_fit; omega_using [hi]))
     (fun w hw => ?_) (by decide)
   rcases List.mem_append.mp hw with hw | hw
   · exact h.tab_wr (by rw [h.wr_eq]; exact hw)
@@ -223,12 +223,12 @@ theorem frame_disjoint (h : SearchInput p s) : ∀ r ∈ callChanges s, p.frame.
   · rw [← h.sp_eq]
     have hs := Offset.sep_below p.sp 496 (a := 160) (n := 160) (b := 496) (k := 336) (by decide) (by decide)
       (Or.inr (by decide)) (by decide) (by decide)
-    exact fun x hx hy => hs x (by simp only [Region.Contains, SearchPublic.F] at hx; omega)
+    exact fun x hx hy => hs x (by simp only [Region.Contains, SearchPublic.F] at hx; omega_using [hx])
       (by simp only [Region.Contains] at hy; exact hy)
 
 theorem frame_words (h : SearchInput p s) {m m' : Mem} (hf : Frame (callChanges s) m m')
     (j : Nat) (hj : j < 20) : word m' p.F (8 * j) = word m p.F (8 * j) :=
-  hf.readW (r := p.frame) (Offset.contains_base _ (by omega) (by omega))
+  hf.readW (r := p.frame) (Offset.contains_base _ (by omega_using [hj]) (by omega_using [hj]))
     (h.frame_disjoint) (by decide)
 
 end SearchInput

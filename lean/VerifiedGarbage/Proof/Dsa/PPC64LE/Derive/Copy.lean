@@ -50,7 +50,7 @@ theorem maskCopy_ok {s : State} {src dst : Addr} {N : Nat} {c : Bool} (hN : 0 < 
       .addi .r14 .r14 1, .addi .r16 .r16 1] ++ ([.subi .r17 .r17 1] : List Instr)))
     (cnt := .r17) (N := N) hN' hN Inv (fun i hi t ⟨t14, t16, tout, tb, tk⟩ hc => ?_)
     ⟨by rw [h14, off, BitVec.add_zero], by rw [h16, off, BitVec.add_zero], Outside.refl _ _ _ _,
-      fun _ h => absurd h (by omega), Keep.refl _ _⟩ h17)
+      fun _ h => absurd h (by omega_using []), Keep.refl _ _⟩ h17)
     fun t ⟨t14, t16, tout, tb, tk⟩ => ⟨⟨?_, tout, t14, t16⟩, tk⟩
   · have t20 : t.gpr .r20 = mask c := (tk.gpr .r20 (by decide)).trans h20
     have hst : WP isa (.block [.lbz .r0 .r14 0, .logic .and .r0 .r0 .r20, .stb .r0 .r16 0, .addi .r14 .r14 1,
@@ -63,21 +63,21 @@ theorem maskCopy_ok {s : State} {src dst : Addr} {N : Nat} {c : Bool} (hN : 0 < 
       prun [t14, t16, t20, exec_lbz' (show Reg.r14 ≠ .r0 by decide) (show 0 < 2 ^ 15 by decide),
         exec_stb (show Reg.r16 ≠ .r0 by decide) (show 0 < 2 ^ 15 by decide),
         (by rw [tk.rd, tk.wr]; exact hrd i hi : InRegions (t.rd ++ t.wr) (off src i) 1),
-        (ho.congr tk.wr).st (d := i) (n := 1) (by omega)]
+        (ho.congr tk.wr).st (d := i) (n := 1) (by omega_using [hi])]
     refine WP.mono hst fun t' ⟨⟨a14, a16, a17, am⟩, ka⟩ => ⟨⟨a14, a16, ?_, ?_, tk.trans' ka⟩, a17⟩
     · have hw1 := write1_outside t.mem dst (d := i)
-        ((((t.mem.read (off src i) 1).setWidth 64) &&& mask c).setWidth 8) (by omega)
-      rw [am]; exact (tout.mono (Nat.le_refl _) (by omega)).trans (hw1.mono (by omega) (by omega))
+        ((((t.mem.read (off src i) 1).setWidth 64) &&& mask c).setWidth 8) (by omega_using [hN', hi])
+      rw [am]; exact (tout.mono (Nat.le_refl _) (by omega_using [])).trans (hw1.mono (by omega_using []) (by omega_using []))
     · intro i' hi'
       have hw1 := write1_outside t.mem dst (d := i)
-        ((((t.mem.read (off src i) 1).setWidth 64) &&& mask c).setWidth 8) (by omega)
+        ((((t.mem.read (off src i) 1).setWidth 64) &&& mask c).setWidth 8) (by omega_using [hN', hi])
       rw [am]
       rcases Nat.lt_succ_iff_lt_or_eq.mp hi' with hi' | rfl
-      · rw [hw1 _ (by rw [Bignum.PPC64LE.ofs_off0 dst (by omega)]; omega)]; exact tb i' hi'
+      · rw [hw1 _ (by rw [Bignum.PPC64LE.ofs_off0 dst (by omega_arith)]; omega_using [hi'])]; exact tb i' hi'
       · have hs : t.mem (off src i') = s.mem (off src i') := by
           refine tout _ (Or.inr ?_)
           by_contra hcon
-          exact hsep i' hi (off src i') (by omega) rfl
+          exact hsep i' hi (off src i') (by omega_using [hi, hcon]) rfl
         rw [write1_self, mask_byte, read_one', hs]
   · rw [Spec.Rsa.bytesAt]
     rw [show (List.range N).map (fun i => t.mem (dst + BitVec.ofNat 64 i)) =

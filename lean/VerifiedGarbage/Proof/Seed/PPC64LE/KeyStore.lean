@@ -34,7 +34,7 @@ theorem keyStore_ok (k : Nat) (hk : k ≤ 16) {s : State} (h : Room s)
       Frame [outR s k] s.mem t.mem
   | 0, _ => ⟨s, runBlock_nil, fun w hw => by omega, fun _ _ => rfl, rfl, rfl, Frame.refl _ _⟩
   | n + 1, hn => by
-    obtain ⟨t, ht, hv, hg, hrd, hwr, hf⟩ := keyStore_ok k hk h hw hsep n (by omega)
+    obtain ⟨t, ht, hv, hg, hrd, hwr, hf⟩ := keyStore_ok k hk h hw hsep n (by omega_using [hn])
     have r8 : t.gpr .r8 = s.gpr .r8 := hg _ (by decide)
     have r4 : t.gpr .r4 = s.gpr .r4 := hg _ (by decide)
     have room : Room t := room_congr h r8 hwr
@@ -46,15 +46,15 @@ theorem keyStore_ok (k : Nat) (hk : k ≤ 16) {s : State} (h : Room s)
       simp only [List.mem_singleton] at hr; subst hr
       refine (hsep.sub_right ?_).symm
       show Region.Sub ⟨s.gpr .r8 + BitVec.ofNat 64 (8 * tSlot 0 + 4 * n), 4⟩ ⟨s.gpr .r8, 8 * scratchSlots⟩
-      exact Offset.sub_base _ (by unfold scratchSlots tSlot; omega)
+      exact Offset.sub_base _ (by unfold scratchSlots tSlot; omega_using [hn])
     let t1 := t.write .r9 ((lv t (tSlot 0) n).setWidth 64)
-    have e1 : exec (ldW .r9 (tSlot 0) n) t = some t1 := exec_ldW_lane room mem_tA (by omega) .r9
+    have e1 : exec (ldW .r9 (tSlot 0) n) t = some t1 := exec_ldW_lane room mem_tA (by omega_using [hn]) .r9
     have hw1 : InRegions t1.wr (t1.gpr .r4 + BitVec.ofNat 64 (4 * (k + n))) 4 := by
       simp only [t1, wr_write, gpr_write_of_ne _ _ (show ¬ Reg.r4 = .r9 by decide), hwr, r4]
-      exact hw n (by omega)
+      exact hw n (by omega_using [hn])
     let t2 := setMem t1 (t.mem.writeW (s.gpr .r4 + BitVec.ofNat 64 (4 * (k + n))) (lv s (tSlot 0) n))
     have e2 : exec (.store .w .r9 .r4 (4 * (k + n))) t1 = some t2 := by
-      rw [exec_store_w (show Reg.r4 ≠ .r0 by decide) (by omega) hw1]
+      rw [exec_store_w (show Reg.r4 ≠ .r0 by decide) (by omega_using [hk, hn]) hw1]
       simp only [t1, t2, gpr_write_self, gpr_write_of_ne _ _ (show ¬ Reg.r4 = .r9 by decide), r4,
         mem_write, setWidth_setWidth_32, hlane]
       rfl
@@ -65,11 +65,11 @@ theorem keyStore_ok (k : Nat) (hk : k ≤ 16) {s : State} (h : Room s)
     · simp only [t2, mem_setMem]
       by_cases hwn : w = n
       · subst hwn; rw [Mem.readW_writeW_self32]
-      · rw [Mem.readW_writeW_sep (Offset.sep _ (by omega) (by omega) (by omega)) (by decide)]
-        exact hv w (by omega)
+      · rw [Mem.readW_writeW_sep (Offset.sep _ (by omega_using [hwn]) (by omega_using [hk, hn, hw']) (by omega_using [hk, hn])) (by decide)]
+        exact hv w (by omega_using [hw', hwn])
     · simp only [t2, gpr_setMem, t1, gpr_write_of_ne _ _ hr]; exact hg r hr
     · simp only [t2, mem_setMem]
-      exact hf.writeW List.mem_cons_self _ (Offset.contains _ (by omega) (by omega) (by omega))
+      exact hf.writeW List.mem_cons_self _ (Offset.contains _ (by omega_using []) (by omega_using [hn]) (by omega_using [hk]))
 
 /-- Moving lane `b` of `uSlot` to `G`'s words. -/
 def spMove : LaneSpec := [(tSlot 0, fun x => x uSlot)]

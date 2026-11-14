@@ -31,9 +31,9 @@ theorem bound2 {ρ : Nat→List Byte} {x : Nat→Poly}
   obtain ⟨b0,h0⟩ := h 0 (by decide)
   obtain ⟨b1,h1⟩ := h 1 (by decide)
   refine ⟨max b0.rejNTT b1.rejNTT,fun k hk => ?_⟩
-  rcases (by omega : k=0 ∨ k=1) with rfl | rfl
-  · exact Proof.MlDsa.KeyGen.rejNTTPoly_mono (by omega) h0
-  · exact Proof.MlDsa.KeyGen.rejNTTPoly_mono (by omega) h1
+  rcases (by omega_using [hk] : k=0 ∨ k=1) with rfl | rfl
+  · exact Proof.MlDsa.KeyGen.rejNTTPoly_mono (by omega_using []) h0
+  · exact Proof.MlDsa.KeyGen.rejNTTPoly_mono (by omega_using []) h1
 
 theorem matrixTwo_ok {S : Nat} (hS : S<2^64) {cd : Prog isa} {nm : String}
     (C : CalleeOk S cd (VG.Proof.MlDsa.rejNTT2Contract AArch64.abi S)) {p : Params} (hF : PFacts p)
@@ -66,7 +66,7 @@ theorem matrixTwo_ok {S : Nat} (hS : S<2^64) {cd : Prog isa} {nm : String}
   rw [h20.get .x0,e20,e2,h20.mem] at hco
   have hco4 : ∀ k < 2, ∀ i < 256,coeffAt s3.mem (poly4 (pa s (aP (e))) k) i =
       if (s2.gpr .x0).setWidth 32 = 1 then coeffAt s2.mem (poly4 (pa s (aP (e))) k) i else 0 :=
-    fun k hk i hi => by rw [coeffAt_poly4,coeffAt_poly4]; exact hco _ (by omega)
+    fun k hk i hi => by rw [coeffAt_poly4,coeffAt_poly4]; exact hco _ (by omega_using [hk, hi])
   have e3 : ∀ k,pa s3 (aP (e+k)) = poly4 (pa s (aP (e))) k := fun k => by
     rw [pa_poly4,sc_pa hP13]
   obtain ⟨A,S',hA,_,hG⟩ := h.ks.ex
@@ -81,11 +81,11 @@ theorem matrixTwo_ok {S : Nat} (hS : S<2^64) {cd : Prog isa} {nm : String}
       exact L.keepPoly hP13 (by lay) (hA e' hlt)
     · rw [ifn hlt]
       refine ⟨?_,rfl⟩
-      obtain ⟨k,rfl⟩ : ∃ k,e' = e+k := ⟨e'-e,by omega⟩
+      obtain ⟨k,rfl⟩ : ∃ k,e' = e+k := ⟨e'-e,by omega_using [hlt]⟩
       rw [e3]
       by_cases h1 : (s2.gpr .x0).setWidth 32 = 1
-      · exact (masked_one h1 (hco4 k (by omega))).2 (hred h1 k (by omega))
-      · exact (masked_zero h1 (hco4 k (by omega))).1
+      · exact (masked_one h1 (hco4 k (by omega_using [he']))).2 (hred h1 k (by omega_using [he']))
+      · exact (masked_zero h1 (hco4 k (by omega_using [he']))).1
   · rw [h24']
     rcases hG with ⟨h1,b,hb,_⟩ | ⟨h0,hn⟩
     · rcases hout with ⟨ho,hb4⟩ | ⟨ho,k,hk,hn⟩
@@ -97,14 +97,14 @@ theorem matrixTwo_ok {S : Nat} (hS : S<2^64) {cd : Prog isa} {nm : String}
         · rw [ifp hlt]
           exact Proof.MlDsa.KeyGen.rejNTTPoly_mono (Nat.le_max_left _ _) (hb e' hlt)
         · rw [ifn hlt]
-          obtain ⟨k,rfl⟩ : ∃ k,e' = e+k := ⟨e'-e,by omega⟩
-          have hk : k < 2 := by omega
+          obtain ⟨k,rfl⟩ : ∃ k,e' = e+k := ⟨e'-e,by omega_using [hlt]⟩
+          have hk : k < 2 := by omega_using [he']
           rw [e3,(masked_one ho (hco4 k hk)).1,← seed2_eq h hk]
           exact Proof.MlDsa.KeyGen.rejNTTPoly_mono (Nat.le_max_right _ _) (hn k hk)
       · rw [ifn (fun h => by rw [h.2] at ho; exact absurd ho (by decide))]
         rw [seed2_eq h hk] at hn
-        have hq : (e+k)/p.ℓ < p.k := Nat.div_lt_of_lt_mul (by rw [Nat.mul_comm p.ℓ p.k]; omega)
-        exact .inr ⟨rfl,Proof.MlDsa.KeyGen.keyGenInternal_none_A hq (Nat.mod_lt _ (by omega)) hn⟩
+        have hq : (e+k)/p.ℓ < p.k := Nat.div_lt_of_lt_mul (by rw [Nat.mul_comm p.ℓ p.k]; omega_using [he, hk])
+        exact .inr ⟨rfl,Proof.MlDsa.KeyGen.keyGenInternal_none_A hq (Nat.mod_lt _ (by omega_using [hl])) hn⟩
     · rw [ifn (fun h => by rw [h.1] at h0; exact absurd h0 (by decide))]
       exact .inr ⟨rfl,hn⟩
 

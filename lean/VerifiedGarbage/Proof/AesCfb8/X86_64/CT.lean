@@ -226,11 +226,11 @@ theorem loop_ct {enc : Bool} {body : Prog isa} (hb : BodyOk enc body) (hc : Body
   · rw [e₁] at hf
     have h0 : N s₀ = k + 1 := by
       have : N s₀ - (k + 1) = 0 := by simpa using hf
-      omega
+      omega_using [hk, this]
     exact ⟨h0 ▸ l₁, by rw [← hN, h0]; exact l₂⟩
   · rw [e₁] at ht
     have h0 : N s₀ - (k + 1) ≠ 0 := by simpa using ht
-    exact ⟨N s₀ - (k + 1), by omega, k + 1, rfl, by omega, l₁, l₂⟩
+    exact ⟨N s₀ - (k + 1), by omega_using [hk], k + 1, rfl, by omega_using [h0], l₁, l₂⟩
 
 /-! ## The whole function -/
 
@@ -276,7 +276,7 @@ theorem whole_rel {enc : Bool} {body : Prog isa} (hb : BodyOk enc body) (hc : Bo
         fun _ _ h => h
       have := h.2; change a.zf = _ at this; rw [h.1.1.2] at this
       have : N s₀ ≠ 0 := by simpa using this
-      omega
+      omega_using [this]
   have epi := RelCT.taint (A := taint) (P := fun a b => LInv enc s₀ (N s₀) a ∧ LInv enc s₀' (N s₀') b) _
     (fun a b h => Taint.agree_ofRegs fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr

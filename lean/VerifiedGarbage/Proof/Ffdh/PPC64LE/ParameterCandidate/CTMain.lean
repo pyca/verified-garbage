@@ -181,7 +181,7 @@ theorem pins_MnPE {x : PP → Nat} {B : PP → Prop} {N : PP → Nat} : Pins (Mn
 theorem MnPT.init {x : PP → Nat} {B : PP → Prop} {N : PP → Nat} {a : PP × Addr} {v : State}
     (hN : 4 ≤ N a.1) (h : MnPT x B N a v) : MnPL x B N (a, N a.1 / 4) v := by
   obtain ⟨u, -, ⟨v23, v24, -⟩, -⟩ := id h
-  refine ⟨v, h, 0, by dsimp only; omega, by dsimp only; omega, ⟨?_, ?_, ?_, Frm.refl _ _ _⟩, Keep.refl _ _⟩
+  refine ⟨v, h, 0, by dsimp only; omega_using [], by dsimp only; omega_using [hN], ⟨?_, ?_, ?_, Frm.refl _ _ _⟩, Keep.refl _ _⟩
   · rw [v23]; exact (BitVec.add_zero _).symm
   · rw [v24]; rfl
   · simp [VG.Proof.RsaKeyGen.trialPrefix]
@@ -200,7 +200,7 @@ theorem MnPL.step {x : PP → Nat} {B : PP → Prop} {N : PP → Nat}
   have ha := M.largs vm vg vrd vwr (hN d.1.1).1 (hN d.1.1).2.1 (hN d.1.1).2.2
   refine WP.mono (lstep_ok ha hI) fun t ⟨e, f, g⟩ => ⟨e, fun hg => ⟨v, hv, (f hg).2⟩, fun hg => ?_⟩
   obtain ⟨hm, hI'⟩ := g hg
-  exact ⟨by omega, v, hv, hI'⟩
+  exact ⟨by omega_using [hm], v, hv, hI'⟩
 
 theorem prodLoop_ct {x : PP → Nat} {B : PP → Prop} {N : PP → Nat}
     (hN : ∀ q, N q % 4 = 0 ∧ 4 ≤ N q ∧ N q ≤ 1024) :
@@ -269,9 +269,9 @@ theorem ts_of {a : PP × Addr} {s : State} (h : MnB candOf allOk a s) (ha : allO
     TS ⟨a.1, candOf a.1, a.1.L⟩ s := by
   obtain ⟨⟨sv, toc, M⟩, hL⟩ := h
   have hb1 : 512 ≤ a.1.bits := M.st.dims.b1
-  obtain ⟨ho, _⟩ := VG.Proof.Ffdh.ParameterCandidate.candidate_shape (bits := a.1.bits) (by omega)
+  obtain ⟨ho, _⟩ := VG.Proof.Ffdh.ParameterCandidate.candidate_shape (bits := a.1.bits) (by omega_using [hb1])
     (Spec.Rsa.os2ip (a.1.r.take a.1.L))
-  have hq : (candOf a.1 - 1) / 2 = candOf a.1 / 2 := by unfold candOf; omega
+  have hq : (candOf a.1 - 1) / 2 = candOf a.1 / 2 := by unfold candOf; omega_using [ho]
   exact ⟨⟨sv, toc, M.st, rfl, M.u, hL, hL⟩, by rw [hq]; exact ha.1.1.2⟩
 
 /-- `mainP` leaks the same from the same arguments, tape and table. -/

@@ -32,18 +32,18 @@ theorem cutRestore_ok {p : WitnessParams} {s₀ s : State} {rp : Addr} {bs : Lis
       (∀ d, d + 8 ≤ p.IZ → word t.mem p.I d = word s.mem p.I d) ∧
       DrawFrame p s.mem t.mem ∧ Keep (.rdi :: mmRegs) s t := by
   have hz64 : p.Z ≤ 2 ^ 64 := Nat.le_trans (Nat.le_add_left _ _) hs.nowrap
-  have hiz64 : p.IZ ≤ 2 ^ 64 := by unfold WitnessParams.IZ; omega
+  have hiz64 : p.IZ ≤ 2 ^ 64 := by unfold WitnessParams.IZ; omega_using [hz64]
   have hi := output_inner ho hz64
-  have hb1 : 16 ≤ p.bits := by have := p.bits1; omega
+  have hb1 : 16 ≤ p.bits := by have := p.bits1; omega_using [this]
   have hlen' : bs.length = (p.bits + 7) / 8 := hbl
   have hcount : s.gpr .rcx = BitVec.ofNat 64 bs.length := by rw [hbl]; exact hcx
   unfold cutRestore
   refine WP.seq (WP.mono (witnessCut_ok hb1 p.bits2 hlen' hsi hdi hcount hdx hsrc.rd
-    (fun i hi => ho.wr i (by omega))
+    (fun i hi => ho.wr i (by omega_using [hbl, hi]))
     (fun i hi => by
       rw [hsrc.val i hi]
       simp only [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem hi, Option.getD_some])
-    (fun i hi j hj he => ha j (by omega) i hi he.symm)) fun u ⟨_, hv, hf, k⟩ => ?_)
+    (fun i hi j hj he => ha j (by omega_using [hbl, hj]) i hi he.symm)) fun u ⟨_, hv, hf, k⟩ => ?_)
   have hf' : ∀ a, (∀ i < p.len, a ≠ off p.op i) → u.mem a = s.mem a := by
     simpa only [hbl] using hf
   have hwO := words_outside_bytes hz64 hf' ho.sep
@@ -54,16 +54,16 @@ theorem cutRestore_ok {p : WitnessParams} {s₀ s : State} {rp : Addr} {bs : Lis
     simp only [slot, VG.Impl.Bignum.hdrBytes] at hroom
     omega_using [hroom]
   have hsO : Scr u p.O 256 := by
-    have hsize : 256 ≤ p.Z := by have := p.room; omega
-    simpa [off] using (hs.congr k.2.2).sub (o := 0) (n := 256) (by omega) (by decide)
+    have hsize : 256 ≤ p.Z := by have := p.room; omega_using [this]
+    simpa [off] using (hs.congr k.2.2).sub (o := 0) (n := 256) (by omega_using [hsize]) (by decide)
   have hlink : word u.mem p.I (8 * VG.Impl.Rsa.X86_64.Crt.sLink) = p.O := by
     rw [hwI _ (by change 136 ≤ p.IZ; exact hI136)]
     exact hl
   have hOut : word u.mem p.O (8 * oOut) = p.op := by
-    rw [hwO _ (by have := p.room; unfold oOut; omega)]
+    rw [hwO _ (by have := p.room; unfold oOut; omega_using [this])]
     exact hop
   have hLen : word u.mem p.O (8 * oWitnessLen) = BitVec.ofNat 64 p.len := by
-    rw [hwO _ (by have := p.room; unfold oWitnessLen; omega)]
+    rw [hwO _ (by have := p.room; unfold oWitnessLen; omega_using [this])]
     exact hlen
   refine WP.mono (drawLoad_ok (hready.good.scr.congr (k.2.2.trans hwr)) hI136 hsO
     ((k.gpr (by decide)).trans hbp) hlink hOut hLen) fun t ⟨hdt, hst, hct, hmt, kt⟩ => ?_

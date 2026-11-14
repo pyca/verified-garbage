@@ -89,7 +89,7 @@ include hT
 
 theorem rekeyFull_okP (b : Nat) (hb : b < 2) : OkP (c.rekeyFull b) := by
   unfold Cfg.rekeyFull
-  obtain rfl | rfl : b = 0 ∨ b = 1 := by omega
+  obtain rfl | rfl : b = 0 ∨ b = 1 := by omega_using [hb]
   · exact okP_seq rfl (okP_seq (by exact hT.iMsgF₀) (okP_seq (hmacK_okP hf _ _ (by exact hT.iUpdM)
       (by exact hT.iFinM)) (hmacVS_okP hf)))
   · exact okP_seq rfl (okP_seq (by exact hT.iMsgF₁) (okP_seq (hmacK_okP hf _ _ (by exact hT.iUpdM)

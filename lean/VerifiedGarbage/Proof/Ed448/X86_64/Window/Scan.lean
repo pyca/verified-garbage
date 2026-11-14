@@ -88,7 +88,7 @@ theorem scanCoord_ok {pick : Nat → List Instr} {value : Mem → Addr → Nat �
   · intro r hr
     exact (gu r).trans (kv.1 r (fun h => hr ((show ∀ r ∈ ScanRegs, r ∈ clob from by decide) r h)))
   · rw [kv.2.1] at ou
-    exact ou.mono (slot_ge i) (by have := slot_lt i; simp only [Impl.X448.X86_64.ACC] at this; omega)
+    exact ou.mono (slot_ge i) (by have := slot_lt i; simp only [Impl.X448.X86_64.ACC] at this; omega_using [this])
   · rw [eu, ev, picked_eq, ite_eq_left (List.mem_range.mpr hd), kv.2.1]
 
 end VG.Proof.Ed448.X86_64.Window

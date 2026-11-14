@@ -63,7 +63,7 @@ theorem frame_outs {s0 : State} {rs : List (Nat × Nat)} {m m' : Mem} (h : Outs 
 theorem TabOk.held_at {s0 s : State} (h : TabOk s0) (hb : Bx s0 s) {i : Nat} (hi : i < 1024) :
     s.mem.readW (s0.syms TrialTable32.symbol + BitVec.ofNat 64 (8 * i)) 64 = TrialTable32.packed.getD i 0 := by
   rw [hb.out.readW (r := ⟨s0.syms TrialTable32.symbol, 8 * 1024⟩)
-    (Offset.contains_base _ (by omega) (by have := h.fit; omega)) h.dj (by decide)]
+    (Offset.contains_base _ (by omega_using [hi]) (by have := h.fit; omega_using [hi])) h.dj (by decide)]
   exact h.held i hi
 
 /-- Octets of an input through `Bx`. -/
@@ -123,7 +123,7 @@ theorem res_ok {s0 u : State} {w c : Nat} (hc : Ctx s0 u) (hp : Prep u (sB s0) (
   refine WP.seq (WP.mono (WP.keep [.r28, .r3] (Q := fun t => t.gpr .r28 = word u.mem (sB s0) (8 * hUsed) ∧
       t.gpr .r3 = word u.mem (sB s0) (8 * hStat) ∧ t.mem = u.mem) (by
     simp only [ldh, hUsed, hStat]
-    prun [e.h31, hs.ld (d := 152) (n := 8) (by omega), hs.ld (d := 160) (n := 8) (by omega)]) (by decide)) fun t₁ ⟨⟨a28, a3, m₁⟩, k₁⟩ => ?_)
+    prun [e.h31, hs.ld (d := 152) (n := 8) (by omega_using [hZ]), hs.ld (d := 160) (n := 8) (by omega_using [hZ])]) (by decide)) fun t₁ ⟨⟨a28, a3, m₁⟩, k₁⟩ => ?_)
   have c₁ := hc.keep k₁ m₁
   rcases pt with _ | ⟨b, rest⟩
   · refine WP.ite _ (eval_zero_ofNat _ _ (by decide) (a3.trans hres)) (fun _ => ?_) (fun h => absurd h (by decide))
@@ -140,7 +140,7 @@ theorem res_ok {s0 u : State} {w c : Nat} (hc : Ctx s0 u) (hp : Prep u (sB s0) (
     · have hb : b = true := by revert h; cases b <;> decide
       subst hb
       have p₂ := hp.keep (e.keep (k₁.trans k₂) (by decide)) (fun _ _ => by rw [m₂, m₁]) (fun _ _ => by rw [m₂, m₁])
-      refine finPrime_post c₂ p₂.env.hs p₂.env.h31 (by rw [hw]; omega) hw (by omega) hcS ?_ (by rw [hop]; rfl)
+      refine finPrime_post c₂ p₂.env.hs p₂.env.h31 (by rw [hw]; omega_using [hZ]) hw (by omega_using [hw4]) hcS ?_ (by rw [hop]; rfl)
         (by rw [k₂.gpr _ (by decide), a28, hus])
       rw [← slot0 (w := w)]; exact p₂.n
     · have hb : b = false := by revert h; cases b <;> decide
@@ -196,8 +196,8 @@ theorem TIn.tc {s0 s : State} {w c : Nat} (h : TIn s0 s w c) : TC s0 w c :=
 
 theorem TC.c8 {s0 : State} {w c : Nat} (h : TC s0 w c) (hw4 : 4 ≤ w) : 8161 < c := by
   have := h.shape.2.1
-  have : 2 ^ 14 ≤ 2 ^ (64 * w - 2) := Nat.pow_le_pow_right (by decide) (by omega)
-  omega
+  have : 2 ^ 14 ≤ 2 ^ (64 * w - 2) := Nat.pow_le_pow_right (by decide) (by omega_using [hw4])
+  omega_arith
 
 /-- The test's arguments in the header. -/
 structure THdr (s0 : State) (w : Nat) (m : Mem) : Prop where
@@ -209,11 +209,11 @@ structure THdr (s0 : State) (w : Nat) (m : Mem) : Prop where
 
 theorem THdr.keep {s0 : State} {w : Nat} {m m' : Mem} (h : THdr s0 w m)
     (ow : ∀ d, 128 ≤ d → d + 8 ≤ 224 → word m' (sB s0) d = word m (sB s0) d) : THdr s0 w m' :=
-  ⟨(ow _ (by simp only [hRand]; omega) (by simp only [hRand]; omega)).trans h.rand,
-    (ow _ (by simp only [hRandLen]; omega) (by simp only [hRandLen]; omega)).trans h.randLen,
-    (ow _ (by simp only [hUsed]; omega) (by simp only [hUsed]; omega)).trans h.used,
-    (ow _ (by simp only [hK]; omega) (by simp only [hK]; omega)).trans h.kk,
-    (ow _ (by simp only [hChecks]; omega) (by simp only [hChecks]; omega)).trans h.checks⟩
+  ⟨(ow _ (by simp only [hRand]; omega_using []) (by simp only [hRand]; omega_using [])).trans h.rand,
+    (ow _ (by simp only [hRandLen]; omega_using []) (by simp only [hRandLen]; omega_using [])).trans h.randLen,
+    (ow _ (by simp only [hUsed]; omega_using []) (by simp only [hUsed]; omega_using [])).trans h.used,
+    (ow _ (by simp only [hK]; omega_using []) (by simp only [hK]; omega_using [])).trans h.kk,
+    (ow _ (by simp only [hChecks]; omega_using []) (by simp only [hChecks]; omega_using [])).trans h.checks⟩
 
 /-- After `testArgs`. -/
 structure T1 (s0 : State) (w c : Nat) (s : State) : Prop where
@@ -236,13 +236,13 @@ theorem argsS {s0 s : State} {w c : Nat} (h : TIn s0 s w c) : WP isa (.block tes
   rw [slot_lin] at hZ
   refine WP.mono_syms (testArgs_ok e h.lay.wW h.hw64) fun t₁ ⟨⟨ao, o₁, _⟩, k₁⟩ sy₁ => ?_
   have ow : ∀ d, d + 8 ≤ 128 ∨ 224 ≤ d → d + 8 ≤ 8 * sL s0 → word t₁.mem (sB s0) d = word s.mem (sB s0) d :=
-    fun d hd hd' => o₁.word hd (by omega)
-  refine ⟨h.ctx.step k₁.sp k₁.rd k₁.wr (frame_scr (frame_of_outside o₁ (by omega))) (k₁.gpr _ (by decide))
+    fun d hd hd' => o₁.word hd (by omega_using [hnw, hd'])
+  refine ⟨h.ctx.step k₁.sp k₁.rd k₁.wr (frame_scr (frame_of_outside o₁ (by omega_using [hZ]))) (k₁.gpr _ (by decide))
     (k₁.gpr _ (by decide)) (k₁.gpr _ (by decide)) (k₁.gpr _ (by decide)), e.keep k₁ (by decide),
-    ⟨(ow 0 (by omega) (by omega)).trans h.lay.len, (ow 48 (by omega) (by omega)).trans h.lay.wW,
-      (ow 224 (by omega) (by omega)).trans h.lay.strideW,
-      fun j hj => (ow _ (by omega) (by omega)).trans (h.lay.arrW j hj)⟩,
-    by rw [← h.arr0]; exact o₁.val32 (by rw [slot_lin]; omega) (by rw [slot_lin]; omega),
+    ⟨(ow 0 (by omega_using []) (by omega_using [hZ])).trans h.lay.len, (ow 48 (by omega_using []) (by omega_using [hZ])).trans h.lay.wW,
+      (ow 224 (by omega_using []) (by omega_using [hZ])).trans h.lay.strideW,
+      fun j hj => (ow _ (by omega_using [hj]) (by omega_using [hZ, hj])).trans (h.lay.arrW j hj)⟩,
+    by rw [← h.arr0]; exact o₁.val32 (by rw [slot_lin]; omega_using []) (by rw [slot_lin]; omega_using [hnw, hZ]),
     ⟨ao.rand.trans h.r26, ao.randLen.trans h.r27, ao.used.trans h.r28,
       ao.k.trans (by rw [h.ctx.r24, ← h.hw]; exact (ofNat_toNat64 _).symm), ao.checks⟩, ao.trial,
     (k₁.gpr _ (by decide)).trans h.r28, sy₁.trans h.syms, h.tc⟩
@@ -281,27 +281,27 @@ theorem trialS {trial : Prog isa} (D : DivOk trial) {s0 s : State} {w c : Nat} (
   have w₂ : Frame [cS s0, below (off (cB s0) 176) 176] s.mem t₂.mem := by
     rw [m₂]
     refine frame_scr (((Frame.refl _ _).writeW (List.mem_singleton_self _) _ ?_).writeW
-      (List.mem_singleton_self _) _ ?_) <;> exact Offset.contains_base _ (by omega) (by omega)
+      (List.mem_singleton_self _) _ ?_) <;> exact Offset.contains_base _ (by omega_using [hZ]) (by omega_using [])
   have o₂ : Outs (sB s0) [(24, 8), (40, 8)] s.mem t₂.mem := by
     rw [m₂]
-    exact (Outs.of_outside (writeW_outside _ _ (d := 24) _ (by omega)) (by simp)).trans
-      (Outs.of_outside (writeW_outside _ _ (d := 40) _ (by omega)) (by simp))
+    exact (Outs.of_outside (writeW_outside _ _ (d := 24) _ (by omega_using [])) (by simp)).trans
+      (Outs.of_outside (writeW_outside _ _ (d := 40) _ (by omega_using [])) (by simp))
   have ow : ∀ d, d + 8 ≤ 24 ∨ (32 ≤ d ∧ d + 8 ≤ 40) ∨ 48 ≤ d → d + 8 ≤ 8 * sL s0 →
       word t₂.mem (sB s0) d = word s.mem (sB s0) d := fun d hd hd' =>
     o₂.word (fun x hx => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
-      rcases hx with rfl | rfl <;> simp only [] <;> omega) (by omega)
+      rcases hx with rfl | rfl <;> simp only [] <;> omega_using [hd]) (by omega_using [hnw, hd'])
   refine ⟨h.ctx.step sp₂ rd₂ wr₂ w₂ (g₂ _ (by decide)) r23₂ r24₂ (g₂ _ (by decide)),
     ⟨e.hs.congr wr₂, (g₂ _ (by decide)).trans e.h10, (g₂ _ (by decide)).trans e.h29,
       (g₂ _ (by decide)).trans e.h11, (g₂ _ (by decide)).trans e.h31, e.hw, e.hw', e.hZ⟩,
-    ⟨(ow 0 (by omega) (by omega)).trans h.lay.len, (ow 48 (by omega) (by omega)).trans h.lay.wW,
-      (ow 224 (by omega) (by omega)).trans h.lay.strideW,
-      fun j hj => (ow _ (by omega) (by omega)).trans (h.lay.arrW j hj)⟩, ?_,
-    h.hdr.keep fun d h1 h2 => ow d (by omega) (by omega), f₂, (g₂ _ (by decide)).trans h.r28, h.tc⟩
+    ⟨(ow 0 (by omega_using []) (by omega_using [hZ])).trans h.lay.len, (ow 48 (by omega_using []) (by omega_using [hZ])).trans h.lay.wW,
+      (ow 224 (by omega_using []) (by omega_using [hZ])).trans h.lay.strideW,
+      fun j hj => (ow _ (by omega_using []) (by omega_using [hZ, hj])).trans (h.lay.arrW j hj)⟩, ?_,
+    h.hdr.keep fun d h1 h2 => ow d (by omega_using [h1]) (by omega_using [hZ, h2]), f₂, (g₂ _ (by decide)).trans h.r28, h.tc⟩
   rw [← h.arr0]
   exact o₂.val32 (fun x hx => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
-    rcases hx with rfl | rfl <;> simp only [slot_lin] <;> omega) (by rw [slot_lin]; omega)
+    rcases hx with rfl | rfl <;> simp only [slot_lin] <;> omega_using []) (by rw [slot_lin]; omega_using [hnw, hZ])
 
 /-- A divisor: rejected. -/
 theorem compFin {s0 s : State} {w c : Nat} (h : T2 s0 w c s)
@@ -314,7 +314,7 @@ theorem compFin {s0 s : State} {w c : Nat} (h : T2 s0 w c s)
   refine fin_ok 3 (by decide) h.ctx (by rw [hop]; rfl) (by rw [outOf, hop]) ?_
   rw [h.r28, usedOf, hop]
   simp only [List.length_drop, bytesAt_length]
-  congr 1; omega
+  congr 1; omega_using [h8]
 
 /-- The working space prepared. -/
 structure T3 (s0 : State) (w c : Nat) (s : State) : Prop where
@@ -340,21 +340,21 @@ theorem prepS {s0 s : State} {w c : Nat} (h : T2 s0 w c s)
   have hfS := hp.fS
   have hcB := cB_fit hp
   have hrl := (PPC64LE.stackArg s0 0).isLt
-  refine WP.mono (prep_ok e h.lay h.arr0 h.tc.shape.1 (by have := h.tc.c8 hw4; omega) (by
+  refine WP.mono (prep_ok e h.lay h.arr0 h.tc.shape.1 (by have := h.tc.c8 hw4; omega_using [this]) (by
     have := h.tc.shape.2.1
-    have : 2 ^ (64 * (w - 1)) < 2 ^ (64 * w - 2) := Nat.pow_lt_pow_right (by decide) (by omega)
-    omega)) fun t₃ ⟨⟨p₃, o₃⟩, k₃⟩ => ?_
+    have : 2 ^ (64 * (w - 1)) < 2 ^ (64 * w - 2) := Nat.pow_lt_pow_right (by decide) (by omega_using [hw4])
+    omega_arith)) fun t₃ ⟨⟨p₃, o₃⟩, k₃⟩ => ?_
   have c₃ := h.ctx.step k₃.sp k₃.rd k₃.wr (frame_outs o₃ (fun x hx => by
     simp only [VG.Proof.MillerRabin.PPC64LE.Search.mpRanges, VG.Impl.MillerRabin.PPC64LE.aE, List.mem_cons,
       List.not_mem_nil, or_false] at hx
-    rcases hx with rfl | rfl | rfl | rfl | rfl <;> simp only [slot_lin] <;> omega)) (k₃.gpr _ (by decide))
+    rcases hx with rfl | rfl | rfl | rfl | rfl <;> simp only [slot_lin] <;> omega_using [hZ])) (k₃.gpr _ (by decide))
     (k₃.gpr _ (by decide)) (k₃.gpr _ (by decide)) (k₃.gpr _ (by decide))
   have ow₃ : ∀ d, 64 ≤ d → d + 8 ≤ 256 → word t₃.mem (sB s0) d = word s.mem (sB s0) d := fun d h1 h3 =>
     o₃.word (fun x hx => by
       simp only [VG.Proof.MillerRabin.PPC64LE.Search.mpRanges, VG.Impl.MillerRabin.PPC64LE.aE, List.mem_cons,
         List.not_mem_nil, or_false] at hx
-      rcases hx with rfl | rfl | rfl | rfl | rfl <;> simp only [slot_lin] <;> omega) (by omega)
-  have hd := h.hdr.keep (m' := t₃.mem) fun d h1 h2 => ow₃ d (by omega) (by omega)
+      rcases hx with rfl | rfl | rfl | rfl | rfl <;> simp only [slot_lin] <;> omega_arith) (by omega_using [h3])
+  have hd := h.hdr.keep (m' := t₃.mem) fun d h1 h2 => ow₃ d (by omega_using [h1]) (by omega_using [h2])
   have bF : below (off (cB s0) 176) 176 = ⟨cB s0, 176⟩ := by
     simp only [below, off, BitVec.add_sub_cancel]
   have sp₃ : t₃.sp = off (cB s0) 176 := c₃.bx.sp
@@ -362,8 +362,8 @@ theorem prepS {s0 s : State} {w c : Nat} (h : T2 s0 w c s)
       (Spec.Rsa.bytesAt s0.mem (s0.gpr .r10) (rL s0)) := {
     h35 := h.tc.h35
     shape := h.tc.shape
-    hch := (VG.Proof.RsaKeyGen.checksW_eq w (by have := h.tc.hw64; omega) hw4).symm
-    hch' := by have := VG.Proof.RsaKeyGen.checksW_le w; omega
+    hch := (VG.Proof.RsaKeyGen.checksW_eq w (by have := h.tc.hw64; omega_using [this]) hw4).symm
+    hch' := by have := VG.Proof.RsaKeyGen.checksW_le w; omega_using [this]
     rand := hd.rand
     rlen := hd.randLen.trans (ofNat_toNat64 _).symm
     kk := hd.kk
@@ -371,7 +371,7 @@ theorem prepS {s0 s : State} {w c : Nat} (h : T2 s0 w c s)
     hrl := hrl
     tape := bytes_bx c₃.bx hrl (hR_dj hp)
     rN := fun i hi => ⟨cR s0, List.mem_append_left _ (by rw [c₃.bx.rd]; exact hp.rR),
-      Offset.contains_base _ (by simp only [rL] at hi; omega) (by have := hp.fr; simp only [rL] at hi; omega)⟩
+      Offset.contains_base _ (by simp only [rL] at hi; omega_using [hi]) (by have := hp.fr; simp only [rL] at hi; omega_using [hi])⟩
     rD := by
       intro ρ hρ
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hρ
@@ -379,7 +379,7 @@ theorem prepS {s0 s : State} {w c : Nat} (h : T2 s0 w c s)
       · rw [← cS_eq]; exact hp.rS
       · rw [sp₃, bF]; exact (hp.Fr.sub_left (Region.sub_prefix (by decide))).symm
     wr := by rw [c₃.bx.wr, bodyWr, hp.wr, ← cS_eq]; simp
-    hsp := by rw [sp₃]; simp only [off, BitVec.toNat_add, BitVec.toNat_ofNat]; omega
+    hsp := by rw [sp₃]; simp only [off, BitVec.toNat_add, BitVec.toNat_ofNat]; omega_using [hcB]
     hstk := by rw [sp₃, bF, ← cS_eq]; exact hp.FS.sub_left (Region.sub_prefix (by decide)) }
   exact ⟨c₃, p₃, P, hd.used, h.tc, hoc⟩
 

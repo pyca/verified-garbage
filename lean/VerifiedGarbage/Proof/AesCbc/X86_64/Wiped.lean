@@ -84,7 +84,7 @@ theorem wiped_scrubbed {P : Spec.Cbc.aesSig.Post 64} {w : Nat} {name : String} {
   Verified.callWipeTail' (ps₁ := [("schedule", .array false .u8 240), ("rounds", .int .usize true),
       ("iv", .array true .u8 16), ("data", .slice true (.array .u8 16) "n")]) (ps₂ := [])
     (nm := "scratch") (e := .u64) (k := 272) (i := 5) h z.verified (by decide) rfl rfl rfl
-    (by simp only [Elem.size]; omega) (by omega) (by decide) hsp hd z.spSafe (by rw [z.xd])
+    (by simp only [Elem.size]; omega_using [hw]) (by omega_using [hw]) (by decide) hsp hd z.spSafe (by rw [z.xd])
     (Nat.zero_le _) (pre_local 64) (tailPost_local 64 w P hpost) (tailPost_out 64 w P hout hw)
     (wipedTail 64 w P) (sat _)
 
@@ -98,7 +98,7 @@ theorem decrypt_depth (v : BlocksImpl) : (Caller.decrypt v).x86_64Depth ≤ 8 :=
     · decide
     · simp only [Impl.AesCbc.X86_64.decrypt, Impl.AesCbc.X86_64.batched, Impl.AesCbc.X86_64.groups,
         Impl.AesCbc.X86_64.decGroup, Impl.AesCbc.X86_64.decBody, Code.x86_64Depth, v.decNoStack, Nat.max_le]
-      omega
+      omega_using []
 
 theorem encrypt_depth (v : BlocksImpl) : (Caller.encrypt v).x86_64Depth ≤ 8 := by
   unfold Caller.encrypt
@@ -106,7 +106,7 @@ theorem encrypt_depth (v : BlocksImpl) : (Caller.encrypt v).x86_64Depth ≤ 8 :=
   · decide
   · simp only [Impl.AesCbc.X86_64.encrypt, Impl.AesCbc.X86_64.whole, Impl.AesCbc.X86_64.encBody,
       Code.x86_64Depth, v.encNoStack, Nat.max_le]
-    omega
+    omega_using []
 
 /-- The bytes of `scratch` that `Caller.decrypt v` may write: 224 for the
 loops in AES-NI or VAES registers, all of them for the others. -/
@@ -218,7 +218,7 @@ theorem encryptOut (stack : Nat) :
     obtain ⟨h1, h2⟩ := h
     have hd := AesEcb.agree_of hb.2.2.1
     have hb' : Spec.Cbc.blocksAt m₂ d (e.setWidth abi.ptrBits).toNat = Spec.Cbc.blocksAt m₁ d (e.setWidth abi.ptrBits).toNat :=
-      blocksAt_congr fun i hi => hd i (by have := AesEcb.n_le (pb := abi.ptrBits) e; omega)
+      blocksAt_congr fun i hi => hd i (by have := AesEcb.n_le (pb := abi.ptrBits) e; omega_using [hi, this])
     have hc := AesEcb.bytesAt_congr (AesEcb.agree_of hb.2.1)
     refine ⟨fun key hk => ?_, fun z hz => ?_⟩
     · obtain ⟨h1a, h1b⟩ := h1 key hk
@@ -238,7 +238,7 @@ theorem decryptOut (stack : Nat) :
     obtain ⟨h1, h2⟩ := h
     have hd := AesEcb.agree_of hb.2.2.1
     have hb' : Spec.Cbc.blocksAt m₂ d (e.setWidth abi.ptrBits).toNat = Spec.Cbc.blocksAt m₁ d (e.setWidth abi.ptrBits).toNat :=
-      blocksAt_congr fun i hi => hd i (by have := AesEcb.n_le (pb := abi.ptrBits) e; omega)
+      blocksAt_congr fun i hi => hd i (by have := AesEcb.n_le (pb := abi.ptrBits) e; omega_using [hi, this])
     have hc := AesEcb.bytesAt_congr (AesEcb.agree_of hb.2.1)
     refine ⟨fun key hk => ?_, fun z hz => ?_⟩
     · obtain ⟨h1a, h1b⟩ := h1 key hk

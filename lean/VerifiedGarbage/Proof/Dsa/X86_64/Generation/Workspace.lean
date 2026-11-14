@@ -22,11 +22,11 @@ theorem workspaceHead_ok {s : State} {B : Addr} {Z w : Nat}
       t.gpr .r12 = BitVec.ofNat 64 w ∧
       t.mem = (s.mem.writeW (off B 48) (BitVec.ofNat 64 w)).writeW (off B 56) (0#64)) (by
     xrun [Impl.Dsa.X86_64.Generation.workspaceHead, State.ea, hdr, hdrOff, sW, sMinv, hdi,
-      h.st (d := 48) (by omega), h.st (d := 56) (by omega)]
+      h.st (d := 48) (by omega_using [hZ]), h.st (d := 56) (by omega_using [hZ])]
     have he : (BitVec.ofNat 32 w).setWidth 64 = BitVec.ofNat 64 w := by
       apply BitVec.eq_of_toNat_eq
       simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]
-      rw [Nat.mod_eq_of_lt (by omega : w < 2 ^ 32)]
+      rw [Nat.mod_eq_of_lt (by omega_using [hw] : w < 2 ^ 32)]
     simp only [he]
     exact ⟨True.intro, rfl⟩) rfl) fun _ ⟨⟨h12, hm⟩, hk⟩ => ⟨h12, hm, hk⟩
 
@@ -42,18 +42,18 @@ theorem workspace_ok {s : State} {B : Addr} {Z w : Nat}
   refine WP.seq (WP.mono (workspaceHead_ok h hdi hz hw2) fun u ⟨h12, hm, ku⟩ => ?_)
   have hu := h.congr ku.2.2
   have hudi := (ku.gpr (by decide)).trans hdi
-  refine WP.seq (WP.mono (setBases_ok hu hudi h12 (by unfold sArr; omega))
+  refine WP.seq (WP.mono (setBases_ok hu hudi h12 (by unfold sArr; omega_using [hz]))
     fun v ⟨harr, fv, kv⟩ => ?_)
   have hv := hu.congr kv.2.2
   have hvdi := (kv.gpr (by decide)).trans hudi
   refine WP.mono (WP.keep [.rax] (Q := fun t =>
       t.mem = v.mem.writeW (off B 224) (BitVec.ofNat 64 (8 * (w + 2)))) (by
     xrun [Impl.Dsa.X86_64.Generation.workspaceStride, State.ea, hdr, hdrOff, sStride, sFn, hvdi,
-      hv.st (d := 224) (by omega)]
+      hv.st (d := 224) (by omega_using [hz])]
     congr 1
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]
-    rw [Nat.mod_eq_of_lt (by omega : 8 * (w + 2) < 2 ^ 32)]) rfl) fun t ⟨htm, kt⟩ => ?_
+    rw [Nat.mod_eq_of_lt (by omega_using [hw2] : 8 * (w + 2) < 2 ^ 32)]) rfl) fun t ⟨htm, kt⟩ => ?_
   have ft : Outside B 224 8 v.mem t.mem := by rw [htm]; exact writeW_outside _ _ _ (by decide)
   have allk := (ku.trans kv).trans kt
   have hw : word t.mem B 48 = BitVec.ofNat 64 w := by
@@ -64,7 +64,7 @@ theorem workspace_ok {s : State} {B : Addr} {Z w : Nat}
     rfl
   have ha : ∀ j < 8, word t.mem B (8 * sArr j) = off B (slot w j) := by
     intro j hj
-    rw [ft.word (Or.inl (by unfold sArr; omega)) (by unfold sArr; omega)]
+    rw [ft.word (Or.inl (by unfold sArr; omega_using [hj])) (by unfold sArr; omega_using [hj])]
     exact harr j hj
   have hs := h.congr allk.2.2
   have ht := allk.gpr (by decide) |>.trans hdi

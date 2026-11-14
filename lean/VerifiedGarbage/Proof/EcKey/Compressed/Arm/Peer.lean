@@ -101,12 +101,12 @@ theorem decompressPeer_ok {c : Cfg} (hc : CfgOk c) {base : Addr} {s : State}
   have K₄ : Rest [.r4, .r6] s s₄ := K₃.trans (k₄.mono (by simp))
   have W₄ : Outside base 0 size s.mem s₄.mem := W₂.trans (O₄.mono (Nat.zero_le _) hE)
   have lead₄ : s₄.mem qa = s.mem qa := by
-    have e := keep_of_disjoint' W₄ hd (by decide) (i := 0) (by omega) (by omega)
+    have e := keep_of_disjoint' W₄ hd (by decide) (i := 0) (by omega_using []) (by omega_using [hqfit])
     simpa only [BitVec.add_zero] using e
   refine VG.Proof.X25519.Arm.WP.append (decompressTag_ok (q := q32) hs₄
     (by rw [K₄.gpr _ (by decide), hq32])
-    (by rw [K₄.rd, K₄.wr, hq64]; exact ⟨_, hin, by simpa using Offset.contains_base qa (d := 0) (n := 1) (by omega) (by decide)⟩)
-    (by have := sl_le c h7 (i := D) (by decide); omega)) fun s₅ ⟨mask₅, tag₅, k₅, O₅⟩ => ?_
+    (by rw [K₄.rd, K₄.wr, hq64]; exact ⟨_, hin, by simpa using Offset.contains_base qa (d := 0) (n := 1) (by omega_using []) (by decide)⟩)
+    (by have := sl_le c h7 (i := D) (by decide); omega_using [h0, hD])) fun s₅ ⟨mask₅, tag₅, k₅, O₅⟩ => ?_
   rw [hq64, lead₄] at mask₅ tag₅
   have hs₅ := hs₄.of_rest k₅ (by decide)
   refine VG.Proof.X25519.Arm.WP.append (andFlag_ok c hs₅ hF) fun s₆ ⟨f₆, k₆, O₆⟩ => ?_
@@ -115,34 +115,34 @@ theorem decompressPeer_ok {c : Cfg} (hc : CfgOk c) {base : Addr} {s : State}
   have U₄ : Unch base (slW c [R2P, BP, E, D]) s.mem s₄.mem :=
     unch_same (unch_same (slot_frame (by simp) (Nat.le_refl _) O₁)
       (slot_frame (by simp) (Nat.le_refl _) O₂)) (slot_frame (by simp) (Nat.le_refl _) O₄)
-  have U₅ := unch_same U₄ (slot_frame (by simp) (by omega) O₅)
+  have U₅ := unch_same U₄ (slot_frame (by simp) (by omega_using [h0]) O₅)
   have v₅ {i : Nat} (hi : i < 45) (hw : i ∉ [R2P, BP, E, D]) :
       sv c base s₅ i = sv c base s i := sv_unch U₅ h7 hn hi (apart_slW hw)
   have x₅ : sv c base s₅ E = ofBytes (Spec.Ecdsa.bytesAt s.mem (qa + 1) c.C.len) := by
     change wordsVal s₅.mem base (c.sl E) c.n = _
-    rw [sv_out (O₅.mono (Nat.le_refl _) (by omega : c.sl D + 4 ≤ c.sl D + 8 * c.n)) h7 hn (by decide) (by decide), e₄]
+    rw [sv_out (O₅.mono (Nat.le_refl _) (by omega_using [h0] : c.sl D + 4 ≤ c.sl D + 8 * c.n)) h7 hn (by decide) (by decide), e₄]
     congr 1
-    exact bytesAt_keep W₂ (hd.sub_left (Offset.sub_base qa (d := 1) (by omega))) (by decide) (by omega)
+    exact bytesAt_keep W₂ (hd.sub_left (Offset.sub_base qa (d := 1) (by omega_using []))) (by decide) (by omega_using [hqfit])
   have flag₅ : flagW c base s₅ = BitVec.allOnes 32 := by
     rw [flagW, ← hf]
-    exact Unch.readW32 U₅ (fun w hw => by have := (apart_slW (c := c) (by decide : FLAG ∉ [R2P, BP, E, D])) w hw; omega) (by omega)
+    exact Unch.readW32 U₅ (fun w hw => by have := (apart_slW (c := c) (by decide : FLAG ∉ [R2P, BP, E, D])) w hw; omega_using [h0, this]) (by omega_using [hn, hF])
   refine ⟨hs₆.of_rest k₇ (by decide), ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · exact (K₄.mono (by simp)).trans ((k₅.mono (by simp)).trans ((k₆.mono (by simp)).trans (k₇.mono (by simp))))
-  · exact unch_same (unch_same (slots_widen U₅ (slots' := [R2P, BP, E, D, FLAG]) (by decide)) (slot_frame (by simp) (by omega) O₆)) (slot_frame (by simp) (by omega) O₇)
+  · exact unch_same (unch_same (slots_widen U₅ (slots' := [R2P, BP, E, D, FLAG]) (by decide)) (slot_frame (by simp) (by omega_using [h0]) O₆)) (slot_frame (by simp) (by omega_using [h0]) O₇)
   · simp only [sv] at *
     rw [sv_flag O₇ h0 h7 hn (by decide) (by decide), sv_flag O₆ h0 h7 hn (by decide) (by decide),
-      sv_out (O₅.mono (Nat.le_refl _) (by omega : c.sl D + 4 ≤ c.sl D + 8 * c.n)) h7 hn (by decide) (by decide),
+      sv_out (O₅.mono (Nat.le_refl _) (by omega_using [h0] : c.sl D + 4 ≤ c.sl D + 8 * c.n)) h7 hn (by decide) (by decide),
       sv_out O₄ h7 hn (by decide) (by decide), sv_out O₂ h7 hn (by decide) (by decide)]
     exact e₁
   · simp only [sv] at *
     rw [sv_flag O₇ h0 h7 hn (by decide) (by decide), sv_flag O₆ h0 h7 hn (by decide) (by decide),
-      sv_out (O₅.mono (Nat.le_refl _) (by omega : c.sl D + 4 ≤ c.sl D + 8 * c.n)) h7 hn (by decide) (by decide),
+      sv_out (O₅.mono (Nat.le_refl _) (by omega_using [h0] : c.sl D + 4 ≤ c.sl D + 8 * c.n)) h7 hn (by decide) (by decide),
       sv_out O₄ h7 hn (by decide) (by decide)]
     exact e₂
   · simp only [sv] at *
     rw [sv_flag O₇ h0 h7 hn (by decide) (by decide), sv_flag O₆ h0 h7 hn (by decide) (by decide), x₅]
-  · rw [BitVec.eq_of_toNat_eq (O₇.w32 (by have := sl_apart c (i := D) (j := FLAG) (by decide); omega) (by omega)),
-      BitVec.eq_of_toNat_eq (O₆.w32 (by have := sl_apart c (i := D) (j := FLAG) (by decide); omega) (by omega))]
+  · rw [BitVec.eq_of_toNat_eq (O₇.w32 (by have := sl_apart c (i := D) (j := FLAG) (by decide); omega_using [h0, this]) (by omega_using [hn, hD])),
+      BitVec.eq_of_toNat_eq (O₆.w32 (by have := sl_apart c (i := D) (j := FLAG) (by decide); omega_using [h0, this]) (by omega_using [hn, hD]))]
     exact tag₅
   · simp only [sv] at *
     rw [f₇, f₆, flag₅, mask₅, BitVec.allOnes_and,

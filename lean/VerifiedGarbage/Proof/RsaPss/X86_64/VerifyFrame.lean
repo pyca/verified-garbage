@@ -89,7 +89,7 @@ theorem VPre.k2 {s : State} (hp : VPre tsH tsG s) : (s.gpr .rsi).toNat ≤ 1024 
 theorem VPre.hsl {s : State} (hp : VPre tsH tsG s) :
     8 * (((s.gpr .rsi).toNat + 7) / 8) + 48 + 1024 ≤ (stackArg s 5).toNat := by
   have := hp.hsw
-  unfold Spec.RsaPss.publicScratchWords Spec.Rsa.publicScratchWords Spec.Rsa.modulusWords at this; omega
+  unfold Spec.RsaPss.publicScratchWords Spec.Rsa.publicScratchWords Spec.Rsa.modulusWords at this; omega_using [this]
 
 /-- The regions read: those of the inputs, and of the arguments. -/
 theorem VPre.hrd {s : State} (hp : VPre tsH tsG s) :
@@ -139,7 +139,7 @@ theorem vin_apart {s : State} {R : Region} (hK : (vstkR s).Disjoint R) (hS : R.D
 
 theorem vfb_toNat {s : State} (hp : VPre tsH tsG s) : (fb s).toNat + frameBytes = (s.gpr .rsp).toNat := by
   have := hp.sp1; unfold verifyStack at this
-  simp only [fb, BitVec.toNat_sub, BitVec.toNat_ofNat]; unfold frameBytes at *; omega
+  simp only [fb, BitVec.toNat_sub, BitVec.toNat_ofNat]; unfold frameBytes at *; omega_using [this]
 
 theorem VPre.geo {s : State} (hp : VPre tsH tsG s) : Geo (fb s) (stackArg s 4) := by
   have hF := vfb_toNat hp
@@ -148,8 +148,8 @@ theorem VPre.geo {s : State} (hp : VPre tsH tsG s) : Geo (fb s) (stackArg s 4) :
   have hk := hp.k1
   have wS := hp.wS
   have sS : Region.Sub ⟨stackArg s 4, oRsa⟩ ⟨stackArg s 4, (stackArg s 5).toNat * 8⟩ :=
-    Region.sub_prefix (by unfold oRsa; omega)
-  refine ⟨by omega, by unfold oRsa; omega, ((hp.dKs.sub_left (vframe_sub s)).sub_right sS),
+    Region.sub_prefix (by unfold oRsa; omega_using [hsl])
+  refine ⟨by omega_using [hF, this], by unfold oRsa; omega_using [hsl, wS], ((hp.dKs.sub_left (vframe_sub s)).sub_right sS),
     ((hp.dKs.sub_left (vret_sub s)).sub_right sS)⟩
 
 /-- Stack argument `j`, read from memory changed only in the frame. -/
@@ -158,9 +158,9 @@ theorem varg_read {s : State} (hp : VPre tsH tsG s) {m : Mem} (hf : Frame [frR s
   rw [argAddr]
   refine hf.readW (r := ⟨stackArgAddr s 0, 80⟩) ?_ (fun r' hr' => ?_) (by decide)
   · rw [show stackArgAddr s j = stackArgAddr s 0 + BitVec.ofNat 64 (8 * j) by
-      simp only [stackArgAddr, BitVec.add_assoc, BitVec.ofNat_add_ofNat]; congr 2; omega]
+      simp only [stackArgAddr, BitVec.add_assoc, BitVec.ofNat_add_ofNat]; congr 2; omega_using []]
     have := hp.sp2
-    exact Offset.contains_base _ (by omega) (by omega)
+    exact Offset.contains_base _ (by omega_using [hj]) (by omega_using [hj])
   · simp only [List.mem_singleton] at hr'; subst hr'
     exact (hp.dKa.sub_left (vframe_sub s)).symm
 
@@ -173,14 +173,14 @@ theorem varg_in {s : State} (hp : VPre tsH tsG s) {u : State} (hrd : u.rd = s.rd
   apply hp.hrd.left
   refine ⟨⟨stackArgAddr s 0, 80⟩, by simp, ?_⟩
   rw [argAddr, show stackArgAddr s j = stackArgAddr s 0 + BitVec.ofNat 64 (8 * j) by
-    simp only [stackArgAddr, BitVec.add_assoc, BitVec.ofNat_add_ofNat]; congr 2; omega]
-  exact Offset.contains_base _ (by omega) (by omega)
+    simp only [stackArgAddr, BitVec.add_assoc, BitVec.ofNat_add_ofNat]; congr 2; omega_using []]
+  exact Offset.contains_base _ (by omega) (by omega_using [hj])
 
 theorem vframe_w {s : State} (hp : VPre tsH tsG s) {m m' : Mem} (hf : Frame [frR s] m m') {d : Nat}
     (hd : d + 8 ≤ frameBytes) (v : BitVec 64) : Frame [frR s] m (m'.writeW (off (fb s) d) v) := by
   have hF := vfb_toNat hp
   have := hp.sp2
-  exact hf.writeW (List.mem_singleton_self _) _ (Offset.contains_base _ (by omega) (by omega))
+  exact hf.writeW (List.mem_singleton_self _) _ (Offset.contains_base _ (by omega_using [hd]) (by omega_using [hd, hF]))
 
 /-- One stack argument copied to a slot. -/
 theorem vcopy1_ok {s : State} (hp : VPre tsH tsG s) {u : State} (hsp : u.gpr .rsp = fb s) (hfr : frR s ∈ u.wr)
@@ -189,7 +189,7 @@ theorem vcopy1_ok {s : State} (hp : VPre tsH tsG s) {u : State} (hsp : u.gpr .rs
       u'.mem = u.mem.writeW (off (fb s) d) (stackArg s j) ∧ Frame [frR s] s.mem u'.mem := by
   have hF := vfb_toNat hp
   have := hp.sp2
-  have hsc : Scr u (fb s) frameBytes := Scr.of_mem hfr (by omega)
+  have hsc : Scr u (fb s) frameBytes := Scr.of_mem hfr (by omega_using [hF])
   refine WP.mono (WP.keep [.rax] (Q := fun u' => u'.mem = u.mem.writeW (off (fb s) d) (stackArg s j)) ?_ rfl)
     fun u' ⟨hm, k⟩ => ⟨k, hm, hm ▸ vframe_w hp hf hd _⟩
   xrun [arg, ea_sp, hsp, varg_in hp hrd hj, varg_read hp hf hj, hsc.st (d := d) hd]
@@ -218,7 +218,7 @@ theorem verifyPro_ok {s : State} (hp : VPre tsH tsG s) :
   set A := allocState frameBytes s with hA
   have hsp : A.gpr .rsp = fb s := rfl
   have hfr : frR s ∈ A.wr := List.mem_cons_self ..
-  have hsc : Scr A (fb s) frameBytes := Scr.of_mem hfr (by omega)
+  have hsc : Scr A (fb s) frameBytes := Scr.of_mem hfr (by omega_using [hF])
   have R0 : Rep s.mem (fb s) (stackArg s 4) (fun o => s.mem (off (stackArg s 4) o))
       (fun k => word s.mem (fb s) (8 * k)) := ⟨fun _ _ => rfl, fun _ _ => rfl⟩
   rw [verifyPrologue_eq, WP.block_append_iff, WP.block_append_iff, WP.block_append_iff]
@@ -255,11 +255,11 @@ theorem verifyPro_ok {s : State} (hp : VPre tsH tsG s) :
   have := hp.sp1
   have h392 : frameBytes = 392 := rfl
   have hvs : verifyStack = 808 := rfl
-  refine ⟨k13, ⟨(k13.gpr (by decide)).trans hsp, k13.2.2 ▸ hfr, by omega, by omega, ?_, ?_, G'.dFS, G'.dRS⟩, R3, f4⟩
+  refine ⟨k13, ⟨(k13.gpr (by decide)).trans hsp, k13.2.2 ▸ hfr, by omega_using [hF, this, h392, hvs], by omega_arith, ?_, ?_, G'.dFS, G'.dRS⟩, R3, f4⟩
   · have hsl := hp.hsl
     have hk := hp.k1
     refine ⟨⟨stackArg s 4, 0, (stackArg s 5).toNat * 8, by rw [k13.2.2, hA]; simp [allocState, hp.hwr],
-      (BitVec.add_zero _).symm, by unfold oRsa; omega, Nat.le_trans (by omega) hp.wS⟩, G'.Sw⟩
+      (BitVec.add_zero _).symm, by unfold oRsa; omega_using [hsl], Nat.le_trans (by omega_using []) hp.wS⟩, G'.Sw⟩
   · rw [show sScr = 8 * 21 from rfl]
     exact (R3.fr 21 (by decide)).trans (by simp [vproW, upd])
 
@@ -271,7 +271,7 @@ theorem zext32_beq_zero (x : BitVec 32) : (BitVec.setWidth 64 x == 0) = decide (
   · have : BitVec.setWidth 64 x ≠ 0 := fun e => h (BitVec.eq_of_toNat_eq (by
       have := congrArg BitVec.toNat e
       simp only [BitVec.toNat_setWidth] at this
-      rw [Nat.mod_eq_of_lt (by omega)] at this
+      rw [Nat.mod_eq_of_lt (by omega_using [])] at this
       exact this))
     rw [beq_eq_false_iff_ne.mpr this, decide_eq_false h]
 

@@ -64,10 +64,10 @@ theorem addW_read_okK {s₀ : State} (hp : Pre P s₀) {f g : Nat} (hf : PolyOff
   have cw := cov_w hp kb₂ (b := 3) (by decide) ff
   have cr := cov_r hp kb₂ (b := 3) (by decide) fg
   refine WP.mono (AddSubW.addW_ok ⟨fun j hj => ?_, fun j hj => ?_, ?_, ?_, ?_⟩) fun s₃ ⟨k₃,f₃,p₃⟩ => ?_
-  · rw [x0]; exact cw _ _ (in_regions (List.mem_singleton_self _) (contains_off (by omega) (by decide)))
-  · rw [x1]; exact cr _ _ (in_regions (List.mem_singleton_self _) (contains_off (by omega) (by decide)))
+  · rw [x0]; exact cw _ _ (in_regions (List.mem_singleton_self _) (contains_off (by omega_using [hj]) (by decide)))
+  · rw [x1]; exact cr _ _ (in_regions (List.mem_singleton_self _) (contains_off (by omega_using [hj]) (by decide)))
   · rw [x0, x1]
-    exact ((hp.args.rdisj (by decide) (by decide) ff fg (by omega)).sub_left (half_sub _)).sub_right
+    exact ((hp.args.rdisj (by decide) (by decide) ff fg (by omega_using [d])).sub_left (half_sub _)).sub_right
       (half_sub _)
   · rw [x0, m₂]; exact rf
   · rw [x1, m₂]; exact rg
@@ -85,9 +85,9 @@ theorem enc12W_okK {s₀ : State} (hp : Pre P s₀) {off b o : Nat} (ho : PolyOf
     WP isa (Kem16.enc12WAt off (breg b) o) s fun s' => KB P s₀ s' ∧ Frame [R (kA s₀) b o 384] s.mem s'.mem ∧
       bytesAt s'.mem (kA s₀ b + BitVec.ofNat 64 o) 384 = encode12 F ∧ s'.gpr .x24 = s.gpr .x24 := by
   obtain ⟨ho1, ho2⟩ := ho
-  have hb4 : b < 4 := by omega
+  have hb4 : b < 4 := by omega_using [hb]
   have fo3 : off + 1024 ≤ kL P 3 := by kl
-  have hol : o < 65536 := by have := kL_le hp.wf b; omega
+  have hol : o < 65536 := by have := kL_le hp.wf b; omega_using [fo, this]
   have hx : Reg.x1 ≠ breg b := by rcases hb with rfl | rfl <;> decide
   have hx0 : breg b ≠ Reg.x0 := by rcases hb with rfl | rfl <;> decide
   refine WP.seq (wp_ptrTo (by decide) (by kl) fun s₁ h₁ e₁ => wp_ptrTo' hx hol fun s₂ h₂ e₂ => ?_)
@@ -97,15 +97,15 @@ theorem enc12W_okK {s₀ : State} (hp : Pre P s₀) {off b o : Nat} (ho : PolyOf
   have x1 : s₂.gpr .x1 = kA s₀ b + BitVec.ofNat 64 o := by
     rw [e₂, h₁.get (breg b) (by simpa using hx0), hk.breg hb4]
   have cr := cov_r hp kb₂ (b := 3) (by decide) fo3
-  have cw := cov_w hp kb₂ ⟨by omega, hb4⟩ fo
+  have cw := cov_w hp kb₂ ⟨by omega_using [hb], hb4⟩ fo
   refine WP.mono (Codec12W.encW_ok (P := F) x0 x1 ⟨by rw [m₂]; exact hr, fun j hj => ?_, fun j n hj => ?_, ?_⟩)
     fun s₃ ⟨k₃,f₃,b₃⟩ => ?_
-  · exact cr _ _ (in_regions (List.mem_singleton_self _) (contains_off (by omega) (by decide)))
-  · exact cw _ _ (in_regions (List.mem_singleton_self _) (contains_off (by omega) (by decide)))
-  · exact (hp.args.rdisj (b₁ := 3) (o₁ := off) (l₁ := 1024) (by decide) hb4 fo3 fo (by omega)).sub_left
+  · exact cr _ _ (in_regions (List.mem_singleton_self _) (contains_off (by omega_using [hj]) (by decide)))
+  · exact cw _ _ (in_regions (List.mem_singleton_self _) (contains_off (by omega_using [hj]) (by decide)))
+  · exact (hp.args.rdisj (b₁ := 3) (o₁ := off) (l₁ := 1024) (by decide) hb4 fo3 fo (by omega_using [hb])).sub_left
       (half_sub _)
   refine ⟨kb₂.frame k₃ f₃ (by decide) fun r hr => by
-      rw [List.mem_singleton.mp hr]; exact kb_disj hp hb4 fo (.inl (by omega)) (by omega),
+      rw [List.mem_singleton.mp hr]; exact kb_disj hp hb4 fo (.inl (by omega_using [hb])) (by omega_using [hb]),
     by rw [← m₂]; exact f₃, b₃, by rw [k₃.get .x24 (by decide), h₂.get .x24, h₁.get .x24]⟩
 
 end VG.Proof.MlKem.AArch64.KeyGen

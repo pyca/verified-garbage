@@ -58,7 +58,7 @@ end
 
 /-! ## The slices -/
 
-theorem desc_off (i : Nat) : i * (2 * (64 / 8)) = 16 * i := by omega
+theorem desc_off (i : Nat) : i * (2 * (64 / 8)) = 16 * i := by omega_using []
 
 theorem gl_succ (s : State) (i : Nat) : gl s (i + 1) = gl s i + sl s i := by
   simp only [gl, sl]
@@ -79,7 +79,7 @@ theorem gl_mono (s : State) {i j : Nat} (h : i ≤ j) : gl s i ≤ gl s j := by
   | succ j ih =>
     rcases Nat.eq_or_lt_of_le h with rfl | h
     · exact Nat.le_refl _
-    · rw [gl_succ]; exact Nat.le_trans (ih (by omega)) (Nat.le_add_right _ _)
+    · rw [gl_succ]; exact Nat.le_trans (ih (by omega_using [h])) (Nat.le_add_right _ _)
 
 /-- Slice `i` is listed. -/
 theorem slice_mem (s : State) {i : Nat} (hi : i < Cnt s) : (⟨sb s i, sl s i⟩ : Region) ∈ lsR s := by
@@ -120,7 +120,7 @@ theorem ciph_eq {m : Mem} (hf : Frame (wR s ++ [tR s]) s.mem m) : ctxCiph m (K s
   have hRb : 16 * (R s + 1) ≤ 256 := by rcases hp.rounds with h | h | h <;> simp only [R, h] <;> decide
   simp only [ciph, ctxCiph]
   rw [bytesAt_frame hf (fun r hr => (k_apart hp r hr).sub_left (Region.sub_prefix (Nat.le_trans hRb M.ge)))
-    (by have := hp.w_k; have := M.ge; omega)]
+    (by have := hp.w_k; have := M.ge; omega_using [hRb])]
 
 /-- The hash subkey, through a frame of the regions written and the stack. -/
 theorem hk_eq {m : Mem} (hf : Frame (wR s ++ [tR s]) s.mem m) : ctxH m (K s) = hk s := by
@@ -128,29 +128,29 @@ theorem hk_eq {m : Mem} (hf : Frame (wR s ++ [tR s]) s.mem m) : ctxH m (K s) = h
   exact blockAt_frame hf fun r hr => (k_apart hp r hr).sub_left (Offset.sub_base _ (by have := M.ge; omega))
 
 theorem iv_eq {m : Mem} (hf : Frame (wR s ++ [tR s]) s.mem m) : bytesAt m (Nn s) (NL s) = iv s :=
-  bytesAt_frame hf (n_apart hp) (by have := hp.w_n; omega)
+  bytesAt_frame hf (n_apart hp) (by have := hp.w_n; omega_using [this])
 
 theorem ad_eq {m : Mem} (hf : Frame (wR s ++ [tR s]) s.mem m) : bytesAt m (Ad s) (AL s).toNat = ad s :=
-  bytesAt_frame hf (a_apart hp) (by have := hp.w_ad; omega)
+  bytesAt_frame hf (a_apart hp) (by have := hp.w_ad; omega_using [])
 
 /-- The descriptors, through a frame of the regions written and the stack. -/
 theorem desc_eq {m : Mem} (hf : Frame (wR s ++ [tR s]) s.mem m) {j : Nat} (hj : j + 8 ≤ Cnt s * 16) :
     m.readW (Src s + BitVec.ofNat 64 j) 64 = s.mem.readW (Src s + BitVec.ofNat 64 j) 64 :=
-  hf.readW (Offset.contains_base _ hj (by have := hp.w_ds; omega)) (ds_apart hp) (by decide)
+  hf.readW (Offset.contains_base _ hj (by have := hp.w_ds; omega_using [hj, this])) (ds_apart hp) (by decide)
 
 /-- Slice `i`'s address and length, through a frame. -/
 theorem sb_eq {m : Mem} (hf : Frame (wR s ++ [tR s]) s.mem m) {i : Nat} (hi : i < Cnt s) :
-    m.readW (Src s + BitVec.ofNat 64 (16 * i)) 64 = sb s i := desc_eq hp hf (by omega)
+    m.readW (Src s + BitVec.ofNat 64 (16 * i)) 64 = sb s i := desc_eq hp hf (by omega_using [hi])
 
 theorem sl_eq {m : Mem} (hf : Frame (wR s ++ [tR s]) s.mem m) {i : Nat} (hi : i < Cnt s) :
     m.readW (Src s + BitVec.ofNat 64 (16 * i) + BitVec.ofNat 64 8) 64 = BitVec.ofNat 64 (sl s i) := by
-  rw [BitVec.add_assoc, ← BitVec.ofNat_add, desc_eq hp hf (by omega), sl, ofNat_toNat, BitVec.add_assoc,
+  rw [BitVec.add_assoc, ← BitVec.ofNat_add, desc_eq hp hf (by omega_using [hi]), sl, ofNat_toNat, BitVec.add_assoc,
     ← BitVec.ofNat_add]
 
 /-- Slice `i`'s bytes, through a frame. -/
 theorem slice_eq {m : Mem} (hf : Frame (wR s ++ [tR s]) s.mem m) {i : Nat} (hi : i < Cnt s) :
     bytesAt m (sb s i) (sl s i) = bytesAt s.mem (sb s i) (sl s i) :=
-  bytesAt_frame hf (ls_apart hp (slice_mem s hi)) (by have := hp.w_ls _ (slice_mem s hi); simp at this; omega)
+  bytesAt_frame hf (ls_apart hp (slice_mem s hi)) (by have := hp.w_ls _ (slice_mem s hi); simp at this; omega_using [this])
 
 end
 
@@ -217,14 +217,14 @@ theorem Kept.zeros {s : State} {ap : BitVec 64} {i : Nat} {m : Mem} (h : Kept s 
       have := h.z₀; simp only [Mem.readW] at this
       rw [show m.read (W s + BitVec.ofNat 64 88) 8 = 0 by simpa using this]; simp
     · have e : W s + BitVec.ofNat 64 88 + BitVec.ofNat 64 j = W s + BitVec.ofNat 64 96 + BitVec.ofNat 64 (j - 8) := by
-        rw [BitVec.add_assoc, BitVec.add_assoc, ← BitVec.ofNat_add, ← BitVec.ofNat_add]; congr 2; omega
-      rw [e, ← Mem.extractLsb'_read m _ (n := 8) (by omega)]
+        rw [BitVec.add_assoc, BitVec.add_assoc, ← BitVec.ofNat_add, ← BitVec.ofNat_add]; congr 2; omega_using [h8]
+      rw [e, ← Mem.extractLsb'_read m _ (n := 8) (by omega_using [hj])]
       have := h.z₁; simp only [Mem.readW] at this
       rw [show m.read (W s + BitVec.ofNat 64 96) 8 = 0 by simpa using this]; simp
   simp only [bytesAt, Spec.Gcm.zeros]
   refine List.ext_getElem (by simp) fun j h₁ h₂ => ?_
   simp only [List.getElem_map, List.getElem_range, List.getElem_replicate]
   simp only [List.length_map, List.length_range] at h₁
-  exact byte j (by omega)
+  exact byte j (by omega_using [hk, h₁])
 
 end VG.Proof.AesGcm.X86_64.Gather

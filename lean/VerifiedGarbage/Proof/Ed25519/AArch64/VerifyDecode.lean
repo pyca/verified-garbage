@@ -45,13 +45,13 @@ theorem ptrAt_ok {s : State} {base : Addr} (hs : Scr s base) {c : Nat} (hc : c <
       t.gpr .x2 = word s.mem base (7936 + 8 * c) ∧ Keeps [.x2] s t := by
   have hshift : (BitVec.ofNat 64 c) <<< 3 = BitVec.ofNat 64 (8 * c) := by
     apply BitVec.eq_of_toNat_eq
-    rw [BitVec.toNat_shiftLeft, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega : c < 2 ^ 64),
+    rw [BitVec.toNat_shiftLeft, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hc] : c < 2 ^ 64),
       Nat.shiftLeft_eq, BitVec.toNat_ofNat, show 2 ^ 3 = 8 from rfl, Nat.mul_comm,
-      Nat.mod_eq_of_lt (by omega : 8 * c < 2 ^ 64)]
+      Nat.mod_eq_of_lt (by omega_using [hc] : 8 * c < 2 ^ 64)]
   have ha : BitVec.ofNat 64 (8 * c) + base + BitVec.ofNat 64 7936 = off base (7936 + 8 * c) := by
     rw [BitVec.add_comm (BitVec.ofNat 64 (8 * c)), BitVec.add_assoc, ← BitVec.ofNat_add, Nat.add_comm]
   have hin : InRegions (s.rd ++ s.wr) (off base (7936 + 8 * c)) 8 :=
-    ⟨_, List.mem_append_right _ hs.wr, contains_sc (by omega)⟩
+    ⟨_, List.mem_append_right _ hs.wr, contains_sc (by omega_using [hc])⟩
   have e1 : exec (.lsl .x .x2 .x19 3) s = some (s.write .x .x2 (BitVec.ofNat 64 (8 * c))) := by
     simp only [exec, read_x, show (3 : Nat) < Size.x.bits from by decide, ite_true, h19, hshift]
   have e2 : exec (.add .x .x2 .x2 .x0) (s.write .x .x2 (BitVec.ofNat 64 (8 * c))) =
@@ -137,10 +137,10 @@ theorem decodeStore_ok {s : State} {base : Addr} (hs : Scr s base) {c : Nat} (hc
   refine WP.mono (loadPointer_ok hs .x19 DCOUNT (by decide) (by decide)) fun a ⟨a19, ka⟩ => ?_
   have hsa := hs.of_keeps ka (by decide)
   rw [WP.block_append_iff]
-  refine WP.mono (tableAddr_ok hsa.x0 7424 c (by omega) (a19.trans hw)) fun b ⟨b8, kb⟩ => ?_
+  refine WP.mono (tableAddr_ok hsa.x0 7424 c (by omega_using [hc]) (a19.trans hw)) fun b ⟨b8, kb⟩ => ?_
   have hsb := hsa.of_keeps kb (by decide)
   rw [WP.block_append_iff]
-  refine WP.mono (pointToTable_ok hsb b8 (by omega) (by omega)) fun d ⟨dp, kd⟩ => ?_
+  refine WP.mono (pointToTable_ok hsb b8 (by omega_using []) (by omega_using [hc])) fun d ⟨dp, kd⟩ => ?_
   refine WP.mono (countTail_ok (kd.scratch hsb)) fun t ⟨t8, tg, trd, twr, tsp, tm⟩ => ?_
   have d19 : d.gpr .x19 = BitVec.ofNat 64 c := by
     rw [kd.gpr _ (by decide), kb.gpr _ (by decide), a19]; exact hw
@@ -151,10 +151,10 @@ theorem decodeStore_ok {s : State} {base : Addr} (hs : Scr s base) {c : Nat} (hc
       TableFrame.table (ft.mono (by decide) (by decide))⟩
   have hbs : ∀ d', tablePoint b.mem base d' = tablePoint s.mem base d' := fun d' => by rw [kb.mem, ka.mem]
   refine ⟨(PowersKeep.of_keeps ka (by decide)).trans ((PowersKeep.of_keeps kb (by decide)).trans
-    ((PowersKeep.of_table kd (by omega) (by omega)).trans kdt)), ?_, t8, ?_, ?_, fun h0 => ?_⟩
+    ((PowersKeep.of_table kd (by omega_using []) (by omega_using [hc])).trans kdt)), ?_, t8, ?_, ?_, fun h0 => ?_⟩
   · rw [tg _ (by decide) (by decide), d19]
   · rw [tm, word_writeW_self, d19]
-  · rw [(TableFrame.table ft).point (by omega) (Or.inl (by unfold DCOUNT; omega)) (by omega), dp, kb.mem, ka.mem]
+  · rw [(TableFrame.table ft).point (by omega_using []) (Or.inl (by unfold DCOUNT; omega_using [hc])) (by omega_using [hc]), dp, kb.mem, ka.mem]
   · subst h0
     rw [(TableFrame.table ft).point (by decide) (Or.inl (by decide)) (by decide),
       (TableFrame.table kd.mem).point (by decide) (Or.inr (by decide)) (by decide), hbs]
@@ -172,7 +172,7 @@ theorem VerifyPublic.pass {base pk sig challenge : Addr} {pkbs rbs sbs kbs : Lis
     word s.mem base (7936 + 8 * c) = inPtr pk sig c ∧
       (∀ d, d + 8 ≤ 32 → InRegions (s.rd ++ s.wr) (off (inPtr pk sig c) d) 8) ∧
       Spec.Ed25519.bytesAt s.mem (inPtr pk sig c) 32 = inBytes pkbs rbs c := by
-  rcases (by omega : c = 0 ∨ c = 1) with rfl | rfl
+  rcases (by omega_using [hc] : c = 0 ∨ c = 1) with rfl | rfl
   · exact ⟨h.context.pkHeader, h.context.pkRead, h.pkBytes⟩
   · exact ⟨h.context.sigHeader, h.context.rRead, h.rBytes⟩
 
@@ -290,7 +290,7 @@ theorem decodeLoop_ok {s : State} {base pk sig challenge : Addr} {pkbs rbs sbs k
   · have hn : n = 2 := by
       simp only [Bool.and_eq_true, beq_iff_eq] at hb
       exact hb.1
-    exact Or.inr ⟨ev.trans (by rw [hb]), 1, by omega, ht hb, hx.2.trans kt⟩
+    exact Or.inr ⟨ev.trans (by rw [hb]), 1, by omega_using [hn], ht hb, hx.2.trans kt⟩
 
 /-! ### Constant time -/
 
@@ -388,7 +388,7 @@ theorem decodeLoop_ct (base pk sig challenge : Addr) (pkbs rbs sbs kbs : List By
     have hn : n = 2 := by
       simp only [Bool.and_eq_true, beq_iff_eq] at hb
       exact hb.1
-    exact ⟨1, by omega, tx hb, ty hb⟩
+    exact ⟨1, by omega_using [hn], tx hb, ty hb⟩
 
 /-! ### Decoding, then the equation -/
 

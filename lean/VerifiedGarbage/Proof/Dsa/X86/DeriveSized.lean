@@ -113,9 +113,9 @@ theorem deriveSizedWith_spec {base : Addr} {size pLen qLen p q g x : Nat}
       ∀ regs, VG.X86.Spill.Saved s.mem (off base) regs Entry.savedRegisters →
         VG.X86.Spill.Saved sf.mem (off base) regs Entry.savedRegisters := by
   dsimp only
-  have bound : 8248 ≤ size := by have H : 15712 ≤ size := extent; omega
-  have sz : 8272 ≤ size := by have H : 15712 ≤ size := extent; omega
-  have L : 128 ≤ pLen ∧ pLen ≤ 384 ∧ 20 ≤ qLen ∧ qLen ≤ 32 := by unfold Spec.Dsa.lengthsValid at widths; omega
+  have bound : 8248 ≤ size := by have H : 15712 ≤ size := extent; omega_using [H]
+  have sz : 8272 ≤ size := by have H : 15712 ≤ size := extent; omega_using [H]
+  have L : 128 ≤ pLen ∧ pLen ≤ 384 ∧ 20 ≤ qLen ∧ qLen ≤ 32 := by unfold Spec.Dsa.lengthsValid at widths; omega_using [widths]
   have spec := deriveSpec widths
     (show params.length = 2 * pLen + qLen by rw [← paramBytes]; simp [Spec.Rsa.bytesAt])
     (show scalar.length = qLen by rw [← scalarBytes]; simp [Spec.Rsa.bytesAt]) paramsValue
@@ -148,22 +148,22 @@ theorem deriveSizedWith_spec {base : Addr} {size pLen qLen p q g x : Nat}
     · split_ifs at B ⊢ <;> exact B
     · intro a hb hout hstack
       exact (Of a hb hout (by rw [K.1 .esp (by decide)]; exact hstack)).trans
-        ((shapeFrame_outside O) a (.inr (by change 15712 ≤ ofs base a at hb; omega)))
+        ((shapeFrame_outside O) a (.inr (by change 15712 ≤ ofs base a at hb; omega_using [hb])))
   · refine WP.ite true (by simp only [eval, Z, valid, decide_false, Bool.not_false])
       (fun _ => ?_) (fun h => Bool.noConfusion h)
-    refine WP.mono (deriveFailure_ok (scr.of_keeps K (by decide)) (by change 8256 ≤ size; omega)
-      (by omega) (by omega) ((shapeFrame_field O (by decide)).trans ho) hf
+    refine WP.mono (deriveFailure_ok (scr.of_keeps K (by decide)) (by change 8256 ≤ size; omega_using [sz])
+      (by omega_using [L]) (by omega_using [L]) ((shapeFrame_field O (by decide)).trans ho) hf
       (by rw [K.2.2]; exact hw)) fun sf ⟨B, V, Of, Kf⟩ => ?_
     have Fout : OutputFrame base (out.setWidth 64) 0 (3 * pLen + 2 * qLen) t.mem sf.mem :=
-      fun a _ h => Of a (.inr (by omega))
+      fun a _ h => Of a (.inr (by omega_using [h]))
     rw [spec]
     simp only [valid, false_and, ite_false, Option.getD_none]
     refine ⟨by rw [V]; rfl, B, (K.mono (by decide)).trans (Kf.mono (by decide)), ?_, ?_⟩
     · intro a hb hout _
-      exact (Fout a (by omega) hout).trans
-        ((shapeFrame_outside O) a (.inr (by change 15712 ≤ ofs base a at hb; omega)))
+      exact (Fout a (by omega_using []) hout).trans
+        ((shapeFrame_outside O) a (.inr (by change 15712 ≤ ofs base a at hb; omega_using [hb])))
     · intro regs saved
-      exact Fout.saved ha (by decide) sz (by have := scr.nowrap; omega) (shapeFrame_saved O saved)
+      exact Fout.saved ha (by decide) sz (by have := scr.nowrap; omega_using [this]) (shapeFrame_saved O saved)
 
 theorem deriveSized_spec {base : Addr} {size pLen qLen p q g x : Nat}
     {s : State} {out : BitVec 32} {params scalar : List Byte}

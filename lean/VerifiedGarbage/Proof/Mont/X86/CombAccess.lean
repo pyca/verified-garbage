@@ -24,14 +24,14 @@ theorem publicSelect_ok {s : State} {base : Addr} {size n tab dst : Nat}
       wordsVal t.mem base dst n = wordsVal s.mem base (entry n tab (w32 s.mem base 4)) n ∧
       Keeps [.eax, .ebx, .ecx, .edx, .ebp] s t := by
   unfold VG.Impl.Mont.X86.Comb.publicSelect
-  refine WP.seq (WP.mono (copySetup_ok hs (by have := hs.size_lt; omega)
+  refine WP.seq (WP.mono (copySetup_ok hs (by have := hs.size_lt; omega_using [src, this])
     (readSrc_sc hs (d := 4) header)) fun u ⟨M, P, Q, C, K⟩ => ?_)
   have hu := hs.of_keeps K (by decide)
   refine WP.mono (copyLoop_ok (x := entry n tab (w32 s.mem base 4)) (y := 0) (sd := 0) (dd := dst)
-    (N := 2*n) ⟨hu.wr, hu.nowrap⟩ (by omega) (by simp) (by simp)
-    (by omega) (by omega) (by omega) P Q C) fun t ⟨O, V, K'⟩ => ?_
+    (N := 2*n) ⟨hu.wr, hu.nowrap⟩ (by omega_using [hn]) (by simp) (by simp)
+    (by omega_using [src]) (by omega_using [out]) (by omega_using [sep]) P Q C) fun t ⟨O, V, K'⟩ => ?_
   refine ⟨?_, ?_, K.trans (K'.mono (by decide))⟩
-  · simpa only [Nat.zero_add, show 4*(2*n) = 8*n by omega, M] using O
+  · simpa only [Nat.zero_add, show 4*(2*n) = 8*n by omega_using [], M] using O
   · simpa only [wordsVal_eq_val32, Nat.zero_add, Nat.add_zero, M] using V
 
 theorem copyToComb_ok {s : State} {base : Addr} {size n tab src : Nat}
@@ -44,14 +44,14 @@ theorem copyToComb_ok {s : State} {base : Addr} {size n tab src : Nat}
       wordsVal t.mem base (entry n tab (s.gpr .esi).toNat) n = wordsVal s.mem base src n ∧
       Keeps [.eax, .ebx, .ecx, .edx, .ebp] s t := by
   unfold VG.Impl.Mont.X86.Comb.copyToComb
-  refine WP.seq (WP.mono (copySetup_ok hs (by have := hs.size_lt; omega) rfl)
+  refine WP.seq (WP.mono (copySetup_ok hs (by have := hs.size_lt; omega_using [input, this]) rfl)
     fun u ⟨M, P, Q, C, K⟩ => ?_)
   have hu := hs.of_keeps K (by decide)
   refine WP.mono (copyLoop_ok (x := 0) (y := entry n tab (s.gpr .esi).toNat) (sd := src) (dd := 0)
-    (N := 2*n) ⟨hu.wr, hu.nowrap⟩ (by omega) (by simp) (by simp)
-    (by omega) (by omega) (by omega) Q P C) fun t ⟨O, V, K'⟩ => ?_
+    (N := 2*n) ⟨hu.wr, hu.nowrap⟩ (by omega_using [hn]) (by simp) (by simp)
+    (by omega_using [input]) (by omega_using [out]) (by omega_using [sep]) Q P C) fun t ⟨O, V, K'⟩ => ?_
   refine ⟨?_, ?_, K.trans (K'.mono (by decide))⟩
-  · simpa only [Nat.add_zero, show 4*(2*n) = 8*n by omega, M] using O
+  · simpa only [Nat.add_zero, show 4*(2*n) = 8*n by omega_using [], M] using O
   · simpa only [wordsVal_eq_val32, Nat.zero_add, Nat.add_zero, M] using V
 
 end VG.Proof.Mont.X86.Comb

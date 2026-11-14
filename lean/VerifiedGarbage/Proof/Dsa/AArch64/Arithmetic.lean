@@ -32,7 +32,7 @@ theorem reduceStep_ok (M : Mont) {s : State} {B : Addr} {Z w m y byte : Nat}
       Arrays B w [aAcc, aTmp, aY] s.mem t.mem ∧ Keep mmRegs s t := by
   have hnZ : B.toNat + slot w 8 ≤ 2 ^ 64 := by
     have := hg.scr.nowrap
-    omega
+    omega_using [hZ, this]
   unfold VG.Impl.Dsa.AArch64.Arithmetic.reduceStep
   refine WP.seq (WP.mono (M.mm_ok hg hZ hw hw' (by decide) (by decide) (by decide)
     (by decide) (by decide) (by decide) (by decide) hinv ?_) fun u h => ?_)

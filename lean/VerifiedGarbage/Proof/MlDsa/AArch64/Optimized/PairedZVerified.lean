@@ -95,11 +95,11 @@ theorem zEntry_frame {s : State} {m : Mem} (h : ZSpecPre s)
   · intro j hj
     apply VG.Proof.MlDsa.Verify.reduced_frame hf _ (h.data j hj)
     intro r hr
-    exact (ho r hr).sub_left (Offset.sub_base _ (by omega))
+    exact (ho r hr).sub_left (Offset.sub_base _ (by omega_using [hj]))
   · intro j hj
     rw [pairedProduct_frame hf hc hs hj,VG.Proof.MlDsa.Verify.polyAt_frame hf]
     intro r hr
-    exact (ho r hr).sub_left (Offset.sub_base _ (by omega))
+    exact (ho r hr).sub_left (Offset.sub_base _ (by omega_using [hj]))
 
 end VG.Proof.MlDsa.AArch64.Optimized.Paired
 
@@ -167,7 +167,7 @@ theorem zLane_norm {m : Mem} {work challenge secret out : Addr} {u e B : Nat}
     passMask false work out c (firstPassMem m work challenge secret 8) u i e=0 ↔
       normZq (add (polyAt m (pairPolyPtr out i.1.val))
         (pairedProduct m challenge secret i.1.val))[4*u+32*i.2.val+e]!<B := by
-  have hk : 4*u+32*i.2.val+e<n := by change 4*u+32*i.2.val+e<256; omega
+  have hk : 4*u+32*i.2.val+e<n := by change 4*u+32*i.2.val+e<256; omega_using [hu, he]
   have hr := rawFinal_field hu hc hs i.1 (Inverse.positiveReduced_is hp.1)
     (Inverse.positiveReduced_is (hp.2 i.1.val i.1.isLt)) i.2 he
   simp only [passMask,checkMask,Bool.false_eq_true,ite_false,hlower,hwidth]
@@ -192,7 +192,7 @@ open VG.Impl.MlDsa.AArch64.Optimized.Paired
 private theorem accessRegion {p : Addr} {len : Nat} {rs : List Region}
     (h : (⟨p,len⟩:Region)∈rs) {off : Nat} (ho : off+16≤len) (hl : len<2^64) :
     InRegions rs (p+BitVec.ofNat 64 off) 16 :=
-  ⟨_,h,Offset.contains_base p ho (by omega)⟩
+  ⟨_,h,Offset.contains_base p ho (by omega_using [ho, hl])⟩
 
 theorem ZSpecPre.access {s : State} (h : ZSpecPre s) : EntryAccess s := by
   constructor
@@ -277,7 +277,7 @@ theorem zPass_norm_complete {m : Mem} {work challenge secret out aux : Addr} {B 
       normRq ((List.range 2).map fun j => add (polyAt m (pairPolyPtr out j))
         (pairedProduct m challenge secret j))<B := by
   dsimp only
-  rw [paired_norm_iff _ (by omega),←checkCoverage]
+  rw [paired_norm_iff _ (by omega_using [hB]),←checkCoverage]
   apply forall_congr'
   intro e
   apply forall_congr'
@@ -340,11 +340,11 @@ theorem pairedZ_sat : (pairedZContract (abi.withConsts pairedConsts)).pre zSat :
     intro j hj
     change PositiveReduced pairedSatMem (8192+BitVec.ofNat 64 (1024*j))
     rw [show (8192:BitVec 64)=BitVec.ofNat 64 8192 by rfl,←BitVec.ofNat_add]
-    exact pairedSat_positive (by omega)
+    exact pairedSat_positive (by omega_using [hj])
   · intro j hj
     change Reduced pairedSatMem (12288+BitVec.ofNat 64 (1024*j))
     rw [show (12288:BitVec 64)=BitVec.ofNat 64 12288 by rfl,←BitVec.ofNat_add]
-    exact pairedSat_reduced (by omega)
+    exact pairedSat_reduced (by omega_using [hj])
 
 end VG.Proof.MlDsa.AArch64.Optimized.Paired
 

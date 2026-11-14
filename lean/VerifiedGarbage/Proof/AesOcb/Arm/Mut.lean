@@ -47,7 +47,7 @@ theorem w_mut (_L : Lay p) {a l : Nat} (h : a + l ≤ 128 ∨ (164 ≤ a ∧ a +
     ∃ r' ∈ mutR p, Region.Sub ⟨State.addr p.W + BitVec.ofNat 64 a, l⟩ r' := by
   rcases h with h | h
   · exact ⟨_, List.mem_cons_self .., Offset.sub_base _ h⟩
-  · exact ⟨⟨State.addr p.W + BitVec.ofNat 64 164, 2396⟩, by simp, Offset.sub _ h.1 (by omega)⟩
+  · exact ⟨⟨State.addr p.W + BitVec.ofNat 64 164, 2396⟩, by simp, Offset.sub _ h.1 (by omega_using [h])⟩
 
 omit L in
 theorem below_mut (_L : Lay p) : ∃ r' ∈ mutR p, Region.Sub (below p.SP) r' := ⟨_, by simp, fun _ h => h⟩
@@ -92,7 +92,7 @@ theorem k_mut : ∀ r ∈ mutR p, (⟨State.addr p.K, 256⟩ : Region).Disjoint 
 
 theorem sched_mut {m m' : Mem} (h : Frame (mutR p) m m') : sched p m' = sched p m :=
   Proof.Cmac.bytesAt_frame h (fun r hr => (k_mut L r hr).sub_left
-    (Region.sub_prefix (by have := L.rounds_le; omega))) (by have := L.rounds_le; omega)
+    (Region.sub_prefix (by have := L.rounds_le; omega_using [this]))) (by have := L.rounds_le; omega_using [this])
 
 theorem lstar_mut {m m' : Mem} (h : Frame (mutR p) m m') :
     Spec.Ocb.ctxLstar m' (State.addr p.K) = Spec.Ocb.ctxLstar m (State.addr p.K) := by
@@ -101,11 +101,11 @@ theorem lstar_mut {m m' : Mem} (h : Frame (mutR p) m m') :
 
 theorem aad_mut {m m' : Mem} (h : Frame (mutR p) m m') :
     bytesAt m' (State.addr p.A) p.al = bytesAt m (State.addr p.A) p.al :=
-  Proof.Cmac.bytesAt_frame h (disj_mut L L.a_w L.ba L.a_d) (by have := L.al_lt; omega)
+  Proof.Cmac.bytesAt_frame h (disj_mut L L.a_w L.ba L.a_d) (by have := L.al_lt; omega_using [this])
 
 theorem tag_mut {m m' : Mem} (h : Frame (mutR p) m m') :
     bytesAt m' (State.addr p.T) p.tl = bytesAt m (State.addr p.T) p.tl :=
-  Proof.Cmac.bytesAt_frame h (disj_mut L L.t_w L.bt L.t_d) (by have := L.tl16; omega)
+  Proof.Cmac.bytesAt_frame h (disj_mut L L.t_w L.bt L.t_d) (by have := L.tl16; omega_using [this])
 
 /-- A block of the associated data. -/
 theorem aadBlk_mut {m m' : Mem} (h : Frame (mutR p) m m') {k : Nat} (hk : k + 16 ≤ p.al) :

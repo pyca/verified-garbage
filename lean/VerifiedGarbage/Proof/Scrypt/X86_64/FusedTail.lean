@@ -32,7 +32,7 @@ theorem meta_read_write (m : Mem) (p : Addr) {i j : Nat} (hi : MetaOff i) (hj : 
     apply Mem.readW_writeW_sep _ (by decide)
     simp only [bufAt, ofInt_natCast]
     exact Offset.sep p (by rcases hi with rfl | rfl | rfl | rfl <;>
-      rcases hj with rfl | rfl | rfl | rfl <;> omega)
+      rcases hj with rfl | rfl | rfl | rfl <;> omega_arith)
       (by rcases hj with rfl | rfl | rfl | rfl <;> decide)
       (by rcases hi with rfl | rfl | rfl | rfl <;> decide)
 
@@ -61,10 +61,10 @@ theorem advance_ok {p : Addr} {s : State} (si : s.gpr .rsi = p) (hs : InRegions 
   have bound : off + 8 ≤ 64 := by rcases ho with rfl | rfl | rfl | rfl <;> decide
   unfold fusedAdvance
   refine wp_movm (a := bufAt p off) (by rw [ea_at, si])
-    (Memory.InRegions.right (access hs bound (by omega))) fun a ua => wp_addi fun b ub => ?_
+    (Memory.InRegions.right (access hs bound (by omega_using [bound]))) fun a ua => wp_addi fun b ub => ?_
   have si' : b.gpr .rsi = p := by rw [ub.other _ (by decide), ua.other _ (by decide), si]
   refine wp_store (a := bufAt p off) (by rw [ea_at, si'])
-    (by rw [ub.wr, ua.wr]; exact access hs bound (by omega)) fun t gt mt rt wt => WP.block_nil ?_
+    (by rw [ub.wr, ua.wr]; exact access hs bound (by omega_using [bound])) fun t gt mt rt wt => WP.block_nil ?_
   have val : b.gpr .rax = s.mem.readW (bufAt p off) 64 + BitVec.ofNat 64 inc := by
     rw [ub.gpr, ua.gpr]; rcases hn with rfl | rfl <;> rfl
   rw [val, ub.mem, ua.mem] at mt
@@ -140,7 +140,7 @@ theorem Words.tail {p : Addr} {v : Vector Spec.Scrypt.Word 16} {s t : State}
   rw [ht.frame.readW (r := slotR p) (by
     simpa only [slotR, bufAt, ofInt_natCast] using
       Offset.contains_base p (d := slotOff k) (n := 4) (k := 16)
-        (by simp only [slotOff]; omega) (by simp only [slotOff]; omega)) (fun R hR => by
+        (by simp only [slotOff]; omega_using [hk]) (by simp only [slotOff]; omega_using [hk])) (fun R hR => by
     simp only [List.mem_singleton] at hR; subst R
     simpa only [slotR, metaR, bufAt, ofInt_natCast, BitVec.add_zero] using
       Offset.disjoint p (d := 0) (n := 16) (e := 16) (k := 32) (by decide) (by decide) (by decide)) (by decide)]

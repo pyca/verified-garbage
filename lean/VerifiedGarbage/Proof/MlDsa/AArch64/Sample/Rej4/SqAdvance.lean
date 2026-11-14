@@ -26,10 +26,10 @@ theorem phaseAdvance_ok {σ s : State} {n : Nat} (hn : n < 6) (h : Phase σ n 2 
   · rw [hptr k hk,h.ptrs k hk]
     unfold bufAt at'
     rw [show (168 : BitVec 64) = BitVec.ofNat 64 168 from rfl,Offset.add_add]
-    exact congrArg (fun d => scr σ+BitVec.ofNat 64 d) (by omega)
-  · rw [hct,toNat_sub_n (by rw [h.count]; change 1 ≤ 6-n; omega),h.count]
+    exact congrArg (fun d => scr σ+BitVec.ofNat 64 d) (by omega_using [])
+  · rw [hct,toNat_sub_n (by rw [h.count]; change 1 ≤ 6-n; omega_using [hn]),h.count]
     change 6-n-1 = 6-(n+1)
-    omega
+    omega_using []
   · rw [ht.mem]
     have hs := h.states p hp
     simpa only [ite_eq_left hp,ite_eq_right (Nat.not_lt_zero _)] using hs

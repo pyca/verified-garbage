@@ -93,17 +93,17 @@ theorem crypt_wp (up : Bool) {s : State} {B : Addr} {ws : List Region} {k : Sche
   have hW : (⟨B, 8 * 12⟩ : Region) ∈ s.wr := hS.wr
   obtain ⟨⟨hk, hin, hd⟩, hkB⟩ := hR
   have slotIn : ∀ (u : State), u.wr = s.wr → ∀ o, o + 8 ≤ 96 → InRegions u.wr (B + BitVec.ofNat 64 o) 8 :=
-    fun u hu o ho => ⟨_, by rw [hu]; exact hW, Offset.contains_base _ (by omega) (by omega)⟩
+    fun u hu o ho => ⟨_, by rw [hu]; exact hW, Offset.contains_base _ (by omega_using [ho]) (by omega_using [ho])⟩
   have slotRd : ∀ (u : State), u.rd = s.rd → u.wr = s.wr → ∀ o n, o + n ≤ 96 →
       InRegions (u.rd ++ u.wr) (B + BitVec.ofNat 64 o) n := fun u hr hu o n ho =>
-    ⟨_, by rw [hr, hu]; exact List.mem_append_right _ hW, Offset.contains_base _ (by omega) (by omega)⟩
+    ⟨_, by rw [hr, hu]; exact List.mem_append_right _ hW, Offset.contains_base _ (by omega_using [ho]) (by omega_using [ho])⟩
   simp only [dirCore, modeCrypt]
   -- Our caller's `r14`–`r17`, through `r6`.
   refine WP.seq (wp_mr fun s₁ u₁ => ?_)
   have r6₁ : s₁.gpr .r6 = B := by rw [u₁.gpr]; exact hB
   rw [save_eq, ← List.append_nil (Spill.saveCode .r6 saved)]
   refine Spill.save_ok (by decide) saved_fits (fun p hp => by
-    rw [r6₁, u₁.wr]; exact slotIn s rfl _ (by have := saved_lt p hp; omega)) (wp_nil ?_)
+    rw [r6₁, u₁.wr]; exact slotIn s rfl _ (by have := saved_lt p hp; omega_using [this])) (wp_nil ?_)
   let M₀ := Spill.saveMem s₁.mem (s₁.gpr .r6) s₁.gpr saved
   let s₂ : State := { s₁ with mem := M₀ }
   have F₀ : Frame [⟨B, 32⟩] s.mem M₀ := by
@@ -131,7 +131,7 @@ theorem crypt_wp (up : Bool) {s : State} {B : Addr} {ws : List Region} {k : Sche
   have E : LookEnv s₅ := by
     refine ⟨fun o n ho => ?_, by rw [k₅.gpr (by decide)]; exact z₄⟩
     rw [r3₅, k₅.2.1, k₅.2.2, rd₄, wr₄]
-    exact ⟨_, hin, Offset.contains_base _ ho (by omega)⟩
+    exact ⟨_, hin, Offset.contains_base _ ho (by omega_using [ho])⟩
   -- The block function.
   refine WP.seq (WP.mono (cipher_run E up) fun s₆ ⟨c₆, k₆, m₆⟩ => ?_)
   have rd₆ : s₆.rd = s.rd := by rw [k₆.2.1, k₅.2.1, rd₄]
@@ -140,10 +140,10 @@ theorem crypt_wp (up : Bool) {s : State} {B : Addr} {ws : List Region} {k : Sche
   have z₆ : s₆.gpr .r0 = 0#64 := by rw [k₆.gpr (by decide), k₅.gpr (by decide), z₄]
   have q4' : InRegions s₆.wr (B + BitVec.ofNat 64 32 + BitVec.ofNat 64 4) 4 := by
     rw [Offset.add_add]
-    exact ⟨_, by rw [wr₆]; exact hW, Offset.contains_base _ (show 36 + 4 ≤ 96 by decide) (by omega)⟩
+    exact ⟨_, by rw [wr₆]; exact hW, Offset.contains_base _ (show 36 + 4 ≤ 96 by decide) (by omega_using [])⟩
   -- The halves back to the block.
   refine WP.seq (WP.mono (storeBlock_run s₆ p₆ z₆
-    ⟨_, by rw [wr₆]; exact hW, Offset.contains_base _ (show 32 + 4 ≤ 96 by decide) (by omega)⟩ q4')
+    ⟨_, by rw [wr₆]; exact hW, Offset.contains_base _ (show 32 + 4 ≤ 96 by decide) (by omega_using [])⟩ q4')
     fun s₇ ⟨m₇, _, _, k₇⟩ => ?_)
   have r6₇ : s₇.gpr .r6 = B := by
     rw [k₇.gpr (by decide), k₆.gpr (by decide), k₅.gpr (by decide), g₄ _ (by decide) (by decide), r6₁]
@@ -162,13 +162,13 @@ theorem crypt_wp (up : Bool) {s : State} {B : Addr} {ws : List Region} {k : Sche
   have hsv₇ : Spill.Saved B s₁.gpr saved s₇.mem := by
     refine (hsv.frame (by rw [← m₄, ← m₅, ← m₆]; exact Fblk)) fun p hp r hr => ?_
     simp only [List.mem_singleton] at hr; subst hr
-    exact Offset.disjoint _ (.inl (by have := saved_lt p hp; omega)) (by have := saved_lt p hp; omega) (by omega)
+    exact Offset.disjoint _ (.inl (by have := saved_lt p hp; omega_using [this])) (by have := saved_lt p hp; omega_using [this]) (by omega_using [])
   -- `sb` and our caller's registers back.
   refine wp_mr fun s₈ u₈ => ?_
   rw [restore_eq]
   refine WP.mono (Spill.restore_wp (by decide) (by rw [u₈.other _ (by decide), r6₇]) saved_fits (by decide)
     (fun p hp => by
-      rw [u₈.rd, u₈.wr]; exact slotRd _ rd₇ wr₇ _ 8 (by have := saved_lt p hp; omega))
+      rw [u₈.rd, u₈.wr]; exact slotRd _ rd₇ wr₇ _ 8 (by have := saved_lt p hp; omega_using [this]))
     (by rw [u₈.mem]; exact hsv₇)) fun s' R => ?_
   have K₇ : Keep cryptRegs s s₇ := by
     have Kb : Keep cryptRegs s₄ s₇ := ((k₅.trans k₆).trans k₇).mono (by decide)
@@ -209,7 +209,7 @@ theorem crypt_wp (up : Bool) {s : State} {B : Addr} {ws : List Region} {k : Sche
     have hb : blockAt s₄.mem (B + BitVec.ofNat 64 32) = blockAt s.mem (B + BitVec.ofNat 64 32) := by
       rw [m₄]; exact blockAt_frame F₀ fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr
-        exact Offset.disjoint_base _ (by decide) (by omega)
+        exact Offset.disjoint_base _ (by decide) (by omega_using [])
     have hk₄ : scheduleAt s₄.mem (s.gpr .r3) = k := by
       rw [m₄, scheduleAt_eq_of_frame _ F₀ fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr; exact hkB.sub_right (Region.sub_prefix (by decide)), hk]

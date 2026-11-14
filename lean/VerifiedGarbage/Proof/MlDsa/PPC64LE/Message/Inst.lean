@@ -99,7 +99,7 @@ theorem pv_mem : ∃ m : Mem, PreparedPublicKey p m 0x10000 ∧
   have hk : bytesAt (VG.WriteBytes.writeBytes m 0xC000 (pkTr (bytesAt m 0x10000 p.pkLen))) 0x10000 p.pkLen =
       bytesAt m 0x10000 p.pkLen := by
     have hs : Region.Sub ⟨0x10000, p.pkLen⟩ ⟨0x10000, preparedPublicKeyBytes p⟩ := fun a ha => by
-      simp only [Region.Contains, preparedPublicKeyBytes] at ha ⊢; omega
+      simp only [Region.Contains, preparedPublicKeyBytes] at ha ⊢; omega_using [ha]
     exact Proof.MlKem.bytesAt_frame hf (fun r hr => by
       rw [List.mem_singleton] at hr; subst hr; exact hd.sub_left hs) (by rcases hp3 with rfl | rfl | rfl <;> decide)
   refine ⟨_, preparedPublicKey_frame hf (fun r hr => by rw [List.mem_singleton] at hr; subst hr; exact hd) hfit hm,

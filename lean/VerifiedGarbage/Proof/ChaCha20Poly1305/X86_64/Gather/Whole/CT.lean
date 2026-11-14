@@ -125,7 +125,7 @@ theorem sealGather_ct (w : Width) (F : SealFn) :
       e₁.mem (Src σ₁ + BitVec.ofNat 64 j) = e₂.mem (Src σ₁ + BitVec.ofNat 64 j) := by
     intro j hj
     have hx : (dsR σ₁).Contains (Src σ₁ + BitVec.ofNat 64 j) 1 :=
-      Offset.contains_base _ hj (by omega)
+      Offset.contains_base _ hj (by omega_using [ods₁, hj])
     have hx₂ : (dsR σ₂).Contains (Src σ₁ + BitVec.ofNat 64 j) 1 := by
       simp only [dsR, Src, Cnt, ← q8, ← q9]; exact hx
     rw [he₁.mem, he₂.mem, h₁.keepE bds₁.symm hx, h₂.keepE bds₂.symm hx₂]

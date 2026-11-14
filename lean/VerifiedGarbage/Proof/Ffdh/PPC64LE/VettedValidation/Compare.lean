@@ -45,7 +45,7 @@ theorem compare_ok {s : State} {n : Nat} (hn : 0 < n) (hn' : n < 2 ^ 64)
       have sum : BitVec.ofNat 64 n = BitVec.ofNat 64 (n - i) + BitVec.ofNat 64 i := by
         rw [← BitVec.ofNat_add]
         congr 1
-        omega
+        omega_using [hi]
       rw [sum, BitVec.add_comm, BitVec.add_sub_cancel]
     unfold compareByte
     refine wp_sub fun t₁ o₁ e₁ => wp_add fun t₂ o₂ e₂ => ?_

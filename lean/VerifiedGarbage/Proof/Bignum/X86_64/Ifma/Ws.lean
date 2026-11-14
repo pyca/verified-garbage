@@ -30,7 +30,7 @@ theorem nsafe_wv {m m' : Mem} {B : Addr} {w : Nat} {rs : List (Nat × Nat)} (hf 
     (hr : NSafe w rs) {j : Nat} (hj : j < 8) (h1 : j ≠ Public.aAcc) (h2 : j ≠ Public.aTmp) (h3 : j ≠ Public.aY)
     (h4 : j ≠ Public.aX) (hz : slot w 8 ≤ 2 ^ 64) : wv m' B (slot w j) w = wv m B (slot w j) w := by
   have := slot_le (w := w) hj
-  refine hf.wv_eq (fun r hr' => ?_) (by omega)
+  refine hf.wv_eq (fun r hr' => ?_) (by omega_using [hz, this])
   rcases hr r hr' with h | h | h
   · have := slot_sep (w := w) h1
     have := slot_sep (w := w) h2
@@ -38,30 +38,30 @@ theorem nsafe_wv {m m' : Mem} {B : Addr} {w : Nat} {rs : List (Nat × Nat)} (hf 
     have := hdr_lt_slot w j (show Crt.sD < 32 by decide)
     have := hdr_lt_slot w j (show Public.sCnt < 32 by decide)
     simp only [gRanges, List.mem_cons, List.not_mem_nil, or_false] at h
-    rcases h with rfl | rfl | rfl | rfl | rfl <;> simp only [Crt.sD, Public.sCnt, sFn] at * <;> omega
-  · subst h; have := slot_sep (w := w) h4; simp only; omega
-  · exact .inl (by omega)
+    rcases h with rfl | rfl | rfl | rfl | rfl <;> simp only [Crt.sD, Public.sCnt, sFn] at * <;> omega_arith
+  · subst h; have := slot_sep (w := w) h4; simp only; omega_using [this]
+  · exact .inl (by omega_using [this, h])
 
 theorem nsafe_word {m m' : Mem} {B : Addr} {w : Nat} {rs : List (Nat × Nat)} (hf : Frm B rs m m')
     (hr : NSafe w rs) {i : Nat} (hi : i < 32) (h1 : i ≠ Crt.sD) (h2 : i ≠ Public.sCnt) :
     word m' B (8 * i) = word m B (8 * i) := by
   have := hdr_lt_slot w 8 hi
-  refine hf.word_eq (fun r hr' => ?_) (by omega)
+  refine hf.word_eq (fun r hr' => ?_) (by omega_using [hi])
   rcases hr r hr' with h | h | h
   · have := hdr_lt_slot w Public.aAcc hi
     have := hdr_lt_slot w Public.aTmp hi
     have := hdr_lt_slot w Public.aY hi
     simp only [gRanges, List.mem_cons, List.not_mem_nil, or_false] at h
     rcases h with rfl | rfl | rfl | rfl | rfl
-    · exact .inl (by omega)
-    · exact .inl (by omega)
-    · exact .inl (by omega)
+    · exact .inl (by omega_arith)
+    · exact .inl (by omega_arith)
+    · exact .inl (by omega_using [this])
     · show 8 * i + 8 ≤ 8 * Crt.sD ∨ 8 * Crt.sD + 8 ≤ 8 * i
-      unfold Crt.sD sFn at h1 ⊢; omega
+      unfold Crt.sD sFn at h1 ⊢; omega_using [h1]
     · show 8 * i + 8 ≤ 8 * Public.sCnt ∨ 8 * Public.sCnt + 8 ≤ 8 * i
-      unfold Public.sCnt sFn at h2 ⊢; omega
-  · subst h; have := hdr_lt_slot w Public.aX hi; exact .inl (by simp only; omega)
-  · exact .inl (by omega)
+      unfold Public.sCnt sFn at h2 ⊢; omega_using [h2]
+  · subst h; have := hdr_lt_slot w Public.aX hi; exact .inl (by simp only; omega_using [this])
+  · exact .inl (by omega_using [this, h])
 
 theorem NVals.of_nsafe {s t : State} {B : Addr} {w : Nat} {minv : BitVec 64} {N : Nat} (h : NVals s B w minv N)
     {rs : List (Nat × Nat)} (hf : Frm B rs s.mem t.mem) (hr : NSafe w rs) (hz : slot w 8 ≤ 2 ^ 64) (hw : 1 ≤ w) :
@@ -83,11 +83,11 @@ theorem preRanges_nsafe {w op wp oq wq : Nat} (hp : slot w 8 ≤ op) (hq : slot 
   rcases hr with hr | rfl | rfl | rfl
   · exact .inl hr
   · exact .inr (.inl rfl)
-  · exact .inr (.inr (by simp only [xRange]; omega))
-  · exact .inr (.inr (by simp only [xRange]; omega))
+  · exact .inr (.inr (by simp only [xRange]; omega_using [hq]))
+  · exact .inr (.inr (by simp only [xRange]; omega_using [hp]))
 
 theorem above_nsafe {w L : Nat} {rs : List (Nat × Nat)} (hL : slot w 8 ≤ L) (hr : ∀ r ∈ rs, L ≤ r.1) :
-    NSafe w rs := fun r h => .inr (.inr (by have := hr r h; omega))
+    NSafe w rs := fun r h => .inr (.inr (by have := hr r h; omega_using [hL, this]))
 
 /-- What `pre` leaves (`pre_ok`), from `s`. -/
 def APost (s t : State) (B : Addr) (Z w op oq wp : Nat) (minv mp mq : BitVec 64) (N P Q C : Nat) : Prop :=
@@ -122,7 +122,7 @@ theorem mx_ffff (x : BitVec 32) : (x &&& 0xFFFF).extractLsb' 6 10 = x.extractLsb
   have : (0xFFFF : BitVec 32).getLsbD (6 + i) = true := by
     rw [show (0xFFFF : BitVec 32) = BitVec.ofNat 32 (2 ^ 16 - 1) from rfl, BitVec.getLsbD_ofNat,
       Nat.testBit_two_pow_sub_one]
-    rw [Bool.and_eq_true, decide_eq_true_eq, decide_eq_true_eq]; omega
+    rw [Bool.and_eq_true, decide_eq_true_eq, decide_eq_true_eq]; omega_using [hi]
   rw [this, Bool.and_true]
 
 /-- The checks' state, across a change of `rax` and `rdx` only. -/

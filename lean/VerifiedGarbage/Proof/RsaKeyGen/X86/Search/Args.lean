@@ -42,7 +42,7 @@ theorem low_toNat {o : State} (A : SearchABI o) : (low o).toNat = (o.gpr .esp).t
   have : 216 ≤ (o.gpr .esp).toNat := A.stackLow
   have := (o.gpr .esp).isLt
   simp only [low, BitVec.toNat_sub, BitVec.toNat_setWidth, BitVec.toNat_ofNat]
-  omega
+  omega_arith
 
 /-- A word at `d` above a stack pointer `k ≤ 216` bytes below the entry's. -/
 theorem addr_sub {o : State} (A : SearchABI o) {k d : Nat} (hk : k ≤ 216) (hd : d < k + 52) :
@@ -52,7 +52,7 @@ theorem addr_sub {o : State} (A : SearchABI o) {k d : Nat} (hk : k ≤ 216) (hd 
   have hl := low_toNat A
   apply BitVec.eq_of_toNat_eq
   simp only [addr, BitVec.toNat_setWidth, BitVec.toNat_sub, BitVec.toNat_add, BitVec.toNat_ofNat, hl]
-  omega
+  omega_using [hk, hd, h1, h2]
 
 /-- A range at offsets of `low o` lies in the stack the search uses. -/
 theorem low_sub {o : State} {d n : Nat} (h : d + n ≤ 216) : Region.Sub ⟨low o + BitVec.ofNat 64 d, n⟩ (lowR o) :=
@@ -76,7 +76,7 @@ theorem saved_addr {p : SearchPublic} {o : State} (h : SearchInput p o) {i : Nat
     (p.S1 + BitVec.ofNat 32 (4 * i)).setWidth 64 = low o + BitVec.ofNat 64 (200 + 4 * i) := by
   have A := h.abi
   rw [SearchPublic.S1, h.sp_eq]
-  exact addr_sub A (by decide) (by omega)
+  exact addr_sub A (by decide) (by omega_using [hi])
 
 /-- A state in the candidate's frame: `SearchBase` but for the stack pointer
 and the frame's region, with the registers but `eax` those of `s₀`, the
@@ -128,13 +128,13 @@ theorem Fr.load {p : SearchPublic} {o s₀ s : State} (h : Fr p o s₀ s) {i : N
       BitVec.sub_add_cancel]
   have hin : InRegions (s.rd ++ s.wr) (argAddr o i) 4 := by
     have a0 : argAddr o 0 = (o.gpr .esp).setWidth 64 + BitVec.ofNat 64 4 :=
-      VG.Proof.MlKem.X86.ea_off (by have := A.stackBound; omega)
+      VG.Proof.MlKem.X86.ea_off (by have := A.stackBound; omega_using [this])
     have ai : argAddr o i = (o.gpr .esp).setWidth 64 + BitVec.ofNat 64 (4 + 4 * i) :=
-      VG.Proof.MlKem.X86.ea_off (by have := A.stackBound; omega)
+      VG.Proof.MlKem.X86.ea_off (by have := A.stackBound; omega_using [hi, this])
     refine ⟨aR o, ?_, ?_⟩
     · rw [h.rd, h.wr, A.wr]; simp
     · rw [ai, show aR o = ⟨argAddr o 0, 48⟩ from rfl, a0]
-      exact Offset.contains _ (by omega) (by omega) (by omega)
+      exact Offset.contains _ (by omega_using []) (by omega_using [hi]) (by omega_using [])
   change s.load32 (s.ea _) = _
   simp only [State.load32, ea, hin, ↓reduceIte]
   rw [h.input.arg_frame h.frame hi]; rfl
@@ -150,13 +150,13 @@ theorem store_ok {p : SearchPublic} {o s₀ s : State} {used : Nat} (h : Fr p o 
   have hb := A.stackBound
   have hlow := A.stackLow
   have ea : addr (s.gpr .esp) (4 * j) = low o + BitVec.ofNat 64 (156 + 4 * j) := by
-    rw [h.esp, SearchPublic.S2, h.input.sp_eq, addr_sub A (by decide) (by omega)]
+    rw [h.esp, SearchPublic.S2, h.input.sp_eq, addr_sub A (by decide) (by omega_using [hj])]
   have win : (frR o).Contains (low o + BitVec.ofNat 64 (156 + 4 * j)) 4 :=
-    Offset.contains _ (by omega) (by omega) (by omega)
+    Offset.contains _ (by omega_using []) (by omega_using [hj]) (by omega_using [])
   refine wp_storeS (show s.ea ⟨.esp, 4 * j⟩ = _ by rw [ea_mk, ea])
     (by rw [h.wr]; exact ⟨_, List.mem_cons_self .., win⟩) fun t' M => k t' ?_ ?_
   · have lc : (lowR o).Contains (low o + BitVec.ofNat 64 (156 + 4 * j)) 4 :=
-      Offset.contains_base _ (by omega) (by omega)
+      Offset.contains_base _ (by omega_using [hj]) (by omega_using [hj])
     have fr : Frame [lowR o] s.mem t'.mem := by
       rw [M.mem]; exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ lc
     refine ⟨h.input, M.rd.trans h.rd, M.wr.trans h.wr, M.syms.trans h.syms, by rw [M.gpr, h.esp],
@@ -165,7 +165,7 @@ theorem store_ok {p : SearchPublic} {o s₀ s : State} {used : Nat} (h : Fr p o 
       have keep (i : Nat) (hi : i < 4) : t'.mem.readW ((p.S1 + BitVec.ofNat 32 (4 * i)).setWidth 64) 32 =
           s.mem.readW ((p.S1 + BitVec.ofNat 32 (4 * i)).setWidth 64) 32 := by
         rw [M.mem, saved_addr h.input hi]
-        exact Mem.readW_writeW_sep (Offset.sep _ (by omega) (by omega) (by omega)) (by decide)
+        exact Mem.readW_writeW_sep (Offset.sep _ (by omega_using [hj]) (by omega_using [hi]) (by omega_using [hj])) (by decide)
       exact ⟨(keep 0 (by decide)).trans s0, (keep 1 (by decide)).trans s1, (keep 2 (by decide)).trans s2,
         (keep 3 (by decide)).trans s3⟩
     · simp only [List.mem_singleton] at hr; subst hr
@@ -174,8 +174,8 @@ theorem store_ok {p : SearchPublic} {o s₀ s : State} {used : Nat} (h : Fr p o 
     rw [M.mem]
     by_cases hij : i = j
     · subst hij; rw [Mem.readW_writeW_self32, hv]
-    · rw [Mem.readW_writeW_sep (Offset.sep _ (by omega) (by omega) (by omega)) (by decide)]
-      exact ha i (by omega)
+    · rw [Mem.readW_writeW_sep (Offset.sep _ (by omega_using [hij]) (by omega_using [hj, hi]) (by omega_using [hj])) (by decide)]
+      exact ha i (by omega_using [hi, hij])
 
 theorem Fr.eax {p : SearchPublic} {o s₀ s t : State} (h : Fr p o s₀ s) {v : BitVec 32} (U : Upd s t .eax v) :
     Fr p o s₀ t :=
@@ -189,7 +189,7 @@ theorem pass_ok {p : SearchPublic} {o s₀ s : State} {used : Nat} (h : Fr p o s
     (k : ∀ t, Fr p o s₀ t → ArgsAt o used (j + 1) t.mem → WP isa (.block rest) t Q) :
     WP isa (.block (pass j [] ++ rest)) s Q := by
   show WP isa (.block (.mov .eax (.mem (param callWords j)) :: .store (at_ .esp (4 * j)) .eax :: rest)) s Q
-  refine wp_movS (h.load (by omega)) fun t U _ => ?_
+  refine wp_movS (h.load (by omega_using [hj])) fun t U _ => ?_
   exact store_ok (h.eax U) hj (by rw [U.gpr, hc]) (by rw [U.mem]; exact ha) k
 
 theorem arguments_ok {p : SearchPublic} {o s₀ s : State} {used : Nat} (h : Fr p o s₀ s)

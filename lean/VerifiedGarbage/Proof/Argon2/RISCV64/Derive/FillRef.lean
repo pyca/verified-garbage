@@ -78,8 +78,8 @@ theorem RS.store {s t : State} {pass slice lane index ctr : Nat} {σ : FillState
     (hd' : d + 8 ≤ 320) {v : BitVec 64} (hm : t.mem = s.mem.writeW (E s₀ + BitVec.ofNat 64 d) v)
     (ho : ∀ e, e + 8 ≤ 320 → d + 8 ≤ e ∨ e + 8 ≤ d → lw s₀ t e = lw s₀ s e) :
     RS s₀ pass slice lane index ctr σ J1 J2 t :=
-  ⟨h.fs.store hp it (by omega) hd' hm, by rw [ho j1Off (by decide) (by simp [j1Off]; omega)]; exact h.j1,
-    by rw [ho j2Off (by decide) (by simp [j2Off]; omega)]; exact h.j2⟩
+  ⟨h.fs.store hp it (by omega_using [hd]) hd' hm, by rw [ho j1Off (by decide) (by simp [j1Off]; omega_using [hd])]; exact h.j1,
+    by rw [ho j2Off (by decide) (by simp [j2Off]; omega_using [hd])]; exact h.j2⟩
 
 /-- The block of `refLane`: J₂ mod lanes, to the frame, and `a0` zero in the
 first slice of the first pass. -/
@@ -99,7 +99,7 @@ theorem refLaneBlk_ok {s : State} {pass slice lane index ctr : Nat} {σ : FillSt
   refine wp_ldloc h.fs.inv (d := j2Off) (by decide) fun s₁ u₁ =>
     wp_ldw hp (h.fs.inv.upd u₁) (i := 7) (by decide) fun s₂ u₂ => ?_
   have h₂ := h.of_only ((Only.of_upd u₁).trans (Only.of_upd u₂))
-  refine Divide.code_ok (D := lanesN s₀) (by omega) (by omega) (by rw [u₂.gpr, toNat_ext32])
+  refine Divide.code_ok (D := lanesN s₀) (by omega_using [hl1]) (by omega_using [hlt]) (by rw [u₂.gpr, toNat_ext32])
     fun s₃ _ r₃ k₃ => ?_
   have h₃ := h₂.of_only (Divide.KeepD.only k₃)
   refine wp_stloc h₃.fs.inv (d := refLaneOff) (by decide) fun s₄ i₄ v₄ o₄ g₄ m₄ => ?_
@@ -109,14 +109,14 @@ theorem refLaneBlk_ok {s : State} {pass slice lane index ctr : Nat} {σ : FillSt
   refine wp_ldloc h₅.fs.inv (d := sliceOff) (by decide) fun s₆ u₆ => wp_or fun t u₇ => WP.block_nil ?_
   have h₇ := h₅.of_only ((Only.of_upd u₆).trans (Only.of_upd u₇))
   have r : s₃.gpr .a4 = BitVec.ofNat 64 (J2.toNat % lanesN s₀) := by
-    have hm : J2.toNat % lanesN s₀ < 2 ^ 64 := by have := Nat.mod_le J2.toNat (lanesN s₀); omega
+    have hm : J2.toNat % lanesN s₀ < 2 ^ 64 := by have := Nat.mod_le J2.toNat (lanesN s₀); omega_using [this]
     apply BitVec.eq_of_toNat_eq
     rw [r₃, u₂.other _ (by decide), u₁.gpr, h.j2, BitVec.toNat_setWidth, Nat.mod_eq_of_lt hj2,
       BitVec.toNat_ofNat, Nat.mod_eq_of_lt hm]
   refine ⟨h₇, ?_, by rw [lw_mem u₇.mem, lw_mem u₆.mem, lw_mem u₅.mem, v₄, r]⟩
   rw [VG.RISCV64.Wp.eval_zero, u₇.gpr,
     u₆.other _ (by decide), u₅.gpr, u₆.gpr, lw_mem u₅.mem, h₄.fs.pos.slice, h₄.fs.pos.pass,
-    or_zero (by omega) (by omega)]
+    or_zero (by omega_using [hpass]) (by omega_using [hs])]
 
 /-- `refLane`: the reference lane, to the frame. -/
 theorem refLane_ok {s : State} {pass slice lane index ctr : Nat} {σ : FillState} {J1 J2 : BitVec 64}
@@ -156,7 +156,7 @@ theorem refStart_ok {s : State} {pass slice lane index ctr : Nat} {σ : FillStat
   have m₄ : s₄.mem = s₂.mem := u₃.mem
   have r₂ : lw s₀ s₂ refLaneOff = lw s₀ s refLaneOff := by
     rw [o₂ _ (by decide) (by decide), lw_mem u₁.mem]
-  refine WP.ite (decide (pass = 0)) (zero_eval (by omega) (by rw [u₃.gpr, h₂.fs.pos.pass]))
+  refine WP.ite (decide (pass = 0)) (zero_eval (by omega_using [hpass]) (by rw [u₃.gpr, h₂.fs.pos.pass]))
     (fun hb => ?_) fun hb => ?_
   · refine WP.block_nil ⟨h₄, by rw [lw_mem m₄, r₂], ?_⟩
     rw [lw_mem m₄, v₂, u₁.gpr, startV, ite_eq_left (of_decide_eq_true hb)]
@@ -167,7 +167,7 @@ theorem refStart_ok {s : State} {pass slice lane index ctr : Nat} {σ : FillStat
     have m₆ : s₆.mem = s₂.mem := by rw [u₆.mem, u₅.mem, m₄]
     refine WP.ite (decide (slice = 3)) (by
       rw [show isa.eval _ s₆ = VG.RISCV64.eval _ s₆ from rfl, VG.RISCV64.Wp.eval_zero, u₆.gpr,
-        u₅.gpr, h₄.fs.pos.slice, sub_beq (by omega) (by decide)])
+        u₅.gpr, h₄.fs.pos.slice, sub_beq (by omega_using [hs]) (by decide)])
       (fun hb' => ?_) fun hb' => ?_
     · refine WP.block_nil ⟨h₆, by rw [lw_mem m₆, r₂], ?_⟩
       rw [lw_mem m₆, v₂, u₁.gpr, startV, ite_eq_right hp0, of_decide_eq_true hb', ll, Nat.mod_self]
@@ -183,7 +183,7 @@ theorem refStart_ok {s : State} {pass slice lane index ctr : Nat} {σ : FillStat
       · exact h₁₀.store hp it (d := startOff) (by decide) (by decide) mt ot
       · rw [ot _ (by decide) (by decide), lw_mem m₁₀, r₂]
       · have : (slice + 1) * (prm s₀).segmentLen < (prm s₀).laneLen := by
-          rw [ll]; exact Nat.mul_lt_mul_of_pos_right (by omega) (by omega)
+          rw [ll]; exact Nat.mul_lt_mul_of_pos_right (by omega_using [hs, hs3]) (by omega_using [s2])
         rw [vt, u₁₀.gpr, u₉.other _ (by decide), u₈.gpr, u₇.gpr, u₉.gpr, lw_mem u₈.mem, lw_mem u₇.mem,
           h₆.fs.pr.segLen, lw_mem (show s₆.mem = s₂.mem from m₆), h₂.fs.pos.slice,
           BitVec.ofNat_add_ofNat, ofNat_mul_ofNat, startV, ite_eq_right hp0, Nat.mod_eq_of_lt this]
@@ -199,7 +199,7 @@ theorem countBase_ok {s : State} {pass slice lane index ctr : Nat} {σ : FillSta
   refine WP.seq (wp_ldloc h.fs.inv (d := passOff) (by decide) fun s₂ u₁ => WP.block_nil ?_)
   have k₂ := Only.of_upd u₁
   have h₂ := h.of_only k₂
-  refine WP.ite (decide (pass = 0)) (zero_eval (by omega) (by rw [u₁.gpr, h.fs.pos.pass]))
+  refine WP.ite (decide (pass = 0)) (zero_eval (by omega_using [hpass]) (by rw [u₁.gpr, h.fs.pos.pass]))
     (fun hb => ?_) fun hb => ?_
   · refine wp_ldloc h₂.fs.inv (d := sliceOff) (by decide) fun s₃ u₃ =>
       wp_ldloc (h₂.of_only (Only.of_upd u₃)).fs.inv (d := segLenOff) (by decide) fun s₄ u₄ =>
@@ -212,7 +212,7 @@ theorem countBase_ok {s : State} {pass slice lane index ctr : Nat} {σ : FillSta
       wp_sub fun t u => WP.block_nil ⟨(((k₂.trans (Only.of_upd u₃)).trans (Only.of_upd u₄)).trans
         (Only.of_upd u)).mono (by simp), ?_⟩
     rw [u.gpr, u₄.other _ (by decide), u₃.gpr, u₄.gpr, lw_mem u₃.mem, h₂.fs.pr.laneLen, h₂.fs.pr.segLen,
-      sub_ofNat (by omega), baseV, ite_eq_right (of_decide_eq_false hb)]
+      sub_ofNat (by omega_using [ll]), baseV, ite_eq_right (of_decide_eq_false hb)]
 
 end
 

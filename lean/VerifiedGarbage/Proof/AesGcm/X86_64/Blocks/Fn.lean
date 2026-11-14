@@ -35,14 +35,14 @@ include hp
 /-- With nothing left, `Mid` is the end, when encrypting. -/
 theorem encDone_of {q k : Nat} {st : State} (M : Mid s q k (ctr32 (ciph s) (cb s) (blocksAt s.mem (D s) q)) st)
     (h0 : n s - q = 0) : EncDone s st := by
-  have hq : q = n s := by have := M.q_le; omega
+  have hq : q = n s := by have := M.q_le; omega_using [h0, this]
   subst hq
   exact ⟨⟨M.saved, keep_r hp M.frame⟩, M.data, M.ctr, M.y⟩
 
 /-- With nothing left, `Mid` is the end, when decrypting. -/
 theorem decDone_of {q k : Nat} {st : State} (M : Mid s q k (blocksAt s.mem (D s) q) st) (h0 : n s - q = 0) :
     DecDone s st := by
-  have hq : q = n s := by have := M.q_le; omega
+  have hq : q = n s := by have := M.q_le; omega_using [h0, this]
   subst hq
   exact ⟨⟨M.saved, keep_r hp M.frame⟩, M.data, M.ctr, M.y⟩
 
@@ -68,7 +68,7 @@ theorem encrypt_wp (v : GcmImpl) {M : CtxMode} {aligned : Bool} (st : Option (St
         (fun _ h hl => okS.1 _ h hl)
         (fun _ _ h9 ga gc g11 rd₃ wr₃ hk₃ hf₃ hP =>
           encDone_of hp (stitchEFull_ok hp h9 ga gc g11 rd₃ wr₃ hk₃ hf₃ hP) (Nat.sub_self _))
-        (fun h16 _ M => WP.seq (WP.mono (rest_ok hp (by omega) M) fun st' M' => tl _ st' M'))
+        (fun h16 _ M => WP.seq (WP.mono (rest_ok hp (by omega_using [h16]) M) fun st' M' => tl _ st' M'))
         h11 hg hk hf hrd hwr
 
 theorem decrypt_wp (v : GcmImpl) {M : CtxMode} {aligned : Bool} (st : Option (StitchCode M aligned)) {s : State}
@@ -91,7 +91,7 @@ theorem decrypt_wp (v : GcmImpl) {M : CtxMode} {aligned : Bool} (st : Option (St
         (fun _ h hl => okS.2 _ h hl)
         (fun _ _ h9 ga gc g11 rd₃ wr₃ hk₃ hf₃ hP =>
           decDone_of hp (stitchDFull_ok hp h9 ga gc g11 rd₃ wr₃ hk₃ hf₃ hP) (Nat.sub_self _))
-        (fun h16 _ M => WP.seq (WP.mono (rest_ok hp (by omega) M) fun st' M' => tl _ st' M'))
+        (fun h16 _ M => WP.seq (WP.mono (rest_ok hp (by omega_using [h16]) M) fun st' M' => tl _ st' M'))
         h11 hg hk hf hrd hwr
 
 end VG.Proof.AesGcm.X86_64.Blocks

@@ -29,7 +29,7 @@ theorem scalarByteRead_ok {s : State} {base k : Addr} (hs : Scr s base)
     rw [BitVec.toNat_shiftLeft, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega),
       Nat.shiftLeft_eq, BitVec.toNat_ofNat]
     rw [show 2 ^ 3 = 8 from rfl, Nat.mul_comm]
-    rw [Nat.mod_eq_of_lt (by omega : i < 2 ^ 64), Nat.mod_eq_of_lt (by omega : 8 * i < 2 ^ 64)]
+    rw [Nat.mod_eq_of_lt (by omega_using [hi] : i < 2 ^ 64), Nat.mod_eq_of_lt (by omega_using [hi] : 8 * i < 2 ^ 64)]
   apply WP.of_runBlock
   simp only [runBlock_cons, runStep_some, runBlock_nil, exec, read_x, addr, State.load,
     show (0 : Nat) < 4096 * 1 from by decide, show (0 : Nat) % 1 = 0 from rfl,
@@ -81,9 +81,9 @@ theorem scalarByteBits_ok {s : State} {base k : Addr} (hs : Scr s base)
       ∀ j < 8, t.mem (off base (768 + (8 * i + j))) =
         BitVec.ofNat 8 (((s.mem (off k i)).toNat >>> j) &&& 1) := by
   rw [scalarByteBits, List.append_assoc, WP.block_append_iff]
-  refine WP.mono (scalarByteRead_ok hs i (by omega) hc hp hr) fun a ⟨av, ap, ka⟩ => ?_
+  refine WP.mono (scalarByteRead_ok hs i (by omega_using [hi, hn]) hc hp hr) fun a ⟨av, ap, ka⟩ => ?_
   rw [WP.block_append_iff]
-  refine WP.mono (scalarBitPrefix_ok (hs.of_keeps ka (by decide)) i 8 (by omega) (by decide)
+  refine WP.mono (scalarBitPrefix_ok (hs.of_keeps ka (by decide)) i 8 (by omega_using [hi, hn]) (by decide)
     ap ((ka.gpr _ (by decide)).trans hone) _ av) fun b ⟨kb, bv⟩ => ?_
   refine WP.mono (powersNext_ok b i count hi hn
     ((kb.gpr _ (by decide)).trans ((ka.gpr _ (by decide)).trans hc))) fun t ⟨tc, tz, kt⟩ => ?_
@@ -121,19 +121,19 @@ theorem scalarBitsLoop_ok {s₀ : State} {base k : Addr} (count : Nat) (hn : cou
   rintro n s ⟨i, rfl, hi, h⟩
   refine WP.mono (scalarByteBits_ok h.scratch i count hi hn h.counter h.ptr
     (by rw [h.keep.rd, h.keep.wr]; exact hr i hi) h.one) fun t ⟨tc, tz, tone, tk, tb⟩ => ?_
-  have hbyte : s.mem (off k i) = s₀.mem (off k i) := h.keep.mem _ (by have := hd i hi; omega)
+  have hbyte : s.mem (off k i) = s₀.mem (off k i) := h.keep.mem _ (by have := hd i hi; omega_using [hn, this])
   have inv : BitsInv s₀ base k count (i + 1) t := by
     refine ⟨tk.scratch h.scratch, (tk.gpr _ (by decide)).trans h.ptr, tc, tone,
-      h.keep.trans (tk.mono (by omega) (by omega)), fun j hj => ?_⟩
+      h.keep.trans (tk.mono (by omega_using []) (by omega_using [hi])), fun j hj => ?_⟩
     by_cases hp : j < 8 * i
-    · rw [tk.mem _ (by rw [ofs_off' base (by omega)]; omega), h.bits j hp]
-    · have e := tb (j - 8 * i) (by omega)
-      rw [show 8 * i + (j - 8 * i) = j by omega, hbyte] at e
-      rw [e, show j / 8 = i by omega, show j % 8 = j - 8 * i by omega]
+    · rw [tk.mem _ (by rw [ofs_off' base (by omega_using [hn, hi, hj])]; omega_using [hp]), h.bits j hp]
+    · have e := tb (j - 8 * i) (by omega_using [hj])
+      rw [show 8 * i + (j - 8 * i) = j by omega_using [hp], hbyte] at e
+      rw [e, show j / 8 = i by omega_using [hj, hp], show j % 8 = j - 8 * i by omega_using [hj, hp]]
   by_cases he : i + 1 = count
   · exact Or.inl ⟨by simp only [eval, read_x, tz, he, show decide (count ≠ count) = false from decide_eq_false (not_not_intro rfl)], he ▸ inv⟩
   · exact Or.inr ⟨by simp only [eval, read_x, tz, decide_eq_true he],
-      count - (i + 1), by omega, i + 1, rfl, by omega, inv⟩
+      count - (i + 1), by omega_using [hi], i + 1, rfl, by omega_using [hi, he], inv⟩
 
 theorem input_byte (m : Mem) (k : Addr) (count j : Nat) (hj : j < count) :
     (Spec.Ed25519.bytesAt m k count).getD j 0 = m (off k j) := by
@@ -168,7 +168,7 @@ theorem expandScalarBits_ok {s : State} {base k : Addr} (hs : Scr s base) (hp : 
   refine ⟨h.keep, fun j hj => ?_⟩
   rw [h.bits j hj]
   have hb := Proof.X25519.leNum_bit (Spec.Ed25519.bytesAt s.mem k count) j
-  rw [← decodeLE_eq, input_byte _ _ _ _ (by omega)] at hb
+  rw [← decodeLE_eq, input_byte _ _ _ _ (by omega_using [hj])] at hb
   simp only [Nat.shiftRight_eq_div_pow, Nat.and_one_is_mod] at hb ⊢
   exact congrArg (BitVec.ofNat 8) hb.symm
 

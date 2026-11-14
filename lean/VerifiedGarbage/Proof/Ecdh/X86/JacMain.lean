@@ -60,7 +60,7 @@ theorem exchangeJacWindow_ok (hc : CfgOk c) (hn4 : c.n = 4) (hC : Law c.C) (ham3
   have hsz : size = 8192 := rfl
   have hpR := unitMod_pow_two hc.p_odd (64 * c.n)
   have hp3 := hc.p_ge
-  have h4 : (s₀.gpr .esp).toNat + 4 + 4 * 4 ≤ 2 ^ 32 := by have := hp.sp_fit; omega
+  have h4 : (s₀.gpr .esp).toNat + 4 + 4 * 4 ≤ 2 ^ 32 := by have := hp.sp_fit; omega_using [this]
   rw [exchangeJacWindow_eq]
   refine WP.seq (stage₁ hc hp.setup fun s₂ S₂ => WP.block_nil ?_)
   have hn := S₂.scr.nowrap
@@ -78,7 +78,7 @@ theorem exchangeJacWindow_ok (hc : CfgOk c) (hn4 : c.n = 4) (hC : Law c.C) (ham3
       sv c (ptr s₀ 3) s₃ i = sv c (ptr s₀ 3) s₂ i := fun hi hl hf =>
     sv_unch U₃ h7 hn hi (apart_append (apart_slW hl) (apart_flag h0 hf))
   have hq0 : s₂.mem (ptr s₀ 2) = s₀.mem (ptr s₀ 2) := by
-    have := keep_of_disjoint' W₂ hp.peer_sc (by omega) (i := 0) (by omega) (by omega)
+    have := keep_of_disjoint' W₂ hp.peer_sc (by omega_using [hsz]) (i := 0) (by omega_using []) (by omega_using [hn4, hlhi])
     rwa [BitVec.add_zero] at this
   -- What the code checks of the peer's key so far.
   have hf₃ : flagW c (ptr s₀ 3) s₃ = mask32 (((s₀.mem (ptr s₀ 2) = 4 ∧
@@ -127,9 +127,9 @@ theorem exchangeJacWindow_ok (hc : CfgOk c) (hn4 : c.n = 4) (hC : Law c.C) (ham3
       intro w hw
       rcases apart_append (jwinW_apart (c := c) hn4 (i := FLAG) (by decide) (by decide))
         (apart_pwW (c := c) (i := FLAG) (by decide) (by decide)) w hw with h | h
-      · exact Or.inl (by omega)
+      · exact Or.inl (by omega_using [hn4, h])
       · exact Or.inr h
-    rw [flagW, Unch.readW32 L.unch ap (by omega), ← flagW]
+    rw [flagW, Unch.readW32 L.unch ap (by omega_using [hsz, hFl]), ← flagW]
     exact f₄
   have K₅ : Keep c s₀ (ptr s₀ 3) s₅ := ⟨hs₅, by rw [L.gpr _ (by decide), K₄.esp], by rw [L.rd, K₄.rd],
     by rw [L.wr, K₄.wr], F₅, w₅, S₂.sp_lo⟩
@@ -138,17 +138,17 @@ theorem exchangeJacWindow_ok (hc : CfgOk c) (hn4 : c.n = 4) (hC : Law c.C) (ham3
     fun s' ⟨xv, hxl, hxv, bytes, ret, saved, esp, fr⟩ => ⟨⟨saved, esp, fr⟩, ?_⟩
   -- The specification.
   have hlen : (Spec.Ecdsa.bytesAt s₀.mem (ptr s₀ 2) (1 + 2 * c.C.len)).length = 2 * c.C.len + 1 := by
-    rw [length_bytesAt]; omega
+    rw [length_bytesAt]; omega_using []
   have hb0 : (Spec.Ecdsa.bytesAt s₀.mem (ptr s₀ 2) (1 + 2 * c.C.len)).head? = some (s₀.mem (ptr s₀ 2)) := by
     rw [peer_bytes]; rfl
   have hxs : ofBytes (((Spec.Ecdsa.bytesAt s₀.mem (ptr s₀ 2) (1 + 2 * c.C.len)).drop 1).take c.C.len) =
       sv c (ptr s₀ 3) s₃ E := by
     rw [peer_bytes, List.drop_one, List.tail_cons, List.take_left' (length_bytesAt _ _ _), x₃,
-      bytesAt_keep W₂ (hp.peer_sc.sub_left (Offset.sub_base _ (by omega))) (by omega) (by omega)]
+      bytesAt_keep W₂ (hp.peer_sc.sub_left (Offset.sub_base _ (by omega_using []))) (by omega_using [hsz]) (by omega_using [hn4, hlhi])]
   have hys : ofBytes ((Spec.Ecdsa.bytesAt s₀.mem (ptr s₀ 2) (1 + 2 * c.C.len)).drop (c.C.len + 1)) =
       sv c (ptr s₀ 3) s₃ QY := by
     rw [peer_bytes, List.drop_succ_cons, List.drop_left' (length_bytesAt _ _ _), y₃,
-      bytesAt_keep W₂ (hp.peer_sc.sub_left (Offset.sub_base _ (by omega))) (by omega) (by omega)]
+      bytesAt_keep W₂ (hp.peer_sc.sub_left (Offset.sub_base _ (by omega_using []))) (by omega_using [hsz]) (by omega_using [hn4, hlhi])]
   have hP' : ∀ h : Ecdh.Valid c.C (s₀.mem (ptr s₀ 2)) (sv c (ptr s₀ 3) s₃ E) (sv c (ptr s₀ 3) s₃ QY),
       peerPt c (s₀.mem (ptr s₀ 2) = 4) (sv c (ptr s₀ 3) s₃ E) (sv c (ptr s₀ 3) s₃ QY) =
         .affine ⟨_, h.2.1⟩ ⟨_, h.2.2.1⟩ := fun h => by

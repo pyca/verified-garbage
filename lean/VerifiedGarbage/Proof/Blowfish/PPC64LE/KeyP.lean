@@ -46,7 +46,7 @@ theorem keyByte_run (s : State) {K : Addr} {L c : Nat} (hc : c < L) (hL : L < 2 
   · brun [h3, h4, h9, hK]
     rw [show (1#64 : BitVec 64) = BitVec.ofNat 64 1 from rfl, BitVec.ofNat_add_ofNat]
     exact ⟨rfl, rfl⟩
-  refine WP.ite (decide (c + 1 = L)) (by rw [tmp, eval_zero, u12, ofNat_sub_beq (by omega) hL]) (fun h => ?_)
+  refine WP.ite (decide (c + 1 = L)) (by rw [tmp, eval_zero, u12, ofNat_sub_beq (by omega_using [hc, hL]) hL]) (fun h => ?_)
     (fun h => ?_)
   · have e : c + 1 = L := by simpa using h
     refine WP.mono (WP.keep [.r9] (Q := fun t => t.gpr .r9 = 0#64 ∧ t.mem = u.mem) (by brun)
@@ -54,17 +54,17 @@ theorem keyByte_run (s : State) {K : Addr} {L c : Nat} (hc : c < L) (hL : L < 2 
         (uk.trans tk).mono (by decide)⟩
     rw [t9, e, Nat.mod_self]
   · have e : c + 1 ≠ L := by simpa using h
-    exact WP.block_nil ⟨u10, by rw [u9, Nat.mod_eq_of_lt (by omega)], um, uk⟩
+    exact WP.block_nil ⟨u10, by rw [u9, Nat.mod_eq_of_lt (by omega_using [hc, e])], um, uk⟩
 
 theorem lo_shl8 (x : BitVec 64) : lo (x <<< 8) = lo x <<< 8 := by
   apply BitVec.eq_of_getLsbD_eq; intro i hi
   simp only [BitVec.getLsbD_setWidth, BitVec.getLsbD_shiftLeft, hi, decide_true, Bool.true_and,
-    show i < 64 by omega, show i - 8 < 32 by omega]
+    show i < 64 by omega_using [hi], show i - 8 < 32 by omega_using [hi]]
 
 theorem lo_byte (b : BitVec 8) : lo (b.setWidth 64) = b.zeroExtend 32 := by
   apply BitVec.eq_of_getLsbD_eq; intro i hi
   simp only [BitVec.getLsbD_setWidth, BitVec.truncate_eq_setWidth]
-  by_cases h : i < 8 <;> simp [h, show i < 64 by omega]
+  by_cases h : i < 8 <;> simp [h, show i < 64 by omega_using [hi]]
 
 /-- What a keyed P-array entry needs: entry `i` writable at `r8`, the key's
 bytes readable at `r3`, its length in `r4` and the next byte's offset in
@@ -136,7 +136,7 @@ theorem keyWord_run {S K : Addr} {L i : Nat} {s : State} (E : KeyWordEnv S K L i
     · simp only [lo_xor, lo_ext, kw]
     · rw [show (4#64 : BitVec 64) = BitVec.ofNat 64 4 from rfl, Offset.add_add]
       congr 2
-  · rw [tk.gpr (by decide), b₄, show 4 * i + (3 + 1) = 4 * (i + 1) by omega]
+  · rw [tk.gpr (by decide), b₄, show 4 * i + (3 + 1) = 4 * (i + 1) by omega_using []]
 
 /-- What the P-array loop needs, of the state it starts in. -/
 structure KeyPEnv (S K : Addr) (L : Nat) (s : State) : Prop where
@@ -169,7 +169,7 @@ theorem keyP_step {S K : Addr} {L : Nat} {s₀ : State} (E : KeyPEnv S K L s₀)
   have W : KeyWordEnv S K L i u := by
     refine ⟨hi, E.L0, E.L64, by rw [hrd, hwr]; exact E.key, by rw [I.keep.gpr (by decide)]; exact E.r3,
       by rw [I.keep.gpr (by decide)]; exact E.r4, I.r8, I.r9, ?_⟩
-    rw [hwr]; exact ⟨_, E.wrS, Offset.contains_base S (by omega) (by omega)⟩
+    rw [hwr]; exact ⟨_, E.wrS, Offset.contains_base S (by omega_using [hi]) (by omega_using [hi])⟩
   refine WP.mono (keyWord_run W) fun u' ⟨m', r9', r8', r17', k'⟩ => ?_
   have hT : u.mem.readW (S + BitVec.ofNat 64 (4096 + 4 * i)) 32 =
       s₀.mem.readW (S + BitVec.ofNat 64 (4096 + 4 * i)) 32 :=
@@ -178,26 +178,26 @@ theorem keyP_step {S K : Addr} {L : Nat} {s₀ : State} (E : KeyPEnv S K L s₀)
         simp only [List.mem_singleton] at hr; subst hr
         rw [← Offset.add_add]
         exact Offset.disjoint (S + BitVec.ofNat 64 4096) (d := 4 * i) (n := 4) (e := 0) (k := 4 * i)
-          (.inr (by omega)) (by omega) (by omega) |> fun h => by rwa [BitVec.add_zero] at h) (by decide)
+          (.inr (by omega_using [])) (by omega_using [hi]) (by omega_using [hi]) |> fun h => by rwa [BitVec.add_zero] at h) (by decide)
   have hB : bytesAt u.mem K L = bytesAt s₀.mem K L :=
     bytesAt_frame I.frame fun c hc r hr hcon => by
       simp only [List.mem_singleton] at hr; subst hr
-      exact E.keyS c hc (Offset.sub_base S (d := 4096) (n := 4 * i) (k := 4168) (by omega) _ hcon)
+      exact E.keyS c hc (Offset.sub_base S (d := 4096) (n := 4 * i) (k := 4168) (by omega_using [hi]) _ hcon)
   have r17'' : u'.gpr .r17 = BitVec.ofNat 64 (18 - (i + 1)) := by
-    rw [r17', I.r17]; apply BitVec.eq_of_toNat_eq; simp; omega
-  refine ⟨⟨by omega, r9', r8', r17'', fun j hj => ?_, ?_, (I.keep.trans k').mono (by decide)⟩, r17''⟩
+    rw [r17', I.r17]; apply BitVec.eq_of_toNat_eq; simp; omega_using [hi]
+  refine ⟨⟨by omega_using [hi], r9', r8', r17'', fun j hj => ?_, ?_, (I.keep.trans k').mono (by decide)⟩, r17''⟩
   · rw [m', hT, hB]
     rcases Nat.lt_succ_iff_lt_or_eq.mp hj with hj | rfl
-    · rw [Mem.readW_writeW_sep (Offset.sep S (by omega) (by omega) (by omega)) (by decide)]
+    · rw [Mem.readW_writeW_sep (Offset.sep S (by omega_using [hj]) (by omega_arith) (by omega_using [hi])) (by decide)]
       exact I.done j hj
     · exact Mem.readW_writeW_self32 _ _ _
   · rw [m']
     refine Frame.writeW (Frame.sub I.frame fun r hr => ⟨⟨S + BitVec.ofNat 64 4096, 4 * (i + 1)⟩,
       List.mem_singleton_self _, ?_⟩) (List.mem_singleton_self _) _ ?_
     · simp only [List.mem_singleton] at hr; subst hr
-      exact Region.sub_prefix (by omega)
+      exact Region.sub_prefix (by omega_using [])
     · rw [← Offset.add_add]
-      exact Offset.contains_base _ (by omega) (by omega)
+      exact Offset.contains_base _ (by omega_using []) (by omega_using [hi])
 
 theorem keyP_run {S K : Addr} {L : Nat} {s₀ : State} (E : KeyPEnv S K L s₀) :
     WP isa keyP s₀ (KeyPInv S K L s₀ 18) := by
@@ -207,16 +207,16 @@ theorem keyP_run {S K : Addr} {L : Nat} {s₀ : State} (E : KeyPEnv S K L s₀) 
       t.gpr .r8 = S + BitVec.ofNat 64 4096 ∧ t.gpr .r17 = BitVec.ofNat 64 18 ∧ t.mem = s₀.mem)
     (by brun [E.r5, pOff]) (by decide) rfl) fun s₁ ⟨⟨a, b, c, d⟩, k⟩ => ?_
   have I₀ : KeyPInv S K L s₀ 0 s₁ :=
-    ⟨by omega, by rw [a]; simp, b, c, fun j hj => absurd hj (by omega), by rw [d]; exact Frame.refl _ _,
+    ⟨by omega_using [], by rw [a]; simp, b, c, fun j hj => absurd hj (by omega_using []), by rw [d]; exact Frame.refl _ _,
       k.mono (by decide)⟩
   refine WP.loop (M := isa) (fun m u => ∃ i, i < 18 ∧ m = 18 - i ∧ KeyPInv S K L s₀ i u)
-    ?_ 18 s₁ ⟨0, by omega, rfl, I₀⟩
+    ?_ 18 s₁ ⟨0, by omega_using [], rfl, I₀⟩
   intro m u ⟨i, hi, hm, I⟩
   refine WP.mono (keyP_step E hi I) fun u' ⟨I', z'⟩ => ?_
-  rw [cnt, eval_nonzero, z', ofNat_bne_zero (by omega)]
+  rw [cnt, eval_nonzero, z', ofNat_bne_zero (by omega_using [])]
   by_cases h : i + 1 = 18
   · left; exact ⟨by simp [h], h ▸ I'⟩
   · right
-    exact ⟨by simp; omega, 18 - (i + 1), by omega, i + 1, by omega, rfl, I'⟩
+    exact ⟨by simp; omega_using [hi, h], 18 - (i + 1), by omega_using [hi, hm], i + 1, by omega_using [hi, h], rfl, I'⟩
 
 end VG.Proof.Blowfish.PPC64LE

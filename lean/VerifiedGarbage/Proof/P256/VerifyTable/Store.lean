@@ -57,8 +57,8 @@ theorem cacheAddr_ok {base : Addr} {s : State} {m : Nat}
     have hl : BitVec.ofNat 64 (m-1) <<< 6=BitVec.ofNat 64 (64*(m-1)) := by
       apply BitVec.eq_of_toNat_eq
       rw [BitVec.toNat_shiftLeft,BitVec.toNat_ofNat,BitVec.toNat_ofNat,Nat.shiftLeft_eq,
-        Nat.mod_eq_of_lt (by omega : m-1<2^64)]
-      omega
+        Nat.mod_eq_of_lt (by omega_using [hm9] : m-1<2^64)]
+      omega_using []
     simp only [hl]
     simp only [off,BitVec.ofNat_add,BitVec.add_assoc]
     rfl
@@ -80,8 +80,8 @@ theorem storeEntry_ok {base : Addr} {s : State} {m : Nat}
   refine WP.mono (entryAddr_ok hs.x0 hm h19) fun a ⟨pa,ka⟩ => ?_
   have ha := hs.of_keeps ka (by decide)
   rw [WP.block_append_iff]
-  refine WP.mono (Proof.P256.EcdhJac.tableStoreWords_ok (n:=12) (src:=fun i => 704+8*i) ha pa (by omega)
-    (by intro i hi; omega) (by intro i hi; omega) (by intro i hi; omega) 12 (by omega))
+  refine WP.mono (Proof.P256.EcdhJac.tableStoreWords_ok (n:=12) (src:=fun i => 704+8*i) ha pa (by omega_using [hm9])
+    (by intro i hi; omega_using [hi]) (by intro i hi; omega_using []) (by intro i hi; omega_using [hi]) 12 (by omega_using []))
     fun b ⟨vb,kb,ob⟩ => ?_
   have hb := ha.of_keepRegs kb (by decide)
   have a19 : a.gpr .x19=BitVec.ofNat 64 m := by rw [ka.gpr _ (by decide),h19]
@@ -89,13 +89,13 @@ theorem storeEntry_ok {base : Addr} {s : State} {m : Nat}
   rw [WP.block_append_iff]
   refine WP.mono (cacheAddr_ok hb.x0 hm hm9 b19) fun d ⟨pd,kd⟩ => ?_
   have hd := hb.of_keeps kd (by decide)
-  refine WP.mono (Proof.P256.EcdhJac.tableStoreWords_ok (n:=8) (src:=fun i => 5400+8*i) hd pd (by omega)
-    (by intro i hi; omega) (by intro i hi; omega) (by intro i hi; omega) 8 (by omega))
+  refine WP.mono (Proof.P256.EcdhJac.tableStoreWords_ok (n:=8) (src:=fun i => 5400+8*i) hd pd (by omega_using [hm9])
+    (by intro i hi; omega_using [hi]) (by intro i hi; omega_using []) (by intro i hi; omega_using [hi]) 8 (by omega_using []))
     fun t ⟨vt,kt,ot⟩ => ?_
   have od : Outside base (6000+64*(m-1)) 64 b.mem t.mem := by simpa only [kd.mem] using ot
   refine ⟨fun i hi => ?_,fun i hi => ?_,?_,fun x hx => ?_⟩
-  · rw [od.word (by omega) (by omega),vb i hi,ka.mem]
-  · rw [vt i hi,kd.mem,ob.word (by omega) (by omega),ka.mem]
+  · rw [od.word (by omega_using [hm9, hi]) (by omega_using [hm9, hi]),vb i hi,ka.mem]
+  · rw [vt i hi,kd.mem,ob.word (by omega_using [hm9]) (by omega_using [hi]),ka.mem]
   · exact ((Keeps.regs ka).trans (kb.mono (by decide))).trans
       ((Keeps.regs kd).trans (kt.mono (by decide)))
   · rw [od x (hx (6000+64*(m-1),64) (by simp)),ob x (hx (2848+96*(m-1),96) (by simp)),ka.mem]

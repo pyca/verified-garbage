@@ -57,7 +57,7 @@ theorem wrap_nat (x q : Addr) (bound : x.toNat < 2 * q.toNat) :
     calc
       x - q = BitVec.ofNat 64 x.toNat - BitVec.ofNat 64 q.toNat := by
         simp only [BitVec.ofNat_toNat, BitVec.setWidth_eq]
-      _ = _ := Offset.ofNat_sub_ofNat (by omega)
+      _ = _ := Offset.ofNat_sub_ofNat (by omega_using [small])
 
 theorem code_nat_ok (s : State) (bound : (s.gpr .rdi).toNat < 2 * (s.gpr .rsi).toNat) :
     WP isa code s fun t =>

@@ -69,9 +69,9 @@ theorem zX_out {w : Nat → Nat} {X : Pub → State → Prop} {a : Pub} {s t : S
   have o' : Outside I.B d n s.mem t.mem := o
   have hd' : slot (vk I.k) nXn + 8 * vk I.k + 8 ≤ d ∨ d + n ≤ slot (vk I.k) nXn + 8 * vk I.k := hd
   have z' : word s.mem I.B (slot (vk I.k) nXn + 8 * vk I.k) = 0 := z
-  have := g.bndv L.1 (j := nXn) (k := vk I.k + 1) (by decide) (by omega)
+  have := g.bndv L.1 (j := nXn) (k := vk I.k + 1) (by decide) (by omega_using [])
   show word t.mem I.B (slot (vk I.k) nXn + 8 * vk I.k) = 0
-  rw [o'.word hd' (by omega)]; exact z'
+  rw [o'.word hd' (by omega_using [this])]; exact z'
 
 theorem zX_frm {w : Nat → Nat} {X : Pub → State → Prop} {a : Pub} {s t : State} (h : GC w X a s)
     (f : Frm a.1.B hdrW s.mem t.mem) (z : zX a.1 s) : zX a.1 t := by
@@ -80,9 +80,9 @@ theorem zX_frm {w : Nat → Nat} {X : Pub → State → Prop} {a : Pub} {s t : S
   subst e
   have f' : Frm I.B hdrW s.mem t.mem := f
   have z' : word s.mem I.B (slot (vk I.k) nXn + 8 * vk I.k) = 0 := z
-  have := g.bndv L.1 (j := nXn) (k := vk I.k + 1) (by decide) (by omega)
+  have := g.bndv L.1 (j := nXn) (k := vk I.k + 1) (by decide) (by omega_using [])
   show word t.mem I.B (slot (vk I.k) nXn + 8 * vk I.k) = 0
-  rw [Frm.hdrW_word f' (by have := slot_ge (vk I.k) nXn; omega) (by omega)]; exact z'
+  rw [Frm.hdrW_word f' (by have := slot_ge (vk I.k) nXn; omega_using [this]) (by omega_using [this])]; exact z'
 
 /-! ## The shifts' stages -/
 
@@ -143,8 +143,8 @@ theorem wGuard_rel {w : Nat → Nat} {sl : Nat} {bnd : DP → Nat} {Φ : Pub →
   refine WP.mono (g.setNar_ok L.1) fun t₀ ⟨g₀, f₀, k₀⟩ => ?_
   rw [WP.block_append_iff]
   refine WP.mono (ctx_ok g₀ L.1 wide (fun _ => rfl) rfl) fun t₁ ⟨⟨g₁, f₁, h12, _⟩, k₁⟩ => ?_
-  refine WP.mono (guardT_ok (k := k) h12 (by cases wide <;> simp only [nw, Wk, vk, Bool.false_eq_true, ↓reduceIte] <;> omega)
-    (by cases wide <;> simp only [nw, Wk, vk, Bool.false_eq_true, ↓reduceIte] <;> omega) (by omega)) fun t₂ ⟨⟨h3, m₂⟩, k₂⟩ => ?_
+  refine WP.mono (guardT_ok (k := k) h12 (by cases wide <;> simp only [nw, Wk, vk, Bool.false_eq_true, ↓reduceIte] <;> omega_using [])
+    (by cases wide <;> simp only [nw, Wk, vk, Bool.false_eq_true, ↓reduceIte] <;> omega_using [hk2]) (by omega_using [hk])) fun t₂ ⟨⟨h3, m₂⟩, k₂⟩ => ?_
   refine ⟨⟨I, m₀, c, rfl, g₁.same m₂ k₂ (by decide), L, T, ?_, hTb, hT'⟩, fun r hr => ?_⟩
   · show word t₂.mem I.B (8 * sl) = _
     rw [m₂, hdrW_word (f₀.trans f₁) hsl hsl' hslS]; exact hT
@@ -191,22 +191,22 @@ theorem wstage_rel {w : Nat → Nat} {sl : Nat} {bnd : DP → Nat} {Φ : Pub →
   subst e
   have hk1 := L.1.k1
   have hk2 := L.1.k2
-  have hN2 : 2 ≤ nw I.k wide := by cases wide <;> simp only [nw, Wk, vk, Bool.false_eq_true, ↓reduceIte] <;> omega
+  have hN2 : 2 ≤ nw I.k wide := by cases wide <;> simp only [nw, Wk, vk, Bool.false_eq_true, ↓reduceIte] <;> omega_arith
   have hNl : nw I.k wide < 512 := by
-    cases wide <;> simp only [nw, Wk, vk, Bool.false_eq_true, ↓reduceIte] <;> omega
+    cases wide <;> simp only [nw, Wk, vk, Bool.false_eq_true, ↓reduceIte] <;> omega_using [hk2]
   have hd : 2 ^ k < nw I.k wide := by
     have h3 : s.gpr .x3 = BitVec.ofNat 64 ((nw I.k wide - 1) / 2 ^ k) := hp .x3 (by simp)
-    rw [eval_zero, h3, ofNat_beq_zero (Nat.lt_of_le_of_lt (Nat.div_le_self _ _) (by omega))] at hz
+    rw [eval_zero, h3, ofNat_beq_zero (Nat.lt_of_le_of_lt (Nat.div_le_self _ _) (by omega_using [hNl]))] at hz
     have := of_decide_eq_false (Option.some.inj hz)
     rw [Nat.div_eq_zero_iff] at this
-    omega
+    omega_using [this]
   have x0 : s.gpr .x0 = I.B := g.ws.x0
   cases up
   · simp only [Bool.false_eq_true, ↓reduceIte]
     rw [WP.block_append_iff]
     refine WP.mono (pre_ok g L.1 wide (fun hw => by rw [hw]; rfl) .x16 (.inr rfl) hsl hsl' hslS hT hT' words
-      (by omega) rfl) fun t₃ ⟨⟨g₃, f₃, h12₃, h16₃, _, _⟩, k₃⟩ => ?_
-    refine WP.mono (tailWD_ok h12₃ h16₃ hd (by omega) hk) fun t₄ ⟨⟨h17₄, h13₄, _⟩, k₄⟩ => ⟨trivial, fun r hr => ?_⟩
+      (by omega_using [hk]) rfl) fun t₃ ⟨⟨g₃, f₃, h12₃, h16₃, _, _⟩, k₃⟩ => ?_
+    refine WP.mono (tailWD_ok h12₃ h16₃ hd (by omega_using [hNl]) hk) fun t₄ ⟨⟨h17₄, h13₄, _⟩, k₄⟩ => ⟨trivial, fun r hr => ?_⟩
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl
     · rw [k₄.get .x0, k₃.get .x0, x0]; rfl
@@ -216,8 +216,8 @@ theorem wstage_rel {w : Nat → Nat} {sl : Nat} {bnd : DP → Nat} {Φ : Pub →
   · simp only [↓reduceIte]
     rw [WP.block_append_iff]
     refine WP.mono (pre_ok g L.1 wide (fun hw => by rw [hw]; rfl) .x8 (.inl rfl) hsl hsl' hslS hT hT' words
-      (by omega) rfl) fun t₃ ⟨⟨g₃, f₃, h12₃, h8₃, _, _⟩, k₃⟩ => ?_
-    refine WP.mono (tailWU_ok h12₃ h8₃ hd (by omega) hk) fun t₄ ⟨⟨h16₄, h17₄, h13₄, _⟩, k₄⟩ =>
+      (by omega_using [hk]) rfl) fun t₃ ⟨⟨g₃, f₃, h12₃, h8₃, _, _⟩, k₃⟩ => ?_
+    refine WP.mono (tailWU_ok h12₃ h8₃ hd (by omega_using [hNl]) hk) fun t₄ ⟨⟨h16₄, h17₄, h13₄, _⟩, k₄⟩ =>
       ⟨trivial, fun r hr => ?_⟩
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl
@@ -283,16 +283,16 @@ theorem bstage_ct {sl : Nat} {bnd : DP → Nat} {E : Pub → State → Prop} (wi
     have hk1 := L.1.k1
     have hk2 := L.1.k2
     have hN2 : 2 ≤ nw I.k wide := by
-      cases wide <;> simp only [nw, Wk, vk, Bool.false_eq_true, ↓reduceIte] <;> omega
+      cases wide <;> simp only [nw, Wk, vk, Bool.false_eq_true, ↓reduceIte] <;> omega_arith
     have hNl : nw I.k wide < 512 := by
-      cases wide <;> simp only [nw, Wk, vk, Bool.false_eq_true, ↓reduceIte] <;> omega
+      cases wide <;> simp only [nw, Wk, vk, Bool.false_eq_true, ↓reduceIte] <;> omega_using [hk2]
     have x0 : s.gpr .x0 = I.B := g.ws.x0
     rw [bHead, WP.block_append_iff]
-    refine WP.mono (pre_ok g L.1 wide (fun _ => rfl) .x16 (.inr rfl) hsl hsl' hslS hT hT' false (by omega) rfl)
+    refine WP.mono (pre_ok g L.1 wide (fun _ => rfl) .x16 (.inr rfl) hsl hsl' hslS hT hT' false (by omega_using [hk]) rfl)
       fun t₃ ⟨⟨_, _, h12₃, h16₃, _, _⟩, k₃⟩ => ?_
     cases up
     · simp only [Bool.false_eq_true, ↓reduceIte]
-      refine WP.mono (tailBD_ok h12₃ h16₃ (by omega) (by omega)) fun t₄ ⟨⟨h16₄, h14₄, _, _⟩, k₄⟩ =>
+      refine WP.mono (tailBD_ok h12₃ h16₃ (by omega_using [hN2]) (by omega_using [hNl])) fun t₄ ⟨⟨h16₄, h14₄, _, _⟩, k₄⟩ =>
         ⟨trivial, fun r hr => ?_⟩
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl
@@ -319,8 +319,8 @@ theorem CTW.range {f : Nat → Prog isa} {Φ Ψ : Pub → State → Prop} :
   | 1, _, h0, _ => by simpa using CTW.one h0
   | M + 2, _, h0, hs => by
     rw [List.range_succ, List.map_append, List.map_singleton]
-    exact CTW.app (by simp) (by simp) (CTW.range (M := M + 1) (by omega) h0 fun m h1 h2 => hs m h1 (by omega))
-      (CTW.one (hs (M + 1) (by omega) (by omega)))
+    exact CTW.app (by simp) (by simp) (CTW.range (M := M + 1) (by omega_using []) h0 fun m h1 h2 => hs m h1 (by omega_using [h2]))
+      (CTW.one (hs (M + 1) (by omega_using []) (by omega_using [])))
 
 /-- A shift by the count in slot `sl`. -/
 theorem shiftBy_ct {w : Nat → Nat} {sl : Nat} {bnd : DP → Nat} {E : Pub → State → Prop} (wide up : Bool) {j : Nat}
@@ -370,19 +370,19 @@ theorem stable_zX {N : DP → Nat} {j : Nat} (hsep : ∀ P : DP, 2 ≤ P.k →
     slot (N P) j + 8 * N P ≤ slot (vk P.k) nXn + 8 * vk P.k ∨ slot (vk P.k) nXn + 8 * vk P.k + 8 ≤ slot (N P) j) :
     Stable N j (fun a s => zX a.1 s) := fun ⟨P, i⟩ s t w X h f z => h.elim fun I m₀ c e g L _ => by
   subst e
-  have := g.bndv L.1 (j := nXn) (k := vk I.k + 1) (by decide) (by omega)
+  have := g.bndv L.1 (j := nXn) (k := vk I.k + 1) (by decide) (by omega_using [])
   have hk : slot (N (dpub I)) j + 8 * N (dpub I) ≤ slot (vk I.k) nXn + 8 * vk I.k ∨
-      slot (vk I.k) nXn + 8 * vk I.k + 8 ≤ slot (N (dpub I)) j := hsep (dpub I) (by have := L.1.k1; show 2 ≤ I.k; omega)
+      slot (vk I.k) nXn + 8 * vk I.k + 8 ≤ slot (N (dpub I)) j := hsep (dpub I) (by have := L.1.k1; show 2 ≤ I.k; omega_using [this])
   have f' : Frm I.B (hdrW ++ [(slot (N (dpub I)) j, 8 * N (dpub I))]) s.mem t.mem := f
   show word t.mem I.B (slot (vk I.k) nXn + 8 * vk I.k) = 0
   rw [f'.word_eq (fun r hr => by
     simp only [hdrW, List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hr
     have h256 := hdr_lt_slot (vk I.k) nXn (i := 31) (by decide)
     rcases hr with (rfl | rfl | rfl) | rfl
-    · exact .inr (by simp only [sW]; omega)
-    · exact .inr (by simp only [sArr]; omega)
-    · exact .inr (by simp only [sStride, sFn]; omega)
-    · exact hk.symm) (by omega)]
+    · exact .inr (by simp only [sW]; omega_using [h256])
+    · exact .inr (by simp only [sArr]; omega_using [h256])
+    · exact .inr (by simp only [sStride, sFn]; omega_using [h256])
+    · exact hk.symm) (by omega_using [this])]
   exact z
 
 theorem stable_and {N : DP → Nat} {j : Nat} {E F : Pub → State → Prop} (hE : Stable N j E) (hF : Stable N j F) :
@@ -445,18 +445,18 @@ theorem ctzOr_ct {w : Nat → Nat} {sl : Nat} (hsl : Own sl) {A Bj : Nat} (hA : 
       have hVl : V < 2 ^ (64 * vk I.k) := by rw [← hV]; exact Nat.or_lt_two_pow (wv_lt _ _ _ _) (wv_lt _ _ _ _)
       show tz V < 64 * vk I.k
       rcases Nat.eq_zero_or_pos V with h0 | h0
-      · rw [h0, tz_zero]; have : 1 ≤ vk I.k := by simp only [vk]; omega
-        omega
+      · rw [h0, tz_zero]; have : 1 ≤ vk I.k := by simp only [vk]; omega_using []
+        omega_using [this]
       · exact VG.Proof.Bignum.ShiftStages.tz_lt h0 hVl
     · generalize hV : wv s.mem I.B (slot (vk I.k) A) (vk I.k) ||| wv s.mem I.B (slot (vk I.k) Bj) (vk I.k) = V
       have hVl : V < 2 ^ (64 * vk I.k) := by rw [← hV]; exact Nat.or_lt_two_pow (wv_lt _ _ _ _) (wv_lt _ _ _ _)
       have : tz V < 64 * vk I.k + 1 := by
         rcases Nat.eq_zero_or_pos V with h0 | h0
-        · rw [h0, tz_zero]; omega
-        · have := VG.Proof.Bignum.ShiftStages.tz_lt h0 hVl; omega
+        · rw [h0, tz_zero]; omega_using []
+        · have := VG.Proof.Bignum.ShiftStages.tz_lt h0 hVl; omega_using [this]
       have := L.1.k2
-      have : vk I.k < 200 := by simp only [vk]; omega
-      omega
+      have : vk I.k < 200 := by simp only [vk]; omega_using [this]
+      omega_arith
 
 /-- A store to a header slot keeps `x`'s top word. -/
 theorem zX_hdr {w : Nat → Nat} {X : Pub → State → Prop} {a : Pub} {s t : State} (h : GC w X a s) {sl : Nat}
@@ -465,16 +465,16 @@ theorem zX_hdr {w : Nat → Nat} {X : Pub → State → Prop} {a : Pub} {s t : S
   obtain ⟨I, m₀, c, e, g, L, -⟩ := h
   subst e
   have f' : Frm I.B (hdrW ++ [(8 * sl, 8)]) s.mem t.mem := f
-  have := g.bndv L.1 (j := nXn) (k := vk I.k + 1) (by decide) (by omega)
+  have := g.bndv L.1 (j := nXn) (k := vk I.k + 1) (by decide) (by omega_using [])
   have h256 := hdr_lt_slot (vk I.k) nXn (i := 31) (by decide)
   show word t.mem I.B (slot (vk I.k) nXn + 8 * vk I.k) = 0
   rw [f'.word_eq (fun r hr => by
     simp only [hdrW, List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with (rfl | rfl | rfl) | rfl
-    · exact .inr (by simp only [sW]; omega)
-    · exact .inr (by simp only [sArr]; omega)
-    · exact .inr (by simp only [sStride, sFn]; omega)
-    · exact .inr (by dsimp only; omega)) (by omega)]
+    · exact .inr (by simp only [sW]; omega_using [h256])
+    · exact .inr (by simp only [sArr]; omega_using [h256])
+    · exact .inr (by simp only [sStride, sFn]; omega_using [h256])
+    · exact .inr (by dsimp only; omega_using [hsl, h256])) (by omega_using [this])]
   exact z
 
 theorem twos_eq : twos = seqs ((([.block setNar] : List (Prog isa)) ++ oneA nOne ++ [zeroA nU, subA nU Public.aN nOne, zeroA nXn,
@@ -504,9 +504,9 @@ theorem twos_ct : CTW (GC Wk XT) (GC vk fun a s => zX a.1 s) twos := by
       obtain ⟨I, m₀, c, e, g, L, -⟩ := h
       subst e
       exact (wv_eq_zero_iff _ _ _ _).mp (show wv t.mem I.B (slot (vk I.k) nXn) (vk I.k + 2) = 0 from z) (vk I.k)
-        (by omega)) (by taint_decide)) ?_
+        (by omega_using [])) (by taint_decide)) ?_
     refine CTW.cons (by simp) (copyA_w (Y := fun a s => zX a.1 s) (by decide) (by decide) (by decide)
-      (fun _ _ _ h o _ => zX_out h o (.inr (by omega)) h.x) (by taint_decide)) ?_
+      (fun _ _ _ h o _ => zX_out h o (.inr (by omega_using [])) h.x) (by taint_decide)) ?_
     refine CTW.cons (by simp) (ctzOr_ct (sl := sT1) ⟨by decide, by decide, by decide⟩ (by decide) (by decide)
       (fun _ _ _ _ _ h f z => zX_hdr h (by decide) f z) (by taint_decide) (by taint_decide)) ?_
     exact CTW.one (ctzOr_ct (sl := sT2) ⟨by decide, by decide, by decide⟩ (by decide) (by decide)
@@ -514,17 +514,17 @@ theorem twos_ct : CTW (GC Wk XT) (GC vk fun a s => zX a.1 s) twos := by
         (by decide)).trans hT, hb, hT'⟩, zX_hdr h (by decide) f x.2⟩) (by taint_decide) (by taint_decide))
   refine CTW.app (by simp [shiftBy]) (by simp [shiftBy]) (shiftBy_ct (sl := sT2) (bnd := bT) false false (j := nU)
     (E := fun a s => XS sT1 bT a s ∧ zX a.1 s) (stable_and (stable_XS (by decide) (by decide) (by decide))
-      (stable_zX fun P _ => .inl (by simp only [nw, slot, hdrBytes, nU, nXn, Bool.false_eq_true, ↓reduceIte]; omega)))
-    (by decide) (by decide) (by decide) (by decide) (fun P T h => by simp only [bT] at h; simp only [nw, Bool.false_eq_true, ↓reduceIte]; omega)
+      (stable_zX fun P _ => .inl (by simp only [nw, slot, hdrBytes, nU, nXn, Bool.false_eq_true, ↓reduceIte]; omega_using [])))
+    (by decide) (by decide) (by decide) (by decide) (fun P T h => by simp only [bT] at h; simp only [nw, Bool.false_eq_true, ↓reduceIte]; omega_using [h])
     (by taints9) (by taints9) (by taints9) (by taints6) (by taints6)) ?_
   refine CTW.app (by simp [shiftBy]) (by simp) ((shiftBy_ct (sl := sT1) (bnd := bT) false false (j := nXn)
-    (E := fun a s => zX a.1 s) (stable_zX fun P _ => .inl (by simp only [nw, Bool.false_eq_true, ↓reduceIte]; omega))
-    (by decide) (by decide) (by decide) (by decide) (fun P T h => by simp only [bT] at h; simp only [nw, Bool.false_eq_true, ↓reduceIte]; omega)
+    (E := fun a s => zX a.1 s) (stable_zX fun P _ => .inl (by simp only [nw, Bool.false_eq_true, ↓reduceIte]; omega_using []))
+    (by decide) (by decide) (by decide) (by decide) (fun P T h => by simp only [bT] at h; simp only [nw, Bool.false_eq_true, ↓reduceIte]; omega_using [h])
     (by taints9) (by taints9) (by taints9) (by taints6) (by taints6)).mono (fun a s h => h.map fun x => x.2)
     fun _ _ h => h) ?_
   refine CTW.app (by simp [shiftBy]) (by simp) (shiftBy_ct (sl := sT1) (bnd := bT) true true (j := wX)
-    (E := fun a s => zX a.1 s) (stable_zX fun P _ => .inr (by simp only [nw, Wk, slot, hdrBytes, wX, nXn, ↓reduceIte]; omega))
-    (by decide) (by decide) (by decide) (by decide) (fun P T h => by simp only [bT] at h; simp only [nw, Wk, ↓reduceIte]; omega)
+    (E := fun a s => zX a.1 s) (stable_zX fun P _ => .inr (by simp only [nw, Wk, slot, hdrBytes, wX, nXn, ↓reduceIte]; omega_using []))
+    (by decide) (by decide) (by decide) (by decide) (fun P T h => by simp only [bT] at h; simp only [nw, Wk, ↓reduceIte]; omega_using [h])
     (by taints9) (by taints9) (by taints9) (by taints6) (by taints6)) ?_
   exact CTW.one (setNar_w (Y := fun a s => zX a.1 s) fun _ _ _ h f _ => zX_frm h f h.x.2)
 

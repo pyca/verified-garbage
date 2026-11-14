@@ -23,8 +23,8 @@ private theorem word_values {m m' : Mem} {base : Addr} {a n : Nat}
   | zero => rfl
   | succ n ih =>
     simp only [wordsVal]
-    rw [show word m base a=word m' base a by simpa only [Nat.mul_zero,Nat.add_zero] using h 0 (by omega)]
-    rw [ih (a:=a+8) (fun i hi => by rw [show a+8+8*i=a+8*(i+1) by omega]; exact h (i+1) (by omega))]
+    rw [show word m base a=word m' base a by simpa only [Nat.mul_zero,Nat.add_zero] using h 0 (by omega_using [])]
+    rw [ih (a:=a+8) (fun i hi => by rw [show a+8+8*i=a+8*(i+1) by omega_using []]; exact h (i+1) (by omega_using [hi]))]
 
 theorem update_clob : ∀r∈Update.optimized.flatMap Forward.instrClob,r∈allocatedRegs.filter (· != .x20) := by
   rw [Update.rightCode.lit_eq]; decide +kernel
@@ -60,18 +60,18 @@ theorem batch_ok {base : Addr} {m : Nat} (hL : InvLay p256.invP 8192)
       ∀n, n≤(if a=p256.invP.sF ∨ a=p256.invP.sG then 5 else 4) →
       wordsVal t.mem base a n=wordsVal u.mem base a n := by
     intro a ha n hn
-    have hn5 : n≤5 := by split at hn <;> omega
+    have hn5 : n≤5 := by split at hn <;> omega_using [hn]
     change a∈[2272,2312,2352,2384] at ha
     apply word_values
     intro i hi
     apply hu
     · simp only [List.mem_cons,List.not_mem_nil,or_false] at ha
       rcases ha with rfl|rfl|rfl|rfl <;> simp only [Update.observe] <;>
-        norm_num [show p256.invP.sF=2272 from rfl,show p256.invP.sG=2312 from rfl] at hn <;> omega
+        norm_num [show p256.invP.sF=2272 from rfl,show p256.invP.sG=2312 from rfl] at hn <;> omega_arith
     · simp only [List.mem_cons,List.not_mem_nil,or_false] at ha
-      rcases ha with rfl|rfl|rfl|rfl <;> omega
+      rcases ha with rfl|rfl|rfl|rfl <;> omega_using []
     · simp only [List.mem_cons,List.not_mem_nil,or_false] at ha
-      rcases ha with rfl|rfl|rfl|rfl <;> omega
+      rcases ha with rfl|rfl|rfl|rfl <;> omega_using [hn5, hi]
   have hnot1 : Reg.x1∉Update.optimized.flatMap Forward.instrClob :=
     fun hr => (Update.keepsDeltaCounter _ hr).1 rfl
   have hnot19 : Reg.x19∉Update.optimized.flatMap Forward.instrClob :=

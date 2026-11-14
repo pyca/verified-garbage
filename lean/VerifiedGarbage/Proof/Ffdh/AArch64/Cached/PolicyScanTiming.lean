@@ -46,18 +46,18 @@ theorem policyScan_ct : RelCT isa (Two fun q s =>PolicyScanReady q 0 s)
  have loop:=two_loop (cond:= .zero .x .x3) (Φ:=PolicyScanReady) (Ψ:=fun _ _ =>True)
   (fun q =>q.L+1) stepCt (by
    intro q i s hi h
-   refine WP.mono (policyScanStep h.source q.size (by have :=q.inside;omega) h.pointer h.remaining) ?_
+   refine WP.mono (policyScanStep h.source q.size (by have :=q.inside;omega_using [hi, this]) h.pointer h.remaining) ?_
    rintro t ⟨⟨ptr,count,byte,mem⟩,rest⟩
    refine ⟨?_,fun _ =>⟨h.source.of_mem mem rest,ptr,count⟩,fun _ =>trivial⟩
    rw [eval_zero,byte]
    change some (BitVec.ofNat 64 (q.bs.getD i 0).toNat==0#64)=_
    rw [publicByteZero]
    by_cases more : i<q.L
-   · rw [q.zeros i more,decide_eq_true (show i+1<q.L+1 by omega)]
+   · rw [q.zeros i more,decide_eq_true (show i+1<q.L+1 by omega_using [more])]
      rfl
-   · have last : i=q.L :=by omega
-     rw [last,decide_eq_false q.nonzero,decide_eq_false (show ¬q.L+1<q.L+1 by omega)])
- exact loop.mono (fun _ _ ⟨q,hs,ht,sp⟩ =>⟨q,⟨by have :=q.inside;omega,hs⟩,⟨by have :=q.inside;omega,ht⟩,sp⟩)
+   · have last : i=q.L :=by omega_using [hi, more]
+     rw [last,decide_eq_false q.nonzero,decide_eq_false (show ¬q.L+1<q.L+1 by omega_using [])])
+ exact loop.mono (fun _ _ ⟨q,hs,ht,sp⟩ =>⟨q,⟨by have :=q.inside;omega_using [],hs⟩,⟨by have :=q.inside;omega_using [],ht⟩,sp⟩)
   (fun _ _ _ =>trivial)
 
 end VG.Proof.Ffdh.AArch64.Cached

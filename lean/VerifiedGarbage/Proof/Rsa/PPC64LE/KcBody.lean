@@ -36,7 +36,7 @@ theorem prep_ok {s0 s : State} {B : Addr} {Z K oS na : Nat} (hp : KPre s0 B Z K 
   refine WP.mono (setup_ok hp h h15) fun t1 ⟨b1, w1, z1, k1⟩ => ?_
   rw [wp_seqs_cons hrest]
   have l1 := LdS.of_setup b1 w1 z1
-  refine WP.mono (eArr_ok l1 (by omega) rfl (by rw [k1.gpr _ (by decide)]; exact h24) hE)
+  refine WP.mono (eArr_ok l1 (by omega_using [hw16]) rfl (by rw [k1.gpr _ (by decide)]; exact h24) hE)
     fun t ⟨lt, kt⟩ => k t lt ((k1.trans kt).mono)
 
 /-- The checks keep `KBase`. -/
@@ -55,7 +55,7 @@ theorem ret_ok {g : Geo} {sS t : State} {A : Nat → Nat} {live : List Nat} {c :
   refine WP.keep _ ?_ (by decide)
   prun [Impl.Rsa.PPC64LE.KeyCheck.ret, h.ws.r31,
       exec_load_w (show Reg.r31 ≠ .r0 by decide) (show sMask < 2 ^ 15 by decide),
-    hs.ld (d := sMask) (n := 4) (by unfold sMask; simp only [KeyWorkspace.hdr] at hz; omega),
+    hs.ld (d := sMask) (n := 4) (by unfold sMask; simp only [KeyWorkspace.hdr] at hz; omega_using [hz]),
     CrtValues.ofNat_slot _ h.mask]
 
 end VG.Proof.Rsa.PPC64LE.KeyCheck

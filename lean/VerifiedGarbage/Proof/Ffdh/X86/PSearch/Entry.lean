@@ -70,9 +70,9 @@ theorem keep_ok {o s : State} {ds : List Nat} {f : Nat → BitVec 32} (A : PSear
 theorem halves {m : Mem} {a : Addr} {k : Nat} (h : m.readW a 64 = BitVec.ofNat 64 k) (hk : k < 2 ^ 64) :
     m.readW a 32 = BitVec.ofNat 32 k ∧ m.readW (a + BitVec.ofNat 64 4) 32 = BitVec.ofNat 32 (k / 2 ^ 32) := by
   refine ⟨(Mem.readW_lo32 h).trans ?_, (Mem.readW_hi32 h).trans ?_⟩ <;> apply BitVec.eq_of_toNat_eq
-  · simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]; omega
+  · simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]; omega_using []
   · simp only [BitVec.extractLsb'_toNat, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow]
-    rw [Nat.mod_eq_of_lt (by omega : k < 2 ^ 64)]
+    rw [Nat.mod_eq_of_lt (by omega_using [hk] : k < 2 ^ 64)]
 
 /-- The state's attempts, width and cap, from the contract's precondition. -/
 theorem entry_words {o : State} (A : PSearchABI o) :
@@ -85,8 +85,8 @@ theorem entry_words {o : State} (A : PSearchABI o) :
     fun d hd => Spill.addr_eq_of hS hd
   have k0 := halves (m := o.mem) (a := argumentPointer o 9) (k := (ofState o).attempts)
     (by simp only [ofState, BitVec.ofNat_toNat, BitVec.setWidth_eq]) (BitVec.isLt _)
-  have k1 := halves A.width (by have := (arg o 1).isLt; omega)
-  have k2 := halves A.cap (by unfold Spec.Ffdh.parameterEntropy; have := A.bitsHigh; omega)
+  have k1 := halves A.width (by have := (arg o 1).isLt; omega_using [])
+  have k2 := halves A.cap (by unfold Spec.Ffdh.parameterEntropy; have := A.bitsHigh; omega_using [])
   refine ⟨?_, ?_, ?_, ?_⟩
   · rw [e 0 (by decide), BitVec.add_zero]; exact k0.1
   · rw [e 4 (by decide)]; exact k0.2

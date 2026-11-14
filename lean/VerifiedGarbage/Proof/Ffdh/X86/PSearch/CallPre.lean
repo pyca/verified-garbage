@@ -54,11 +54,11 @@ theorem ce_arg {o t : State} {used : Nat} (A : PSearchABI o)
   have h1 : 212 ≤ (o.gpr .esp).toNat := A.stackLow
   have hb := A.stackBound
   have hn : (t.gpr .esp).toNat = (o.gpr .esp).toNat - 36 := by
-    rw [he]; exact VG.X86.sub_toNat (by unfold argsBytes; omega)
-  rw [arg_withRegions, arg_callEntry (by omega) (by omega), ← ha j hj]
+    rw [he]; exact VG.X86.sub_toNat (by unfold argsBytes; omega_using [h1])
+  rw [arg_withRegions, arg_callEntry (by omega_using [h1, hn]) (by omega_using [hj, hn]), ← ha j hj]
   congr 1
   rw [show (t.gpr .esp + BitVec.ofNat 32 (4 * j)).setWidth 64 = addr (t.gpr .esp) (4 * j) from rfl, he,
-    addr_sub A (by decide) (by unfold argsBytes; omega)]
+    addr_sub A (by decide) (by unfold argsBytes; omega_using [hj])]
   rfl
 
 /-- Constants held, through writes apart from them. -/
@@ -67,7 +67,7 @@ theorem held_frame {m m' : Mem} {f : String → BitVec 64} {cs : List (String ×
     (hd : ∀ t ∈ Abi.constRegions f cs, ∀ r ∈ rs, t.Disjoint r) : Abi.constsHeld m' f cs := by
   intro c hc i hi
   have := hb c hc
-  rw [hf.readW (r := ⟨f c.1, 8 * c.2.length⟩) (Offset.contains_base _ (by omega) (by omega))
+  rw [hf.readW (r := ⟨f c.1, 8 * c.2.length⟩) (Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi, this]))
     (hd _ (List.mem_map_of_mem hc)) (by decide)]
   exact h c hc i hi
 
@@ -75,18 +75,18 @@ theorem held_frame {m m' : Mem} {f : String → BitVec 64} {cs : List (String ×
 theorem win_base {o : State} (A : PSearchABI o) {used : Nat} (hu : used < (arg o 6).toNat) :
     (arg o 5 + BitVec.ofNat 32 used).setWidth 64 = argumentPointer o 5 + BitVec.ofNat 64 used := by
   have := A.rBound
-  exact addr_eq (by omega)
+  exact addr_eq (by omega_using [hu, this])
 
 theorem win_toNat {o : State} (A : PSearchABI o) {used : Nat} (hu : used < (arg o 6).toNat) :
     (arg o 5 + BitVec.ofNat 32 used).toNat = (arg o 5).toNat + used := by
   have := A.rBound
   have := (arg o 6).isLt
-  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := used) (by omega)]
-  exact Nat.mod_eq_of_lt (by omega)
+  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := used) (by omega_using [hu])]
+  exact Nat.mod_eq_of_lt (by omega_arith)
 
 theorem win_sub {o : State} (A : PSearchABI o) {used : Nat} (hu : used < (arg o 6).toNat) :
     Region.Sub (winR o used) (rR o) := by
-  rw [winR, win_base A hu]; exact Offset.sub_base _ (by omega)
+  rw [winR, win_base A hu]; exact Offset.sub_base _ (by omega_using [hu])
 
 theorem cu_base {o : State} (A : PSearchABI o) :
     (arg o 9 + BitVec.ofNat 32 candOff).setWidth 64 = argumentPointer o 9 + BitVec.ofNat 64 80 :=
@@ -103,7 +103,7 @@ theorem esp_sub4 {o t : State} (A : PSearchABI o) (he : t.gpr .esp = o.gpr .esp 
   simp only [BitVec.toNat_sub, BitVec.toNat_ofNat, argsBytes]
   have := (o.gpr .esp).isLt
   show (2 ^ 32 - 4 % 2 ^ 32 + (2 ^ 32 - 36 % 2 ^ 32 + (o.gpr .esp).toNat) % 2 ^ 32) % 2 ^ 32 = _
-  omega
+  omega_using []
 
 /-- The table, apart from every region the run may write. -/
 theorem table_far {o : State} (A : PSearchABI o) :
@@ -123,13 +123,13 @@ theorem call_pre {o t : State} {used : Nat} (A : PSearchABI o) (hu : used < (arg
   have h1 : 212 ≤ (o.gpr .esp).toNat := A.stackLow
   have hb := A.stackBound
   have hs4 := esp_sub4 A he
-  have hs4n : (o.gpr .esp - BitVec.ofNat 32 40).toNat = (o.gpr .esp).toNat - 40 := VG.X86.sub_toNat (by omega)
+  have hs4n : (o.gpr .esp - BitVec.ofNat 32 40).toNat = (o.gpr .esp).toNat - 40 := VG.X86.sub_toNat (by omega_using [h1])
   have ha0 : argAddr (t.callEntry.withRegions (callRd o used) (callWr o)) 0 = low o + BitVec.ofNat 64 176 := by
     rw [argAddr_withRegions, argAddr_callEntry, show 4 * 0 = 0 from rfl, BitVec.add_zero, he,
       sw_sub A (by decide)]; rfl
   have hret : (o.gpr .esp - BitVec.ofNat 32 40).setWidth 64 = low o + BitVec.ofNat 64 172 := sw_sub A (by decide)
   have hlen : (BitVec.ofNat 32 ((arg o 6).toNat - used)).toNat = (arg o 6).toNat - used := by
-    have := (arg o 6).isLt; rw [BitVec.toNat_ofNat]; omega
+    have := (arg o 6).isLt; rw [BitVec.toNat_ofNat]; omega_using []
   have hT : Abi.constRegions (fun name => BitVec.setWidth 64 (t.syms name))
       [(VG.Impl.RsaKeyGen.TrialTable32.symbol, VG.Impl.RsaKeyGen.TrialTable32.packed)] = [tR o] := by
     rw [hsy, Abi.constRegions_cons, Abi.constRegions_nil, VG.Proof.RsaKeyGen.X86.Candidate.packed_length]
@@ -158,19 +158,19 @@ theorem call_pre {o t : State} {used : Nat} (A : PSearchABI o) (hu : used < (arg
   have rW : Region.Disjoint ⟨low o + BitVec.ofNat 64 172, 4⟩ (winR o used) := (A.lowRand.sub_left Rs).sub_right W
   have rB : Region.Disjoint ⟨low o + BitVec.ofNat 64 172, 4⟩ (bR o) := A.lowB.sub_left Rs
   have rF : Region.Disjoint ⟨low o + BitVec.ofNat 64 172, 4⟩ (frR o) :=
-    Offset.disjoint _ (by omega) (by omega) (by omega)
+    Offset.disjoint _ (by omega_using []) (by omega_using []) (by omega_using [])
   have bO : Region.Disjoint ⟨low o, 172⟩ (oR o) := A.lowO.sub_left Bs
   have bC : Region.Disjoint ⟨low o, 172⟩ (cuR o) := (A.lowS.sub_left Bs).sub_right Cu
   have bW : Region.Disjoint ⟨low o, 172⟩ (winR o used) := (A.lowRand.sub_left Bs).sub_right W
   have bB : Region.Disjoint ⟨low o, 172⟩ (bR o) := A.lowB.sub_left Bs
-  have bF : Region.Disjoint ⟨low o, 172⟩ (frR o) := Offset.base_disjoint _ (by omega) (by omega)
+  have bF : Region.Disjoint ⟨low o, 172⟩ (frR o) := Offset.base_disjoint _ (by omega_using []) (by omega_using [])
   have oB := A.oBound
   have cB : (arg o 9 + BitVec.ofNat 32 candOff).toNat + 8 ≤ 2 ^ 32 := by
     have := A.sBound
     rw [BitVec.toNat_add, BitVec.toNat_ofNat, show candOff = 80 from rfl]
-    rw [Nat.mod_eq_of_lt (a := 80) (by decide), Nat.mod_eq_of_lt (by omega)]; omega
+    rw [Nat.mod_eq_of_lt (a := 80) (by decide), Nat.mod_eq_of_lt (by omega_using [this])]; omega_using [this]
   have wB : (arg o 5 + BitVec.ofNat 32 used).toNat + ((arg o 6).toNat - used) ≤ 2 ^ 32 := by
-    rw [win_toNat A hu]; have := A.rBound; omega
+    rw [win_toNat A hu]; have := A.rBound; omega_using [hu, this]
   have sB := A.bBound
   have bL := A.bitsLow
   have bH := A.bitsHigh
@@ -178,8 +178,8 @@ theorem call_pre {o t : State} {used : Nat} (A : PSearchABI o) (hu : used < (arg
   have gG := A.gen
   have sL := A.scratchLength
   have st : Proof.Ffdh.X86.stack ≤ (o.gpr .esp - BitVec.ofNat 32 40).toNat := by
-    rw [hs4n]; show 172 ≤ _; omega
-  have st' : (o.gpr .esp - BitVec.ofNat 32 40).toNat + 4 + 36 ≤ 2 ^ 32 := by rw [hs4n]; omega
+    rw [hs4n]; show 172 ≤ _; omega_using [h1]
+  have st' : (o.gpr .esp - BitVec.ofNat 32 40).toNat + 4 + 36 ≤ 2 ^ 32 := by rw [hs4n]; omega_using []
   have held : Abi.constsHeld (t.mem.writeW (low o + BitVec.ofNat 64 172) (t.unknowns 0))
       (fun name => BitVec.setWidth 64 (t.syms name))
       [(VG.Impl.RsaKeyGen.TrialTable32.symbol, VG.Impl.RsaKeyGen.TrialTable32.packed)] := by

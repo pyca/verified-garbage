@@ -42,31 +42,31 @@ theorem scalarBound_positive {k : Nat} {dom : List Byte} (valid : Spec.Ffdh.doma
  have mod := facts.1
  simp only [Spec.Rsa.modulusValid,Bool.and_eq_true,beq_iff_eq,decide_eq_true_eq] at mod
  cases q : (domainOf k dom).q with
- | none => simp only [scalarBound,q,Option.getD_none];omega
+ | none => simp only [scalarBound,q,Option.getD_none];omega_using [mod]
  | some v =>
    have bound := (facts.2.2 v q).1.2.1
    simp only [scalarBound,q,Option.getD_some]
-   omega
+   omega_using [bound]
 
 theorem generation_bits_positive {k : Nat} {dom : List Byte} (valid : Spec.Ffdh.domainValid k dom=true) :
  0<generationScalarBits (domainOf k dom) := by
  have positive := scalarBound_positive valid
  have length : 0<bitLength (scalarBound (domainOf k dom)) := by
   unfold bitLength
-  rw [ite_eq_right (by omega : scalarBound (domainOf k dom)≠0)]
-  omega
+  rw [ite_eq_right (by omega_using [positive] : scalarBound (domainOf k dom)≠0)]
+  omega_using []
  unfold generationScalarBits
  cases h : Spec.Ffdh.vettedExponentBits (domainOf k dom) with
  | none => exact length
  | some bits =>
    have := recognized_nonzero h
-   exact Nat.lt_min.mpr ⟨by omega,length⟩
+   exact Nat.lt_min.mpr ⟨by omega_using [this],length⟩
 
 theorem generation_bits_bound {k : Nat} {dom : List Byte} (positive : 0<k) (size : k≤1024) :
  generationScalarBits (domainOf k dom)≤8192 := by
  have := VG.Proof.Ffdh.VettedPolicy.bits_le_bound (domainOf k dom)
  have := scalarBound_bits_fit (dom:=dom) positive
- omega
+ omega_arith
 
 theorem domain_normalized {k : Nat} {dom : List Byte} (positive : 0<k)
  (valid : Spec.Ffdh.domainValid k dom=true) :

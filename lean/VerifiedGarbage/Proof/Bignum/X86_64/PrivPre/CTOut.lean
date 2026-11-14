@@ -69,10 +69,10 @@ theorem outArr_ct {j : Nat} (hj : j < 8) {hc : VG.Taint.Hint VG.X86_64.Taint.T}
   rintro p s ⟨mx, hg, hZ, hbx⟩
   have hn := hg.scr.nowrap
   have hl : ∀ i < 32, InRegions (s.rd ++ s.wr) (off p.X (8 * i)) 8 := fun i hi =>
-    hg.scr.ld (by have := hdr_lt_slot p.wx 8 hi; omega)
+    hg.scr.ld (by have := hdr_lt_slot p.wx 8 hi; omega_using [hZ, this])
   exact WP.mono (WP.keep [.r12, .rsi] (Q := fun t => t.gpr .r12 = BitVec.ofNat 64 p.wx ∧
       t.gpr .rsi = off p.X (slot p.wx j))
-    (by xrun [State.ea, hdr, hg.rdi, hdrOff, hl sW (by decide), hl (sArr j) (by unfold sArr; omega),
+    (by xrun [State.ea, hdr, hg.rdi, hdrOff, hl sW (by decide), hl (sArr j) (by unfold sArr; omega_using [hj]),
       hg.hdr.hw, hg.hdr.harr j hj]) rfl) fun t ⟨⟨h12, hsi⟩, k⟩ => ⟨h12, hsi, (k.gpr (by decide)).trans hbx⟩
 
 /-- The public data of `out`: the working space, the workspaces' offsets
@@ -123,19 +123,19 @@ theorem OB.of_scr {p : OPub} {minv mp mq : BitVec 64} {s t : State} (h : OB p mi
   have hn := h.good.scr.nowrap
   have h8 := hdr_lt_slot p.w 8 (show 31 < 32 by decide)
   have hw : ∀ d, d + 8 ≤ p.Z → word t.mem p.B d = word s.mem p.B d := fun d hd => word_of_scr hm hd hn
-  have hP8 : 8 * 32 ≤ slot p.wp 8 := by unfold slot hdrBytes; omega
-  have hQ8 : 8 * 32 ≤ slot p.wq 8 := by unfold slot hdrBytes; omega
+  have hP8 : 8 * 32 ≤ slot p.wp 8 := by unfold slot hdrBytes; omega_using []
+  have hQ8 : 8 * 32 ≤ slot p.wq 8 := by unfold slot hdrBytes; omega_using []
   have hlo := h.loP
   have hhi := h.hiP
   have hlo' := h.loQ
   have hhi' := h.hiQ
   exact { h with
     good := Good.of_scr h.good h.zw hm hwr hdi
-    out := (hw _ (by unfold sOut sFn; omega)).trans h.out
-    wsP := (hw _ (by unfold sWsP sFn; omega)).trans h.wsP
-    wsQ := (hw _ (by unfold sWsQ sFn; omega)).trans h.wsQ
-    pws := h.pws.of_words fun i hi => by rw [word_off, word_off]; exact hw _ (by omega)
-    qws := h.qws.of_words fun i hi => by rw [word_off, word_off]; exact hw _ (by omega)
+    out := (hw _ (by unfold sOut sFn; omega_using [hP8, hhi])).trans h.out
+    wsP := (hw _ (by unfold sWsP sFn; omega_using [hP8, hhi])).trans h.wsP
+    wsQ := (hw _ (by unfold sWsQ sFn; omega_using [hP8, hhi])).trans h.wsQ
+    pws := h.pws.of_words fun i hi => by rw [word_off, word_off]; exact hw _ (by omega_using [hP8, hhi, hi])
+    qws := h.qws.of_words fun i hi => by rw [word_off, word_off]; exact hw _ (by omega_using [hQ8, hhi', hi])
     wr := by rw [hwr]; exact h.wr }
 
 theorem pins_oat {e : OPub → Nat} : Pins (OAt e) [.rdi, .rbx] :=
@@ -160,13 +160,13 @@ theorem arrN_ct {j : Nat} (hj : j < 8) {hc : VG.Taint.Hint VG.X86_64.Taint.T}
   have hw1 := h.w1
   have hw2 := h.w2
   have hzw := h.zw
-  exact WP.mono (outArr_ok h.good h.zw hj hw1 (by omega) hbx rfl (by omega)
-    (fun i hi => ⟨_, h.wr, Offset.contains_base p.D (by omega) (by omega)⟩)
+  exact WP.mono (outArr_ok h.good h.zw hj hw1 (by omega_using [hw2]) hbx rfl (by omega_using [hhe, hw2])
+    (fun i hi => ⟨_, h.wr, Offset.contains_base p.D (by omega_using [hlen, hhe, hi]) (by omega_using [hhe, hw2, hi])⟩)
     (fun i hi => by
       have := slot_le (w := p.w) hj
-      have := sep_of (o := 0) (d := slot p.w j + 8 * i) h.sep (eD := e p) (n := 8 * p.w) (by omega) (by omega) hn
+      have := sep_of (o := 0) (d := slot p.w j + 8 * i) h.sep (eD := e p) (n := 8 * p.w) (by omega_using [hlen, hhe]) (by omega_using [hzw, hi, this]) hn
       simpa [off_off] using this)) fun t ⟨_, ho, hbx', k⟩ =>
-    ⟨⟨minv, mp, mq, h.of_scr (scr_of_outside ho h.sep (by omega)) k.2.2 ((k.gpr (by decide)).trans h.good.rdi)⟩,
+    ⟨⟨minv, mp, mq, h.of_scr (scr_of_outside ho h.sep (by omega_using [hlen, hhe])) k.2.2 ((k.gpr (by decide)).trans h.good.rdi)⟩,
       hbx'⟩
 
 /-- `outAt sl` of the workspace at `o p` (`wx p` words), its base in slot
@@ -191,11 +191,11 @@ theorem at_ct {sl : Nat} {hc : VG.Taint.Hint VG.X86_64.Taint.T}
       obtain ⟨mx, hslv, hws, hlo, hhi, hw1, hw2, hhe⟩ := hsel p minv mp mq s h
       have hs := h.good.scr
       have hn := hs.nowrap
-      have hX8 : 256 ≤ slot (wx p) 8 := by unfold slot hdrBytes; omega
+      have hX8 : 256 ≤ slot (wx p) 8 := by unfold slot hdrBytes; omega_using []
       refine WP.mono (WP.keep [.rdi] (Q := fun t => t.gpr .rdi = off p.B (o p) ∧ t.mem = s.mem)
-        (by xrun [State.ea, hdr, h.good.rdi, hdrOff, hs.ld (d := 8 * sl) (by have := hdr_lt_slot p.w 8 hsl; omega),
+        (by xrun [State.ea, hdr, h.good.rdi, hdrOff, hs.ld (d := 8 * sl) (by have := hdr_lt_slot p.w 8 hsl; omega_using [hsl, hhi, hX8]),
           hslv]) rfl)
-        fun t ⟨⟨hdi, hm⟩, k⟩ => ⟨⟨mx, ⟨(hs.congr k.2.2).sub (o := o p) (n := slot (wx p) 8) hhi (by omega), hdi,
+        fun t ⟨⟨hdi, hm⟩, k⟩ => ⟨⟨mx, ⟨(hs.congr k.2.2).sub (o := o p) (n := slot (wx p) 8) hhi (by omega_using [hX8]), hdi,
           by rw [hm]; exact hws.hdr⟩, Nat.le_refl _, (k.gpr (by decide)).trans hbx⟩, hw1, hw2, hhe, h.hL,
           by rw [k.2.2]; exact h.wr, fun x hx => h.sep x (ofs_lt_of_sub hhi hn hx)⟩
     refine RelCT.seqs_append (by simp [outArr]) (by simp) (RelCT.seq (two_post (Ψ := fun p t =>
@@ -203,20 +203,20 @@ theorem at_ct {sl : Nat} {hc : VG.Taint.Hint VG.X86_64.Taint.T}
       fun p s ⟨⟨mx, hg, hZ, hbx⟩, hw1, hw2, hhe, hL, hwr, hS⟩ => ?_) ?_)
     · dsimp only at hg hZ hbx
       have hn := hg.scr.nowrap
-      exact WP.mono (outArr_ok hg hZ (show aY < 8 by decide) hw1 (by omega) hbx rfl (by omega)
-        (fun i hi => ⟨_, hwr, Offset.contains_base p.D (by omega) (by omega)⟩)
+      exact WP.mono (outArr_ok hg hZ (show aY < 8 by decide) hw1 (by omega_using [hw2]) hbx rfl (by omega_using [hhe, hL])
+        (fun i hi => ⟨_, hwr, Offset.contains_base p.D (by omega_using [hhe, hi]) (by omega_using [hhe, hL, hi])⟩)
         (fun i hi => by
           have := slot_le (w := wx p) (show aY < 8 by decide)
-          have := sep_of (o := 0) (d := slot (wx p) aY + 8 * i) hS (eD := e p) (n := 8 * wx p) (by omega)
-            (by omega) hn
+          have := sep_of (o := 0) (d := slot (wx p) aY + 8 * i) hS (eD := e p) (n := 8 * wx p) (by omega_using [hhe])
+            (by omega_using [hi, this]) hn
           simpa [off_off] using this)) fun t ⟨_, _, _, k⟩ => (k.gpr (by decide)).trans hg.rdi
     exact two_taint [.rdi] (pins_of (fun p _ => off p.B (o p)) fun p s h r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact h) (by taint_decide)
   · rintro p s ⟨⟨minv, mp, mq, h⟩, hbx⟩
     obtain ⟨mx, hslv, hws, hlo, hhi, hw1, hw2, hhe⟩ := hsel p minv mp mq s h
-    exact WP.mono (outAt_ok h.good hlo hhi hw1 (by omega) hsl hslv hws hbx rfl (by omega) h.hL h.wr h.sep)
+    exact WP.mono (outAt_ok h.good hlo hhi hw1 (by omega_using [hw2]) hsl hslv hws hbx rfl (by omega_using [hhe]) h.hL h.wr h.sep)
       fun t ⟨_, ho, hbx', hdi, _, k⟩ =>
-        ⟨⟨minv, mp, mq, h.of_scr (scr_of_outside ho h.sep (by omega)) k.2.2 hdi⟩, hbx'⟩
+        ⟨⟨minv, mp, mq, h.of_scr (scr_of_outside ho h.sep (by omega_using [hhe])) k.2.2 hdi⟩, hbx'⟩
 
 /-- `out` leaks the same in runs with the same working space, workspaces
 and `pre`. -/
@@ -232,23 +232,23 @@ theorem out_ct : RelCT isa (Two fun p s => ∃ minv mp mq, OB p minv mp mq s) (s
     have h8 := hdr_lt_slot p.w 8 (show 31 < 32 by decide)
     have hzw := h.zw
     refine WP.mono (WP.keep [.rbx, .r15] (Q := fun t => t.gpr .rbx = off p.D 0 ∧ t.mem = s.mem)
-      (by xrun [State.ea, hdr, h.good.rdi, hdrOff, hs.ld (d := 8 * sOut) (by unfold sOut sFn; omega),
-        hs.ld (d := 8 * sMask) (by unfold sMask sFn; omega), h.out]) rfl)
+      (by xrun [State.ea, hdr, h.good.rdi, hdrOff, hs.ld (d := 8 * sOut) (by unfold sOut sFn; omega_using [h8, hzw]),
+        hs.ld (d := 8 * sMask) (by unfold sMask sFn; omega_using [h8, hzw]), h.out]) rfl)
       fun t ⟨⟨hbx, hm⟩, k⟩ => ⟨⟨minv, mp, mq, h.of_scr (fun x _ => by rw [hm]) k.2.2
         ((k.gpr (by decide)).trans h.good.rdi)⟩, hbx⟩
   refine RelCT.seqs_append (by simp [outArr]) (by simp [outArr]) (RelCT.seq
-    (R := Two (OAt fun p => 0 + 8 * p.w)) (arrN_ct (show aN < 8 by decide) (by taint_decide) fun _ => by omega) ?_)
+    (R := Two (OAt fun p => 0 + 8 * p.w)) (arrN_ct (show aN < 8 by decide) (by taint_decide) fun _ => by omega_using []) ?_)
   refine RelCT.seqs_append (by simp [outArr]) (by simp [outAt]) (RelCT.seq
     (R := Two (OAt fun p => 0 + 8 * p.w + 8 * p.w))
-    (arrN_ct (show aR2 < 8 by decide) (by taint_decide) fun _ => by omega) ?_)
+    (arrN_ct (show aR2 < 8 by decide) (by taint_decide) fun _ => by omega_using []) ?_)
   refine RelCT.seqs_append (by simp [outAt]) (by simp [outAt]) (RelCT.seq
     (R := Two (OAt fun p => 0 + 8 * p.w + 8 * p.w + 8 * p.wp))
     (at_ct (o := OPub.op) (wx := OPub.wp) (sl := sWsP) (by taint_decide) (by decide)
-      fun p minv mp mq s h => ⟨mp, h.wsP, h.pws, h.loP, h.hiP, h.wp1, h.wp2, by have := h.len; omega⟩) ?_)
+      fun p minv mp mq s h => ⟨mp, h.wsP, h.pws, h.loP, h.hiP, h.wp1, h.wp2, by have := h.len; omega_using [this]⟩) ?_)
   refine RelCT.seqs_append (by simp [outAt]) (by simp) (RelCT.seq
     (R := Two (OAt fun p => 0 + 8 * p.w + 8 * p.w + 8 * p.wp + 8 * p.wq))
     (at_ct (o := OPub.oq) (wx := OPub.wq) (sl := sWsQ) (by taint_decide) (by decide)
-      fun p minv mp mq s h => ⟨mq, h.wsQ, h.qws, h.loQ, h.hiQ, h.wq1, h.wq2, by have := h.len; omega⟩) ?_)
+      fun p minv mp mq s h => ⟨mq, h.wsQ, h.qws, h.loQ, h.hiQ, h.wq1, h.wq2, by have := h.len; omega_using [this]⟩) ?_)
   exact two_taint [.rdi] (pins_of (fun p _ => p.B) fun p s ⟨⟨_, _, _, h⟩, _⟩ r hr => by
     simp only [List.mem_singleton] at hr; subst hr; exact h.good.rdi) (by taint_decide)
 

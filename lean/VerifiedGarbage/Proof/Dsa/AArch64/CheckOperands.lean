@@ -34,7 +34,7 @@ theorem CheckEffect.preserve {L : ExecutionLayout} {s t : State} {valid : Bool}
   refine ⟨(h.ready.fields a.length ha).trans ((hs.fields a.length ha).symm.trans hb.length), ?_⟩
   rw [hs.pointer_eq h.ready a.pointer hp]
   have hlo : 128 ≤ activeBytes := by decide
-  exact hb.source.congrK (InScr.of_outside h.frame (by omega)) h.keep
+  exact hb.source.congrK (InScr.of_outside h.frame (by omega_using [hZ, hlo])) h.keep
 
 theorem CheckEffect.scheduleFrame {L : ExecutionLayout} {s t : State} {valid : Bool}
     (h : CheckEffect L valid s t) : Outside L.base 128 (usedBytes - 128) s.mem t.mem :=

@@ -30,10 +30,10 @@ theorem phase_ok (M : Mont) {s : State} {B ep : Addr} {Z w N X x u L : Nat} {mi 
       Good t B Z w mi ∧ wv t.mem B (slot w aY) w < N ∧
       (x % N = u % N → wv t.mem B (slot w aY) w = u^Spec.Rsa.os2ip eb % N) ∧
       Frm B (pExpRanges w) s.mem t.mem ∧ Keep mmRegs s t := by
-  have hMod (r : Nat) : r % N < N := Nat.mod_lt r (by omega)
+  have hMod (r : Nat) : r % N < N := Nat.mod_lt r (by omega_using [hN])
   have hFactor (e : Nat) (hxu : x % N = u % N) :
       x^e * u % N = u^(e+1) % N := factor_congr hxu
-  have hb : B.toNat + slot w 8 ≤ 2^64 := by have := hc.good.scr.nowrap; omega
+  have hb : B.toNat + slot w 8 ≤ 2^64 := by have := hc.good.scr.nowrap; omega_using [hZ, this]
   apply WP.seq
   apply fastLoop_dispatch M hc.good hZ hL he hlen hs hel
   · intro a hm ka _ h65
@@ -57,8 +57,8 @@ theorem phase_ok (M : Mont) {s : State} {B ep : Addr} {Z w N X x u L : Nat} {mi 
     have hsa := hs.congrK (by rw [hm]; exact InScr.refl _ _ _) ka
     refine WP.mono (pExpLoop_ok (M := M) (x := x) ca hZ hw hw' hR hX hx
       (by rw [hm]; exact he) (by rw [hm]; exact hlen) hel hL1 hL
-      (fun i hi => hsa.rd i (by omega)) (fun i hi => hsa.val i (by omega))
-      (fun i hi => hsa.out i (by omega))) fun b ⟨cb,yb,fb,kb⟩ => ?_
+      (fun i hi => hsa.rd i (by omega_using [hel, hi])) (fun i hi => hsa.val i (by omega_using [hel, hi]))
+      (fun i hi => hsa.out i (by omega_using [hel, hi]))) fun b ⟨cb,yb,fb,kb⟩ => ?_
     have ob : wv b.mem B (slot w aOne) w = 1 := by
       rw [one_preserved fb hb,hm]; exact hone
     refine WP.mono (finish_slow_ok M cb hZ hw hw' hR hN ob yb) fun t ⟨gt,yt,ft,kt⟩ => ?_

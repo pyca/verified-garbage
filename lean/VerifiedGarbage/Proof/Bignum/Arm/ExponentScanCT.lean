@@ -28,7 +28,7 @@ theorem exponentLoop_ct {ep : BitVec 32} {eb : List Byte} (positive : 0 < eb.len
       (isa.eval .ne s = some true → ∃ m, m < k ∧ I m s t) := by
     intro k s t tr1 tr2 u v h e1 e2
     obtain ⟨j, jk, hk, hs, ht⟩ := h
-    have hj : j < eb.length := by omega
+    have hj : j < eb.length := by omega_using [jk, hk]
     have trace := (exponentByte_ct s t tr1 tr2 u v ⟨hs.input hj, ht.input hj⟩ e1 e2).1
     obtain ⟨_, _, run1, next1, zero1⟩ := exponentState_step s hs hj
     obtain ⟨_, _, run2, next2, zero2⟩ := exponentState_step t ht hj
@@ -42,8 +42,8 @@ theorem exponentLoop_ct {ep : BitVec 32} {eb : List Byte} (positive : 0 < eb.len
         intro last
         change some (!_ ) = some true at again
         simp only [zero1, last, decide_true, Bool.not_true, Option.some.injEq, Bool.false_eq_true] at again
-      exact ⟨k - 1, by omega, j + 1, by omega, by omega, next1, next2⟩
-  exact (RelCT.loop I step eb.length).mono (fun _ _ h => ⟨0, by omega, positive, h.1, h.2⟩) (fun _ _ h => h)
+      exact ⟨k - 1, by omega_using [hk], j + 1, by omega_using [jk, hk], by omega_using [jk, hk, notLast], next1, next2⟩
+  exact (RelCT.loop I step eb.length).mono (fun _ _ h => ⟨0, by omega_using [], positive, h.1, h.2⟩) (fun _ _ h => h)
 
 def ExponentInput (ep : BitVec 32) (eb : List Byte) (s : State) : Prop :=
   ExponentBuffer ep eb s ∧ s.gpr .r1 = ep ∧ s.gpr .lr = BitVec.ofNat 32 eb.length

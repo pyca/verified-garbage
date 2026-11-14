@@ -167,10 +167,10 @@ theorem selectAt_ok {s : State} {B : Addr} {Z w N : Nat} (h : WCtx s B Z w N) {b
   have hA := h.sl ha
   have hT := h.sl ht
   refine WP.mono (selectAcc64_ok h.scr (dA := slot w a) (dT := slot w t) (dO := slot w o) (w := w) (b := b)
-      h8 h9 h5 h.r11 (by rw [h20, mask_eq]) (by have := h.w2; omega) h.w31
+      h8 h9 h5 h.r11 (by rw [h20, mask_eq]) (by have := h.w2; omega_using [this]) h.w31
       (by omega_arith) (by omega_arith) (by omega_arith)
       (by have := sep hoa; omega_arith) (by have := sep hot; omega_arith)) fun s' ⟨hv, hout, k⟩ =>
-    ⟨⟨?_, hout.mono (Nat.le_refl _) (by omega)⟩, k⟩
+    ⟨⟨?_, hout.mono (Nat.le_refl _) (by omega_using [])⟩, k⟩
   simp only [A, ← wordsVal_eq_val32]
   exact hv
 

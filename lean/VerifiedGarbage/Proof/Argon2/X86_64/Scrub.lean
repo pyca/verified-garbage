@@ -33,6 +33,6 @@ theorem deriveOut (stack : Nat) :
       have := List.mem_range.mp hi
       simp only [ArgWord.ofRaw, show abi.ptrBits = 64 from rfl, BitVec.toNat_setWidth] at this
       have := Nat.mod_le outLen.toNat (2 ^ 64)
-      exact (ho _ (Offset.contains_base _ (by simp only [Elem.size] at *; omega) (by omega))).symm
+      exact (ho _ (Offset.contains_base _ (by simp only [Elem.size] at *; omega_arith) (by omega_arith))).symm
 
 end VG.Proof.Argon2.X86_64.Scrub

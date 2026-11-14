@@ -37,27 +37,27 @@ theorem subWord_ok {s₀ : State} {B : Addr} {Z w eA eN eT j k : Nat}
       (~~~word t.mem B (eN+8*(j+k))).toNat + t.c.toNat)) ?_ rfl rfl rfl)
     fun u ⟨⟨hm, hc⟩, ku⟩ => ?_
   · unfold VG.Impl.Bignum.AArch64.FastFinish.subWord
-    have enc : (8*k) % 8 = 0 ∧ 8*k < 32768 := by omega
-    have eAEq : eA+8*j+8*k = eA+8*(j+k) := by omega
-    have eNEq : eN+8*j+8*k = eN+8*(j+k) := by omega
-    have eTEq : eT+8*j+8*k = eT+8*(j+k) := by omega
+    have enc : (8*k) % 8 = 0 ∧ 8*k < 32768 := by omega_using [hk]
+    have eAEq : eA+8*j+8*k = eA+8*(j+k) := by omega_using []
+    have eNEq : eN+8*j+8*k = eN+8*(j+k) := by omega_using []
+    have eTEq : eT+8*j+8*k = eT+8*(j+k) := by omega_using []
     brun [hI.x16, hI.x17, hI.x13, enc,
-      hI.scr.ld (show eA+8*j+8*k+8 ≤ Z by omega),
-      hI.scr.ld (show eN+8*j+8*k+8 ≤ Z by omega),
-      hI.scr.st (show eT+8*j+8*k+8 ≤ Z by omega)]
+      hI.scr.ld (show eA+8*j+8*k+8 ≤ Z by omega_using [hA, hj]),
+      hI.scr.ld (show eN+8*j+8*k+8 ≤ Z by omega_using [hN, hj]),
+      hI.scr.st (show eT+8*j+8*k+8 ≤ Z by omega_using [hT, hj])]
     all_goals simp only [eAEq, eNEq, eTEq, and_self]
   have hx : word t.mem B (eA+8*(j+k)) = word s₀.mem B (eA+8*(j+k)) :=
-    hI.out.word (by omega) (by omega)
+    hI.out.word (by omega_using [sA, hj]) (by omega_using [hA, hj, hn])
   have hy : word t.mem B (eN+8*(j+k)) = word s₀.mem B (eN+8*(j+k)) :=
-    hI.out.word (by omega) (by omega)
+    hI.out.word (by omega_using [sN, hj]) (by omega_using [hN, hj, hn])
   refine ⟨hI.scr.congr ku.wr, (hI.keep.trans ku).mono (by decide),
     (ku.gpr .x16 (by decide)).trans hI.x16, (ku.gpr .x17 (by decide)).trans hI.x17,
     (ku.gpr .x13 (by decide)).trans hI.x13, ?_, ?_⟩
   · rw [hm]
     intro x hx'
-    rw [writeW_outside t.mem B _ (by omega) x (by omega)]
-    exact hI.out x (by omega)
-  · rw [show j+(k+1) = (j+k)+1 by omega, hm, wv_writeW_top _ _ _ _ _ (by omega), hc]
+    rw [writeW_outside t.mem B _ (by omega_using [hT, hj, hn]) x (by omega_using [hx'])]
+    exact hI.out x (by omega_using [hx'])
+  · rw [show j+(k+1) = (j+k)+1 by omega_using [], hm, wv_writeW_top _ _ _ _ _ (by omega_using [hT, hj, hn]), hc]
     have hs := sbcs_toNat (word t.mem B (eA+8*(j+k))) (word t.mem B (eN+8*(j+k))) t.c
     rw [hx, hy] at hs
     have hv := hI.val

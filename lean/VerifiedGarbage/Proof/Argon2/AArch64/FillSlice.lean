@@ -129,7 +129,7 @@ theorem code_ok (s : State) (p : Params) (pass slice : Nat) (h : Ready p pass sl
   have representedA : Proof.Argon2.Represents a.mem (FillKernel.matrix a) p.blocks state.memory := by
     rw [prepared.keeps.mem, base]; exact represented
   refine (FillLanes.loop_ok p.lanes a p pass 0 slice prepared.ready state representedA
-    h.parameters.lanesPositive (by omega)).mono ?_
+    h.parameters.lanesPositive (by omega_using [])).mono ?_
   intro t finished
   refine ⟨finished.represented, finished.matrix.trans base, finished.work.trans work, finished.laneWord,
     finished.rd.trans prepared.keeps.rd, finished.wr.trans prepared.keeps.wr, ?_,

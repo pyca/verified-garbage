@@ -86,23 +86,23 @@ theorem ok (base : State) (total count : Nat) (cfg : Config base total count) :
   · have hne : (setupState base).gpr .r5≠0 := by
       rw [h5]
       intro he
-      exact hz ((ofNat_eq_zero (n := count%16) (by omega)).mp he)
+      exact hz ((ofNat_eq_zero (n := count%16) (by omega_using [])).mp he)
     refine WP.ite false (by simpa only [eval,State.read,Size.bits,BitVec.setWidth_eq,
       Option.some.injEq,beq_eq_false_iff_ne] using hne) (by simp) (fun _ => ?_)
     have lp : LoopPre (setupState base)
         (base.gpr .r7+BitVec.ofNat 64 (count-count%16))
         (base.gpr .r27+BitVec.ofNat 64 (count-count%16)) (count%16) := by
-      refine ⟨h3,h4,h5,by omega,by omega,?_,?_,?_⟩
+      refine ⟨h3,h4,h5,by omega_using [hz],by omega_using [],?_,?_,?_⟩
       · rw [hk.2.1,hk.2.2]
-        exact covers_off cfg.reads (by omega) (Nat.lt_of_le_of_lt cfg.bound cfg.size)
+        exact covers_off cfg.reads (by omega_using []) (Nat.lt_of_le_of_lt cfg.bound cfg.size)
       · rw [hk.2.2]
         exact Covers.trans (Covers.of_sub (by
           intro r hr
           rw [List.mem_singleton] at hr
           subst r
-          exact ⟨⟨base.gpr .r27,total⟩,by simp,count-count%16,rfl,by change count-count%16+count%16≤total; have := cfg.bound; omega⟩)) cfg.writes
-      · exact (cfg.disjoint.sub_left (Offset.sub_base _ (d := count-count%16) (n := count%16) (k := count) (by omega))).sub_right
-          (Offset.sub_base _ (d := count-count%16) (n := count%16) (k := total) (by have := cfg.bound; omega))
+          exact ⟨⟨base.gpr .r27,total⟩,by simp,count-count%16,rfl,by change count-count%16+count%16≤total; have := cfg.bound; omega_using [this]⟩)) cfg.writes
+      · exact (cfg.disjoint.sub_left (Offset.sub_base _ (d := count-count%16) (n := count%16) (k := count) (by omega_using []))).sub_right
+          (Offset.sub_base _ (d := count-count%16) (n := count%16) (k := total) (by have := cfg.bound; omega_using [this]))
     refine WP.mono (copyLoop_ok _ lp) fun t ⟨hm,ht⟩ => ?_
     refine ⟨?_,ht.keeps.2.2.1,ht.keeps.2.2.2,hm⟩
     have hlk : Keep registers (setupState base) t := by
@@ -122,18 +122,18 @@ theorem Result.frame {base s : State} {count : Nat} (hs : Result base count s) :
 theorem Result.source {base s : State} {total count k : Nat} (cfg : Config base total count)
     (hs : Result base count s) (hk : k≤count) :
     bytesAt s.mem (base.gpr .r7) k=bytesAt base.mem (base.gpr .r7) k := by
-  apply VG.Proof.Cmac.bytesAt_frame hs.frame _ (by have := cfg.bound; have := cfg.size; omega)
+  apply VG.Proof.Cmac.bytesAt_frame hs.frame _ (by have := cfg.bound; have := cfg.size; omega_arith)
   intro r hr
   rw [List.mem_singleton] at hr
   subst r
   exact (cfg.disjoint.sub_left (Region.sub_prefix hk)).sub_right
-    (Offset.sub_base _ (d := count-count%16) (n := count%16) (k := total) (by have := cfg.bound; omega))
+    (Offset.sub_base _ (d := count-count%16) (n := count%16) (k := total) (by have := cfg.bound; omega_using [this]))
 
 
 theorem bytes_drop (m : Mem) (D : Addr) (n k : Nat) (hk : k≤n) :
     (bytesAt m D n).drop k=bytesAt m (D+BitVec.ofNat 64 k) (n-k) := by
   have he := bytesAt_add m D k (n-k)
-  rw [show k+(n-k)=n by omega] at he
+  rw [show k+(n-k)=n by omega_using [hk]] at he
   rw [he]
   exact List.drop_left' (length_bytesAt _ _ _)
 
@@ -145,22 +145,22 @@ theorem Result.plaintext {base s : State} {total count : Nat} (cfg : Config base
     bytesAt base.mem (base.gpr .r7) count ++
       bytesAt base.mem (base.gpr .r27+BitVec.ofNat 64 count) (total-count) := by
   rw [hs.mem,bytesAt_writeBytes_prefix _ _ _
-    (by rw [length_bytesAt]; have := cfg.bound; omega) (by have := cfg.size; omega)]
+    (by rw [length_bytesAt]; have := cfg.bound; omega_using [this]) (by have := cfg.size; omega_using [this])]
   rw [length_bytesAt,Offset.add_add]
-  have he : count-count%16+count%16=count := by omega
+  have he : count-count%16+count%16=count := by omega_using []
   rw [he,← List.append_assoc]
   have hp := bytesAt_add base.mem (base.gpr .r7) (count-count%16) (count%16)
   rw [he] at hp
   rw [← hp]
   congr 2
-  omega
+  omega_using []
 
 
 theorem Result.input {base s : State} {total count : Nat} (cfg : Config base total count)
     (hs : Result base count s) :
     bytesAt s.mem (base.gpr .r7) (count-count%16) ++ (bytesAt s.mem (base.gpr .r27) total).drop (count-count%16)=
       bytesAt base.mem (base.gpr .r7) count ++ (bytesAt base.mem (base.gpr .r27) total).drop count := by
-  rw [Result.source cfg hs (by omega),bytes_drop _ _ _ _ (by have := cfg.bound; omega),bytes_drop _ _ _ _ cfg.bound]
+  rw [Result.source cfg hs (by omega_using []),bytes_drop _ _ _ _ (by have := cfg.bound; omega_using [this]),bytes_drop _ _ _ _ cfg.bound]
   exact Result.plaintext cfg hs
 
 end VG.Proof.AesGcm.PPC64LE.SealSplit.PartialCopy

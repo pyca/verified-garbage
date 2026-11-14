@@ -54,7 +54,7 @@ theorem Config.magnitude {K : TCombCfg} {C : Curve} {tbl : List (List (Nat × Na
   have pow : 2^K.w=2*K.H := by
     change 2^K.w=2*2^(K.w-1)
     calc
-      2^K.w=2^((K.w-1)+1) := congrArg (fun n => 2^n) (by have := h.w1; omega)
+      2^K.w=2^((K.w-1)+1) := congrArg (fun n => 2^n) (by have := h.w1; omega_using [this])
       _ = 2*2^(K.w-1) := by rw [Nat.pow_succ,Nat.mul_comm]
   rw [← pow]
   exact combWin_lt _ _ _
@@ -62,7 +62,7 @@ theorem Config.magnitude {K : TCombCfg} {C : Curve} {tbl : List (List (Nat × Na
 theorem Config.halfBound {K : TCombCfg} {C : Curve} {tbl : List (List (Nat × Nat))}
     {start : Nat × Nat} (h : Config K C tbl start) : K.H+1<2^31 := by
   have hw := h.w9
-  have bound : K.H≤2^8 := Nat.pow_le_pow_right (by decide) (by omega)
-  omega
+  have bound : K.H≤2^8 := Nat.pow_le_pow_right (by decide) (by omega_using [hw])
+  omega_using [bound]
 
 end VG.Proof.Weierstrass.Arm.TComb

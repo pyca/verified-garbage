@@ -37,7 +37,7 @@ theorem le8_ushiftRight (x : BitVec 64) {k : Nat} (hk : k ≤ 8) :
   have hl : ((le8 x).drop k).length = 8 - k := by rw [List.length_drop, Proof.Cmac.length_le8]
   have hlen : (le8 (x >>> (8 * k))).length = ((le8 x).drop k ++ Spec.Ccm.zeros k).length := by
     rw [Proof.Cmac.length_le8, List.length_append, hl, Spec.Ccm.zeros, List.length_replicate]
-    omega
+    omega_using [hk]
   apply List.ext_getElem hlen
   intro i h₁ h₂
   have hi : i < 8 := by rwa [Proof.Cmac.length_le8] at h₁
@@ -47,13 +47,13 @@ theorem le8_ushiftRight (x : BitVec 64) {k : Nat} (hk : k ≤ 8) :
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.extractLsb'_toNat, BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow, Nat.div_div_eq_div_mul,
       ← Nat.pow_add]
-    rw [show 8 * k + 8 * i = 8 * (k + i) by omega]
-  · rw [List.getElem_append_right (by rw [hl]; omega)]
+    rw [show 8 * k + 8 * i = 8 * (k + i) by omega_using []]
+  · rw [List.getElem_append_right (by rw [hl]; omega_using [h])]
     simp only [Spec.Ccm.zeros, List.getElem_replicate, le8, List.getElem_map, List.getElem_range]
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.extractLsb'_toNat, BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow, Nat.div_div_eq_div_mul,
       ← Nat.pow_add, BitVec.toNat_ofNat]
-    rw [Nat.div_eq_of_lt (Nat.lt_of_lt_of_le x.isLt (Nat.pow_le_pow_right (by decide) (by omega)))]
+    rw [Nat.div_eq_of_lt (Nat.lt_of_lt_of_le x.isLt (Nat.pow_le_pow_right (by decide) (by omega_using [h])))]
     rfl
 
 theorem le8_ffff : le8 (BitVec.ofNat 64 0xffff) = [0xff, 0xff] ++ Spec.Ccm.zeros 6 := by decide
@@ -81,7 +81,7 @@ theorem minLen_ok (s : State) {o n : Nat} (hbx : s.gpr .rbx = BitVec.ofNat 64 o)
     refine ⟨_, by crun [], ?_, ?_, ?_, ?_, ?_, ?_⟩
     · simp [gpr_setReg, hbx, ofNat_sub ho (by decide)]
     · simp only [cf_arithFlags, hbp, hbx, setWidth_imm, ofNat_sub ho (by decide),
-        toNat_ofNat_of_lt hn, toNat_ofNat_of_lt (show 16 - o < 2 ^ 64 by omega),
+        toNat_ofNat_of_lt hn, toNat_ofNat_of_lt (show 16 - o < 2 ^ 64 by omega_using []),
         show (16 : Nat) % 2 ^ 32 = 16 from rfl, gpr_setReg, gpr_arithFlags, ite_true, ite_false, reduceCtorEq]
     · intro r hr; simp [gpr_setReg, gpr_arithFlags, hr]
     all_goals rfl
@@ -95,7 +95,7 @@ theorem minLen_ok (s : State) {o n : Nat} (hbx : s.gpr .rbx = BitVec.ofNat 64 o)
     all_goals first | exact hm | exact hrd | exact hwr
   · have h := of_decide_eq_false hf
     refine WP.of_runBlock ⟨s₁, rfl, ?_, hg, hm, hrd, hwr⟩
-    rw [hcx, Nat.min_eq_left (by omega)]
+    rw [hcx, Nat.min_eq_left (by omega_using [h])]
 
 /-- `B` zeroed, then the encoding of the length `a` of the associated data
 (`rbp`) at its start, and its length in `rbx`. -/

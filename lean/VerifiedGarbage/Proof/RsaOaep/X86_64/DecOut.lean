@@ -80,7 +80,7 @@ theorem outLoop_ok {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byte} {
       VG.Proof.MlKem.X86_64.sx_ofNat (show oBuf < 2 ^ 31 by decide)]
   have Lv : Lay v F S := L.congr (hk'.gpr (by decide)) hk'.2.2 (by rw [hm])
   have hsc : Scr v o k := Scr.of_mem (by rw [hk'.2.2]; exact hw) hnw
-  refine WP.mono (byteLoop_ok hk0 (stepR_ok (by omega) v (show Reg.r10 ∉ [Reg.rax, .r8] by decide) (by decide) h₃)
+  refine WP.mono (byteLoop_ok hk0 (stepR_ok (by omega_using [hk1]) v (show Reg.r10 ∉ [Reg.rax, .r8] by decide) (by decide) h₃)
     (OutI v F S V W o k (W 33)) ?_ ⟨Lv, Keep.refl _ _, h₅, hm ▸ R, Frame.refl _ _,
       fun _ h => absurd h (Nat.not_lt_zero _)⟩) fun w I => ?_
   · intro j hj w I
@@ -88,23 +88,23 @@ theorem outLoop_ok {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byte} {
     have hcw : w.gpr .rcx = off S oBuf := (I.keep.gpr (by decide)).trans h₂
     have h11w : w.gpr .r11 = W 33 := (I.keep.gpr (by decide)).trans h₄
     have hst : InRegions w.wr (o + BitVec.ofNat 64 j) 1 := by
-      have := hsc.st8 (d := j) (by omega); rw [I.keep.2.2]; exact this
-    have vb : w.mem (off S (oBuf + j)) = V (oBuf + j) := I.R.scr _ (by unfold oRsa; omega)
+      have := hsc.st8 (d := j) (by omega_using [hj]); rw [I.keep.2.2]; exact this
+    have vb : w.mem (off S (oBuf + j)) = V (oBuf + j) := I.R.scr _ (by unfold oRsa; omega_using [hk1, c3, hj])
     refine WP.mono (WP.keep [.rax] (Q := fun w' => w'.gpr .r8 = BitVec.ofNat 64 j ∧
         w'.mem = w.mem.writeW (o + BitVec.ofNat 64 j) (andB (V (oBuf + j)) (W 33))) ?_ rfl)
       fun w' ⟨⟨h8', hm'⟩, k'⟩ => ⟨(I.keep.trans k').mono (by decide), h8', fun w'' k'' hm'' h8'' => ?_⟩
-    · xrun [ea_ix0, ea_ix, hdw, hcw, h11w, I.r8, off_plus, I.L.sld8 (d := oBuf + j) (by unfold oRsa; omega), vb,
+    · xrun [ea_ix0, ea_ix, hdw, hcw, h11w, I.r8, off_plus, I.L.sld8 (d := oBuf + j) (by unfold oRsa; omega_using [hk1, c3, hj]), vb,
         show o + BitVec.ofNat 64 j + BitVec.ofNat 64 0 = o + BitVec.ofNat 64 j from BitVec.add_zero _, hst, andB]
     · have fw : Frame [⟨o, k⟩] w.mem w''.mem := by
         rw [hm'', hm']
-        exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Offset.contains_base _ (by omega) (by omega))
+        exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Offset.contains_base _ (by omega_using [hj]) (by omega_using [hk1, hj]))
       refine ⟨I.L.of_rep I.R (Rep.apart I.R ha fw) (by rw [k''.gpr (by decide), k'.gpr (by decide)])
           (k''.2.2.trans k'.2.2), (I.keep.trans (k'.trans k'')).mono (by decide), h8'', Rep.apart I.R ha fw,
         I.fr.trans fw, fun i hi => ?_⟩
       rw [hm'', hm', VG.WriteBytes.writeW8_apply]
       by_cases h : i = j
       · subst h; simp
-      · rw [ifn (Offset.add_ofNat_ne o (by omega) (by omega) h), I.out i (by omega)]
+      · rw [ifn (Offset.add_ofNat_ne o (by omega_using [hk1, hj, hi]) (by omega_using [hk1, hj]) h), I.out i (by omega_using [hi, h])]
   · have fr : Frame [⟨o, k⟩] u.mem w.mem := by rw [← hm]; exact I.fr
     exact ⟨I.L, (hk'.trans I.keep).mono (by decide), I.R, I.out, fr⟩
 
@@ -144,8 +144,8 @@ theorem decRet_ok {Hm : Stream} {u : State} {F S : Addr} (L : Lay u F S) {V : Na
       L.ld (d := sIdx) (by decide), L.ld (d := sMl) (by decide), hst,
       R.slot (d := sOk) (k := 33) rfl (by decide) rfl, R.slot (d := sK) (k := 23) rfl (by decide) hk,
       R.slot (d := sIdx) (k := 32) rfl (by decide) rfl, R.slot (d := sMl) (k := 29) rfl (by decide) hpm,
-      VG.Proof.MlKem.X86_64.sx_ofNat (show 2 * Hm.D + 2 < 2 ^ 31 by omega),
-      VG.Offset.ofNat_sub_ofNat (show 2 * Hm.D + 2 ≤ k by omega)]
+      VG.Proof.MlKem.X86_64.sx_ofNat (show 2 * Hm.D + 2 < 2 ^ 31 by omega_using [hD64]),
+      VG.Offset.ofNat_sub_ofNat (show 2 * Hm.D + 2 ≤ k by omega_using [hkD])]
   have fv : Frame [⟨pm, 8⟩] u.mem v.mem := by
     rw [hm]; exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ _)
   have Rv := Rep.apart R ha fv
@@ -192,7 +192,7 @@ theorem decFail_ok {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byte} {
     simp only [Spec.Rsa.bytesAt]
     refine List.map_congr_left fun i hi => ?_
     rw [hmy]
-    exact fv.bytes (R := ⟨o, k⟩) (fun r hr => by rw [List.mem_singleton.mp hr]; exact hom) (show k ≤ 2 ^ 64 by omega)
+    exact fv.bytes (R := ⟨o, k⟩) (fun r hr => by rw [List.mem_singleton.mp hr]; exact hom) (show k ≤ 2 ^ 64 by omega_using [hk1])
       (List.mem_range.mp hi)
   · rw [hmy]
     exact (f1.sub fun r hr => ⟨r, by simp [List.mem_singleton.mp hr], fun _ h => h⟩).trans

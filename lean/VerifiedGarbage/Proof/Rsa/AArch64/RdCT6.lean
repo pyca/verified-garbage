@@ -138,7 +138,7 @@ theorem prodRows_ct : RelCT isa (Two (GC vk XT)) (seqs [.block VG.Proof.Rsa.AArc
     (fun ⟨P, i⟩ s h => by
       obtain ⟨I, m₀, c, e, g, L, -⟩ := h
       subst e
-      exact WP.mono (prodBlk_ok g.ws g.args.el (by have := L.1.el2; have := L.1.k2; omega))
+      exact WP.mono (prodBlk_ok g.ws g.args.el (by have := L.1.el2; have := L.1.k2; omega_arith))
         fun t ⟨⟨h0, h11, h9, h8, h12, h13, h7, _⟩, _⟩ r hr => by
           simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
           rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl
@@ -153,7 +153,7 @@ theorem prodRows_ct : RelCT isa (Two (GC vk XT)) (seqs [.block VG.Proof.Rsa.AArc
 
 theorem prefix_ct : CTW GM (GC vk XT) (seqs (([.block (VG.Impl.Rsa.AArch64.Keys.head ++ setNar)] : List (Prog isa)) ++
     (loadA Public.aN Public.sN Public.sK ++ (loadA aE Public.sE Public.sElen ++ (loadA aD sD sDl ++ prod))))) := by
-  have k8 : ∀ {k : Nat}, k ≤ 8 * vk k := fun {k} => by simp only [vk]; omega
+  have k8 : ∀ {k : Nat}, k ≤ 8 * vk k := fun {k} => by simp only [vk]; omega_using []
   refine ⟨?_, fun _ s ⟨I, e, h, _⟩ => WP.mono (prefix_ok h) fun _ ⟨g, _⟩ => ⟨I, s.mem, true, e, g,
     ⟨h.L, ⟨fun i hi => by rw [← h.wr]; exact h.oP.wr i hi, fun i hi => by rw [← h.wr]; exact h.oQ.wr i hi, h.oP.sep,
       h.oQ.sep, h.a⟩⟩, trivial⟩⟩
@@ -164,11 +164,11 @@ theorem prefix_ct : CTW GM (GC vk XT) (seqs (([.block (VG.Impl.Rsa.AArch64.Keys.
     (by taint_decide) (by taint_decide) (by taint_decide)) ?_
   refine ctr_app (a := loadA aE Public.sE Public.sElen) (by simp [loadA]) (by simp [loadA])
     (loadA_w (by decide) (by decide) (by decide) DP.pE DP.el
-    RpIn.eb (fun I _ _ _ g L => ⟨g.args.e, g.args.el, g.e, L.ebl, L.el1, show I.el ≤ 8 * vk I.k by have := L.el2; have := @k8 I.k; omega⟩)
+    RpIn.eb (fun I _ _ _ g L => ⟨g.args.e, g.args.el, g.e, L.ebl, L.el1, show I.el ≤ 8 * vk I.k by have := L.el2; have := @k8 I.k; omega_arith⟩)
     (by taint_decide) (by taint_decide) (by taint_decide)) ?_
   refine ctr_app (a := loadA aD sD sDl) (by simp [loadA]) (by simp [prod])
     (loadA_w (by decide) (by decide) (by decide) DP.pD DP.dl
-    RpIn.db (fun I _ _ _ g L => ⟨g.args.d, g.args.dl, g.d, L.dbl, L.dl1, show I.dl ≤ 8 * vk I.k by have := L.dl2; have := @k8 I.k; omega⟩)
+    RpIn.db (fun I _ _ _ g L => ⟨g.args.d, g.args.dl, g.d, L.dbl, L.dl1, show I.dl ≤ 8 * vk I.k by have := L.dl2; have := @k8 I.k; omega_arith⟩)
     (by taint_decide) (by taint_decide) (by taint_decide)) ?_
   rw [prod_eq]
   refine ctr_cons (by simp) (zeroA_w (Y := XT) (by decide) (by intros; trivial) (by taint_decide)) ?_
@@ -213,14 +213,14 @@ theorem prefix_ct' [GcdLaw gcdB] : CTW GM (fun a s => GC vk XT a s ∧ XP a s) (
   have hpv := pow_v I.k
   have hpk : 2 ^ (8 * I.k + 64) = 2 ^ (8 * I.k) * 2 ^ 64 := Nat.pow_add _ _ _
   have h3 : 3 ≤ numN I := by
-    have : 2 ^ 8 ≤ 256 ^ (I.k - 1) := by rw [pow256_eq]; exact Nat.pow_le_pow_right (by decide) (by omega)
+    have : 2 ^ 8 ≤ 256 ^ (I.k - 1) := by rw [pow256_eq]; exact Nat.pow_le_pow_right (by decide) (by omega_using [k1])
     omega
   have hD : numD I < 2 ^ (8 * I.k) := by
     have := os2ip_lt I.db; rw [L.dbl, pow256_eq] at this
-    exact Nat.lt_of_lt_of_le this (Nat.pow_le_pow_right (by decide) (by have := L.dl2; omega))
+    exact Nat.lt_of_lt_of_le this (Nat.pow_le_pow_right (by decide) (by have := L.dl2; omega_using [this]))
   have hE : numE I < 2 ^ 64 := by
     have := os2ip_lt I.eb; rw [L.ebl, pow256_eq] at this
-    exact Nat.lt_of_lt_of_le this (Nat.pow_le_pow_right (by decide) (by have := h.el8; omega))
+    exact Nat.lt_of_lt_of_le this (Nat.pow_le_pow_right (by decide) (by have := h.el8; omega_using [this]))
   have hde : numD I * numE I < 2 ^ (64 * vk I.k) :=
     Nat.lt_of_lt_of_le (by rw [hpk]; exact Nat.mul_lt_mul'' hD hE) hpv
   exact WP.mono (prefix_ok h) fun t ⟨g₁, n₁, M₁⟩ => WP.mono (mid4_ok g₁ L n₁ hodd h3 (by omega) M₁ hde)
@@ -319,8 +319,8 @@ theorem zeroOutR_ct {sPtr : Nat} (hP : sPtr < 32) (ptr : DP → Addr)
       obtain ⟨I, rfl, hs, h0, ha, -, L, O⟩ := h
       obtain ⟨hp, -⟩ := hA I s.mem ha O
       have hn := hs.nowrap
-      have h256 : 8 * 32 ≤ I.Z := by have := L.z; have := L.k1; omega
-      have hl' : ∀ i < 32, InRegions (s.rd ++ s.wr) (off I.B (8 * i)) 8 := fun i hi => hs.ld (by omega)
+      have h256 : 8 * 32 ≤ I.Z := by have := L.z; have := L.k1; omega_arith
+      have hl' : ∀ i < 32, InRegions (s.rd ++ s.wr) (off I.B (8 * i)) 8 := fun i hi => hs.ld (by omega_using [h256, hi])
       refine WP.mono (WP.keep [.x1, .x2, .x3] (Q := fun t => t.gpr .x1 = ptr (dpub I) ∧
         t.gpr .x2 = BitVec.ofNat 64 I.k) (by
         brun [h0, hdr_enc hP, hdr_enc (show Public.sK < 32 by decide), hl' sPtr hP,
@@ -335,16 +335,16 @@ theorem zeroOutR_ct {sPtr : Nat} (hP : sPtr < 32) (ptr : DP → Addr)
       obtain ⟨I, rfl, hs, h0, ha, hW, L, O⟩ := h
       obtain ⟨hp, hwr, hsep⟩ := hA I s.mem ha O
       have hn := hs.nowrap
-      have h256 : 8 * 32 ≤ I.Z := by have := L.z; have := L.k1; omega
+      have h256 : 8 * 32 ≤ I.Z := by have := L.z; have := L.k1; omega_arith
       have hk1 := L.k1
       have hk2 := L.k2
-      refine WP.mono (zeroOut_ok hs h0 h256 hP (by decide) hp ha.k (by omega) (by omega)
+      refine WP.mono (zeroOut_ok hs h0 h256 hP (by decide) hp ha.k (by omega_using [hk1]) (by omega_using [hk2])
         ⟨fun i hi => by rw [hW]; exact hwr i hi, hsep⟩) fun t ⟨_, hx, k⟩ => ?_
       have fw : ∀ i < 32, word t.mem I.B (8 * i) = word s.mem I.B (8 * i) :=
         fun i hi => (frm_scr hsep hx).word_eq (fun r hr => by rw [List.mem_singleton.mp hr]; exact Or.inl (by omega))
-          (by omega)
+          (by omega_using [hi])
       exact ⟨I, rfl, hs.congr k.wr, (k.gpr .x0 (by decide)).trans h0, ha.congr fun i hi => fw i (by
-        unfold rArg at hi; omega), k.wr.trans hW, L, O⟩
+        unfold rArg at hi; omega_using [hi]), k.wr.trans hW, L, O⟩
 
 /-- `fail` leaks the same in two runs with the same public data. -/
 theorem failR_ct : RelCT isa (Two GFr) fail fun _ _ => True := by

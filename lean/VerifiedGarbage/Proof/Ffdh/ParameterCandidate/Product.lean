@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.RsaKeyGen.Table
 import VerifiedGarbage.Proof.Bignum.Words
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # FFDH parameter candidates: trial division by a product of four primes
 
@@ -28,7 +29,7 @@ theorem redc64_math {M mv acc x : Nat} (hinv : (M * mv + 1) % 2 ^ 64 = 0)
         ((acc + x) % 2 ^ 64 * mv % 2 ^ 64 * M % 2 ^ 64 + (acc + x) % 2 ^ 64) / 2 ^ 64) * 2 ^ 64 % M =
       (acc + x) % M := by
   generalize hX : acc + x = X
-  have hXb : X < M + 2 + 2 ^ 64 := by omega
+  have hXb : X < M + 2 + 2 ^ 64 := by omega_using [hacc, hx, hX]
   generalize hlo : X % 2 ^ 64 = lo
   have hlo' : lo < 2 ^ 64 := hlo ▸ Nat.mod_lt _ (by decide)
   generalize hq : lo * mv % 2 ^ 64 = q
@@ -47,14 +48,14 @@ theorem redc64_math {M mv acc x : Nat} (hinv : (M * mv + 1) % 2 ^ 64 = 0)
   have hexact : (X / 2 ^ 64 + q * M / 2 ^ 64 + (q * M % 2 ^ 64 + lo) / 2 ^ 64) * 2 ^ 64 = X + q * M := by
     rw [Nat.add_mul, Nat.add_mul, Nat.mul_comm (X / 2 ^ 64), Nat.mul_comm (q * M / 2 ^ 64),
       Nat.mul_comm ((q * M % 2 ^ 64 + lo) / 2 ^ 64), e3]
-    omega
+    omega_using [hinv, hacc, hX, hXb, hlo, hlo', hq, hq', hz, e1, e2, e3, hz']
   refine ⟨?_, ?_⟩
-  · have hqM : q * M ≤ (2 ^ 64 - 1) * M := Nat.mul_le_mul_right _ (by omega)
+  · have hqM : q * M ≤ (2 ^ 64 - 1) * M := Nat.mul_le_mul_right _ (by omega_using [hq])
     have : (X / 2 ^ 64 + q * M / 2 ^ 64 + (q * M % 2 ^ 64 + lo) / 2 ^ 64) * 2 ^ 64 < (M + 2) * 2 ^ 64 := by
       rw [hexact]
       have : (2 ^ 64 - 1) * M + M = 2 ^ 64 * M := by
         rw [Nat.sub_mul, Nat.one_mul, Nat.sub_add_cancel (Nat.le_mul_of_pos_left _ (by decide))]
-      omega
+      omega_using [hinv, hacc, hX, hXb, hlo, hq, hq', hz, e1, e2, e3, hz', hexact, hqM, this]
     exact Nat.lt_of_mul_lt_mul_right this
   · rw [hexact, Nat.add_mul_mod_self_right]
 
@@ -73,21 +74,21 @@ theorem prod_word_math {M acc r x V j : Nat} (h : r * 2 ^ 64 % M = (acc + x) % M
 def wordProd (i : Nat) : Nat := tabEntry (4 * i) * tabEntry (4 * i + 1) * tabEntry (4 * i + 2) * tabEntry (4 * i + 3)
 
 theorem wordProd_facts {i : Nat} (hi : i < 256) : wordProd i % 2 = 1 ∧ wordProd i < 2 ^ 52 := by
-  have b0 := tabEntry_facts (i := 4 * i) (by omega)
-  have b1 := tabEntry_facts (i := 4 * i + 1) (by omega)
-  have b2 := tabEntry_facts (i := 4 * i + 2) (by omega)
-  have b3 := tabEntry_facts (i := 4 * i + 3) (by omega)
+  have b0 := tabEntry_facts (i := 4 * i) (by omega_using [hi])
+  have b1 := tabEntry_facts (i := 4 * i + 1) (by omega_using [hi])
+  have b2 := tabEntry_facts (i := 4 * i + 2) (by omega_using [hi])
+  have b3 := tabEntry_facts (i := 4 * i + 3) (by omega_using [hi])
   unfold wordProd
   refine ⟨by rw [Nat.mul_mod, Nat.mul_mod (_ * _), Nat.mul_mod (tabEntry (4 * i)), b0.1, b1.1, b2.1, b3.1], ?_⟩
   have h01 : tabEntry (4 * i) * tabEntry (4 * i + 1) < 2 ^ 26 :=
-    Nat.lt_of_lt_of_le (Nat.mul_lt_mul_of_lt_of_le b0.2.2 (Nat.le_of_lt b1.2.2) (by omega)) (by decide)
+    Nat.lt_of_lt_of_le (Nat.mul_lt_mul_of_lt_of_le b0.2.2 (Nat.le_of_lt b1.2.2) (by omega_using [])) (by decide)
   have h012 : tabEntry (4 * i) * tabEntry (4 * i + 1) * tabEntry (4 * i + 2) < 2 ^ 39 :=
-    Nat.lt_of_lt_of_le (Nat.mul_lt_mul_of_lt_of_le h01 (Nat.le_of_lt b2.2.2) (by omega)) (by decide)
-  exact Nat.lt_of_lt_of_le (Nat.mul_lt_mul_of_lt_of_le h012 (Nat.le_of_lt b3.2.2) (by omega)) (by decide)
+    Nat.lt_of_lt_of_le (Nat.mul_lt_mul_of_lt_of_le h01 (Nat.le_of_lt b2.2.2) (by omega_using [])) (by decide)
+  exact Nat.lt_of_lt_of_le (Nat.mul_lt_mul_of_lt_of_le h012 (Nat.le_of_lt b3.2.2) (by omega_using [])) (by decide)
 
 theorem dvd_wordProd {i j : Nat} (hj : j < 4) : tabEntry (4 * i + j) ∣ wordProd i := by
   unfold wordProd
-  rcases (show j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 by omega) with rfl | rfl | rfl | rfl
+  rcases (show j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 by omega_using [hj]) with rfl | rfl | rfl | rfl
   · exact Nat.dvd_mul_right_of_dvd (Nat.dvd_mul_right_of_dvd (Nat.dvd_mul_right _ _) _) _
   · exact Nat.dvd_mul_right_of_dvd (Nat.dvd_mul_right_of_dvd (Nat.dvd_mul_left _ _) _) _
   · exact Nat.dvd_mul_right_of_dvd (Nat.dvd_mul_left _ _) _

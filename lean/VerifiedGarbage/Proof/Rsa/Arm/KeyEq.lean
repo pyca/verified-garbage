@@ -24,8 +24,8 @@ theorem eqS_ok {s : State} {B : BitVec 32} {Z w N d a b t : Nat} (h : Ws s B Z w
       slot u.mem B d = (if num s.mem B w a = num s.mem B w b then 1 else 0) ∧ Rest opRegs s u := by
   rw [eqS, WP.seq_iff]
   simp only [List.append_assoc]
-  refine ptr_ok h (by decide) (by omega) fun s1 first rest1 mem1 h1 => ?_
-  refine ptr_ok h1 (by decide) (by omega) fun s2 second rest2 mem2 h2 => ?_
+  refine ptr_ok h (by decide) (by omega_using [ha, hN]) fun s1 first rest1 mem1 h1 => ?_
+  refine ptr_ok h1 (by decide) (by omega_using [hb, hN]) fun s2 second rest2 mem2 h2 => ?_
   refine wp_mov (op2_reg _ _) fun s3 u3 => ?_
   have h3 := h2.of_upd u3 (by decide) (by decide) (by decide)
   refine wp_mov (op2_imm (by decide)) fun s4 u4 => WP.block_nil ?_
@@ -54,7 +54,7 @@ theorem eqS_ok {s : State} {B : BitVec 32} {Z w N d a b t : Nat} (h : Ws s B Z w
   refine wp_strSlot hv hd fun out store => WP.block_nil ?_
   refine ⟨hv.of_mupd store, ?_, ?_, ?_⟩
   · rw [store.mem, memV, inv.mem, mem4]
-    exact keep_write _ _ (by simp) (by simp only [hdr] at hd; omega)
+    exact keep_write _ _ (by simp) (by simp only [hdr] at hd; omega_using [hd])
   · rw [store.mem, slot_write_self, bit]
     by_cases eq : num s.mem B w a = num s.mem B w b
     · rw [ite_eq_left (same.mpr eq), ite_eq_left eq]; rfl

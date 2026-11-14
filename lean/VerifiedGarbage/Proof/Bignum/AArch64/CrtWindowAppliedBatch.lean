@@ -24,7 +24,7 @@ theorem appliedBatch_ok (W : Window) {s : State} {P src : Addr} {w i : Nat}
     (hbs : 5 ≤ bs.length) (hp : word s.mem P (8 * Crt.sExp) = src)
     (hi : word s.mem P (8 * Crt.sI) = BitVec.ofNat 64 i)
     (hld : ∀ j < 5, InRegions (s.rd ++ s.wr) ((src + BitVec.ofNat 64 i) + BitVec.ofNat 64 j) 1)
-    (hb : ∀ j (hj : j < 5), s.mem ((src + BitVec.ofNat 64 i) + BitVec.ofNat 64 j) = bs[j]'(by omega)) :
+    (hb : ∀ j (hj : j < 5), s.mem ((src + BitVec.ofNat 64 i) + BitVec.ofNat 64 j) = bs[j]'(by omega_using [hbs, hj])) :
     WP isa (appliedBatch W.code) s fun t =>
       TableCtx t P w mi X Xc ∧ CrtWindowFive.CTab t.mem P w X Q x ∧
       wv t.mem P (slot w aY) w < X ∧
@@ -39,12 +39,12 @@ theorem appliedBatch_ok (W : Window) {s : State} {P src : Addr} {w i : Nat}
   have cu := hc.of_win fu ku.wr (ku.gpr .x0 (by decide))
   have tu := ht.of_win fu hc.scrT.nowrap
   have yu : wv u.mem P (slot w aY) w = wv s.mem P (slot w aY) w :=
-    ho.wv (by have := hdr_lt_slot w aY (show Crt.sV < 32 by decide); omega)
-      (by have := hc.good.scr.nowrap; have := slot_le (w := w) (show aY < 8 by decide); omega)
+    ho.wv (by have := hdr_lt_slot w aY (show Crt.sV < 32 by decide); omega_using [this])
+      (by have := hc.good.scr.nowrap; have := slot_le (w := w) (show aY < 8 by decide); omega_arith)
   have hV := pre_lt bs hbs
   refine WP.mono (appliedGroup_ok W 8 (Q := Q) (x := x) (E := E) (V := pre bs 5)
     (by decide) cu tu hw hw' hR (yu.symm ▸ hy) (fun hQ => by rw [yu]; exact hyv hQ)
-    (by rw [hm,word_writeW_self]) (by omega)
+    (by rw [hm,word_writeW_self]) (by omega_using [hV])
     (by rw [hm,hdrStore_hdr _ _ _ (by decide) (by decide) (by decide)]; exact hbit)
     (by rw [hm,hdrStore_hdr _ _ _ (by decide) (by decide) (by decide)]; exact hnib)) fun t ⟨ct,tt,yt,vt,_,bt,nt,ft,kt⟩ => ?_
   refine ⟨ct,tt,yt,?_,bt,nt,fu.trans ft,(ku.trans kt).mono (by decide)⟩

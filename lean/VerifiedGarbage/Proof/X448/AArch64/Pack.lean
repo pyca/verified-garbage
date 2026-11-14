@@ -26,10 +26,10 @@ abbrev packed (m : Mem) (base : Addr) (i : Nat) : Nat :=
 
 theorem packed_bound {m : Mem} {base : Addr} (hb : Bounded m base X2) {i : Nat} (hi : i < 8) :
     packed m base i < 2 ^ 56 := by
-  have h0 := hb (2 * i) (by omega)
-  have h1 := hb (2 * i + 1) (by omega)
+  have h0 := hb (2 * i) (by omega_using [hi])
+  have h1 := hb (2 * i + 1) (by omega_using [hi])
   simp only [packed, radix] at h0 h1 ⊢
-  omega
+  omega_using [h0, h1]
 
 def packHead (i : Nat) : List Instr :=
   [ld .x4 (X2 + 16 * i + 8), .lsl .x .x4 .x4 28,
@@ -39,13 +39,13 @@ theorem packHead_ok {s : State} {base : Addr} (hs : Scr s base) (hb : Bounded s.
     {i : Nat} (hi : i < 8) :
     WP isa (.block (packHead i)) s fun t =>
       (t.gpr .x4).toNat = packed s.mem base i ∧ t.mem = s.mem ∧ Keeps [.x4, .x6, .x5] s t := by
-  have lo := hs.read (d := X2 + 16 * i) (n := 8) (by simp only [X2, slot]; omega)
-  have lh := hs.read (d := X2 + 16 * i + 8) (n := 8) (by simp only [X2, slot]; omega)
+  have lo := hs.read (d := X2 + 16 * i) (n := 8) (by simp only [X2, slot]; omega_using [hi])
+  have lh := hs.read (d := X2 + 16 * i + 8) (n := 8) (by simp only [X2, slot]; omega_using [hi])
   have b := packed_bound hb hi
-  have he0 : X2 + 16 * i = X2 + 8 * (2 * i) := by omega
-  have he1 : X2 + 16 * i + 8 = X2 + 8 * (2 * i + 1) := by omega
-  have le : (X2 + 16 * i) % 8 = 0 ∧ X2 + 16 * i < 32768 := by simp only [X2, slot]; omega
-  have he : (X2 + 16 * i + 8) % 8 = 0 ∧ X2 + 16 * i + 8 < 32768 := by simp only [X2, slot]; omega
+  have he0 : X2 + 16 * i = X2 + 8 * (2 * i) := by omega_using []
+  have he1 : X2 + 16 * i + 8 = X2 + 8 * (2 * i + 1) := by omega_using []
+  have le : (X2 + 16 * i) % 8 = 0 ∧ X2 + 16 * i < 32768 := by simp only [X2, slot]; omega_using [hi]
+  have he : (X2 + 16 * i + 8) % 8 = 0 ∧ X2 + 16 * i + 8 < 32768 := by simp only [X2, slot]; omega_using [hi]
   apply WP.of_runBlock
   simp only [packHead, ld, runBlock_cons, runStep_some, runBlock_nil, exec, State.read,
     Size.bits, Size.bytes, Nat.reduceLT, BitVec.setWidth_eq, addr, le, he, and_self,
@@ -57,7 +57,7 @@ theorem packHead_ok {s : State} {base : Addr} (hs : Scr s base) (hb : Bounded s.
     change (limbs s.mem base X2 (2 * i + 1) * radix % 2 ^ 64 +
       limbs s.mem base X2 (2 * i)) % 2 ^ 64 = _
     change limbs s.mem base X2 (2 * i) + radix * limbs s.mem base X2 (2 * i + 1) < _ at b
-    rw [Nat.mul_comm, Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega)]
+    rw [Nat.mul_comm, Nat.mod_eq_of_lt (by omega_using [b]), Nat.mod_eq_of_lt (by omega_using [b])]
     exact Nat.add_comm _ _
   · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
     simp only [RegUpd.gpr_write, hr.1, hr.2.2, ite_false]
@@ -70,7 +70,7 @@ theorem packByte_ok {s : State} {p : Addr} {i j : Nat} (hp : s.gpr .x1 = p) (hi 
     WP isa (.block (packByte i j)) s fun t =>
       (t.gpr .x4).toNat = (s.gpr .x4).toNat / 256 ∧
       t.mem = s.mem.writeW (off p (7 * i + j)) (BitVec.ofNat 8 (s.gpr .x4).toNat) ∧ Keeps [.x4] s t := by
-  have enc : (7 * i + j) % 1 = 0 ∧ 7 * i + j < 4096 := by omega
+  have enc : (7 * i + j) % 1 = 0 ∧ 7 * i + j < 4096 := by omega_using [hi, hj]
   apply WP.of_runBlock
   simp only [packByte, runBlock_cons, runStep_some, runBlock_nil, exec, State.read,
     Size.bits, Nat.reduceLT, BitVec.setWidth_eq, addr, enc, and_self,
@@ -81,7 +81,7 @@ theorem packByte_ok {s : State} {p : Addr} {i j : Nat} (hp : s.gpr .x1 = p) (hi 
   · apply congrArg (s.mem.writeW (off p (7 * i + j)))
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]
-    omega
+    omega_using []
   · simp only [List.mem_singleton] at hr
     simp only [RegUpd.gpr_write, hr, ite_false]
 
@@ -102,13 +102,13 @@ theorem writeSeven_ok {s : State} {p : Addr} {i : Nat} (hi : i < 8) (hp : s.gpr 
     · rw [ua, ta, Nat.div_div_eq_div_mul, ← Nat.pow_succ]
     · intro j hj
       rw [um, writeW8_apply]
-      simp only [off_eq_iff p (d := 7 * i + j) (e := 7 * i + n) (by omega) (by omega)]
+      simp only [off_eq_iff p (d := 7 * i + j) (e := 7 * i + n) (by omega_using [hi, hn, hj]) (by omega_using [hi, hn])]
       by_cases h : j = n
-      · rw [ite_eq_left (by omega), h, ta]
-      · rw [ite_eq_right (by omega)]; exact tf j (by omega)
+      · rw [ite_eq_left (by omega_using [h]), h, ta]
+      · rw [ite_eq_right (by omega_using [h])]; exact tf j (by omega_using [hj, h])
     · intro q hq
-      rw [um, writeW8_outside _ _ _ (by omega) (by omega)]
-      exact tm q (by omega)
+      rw [um, writeW8_outside _ _ _ (by omega_using [hi, hn]) (by omega_using [hq])]
+      exact tm q (by omega_using [hq])
   refine WP.mono (wp_range_flatMap (M := isa) (N := 7) inv st 7 (by decide) s
     ⟨by rw [Nat.pow_zero, Nat.div_one], fun _ h => by omega, Outside.refl _ _ _ _, Keeps.refl _ _⟩)
     fun t ⟨_, tf, tm, tk⟩ => ⟨tf, tm, tk⟩

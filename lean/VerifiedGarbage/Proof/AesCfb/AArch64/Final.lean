@@ -246,7 +246,7 @@ theorem fN_eq (s₀ : State) : fN s₀ = fL s₀ / 16 := rfl
 theorem fU_eq (s₀ : State) : fU s₀ = fL s₀ % 16 := rfl
 
 theorem n_lt (s₀ : State) : fN s₀ < 2 ^ 64 := by
-  have := (s₀.gpr .x4).isLt; have : fL s₀ = (s₀.gpr .x4).toNat := rfl; rw [fN_eq]; omega
+  have := (s₀.gpr .x4).isLt; have : fL s₀ = (s₀.gpr .x4).toNat := rfl; rw [fN_eq]; omega_using [this]
 
 theorem u_lt (s₀ : State) : fU s₀ < 16 := Nat.mod_lt _ (by decide)
 
@@ -257,16 +257,16 @@ include hp
 theorem FPre.blk_tail : (fBlk s₀).Disjoint (fTail s₀) := by
   have := hp.data_wrap
   have := Nat.div_add_mod (fL s₀) 16
-  exact Offset.base_disjoint _ (Nat.le_refl _) (by rw [fN_eq, fU_eq]; omega)
+  exact Offset.base_disjoint _ (Nat.le_refl _) (by rw [fN_eq, fU_eq]; omega_arith)
 
 theorem FPre.blk_wrap : (fD s₀).toNat + 16 * fN s₀ ≤ 2 ^ 64 := by
-  have := hp.data_wrap; have := Nat.mul_div_le (fL s₀) 16; rw [fN_eq]; omega
+  have := hp.data_wrap; have := Nat.mul_div_le (fL s₀) 16; rw [fN_eq]; omega_arith
 
 theorem FPre.sched_sub : Region.Sub ⟨fW s₀, 16 * (fR s₀ + 1)⟩ (fSch s₀) :=
-  Region.sub_prefix (by rcases hp.rounds with h | h | h <;> omega)
+  Region.sub_prefix (by rcases hp.rounds with h | h | h <;> omega_using [h])
 
 theorem FPre.sched_len : 16 * (fR s₀ + 1) ≤ 2 ^ 64 := by
-  rcases hp.rounds with h | h | h <;> omega
+  rcases hp.rounds with h | h | h <;> omega_using [h]
 
 end
 
@@ -275,7 +275,7 @@ theorem blocksAt_frame' {rs : List Region} {m m' : Mem} (hf : Frame rs m m') {D 
     (hd : ∀ r ∈ rs, (⟨D, 16 * n⟩ : Region).Disjoint r) :
     Spec.Cbc.blocksAt m' D n = Spec.Cbc.blocksAt m D n :=
   List.map_congr_left fun j hj => Proof.Cmac.bytesAt_frame hf
-    (fun r hr => (hd r hr).sub_left (Offset.sub_base _ (by have := List.mem_range.mp hj; omega))) (by decide)
+    (fun r hr => (hd r hr).sub_left (Offset.sub_base _ (by have := List.mem_range.mp hj; omega_using [this]))) (by decide)
 
 /-- The save changes only `save`. -/
 theorem svMem_frame (s₀ : State) : Frame [fSv s₀] s₀.mem (svMem s₀) :=
@@ -306,20 +306,20 @@ theorem moves_ok (s : State) :
 theorem shr4 (x : BitVec 64) : x >>> 4 = BitVec.ofNat 64 (x.toNat / 16) := by
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow, BitVec.toNat_ofNat,
-    Nat.mod_eq_of_lt (by have := x.isLt; omega)]
+    Nat.mod_eq_of_lt (by have := x.isLt; omega_using [])]
 
 theorem shr4_shl4 (x : BitVec 64) : x >>> 4 <<< 4 = BitVec.ofNat 64 (16 * (x.toNat / 16)) := by
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_shiftLeft, BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow, Nat.shiftLeft_eq,
     BitVec.toNat_ofNat]
   have := x.isLt
-  omega
+  omega_using []
 
 theorem sub_shl4 (x : BitVec 64) : x - BitVec.ofNat 64 (16 * (x.toNat / 16)) = BitVec.ofNat 64 (x.toNat % 16) := by
   apply BitVec.eq_of_toNat_eq
   have := x.isLt
   simp only [BitVec.toNat_sub, BitVec.toNat_ofNat]
-  omega
+  omega_using []
 
 /-- The registers kept for the caller that this code neither saves nor uses. -/
 abbrev Kept (s₀ s : State) : Prop := ∀ r, r = .x26 ∨ r = .x27 ∨ r = .x28 → s.gpr r = s₀.gpr r
@@ -350,7 +350,7 @@ theorem final_setup_wp {s₀ : State} (hp : FPre s₀) : WP isa (.block finalSet
     intro p hp'
     rw [hp.wr]
     have := saved_slots p hp'
-    exact ⟨fSv s₀, by simp, Offset.contains_base _ (by omega) (by omega)⟩
+    exact ⟨fSv s₀, by simp, Offset.contains_base _ (by omega_using [this]) (by omega_using [this])⟩
   show WP isa (.block (Spill.saveCode .x6 finalSaved ++ finalMoves)) _ _
   refine Spill.save_ok saved_fits hw ?_
   refine WP.mono (WP.of_runBlock (moves_ok _))
@@ -473,7 +473,7 @@ theorem whole_wp {M : Mode} {name : String} {whole : Prog isa}
 
 theorem eval_u {M : Mode} {s₀ s : State} (h : Whole M s₀ s) :
     isa.eval (.zero .x .x23) s = some (decide (fU s₀ = 0)) := by
-  rw [Proof.Modes.AArch64.eval_zero, h.x23, Proof.Modes.AArch64.ofNat_beq_zero (by have := u_lt s₀; omega)]
+  rw [Proof.Modes.AArch64.eval_zero, h.x23, Proof.Modes.AArch64.ofNat_beq_zero (by have := u_lt s₀; omega_using [this])]
 
 theorem bytesAt_getD (m : Mem) (p : Addr) {n q : Nat} (hq : q < n) :
     (bytesAt m p n).getD q 0 = m (p + BitVec.ofNat 64 q) := by
@@ -502,7 +502,7 @@ theorem Whole.frame' {M : Mode} {s₀ s : State} (h : Whole M s₀ s) :
     · exact ⟨_, by simp, fun _ h => h⟩
 
 theorem done_of_zero {M : Mode} {s₀ s : State} (h : Whole M s₀ s) (hu : fU s₀ = 0) : Done M s₀ s :=
-  ⟨h.x25, h.kept, h.rd, h.wr, h.frame', h.blocks, fun q hq => absurd hq (by omega),
+  ⟨h.x25, h.kept, h.rd, h.wr, h.frame', h.blocks, fun q hq => absurd hq (by omega_using [hu]),
     by rw [ite_eq_left hu]; exact h.iv⟩
 
 /-- Everything the function writes, from entry. -/
@@ -616,7 +616,7 @@ theorem final_ciph_wp (v : BlocksImpl) {M : Mode} {s₀ : State} (hp : FPre s₀
     simp only [List.mem_singleton] at hr; subst hr
     exact hp.data_sv.sub_left (tail_sub s₀)
   have hlen : (fTail s₀).len ≤ 2 ^ 64 := by
-    show fU s₀ ≤ 2 ^ 64; have := u_lt s₀; omega
+    show fU s₀ ≤ 2 ^ 64; have := u_lt s₀; omega_using [this]
   refine ⟨by rw [cs .x21 (by simp), hw.x21], by rw [cs .x22 (by simp), hw.x22],
     by rw [cs .x23 (by simp), hw.x23], by rw [cs .x25 (by simp), hw.x25],
     fun r hr => by rw [cs r (by rcases hr with rfl | rfl | rfl <;> simp), hw.kept r hr],
@@ -650,16 +650,16 @@ theorem final_xor_wp {M : Mode} {s₀ : State} (hp : FPre s₀) {s : State} (h :
   have eN := fN_eq s₀
   have eU := fU_eq s₀
   have xp : Proof.Modes.AArch64.XPre s₁ (fIv s₀) (fT s₀) (fU s₀) .x22 .x23 := {
-    small := by omega
-    disj := (hp.iv_data.sub_left (Region.sub_prefix (by omega))).sub_right (tail_sub s₀)
+    small := by omega_using [hU]
+    disj := (hp.iv_data.sub_left (Region.sub_prefix (by omega_using [hU]))).sub_right (tail_sub s₀)
     rdK := fun q hq => by
       rw [rd₁, wr₁, h.rd, h.wr, hp.rd, hp.wr]
-      exact ⟨fIvR s₀, by simp, Offset.contains_base _ (by omega) (by have := hp.iv_wrap; omega)⟩
+      exact ⟨fIvR s₀, by simp, Offset.contains_base _ (by omega_using [hU, hq]) (by have := hp.iv_wrap; omega_using [hU, hq])⟩
     wrR := fun q hq => by
       rw [wr₁, h.wr, hp.wr]
       refine ⟨fData s₀, by simp, ?_⟩
       rw [show fT s₀ + BitVec.ofNat 64 q = fD s₀ + BitVec.ofNat 64 (16 * fN s₀ + q) from Offset.add_add _ _ _]
-      exact Offset.contains_base _ (by omega) (by omega)
+      exact Offset.contains_base _ (by omega_using [eN, eU, hq]) (by omega_using [hU, hT, hq])
     dl := by decide
     d9 := by decide
     d6 := by decide
@@ -668,7 +668,7 @@ theorem final_xor_wp {M : Mode} {s₀ : State} (hp : FPre s₀) {s : State} (h :
     x9 := by rw [x9₁, h.x21]
     dat := by rw [o₁ _ (by decide), h.x22]; exact (BitVec.add_zero _).symm
     left := by rw [o₁ _ (by decide), h.x23, Nat.sub_zero]
-    lt := by omega
+    lt := by omega_using [hu]
     data := fun q _ => by rw [ite_eq_right (Nat.not_lt_zero q)]
     frame := Frame.refl _ _
     rd := rfl
@@ -689,7 +689,7 @@ theorem final_xor_wp {M : Mode} {s₀ : State} (hp : FPre s₀) {s : State} (h :
   · rw [blocksAt_frame' d.frame fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact hp.blk_tail, mem₁]
     exact h.blocks
-  · rw [d.data q hq, mem₁, h.tailb q hq, ← bytesAt_getD s.mem (fIv s₀) (show q < 16 by omega), h.iv]
+  · rw [d.data q hq, mem₁, h.tailb q hq, ← bytesAt_getD s.mem (fIv s₀) (show q < 16 by omega_using [hU, hq]), h.iv]
   · rw [ite_eq_right hu, Proof.Cmac.bytesAt_frame d.frame ivT (by decide), mem₁, h.iv]
 
 theorem final_mid_wp (v : BlocksImpl) {M : Mode} {s₀ : State} (hp : FPre s₀) {s : State} (h : Whole M s₀ s) :
@@ -718,7 +718,7 @@ theorem final_end_wp {M : Mode} {s₀ : State} (hp : FPre s₀) {s : State} (h :
     fun s' r => ⟨fun q hq => r.gpr_of ?_, r.mem⟩
   · rw [h.rd, h.wr, hp.rd, hp.wr]
     have := saved_slots p hp'
-    exact ⟨fSv s₀, by simp, Offset.contains_base _ (by omega) (by have := hp.sv_wrap; omega)⟩
+    exact ⟨fSv s₀, by simp, Offset.contains_base _ (by omega_using [this]) (by have := hp.sv_wrap; omega_arith)⟩
   · simp only [preserved, List.mem_cons, List.not_mem_nil, or_false] at hq
     rcases hq with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
     all_goals first

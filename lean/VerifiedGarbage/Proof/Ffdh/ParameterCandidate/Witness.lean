@@ -53,7 +53,7 @@ theorem drawWitnesses_bounds {w : Nat} : ∀ n r as r', drawWitnesses w n r = so
       simp only [pure, Option.some.injEq, Prod.mk.injEq] at h
       obtain ⟨rfl, _⟩ := h
       obtain ⟨hlen, hall⟩ := ih _ _ _ hbs
-      exact ⟨by simp only [List.length_cons]; omega, fun b he => by
+      exact ⟨by simp only [List.length_cons]; omega_using [hlen], fun b he => by
         rcases List.mem_cons.mp he with rfl | he
         · exact hb
         · exact hall b he⟩

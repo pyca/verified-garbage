@@ -99,7 +99,7 @@ theorem xdLe_callee {k : Nat} {kk : Contract isa} {c : Prog isa} (h : CalleeOk k
   xdLe_of_le (by rw [x86_64Depth_zero h.nosp h.depth]; exact Nat.zero_le _)
 
 theorem xdLe_s16 {k : Nat} {c : Prog isa} (S : S16Ok c) (hk : 24 ≤ k) : xdLe k c = true :=
-  xdLe_of_le (by rw [x86_64Depth_noSp S.nosp]; have := S.depth_le; omega)
+  xdLe_of_le (by rw [x86_64Depth_noSp S.nosp]; have := S.depth_le; omega_using [hk, this])
 
 theorem xdLe_prfs {k : Nat} (v : Sample4Impl) (N₀ n o wl : Nat) (hk : 16 ≤ k) :
     xdLe k (v.callee.prfs N₀ n o wl) = true :=

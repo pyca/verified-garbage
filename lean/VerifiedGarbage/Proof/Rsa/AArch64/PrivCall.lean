@@ -68,9 +68,9 @@ theorem InW.disj {L : Lay} (hL : L.Ok) {r : Region} (h : InW L r) :
     have hs' : Region.Sub L.LR L.STK := Offset.sub_base _ (by decide)
     exact ⟨(hL.ksc.sub_left hs).sub_right h.sub, (hL.ksc.sub_left hs').sub_right h.sub⟩
   · exact ⟨(Offset.disjoint L.B (d := oOut) (n := 48) (e := oM) (k := frameBytes - oM) (by decide)
-        (by simp only [oOut]; omega) (by simp only [oM, frameBytes]; omega)).sub_right h.sub,
+        (by simp only [oOut]; omega_using []) (by simp only [oM, frameBytes]; omega_using [])).sub_right h.sub,
       (Offset.disjoint L.B (d := frameBytes) (n := 16) (e := oM) (k := frameBytes - oM) (by decide)
-        (by simp only [frameBytes]; omega) (by simp only [oM, frameBytes]; omega)).sub_right h.sub⟩
+        (by simp only [frameBytes]; omega_using []) (by simp only [oM, frameBytes]; omega_using [])).sub_right h.sub⟩
 
 theorem covers {L : Lay} {g : Reg → BitVec 64} {vv : VReg → BitVec 128} {m₀ : Mem} {t : State}
     (hc : Ctx L g vv m₀ t) {rd wr : List Region}
@@ -89,7 +89,7 @@ theorem covers {L : Lay} {g : Reg → BitVec 64} {vv : VReg → BitVec 128} {m�
     · obtain ⟨off, hb, hl⟩ := h
       refine ⟨L.FR, by simp, oM + off, ?_, ?_⟩
       · rw [hb, add_add]
-      · simp only [oM, frameBytes] at hl ⊢; omega
+      · simp only [oM, frameBytes] at hl ⊢; omega_using [hl]
 
 /-- A call of verified code without frames, given regions within ours to
 read, and within `out`, `scratch` or the inner frame above the slots to
@@ -111,7 +111,7 @@ theorem call_ok {L : Lay} (hL : L.Ok) {g : Reg → BitVec 64} {vv : VReg → Bit
   refine hQ s' ⟨hrd.trans hc.rd, hwr.trans hc.wr, hsp.trans hc.sp,
     fun r hr hr' => (hcs r hr hr').trans (hc.cs r hr hr'), fun r hr => (hvs r hr).trans (hc.vs r hr),
     ?_, hc.frame.trans (Frame.sub hf fun r hr => (hwsub r hr).sub hL)⟩
-    (hs.frame hf (fun R hR => ((hwsub R hR).disj hL).1) (by omega)) hf hpost
+    (hs.frame hf (fun R hR => ((hwsub R hR).disj hL).1) (by omega_using [hnB])) hf hpost
   have hlr : L.LR.Contains (L.B + BitVec.ofNat 64 frameBytes) (64 / 8) := by
     simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; decide
   rw [hf.readW hlr (fun R hR => ((hwsub R hR).disj hL).2) (by decide)]

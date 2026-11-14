@@ -211,8 +211,8 @@ theorem storeTwo_ok {a b : VReg} {n : Reg} {off : Nat}
       v.mem=(s.mem.write (s.gpr n+BitVec.ofNat 64 off) 16 (s.v a)).write
         (s.gpr n+BitVec.ofNat 64 (off+128)) 16 (s.v b) → WP isa (.block rest) v Q) :
     WP isa (.block (storeTwo a b n off++rest)) s Q := by
-  refine wp_strq (by omega) rfl hr fun u hu =>
-    wp_strq (by omega) rfl (by rw [hu.wr,hu.gpr]; exact hr') fun v hv =>
+  refine wp_strq (by omega_using [ho]) rfl hr fun u hu =>
+    wp_strq (by omega_using [ho]) rfl (by rw [hu.wr,hu.gpr]; exact hr') fun v hv =>
       k v (((StepKeep.ofMem hu).trans (StepKeep.ofMem hv)).mono (by simp)) (hv.v.trans hu.v) ?_
   rw [hv.mem,hu.mem,hu.gpr,hu.v]
 
@@ -627,8 +627,8 @@ theorem lowPair_offsets {p j : Nat} (hp : p<2) (hj : j<4) :
     (1024*p+256*j)%16=0 ∧ 1024*p+256*j+128<65536 ∧
       1024*p≤1024*p+256*j ∧ 1024*p+256*j+128+16≤1024*p+1024 := by
   constructor
-  · omega
-  · omega
+  · omega_using []
+  · omega_using [hp, hj]
 end VG.Proof.MlDsa.AArch64.Optimized.Paired
 
 end

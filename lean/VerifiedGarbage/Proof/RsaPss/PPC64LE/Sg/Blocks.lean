@@ -49,9 +49,9 @@ theorem dbArgs_ok {H : Impl.Hmac.Stream.PPC64LE.Hash} (hD : H.D = D) (hD64 : D �
   have hS := S_fits F
   have ek : (s.gpr .r6).toNat = kk s := rfl
   have hE : oEm = 0 := rfl
-  refine wp_addi fun t₁ o₁ e₁ => wp_add fun t₂ o₂ e₂ => wp_subi (h := by omega) fun t₃ o₃ e₃ =>
-    wp_li (by omega) fun t₄ o₄ e₄ => wp_addi fun t₅ o₅ e₅ => wp_add fun t₆ o₆ e₆ => wp_sub fun t₇ o₇ e₇ =>
-    wp_subi (h := by omega) fun t₈ o₈ e₈ => wp_nil ?_
+  refine wp_addi fun t₁ o₁ e₁ => wp_add fun t₂ o₂ e₂ => wp_subi (h := by omega_using [hD, hD64]) fun t₃ o₃ e₃ =>
+    wp_li (by omega_using [hD, hD64]) fun t₄ o₄ e₄ => wp_addi fun t₅ o₅ e₅ => wp_add fun t₆ o₆ e₆ => wp_sub fun t₇ o₇ e₇ =>
+    wp_subi (h := by omega_using [hD, hD64]) fun t₈ o₈ e₈ => wp_nil ?_
   have k₈ : Only [.r24, .r25, .r26, .r27] t t₈ :=
     (o₁.trans (o₂.trans (o₃.trans (o₄.trans (o₅.trans (o₆.trans (o₇.trans o₈))))))).mono
   have r15 : ∀ u : State, Only [.r24, .r25, .r26, .r27] t u → u.gpr .r15 = s.gpr .r6 := fun u o => by
@@ -61,7 +61,7 @@ theorem dbArgs_ok {H : Impl.Hmac.Stream.PPC64LE.Hash} (hD : H.D = D) (hD64 : D �
       r15 t₁ (o₁.mono), h.r14, hD]
     apply BitVec.eq_of_toNat_eq
     simp only [off, BitVec.toNat_sub, BitVec.toNat_add, BitVec.toNat_ofNat, ek] at hS ⊢
-    unfold oRsa at hS; unfold oEm; omega
+    unfold oRsa at hS; unfold oEm; omega_using [hfit]
   · rw [o₈.get .r25, o₇.get .r25, o₆.get .r25, o₅.get .r25, e₄, hD]
   · rw [o₈.get .r26, o₇.get .r26, e₆, e₅, o₅.get .r23, o₄.get .r23, o₃.get .r23, o₂.get .r23, o₁.get .r23,
       lo_reg h h0, o₄.get .r14, o₃.get .r14, o₂.get .r14, o₁.get .r14, h.r14]
@@ -69,7 +69,7 @@ theorem dbArgs_ok {H : Impl.Hmac.Stream.PPC64LE.Hash} (hD : H.D = D) (hD64 : D �
     rw [← off_off]
   · rw [e₈, e₇, r15 t₆ ((o₁.trans (o₂.trans (o₃.trans (o₄.trans (o₅.trans o₆))))).mono),
       o₆.get .r23, o₅.get .r23, o₄.get .r23, o₃.get .r23, o₂.get .r23, o₁.get .r23, lo_reg h h0, hD,
-      ← ofNat_toNat (s.gpr .r6), ek, Offset.ofNat_sub_ofNat (by omega), Offset.ofNat_sub_ofNat (by omega)]
+      ← ofNat_toNat (s.gpr .r6), ek, Offset.ofNat_sub_ofNat (by omega_using [hfit]), Offset.ofNat_sub_ofNat (by omega_using [hfit])]
     congr 1
 
 omit P in
@@ -115,20 +115,20 @@ theorem clearTop_ok {t : State} (h : Base Ss vS s t) (h0 : s.mem (s.gpr .r5) ≠
     rw [e₁₇, e₁₆, o₁₆.get .r23, K.get .r23, K.get .r14, lo_reg h h0, h.r14, ← off_off]
   have hin : InRegions (t₁₇.rd ++ t₁₇.wr) (off (Ss s) (oEm + loN s)) 1 := by
     rw [K₁₇.wr, h.wr]
-    have := VG.Proof.RsaOaep.PPC64LE.sc_inR F (o := oEm + loN s) (n := 1) (by omega) t₁₇.rd
+    have := VG.Proof.RsaOaep.PPC64LE.sc_inR F (o := oEm + loN s) (n := 1) (by omega_using [hl1, hE, hR]) t₁₇.rd
     exact this
   refine wp_lbz (a := off (Ss s) (oEm + loN s)) (by rw [x17, BitVec.add_zero]) hin fun t₁₈ o₁₈ e₁₈ =>
     wp_and fun t₁₉ o₁₉ e₁₉ => ?_
   have K₁₉ : Only [.r9, .r10, .r11, .r8, .r7, .r4, .r5] t t₁₉ := (K₁₇.trans (o₁₈.trans o₁₉)).mono
   refine wp_stb (a := off (Ss s) (oEm + loN s)) (by rw [o₁₉.get .r4, o₁₈.get .r4, x17, BitVec.add_zero])
-    (by rw [K₁₉.wr, h.wr]; exact sc_inW F (by omega)) fun t' m' => wp_nil ?_
+    (by rw [K₁₉.wr, h.wr]; exact sc_inW F (by omega_using [hl1, hE, hR])) fun t' m' => wp_nil ?_
   have hv : (t₁₉.gpr .r5).setWidth 8 = view t.mem (Ss s) (oEm + loN s) &&& cS s := by
     rw [e₁₉, e₁₈, o₁₈.get .r10, o₁₇.get .r10, o₁₆.get .r10, x15, K₁₇.mem, and_mask]; rfl
   have hm : t'.mem = t.mem.writeW (off (Ss s) (oEm + loN s)) (view t.mem (Ss s) (oEm + loN s) &&& cS s) := by
     rw [m'.mem, hv, K₁₉.mem]
   refine ⟨(h.only F K₁₉).keep F m'.keep (R := [⟨off (Ss s) (oEm + loN s), 1⟩])
     (by rw [hm, ← K₁₉.mem]; exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ _))
-    (fun r hr => by rw [List.mem_singleton.mp hr]; exact .inl (sc_in (by omega))), hm⟩
+    (fun r hr => by rw [List.mem_singleton.mp hr]; exact .inl (sc_in (by omega_using [hl1, hE, hR]))), hm⟩
 
 end
 

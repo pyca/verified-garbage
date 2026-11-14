@@ -153,7 +153,7 @@ theorem privP_pub' {L : DLay} {S : Nat} {g₁ g₂ : Reg → BitVec 64} {v₁ v�
   have ab := privP_args_eq hb (privRdP L) (privWr L)
   have hx := ha.2.2.1
   have hle : Spec.Rsa.precomputedWords L.k.toNat ≤ L.prl.toNat := by
-    rw [hx.prlv]; unfold Spec.Rsa.privatePrecomputedWords; omega
+    rw [hx.prlv]; unfold Spec.Rsa.privatePrecomputedWords; omega_using []
   sig_pub [Proof.Rsa.privateCheckedPrecomputedContract, Proof.Rsa.privateCheckedPrecomputedSig,
     Proof.Rsa.privateCheckedSig, AArch64.abi, AArch64.argRegs, stackArgs_fourteen, List.append_eq,
     _root_.List.range, _root_.List.range.loop]
@@ -200,7 +200,7 @@ theorem fixScr_ct {S : Nat} (hS : 15 ≤ S) (ts : List FnTable) :
   two [] (by taint_decide)
     (fun _ _ _ _ _ _ _ _ _ _ ⟨_, f₁, _⟩ ⟨_, f₂, _⟩ =>
       ⟨f₁.ctx.sp.trans f₂.ctx.sp.symm, fun _ h => absurd h List.not_mem_nil⟩)
-    fun _ _ _ _ _ hL hP ⟨_, hcl, hSl⟩ => WP.mono (fixScr_ok hL (by omega) hcl) fun _ h => ⟨_, h, slots_fix hSl⟩
+    fun _ _ _ _ _ hL hP ⟨_, hcl, hSl⟩ => WP.mono (fixScr_ok hL (by omega_using [hS, hP]) hcl) fun _ h => ⟨_, h, slots_fix hSl⟩
 
 /-! ## The whole function -/
 
@@ -229,7 +229,7 @@ include hc in
 theorem decP_verified (c : PrivPChecked) (h16 : 16 ≤ c.stack)
     (hsat : ∃ s, (decSpecP (tables vs) c.stack).pre s) :
     Verified AArch64.target (decryptP (fnsOf vs) c.name c.code) (decSpecP (tables vs) c.stack) := by
-  obtain ⟨S, hS⟩ : ∃ S, c.stack = S + 1 := ⟨c.stack - 1, by omega⟩
+  obtain ⟨S, hS⟩ : ∃ S, c.stack = S + 1 := ⟨c.stack - 1, by omega_using [h16]⟩
   have hct := decP_ct hc c hS (by omega)
   rw [← hS] at hct
   exact Verified.of_correct (fun _ h => by

@@ -44,7 +44,7 @@ theorem addInput_ok {s : State} {B : Addr} {Z e : Nat}
     intro k hk t kt
     rw [kt.readMem (by simp [AdxDualAdd.regs, at_]) (by intro r h; nomatch h),
       ka.readMem (by simp [at_]) (by intro r h; nomatch h)]
-    exact readSrc_word hs (AdxRotate8.ea_at hp (8*k)) (by omega)
+    exact readSrc_word hs (AdxRotate8.ea_at hp (8*k)) (by omega_using [he, hk])
   have srcB : ∀ k < 8, ∀ t, Keeps AdxDualAdd.regs a t →
       readSrc t (.reg (if k = 0 then .rdx else .rax)) =
         some (if k = 0 then s.gpr .rdx else 0) := by
@@ -65,6 +65,6 @@ theorem addInput_ok {s : State} {B : Addr} {Z e : Nat}
   refine ⟨?_,?_,hct,hot,(ka.trans (kb.trans kt)).mono (by simp [AdxDualAdd.regs])⟩
   · rw [cols_keep kt.keep (by decide), et]
     exact eb
-  · rw [et]; have bc := Bool.toNat_le cb; have bo := Bool.toNat_le ob; omega
+  · rw [et]; have bc := Bool.toNat_le cb; have bo := Bool.toNat_le ob; omega_using [bc, bo]
 
 end VG.Proof.Bignum.X86_64.AdxDualAdd

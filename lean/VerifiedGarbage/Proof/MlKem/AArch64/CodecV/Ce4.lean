@@ -34,12 +34,12 @@ theorem ce4Math_ok {s : State} (hc : CConsts width4 s) {X : Nat → Nat} (hX : �
   unfold ce4Math cmp8
   simp only [List.append_assoc]
   rw [WP.block_append_iff]
-  refine WP.mono (cmp4_ok hd hc (fun i hi => hX i (by omega)) l0 l1 l2 l3) fun s1 ⟨c1, m0, m1, m2, m3⟩ => ?_
+  refine WP.mono (cmp4_ok hd hc (fun i hi => hX i (by omega_using [hi])) l0 l1 l2 l3) fun s1 ⟨c1, m0, m1, m2, m3⟩ => ?_
   rw [WP.block_append_iff]
-  refine WP.mono (cmp4_ok hd (hc.chg c1) (X := fun i => X (16 + i)) (fun i hi => hX _ (by omega))
-    (Lanes.chg c1 (by decide) l4) ((Lanes.chg c1 (by decide) l5).congr fun i _ => by congr 1; omega)
-    ((Lanes.chg c1 (by decide) l6).congr fun i _ => by congr 1; omega)
-    ((Lanes.chg c1 (by decide) l7).congr fun i _ => by congr 1; omega))
+  refine WP.mono (cmp4_ok hd (hc.chg c1) (X := fun i => X (16 + i)) (fun i hi => hX _ (by omega_using [hi]))
+    (Lanes.chg c1 (by decide) l4) ((Lanes.chg c1 (by decide) l5).congr fun i _ => by congr 1; omega_using [])
+    ((Lanes.chg c1 (by decide) l6).congr fun i _ => by congr 1; omega_using [])
+    ((Lanes.chg c1 (by decide) l7).congr fun i _ => by congr 1; omega_using []))
     fun s2 ⟨c2, m4, m5, m6, m7⟩ => ?_
   -- the compressed coefficients
   let Y : Nat → Nat := fun i => cf width4 (X i)
@@ -65,7 +65,7 @@ theorem ce4Math_ok {s : State} (hc : CConsts width4 s) {X : Nat → Nat} (hX : �
     (by decide) ((Lanes.chg c5 (by decide) (Lanes.chg c4 (by decide) (Lanes.chg c3 (by decide)
       m6))).congr fun i _ => by show Y (16 + (8 + i)) = Y (24 + i); rw [← Nat.add_assoc])
     ((Lanes.chg c5 (by decide) (Lanes.chg c4 (by decide) (Lanes.chg c3 (by decide) m7))).congr
-      fun i _ => by show Y (16 + (12 + i)) = Y (24 + (4 + i)); congr 1; omega)
+      fun i _ => by show Y (16 + (12 + i)) = Y (24 + (4 + i)); congr 1; omega_using [])
     fun i _ => hY _) fun s6 ⟨c6, p3⟩ => ?_
   refine wp_vop rfl fun s7 h7 => wp_vop rfl fun s8 h8 => wp_vop rfl fun t h9 => wp_nil ⟨?_, ?_⟩
   · exact (((((((c1.trans c2).trans c3).trans c4).trans c5).trans c6).trans h7.chg).trans
@@ -77,9 +77,9 @@ theorem ce4Math_ok {s : State} (hc : CConsts width4 s) {X : Nat → Nat} (hX : �
   have q2 := Lanes.chg c6 (by decide) p2
   rw [h9.v, h8.get .v0 (by decide), h8.v, h7.v, h7.get .v2 (by decide), h7.get .v3 (by decide)]
   rw [narrow4 (f := fun j => Y (2 * j) + Y (2 * j + 1) * 2 ^ 4) q0
-    (q1.congr fun e _ => by rw [show 8 + 2 * e = 2 * (4 + e) by omega, show 8 + (2 * e + 1) = 2 * (4 + e) + 1 by omega])
-    (q2.congr fun e _ => by rw [show 16 + 2 * e = 2 * (8 + e) by omega, show 16 + (2 * e + 1) = 2 * (8 + e) + 1 by omega])
-    (p3.congr fun e _ => by rw [show 24 + 2 * e = 2 * (12 + e) by omega, show 24 + (2 * e + 1) = 2 * (12 + e) + 1 by omega])
-    (fun j _ => by have := hY (2 * j); have := hY (2 * j + 1); omega) hj]
+    (q1.congr fun e _ => by rw [show 8 + 2 * e = 2 * (4 + e) by omega_using [], show 8 + (2 * e + 1) = 2 * (4 + e) + 1 by omega_using []])
+    (q2.congr fun e _ => by rw [show 16 + 2 * e = 2 * (8 + e) by omega_using [], show 16 + (2 * e + 1) = 2 * (8 + e) + 1 by omega_using []])
+    (p3.congr fun e _ => by rw [show 24 + 2 * e = 2 * (12 + e) by omega_using [], show 24 + (2 * e + 1) = 2 * (12 + e) + 1 by omega_using []])
+    (fun j _ => by have := hY (2 * j); have := hY (2 * j + 1); omega_arith) hj]
 
 end VG.Proof.MlKem.AArch64.CodecV

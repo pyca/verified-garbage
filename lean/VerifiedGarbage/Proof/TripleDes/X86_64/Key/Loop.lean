@@ -64,7 +64,7 @@ theorem loopBody_ok (key : BitVec 64) (base : Addr) (origin : State)
   · rw [h₂.ptr, reg₁ .r15 (by decide), hs.pointer]
     change base + BitVec.ofNat 64 (8 * j) + BitVec.ofNat 64 8 = _
     rw [Offset.add_ofNat_add_ofNat]
-    exact congrArg (fun n => base + BitVec.ofNat 64 n) (by omega)
+    exact congrArg (fun n => base + BitVec.ofNat 64 n) (by omega_using [])
   · intro i hi hi16
     rw [hmem, keyPrefix_succ]
     by_cases he : i = j

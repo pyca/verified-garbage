@@ -41,8 +41,8 @@ theorem StackArgument.value_keep {s t : State} {base : Addr} {size i : Nat} {reg
   apply Mem.readW_congr
   intro j hj
   have H := A.apart (stackAddress s i + BitVec.ofNat 64 j)
-    (Offset.contains_base _ (by omega) (by omega))
+    (Offset.contains_base _ (by omega_using [hj]) (by omega_using [hj]))
   change ¬ (ofs base (stackAddress s i + BitVec.ofNat 64 j) + 1 ≤ size) at H
-  exact O _ (.inr (by omega))
+  exact O _ (.inr (by omega_using [H]))
 
 end VG.Proof.Dsa.X86

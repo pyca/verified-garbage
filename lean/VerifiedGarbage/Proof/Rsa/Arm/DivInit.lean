@@ -36,7 +36,7 @@ theorem clear_ok {g : Geometry} {s : State} (h : Context g s) :
   have ctxV := ctxU.of_update upd (by decide)
   have zeroCtx : ZeroCtx v g.base g.size (g.offsets 1) (g.n + 1) :=
     ⟨h.workspace.nowrap, h.fits 1, ⟨_, ctxV.workspace.writable, Region.contains_self _ _⟩⟩
-  refine WP.mono (zero_ok v zeroCtx (by omega)
+  refine WP.mono (zero_ok v zeroCtx (by omega_using [])
     ((upd.other .r0 (by decide)).trans ptr) ((upd.other .lr (by decide)).trans count) upd.gpr) ?_
   intro z inv
   exact ctxV.after (Outs.of_outside inv.outside (by simp [Geometry.ranges]))
@@ -56,7 +56,7 @@ theorem init_ok {g : Geometry} {s : State} (h : Context g s) :
   have zeroCtx : ZeroCtx v g.base g.size (g.offsets 1) (g.n + 1) :=
     ⟨h.workspace.nowrap, f1, ⟨_, ctxV.workspace.writable, Region.contains_self _ _⟩⟩
   rw [WP.seq_iff]
-  refine WP.mono (zero_ok v zeroCtx (by omega)
+  refine WP.mono (zero_ok v zeroCtx (by omega_using [])
     ((upd.other .r0 (by decide)).trans ptr) ((upd.other .lr (by decide)).trans count) upd.gpr) ?_
   intro z inv
   have frame : Outs (State.addr g.base) g.ranges v.mem z.mem :=
@@ -71,7 +71,7 @@ theorem init_ok {g : Geometry} {s : State} (h : Context g s) :
     have f0 : g.offsets 0 + 4 * g.n ≤ g.size := h.fits 0
     have nowrap := h.workspace.nowrap
     change val32 _ _ _ g.n = val32 _ _ _ g.n
-    rw [memT, inv.outside.val32 sep (by omega), upd.mem, memU]
+    rw [memT, inv.outside.val32 sep (by omega_using [f0, nowrap]), upd.mem, memU]
   · rw [memT, ← memU, ← upd.mem]; exact frame
   · exact (restU.mono (by simp [clobbers])).trans ((upd.rest (by simp [clobbers])).trans
       ((inv.rest.mono (by simp [clobbers])).trans (restT.mono (by simp))))

@@ -39,13 +39,13 @@ theorem sampleStatus_reject (q fuel width : Nat) (rand : List VG.Byte) :
 
 theorem sample_short (q fuel : Nat) (rand : List VG.Byte) (hq : 1 < q)
     (hs : rand.length < drawBytes q) : sample q (fuel + 1) rand = ⟨none, 0, [2]⟩ := by
-  rw [sample, ite_eq_right (by omega), ite_eq_left hs]
+  rw [sample, ite_eq_right (by omega_using [hq]), ite_eq_left hs]
 
 theorem sample_accept (q fuel : Nat) (rand : List VG.Byte) (hq : 1 < q)
     (hs : drawBytes q ≤ rand.length)
     (hk : 0 < candidate q (rand.take (drawBytes q)) ∧ candidate q (rand.take (drawBytes q)) < q) :
     sample q (fuel + 1) rand = ⟨some (candidate q (rand.take (drawBytes q))), drawBytes q, [1]⟩ := by
-  rw [sample, ite_eq_right (by omega), ite_eq_right (by omega)]
+  rw [sample, ite_eq_right (by omega_using [hq]), ite_eq_right (by omega_using [hs])]
   simp only [hk.1, hk.2, decide_true, Bool.and_self, ite_true]
 
 theorem sample_reject (q fuel : Nat) (rand : List VG.Byte) (hq : 1 < q)
@@ -55,7 +55,7 @@ theorem sample_reject (q fuel : Nat) (rand : List VG.Byte) (hq : 1 < q)
       { sample q fuel (rand.drop (drawBytes q)) with
         used := drawBytes q + (sample q fuel (rand.drop (drawBytes q))).used,
         trace := 0 :: (sample q fuel (rand.drop (drawBytes q))).trace } := by
-  rw [sample, ite_eq_right (by omega), ite_eq_right (by omega)]
+  rw [sample, ite_eq_right (by omega_using [hq]), ite_eq_right (by omega_using [hs])]
   simp only [Bool.and_eq_true, decide_eq_true_eq, hk, ite_false]
 
 

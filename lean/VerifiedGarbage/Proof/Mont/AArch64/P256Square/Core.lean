@@ -31,7 +31,7 @@ def core (a : Nat) : List Instr :=
 
 theorem low_regs (s : State) : regsVal s [.x8,.x9,.x10,.x11] = lowValue s := by
   simp only [regsVal,lowValue,val4,Nat.mul_zero,Nat.add_zero,Nat.mul_add,←Nat.mul_assoc]
-  omega
+  omega_using []
 
 theorem load_value {s t : State} {base : Addr} {a : Nat}
     (h : ∀ j (r : Reg), bRegs[j]? = some r → t.gpr r = word s.mem base (a+8*j)) :
@@ -77,7 +77,7 @@ theorem core_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size)
   change lowValue s₂+R*highValue s₂ = _ at e₂
   rw [hl] at e₂
   rw [e₄,Nat.mul_add,e₃,hh]
-  omega
+  omega_using [e₂]
 
 /-- Dedicated P-256 Montgomery squaring, including alias-safe loads and stores. -/
 theorem square_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size)
@@ -130,7 +130,7 @@ theorem supported_mod {M : Mod} {m : Nat} (h : supported M = true) (hm : M.ok m 
   change 6277101733925179126845168871924920046849447032244165148672 = (m+1)/2^64 at hd
   have hrem := Nat.mod_add_div m (2^64)
   simp only [p,Spec.P256.curve,Spec.P256.p]
-  omega
+  omega_using [hl, hd]
 
 theorem SquareKeep.toOpKeep {M : Mod} {base : Addr} {o : Nat} {s t : State}
     (h : SquareKeep base o s t) (hn : M.n = 4) : OpKeep M base o s t := by

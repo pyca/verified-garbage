@@ -149,25 +149,25 @@ theorem diag_words (s : State) : words (vrun diagOps s) = rotIn (words s) := by
   apply Vector.ext
   intro j hj
   have hk : j % 4 < 4 := Nat.mod_lt _ (by decide)
-  rw [words_get _ _ hj, rotIn_get _ _ hj, words_get _ _ (by omega),
-    show (4 * (j / 4) + (j % 4 + j / 4 + 3) % 4) / 4 = j / 4 by omega,
-    show (4 * (j / 4) + (j % 4 + j / 4 + 3) % 4) % 4 = (j % 4 + j / 4 + 3) % 4 by omega]
+  rw [words_get _ _ hj, rotIn_get _ _ hj, words_get _ _ (by omega_using [hj]),
+    show (4 * (j / 4) + (j % 4 + j / 4 + 3) % 4) / 4 = j / 4 by omega_using [],
+    show (4 * (j / 4) + (j % 4 + j / 4 + 3) % 4) % 4 = (j % 4 + j / 4 + 3) % 4 by omega_using []]
   simp only [diagOps, vrun]
   rcases cases_div4 hj with e | e | e | e <;> rw [e] <;>
-    simp (disch := omega) only [Impl.Argon2.X86_64.Avx2.vreg, qw_vpermq, sel4_39, sel4_4e, sel4_93,
-      ↓reduceIte, reduceCtorEq, Nat.add_zero] <;> congr 1 <;> omega
+    simp (disch := omega_using []) only [Impl.Argon2.X86_64.Avx2.vreg, qw_vpermq, sel4_39, sel4_4e, sel4_93,
+      ↓reduceIte, reduceCtorEq, Nat.add_zero] <;> congr 1 <;> omega_using []
 
 theorem undiag_words (s : State) : words (vrun undiagOps s) = rotOut (words s) := by
   apply Vector.ext
   intro j hj
   have hk : j % 4 < 4 := Nat.mod_lt _ (by decide)
-  rw [words_get _ _ hj, rotOut_get _ _ hj, words_get _ _ (by omega),
-    show (4 * (j / 4) + (j % 4 + 3 * (j / 4) + 1) % 4) / 4 = j / 4 by omega,
-    show (4 * (j / 4) + (j % 4 + 3 * (j / 4) + 1) % 4) % 4 = (j % 4 + 3 * (j / 4) + 1) % 4 by omega]
+  rw [words_get _ _ hj, rotOut_get _ _ hj, words_get _ _ (by omega_using [hj]),
+    show (4 * (j / 4) + (j % 4 + 3 * (j / 4) + 1) % 4) / 4 = j / 4 by omega_using [],
+    show (4 * (j / 4) + (j % 4 + 3 * (j / 4) + 1) % 4) % 4 = (j % 4 + 3 * (j / 4) + 1) % 4 by omega_using []]
   simp only [undiagOps, vrun]
   rcases cases_div4 hj with e | e | e | e <;> rw [e] <;>
-    simp (disch := omega) only [Impl.Argon2.X86_64.Avx2.vreg, qw_vpermq, sel4_39, sel4_4e, sel4_93,
-      ↓reduceIte, reduceCtorEq] <;> congr 1 <;> omega
+    simp (disch := omega_using []) only [Impl.Argon2.X86_64.Avx2.vreg, qw_vpermq, sel4_39, sel4_4e, sel4_93,
+      ↓reduceIte, reduceCtorEq] <;> congr 1 <;> omega_using []
 
 theorem diag_keeps {r : XReg} (h0 : r ≠ x0) (h2 : r ≠ x2) (h3 : r ≠ x3) (s : State) :
     Keeps r s (vrun diagOps s) :=
@@ -187,11 +187,11 @@ theorem words_of_cols {s t : State} {x y : Nat → W}
   have g := h (j % 4) (Nat.mod_lt _ (by decide))
   rw [← mix_eq] at g
   simp only [cols] at g
-  rw [words_get _ _ hj, mixCols_get _ _ _ _ hj, words_get _ _ (by omega),
-    words_get _ _ (by omega), words_get _ _ (by omega), words_get _ _ (by omega),
-    show j % 4 / 4 = 0 by omega, show (4 + j % 4) / 4 = 1 by omega, show (8 + j % 4) / 4 = 2 by omega,
-    show (12 + j % 4) / 4 = 3 by omega, Nat.mod_mod, show (4 + j % 4) % 4 = j % 4 by omega,
-    show (8 + j % 4) % 4 = j % 4 by omega, show (12 + j % 4) % 4 = j % 4 by omega]
+  rw [words_get _ _ hj, mixCols_get _ _ _ _ hj, words_get _ _ (by omega_using []),
+    words_get _ _ (by omega_using []), words_get _ _ (by omega_using []), words_get _ _ (by omega_using []),
+    show j % 4 / 4 = 0 by omega_using [], show (4 + j % 4) / 4 = 1 by omega_using [], show (8 + j % 4) / 4 = 2 by omega_using [],
+    show (12 + j % 4) / 4 = 3 by omega_using [], Nat.mod_mod, show (4 + j % 4) % 4 = j % 4 by omega_using [],
+    show (8 + j % 4) % 4 = j % 4 by omega_using [], show (12 + j % 4) % 4 = j % 4 by omega_using []]
   rcases cases_div4 hj with e | e | e | e <;> rw [e] <;>
     simp only [Impl.Argon2.X86_64.Avx2.vreg, VG.Proof.Argon2.mixAt] <;> rw [← g]
 
@@ -208,7 +208,7 @@ theorem qword_shuf_4e (x : BitVec 128) {i : Nat} (hi : i < 2) :
   have e : shufDwords x 0x4e = ofDwords (dword x 2) (dword x 3) (dword x 0) (dword x 1) := by
     simp only [shufDwords]; rfl
   rw [e, qword_ofDwords _ _ _ _ hi, qword_eq]
-  rcases (by omega : i = 0 ∨ i = 1) with rfl | rfl <;> rfl
+  rcases (by omega_using [hi] : i = 0 ∨ i = 1) with rfl | rfl <;> rfl
 
 /-- What a block of vector code leaves: everything but the vector registers
 `rs`. -/
@@ -247,8 +247,8 @@ theorem bcast_ok {d : XReg} {j q : Nat} (hj : j < 16) (hq : q < 4) {s : State} {
   · refine ⟨?_, ⟨by simp, by simp, by simp, by simp, fun r hr l _ => ?_⟩⟩
     · rw [qw_vpshufd, ite_eq_left_of_eq_true _ _ (eq_true rfl), State.lane_setV256,
         ite_eq_left_of_eq_true _ _ (eq_true rfl), lane_same, qword_shuf_4e _ h2,
-        qword_readW128 _ _ (by omega)]
-      exact hq' _ he (by omega)
+        qword_readW128 _ _ (by omega_using [])]
+      exact hq' _ he (by omega_using [])
     · simp only [List.mem_singleton] at hr
       simp only [lane_vpshufd256, State.lane_setV256, hr, ite_false]
 
@@ -257,14 +257,14 @@ theorem pick2_ff (a b : W) : pick2 a b false false = a := by
   simp only [pick2, Bool.false_eq_true, ite_false, BitVec.getLsbD_append, BitVec.getLsbD_extractLsb']
   by_cases h : i < 32
   · simp [h]
-  · simp [h, show i - 32 < 32 by omega, show 32 + (i - 32) = i by omega]
+  · simp [h, show i - 32 < 32 by omega_using [hi], show 32 + (i - 32) = i by omega_using [h]]
 
 theorem pick2_tt (a b : W) : pick2 a b true true = b := by
   apply BitVec.eq_of_getLsbD_eq; intro i hi
   simp only [pick2, ite_true, BitVec.getLsbD_append, BitVec.getLsbD_extractLsb']
   by_cases h : i < 32
   · simp [h]
-  · simp [h, show i - 32 < 32 by omega, show 32 + (i - 32) = i by omega]
+  · simp [h, show i - 32 < 32 by omega_using [hi], show 32 + (i - 32) = i by omega_using [h]]
 
 theorem qw_blend_a (d a b : XReg) (n : BitVec 8) (s : State) {q : Nat} (hq : q < 4)
     (h1 : n.toNat.testBit (2 * q) = false) (h2 : n.toNat.testBit (2 * q + 1) = false) :
@@ -288,7 +288,7 @@ theorem VF.blend {rs : List XReg} {d : XReg} (hd : d ∈ rs) (a b : XReg) (n : B
 
 theorem qw_eq_of_vf {rs : List XReg} {s t : State} (h : VF rs s t) {r : XReg} (hr : r ∉ rs) {k : Nat}
     (hk : k < 4) : qw t r k = qw s r k := by
-  simp only [qw, h.lane r hr (k / 2) (by omega)]
+  simp only [qw, h.lane r hr (k / 2) (by omega_using [hk])]
 
 theorem VF.trans {rs : List XReg} {s t u : State} (h : VF rs s t) (h' : VF rs t u) : VF rs s u :=
   YFrame.trans h h'
@@ -467,25 +467,25 @@ theorem msg_lo (m : Mem) (p : Addr) (r q : Nat) :
     m.readW (p + BitVec.ofNat 64 (8 * msgWord r 0 q)) 64 =
       Spec.Blake2.blockAt 64 m p (Spec.Blake2.sigmaAt r (2 * q)) := by
   rw [msg_word, lane_lo (by decide)]
-  exact congrArg _ (congrArg _ (by omega))
+  exact congrArg _ (congrArg _ (by omega_using []))
 
 theorem msg_lo1 (m : Mem) (p : Addr) (r q : Nat) :
     m.readW (p + BitVec.ofNat 64 (8 * msgWord r (0 + 1) q)) 64 =
       Spec.Blake2.blockAt 64 m p (Spec.Blake2.sigmaAt r (2 * q + 1)) := by
   rw [msg_word, lane_lo (by decide)]
-  exact congrArg _ (congrArg _ (by omega))
+  exact congrArg _ (congrArg _ (by omega_using []))
 
 theorem msg_hi (m : Mem) (p : Addr) (r q : Nat) :
     m.readW (p + BitVec.ofNat 64 (8 * msgWord r 2 q)) 64 =
       Spec.Blake2.blockAt 64 m p (Spec.Blake2.sigmaAt r (8 + 2 * ((q + 3) % 4))) := by
   rw [msg_word, lane_hi (by decide)]
-  exact congrArg _ (congrArg _ (by omega))
+  exact congrArg _ (congrArg _ (by omega_using []))
 
 theorem msg_hi1 (m : Mem) (p : Addr) (r q : Nat) :
     m.readW (p + BitVec.ofNat 64 (8 * msgWord r (2 + 1) q)) 64 =
       Spec.Blake2.blockAt 64 m p (Spec.Blake2.sigmaAt r (9 + 2 * ((q + 3) % 4))) := by
   rw [msg_word, lane_hi (by decide)]
-  exact congrArg _ (congrArg _ (by omega))
+  exact congrArg _ (congrArg _ (by omega_using []))
 
 /-- Round `r` on the rows in `ymm0`–`ymm3`, with the block at `rsi`. -/
 theorem round_ok (r : Nat) {s : State} {p : Addr} (hp : s.gpr .rsi = p)

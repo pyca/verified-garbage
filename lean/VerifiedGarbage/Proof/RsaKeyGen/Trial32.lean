@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.RsaKeyGen.Table
 public import VerifiedGarbage.Proof.Framework.PowLit
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # Whole-word trial-division reduction with a 32-bit inverse -/
 
@@ -31,7 +32,7 @@ theorem redc32_math {X s sv : Nat} (hinv : (s * sv + 1) % 2 ^ 32 = 0) (hX : X < 
   refine ⟨hd, ?_, ?_⟩
   · have hus : X * sv % 2 ^ 32 * s < 2 ^ 32 * s := Nat.mul_lt_mul_of_pos_right hu (by
       rcases Nat.eq_zero_or_pos s with h | h
-      · rw [h, Nat.zero_mul] at hX; omega
+      · rw [h, Nat.zero_mul] at hX; omega_using [hX]
       · exact h)
     apply (Nat.div_lt_iff_lt_mul (Nat.two_pow_pos _)).mpr
     rw [Nat.mul_comm s (2 ^ 32)] at hX
@@ -47,7 +48,7 @@ theorem trial_word32 {s acc r x V j : Nat}
   have shift : r * 2 ^ (32 * (j + 1)) = r * 2 ^ 32 * 2 ^ (32 * j) := by
     rw [Nat.mul_assoc, ← Nat.pow_add]
     congr 2
-    omega
+    omega_using []
   rw [shift, ← Nat.mod_mul_mod, step, Nat.mod_mul_mod, Nat.add_mul]
   rw [Nat.add_mod, prefixValue, ← Nat.add_mod, Nat.add_comm, Nat.mul_comm x]
 

@@ -22,7 +22,7 @@ theorem rangeLow_zero (aboveOne : Bool) (x : BitVec 64) :
   · simp only [rangeLow, ite_true]
     rw [← BitVec.toNat_inj, BitVec.toNat_ushiftRight]
     change x.toNat / 2 = 0 ↔ x.toNat ≤ 1
-    omega
+    omega_using []
 
 /-- OR-ing all high limbs and testing the adjusted low limb characterizes
 exactly the rejected lower interval: zero, or zero and one. -/
@@ -39,9 +39,9 @@ theorem rangeLow_words {mem : Mem} {B : Addr} {d w : Nat} (hw : 1 ≤ w) (aboveO
       by_cases hz : i = 0
       · subst i
         simpa only [Nat.mul_zero, Nat.add_zero] using BitVec.eq_of_toNat_eq h0
-      · exact h i (by omega) hi
+      · exact h i (by omega_using [hz]) hi
     · intro h
-      exact ⟨congrArg BitVec.toNat (by simpa using h 0 (by omega)), fun i _ hi => h i hi⟩
+      exact ⟨congrArg BitVec.toNat (by simpa using h 0 (by omega_using [hw])), fun i _ hi => h i hi⟩
   · simp only [ite_true]
     rw [VG.Proof.RsaKeyGen.wv_le_one hw, VG.Proof.RsaKeyGen.and_m2_eq_zero, rangeLow_zero]
     rfl

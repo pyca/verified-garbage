@@ -24,10 +24,10 @@ theorem localArgument_ok (s : State) {g : Geometry} {bs : Fin 8 → List Byte}
   refine wp_addS rfl fun b B _ => ?_
   refine wp_stm (B := s.gpr .esp)
     (by rw [B.other .esp (by decide), A.other .esp (by decide)])
-    (by rw [B.wr, A.wr, h.address (by omega)]; exact h.inner.write (by simp only [VG.Impl.RsaPkcs1Sig.X86.Sign.frameBytes]; omega))
+    (by rw [B.wr, A.wr, h.address (by omega_using [hj])]; exact h.inner.write (by simp only [VG.Impl.RsaPkcs1Sig.X86.Sign.frameBytes]; omega_using [hj]))
     fun t T => WP.block_nil ?_
   have M : t.mem = s.mem.writeW (byteAddr g.stack + BitVec.ofNat 64 (4 * j)) (g.stack + BitVec.ofNat 32 d) := by
-    rw [T.mem, B.gpr, A.gpr, B.mem, A.mem, h.address (by omega), h.sp]
+    rw [T.mem, B.gpr, A.gpr, B.mem, A.mem, h.address (by omega_using [hj]), h.sp]
   have K : Keeps [.eax] s t := A.keeps.trans (B.keeps.trans (T.keeps _))
   have F : Frame [⟨byteAddr g.stack + BitVec.ofNat 64 (4 * j), 4⟩] s.mem t.mem := by
     rw [M]
@@ -35,7 +35,7 @@ theorem localArgument_ok (s : State) {g : Geometry} {bs : Fin 8 → List Byte}
   refine ⟨h.after (F.sub ?_) K (K.1 .esp (by decide)), M, F, K⟩
   intro r hr
   obtain rfl := List.mem_singleton.mp hr
-  exact ⟨g.innerRegion, by simp [bodyWrites], Offset.sub_base _ (by simp only [VG.Impl.RsaPkcs1Sig.X86.Sign.frameBytes]; omega)⟩
+  exact ⟨g.innerRegion, by simp [bodyWrites], Offset.sub_base _ (by simp only [VG.Impl.RsaPkcs1Sig.X86.Sign.frameBytes]; omega_using [hj])⟩
 
 theorem outgoing_word_preserved {g : Geometry} {m m' : Mem} {i j : Nat}
     (hi : i < 20) (hj : j < 20) (hne : i ≠ j)
@@ -45,6 +45,6 @@ theorem outgoing_word_preserved {g : Geometry} {m m' : Mem} {i j : Nat}
   apply f.readW (r := ⟨byteAddr g.stack + BitVec.ofNat 64 (4 * i), 4⟩) (Region.contains_self _ _) ?_ (by decide)
   intro r hr
   obtain rfl := List.mem_singleton.mp hr
-  exact Offset.disjoint _ (by omega) (by omega) (by omega)
+  exact Offset.disjoint _ (by omega_using [hne]) (by omega_using [hi]) (by omega_using [hj])
 
 end VG.Proof.RsaPkcs1Sig.X86.Sgn

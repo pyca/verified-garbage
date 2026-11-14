@@ -39,24 +39,24 @@ theorem tableValues_next (A : Nat → Nat) (c w k : Nat) :
   unfold setAt tableValues
   by_cases output : j = aTable + k + 2
   · subst j
-    simp only [show ¬ aTable + k + 2 = aY by unfold aTable aY; omega, ↓reduceIte]
-    rw [ite_eq_left (by omega : aTable ≤ aTable + k + 2 ∧ aTable + k + 2 < aTable + (k + 1) + 2)]
+    simp only [show ¬ aTable + k + 2 = aY by unfold aTable aY; omega_using [], ↓reduceIte]
+    rw [ite_eq_left (by omega_using [] : aTable ≤ aTable + k + 2 ∧ aTable + k + 2 < aTable + (k + 1) + 2)]
     congr 1
-    omega
+    omega_using []
   · rw [ite_eq_right output]
     by_cases y : j = aY
     · subst j
       simp only [↓reduceIte]
     · simp only [y, ↓reduceIte]
-      have same : (aTable ≤ j ∧ j < aTable + k + 2) ↔ (aTable ≤ j ∧ j < aTable + (k + 1) + 2) := by omega
+      have same : (aTable ≤ j ∧ j < aTable + k + 2) ↔ (aTable ≤ j ∧ j < aTable + (k + 1) + 2) := by omega_using [output]
       simp only [same]
 
 theorem tableArrays_next (k j : Nat) : j ∈ tableArrays (k + 1) ↔
     j = aTable + k + 2 ∨ j ∈ tableArrays k := by
   unfold tableArrays
-  rw [show k + 1 + 2 = (k + 2) + 1 by omega, List.range_succ, List.map_append]
+  rw [show k + 1 + 2 = (k + 2) + 1 by omega_using [], List.range_succ, List.map_append]
   simp only [List.map_cons, List.map_nil, List.mem_cons, List.mem_append, List.not_mem_nil, or_false]
-  rw [show aTable + (k + 2) = aTable + k + 2 by omega]
+  rw [show aTable + (k + 2) = aTable + k + 2 by omega_using []]
   simp only [or_left_comm, or_comm]
 
 theorem tableValues_initial (A : Nat → Nat) (c w j : Nat) (known : j ∈ tableArrays 0) :
@@ -69,9 +69,9 @@ theorem tableValues_initial (A : Nat → Nat) (c w j : Nat) (known : j ∈ table
 theorem tableValues_power (A : Nat → Nat) (c w : Nat) {j : Nat} (digit : j < 16) :
     tableValues A c w 14 (aTable + j) = Word32.tp c w (A aX) (A aOne) j := by
   unfold tableValues
-  rw [ite_eq_right (by unfold aTable aY; omega : aTable + j ≠ aY),
-    ite_eq_left (by omega : aTable ≤ aTable + j ∧ aTable + j < aTable + 14 + 2)]
+  rw [ite_eq_right (by unfold aTable aY; omega_using [] : aTable + j ≠ aY),
+    ite_eq_left (by omega_using [digit] : aTable ≤ aTable + j ∧ aTable + j < aTable + 14 + 2)]
   congr 1
-  omega
+  omega_using []
 
 end VG.Proof.MillerRabin.X86

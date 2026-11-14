@@ -46,12 +46,12 @@ theorem keepHi_of_frame {s : State} (hp : DPre s) {lo : List (Nat × Nat)} {ws :
     (hn : n ≤ 8 + privStack) {m m' : Mem} (hf : Frame (ws ++ [below (fb s) n]) m m')
     (hw : ∀ r ∈ ws, ∃ a k, r = ⟨scA s a, k⟩ ∧ a + k ≤ scrBytes ∧ (a + k ≤ sMsg ∨ (a, k) ∈ lo)) :
     KeepHi s lo m m' := fun a k h₀ ha hl => by
-  refine bytes_keep hf (fun r hr => ?_) (by unfold scrBytes at ha; omega)
+  refine bytes_keep hf (fun r hr => ?_) (by unfold scrBytes at ha; omega_using [ha])
   rcases List.mem_append.mp hr with hr | hr
   · obtain ⟨b, j, rfl, hb, hb'⟩ := hw r hr
     refine scD ?_ ha hb
     rcases hb' with hb' | hb'
-    · exact .inr (by omega)
+    · exact .inr (by omega_using [h₀, hb'])
     · exact hl _ hb'
   · rw [List.mem_singleton.mp hr]; exact (stkD hp hn ha).symm
 
@@ -76,7 +76,7 @@ theorem frmKeep_of_frame {s : State} (hp : DPre s) {lo : List (Nat × Nat)} {ws 
   · obtain ⟨b, j, rfl, hb, -⟩ := hw r hr
     exact (hp.dKs.sub_left (frame_sub s hd)).sub_right (sub_trans (scSub hb) (Region.sub_prefix h1))
   · rw [List.mem_singleton.mp hr]
-    exact Offset.disjoint_below (fb s) (by unfold frameBytes privStack at *; omega)
+    exact Offset.disjoint_below (fb s) (by unfold frameBytes privStack at *; omega_using [hn, hd])
 
 /-- After HMAC's `init` with `K` and the streaming `update` with `X`, from `t₀`. -/
 structure MacMid (v : Compress) (s : State) (R : BitVec 64) (EM K X : List Byte) (t₀ t : State) : Prop where
@@ -118,7 +118,7 @@ theorem mac_front {s : State} (hp : DPre s) {R : BitVec 64} {EM : List Byte} {t�
     WP isa (.seq (.block (macInitArgs kOff)) (.seq (.call (HH v).hmacInitN (HH v).hmacInit)
       (.seq (.block updA) (.seq (.call (HH v).updN (HH v).updC) rest)))) t₀ Q := by
   obtain ⟨hS, -, -, hB, hSs, -, -, -⟩ := sizes v
-  refine WP.seq (WP.mono (macInitArgs_run hp hc (by unfold scrBytes at hk2; omega))
+  refine WP.seq (WP.mono (macInitArgs_run hp hc (by unfold scrBytes at hk2; omega_using [hk2]))
     fun t₁ ⟨hc₁, hm₁, hdi₁, hsi₁, hdx₁, hcx₁, h8₁⟩ => ?_)
   have cw₁ : Covers [⟨scA s 0, 96⟩, ⟨scA s sOuter, 96⟩, ⟨scA s sWork, 8 * (HH v).W⟩] t₁.wr :=
     (scCov hp hc₁ (by decide)).cons ((scCov hp hc₁ (by decide)).cons ((scCov hp hc₁ (wScr v)).cons Covers.nil))
@@ -129,8 +129,8 @@ theorem mac_front {s : State} (hp : DPre s) {R : BitVec 64} {EM : List Byte} {t�
       i_o := by rw [hS]; exact scD (.inl (by decide)) (by decide) (by decide)
       i_s := by rw [hS]; exact scD (.inl (by decide)) (by decide) (wScr v)
       o_s := by rw [hS]; exact scD (.inl (by decide)) (by decide) (wScr v)
-      k_i := by rw [hS]; exact scD (.inr (by unfold sMsg at hk1; omega)) hk2 (by decide)
-      k_o := by rw [hS]; exact scD (.inr (by unfold sMsg sOuter at *; omega)) hk2 (by decide)
+      k_i := by rw [hS]; exact scD (.inr (by unfold sMsg at hk1; omega_using [hk1])) hk2 (by decide)
+      k_o := by rw [hS]; exact scD (.inr (by unfold sMsg sOuter at *; omega_using [hk1])) hk2 (by decide)
       k_s := by exact scD (.inr (wBelow v hk1)) hk2 (wScr v)
       stk_i := by rw [below_rsp hc₁, hS]; exact stkD hp (by decide) (by decide)
       stk_o := by rw [below_rsp hc₁, hS]; exact stkD hp (by decide) (by decide)
@@ -138,7 +138,7 @@ theorem mac_front {s : State} (hp : DPre s) {R : BitVec 64} {EM : List Byte} {t�
       stk_s := by rw [below_rsp hc₁]; exact stkD hp (by decide) (wScr v)
       scnw := by
         have hw := (sizes v).2.1; obtain ⟨h1, h2⟩ := scr_len hp
-        simp only [scA, off, BitVec.toNat_add, BitVec.toNat_ofNat]; unfold scrBytes at h1; unfold sWork; omega }
+        simp only [scA, off, BitVec.toNat_add, BitVec.toNat_ofNat]; unfold scrBytes at h1; unfold sWork; omega_using [hw, h1, h2] }
     fun t₂ hrd₂ hwr₂ hcs₂ hf₂ hi₂ ho₂ => ?_)
   rw [hS, below_rsp hc₁] at hf₂
   rw [hm₁] at hi₂ ho₂
@@ -232,9 +232,9 @@ theorem mac_fin {s : State} (hp : DPre s) {R : BitVec 64} {EM K X : List Byte} {
       cr := by rw [hS]; exact Covers.right (scCov hp hc (by decide))
       cw := by rw [hS, hD]; exact cw
       i_u := by rw [hS]; exact scD (.inl (by decide)) (by decide) (by decide)
-      i_o := by rw [hS, hD]; exact scD (.inl (by unfold sMsg at hd1; omega)) (by decide) hd2
+      i_o := by rw [hS, hD]; exact scD (.inl (by unfold sMsg at hd1; omega_using [hd1])) (by decide) hd2
       i_s := by rw [hS]; exact scD (.inl (by decide)) (by decide) (wScr v)
-      u_o := by rw [hS, hD]; exact scD (.inl (by unfold sMsg sOuter at *; omega)) (by decide) hd2
+      u_o := by rw [hS, hD]; exact scD (.inl (by unfold sMsg sOuter at *; omega_using [hd1])) (by decide) hd2
       u_s := by rw [hS]; exact scD (.inl (by decide)) (by decide) (wScr v)
       o_s := by rw [hD]; exact scD (.inr (wBelow v hd1)) hd2 (wScr v)
       stk_i := by rw [below_rsp hc, hS]; exact stkD hp (by decide) (by decide)
@@ -243,7 +243,7 @@ theorem mac_fin {s : State} (hp : DPre s) {R : BitVec 64} {EM K X : List Byte} {
       stk_s := by rw [below_rsp hc]; exact stkD hp (by decide) (wScr v)
       scnw := by
         have hw := (sizes v).2.1; obtain ⟨h1, h2⟩ := scr_len hp
-        simp only [scA, off, BitVec.toNat_add, BitVec.toNat_ofNat]; unfold scrBytes at h1; unfold sWork; omega }
+        simp only [scA, off, BitVec.toNat_add, BitVec.toNat_ofNat]; unfold scrBytes at h1; unfold sWork; omega_using [hw, h1, h2] }
     fun t' hrd hwr hcs hf hmac => ?_
   rw [hS, hD, below_rsp hc] at hf
   have hws : ∀ r ∈ [(⟨scA s 0, 96⟩ : Region), ⟨scA s dOff, 32⟩, ⟨scA s sWork, 8 * (HH v).W⟩],
@@ -259,7 +259,7 @@ theorem mac_fin {s : State} (hp : DPre s) {R : BitVec 64} {EM K X : List Byte} {
     · obtain ⟨a, k, rfl, hk, -⟩ := hws r hr; exact scS hk
     · rw [List.mem_singleton.mp hr]; exact belowS hp (n := 24) (by decide)
   have hk0 : (Spec.Hmac.blockKey (OK v).SH.H K).length = 64 := blockKey_len K hK
-  have := hmac (Spec.Hmac.blockKey (OK v).SH.H K) X (by rw [hk0, hB]) (by rw [hk0]; omega) h.inner
+  have := hmac (Spec.Hmac.blockKey (OK v).SH.H K) X (by rw [hk0, hB]) (by rw [hk0]; omega_using [hX]) h.inner
     (by rw [hB]) h.outer
   rw [hD] at this
   refine ⟨hc', this, ((h.keep.trans (keepHi_of_frame hp (by decide) hf hws)).mono fun p hp => ?_),

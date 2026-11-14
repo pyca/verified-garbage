@@ -118,8 +118,8 @@ def DeriveCall.shape (c : DeriveCall) : ShapePublic where
   extentBound := by decide
   pPositive := c.input.pPositive
   qPositive := c.input.qPositive
-  pBound := by rw [c.input.pbLength]; have := c.layout.widths; change c.layout.pLen < 2 ^ 64; omega
-  qBound := by rw [c.input.qbLength]; have := c.layout.widths; change c.layout.qLen < 2 ^ 64; omega
+  pBound := by rw [c.input.pbLength]; have := c.layout.widths; change c.layout.pLen < 2 ^ 64; omega_using [this]
+  qBound := by rw [c.input.qbLength]; have := c.layout.widths; change c.layout.qLen < 2 ^ 64; omega_using [this]
   digestBound := by decide
 
 theorem DeriveAgrees.shape {reference c : DeriveCall} (h : DeriveAgrees reference c) :
@@ -197,7 +197,7 @@ theorem deriveFailure_ct : RelCT isa (Two DeriveFailurePre) Generate.deriveFailu
       hs.ld (Nat.le_trans (VG.Proof.Dsa.field_bounds .qLen).2 (Nat.le_refl _))]
     simp only [BitVec.ofNat_add_ofNat, hw]
     congr 1
-    omega
+    omega_using []
   · exact two_taint [.x0, .x1, .x2]
       (pins_of (fun p r => if r = .x0 then p.base else if r = .x1 then p.output else BitVec.ofNat 64 p.width)
         (by

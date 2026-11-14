@@ -15,15 +15,15 @@ theorem sign_sub {a b : Nat} (ha : a<2^63) (hb : b<2^63) :
  (if a<b then 1#64 else 0#64) := by
  apply BitVec.eq_of_toNat_eq
  simp only [BitVec.toNat_ushiftRight,BitVec.toNat_sub,BitVec.toNat_ofNat,Nat.shiftRight_eq_div_pow]
- rw [Nat.mod_eq_of_lt (by omega : a<2^64),Nat.mod_eq_of_lt (by omega : b<2^64)]
+ rw [Nat.mod_eq_of_lt (by omega_using [ha] : a<2^64),Nat.mod_eq_of_lt (by omega_using [hb] : b<2^64)]
  split_ifs with h
  · change ((2^64-b+a)%2^64)/2^63=1
-   rw [Nat.mod_eq_of_lt (by omega)]
-   omega
+   rw [Nat.mod_eq_of_lt (by omega_using [ha, h])]
+   omega_using [hb, h]
  · change ((2^64-b+a)%2^64)/2^63=0
-   have eq : 2^64-b+a=2^64+(a-b) := by omega
-   rw [eq,Nat.add_mod_left,Nat.mod_eq_of_lt (by omega)]
-   omega
+   have eq : 2^64-b+a=2^64+(a-b) := by omega_using [ha, h]
+   rw [eq,Nat.add_mod_left,Nat.mod_eq_of_lt (by omega_using [ha])]
+   omega_using [ha]
 
 theorem byte_bit : ∀ (b : Byte), ∀ n<8,
  ((BitVec.ofNat 64 b.toNat >>> n) &&& 1#64).toNat = b.toNat / 2^n % 2 := by

@@ -48,16 +48,16 @@ theorem rowSrcWith_ok {s : State} {base : Addr} (hs : Scr s base) {mb : Nat → 
       Keeps [.eax, .edx] s t ∧ t.mem = s.mem := by
   have hb' : b + 112 ≤ 3584 := hb
   unfold rowSrcWith
-  refine wp_load hm (hs.read (by omega)) fun t ht => ?_
+  refine wp_load hm (hs.read (by omega_using [hj, hb'])) fun t ht => ?_
   refine wp_mul fun u uv um uk => ?_
   have us := (hs.of_upd ht (by decide)).of_keeps uk (by decide)
   have up : u.gpr .ebp = u.gpr .edi + BitVec.ofNat 32 (4 * i) := by
     rw [uk.1 _ (by decide), uk.1 _ (by decide), ht.other .ebp (by decide), ht.other .edi (by decide)]
     exact hp
   have ea : u.ea (at_ .ebp (ACC + 4 * j)) = off base (ACC + 4 * (i + j)) := by
-    rw [rowEa us up (by simp only [ACC]; omega), show 4 * i + (ACC + 4 * j) = ACC + 4 * (i + j) by omega]
+    rw [rowEa us up (by simp only [ACC]; omega_using [hi, hj]), show 4 * i + (ACC + 4 * j) = ACC + 4 * (i + j) by omega_using []]
   have rd : readSrc u (.mem (at_ .ebp (ACC + 4 * j))) = some (word u.mem base (ACC + 4 * (i + j))) := by
-    simp only [readSrc, ea, State.load32, us.read (d := ACC + 4 * (i + j)) (n := 4) (by simp only [ACC]; omega), ite_true]
+    simp only [readSrc, ea, State.load32, us.read (d := ACC + 4 * (i + j)) (n := 4) (by simp only [ACC]; omega_using [hi, hj]), ite_true]
   refine wp_alu (Or.inl rfl) rd fun v hv _ => WP.block_nil ⟨?_, ?_, hv.mem.trans (um.trans ht.mem)⟩
   · rw [hv.gpr]
     change (u.gpr .eax + word u.mem base (ACC + 4 * (i + j))).toNat = _
@@ -66,7 +66,7 @@ theorem rowSrcWith_ok {s : State} {base : Addr} (hs : Scr s base) {mb : Nat → 
     simp only [radix] at hc hy hacc prod
     change ((limbs s.mem base b j * (s.gpr .ecx).toNat) % 2 ^ 32 + accw s.mem base (i + j)) % 2 ^ 32 = _
     rw [Nat.mul_comm (limbs s.mem base b j)]
-    omega
+    omega_using [hacc, prod]
   · exact (ht.rest (by decide)).trans (uk.trans (hv.rest (by decide)))
 
 end VG.Proof.X448.X86

@@ -125,12 +125,12 @@ theorem piece_tw3 {j : Nat} (hj : 16 * j + 16 ≤ N) {ws : Nat → W} {s : State
     WP isa (.block (piece j)) s (TW3 s₁ ws (AccTo q R0 R1 X s₁ (j + 1))) := by
   unfold piece
   refine WP.block_append (WP.mono (addProd_ok hk h.poly (p := q) (by rw [h.gpr _ (by decide), hrsi]) (j := j)
-    fun e he => by rw [h.rd, h.wr]; exact hin _ _ (by omega)) fun s' ⟨a, k, x, y⟩ => ?_)
+    fun e he => by rw [h.rd, h.wr]; exact hin _ _ (by omega_using [hj, he])) fun s' ⟨a, k, x, y⟩ => ?_)
   have a' : HalfTo q R0 R1 X s₁ j s' := by
     show Half R0 R1 (absorbAll (rN R0 R1) X (bytesAt s₁.mem q (16 * (j + 1)))) s'
     rw [h.mem] at a
     rw [Nat.mul_add, Nat.mul_one, VG.Proof.Poly1305.bytesAt_add,
-      VG.Proof.Poly1305.absorbAll_append (by rw [VG.Proof.Poly1305.length_bytesAt]; omega)]
+      VG.Proof.Poly1305.absorbAll_append (by rw [VG.Proof.Poly1305.length_bytesAt]; omega_using [])]
     exact a
   exact WP.mono (carry1_ok hk a') fun s'' ⟨a₂, k₂, x₂, y₂⟩ =>
     (h.piece a' k x y).piece a₂ k₂ x₂ y₂
@@ -142,7 +142,7 @@ theorem troundG3_ok {bl fb : Nat → Nat} {tot : Nat} (sc : SchedOk bl fb tot)
     WP isa (.block (troundG3 bl fb n)) s
       (TB3 s₁ (fun j => innerBlock (vs j)) (AccTo q R0 R1 X s₁ (fb (n + 1)))) := by
   have hb32 : fb n + bl n ≤ tot := by
-    rw [← sc.succ n hn]; exact sc.le _ (by omega)
+    rw [← sc.succ n hn]; exact sc.le _ (by omega_using [hn])
   have hfb : bl n ≠ 0 → 4 ≤ fb n + bl n := sc.four n hn
   -- The parts, as steps of `TW3`.
   have tw : TW3 s₁ (wordsOf s) (AccTo q R0 R1 X s₁ (fb n)) s :=
@@ -168,38 +168,38 @@ theorem troundG3_ok {bl fb : Nat → Nat} {tot : Nat} (sc : SchedOk bl fb tot)
   have hfin : ∀ {s' : State}, TW3 s₁ (fun l => (cols3H ++ diags3H).foldl hstep (wordsOf s l))
       (AccTo q R0 R1 X s₁ (j + 3 + 1)) s' →
       TB3 s₁ (fun j => innerBlock (vs j)) (AccTo q R0 R1 X s₁ (fb (n + 1))) s' := fun h' =>
-    hwords (by rw [sc.succ n hn, show fb n + bl n = j + 3 + 1 by omega]; exact h')
+    hwords (by rw [sc.succ n hn, show fb n + bl n = j + 3 + 1 by omega_using [hfb, e0, hj]]; exact h')
   rw [troundG3_eq bl fb n e0, ← hj]
   simp only [drH3_eq, List.foldl_append] at hfin
   rcases sc.cases n hn with e4 | e3 | e0'
   rotate_left 2
   · exact absurd e0' e0
   · -- Four blocks: one after each half.
-    have ej : fb n = j := by omega
+    have ej : fb n = j := by omega_using [hj, e4]
     rw [ite_eq_left e4]
     refine WP.block_append (WP.mono (seg_tw3 (trH3_ok 0) acc_gpr tw) fun t₁ h₁ => ?_)
     rw [ej] at h₁
-    refine WP.block_append (WP.mono (piece_tw3 hk hrsi hin (by omega) h₁) fun t₂ h₂ => ?_)
+    refine WP.block_append (WP.mono (piece_tw3 hk hrsi hin (by omega_using [hN, hb32, e0, hj]) h₁) fun t₂ h₂ => ?_)
     refine WP.block_append (WP.mono (seg_tw3 (trH3_ok 1) acc_gpr h₂) fun t₃ h₃ => ?_)
-    refine WP.block_append (WP.mono (piece_tw3 hk hrsi hin (by omega) h₃) fun t₄ h₄ => ?_)
+    refine WP.block_append (WP.mono (piece_tw3 hk hrsi hin (by omega_using [hN, hb32, hfb, e0, hj]) h₃) fun t₄ h₄ => ?_)
     refine WP.block_append (WP.mono (seg_tw3 (trH3_ok 2) acc_gpr h₄) fun t₅ h₅ => ?_)
     refine WP.block_append (WP.mono (seg_tw3 (trH3_ok 3) acc_gpr h₅) fun t₆ h₆ => ?_)
-    refine WP.block_append (WP.mono (piece_tw3 hk hrsi hin (by omega) h₆) fun t₇ h₇ => ?_)
+    refine WP.block_append (WP.mono (piece_tw3 hk hrsi hin (by omega_using [hN, hb32, hfb, e0, hj]) h₆) fun t₇ h₇ => ?_)
     refine WP.block_append (WP.mono (seg_tw3 (trH3_ok 4) acc_gpr h₇) fun t₈ h₈ => ?_)
-    refine WP.block_append (WP.mono (piece_tw3 hk hrsi hin (by omega) h₈) fun t₉ h₉ => ?_)
+    refine WP.block_append (WP.mono (piece_tw3 hk hrsi hin (by omega_using [hN, hb32, hfb, e0, hj]) h₈) fun t₉ h₉ => ?_)
     exact WP.mono (seg_tw3 (trH3_ok 5) acc_gpr h₉) fun _ h' => hfin h'
   · -- Three blocks: none after the first half.
-    have ej : fb n = j + 1 := by omega
-    rw [ite_eq_right (by omega), List.nil_append]
+    have ej : fb n = j + 1 := by omega_using [hfb, hj, e3]
+    rw [ite_eq_right (by omega_using [e3]), List.nil_append]
     refine WP.block_append (WP.mono (seg_tw3 (trH3_ok 0) acc_gpr tw) fun t₁ h₁ => ?_)
     rw [ej] at h₁
     refine WP.block_append (WP.mono (seg_tw3 (trH3_ok 1) acc_gpr h₁) fun t₃ h₃ => ?_)
-    refine WP.block_append (WP.mono (piece_tw3 hk hrsi hin (by omega) h₃) fun t₄ h₄ => ?_)
+    refine WP.block_append (WP.mono (piece_tw3 hk hrsi hin (by omega_using [hN, hb32, hfb, e0, hj]) h₃) fun t₄ h₄ => ?_)
     refine WP.block_append (WP.mono (seg_tw3 (trH3_ok 2) acc_gpr h₄) fun t₅ h₅ => ?_)
     refine WP.block_append (WP.mono (seg_tw3 (trH3_ok 3) acc_gpr h₅) fun t₆ h₆ => ?_)
-    refine WP.block_append (WP.mono (piece_tw3 hk hrsi hin (by omega) h₆) fun t₇ h₇ => ?_)
+    refine WP.block_append (WP.mono (piece_tw3 hk hrsi hin (by omega_using [hN, hb32, hfb, e0, hj]) h₆) fun t₇ h₇ => ?_)
     refine WP.block_append (WP.mono (seg_tw3 (trH3_ok 4) acc_gpr h₇) fun t₈ h₈ => ?_)
-    refine WP.block_append (WP.mono (piece_tw3 hk hrsi hin (by omega) h₈) fun t₉ h₉ => ?_)
+    refine WP.block_append (WP.mono (piece_tw3 hk hrsi hin (by omega_using [hN, hb32, hfb, e0, hj]) h₈) fun t₉ h₉ => ?_)
     exact WP.mono (seg_tw3 (trH3_ok 5) acc_gpr h₉) fun _ h' => hfin h'
 
 end

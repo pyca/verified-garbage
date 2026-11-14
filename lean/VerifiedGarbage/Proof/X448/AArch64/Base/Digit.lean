@@ -65,15 +65,15 @@ theorem nibble_ok {s : State} {base : Addr} (hs : Scr s base) {n k i p o : Nat} 
     WP isa (.block (nibble o)) s fun t =>
       t.gpr .x2 = BitVec.ofNat 64 (nib k i) ∧ Keeps [.x2, .x9] s t ∧ t.mem = s.mem := by
   have hr : ∀ j < 4, InRegions (s.rd ++ s.wr) (off base (BITS + (4 * i + j))) 1 := fun j hj =>
-    ⟨_, List.mem_append_right _ hs.wr, contains_sc (by simp only [BITS]; omega)⟩
+    ⟨_, List.mem_append_right _ hs.wr, contains_sc (by simp only [BITS]; omega_using [hn, hi, hj])⟩
   have he : ∀ j, off base p + BitVec.ofNat 64 (o + j) = off base (BITS + (4 * i + j)) :=
     fun j => by
       simp only [off]
       rw [BitVec.add_assoc, ← BitVec.ofNat_add]
-      exact congrArg (base + ·) (congrArg (BitVec.ofNat 64) (by omega))
+      exact congrArg (base + ·) (congrArg (BitVec.ofNat 64) (by omega_using [hpo]))
   have hv : ∀ j < 4, ((s.mem (off base (BITS + (4 * i + j)))).setWidth 32).setWidth 64 =
       BitVec.ofNat 64 ((k / 2 ^ (4 * i + j)) % 2) := fun j hj => by
-    rw [hb _ (by omega), bit_eq]; exact bit_ext _ (Nat.mod_lt _ (by decide))
+    rw [hb _ (by omega_using [hi, hj]), bit_eq]; exact bit_ext _ (Nat.mod_lt _ (by decide))
   have e0 := he 0
   have e1 := he 1
   have e2 := he 2
@@ -92,8 +92,8 @@ theorem nibble_ok {s : State} {base : Addr} (hs : Scr s base) {n k i p o : Nat} 
   simp only [nibble, runBlock_cons, runStep_some, runBlock_nil, exec, State.read,
     State.load, addr, Size.bits, RegUpd.gpr_write, RegUpd.mem_write,
     RegUpd.rd_write, RegUpd.wr_write, BitVec.setWidth_eq, Nat.mod_one,
-    show o + 3 < 4096 * 1 by omega, show o + 2 < 4096 * 1 by omega, show o + 1 < 4096 * 1 by omega,
-    show o < 4096 * 1 by omega,
+    show o + 3 < 4096 * 1 by omega_using [ho], show o + 2 < 4096 * 1 by omega_using [ho], show o + 1 < 4096 * 1 by omega_using [ho],
+    show o < 4096 * 1 by omega_using [ho],
     Nat.reduceMul, and_self, hp, e0, e1, e2, e3,
     r0, r1, r2, r3, read1_eq, v0, v1, v2, v3,
     ite_true, ite_false, reduceCtorEq, Option.map_some, Option.bind_some,
@@ -102,7 +102,7 @@ theorem nibble_ok {s : State} {base : Addr} (hs : Scr s base) {n k i p o : Nat} 
   · rw [nib_bits]
     simp only [← BitVec.ofNat_add]
     congr 1
-    omega
+    omega_using []
   · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
     simp only [RegUpd.gpr_write, hr.1, hr.2, ite_false]
 
@@ -157,11 +157,11 @@ theorem masksOdd_ok (s : State) {a : Nat} (ha : a < 9) (hx : s.gpr .x2 = BitVec.
     List.nil_append, List.append_nil, List.getD_cons_zero, List.getD_cons_succ,
     Nat.reduceAdd, Nat.reduceLT, ↓reduceIte,
     runBlock_cons, runStep_some, runBlock_nil, exec, State.read, Size.bits,
-    show (63 : Nat) < 64 from by decide, show ∀ k < 9, k < 4096 from fun k hk => by omega,
+    show (63 : Nat) < 64 from by decide, show ∀ k < 9, k < 4096 from fun k hk => by omega_using [hk],
     RegUpd.gpr_write, BitVec.setWidth_eq, hx, reduceCtorEq,
     Option.some.injEq, exists_eq_left']
   refine ⟨fun m hm1 hm8 => ?_, (last_fact a ha).2, ⟨fun r hr => ?_, rfl, rfl⟩, rfl⟩
-  · have : m = 1 ∨ m = 2 ∨ m = 3 ∨ m = 4 ∨ m = 5 ∨ m = 6 ∨ m = 7 ∨ m = 8 := by omega
+  · have : m = 1 ∨ m = 2 ∨ m = 3 ∨ m = 4 ∨ m = 5 ∨ m = 6 ∨ m = 7 ∨ m = 8 := by omega_using [hm1, hm8]
     rcases this with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
       simp only [List.getD_cons_zero, List.getD_cons_succ, Nat.reduceSub, ite_true, ite_false,
         reduceCtorEq] <;>
@@ -183,11 +183,11 @@ theorem masksEven_ok (s : State) {a : Nat} (ha : a < 9) (hx : s.gpr .x2 = BitVec
     List.nil_append, List.append_nil, List.getD_cons_zero, List.getD_cons_succ,
     Nat.reduceAdd, Nat.reduceLT, ↓reduceIte,
     runBlock_cons, runStep_some, runBlock_nil, exec, State.read, Size.bits,
-    show (63 : Nat) < 64 from by decide, show ∀ k < 9, k < 4096 from fun k hk => by omega,
+    show (63 : Nat) < 64 from by decide, show ∀ k < 9, k < 4096 from fun k hk => by omega_using [hk],
     RegUpd.gpr_write, BitVec.setWidth_eq, hx, reduceCtorEq,
     Option.some.injEq, exists_eq_left']
   refine ⟨fun m hm1 hm8 => ?_, (last_fact a ha).2, ⟨fun r hr => ?_, rfl, rfl⟩, rfl⟩
-  · have : m = 1 ∨ m = 2 ∨ m = 3 ∨ m = 4 ∨ m = 5 ∨ m = 6 ∨ m = 7 ∨ m = 8 := by omega
+  · have : m = 1 ∨ m = 2 ∨ m = 3 ∨ m = 4 ∨ m = 5 ∨ m = 6 ∨ m = 7 ∨ m = 8 := by omega_using [hm1, hm8]
     rcases this with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
       simp only [List.getD_cons_zero, List.getD_cons_succ, Nat.reduceSub, ite_true, ite_false,
         reduceCtorEq] <;>
@@ -220,10 +220,10 @@ theorem digits_ok {s : State} {base : Addr} (hs : Scr s base) {n k j : Nat} (hn 
   have ne : nib k (2 * j) < 16 := nib_lt _ _
   simp only [digits, List.append_assoc]
   rw [WP.block_append_iff]
-  refine WP.mono (index_ok s hs (by omega) hc) fun a ⟨a8, ka, ma⟩ => ?_
+  refine WP.mono (index_ok s hs (by omega_using [hn, hj]) hc) fun a ⟨a8, ka, ma⟩ => ?_
   have hsa := hs.of_keeps ka (by decide)
   rw [WP.block_append_iff]
-  refine WP.mono (nibble_ok hsa hn (k := k) (i := 2 * j + 1) (by omega) a8 (by simp only [BITS]; omega)
+  refine WP.mono (nibble_ok hsa hn (k := k) (i := 2 * j + 1) (by omega_using [hj]) a8 (by simp only [BITS]; omega_using [])
     (by decide) (by rw [ma]; exact hb)) fun b ⟨b2, kb, mb⟩ => ?_
   rw [WP.block_append_iff]
   refine WP.mono (magnitude_ok b no b2) fun c ⟨c2, _, kc, mc⟩ => ?_
@@ -236,7 +236,7 @@ theorem digits_ok {s : State} {base : Addr} (hs : Scr s base) {n k j : Nat} (hn 
   have hbe : Bits n base k e.mem := fun q hq => by
     rw [me, mc, mb, ma]; exact hb q hq
   rw [WP.block_append_iff]
-  refine WP.mono (nibble_ok hse hn (k := k) (i := 2 * j) (by omega) e8 (by simp only [BITS]; omega)
+  refine WP.mono (nibble_ok hse hn (k := k) (i := 2 * j) (by omega_using [hj]) e8 (by simp only [BITS]; omega_using [])
     (by decide) hbe) fun f ⟨f2, kf, mf⟩ => ?_
   rw [WP.block_append_iff]
   refine WP.mono (magnitude_ok f ne f2) fun g ⟨g2, _, kg, mg⟩ => ?_
@@ -245,7 +245,7 @@ theorem digits_ok {s : State} {base : Addr} (hs : Scr s base) {n k j : Nat} (hn 
   · have hk : ∀ m < 9, oddReg m ∉ [Reg.x0, .x21, .x22, .x23, .x24, .x25, .x26, .x27, .x28] ∧
         oddReg m ∉ [Reg.x1, .x2, .x9] ∧ oddReg m ∉ [Reg.x2, .x9] := by
       decide
-    obtain ⟨ht, hg, hf⟩ := hk m (by omega)
+    obtain ⟨ht, hg, hf⟩ := hk m (by omega_using [h8])
     rw [kt.1 _ ht, kg.1 _ hg, kf.1 _ hf]
     exact em m h1 h8
   · rw [kt.1 _ (by decide), kg.1 _ (by decide), kf.1 _ (by decide)]

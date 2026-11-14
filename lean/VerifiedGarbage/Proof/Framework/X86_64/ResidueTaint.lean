@@ -71,13 +71,13 @@ theorem mem_sub1 {c m j : Nat} {p : Nat × Nat} :
   simp only [sub1, List.mem_append]
   constructor
   · rintro ⟨q, hq, h₁, h₂⟩
-    rcases hq with hq | hq <;> split at hq <;> simp at hq <;> subst hq <;> simp at h₁ h₂ <;> omega
+    rcases hq with hq | hq <;> split at hq <;> simp at hq <;> subst hq <;> simp at h₁ h₂ <;> omega_using [h₁, h₂]
   · rintro ⟨h₁, h₂, h₃⟩
     by_cases hc : j < c
-    · refine ⟨(p.1, min (p.1 + p.2) c - p.1), .inl ?_, by simp; omega, by simp; omega⟩
-      simp only [show p.1 < min (p.1 + p.2) c by omega, ↓reduceIte, List.mem_singleton]
-    · refine ⟨(max p.1 (c + m), p.1 + p.2 - max p.1 (c + m)), .inr ?_, by simp; omega, by simp; omega⟩
-      simp only [show max p.1 (c + m) < p.1 + p.2 by omega, ↓reduceIte, List.mem_singleton]
+    · refine ⟨(p.1, min (p.1 + p.2) c - p.1), .inl ?_, by simp; omega_using [h₁], by simp; omega_using [h₂, hc]⟩
+      simp only [show p.1 < min (p.1 + p.2) c by omega_using [h₁, h₂, hc], ↓reduceIte, List.mem_singleton]
+    · refine ⟨(max p.1 (c + m), p.1 + p.2 - max p.1 (c + m)), .inr ?_, by simp; omega_using [h₁, h₃, hc], by simp; omega_using [h₂]⟩
+      simp only [show max p.1 (c + m) < p.1 + p.2 by omega_using [h₁, h₂, h₃, hc], ↓reduceIte, List.mem_singleton]
 
 theorem mem_gaps {j : Nat} : ∀ (l ps : List (Nat × Nat)),
     InSec (gaps l ps) j ↔ InSec ps j ∧ ¬ InSec l j

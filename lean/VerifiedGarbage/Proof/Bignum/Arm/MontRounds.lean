@@ -23,7 +23,7 @@ theorem montRounds_ok (s : State) {base : BitVec 32} {size tmp a b mod acc n : N
   refine WP.loop (M := isa) loopInv ?_ n s ?_
   · intro k t h
     obtain ⟨i, hik, hk, hi⟩ := h
-    refine WP.mono (montLoopBody_ok ctx hi (by omega) hB hInv) ?_
+    refine WP.mono (montLoopBody_ok ctx hi (by omega_using [hik, hk]) hB hInv) ?_
     rintro u ⟨hu, hz⟩
     by_cases he : i + 1 = n
     · left
@@ -31,14 +31,14 @@ theorem montRounds_ok (s : State) {base : BitVec 32} {size tmp a b mod acc n : N
       change some (!u.z) = some false
       simp only [hz, he, decide_true, Bool.not_true]
     · right
-      refine ⟨?_, k - 1, by omega, i + 1, by omega, by omega, hu⟩
+      refine ⟨?_, k - 1, by omega_using [hk], i + 1, by omega_using [hik, hk], by omega_using [hik, hk, he], hu⟩
       change some (!u.z) = some true
       simp only [hz, he, decide_false, Bool.not_false]
-  · refine ⟨0, by omega, by omega, ?_⟩
-    refine ⟨by omega, hdr, ptr, ?_, ?_, Outs.refl _ _ _, Rest.refl _ _⟩
+  · refine ⟨0, by omega_using [], by omega_using [hn], ?_⟩
+    refine ⟨by omega_using [], hdr, ptr, ?_, ?_, Outs.refl _ _ _, Rest.refl _ _⟩
     · rw [hzero]
       simp only [val32, Nat.mul_zero, Nat.zero_mul, Nat.zero_mod]
     · rw [hzero]
-      omega
+      omega_using [hB]
 
 end VG.Proof.Bignum.Arm

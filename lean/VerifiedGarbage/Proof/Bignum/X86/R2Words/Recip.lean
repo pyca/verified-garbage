@@ -35,17 +35,17 @@ theorem dbl1 (r : Nat) : BitVec.ofNat 32 r + BitVec.ofNat 32 r + 1 = BitVec.ofNa
 
 theorem subMask_eq {r d : Nat} (hr : r < d) (hd : d < 2 ^ 32) :
     subMask (BitVec.ofNat 32 r) (BitVec.ofNat 32 d) = if d ≤ 2 * r + 1 then BitVec.allOnes 32 else 0 := by
-  have hr' : r < 2 ^ 32 := by omega
+  have hr' : r < 2 ^ 32 := by omega_using [hr, hd]
   unfold subMask
   rw [dbl1, BitVec.toNat_ofNat, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hr', Nat.mod_eq_of_lt hd]
   by_cases c : 2 ^ 32 ≤ r + r
-  · rw [decide_eq_true c, ite_eq_left_of_eq_true _ _ (eq_true (by omega))]
+  · rw [decide_eq_true c, ite_eq_left_of_eq_true _ _ (eq_true (by omega_using [hd, c]))]
     generalize decide (_ < d) = b1
     cases b1 <;> rfl
   · rw [decide_eq_false c]
     by_cases b : (2 * r + 1) % 2 ^ 32 < d
-    · rw [decide_eq_true b, ite_eq_right_of_eq_false _ _ (eq_false (by omega))]; rfl
-    · rw [decide_eq_false b, ite_eq_left_of_eq_true _ _ (eq_true (by omega))]; rfl
+    · rw [decide_eq_true b, ite_eq_right_of_eq_false _ _ (eq_false (by omega_using [c, b]))]; rfl
+    · rw [decide_eq_false b, ite_eq_left_of_eq_true _ _ (eq_true (by omega_using [b]))]; rfl
 
 theorem divBit_rem {r d : Nat} (hr : r < d) (hd : d < 2 ^ 32) :
     BitVec.ofNat 32 r + BitVec.ofNat 32 r + 1 - (BitVec.ofNat 32 d &&& subMask (BitVec.ofNat 32 r) (BitVec.ofNat 32 d)) =
@@ -55,7 +55,7 @@ theorem divBit_rem {r d : Nat} (hr : r < d) (hd : d < 2 ^ 32) :
   by_cases h : d ≤ 2 * r + 1
   · rw [ite_eq_left_of_eq_true _ _ (eq_true h), ite_eq_left_of_eq_true _ _ (eq_true h), BitVec.and_allOnes, BitVec.toNat_sub,
       BitVec.toNat_ofNat, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hd]
-    omega
+    omega_using [hd, h]
   · rw [ite_eq_right_of_eq_false _ _ (eq_false h), ite_eq_right_of_eq_false _ _ (eq_false h)]
     simp
 
@@ -67,7 +67,7 @@ theorem divBit_quot {r d q : Nat} (hr : r < d) (hd : d < 2 ^ 32) :
   by_cases h : d ≤ 2 * r + 1
   · rw [ite_eq_left_of_eq_true _ _ (eq_true h), ite_eq_left_of_eq_true _ _ (eq_true h), BitVec.toNat_sub, BitVec.toNat_allOnes,
       BitVec.toNat_ofNat, BitVec.toNat_ofNat]
-    omega
+    omega_using []
   · rw [ite_eq_right_of_eq_false _ _ (eq_false h), ite_eq_right_of_eq_false _ _ (eq_false h)]
     simp
 
@@ -100,7 +100,7 @@ theorem rdiv_succ (d j : Nat) : rdiv d (j + 1) = 2 * rdiv d j + 1 := by
   generalize 2 ^ 32 - 1 - d = K
   rw [Nat.pow_succ, Nat.mul_comm (2 ^ j) 2, ← Nat.mul_assoc, Nat.mul_comm K 2, Nat.mul_assoc]
   have := Nat.one_le_two_pow (n := j)
-  omega
+  omega_using [this]
 
 /-- The loop of `recip`: from `r = 2^32 - 1 - d`, `q = 0` and the count 32,
 `q = ⌊rdiv d 32 / d⌋`. -/
@@ -112,30 +112,30 @@ theorem recipLoop_ok {s : State} {d : Nat} (hd : 2 ^ 31 ≤ d) (hd' : d < 2 ^ 32
   refine WP.loop (M := isa) (fun n t => ∃ j q r, n = 32 - j ∧ j < 32 ∧ t.gpr .edx = BitVec.ofNat 32 r ∧
       t.gpr .ecx = BitVec.ofNat 32 q ∧ t.gpr .esi = BitVec.ofNat 32 d ∧ t.gpr .edi = BitVec.ofNat 32 (32 - j) ∧
       r < d ∧ rdiv d j = q * d + r ∧ t.mem = s.mem ∧ Keeps [.eax, .ebx, .ecx, .edx, .ebp, .edi] s t) ?_ _ s
-    ⟨0, 0, 2 ^ 32 - 1 - d, rfl, by decide, hdx, hcx, hsi, hdi, by omega, by simp [rdiv], rfl, Keeps.refl _ _⟩
+    ⟨0, 0, 2 ^ 32 - 1 - d, rfl, by decide, hdx, hcx, hsi, hdi, by omega_using [hd], by simp [rdiv], rfl, Keeps.refl _ _⟩
   rintro n t ⟨j, q, r, rfl, hj, hdx', hcx', hsi', hdi', hr, hP, hm, k⟩
   refine WP.mono (divBit_ok hdx' hsi' hcx' hdi' hr hd') fun t' ⟨h1, h2, h3, h4, h5, hm', k'⟩ => ?_
   obtain ⟨hP', hr'⟩ := VG.Proof.Bignum.WordStep32.divBit_inv hP hr (show 1 < 2 by decide)
   rw [← rdiv_succ] at hP'
   obtain ⟨c1, c2⟩ := VG.Proof.Bignum.X86.PublicRt.count1_zf (N := 32) (x := BitVec.ofNat 32 (32 - j))
-    (by rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]) hj
+    (by rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [])]) hj
   have hd₁ : t'.gpr .edi = BitVec.ofNat 32 (32 - (j + 1)) := by
-    rw [h4]; apply BitVec.eq_of_toNat_eq; rw [c1, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+    rw [h4]; apply BitVec.eq_of_toNat_eq; rw [c1, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [])]
   have K := k.trans k'
   by_cases e : j + 1 = 32
   · refine .inl ⟨by simp only [eval, h5, c2, e, decide_true, Option.map_some, Bool.not_true], ?_, hm'.trans hm, K⟩
     have e32 : rdiv d 32 = (2 * q + if d ≤ 2 * r + 1 then 1 else 0) * d +
-        (if d ≤ 2 * r + 1 then 2 * r + 1 - d else 2 * r + 1) := by rw [show (32 : Nat) = j + 1 by omega]; exact hP'
+        (if d ≤ 2 * r + 1 then 2 * r + 1 - d else 2 * r + 1) := by rw [show (32 : Nat) = j + 1 by omega_using [e]]; exact hP'
     have key : ∀ Q R, R < d → (Q * d + R) / d = Q := fun Q R h' => by
-      rw [Nat.add_comm, Nat.add_mul_div_right _ _ (by omega), Nat.div_eq_of_lt h', Nat.zero_add]
+      rw [Nat.add_comm, Nat.add_mul_div_right _ _ (by omega_using [hd]), Nat.div_eq_of_lt h', Nat.zero_add]
     rw [h2, e32, key _ _ hr']
-  · refine .inr ⟨by simp only [eval, h5, c2, e, decide_false, Option.map_some, Bool.not_false], 32 - (j + 1), by omega,
-      j + 1, _, _, rfl, by omega, h1, h2, by rw [h3]; exact hsi', hd₁, hr', hP', hm'.trans hm, K⟩
+  · refine .inr ⟨by simp only [eval, h5, c2, e, decide_false, Option.map_some, Bool.not_false], 32 - (j + 1), by omega_using [hj],
+      j + 1, _, _, rfl, by omega_using [hj, e], h1, h2, by rw [h3]; exact hsi', hd₁, hr', hP', hm'.trans hm, K⟩
 
 theorem xor_m1 (d : Nat) (hd : d < 2 ^ 32) : BitVec.ofNat 32 d ^^^ (-1) = BitVec.ofNat 32 (2 ^ 32 - 1 - d) := by
   apply BitVec.eq_of_toNat_eq
   rw [show (-1 : BitVec 32) = BitVec.allOnes 32 from rfl, BitVec.xor_allOnes, BitVec.toNat_not, BitVec.toNat_ofNat,
-    BitVec.toNat_ofNat, Nat.mod_eq_of_lt hd, Nat.mod_eq_of_lt (by omega)]
+    BitVec.toNat_ofNat, Nat.mod_eq_of_lt hd, Nat.mod_eq_of_lt (by omega_using [])]
 
 /-- `recip`: `v = ⌊(2^64 - 1) / d⌋ - 2^32` at 168, for `d ≥ 2^31` at 164. -/
 theorem recip_ok {s : State} {base : Addr} {bytes len : Nat} {args : Nat → BitVec 32} {d : Nat}
@@ -145,11 +145,11 @@ theorem recip_ok {s : State} {base : Addr} {bytes len : Nat} {args : Nat → Bit
   have nw' := h.scratch.nowrap
   have sp := h.space
   have hdims := h.dimensions
-  have hb : 256 ≤ bytes := by have := (h.fits (j := 0) (by decide)).1; simp only [numAt, numOff] at this; omega
-  have di : PtrAt s base .edi 0 := by rw [PtrAt, Nat.add_zero, Nat.mod_eq_of_lt (by omega)]; exact h.edi
+  have hb : 256 ≤ bytes := by have := (h.fits (j := 0) (by decide)).1; simp only [numAt, numOff] at this; omega_using [this]
+  have di : PtrAt s base .edi 0 := by rw [PtrAt, Nat.add_zero, Nat.mod_eq_of_lt (by omega_using [nw', hb])]; exact h.edi
   have hdi := ptr_eq di
-  have ha := addr_off base (x := 0) (d := oD) (by simp only [oD]; omega)
-  have hin : InRegions (s.rd ++ s.wr) (off base (0 + oD)) 4 := ws_read h.ws (by simp only [oD]; omega)
+  have ha := addr_off base (x := 0) (d := oD) (by simp only [oD]; omega_using [nw', hb])
+  have hin : InRegions (s.rd ++ s.wr) (off base (0 + oD)) 4 := ws_read h.ws (by simp only [oD]; omega_using [hb])
   have hv : s.mem.readW (off base (0 + oD)) 32 = BitVec.ofNat 32 d := by
     rw [Nat.zero_add]; exact BitVec.eq_of_toNat_eq (by rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt hd2]; exact hD)
   unfold recip
@@ -164,16 +164,16 @@ theorem recip_ok {s : State} {base : Addr} {bytes len : Nat} {args : Nat → Bit
   refine wp_movS A4.readSrc fun t₁ U₁ _ => ?_
   have di₁ : PtrAt t₁ base .edi 0 := by rw [PtrAt, U₁.gpr, h.edi_eq]; exact di
   have ws₁ : Ws t₁ base bytes := h.ws.of_wr (U₁.wr.trans Kt.2.2 |>.trans K.2.2)
-  refine wp_storeS (ea_ptr ws₁ di₁ (d := oV) (by simp only [oV]; omega)) (ws_write ws₁ (by simp only [oV]; omega))
+  refine wp_storeS (ea_ptr ws₁ di₁ (d := oV) (by simp only [oV]; omega_using [hb])) (ws_write ws₁ (by simp only [oV]; omega_using [hb]))
     fun t₂ M₂ => WP.block_nil ?_
   have hq : rdiv d 32 / d = (2 ^ 64 - 1) / d - 2 ^ 32 := by
-    rw [← VG.Proof.Bignum.WordStep32.recip_eq hd2 (by omega)]; rfl
+    rw [← VG.Proof.Bignum.WordStep32.recip_eq hd2 (by omega_using [hd1])]; rfl
   have hv32 : (2 ^ 64 - 1) / d - 2 ^ 32 < 2 ^ 32 := by
-    have : (2 ^ 64 - 1) / d < 2 ^ 33 := by rw [Nat.div_lt_iff_lt_mul (by omega)]; omega
-    omega
+    have : (2 ^ 64 - 1) / d < 2 ^ 33 := by rw [Nat.div_lt_iff_lt_mul (by omega_using [hd1])]; omega_using [hd1]
+    omega_using [this]
   refine ⟨?_, ?_, ?_⟩
   · rw [M₂.mem, Nat.zero_add, w32_write_self, U₁.other _ (by decide), hcx, hq, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hv32]
-  · rw [M₂.mem, U₁.mem, hmt, hm, Nat.zero_add]; exact writeW32_outside _ _ _ (by simp only [oV]; omega)
+  · rw [M₂.mem, U₁.mem, hmt, hm, Nat.zero_add]; exact writeW32_outside _ _ _ (by simp only [oV]; omega_using [])
   · refine ⟨fun r hr => ?_, by rw [M₂.rd, U₁.rd, Kt.2.1, K.2.1], by rw [M₂.wr, U₁.wr, Kt.2.2, K.2.2]⟩
     rw [M₂.gpr]
     by_cases e : r = .edi

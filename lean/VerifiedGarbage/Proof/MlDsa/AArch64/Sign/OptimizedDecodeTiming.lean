@@ -88,17 +88,17 @@ theorem positiveDecodeSecrets_tr {P : Prims} {S : Nat} (hP : PrimsOk P S) {p : P
   · simpa only [Nat.zero_add] using
       seqR_tr (Q := fun r => RootRS p S E (PositiveID p S · r 0 0)) p.ℓ 0
         (fun r _ hr => liftRootT (fun _ _ h => ⟨h.im.st,h.roots⟩)
-          (fun _ _ _ h => positiveDecodeS1_ok hP hc (by omega) h)
-          (positiveDecode_tr hP hs.2.2.2.2.2.2.1 (sLen_eq p) (hs.1 r (by omega)).1))
+          (fun _ _ _ h => positiveDecodeS1_ok hP hc (by omega_using [hr]) h)
+          (positiveDecode_tr hP hs.2.2.2.2.2.2.1 (sLen_eq p) (hs.1 r (by omega_using [hr])).1))
   · simpa only [Nat.zero_add] using
       seqR_tr (Q := fun i => RootRS p S E (PositiveID p S · p.ℓ i 0)) p.k 0
         (fun i _ hi => liftRootT (fun _ _ h => ⟨h.im.st,h.roots⟩)
-          (fun _ _ _ h => positiveDecodeS2_ok hP hc (by omega) h)
-          (positiveDecode_tr hP hs.2.2.2.2.2.2.1 (sLen_eq p) (hs.2.1 i (by omega)).1))
+          (fun _ _ _ h => positiveDecodeS2_ok hP hc (by omega_using [hi]) h)
+          (positiveDecode_tr hP hs.2.2.2.2.2.2.1 (sLen_eq p) (hs.2.1 i (by omega_using [hi])).1))
   · simpa only [Nat.zero_add] using
       seqR_tr (Q := fun i => RootRS p S E (PositiveID p S · p.ℓ p.k i)) p.k 0
         (fun i _ hi => liftRootT (fun _ _ h => ⟨h.im.st,h.roots⟩)
-          (fun _ _ _ h => positiveDecodeT0_ok hP hc (by omega) h)
-          (positiveDecode_tr hP (by decide) (by decide) (hs.2.2.1 i (by omega)).1))
+          (fun _ _ _ h => positiveDecodeT0_ok hP hc (by omega_using [hi]) h)
+          (positiveDecode_tr hP (by decide) (by decide) (hs.2.2.1 i (by omega_using [hi])).1))
 
 end VG.Proof.MlDsa.AArch64.Sign

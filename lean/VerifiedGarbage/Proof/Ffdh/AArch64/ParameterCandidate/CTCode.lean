@@ -76,7 +76,7 @@ theorem zeros_ct : RelCT isa (Two P2) (zeroOut kOut kLen) (Two P2') :=
       have hn := hs.nowrap
       have hZ : 128 * (((s.gpr .x3).toNat + 7) / 8) + 256 ≤ (stackArg s 0).toNat * 8 := k.dims.z
       have hL : (s.gpr .x1).toNat = ((s.gpr .x3).toNat + 7) / 8 := k.len
-      have hl : ∀ i < 32, InRegions (t.rd ++ t.wr) (off (s.gpr .x7) (8 * i)) 8 := fun i hi => hs.ld (by omega)
+      have hl : ∀ i < 32, InRegions (t.rd ++ t.wr) (off (s.gpr .x7) (8 * i)) 8 := fun i hi => hs.ld (by omega_using [hZ, hi])
       have hop : s.gpr .x0 = p.op := congrArg PP.op c.2
       have hpL : BitVec.ofNat 64 p.L = s.gpr .x1 := by
         rw [← c.2]; show BitVec.ofNat 64 (((s.gpr .x3).toNat + 7) / 8) = _; rw [← hL, ofNat_toNat64]
@@ -141,7 +141,7 @@ theorem code_ct (M : Mont) (R : Kernel) :
       have hs := hph.scr
       have hn := hs.nowrap
       have hZ := hph.dims.z
-      have hl : InRegions (t.rd ++ t.wr) (off p.B (8 * kUsedP)) 8 := hs.ld (by simp only [kUsedP, sFn, PP.L] at *; omega)
+      have hl : InRegions (t.rd ++ t.wr) (off p.B (8 * kUsedP)) 8 := hs.ld (by simp only [kUsedP, sFn, PP.L] at *; omega_using [hZ])
       refine WP.mono (WP.keep [.x2, .x3] (Q := fun t' => t'.gpr .x2 = p.up) (by
         brun [hph.x0, hdr_enc (show kUsedP < 32 by decide), hl, hph.args.usedP]) (by decide) (by decide)
         (by decide +kernel)) fun t' h2 r hr => ?_
@@ -159,7 +159,7 @@ theorem code_ct (M : Mont) (R : Kernel) :
         · intro hb; cases hb
       have hZ : 128 * (((s.gpr .x3).toNat + 7) / 8) + 256 ≤ (stackArg s 0).toNat * 8 := k.dims.z
       exact WP.seq_iff.mpr (WP.block_append_iff.mp (WP.mono (finNone_ok (up := s.gpr .x2) (k.hs.congr hf.keep.wr)
-        hf.x0 (show 8 * 32 ≤ (stackArg s 0).toNat * 8 by omega) hf.args.usedP (k.ou.congr hf.keep.wr).upw)
+        hf.x0 (show 8 * 32 ≤ (stackArg s 0).toNat * 8 by omega_using [hZ]) hf.args.usedP (k.ou.congr hf.keep.wr).upw)
         fun _ _ => trivial))
   · exact two_map id (fun p t h => h.1.m0 h.2) (main_ct M R)
 

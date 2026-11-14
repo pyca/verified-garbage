@@ -64,7 +64,7 @@ theorem fix_ok {w16 : Bool} {aP : Addr} {s₀ s : State} {L : List Zq}
   have hl := h.len
   refine WP.ite (s.gpr .x4 == 0) (eval_zero _ _) (fun _ => wp_nil ⟨h,Keep.refl _ _⟩) (fun hz => ?_)
   rw [eq_zero_iff,decide_eq_false_iff_not,h.x4] at hz
-  have hlt : L.length<256 := by omega
+  have hlt : L.length<256 := by omega_using [hz]
   refine wp_movz fun a ha ea => wp_strw (a := cAddr w16 aP L.length) (by decide)
     (by rw [ha.gpr .x3 (by decide),h.x3,ptr_zero])
     (by rw [ha.wr,h.wr]; exact hina _ hlt) fun u hu => wp_nil ?_
@@ -98,6 +98,6 @@ theorem loop_ok {w16 : Bool} {initial : List Zq} {N : Nat} {B : Nat → Byte} {b
   have hl := hb.len
   rw [eu,toNat_lsr,ec,BitVec.toNat_sub,hb.x4]
   simp only [BitVec.toNat_ofNat]
-  split <;> omega
+  split <;> omega_arith
 
 end VG.Proof.MlKem.AArch64.Rej8

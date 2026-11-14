@@ -86,7 +86,7 @@ theorem ctrPre_wp (h : Env s₀ C D P W R L) {i : Nat} {s : State} (hr : CR s₀
   obtain ⟨s₁, run₁, rdi₁, rsi₁, rdx₁, rcx₁, r8₁, r9₁, g₁, m₁, rd₁, wr₁⟩ := ctrPre_ok h hr.rbx hr.rbp hr.r15 hr.rd hr.wr
   have hz : Spec.Aes.bytesAt s₁.mem (W + BitVec.ofNat 64 80) 16 = Spec.Cmac.zeros 16 := by
     rw [m₁, bytesAt_frame (copyMem_frame _ _ _) (fun r hr => by
-      simp only [List.mem_singleton] at hr; subst hr; exact Offset.disjoint W (by omega) (by omega) (by omega))
+      simp only [List.mem_singleton] at hr; subst hr; exact Offset.disjoint W (by omega_using []) (by omega_using []) (by omega_using []))
       (by decide), zero2_bytes]
   have hr₁ := hr.keep g₁ rd₁ wr₁
   exact WP.of_runBlock ⟨s₁, run₁, h.cargs hr₁.rd hr₁.wr hr₁.rsp rdi₁ rsi₁ rdx₁ rcx₁ r8₁ r9₁ hz, hr₁⟩
@@ -141,10 +141,10 @@ theorem slot_keep (h : Env s₀ C D P W R L) {m m' : Mem} (hf : Frame (ctrRegion
   refine hf.readW (w := 64) (Region.contains_self _ _) (fun r hr => ?_) (by decide)
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl
-  · exact h.p_w.symm.sub_left (h.sW (by omega))
-  · exact Offset.disjoint W (by omega) (by omega) (by omega)
-  · exact Offset.disjoint W (by omega) (by omega) (by omega)
-  · exact (h.stk_w.sub_right (h.sW (by omega))).symm
+  · exact h.p_w.symm.sub_left (h.sW (by omega_using [hd']))
+  · exact Offset.disjoint W (by omega_using [hd]) (by omega_using [hd']) (by omega_using [])
+  · exact Offset.disjoint W (by omega_using [hd']) (by omega_using [hd']) (by omega_using [])
+  · exact (h.stk_w.sub_right (h.sW (by omega_using [hd']))).symm
 
 /-- What a block leaves, for the loop: the last block, or the next one. -/
 def BPost (s₀ : State) (C D P W : Addr) (R L i : Nat) (s : State) : Prop :=
@@ -160,7 +160,7 @@ theorem body_wp (v : Ctr32Impl) (h : Env s₀ C D P W R L) (hcp : (⟨C, 512⟩ 
   · exact Or.inl ⟨hc, hz, ⟨hd.rbx, hd.rbp, hd.r12, hd.r15, hd.rsp, hd.rd, hd.wr,
       by rw [slot_keep h hd.frame (by decide) (by decide)]; exact h208,
       by rw [slot_keep h hd.frame (by decide) (by decide)]; exact h216⟩⟩
-  · exact Or.inr ⟨hc, hz, by omega, m₀, q, x, hi', h208, h216⟩
+  · exact Or.inr ⟨hc, hz, by omega_using [hc], m₀, q, x, hi', h208, h216⟩
 
 theorem CI.cr {i : Nat} {s : State} (hs : CI s₀ C D P W R L i s) : CR s₀ C D P W R L i s :=
   let ⟨_, _, _, _, hi, _, _⟩ := hs; hi.cr
@@ -185,7 +185,7 @@ theorem loop_rel (v : Ctr32Impl) {s₀' : State} (h : Env s₀ C D P W R L) (h' 
   · omega
   · omega
   · exact ⟨by simp [eval, hz, hz'], fun e => by simp [eval, hz] at e, fun _ =>
-      ⟨L - 16 * (i + 1), by omega, i + 1, rfl, hci, hci'⟩⟩
+      ⟨L - 16 * (i + 1), by omega_using [hk, hc], i + 1, rfl, hci, hci'⟩⟩
 
 /-- What `ctr` needs of a run: the registers, the counter `Q` (whose last
 32 bits are below `2³¹`), and the slots of the data and its length. -/
@@ -283,7 +283,7 @@ theorem ctr_rel' (v : Ctr32Impl) {s₀' : State} (h : Env s₀ C D P W R L) (h' 
     ((loop_rel v h h' hq hcp hPw hPw' (L - 16 * wholeOf L)).mono (fun a b hab => by
       have hL : 16 * wholeOf L < L := by
         have e := hab.2; rw [show isa.eval .e a = a.zf from rfl, hab.1.1.1] at e
-        simp at e; omega
+        simp at e; omega_using [e]
       exact ⟨wholeOf L, rfl, hab.1.1.ci hL, hab.1.2.ci hL⟩) fun _ _ h => h)
   have we {σ s : State} (hσ : Env σ C D P W R L) (hs : CEnd σ C D P W R L s) :
       WP isa (.block [.mov .r13 (.mem (at_ .r15 dataOff)), .mov .r14 (.mem (at_ .r15 lenOff))]) s

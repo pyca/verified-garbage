@@ -6,6 +6,7 @@ public import VerifiedGarbage.Proof.Framework.Bitslice.Table
 meta import VerifiedGarbage.Proof.Framework.Bitslice.Table
 public import VerifiedGarbage.Proof.Framework.Lit
 meta import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # The SM4 S-box on all 256 inputs at once
@@ -44,7 +45,7 @@ theorem toList_getD_toNat (v : Vector Byte 256) (c : Nat) :
 
 theorem sboxN_eq {c : Nat} (hc : c < 256) : sboxN c = (sboxB (BitVec.ofNat 8 c)).toNat := by
   unfold sboxN sboxB sboxL
-  rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+  rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hc])]
   exact toList_getD_toNat _ _
 
 /-- The truth table of bit `j` of the S-box. -/

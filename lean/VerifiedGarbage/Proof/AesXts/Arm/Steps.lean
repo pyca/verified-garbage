@@ -40,8 +40,8 @@ theorem ushr31 (x : BitVec 32) : x >>> 31 = if x.msb then (1 : BitVec 32) else 0
   rw [BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow, BitVec.msb_eq_decide]
   have := x.isLt
   by_cases h : 2 ^ 31 ≤ x.toNat
-  · rw [decide_eq_true h]; show _ = 1; omega
-  · rw [decide_eq_false h]; show _ = 0; omega
+  · rw [decide_eq_true h]; show _ = 1; omega_using [h]
+  · rw [decide_eq_false h]; show _ = 0; omega_using [h]
 
 theorem mask_87 (x : BitVec 32) :
     (0 - (if x.msb then (1 : BitVec 32) else 0)) &&& (0x87 : BitVec 32) = if x.msb then (0x87 : BitVec 32) else 0 := by
@@ -55,7 +55,7 @@ theorem mulA_ok (s : State) {Q : Addr} (hq : State.addr (s.gpr .r6) = Q)
       (∀ r, r ≠ .r0 → r ≠ .r1 → r ≠ .r2 → r ≠ .r3 → r ≠ .r12 → r ≠ .lr → s'.gpr r = s.gpr r) ∧ s'.sp = s.sp ∧
       s'.mem = alphaMem s.mem Q ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
   have a (d : Nat) (hd : d < 16) : State.addr (s.gpr .r6 + BitVec.ofNat 32 d) = Q + BitVec.ofNat 64 d := by
-    rw [addr_add (by omega), hq]
+    rw [addr_add (by omega_using [hfit, hd]), hq]
   have a0 : State.addr (s.gpr .r6 + BitVec.ofNat 32 0) = Q := by rw [a 0 (by decide)]; simp
   have r0 : InRegions (s.rd ++ s.wr) Q 4 := by simpa using hr 0 4 (by decide)
   have w0 : InRegions s.wr Q 4 := by simpa using hw 0 4 (by decide)

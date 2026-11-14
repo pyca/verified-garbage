@@ -66,7 +66,7 @@ theorem loop_ok {s : State} {base : Addr} {size a b d n : Nat} {op : AluOp}
     (pa : PtrAt s base .ebp a) (pb : PtrAt s base .ebx b) (pd : PtrAt s base .edi d)
     (count : (s.gpr .edx).toNat=4*n) (mask : s.gpr .ecx=cmask false) :
     WP isa (VG.Impl.Rsa.X86.Chain.loop op) s (Inv s base a b d n n op) := by
-  have small : 4*n<2^32 := by have := (s.gpr .edx).isLt;omega
+  have small : 4*n<2^32 := by have := (s.gpr .edx).isLt;omega_using [count]
   have initial : Inv s base a b d n 0 op s := by
     refine ⟨Keeps.refl _ _,by simpa using pa,by simpa using pb,by simpa using pd,
       by simpa using count,Outside.refl _ _ _ _,false,mask,?_⟩
@@ -83,7 +83,7 @@ theorem loop_ok {s : State} {base : Addr} {size a b d n : Nat} {op : AluOp}
     refine wp_cmpS rfl fun v F Z => WP.block_nil ?_
     have J' := J.flags F
     have word : u.gpr .edx=BitVec.ofNat 32 (4*(n-(i+k))) :=
-      BitVec.eq_of_toNat_eq (by rw [J.count,BitVec.toNat_ofNat,Nat.mod_eq_of_lt (by omega)])
+      BitVec.eq_of_toNat_eq (by rw [J.count,BitVec.toNat_ofNat,Nat.mod_eq_of_lt (by omega_using [count])])
     have zero : v.zf=some (decide (i+k=n)) := by
       rw [Z,word]
       change some ((BitVec.ofNat 32 (4*(n-(i+k))) - 0#32 == 0#32)) = _
@@ -95,13 +95,13 @@ theorem loop_ok {s : State} {base : Addr} {size a b d n : Nat} {op : AluOp}
       · intro H
         have Hn := congrArg BitVec.toNat H
         simp only [BitVec.toNat_ofNat] at Hn
-        omega
+        omega_using [hn, ha, hb, hd, da, db, count, small, hi, hk, ik, H, Hn]
       · intro done
         simp [done]
     by_cases done : i+k=n
     · exact .inl ⟨by simp only [eval,zero,done,decide_true,Option.map_some,Bool.not_true],done ▸ J'⟩
     · exact .inr ⟨by simp only [eval,zero,decide_eq_false done,Option.map_some,Bool.not_false],
-        n-(i+k),by omega,i+k,rfl,by omega,J'⟩
+        n-(i+k),by omega_using [hi, hk],i+k,rfl,by omega_using [ik, done],J'⟩
   refine WP.seq (VG.Proof.Mont.X86.Square.wp_cmpCF rfl fun u F C => WP.block_nil ?_)
   have I' := I.flags F
   have choose : eval .ae u=some (!decide (4*(n-i)<32)) := by
@@ -112,10 +112,10 @@ theorem loop_ok {s : State} {base : Addr} {size a b d n : Nat} {op : AluOp}
   · intro yes
     have ik : i+8≤n := by
       have ge : ¬4*(n-i)<32 := by simpa using yes
-      omega
+      omega_using [ge]
     exact WP.mono (inv_chunk hw hop ha hb hd da db small ik I') fun v J => finish (by decide) ik J
   · intro _
-    have ik : i+1≤n := by omega
+    have ik : i+1≤n := by omega_using [hi]
     exact WP.mono (inv_chunk hw hop ha hb hd da db small ik I') fun v J => finish (by decide) ik J
 
 end VG.Proof.Rsa.X86.Chain

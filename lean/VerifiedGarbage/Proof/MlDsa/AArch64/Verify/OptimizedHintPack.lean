@@ -47,7 +47,7 @@ theorem hintPack_ok {p : Params} (hF : VFacts p) {S : Nat} {σ s : State} (hp : 
     (fun w hm=>by obtain rfl:=List.mem_singleton.mp hm;exact wo)
     (hp'.cs .x24 (by decide) (by decide))
   refine ⟨ht.vc,ht.roots,ht.hh,ht.hint,ht.nok,ht.gd,ht.a,ht.z,ht.c,fun j hj=>?_,ht.x24⟩
-  rcases (by omega : j<r∨j=r) with hj'|rfl
+  rcases (by omega_using [hj] : j<r∨j=r) with hj'|rfl
   · exact ht.rows j hj'
   · rw [hb.pa (L.ptrBs ro)]
     rw [hintRow_pa p s j,Proof.MlDsa.Verify.hintAt_row hs.hint hr,hw.2] at hv

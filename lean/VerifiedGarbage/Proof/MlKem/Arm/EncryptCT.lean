@@ -42,8 +42,8 @@ theorem decT1_ok {K : KemLay} {L : Lay} {i o : Nat} {x s : State} (hc : Ctx L x)
   have g4' : s.gpr .r4 = L.ptr i + BitVec.ofNat 32 o := by
     rw [h.kx.cs .r4 (by decide) (by decide) (by decide), g4]
   refine WP.mono (decTArgs_ok hc'.r7 g4' h.r9) fun s₁ ⟨_, a0, a1⟩ => ⟨?_, ?_⟩
-  · rw [a0, at384_eq _ (by omega), ptr_add_add32]
-  · rw [a1, slot_eq _ (by offs), show 2048 + 1024 * 0 + 1024 * j = 2048 + 1024 * j by omega]
+  · rw [a0, at384_eq _ (by omega_using [hj]), ptr_add_add32]
+  · rw [a1, slot_eq _ (by offs), show 2048 + 1024 * 0 + 1024 * j = 2048 + 1024 * j by omega_using []]
 
 theorem decT_ctG {K : KemLay} (hK : K.WF) {L : Lay} {i o : Nat} {x y : State} (hcx : Ctx L x) (hcy : Ctx L y)
     (g4x : x.gpr .r4 = L.ptr i + BitVec.ofNat 32 o) (g4y : y.gpr .r4 = L.ptr i + BitVec.ofNat 32 o)
@@ -52,7 +52,7 @@ theorem decT_ctG {K : KemLay} (hK : K.WF) {L : Lay} {i o : Nat} {x y : State} (h
     RelCT isa (fun a₁ a₂ => DecInv K L i o x j a₁ ∧ DecInv K L i o y j a₂) K.decTBody fun a₁ a₂ =>
       (DecInv K L i o x (j + 1) a₁ ∧ a₁.z = decide (j + 1 = K.k)) ∧
       (DecInv K L i o y (j + 1) a₂ ∧ a₂.z = decide (j + 1 = K.k)) := by
-  have hj4 : j < 4 := by have := hK.k4; omega
+  have hj4 : j < 4 := by have := hK.k4; omega_using [hj, this]
   refine relct_wp (RelCT.pointwise fun u w ⟨hu, hw⟩ => ?_) fun a₁ a₂ hab =>
     ⟨decT_step hK hcx g4x hs hrx hj hab.1, decT_step hK hcy g4y hs hry hj hab.2⟩
   refine RelCT.seq (R := fun (a₁ a₂ : State) =>
@@ -151,12 +151,12 @@ theorem v_ct {x y : State} (hx : VEnv K L b s₀₁ x) (hy : VEnv K L b s₀₂ 
   have hcy := hy.kx.ctx (by decide) hp₂.ctx
   have va : ∀ {s₀ s : State}, VEnv K L b s₀ s → ∀ j < K.k,
       PolyIs s.mem (L.A 0 (oPoly j)) (VG.Proof.MlKem.ekT (ekB K L b s₀) j) := fun h j hj => by
-    have := h.d.v j (by omega); simp only [hj, ↓reduceIte] at this; exact this
+    have := h.d.v j (by omega_using [hj]); simp only [hj, ↓reduceIte] at this; exact this
   have vv : ∀ {s₀ s : State}, VEnv K L b s₀ s → ∀ j < K.k,
       PolyIs s.mem (L.A 0 (oPoly (K.k + j))) (VG.Proof.MlKem.encY (rB L s₀) j) := fun h j hj => by
-    have := h.d.v (K.k + j) (by omega)
-    have e : ¬ (K.k + j < K.k) := by omega
-    simp only [e, ↓reduceIte, show K.k + j - K.k = j by omega] at this
+    have := h.d.v (K.k + j) (by omega_using [hj])
+    have e : ¬ (K.k + j < K.k) := by omega_using []
+    simp only [e, ↓reduceIte, show K.k + j - K.k = j by omega_using []] at this
     exact this
   -- `dot`
   refine RelCT.seq (R := fun (a b' : State) =>
@@ -187,8 +187,8 @@ theorem v_ct {x y : State} (hx : VEnv K L b s₀₁ x) (hy : VEnv K L b s₀₂ 
       ⟨evArgs_ok hp₁ hab.1.1 hab.1.2 (by kenc), evArgs_ok hp₂ hab.2.1 hab.2.2 (by kenc)⟩) ?_
   have e₂ : ∀ {s₀ s : State}, VEnv K L b s₀ s →
       PolyIs s.mem (L.A 0 (oPoly (3 * K.k))) (VG.Proof.MlKem.cbd (rB L s₀) (2 * K.k)) := fun h => by
-    have := h.d.e (2 * K.k) (by omega) (by omega)
-    rwa [show K.k + 2 * K.k = 3 * K.k by omega] at this
+    have := h.d.e (2 * K.k) (by omega_using []) (by omega_using [])
+    rwa [show K.k + 2 * K.k = 3 * K.k by omega_using []] at this
   refine RelCT.seq (R := fun (a b' : State) =>
       (VEnv K L b s₀₁ a ∧ PolyIs a.mem (L.A 0 K.oAcc)
         (add (nttInv (VG.Proof.MlKem.KPke.dotK (VG.Proof.MlKem.ekT (ekB K L b s₀₁)) (VG.Proof.MlKem.encY (rB L s₀₁)) K.k)) (VG.Proof.MlKem.cbd (rB L s₀₁) (2 * K.k)))) ∧
@@ -256,7 +256,7 @@ theorem encrypt_ct (hρ : ρE K L b s₀₁ = ρE K L b s₀₂) :
         (∀ k < K.k, PolyIs c.mem (L.A 0 (oPoly k)) (VG.Proof.MlKem.ekT (ekB K L b s₀₂) k)) ∧
         ∀ j < K.k, PolyIs c.mem (L.A 0 (oPoly (K.k + j))) (VG.Proof.MlKem.encY (rB L s₀₂) j)))
     (relct_wp (RelCT.pointwise fun a c hac =>
-      prfLoop_ct hK (L := L) true (N₀ := 0) (N₁ := K.k) hK.k1 (by omega)
+      prfLoop_ct hK (L := L) true (N₀ := 0) (N₁ := K.k) hK.k1 (by omega_using [])
         (EA.ctx hp₁ (enc2_ok hp₁ ex ρx hac.1).1) (EA.ctx hp₂ (enc2_ok hp₂ ey ρy hac.2).1) rfl rfl)
       fun a c hac =>
         ⟨let ⟨e, ρ', t⟩ := enc2_ok hp₁ ex ρx hac.1; enc3_ok hp₁ e ρ' t,
@@ -274,7 +274,7 @@ theorem encrypt_ct (hρ : ρE K L b s₀₁ = ρE K L b s₀₂) :
         ∀ N, K.k ≤ N → N < 2 * K.k + 1 →
           PolyIs c.mem (L.A 0 (oPoly (K.k + N))) (VG.Proof.MlKem.cbd (rB L s₀₂) N)))
     (relct_wp (RelCT.pointwise fun a c hac =>
-      prfLoop_ct hK (L := L) false (N₀ := K.k) (N₁ := 2 * K.k + 1) (by omega) (by omega)
+      prfLoop_ct hK (L := L) false (N₀ := K.k) (N₁ := 2 * K.k + 1) (by omega_using []) (by omega_using [])
         (EA.ctx hp₁ hac.1.1) (EA.ctx hp₂ hac.2.1) rfl rfl)
       fun a c hac => ⟨enc4_ok hp₁ hac.1.1 hac.1.2.1 (v_of hac.1.2.2.1 hac.1.2.2.2),
         enc4_ok hp₂ hac.2.1 hac.2.2.1 (v_of hac.2.2.2.1 hac.2.2.2.2)⟩) ?_

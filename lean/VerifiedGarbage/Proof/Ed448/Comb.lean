@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Ed448.Comb
 public import VerifiedGarbage.Proof.X448.BaseTable
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-! The table and scalar arithmetic of the four-column, 456-bit fixed-base comb. -/
 
@@ -34,7 +35,7 @@ def digit (k t : Nat) : Nat :=
 
 theorem digit_lt (k t : Nat) : digit k t < 16 := by
   unfold digit
-  omega
+  omega_using []
 
 /-- The represented scalar after processing all column bits above `n - 1`. -/
 def accScalar (k n : Nat) : Nat :=
@@ -49,7 +50,7 @@ private theorem limb_bit (k b t : Nat) (ht : t < 114) :
     (k / 2 ^ b % 2 ^ 114) / 2 ^ t % 2 = k / 2 ^ (t + b) % 2 := by
   have hpow : 2 ^ 114 = 2 ^ t * (2 * 2 ^ (113 - t)) := by
     rw [← Nat.pow_succ', ← Nat.pow_add]
-    congr 1; omega
+    congr 1; omega_using [ht]
   rw [hpow, Nat.mod_mul_right_div_self, Nat.mod_mul_right_mod,
     Nat.div_div_eq_div_mul, ← Nat.pow_add, Nat.add_comm b t]
 
@@ -60,7 +61,7 @@ private theorem limb_step (k b t : Nat) (ht : t < 114) :
       ((k / 2 ^ b % 2 ^ 114) / 2 ^ t) / 2 := by
     rw [Nat.pow_succ 2 t, Nat.div_div_eq_div_mul]
   rw [hd, ← limb_bit k b t ht]
-  omega
+  omega_using []
 
 private theorem weight_bits : ∀ a < 2, ∀ b < 2, ∀ c < 2, ∀ d < 2,
     weight (a + b * 2 + c * 4 + d * 8) =
@@ -75,7 +76,7 @@ theorem accScalar_step (k t : Nat) (ht : t < 114) :
   simp only [Nat.pow_zero, Nat.div_one, Nat.add_zero] at h0
   rw [digit, weight_bits _ (Nat.mod_lt _ (by decide)) _ (Nat.mod_lt _ (by decide))
     _ (Nat.mod_lt _ (by decide)) _ (Nat.mod_lt _ (by decide)), accScalar, h0, h1, h2, h3, accScalar]
-  omega
+  omega_using []
 
 theorem accScalar_total (k : Nat) (hk : k < 2 ^ 456) : accScalar k 0 = k := by
   simp only [accScalar, Nat.pow_zero, Nat.div_one]
@@ -86,6 +87,6 @@ theorem accScalar_total (k : Nat) (hk : k < 2 ^ 456) : accScalar k 0 = k := by
     rw [← Nat.pow_add]; exact hk)
   rw [Nat.div_div_eq_div_mul, ← Nat.pow_add] at h2 h3
   rw [Nat.mod_eq_of_lt h4]
-  omega
+  omega_using []
 
 end VG.Proof.Ed448.Comb

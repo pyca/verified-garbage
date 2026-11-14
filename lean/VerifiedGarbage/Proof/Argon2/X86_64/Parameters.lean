@@ -84,11 +84,11 @@ theorem code_ok (s : State) (p : Params) (h : Ready p s) :
     rw [lanes, h.lanesWord, show (4 : Addr) = BitVec.ofNat 64 4 from rfl, ← BitVec.ofNat_mul, Nat.mul_comm]
   have n : (a.gpr .rdi).toNat = p.memory := by
     rw [memory, h.memoryWord, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (Nat.lt_trans h.memoryBound (by decide))]
-  have bound : 4 * p.lanes < 2 ^ 32 := by have lanesBound := h.lanesBound; omega
+  have bound : 4 * p.lanes < 2 ^ 32 := by have lanesBound := h.lanesBound; omega_using [lanesBound]
   have d : (a.gpr .rsi).toNat = 4 * p.lanes := by
     rw [divisor, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (Nat.lt_trans bound (by decide))]
   refine WP.seq ((Divide.code_ok a (by rw [n]; exact h.memoryBound)
-    (by rw [d]; have positive := h.positive; omega) (by rw [d]; exact bound)).mono ?_)
+    (by rw [d]; have positive := h.positive; omega_using [positive]) (by rw [d]; exact bound)).mono ?_)
   rintro b ⟨quotient, _, kb⟩
   rw [n, d] at quotient
   have word : b.gpr .r9 = BitVec.ofNat 64 (p.memory / (4 * p.lanes)) := by

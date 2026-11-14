@@ -129,7 +129,7 @@ theorem preO_of {H : Spec.Mgf1.Hash} {ts : List FnTable} {s : State} (h : (encSp
     hs, hp, hl⟩ := h
   have hl := hl H hH
   rw [hl] at hrd osd sds ksd wsd
-  exact ⟨sp1, by omega, hrd, hwr, on, oe, ol, om, osd, osc, op, otl, ot, oa, ns, es, ls, ms, sds, sp, stl, st, sa,
+  exact ⟨sp1, by omega_using [sp2], hrd, hwr, on, oe, ol, om, osd, osc, op, otl, ot, oa, ns, es, ls, ms, sds, sp, stl, st, sa,
     ko, kn, ke, kl, km, ksd, ksc, kp, ktl, kt, ka, wo, wn, we, wl, wm, wsd, wsc, wp, wtl, wt, k1, k2, ok, e1, e2, hs,
     hp⟩
 
@@ -166,18 +166,18 @@ variable {D : Nat} {s : State} (P : PreO D s)
 include P
 
 theorem scLen : oRsa ≤ (stackArg s 5).toNat * 8 := by
-  have := P.hs; unfold Spec.RsaPss.publicScratchWords at this; unfold oRsa; omega
+  have := P.hs; unfold Spec.RsaPss.publicScratchWords at this; unfold oRsa; omega_using [this]
 
 theorem sc_sub : Region.Sub (SC S s) (scR s) := Region.sub_prefix (scLen P)
 
 theorem scR_contains {o n : Nat} (h : o + n ≤ oRsa) : (scR s).Contains (off (S s) o) n :=
-  Offset.contains_base _ (by have := scLen P; omega) (by unfold oRsa at h; omega)
+  Offset.contains_base _ (by have := scLen P; omega_using [h, this]) (by unfold oRsa at h; omega_using [h])
 
 theorem PreO.fits : Fits S s where
   sp1 := P.sp1
   sc := ⟨scR s, by rw [P.hwr]; simp, rfl, scLen P⟩
   ksc := P.ksc.sub_right (sc_sub P)
-  wS := by show (stackArg s 4).toNat + oRsa ≤ 2 ^ 64; have := P.wsc; have := scLen P; omega
+  wS := by show (stackArg s 4).toNat + oRsa ≤ 2 ^ 64; have := P.wsc; have := scLen P; omega_arith
 
 end
 

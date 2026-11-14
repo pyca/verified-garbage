@@ -30,7 +30,7 @@ theorem fixedArgs_ok (s : State) (offset size : Nat) (ho : offset < 2 ^ 31) (hn 
   have hsize : (BitVec.ofNat 32 size).setWidth 64 = BitVec.ofNat 64 size := by
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hn,
-      Nat.mod_eq_of_lt (by omega : size < 2 ^ 64)]
+      Nat.mod_eq_of_lt (by omega_using [hn] : size < 2 ^ 64)]
   apply WP.of_runBlock
   simp only [fixedArgs, runBlock_cons, runStep_some, runBlock_nil, exec, readSrc,
     readSrc32, execAlu, State.setReg32, RegUpd.gpr_setReg,

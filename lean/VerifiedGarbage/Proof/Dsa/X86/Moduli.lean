@@ -33,21 +33,21 @@ theorem Moduli.lengths {base : Addr} {size pLen qLen p q : Nat} {s : State}
     128 ≤ pLen ∧ pLen ≤ 384 ∧ 20 ≤ qLen ∧ qLen ≤ 32 ∧ qLen ≤ pLen := by
   have H := M.widths
   unfold Spec.Dsa.lengthsValid at H
-  omega
+  omega_using [H]
 
 /-- Every supported width is a whole number of 32-bit words. -/
 theorem Moduli.aligned {base : Addr} {size pLen qLen p q : Nat} {s : State}
     (M : Moduli base size pLen qLen p q s) : pLen % 4 = 0 ∧ qLen % 4 = 0 := by
   have H := M.widths
   unfold Spec.Dsa.lengthsValid at H
-  omega
+  omega_using [H]
 
 theorem Moduli.saved {base : Addr} {size pLen qLen p q : Nat} {s : State}
     (M : Moduli base size pLen qLen p q s) : Layout.saved ≤ size := by
   have H := M.extent
   change 15712 ≤ size at H
   change 8256 ≤ size
-  omega
+  omega_using [H]
 
 theorem Moduli.context {base : Addr} {size pLen qLen p q n : Nat} {s : State}
     (M : Moduli base size pLen qLen p q s) (hn : n ≤ 48) : contextBytes n ≤ size :=
@@ -55,11 +55,11 @@ theorem Moduli.context {base : Addr} {size pLen qLen p q n : Nat} {s : State}
 
 theorem Moduli.pReady {base : Addr} {size pLen qLen p q : Nat} {s : State}
     (M : Moduli base size pLen qLen p q s) : OperandReady s base ((pLen + 7) / 8) (.input .p) pLen :=
-  M.pBuffer.ready (M.context (by have := M.lengths; omega))
+  M.pBuffer.ready (M.context (by have := M.lengths; omega_using [this]))
 
 theorem Moduli.qReady {base : Addr} {size pLen qLen p q : Nat} {s : State}
     (M : Moduli base size pLen qLen p q s) : OperandReady s base ((qLen + 7) / 8) (.input .q) qLen :=
-  M.qBuffer.ready (M.context (by have := M.lengths; omega))
+  M.qBuffer.ready (M.context (by have := M.lengths; omega_using [this]))
 
 theorem Moduli.valueBounds {base : Addr} {size pLen qLen p q : Nat} {s : State}
     (M : Moduli base size pLen qLen p q s) : p < 256 ^ pLen ∧ q < 256 ^ qLen := by

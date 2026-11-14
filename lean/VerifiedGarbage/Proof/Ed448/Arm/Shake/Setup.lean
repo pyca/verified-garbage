@@ -50,7 +50,7 @@ theorem setArg_ok {s : State} {E : BitVec 32} {r : Reg} {v : Value}
   | caller j d =>
     obtain ⟨hj, hd⟩ := hv
     have hj' : j < 16 := by omega
-    have ha : 248 + 4 * j < 4096 := by omega
+    have ha : 248 + 4 * j < 4096 := by omega_using [hj']
     have he' : State.addr (E + BitVec.ofNat 32 (248 + 4 * j)) =
         State.addr E + BitVec.ofNat 64 (248 + 4 * j) := addr_add (by omega)
     have enc : encodable (BitVec.ofNat 32 d) = true := by
@@ -59,7 +59,7 @@ theorem setArg_ok {s : State} {E : BitVec 32} {r : Reg} {v : Value}
       simp only [Nat.mul_zero, BitVec.rotateLeft, BitVec.rotateLeftAux, Nat.zero_mod, Nat.sub_zero,
         BitVec.shiftLeft_zero, BitVec.ushiftRight_eq_zero (Nat.le_refl 32), BitVec.or_zero,
         BitVec.toNat_ofNat, decide_eq_true_eq]
-      omega
+      omega_using [hd]
     have hr' := hr j d rfl
     apply WP.of_runBlock
     simp only [setArg, Whole.value, runBlock_cons, runStep_some, runBlock_nil, exec,
@@ -113,7 +113,7 @@ theorem value_frame {E : BitVec 32} {m m' : Mem}
       (Region.contains_self _ _) ?_ (by decide)
     rintro r hr
     rw [List.mem_singleton.mp hr]
-    exact Offset.disjoint_base _ (d := 248 + 4 * j) (by omega) (by omega)
+    exact Offset.disjoint_base _ (d := 248 + 4 * j) (by omega_using []) (by omega)
 
 theorem putArg_ok {s : State} {E : BitVec 32} {j : Nat} {v : Value}
     (he : s.sp = E) (hE : Fits E n) (hj : j < 6) (hv : valid n v)
@@ -126,7 +126,7 @@ theorem putArg_ok {s : State} {E : BitVec 32} {j : Nat} {v : Value}
   · intro i d h
     subst v
     exact hr i hv.1
-  have hoff : 4 * j < 256 := by omega
+  have hoff : 4 * j < 256 := by omega_using [hj]
   have ha : State.addr (E + BitVec.ofNat 32 (4 * j)) = State.addr E + BitVec.ofNat 64 (4 * j) :=
     addr_add (by omega)
   apply WP.of_runBlock
@@ -139,7 +139,7 @@ theorem putArg_ok {s : State} {E : BitVec 32} {j : Nat} {v : Value}
     rw [RegUpd.gpr_setReg_of_ne _ _ h12]
     exact hu.regs r (by simpa using h0)
   · exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _
-      (Offset.contains_base _ (by omega) (by omega))
+      (Offset.contains_base _ (by omega_using [hj]) (by omega_using [hj]))
 
 structure StackReady (E : BitVec 32) (s : State) (start : Nat) (vs : List Value) (t : State) : Prop where
   step : Whole.StackStep E s t
@@ -158,9 +158,9 @@ theorem setupStack_ok {E : BitVec 32} (hE : Fits E n)
   | nil => exact WP.block_nil ⟨.refl _ _, Frame.refl _ _, fun j hj => by simp at hj⟩
   | cons v vs ih =>
     rw [setupStack, WP.block_append_iff]
-    have hj : start < 6 := by simp only [List.length_cons] at hs; omega
+    have hj : start < 6 := by simp only [List.length_cons] at hs; omega_using [hs]
     refine WP.mono (putArg_ok he hE hj (hv v List.mem_cons_self) hr (hw start hj)) fun u ⟨hu, hmem⟩ => ?_
-    refine WP.mono (ih (hu.sp.trans he) (by simp only [List.length_cons] at hs; omega)
+    refine WP.mono (ih (hu.sp.trans he) (by simp only [List.length_cons] at hs; omega_using [hs])
       (fun v hv' => hv v (List.mem_cons_of_mem _ hv'))
       (by intro j hj; rw [hu.rd, hu.wr]; exact hr j hj)
       (by intro j hj; rw [hu.wr]; exact hw j hj)) fun t ht => ?_
@@ -168,12 +168,12 @@ theorem setupStack_ok {E : BitVec 32} (hE : Fits E n)
     · have first : Frame [⟨State.addr E + BitVec.ofNat 64 (4 * start), 4 * (v :: vs).length⟩] s.mem u.mem := by
         rw [hmem]
         exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _
-          (by simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero, Nat.zero_add, List.length_cons]; omega)
+          (by simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero, Nat.zero_add, List.length_cons]; omega_using [])
       refine first.trans (Frame.sub ht.frame ?_)
       intro r hr
       rw [List.mem_singleton.mp hr]
       refine ⟨_, List.mem_singleton_self _, ?_⟩
-      exact Offset.sub _ (by omega) (by simp only [List.length_cons]; omega)
+      exact Offset.sub _ (by omega_using []) (by simp only [List.length_cons]; omega_using [])
     · intro j hj'
       cases j with
       | zero =>
@@ -182,7 +182,7 @@ theorem setupStack_ok {E : BitVec 32} (hE : Fits E n)
           (Region.contains_self _ _) (by
             intro r hr
             rw [List.mem_singleton.mp hr]
-            exact Offset.disjoint _ (by omega) (by omega) (by simp only [List.length_cons] at hs; omega)) (by decide)]
+            exact Offset.disjoint _ (by omega_using []) (by omega_using [hs]) (by simp only [List.length_cons] at hs; omega_using [hs])) (by decide)]
         rw [hmem, Mem.readW_writeW_self32]
       | succ j =>
         have hj : j < vs.length := by simpa using hj'
@@ -212,7 +212,7 @@ theorem Ctx.setup {E : BitVec 32} {g : Reg → BitVec 32}
     exact ⟨R, List.mem_append_left _ hR, hcon⟩
   have write : ∀ j < 6, InRegions s.wr (State.addr E + BitVec.ofNat 64 (4 * j)) 4 := by
     intro j hj
-    exact hc.writable_frame (Offset.contains_base _ (by omega) (by omega))
+    exact hc.writable_frame (Offset.contains_base _ (by omega_using [hj]) (by omega_using [hj]))
   rw [Impl.Ed25519.Arm.Whole.setup, WP.block_append_iff]
   refine WP.mono (setupStack_ok hE hc.sp (by simpa using hs) hvs read write) fun u hu => ?_
   refine WP.mono (setupRegs_ok (hu.step.sp.trans hc.sp) hE hn hv

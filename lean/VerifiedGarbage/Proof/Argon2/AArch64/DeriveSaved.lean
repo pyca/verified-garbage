@@ -20,7 +20,7 @@ theorem frameStart_sp (s : State) (rs : List Reg) :
     rw [frameStart, ih]
     change s.sp - 16 - BitVec.ofNat 64 (272 + 16 * rs.length) = _
     rw [BitVec.sub_sub, show (16 : Addr) = BitVec.ofNat 64 16 from rfl, ← BitVec.ofNat_add]
-    exact congrArg (fun n => s.sp - BitVec.ofNat 64 n) (by simp only [List.length_cons]; omega)
+    exact congrArg (fun n => s.sp - BitVec.ofNat 64 n) (by simp only [List.length_cons]; omega_using [])
 
 theorem frameStart_reg (s : State) (rs : List Reg) (r : Reg) :
     (frameStart s rs).gpr r = s.gpr r := by
@@ -39,12 +39,12 @@ theorem frameStart_frame (s : State) (rs : List Reg)
   induction rs generalizing s with
   | nil => exact Frame.refl _ _
   | cons r rs ih =>
-    have enough : 16 ≤ s.sp.toNat := by simp only [List.length_cons] at space; omega
+    have enough : 16 ≤ s.sp.toNat := by simp only [List.length_cons] at space; omega_using [space]
     have innerSpace : 272 + 16 * rs.length ≤ (pushed r s).sp.toNat := by
       change 272 + 16 * rs.length ≤ (s.sp - 16).toNat
       rw [BitVec.toNat_sub_of_le (by rw [BitVec.le_def]; exact enough)]
       change 272 + 16 * rs.length ≤ s.sp.toNat - 16
-      simp only [List.length_cons] at space; omega
+      simp only [List.length_cons] at space; omega_using [space]
     have outer : Frame [below s.sp 16] s.mem (pushed r s).mem := by
       change Frame [⟨s.sp - 16, 16⟩] s.mem (s.mem.writeW (s.sp - 16) (s.gpr r))
       exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _
@@ -54,8 +54,8 @@ theorem frameStart_frame (s : State) (rs : List Reg)
     apply (outer.sub ?_).trans (inner.sub ?_)
     · intro region hr
       simp only [List.mem_singleton] at hr; subst region
-      exact ⟨_, List.mem_singleton_self _, below_sub (by simp only [List.length_cons]; omega) (by
-        have := s.sp.isLt; omega)⟩
+      exact ⟨_, List.mem_singleton_self _, below_sub (by simp only [List.length_cons]; omega_using []) (by
+        have := s.sp.isLt; omega_using [space])⟩
     · intro region hr
       simp only [List.mem_singleton] at hr; subst region
       refine ⟨_, List.mem_singleton_self _, ?_⟩
@@ -63,8 +63,8 @@ theorem frameStart_frame (s : State) (rs : List Reg)
         (below s.sp (272 + 16 * (r :: rs).length))
       simp only [List.length_cons, below]
       rw [BitVec.sub_sub, show (16 : Addr) = BitVec.ofNat 64 16 from rfl, ← BitVec.ofNat_add,
-        show 16 + (272 + 16 * rs.length) = 272 + 16 * (rs.length + 1) by omega]
-      exact Region.sub_prefix (by omega)
+        show 16 + (272 + 16 * rs.length) = 272 + 16 * (rs.length + 1) by omega_using []]
+      exact Region.sub_prefix (by omega_using [])
 
 theorem frameEnd_mem (s : State) (rs : List Reg) : (frameEnd s rs).mem = s.mem := by
   induction rs with
@@ -84,12 +84,12 @@ theorem frameStart_word (s : State) (rs : List Reg)
   induction rs generalizing s j with
   | nil => exact absurd bound (Nat.not_lt_zero _)
   | cons r rs ih =>
-    have enough : 16 ≤ s.sp.toNat := by simp only [List.length_cons] at space; omega
+    have enough : 16 ≤ s.sp.toNat := by simp only [List.length_cons] at space; omega_using [space]
     have innerSpace : 272 + 16 * rs.length ≤ (pushed r s).sp.toNat := by
       change 272 + 16 * rs.length ≤ (s.sp - 16).toNat
       rw [BitVec.toNat_sub_of_le (by rw [BitVec.le_def]; exact enough)]
       change 272 + 16 * rs.length ≤ s.sp.toNat - 16
-      simp only [List.length_cons] at space; omega
+      simp only [List.length_cons] at space; omega_using [space]
     cases j with
     | zero =>
       have inner := frameStart_frame (pushed r s) rs innerSpace
@@ -100,7 +100,7 @@ theorem frameStart_word (s : State) (rs : List Reg)
           simp only [List.mem_singleton] at hr; subst region
           apply Offset.base_disjoint_below
           have limit := s.sp.isLt
-          simp only [List.length_cons] at space; omega) (by decide)
+          simp only [List.length_cons] at space; omega_using [space]) (by decide)
       change (frameStart (pushed r s) rs).mem.readW (s.sp - 16) 64 = s.gpr r
       change (frameStart (pushed r s) rs).mem.readW (s.sp - 16) 64 =
         (pushed r s).mem.readW (s.sp - 16) 64 at unchanged
@@ -112,6 +112,6 @@ theorem frameStart_word (s : State) (rs : List Reg)
       change (frameStart (pushed r s) rs).mem.readW
         (s.sp - 16 - BitVec.ofNat 64 (16 * (j + 1))) 64 = s.gpr rs[j] at word
       rw [BitVec.sub_sub, show (16 : Addr) = BitVec.ofNat 64 16 from rfl, ← BitVec.ofNat_add,
-        show 16 + 16 * (j + 1) = 16 * (j + 1 + 1) by omega] at word
+        show 16 + 16 * (j + 1) = 16 * (j + 1 + 1) by omega_using []] at word
       exact word
 end VG.Proof.Argon2.AArch64.Derive

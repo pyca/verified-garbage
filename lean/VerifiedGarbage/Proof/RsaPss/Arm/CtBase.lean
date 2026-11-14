@@ -40,9 +40,9 @@ theorem L_le : h.L ≤ 16 := h.ok.sizes.L16
 theorem D_le : h.D ≤ h.N := h.ok.sizes.DN
 theorem D_pos : 0 < h.D := h.ok.sizes.D0
 theorem NL : h.N + h.L ≤ h.B := h.ok.sizes.NL
-theorem so_le : h.H.md.so ≤ 512 := by have := h.ok.sizes.so; have := h.ok.sizes.W; omega
-theorem B_le : h.B ≤ 128 := by rcases h.B_cases with e | e <;> omega
-theorem B_ge : 64 ≤ h.B := by rcases h.B_cases with e | e <;> omega
+theorem so_le : h.H.md.so ≤ 512 := by have := h.ok.sizes.so; have := h.ok.sizes.W; omega_arith
+theorem B_le : h.B ≤ 128 := by rcases h.B_cases with e | e <;> omega_using [e]
+theorem B_ge : 64 ≤ h.B := by rcases h.B_cases with e | e <;> omega_using [e]
 theorem S_eq : h.H.md.st.S = h.N + h.B := h.ok.sizes.S
 
 theorem lg : lgB h.sh = 6 ∧ h.B = 64 ∨ lgB h.sh = 7 ∧ h.B = 128 := by
@@ -70,10 +70,10 @@ include hg
 
 theorem scr_lt {o : Nat} (h : o ≤ oRsa) : (scr + BitVec.ofNat 32 o).toNat = scr.toNat + o := by
   have := hg.fit; unfold oRsa at *
-  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := o) (by omega), Nat.mod_eq_of_lt (by omega)]
+  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := o) (by omega_using [h]), Nat.mod_eq_of_lt (by omega_using [h, this])]
 
 theorem byteAt_scr {o i : Nat} (h : o + i < oRsa) : byteAt (scr + BitVec.ofNat 32 o) i = sa scr (o + i) := by
-  rw [byteAt, hg.addr (by omega), sa, BitVec.add_assoc, BitVec.ofNat_add_ofNat]
+  rw [byteAt, hg.addr (by omega_using [h]), sa, BitVec.add_assoc, BitVec.ofNat_add_ofNat]
 
 /-- A range of our part of `scratch`, as a buffer the body writes. -/
 theorem wbuf {o n : Nat} (h : o + n ≤ oRsa) (hn : 0 < n) : WBuf L (scr + BitVec.ofNat 32 o) n := by
@@ -81,11 +81,11 @@ theorem wbuf {o n : Nat} (h : o + n ≤ oRsa) (hn : 0 < n) : WBuf L (scr + BitVe
   obtain ⟨k, hk, hR⟩ := hg.sub
   have fit := hg.fit
   unfold oRsa at h hk fit
-  refine ⟨by rw [hg.scr_lt (by unfold oRsa; omega)]; omega, by omega, ⟨_, List.mem_cons_of_mem _ hR, ?_⟩, ?_⟩
-  · rw [hg.addr (by unfold oRsa; omega)]
-    exact Offset.contains_base _ (by omega) (by omega)
-  · rw [hg.addr (by unfold oRsa; omega)]
-    exact hg.slot ok (o := o) (n := n) (by unfold oRsa; omega) (by rw [hg.F]; decide)
+  refine ⟨by rw [hg.scr_lt (by unfold oRsa; omega_using [h])]; omega_using [h, fit], by omega_using [h], ⟨_, List.mem_cons_of_mem _ hR, ?_⟩, ?_⟩
+  · rw [hg.addr (by unfold oRsa; omega_using [h, hn])]
+    exact Offset.contains_base _ (by omega_using [h, hk]) (by omega_using [h])
+  · rw [hg.addr (by unfold oRsa; omega_using [h, hn])]
+    exact hg.slot ok (o := o) (n := n) (by unfold oRsa; omega_using [h]) (by rw [hg.F]; decide)
 
 theorem rbuf {o n : Nat} (h : o + n ≤ oRsa) (hn : 0 < n) : RBuf L (scr + BitVec.ofNat 32 o) n := (hg.wbuf h hn).rbuf
 
@@ -108,19 +108,19 @@ theorem sa_write (scr : BitVec 32) (m : Mem) {o i : Nat} (b : Byte) (ho : o < 2 
 /-- A byte written within a range of our part of `scratch`. -/
 theorem frame_byte (scr : BitVec 32) (m : Mem) {o n x : Nat} (b : Byte) (h₁ : o ≤ x) (h₂ : x < o + n)
     (hn : o + n < 2 ^ 64) : Frame [sR scr o n] m (m.writeW (sa scr x) b) :=
-  (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Offset.contains _ h₁ (by omega) (by omega))
+  (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Offset.contains _ h₁ (by omega_using [h₂]) (by omega_using [hn]))
 
 /-- Bytes of our part of `scratch` kept by writes elsewhere. -/
 theorem sbytes_keep {rs : List Region} {m m' : Mem} (hf : Frame rs m m') {o n : Nat}
     (hd : ∀ r ∈ rs, Region.Disjoint (sR scr o n) r) (hn : o + n < 2 ^ 64) {f : Nat → Byte}
     (h : ∀ i < n, m (sa scr (o + i)) = f i) : ∀ i < n, m' (sa scr (o + i)) = f i := fun i hi => by
   rw [← h i hi]
-  refine hf _ fun r hr hc => hd r hr _ (Offset.contains _ (Nat.le_add_right _ _) (by omega) (by omega)) hc
+  refine hf _ fun r hr hc => hd r hr _ (Offset.contains _ (Nat.le_add_right _ _) (by omega_using [hi]) (by omega_using [hn])) hc
 
 /-- A hash value kept by writes elsewhere. -/
 theorem stateAt_keep (h : PssHash) {rs : List Region} {m m' : Mem} (hf : Frame rs m m') {o : Nat}
     (hd : ∀ r ∈ rs, Region.Disjoint (sR scr o h.N) r) : h.md.stateAt m' (sa scr o) = h.md.stateAt m (sa scr o) :=
-  h.md.stateAt_congr fun _ hi => hf.bytes (R := sR scr o h.N) hd (by show h.N ≤ 2 ^ 64; have := h.N_le; omega) hi
+  h.md.stateAt_congr fun _ hi => hf.bytes (R := sR scr o h.N) hd (by show h.N ≤ 2 ^ 64; have := h.N_le; omega_using [this]) hi
 
 /-- A frame within a sub-list of regions. -/
 theorem Frame.subset {rs rs' : List Region} {m m' : Mem} (h : Frame rs m m') (hs : ∀ r ∈ rs, r ∈ rs') :
@@ -154,36 +154,36 @@ theorem padY_eq {B L : Nat} (hB : 0 < B) (hLB : L < B) (msg lenB : List Byte) {i
   generalize hfb : (msg.length + L) / B = fb at hlt hge hi
   have hdiv : i / B ≤ fb := by
     have := (Nat.div_lt_iff_lt_mul hB).mpr (show i < (fb + 1) * B by rw [Nat.mul_comm]; exact hi)
-    omega
+    omega_using [this]
   have hmod := Nat.div_add_mod i B
   have hmodl := Nat.mod_lt i hB
   have e2 : B * (fb + 1) = B * fb + B := Nat.mul_succ _ _
   rw [Nat.mul_comm] at hge
   simp only [padY, RsaPss.padded, RsaPss.lastBlk, hfb, lenBlk]
   by_cases h1 : i < msg.length
-  · rw [ite_eq_left h1, ite_eq_right (by omega)]
+  · rw [ite_eq_left h1, ite_eq_right (by omega_using [h1])]
     by_cases h3 : i / B = fb
     · have e1 : B * (i / B) = B * fb := by rw [h3]
-      rw [ite_eq_left h3, ite_eq_left (by omega), or_zero, or_zero]
+      rw [ite_eq_left h3, ite_eq_left (by omega_using [hB, hLB, hfb, hlt, hge, hi, hdiv, hmod, hmodl, e2, h1, h3, e1]), or_zero, or_zero]
     · rw [ite_eq_right h3, or_zero, or_zero]
-  · rw [ite_eq_right h1, getD_ge (by omega), zero_or]
+  · rw [ite_eq_right h1, getD_ge (by omega_using [h1]), zero_or]
     by_cases h2 : i = msg.length
     · rw [ite_eq_left h2, ite_eq_left h2]
       by_cases h3 : i / B = fb
       · have e1 : B * (i / B) = B * fb := by rw [h3]
-        rw [ite_eq_left h3, ite_eq_left (by omega), or_zero]
+        rw [ite_eq_left h3, ite_eq_left (by omega_using [hB, hLB, hfb, hlt, hge, hi, hdiv, hmod, hmodl, e2, h1, h2, h3, e1]), or_zero]
       · rw [ite_eq_right h3, or_zero]
     · rw [ite_eq_right h2, ite_eq_right h2, zero_or]
       by_cases h3 : i / B = fb
       · rw [ite_eq_left h3]
         have e1 : B * (i / B) = B * fb := by rw [h3]
-        have hm : i % B = i - B * fb := by omega
+        have hm : i % B = i - B * fb := by omega_using [hB, hLB, hfb, hlt, hge, hi, hdiv, hmod, hmodl, e2, h1, h2, h3, e1]
         by_cases h4 : B * fb + B - L ≤ i ∧ i < B * fb + B
-        · rw [ite_eq_right (by omega), ite_eq_left h4]
-          congr 1; omega
-        · rw [ite_eq_right h4, ite_eq_left (by omega)]
+        · rw [ite_eq_right (by omega_using [hB, hLB, hfb, hlt, hge, hi, hdiv, hmod, hmodl, e2, h1, h2, h3, e1, hm, h4]), ite_eq_left h4]
+          congr 1; omega_using [hB, hLB, hfb, hlt, hge, hi, hdiv, hmod, hmodl, e2, h1, h2, h3, e1, hm, h4]
+        · rw [ite_eq_right h4, ite_eq_left (by omega_using [hB, hLB, hfb, hlt, hge, hi, hdiv, hmod, hmodl, e2, h1, h2, h3, e1, hm, h4])]
       · rw [ite_eq_right h3, ite_eq_right (by
           intro ⟨h5, _⟩
-          exact h3 (Nat.le_antisymm hdiv ((Nat.le_div_iff_mul_le hB).mpr (by rw [Nat.mul_comm]; omega))))]
+          exact h3 (Nat.le_antisymm hdiv ((Nat.le_div_iff_mul_le hB).mpr (by rw [Nat.mul_comm]; omega_arith))))]
 
 end VG.Proof.RsaPss.Arm

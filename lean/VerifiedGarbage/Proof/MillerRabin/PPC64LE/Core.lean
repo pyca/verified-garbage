@@ -32,7 +32,7 @@ theorem core_ok {s : State} {B : Addr} {Z w c b : Nat} (h : MCtx s B Z w) (hc : 
       Mut B w s.mem t.mem ∧ Keep coreRegs s t := by
   have hcw : c < 16 ^ (16 * w) := by
     rw [← hc.cand, show (16 : Nat) ^ (16 * w) = 2 ^ (32 * (2 * w)) by
-      rw [show (16 : Nat) = 2 ^ 4 from rfl, ← Nat.pow_mul]; congr 1; omega]
+      rw [show (16 : Nat) = 2 ^ 4 from rfl, ← Nat.pow_mul]; congr 1; omega_using []]
     exact val32_lt _ _ _ _
   have hE : mrE c < 16 ^ (16 * w) :=
     Nat.lt_of_le_of_lt (Nat.le_trans (Nat.div_le_self _ _) (Nat.sub_le _ _)) hcw

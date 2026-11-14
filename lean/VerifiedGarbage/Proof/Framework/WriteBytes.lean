@@ -31,7 +31,7 @@ theorem writeW8_apply (m : Mem) (a x : Addr) (b : Byte) :
   · have : ¬ (x - a).toNat < 8 / 8 := by
       intro h'
       apply h
-      have : (x - a).toNat = 0 := by omega
+      have : (x - a).toNat = 0 := by omega_using [h']
       have : x - a = 0 := BitVec.eq_of_toNat_eq (by simpa using this)
       rw [← BitVec.sub_add_cancel x a, this]; exact BitVec.zero_add a
     simp only [this, h, ite_false]
@@ -53,9 +53,9 @@ theorem writeBytes_snoc (m : Mem) (q : Addr) (xs : List Byte) (b : Byte) (h : xs
       rw [← BitVec.sub_add_cancel a q, this, BitVec.add_comm]
     simp only [ha, ite_false]
     by_cases hl : (a - q).toNat < xs.length
-    · simp only [show (a - q).toNat < xs.length + 1 by omega, hl, ite_true]
+    · simp only [show (a - q).toNat < xs.length + 1 by omega_using [hl], hl, ite_true]
       simp only [List.getD_eq_getElem?_getD, List.getElem?_append_left hl]
-    · simp only [show ¬ (a - q).toNat < xs.length + 1 by omega, hl, ite_false]
+    · simp only [show ¬ (a - q).toNat < xs.length + 1 by omega_using [hne, hl], hl, ite_false]
 
 /-- The bytes before `q` (within `2⁶⁴ - |xs|`) are unchanged. -/
 theorem writeBytes_before (m : Mem) (q : Addr) (xs : List Byte) {i d : Nat} (hi : i < d)
@@ -65,9 +65,9 @@ theorem writeBytes_before (m : Mem) (q : Addr) (xs : List Byte) {i d : Nat} (hi 
   split
   · rename_i hc
     rw [show q + BitVec.ofNat 64 i - (q + BitVec.ofNat 64 d) = BitVec.ofNat 64 i - BitVec.ofNat 64 d by
-      rw [← BitVec.sub_sub, BitVec.add_comm q, BitVec.add_sub_cancel], BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := i) (by omega),
-      Nat.mod_eq_of_lt (a := d) (by omega), show 2 ^ 64 - d + i = 2 ^ 64 - (d - i) by omega,
-      Nat.mod_eq_of_lt (by omega)] at hc
+      rw [← BitVec.sub_sub, BitVec.add_comm q, BitVec.add_sub_cancel], BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := i) (by omega_using [hi, h]),
+      Nat.mod_eq_of_lt (a := d) (by omega_using [h]), show 2 ^ 64 - d + i = 2 ^ 64 - (d - i) by omega_using [hi, h],
+      Nat.mod_eq_of_lt (by omega_using [hi])] at hc
     omega
   · rfl
 
@@ -99,19 +99,19 @@ theorem writeBytes_append (m : Mem) (q : Addr) (xs ys : List Byte) (h : xs.lengt
       ((a - q).toNat + (18446744073709551616 - xs.length)) % 18446744073709551616 := by
     rw [show a - (q + BitVec.ofNat 64 xs.length) = (a - q) - BitVec.ofNat 64 xs.length from
         (BitVec.sub_sub _ _ _).symm,
-      BitVec.toNat_sub, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := xs.length) (by omega),
+      BitVec.toNat_sub, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := xs.length) (by omega_using [h]),
       Nat.add_comm]
   have hlt : (a - q).toNat < 18446744073709551616 := (a - q).isLt
   have h' : xs.length + ys.length < 18446744073709551616 := h
   by_cases h1 : (a - q).toNat < xs.length
-  · have ht : ¬ (a - (q + BitVec.ofNat 64 xs.length)).toNat < ys.length := by rw [hq]; omega
-    simp only [ht, h1, ite_false, ite_true, show (a - q).toNat < xs.length + ys.length by omega]
+  · have ht : ¬ (a - (q + BitVec.ofNat 64 xs.length)).toNat < ys.length := by rw [hq]; omega_using [h, h1]
+    simp only [ht, h1, ite_false, ite_true, show (a - q).toNat < xs.length + ys.length by omega_using [h1]]
     simp only [List.getD_eq_getElem?_getD, List.getElem?_append_left h1]
-  · have ht : (a - (q + BitVec.ofNat 64 xs.length)).toNat = (a - q).toNat - xs.length := by rw [hq]; omega
+  · have ht : (a - (q + BitVec.ofNat 64 xs.length)).toNat = (a - q).toNat - xs.length := by rw [hq]; omega_using [h1]
     simp only [ht, h1, ite_false]
     by_cases h2 : (a - q).toNat < xs.length + ys.length
-    · simp only [show (a - q).toNat - xs.length < ys.length by omega, h2, ite_true]
-      simp only [List.getD_eq_getElem?_getD, List.getElem?_append_right (by omega : xs.length ≤ (a - q).toNat)]
-    · simp only [show ¬ (a - q).toNat - xs.length < ys.length by omega, h2, ite_false]
+    · simp only [show (a - q).toNat - xs.length < ys.length by omega_using [h1, h2], h2, ite_true]
+      simp only [List.getD_eq_getElem?_getD, List.getElem?_append_right (by omega_using [h1] : xs.length ≤ (a - q).toNat)]
+    · simp only [show ¬ (a - q).toNat - xs.length < ys.length by omega_using [h2], h2, ite_false]
 
 end VG.WriteBytes

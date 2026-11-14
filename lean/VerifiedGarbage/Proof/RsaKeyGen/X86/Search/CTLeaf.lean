@@ -89,9 +89,9 @@ theorem shortHead_ok {p : SearchPublic} {o s : State} {used : Nat} (hb : SearchB
   xrun [State.ea, at_, hb.arg_ea (i := 1) (d := 24) rfl, hb.arg_ea (i := 8) (d := 52) rfl,
     hb.arg_in (i := 1) (by decide), hb.arg_in (i := 8) (by decide), hb.arg_val (i := 1) (by decide),
     hb.arg_val (i := 8) (by decide), hi.len_arg, hi.randLen_arg, hsi, execMul,
-    show (32769 : BitVec 32).toNat = 32769 from rfl, toNat_small32 (show p.len < 2 ^ 32 by omega),
-    BitVec.ofNat_sub_ofNat_of_le _ _ (show used < 2 ^ 32 by omega) hu]
-  rw [sub_eq_beq (by omega) (by omega), Nat.mul_comm]
+    show (32769 : BitVec 32).toNat = 32769 from rfl, toNat_small32 (show p.len < 2 ^ 32 by omega_using [hv]),
+    BitVec.ofNat_sub_ofNat_of_le _ _ (show used < 2 ^ 32 by omega_using [hu, hv, rl]) hu]
+  rw [sub_eq_beq (by omega_using [hv, rl]) (by omega_using [hv]), Nat.mul_comm]
 
 theorem short_ct (p : SearchPublic) : RelCT isa (Two (ShortCT p)) short fun _ _ => True := by
   unfold short

@@ -22,7 +22,7 @@ open VG.Proof.Sha3 (Rep)
 theorem rate_bounds {b : State} (hp : BulkPre b) : 0 < rate b ∧ rate b ≤ 168 := by
   have h := hp.rate_mem
   simp only [Spec.Sha3.rates,List.mem_cons,List.not_mem_nil,or_false] at h
-  rcases h with h|h|h|h|h <;> omega
+  rcases h with h|h|h|h|h <;> omega_using [h]
 
 theorem input_bytes (b : State) (hp : BulkPre b) (m : Mem)
     (hf : Frame [stateR b,scratchR b] b.mem m) (c n : Nat) (hcn : c+n ≤ len b) :
@@ -33,7 +33,7 @@ theorem input_bytes (b : State) (hp : BulkPre b) (m : Mem)
   have hi := List.mem_range.mp hi
   rw [BitVec.add_assoc,← BitVec.ofNat_add]
   exact hf.bytes (R := dataR b) (by simpa using ⟨hp.d_st,hp.d_scr⟩)
-    (Nat.le_of_lt (BitVec.isLt _)) (by change c+i < len b; omega)
+    (Nat.le_of_lt (BitVec.isLt _)) (by change c+i < len b; omega_using [hcn, hi])
 
 theorem bytesAt_add (m : Mem) (p : Addr) (c : Nat) :
     ∀ n, bytesAt m p (c+n) = bytesAt m p c ++ bytesAt m (p+BitVec.ofNat 64 c) n
@@ -84,11 +84,11 @@ theorem body_ok (b : State) (hp : BulkPre b) (m : Mem)
     have h6 : u.gpr .x6 = BitVec.ofNat 64 (rate b) := by
       rw [hu.gpr _ (by decide),hk.gpr _ (by decide) (by decide),h.x6,BitVec.ofNat_toNat,BitVec.setWidth_eq]
     have ctl := advance_test_ok u (data b+BitVec.ofNat 64 c) (len b-c) (rate b)
-      (by have hlen : len b < 2^64 := BitVec.isLt _; omega) (by omega) (rate_bounds hp).2
-      (by have := hp.len_upper; omega) h3 h4 h6
+      (by have hlen : len b < 2^64 := BitVec.isLt _; omega_using [hlen]) (by omega_using [hc]) (rate_bounds hp).2
+      (by have := hp.len_upper; omega_using [this]) h3 h4 h6
     rw [← WP.block_append_iff]
     refine ctl.mono fun v ⟨hm,hr,hw,hsp,hv,h3',h4',h6',he⟩ => ?_
-    refine ⟨Spec.Sha3.keccakF (Spec.Sha3.xorBytes A (bytesAt s.mem (s.gpr .x3) (rate b))),⟨by omega,?_,hm.trans (hu.mem.trans (hk.mem.trans h.mem)),
+    refine ⟨Spec.Sha3.keccakF (Spec.Sha3.xorBytes A (bytesAt s.mem (s.gpr .x3) (rate b))),⟨by omega_using [hc],?_,hm.trans (hu.mem.trans (hk.mem.trans h.mem)),
       hr.trans (hu.rd.trans (hk.rd.trans h.rd)),hw.trans (hu.wr.trans (hk.wr.trans h.wr)),
       ?_,?_,?_,?_,?_⟩,?_⟩
     · rw [Nat.add_mod,h.aligned,Nat.mod_self,Nat.zero_add,Nat.zero_mod]
@@ -104,7 +104,7 @@ theorem body_ok (b : State) (hp : BulkPre b) (m : Mem)
       have hal : (msg ++ bytesAt b.mem (data b) c).length % rate b = 0 := by
         simp only [List.length_append,VG.Proof.Sha3.bytesAt_length,Nat.add_mod,halign,
           h.aligned,Nat.zero_add,Nat.zero_mod]
-      rw [← rep_whole (rate_bounds hp).1 (by have := (rate_bounds hp).2; omega)
+      rw [← rep_whole (rate_bounds hp).1 (by have := (rate_bounds hp).2; omega_using [this])
         _ _ hal (VG.Proof.Sha3.bytesAt_length _ _ _),List.append_assoc,← bytesAt_add]
     · simpa only [Nat.sub_sub] using he
 
@@ -121,12 +121,12 @@ theorem loop_ok (b : State) (hp : BulkPre b) (s₀ : State) (hs : Setup b s₀) 
       refine ⟨?_,len b-(c+rate b),?_,c+rate b,A',h',rfl,?_⟩
       · simpa only [hk,decide_true] using he
       · have := (rate_bounds hp).1
-        omega
-      · omega
+        omega_using [hn, hc, this]
+      · omega_using [hc, hk]
     · left
       exact ⟨by simpa only [hk,decide_false] using he,c+rate b,A',h'⟩
-  · refine ⟨0,stateAt b.mem (st b),⟨by omega,by simp,rfl,hs.rd,hs.wr,?_,?_,?_,hs.lanes,?_⟩,
-      by omega,?_⟩
+  · refine ⟨0,stateAt b.mem (st b),⟨by omega_using [],by simp,rfl,hs.rd,hs.wr,?_,?_,?_,hs.lanes,?_⟩,
+      by omega_using [],?_⟩
     · simpa only [BitVec.ofNat_eq_ofNat,BitVec.add_zero] using hs.gpr .x3 (by simp)
     · simpa only [Nat.sub_zero,BitVec.ofNat_toNat,BitVec.setWidth_eq] using hs.gpr .x4 (by simp)
     · exact hs.gpr .x6 (by simp)

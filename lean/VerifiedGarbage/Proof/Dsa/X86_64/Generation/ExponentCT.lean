@@ -32,7 +32,7 @@ theorem lowWordArgs_state {p : PrimeParams} {s : State} (h : PrimeGood p s) :
       (fun t => t.gpr .r12 = BitVec.ofNat 64 p.w ∧ t.gpr .r8 = off p.B (slot p.w aN)) := by
   obtain ⟨mi, hg⟩ := h
   have hl : ∀ i < 32, InRegions (s.rd ++ s.wr) (off p.B (8 * i)) 8 := fun i hi =>
-    hg.scr.ld (by have := hdr_lt_slot p.w 8 hi; have := p.dims.z; omega)
+    hg.scr.ld (by have := hdr_lt_slot p.w 8 hi; have := p.dims.z; omega_arith)
   xrun [State.ea, hdr, hdrOff, hg.rdi, hl sW (by decide), hl (sArr aN) (by decide),
     hg.hdr.hw, hg.hdr.harr aN (by decide)]
 
@@ -59,8 +59,8 @@ theorem lowWord_ct : RelCT isa (Two PrimeGood) (seqs lowWord) (fun _ _ => True) 
 theorem lowWord_good {p : PrimeParams} {s : State} (h : ExponentBefore p s) :
     WP isa (seqs lowWord) s (PrimeGood p) := by
   obtain ⟨mi, hg⟩ := h.1
-  refine WP.mono (lowWord_ok hg p.dims.z (by have := p.dims.w4; omega)
-    (by have := p.dims.w128; omega) h.2 p.odd (by have := p.n3; omega)) fun t ⟨_, hm, hk⟩ => ?_
+  refine WP.mono (lowWord_ok hg p.dims.z (by have := p.dims.w4; omega_using [this])
+    (by have := p.dims.w128; omega_using [this]) h.2 p.odd (by have := p.n3; omega_using [this])) fun t ⟨_, hm, hk⟩ => ?_
   exact ⟨mi, hg.scr.congr hk.2.2, (hk.gpr (by decide)).trans hg.rdi, by rw [hm]; exact hg.hdr⟩
 
 def ExponentRegs (p : PrimeParams) (s : State) : Prop :=
@@ -72,12 +72,12 @@ theorem exponentArgs_state {p : PrimeParams} {s : State} (h : PrimeGood p s) :
       ([.mov .r12 (.mem (hdr sW)), .mov .rsi (.mem (hdr (sArr aN)))] : List Instr))) s (ExponentRegs p) := by
   obtain ⟨mi, hg⟩ := h
   rw [WP.block_append_iff]
-  refine WP.mono (extBase_ok hg p.dims.z (by have := p.dims.w128; omega)
+  refine WP.mono (extBase_ok hg p.dims.z (by have := p.dims.w128; omega_using [this])
     (j := aE) (by decide) (r := .rbx) (by decide) rfl rfl) fun u ⟨hbx, hm, hk⟩ => ?_
   have hu : Good u p.B p.Z p.w mi :=
     ⟨hg.scr.congr hk.2.2, (hk.gpr (by decide)).trans hg.rdi, by rw [hm]; exact hg.hdr⟩
   have hl : ∀ i < 32, InRegions (u.rd ++ u.wr) (off p.B (8 * i)) 8 := fun i hi =>
-    hu.scr.ld (by have := hdr_lt_slot p.w 8 hi; have := p.dims.z; omega)
+    hu.scr.ld (by have := hdr_lt_slot p.w 8 hi; have := p.dims.z; omega_arith)
   xrun [ExponentRegs, State.ea, hdr, hdrOff, hu.rdi, hl sW (by decide), hl (sArr aN) (by decide),
     hu.hdr.hw, hu.hdr.harr aN (by decide), hbx]
 

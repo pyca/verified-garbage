@@ -45,7 +45,7 @@ private theorem loaded_range (d : DrawPublic) (s : State) (h : SampleLoaded d s)
     intro r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
-    · unfold slot VG.Impl.Bignum.hdrBytes aTmp; omega
+    · unfold slot VG.Impl.Bignum.hdrBytes aTmp; omega_using []
     · decide
   refine ⟨h.2.2.2, ht.good.rdi, k.2.2.trans h.2.2.1, ?_⟩
   intro e he

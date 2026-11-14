@@ -22,7 +22,7 @@ open VG VG.PPC64LE VG.Impl.Rc2.PPC64LE VG.Impl.Rc2.PPC64LE.Cbc
 
 theorem count_sub {n j : Nat} (hj : j < n) :
     BitVec.ofNat 64 (n - j) - 1#64 = BitVec.ofNat 64 (n - (j + 1)) := by
-  rw [Offset.ofNat_sub_ofNat (by omega)]; congr 1
+  rw [Offset.ofNat_sub_ofNat (by omega_using [hj])]; congr 1
 
 theorem preserved_not : ∀ r ∈ preserved, r ∉ saved.map Prod.fst →
     r ∉ [Reg.r3, .r4, .r5, .r10, .r11, .r28, .r29, .r31] := by decide
@@ -41,13 +41,13 @@ theorem body_run (d : Spec.Rc2.Direction) {T I D W : Addr} {n : Nat} {g : Reg �
   have hf := R.fit
   let p := D + BitVec.ofNat 64 (8 * j)
   have pIn : InRegions t.wr p 8 := by
-    rw [H.wr]; exact ⟨⟨D, 8 * n⟩, by simp, Offset.contains_base _ (by omega) (by omega)⟩
+    rw [H.wr]; exact ⟨⟨D, 8 * n⟩, by simp, Offset.contains_base _ (by omega_using [hj]) (by omega_using [hj, hf])⟩
   have pIn' : InRegions (t.rd ++ t.wr) p 8 := by
     obtain ⟨r, hr, hc⟩ := pIn; exact ⟨r, List.mem_append_right _ hr, hc⟩
   have iIn : InRegions t.wr I 8 := by rw [H.wr]; exact ⟨⟨I, 8⟩, by simp, Region.contains_self _ _⟩
   have iIn' : InRegions (t.rd ++ t.wr) I 8 := by
     obtain ⟨r, hr, hc⟩ := iIn; exact ⟨r, List.mem_append_right _ hr, hc⟩
-  have bj : Region.Sub ⟨p, 8⟩ ⟨D, 8 * n⟩ := Offset.sub_base D (by omega)
+  have bj : Region.Sub ⟨p, 8⟩ ⟨D, 8 * n⟩ := Offset.sub_base D (by omega_using [hj])
   have pI : (⟨p, 8⟩ : Region).Disjoint ⟨I, 8⟩ := (R.ID.sub_right bj).symm
   have r28 : t.gpr .r28 = p := H.r28
   have b₀ : Spec.Rc2.blockAt t.mem p = Spec.Rc2.blockAt m₀ p := H.rest j (Nat.le_refl _) hj
@@ -106,10 +106,10 @@ theorem body_run (d : Spec.Rc2.Direction) {T I D W : Addr} {n : Nat} {g : Reg �
       rw [k₃.gpr (by simp [hn']), g2 r hr (by simp [hn']), H.pres r hr hn]
     · rw [done_succ, done_succ, fD, H.done, spec, enc_spec, ← H.iv, b₃, out]
     · rw [done_succ, spec, enc_spec, ← H.iv, i₃, out]
-    · rw [fB i hn (by omega), H.rest i (by omega) hn]
-    · rw [a29, count_sub hj, ofNat_bne_zero (by omega)]
+    · rw [fB i hn (by omega_using [hi]), H.rest i (by omega_using [hi]) hn]
+    · rw [a29, count_sub hj, ofNat_bne_zero (by omega_using [hf])]
       congr 1
-      exact decide_eq_decide.mpr (by omega)
+      exact decide_eq_decide.mpr (by omega_using [hj])
   | decrypt =>
     apply WP.seq
     refine WP.mono (WP.keep [.r3, .r4, .r5, .r31] (c := .block (before .decrypt)) (Q := fun t₁ =>
@@ -169,9 +169,9 @@ theorem body_run (d : Spec.Rc2.Direction) {T I D W : Addr} {n : Nat} {g : Reg �
       rw [k₃.gpr (by simp [hn']), g2 r hr (by simp [hn']), H.pres r hr hn]
     · rw [done_succ, done_succ, fD, H.done, spec, dec_spec, ← H.iv, b₃]
     · rw [done_succ, spec, dec_spec, i₃]
-    · rw [fB i hn (by omega), H.rest i (by omega) hn]
-    · rw [a29, count_sub hj, ofNat_bne_zero (by omega)]
+    · rw [fB i hn (by omega_using [hi]), H.rest i (by omega_using [hi]) hn]
+    · rw [a29, count_sub hj, ofNat_bne_zero (by omega_using [hf])]
       congr 1
-      exact decide_eq_decide.mpr (by omega)
+      exact decide_eq_decide.mpr (by omega_using [hj])
 
 end VG.Proof.Rc2.PPC64LE.Cbc

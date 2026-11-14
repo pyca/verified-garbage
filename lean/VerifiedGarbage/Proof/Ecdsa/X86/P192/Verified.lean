@@ -59,7 +59,7 @@ theorem p192_nBits : Spec.Ecdsa.nBits p192.C = 192 := by
     (Nat.le_log2 (by decide +kernel)).mpr (by decide +kernel)
   have h2 : Spec.P192.curve.n.log2 < 192 :=
     (Nat.log2_lt (by decide +kernel)).mpr (by decide +kernel)
-  omega
+  omega_using [h1, h2]
 
 /-- No bit of a hash of `24` bytes is dropped. -/
 theorem p192_sh : p192.sh = 0 := by
@@ -165,8 +165,8 @@ theorem agree₀ {s₁ s₂ : State} (h₁ : signX86.pre s₁) (h₂ : signX86.p
   · rw [hp₁.wr, hp₂.wr]; simp only [outR, scR, ptr, a0, a4]
   · simp only [τ₀] at hk
     rw [show VG.X86.Taint.depth τ₀.stk = 0 from rfl, Nat.zero_add]
-    rw [VG.X86.Taint.argByte_eq (by have := hp₁.sp_fit; omega) h4 hk,
-      VG.X86.Taint.argByte_eq (by have := hp₂.sp_fit; omega) h4 hk,
+    rw [VG.X86.Taint.argByte_eq (by have := hp₁.sp_fit; omega_using [this]) h4 hk,
+      VG.X86.Taint.argByte_eq (by have := hp₂.sp_fit; omega_using [this]) h4 hk,
       Mem.readW_byte s₁.mem _ (Nat.mod_lt _ (by decide)), Mem.readW_byte s₂.mem _ (Nat.mod_lt _ (by decide))]
     have : (k - 4) / 4 = 0 ∨ (k - 4) / 4 = 1 ∨ (k - 4) / 4 = 2 ∨ (k - 4) / 4 = 3 ∨ (k - 4) / 4 = 4 := by
       omega_using [hk]

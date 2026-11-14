@@ -32,10 +32,10 @@ theorem entryCache_ok (s : State) {p : KeyPublic sampling} (h : EntryContext p s
       (EntryContext p t ∧ t.mem=entryCacheMem p s.mem) ∧ Rest [.r3] s t := by
   have a9 := h.incoming 9 (by simp only [entryWords,cached,ite_true]; decide)
   have a10 := h.incoming 10 (by simp only [entryWords,cached,ite_true]; decide)
-  have a60 : State.addr (s.sp+BitVec.ofNat 32 60)=off (State.addr s.sp) 60 := addr_add (by have := a9.fits; omega)
-  have a64 : State.addr (s.sp+BitVec.ofNat 32 64)=off (State.addr s.sp) 64 := addr_add (by have := a10.fits; omega)
-  have d32 : State.addr (p.control+BitVec.ofNat 32 32)=off (State.addr p.control) 32 := addr_add (by have := h.controller.space.nowrap; omega)
-  have d36 : State.addr (p.control+BitVec.ofNat 32 36)=off (State.addr p.control) 36 := addr_add (by have := h.controller.space.nowrap; omega)
+  have a60 : State.addr (s.sp+BitVec.ofNat 32 60)=off (State.addr s.sp) 60 := addr_add (by have := a9.fits; omega_using [this])
+  have a64 : State.addr (s.sp+BitVec.ofNat 32 64)=off (State.addr s.sp) 64 := addr_add (by have := a10.fits; omega_using [this])
+  have d32 : State.addr (p.control+BitVec.ofNat 32 32)=off (State.addr p.control) 32 := addr_add (by have := h.controller.space.nowrap; omega_using [this])
+  have d36 : State.addr (p.control+BitVec.ofNat 32 36)=off (State.addr p.control) 36 := addr_add (by have := h.controller.space.nowrap; omega_using [this])
   have raw : WP isa (.block [.ldrSp .r3 60,.str .r3 .r4 32,.ldrSp .r3 64,.str .r3 .r4 36]) s fun t =>
       t.mem=entryCacheMem p s.mem ∧ Rest [.r3] s t := by
     refine withRest_all [.r3] ?_ (by rfl) rfl

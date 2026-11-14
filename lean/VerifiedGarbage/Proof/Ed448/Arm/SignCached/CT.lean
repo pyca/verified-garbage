@@ -95,11 +95,11 @@ theorem local_ct (hL : L.Ok) (ha : Arguments L m₁) (hb : Arguments L m₂) (P 
     RelCT isa (T2 L g₁ g₂ m₁ m₂ fun s => s.gpr .r0 = BitVec.ofNat 32 P) (absorb (nextArgs SC (.frame d) (.const k)))
       (T2 L g₁ g₂ m₁ m₂ fun s => s.gpr .r0 = BitVec.ofNat 32 ((P + (argVal L.E L.value (.const k)).toNat) % 136)) := by
   have hkn : (argVal L.E L.value (.const k)).toNat = k := by
-    simp only [argVal, BitVec.toNat_ofNat]; omega
+    simp only [argVal, BitVec.toNat_ofNat]; omega_using [hd]
   have hd' : argVal L.E L.value (.frame d) = L.E + BitVec.ofNat 32 d := rfl
-  exact hL.kit.next_ct ha hb (scr_at L) P hP (valid_frame (by omega)) (valid_const hk)
-    (by rw [hd', hkn, hL.kit.frame_addr (by omega)]; exact .inl (frame_within _ hd))
-    (by rw [hd', hkn, hL.kit.frame_addr (by omega)]; exact (hL.away_fr h8 hd).kwr)
+  exact hL.kit.next_ct ha hb (scr_at L) P hP (valid_frame (by omega_using [hd])) (valid_const hk)
+    (by rw [hd', hkn, hL.kit.frame_addr (by omega_using [hd])]; exact .inl (frame_within _ hd))
+    (by rw [hd', hkn, hL.kit.frame_addr (by omega_using [hd])]; exact (hL.away_fr h8 hd).kwr)
     (by rw [hd', hkn]; exact hL.kit.frame_fit hd)
 
 theorem hdrAbs_ct (hL : L.Ok) (ha : Arguments L m₁) (hb : Arguments L m₂) :
@@ -147,12 +147,12 @@ theorem chal_ct (hL : L.Ok) (ha : Arguments L m₁) (hb : Arguments L m₂) :
   have x3 := hk.next_ct (g₁ := g₁) (g₂ := g₂) ha hb (scr_at L) P2 (Nat.mod_lt _ (by decide))
     (src := .caller 0 0) (len := .const 57) ⟨by decide, by decide⟩ (valid_const (by decide))
     (by rw [e0, e57]; exact .inr ⟨L.OUT, List.mem_append_right _ (out_in L), r0_within L⟩)
-    (by rw [e0, e57]; exact hL.away_r0.kwr) (by rw [e0, e57]; have := hL.no; omega)
+    (by rw [e0, e57]; exact hL.away_r0.kwr) (by rw [e0, e57]; have := hL.no; omega_using [this])
   let P3 : Nat := (P2 + (argVal L.E L.value (.const 57)).toNat) % 136
   have x4 := input_ct (g₁ := g₁) (g₂ := g₂) hL ha hb P3 (Nat.mod_lt _ (by decide)) (src := .caller 2 0)
     (len := .const 57) ⟨by decide, by decide⟩ (valid_const (by decide)) (R := L.PK) (by simp [Lay.inputs])
     (by simp only [argVal, Lay.value, BitVec.add_zero]; exact ⟨0, (BitVec.add_zero _).symm, by simp⟩)
-    (by simp only [argVal, Lay.value, BitVec.add_zero]; have := hL.np; simp; omega)
+    (by simp only [argVal, Lay.value, BitVec.add_zero]; have := hL.np; simp; omega_using [this])
   let P4 : Nat := (P3 + (argVal L.E L.value (.const 57)).toNat) % 136
   have x5 := input_ct (g₁ := g₁) (g₂ := g₂) hL ha hb P4 (Nat.mod_lt _ (by decide)) (src := .caller 5 0)
     (len := LEN) ⟨by decide, by decide⟩ ⟨by decide, by decide⟩ (R := L.MSG) (by simp [Lay.inputs])

@@ -99,7 +99,7 @@ theorem argRegs_pres : ∀ r ∈ preserved, r ∉ argRegs := by decide
 theorem imm16_ofNat {v : Nat} (h : v < 65536) : (BitVec.ofNat 16 v).setWidth 64 = BitVec.ofNat 64 v := by
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]
-  omega
+  omega_using [h]
 
 theorem movV_ok (d : Reg) (v : Nat) {is : List Instr} {s : State} {Q : State → Prop}
     (k : ∀ s', Only [d] s s' → s'.gpr d = BitVec.ofNat 64 v → WP isa (.block is) s' Q) :
@@ -377,7 +377,7 @@ theorem Lay.keepBytes (hP : PPostB S s s' ws) (hc : keepB rbs wbs ws p l = true)
     bytesAt s'.mem (pa s' p) l = bytesAt s.mem (pa s p) l := by
   rw [hP.pa (L.keepBs hc)]
   obtain ⟨n, hn, hl⟩ := inB_spec (keepB_in hc)
-  exact Proof.MlKem.bytesAt_frame hP.frame (L.fdisj hc) (by have := L.small _ hn; simp only at this; omega)
+  exact Proof.MlKem.bytesAt_frame hP.frame (L.fdisj hc) (by have := L.small _ hn; simp only at this; omega_using [hl, this])
 
 theorem Lay.keepPoly {f : Spec.MlDsa.Poly} (hP : PPostB S s s' ws) (hc : keepB rbs wbs ws p 1024 = true)
     (h : Proof.MlDsa.PolyIs s.mem (pa s p) f) : Proof.MlDsa.PolyIs s'.mem (pa s' p) f := by
@@ -399,7 +399,7 @@ theorem Lay.keepHint {k : Nat} {h : List (Vector Bool Spec.MlDsa.n)} (hP : PPost
     (hh : Proof.MlDsa.HintIs s.mem (pa s p) k h) : Proof.MlDsa.HintIs s'.mem (pa s' p) k h := by
   rw [hP.pa (L.keepBs hc)]
   obtain ⟨n, hn, hl⟩ := inB_spec (keepB_in hc)
-  exact Proof.MlDsa.Verify.hintIs_frame hP.frame (by have := L.small _ hn; simp only at this; omega)
+  exact Proof.MlDsa.Verify.hintIs_frame hP.frame (by have := L.small _ hn; simp only at this; omega_using [hl, this])
     (L.fdisj hc) hh
 
 theorem Lay.keepW (hP : PPostB S s s' ws) (hc : keepB rbs wbs ws p 8 = true) :

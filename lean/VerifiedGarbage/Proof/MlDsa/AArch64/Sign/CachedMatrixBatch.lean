@@ -57,12 +57,12 @@ theorem twoBatch_ok {P : Prims} {D : Nat} (hP : PrimsOk P D) {p : Params} {σ : 
     refine ⟨fun e' he' => ?_,fun e' he' => ?_⟩
     · by_cases hlt : e' < e
       · exact ok e' hlt
-      · obtain ⟨k,rfl⟩ : ∃ k,e'=e+k := ⟨e'-e,by omega⟩
-        rw [← aseeds2_eq h (by omega)]; exact hmax hs.2 k (by omega)
+      · obtain ⟨k,rfl⟩ : ∃ k,e'=e+k := ⟨e'-e,by omega_using [hlt]⟩
+        rw [← aseeds2_eq h (by omega_using [he'])]; exact hmax hs.2 k (by omega_using [he'])
     · by_cases hlt : e' < e
       · exact fm e' hlt
-      · obtain ⟨k,rfl⟩ : ∃ k,e'=e+k := ⟨e'-e,by omega⟩
-        have hk : k < 2 := by omega
+      · obtain ⟨k,rfl⟩ : ∃ k,e'=e+k := ⟨e'-e,by omega_using [hlt]⟩
+        have hk : k < 2 := by omega_using [he']
         have hm := hmax hs.2 k hk
         have hv : polyAt s1.mem (poly4 (pa s (pS (aBase p+e))) k) = aVal p σ (e+k) := by
           obtain ⟨_,hb⟩ | ⟨h0,_⟩ := hout
@@ -75,11 +75,11 @@ theorem twoBatch_ok {P : Prims} {D : Nat} (hP : PrimsOk P D) {p : Params} {σ : 
         exact ⟨hred hs.2 k hk,hv⟩
   · rw [et'] at ht
     rcases h.ia.r01 with e0 | e0
-    · obtain ⟨e',he',hn⟩ := h.ia.bad e0; exact ⟨e',by omega,hn⟩
+    · obtain ⟨e',he',hn⟩ := h.ia.bad e0; exact ⟨e',by omega_using [he'],hn⟩
     · rcases hr with e1 | e1
       · rw [e0,e1] at ht; exact absurd ht (by decide)
       · rcases hout with ⟨h1,_⟩ | ⟨_,k,hk,hn⟩
         · exact absurd (e1.symm.trans h1) (by decide)
-        · exact ⟨e+k,by omega,by rw [← aseeds2_eq h hk]; exact hn⟩
+        · exact ⟨e+k,by omega_using [hk],by rw [← aseeds2_eq h hk]; exact hn⟩
 
 end VG.Proof.MlDsa.AArch64.Sign.CachedMatrix

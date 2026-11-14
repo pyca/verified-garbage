@@ -83,7 +83,7 @@ theorem entry_ok {s₀ t : State} (h : Ready s₀ t) (hb : t.gpr .ebx = s₀.gpr
       ⟨fun r _ => by rw [g₃], r₃, w₃⟩).trans ⟨fun r _ => by rw [g₄], r₄, w₄⟩).trans u₅.keeps).trans
       ⟨fun r _ => by rw [g₆], r₆, w₆⟩).trans (u₇.keeps.trans ⟨fun r _ => by rw [g₈], r₈, w₈⟩)
   have e := fun {m : Mem} {d : Nat} (v : BitVec 32) (h₁ : oSaveEbx ≤ d) (h₂ : d + 4 ≤ oSaveEbx + 24) =>
-    store_in (rBase s₀) m (rs := [(oSaveEbx, 24)]) v (List.mem_singleton_self _) h₁ h₂ (by unfold oSaveEbx at h₂; omega)
+    store_in (rBase s₀) m (rs := [(oSaveEbx, 24)]) v (List.mem_singleton_self _) h₁ h₂ (by unfold oSaveEbx at h₂; omega_using [h₂])
   refine ⟨h.congr kk (by
       rw [hm]
       exact (((((frame_store s₀ _ (by decide) _).trans (frame_store s₀ _ (by decide) _)).trans
@@ -116,11 +116,11 @@ theorem body_ok (F : SignFn) {s₀ : State} (A : RandomSignABI s₀) (hval : Key
     (allocated_gpr _ _ (by decide)) (allocated_gpr _ _ (by decide))) fun t₁ ⟨h₁, sv₁, us₁, at₁, _⟩ => ?_)
   refine WP.seq (WP.mono (prepare_ok A h₁) fun t₂ ⟨ax₂, P₂, h₂, o₂, _⟩ => ?_)
   have lo₂ : ∀ d, d + 4 ≤ oQ → slot t₂.mem (rBase s₀) d = slot t₁.mem (rBase s₀) d := fun d hd =>
-    outs_low o₂ (by decide) hd (by unfold oQ at hd; omega)
+    outs_low o₂ (by decide) hd (by unfold oQ at hd; omega_using [hd])
   refine WP.seq (wp_cmpi fun t₃ f₃ _ z₃ => WP.block_nil ?_)
   have h₃ := h₂.fupd f₃
   have m₃ : t₃.mem = t₂.mem := f₃.mem
-  have sv₃ : Saved s₀ t₃.mem := by rw [m₃]; exact sv₁.of_slots fun d _ hd => lo₂ d (by unfold oQ; omega)
+  have sv₃ : Saved s₀ t₃.mem := by rw [m₃]; exact sv₁.of_slots fun d _ hd => lo₂ d (by unfold oQ; omega_using [hd])
   have us₃ : slot t₃.mem (rBase s₀) oUsed = 0 := by rw [m₃, lo₂ _ (by decide)]; exact us₁
   have at₃ : slot t₃.mem (rBase s₀) oAttempts = 8 := by rw [m₃, lo₂ _ (by decide)]; exact at₁
   rw [ax₂] at z₃
@@ -131,14 +131,14 @@ theorem body_ok (F : SignFn) {s₀ : State} (A : RandomSignABI s₀) (hval : Key
     have T₀ : Att s₀ 0 8 t₃ := by
       refine ⟨⟨(slot t₃.mem (rBase s₀) oDraws).toNat, ⟨h₃, by rw [m₃]; exact P.q, by rw [m₃]; exact P.width,
         by rw [m₃]; exact P.mask, us₃, by rw [BitVec.ofNat_toNat, BitVec.setWidth_eq],
-        fun i hi => by rw [m₃]; exact P.nonce i (by omega), Nat.zero_le _⟩⟩, at₃, sv₃, ?_⟩
+        fun i hi => by rw [m₃]; exact P.nonce i (by omega_using [hql, hi]), Nat.zero_le _⟩⟩, at₃, sv₃, ?_⟩
       have e : VG.Proof.Dsa.randomSignRemaining (rInput s₀) 0 8 = rResult s₀ := by
         rw [rResult_loop A]; rfl
       exact ⟨by rw [e], by rw [e], by rw [e]⟩
     refine WP.loop (M := isa) (fun (n : Nat) (u : State) => ∃ used, 1 ≤ n ∧ n ≤ 8 ∧ Att s₀ used n u)
       (fun n u hu => ?_) 8 t₃ ⟨0, by decide, by decide, T₀⟩
     obtain ⟨used, hn1, hn8, T⟩ := hu
-    obtain ⟨f, rfl⟩ : ∃ f, n = f + 1 := ⟨n - 1, by omega⟩
+    obtain ⟨f, rfl⟩ : ∃ f, n = f + 1 := ⟨n - 1, by omega_using [hn1]⟩
     refine WP.seq (WP.mono (attempt_ok F A T hn8 hq hval) fun v hv => ?_)
     have hrv : Ready s₀ v := by
       rcases hv with ⟨_, _, T', _⟩ | ⟨_, D, _⟩
@@ -151,14 +151,14 @@ theorem body_ok (F : SignFn) {s₀ : State} (A : RandomSignABI s₀) (hval : Key
     rcases hv with ⟨st, h1f, T', _⟩ | ⟨st, D, _⟩
     · right
       have st' : v.mem.readW (off (rBase s₀) oStatus) 32 = 4 := st
-      refine ⟨by simp only [eval, zv₂, st']; rfl, f, by omega, _, h1f, by omega, T'.mem A hv₂ mv₂⟩
+      refine ⟨by simp only [eval, zv₂, st']; rfl, f, by omega_using [], _, h1f, by omega_using [hn8], T'.mem A hv₂ mv₂⟩
     · left
       refine ⟨?_, finish_ok A ((D.mem A hv₂ mv₂).fin) (rResult_status_le A) (rResult_signature A)⟩
       have hle := rResult_status_le A
       have st' : v.mem.readW (off (rBase s₀) oStatus) 32 = BitVec.ofNat 32 (rResult s₀).status := D.status
       have hz : (v.mem.readW (off (rBase s₀) oStatus) 32 - 4 == 0) = false := by
-        rw [st', show (4 : BitVec 32) = BitVec.ofNat 32 4 from rfl, sub_beq (by omega) (by decide)]
-        simp only [decide_eq_false_iff_not]; omega
+        rw [st', show (4 : BitVec 32) = BitVec.ofNat 32 4 from rfl, sub_beq (by omega_using [hle]) (by decide)]
+        simp only [decide_eq_false_iff_not]; omega_using [hle]
       simp only [eval, zv₂, hz]
   · simp only [hq, ↓reduceIte] at z₃
     have hR := rResult_small A hq
@@ -169,7 +169,7 @@ theorem body_ok (F : SignFn) {s₀ : State} (A : RandomSignABI s₀) (hval : Key
     have h₄ : Ready s₀ t₄ := h₃.congr (rs := []) ⟨fun r _ => by rw [g₄], r₄, w₄⟩
       (by rw [m₄]; exact frame_store s₀ _ (by decide) _)
     refine finish_ok A ⟨h₄, ?_, by rw [m₄, slot_write_self], fun e => by rw [hR] at e; exact absurd e (by decide),
-      sv₃.of_slots fun d _ hd => by rw [m₄, slot_write_ne _ _ _ (by unfold oStatus; omega) (by omega) (by decide)]⟩
+      sv₃.of_slots fun d _ hd => by rw [m₄, slot_write_ne _ _ _ (by unfold oStatus; omega_using [hd]) (by omega_using [hd]) (by decide)]⟩
       (rResult_status_le A) (rResult_signature A)
     rw [m₄, slot_write_ne _ _ _ (by decide) (by decide) (by decide), us₃, hR]; rfl
 

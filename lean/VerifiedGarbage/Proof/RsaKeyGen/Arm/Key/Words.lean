@@ -39,23 +39,23 @@ theorem setWd_ok {s : State} {B : BitVec 32} {Z w N j o x : Nat} (h : Ws s B Z w
   have wl := h.wle
   unfold setWd
   rw [List.append_assoc]
-  refine ptr_ok h (by decide) (by omega) fun s1 p1 r1 m1 h1 => ?_
+  refine ptr_ok h (by decide) (by omega_using [hj, hN]) fun s1 p1 r1 m1 h1 => ?_
   simp only [List.cons_append, List.nil_append]
   refine wp_mov (op2_imm hx) fun s2 u2 => ?_
   have h2 : Ws s2 B Z w N := h1.of_upd u2 (by decide) (by decide) (by decide)
   have a0 : State.addr (s2.gpr .r0 + BitVec.ofNat 32 o) = off (State.addr B) (arr w j + 4 * (o / 4)) := by
     rw [u2.other _ (by decide), p1, BitVec.add_assoc, BitVec.ofNat_add_ofNat]
-    rw [show arr w j + o = arr w j + 4 * (o / 4) by omega]
-    exact h.addr (by omega)
-  refine wp_str (by omega) a0 (h2.write (by omega)) fun t u3 => ?_
+    rw [show arr w j + o = arr w j + 4 * (o / 4) by omega_using [ho]]
+    exact h.addr (by omega_using [how, fit, hS])
+  refine wp_str (by omega_using [how, wl]) a0 (h2.write (by omega_using [how, fit, hS])) fun t u3 => ?_
   have mt : t.mem = s.mem.writeW (off (State.addr B) (arr w j + 4 * (o / 4))) (BitVec.ofNat 32 x) := by
     rw [u3.mem, u2.gpr, u2.mem, m1]
-  have o1 := writeW32_outside s.mem (State.addr B) (d := arr w j + 4 * (o / 4)) (BitVec.ofNat 32 x) (by omega)
+  have o1 := writeW32_outside s.mem (State.addr B) (d := arr w j + 4 * (o / 4)) (BitVec.ofNat 32 x) (by omega_using [how, fit, hS, nw])
   rw [← mt] at o1
-  refine k t (h2.of_mupd u3) (Keep.of_arr (d := 4 * (o / 4)) o1 (by omega) (by simp)) ?_
+  refine k t (h2.of_mupd u3) (Keep.of_arr (d := 4 * (o / 4)) o1 (by omega_using [how, hS]) (by simp)) ?_
     ((r1.mono (by simp)).trans ((u2.rest (by simp)).trans (u3.rest _)))
   change val32 _ _ _ _ = _
-  rw [mt, val32_write_word _ _ _ how (by omega) hl, BitVec.toNat_ofNat]
+  rw [mt, val32_write_word _ _ _ how (by omega_using [fit, hS, nw]) hl, BitVec.toNat_ofNat]
 
 /-- `setHi j sh c x`: the word at byte `(w << sh) − c` of `[j]`, word `i`, := `x`. -/
 theorem setHi_ok {s : State} {B : BitVec 32} {Z w N j sh c x i : Nat} (h : Ws s B Z w N)
@@ -72,12 +72,12 @@ theorem setHi_ok {s : State} {B : BitVec 32} {Z w N j sh c x i : Nat} (h : Ws s 
   have wl := h.wle
   have p4 : 2 ^ sh ≤ 4 := by
     rcases hsh with ⟨h1, h2⟩
-    rcases (by omega : sh = 1 ∨ sh = 2) with rfl | rfl <;> decide
+    rcases (by omega_using [h1, h2] : sh = 1 ∨ sh = 2) with rfl | rfl <;> decide
   unfold setHi
   rw [List.append_assoc]
-  refine ptr_ok h (by decide) (by omega) fun s1 p1 r1 m1 h1 => ?_
+  refine ptr_ok h (by decide) (by omega_using [hj, hN]) fun s1 p1 r1 m1 h1 => ?_
   simp only [List.cons_append, List.nil_append]
-  refine wp_dp (op2_lsl (by omega)) fun s2 u2 => ?_
+  refine wp_dp (op2_lsl (by omega_using [hsh])) fun s2 u2 => ?_
   refine wp_dp (op2_imm hc) fun s3 u3 => ?_
   have e3 : s3.gpr .r0 = B + BitVec.ofNat 32 (arr w j + 4 * i) := by
     rw [u3.gpr, dpVal, u2.gpr, dpVal, p1, h1.r9]
@@ -85,24 +85,24 @@ theorem setHi_ok {s : State} {B : BitVec 32} {Z w N j sh c x i : Nat} (h : Ws s 
       apply BitVec.eq_of_toNat_eq
       have : w * 2 ^ sh ≤ w * 4 := Nat.mul_le_mul_left _ p4
       rw [BitVec.toNat_shiftLeft, Nat.shiftLeft_eq, BitVec.toNat_ofNat, BitVec.toNat_ofNat,
-        Nat.mod_eq_of_lt (a := w) (by omega)]
-    rw [this, BitVec.add_assoc, BitVec.ofNat_add_ofNat, VG.Proof.Rsa.Arm.Recover.add_ofNat_sub32 _ (by omega)]
-    congr 2; omega
+        Nat.mod_eq_of_lt (a := w) (by omega_using [wl])]
+    rw [this, BitVec.add_assoc, BitVec.ofNat_add_ofNat, VG.Proof.Rsa.Arm.Recover.add_ofNat_sub32 _ (by omega_using [hi])]
+    congr 2; omega_using [hi]
   refine wp_mov (op2_imm hx) fun s4 u4 => ?_
   have h4 : Ws s4 B Z w N :=
     ((h1.of_upd u2 (by decide) (by decide) (by decide)).of_upd u3 (by decide) (by decide) (by decide)).of_upd u4
       (by decide) (by decide) (by decide)
   have a0 : State.addr (s4.gpr .r0 + BitVec.ofNat 32 0) = off (State.addr B) (arr w j + 4 * i) := by
-    rw [u4.other _ (by decide), e3, BitVec.add_zero]; exact h.addr (by omega)
-  refine wp_str (by decide) a0 (h4.write (by omega)) fun t u5 => ?_
+    rw [u4.other _ (by decide), e3, BitVec.add_zero]; exact h.addr (by omega_using [hiw, fit, hS])
+  refine wp_str (by decide) a0 (h4.write (by omega_using [hiw, fit, hS])) fun t u5 => ?_
   have mt : t.mem = s.mem.writeW (off (State.addr B) (arr w j + 4 * i)) (BitVec.ofNat 32 x) := by
     rw [u5.mem, u4.gpr, u4.mem, u3.mem, u2.mem, m1]
-  have o1 := writeW32_outside s.mem (State.addr B) (d := arr w j + 4 * i) (BitVec.ofNat 32 x) (by omega)
+  have o1 := writeW32_outside s.mem (State.addr B) (d := arr w j + 4 * i) (BitVec.ofNat 32 x) (by omega_using [hiw, fit, hS, nw])
   rw [← mt] at o1
-  refine k t (h4.of_mupd u5) (Keep.of_arr (d := 4 * i) o1 (by omega) (by simp)) ?_
+  refine k t (h4.of_mupd u5) (Keep.of_arr (d := 4 * i) o1 (by omega_using [hiw, hS]) (by simp)) ?_
     ((r1.mono (by simp)).trans ((u2.rest (by simp)).trans ((u3.rest (by simp)).trans
       ((u4.rest (by simp)).trans (u5.rest _)))))
   change val32 _ _ _ _ = _
-  rw [mt, val32_write_word _ _ _ hiw (by omega) hl, BitVec.toNat_ofNat]
+  rw [mt, val32_write_word _ _ _ hiw (by omega_using [fit, hS, nw]) hl, BitVec.toNat_ofNat]
 
 end VG.Proof.Rsa.Arm.Keys

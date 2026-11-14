@@ -31,20 +31,20 @@ theorem RowCtx.of_rest {b : BitVec 32} {s t : State} {ws : List Reg} (h : RowCtx
 
 theorem RowCtx.ea {b : BitVec 32} {s : State} (h : RowCtx b s) {d : Nat} (hd : d < 4096) :
     State.addr (s.gpr .r0 + BitVec.ofNat 32 d) = State.addr b + BitVec.ofNat 64 d := by
-  rw [h.r0]; exact addr_add (by have := h.fit; omega)
+  rw [h.r0]; exact addr_add (by have := h.fit; omega_using [hd, this])
 
 theorem RowCtx.inW {b : BitVec 32} {s : State} (h : RowCtx b s) {d n : Nat} (hd : d + n ≤ 4096) :
-    InRegions s.wr (State.addr b + BitVec.ofNat 64 d) n := in_base h.wr (by omega) (by omega)
+    InRegions s.wr (State.addr b + BitVec.ofNat 64 d) n := in_base h.wr (by omega_using [hd]) (by omega_using [hd])
 
 theorem RowCtx.inR {b : BitVec 32} {s : State} (h : RowCtx b s) {d n : Nat} (hd : d + n ≤ 4096) :
     InRegions (s.rd ++ s.wr) (State.addr b + BitVec.ofNat 64 d) n :=
-  in_base (List.mem_append_right _ h.wr) (by omega) (by omega)
+  in_base (List.mem_append_right _ h.wr) (by omega_using [hd]) (by omega_using [hd])
 
 theorem rowLoad_ok {b : BitVec 32} {s : State} (hc : RowCtx b s) {t : Reg} {d : Nat}
     (hd : d + 4 ≤ 4096) {is : List Instr} {Q : State → Prop}
     (k : ∀ s', Upd s s' t (s.mem.readW (State.addr b + BitVec.ofNat 64 d) 32) →
       WP isa (.block is) s' Q) : WP isa (.block (ld t d :: is)) s Q :=
-  wp_ldr (by omega) (hc.ea (by omega)) (hc.inR hd) k
+  wp_ldr (by omega_using [hd]) (hc.ea (by omega_using [hd])) (hc.inR hd) k
 
 abbrev accw (m : Mem) (B : Addr) (k : Nat) : Nat := wd m B (ACC + 4 * k)
 
@@ -66,21 +66,21 @@ variable {b : BitVec 32}
 
 theorem addr7 (hfit : b.toNat + 4096 ≤ 2 ^ 32) {i : Nat} (hi : 4 * i < 4096) :
     State.addr (b + BitVec.ofNat 32 (4 * i)) = State.addr b + BitVec.ofNat 64 (4 * i) :=
-  addr_add (by omega)
+  addr_add (by omega_using [hfit, hi])
 
 theorem toNat7 (hfit : b.toNat + 4096 ≤ 2 ^ 32) {i : Nat} (hi : 4 * i < 4096) :
     (b + BitVec.ofNat 32 (4 * i)).toNat = b.toNat + 4 * i := by
-  rw [toNat_add_lt (by rw [toNat_imm (by omega)]; omega), toNat_imm (by omega)]
+  rw [toNat_add_lt (by rw [toNat_imm (by omega_using [hi])]; omega_using [hfit, hi]), toNat_imm (by omega_using [hi])]
 
 theorem ea7 (hfit : b.toNat + 4096 ≤ 2 ^ 32) {i d : Nat} (h : 4 * i + d < 4096) :
     State.addr (b + BitVec.ofNat 32 (4 * i) + BitVec.ofNat 32 d) =
       State.addr b + BitVec.ofNat 64 (4 * i + d) := by
-  rw [Offset.add_add]; exact addr_add (by omega)
+  rw [Offset.add_add]; exact addr_add (by omega_using [hfit, h])
 
 theorem eaB (hfit : b.toNat + 4096 ≤ 2 ^ 32) {x d : Nat} (h : x + d < 4096) :
     State.addr (b + BitVec.ofNat 32 x + BitVec.ofNat 32 d) =
       State.addr b + BitVec.ofNat 64 (x + d) := by
-  rw [Offset.add_add]; exact addr_add (by omega)
+  rw [Offset.add_add]; exact addr_add (by omega_using [hfit, h])
 
 end
 

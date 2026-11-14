@@ -91,7 +91,7 @@ theorem front_ok {s : State} (hc : Consts s) (h1 : InRegions (s.rd ++ s.wr) (s.g
   have h42 : 4 + k / 2 < 8 := by bdd_omega
   obtain ⟨a8, a9, a10, a11, a12⟩ := word_m hk2
   obtain ⟨b8, b9, b10, b11, b12⟩ := word_m h42
-  simp (disch := first | decide | omega) only [word_punpcklwd, word_punpckhwd, word_pand, word_paddw,
+  simp (disch := first | decide | omega_using [hk]) only [word_punpcklwd, word_punpckhwd, word_pand, word_paddw,
     word_psubw, word_psrlw, hc.m8, hc.m9, hc.m10, hc.m11, hc.m12, a8, a9, a10, a11, a12, b8, b9,
     b10, b11, b12, show (1 : BitVec 8).toNat = 1 from rfl, show (2 : BitVec 8).toNat = 2 from rfl,
     show (4 : BitVec 8).toNat = 4 from rfl, show (8 : BitVec 8).toNat = 8 from rfl, word_lo _ _ hk2,
@@ -199,7 +199,7 @@ theorem wordAt_wr2 (m : Mem) (p : Addr) {c₀ off : Nat} (hoff : off = 0 ∨ off
   rw [e16, ← Nat.add_assoc, hb]
   by_cases hin : b ≤ k ∧ k < b + 16
   · rw [ite_eq_left hin]
-    obtain ⟨r, rfl, hr⟩ : ∃ r, k = b + r ∧ r < 16 := ⟨k - b, by omega, by omega⟩
+    obtain ⟨r, rfl, hr⟩ : ∃ r, k = b + r ∧ r < 16 := ⟨k - b, by omega_using [hin], by omega_using [hin]⟩
     simp only [Nat.add_le_add_iff_left, Nat.add_lt_add_iff_left, Nat.add_sub_cancel_left]
     rcases (by bdd_omega : r / 8 = 0 ∨ r / 8 = 1) with h | h <;>
       rw [h] <;> simp (disch := bdd_omega) only [ite_eq_left, ite_eq_right] <;> congr 1 <;> bdd_omega
@@ -298,7 +298,7 @@ theorem val_eq {i : Nat} (hi : i < 8) {s : State} (hI : Inv s₀ i s) {g t j : N
     rw [hI.rdi, BitVec.add_assoc, ← BitVec.ofNat_add, bytesAt_getD _ _ (by bdd_omega),
       show 16 * i + (8 * g + 4 * t + j / 2) = (32 * i + 16 * g + 8 * t + j) / 2 by bdd_omega]
     exact bytes_frame hI.frame (by simpa using hp.2.2.1) (by decide) _ (by bdd_omega)
-  rw [val, samplePolyCBD2_val _ (by rw [n_eq]; omega), nibble, q_eq, ← hb,
+  rw [val, samplePolyCBD2_val _ (by rw [n_eq]; omega_using [hi, hg, ht, hj]), nibble, q_eq, ← hb,
     show (32 * i + 16 * g + 8 * t + j) % 2 = j % 2 by bdd_omega]
 
 theorem step {i : Nat} (hi : i < 8) {s : State} (hI : Inv s₀ i s) :
@@ -354,7 +354,7 @@ theorem correct : ∃ t s', Exec isa Impl.MlKem.X86_64.cbd2_16 s₀ t s' ∧ abi
   refine ⟨t, s', he, abiPreserved_of_exec (by decide) he (gprPreserved_of hk (by decide) hI.frame
     (by simpa using hp.2.2.2.2)), polyIsW_of_toNat fun k hk => ?_⟩
   rw [coeffAtW_eq]
-  exact hI.coeff k (by rw [n_eq] at hk; omega)
+  exact hI.coeff k (by rw [n_eq] at hk; omega_using [hk])
 
 end
 

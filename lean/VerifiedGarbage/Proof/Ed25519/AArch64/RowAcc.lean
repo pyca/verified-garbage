@@ -28,12 +28,12 @@ theorem mul_lo_hi (a b : Word) :
   have h1 : (a * b).toNat = a.toNat * b.toNat % 2 ^ 64 := BitVec.toNat_mul _ _
   have h2 : (mulHi a b).toNat = a.toNat * b.toNat / 2 ^ 64 := by
     simp only [mulHi, BitVec.toNat_ofNat]
-    exact Nat.mod_eq_of_lt (by omega)
+    exact Nat.mod_eq_of_lt (by omega_using [hp])
   rw [h1, h2]
-  omega
+  omega_using []
 
 theorem mul_le (a b : Word) : a.toNat * b.toNat ≤ (2 ^ 64 - 1) * (2 ^ 64 - 1) :=
-  Nat.mul_le_mul (by have := a.isLt; omega) (by have := b.isLt; omega)
+  Nat.mul_le_mul (by have := a.isLt; omega_using []) (by have := b.isLt; omega_using [])
 
 theorem mul_val4 (a b0 b1 b2 b3 : Nat) :
     a * (b0 + 2 ^ 64 * b1 + 2 ^ 128 * b2 + 2 ^ 192 * b3) =
@@ -57,7 +57,7 @@ theorem rowAcc_arith {T0 T1 T2 T3 L0 L1 L2 L3 H0 H1 H2 H3 P0 P1 P2 P3
     S0 + 2 ^ 64 * R1 + 2 ^ 128 * R2 + 2 ^ 192 * R3 + 2 ^ 256 * R4 =
       T0 + 2 ^ 64 * T1 + 2 ^ 128 * T2 + 2 ^ 192 * T3 +
         (P0 + 2 ^ 64 * P1 + 2 ^ 128 * P2 + 2 ^ 192 * P3) := by
-  omega
+  omega_using [e0, e1, e2, e3, e4, f1, f2, f3, f4, m0, m1, m2, m3, p0, p1, p2, p3, t0, t1, t2, t3]
 
 /-- What `rowAcc` computes, word by word. -/
 theorem rowAcc_value (a b0 b1 b2 b3 t0 t1 t2 t3 : Word) :
@@ -96,7 +96,7 @@ theorem rowFirst_arith {L0 L1 L2 L3 H0 H1 H2 H3 P0 P1 P2 P3 R1 R2 R3 R4 D1 D2 D3
     (p2 : P2 ≤ (2 ^ 64 - 1) * (2 ^ 64 - 1)) (p3 : P3 ≤ (2 ^ 64 - 1) * (2 ^ 64 - 1)) :
     L0 + 2 ^ 64 * R1 + 2 ^ 128 * R2 + 2 ^ 192 * R3 + 2 ^ 256 * R4 =
       P0 + 2 ^ 64 * P1 + 2 ^ 128 * P2 + 2 ^ 192 * P3 := by
-  omega
+  omega_using [f1, f2, f3, f4, m0, m1, m2, m3, p0, p1, p2, p3]
 
 /-- What `rowFirst` computes, word by word. -/
 theorem rowFirst_value (a b0 b1 b2 b3 : Word) :
@@ -210,8 +210,8 @@ theorem reduceLo_arith {T0 T1 T2 T3 L0 L1 L2 L3 H0 H1 H2 H3 W0 W1 W2 W3 A
     S0 + 2 ^ 64 * S1 + 2 ^ 128 * S2 + 2 ^ 192 * R3 + 2 ^ 256 * R4 + 2 ^ 64 * H0 + 2 ^ 128 * H1 =
       T0 + 2 ^ 64 * T1 + 2 ^ 128 * T2 + 2 ^ 192 * T3 +
         (A * W0 + 2 ^ 64 * (A * W1) + 2 ^ 128 * (A * W2) + 2 ^ 192 * (A * W3)) := by
-  have hw : A * W3 ≤ 38 * (2 ^ 64 - 1) := Nat.mul_le_mul ha (by omega)
-  omega
+  have hw : A * W3 ≤ 38 * (2 ^ 64 - 1) := Nat.mul_le_mul ha (by omega_using [w3])
+  omega_using [e0, e1, e2, e3, e4, f3, f4, m0, m1, m2, m3, ha, w3, c3, d3, hw]
 
 theorem reduceLo_value (a b0 b1 b2 b3 t0 t1 t2 t3 : Word) (ha : a.toNat ≤ 38) :
     let c0 := carryOut t0 (a * b0) false

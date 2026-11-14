@@ -28,7 +28,7 @@ abbrev CodeByte (d : Int) : Byte := (BitVec.ofInt 64 d).setWidth 8
 abbrev DigitWord (d : Int) : BitVec 64 := (CodeByte d).setWidth 64
 
 theorem bounded_index {d : Int} (h : -15 ≤ d ∧ d ≤ 15) : ∃ (i : Nat), i < 31 ∧ d = (i : Int) - 15 := by
-  refine ⟨(d + 15).toNat, ?_, ?_⟩ <;> omega
+  refine ⟨(d + 15).toNat, ?_, ?_⟩ <;> omega_using [h]
 
 private theorem digit_zero : ∀ (i : Nat), i < 31 →
     (DigitWord ((i : Int) - 15) &&& DigitWord ((i : Int) - 15) == 0) = decide ((i : Int) - 15 = 0) := by

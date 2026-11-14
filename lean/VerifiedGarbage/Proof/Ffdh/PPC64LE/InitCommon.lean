@@ -28,7 +28,7 @@ theorem lt_bit {n c : Nat} (hn : n < 2 ^ 63) (hc : c < 2 ^ 63) :
     (BitVec.ofNat 64 n - BitVec.ofNat 64 c) >>> 63 = BitVec.ofNat 64 (if n < c then 1 else 0) := by
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_ushiftRight, BitVec.toNat_sub, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow]
-  split <;> omega
+  split <;> omega_arith
 
 /-- `n >> k` is zero exactly when `n < 2^k`. -/
 theorem shr_zero {n k : Nat} (hn : n < 2 ^ 64) :
@@ -79,7 +79,7 @@ def StateWr (s : State) : Prop :=
 theorem st {s : State} (h : StateWr s) (d : Nat) (hd : d + 8 ≤ 128) :
     InRegions s.wr (s.gpr .r3 + BitVec.ofNat 64 d) 8 := by
   rw [h.1]
-  exact ⟨_, List.mem_singleton_self _, Offset.contains_base _ hd (by omega)⟩
+  exact ⟨_, List.mem_singleton_self _, Offset.contains_base _ hd (by omega_using [hd])⟩
 
 theorem st0 {s : State} (h : StateWr s) : InRegions s.wr (s.gpr .r3) 8 := by
   simpa only [BitVec.ofNat_eq_ofNat, BitVec.add_zero] using st h 0 (by decide)

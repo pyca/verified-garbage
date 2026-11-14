@@ -30,8 +30,8 @@ theorem random_copyInit_ok {s : State} {B R src dst : Addr} {l n used : Nat} {ma
   have haddr : B + BitVec.signExtend 64 (BitVec.ofNat 32 Random.oNonce) +
       BitVec.ofNat 64 l - BitVec.ofNat 64 n = dst := hdst
   have he : (BitVec.ofNat 64 (n - 1) == 0) = decide (n = 1) := by
-    rw [ofNat64_beq_zero (by omega)]
-    exact decide_eq_decide.mpr (by omega)
+    rw [ofNat64_beq_zero (by omega_using [hbound])]
+    exact decide_eq_decide.mpr (by omega_using [hpos])
   refine WP.mono (WP.keep [.rax, .r10, .rdx, .r11] (Q := fun t =>
       t.gpr .r10 = src + 1 ∧ t.gpr .rdx = dst + 1 ∧ t.gpr .r11 = BitVec.ofNat 64 (n - 1) ∧
       t.zf = some (decide (n = 1)) ∧

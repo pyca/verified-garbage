@@ -33,15 +33,15 @@ theorem foldl_toNat (t : BitVec 32) : ∀ (sh : List Nat) (acc : BitVec 32),
   | k :: sh, acc, h => by
     simp only [List.map_cons, List.sum_cons, Nat.mul_add] at h ⊢
     have hk : (t <<< k).toNat = t.toNat * 2 ^ k := by
-      rw [BitVec.toNat_shiftLeft, Nat.shiftLeft_eq, Nat.mod_eq_of_lt (by omega)]
+      rw [BitVec.toNat_shiftLeft, Nat.shiftLeft_eq, Nat.mod_eq_of_lt (by omega_using [h])]
     have ha : (acc + t <<< k).toNat = acc.toNat + t.toNat * 2 ^ k := by
-      rw [BitVec.toNat_add, hk, Nat.mod_eq_of_lt (by omega)]
-    rw [List.foldl_cons, foldl_toNat t sh _ (by rw [ha]; omega), ha]
-    omega
+      rw [BitVec.toNat_add, hk, Nat.mod_eq_of_lt (by omega_using [h])]
+    rw [List.foldl_cons, foldl_toNat t sh _ (by rw [ha]; omega_using [h]), ha]
+    omega_using []
 
 theorem mulL_toNat (sh : List Nat) {t : BitVec 32} (h : t.toNat * (1 + (sh.map (2 ^ ·)).sum) < 2 ^ 32) :
     (mulL sh t).toNat = t.toNat * (1 + (sh.map (2 ^ ·)).sum) := by
-  rw [mulL, foldl_toNat t sh t (by rw [Nat.mul_add] at h; omega), Nat.mul_add]; omega
+  rw [mulL, foldl_toNat t sh t (by rw [Nat.mul_add] at h; omega_using [h]), Nat.mul_add]; omega_using []
 
 theorem dSh_sum {g : Nat} (h : g ∈ gamma2s) : 1 + ((dSh g).map (2 ^ ·)).sum = dMul g := by
   rcases mem_gamma2s h with rfl | rfl <;> rfl
@@ -62,17 +62,17 @@ theorem hbF32 {g : Nat} (h : g ∈ gamma2s) {x : BitVec 32} (hx : x.toNat < q) :
     (hbFL g x).toNat = hbF g x.toNat := by
   rw [q_eq] at hx
   have e1 : (x + BitVec.ofNat 32 127).toNat = x.toNat + 127 := by
-    rw [BitVec.toNat_add, BitVec.toNat_ofNat]; omega
+    rw [BitVec.toNat_add, BitVec.toNat_ofNat]; omega_using [hx]
   have e2 : ((x + BitVec.ofNat 32 127) >>> 7).toNat = (x.toNat + 127) / 128 := by
     rw [BitVec.toNat_ushiftRight, e1, Nat.shiftRight_eq_div_pow]
   have hM : dMul g ≤ 11275 := by unfold dMul; split <;> decide
   have hA : dAdd g ≤ 2 ^ 23 := by unfold dAdd; split <;> decide
-  have hp : (x.toNat + 127) / 128 * dMul g ≤ 65473 * 11275 := Nat.mul_le_mul (by omega) hM
+  have hp : (x.toNat + 127) / 128 * dMul g ≤ 65473 * 11275 := Nat.mul_le_mul (by omega_using [hx]) hM
   have e3 : (mulL (dSh g) ((x + BitVec.ofNat 32 127) >>> 7)).toNat = (x.toNat + 127) / 128 * dMul g := by
-    rw [mulL_toNat _ (by rw [e2, dSh_sum h]; omega), e2, dSh_sum h]
+    rw [mulL_toNat _ (by rw [e2, dSh_sum h]; omega_using [hp]), e2, dSh_sum h]
   have e4 : (mulL (dSh g) ((x + BitVec.ofNat 32 127) >>> 7) + BitVec.ofNat 32 (dAdd g)).toNat =
       (x.toNat + 127) / 128 * dMul g + dAdd g := by
-    rw [BitVec.toNat_add, e3, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show dAdd g < 2 ^ 32 by omega)]; omega
+    rw [BitVec.toNat_add, e3, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show dAdd g < 2 ^ 32 by omega_using [hA])]; omega_using [hA, hp]
   rw [hbFL, BitVec.toNat_ushiftRight, e4, Nat.shiftRight_eq_div_pow, hbF_eq h (by rw [q_eq]; exact hx)]
   rfl
 
@@ -86,11 +86,11 @@ theorem hbL_toNat {g : Nat} (h : g ∈ gamma2s) {x : BitVec 32} (hx : x.toNat < 
   generalize hbFL g x = f at hf ⊢
   rw [sshiftRight31]
   have hsub : (f - BitVec.ofNat 32 (dMod g)).toNat = (f.toNat + 2 ^ 32 - dMod g) % 2 ^ 32 := by
-    rw [BitVec.toNat_sub, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show dMod g < 2 ^ 32 by omega)]; omega
+    rw [BitVec.toNat_sub, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show dMod g < 2 ^ 32 by omega_using [hm])]; omega_using [hm]
   by_cases e : hbF g x.toNat = dMod g
-  · rw [ite_eq_left (by rw [hsub, hf, e]; omega), show f &&& (0 : BitVec 32) = 0 from BitVec.and_zero, e, Nat.mod_self]; rfl
-  · rw [ite_eq_right (by rw [hsub, hf]; omega), show (-1 : BitVec 32) = BitVec.allOnes 32 by decide, BitVec.and_allOnes,
-      hf, Nat.mod_eq_of_lt (by omega)]
+  · rw [ite_eq_left (by rw [hsub, hf, e]; omega_using []), show f &&& (0 : BitVec 32) = 0 from BitVec.and_zero, e, Nat.mod_self]; rfl
+  · rw [ite_eq_right (by rw [hsub, hf]; omega_using [hle, hm, e]), show (-1 : BitVec 32) = BitVec.allOnes 32 by decide, BitVec.and_allOnes,
+      hf, Nat.mod_eq_of_lt (by omega_using [hle, e])]
 
 /-- `r₁ · 2γ₂` by shifts and additions, as `mul2X` computes it. -/
 def mul2L (g : Nat) (r : BitVec 32) : BitVec 32 :=
@@ -109,10 +109,10 @@ theorem mul2L_toNat {g : Nat} (h : g ∈ gamma2s) {r : BitVec 32} (hr : r.toNat 
     simp only [List.foldl_cons, List.foldl_nil]
     rw [BitVec.toNat_add, BitVec.toNat_add, BitVec.toNat_add, BitVec.toNat_add, s 11 (by decide), s 13 (by decide),
       s 14 (by decide), s 15 (by decide), s 17 (by decide)]
-    omega
+    omega_using [hr]
   · unfold mul2L
     rw [ite_eq_left rfl, BitVec.toNat_sub, s 19 (by decide), s 9 (by decide)]
-    omega
+    omega_using [hr]
 
 /-- What `lbX` computes in a doubleword. -/
 def lbL (g : Nat) (x : BitVec 32) : BitVec 32 := caddL (x - mul2L g (hbL g x))
@@ -126,10 +126,10 @@ theorem lbL_toNat {g : Nat} (h : g ∈ gamma2s) {x : BitVec 32} (hx : x.toNat < 
   have hle : hbF g x.toNat % hbM g * (2 * g) ≤ q - 1 := by
     rw [← hbM_mul h]; exact Nat.mul_le_mul_right _ (Nat.le_of_lt hlt)
   have e1 : (mul2L g (hbL g x)).toNat = hbF g x.toNat % hbM g * (2 * g) := by
-    rw [mul2L_toNat h (by rw [hbL_toNat h hx]; omega), hbL_toNat h hx]
+    rw [mul2L_toNat h (by rw [hbL_toNat h hx]; omega_using [hlt, hM]), hbL_toNat h hx]
   unfold lbL
   rw [caddL_toNat, BitVec.toNat_sub, e1]
   rw [q_eq] at hx hle ⊢
-  split <;> split <;> omega
+  split <;> split <;> omega_arith
 
 end VG.Proof.MlDsa.X86_64.Round

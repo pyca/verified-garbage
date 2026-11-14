@@ -95,7 +95,7 @@ theorem bodyWith_noSp (check derive : Prog isa) (C : NoSp check) (D : NoSp deriv
 theorem codeWith_ok {I : State → Mem → Prop} (C : CheckInvoke I) (D : DeriveInvoke I)
     (stable : StableScratch I) (nc : NoSp C.code) (nd : NoSp D.code) {s₀ : State} (A : KeyABI s₀) :
     WP isa (codeWith C.code D.code) s₀ fun s' => ∃ u, Finished s₀ u ∧ s' = freed KeyRandom.frameBytes u :=
-  WP.alloc ⟨by decide, by decide, by decide⟩ (by have := A.stackLow; unfold KeyRandom.frameBytes; omega)
+  WP.alloc ⟨by decide, by decide, by decide⟩ (by have := A.stackLow; unfold KeyRandom.frameBytes; omega_using [this])
     (bodyWith_noSp C.code D.code nc nd) (WP.mono (bodyWith_ok C D stable A) fun u hu => ⟨u, hu, rfl⟩)
 
 theorem freed_esp_eq {s₀ u : State} (A : KeyABI s₀) (h : Ready s₀ u) :
@@ -144,11 +144,11 @@ theorem generateKeyWith_correct {I : State → Mem → Prop} (C : CheckInvoke I)
     have hul : (rResult s).used < 2 ^ 32 := by
       have := result_used_le A
       have : (rInput s).rand.length < 2 ^ 32 := by simp only [rInput, rBytes_length]; exact BitVec.isLt _
-      omega
+      omega_arith
     refine ⟨?_, hF.out, ?_⟩
     · rw [BitVec.setWidth_append_eq_right]
       show (u.gpr .eax).toNat = (rResult s).status
-      rw [hF.eax, toNat_ofNat_lt (by omega)]
+      rw [hF.eax, toNat_ofNat_lt (by omega_using [hle])]
     · show Spec.Rsa.wordsAt u.mem (argumentPointer s 2) 1 = [BitVec.ofNat 64 (rResult s).used]
       simp only [Spec.Rsa.wordsAt, List.range_one, List.map_cons, List.map_nil, Nat.mul_zero]
       refine congrArg (· :: []) (BitVec.eq_of_toNat_eq ?_)
@@ -158,7 +158,7 @@ theorem generateKeyWith_correct {I : State → Mem → Prop} (C : CheckInvoke I)
       rw [this, show (0 + 4 : Nat) = 4 from rfl]
       have lo : (u.mem.readW (argumentPointer s 2 + BitVec.ofNat 64 0) 32) = _ := hF.usedLo
       have hi : (u.mem.readW (argumentPointer s 2 + BitVec.ofNat 64 4) 32) = _ := hF.usedHi
-      rw [lo, hi, toNat_ofNat_lt hul, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+      rw [lo, hi, toNat_ofNat_lt hul, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hul])]
       rfl
 
 end VG.Proof.Dsa.X86.KeyRandom

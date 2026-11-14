@@ -31,7 +31,7 @@ theorem candidateWidth_ok {s : State} {B pp : Addr} {Z w len p : Nat}
     fun _ ⟨⟨hc, hm⟩, hk⟩ => ⟨hc, hm, hk⟩
   unfold Impl.Dsa.AArch64.Generation.candidateWidth
   brun [h.x0, hdr_enc (by decide : 20 < 32),
-    h.scr.ld (d := 160) (by have := h.h256; omega), hptr, hrd, eval, read_one,
+    h.scr.ld (d := 160) (by have := h.h256; omega_using [this]), hptr, hrd, eval, read_one,
     BitVec.setWidth_setWidth_of_le _ (show 8 ≤ 64 by decide),
     BitVec.setWidth_setWidth_of_le _ (show 8 ≤ 32 by decide)]
   have hb := (s.mem pp).isLt
@@ -42,12 +42,12 @@ theorem candidateWidth_ok {s : State} {B pp : Addr} {Z w len p : Nat}
       apply BitVec.eq_of_toNat_eq
       simp only [BitVec.toNat_ushiftRight, BitVec.toNat_setWidth, Nat.shiftRight_eq_div_pow]
       change ((s.mem pp).toNat % 2 ^ 32 % 2 ^ 64) / 128 = 0
-      omega
+      omega_using [ht]
     · rw [ite_eq_right ht]
       apply BitVec.eq_of_toNat_eq
       simp only [BitVec.toNat_ushiftRight, BitVec.toNat_setWidth, Nat.shiftRight_eq_div_pow]
       change ((s.mem pp).toNat % 2 ^ 32 % 2 ^ 64) / 128 = 1
-      omega
+      omega_using [ht]
   change ((BitVec.setWidth 64 (BitVec.setWidth 32 (s.mem pp)) >>> 7) == (0#64)) =
     decide (p < 2 ^ (8 * len - 1))
   rw [hshift]

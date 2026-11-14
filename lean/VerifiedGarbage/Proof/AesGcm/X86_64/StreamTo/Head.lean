@@ -53,7 +53,7 @@ theorem Mid.slot {o : Nat} {st st' : State} (h : Mid s o st) (hf : Frame [hR s] 
   refine ⟨streamRepr_frame hf (one (hp.st_w.sub_right hR_sub)) sr, ?_⟩
   rw [← dd]
   exact bytesAt_frame hf (one ((hp.d_w.sub_left (Region.sub_prefix h.o_le)).sub_right hR_sub))
-    (by have := h.o_le; omega)
+    (by have := h.o_le; omega_using [hL, this])
 
 end
 
@@ -127,27 +127,27 @@ theorem hc_wp (hk0 : Hd s ≠ 0) {st : State} (h : HC s st) : WP isa copyLoop st
   have hL : L s < 2 ^ 64 := (stackArg s 0).isLt
   have hHL : Hd s ≤ L s := Nat.min_le_right _ _
   obtain ⟨M₃, si₃, di₃, cx₃, k₃⟩ := h
-  have ds := dq_sub (s := s) (o := 0) (n := Hd s) (by omega)
-  have ss : Region.Sub ⟨Src s + BitVec.ofNat 64 0, Hd s⟩ (srcR s) := Offset.sub_base _ (by omega)
+  have ds := dq_sub (s := s) (o := 0) (n := Hd s) (by omega_using [hHL])
+  have ss : Region.Sub ⟨Src s + BitVec.ofNat 64 0, Hd s⟩ (srcR s) := Offset.sub_base _ (by omega_using [hHL])
   have cp : CopyPre st (Src s + BitVec.ofNat 64 0) (Dst s + BitVec.ofNat 64 0) (Hd s) :=
-    ⟨si₃, di₃, cx₃, by omega, by omega,
-      covers_off (k := L s) (d := 0) (m := Hd s) (by rw [M₃.rd, M₃.wr, hp.rd]; simp) (by omega) (by omega),
-      covers_off (k := L s) (d := 0) (m := Hd s) (by rw [M₃.wr, hp.wr]; simp) (by omega) (by omega),
+    ⟨si₃, di₃, cx₃, by omega_using [hk0], by omega_using [hL, hHL],
+      covers_off (k := L s) (d := 0) (m := Hd s) (by rw [M₃.rd, M₃.wr, hp.rd]; simp) (by omega_using [hHL]) (by omega_using []),
+      covers_off (k := L s) (d := 0) (m := Hd s) (by rw [M₃.wr, hp.wr]; simp) (by omega_using [hHL]) (by omega_using []),
       (hp.r_d.sub_left ss).sub_right ds⟩
   refine WP.mono (copyLoopL_ok st cp) fun s₄ ⟨m₄, g₄, rd₄, wr₄⟩ => ?_
   have f₄ : Frame [dqR s 0 (Hd s)] st.mem s₄.mem := by
     rw [m₄]; exact writeBytes_frame' _ (length_bytesAt _ _ _)
-  refine ⟨M₃.copy hp (by omega) f₄ (fun r hr => g₄ r (notCs' hr).1 (notCs' hr).2.2.2.2.2.2.2.1) rd₄ wr₄, ?_, ?_⟩
+  refine ⟨M₃.copy hp (by omega_using [hHL]) f₄ (fun r hr => g₄ r (notCs' hr).1 (notCs' hr).2.2.2.2.2.2.2.1) rd₄ wr₄, ?_, ?_⟩
   · show s₄.mem.readW _ 64 = _
     rw [← k₃]
     exact f₄.readW (Region.contains_self _ _) (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
       exact ((hp.d_w.sub_left ds).sub_right hR_sub).symm) (by decide)
   · have e := bytesAt_writeBytes_self st.mem (Dst s + BitVec.ofNat 64 0)
-      (bytesAt st.mem (Src s + BitVec.ofNat 64 0) (Hd s)) (by rw [length_bytesAt]; omega)
+      (bytesAt st.mem (Src s + BitVec.ofNat 64 0) (Hd s)) (by rw [length_bytesAt]; omega_using [hL, hHL])
     rw [length_bytesAt] at e
     rw [m₄, e, BitVec.add_zero]
-    exact bytesAt_frame M₃.frame (fun r hr => (r_disj hp r hr).sub_left (Region.sub_prefix hHL)) (by omega)
+    exact bytesAt_frame M₃.frame (fun r hr => (r_disj hp r hr).sub_left (Region.sub_prefix hHL)) (by omega_using [hL, hHL])
 
 theorem ha_wp {st : State} (h : HA s st) : WP isa (.block headArgs) st (HE s) :=
   WP.mono (headArgs_ok hp h.1 h.2.1) fun _ ⟨di, si, dx, cx, r8, r9, r10, cs, m, rd, wr⟩ =>
@@ -158,8 +158,8 @@ theorem hcall_wp (E : EncFn M) {st : State} (h : HE s st) :
   have hL : L s < 2 ^ 64 := (stackArg s 0).isLt
   have hHL : Hd s ≤ L s := Nat.min_le_right _ _
   obtain ⟨⟨M₅, k₅, hX₅⟩, di, si, dx, cx, r8, r9, r10⟩ := h
-  have ds := dq_sub (s := s) (o := 0) (n := Hd s) (by omega)
-  refine WP.mono (encCall_ok hp E (o := 0) (n := Hd s) (by omega) M₅.rsp M₅.rd M₅.wr M₅.frame
+  have ds := dq_sub (s := s) (o := 0) (n := Hd s) (by omega_using [hHL])
+  refine WP.mono (encCall_ok hp E (o := 0) (n := Hd s) (by omega_using [hHL]) M₅.rsp M₅.rd M₅.wr M₅.frame
     di si dx cx r8 r9 r10) fun s₆ ⟨cs₆, rd₆, wr₆, f₆, post⟩ => ?_
   have f₆' : Frame (wR s ++ [tR s]) s.mem s₆.mem := M₅.frame.trans (f₆.sub fun r hr => by
     simp only [List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hr

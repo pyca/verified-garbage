@@ -41,7 +41,7 @@ theorem hashCopyArgs_ok {s : State} {F S op : Addr} {len count j : Nat}
     WP isa (.block (Impl.Dsa.AArch64.Generation.hashCopyArgs len count j)) s fun t =>
       t.gpr .x12 = off S oDig ∧ t.gpr .x2 = off op ((count - j) * len) ∧
       t.gpr .x9 = BitVec.ofNat 64 len ∧ t.mem = s.mem ∧ Keep [.x12, .x2, .x9] s t := by
-  have hoff : (count - j) * len < 4096 := by rcases hlen with rfl | rfl <;> omega
+  have hoff : (count - j) * len < 4096 := by rcases hlen with rfl | rfl <;> omega_using [hcount]
   have h4 : s.mem.readW (F + BitVec.ofNat 64 32) 64 = op := (R.fr 4 (by decide)).trans hop
   have hs : s.mem.readW (F + BitVec.ofNat 64 sScr) 64 = S := L.slot
   refine WP.mono (WP.keep [.x12, .x2, .x9] (Q := fun t =>

@@ -30,11 +30,11 @@ theorem trialBytes_pair (m : Mem) (endPtr : BitVec 32) (n : Nat) :
       change BitVec.ofNat 32 2 + BitVec.ofNat 32 (n - j) = _
       rw [BitVec.ofNat_add_ofNat]
       congr 1
-      omega
+      omega_using [bound]
     rw [offset]
   · change [m (State.addr (endPtr - BitVec.ofNat 32 (n + 2 - (n + 0)))),
         m (State.addr (endPtr - BitVec.ofNat 32 (n + 2 - (n + 1))))] = _
-    rw [show n + 2 - (n + 0) = 2 by omega, show n + 2 - (n + 1) = 1 by omega]
+    rw [show n + 2 - (n + 0) = 2 by omega_using [], show n + 2 - (n + 1) = 1 by omega_using []]
     rfl
 
 theorem trialValue_octets (m : Mem) (endPtr : BitVec 32) (n : Nat) :
@@ -47,12 +47,12 @@ theorem trialValue_octets (m : Mem) (endPtr : BitVec 32) (n : Nat) :
       cases n with
       | zero => simp [trialValue, trialDigitNat, trialBytes, Spec.Rsa.os2ip]
       | succ n =>
-        rw [trialValue, trialBytes_pair, ih n (by omega)]
+        rw [trialValue, trialBytes_pair, ih n (by omega_using [])]
         rw [show [m (State.addr (endPtr - 2)), m (State.addr (endPtr - 1))] =
           [m (State.addr (endPtr - 2))] ++ [m (State.addr (endPtr - 1))] from rfl,
           ← List.append_assoc, VG.Proof.Rsa.os2ip_snoc, VG.Proof.Rsa.os2ip_snoc]
-        simp only [trialDigitNat, show n + 1 + 1 ≠ 1 by omega, ite_false]
-        omega
+        simp only [trialDigitNat, show n + 1 + 1 ≠ 1 by omega_using [], ite_false]
+        omega_using []
 
 theorem trialBytes_at (m : Mem) (dst : BitVec 32) {n : Nat}
     (fits : n < 2 ^ 32) (bufferFits : dst.toNat + n ≤ 2 ^ 32) :
@@ -63,9 +63,9 @@ theorem trialBytes_at (m : Mem) (dst : BitVec 32) {n : Nat}
   have bound := List.mem_range.mp hj
   have ptr : dst + BitVec.ofNat 32 n - BitVec.ofNat 32 (n - j) = dst + BitVec.ofNat 32 j := by
     rw [BitVec.sub_eq_add_neg, BitVec.add_assoc, ← BitVec.sub_eq_add_neg,
-      BitVec.ofNat_sub_ofNat_of_le _ _ (by omega) (by omega)]
+      BitVec.ofNat_sub_ofNat_of_le _ _ (by omega_using [fits]) (by omega_using [])]
     congr 2
-    omega
-  rw [ptr, VG.Arm.addr_add (by omega : dst.toNat + j < 2 ^ 32)]
+    omega_using [bound]
+  rw [ptr, VG.Arm.addr_add (by omega_using [bufferFits, bound] : dst.toNat + j < 2 ^ 32)]
 
 end VG.Proof.Ffdh.Arm.ParameterCandidate

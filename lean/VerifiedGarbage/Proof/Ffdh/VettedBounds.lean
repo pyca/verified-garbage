@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Spec.Ffdh.VettedKeyGeneration
 import VerifiedGarbage.Proof.Ffdh.KeyScalar
 import Mathlib.Tactic.NormNum
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-! Exact vetted groups have scalar bounds exceeding their recommended widths. -/
 
@@ -72,7 +73,7 @@ theorem recognized_q {a : Spec.Ffdh.Parameters} {bits : Nat}
     exact guard (Or.inr different)
 
 private theorem half_bound {p n : Nat} (hp : 2 * n < p) : n ≤ p - 1 ∧ n ≤ (p - 1) / 2 := by
-  omega
+  omega_using [hp]
 
 private theorem lower_bitLength {n x : Nat} (lower : 2 ^ n ≤ x) : n < Spec.RsaKeyGen.bitLength x := by
   have nonzero : x ≠ 0 := Nat.ne_of_gt (Nat.lt_of_lt_of_le (Nat.two_pow_pos _) lower)

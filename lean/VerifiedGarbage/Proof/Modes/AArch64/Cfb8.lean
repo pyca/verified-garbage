@@ -51,9 +51,9 @@ theorem cfb8_wp (cs : BlockSpec c) (enc : Bool) {r : CtrRegs} (hr : RegsOk r) (h
   have hroom := hL.room
   have hbw0 := hL.bw_pos
   have hbw2 := hL.bw_le
-  have hL0 : 0 < 8 * c.bw := by omega
+  have hL0 : 0 < 8 * c.bw := by omega_using [hbw0]
   have hn64 : n < 2 ^ 64 := by rw [← hn]; exact BitVec.isLt _
-  have hN : 8 * c.total < 2 ^ 64 := by omega
+  have hN : 8 * c.total < 2 ^ 64 := by omega_using [hsm]
   obtain ⟨hregs, hdl⟩ := regsOk_ne cs.regs_ok
   obtain ⟨-, dsb, dk⟩ := hregs c.dataReg List.mem_cons_self
   obtain ⟨-, lsb, lk⟩ := hregs c.leftReg (List.mem_cons_of_mem _ List.mem_cons_self)
@@ -63,12 +63,12 @@ theorem cfb8_wp (cs : BlockSpec c) (enc : Bool) {r : CtrRegs} (hr : RegsOk r) (h
   obtain ⟨-, idr, ilr⟩ := of_not_modeRegs hiv.mode
   obtain ⟨isb, -⟩ := not_setupRegs hiv.setup
   let S : Region := ⟨B, 8 * c.total⟩
-  have subMode : Region.Sub (modeRegion c B) S := VG.Offset.sub_base B (by omega)
-  have subCore : Region.Sub (coreRegion c B) S := Region.sub_prefix (by omega)
+  have subMode : Region.Sub (modeRegion c B) S := VG.Offset.sub_base B (by omega_using [hroom])
+  have subCore : Region.Sub (coreRegion c B) S := Region.sub_prefix (by omega_using [hroom])
   have slotIn : ∀ i < 10, Region.Sub ⟨wordAddr B (c.slots + i), 8⟩ S := fun i hi =>
-    VG.Offset.sub_base B (by omega)
+    VG.Offset.sub_base B (by omega_using [hroom, hi])
   have slotCore : ∀ i < 10, Region.Disjoint ⟨wordAddr B (c.slots + i), 8⟩ (coreRegion c B) := fun i hi =>
-    VG.Offset.disjoint_base B (by omega) (by omega)
+    VG.Offset.disjoint_base B (by omega_using []) (by omega_using [hsm, hroom, hi])
   -- The entry.
   obtain ⟨sE, eE, bE, svE, fE, gE, rdE, wrE⟩ := entry_ok hsm hroom s₀ hB hs
   obtain ⟨sS, eS, xS, gS, mS, rdS, wrS⟩ := movR_ok sE ivR r.ctr
@@ -115,13 +115,13 @@ theorem cfb8_wp (cs : BlockSpec c) (enc : Bool) {r : CtrRegs} (hr : RegsOk r) (h
   have dPcore : ∀ x ∈ [coreRegion c B], Region.Disjoint ⟨P, 8 * c.bw⟩ x := fun x hx => by
     simp only [List.mem_singleton] at hx; subst hx; exact sPS.sub_right subCore
   have m₄P : ∀ u < 8 * c.bw, s₄.mem (P + BitVec.ofNat 64 u) = s₀.mem (P + BitVec.ofNat 64 u) := fun u hu => by
-    rw [f₄.bytes (R := ⟨P, 8 * c.bw⟩) dPcore (show 8 * c.bw ≤ 2 ^ 64 by omega) hu]
+    rw [f₄.bytes (R := ⟨P, 8 * c.bw⟩) dPcore (show 8 * c.bw ≤ 2 ^ 64 by omega_using [hbw2]) hu]
     exact fA.bytes (R := ⟨P, 8 * c.bw⟩) (fun x hx => by simp only [List.mem_singleton] at hx; subst hx; exact sPS)
-      (show 8 * c.bw ≤ 2 ^ 64 by omega) hu
+      (show 8 * c.bw ≤ 2 ^ 64 by omega_using [hbw2]) hu
   have m₄D : ∀ q < n, s₄.mem (D + BitVec.ofNat 64 q) = s₀.mem (D + BitVec.ofNat 64 q) := fun q hq => by
-    rw [f₄.bytes (R := ⟨D, n⟩) dDcore (show n ≤ 2 ^ 64 by omega) hq]
+    rw [f₄.bytes (R := ⟨D, n⟩) dDcore (show n ≤ 2 ^ 64 by omega_using [hn]) hq]
     exact fA.bytes (R := ⟨D, n⟩) (fun x hx => by simp only [List.mem_singleton] at hx; subst hx; exact sDS)
-      (show n ≤ 2 ^ 64 by omega) hq
+      (show n ≤ 2 ^ 64 by omega_using [hn]) hq
   let iv := bytesAt s₀.mem P (8 * c.bw)
   have hivl : iv.length = 8 * c.bw := by simp [iv, bytesAt]
   have hp : C8Pre c s₄ B D P n := ⟨⟨by rw [wr₄']; exact hs.wr, hs.fit⟩, by rw [wr₄']; exact hwD,
@@ -136,7 +136,7 @@ theorem cfb8_wp (cs : BlockSpec c) (enc : Bool) {r : CtrRegs} (hr : RegsOk r) (h
     exact WP.block_nil ⟨b₄, fun _ _ => rfl, fun u hu => by rw [hn0, m₄P u hu]; simp [cfb8In, iv, bytesAt, hu],
       fun q hq => by omega, Frame.refl _ _, rfl, rfl, ivR₄⟩
   · have hn0 : n ≠ 0 := by simpa using h0
-    refine cfb8Loop_wp cs enc hiv.mode hivl hp hsc.2 ⟨b₄, ready₄, fun _ _ => rfl, ?_, ?_, by omega,
+    refine cfb8Loop_wp cs enc hiv.mode hivl hp hsc.2 ⟨b₄, ready₄, fun _ _ => rfl, ?_, ?_, by omega_using [hn0],
       fun u hu => by rw [m₄P u hu]; simp [cfb8In, iv, bytesAt, hu], fun q hq => ?_, Frame.refl _ _, rfl, rfl, ivR₄⟩
     · rw [dr₄, drA, gS _ (Ne.symm hiv.data), gE _ ds', hD]; simp
     · rw [left₄, Nat.sub_zero, ← hn]; simp
@@ -147,9 +147,9 @@ theorem cfb8_wp (cs : BlockSpec c) (enc : Bool) {r : CtrRegs} (hr : RegsOk r) (h
   have hsv : ∀ i < 10, Core.savedRegs.getD i .x19 ≠ sb := by decide
   have hinj : ∀ i < 10, ∀ j < 10, Core.savedRegs.getD i .x19 = Core.savedRegs.getD j .x19 → i = j := by decide
   obtain ⟨s₈, e₈, v₈, -, m₈, rd₈, wr₈⟩ := loads_ok (B := B) c.slots (fun i => Core.savedRegs.getD i .x19) 10 s₆
-    d₆.base hsv hinj (by omega) (fun i hi' => by
+    d₆.base hsv hinj (by omega_using [hsm, hroom]) (fun i hi' => by
       rw [rd₆, wr₆]
-      exact inRd (slot_wr hs.wr hN (by omega)))
+      exact inRd (slot_wr hs.wr hN (by omega_using [hroom, hi'])))
   refine WP.of_runBlock ⟨s₈, e₈, fun i hi' => ?_, ?_, ?_, ?_, by rw [rd₈, rd₆], by rw [wr₈, wr₆]⟩
   · rw [v₈ i hi', d₆.saved i hi', sv₄ i hi']
   · rw [m₈]

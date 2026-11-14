@@ -211,7 +211,7 @@ theorem tmp_step_ne {j : Nat} (hj : j < 40) :
     have : BitVec.ofNat 64 (j + 1) - BitVec.ofNat 64 40 ≠ 0 := fun e => by
       have := congrArg BitVec.toNat e
       rw [BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat] at this
-      simp at this; omega
+      simp at this; omega_using [hj, he, this]
     simpa using this
 
 theorem half_ok {m0 : Mem} {cb kb T : Addr} {u : State} {k0 : KSt} {hh : Nat} (h : KS m0 cb kb T u k0)

@@ -39,10 +39,10 @@ theorem read_copy {m m' : Mem} : ∀ {n : Nat} {a b : Addr},
   | 0, _, _, _ => rfl
   | n + 1, a, b, h => by
     simp only [Mem.read]
-    have h0 := h 0 (by omega)
+    have h0 := h 0 (by omega_using [])
     simp only [BitVec.add_zero] at h0
     rw [h0, read_copy fun i hi => ?_]
-    have := h (i + 1) (by omega)
+    have := h (i + 1) (by omega_using [hi])
     rwa [Offset.add_ofNat_succ, Offset.add_ofNat_succ] at this
 
 /-- The schedule at `q` is the one at `p` if their 128 bytes are. -/
@@ -54,7 +54,7 @@ theorem scheduleAt_congr_at {m m' : Mem} {p q : Addr}
   rw [scheduleAt_readW _ _ i hi, scheduleAt_readW _ _ i hi]
   simp only [Mem.readW]
   exact congrArg (BitVec.setWidth 32) (read_copy fun j hj => by
-    rw [Offset.add_add, Offset.add_add]; exact h _ (by omega))
+    rw [Offset.add_add, Offset.add_add]; exact h _ (by omega_using [hi, hj]))
 
 theorem scheduleAt_frame {rs : List Region} {m m' : Mem} (hf : Frame rs m m') {p : Addr}
     (hd : ∀ r ∈ rs, (⟨p, 128⟩ : Region).Disjoint r) :

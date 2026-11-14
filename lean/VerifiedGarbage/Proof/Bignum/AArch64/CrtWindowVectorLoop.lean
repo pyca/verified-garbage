@@ -51,7 +51,7 @@ theorem loopStep_ok {s t : State} {P : Addr} {w v j : Nat} {mi : BitVec 64} {X X
     simp only [slot, Nat.add_mul, Nat.mul_comm v, Nat.add_assoc]
   unfold tileStep
   apply WP.seq
-  refine WP.mono (tile_ok hI.ctx hv hI.tab hI.ptr hI.stride hI.digit hI.one (by omega)
+  refine WP.mono (tile_ok hI.ctx hv hI.tab hI.ptr hI.stride hI.digit hI.one (by omega_using [hj, hn, hT])
     (fun r hr i hi => tableTile_ld hI.ctx hj hr hi)
     (fun i hi => tableTile_st hI.ctx hj hi)) fun a ⟨ka,ho,h22,h24,hb⟩ => ?_
   have hcopy : ∀ k < 64, a.mem (off P (slot w Crt.aT + 64 * j + k)) =
@@ -60,12 +60,12 @@ theorem loopStep_ok {s t : State} {P : Addr} {w v j : Nat} {mi : BitVec 64} {X X
     rw [hb k hk]
     have hs := hI.frame (off P (slot w 8 + 64 * j + 8 * (w + 2) * v + k)) (by
       simp only [ofs, off, Offset.add_sub_cancel_left, BitVec.toNat_ofNat,
-        Nat.mod_eq_of_lt (show slot w 8 + 64 * j + 8 * (w + 2) * v + k < 2 ^ 64 by omega)]
-      omega)
+        Nat.mod_eq_of_lt (show slot w 8 + 64 * j + 8 * (w + 2) * v + k < 2 ^ 64 by omega_using [hj, hn, hE, he, hk])]
+      omega_using [hT])
     rw [hs]
     congr 2
-    omega
-  have copied := copy_append (by omega) hI.frame ho hI.bytes hcopy
+    omega_using []
+  have copied := copy_append (by omega_using [hj, hn, hT]) hI.frame ho hI.bytes hcopy
   refine WP.mono (tileAdvance_ok a) fun u ⟨⟨hp,hc,hm,hvec⟩,ku⟩ => ?_
   have frame : Outside P (slot w Crt.aT) (64 * (j + 1)) s.mem u.mem := by
     rw [hm, Nat.mul_add, Nat.mul_one]
@@ -73,11 +73,11 @@ theorem loopStep_ok {s t : State} {P : Addr} {w v j : Nat} {mi : BitVec 64} {X X
   have localFrame : Frm P (crtWinRanges w) t.mem u.mem := by
     rw [hm]
     exact (Frm.of_outside (ho.mono (o' := slot w Crt.aT) (n' := 8 * (w + 2))
-      (by omega) (by omega)) (by simp [crtWinRanges]))
+      (by omega_using []) (by omega_using [hj])) (by simp [crtWinRanges]))
   have keep := (ka.trans ku).mono (rs' := mmRegs) (by decide)
   refine ⟨⟨hI.ctx.of_win localFrame keep.wr (keep.gpr .x0 (by decide)), ?_, ?_, ?_, ?_, ?_,
     frame, ?_, (hI.keep.trans keep).mono (by decide)⟩, ?_⟩
-  · rw [hm, ho.word (by have := hdr_lt_slot w Crt.aT (show Crt.sTab < 32 by decide); omega)
+  · rw [hm, ho.word (by have := hdr_lt_slot w Crt.aT (show Crt.sTab < 32 by decide); omega_using [this])
       (by decide)]
     exact hI.tab
   · rw [ku.gpr .x6 (by decide), ka.gpr .x6 (by decide)]
@@ -93,7 +93,7 @@ theorem blocks_ok {s : State} {P : Addr} {w v : Nat} {mi : BitVec 64} {X Xc : Na
     (h0 : LoopInv s P w mi X Xc v 0 s)
     (hc : s.gpr .x13 = BitVec.ofNat 64 (w / 8)) :
     WP isa (.loop rawStep (.nonzero .x .x13)) s (LoopInv s P w mi X Xc v (w / 8)) := by
-  apply wp_countdown (by omega) (by omega) (fun j => LoopInv s P w mi X Xc v j)
-    (fun j hj t hI _ => (rawStep_wp _ _).mpr (loopStep_ok hv (by omega) hI)) h0 hc
+  apply wp_countdown (by omega_using [hw']) (by omega_using [hw]) (fun j => LoopInv s P w mi X Xc v j)
+    (fun j hj t hI _ => (rawStep_wp _ _).mpr (loopStep_ok hv (by omega_using [hj]) hI)) h0 hc
 
 end VG.Proof.Bignum.AArch64.WindowVector

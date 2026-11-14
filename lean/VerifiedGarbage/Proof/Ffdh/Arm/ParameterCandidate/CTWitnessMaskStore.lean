@@ -46,15 +46,15 @@ private theorem loadBase_ok (p : MaskStoreData) (s : State) (h : MaskStoreStart 
 private theorem loadArray_ok (p : MaskStoreData) (s : State) (h : MaskStoreStart p s) :
     WP isa (.block [.ldr .r4 .r0 72]) s (MaskStoreHead p) := by
   have fits : arrAt p.words 8 ≤ 8 * p.capacity := h.1.width ▸ h.1.layout.2.2.1
-  have size : 128 ≤ 8 * p.capacity := by simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at fits; omega
+  have size : 128 ≤ 8 * p.capacity := by simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at fits; omega_using [fits]
   have header := nativeHeader_of_layout s.mem p.base h.1.workspace.nowrap (Nat.le_refl _) h.1.layout
   rw [h.1.width] at header
   have addr72 : State.addr (p.base + 72#32) = off (State.addr p.base) 72 :=
-    VG.Arm.addr_add (by have := h.1.workspace.nowrap; omega)
+    VG.Arm.addr_add (by have := h.1.workspace.nowrap; omega_using [size, this])
   have raw : WP isa (.block [.ldr .r4 .r0 72]) s fun t =>
       t.gpr .r4 = p.base + BitVec.ofNat 32 (arrAt p.words 1) ∧ Rest [.r4] s t := by
     refine withRest_all [.r4] ?_ (by rfl) (by rfl)
-    ffrun [h.1.ptr, addr72, h.1.workspace.read (off := 72) (by omega), header.array 1 (by decide)]
+    ffrun [h.1.ptr, addr72, h.1.workspace.read (off := 72) (by omega_using [size]), header.array 1 (by decide)]
   exact WP.mono raw (fun _ post => ⟨post.1, (post.2.gpr .r5 (by simp)).trans h.2⟩)
 
 theorem witnessMaskStore_ct : RelCT isa (Two MaskStoreStart)

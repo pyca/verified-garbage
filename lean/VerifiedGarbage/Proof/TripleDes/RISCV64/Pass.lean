@@ -24,7 +24,7 @@ def passOffset (component : Nat) (direction : Direction) : Nat :=
 
 theorem passOffset_bound : ∀ c < 3, ∀ d : Direction, passOffset c d < 2048 := by
   intro c hc d
-  cases d <;> simp only [passOffset, keyOff, reduceCtorEq, ite_true, ite_false] <;> omega
+  cases d <;> simp only [passOffset, keyOff, reduceCtorEq, ite_true, ite_false] <;> omega_using [hc]
 
 theorem passStart_ok (component : Nat) (hc : component < 3) (direction : Direction)
     (s : State) :
@@ -44,7 +44,7 @@ theorem passStart_ok (component : Nat) (hc : component < 3) (direction : Directi
   refine ⟨s₃, ?_, ?_, ?_, rfl, ?_, rfl, rfl, rfl, ?_⟩
   · rw [passStart, runBlock_cons, show (keyOff + 128 * component +
         if direction = .encrypt then 0 else 120) = passOffset component direction from rfl,
-      exec_addi (by constructor <;> omega), runStep_some, runBlock_cons, exec_li (by decide),
+      exec_addi (by constructor <;> omega_arith), runStep_some, runBlock_cons, exec_li (by decide),
       runStep_some, runBlock_cons, e₃, runStep_some, runBlock_nil]
   · simp only [s₃, s₂, s₁, gpr_write, kp, cnt, kstep, sb, reduceCtorEq, ite_true, ite_false,
       BitVec.ofInt_natCast]
@@ -122,7 +122,7 @@ theorem select_ok (d : Direction) {p : Nat} (hp : 1 ≤ p ∧ p ≤ 3) (s : Stat
     · intro h2
       have hp3 : p ≠ 3 := by simpa using h3
       have hp2 : p ≠ 2 := by simpa using h2
-      exact branch t₂ 1 (by omega) rfl rfl rfl rfl hg₂
+      exact branch t₂ 1 (by omega_using [hp, hp3, hp2]) rfl rfl rfl rfl hg₂
 
 /-- The registers a pass keeps. -/
 def passKept : List Reg := [.ra, .s0, .s1, .s2, .s3, .s4, .s11, .a0]
@@ -176,7 +176,7 @@ theorem pass_ok (d : Direction) {p : Nat} (hp : 1 ≤ p ∧ p ≤ 3)
   have hp₃ : s₃.gpr passes = BitVec.ofNat 64 p :=
     (regs₃ passes (by decide)).trans ((hs₂.regs passes (by decide)).trans
       ((hs.regs passes (by decide) (by decide) (by decide) (by decide)).trans hpasses))
-  obtain ⟨hsub, hzero⟩ := countDown_rules p (by omega) hp.1
+  obtain ⟨hsub, hzero⟩ := countDown_rules p (by omega_using [hp]) hp.1
   refine WP.of_runBlock ⟨s₄, by simp only [runBoxes_append, run₃, Option.bind_some, run₄], ?_⟩
   refine ⟨?_, ?_, rd₄.trans (rd₃.trans (hs₂.rd.trans hs.rd)),
     wr₄.trans (wr₃.trans (hs₂.wr.trans hs.wr)), sp₄.trans (sp₃.trans (hs₂.sp.trans hs.sp)),

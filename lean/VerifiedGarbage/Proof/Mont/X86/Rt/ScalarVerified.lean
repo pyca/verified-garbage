@@ -42,7 +42,7 @@ open VG.Proof.Rsa.MontMul (Apart numAt scratchBytes)
 
 theorem numAt_val32 (m : Mem) (ws : Addr) (d n : Nat) : numAt m ws d (8 * n) = val32 m ws d (2 * n) := by
   unfold numAt
-  rw [show 8 * n = 4 * (2 * n) by omega]
+  rw [show 8 * n = 4 * (2 * n) by omega_using []]
   exact VG.Proof.Dsa.X86.Pow.read_eq_val32 m ws (2 * n) d
 
 theorem numAt_w32 (m : Mem) (ws : Addr) (d : Nat) : numAt m ws d 4 = w32 m ws d := by

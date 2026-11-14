@@ -77,8 +77,8 @@ theorem head_ok {M : Mode} {s₀ : State} (hp : UPre s₀) {k : Nat} (hk : k < N
   have w₂ : s₂.wr = [ivR s₀, dataR s₀, scrR s₀] := by rw [rg₂.wr, hp.wr]
   have rw₂ : s₂.rd ++ s₂.wr = [schR s₀, argsR s₀, ivR s₀, dataR s₀, scrR s₀] := by
     rw [rg₂.rd, rg₂.wr, hp.rd, hp.wr]; rfl
-  refine xorIn_wp (by decide) (by decide) (by decide) (by decide) (by rw [rg₂.r6]; omega)
-    (by rw [rg₂.r7, qN]; omega) (by rw [rg₂.r6, add0, rw₂]; exact covIv (by simp))
+  refine xorIn_wp (by decide) (by decide) (by decide) (by decide) (by rw [rg₂.r6]; omega_using [hiv])
+    (by rw [rg₂.r7, qN]; omega_using [hk, hdf]) (by rw [rg₂.r6, add0, rw₂]; exact covIv (by simp))
     (by rw [rg₂.r7, add0, hd, w₂]; exact covBlk hk (by simp)) fun s₃ g₃ => hq s₃ ?_
   have m₃ : s₃.mem = Proof.Cmac.xor4Mem s₂.mem (blk s₀ k) (blk s₀ k) (State.addr (Iv s₀)) := by
     rw [g₃.mem, rg₂.r7, rg₂.r6, add0, add0, hd]
@@ -118,7 +118,7 @@ theorem linv_succ {M : Mode} {s₀ : State} (hp : UPre s₀) {k : Nat} (hk : k <
     x.frame.trans (f₄.sub fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact stepIn (.inr (.inl rfl)))
   have hl' : (outK M s₀ k).length = k := by
-    rw [outK, Mode.length_out]; simp [Spec.Cbc.blocksAt]; omega
+    rw [outK, Mode.length_out]; simp [Spec.Cbc.blocksAt]; omega_using [hk]
   refine advance_wp hp hk (x.regs.of g₄.gpr g₄.sp g₄.rd g₄.wr)
     (by rw [g₄.gpr _ (by decide) (by decide), x.r8, h.r8])
     (by rw [g₄.gpr _ (by decide) (by decide), x.r11, h.r11])
@@ -139,8 +139,8 @@ theorem encBody_ok : BodyOk (cfbMode true) (body encPost) := by
   have hiv := hp.iv_fit
   rw [encPost_eq]
   refine head_ok hp hk h _ fun s₃ x => ?_
-  refine copy_wp (by decide) (by decide) (by decide) (by decide) (by rw [x.regs.r7, qN]; omega)
-    (by rw [x.regs.r6]; omega) (by rw [x.regs.r7, add0, hd, x.rw]; exact covBlk hk (by simp))
+  refine copy_wp (by decide) (by decide) (by decide) (by decide) (by rw [x.regs.r7, qN]; omega_using [hk, hdf])
+    (by rw [x.regs.r6]; omega_using [hiv]) (by rw [x.regs.r7, add0, hd, x.rw]; exact covBlk hk (by simp))
     (by rw [x.regs.r6, add0, x.w]; exact covIv (by simp)) fun s₄ g₄ => ?_
   have m₄ : s₄.mem = copy4Mem s₃.mem (State.addr (Iv s₀)) (blk s₀ k) := by
     rw [g₄.mem, x.regs.r6, x.regs.r7, add0, add0, hd]
@@ -170,8 +170,8 @@ theorem decBody_ok : BodyOk (cfbMode false) (body decPost) := by
   have hiv := hp.iv_fit
   rw [decPost_eq]
   refine head_ok hp hk h _ fun s₃ x => ?_
-  refine xorIn_wp (by decide) (by decide) (by decide) (by decide) (by rw [x.regs.r7, qN]; omega)
-    (by rw [x.regs.r6]; omega) (by rw [x.regs.r7, add0, hd, x.rw]; exact covBlk hk (by simp))
+  refine xorIn_wp (by decide) (by decide) (by decide) (by decide) (by rw [x.regs.r7, qN]; omega_using [hk, hdf])
+    (by rw [x.regs.r6]; omega_using [hiv]) (by rw [x.regs.r7, add0, hd, x.rw]; exact covBlk hk (by simp))
     (by rw [x.regs.r6, add0, x.w]; exact covIv (by simp)) fun s₄ g₄ => ?_
   have m₄ : s₄.mem = Proof.Cmac.xor4Mem s₃.mem (State.addr (Iv s₀)) (State.addr (Iv s₀)) (blk s₀ k) := by
     rw [g₄.mem, x.regs.r6, x.regs.r7, add0, add0, hd]

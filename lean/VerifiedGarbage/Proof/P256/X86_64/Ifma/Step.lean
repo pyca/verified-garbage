@@ -92,16 +92,16 @@ def bndsOf (L : List Loc) (bt : BT) : Bnds where
 theorem toInt_range (x : BitVec 64) : -2 ^ 63 ≤ x.toInt ∧ x.toInt ≤ 2 ^ 63 - 1 := by
   have := x.isLt
   rw [BitVec.toInt_eq_toNat_cond]
-  split <;> omega
+  split <;> omega_arith
 
 theorem group5_getD : ∀ (ts : List T) (j i : Nat), i < 5 → 5 * j + 5 ≤ ts.length →
     ((group5 ts).getD j zero5).get i = ts.getD (5 * j + i) (.lit 0 0 0 0)
   | a :: b :: c :: d :: e :: rest, 0, i, hi, _ => by
-    rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4) with rfl | rfl | rfl | rfl | rfl <;> rfl
+    rcases (by omega_using [hi] : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4) with rfl | rfl | rfl | rfl | rfl <;> rfl
   | a :: b :: c :: d :: e :: rest, j + 1, i, hi, h => by
-    have := group5_getD rest j i hi (by simp only [List.length_cons] at h; omega)
+    have := group5_getD rest j i hi (by simp only [List.length_cons] at h; omega_using [h])
     simp only [group5, List.getD_cons_succ]
-    rw [this, show 5 * (j + 1) + i = (5 * j + i) + 5 by omega]
+    rw [this, show 5 * (j + 1) + i = (5 * j + i) + 5 by omega_using []]
     rfl
   | [], _, _, _, h => by simp at h
   | [_], _, _, _, h => by simp at h
@@ -112,7 +112,7 @@ theorem group5_getD : ∀ (ts : List T) (j i : Nat), i < 5 → 5 * j + 5 ≤ ts.
 /-- A limb of the vectors in the places `L` is the quadword of its place. -/
 theorem tab_leaves (s : State) (L : List Loc) {j i : Nat} (hi : i < 5) (hj : 5 * j + 5 ≤ L.length) (k : Nat) :
     tab (envOf s) (leaves L) j i k = ints s (L.getD (5 * j + i) (.reg 0)) k := by
-  have hl : 5 * j + i < L.length := by omega
+  have hl : 5 * j + i < L.length := by omega_using [hi, hj]
   rw [tab, leaves, group5_getD _ j i hi (by rw [List.length_map]; exact hj)]
   rw [List.getD_eq_getElem?_getD, List.getElem?_map, List.getD_eq_getElem?_getD, List.getElem?_eq_getElem hl]
   simp only [Option.map_some, Option.getD_some]
@@ -143,7 +143,7 @@ theorem envOK_of {s : State} {L : List Loc} {bt : BT}
   by_cases hu : uBase b = true
   · simp only [hu, ite_true, envOf]
     have := (s.mem.readW (s.gpr b + BitVec.ofNat 64 (d + 8 * k)) 64).isLt
-    omega
+    omega_using []
   have hm : (envOf s).m b d k = (s.mem.readW (s.gpr b + BitVec.ofNat 64 (d + 8 * k)) 64).toInt := by
     simp only [envOf, hu, Bool.false_eq_true, ite_false]
   simp only [hu, Bool.false_eq_true, ite_false]
@@ -157,7 +157,7 @@ theorem envOK_of {s : State} {L : List Loc} {bt : BT}
       have hd : d = slotOff i := by
         unfold slotAt at hs
         split at hs
-        · rename_i hc; cases hs; simp only [slotOff]; omega
+        · rename_i hc; cases hs; simp only [slotOff]; omega_using [hc]
         · cases hs
       subst hd
       exact key (.slot i) k hk
@@ -195,8 +195,8 @@ theorem stage_tab {w : Nat} {c : List Instr} {ins : List (F5 T)} {seg : Seg Id T
   | none => simp [hiv'] at h2
   | some iv =>
     simp only [hiv', decide_eq_true_eq] at h2
-    obtain ⟨e, lo, hi⟩ := hs n l t hl ht k hk iv hiv' (by omega) (by omega)
-    exact ⟨e, by omega, by omega⟩
+    obtain ⟨e, lo, hi⟩ := hs n l t hl ht k hk iv hiv' (by omega_using [h2]) (by omega_using [h2])
+    exact ⟨e, by omega_using [h2, e, lo], by omega_using [h2, e, hi]⟩
 
 end
 
@@ -755,14 +755,14 @@ theorem group5_flat : ∀ xs : List (F5 T), group5 (xs.flatMap F5.toList) = xs
 theorem flat_length (xs : List (F5 T)) : (xs.flatMap F5.toList).length = 5 * xs.length := by
   induction xs with
   | nil => rfl
-  | cons x xs ih => simp only [List.flatMap_cons, List.length_append, ih, F5.toList, List.length_cons, List.length_nil]; omega
+  | cons x xs ih => simp only [List.flatMap_cons, List.length_append, ih, F5.toList, List.length_cons, List.length_nil]; omega_using []
 
 /-- A limb of the flattened vectors. -/
 theorem flat_get (xs : List (F5 T)) {j i : Nat} (hi : i < 5) (hj : j < xs.length) :
     (xs.flatMap F5.toList)[5 * j + i]? = some ((xs.getD j zero5).get i) := by
-  have h := group5_getD (xs.flatMap F5.toList) j i hi (by rw [flat_length]; omega)
+  have h := group5_getD (xs.flatMap F5.toList) j i hi (by rw [flat_length]; omega_using [hj])
   rw [group5_flat] at h
-  rw [h, List.getD_eq_getElem?_getD, List.getElem?_eq_getElem (by rw [flat_length]; omega)]
+  rw [h, List.getD_eq_getElem?_getD, List.getElem?_eq_getElem (by rw [flat_length]; omega_using [hi, hj])]
   rfl
 
 theorem vI_get (E : Env) (k : Nat) (v : F5 T) :
@@ -819,7 +819,7 @@ theorem ivWithin_get {B : Bnds} {ts : List T} {bt : BT} (h : ivWithin B ts bt = 
 theorem Carried.get {E : Env} {k : Nat} {v : F5 T} (h : Carried E k v) {i : Nat} (hi : i < 5) :
     0 ≤ (v.get i).int E k ∧ (v.get i).int E k < 2 ^ 52 := by
   obtain ⟨h0, h1, h2, h3, h4⟩ := h
-  rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4) with rfl | rfl | rfl | rfl | rfl
+  rcases (by omega_using [hi] : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4) with rfl | rfl | rfl | rfl | rfl
   exacts [h0, h1, h2, h3, h4]
 
 /-- The limbs of the vectors `ys` under `E'` are those of `xs` under `E`, in the lanes with bounds in `iv`. -/
@@ -862,24 +862,24 @@ theorem cut_step {w : Nat} {c : List Instr} {ins : List (F5 T)} {seg : Seg Id T}
   refine WP.mono (stage_tab h hc hB hiv) fun s ⟨hσ, hu, hs⟩ => ⟨hσ, hu, ?_, ?_⟩
   · refine envOK_of fun n l hl k hk b hb => ?_
     have hn : n < outs.length := (List.getElem?_eq_some_iff.1 hl).1
-    have hj : n / 5 < (Id.run (seg ins)).length := by omega
+    have hj : n / 5 < (Id.run (seg ins)).length := by omega_using [hlen, hn]
     have ht := flat_get (Id.run (seg ins)) (i := n % 5) (Nat.mod_lt _ (by decide)) hj
-    rw [show 5 * (n / 5) + n % 5 = n by omega] at ht
+    rw [show 5 * (n / 5) + n % 5 = n by omega_using []] at ht
     rcases ovOk_spec hov hb with ⟨c', h1, l1, l2⟩ | ⟨h1, h2, c', h3⟩
     · have := (hs n l _ hl ht k hk c' h1).2
-      exact ⟨by omega, by omega⟩
+      exact ⟨by omega_using [l1, this], by omega_using [l2, this]⟩
     · obtain ⟨e, -, -⟩ := hs n l _ hl ht k hk c' h3
       have := (hcar _ _ h1).get (i := n % 5) (Nat.mod_lt _ (by decide))
       rw [e, h2]
-      exact ⟨this.1, by have := this.2; omega⟩
+      exact ⟨this.1, by have := this.2; omega_arith⟩
   · intro j k b hk hb i hi
     have hj : j < (Id.run (seg ins)).length := Nat.lt_of_lt_of_le (BT.get_lt hb) hrows
     have ht := flat_get (Id.run (seg ins)) hi hj
-    have hn : 5 * j + i < outs.length := by omega
+    have hn : 5 * j + i < outs.length := by omega_using [hlen, hi, hj]
     have hl : outs[5 * j + i]? = some (outs.getD (5 * j + i) (.reg 0)) := by
       rw [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem hn]; rfl
-    rw [tab_leaves s outs hi (by omega) k]
-    exact (hs (5 * j + i) _ _ hl ht k hk b (by rw [show (5 * j + i) / 5 = j by omega]; exact hb)).1
+    rw [tab_leaves s outs hi (by omega_using [hlen, hj]) k]
+    exact (hs (5 * j + i) _ _ hl ht k hk b (by rw [show (5 * j + i) / 5 = j by omega_using [hi]]; exact hb)).1
 
 theorem par_cst_length : par.cst.length = 220 := by decide +kernel
 
@@ -895,9 +895,9 @@ theorem ctx_step {σ : VSym} {s₀ s : State} (hc : Ctx par s₀) (h : SRel par 
   · intro i hi
     rw [par_cst_length] at hi
     -- the 32 bytes of the constants that hold quadword `i`
-    have hd : 8 * (min i 216) + 32 ≤ 8 * par.cst.length := by rw [par_cst_length]; omega
-    have e := stores_sep (hc.csep _ hd) hc.small (k := i - min i 216) (by omega) σ.st h.al h.lo
-    rw [BitVec.add_assoc, ← BitVec.ofNat_add, show 8 * min i 216 + 8 * (i - min i 216) = 8 * i by omega] at e
+    have hd : 8 * (min i 216) + 32 ≤ 8 * par.cst.length := by rw [par_cst_length]; omega_using []
+    have e := stores_sep (hc.csep _ hd) hc.small (k := i - min i 216) (by omega_using [hi]) σ.st h.al h.lo
+    rw [BitVec.add_assoc, ← BitVec.ofNat_add, show 8 * min i 216 + 8 * (i - min i 216) = 8 * i by omega_using []] at e
     rw [h.mem, hg, e]
     exact hc.cst i (by rw [par_cst_length]; exact hi)
 

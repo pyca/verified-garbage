@@ -406,7 +406,7 @@ theorem exchange_ok (hc : CfgOk c) (hC : Law c.C) {s₀ : State} (hp : EPre c s�
   have e₅ : ∀ {i}, i < 45 → i ∉ [RX, RY, RZ, T0, T1, T2, T3, T4, T5, DX, DY, DZ, T0, T1, T2, T3, T4, T5,
       TX, TY, TZ, TMP] → i ∉ [ACC, PT, TMP] → sv c (ptr s₀ .r3) s₅ i = sv c (ptr s₀ .r3) s₄ i :=
     fun hi h₁ h₂ => sv_unch L.unch h7 hn hi (apart_append (apart_append (apart_slWkP h7 hi h₁)
-      (apart_genX h7 hi fun h => h₂ (by simp only [List.mem_cons, List.not_mem_nil, or_false] at h ⊢; omega)))
+      (apart_genX h7 hi fun h => h₂ (by simp only [List.mem_cons, List.not_mem_nil, or_false] at h ⊢; omega_using [h])))
       (apart_slWk h7 hi h₂))
   have hflag₅ : flagW c (ptr s₀ .r3) s₅ = mask32 (PeerOk c (ptr s₀ .r3) s₃ ((s₀.mem (ptr s₀ .r2) = 4 ∧
       sv c (ptr s₀ .r3) s₃ E < c.C.p) ∧ sv c (ptr s₀ .r3) s₃ QY < c.C.p)) := by
@@ -432,9 +432,9 @@ theorem exchange_ok (hc : CfgOk c) (hC : Law c.C) {s₀ : State} (hp : EPre c s�
       (fun w hw => by
         rcases List.mem_append.mp hw with hw | hw
         · rcases List.mem_append.mp hw with hw | hw
-          · have := slWkP_le h7 (by decide) w hw; dsimp only [size] at this; omega
+          · have := slWkP_le h7 (by decide) w hw; dsimp only [size] at this; omega_using [this]
           · exact genX_le h7 w hw
-        · have := slWk_le h7 (by decide) w hw; dsimp only [size] at this; omega)
+        · have := slWk_le h7 (by decide) w hw; dsimp only [size] at this; omega_using [this])
   refine WP.mono (middle_ok hc hs₅ (((S₂.far.of_rest k₃).of_rest g₄).of_rest L.rest) F₅ L.acc_lt hflag₅ W₅ K₅ hlr₅ hp.out_fit (by rw [hp.wr]; simp)
     (hp.out_sc.sub_right (Region.sub_prefix (by decide))))
     fun s' ⟨xv, hxl, hxv, bytes, ret, saved, sp, m, Wm, Om⟩ => ⟨⟨saved, sp, m, Wm, Om⟩, ?_⟩

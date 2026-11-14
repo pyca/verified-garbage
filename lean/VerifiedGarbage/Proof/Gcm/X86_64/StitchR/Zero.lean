@@ -65,7 +65,7 @@ theorem dinv0 {s₀ : State} {P : Nat → Nat → Block} {s : State} (hR : Ready
 theorem decSmall_ok {s₀ : State} {lo : Nat} (hp : SPre s₀ lo) {P : Nat → Nat → Block} (hr : RemLaw (hk s₀) P)
     (h1 : 1 ≤ nb s₀) (hlt : nb s₀ < 16) {s : State} (hR : Ready s₀ P s) :
     WP isa (.seq (.block [.alu .add .r9 (.imm 16)]) remD) s (DPost s₀) :=
-  remD_ok hp hr (dinv0 hR) (by omega) (by omega)
+  remD_ok hp hr (dinv0 hR) (by omega_using [hlt]) (by omega_using [h1])
 
 /-- Encryption of fewer blocks than a group: all of them by `remE`. -/
 theorem encSmall_ok {s₀ : State} {lo : Nat} (hp : SPre s₀ lo) {P : Nat → Nat → Block} (hr : RemLaw (hk s₀) P)
@@ -74,7 +74,7 @@ theorem encSmall_ok {s₀ : State} {lo : Nat} (hp : SPre s₀ lo) {P : Nat → N
   refine WP.seq (WP.mono (add9_ok s) fun s₁ ⟨a9, g₁, l₁, m₁, rd₁, wr₁⟩ => ?_)
   have l : ∀ x k, k < 2 → s₁.lane x k = s.lane x k := fun x k hk => by
     rw [← State.zlane_lt2 _ _ hk, ← State.zlane_lt2 _ _ hk, l₁]
-  refine remE_ok hp hr (e := 0) ?_ (by omega) (by omega)
+  refine remE_ok hp hr (e := 0) ?_ (by omega_using [hlt]) (by omega_using [h1])
   exact
     { a := ⟨Nat.zero_le _, fun k hk => by rw [l _ _ hk]; exact hR.a.ctr k hk,
         fun k hk => by rw [l _ _ hk]; exact hR.a.msk k hk, fun k hk => by rw [l _ _ hk]; exact hR.a.inc k hk,
@@ -104,6 +104,6 @@ theorem zeroTail_ok {s₀ : State} {Rdy : State → Prop} {Q : State → Prop} {
   rw [h9 s hR] at cf
   refine WP.ite (decide (nb s₀ < 16)) (by simp only [eval, cf]) (fun h => ?_) (fun h => ?_)
   · exact hsmall (by simpa using h) s' hR'
-  · exact hbig (by simp at h; omega) s' hR'
+  · exact hbig (by simp at h; omega_using [h]) s' hR'
 
 end VG.Proof.Gcm.X86_64.StitchR

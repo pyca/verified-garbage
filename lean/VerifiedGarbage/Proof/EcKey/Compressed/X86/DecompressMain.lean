@@ -103,17 +103,17 @@ theorem decompress_correct (c : Cfg) (hc : CfgOk c)
     refine WP.seq (WP.mono (WP.spFrame hbody hlo (decompressBody_ok hc hroot
       (by simpa only [Nat.add_comm] using hp))) fun t ⟨F, W⟩ => ?_)
     have hin : InRegions (s.rd ++ s.wr) (argAddr s 0) 4 :=
-      ⟨_, by rw [hrd, hwr]; simp, arg_containsN (k := 3) (by omega) (by decide)⟩
+      ⟨_, by rw [hrd, hwr]; simp, arg_containsN (k := 3) (by omega_using [hsf]) (by decide)⟩
     have hdarg : ∀ r ∈ s.wr ++ [below (s.gpr .esp) 28], Region.Disjoint ⟨argAddr s 0, 4⟩ r := by
       intro r hr
       rw [hwr] at hr
       simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl
-      · exact hao.sub_left (arg_subN (k := 3) (by omega) (by decide))
-      · exact haw.sub_left (arg_subN (k := 3) (by omega) (by decide))
-      · exact (below_disjoint_args hlo (by omega) (by decide)).symm
+      · exact hao.sub_left (arg_subN (k := 3) (by omega_using [hsf]) (by decide))
+      · exact haw.sub_left (arg_subN (k := 3) (by omega_using [hsf]) (by decide))
+      · exact (below_disjoint_args hlo (by omega_using [hsf]) (by decide)).symm
     have hout := argLoad_frame hin hdarg F.esp (by rw [F.rd, F.wr]) W
-    refine WP.mono (decompressFinish_ok hc F.scr hout (by omega)
+    refine WP.mono (decompressFinish_ok hc F.scr hout (by omega_using [hfit])
       (by rw [F.wr, hwr]; simp [Nat.add_comm]) (by simpa only [Nat.add_comm] using how)
       F.saved (decide (CompressedAccept c root s)) (by simp only [F.flag, decide_eq_true_eq]))
       fun u ⟨bytes, ret, saved, esp, _⟩ => ?_

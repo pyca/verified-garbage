@@ -127,7 +127,7 @@ theorem bitToU_taint : ∀ i, i < 5 → DCert (.block (bitTo sTu i))
   | 2, _ => bitToU_taint2
   | 3, _ => bitToU_taint3
   | 4, _ => bitToU_taint4
-  | _ + 5, h => absurd h (by omega)
+  | _ + 5, h => absurd h (by omega_using [])
 theorem bitToK_taint0 : DCert (.block (bitTo sKv 0)) := ⟨_, by taint_decide⟩
 theorem bitToK_taint1 : DCert (.block (bitTo sKv 1)) := ⟨_, by taint_decide⟩
 theorem bitToK_taint2 : DCert (.block (bitTo sKv 2)) := ⟨_, by taint_decide⟩
@@ -139,7 +139,7 @@ theorem bitToK_taint : ∀ i, i < 5 → DCert (.block (bitTo sKv i))
   | 2, _ => bitToK_taint2
   | 3, _ => bitToK_taint3
   | 4, _ => bitToK_taint4
-  | _ + 5, h => absurd h (by omega)
+  | _ + 5, h => absurd h (by omega_using [])
 theorem halfKT1_taint0 : DCert (halfK VG.Impl.Rsa.Arm.RecoverDet.aT1 (2 ^ 0)) := ⟨_, by taint_decide⟩
 theorem halfKT1_taint1 : DCert (halfK VG.Impl.Rsa.Arm.RecoverDet.aT1 (2 ^ 1)) := ⟨_, by taint_decide⟩
 theorem halfKT1_taint2 : DCert (halfK VG.Impl.Rsa.Arm.RecoverDet.aT1 (2 ^ 2)) := ⟨_, by taint_decide⟩
@@ -151,7 +151,7 @@ theorem halfKT1_taint : ∀ i, i < 5 → DCert (halfK VG.Impl.Rsa.Arm.RecoverDet
   | 2, _ => halfKT1_taint2
   | 3, _ => halfKT1_taint3
   | 4, _ => halfKT1_taint4
-  | _ + 5, h => absurd h (by omega)
+  | _ + 5, h => absurd h (by omega_using [])
 
 theorem shlKT1_taint0 : DCert (shlK wT1 (2 ^ 0)) := ⟨_, by taint_decide⟩
 theorem shlKT1_taint1 : DCert (shlK wT1 (2 ^ 1)) := ⟨_, by taint_decide⟩
@@ -164,7 +164,7 @@ theorem shlKT1_taint : ∀ i, i < 5 → DCert (shlK wT1 (2 ^ i))
   | 2, _ => shlKT1_taint2
   | 3, _ => shlKT1_taint3
   | 4, _ => shlKT1_taint4
-  | _ + 5, h => absurd h (by omega)
+  | _ + 5, h => absurd h (by omega_using [])
 theorem copyT1U_taint : DCert (copy VG.Impl.Rsa.Arm.RecoverDet.aT1 aU) := ⟨_, by taint_decide⟩
 theorem copyT1X_taint : DCert (copy VG.Impl.Rsa.Arm.RecoverDet.aT1 aX2) := ⟨_, by taint_decide⟩
 theorem copyWT1_taint : DCert (copy wT1 wX3) := ⟨_, by taint_decide⟩
@@ -201,8 +201,8 @@ theorem bitToLz_taint : ∀ i, 1 ≤ i → i < 5 → DCert (.block (bitTo sLz i)
   | 2, _, _ => bitToLz_taint2
   | 3, _, _ => bitToLz_taint3
   | 4, _, _ => bitToLz_taint4
-  | 0, h, _ => absurd h (by omega)
-  | _ + 5, _, h => absurd h (by omega)
+  | 0, h, _ => absurd h (by omega_using [])
+  | _ + 5, _, h => absurd h (by omega_using [])
 theorem shlKG_taint0 : DCert (shlK wG (2 ^ 0)) := ⟨_, by taint_decide⟩
 theorem shlKG_taint1 : DCert (shlK wG (2 ^ 1)) := ⟨_, by taint_decide⟩
 theorem shlKG_taint2 : DCert (shlK wG (2 ^ 2)) := ⟨_, by taint_decide⟩
@@ -214,7 +214,7 @@ theorem shlKG_taint : ∀ i, i < 5 → DCert (shlK wG (2 ^ i))
   | 2, _ => shlKG_taint2
   | 3, _ => shlKG_taint3
   | 4, _ => shlKG_taint4
-  | _ + 5, h => absurd h (by omega)
+  | _ + 5, h => absurd h (by omega_using [])
 
 theorem halfKHG_taint0 : DCert (halfKH wG (2 ^ 0)) := ⟨_, by taint_decide⟩
 theorem halfKHG_taint1 : DCert (halfKH wG (2 ^ 1)) := ⟨_, by taint_decide⟩
@@ -227,7 +227,7 @@ theorem halfKHG_taint : ∀ i, i < 5 → DCert (halfKH wG (2 ^ i))
   | 2, _ => halfKHG_taint2
   | 3, _ => halfKHG_taint3
   | 4, _ => halfKHG_taint4
-  | _ + 5, h => absurd h (by omega)
+  | _ + 5, h => absurd h (by omega_using [])
 theorem copyGR_taint : DCert (copy wG wR) := ⟨_, by taint_decide⟩
 theorem selFRG_taint : DCert (sel wF wR wG sBit) := ⟨_, by taint_decide⟩
 theorem copyRF_taint : DCert (copy wR wF) := ⟨_, by taint_decide⟩

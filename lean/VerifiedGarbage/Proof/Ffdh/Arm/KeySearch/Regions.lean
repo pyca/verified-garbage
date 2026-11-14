@@ -110,29 +110,29 @@ theorem callStack_sub {p : KeyPublic sampling} (fit : stackUse sampling ≤ p.sp
 theorem saved_arguments_separate {p : KeyPublic sampling} (fit : stackUse sampling ≤ p.sp.toNat) :
     (rSaved p).Disjoint (rArguments p) := by
   change 24 + sampling.argumentBytes + 176 ≤ p.sp.toNat at fit
-  rw [rSaved, rArguments, callSp, FrameStack.addr_sub' (by omega : 24 ≤ p.sp.toNat),
-    FrameStack.addr_sub' (by omega : 24 + sampling.argumentBytes ≤ p.sp.toNat)]
+  rw [rSaved, rArguments, callSp, FrameStack.addr_sub' (by omega_using [fit] : 24 ≤ p.sp.toNat),
+    FrameStack.addr_sub' (by omega_using [fit] : 24 + sampling.argumentBytes ≤ p.sp.toNat)]
   have address : State.addr p.sp - BitVec.ofNat 64 (24 + sampling.argumentBytes) =
       (State.addr p.sp - 24#64) - BitVec.ofNat 64 sampling.argumentBytes := by
     rw [BitVec.sub_sub, BitVec.ofNat_add]
   rw [address]
-  exact Offset.base_disjoint_below _ (by have := argumentBytes_max sampling; omega)
+  exact Offset.base_disjoint_below _ (by have := argumentBytes_max sampling; omega_using [fit])
 
 theorem saved_callStack_separate {p : KeyPublic sampling} (fit : stackUse sampling ≤ p.sp.toNat) :
     (rSaved p).Disjoint (rCallStack p) := by
   change 24 + sampling.argumentBytes + 176 ≤ p.sp.toNat at fit
   have room : 176 ≤ (callSp p).toNat := by
-    rw [callSp, FrameStack.sub_toNat' (by omega : 24 + sampling.argumentBytes ≤ p.sp.toNat)]
-    omega
+    rw [callSp, FrameStack.sub_toNat' (by omega_using [fit] : 24 + sampling.argumentBytes ≤ p.sp.toNat)]
+    omega_using [fit]
   rw [rSaved, rCallStack, FrameStack.belowA, FrameStack.addr_sub' room,
-    FrameStack.addr_sub' (by omega : 24 ≤ p.sp.toNat)]
+    FrameStack.addr_sub' (by omega_using [fit] : 24 ≤ p.sp.toNat)]
   have savedAddr : State.addr p.sp - 24#64 =
       State.addr (callSp p) + BitVec.ofNat 64 sampling.argumentBytes := by
-    rw [callSp, FrameStack.addr_sub' (by omega : 24 + sampling.argumentBytes ≤ p.sp.toNat)]
+    rw [callSp, FrameStack.addr_sub' (by omega_using [fit] : 24 + sampling.argumentBytes ≤ p.sp.toNat)]
     rw [show BitVec.ofNat 64 (24 + sampling.argumentBytes) =
       24#64 + BitVec.ofNat 64 sampling.argumentBytes from BitVec.ofNat_add _ _,
       ← BitVec.sub_sub, BitVec.sub_add_cancel]
   rw [savedAddr]
-  exact Offset.disjoint_below _ (by have := argumentBytes_max sampling; omega)
+  exact Offset.disjoint_below _ (by have := argumentBytes_max sampling; omega_using [fit])
 
 end VG.Proof.Ffdh.Arm.KeySearch

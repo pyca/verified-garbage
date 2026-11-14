@@ -46,7 +46,7 @@ theorem advance_nat_ok (s : State) (p : Params) (pass lane slice index : Nat)
   have indexBound := h.bounds.indexBound
   refine ⟨value.trans added, ?_, keeps⟩
   rw [flag, added, h.position.segmentLength,
-    ReferenceMap.word_nat (index + 1) (by omega), ReferenceMap.word_nat p.segmentLen endBound]
+    ReferenceMap.word_nat (index + 1) (by omega_using [endBound, indexBound]), ReferenceMap.word_nat p.segmentLen endBound]
 
 theorem next_ready {p : Params} {pass lane slice index old : Nat} {s t : State}
     (h : RandomSource.Ready p pass lane slice index old s)
@@ -79,7 +79,7 @@ theorem next_ready {p : Params} {pass lane slice index old : Nat} {s t : State}
       rcases bounds.active with hp | hs | hi
       · exact Or.inl hp
       · exact Or.inr (Or.inl hs)
-      · exact Or.inr (Or.inr (by omega))
+      · exact Or.inr (Or.inr (by omega_using [hi]))
     · exact ⟨(k.regs .rbx (by decide)).trans h.filling.position.current,
         (k.regs .r12 (by decide)).trans h.filling.position.laneLength,
         (k.regs .r13 (by decide)).trans h.filling.position.segmentLength,

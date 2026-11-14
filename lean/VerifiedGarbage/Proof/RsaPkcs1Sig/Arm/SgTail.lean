@@ -67,21 +67,21 @@ theorem wipe_wp {σ s : State} (h : R3 P σ s) : WP isa Impl.Bignum.Arm.maskByte
   have e := inpA P hs.1
   have fit := ok.fit
   refine WP.mono (Bignum.Arm.maskBuffer_ok s (dst := P.B + BitVec.ofNat 32 oEM) (n := P.K)
-    (by have := hs.1.k64; omega) (by omega) (by
-      rw [Proof.X25519.Arm.toNat_add_lt (by rw [BitVec.toNat_ofNat]; simp only [oEM, frameBytes] at fit ⊢; omega),
+    (by have := hs.1.k64; omega_using [this]) (by omega_using [hK]) (by
+      rw [Proof.X25519.Arm.toNat_add_lt (by rw [BitVec.toNat_ofNat]; simp only [oEM, frameBytes] at fit ⊢; omega_using [fit]),
         BitVec.toNat_ofNat]
-      simp only [oEM, frameBytes] at fit ⊢; omega)
-    (by rw [e]; exact hs.2.inFr (by show oEM + P.K ≤ frameBytes; simp only [oEM, frameBytes]; omega)) r0 lr)
+      simp only [oEM, frameBytes] at fit ⊢; omega_using [hK, fit])
+    (by rw [e]; exact hs.2.inFr (by show oEM + P.K ≤ frameBytes; simp only [oEM, frameBytes]; omega_using [hK])) r0 lr)
     fun t ⟨_, fr, rest⟩ => ?_
   rw [e] at fr
-  have st : P.lay.St σ t := hs.2.frameW (by show oEM + P.K ≤ frameBytes; simp only [oEM, frameBytes]; omega) fr
+  have st : P.lay.St σ t := hs.2.frameW (by show oEM + P.K ≤ frameBytes; simp only [oEM, frameBytes]; omega_using [hK]) fr
     rest.rd rest.wr rest.sp
   refine ⟨⟨hs.1, st⟩, ?_⟩
   have hb : Spec.Rsa.bytesAt t.mem (State.addr P.out) P.K = Spec.Rsa.bytesAt s.mem (State.addr P.out) P.K :=
     bytesAt_frame fr (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
-      exact (ok.stk_fr (.inr (by simp)) (by show _ ≤ frameBytes + 56; simp only [oEM, frameBytes]; omega)).symm)
-      (by omega)
+      exact (ok.stk_fr (.inr (by simp)) (by show _ ≤ frameBytes + 56; simp only [oEM, frameBytes]; omega_using [hK])).symm)
+      (by omega_using [hK])
   obtain ⟨em, he, w⟩ := sr
   rw [rest.gpr .r3 (by decide)]
   exact ⟨em, he, writtenOutcome_congr hb w⟩

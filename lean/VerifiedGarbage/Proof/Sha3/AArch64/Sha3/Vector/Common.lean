@@ -23,7 +23,7 @@ theorem low_not (a : BitVec 128) : vdword (~~~a) 0 = ~~~(vdword a 0) := by
   apply BitVec.eq_of_getLsbD_eq
   intro i hi
   simp only [vdword, BitVec.getLsbD_extractLsb', BitVec.getLsbD_not, Nat.mul_zero,
-    Nat.zero_add, hi, decide_true, Bool.true_and, show i < 128 by omega]
+    Nat.zero_add, hi, decide_true, Bool.true_and, show i < 128 by omega_using [hi]]
 
 theorem low_ext8 (a : BitVec 128) :
     vdword (((a ++ a) >>> (8 * 8)).extractLsb' 0 128) 0 = vdword a 1 := by
@@ -31,7 +31,7 @@ theorem low_ext8 (a : BitVec 128) :
   intro i hi
   simp only [vdword, BitVec.getLsbD_extractLsb', BitVec.getLsbD_ushiftRight,
     BitVec.getLsbD_append, Nat.mul_zero, Nat.zero_add, Nat.mul_one, hi,
-    show i < 128 by omega, show 8 * 8 + i < 128 by omega,
+    show i < 128 by omega_using [hi], show 8 * 8 + i < 128 by omega_using [hi],
     decide_true, Bool.true_and, ite_true]
 
 theorem exec_vop (s : VG.AArch64.State) (op : VOp) :

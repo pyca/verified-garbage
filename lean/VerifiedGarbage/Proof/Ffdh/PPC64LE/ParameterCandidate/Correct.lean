@@ -28,7 +28,7 @@ open VG.Impl.MillerRabin.PPC64LE.Search VG.Proof.MillerRabin.PPC64LE.Search
 open VG.Proof.MillerRabin.PPC64LE (RoundImpl)
 theorem sieved_short {bits g : Nat} {r : List Byte} (h : r.length < (bits + 7) / 8) :
     Spec.Ffdh.sievedParameterCandidate bits g r = none := by
-  have : (r.take ((bits + 7) / 8)).length ≠ (bits + 7) / 8 := by rw [List.length_take]; omega
+  have : (r.take ((bits + 7) / 8)).length ≠ (bits + 7) / 8 := by rw [List.length_take]; omega_using [h]
   simp only [Spec.Ffdh.sievedParameterCandidate, Spec.RsaKeyGen.draw, this, ↓reduceIte, bind, Option.bind]
 
 /-- The tape's length and `out_len`. -/
@@ -49,7 +49,7 @@ theorem lenChk_ok {p : PP} {t : State} (h : St p t) (hU : word t.mem p.B 152 = B
   have hLe : p.L = (p.bits + 7) / 8 := rfl
   rw [WP.block_append_iff]
   refine WP.mono (lenLoad_ok h) fun u ⟨⟨a3, a4, am⟩, ka⟩ => ?_
-  refine WP.mono (geFlag_ok a3 a4 hrl (by omega)) fun v ⟨⟨a5, vm⟩, kv⟩ => ?_
+  refine WP.mono (geFlag_ok a3 a4 hrl (by omega_using [hb2, hLe])) fun v ⟨⟨a5, vm⟩, kv⟩ => ?_
   have hm : v.mem = t.mem := vm.trans am
   exact ⟨eval_zero_ofNat v .r5 (by split <;> decide) a5, h.step (by rw [hm]; exact Frm.refl _ _ _) (ka.trans kv),
     by rw [hm]; exact hU, hm, (ka.trans kv).rd⟩
@@ -63,11 +63,11 @@ theorem body_ok (R : RoundImpl) {p : PP} {T : Addr} {t : State} (h : St p t) (ht
   refine WP.seq (WP.mono_syms (lenChk_ok h hU) fun v ⟨he, st, hUv, vm, vrd⟩ sy => ?_)
   refine WP.ite (decide ((if p.L ≤ p.r.length then 1 else 0) = 0)) he (fun hb => ?_) (fun hb => ?_)
   · have hs : p.r.length < p.L := by
-      by_contra hc; simp only [decide_eq_true_eq] at hb; rw [ite_eq_left (by omega)] at hb; exact absurd hb (by decide)
+      by_contra hc; simp only [decide_eq_true_eq] at hb; rw [ite_eq_left (by omega_using [hc])] at hb; exact absurd hb (by decide)
     rw [sieved_short (by omega)]
     exact finEnd st (r := 0) (Or.inl rfl) rfl rfl rfl hUv
   · have hl : p.L ≤ p.r.length := by
-      by_contra hc; simp only [decide_eq_false_iff_not] at hb; exact hb (by rw [ite_eq_right (by omega)])
+      by_contra hc; simp only [decide_eq_false_iff_not] at hb; exact hb (by rw [ite_eq_right (by omega_using [hc])])
     exact main_ok R st (ht.step sy (rs := []) (by rw [vm]; exact Frm.refl _ _ _) (by simp) vrd) hUv hl
 
 theorem preserved_cases : ∀ r ∈ preserved,
@@ -78,7 +78,7 @@ theorem r2_cases : ∀ i < 18, Reg.r2 ≠ Impl.Ffdh.PPC64LE.ParameterCandidate.s
 theorem r3_cases : ∀ i < 18, Reg.r3 ≠ Impl.Ffdh.PPC64LE.ParameterCandidate.saved i := by decide
 
 theorem small_setWidth {k : Nat} (hk : k < 2 ^ 32) : ((BitVec.ofNat 64 k).setWidth 32).toNat = k := by
-  simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]; omega
+  simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]; omega_using [hk]
 
 theorem status_le (res : Option (Option Nat × Spec.RsaKeyGen.Rand)) : Proof.Ffdh.candidateStatus res ≤ 2 := by
   rcases res with _ | ⟨_ | _, _⟩ <;> simp [Proof.Ffdh.candidateStatus]
@@ -93,7 +93,7 @@ theorem front_tab (s : State) (h : pcPre s) :
   refine WP.mono_syms (front_ok s hpre) fun t ⟨st, hU, _, fr, trd⟩ sy => ⟨st, hU, ?_⟩
   obtain ⟨tfit, tat, tdO, tdS⟩ := htab
   refine ⟨by rw [sy], fun i hi => ?_, by rw [trd, hrd]; simp, tfit, ?_⟩
-  · rw [fr.readW (r := tabR s) (Offset.contains_base _ (by omega) (by omega)) (fun r hr => by
+  · rw [fr.readW (r := tabR s) (Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi])) (fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
       · rw [Nat.mul_comm]; exact tdS
@@ -123,7 +123,7 @@ theorem code_correct (R : RoundImpl) (s : State) (h : pcContract.pre s) :
   · have hres : pcResult s = Spec.Ffdh.sievedParameterCandidate (ppOf s).bits (ppOf s).g (ppOf s).r := rfl
     simp only [pcPost]
     rw [hres, wm, wo .r3 (by decide) (by decide) r3_cases, u3, hLe]
-    refine ⟨small_setWidth (by have := status_le (Spec.Ffdh.sievedParameterCandidate (ppOf s).bits (ppOf s).g (ppOf s).r); omega),
+    refine ⟨small_setWidth (by have := status_le (Spec.Ffdh.sievedParameterCandidate (ppOf s).bits (ppOf s).g (ppOf s).r); omega_using [this]),
       ?_, ?_⟩
     · refine uo.trans ?_
       generalize Spec.Ffdh.sievedParameterCandidate (ppOf s).bits (ppOf s).g (ppOf s).r = res

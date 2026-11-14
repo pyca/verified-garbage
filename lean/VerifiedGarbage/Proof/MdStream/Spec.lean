@@ -118,7 +118,7 @@ theorem compressBlocks_congr {h : H.HV} {m m' : Mem} {p : Addr} {n : Nat}
   have e : p + BitVec.ofNat 64 (B * i) + BitVec.ofNat 64 k = p + BitVec.ofNat 64 (B * i + k) := by
     rw [BitVec.add_assoc, ← BitVec.ofNat_add]
   rw [e]
-  exact hm _ (by have := Nat.mul_le_mul_left B (Nat.succ_le_of_lt hi); rw [Nat.mul_succ] at this; omega)
+  exact hm _ (by have := Nat.mul_le_mul_left B (Nat.succ_le_of_lt hi); rw [Nat.mul_succ] at this; omega_using [hk, this])
 
 theorem compressList_succ (h : H.HV) (p : List Byte) (n : Nat) :
     H.compressList h p (n + 1) = H.compress (H.compressList h p n) (H.blockOf p n) := by
@@ -132,9 +132,9 @@ theorem compressList_congr {h : H.HV} {p q : List Byte} {n : Nat}
   induction n with
   | zero => simp only [compressList_zero]
   | succ n ih =>
-    rw [compressList_succ, compressList_succ, ih fun j hj => hpq j (by rw [Nat.mul_succ] at *; omega)]
+    rw [compressList_succ, compressList_succ, ih fun j hj => hpq j (by rw [Nat.mul_succ] at *; omega_using [hj])]
     have : H.blockOf p n = H.blockOf q n :=
-      H.parse_congr fun k hk => hpq _ (by rw [Nat.mul_succ]; omega)
+      H.parse_congr fun k hk => hpq _ (by rw [Nat.mul_succ]; omega_using [hk])
     rw [this]
 
 theorem compressList_add (h : H.HV) (p : List Byte) (a b : Nat) :
@@ -150,7 +150,7 @@ theorem compressList_add (h : H.HV) (p : List Byte) (a b : Nat) :
 
 theorem compressList_append {h : H.HV} {p q : List Byte} {n : Nat} (hn : B * n ≤ p.length) :
     H.compressList h (p ++ q) n = H.compressList h p n :=
-  H.compressList_congr fun _ hj => getD_append_left (by omega)
+  H.compressList_congr fun _ hj => getD_append_left (by omega_using [hn, hj])
 
 /-- `compressBlocks` of blocks in memory holding the bytes `xs`. -/
 theorem compressBlocks_eq {h : H.HV} {m : Mem} {p : Addr} {n : Nat} {xs : List Byte}
@@ -162,7 +162,7 @@ theorem compressBlocks_eq {h : H.HV} {m : Mem} {p : Addr} {n : Nat} {xs : List B
   refine congrArg (H.compress h') (H.parse_congr fun k hk => ?_)
   have hi := List.mem_range.mp hi
   rw [BitVec.add_assoc, ← BitVec.ofNat_add]
-  exact hx _ (by have := Nat.mul_le_mul_left B (Nat.succ_le_of_lt hi); rw [Nat.mul_succ] at this; omega)
+  exact hx _ (by have := Nat.mul_le_mul_left B (Nat.succ_le_of_lt hi); rw [Nat.mul_succ] at this; omega_using [hk, this])
 
 theorem compressList_one (h : H.HV) (p : List Byte) :
     H.compressList h p 1 = H.compress h (H.parse fun t => p.getD t 0) := by
@@ -172,20 +172,20 @@ theorem compressList_one (h : H.HV) (p : List Byte) :
 
 theorem add_div_of_lt {n x B : Nat} (h : n % B + x < B) : (n + x) / B = n / B := by
   have e := Nat.div_add_mod n B
-  rw [show n + x = B * (n / B) + (n % B + x) by omega, Nat.mul_add_div (by omega),
+  rw [show n + x = B * (n / B) + (n % B + x) by omega_using [e], Nat.mul_add_div (by omega_using [h]),
     Nat.div_eq_of_lt h, Nat.add_zero]
 
 theorem add_mod_of_lt {n x B : Nat} (h : n % B + x < B) : (n + x) % B = n % B + x := by
   have e := Nat.div_add_mod n B
-  rw [show n + x = B * (n / B) + (n % B + x) by omega, Nat.mul_add_mod, Nat.mod_eq_of_lt h]
+  rw [show n + x = B * (n / B) + (n % B + x) by omega_using [e], Nat.mul_add_mod, Nat.mod_eq_of_lt h]
 
 theorem add_div_of_eq {n x B : Nat} (hB : 0 < B) (h : n % B + x = B) : (n + x) / B = n / B + 1 := by
   have e := Nat.div_add_mod n B
-  rw [show n + x = B * (n / B) + B by omega, Nat.mul_add_div hB, Nat.div_self hB]
+  rw [show n + x = B * (n / B) + B by omega_using [h, e], Nat.mul_add_div hB, Nat.div_self hB]
 
 theorem add_mod_of_eq {n x B : Nat} (h : n % B + x = B) : (n + x) % B = 0 := by
   have e := Nat.div_add_mod n B
-  rw [show n + x = B * (n / B) + B by omega, Nat.mul_add_mod, Nat.mod_self]
+  rw [show n + x = B * (n / B) + B by omega_using [h, e], Nat.mul_add_mod, Nat.mod_self]
 
 theorem mod_lt' {n B : Nat} (hB : 0 < B) : n % B < B := Nat.mod_lt _ hB
 
@@ -198,11 +198,11 @@ theorem repr_congr {iv : H.HV} {mem mem' : Mem} {p : Addr} {m : List Byte} (hB :
     (h : ∀ i < N + B, mem' (p + BitVec.ofNat 64 i) = mem (p + BitVec.ofNat 64 i))
     (hr : H.Repr iv mem p m) : H.Repr iv mem' p m := by
   have hm := mod_lt' (n := m.length) hB
-  refine ⟨by rw [H.stateAt_congr fun i hi => h i (by omega)]; exact hr.1, ?_⟩
+  refine ⟨by rw [H.stateAt_congr fun i hi => h i (by omega_using [hi])]; exact hr.1, ?_⟩
   rw [← hr.2]
   apply bytesAt_congr
   intro i hi
-  have := h (N + i) (by omega)
+  have := h (N + i) (by omega_using [hm, hi])
   rwa [show p + BitVec.ofNat 64 N + BitVec.ofNat 64 i = p + BitVec.ofNat 64 (N + i) by
     rw [BitVec.ofNat_add, BitVec.add_assoc]]
 
@@ -248,7 +248,7 @@ theorem repr_append_block {iv : H.HV} {mem mem' : Mem} {p : Addr} {m xs : List B
     symm; rw [List.drop_eq_nil_iff]
     have e := Nat.div_add_mod (m ++ xs).length B
     rw [hmod, Nat.add_zero] at e
-    omega
+    omega_using [e]
 
 /-- Appending whole blocks to a message of whole blocks, which are
 compressed. -/
@@ -264,7 +264,7 @@ theorem repr_append_blocks {iv : H.HV} {mem mem' : Mem} {p : Addr} {m xs : List 
     rw [hlen, Nat.mul_div_cancel_left _ hB]
   have hmod : (m ++ xs).length % B = 0 := by rw [hlen, Nat.mul_mod_right]
   refine ⟨?_, ?_⟩
-  · rw [hs, hr.1, hdiv, compressList_add, H.compressList_append (by omega), e,
+  · rw [hs, hr.1, hdiv, compressList_add, H.compressList_append (by omega_using [e]), e,
       List.drop_left]
   · rw [hmod]
     simp only [bytesAt, List.range_zero, List.map_nil]
@@ -278,7 +278,7 @@ abbrev rest (B : Nat) (m : List Byte) : List Byte := m.drop (B * (m.length / B))
 theorem rest_length (B : Nat) (m : List Byte) : (rest B m).length = m.length % B := by
   simp only [rest, List.length_drop]
   have := Nat.div_add_mod m.length B
-  omega
+  omega_using [this]
 
 theorem hash_eq (iv : H.HV) (m : List Byte) (nt : Nat) (hB : 0 < B)
     (hn : m.length % B + 1 + (2 * B - L - 1 - m.length % B) % B + L = B * nt) :
@@ -294,7 +294,7 @@ theorem hash_eq (iv : H.HV) (m : List Byte) (nt : Nat) (hB : 0 < B)
     rw [hp]
     simp only [List.length_append, List.length_replicate, H.lenBytes_length, List.length_singleton]
     rw [show m.length + (1 + (2 * B - L - 1 - m.length % B) % B + L) = B * (m.length / B + nt) by
-      rw [Nat.mul_add]; omega, Nat.mul_div_cancel_left _ hB]
+      rw [Nat.mul_add]; omega_using [hn, e], Nat.mul_div_cancel_left _ hB]
   simp only [hash]
   rw [hlen, compressList_add, hp, compressList_append _ hle, List.drop_append_of_le_length hle]
   simp only [List.append_assoc]
@@ -305,9 +305,9 @@ theorem hash_one {iv : H.HV} {m : List Byte} (hB : 0 < B) (hr : m.length % B + L
       (H.parse fun t => (rest B m ++ [0x80] ++ List.replicate (B - L - 1 - m.length % B) 0 ++
         H.lenBytes m.length).getD t 0)) := by
   have hz : (2 * B - L - 1 - m.length % B) % B = B - L - 1 - m.length % B := by
-    rw [show 2 * B - L - 1 - m.length % B = (B - L - 1 - m.length % B) + B by omega,
-      Nat.add_mod_right, Nat.mod_eq_of_lt (by omega)]
-  rw [hash_eq H iv m 1 hB (by rw [hz]; omega), compressList_one, hz]
+    rw [show 2 * B - L - 1 - m.length % B = (B - L - 1 - m.length % B) + B by omega_using [hr],
+      Nat.add_mod_right, Nat.mod_eq_of_lt (by omega_using [hB])]
+  rw [hash_eq H iv m 1 hB (by rw [hz]; omega_using [hr]), compressList_one, hz]
 
 /-- A message whose padding takes two more blocks. -/
 theorem hash_two {iv : H.HV} {m : List Byte} (hB : 0 < B) (hL : L < B) (hr : B ≤ m.length % B + L) :
@@ -316,8 +316,8 @@ theorem hash_two {iv : H.HV} {m : List Byte} (hB : 0 < B) (hL : L < B) (hr : B �
       (H.parse fun t => (List.replicate (B - L) 0 ++ H.lenBytes m.length).getD t 0)) := by
   have hm := mod_lt' (n := m.length) hB
   have hz : (2 * B - L - 1 - m.length % B) % B = (B - 1 - m.length % B) + (B - L) := by
-    rw [Nat.mod_eq_of_lt (by omega)]; omega
-  rw [hash_eq H iv m 2 hB (by rw [hz]; omega), compressList_succ, compressList_one]
+    rw [Nat.mod_eq_of_lt (by omega_using [hB, hr])]; omega_using [hL, hm]
+  rw [hash_eq H iv m 2 hB (by rw [hz]; omega_using [hL, hm]), compressList_succ, compressList_one]
   have e : rest B m ++ [0x80] ++ List.replicate ((2 * B - L - 1 - m.length % B) % B) 0 ++
       H.lenBytes m.length =
       (rest B m ++ [0x80] ++ List.replicate (B - 1 - m.length % B) 0) ++
@@ -325,12 +325,12 @@ theorem hash_two {iv : H.HV} {m : List Byte} (hB : 0 < B) (hL : L < B) (hr : B �
     rw [hz, ← List.replicate_append_replicate]
     simp only [List.append_assoc]
   have hl : (rest B m ++ [0x80] ++ List.replicate (B - 1 - m.length % B) 0).length = B := by
-    simp only [List.length_append, rest_length, List.length_replicate, List.length_singleton]; omega
+    simp only [List.length_append, rest_length, List.length_replicate, List.length_singleton]; omega_using [hm]
   rw [e]
   have h1 : (H.parse fun t => ((rest B m ++ [0x80] ++ List.replicate (B - 1 - m.length % B) 0) ++
       (List.replicate (B - L) 0 ++ H.lenBytes m.length)).getD t 0) =
       H.parse fun t => (rest B m ++ [0x80] ++ List.replicate (B - 1 - m.length % B) 0).getD t 0 :=
-    H.parse_congr fun k hk => getD_append_left (by omega)
+    H.parse_congr fun k hk => getD_append_left (by omega_using [hl, hk])
   have h2 : H.blockOf ((rest B m ++ [0x80] ++ List.replicate (B - 1 - m.length % B) 0) ++
       (List.replicate (B - L) 0 ++ H.lenBytes m.length)) 1 =
       H.parse fun t => (List.replicate (B - L) 0 ++ H.lenBytes m.length).getD t 0 :=

@@ -35,7 +35,7 @@ theorem fused_m_ok {s₀ s : State} (hp : Pre P (deL P) s₀) (hc : Calls P) (ht
     intro o l hf
     have hd : (⟨s.syms "VG_MLKEM_GAMMA",512⟩ : Region).Disjoint (R (kA s₀) (deL P).sc 0 P.scl) := by
       simpa only [R,ptr_zero] using ha
-    exact hd.sub_right (R.sub2 (by omega) (by omega))
+    exact hd.sub_right (R.sub2 (by omega_using []) (by omega_using [hf]))
   apply WPs.seqs (by simp)
   rw [List.append_assoc]
   apply WPs.append

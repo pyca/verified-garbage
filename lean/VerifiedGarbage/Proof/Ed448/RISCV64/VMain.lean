@@ -80,7 +80,7 @@ theorem residual_tail {k : Nat} (hk : k < Impl.Ed448.WnafWide.scalarLimit) :
     | zero => omega
     | succ n ih =>
       rcases Nat.lt_or_ge n 464 with h' | h'
-      · have e : n = 463 := by omega
+      · have e : n = 463 := by omega_using [h, h']
         subst e
         exact residual_464 hk
       · show Impl.Ed448.WnafWide.next false (residual false k n) = 0
@@ -100,30 +100,30 @@ theorem tbSet_bit {S K : Nat} (hS : S < Impl.Ed448.WnafWide.scalarLimit) (hK : K
       else 0 := by
   unfold tbSet
   by_cases h0 : h % 4 = 0
-  · rw [ite_eq_right (by omega), ite_eq_left h0]
+  · rw [ite_eq_right (by omega_using [h0]), ite_eq_left h0]
     by_cases hi : h / 4 < 456
     · rw [ite_eq_left ⟨h0, hi⟩, Proof.Ed448.WnafWide.bit_shift]
-    · rw [ite_eq_right (fun c => hi c.2), bit_tail hS (by omega)]
+    · rw [ite_eq_right (fun c => hi c.2), bit_tail hS (by omega_using [hi])]
   · rw [ite_eq_right h0]
     by_cases h1 : h % 4 = 1
     · rw [ite_eq_left h1]
       by_cases hi : h / 4 < 456
       · rw [ite_eq_left ⟨h1, hi⟩, Proof.Ed448.WnafWide.bit_shift]
-      · rw [ite_eq_right (fun c => hi c.2), ite_eq_right (by omega), bit_tail hK (by omega)]
-    · rw [ite_eq_right h1, ite_eq_right (by omega), ite_eq_right (by omega)]
+      · rw [ite_eq_right (fun c => hi c.2), ite_eq_right (by omega_using [h0]), bit_tail hK (by omega_using [hi])]
+    · rw [ite_eq_right h1, ite_eq_right (by omega_using [h1]), ite_eq_right (by omega_using [h0])]
 
 theorem dig_eq {S K : Nat} (hS : S < Impl.Ed448.WnafWide.scalarLimit) (hK : K < Impl.Ed448.WnafWide.scalarLimit)
     (h : Nat) : recCur 1 K (recCur 0 S (tbSet 1 K (tbSet 0 S fun _ => 0)) 464) 464 h = digV S K h := by
   unfold recCur digV
   rw [tbSet_bit hS hK]
-  rcases (by omega : h % 4 = 0 ∨ h % 4 = 1 ∨ h % 4 = 2 ∨ h % 4 = 3) with e | e | e | e <;>
+  rcases (by omega_using [] : h % 4 = 0 ∨ h % 4 = 1 ∨ h % 4 = 2 ∨ h % 4 = 3) with e | e | e | e <;>
     simp only [e, Nat.reduceEqDiff, false_and, ite_false, ite_true, true_and, Nat.reduceAdd]
   · by_cases hn : h / 4 < 464
     · rw [ite_eq_left hn]
-    · rw [ite_eq_right hn, digit_tail hS (by omega)]; rfl
+    · rw [ite_eq_right hn, digit_tail hS (by omega_using [hn])]; rfl
   · by_cases hn : h / 4 < 464
     · rw [ite_eq_left hn]
-    · rw [ite_eq_right hn, digit_tail hK (by omega)]; rfl
+    · rw [ite_eq_right hn, digit_tail hK (by omega_using [hn])]; rfl
 
 section
 variable {b : Addr}
@@ -159,7 +159,7 @@ theorem disj_one {d n e k : Nat} (h1 : d + n ≤ e ∨ e + k ≤ d) (h2 : d + n 
     ∀ r ∈ [(⟨b + BitVec.ofNat 64 e, k⟩ : Region)], Region.Disjoint ⟨b + BitVec.ofNat 64 d, n⟩ r := by
   intro r hr
   rw [List.mem_singleton.mp hr]
-  exact Offset.disjoint _ h1 (by omega) (by omega)
+  exact Offset.disjoint _ h1 (by omega_using [h2]) (by omega_using [h3])
 
 theorem disj_FA {d n : Nat} (h1 : 1064 ≤ d) (h2 : d + n ≤ 8192) :
     ∀ r ∈ [FA b], Region.Disjoint ⟨b + BitVec.ofNat 64 d, n⟩ r := by
@@ -173,7 +173,7 @@ theorem disj_FAK {d n : Nat} (h1 : 1064 ≤ d) (h2 : d + n ≤ 3976) :
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl
   · exact Offset.disjoint_base _ (by unfold ACC; omega_arith) (by omega_arith)
-  · exact Offset.disjoint _ (by unfold KT; omega) (by omega) (by unfold KT; omega)
+  · exact Offset.disjoint _ (by unfold KT; omega_using [h2]) (by omega_using [h2]) (by unfold KT; omega_using [])
 
 theorem bytes_take (m : Mem) (p : Addr) :
     (Spec.Ed448.bytesAt m p 114).take 57 = Spec.Ed448.bytesAt m p 57 := by
@@ -192,7 +192,7 @@ theorem keyOk_BT {a : VG.Proof.EdwardsLaw.EPoint dZ} {m m' : Mem}
   rw [kpt_keep hf fun o ho r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at ho
     rw [List.mem_singleton.mp hr]
-    rcases ho with rfl | rfl | rfl <;> exact Offset.disjoint _ (by omega) (by omega) (by omega)]
+    rcases ho with rfl | rfl | rfl <;> exact Offset.disjoint _ (by omega_using [hi, hK, hB]) (by omega_using [hi, hK]) (by omega_using [hB])]
   exact h i hi
 
 theorem limit_of {bs : List Byte} (h : bs.length = 57) :
@@ -256,7 +256,7 @@ theorem pre_run (hR : Proof.Ed448.RecoverOk) {s : State} (hp : VPre s) : WP isa 
     fun s7 ⟨hc7, hr7, hf7, ht7⟩ => ?_)
   -- What the digits' phases keep: everything below `TB`.
   have dTB : ∀ {d n : Nat}, d + n ≤ 2104 → ∀ r ∈ [(⟨b + BitVec.ofNat 64 TB, 1872⟩ : Region)],
-      Region.Disjoint ⟨b + BitVec.ofNat 64 d, n⟩ r := fun h => disj_one (.inl (by omega)) (by omega) (by omega)
+      Region.Disjoint ⟨b + BitVec.ofNat 64 d, n⟩ r := fun h => disj_one (.inl (by omega_using [hTB, h])) (by omega_using [h]) (by omega_using [hTB])
   -- The inputs, as the phases read them.
   have kA : Spec.Ed448.bytesAt s2.mem (b + BitVec.ofNat 64 PK) 57 = Spec.Ed448.bytesAt s.mem (s.gpr .a0) 57 := by
     rw [bytes_keep hf2 (disj_decW (by omega_arith) (by omega_arith) (by decide) (by decide) (by decide) (by decide))
@@ -271,10 +271,10 @@ theorem pre_run (hR : Proof.Ed448.RecoverOk) {s : State} (hp : VPre s) : WP isa 
         (by decide), eSS, bytes_drop]
   have kS5 : Spec.Ed448.bytesAt s5.mem (b + BitVec.ofNat 64 SGS) 57 =
       (Spec.Ed448.bytesAt s.mem (s.gpr .a1) 114).drop 57 := by
-    rw [bytes_keep hf5 (dTB (by omega)) (by decide),
+    rw [bytes_keep hf5 (dTB (by omega_using [hSS])) (by decide),
       bytes_keep hf4 (disj_FAB (by omega_arith) (by omega_arith) (by omega_arith)) (by decide), kS3]
   have kK : Spec.Ed448.bytesAt s6.mem (b + BitVec.ofNat 64 CH) 57 = Spec.Ed448.bytesAt s.mem (s.gpr .a2) 57 := by
-    rw [bytes_keep hf6 (dTB (by omega)) (by decide), bytes_keep hf5 (dTB (by omega)) (by decide),
+    rw [bytes_keep hf6 (dTB (by omega_using [hCH])) (by decide), bytes_keep hf5 (dTB (by omega_using [hCH])) (by decide),
       bytes_keep hf4 (disj_FAB (by omega_arith) (by omega_arith) (by omega_arith)) (by decide),
       bytes_keep hf3 (disj_decW (by omega_arith) (by omega_arith) (by decide) (by decide) (by decide) (by decide))
         (by decide),
@@ -290,19 +290,19 @@ theorem pre_run (hR : Proof.Ed448.RecoverOk) {s : State} (hp : VPre s) : WP isa 
   generalize hS : Spec.Ed448.decodeLE ((Spec.Ed448.bytesAt s.mem (s.gpr .a1) 114).drop 57) = S at *
   generalize hK : Spec.Ed448.decodeLE (Spec.Ed448.bytesAt s.mem (s.gpr .a2) 57) = K at *
   refine WP.seq (WP.mono (recode_ok hc7 (e := 0) (k := S) (by decide) (fun i _ => by
-      rw [tbSet_bit hSl hKl, ite_eq_left (by omega), show (4 * i + 0) / 4 = i by omega]) ht7)
+      rw [tbSet_bit hSl hKl, ite_eq_left (by omega_using []), show (4 * i + 0) / 4 = i by omega_using []]) ht7)
     fun s8 ⟨hc8, hr8, hf8, ht8⟩ => ?_)
   refine WP.seq (WP.mono (recode_ok hc8 (e := 1) (k := K) (by decide) (fun i _ => by
-      rw [recCur, ite_eq_right (by omega), tbSet_bit hSl hKl, ite_eq_right (by omega), ite_eq_left (by omega),
-        show (4 * i + 1) / 4 = i by omega]) ht8)
+      rw [recCur, ite_eq_right (by omega_using []), tbSet_bit hSl hKl, ite_eq_right (by omega_using []), ite_eq_left (by omega_using []),
+        show (4 * i + 1) / 4 = i by omega_using []]) ht8)
     fun s9 ⟨hc9, hr9, hf9, ht9⟩ => ?_)
   have hdig : TbIs b s9.mem (digV S K) := fun h hh => by rw [ht9 h hh, dig_eq hSl hKl]
   -- The slots above the field area, from the checks to the digits.
   have k49 : ∀ {q : Nat}, 1064 ≤ q → q + 56 ≤ 1696 → FS s9.mem b q = FS s4.mem b q := fun h1 h2 => by
-    rw [fs_disj hf9 (dTB (by omega)), fs_disj hf8 (dTB (by omega)), fs_disj hf7 (dTB (by omega)),
-      fs_disj hf6 (dTB (by omega)), fs_disj hf5 (dTB (by omega))]
+    rw [fs_disj hf9 (dTB (by omega_using [h2])), fs_disj hf8 (dTB (by omega_using [h2])), fs_disj hf7 (dTB (by omega_using [h2])),
+      fs_disj hf6 (dTB (by omega_using [h2])), fs_disj hf5 (dTB (by omega_using [h2]))]
   have k34 : ∀ {q : Nat}, 1064 ≤ q → q + 56 ≤ 1696 → FS s4.mem b q = FS s3.mem b q := fun h1 h2 =>
-    fs_disj hf4 (disj_FAB (by omega) (by omega) (by omega))
+    fs_disj hf4 (disj_FAB (by omega_using [h1]) (by omega_using [h2]) (by omega_using [h2]))
   have kFS1 : ∀ {q : Nat}, 1064 ≤ q → q + 56 ≤ 1176 ∨ 1400 ≤ q → q + 56 ≤ 1456 → FS s3.mem b q = FS s1.mem b q :=
     fun h1 h2 h3 => by
       rw [fs_disj hf3 (disj_decW (by omega_arith) (by omega_arith) (by unfold NAX; omega_arith)
@@ -316,26 +316,26 @@ theorem pre_run (hR : Proof.Ed448.RecoverOk) {s : State} (hp : VPre s) : WP isa 
   let A' : Point := ⟨FS s9.mem b NAX, FS s9.mem b NAY, FS s9.mem b ONE⟩
   have hpA : Pt s9.mem b NAX NAY ONE A' := ⟨rfl, rfl, rfl⟩
   have hd9 : FS s9.mem b DK = Spec.Ed448.d := by
-    rw [fs_disj hf9 (dTB (by omega)), fs_disj hf8 (dTB (by omega)), fs_disj hf7 (dTB (by omega)),
-      fs_disj hf6 (dTB (by omega)), fs_disj hf5 (dTB (by omega)), hk4, hd3]
+    rw [fs_disj hf9 (dTB (by omega_using [hDK])), fs_disj hf8 (dTB (by omega_using [hDK])), fs_disj hf7 (dTB (by omega_using [hDK])),
+      fs_disj hf6 (dTB (by omega_using [hDK])), fs_disj hf5 (dTB (by omega_using [hDK])), hk4, hd3]
   refine WP.seq (WP.mono (keyTable_ok hc9 hpA hd9) fun s10 hK10 => ?_)
   have hc10 : VCtx b s10 := hK10.1
   refine WP.mono (baseTable_ok hc10) fun s11 ⟨hc11, hr11, hf11, hB11⟩ => ?_
   have dBT : ∀ {d n : Nat}, d + n ≤ 5320 → ∀ r ∈ [(⟨b + BitVec.ofNat 64 BT, 896⟩ : Region)],
-      Region.Disjoint ⟨b + BitVec.ofNat 64 d, n⟩ r := fun h => disj_one (.inl (by omega)) (by omega) (by omega)
+      Region.Disjoint ⟨b + BitVec.ofNat 64 d, n⟩ r := fun h => disj_one (.inl (by omega_using [hBT, h])) (by omega_using [h]) (by omega_using [hBT])
   have hfx : JFix b S K s11.mem := ⟨fun h hh => by
       have e1 := hf11 (b + BitVec.ofNat 64 (TB + h)) fun r hr => by
         rw [List.mem_singleton.mp hr]
-        exact fun hc => (dBT (d := TB + h) (n := 1) (by omega) _ (List.mem_singleton_self _)) _
+        exact fun hc => (dBT (d := TB + h) (n := 1) (by omega_using [hTB, hh]) _ (List.mem_singleton_self _)) _
           (Region.contains_self _ _) hc
       have e2 := hK10.2.2.1 (b + BitVec.ofNat 64 (TB + h)) fun r hr => by
-        exact fun hc => (disj_FAK (d := TB + h) (n := 1) (by omega) (by omega) r hr) _ (Region.contains_self _ _) hc
+        exact fun hc => (disj_FAK (d := TB + h) (n := 1) (by omega_using [hTB]) (by omega_using [hTB, hh]) r hr) _ (Region.contains_self _ _) hc
       rw [e1, e2]; exact hdig h hh, hB11⟩
   have hd11 : FS s11.mem b DK = Spec.Ed448.d := by
-    rw [fs_disj hf11 (dBT (by omega))]; exact hK10.2.2.2.2.2.2.2.1
-  have dF := disj_FA (b := b) (d := BAD) (n := 8) (by omega) (by omega)
+    rw [fs_disj hf11 (dBT (by omega_using [hDK]))]; exact hK10.2.2.2.2.2.2.2.1
+  have dF := disj_FA (b := b) (d := BAD) (n := 8) (by omega_using [o3]) (by omega_using [o3])
   have k911 : ∀ {q : Nat}, 1064 ≤ q → q + 56 ≤ 1696 → FS s11.mem b q = FS s9.mem b q := fun h1 h2 => by
-    rw [fs_disj hf11 (dBT (by omega)), fs_disj hK10.2.2.1 (disj_FAK (by omega) (by omega))]
+    rw [fs_disj hf11 (dBT (by omega_using [h2])), fs_disj hK10.2.2.1 (disj_FAK (by omega_using [h1]) (by omega_using [h2]))]
   refine ⟨?_, (hr1.mono (by decide)).trans ((hr2.mono (by decide)).trans
     ((hr3.mono (by decide)).trans ((hr4.mono (by decide)).trans
     ((hr5.mono (by decide)).trans ((hr6.mono (by decide)).trans
@@ -343,9 +343,9 @@ theorem pre_run (hR : Proof.Ed448.RecoverOk) {s : State} (hp : VPre s) : WP isa 
     ((hr9.mono (by decide)).trans ((hK10.2.1.mono (by decide)).trans (hr11.mono (by decide)))))))))))⟩
   refine ⟨hc11, ?_, hfx, hd11, ?_, fun a hA => ?_, fun r hRr => ?_⟩
   · rw [hr11.sp, hK10.2.1.sp, hr9.sp, hr8.sp, hr7.sp, hr6.sp, hr5.sp, hr4.sp, hr3.sp, hr2.sp, hr1.sp]
-  · rw [bad_keep hf11 (dBT (by omega)), bad_keep hK10.2.2.1 (disj_FAK (by omega) (by omega)),
-      bad_keep hf9 (dTB (by omega)), bad_keep hf8 (dTB (by omega)), bad_keep hf7 (dTB (by omega)),
-      bad_keep hf6 (dTB (by omega)), bad_keep hf5 (dTB (by omega)), hb4, hb3, hb2, kA, kR, kS3, hS]
+  · rw [bad_keep hf11 (dBT (by omega_using [o3])), bad_keep hK10.2.2.1 (disj_FAK (by omega_using [o3]) (by omega_using [o3])),
+      bad_keep hf9 (dTB (by omega_using [o3])), bad_keep hf8 (dTB (by omega_using [o3])), bad_keep hf7 (dTB (by omega_using [o3])),
+      bad_keep hf6 (dTB (by omega_using [o3])), bad_keep hf5 (dTB (by omega_using [o3])), hb4, hb3, hb2, kA, kR, kS3, hS]
     simp only [hb1, true_and]
     exact ⟨fun ⟨⟨h1, h2⟩, h3⟩ => ⟨h1, h2, h3⟩, fun ⟨h1, h2, h3⟩ => ⟨⟨h1, h2⟩, h3⟩⟩
   · obtain ⟨ax, ay, az⟩ := hv3 a (by rw [kA]; exact hA)
@@ -392,10 +392,10 @@ theorem verifyEquation_correct (hR : Proof.Ed448.RecoverOk) {s : State} (hp : VP
   refine ⟨tf, t, hef, ?_, hru.trans ((rL.mono (by decide)).trans
     ((st13.rest.mono (by decide)).trans rf))⟩
   rw [ht]
-  have dF := disj_FA (b := b) (d := BAD) (n := 8) (by omega) (by omega)
+  have dF := disj_FA (b := b) (d := BAD) (n := 8) (by omega_using [o3]) (by omega_using [o3])
   have hb13 : bad s13.mem b = bad u.mem b := by rw [bad_keep st13.frame dF, bad_keep fL dF]
   have kU : ∀ {q : Nat}, 1064 ≤ q → q + 56 ≤ 1696 → FS s12.mem b q = FS u.mem b q := fun h1 h2 => by
-    rw [fs_hi C12.stp.frame (by omega) (by omega), fs_hi fL (by omega) (by omega)]
+    rw [fs_hi C12.stp.frame (by omega_using [o1, h1]) (by omega_using [h2]), fs_hi fL (by omega_using [o1, h1]) (by omega_using [h2])]
   rw [hb13] at *
   have res : ∀ (c : Prop) [Decidable c] (v : Bool), (c ↔ v = true) →
       (BitVec.ofNat 64 (if c then 1 else 0)).setWidth 32 = if v then 1 else 0 := by

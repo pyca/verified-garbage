@@ -66,16 +66,16 @@ theorem setupToDec_ok {s₀ : State} (hp : SPreTo CtxMode.prepared s₀) :
     refine ⟨fun k l => hInvF (Spec.Gcm.hpow (hk s₀) (16 - 2 * (2 * k + l / 2) - l % 2)), ⟨⟨Nat.zero_le _, fun l hl => by rw [c14 l hl, Nat.mul_zero, Nat.zero_add], m0, i15,
         by rw [f.gpr]; exact hA.rdi, by rw [f.gpr]; exact hA.rsi, by rw [f.gpr]; exact hA.r10,
         by rw [f.mem]; exact hA.frame,
-        fun k hk => absurd hk (by omega), fun k hk _ => by rw [f.mem]; exact hA.src k hk (Nat.zero_le _),
+        fun k hk => absurd hk (by omega_using []), fun k hk _ => by rw [f.mem]; exact hA.src k hk (Nat.zero_le _),
         by rw [f.rd]; exact hA.rd, by rw [f.wr]; exact hA.wr⟩,
       by rw [f.gpr, hR.rdx]; simp, by rw [f.gpr, hR.gpr _ (by decide) (by decide) (by decide) (by decide)]; simp,
       by rw [f.gpr]; exact hR.rax, fun _ => by rw [f.gpr]; exact hR.r8,
       fun r h1 h2 h3 _ h5 => by rw [f.gpr]; exact hR.gpr r h1 h2 (h3 rfl) h5,
       fun k hk l hl => ?_, p1, by rw [y0, hR.y]; simp [ghashFrom], y1⟩, fun k _ l _ => ?_⟩
-    · rw [f.mem, show 64 * k + 16 * l = 32 * (2 * k + l / 2) + 16 * (l % 2) by omega]
-      exact hR.pw _ (by omega) _ (by omega)
+    · rw [f.mem, show 64 * k + 16 * l = 32 * (2 * k + l / 2) + 16 * (l % 2) by omega_using []]
+      exact hR.pw _ (by omega_using [hk, hl]) _ (by omega_using [])
     · show hInvF (Spec.Gcm.hpow (hk s₀) (16 - 2 * (2 * k + l / 2) - l % 2)) = _
-      rw [show 16 - 2 * (2 * k + l / 2) - l % 2 = 16 - 4 * k - l by omega]
+      rw [show 16 - 2 * (2 * k + l / 2) - l % 2 = 16 - 4 * k - l by omega_using []]
   refine WP.seq (WP.mono h₁ fun s ⟨P, hI, hpw⟩ => ?_)
   refine WP.mono (VG.Proof.Aes.X86_64.VaesZH.loadKeys_ok s (hI.a.keys hm) hm.rounds
       (by rw [hI.a.rsi]; simp) (by rw [hI.a.r10, hI.a.rdi])) fun t ⟨hK, f⟩ => ?_
@@ -117,20 +117,20 @@ theorem decToR_ok (hz : PowFinZ) : Stitch.StitchToDecOkM CtxMode.prepared decToR
     fun s₂ ⟨⟨hcf, g, l, m, rd, wr⟩, hh⟩ => ?_)
   have hI₂ := hI₁.of_eq g l m rd wr
   have hCache₂ := hCache.keep hh (hI₂.a.keys hm)
-  rw [hI₁.r9, toNat_ofNat_lt (by omega), toNat_ofNat_lt (by decide)] at hcf
+  rw [hI₁.r9, toNat_ofNat_lt (by omega_using [hn]), toNat_ofNat_lt (by decide)] at hcf
   refine WP.seq (WP.mono (WP.ite (Q := fun s' => ∃ e, DInvM true s₀ P e s' ∧
       VG.Proof.Aes.X86_64.VaesZH.Keys (nr s₀) (sch s₀) s') (decide (nb s₀ - 16 * 0 < 96))
     (by simp only [eval, hcf]) (fun _ => WP.block_nil ⟨0, hI₂, hCache₂⟩)
-    (fun h => bigDPM_ok hm hp.toPrepared hpw (hz.2 (hk s₀)) (by simp at h; omega) hI₂ hCache₂))
+    (fun h => bigDPM_ok hm hp.toPrepared hpw (hz.2 (hk s₀)) (by simp at h; omega_using [h]) hI₂ hCache₂))
     fun s₃ ⟨e, hI₃, hCache₃⟩ => ?_)
   refine WP.seq (WP.mono (WP.hkeep (by decide) (cmp_ok s₃ 16 16 (by decide)))
     fun s₄ ⟨⟨hcf₄, g₄, l₄, m₄, rd₄, wr₄⟩, hh₄⟩ => ?_)
   have hI₄ := hI₃.of_eq g₄ l₄ m₄ rd₄ wr₄
   have hle := hI₃.a.le
-  rw [hI₃.r9, toNat_ofNat_lt (by omega), toNat_ofNat_lt (by decide)] at hcf₄
+  rw [hI₃.r9, toNat_ofNat_lt (by omega_using [hn]), toNat_ofNat_lt (by decide)] at hcf₄
   refine WP.seq (WP.mono (loopDRM_ok hm hf hI₄ hcf₄ (hCache₃.keep hh₄ (hI₄.a.keys hm)))
     fun s₅ ⟨e, hlt, hI₅, _⟩ => ?_)
   have hle₅ := hI₅.a.le
-  exact WP.mono (StitchZ.dfinalM_ok hm (by omega) hI₅) fun _ h => h.toDPostTo
+  exact WP.mono (StitchZ.dfinalM_ok hm (by omega_using [hm16, hlt, hle₅]) hI₅) fun _ h => h.toDPostTo
 
 end VG.Proof.Gcm.X86_64.StitchZH

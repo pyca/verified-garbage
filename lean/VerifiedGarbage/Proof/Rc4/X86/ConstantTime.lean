@@ -42,11 +42,11 @@ theorem initTaint_wf {s : State} (hs : initC.pre s) : VG.X86.Taint.Wf initTaint 
       forall_eq, List.Pairwise.nil, and_true]
     exact ⟨cs, fun _ h => h.elim⟩
   · simp only [hwr, List.mem_cons, List.not_mem_nil, or_false]
-    rintro r (rfl | rfl) <;> simp only [BitVec.toNat_setWidth] <;> omega
+    rintro r (rfl | rfl) <;> simp only [BitVec.toNat_setWidth] <;> omega_arith
   · simp only [hwr, List.mem_cons, List.not_mem_nil, or_false]
     rintro r (rfl | rfl)
-    · exact VG.X86.Taint.frame_disjoint (n := 16) (by omega) rc ac
-    · exact VG.X86.Taint.frame_disjoint (n := 16) (by omega) rs as
+    · exact VG.X86.Taint.frame_disjoint (n := 16) (by omega_using [spfit]) rc ac
+    · exact VG.X86.Taint.frame_disjoint (n := 16) (by omega_using [spfit]) rs as
   · intro p hp
     simp only [initTaint, List.mem_cons, List.not_mem_nil, or_false] at hp
     rcases hp with rfl | rfl <;> refine ⟨by decide, ?_⟩ <;>
@@ -68,7 +68,7 @@ theorem initTaint_agree {s t : State} (hs : initC.pre s) (ht : initC.pre t) (hp 
     rw [VG.X86.Taint.argByte_eq (fit _ hs) h4 hk, VG.X86.Taint.argByte_eq (fit _ ht) h4 hk,
       Mem.readW_byte s.mem _ (Nat.mod_lt _ (by decide)),
       Mem.readW_byte t.mem _ (Nat.mod_lt _ (by decide))]
-    exact congrArg _ (args ((k - 4) / 4) (by omega))
+    exact congrArg _ (args ((k - 4) / 4) (by omega_using [hk]))
 
 theorem init_ct : ConstantTime isa initC.pre initC.pub init :=
   VG.Taint.constantTime (A := taint) initTaint (fun _ _ h₁ h₂ hp => initTaint_agree h₁ h₂ hp)
@@ -94,12 +94,12 @@ theorem applyTaint_wf {s : State} (hs : applyC.pre s) : VG.X86.Taint.Wf applyTai
       forall_eq_or_imp, forall_eq, List.Pairwise.nil, and_true]
     exact ⟨⟨cd, cs⟩, ds, fun _ h => h.elim⟩
   · simp only [hwr, List.mem_cons, List.not_mem_nil, or_false]
-    rintro r (rfl | rfl | rfl) <;> simp only [BitVec.toNat_setWidth] <;> omega
+    rintro r (rfl | rfl | rfl) <;> simp only [BitVec.toNat_setWidth] <;> omega_arith
   · simp only [hwr, List.mem_cons, List.not_mem_nil, or_false]
     rintro r (rfl | rfl | rfl)
-    · exact VG.X86.Taint.frame_disjoint (n := 16) (by omega) rc ac
-    · exact VG.X86.Taint.frame_disjoint (n := 16) (by omega) rd ad
-    · exact VG.X86.Taint.frame_disjoint (n := 16) (by omega) rs as
+    · exact VG.X86.Taint.frame_disjoint (n := 16) (by omega_using [spfit]) rc ac
+    · exact VG.X86.Taint.frame_disjoint (n := 16) (by omega_using [spfit]) rd ad
+    · exact VG.X86.Taint.frame_disjoint (n := 16) (by omega_using [spfit]) rs as
   · intro p hp
     simp only [applyTaint, List.mem_cons, List.not_mem_nil, or_false] at hp
     rcases hp with rfl | rfl | rfl <;> refine ⟨by decide, ?_⟩ <;>
@@ -122,7 +122,7 @@ theorem applyTaint_agree {s t : State} (hs : applyC.pre s) (ht : applyC.pre t)
     rw [VG.X86.Taint.argByte_eq (fit _ hs) h4 hk, VG.X86.Taint.argByte_eq (fit _ ht) h4 hk,
       Mem.readW_byte s.mem _ (Nat.mod_lt _ (by decide)),
       Mem.readW_byte t.mem _ (Nat.mod_lt _ (by decide))]
-    exact congrArg _ (args ((k - 4) / 4) (by omega))
+    exact congrArg _ (args ((k - 4) / 4) (by omega_using [hk]))
 
 theorem applyPre_of {s : State} (hs : applyC.pre s) :
     ApplyPre s (arg s 0) (arg s 1) (arg s 2) (arg s 3) := by

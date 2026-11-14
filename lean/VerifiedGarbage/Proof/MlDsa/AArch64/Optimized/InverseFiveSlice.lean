@@ -25,7 +25,7 @@ theorem fiveSlice_ok (u : Nat) {s : State} {rest : List Instr} {Q : State → Pr
     (hw : ∀ i : Fin 8, InRegions s.wr (s.gpr .x0+BitVec.ofNat 64 (16*i.val)) 16)
     (k : ∀ t, (∃ mid, VChg runRegs s mid ∧ VMem mid t (fiveSliceMem u s)) → WP isa (.block rest) t Q) :
     WP isa (.block (fiveSliceCode ++ rest)) s Q := by
-  have ho : ∀ i : Fin 8, (16*i.val)%16=0 ∧ 16*i.val<65536 := by intro i; omega
+  have ho : ∀ i : Fin 8, (16*i.val)%16=0 ∧ 16*i.val<65536 := by intro i; omega_using []
   have hsub : ((bankLoads (regs 0) 16).map Prod.fst)⊆packedRegs := by decide +kernel
   simp only [fiveSliceCode,firstLoads_eq,firstStores_eq,List.append_assoc]
   refine loadBank_ok (regs 0) 16 .x0 initial_inj ho hr fun s₁ hc₁ hb₁ => ?_

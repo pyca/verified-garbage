@@ -151,7 +151,7 @@ theorem len_eq (h : SInput p s) : p.len = (p.bits + 7) / 8 := by
   rw [← h.2]; exact hl
 
 theorem len_bounds (h : SInput p s) : 64 ≤ p.len ∧ p.len ≤ 1024 := by
-  have := h.bits_bounds; have := h.len_eq; omega
+  have := h.bits_bounds; have := h.len_eq; omega_arith
 
 theorem attempts_le (h : SInput p s) : p.attempts ≤ parameterAttempts p.bits := by
   obtain ⟨-, -, -, -, -, -, -, -, -, -, -, -, -, ha, -⟩ := h.1
@@ -163,7 +163,7 @@ theorem attempts_lt (h : SInput p s) : p.attempts < 2 ^ 64 := by
   have : parameterAttempts p.bits ≤ 8192 * 8192 * 64 := by
     unfold parameterAttempts
     exact Nat.mul_le_mul (Nat.mul_le_mul hb.2 hb.2) (Nat.le_refl _)
-  omega
+  omega_using [ha, this]
 
 theorem randLen_le (h : SInput p s) : p.randLen ≤ parameterEntropy p.bits := by
   obtain ⟨-, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, hr, -⟩ := h.1

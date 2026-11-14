@@ -77,11 +77,11 @@ theorem tableFields_ok {s:State} {base:Addr} (hs:Scr s base) (hb:BEnv s.mem base
     have hi:=i.isLt
     unfold VG.Proof.X448.AArch64.Weak.E VG.Proof.X448.AArch64.Weak.F
     exact congrArg VG.Proof.X448.toFe (VG.Proof.X448.Wide.valN_congr fun j hj =>
-      fo.limbs (Or.inl (by simp only [slot,TAB];omega)) (by simp only [slot];omega) (by omega))
+      fo.limbs (Or.inl (by simp only [slot,TAB];omega_using [])) (by simp only [slot];omega_using []) (by omega_using [hj]))
   have tB:BEnv t.mem base:=by
     intro i j hj
     have hi:=i.isLt
-    rw [fo.limbs (Or.inl (by simp only [slot,TAB];omega)) (by simp only [slot];omega) (by omega),fm]
+    rw [fo.limbs (Or.inl (by simp only [slot,TAB];omega_using [])) (by simp only [slot];omega_using []) (by omega_using [hj]),fm]
     exact eb i j hj
   have ez:∀ w<8,limbs e.mem base (slot (19:Index).val) w=0:=by
     intro w hw
@@ -98,11 +98,11 @@ theorem tableFields_ok {s:State} {base:Addr} (hs:Scr s base) (hb:BEnv s.mem base
     rfl
   refine ⟨hf.of_keeps tk (by decide),tB,?_,?_,?_,?_,?_,?_,?_,?_,?_⟩
   · intro w hw
-    rw [fo.limbs (Or.inl (by simp only [slot,TAB];omega)) (by decide) (by omega),fm]
+    rw [fo.limbs (Or.inl (by simp only [slot,TAB];omega_using [])) (by decide) (by omega_using [hw]),fm]
     exact ez w hw
   · intro w hw
     show (VG.Proof.X448.AArch64.word t.mem base (slot 5+8*w)).toNat<Mb
-    rw [fo.word (Or.inl (by simp only [slot,TAB];omega)) (by simp only [slot];omega),fm]
+    rw [fo.word (Or.inl (by simp only [slot,TAB];omega_using [hw])) (by simp only [slot];omega_using [hw]),fm]
     change (VG.Proof.X448.AArch64.word e.mem base (slot (5:Index).val+8*w)).toNat<Mb
     rw [ev w hw]
     exact Nat.lt_of_lt_of_le (limb_lt 1 w) (by decide)
@@ -116,8 +116,8 @@ theorem tableFields_ok {s:State} {base:Addr} (hs:Scr s base) (hb:BEnv s.mem base
       exact ep
     · exact tabStore_bnd (by rw [fm];exact eb) tv
   · intro hx w hw
-    rw [Window.tw,tv w (by omega),fm]
-    have heq:Window.src w=slot 3+8*w:=by simp only [Window.src,slot];omega
+    rw [Window.tw,tv w (by omega_using [hw]),fm]
+    have heq:Window.src w=slot 3+8*w:=by simp only [Window.src,slot];omega_using [hw]
     rw [heq]
     change limbs e.mem base (slot (3:Index).val) w<Mb
     rw [esm 3 (by decide) w hw,dsm 3 (by decide) w hw,cv w hw,
@@ -130,9 +130,9 @@ theorem tableFields_ok {s:State} {base:Addr} (hs:Scr s base) (hb:BEnv s.mem base
     have k3:Keeps (.x19::VG.Proof.X448.AArch64.Fast.fclob) d f:=
       (ek.mono (by decide)).trans (fk.mono (by decide))
     exact ((k1.trans k2).trans k3).trans (tk.mono (by decide))
-  · have fa:OddFrame base s.mem a.mem:=fun x hx _ _ => ao x (by simp only [slot] at hx ⊢;omega)
-    have fb:OddFrame base a.mem b.mem:=fun x hx _ _ => bo x (by simp only [slot] at hx ⊢;omega)
-    have fe:OddFrame base d.mem e.mem:=fun x hx _ _ => eo x (by simp only [slot] at hx ⊢;omega)
+  · have fa:OddFrame base s.mem a.mem:=fun x hx _ _ => ao x (by simp only [slot] at hx ⊢;omega_using [hx])
+    have fb:OddFrame base a.mem b.mem:=fun x hx _ _ => bo x (by simp only [slot] at hx ⊢;omega_using [hx])
+    have fe:OddFrame base d.mem e.mem:=fun x hx _ _ => eo x (by simp only [slot] at hx ⊢;omega_using [hx])
     rw [fm] at fo
     exact (((fa.trans fb).trans (OddFrame.of_outside2 ck.mem)).trans
       (OddFrame.of_outside2 dk.mem)).trans (fe.trans (OddFrame.of_entry (by decide) fo))
@@ -171,9 +171,9 @@ theorem OddFrame.word {base:Addr} {m m':Mem} (h:OddFrame base m m') {d:Nat}
     (h3:d+8≤TAB ∨ TAB+1536≤d) (hd:d+8≤8192) : word m' base d=word m base d := by
   apply Mem.readW_congr
   intro i hi
-  exact h _ (by rw [VG.Proof.X448.AArch64.ofs_off base (by omega)];omega)
-    (by rw [VG.Proof.X448.AArch64.ofs_off base (by omega)];omega)
-    (by rw [VG.Proof.X448.AArch64.ofs_off base (by omega)];omega)
+  exact h _ (by rw [VG.Proof.X448.AArch64.ofs_off base (by omega_using [hd, hi])];omega_using [h1, hi])
+    (by rw [VG.Proof.X448.AArch64.ofs_off base (by omega_using [hd, hi])];omega_using [h2, hi])
+    (by rw [VG.Proof.X448.AArch64.ofs_off base (by omega_using [hd, hi])];omega_using [h3, hi])
 
 structure TableOut (s:State) (base:Addr) (t:State) : Prop where
   scr : Scr t base
@@ -206,8 +206,8 @@ theorem oddTable_ok {s:State} {base:Addr} (hs:Scr s base) (hb:BEnv s.mem base) (
   have sb:∀ (i:Index),∀ j<8,limbs b.mem base (slot i.val) j=limbs s.mem base (slot i.val) j:=by
     intro i j hj
     have hi:=i.isLt
-    rw [bo.limbs (Or.inl (by simp only [slot,RY,CAN];omega)) (by simp only [slot];omega) (by omega),
-      ao.limbs (Or.inl (by simp only [slot,RX];omega)) (by simp only [slot];omega) (by omega)]
+    rw [bo.limbs (Or.inl (by simp only [slot,RY,CAN];omega_using [])) (by simp only [slot];omega_using []) (by omega_using [hj]),
+      ao.limbs (Or.inl (by simp only [slot,RX];omega_using [])) (by simp only [slot];omega_using []) (by omega_using [hj])]
   have bb:BEnv b.mem base:=by
     intro i j hj
     rw [sb i j hj]
@@ -226,8 +226,8 @@ theorem oddTable_ok {s:State} {base:Addr} (hs:Scr s base) (hb:BEnv s.mem base) (
     rw [de,Window.dblEnv_345,hc.one,Window.dblPt_eq,hc.acc,hcp]
   have dt:TPt d.mem base 0=slotPt s.mem base ∧ TBnd d.mem base 0:=by
     have hw:∀ w<24,Window.tw d.mem base 0 w=Window.tw c.mem base 0 w:=fun w hw =>
-      dk.mem.word (Or.inr (by simp only [TAB];omega)) (Or.inr (by simp only [ACC,TAB];omega))
-        (by simp only [TAB];omega)
+      dk.mem.word (Or.inr (by simp only [TAB];omega_using [])) (Or.inr (by simp only [ACC,TAB];omega_using []))
+        (by simp only [TAB];omega_using [hw])
     refine ⟨?_,fun w hw' => ?_⟩
     · rw [Window.TPt_of_tw hw,hc.tab.1,hcp]
     · rw [hw w hw']
@@ -235,8 +235,8 @@ theorem oddTable_ok {s:State} {base:Addr} (hs:Scr s base) (hb:BEnv s.mem base) (
   have dx:∀ w<8,(Window.tw d.mem base 0 w).toNat<Mb:=by
     intro w hw
     have hm:Window.tw d.mem base 0 w=Window.tw c.mem base 0 w:=
-      dk.mem.word (Or.inr (by simp only [TAB];omega)) (Or.inr (by simp only [ACC,TAB];omega))
-        (by simp only [TAB];omega)
+      dk.mem.word (Or.inr (by simp only [TAB];omega_using [])) (Or.inr (by simp only [ACC,TAB];omega_using []))
+        (by simp only [TAB];omega_using [hw])
     rw [hm]
     exact hc.xbound (fun j hj => by
       change limbs b.mem base (slot (6:Index).val) j<Mb
@@ -253,28 +253,28 @@ theorem oddTable_ok {s:State} {base:Addr} (hs:Scr s base) (hb:BEnv s.mem base) (
     exact hc.one
   · intro w hw
     show (word t.mem base (RX+8*w)).toNat=_
-    rw [ct.word (Or.inr (by simp only [RX];omega)) (Or.inr (by simp only [ACC,RX];omega))
-      (Or.inr (by simp only [TAB,RX];omega)) (by simp only [RX];omega),
-      hc.mem.word (Or.inr (by simp only [RX];omega)) (Or.inr (by simp only [ACC,RX];omega))
-      (Or.inr (by simp only [TAB,RX];omega)) (by simp only [RX];omega)]
+    rw [ct.word (Or.inr (by simp only [RX];omega_using [])) (Or.inr (by simp only [ACC,RX];omega_using []))
+      (Or.inr (by simp only [TAB,RX];omega_using [])) (by simp only [RX];omega_using [hw]),
+      hc.mem.word (Or.inr (by simp only [RX];omega_using [])) (Or.inr (by simp only [ACC,RX];omega_using []))
+      (Or.inr (by simp only [TAB,RX];omega_using [])) (by simp only [RX];omega_using [hw])]
     change limbs b.mem base RX w=_
-    rw [bo.limbs (Or.inr (by simp only [RY,CAN,RX];omega)) (by simp only [RX];omega) (by omega)]
+    rw [bo.limbs (Or.inr (by simp only [RY,CAN,RX];omega_using [])) (by simp only [RX];omega_using []) (by omega_using [hw])]
     exact av w hw
   · intro w hw
     show (word t.mem base (RY+8*w)).toNat=_
-    rw [ct.word (Or.inr (by simp only [RY,CAN];omega)) (Or.inr (by simp only [ACC,RY,CAN];omega))
-      (Or.inl (by simp only [TAB,RY,CAN];omega)) (by simp only [RY,CAN];omega),
-      hc.mem.word (Or.inr (by simp only [RY,CAN];omega)) (Or.inr (by simp only [ACC,RY,CAN];omega))
-      (Or.inl (by simp only [TAB,RY,CAN];omega)) (by simp only [RY,CAN];omega)]
+    rw [ct.word (Or.inr (by simp only [RY,CAN];omega_using [])) (Or.inr (by simp only [ACC,RY,CAN];omega_using []))
+      (Or.inl (by simp only [TAB,RY,CAN];omega_using [hw])) (by simp only [RY,CAN];omega_using [hw]),
+      hc.mem.word (Or.inr (by simp only [RY,CAN];omega_using [])) (Or.inr (by simp only [ACC,RY,CAN];omega_using []))
+      (Or.inl (by simp only [TAB,RY,CAN];omega_using [hw])) (by simp only [RY,CAN];omega_using [hw])]
     change limbs b.mem base RY w=_
-    rw [bv w hw,ao.limbs (Or.inl (by simp only [slot,RX];omega)) (by decide) (by omega)]
+    rw [bv w hw,ao.limbs (Or.inl (by simp only [slot,RX];omega_using [])) (by decide) (by omega_using [hw])]
   · rw [ht.chk,ek.1 _ (by decide),dk.regs.1 _ (by decide),hc.keep.1 _ (by decide),
       bk.1 _ (by decide),ak.1 _ (by decide)]
   · rw [ht.rd,ek.2.1,dk.regs.2.1,hc.keep.2.1,bk.2.1,ak.2.1]
   · rw [ht.wr,ek.2.2,dk.regs.2.2,hc.keep.2.2,bk.2.2,ak.2.2]
   · intro x hx hy hz hr
-    rw [ct x hx hy (by simp only [TAB,RY,CAN] at hr ⊢;omega),
-      hc.mem x hx hy (by simp only [TAB,RY,CAN] at hr ⊢;omega),
-      bo x (by simp only [TAB,RY,CAN] at hr ⊢;omega),ao x hz]
+    rw [ct x hx hy (by simp only [TAB,RY,CAN] at hr ⊢;omega_using [hr]),
+      hc.mem x hx hy (by simp only [TAB,RY,CAN] at hr ⊢;omega_using [hr]),
+      bo x (by simp only [TAB,RY,CAN] at hr ⊢;omega_using [hr]),ao x hz]
 
 end VG.Proof.Ed448.AArch64.Sparse

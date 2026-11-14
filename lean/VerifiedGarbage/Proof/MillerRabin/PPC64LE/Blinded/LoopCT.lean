@@ -127,7 +127,7 @@ theorem body_ct (Ri : RoundImpl) (n : Nat) :
     obtain ⟨e, sp⟩ := h.bs.env
     have hZ : 256 + 28 * (8 * (a.1.w + 2)) ≤ 8 * a.1.L := e.hZ
     exact WP.mono (WP.keep [.r3] (Q := fun _ => True) (by
-      simp only [sth, hStat]; prun [e.h31, e.hs.st (d := 160) (n := 8) (by omega)]; exact ⟨_, rfl⟩) (by decide))
+      simp only [sth, hStat]; prun [e.h31, e.hs.st (d := 160) (n := 8) (by omega_using [hZ])]; exact ⟨_, rfl⟩) (by decide))
       fun t ⟨_, kt⟩ => ⟨(kt.gpr .r31 (by decide)).trans e.h31, kt.sp.trans sp⟩
   · refine two_map id (Ψ := DS) (fun a s ⟨h, hz⟩ => ⟨⟨n, h.bs⟩, ?_⟩) (two_post (draw_ct Ri) fun a s h => ?_)
     · obtain ⟨⟨m, σ, hl, sp⟩, hav⟩ := h
@@ -136,7 +136,7 @@ theorem body_ct (Ri : RoundImpl) (n : Nat) :
       rw [VG.PPC64LE.eval_zero, h5] at hz
       dsimp only [id]
       by_contra hc
-      have : ¬ 8 * (a.1.t + 1) ≤ a.1.rl - 8 * (a.1.t + 1) * a.2 := by omega
+      have : ¬ 8 * (a.1.t + 1) ≤ a.1.rl - 8 * (a.1.t + 1) * a.2 := by omega_using [hc]
       simp only [this, ↓reduceIte] at hz
       exact absurd hz (by decide)
 
@@ -156,13 +156,13 @@ theorem loop_ct (Ri : RoundImpl) (n : Nat) :
     WP.mono (body_ok Ri hl) fun t ht => ⟨σ, ht, sp⟩).mono (fun _ _ h => h) ?_
   rintro s₁ s₂ ⟨a, ⟨σ₁, h₁, sp₁⟩, ⟨σ₂, h₂, sp₂⟩⟩
   rcases Nat.eq_zero_or_pos n with hn | hn
-  · obtain ⟨e₁, -⟩ := h₁.resolve_right fun ⟨_, h, _⟩ => by omega
-    obtain ⟨e₂, -⟩ := h₂.resolve_right fun ⟨_, h, _⟩ => by omega
+  · obtain ⟨e₁, -⟩ := h₁.resolve_right fun ⟨_, h, _⟩ => by omega_using [hn, h]
+    obtain ⟨e₂, -⟩ := h₂.resolve_right fun ⟨_, h, _⟩ => by omega_using [hn, h]
     refine ⟨by rw [e₁, e₂], fun _ => trivial, fun he => ?_⟩
     rw [e₁] at he; cases he
-  · obtain ⟨e₁, -, l₁⟩ := h₁.resolve_left fun ⟨_, h, _⟩ => by omega
-    obtain ⟨e₂, -, l₂⟩ := h₂.resolve_left fun ⟨_, h, _⟩ => by omega
-    exact ⟨by rw [e₁, e₂], fun _ => trivial, fun _ => ⟨n - 1, by omega, (a.1, a.2 + 1), ⟨σ₁, l₁, sp₁⟩, ⟨σ₂, l₂, sp₂⟩⟩⟩
+  · obtain ⟨e₁, -, l₁⟩ := h₁.resolve_left fun ⟨_, h, _⟩ => by omega_using [hn, h]
+    obtain ⟨e₂, -, l₂⟩ := h₂.resolve_left fun ⟨_, h, _⟩ => by omega_using [hn, h]
+    exact ⟨by rw [e₁, e₂], fun _ => trivial, fun _ => ⟨n - 1, by omega_using [hn], (a.1, a.2 + 1), ⟨σ₁, l₁, sp₁⟩, ⟨σ₂, l₂, sp₂⟩⟩⟩
 
 /-- The loop's start: the context, no octets read, the tape. -/
 def MS (a : BD) (s : State) : Prop :=

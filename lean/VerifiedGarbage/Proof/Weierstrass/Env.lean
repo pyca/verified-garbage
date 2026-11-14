@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Impl.Weierstrass.Slots
 public import VerifiedGarbage.Proof.Weierstrass.Rcb
 public import Mathlib.Logic.Function.Basic
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # Field programs on slots, as functions on environments
@@ -100,7 +101,7 @@ theorem mul_rinv {R : Nat} (h : UnitMod m R) : Fin.ofNat m R * rinv m R = 1 := b
 theorem unitMod_pow_two (hm : m % 2 = 1) (k : Nat) : UnitMod m (2 ^ k) := by
   refine ⟨Fin.ofNat m ((m + 1) / 2) ^ k, ?_⟩
   have h2 : Fin.ofNat m 2 * Fin.ofNat m ((m + 1) / 2) = 1 := by
-    rw [← ofNat_mul', show 2 * ((m + 1) / 2) = m + 1 by omega]
+    rw [← ofNat_mul', show 2 * ((m + 1) / 2) = m + 1 by omega_using [hm]]
     apply Fin.ext
     rw [Fin.val_ofNat, Nat.add_mod_left]
     rfl
@@ -219,7 +220,7 @@ theorem getD_append_inj {W R : List Nat} {d : Nat} (hW : W.Nodup) (hR : ∀ x �
   · rw [getD_append_left hy] at h
     exact hW.getElem_inj.mp h
   · exfalso
-    rw [List.getD_eq_getElem?_getD, List.getElem?_append_right (by omega),
+    rw [List.getD_eq_getElem?_getD, List.getElem?_append_right (by omega_using [hy]),
       ← List.getD_eq_getElem?_getD] at h
     rcases getD_mem_or R (y - W.length) d with h' | h'
     · exact hR _ h' (h ▸ List.getElem_mem hw)

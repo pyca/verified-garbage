@@ -34,7 +34,7 @@ theorem secp256k1_nBits : Spec.Ecdsa.nBits Spec.Secp256k1.curve = 256 := by
   show Spec.Secp256k1.curve.n.log2 + 1 = 256
   have h₁ : 255 ≤ Spec.Secp256k1.curve.n.log2 := (Nat.le_log2 (by decide +kernel)).mpr (by decide +kernel)
   have h₂ : Spec.Secp256k1.curve.n.log2 < 256 := (Nat.log2_lt (by decide +kernel)).mpr (by decide +kernel)
-  omega
+  omega_using [h₁, h₂]
 
 /-- secp256k1, with the group law `hL`. -/
 def secp256k1 (hL : Weierstrass.Law Spec.Secp256k1.curve) : RfcCurve where

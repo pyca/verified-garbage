@@ -125,7 +125,7 @@ theorem centered_of_signed {m : Mem} {p : Addr} {f : Poly} {lo hi : Int}
     CenteredReduced m p := by
   intro i hn
   have := h.bound i hn
-  omega
+  omega_using [hl, hh, this]
 
 theorem value_of_signed {m : Mem} {p : Addr} {f : Poly} {lo hi : Int}
     (h : SignedPolyIs m p f lo hi) : signedPolyAt m p=f := by
@@ -201,7 +201,7 @@ theorem canonicalizeZ_step_post {p : Params} {S : Nat} {σ s : State} {f : Nat �
   simp only [canonicalizeZChk,Bool.and_eq_true] at hc
   obtain ⟨⟨hread,hwrite⟩,hst⟩ := hc
   refine WP.mono_syms (canonicalizeAt_layout h.rooted.1.lay hread hwrite
-    (h.pending r (by omega) hr) hl hh) fun t ⟨hp,h24,hval⟩ hy => ?_
+    (h.pending r (by omega_using []) hr) hl hh) fun t ⟨hp,h24,hval⟩ hy => ?_
   refine ⟨?_,hp⟩
   refine ⟨h.rooted.step hp hy hst (by simpa using hwrite),?_,?_,h24.trans h.flag⟩
   · intro j hj
@@ -209,11 +209,11 @@ theorem canonicalizeZ_step_post {p : Params} {S : Nat} {σ s : State} {f : Nat �
     · subst j
       rw [hp.pa (h.rooted.1.lay.ptrBs hread)]
       exact hval
-    · exact h.rooted.1.lay.keepPoly hp (canonicalizeZ_keep hk hr (by omega) he)
-        (h.converted j (by omega))
+    · exact h.rooted.1.lay.keepPoly hp (canonicalizeZ_keep hk hr (by omega_using [hr, hj]) he)
+        (h.converted j (by omega_using [hj, he]))
   · intro j hj hjl
-    exact keepSignedPoly h.rooted.1.lay hp (canonicalizeZ_keep hk hr hjl (by omega))
-      (h.pending j (by omega) hjl)
+    exact keepSignedPoly h.rooted.1.lay hp (canonicalizeZ_keep hk hr hjl (by omega_using [hj]))
+      (h.pending j (by omega_using [hj]) hjl)
 
 end VG.Proof.MlDsa.AArch64.Sign
 
@@ -266,7 +266,7 @@ theorem optimizedOutput_ok {P : Prims} {S : Nat} (hP : PrimsOk P S) {p : Params}
       St p S σ t ∧ bytesAt t.mem (pa t (.x23,0)) p.sigLen=sigV p σ κ ∧ t.gpr .x24=1 := by
   unfold Impl.MlDsa.AArch64.Sign.Optimized.output
   refine WP.seq (WP.mono (seqR_ok (I := fun r s => AcceptedConversion p S σ κ lo hi r s)
-    p.ℓ 0 (fun r _ hr s h => acceptedConversion_step hp (by omega) hl hh h) s h)
+    p.ℓ 0 (fun r _ hr s h => acceptedConversion_step hp (by omega_using [hr]) hl hh h) s h)
     fun t ht => ?_)
   simp only [Nat.zero_add] at ht
   exact Output.output_ok hP (Output.oChk_ok hp) ht.z.rooted.1 ht.ct ht.z.converted ht.hints hpass ht.z.flag

@@ -328,11 +328,11 @@ theorem top_of_valid {p k w : Nat} (h : Spec.Rsa.modulusValid p k = true) (hw : 
   obtain ⟨⟨⟨hodd, _⟩, _⟩, hk⟩ := h
   have e : (256 : Nat) ^ (k - 1) = 2 ^ (8 * (k - 1)) := by rw [Nat.pow_mul]
   have hle : 2 ^ (64 * (w - 1)) ≤ p :=
-    Nat.le_trans (Nat.pow_le_pow_right (by decide) (by omega)) (e ▸ hk)
+    Nat.le_trans (Nat.pow_le_pow_right (by decide) (by omega_using [hw])) (e ▸ hk)
   have hev : 2 ^ (64 * (w - 1)) % 2 = 0 := by
-    obtain ⟨j, hj⟩ : ∃ j, 64 * (w - 1) = j + 1 := ⟨64 * (w - 1) - 1, by omega⟩
+    obtain ⟨j, hj⟩ : ∃ j, 64 * (w - 1) = j + 1 := ⟨64 * (w - 1) - 1, by omega_using [hw2]⟩
     rw [hj, Nat.pow_succ, Nat.mul_mod_left]
-  omega
+  omega_using [hodd, hle, hev]
 
 /-! ## The scan for q's first nonzero octet -/
 
@@ -357,7 +357,7 @@ theorem lead_len_bit {m : Nat} (hm : m < 2 ^ 63) :
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_ushiftRight, BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat, BitVec.toNat_ofNat,
     Nat.shiftRight_eq_div_pow]
-  by_cases h : 2 ≤ m <;> simp only [h, decide_true, decide_false, Bool.toNat_true, Bool.toNat_false] <;> omega
+  by_cases h : 2 ≤ m <;> simp only [h, decide_true, decide_false, Bool.toNat_true, Bool.toNat_false] <;> omega_arith
 
 theorem lead_and (a b : Bool) :
     (BitVec.ofNat 64 a.toNat &&& BitVec.ofNat 64 b.toNat) = BitVec.ofNat 64 (b && a).toNat := by
@@ -372,7 +372,7 @@ theorem leadStep_ok {s₀ : State} {Q : Addr} {bs : List Byte} (hl : bs.length �
     WP isa (.block leadBody) t fun t' => LeadAt s₀ Q bs.length (min (j + 1) (lead bs)) t' ∧
       t'.gpr .r17 = BitVec.ofNat 64 (decide (j < lead bs)).toNat := by
   have hL := lead_lt hne
-  have hjl : j < bs.length := by omega
+  have hjl : j < bs.length := by omega_using [hj, hL]
   obtain ⟨h30, h31, hm, kt⟩ := ht
   have hld : InRegions (t.rd ++ t.wr) (off Q j) 1 := by
     rw [kt.rd, kt.wr]; exact hrd j hjl
@@ -381,12 +381,12 @@ theorem leadStep_ok {s₀ : State} {Q : Addr} {bs : List Byte} (hl : bs.length �
     constructor
     · rintro ⟨hz, h2⟩
       by_contra hc
-      have hje : j = lead bs := by omega
+      have hje : j = lead bs := by omega_using [hj, hc]
       subst hje
-      exact lead_nonzero hne (by omega) hz
+      exact lead_nonzero hne (by omega_using [h2]) hz
     · intro hlt
       obtain ⟨_, hz⟩ := lead_zero j hlt
-      exact ⟨hz, by omega⟩
+      exact ⟨hz, by omega_using [hL, hlt]⟩
   refine WP.mono (WP.keep [.r16, .r17, .r30, .r31] (Q := fun t' =>
       t'.gpr .r17 = BitVec.ofNat 64 (decide (bs[j] = 0 ∧ 2 ≤ bs.length - j)).toNat ∧
       t'.gpr .r30 = off Q j + BitVec.ofNat 64 (decide (bs[j] = 0 ∧ 2 ≤ bs.length - j)).toNat ∧
@@ -395,7 +395,7 @@ theorem leadStep_ok {s₀ : State} {Q : Addr} {bs : List Byte} (hl : bs.length �
     (by
       unfold leadBody
       prun [h30, h31, exec_lbz' (show Reg.r30 ≠ .r0 by decide) (show 0 < 2 ^ 15 by decide), hld,
-        BitVec.add_zero, Pub.read1_setWidth, hb, lead_zero_bit, lead_len_bit (show bs.length - j < 2 ^ 63 by omega),
+        BitVec.add_zero, Pub.read1_setWidth, hb, lead_zero_bit, lead_len_bit (show bs.length - j < 2 ^ 63 by omega_using [hl]),
         lead_and, Bool.decide_and])
     (by decide)) fun t' ⟨⟨h17, h30', h31', hm'⟩, k⟩ => ?_
   have hc : decide (bs[j] = 0 ∧ 2 ≤ bs.length - j) = decide (j < lead bs) := decide_eq_decide.mpr hgo
@@ -403,17 +403,17 @@ theorem leadStep_ok {s₀ : State} {Q : Addr} {bs : List Byte} (hl : bs.length �
   refine ⟨⟨?_, ?_, hm'.trans hm, (kt.trans k).mono (by decide)⟩, h17⟩
   · rw [h30']
     by_cases hlt : j < lead bs
-    · rw [decide_eq_true hlt, Nat.min_eq_left (by omega)]; simp [off, BitVec.ofNat_add, BitVec.add_assoc]
-    · rw [decide_eq_false hlt, Nat.min_eq_right (by omega)]
-      have : j = lead bs := by omega
+    · rw [decide_eq_true hlt, Nat.min_eq_left (by omega_using [hlt])]; simp [off, BitVec.ofNat_add, BitVec.add_assoc]
+    · rw [decide_eq_false hlt, Nat.min_eq_right (by omega_using [hlt])]
+      have : j = lead bs := by omega_using [hj, hlt]
       subst this; simp
   · rw [h31']
     apply BitVec.eq_of_toNat_eq
     by_cases hlt : j < lead bs
-    · rw [decide_eq_true hlt, Nat.min_eq_left (by omega)]
-      simp only [BitVec.toNat_sub, BitVec.toNat_ofNat, Bool.toNat_true]; omega
-    · rw [decide_eq_false hlt, Nat.min_eq_right (by omega)]
-      simp only [BitVec.toNat_sub, BitVec.toNat_ofNat, Bool.toNat_false]; omega
+    · rw [decide_eq_true hlt, Nat.min_eq_left (by omega_using [hlt])]
+      simp only [BitVec.toNat_sub, BitVec.toNat_ofNat, Bool.toNat_true]; omega_using [hj, hL]
+    · rw [decide_eq_false hlt, Nat.min_eq_right (by omega_using [hlt])]
+      simp only [BitVec.toNat_sub, BitVec.toNat_ofNat, Bool.toNat_false]; omega_using [hj, hlt]
 
 /-- `leadScan` over the `n ≥ 1` octets `bs` at `Q`: `r30` at the first nonzero
 one (or the last), `r31` the number of octets from it. -/
@@ -423,18 +423,18 @@ theorem leadScan_ok {s : State} {Q : Addr} {bs : List Byte} (hl : bs.length ≤ 
     (h30 : s.gpr .r30 = off Q 0) (h31 : s.gpr .r31 = BitVec.ofNat 64 bs.length) :
     WP isa leadScan s fun t => (t.gpr .r30 = off Q (lead bs) ∧
       t.gpr .r31 = BitVec.ofNat 64 (bs.length - lead bs) ∧ t.mem = s.mem) ∧ Keep [.r16, .r17, .r30, .r31] s t := by
-  refine WP.mono (count_loop (cr := .r17) (n := lead bs + 1) (by omega)
+  refine WP.mono (count_loop (cr := .r17) (n := lead bs + 1) (by omega_using [])
     (fun k t => LeadAt s Q bs.length (min k (lead bs)) t)
     (fun k hk t ht => by
-      have e : min k (lead bs) = k := Nat.min_eq_left (by omega)
+      have e : min k (lead bs) = k := Nat.min_eq_left (by omega_using [hk])
       rw [e] at ht
-      refine WP.mono (leadStep_ok hl hne hrd hval (by omega) ht) fun t' ⟨ht', h17⟩ => ⟨ht', ?_⟩
+      refine WP.mono (leadStep_ok hl hne hrd hval (by omega_using [hk]) ht) fun t' ⟨ht', h17⟩ => ⟨ht', ?_⟩
       rw [h17]
       by_cases hlt : k < lead bs
-      · rw [decide_eq_true hlt]; simp; omega
-      · rw [decide_eq_false hlt]; simp; omega)
+      · rw [decide_eq_true hlt]; simp; omega_using [hlt]
+      · rw [decide_eq_false hlt]; simp; omega_using [hk, hlt])
     ⟨by rw [h30]; simp, by rw [h31]; simp, rfl, Keep.refl _ _⟩) fun t ⟨h1, h2, hm, k⟩ => ?_
-  rw [Nat.min_eq_right (by omega)] at h1 h2
+  rw [Nat.min_eq_right (by omega_using [])] at h1 h2
   exact ⟨⟨h1, h2, hm⟩, k⟩
 
 /-- The registers `subgroup` writes. -/
@@ -564,12 +564,12 @@ theorem subgroup_ok {s : State} {B D : Addr} {Z w k : Nat} (h : Env s B Z w) (h2
       exact this _ (by simp only [ofs] at hc ⊢; omega) rfl)
   generalize hbs : Spec.Rsa.bytesAt s.mem (off D (2 * k)) k = bs at hQ
   have hbl : bs.length = k := by rw [← hbs, bytesAt_length]
-  have hne : bs ≠ [] := by rintro rfl; simp at hbl; omega
+  have hne : bs ≠ [] := by rintro rfl; simp at hbl; omega_using [h23, h21, h28, hk, hk', hnw, hZ, hw, hw', e0, e1, e2, e3, e4, e5, e6, e7, e8, e24, e28, hP, hp2, hodd, hpt, hr2₀, p40, hY, y40, hQ, hbl]
   have hlead := lead_lt hne
-  refine WP.seq (WP.mono (leadScan_ok (Q := off D (2 * k)) (bs := bs) (by omega) hne
-    (fun i hi => by rw [hm.keep.rd, hm.keep.wr]; exact hrd i (by omega))
+  refine WP.seq (WP.mono (leadScan_ok (Q := off D (2 * k)) (bs := bs) (by omega_using [hk', hbl]) hne
+    (fun i hi => by rw [hm.keep.rd, hm.keep.wr]; exact hrd i (by omega_using [hbl, hi]))
     (fun i hi => by
-      rw [hmq0 i (by omega)]
+      rw [hmq0 i (by omega_using [hbl, hi])]
       subst hbs
       simp only [Spec.Rsa.bytesAt, List.getElem_map, List.getElem_range])
     hm.r30 (by rw [hm.r31, hbl])) fun s₆ ⟨⟨a30, a31, m6s⟩, k6⟩ => ?_)
@@ -592,13 +592,13 @@ theorem subgroup_ok {s : State} {B D : Addr} {Z w k : Nat} (h : Env s B Z w) (h2
     (by rw [(k6.gpr .r12 (by decide))]; exact hm.r12lt)
     (by rw [(k6.gpr .r12 (by decide)), m6s]; exact hm.r12inv) (by rw [p4]; exact hp2) (by rw [p4]; exact hodd)
     (by rw [hr2, p4]; exact Nat.mod_lt _ (by omega_arith)) (by rw [a30, boff_off_add]; rfl)
-    (by rw [a31, hbl]) (by omega) (by omega_arith)
-    (fun i hi => by rw [k16.rd, k16.wr, boff_off_add, off_off_add, ← off_off_add]; exact hrd _ (by omega))
-    (fun i hi => by rw [boff_off_add, off_off_add, ← off_off_add]; exact hsep _ (by omega)))
+    (by rw [a31, hbl]) (by omega_using [hbl, hlead]) (by omega_arith)
+    (fun i hi => by rw [k16.rd, k16.wr, boff_off_add, off_off_add, ← off_off_add]; exact hrd _ (by omega_using [hi]))
+    (fun i hi => by rw [boff_off_add, off_off_add, ← off_off_add]; exact hsep _ (by omega_using [hi])))
     fun s₇ ⟨⟨hpow, o7⟩, k7⟩ => ?_)
   have hq' : Spec.Rsa.os2ip (Spec.Rsa.bytesAt s₆.mem (off (off D (2 * k)) (lead bs)) (k - lead bs)) = q := by
-    rw [← VG.Proof.Dsa.bytesAt_slice _ _ (show lead bs + (k - lead bs) ≤ k by omega), hbq, hbs,
-      List.take_of_length_le (by simp only [List.length_drop]; omega), VG.Proof.Ffdh.os2ip_drop_lead, hQ]
+    rw [← VG.Proof.Dsa.bytesAt_slice _ _ (show lead bs + (k - lead bs) ≤ k by omega_using [hbl, hlead]), hbq, hbs,
+      List.take_of_length_le (by simp only [List.length_drop]; omega_using [hbl]), VG.Proof.Ffdh.os2ip_drop_lead, hQ]
   rw [hq', p4, y4] at hpow
   have v4 := hpow (by rw [hr2, two_pow_128])
   have k17 := k16.trans k7

@@ -38,11 +38,11 @@ theorem LS.ksE {P : RP} {σ s : State} (h : LS P σ (Aload P σ) s) :
   have kw := sz.kw
   have hn : P.n < 2 ^ (32 * P.w) := by
     have := h.bs.pre.nB ▸ bytes_lt σ.mem (State.addr P.nP) P.K
-    exact Nat.lt_of_lt_of_le this (Nat.pow_le_pow_right (by decide) (by omega))
+    exact Nat.lt_of_lt_of_le this (Nat.pow_le_pow_right (by decide) (by omega_using [kw]))
   have he : P.e < 2 ^ (32 * P.w) := by
     have hb := h.bs.pre.eB ▸ bytes_lt σ.mem (State.addr P.eP) P.el
     have := h.bs.pre.el2
-    exact Nat.lt_of_lt_of_le hb (Nat.pow_le_pow_right (n := 2) (by decide) (show 8 * P.el ≤ 32 * P.w by omega))
+    exact Nat.lt_of_lt_of_le hb (Nat.pow_le_pow_right (n := 2) (by decide) (show 8 * P.el ≤ 32 * P.w by omega_using [kw, this]))
   have nw : ∀ j < nArr, Aload P σ j < 2 ^ (32 * P.w) → num s.mem P.B P.w j = Aload P σ j := fun j hj hl => by
     rw [← h.full j hj] at hl ⊢
     exact VG.Proof.Rsa.Arm.CrtValues.val32_low2 hl

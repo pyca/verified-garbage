@@ -49,8 +49,8 @@ theorem inner_good (p : KpP) (s : State) (h : Inner p s) : GoodW1 p.ws s := by
   have hc := hw.mem.ctx hd
   have hk := hw.base.k1
   have hk' := hw.base.k2
-  have ew : 8 * p.w ≤ p.k + 7 ∧ p.k ≤ 8 * p.w := by unfold KpP.w; omega
-  exact ⟨⟨mi, hc.good, Nat.le_refl _⟩, show 1 ≤ p.w by omega, show p.w < 2 ^ 31 by omega⟩
+  have ew : 8 * p.w ≤ p.k + 7 ∧ p.k ≤ 8 * p.w := by unfold KpP.w; omega_using []
+  exact ⟨⟨mi, hc.good, Nat.le_refl _⟩, show 1 ≤ p.w by omega_using [hk, ew], show p.w < 2 ^ 31 by omega_using [hk', ew]⟩
 
 private theorem inner_nonzero (p : KpP) (s : State) (h : Inner p s) :
     WP isa (seqs (isNonzero aXm)) s (Inner p) := by
@@ -74,10 +74,10 @@ private theorem outer_test (p : KpP) (s : State) (h : Outer p s) : WP isa (.bloc
   have hk' := hb.k2
   have hZ := hb.hZ
   have hdl := hb.dl
-  exact WP.mono (qTest_ok hb.scr hd (by omega)
+  exact WP.mono (qTest_ok hb.scr hd (by omega_using [hZ])
     (hb.hdr (sDomLen, BitVec.ofNat 64 p.dl) (by simp [KpP.headers]))
     (hb.hdr (sK, BitVec.ofNat 64 p.k) (by simp [KpP.headers]))
-    (by rcases hdl with h | h <;> omega) (by rcases hdl with h | h <;> omega))
+    (by rcases hdl with h | h <;> omega_using [h]) (by rcases hdl with h | h <;> omega_using [hk', h]))
     fun t ⟨_, hz, hmem, k⟩ => ⟨⟨xb, mi, hw.keep hmem k, (k.gpr (by decide)).trans hd, hm⟩, hz⟩
 
 private theorem outer_enter (p : KpP) (s : State) (h : Outer p s) : WP isa (.block [enter]) s (Inner p) := by
@@ -96,7 +96,7 @@ private theorem oq_enterQ (p : KpP) (s : State) (h : OQ p s ∧ isa.eval .e s = 
     rw [oq_eval h.1] at he
     have hn := of_decide_eq_false (Option.some.inj he)
     obtain ⟨xb, mi, hw, _⟩ := h.1.1
-    rcases hw.base.dl with h | h <;> omega
+    rcases hw.base.dl with h | h <;> omega_arith
   exact WP.mono (outer_enter p s h.1.1) fun _ hi => ⟨hi, hq⟩
 
 abbrev KpP.ql (p : KpP) : BPub := ⟨⟨p.B, p.Z, inner p.w, p.w, p.w⟩, off p.dp (2 * p.k), p.k⟩
@@ -107,12 +107,12 @@ private theorem iq_load (p : KpP) (s : State) (h : IQ p s) : LPre aY sQ sK p.ql 
   have hb := hw.base
   have hk := hb.k1
   have hk' := hb.k2
-  have hlen : p.qb.length = p.k := by simp only [KpP.qb, List.length_take, List.length_drop, hb.doml, hdl]; omega
-  have ew : 8 * p.w ≤ p.k + 7 ∧ p.k ≤ 8 * p.w := by unfold KpP.w; omega
-  exact ⟨mi, p.qb, hc, show 2 ≤ p.w by omega, Nat.le_refl _, show p.w < 2 ^ 30 by omega,
+  have hlen : p.qb.length = p.k := by simp only [KpP.qb, List.length_take, List.length_drop, hb.doml, hdl]; omega_using []
+  have ew : 8 * p.w ≤ p.k + 7 ∧ p.k ≤ 8 * p.w := by unfold KpP.w; omega_using []
+  exact ⟨mi, p.qb, hc, show 2 ≤ p.w by omega_using [hk, ew], Nat.le_refl _, show p.w < 2 ^ 30 by omega_using [hk', ew],
     by decide, by decide, by decide, hw.hQ,
     by rw [hlen]; exact hb.hdr (sK, BitVec.ofNat 64 p.k) (by simp [KpP.headers]), hlen,
-    (hb.dom.drop (2 * p.k)).take p.k, by rw [hlen]; omega, by rw [hlen]; omega, by rw [hlen]⟩
+    (hb.dom.drop (2 * p.k)).take p.k, by rw [hlen]; omega_using [hk], by rw [hlen]; omega_using [hk'], by rw [hlen]⟩
 
 private theorem iq_loaded (p : KpP) (s : State) (h : IQ p s) : WP isa (seqs (loadArr aY sQ sK)) s (Inner p) := by
   obtain ⟨⟨xb, mi, hw, hd, hm⟩, hdl⟩ := h

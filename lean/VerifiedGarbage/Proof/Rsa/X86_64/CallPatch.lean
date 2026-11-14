@@ -28,7 +28,7 @@ theorem pc_patch (s b : State) (hv : Mem) (u : Nat → BitVec 64) (hs : pcContra
   obtain ⟨-, hwr, -, -, -, -, -, -, hn, -⟩ := hs
   have hm := Clear.miss_wr hc (by rw [hwr]; simp) hn (Nat.le_refl _)
   simp only [pcContract, State.patch_gpr] at hp ⊢
-  rw [patch_mem, wordsAt_overlay fun i hi => hm i (by omega)]
+  rw [patch_mem, wordsAt_overlay fun i hi => hm i (by omega_using [hi])]
   exact hp
 
 theorem crtP_patch (s b : State) (hv : Mem) (u : Nat → BitVec 64) (hs : crtContractP.pre s)

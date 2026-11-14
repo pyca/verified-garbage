@@ -34,7 +34,7 @@ theorem add7_shr3 {x : Nat} (hx : x < 2 ^ 32) :
   rw [show BitVec.signExtend 64 (7 : BitVec 32) = BitVec.ofNat 64 7 by decide]
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_ushiftRight, BitVec.toNat_add, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow]
-  omega
+  omega_using [hx]
 
 /-- `ws` and `nPQ`: `w`, the stride and the primes' width. -/
 theorem nPQ_ok {s : State} {B : Addr} {Z w pl ql : Nat} (h : Ws s B Z w)
@@ -56,20 +56,20 @@ theorem nPQ_ok {s : State} {B : Addr} {Z w pl ql : Nat} (h : Ws s B Z w)
   have hq₁ : Bignum.word s₁.mem B (8 * sQl) = BitVec.ofNat 64 ql := by rw [m₁]; exact hq
   unfold nPQ nOf
   by_cases hlt : pl < ql
-  · have hm : max pl ql = ql := by omega
+  · have hm : max pl ql = ql := by omega_using [hlt]
     rw [hm]
     xrun [State.ea, hdr, hdi₁, hdrOff, hl₁ sPl (by decide), hl₁ sQl (by decide), hp₁, hq₁,
-      Nat.mod_eq_of_lt (show pl < 2 ^ 64 by omega), Nat.mod_eq_of_lt (show ql < 2 ^ 64 by omega), hlt, execCmov, eval, readSrc, BitVec.toNat_ofNat]
-    exact add7_shr3 (by omega)
-  · have hm : max pl ql = pl := by omega
+      Nat.mod_eq_of_lt (show pl < 2 ^ 64 by omega_using [hpl]), Nat.mod_eq_of_lt (show ql < 2 ^ 64 by omega_using [hql]), hlt, execCmov, eval, readSrc, BitVec.toNat_ofNat]
+    exact add7_shr3 (by omega_using [hql])
+  · have hm : max pl ql = pl := by omega_using [hlt]
     rw [hm]
     xrun [State.ea, hdr, hdi₁, hdrOff, hl₁ sPl (by decide), hl₁ sQl (by decide), hp₁, hq₁,
-      Nat.mod_eq_of_lt (show pl < 2 ^ 64 by omega), Nat.mod_eq_of_lt (show ql < 2 ^ 64 by omega), hlt, execCmov, eval, readSrc, BitVec.toNat_ofNat]
-    exact add7_shr3 (by omega)
+      Nat.mod_eq_of_lt (show pl < 2 ^ 64 by omega_using [hpl]), Nat.mod_eq_of_lt (show ql < 2 ^ 64 by omega_using [hql]), hlt, execCmov, eval, readSrc, BitVec.toNat_ofNat]
+    exact add7_shr3 (by omega_using [hpl])
 
 theorem pow256_le {l n : Nat} (h : l ≤ 8 * n) : 256 ^ l ≤ 2 ^ (64 * n) := by
   rw [show (256 : Nat) = 2 ^ 8 by rfl, ← Nat.pow_mul]
-  exact Nat.pow_le_pow_right (by decide) (by omega)
+  exact Nat.pow_le_pow_right (by decide) (by omega_using [h])
 
 /-- The inverse at the primes' width `n`, of the low `n` words of `q` and
 `p`: `inverseN_ok`'s, after `nPQ`, whatever the arrays hold. -/
@@ -85,12 +85,12 @@ theorem invQ_gen [InvLaw] {s : State} {B : Addr} {Z w pl ql : Nat} (h : Ws s B Z
         ((wv s.mem B (slot w aP) (nOf pl ql) : Nat) : Int) ∣
           (wv t.mem B (slot w aX₂) w : Int) * wv s.mem B (slot w aQ) (nOf pl ql) - wv t.mem B (slot w aV) w ∧
         wv t.mem B (slot w aX₂) w < wv s.mem B (slot w aP) (nOf pl ql)) := by
-  have hn1 : 1 ≤ nOf pl ql := by unfold nOf; omega
-  have hnw : nOf pl ql ≤ w := by unfold nOf; omega
-  refine WP.seq (WP.mono (nPQ_ok h hp hq (by omega) (by omega)) fun s₁ ⟨_, h9, h13, _, m₁, k₁⟩ => ?_)
+  have hn1 : 1 ≤ nOf pl ql := by unfold nOf; omega_using [hpl1]
+  have hnw : nOf pl ql ≤ w := by unfold nOf; omega_using [hplw, hqlw]
+  refine WP.seq (WP.mono (nPQ_ok h hp hq (by omega_using [hw20, hplw]) (by omega_using [hw20, hqlw])) fun s₁ ⟨_, h9, h13, _, m₁, k₁⟩ => ?_)
   have h₁ : Ws s₁ B Z w := h.congr (rs := []) (by rw [m₁]; exact Frm.refl _ _ _) (by simp) k₁ (by decide)
   rw [← m₁]
-  exact WP.mono (InvLaw.inverseN_ok h₁ hZ h9 h13 hn1 hnw (by omega) (by decide) (by decide) (by decide) (by decide)
+  exact WP.mono (InvLaw.inverseN_ok h₁ hZ h9 h13 hn1 hnw (by omega_using [hw20, hnw]) (by decide) (by decide) (by decide) (by decide)
     (by decide)) fun t ⟨dt, ft, kt, ht⟩ => ⟨dt, ft, (k₁.trans kt).mono (by decide), ht⟩
 
 /-- The inverse at the primes' width, `q⁻¹ mod p`: `inverse_ok`'s result
@@ -107,9 +107,9 @@ theorem invQ_ok [InvLaw] {s : State} {B : Addr} {Z w pl ql : Nat} (h : Ws s B Z 
         ((wv s.mem B (slot w aP) w : Nat) : Int) ∣
           (wv t.mem B (slot w aX₂) w : Int) * wv s.mem B (slot w aQ) w - wv t.mem B (slot w aV) w ∧
         wv t.mem B (slot w aX₂) w < wv s.mem B (slot w aP) w) := by
-  have hnw : nOf pl ql ≤ w := by unfold nOf; omega
-  have hpn : pl ≤ 8 * nOf pl ql := by unfold nOf; omega
-  have hqn : ql ≤ 8 * nOf pl ql := by unfold nOf; omega
+  have hnw : nOf pl ql ≤ w := by unfold nOf; omega_using [hplw, hqlw]
+  have hpn : pl ≤ 8 * nOf pl ql := by unfold nOf; omega_using []
+  have hqn : ql ≤ 8 * nOf pl ql := by unfold nOf; omega_using []
   have eP := wv_low_of_lt hnw (Nat.lt_of_lt_of_le hP (pow256_le hpn))
   have eQ := wv_low_of_lt hnw (Nat.lt_of_lt_of_le hQ (pow256_le hqn))
   rw [← eP, ← eQ]
@@ -123,12 +123,12 @@ theorem invQS_gen [InvLaw] {s : State} {B : Addr} {Z w pl ql : Nat} (h : Ws s B 
     WP isa (.seq (.block (ws ++ nPQ)) (inverseNS aQ aV aX₂ aP)) s fun t => t.gpr .rdi = B ∧
       Frm B [(slot w aV, 8 * w), (slot w aX₂, 8 * w), (slot w 16, 80 * (w + 2))] s.mem t.mem ∧
       Keep [.rax, .rbx, .rcx, .rdx, .rbp, .rsi, .r8, .r9, .r10, .r11, .r12, .r13, .r14, .r15] s t := by
-  have hn1 : 1 ≤ nOf pl ql := by unfold nOf; omega
-  have hnw : nOf pl ql ≤ w := by unfold nOf; omega
-  refine WP.seq (WP.mono (nPQ_ok h hp hq (by omega) (by omega)) fun s₁ ⟨_, h9, h13, _, m₁, k₁⟩ => ?_)
+  have hn1 : 1 ≤ nOf pl ql := by unfold nOf; omega_using [hpl1]
+  have hnw : nOf pl ql ≤ w := by unfold nOf; omega_using [hplw, hqlw]
+  refine WP.seq (WP.mono (nPQ_ok h hp hq (by omega_using [hw20, hplw]) (by omega_using [hw20, hqlw])) fun s₁ ⟨_, h9, h13, _, m₁, k₁⟩ => ?_)
   have h₁ : Ws s₁ B Z w := h.congr (rs := []) (by rw [m₁]; exact Frm.refl _ _ _) (by simp) k₁ (by decide)
   rw [← m₁]
-  exact WP.mono (InvLaw.inverseNS_ok h₁ hZ h9 h13 hn1 hnw (by omega) (by decide) (by decide) (by decide) (by decide)
+  exact WP.mono (InvLaw.inverseNS_ok h₁ hZ h9 h13 hn1 hnw (by omega_using [hw20, hnw]) (by decide) (by decide) (by decide) (by decide)
     (by decide)) fun t ⟨dt, ft, kt, _⟩ => ⟨dt, ft, (k₁.trans kt).mono (by decide)⟩
 
 /-- `invQ_ok` for `inverseNS`: `[x₂] 2^(15 n + 10)` for `[x₂]`. -/
@@ -145,17 +145,17 @@ theorem invQS_ok [InvLaw] {s : State} {B : Addr} {Z w pl ql : Nat} (h : Ws s B Z
           (wv t.mem B (slot w aX₂) w : Int) * 2 ^ (15 * nOf pl ql + 10) * wv s.mem B (slot w aQ) w -
             wv t.mem B (slot w aV) w ∧
         wv t.mem B (slot w aX₂) w < wv s.mem B (slot w aP) w) := by
-  have hn1 : 1 ≤ nOf pl ql := by unfold nOf; omega
-  have hnw : nOf pl ql ≤ w := by unfold nOf; omega
-  have hpn : pl ≤ 8 * nOf pl ql := by unfold nOf; omega
-  have hqn : ql ≤ 8 * nOf pl ql := by unfold nOf; omega
+  have hn1 : 1 ≤ nOf pl ql := by unfold nOf; omega_using [hpl1]
+  have hnw : nOf pl ql ≤ w := by unfold nOf; omega_using [hplw, hqlw]
+  have hpn : pl ≤ 8 * nOf pl ql := by unfold nOf; omega_using []
+  have hqn : ql ≤ 8 * nOf pl ql := by unfold nOf; omega_using []
   have eP := wv_low_of_lt hnw (Nat.lt_of_lt_of_le hP (pow256_le hpn))
   have eQ := wv_low_of_lt hnw (Nat.lt_of_lt_of_le hQ (pow256_le hqn))
   rw [← eP, ← eQ]
-  refine WP.seq (WP.mono (nPQ_ok h hp hq (by omega) (by omega)) fun s₁ ⟨_, h9, h13, _, m₁, k₁⟩ => ?_)
+  refine WP.seq (WP.mono (nPQ_ok h hp hq (by omega_using [hw20, hplw]) (by omega_using [hw20, hqlw])) fun s₁ ⟨_, h9, h13, _, m₁, k₁⟩ => ?_)
   have h₁ : Ws s₁ B Z w := h.congr (rs := []) (by rw [m₁]; exact Frm.refl _ _ _) (by simp) k₁ (by decide)
   rw [← m₁]
-  exact WP.mono (InvLaw.inverseNS_ok h₁ hZ h9 h13 hn1 hnw (by omega) (by decide) (by decide) (by decide) (by decide)
+  exact WP.mono (InvLaw.inverseNS_ok h₁ hZ h9 h13 hn1 hnw (by omega_using [hw20, hnw]) (by decide) (by decide) (by decide) (by decide)
     (by decide)) fun t ⟨dt, ft, kt, ht⟩ => ⟨dt, ft, (k₁.trans kt).mono (by decide), ht⟩
 
 /-- The inverse's frame, as `CvS` and the arrays and the mask it keeps. -/
@@ -171,7 +171,7 @@ theorem cvInvFrame {I : CvIn} {m₀ : Mem} {s t : State} (h : CvS I m₀ s)
   have eM : Impl.Bignum.X86_64.Public.sMask = 22 := rfl
   have e16 := slot_lin (wk I.k) 16
   have hZ26 : slot (wk I.k) 26 ≤ I.Z := by
-    have := slot_lin (wk I.k) 26; have := L.z; have := L.k1; unfold wk at *; omega
+    have := slot_lin (wk I.k) 26; have := L.z; have := L.k1; unfold wk at *; omega_arith
   refine ⟨h.step f (fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl <;> exact Mut.ofSlot _ _ _) (fun r hr => by
@@ -211,17 +211,17 @@ theorem cvInvG_ok [InvLaw] {I : CvIn} {m₀ : Mem} {s : State} (h : CvS I m₀ s
               wv t.mem I.B (slot (wk I.k) aV) (wk I.k) ∧
           wv t.mem I.B (slot (wk I.k) aX₂) (wk I.k) < wv s.mem I.B (slot (wk I.k) aP) (wk I.k)) := by
   have hZ26 : slot (wk I.k) 26 ≤ I.Z := by
-    have := slot_lin (wk I.k) 26; have := L.z; have := L.k1; unfold wk at *; omega
-  have hw20 : wk I.k < 2 ^ 20 := by have := L.k2; unfold wk; omega
+    have := slot_lin (wk I.k) 26; have := L.z; have := L.k1; unfold wk at *; omega_arith
+  have hw20 : wk I.k < 2 ^ 20 := by have := L.k2; unfold wk; omega_using [this]
   refine cvGuarded_ok h L (fun s₂ h₂ m₂ g => ?_) (fun s₂ h₂ m₂ g => ?_)
   · rw [← m₂] at hPl hQl ⊢
     refine WP.mono (invQS_ok h₂.ws hZ26 hw20 h₂.args.pl h₂.args.ql L.pl1
-      (by have := L.pl2; unfold wk; omega) (by have := L.ql2; unfold wk; omega) hPl hQl) fun t ⟨_, f, k, hv⟩ => ?_
+      (by have := L.pl2; unfold wk; omega_using [this]) (by have := L.ql2; unfold wk; omega_using [this]) hPl hQl) fun t ⟨_, f, k, hv⟩ => ?_
     obtain ⟨ht, hm, ha⟩ := cvInvFrame h₂ f k L
-    obtain ⟨hw2, hwk, hpk, hpq, -⟩ := WordDivide.guard_zero (by have := L.k2; unfold wk; omega)
-      (by have := L.k2; omega) (by have := L.k2; have := L.pl2; omega) (by have := L.k2; have := L.ql2; omega)
+    obtain ⟨hw2, hwk, hpk, hpq, -⟩ := WordDivide.guard_zero (by have := L.k2; unfold wk; omega_using [this])
+      (by have := L.k2; omega_using [this]) (by have := L.k2; have := L.pl2; omega_arith) (by have := L.k2; have := L.ql2; omega_arith)
       ((cvGuard_iff L).mp g)
-    have hn : nOf I.pl I.ql = wk I.k / 2 := by unfold nOf; omega
+    have hn : nOf I.pl I.ql = wk I.k / 2 := by unfold nOf; omega_using [hw2, hwk, hpk, hpq]
     rw [hn] at hv
     refine ⟨ht, hm, ha, fun hp => ?_⟩
     obtain ⟨e1, e2, e3⟩ := hv hp
@@ -229,7 +229,7 @@ theorem cvInvG_ok [InvLaw] {I : CvIn} {m₀ : Mem} {s : State} (h : CvS I m₀ s
     exact ⟨e1, e2, e3⟩
   · rw [← m₂] at hPl hQl ⊢
     refine WP.mono (invQ_ok h₂.ws hZ26 hw20 h₂.args.pl h₂.args.ql L.pl1
-      (by have := L.pl2; unfold wk; omega) (by have := L.ql2; unfold wk; omega) hPl hQl) fun t ⟨_, f, k, hv⟩ => ?_
+      (by have := L.pl2; unfold wk; omega_using [this]) (by have := L.ql2; unfold wk; omega_using [this]) hPl hQl) fun t ⟨_, f, k, hv⟩ => ?_
     obtain ⟨ht, hm, ha⟩ := cvInvFrame h₂ f k L
     refine ⟨ht, hm, ha, fun hp => ?_⟩
     obtain ⟨e1, e2, e3⟩ := hv hp
@@ -339,16 +339,16 @@ theorem cvInv_ok [InvLaw] {I : CvIn} {m₀ : Mem} {s : State} (h : CvS I m₀ s)
     have P2 : wv s₂.mem I.B (slot (wk I.k) aP) (wk I.k) = wv s.mem I.B (slot (wk I.k) aP) (wk I.k) := aPQD aP (by simp)
     by_cases g : cvGuard I
     · simp only [g, ↓reduceIte] at e2
-      obtain ⟨hw2, hwk, hpk, hpq, -⟩ := WordDivide.guard_zero (by have := L.k2; unfold wk; omega)
-        (by have := L.k2; omega) (by have := L.k2; have := L.pl2; omega) (by have := L.k2; have := L.ql2; omega)
+      obtain ⟨hw2, hwk, hpk, hpq, -⟩ := WordDivide.guard_zero (by have := L.k2; unfold wk; omega_using [this])
+        (by have := L.k2; omega_using [this]) (by have := L.k2; have := L.pl2; omega_arith) (by have := L.k2; have := L.ql2; omega_arith)
         ((cvGuard_iff L).mp g)
       obtain ⟨⟨fp1, fp2⟩, -⟩ := WordDivide.factors_word L ((cvGuard_iff L).mp g) (hcN hcT)
       rw [← hP] at fp1 fp2
       have hx : wv s₂.mem I.B (slot (wk I.k) aX₂) (wk I.k) < wv s₂.mem I.B (slot (wk I.k) aP) (wk I.k) := by
         rw [xV, P2]; exact e3
-      have vt := gt g (by rw [P2]; omega) (by rw [P2]; exact fp2) hx
+      have vt := gt g (by rw [P2]; omega_using [fp1]) (by rw [P2]; exact fp2) hx
       rw [P2, xV] at vt
-      refine ⟨?_, by rw [vt]; exact Nat.mod_lt _ (by omega)⟩
+      refine ⟨?_, by rw [vt]; exact Nat.mod_lt _ (by omega_using [hp])⟩
       rw [vt, ← e1]
       have d1 : ((wv s.mem I.B (slot (wk I.k) aP) (wk I.k) : Nat) : Int) ∣
           (wv s₁.mem I.B (slot (wk I.k) aX₂) (wk I.k) : Int) * 2 ^ (15 * (wk I.k / 2) + 10) -

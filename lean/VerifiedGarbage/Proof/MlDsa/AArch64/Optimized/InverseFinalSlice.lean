@@ -32,7 +32,7 @@ theorem finalSlice_ok {s : State} {rest : List Instr} {Q : State → Prop}
     (hw : ∀ i : Fin 8, InRegions s.wr (s.gpr .x2+BitVec.ofNat 64 (128*i.val)) 16)
     (k : ∀ t, (∃ mid, VChg runRegs s mid ∧ VMem mid t (finalSliceMem s)) → WP isa (.block rest) t Q) :
     WP isa (.block (finalSliceCode ++ rest)) s Q := by
-  have ho : ∀ i : Fin 8, (128*i.val)%16=0 ∧ 128*i.val<65536 := by intro i; omega
+  have ho : ∀ i : Fin 8, (128*i.val)%16=0 ∧ 128*i.val<65536 := by intro i; omega_using []
   have hsub : ((bankLoads (regs 0) 128).map Prod.fst)⊆runRegs := by decide +kernel
   have hconst : ∀ r∈finalConstants, r∉runRegs := by decide
   simp only [finalSliceCode,finalLoads,List.append_assoc]

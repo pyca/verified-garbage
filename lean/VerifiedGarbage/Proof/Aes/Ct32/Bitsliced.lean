@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Spec.Aes
 public import VerifiedGarbage.Proof.Framework.Bitslice.Table
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # Bitsliced AES on 32-bit words: the layout and the round transformations
@@ -36,7 +37,7 @@ def pos (b i : Nat) : Nat := 8 * (i % 4) + 2 * (i / 4) + b
 def idx (p : Nat) : Nat := p / 8 + 4 * (p / 2 % 4)
 
 theorem pos_lt {b i : Nat} (hb : b < 2) (hi : i < 16) : pos b i < 32 := by
-  simp only [pos]; omega
+  simp only [pos]; omega_using [hb, hi]
 
 /-- The words `Q` hold the two states `S`. -/
 def BsRel (Q : Nat → BitVec 32) (S : Nat → State) : Prop :=
@@ -89,7 +90,7 @@ theorem bs_shiftRows {Q Q' : Nat → BitVec 32} {S : Nat → State}
   have : bsByte Q' (pos b i) = bsByte Q (pos b (i % 4 + 4 * ((i / 4 + i % 4) % 4))) :=
     byte_ext fun j hj => by
       rw [getLsbD_bsByte _ _ hj, getLsbD_bsByte _ _ hj, h j hj _ (pos_lt hb hi), srSrc_pos b hb i hi]
-  rw [this, hr b hb _ (by omega), getD_eq _ hi]
+  rw [this, hr b hb _ (by omega_using []), getD_eq _ hi]
   simp only [shiftRows, Vector.getElem_ofFn]
 
 theorem bs_addRoundKey {Q Q' K : Nat → BitVec 32} {S : Nat → State} {rk : List Byte}
@@ -118,9 +119,9 @@ theorem in_of_bs {Q Q' : Nat → BitVec 32} {S : Nat → State}
     (h : ∀ k < 8, ∀ t < 32, (Q' k).getLsbD t = (Q (t % 8)).getLsbD (pos (k % 2) (t / 8 + 4 * (k / 2))))
     (hr : BsRel Q S) : InRel Q' S := by
   intro b hb i hi j hj
-  rw [h _ (by omega) _ (by omega), ← getLsbD_bsByte _ _ (by omega)]
-  rw [show (8 * (i % 4) + j) % 8 = j by omega, show (b + 2 * (i / 4)) % 2 = b by omega,
-    show (8 * (i % 4) + j) / 8 + 4 * ((b + 2 * (i / 4)) / 2) = i by omega, hr b hb i hi]
+  rw [h _ (by omega_using [hb, hi]) _ (by omega_using [hj]), ← getLsbD_bsByte _ _ (by omega_using [])]
+  rw [show (8 * (i % 4) + j) % 8 = j by omega_using [hj], show (b + 2 * (i / 4)) % 2 = b by omega_using [hb],
+    show (8 * (i % 4) + j) / 8 + 4 * ((b + 2 * (i / 4)) / 2) = i by omega_using [hb, hj], hr b hb i hi]
 
 /-! ## MixColumns -/
 
@@ -134,7 +135,7 @@ theorem xtimes_bit (a : Byte) {j : Nat} (hj : j < 8) : (xtimes a).getLsbD j =
     ((if j = 0 then false else a.getLsbD (j - 1)) ^^
       (decide (j = 0 ∨ j = 1 ∨ j = 3 ∨ j = 4) && a.getLsbD 7)) := by
   simp only [xtimes, BitVec.getLsbD_xor, BitVec.getLsbD_shiftLeft, BitVec.msb_eq_getLsbD_last]
-  rcases (by omega : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4 ∨ j = 5 ∨ j = 6 ∨ j = 7) with
+  rcases (by omega_using [hj] : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4 ∨ j = 5 ∨ j = 6 ∨ j = 7) with
     rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
   cases h : a.getLsbD 7 <;> simp_all
 
@@ -176,12 +177,12 @@ theorem bs_mixColumns {Q Q' : Nat → BitVec 32} {S : Nat → State}
   refine byte_ext fun j hj => ?_
   have hbit : ∀ k < 4, ∀ w < 8, (Q w).getLsbD (down (pos b i) k) =
       ((S b).getD ((i % 4 + k) % 4 + 4 * (i / 4)) 0).getLsbD w := fun k hk w hw => by
-    rw [down_pos b hb i hi k hk, ← hr b hb _ (by omega), getLsbD_bsByte _ _ hw]
+    rw [down_pos b hb i hi k hk, ← hr b hb _ (by omega_using [hi]), getLsbD_bsByte _ _ hw]
   rw [getLsbD_bsByte _ _ hj, h j hj _ (pos_lt hb hi), getD_eq _ hi, termsXor_mc]
   simp only [mixColumns, Vector.getElem_ofFn, mul2, mul3, BitVec.getLsbD_xor, xtimes_bit _ hj]
   simp only [hbit 1 (by decide) _ hj, hbit 2 (by decide) _ hj,
     hbit 3 (by decide) _ hj, hbit 0 (by decide) 7 (by decide), hbit 1 (by decide) 7 (by decide),
-    hbit 0 (by decide) (j - 1) (by omega), hbit 1 (by decide) (j - 1) (by omega)]
+    hbit 0 (by decide) (j - 1) (by omega_using [hj]), hbit 1 (by decide) (j - 1) (by omega_using [hj])]
   generalize ((S b).getD ((i % 4 + 0) % 4 + 4 * (i / 4)) 0) = a0
   generalize ((S b).getD ((i % 4 + 1) % 4 + 4 * (i / 4)) 0) = a1
   generalize ((S b).getD ((i % 4 + 2) % 4 + 4 * (i / 4)) 0) = a2

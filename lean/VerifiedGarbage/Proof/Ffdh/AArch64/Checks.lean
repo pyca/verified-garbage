@@ -310,7 +310,7 @@ theorem range_frame (w : Nat) : ∀ r ∈ [(slot w aTmp, 8 * w), (8 * sF, 8)],
   have h3 := slot_sep (w := w) (show aTmp ≠ aN by decide)
   have h4 := slot_sep (w := w) (show aTmp ≠ aOne by decide)
   simp only [List.forall_mem_cons, List.not_mem_nil, false_imp_iff, implies_true, and_true]
-  refine ⟨⟨by omega, by omega, by omega, by omega⟩, by decide, hdr_lt_slot w 8 (by decide),
+  refine ⟨⟨by omega_using [h1], by omega_using [h2], by omega_using [h3], by omega_using [h4]⟩, by decide, hdr_lt_slot w 8 (by decide),
     Or.inl (hdr_lt_slot w aN (by decide)), Or.inl (hdr_lt_slot w aOne (by decide))⟩
 
 end VG.Proof.Ffdh.AArch64

@@ -46,7 +46,7 @@ theorem call_public {q : SearchPoint} {s t : State} (hs : CallCT q s) (ht : Call
   have bytesS := liveS.call_bytes roomS memS
   have bytesT := liveT.call_bytes roomT memT
   have tapeNat : (BitVec.ofNat 32 (q.inputs.c.bytes.length - q.used)).toNat = q.inputs.c.bytes.length - q.used := by
-    rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := q.inputs.c.tapeCount; omega)]
+    rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := q.inputs.c.tapeCount; omega_using [this])]
   simp only [State.addr] at bytesS bytesT
   sig_pub [Proof.Ffdh.sievedParameterCandidateContract, Proof.Ffdh.parameterCandidateSig,
     abi, argRegs, reduceClassify, Loc.val, State.addr]

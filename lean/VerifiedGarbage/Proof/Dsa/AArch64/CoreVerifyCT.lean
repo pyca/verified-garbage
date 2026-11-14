@@ -40,8 +40,8 @@ theorem coreVerifySchedule_ct (M : Mont) (inputs : SchedulePublic → List (Oper
     RelCT isa (Two (ScheduleState inputs)) (Core.verify M.mm)
       (Two (ScheduleState inputs)) := by
   have qp (p : SchedulePublic) : 1 ≤ p.layout.qLen := p.layout.widths.1
-  have pp (p : SchedulePublic) : 1 ≤ p.layout.pLen := by have := p.layout.widths; omega
-  have qb (p : SchedulePublic) : p.layout.qLen ≤ 1024 := by have := p.layout.widths; omega
+  have pp (p : SchedulePublic) : 1 ≤ p.layout.pLen := by have := p.layout.widths; omega_using [this]
+  have qb (p : SchedulePublic) : p.layout.qLen ≤ 1024 := by have := p.layout.widths; omega_using [this]
   have hpfit (p : SchedulePublic) : (p.layout.pLen + 7) / 8 ≤ ModulusSide.p.words p.layout := Nat.le_refl _
   have hqfit (p : SchedulePublic) : (p.layout.qLen + 7) / 8 ≤ ModulusSide.q.words p.layout := Nat.le_refl _
   have h1 := schedulePow_ct M inputs stable .q inverse Core.signatureS (Core.scalar qMinusTwo)
@@ -64,7 +64,7 @@ theorem coreVerifySchedule_ct (M : Mont) (inputs : SchedulePublic → List (Oper
     (by trivial) (by trivial) (by simp [stablePointer, Core.generator]) (by simp [stablePointer, Core.publicValue])
     pp hpfit pp hpfit (by decide) (by decide) (element_space (by decide)) (by taint_decide)
   have h8 := scheduleReduce_ct M inputs stable u (Core.element t) (fun p => p.layout.pLen)
-    (by change t < 2 ^ 16; decide) (by trivial) (by intro p; have := p.layout.widths; omega)
+    (by change t < 2 ^ 16; decide) (by trivial) (by intro p; have := p.layout.widths; omega_using [this])
     (by decide) (by decide) (scalar_space (by decide)) (by taint_decide)
   unfold Core.verify seqs
   refine RelCT.seq (two_map (Φ := ScheduleState inputs) (fun p => p) (fun p st h =>

@@ -62,7 +62,7 @@ theorem keygen_entry_ok {s : State} {B : Addr}
 private theorem extend_entry_frame {B : Addr} {m m' : Mem} {d : Nat} (v : BitVec 64)
     (h : Outside B 0 Random.frameBytes m m') (hd : d + 8 ≤ Random.frameBytes) :
     Outside B 0 Random.frameBytes m (m'.writeW (off B d) v) :=
-  h.trans ((writeW_outside _ B _ (by unfold Random.frameBytes at hd; omega)).mono (Nat.zero_le _) hd)
+  h.trans ((writeW_outside _ B _ (by unfold Random.frameBytes at hd; omega_using [hd])).mono (Nat.zero_le _) hd)
 
 theorem keygen_entry_outside (s : State) (B : Addr) :
     Outside B 0 Random.frameBytes s.mem (keygenEntryMem s B) := by

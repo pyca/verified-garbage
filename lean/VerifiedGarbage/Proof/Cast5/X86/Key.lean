@@ -51,13 +51,13 @@ theorem zeroMem_cinv (m : Mem) {S : BitVec 32} (hfit : S.toNat + 256 ≤ 2 ^ 32)
   simp only [zeroMem, xOff]
   rw [e 16 (by decide), e 20 (by decide), e 24 (by decide), e 28 (by decide)]
   refine ⟨fun i hi => ?_, fun i hi => ?_, ?_⟩
-  · rw [zero_byte32 _ _ (by decide) (by omega), zero_byte32 _ _ (by decide) (by omega),
-      zero_byte32 _ _ (by decide) (by omega), zero_byte32 _ _ (by decide) (by omega)]
+  · rw [zero_byte32 _ _ (by decide) (by omega_using [hi]), zero_byte32 _ _ (by decide) (by omega_using [hi]),
+      zero_byte32 _ _ (by decide) (by omega_using [hi]), zero_byte32 _ _ (by decide) (by omega_using [hi])]
     repeat' split
     all_goals first | rfl | omega
-  · rw [zero_byte32 _ _ (by decide) (by omega), zero_byte32 _ _ (by decide) (by omega),
-      zero_byte32 _ _ (by decide) (by omega), zero_byte32 _ _ (by decide) (by omega), ite_eq_right (by omega),
-      ite_eq_right (by omega), ite_eq_right (by omega), ite_eq_right (by omega)]
+  · rw [zero_byte32 _ _ (by decide) (by omega_using [hi]), zero_byte32 _ _ (by decide) (by omega_using [hi]),
+      zero_byte32 _ _ (by decide) (by omega_using [hi]), zero_byte32 _ _ (by decide) (by omega_using [hi]), ite_eq_right (by omega_using []),
+      ite_eq_right (by omega_using []), ite_eq_right (by omega_using []), ite_eq_right (by omega_using [])]
   · exact ((((Frame.refl _ _).writeW List.mem_cons_self _ (Offset.contains_base _ (by decide) (by decide))).writeW
       List.mem_cons_self _ (Offset.contains_base _ (by decide) (by decide))).writeW
       List.mem_cons_self _ (Offset.contains_base _ (by decide) (by decide))).writeW
@@ -78,19 +78,19 @@ theorem copyStep_ok (u : State) {m0 : Mem} {key c : Addr} {k32 x32 : BitVec 32} 
   crun [hdi, hax, ek, ex, hr, hw, hk]
   refine ⟨⟨fun i hi => ?_, fun i hi => ?_, ?_⟩, rfl, rfl, rfl, rfl, fun r h1 h2 h3 h4 => ?_⟩
   · simp only [Mem.writeW]
-    rw [byte_write (d := 16 + j) (e := 16 + i) (n := 1) _ _ _ (by omega) (by omega)]
+    rw [byte_write (d := 16 + j) (e := 16 + i) (n := 1) _ _ _ (by omega_using [hj]) (by omega_using [hi])]
     split
-    · have hij : i = j := by omega
+    · have hij : i = j := by omega_arith
       subst hij
-      rw [Nat.sub_self, ite_eq_left (show i < i + 1 by omega), ite_eq_left (show Reg8.cl.reg = Reg.ecx from rfl)]
+      rw [Nat.sub_self, ite_eq_left (show i < i + 1 by omega_using []), ite_eq_left (show Reg8.cl.reg = Reg.ecx from rfl)]
       apply BitVec.eq_of_getLsbD_eq; intro k hk
       simp [hk]
     · rw [hI.x i hi]
       split <;> split <;> first | rfl | omega
   · simp only [Mem.writeW]
-    rw [byte_write (d := 16 + j) (e := 32 + i) (n := 1) _ _ _ (by omega) (by omega), ite_eq_right (by omega)]
+    rw [byte_write (d := 16 + j) (e := 32 + i) (n := 1) _ _ _ (by omega_using [hj]) (by omega_using [hi]), ite_eq_right (by omega_using [hj])]
     exact hI.z i hi
-  · exact hI.fr.writeW List.mem_cons_self _ (Offset.contains_base _ (by omega) (by omega))
+  · exact hI.fr.writeW List.mem_cons_self _ (Offset.contains_base _ (by omega_using [hj]) (by omega_using [hj]))
   · simp only [h1, h2, h3, h4, ite_false]
 
 /-- The facts of key expansion's precondition on this target (the shared
@@ -154,10 +154,10 @@ theorem argK_in {s : State} (h : KPre s) {i : Nat} (hi : i < 4) :
     InRegions (s.rd ++ s.wr) (addr (s.gpr .esp) (4 + 4 * i)) 4 := by
   have hA : InRegions (s.rd ++ s.wr) (argAddr s 0) 16 := by
     rw [h.rdEq]; exact ⟨_, by simp, Region.contains_self _ _⟩
-  have e0 : argAddr s 0 = (s.gpr .esp).setWidth 64 + BitVec.ofNat 64 4 := addr_eq (by have := h.spfit; omega)
+  have e0 : argAddr s 0 = (s.gpr .esp).setWidth 64 + BitVec.ofNat 64 4 := addr_eq (by have := h.spfit; omega_using [this])
   rw [e0] at hA
-  rw [addr_eq (by have := h.spfit; omega), ← Offset.add_add]
-  exact CallLay.inRegions_sub hA (by omega) (by decide)
+  rw [addr_eq (by have := h.spfit; omega_using [hi, this]), ← Offset.add_add]
+  exact CallLay.inRegions_sub hA (by omega_using [hi]) (by decide)
 
 theorem one32 : (1 : BitVec 32) = BitVec.ofNat 32 1 := rfl
 

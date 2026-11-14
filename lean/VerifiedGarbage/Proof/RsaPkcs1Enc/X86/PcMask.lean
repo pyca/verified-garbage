@@ -119,13 +119,13 @@ theorem maskBody_vp (m : Nat) : VP (MI P (m + 1)) (.block maskBody) fun σ s =>
   have hfo : P.out.toNat + P.K ≤ 2 ^ 32 := by
     have := hs.1.ok.fits P.OUT (by simp)
     simp only [BitVec.toNat_setWidth] at this
-    rwa [Nat.mod_eq_of_lt (by have := P.out.isLt; omega)] at this
-  have hi : P.K - (m + 1) < P.K := by omega
+    rwa [Nat.mod_eq_of_lt (by have := P.out.isLt; omega_using [])] at this
+  have hi : P.K - (m + 1) < P.K := by omega_using [hk]
   have ha : ∀ t : State, t.gpr .esi = s.gpr .esi →
       t.ea ⟨.esi, 0⟩ = P.out.setWidth 64 + BitVec.ofNat 64 (P.K - (m + 1)) := fun t e => by
-    rw [ea_at, e, si, addr, BitVec.add_zero]; exact addr_eq (by omega)
+    rw [ea_at, e, si, addr, BitVec.add_zero]; exact addr_eq (by omega_using [hfo])
   have hc : (P.OUT : Region).Contains (P.out.setWidth 64 + BitVec.ofNat 64 (P.K - (m + 1))) 1 :=
-    Offset.contains_base _ (by omega) (by omega)
+    Offset.contains_base _ (by omega_using [hk]) (by omega_using [hK])
   simp only [maskBody]
   refine wp_movzx8 (ha s rfl) ⟨P.OUT, List.mem_append_right _ (hs.2.inRw (by simp)), hc⟩ fun t1 u1 => ?_
   refine wp_and fun t2 u2 => ?_
@@ -138,16 +138,16 @@ theorem maskBody_vp (m : Nat) : VP (MI P (m + 1)) (.block maskBody) fun σ s =>
     exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ _)
   have st : P.lay.St σ t5 := hs.2.write fr (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
-      exact ⟨P.OUT, by simp, Offset.sub_base _ (by omega)⟩)
+      exact ⟨P.OUT, by simp, Offset.sub_base _ (by omega_using [hk])⟩)
     (by rw [u5.rd, u4.rd, u3.rd, u2.rd, u1.rd]) (by rw [u5.wr, u4.wr, u3.wr, u2.wr, u1.wr])
     (by rw [u5.other _ (by decide), u4.other _ (by decide), u3.gpr, u2.other _ (by decide), u1.other _ (by decide)])
   have cx4 : t4.gpr .ecx = BitVec.ofNat 32 (m + 1) := by
     rw [u4.other _ (by decide), u3.gpr, u2.other _ (by decide), u1.other _ (by decide), cx]
   have inv : MI P m σ t5 := by
-    refine ⟨⟨hs.1, st⟩, by omega, ?_, ?_, ?_, m0, rc, cr, ?_, fun i hi' => ?_⟩
+    refine ⟨⟨hs.1, st⟩, by omega_using [hk], ?_, ?_, ?_, m0, rc, cr, ?_, fun i hi' => ?_⟩
     · rw [u5.other _ (by decide), u4.gpr, u3.gpr, u2.other _ (by decide), u1.other _ (by decide), si]
-      exact off_add _ _ 1 _ (by omega)
-    · rw [u5.gpr, cx4]; exact Offset.ofNat_sub_ofNat (d := 1) (by omega)
+      exact off_add _ _ 1 _ (by omega_using [hk])
+    · rw [u5.gpr, cx4]; exact Offset.ofNat_sub_ofNat (d := 1) (by omega_using [])
     · rw [u5.other _ (by decide), u4.other _ (by decide), u3.gpr, u2.other _ (by decide),
         u1.other _ (by decide), bx]
     · rw [u5.other _ (by decide), u4.other _ (by decide), u3.gpr, u2.other _ (by decide),
@@ -157,27 +157,27 @@ theorem maskBody_vp (m : Nat) : VP (MI P (m + 1)) (.block maskBody) fun σ s =>
       · subst e
         have hm := mem _ hi
         simp only [Nat.lt_irrefl, ↓reduceIte] at hm
-        simp only [show P.K - (m + 1) < P.K - m from by omega, ↓reduceIte]
+        simp only [show P.K - (m + 1) < P.K - m from by omega_using [hk], ↓reduceIte]
         rw [show Reg8.dl.reg = .edx from rfl, u2.gpr, u1.gpr, u1.other _ (by decide), bx, ← hm,
           BitVec.setWidth_and, setWidth_byte]
-      · have hne := Offset.add_ofNat_ne (P.out.setWidth 64) (by omega : i < 2 ^ 64)
-          (by omega : P.K - (m + 1) < 2 ^ 64) e
+      · have hne := Offset.add_ofNat_ne (P.out.setWidth 64) (by omega_using [hK, hi'] : i < 2 ^ 64)
+          (by omega_using [hK] : P.K - (m + 1) < 2 ^ 64) e
         simp only [hne, ↓reduceIte]
         rw [mem i hi']
         by_cases h1 : i < P.K - (m + 1)
-        · simp only [h1, show i < P.K - m from by omega, ↓reduceIte]
-        · simp only [h1, show ¬ i < P.K - m from by omega, ↓reduceIte]
+        · simp only [h1, show i < P.K - m from by omega_using [h1], ↓reduceIte]
+        · simp only [h1, show ¬ i < P.K - m from by omega_using [e, h1], ↓reduceIte]
   refine ⟨?_, fun h0 => h0 ▸ inv, fun _ => inv⟩
   show eval .ne t5 = _
   rw [cx4, show BitVec.ofNat 32 (m + 1) - 1 = BitVec.ofNat 32 m from
-    Offset.ofNat_sub_ofNat (d := 1) (by omega), ofNat_beq_zero (by omega)] at z5
+    Offset.ofNat_sub_ofNat (d := 1) (by omega_using []), ofNat_beq_zero (by omega_using [hk, hK])] at z5
   simp only [eval, z5]
-  by_cases h0 : m = 0 <;> simp [h0] <;> omega
+  by_cases h0 : m = 0 <;> simp [h0] <;> omega_using [h0]
 
 theorem maskLoop_vp : VP (MI P P.K) maskLoop (MI P 0) := by
   refine (VP.loop (I := fun m => MI P m) maskBody_vp (P.K - 1)).mono (fun σ s h => ?_) fun _ _ h => h
   have := h.1.1.k64
-  rw [show P.K - 1 + 1 = P.K by omega]; exact h
+  rw [show P.K - 1 + 1 = P.K by omega_using [this]]; exact h
 
 theorem masked_g10 {σ s : State} (h : MI P 0 σ s) : G10 P σ s := by
   obtain ⟨hs, -, -, -, -, m0, rc, cr, di, mem⟩ := h
@@ -211,12 +211,12 @@ theorem zero_wp {σ s : State} (h : G11 P σ s) : WP isa zeroLoop s (G10 P σ) :
   have hK := hs.1.k1024
   have fit := hs.1.fit
   have em := hs.1.emA
-  have hF : oEM + P.K ≤ P.lay.F := by show _ ≤ frameBytes; simp only [oEM, frameBytes]; omega
+  have hF : oEM + P.K ≤ P.lay.F := by show _ ≤ frameBytes; simp only [oEM, frameBytes]; omega_using [hK]
   have hpt : (P.B + BitVec.ofNat 32 oEM).toNat + P.K ≤ 2 ^ 32 := by
     rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := oEM) (by decide)]
     simp only [oEM, frameBytes] at fit ⊢
-    rw [Nat.mod_eq_of_lt (by omega)]; omega
-  refine WP.mono (zero_ok (p := P.B + BitVec.ofNat 32 oEM) (n := P.K) (by have := hs.1.k64; omega) (by omega)
+    rw [Nat.mod_eq_of_lt (by omega_using [fit])]; omega_using [hK, fit]
+  refine WP.mono (zero_ok (p := P.B + BitVec.ofNat 32 oEM) (n := P.K) (by have := hs.1.k64; omega_using [this]) (by omega_using [hK])
     hpt si cx ax (by rw [em]; exact hs.2.inFr hF)) fun t ht => ?_
   have fr : Frame [⟨P.lay.fr oEM, P.K⟩] s.mem t.mem := by
     rw [ht.mem, em]
@@ -224,11 +224,11 @@ theorem zero_wp {σ s : State} (h : G11 P σ s) : WP isa zeroLoop s (G10 P σ) :
     simpa using this
   have st : P.lay.St σ t := hs.2.frameW hF fr ht.rd ht.wr (ht.other _ (by decide) (by decide))
   refine ⟨⟨hs.1, st⟩, fun nB hn hp => ?_⟩
-  have hd : oEM + P.K ≤ P.lay.F + 16 := by show _ ≤ frameBytes + 16; simp only [oEM, frameBytes]; omega
+  have hd : oEM + P.K ≤ P.lay.F + 16 := by show _ ≤ frameBytes + 16; simp only [oEM, frameBytes]; omega_using [hK]
   have hb : Spec.Rsa.bytesAt t.mem (P.out.setWidth 64) P.K = Spec.Rsa.bytesAt s.mem (P.out.setWidth 64) P.K :=
     Proof.RsaPkcs1Sig.bytesAt_frame fr (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
-      exact (ok.stk_fr (R := P.OUT) (.inr (by simp)) hd).symm) (by omega)
+      exact (ok.stk_fr (R := P.OUT) (.inr (by simp)) hd).symm) (by omega_using [hK])
   have w := res nB hn hp
   rw [ht.other _ (by decide) (by decide)]
   revert w

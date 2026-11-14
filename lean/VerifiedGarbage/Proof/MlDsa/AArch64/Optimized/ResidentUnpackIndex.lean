@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.ResidentUnpack
 import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.Omega
 
 @[expose] public section
 
@@ -32,5 +33,5 @@ theorem indexCorrect_of_width {d : Nat} (hd : d=18 ∨ d=20) : indexCorrect d :=
 theorem fieldShift_bounds {d g e : Nat} (hd : d=18 ∨ d=20) :
     d*(4*g+e)%8 = d*e%8 ∧ d+d*e%8 ≤ 24 ∧
     d*e%8 ≤ (if d=20 then 4 else 6) := by
-  rcases hd with rfl | rfl <;> simp only [ite_true,ite_eq_right (by decide : ¬ (18:Nat)=20)] <;> omega
+  rcases hd with rfl | rfl <;> simp only [ite_true,ite_eq_right (by decide : ¬ (18:Nat)=20)] <;> omega_using []
 end VG.Proof.MlDsa.AArch64.Optimized.ResidentMask

@@ -38,8 +38,8 @@ theorem callReduce_relCT (L : CallLayout) (input : Pointer) (src : Src) (len out
     (ho : r ≤ output) (hb : output + L.qLen ≤ usedBytes) :
     RelCT isa (CallPair L) (Core.reduce L.qLen src input output) (CallPair L) := by
   have W := L.lengths
-  have N : (L.qLen + 7) / 8 ≤ 48 := by omega
-  have hw4 : L.qLen % 4 = 0 := by have H := L.widths; unfold Spec.Dsa.lengthsValid at H; omega
+  have N : (L.qLen + 7) / 8 ≤ 48 := by omega_using [W]
+  have hw4 : L.qLen % 4 = 0 := by have H := L.widths; unfold Spec.Dsa.lengthsValid at H; omega_using [H]
   have pre (s : State) (R : CallReady L s) : ReductionPre L.base L.size L.qLen len input src s := by
     refine ⟨R.moduli.scr, R.moduli.qReady, R.stream I hl N, hsrc s R, ?_, ?_, R.moduli.room, R.stack I hl, hlen⟩
     · change 255 < operandValue s L.base (.input .q) L.qLen
@@ -47,7 +47,7 @@ theorem callReduce_relCT (L : CallLayout) (input : Pointer) (src : Src) (len out
     · change operandValue s L.base (.input .q) L.qLen % 2 = 1
       rw [R.moduli.qValue]; exact R.moduli.qOdd
   refine call_stage (Q := VG.X86.Taint.Agree (workspaceTaint true)) ?_ ?_
-  · apply (coreReduce_relCT L.base L.size L.qLen len output input src hf L.saved L.extent (by omega) (by omega)
+  · apply (coreReduce_relCT L.base L.size L.qLen len output input src hf L.saved L.extent (by omega_using [W]) (by omega_using [W])
       hw4).mono ?_ (fun _ _ h => h)
     intro s t H
     exact ⟨pre s H.1, pre t H.2, H.pointer Q, H.pointer I, H.1.sp.trans H.2.sp.symm⟩
@@ -58,6 +58,6 @@ theorem callReduce_relCT (L : CallLayout) (input : Pointer) (src : Src) (len out
 /-- The saved digest prefix, as a length operand. -/
 theorem CallReady.prefixOperand {L : CallLayout} {s : State} (R : CallReady L s) :
     LenOperand L.base L.size ((L.qLen + 7) / 8) s Core.digestPrefix L.digestPrefix :=
-  LenOperand.prefix L.saved (by have := L.lengths; omega) R.prefixLen
+  LenOperand.prefix L.saved (by have := L.lengths; omega_using [this]) R.prefixLen
 
 end VG.Proof.Dsa.X86

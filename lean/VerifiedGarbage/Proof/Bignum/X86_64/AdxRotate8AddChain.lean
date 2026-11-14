@@ -25,7 +25,7 @@ theorem add_combine {a0 a1 a2 a3 a4 a5 a6 a7 b0 b1 b2 b3 b4 b5 b6 b7 t0 t1 t2 t3
     (h7 : t7 + 2 ^ 64 * c8 = a7 + b7 + c7)
     : t0 + 2 ^ 64 * t1 + 2 ^ 128 * t2 + 2 ^ 192 * t3 + 2 ^ 256 * t4 + 2 ^ 320 * t5 + 2 ^ 384 * t6 + 2 ^ 448 * t7 + 2 ^ 512 * c8 =
       a0 + b0 + 2 ^ 64 * (a1 + b1) + 2 ^ 128 * (a2 + b2) + 2 ^ 192 * (a3 + b3) + 2 ^ 256 * (a4 + b4) + 2 ^ 320 * (a5 + b5) + 2 ^ 384 * (a6 + b6) + 2 ^ 448 * (a7 + b7) + c0 := by
-  omega
+  omega_using [h0, h1, h2, h3, h4, h5, h6, h7]
 
 theorem chain_ok (s : State) (src : Nat → Src) (v : Nat → BitVec 64) {c : Bool}
     (hc : s.cf = some c)

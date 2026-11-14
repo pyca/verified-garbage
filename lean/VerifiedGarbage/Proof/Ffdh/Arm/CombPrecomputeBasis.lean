@@ -35,10 +35,10 @@ theorem basis_ok (backend : MontBackend) (s : State) {p : Inputs} {sp : BitVec 3
       t.z=decide (j=4) ∧
       WorkspaceEq (State.addr p.output) (24+16*p.w) s.mem t.mem ∧
       Frame (productWrites p sp) s.mem t.mem ∧ Rest roundClobbers s t := by
-  have highBound : 2^j≤16 := Nat.pow_le_pow_right (by decide : 0<2) (by omega : j≤4)
+  have highBound : 2^j≤16 := Nat.pow_le_pow_right (by decide : 0<2) (by omega_using [hj] : j≤4)
   have nextHigh : 2*2^j=2^(j+1) := by rw [Nat.pow_succ]; ac_rfl
   have stop : (2*2^j=32) ↔ j=4 := by
-    have cases : j=1 ∨ j=2 ∨ j=3 ∨ j=4 := by omega
+    have cases : j=1 ∨ j=2 ∨ j=3 ∨ j=4 := by omega_using [hj, jpositive]
     rcases cases with rfl|rfl|rfl|rfl <;> decide
   have exponent : 2^Spec.Rsa.FixedBaseComb.rows (bits p)*
       2^((j-1)*Spec.Rsa.FixedBaseComb.rows (bits p))=
@@ -48,14 +48,14 @@ theorem basis_ok (backend : MontBackend) (s : State) {p : Inputs} {sp : BitVec 3
     calc
       _ = 1*Spec.Rsa.FixedBaseComb.rows (bits p)+(j-1)*Spec.Rsa.FixedBaseComb.rows (bits p) := by rw [Nat.one_mul]
       _ = (1+(j-1))*Spec.Rsa.FixedBaseComb.rows (bits p) := (Nat.add_mul _ _ _).symm
-      _ = _ := by rw [show 1+(j-1)=j by omega]
+      _ = _ := by rw [show 1+(j-1)=j by omega_using [jpositive]]
   rw [VG.Impl.Ffdh.Arm.CombPrecompute.basis,WP.seq_iff]
   refine WP.mono (squares_ok backend s h power positive fits) ?_
   rintro u ⟨coreU,powerU,ctxU,frameU,restU⟩
   rw [exponent] at powerU
   have tableU : TablePrefix p (2^j) u.mem := by
     intro digit hd
-    rw [ctxU.read (entryOffset p digit) (8*p.w) (entry_bound p (by omega))]
+    rw [ctxU.read (entryOffset p digit) (8*p.w) (entry_bound p (by omega_using [highBound, hd]))]
     exact table digit hd
   have savedU := (h.memory.squareNarrowRead36 frameU).trans saved
   have squareFrame : Frame (productWrites p sp) s.mem u.mem := frameU.sub (by
@@ -80,7 +80,7 @@ theorem basis_ok (backend : MontBackend) (s : State) {p : Inputs} {sp : BitVec 3
     rw [WP.seq_iff]
     refine WP.mono (products_ok backend v coreV hj jpositive powerV tableV savedV) ?_
     rintro w ⟨coreW,powerW,tableW,savedW,headW,frameW,restW⟩
-    refine WP.mono (basisNext_state w coreW powerW (by omega) savedW) ?_
+    refine WP.mono (basisNext_state w coreW powerW (by omega_using [highBound]) savedW) ?_
     rintro t ⟨coreT,powerT,savedT,zeroT,frameT,restT⟩
     simp only [stop] at zeroT
     rw [nextHigh] at tableW savedT
@@ -89,13 +89,13 @@ theorem basis_ok (backend : MontBackend) (s : State) {p : Inputs} {sp : BitVec 3
       intro digit hd
       rw [ctxT.read (entryOffset p digit) (8*p.w) (entry_bound p (by
         rw [←nextHigh] at hd
-        omega))]
+        omega_using [highBound, hd]))]
       exact tableW digit hd
     have header : WorkspaceEq (State.addr p.output) (24+16*p.w) s.mem t.mem := by
       refine ⟨?_⟩
       intro d n hd
-      exact (ctxT.read d n (by rw [bytes_eq]; omega)).trans
-        ((headW.read d n hd).trans ((headV.read d n hd).trans (ctxU.read d n (by rw [bytes_eq]; omega))))
+      exact (ctxT.read d n (by rw [bytes_eq]; omega_using [hd])).trans
+        ((headW.read d n hd).trans ((headV.read d n hd).trans (ctxU.read d n (by rw [bytes_eq]; omega_using [hd]))))
     have storeFrame : Frame (productWrites p sp) u.mem v.mem := frameV.mono (by
       intro r hr
       simp only [productBodyWrites,List.mem_cons,List.not_mem_nil,or_false] at hr

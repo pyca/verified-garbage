@@ -28,23 +28,23 @@ variable {l : VG.Impl.Rsa.X86_64.CrtIfma.Lay}
 theorem limb_of {m : Mem} {F : Addr} {c p v : Nat}
     (h : ∀ k < l.L, word m F (l.D * p + c + l.off k) = BitVec.ofNat 64 (limbN v k))
     {j : Nat} (hj : j < l.L) : limb l m F (l.D * p + c) j = limbN v j := by
-  rw [limb, h j hj, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := limbN_lt v j; omega)]
+  rw [limb, h j hj, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := limbN_lt v j; omega_using [this])]
 
 theorem val52_of (hl : AmmOk l) {m : Mem} {F : Addr} {c p v : Nat}
     (h : ∀ k < l.L, word m F (l.D * p + c + l.off k) = BitVec.ofNat 64 (limbN v k))
     (hv : v < 2 ^ (64 * l.W + 1)) : val52 l m F (l.D * p + c) = v := by
   rw [val52, lval_congr fun j hj => limb_of h hj, lval_limbN]
-  have h2 := pow2_le (a := 64 * l.W + 1) (b := 52 * l.L) (by have := conv_boundsN hl; omega)
+  have h2 := pow2_le (a := 64 * l.W + 1) (b := 52 * l.L) (by have := conv_boundsN hl; omega_using [this])
   exact Nat.mod_eq_of_lt (Nat.lt_of_lt_of_le hv h2)
 
 theorem two_mul_lt {k a : Nat} (h : a < 2 ^ k) : 2 * a < 2 ^ (k + 1) + 1 := by
-  rw [Nat.pow_succ]; omega
+  rw [Nat.pow_succ]; omega_using [h]
 
 theorem good_of (hl : AmmOk l) {m : Mem} {F : Addr} {M : Nat → Nat} {c p v : Nat}
     (h : ∀ k < l.L, word m F (l.D * p + c + l.off k) = BitVec.ofNat 64 (limbN v k))
     (hv : v < 2 * M p) (hM : M p < 2 ^ (64 * l.W)) : GoodS l m F M c p := by
   have := two_mul_lt hM
-  exact ⟨fun j hj => by rw [limb_of h hj]; exact limbN_lt v j, by rw [val52_of hl h (by omega)]; exact hv⟩
+  exact ⟨fun j hj => by rw [limb_of h hj]; exact limbN_lt v j, by rw [val52_of hl h (by omega_using [hv, this])]; exact hv⟩
 
 /-- The limbs of `v` at offset `c` of region `p` (as `Limbs` says, for each prime). -/
 abbrev LimbsAt (l : VG.Impl.Rsa.X86_64.CrtIfma.Lay) (m : Mem) (F : Addr) (c : Nat) (v : Nat → Nat) : Prop :=
@@ -81,27 +81,27 @@ theorem vecR_ok (hl : AmmOk l) {s : State} {F : Addr} {M K1 Xc Y Fin x e : Nat �
   obtain ⟨cb1, cb2, cb3, cb4, cb5, cb6⟩ := conv_boundsN hl
   have hv : ∀ {c} {v : Nat → Nat}, LimbsAt l s.mem F c v → ∀ p < l.nl, v p < 2 * M p →
       val52 l s.mem F (l.D * p + c) = v p :=
-    fun h p hp hlt => val52_of hl (h p hp) (by have := two_mul_lt (hMlt p hp); omega)
+    fun h p hp hlt => val52_of hl (h p hp) (by have := two_mul_lt (hMlt p hp); omega_using [hlt, this])
   have ar : Ar0 l s.mem F M (fun p => (mi p &&& mask52).toNat) := by
-    refine ⟨fun p hp j hj => ?_, fun p hp => hv hM p hp (by have := hModd p hp; omega), fun p hp t ht => ?_,
+    refine ⟨fun p hp j hj => ?_, fun p hp => hv hM p hp (by have := hModd p hp; omega_using [this]), fun p hp t ht => ?_,
       fun p hp => ?_, fun p hp => ?_, fun p hp => ?_⟩
     · rw [limb_of (hM p hp) hj]; exact limbN_lt _ _
     · rw [hk0 p hp t ht, BitVec.ofNat_toNat, BitVec.setWidth_eq]
     · rw [BitVec.toNat_and, show mask52.toNat = 2 ^ 52 - 1 from rfl, Nat.and_two_pow_sub_one_eq_mod]
       exact Nat.mod_lt _ (by decide)
-    · rw [limb_of (hM p hp) (by simp only [Lay.L]; have := hl.bounds; omega)]; exact k0_of (hinv p hp)
+    · rw [limb_of (hM p hp) (by simp only [Lay.L]; have := hl.bounds; omega_using [this])]; exact k0_of (hinv p hp)
     · have h4 : 4 * M p ≤ 2 ^ (64 * l.W + 2) := by
         have := hMlt p hp
-        rw [Nat.pow_succ, Nat.pow_succ]; omega
-      exact Nat.le_trans h4 (pow2_le (by omega))
+        rw [Nat.pow_succ, Nat.pow_succ]; omega_using [this]
+      exact Nat.le_trans h4 (pow2_le (by omega_using [cb4]))
   refine WP.mono (vec_ok hl (Q := Q) (x := x) hB hs ar hModd hMlt
-    (fun p hp => good_of hl (hX p hp) (by have := hXlt p hp; omega) (hMlt p hp))
-    (fun p hp => good_of hl (hY p hp) (by have := hYlt p hp; omega) (hMlt p hp))
-    (fun p hp => good_of hl (hK p hp) (by have := hKlt p hp; omega) (hMlt p hp))
+    (fun p hp => good_of hl (hX p hp) (by have := hXlt p hp; omega_using [this]) (hMlt p hp))
+    (fun p hp => good_of hl (hY p hp) (by have := hYlt p hp; omega_using [this]) (hMlt p hp))
+    (fun p hp => good_of hl (hK p hp) (by have := hKlt p hp; omega_using [this]) (hMlt p hp))
     (fun p hp => good_of hl (hF p hp) (hFlt p hp) (hMlt p hp))
-    (fun q p hp => by rw [hv hX p hp (by have := hXlt p hp; omega)]; exact vx q p hp)
-    (fun q p hp => by rw [Nat.one_mul, ← vy q p hp, hv hY p hp (by have := hYlt p hp; omega)])
-    (fun q p hp => by rw [← vk q p hp, hv hK p hp (by have := hKlt p hp; omega)]) he hd)
+    (fun q p hp => by rw [hv hX p hp (by have := hXlt p hp; omega_using [this])]; exact vx q p hp)
+    (fun q p hp => by rw [Nat.one_mul, ← vy q p hp, hv hY p hp (by have := hYlt p hp; omega_using [this])])
+    (fun q p hp => by rw [← vk q p hp, hv hK p hp (by have := hKlt p hp; omega_using [this])]) he hd)
     fun s' ⟨hy, ho, hr, hrd, hwr, hmx⟩ => ⟨fun p hp => ⟨(hy p hp).1, fun q => by
       rw [(hy p hp).2 q, hv hF p hp (hFlt p hp)]⟩, ho, hr, hrd, hwr, hmx⟩
 

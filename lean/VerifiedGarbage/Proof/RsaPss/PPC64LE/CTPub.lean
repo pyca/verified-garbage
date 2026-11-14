@@ -72,7 +72,7 @@ theorem pubT_of {hs gs : List FnTable} {s₁ s₂ : State} (h : (verSpec hs gs).
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
     exacts [h3.symm, h4.symm, h5.symm, h6.symm, h7.symm, h8.symm, h9.symm, h10.symm]
-  · rcases (by omega : i = 0 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7) with
+  · rcases (by omega_using [hi, h1] : i = 0 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7) with
       rfl | rfl | rfl | rfl | rfl | rfl | rfl
     exacts [a0.symm, a2.symm, a3.symm, a4.symm, a5.symm, a6.symm, a7.symm]
 

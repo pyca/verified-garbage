@@ -40,36 +40,36 @@ theorem RF.esp_toNat {s : State} {B : Addr} (h : RF s B) : (s.gpr .esp).toNat = 
 theorem RF.ea {s : State} {B : Addr} (h : RF s B) {d : Nat} (hd : d < argOff 13) :
     s.ea (sp d) = off B d := by
   change addr (s.gpr .esp) d = _
-  rw [addr_eq (by have := h.nowrap; have := h.esp_toNat; omega), h.esp]
+  rw [addr_eq (by have := h.nowrap; have := h.esp_toNat; omega_arith), h.esp]
 
 theorem RF.read {s : State} {B : Addr} (h : RF s B) {d n : Nat} (hd : d + n ≤ frameBytes) :
     InRegions (s.rd ++ s.wr) (off B d) n :=
-  ⟨_, List.mem_append_right _ h.wr, Offset.contains_base B hd (by have := h.nowrap; unfold argOff at this; omega)⟩
+  ⟨_, List.mem_append_right _ h.wr, Offset.contains_base B hd (by have := h.nowrap; unfold argOff at this; omega_using [hd, this])⟩
 
 theorem RF.write {s : State} {B : Addr} (h : RF s B) {d n : Nat} (hd : d + n ≤ frameBytes) :
     InRegions s.wr (off B d) n :=
-  ⟨_, h.wr, Offset.contains_base B hd (by have := h.nowrap; unfold argOff at this; omega)⟩
+  ⟨_, h.wr, Offset.contains_base B hd (by have := h.nowrap; unfold argOff at this; omega_using [hd, this])⟩
 
 theorem RF.readArg {s : State} {B : Addr} (h : RF s B) {j : Nat} (hj : j < 13) :
     InRegions (s.rd ++ s.wr) (off B (argOff j)) 4 := by
   refine ⟨_, List.mem_append_right _ h.args, ?_⟩
   have e : off B (argOff j) = off (off B (argOff 0)) (4 * j) := by
     rw [off, off, off, BitVec.add_assoc, ← BitVec.ofNat_add, show argOff 0 + 4 * j = argOff j by
-      unfold argOff; omega]
+      unfold argOff; omega_using []]
   rw [e]
-  exact Offset.contains_base _ (by omega) (by omega)
+  exact Offset.contains_base _ (by omega_using [hj]) (by omega_using [hj])
 
 /-- A slot's word. -/
 theorem RF.readSlot {s : State} {B : Addr} (h : RF s B) {d : Nat} (hd : d + 4 ≤ frameBytes) :
     readSrc s (.mem (sp d)) = some (s.mem.readW (off B d) 32) := by
   show s.load32 (s.ea (sp d)) = _
-  rw [h.ea (by unfold argOff; omega), State.load32, ite_eq_left_iff.mpr fun e => absurd (h.read hd) e]
+  rw [h.ea (by unfold argOff; omega_using [hd]), State.load32, ite_eq_left_iff.mpr fun e => absurd (h.read hd) e]
 
 /-- The caller's argument `j`. -/
 theorem RF.readArgSrc {s : State} {B : Addr} (h : RF s B) {j : Nat} (hj : j < 13) :
     readSrc s (.mem (arg j)) = some (s.mem.readW (off B (argOff j)) 32) := by
   show s.load32 (s.ea (sp (argOff j))) = _
-  rw [h.ea (by unfold argOff; omega), State.load32, ite_eq_left_iff.mpr fun e => absurd (h.readArg hj) e]
+  rw [h.ea (by unfold argOff; omega_using [hj]), State.load32, ite_eq_left_iff.mpr fun e => absurd (h.readArg hj) e]
 
 theorem RF.of_keeps {rs : List Reg} {s s' : State} {B : Addr} (h : RF s B) (hk : Keeps rs s s')
     (hsp : .esp ∉ rs := by decide) : RF s' B :=
@@ -95,7 +95,7 @@ theorem wp_slot {s : State} {B : Addr} (hf : RF s B) {d : Nat} (hd : d + 4 ≤ f
     (k : ∀ t, RF t B → t.mem = s.mem.writeW (off B d) v → t.gpr = s.gpr → t.rd = s.rd → t.wr = s.wr →
       t.zf = s.zf → t.cf = s.cf → WP isa (.block is) t Q) :
     WP isa (.block (.store (sp d) r :: is)) s Q :=
-  wp_storeS (hf.ea (by unfold argOff frameBytes at *; omega)) (hf.write hd) fun t u =>
+  wp_storeS (hf.ea (by unfold argOff frameBytes at *; omega_using [hd])) (hf.write hd) fun t u =>
     k t (hf.of_mupd u) (by rw [u.mem, hv]) u.gpr u.rd u.wr u.zf u.cf
 
 end VG.Proof.Dsa.X86

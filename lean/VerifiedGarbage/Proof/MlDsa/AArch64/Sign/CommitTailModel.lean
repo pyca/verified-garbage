@@ -38,10 +38,10 @@ theorem streamOutput_append {m m' : Mem} {p : Addr} {j : Nat} {B : Spec.Sha3.Sta
   intro i hi
   by_cases he : i=j
   · subst i; exact hn
-  · refine (h i (by omega)).keep (by decide) hf ?_
+  · refine (h i (by omega_using [hi, he])).keep (by decide) hf ?_
     intro r hr
     rcases List.mem_singleton.mp hr with rfl
-    exact VG.Proof.MlDsa.AArch64.Optimized.Resident.block_disjoint (by decide) (by omega) (by omega)
+    exact VG.Proof.MlDsa.AArch64.Optimized.Resident.block_disjoint (by decide) (by omega_using [hi, he]) (by omega_using [hj])
 
 /-- Absorbs depend only on the words in their readable input slice. -/
 theorem xorWords_congr {A : Spec.Sha3.State} {m m' : Mem} {p : Addr} {n : Nat}

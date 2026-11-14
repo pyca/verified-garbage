@@ -21,7 +21,7 @@ theorem result_ok {base : Addr} {size : Nat} {s : State} (hs : Scr s base size)
   have hb : Layout.field .mask + 4 ≤ size := by
     have H : 8256 ≤ size := hz
     change 8248 ≤ size
-    omega
+    omega_using [H]
   unfold SignVerify.result
   refine wp_movS (readSrc_sc hs hb) fun u su _ => ?_
   refine wp_logicS (.inl rfl) rfl fun t ut => WP.block_nil ⟨?_, su.keeps.trans ut.keeps, ut.mem.trans su.mem⟩

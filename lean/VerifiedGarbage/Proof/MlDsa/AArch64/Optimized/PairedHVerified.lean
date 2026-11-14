@@ -159,7 +159,7 @@ theorem sumN_add (n : Nat) (f g : Nat → Nat) :
     sumN n (fun i => f i+g i)=sumN n f+sumN n g := by
   induction n with
   | zero => rfl
-  | succ n ih => simp only [sumN_succ,ih]; omega
+  | succ n ih => simp only [sumN_succ,ih]; omega_using []
 
 theorem sumN_swap (m n : Nat) (f : Nat → Nat → Nat) :
     sumN m (fun i => sumN n (f i))=sumN n (fun j => sumN m (fun i => f i j)) := by
@@ -171,7 +171,7 @@ theorem sumN_append (m n : Nat) (f : Nat → Nat) :
     sumN (m+n) f=sumN m f+sumN n (fun i => f (m+i)) := by
   induction n with
   | zero => simp [sumN]
-  | succ n ih => rw [show m+(n+1)=(m+n)+1 by omega,sumN_succ,ih,sumN_succ]; omega
+  | succ n ih => rw [show m+(n+1)=(m+n)+1 by omega_using [],sumN_succ,ih,sumN_succ]; omega_using []
 
 theorem sumN_blocks (m n : Nat) (f : Nat → Nat) :
     sumN m (fun i => sumN n (fun j => f (n*i+j)))=sumN (n*m) f := by
@@ -199,12 +199,12 @@ theorem pairedHintSum_order (f : Nat → Nat → Nat) :
     congr 1
     funext e
     congr 1
-    omega
+    omega_using []
   rw [he,sumN_blocks 8 32]
 
 theorem sumN_four (f : Nat → Nat) : sumN 4 f=f 0+f 1+f 2+f 3 := by
   change f 0+(f 1+(f 2+(f 3+0)))=f 0+f 1+f 2+f 3
-  omega
+  omega_using []
 
 theorem map_finRange_nat (n : Nat) (f : Nat → Nat) :
     (List.finRange n).map (fun i => f i.val)=(List.range n).map f := by

@@ -231,7 +231,7 @@ theorem Op.okLo {l h d : Reg} (hl : l ≠ d) (hh : h ≠ d) {o : Op} (hv : o.val
     simp only [Op.valid, Bool.and_eq_true, decide_eq_true_eq, bne_iff_ne, ne_eq] at hv
     simp only [Op.lo]
     split <;> simp only [List.mem_cons, List.not_mem_nil, or_false] <;>
-      rintro p (rfl | rfl) <;> exact ⟨by assumption, by omega, by omega⟩
+      rintro p (rfl | rfl) <;> exact ⟨by assumption, by omega_arith, by omega_arith⟩
   | shr n =>
     simp only [Op.valid, Bool.and_eq_true, decide_eq_true_eq] at hv
     simp only [Op.lo, List.mem_cons, List.not_mem_nil, or_false]
@@ -244,7 +244,7 @@ theorem Op.okHi {l h d : Reg} (hl : l ≠ d) (hh : h ≠ d) {o : Op} (hv : o.val
     simp only [Op.valid, Bool.and_eq_true, decide_eq_true_eq, bne_iff_ne, ne_eq] at hv
     simp only [Op.hi]
     split <;> simp only [List.mem_cons, List.not_mem_nil, or_false] <;>
-      rintro p (rfl | rfl) <;> exact ⟨by assumption, by omega, by omega⟩
+      rintro p (rfl | rfl) <;> exact ⟨by assumption, by omega_arith, by omega_arith⟩
   | shr n =>
     simp only [Op.valid, Bool.and_eq_true, decide_eq_true_eq] at hv
     simp only [Op.hi, List.mem_cons, List.not_mem_nil, or_false]
@@ -257,10 +257,10 @@ theorem Op.valLo (s : State) (l h : Reg) {o : Op} (hv : o.valid = true) :
     simp only [Op.valid, Bool.and_eq_true, decide_eq_true_eq, bne_iff_ne, ne_eq] at hv
     simp only [Op.lo, Op.loVals]
     split
-    · simp [val, Op2.eval, show 1 ≤ n by omega_using [hv], show 1 ≤ 32 - n by omega,
-        show 32 - n ≤ 31 by omega_using [hv], show n ≤ 31 by omega]
-    · simp [val, Op2.eval, show 1 ≤ n - 32 by omega, show n - 32 ≤ 31 by omega_using [hv],
-        show 1 ≤ 64 - n by omega_using [hv], show 64 - n ≤ 31 by omega]
+    · simp [val, Op2.eval, show 1 ≤ n by omega_using [hv], show 1 ≤ 32 - n by omega_arith,
+        show 32 - n ≤ 31 by omega_using [hv], show n ≤ 31 by omega_arith]
+    · simp [val, Op2.eval, show 1 ≤ n - 32 by omega_arith, show n - 32 ≤ 31 by omega_using [hv],
+        show 1 ≤ 64 - n by omega_using [hv], show 64 - n ≤ 31 by omega_arith]
   | shr n =>
     simp only [Op.valid, Bool.and_eq_true, decide_eq_true_eq] at hv
     simp [Op.lo, Op.loVals, val, Op2.eval, show 1 ≤ n by omega_using [hv], show 1 ≤ 32 - n by omega_using [hv],
@@ -273,10 +273,10 @@ theorem Op.valHi (s : State) (l h : Reg) {o : Op} (hv : o.valid = true) :
     simp only [Op.valid, Bool.and_eq_true, decide_eq_true_eq, bne_iff_ne, ne_eq] at hv
     simp only [Op.hi, Op.hiVals]
     split
-    · simp [val, Op2.eval, show 1 ≤ n by omega_using [hv], show 1 ≤ 32 - n by omega,
-        show 32 - n ≤ 31 by omega_using [hv], show n ≤ 31 by omega]
-    · simp [val, Op2.eval, show 1 ≤ n - 32 by omega, show n - 32 ≤ 31 by omega_using [hv],
-        show 1 ≤ 64 - n by omega_using [hv], show 64 - n ≤ 31 by omega]
+    · simp [val, Op2.eval, show 1 ≤ n by omega_using [hv], show 1 ≤ 32 - n by omega_arith,
+        show 32 - n ≤ 31 by omega_using [hv], show n ≤ 31 by omega_arith]
+    · simp [val, Op2.eval, show 1 ≤ n - 32 by omega_arith, show n - 32 ≤ 31 by omega_using [hv],
+        show 1 ≤ 64 - n by omega_using [hv], show 64 - n ≤ 31 by omega_arith]
   | shr n =>
     simp only [Op.valid, Bool.and_eq_true, decide_eq_true_eq] at hv
     simp [Op.hi, Op.hiVals, val, Op2.eval, show 1 ≤ n by omega_using [hv], show n ≤ 31 by omega_using [hv]]
@@ -817,7 +817,7 @@ theorem round_ok {st scr : BitVec 32} {H : HashValue} {M : Block} {s₀ s : Stat
     have v3 := vOff_lt t 3
     have v7 := vOff_lt t 7
     exact frame_write64 (N := 192) (frame_write64 (N := 192) (frame_write64 (N := 192) hI.frame (by simp)
-      (by omega_using [fitV]) (wOff_lt t) _) (by simp) (by omega_using [fitV]) (by omega) _) (by simp) (by omega_using [fitV]) (by omega) _
+      (by omega_using [fitV]) (wOff_lt t) _) (by simp) (by omega_using [fitV]) (by omega_using [v7]) _) (by simp) (by omega_using [fitV]) (by omega_using [v3]) _
 
 theorem Ctx.of_rinv {st scr : BitVec 32} {H : HashValue} {M : Block} {s₀ s : State} {t : Nat}
     (c : Ctx st scr s₀) (hI : RInv st scr H M s₀ t s) : Ctx st scr s :=

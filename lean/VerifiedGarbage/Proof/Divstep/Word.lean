@@ -4,6 +4,7 @@ import VerifiedGarbage.Proof.Divstep.WordBasic
 public import VerifiedGarbage.Proof.Divstep.BatchBasic
 public import VerifiedGarbage.Proof.Divstep.WordDef
 import Mathlib.Data.BitVec
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # Divsteps on 64-bit words
@@ -30,14 +31,14 @@ def WSt.rel (w : WSt) (t : MSt) (k : Nat) : Prop :=
 theorem shl1 (x : BitVec 64) : x <<< 1 = x + x := by
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_shiftLeft, BitVec.toNat_add, Nat.shiftLeft_eq, Nat.pow_one]
-  congr 1; omega
+  congr 1; omega_using []
 
 theorem ofInt_two_mul (a : Int) : BitVec.ofInt 64 (2 * a) = BitVec.ofInt 64 a <<< 1 := by
   rw [shl1, two_mul, BitVec.ofInt_add]
 
 theorem lowered {x : BitVec 64} {a : Int} {k : Nat} (h : (x.toNat : Int) % 2 ^ (k + 1) = a % 2 ^ (k + 1)) :
     (x.toNat : Int) % 2 ^ k = a % 2 ^ k := by
-  have hd : (2 : Int) ^ k ∣ 2 ^ (k + 1) := pow_dvd_pow 2 (by omega)
+  have hd : (2 : Int) ^ k ∣ 2 ^ (k + 1) := pow_dvd_pow 2 (by omega_using [])
   rw [← Int.emod_emod_of_dvd _ hd, h, Int.emod_emod_of_dvd _ hd]
 
 /-- `x - y` as an integer modulo `2^64`. -/
@@ -47,7 +48,7 @@ theorem toNat_sub_cong (x y : BitVec 64) :
   have := y.isLt
   push_cast
   rw [Int.emod_emod_of_dvd _ (by decide)]
-  omega
+  omega_using []
 
 theorem toNat_add_cong (x y : BitVec 64) :
     ((x + y).toNat : Int) % 2 ^ 64 = ((x.toNat : Int) + y.toNat) % 2 ^ 64 := by
@@ -60,7 +61,7 @@ theorem half_word {x : BitVec 64} {a : Int} {k : Nat} (hk : k + 1 ≤ 64)
   have hx2 : (x.toNat : Int) % 2 = 0 := by
     have := congrArg (· % 2) h
     simp only [Int.emod_emod_of_dvd _ (show (2 : Int) ∣ 2 ^ (k + 1) from dvd_pow_self 2 (by omega))] at this
-    omega
+    omega_using [ha, this]
   rw [BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow, Nat.pow_one]
   have : ((x.toNat / 2 : Nat) : Int) = (x.toNat : Int) / 2 := by push_cast; rfl
   rw [this]
@@ -111,7 +112,7 @@ theorem sign_word {d : Int} (hd : |d| < 2 ^ 62) : BitVec.ofInt 64 d >>> 63 = if 
   rw [BitVec.toNat_ushiftRight, BitVec.toNat_ofInt, Nat.shiftRight_eq_div_pow]
   rw [abs_lt] at hd
   push_cast
-  split <;> simp only [BitVec.toNat_ofNat] <;> omega
+  split <;> simp only [BitVec.toNat_ofNat] <;> omega_arith
 
 /-- A divstep on words. -/
 theorem wstep_rel {w : WSt} {t : MSt} {k : Nat} (hk : k + 1 ≤ 64) (h : w.rel t (k + 1))
@@ -120,7 +121,7 @@ theorem wstep_rel {w : WSt} {t : MSt} {k : Nat} (hk : k + 1 ≤ 64) (h : w.rel t
   have hpar : ∀ x : BitVec 64, ∀ a : Int, (x.toNat : Int) % 2 ^ (k + 1) = a % 2 ^ (k + 1) →
       (x.toNat : Int) % 2 = a % 2 := fun x a hx => by
     have := congrArg (· % 2) hx
-    simpa only [Int.emod_emod_of_dvd _ (show (2 : Int) ∣ 2 ^ (k + 1) from dvd_pow_self 2 (by omega))] using this
+    simpa only [Int.emod_emod_of_dvd _ (show (2 : Int) ∣ 2 ^ (k + 1) from dvd_pow_self 2 (by omega_using []))] using this
   have gG := hpar _ _ hG
   have hS := sign_word hd
   rw [← hD] at hS
@@ -128,11 +129,11 @@ theorem wstep_rel {w : WSt} {t : MSt} {k : Nat} (hk : k + 1 ≤ 64) (h : w.rel t
   have hd' : (2 : Int) ^ (k + 1) ∣ 2 ^ 64 := pow_dvd_pow 2 hk
   unfold mstep
   by_cases hg : t.g % 2 = 1
-  · rw [ite_t (show w.G.toNat % 2 = 1 by omega)] at hB
+  · rw [ite_t (show w.G.toNat % 2 = 1 by omega_using [gG, hg])] at hB
     by_cases hd0 : 0 ≤ t.d
-    · rw [ite_f (show ¬ t.d < 0 by omega)] at hS
+    · rw [ite_f (show ¬ t.d < 0 by omega_using [hd0])] at hS
       rw [wstep_swap w hB hS, ite_t ⟨hd0, hg⟩]
-      refine ⟨?_, ?_, ?_, ?_, ?_, lowered hG, half_word hk ?_ (by omega)⟩
+      refine ⟨?_, ?_, ?_, ?_, ?_, lowered hG, half_word hk ?_ (by omega_using [hf, hg])⟩
       · simp only; rw [hD, ofInt_sub', ofInt_two]; simp only [sub_eq_add_neg, add_comm]
       · simp only; rw [hQ, ofInt_two_mul]
       · simp only; rw [hR, ofInt_two_mul]
@@ -140,8 +141,8 @@ theorem wstep_rel {w : WSt} {t : MSt} {k : Nat} (hk : k + 1 ≤ 64) (h : w.rel t
       · simp only; rw [hR, hV, ofInt_sub']
       · rw [← Int.emod_emod_of_dvd _ hd', toNat_sub_cong, Int.emod_emod_of_dvd _ hd', Int.sub_emod, hG, hF,
           ← Int.sub_emod]
-    · rw [ite_t (show t.d < 0 by omega)] at hS
-      rw [wstep_odd w hB hS, ite_f (show ¬ (0 ≤ t.d ∧ t.g % 2 = 1) by omega)]
+    · rw [ite_t (show t.d < 0 by omega_using [hd0])] at hS
+      rw [wstep_odd w hB hS, ite_f (show ¬ (0 ≤ t.d ∧ t.g % 2 = 1) by omega_using [hd0])]
       refine ⟨?_, ?_, ?_, ?_, ?_, lowered hF, ?_⟩
       · simp only; rw [hD, BitVec.ofInt_add, BitVec.ofInt_ofNat, two64, add_comm]
       · simp only; rw [hU, ofInt_two_mul]
@@ -149,12 +150,12 @@ theorem wstep_rel {w : WSt} {t : MSt} {k : Nat} (hk : k + 1 ≤ 64) (h : w.rel t
       · simp only; rw [hQ, hU, hg, one_mul, BitVec.ofInt_add]
       · simp only; rw [hR, hV, hg, one_mul, BitVec.ofInt_add]
       · simp only; rw [hg, one_mul]
-        refine half_word hk ?_ (by omega)
+        refine half_word hk ?_ (by omega_using [hf, hg])
         rw [← Int.emod_emod_of_dvd _ hd', toNat_add_cong, Int.emod_emod_of_dvd _ hd', Int.add_emod, hG, hF,
           ← Int.add_emod]
-  · have hg0 : t.g % 2 = 0 := by omega
-    rw [ite_f (show ¬ w.G.toNat % 2 = 1 by omega)] at hB
-    rw [wstep_even w hB, ite_f (show ¬ (0 ≤ t.d ∧ t.g % 2 = 1) by omega)]
+  · have hg0 : t.g % 2 = 0 := by omega_using [hg]
+    rw [ite_f (show ¬ w.G.toNat % 2 = 1 by omega_using [gG, hg])] at hB
+    rw [wstep_even w hB, ite_f (show ¬ (0 ≤ t.d ∧ t.g % 2 = 1) by omega_using [hg])]
     refine ⟨?_, ?_, ?_, ?_, ?_, lowered hF, ?_⟩
     · simp only; rw [hD, BitVec.ofInt_add, BitVec.ofInt_ofNat, two64, add_comm]
     · simp only; rw [hU, ofInt_two_mul]
@@ -168,12 +169,12 @@ theorem wsteps_rel {w : WSt} {t : MSt} {K : Nat} (hK : K ≤ 64) (h : w.rel t K)
     (hd : |t.d| + 2 * K < 2 ^ 62) (hf : t.f % 2 = 1) : ∀ n ≤ K, (wsteps n w).rel (msteps n t) (K - n)
   | 0, _ => by simpa [wsteps, msteps] using h
   | n + 1, hn => by
-    have ih := wsteps_rel hK h hd hf n (by omega)
+    have ih := wsteps_rel hK h hd hf n (by omega_using [hn])
     rw [wsteps_succ, msteps_succ]
-    rw [show K - n = (K - (n + 1)) + 1 by omega] at ih
-    refine wstep_rel (by omega) ih ?_ (msteps_f_odd hf n)
+    rw [show K - n = (K - (n + 1)) + 1 by omega_using [hn]] at ih
+    refine wstep_rel (by omega_using [hK]) ih ?_ (msteps_f_odd hf n)
     have := msteps_d t n
-    have : (2 * n : Int) ≤ 2 * K := by exact_mod_cast (by omega : 2 * n ≤ 2 * K)
-    omega
+    have : (2 * n : Int) ≤ 2 * K := by exact_mod_cast (by omega_using [hn] : 2 * n ≤ 2 * K)
+    omega_arith
 
 end VG.Proof.Divstep

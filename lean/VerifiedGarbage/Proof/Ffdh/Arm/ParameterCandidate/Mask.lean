@@ -28,14 +28,14 @@ theorem maskStep_ok (s : State) {n i : Nat} (bound : n ≤ 32) (more : i < n)
     congr 1
     have positive := Nat.two_pow_pos i
     rw [Nat.pow_succ]
-    omega
+    omega_using [positive]
   have dec : BitVec.ofNat 32 (n - i) - 1 = BitVec.ofNat 32 (n - (i + 1)) := by
     change BitVec.ofNat 32 (n - i) - BitVec.ofNat 32 1 = _
-    rw [BitVec.ofNat_sub_ofNat_of_le _ _ (by decide) (by omega)]
+    rw [BitVec.ofNat_sub_ofNat_of_le _ _ (by decide) (by omega_using [more])]
     congr 1
   have zero : (BitVec.ofNat 32 (n - (i + 1)) == (0 : BitVec 32)) = decide (i + 1 = n) := by
-    rw [ofNat_beq_zero (k := n - (i + 1)) (by omega)]
-    simp only [show n - (i + 1) = 0 ↔ i + 1 = n by omega]
+    rw [ofNat_beq_zero (k := n - (i + 1)) (by omega_using [bound])]
+    simp only [show n - (i + 1) = 0 ↔ i + 1 = n by omega_using [more]]
   refine withRest_all [.r6, .r7] ?_ (by rfl) (by rfl)
   unfold VG.Impl.Ffdh.Arm.ParameterCandidate.maskStep
   ffrun [mask, count, inc, dec, zero]
@@ -52,7 +52,7 @@ theorem maskLoop_ok (s : State) {n : Nat} (positive : 0 < n) (bound : n ≤ 32)
   refine WP.loop (M := isa) inv ?_ n s ?_
   · intro k t h
     obtain ⟨i, hik, hk, hm, hc, mem, rest⟩ := h
-    refine WP.mono (maskStep_ok t bound (by omega) hm hc) ?_
+    refine WP.mono (maskStep_ok t bound (by omega_using [hik, hk]) hm hc) ?_
     rintro u ⟨⟨um, uc, uz, umem⟩, ur⟩
     by_cases last : i + 1 = n
     · left
@@ -62,11 +62,11 @@ theorem maskLoop_ok (s : State) {n : Nat} (positive : 0 < n) (bound : n ≤ 32)
       · exact ⟨last ▸ um, by simpa [last] using uc,
           umem.trans mem, rest.trans ur⟩
     · right
-      refine ⟨?_, k - 1, by omega, i + 1, by omega, by omega,
+      refine ⟨?_, k - 1, by omega_using [hk], i + 1, by omega_using [hik, hk], by omega_using [hik, hk, last],
         um, uc, umem.trans mem, rest.trans ur⟩
       change some (!u.z) = some true
       simp only [uz, last, decide_false, Bool.not_false]
-  · exact ⟨0, by omega, positive, by simpa using mask,
+  · exact ⟨0, by omega_using [], positive, by simpa using mask,
       by simpa using count, rfl, Rest.refl _ _⟩
 
 end VG.Proof.Ffdh.Arm.ParameterCandidate

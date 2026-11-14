@@ -75,12 +75,12 @@ theorem readyAt_congr {d : Dir} {R : Nat} {m m' : Mem} {B : Addr} {w : List (Bit
     (hw : ∀ o, o + 8 ≤ 8 * tailSlot → m'.readW (B + BitVec.ofNat 64 o) 64 = m.readW (B + BitVec.ofNat 64 o) 64) :
     ReadyAt d R m' B w := by
   obtain ⟨hm, he⟩ := h
-  have hg4 : R / 6 ≤ 4 := by omega
+  have hg4 : R / 6 ≤ 4 := by omega_using [hR]
   refine ⟨fun kv hkv => ?_, fun i hi => (he i hi).congr fun j hj => ?_⟩
   · have hk := mask_range hkv
     rw [← hm kv hkv]
-    exact hw (8 * kv.1) (by rw [tailSlot_eq]; omega)
-  · exact hw (8 * keySlot + 64 * i + 8 * j) (by rw [keySlot_eq, tailSlot_eq]; omega)
+    exact hw (8 * kv.1) (by rw [tailSlot_eq]; omega_using [hk])
+  · exact hw (8 * keySlot + 64 * i + 8 * j) (by rw [keySlot_eq, tailSlot_eq]; omega_using [hR, hi, hj])
 
 /-- A word of the core's slots before the tail buffer is outside the regions
 that are disjoint from the core's slots or within the tail buffer. -/
@@ -88,11 +88,11 @@ theorem word_disjoint {dir : Dir} {B : Addr} {o : Nat} (ho : o + 8 ≤ 8 * tailS
     (hr : Region.Disjoint (coreRegion (dirCore dir) B) r ∨ Region.Sub r (blkRegion (dirCore dir) B)) :
     Region.Disjoint ⟨B + BitVec.ofNat 64 o, 8⟩ r := by
   rcases hr with h | h
-  · exact h.sub_left (VG.Offset.sub_base B (show o + 8 ≤ 8 * slots by rw [slots_eq]; rw [tailSlot_eq] at ho; omega))
+  · exact h.sub_left (VG.Offset.sub_base B (show o + 8 ≤ 8 * slots by rw [slots_eq]; rw [tailSlot_eq] at ho; omega_using [ho]))
   · refine Region.Disjoint.sub_right ?_ h
     show Region.Disjoint ⟨B + BitVec.ofNat 64 o, 8⟩ ⟨B + BitVec.ofNat 64 (8 * tailSlot), 4 * 4 * 8⟩
-    exact VG.Offset.disjoint B (by simp only [tailSlot_eq] at ho ⊢; omega)
-      (by simp only [tailSlot_eq] at ho; omega) (by simp only [tailSlot_eq]; omega)
+    exact VG.Offset.disjoint B (by simp only [tailSlot_eq] at ho ⊢; omega_using [ho])
+      (by simp only [tailSlot_eq] at ho; omega_using [ho]) (by simp only [tailSlot_eq]; omega_using [])
 
 theorem ready_frame {dir : Dir} {s s' : State} {B : Addr} {ws : List Region} {k : Nat × List (BitVec 64)}
     {rs : List Region} (h : Ready dir s B ws k) (hk : KeptBut s s') (hf : Frame rs s.mem s'.mem)
@@ -111,7 +111,7 @@ theorem keyArgs_congr {s s' : State} {rs : List Region} {k : Nat × List (BitVec
   simp only [schedWords]
   refine List.map_congr_left fun i hi => ?_
   have hi := List.mem_range.mp hi
-  have hl : 8 * i + 8 ≤ 272 := by simp only [Spec.Camellia.scheduleLength] at hi; omega
+  have hl : 8 * i + 8 ≤ 272 := by simp only [Spec.Camellia.scheduleLength] at hi; omega_using [hR, hi]
   exact (wordAt_frame hf fun r hr => (hdis r hr).sub_left (VG.Offset.sub_base p hl)).symm
 
 /-- The cipher of the direction `d`. -/
@@ -151,7 +151,7 @@ theorem ws_covers {s : State} {B : Addr} {d : Dir} (hS : ScrIn s B (dirCore d).t
     Covers [⟨B, 8 * slots⟩] s.wr :=
   Covers.of_sub fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr
-    exact ⟨_, hS.wr, 0, by simp, by have := slots_le d; simp only; omega⟩
+    exact ⟨_, hS.wr, 0, by simp, by have := slots_le d; simp only; omega_using [this]⟩
 
 theorem sreg_not_parked : ∀ i < 18, sreg i ∉ [Reg.r0, .r4, .r5, .r6, .r9, .r10, .r11, .r12] := by decide
 
@@ -166,9 +166,9 @@ theorem prepare_wp (d : Dir) {s : State} {B : Addr} {rs : List Region} {k : Nat 
       (∀ r ∈ kept, s'.gpr r = s.gpr r) ∧ Frame [coreRegion (dirCore d) B] s.mem s'.mem ∧
       s'.rd = s.rd ∧ s'.wr = s.wr := by
   obtain ⟨p, hp, h28, hR, hws, hin, hfit, hdis⟩ := hk
-  have hfB : B.toNat + 8 * slots ≤ 2 ^ 64 := by have := hS.fit; have := slots_le d; omega
+  have hfB : B.toNat + 8 * slots ≤ 2 ^ 64 := by have := hS.fit; have := slots_le d; omega_arith
   have dSS : Region.Disjoint ⟨p, 272⟩ ⟨B, 8 * slots⟩ :=
-    (hdis _ hm).sub_right (Region.sub_prefix (by have := slots_le d; omega))
+    (hdis _ hm).sub_right (Region.sub_prefix (by have := slots_le d; omega_using [this]))
   -- The arguments, and the values to keep in registers the body does not write.
   let s₁ := (((((((s.write .r6 (s.gpr .r5)).write .r4 (s.gpr .r28)).write .r5 (BitVec.ofNat 64 (dirBit d))).write
     .r9 (s.gpr .r29)).write .r10 (s.gpr .r30)).write .r11 (s.gpr .r31)).write .r12 (s.gpr .r3)).write .r0 (s.gpr .r28)
@@ -260,14 +260,14 @@ theorem holds_of_keeps {R : Nat} {m m' : Mem} {B : Addr} {w : List (BitVec 64)} 
     (hR : R = 18 ∨ R = 24) (h : Proof.Camellia.Prepared.Holds layout m B R w d)
     (hk : Proof.Camellia.Prepared.Keeps B slots layout.cryptScratch m m') :
     Proof.Camellia.Prepared.Holds layout m' B R w d := fun r hr i hi => by
-  have hg : R / 6 ≤ 4 := by omega
+  have hg : R / 6 ≤ 4 := by omega_using [hR]
   have hr' := hr
   rw [layout_table] at hr'
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr'
-  rw [hk (r.1 + i) (by rw [slots_eq]; rcases hr' with rfl | rfl <;> dsimp only at hi ⊢ <;> omega) (by
+  rw [hk (r.1 + i) (by rw [slots_eq]; rcases hr' with rfl | rfl <;> dsimp only at hi ⊢ <;> omega_arith) (by
     simp only [layout, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq]
     rw [evenSlot_eq, m3Slot_eq, keySlot_eq, savedSlot_eq, tailSlot_eq]
-    rcases hr' with rfl | rfl <;> dsimp only at hi ⊢ <;> omega)]
+    rcases hr' with rfl | rfl <;> dsimp only at hi ⊢ <;> omega_arith)]
   exact h r hr i hi
 
 /-- Block `j` of blocks transformed by ECB. -/
@@ -328,7 +328,7 @@ theorem crypt_wp (d : Dir) {s : State} {B : Addr} {ws : List Region} {k : Nat ×
     (by lit_decide))
   · refine ⟨rfl, ?_, ?_, ?_, ?_, ?_⟩
     · rw [State.withRegions_wr, c4, c5, Nat.mul_comm]
-    · rw [c4, c5]; have := slots_le d; omega
+    · rw [c4, c5]; have := slots_le d; omega_using [hfB, this]
     · rw [c3]; exact hR
     · rw [c5, size_eq]
     · rw [c3, c4, hm₀]; exact ⟨k.2, specDir d, hH⟩

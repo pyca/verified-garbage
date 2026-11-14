@@ -49,7 +49,7 @@ theorem os2ip_ones : ∀ (n acc : Nat),
     rw [ff]
     have pos : 0 < 256 ^ n := Nat.pow_pos (by decide)
     generalize 256 ^ n = p at *
-    obtain ⟨q, rfl⟩ : ∃ q, p = q + 1 := ⟨p - 1, by omega⟩
+    obtain ⟨q, rfl⟩ : ∃ q, p = q + 1 := ⟨p - 1, by omega_using [pos]⟩
     grind
 
 theorem sat_candidate {bits : Nat} (hb : Bits bits) :
@@ -66,29 +66,29 @@ theorem sat_candidate {bits : Nat} (hb : Bits bits) :
     simp only [List.getElem_map, List.getElem_range, List.getElem_replicate]
     simp only [List.length_map, List.length_range] at hi
     unfold satMemory
-    rw [ite_eq_left (by simp only [BitVec.toNat_sub, BitVec.toNat_add, BitVec.toNat_ofNat]; omega)]
+    rw [ite_eq_left (by simp only [BitVec.toNat_sub, BitVec.toNat_add, BitVec.toNat_ofNat]; omega_using [hi])]
   unfold Proof.Dsa.ProbablePrime.candidateAt
   rw [bytes, VG.Proof.Dsa.decodeBE_os2ip]
   unfold Spec.Rsa.os2ip
   rw [os2ip_ones, Nat.zero_mul, Nat.zero_add]
-  rw [show (256 : Nat) = 2 ^ 8 by rfl, ← Nat.pow_mul, show 8 * (bits / 8) = bits by rw [← hs.hlen]; omega]
+  rw [show (256 : Nat) = 2 ^ 8 by rfl, ← Nat.pow_mul, show 8 * (bits / 8) = bits by rw [← hs.hlen]; omega_using [hl]]
 
 theorem sat_odd {bits : Nat} (hb : Bits bits) :
     Proof.Dsa.ProbablePrime.candidateAt (layout bits) (satMemory bits) 0x10000#64 % 2 = 1 := by
   rw [sat_candidate hb]
   have : 2 ^ bits % 2 = 0 := by
-    rw [show bits = (bits - 1) + 1 by rcases hb with rfl | rfl | rfl | rfl | rfl <;> decide, Nat.pow_succ]; omega
+    rw [show bits = (bits - 1) + 1 by rcases hb with rfl | rfl | rfl | rfl | rfl <;> decide, Nat.pow_succ]; omega_using []
   have := Nat.two_pow_pos bits
-  omega
+  omega_arith
 
 theorem sat_length {bits : Nat} (hb : Bits bits) :
     Spec.Dsa.bitLength (Proof.Dsa.ProbablePrime.candidateAt (layout bits) (satMemory bits) 0x10000#64) = bits := by
   rw [sat_candidate hb]
   have low : 1 ≤ bits := by rcases hb with rfl | rfl | rfl | rfl | rfl <;> decide
   have half : 2 ^ bits = 2 ^ (bits - 1) * 2 := by
-    rw [← Nat.pow_succ]; congr 1; omega
+    rw [← Nat.pow_succ]; congr 1; omega_using [low]
   have pos := Nat.two_pow_pos (bits - 1)
-  exact (VG.Proof.Dsa.bitLength_iff_bounds (by omega)).mpr ⟨by omega, by omega⟩
+  exact (VG.Proof.Dsa.bitLength_iff_bounds (by omega_using [low])).mpr ⟨by omega_using [half], by omega_using [half, pos]⟩
 
 theorem single_held {m : Mem} {f : String → Addr} {name : String} {words : List (BitVec 64)}
     (H : ∀ i < words.length, m.readW (f name + BitVec.ofNat 64 (8 * i)) 64 = words.getD i 0) :
@@ -110,7 +110,7 @@ theorem sat_table {bits : Nat} (hb : Bits bits) :
     (constMem_held 0x30000 VG.Impl.RsaKeyGen.TrialTable32.packed fit i index)
   intro j hj
   change (if _ then _ else _) = _
-  rw [ite_eq_right (by simp only [BitVec.toNat_sub, BitVec.toNat_add, BitVec.toNat_ofNat]; omega)]
+  rw [ite_eq_right (by simp only [BitVec.toNat_sub, BitVec.toNat_add, BitVec.toNat_ofNat]; omega_using [small, h384, hj])]
   rfl
 
 theorem packed_regions (f : String → Addr) :
@@ -130,7 +130,7 @@ theorem satisfiable {bits : Nat} (hb : Bits bits) : ∃ s, (contract bits).pre s
     all_goals first
       | exact sat_odd hb
       | exact sat_length hb
-      | (show _ ≤ 8 * 2000; omega)
+      | (show _ ≤ 8 * 2000; omega_using [hkw])
       | decide
       | exact Region.disjoint_of_sep (by decide +kernel)
   · refine ⟨?_, sat_table hb, ?_, ?_⟩

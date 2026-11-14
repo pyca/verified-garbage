@@ -71,7 +71,7 @@ theorem anyV_eq (s : State) : anyV s = 0 ↔ (stackArg s 1).setWidth 32 = 0 := b
     simp only [anyV, BitVec.toNat_setWidth] at this ⊢
     rw [show (0 : BitVec 64).toNat = 0 from rfl] at this
     rw [show (0 : BitVec 32).toNat = 0 from rfl]
-    omega
+    omega_using [this]
   · intro h; unfold anyV; rw [h]; rfl
 
 theorem expected_eq (s : State) :
@@ -96,13 +96,13 @@ theorem eb_bounds : 1 ≤ ebS s ∧ ebS s ≤ Proof.RsaPss.maxEmBits ∧ loS s +
   have h0' : (s.mem (s.gpr .x0)).toNat ≠ 0 := fun h => h0 (BitVec.eq_of_toNat_eq (by rw [h]; rfl))
   have hl8 := RsaPss.log2_lt8 (s.mem (s.gpr .x0))
   unfold loS elS ebS Spec.RsaPss.emLength ebV Proof.RsaPss.maxEmBits
-  omega
+  omega_using [hk1, hk2, hl8]
 
 omit hk2 in
 /-- `emBits`, from the modulus' length and first byte. -/
 theorem emBits_of :
     Spec.RsaPss.bitLength (Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (s.gpr .x0) (s.gpr .x1).toNat)) - 1 = ebS s := by
-  rw [bytesAt_cons _ _ (by omega), RsaPss.emBits_eq _ h0, bytesAt_length]
+  rw [bytesAt_cons _ _ (by omega_using [hk1]), RsaPss.emBits_eq _ h0, bytesAt_length]
   rfl
 
 /-- Verifying: `lo` zero bytes, then a consistent encoding. -/
@@ -111,17 +111,17 @@ theorem verifyOut_enc :
       Spec.RsaPss.verifyEncoding Hs Gs (Spec.Rsa.bytesAt s.mem (s.gpr .x4) Hs.len) ((pubX s).drop (loS s)) (ebS s)
         (sLenV s)) := by
   obtain ⟨hb1, -, hlok, -⟩ := eb_bounds hk1 hk2 h0
-  have hel : 1 ≤ elS s := by unfold elS Spec.RsaPss.emLength; omega
+  have hel : 1 ≤ elS s := by unfold elS Spec.RsaPss.emLength; omega_using [hb1]
   unfold verifyOut pubX pubOut
   rw [expected_eq, RsaPss.verify_encode₂ Hs Gs (emBits_of hk1 h0) (by rw [bytesAt_length, bytesAt_length])
-    (by rw [bytesAt_length]; unfold elS at hlok hel; omega), bytesAt_length]
+    (by rw [bytesAt_length]; unfold elS at hlok hel; omega_using [hk1, hel]), bytesAt_length]
 
 end
 
 /-- `lo ≤ 1` zero bytes: none, or the first byte zero. -/
 theorem take_zeros {x : List Byte} {lo : Nat} (hlo : lo ≤ 1) (hx : 1 ≤ x.length) :
     (x.take lo == Spec.RsaPss.zeros lo) = (lo == 0 || x.getD 0 0 == 0) := by
-  rcases (by omega : lo = 0 ∨ lo = 1) with rfl | rfl
+  rcases (by omega_using [hlo] : lo = 0 ∨ lo = 1) with rfl | rfl
   · rfl
   · obtain ⟨b, x, rfl⟩ : ∃ b y, x = b :: y := by
       cases x with

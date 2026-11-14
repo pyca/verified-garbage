@@ -40,7 +40,7 @@ theorem prime_frame_word {P : PrimeParams} {m m' : Mem} {rs : List (Nat × Nat)}
     (hn : P.B.toNat + P.Z ≤ 2 ^ 64) (hf : WorkFrame P.B rs (primeExtras P) m m')
     (hk : k < 32) (hh : ∀ r ∈ rs, 8 * k + 8 ≤ r.1 ∨ r.1 + r.2 ≤ 8 * k) :
     word m' P.B (8 * k) = word m P.B (8 * k) :=
-  hf.word_eq hh (by have := P.z256; omega) hn P.extras_disjoint
+  hf.word_eq hh (by have := P.z256; omega_using [hk, this]) hn P.extras_disjoint
 
 theorem PrimeState.advance {P : PrimeParams} {mi : BitVec 64} {used used' : Nat} {s t : State}
     {rs : List (Nat × Nat)} (h : PrimeState P mi used s)

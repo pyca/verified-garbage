@@ -24,14 +24,14 @@ theorem storeLow_ok {s : State} {B : BitVec 32} {Z w N j : Nat} (h : Ws s B Z w 
   have fit := h.arr_fit hj
   have hS : S w = 4 * (w + 2) := rfl
   have nw := h.nowrap
-  refine wp_str (by decide) (arr_addr0 h hj p) (h.write (by omega)) fun t u => ?_
+  refine wp_str (by decide) (arr_addr0 h hj p) (h.write (by omega_using [fit, hS])) fun t u => ?_
   have wp := h.wpos
   refine k t (h.of_mupd u) ?_ ?_ (u.rest _) ?_
-  · have o := writeW32_outside s.mem (State.addr B) (d := arr w j) (s.gpr .r1) (by omega)
-    rw [u.mem]; exact Keep.of_arr (d := 0) (by simpa only [Nat.add_zero] using o) (by omega) (by simp)
-  · rw [u.mem]; exact num_write0 _ _ h.wpos (by omega) _
+  · have o := writeW32_outside s.mem (State.addr B) (d := arr w j) (s.gpr .r1) (by omega_using [fit, nw])
+    rw [u.mem]; exact Keep.of_arr (d := 0) (by simpa only [Nat.add_zero] using o) (by omega_using [hS]) (by simp)
+  · rw [u.mem]; exact num_write0 _ _ h.wpos (by omega_using [fit, hS, nw]) _
   · rw [u.mem]
-    exact (writeW32_outside s.mem (State.addr B) (d := arr w j) (s.gpr .r1) (by omega)).w32 (by omega) (by omega)
+    exact (writeW32_outside s.mem (State.addr B) (d := arr w j) (s.gpr .r1) (by omega_using [fit, nw])).w32 (by omega_using [wp]) (by omega_using [fit, hS, nw])
 
 /-- `setOne j`: the low word of `[j]` := 1. -/
 theorem setOne_ok {s : State} {B : BitVec 32} {Z w N j : Nat} (h : Ws s B Z w N)
@@ -42,7 +42,7 @@ theorem setOne_ok {s : State} {B : BitVec 32} {Z w N j : Nat} (h : Ws s B Z w N)
     WP isa (.block (setOne j ++ rest)) s Q := by
   unfold setOne
   rw [List.append_assoc]
-  refine ptr_ok h (by decide) (by omega) fun s1 p1 r1 m1 h1 => ?_
+  refine ptr_ok h (by decide) (by omega_using [hj, hN]) fun s1 p1 r1 m1 h1 => ?_
   refine wp_mov (op2_imm (by decide)) fun s2 u2 => ?_
   refine storeLow_ok (h1.of_upd u2 (by decide) (by decide) (by decide)) hj
     (by rw [u2.other _ (by decide), p1]) fun t ht kt vt rt _ => k t ht ?_ ?_ ?_
@@ -61,10 +61,10 @@ theorem lowOp_ok {s : State} {B : BitVec 32} {Z w N j : Nat} (h : Ws s B Z w N)
       Rest opRegs s t → w32 t.mem (State.addr B) (arr w j + 4 * w) = w32 s.mem (State.addr B) (arr w j + 4 * w) →
       WP isa (.block rest) t Q) :
     WP isa (.block (ptr .r0 j ++ .ldr .r1 .r0 0 :: (ops ++ .str .r1 .r0 0 :: rest))) s Q := by
-  refine ptr_ok h (by decide) (by omega) fun s1 p1 r1 m1 h1 => ?_
+  refine ptr_ok h (by decide) (by omega_using [hj, hN]) fun s1 p1 r1 m1 h1 => ?_
   have fit := h.arr_fit hj
   have hS : S w = 4 * (w + 2) := rfl
-  refine wp_ldr (by decide) (arr_addr0 h1 hj p1) (h1.read (by omega)) fun s2 u2 => ?_
+  refine wp_ldr (by decide) (arr_addr0 h1 hj p1) (h1.read (by omega_using [fit, hS])) fun s2 u2 => ?_
   rw [WP.block_append_iff]
   refine WP.mono (hops s2 _ fun u' x => x) fun s3 u3 => ?_
   have h3 : Ws s3 B Z w N := (h1.of_upd u2 (by decide) (by decide) (by decide)).of_upd u3 (by decide)
@@ -88,7 +88,7 @@ theorem orOne_ok {s : State} {B : BitVec 32} {Z w N j : Nat} (h : Ws s B Z w N)
     (fun u R k' => wp_dp (op2_imm (by decide)) fun u' up => WP.block_nil (k' u' up))
     fun t ht kt vt rt _ => k t ht kt ?_ rt
   rw [vt, bv_or_one, BitVec.toNat_ofNat, Nat.mod_mod]
-  omega
+  omega_using []
 
 /-- `clrLow j`: the low bit of `[j]` cleared. -/
 theorem clrLow_ok {s : State} {B : BitVec 32} {Z w N j : Nat} (h : Ws s B Z w N)
@@ -108,6 +108,6 @@ theorem clrLow_ok {s : State} {B : BitVec 32} {Z w N j : Nat} (h : Ws s B Z w N)
         up'.wr.trans up.wr, up'.sp.trans up.sp⟩))
     fun t ht kt vt rt tt => k t ht kt ?_ rt tt
   rw [vt, bv_clr_one, BitVec.toNat_ofNat, Nat.mod_mod]
-  omega
+  omega_using []
 
 end VG.Proof.Rsa.Arm.Keys

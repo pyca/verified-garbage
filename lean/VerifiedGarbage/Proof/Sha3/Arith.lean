@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Spec.Sha3.Contract
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # The SHA-3 sponge: arithmetic and bytes, for every target
@@ -20,11 +21,11 @@ theorem ofNat_succ (k : Nat) : BitVec.ofNat 64 (k + 1) = BitVec.ofNat 64 k + 1 :
   rw [BitVec.ofNat_add]; rfl
 
 theorem ofNat_pred {k : Nat} (h : 1 ≤ k) : BitVec.ofNat 64 k - 1 = BitVec.ofNat 64 (k - 1) := by
-  rw [show k = (k - 1) + 1 by omega, ofNat_succ, Nat.add_sub_cancel, BitVec.add_sub_cancel]
+  rw [show k = (k - 1) + 1 by omega_using [h], ofNat_succ, Nat.add_sub_cancel, BitVec.add_sub_cancel]
 
 theorem sub_ofNat {a b : Nat} (h : b ≤ a) :
     BitVec.ofNat 64 a - BitVec.ofNat 64 b = BitVec.ofNat 64 (a - b) := by
-  conv => lhs; rw [show a = (a - b) + b by omega, BitVec.ofNat_add]
+  conv => lhs; rw [show a = (a - b) + b by omega_using [h], BitVec.ofNat_add]
   rw [BitVec.add_sub_cancel]
 
 theorem ofNat_beq_zero{k : Nat} (h : k < 2 ^ 64) : (BitVec.ofNat 64 k == 0) = decide (k = 0) := by
@@ -47,7 +48,7 @@ theorem sub_beq {a b : Nat} (ha : a < 2 ^ 64) (hb : b < 2 ^ 64) :
     rw [BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt ha,
       Nat.mod_eq_of_lt hb] at this
     change _ = 0 at this
-    omega
+    omega_using [ha, hb, this]
 
 theorem xor_setWidth (x y : Byte) : (x.setWidth 64 ^^^ y.setWidth 64).setWidth 8 = x ^^^ y := by
   ext i hi
@@ -74,7 +75,7 @@ theorem bytesAt_length (m : Mem) (p : Addr) (c : Nat) : (bytesAt m p c).length =
 
 theorem rate_bounds {r : Nat} (h : r ∈ rates) : 72 ≤ r ∧ r ≤ 168 := by
   simp only [rates, List.mem_cons, List.not_mem_nil, or_false] at h
-  omega
+  omega_using [h]
 
 theorem ne_of_lt200 {p : Addr} {a b : Nat} (ha : a < 200) (hb : b < 200) (h : a ≠ b) :
     p + BitVec.ofNat 64 a ≠ p + BitVec.ofNat 64 b := by
@@ -108,7 +109,7 @@ theorem writeW64_byte (m : Mem) (a : Addr) (v : BitVec 64) {d : Nat} (hd : d < 8
     (m.writeW a v) (a + BitVec.ofNat 64 d) = v.extractLsb' (8 * d) 8 := by
   simp only [Mem.writeW, Mem.write]
   rw [show a + BitVec.ofNat 64 d - a = BitVec.ofNat 64 d by bv_omega, BitVec.toNat_ofNat,
-    Nat.mod_eq_of_lt (by omega)]
+    Nat.mod_eq_of_lt (by omega_using [hd])]
   simp only [show d < 8 from hd, ↓reduceIte]
   rfl
 

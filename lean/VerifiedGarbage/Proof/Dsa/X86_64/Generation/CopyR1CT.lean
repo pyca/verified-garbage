@@ -39,7 +39,7 @@ theorem copyR1Args_state {p : PrimeParams} {s : State} (h : PrimeGood p s) :
       extBase aR1 .rbx)) s (CopyR1Regs p) := by
   obtain ⟨mi, hg⟩ := h
   have hl : ∀ i < 32, InRegions (s.rd ++ s.wr) (off p.B (8 * i)) 8 := fun i hi =>
-    hg.scr.ld (by have := hdr_lt_slot p.w 8 hi; have := p.dims.z; omega)
+    hg.scr.ld (by have := hdr_lt_slot p.w 8 hi; have := p.dims.z; omega_arith)
   rw [WP.block_append_iff]
   refine WP.mono (WP.keep [.r12, .rsi] (Q := fun t => t.gpr .r12 = BitVec.ofNat 64 p.w ∧
     t.gpr .rsi = off p.B (slot p.w aY) ∧ t.mem = s.mem) (by
@@ -47,7 +47,7 @@ theorem copyR1Args_state {p : PrimeParams} {s : State} (h : PrimeGood p s) :
         hg.hdr.hw, hg.hdr.harr aY (by decide)]) rfl) fun u ⟨⟨h12, hsi, hm⟩, hk⟩ => ?_
   have hu : Good u p.B p.Z p.w mi :=
     ⟨hg.scr.congr hk.2.2, (hk.gpr (by decide)).trans hg.rdi, by rw [hm]; exact hg.hdr⟩
-  exact WP.mono (extBase_ok hu p.dims.z (by have := p.dims.w128; omega)
+  exact WP.mono (extBase_ok hu p.dims.z (by have := p.dims.w128; omega_using [this])
     (j := aR1) (by decide) (r := .rbx) (by decide) rfl rfl) fun t ⟨hbx, _, kt⟩ =>
       ⟨(kt.gpr (by decide)).trans h12, (kt.gpr (by decide)).trans hsi, hbx⟩
 
@@ -76,11 +76,11 @@ theorem copyR1_good {p : PrimeParams} {s : State} (h : PrimeGood p s) :
   have hfit : slot p.w aR1 + 8 * (p.w + 2) ≤ p.Z := by
     exact Nat.le_trans (Nat.add_le_add_right
       (slot_mono p.w (show aR1 ≤ aRm1 by decide)) _) p.dims.x
-  refine WP.mono (copyToExt_ok hg p.dims.z (by have := p.dims.w4; omega)
-    (by have := p.dims.w128; omega) (a := aY) (d := aR1) (by decide) (by decide)
+  refine WP.mono (copyToExt_ok hg p.dims.z (by have := p.dims.w4; omega_using [this])
+    (by have := p.dims.w128; omega_using [this]) (a := aY) (d := aR1) (by decide) (by decide)
     hfit)
     fun t ⟨_, hf, hk⟩ => ?_
   exact ⟨mi, hg.scr.congr hk.2.2, (hk.gpr (by decide)).trans hg.rdi,
-    hg.hdr.outside hf (by unfold slot; omega)⟩
+    hg.hdr.outside hf (by unfold slot; omega_using [])⟩
 
 end VG.Proof.Dsa.X86_64.Generation

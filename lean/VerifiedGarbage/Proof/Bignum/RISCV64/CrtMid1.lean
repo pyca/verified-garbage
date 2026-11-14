@@ -119,8 +119,8 @@ theorem Scr.sub {s : State} {B : Addr} {Z d n : Nat} (hs : Scr s B Z) (h : d + n
   refine ⟨⟨B₀, o + d, L, hm, ?_, ?_, hL'⟩, ?_, ?_⟩
   · rw [hb]; simp only [Mont.off, BitVec.add_assoc, BitVec.ofNat_add]
   · exact Nat.le_trans (by rw [Nat.add_assoc]; exact Nat.add_le_add_left h o) hL
-  · rw [e]; omega
-  · rw [e]; omega
+  · rw [e]; omega_using [h, hn]
+  · rw [e]; omega_using [h8, ha]
 
 theorem Scr.le {s : State} {B : Addr} {Z n : Nat} (hs : Scr s B Z) (h : n ≤ Z) : Scr s B n :=
   ⟨let ⟨B₀, o, L, hm, hb, hL, hL'⟩ := hs.wr; ⟨B₀, o, L, hm, hb, by omega_arith, hL'⟩,
@@ -136,26 +136,26 @@ theorem sepXB {S : Addr} {n b k : Nat} (h : n ≤ b) (hb : b + k ≤ 2 ^ 64) (hk
     ∀ x, ofs S x < n → k ≤ ofs (Mont.off S b) x := fun x hx => by
   change (x - S).toNat < n at hx
   change k ≤ (x - Mont.off S b).toNat
-  rcases ofs_reb S x (b := b) (by omega) with ⟨_, _⟩ | ⟨_, h2⟩ <;> omega
+  rcases ofs_reb S x (b := b) (by omega_using [hb, hk]) with ⟨_, _⟩ | ⟨_, h2⟩ <;> omega_arith
 
 theorem sepBX {S : Addr} {n b k : Nat} (h : n ≤ b) (hb : b + k ≤ 2 ^ 64) (hk : 0 < k) :
     ∀ x, ofs (Mont.off S b) x < k → n ≤ ofs S x := fun x hx => by
   change (x - Mont.off S b).toNat < k at hx
   change n ≤ (x - S).toNat
-  rcases ofs_reb S x (b := b) (by omega) with ⟨_, _⟩ | ⟨_, h2⟩ <;> omega
+  rcases ofs_reb S x (b := b) (by omega_using [hb, hk]) with ⟨_, _⟩ | ⟨_, h2⟩ <;> omega_arith
 
 /-- A byte within `k` of `b` is within the scratch's `Z`. -/
 theorem sepIn {S : Addr} {b k Z : Nat} (h : b + k ≤ Z) (hZ : Z ≤ 2 ^ 64) (hk : 0 < k) :
     ∀ x, ofs (Mont.off S b) x < k → ofs S x < Z := fun x hx => by
   change (x - Mont.off S b).toNat < k at hx
   change (x - S).toNat < Z
-  rcases ofs_reb S x (b := b) (by omega) with ⟨_, h2⟩ | ⟨_, h2⟩ <;> omega
+  rcases ofs_reb S x (b := b) (by omega_using [h, hZ, hk]) with ⟨_, h2⟩ | ⟨_, h2⟩ <;> omega_arith
 
 theorem out_reb {S : Addr} {a o n : Nat} {m m' : Mem} (h : Mont.Outside (Mont.off S a) o n m m')
     (h' : a + o + n ≤ 2 ^ 64) (hn : 0 < n) : Mont.Outside S (a + o) n m m' := fun x hx => h x (by
   change (x - S).toNat < a + o ∨ a + o + n ≤ (x - S).toNat at hx
   change (x - Mont.off S a).toNat < o ∨ o + n ≤ (x - Mont.off S a).toNat
-  rcases ofs_reb S x (b := a) (by omega) with ⟨_, h2⟩ | ⟨_, h2⟩ <;> omega)
+  rcases ofs_reb S x (b := a) (by omega_using [h', hn]) with ⟨_, h2⟩ | ⟨_, h2⟩ <;> omega_arith)
 
 theorem word_off' (m : Mem) (S : Addr) (a d : Nat) : Mont.word m (Mont.off S a) d = Mont.word m S (a + d) := by
   simp only [Mont.word, Mont.off, BitVec.add_assoc, BitVec.ofNat_add]
@@ -164,7 +164,7 @@ theorem wordsVal_off (m : Mem) (S : Addr) (a : Nat) : ∀ d k,
     wordsVal m (Mont.off S a) d k = wordsVal m S (a + d) k
   | _, 0 => rfl
   | d, k + 1 => by
-    rw [wordsVal, wordsVal, word_off', wordsVal_off m S a (d + 8) k, show a + (d + 8) = a + d + 8 by omega]
+    rw [wordsVal, wordsVal, word_off', wordsVal_off m S a (d + 8) k, show a + (d + 8) = a + d + 8 by omega_using []]
 
 theorem wordsOf_le_of {l k : Nat} (h : l ≤ k) (hk : 9 ≤ k) : wordsOf l ≤ (k + 7) / 8 := by
   unfold wordsOf; split <;> omega_arith

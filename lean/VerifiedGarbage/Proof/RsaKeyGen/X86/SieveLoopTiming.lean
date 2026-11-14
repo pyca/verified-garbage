@@ -138,12 +138,12 @@ theorem loop_trace {g : Geometry} (v : g.Valid) {c d : Nat} (pattern : SamePatte
       (Q := VG.X86.Taint.Agree (τr [.esp])) ?_ g.limit).mono
       (fun _ _ H => ⟨0, v.limitPositive, rfl, H⟩) (fun _ _ H => H)
     rintro q s t tr ur u z ⟨i, index, rfl, S, T⟩ E G
-    have positive : 0 < g.limit - i := by omega
-    have bound : g.limit - i < 2 ^ 32 := by have := v.limitBound; omega
+    have positive : 0 < g.limit - i := by omega_using [index]
+    have bound : g.limit - i < 2 ^ 32 := by have := v.limitBound; omega_using [this]
     have hitEq := pattern i index
-    have trace := (step_trace v (by have := v.limitBound; omega) _ _ _ _ _ _ ⟨S, T⟩ E G).1
-    obtain ⟨U, _, Zu, _, _⟩ := wp_result (S.step v (by have := v.limitBound; omega) positive bound) E
-    obtain ⟨Z, _, Zz, _, _⟩ := wp_result (T.step v (by have := v.limitBound; omega) positive bound) G
+    have trace := (step_trace v (by have := v.limitBound; omega_using [index, this]) _ _ _ _ _ _ ⟨S, T⟩ E G).1
+    obtain ⟨U, _, Zu, _, _⟩ := wp_result (S.step v (by have := v.limitBound; omega_using [index, this]) positive bound) E
+    obtain ⟨Z, _, Zz, _, _⟩ := wp_result (T.step v (by have := v.limitBound; omega_using [index, this]) positive bound) G
     rw [← hitEq] at Z Zz
     have nextBound : nextCount (g.limit - i) (dividesAt c i) < 2 ^ 32 := Nat.lt_trans (nextCount_lt positive _) bound
     have eu : isa.eval .ne u = some (!decide (nextCount (g.limit - i) (dividesAt c i) = 0)) := by
@@ -175,7 +175,7 @@ theorem loop_trace {g : Geometry} (v : g.Valid) {c d : Nat} (pattern : SamePatte
       have count : nextCount (g.limit - i) (dividesAt c i) = g.limit - (i + 1) := by
         rw [missed]
         change g.limit - i - 1 = g.limit - (i + 1)
-        omega
+        omega_using []
       exact ⟨nextCount (g.limit - i) (dividesAt c i), nextCount_lt positive _, i + 1,
         by omega, count, U, Z⟩
   exact RelCT.seq raw (checkedBlockInvariant rfl rfl)

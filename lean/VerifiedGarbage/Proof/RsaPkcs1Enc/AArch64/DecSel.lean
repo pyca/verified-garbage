@@ -31,7 +31,7 @@ theorem two_mask (b : Byte) :
         have := congrArg (BitVec.setWidth 8) ((BitVec.xor_eq_zero_iff).mp e)
         rwa [BitVec.setWidth_setWidth_of_le _ (by decide), BitVec.setWidth_eq] at this)
       have : (b.setWidth 64 ^^^ 2).toNat ≠ 0 := fun e => hne (BitVec.eq_of_toNat_eq e)
-      show 1 ≤ _; omega
+      show 1 ≤ _; omega_using [this]
     simp only [this, ↓reduceIte, bm, h, decide_false, Bool.false_eq_true]
 
 theorem ten_mask {sep : Nat} (h : sep < 2 ^ 64) :
@@ -40,8 +40,8 @@ theorem ten_mask {sep : Nat} (h : sep < 2 ^ 64) :
   rw [show (BitVec.setWidth 64 (10 : BitVec 16) <<< 0).toNat = 10 from rfl, BitVec.toNat_ofNat,
     Nat.mod_eq_of_lt h]
   by_cases hs : sep < 10
-  · simp only [show ¬ 10 ≤ sep by omega, ↓reduceIte, bm, hs, decide_true]
-  · simp only [show 10 ≤ sep by omega, ↓reduceIte, bm, hs, decide_false, Bool.false_eq_true]
+  · simp only [show ¬ 10 ≤ sep by omega_using [hs], ↓reduceIte, bm, hs, decide_true]
+  · simp only [show 10 ≤ sep by omega_using [hs], ↓reduceIte, bm, hs, decide_false, Bool.false_eq_true]
 
 theorem one_mask (R : BitVec 64) :
     (if (1 : BitVec 64).toNat ≤ (R ^^^ 1).toNat then (0 : BitVec 64) else BitVec.allOnes 64) =
@@ -51,7 +51,7 @@ theorem one_mask (R : BitVec 64) :
   · have : (1 : BitVec 64).toNat ≤ (R ^^^ 1).toNat := by
       have hne : R ^^^ 1 ≠ 0 := fun e => h ((BitVec.xor_eq_zero_iff).mp e)
       have : (R ^^^ 1).toNat ≠ 0 := fun e => hne (BitVec.eq_of_toNat_eq e)
-      show 1 ≤ _; omega
+      show 1 ≤ _; omega_using [this]
     simp only [this, ↓reduceIte, bm, h, decide_false, Bool.false_eq_true]
 
 theorem bm_and (a b : Bool) : bm a &&& bm b = bm (a && b) := by
@@ -70,8 +70,8 @@ theorem vOf_eq (a b : Byte) (f : Bool) (sep : Nat) :
     (f && (decide (a = 0) && decide (b = 2)) && !decide (sep < 10)) = vOf a b f sep := by
   have e : (!decide (sep < 10)) = decide (10 ≤ sep) := by
     by_cases hs : sep < 10
-    · simp only [hs, decide_true, Bool.not_true, show ¬ 10 ≤ sep by omega, decide_false]
-    · simp only [hs, decide_false, Bool.not_false, show 10 ≤ sep by omega, decide_true]
+    · simp only [hs, decide_true, Bool.not_true, show ¬ 10 ≤ sep by omega_using [hs], decide_false]
+    · simp only [hs, decide_false, Bool.not_false, show 10 ≤ sep by omega_using [hs], decide_true]
   rw [e]
   unfold vOf
   cases f <;> by_cases ha : a = 0 <;> by_cases hb : b = 2 <;> by_cases hs : 10 ≤ sep <;> simp [ha, hb, hs]

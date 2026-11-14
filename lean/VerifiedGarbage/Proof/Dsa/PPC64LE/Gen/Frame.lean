@@ -94,7 +94,7 @@ theorem GI.scrBig (h : GI G STK σ V LS s) : 8 * (64 * G.pLen + 1024) ≤ G.scrL
   have e2 : (σ.gpr .r9).toNat = G.scrLen := by rw [← h.hG]; rfl
   rw [e1, e2] at this
   simp only [Spec.Dsa.generationScratchWords] at this
-  omega
+  omega_using [this]
 
 /-- Byte `o` of `scratch`. -/
 abbrev GP.sa (G : GP) (o : Nat) : Addr := G.scr + BitVec.ofNat 64 o
@@ -108,7 +108,7 @@ theorem sw (G : GP) {o n : Nat} (ho : o + n ≤ G.scrLen * 8) : Region.Sub (G.rs
 theorem GI.inScr (h : GI G STK σ V LS s) {o n : Nat} (ho : o + n ≤ G.scrLen * 8) (hn : 0 < n := by decide) :
     InRegions s.wr (G.sa o) n := by
   have := h.scrFit
-  refine ⟨G.rScr, ?_, Offset.contains_base _ ho (by omega)⟩
+  refine ⟨G.rScr, ?_, Offset.contains_base _ ho (by omega_using [ho, hn, this])⟩
   rw [h.wr, h.pre.wr, h.hG]; simp
 
 theorem GI.inRdWr (h : GI G STK σ V LS s) {o n : Nat} (ho : o + n ≤ G.scrLen * 8) (hn : 0 < n := by decide) :
@@ -121,7 +121,7 @@ theorem GI.sdisj (h : GI G STK σ V LS s) {o n o' n' : Nat} (hs : o + n ≤ o' �
     (h1 : o + n ≤ G.scrLen * 8) (h2 : o' + n' ≤ G.scrLen * 8) :
     (G.rs o n).Disjoint (G.rs o' n') := by
   have := h.scrFit
-  exact Offset.disjoint _ hs (by omega) (by omega)
+  exact Offset.disjoint _ hs (by omega_using [h1, this]) (by omega_using [h2, this])
 
 /-- `scratch` is apart from the stack below the stack pointer. -/
 theorem GI.scr_below (h : GI G STK σ V LS s) {o n : Nat} (ho : o + n ≤ G.scrLen * 8) :
@@ -130,7 +130,7 @@ theorem GI.scr_below (h : GI G STK σ V LS s) {o n : Nat} (ho : o + n ≤ G.scrL
   exact this.symm.sub_left (sw G ho)
 
 theorem GI.hEnd_le (h : GI G STK σ V LS s) : hEnd ≤ G.scrLen * 8 := by
-  have := h.scrBig; simp only [hEnd, fSave]; omega
+  have := h.scrBig; simp only [hEnd, fSave]; omega_using [this]
 
 /-- A header word's value. -/
 theorem GI.fixedV (h : GI G STK σ V LS s) {o : Nat} {v : BitVec 64} (hp : (o, v) ∈ fixedWords G) :
@@ -170,14 +170,14 @@ theorem GI.of_scr {t : State} {ws : List Reg} (h : GI G STK σ V LS s) (r : Keep
   have hd : ∀ p, p + 8 ≤ hEnd → ∀ r ∈ [G.rs o n, rBelow σ STK], (G.rs p 8).Disjoint r := fun p hp r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
-    · exact h.sdisj (.inl (by omega)) (by omega) hon
-    · exact h.scr_below (by omega)
+    · exact h.sdisj (.inl (by omega_using [ho, hp])) (by omega_using [big, hp]) hon
+    · exact h.scr_below (by omega_using [big, hp])
   refine ⟨h.pre, h.hG, sp.trans h.sp, r.2.1.trans h.rd, r.2.2.trans h.wr, (r.gpr h28).trans h.r28,
     fun i hi => ?_, ?_, fun p hp => ?_, fun p hp => ?_, h.ls, h.frame.trans (f.sub fun x hx => ?_)⟩
-  · rw [fw_frame f (hd _ (by simp only [hEnd]; omega))]; exact h.saved i hi
+  · rw [fw_frame f (hd _ (by simp only [hEnd]; omega_using [hi]))]; exact h.saved i hi
   · rw [fw_frame f (hd _ (by decide))]; exact h.lr
-  · rw [fw_frame f (hd _ (by have := (fixed_ok G p hp).1; simp only [hEnd]; omega))]; exact h.fixed p hp
-  · rw [fw_frame f (hd _ (by have := (h.ls p hp).1; simp only [hEnd]; omega))]; exact h.slots p hp
+  · rw [fw_frame f (hd _ (by have := (fixed_ok G p hp).1; simp only [hEnd]; omega_using [this]))]; exact h.fixed p hp
+  · rw [fw_frame f (hd _ (by have := (h.ls p hp).1; simp only [hEnd]; omega_using [this]))]; exact h.slots p hp
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
     rcases hx with rfl | rfl
     · exact ⟨G.rScr, List.mem_cons_self, sw G hon⟩
@@ -192,32 +192,32 @@ theorem GI.stF (h : GI G STK σ V LS s) {o : Nat} (hv : VarOk G o) {r : Reg}
   obtain ⟨oS, o8, oLR, ofix⟩ := hv
   have big := h.hEnd_le
   have fit := h.scrFit
-  refine wp_std' (by decide) ⟨by simp only [fSave] at oS; omega, by omega⟩ (by rw [h.r28])
-    (h.inScr (by simp only [hEnd] at big; omega)) fun t m tsp tlr => k t ?_ m tlr
+  refine wp_std' (by decide) ⟨by simp only [fSave] at oS; omega_using [oS], by omega_using [o8]⟩ (by rw [h.r28])
+    (h.inScr (by simp only [hEnd] at big; omega_using [oS, big])) fun t m tsp tlr => k t ?_ m tlr
   have mt : t.mem = s.mem.writeW (G.sa o) (s.gpr r) := m.mem
   have sep : ∀ {p : Nat}, p % 8 = 0 → p ≠ o → p + 8 ≤ hEnd → fw t.mem G p = fw s.mem G p := fun hp hne hpE => by
     show t.mem.readW _ 64 = s.mem.readW _ 64
     rw [mt]
-    exact Mem.readW_writeW_sep (Offset.sep _ (by omega) (by simp only [hEnd] at *; omega)
-      (by simp only [hEnd, fSave] at *; omega)) (by decide)
+    exact Mem.readW_writeW_sep (Offset.sep _ (by omega_using [o8, hp, hne]) (by simp only [hEnd] at *; omega_using [big, fit, hpE])
+      (by simp only [hEnd, fSave] at *; omega_using [oS])) (by decide)
   refine ⟨h.pre, h.hG, by rw [tsp, h.sp], by rw [m.rd, h.rd], by rw [m.wr, h.wr],
     by rw [m.gpr, h.r28], fun i hi => ?_, ?_, fun p hp => ?_, fun o' ho' => ?_, fun o' ho' => ?_, ?_⟩
-  · rw [sep (by simp only [fSave]; omega) (by simp only [fSave] at *; omega) (by simp only [hEnd]; omega)]
+  · rw [sep (by simp only [fSave]; omega_using []) (by simp only [fSave] at *; omega_using [oS]) (by simp only [hEnd]; omega_using [hi])]
     exact h.saved i hi
   · rw [sep (by decide) (Ne.symm oLR) (by decide)]; exact h.lr
   · obtain ⟨b1, b2⟩ := fixed_ok G p hp
-    exact (sep b2 (fun e => ofix p hp e.symm) (by simp only [hEnd]; omega)).trans (h.fixed p hp)
+    exact (sep b2 (fun e => ofix p hp e.symm) (by simp only [hEnd]; omega_using [b1])).trans (h.fixed p hp)
   · by_cases he : o' = o
     · subst he; show t.mem.readW _ 64 = _; rw [mt, Mem.readW_writeW_self64, upd_self]
     · have ho'' := (List.mem_cons.mp ho').resolve_left he
       obtain ⟨l1, l2, _, _⟩ := h.ls o' ho''
-      rw [sep l2 he (by simp only [hEnd]; omega), upd_ne _ _ he]; exact h.slots o' ho''
+      rw [sep l2 he (by simp only [hEnd]; omega_using [l1]), upd_ne _ _ he]; exact h.slots o' ho''
   · rcases List.mem_cons.mp ho' with rfl | ho'
     · exact ⟨oS, o8, oLR, ofix⟩
     · exact h.ls o' ho'
   · rw [mt]
-    exact h.frame.writeW List.mem_cons_self _ (Offset.contains_base _ (by simp only [hEnd] at big; omega)
-      (by simp only [fSave] at oS; omega))
+    exact h.frame.writeW List.mem_cons_self _ (Offset.contains_base _ (by simp only [hEnd] at big; omega_using [oS, big])
+      (by simp only [fSave] at oS; omega_using [oS]))
 
 end
 

@@ -118,13 +118,13 @@ theorem bytesAt_agree {m₁ m₂ : Mem} {p : Addr} {k : Nat}
   refine List.map_congr_left fun i hi => ?_
   simp only [List.mem_range] at hi
   rw [Offset.add_add]
-  exact h _ (Offset.contains_base _ (by omega) (by omega))
+  exact h _ (Offset.contains_base _ (by omega_using [hn, hi]) (by omega_using [hk, hn, hi]))
 
 /-- `bytesAt_agree` at offset 0. -/
 theorem bytesAt_agree0 {m₁ m₂ : Mem} {p : Addr} {k : Nat}
     (h : ∀ a, Region.Contains ⟨p, k⟩ a 1 → m₁ a = m₂ a) (hk : k < 2 ^ 64) {n : Nat} (hn : n ≤ k) :
     Spec.Sha3.bytesAt m₁ p n = Spec.Sha3.bytesAt m₂ p n := by
-  have := bytesAt_agree h hk (o := 0) (n := n) (by omega)
+  have := bytesAt_agree h hk (o := 0) (n := n) (by omega_using [hn])
   rwa [show p + BitVec.ofNat 64 0 = p from BitVec.add_zero p] at this
 
 theorem vs4 {vs : List (BitVec 64)} (h : vs.length = 4) : ∃ a b c d, vs = [a, b, c, d] :=
@@ -139,7 +139,7 @@ theorem vs6 {vs : List (BitVec 64)} (h : vs.length = 6) : ∃ a b c d e f, vs = 
 /-- Two buffers of a contract, one of them writable, lie apart. -/
 theorem pw_disj {l : List (Region × Bool)} (h : l.Pairwise (fun a b => (a.2 || b.2) = true → a.1.Disjoint b.1))
     {i j : Nat} (hij : i < j) (hj : j < l.length) (hw : (l[i].2 || l[j].2) = true) : l[i].1.Disjoint l[j].1 :=
-  List.pairwise_iff_getElem.mp h i j (by omega) hj hij hw
+  List.pairwise_iff_getElem.mp h i j (by omega_using [hij, hj]) hj hij hw
 
 /-! ## The functions, under a calling convention for which `callWipe` is verified -/
 
@@ -593,11 +593,11 @@ macro "sponge_depth " v:ident : tactic =>
 
 /-- At most one unit of stack: `16 * depth ≤ 16`. -/
 theorem depth16 {c : Prog isa} (h : adLe 1 c = true) : 16 * c.aarch64Depth ≤ 16 := by
-  have := adLe_spec h; omega
+  have := adLe_spec h; omega_using [this]
 
 /-- At most eight units of stack: `16 * depth ≤ 128`. -/
 theorem depth128 {c : Prog isa} (h : c.aarch64Depth ≤ 8) : 16 * c.aarch64Depth ≤ 128 := by
-  omega
+  omega_using [h]
 
 section
 variable (v : Proof.Sha3.AArch64.Permutation)

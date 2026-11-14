@@ -43,17 +43,17 @@ theorem hashPrep_ok {g : Geo} (G : GeoOk g) {E : Env} (v : E.Valid) {s : State} 
   have low := v.low
   have hs := B.scr
   rw [← G.N]
-  refine prep_ok G.hash hs (by simp only [sHScr]; omega) fun t eb ea ep gt rd wr _ => ?_
+  refine prep_ok G.hash hs (by simp only [sHScr]; omega_using [sz]) fun t eb ea ep gt rd wr _ => ?_
   have tsp : t.gpr .esp = s.gpr .esp := gt _ (by decide) (by decide) (by decide) (by decide)
   have tdi : t.gpr .edi = s.gpr .edi := gt _ (by decide) (by decide) (by decide) (by decide)
-  have hsS : sState < E.size := by simp only [sState]; omega
-  have hsC : sHScr < E.size := by simp only [sHScr]; omega
+  have hsS : sState < E.size := by simp only [sState]; omega_using [sz]
+  have hsC : sHScr < E.size := by simp only [sHScr]; omega_using [sz]
   have yNat := Scr.toNat_add hs hsS
   have yW := Scr.wide hs hsS
   have cNat := Scr.toNat_add hs hsC
   have cW := Scr.wide hs hsC
   have stkSub : Region.Sub (stk s) E.stackRegion := by
-    simp only [stk, B.sp, Env.stackRegion]; exact below_sub (by decide) (by omega)
+    simp only [stk, B.sp, Env.stackRegion]; exact below_sub (by decide) (by omega_using [low])
   have hstk : (stk s).Disjoint E.scratchRegion := v.scratchStack.symm.sub_left stkSub
   rw [B.edi] at eb ea ep yNat yW cNat cW
   have cargs : CmpArgs g.H.N g.H.B g.H.so t (E.base.setWidth 32 + BitVec.ofNat 32 sState)
@@ -61,20 +61,20 @@ theorem hashPrep_ok {g : Geo} (G : GeoOk g) {E : Env} (v : E.Valid) {s : State} 
     { ebx := eb
       eax := ea
       ebp := ep
-      sp48 := by rw [tsp, B.sp]; omega
-      cst := by rw [yW, wr]; exact Scr.covers hs (by rw [hB]; simp only [sState]; omega)
-      csc := by rw [cW, wr]; exact Scr.covers hs (by simp only [sHScr]; omega)
+      sp48 := by rw [tsp, B.sp]; omega_using [low]
+      cst := by rw [yW, wr]; exact Scr.covers hs (by rw [hB]; simp only [sState]; omega_using [sz, nl])
+      csc := by rw [cW, wr]; exact Scr.covers hs (by simp only [sHScr]; omega_using [sz, so, sW])
       st_sc := by
         rw [yW, cW]
-        exact Offset.disjoint E.base (by simp only [sState, sHScr]; rw [hB]; omega) (by rw [hB]; omega) (by omega)
+        exact Offset.disjoint E.base (by simp only [sState, sHScr]; rw [hB]; omega_using [nl]) (by rw [hB]; omega_using [nl, yNat]) (by omega_using [so, sW, nw, hsC])
       b_st := by
         rw [stk, tsp, yW]
-        exact hstk.sub_right (Offset.sub_base E.base (by rw [hB]; simp only [sState]; omega))
+        exact hstk.sub_right (Offset.sub_base E.base (by rw [hB]; simp only [sState]; omega_using [sz, nl]))
       b_sc := by
         rw [stk, tsp, cW]
-        exact hstk.sub_right (Offset.sub_base E.base (by simp only [sHScr]; omega))
-      nst := by rw [yNat, hB]; simp only [sState]; omega
-      nsc := by rw [cNat]; simp only [sHScr]; omega }
+        exact hstk.sub_right (Offset.sub_base E.base (by simp only [sHScr]; omega_using [sz, so, sW]))
+      nst := by rw [yNat, hB]; simp only [sState]; omega_using [sz, nl, nw]
+      nsc := by rw [cNat]; simp only [sHScr]; omega_using [sz, so, sW, nw] }
   exact ⟨cargs, tsp.trans B.sp, tdi.trans B.edi⟩
 
 theorem hash_ct {g : Geo} (G : GeoOk g) {E : Env} (v : E.Valid) (dst : Nat) :

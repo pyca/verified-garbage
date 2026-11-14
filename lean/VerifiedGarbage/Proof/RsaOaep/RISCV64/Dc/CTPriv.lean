@@ -30,7 +30,7 @@ open VG.Proof.RsaPkcs1Sig.RISCV64 (Only Two Pins two_post two_alloc)
 open VG.Proof.RsaOaep.RISCV64 (two_seq)
 
 theorem psa_pub {pc : Bool} {a s : State} (p : PubD pc a s) {i : Nat} (hi : i < 12) : psa s i = psa a i := by
-  rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 ∨ i = 8 ∨ i = 9 ∨ i = 10 ∨
+  rcases (by omega_using [hi] : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 ∨ i = 8 ∨ i = 9 ∨ i = 10 ∨
       i = 11) with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
     simp only [psa, Sd, p.g .a7 (by decide), p.args _ (by decide : (0 : Nat) < 17),
       p.args _ (by decide : (1 : Nat) < 17), p.args _ (by decide : (2 : Nat) < 17),
@@ -49,14 +49,14 @@ theorem pre_leak {s t : State} (P : PreD true s) (A : AtPriv true s t) :
       Spec.Rsa.privatePrecomputedLeak s.mem (stackArg s 17) (s.gpr .a4).toNat := by
   have X := P.px rfl
   have pwl : Spec.Rsa.precomputedWords (s.gpr .a4).toNat ≤ (stackArg s 18).toNat := by
-    rw [X.pl]; unfold Spec.Rsa.privatePrecomputedWords; omega
+    rw [X.pl]; unfold Spec.Rsa.privatePrecomputedWords; omega_using []
   simp only [Spec.Rsa.privatePrecomputedLeak, callE_stackArg A (i := 12) (by decide), psa,
     callE_gpr true s t (r := .a3), A.a3]
   congr 1
   have subPre : Region.Sub ⟨stackArg s 17, 8 * Spec.Rsa.precomputedWords (s.gpr .a4).toNat⟩ (preR s) :=
-    fun _ hx => by simp only [Region.Contains] at hx ⊢; omega
+    fun _ hx => by simp only [Region.Contains] at hx ⊢; omega_using [pwl, hx]
   exact VG.Proof.Rsa.RISCV64.Priv.words_of_frame A.mem (fun r hr => by
-    rw [List.mem_singleton.mp hr]; exact X.kP.symm.sub_left subPre) (by have := X.wP; omega)
+    rw [List.mem_singleton.mp hr]; exact X.kP.symm.sub_left subPre) (by have := X.wP; omega_using [pwl, this])
 
 /-- What the two calls' public data share, from entry states with `a`'s. -/
 theorem priv_facts {pc : Bool} {a s₁ s₂ u₁ u₂ : State}
@@ -90,19 +90,19 @@ theorem priv_facts {pc : Bool} {a s₁ s₂ u₁ u₂ : State}
     by_cases h : i < 12
     · rw [psa_pub p₁ h, psa_pub p₂ h]
     · cases pc with
-      | false => exact absurd hi (by simp only [Bool.false_eq_true, ↓reduceIte]; omega)
+      | false => exact absurd hi (by simp only [Bool.false_eq_true, ↓reduceIte]; omega_using [h])
       | true =>
         obtain ⟨x₁, y₁⟩ := p₁.args2 rfl
         obtain ⟨x₂, y₂⟩ := p₂.args2 rfl
-        rcases (by simp only [↓reduceIte] at hi; omega : i = 12 ∨ i = 13) with rfl | rfl
+        rcases (by simp only [↓reduceIte] at hi; omega_using [h, hi] : i = 12 ∨ i = 13) with rfl | rfl
         · simp only [psa]; rw [x₁, x₂]
         · simp only [psa]; rw [y₁, y₂]
   · rw [m, m, callE_gpr _ _ _ (r := .a2), callE_gpr _ _ _ (r := .a3), callE_gpr _ _ _ (r := .a2),
-      callE_gpr _ _ _ (r := .a3), A₁.a2, A₁.a3, A₂.a2, A₂.a3, hb A₁ P₁.kn (by have := P₁.wn; omega),
-      hb A₂ P₂.kn (by have := P₂.wn; omega), p₁.n, p₂.n]
+      callE_gpr _ _ _ (r := .a3), A₁.a2, A₁.a3, A₂.a2, A₂.a3, hb A₁ P₁.kn (by have := P₁.wn; omega_using []),
+      hb A₂ P₂.kn (by have := P₂.wn; omega_using []), p₁.n, p₂.n]
   · rw [m, m, callE_gpr _ _ _ (r := .a4), callE_gpr _ _ _ (r := .a5), callE_gpr _ _ _ (r := .a4),
-      callE_gpr _ _ _ (r := .a5), A₁.a4, A₁.a5, A₂.a4, A₂.a5, hb A₁ P₁.ke (by have := P₁.we; omega),
-      hb A₂ P₂.ke (by have := P₂.we; omega), p₁.e, p₂.e]
+      callE_gpr _ _ _ (r := .a5), A₁.a4, A₁.a5, A₂.a4, A₂.a5, hb A₁ P₁.ke (by have := P₁.we; omega_using []),
+      hb A₂ P₂.ke (by have := P₂.we; omega_using []), p₁.e, p₂.e]
 
 theorem call_ct {pc : Bool} : RelCT isa (Two (APriv pc)) (privCall pc) fun _ _ => True := by
   cases pc with

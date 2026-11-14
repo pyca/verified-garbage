@@ -18,10 +18,10 @@ theorem polySum_dotK (offsets : Nat → Nat × Nat) (F G : (Nat × Nat) → Poly
   induction k with
   | zero => rfl
   | succ k ih =>
-    have hrec := ih (fun j hj => hf j (by omega)) (fun j hj => hg j (by omega))
+    have hrec := ih (fun j hj => hf j (by omega_using [hj])) (fun j hj => hg j (by omega_using [hj]))
     unfold Dot.polySum at *
     rw [List.range_succ,List.map_append,List.foldl_append,List.map_cons,List.map_nil,
-      List.foldl_cons,List.foldl_nil,hrec,hf k (by omega),hg k (by omega)]
+      List.foldl_cons,List.foldl_nil,hrec,hf k (by omega_using []),hg k (by omega_using [])]
     exact (KPke.foldK_succ zero_add_poly (fun j => multiplyNTTs (a j) (b j)) k).symm
 
 end VG.Proof.MlKem.AArch64.Optimized

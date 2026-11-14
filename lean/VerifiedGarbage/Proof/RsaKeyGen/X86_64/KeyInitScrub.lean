@@ -37,7 +37,7 @@ theorem wordsAt_congr {m₁ m₂ : Mem} {q : Addr} {k N : Nat} (hk : 8 * k ≤ N
   List.map_congr_left fun i hi => Mem.readW_congr fun t ht => by
     have := List.mem_range.mp hi
     rw [Offset.add_add]
-    exact (h _ (Offset.contains_base _ (by omega) (by omega))).symm
+    exact (h _ (Offset.contains_base _ (by omega_using [hk, ht, this]) (by omega_using [hk, hN, ht, this]))).symm
 
 theorem initOut : PostOut (Spec.RsaKeyGen.keyInitContract abi) (Spec.RsaKeyGen.keyInitSig.retBits 64) :=
   postOut_of_local ScrubAbi.plain fun vs m m₁ m₂ r hlen hb h => by
@@ -58,7 +58,7 @@ theorem initOut : PostOut (Spec.RsaKeyGen.keyInitContract abi) (Spec.RsaKeyGen.k
       refine List.map_congr_left fun i hi => ?_
       have := List.mem_range.mp hi
       rw [show (a0 + 48 : Addr) = a0 + BitVec.ofNat 64 48 from rfl, Offset.add_add]
-      exact (hb.1 _ (Offset.contains_base _ (by omega) (by omega))).symm
+      exact (hb.1 _ (Offset.contains_base _ (by omega_using [this]) (by omega_using [this]))).symm
     change @Curry.apply (Mem → Mem → BitVec _ → Prop) [_, _, _, _] _ _ _ m₁ r at h
     change @Curry.apply (Mem → Mem → BitVec _ → Prop) [_, _, _, _] _ _ _ m₂ r
     dsimp only [Curry.apply] at h ⊢

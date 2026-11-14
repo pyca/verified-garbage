@@ -21,18 +21,18 @@ theorem nonmask_field (f : Field) (h : f ≠ .mask) : f.offset + 8 ≤ Field.mas
 theorem rangeFrame_local {B : Addr} {o wx : Nat} {mem mem' : Mem}
     (hf : RangeFrame B o wx mem mem') (ho : o + slot wx 8 + tabBytes wx ≤ 2 ^ 64) :
     Frm B (localCallRanges o wx Field.mask.offset 8) mem mem' := by
-  have hslot : 256 ≤ slot wx 8 := by unfold slot hdrBytes; omega
+  have hslot : 256 ≤ slot wx 8 := by unfold slot hdrBytes; omega_using []
   intro x hx
   apply hf x
   · intro r hr
     have h := hx (128, 48) (by simp [localCallRanges])
     simp only [callRanges, List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl <;> simp only [arg, argLen] <;> omega
+    rcases hr with rfl | rfl <;> simp only [arg, argLen] <;> omega_using [h]
   · intro r hr
     simp only [workRanges, List.mem_singleton] at hr
     subst r
     have h := hx (o + 136, slot wx 8 + tabBytes wx - 136) (by simp [localCallRanges])
-    rcases ofs_rebase B x (o := o) (by omega) with ⟨h1, h2⟩ | ⟨h1, h2⟩ <;> simp only at * <;> omega
+    rcases ofs_rebase B x (o := o) (by omega_using [ho, hslot]) with ⟨h1, h2⟩ | ⟨h1, h2⟩ <;> simp only at * <;> omega_arith
   · exact hx (Field.mask.offset, 8) (by simp [localCallRanges])
 
 theorem checkFrame_field {B : Addr} {o wx : Nat} {mem mem' : Mem}
@@ -44,8 +44,8 @@ theorem checkFrame_field {B : Addr} {o wx : Nat} {mem mem' : Mem}
   intro r hr
   simp only [localCallRanges, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl
-  · right; omega
-  · left; omega
+  · right; omega_using [hb]
+  · left; omega_using [ho, hb]
   · exact Or.inl hm'
 
 theorem Ready.afterCheck {L : ExecutionLayout} {s t : State} (side : ModulusSide)
@@ -61,14 +61,14 @@ theorem Ready.afterCheck {L : ExecutionLayout} {s t : State} (side : ModulusSide
   have hn := h.scratch.nowrap
   have hhi := (side.bounds L).2.2.2.2.1
   have ho : pWorkspace ≤ side.offset := by cases side <;> decide
-  have hlf := rangeFrame_local hf (by omega)
+  have hlf := rangeFrame_local hf (by omega_using [hau, hn, hhi])
   have hfields : ∀ f, f ≠ .mask → word t.mem L.base f.offset = L.fields f :=
     fun f hm => (checkFrame_field hlf ho f hm).trans (h.fields f hm)
   cases side
   · exact ⟨hp, h.scratch.congr hk.wr, hfields, hc,
-      localCall_ready hlf h.qChild (by decide) (by omega) (Or.inr hpHi) (Or.inr (by decide))⟩
+      localCall_ready hlf h.qChild (by decide) (by omega_using [hqHi, hau, hn]) (Or.inr hpHi) (Or.inr (by decide))⟩
   · exact ⟨hp, h.scratch.congr hk.wr, hfields,
-      localCall_ready hlf h.pChild (by decide) (by omega) (Or.inl (by change pWorkspace + slot L.pWords 8 ≤ qWorkspace; omega)) (Or.inr (by decide)), hc⟩
+      localCall_ready hlf h.pChild (by decide) (by omega_using [hpHi, hqHi, hau, hn]) (Or.inl (by change pWorkspace + slot L.pWords 8 ≤ qWorkspace; omega_using [hpHi])) (Or.inr (by decide)), hc⟩
 
 theorem Ready.afterMask {L : ExecutionLayout} {s t : State}
     (h : Ready L s) (hp : Good t L.base activeBytes outerWords 0)
@@ -80,8 +80,8 @@ theorem Ready.afterMask {L : ExecutionLayout} {s t : State}
   have hn := h.scratch.nowrap
   have hau : activeBytes ≤ usedBytes := by decide
   refine ⟨hp, h.scratch.congr hk.wr, ?_,
-    maskWrite_child h.pChild hf (by decide) (by omega),
-    maskWrite_child h.qChild hf (by decide) (by omega)⟩
+    maskWrite_child h.pChild hf (by decide) (by omega_using [hhi, hn, hau]),
+    maskWrite_child h.qChild hf (by decide) (by omega_using [hqi, hn, hau])⟩
   intro f hm
   exact (hf.word (Or.inl (nonmask_field f hm))
     (Nat.le_trans (VG.Proof.Dsa.field_bounds f).2 (by decide))).trans (h.fields f hm)

@@ -119,7 +119,7 @@ theorem cand_stack (v : RoundImpl) :
     Impl.Bignum.Arm.rowBody2, Impl.Bignum.Arm.rowStep, Impl.Bignum.Arm.DownRow.body, Impl.Bignum.Arm.rowStepAt,
     Impl.Bignum.Arm.DownRow.step, FrameStack.armStack, List.cons_append, List.nil_append, Nat.max_zero,
     Nat.zero_max, Nat.max_self, List.length_cons, List.length_nil]
-  omega
+  omega_using [this]
 
 theorem search_verified_of (c : Cand) :
     Verified target (Impl.RsaKeyGen.Arm.Search.code c.call)

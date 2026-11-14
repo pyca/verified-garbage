@@ -31,7 +31,7 @@ open VG.Proof.MlKem.AArch64 (Only wp_ldrw wp_nil toNat_readW32 abi_of agree_of)
 open VG.Proof.MlDsa.Pack
 
 theorem sbpLd_ok (K12 K13 : BitVec 64) : LdOk sbpLd BitVec.toNat K12 K13 := fun j _ _ _ hj hin =>
-  wp_ldrw ⟨by omega, by omega⟩ rfl hin fun _ o₁ e₁ => wp_nil ⟨by rw [e₁, toNat_readW32], o₁.mono⟩
+  wp_ldrw ⟨by omega_using [], by omega_using [hj]⟩ rfl hin fun _ o₁ e₁ => wp_nil ⟨by rw [e₁, toNat_readW32], o₁.mono⟩
 
 /-- A value at most `b` is less than `2 ^ bitlen b`. -/
 theorem lt_bitlen {x b : Nat} (h : x ≤ b) : x < 2 ^ bitlen b := Nat.lt_of_le_of_lt h Nat.lt_log2_self
@@ -63,12 +63,12 @@ theorem sbp_wp {s₀ : State} (hp : simpleBitPackK.pre s₀) :
   have hc := sbp_cases hb hlen
   unfold Impl.MlDsa.AArch64.Pack.simpleBitPack
   refine sel_ok (by decide) (fun s₁ o₁ h => ?_) (fun s₁ o₁ h => ?_)
-  · have e : bitlen (wArg s₀ .x1) = 4 := by omega
+  · have e : bitlen (wArg s₀ .x1) = 4 := by omega_using [hlen, h]
     exact go (d := 4) (c := 2) (nb := 1) ⟨by decide, by decide, rfl, by decide, by decide, rfl, rfl⟩ e s₁ o₁
   refine sel_ok (by decide) (fun s₂ o₂ h' => ?_) (fun s₂ o₂ h' => ?_)
-  · have e : bitlen (wArg s₀ .x1) = 6 := by rw [o₁.get .x3] at h'; omega
+  · have e : bitlen (wArg s₀ .x1) = 6 := by rw [o₁.get .x3] at h'; omega_using [hlen, h']
     exact go (d := 6) (c := 4) (nb := 3) ⟨by decide, by decide, rfl, by decide, by decide, rfl, rfl⟩ e s₂ (o₁.trans o₂).mono
-  · have e : bitlen (wArg s₀ .x1) = 10 := by rw [o₁.get .x3] at h'; omega
+  · have e : bitlen (wArg s₀ .x1) = 10 := by rw [o₁.get .x3] at h'; omega_using [hc, h, h']
     exact go (d := 10) (c := 4) (nb := 5) ⟨by decide, by decide, rfl, by decide, by decide, rfl, rfl⟩ e s₂ (o₁.trans o₂).mono
 
 theorem simpleBitPack_correct (s : State) (hs : simpleBitPackK.pre s) :

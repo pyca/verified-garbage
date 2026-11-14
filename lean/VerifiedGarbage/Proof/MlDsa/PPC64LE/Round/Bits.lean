@@ -165,7 +165,7 @@ theorem inv_step {g : Nat} {k4 k7 : BitVec 64} {out : Nat → BitVec 32} {s₀ :
     rw [m, show O s₀ + BitVec.ofNat 64 (4 * i) = coeffAddr (O s₀) i from rfl, coeffAt_writeW _ _ hj hi]
     by_cases e : i = j
     · subst e; rw [ite_eq_left rfl, er, hv]
-    · rw [ite_eq_right e]; exact h.coeff j hj (by omega)
+    · rw [ite_eq_right e]; exact h.coeff j hj (by omega_using [hji, e])
   · rw [r6, show (1 : BitVec 64) = BitVec.ofNat 64 1 from rfl, count_sub hi]; exact count_nz hi (by decide)
 
 /-- The loop, from the state after its constants are loaded. -/
@@ -186,7 +186,7 @@ theorem g_cases' (x : BitVec 64) :
   have hiff : (x - BitVec.ofNat 64 261888).setWidth 32 = 0 ↔ (x.setWidth 32).toNat = g32 := by
     rw [BitVec.toNat_eq, BitVec.toNat_setWidth, BitVec.toNat_sub, BitVec.toNat_ofNat,
       show (0 : BitVec 32).toNat = 0 from rfl, BitVec.toNat_setWidth, g32]
-    omega
+    omega_using []
   by_cases hc : (x.setWidth 32).toNat = g32
   · rw [decide_eq_true hc, beq_iff_eq.mpr (hiff.mpr hc)]
   · rw [decide_eq_false hc]

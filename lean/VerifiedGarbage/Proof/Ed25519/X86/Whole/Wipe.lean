@@ -20,34 +20,34 @@ theorem zeroWords_ok {s : State} {E : BitVec 32} {start count : Nat}
     exact WP.block_nil ⟨SetupStep.refl s, Frame.refl _ _, fun _ h => by omega⟩
   | succ count ih =>
     rw [zeroWords, List.replicate_succ, setup, WP.block_append_iff]
-    have hs : start < 64 := by omega
+    have hs : start < 64 := by omega_using [hlen]
     refine WP.mono (put_ok (v := .const 0) he (fun _ _ h => by cases h)
-      (frame_word hf hw (by omega))) fun u ⟨hu, hm⟩ => ?_
-    refine WP.mono (ih (hu.esp.trans he) (hu.wr ▸ hw) (by omega)) fun t ⟨ht, ft, vt⟩ => ?_
+      (frame_word hf hw (by omega_using [hlen]))) fun u ⟨hu, hm⟩ => ?_
+    refine WP.mono (ih (hu.esp.trans he) (hu.wr ▸ hw) (by omega_using [hlen])) fun t ⟨ht, ft, vt⟩ => ?_
     refine ⟨hu.trans ht, ?_, ?_⟩
     · have fs : Frame [⟨E.setWidth 64 + BitVec.ofNat 64 (4 * start), 4 * (count + 1)⟩] s.mem u.mem := by
-        rw [hm, addr_eq (by omega)]
+        rw [hm, addr_eq (by omega_using [hf, hlen])]
         exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _
-          (by simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; omega)
+          (by simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; omega_using [])
       refine fs.trans (Frame.sub ft ?_)
       rintro r hr
       simp only [List.mem_singleton] at hr; subst hr
-      exact ⟨_, List.mem_singleton_self _, Offset.sub _ (by omega) (by omega)⟩
+      exact ⟨_, List.mem_singleton_self _, Offset.sub _ (by omega_using []) (by omega_using [])⟩
     · intro j hj
       cases j with
       | zero =>
         simp only [Nat.add_zero]
         have keep : t.mem.readW (addr E (4 * start)) 32 = u.mem.readW (addr E (4 * start)) 32 := by
-          rw [addr_eq (by omega)]
+          rw [addr_eq (by omega_using [hf, hlen])]
           refine ft.readW (Region.contains_self _ _) ?_ (by decide)
           rintro r hr
           simp only [List.mem_singleton] at hr; subst hr
-          exact Offset.disjoint _ (by omega) (by omega) (by omega)
+          exact Offset.disjoint _ (by omega_using []) (by omega_using [hlen]) (by omega_using [hlen])
         rw [keep, hm, Mem.readW_writeW_self32]
         rfl
       | succ j =>
-        rw [show start + (j + 1) = start + 1 + j by omega]
-        exact vt j (by omega)
+        rw [show start + (j + 1) = start + 1 + j by omega_using []]
+        exact vt j (by omega_using [hj])
 
 theorem Ctx.zeroWords {E : BitVec 32} {g : Reg → BitVec 32} {m₀ : Mem} {rd wr : List Region}
     {s : State} (hc : Ctx E g m₀ rd wr s) {start count : Nat}
@@ -63,6 +63,6 @@ theorem Ctx.zeroWords {E : BitVec 32} {g : Reg → BitVec 32} {m₀ : Mem} {rd w
     simp [calleeSaved] at hr
   · rintro r hr
     simp only [List.mem_singleton] at hr; subst hr
-    exact .inl (Offset.sub_base _ (by omega))
+    exact .inl (Offset.sub_base _ (by omega_using [hlen]))
 
 end VG.Proof.Ed25519.X86.Whole

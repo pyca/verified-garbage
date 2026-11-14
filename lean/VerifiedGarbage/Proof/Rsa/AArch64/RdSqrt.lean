@@ -41,8 +41,8 @@ theorem square_ok {I : RpIn} {m₀ : Mem} {c : Bool} {s : State} (h : G I m₀ (
   have hW : Wk I.k = 2 * vk I.k + 2 := rfl
   have hk1 := L.k1
   have hk2 := L.k2
-  have hv1 : 2 ≤ vk I.k := by simp only [vk]; omega
-  have hvl : vk I.k < 200 := by simp only [vk]; omega
+  have hv1 : 2 ≤ vk I.k := by simp only [vk]; omega_using [hk1]
+  have hvl : vk I.k < 200 := by simp only [vk]; omega_using [hk2]
   have hb32 := hb32_of h L
   have q32 : slot (vk I.k) 32 = 256 + 32 * (8 * (vk I.k + 2)) := rfl
   have q1 : slot (vk I.k) nOne = 256 + 1 * (8 * (vk I.k + 2)) := rfl
@@ -51,7 +51,7 @@ theorem square_ok {I : RpIn} {m₀ : Mem} {c : Bool} {s : State} (h : G I m₀ (
   have q12 : slot (vk I.k) 12 = 256 + 12 * (8 * (vk I.k + 2)) := rfl
   have q13 : slot (vk I.k) 13 = 256 + 13 * (8 * (vk I.k + 2)) := rfl
   have one' : wv s.mem I.B (slot (vk I.k) nOne) (vk I.k) = 1 := by
-    rw [wv_low_of_lt (w := vk I.k + 2) (by omega) (by rw [one]; exact Nat.one_lt_two_pow (by omega)), one]
+    rw [wv_low_of_lt (w := vk I.k + 2) (by omega_using []) (by rw [one]; exact Nat.one_lt_two_pow (by omega_using [hv1])), one]
   unfold square
   simp only [seqs]
   refine WP.seq (WP.mono (ones_ok s) fun s₁ ⟨⟨h15, _, m₁⟩, k₁⟩ => ?_)
@@ -60,10 +60,10 @@ theorem square_ok {I : RpIn} {m₀ : Mem} {c : Bool} {s : State} (h : G I m₀ (
   have g₂ := g₁.out (by decide) (Nat.le_refl _) o₂ k₂ (by decide)
   refine WP.seq (WP.mono (addA_ok g₂.ws (o := nB) (a := nD) (b := nOne) (by decide) (by decide) (by decide)
     (by decide) (by decide) (c := true) ((k₂.gpr .x15 (by decide)).trans h15)) fun s₃ ⟨v₃, _, o₃, k₃⟩ => ?_)
-  have g₃ := g₂.out (by decide) (by omega) o₃ k₃ (by decide)
+  have g₃ := g₂.out (by decide) (by omega_using []) o₃ k₃ (by decide)
   simp only [↓reduceIte] at v₃
-  rw [o₂.wv (rd_sep (by decide) (by omega) (by omega)) (by omega), m₁, hq,
-    o₂.wv (rd_sep (by decide) (by omega) (by omega)) (by omega), m₁, one'] at v₃
+  rw [o₂.wv (rd_sep (by decide) (by omega_using []) (by omega_using [])) (by omega_using [hvl, q3]), m₁, hq,
+    o₂.wv (rd_sep (by decide) (by omega_using []) (by omega_using [])) (by omega_using [hvl, q1]), m₁, one'] at v₃
   -- `b²` by rows into wide array 6.
   refine WP.seq (WP.mono (g₃.setWid_ok L) fun s₄ ⟨g₄, f₄, k₄⟩ => ?_)
   refine WP.seq (WP.mono (zeroA_ok g₄.ws (j := wSq) (by decide)) fun s₅ ⟨z₅, o₅, _, _, _, k₅⟩ => ?_)
@@ -84,49 +84,49 @@ theorem square_ok {I : RpIn} {m₀ : Mem} {c : Bool} {s : State} (h : G I m₀ (
   have hn := g₁₁.ws.scr.nowrap
   have z13 := g₁₁.ws.sl (j := 13) (by decide)
   have e12 : slot (Wk I.k) wSq = slot (vk I.k) 12 := slot_wide _ _
-  have eW : Wk I.k = vk I.k + vk I.k + 2 := by omega
+  have eW : Wk I.k = vk I.k + vk I.k + 2 := by omega_using [hW]
   -- What the rows read: `b`, and the accumulator zero.
   have mS : ∀ d n, 256 ≤ d → d + 8 * n ≤ 2 ^ 64 → (d + 8 * n ≤ slot (vk I.k) 12 ∨ slot (vk I.k) 12 + 8 * (Wk I.k + 2) ≤ d) →
       wv s₁₁.mem I.B d n = wv s₃.mem I.B d n := fun d n hd hd' hsep => by
     rw [m₁₁, m₁₀, m₉, Frm.hdrW_wv f₈ hd hd', m₇, m₆, o₅.wv (by rw [e12]; exact hsep) hd', Frm.hdrW_wv f₄ hd hd']
   have hb : wv s₁₁.mem I.B (slot (vk I.k) nB) (vk I.k) = (q + 1) % 2 ^ (64 * vk I.k) := by
-    rw [mS _ _ (slot_ge _ _) (by omega) (.inl (by simp only [slot, hdrBytes, nB]; omega)), v₃]
+    rw [mS _ _ (slot_ge _ _) (by omega_using [hvl, q6]) (.inl (by simp only [slot, hdrBytes, nB]; omega_using [])), v₃]
   have hA0 : wv s₁₁.mem I.B (slot (Wk I.k) wSq) (vk I.k + vk I.k + 2) = 0 := by
-    rw [← eW, m₁₁, m₁₀, m₉, Frm.hdrW_wv f₈ (slot_ge _ _) (by rw [e12]; omega), m₇, m₆,
-      wv_low_of_lt (w := Wk I.k + 2) (by omega) (by rw [z₅]; exact Nat.two_pow_pos _), z₅]
+    rw [← eW, m₁₁, m₁₀, m₉, Frm.hdrW_wv f₈ (slot_ge _ _) (by rw [e12]; omega_using [hW, hvl, q12]), m₇, m₆,
+      wv_low_of_lt (w := Wk I.k + 2) (by omega_using []) (by rw [z₅]; exact Nat.two_pow_pos _), z₅]
   refine WP.mono (mulRows_ok (ea := slot (vk I.k) nB) (eb := slot (vk I.k) nB) (eA := slot (Wk I.k) wSq)
     (wa := vk I.k) (wb := vk I.k) g₁₁.ws.scr h11 (by rw [k₁₁.gpr .x9 (by decide), h9₁₀]) h13
     (by rw [k₁₁.gpr .x12 (by decide), h12₁₀])
     (by rw [k₁₁.gpr .x8 (by decide), k₁₀.gpr .x8 (by decide), k₉.gpr .x8 (by decide), k₈.gpr .x8 (by decide), h8₇])
-    h7 (by omega) (by omega) (by omega) (by rw [e12]; simp only [slot, hdrBytes] at z13 ⊢; omega) (by omega) (by omega)
-    (.inl (by rw [e12]; simp only [slot, hdrBytes, nB]; omega)) (.inl (by rw [e12]; simp only [slot, hdrBytes, nB]; omega))
+    h7 (by omega_using [hv1]) (by omega_using [hv1]) (by omega_using [hvl]) (by rw [e12]; simp only [slot, hdrBytes] at z13 ⊢; omega_using [z13]) (by omega_using [q6, q13, z13]) (by omega_using [q6, q13, z13])
+    (.inl (by rw [e12]; simp only [slot, hdrBytes, nB]; omega_using [])) (.inl (by rw [e12]; simp only [slot, hdrBytes, nB]; omega_using []))
     (by rw [hA0]; exact Nat.two_pow_pos _)) fun t ⟨vt, ot, kt⟩ => ?_
   rw [hA0, Nat.zero_add, hb, ← eW] at vt
-  refine ⟨g₁₁.out2 (j := 12) (n := 16 * (vk I.k + 2)) (by decide) (by omega)
-    (by rw [← e12]; exact ot.mono (Nat.le_refl _) (by omega)) kt
+  refine ⟨g₁₁.out2 (j := 12) (n := 16 * (vk I.k + 2)) (by decide) (by omega_using [])
+    (by rw [← e12]; exact ot.mono (Nat.le_refl _) (by omega_using [])) kt
     (by decide), ?_, ?_, fun j k hj hk => ?_⟩
-  · rw [ot.wv (.inl (by rw [e12]; simp only [slot, hdrBytes, nB]; omega)) (by omega), hb]
+  · rw [ot.wv (.inl (by rw [e12]; simp only [slot, hdrBytes, nB]; omega_using [])) (by omega_using [hvl, q6]), hb]
   · have hbl : (q + 1) % 2 ^ (64 * vk I.k) < 2 ^ (64 * Wk I.k) :=
-      Nat.lt_of_lt_of_le (Nat.mod_lt _ (Nat.two_pow_pos _)) (Nat.pow_le_pow_right (by decide) (by omega))
+      Nat.lt_of_lt_of_le (Nat.mod_lt _ (Nat.two_pow_pos _)) (Nat.pow_le_pow_right (by decide) (by omega_using [hW]))
     have hbb : (q + 1) % 2 ^ (64 * vk I.k) * ((q + 1) % 2 ^ (64 * vk I.k)) < 2 ^ (64 * Wk I.k) :=
       calc (q + 1) % 2 ^ (64 * vk I.k) * ((q + 1) % 2 ^ (64 * vk I.k)) < 2 ^ (64 * vk I.k) * 2 ^ (64 * vk I.k) :=
             Nat.mul_lt_mul'' (Nat.mod_lt _ (Nat.two_pow_pos _)) (Nat.mod_lt _ (Nat.two_pow_pos _))
-        _ ≤ 2 ^ (64 * Wk I.k) := by rw [← Nat.pow_add]; exact Nat.pow_le_pow_right (by decide) (by omega)
+        _ ≤ 2 ^ (64 * Wk I.k) := by rw [← Nat.pow_add]; exact Nat.pow_le_pow_right (by decide) (by omega_using [hW])
     rw [vt, prod_iter _ _ _ hbl, Nat.mod_mod, Nat.mod_eq_of_lt hbb]
   · have sB : slot (vk I.k) j + 8 * k ≤ slot (vk I.k) nB ∨ slot (vk I.k) nB + 8 * (vk I.k + 2) ≤ slot (vk I.k) j := by
       rcases hj with hj | rfl | rfl
-      · left; have := slot_lt (w := vk I.k) (show j < nB from hj); omega
-      all_goals right; simp only [slot, hdrBytes] at q6 ⊢; omega
+      · left; have := slot_lt (w := vk I.k) (show j < nB from hj); omega_using [hk, this]
+      all_goals right; simp only [slot, hdrBytes] at q6 ⊢; omega_using [q6]
     have sS : slot (vk I.k) j + 8 * k ≤ slot (vk I.k) 12 := by
       rcases hj with hj | rfl | rfl
-      · have := slot_lt (w := vk I.k) (show j < nB from hj); omega
-      all_goals simp only [slot, hdrBytes] at q12 ⊢; omega
-    have bj : slot (vk I.k) j + 8 * k ≤ 2 ^ 64 := by omega
+      · have := slot_lt (w := vk I.k) (show j < nB from hj); omega_using [q6, q12, hk, this]
+      all_goals simp only [slot, hdrBytes] at q12 ⊢; omega_using [hk]
+    have bj : slot (vk I.k) j + 8 * k ≤ 2 ^ 64 := by omega_using [hvl, q12, sS]
     rw [ot.wv (.inl (by rw [e12]; exact sS)) bj, mS _ _ (slot_ge _ _) bj (.inl sS),
-      o₃.wv (by rcases sB with h | h; exact .inl h; exact .inr (by omega)) bj, o₂.wv sB bj, m₁]
+      o₃.wv (by rcases sB with h | h; exact .inl h; exact .inr (by omega_using [h])) bj, o₂.wv sB bj, m₁]
 
 theorem ok4_eq (sq f x : Nat) : (!(decide (sq < f) || decide (x < 1))) = (decide (f ≤ sq) && decide (1 ≤ x)) := by
-  by_cases a : f ≤ sq <;> by_cases b : 1 ≤ x <;> simp [a, b] <;> omega
+  by_cases a : f ≤ sq <;> by_cases b : 1 ≤ x <;> simp [a, b] <;> omega_using [b]
 
 /-- `minus4n`: `X = b² - 4 n` modulo `2^(64 W)` (wide array 7), and `4 n ≤ b²` and `1 ≤ X` and'ed into the mask. -/
 theorem minus4n_ok {I : RpIn} {m₀ : Mem} {c : Bool} {s : State} (h : G I m₀ (vk I.k) c s) (L : RpLens I) {N SQ : Nat}
@@ -137,7 +137,7 @@ theorem minus4n_ok {I : RpIn} {m₀ : Mem} {c : Bool} {s : State} (h : G I m₀ 
       wv t.mem I.B (slot (Wk I.k) wX4) (Wk I.k) = wsub (64 * Wk I.k) SQ (fourN (64 * Wk I.k) N) ∧
       (∀ j k, j < 8 → k ≤ vk I.k + 2 → wv t.mem I.B (slot (vk I.k) j) k = wv s.mem I.B (slot (vk I.k) j) k) := by
   have hW : Wk I.k = 2 * vk I.k + 2 := rfl
-  have hv1 : 1 ≤ vk I.k := by have := L.k1; simp only [vk]; omega
+  have hv1 : 1 ≤ vk I.k := by have := L.k1; simp only [vk]; omega_using []
   have hb32 := hb32_of h L
   have bN : slot (Wk I.k) wN + 8 * (Wk I.k + 2) ≤ 2 ^ 64 := h.bndW L (by decide) (Nat.le_refl _)
   have bS : slot (Wk I.k) wSq + 8 * (Wk I.k + 2) ≤ 2 ^ 64 := h.bndW L (by decide) (Nat.le_refl _)
@@ -151,19 +151,19 @@ theorem minus4n_ok {I : RpIn} {m₀ : Mem} {c : Bool} {s : State} (h : G I m₀ 
   refine WP.seq (WP.mono (h.setWid_ok L) fun s₁ ⟨g₁, f₁, k₁⟩ => ?_)
   refine WP.seq (WP.mono (dbl_ok g₁.ws (a := wN) (by decide) (b := false) (fun t h7 _ => c0_ok t h7))
     fun s₂ ⟨v₂, _, o₂, k₂⟩ => ?_)
-  have g₂ := g₁.out (by decide) (by omega) o₂ k₂ (by decide)
+  have g₂ := g₁.out (by decide) (by omega_using []) o₂ k₂ (by decide)
   refine WP.seq (WP.mono (dbl_ok g₂.ws (a := wN) (by decide) (b := false) (fun t h7 _ => c0_ok t h7))
     fun s₃ ⟨v₃, _, o₃, k₃⟩ => ?_)
-  have g₃ := g₂.out (by decide) (by omega) o₃ k₃ (by decide)
-  rw [v₂, Frm.hdrW_wv f₁ (slot_ge _ _) (by omega), hN] at v₃
+  have g₃ := g₂.out (by decide) (by omega_using []) o₃ k₃ (by decide)
+  rw [v₂, Frm.hdrW_wv f₁ (slot_ge _ _) (by omega_using [bN]), hN] at v₃
   have f4 : wv s₃.mem I.B (slot (Wk I.k) wN) (Wk I.k) = fourN (64 * Wk I.k) N := by
     rw [v₃]; simp [fourN]
   refine WP.seq (WP.mono (subA_ok g₃.ws (o := wX4) (a := wSq) (b := wN) (by decide) (by decide) (by decide)
     (by decide) (by decide)) fun s₄ ⟨v₄, h15₄, _, o₄, k₄⟩ => ?_)
-  have g₄ := g₃.out (by decide) (by omega) o₄ k₄ (by decide)
+  have g₄ := g₃.out (by decide) (by omega_using []) o₄ k₄ (by decide)
   have sq₃ : wv s₃.mem I.B (slot (Wk I.k) wSq) (Wk I.k) = SQ := by
-    rw [o₃.wv (rd_sep (by decide) (by omega) (by omega)) (by omega),
-      o₂.wv (rd_sep (by decide) (by omega) (by omega)) (by omega), Frm.hdrW_wv f₁ (slot_ge _ _) (by omega), hS]
+    rw [o₃.wv (rd_sep (by decide) (by omega_using []) (by omega_using [])) (by omega_using [bS]),
+      o₂.wv (rd_sep (by decide) (by omega_using []) (by omega_using [])) (by omega_using [bS]), Frm.hdrW_wv f₁ (slot_ge _ _) (by omega_using [bS]), hS]
   rw [f4, sq₃] at v₄ h15₄
   have hX : wv s₄.mem I.B (slot (Wk I.k) wX4) (Wk I.k) = wsub (64 * Wk I.k) SQ (fourN (64 * Wk I.k) N) :=
     sub_wsub (wv_lt _ _ _ _) v₄
@@ -171,25 +171,25 @@ theorem minus4n_ok {I : RpIn} {m₀ : Mem} {c : Bool} {s : State} (h : G I m₀ 
   refine wp_seqs_append (by simp [oneA]) (by simp) (WP.mono (oneA_ok g₅ (j := wOne) (by decide))
     fun s₆ ⟨g₆, v₆, o₆, k₆⟩ => ?_)
   have hX₆ : wv s₆.mem I.B (slot (Wk I.k) wX4) (Wk I.k) = wsub (64 * Wk I.k) SQ (fourN (64 * Wk I.k) N) := by
-    rw [o₆.wv (rd_sep (by decide) (by omega) (by omega)) (by omega), o₅.wv (hd_sep (by decide)) (by omega), hX]
+    rw [o₆.wv (rd_sep (by decide) (by omega_using []) (by omega_using [])) (by omega_using [bX]), o₅.wv (hd_sep (by decide)) (by omega_using [bX]), hX]
   have one₆ : wv s₆.mem I.B (slot (Wk I.k) wOne) (Wk I.k) = 1 := by
-    rw [wv_low_of_lt (w := Wk I.k + 2) (by omega) (by rw [v₆]; exact Nat.one_lt_two_pow (by omega)), v₆]
+    rw [wv_low_of_lt (w := Wk I.k + 2) (by omega_using []) (by rw [v₆]; exact Nat.one_lt_two_pow (by omega_using [hW])), v₆]
   simp only [seqs]
   refine WP.seq (WP.mono (subA_ok g₆.ws (o := wT) (a := wX4) (b := wOne) (by decide) (by decide) (by decide)
     (by decide) (by decide)) fun s₇ ⟨_, h15₇, _, o₇, k₇⟩ => ?_)
-  have g₇ := g₆.out (by decide) (by omega) o₇ k₇ (by decide)
+  have g₇ := g₆.out (by decide) (by omega_using []) o₇ k₇ (by decide)
   rw [hX₆, one₆] at h15₇
   refine WP.mono (andMask_ok g₇ h15₇) fun t ⟨gt, ot, _⟩ => ⟨gt, ?_, fun j k hj hk => ?_⟩
-  · rw [ot.wv (hd_sep (by decide)) (by omega), o₇.wv (rd_sep (by decide) (by omega) (by omega)) (by omega), hX₆]
-  · have sj := slot_lt (w := vk I.k) (show j < 32 by omega)
+  · rw [ot.wv (hd_sep (by decide)) (by omega_using [bX]), o₇.wv (rd_sep (by decide) (by omega_using []) (by omega_using [])) (by omega_using [bX]), hX₆]
+  · have sj := slot_lt (w := vk I.k) (show j < 32 by omega_using [hj])
     have e4 : wN = 4 := rfl
     have e7 : wX4 = 7 := rfl
     have e8 : wOne = 8 := rfl
     have e9 : wT = 9 := rfl
-    rw [ot.wv (hd_sep (by decide)) (by omega), o₇.wv (nw_sep (by omega) (by omega) hk (by omega)) (by omega),
-      o₆.wv (nw_sep (by omega) (by omega) hk (by omega)) (by omega), o₅.wv (hd_sep (by decide)) (by omega),
-      o₄.wv (nw_sep (by omega) (by omega) hk (by omega)) (by omega),
-      o₃.wv (nw_sep (by omega) (by omega) hk (by omega)) (by omega),
-      o₂.wv (nw_sep (by omega) (by omega) hk (by omega)) (by omega), Frm.hdrW_wv f₁ (slot_ge _ _) (by omega)]
+    rw [ot.wv (hd_sep (by decide)) (by omega_using [hb32, hk, sj]), o₇.wv (nw_sep (by omega_using [hj, e9]) (by omega_using [hj, e9]) hk (by omega_using [hW])) (by omega_using [hb32, hk, sj]),
+      o₆.wv (nw_sep (by omega_using [hj, e8]) (by omega_using [hj, e8]) hk (by omega_using [hW])) (by omega_using [hb32, hk, sj]), o₅.wv (hd_sep (by decide)) (by omega_using [hb32, hk, sj]),
+      o₄.wv (nw_sep (by omega_using [hj, e7]) (by omega_using [hj, e7]) hk (by omega_using [hW])) (by omega_using [hb32, hk, sj]),
+      o₃.wv (nw_sep (by omega_using [hj, e4]) (by omega_using [hj, e4]) hk (by omega_using [hW])) (by omega_using [hb32, hk, sj]),
+      o₂.wv (nw_sep (by omega_using [hj, e4]) (by omega_using [hj, e4]) hk (by omega_using [hW])) (by omega_using [hb32, hk, sj]), Frm.hdrW_wv f₁ (slot_ge _ _) (by omega_using [hb32, hk, sj])]
 
 end VG.Proof.Rsa.AArch64.Rd

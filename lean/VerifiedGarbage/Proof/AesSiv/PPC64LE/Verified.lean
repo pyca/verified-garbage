@@ -244,7 +244,7 @@ theorem descW_eq {m m' : Mem} {A : Addr} {N : Nat}
     (h : ∀ k < N * 16, m (A + BitVec.ofNat 64 k) = m' (A + BitVec.ofNat 64 k))
     {i j : Nat} (hi : i < N) (hj : j < 2) : descW m A i j = descW m' A i j := by
   have e := Mem.read_congr (m := m) (m' := m') (a := A + BitVec.ofNat 64 (16 * i + 8 * j))
-    (n := 64 / 8) fun k hk => by rw [Offset.add_add]; exact h _ (by omega)
+    (n := 64 / 8) fun k hk => by rw [Offset.add_add]; exact h _ (by omega_using [hi, hj, hk])
   simp only [descW, Mem.readW, e]
 
 /-- Two runs from the same public arguments: both from the public values of

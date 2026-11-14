@@ -88,7 +88,7 @@ theorem ckMod_ct {sX sXlen sDX sYlen : Nat} (hsX : sX < 32) (hsL : sXlen < 32) (
         have := L.k2
         dsimp only [CkIn.pub]
         rw [L.capk]
-        exact ⟨ckLenD_ok _ (by unfold wW wk; omega), by omega, by unfold wW wk; omega⟩)
+        exact ⟨ckLenD_ok _ (by unfold wW wk; omega_using [this]), by omega_using [], by unfold wW wk; omega_using []⟩)
       (by taint_decide) tHi tLo tCnt
   have rE : RelCT isa (Two GK) (seqs (wmodOne CheckCrtKey.topE lenE)) (Two GK) :=
     wmodOne_ckct (fun _ => 1) (fun p => (wW p.cap - 2) / 4 + 1) (fun p s _ => topE_ok p.B p.Z s.mem)
@@ -99,8 +99,8 @@ theorem ckMod_ct {sX sXlen sDX sYlen : Nat} (hsX : sX < 32) (hsL : sXlen < 32) (
         have := L.k1
         dsimp only [CkIn.pub]
         rw [L.capk]
-        exact ⟨ckLenE_ok _ (by unfold wW wk; omega) (by unfold wW wk; omega), by unfold wW wk; omega,
-          by unfold wW wk; omega⟩)
+        exact ⟨ckLenE_ok _ (by unfold wW wk; omega_using []) (by unfold wW wk; omega_arith), by unfold wW wk; omega_using [],
+          by unfold wW wk; omega_using []⟩)
       (by taint_decide) (by taint_decide) (by taint_decide) (by taint_decide)
   exact ct_app (by simp [loadA]) (by simp) ldX (ct_app (a := [.block (decA aM)]) (by simp) (by simp [loadA])
     (ct_one (decA_ckct (by decide) (by taint_decide)))

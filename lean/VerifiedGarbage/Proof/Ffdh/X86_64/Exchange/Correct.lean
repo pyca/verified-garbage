@@ -97,7 +97,7 @@ theorem main_post {s u t : State} (c : ExCtx s) (hb : Base (exOf s) (exX s) u)
     have := os2ip_lt (exOf s).pb
     rw [hb.plen] at this
     exact this
-  have hk := octets_bitLength (by have := hb.k1; omega) hlo hhi
+  have hk := octets_bitLength (by have := hb.k1; omega_using [this]) hlo hhi
   have hfl : (exOf s).fl (exX s) ↔ (1 < (exOf s).z (exX s) ∧ (exOf s).z (exX s) < (exOf s).P - 1) := by
     unfold ExP.fl
     rw [lt_pm1 hp1.1]
@@ -107,7 +107,7 @@ theorem main_post {s u t : State} (c : ExCtx s) (hb : Base (exOf s) (exX s) u)
   rw [c.ol]
   change Spec.Rsa.written t.mem (exOf s).op (exOf s).k ((t.gpr .rax).setWidth 32)
     (exchangeOp (domainOf (exOf s).k (exOf s).dom) (Spec.Rsa.os2ip (exX s)) (Spec.Rsa.os2ip (exOf s).yb))
-  rw [exchangeOp_eq (k := (exOf s).k) hpv (by rw [hpk]; have := hp1.2.1; omega)
+  rw [exchangeOp_eq (k := (exOf s).k) hpv (by rw [hpk]; have := hp1.2.1; omega_using [hp1])
     (by rw [hpk]; exact hk), h.2.1]
   rw [hpk]
   by_cases hf : 1 < (exOf s).z (exX s) ∧ (exOf s).z (exX s) < (exOf s).P - 1
@@ -167,7 +167,7 @@ theorem ex_correct (M : Mont) (E : CrtExpL M) (R : R2Impl M)
   refine WP.seq (WP.mono (body_ok M E R hpre) fun u ⟨hp, hd, hf, hs, k⟩ => ?_)
   have hZ := c.hZ
   have hk := c.k1
-  refine WP.mono (exit_ok (c.hs.congr k.2.2) hd (by omega) hs)
+  refine WP.mono (exit_ok (c.hs.congr k.2.2) hd (by omega_using [hZ]) hs)
     fun t ⟨hRestore, hm, kk⟩ => ⟨⟨?_, ?_⟩, ?_⟩
   · intro r hr
     simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -190,14 +190,14 @@ theorem ex_correct (M : Mont) (E : CrtExpL M) (R : R2Impl M)
     have hj64 : j < 2 ^ 64 := by
       have hk2 := c.k2
       change j < (s.gpr .r8).toNat at hj
-      omega
+      omega_using [hj]
     have ho : ofs (s.gpr .rdi) (s.gpr .rdi + BitVec.ofNat 64 j) = j := by
       change (s.gpr .rdi + BitVec.ofNat 64 j - s.gpr .rdi).toNat = j
       exact Mem.sub_ofNat_toNat _ hj64
     rw [ho] at hx
     have := c.ol
     dsimp only [exOf] at hj
-    omega
+    omega_arith
   · intro hv hy
     change Spec.Rsa.written t.mem _ _ _ _
     rw [hm, kk.gpr (show .rax ∉ saved by decide)]

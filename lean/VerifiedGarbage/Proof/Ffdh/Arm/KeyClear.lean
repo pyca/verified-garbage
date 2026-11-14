@@ -25,9 +25,9 @@ theorem keyClearArgs_ok (s : State) {p : Inputs} {slots : List Nat} (slot : Nat)
       Rest [.r0, .r2, .lr] s t := by
   have addr (d : Nat) (hd : d + 4 ≤ 72) :
       State.addr (s.sp + BitVec.ofNat 32 d) = off (State.addr s.sp) d :=
-    VG.Arm.addr_add (by have := h.locals.space.nowrap; omega)
+    VG.Arm.addr_add (by have := h.locals.space.nowrap; omega_using [hd, this])
   refine withRest_all [.r0, .r2, .lr] ?_ (by rfl) (by rfl)
-  ffrun [(by omega : slot < 4096), addr slot fit, addr 32 (by decide), h.locals.read fit, h.locals.read (d := 32) (by decide),
+  ffrun [(by omega_using [fit] : slot < 4096), addr slot fit, addr 32 (by decide), h.locals.read fit, h.locals.read (d := 32) (by decide),
     h.saved slot hs, h.saved 32 hk, Inputs.slotValue]
 
 theorem keyClear_ok (s : State) {p : Inputs} {slots : List Nat} (slot : Nat)
@@ -39,7 +39,7 @@ theorem keyClear_ok (s : State) {p : Inputs} {slots : List Nat} (slot : Nat)
   rw [VG.Impl.Ffdh.Arm.Domain.GenerateKey.clearOutput, WP.seq_iff]
   refine WP.mono (keyClearArgs_ok s slot h fit hs hk) ?_
   rintro u ⟨⟨ptr, count, zero, mem⟩, restU⟩
-  refine WP.mono (zeroBuffer_ok false u (by have := p.minLength; omega) (by have := p.maxLength; omega)
+  refine WP.mono (zeroBuffer_ok false u (by have := p.minLength; omega_using [this]) (by have := p.maxLength; omega_using [this])
     output.fits (by rw [restU.wr]; exact output.writable) zero (src := u.gpr .r1) rfl ptr count) ?_
   rintro t ⟨bytes, _, _, frame, rest⟩
   exact ⟨bytes, by rw [mem] at frame; exact frame, (restU.mono (by simp)).trans (rest.mono (by simp))⟩

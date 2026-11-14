@@ -66,7 +66,7 @@ theorem absorb_piece' (E S D W : State → BitVec 32) (rate : Nat) (len : State 
         Repr s'.mem ((S s₀).setWidth 64) rate (msg ++ bytesAt s.mem ((D s₀).setWidth 64) (len s₀))) →
       B s₀ s') :
     Piece Pre Pub A B (Impl.MlKem.X86.callWith rs6 "vg_keccak_absorb_scratch" Impl.Sha3.X86.Stream.absorb) := by
-  have hp0 : 0 < rate := by simp [rates] at hr; omega
+  have hp0 : 0 < rate := by simp [rates] at hr; omega_using [hr]
   refine Piece.callWith Proof.Sha3.X86.Stream.Absorb.absorb_verified.1
     Proof.Sha3.X86.Stream.Absorb.absorb_verified.2.1 absorb_nosp (by decide) (by decide)
     (fun s₀ => [reg32 (D s₀) (len s₀)]) (fun s₀ => [reg32 (S s₀) 200, reg32 (W s₀) 640, below (E s₀) 24])
@@ -74,7 +74,7 @@ theorem absorb_piece' (E S D W : State → BitVec 32) (rate : Nat) (len : State 
     (fun s₀ s s' h₀ ha e₁ e₂ e₃ fr post => ?_)
   · have h := hA s₀ s h₀ ha
     have := h.bufs.hE
-    rw [absorb_stack, h.esp]; simp only [List.length_cons, List.length_nil]; omega
+    rw [absorb_stack, h.esp]; simp only [List.length_cons, List.length_nil]; omega_using [this]
   · have h := hA s₀ s h₀ ha
     exact absorb_pre h.esp h.args h.bufs h.fD h.dDS h.dDW h.bD hr hp0 (hlen s₀ h₀) h.cD h.cS h.cW
   · obtain ⟨e₁, e₂, e₃, e₄, e₅⟩ := hpub s₀ s₀' h₀ h₀' hq
@@ -87,13 +87,13 @@ theorem absorb_piece' (E S D W : State → BitVec 32) (rate : Nat) (len : State 
   · have h := hA s₀ s h₀ ha
     have hE := h.bufs.hE
     refine hQ s₀ s s' h₀ ha e₁ e₂ e₃ (fr.sub fun r hr' => ?_)
-      (absorb_post h.esp h.args hE (hlen s₀ h₀) (rate_lt hr) (by have := rate_lt hr; omega) h.bufs.bS h.bD post)
+      (absorb_post h.esp h.args hE (hlen s₀ h₀) (rate_lt hr) (by have := rate_lt hr; omega_using []) h.bufs.bS h.bD post)
     rw [absorb_stack, h.esp] at hr'
     simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr'
     rcases hr' with rfl | rfl | rfl | rfl
     · exact ⟨_, List.mem_cons_self .., fun _ h => h⟩
     · exact ⟨_, List.mem_cons_of_mem _ (List.mem_cons_self ..), fun _ h => h⟩
-    · exact ⟨_, by simp, below_sub (by omega) hE⟩
+    · exact ⟨_, by simp, below_sub (by omega_using []) hE⟩
     · exact ⟨_, by simp, below_sub (by simp) hE⟩
 
 /-- A call of `vg_keccak_pad`, from position `pos s₀`. -/
@@ -116,7 +116,7 @@ theorem pad_piece' (E S W : State → BitVec 32) (rate : Nat) (pos : State → N
     (fun s₀ s s' h₀ ha e₁ e₂ e₃ fr post => ?_)
   · have h := hA s₀ s h₀ ha
     have := h.bufs.hE
-    rw [pad_stack, h.esp]; simp only [List.length_cons, List.length_nil]; omega
+    rw [pad_stack, h.esp]; simp only [List.length_cons, List.length_nil]; omega_using [this]
   · have h := hA s₀ s h₀ ha
     exact pad_pre h.esp h.args h.bufs hr (hp s₀ h₀) h.cS h.cW
   · obtain ⟨e₁, e₂, e₃, e₄⟩ := hpub s₀ s₀' h₀ h₀' hq
@@ -129,13 +129,13 @@ theorem pad_piece' (E S W : State → BitVec 32) (rate : Nat) (pos : State → N
   · have h := hA s₀ s h₀ ha
     have hE := h.bufs.hE
     refine hQ s₀ s s' h₀ ha e₁ e₂ e₃ (fr.sub fun r hr' => ?_)
-      (pad_post h.esp h.args hE (rate_lt hr) (by have := rate_lt hr; have := hp s₀ h₀; omega) h.bufs.bS post)
+      (pad_post h.esp h.args hE (rate_lt hr) (by have := rate_lt hr; have := hp s₀ h₀; omega_arith) h.bufs.bS post)
     rw [pad_stack, h.esp] at hr'
     simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr'
     rcases hr' with rfl | rfl | rfl | rfl
     · exact ⟨_, List.mem_cons_self .., fun _ h => h⟩
     · exact ⟨_, List.mem_cons_of_mem _ (List.mem_cons_self ..), fun _ h => h⟩
-    · exact ⟨_, by simp, below_sub (by omega) hE⟩
+    · exact ⟨_, by simp, below_sub (by omega_using []) hE⟩
     · exact ⟨_, by simp, below_sub (by simp) hE⟩
 
 end
@@ -187,23 +187,23 @@ theorem zinit_piece : Piece (Pre L) (PubP L) (Ctx L) (ZInv L · 0) (.block (zero
     Option.map_some, Option.bind_some, State.setReg, arithFlags, State.setFlags, Option.some.injEq,
     exists_eq_left']
   exact ⟨⟨⟨by simp [h.esp], h.rd, h.wr, h.frame⟩, h.args, by simp [h.esi]⟩, by simp [h.esi], by simp, by simp,
-    fun j hj => absurd hj (by omega)⟩
+    fun j hj => absurd hj (by omega_using [])⟩
 
 theorem zstep {s₀ : State} (hp : Pre L s₀) {k : Nat} (hk : k < 50) {s : State} (h : ZInv L s₀ k s) :
     WP isa (.block zeroBody) s fun s' => ZInv L s₀ (k + 1) s' ∧ eval .ne s' = some (decide (k + 1 < 50)) := by
   have hs := hp.s_fit
   have ea : (L.sP s₀ + BitVec.ofNat 32 (4 * k) + BitVec.ofNat 32 0).setWidth 64 =
       L.sA s₀ + BitVec.ofNat 64 (4 * k) := by
-    rw [ea_add (by omega)]; rfl
-  have hin : InRegions s.wr (L.sA s₀ + BitVec.ofNat 64 (4 * k)) 4 := hp.inS h.wr (by omega)
+    rw [ea_add (by omega_using [hk, hs])]; rfl
+  have hin : InRegions s.wr (L.sA s₀ + BitVec.ofNat 64 (4 * k)) 4 := hp.inS h.wr (by omega_using [hk])
   have fr : Frame [L.sR s₀] s.mem (s.mem.writeW (L.sA s₀ + BitVec.ofNat 64 (4 * k)) (0 : BitVec 32)) :=
-    (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (contains_at (by omega) hs)
+    (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (contains_at (by omega_using [hk]) hs)
   apply WP.of_runBlock
   simp only [reduceCtorEq, ↓reduceIte, Nat.reducePow, zeroBody, at_, runBlock_cons, runStep_some, runBlock_nil, exec,
     execAlu, readSrc, State.ea, State.store32, State.setReg, arithFlags, State.setFlags,
     Option.bind_some, h.ebx, ea, hin, Option.some.injEq, exists_eq_left']
   refine ⟨⟨⟨⟨by simp [h.esp], h.rd, h.wr, ?_⟩, ?_, by simp [h.esi]⟩, ?_, ?_, by simp [h.eax], ?_⟩, ?_⟩
-  · exact h.frame.writeW (r := L.sR s₀) (by simp) _ (contains_at (by omega) hs)
+  · exact h.frame.writeW (r := L.sR s₀) (by simp) _ (contains_at (by omega_using [hk]) hs)
   · rw [h.eax]
     exact args_frame hp h.args fr (by simp only [List.mem_singleton, forall_eq]; exact hp.s_g.symm)
   · simp only [ite_true]
@@ -212,7 +212,7 @@ theorem zstep {s₀ : State} (hp : Pre L s₀) {k : Nat} (hk : k < 50) {s : Stat
     exact cnt_next hk
   · rw [h.eax]; exact zero_write h.zero
   · simp only [eval, h.ecx]
-    exact cnt_ne hk (by omega)
+    exact cnt_ne hk (by omega_using [])
 
 theorem zloop_piece (hL : L.Ok) : Piece (Pre L) (PubP L) (ZInv L · 0) (ZInv L · 50) (.loop (.block zeroBody) .ne) :=
   Piece.countLoop (by decide) (fun k s₀ s => ZInv L s₀ k s) [.ebx]
@@ -228,7 +228,7 @@ structure Z (L : Lay) (s₀ s : State) : Prop extends Ctx L s₀ s where
 
 theorem zero_piece (hL : L.Ok) : Piece (Pre L) (PubP L) (Ctx L) (Z L) (zeroSt 0) :=
   (Piece.seq zinit_piece (zloop_piece hL)).mono (fun _ _ _ h => h)
-    fun _ _ _ h => ⟨h.toCtx, stateAt_zero fun j hj => h.zero j (by omega)⟩
+    fun _ _ _ h => ⟨h.toCtx, stateAt_zero fun j hj => h.zero j (by omega_using [hj])⟩
 
 
 /-! ## Absorbing the message -/
@@ -243,8 +243,8 @@ theorem absArgs_piece (hL : L.Ok) : Piece (Pre L) (PubP L) (Z L)
   obtain ⟨_, ht⟩ := hL.tAbs
   refine Piece.taint [.esp] (fun s₀ s hp h => ?_) (fun s₀ s₀' s s' _ _ hq h h' r hr => ?_) ht
   · have a₀ := h.argEa (i := 0)
-    have i₀ := h.argIn hp (i := 0) (by have := hL.one; omega)
-    have v₀ := h.args 0 (by have := hL.one; omega)
+    have i₀ := h.argIn hp (i := 0) (by have := hL.one; omega_using [this])
+    have v₀ := h.args 0 (by have := hL.one; omega_using [this])
     have a₁ := h.argEa (i := 1)
     have i₁ := h.argIn hp (i := 1) hL.one
     have v₁ := h.args 1 hL.one
@@ -293,15 +293,15 @@ theorem absorb_call (hL : L.Ok) : Piece (Pre L) (PubP L)
     (fun s₀ s => Z L s₀ s ∧ AbsArgs s (L.sP s₀) (L.dP s₀) (L.WW s₀) L.rate 0 (L.ml s₀)) (A1 L)
     (callWith rs6 "vg_keccak_absorb_scratch" Impl.Sha3.X86.Stream.absorb) := by
   refine absorb_piece' E1 L.sP L.dP L.WW L.rate L.ml hL.rate
-    (fun s₀ hp => by have := hp.ml_lt; have := rate_lt hL.rate; omega) (fun s₀ s hp ⟨h, ha⟩ => ?_)
+    (fun s₀ hp => by have := hp.ml_lt; have := rate_lt hL.rate; omega_arith) (fun s₀ s hp ⟨h, ha⟩ => ?_)
     (fun s₀ s₀' _ _ hq => ⟨hq.e1, hq.sP hL, hq.dP hL, by rw [Lay.WW, Lay.WW, hq.sP hL], hq.ml hL⟩)
     (fun s₀ s s' hp ⟨h, _⟩ e₁ e₂ e₃ fr post => ?_)
   · have hk := hp.kbufs
     have hs := hp.s_fit
-    refine ⟨h.esp, ha, hk, hp.d_fit, ?_, ?_, (hp.stk_d.sub_left hp.c_sub), ?_, hp.within_s0 h.wr (by omega),
-      hp.within_s h.wr (by omega) (by omega)⟩
-    · rw [Pre.reg_s0]; exact hp.d_s.sub_right (hp.sub_s (by omega))
-    · rw [hp.reg_s (by omega)]; exact hp.d_s.sub_right (hp.sub_s (by omega))
+    refine ⟨h.esp, ha, hk, hp.d_fit, ?_, ?_, (hp.stk_d.sub_left hp.c_sub), ?_, hp.within_s0 h.wr (by omega_using []),
+      hp.within_s h.wr (by omega_using []) (by omega_using [])⟩
+    · rw [Pre.reg_s0]; exact hp.d_s.sub_right (hp.sub_s (by omega_using []))
+    · rw [hp.reg_s (by omega_using [])]; exact hp.d_s.sub_right (hp.sub_s (by omega_using []))
     · refine ⟨L.dR s₀, ?_, 0, (BitVec.add_zero _).symm, by simp⟩
       rw [h.rd, h.wr, pushed_rd, hp.rd]; simp
   · refine ⟨h.toCtx.call hL hp e₁ e₂ e₃ fr fun r hr => ?_, ?_⟩
@@ -353,7 +353,7 @@ theorem pad_call (hL : L.Ok) : Piece (Pre L) (PubP L)
   refine pad_piece' E1 L.sP L.WW L.rate L.ml 0x1f hL.rate (fun s₀ hp => hp.ml_lt) (fun s₀ s hp ⟨h, ha⟩ => ?_)
     (fun s₀ s₀' _ _ hq => ⟨hq.e1, hq.sP hL, by rw [Lay.WW, Lay.WW, hq.sP hL], hq.ml hL⟩)
     (fun s₀ s s' hp ⟨h, _⟩ e₁ e₂ e₃ fr post => ?_)
-  · exact ⟨h.esp, ha, hp.kbufs, hp.within_s0 h.wr (by omega), hp.within_s h.wr (by omega) (by omega)⟩
+  · exact ⟨h.esp, ha, hp.kbufs, hp.within_s0 h.wr (by omega_using []), hp.within_s h.wr (by omega_using []) (by omega_using [])⟩
   · refine ⟨h.toCtx.call hL hp e₁ e₂ e₃ fr fun r hr => ?_, ?_⟩
     · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr ⊢
       rcases hr with h | h | h <;> simp [h]
@@ -387,23 +387,23 @@ theorem squeeze_call (hL : L.Ok) : Piece (Pre L) (PubP L)
     (callWith rs6 "vg_keccak_squeeze_scratch" Impl.Sha3.X86.Stream.squeeze) := by
   have ho := hL.out
   refine squeeze_piece E1 L.sP (fun s₀ => L.sP s₀ + BitVec.ofNat 32 840) L.WW L.rate 0 L.outlen hL.rate
-    (by omega) (by omega) (fun s₀ s hp ⟨h, ha⟩ => ?_)
+    (by omega_using []) (by omega_using [ho]) (fun s₀ s hp ⟨h, ha⟩ => ?_)
     (fun s₀ s₀' _ _ hq => ⟨hq.e1, hq.sP hL, by rw [hq.sP hL], by rw [Lay.WW, Lay.WW, hq.sP hL]⟩)
     (fun s₀ s s' hp ⟨h, _⟩ e₁ e₂ e₃ fr r₁ _ => ?_)
   · have hs := hp.s_fit
-    refine ⟨h.esp, ha, hp.kbufs, by rw [toNat_off (by omega)]; omega, ?_, ?_, ?_,
-      hp.within_s0 h.wr (by omega), hp.within_s h.wr (by omega) (by omega),
-      hp.within_s h.wr (by omega) (by omega)⟩
-    · rw [hp.reg_s (by omega), Pre.reg_s0]
-      exact VG.Proof.MlKem.X86.Sample.disj_at (len := 2048) (by omega) (by omega) hs (by omega)
-    · rw [hp.reg_s (by omega), hp.reg_s (by omega)]
-      exact VG.Proof.MlKem.X86.Sample.disj_at (len := 2048) (by omega) (by omega) hs (by omega)
-    · rw [hp.reg_s (by omega)]
-      exact (hp.stk_s.sub_left hp.c_sub).sub_right (hp.sub_s (by omega))
+    refine ⟨h.esp, ha, hp.kbufs, by rw [toNat_off (by omega_using [hs])]; omega_using [ho, hs], ?_, ?_, ?_,
+      hp.within_s0 h.wr (by omega_using []), hp.within_s h.wr (by omega_using []) (by omega_using [ho]),
+      hp.within_s h.wr (by omega_using []) (by omega_using [])⟩
+    · rw [hp.reg_s (by omega_using []), Pre.reg_s0]
+      exact VG.Proof.MlKem.X86.Sample.disj_at (len := 2048) (by omega_using []) (by omega_using [ho]) hs (by omega_using [])
+    · rw [hp.reg_s (by omega_using []), hp.reg_s (by omega_using [])]
+      exact VG.Proof.MlKem.X86.Sample.disj_at (len := 2048) (by omega_using [ho]) (by omega_using []) hs (by omega_using [])
+    · rw [hp.reg_s (by omega_using [])]
+      exact (hp.stk_s.sub_left hp.c_sub).sub_right (hp.sub_s (by omega_using [ho]))
   · refine ⟨h.toCtx.call hL hp e₁ e₂ e₃ fr fun r hr => ?_, fun p hp' => ?_⟩
     · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr ⊢
       rcases hr with h | h | h | h <;> simp [h]
-    · rw [h.st, hp.off_eq (by omega)] at r₁
+    · rw [h.st, hp.off_eq (by omega_using [])] at r₁
       have e := bytesAt_getD s'.mem (L.sA s₀ + BitVec.ofNat 64 840) (len := L.outlen) hp'
       rw [r₁, BitVec.add_assoc, ← BitVec.ofNat_add] at e
       exact e.symm

@@ -61,19 +61,19 @@ theorem keyChecks_ok {sp : BitVec 32} {σ : State} (S : SIn base bytes len args 
   have f7 := h.fits (j := 7) (by decide)
   have wl := wb_ge h.lower
   refine WP.seq (WP.mono (importKey_ok h S.2.1) fun u ⟨V0, V4, V3, O₁, K₁⟩ => ?_)
-  have O₁' : Outside base 0 bytes σ.mem u.mem := O₁.mono (by simp only [numOff]; omega) (by
-    have := (h.fits (j := 5) (by decide)).2; simp only [numAt, numOff] at this ⊢; omega)
+  have O₁' : Outside base 0 bytes σ.mem u.mem := O₁.mono (by simp only [numOff]; omega_using []) (by
+    have := (h.fits (j := 5) (by decide)).2; simp only [numAt, numOff] at this ⊢; omega_using [this])
   have Su := S.keep K₁ (by decide) (by decide) O₁'
   refine WP.mono (checks_ok Su.1 V3) fun v ⟨Z, O₂, K₂⟩ => ?_
   simp only [checkOffset] at O₂
-  have O₂' : Outside base 0 bytes u.mem v.mem := O₂.mono (by omega) (by
-    have := (h.fits (j := 0) (by decide)).1; simp only [numAt, numOff] at this; omega)
+  have O₂' : Outside base 0 bytes u.mem v.mem := O₂.mono (by omega_using []) (by
+    have := (h.fits (j := 0) (by decide)).1; simp only [numAt, numOff] at this; omega_using [this])
   have uv : ∀ j, j ≤ 4 → val32 v.mem base (numAt len j) (nw len) = val32 u.mem base (numAt len j) (nw len) :=
-    fun j hj => O₂.val32 (.inr (by simp only [numAt, numOff]; omega)) (by
-      have := (h.fits (j := j) (by omega)).1; simp only [nw, wb] at *; omega)
+    fun j hj => O₂.val32 (.inr (by simp only [numAt, numOff]; omega_using [])) (by
+      have := (h.fits (j := j) (by omega_using [hj])).1; simp only [nw, wb] at *; omega_using [nw', this])
   exact ⟨Su.keep K₂ (by decide) (by decide) O₂', by rw [Z, V0, V4], by rw [uv 0 (by decide), V0],
     by rw [uv 4 (by decide), V4], by rw [uv 3 (by decide), V3],
-    by rw [O₂.val32 (.inl (by decide)) (by decide), O₁.val32 (.inl (by simp only [numOff]; omega)) (by decide)]⟩
+    by rw [O₂.val32 (.inl (by decide)) (by decide), O₁.val32 (.inl (by simp only [numOff]; omega_using [])) (by decide)]⟩
 
 theorem sized_relCT (hbytes : bytes = (args 9).toNat * 8) (sp : BitVec 32) :
     RelCT isa (fun s t => SIn base bytes len args sp s ∧ SIn base bytes len args sp t ∧

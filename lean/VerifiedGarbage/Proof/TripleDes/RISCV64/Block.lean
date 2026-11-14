@@ -94,14 +94,14 @@ theorem keysAt_of {k : Schedule} {s : State} (hal : (s.gpr sb).toNat % 8 = 0)
       s.gpr sb + BitVec.ofNat 64 (8 * (70 + 16 * c + (if d = .encrypt then j else 15 - j))) := by
     intro j hj
     simp only [keyAddr, componentBase, keyOff, Offset.add_ofNat_add_ofNat]
-    exact congrArg (fun n => s.gpr sb + BitVec.ofNat 64 n) (by split <;> omega)
-  have hj' : ∀ j < 16, (if d = .encrypt then j else 15 - j) < 16 := fun j hj => by split <;> omega
+    exact congrArg (fun n => s.gpr sb + BitVec.ofNat 64 n) (by split <;> omega_using [])
+  have hj' : ∀ j < 16, (if d = .encrypt then j else 15 - j) < 16 := fun j hj => by split <;> omega_arith
   refine ⟨fun j hj => ?_, fun j hj => ?_, fun j hj => ?_⟩
   · rw [haddr j hj]
     have := hj' j hj
-    obtain ⟨r, hr, hc'⟩ := hwr (70 + 16 * c + (if d = .encrypt then j else 15 - j)) (by omega)
+    obtain ⟨r, hr, hc'⟩ := hwr (70 + 16 * c + (if d = .encrypt then j else 15 - j)) (by omega_using [hc, this])
     exact ⟨r, List.mem_append_right _ hr, hc'⟩
-  · rw [haddr j hj]; exact Spill.al8 hal (by omega)
+  · rw [haddr j hj]; exact Spill.al8 hal (by omega_using [])
   · rw [haddr j hj]
     have h := VG.Proof.TripleDes.componentSchedule_readW s.mem
       (s.gpr sb + BitVec.ofNat 64 keyOff) c (if d = .encrypt then j else 15 - j) hc (hj' j hj)
@@ -109,14 +109,14 @@ theorem keysAt_of {k : Schedule} {s : State} (hal : (s.gpr sb).toNat % 8 = 0)
     simp only [VG.Proof.TripleDes.roundKey]
     rw [h]
     exact congrArg (fun n => (s.mem.readW (s.gpr sb + BitVec.ofNat 64 n) 64).setWidth 48)
-      (by simp only [keyOff]; omega)
+      (by simp only [keyOff]; omega_using [])
 
 theorem ready_of {k : Schedule} {s : State} (hal : (s.gpr sb).toNat % 8 = 0)
     (hwr : ∀ o < 118, InRegions s.wr (s.gpr sb + BitVec.ofNat 64 (8 * o)) 8)
     (hk : Spec.TripleDes.scheduleAt s.mem (s.gpr sb + BitVec.ofNat 64 keyOff) = k)
     (hc : ConstsAt s) :
     Ready (Spec.TripleDes.componentSchedule k) (s.gpr sb + BitVec.ofNat 64 keyOff) s :=
-  ⟨⟨hal, fun o ho => hwr o (by omega), hc⟩, rfl, fun c hc d => keysAt_of hal hwr hk c hc d⟩
+  ⟨⟨hal, fun o ho => hwr o (by omega_using [ho]), hc⟩, rfl, fun c hc d => keysAt_of hal hwr hk c hc d⟩
 
 /-- IP of the block at `doff(dp)` in the halves. -/
 theorem blockLoad_ok (dp : Reg) (doff : Nat) (hdp : dp ∈ passKept) (ho : doff + 8 ≤ 2048)
@@ -130,7 +130,7 @@ theorem blockLoad_ok (dp : Reg) (doff : Nat) (hdp : dp ∈ passKept) (ho : doff 
   unfold blockLoad
   rw [WP.block_append_iff, WP.block_append_iff]
   refine WP.mono (loadBE64_ok (d := .t0) (tmp := .t1) (n := dp) hne.1 hne.2 (by decide)
-    (by omega) hin) fun u₁ e₁ => ?_
+    (by omega_using [ho]) hin) fun u₁ e₁ => ?_
   subst e₁
   have hcode : permuteCode Spec.TripleDes.ip 64 .t2 .t0 .t3 = instrs initialPermutation.lit :=
     congrArg instrs initialPermutation.lit_eq

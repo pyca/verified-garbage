@@ -27,10 +27,10 @@ theorem even_bit (x y : BitVec 32) :
   rw [BitVec.and_or_distrib_right]
   have bx : (x &&& (1 : BitVec 32)).toNat ≤ 1 := by
     rw [VG.Proof.Rsa.KeyBits32.bv_and_one]
-    omega
+    omega_using []
   have by' : (y &&& (1 : BitVec 32)).toNat ≤ 1 := by
     rw [VG.Proof.Rsa.KeyBits32.bv_and_one]
-    omega
+    omega_using []
   rw [VG.Proof.Rsa.KeyBits32.bv_nor_bits bx by',
     VG.Proof.Rsa.KeyBits32.bv_and_one, VG.Proof.Rsa.KeyBits32.bv_and_one]
 

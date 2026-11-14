@@ -88,25 +88,25 @@ theorem chain2_mid {s₀ s : State} {St D S : Addr} {L R : Nat} (hp : APre s₀ 
   have hsum := nb_le c L
   obtain ⟨x14₆, x15₆, x16₆, x17₆, x19₆, sp₆, rd₆, wr₆⟩ := h
   rw [hc] at x16₆ x17₆
-  refine WP.mono (wp_sp (chain2_wp (x := leftOf c L) (by unfold leftOf; omega) x17₆)) fun s₇ ⟨h₇, sp₇⟩ => ?_
+  refine WP.mono (wp_sp (chain2_wp (x := leftOf c L) (by unfold leftOf; omega_using [hL]) x17₆)) fun s₇ ⟨h₇, sp₇⟩ => ?_
   obtain ⟨x18₇, x7₇, x3₇, x4₇, x5₇, x6₇, x8₇, sv₇, -, rd₇, wr₇⟩ := h₇
   have hnb : (if leftOf c L = 0 then 0 else (leftOf c L - 1) / 16) = nbOf c L := rfl
   rw [hnb] at x18₇ x7₇
   have c272 : Region.Sub ⟨St + BitVec.ofNat 64 272, 16⟩ ⟨St, 304⟩ := Offset.sub_base St (by decide)
   subst hc
   have dD : Region.Sub ⟨D + BitVec.ofNat 64 (fOf (s₀.gpr .a2).toNat L), 16 * nbOf (s₀.gpr .a2).toNat L⟩
-      ⟨D, L⟩ := Offset.sub_base D (by omega)
+      ⟨D, L⟩ := Offset.sub_base D (by omega_using [hsum])
   refine ⟨hp.uargs (s := s₇) (Dd := D + BitVec.ofNat 64 (fOf (s₀.gpr .a2).toNat L))
     (n := nbOf (s₀.gpr .a2).toNat L)
     (by rw [x3₇, x14₆]) (by rw [x4₇, x15₆]) (by rw [x5₇, x14₆]) (by rw [x6₇, x16₆]) x7₇
-    (by rw [x8₇, x19₆]) (by rw [rd₇, rd₆]) (by rw [wr₇, wr₆]) (by omega)
+    (by rw [x8₇, x19₆]) (by rw [rd₇, rd₆]) (by rw [wr₇, wr₆]) (by omega_using [hL, hsum])
     ((hp.st_d.sub_left c272).symm.sub_left dD)
     ((hp.d_s.sub_left dD).sub_right (Region.sub_prefix (by decide)))
     (by
       by_cases h0 : nbOf (s₀.gpr .a2).toNat L = 0
-      · rw [h0]; have := (D + BitVec.ofNat 64 (fOf (s₀.gpr .a2).toNat L)).isLt; omega
-      · have := hp.wD; rw [toNat_add_lt D hp.wD (by omega)]; omega)
-    ⟨⟨D, L⟩, by simp, fOf (s₀.gpr .a2).toNat L, rfl, by simp; omega⟩,
+      · rw [h0]; have := (D + BitVec.ofNat 64 (fOf (s₀.gpr .a2).toNat L)).isLt; omega_using []
+      · have := hp.wD; rw [toNat_add_lt D hp.wD (by omega_using [hsum, h0])]; omega_using [hsum, this])
+    ⟨⟨D, L⟩, by simp, fOf (s₀.gpr .a2).toNat L, rfl, by simp; omega_using [hsum]⟩,
     by rw [sv₇ .s1 (by decide) (by decide), x14₆], x18₇,
     by rw [sv₇ .s3 (by decide) (by decide), x16₆],
     by rw [sv₇ .s4 (by decide) (by decide), x17₆],

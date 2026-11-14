@@ -26,20 +26,20 @@ theorem witnessRange_ok {s : State} {B : Addr} {Z w N a : Nat} {mi : BitVec 64}
       t.gpr .rax = bit (2 ≤ a ∧ a < N - 1) ∧ t.zf = some (!decide (2 ≤ a ∧ a < N - 1)) ∧
       ModulusReady t B Z w mi N ∧ wv t.mem B (slot w aXm) w = a ∧
       Frm B [(slot w aTmp, 8 * w), (8 * VG.Impl.Ffdh.X86_64.Domain.sF, 8)] s.mem t.mem ∧ Keep mmRegs s t := by
-  have hw : w < 2 ^ 31 := by have := hd.w128; omega
+  have hw : w < 2 ^ 31 := by have := hd.w128; omega_using [this]
   have hP : (1 < wv s.mem B (slot w aXm) w ∧
       2 * (wv s.mem B (slot w aXm) w / 2) + 1 < wv s.mem B (slot w aN) w) ↔
       (2 ≤ a ∧ a < N - 1) := by
     rw [ha, h.n, VG.Proof.Ffdh.lt_pm1 ho]
-    omega
+    omega_using []
   unfold witnessRange
-  refine WP.mono (VG.Proof.Ffdh.X86_64.rangeTest_ok h.good hd.z (by have := hd.w4; omega) hw
+  refine WP.mono (VG.Proof.Ffdh.X86_64.rangeTest_ok h.good hd.z (by have := hd.w4; omega_using [this]) hw
     (a := aXm) (by decide) (by decide) h.one) fun t ⟨hax, hz, _, hf, k⟩ => ?_
   simp only [bit, propext hP] at hax hz ⊢
   refine ⟨hax, hz, h.of_frm hd hf k ((k.gpr (by decide)).trans h.good.rdi) ?_ ?_ ?_, ?_, hf, k⟩
   · simp only [List.forall_mem_cons, List.not_mem_nil, false_implies, implies_true, and_true]
     constructor
-    · unfold slot hdrBytes aTmp; omega
+    · unfold slot hdrBytes aTmp; omega_using []
     · decide
   · simp only [List.forall_mem_cons, List.not_mem_nil, false_implies, implies_true, and_true,
       VG.Impl.Ffdh.X86_64.Domain.sF]

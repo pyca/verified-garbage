@@ -61,10 +61,10 @@ theorem n0_at {D : Nat} {P : EP} {σ s : State} (hi : In D P σ) (hs : (P.lay D)
   have a : addr P.n 0 = P.n.setWidth 64 := by simp [addr]
   rw [a]
   refine ⟨?_, ⟨P.N, by rw [hs.rd]; exact List.mem_append_left _ (hi.ok.rd _ (by simp)), by
-    simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; omega⟩⟩
+    simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; omega_using [hK]⟩⟩
   have e : Spec.Rsa.bytesAt s.mem (P.n.setWidth 64) P.K = P.nB := (hs.ro (R := P.N) (by simp)).trans hi.nB
   show s.mem (P.n.setWidth 64) = P.nB.getD 0 0
-  rw [← e, RsaPkcs1Sig.bytesAt_getD (by omega), BitVec.add_zero]
+  rw [← e, RsaPkcs1Sig.bytesAt_getD (by omega_using [hK]), BitVec.add_zero]
 
 /-- After the checks. -/
 abbrev C1 (P : EP) (σ s : State) : Prop :=
@@ -81,7 +81,7 @@ theorem chk_vp (P : EP) : VP (S h P) (.block (signChk ++ params h.H)) (C1 h P) :
   refine VP.block_append (G := C0 h P) (VP.taint [.esp] signChk_taint (fun _ _ _ _ h₁ h₂ r hr => by
       simp only [List.mem_singleton] at hr; subst hr; rw [h₁.2.sp, h₂.2.sp]) fun σ s ⟨hi, hs⟩ => ?_)
     (VP.taint _ h.certs.params (fun _ _ _ _ h₁ h₂ r hr => ?_) fun σ s ⟨hc, hi, si, cx, dx⟩ => ?_)
-  · have hl : ∀ j, j < 24 → j < ((P.lay h.D).argv).length := fun j hj => by simp; omega
+  · have hl : ∀ j, j < 24 → j < ((P.lay h.D).argv).length := fun j hj => by simp; omega_using [hj]
     simp only [signChk, ld]
     refine hs.wp_arg (hl 20 (by decide)) (by decide) fun t1 s1 u1 => ?_
     refine s1.wp_arg (hl 2 (by decide)) (by decide) fun t2 s2 u2 => ?_
@@ -102,7 +102,7 @@ theorem chk_vp (P : EP) : VP (S h P) (.block (signChk ++ params h.H)) (C1 h P) :
     · rw [d1, d2]
   have hg := hi.geo
   have hK := hi.k1024
-  have hD : h.D ≤ 64 := by have := h.D_le; have := h.N_le; omega
+  have hD : h.D ≤ 64 := by have := h.D_le; have := h.N_le; omega_arith
   obtain ⟨σ', ok⟩ := hg.ok
   obtain ⟨nb, hn⟩ := n0_at hi hc.st
   rw [← si] at hn nb
@@ -174,7 +174,7 @@ theorem fail_vp (G : Spec.Mgf1.Hash) (P : EP) :
       simp only [eval, z, decide_eq_true hfits] at e
       exact absurd e (by decide)
     have hg := hi.geo
-    have hl : ∀ j, j < 24 → j < ((P.lay h.D).argv).length := fun j hj => by simp; omega
+    have hl : ∀ j, j < 24 → j < ((P.lay h.D).argv).length := fun j hj => by simp; omega_using [hj]
     simp only [ld, mi]
     refine hc.wp_arg hg (hl 0 (by decide)) (by decide) (by decide) fun t1 c1 u1 =>
       c1.wp_arg hg (hl 3 (by decide)) (by decide) (by decide) fun t2 c2 u2 => wp_movi fun t3 u3 =>
@@ -189,9 +189,9 @@ theorem fail_vp (G : Spec.Mgf1.Hash) (P : EP) :
     have hK := hi₀.k1024
     have hfo := hi₀.ok.fits P.OUT (by simp)
     simp only [BitVec.toNat_setWidth] at hfo
-    rw [Nat.mod_eq_of_lt (by have := P.out.isLt; omega)] at hfo
-    have wb : WBuf (P.lay h.D) P.out P.K := ⟨hfo, by omega, ⟨P.OUT, by simp, Region.contains_self _ _⟩⟩
-    refine (zero_vp (scr := P.scr) wb (by have := hi₀.k64; omega)
+    rw [Nat.mod_eq_of_lt (by have := P.out.isLt; omega_using [])] at hfo
+    have wb : WBuf (P.lay h.D) P.out P.K := ⟨hfo, by omega_using [hK], ⟨P.OUT, by simp, Region.contains_self _ _⟩⟩
+    refine (zero_vp (scr := P.scr) wb (by have := hi₀.k64; omega_using [this])
       (Inv := fun σ _ => In h.D P σ ∧ ¬ fits h P) fun _ _ _ hi _ => hi).mono
       (fun σ s ⟨hc, hi, hf, si, cx, ax⟩ => ⟨hc, ⟨hi, hf⟩, si, cx, ax⟩) fun σ s ⟨hc, ⟨hi, hf⟩, hz⟩ => ?_
     refine ⟨hc, hi, hf, ?_⟩

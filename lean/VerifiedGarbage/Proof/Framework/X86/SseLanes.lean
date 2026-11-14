@@ -99,7 +99,7 @@ theorem mask_eq {x : BitVec 32} (hx : x.toNat < 256) {j : Nat} (hj : j < 256) :
   · rw [ite_eq_right h]
     obtain ⟨z, hz⟩ : ∃ z, x ^^^ BitVec.ofNat 32 j = z := ⟨_, rfl⟩
     have hzl : z.toNat < 256 := by
-      rw [← hz, BitVec.toNat_xor, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+      rw [← hz, BitVec.toNat_xor, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hj])]
       exact Nat.xor_lt_two_pow (n := 8) hx hj
     have hz0 : z ≠ 0 := fun e => h (by
       rw [e] at hz
@@ -112,7 +112,7 @@ theorem mask_eq {x : BitVec 32} (hx : x.toNat < 256) {j : Nat} (hj : j < 256) :
       apply BitVec.eq_of_toNat_eq
       rw [BitVec.toNat_ushiftRight, BitVec.toNat_add, Nat.shiftRight_eq_div_pow,
         show (0xFFFFFFFF : BitVec 32).toNat = 0xFFFFFFFF from rfl, show (0 : BitVec 32).toNat = 0 from rfl]
-      omega
+      omega_using [hzl, hz1]
     rw [hs]
     rfl
 

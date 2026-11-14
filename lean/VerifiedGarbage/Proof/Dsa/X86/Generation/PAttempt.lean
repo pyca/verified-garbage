@@ -54,7 +54,7 @@ theorem paRanges_apart {g : Geo} (G : GeoOk g) {E : Env} (v : E.Valid) : E.Apart
   simp only [paRanges, pxRanges, aRanges, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil,
     or_false] at ho
   rcases ho with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
-    simp only [sState, sX, arr, sPk, sPP, ppWords, fRes, fUsed, fUsedOut, fP, fOut, fWitLen, hdr] <;> omega
+    simp only [sState, sX, arr, sPk, sPP, ppWords, fRes, fUsed, fUsedOut, fP, fOut, fWitLen, hdr] <;> omega_arith
 
 /-- After a counter. -/
 structure PAPost (E : Env) (g : Geo) (k offset Q used : Nat) (s t : State) : Prop where
@@ -83,9 +83,9 @@ theorem and80 (b : Byte) :
   have e : ((b.setWidth 32 &&& (0x80 : BitVec 32)) - 0).toNat = b.toNat &&& 128 := by
     rw [BitVec.toNat_sub, BitVec.toNat_and, BitVec.toNat_setWidth]
     show (2 ^ 32 - 0 + (b.toNat % 2 ^ 32 &&& 128)) % 2 ^ 32 = b.toNat &&& 128
-    rw [Nat.mod_eq_of_lt (a := b.toNat) (by omega)]
-    have : b.toNat &&& 128 < 2 ^ 32 := Nat.lt_of_le_of_lt Nat.and_le_left (by omega)
-    omega
+    rw [Nat.mod_eq_of_lt (a := b.toNat) (by omega_using [])]
+    have : b.toNat &&& 128 < 2 ^ 32 := Nat.lt_of_le_of_lt Nat.and_le_left (by omega_using [])
+    omega_using [this]
   by_cases h : b.toNat < 128
   · simp only [h, decide_true, beq_iff_eq]
     exact BitVec.eq_of_toNat_eq (by rw [e, (key _ hb).mpr h]; rfl)
@@ -143,12 +143,12 @@ theorem paMid_ok {g : Geo} (G : GeoOk g) {E : Env} (v : E.Valid) {s t₁ : State
   have nw := v.scratchFit
   have Apa := paRanges_apart G v
   have hQ₁ : Spec.Dsa.decodeBE (Spec.Rsa.bytesAt t₁.mem (off E.base (sPk + g.pLen)) g.qLen) = Q := by
-    rw [Env.Chg.scratch v X₁.chg (by simp only [sPk]; omega) fun o ho => by
+    rw [Env.Chg.scratch v X₁.chg (by simp only [sPk]; omega_using [sz, bd]) fun o ho => by
       simp only [pxRanges, List.mem_singleton] at ho; subst ho
-      exact ⟨by simp only [sState, sX]; omega, by left; simp only [sState, sX, sPk]; omega⟩, hQ]
+      exact ⟨by simp only [sState, sX]; omega_using [sz, bd], by left; simp only [sState, sX, sPk]; omega_using []⟩, hQ]
   -- p.
   have lens : g.pLen = 128 ∨ g.pLen = 256 ∨ g.pLen = 384 := by
-    rcases G.lengths with ⟨h, _⟩ | ⟨h, _⟩ | ⟨h, _⟩ <;> omega
+    rcases G.lengths with ⟨h, _⟩ | ⟨h, _⟩ | ⟨h, _⟩ <;> omega_using [h]
   refine WP.seq (VG.X86.WP.mono_syms (pArith_ok lens ⟨bd.1, bd.2.1⟩ X₁.base.scr sz X₁.x hQ₁ hQ0)
     fun t₂ ⟨P₂, E₂, V₂, K₂, O₂, Kr₂, One₂⟩ sy₂ => ?_)
   have hlen : ∀ bs, 8 * (Spec.Dsa.seedHash (8 * g.qLen) bs).length = 8 * g.qLen := fun bs => by
@@ -159,15 +159,15 @@ theorem paMid_ok {g : Geo} (G : GeoOk g) {E : Env} (v : E.Valid) {s t₁ : State
         (contributions (8 * g.qLen) (pDigest (8 * g.qLen) (chunk E k) offset) (g.count + 1)) % (2 * Q) + 1 =
       pcand g E k offset Q := by
     unfold pcand
-    rw [pCandidate_shaped (by omega) hlen]
+    rw [pCandidate_shaped (by omega_using [bd]) hlen]
     have := Nat.mod_le (Spec.Ffdh.candidateOf (8 * g.pLen)
       (contributions (8 * g.qLen) (pDigest (8 * g.qLen) (chunk E k) offset) (g.count + 1))) (2 * Q)
     show _ = Spec.Ffdh.candidateOf (8 * g.pLen)
         (contributions (8 * g.qLen) (pDigest (8 * g.qLen) (chunk E k) offset) (g.count + 1)) + 1 -
       Spec.Ffdh.candidateOf (8 * g.pLen)
         (contributions (8 * g.qLen) (pDigest (8 * g.qLen) (chunk E k) offset) (g.count + 1)) % (2 * Q)
-    omega
-  have Xsh := VG.Proof.Ffdh.ParameterCandidate.candidate_shape (bits := 8 * g.pLen) (by omega)
+    omega_using [this]
+  have Xsh := VG.Proof.Ffdh.ParameterCandidate.candidate_shape (bits := 8 * g.pLen) (by omega_using [bd])
     (contributions (8 * g.qLen) (pDigest (8 * g.qLen) (chunk E k) offset) (g.count + 1))
   generalize Spec.Ffdh.candidateOf (8 * g.pLen)
     (contributions (8 * g.qLen) (pDigest (8 * g.qLen) (chunk E k) offset) (g.count + 1)) = X
@@ -176,18 +176,18 @@ theorem paMid_ok {g : Geo} (G : GeoOk g) {E : Env} (v : E.Valid) {s t₁ : State
   have dm := Nat.div_add_mod X (2 * Q)
   have ml := Nat.mod_le X (2 * Q)
   have dQ : 2 * Q * (X / (2 * Q)) = 2 * (Q * (X / (2 * Q))) := Nat.mul_assoc _ _ _
-  have pcOdd : pc % 2 = 1 := by omega
-  have pcLt : pc < 2 ^ (8 * g.pLen) := by omega
+  have pcOdd : pc % 2 = 1 := by omega_using [pEq, dm, dQ]
+  have pcLt : pc < 2 ^ (8 * g.pLen) := by omega_using [Xsh, pEq, pcOdd]
   have e256 : (256 : Nat) ^ g.pLen = 2 ^ (8 * g.pLen) := by rw [Nat.pow_mul]
   rw [pEq] at V₂ K₂
-  rw [show X - X % (2 * Q) = pc - 1 by omega] at P₂ E₂
+  rw [show X - X % (2 * Q) = pc - 1 by omega_using [pEq]] at P₂ E₂
   -- What changed so far.
   have Aa : E.Apart (aRanges g.pLen) := fun o ho => Apa o
     (List.mem_append_left _ (List.mem_append_right _ ho))
   have Ca : E.Chg (aRanges g.pLen) t₁.mem t₂.mem := Env.Chg.of_frame
     (VG.Proof.Bignum.outs_frame O₂ fun r hr => by
       simp only [aRanges, List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl <;> simp only [arr, sPk] <;> omega) fun r hr => by
+      rcases hr with rfl | rfl <;> simp only [arr, sPk] <;> omega_arith) fun r hr => by
     simp only [List.mem_map] at hr
     obtain ⟨o, ho, rfl⟩ := hr
     exact Env.in_range ho (Nat.le_refl _) (Nat.le_refl _)
@@ -199,23 +199,23 @@ theorem paMid_ok {g : Geo} (G : GeoOk g) {E : Env} (v : E.Valid) {s t₁ : State
     fun o ho => ⟨o, List.mem_append_left _ ho, Nat.le_refl _, Nat.le_refl _⟩
   have C₂ : E.Chg (paRanges g) s.mem t₂.mem := C₂'.widen inPa
   have word₂ : ∀ d, d + 4 ≤ sState → t₂.mem.readW (off E.base d) 32 = s.mem.readW (off E.base d) 32 :=
-    fun d hd => Env.Chg.word v C₂' (by simp only [sState] at hd; omega) fun o ho => by
+    fun d hd => Env.Chg.word v C₂' (by simp only [sState] at hd; omega_using [sz, hd]) fun o ho => by
       simp only [pxRanges, aRanges, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil,
         or_false] at ho
-      rcases ho with rfl | rfl | rfl <;> simp only [sState, sX, arr, sPk] at hd ⊢ <;> omega
+      rcases ho with rfl | rfl | rfl <;> simp only [sState, sX, arr, sPk] at hd ⊢ <;> omega_arith
   have hP₂ : t₂.mem.readW (off E.base fP) 32 = BitVec.ofNat 32 4 := by
-    rw [word₂ fP (by simp only [fP, hdr, sState]; omega), hP4]
+    rw [word₂ fP (by simp only [fP, hdr, sState]; omega_using []), hP4]
   have hU₂ : t₂.mem.readW (off E.base fUsed) 32 = BitVec.ofNat 32 used := by
-    rw [word₂ fUsed (by simp only [fUsed, hdr, sState]; omega), hU]
+    rw [word₂ fUsed (by simp only [fUsed, hdr, sState]; omega_using []), hU]
   -- The guard `p ≥ 2^(L − 1)`, by p's first byte.
   have hb : t₂.mem (off E.base sPk) = (Spec.Dsa.encodeBE g.pLen pc).getD 0 0 := by
     have := congrArg (fun l : List Byte => l.getD 0 0) K₂
     simp only [Spec.Rsa.bytesAt, List.getD_eq_getElem?_getD, List.getElem?_map,
-      List.getElem?_range (show 0 < g.pLen by omega), Option.map_some, Option.getD_some] at this
+      List.getElem?_range (show 0 < g.pLen by omega_using [bd]), Option.map_some, Option.getD_some] at this
     rw [List.getD_eq_getElem?_getD, ← this, show BitVec.ofNat 64 0 = 0#64 from rfl, BitVec.add_zero]
   have top : (t₂.mem (off E.base sPk)).toNat < 128 ↔ pc < 2 ^ (8 * g.pLen - 1) := by
-    rw [hb]; exact candidate_firstByte (by omega) (by rw [e256]; exact pcLt)
-  refine ld8_ok B₂.scr (d := sPk) (by simp only [sPk]; omega) fun s₃ u₃ => wp_andi fun s₄ u₄ =>
+    rw [hb]; exact candidate_firstByte (by omega_using [bd]) (by rw [e256]; exact pcLt)
+  refine ld8_ok B₂.scr (d := sPk) (by simp only [sPk]; omega_using [sz]) fun s₃ u₃ => wp_andi fun s₄ u₄ =>
     wp_cmpi fun s₅ f₅ _ z₅ => WP.block_nil ?_
   have zf₅ : isa.eval .e s₅ = some (decide ((t₂.mem (off E.base sPk)).toNat < 128)) := by
     show s₅.zf = _

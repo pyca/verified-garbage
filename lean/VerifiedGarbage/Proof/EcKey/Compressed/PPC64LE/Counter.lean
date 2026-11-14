@@ -40,12 +40,12 @@ theorem loopBy_ok {body : Prog isa} {cond : Cond} {Inv : Nat → State → Prop}
   have he := hc _ _ hi'
   by_cases hj : j - 1 = 0
   · exact .inl ⟨by rw [he]; simp [hj], hQ s' (by rw [hj] at hi'; exact hi')⟩
-  · exact .inr ⟨by rw [he]; simp [hj], j - 1, by omega, by omega, by omega, hi'⟩
+  · exact .inr ⟨by rw [he]; simp [hj], j - 1, by omega_using [h1], by omega_using [hj], by omega_using [h2], hi'⟩
 
 theorem ctr_lo (j i : Nat) : (ctr j i).setWidth 32 = BitVec.ofNat 32 i := by
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_setWidth, BitVec.toNat_ofNat, BitVec.toNat_ofNat]
-  omega
+  omega_using []
 
 theorem ofNat32_eq_zero {i : Nat} (hi : i < 2 ^ 32) : (BitVec.ofNat 32 i = 0) = (i = 0) := by
   apply propext
@@ -75,10 +75,10 @@ theorem eval_lo_zero {s : State} {j i : Nat} (hi : i < 2 ^ 32) (h : s.gpr .r31 =
 /-- The whole register's test, with the low word zero. -/
 theorem eval_hi_nonzero {s : State} {j : Nat} (hj : j < 2 ^ 32) (h : s.gpr .r31 = ctr j 0) :
     isa.eval (.nonzero .d .r31) s = some (decide (j ≠ 0)) := by
-  rw [eval_nonzero_ofNat h (by omega)]
+  rw [eval_nonzero_ofNat h (by omega_using [hj])]
   by_cases hj0 : j = 0
   · simp [hj0]
-  · simp only [Nat.add_zero, Option.some.injEq, decide_eq_decide]; omega
+  · simp only [Nat.add_zero, Option.some.injEq, decide_eq_decide]; omega_using []
 
 /-- `r31 -= 1` takes the low word down. -/
 theorem ctr_dec {j i : Nat} (hi : 1 ≤ i) (hi' : i < 2 ^ 32) :
@@ -90,16 +90,16 @@ theorem ctr_dec {j i : Nat} (hi : 1 ≤ i) (hi' : i < 2 ^ 32) :
 /-- `r4 = r31 >>> 32` is the high word. -/
 theorem ctr_hi {j i : Nat} (hj : j < 2 ^ 32) (hi : i < 2 ^ 32) : ctr j i >>> 32 = BitVec.ofNat 64 j := by
   apply BitVec.eq_of_toNat_eq
-  rw [BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega),
-    Nat.mod_eq_of_lt (by omega), Nat.shiftRight_eq_div_pow]
-  omega
+  rw [BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hj, hi]),
+    Nat.mod_eq_of_lt (by omega_using [hj]), Nat.shiftRight_eq_div_pow]
+  omega_using [hi]
 
 /-- `r31 |= i` sets the low word, when it is zero. -/
 theorem ctr_or {j i : Nat} (hj : j < 2 ^ 32) (hi : i < 2 ^ 32) :
     ctr j 0 ||| BitVec.ofNat 64 i = ctr j i := by
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_or, BitVec.toNat_ofNat, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.add_zero,
-    Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega),
+    Nat.mod_eq_of_lt (by omega_using [hj]), Nat.mod_eq_of_lt (by omega_using [hi]), Nat.mod_eq_of_lt (by omega_using [hj, hi]),
     Nat.two_pow_add_eq_or_of_lt hi]
 
 /-- `r31 -= 1 <<< 32` takes the high word down, with the low one zero. -/
@@ -113,6 +113,6 @@ theorem ctr_next {j : Nat} (hj : 1 ≤ j) (hj' : j < 2 ^ 32) :
 theorem ctr_init (j : Nat) : BitVec.ofNat 64 j <<< 32 = ctr j 0 := by
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_shiftLeft, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.shiftLeft_eq]
-  omega
+  omega_using []
 
 end VG.Proof.EcKey.Compressed.PPC64LE

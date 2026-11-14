@@ -61,8 +61,8 @@ theorem row_piece {P : Prims} {S' : Nat} (hP : PrimsOk P S') {p : Params} (hF : 
   refine (mul_piece hP hF hi).seq (Piece.seq ?_ ((inv_piece hP hF hi).seq ((addS2_piece hP hF hi).seq
     ((p2r_piece hP hF hi).seq ((sbp_piece hP hF hi).seq (bp_piece hP hF hi))))))
   refine Piece.mono (Piece.seqR (I := fun j => RowI p i (tIs p fun A S => dotK p A S i j)) (p.ℓ - 1) 1
-    fun j h1 h2 => mulAdd_piece hP hF hi (by omega)) (fun _ _ _ h => h) fun _ _ _ h => ?_
-  rwa [show 1 + (p.ℓ - 1) = p.ℓ by omega] at h
+    fun j h1 h2 => mulAdd_piece hP hF hi (by omega_using [hl, h2])) (fun _ _ _ h => h) fun _ _ _ h => ?_
+  rwa [show 1 + (p.ℓ - 1) = p.ℓ by omega_using [hl]] at h
 
 /-! ## The keys in memory -/
 
@@ -130,11 +130,11 @@ theorem trHash_piece {p : Params} (hF : PFacts p) {S' : Nat} (h16 : 16 ≤ S') (
   refine WP.mono (shake_ok h16 hSl L (by simp) (trHash_chk hF)) fun s' ⟨hP', x', ho⟩ => ⟨A, S, R, ?_, ?_⟩
   · have hc : KRChk p (p.ℓ + p.k) p.ℓ p.k [((.x28, 0), 200), ((.x28, 200), 640), ((.x27, 64), 64)] :=
       (KRChk.x28 hF (Nat.le_refl _) (Nat.le_refl _) (.inl (by decide)) (.inl (by decide))
-        (by rw [hF.scr]; omega)).append (ws₁ := [_])
+        (by rw [hF.scr]; omega_using [])).append (ws₁ := [_])
       ((KRChk.x28 hF (Nat.le_refl _) (Nat.le_refl _) (.inl (by decide)) (.inl (by decide))
-        (by rw [hF.scr]; omega)).append (ws₁ := [_])
+        (by rw [hF.scr]; omega_using [])).append (ws₁ := [_])
       (KRChk.x27 hF (Nat.le_refl _) (Nat.le_refl _) (by decide) (.inl (by decide))
-        (.inl (by simp only [oT0]; omega)) (by rw [hF.sk, oT0]; omega)))
+        (.inl (by simp only [oT0]; omega_using [])) (by rw [hF.sk, oT0]; omega_using [])))
     exact h.keep hF hp hP' x' hc
   · simp only [List.map_cons, List.map_nil, List.flatten_cons, List.flatten_nil, List.append_nil] at ho
     rw [hP'.pa (show Reg.x27 ∈ keptRegs by decide), ho]
@@ -171,7 +171,7 @@ theorem epi_piece {p : Params} (hF : PFacts p) {S' : Nat} :
   have e26 : pa s (.x26, 0) = σ.gpr .x1 := by rw [pa_zero, h.kc.top.x26]
   have e27 : pa s (.x27, 0) = σ.gpr .x2 := by rw [pa_zero, h.kc.top.x27]
   rw [hr, h.x24, hm, ← e26, ← e27, pk_bytes hF h, sk_bytes hF h htr]
-  exact outcome_of (by have := hF.l; omega) h.good
+  exact outcome_of (by have := hF.l; omega_using [this]) h.good
 
 /-! ## The function -/
 
@@ -181,14 +181,14 @@ theorem rest_piece {P : Prims} {S' : Nat} (hP : PrimsOk P S') {p : Params} (hF :
   refine (copies_piece hF).seq (Piece.seq (J := KRx p (p.ℓ + p.k) 0 0) ?_
     (Piece.seq (J := KRx p (p.ℓ + p.k) p.ℓ 0) ?_ (Piece.seq (J := KRx p (p.ℓ + p.k) p.ℓ p.k) ?_
       (trHash_piece hF hP.s16 hP.s64))))
-  · refine Piece.mono (Piece.seqR (I := fun r => KRx p r 0 0) (p.ℓ + p.k) 0 fun r _ hr => packS_piece hP hF (by omega))
+  · refine Piece.mono (Piece.seqR (I := fun r => KRx p r 0 0) (p.ℓ + p.k) 0 fun r _ hr => packS_piece hP hF (by omega_using [hr]))
       (fun _ _ _ h => h) fun _ _ _ h => ?_
     simpa using h
   · refine Piece.mono (Piece.seqR (I := fun j => KRx p (p.ℓ + p.k) j 0) p.ℓ 0
-      fun j _ hj => nttS_piece hP hF (by omega)) (fun _ _ _ h => h) fun _ _ _ h => ?_
+      fun j _ hj => nttS_piece hP hF (by omega_using [hj])) (fun _ _ _ h => h) fun _ _ _ h => ?_
     simpa using h
   · refine Piece.mono (Piece.seqR (I := fun i => KRx p (p.ℓ + p.k) p.ℓ i) p.k 0
-      fun i _ hi => row_piece hP hF (by omega)) (fun _ _ _ h => h) fun _ _ _ h => ?_
+      fun i _ hi => row_piece hP hF (by omega_using [hi])) (fun _ _ _ h => h) fun _ _ _ h => ?_
     simpa using h
 
 theorem keyGen_piece {P : Prims} {S' : Nat} (hP : PrimsOk P S') {p : Params} (hF : PFacts p)

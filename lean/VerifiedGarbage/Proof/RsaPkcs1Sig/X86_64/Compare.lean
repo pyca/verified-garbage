@@ -46,7 +46,7 @@ theorem ea_ix (s : State) (b i : Reg) :
 
 theorem setWidth_byte_eq_zero' (d : Byte) : d.setWidth 64 = 0 ↔ d = 0 := by
   constructor
-  · intro h; apply BitVec.eq_of_toNat_eq; have := congrArg BitVec.toNat h; have := d.isLt; simp at *; omega
+  · intro h; apply BitVec.eq_of_toNat_eq; have := congrArg BitVec.toNat h; have := d.isLt; simp at *; omega_using [this]
   · rintro rfl; rfl
 
 theorem or_eq_zero64 {x y : BitVec 64} : x ||| y = 0 ↔ x = 0 ∧ y = 0 := BitVec.or_eq_zero_iff
@@ -70,11 +70,11 @@ theorem eqBytes_succ8 (m : Mem) (a b : Addr) (j : Nat) :
     fun c i => by rw [BitVec.add_assoc, BitVec.ofNat_add]
   simp only [EqBytes, hc]
   constructor
-  · intro h; exact ⟨fun i hi => h i (by omega), fun i hi => h _ (by omega)⟩
+  · intro h; exact ⟨fun i hi => h i (by omega_using [hi]), fun i hi => h _ (by omega_using [hi])⟩
   · intro ⟨h₁, h₂⟩ i hi
     by_cases hl : i < 8 * j
     · exact h₁ i hl
-    · have := h₂ (i - 8 * j) (by omega); rwa [Nat.add_sub_cancel' (by omega)] at this
+    · have := h₂ (i - 8 * j) (by omega_using [hi]); rwa [Nat.add_sub_cancel' (by omega_using [hl])] at this
 
 theorem compare_step {s₀ s : State} {n : Nat}
     (hr : ∀ i < n, InRegions (s₀.rd ++ s₀.wr) (s₀.gpr .rdi + BitVec.ofNat 64 i) 1 ∧
@@ -148,32 +148,32 @@ theorem compare_ok {s₀ : State} {n : Nat} (hn : n = (s₀.gpr .rcx).toNat) (hn
   · replace h8 := of_decide_eq_true h8
     have hw : ∀ j, 8 * j < n → InRegions (s₀.rd ++ s₀.wr) (s₀.gpr .rdi + BitVec.ofNat 64 (8 * j)) 8 ∧
         InRegions (s₀.rd ++ s₀.wr) (s₀.gpr .rsi + BitVec.ofNat 64 (8 * j)) 8 := fun j hj =>
-      ⟨CallLay.inRegions_sub hr.1 (by omega) hn64, CallLay.inRegions_sub hr.2 (by omega) hn64⟩
+      ⟨CallLay.inRegions_sub hr.1 (by omega_using [h8, hj]) hn64, CallLay.inRegions_sub hr.2 (by omega_using [h8, hj]) hn64⟩
     have w0 : WInv s₀ 0 t := ⟨h0.1, h0.2.1, h0.2.2.1, by
-      rw [h0.2.2.2]; exact ⟨fun _ i hi => absurd hi (by omega), fun _ => rfl⟩⟩
+      rw [h0.2.2.2]; exact ⟨fun _ i hi => absurd hi (by omega_using []), fun _ => rfl⟩⟩
     refine WP.mono (Q := WInv s₀ (n / 8)) ?_ fun u hu => ⟨hu.1, hu.2.1, by
       rw [hu.2.2.2, Nat.mul_div_cancel' (Nat.dvd_of_mod_eq_zero h8)]⟩
     refine WP.loop (M := isa) (fun rem u => ∃ j, 8 * j < n ∧ rem = n / 8 - j ∧ WInv s₀ j u) ?_ (n / 8) t
-      ⟨0, by omega, by omega, w0⟩
+      ⟨0, by omega_using [hn0], by omega_using [], w0⟩
     intro rem u ⟨j, hj, hrem, hinv⟩
     refine WP.mono (word_step hw j hj hinv) fun u' ⟨hout, hz'⟩ => ?_
     by_cases he : 8 * (j + 1) = n
     · left
-      refine ⟨?_, by rwa [show n / 8 = j + 1 by omega]⟩
+      refine ⟨?_, by rwa [show n / 8 = j + 1 by omega_using [he]]⟩
       have : BitVec.ofNat 64 (8 * (j + 1)) = s₀.gpr .rcx := by rw [he, hn]; simp
       simp [eval, hz', this]
     · right
       have hne : BitVec.ofNat 64 (8 * (j + 1)) ≠ s₀.gpr .rcx := by
         intro hh
         have := congrArg BitVec.toNat hh
-        rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)] at this
-        exact he (by omega)
-      refine ⟨?_, n / 8 - (j + 1), by omega, j + 1, by omega, rfl, hout⟩
+        rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hn, h8, hj])] at this
+        exact he (by omega_using [hn, this])
+      refine ⟨?_, n / 8 - (j + 1), by omega_using [h8, hj, hrem], j + 1, by omega_using [h8, hj, he], rfl, hout⟩
       simp [eval, hz', hne]
   · replace h8 := of_decide_eq_false h8
     have hb : ∀ i < n, InRegions (s₀.rd ++ s₀.wr) (s₀.gpr .rdi + BitVec.ofNat 64 i) 1 ∧
         InRegions (s₀.rd ++ s₀.wr) (s₀.gpr .rsi + BitVec.ofNat 64 i) 1 := fun i hi =>
-      ⟨CallLay.inRegions_sub hr.1 (by omega) hn64, CallLay.inRegions_sub hr.2 (by omega) hn64⟩
+      ⟨CallLay.inRegions_sub hr.1 (by omega_using [hi]) hn64, CallLay.inRegions_sub hr.2 (by omega_using [hi]) hn64⟩
     refine WP.mono (Q := CInv s₀ n) ?_ fun u hu => ⟨hu.1, hu.2.1, by
       rw [hu.2.2.2, setWidth_byte_eq_zero', diff_zero]; rfl⟩
     refine WP.loop (M := isa) (fun rem u => ∃ j, j < n ∧ rem = n - j ∧ CInv s₀ j u) ?_ n t
@@ -189,9 +189,9 @@ theorem compare_ok {s₀ : State} {n : Nat} (hn : n = (s₀.gpr .rcx).toNat) (hn
       have hne : BitVec.ofNat 64 (j + 1) ≠ s₀.gpr .rcx := by
         intro hh
         have := congrArg BitVec.toNat hh
-        rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)] at this
-        exact he (by omega)
-      refine ⟨?_, n - (j + 1), by omega, j + 1, by omega, rfl, hout⟩
+        rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hn, hj])] at this
+        exact he (by omega_using [hn, this])
+      refine ⟨?_, n - (j + 1), by omega_using [hj, hrem], j + 1, by omega_using [hj, he], rfl, hout⟩
       simp [eval, hz', hne]
 
 end VG.Proof.RsaPkcs1Sig.X86_64

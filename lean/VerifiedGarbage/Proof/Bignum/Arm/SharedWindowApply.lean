@@ -27,7 +27,7 @@ theorem sharedWindowApply_ok {base : BitVec 32} {len w : Nat} {P : State → Pro
       t.mem.readW (off (State.addr base) 204) 32 = BitVec.ofNat 32 0 ∧
       KeepsExp base s.mem t.mem ∧ P t ∧ Frame regions s.mem t.mem ∧ Rest roundClobbers s t := by
   have nowrap := h.ready.workspace.nowrap
-  have size : 256 ≤ 8 * len := Nat.le_trans (by simp only [arrAt, Proof.Rsa.Mont.hdrBytes]; omega) fits
+  have size : 256 ≤ 8 * len := Nat.le_trans (by simp only [arrAt, Proof.Rsa.Mont.hdrBytes]; omega_using []) fits
   rw [SharedWindow.apply, WP.seq_iff]
   refine WP.mono (scan_ok s h table fits hd digit) ?_
   rintro u ⟨powerU, tableU, selected, _, keepsU, frameU, restU⟩

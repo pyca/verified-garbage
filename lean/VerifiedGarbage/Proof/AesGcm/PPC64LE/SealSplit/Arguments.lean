@@ -57,9 +57,9 @@ theorem args_pre {V : Reg → BitVec 64} {sp S : Addr} {count R : Nat} {s : Stat
     (Proof.Gcm.encryptBlocksSplitContract PPC64LE.abi).pre
       ((argsState s).callEntry.withRegions (reads (argsState s)) (writes (argsState s))) := by
   obtain ⟨h3,h4,h5,h6,h7,h8,h9,h10,hw⟩ := args_values he lay
-  have hc : count/16<2^64 := by have := lay.bound; have := (V .r23).isLt; omega
-  have hn : (V .r23).toNat/16<2^64 := by have := (V .r23).isLt; omega
-  have hr : R<2^64 := by rcases hv with h | h | h <;> omega
+  have hc : count/16<2^64 := by have := lay.bound; have := (V .r23).isLt; omega_arith
+  have hn : (V .r23).toNat/16<2^64 := by have := (V .r23).isLt; omega_using []
+  have hr : R<2^64 := by rcases hv with h | h | h <;> omega_using [h]
   sig_eval [Proof.Gcm.encryptBlocksSplitContract,Proof.Gcm.encryptBlocksSplitSig,Proof.Gcm.encryptBlocksSplitPre,
     PPC64LE.abi,PPC64LE.argRegs,stackArg,stackArgAddr,List.getD,List.range,List.range.loop]
   simp only [reads,writes,argsState,argsRegs,RegUpd.gpr_write,RegUpd.sp_write,reduceCtorEq,ite_false,ite_true,
@@ -73,9 +73,9 @@ theorem args_pre {V : Reg → BitVec 64} {sp S : Addr} {count R : Nat} {s : Stat
   have hslt : (s.mem.writeW (sp+96) (V .r31+448)).readW (sp+96#64) 64=V .r31+448 :=
     Mem.readW_writeW_self64 _ _ _
   simp only [h23,hslt]
-  have dp := hd.take (k := ((V .r23).toNat/16)*16) (by omega)
-  have src := Region.sub_prefix (by omega : count/16*16≤count) (base := S)
-  refine ⟨by have := lay.stackFit; omega,rfl,trivial,?_,?_,?_,?_,?_,?_,?_,?_,?_,?_,?_,?_,?_,?_,?_,?_,?_,?_,L.cw,?_,?_,?_,dp.ok.fit,?_,hv,by have := lay.bound; omega⟩
+  have dp := hd.take (k := ((V .r23).toNat/16)*16) (by omega_using [])
+  have src := Region.sub_prefix (by omega_using [] : count/16*16≤count) (base := S)
+  refine ⟨by have := lay.stackFit; omega_using [this],rfl,trivial,?_,?_,?_,?_,?_,?_,?_,?_,?_,?_,?_,?_,?_,?_,?_,?_,?_,?_,L.cw,?_,?_,?_,dp.ok.fit,?_,hv,by have := lay.bound; omega_using [this]⟩
   · exact L.cs.sub_right (Lay.stSub (d := 48) (n := 16) (by decide))
   · exact L.cs.sub_right (Lay.stSub (d := 16) (n := 16) (by decide))
   · exact dp.ctx
@@ -89,14 +89,14 @@ theorem args_pre {V : Reg → BitVec 64} {sp S : Addr} {count R : Nat} {s : Stat
   · exact dp.ok.st.symm.sub_left (Lay.stSub (d := 16) (n := 16) (by decide))
   · exact L.st_w (a := 16) (n := 16) (d := 448) (k := 2112) (by decide) (.inr ⟨by decide,by decide⟩)
   · exact lay.slotState.symm.sub_left (Lay.stSub (d := 16) (n := 16) (by decide))
-  · exact (lay.data.sub_left src).sub_right (Region.sub_prefix (by omega))
+  · exact (lay.data.sub_left src).sub_right (Region.sub_prefix (by omega_using []))
   · exact (lay.work.sub_left src).sub_right (Lay.wSub (d := 448) (n := 2112) (by decide))
   · exact dp.ok.w.sub_right (Lay.wSub (d := 448) (n := 2112) (by decide))
-  · exact lay.slotData.symm.sub_left (Region.sub_prefix (by omega))
+  · exact lay.slotData.symm.sub_left (Region.sub_prefix (by omega_using []))
   · exact lay.slotWork.symm.sub_left (Lay.wSub (d := 448) (n := 2112) (by decide))
   · exact SealFused.fit_offset _ L.sw (by decide) (off := 48) (n := 16) (by decide)
   · exact SealFused.fit_offset _ L.sw (by decide) (off := 16) (n := 16) (by decide)
-  · have := lay.fit; omega
+  · have := lay.fit; omega_using [this]
   · exact SealFused.fit_offset _ L.ww (by decide) (off := 448) (n := 2112) (by decide)
 
 
@@ -106,8 +106,8 @@ theorem args_regions {V : Reg → BitVec 64} {sp S : Addr} {count : Nat} {s : St
     writes (argsState s)=[⟨V .r30+48,16⟩,⟨V .r30+16,16⟩,
       ⟨V .r27,(V .r23).toNat/16*16⟩,⟨V .r31+448,2112⟩] := by
   obtain ⟨h3,_,h5,h6,h7,h8,h9,h10,hw⟩ := args_values he lay
-  have hc : count/16<2^64 := by have := lay.bound; have := (V .r23).isLt; omega
-  have hn : (V .r23).toNat/16<2^64 := by have := (V .r23).isLt; omega
+  have hc : count/16<2^64 := by have := lay.bound; have := (V .r23).isLt; omega_arith
+  have hn : (V .r23).toNat/16<2^64 := by have := (V .r23).isLt; omega_using []
   simp only [reads,writes,h3,h5,h6,h7,h8,h9,h10,hw,toNat64 hc,toNat64 hn]
   exact ⟨by rw [show (argsState s).sp=sp by exact he.sp],trivial⟩
 
@@ -129,14 +129,14 @@ theorem args_config {V : Reg → BitVec 64} {sp S : Addr} {count R : Nat} {s : S
   have hk := args_keep s (by rw [he.sp]; exact lay.slotWrite)
   have ww : Covers (writes (argsState s)) (argsState s).wr := by
     rw [hw,hk.2.2]
-    have dp := hd.take (k := (V .r23).toNat/16*16) (by omega)
+    have dp := hd.take (k := (V .r23).toNat/16*16) (by omega_using [])
     exact Covers.cons (he.perm.stC (d := 48) (n := 16) (by decide))
       (Covers.cons (he.perm.stC (d := 16) (n := 16) (by decide))
         (Covers.cons dp.wr (he.perm.wC (d := 448) (n := 2112) (by decide))))
   refine ⟨args_pre L he hd lay hR hv,?_,ww⟩
   apply Covers.append_left
   · rw [hr,hk.2.1,hk.2.2]
-    exact Covers.cons he.perm.ctx (Covers.cons (covers_prefix lay.reads (by omega))
+    exact Covers.cons he.perm.ctx (Covers.cons (covers_prefix lay.reads (by omega_using []))
       (Covers.one (in_left lay.slotWrite)))
   · exact Covers.right ww
 

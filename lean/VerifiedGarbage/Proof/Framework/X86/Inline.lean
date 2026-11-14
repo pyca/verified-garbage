@@ -335,12 +335,12 @@ theorem push_eq {i : Instr} {s s₁ : State} (h : isa.push i s = some s₁) :
   cases i <;> simp only [isa, push, reduceCtorEq] at h
   case mmxEnter =>
     split at h <;> cases h
-    exact ⟨0, 0, by omega, by omega, rfl, rfl, fun _ _ _ => rfl, by simp⟩
+    exact ⟨0, 0, by omega_using [], by omega_using [], rfl, rfl, fun _ _ _ => rfl, by simp⟩
   case mcdtEnter d =>
     split at h <;> cases h
     rename_i hc
     have he : Reg.esp ≠ d := fun e => hc.1 e.symm
-    refine ⟨3, 9, by omega, by omega, rfl, ?_, fun r hr hd => ?_, ?_⟩
+    refine ⟨3, 9, by omega_using [], by omega_using [], rfl, ?_, fun r hr hd => ?_, ?_⟩
     · simp only [State.setReg, he, ↓reduceIte]
     · have hd' : r ≠ d := fun e => hd (by simp [dstOf, Taint.dst, e])
       simp only [State.setReg, hr, hd', ↓reduceIte]
@@ -348,12 +348,12 @@ theorem push_eq {i : Instr} {s s₁ : State} (h : isa.push i s = some s₁) :
   case push rs =>
     split at h <;> cases h
     obtain ⟨h₁, -, h₃, h₄⟩ := pushRegs_eq s rs
-    exact ⟨rs.length, 4 * rs.length, by omega, by omega, h₁, by rw [h₃], fun r hr _ => h₄ r hr, h₃⟩
+    exact ⟨rs.length, 4 * rs.length, by omega_using [], by omega_using [], h₁, by rw [h₃], fun r hr _ => h₄ r hr, h₃⟩
   case alloc bytes =>
     split at h <;> cases h
     rename_i hc
     have e : 4 * (bytes / 4) = bytes := Nat.mul_div_cancel' (Nat.dvd_of_mod_eq_zero hc.2.2.1)
-    refine ⟨bytes / 4, bytes, by omega, by omega, rfl, ?_, fun r hr _ => ?_, ?_⟩
+    refine ⟨bytes / 4, bytes, by omega_using [hc], by omega_using [], rfl, ?_, fun r hr _ => ?_, ?_⟩
     · simp only [State.setReg, ite_true]
     · simp only [State.setReg, hr, ite_false]
     · simp only [State.setReg, ite_true, e]
@@ -362,7 +362,7 @@ theorem push_eq {i : Instr} {s s₁ : State} (h : isa.push i s = some s₁) :
     split at h <;> cases h
     rename_i hc
     have he : Reg.esp ≠ d := hc.1.symm
-    refine ⟨1, 4, by omega, by omega, rfl, ?_, fun r hr hd => ?_, ?_⟩
+    refine ⟨1, 4, by omega_using [], by omega_using [], rfl, ?_, fun r hr hd => ?_, ?_⟩
     · simp only [State.setReg, he, ↓reduceIte]
     · have hd' : r ≠ d := fun e => hd (by simp [dstOf, Taint.dst, e])
       simp only [RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, hr, hd', ↓reduceIte]
@@ -379,25 +379,25 @@ theorem pop_eq {j : Instr} {s₁ s₂ s' : State} (h : isa.pop j s₁ s₂ = som
   case emms =>
     split at h <;> cases h
     rename_i hc
-    exact ⟨hc.2.2.1, rfl, rfl, fun _ _ _ => rfl, hc.2.1, 0, 0, by omega, by omega, hc.2.2.2, by simp⟩
+    exact ⟨hc.2.2.1, rfl, rfl, fun _ _ _ => rfl, hc.2.1, 0, 0, by omega_using [], by omega_using [], hc.2.2.2, by simp⟩
   case mcdtLeave =>
     split at h <;> cases h
     rename_i hc
-    refine ⟨hc.2.2.1, rfl, rfl, fun r hr _ => ?_, hc.2.1, 3, 9, by omega, by omega, hc.2.2.2.1, ?_⟩
+    refine ⟨hc.2.2.1, rfl, rfl, fun r hr _ => ?_, hc.2.1, 3, 9, by omega_using [], by omega_using [], hc.2.2.2.1, ?_⟩
     · simp only [State.setReg, hr, ite_false]
     · simp only [State.setReg, ite_true]; rfl
   case pop d k =>
     split at h <;> cases h
     rename_i hc
     obtain ⟨h₁, -, h₃, h₄⟩ := popReg_eq s₂ d k
-    refine ⟨hc.2.2.2.1, h₁, rfl, fun r hr hd => h₄ r hr ?_, hc.2.2.1, k, 4 * k, by omega, by omega,
+    refine ⟨hc.2.2.2.1, h₁, rfl, fun r hr hd => h₄ r hr ?_, hc.2.2.1, k, 4 * k, by omega_using [], by omega_using [],
       hc.2.2.2.2, h₃⟩
     intro e; exact hd (by simp [dstOf, Taint.dst, e])
   case free bytes =>
     split at h <;> cases h
     rename_i hc
     have e : 4 * (bytes / 4) = bytes := Nat.mul_div_cancel' (Nat.dvd_of_mod_eq_zero hc.2.2.1)
-    refine ⟨hc.2.2.2.2.1, rfl, rfl, fun r hr _ => ?_, hc.2.2.2.1, bytes / 4, bytes, by omega, by omega,
+    refine ⟨hc.2.2.2.2.1, rfl, rfl, fun r hr _ => ?_, hc.2.2.2.1, bytes / 4, bytes, by omega_using [e], by omega_using [],
       hc.2.2.2.2.2, ?_⟩
     · simp only [State.setReg, hr, ite_false]
     · simp only [State.setReg, ite_true, e]
@@ -495,7 +495,7 @@ theorem frame_gpr {i j : Instr} {s s₁ s₂ s' : State} {r : Reg} (hi : Taint.c
   · subst hrs
     rw [w₁] at h₃
     simp only [List.head?_cons, Option.some.injEq, Region.mk.injEq] at h₃
-    have : k = k' := by omega
+    have : k = k' := by omega_using [hl₁, hl₂, hl₁', hl₂', h₃]
     subst this
     rw [e₃, hb, e₁, BitVec.sub_add_cancel]
   · rw [g₂ r hrs (Taint.dst_ne_of_clobbers hj), hb, g₁ r hrs (Taint.dst_ne_of_clobbers hi)]

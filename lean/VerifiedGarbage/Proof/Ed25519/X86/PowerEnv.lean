@@ -85,7 +85,7 @@ theorem sqLoop_ok {x : BitVec 32} {s₀ : State} (hc₀ : Ctx x s₀) (o : Slot)
   have eu : env u.mem x = Function.update (env s₀.mem x) o (sqn v (n - (m - 1))) := by
     rw [hu.mem, et, he]
     change opMul o o o (Function.update _ o _) = _
-    rw [opMul_update, show n - (m - 1) = (n - m) + 1 by omega]
+    rw [opMul_update, show n - (m - 1) = (n - m) + 1 by omega_using [h1, h2]]
     rfl
   have ev : isa.eval .ne u = some (!decide (m - 1 = 0)) := by
     show u.zf.map (!·) = _
@@ -94,8 +94,8 @@ theorem sqLoop_ok {x : BitVec 32} {s₀ : State} (hc₀ : Ctx x s₀) (o : Slot)
   by_cases hm : m = 1
   · subst m
     exact .inl ⟨by rw [ev]; rfl, ku, by simpa only [Nat.sub_self, Nat.sub_zero] using eu⟩
-  · exact .inr ⟨by rw [ev]; simp only [show m - 1 ≠ 0 by omega, decide_false]; rfl,
-      m - 1, by omega, by omega, by omega, ku, bu, eu⟩
+  · exact .inr ⟨by rw [ev]; simp only [show m - 1 ≠ 0 by omega_using [h1, hm], decide_false]; rfl,
+      m - 1, by omega_using [h1], by omega_using [h1, hm], by omega_using [h2], ku, bu, eu⟩
 
 /-- `n` squarings of a slot in place. -/
 theorem sqnI (x : BitVec 32) (o : Slot) (_ho : ISlot o) (n : Nat) (hn : 1 ≤ n)

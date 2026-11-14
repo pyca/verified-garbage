@@ -27,21 +27,21 @@ theorem encoding_pre {g : Geometry} {bs : Fin 5 → List Byte} {s : State}
   have df := h.valid.digestBound
   refine ⟨hash, len, h.valid.maxLength, ⟨by rw [dst]; exact h.em2Fit, ?_⟩, ?_⟩
   · intro i hi
-    rw [dst, byteAddr_add (by have := h.em2Fit; omega)]
-    exact CallLay.inRegions_sub (off := i) h.em2Write (by omega) (by have := h.valid.maxLength; omega)
+    rw [dst, byteAddr_add (by have := h.em2Fit; omega_using [hi, this])]
+    exact CallLay.inRegions_sub (off := i) h.em2Write (by omega_using [hi]) (by have := h.valid.maxLength; omega_using [this])
   · rw [count, BitVec.toNat_ofNat, Nat.mod_eq_of_lt df]
     refine ⟨by rw [src]; exact (h.sources 2).fits, ?_, ?_⟩
     · intro i hi
-      rw [src, byteAddr_add (by have := (h.sources 2).fits; change (g.sources 2).toNat + g.digestLength ≤ 2 ^ 32 at this; omega)]
-      exact CallLay.inRegions_sub (off := i) (h.sources 2).read (by exact Nat.succ_le_of_lt hi) (by change g.digestLength < 2 ^ 64; omega)
+      rw [src, byteAddr_add (by have := (h.sources 2).fits; change (g.sources 2).toNat + g.digestLength ≤ 2 ^ 32 at this; omega_using [hi, this])]
+      exact CallLay.inRegions_sub (off := i) (h.sources 2).read (by exact Nat.succ_le_of_lt hi) (by change g.digestLength < 2 ^ 64; omega_using [df])
     · intro i hi j hj eq
-      rw [src, byteAddr_add (by have := (h.sources 2).fits; change (g.sources 2).toNat + g.digestLength ≤ 2 ^ 32 at this; omega),
-        dst, byteAddr_add (by have := h.em2Fit; omega)] at eq
+      rw [src, byteAddr_add (by have := (h.sources 2).fits; change (g.sources 2).toNat + g.digestLength ≤ 2 ^ 32 at this; omega_using [hi, this]),
+        dst, byteAddr_add (by have := h.em2Fit; omega_using [hj, this])] at eq
       have sep := ((h.valid.stackSources 2).sub_left (fun x hx => h.valid.innerSub x (h.em2Sub x hx))).symm
       apply sep (byteAddr (g.sources 2) + BitVec.ofNat 64 i)
-      · exact Offset.contains_base _ (by change i + 1 ≤ g.digestLength; omega) (by omega)
+      · exact Offset.contains_base _ (by change i + 1 ≤ g.digestLength; omega_using [hi]) (by omega_using [df, hi])
       · rw [eq]
-        exact Offset.contains_base _ (by omega) (by have := h.valid.maxLength; omega)
+        exact Offset.contains_base _ (by omega_using [hj]) (by have := h.valid.maxLength; omega_using [hj, this])
 
 def Encoded (g : Geometry) (bs : Fin 5 → List Byte) (s : State) : Prop :=
   match encodeId g.hash (bs 2) g.length with
@@ -87,6 +87,6 @@ theorem encoding_ok {g : Geometry} {bs : Fin 5 → List Byte} {s : State}
     · simp only [Encoded, result]
       refine ⟨out.1, ?_⟩
       rw [out.2, dst, ← length]
-      exact bytesAt_writeBytes _ _ _ (by rw [length]; have := h.valid.maxLength; omega)
+      exact bytesAt_writeBytes _ _ _ (by rw [length]; have := h.valid.maxLength; omega_using [this])
 
 end VG.Proof.RsaPkcs1Sig.X86.Ver

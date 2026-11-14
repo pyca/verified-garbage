@@ -176,7 +176,7 @@ theorem combMetadata_ct {base ctx : BitVec 32} {len N : Nat}
   have headPositive : 0<h := by
     dsimp [h]
     unfold VG.Proof.Ffdh.ScalarWidth.headBits VG.Proof.Ffdh.ScalarWidth.width
-    omega
+    omega_using [positive]
   have headBound : h≤8 := (VG.Proof.Ffdh.ScalarWidth.headBits_parts N).1
   have maskValue : (VG.Proof.Ffdh.ScalarWidth.mask N).setWidth 32=combLowMask h := by
     apply BitVec.eq_of_toNat_eq
@@ -203,7 +203,7 @@ theorem combMetadata_ct {base ctx : BitVec 32} {len N : Nat}
     change 8*(VG.Proof.Ffdh.ScalarWidth.width N-1)+h=N at parts
     exact ⟨hs.1.after rest,metadataCtx_after (by simp) rest.sp frame hs.2.1,by rw [parts] at count;exact count⟩
   have rows (s : State) (hs : Second s) : WP isa rowsCount s Last := by
-    refine WP.mono (combRowsCount_ok s hs.1 positive (by omega) hs.2.2) ?_
+    refine WP.mono (combRowsCount_ok s hs.1 positive (by omega_using [bound]) hs.2.2) ?_
     rintro t ⟨_,_,frame,rest⟩
     exact ⟨hs.1.after rest,metadataCtx_after (by simp) rest.sp frame hs.2.1⟩
   unfold metadata

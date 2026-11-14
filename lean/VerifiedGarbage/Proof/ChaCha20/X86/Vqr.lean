@@ -104,15 +104,15 @@ theorem dword_rotBytes (x : BitVec 128) {i t : Nat} (hi : i < 4) (ht : 0 < t ∧
     dword (ofBytes fun j => byte x (4 * (j / 4) + (j % 4 + t) % 4)) i = (dword x i).rotateLeft (32 - 8 * t) := by
   apply BitVec.eq_of_getLsbD_eq; intro m hm
   rw [getLsbD_dword, decide_eq_true hm, Bool.true_and,
-    show 32 * i + m = 8 * (4 * i + m / 8) + m % 8 by omega, getLsbD_ofBytes _ (by omega) (by omega),
-    byte, BitVec.getLsbD_extractLsb', decide_eq_true (by omega), Bool.true_and, BitVec.getLsbD_rotateLeft]
-  rw [show (32 - 8 * t) % 32 = 32 - 8 * t by omega]
+    show 32 * i + m = 8 * (4 * i + m / 8) + m % 8 by omega_using [], getLsbD_ofBytes _ (by omega_using [hi, hm]) (by omega_using []),
+    byte, BitVec.getLsbD_extractLsb', decide_eq_true (by omega_using []), Bool.true_and, BitVec.getLsbD_rotateLeft]
+  rw [show (32 - 8 * t) % 32 = 32 - 8 * t by omega_using [ht]]
   by_cases h : m < 32 - 8 * t
-  · rw [ite_eq_left h, getLsbD_dword, decide_eq_true (by omega), Bool.true_and]
-    exact congrArg _ (by omega)
-  · rw [ite_eq_right h, decide_eq_true hm, Bool.true_and, getLsbD_dword, decide_eq_true (by omega),
+  · rw [ite_eq_left h, getLsbD_dword, decide_eq_true (by omega_using [h]), Bool.true_and]
+    exact congrArg _ (by omega_using [h])
+  · rw [ite_eq_right h, decide_eq_true hm, Bool.true_and, getLsbD_dword, decide_eq_true (by omega_using [hm]),
       Bool.true_and]
-    exact congrArg _ (by omega)
+    exact congrArg _ (by omega_using [ht, hm, h])
 
 theorem dword_pshufb16 (x : BitVec 128) {i : Nat} (hi : i < 4) :
     dword (XBinOp.eval .pshufb x mask16) i = (dword x i).rotateLeft 16 := by

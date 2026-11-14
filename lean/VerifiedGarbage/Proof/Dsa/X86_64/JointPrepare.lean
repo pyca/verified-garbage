@@ -47,7 +47,7 @@ theorem jointPrepare_ok (M : Mont) {s : State} {B : Addr} {Z o w wx m : Nat}
   refine WP.seq (WP.mono (load_mod_ok hc1 hm1 hw2 hwx hw30 (by decide) (by decide)
     (by decide) (by decide) ((work_parent hc hf1 (by decide)).trans hg)
     ((work_parent hc hf1 (by decide)).trans hgl) (work_source hc hf1 hk1 hgs)
-    hg1 (by omega) hgw) fun s2 ⟨hc2, hm2, hg2, ha2, hf2, hk2⟩ => ?_)
+    hg1 (by omega_using [hw48, hgw]) hgw) fun s2 ⟨hc2, hm2, hg2, ha2, hf2, hk2⟩ => ?_)
   have hf12 := hf1.trans hf2
   have hk12 := (hk1.trans hk2).mono (show ∀ r ∈ mmRegs ++ mmRegs, r ∈ mmRegs by decide)
   have ho2 := (ha2 aOne (by decide) (by decide)).trans ho1
@@ -55,18 +55,18 @@ theorem jointPrepare_ok (M : Mont) {s : State} {B : Addr} {Z o w wx m : Nat}
   refine WP.seq (WP.mono (load_mod_ok hc2 hm2 hw2 hwx hw30 (by decide) (by decide)
     (by decide) (by decide) ((work_parent hc hf12 (by decide)).trans hy)
     ((work_parent hc hf12 (by decide)).trans hyl) (work_source hc hf12 hk12 hys)
-    hy1 (by omega) hyw) fun s3 ⟨hc3, hm3, hy3, ha3, hf3, hk3⟩ => ?_)
+    hy1 (by omega_using [hw48, hyw]) hyw) fun s3 ⟨hc3, hm3, hy3, ha3, hf3, hk3⟩ => ?_)
   have hg3 := (ha3 aX (by decide) (by decide)).trans hg2
   have ho3 := (ha3 aOne (by decide) (by decide)).trans ho2
   have hr3 := (ha3 aR2 (by decide) (by decide)).trans hr2
   have hr3' : wv s3.mem (off B o) (slot wx aR2) wx =
       (2 ^ (64 * wx) * 2 ^ (64 * wx)) % m := by
-    rw [hr3, ← Nat.pow_add, show 64 * wx + 64 * wx = 128 * wx by omega]
+    rw [hr3, ← Nat.pow_add, show 64 * wx + 64 * wx = 128 * wx by omega_using []]
   have hR := coprime_pow2 hodd (64 * wx)
-  refine WP.seq (WP.mono (jointEncode_ok M ⟨hm3, hc3.scrT⟩ hw2 (by omega) hm hR hg3 hy3 ho3 hr3')
+  refine WP.seq (WP.mono (jointEncode_ok M ⟨hm3, hc3.scrT⟩ hw2 (by omega_using [hw48]) hm hR hg3 hy3 ho3 hr3')
     fun s4 ⟨hc4, hv4, hf4, hk4⟩ => ?_)
   have hsub4 := arrays_context hc3 hf4 (by decide) hk4
-  refine WP.mono (jointBuild_ok M hc4 hw2 (by omega) (by omega) hR hv4)
+  refine WP.mono (jointBuild_ok M hc4 hw2 (by omega_using [hw48]) (by omega_using [hm]) hR hv4)
     fun t ⟨hct, ht, hyt, hot, hft, hkt⟩ => ?_
   exact ⟨hsub4.of_frmT hft (workRanges_ok wx) hkt.2.2 (hkt.gpr (by decide)),
     hct, ht, hyt, hot, (((hf12.trans hf3).trans (arrays_work hf4 (by decide))).trans hft),

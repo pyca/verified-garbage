@@ -717,7 +717,7 @@ theorem written_of_frame {s s' : State} (hp : Ecb.PreS s) (hf : Frame [Ecb.dR s]
   refine hf _ fun r hr hc => ?_
   rw [List.mem_singleton] at hr
   subst hr
-  exact hp.d_scr _ hc (Offset.contains_base _ (by omega) (by omega))
+  exact hp.d_scr _ hc (Offset.contains_base _ (by omega_using [h']) (by omega_using [h']))
 
 theorem encryptBlocks_written (s : State) (t : List Leak) (s' : State)
     (hs : (Proof.Aes.encryptBlocksRoundsContract X86_64.abi).pre s)
@@ -750,10 +750,10 @@ theorem written_of_frameKeys {s s' : State} (hp : Ecb.PreS s)
   refine hf _ fun r hr hc => ?_
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl
-  · exact hp.d_scr _ hc (Offset.contains_base _ (by omega) (by omega))
+  · exact hp.d_scr _ hc (Offset.contains_base _ (by omega_using [hib]) (by omega_using [hib]))
   · change (s.gpr .r8 + BitVec.ofNat 64 i - s.gpr .r8).toNat + 1 ≤ 224 at hc
-    rw [Offset.add_sub_cancel_left, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)] at hc
-    omega
+    rw [Offset.add_sub_cancel_left, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hib])] at hc
+    omega_using [hi, hc]
 
 theorem decryptBlocks_written (s : State) (t : List Leak) (s' : State)
     (hs : (Proof.Aes.decryptBlocksRoundsContract X86_64.abi).pre s)

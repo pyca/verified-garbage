@@ -23,15 +23,15 @@ theorem advance_ok {s₀ s : State} {c d : Nat} (hd : d < 256) (hc : c+d ≤ N s
     (hI : Inv s₀ (c+d) c s) :
     WP isa (.block (advance d)) s fun t => Inv s₀ (c+d) (c+d) t ∧ t.gpr .x13 = s.gpr .x13 := by
   rw [advance,Impl.AesCfb.AArch64.Decrypt.advance,WP.block_cons_iff]
-  refine ⟨_, exec_addImm_x (imm := 16*d) (by omega), ?_⟩
+  refine ⟨_, exec_addImm_x (imm := 16*d) (by omega_using [hd]), ?_⟩
   rw [WP.block_cons_iff]
-  refine ⟨_, exec_subImm_x (imm := d) (by omega), WP.block_nil ?_⟩
+  refine ⟨_, exec_subImm_x (imm := d) (by omega_using [hd]), WP.block_nil ?_⟩
   refine ⟨⟨hI.le,hI.keys.of_v (vs := []) ⟨by simp,by simp⟩ (fun _ _ => rfl) rfl rfl,
     ?_,?_,hI.x11,hI.chain,hI.data,hI.frame,hI.rd,hI.wr⟩,rfl⟩
   · simp only [State.write,State.read,BitVec.setWidth_eq,reduceCtorEq,ite_false,ite_true,hI.x2]
-    exact Offset.add_add_eq _ (by omega)
+    exact Offset.add_add_eq _ (by omega_using [])
   · simp only [State.write,State.read,BitVec.setWidth_eq,reduceCtorEq,ite_false,ite_true,hI.x3]
-    rw [Offset.ofNat_sub_ofNat (by omega), show N s₀-c-d=N s₀-(c+d) by omega]
+    rw [Offset.ofNat_sub_ofNat (by omega_using [hc]), show N s₀-c-d=N s₀-(c+d) by omega_using []]
 
 theorem flag_bound (d m : Nat) : (if m<d then 1 else 0) < 2^64 := by
   split <;> decide
@@ -40,13 +40,13 @@ theorem check_ok {s₀ s : State} (hp : UPre s₀) {c p : Nat} (hI : Inv s₀ c 
     WP isa (.block (Impl.AesCfb.AArch64.Decrypt.checkEnough d)) s fun t =>
       Inv s₀ c p t ∧ t.gpr .x13=BitVec.ofNat 64 (if N s₀-p<d then 1 else 0) := by
   rw [Impl.AesCfb.AArch64.Decrypt.checkEnough,WP.block_cons_iff]
-  refine ⟨_,exec_subImm_x (imm := d) (by omega),?_⟩
+  refine ⟨_,exec_subImm_x (imm := d) (by omega_using [hd]),?_⟩
   rw [WP.block_cons_iff]
   refine ⟨_,exec_lsr_x (sh := 63) (by decide),WP.block_nil ?_⟩
   refine ⟨⟨hI.le,hI.keys.of_v (vs := []) ⟨by simp,by simp⟩ (fun _ _ => rfl) rfl rfl,
     hI.x2,hI.x3,hI.x11,hI.chain,hI.data,hI.frame,hI.rd,hI.wr⟩,?_⟩
   simp only [State.write,State.read,BitVec.setWidth_eq,reduceCtorEq,ite_true,ite_false,hI.x3]
-  exact Proof.AesCcm.AArch64.sign63 (by have := hp.data_wrap; omega) (by omega)
+  exact Proof.AesCcm.AArch64.sign63 (by have := hp.data_wrap; omega_using [this]) (by omega_using [hd])
 
 theorem eval_short {s : State} {d m : Nat}
     (h : s.gpr .x13=BitVec.ofNat 64 (if m<d then 1 else 0)) :
@@ -60,7 +60,7 @@ theorem group_advance_ok {s₀ s : State} (hp : UPre s₀) (b : VReg) (bs : List
     WP isa (Impl.AesCfb.AArch64.Decrypt.group (b::bs)) s
       (Inv s₀ (c+(b::bs).length) (c+(b::bs).length)) := by
   exact group_ok hp b bs hbr h31 hlen hc hI _ fun _ hi _ =>
-    WP.mono (advance_ok (by omega) hc hi) fun _ hi' => hi'.1
+    WP.mono (advance_ok (by omega_using [hlen]) hc hi) fun _ hi' => hi'.1
 
 theorem batch_ok {s₀ s : State} (hp : UPre s₀) {c : Nat} (hc : c+8 ≤ N s₀)
     (hI : Inv s₀ c c s) :
@@ -87,7 +87,7 @@ theorem loops_ok {s₀ s₁ : State} (hp : UPre s₀) (hI₀ : Inv s₀ 0 0 s₁
   refine WP.seq (WP.mono (Q := fun s => ∃ c, N s₀-c < 8 ∧ Inv s₀ c c s) ?_
     fun s₂ ⟨c,hc,hI₂⟩ => ?_)
   · refine WP.ite (decide (N s₀<8)) (eval_short h13) (fun h => ?_) (fun h => ?_)
-    · exact WP.block_nil ⟨0,by simp at h; omega,hI₁⟩
+    · exact WP.block_nil ⟨0,by simp at h; omega_using [h],hI₁⟩
     · refine WP.seq ?_
       rw [WP.block_cons_iff]
       refine ⟨_,rfl,WP.block_nil ?_⟩
@@ -101,30 +101,30 @@ theorem loops_ok {s₀ s₁ : State} (hp : UPre s₀) (hI₀ : Inv s₀ 0 0 s₁
         rw [eval_zero h13' (flag_bound 8 _)]
         by_cases hlt : N s₀-(c+8)<8
         · exact .inl ⟨by simp [hlt],c+8,hlt,hi'⟩
-        · exact .inr ⟨by simp [hlt],N s₀-(c+8),by omega,c+8,rfl,by omega,hi'⟩
-      exact WP.loop (M := isa) I8 hstep (N s₀) s₁ ⟨0,rfl,by simp at h; omega,hI₁⟩
+        · exact .inr ⟨by simp [hlt],N s₀-(c+8),by omega_using [hc],c+8,rfl,by omega_using [hlt],hi'⟩
+      exact WP.loop (M := isa) I8 hstep (N s₀) s₁ ⟨0,rfl,by simp at h; omega_using [h],hI₁⟩
   refine WP.seq (WP.mono (check_ok hp hI₂ 4 (by decide)) fun s₃ ⟨hi₃,h4⟩ => ?_)
   refine WP.seq (WP.mono (Q := fun t => ∃ c, Inv s₀ c c t) ?_
     fun s₂ ⟨c,hI₂⟩ => ?_)
   · refine WP.ite (decide (N s₀-c<4)) (eval_short h4) (fun _ => ?_) (fun h => ?_)
     · exact WP.block_nil ⟨c,hi₃⟩
     · exact WP.mono (group_advance_ok hp .v0 [.v1,.v2,.v3] ⟨by decide,by decide⟩
-        (by decide) (by decide) (by simp only [List.length_cons,List.length_nil]; simp at h; have := hi₃.le; omega) hi₃) fun _ hi => ⟨c+4,hi⟩
-  refine WP.ite (decide (N s₀-c=0)) (eval_zero hI₂.x3 (by omega)) (fun h => ?_) (fun h => ?_)
-  · have he : c=N s₀ := by have := hI₂.le; simp at h; omega
+        (by decide) (by decide) (by simp only [List.length_cons,List.length_nil]; simp at h; have := hi₃.le; omega_using [h]) hi₃) fun _ hi => ⟨c+4,hi⟩
+  refine WP.ite (decide (N s₀-c=0)) (eval_zero hI₂.x3 (by omega_using [hn])) (fun h => ?_) (fun h => ?_)
+  · have he : c=N s₀ := by have := hI₂.le; simp at h; omega_using [this, h]
     exact WP.block_nil (he ▸ hI₂)
   · let I1 : Nat → State → Prop := fun m s => ∃ c, m=N s₀-c ∧ c<N s₀ ∧ Inv s₀ c c s
     have hstep : ∀ m s, I1 m s → WP isa (Impl.AesCfb.AArch64.Decrypt.group [.v0]) s
         (fun t => (AArch64.eval (.nonzero .x .x3) t=some false ∧ Inv s₀ (N s₀) (N s₀) t) ∨
           (AArch64.eval (.nonzero .x .x3) t=some true ∧ ∃ m'<m,I1 m' t)) := by
       rintro m s ⟨c,rfl,hc,hi⟩
-      refine WP.mono (tail_ok hp (by omega) hi) fun t hi' => ?_
-      rw [eval_nonzero hi'.x3 (by omega)]
+      refine WP.mono (tail_ok hp (by omega_using [hc]) hi) fun t hi' => ?_
+      rw [eval_nonzero hi'.x3 (by omega_using [hn])]
       by_cases hlast : N s₀-(c+1)=0
-      · have he : c+1=N s₀ := by omega
+      · have he : c+1=N s₀ := by omega_using [hc, hlast]
         exact .inl ⟨by simp [hlast],he ▸ hi'⟩
-      · exact .inr ⟨by simp [hlast],N s₀-(c+1),by omega,c+1,rfl,by omega,hi'⟩
+      · exact .inr ⟨by simp [hlast],N s₀-(c+1),by omega_using [hc],c+1,rfl,by omega_using [hlast],hi'⟩
     exact WP.loop (M := isa) I1 hstep (N s₀-c) s₂
-      ⟨c,rfl,by have := hI₂.le; simp at h; omega,hI₂⟩
+      ⟨c,rfl,by have := hI₂.le; simp at h; omega_using [h],hI₂⟩
 
 end VG.Proof.AesCfb.AArch64.Decrypt

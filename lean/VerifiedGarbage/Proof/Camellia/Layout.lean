@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Framework.PowLit
 public import VerifiedGarbage.Proof.Camellia.Bitsliced
 public import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # Bitsliced Camellia: words, bytes and blocks
@@ -31,14 +32,14 @@ theorem half_of_words {W Q : Nat → BitVec 64} {d : Nat → BitVec 64}
     (hT : ∀ j < 8, ∀ p < 64, (Q j).getLsbD p = (W (p % 8)).getLsbD (8 * pos (p / 8) + j))
     (hw : WordRel W d) : HalfRel Q d := by
   intro b hb c hc j hj
-  rw [hT j hj _ (by omega), show (8 * c + b) % 8 = b by omega, show (8 * c + b) / 8 = c by omega,
+  rw [hT j hj _ (by omega_using [hb, hc]), show (8 * c + b) % 8 = b by omega_using [hb], show (8 * c + b) / 8 = c by omega_using [hb],
     hw b hb _ (pos_lt hc) j hj]
 
 theorem words_of_half {W Q : Nat → BitVec 64} {d : Nat → BitVec 64}
     (hF : ∀ b < 8, ∀ t < 64, (W b).getLsbD t = (Q (t % 8)).getLsbD (8 * cpos (t / 8) + b))
     (hq : HalfRel Q d) : WordRel W d := by
   intro b hb i hi j hj
-  rw [hF b hb _ (by omega), show (8 * i + j) % 8 = j by omega, show (8 * i + j) / 8 = i by omega,
+  rw [hF b hb _ (by omega_using [hi, hj]), show (8 * i + j) % 8 = j by omega_using [hj], show (8 * i + j) / 8 = i by omega_using [hj],
     hq b hb _ (cpos_lt hi) j hj, pos_cpos hi]
 
 /-! ## Big-endian numbers -/
@@ -56,20 +57,20 @@ theorem testBit_foldl_bytes (l : List Byte) (a k : Nat) :
       rw [show 256 * a + b.toNat = 2 ^ 8 * a + b.toNat by rfl, Nat.testBit_two_pow_mul_add a b.isLt]
       split <;> simp [BitVec.testBit_toNat]
     by_cases h1 : k < 8 * l.length
-    · simp only [h1, show k < 8 * (l.length + 1) by omega, ↓reduceIte]
-      rw [show l.length + 1 - 1 - k / 8 = (l.length - 1 - k / 8) + 1 by omega, List.getD_cons_succ]
+    · simp only [h1, show k < 8 * (l.length + 1) by omega_using [h1], ↓reduceIte]
+      rw [show l.length + 1 - 1 - k / 8 = (l.length - 1 - k / 8) + 1 by omega_using [h1], List.getD_cons_succ]
     · simp only [h1, ↓reduceIte, hstep]
       by_cases h2 : k - 8 * l.length < 8
-      · simp only [h2, show k < 8 * (l.length + 1) by omega, ↓reduceIte,
-          show l.length + 1 - 1 - k / 8 = 0 by omega, List.getD_cons_zero]
-        congr 1; omega
-      · simp only [h2, show ¬ k < 8 * (l.length + 1) by omega, ↓reduceIte]
+      · simp only [h2, show k < 8 * (l.length + 1) by omega_using [h2], ↓reduceIte,
+          show l.length + 1 - 1 - k / 8 = 0 by omega_using [h1], List.getD_cons_zero]
+        congr 1; omega_using [h1, h2]
+      · simp only [h2, show ¬ k < 8 * (l.length + 1) by omega_using [h2], ↓reduceIte]
         congr 1 <;> omega
 
 theorem getLsbD_ofBytes (n : Nat) (l : List Byte) {k : Nat} (hk : k < n) (hl : 8 * l.length = n) :
     (ofBytes n l).getLsbD k = (l.getD (l.length - 1 - k / 8) 0).getLsbD (k % 8) := by
   rw [ofBytes, BitVec.getLsbD_ofNat, testBit_foldl_bytes]
-  simp [hk, show k < 8 * l.length by omega]
+  simp [hk, show k < 8 * l.length by omega_using [hk, hl]]
 
 /-- Byte `i` of the left half of a block is its byte `i`. -/
 theorem byteOf_hi (blk : Block) {i : Nat} (hi : i < 8) :
@@ -77,11 +78,11 @@ theorem byteOf_hi (blk : Block) {i : Nat} (hi : i < 8) :
   apply BitVec.eq_of_getLsbD_eq
   intro j hj
   rw [getLsbD_byteOf _ hi hj, BitVec.getLsbD_setWidth, BitVec.getLsbD_ushiftRight, decodeBlock,
-    getLsbD_ofBytes 128 _ (by omega) (by simp)]
-  simp only [show 56 - 8 * i + j < 64 by omega, decide_true, Bool.true_and, Vector.length_toList]
-  rw [show 16 - 1 - (64 + (56 - 8 * i + j)) / 8 = i by omega,
-    show (64 + (56 - 8 * i + j)) % 8 = j by omega]
-  simp [show i < 16 by omega]
+    getLsbD_ofBytes 128 _ (by omega_using [hj]) (by simp)]
+  simp only [show 56 - 8 * i + j < 64 by omega_using [hj], decide_true, Bool.true_and, Vector.length_toList]
+  rw [show 16 - 1 - (64 + (56 - 8 * i + j)) / 8 = i by omega_using [hi, hj],
+    show (64 + (56 - 8 * i + j)) % 8 = j by omega_using [hj]]
+  simp [show i < 16 by omega_using [hi]]
 
 /-- Byte `i` of the right half of a block is its byte `8 + i`. -/
 theorem byteOf_lo (blk : Block) {i : Nat} (hi : i < 8) :
@@ -89,10 +90,10 @@ theorem byteOf_lo (blk : Block) {i : Nat} (hi : i < 8) :
   apply BitVec.eq_of_getLsbD_eq
   intro j hj
   rw [getLsbD_byteOf _ hi hj, BitVec.getLsbD_setWidth, decodeBlock,
-    getLsbD_ofBytes 128 _ (by omega) (by simp)]
-  simp only [show 56 - 8 * i + j < 64 by omega, decide_true, Bool.true_and, Vector.length_toList]
-  rw [show 16 - 1 - (56 - 8 * i + j) / 8 = 8 + i by omega, show (56 - 8 * i + j) % 8 = j by omega]
-  simp [show 8 + i < 16 by omega]
+    getLsbD_ofBytes 128 _ (by omega_using [hj]) (by simp)]
+  simp only [show 56 - 8 * i + j < 64 by omega_using [hj], decide_true, Bool.true_and, Vector.length_toList]
+  rw [show 16 - 1 - (56 - 8 * i + j) / 8 = 8 + i by omega_using [hi, hj], show (56 - 8 * i + j) % 8 = j by omega_using [hj]]
+  simp [show 8 + i < 16 by omega_using [hi]]
 
 /-- The bytes of `hi ++ lo`: bytes 0–7 are `hi`'s, 8–15 `lo`'s. -/
 theorem encodeBlock_getElem (hi lo : BitVec 64) {i : Nat} (h : i < 16) :
@@ -102,16 +103,16 @@ theorem encodeBlock_getElem (hi lo : BitVec 64) {i : Nat} (h : i < 16) :
   simp only [encodeBlock, Vector.getElem_ofFn, BitVec.getLsbD_setWidth, BitVec.getLsbD_ushiftRight,
     hj, decide_true, Bool.true_and, BitVec.getLsbD_append]
   by_cases hi8 : i < 8
-  · simp only [hi8, ↓reduceIte, show ¬ 8 * (15 - i) + j < 64 by omega, getLsbD_byteOf _ hi8 hj]
-    congr 1; omega
-  · simp only [hi8, ↓reduceIte, show 8 * (15 - i) + j < 64 by omega, getLsbD_byteOf _ (show i - 8 < 8 by omega) hj]
-    congr 1; omega
+  · simp only [hi8, ↓reduceIte, show ¬ 8 * (15 - i) + j < 64 by omega_using [hi8], getLsbD_byteOf _ hi8 hj]
+    congr 1; omega_using [hi8]
+  · simp only [hi8, ↓reduceIte, show 8 * (15 - i) + j < 64 by omega_using [hj, hi8], getLsbD_byteOf _ (show i - 8 < 8 by omega_using [h]) hj]
+    congr 1; omega_using [hi8]
 
 /-- XORing a subkey into the planes of a half. -/
 theorem HalfRel.xor_key {Q K Q' : Nat → BitVec 64} {d k : Nat → BitVec 64} (hq : HalfRel Q d)
     (hk : HalfRel K k) (h : ∀ j < 8, ∀ p < 64, (Q' j).getLsbD p = ((Q j).getLsbD p ^^ (K j).getLsbD p)) :
     HalfRel Q' (fun b => d b ^^^ k b) := fun b hb c hc j hj => by
-  rw [h j hj _ (by omega), hq b hb c hc j hj, hk b hb c hc j hj, byteOf_xor,
+  rw [h j hj _ (by omega_using [hb, hc]), hq b hb c hc j hj, hk b hb c hc j hj, byteOf_xor,
     BitVec.getLsbD_xor]
 
 /-- Bit `8 i + j` of a little-endian word is bit `j` of its byte `i`. -/
@@ -119,6 +120,6 @@ theorem readW64_bit (m : Mem) (a : Addr) {i j : Nat} (hi : i < 8) (hj : j < 8) :
     (m.readW a 64).getLsbD (8 * i + j) = (m (a + BitVec.ofNat 64 i)).getLsbD j := by
   rw [← Mem.extractLsb'_read m a (n := 8) hi, BitVec.getLsbD_extractLsb']
   simp only [Mem.readW, BitVec.getLsbD_setWidth, hj, decide_true, Bool.true_and]
-  simp only [show 8 * i + j < 64 by omega, decide_true, Bool.true_and]
+  simp only [show 8 * i + j < 64 by omega_using [hi, hj], decide_true, Bool.true_and]
 
 end VG.Proof.Camellia

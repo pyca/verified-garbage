@@ -88,7 +88,7 @@ theorem SlotsOk.above {m m' : Mem} {qs : List Nat} {v : Nat → Fe} (hS : SlotsO
   simp only [decide_eq_true_eq] at h
   have hB : BITS = 1064 := rfl
   have e := limb_frame (o := q) hf fun r hr k hk => by
-    rw [List.mem_singleton.mp hr]; exact Offset.disjoint _ (.inl (by omega)) (by omega) (by omega)
+    rw [List.mem_singleton.mp hr]; exact Offset.disjoint _ (.inl (by omega_using [hd, h, hk])) (by omega_using [h, hB, hk]) (by omega_using [hdn])
   rw [FS, V, val32_congr e]; exact hS q hq'
 
 /-- The slots stay through a write of `BITS`. -/
@@ -100,7 +100,7 @@ theorem SlotsOk.bits {m m' : Mem} {qs : List Nat} {v : Nat → Fe} (hS : SlotsOk
   simp only [decide_eq_true_eq] at h
   have hB : BITS = 1064 := rfl
   have e := limb_frame (o := q) hf fun r hr k hk => by
-    rw [List.mem_singleton.mp hr]; exact Offset.disjoint _ (.inl (by omega)) (by omega) (by omega)
+    rw [List.mem_singleton.mp hr]; exact Offset.disjoint _ (.inl (by omega_using [h, hk])) (by omega_using [h, hB, hk]) (by omega_using [hB])
   rw [FS, V, val32_congr e]; exact hS q hq'
 
 end
@@ -110,7 +110,7 @@ theorem bytesAt_frame {m m' : Mem} {rs : List Region} (hf : Frame rs m m') {p : 
   simp only [bytesAt]
   refine List.map_congr_left fun i hi => ?_
   have hi := List.mem_range.mp hi
-  exact hf _ fun r hr hc => hd r hr _ (Offset.contains_base _ (by omega) (by omega)) hc
+  exact hf _ fun r hr hc => hd r hr _ (Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi])) hc
 
 /-- The code after the setup, from the ladder's initial state for the
 u-coordinate `pb` in the working space at `r6` of `s`: it saves `r15`–`r31`
@@ -140,9 +140,9 @@ theorem afterSetup_correct {s s1 : State} {pb : List Byte}
       (by decide) _ _ _
   have hsv1 : Saved (s.gpr .r6 + BitVec.ofNat 64 NV) s1.gpr (slotsOf nvR 17) s1'.mem := by
     rw [mem1']; exact saveMem_saved (by decide) _ _ _
-  have hS1' := hS1.above (by decide) (by rw [hB]; decide) (by omega) hfNV
+  have hS1' := hS1.above (by decide) (by rw [hB]; decide) (by omega_using [hNV]) hfNV
   have hf1' : Frame [⟨s.gpr .r6, 8192⟩] s.mem s1'.mem := hf1.trans (hfNV.sub fun r hr =>
-    ⟨_, List.mem_singleton_self _, by rw [List.mem_singleton.mp hr]; exact Offset.sub_base _ (by omega)⟩)
+    ⟨_, List.mem_singleton_self _, by rw [List.mem_singleton.mp hr]; exact Offset.sub_base _ (by omega_using [hNV])⟩)
   have hr1' : Rest [.r5, .r7, .r8] s s1' := ⟨fun r hr => by rw [congrFun g1']; exact hr1.gpr r hr,
     by rw [rd1', hr1.rd], by rw [wr1', hr1.wr], by rw [sp1', hr1.sp]⟩
   refine WP.seq (WP.mono (bits_ok hc1' (hr1'.gpr .r4 (by decide)) (by rw [hr1'.rd, hr1'.wr]; exact hsc_in)
@@ -163,11 +163,11 @@ theorem afterSetup_correct {s s1 : State} {pb : List Byte}
     have h2 := hsv1.frame_in (lo := 0) (n := 136) (fun p hp => by obtain ⟨i, hi, rfl⟩ := slotsOf_mem hp; omega)
       hf2 (fun r hr => by
         rw [List.mem_singleton.mp hr]; simpa using Offset.disjoint (s.gpr .r6) (d := NV) (n := 136)
-          (e := BITS) (k := 448) (.inr (by omega)) (by omega) (by omega))
+          (e := BITS) (k := 448) (.inr (by omega_using [hB, hNV])) (by omega_using [hNV]) (by omega_using [hB]))
     exact h2.frame_in (lo := 0) (n := 136) (fun p hp => by obtain ⟨i, hi, rfl⟩ := slotsOf_mem hp; omega)
       hst6.frame (fun r hr => by
         rw [List.mem_singleton.mp hr]; simpa using Offset.disjoint_base (s.gpr .r6) (d := NV) (n := 136)
-          (k := ACC + 112) (by omega) (by omega))
+          (k := ACC + 112) (by omega_using [hNV, hA]) (by omega_using [hNV]))
   refine ldsAt_ok (l := slotsOf nvR 17) (by decide) (slotsOf_fit (by decide) (by decide)) (by decide)
     (by decide) hc6 fun s7 hc7 r7 m7 _ v7 => ?_
   have nv7 : ∀ i < 17, s7.gpr (nvR i) = s1.gpr (nvR i) := fun i hi => by
@@ -177,7 +177,7 @@ theorem afterSetup_correct {s s1 : State} {pb : List Byte}
     rw [r7.gpr _ (by decide), hst6.rest.gpr _ (by decide), hr2.gpr _ (by decide), hr1'.gpr _ (by decide)]
   have hwr7 : s7.wr = s.wr := by rw [r7.wr, hst6.rest.wr, hr2.wr, hr1'.wr]
   refine WP.mono (freeze_ok hc7 h3'
-    (fun k hk => in_base (len := 56) (by rw [hwr7]; exact hout) (by omega) (by omega)) (disj4096 out_ws).symm)
+    (fun k hk => in_base (len := 56) (by rw [hwr7]; exact hout) (by omega_using [hk]) (by omega_using [hk])) (disj4096 out_ws).symm)
     fun s8 ⟨hbytes, hr8, _⟩ => ⟨?_, fun i hi => by
       rw [hr8.gpr _ (by revert i; decide), nv7 i hi]⟩
   -- The result.

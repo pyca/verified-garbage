@@ -120,7 +120,7 @@ theorem stk_apart (h : FPre s) :
   have hfit := h.espFit
   have e : (s.gpr .esp - BitVec.ofNat 32 4).setWidth 64 = (s.gpr .esp).setWidth 64 - BitVec.ofNat 64 4 :=
     VG.X86.Taint.sub_setWidth hlo
-  have ea : argAddr s 0 = (s.gpr .esp).setWidth 64 + BitVec.ofNat 64 4 := addr_eq (by omega)
+  have ea : argAddr s 0 = (s.gpr .esp).setWidth 64 + BitVec.ofNat 64 4 := addr_eq (by omega_using [hfit])
   refine ⟨?_, ?_⟩
   · show Region.Disjoint ⟨(s.gpr .esp - BitVec.ofNat 32 4).setWidth 64, 4⟩ ⟨argAddr s 0, 24⟩
     rw [e, ea]; exact VG.Offset.disjoint_below_above _ (by decide)
@@ -155,21 +155,21 @@ theorem keyArgs_of {s : State} (h : FPre s) :
   have hfit := h.espFit
   have ea : ∀ k, k + 4 ≤ 24 → (⟨addr (s.gpr .esp) (4 + k), 4⟩ : Region).Sub (argsA s) := by
     intro k hk
-    have e0 : argAddr s 0 = (s.gpr .esp).setWidth 64 + BitVec.ofNat 64 4 := addr_eq (by omega)
+    have e0 : argAddr s 0 = (s.gpr .esp).setWidth 64 + BitVec.ofNat 64 4 := addr_eq (by omega_using [hfit])
     have ek : addr (s.gpr .esp) (4 + k) = (s.gpr .esp).setWidth 64 + BitVec.ofNat 64 4 + BitVec.ofNat 64 k := by
-      rw [addr_eq (by omega), VG.Offset.add_add]
+      rw [addr_eq (by omega_using [hfit, hk]), VG.Offset.add_add]
     show Region.Sub ⟨addr (s.gpr .esp) (4 + k), 4⟩ ⟨argAddr s 0, 24⟩
     rw [e0, ek]; exact VG.Offset.sub_base _ hk
   have argSub : (Mode.argR s).Sub (argsA s) := by
-    have e0 : argAddr s 0 = (s.gpr .esp).setWidth 64 + BitVec.ofNat 64 4 := addr_eq (by omega)
+    have e0 : argAddr s 0 = (s.gpr .esp).setWidth 64 + BitVec.ofNat 64 4 := addr_eq (by omega_using [hfit])
     show Region.Sub ⟨addr (s.gpr .esp) 4, 8⟩ ⟨argAddr s 0, 24⟩
     rw [e0, show addr (s.gpr .esp) 4 = (s.gpr .esp).setWidth 64 + BitVec.ofNat 64 4 + BitVec.ofNat 64 0 by
-      rw [BitVec.add_zero]; exact addr_eq (by omega)]
+      rw [BitVec.add_zero]; exact addr_eq (by omega_using [hfit])]
     exact VG.Offset.sub_base _ (by decide)
   have mS := h.mem_wr_scr
-  refine ⟨arg s 0, ⟨by omega, h.sp, ⟨_, h.mem_args, by
+  refine ⟨arg s 0, ⟨by omega_using [hfit], h.sp, ⟨_, h.mem_args, by
       show (⟨argAddr s 0, 24⟩ : Region).Contains (argAddr s 0) 8
-      simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; omega⟩, rfl, ?_, h.nv, h.fitK, ⟨_, h.mem_key,
+      simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; omega_using []⟩, rfl, ?_, h.nv, h.fitK, ⟨_, h.mem_key,
     Region.contains_self _ _⟩, rfl, h.fitT, ⟨_, h.mem_tab, Region.contains_self _ _⟩, h.held,
     fun r hr => ⟨h.dKw r hr, h.dTw r hr, (h.dAw r hr).sub_left argSub⟩, h.dKs, h.dTs,
     (sA.symm.sub_left argSub)⟩, fun r hr => ?_⟩
@@ -200,7 +200,7 @@ theorem τFb_wf {s : State} (h : FPre s) : VG.X86.Taint.Wf τFb s := by
   have hw := h.wrEq
   simp only [wrF] at hw
   refine VG.X86.Taint.Wf.entryRoom rfl ⟨fun _ => ⟨?_, ?_, ?_⟩, fun _ h => (List.not_mem_nil h).elim,
-    fun _ h => (List.not_mem_nil h).elim, fun _ => ⟨by simp only [τFb]; have := h.espFit; omega, ?_⟩, ?_⟩ ?_
+    fun _ h => (List.not_mem_nil h).elim, fun _ => ⟨by simp only [τFb]; have := h.espFit; omega_using [this], ?_⟩, ?_⟩ ?_
   · rw [hw]
     exact .cons (Nat.zero_le _) (.cons (Nat.le_refl _) (.cons (Nat.le_refl _) .nil))
   · simp only [hw, List.pairwise_cons, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq,
@@ -212,7 +212,7 @@ theorem τFb_wf {s : State} (h : FPre s) : VG.X86.Taint.Wf τFb s := by
     · simp only [toNat_setWidth]; exact h.fitV
     · simp only [toNat_setWidth]; exact h.fitS
   · intro r hr
-    exact VG.X86.Taint.frame_disjoint (n := 24) (by have := h.espFit; omega) (h.dRw r hr) (h.dAw r hr)
+    exact VG.X86.Taint.frame_disjoint (n := 24) (by have := h.espFit; omega_using [this]) (h.dRw r hr) (h.dAw r hr)
   · intro p hp
     simp only [τFb, List.mem_cons, List.not_mem_nil, or_false] at hp
     rcases hp with rfl | rfl | rfl <;> refine ⟨by decide, ?_⟩ <;>
@@ -265,7 +265,7 @@ theorem final_pre {post : Spec.Cast5.cfbFinalSig.Post X86.abi.ptrBits} (s : Stat
   have mD : dataF s ∈ s.wr := by rw [hwr]; exact List.mem_cons_of_mem _ List.mem_cons_self
   have mS : scrA s ∈ s.wr := by
     rw [hwr]; exact List.mem_cons_of_mem _ (List.mem_cons_of_mem _ List.mem_cons_self)
-  refine ⟨⟨rfl, rfl, h4, (by show (s.gpr .esp).toNat + 28 ≤ 2 ^ 32; omega), nv, fK, fV, fD, fS, fitT,
+  refine ⟨⟨rfl, rfl, h4, (by show (s.gpr .esp).toNat + 28 ≤ 2 ^ 32; omega_using [hsp]), nv, fK, fV, fD, fS, fitT,
     (fun i hi => held i (by rw [s1234_length] at hi; exact hi)), dDS, dVS, dVD,
     (fun r hr => ?_), (fun r hr => ?_), (fun r hr => ?_), (fun r hr => ?_), (fun r hr => ?_),
     (by show Region.Disjoint _ (below (s.gpr .esp) 4); rw [be]; exact dBK.symm),
@@ -300,7 +300,7 @@ theorem final_pub {post : Spec.Cast5.cfbFinalSig.Post X86.abi.ptrBits} {postX : 
     X86.argBytes, ecbConsts_eq, Abi.withConsts, Curry.withScratch] at h
   obtain ⟨hsp, hsy, h0, h1, h2, h3, h4, h5⟩ := h
   refine ⟨hsp, fun i hi => ?_, hsy⟩
-  rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 by omega) with rfl | rfl | rfl | rfl | rfl | rfl
+  rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 by omega_using [hi]) with rfl | rfl | rfl | rfl | rfl | rfl
   · exact h0
   · exact h1
   · exact h2

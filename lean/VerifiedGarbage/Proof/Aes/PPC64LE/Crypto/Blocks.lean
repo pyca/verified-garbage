@@ -46,7 +46,7 @@ theorem blocks_ok (inverse : Bool) (s : State)
       · intro j hj
         rw [he.keep.2.1, he.keep.2.2, he.keep.gpr (by decide), hrd, hwr]
         exact ⟨⟨s.gpr .r3, 240⟩, by simp,
-          Offset.contains_base _ (d := 16*j) (n := 16) (k := 240) (by omega) (by omega)⟩
+          Offset.contains_base _ (d := 16*j) (n := 16) (k := 240) (by omega_using [hnrlt, hj]) (by omega_using [hnrlt, hj])⟩
       · rw [he.keep.2.2, hwr]
         exact List.mem_cons_self
       · rw [he.keep.gpr (by decide)]
@@ -54,7 +54,7 @@ theorem blocks_ok (inverse : Bool) (s : State)
       · rw [he.keep.2.2, hwr]
         exact List.mem_append_right _ List.mem_cons_self
     have hi : LoopInv inverse false base nr n D D 0 0 base := by
-      refine ⟨by omega, Keep.refl _ _, ?_, ?_, Processed.refl _ _ _ _, Frame.refl _ _, hm,
+      refine ⟨by omega_using [], Keep.refl _ _, ?_, ?_, Processed.refl _ _ _ _, Frame.refl _ _, hm,
         by simp, by simp⟩
       · simpa only [Nat.mul_zero, BitVec.ofNat_eq_ofNat, BitVec.add_zero] using hp
       · simpa only [Nat.sub_zero, n, BitVec.ofNat_toNat, BitVec.setWidth_eq] using hl

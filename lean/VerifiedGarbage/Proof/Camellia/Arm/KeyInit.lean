@@ -105,7 +105,7 @@ theorem mem_sigmaTable {e k : Nat} (he : e < 6) (hk : k < 16) :
 theorem sigmaTable_slot {x : Nat × BitVec 32} (hx : x ∈ sigmaTable) : keySlot ≤ x.1 ∧ x.1 < keySlot + 96 := by
   simp only [sigmaTable, List.mem_flatMap, List.mem_range, List.mem_map] at hx
   obtain ⟨e, he, k, hk, rfl⟩ := hx
-  simp only; omega
+  simp only; omega_using [he, hk]
 
 /-! ## The prologue -/
 
@@ -129,7 +129,7 @@ theorem ekPrologue_ok {s₀ : State} {b : BitVec 32} (hb : s₀.gpr .r3 = b) (hw
     (by rw [wr₄, wr₃]; exact hw₂) hnd hlt
   have hout : ∀ k, k < keySlot ∨ keySlot + 96 ≤ k → k ∉ sigmaTable.map (·.1) := fun k hk h => by
     obtain ⟨x, hx, rfl⟩ := List.mem_map.mp h
-    have := sigmaTable_slot hx; omega
+    have := sigmaTable_slot hx; omega_using [hk, this]
   have hg : ∀ r, r ≠ sb → r ≠ t0 → s₅.gpr r = s₀.gpr r := fun r h1 h2 => by
     rw [g₅ r h2, g₄, g₃, o₂ r h1, g₁]
   have hrun : runBlock isa (saveRegs .r3 ++ [movR sb .r3, stS dSlot .r2, stS nSlot .r1] ++
@@ -141,11 +141,11 @@ theorem ekPrologue_ok {s₀ : State} {b : BitVec 32} (hb : s₀.gpr .r3 = b) (hw
     exact e₅
   refine ⟨s₅, hrun, by rw [g₅ _ (by decide), g₄, g₃, b₂], hg, fun i hi => ?_, ?_, ?_, fun e he j hj => ?_, ?_,
     by rw [rd₅, rd₄, rd₃, rd₂, rd₁], by rw [wr₅, wr₄, wr₃, wr₂, wr₁], by rw [sp₅, sp₄, sp₃, sp₂, sp₁]⟩
-  · rw [k₅ _ (by rw [savedSlot_eq, slots_eq]; omega) (hout _ (.inr (by rw [savedSlot_eq, keySlot_eq]; omega))),
-      m₄, readW_slot_write hfit _ (by rw [savedSlot_eq, slots_eq]; omega) (by decide),
-      ite_eq_right (by rw [savedSlot_eq, nSlot_eq]; omega), m₃,
-      readW_slot_write hfit _ (by rw [savedSlot_eq, slots_eq]; omega) (by decide),
-      ite_eq_right (by rw [savedSlot_eq, dSlot_eq]; omega), m₂]
+  · rw [k₅ _ (by rw [savedSlot_eq, slots_eq]; omega_using [hi]) (hout _ (.inr (by rw [savedSlot_eq, keySlot_eq]; omega_using []))),
+      m₄, readW_slot_write hfit _ (by rw [savedSlot_eq, slots_eq]; omega_using [hi]) (by decide),
+      ite_eq_right (by rw [savedSlot_eq, nSlot_eq]; omega_using [hi]), m₃,
+      readW_slot_write hfit _ (by rw [savedSlot_eq, slots_eq]; omega_using [hi]) (by decide),
+      ite_eq_right (by rw [savedSlot_eq, dSlot_eq]; omega_using [hi]), m₂]
     exact sv₁ i hi
   · rw [k₅ _ (by decide) (hout _ (.inr (by decide))), m₄, readW_slot_write hfit _ (by decide) (by decide),
       ite_eq_right (by decide), m₃, readW_slot_write hfit _ (by decide) (by decide), ite_eq_left rfl, o₂ _ (by decide),

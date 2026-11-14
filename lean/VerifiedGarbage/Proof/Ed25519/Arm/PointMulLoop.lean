@@ -34,20 +34,20 @@ theorem pointMulLoop_ok {b ptr : BitVec 32} {s₀ : State} (hc : Ctx b s₀) (hl
       env t.mem b 16 = Spec.Ed25519.d ∧ point (env t.mem b) 0 1 2 3 = Spec.Ed25519.pointMul scalar p := by
   apply WP.loop (PointMulInv s₀ b ptr count scalar p) (n := count)
   · intro n s h
-    obtain ⟨j, rfl⟩ := Nat.exists_eq_succ_of_ne_zero (by have := h.positive; omega : n ≠ 0)
-    have hj : j < count := by have := h.bound; omega
+    obtain ⟨j, rfl⟩ := Nat.exists_eq_succ_of_ne_zero (by have := h.positive; omega_using [this] : n ≠ 0)
+    have hj : j < count := by have := h.bound; omega_using [this]
     refine WP.mono (pointMulBody_ok h.ctx h.lim count scalar j p h.input hj h.d h.value h.counter
       (h.table j hj)) fun t ⟨tk, tl, td, tp, tc, tz⟩ => ?_
     have tt : ∀ i < count, tablePoint t.mem b (1632 + 128 * i) = powerPoint p (16 * i) := by
       intro i hib
       have := h.input.bound
-      exact (tk.table (by omega) (by omega) (by decide) (.inl (by omega))).trans (h.table i hib)
+      exact (tk.table (by omega_using []) (by omega_using [hib, this]) (by decide) (.inl (by omega_using [hib, this]))).trans (h.table i hib)
     by_cases hj0 : j = 0
     · subst hj0
       exact .inl ⟨by simp only [VG.Arm.eval, tz, decide_true, Bool.not_true], h.keep.trans tk,
         tl, td, tp.trans (after_zero scalar p)⟩
     · exact .inr ⟨by simp only [VG.Arm.eval, tz, decide_eq_false hj0, Bool.not_false],
-        j, by omega, ⟨by omega, by omega, tk.ctx h.ctx, tl,
+        j, by omega_using [], ⟨by omega_using [hj0], by omega_using [hj], tk.ctx h.ctx, tl,
           h.input.keep tk (by decide) (by decide), tc, td, tp, tt, h.keep.trans tk⟩⟩
   · exact ⟨hn, Nat.le_refl _, hc, hl, hi, hcj, hd, hp, ht, MulKeep.refl _ _ _ _⟩
 

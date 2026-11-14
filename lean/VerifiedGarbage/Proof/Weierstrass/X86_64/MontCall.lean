@@ -42,7 +42,7 @@ theorem callArgs_ok (s : State) {o a b : Nat} (ho : o < 2 ^ 32) (ha : a < 2 ^ 32
   simp only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, readSrc32, Option.map_some,
     State.setReg32, Option.some.injEq, exists_eq_left', RegUpd.gpr_setReg, reduceCtorEq, ite_true,
     ite_false, argOf, BitVec.toNat_setWidth, BitVec.toNat_ofNat]
-  refine ⟨trivial, by omega, by omega, by omega, fun r hr => ?_, rfl, rfl, rfl⟩
+  refine ⟨trivial, by omega_using [ho], by omega_using [ha], by omega_using [hb], fun r hr => ?_, rfl, rfl, rfl⟩
   simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
   rw [RegUpd.gpr_setReg_of_ne _ _ hr.2.2.2, RegUpd.gpr_setReg_of_ne _ _ hr.2.2.1,
     RegUpd.gpr_setReg_of_ne _ _ hr.2.1, RegUpd.gpr_setReg_of_ne _ _ hr.1]
@@ -78,16 +78,16 @@ theorem mulCall_ok {f : String} {body : Prog isa} (hbody : body = mulFn ∨ body
       wordsVal s'.mem base o M.n * 2 ^ (64 * M.n) % m =
         wordsVal s.mem base a M.n * wordsVal s.mem base b M.n % m := by
   obtain ⟨hn9, hm⟩ := p521_of_red hred hM.red
-  have hZ : 4096 ≤ Z := by have := hM.tmp; rw [ht, hn9] at this; simp only [fnTmp] at this; omega
+  have hZ : 4096 ≤ Z := by have := hM.tmp; rw [ht, hn9] at this; simp only [fnTmp] at this; omega_using [this]
   simp only [lowArgs, ↓reduceIte, Bool.and_eq_true, decide_eq_true_eq] at hlow
   obtain ⟨⟨ho, ha⟩, hb⟩ := hlow
   rw [hn9] at hB ⊢
   simp only [mulCall, Code.inline]
-  refine WP.seq (WP.mono (callArgs_ok s (o := o) (a := a) (b := b) (by omega) (by omega) (by omega))
+  refine WP.seq (WP.mono (callArgs_ok s (o := o) (a := a) (b := b) (by omega_using [ho]) (by omega_using [ha]) (by omega_using [hb]))
     fun s₁ ⟨r12₁, o₁, a₁, b₁, k₁⟩ => ?_)
   have hs₁ := hs.of_keeps k₁ (by decide)
   have hm₁ : s₁.mem = s.mem := k₁.2.1
-  refine WP.seq (WP.mono (fn_ok hbody hs₁ hZ hm (by rw [o₁]; omega) (by rw [a₁]; omega) (by rw [b₁]; omega)
+  refine WP.seq (WP.mono (fn_ok hbody hs₁ hZ hm (by rw [o₁]; omega_using [ho]) (by rw [a₁]; omega_using [ha]) (by rw [b₁]; omega_using [hb])
     (by rw [b₁, hm₁]; exact hB)) fun s₂ ⟨lt₂, e₂, k₂, m₂⟩ => ?_)
   refine WP.mono (movReg_ok s₂ .rsi .r12) fun s₃ ⟨v₃, k₃⟩ => ?_
   rw [o₁] at lt₂ e₂ m₂
@@ -103,7 +103,7 @@ theorem mulCall_ok {f : String} {body : Prog isa} (hbody : body = mulFn ∨ body
     · rw [k₃.1 _ (by decide), k₂.gpr _ (by decide), k₁.1 _ (by decide)]
   · rw [hn9] at hx ht'
     rw [ht] at ht'
-    rw [hm₃, m₂ x hx (by simp only [fnTmp] at ht' ⊢; omega), hm₁]
+    rw [hm₃, m₂ x hx (by simp only [fnTmp] at ht' ⊢; omega_using [ht']), hm₁]
 
 /-- The registers the inline products keep, for six words. -/
 theorem not_clob6 : ∀ r : Reg, r ∉ clob 6 → r = .rbx ∨ r = .rsp ∨ r = .rsi ∨ r = .rdi := by
@@ -135,20 +135,20 @@ theorem mulCall6_ok {f : String} {body : Prog isa} (hbody : body = mulFn6 false 
       wordsVal s'.mem base o M.n * 2 ^ (64 * M.n) % m =
         wordsVal s.mem base a M.n * wordsVal s.mem base b M.n % m := by
   obtain ⟨hn6, hm⟩ := Mod.ok_sparse hM.red hsp
-  have hZ : 4096 ≤ Z := by have := hM.tmp; rw [ht, hn6] at this; simp only [fnTmp6] at this; omega
+  have hZ : 4096 ≤ Z := by have := hM.tmp; rw [ht, hn6] at this; simp only [fnTmp6] at this; omega_using [this]
   simp only [lowArgs, show ¬ (6 = 9) by decide, show ¬ (6 = 8) by decide, ↓reduceIte, Bool.and_eq_true, Bool.or_eq_true,
     decide_eq_true_eq] at hlow
   obtain ⟨⟨ho, ha⟩, hb⟩ := hlow
   rw [hn6] at hB hoZ haZ hbZ ⊢
   have h31 : ∀ x, (x + 96 ≤ fnTmp6 ∨ 4096 ≤ x ∧ x < 2 ^ 31) → x < 2 ^ 32 := fun x h => by
-    simp only [fnTmp6] at h; omega
+    simp only [fnTmp6] at h; omega_using [h]
   simp only [mulCall, Code.inline]
   refine WP.seq (WP.mono (callArgs_ok s (o := o) (a := a) (b := b) (h31 o ho) (h31 a ha) (h31 b hb))
     fun s₁ ⟨r12₁, o₁, a₁, b₁, k₁⟩ => ?_)
   have hs₁ := hs.of_keeps k₁ (by decide)
   have hm₁ : s₁.mem = s.mem := k₁.2.1
   have arg : ∀ x, (x + 96 ≤ fnTmp6 ∨ 4096 ≤ x ∧ x < 2 ^ 31) → x + 48 ≤ Z → Arg6 Z x := fun x h hz =>
-    ⟨h.imp (fun h => by simp only [fnTmp6] at h ⊢; omega) And.left, hz⟩
+    ⟨h.imp (fun h => by simp only [fnTmp6] at h ⊢; omega_using [h]) And.left, hz⟩
   refine WP.seq (WP.mono (fn6_ok hbody hs₁ hZ hm (by rw [o₁]; exact arg o ho hoZ) (by rw [a₁]; exact arg a ha haZ)
     (by rw [b₁]; exact arg b hb hbZ) (by rw [b₁, hm₁]; exact hB)) fun s₂ ⟨lt₂, e₂, k₂, m₂⟩ => ?_)
   refine WP.mono (movReg_ok s₂ .rsi .r12) fun s₃ ⟨v₃, k₃⟩ => ?_
@@ -165,7 +165,7 @@ theorem mulCall6_ok {f : String} {body : Prog isa} (hbody : body = mulFn6 false 
     · rw [k₃.1 _ (by decide), k₂.gpr _ (by decide), k₁.1 _ (by decide)]
   · rw [hn6] at hx ht'
     rw [ht] at ht'
-    rw [hm₃, m₂ x hx (by simp only [fnTmp6] at ht' ⊢; omega), hm₁]
+    rw [hm₃, m₂ x hx (by simp only [fnTmp6] at ht' ⊢; omega_using [ht']), hm₁]
 
 /-- A product modulo P-521's `n` (`Mod.fnN`) by a call of `mulFnN`, inlined: as
 the inline product, for the functions' temporary area. -/
@@ -181,12 +181,12 @@ theorem mulCallN_ok {f : String} {s : State} {base : Addr} {Z : Nat} (hs : Scr s
     · exact hm
     · omega
   have hm' : m = n521 := hm
-  have hZ : 4096 ≤ Z := by have := hM.tmp; rw [ht, hn9] at this; simp only [fnTmp] at this; omega
+  have hZ : 4096 ≤ Z := by have := hM.tmp; rw [ht, hn9] at this; simp only [fnTmp] at this; omega_using [this]
   simp only [lowArgs, ↓reduceIte, Bool.and_eq_true, decide_eq_true_eq] at hlow
   obtain ⟨⟨ho, ha⟩, hb⟩ := hlow
   rw [hn9] at hB ⊢
   simp only [mulCall, Code.inline]
-  refine WP.seq (WP.mono (callArgs_ok s (o := o) (a := a) (b := b) (by omega) (by omega) (by omega))
+  refine WP.seq (WP.mono (callArgs_ok s (o := o) (a := a) (b := b) (by omega_using [ho]) (by omega_using [ha]) (by omega_using [hb]))
     fun s₁ ⟨r12₁, o₁, a₁, b₁, k₁⟩ => ?_)
   have hs₁ := hs.of_keeps k₁ (by decide)
   have hm₁ : s₁.mem = s.mem := k₁.2.1
@@ -206,7 +206,7 @@ theorem mulCallN_ok {f : String} {s : State} {base : Addr} {Z : Nat} (hs : Scr s
     · rw [k₃.1 _ (by decide), k₂.gpr _ (by decide), k₁.1 _ (by decide)]
   · rw [hn9] at hx ht'
     rw [ht] at ht'
-    rw [hm₃, m₂ x hx (by simp only [fnTmp] at ht' ⊢; omega), hm₁]
+    rw [hm₃, m₂ x hx (by simp only [fnTmp] at ht' ⊢; omega_using [ht']), hm₁]
 
 theorem mulCall8_ok (order : Bool) {f : String} {s : State} {base : Addr} {Z : Nat} (hs : Scr s base Z) {M : Mod} {m : Nat}
     (hM : ModOkW M Z m s.mem base) (hf : M.fnMod = some (Wide8.modulus order)) (hn8 : M.n = 8) (ht : M.tmp = Wide8.tmp)
@@ -216,12 +216,12 @@ theorem mulCall8_ok (order : Bool) {f : String} {s : State} {base : Addr} {Z : N
       wordsVal s'.mem base o M.n * 2 ^ (64 * M.n) % m =
         wordsVal s.mem base a M.n * wordsVal s.mem base b M.n % m := by
   have hm' : m = Wide8.modulus order := (Mod.ok_fnMod hM.red hf).symm
-  have hZ : 4096 ≤ Z := by have := hM.tmp; rw [ht, hn8] at this; simp only [Wide8.tmp] at this; omega
+  have hZ : 4096 ≤ Z := by have := hM.tmp; rw [ht, hn8] at this; simp only [Wide8.tmp] at this; omega_using [this]
   simp only [lowArgs, show ¬ (8 = 9) by decide, ↓reduceIte, Bool.and_eq_true, decide_eq_true_eq] at hlow
   obtain ⟨⟨ho, ha⟩, hb⟩ := hlow
   rw [hn8] at hB ⊢
   simp only [mulCall, Code.inline]
-  refine WP.seq (WP.mono (callArgs_ok s (o := o) (a := a) (b := b) (by omega) (by omega) (by omega))
+  refine WP.seq (WP.mono (callArgs_ok s (o := o) (a := a) (b := b) (by omega_using [ho]) (by omega_using [ha]) (by omega_using [hb]))
     fun s₁ ⟨r12₁, o₁, a₁, b₁, k₁⟩ => ?_)
   have hs₁ := hs.of_keeps k₁ (by decide)
   have hm₁ : s₁.mem = s.mem := k₁.2.1
@@ -241,7 +241,7 @@ theorem mulCall8_ok (order : Bool) {f : String} {s : State} {base : Addr} {Z : N
     · rw [k₃.1 _ (by decide), k₂.gpr _ (by decide), k₁.1 _ (by decide)]
   · rw [hn8] at hx ht'
     rw [ht] at ht'
-    rw [hm₃, m₂ x hx (by simp only [Wide8.tmp] at ht' ⊢; omega), hm₁]
+    rw [hm₃, m₂ x hx (by simp only [Wide8.tmp] at ht' ⊢; omega_using [ht']), hm₁]
 
 theorem fnN6_ok {body : Prog isa} (hbody : body = mulFnN6 false ∨ body = mulFnN6 true) {s : State} {base : Addr}
     {Z : Nat} (hs : Scr s base Z) (hZ : 4096 ≤ Z) (ho : ArgN6 Z (argOf s .rsi))
@@ -273,13 +273,13 @@ theorem mulCallN6_ok {f : String} {body : Prog isa} (hbody : body = mulFnN6 fals
     rcases Mod.ok_fnN hM.red hf with ⟨h9, _⟩ | ⟨_, hm⟩
     · omega
     · exact hm
-  have hZ : 4096 ≤ Z := by have := hM.tmp; rw [ht, hn6] at this; simp only [fnTmp6] at this; omega
+  have hZ : 4096 ≤ Z := by have := hM.tmp; rw [ht, hn6] at this; simp only [fnTmp6] at this; omega_using [this]
   simp only [lowArgs, show ¬ (6 = 9) by decide, show ¬ (6 = 8) by decide, ↓reduceIte, Bool.and_eq_true, Bool.or_eq_true,
     decide_eq_true_eq] at hlow
   obtain ⟨⟨ho, ha⟩, hb⟩ := hlow
   rw [hn6] at hB hoZ haZ hbZ ⊢
   have h31 : ∀ x, (x + 96 ≤ fnTmp6 ∨ 4096 ≤ x ∧ x < 2 ^ 31) → x < 2 ^ 32 := fun x h => by
-    simp only [fnTmp6] at h; omega
+    simp only [fnTmp6] at h; omega_using [h]
   simp only [mulCall, Code.inline]
   refine WP.seq (WP.mono (callArgs_ok s (o := o) (a := a) (b := b) (h31 o ho) (h31 a ha) (h31 b hb))
     fun s₁ ⟨r12₁, o₁, a₁, b₁, k₁⟩ => ?_)
@@ -303,6 +303,6 @@ theorem mulCallN6_ok {f : String} {body : Prog isa} (hbody : body = mulFnN6 fals
     · rw [k₃.1 _ (by decide), k₂.gpr _ (by decide), k₁.1 _ (by decide)]
   · rw [hn6] at hx ht'
     rw [ht] at ht'
-    rw [hm₃, m₂ x hx (by simp only [fnTmp6] at ht' ⊢; omega), hm₁]
+    rw [hm₃, m₂ x hx (by simp only [fnTmp6] at ht' ⊢; omega_using [ht']), hm₁]
 
 end VG.Proof.Weierstrass.X86_64.Mont

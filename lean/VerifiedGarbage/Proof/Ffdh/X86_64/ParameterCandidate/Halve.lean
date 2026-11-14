@@ -41,7 +41,7 @@ theorem halfStep_ok {s₀ t : State} {op : Addr} {bs : List Byte} {j : Nat}
   have hrd' : InRegions (t.rd ++ t.wr) (off op j) 1 :=
     let ⟨r, hr, hc⟩ := hwr'; ⟨r, List.mem_append_right _ hr, hc⟩
   have hb' : t.mem (off op j) = bs.getD j 0 := by
-    rw [h.frame _ (fun i hi => out_ne (by omega) (by omega) (by omega))]
+    rw [h.frame _ (fun i hi => out_ne (by omega_using [hk, hj]) (by omega_using [hk, hj, hi]) (by omega_using [hi]))]
     exact hb j hj
   refine WP.mono (halveByte_ok hj hk (carryAt_le (by decide) bs j) h.ptr h.count h.carry hrd' hwr' hb')
     fun u ⟨hm, hp, hn, hc, hz, k⟩ => ?_
@@ -56,11 +56,11 @@ theorem halfStep_ok {s₀ t : State} {op : Addr} {bs : List Byte} {j : Nat}
       have hhl : i < (halfOctets 0 bs).length := by rw [halfOctets_length]; exact hj
       simpa only [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem hj,
         List.getElem?_eq_getElem hhl, Option.getD_some] using (halfOctets_get 0 hj).symm
-    · rw [ite_eq_right (out_ne (by omega) (by omega) he)]
-      exact h.bytes i (by omega)
+    · rw [ite_eq_right (out_ne (by omega_using [hk, hj, hi]) (by omega_using [hk, hj]) he)]
+      exact h.bytes i (by omega_using [hi, he])
   · intro a ha
-    rw [hm, WriteBytes.writeW8_apply, ite_eq_right (ha j (by omega))]
-    exact h.frame a (fun i hi => ha i (by omega))
+    rw [hm, WriteBytes.writeW8_apply, ite_eq_right (ha j (by omega_using []))]
+    exact h.frame a (fun i hi => ha i (by omega_using [hi]))
 
 theorem halfLoop_ok {s : State} {op : Addr} {bs : List Byte}
     (hk1 : 1 ≤ bs.length) (hk : bs.length < 2 ^ 31)
@@ -68,7 +68,7 @@ theorem halfLoop_ok {s : State} {op : Addr} {bs : List Byte}
     (hwr : ∀ i < bs.length, InRegions s.wr (off op i) 1)
     (hb : ∀ i < bs.length, s.mem (off op i) = bs.getD i 0) :
     WP isa (.loop (.block halveByte) .ne) s (HalfInv s op bs bs.length) :=
-  wp_upto (a := 0) (by omega) (HalfInv s op bs)
+  wp_upto (a := 0) (by omega_using [hk1]) (HalfInv s op bs)
     (fun j _ hj t ht => halfStep_ok hk hj hwr hb ht) (fun _ h => h)
     ⟨Keep.refl _ _, by rw [hp]; simp, by rw [hn, Nat.sub_zero], by simpa [carryAt] using hc,
       fun i hi => by omega, fun _ _ => rfl⟩

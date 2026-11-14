@@ -106,7 +106,7 @@ theorem hUpd_two {Φ : α → State → Prop} {o len : α → Nat}
     have b' := b.only (X.fits P) oo
     exact ⟨s, off (S s) (o x), len x, P, p, ⟨X.fits P, b', by rw [e0, hS], by rw [oo.get .a2, h2, hS],
       by rw [oo.get .a3, h3], Covers.right (by rw [b'.wr]; exact sc_cov (X.fits P) hl),
-      sdis (.inr (by omega)) hl (by omega), cR_dis (X.fits P) hl⟩, y.trans sy⟩
+      sdis (.inr (by omega_using [F, hSt, hY, ho])) hl (by omega_using [F, hSt, hR]), cR_dis (X.fits P) hl⟩, y.trans sy⟩
   · obtain ⟨-, -, -, x2, x3⟩ := h x t₁ h₁
     obtain ⟨-, -, -, z2, z3⟩ := h x t₂ h₂
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hq
@@ -129,7 +129,7 @@ theorem hUpd_wp {a t : State} (h : BT S vf Pre Pub a t) {o len : Nat} (ho : oY �
   have b₁ := b.only (X.fits P) o₁
   exact WP.mono (updM_ok (A.tab P) (X.fits P) hF b₁ (sy₁.trans sy) (dat := off (S s) o) (len := len)
     (by rw [e₁, b.s0]) (by rw [o₁.get .a2, h2, hS]) (by rw [o₁.get .a3, h3])
-    (Covers.right (by rw [b₁.wr]; exact sc_cov (X.fits P) hl)) (sdis (.inr (by omega)) hl (by omega))
+    (Covers.right (by rw [b₁.wr]; exact sc_cov (X.fits P) hl)) (sdis (.inr (by omega_using [ho, F, hSt, hY])) hl (by omega_using [F, hSt, hR]))
     (cR_dis (X.fits P) hl))
     fun t' ⟨⟨b', g, _, _⟩, y⟩ => ⟨⟨s, P, p, b', y⟩, fun r hr => by rw [g r hr, pres_of o₁ (by decide) r hr]⟩
 
@@ -178,7 +178,7 @@ theorem hashFixedG_ct (hal : ∀ {s}, Pre s → (S s).toNat % 8 = 0) (sl : State
   obtain ⟨hL, hL8⟩ := M.hL
   have hB : H.B = 2 ^ H.b := rfl
   have hB' : H.B = 64 ∨ H.B = 128 := by rcases hH.hb with e | e <;> simp [hB, e]
-  have hB0 : 0 < H.B := by omega
+  have hB0 : 0 < H.B := by omega_using [hB']
   have hL' : M.L ≤ 16 := by rcases hB' with e | e <;> rw [hL, e] <;> decide
   let K := fun (a t : State) => BT S vf Pre Pub a t ∧ t.gpr .s6 = sl a ∧ (sl a).toNat + 8 + H.D ≤ 1880
   -- `init`.
@@ -190,7 +190,7 @@ theorem hashFixedG_ct (hal : ∀ {s}, Pre s → (S s).toNat % 8 = 0) (sl : State
     have := padB_bounds (ℓ := 8 + H.D + (sl a).toNat) (L := M.L) hB0
     unfold padB at this
     show oY + H.B * ((8 + H.D + (sl a).toNat + M.L) / H.B + 1) ≤ oRsa
-    rcases hB' with e | e <;> rw [e] at this ⊢ <;> omega
+    rcases hB' with e | e <;> rw [e] at this ⊢ <;> omega_using [hR, hY, hL', h]
   let C := fun (a t : State) => (BT S vf Pre Pub a t ∧ oY + H.B * n a ≤ oRsa) ∧ t.gpr .a0 = off (S a) oSt ∧
     t.gpr .a1 = off (S a) oY ∧ t.gpr .a2 = BitVec.ofNat 64 (n a) ∧ t.gpr .a3 = off (S a) oCs
   refine two_seq (Ψ := C) (padAll_taint H hH.hb M.be fun a t₁ t₂ h₁ h₂ => ⟨(bt_pins X (an := id)
@@ -202,14 +202,14 @@ theorem hashFixedG_ct (hal : ∀ {s}, Pre s → (S s).toNat % 8 = 0) (sl : State
     (fun a t h => ?_) ?_
   · obtain ⟨⟨s, P, p, b, sy⟩, h6, hb⟩ := h
     have hS := X.S p
-    exact WP.mono_syms (padAll_ok (X.fits P) M (sl := (sl a).toNat) (by rw [h6, ofNat_toNat]) b (by omega))
+    exact WP.mono_syms (padAll_ok (X.fits P) M (sl := (sl a).toNat) (by rw [h6, ofNat_toNat]) b (by omega_using [hb]))
       fun t' ⟨b', _, _, x0, x1, x2, x3, _⟩ y => ⟨⟨⟨s, P, p, b', y.trans sy⟩, hn a hb⟩, by rw [x0, hS],
         by rw [x1, hS], by rw [x2], by rw [x3, hS]⟩
   -- The compression function.
   have ca : ∀ {a t : State}, C a t → ∃ s, Pre s ∧ Pub a s ∧ CompArgs S vf s t oY (n a) ∧ t.syms = s.syms :=
     fun {a t} ⟨⟨⟨s, P, p, b, sy⟩, _⟩, x0, x1, x2, x3⟩ => by
       have hS := X.S p
-      exact ⟨s, P, p, ⟨X.fits P, b, hal P, by rw [x0, hS], by rw [x1, hS], x2, by rw [x3, hS], by omega⟩, sy⟩
+      exact ⟨s, P, p, ⟨X.fits P, b, hal P, by rw [x0, hS], by rw [x1, hS], x2, by rw [x3, hS], by omega_using [hY, hCs]⟩, sy⟩
   refine two_seq (Ψ := fun a t => BT S vf Pre Pub a t)
     (compM_two X A (an := id) (fun a t h => let ⟨s, P, p, Ca, y⟩ := ca h; ⟨s, oY, n a, P, p, Ca, h.1.2, y⟩)
       (fun a t₁ t₂ h₁ h₂ r hr => by
@@ -237,9 +237,9 @@ end
 abbrev PreL (D : Nat) (s : State) : Prop := Lay D s (lo s).toNat (dbLen D s).toNat ((cm s).setWidth 8)
 
 theorem Lay.canon {D lN dN : Nat} {c : Byte} {s : State} (L : Lay D s lN dN c) : PreL D s := by
-  have h1 : (lo s).toNat = lN := by rw [L.hlo, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := L.l1; omega)]
+  have h1 : (lo s).toNat = lN := by rw [L.hlo, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := L.l1; omega_using [this])]
   have h2 : (dbLen D s).toNat = dN := by
-    rw [L.hdb, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := L.hk; have := L.k2; omega)]
+    rw [L.hdb, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := L.hk; have := L.k2; omega_arith)]
   have h3 : (cm s).setWidth 8 = c := by rw [L.hc, BitVec.setWidth_setWidth_of_le _ (by decide), BitVec.setWidth_eq]
   show Lay D s (lo s).toNat (dbLen D s).toNat ((cm s).setWidth 8)
   rw [h1, h2, h3]; exact L
@@ -335,7 +335,7 @@ theorem BL.dn {a t : State} (h : BL D W a t) :
   obtain ⟨s, P, g, -⟩ := h
   have L := agree_lay P.1 g.1
   have := L.hk; have := L.k2
-  exact ⟨L.d1, by omega, L.D0, L.D64⟩
+  exact ⟨L.d1, by omega_arith, L.D0, L.D64⟩
 
 end
 
@@ -372,15 +372,15 @@ theorem copyN_wp {ac : State × Nat} {u : State} (h : LoopR D W ac u) {a b : Nat
   obtain ⟨_, hSt, _, _, hR⟩ := offs
   have hB : oBk = 1376 := rfl
   have hN := W.hH.hN
-  have hS1 : 0 < W.H.S := by simp only [Hash.S]; omega
+  have hS1 : 0 < W.H.S := by simp only [Hash.S]; omega_using [hN]
   refine WP.mono (h.1.lift (Q := fun u' => Kept [.a4, .a1, .a5, .t0] u u') fun s P g b' => ?_)
     fun u' ⟨bl, k⟩ => h.keep bl fun r hr => k.gpr r (by revert r; decide)
   have L := agree_lay P g
   rcases hab with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩
-  · exact WP.mono (copyN_ok L b' (a := oSt) (b := oBk) (n := W.H.S) hS1 (by omega) (by omega) (by omega)
-      (.inl (by omega)) (by decide) (by decide)) fun u' ⟨b'', k', _⟩ => ⟨b'', k'⟩
-  · exact WP.mono (copyN_ok L b' (a := oBk) (b := oSt) (n := W.H.S) hS1 (by omega) (by omega) (by omega)
-      (.inr (by omega)) (by decide) (by decide)) fun u' ⟨b'', k', _⟩ => ⟨b'', k'⟩
+  · exact WP.mono (copyN_ok L b' (a := oSt) (b := oBk) (n := W.H.S) hS1 (by omega_using [F]) (by omega_using [F, hSt, hR]) (by omega_using [F, hR, hB])
+      (.inl (by omega_using [F, hSt, hB])) (by decide) (by decide)) fun u' ⟨b'', k', _⟩ => ⟨b'', k'⟩
+  · exact WP.mono (copyN_ok L b' (a := oBk) (b := oSt) (n := W.H.S) hS1 (by omega_using [F]) (by omega_using [F, hR, hB]) (by omega_using [F, hSt, hR])
+      (.inr (by omega_using [F, hSt, hB])) (by decide) (by decide)) fun u' ⟨b'', k', _⟩ => ⟨b'', k'⟩
 
 /-- The loop's invariant, with the lengths left. -/
 abbrev LoopN (D : Nat) (W : VT) (n : Nat) (ac : State × Nat) (u : State) : Prop :=
@@ -413,7 +413,7 @@ theorem round_two (n : Nat) :
     u.gpr .a1 = BitVec.ofNat 64 ac.2 + BitVec.ofNat 64 (8 + W.H.D)
   refine two_seq (Ψ := A4) (lr1_taint W.H (pin0 fun _ _ h => h.1)) (fun ac u h =>
     WP.mono (h.1.1.lift (Q := fun u' => Only [.a1] u u' ∧ u'.gpr .a1 = u.gpr .s8 + BitVec.ofNat 64 (8 + W.H.D))
-      fun s P g b => wp_addi (imm := 8 + W.H.D) (h := by omega) fun u' o e => wp_nil ⟨b.only P.F o, o, e⟩)
+      fun s P g b => wp_addi (imm := 8 + W.H.D) (h := by omega_using [F]) fun u' o e => wp_nil ⟨b.only P.F o, o, e⟩)
       fun u' ⟨bl, o, e⟩ => ⟨⟨h.1.keep bl fun r hr => o.gpr r (by revert r; decide), h.2⟩,
         by rw [e, h.1.2.2.1]⟩) ?_
   refine two_seq (Ψ := LoopN W.H.D W n) (hFin_two X A cH hF (an := Prod.fst) (fun ac u h => h.1.1.1)
@@ -424,7 +424,7 @@ theorem round_two (n : Nat) :
   · have hb := h.1.dn
     obtain ⟨sl, x11, hs⟩ := h.2.1
     exact WP.mono (h.1.lift (Q := fun u' => Kept [.t1, .t2, .t3, .t4, .a1, .a2, .a3] u u') fun s P g b =>
-      WP.mono (select_ok (agree_lay P g) rfl b h.2.2.1 x11 (by have := h.2.2.2.2; omega) hs)
+      WP.mono (select_ok (agree_lay P g) rfl b h.2.2.1 x11 (by have := h.2.2.2.2; omega_using [hb, this]) hs)
         fun u' ⟨b', k', _⟩ => ⟨b', k'⟩)
       fun u' ⟨bl, k'⟩ => ⟨h.keep bl fun r hr => k'.gpr r (by revert r; decide), hn⟩
   -- The state back.
@@ -442,9 +442,9 @@ theorem round_two (n : Nat) :
         u'.gpr .a2 = off (off (off (Sp ac.1) oY) (8 + W.H.D)) ac.2 ∧ u'.gpr .a3 = BitVec.ofNat 64 1)
       fun s P g b => ?_) fun u' ⟨bl, k₅, x1, x2, x3⟩ => ⟨⟨h.1.keep bl fun r hr => k₅.gpr r (by revert r; decide),
         h.2⟩, by rw [x1, h.1.2.2.1], ?_, x3⟩
-    · refine wp_addi (imm := 8 + W.H.D) (h := by omega) fun u₁ o₁ e₁ => ?_
+    · refine wp_addi (imm := 8 + W.H.D) (h := by omega_using [F]) fun u₁ o₁ e₁ => ?_
       refine wp_yBase (by rw [o₁.get .s0, s0]) fun u₂ o₂ e₂ =>
-        wp_addi (imm := 8 + W.H.D) (h := by omega) fun u₃ o₃ e₃ => wp_add fun u₄ o₄ e₄ =>
+        wp_addi (imm := 8 + W.H.D) (h := by omega_using [F]) fun u₃ o₃ e₃ => wp_add fun u₄ o₄ e₄ =>
         wp_li (imm := 1) (by decide) fun u₅ o₅ e₅ => wp_nil ?_
       have k₅ : Only [.a1, .a2, .a3] u u₅ := (o₁.trans (o₂.trans (o₃.trans (o₄.trans o₅)))).mono
       refine ⟨b.only P.F k₅, k₅, ?_, ?_, e₅⟩
@@ -454,11 +454,11 @@ theorem round_two (n : Nat) :
   have h3 : ∀ {ac : State × Nat} {u : State}, A6 ac u → (u.gpr .a3).toNat = 1 := fun h => by
     rw [h.2.2.2]; rfl
   have hb7 : ∀ {ac : State × Nat} {u : State}, A6 ac u → oY + 8 + W.H.D + ac.2 + 1 ≤ oRsa := fun h => by
-    have := h.1.1.2.2.2.2; have := h.1.1.1.dn; omega
+    have := h.1.1.2.2.2.2; have := h.1.1.1.dn; omega_arith
   refine two_seq (Ψ := LoopN W.H.D W n)
     (hUpd_two X A cH hF (an := Prod.fst) (o := fun ac => oY + 8 + W.H.D + ac.2) (len := fun _ => 1)
-      (fun ac u h => ⟨h.1.1.1, by omega, hb7 h, h.2.2.1, h3 h⟩) (fun ac u₁ u₂ h₁ h₂ => by rw [h₁.2.1, h₂.2.1]))
-    (fun ac u h => WP.mono (hUpd_wp X A hF h.1.1.1 (o := oY + 8 + W.H.D + ac.2) (len := 1) (by omega) (hb7 h)
+      (fun ac u h => ⟨h.1.1.1, by omega_using [], hb7 h, h.2.2.1, h3 h⟩) (fun ac u₁ u₂ h₁ h₂ => by rw [h₁.2.1, h₂.2.1]))
+    (fun ac u h => WP.mono (hUpd_wp X A hF h.1.1.1 (o := oY + 8 + W.H.D + ac.2) (len := 1) (by omega_using []) (hb7 h)
       h.2.2.1 (h3 h)) fun u' ⟨b', g'⟩ => ⟨h.1.1.keep b' (pres_three g'), h.1.2⟩) ?_
   -- The counters.
   let Po := fun (ac : State × Nat) (u : State) => BL W.H.D W ac.1 u ∧
@@ -475,15 +475,15 @@ theorem round_two (n : Nat) :
     · obtain ⟨sl, x11, hs⟩ := h.1.2.1
       exact ⟨sl, by rw [o.get .s11, x11], hs⟩
     · rw [x8, h.1.2.2.1, show (1#64) = BitVec.ofNat 64 1 from rfl, BitVec.ofNat_add]
-    · rw [x9, h.1.2.2.2.1, Offset.ofNat_sub_ofNat (by have := h.1.2.2.2.2; omega)]
+    · rw [x9, h.1.2.2.2.1, Offset.ofNat_sub_ofNat (by have := h.1.2.2.2.2; omega_using [this])]
   have hfin := two_post (Φ := LoopN W.H.D W n) (Ψ := Po) (lr3_taint (pin0 fun _ _ h => h.1)) w8
   refine hfin.mono (fun _ _ h => h) fun u₁ u₂ ⟨ac, h₁, h₂⟩ => ?_
   refine ⟨by rw [eval_nonzero, eval_nonzero, h₁.2.2.2.1, h₂.2.2.2.1], fun _ => trivial, fun ht => ?_⟩
   rw [eval_nonzero, h₁.2.2.2.1] at ht
   have hb := h₁.1.dn
   have hne : (dbLen W.H.D ac.1).toNat - ac.2 - 1 ≠ 0 := fun h0 => by rw [h0] at ht; simp at ht
-  have hlt : ac.2 + 1 < (dbLen W.H.D ac.1).toNat := by omega
-  refine ⟨(dbLen W.H.D ac.1).toNat - (ac.2 + 1), by have := h₁.2.2.2.2.2; omega, (ac.1, ac.2 + 1),
+  have hlt : ac.2 + 1 < (dbLen W.H.D ac.1).toNat := by omega_using [hne]
+  refine ⟨(dbLen W.H.D ac.1).toNat - (ac.2 + 1), by have := h₁.2.2.2.2.2; omega_using [hne, this], (ac.1, ac.2 + 1),
     ⟨⟨h₁.1, h₁.2.1, h₁.2.2.1, by rw [h₁.2.2.2.1, Nat.sub_sub], hlt⟩, rfl⟩,
     ⟨⟨h₂.1, h₂.2.1, h₂.2.2.1, by rw [h₂.2.2.2.1, Nat.sub_sub], hlt⟩, rfl⟩⟩
 
@@ -518,14 +518,14 @@ theorem hashAny_ct : RelCT isa (Two fun a t => BL D W a t ∧ S11 t) (hashAny W.
       fun t' ⟨bl, k₃, x1, x2, x3⟩ => ⟨⟨bl, h.2.keep (k₃.get .s11)⟩, x1, x2, x3⟩
     refine wp_li (imm := 0) (by decide) fun t₁ o₁ e₁ => ?_
     refine wp_yBase (by rw [o₁.get .s0, s0]) fun t₂ o₂ e₂ =>
-      wp_li (imm := 8 + W.H.D) (by omega) fun t₃ o₃ e₃ => wp_nil ?_
+      wp_li (imm := 8 + W.H.D) (by omega_using [F]) fun t₃ o₃ e₃ => wp_nil ?_
     have k₃ : Only [.a1, .a2, .a3] t t₃ := (o₁.trans (o₂.trans o₃)).mono
     exact ⟨b.only P.F k₃, k₃, by rw [o₃.get .a1, o₂.get .a1, e₁], by rw [o₃.get .a2, e₂], e₃⟩
   have h3 : ∀ {a t : State}, U a t → (t.gpr .a3).toNat = 8 + W.H.D := fun h => by
-    rw [h.2.2.2, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+    rw [h.2.2.2, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [F])]
   refine two_seq (Ψ := Φ₀) (hUpd_two X A cH hF (an := id) (o := fun _ => oY) (len := fun _ => 8 + W.H.D)
-      (fun a t h => ⟨h.1.1, Nat.le_refl _, by omega, h.2.2.1, h3 h⟩) (fun a t₁ t₂ h₁ h₂ => by rw [h₁.2.1, h₂.2.1]))
-    (fun a t h => WP.mono (hUpd_wp X A hF h.1.1 (o := oY) (len := 8 + W.H.D) (Nat.le_refl _) (by omega) h.2.2.1
+      (fun a t h => ⟨h.1.1, Nat.le_refl _, by omega_using [F, hR, hY], h.2.2.1, h3 h⟩) (fun a t₁ t₂ h₁ h₂ => by rw [h₁.2.1, h₂.2.1]))
+    (fun a t h => WP.mono (hUpd_wp X A hF h.1.1 (o := oY) (len := 8 + W.H.D) (Nat.le_refl _) (by omega_using [F, hR, hY]) h.2.2.1
       (h3 h)) fun _ ⟨b'', g''⟩ => ⟨b'', h.1.2.keep (g'' .s11 (by decide))⟩) ?_
   -- The counters, and the loop.
   refine two_seq (Ψ := fun a u => LoopR W.H.D W (a, 0) u) (loopInit_taint (bl_pins (fun _ _ h => h.1) []))
@@ -537,7 +537,7 @@ theorem hashAny_ct : RelCT isa (Two fun a t => BL D W a t ∧ S11 t) (hashAny W.
       wp_nil ⟨b.only P.F ((o₁.trans o₂).mono : Only [.s8, .s9] t t₂), (o₁.trans o₂).mono, by rw [o₂.get .s8, e₁],
         by rw [e₂, o₁.get .s4]⟩)
       fun t' ⟨bl, k₂, x8, x9⟩ => ⟨bl, h.2.keep (k₂.get .s11), x8,
-        by rw [x9, v4, Nat.sub_zero]; exact (ofNat_toNat _).symm, show 0 < (dbLen W.H.D a).toNat by omega⟩
+        by rw [x9, v4, Nat.sub_zero]; exact (ofNat_toNat _).symm, show 0 < (dbLen W.H.D a).toNat by omega_using [hb]⟩
   exact (RelCT.exists_ (P := fun n => Two (LoopN W.H.D W n)) fun n => RelCT.loop _ (round_two cH hF rfl) n).mono
     (fun u₁ u₂ ⟨a, h₁, h₂⟩ => ⟨_, (a, 0), ⟨h₁, rfl⟩, ⟨h₂, rfl⟩⟩) fun _ _ h => h
 end

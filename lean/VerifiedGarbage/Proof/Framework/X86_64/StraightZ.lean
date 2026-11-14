@@ -141,7 +141,7 @@ end
 /-! ## Quadwords -/
 
 theorem cases8 {q : Nat} (hq : q < 8) :
-    q = 0 ∨ q = 1 ∨ q = 2 ∨ q = 3 ∨ q = 4 ∨ q = 5 ∨ q = 6 ∨ q = 7 := by omega
+    q = 0 ∨ q = 1 ∨ q = 2 ∨ q = 3 ∨ q = 4 ∨ q = 5 ∨ q = 6 ∨ q = 7 := by omega_using [hq]
 
 theorem getLsbD_qw (x : BitVec 512) {q i : Nat} (hi : i < 64) :
     (qw x q).getLsbD i = x.getLsbD (64 * q + i) := by
@@ -154,14 +154,14 @@ theorem qw_app4 (f : Nat → BitVec 128) {q : Nat} (hq : q < 8) :
   · apply BitVec.eq_of_getLsbD_eq; intro j hj
     simp only [qw, qword, BitVec.getLsbD_extractLsb', BitVec.getLsbD_append, decide_eq_true hj,
       Bool.true_and, Nat.reduceDiv, Nat.reduceMod, Nat.reduceMul]
-    split <;> (try split) <;> first | (exfalso; omega) | exact congrArg _ (by omega)
+    split <;> (try split) <;> first | (exfalso; omega) | exact congrArg _ (by omega_using [])
 
 theorem split256 (v : BitVec 256) : v.extractLsb' 128 128 ++ v.extractLsb' 0 128 = v := by
   apply BitVec.eq_of_getLsbD_eq; intro i hi
   simp only [BitVec.getLsbD_append, BitVec.getLsbD_extractLsb']
   by_cases h : i < 128
   · simp [h]
-  · simp [h, show i - 128 < 128 by omega, show 128 + (i - 128) = i by omega]
+  · simp [h, show i - 128 < 128 by omega_using [hi], show 128 + (i - 128) = i by omega_using [h]]
 
 theorem zmm_lanes (s : State) (r : XReg) :
     s.zmm r = (s.zlane r 3 ++ s.zlane r 2) ++ (s.zlane r 1 ++ s.zlane r 0) := by
@@ -178,7 +178,7 @@ theorem qw_zmm (s : State) (r : XReg) {q : Nat} (hq : q < 8) :
 theorem qw_setZ (s : State) (d : XReg) (l0 l1 l2 l3 : BitVec 128) {q : Nat} (hq : q < 8) :
     qw ((s.setZ d l0 l1 l2 l3).zmm d) q =
       qword (VG.X86_64.pick4 l0 l1 l2 l3 (q / 2)) (q % 2) := by
-  rw [qw_zmm _ _ hq, State.zlane_setZ _ _ _ _ _ _ _ (by omega)]
+  rw [qw_zmm _ _ hq, State.zlane_setZ _ _ _ _ _ _ _ (by omega_using [hq])]
   simp
 
 theorem zmm_setZ_other (s : State) {d r : XReg} (h : r ≠ d) (l0 l1 l2 l3 : BitVec 128) :
@@ -193,10 +193,10 @@ theorem split_eq (v : BitVec 512) :
   by_cases h1 : i < 256
   · by_cases h2 : i < 128
     · simp [h1, h2]
-    · simp [h1, h2, show i - 128 < 128 by omega, show 128 + (i - 128) = i by omega]
+    · simp [h1, h2, show i - 128 < 128 by omega_using [h1], show 128 + (i - 128) = i by omega_using [h2]]
   · by_cases h3 : i - 256 < 128
-    · simp [h1, h3, show 256 + (i - 256) = i by omega]
-    · simp [h1, h3, show i - 256 - 128 < 128 by omega, show 384 + (i - 256 - 128) = i by omega]
+    · simp [h1, h3, show 256 + (i - 256) = i by omega_using [h1]]
+    · simp [h1, h3, show i - 256 - 128 < 128 by omega_using [hi], show 384 + (i - 256 - 128) = i by omega_using [h3]]
 
 /-- The register after a load of `v`. -/
 theorem zmm_load (s : State) (d : XReg) (v : BitVec 512) :
@@ -215,7 +215,7 @@ def ternlog64 (a b c : BitVec 64) (imm : BitVec 8) : BitVec 64 :=
 theorem qword_not (a : BitVec 128) {i : Nat} (hi : i < 2) : qword (~~~a) i = ~~~qword a i := by
   apply BitVec.eq_of_getLsbD_eq; intro j hj
   simp only [qword, BitVec.getLsbD_extractLsb', BitVec.getLsbD_not, decide_eq_true hj,
-    Bool.true_and, decide_eq_true (show 64 * i + j < 128 by omega)]
+    Bool.true_and, decide_eq_true (show 64 * i + j < 128 by omega_using [hi, hj])]
 
 theorem qword_zero (i : Nat) : qword 0 i = 0 := by
   apply BitVec.eq_of_getLsbD_eq; intro j hj; simp [qword]
@@ -324,13 +324,13 @@ theorem slot_sep (b : Addr) {j k : Nat} (hj : 64 * j < 2 ^ 64) (hk : 64 * k < 2 
   intro x h₁ h₂
   simp only [zAddr, Offset.sub_add_eq, Offset.toNat_sub_ofNat] at h₁ h₂
   have := (x - b).isLt
-  omega
+  omega_using [hj, hk, h, h₁, h₂]
 
 theorem slot_contains (b : Addr) {n k : Nat} (hk : k < n) (hn : 64 * n < 2 ^ 64) :
     (⟨b, 64 * n⟩ : Region).Contains (zAddr b k) (512 / 8) := by
   simp only [Region.Contains, zAddr]
-  rw [Offset.add_sub_cancel_left, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
-  omega
+  rw [Offset.add_sub_cancel_left, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hk, hn])]
+  omega_using [hk]
 
 theorem loc_some {c : Cfg} {m : MemOp} {k : Nat} (h : c.loc m = some k) :
     m.base = c.base ∧ m.index = none ∧ m.disp = ((64 * k : Nat) : Int) ∧ k < c.slots := by
@@ -339,7 +339,7 @@ theorem loc_some {c : Cfg} {m : MemOp} {k : Nat} (h : c.loc m = some k) :
   · rename_i h1
     cases h
     obtain ⟨hi, hb, h0, hm, hlt⟩ := h1
-    exact ⟨hb, hi, by omega, hlt⟩
+    exact ⟨hb, hi, by omega_using [h0, hm], hlt⟩
   · cases h
 
 theorem ea_of {s : State} {m : MemOp} {b : Reg} {k : Nat} (hb : m.base = b) (hi : m.index = none)
@@ -400,7 +400,7 @@ theorem post_setZ {e : Env α} {s : State} (hok : Ok c s) (hrel : Rel R c e s) {
 
 theorem pick4_f (f : Nat → BitVec 128) {q : Nat} (hq : q < 8) :
     VG.X86_64.pick4 (f 0) (f 1) (f 2) (f 3) (q / 2) = f (q / 2) :=
-  VG.X86_64.pick4_lanes f (by omega)
+  VG.X86_64.pick4_lanes f (by omega_using [hq])
 
 theorem step_ok (hD : ∀ q < 8, D.Sound (R q)) {e e' : Env α} {s : State} (hok : Ok c s)
     (hrel : Rel R c e s) {i : Instr} (h : step D c e i = some e') :
@@ -466,7 +466,7 @@ theorem step_ok (hD : ∀ q < 8, D.Sound (R q)) {e e' : Env α} {s : State} (hok
             (fun _ h => h.elim)
           rw [pick4_f (fun i => ZShiftOp.vpsrlq.sse.eval (s.zlane r i) n) hq]
           simp only [ZShiftOp.sse]
-          rw [qword_psrlq _ (by omega) (hl q), ← qw_zmm s r hq]
+          rw [qword_psrlq _ (by omega_using [hn]) (hl q), ← qw_zmm s r hq]
           exact (hD q hq).shr (hrel.reg r a ha q hq) hb
         · rename_i a ha
           obtain ⟨b, hb, rfl⟩ := Option.map_eq_some_iff.mp h
@@ -474,7 +474,7 @@ theorem step_ok (hD : ∀ q < 8, D.Sound (R q)) {e e' : Env α} {s : State} (hok
             (fun _ h => h.elim)
           rw [pick4_f (fun i => ZShiftOp.vpsllq.sse.eval (s.zlane r i) n) hq]
           simp only [ZShiftOp.sse]
-          rw [qword_psllq _ (by omega) (hl q), ← qw_zmm s r hq, ← shl_eq _ hn.1 hn.2]
+          rw [qword_psllq _ (by omega_using [hn]) (hl q), ← qw_zmm s r hq, ← shl_eq _ hn.1 hn.2]
           simp only [shl, Option.bind_eq_some_iff] at hb
           obtain ⟨t, ⟨o, ho, ht⟩, hc⟩ := hb
           exact (hD q hq).ror ((hD q hq).and (hrel.reg r a ha q hq) ((hD q hq).const ho) ht) hc
@@ -490,7 +490,7 @@ theorem step_ok (hD : ∀ q < 8, D.Sound (R q)) {e e' : Env α} {s : State} (hok
         show (0 : Nat) < 2 by decide] at hx
       have hq8 : ∀ q < 8, qw (((ZOp.vpbroadcastq d x).exec s).zmm d) q = v := by
         intro q hq
-        rw [qw_zmm _ _ hq, zlane_vpbroadcastq _ _ _ _ (by omega)]
+        rw [qw_zmm _ _ hq, zlane_vpbroadcastq _ _ _ _ (by omega_using [hq])]
         simp only [ite_true]
         rw [qword_app _ _ (Nat.mod_lt _ (by decide)), hx]
         split <;> rfl
@@ -574,7 +574,7 @@ theorem step_ok (hD : ∀ q < 8, D.Sound (R q)) {e e' : Env α} {s : State} (hok
         by simp [exec, State.store512, hea, hin], ?_⟩
       have hsep : ∀ j < c.slots, j ≠ k → Mem.Sep (zAddr (s.gpr c.base) j) (512 / 8)
           (zAddr (s.gpr c.base) k) (512 / 8) := fun j hj hjk =>
-        slot_sep _ (by have := hok.slots; omega) (by have := hok.slots; omega) hjk
+        slot_sep _ (by have := hok.slots; omega_using [hj, this]) (by have := hok.slots; omega_using [hlt, this]) hjk
       refine ⟨⟨fun r' b hr' => hrel.reg r' b hr', fun j b hj hjb => ?_,
         fun r' w hw => hrel.gc r' w hw, fun r' w hw => hrel.xc r' w hw⟩,
         hok.congr rfl rfl, rfl, fun _ _ => rfl, rfl, rfl, rfl, rfl, fun _ _ => rfl, ?_⟩
@@ -657,8 +657,8 @@ theorem Ok.of_off {c : Cfg} {s : State} {r : Region} {off : Nat} (hr : r ∈ s.w
   slotIn k hk := ⟨r, hr, by
     simp only [Region.Contains, zAddr, hb]
     rw [BitVec.add_assoc, ← BitVec.ofNat_add, Offset.add_sub_cancel_left, BitVec.toNat_ofNat,
-      Nat.mod_eq_of_lt (by omega)]
-    omega⟩
-  slots := by omega
+      Nat.mod_eq_of_lt (by omega_using [hlen, hn, hk])]
+    omega_using [hlen, hk]⟩
+  slots := by omega_using [hlen, hn]
 
 end VG.X86_64.StraightZ

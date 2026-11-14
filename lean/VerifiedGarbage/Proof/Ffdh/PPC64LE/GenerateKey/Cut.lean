@@ -32,7 +32,7 @@ theorem lt_mask {j l : Nat} (hj : j < 2 ^ 32) (hl : l < 2 ^ 32) :
     apply BitVec.eq_of_toNat_eq
     rw [BitVec.toNat_ushiftRight, BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat, BitVec.toNat_ofNat,
       Nat.shiftRight_eq_div_pow]
-    split <;> omega
+    split <;> omega_arith
   rw [e]
   by_cases h : j < l <;> simp [h]
 
@@ -40,8 +40,8 @@ theorem eq_mask {j l : Nat} (hj : j < 2 ^ 32) (hl : l < 2 ^ 32) :
     0#64 - (((BitVec.ofNat 64 j ^^^ BitVec.ofNat 64 l) - 1#64) >>> 63) = mask (decide (j = l)) := by
   have hx : (BitVec.ofNat 64 j ^^^ BitVec.ofNat 64 l) = BitVec.ofNat 64 (j ^^^ l) := by
     apply BitVec.eq_of_toNat_eq
-    rw [BitVec.toNat_xor, BitVec.toNat_ofNat, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega),
-      Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (Nat.lt_of_lt_of_le (Nat.xor_lt_two_pow hj hl) (by decide))]
+    rw [BitVec.toNat_xor, BitVec.toNat_ofNat, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hj]),
+      Nat.mod_eq_of_lt (by omega_using [hl]), Nat.mod_eq_of_lt (Nat.lt_of_lt_of_le (Nat.xor_lt_two_pow hj hl) (by decide))]
   have hlt : j ^^^ l < 2 ^ 32 := Nat.xor_lt_two_pow hj hl
   have hz : j ^^^ l = 0 ↔ j = l := ⟨fun h => by
     have := congrArg (· ^^^ l) h
@@ -51,7 +51,7 @@ theorem eq_mask {j l : Nat} (hj : j < 2 ^ 32) (hl : l < 2 ^ 32) :
     rw [BitVec.toNat_ushiftRight, BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat,
       Nat.shiftRight_eq_div_pow]
     simp only [BitVec.toNat_ofNat]
-    split <;> omega
+    split <;> omega_arith
   rw [hx, e]
   by_cases h : j = l <;> simp [h]
 
@@ -94,9 +94,9 @@ theorem cutBody_ok {s t : State} {R X : Addr} {k ld j : Nat} {tb : Byte} (hj : j
   have hb : t.mem (off R j) = s.mem (off R j) := by
     refine tout _ (Or.inr ?_)
     by_contra hc
-    exact hsep _ (by omega) rfl
+    exact hsep _ (by omega_using [hj, hc]) rfl
   have hrd' : InRegions (t.rd ++ t.wr) (off R j) 1 := by rw [tk.rd, tk.wr]; exact hrd
-  have hst : InRegions t.wr (off X j) 1 := (hx.congr tk.wr).st (d := j) (n := 1) (by omega)
+  have hst : InRegions t.wr (off X j) 1 := (hx.congr tk.wr).st (d := j) (n := 1) (by omega_using [hj])
   have hnw := hx.nowrap
   unfold cutBody
   refine WP.mono (WP.keep cutRegs (Q := fun u => u.gpr .r24 = off R (j + 1) ∧ u.gpr .r25 = off X (j + 1) ∧
@@ -107,24 +107,24 @@ theorem cutBody_ok {s t : State} {R X : Addr} {k ld j : Nat} {tb : Byte} (hj : j
       ⟨⟨u24, u25, u4, ?_, ?_, ?_, ?_, fun _ => u0, (tk.trans ku).mono (by decide)⟩, u6⟩
   · prun [t24, t25, t4, t9, t14, exec_lbz' (show Reg.r24 ≠ .r0 by decide) (show 0 < 2 ^ 15 by decide), hrd',
       exec_stb (show Reg.r25 ≠ .r0 by decide) (show 0 < 2 ^ 15 by decide), hst, BitVec.add_zero, Pub.read1_setWidth,
-      hb, lt_mask (show j < 2 ^ 32 by omega) (show ld < 2 ^ 32 by omega),
-      eq_mask (show j < 2 ^ 32 by omega) (show ld < 2 ^ 32 by omega), sel255, or_xor_mask]
+      hb, lt_mask (show j < 2 ^ 32 by omega_using [hj, hk]) (show ld < 2 ^ 32 by omega_using [hk, hld]),
+      eq_mask (show j < 2 ^ 32 by omega_using [hj, hk]) (show ld < 2 ^ 32 by omega_using [hk, hld]), sel255, or_xor_mask]
     rw [BitVec.ofNat_add]
   · rw [ku.gpr .r22 (by decide), t9]
   · rw [ku.gpr .r14 (by decide), t14]
   · rw [um]
-    exact (tout.mono (Nat.le_refl _) (by omega)).trans ((write1_outside t.mem X (d := j) _ (by omega)).mono
-      (by omega) (by omega))
+    exact (tout.mono (Nat.le_refl _) (by omega_using [])).trans ((write1_outside t.mem X (d := j) _ (by omega_using [hj, hk])).mono
+      (by omega_using []) (by omega_using []))
   · intro i hi
     rw [um]
     rcases Nat.lt_succ_iff_lt_or_eq.mp hi with hi | rfl
-    · rw [write1_outside t.mem X (d := j) _ (by omega) _ (by rw [Bignum.PPC64LE.ofs_off0 X (by omega)]; omega)]
+    · rw [write1_outside t.mem X (d := j) _ (by omega_using [hj, hk]) _ (by rw [Bignum.PPC64LE.ofs_off0 X (by omega_arith)]; omega_using [hi])]
       exact tx i hi
     · rw [write1_self, cut_byte]
       have hl : (Spec.Rsa.bytesAt s.mem R k).length = k := by simp [Spec.Rsa.bytesAt]
-      rw [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem (by rw [cut_length tb (by omega), hl]; omega),
-        Option.getD_some, cut_get tb (by omega) (by omega)]
-      have hr : (Spec.Rsa.bytesAt s.mem R k)[i]'(by omega) = s.mem (off R i) := by
+      rw [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem (by rw [cut_length tb (by omega_using [hld, hl]), hl]; omega_using [hj]),
+        Option.getD_some, cut_get tb (by omega_using [hld, hl]) (by omega_using [hj, hl])]
+      have hr : (Spec.Rsa.bytesAt s.mem R k)[i]'(by omega_using [hj, hl]) = s.mem (off R i) := by
         simp [Spec.Rsa.bytesAt, off]
       rw [hr]
       by_cases h1 : i < ld
@@ -140,13 +140,13 @@ theorem cut_ok {s : State} {R X : Addr} {k ld : Nat} {tb : Byte} (hk1 : 1 ≤ k)
     WP isa (countLoop .r6 cutBody) s fun t =>
       (Spec.Rsa.bytesAt t.mem X k = cut (Spec.Rsa.bytesAt s.mem R k) ld tb ∧ Outside X 0 k s.mem t.mem ∧
         t.gpr .r0 = 0#64) ∧ Keep cutRegs s t := by
-  refine WP.mono (wp_countdown (cnt := .r6) (N := k) (by omega) (by omega) (CutInv s R X k ld tb)
+  refine WP.mono (wp_countdown (cnt := .r6) (N := k) (by omega_using [hk]) (by omega_using [hk1]) (CutInv s R X k ld tb)
     (fun j hj t ht _ => cutBody_ok hj hk hld hx (hrd j hj) (hsep j hj) ht)
-    ⟨h24, h25, h4, h22, h14, Outside.refl _ _ _ _, fun _ h => absurd h (by omega), fun h => absurd h (by omega),
+    ⟨h24, h25, h4, h22, h14, Outside.refl _ _ _ _, fun _ h => absurd h (by omega_using []), fun h => absurd h (by omega_using []),
       Keep.refl _ _⟩ h6)
-    fun t ⟨_, _, _, _, _, tout, tx, t0, kt⟩ => ⟨⟨?_, tout, t0 (by omega)⟩, kt⟩
+    fun t ⟨_, _, _, _, _, tout, tx, t0, kt⟩ => ⟨⟨?_, tout, t0 (by omega_using [hk1])⟩, kt⟩
   have hl : (Spec.Rsa.bytesAt s.mem R k).length = k := by simp [Spec.Rsa.bytesAt]
-  apply List.ext_getElem (by rw [cut_length tb (by omega), hl]; simp [Spec.Rsa.bytesAt])
+  apply List.ext_getElem (by rw [cut_length tb (by omega_using [hld, hl]), hl]; simp [Spec.Rsa.bytesAt])
   intro i h1 h2
   have hi : i < k := by simpa [Spec.Rsa.bytesAt] using h1
   have e : (Spec.Rsa.bytesAt t.mem X k)[i] = t.mem (off X i) := by simp [Spec.Rsa.bytesAt, off]
@@ -164,13 +164,13 @@ theorem masked_ok {s : State} {X : Addr} {k : Nat} {c : Bool} (hk1 : 1 ≤ k) (h
   let Inv : Nat → State → Prop := fun j t => t.gpr .r25 = off X j ∧ t.gpr .r17 = mask c ∧
     Outside X 0 j s.mem t.mem ∧ (∀ i < j, t.mem (off X i) = if c then s.mem (off X i) else 0) ∧
     Keep [.r6, .r16, .r25] s t
-  refine WP.mono (wp_countdown (cnt := .r6) (N := k) (by omega) (by omega) Inv
-    (fun j hj t ⟨t25, t17, tout, tz, tk⟩ _ => ?_) ⟨h25, h17, Outside.refl _ _ _ _, fun _ h => absurd h (by omega),
+  refine WP.mono (wp_countdown (cnt := .r6) (N := k) (by omega_using [hk]) (by omega_using [hk1]) Inv
+    (fun j hj t ⟨t25, t17, tout, tz, tk⟩ _ => ?_) ⟨h25, h17, Outside.refl _ _ _ _, fun _ h => absurd h (by omega_using []),
       Keep.refl _ _⟩ h6) fun t ⟨_, _, tout, tz, kt⟩ => ⟨⟨?_, tout⟩, kt⟩
-  · have hst : InRegions t.wr (off X j) 1 := (hx.congr tk.wr).st (d := j) (n := 1) (by omega)
-    have hrd : InRegions (t.rd ++ t.wr) (off X j) 1 := (hx.congr tk.wr).ld (d := j) (n := 1) (by omega)
+  · have hst : InRegions t.wr (off X j) 1 := (hx.congr tk.wr).st (d := j) (n := 1) (by omega_using [hj])
+    have hrd : InRegions (t.rd ++ t.wr) (off X j) 1 := (hx.congr tk.wr).ld (d := j) (n := 1) (by omega_using [hj])
     have hb : t.mem (off X j) = s.mem (off X j) :=
-      tout _ (Or.inr (by rw [Bignum.PPC64LE.ofs_off0 X (by omega)]; omega))
+      tout _ (Or.inr (by rw [Bignum.PPC64LE.ofs_off0 X (by omega_using [hk, hj])]; omega_using []))
     refine WP.mono (WP.keep [.r6, .r16, .r25] (Q := fun u => u.gpr .r25 = off X (j + 1) ∧ u.gpr .r17 = mask c ∧
         u.gpr .r6 = t.gpr .r6 - BitVec.ofNat 64 1 ∧
         u.mem = t.mem.write (off X j) 1 (if c then s.mem (off X j) else 0)) (by
@@ -180,17 +180,17 @@ theorem masked_ok {s : State} {X : Addr} {k : Nat} {c : Bool} (hk1 : 1 ≤ k) (h
       (by decide)) fun u ⟨⟨u25, u17, u6, um⟩, ku⟩ =>
         ⟨⟨u25, u17, ?_, fun i hi => ?_, (tk.trans ku).mono (by decide)⟩, u6⟩
     · rw [um]
-      exact (tout.mono (Nat.le_refl _) (by omega)).trans ((write1_outside t.mem X (d := j) _ (by omega)).mono
-        (by omega) (by omega))
+      exact (tout.mono (Nat.le_refl _) (by omega_using [])).trans ((write1_outside t.mem X (d := j) _ (by omega_using [hk, hj])).mono
+        (by omega_using []) (by omega_using []))
     · rw [um]
       rcases Nat.lt_succ_iff_lt_or_eq.mp hi with hi | rfl
-      · rw [write1_outside t.mem X (d := j) _ (by omega) _ (by rw [Bignum.PPC64LE.ofs_off0 X (by omega)]; omega)]
+      · rw [write1_outside t.mem X (d := j) _ (by omega_using [hk, hj]) _ (by rw [Bignum.PPC64LE.ofs_off0 X (by omega_arith)]; omega_using [hi])]
         exact tz i hi
       · exact write1_self _ _ _
   · apply List.ext_getElem (by cases c <;> simp [Spec.Rsa.bytesAt])
     intro i h1 _
     have hi : i < k := by simpa [Spec.Rsa.bytesAt] using h1
-    have e : ∀ m : Mem, (Spec.Rsa.bytesAt m X k)[i]'(by simp [Spec.Rsa.bytesAt]; omega) = m (off X i) :=
+    have e : ∀ m : Mem, (Spec.Rsa.bytesAt m X k)[i]'(by simp [Spec.Rsa.bytesAt]; omega_using [hi]) = m (off X i) :=
       fun m => by simp [Spec.Rsa.bytesAt, off]
     rw [e, tz i hi]
     cases c

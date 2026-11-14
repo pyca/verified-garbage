@@ -127,14 +127,14 @@ theorem parsed_word {s : State} {m : Mem} {a : Addr} {d g e : Nat}
   rw [correctVec_word _ _ _ he (hc.modulus e he),
     alignVec_word _ _ _ hd he (hc.powers e he) (hc.mask e he),hc.bound e he,
     gather_word hd hg he h0 h1 h2]
-  have hd32 : d≤32 := by omega
+  have hd32 : d≤32 := by omega_using [hd]
   have hb : (BitVec.ofNat 32 (2^(d-1))).toNat<8380417 := by
     rcases hd with rfl | rfl <;> decide
   have hx : (BitVec.setWidth 32
       (((m.read (a+BitVec.ofNat 64 (d*(4*g+e)/8)) 3).setWidth 32).extractLsb' (d*e%8) d)).toNat<8380417 := by
     rw [BitVec.toNat_setWidth_of_le hd32]
     have h := (((m.read (a+BitVec.ofNat 64 (d*(4*g+e)/8)) 3).setWidth 32).extractLsb' (d*e%8) d).isLt
-    rcases hd with rfl | rfl <;> omega
+    rcases hd with rfl | rfl <;> omega_using []
   rw [unpackWord_toNat hb hx,BitVec.toNat_setWidth_of_le hd32]
   have hp : (BitVec.ofNat 32 (2^(d-1))).toNat=2^(d-1) := by
     rcases hd with rfl | rfl <;> decide

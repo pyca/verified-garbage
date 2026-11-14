@@ -49,7 +49,7 @@ theorem aP_eq (p : Params) (e : Nat) : aP p (e / p.ℓ) (e % p.ℓ) = pS (aBase 
 
 theorem Fam.snoc {s : State} {b m : Nat} {f : Nat → Poly} (h : Fam s b m f) (h' : Pl s (b + m) (f m)) :
     Fam s b (m + 1) f := fun j hj => by
-  rcases (by omega : j < m ∨ j = m) with hj | rfl
+  rcases (by omega_using [hj] : j < m ∨ j = m) with hj | rfl
   exacts [h j hj, h']
 
 /-- `ExpandA` after `e` entries. -/
@@ -192,7 +192,7 @@ theorem andE_ok {D : Nat} {p : Params} {σ : State} {e : Nat} (he : eChk p e = t
     obtain ⟨ok1, fam⟩ := h.ok hs.1
     have hm := hmax hs.2
     refine ⟨fun e' he' => ?_, Fam.snoc ?_ ?_⟩
-    · rcases (by omega : e' < e ∨ e' = e) with he' | rfl
+    · rcases (by omega_using [he'] : e' < e ∨ e' = e) with he' | rfl
       exacts [ok1 e' he', hm]
     · exact Fam.of_eq k4.mem (hP4.bs _ (by decide)) (Fam.keep h.st.lay hP3 f3 fam)
     · show PolyIs s4.mem (pa s4 (pS (aBase p + e))) (aVal p σ e)
@@ -201,12 +201,12 @@ theorem andE_ok {D : Nat} {p : Params} {σ : State} {e : Nat} (he : eChk p e = t
   · rw [h15] at h0
     rcases h.r01 with e0 | e0
     · obtain ⟨e', he', hn⟩ := h.bad e0
-      exact ⟨e', by omega, hn⟩
+      exact ⟨e', by omega_using [he'], hn⟩
     · rcases hr with e1 | e1
       · rw [e0, e1] at h0; exact absurd h0 (by decide)
       · rcases hout with ⟨h1, _⟩ | ⟨_, hn⟩
         · rw [e1] at h1; cases h1
-        · exact ⟨e, by omega, hn⟩
+        · exact ⟨e, by omega_using [], hn⟩
 
 theorem sampleE_eq (P : Prims) (p : Params) (e : Nat) : sampleE P p e = .seq (.block (blkE p e))
     (.seq (callR "vg_mldsa_rej_ntt_poly" P.rejNTT [.ptr (sc oRS), .ptr (pS (aBase p + e)), .ptr (sc oPS)])
@@ -241,7 +241,7 @@ theorem expandA_ok {P : Prims} {D : Nat} (hP : PrimsOk P D) {p : Params} (hc : a
     .inr e15, fun _ => ⟨fun _ h => absurd h (Nat.not_lt_zero _), fun _ h => absurd h (Nat.not_lt_zero _)⟩,
     fun h0 => absurd (h0.symm.trans e15) (by decide)⟩
   have := seqR_ok (f := sampleE P p) (I := IA p D σ) (p.k * p.ℓ) 0
-    (fun k _ hk s h => sampleE_ok hP (he k (by omega)) h) s1 I0
+    (fun k _ hk s h => sampleE_ok hP (he k (by omega_using [hk])) h) s1 I0
   rwa [Nat.zero_add] at this
 
 end VG.Proof.MlDsa.Arm.Sign

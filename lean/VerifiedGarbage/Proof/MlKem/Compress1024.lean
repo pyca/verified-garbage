@@ -5,6 +5,7 @@ public import VerifiedGarbage.Spec.MlKem.Contract1024
 public import VerifiedGarbage.Proof.MlKem1024.Contract
 public import VerifiedGarbage.Proof.Framework.PowLit
 import VerifiedGarbage.Proof.MlKem.Arith
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # ML-KEM-1024: Compress and Decompress without division, for every target
@@ -65,14 +66,14 @@ theorem compress1024_arg_lt {d : Nat} (hd : d ∈ Proof.MlKem1024.compressWidths
     x.val * compressMul1024 d + compressAdd1024 < 2 ^ 30 := by
   have := val_lt x
   rcases mem_compressWidths1024 hd with rfl | rfl
-  · show x.val * 5040 + 261888 < 2 ^ 30; omega
-  · show x.val * 322542 + 261888 < 2 ^ 30; omega
+  · show x.val * 5040 + 261888 < 2 ^ 30; omega_using [this]
+  · show x.val * 322542 + 261888 < 2 ^ 30; omega_using [this]
 
 /-- For `d = 11` the shifted value is less than `2¹¹`, so the reduction
 modulo `2¹¹` of `compress1024_eq` does nothing. -/
 theorem compress11_eq (x : Zq) : compress 11 x = (x.val * 322542 + 261888) / 2 ^ 19 := by
   rw [compress1024_eq (d := 11) (by decide), Nat.mod_eq_of_lt (by
-    have := val_lt x; show (x.val * 322542 + 261888) / 2 ^ 19 < 2 ^ 11; omega)]
+    have := val_lt x; show (x.val * 322542 + 261888) / 2 ^ 19 < 2 ^ 11; omega_using [this])]
   rfl
 
 /-- `Decompress_d(y)` with a multiplication, an addition and a shift, for

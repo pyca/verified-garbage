@@ -16,7 +16,7 @@ open VG VG.Arm VG.Impl.Ffdh.Arm.VettedGroups
 theorem groupBytes_length (g : Group) : g.bytes.length = 8 + 3 * g.len := by
   simp only [Group.bytes, wordBytes, List.length_append, List.length_map, List.length_range,
     Group.domain, VG.Proof.Rsa.i2osp_length]
-  omega
+  omega_using []
 
 theorem tableBytes_length : tableBytes.length = 17744 := by
   simp only [tableBytes, groups, List.flatMap_cons, List.flatMap_nil, List.length_append,
@@ -35,20 +35,20 @@ theorem tableWord_byte {i : Nat} (hi : i < tableBytes.length) :
     (tableWord (i / 8)).extractLsb' (8 * (i % 8)) 8 = tableBytes.getD i 0 := by
   unfold tableWord
   change ((show Mem from fun a : Addr => tableBytes.getD a.toNat 0).read  (BitVec.ofNat 64 (8 * (i / 8))) 8).extractLsb' (8 * (i % 8)) 8 = _
-  rw [Mem.extractLsb'_read _ _ (by omega)]
+  rw [Mem.extractLsb'_read _ _ (by omega_using [])]
   simp only [BitVec.ofNat_add_ofNat, Nat.div_add_mod, BitVec.toNat_ofNat]
-  rw [Nat.mod_eq_of_lt (by rw [tableBytes_length] at hi; omega)]
+  rw [Nat.mod_eq_of_lt (by rw [tableBytes_length] at hi; omega_using [hi])]
 
 theorem table_held_byte {m : Mem} {base : Addr}
     (held : ∀ i < tableWords.length, m.readW (base + BitVec.ofNat 64 (8 * i)) 64 = tableWords.getD i 0)
     {i : Nat} (hi : i < tableBytes.length) :
     m (base + BitVec.ofNat 64 i) = tableBytes.getD i 0 := by
-  have word := held (i / 8) (by rw [tableWords_length]; rw [tableBytes_length] at hi; omega)
-  rw [tableWords_getD (by rw [tableWords_length]; rw [tableBytes_length] at hi; omega)] at word
+  have word := held (i / 8) (by rw [tableWords_length]; rw [tableBytes_length] at hi; omega_using [hi])
+  rw [tableWords_getD (by rw [tableWords_length]; rw [tableBytes_length] at hi; omega_using [hi])] at word
   have addr : base + BitVec.ofNat 64 i =
       (base + BitVec.ofNat 64 (8 * (i / 8))) + BitVec.ofNat 64 (i % 8) := by
     rw [BitVec.add_assoc, BitVec.ofNat_add_ofNat, Nat.div_add_mod]
-  rw [addr, ← Mem.extractLsb'_read m _ (n := 8) (by omega), ← tableWord_byte hi, ← word]
+  rw [addr, ← Mem.extractLsb'_read m _ (n := 8) (by omega_using []), ← tableWord_byte hi, ← word]
   rfl
 
 private theorem consts_singleton_held {name : String} {words : List (BitVec 64)}

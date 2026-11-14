@@ -203,9 +203,9 @@ theorem fbTaint_wf {len : State → Nat} (s : State) (hs : fbPre len s) : Taint.
   refine ⟨fun _ => ?_, ?_⟩
   · rw [hwr]
     refine ⟨?_, ?_, ?_⟩
-    · exact List.Forall₂.cons (by change 16 ≤ 16; omega)
-        (List.Forall₂.cons (by change 0 ≤ len s; omega)
-        (List.Forall₂.cons (by change 8 * 409 ≤ 8 * 409; omega) List.Forall₂.nil))
+    · exact List.Forall₂.cons (by change 16 ≤ 16; omega_using [])
+        (List.Forall₂.cons (by change 0 ≤ len s; omega_using [])
+        (List.Forall₂.cons (by change 8 * 409 ≤ 8 * 409; omega_using []) List.Forall₂.nil))
     · refine List.Pairwise.cons (fun r hr => ?_) (List.Pairwise.cons (fun r hr => ?_)
         (List.Pairwise.cons (by simp) List.Pairwise.nil))
       · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -216,9 +216,9 @@ theorem fbTaint_wf {len : State → Nat} (s : State) (hs : fbPre len s) : Taint.
     · intro r hr
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl
-      · change 16 ≤ 2 ^ 64; omega
-      · change len s ≤ 2 ^ 64; omega
-      · change 8 * 409 ≤ 2 ^ 64; omega
+      · change 16 ≤ 2 ^ 64; omega_using []
+      · change len s ≤ 2 ^ 64; omega_using [fitD]
+      · change 8 * 409 ≤ 2 ^ 64; omega_using []
   · intro p hp
     simp only [fbTaint, List.mem_singleton] at hp
     subst p

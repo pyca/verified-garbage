@@ -23,7 +23,7 @@ theorem bytesAt_window (m : Mem) (a : Addr) {d n len : Nat} (h : d + n ≤ len) 
     Spec.Rsa.bytesAt m (a + BitVec.ofNat 64 d) n = ((Spec.Rsa.bytesAt m a len).drop d).take n := by
   apply List.ext_getElem
   · simp only [Spec.Rsa.bytesAt, List.length_map, List.length_range, List.length_take, List.length_drop]
-    omega
+    omega_using [h]
   · intro i h₁ h₂
     simp only [Spec.Rsa.bytesAt, List.getElem_map, List.getElem_range, List.getElem_take, List.getElem_drop]
     rw [BitVec.add_assoc, BitVec.ofNat_add]
@@ -38,23 +38,23 @@ def GenerationTape.window {g : GenerationGeometry} (t : GenerationTape g) (d n :
     simp only [List.length_take, List.length_drop, off]
     have := t.size
     rw [BitVec.toNat_add, BitVec.toNat_ofNat]
-    omega
+    omega_arith
   size := by
     have := t.size
-    simp only [List.length_take, List.length_drop]; omega
+    simp only [List.length_take, List.length_drop]; omega_using [this]
   arena := t.arena.sub_left (by
     simp only [List.length_take, List.length_drop, off]
-    exact Offset.sub_base t.ptr (by omega))
+    exact Offset.sub_base t.ptr (by omega_using [h]))
   frame := t.frame.sub_left (by
     simp only [List.length_take, List.length_drop, off]
-    exact Offset.sub_base t.ptr (by omega))
+    exact Offset.sub_base t.ptr (by omega_using [h]))
   stack := t.stack.sub_left (by
     simp only [List.length_take, List.length_drop, off]
-    exact Offset.sub_base t.ptr (by omega))
+    exact Offset.sub_base t.ptr (by omega_using [h]))
 
 theorem GenerationTape.window_length {g : GenerationGeometry} (t : GenerationTape g) {d n : Nat}
     (h : d + n ≤ t.bytes.length) : (t.window d n h).bytes.length = n := by
-  simp only [GenerationTape.window, List.length_take, List.length_drop]; omega
+  simp only [GenerationTape.window, List.length_take, List.length_drop]; omega_using [h]
 
 theorem GenerationTapeMemory.window {g : GenerationGeometry} {t : GenerationTape g} {s : State}
     (ht : GenerationTapeMemory t s) {d n : Nat} (h : d + n ≤ t.bytes.length) :
@@ -70,7 +70,7 @@ theorem GenerationTapeMemory.window {g : GenerationGeometry} {t : GenerationTape
       rw [← BitVec.sub_sub, BitVec.sub_add_cancel]
     change (a - (t.ptr + BitVec.ofNat 64 d)).toNat + k ≤ n at hc
     rw [e, BitVec.toNat_add, BitVec.toNat_ofNat]
-    omega
+    omega_using [h, hc]
   · rw [t.window_length h]
     show Spec.Rsa.bytesAt s.mem (t.ptr + BitVec.ofNat 64 d) n = (t.bytes.drop d).take n
     rw [bytesAt_window s.mem t.ptr h, ht.bytes]

@@ -30,7 +30,7 @@ def randomQBytes (s : State) : List Byte :=
 theorem random_q_length {extra : Nat} {s : State} (h : RandomSignABI extra s) :
     (randomQBytes s).length = (stackArg s 0).toNat := by
   simp only [randomQBytes, randomInput, List.length_take, List.length_drop, bytesAt_length, h.keyLength]
-  omega
+  omega_using []
 
 theorem random_q_decode (s : State) :
     Spec.Dsa.decodeBE (randomQBytes s) =
@@ -72,10 +72,10 @@ def randomContextOf {extra : Nat} {s : State} (h : RandomSignABI extra s) (m : M
     rw [random_q_length h]
     have hl := h.lengths
     unfold Spec.Dsa.lengthsValid at hl
-    omega
+    omega_using [hl]
   randBound := by rw [randomInput, bytesAt_length]; exact (stackArg s 4).isLt
   positive := by
     have hh := (VG.Proof.Dsa.random_valid_scan (randomQBytes s)).mp hq
-    omega
+    omega_using [hh]
 
 end VG.Proof.Dsa.X86_64

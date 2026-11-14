@@ -165,7 +165,7 @@ theorem Data.squareFlag {g : Geometry} (v : g.Valid) {A : Nat → Nat} {Js : Lis
   have countWord : t.mem.readW (off g.W sSquares) 32 = BitVec.ofNat 32 (q - 1) := by
     apply BitVec.eq_of_toNat_eq
     change w32 t.mem g.W sSquares = _
-    rw [Count, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+    rw [Count, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [qBound])]
   refine ⟨D.afterSlots v C [sFlag, sSquares] ?_ ?_ O, Z, O, K⟩
   · intro d mem
     simp only [List.mem_cons, List.not_mem_nil, or_false] at mem

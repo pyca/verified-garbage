@@ -53,7 +53,7 @@ theorem var_succ (t k : Nat) (hk : k < 4) : var (t + 1) (k + 1) = var t k := by
   simp only [var]; congr 1; omega
 
 theorem var_succ_zero (t : Nat) : var (t + 1) 0 = var t 4 := by
-  simp only [var]; congr 1; omega
+  simp only [var]; congr 1; omega_using []
 
 /-- The registers of the working variables are all different. -/
 theorem round_nodup (t : Nat) : [var t 0, var t 1, var t 2, var t 3, var t 4].Nodup := by
@@ -372,17 +372,17 @@ include h
 
 theorem stAddr_eq {k : Nat} (hk : k < 5) :
     stAddr s₀ k = (st s₀).setWidth 64 + BitVec.ofNat 64 (4 * k) :=
-  addr_eq (by have := h.st_fits; omega)
+  addr_eq (by have := h.st_fits; omega_using [hk, this])
 
 theorem argAddr_eq {d : Nat} (hd : d < 20) :
     addr (esp₀ s₀) d = (esp₀ s₀).setWidth 64 + BitVec.ofNat 64 d :=
-  addr_eq (by have := h.esp_fits; omega)
+  addr_eq (by have := h.esp_fits; omega_using [hd, this])
 
 theorem blkAddr_eq {i t : Nat} (hi : i < nb s₀) (ht : t < 16) :
     addr (blkAddr s₀ i) (4 * t) =
       (bp s₀).setWidth 64 + BitVec.ofNat 64 (64 * i) + BitVec.ofNat 64 (4 * t) := by
   have := h.blk_fits
-  rw [addr_eq (by rw [BitVec.toNat_add, BitVec.toNat_ofNat]; have := (bp s₀).isLt; omega)]
+  rw [addr_eq (by rw [BitVec.toNat_add, BitVec.toNat_ofNat]; have := (bp s₀).isLt; omega_arith)]
   have e : (blkAddr s₀ i).setWidth 64 = (bp s₀).setWidth 64 + BitVec.ofNat 64 (64 * i) := by
     have := addr_eq (x := bp s₀) (k := 64 * i) (by bdd_omega)
     simpa only [addr] using this
@@ -390,7 +390,7 @@ theorem blkAddr_eq {i t : Nat} (hi : i < nb s₀) (ht : t < 16) :
 
 theorem scr_eq {d : Nat} (hd : d < 112) :
     addr (scr s₀) d = (scr s₀).setWidth 64 + BitVec.ofNat 64 d :=
-  addr_eq (by have := h.scr_fits; omega)
+  addr_eq (by have := h.scr_fits; omega_using [hd, this])
 
 theorem in_scr {d : Nat} (hd : d + 4 ≤ 112) : InRegions (s₀.rd ++ s₀.wr) (addr (scr s₀) d) 4 :=
   ⟨scrR s₀, by simp [h.wr], contains_sub hd (by bdd_omega) (h.scr_eq (by bdd_omega))⟩
@@ -447,7 +447,7 @@ theorem readW_writeW_st {s₀ : State} (hp : Pre s₀) (m : Mem) (v : Word) {d e
 
 theorem st_eq {s₀ : State} (hp : Pre s₀) {d : Nat} (hd : d < 20) :
     addr (st s₀) d = (st s₀).setWidth 64 + BitVec.ofNat 64 d :=
-  addr_eq (by have := hp.st_fits; omega)
+  addr_eq (by have := hp.st_fits; omega_using [hd, this])
 
 theorem in_st {s₀ : State} (hp : Pre s₀) {d : Nat} (hd : d + 4 ≤ 20) :
     InRegions (s₀.rd ++ s₀.wr) (addr (st s₀) d) 4 :=
@@ -742,8 +742,8 @@ theorem body_ok {s₀ : State} (hp : Pre s₀) {i : Nat} (hi : i < nb s₀) {s :
       (hfa.sub fun r hr => ⟨r, by simp at hr; simp [hr], fun _ h => h⟩))
   have hsv : ∀ d, 64 ≤ d → d + 4 ≤ 80 → s₄.mem.readW (addr (scr s₀) d) 32 = s.mem.readW (addr (scr s₀) d) 32 := by
     intro d h₁ h₂
-    rw [hm₄, readW_writeW_scr hp _ _ (by simp [nOff]) (by bdd_omega) (by simp [nOff]; omega),
-      readW_writeW_scr hp _ _ (by simp [bpOff]) (by bdd_omega) (by simp [bpOff]; omega),
+    rw [hm₄, readW_writeW_scr hp _ _ (by simp [nOff]) (by bdd_omega) (by simp [nOff]; omega_using [h₂]),
+      readW_writeW_scr hp _ _ (by simp [bpOff]) (by bdd_omega) (by simp [bpOff]; omega_using [h₂]),
       st_word hp hfs (by bdd_omega), win_word hp hf₂ h₁ (by bdd_omega)]
   have hstate : stateAt s₄.mem ((st s₀).setWidth 64) =
       compressBlocks (H₀ s₀) s₀.mem ((bp s₀).setWidth 64) (i + 1) := by
@@ -819,7 +819,7 @@ theorem save_ok {s₀ : State} (hp : Pre s₀) :
   rw [prologue_eq]
   refine Wp.wp_ldm rfl (hp.in_arg (d := 16) (by bdd_omega) (by bdd_omega)) fun s₁ u₁ => ?_
   refine Spill.save_ok compressSaved (fun p h => by rw [u₁.gpr, u₁.wr]; exact hp.out_scr (by
-    have := compressSaved_fits.1 p h; omega)) fun s₂ u₂ => ?_
+    have := compressSaved_fits.1 p h; omega_using [this])) fun s₂ u₂ => ?_
   have hm : s₂.mem = Spill.saveMem s₀.mem (addr (scr s₀)) s₀.gpr compressSaved := by
     rw [u₂.mem, u₁.gpr, u₁.mem]
     exact Spill.saveMem_congr _ _ (fun _ _ => rfl) fun p h => u₁.other _ (by revert p h; decide)
@@ -851,7 +851,7 @@ theorem save_ok {s₀ : State} (hp : Pre s₀) :
   · rw [z₈, u₇.gpr, h12]
 
 theorem saveMem_saved {s₀ : State} (hp : Pre s₀) : Saved s₀ (saveMem s₀) :=
-  (Spill.saveMem_saved_addr _ _ compressSaved_fits (by have := hp.scr_fits; omega)).of_readW fun p h => by
+  (Spill.saveMem_saved_addr _ _ compressSaved_fits (by have := hp.scr_fits; omega_using [this])).of_readW fun p h => by
     have := compressSaved_fits.1 p h
     rw [saveMem, readW_writeW_scr hp _ _ (by bdd_omega) (by bdd_omega) (by bdd_omega),
       readW_writeW_scr hp _ _ (by bdd_omega) (by bdd_omega) (by bdd_omega)]
@@ -888,7 +888,7 @@ theorem restore_ok {s₀ : State} (hp : Pre s₀) {s : State} (hc : Common s₀ 
       (∀ r ∈ calleeSaved, s'.gpr r = s₀.gpr r) ∧ s'.mem = s.mem := by
   rw [epilogue_eq]
   refine Spill.restoreBase_ok _ (by decide)
-    (fun p h => by rw [hc.ebp, hc.rd, hc.wr]; exact hp.in_scr (by have := compressSaved_fits.1 p h; omega))
+    (fun p h => by rw [hc.ebp, hc.rd, hc.wr]; exact hp.in_scr (by have := compressSaved_fits.1 p h; omega_using [this]))
     (by rw [hc.ebp]; exact hc.saved) fun s' u => WP.block_nil ⟨u.abi (by decide) (by decide) hc.esp, u.mem⟩
 
 /-! ## The whole function -/
@@ -960,7 +960,7 @@ theorem wf₀ {s : State} (hp : Pre s) : VG.X86.Taint.Wf τ₀ s := by
     fun _ h => (List.not_mem_nil h).elim, fun _ h => (List.not_mem_nil h).elim,
     fun _ => ⟨hs, ?_⟩, ?_⟩
   · simp only [hp.wr, List.mem_cons, List.not_mem_nil, or_false]
-    rintro r (rfl | rfl) <;> simp only [BitVec.toNat_setWidth] <;> omega
+    rintro r (rfl | rfl) <;> simp only [BitVec.toNat_setWidth] <;> omega_arith
   · simp only [hp.wr, List.mem_cons, List.not_mem_nil, or_false]
     rintro r (rfl | rfl)
     · exact VG.X86.Taint.frame_disjoint (n := 16) (by bdd_omega) hp.ret_st hp.arg_st

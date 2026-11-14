@@ -110,7 +110,7 @@ theorem saved_tagFrame {sp : Addr} (hbw : (below sp 3248).Disjoint ⟨w, 2560⟩
   rcases hr with rfl | rfl | rfl | rfl | rfl
   · simpa using L.saved_st (d := 0) (k := 32) (by decide)
   · exact saved_w (by decide) (.inl (by decide))
-  · exact saved_w (by omega) (.inl (by omega))
+  · exact saved_w (by omega_using [ho]) (.inl (by omega_using [ho]))
   · exact saved_w (by decide) (.inr (by decide))
   · exact (hbw.sub_right (Lay.wSub (by decide))).symm
 
@@ -137,7 +137,7 @@ theorem fin_out {s₀ s : State} {m₀ : Mem} {rs : List Region} (hf₀ : Frame 
       (ctxH s₀.mem (s₀.gpr .a0)) (ghashInput a ct) := by
     rw [h30]
     exact hab.congr (blockAt_frame hf₀ (dS (d := 16) (by decide)))
-      (bytesAt_frame hf₀ (dS (d := 32) (k := (ghashInput a ct).length % 16) (by omega)) (by omega))
+      (bytesAt_frame hf₀ (dS (d := 32) (k := (ghashInput a ct).length % 16) (by omega_using [])) (by omega_using []))
   rw [hf.out hab₀,
     h29, ciph_keep hf₀ hdc, h30,
     blockAt_frame hf₀ (by simpa using dS (d := 0) (k := 16) (by decide)), hj,

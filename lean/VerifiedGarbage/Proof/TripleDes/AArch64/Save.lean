@@ -62,7 +62,7 @@ theorem blockRestore_ok (original s : State) (hsaved : Saved original s)
 
 theorem savedSlot_spill_disjoint (s : State) (i : Nat) (hi : i < 4) :
     (⟨s.gpr .x2 + BitVec.ofNat 64 (8 * i), 8⟩ : Region).Disjoint (spillRegion s) :=
-  Offset.disjoint (s.gpr .x2) (by omega) (by omega) (by decide)
+  Offset.disjoint (s.gpr .x2) (by omega_using [hi]) (by omega_using [hi]) (by decide)
 
 theorem Saved.congr {original s t : State} (hs : Saved original s)
     (hbase : t.gpr .x2 = s.gpr .x2) (hf : Frame [spillRegion s] s.mem t.mem) :

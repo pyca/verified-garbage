@@ -47,14 +47,14 @@ theorem WideProductCtx.frame {s t : State} {base : BitVec 32} {size o a b m n : 
     (h : WideProductCtx s base size o a b m n)
     (outside : Outs (State.addr base) [(128, 16), (o, 4 * (m + n + 2))] s.mem t.mem) :
     Frame [⟨State.addr base, size⟩] s.mem t.mem := by
-  refine outside_workspace (o := 0) (n := size) ?_ (by omega)
+  refine outside_workspace (o := 0) (n := size) ?_ (by omega_using [])
   intro x hx
   apply outside x
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   have := h.headerFit
   have := h.outFits
-  rcases hr with rfl | rfl <;> omega
+  rcases hr with rfl | rfl <;> omega_arith
 
 theorem WideProductInv.source {s0 s : State} {base : BitVec 32} {size o a b m n i : Nat}
     (ctx : WideProductCtx s0 base size o a b m n) (h : WideProductInv s0 base o a b m n i s) (hi : i < m) :
@@ -69,11 +69,11 @@ theorem WideProductInv.source {s0 s : State} {base : BitVec 32} {size o a b m n 
   have sepB := ctx.separateB
   have word := h.outside.val32 (d := a + 4 * i) (k := 1)
     (by intro r hr; simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-        rcases hr with rfl | rfl <;> omega) (by omega)
-  refine ⟨?_, h.outside.val32 ?_ (by omega)⟩
+        rcases hr with rfl | rfl <;> omega_arith) (by omega_using [hi, nowrap, aFits])
+  refine ⟨?_, h.outside.val32 ?_ (by omega_using [nowrap, bFits])⟩
   · simpa only [val32, Nat.mul_zero, Nat.add_zero] using word
   · intro r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl <;> omega
+    rcases hr with rfl | rfl <;> omega_arith
 
 end VG.Proof.Bignum.Arm

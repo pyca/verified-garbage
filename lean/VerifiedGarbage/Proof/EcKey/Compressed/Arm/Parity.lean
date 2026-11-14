@@ -35,9 +35,9 @@ theorem parityMask_ok {c : Cfg} {s : State} {base : Addr}
         (s.mem.readW (off base (c.sl D)) 32).toNat % 2) ∧
       Rest [.r4, .r5, .r10] s t ∧ t.mem = s.mem := by
   unfold Impl.EcKey.Compressed.Arm.parityMask
-  refine wp_ldr (hs.off_lt (by omega)) (hs.ea (by omega)) (hs.read hy) fun s₁ u₁ => ?_
+  refine wp_ldr (hs.off_lt (by omega_using [hy])) (hs.ea (by omega_using [hy])) (hs.read hy) fun s₁ u₁ => ?_
   have hs₁ := hs.of_rest (u₁.rest (ws := [.r4]) (by simp)) (by decide)
-  refine wp_ldr (hs₁.off_lt (by omega)) (hs₁.ea (by omega)) (hs₁.read ht) fun s₂ u₂ => ?_
+  refine wp_ldr (hs₁.off_lt (by omega_using [ht])) (hs₁.ea (by omega_using [ht])) (hs₁.read ht) fun s₂ u₂ => ?_
   refine wp_dp (op2_reg _ _) fun s₃ u₃ => ?_
   refine wp_dp (op2_imm (by decide)) fun s₄ u₄ => ?_
   refine wp_mov (op2_imm (by decide)) fun s₅ u₅ => ?_

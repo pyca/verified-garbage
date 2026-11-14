@@ -88,7 +88,7 @@ theorem twordM_two {Φ : α → State → Prop} (hb : ∀ x t, Φ x t → BT S v
       (by rw [o.rd, b.rd]; exact let ⟨R, hR, hc⟩ := T.tR k hk; ⟨R, List.mem_append_left _ hR, hc⟩)
       (fun u₂ o₂ e₂ => wp_nil fun sy₂ => ⟨t, h, (o.trans o₂).mono fun r hr => by
         simp only [List.mem_append, List.mem_singleton, or_self] at hr ⊢; exact hr, sy₂.trans sy, by
-          rw [e₂, o.mem, b.readW_apart (T.tK k hk) (T.tS k hk), hv P p]⟩) (by omega))
+          rw [e₂, o.mem, b.readW_apart (T.tK k hk) (T.tS k hk), hv P p]⟩) (by omega_using [hk]))
 
 include X A in
 /-- The call of the table's function `k`, among `ts`, which reaches `n` in
@@ -221,7 +221,7 @@ theorem compM_two {Φ : α → State → Prop}
         [⟨off (S s) oSt, H.N⟩, ⟨off (S s) oCs, M.cs⟩]) := fun {s u o n} C hon => by
     have hn : n < 2 ^ 64 := by
       have : n ≤ H.B * n := Nat.le_mul_of_pos_left n (Nat.two_pow_pos _)
-      unfold oRsa at hon; omega
+      unfold oRsa at hon; omega_using [hon, this]
     have c0 : u.callEntry.gpr .a0 = off (S s) oSt := (State.callEntry_gpr _ (by decide)).trans C.h0
     have c1 : u.callEntry.gpr .a1 = off (S s) o := (State.callEntry_gpr _ (by decide)).trans C.h1
     have c2 : u.callEntry.gpr .a2 = BitVec.ofNat 64 n := (State.callEntry_gpr _ (by decide)).trans C.h2
@@ -229,18 +229,18 @@ theorem compM_two {Φ : α → State → Prop}
     have e2 : (BitVec.ofNat 64 n).toNat = n := by rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt hn]
     have ho := C.ho
     simp only [compK, State.withRegions_gpr, State.withRegions_rd, State.withRegions_wr, c0, c1, c2, c3, e2]
-    refine ⟨trivial, trivial, sdis (.inl (by omega)) (by omega) (by omega), sdis (.inr (by omega)) hon (by omega),
-      sdis (.inr (by omega)) hon (by omega), ?_⟩
+    refine ⟨trivial, trivial, sdis (.inl (by omega_using [hN, hY, hSt])) (by omega_using [hN, hSt, hRs]) (by omega_using [hcs, hY, hRs]), sdis (.inr (by omega_using [hN, hY, hSt, ho])) hon (by omega_using [hN, hSt, hRs]),
+      sdis (.inr (by omega_using [hcs, ho])) hon (by omega_using [hcs, hY, hRs]), ?_⟩
     have e : (off (S s) oCs).toNat = (S s).toNat + oCs := by
       have := C.P.wS
-      simp only [off, BitVec.toNat_add, BitVec.toNat_ofNat]; omega
+      simp only [off, BitVec.toNat_add, BitVec.toNat_ofNat]; omega_using [hY, hRs, this]
     show (off (S s) oCs).toNat % 8 = 0
-    rw [e]; have := C.al; omega
+    rw [e]; have := C.al; omega_using [hY, this]
   have cov : ∀ {s u : State} {o n : Nat}, CompArgs S vf s u o n → o + H.B * n ≤ oRsa →
       Covers ([⟨off (S s) o, H.B * n⟩] ++ [⟨off (S s) oSt, H.N⟩, ⟨off (S s) oCs, M.cs⟩]) (u.rd ++ u.wr) ∧
         Covers [⟨off (S s) oSt, H.N⟩, ⟨off (S s) oCs, M.cs⟩] u.wr := fun {s u o n} C hon => by
     have hwc0 : Covers [⟨off (S s) oSt, H.N⟩, ⟨off (S s) oCs, M.cs⟩] (fr s :: s.wr) :=
-      Covers.pair (sc_cov C.P (by omega)) (sc_cov C.P (by omega))
+      Covers.pair (sc_cov C.P (by omega_using [hN, hSt, hRs])) (sc_cov C.P (by omega_using [hcs, hY, hRs]))
     rw [C.b.rd, C.b.wr]
     exact ⟨Covers.append_left (Covers.right (sc_cov C.P hon)) (Covers.right hwc0), hwc0⟩
   refine tcallM_two X A (fun x t hp => let ⟨s, _, _, P, p, C, _, y⟩ := h x t hp; ⟨s, P, p, C.b, y⟩) (k := 3)
@@ -282,11 +282,11 @@ theorem digM_two {Φ : α → State → Prop}
         Covers [⟨off (S s) oDig, H.N⟩] u.wr := fun {s u} P p b e0 e1 => by
     have c0 : u.callEntry.gpr .a0 = off (S s) oSt := (State.callEntry_gpr _ (by decide)).trans (by rw [e0, X.S p])
     have c1 : u.callEntry.gpr .a1 = off (S s) oDig := (State.callEntry_gpr _ (by decide)).trans (by rw [e1, X.S p])
-    have hwc0 : Covers [⟨off (S s) oDig, H.N⟩] (fr s :: s.wr) := sc_cov (X.fits P) (by omega)
+    have hwc0 : Covers [⟨off (S s) oDig, H.N⟩] (fr s :: s.wr) := sc_cov (X.fits P) (by omega_arith)
     simp only [digestK, State.withRegions_gpr, State.withRegions_rd, State.withRegions_wr, c0, c1]
     rw [b.rd, b.wr]
-    exact ⟨⟨trivial, trivial, sdis (.inl (by omega)) (by omega) (by omega)⟩,
-      Covers.append_left (Covers.right (sc_cov (X.fits P) (by omega))) (Covers.right hwc0), hwc0⟩
+    exact ⟨⟨trivial, trivial, sdis (.inl (by omega_using [hN, hSt, hDg])) (by omega_arith) (by omega_arith)⟩,
+      Covers.append_left (Covers.right (sc_cov (X.fits P) (by omega_arith))) (Covers.right hwc0), hwc0⟩
   obtain ⟨q₁, v₁, w₁⟩ := pre P₁ p₁ c₁ (by rw [only_t1 o₁, x0]) (by rw [only_t1 o₁, x1])
   obtain ⟨q₂, v₂, w₂⟩ := pre P₂ p₂ c₂ (by rw [only_t1 o₂, z0]) (by rw [only_t1 o₂, z1])
   refine ⟨_, _, _, _, q₁, q₂, ?_, v₁, w₁, v₂, w₂⟩

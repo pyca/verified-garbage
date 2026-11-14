@@ -31,13 +31,13 @@ theorem packStep_ok {s : State} {base p : Addr} (hs : Scr s base) {i : Nat} (hi 
     WP isa (.block (packLimb i)) s fun t =>
       t.mem = packMem s.mem p i (word s.mem base (X2 + 4 * i)) ∧ Keeps [.r3] s t := by
   have ea : ∀ j < 2, State.addr (s.gpr .r8 + BitVec.ofNat 32 (2 * i + j)) = off p (2 * i + j) := by
-    intro j hj; rw [addr_add (by omega), hp]
+    intro j hj; rw [addr_add (by omega_using [hi, hfit, hj]), hp]
   unfold packLimb
-  refine load_ok hs (by simp only [X2, slot]; omega) fun t ht => ?_
-  refine wp_strb (a := off p (2 * i)) (by omega) (by rw [ht.other .r8 (by decide)]; exact ea 0 (by decide))
+  refine load_ok hs (by simp only [X2, slot]; omega_using [hi]) fun t ht => ?_
+  refine wp_strb (a := off p (2 * i)) (by omega_using [hi]) (by rw [ht.other .r8 (by decide)]; exact ea 0 (by decide))
     (by rw [ht.wr]; exact hw 0 (by decide)) fun u hu => ?_
   refine wp_mov (op2_lsr (by decide)) fun v hv => ?_
-  refine wp_strb (a := off p (2 * i + 1)) (by omega) (by rw [hv.other .r8 (by decide), hu.gpr, ht.other .r8 (by decide)]; exact ea 1 (by decide))
+  refine wp_strb (a := off p (2 * i + 1)) (by omega_using [hi]) (by rw [hv.other .r8 (by decide), hu.gpr, ht.other .r8 (by decide)]; exact ea 1 (by decide))
     (by rw [hv.wr, hu.wr, ht.wr]; exact hw 1 (by decide)) fun w hw' => WP.block_nil ⟨?_, ?_⟩
   · rw [hw'.mem, hv.mem, hu.mem, ht.mem, hv.gpr, hu.gpr, ht.gpr]; rfl
   · exact rest_keeps ((ht.rest (by decide)).trans ((hu.rest _).trans
@@ -46,17 +46,17 @@ theorem packStep_ok {s : State} {base p : Addr} (hs : Scr s base) {i : Nat} (hi 
 theorem packMem_decoded (m : Mem) (p : Addr) {i : Nat} (hi : i < 28) (v : BitVec 32)
     (hv : v.toNat < radix) : decoded (packMem m p i v) p i = v.toNat := by
   have hn : off p (2 * i) ≠ off p (2 * i + 1) := by
-    rw [ne_eq, off_eq_iff p (by omega) (by omega)]; omega
+    rw [ne_eq, off_eq_iff p (by omega_using [hi]) (by omega_using [hi])]; omega_using []
   simp only [decoded, byteN, packMem, writeW8_apply, hn, ite_false, ite_true,
     BitVec.toNat_setWidth, BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow]
   simp only [radix] at hv
-  omega
+  omega_using [hv]
 
 theorem packMem_outside (m : Mem) (p : Addr) {i : Nat} (hi : i < 28) (v : BitVec 32) :
     Outside p (2 * i) 2 m (packMem m p i v) := by
   intro x hx
-  rw [packMem, writeW8_outside _ _ _ (by omega) (by omega),
-    writeW8_outside _ _ _ (by omega) (by omega)]
+  rw [packMem, writeW8_outside _ _ _ (by omega_using [hi]) (by omega_using [hx]),
+    writeW8_outside _ _ _ (by omega_using [hi]) (by omega_using [hx])]
 
 theorem packLimb_ok {s : State} {base p : Addr} (hs : Scr s base) (hb : Bounded s.mem base X2)
     {i : Nat} (hi : i < 28) (hp : State.addr (s.gpr .r8) = p)

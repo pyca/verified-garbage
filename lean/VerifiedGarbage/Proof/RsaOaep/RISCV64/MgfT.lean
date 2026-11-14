@@ -113,8 +113,8 @@ theorem TabS.wA {G : Hash} {f : Fns} {j : Nat} {S : State → Addr} {s : State} 
   have h₁ := T.pA
   have h₂ := T.pw
   have e : (p + BitVec.ofNat 64 (8 * k)).toNat = p.toNat + 8 * k := by
-    rw [BitVec.toNat_add, BitVec.toNat_ofNat]; omega
-  rw [e]; omega
+    rw [BitVec.toNat_add, BitVec.toNat_ofNat]; omega_using [hk, h₂]
+  rw [e]; omega_using [h₁]
 
 /-- The table's word `k` into `d`, through our stack argument `j`. -/
 theorem wp_tword {G : Hash} {f : Fns} {j : Nat} {S : State → Addr} {vf : State → Reg → BitVec 64} {s t : State}
@@ -130,7 +130,7 @@ theorem wp_tword {G : Hash} {f : Fns} {j : Nat} {S : State → Addr} {vf : State
       (T.wA hk) (by rw [o₂.rd, o₁.rd, h.rd]; exact let ⟨R, hR, hc⟩ := T.tR k hk; ⟨R, List.mem_append_left _ hR, hc⟩)
       (fun u₃ o₃ e₃ => kk u₃ ((o₁.trans (o₂.trans o₃)).mono fun r hr => by
         simp only [List.mem_append, List.mem_singleton, or_self] at hr ⊢; exact hr) (by
-        rw [e₃, o₂.mem, o₁.mem, h.readW_apart (T.tK k hk) (T.tS k hk)])) (by omega))
+        rw [e₃, o₂.mem, o₁.mem, h.readW_apart (T.tK k hk) (T.tS k hk)])) (by omega_using [hk]))
 
 /-- How many bytes of the digest go into `dst`: `min(hLen, dstLen - done)`,
 `hLen` the table's word 6. -/
@@ -152,7 +152,7 @@ theorem xorHeadT_ok {G : Hash} {f : Fns} {j : Nat} {S' : State → Addr} {vf : S
     (o₀.trans (o₁.trans (o₂.trans (o₃.trans (o₅.trans (o₆.trans (o₇.trans (o₈.trans (o₉.trans o₁₀))))))))).mono
   have r1 : u₃.gpr .t1 = BitVec.ofNat 64 (dstLen - done) := by
     rw [e₃, o₂.get .s9, o₂.get .s11, o₁.get .s9, o₁.get .s11, o₀.get .s9, o₀.get .s11, h9, h11,
-      Offset.ofNat_sub_ofNat (by omega)]
+      Offset.ofNat_sub_ofNat (by omega_using [hlt])]
   have r6 : u₃.gpr .a6 = BitVec.ofNat 64 G.D := by rw [o₃.get .a6, o₂.get .a6, o₁.get .a6, e₀]
   have r2 : u₅.gpr .t2 = BitVec.ofNat 64 (dstLen - done) - BitVec.ofNat 64 G.D := by
     rw [e₅, r1, r6]
@@ -164,7 +164,7 @@ theorem xorHeadT_ok {G : Hash} {f : Fns} {j : Nat} {S' : State → Addr} {vf : S
       o₁.get .s8, o₁.get .s11, o₀.get .s8, o₀.get .s11, h8, h11, off_add]
   · rw [e₁₀, o₉.get .a6, o₈.get .a6, o₇.get .a6, o₆.get .a6, o₅.get .a6, r6, e₉, o₈.get .t2, o₇.get .t2,
       o₆.get .t2, r2, e₈, e₇, o₇.get .t3, e₆, r2]
-    exact minSel (by omega) (by omega)
+    exact minSel (by omega_using [hdl]) (by omega_arith)
 
 /-- `nextCtrT`: the next counter and `done`, and in `t1` whether `done` is
 still below `dstLen`. -/
@@ -224,7 +224,7 @@ theorem tcallT_ok {t : State} (h : Base S vf s t) (sy : t.syms = s.syms) {k : Na
     (hw : s.mem.readW (p + BitVec.ofNat 64 (8 * k)) 64 = s.syms n) {Q : State → Prop}
     (kk : ∀ t', Only [.t1] t t' → t'.syms = t.syms → WP isa (.call n c) t' Q) : WP isa (tcall j k ts) t Q := by
   show WP isa (.seq (.block (tword .t1 j k ++ [])) (Code.icalls (.jalr .t1) ts)) t Q
-  refine WP.seq (WP.of_syms (wp_tword T h (by omega) fun t' o e => wp_nil fun sy' => ?_))
+  refine WP.seq (WP.of_syms (wp_tword T h (by omega_using [hk]) fun t' o e => wp_nil fun sy' => ?_))
   refine WP.icalls_of_call (a := t'.gpr .t1) rfl ?_ (kk t' o sy')
   show ts.find? (fun q => t'.syms q.1 == t'.gpr .t1) = _
   rw [e, hw, sy', sy]; exact hf
@@ -308,34 +308,34 @@ theorem roundT_ok {G : Hash} (hG : HashOK G) (hF : G.F ≤ 208) {f : Fns} {j : N
     (by rw [o₆.get .a0, o₅.get .a0, o₄.get .a0, e₃, b₂.s0])
     (by rw [o₆.get .a2, e₅, o₄.get .s6, o₃.get .s6, m₂ _ (by decide), I.s6])
     (by rw [e₆, o₅.get .s7, o₄.get .s7, o₃.get .s7, m₂ _ (by decide), I.s7, BitVec.toNat_ofNat,
-      Nat.mod_eq_of_lt (by omega)])
-    (Covers.right (by rw [b₆.wr]; exact sc_cov P (by omega))) (sdis (.inl (by omega)) (by omega) (by omega))
-    (cR_dis P (by omega))) fun t₇ ⟨⟨b₇, g₇, s₇, r₇⟩, sy₇⟩ => ?_)
+      Nat.mod_eq_of_lt (by omega_using [hfs])])
+    (Covers.right (by rw [b₆.wr]; exact sc_cov P (by omega_using [hRs, hfs]))) (sdis (.inl (by omega_using [hSt, hfs])) (by omega_using [hRs, hfs]) (by omega_using [F, hSt, hRs]))
+    (cR_dis P (by omega_using [hRs, hfs]))) fun t₇ ⟨⟨b₇, g₇, s₇, r₇⟩, sy₇⟩ => ?_)
   have m₇ : ∀ r ∈ mg, t₇.gpr r = v.gpr r := fun r hr => by
     rw [g₇ r (pm r hr), k₆.gpr r (by revert r; decide), m₂ r hr]
   have hsrc : Spec.Rsa.bytesAt t₆.mem (off (S s) src) srcLen = srcB V src srcLen := by
     rw [bytesAt_view]
     refine List.map_congr_left fun i hi => ?_
     have hi := List.mem_range.mp hi
-    rw [k₆.mem, s₂ _ (by omega) (by simp; omega), o₁.mem, I.em _ ⟨by omega, .inl (by omega)⟩, mixV, ifn (by omega)]
+    rw [k₆.mem, s₂ _ (by omega_using [hRs, hfs, hi]) (by simp; omega_using [hSt, hfs, hi]), o₁.mem, I.em _ ⟨by omega_using [hRs, hfs, hi], .inl (by omega_using [hSt, hfs, hi])⟩, mixV, ifn (by omega_using [hsep, hi])]
   have hR7 : hG.SH.Repr t₇.mem (off (S s) oSt) (srcB V src srcLen) := by
     have := r₇ [] (by rw [k₆.mem]; exact r₂) (by rw [o₆.get .a1, o₅.get .a1, e₄]; rfl)
     rw [List.nil_append] at this
     exact hsrc ▸ this
   -- The counter, and `update` with it.
-  refine WP.seq (WP.mono_syms (ctr_ok P b₇ (c := c) (by rw [m₇ _ (by decide), I.s10]) (by omega))
+  refine WP.seq (WP.mono_syms (ctr_ok P b₇ (c := c) (by rw [m₇ _ (by decide), I.s10]) (by omega_using [hc, hfd, hcD]))
     fun t₈ ⟨b₈, g₈, v₈, x0, x1, x2, x3⟩ sy₈ => ?_)
   have m₈ : ∀ r ∈ mg, t₈.gpr r = v.gpr r := fun r hr => by rw [g₈ r (pm r hr), m₇ r hr]
   have hR8 : hG.SH.Repr t₈.mem (off (S s) oSt) (srcB V src srcLen) :=
     hG.congr t₇.mem t₈.mem (off (S s) oSt) _ (fun i hi => by
-      have e := v₈ (oSt + i) (by omega)
+      have e := v₈ (oSt + i) (by omega_using [F, hSt, hRs, hi])
       simp only [view, ctrV] at e
-      rw [ifn (by omega)] at e
+      rw [ifn (by omega_using [F, hSt, hCt, hi])] at e
       rw [off_add]; exact e) hR7
   refine WP.seq (WP.mono (updT_ok P T hG hF b₈ (sy₈.trans sy₇) (dat := off (S s) oCtr) (len := 4) x0 x2
     (by rw [x3]; rfl)
-    (Covers.right (by rw [b₈.wr]; exact sc_cov P (by omega))) (sdis (.inr (by omega)) (by omega) (by omega))
-    (cR_dis P (by omega))) fun t₉ ⟨⟨b₉, g₉, s₉, r₉⟩, sy₉⟩ => ?_)
+    (Covers.right (by rw [b₈.wr]; exact sc_cov P (by omega_using [hCt, hRs]))) (sdis (.inr (by omega_using [F, hSt, hCt])) (by omega_using [hCt, hRs]) (by omega_using [F, hSt, hRs]))
+    (cR_dis P (by omega_using [hCt, hRs]))) fun t₉ ⟨⟨b₉, g₉, s₉, r₉⟩, sy₉⟩ => ?_)
   have m₉ : ∀ r ∈ mg, t₉.gpr r = v.gpr r := fun r hr => by rw [g₉ r (pm r hr), m₈ r hr]
   have hctr : Spec.Rsa.bytesAt t₈.mem (off (S s) oCtr) 4 = Spec.Rsa.i2osp c 4 := by
     rw [bytesAt_view]
@@ -343,7 +343,7 @@ theorem roundT_ok {G : Hash} (hG : HashOK G) (hF : G.F ≤ 208) {f : Fns} {j : N
       (xs := Spec.Rsa.i2osp c 4) (by rw [Proof.Mgf1.i2osp_length])).trans
       (List.take_of_length_le (by rw [Proof.Mgf1.i2osp_length])))
     have := List.mem_range.mp hi
-    rw [v₈ _ (by omega), ctrV, ifp (by omega), Nat.add_sub_cancel_left]
+    rw [v₈ _ (by omega_using [hCt, hRs, this]), ctrV, ifp (by omega_using [this]), Nat.add_sub_cancel_left]
   have hml : (srcB V src srcLen).length = srcLen := by simp [srcB]
   have hR9 : hG.SH.Repr t₉.mem (off (S s) oSt) (srcB V src srcLen ++ Spec.Rsa.i2osp c 4) := by
     have := r₉ _ hR8 (by rw [x1, m₇ _ (by decide), I.s7, hml])
@@ -359,7 +359,7 @@ theorem roundT_ok {G : Hash} (hG : HashOK G) (hF : G.F ≤ 208) {f : Fns} {j : N
     (by rw [e₁₂, o₁₁.get .s0, o₁₀.get .s0, b₉.s0])) fun t₁₃ ⟨⟨b₁₃, g₁₃, s₁₃, r₁₃⟩, _⟩ => ?_)
   have m₁₃ : ∀ r ∈ mg, t₁₃.gpr r = v.gpr r := fun r hr => by
     rw [g₁₃ r (pm r hr), k₁₂.gpr r (by revert r; decide), m₉ r hr]
-  have hfh := r₁₃ _ (by rw [k₁₂.mem]; exact hR9) (by rw [hl4]; omega)
+  have hfh := r₁₃ _ (by rw [k₁₂.mem]; exact hR9) (by rw [hl4]; omega_using [hfs])
     (by rw [o₁₂.get .a1, e₁₁, o₁₀.get .s7, m₉ _ (by decide), I.s7, hl4, BitVec.ofNat_add])
   have hdig : ∀ j < G.D, view t₁₃.mem (S s) (oDig + j) =
       (Gs.hash (srcB V src srcLen ++ Spec.Rsa.i2osp c 4)).getD j 0 := fun j hj => by
@@ -368,67 +368,67 @@ theorem roundT_ok {G : Hash} (hG : HashOK G) (hF : G.F ≤ 208) {f : Fns} {j : N
     rfl
   -- Into `dst`.
   have hdc := Nat.min_le_left G.D (dstLen - c * G.D)
-  have hn0 : 0 < min G.D (dstLen - c * G.D) := by omega
+  have hn0 : 0 < min G.D (dstLen - c * G.D) := by omega_using [hc, hD0]
   refine WP.seq (WP.seq (WP.mono (xorHeadT_ok T b₁₃ (G := G) (S := S s) (dst := dst) (dstLen := dstLen)
-    (done := c * G.D) (by omega) b₁₃.s0 (by rw [m₁₃ _ (by decide), I.s8]) (by rw [m₁₃ _ (by decide), I.s9])
-    (by rw [m₁₃ _ (by decide), I.s11]) hc (by omega)) fun t₁₄ ⟨k₁₄, x4, x5, x6⟩ => ?_))
+    (done := c * G.D) (by omega_using [F]) b₁₃.s0 (by rw [m₁₃ _ (by decide), I.s8]) (by rw [m₁₃ _ (by decide), I.s9])
+    (by rw [m₁₃ _ (by decide), I.s11]) hc (by omega_using [hfd])) fun t₁₄ ⟨k₁₄, x4, x5, x6⟩ => ?_))
   have b₁₄ := b₁₃.only P k₁₄
-  refine WP.mono (xorLoop_ok (p := off (S s) (dst + c * G.D)) (q := off (S s) oDig) hn0 (by omega) x4 x5 x6
+  refine WP.mono (xorLoop_ok (p := off (S s) (dst + c * G.D)) (q := off (S s) oDig) hn0 (by omega_using [F]) x4 x5 x6
     (fun j hj => by
-      rw [off_add, k₁₄.rd, k₁₄.wr, b₁₃.wr, b₁₃.rd]; exact sc_inR P (by omega) _)
-    (sc_w P (by rw [k₁₄.wr, b₁₃.wr]) (by omega))
+      rw [off_add, k₁₄.rd, k₁₄.wr, b₁₃.wr, b₁₃.rd]; exact sc_inR P (by omega_using [F, hDg, hRs, hj]) _)
+    (sc_w P (by rw [k₁₄.wr, b₁₃.wr]) (by omega_using [hc, hRs, hfd]))
     (fun j hj i hi => by
-      rw [off_add, off_add]; exact Offset.add_ofNat_ne _ (by omega) (by omega) (by omega))
+      rw [off_add, off_add]; exact Offset.add_ofNat_ne _ (by omega_using [F, hDg, hj]) (by omega_using [hfd, hi]) (by omega_using [hDg, hfd, hi]))
     (fun i hi j hj hij => by
-      rw [off_add, off_add]; exact Offset.add_ofNat_ne _ (by omega) (by omega) (by omega)))
+      rw [off_add, off_add]; exact Offset.add_ofNat_ne _ (by omega_using [hfd, hi]) (by omega_using [hfd, hj]) (by omega_using [hij])))
     fun t₁₅ ⟨k₁₅, x₁₅⟩ => ?_
-  have b₁₅ : Base S vf s t₁₅ := b₁₄.wb P k₁₅ (by rw [xorAt_length]; omega) x₁₅
+  have b₁₅ : Base S vf s t₁₅ := b₁₄.wb P k₁₅ (by rw [xorAt_length]; omega_using [hc, hRs, hfd]) x₁₅
   have m₁₅ : ∀ r ∈ mg, t₁₅.gpr r = v.gpr r := fun r hr => by
     rw [k₁₅.gpr r (by revert r; decide), k₁₄.gpr r (by revert r; decide), m₁₃ r hr]
   -- The next counter.
   refine WP.mono (nextCtrT_ok T b₁₅ (G := G) (c := c) (done := c * G.D) (dstLen := dstLen)
     (by rw [m₁₅ _ (by decide), I.s10]) (by rw [m₁₅ _ (by decide), I.s11]) (by rw [m₁₅ _ (by decide), I.s9])
-    (by omega) (by omega)) fun t₁₆ ⟨k₁₆, x10, x11, xt⟩ hsy => ?_
+    (by omega_using [hc, F, hfd]) (by omega_using [hfd])) fun t₁₆ ⟨k₁₆, x10, x11, xt⟩ hsy => ?_
   have hs1 : (c + 1) * G.D = c * G.D + G.D := Nat.succ_mul _ _
   refine ⟨by rw [xt, hs1], b₁₅.only P k₁₆, by rw [k₁₆.get .s6, m₁₅ _ (by decide), I.s6],
     by rw [k₁₆.get .s7, m₁₅ _ (by decide), I.s7], by rw [k₁₆.get .s8, m₁₅ _ (by decide), I.s8],
     by rw [k₁₆.get .s9, m₁₅ _ (by decide), I.s9], x10, by rw [x11, hs1], fun o ⟨ho, ho'⟩ => ?_, hsy.trans I.sy⟩
   -- `EM`'s place.
   have hold : view t₁₃.mem (S s) o = view v.mem (S s) o := by
-    have e₁₃ := s₁₃ o (by omega) (by simp; omega)
-    have e₉ := s₉ o (by omega) (by simp; omega)
-    have e₈ := v₈ o (by omega)
-    have e₇ := s₇ o (by omega) (by simp; omega)
-    have e₂ := s₂ o (by omega) (by simp; omega)
+    have e₁₃ := s₁₃ o (by omega_using [ho]) (by simp; omega_using [hc, F, hSt, hDg, hCt, hRs, hD0, hD64, hfd, hsep, hcD, hdc, hn0, hs1, ho, ho'])
+    have e₉ := s₉ o (by omega_using [ho]) (by simp; omega_using [hc, F, hSt, hCt, hRs, hD0, hD64, hcD, hdc, hn0, hs1, ho, ho'])
+    have e₈ := v₈ o (by omega_using [ho])
+    have e₇ := s₇ o (by omega_using [ho]) (by simp; omega_using [hc, F, hSt, hCt, hRs, hD0, hD64, hcD, hdc, hn0, hs1, ho, ho'])
+    have e₂ := s₂ o (by omega_using [ho]) (by simp; omega_using [hc, F, hSt, hCt, hRs, hD0, hD64, hcD, hdc, hn0, hs1, ho, ho'])
     simp only [ctrV] at e₈
-    rw [ifn (by omega)] at e₈
+    rw [ifn (by omega_using [hSt, hCt, ho'])] at e₈
     simp only [view] at *
     rw [e₁₃, k₁₂.mem, e₉, e₈, e₇, k₆.mem, e₂, o₁.mem]
   have hv : view t₁₆.mem (S s) o = if dst + c * G.D ≤ o ∧ o < dst + c * G.D + min G.D (dstLen - c * G.D) then
       view v.mem (S s) o ^^^ (Gs.hash (srcB V src srcLen ++ Spec.Rsa.i2osp c 4)).getD (o - (dst + c * G.D)) 0
       else view v.mem (S s) o := by
-    rw [k₁₆.mem, x₁₅, k₁₄.mem, view_wb _ _ (by rw [xorAt_length]; omega) (by omega), xorAt_length]
+    rw [k₁₆.mem, x₁₅, k₁₄.mem, view_wb _ _ (by rw [xorAt_length]; omega_using [hc, hRs, hfd]) (by omega_using [ho]), xorAt_length]
     split
     · rename_i hx
-      rw [xorAt_getD _ _ _ (by omega), off_add, off_add,
-        show dst + c * G.D + (o - (dst + c * G.D)) = o by omega, ← hold]
+      rw [xorAt_getD _ _ _ (by omega_using [hc, F, hD0, hD64, hfd, hsep, hcD, hdc, hn0, hs1, ho, ho', hx]), off_add, off_add,
+        show dst + c * G.D + (o - (dst + c * G.D)) = o by omega_using [hc, F, hD0, hD64, hfd, hsep, hcD, hdc, hn0, hs1, ho, ho', hx], ← hold]
       simp only [view]
-      rw [← hdig _ (by omega)]
+      rw [← hdig _ (by omega_using [hc, F, hD0, hD64, hfd, hsep, hcD, hdc, hn0, hs1, ho, ho', hx])]
       simp only [view]
     · exact hold
   rw [hv]
   by_cases hx : dst + c * G.D ≤ o ∧ o < dst + c * G.D + min G.D (dstLen - c * G.D)
   · have hs2 : G.D * (c + 1) = c * G.D + G.D := by rw [Nat.mul_comm]; exact hs1
     have hs3 : G.D * c = c * G.D := Nat.mul_comm _ _
-    have hq : (o - dst) / G.D = c := Nat.div_eq_of_lt_le (by omega) (by omega)
+    have hq : (o - dst) / G.D = c := Nat.div_eq_of_lt_le (by omega_using [hc, F, hD0, hD64, hfd, hsep, hcD, hdc, hn0, hs1, ho, ho', hx, hs2, hs3]) (by omega_using [hc, F, hD0, hD64, hfd, hsep, hcD, hdc, hn0, hs1, ho, ho', hx, hs2, hs3])
     have hr : (o - dst) % G.D = o - (dst + c * G.D) := by
-      rw [Nat.mod_eq_sub_mul_div, hq, Nat.mul_comm]; omega
-    rw [ifp hx, I.em o ⟨ho, ho'⟩, mixV, mixV, ifn (by omega), ifp (by rw [hs1]; omega),
-      Proof.Mgf1.mgf1_getD hGv _ (show o - dst < dstLen by omega), hGl, hq, hr]
+      rw [Nat.mod_eq_sub_mul_div, hq, Nat.mul_comm]; omega_using []
+    rw [ifp hx, I.em o ⟨ho, ho'⟩, mixV, mixV, ifn (by omega_using [hc, F, hD0, hD64, hfd, hsep, hcD, hdc, hn0, hs1, ho, ho', hx, hs2, hs3, hq, hr]), ifp (by rw [hs1]; omega_using [hc, F, hD0, hD64, hfd, hsep, hcD, hdc, hn0, hs1, ho, ho', hx, hs2, hs3, hq, hr]),
+      Proof.Mgf1.mgf1_getD hGv _ (show o - dst < dstLen by omega_using [hx]), hGl, hq, hr]
   · rw [ifn hx, I.em o ⟨ho, ho'⟩, mixV, mixV]
     by_cases hy : dst ≤ o ∧ o < dst + min (c * G.D) dstLen
-    · rw [ifp hy, ifp (by rw [hs1]; omega)]
-    · rw [ifn hy, ifn (by rw [hs1]; omega)]
+    · rw [ifp hy, ifp (by rw [hs1]; omega_using [hc, F, hD0, hD64, hfd, hsep, hcD, hdc, hn0, hs1, ho, ho', hx, hy])]
+    · rw [ifn hy, ifn (by rw [hs1]; omega_using [hc, F, hD0, hD64, hfd, hsep, hcD, hdc, hn0, hs1, ho, ho', hx, hy])]
 
 /-- `dst ⊕= MGF1(src, dstLen)` in `EM`'s place, from `src`, `srcLen`, `dst`
 and `dstLen` in `s6`–`s9`, with the hash function of the table that is our
@@ -452,18 +452,18 @@ theorem mgfXorT_ok {G : Hash} (hG : HashOK G) (hF : G.F ≤ 208) {f : Fns} {j : 
       srcLen dst dstLen G.D 0 t₂ :=
     ⟨h.only P k₂, by rw [k₂.get .s6, h6], by rw [k₂.get .s7, h7], by rw [k₂.get .s8, h8],
       by rw [k₂.get .s9, h9], by rw [o₂.get .s10, e₁], by rw [e₂, Nat.zero_mul],
-      fun o _ => by rw [mixV, ifn (by omega), k₂.mem], sy₂.trans hsy⟩
+      fun o _ => by rw [mixV, ifn (by omega_using []), k₂.mem], sy₂.trans hsy⟩
   refine WP.loop (M := isa) (fun n w => ∃ c, n = dstLen - c * G.D ∧ c * G.D < dstLen ∧
       MgfIT S vf s (view t.mem (S s)) (Spec.Mgf1.mgf1 Gs (srcB (view t.mem (S s)) src srcLen) dstLen) src srcLen dst
         dstLen G.D c w)
-    ?_ (dstLen - 0 * G.D) t₂ ⟨0, rfl, by omega, I0⟩
+    ?_ (dstLen - 0 * G.D) t₂ ⟨0, rfl, by omega_using [hpos], I0⟩
   rintro n w ⟨c, rfl, hc, I⟩
   refine WP.mono (roundT_ok P hG hF T hGh hGl hGv hf I hc) fun w' ⟨hcf, I'⟩ => ?_
   have hs1 : (c + 1) * G.D = c * G.D + G.D := Nat.succ_mul _ _
   by_cases h' : (c + 1) * G.D < dstLen
-  · exact .inr ⟨by rw [eval_nonzero, hcf, decide_eq_true h'], _, by omega, c + 1, rfl, h', I'⟩
+  · exact .inr ⟨by rw [eval_nonzero, hcf, decide_eq_true h'], _, by omega_using [hD, hc, hs1], c + 1, rfl, h', I'⟩
   · exact .inl ⟨by rw [eval_nonzero, hcf, decide_eq_false h'], ⟨I'.base,
-      fun o ho => by rw [I'.em o ho, Nat.min_eq_right (by omega)]⟩, I'.sy⟩
+      fun o ho => by rw [I'.em o ho, Nat.min_eq_right (by omega_using [h'])]⟩, I'.sy⟩
 
 end
 

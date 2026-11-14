@@ -48,6 +48,6 @@ theorem implies {o : List Instr} {iv : Spec.Sha512.HashValue} {D : Nat} {digest 
     sig_and_intros
     all_goals first
       | exact hp.sp | rfl | exact hp.d_o | exact hp.f_d | exact hp.f_o | decide
-      | exact (show 8192 + D ≤ 2 ^ 64 by omega)
+      | exact (show 8192 + D ≤ 2 ^ 64 by omega_using [hD])
 
 end VG.Proof.Sha512.AArch64.OneShot

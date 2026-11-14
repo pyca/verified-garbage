@@ -33,7 +33,7 @@ theorem DInvW.frame {s₀ : State} {n : Nat} {s s' : State} (h : DInvW P s₀ n 
     (hx : s'.gpr .x24 = s.gpr .x24) {W : List Region} (hf : Frame W s.mem s'.mem)
     (hW : ∀ r ∈ W, (R (kA s₀) (deL P).sc (YH P) (1024 * n)).Disjoint r) : DInvW P s₀ n s' :=
   ⟨hk, by rw [hx, h.x24], fun i hi => polyIsW_frame_poly (w16 := true) hf (fun r hr => (hW r hr).sub_left
-    (R.sub2 (by simp only [yOff]; omega) (by simp only [yOff]; omega))) (h.u i hi)⟩
+    (R.sub2 (by simp only [yOff]; omega_using []) (by simp only [yOff]; omega_using [hi]))) (h.u i hi)⟩
 
 theorem uW_step {s₀ : State} (hp : Pre P (deL P) s₀) (hc : Calls P) {i : Nat} (hi : i < P.k) {s : State}
     (ht : Optimized.TransformTables s) (h : DInvW P s₀ i s) :
@@ -48,26 +48,26 @@ theorem uW_step {s₀ : State} (hp : Pre P (deL P) s₀) (hc : Calls P) {i : Nat
   refine WPs.cons (WP.mono_syms (ddL_ok hp hc (k := 1) (o := 32 * P.du * i) (d := P.du) (off := PP P)
     (by decide) fu (.inl rfl) (po_PP hw) (.inl (by dek)) h.kb) fun s₁ ⟨kb₁, f₁, p₁, x₁⟩ sy₁ => ?_)
   have e₁ := h.frame kb₁ x₁ f₁ fun r hr => by
-    rw [List.mem_singleton.mp hr]; exact dfar hp (by omega) (po_PP hw).le (by lom)
+    rw [List.mem_singleton.mp hr]; exact dfar hp (by omega_using [hi]) (po_PP hw).le (by lom)
   rw [slice_eq h.kb (b := 1) (by decide) fu] at p₁
   have ht₁ := ht.frame sy₁ (kb₁.rd.trans h.kb.rd.symm) (kb₁.wr.trans h.kb.wr.symm) (kb₁.sp.trans h.kb.sp.symm)
     f₁ (cov_w hp h.kb ⟨hp.scw,hp.scb⟩ (o:=PP P) (l:=1024) (hp.fs (po_PP hw).le))
   refine WPs.cons (WP.mono_syms (narrowW_ok hp (po_PP hw) hpo (by lom) kb₁ p₁)
     fun s₂ ⟨kb₂, f₂, p₂, x₂⟩ sy₂ => ?_)
   have e₂ := e₁.frame kb₂ x₂ f₂ fun r hr => by
-    rw [List.mem_singleton.mp hr]; exact dfar hp (by omega) hpo.le (.inr (by simp only [yOff]; omega))
+    rw [List.mem_singleton.mp hr]; exact dfar hp (by omega_using [hi]) hpo.le (.inr (by simp only [yOff]; omega_using []))
   have ht₂ := ht₁.frame sy₂ (kb₂.rd.trans kb₁.rd.symm) (kb₂.wr.trans kb₁.wr.symm) (kb₂.sp.trans kb₁.sp.symm)
     f₂ (cov_w hp kb₁ ⟨hp.scw,hp.scb⟩ (o:=yOff P i) (l:=1024) (hp.fs hpo.le))
   refine WPs.single (WP.mono_syms (nttW_ok hp hpo kb₂ p₂ ht₂) fun s₃ ⟨kb₃, f₃, p₃, x₃⟩ sy₃ => ?_)
   have e₃ := e₂.frame kb₃ x₃ f₃ fun r hr => by
     rcases mem2' hr with rfl | rfl
-    · exact dfar hp (by omega) hpo.le (.inr (by simp only [yOff]; omega))
-    · exact dfar hp (by omega) (by kom) (.inl (by kom))
+    · exact dfar hp (by omega_using [hi]) hpo.le (.inr (by simp only [yOff]; omega_using []))
+    · exact dfar hp (by omega_using [hi]) (by kom) (.inl (by kom))
   have ht₃ := ht₂.frame sy₃ (kb₃.rd.trans kb₂.rd.symm) (kb₃.wr.trans kb₂.wr.symm) (kb₃.sp.trans kb₂.sp.symm)
     f₃ (covers_cons (cov_s hp kb₂ hpo.le) (cov_s hp kb₂ (o:=NS) (l:=1024) (by kom)))
   refine ⟨⟨e₃.kb,e₃.x24,fun i' hi' => ?_⟩,
     ((f₁.mono (by simp)).trans (f₂.mono (by simp))).trans (f₃.mono (by simp)),ht₃⟩
-  rcases (by omega : i' < i ∨ i' = i) with hi' | rfl
+  rcases (by omega_using [hi'] : i' < i ∨ i' = i) with hi' | rfl
   · exact e₃.u i' hi'
   · refine (congrArg (fun x => PolyIsW 16 s₃.mem (sA (deL P) s₀ (yOff P i')) (ntt x)) ?_).mp p₃
     simp only [KPke.dcU, cD, deL, List.getD_cons_zero, List.getD_cons_succ, KemLay.params]
@@ -88,7 +88,7 @@ theorem uW_all {s₀ s : State} (hp : Pre P (deL P) s₀) (hc : Calls P)
     rcases hh with rfl | rfl | rfl
     · exact ⟨_,by simp [uWritesW],fun _ hh => hh⟩
     · exact ⟨R (kA s₀) (deL P).sc (YH P) (1024*P.k),by simp [uWritesW],
-        R.sub2 (by simp [yOff]) (by simp only [yOff]; omega)⟩
+        R.sub2 (by simp [yOff]) (by simp only [yOff]; omega_using [hi])⟩
     · exact ⟨_,by simp [uWritesW],fun _ hh => hh⟩
   · exact ⟨h,Frame.refl _ _,ht⟩
 

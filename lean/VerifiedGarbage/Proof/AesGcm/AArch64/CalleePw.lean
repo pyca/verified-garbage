@@ -78,7 +78,7 @@ include h p h5
 
 theorem GhWCall.pre : Proof.Gcm.ghashWithAArch64.pre (s.callEntry.withRegions
     [⟨Ctx + BitVec.ofNat 64 240, 16⟩, ⟨D, 16 * n⟩, ⟨P, 128⟩] [⟨Y, 16⟩, ⟨S, 256⟩]) := by
-  have hn := toNat_ofNat_lt (show n < 2 ^ 64 by have := h.n_lt; omega)
+  have hn := toNat_ofNat_lt (show n < 2 ^ 64 by have := h.n_lt; omega_using [this])
   simp only [Proof.Gcm.ghashWithAArch64, State.withRegions_gpr, State.withRegions_rd, State.withRegions_wr,
     State.withRegions_mem, State.callEntry_mem, callEntry_x0, callEntry_x1, callEntry_x2, callEntry_x3,
     callEntry_x4, callEntry_x5, h.x0, h.x1, h.x2, h.x3, h.x4, h5, hn]
@@ -94,7 +94,7 @@ theorem GhWCall.covers : Covers ([⟨Ctx + BitVec.ofNat 64 240, 16⟩, ⟨D, 16 
 
 theorem gw_call (g : GhashWithImpl) :
     WP isa (.call g.fn.name g.fn.code) s (GhPost s (Ctx + BitVec.ofNat 64 240) Y D S n) := by
-  have hn := toNat_ofNat_lt (show n < 2 ^ 64 by have := h.n_lt; omega)
+  have hn := toNat_ofNat_lt (show n < 2 ^ 64 by have := h.n_lt; omega_using [this])
   refine WP.call (k := Proof.Gcm.ghashWithAArch64) g.ok
     (rd := [⟨Ctx + BitVec.ofNat 64 240, 16⟩, ⟨D, 16 * n⟩, ⟨P, 128⟩]) (wr := [⟨Y, 16⟩, ⟨S, 256⟩])
     (GhWCall.pre h p h5) (GhWCall.covers h p) h.writes ?_ g.noFrames
@@ -207,11 +207,11 @@ theorem pwSel_call (v : GcmImpl) (g : GhashWithImpl) {s : State} {Ctx Y D S P : 
     (hsp : InRegions (s.rd ++ s.wr) (s.sp + BitVec.ofNat 64 k) 8)
     (h : GhCall s (Ctx + BitVec.ofNat 64 240) Y D S n) (p : GhWCall s Ctx Y S P) :
     WP isa (Impl.AesGcm.AArch64.Fast.pwSel v.callees k g.fn) s (GhPost s (Ctx + BitVec.ofNat 64 240) Y D S n) := by
-  have hn : n < 2 ^ 64 := by have := h.n_lt; omega
+  have hn : n < 2 ^ 64 := by have := h.n_lt; omega_using [this]
   obtain ⟨s₁, run, x9, o, m, sp, rd, wr⟩ := selLsr_ok h.x3 hn
   have h₁ := h.of_x9 o rd wr
   refine WP.seq (WP.of_runBlock ⟨s₁, run, ?_⟩)
-  refine WP.ite _ (eval_zero x9 (by omega)) (fun _ => ?_) (fun _ => ?_)
+  refine WP.ite _ (eval_zero x9 (by omega_using [hn])) (fun _ => ?_) (fun _ => ?_)
   · exact WP.mono (gh_call v.gh h₁) fun _ q => q.of_x9 o m sp rd wr
   · exact WP.mono (pw_call g hk (by rw [sp, m]; exact hP) (by rw [rd, wr, sp]; exact hsp) h₁ (p.of_x9 m rd wr))
       fun _ q => q.of_x9 o m sp rd wr
@@ -224,7 +224,7 @@ theorem pwSel_rel (v : GcmImpl) (g : GhashWithImpl) {σ₁ σ₂ : State} {Ctx Y
     (h₁ : GhCall σ₁ (Ctx + BitVec.ofNat 64 240) Y D S n) (p₁ : GhWCall σ₁ Ctx Y S P)
     (h₂ : GhCall σ₂ (Ctx + BitVec.ofNat 64 240) Y D S n) (p₂ : GhWCall σ₂ Ctx Y S P) (qsp : σ₁.sp = σ₂.sp) :
     RelCT isa (Eq2 σ₁ σ₂) (Impl.AesGcm.AArch64.Fast.pwSel v.callees k g.fn) TT := by
-  have hn : n < 2 ^ 64 := by have := h₁.n_lt; omega
+  have hn : n < 2 ^ 64 := by have := h₁.n_lt; omega_using [this]
   obtain ⟨s₁, run₁, x9₁, o₁, m₁, sp₁, rd₁, wr₁⟩ := selLsr_ok h₁.x3 hn
   obtain ⟨s₂, run₂, x9₂, o₂, m₂, sp₂, rd₂, wr₂⟩ := selLsr_ok h₂.x3 hn
   have t : ∃ h, (taint.check (Taint.ofRegs [.x3]) (.block [.lsr .x .x9 .x3 1]) h).isSome = true :=
@@ -237,7 +237,7 @@ theorem pwSel_rel (v : GcmImpl) (g : GhashWithImpl) {σ₁ σ₂ : State} {Ctx Y
   have c₁ := h₁.of_x9 o₁ rd₁ wr₁
   have c₂ := h₂.of_x9 o₂ rd₂ wr₂
   have q : τ₁.sp = τ₂.sp := by rw [sp₁, sp₂, qsp]
-  refine rel_ite (eval_zero x9₁ (by omega)) (eval_zero x9₂ (by omega)) (fun _ => ?_) (fun _ => ?_)
+  refine rel_ite (eval_zero x9₁ (by omega_using [hn])) (eval_zero x9₂ (by omega_using [hn])) (fun _ => ?_) (fun _ => ?_)
   · exact gh_rel v.gh fun a b hab => by obtain ⟨rfl, rfl⟩ := hab; exact ⟨_, Y, D, S, n, c₁, c₂, q⟩
   · exact pw_rel g hk (by rw [sp₁, m₁]; exact hP₁) (by rw [rd₁, wr₁, sp₁]; exact hsp₁)
       (by rw [sp₂, m₂]; exact hP₂) (by rw [rd₂, wr₂, sp₂]; exact hsp₂) c₁ (p₁.of_x9 m₁ rd₁ wr₁) c₂

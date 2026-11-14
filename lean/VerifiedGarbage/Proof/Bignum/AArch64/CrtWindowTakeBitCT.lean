@@ -34,7 +34,7 @@ theorem prepare_ready {i : Nat} (hi : i < 8) {p : XPub × Nat} {s : State}
   refine WP.mono (prepareBit_state hc hi (pending_lt16 hb hv) hV hn bc byc)
     fun u ⟨cu,yu,nu,_,fu,_,_,flag⟩ => ?_
   exact ⟨⟨mi,X,Xc,2 * v + V / 2 ^ (7 - i) % 2,cu,
-    ht.of_win fu hc.scrT.nowrap,yu.symm ▸ hy,hw,hw',by have := pending_lt16 hb hv; omega,nu⟩,flag⟩
+    ht.of_win fu hc.scrT.nowrap,yu.symm ▸ hy,hw,hw',by have := pending_lt16 hb hv; omega_using [this],nu⟩,flag⟩
 
 theorem takeBit_ct (W : Window) {i : Nat} (hi : i < 8) :
     RelCT isa (Two TailPre) (takeBit W.code i) (fun _ _ => True) := by

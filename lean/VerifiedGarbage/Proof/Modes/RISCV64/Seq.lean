@@ -103,7 +103,7 @@ theorem fb_toNat {s₀ : State} (hp : SeqPre c M s₀) : (Fb s₀ c).toNat = s�
   fb_toNat' hp.spFit
 
 theorem fb_al {s₀ : State} (hp : SeqPre c M s₀) : (Fb s₀ c).toNat % 4 = 0 := by
-  rw [fb_toNat hp]; have := hp.spAl; omega
+  rw [fb_toNat hp]; have := hp.spAl; omega_using [this]
 
 /-- The frame, from inside `bigFrame`, for any function in the modes' frame. -/
 theorem scrIn_of' {s₀ t : State} (hs : s₀.sp.toNat % 16 = 0) (hsp : 8 * c.total ≤ s₀.sp.toNat)
@@ -174,7 +174,7 @@ theorem ivAreas_al {s₀ : State} (hp : SeqPre c M s₀) (P : Addr) :
     ∀ l, Core.wordAt false l = true → (ivAreas c P (Fb s₀ c) l).toNat % 4 = 0
   | .dat, h => by cases h
   | .chn, _ => al4 (fb_al hp) (by simp [Core.chnSlot])
-  | .buf, _ => al4 (fb_al hp) (by omega)
+  | .buf, _ => al4 (fb_al hp) (by omega_using [])
 
 theorem ivAreasOk {s₀ s : State} (hp : SeqPre c M s₀) (hS : ScrIn s (Fb s₀ c) c.total)
     (hb : s.gpr sb = Fb s₀ c) (h2 : s.gpr .s2 = P s₀) {ws : List Loc} (hws : ∀ l ∈ ws, l = .dat → ivR s₀ c ∈ s.wr)
@@ -727,14 +727,14 @@ theorem steps_ok (cs : CoreSpec c) {M : Mode} {F : StepFn} {s₀ : State} {k : c
     (hpreA : ∀ o ∈ M.pre, WordAl o) (hpostA : ∀ o ∈ M.post, WordAl o)
     (hD : w = true → (Dp s₀).toNat % 4 = 0 ∧ M.step % 4 = 0)
     (hcomp : Computes M (4 * c.bw) (cs.cipher k) F) : LoopsOk cs M F s₀ k (c.steps w M) := fun _ hFx hI =>
-  WP.mono (loop_wp cs hFx ⟨hpreA, hpostA, by have := hFx.scr.al; omega, hD⟩ rfl hpre hpost hcomp
+  WP.mono (loop_wp cs hFx ⟨hpreA, hpostA, by have := hFx.scr.al; omega_using [this], hD⟩ rfl hpre hpost hcomp
     (chunksAt_length _ _ _ _) hI) fun _ h => h.done (chunksAt_length _ _ _ _)
 
 theorem and3 (x : BitVec 64) : x &&& BitVec.ofInt 64 3 = BitVec.ofNat 64 (x.toNat % 4) := by
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_and, show (BitVec.ofInt 64 3).toNat = 2 ^ 2 - 1 from rfl,
     Nat.and_two_pow_sub_one_eq_mod, BitVec.toNat_ofNat]
-  omega
+  omega_using []
 
 /-- The loops `L w`, `w` whether the data's address is a multiple of 4, as
 `Core.aligned` chooses them for steps of `st` bytes, for any outputs. -/
@@ -763,7 +763,7 @@ theorem aligned_okO (cs : CoreSpec c) {M : Mode} {F : StepFn} {s₀ : State} {k 
         by rw [d.wr, u₃.wr], d.data, d.chn, by rw [← u₃.mem]; exact d.frame⟩
     have ev : isa.eval (.zero .t0) s₃ = some (decide ((Dp s₀).toNat % 4 = 0)) := by
       have e : s₂.gpr .s2 = Dp s₀ := by rw [hI.dp, Nat.mul_zero]; simp
-      rw [eval_zero, u₃.gpr, e, and3, ofNat_beq_zero (by omega)]
+      rw [eval_zero, u₃.gpr, e, and3, ofNat_beq_zero (by omega_using [])]
     exact WP.ite _ ev (fun hd => WP.mono (h true (fun _ => ⟨by simpa using hd, hst⟩) s₃ hF₃ hI₃) fun _ d => back d)
       (fun _ => WP.mono (h false (fun e => by cases e) s₃ hF₃ hI₃) fun _ d => back d)
   · exact h false fun e => by cases e

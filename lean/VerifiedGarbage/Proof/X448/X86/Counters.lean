@@ -47,6 +47,6 @@ theorem decCounter_ok {s : State} {k : Nat} (hk : k < 2 ^ 16)
     ⟨ht.gpr.trans he, ht.other, ht.mem, ht.rd, ht.wr, ?_⟩
   rw [hz]
   change some (s.gpr .esi - (1 : BitVec 32) == 0) = _
-  rw [he, ofNat_beq_zero (by omega)]
+  rw [he, ofNat_beq_zero (by omega_using [hk])]
 
 end VG.Proof.X448.X86

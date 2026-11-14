@@ -44,7 +44,7 @@ theorem initOut (iv : Spec.Sha256.HashValue)
     simp only [Spec.Sha256.initSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
       forall_eq] at hb
     exact Stream.reprFrom_congr (fun i hi => (hb _ (Offset.contains_base _
-      (by simp only [Elem.size]; omega) (by omega))).symm) h
+      (by simp only [Elem.size]; omega_using [hi]) (by omega_using [hi]))).symm) h
 
 def initKs : List Nat := keep_for% Spec.Sha256.initApi.sig 0 Impl.Sha256.X86_64.Stream.init []
 

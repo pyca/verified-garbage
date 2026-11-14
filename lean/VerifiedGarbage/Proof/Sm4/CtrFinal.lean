@@ -4,6 +4,7 @@ public import VerifiedGarbage.Spec.Sm4.CtrFinal
 public import VerifiedGarbage.Proof.Framework.Scratch
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Sm4.CtrCipher
+import VerifiedGarbage.Proof.Framework.Omega
 
 -- separate module: shared by the final function's proofs of every target.
 
@@ -43,10 +44,10 @@ private theorem agree_of' {m₁ m₂ : Mem} {p : Addr} {n : Nat} (h : ∀ a, Reg
   intro i hi
   refine (h _ ?_).symm
   by_cases hw : i < 2 ^ 64
-  · exact Offset.contains_base _ (by omega) hw
+  · exact Offset.contains_base _ (by omega_using [hi]) hw
   · simp only [Region.Contains]
     have := (p + BitVec.ofNat 64 i - p).isLt
-    omega
+    omega_using [hi, hw]
 
 /-- `ctrFinalPost` reads the memory on return only within the buffers. -/
 theorem ctrFinalPostOut_local (pb : Nat) : ∀ vs m m₁ m₂ r, vs.length = (ctrFinalSig.words pb).length →
@@ -66,7 +67,7 @@ theorem ctrFinalPostOut_local (pb : Nat) : ∀ vs m m₁ m₂ r, vs.length = (ct
       (ctrFinalPost pb) _ m m₂ r
     dsimp only [Curry.apply, ctrFinalPost, ArgWord.ofRaw, Spec.Ctr.CryptFinal] at h ⊢
     have := Nat.mod_le len.toNat (2 ^ pb)
-    rw [bytesAt_congr' fun i hi => hd i (by rw [BitVec.toNat_setWidth] at hi; omega), bytesAt_congr' hc]
+    rw [bytesAt_congr' fun i hi => hd i (by rw [BitVec.toNat_setWidth] at hi; omega_using [this, hi]), bytesAt_congr' hc]
     exact h
 
 /-- `ctrFinalPost` reads the memory on entry only within the buffers. -/
@@ -88,7 +89,7 @@ theorem ctrFinalPost_local (pb : Nat) : ∀ vs m₁ m₂ m' r, vs.length = (ctrF
       (ctrFinalPost pb) _ m₂ m' r
     dsimp only [Curry.apply, ctrFinalPost, ArgWord.ofRaw, Spec.Ctr.CryptFinal] at h ⊢
     have := Nat.mod_le len.toNat (2 ^ pb)
-    rw [scheduleAt_congr hk, bytesAt_congr' fun i hi => hd i (by rw [BitVec.toNat_setWidth] at hi; omega),
+    rw [scheduleAt_congr hk, bytesAt_congr' fun i hi => hd i (by rw [BitVec.toNat_setWidth] at hi; omega_using [this, hi]),
       bytesAt_congr' hc]
     exact h
 

@@ -54,17 +54,17 @@ theorem dbB_length {P : EP} (hf : fits h P) (σ : State) : (dbB h P σ).length =
   have hfit : 2 * h.H.D + 2 + P.ml ≤ P.K := hf
   simp only [dbB, List.length_append, List.length_cons, lhB_length, msgB_length, Spec.RsaOaep.zeros,
     List.length_replicate]
-  omega
+  omega_using [hfit]
 
 theorem mdbB_length {P : EP} (hf : fits h P) (σ : State) : (mdbB h g P σ).length = P.K - h.H.D - 1 := by
-  rw [mdbB, Proof.Mgf1.xorBytes_length, dbB_length h hf, Proof.Mgf1.mgf1_length g.valid]; omega
+  rw [mdbB, Proof.Mgf1.xorBytes_length, dbB_length h hf, Proof.Mgf1.mgf1_length g.valid]; omega_using []
 
 theorem x0_keep {P : EP} (hg : Geo (P.lay h.H.D) P.scr) {dOff dl : Nat} (hfd : dOff + dl ≤ oBuf)
     (h0 : oEm + 1 ≤ dOff) :
     ∀ σ m m', X0 h P σ m → Frame (mgfW g (P.lay h.H.D) P.scr dOff dl) m m' → X0 h P σ m' :=
   fun _ _ _ ⟨k, z⟩ hf => ⟨k, by
     rw [emV, ← z]
-    exact hf _ fun r hr => mgfW_byte g hg hfd (o := oEm + 0) (by oomega) (by oomega) (by omega) r hr _
+    exact hf _ fun r hr => mgfW_byte g hg hfd (o := oEm + 0) (by oomega) (by oomega) (by omega_using [h0]) r hr _
       (Region.contains_self _ _)⟩
 
 /-- Four slots written, and the memory around them. -/
@@ -132,7 +132,7 @@ theorem db_vp (P : EP) :
   have e2 : t2.gpr .eax = P.scr + BitVec.ofNat 32 (oEm + 1 + h.H.D) := by rw [u2.gpr, u1.gpr, hc.ebp]
   have e5 : t5.gpr .eax = BitVec.ofNat 32 (P.K - h.H.D - 1) := by
     rw [u5.gpr, u4.gpr]; show BitVec.ofNat 32 P.K - BitVec.ofNat 32 (h.H.D + 1) = _
-    rw [sub_ofNat (by omega), Nat.sub_add_eq]
+    rw [sub_ofNat (by omega_using [hfit]), Nat.sub_add_eq]
   have e8 : t8.gpr .eax = P.scr + BitVec.ofNat 32 (oEm + 1) := by
     rw [u8.gpr, u7.gpr, m6.gpr, u5.other _ (by decide), u4.other _ (by decide), m3.gpr, u2.other _ (by decide),
       u1.other _ (by decide), hc.ebp]
@@ -147,7 +147,7 @@ theorem db_vp (P : EP) :
   refine ⟨c, ⟨⟨⟨hi, hf⟩, ?_⟩, r1, r2, r3, r4⟩, fun i hi' => ?_, fun i hi' => ?_⟩
   · rw [emV, ← em.z0]
     exact sbytes_keep fr (dis _ _ (by oomega)) (by oomega) (o := oEm) (n := 1) (f := fun _ => s.mem (sa P.scr oEm))
-      (fun i hi => by rw [show i = 0 by omega, Nat.add_zero]) 0 (by decide)
+      (fun i hi => by rw [show i = 0 by omega_using [hi], Nat.add_zero]) 0 (by decide)
   · rw [← db i hi', emV, show oEm + (1 + h.H.D + i) = oEm + 1 + h.H.D + i by oomega]
     exact sbytes_keep fr (dis _ _ (by oomega)) (by oomega) (o := oEm + 1 + h.H.D) (n := P.K - h.H.D - 1)
       (f := fun i => s.mem (sa P.scr (oEm + 1 + h.H.D + i))) (fun _ _ => rfl) i hi'
@@ -188,7 +188,7 @@ theorem seed_vp (P : EP) :
       hc.ebp]
   have e10 : t10.gpr .eax = BitVec.ofNat 32 (P.K - h.H.D - 1) := by
     rw [u10.gpr, u9.gpr]; show BitVec.ofNat 32 P.K - BitVec.ofNat 32 (h.H.D + 1) = _
-    rw [sub_ofNat (by omega), Nat.sub_add_eq]
+    rw [sub_ofNat (by omega_using [hfit]), Nat.sub_add_eq]
   have m11 : t11.mem = (((s.mem.writeW ((P.lay h.H.D).fr sDst) (P.scr + BitVec.ofNat 32 (oEm + 1))).writeW
       ((P.lay h.H.D).fr sDstLen) (BitVec.ofNat 32 h.H.D)).writeW ((P.lay h.H.D).fr sSrc)
         (P.scr + BitVec.ofNat 32 (oEm + 1 + h.H.D))).writeW ((P.lay h.H.D).fr sSrcLen)
@@ -202,8 +202,8 @@ theorem seed_vp (P : EP) :
   refine ⟨c, ⟨⟨⟨hi, hf⟩, ?_⟩, r1, r2, r3, r4⟩, sbytes_keep fr (dis _ _ (by oomega)) (by oomega) hsd, fun i hi' => ?_⟩
   · rw [emV, ← z0]
     exact sbytes_keep fr (dis _ _ (by oomega)) (by oomega) (o := oEm) (n := 1) (f := fun _ => s.mem (sa P.scr oEm))
-      (fun i hi => by rw [show i = 0 by omega, Nat.add_zero]) 0 (by decide)
-  · rw [mdbB, Proof.Mgf1.xorBytes_getD (by omega) (by omega)]
+      (fun i hi => by rw [show i = 0 by omega_using [hi], Nat.add_zero]) 0 (by decide)
+  · rw [mdbB, Proof.Mgf1.xorBytes_getD (by omega_using [hdl, hi']) (by omega_using [hml, hi'])]
     exact sbytes_keep fr (dis _ _ (by oomega)) (by oomega) hdb i hi'
 
 /-! ## `EM` masked -/
@@ -228,22 +228,22 @@ theorem emB_getD {P : EP} (hf : fits h P) (σ : State) {i : Nat} (hi : i < P.K) 
   cases i with
   | zero => rfl
   | succ i =>
-    rw [List.getD_cons_succ, ite_eq_right (by omega), Proof.Mgf1.getD_append, Proof.Mgf1.xorBytes_length, hsl, hml,
+    rw [List.getD_cons_succ, ite_eq_right (by omega_using []), Proof.Mgf1.getD_append, Proof.Mgf1.xorBytes_length, hsl, hml,
       Nat.min_self, Nat.add_sub_cancel]
     by_cases h1 : i < h.H.D
-    · rw [ite_eq_left h1, ite_eq_left (by omega), Proof.Mgf1.xorBytes_getD (by omega) (by omega)]
-    · rw [ite_eq_right h1, ite_eq_right (by omega)]
+    · rw [ite_eq_left h1, ite_eq_left (by omega_using [h1]), Proof.Mgf1.xorBytes_getD (by omega_using [hsl, h1]) (by omega_using [hml, h1])]
+    · rw [ite_eq_right h1, ite_eq_right (by omega_using [h1])]
 
 /-- MGF1's table, the argument 17, in a buffer only read. -/
 theorem tbl_of {D : Nat} {P : EP} {σ : State} (hi : In D P σ) :
     ∃ R ∈ (P.lay D).ro, ∀ o, o + 4 ≤ 44 → R.Contains (VG.X86.addr ((P.lay D).argv.getD 17 0) o) 4 := by
   have hf := hi.ok.fits P.TAB (by simp)
   simp only [Sig.tableRegion, BitVec.toNat_setWidth] at hf
-  rw [Nat.mod_eq_of_lt (by have := P.tab.isLt; omega)] at hf
+  rw [Nat.mod_eq_of_lt (by have := P.tab.isLt; omega_using [])] at hf
   refine ⟨P.TAB, by simp, fun o ho => ?_⟩
   show (⟨P.tab.setWidth 64, 11 * (32 / 8)⟩ : Region).Contains (VG.X86.addr P.tab o) 4
-  rw [addr_eq (by omega)]
-  exact Offset.contains_base _ (by omega) (by omega)
+  rw [addr_eq (by omega_using [hf, ho])]
+  exact Offset.contains_base _ (by omega_using [ho]) (by omega_using [ho])
 
 /-- `EM` masked, from `EM` before masking, then `k`, with MGF1's hash
 function `g`, whose functions the table reaches (`hT`). -/
@@ -266,10 +266,10 @@ theorem mask_vp (P : EP) {f : Fns} (hT : ∀ σ, P.T σ → TabFacts g.H f P.tab
   have tab : ∀ σ m, X0 h P σ m → TabFacts g.H f ((P.lay h.H.D).argv.getD 17 0) P.ai P.au P.af σ :=
     fun σ m hx => hT σ hx.1.1.tabT
   have P1 := mpOf g hg (so := oEm + 1) (sl := h.H.D) (dOff := oEm + 1 + h.H.D) (dl := P.K - h.H.D - 1) hD0
-    (by omega) (by oomega) (by oomega) (by oomega) (by oomega) (.inl (Nat.le_refl _)) (seed := seedB h P)
+    (by omega_using [hfit]) (by oomega) (by oomega) (by oomega) (by oomega) (.inl (Nat.le_refl _)) (seed := seedB h P)
     (seedB_length h P) (x0_keep h g hg (by oomega) (by oomega)) (by simp) (tbl_of hi₀) tabArg17_taint tab fne
   have P2 := mpOf g hg (so := oEm + 1 + h.H.D) (sl := P.K - h.H.D - 1) (dOff := oEm + 1) (dl := h.H.D)
-    (by omega) hD0 (by oomega) (by oomega) (by oomega) (by oomega) (.inr (Nat.le_refl _)) (seed := mdbB h g P)
+    (by omega_using [hfit]) hD0 (by oomega) (by oomega) (by oomega) (by oomega) (.inr (Nat.le_refl _)) (seed := mdbB h g P)
     (mdbB_length h g hf) (x0_keep h g hg (by oomega) (by oomega)) (by simp) (tbl_of hi₀) tabArg17_taint tab fne
   refine VP.seq (VP.syms (db_vp h P)) (VP.seq (mgf_vp g P1 (dstv := fun σ i => (dbB h P σ).getD i 0))
     (VP.seq (VP.syms (seed_vp h g P)) (VP.seq ((mgf_vp g P2 (dstv := fun σ i => (seedB h P σ).getD i 0)).mono
@@ -281,8 +281,8 @@ theorem mask_vp (P : EP) {f : Fns} (hT : ∀ σ, P.T σ → TabFacts g.H f P.tab
   rw [ite_eq_right h0]
   by_cases h1 : i < 1 + h.H.D
   · rw [ite_eq_left h1, emV, show oEm + i = oEm + 1 + (i - 1) by oomega]
-    exact hsd _ (by omega)
+    exact hsd _ (by omega_using [hD0, h1])
   · rw [ite_eq_right h1, emV, show oEm + i = oEm + 1 + h.H.D + (i - 1 - h.H.D) by oomega]
-    exact hdb _ (by omega)
+    exact hdb _ (by omega_using [hfit, hi'])
 
 end VG.Proof.RsaOaep.X86.Enc

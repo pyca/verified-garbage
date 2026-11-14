@@ -47,7 +47,7 @@ def satState : State where
 
 theorem sat_argument_word (i : Nat) (index : i < 8) :
     satArguments.readW (BitVec.ofNat 64 (0x80004 + 4 * i)) 32 = satArgument i := by
-  have cases : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 := by omega
+  have cases : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 := by omega_using [index]
   rcases cases with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide +kernel
 
 theorem sat_arguments (i : Nat) (index : i < 8) : arg satState i = satArgument i := by
@@ -55,7 +55,7 @@ theorem sat_arguments (i : Nat) (index : i < 8) : arg satState i = satArgument i
     change ((0x80000#32 + BitVec.ofNat 32 (4 + 4 * i)).setWidth 64) = _
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.toNat_setWidth, BitVec.toNat_add, BitVec.toNat_ofNat]
-    omega
+    omega_using [index]
   unfold arg
   rw [address, ← sat_argument_word i index]
   apply Mem.readW_congr
@@ -64,7 +64,7 @@ theorem sat_arguments (i : Nat) (index : i < 8) : arg satState i = satArgument i
   refine ite_eq_left ?_
   change ((BitVec.ofNat 64 (0x80004 + 4 * i) + BitVec.ofNat 64 j) - 0x80004#64).toNat < 32
   simp only [BitVec.toNat_sub, BitVec.toNat_add, BitVec.toNat_ofNat]
-  omega
+  omega_using [index, hj]
 
 private theorem single_held {m : Mem} {f : String → Addr} {name : String} {words : List (BitVec 64)}
     (H : ∀ i < words.length, m.readW (f name + BitVec.ofNat 64 (8 * i)) 64 = words.getD i 0) :
@@ -93,10 +93,10 @@ theorem sat_table :
     (m' := constMem 0x30000 VG.Impl.RsaKeyGen.TrialTable32.packed) ?_) held
   intro j hj
   have e : (0x30000#64 + BitVec.ofNat 64 (8 * i) + BitVec.ofNat 64 j).toNat = 0x30000 + 8 * i + j := by
-    simp only [BitVec.toNat_add, BitVec.toNat_ofNat]; omega
+    simp only [BitVec.toNat_add, BitVec.toNat_ofNat]; omega_using [small, hj]
   change (if _ then _ else if _ then _ else if _ then _ else if _ then _ else _) = _
-  rw [ite_eq_right (by simp only [BitVec.toNat_sub, BitVec.toNat_add, BitVec.toNat_ofNat]; omega),
-    ite_eq_right (by rw [e]; omega), ite_eq_right (by rw [e]; omega), ite_eq_right (by rw [e]; omega)]
+  rw [ite_eq_right (by simp only [BitVec.toNat_sub, BitVec.toNat_add, BitVec.toNat_ofNat]; omega_using [small, hj]),
+    ite_eq_right (by rw [e]; omega_using []), ite_eq_right (by rw [e]; omega_using []), ite_eq_right (by rw [e]; omega_using [])]
   rfl
 
 theorem sat_w0 : satMemory.readW (BitVec.setWidth 64 (satArgument 7)) 64 = 0#64 := by decide +kernel

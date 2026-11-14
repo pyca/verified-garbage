@@ -52,8 +52,8 @@ theorem deMinus_ok {g : Geo} {s0 s : State} {A AW V : Nat → Nat} {de : Nat}
   refine WP.seq (WP.mono (h6.flagOr_ok (d := sOkDE) (a := sB0) (b := sB1) (by decide) (by simp) (by simp)
     (by rw [upd_ne _ _ (show sB0 ≠ sB1 by decide), upd_self]) (by rw [upd_self])) fun u7 h7 => ?_)
   refine WP.mono (h7.flagNot_ok (d := sOkDE) (a := sOkDE) (by decide) (by simp) (by rw [upd_self])) fun t ht => ?_
-  refine ⟨_, ht.mono (fun j hj => ⟨hj, rfl⟩) (fun j hj => ⟨by simp at hj ⊢; omega, rfl⟩)
-    (fun d hd => ⟨by simp at hd ⊢; omega, ?_⟩), ?_, ?_⟩
+  refine ⟨_, ht.mono (fun j hj => ⟨hj, rfl⟩) (fun j hj => ⟨by simp at hj ⊢; omega_using [hj], rfl⟩)
+    (fun d hd => ⟨by simp at hd ⊢; omega_using [hd], ?_⟩), ?_, ?_⟩
   · simp only [List.mem_singleton] at hd
     subst hd
     simp [upd, okDE, deX, sub32_wsub, hde', sOkDE, wX, wOne, VG.Impl.Rsa.X86.Recover.wM]

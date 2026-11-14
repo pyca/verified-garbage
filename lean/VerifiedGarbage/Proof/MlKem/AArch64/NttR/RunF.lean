@@ -7,6 +7,7 @@ import VerifiedGarbage.Proof.MlKem.AArch64.NttR.Sound
 meta import VerifiedGarbage.Proof.MlKem.AArch64.NttR.RunW
 meta import VerifiedGarbage.Proof.MlKem.AArch64.NttR.LitF
 meta import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # ML-KEM on AArch64: the run of `vg_mlkem16_ntt` (mlkem-native's schedule)
@@ -40,12 +41,12 @@ theorem packH_get {L : List Nat} {j e : Nat} (he : e < 8) (h : 8 * j + e < L.len
     Y.get (slot yw (packH L) j) e = cT (L.getD (8 * j + e) 0) := by
   show slot tw (slot (tw * 8) (packH L) j) e = _
   rw [slot_slot _ _ _ _ _ he, packH, slot_foldr cT (fun h => Nat.lt_trans (mk_lt _ _ _ _ _) (by decide)) _ _
-    (by omega)]
+    (by omega_using [h])]
 
 theorem tab_length : tab.length = 464 := by rw [tab.lit_eq]; decide +kernel
 
 theorem initF_t {j e : Nat} (hj : j < 58) (he : e < 8) :
     (initF.chunk 1 j).get e = cT (tab.getD (8 * j + e) 0) :=
-  packH_get he (by rw [tab_length]; omega)
+  packH_get he (by rw [tab_length]; omega_using [hj, he])
 
 end VG.Proof.MlKem.AArch64.NttR

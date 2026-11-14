@@ -27,7 +27,7 @@ def SquareCount (sp : BitVec 32) (n : Nat) (s : State) : Prop :=
 theorem Memory.squareNarrowContextEq {p : Inputs} {sp : BitVec 32} {s t : State}
     (h : Memory p sp s) (frame : Frame (squareNarrowWrites p sp) s.mem t.mem) :
     WorkspaceEq (State.addr p.output) (bytes p) s.mem t.mem := by
-  apply WorkspaceEq.of_frame (by have := h.output.fits; omega) frame
+  apply WorkspaceEq.of_frame (by have := h.output.fits; omega_using [this]) frame
   intro r hr
   simp only [squareNarrowWrites,List.mem_cons,List.not_mem_nil,or_false] at hr
   rcases hr with rfl|rfl|rfl

@@ -44,7 +44,7 @@ theorem below_body' (sp : Addr) (a n : Nat) :
   simp only [Region.Contains] at hx ⊢
   rw [show x - (sp - BitVec.ofNat 64 (n + a)) = x - (sp - BitVec.ofNat 64 a - BitVec.ofNat 64 n) by
     rw [BitVec.ofNat_add]; bv_omega]
-  omega
+  omega_using [hx]
 
 /-- What a frame's push changes: the stack pointer moves down by the frame's
 bytes, memory changes only in them, and its region, in them, is added at the
@@ -81,28 +81,28 @@ theorem Exec.frameAny {c : Prog isa} {s s' : State} {t : List Leak} (h : Exec is
     simp only [sdepth] at hd ⊢
     obtain ⟨-, w₁, p₁, m₁, -⟩ := call_eq hc
     rw [ret_eq hr]
-    have := ih (by omega)
+    have := ih (by omega_using [hd])
     rw [w₁, p₁, m₁] at this
-    exact Frame.below_mono this (by omega) (by omega)
+    exact Frame.below_mono this (by omega_using []) (by omega_using [hd])
   | icallNext _ _ _ ih =>
     simp only [sdepth] at hd ⊢
-    exact Frame.below_mono (ih (by simp only [sdepth]; omega)) (by simp only [sdepth]; omega) (by omega)
+    exact Frame.below_mono (ih (by simp only [sdepth]; omega_using [hd])) (by simp only [sdepth]; omega_using []) (by omega_using [hd])
   | block h => exact Frame.mono (execBlock_regions h).2.2.2 fun r hr => List.mem_append_left _ hr
   | @seq c₁ c₂ _ s₂ _ _ _ h₁ _ ih₁ ih₂ =>
     simp only [sdepth] at hd ⊢
-    have f₁ := Frame.below_mono (ih₁ (by omega)) (b := max (sdepth c₁) (sdepth c₂)) (by omega)
-      (by omega)
-    have f₂ := Frame.below_mono (ih₂ (by omega)) (b := max (sdepth c₁) (sdepth c₂)) (by omega)
-      (by omega)
+    have f₁ := Frame.below_mono (ih₁ (by omega_using [hd])) (b := max (sdepth c₁) (sdepth c₂)) (by omega_using [])
+      (by omega_using [hd])
+    have f₂ := Frame.below_mono (ih₂ (by omega_using [hd])) (b := max (sdepth c₁) (sdepth c₂)) (by omega_using [])
+      (by omega_using [hd])
     obtain ⟨-, w₁, p₁⟩ := Exec.rdwr h₁
     rw [w₁, p₁] at f₂
     exact Frame.trans f₁ f₂
   | iteT _ _ ih =>
     simp only [sdepth] at hd ⊢
-    exact Frame.below_mono (ih (by omega)) (by omega) (by omega)
+    exact Frame.below_mono (ih (by omega_using [hd])) (by omega_using []) (by omega_using [hd])
   | iteF _ _ ih =>
     simp only [sdepth] at hd ⊢
-    exact Frame.below_mono (ih (by omega)) (by omega) (by omega)
+    exact Frame.below_mono (ih (by omega_using [hd])) (by omega_using []) (by omega_using [hd])
   | loopExit _ _ ih => exact ih hd
   | loopNext h₁ _ _ ih₁ ih₂ =>
     have f₂ := ih₂ hd
@@ -119,10 +119,10 @@ theorem Exec.frameAny {c : Prog isa} {s s' : State} {t : List Leak} (h : Exec is
     simp only [sdepth] at hd ⊢
     obtain ⟨p₁, -, f₀, r, w₁, hr⟩ := push_any hp
     rw [pop_mem hq]
-    have f₁ := ih (by omega)
+    have f₁ := ih (by omega_using [hd])
     rw [w₁, p₁] at f₁
     have hsub : Region.Sub (below s₀.sp i.frameBytes) (below s₀.sp (i.frameBytes + sdepth b)) :=
-      below_sub (by omega) hd
+      below_sub (by omega_using []) hd
     refine Frame.trans (f₀.sub fun r' hr' => ?_) (Frame.sub f₁ fun r' hr' => ?_)
     · simp only [List.mem_singleton] at hr'; subst hr'
       exact ⟨_, List.mem_append_right _ (List.mem_singleton_self _), hsub⟩

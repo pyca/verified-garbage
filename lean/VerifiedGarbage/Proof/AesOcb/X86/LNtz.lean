@@ -35,13 +35,13 @@ theorem even_zf32 {v : Nat} (hv : v < 2 ^ 32) :
   have : BitVec.ofNat 32 v &&& 1#32 = BitVec.ofNat 32 (v % 2) := by
     apply BitVec.eq_of_toNat_eq
     rw [BitVec.toNat_and, toNat_ofNat32 hv, toNat_ofNat32 (by decide), Nat.and_one_is_mod,
-      toNat_ofNat32 (by omega)]
+      toNat_ofNat32 (by omega_using [])]
   rw [this]
   rcases Nat.mod_two_eq_zero_or_one v with h | h <;> rw [h] <;> decide
 
 theorem shr1_32 {v : Nat} (hv : v < 2 ^ 32) : BitVec.ofNat 32 v >>> 1 = BitVec.ofNat 32 (v / 2) := by
   apply BitVec.eq_of_toNat_eq
-  rw [BitVec.toNat_ushiftRight, toNat_ofNat32 hv, toNat_ofNat32 (by omega), Nat.shiftRight_eq_div_pow]
+  rw [BitVec.toNat_ushiftRight, toNat_ofNat32 hv, toNat_ofNat32 (by omega_using [hv]), Nat.shiftRight_eq_div_pow]
 
 /-- The regions `lNtz` writes. -/
 abbrev lNtzR (p : Prm) : List Region := [⟨w64 p.W + BitVec.ofNat 64 lO, 16⟩, ⟨w64 p.W + BitVec.ofNat 64 kO, 4⟩]
@@ -114,7 +114,7 @@ theorem lNtzStep_ok {p : Prm} (L : Lay p) {t : State} (Et : Env p t) {k : Nat} (
       (∀ r, r ≠ .eax → t₂.gpr r = t₁.gpr r) ∧ t₂.rd = t₁.rd ∧ t₂.wr = t₁.wr := by
     refine ⟨_, by grun [Et₁.ebp, kt₁, L.aW, Et₁.perm.wR, Et₁.perm.wW], by gmems [kt₁, shr1_32 hk], ?_,
       fun r h => by gregs [h], by gmems [], by gmems []⟩
-    gmems [kt₁, shr1_32 hk, even_zf32 (show k / 2 < 2 ^ 32 by omega)]
+    gmems [kt₁, shr1_32 hk, even_zf32 (show k / 2 < 2 ^ 32 by omega_using [hk])]
   refine ⟨t₂, runBlock_app_of runt₁ runt₂, ?_, ?_, ?_, zf₂', fun r h1 h2 h3 => by rw [g₂'' r h1, g₁' r h1 h2 h3],
     by rw [rd₂', rd₁'], by rw [wr₂', wr₁']⟩
   · rw [m₂', m₁']; exact lNtz_frame (dblMem_frame _ _ _ _ _) _
@@ -190,14 +190,14 @@ theorem lNtz_ok {p : Prm} (L : Lay p) {s : State} (E : Env p s) {l : Block} {i :
   have g' : ∀ r, r ≠ .eax → r ≠ .ecx → r ≠ .edx → t₂.gpr r = s.gpr r :=
     fun r h1 h2 h3 => by rw [g₂'' r h1 h2 h3, g r h1 h2 h3]
   have hntz' : ntz i = (j + 1) + ntz (i / 2 ^ (j + 1)) := by
-    rw [hntz, Proof.Ocb.ntz_even hpos hev, e]; omega
+    rw [hntz, Proof.Ocb.ntz_even hpos hev, e]; omega_using []
   by_cases hodd : i / 2 ^ (j + 1) % 2 = 0
   · right
-    refine ⟨(eval_e zf₂').trans (by simp [hodd]), i / 2 ^ (j + 1), by rw [e]; omega, j + 1, rfl,
-      by rw [e]; omega, hodd, hntz', kt', fr', v', g', by rw [rd₂', rd], by rw [wr₂', wr]⟩
+    refine ⟨(eval_e zf₂').trans (by simp [hodd]), i / 2 ^ (j + 1), by rw [e]; omega_using [hpos], j + 1, rfl,
+      by rw [e]; omega_using [hpos, hev], hodd, hntz', kt', fr', v', g', by rw [rd₂', rd], by rw [wr₂', wr]⟩
   · left
     refine ⟨(eval_e zf₂').trans (by simp [hodd]), post_of t₂ fr' ?_ g' (by rw [rd₂', rd])
       (by rw [wr₂', wr])⟩
-    rw [v', hntz', Proof.Ocb.ntz_odd (by omega)]
+    rw [v', hntz', Proof.Ocb.ntz_odd (by omega_using [hodd])]
 
 end VG.Proof.AesOcb.X86

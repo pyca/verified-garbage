@@ -51,7 +51,7 @@ theorem Ws.arr_fit {s : State} {B : Addr} {Z w N j : Nat} (h : Ws s B Z w N) (hj
 
 theorem Ws.fit64 {s : State} {B : Addr} {Z w N j : Nat} (h : Ws s B Z w N) (hj : j < N) :
     arr w j + S w ≤ 2 ^ 64 := by
-  have := h.arr_fit hj; have := h.nowrap; omega
+  have := h.arr_fit hj; have := h.nowrap; omega_arith
 
 theorem Ws.hdr_le {s : State} {B : Addr} {Z w N : Nat} (h : Ws s B Z w N) : KeyWorkspace.hdr ≤ Z :=
   Nat.le_trans (Nat.le_add_right _ _) h.fits

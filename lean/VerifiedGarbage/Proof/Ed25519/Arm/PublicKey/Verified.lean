@@ -88,7 +88,7 @@ theorem Ctx.arg_word (hc : Ctx L g m₀ t) (hL : L.Ok) {j : Nat} (hj : j < 3) :
     t.mem.readW (State.addr L.E + BitVec.ofNat 64 (248 + 4 * j)) 32 =
       m₀.readW (State.addr L.E + BitVec.ofNat 64 (248 + 4 * j)) 32 := by
   refine hc.frame.readW (r := L.ARGS)
-    (Offset.contains _ (e := 248) (k := 24) (by omega) (by omega) (by decide)) ?_ (by decide)
+    (Offset.contains _ (e := 248) (k := 24) (by omega_using []) (by omega_using [hj]) (by decide)) ?_ (by decide)
   simp only [Lay.outputs, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false]
   rintro r (rfl | rfl | rfl)
   · exact hL.ko.sub_left (args_sub L)
@@ -139,7 +139,7 @@ def BaseArgs (L : Lay) (t : State) : Prop :=
   t.gpr .r0 = L.out ∧ t.gpr .r1 = L.E + 24 ∧ t.gpr .r2 = L.scr
 
 theorem scalar_addr (hL : L.Ok) : State.addr (L.E + 24) = State.addr L.E + 24 :=
-  addr_add (k := 24) (by have := hL.top; omega)
+  addr_add (k := 24) (by have := hL.top; omega_using [this])
 
 theorem base_pre (hL : L.Ok) (ha : BaseArgs L t) (hsy : t.syms VG.Impl.Ed25519.Arm.combSym = L.T)
     (hw : Tbl L t.mem) :
@@ -155,9 +155,9 @@ theorem base_pre (hL : L.Ok) (ha : BaseArgs L t) (hsy : t.syms VG.Impl.Ed25519.A
     hL.oc, hL.kc.sub_left (Offset.sub_base _ (by decide : 24 + 32 ≤ 280)), hL.no, ?_, hL.nc, hL.tfit, hw,
     hL.tout, hL.tscr⟩
   have h := hL.top
-  rw [BitVec.toNat_add_of_lt (by change L.E.toNat + 24 < 2 ^ 32; omega)]
+  rw [BitVec.toNat_add_of_lt (by change L.E.toNat + 24 < 2 ^ 32; omega_using [h])]
   change L.E.toNat + 24 + 32 ≤ 2 ^ 32
-  omega
+  omega_using [h]
 
 theorem base_covers (L : Lay) : Covers ([⟨State.addr L.E + 24, 32⟩, L.TB] ++ L.outputs)
     (L.inputs ++ Whole.FR L.E :: L.outputs) := by
@@ -172,7 +172,7 @@ theorem base_covers (L : Lay) : Covers ([⟨State.addr L.E + 24, 32⟩, L.TB] ++
 /-- The tables in a memory the body leaves them in. -/
 theorem Ctx.tbl (hc : Ctx L g m₀ t) (hL : L.Ok) (hw : Tbl L m₀) : Tbl L t.mem := fun j hj => by
   rw [← hw j hj]
-  refine hc.frame.readW (r := L.TB) (Offset.contains_base _ (by omega) (by omega)) ?_ (by decide)
+  refine hc.frame.readW (r := L.TB) (Offset.contains_base _ (by omega_using [hj]) (by omega_using [hj])) ?_ (by decide)
   simp only [Lay.outputs, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false]
   rintro r (rfl | rfl | rfl)
   · exact hL.tout
@@ -201,7 +201,7 @@ theorem prune_step (hc : Ctx L g m₀ t) (hL : L.Ok) {digest : List Byte}
     WP isa (.block prune) t fun u => Ctx L g m₀ u ∧
       Spec.Ed25519.decodeLE (Spec.Ed25519.bytesAt u.mem (State.addr L.E + 24) 32) = Spec.Ed25519.prune digest := by
   have hwrite : (⟨State.addr L.E, 248⟩ : Region) ∈ t.wr := by rw [hc.wr]; exact List.mem_cons_self
-  refine WP.mono (prune_ok hc.sp (by have := hL.top; omega) hwrite hh) fun u ⟨hu, hf, hp⟩ => ⟨?_, hp⟩
+  refine WP.mono (prune_ok hc.sp (by have := hL.top; omega_using [this]) hwrite hh) fun u ⟨hu, hf, hp⟩ => ⟨?_, hp⟩
   refine hc.of_frame hu.rd hu.wr hu.sp ?_ hf ?_
   · intro r hr _
     apply hu.regs r <;> intro h <;> subst r <;> simp [preserved] at hr
@@ -238,7 +238,7 @@ theorem base_step (hc : Ctx L g m₀ t) (hL : L.Ok) (ha : Arguments L m₀) (hw 
 theorem wipe_step (hc : Ctx L g m₀ t) (hL : L.Ok) :
     WP isa (.block wipe) t fun u => Ctx L g m₀ u ∧
       Spec.Ed25519.bytesAt u.mem (State.addr L.out) 32 = Spec.Ed25519.bytesAt t.mem (State.addr L.out) 32 := by
-  refine WP.mono (Whole.Ctx.zeroWords hc (by have := hL.top; omega) (start := 6) (count := 56) (by decide))
+  refine WP.mono (Whole.Ctx.zeroWords hc (by have := hL.top; omega_using [this]) (start := 6) (count := 56) (by decide))
     fun u ⟨hu, hf, _⟩ => ⟨hu, ?_⟩
   unfold Spec.Ed25519.bytesAt
   refine List.map_congr_left fun i hi => hf.bytes (R := L.OUT) ?_
@@ -287,7 +287,7 @@ theorem lay_ok {s : State} (h : (pkLocalWith n post).pre s) : (lay n s).Ok := by
   have he := Whole.base_addr hb
   have top := Whole.base_top hb
   have hs := s.sp.isLt
-  refine ⟨by change (Whole.base s).toNat + 272 ≤ 2 ^ 32; omega, os, oc, sc, ?_, ?_, ?_, no, ns, nc,
+  refine ⟨by change (Whole.base s).toNat + 272 ≤ 2 ^ 32; omega_using [top], os, oc, sc, ?_, ?_, ?_, no, ns, nc,
     tf, tout, tscr, ?_⟩
   · change (⟨State.addr (Whole.base s), 280⟩ : Region).Disjoint _
     rw [he]; exact ko
@@ -307,7 +307,7 @@ theorem entry_tbl {s p : State} (h : (pkLocalWith n post).pre s) (hp : Whole.Sav
   have hw := h.2.2.2.2.2.2.2.2.2.2.2.2.2.1 j hj
   rw [← hw]
   refine hf.readW (r := TBL (s.syms VG.Impl.Ed25519.Arm.combSym))
-    (Offset.contains_base _ (by omega) (by omega)) ?_ (by decide)
+    (Offset.contains_base _ (by omega_using [hj]) (by omega_using [hj])) ?_ (by decide)
   intro r hr
   rw [List.mem_singleton.mp hr]
   change Region.Disjoint _ (⟨State.addr (Whole.base s), 280⟩ : Region)
@@ -333,7 +333,7 @@ theorem entry_args {s p : State} (hs : 280 ≤ s.sp.toNat) (hp : Whole.Saved (Wh
   intro j hj
   have hw := Whole.saved_words hs (by decide : 3 ≤ 6)
     (by simp only [Nat.reduceSub, Nat.mul_zero, Nat.add_zero]; exact Nat.le_of_lt s.sp.isLt) hp hj
-  have he : j = 0 ∨ j = 1 ∨ j = 2 := by omega
+  have he : j = 0 ∨ j = 1 ∨ j = 2 := by omega_using [hj]
   rcases he with rfl | rfl | rfl <;> exact hw
 
 end VG.Proof.Ed25519.Arm.PublicKey

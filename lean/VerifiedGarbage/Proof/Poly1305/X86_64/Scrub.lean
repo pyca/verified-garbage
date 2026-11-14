@@ -47,7 +47,7 @@ open VG.Spec.Poly1305 VG.X86_64 VG.X86_64.Scrub
 theorem agreeBuf {m₁ m₂ : Mem} {p : Addr} {n : Nat} (hn : n < 2 ^ 64)
     (h : ∀ a, Region.Contains ⟨p, n⟩ a 1 → m₁ a = m₂ a) :
     ∀ i < n, m₂ (p + BitVec.ofNat 64 i) = m₁ (p + BitVec.ofNat 64 i) := fun i hi =>
-  (h _ (Offset.contains_base _ (by omega) (by omega))).symm
+  (h _ (Offset.contains_base _ (by omega_using [hi]) (by omega_using [hn, hi]))).symm
 
 theorem initOut (stack : Nat) : PostOut (initContract X86_64.abi stack) (initSig.retBits 64) :=
   postOut_of_local (leak := none) ScrubAbi.plain fun vs m m₁ m₂ r hlen hb h => by
@@ -57,7 +57,7 @@ theorem initOut (stack : Nat) : PostOut (initContract X86_64.abi stack) (initSig
     simp only [initSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
       forall_eq] at hb
     exact repr_congr (fun i hi => agreeBuf (n := 16 * Elem.size .u64) (by decide) hb.1 i
-      (by simp only [Elem.size]; omega)) h
+      (by simp only [Elem.size]; omega_using [hi])) h
 
 theorem updateOut (stack : Nat) : PostOut (updateContract X86_64.abi stack) (updateSig.retBits 64) :=
   postOut_of_local (leak := none) ScrubAbi.plain fun vs m m₁ m₂ r hlen hb h => by
@@ -73,7 +73,7 @@ theorem updateOut (stack : Nat) : PostOut (updateContract X86_64.abi stack) (upd
       forall_eq] at hb
     intro key msg hbf hc
     exact buffered_congr (fun i hi => agreeBuf (n := 16 * Elem.size .u64) (by decide) hb.1 i
-      (by simp only [Elem.size]; omega)) (h key msg hbf hc)
+      (by simp only [Elem.size]; omega_using [hi])) (h key msg hbf hc)
 
 theorem finalizeOut (stack : Nat) : PostOut (finalizeContract X86_64.abi stack) (finalizeSig.retBits 64) :=
   postOut_of_local (leak := none) ScrubAbi.plain fun vs m m₁ m₂ r hlen hb h => by
@@ -88,7 +88,7 @@ theorem finalizeOut (stack : Nat) : PostOut (finalizeContract X86_64.abi stack) 
     intro key msg hbf hc
     show bytesAt m₂ ot 16 = _
     rw [bytesAt_congr' fun i hi => agreeBuf (n := 16 * Elem.size .u8) (by decide) hb.2 i
-      (by simp only [Elem.size]; omega)]
+      (by simp only [Elem.size]; omega_using [hi])]
     exact h key msg hbf hc
 
 /-! ## The registrations -/

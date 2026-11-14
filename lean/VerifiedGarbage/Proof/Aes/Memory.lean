@@ -4,6 +4,7 @@ public import VerifiedGarbage.Spec.Aes.Contract
 public import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Omega
 
 -- separate module: ECB and CTR share a target-independent memory invariant.
 /-! # Processing consecutive AES blocks in memory -/
@@ -28,7 +29,7 @@ theorem Processed.original {m₀ m : Mem} {D : Addr} {n k : Nat} {F : Nat → Sp
   apply Vector.ext
   intro i hi
   simp only [Spec.Aes.stateAt, Vector.getElem_ofFn]
-  rw [Offset.add_add, h _ (by omega), ite_eq_right (show ¬16*j+i < 16*k by omega)]
+  rw [Offset.add_add, h _ (by omega_using [hjn, hi]), ite_eq_right (show ¬16*j+i < 16*k by omega_using [hj])]
 
 theorem Processed.store {m₀ m : Mem} {D : Addr} {n k : Nat} {F : Nat → Spec.Aes.State} {v : BitVec 128}
     (hn : 16*n ≤ 2^64) (hk : k < n) (h : Processed m₀ m D n k F)
@@ -36,18 +37,18 @@ theorem Processed.store {m₀ m : Mem} {D : Addr} {n k : Nat} {F : Nat → Spec.
     Processed m₀ (m.write (D + BitVec.ofNat 64 (16*k)) 16 v) D n (k+1) F ∧
       Frame [⟨D, 16*n⟩] m (m.write (D + BitVec.ofNat 64 (16*k)) 16 v) := by
   refine ⟨?_, (Frame.refl _ m).write (List.mem_singleton_self _) v
-    (Offset.contains_base D (d := 16*k) (n := 16) (k := 16*n) (by omega) (by omega))⟩
+    (Offset.contains_base D (d := 16*k) (n := 16) (k := 16*n) (by omega_using [hk]) (by omega_using [hn, hk]))⟩
   intro i hi
-  rw [Mem.write, Offset.sub_toNat' D (by omega) (by omega)]
+  rw [Mem.write, Offset.sub_toNat' D (by omega_using [hn, hk]) (by omega_using [hn, hi])]
   by_cases h1 : 16*k ≤ i
   · rw [ite_eq_left h1]
     by_cases h2 : i-16*k < 16
-    · rw [ite_eq_left h2, hv _ h2, ite_eq_left (show i < 16*(k+1) by omega),
-        show i/16 = k by omega, show i%16 = i-16*k by omega]
-    · rw [ite_eq_right h2, h i hi, ite_eq_right (show ¬i < 16*k by omega),
-        ite_eq_right (show ¬i < 16*(k+1) by omega)]
-  · rw [ite_eq_right h1, ite_eq_right (show ¬2^64+i-16*k < 16 by omega), h i hi,
-      ite_eq_left (show i < 16*k by omega), ite_eq_left (show i < 16*(k+1) by omega)]
+    · rw [ite_eq_left h2, hv _ h2, ite_eq_left (show i < 16*(k+1) by omega_using [h2]),
+        show i/16 = k by omega_using [h1, h2], show i%16 = i-16*k by omega_using [h1, h2]]
+    · rw [ite_eq_right h2, h i hi, ite_eq_right (show ¬i < 16*k by omega_using [h1]),
+        ite_eq_right (show ¬i < 16*(k+1) by omega_using [h2])]
+  · rw [ite_eq_right h1, ite_eq_right (show ¬2^64+i-16*k < 16 by omega_using [hn, hk]), h i hi,
+      ite_eq_left (show i < 16*k by omega_using [h1]), ite_eq_left (show i < 16*(k+1) by omega_using [h1])]
 
 theorem Processed.stateAt {m₀ m : Mem} {D : Addr} {n k j : Nat} {F : Nat → Spec.Aes.State}
     (h : Processed m₀ m D n k F) (hj : j < k) (hkn : k ≤ n) :
@@ -55,8 +56,8 @@ theorem Processed.stateAt {m₀ m : Mem} {D : Addr} {n k j : Nat} {F : Nat → S
   apply Vector.ext
   intro t ht
   simp only [Spec.Aes.stateAt, Vector.getElem_ofFn]
-  rw [Offset.add_add, h _ (by omega), ite_eq_left (show 16*j+t < 16*k by omega),
-    show (16*j+t)/16 = j by omega, show (16*j+t)%16 = t by omega]
+  rw [Offset.add_add, h _ (by omega_using [hj, hkn, ht]), ite_eq_left (show 16*j+t < 16*k by omega_using [hj, ht]),
+    show (16*j+t)/16 = j by omega_using [ht], show (16*j+t)%16 = t by omega_using [ht]]
   simp [Vector.getD, ht]
 
 theorem Processed.statesAt {m₀ m : Mem} {D : Addr} {n : Nat} {F : Nat → Spec.Aes.State}
@@ -85,6 +86,6 @@ theorem bytesAt_frame {m m' : Mem} {R : Region} {D : Addr} {n L : Nat}
   · intro i hi hi'
     have hiL : i < L := by simpa only [Spec.Aes.bytesAt, List.length_map, List.length_range] using hi
     simp only [Spec.Aes.bytesAt, List.getElem_map, List.getElem_range]
-    exact h.bytes (by simpa only [List.mem_singleton, forall_eq] using hd) hR (by omega)
+    exact h.bytes (by simpa only [List.mem_singleton, forall_eq] using hd) hR (by omega_using [hL, hiL])
 
 end VG.Proof.Aes.Memory

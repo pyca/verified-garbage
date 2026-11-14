@@ -79,7 +79,7 @@ theorem trialA_ok {d : TD} {s : State} (h : TS d s) : WP isa (.block trialA) s (
   have hZ : 256 + 28 * (8 * (d.w + 2)) ≤ 8 * d.L := e.hZ
   refine WP.cons (exec_adrSym (by decide)) ?_
   simp only [ldh, hCnt]
-  prun [e.h31, e.hs.ld (d := 40) (n := 8) (by omega)]
+  prun [e.h31, e.hs.ld (d := 40) (n := 8) (by omega_using [hZ])]
   refine ⟨s, h, ⟨hT, hcnt, rfl, rfl⟩, fun r hr => ?_, rfl, rfl, rfl⟩
   have h1 : r ≠ .r23 := fun h => hr (by subst h; decide)
   have h2 : r ≠ .r24 := fun h => hr (by subst h; decide)
@@ -98,14 +98,14 @@ theorem TA.facts {d : TD} {u : State} (h : TA d u) :
   obtain ⟨s, ⟨e, hc, -, -, htab, hTr, sp, -, hn⟩, ⟨-, -, um, -⟩, ug, urd, uwr, usp⟩ := h
   have hZ : 256 + 28 * (8 * (d.w + 2)) ≤ 8 * d.L := e.hZ
   refine ⟨e.hs.congr uwr, (ug _ (by decide)).trans e.h10, (ug _ (by decide)).trans e.h11, by rw [um]; exact hc,
-    e.hw, e.hw', by simp only [slot, hdrBytes]; omega, hn, usp.trans sp, fun i hi => ⟨by rw [um]; exact htab i (by omega),
+    e.hw, e.hw', by simp only [slot, hdrBytes]; omega_using [hZ], hn, usp.trans sp, fun i hi => ⟨by rw [um]; exact htab i (by omega_using [hn, hi]),
       ⟨_, by rw [urd]; exact List.mem_append_left _ hTr, ?_⟩⟩⟩
   simp only [Region.Contains, Offset.add_sub_cancel_left, BitVec.toNat_ofNat]
-  rw [Nat.mod_eq_of_lt (by omega)]; omega
+  rw [Nat.mod_eq_of_lt (by omega_using [hn, hi])]; omega_using [hn, hi]
 
 theorem TA.init {d : TD} {u : State} (h : TA d u) : TInv u d.T d.c d.n d.n u := by
   obtain ⟨s, ⟨-, -, -, -, -, -, -, h1, -⟩, ⟨u23, u24, -, -⟩, -⟩ := h
-  exact ⟨0, by omega, by omega, ⟨by rw [u23, Nat.mul_zero, BitVec.add_zero], by rw [u24, Nat.sub_zero], rfl, rfl⟩,
+  exact ⟨0, by omega_using [], by omega_using [h1], ⟨by rw [u23, Nat.mul_zero, BitVec.add_zero], by rw [u24, Nat.sub_zero], rfl, rfl⟩,
     Keep.refl _ _⟩
 
 theorem TL.regs {m : Nat} {d : TD} {v : State} (h : TL m d v) :
@@ -113,7 +113,7 @@ theorem TL.regs {m : Nat} {d : TD} {v : State} (h : TL m d v) :
       v.gpr .r23 = d.T + BitVec.ofNat 64 (8 * (d.n - m)) ∧ v.sp = d.sp := by
   obtain ⟨u, hu, k, hm, hk, ⟨v23, -, -, -⟩, kv⟩ := h
   obtain ⟨-, h10, h11, -, -, -, -, -, sp, -⟩ := hu.facts
-  refine ⟨(kv.gpr _ (by decide)).trans h10, (kv.gpr _ (by decide)).trans h11, by rw [v23]; congr 3; omega,
+  refine ⟨(kv.gpr _ (by decide)).trans h10, (kv.gpr _ (by decide)).trans h11, by rw [v23]; congr 3; omega_using [hm, hk],
     kv.sp.trans sp⟩
 
 theorem trial_ct : RelCT isa (Two TS) (VG.Impl.RsaKeyGen.PPC64LE.Trial.trial hCnt) fun _ _ => True := by
@@ -140,11 +140,11 @@ theorem trial_ct : RelCT isa (Two TS) (VG.Impl.RsaKeyGen.PPC64LE.Trial.trial hCn
       (isa.eval (.nonzero .d .r24) t = some true → 0 < m ∧ TInv u d.T d.c d.n (m - 1) t))
     (two_taint _ (pL m) (by taint_decide)) fun d v ⟨u, hu, hI⟩ => ?_).mono (fun _ _ h => h) ?_
   · obtain ⟨hs, h10, h11, hc, hw4, hw128, hZ, hn, -, htab⟩ := hu.facts
-    exact WP.mono (step_ok hs h10 h11 hc (by omega) (by omega) hZ hn htab hI) fun t ⟨e, _, g⟩ => ⟨u, hu, e, g⟩
+    exact WP.mono (step_ok hs h10 h11 hc (by omega_using [hw4]) (by omega_using [hw128]) hZ hn htab hI) fun t ⟨e, _, g⟩ => ⟨u, hu, e, g⟩
   · rintro s₁ s₂ ⟨d, ⟨u₁, hu₁, e₁, g₁⟩, ⟨u₂, hu₂, e₂, g₂⟩⟩
     refine ⟨e₁.trans e₂.symm, fun _ => trivial, fun he => ?_⟩
     obtain ⟨hm, i₁⟩ := g₁ he
     obtain ⟨-, i₂⟩ := g₂ (e₂.trans (e₁.symm.trans he))
-    exact ⟨m - 1, by omega, d, ⟨u₁, hu₁, i₁⟩, ⟨u₂, hu₂, i₂⟩⟩
+    exact ⟨m - 1, by omega_using [hm], d, ⟨u₁, hu₁, i₁⟩, ⟨u₂, hu₂, i₂⟩⟩
 
 end VG.Proof.Dsa.PPC64LE.Prime

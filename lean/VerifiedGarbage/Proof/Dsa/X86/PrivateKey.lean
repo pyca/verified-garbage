@@ -34,17 +34,17 @@ theorem privateKey_ok {base : Addr} {size pLen qLen p q g y x k : Nat} {s0 : Sta
       Execution base s0 sf := by
   have L := M.lengths
   have A := M.aligned
-  have np : (pLen + 7) / 8 ≤ 48 := by omega
-  have nq : (qLen + 7) / 8 ≤ 48 := by omega
-  have pp : 0 < p := by have := M.pLarge; omega
+  have np : (pLen + 7) / 8 ≤ 48 := by omega_using [L]
+  have nq : (qLen + 7) / 8 ≤ 48 := by omega_using [L]
+  have pp : 0 < p := by have := M.pLarge; omega_using [this]
   unfold Validate.privateKey Core.sequence
   dsimp only [List.foldr]
   refine WP.seq (WP.seq (WP.mono
-    (stageRange_ok M (by omega) (by omega) (by omega) M.qReady (X.ready (M.context nq)) false)
+    (stageRange_ok M (by omega_using [L]) (by omega_using [L]) (by omega_using [A]) M.qReady (X.ready (M.context nq)) false)
     fun s1 ⟨M1, F1, R1⟩ => ?_))
   have E1 := R1.execution (.inr ⟨rfl, rfl⟩)
   have K1 := E1.buffer K (by decide)
-  refine WP.mono (stageRange_ok M1 (by omega) (by omega) (by omega) M1.qReady (K1.ready (M1.context nq)) false)
+  refine WP.mono (stageRange_ok M1 (by omega_using [L]) (by omega_using [L]) (by omega_using [A]) M1.qReady (K1.ready (M1.context nq)) false)
     fun s2 ⟨M2, F2, R2⟩ => ?_
   have E2 := R2.execution (.inr ⟨rfl, rfl⟩)
   have E12 := E1.trans E2
@@ -59,7 +59,7 @@ theorem privateKey_ok {base : Addr} {size pLen qLen p q g y x k : Nat} {s0 : Sta
     rw [E12.value G (by decide) M.extent, E12.value X (by decide) M.extent, hg, hx] at V
     exact V
   have Y3 := E123.buffer Y (by decide)
-  refine WP.seq (WP.mono (stageEqual_ok M3 (by omega) (by omega) (by omega) (M3.wideReady (by decide) np)
+  refine WP.seq (WP.mono (stageEqual_ok M3 (by omega_using [L]) (by omega_using [L]) (by omega_using [A]) (M3.wideReady (by decide) np)
     (Y3.ready (M3.context np))) fun sf ⟨Mf, F4, R4⟩ => ?_)
   refine WP.block_nil ⟨Mf, ?_, ?_, E123.trans (R4.execution (.inr ⟨rfl, rfl⟩))⟩
   · rw [F4, R3.toStageFrame.mask_keep (by decide), F2, F1, T3,

@@ -63,12 +63,12 @@ theorem stored_append_vector {m : Mem} {p : Addr} {L A : List Zq} {v : BitVec 12
     Stored (m.write (coeffAddr p L.length) 16 v) p (L++A) := by
   intro i hi
   have hil : i<L.length+A.length:=by simpa only [List.length_append] using hi
-  rw [coeffAt_write16 _ _ hL _ (by omega)]
+  rw [coeffAt_write16 _ _ hL _ (by omega_using [hL, hA, hil])]
   by_cases hbefore : i<L.length
-  · rw [ite_eq_right (by omega),hs i hbefore]
+  · rw [ite_eq_right (by omega_using [hbefore]),hs i hbefore]
     simp only [List.getD_eq_getElem?_getD,List.getElem?_append_left hbefore]
-  · rw [ite_eq_left (by omega),hv _ (by omega)]
-    simp only [List.getD_eq_getElem?_getD,List.getElem?_append_right (by omega : L.length≤i)]
+  · rw [ite_eq_left (by omega_using [hA, hil, hbefore]),hv _ (by omega_using [hil, hbefore])]
+    simp only [List.getD_eq_getElem?_getD,List.getElem?_append_right (by omega_using [hbefore] : L.length≤i)]
 
 theorem storeAccepted_ok {s : State} {p : Addr} {L A : List Zq}
     (hL : L.length+4≤256) (hA : A.length≤4) (hs : Stored s.mem p L)

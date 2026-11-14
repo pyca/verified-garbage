@@ -43,7 +43,7 @@ theorem correct (Ri : RoundImpl) {bits : Nat} (hb : Bits bits) (s : State) (hs :
   rw [hc.r3, BitVec.toNat_setWidth, BitVec.toNat_ofNat]
   have := status_le (res bits s)
   simp only [res, cand, tape] at this ⊢
-  omega
+  omega_using [this]
 
 theorem constantTime (Ri : RoundImpl) {bits : Nat} (hb : Bits bits) :
     ConstantTime isa (contract bits).pre (contract bits).pub (code bits Ri.name Ri.code) := by

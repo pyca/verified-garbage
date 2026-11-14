@@ -29,7 +29,7 @@ theorem cat_at {m : Mem} {p : Addr} {T : Nat → Poly} : ∀ {n : Nat},
     bytesAt m p (384 * n) = KPke.catK (fun i => encode12 (T i)) n
   | 0, _ => rfl
   | n + 1, h => by
-    rw [Nat.mul_succ, bytesAt_add, cat_at fun i hi => h i (by omega), h n (by omega)]
+    rw [Nat.mul_succ, bytesAt_add, cat_at fun i hi => h i (by omega_using [hi]), h n (by omega_using [])]
     exact (KPke.foldK_succ (op := fun a b => a ++ b) (fun x => List.nil_append x) _ n).symm
 
 variable {P : KemLay}
@@ -47,10 +47,10 @@ theorem dk_at {m : Mem} {p : Addr} {a b c d : List Byte} (ha : bytesAt m p (384 
     (hc : bytesAt m (p + BitVec.ofNat 64 (768 * P.k + 32)) 32 = c)
     (hd : bytesAt m (p + BitVec.ofNat 64 (768 * P.k + 64)) 32 = d) : bytesAt m p P.dkLen = a ++ b ++ c ++ d := by
   have hc' : bytesAt m (p + BitVec.ofNat 64 (384 * P.k + P.ekLen)) 32 = c := by
-    rw [show 384 * P.k + P.ekLen = 768 * P.k + 32 by simp only [KemLay.ekLen]; omega]; exact hc
+    rw [show 384 * P.k + P.ekLen = 768 * P.k + 32 by simp only [KemLay.ekLen]; omega_using []]; exact hc
   have hd' : bytesAt m (p + BitVec.ofNat 64 (384 * P.k + P.ekLen + 32)) 32 = d := by
-    rw [show 384 * P.k + P.ekLen + 32 = 768 * P.k + 64 by simp only [KemLay.ekLen]; omega]; exact hd
-  rw [show P.dkLen = 384 * P.k + P.ekLen + 32 + 32 by simp only [KemLay.ekLen, KemLay.dkLen]; omega,
+    rw [show 384 * P.k + P.ekLen + 32 = 768 * P.k + 64 by simp only [KemLay.ekLen]; omega_using []]; exact hd
+  rw [show P.dkLen = 384 * P.k + P.ekLen + 32 + 32 by simp only [KemLay.ekLen, KemLay.dkLen]; omega_using [],
     bytesAt_add, bytesAt_add, bytesAt_add, ha, hb, hc', hd']
 
 /-! ## Regions -/
@@ -102,7 +102,7 @@ theorem restore_ok {s₀ : State} (hp : Pre P s₀) {u : State} (hk : KB P s₀ 
       InRegions (w.rd ++ w.wr) (kA s₀ 3 + BitVec.ofNat 64 (SV P + 8 * k)) 8 ∧
       w.mem.readW (kA s₀ 3 + BitVec.ofNat 64 (SV P + 8 * k)) 64 = s₀.gpr (own.getD k .x0) :=
     fun k hk' {w} ⟨hr, hw, hm, h28⟩ =>
-      ⟨by rw [h28], by rw [hr, hw]; exact in_R cv (by omega) (by decide), by rw [hm]; exact hk.sv k hk'⟩
+      ⟨by rw [h28], by rw [hr, hw]; exact in_R cv (by omega_using [hk']) (by decide), by rw [hm]; exact hk.sv k hk'⟩
   have st : ∀ {w w' : State} {r : Reg}, Only [r] w w' → r ≠ .x28 →
       w.rd = u.rd ∧ w.wr = u.wr ∧ w.mem = u.mem ∧ w.gpr .x28 = kA s₀ 3 →
       w'.rd = u.rd ∧ w'.wr = u.wr ∧ w'.mem = u.mem ∧ w'.gpr .x28 = kA s₀ 3 :=
@@ -162,11 +162,11 @@ theorem EndInv.frame {s₀ : State} (hp : Pre P s₀) {mB : Mem} {v : BitVec 64}
 theorem far_R {s₀ : State} (hp : Pre P s₀) {b o l : Nat} (hb : b < 4) (f : o + l ≤ kL P b)
     (h3 : b = 3 → o + l ≤ 840 ∨ EP P ≤ o) (h1 : b ≠ 1) (h2 : b = 2 → 768 * P.k + 32 ≤ o) :
     Far P s₀ (R (kA s₀) b o l) :=
-  ⟨apart_R hp (Nat.le_refl _) hb f h3 (fun e => absurd e h1) (fun e => by have := h2 e; omega),
+  ⟨apart_R hp (Nat.le_refl _) hb f h3 (fun e => absurd e h1) (fun e => by have := h2 e; omega_using [this]),
     hp.args.rdisj (by decide) hb (by kl) f (.inl (Ne.symm h1)),
     hp.args.rdisj (by decide) hb (by kl) f (by
       by_cases e : b = 2
-      · have := h2 e; subst e; omega
+      · have := h2 e; subst e; omega_using [this]
       · exact .inl (Ne.symm e))⟩
 
 theorem far_below {s₀ : State} (hp : Pre P s₀) : Far P s₀ (below s₀.sp 16) :=
@@ -200,7 +200,7 @@ theorem rho_ok {s₀ : State} (hp : Pre P s₀) {mB : Mem} {v : BitVec 64} {s : 
   refine ⟨kbb, tla.frame hp kbb (kb'.get .x24) fb (fun r hr => by
     rw [List.mem_singleton.mp hr]
     exact apart_R hp (b := 2) (o := 768 * P.k) (l := 32) (Nat.le_refl _) (by decide) (by kl) (by kl)
-      (by kl) (fun _ => by omega)), ?_, ?_⟩
+      (by kl) (fun _ => by omega_using [])), ?_, ?_⟩
   · rw [bytesAt_frame fb (fun r hr => by
       rw [List.mem_singleton.mp hr]
       exact hp.args.rdisj (by decide) (by decide) (by kl) (by kl) (by kl)) (by decide), ba]
@@ -280,7 +280,7 @@ theorem end_ok {s₀ : State} (hp : Pre P s₀) {mB : Mem} {v : BitVec 64} {s : 
       KPke.ekPKE P.params (aM P s₀ mB) (dB s₀) ++ H (KPke.ekPKE P.params (aM P s₀ mB) (dB s₀)) ++ zB s₀ :=
     dk_at (cat_at (T := KPke.kgS P.params (dB s₀)) fun j hj => h₃.tl.dk j hj)
       (ek_at (T := tV P s₀ mB) (ρ := rhoK P s₀) (fun i hi => by rw [ptr_add]; exact (h₃.tl.ek i hi).2)
-        (by rw [ptr_add, show 384 * P.k + 384 * P.k = 768 * P.k by omega]; exact h₃.rdk)) hh₃ z₃
+        (by rw [ptr_add, show 384 * P.k + 384 * P.k = 768 * P.k by omega_using []]; exact h₃.rdk)) hh₃ z₃
   refine WP.mono (restore_ok hp kb₃) fun s' ⟨abi, x0, hm⟩ => ⟨abi, by rw [x0, h₃.tl.c.x24], ?_, ?_⟩
   · rw [hm]; exact ek₃
   · rw [hm]; exact dk₃

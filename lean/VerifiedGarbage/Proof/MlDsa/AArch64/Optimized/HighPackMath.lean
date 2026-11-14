@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Round.Arith
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentUnpackWord
+import VerifiedGarbage.Proof.Framework.Omega
 
 @[expose] public section
 
@@ -23,18 +24,18 @@ theorem raw_toNat {g : Nat} (hg : IsG g) {a : BitVec 32} (ha : a.toNat < q) :
   have hS : dShift g = hbShift g := rfl
   have e1 : ((a + BitVec.ofNat 32 127) >>> 7).toNat = (a.toNat + 127) / 128 := by
     rw [BitVec.toNat_ushiftRight, BitVec.toNat_add, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow]
-    congr 1; omega
+    congr 1; omega_using [ha, hq]
   have e2 : (((a + BitVec.ofNat 32 127) >>> 7) * BitVec.ofNat 32 (hbMul g)).toNat =
       (a.toNat + 127) / 128 * hbMul g := by
-    rw [BitVec.toNat_mul, e1, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := hbMul g) (by omega)]
+    rw [BitVec.toNat_mul, e1, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := hbMul g) (by omega_using [hM])]
     exact Nat.mod_eq_of_lt (Nat.lt_of_le_of_lt (Nat.mul_le_mul (Nat.le_refl _) (hM))
-      (by omega))
+      (by omega_using [ha, hq]))
   have e3 : (((a + BitVec.ofNat 32 127) >>> 7) * BitVec.ofNat 32 (hbMul g) + BitVec.ofNat 32 (hbAdd g)).toNat =
       (a.toNat + 127) / 128 * hbMul g + hbAdd g := by
     have : (a.toNat + 127) / 128 * hbMul g < 2 ^ 30 :=
-      Nat.lt_of_le_of_lt (Nat.mul_le_mul (Nat.le_refl _) (hM)) (by omega)
-    rw [BitVec.toNat_add, e2, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := hbAdd g) (by omega)]
-    omega
+      Nat.lt_of_le_of_lt (Nat.mul_le_mul (Nat.le_refl _) (hM)) (by omega_using [ha, hq])
+    rw [BitVec.toNat_add, e2, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := hbAdd g) (by omega_using [hA])]
+    omega_using [hA, this]
   rw [raw, BitVec.toNat_ushiftRight, e3, Nat.shiftRight_eq_div_pow, hS]
 
 
@@ -50,7 +51,7 @@ theorem highWord_toNat {g : Nat} (hg : IsG g) {a : BitVec 32} (ha : a.toNat < q)
   have hm := hbM_pos hg
   have hm44 : hbM g ≤ 44 := by rcases hg with rfl | rfl <;> decide
   have hmod : (BitVec.ofNat 32 (dMod g)).toNat = hbM g := by
-    rw [BitVec.toNat_ofNat, dMod_eq hg, Nat.mod_eq_of_lt (by omega)]
+    rw [BitVec.toNat_ofNat, dMod_eq hg, Nat.mod_eq_of_lt (by omega_using [hm44])]
   dsimp only [highWord]
   rw [ResidentMask.signMask32]
   by_cases h : hbF g a.toNat < hbM g
@@ -59,7 +60,7 @@ theorem highWord_toNat {g : Nat} (hg : IsG g) {a : BitVec 32} (ha : a.toNat < q)
     rw [hand, hf, Nat.mod_eq_of_lt h]
   · rw [ite_eq_left (by bv_omega)]
     have hand : raw g a &&& (0 : BitVec 32) = 0 := BitVec.and_zero
-    rw [hand, show hbF g a.toNat = hbM g by omega, Nat.mod_self]
+    rw [hand, show hbF g a.toNat = hbM g by omega_using [hle, h], Nat.mod_self]
     rfl
 
 /-- Agreement with the original specification on every canonical coefficient. -/

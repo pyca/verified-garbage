@@ -67,9 +67,9 @@ theorem qOdd_ok {s : State} {dst : BitVec 32} {n : Nat} (h : ReadContext dst n s
   have last := candidate_mod8_last s.mem (State.addr dst) h.positive
   rw [←h.lastAddress] at last
   have low : Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (State.addr dst) n)%4 =
-      (s.mem (State.addr (dst+BitVec.ofNat 32 n-1))).toNat%4 := by omega
+      (s.mem (State.addr (dst+BitVec.ofNat 32 n-1))).toNat%4 := by omega_using [last]
   refine ⟨flag.trans (decide_eq_decide.mpr ?_),memory,rest⟩
   rw [←low]
-  omega
+  omega_using [odd]
 
 end VG.Proof.Ffdh.Arm.ParameterCandidate

@@ -41,7 +41,7 @@ theorem SearchPlan.remaining_step {p : SearchPlan} {counter used : Nat}
       | none => none
       | some (true, rest) => some (some (p.candidate counter), rest)
       | some (false, rest) => p.remaining (counter + 1) (p.attempt.rand.length - rest.length) := by
-  have hc' : counter < 4 * (8 * p.attempt.construct.len) := by omega
+  have hc' : counter < 4 * (8 * p.attempt.construct.len) := by omega_using [hc]
   unfold SearchPlan.remaining
   rw [VG.Proof.Dsa.Generation.primeSearch_step _ _ hc']
   rw [← p.attempt.construct.hashCount]
@@ -63,7 +63,7 @@ theorem SearchPlan.remaining_step {p : SearchPlan} {counter used : Nat}
 
 theorem SearchPlan.remaining_done (p : SearchPlan) (used : Nat) :
     p.remaining (32 * p.attempt.construct.len) used = some (none, p.attempt.rand.drop used) :=
-  VG.Proof.Dsa.Generation.primeSearch_done _ _ (by omega)
+  VG.Proof.Dsa.Generation.primeSearch_done _ _ (by omega_using [])
 
 end VG.Proof.Dsa.AArch64.Generation
 end
@@ -108,7 +108,7 @@ theorem controller_frame {C : Addr} {m m' : Mem} (hf : Outside C 0 24 m m') : Fr
   right
   have hn := ha ⟨C, 24⟩ (by simp)
   change ¬ ofs C a < 24 at hn
-  omega
+  omega_using [hn]
 
 theorem searchInvariant_stable (p : SearchPlan) (res : Option (Option Nat × List Byte)) (s : State) (c : Nat) :
     SearchPayload p.C (SearchInvariant p res s c) := by
@@ -130,17 +130,17 @@ theorem searchFinished_stable (p : SearchPlan) (res : Option (Option Nat × List
   · refine Or.inr (Or.inl ⟨h19, value, hr, ?_, ?_⟩)
     · rw [VG.Proof.Dsa.Generation.frame_bytesAt (controller_frame hf) (by
         intro r hr; rcases List.mem_singleton.mp hr with rfl; exact p.pControl)
-        (by rcases p.attempt.construct.width with hh | hh | hh <;> omega), hp]
+        (by rcases p.attempt.construct.width with hh | hh | hh <;> omega_using [hh]), hp]
     · rw [VG.Proof.Dsa.Generation.frame_bytesAt (controller_frame hf) (by
         intro r hr; rcases List.mem_singleton.mp hr with rfl; exact p.exponentControl)
-        (by rcases p.attempt.construct.width with hh | hh | hh <;> omega), he]
+        (by rcases p.attempt.construct.width with hh | hh | hh <;> omega_using [hh]), he]
   · exact Or.inr (Or.inr ho)
 
 theorem searchInvariant_done {p : SearchPlan} {res : Option (Option Nat × List Byte)} {s t : State}
     (h : SearchInvariant p res s (32 * p.attempt.construct.len) t) : SearchFinished p res s t := by
   obtain ⟨W, used, hm, hu, h16, h19, hr, ff, rd, wr⟩ := h
   refine ⟨W, used, hm, hu, h16, Or.inr (Or.inr ⟨h19 ?_, ?_⟩), ff, rd, wr⟩
-  · rcases p.attempt.construct.width with hh | hh | hh <;> omega
+  · rcases p.attempt.construct.width with hh | hh | hh <;> omega_using [hh]
   · exact hr.trans (p.remaining_done used)
 
 end VG.Proof.Dsa.AArch64.Generation
@@ -168,9 +168,9 @@ theorem nativeSearch_ok {G1 G256 : Impl.Pbkdf2.Md.AArch64.Hash} {p : SearchPlan}
       p.attempt.construct.len p.attempt.construct.hash.len) s
       (SearchFinished p (p.remaining 0 used) s) := by
   have hlimit : 0 < 32 * p.attempt.construct.len ∧ 32 * p.attempt.construct.len ≤ 12288 := by
-    rcases p.attempt.construct.width with hh | hh | hh <;> omega
+    rcases p.attempt.construct.width with hh | hh | hh <;> omega_using [hh]
   have hstride : p.attempt.construct.hash.count + 1 ≤ 12 := by
-    have := p.attempt.construct.hash.count_le; omega
+    have := p.attempt.construct.hash.count_le; omega_using [this]
   obtain ⟨V, R⟩ := h.rep
   unfold Impl.Dsa.AArch64.Generation.primeSearch
   rw [← p.attempt.construct.hashCount]
@@ -185,7 +185,7 @@ theorem nativeSearch_ok {G1 G256 : Impl.Pbkdf2.Md.AArch64.Hash} {p : SearchPlan}
     (fun t ht _ _ => searchInvariant_done ht)
     (fun c v hc hi ctrl => ?_)
     (show SearchInvariant p (p.remaining 0 used) s 0 u from
-      ⟨W, used, mu, hu, hused, by omega, rfl, fu, ku.rd, ku.wr⟩)
+      ⟨W, used, mu, hu, hused, by omega_using [], rfl, fu, ku.rd, ku.wr⟩)
     (hC.congr ku.wr) udi
   obtain ⟨Wv, usedv, mv, huv, h16v, _, hremaining, fv, rdv, wrv⟩ := hi
   refine WP.mono (searchBody_ok hG hHh hsize T hd hhash hseedsize mv ctrl hc h16v huv)

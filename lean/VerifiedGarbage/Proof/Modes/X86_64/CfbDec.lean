@@ -64,25 +64,25 @@ theorem copyBlocksEnd_wp {S T : Addr} {n : Nat} {s₀ : State} (hbw : 0 < c.bw) 
     (hc : s₀.gpr .rcx = BitVec.ofNat 64 n) :
     WP isa c.copyBlocks s₀ fun s =>
       CopyInv c S T n s₀ n s ∧ s.gpr .rbx = S + BitVec.ofNat 64 (8 * c.bw * n) := by
-  have hn64 : n ≤ 8 * c.bw * n := Nat.le_mul_of_pos_left n (by omega)
-  refine WP.mono (blockLoop_wp (c := c) _ (CopyInv c S T n s₀) hL hn (by omega)
+  have hn64 : n ≤ 8 * c.bw * n := Nat.le_mul_of_pos_left n (by omega_using [hbw])
+  refine WP.mono (blockLoop_wp (c := c) _ (CopyInv c S T n s₀) hL hn (by omega_using [hfit, hn64])
     (fun j s s' h hm hrd hwr hg => ⟨fun t ht => by rw [hm]; exact h.copied t ht, by rw [hm]; exact h.frame,
       fun r h1 h2 h3 h4 => by rw [hg r h1 h2 h3, h.regs r h1 h2 h3 h4], by rw [hrd, h.rd], by rw [hwr, h.wr]⟩)
     (fun j hj s hi hax hbx => ?_) ⟨fun t ht => by omega, Frame.refl _ _, fun _ _ _ _ _ => rfl, rfl, rfl⟩ ha hb hc)
     fun _ h => ⟨h.1, h.2.2⟩
   have hlt := idx_lt (L := 8 * c.bw) hj
   have hw : ∀ w, 8 * c.bw * j + 8 * w = 8 * (c.bw * j + w) := fun w => by rw [Nat.mul_add, Nat.mul_assoc]
-  have hbj : ∀ w < c.bw, c.bw * j + w < c.bw * n := fun w hw' => by have := idx_lt (L := c.bw) hj; omega
+  have hbj : ∀ w < c.bw, c.bw * j + w < c.bw * n := fun w hw' => by have := idx_lt (L := c.bw) hj; omega_using [hw', this]
   have hSs : ∀ t < 8 * c.bw * n, s.mem (S + BitVec.ofNat 64 t) = s₀.mem (S + BitVec.ofNat 64 t) := fun t ht =>
     hi.frame.bytes (R := ⟨S, 8 * c.bw * n⟩) (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact hsep)
-      (by simp only; omega) ht
+      (by simp only; omega_using [hfit]) ht
   have hPT : Region.Sub ⟨T + BitVec.ofNat 64 (8 * c.bw * j), 8 * c.bw⟩ ⟨T, 8 * c.bw * n⟩ :=
-    VG.Offset.sub_base T (by omega)
+    VG.Offset.sub_base T (by omega_using [hlt])
   refine WP.mono (copyN_wp (k := c.bw) (P := T + BitVec.ofNat 64 (8 * c.bw * j))
     (Q := S + BitVec.ofNat 64 (8 * c.bw * j)) ⟨by rw [hax]; simp, by rw [hbx]; simp,
     by decide, by decide, fun w hw' => by rw [hi.wr, addr_add, hw w]; exact hT _ (hbj w hw'),
     fun w hw' => by rw [hi.rd, hi.wr, addr_add, hw w]; exact hS _ (hbj w hw'),
-    (hsep.symm.sub_left hPT).sub_right (VG.Offset.sub_base S (by omega)), by omega⟩) fun s' h' => ?_
+    (hsep.symm.sub_left hPT).sub_right (VG.Offset.sub_base S (by omega_using [hlt])), by omega_using [hL]⟩) fun s' h' => ?_
   have hm : ∀ t < 8 * c.bw * n, s'.mem (T + BitVec.ofNat 64 t) =
       if 8 * c.bw * j ≤ t ∧ t < 8 * c.bw * j + 8 * c.bw then s.mem (S + BitVec.ofNat 64 t)
       else s.mem (T + BitVec.ofNat 64 t) := fun t ht => by
@@ -90,18 +90,18 @@ theorem copyBlocksEnd_wp {S T : Addr} {n : Nat} {s₀ : State} (hbw : 0 < c.bw) 
     split
     · rename_i h1
       rw [show T + BitVec.ofNat 64 t = T + BitVec.ofNat 64 (8 * c.bw * j) + BitVec.ofNat 64 (t - 8 * c.bw * j) by
-        rw [addr_add, show 8 * c.bw * j + (t - 8 * c.bw * j) = t by omega], over_at (by omega) (by omega), addr_add,
-        show 8 * c.bw * j + (t - 8 * c.bw * j) = t by omega]
-    · exact over_out (off_sub_not T (by omega) (by omega) (by omega) (by omega))
+        rw [addr_add, show 8 * c.bw * j + (t - 8 * c.bw * j) = t by omega_using [h1]], over_at (by omega_using [h1]) (by omega_using [hL]), addr_add,
+        show 8 * c.bw * j + (t - 8 * c.bw * j) = t by omega_using [h1]]
+    · exact over_out (off_sub_not T (by omega_arith) (by omega_using [hfit, ht]) (by omega_using [hbw]) (by omega_using [hfit, hlt]))
   refine ⟨⟨fun t ht => ?_, hi.frame.trans fun x hx => ?_, fun r h1 h2 h3 h4 => by rw [h'.regs r h4, hi.regs r h1 h2 h3 h4],
     by rw [h'.rd, hi.rd], by rw [h'.wr, hi.wr]⟩, h'.regs _ (by decide), h'.regs _ (by decide), h'.regs _ (by decide)⟩
   · have : 8 * c.bw * (j + 1) = 8 * c.bw * j + 8 * c.bw := Nat.mul_succ _ _
-    rw [hm t (by omega)]
+    rw [hm t (by omega_using [hlt, ht, this])]
     split
-    · rw [hSs t (by omega)]
-    · exact hi.copied t (by omega)
+    · rw [hSs t (by omega_using [hlt, ht, this])]
+    · exact hi.copied t (by omega_arith)
   · rw [h'.mem]
-    exact over_out fun h => hx _ (List.mem_singleton_self _) (hPT x (by simp only [Region.Contains]; omega))
+    exact over_out fun h => hx _ (List.mem_singleton_self _) (hPT x (by simp only [Region.Contains]; omega_using [h]))
 
 /-- No blocks to copy when ZF is set; otherwise `copyBlocksEnd_wp`. -/
 theorem copy_tail_wp {S T : Addr} {n : Nat} {s : State} (hbw : 0 < c.bw) (hL : 8 * c.bw < 2 ^ 31)
@@ -118,7 +118,7 @@ theorem copy_tail_wp {S T : Addr} {n : Nat} {s : State} (hbw : 0 < c.bw) (hL : 8
     exact WP.block_nil ⟨⟨fun t ht => by simp at ht, Frame.refl _ _, fun _ _ _ _ _ => rfl, rfl, rfl⟩,
       by simpa using hb⟩
   · have hn0 : n ≠ 0 := by simpa using h
-    exact copyBlocksEnd_wp hbw hL (by omega) hfit hS hT hsep ha hb hc
+    exact copyBlocksEnd_wp hbw hL (by omega_using [hn0]) hfit hS hT hsep ha hb hc
 
 /-- `cfbDecGatherArgs`: past the buffer's first block in `rax`, the data's
 address in `rbx`, one fewer in `rcx`. -/

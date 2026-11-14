@@ -44,29 +44,29 @@ open VG.Proof.MlKem.RISCV64 (align4_add setWidth32_ofNat)
 theorem loadImm_val {v : Nat} (hv : v < 2 ^ 31 - 2048) :
     sext32 (BitVec.ofNat 20 (hi20 v) ++ (0 : BitVec 12)) + BitVec.ofInt 64 ((v : Int) - 4096 * hi20 v) =
       BitVec.ofNat 64 v := by
-  have hh : hi20 v < 2 ^ 19 := by unfold hi20; omega
+  have hh : hi20 v < 2 ^ 19 := by unfold hi20; omega_using [hv]
   have e : BitVec.ofNat 20 (hi20 v) ++ (0 : BitVec 12) = BitVec.ofNat 32 (4096 * hi20 v) := by
     apply BitVec.eq_of_toNat_eq
-    rw [BitVec.toNat_append, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega),
-      Nat.mod_eq_of_lt (by omega)]
-    simp [Nat.shiftLeft_eq]; omega
+    rw [BitVec.toNat_append, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hh]),
+      Nat.mod_eq_of_lt (by omega_using [hh])]
+    simp [Nat.shiftLeft_eq]; omega_using []
   have es : sext32 (BitVec.ofNat 32 (4096 * hi20 v)) = BitVec.ofNat 64 (4096 * hi20 v) := by
     unfold sext32
     have hm : (BitVec.ofNat 32 (4096 * hi20 v)).msb = false := by
-      rw [BitVec.msb_eq_decide, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]; simp; omega
+      rw [BitVec.msb_eq_decide, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hh])]; simp; omega_using [hh]
     rw [BitVec.signExtend_eq_setWidth_of_msb_false hm]
     apply BitVec.eq_of_toNat_eq
-    rw [BitVec.toNat_setWidth, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega),
-      Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega)]
+    rw [BitVec.toNat_setWidth, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using []),
+      Nat.mod_eq_of_lt (by omega_using [hh]), Nat.mod_eq_of_lt (by omega_using [hh])]
   rw [e, es]
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_add, BitVec.toNat_ofInt, BitVec.toNat_ofNat, BitVec.toNat_ofNat]
   unfold hi20 at *
-  omega
+  omega_using []
 
 /-- The rest of `loadImm`, an `addi`'s immediate. -/
 theorem loadImm_imm (v : Nat) : imm12 ((v : Int) - 4096 * hi20 v) := by
-  unfold imm12 hi20; omega
+  unfold imm12 hi20; omega_using []
 
 /-- `loadImm` of the constants, as instructions with their immediates. -/
 theorem loadImm_q (r : Reg) : loadImm r 8380417 = [.lui r 0x7FE, .addi r r 1] := by
@@ -86,7 +86,7 @@ theorem loadImm_inv (r : Reg) : loadImm r 8347681 = [.lui r 0x7F6, .addi r r 33]
 theorem setWidth_sext32 (v : BitVec 32) : (sext32 v).setWidth 32 = v := by
   apply BitVec.eq_of_getElem_eq; intro i hi
   simp only [sext32, BitVec.getElem_setWidth, BitVec.getLsbD_signExtend]
-  simp [hi]; omega
+  simp [hi]; omega_using [hi]
 
 /-- A word sign-extended is zero exactly when it is. -/
 theorem sext32_beq_zero (v : BitVec 32) : (sext32 v == 0) = (v == 0) := by
@@ -105,12 +105,12 @@ theorem fixd_toNat {u : BitVec 64} (h : u.toNat < 8380417 ∨ 2 ^ 64 - 8380417 �
   unfold fixd
   cases hm : u.msb
   · have hu : u.toNat < 2 ^ 63 := by
-      have := BitVec.msb_eq_decide u; rw [hm] at this; simp at this; omega
+      have := BitVec.msb_eq_decide u; rw [hm] at this; simp at this; omega_using [this]
     have h0 : u >>> 63 = 0#64 := by bv_omega
     rw [BitVec.sshiftRight_eq_of_msb_false hm, h0, BitVec.zero_and]
     split <;> bv_omega
   · have hu : 2 ^ 63 ≤ u.toNat := by
-      have := BitVec.msb_eq_decide u; rw [hm] at this; simp at this; omega
+      have := BitVec.msb_eq_decide u; rw [hm] at this; simp at this; omega_using [this]
     have h0 : (~~~u) >>> 63 = 0#64 := by bv_omega
     rw [BitVec.sshiftRight_eq_of_msb_true hm, h0, BitVec.not_zero, BitVec.allOnes_and]
     split <;> bv_omega
@@ -161,11 +161,11 @@ theorem bar_spec (x : Nat) (hx : x < 2 ^ 64) :
   have hq : 2365951 < q := by rw [q_eq]; decide
   -- `q` kept abstract: unifying with its value is what is slow
   generalize q = Q at *
-  have e1 : R * Q < 2 ^ 64 * Q := Nat.mul_lt_mul_of_pos_right hr (by omega)
-  have e2 : 2365951 * x < Q * 2 ^ 64 := Nat.mul_lt_mul_of_le_of_lt (by omega) hx (by omega)
+  have e1 : R * Q < 2 ^ 64 * Q := Nat.mul_lt_mul_of_pos_right hr (by omega_using [hq])
+  have e2 : 2365951 * x < Q * 2 ^ 64 := Nat.mul_lt_mul_of_le_of_lt (by omega_using [hq]) hx (by omega_using [hq])
   have hle : T * Q ≤ x :=
-    Nat.le_of_mul_le_mul_right (show T * Q * 2 ^ 64 ≤ x * 2 ^ 64 by omega) (Nat.two_pow_pos 64)
-  have h2 : x * 2 ^ 64 < T * Q * 2 ^ 64 + 2 * Q * 2 ^ 64 := by omega
+    Nat.le_of_mul_le_mul_right (show T * Q * 2 ^ 64 ≤ x * 2 ^ 64 by omega_using [key]) (Nat.two_pow_pos 64)
+  have h2 : x * 2 ^ 64 < T * Q * 2 ^ 64 + 2 * Q * 2 ^ 64 := by omega_using [hx, key, hq, e1]
   rw [← Nat.add_mul] at h2
   exact ⟨hle, Nat.lt_of_mul_lt_mul_right h2⟩
 
@@ -176,7 +176,7 @@ theorem bar_toNat (x : BitVec 64) : (bar x).toNat = x.toNat * 2201172575745 / 2 
   have hle := (bar_spec x.toNat x.isLt).1
   have hx := x.isLt
   unfold bar; rw [BitVec.toNat_ofNat]
-  exact Nat.mod_eq_of_lt (by rw [q_eq] at hle; omega)
+  exact Nat.mod_eq_of_lt (by rw [q_eq] at hle; omega_using [])
 
 theorem barv_toNat (x : BitVec 64) :
     (barv x).toNat = x.toNat - x.toNat * 2201172575745 / 2 ^ 64 * q := by
@@ -190,20 +190,20 @@ theorem barv_toNat (x : BitVec 64) :
   rw [q_eq] at hle ⊢
   have hm : (B * 8380417).toNat = B.toNat * 8380417 := by
     rw [BitVec.toNat_mul, show (8380417 : BitVec 64).toNat = 8380417 from rfl]
-    exact Nat.mod_eq_of_lt (by omega)
-  rw [BitVec.toNat_sub_of_le (by rw [BitVec.le_def, hm]; omega), hm]
+    exact Nat.mod_eq_of_lt (by omega_using [hle])
+  rw [BitVec.toNat_sub_of_le (by rw [BitVec.le_def, hm]; omega_using [hle]), hm]
 
 /-- `barrett` leaves a value less than `2q`. -/
 theorem barv_lt (x : BitVec 64) : (barv x).toNat < 2 * q := by
   obtain ⟨hle, hlt⟩ := bar_spec x.toNat x.isLt
-  rw [barv_toNat]; omega
+  rw [barv_toNat]; omega_using [hle, hlt]
 
 /-- `barrett` leaves a value congruent to `x`. -/
 theorem barv_mod (x : BitVec 64) : (barv x).toNat % q = x.toNat % q := by
   obtain ⟨hle, -⟩ := bar_spec x.toNat x.isLt
   rw [barv_toNat]
   generalize x.toNat * 2201172575745 / 2 ^ 64 = T at hle ⊢
-  have e : x.toNat = (x.toNat - T * q) + q * T := by rw [Nat.mul_comm q T]; omega
+  have e : x.toNat = (x.toNat - T * q) + q * T := by rw [Nat.mul_comm q T]; omega_using [hle]
   conv => rhs; rw [e]
   rw [Nat.add_mul_mod_self_left]
 
@@ -215,7 +215,7 @@ theorem red_toNat (x : BitVec 64) : (red x).toNat = x.toNat % q := by
   rw [fixd_subq (barv_lt x), barv_mod]
 
 theorem toNat_val64 (x : Zq) : (BitVec.ofNat 64 x.val).toNat = x.val := by
-  rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := val_lt x; omega)]
+  rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := val_lt x; omega_using [this])]
 
 /-- A product of reduced values, reduced. -/
 theorem red_mul (a b : Zq) : (red (BitVec.ofNat 64 a.val * BitVec.ofNat 64 b.val)).toNat = (a * b).val := by
@@ -223,7 +223,7 @@ theorem red_mul (a b : Zq) : (red (BitVec.ofNat 64 a.val * BitVec.ofNat 64 b.val
   have hb := val_lt b
   have hp : (BitVec.ofNat 64 a.val * BitVec.ofNat 64 b.val).toNat = a.val * b.val := by
     rw [BitVec.toNat_mul, toNat_val64, toNat_val64]
-    exact Nat.mod_eq_of_lt (by have := mul_lt_q2 ha hb; omega)
+    exact Nat.mod_eq_of_lt (by have := mul_lt_q2 ha hb; omega_using [this])
   rw [red_toNat, hp, val_mul]
 
 /-- A product of reduced values plus a reduced value, reduced. -/
@@ -236,7 +236,7 @@ theorem red_mulAdd (a b c : Zq) :
       a.val * b.val + c.val := by
     rw [BitVec.toNat_add, BitVec.toNat_mul, toNat_val64, toNat_val64, toNat_val64]
     have := mul_lt_q2 ha hb
-    rw [Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega)]
+    rw [Nat.mod_eq_of_lt (by omega_using [hc, this]), Nat.mod_eq_of_lt (by omega_using [this])]
   rw [red_toNat, hp, val_add', val_mul,
     Nat.add_comm (a.val * b.val), Nat.add_mod_mod]
 
@@ -348,24 +348,24 @@ theorem table_ok (T : Nat → Nat) (hT : ∀ k, T k < 2 ^ 23) {b : Reg} (hb : b 
   let s₁ := s.write .t2 (sext32 (BitVec.ofNat 20 (hi20 (T k)) ++ (0 : BitVec 12)))
   let s₂ := s₁.write .t2 (s₁.gpr .t2 + BitVec.ofInt 64 ((T k : Int) - 4096 * hi20 (T k)))
   have v2 : s₂.gpr .t2 = BitVec.ofNat 64 (T k) := by
-    simp only [s₂, s₁, State.write, ite_true]; exact loadImm_val (by omega)
+    simp only [s₂, s₁, State.write, ite_true]; exact loadImm_val (by omega_using [hTk])
   have e : s₂.gpr b + BitVec.ofNat 64 (4 * k) = B + BitVec.ofNat 64 (4 * k) := by
     simp only [s₂, s₁, State.write, hb, ite_false, h.gpr b hb, hB]
   refine Wp.WP.cons exec_lui (Wp.WP.cons (exec_addi (loadImm_imm _))
-    (Wp.WP.cons (exec_store_w (show 4 * k < 2048 by omega) (by rw [e]; exact align4_add hal k)
+    (Wp.WP.cons (exec_store_w (show 4 * k < 2048 by omega_using [hk]) (by rw [e]; exact align4_add hal k)
       (by show InRegions s₂.wr _ 4; rw [e]; exact h.wr ▸ hwr k hk)) (WP.block_nil ?_)))
   show TabInv T B s₀ (k + 1)
     { s₂ with mem := (s₂.mem.writeW (s₂.gpr b + BitVec.ofNat 64 (4 * k)) ((s₂.gpr .t2).setWidth 32)) }
-  rw [e, v2, setWidth32_ofNat (v := T k) (by rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt (by omega))
-    (by omega)]
+  rw [e, v2, setWidth32_ofNat (v := T k) (by rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt (by omega_using [hTk]))
+    (by omega_using [hTk])]
   refine ⟨fun r hr => ?_, h.rd, h.wr, h.sp, ?_, fun j hj => ?_⟩
   · simp only [s₂, s₁, State.write, hr, ite_false]; exact h.gpr r hr
-  · exact h.frame.writeW (List.mem_singleton_self _) _ (Offset.contains_base _ (by omega) (by omega))
+  · exact h.frame.writeW (List.mem_singleton_self _) _ (Offset.contains_base _ (by omega_using [hk]) (by omega_using [hk]))
   · show (s.mem.writeW _ _).readW _ 32 = _
     by_cases ej : j = k
     · subst ej; exact Mem.readW_writeW_self32 _ _ _
-    · rw [Mem.readW_writeW_sep (Offset.sep _ (by omega) (by omega) (by omega)) (by decide)]
-      exact h.tab j (by omega)
+    · rw [Mem.readW_writeW_sep (Offset.sep _ (by omega_using [ej]) (by omega_using [hk, hj]) (by omega_using [hk])) (by decide)]
+      exact h.tab j (by omega_using [hj, ej])
 
 theorem zetaTab_lt (k : Nat) : zetaTab k < 2 ^ 23 := by
   unfold zetaTab; exact Nat.lt_of_lt_of_le (Nat.mod_lt _ (by decide)) (by decide)

@@ -84,8 +84,8 @@ theorem close_eval : ∀ (a : CD) (s₁ s₂ : State), SG M3 a s₁ → SG M3 a 
   obtain ⟨hw, -, -⟩ := cw_facts k.1
   obtain ⟨hw', -, -⟩ := cw_facts k'.1
   have e := close_agree k k' hav
-  rw [candS_eq k.1 hav, candS_eq k'.1 hav', hw, hw', show 8 * (8 * cw s0) = 64 * cw s0 by omega,
-    show 8 * (8 * cw s0') = 64 * cw s0' by omega] at e
+  rw [candS_eq k.1 hav, candS_eq k'.1 hav', hw, hw', show 8 * (8 * cw s0) = 64 * cw s0 by omega_using [],
+    show 8 * (8 * cw s0') = 64 * cw s0' by omega_using []] at e
   rw [e]
 
 /-! ## `gcdCheck` -/
@@ -112,7 +112,7 @@ theorem eV_lt {s0 : State} (hp : CIn s0) : eV s0 < 2 ^ 64 := by
   have : 256 ^ (s0.gpr .r7).toNat ≤ 256 ^ 8 := Nat.pow_le_pow_right (by decide) hp.el2
   have : (256 : Nat) ^ 8 = 2 ^ 64 := by decide
   show Spec.Rsa.os2ip (Spec.Rsa.bytesAt s0.mem (s0.gpr .r6) (s0.gpr .r7).toNat) < 2 ^ 64
-  omega
+  omega_arith
 
 /-- `gcdCheck`'s start. -/
 def G0 (a : CD) (s : State) : Prop :=
@@ -146,35 +146,35 @@ theorem gcd_ct : RelCT isa (Two G0) gcdCheck fun _ _ => True := by
   · have hp := k.1
     have hfe := hp.fe
     have bE : Spec.Rsa.bytesAt s.mem (s0.gpr .r6) (s0.gpr .r7).toNat = eB s0 :=
-      in_bytes h.ctx.bx (ρ := cE s0) (hE_dj hp) (Nat.le_refl _) (by omega)
+      in_bytes h.ctx.bx (ρ := cE s0) (hE_dj hp) (Nat.le_refl _) (by omega_using [])
     refine WP.mono (loadE_ok (h.r21.trans (BitVec.add_zero _).symm) (h.r30.trans (ofNat_toNat64 _).symm)
-      hp.el1 hp.el2 (rd_bytes (n := (s0.gpr .r7).toNat) (by rw [h.ctx.bx.rd]; exact hp.rE) hfe (by omega)))
+      hp.el1 hp.el2 (rd_bytes (n := (s0.gpr .r7).toNat) (by rw [h.ctx.bx.rd]; exact hp.rE) hfe (by omega_using [])))
       fun t ⟨⟨a21, _⟩, kt⟩ => ⟨s0, s, k, h, hn, kt, by show t.gpr .r21 = _; rw [a21, bE]⟩
   · have hEl := eV_lt k.1
     refine WP.mono (WP.keep [.r0, .r5] (Q := fun t => t.gpr .r5 = BitVec.ofNat 64 (eV s0 % 2) ∧
         t.gpr .r21 = s.gpr .r21) (by
       prun [h21, VG.Proof.RsaKeyGen.PPC64LE.Cand.and1_val]
       rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt hEl]
-      split <;> (congr 1; omega)) (by decide))
+      split <;> (congr 1; omega_arith)) (by decide))
       fun t ⟨⟨a5, a21⟩, kt⟩ => ⟨s0, sM, k, h, hn, kk.trans kt, a21.trans h21, a5⟩
   · rintro a s₁ s₂ ⟨s0, sM, k, -, -, -, -, h5⟩ ⟨s0', sM', k', -, -, -, -, h5'⟩
-    rw [eval_zero_ofNat _ _ (by have := Nat.mod_lt (eV s0) (show 0 < 2 by decide); omega) h5,
-      eval_zero_ofNat _ _ (by have := Nat.mod_lt (eV s0') (show 0 < 2 by decide); omega) h5']
+    rw [eval_zero_ofNat _ _ (by have := Nat.mod_lt (eV s0) (show 0 < 2 by decide); omega_using []) h5,
+      eval_zero_ofNat _ _ (by have := Nat.mod_lt (eV s0') (show 0 < 2 by decide); omega_using []) h5']
     simp only [eV, k.e k']
   · have hEl := eV_lt k.1
     have he1 : eV s0 % 2 = 1 := by
-      rw [eval_zero_ofNat _ _ (by have := Nat.mod_lt (eV s0) (show 0 < 2 by decide); omega) h5] at ev
-      simp at ev; omega
+      rw [eval_zero_ofNat _ _ (by have := Nat.mod_lt (eV s0) (show 0 < 2 by decide); omega_using []) h5] at ev
+      simp at ev; omega_using [ev]
     refine WP.mono (WP.keep [.r5] (Q := fun t => t.gpr .r5 = BitVec.ofNat 64 (eV s0 - 1)) (by
       prun [h21]
       apply BitVec.eq_of_toNat_eq
       rw [BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat, BitVec.toNat_ofNat]
-      omega) (by decide))
+      omega_using [he1]) (by decide))
       fun t ⟨a5, kt⟩ => ⟨s0, sM, k, h, hn, kk.trans kt, a5⟩
   · rintro a s₁ s₂ ⟨s0, sM, k, -, -, -, h5⟩ ⟨s0', sM', k', -, -, -, h5'⟩
     have := eV_lt k.1
     have := eV_lt k'.1
-    rw [eval_zero_ofNat _ _ (by omega) h5, eval_zero_ofNat _ _ (by omega) h5']
+    rw [eval_zero_ofNat _ _ (by omega_arith) h5, eval_zero_ofNat _ _ (by omega_using [this]) h5']
     simp only [eV, k.e k']
 
 theorem gcd_eval : ∀ (a : CD) (s₁ s₂ : State), SG M4 a s₁ → SG M4 a s₂ →
@@ -185,7 +185,7 @@ theorem gcd_eval : ∀ (a : CD) (s₁ s₂ : State), SG M4 a s₁ → SG M4 a s�
   have hav' := h'.hav
   obtain ⟨hw, -, -⟩ := cw_facts k.1
   obtain ⟨hw', -, -⟩ := cw_facts k'.1
-  have e := gcd_agree k k' hav (by rw [candS_eq k.1 hav, show 8 * oL s0 = 64 * cw s0 by omega]; exact h.ncl)
+  have e := gcd_agree k k' hav (by rw [candS_eq k.1 hav, show 8 * oL s0 = 64 * cw s0 by omega_using [hw]]; exact h.ncl)
   rw [candS_eq k.1 hav, candS_eq k'.1 hav'] at e
   have i : s₁.gpr .r22 = 0 ↔ s₂.gpr .r22 = 0 := h.g.trans (e.trans h'.g.symm)
   congr 1

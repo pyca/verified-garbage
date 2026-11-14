@@ -61,7 +61,7 @@ theorem doubleLoopBody_ok (s : State) {base : BitVec 32} {len w c : Nat}
   refine WP.mono (doubleLoopMultiply_ok s h) ?_
   rintro u ⟨ready, value, modulus, frame, rest⟩
   have fits := ready.layout.2.2.1
-  have size : 212 ≤ 8 * len := by simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at fits; omega
+  have size : 212 ≤ 8 * len := by simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at fits; omega_using [fits]
   refine WP.mono (doubleCount_ok u ready.workspace size ready.ptr hc hc' ready.counter) ?_
   rintro t ⟨mem, zero, keep⟩
   obtain ⟨state, frameT, number, modT⟩ := ready.after_count mem keep

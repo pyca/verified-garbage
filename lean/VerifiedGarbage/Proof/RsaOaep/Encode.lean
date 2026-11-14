@@ -70,7 +70,7 @@ theorem encrypt_some {H G : Spec.Mgf1.Hash} {nB eB label m seed : List Byte} (hs
     Spec.RsaOaep.encrypt H G nB eB label m seed =
       Spec.Rsa.publicOpChecked nB eB (emOf G H.len nB.length m.length seed (H.hash label) m) := by
   simp only [Spec.RsaOaep.encrypt, Spec.RsaOaep.encode]
-  rw [ifn (by omega)]
+  rw [ifn (by omega_using [hs, h])]
   simp only [Option.bind_some, emOf]
 
 end VG.Proof.RsaOaep

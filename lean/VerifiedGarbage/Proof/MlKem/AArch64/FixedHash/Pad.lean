@@ -71,18 +71,18 @@ theorem pad_ok {s : State} {sc : Reg} {st rate pos sfx : Nat}
           pos (BitVec.ofNat 8 sfx)) (rate-1) 128 := by
   have hw : ∀j<200,InRegions s.wr (s.gpr sc+BitVec.ofNat 64 st+BitVec.ofNat 64 j) 1 := by
     intro j hj
-    exact cov _ _ ⟨⟨s.gpr sc+BitVec.ofNat 64 st,200⟩,by simp,Proof.Sha3.contains_offset (by omega) (by omega)⟩
+    exact cov _ _ ⟨⟨s.gpr sc+BitVec.ofNat 64 st,200⟩,by simp,Proof.Sha3.contains_offset (by omega_using [hj]) (by omega_using [hj])⟩
   unfold padCode
   rw [WP.block_append_iff]
-  refine WP.mono (xorByte_ok (off:=st+pos) (value:=sfx) h9 h10 (by omega)
-    (by rw [←ptr_add]; exact hw pos (by omega))) fun a ha=>?_
+  refine WP.mono (xorByte_ok (off:=st+pos) (value:=sfx) h9 h10 (by omega_using [hp, hoff])
+    (by rw [←ptr_add]; exact hw pos (by omega_using [hr200, hp]))) fun a ha=>?_
   have ka := ha.1.get sc (by simp [h9,h10])
-  have off : st+rate-1=st+(rate-1) := by omega
+  have off : st+rate-1=st+(rate-1) := by omega_using [hr]
   have ma : a.mem=s.mem.writeW (s.gpr sc+BitVec.ofNat 64 st+BitVec.ofNat 64 pos)
       (s.mem (s.gpr sc+BitVec.ofNat 64 st+BitVec.ofNat 64 pos) ^^^ BitVec.ofNat 8 sfx) := by
     simpa only [ptr_add] using ha.2
-  refine WP.mono (xorByte_ok (s:=a) (off:=st+rate-1) (value:=128) h9 h10 (by omega)
-    (by rw [ha.1.wr,ka,off,←ptr_add]; exact hw (rate-1) (by omega))) fun t ht=>?_
+  refine WP.mono (xorByte_ok (s:=a) (off:=st+rate-1) (value:=128) h9 h10 (by omega_using [hoff])
+    (by rw [ha.1.wr,ka,off,←ptr_add]; exact hw (rate-1) (by omega_using [hr200]))) fun t ht=>?_
   have mt : t.mem=a.mem.writeW (s.gpr sc+BitVec.ofNat 64 st+BitVec.ofNat 64 (rate-1))
       (a.mem (s.gpr sc+BitVec.ofNat 64 st+BitVec.ofNat 64 (rate-1)) ^^^ (128:Byte)) := by
     have hh := ht.2
@@ -92,8 +92,8 @@ theorem pad_ok {s : State} {sc : Reg} {st rate pos sfx : Nat}
   · rw [mt,ma]
     apply Frame.writeW (r:=⟨s.gpr sc+BitVec.ofNat 64 st,200⟩)
       (Frame.writeW (r:=⟨s.gpr sc+BitVec.ofNat 64 st,200⟩) (Frame.refl _ _) (by simp) _ ?_) (by simp) _ ?_
-    · exact Proof.Sha3.contains_offset (by omega) (by omega)
-    · exact Proof.Sha3.contains_offset (by omega) (by omega)
-  · rw [mt,stateAt_writeXor (by omega),ma,stateAt_writeXor (by omega)]
+    · exact Proof.Sha3.contains_offset (by omega_using [hr200, hp]) (by omega_using [hr200, hp])
+    · exact Proof.Sha3.contains_offset (by omega_using [hr200]) (by omega_using [hr200])
+  · rw [mt,stateAt_writeXor (by omega_using [hr200]),ma,stateAt_writeXor (by omega_using [hr200, hp])]
 
 end VG.Proof.MlKem.AArch64.FixedHash

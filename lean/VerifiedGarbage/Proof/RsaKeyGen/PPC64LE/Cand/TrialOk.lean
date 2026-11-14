@@ -65,7 +65,7 @@ theorem trialA_ok {s : State} {B : Addr} {Z w n : Nat} (h : DivIn s B Z w n) :
   have hZ : 256 + 28 * (8 * (w + 2)) ≤ Z := e.hZ
   refine WP.cons (exec_adrSym (by decide)) ?_
   simp only [ldh, hTrial]
-  prun [e.h31, e.hs.ld (d := 128) (n := 8) (by omega)]
+  prun [e.h31, e.hs.ld (d := 128) (n := 8) (by omega_using [hZ])]
   refine ⟨⟨rfl, h.cnt, rfl⟩, fun r hr => ?_, rfl, rfl, rfl⟩
   have h1 : r ≠ .r23 := fun h => hr (by subst h; decide)
   have h2 : r ≠ .r24 := fun h => hr (by subst h; decide)
@@ -85,13 +85,13 @@ theorem TA.facts {s u : State} {B : Addr} {Z w n : Nat} (h : DivIn s B Z w n) (h
   have hw' := e.hw'
   have hn' := h.n2
   have hfit := h.fit
-  refine ⟨e.hs.congr uwr, (ug _ (by decide)).trans e.h10, (ug _ (by decide)).trans e.h11, by rw [um], by omega,
-    by omega, by simp only [slot, hdrBytes]; omega, fun i hi => ⟨?_, ⟨_, by rw [urd]; exact List.mem_append_left _ h.tab, ?_⟩⟩⟩
-  · have hl : i < TrialTable32.packed.length := by rw [VG.Proof.RsaKeyGen.TrialTable32.packed_length]; omega
-    rw [um, h.held i (by omega), List.getD_eq_getElem?_getD, List.getElem?_eq_getElem hl, Option.getD_some,
-      VG.Proof.RsaKeyGen.TrialTable32.packed_entry (by omega)]
+  refine ⟨e.hs.congr uwr, (ug _ (by decide)).trans e.h10, (ug _ (by decide)).trans e.h11, by rw [um], by omega_using [hw],
+    by omega_using [hw'], by simp only [slot, hdrBytes]; omega_using [hZ], fun i hi => ⟨?_, ⟨_, by rw [urd]; exact List.mem_append_left _ h.tab, ?_⟩⟩⟩
+  · have hl : i < TrialTable32.packed.length := by rw [VG.Proof.RsaKeyGen.TrialTable32.packed_length]; omega_using [hn', hi]
+    rw [um, h.held i (by omega_using [hn', hi]), List.getD_eq_getElem?_getD, List.getElem?_eq_getElem hl, Option.getD_some,
+      VG.Proof.RsaKeyGen.TrialTable32.packed_entry (by omega_using [hn', hi])]
   · simp only [Region.Contains, Offset.add_sub_cancel_left, BitVec.toNat_ofNat]
-    rw [Nat.mod_eq_of_lt (by omega)]; omega
+    rw [Nat.mod_eq_of_lt (by omega_using [hn', hi])]; omega_using [hn', hi]
 
 /-- Trial division of the candidate in array 0 by the table's first `n`
 entries. -/
@@ -146,7 +146,7 @@ theorem TS.init {d : TD} {s u : State} (h : TS d s) (hu : TA s d.n u) :
     TInv u d.T (arr s.mem d.B d.w 0) d.n d.n u := by
   obtain ⟨⟨u23, u24, -⟩, -⟩ := hu
   have h1 := h.1.n1
-  exact ⟨0, by omega, by omega, ⟨by rw [u23, h.2.1, Nat.mul_zero, BitVec.add_zero], by rw [u24, Nat.sub_zero], rfl, rfl⟩,
+  exact ⟨0, by omega_using [], by omega_using [h1], ⟨by rw [u23, h.2.1, Nat.mul_zero, BitVec.add_zero], by rw [u24, Nat.sub_zero], rfl, rfl⟩,
     Keep.refl _ _⟩
 
 theorem TL.regs {m : Nat} {d : TD} {v : State} (h : TL m d v) :
@@ -154,7 +154,7 @@ theorem TL.regs {m : Nat} {d : TD} {v : State} (h : TL m d v) :
       v.gpr .r23 = d.T + BitVec.ofNat 64 (8 * (d.n - m)) ∧ v.sp = d.sp := by
   obtain ⟨s, u, hs, hu, k, hm, hk, ⟨v23, -, -, -⟩, kv⟩ := h
   obtain ⟨-, h10, h11, -⟩ := hu.facts hs.1
-  refine ⟨(kv.gpr _ (by decide)).trans h10, (kv.gpr _ (by decide)).trans h11, by rw [v23]; congr 3; omega,
+  refine ⟨(kv.gpr _ (by decide)).trans h10, (kv.gpr _ (by decide)).trans h11, by rw [v23]; congr 3; omega_using [hm, hk],
     kv.sp.trans (hu.2.2.2.2.trans hs.2.2.1)⟩
 
 theorem trial_ct : RelCT isa (Two TS) (VG.Impl.RsaKeyGen.PPC64LE.Trial.trial hTrial) fun _ _ => True := by
@@ -184,7 +184,7 @@ theorem trial_ct : RelCT isa (Two TS) (VG.Impl.RsaKeyGen.PPC64LE.Trial.trial hTr
     (two_taint _ (pL m) (by taint_decide)) fun d v ⟨s, u, hs, hu, hI⟩ => ?_).mono (fun _ _ h => h) ?_
   · obtain ⟨hsc, h10, h11, hc, hw, hw', hZ, htab⟩ := hu.facts hs.1
     rw [hs.2.1] at htab
-    have hk : d.n - m < d.n := by obtain ⟨k, hm, hk, -⟩ := hI; omega
+    have hk : d.n - m < d.n := by obtain ⟨k, hm, hk, -⟩ := hI; omega_using [hm, hk]
     refine WP.mono (step_ok hsc h10 h11 hc hw hw' hZ hs.1.n2 htab hI) fun t ⟨e, _, g⟩ => ⟨s, u, hs, hu, ?_, g⟩
     rw [e, ← hs.2.2.2 _ hk]
     simp only [entryDivides, ne_eq, Bool.decide_and, decide_not]
@@ -192,7 +192,7 @@ theorem trial_ct : RelCT isa (Two TS) (VG.Impl.RsaKeyGen.PPC64LE.Trial.trial hTr
     refine ⟨e₁.trans e₂.symm, fun _ => trivial, fun he => ?_⟩
     obtain ⟨hm, i₁⟩ := g₁ he
     obtain ⟨-, i₂⟩ := g₂ (e₂.trans (e₁.symm.trans he))
-    exact ⟨m - 1, by omega, d, ⟨a₁, u₁, h₁, hu₁, i₁⟩, ⟨a₂, u₂, h₂, hu₂, i₂⟩⟩
+    exact ⟨m - 1, by omega_using [hm], d, ⟨a₁, u₁, h₁, hu₁, i₁⟩, ⟨a₂, u₂, h₂, hu₂, i₂⟩⟩
 
 /-- The shared trial division is what the candidate's proofs need. -/
 theorem trial_divOk : DivOk (VG.Impl.RsaKeyGen.PPC64LE.Trial.trial hTrial) where

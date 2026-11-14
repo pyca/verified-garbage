@@ -31,7 +31,7 @@ theorem product6_ok (backend : MontBackend) (s : State) {p : Inputs} {sp : BitVe
     (fun _ _ _ ho ha hb v input => backend.correct v input ho ha hb) backend.stackOk
   have persistent : TwoExp.CallReady p.base sp p.len s := ⟨h.memory.calls.stack,h.memory.fixed⟩
   have operand : Operand 5 := by simp [Operand,Proof.Rsa.Mont.aAcc,Proof.Rsa.Mont.aTmp]
-  have positive : 0 < p.P := by have := h.memory.ready.modulus; rw [h.modulus] at this; omega
+  have positive : 0 < p.P := by have := h.memory.ready.modulus; rw [h.modulus] at this; omega_using [this]
   have bound : numAt s.mem (State.addr p.base) p.w 5 < numAt s.mem (State.addr p.base) p.w 0 := by
     rw [h.modulus,power]
     exact Nat.mod_lt _ positive

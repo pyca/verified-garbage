@@ -40,24 +40,24 @@ def KPd (s₀ : State) (s : State) : Prop :=
 
 theorem kpd_stable {s₀ : State} (hp : UPre s₀) : Stable (KPd s₀) s₀ :=
   fun s s' ⟨hK, hrdi, hrsi, hr8, hr10⟩ g1 g2 g3 g4 hrd hwr hf => by
-    have hR : 16 * (R s₀ + 1) ≤ 240 := by rcases hp.rounds with h | h | h <;> omega
+    have hR : 16 * (R s₀ + 1) ≤ 240 := by rcases hp.rounds with h | h | h <;> omega_using [h]
     refine ⟨Aes.X86_64.AesNi.Ecb.dkeys_congr hK g1 g3 hrd hwr (by
         rw [hrdi]
         exact AesCbc.X86_64.bytesAt_frame hf (fun r hr => by
           simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
           rcases hr with rfl | rfl
           · exact (hp.sch_data.sub_left (Region.sub_prefix hR))
-          · exact (hp.sch_scr.sub_left (Region.sub_prefix hR)).sub_right buf_scr) (by omega))
+          · exact (hp.sch_scr.sub_left (Region.sub_prefix hR)).sub_right buf_scr) (by omega_using [hR]))
         fun j h1 h2 => ?_,
       by rw [g1, hrdi], by rw [g2, hrsi], by rw [g3, hr8], by rw [g4, g1, hr10]⟩
-    have hj : 16 * j + 16 ≤ 224 := by rcases hp.rounds with h | h | h <;> omega
+    have hj : 16 * j + 16 ≤ 224 := by rcases hp.rounds with h | h | h <;> omega_using [hR, h2]
     rw [hr8, ofInt_natCast]
     exact hf.readW (r := ⟨S s₀ + BitVec.ofNat 64 (16 * j), 16⟩) (w := 128) (Region.contains_self _ _)
       (fun r hr => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl
-        · exact (hp.data_scr.sub_right (UPre.scr_sub (by omega))).symm
-        · exact Offset.disjoint _ (by simp only [bufOff]; omega) (by omega) (by simp only [bufOff]; omega))
+        · exact (hp.data_scr.sub_right (UPre.scr_sub (by omega_using [hj]))).symm
+        · exact Offset.disjoint _ (by simp only [bufOff]; omega_using [hj]) (by omega_using [hj]) (by simp only [bufOff]; omega_using []))
       (by decide)
 
 /-- The round keys through `aesimc` at the scratch buffer, below the tweaks:
@@ -65,7 +65,7 @@ what decryption's rounds need. -/
 theorem imc_pre {s₁ : State} (hp₁ : UPre s₁) {s : State} (h : SInvK s₁ s) :
     WP isa Impl.Aes.X86_64.AesNi.imcKeys s fun s' => SInvK s₁ s' ∧ KPd s₁ s' := by
   have hsw := hp₁.scr_wrap
-  have hR : 16 * (R s₁ + 1) ≤ 240 := by rcases hp₁.rounds with h | h | h <;> omega
+  have hR : 16 * (R s₁ + 1) ≤ 240 := by rcases hp₁.rounds with h | h | h <;> omega_using [h]
   have hrdi : s.gpr .rdi = W s₁ := h.1.keep _ (by decide) (by decide) (by decide) (by decide) (by decide)
     (by decide) (by decide)
   have hrsi : s.gpr .rsi = s₁.gpr .rsi := h.1.keep _ (by decide) (by decide) (by decide) (by decide)
@@ -73,7 +73,7 @@ theorem imc_pre {s₁ : State} (hp₁ : UPre s₁) {s : State} (h : SInvK s₁ s
   have hr8 : s.gpr .r8 = S s₁ := h.1.r8
   have hW : s.wr = [ivR s₁, dataR s₁, scrR s₁] := by rw [h.1.wr, hp₁.wr]
   have hscr : InRegions s.wr (s.gpr .r8) 2048 := ⟨scrR s₁, by rw [hW]; simp, by
-    rw [hr8]; simpa using Offset.contains_base (S s₁) (d := 0) (n := 2048) (k := 2176) (by omega) (by omega)⟩
+    rw [hr8]; simpa using Offset.contains_base (S s₁) (d := 0) (n := 2048) (k := 2176) (by omega_using []) (by omega_using [])⟩
   have hsch : (⟨s.gpr .rdi, 240⟩ : Region) ∈ s.rd ++ s.wr :=
     List.mem_append_left _ (by rw [h.1.rd, hp₁.rd, hrdi]; simp)
   have hsep : Region.Disjoint ⟨s.gpr .rdi, 240⟩ ⟨s.gpr .r8, 2048⟩ := by
@@ -82,7 +82,7 @@ theorem imc_pre {s₁ : State} (hp₁ : UPre s₁) {s : State} (h : SInvK s₁ s
     Aes.X86_64.AesNi.Ecb.keys_congr (keys_entry hp₁) hrdi h.1.rd h.1.wr
       (AesCbc.X86_64.bytesAt_frame h.1.frame (fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr
-        exact hp₁.sch_scr.sub_left (Region.sub_prefix hR)) (by omega))
+        exact hp₁.sch_scr.sub_left (Region.sub_prefix hR)) (by omega_using [hR]))
   refine WP.mono (imcKeys_ok hp₁.rounds (by rw [hrsi, rsi_ofNat]) hscr hsch hsep)
     fun s' ⟨S', hI, hS⟩ => ?_
   have hg := hI.gpr
@@ -98,7 +98,7 @@ theorem imc_pre {s₁ : State} (hp₁ : UPre s₁) {s : State} (h : SInvK s₁ s
   rw [AesCbc.X86_64.bytesAt_frame hI.lo (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
       rw [hr8]
-      exact Offset.disjoint_base _ (by simp only [bufOff]; omega) (by simp only [bufOff]; omega))
+      exact Offset.disjoint_base _ (by simp only [bufOff]; omega_using []) (by simp only [bufOff]; omega_using [hj]))
     (by decide), h.1.buf j hj]
 
 theorem decrypt_wp {s₀ : State} (h0 : (modeX86_64 (AesXts.xtsMode false)).pre s₀) :

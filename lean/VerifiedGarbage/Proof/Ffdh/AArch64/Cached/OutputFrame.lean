@@ -16,6 +16,6 @@ theorem outside_frame_member {rs : List Region} {ptr : Addr} {k : Nat} {m m' : M
  right
  have no := hx ⟨ptr,k⟩ member
  change ¬ofs ptr x+1≤k at no
- omega
+ omega_using [no]
 
 end VG.Proof.Ffdh.AArch64.Cached

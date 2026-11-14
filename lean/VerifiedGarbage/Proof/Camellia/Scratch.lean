@@ -91,7 +91,7 @@ theorem ofBytes_wordBytes (w : BitVec 64) : ofBytes 64 (wordBytes w) = w := by
     List.map_cons, List.map_nil, List.foldl_append, List.foldl_cons, List.foldl_nil,
     BitVec.toNat_ofNat, BitVec.toNat_setWidth, BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow]
   have := w.isLt
-  omega
+  omega_using []
 
 theorem rounds_of_keySchedule {m : Mem} {p : Addr} {R : Nat} {key : List Byte}
     (h : KeySchedule m p R key) : R = 18 ∨ R = 24 := by

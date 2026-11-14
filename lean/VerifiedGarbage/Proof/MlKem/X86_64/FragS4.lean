@@ -95,7 +95,7 @@ theorem seed_step {s : State} (L : Lay rbs wbs s) (hcs : ∀ b ∈ rbs ++ wbs, b
   refine WP.mono (seedAt_ok L hcs (Nat.lt_of_le_of_lt (Nat.div_le_self _ _) he)
     (Nat.lt_of_le_of_lt (Nat.mod_le _ _) he) hs) fun s' ⟨hP, hb⟩ => ⟨hP, ?_, fun k hk => ?_⟩
   · rw [L.keepBytes hP.b kB]; exact h.sb
-  · rcases (by omega : k < K ∨ k = K) with hk | rfl
+  · rcases (by omega_using [hk] : k < K ∨ k = K) with hk | rfl
     · rw [L.keepBytes hP.b (kS k hk)]; exact h.seeds k hk
     · rw [hb, h.sb]
 
@@ -184,12 +184,12 @@ theorem sample4At_ok (v : Sample4Impl) {oa oz : Nat} {s : State} (h : S4H oa oz 
   have hd := v.depth_le
   refine WP.seq (WP.mono (s4Glue_ok oa oz h.offA h.offZ s) fun s1 ⟨⟨hv, hm⟩, k⟩ => ?_)
   have hsp : s1.gpr .rsp = s.gpr .rsp := k.gpr (by decide)
-  refine WP.seq (WP.call v.ok v.nosp (by omega) (s4Pre h hv k) (by rw [k.2.1, k.2.2]; exact h.c)
+  refine WP.seq (WP.call v.ok v.nosp (by omega_using [hd]) (s4Pre h hv k) (by rw [k.2.1, k.2.2]; exact h.c)
     (by rw [k.2.2]; exact h.w) fun s2 hrd hwr hcs hf _ ⟨s₂, hm₂, hg₂, hpost⟩ => ?_)
   refine WP.mono (and15_ok s2) fun s3 ⟨⟨h15, hm3⟩, k3⟩ => ?_
   have hsd : ∀ k < 4, seed4 s1.callEntry.mem (pa s (sc 0)) k = seed4 s.mem (pa s (sc 0)) k := fun k hk => by
     unfold seed4
-    rw [ce_bytesAt s1 (p := pa s (sc 0) + BitVec.ofNat 64 (34 * k)) (n := 34) (by decide) (by rw [hsp]; exact h.kS.sub_right (Offset.sub_base _ (by omega))), hm]
+    rw [ce_bytesAt s1 (p := pa s (sc 0) + BitVec.ofNat 64 (34 * k)) (n := 34) (by decide) (by rw [hsp]; exact h.kS.sub_right (Offset.sub_base _ (by omega_using [hk]))), hm]
   simp only [sample4K, State.withRegions_gpr, State.withRegions_mem, ce_gpr' s1 (by decide : Reg.rdi ≠ .rsp),
     ce_gpr' s1 (by decide : Reg.rsi ≠ .rsp), hv.1, hv.2.1, hm₂] at hpost
   rw [hg₂ .rax (by decide), range_all_congr fun k hk => congrArg (fun B => (sampleNTT minIterations B).isSome)
@@ -198,7 +198,7 @@ theorem sample4At_ok (v : Sample4Impl) {oa oz : Nat} {s : State} (h : S4H oa oz 
     fun j hj f hf => ?_⟩
   · rw [k3.gpr (by simpa using h15'), hcs r hr, k.gpr (argRegs_cs r hr)]
   · rw [hm3, ← hm, ← hsp]
-    exact Frame.below_mono hf (by omega) (by omega)
+    exact Frame.below_mono hf (by omega_using [hd]) (by omega_using [])
   · rw [h15, hcs .r15 (by decide), k.gpr (by decide), hpost.1]
   · rw [hm3]; exact hpost.2 j hj f (by rw [hsd j hj]; exact hf)
 
@@ -260,13 +260,13 @@ theorem quad4_ok {s : State} (L : Lay rbs wbs s) (hcs : ∀ b ∈ rbs ++ wbs, b.
     WP isa (quad v n e₀ (sc oa) (sc oz)) s Q := by
   obtain ⟨c0, c1, c2, c3, _⟩ := quadChk_spec hc
   unfold quad
-  refine WP.seq (WP.mono (seed_step L hcs (by omega) c0 h) fun s₁ ⟨P₁, h₁⟩ => ?_)
+  refine WP.seq (WP.mono (seed_step L hcs (by omega_using [he]) c0 h) fun s₁ ⟨P₁, h₁⟩ => ?_)
   have L₁ := L.post P₁.b hcs
-  refine WP.seq (WP.mono (seed_step L₁ hcs (by omega) c1 h₁) fun s₂ ⟨P₂, h₂⟩ => ?_)
+  refine WP.seq (WP.mono (seed_step L₁ hcs (by omega_using [he]) c1 h₁) fun s₂ ⟨P₂, h₂⟩ => ?_)
   have L₂ := L₁.post P₂.b hcs
-  refine WP.seq (WP.mono (seed_step L₂ hcs (by omega) c2 h₂) fun s₃ ⟨P₃, h₃⟩ => ?_)
+  refine WP.seq (WP.mono (seed_step L₂ hcs (by omega_using [he]) c2 h₂) fun s₃ ⟨P₃, h₃⟩ => ?_)
   have L₃ := L₂.post P₃.b hcs
-  refine WP.seq (WP.mono (seed_step L₃ hcs (by omega) c3 h₃) fun s₄ ⟨P₄, h₄⟩ => ?_)
+  refine WP.seq (WP.mono (seed_step L₃ hcs (by omega_using [he]) c3 h₃) fun s₄ ⟨P₄, h₄⟩ => ?_)
   exact hQ s₄ (PPost.app (PPost.app (PPost.app P₁ P₂ (by decide)) P₃ (by decide)) P₄ (by decide)) h₄
     (L₃.post P₄.b hcs)
 
@@ -308,7 +308,7 @@ theorem copyT3 : (taint.check (X86_64.Taint.ofRegs [.rbx]) (copy (sc (34 * 3)) (
 
 theorem copyT {k : Nat} (hk : k < 4) : (taint.check (X86_64.Taint.ofRegs [.rbx]) (copy (sc (34 * k)) (sc oSB) 32)
     (Taint.hintOf taint (X86_64.Taint.ofRegs [.rbx]) (copy (sc (34 * k)) (sc oSB) 32))).isSome = true := by
-  rcases (by omega : k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3) with rfl | rfl | rfl | rfl
+  rcases (by omega_using [hk] : k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3) with rfl | rfl | rfl | rfl
   exacts [copyT0, copyT1, copyT2, copyT3]
 
 theorem setT : ∀ k < 4, ∀ i < 4, ∀ j < 4, (taint.check (X86_64.Taint.ofRegs [.rbx])
@@ -358,10 +358,10 @@ theorem quad_tr (v : Sample4Impl) (hcs : ∀ b ∈ rbs ++ wbs, b.1 ∈ bases) {�
   have hin : inB (rbs ++ wbs) (sc 0) 136 = true := by
     simp only [s4Chk, rdOk, Bool.and_eq_true] at c4; exact c4.1.1.1.1.1.2
   unfold quad
-  refine RelCT.seq (seed_tr hcs (by omega) (by decide) (hij 0 (by decide)).1 (hij 0 (by decide)).2 c0) ?_
-  refine RelCT.seq (seed_tr hcs (by omega) (by decide) (hij 1 (by decide)).1 (hij 1 (by decide)).2 c1) ?_
-  refine RelCT.seq (seed_tr hcs (by omega) (by decide) (hij 2 (by decide)).1 (hij 2 (by decide)).2 c2) ?_
-  refine RelCT.seq (seed_tr hcs (by omega) (by decide) (hij 3 (by decide)).1 (hij 3 (by decide)).2 c3) ?_
+  refine RelCT.seq (seed_tr hcs (by omega_using [he]) (by decide) (hij 0 (by decide)).1 (hij 0 (by decide)).2 c0) ?_
+  refine RelCT.seq (seed_tr hcs (by omega_using [he]) (by decide) (hij 1 (by decide)).1 (hij 1 (by decide)).2 c1) ?_
+  refine RelCT.seq (seed_tr hcs (by omega_using [he]) (by decide) (hij 2 (by decide)).1 (hij 2 (by decide)).2 c2) ?_
+  refine RelCT.seq (seed_tr hcs (by omega_using [he]) (by decide) (hij 3 (by decide)).1 (hij 3 (by decide)).2 c3) ?_
   refine RelCT.mono (sample4At_tr v) (fun x y h => ⟨S4H.of h.1.1 c4, S4H.of h.1.2.1 c4, h.1.eq hin, h.1.2.2.2, ?_⟩)
     fun _ _ h => h
   rw [bytesAt136, bytesAt136, seed4_eq h.2.1 (k := 0) (by decide), seed4_eq h.2.1 (k := 1) (by decide),

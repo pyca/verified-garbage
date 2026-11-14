@@ -33,9 +33,9 @@ theorem pdFinish_ok (s : State) {base dst np ep xp : BitVec 32} {len k eLen N R 
   have ready := h.ready.of_mem memU restU ((restU.gpr .r0 (by decide)).trans h.ready.ptr)
   have dims := pc_dimensions h.buffers.minLength h.buffers.maxLength h.buffers.space
   refine WP.mono (exportMasked_truncated_ok u ready.workspace ready.layout ready.width (by decide : 6 < 8)
-    (by have := h.buffers.minLength; omega) dims.2.2.2.1
+    (by have := h.buffers.minLength; omega_using [this]) dims.2.2.2.1
     h.buffers.outputFit (by rw [restU.wr]; exact h.buffers.write) h.buffers.outputSeparate
-    ready.ptr index output count (by rw [restU.sp]; have := h.stack.nowrap; omega)
+    ready.ptr index output count (by rw [restU.sp]; have := h.stack.nowrap; omega_using [this])
     (by rw [restU.rd, restU.wr, restU.sp]; exact h.stack.read (by decide) (by decide))
     (by rw [restU.sp]; exact (h.buffers.stackOutput.sub_right (Offset.sub_base _ (by decide))).symm)
     (by rw [memU, restU.sp]; exact h.flag)) ?_

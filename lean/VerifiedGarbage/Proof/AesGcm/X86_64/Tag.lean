@@ -104,7 +104,7 @@ theorem CtrCallF.withScr {Ctx St W SP : Addr} {o R : Nat} {s : State} (L : Lay C
   have hs : Covers [⟨W + BitVec.ofNat 64 512, 2048⟩] s.wr := he.perm.wC (by decide)
   exact ⟨h.rdi, h.rsi, h.rdx, h.rcx, h.r8, h.r9, h.rounds, h.wrap, h.kc, h.kd,
     (L.cw'.sub_left (Region.sub_prefix (by decide))).sub_right (Lay.wSub (by decide)), h.cd, hS,
-    L.w_w (by omega) (by omega) (by decide), h.stkK, h.stkC, h.stkD, by rw [hk]; exact L.stk_w (by decide),
+    L.w_w (by omega_using [ho]) (by omega_using [ho]) (by decide), h.stkK, h.stkC, h.stkD, by rw [hk]; exact L.stk_w (by decide),
     by
       have r := h.reads
       intro a n ⟨x, hx, hc⟩
@@ -195,7 +195,7 @@ theorem tagMid_ok (hN : 184 ≤ N) {o R : Nat} (ho : o = 0 ∨ o = 112) {H J : B
     · exact L.kc.symm) hR.2
   have r₁ := he₁.perm.stR (show 16 + 8 ≤ 80 by decide)
   have r₂ := he₁.perm.stR (show 24 + 8 ≤ 80 by decide)
-  have r₃ := he₁.perm.wR (show 176 + 8 ≤ N by omega) L.nlt
+  have r₃ := he₁.perm.wR (show 176 + 8 ≤ N by omega_using [hN]) L.nlt
   have w₁ := he₁.perm.wW (show o + 8 ≤ N by omega_arith) L.nlt
   have w₂ := he₁.perm.wW (show o + 8 + 8 ≤ N by omega_arith) L.nlt
   have dsep : (⟨W + BitVec.ofNat 64 o, 8⟩ : Region).Disjoint ⟨St + BitVec.ofNat 64 16 + BitVec.ofNat 64 8, 8⟩ := by

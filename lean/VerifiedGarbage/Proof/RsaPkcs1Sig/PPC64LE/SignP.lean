@@ -42,7 +42,7 @@ theorem sPreP_of {s : State} (h : (Spec.RsaPkcs1Sig.signPrecomputedContract abi 
   obtain ⟨sp1, sp2, hrd, hwr, on, oe, od, op, oq, odp, odq, oqi, os, oP, oa, ns, es, ds, ps, qs, dps, dqs, qis, sP,
     sa, ko, kn, ke, kd, kp, kq, kdp, kdq, kqi, ks, kP, ka, wo, wn, we, wd, wp, wq, wdp, wdq, wqi, ws, wP, ⟨k1, k2⟩,
     h4, e1, e2, p1, p2, q1, q2, h6, h10, h8, hs, hpl, hyp⟩ := h
-  exact ⟨⟨sp1, by simp only [↓reduceIte]; omega, hrd, hwr, on, oe, od, op, oq, odp, odq, oqi, os, oa, ns, es, ds,
+  exact ⟨⟨sp1, by simp only [↓reduceIte]; omega_using [sp2], hrd, hwr, on, oe, od, op, oq, odp, odq, oqi, os, oa, ns, es, ds,
     ps, qs, dps, dqs, qis, sa, ko, kn, ke, kd, kp, kq, kdp, kdq, kqi, ks, ka, wo, wn, we, wd, wp, wq, wdp, wdq, wqi,
     ws, k1, k2, h4, e1, e2, p1, p2, q1, q2, h6, h10, h8, hs⟩, ⟨oP, sP, kP, wP, hpl, fun _ => hyp⟩⟩
 

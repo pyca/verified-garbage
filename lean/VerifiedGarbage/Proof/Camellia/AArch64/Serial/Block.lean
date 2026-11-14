@@ -41,7 +41,7 @@ theorem xorKey_run {s : State} {r : Reg} {k : Nat}
       t.gpr r = s.gpr r ^^^ keyWord s k ∧
       (∀ q, q ≠ r → q ≠ .x10 → t.gpr q = s.gpr q) ∧
       t.mem = s.mem ∧ t.rd = s.rd ∧ t.wr = s.wr ∧ t.sp = s.sp ∧ t.v = s.v := by
-  obtain ⟨a,ae,av,ag,am,ard,awr,asp,avec⟩ := loadBE_run (r := .x10) ⟨by omega,by omega⟩ hread
+  obtain ⟨a,ae,av,ag,am,ard,awr,asp,avec⟩ := loadBE_run (r := .x10) ⟨by omega_using [],by omega_using [hk]⟩ hread
   let t := a.write .x r (a.read .x r ^^^ a.read .x .x10)
   refine ⟨t,?_,?_,?_,am,ard,awr,asp,avec⟩
   · rw [xorKey,VG.Interleave.runBlock_append,ae,Option.bind_some]
@@ -94,20 +94,20 @@ theorem decoded_halves (m : Mem) (p : Addr) :
   constructor <;> apply BitVec.eq_of_getLsbD_eq <;> intro i hi
   · rw [readBE,VG.Proof.Camellia.getLsbD_wordAt _ _ hi]
     have h := congrArg (fun b : Byte => b.getLsbD (i%8))
-      (VG.Proof.Camellia.byteOf_hi (Spec.Camellia.blockAt m p) (i := 7-i/8) (by omega))
+      (VG.Proof.Camellia.byteOf_hi (Spec.Camellia.blockAt m p) (i := 7-i/8) (by omega_using []))
     simp only [VG.Proof.Camellia.byteOf,BitVec.getLsbD_setWidth,BitVec.getLsbD_ushiftRight,
-      show i%8 < 8 by omega,decide_true,Bool.true_and,
-      show 56-8*(7-i/8)+i%8=i by omega,Spec.Camellia.blockAt,Vector.getElem_ofFn] at h
+      show i%8 < 8 by omega_using [],decide_true,Bool.true_and,
+      show 56-8*(7-i/8)+i%8=i by omega_using [hi],Spec.Camellia.blockAt,Vector.getElem_ofFn] at h
     simpa only [BitVec.getLsbD_setWidth,BitVec.getLsbD_ushiftRight,
       hi,decide_true,Bool.true_and,Spec.Camellia.blockAt] using h
   · rw [readBE,VG.Proof.Camellia.getLsbD_wordAt _ _ hi]
     have h := congrArg (fun b : Byte => b.getLsbD (i%8))
-      (VG.Proof.Camellia.byteOf_lo (Spec.Camellia.blockAt m p) (i := 7-i/8) (by omega))
+      (VG.Proof.Camellia.byteOf_lo (Spec.Camellia.blockAt m p) (i := 7-i/8) (by omega_using []))
     simp only [VG.Proof.Camellia.byteOf,BitVec.getLsbD_setWidth,BitVec.getLsbD_ushiftRight,
-      show i%8 < 8 by omega,decide_true,Bool.true_and,
-      show 56-8*(7-i/8)+i%8=i by omega,Spec.Camellia.blockAt,Vector.getElem_ofFn] at h
+      show i%8 < 8 by omega_using [],decide_true,Bool.true_and,
+      show 56-8*(7-i/8)+i%8=i by omega_using [hi],Spec.Camellia.blockAt,Vector.getElem_ofFn] at h
     rw [VG.Offset.add_add]
-    simpa only [show 8+(7-i/8)=8+7-i/8 by omega,
+    simpa only [show 8+(7-i/8)=8+7-i/8 by omega_using [hi],
       BitVec.getLsbD_setWidth,hi,decide_true,Bool.true_and,Spec.Camellia.blockAt] using h
 
 theorem storeBlock_run (s : State)
@@ -168,19 +168,19 @@ theorem stored_bytes {m : Mem} {p : Addr} {hi lo : BitVec 64}
     rw [b]
     simp only [BitVec.getLsbD_extractLsb',hj,decide_true,Bool.true_and]
     change (byteRev64 hi).getLsbD (8*i+j) = _
-    rw [byteRev64_getLsbD _ (by omega),VG.Proof.Camellia.getLsbD_byteOf _ h hj]
-    congr 1 <;> omega
+    rw [byteRev64_getLsbD _ (by omega_using [hj, h]),VG.Proof.Camellia.getLsbD_byteOf _ h hj]
+    congr 1 <;> omega_using [hj]
   · simp only [h,ite_false]
     have b : m (p+BitVec.ofNat 64 8+BitVec.ofNat 64 (i-8)) =
         (m.readW (p+BitVec.ofNat 64 8) 64).extractLsb' (8*(i-8)) 8 := by
       change m _ = (m.read (p+BitVec.ofNat 64 8) 8).extractLsb' (8*(i-8)) 8
-      exact (Mem.extractLsb'_read m _ (by omega : i-8 < 8)).symm
-    rw [h1,VG.Offset.add_add,show 8+(i-8)=i by omega] at b
+      exact (Mem.extractLsb'_read m _ (by omega_using [hn] : i-8 < 8)).symm
+    rw [h1,VG.Offset.add_add,show 8+(i-8)=i by omega_using [h]] at b
     rw [b]
     simp only [BitVec.getLsbD_extractLsb',hj,decide_true,Bool.true_and]
     change (byteRev64 lo).getLsbD (8*(i-8)+j) = _
-    rw [byteRev64_getLsbD _ (by omega),VG.Proof.Camellia.getLsbD_byteOf _ (by omega) hj]
-    congr 1 <;> omega
+    rw [byteRev64_getLsbD _ (by omega_using [hn, hj]),VG.Proof.Camellia.getLsbD_byteOf _ (by omega_using [hn]) hj]
+    congr 1 <;> omega_using [hj]
 
 theorem whitening_run (s : State) (k : Nat) (hk : k+1 < 34)
     (hr : ∀ j < 34, InRegions (s.rd ++ s.wr) (s.gpr .x5+BitVec.ofNat 64 (256+8*j)) 8)
@@ -193,7 +193,7 @@ theorem whitening_run (s : State) (k : Nat) (hk : k+1 < 34)
       (∀ r, r ∉ written → t.gpr r = s.gpr r) ∧
       Frame [⟨s.gpr .x5+BitVec.ofNat 64 768,16⟩] s.mem t.mem ∧
       t.rd = s.rd ∧ t.wr = s.wr ∧ t.sp = s.sp := by
-  obtain ⟨a,ae,av,ag,am,ard,awr,asp,_⟩ := xorKey_run (r := .x7) (by decide) (by omega) (hr k (by omega))
+  obtain ⟨a,ae,av,ag,am,ard,awr,asp,_⟩ := xorKey_run (r := .x7) (by decide) (by omega_using [hk]) (hr k (by omega_using [hk]))
   have ar : InRegions (a.rd ++ a.wr) (a.gpr .x5+BitVec.ofNat 64 (256+8*(k+1))) 8 := by
     rw [ard,awr,ag _ (by decide) (by decide)]
     exact hr (k+1) hk

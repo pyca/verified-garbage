@@ -88,20 +88,20 @@ theorem fourLoopStep_ok {s₀ s : State} {b p : Addr} {n d : Nat} {L : List Zq}
     WP isa vectorBody s fun t => ParseInv s₀ b p n L (d+4) t ∧ t.gpr .x17=4 ∧
       t.gpr .x16=(if 4≤256-(parsed s₀ b L (d+4)).length then t.gpr .x5 else 0) := by
   refine WP.mono (fourBody_ok h.constants h17 h.zero
-    (by rw [h.keep.rd,h.keep.wr,h.x2]; exact hl.read16 _ (by omega))
+    (by rw [h.keep.rd,h.keep.wr,h.x2]; exact hl.read16 _ (by omega_using [hd]))
     h.x3 h.x4 hc h.stored (fun i hi => by rw [h.keep.wr]; exact hl.write4 i hi)
     (by rw [h.keep.wr,h.x3]; exact hl.write16 _ hc))
     fun t ⟨ht,hf,hconst,h2,h5,h3,h4,hguard,hst⟩ => ?_
   have he := h.batch hl hd hc
   rw [he] at h3 h4 hst
   have hn5 : (t.gpr .x5).toNat=n-(d+4) := by
-    rw [h5,toNat_sub_n (by rw [h.x5]; simp; omega),h.x5,show (4 : BitVec 64).toNat=4 from rfl]
-    omega
+    rw [h5,toNat_sub_n (by rw [h.x5]; simp; omega_using [hd]),h.x5,show (4 : BitVec 64).toNat=4 from rfl]
+    omega_using []
   refine ⟨⟨(h.keep.trans ht).mono (by decide),h.frame.trans hf,hconst,hd,?_,h3,h4,hn5,?_,?_,hst⟩,
     by rw [ht.get .x17]; exact h17,?_⟩
   · rw [h2,h.x2]
     change b+BitVec.ofNat 64 (3*d)+BitVec.ofNat 64 12=_
-    rw [Offset.add_add,show 3*d+12=3*(d+4) by omega]
+    rw [Offset.add_add,show 3*d+12=3*(d+4) by omega_using []]
   · rw [ht.get .x10]; exact h.mask
   · rw [ht.get .x0]; exact h.zero
   · rw [hguard,h4]
@@ -146,10 +146,10 @@ theorem fourLoop_ok {s₀ s : State} {b p : Addr} {n d : Nat} {L : List Zq}
   refine WP.mono (fourLoopStep_ok hl ht h17 hj hc) fun u ⟨hu,h17,hflag⟩ => ?_
   have he := fourGuard_eval hflag hu.x5
   by_cases hp : j+4<n ∧ (parsed s₀ b L (j+4)).length+4≤256
-  · refine .inr ⟨?_,n-(j+4),by omega,j+4,rfl,hu,by omega,by omega,h17,by omega,hp.2⟩
-    rw [he,decide_eq_true (by omega)]
-  · refine .inl ⟨?_,j+4,hu,by omega,by omega,h17,by omega⟩
-    rw [he,decide_eq_false (by omega)]
+  · refine .inr ⟨?_,n-(j+4),by omega_using [hj],j+4,rfl,hu,by omega_using [hdj],by omega_using [hmod],h17,by omega_using [hmod, hp],hp.2⟩
+    rw [he,decide_eq_true (by omega_using [hp])]
+  · refine .inl ⟨?_,j+4,hu,by omega_using [hdj],by omega_using [hmod],h17,by omega_using [hj, hp]⟩
+    rw [he,decide_eq_false (by omega_using [hp])]
 
 end VG.Proof.MlDsa.AArch64.Optimized.ResidentRej
 

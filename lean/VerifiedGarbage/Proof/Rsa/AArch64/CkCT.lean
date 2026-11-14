@@ -305,7 +305,7 @@ theorem mulPQ_ckct {hc₁ : VG.Taint.Hint VG.AArch64.Taint.T}
       fun _ _ h => WP.mono h.2 fun _ _ => trivial).mono (fun _ _ h => h) fun _ _ _ => trivial) fun p s h => ?_
   · obtain ⟨⟨⟨I, m₀, c, rfl, h', L, hmw⟩, _⟩, _⟩ := h
     have := L.pl2; have := L.ql2; have := L.k2
-    refine WP.mono (pqSetupK_ok h'.ws h'.args.pl h'.args.ql (by omega) (by omega))
+    refine WP.mono (pqSetupK_ok h'.ws h'.args.pl h'.args.ql (by omega_arith) (by omega_arith))
       fun t ⟨a0, a11, a9, a8, a12, a13, a7⟩ r hr => ?_
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl
@@ -313,7 +313,7 @@ theorem mulPQ_ckct {hc₁ : VG.Taint.Hint VG.AArch64.Taint.T}
   · rw [← e]
     obtain ⟨⟨I, m₀, c, rfl, h', L, hmw⟩, _⟩ := h
     exact WP.mono (mulPQ_raw_ok h'.ws h'.args.pl h'.args.ql L.pl1 L.ql1
-      (by have := L.pcap; simp only [wk]; omega) (by have := L.qcap; simp only [wk]; omega)) fun _ ⟨_, o, k⟩ =>
+      (by have := L.pcap; simp only [wk]; omega_using [this]) (by have := L.qcap; simp only [wk]; omega_using [this])) fun _ ⟨_, o, k⟩ =>
       GK.arr ⟨I, m₀, c, rfl, h', L, hmw⟩ (by decide) (Nat.le_refl _) o k (by decide)
 
 end VG.Proof.Rsa.AArch64

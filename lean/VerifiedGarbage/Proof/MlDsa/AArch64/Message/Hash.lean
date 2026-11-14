@@ -34,24 +34,24 @@ variable {L : Lay} {g : Reg → BitVec 64} {vv : VReg → BitVec 128} {m₀ : Me
 theorem x0 (L : Lay) : L.X + BitVec.ofNat 64 0 = L.X := BitVec.add_zero _
 
 theorem st_ks : Region.Disjoint ⟨L.ST, 200⟩ ⟨L.KS, 640⟩ := by
-  have := Offset.disjoint L.X (d := 0) (n := 200) (e := 200) (k := 640) (by omega) (by omega) (by omega)
+  have := Offset.disjoint L.X (d := 0) (n := 200) (e := 200) (k := 640) (by omega_using []) (by omega_using []) (by omega_using [])
   simpa only [x0] using this
 
 theorem st_mu : Region.Disjoint ⟨L.ST, 200⟩ ⟨L.MU, 64⟩ := by
-  have := Offset.disjoint L.X (d := 0) (n := 200) (e := 840) (k := 64) (by omega) (by omega) (by omega)
+  have := Offset.disjoint L.X (d := 0) (n := 200) (e := 840) (k := 64) (by omega_using []) (by omega_using []) (by omega_using [])
   simpa only [x0] using this
 
 theorem mu_ks : Region.Disjoint ⟨L.MU, 64⟩ ⟨L.KS, 640⟩ :=
-  Offset.disjoint L.X (d := 840) (n := 64) (e := 200) (k := 640) (by omega) (by omega) (by omega)
+  Offset.disjoint L.X (d := 840) (n := 64) (e := 200) (k := 640) (by omega_using []) (by omega_using []) (by omega_using [])
 
-theorem w_st : Within ⟨L.ST, 200⟩ L.W := within_base _ (by omega)
-theorem w_ks : Within ⟨L.KS, 640⟩ L.W := within_off _ (by omega)
-theorem w_mu : Within ⟨L.MU, 64⟩ L.W := within_off _ (by omega)
+theorem w_st : Within ⟨L.ST, 200⟩ L.W := within_base _ (by omega_using [])
+theorem w_ks : Within ⟨L.KS, 640⟩ L.W := within_off _ (by omega_using [])
+theorem w_mu : Within ⟨L.MU, 64⟩ L.W := within_off _ (by omega_using [])
 
 theorem k_st (hL : L.Ok) : L.STK.Disjoint ⟨L.ST, 200⟩ := by
-  have := hL.stk_x (e := 0) (k := 200) (by omega); simpa only [x0] using this
-theorem k_ks (hL : L.Ok) : L.STK.Disjoint ⟨L.KS, 640⟩ := hL.stk_x (by omega)
-theorem k_mu (hL : L.Ok) : L.STK.Disjoint ⟨L.MU, 64⟩ := hL.stk_x (by omega)
+  have := hL.stk_x (e := 0) (k := 200) (by omega_using []); simpa only [x0] using this
+theorem k_ks (hL : L.Ok) : L.STK.Disjoint ⟨L.KS, 640⟩ := hL.stk_x (by omega_using [])
+theorem k_mu (hL : L.Ok) : L.STK.Disjoint ⟨L.MU, 64⟩ := hL.stk_x (by omega_using [])
 
 theorem cov_x (hL : L.Ok) {e k : Nat} (h₂ : e + k ≤ 1024) :
     ∃ R ∈ L.rd ++ L.wr, Within ⟨L.X + BitVec.ofNat 64 e, k⟩ R := by
@@ -84,8 +84,8 @@ theorem zeroSt_ok (hL : L.Ok) {t : State} (hc : Ctx L g vv m₀ t) :
       exact covers_of_within fun r hr => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl
-        · have := cov_xw hL (e := 0) (k := 200) (by omega); rwa [x0] at this
-        · exact cov_xw hL (e := 200) (by omega)
+        · have := cov_xw hL (e := 0) (k := 200) (by omega_using []); rwa [x0] at this
+        · exact cov_xw hL (e := 200) (by omega_using [])
   refine WP.mono (zeroState_ok hS ⟨rfl, rfl, rfl, fun _ _ _ => rfl⟩) fun t' ⟨hk, hz⟩ => ?_
   simp only [Proof.MlKem.AArch64.STr, hc.x28, x0] at hk hz
   exact ⟨hc.kept hL hk (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact .inl w_st),
@@ -122,7 +122,7 @@ theorem kabs_ok (v : Proof.Sha3.AArch64.Permutation) (hL : L.Ok) {t : State} (hc
   rw [hn] at e4
   have hs1 : t1.sp = L.SP := hc1.sp
   refine absorb_callWith v (st := L.ST) (dt := dp) (sc := L.KS) (rate := 136) (pos := q) (len := n) e0
-    (by rw [e1]; rfl) (by rw [e2, BitVec.toNat_ofNat]; omega) e3 (by rw [e4, BitVec.toNat_ofNat]; omega) e5
+    (by rw [e1]; rfl) (by rw [e2, BitVec.toNat_ofNat]; omega_using [hql]) e3 (by rw [e4, BitVec.toNat_ofNat]; omega_using [hnl]) e5
     (by decide) hql st_ks dS dK (by rw [hs1]; exact hL.nSP) (by simp only [Proof.MlKem.AArch64.stk, hs1]; exact k_st hL)
     (by simp only [Proof.MlKem.AArch64.stk, hs1]; exact kD) (by simp only [Proof.MlKem.AArch64.stk, hs1]; exact k_ks hL) ?_ ?_ fun s' hk hrep hx => ?_
   · rw [hc1.rd, hc1.wr]
@@ -130,14 +130,14 @@ theorem kabs_ok (v : Proof.Sha3.AArch64.Permutation) (hL : L.Ok) {t : State} (hc
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
     · exact hin
-    · have := cov_x hL (e := 0) (k := 200) (by omega); rwa [x0] at this
-    · exact cov_x hL (e := 200) (by omega)
+    · have := cov_x hL (e := 0) (k := 200) (by omega_using []); rwa [x0] at this
+    · exact cov_x hL (e := 200) (by omega_using [])
   · rw [hc1.wr]
     refine covers_of_within fun r hr => ?_
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
-    · have := cov_xw hL (e := 0) (k := 200) (by omega); rwa [x0] at this
-    · exact cov_xw hL (e := 200) (by omega)
+    · have := cov_xw hL (e := 0) (k := 200) (by omega_using []); rwa [x0] at this
+    · exact cov_xw hL (e := 200) (by omega_using [])
   · rw [hs1] at hk
     refine ⟨hc1.kept hL hk fun r hr => ?_, by rw [← o.mem]; exact hk.frame, fun msg hm hp => ?_, hx⟩
     · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -170,21 +170,21 @@ theorem kpad_ok (v : Proof.Sha3.AArch64.Permutation) (hL : L.Ok) {t : State} (hc
   rw [hq] at e2
   have hs1 : t1.sp = L.SP := hc1.sp
   refine pad_callWith v (st := L.ST) (sc := L.KS) (rate := 136) (pos := q) e0
-    (by rw [e1]; rfl) (by rw [e2, BitVec.toNat_ofNat]; omega) e4
+    (by rw [e1]; rfl) (by rw [e2, BitVec.toNat_ofNat]; omega_using [hql]) e4
     (by decide) hql st_ks (by rw [hs1]; exact hL.nSP) (by simp only [Proof.MlKem.AArch64.stk, hs1]; exact k_st hL)
     (by simp only [Proof.MlKem.AArch64.stk, hs1]; exact k_ks hL) ?_ ?_ fun s' hk hpost => ?_
   · rw [hc1.rd, hc1.wr]
     refine covers_of_within fun r hr => ?_
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
-    · have := cov_x hL (e := 0) (k := 200) (by omega); rwa [x0] at this
-    · exact cov_x hL (e := 200) (by omega)
+    · have := cov_x hL (e := 0) (k := 200) (by omega_using []); rwa [x0] at this
+    · exact cov_x hL (e := 200) (by omega_using [])
   · rw [hc1.wr]
     refine covers_of_within fun r hr => ?_
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
-    · have := cov_xw hL (e := 0) (k := 200) (by omega); rwa [x0] at this
-    · exact cov_xw hL (e := 200) (by omega)
+    · have := cov_xw hL (e := 0) (k := 200) (by omega_using []); rwa [x0] at this
+    · exact cov_xw hL (e := 200) (by omega_using [])
   · rw [hs1] at hk
     refine ⟨hc1.kept hL hk fun r hr => ?_, by rw [← o.mem]; exact hk.frame, fun msg hm hp => ?_⟩
     · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -222,16 +222,16 @@ theorem ksqz_ok (v : Proof.Sha3.AArch64.Permutation) (hL : L.Ok) {t : State} (hc
     refine covers_of_within fun r hr => ?_
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
-    · have := cov_x hL (e := 0) (k := 200) (by omega); rwa [x0] at this
-    · exact cov_x hL (e := 840) (by omega)
-    · exact cov_x hL (e := 200) (by omega)
+    · have := cov_x hL (e := 0) (k := 200) (by omega_using []); rwa [x0] at this
+    · exact cov_x hL (e := 840) (by omega_using [])
+    · exact cov_x hL (e := 200) (by omega_using [])
   · rw [hc1.wr]
     refine covers_of_within fun r hr => ?_
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
-    · have := cov_xw hL (e := 0) (k := 200) (by omega); rwa [x0] at this
-    · exact cov_xw hL (e := 840) (by omega)
-    · exact cov_xw hL (e := 200) (by omega)
+    · have := cov_xw hL (e := 0) (k := 200) (by omega_using []); rwa [x0] at this
+    · exact cov_xw hL (e := 840) (by omega_using [])
+    · exact cov_xw hL (e := 200) (by omega_using [])
   · rw [hs1] at hk
     refine ⟨hc1.kept hL hk fun r hr => ?_, by rw [← o.mem]; exact hk.frame, by rw [hout, o.mem]⟩
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr

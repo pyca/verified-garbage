@@ -43,7 +43,7 @@ theorem selectRow_ok {s : State} {j v : Nat} (hj : j < 32) (hv : v < 32)
         s.mem.read (s.gpr .x16 + BitVec.ofNat 64 (16 * i)) 16 else s.v (acc i)) ∧
       VKeep (.v20 :: written) s t := by
   rw [WP.block_append_iff]
-  refine WP.mono (compare_ok (by omega) (by omega) h23 h22) fun a ⟨ha, ka⟩ => ?_
+  refine WP.mono (compare_ok (by omega_using [hj]) (by omega_using [hv]) h23 h22) fun a ⟨ha, ka⟩ => ?_
   refine WP.mono (loadBits_ok (choose := j = v) 4 (by decide) ha
     (fun i hi => by rw [ka.rd, ka.wr, ka.gpr]; exact hld i hi)) fun t ⟨ht, kt⟩ => ?_
   refine ⟨?_, ka.trans kt⟩

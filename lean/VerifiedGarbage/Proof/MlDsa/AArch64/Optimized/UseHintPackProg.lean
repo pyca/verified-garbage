@@ -225,24 +225,24 @@ theorem prog_ok {g : Nat} (hg : IsG g) {s : State} (hp : Pre g s) :
       (by rw [bi,bo];exact hp.sep) (by rw [bh,bo];exact hp.hintSep) ?_ ?_ ?_ ?_) fun t ht=>?_
     · intro j hj k hk
       rw [br,bw,bh,Offset.add_add]
-      exact subregion hp.hints (by omega) (by omega)
+      exact subregion hp.hints (by omega_using [hj, hk]) (by omega_using [])
     · intro j hj k hk
       rw [br,bw,bi,Offset.add_add]
-      exact subregion hp.input (by omega) (by omega)
+      exact subregion hp.input (by omega_using [hj, hk]) (by omega_using [])
     · intro j hj
       rw [bw,bo]
       apply subregion hp.output
       · rcases hg with rfl|rfl
-        · change 8*j+8≤128;omega
-        · change 12*j+8≤192;omega
+        · change 8*j+8≤128;omega_using [hj]
+        · change 12*j+8≤192;omega_using [hj]
       · rcases hg with rfl|rfl <;> decide
     · intro j hj hw
       rw [bw,bo]
       change InRegions s.wr ((s.gpr .x0+BitVec.ofNat 64 (2*packWidth g*j))+BitVec.ofNat 64 8) 4
       rw [Offset.add_add]
       apply subregion hp.output
-      · rw [hw];omega
-      · rw [hw];omega
+      · rw [hw];omega_using [hj]
+      · rw [hw];omega_using []
     · exact ⟨by simpa only [bm,bo] using ht.frame,
         by simpa only [bm,bo,bh,bi] using ht.bytes⟩
 

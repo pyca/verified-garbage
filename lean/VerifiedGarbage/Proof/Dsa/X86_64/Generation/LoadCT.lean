@@ -48,8 +48,8 @@ theorem loadZero_state {a ptr len : Nat} (ha : a < 16) (hp : ptr < 32) (hl : len
   have hdr (i : Nat) (hi : i < 32) : word t.mem p.B (8 * i) = word s.mem p.B (8 * i) := by
     apply f.word_eq
     · simp only [List.mem_singleton]; rintro r rfl
-      left; simp only [slot, hdrBytes]; omega
-    · have := h.ws.h256; have := h.ws.scr.nowrap; omega
+      left; simp only [slot, hdrBytes]; omega_using [hi]
+    · have := h.ws.h256; have := h.ws.scr.nowrap; omega_using [hi]
   refine ⟨ht, (hdr ptr hp).trans h.pointer, (hdr len hl).trans h.length,
     h.source.congrK ?_ hk, h.positive, h.fits⟩
   intro x hx
@@ -104,9 +104,9 @@ theorem loadTail_ct {a ptr len : Nat} (ha : a < 16) (hp : ptr < 32) (hl : len < 
     have words := h.ws.w2
     have fits := h.fits
     exact WP.mono (loadBE_ok (w := (p.bytes.length + 7) / 8) (h.ws.scr.congr hk.2.2)
-      hsi hcx hbx rfl h.positive (by omega) rfl (by omega)
-      (fun i hi => src.rd i (by omega)) (fun i hi => src.val i (by omega))
-      (fun i hi => Or.inr (by have := src.out i (by omega); omega))) (fun _ _ => True.intro)
+      hsi hcx hbx rfl h.positive (by omega_using [words, fits]) rfl (by omega_using [room, fits])
+      (fun i hi => src.rd i (by omega_using [hi])) (fun i hi => src.val i (by omega_using [hi]))
+      (fun i hi => Or.inr (by have := src.out i (by omega_using [hi]); omega_using [room, fits, this]))) (fun _ _ => True.intro)
 
 theorem loadCandidate_ct {a ptr len : Nat} (ha : a < 16) (hp : ptr < 32) (hl : len < 32)
     {hc₁ hc₂ : VG.Taint.Hint VG.X86_64.Taint.T}

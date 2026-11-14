@@ -49,7 +49,7 @@ theorem tailBody_ok (W : Window) {s t : State} {P ep : Addr} {w i b : Nat}
     fun d ⟨cd,td,pd,id,fd,kd,hd⟩ => ?_
   have ed := (hd _ (by decide) (by decide)).trans ec
   have ld := (hd _ (by decide) (by decide)).trans lc
-  refine WP.mono (remaining_ok cd (by omega) id ld) fun u ⟨⟨hm,h3⟩,ku⟩ => ?_
+  refine WP.mono (remaining_ok cd (by omega_using [hi]) id ld) fun u ⟨⟨hm,h3⟩,ku⟩ => ?_
   have fu : Frm P (crtWinRanges w) d.mem u.mem := hm.symm ▸ Frm.refl _ _ _
   refine ⟨⟨cd.of_win fu ku.wr (ku.gpr .x0 (by decide)),hm.symm ▸ td,
     by simpa only [Pending,hm] using pd,hm.symm ▸ id,hm.symm ▸ ed,hm.symm ▸ ld,?_,?_⟩,h3⟩

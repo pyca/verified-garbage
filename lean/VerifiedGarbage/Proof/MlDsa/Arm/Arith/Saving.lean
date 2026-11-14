@@ -72,17 +72,17 @@ theorem wp_saving (rs : List Reg) (body : Prog isa) {W : List Region} :
   | cons r rs ih =>
     intro Q s hsp hW hb
     simp only [List.length_cons, Nat.mul_add, Nat.mul_one] at hsp hW hb
-    have hs4 : 4 ≤ s.sp.toNat := by omega
+    have hs4 : 4 ≤ s.sp.toNat := by omega_using [hsp]
     have e4 : (4 : BitVec 32) = BitVec.ofNat 32 (4 * [r].length) := rfl
     have hsp' : (s.sp - 4).toNat = s.sp.toNat - 4 := by bv_omega_arith
     have hsub : Region.Sub (belowA (s.sp - 4) (4 * rs.length)) (belowA s.sp (4 * rs.length + 4)) := by
-      have := belowA_push (sp := s.sp) (k := 4) (a := 4 * rs.length) (by omega)
+      have := belowA_push (sp := s.sp) (k := 4) (a := 4 * rs.length) (by omega_using [hsp])
       rwa [Nat.add_comm] at this
-    have hwd := word_region s.sp (n := 4 * rs.length) (by omega)
+    have hwd := word_region s.sp (n := 4 * rs.length) (by omega_using [hsp])
     rw [Nat.add_comm] at hwd
-    refine WP.frame (rs := [r]) (r := r) rfl (by simp; omega) (by simp) ?_
+    refine WP.frame (rs := [r]) (r := r) rfl (by simp; omega_using [hsp]) (by simp) ?_
     have ih' := ih (fun s₂ => Q s₂ ∧ s₂.mem.readW (State.addr (s.sp - 4)) 32 = s.gpr r) (pushed [r] s)
-      (by rw [pushed_sp, ← e4, hsp']; omega)
+      (by rw [pushed_sp, ← e4, hsp']; omega_using [hsp])
       (fun R hR => (hW R hR).sub_left (by rw [pushed_sp, ← e4]; exact hsub)) (fun s₁ hE => ?_)
     · refine WP.mono ih' fun s' ⟨s₂, ⟨hq, hword⟩, hm, hrd, hsp₂, hwr, hg⟩ => ⟨s₂, hq, ?_, ?_, ?_, ?_, ?_⟩
       · exact hm
@@ -109,7 +109,7 @@ theorem wp_saving (rs : List Reg) (body : Prog isa) {W : List Region} :
         · rw [List.mem_singleton] at hR; subst hR
           refine ⟨_, List.mem_singleton_self _, fun x hx => hwd.byte ?_⟩
           simp only [Region.Contains] at hx ⊢
-          omega
+          omega_using [hx]
         · rw [List.mem_singleton] at hR; subst hR
           refine ⟨_, List.mem_singleton_self _, ?_⟩
           rw [pushed_sp, ← e4]; exact hsub
@@ -118,7 +118,7 @@ theorem wp_saving (rs : List Reg) (body : Prog isa) {W : List Region} :
         rw [hE.frame.readW (r := ⟨State.addr (s.sp - 4), 4⟩) (Region.contains_self _ _)
           (fun R hR => by
             rw [List.mem_singleton] at hR; subst hR
-            rw [pushed_sp, ← e4]; exact word_disj s.sp (by omega)) (by decide)]
+            rw [pushed_sp, ← e4]; exact word_disj s.sp (by omega_using [hsp])) (by decide)]
         exact pushed_word r s
       rw [hf.readW (r := belowA s.sp (4 * rs.length + 4)) hwd (fun R hR => hW R hR) (by decide), hw₁]
 

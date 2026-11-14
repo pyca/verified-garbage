@@ -81,7 +81,7 @@ theorem aad_entry {s : State} (hs : streamAadRISCV64.pre s) {x : List Byte}
   have sW : Region.Sub (savedR W) ⟨W, 2560⟩ := Offset.sub_base _ (by decide)
   have hdat : bytesAt s₁.mem D n = bytesAt s.mem D n :=
     bytesAt_frame en.frame (fun r hr => by
-      simp only [List.mem_singleton] at hr; subst hr; exact ddw.sub_right sW) (by omega)
+      simp only [List.mem_singleton] at hr; subst hr; exact ddw.sub_right sW) (by omega_using [hn])
   have hH : blockAt s₁.mem (s₁.gpr .s2 + BitVec.ofNat 64 240) = Spec.Gcm.ctxH s.mem Ctx := by
     rw [h29, ctxH_eq]
     exact blockAt_frame en.frame (fun r hr => by
@@ -119,7 +119,7 @@ theorem aad_run [VG.Proof.Gcm.RISCV64.GhashLaw] {s : State} (hs : streamAadRISCV
       (bytesAt_frame hf (fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr
         exact (dS 32 16 (by decide)).sub_left (Region.sub_prefix (Nat.le_of_lt (Nat.mod_lt _ (by decide)))))
-        (by omega))
+        (by omega_using []))
   refine WP.seq (WP.mono (absorb_ok (L₀.v h29 h30 h31) (.inr rfl) hIn) fun s₂ h₂ => ?_)
   have f₂ := h₂.frame
   rw [h30, h31] at f₂
@@ -160,13 +160,13 @@ theorem streamAad_wp [VG.Proof.Gcm.RISCV64.GhashLaw] {s : State} (hs : streamAad
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     have st_off : ∀ e k, e + k ≤ 80 → (d + 16 ≤ e ∨ e + k ≤ d) →
         (⟨s.gpr .a1 + BitVec.ofNat 64 d, 16⟩ : Region).Disjoint ⟨s.gpr .a1 + BitVec.ofNat 64 e, k⟩ :=
-      fun e k he h => Offset.disjoint _ h (by omega) (by omega)
+      fun e k he h => Offset.disjoint _ h (by omega_using [hd]) (by omega_using [he])
     rcases hr with rfl | rfl | rfl | rfl | rfl
-    · exact (dsw.sub_left (Offset.sub_base _ (by omega))).sub_right (Offset.sub_base _ (by decide))
-    · exact st_off 16 16 (by decide) (by omega)
-    · exact st_off 32 16 (by decide) (by omega)
-    · exact (dsw.sub_left (Offset.sub_base _ (by omega))).sub_right (Offset.sub_base _ (by decide))
-    · exact (hstk.buf (r := ⟨s.gpr .a1, 80⟩) (by simp)).sub_left (Offset.sub_base _ (by omega))
+    · exact (dsw.sub_left (Offset.sub_base _ (by omega_using [hd]))).sub_right (Offset.sub_base _ (by decide))
+    · exact st_off 16 16 (by decide) (by omega_using [hd'])
+    · exact st_off 32 16 (by decide) (by omega_using [hd'])
+    · exact (dsw.sub_left (Offset.sub_base _ (by omega_using [hd]))).sub_right (Offset.sub_base _ (by decide))
+    · exact (hstk.buf (r := ⟨s.gpr .a1, 80⟩) (by simp)).sub_left (Offset.sub_base _ (by omega_using [hd]))
   refine WP.mono (aad_run hs hx) fun s' ⟨_, habs, hf⟩ => ?_
   refine Proof.Gcm.streamRepr_iff.mpr ⟨?_, ?_, ?_⟩
   · rw [← hj]

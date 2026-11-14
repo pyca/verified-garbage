@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Pbkdf2.MdStep
 import VerifiedGarbage.Proof.Hmac.Common
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # HMAC over a Merkle–Damgård hash function: the outer hash as one compression
@@ -31,7 +32,7 @@ theorem blockAt_tailPad {D : Nat} {m : Mem} {p : Addr} (hD : D ≤ B)
   simp only [blockAt, tailBlock]
   refine H.parse_congr fun k hk => ?_
   have e := Hmac.Common.bytesAt_add m p D (B - D)
-  rw [h, show D + (B - D) = B by omega] at e
+  rw [h, show D + (B - D) = B by omega_using [hD]] at e
   rw [← e, Hmac.Common.bytesAt_getD' _ _ hk]
 
 /-- The hash of a block `p` and `D` bytes `x` is one compression, of the hash

@@ -40,7 +40,7 @@ theorem wordsAt_congr {m₁ m₂ : Mem} {q : Addr} {k N : Nat} (hk : 8 * k ≤ N
   List.map_congr_left fun i hi => Mem.readW_congr fun t ht => by
     have := List.mem_range.mp hi
     rw [Offset.add_add]
-    exact (h _ (Offset.contains_base _ (by omega) (by omega))).symm
+    exact (h _ (Offset.contains_base _ (by omega_using [hk, ht, this]) (by omega_using [hk, hN, ht, this]))).symm
 
 theorem parameterInitOut : PostOut (Spec.Ffdh.parameterInitContract abi) (Spec.Ffdh.parameterInitSig.retBits 64) :=
   postOut_of_local ScrubAbi.plain fun vs m m₁ m₂ r hlen hb h => by

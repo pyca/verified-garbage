@@ -72,7 +72,7 @@ theorem combine_run (u : State) {j : Nat} (hj : j < 4) (hw : InRegions u.wr (add
         else if j = 2 then u.mem.readW (addr (u.gpr .ebp) fOff) 32 ^^^ u.gpr .edi
         else u.mem.readW (addr (u.gpr .ebp) fOff) 32 + u.gpr .edi) := by
   have hr := region_in (rs := u.rd) hw
-  rcases (by omega : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3) with rfl | rfl | rfl | rfl <;>
+  rcases (by omega_using [hj] : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3) with rfl | rfl | rfl | rfl <;>
     simp only [fOff] at hw hr ⊢ <;> brun [combine, hw, hr]
 
 /-- S-box `j`'s lookup, then its accumulation into F's slot, which holds
@@ -103,7 +103,7 @@ theorem step_run {sch : Nat} {S : BitVec 32} {s₀ : State} (E : FEnv sch S s₀
   have vbp : v.gpr .ebp = s₀.gpr .ebp := (vk.gpr (by decide)).trans ebp
   have hw : InRegions v.wr (addr (v.gpr .ebp) fOff) 4 := by rw [vk.2.2, vk.gpr (by decide)]; exact Eu.fw
   refine WP.mono (WP.keep [.ecx] (combine_run v hj hw) (by
-    rcases (by omega : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3) with rfl | rfl | rfl | rfl <;> decide))
+    rcases (by omega_using [hj] : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3) with rfl | rfl | rfl | rfl <;> decide))
     fun t ⟨tm, tk⟩ => hQ t ((k.trans vk).trans tk |>.mono (by decide)) ?_
   rw [tm, vm, vbp, v7, hK]
   -- For any `j`, with `fAcc_step`: a case split on `j` would have the kernel

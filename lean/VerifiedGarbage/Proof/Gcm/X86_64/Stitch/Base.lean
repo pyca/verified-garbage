@@ -47,7 +47,7 @@ theorem in_sub {rs : List Region} {b : Addr} {L off n : Nat} (h : InRegions rs b
   rw [e, BitVec.toNat_add]
   have := Nat.mod_le ((b - r.base).toNat + (BitVec.ofNat 64 off).toNat) (2 ^ 64)
   have := ofNat_toNat_le off
-  omega
+  omega_using [ho, hc, this]
 
 theorem in_sub_int {rs : List Region} {b : Addr} {L off n : Nat} (h : InRegions rs b L)
     (ho : off + n ≤ L) : InRegions rs (b + BitVec.ofInt 64 (off : Int)) n := by
@@ -65,7 +65,7 @@ open VG.Spec.Gcm (mul blocksAt)
 theorem ghash_append16 (h y : Block) (f : Nat → Block) (g : Nat) :
     ghashFrom h y ((List.range (16 * (g + 1))).map f) =
       ghashFrom h (ghashFrom h y ((List.range (16 * g)).map f)) ((List.range 16).map fun i => f (16 * g + i)) := by
-  rw [show 16 * (g + 1) = 16 * g + 16 by omega, List.range_add, List.map_append, List.map_map]
+  rw [show 16 * (g + 1) = 16 * g + 16 by omega_using [], List.range_add, List.map_append, List.map_map]
   simp only [ghashFrom, List.foldl_append]
   rfl
 
@@ -125,7 +125,7 @@ theorem store16_ok (x x' : XReg) (b : Reg) (s : State) (h0 : s.lane .xmm0 0 = re
     VG.Proof.Gcm.X86_64.Pclmul.ea_at, reduceVBinOpSse, State.lane, ite_true, hin', h0, Option.some.injEq,
     exists_eq_left']
   refine ⟨by rw [BitVec.ofInt_natCast, BitVec.add_zero]; simp, rfl, rfl, rfl, fun r hr l hl => ?_⟩
-  rcases (by omega : l = 0 ∨ l = 1) with rfl | rfl <;> simp [hr]
+  rcases (by omega_using [hl] : l = 0 ∨ l = 1) with rfl | rfl <;> simp [hr]
 
 /-- The blocks of the data, after all of them are encrypted. -/
 theorem blocks_ctr32 {s₀ : State} {m : Mem} (hb : ∀ k < nb s₀, blockAt m (bAddr s₀ k) = ctb s₀ k) :

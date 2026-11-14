@@ -85,29 +85,29 @@ theorem stage1_ok {s : State} (h : BI S D X O R C Z k L p bits v s) :
   have e28 := Domain.slot_eq ((k + 7) / 8) 28
   have hk := h.hk
   have hk' := h.hk'
-  refine WP.mono (scalarC_ok h.env h.h23 h.h28 (by omega) h.hk' h.hb1 h.hbk h.hbw h.hyw h.hX h.hR h.hrdR h.hx
+  refine WP.mono (scalarC_ok h.env h.h23 h.h28 (by omega_using [hk]) h.hk' h.hb1 h.hbk h.hbw h.hyw h.hX h.hR h.hrdR h.hx
     h.hsepRX) fun s₃ ⟨⟨xb, xout⟩, k3⟩ => ?_
   have osc := GenerateKey.out_scr xout h.hsepBX
   have hw3 : ∀ d, d + 8 ≤ 256 → word s₃.mem S d = word s.mem S d := fun d hd =>
-    Outside.word osc (Or.inl (by omega)) (by omega)
+    Outside.word osc (Or.inl (by omega_using [hZ, e28, hd])) (by omega_using [hd])
   have hp3 : arr s₃.mem S ((k + 7) / 8) 0 = p := by
-    rw [arr, Outside.val32 osc (Or.inl (by omega)) (by omega)]; exact h.hP
+    rw [arr, Outside.val32 osc (Or.inl (by omega_using [hZ, e0, e28])) (by omega_using [e0, hk'])]; exact h.hP
   have e3 := h.env.keep k3 (by decide)
   have g23 : s₃.gpr .r23 = S := (k3.gpr .r23 (by decide)).trans h.h23
   have g21 : s₃.gpr .r21 = D := (k3.gpr .r21 (by decide)).trans h.h21
   have g27 : s₃.gpr .r27 = BitVec.ofNat 64 L := (k3.gpr .r27 (by decide)).trans h.h27
   have g28 : s₃.gpr .r28 = BitVec.ofNat 64 k := (k3.gpr .r28 (by decide)).trans h.h28
   have hX3 : s₃.mem.readW (off S 64) 64 = off X 0 := by
-    show word s₃.mem S 64 = _; rw [hw3 64 (by omega)]; exact h.hX
+    show word s₃.mem S 64 = _; rw [hw3 64 (by omega_using [])]; exact h.hX
   have hXL3 : s₃.mem.readW (off S 72) 64 = BitVec.ofNat 64 k := by
-    show word s₃.mem S 72 = _; rw [hw3 72 (by omega)]; exact h.hXL
+    show word s₃.mem S 72 = _; rw [hw3 72 (by omega_using [])]; exact h.hXL
   have rdQ : L = 3 * k → ∀ i < k, InRegions (s₃.rd ++ s₃.wr) (off (off D (2 * k)) i) 1 := fun hq i hi => by
-    rw [Domain.off_off', k3.rd, k3.wr]; exact h.hrdD _ (by omega)
+    rw [Domain.off_off', k3.rd, k3.wr]; exact h.hrdD _ (by omega_using [hq, hi])
   have sepQ : L = 3 * k → ∀ i < k, ∀ x, ofs S x < Z → off (off D (2 * k)) i ≠ x := fun hq i hi => by
-    rw [Domain.off_off']; exact h.hsepD _ (by omega)
-  refine ⟨⟨e3, g23, g21, g27, g28, hX3, hXL3⟩, WP.mono (Derive.xRange_ok (xl := k) e3 g23 g21 g27 g28 (by omega)
-    (by omega) (by rcases h.hL with e | e <;> omega) (by omega) (by omega) (Nat.le_refl _) hX3 hXL3
-    (fun i hi => (h.hx.congr k3.wr).ld (d := i) (n := 1) (by omega)) h.hsepX rdQ sepQ (by rw [hp3]; have := h.hp2; omega))
+    rw [Domain.off_off']; exact h.hsepD _ (by omega_using [hq, hi])
+  refine ⟨⟨e3, g23, g21, g27, g28, hX3, hXL3⟩, WP.mono (Derive.xRange_ok (xl := k) e3 g23 g21 g27 g28 (by omega_using [hk])
+    (by omega_using []) (by rcases h.hL with e | e <;> omega_using [hk', e]) (by omega_using [hk']) (by omega_using [hk]) (Nat.le_refl _) hX3 hXL3
+    (fun i hi => (h.hx.congr k3.wr).ld (d := i) (n := 1) (by omega_using [hi])) h.hsepX rdQ sepQ (by rw [hp3]; have := h.hp2; omega_using [this]))
     fun u hu => ⟨s₃, ⟨⟨xb, xout⟩, k3⟩, hu⟩⟩
 
 end
@@ -203,10 +203,10 @@ theorem BI_B1 {q : CG} {s : State} (h : BIq q s) : WP isa (.block mbBlock) s (B1
   have hw := Domain.slot_eq ((q.c.k + 7) / 8) 28
   have hs1 := stage1_ok h
   rw [scalar_eq] at hs1
-  have hm := WP.and (maskByte_ok h.env.hs (by omega) h.h23 h.hbw h.hyw (by have := h.hbk; have := h.hk'; omega))
+  have hm := WP.and (maskByte_ok h.env.hs (by omega_using [hZ, hw]) h.h23 h.hbw h.hyw (by have := h.hbk; have := h.hk'; omega_arith))
     (WP.seq_iff.mp hs1)
   rw [maskByte_eq] at hm
-  exact WP.mono (WP.and (mb_ok h.env.hs (by omega) h.h23 h.hbw h.hyw (by have := h.hbk; have := h.hk'; omega))
+  exact WP.mono (WP.and (mb_ok h.env.hs (by omega_using [hZ, hw]) h.h23 h.hbw h.hyw (by have := h.hbk; have := h.hk'; omega_arith))
     (WP.seq_iff.mp hm)) fun t ⟨⟨⟨a17, _⟩, _⟩, hw⟩ => ⟨s, h, a17,
       WP.mono hw fun u ⟨⟨⟨_, um⟩, uk⟩, hu⟩ => ⟨⟨um, uk⟩, hu⟩⟩
 
@@ -214,9 +214,9 @@ theorem B2_B3 {q : CG} {s : State} (h : B2 q s) : WP isa (.block sbBlock) s (B3 
   obtain ⟨s₀, h₀, ⟨hm, hk⟩, hw⟩ := h
   have hZ := h₀.env.hZ
   have hw28 := Domain.slot_eq ((q.c.k + 7) / 8) 28
-  refine WP.mono (WP.and (sb_ok (bits := q.bits) (X := q.g.d.x.X) (R := q.g.R) (h₀.env.hs.congr hk.wr) (by omega)
+  refine WP.mono (WP.and (sb_ok (bits := q.bits) (X := q.g.d.x.X) (R := q.g.R) (h₀.env.hs.congr hk.wr) (by omega_using [hZ, hw28])
     ((hk.gpr .r23 (by decide)).trans h₀.h23) ((hk.gpr .r28 (by decide)).trans h₀.h28)
-    (by have := h₀.hbk; omega) (by have := h₀.hk'; omega)
+    (by have := h₀.hbk; omega_using [this]) (by have := h₀.hk'; omega_using [this])
     (by rw [hm]; exact h₀.hyw) (by rw [hm]; exact h₀.hX) (by rw [hm]; exact h₀.hR)) (WP.seq_iff.mp hw))
     fun t ⟨⟨⟨_, a24, a25, a6, a4, _⟩, _⟩, hw'⟩ => ⟨s₀, h₀, ⟨a24, a25, a6, a4⟩, hw'⟩
 
@@ -274,17 +274,17 @@ theorem xf_of {s₀ u : State} (h : BI S D X O R C Z k L p bits v s₀) (hx : XI
   have e28 := Domain.slot_eq ((k + 7) / 8) 28
   have osc := GenerateKey.out_scr xout h.hsepBX
   have hw3 : ∀ d, d + 8 ≤ 256 → word s₃.mem S d = word s₀.mem S d := fun d hd =>
-    Outside.word osc (Or.inl (by omega)) (by omega)
+    Outside.word osc (Or.inl (by omega_using [hZ, e28, hd])) (by omega_using [hd])
   have hp3 : arr s₃.mem S ((k + 7) / 8) 0 = p := by
-    rw [arr, Outside.val32 osc (Or.inl (by omega)) (by omega)]; exact h.hP
+    rw [arr, Outside.val32 osc (Or.inl (by omega_using [hZ, e0, e28])) (by omega)]; exact h.hP
   have hbD : ∀ (Q : Addr) n, (∀ i < n, ∀ y, ofs X y < k → off Q i ≠ y) →
       Spec.Rsa.bytesAt s₃.mem Q n = Spec.Rsa.bytesAt s₀.mem Q n := fun Q n hq =>
-    Domain.outside_bytesAt xout (by omega) hq
+    Domain.outside_bytesAt xout (by omega_using []) hq
   have eb : Derive.bnd s₃.mem D k L p = Derive.bnd s₀.mem D k L p := by
     unfold Derive.bnd
     by_cases hq : L = 3 * k
     · rw [ite_eq_left hq, ite_eq_left hq, hbD _ _ fun i hi => by
-        rw [Domain.off_off']; exact h.hsepDX _ (by omega)]
+        rw [Domain.off_off']; exact h.hsepDX _ (by omega_using [hq, hi])]
     · rw [ite_eq_right hq, ite_eq_right hq]
   have cx3 := ctx_of_x (n := 8 * ctxWords ((k + 7) / 8)) xout h.hsepCX
   have e3 := h.env.keep k3 (by decide)
@@ -294,7 +294,7 @@ theorem xf_of {s₀ u : State} (h : BI S D X O R C Z k L p bits v s₀) (hx : XI
   refine ⟨⟨h.env.hs.congr k34.wr, a10, (k34.gpr .r29 (by decide)).trans h.env.h29,
     (k34.gpr .r11 (by decide)).trans h.env.h11, (k34.gpr .r31 (by decide)).trans h.env.h31, h.env.hw, h.env.hw', hZ⟩,
     (k34.gpr .r23 (by decide)).trans h.h23, (k34.gpr .r28 (by decide)).trans h.h28,
-    fun d hd => by rw [Outside.word b4 (by omega) (by omega), hw3 d hd],
+    fun d hd => by rw [Outside.word b4 (by omega_using [e0, hd]) (by omega_using [hd]), hw3 d hd],
     by rw [Domain.Body.bytesAt b4 hZ h.hsepX, xb], p4, k34,
     cx3.trans (outs_ctx (body_att b4) (attOut_fit e3) h.hc.sep), ?_⟩
   rw [a26, Domain.mask_beq_zero]
@@ -398,9 +398,9 @@ theorem k6_of {q : CG} {s₀ u t : State} {rs : List Reg} (h₀ : BIq q s₀) (h
   have hk' := h₀.hk'
   have kk := hx.keep.trans k
   exact ⟨⟨(k.gpr _ h23).trans hx.h23, (k.gpr _ h28).trans hx.h28⟩,
-    by show word t.mem _ 64 = _; rw [hw, hx.hw 64 (by omega)]; exact h₀.hX,
-    by rw [kk.rd, kk.wr]; exact h₀.env.hs.ld (d := 64) (n := 8) (by omega), h₀.hx.congr kk.wr,
-    ⟨show 1 ≤ q.c.k by omega, show q.c.k < 2 ^ 32 by omega⟩, st, h3, hst1, hst⟩
+    by show word t.mem _ 64 = _; rw [hw, hx.hw 64 (by omega_using [])]; exact h₀.hX,
+    by rw [kk.rd, kk.wr]; exact h₀.env.hs.ld (d := 64) (n := 8) (by omega_using [hZ, e28]), h₀.hx.congr kk.wr,
+    ⟨show 1 ≤ q.c.k by omega_using [hk], show q.c.k < 2 ^ 32 by omega_using [hk']⟩, st, h3, hst1, hst⟩
 
 /-- Out of range: zeros to `y`, the status 2. -/
 theorem bad_ok {q : CG} {u : State} (h : XIc q u) (hv : q.g.d.v = false) :
@@ -413,9 +413,9 @@ theorem bad_ok {q : CG} {u : State} (h : XIc q u) (hv : q.g.d.v = false) :
   have hk' := h₀.hk'
   have e8 := Domain.slot_eq ((q.c.k + 7) / 8) 8
   have e28 := Domain.slot_eq ((q.c.k + 7) / 8) 28
-  have hO : u.mem.readW (off q.c.S 80) 64 = off q.g.d.x.O 0 := (xf.hw 80 (by omega)).trans h₀.hO
+  have hO : u.mem.readW (off q.c.S 80) 64 = off q.g.d.x.O 0 := (xf.hw 80 (by omega_using [])).trans h₀.hO
   refine WP.mono (WP.keep [.r27] (Q := fun t => t.gpr .r27 = off q.g.d.x.O 0 ∧ t.mem = u.mem) (by
-      prun [xf.h23, xf.env.hs.ld (d := 80) (n := 8) (by omega), hO]) (by decide)) fun t ⟨⟨a27, mt⟩, kt⟩ => ?_
+      prun [xf.h23, xf.env.hs.ld (d := 80) (n := 8) (by omega_using [hZ, e28]), hO]) (by decide)) fun t ⟨⟨a27, mt⟩, kt⟩ => ?_
   have k10 := (kt.gpr .r10 (by decide)).trans xf.env.h10
   have k29 := (kt.gpr .r29 (by decide)).trans xf.env.h29
   have k28 := (kt.gpr .r28 (by decide)).trans xf.h28
@@ -428,12 +428,12 @@ theorem bad_ok {q : CG} {u : State} (h : XIc q u) (hv : q.g.d.v = false) :
     rw [hv] at e
     exact (beq_iff_eq.mp e).trans rfl
   refine ⟨⟨a27, k10, k29, k28, k23, k11⟩, WP.mono (Pub.output_ok (b := false) (xf.env.hs.congr kt.wr)
-    (h₀.ho.congr ka.wr) k10 k29 k28 a27 h26 (by omega) (by omega) (by omega) h₀.hsepO)
+    (h₀.ho.congr ka.wr) k10 k29 k28 a27 h26 (by omega_using [hk]) (by omega_using []) (by omega_using [hZ, e8, e28]) h₀.hsepO)
     fun t' ⟨⟨_, ot, _⟩, kt'⟩ => ⟨(kt'.gpr .r23 (by decide)).trans k23, WP.mono (li_ok t' 2 (by decide))
       fun t'' ⟨⟨u3, um⟩, ku⟩ => k6_of h₀ xf ((kt.trans kt').trans ku) (by decide) (by decide) ?_ u3
         (by decide) (by decide)⟩⟩
   rw [um]
-  refine (Pub.Outside.word_apart (d := 64) ot h₀.hsepB (by omega) (by omega) hnw).trans ?_
+  refine (Pub.Outside.word_apart (d := 64) ot h₀.hsepB (by omega_using []) (by omega_using [hZ, e28]) hnw).trans ?_
   show word t.mem _ 64 = word u.mem _ 64
   rw [mt]
 
@@ -454,22 +454,22 @@ theorem good_ok {q : CG} {u : State} (h : XIc q u) :
     rw [xf.xb, scalarC_value (by simp [Spec.Rsa.bytesAt]) h₀.hb1 h₀.hbk]; exact Nat.mod_lt _ (Nat.two_pow_pos _)
   have ci : CombIn u q.c.S q.C q.g.d.x.X q.c.Z ((q.c.k + 7) / 8) (Spec.Rsa.bytesAt u.mem q.g.d.x.X q.c.k) q.c.p
       (Spec.Rsa.os2ip (Spec.Rsa.bytesAt s₀.mem (off q.c.D q.c.k) q.c.k)) q.bits := by
-    refine ⟨xf.env, xf.h23, by rw [xf.h28, hl4], by rw [show hCtx = 0 from rfl]; exact (xf.hw 0 (by omega)).trans h₀.hCw,
+    refine ⟨xf.env, xf.h23, by rw [xf.h28, hl4], by rw [show hCtx = 0 from rfl]; exact (xf.hw 0 (by omega_using [])).trans h₀.hCw,
       h₀.hc.congr xf.keep.rd xf.keep.wr, fun a ha => ?_, ?_, xf.hp,
-      by rw [show hRows = 24 from rfl]; exact (xf.hw 24 (by omega)).trans h₀.hRw,
-      by rw [show u.mem.readW (off q.c.S 64) 64 = word u.mem q.c.S 64 from rfl, xf.hw 64 (by omega)]
+      by rw [show hRows = 24 from rfl]; exact (xf.hw 24 (by omega_using [])).trans h₀.hRw,
+      by rw [show u.mem.readW (off q.c.S 64) 64 = word u.mem q.c.S 64 from rfl, xf.hw 64 (by omega_using [])]
          exact h₀.hX.trans (BitVec.add_zero _),
-      fun n hn => (h₀.hx.congr xf.keep.wr).ld (d := n) (n := 1) (by omega), fun n hn => h₀.hsepX n (by omega),
+      fun n hn => (h₀.hx.congr xf.keep.wr).ld (d := n) (n := 1) (by omega_using [hl4, hn]), fun n hn => h₀.hsepX n (by omega_using [hl4, hn]),
       fun n hn => by simp [Spec.Rsa.bytesAt, off],
-      ⟨h₀.hodd, by have := h₀.hp2; omega, (Rsa.FixedBaseComb.rows_small (show q.bits ≤ 8192 by have := h₀.hbk; omega)).1,
-        by rw [hl4]; omega⟩, h₀.hb1⟩
+      ⟨h₀.hodd, by have := h₀.hp2; omega_using [this], (Rsa.FixedBaseComb.rows_small (show q.bits ≤ 8192 by have := h₀.hbk; omega_using [hk', this])).1,
+        by rw [hl4]; omega_using [hk']⟩, h₀.hb1⟩
     · rw [← h₀.hents a ha]
-      exact Outside.val32 xf.cx (Or.inl (by have := row_fits (w := (q.c.k + 7) / 8) ha; omega))
-        (by have := row_fits (w := (q.c.k + 7) / 8) ha; have := h₀.hc.hn; omega)
+      exact Outside.val32 xf.cx (Or.inl (by have := row_fits (w := (q.c.k + 7) / 8) ha; omega_using [this]))
+        (by have := row_fits (w := (q.c.k + 7) / 8) ha; have := h₀.hc.hn; omega_arith)
     · rw [← h₀.hr2]
-      exact Outside.val32 xf.cx (Or.inl (by have := row1_fits ((q.c.k + 7) / 8); omega))
-        (by have := row1_fits ((q.c.k + 7) / 8); have := h₀.hc.hn; omega)
-  have hP : 0 < q.c.p := by have := h₀.hp2; omega
+      exact Outside.val32 xf.cx (Or.inl (by have := row1_fits ((q.c.k + 7) / 8); omega_using [this]))
+        (by have := row1_fits ((q.c.k + 7) / 8); have := h₀.hc.hn; omega_arith)
+  have hP : 0 < q.c.p := by have := h₀.hp2; omega_using [this]
   have hc : WP isa comb u (GD2 q) := by
     refine WP.mono (comb_ok ci) fun t ⟨⟨z1, p1, o1, r10⟩, k1⟩ => ?_
     generalize hz : Spec.Rsa.powMod (Spec.Rsa.os2ip (Spec.Rsa.bytesAt s₀.mem (off q.c.D q.c.k) q.c.k))
@@ -480,20 +480,20 @@ theorem good_ok {q : CG} {u : State} (h : XIc q u) :
     have t23 := (k1.gpr .r23 (by decide)).trans xf.h23
     have t28 := (k1.gpr .r28 (by decide)).trans xf.h28
     refine ⟨⟨r10, t29, t11, t23, t28⟩, WP.mono (Domain.exOut_split (O := q.g.d.x.O) (k := q.c.k)
-      (xf.env.hs.congr k1.wr) (h₀.ho.congr (xf.keep.trans k1).wr) r10 t29 t11 t23 t28 hw hw' hZ (by omega) (by omega)
-      (by rw [hdr_of_comb o1 (by decide)]; exact (xf.hw 80 (by omega)).trans h₀.hO) h₀.hsepO
-      (by rw [p1]; omega) (by rw [z1, p1]; exact hzP) (by rw [p1]; exact h₀.hpk))
+      (xf.env.hs.congr k1.wr) (h₀.ho.congr (xf.keep.trans k1).wr) r10 t29 t11 t23 t28 hw hw' hZ (by omega_using [hk]) (by omega_using [])
+      (by rw [hdr_of_comb o1 (by decide)]; exact (xf.hw 80 (by omega_using [])).trans h₀.hO) h₀.hsepO
+      (by rw [p1]; omega_using [hP]) (by rw [z1, p1]; exact hzP) (by rw [p1]; exact h₀.hpk))
       fun t₃ ⟨p3, hw3⟩ => ⟨p3, WP.mono hw3 fun t₄ ⟨⟨_, o2, m, bm, om⟩, k4⟩ => ⟨(k4.gpr .r23 (by decide)).trans t23,
         WP.mono (Derive.status_ok t₄ _ o2) fun t₅ ⟨⟨t3, tm⟩, k5⟩ =>
           k6_of h₀ xf ((k1.trans k4).trans k5) (by decide) (by decide) ?_ t3
             (by split <;> decide) (by split <;> decide)⟩⟩⟩
     rw [tm]
-    refine (Pub.Outside.word_apart (d := 64) om h₀.hsepB (by omega) (by omega) hnw).trans ?_
+    refine (Pub.Outside.word_apart (d := 64) om h₀.hsepB (by omega_using []) (by omega_using [hZ, e28]) hnw).trans ?_
     show word m _ 64 = word u.mem _ 64
-    rw [Outside.word bm (Or.inl (by omega)) (by omega)]
+    rw [Outside.word bm (Or.inl (by omega_using [e0])) (by omega_using [])]
     exact hdr_of_comb o1 (by decide)
   rw [comb_eq] at hc
-  refine WP.mono (WP.and (head_ok xf.env.hs (by omega) xf.h23 ci.hC ci.hX ci.hRw) (WP.seq_iff.mp hc))
+  refine WP.mono (WP.and (head_ok xf.env.hs (by omega_using [hZ, e28]) xf.h23 ci.hC ci.hX ci.hRw) (WP.seq_iff.mp hc))
     fun t ⟨⟨⟨a30, a27, a21, a3, _⟩, kt⟩, hw⟩ => ⟨⟨a30, a27.trans (BitVec.add_zero _).symm, a21, a3,
       (kt.gpr .r10 (by decide)).trans xf.env.h10, (kt.gpr .r29 (by decide)).trans xf.env.h29,
       (kt.gpr .r11 (by decide)).trans xf.env.h11, (kt.gpr .r23 (by decide)).trans xf.h23,

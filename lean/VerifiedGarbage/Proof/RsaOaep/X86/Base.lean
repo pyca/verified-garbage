@@ -102,22 +102,22 @@ namespace OHash
 variable (g : OHash)
 
 theorem D_pos : 0 < g.H.D := g.ok.hD0
-theorem D_le : g.H.D ≤ 64 := by have := g.ok.hDF; have := g.ok.hF; omega
+theorem D_le : g.H.D ≤ 64 := by have := g.ok.hDF; have := g.ok.hF; omega_arith
 theorem DF : g.H.D ≤ g.H.F := g.ok.hDF
 theorem F_le : g.H.F ≤ 64 := g.ok.hF
 theorem S_le : g.H.S ≤ 256 := g.ok.hSB
-theorem Wb_le : g.ok.Wb ≤ 512 := by have := g.ok.hWb; have := g.ok.hW; omega
+theorem Wb_le : g.ok.Wb ≤ 512 := by have := g.ok.hWb; have := g.ok.hW; omega_arith
 
 /-- A byte of the mask, in the digest of `src ‖ C` for the counter `c`. -/
 theorem mask_byte {seed : List Byte} {dl c i : Nat} (hi : i < dl) (h₁ : c * g.H.D ≤ i) (h₂ : i < c * g.H.D + g.H.D) :
     (Spec.Mgf1.mgf1 g.G seed dl).getD i 0 = (g.ok.SH.H.hash (seed ++ Spec.Rsa.i2osp c 4)).getD (i - c * g.H.D) 0 := by
   have hD0 := g.D_pos
   rw [Proof.Mgf1.mgf1_getD g.valid _ hi, g.glen, ← g.hash]
-  have e1 : i / g.H.D = c := Nat.div_eq_of_lt_le h₁ (by rw [Nat.succ_mul]; omega)
+  have e1 : i / g.H.D = c := Nat.div_eq_of_lt_le h₁ (by rw [Nat.succ_mul]; omega_using [h₂])
   have e2 : i % g.H.D = i - c * g.H.D := by
     have := Nat.mod_add_div i g.H.D
     rw [e1, Nat.mul_comm] at this
-    omega
+    omega_using [this]
   rw [e1, e2]
 
 end OHash

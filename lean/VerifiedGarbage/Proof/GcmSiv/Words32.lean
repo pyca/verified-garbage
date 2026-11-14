@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.GcmSiv.Words
 import VerifiedGarbage.Proof.GcmSiv.Ctr
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # AES-GCM-SIV: blocks as 32-bit words
@@ -39,28 +40,28 @@ theorem le8_append (a b : BitVec 32) : le8 (a ++ b) = le4 b ++ le4 a := by
     simp only [le4, List.getElem_map, List.getElem_range]
     apply BitVec.eq_of_getLsbD_eq; intro j hj
     simp only [BitVec.getLsbD_extractLsb', hj, decide_true, Bool.true_and, BitVec.getLsbD_append,
-      show 8 * i + j < 32 by omega, ↓reduceIte]
+      show 8 * i + j < 32 by omega_using [h4, hj], ↓reduceIte]
   · rw [List.getElem_append_right (by simpa [le4] using h4)]
     simp only [le4, List.getElem_map, List.getElem_range, length_le4]
     apply BitVec.eq_of_getLsbD_eq; intro j hj
     simp only [BitVec.getLsbD_extractLsb', hj, decide_true, Bool.true_and, BitVec.getLsbD_append,
-      show ¬ (8 * i + j < 32) by omega, ↓reduceIte]
+      show ¬ (8 * i + j < 32) by omega_using [h4], ↓reduceIte]
     congr 1
     simp only [List.length_map, List.length_range]
-    omega
+    omega_using [h4]
 
 /-- Four words, regrouped as two 64-bit words. -/
 theorem append4 (a b c d : BitVec 32) : (a ++ b) ++ (c ++ d) = a ++ b ++ c ++ d := by
   apply BitVec.eq_of_getLsbD_eq; intro i hi
   simp only [BitVec.getLsbD_append]
-  rcases (by omega : i < 32 ∨ 32 ≤ i ∧ i < 64 ∨ 64 ≤ i ∧ i < 96 ∨ 96 ≤ i) with h | h | h | h
-  · simp only [h, show i < 64 by omega, ↓reduceIte]
-  · simp only [show ¬ i < 32 by omega, show i < 64 by omega, show i - 32 < 32 by omega, ↓reduceIte]
-  · simp only [show ¬ i < 32 by omega, show ¬ i < 64 by omega, show i - 64 < 32 by omega,
-      show ¬ i - 32 < 32 by omega, show i - 32 - 32 < 32 by omega, ↓reduceIte]
+  rcases (by omega_using [] : i < 32 ∨ 32 ≤ i ∧ i < 64 ∨ 64 ≤ i ∧ i < 96 ∨ 96 ≤ i) with h | h | h | h
+  · simp only [h, show i < 64 by omega_using [h], ↓reduceIte]
+  · simp only [show ¬ i < 32 by omega_using [h], show i < 64 by omega_using [h], show i - 32 < 32 by omega_using [h], ↓reduceIte]
+  · simp only [show ¬ i < 32 by omega_using [h], show ¬ i < 64 by omega_using [h], show i - 64 < 32 by omega_using [h],
+      show ¬ i - 32 < 32 by omega_using [h], show i - 32 - 32 < 32 by omega_using [h], ↓reduceIte]
     congr 1
-  · simp only [show ¬ i < 32 by omega, show ¬ i < 64 by omega, show ¬ i - 64 < 32 by omega,
-      show ¬ i - 32 < 32 by omega, show ¬ i - 32 - 32 < 32 by omega, ↓reduceIte]
+  · simp only [show ¬ i < 32 by omega_using [h], show ¬ i < 64 by omega_using [h], show ¬ i - 64 < 32 by omega_using [h],
+      show ¬ i - 32 < 32 by omega_using [h], show ¬ i - 32 - 32 < 32 by omega_using [h], ↓reduceIte]
     congr 1
 
 /-- POLYVAL's field element of a block stored as four little-endian words. -/
@@ -119,7 +120,7 @@ theorem hkeyOf_words (w₀ w₁ w₂ w₃ : BitVec 32) :
   simp only [BitVec.getLsbD_append, BitVec.getLsbD_xor, BitVec.getLsbD_ushiftRight, BitVec.getLsbD_or,
     BitVec.getLsbD_shiftLeft, getLsbD_ite, hR i hi]
   clear hR h0 hx hm
-  rcases (by omega : i < 31 ∨ i = 31 ∨ 32 ≤ i ∧ i < 63 ∨ i = 63 ∨ 64 ≤ i ∧ i < 95 ∨ i = 95 ∨
+  rcases (by omega_using [hi] : i < 31 ∨ i = 31 ∨ 32 ≤ i ∧ i < 63 ∨ i = 63 ∨ 64 ≤ i ∧ i < 95 ∨ i = 95 ∨
       96 ≤ i ∧ i < 127 ∨ i = 127) with h | rfl | h | rfl | h | rfl | h | rfl <;>
     simp (disch := omega) only [↓reduceIte, decide_true, decide_false, ite_eq_left, ite_eq_right,
       decide_eq_true, decide_eq_false, Bool.true_and, Bool.false_and, Bool.and_true, Bool.and_false,
@@ -133,18 +134,18 @@ theorem shl_shr_one (x : BitVec 32) : (x <<< 1) >>> 1 = x &&& 0x7FFFFFFF#32 := b
   have hm : ∀ i < 32, (0x7FFFFFFF#32 : BitVec 32).getLsbD i = decide (i < 31) := by decide +kernel
   rw [BitVec.getLsbD_ushiftRight, BitVec.getLsbD_and, hm i hi, BitVec.getLsbD_shiftLeft]
   by_cases h : i < 31
-  · simp only [show 1 + i < 32 by omega, decide_true, Bool.true_and, show ¬ (1 + i < 1) by omega,
+  · simp only [show 1 + i < 32 by omega_using [h], decide_true, Bool.true_and, show ¬ (1 + i < 1) by omega_using [],
       decide_false, Bool.not_false, h, Bool.and_true]
-    congr 1; omega
-  · simp only [show ¬ (1 + i < 32) by omega, decide_false, Bool.false_and, h, Bool.and_false]
+    congr 1; omega_using []
+  · simp only [show ¬ (1 + i < 32) by omega_using [h], decide_false, Bool.false_and, h, Bool.and_false]
 
 /-- A word zero-extended to 64 bits. -/
 theorem setWidth_64 (x : BitVec 32) : x.setWidth 64 = 0#32 ++ x := by
   apply BitVec.eq_of_getLsbD_eq; intro i hi
   rw [BitVec.getLsbD_setWidth, BitVec.getLsbD_append]
   by_cases h : i < 32
-  · simp [h, show i < 64 by omega]
-  · simp [h, BitVec.getLsbD_of_ge x i (by omega)]
+  · simp [h, show i < 64 by omega_using [hi]]
+  · simp [h, BitVec.getLsbD_of_ge x i (by omega_using [h])]
 
 /-- The tag input of POLYVAL's result stored as four words and the nonce as three. -/
 theorem tagOf_words (a b c d n₀ n₁ n₂ : BitVec 32) :
@@ -178,6 +179,6 @@ theorem le64_words (x : BitVec 32) :
   rw [BitVec.toNat_ofNat, BitVec.toNat_append, ← Nat.shiftLeft_add_eq_or_of_lt (BitVec.isLt _),
     Nat.shiftLeft_eq, BitVec.toNat_ushiftRight, BitVec.toNat_shiftLeft, Nat.shiftLeft_eq,
     Nat.shiftRight_eq_div_pow]
-  omega
+  omega_using []
 
 end VG.Proof.GcmSiv.Words32

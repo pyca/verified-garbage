@@ -22,18 +22,18 @@ theorem addMemory_ok {s : State} {B : Addr} {Z eT : Nat}
        t.mem = s.mem) ∧
       Keep (VG.Impl.Bignum.AArch64.BlockedRedc.aa ++ ([.x13] : List Reg)) s t := by
   have hld : ∀ i < 8, InRegions (s.rd ++ s.wr) (off B (eT + 8 * i)) 8 :=
-    fun i hi => hs.ld (by omega)
+    fun i hi => hs.ld (by omega_using [hT, hi])
   refine WP.keep (c := .block (VG.Impl.Bignum.AArch64.BlockedRedc.addMemory false)) (VG.Impl.Bignum.AArch64.BlockedRedc.aa ++ ([.x13] : List Reg)) ?_
     (by decide) (by decide) (by decide)
   have hcode : VG.Impl.Bignum.AArch64.BlockedRedc.addMemory false =
     [ld .x13 .x16 0, .adds .x .x19 .x19 .x13, ld .x13 .x16 8, .adcs .x .x20 .x20 .x13, ld .x13 .x16 16, .adcs .x .x21 .x21 .x13, ld .x13 .x16 24, .adcs .x .x22 .x22 .x13, ld .x13 .x16 32, .adcs .x .x23 .x23 .x13, ld .x13 .x16 40, .adcs .x .x24 .x24 .x13, ld .x13 .x16 48, .adcs .x .x25 .x25 .x13, ld .x13 .x16 56, .adcs .x .x26 .x26 .x13] := rfl
   brun [hcode,
-    h16, hs.ld (show eT + 8 ≤ Z by omega), hld 1 (by decide), hld 2 (by decide),
+    h16, hs.ld (show eT + 8 ≤ Z by omega_using [hT]), hld 1 (by decide), hld 2 (by decide),
     hld 3 (by decide), hld 4 (by decide), hld 5 (by decide), hld 6 (by decide), hld 7 (by decide)]
   refine ⟨?_, ?_⟩
   · rfl
   · intro i hi
-    rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7) with
+    rcases (by omega_using [hi] : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7) with
       rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
     all_goals rfl
 
@@ -65,18 +65,18 @@ theorem addCarryMemory_ok {s : State} {B : Addr} {Z eT : Nat}
        t.mem = s.mem) ∧
       Keep (VG.Impl.Bignum.AArch64.BlockedRedc.aa ++ ([.x13] : List Reg)) s t := by
   have hld : ∀ i < 8, InRegions (s.rd ++ s.wr) (off B (eT + 8 * i)) 8 :=
-    fun i hi => hs.ld (by omega)
+    fun i hi => hs.ld (by omega_using [hT, hi])
   refine WP.keep (c := .block addCarryMemory) (VG.Impl.Bignum.AArch64.BlockedRedc.aa ++ ([.x13] : List Reg)) ?_
     (by decide) (by decide) (by decide)
   have hcode : addCarryMemory =
     [ld .x13 .x16 0, .adcs .x .x19 .x19 .x13, ld .x13 .x16 8, .adcs .x .x20 .x20 .x13, ld .x13 .x16 16, .adcs .x .x21 .x21 .x13, ld .x13 .x16 24, .adcs .x .x22 .x22 .x13, ld .x13 .x16 32, .adcs .x .x23 .x23 .x13, ld .x13 .x16 40, .adcs .x .x24 .x24 .x13, ld .x13 .x16 48, .adcs .x .x25 .x25 .x13, ld .x13 .x16 56, .adcs .x .x26 .x26 .x13] := rfl
   brun [hcode,
-    h16, hs.ld (show eT + 8 ≤ Z by omega), hld 1 (by decide), hld 2 (by decide),
+    h16, hs.ld (show eT + 8 ≤ Z by omega_using [hT]), hld 1 (by decide), hld 2 (by decide),
     hld 3 (by decide), hld 4 (by decide), hld 5 (by decide), hld 6 (by decide), hld 7 (by decide)]
   refine ⟨?_, ?_⟩
   · rfl
   · intro i hi
-    rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7) with
+    rcases (by omega_using [hi] : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7) with
       rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
     all_goals rfl
 

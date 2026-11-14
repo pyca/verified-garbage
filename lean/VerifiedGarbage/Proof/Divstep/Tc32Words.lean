@@ -8,6 +8,7 @@ import Mathlib.Algebra.Order.Ring.Abs
 import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.NormNum
 public import Mathlib.Tactic.Ring
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # Signed 32-bit words, shifts, and matrix combinations -/
 
@@ -43,12 +44,12 @@ theorem lin_words {M V X X' Y Y' W W' : Int} {c c' : Prop} [Decidable c] [Decida
 theorem toInt_sgn (w : BitVec 32) : (w.toNat : Int) - (if 2 ^ 31 ≤ w.toNat then 2 ^ 32 else 0) = w.toInt := by
   rw [BitVec.toInt_eq_toNat_cond]
   have := w.isLt
-  split_ifs <;> push_cast <;> omega
+  split_ifs <;> push_cast <;> omega_arith
 
 /-- A small integer's word, as a signed number. -/
 theorem toInt_small {u : Int} (h : |u| ≤ 2 ^ 30) : (BitVec.ofInt 32 u).toInt = u := by
   rw [abs_le] at h
-  exact BitVec.toInt_ofInt_eq_self (by decide) (by norm_num; omega) (by norm_num; omega)
+  exact BitVec.toInt_ofInt_eq_self (by decide) (by norm_num; omega_using [h]) (by norm_num; omega_using [h])
 
 /-- The combination of congruent numbers. -/
 theorem cong_comb {Q u v X Y f g : Int} (hX : X % Q = f % Q) (hY : Y % Q = g % Q) :

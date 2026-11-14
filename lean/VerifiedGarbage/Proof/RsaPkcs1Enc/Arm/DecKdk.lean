@@ -28,9 +28,9 @@ variable {P : EP}
 
 theorem blockKey_length {key : List Byte} (h : key.length ≤ 64) :
     (Spec.Hmac.blockKey Spec.Hmac.sha256 key).length = 64 := by
-  have : ¬ 64 < key.length := by omega
+  have : ¬ 64 < key.length := by omega_using [h]
   simp only [Spec.Hmac.blockKey, Spec.Hmac.sha256, this, ite_false, List.length_append, List.length_replicate]
-  omega
+  omega_using [h]
 
 /-- The key derivation key. -/
 abbrev kdkV (P : EP) (σ : State) : List Byte := Spec.RsaPkcs1Enc.kdk P.K (dB P σ) (cB P σ)
@@ -108,7 +108,7 @@ theorem macInitArgs_wp {σ s : State} {key : Nat} (hk : key < 256) {G : State �
   have s1 : P.lay.St σ t1 := hs.2.of_rest (u1.rest (ws := [.r12]) (by simp)) u1.mem
   refine s1.wp_arg (j := 21) (by simp) (by dsimp only; decide) fun t2 s2 u2 => ?_
   refine wp_dp (op2_imm (by decide)) fun t3 u3 => ?_
-  refine wp_dp (op2_imm (Proof.RsaPkcs1Sig.Arm.encodable_of_lt (by rw [BitVec.toNat_ofNat]; omega)))
+  refine wp_dp (op2_imm (Proof.RsaPkcs1Sig.Arm.encodable_of_lt (by rw [BitVec.toNat_ofNat]; omega_using [hk])))
     fun t4 u4 => ?_
   refine wp_mov (op2_imm (by decide)) fun t5 u5 => WP.block_nil ?_
   have s5 : P.lay.St σ t5 := ((s2.of_rest (u3.rest (ws := [.r1]) (by simp)) u3.mem).of_rest
@@ -133,19 +133,19 @@ theorem macInit_vp {key : Nat} (hk : 192 ≤ key) (hk' : key + 32 ≤ 8448) {F G
   · obtain ⟨hs, ha⟩ := hF σ s h
     refine hi_pre ha hs.2.sp (Nat.le_trans (by decide : 1656 ≤ 3440) hs.1.ok.B56)
       (hs.1.sc0_sepW (by decide) (by decide) (by decide) (by decide))
-      (hs.1.sc0_sepW (by omega) (by decide) hk' (by omega))
-      (hs.1.sc_sepW (.inl (by simp only [sOuter]; omega)) (by decide) hk' (by decide) (by omega)) (fun r hr => ?_)
+      (hs.1.sc0_sepW (by omega_using [hk]) (by decide) hk' (by omega_using [hk']))
+      (hs.1.sc_sepW (.inl (by simp only [sOuter]; omega_using [hk])) (by decide) hk' (by decide) (by omega_using [hk'])) (fun r hr => ?_)
       (scr96 hs.1)
-      (hs.1.fit_sc (by decide) (by decide)) (hs.1.fit_sc hk' (by omega))
+      (hs.1.fit_sc (by decide) (by decide)) (hs.1.fit_sc hk' (by omega_using [hk']))
     simp only [hiWr, hiRd, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
     · exact hs.1.lowR_sc0 (by decide) (by decide)
     · exact hs.1.lowR_sc (by decide) (by decide) (by decide)
-    · exact hs.1.lowR_sc (by decide) hk' (by omega)
+    · exact hs.1.lowR_sc (by decide) hk' (by omega_using [hk'])
   · have hs := (hF σ s h).1
     have w : Covers (hiWr P.scr (P.scr + BitVec.ofNat 32 sOuter)) s.wr :=
       (In.scW0 hs (n := 96) (by decide)).cons (In.scW hs (by decide) (by decide))
-    exact ⟨Covers.append_left (Covers.cons (In.scW hs hk' (by omega)).right Covers.nil) w.right, w⟩
+    exact ⟨Covers.append_left (Covers.cons (In.scW hs hk' (by omega_using [hk'])).right Covers.nil) w.right, w⟩
   · have hs := (hF σ s h).1
     simp only [hiWr, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
@@ -160,7 +160,7 @@ theorem macInit_vp {key : Nat} (hk : 192 ≤ key) (hk' : key + 32 ≤ 8448) {F G
       · exact ⟨_, List.mem_cons_of_mem _ (List.mem_cons_self ..), fun _ h => h⟩
     refine hG σ s s' h st fr' ?_
     have := hi_post ha po
-    rw [hs.1.scrA (by omega)] at this
+    rw [hs.1.scrA (by omega_using [hk'])] at this
     exact ⟨by rw [List.append_nil]; exact this.1, this.2⟩
 
 /-- What `update` needs of the data, `dl` bytes at `dp`. -/
@@ -186,7 +186,7 @@ theorem macUpd_vp {dp : BitVec 32} {dl : Nat} {F G : State → State → Prop} {
     (fun σ s s' h st fr _ po => ?_)
   · obtain ⟨hs, ua, -, dk, -⟩ := hF σ s h
     refine upd_pre ua hs.2.sp (Nat.le_trans (by decide : 624 ≤ 3440) hs.1.ok.B56)
-      (by have := hs.1.ok.fit; simp only [frameBytes] at this; omega) dk.dS
+      (by have := hs.1.ok.fit; simp only [frameBytes] at this; omega_using [this]) dk.dS
       (hs.1.sc0_fr0 (by decide) (by decide)) (fun r hr => ?_) (scr96 hs.1) dk.fit
     simp only [updWr, updRd, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
@@ -226,35 +226,35 @@ theorem macFin_vp {o tl : Nat} (ho : 192 ≤ o) (ho' : o + 32 ≤ 8448) {F G : S
     (fun σ s s' h st fr _ po => ?_)
   · obtain ⟨hs, ha, -, -, -⟩ := hF σ s h
     refine hf_pre ha hs.2.sp (Nat.le_trans (by decide : 880 ≤ 3440) hs.1.ok.B56)
-      (by have := hs.1.ok.fit; simp only [frameBytes] at this; omega)
+      (by have := hs.1.ok.fit; simp only [frameBytes] at this; omega_using [this])
       (hs.1.sc0_sepW (by decide) (by decide) (by decide) (by decide))
-      (hs.1.sc0_sepW (by omega) (by decide) ho' (by omega)) (hs.1.sc0_fr0 (by decide) (by decide))
-      (hs.1.sc_sepW (.inl (by simp only [sOuter]; omega)) (by decide) ho' (by decide) (by omega))
-      (hs.1.sc_fr0 ho' (by omega) (by decide)) (fun r hr => ?_) (scr96 hs.1)
-      (hs.1.fit_sc (by decide) (by decide)) (hs.1.fit_sc ho' (by omega))
+      (hs.1.sc0_sepW (by omega_using [ho]) (by decide) ho' (by omega_using [ho'])) (hs.1.sc0_fr0 (by decide) (by decide))
+      (hs.1.sc_sepW (.inl (by simp only [sOuter]; omega_using [ho])) (by decide) ho' (by decide) (by omega_using [ho']))
+      (hs.1.sc_fr0 ho' (by omega_using [ho']) (by decide)) (fun r hr => ?_) (scr96 hs.1)
+      (hs.1.fit_sc (by decide) (by decide)) (hs.1.fit_sc ho' (by omega_using [ho']))
     simp only [hfWr, hfRd, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl
     · exact hs.1.lowR_sc0 (by decide) (by decide)
-    · exact hs.1.lowR_sc (by decide) ho' (by omega)
+    · exact hs.1.lowR_sc (by decide) ho' (by omega_using [ho'])
     · exact hs.1.lowR_sc (by decide) (by decide) (by decide)
     · exact hs.1.lowR_fr (by decide) (by decide)
   · have hs := (hF σ s h).1
     have w : Covers (hfWr P.scr (P.scr + BitVec.ofNat 32 o)) s.wr :=
-      (In.scW0 hs (n := 96) (by decide)).cons (In.scW hs ho' (by omega))
+      (In.scW0 hs (n := 96) (by decide)).cons (In.scW hs ho' (by omega_using [ho']))
     exact ⟨Covers.append_left ((In.scW hs (by decide) (by decide)).right.cons
       (Covers.cons (In.frW hs (n := 4) (by decide)).right Covers.nil)) w.right, w⟩
   · have hs := (hF σ s h).1
     simp only [hfWr, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
     · exact hs.1.subW0 (by decide)
-    · exact hs.1.subW ho' (by omega)
+    · exact hs.1.subW ho' (by omega_using [ho'])
   · obtain ⟨hs, ha, md, hk, ht⟩ := hF σ s h
     have fr' : Frame [sc P 0 96, sc P o 32, P.lay.LOW] s.mem s'.mem := by
-      rw [sc0R, show sc P o 32 = ⟨State.addr (P.scr + BitVec.ofNat 32 o), 32⟩ by rw [hs.1.scrA (by omega)]]
+      rw [sc0R, show sc P o 32 = ⟨State.addr (P.scr + BitVec.ofNat 32 o), 32⟩ by rw [hs.1.scrA (by omega_using [ho'])]]
       exact fr
     refine hG σ s s' h st fr' ?_
     have := hf_post ha po (blockKey_length hk) (by rw [ht]) md.1 md.2
-    rw [hs.1.scrA (by omega)] at this
+    rw [hs.1.scrA (by omega_using [ho'])] at this
     exact this
 
 /-! ## `KDK` -/
@@ -282,7 +282,7 @@ theorem kdkUpdArgs_wp {σ s : State} (h : K2 P σ s) : WP isa (.block kdkUpdArgs
     rw [u8.mem, u7.mem, m6.mem, u5.mem, m4.mem, u3.mem, u2.mem, u1.mem]
   have fr := frame8 mm
   refine ⟨⟨hb.frame s8 fr fun r hr => ?_, macd_frame hs.1 fr (fun r hr => ?_) md⟩, ?_, ?_, ?_, ?_, ?_,
-    by have := hs.1.k1024; omega, by decide⟩
+    by have := hs.1.k1024; omega_using [this], by decide⟩
   · simp only [List.mem_singleton] at hr; subst hr; exact hs.1.safe_fr (by decide) (by simp only [oR]; decide)
   · simp only [List.mem_singleton] at hr; subst hr
     exact (hs.1.fr_sc (by decide) (by decide)).symm
@@ -319,7 +319,7 @@ theorem kdkFinArgs_wp {σ s : State} (h : K4 P σ s) : WP isa (.block kdkFinArgs
   have fr := frame4 mm
   have r0v : t2.gpr .r0 = P.scr := by rw [u2.gpr]; rfl
   refine ⟨⟨hb.frame s8 fr fun r hr => ?_, macd_frame hs.1 fr (fun r hr => ?_) md⟩, ?_, ?_, ?_, ?_, ?_,
-    by omega⟩
+    by omega_using [hK]⟩
   · simp only [List.mem_singleton] at hr; subst hr; exact hs.1.safe_fr (by decide) (by simp only [oR]; decide)
   · simp only [List.mem_singleton] at hr; subst hr
     exact (hs.1.fr_sc (by decide) (by decide)).symm
@@ -331,7 +331,7 @@ theorem kdkFinArgs_wp {σ s : State} (h : K4 P σ s) : WP isa (.block kdkFinArgs
     apply BitVec.eq_of_toNat_eq
     simp only [EP.argv, List.cons_append, List.getD_eq_getElem?_getD, List.getElem?_cons_succ, List.getElem?_cons_zero,
       Option.getD_some, BitVec.toNat_add, BitVec.toNat_ofNat]
-    omega
+    omega_using []
   · exact u8.gpr
   · rw [stackArg_fr ⟨hs.1, s8⟩ (by decide), mm, Mem.readW_writeW_self32, u3.gpr, dpVal, r0v]
 

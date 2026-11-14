@@ -104,10 +104,10 @@ theorem openToWithE_ct (v : GcmImpl) (cl : Prog isa) (hMK : MulKey) {w : Nat} (h
   have hR₁ : rounds (σ₁.gpr .x1) := T₁.rounds
   have hR₂ : rounds (σ₂.gpr .x1) := T₂.rounds
   obtain ⟨q0, q1, q2, q3, q4, q5, q6, q7, qsp, qa⟩ := hq
-  have qw : stackArg σ₁ w = stackArg σ₂ w := qa w (by omega)
-  have qd : stackArg σ₁ 0 = stackArg σ₂ 0 := qa 0 (by omega)
-  have qg : stackArg σ₁ 2 = stackArg σ₂ 2 := qa 2 (by omega)
-  have qt : stackArg σ₁ 3 = stackArg σ₂ 3 := qa 3 (by omega)
+  have qw : stackArg σ₁ w = stackArg σ₂ w := qa w (by omega_using [])
+  have qd : stackArg σ₁ 0 = stackArg σ₂ 0 := qa 0 (by omega_using [])
+  have qg : stackArg σ₁ 2 = stackArg σ₂ 2 := qa 2 (by omega_using [hw])
+  have qt : stackArg σ₁ 3 = stackArg σ₂ 3 := qa 3 (by omega_using [hw])
   have ka : (Code.block (openEntryG true w) : Prog isa).allInstrs
       (fun i => [Reg.x4, .x5, .x6, .x7].all fun r => !clobbers i r) = true := by
     rcases hw with rfl | rfl <;> decide
@@ -122,8 +122,8 @@ theorem openToWithE_ct (v : GcmImpl) (cl : Prog isa) (hMK : MulKey) {w : Nat} (h
     · exact q7.symm
   unfold Impl.AesGcm.AArch64.Fast.openWithEG
   refine rel_seq (openEntryTo_rel hw T₁ T₂ qw qsp (by agree_tac [q0, q1, q2, q3, q4, q5, q6, q7]))
-    (WP.gprs (rs := [.x4, .x5, .x6, .x7]) (openEntryTo_ok (by omega) h₁) ka kc)
-    (WP.gprs (rs := [.x4, .x5, .x6, .x7]) (openEntryTo_ok (by omega) h₂) ka kc)
+    (WP.gprs (rs := [.x4, .x5, .x6, .x7]) (openEntryTo_ok (by omega_using [hw]) h₁) ka kc)
+    (WP.gprs (rs := [.x4, .x5, .x6, .x7]) (openEntryTo_ok (by omega_using [hw]) h₂) ka kc)
     fun s₁ s₂ ⟨⟨o₁, x12₁⟩, k₁⟩ ⟨⟨o₂, x12₂⟩, k₂⟩ => ?_
   rw [← q0, ← q1, ← q2, ← q3, ← q4, ← q5, ← q6, ← q7, ← qsp, ← qw, ← qd, ← qg, ← qt] at o₂
   rw [← qg] at x12₂

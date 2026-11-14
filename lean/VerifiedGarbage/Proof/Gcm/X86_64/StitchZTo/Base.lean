@@ -57,7 +57,7 @@ theorem nb_dst (s₀ : State) : nb (dst s₀) = nb s₀ := rfl
 theorem inRegions_prefix {rs : List Region} {a : Addr} {n L : Nat} (h : InRegions rs a L) (hn : n ≤ L) :
     InRegions rs a n := by
   obtain ⟨r, hr, hc⟩ := h
-  exact ⟨r, hr, by unfold Region.Contains at *; omega⟩
+  exact ⟨r, hr, by unfold Region.Contains at *; omega_using [hn, hc]⟩
 
 /-- The in-place loops' view of the out-of-place one's start. -/
 theorem _root_.VG.Proof.Gcm.X86_64.Stitch.SPreTo.toD {M : CtxMode} {s₀ : State} (hp : SPreTo M s₀) : SPre (dst s₀) where
@@ -81,7 +81,7 @@ theorem _root_.VG.Proof.Gcm.X86_64.Stitch.SPreTo.toD {M : CtxMode} {s₀ : State
   wrap_d := hp.wrap_o
   wrap_k := by
     have := hp.wrap_k; have := M.ge
-    show (kp s₀).toNat + 256 ≤ 2 ^ 64; omega
+    show (kp s₀).toNat + 256 ≤ 2 ^ 64; omega_arith
   wrap_p := hp.wrap_p
 
 /-- The same, with the powers in the key context. -/

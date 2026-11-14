@@ -61,15 +61,15 @@ theorem chunk_ok {s₀ s : State} {d c : Nat} (hd : d < 32) (hc : c < 8) (h : Ch
     refine L_congr fun k hk => ?_
     have ha : addr (s.gpr .edi) (16 * c) + BitVec.ofNat 64 (4 * k) =
         (s₀.gpr .edi).setWidth 64 + BitVec.ofNat 64 (4 * (4 * c + k)) := by
-      rw [hg, addr_eq (by omega), Offset.add_add, show 16 * c + 4 * k = 4 * (4 * c + k) by omega]
+      rw [hg, addr_eq (by omega_using [hc, fit]), Offset.add_add, show 16 * c + 4 * k = 4 * (4 * c + k) by omega_using []]
     rw [hm, ha, show splat d k = BitVec.ofNat 32 d from rfl,
       show splat 0xFFFFFFFF k = (0xFFFFFFFF : BitVec 32) from rfl,
-      mask_eq (by simp only [BitVec.toNat_ofNat]; omega) (by omega)]
-    exact found_succ _ (by omega) (by omega) hk
+      mask_eq (by simp only [BitVec.toNat_ofNat]; omega_using [hd]) (by omega_using [hc, hk])]
+    exact found_succ _ (by omega_using [hd]) (by omega_using [hc]) hk
   · rw [h2, h3, paddd_L]
     refine L_congr fun k _ => ?_
     simp only [splat, ← BitVec.ofNat_add]
-    congr 1; omega
+    congr 1; omega_using []
   · exact h3
   · exact h6
   · exact hg
@@ -88,24 +88,24 @@ theorem chunks_ok {s₀ : State} {d : Nat} (hd : d < 32)
   | succ n ih =>
     intro s h
     rw [List.range_succ, List.flatMap_append, List.flatMap_singleton, WP.block_append_iff]
-    exact WP.mono (ih (by omega) s h) fun t ht => chunk_ok hd (by omega) ht fit (hr n (by omega))
+    exact WP.mono (ih (by omega_using [hn]) s h) fun t ht => chunk_ok hd (by omega_using [hn]) ht fit (hr n (by omega_using [hn]))
 
 /-! ## The halves of a dword -/
 
 theorem byte_bit (m : Mem) (a : Addr) {i : Nat} (hi : i < 32) :
     (m.readW a 32).getLsbD i = (m (a + BitVec.ofNat 64 (i / 8))).getLsbD (i % 8) := by
   simp only [Mem.readW, BitVec.getLsbD_setWidth, decide_eq_true hi, Bool.true_and]
-  exact getLsbD_read _ _ (by omega)
+  exact getLsbD_read _ _ (by omega_using [hi])
 
 /-- Two bytes as a word, in a dword. -/
 theorem pair_bit (x y : Byte) (i : Nat) :
     ((x.setWidth 16 ||| y.setWidth 16 <<< 8).setWidth 32).getLsbD i =
       if i < 8 then x.getLsbD i else if i < 16 then y.getLsbD (i - 8) else false := by
   by_cases h8 : i < 8
-  · simp [h8, show i < 16 by omega, show i < 32 by omega]
+  · simp [h8, show i < 16 by omega_using [h8], show i < 32 by omega_using [h8]]
   · by_cases h16 : i < 16
-    · simp [h8, h16, show i < 32 by omega, BitVec.getLsbD_of_ge x i (by omega)]
-    · simp [h8, h16, BitVec.getLsbD_of_ge x i (by omega)]
+    · simp [h8, h16, show i < 32 by omega_using [h16], BitVec.getLsbD_of_ge x i (by omega_using [h8])]
+    · simp [h8, h16, BitVec.getLsbD_of_ge x i (by omega_using [h8])]
 
 /-- The low half of a dword read, as its two bytes. -/
 theorem readW32_lo (m : Mem) (a : Addr) :
@@ -114,9 +114,9 @@ theorem readW32_lo (m : Mem) (a : Addr) :
   apply BitVec.eq_of_getLsbD_eq; intro i hi
   rw [BitVec.getLsbD_and, byte_bit m a hi, BitVec.getLsbD_ofNat, Nat.testBit_two_pow_sub_one, pair_bit]
   by_cases h8 : i < 8
-  · simp [Nat.div_eq_of_lt h8, Nat.mod_eq_of_lt h8, h8, show i < 16 by omega, hi]
+  · simp [Nat.div_eq_of_lt h8, Nat.mod_eq_of_lt h8, h8, show i < 16 by omega_using [h8], hi]
   · by_cases h16 : i < 16
-    · simp [show i / 8 = 1 by omega, show i % 8 = i - 8 by omega, h8, h16, hi]
+    · simp [show i / 8 = 1 by omega_using [h8, h16], show i % 8 = i - 8 by omega_using [h8, h16], h8, h16, hi]
     · simp [h8, h16]
 
 /-- The high half of a dword read, as its two bytes. -/
@@ -128,10 +128,10 @@ theorem readW32_hi (m : Mem) (a : Addr) :
   by_cases h16 : 16 + i < 32
   · rw [byte_bit m a h16]
     by_cases h8 : i < 8
-    · simp [show (16 + i) / 8 = 2 by omega, show (16 + i) % 8 = i by omega, h8]
-    · simp [show (16 + i) / 8 = 3 by omega, show (16 + i) % 8 = i - 8 by omega, h8, show i < 16 by omega]
-  · simp only [Mem.readW, BitVec.getLsbD_setWidth, show ¬ i < 8 by omega, show ¬ i < 16 by omega, ite_false]
-    rw [BitVec.getLsbD_of_ge _ _ (by omega), Bool.and_false]
+    · simp [show (16 + i) / 8 = 2 by omega_using [h8], show (16 + i) % 8 = i by omega_using [h8], h8]
+    · simp [show (16 + i) / 8 = 3 by omega_using [h16, h8], show (16 + i) % 8 = i - 8 by omega_using [h16, h8], h8, show i < 16 by omega_using [h16]]
+  · simp only [Mem.readW, BitVec.getLsbD_setWidth, show ¬ i < 8 by omega_using [h16], show ¬ i < 16 by omega_using [h16], ite_false]
+    rw [BitVec.getLsbD_of_ge _ _ (by omega_using [h16]), Bool.and_false]
 
 
 /-! ## The start -/
@@ -139,15 +139,15 @@ theorem readW32_hi (m : Mem) (a : Addr) :
 theorem idx_and (x : BitVec 32) : x &&& 63 = BitVec.ofNat 32 (x.setWidth 6).toNat := by
   have hl : (x.setWidth 6).toNat < 64 := (x.setWidth 6).isLt
   apply BitVec.eq_of_toNat_eq
-  rw [BitVec.toNat_and, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega), BitVec.toNat_setWidth]
+  rw [BitVec.toNat_and, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using []), BitVec.toNat_setWidth]
   exact Nat.and_two_pow_sub_one_eq_mod _ 6
 
 theorem idx_shr (x : BitVec 32) :
     BitVec.ofNat 32 (x.setWidth 6).toNat >>> 1 = BitVec.ofNat 32 ((x.setWidth 6).toNat / 2) := by
   have hl : (x.setWidth 6).toNat < 64 := (x.setWidth 6).isLt
   apply BitVec.eq_of_toNat_eq
-  rw [BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega),
-    Nat.mod_eq_of_lt (by omega), Nat.shiftRight_eq_div_pow]
+  rw [BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using []),
+    Nat.mod_eq_of_lt (by omega_using []), Nat.shiftRight_eq_div_pow]
 
 theorem start_ok (s : State) :
     WP isa (.block lookStart) s fun t =>
@@ -174,7 +174,7 @@ theorem start_ok (s : State) :
 theorem lane_read {m : Mem} {B : BitVec 32} (fit : B.toNat + 64 ≤ 2 ^ 32) (f : Nat → BitVec 32) {k : Nat}
     (hk : k < 4) : (m.writeW (addr B 48) (L f)).readW (addr B (48 + 4 * k)) 32 = f k := by
   rw [show addr B (48 + 4 * k) = addr B 48 + BitVec.ofNat 64 (4 * k) by
-      rw [addr_eq (by omega), addr_eq (by omega), Offset.add_add],
+      rw [addr_eq (by omega_using [fit, hk]), addr_eq (by omega_using [fit]), Offset.add_add],
     readW_writeW128 _ _ _ hk, dword_L _ hk]
 
 theorem half_sel (D : BitVec 32) (i : Nat) :
@@ -185,7 +185,7 @@ theorem half_sel (D : BitVec 32) (i : Nat) :
     apply BitVec.eq_of_toNat_eq
     rw [BitVec.toNat_and, BitVec.toNat_ofNat, BitVec.toNat_ofNat, BitVec.toNat_ofNat]
     rw [show (1 : Nat) % 2 ^ 32 = 2 ^ 1 - 1 from rfl, Nat.and_two_pow_sub_one_eq_mod]
-    omega
+    omega_using []
   rw [hb]
   rcases Nat.mod_two_eq_zero_or_one i with h | h <;> rw [h]
   · simp only [ite_true]
@@ -207,10 +207,10 @@ theorem end_ok (t : State) {f : Nat → BitVec 32} {D : BitVec 32} {i : Nat}
       (∀ r, r ≠ .eax → r ≠ .ebx → r ≠ .ecx → u.gpr r = t.gpr r) ∧
       u.mem = t.mem.writeW (addr (t.gpr .ebp) 48) (t.xmm .xmm1) ∧ u.rd = t.rd ∧ u.wr = t.wr := by
   have hr (k : Nat) (hk : k < 4) : InRegions (t.rd ++ t.wr) (addr (t.gpr .ebp) (48 + 4 * k)) 4 := by
-    obtain ⟨r, hr, hc⟩ := CallLay.inRegions_sub (off := 4 * k) (l := 4) hw (by omega) (by decide)
+    obtain ⟨r, hr, hc⟩ := CallLay.inRegions_sub (off := 4 * k) (l := 4) hw (by omega_using [hk]) (by decide)
     refine ⟨r, List.mem_append_right _ hr, ?_⟩
-    rw [addr_eq (by omega)]
-    rw [addr_eq (by omega), Offset.add_add] at hc
+    rw [addr_eq (by omega_using [fit, hk])]
+    rw [addr_eq (by omega_using [fit]), Offset.add_add] at hc
     exact hc
   have e (k : Nat) (hk : k < 4) :=
     lane_read (m := t.mem) fit f hk
@@ -236,7 +236,7 @@ theorem found_or (m : Mem) (p : BitVec 32) {d : Nat} (hd : d < 32) :
   have z' : ∀ y : BitVec 32, 0 ||| y = y := fun y => BitVec.eq_of_getLsbD_eq (by simp)
   unfold found
   rcases cases4 h4 with h | h | h | h <;>
-    simp only [h, show d < 4 * 8 by omega, true_and, ite_true, ite_false,
+    simp only [h, show d < 4 * 8 by omega_using [hd], true_and, ite_true, ite_false,
       show ¬ (0 : Nat) = 1 by decide, show ¬ (0 : Nat) = 2 by decide, show ¬ (0 : Nat) = 3 by decide,
       show ¬ (1 : Nat) = 0 by decide, show ¬ (1 : Nat) = 2 by decide, show ¬ (1 : Nat) = 3 by decide,
       show ¬ (2 : Nat) = 0 by decide, show ¬ (2 : Nat) = 1 by decide, show ¬ (2 : Nat) = 3 by decide,
@@ -248,10 +248,10 @@ theorem sdword_word (m : Mem) (p : BitVec 32) {i : Nat} (hi : i < 64) :
   rw [scheduleAt_getD _ _ _ hi, addr_eq_def]
   unfold sdword
   rcases Nat.mod_two_eq_zero_or_one i with h | h
-  · rw [ite_eq_left h, readW32_lo, Offset.add_add, show 4 * (i / 2) = 2 * i by omega,
+  · rw [ite_eq_left h, readW32_lo, Offset.add_add, show 4 * (i / 2) = 2 * i by omega_using [h],
       show 2 * i + 1 = 2 * i + 1 from rfl]
-  · rw [ite_eq_right (by omega), readW32_hi, Offset.add_add, Offset.add_add,
-      show 4 * (i / 2) + 2 = 2 * i by omega, show 4 * (i / 2) + 3 = 2 * i + 1 by omega]
+  · rw [ite_eq_right (by omega_using [h]), readW32_hi, Offset.add_add, Offset.add_add,
+      show 4 * (i / 2) + 2 = 2 * i by omega_using [h], show 4 * (i / 2) + 3 = 2 * i + 1 by omega_using [h]]
 
 /-- Word `EAX & 63` of the schedule at EDI, through the 16 bytes at `[ebp + 48]`. -/
 theorem keyLookup_ok (s : State)
@@ -270,13 +270,13 @@ theorem keyLookup_ok (s : State)
   have edi : t.gpr .edi = s.gpr .edi := hg .edi (by decide) (by decide) (by decide)
   have ebp : t.gpr .ebp = s.gpr .ebp := hg .ebp (by decide) (by decide) (by decide)
   have hr : ∀ c < 8, InRegions (t.rd ++ t.wr) (addr (t.gpr .edi) (16 * c)) 16 := fun c hc => by
-    rw [hrd, hwr, edi, addr_eq (by omega)]
-    exact CallLay.inRegions_sub readable (by omega) (by decide)
+    rw [hrd, hwr, edi, addr_eq (by omega_using [fit, hc])]
+    exact CallLay.inRegions_sub readable (by omega_using [hc]) (by decide)
   rw [WP.block_append_iff]
-  refine WP.mono (chunks_ok (by omega) (by rw [edi]; exact fit) hr 8 (Nat.le_refl _) t hc) fun u hu => ?_
+  refine WP.mono (chunks_ok (by omega_using []) (by rw [edi]; exact fit) hr 8 (Nat.le_refl _) t hc) fun u hu => ?_
   have hw : InRegions u.wr (addr (u.gpr .ebp) 48) 16 := by
     rw [hu.wr, hwr, congrFun hu.gpr .ebp, ebp]; exact writable
-  refine WP.mono (end_ok u (i := ((s.gpr .eax).setWidth 6).toNat) hu.x1 (found_or _ _ (by omega))
+  refine WP.mono (end_ok u (i := ((s.gpr .eax).setWidth 6).toNat) hu.x1 (found_or _ _ (by omega_using []))
     (by rw [congrFun hu.gpr .ebx]; exact hb) (by rw [congrFun hu.gpr .ebp, ebp]; exact sfit) hw)
     fun v ⟨he, hg', hm', hrd', hwr'⟩ => ⟨?_, fun r ha hb hc => ?_, ?_, ?_, ?_⟩
   · rw [he, sdword_word _ _ hi, hm, edi]

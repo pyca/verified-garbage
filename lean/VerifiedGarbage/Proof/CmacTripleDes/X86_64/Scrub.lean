@@ -51,10 +51,10 @@ theorem agree_of {p : Addr} {L n : Nat} (h : ∀ a, Region.Contains ⟨p, L⟩ a
   intro i hi
   refine (h _ ?_).symm
   by_cases hw : i < 2 ^ 64
-  · exact VG.Offset.contains_base _ (by omega) hw
+  · exact VG.Offset.contains_base _ (by omega_using [hn, hi]) hw
   · simp only [Region.Contains]
     have := (p + BitVec.ofNat 64 i - p).isLt
-    omega
+    omega_using [hn, hi, hw]
 
 /-- The streaming state depends only on its 416 bytes. -/
 theorem repr_congr {p : Addr} {key msg : List Byte}
@@ -63,12 +63,12 @@ theorem repr_congr {p : Addr} {key msg : List Byte}
   rw [Stream.repr_iff] at hr ⊢
   obtain ⟨hk, hc, hh⟩ := hr
   have hle := Stream.held_le msg.length
-  refine ⟨hk.congr fun i hi => h i (by omega), ?_, ?_⟩
+  refine ⟨hk.congr fun i hi => h i (by omega_using [hi]), ?_, ?_⟩
   · rw [show p + 400 = p + BitVec.ofNat 64 400 from rfl, Stream.bytesAt_congr (m := m₁) fun i hi => by
-      rw [BitVec.add_assoc, ← BitVec.ofNat_add]; exact h _ (by omega)]
+      rw [BitVec.add_assoc, ← BitVec.ofNat_add]; exact h _ (by omega_using [hi])]
     exact hc
   · rw [show p + 408 = p + BitVec.ofNat 64 408 from rfl, Stream.bytesAt_congr (m := m₁) fun i hi => by
-      rw [BitVec.add_assoc, ← BitVec.ofNat_add]; exact h _ (by omega)]
+      rw [BitVec.add_assoc, ← BitVec.ofNat_add]; exact h _ (by omega_using [hle, hi])]
     exact hh
 
 end

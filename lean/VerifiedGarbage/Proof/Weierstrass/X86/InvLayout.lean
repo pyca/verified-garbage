@@ -45,11 +45,11 @@ theorem abHalf_ok {s : State} {base : Addr} {size u v acc a b tmp out k p : Nat}
     rw [Outs.val32 O₁ (by
       intro w hw
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
-      rcases hw with rfl | rfl <;> simp only <;> omega) (by omega), hm]
+      rcases hw with rfl | rfl <;> simp only <;> omega_arith) (by omega_using [hn, hmod]), hm]
   have bound : |cu * x + cv * y| ≤ 2 ^ 31 * p := by
     have H := Divstep.W32.comb_le huv hxb hyb
     have hp' : (0 : Int) ≤ p := Int.natCast_nonneg _
-    omega
+    omega_using [H]
   refine WP.mono (reduce_ok (hs.of_keeps K₁ (by decide)) R hp hm₁ hinv bound V₁)
     fun z ⟨O₂, K₂, V₂⟩ => ⟨V₂, (K₁.mono (by decide)).trans K₂, ?_⟩
   intro q hq
@@ -61,7 +61,7 @@ theorem abHalf_ok {s : State} {base : Addr} {size u v acc a b tmp out k p : Nat}
   · exact hq (acc, 4 * (k + 1 + 2)) (by simp)
   · have := hq (tmp, 4 * (k + 1 + 1)) (by simp)
     simp only
-    omega
+    omega_using [this]
 
 end VG.Proof.Weierstrass.X86.Inv
 
@@ -79,12 +79,12 @@ open VG VG.Impl.Weierstrass.X86 VG.Proof.Mont VG.Proof.Weierstrass
 theorem fgLayout {P : InvCfg} {size row : Nat} (ht : P.tbl + 320 ≤ size) (hr : row ≤ 1) :
     LinearLay size (P.sW + 12 + 8 * row) (P.sW + 16 + 8 * row)
       P.sT P.sF P.sG P.sU 9 7 := by
-  constructor <;> (try dsimp only [InvCfg.sW, InvCfg.sT, InvCfg.sF, InvCfg.sG, InvCfg.sU]) <;> omega
+  constructor <;> (try dsimp only [InvCfg.sW, InvCfg.sT, InvCfg.sF, InvCfg.sG, InvCfg.sU]) <;> omega_arith
 
 theorem abLayout {P : InvCfg} {size row : Nat} (ht : P.tbl + 320 ≤ size) (hr : row ≤ 1) :
     LinearLay size (P.sW + 12 + 8 * row) (P.sW + 16 + 8 * row)
       P.sT P.sA P.sB P.sU 8 7 := by
-  constructor <;> (try dsimp only [InvCfg.sW, InvCfg.sT, InvCfg.sA, InvCfg.sB, InvCfg.sU]) <;> omega
+  constructor <;> (try dsimp only [InvCfg.sW, InvCfg.sT, InvCfg.sA, InvCfg.sB, InvCfg.sU]) <;> omega_arith
 
 theorem redLayout {P : InvCfg} {size out : Nat} (L : WorkLay P size) (ho : out = P.sNF ∨ out = P.sB) :
     RedLay P.M size P.sT P.sU out 8 := by
@@ -94,7 +94,7 @@ theorem redLayout {P : InvCfg} {size out : Nat} (L : WorkLay P size) (ho : out =
   · simp only [VG.Impl.Mont.X86.words, L.n4]
   · decide
   all_goals rcases ho with rfl | rfl <;>
-    (try dsimp only [InvCfg.sT, InvCfg.sU, InvCfg.sNF, InvCfg.sB]) <;> omega
+    (try dsimp only [InvCfg.sT, InvCfg.sU, InvCfg.sNF, InvCfg.sB]) <;> omega_arith
 
 end VG.Proof.Weierstrass.X86.Inv
 

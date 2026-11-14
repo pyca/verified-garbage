@@ -41,7 +41,7 @@ theorem arg16_disj {W D SP : Addr} {n k : Nat} (hk : 2 ≤ k)
     {r : Region} (hr : r.Sub ⟨W, 2560⟩ ∨ r.Sub ⟨D, n⟩ ∨ r.Sub (below SP stkN)) :
     (⟨SP + BitVec.ofNat 64 16, 8⟩ : Region).Disjoint r := by
   have hs : Region.Sub ⟨SP + BitVec.ofNat 64 16, 8⟩ ⟨SP + BitVec.ofNat 64 8, 8 * k⟩ := by
-    rw [show (16 : Nat) = 8 + 8 by rfl, ← VG.Proof.AesGcm.X86_64.add_ofNat_assoc]; exact Offset.sub_base _ (by omega)
+    rw [show (16 : Nat) = 8 + 8 by rfl, ← VG.Proof.AesGcm.X86_64.add_ofNat_assoc]; exact Offset.sub_base _ (by omega_using [hk])
   rcases hr with hr | hr | hr
   · exact (dA.sub_left hs).sub_right hr
   · exact (dAD.sub_left hs).sub_right hr
@@ -88,9 +88,9 @@ theorem sealRun_ok (v : GcmImpl) {s₀ s₁ : State} {Ctx W SP Np A D : Addr} {n
     intro d k hk r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
-    · exact (hd₂.dw.ok.st.sub_right (Lay.stSub (by omega))).symm
-    · exact La.st_st (.inl (by omega)) (by omega) (by decide)
-    · exact (L.ks.sub_right (Lay.stSub (by omega))).symm
+    · exact (hd₂.dw.ok.st.sub_right (Lay.stSub (by omega_using [hk]))).symm
+    · exact La.st_st (.inl (by omega_using [hk])) (by omega_using [hk]) (by decide)
+    · exact (L.ks.sub_right (Lay.stSub (by omega_using [hk]))).symm
   have hH₃ : blockAt s₃.mem (Ctx + BitVec.ofNat 64 240) = H := by
     rw [blockAt_frame cr.frame fun r hr => (ctx_crFrame L hd₂ r hr).sub_left (Lay.ctxSub (by decide)), M.hH]
   have hJ₃ : blockAt s₃.mem (W + BitVec.ofNat 64 16) = Spec.Gcm.j0 H iv := by
@@ -98,7 +98,7 @@ theorem sealRun_ok (v : GcmImpl) {s₀ s₁ : State} {Ctx W SP Np A D : Addr} {n
   have habs₃ : Absorbed s₃.mem (W + BitVec.ofNat 64 16 + BitVec.ofNat 64 16) (W + BitVec.ofNat 64 16 + BitVec.ofNat 64 32)
       H (a ++ zeros (padLen a.length)) :=
     M.abs.congr (blockAt_frame cr.frame (dSt 16 16 (by decide)))
-      (bytesAt_frame cr.frame (dSt 32 _ (by omega)) (by omega))
+      (bytesAt_frame cr.frame (dSt 32 _ (by omega_using [])) (by omega_using []))
   have hx16 : (a ++ zeros (padLen a.length)).length % 16 = 0 := by
     simp only [List.length_append, Proof.Gcm.length_zeros]; exact Proof.Gcm.length_pad_mod _
   have hal₃ : s₃.mem.readW (W + BitVec.ofNat 64 184) 64 = BitVec.ofNat 64 al := by
@@ -120,7 +120,7 @@ theorem sealRun_ok (v : GcmImpl) {s₀ s₁ : State} {Ctx W SP Np A D : Addr} {n
   have hc₂ : ciphOf s₂.mem Ctx = ctxCiph s₀.mem Ctx := ciph_frame M.frame (dM _ _ La.cw' L.kc)
   have hc₃ : ciphOf s₃.mem Ctx = ctxCiph s₀.mem Ctx := (ciph_frame cr.frame (ctx_crFrame L hd₂)).trans hc₂
   have hp₂ : bytesAt s₂.mem D n = bytesAt s₀.mem D n :=
-    bytesAt_frame M.frame (dM _ _ C.dE C.data.stk) (by omega)
+    bytesAt_frame M.frame (dM _ _ C.dE C.data.stk) (by omega_using [hlt])
   have dD : ∀ r ∈ (⟨W + BitVec.ofNat 64 0, 16⟩ :: wFrame W SP), (⟨D, n⟩ : Region).Disjoint r := by
     intro r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -130,7 +130,7 @@ theorem sealRun_ok (v : GcmImpl) {s₀ s₁ : State} {Ctx W SP Np A D : Addr} {n
     · exact C.dE.sub_right (Lay.wSub (by decide))
     · exact C.dE.sub_right (Lay.wSub (by decide))
     · exact C.data.stk.symm
-  have hD₄ : bytesAt s₄.mem D n = bytesAt s₃.mem D n := bytesAt_frame f₄ dD (by omega)
+  have hD₄ : bytesAt s₄.mem D n = bytesAt s₃.mem D n := bytesAt_frame f₄ dD (by omega_using [hlt])
   have hT₄ := hT habs₃
   rw [padded_eq, hJ₃, hc₃, ← hD₄, BitVec.add_zero] at hT₄
   refine ⟨he₄, hrd₄.trans (hrd₃.trans M.rd), hwr₄.trans (hwr₃.trans M.wr),
@@ -209,7 +209,7 @@ theorem seal_wp (v : GcmImpl) {s : State} (hp : Proof.Sm4Gcm.sealX86_64.pre s) :
   refine WP.mono (exit_ok he₅.r15 (by rw [he₅.rsp, hSP]) (covers_left he₅.perm.w) hsv₅ (by rw [hSP, hret]))
     fun s' ⟨hg, hm, _⟩ => ⟨hg, ?_⟩
   have hd₅ : bytesAt s₅.mem D n = bytesAt s₄.mem D n := bytesAt_frame f₅ (fun r hr => by
-    simp only [List.mem_singleton] at hr; subst hr; exact d_td.symm) (by omega)
+    simp only [List.mem_singleton] at hr; subst hr; exact d_td.symm) (by omega_using [hn])
   simp only [Proof.Sm4Gcm.sealX86_64, Proof.Sm4Gcm.arg]
   rw [hCtx, hNp, hnl, hA, hal, hD, hn, hT, Spec.Gcm.encryptWith, hm, hb₅, hT₄, hd₅, hC,
     Proof.Gcm.fullTag_eq, Proof.Gcm.length_gctr, length_bytesAt, length_bytesAt]

@@ -27,7 +27,7 @@ theorem ne_of_zf {s : State} {q : Nat} (positive : 0 < q) (Z : s.zf = some (deci
   rw [Z]
   by_cases eq : q = 1
   · simp [eq]
-  · have more : 1 < q := by omega
+  · have more : 1 < q := by omega_using [positive, eq]
     simp [eq, more]
 
 theorem private_control {α : Type} {g : Geometry} {F G : α → State → Prop} {code : Prog isa} {q : Nat}

@@ -95,9 +95,9 @@ theorem EInvW.frame {w16 : Bool} {s₀ : State} (hp : Pre P L s₀) {kC co : Nat
       (hW r hr).2.2.1.sub_left (R.sub2 (by lom) (by lom))
     exact ⟨reducedW_frame hf hd (h.a i hi j hj).1, by rw [polyAtW_frame hf hd]; exact (h.a i hi j hj).2⟩
   · exact polyIsW_frame_poly hf (fun r hr => (hW r hr).2.2.2.1.sub_left
-      (R.sub2 (by simp only [yOff]; omega) (by simp only [yOff]; omega))) (h.y j hj)
+      (R.sub2 (by simp only [yOff]; omega_using []) (by simp only [yOff]; omega_using [hj]))) (h.y j hj)
   · rw [bytesAt_frame hf (fun r hr => (hW r hr).2.2.2.2.1.sub_left
-      (R.sub2 (by omega) (by have := mul_succ_le (a := 32 * P.du) hi; omega))) (by kom)]
+      (R.sub2 (by omega_using []) (by have := mul_succ_le (a := 32 * P.du) hi; omega_using [this]))) (by kom)]
     exact h.u i hi
 
 /-- A buffer of `scratch` apart from what `EInv` describes. -/
@@ -108,21 +108,21 @@ theorem far_s {s₀ : State} (hp : Pre P L s₀) {kE eo kC co : Nat} (A : EncArg
       (o + l ≤ 840 ∨ (o = RB + 32 ∧ l = 1) ∨ PB ≤ o)) :
     Far P L s₀ kC co nY nU (R (kA s₀) L.sc o l) := by
   have hw := hp.wf
-  have f' : o + l ≤ SV P + 48 := by omega
+  have f' : o + l ≤ SV P + 48 := by omega_using [f]
   obtain ⟨h1, h2, h3, h4, h5, h6⟩ := h
   have hu := Nat.mul_le_mul_left (32 * P.du) hnU
-  refine ⟨sdisj hp (by lom) f' (by omega), sdisj hp (by lom) f' (by omega),
-    sdisj hp (by lom) f' (by omega), sdisj hp (by lom) f' (by omega),
+  refine ⟨sdisj hp (by lom) f' (by omega_using [h1]), sdisj hp (by lom) f' (by omega_using [h2]),
+    sdisj hp (by lom) f' (by omega_using [h3]), sdisj hp (by lom) f' (by omega_using [h4]),
     hp.args.rdisj (hp.lt A.hkC) hp.scb (by have := A.fC; have := Nat.mul_assoc 32 P.du P.k; lom)
       (hp.fs f') (.inr (.inr hp.scw)) ?_, ?_⟩
   · rcases A.sC with hC | hC
     · exact .inl hC
-    · exact .inr (.inr (by subst hC; omega))
+    · exact .inr (.inr (by subst hC; omega_using [h5]))
   · rcases h6 with h6 | ⟨rfl, rfl⟩ | h6
-    · exact ⟨_, List.mem_cons_self .., R.sub2 (by omega) (by omega)⟩
+    · exact ⟨_, List.mem_cons_self .., R.sub2 (by omega_using []) (by omega_using [h6])⟩
     · exact ⟨_, List.mem_cons_of_mem _ (List.mem_cons_self ..), fun _ h => h⟩
     · exact ⟨_, List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_self ..)),
-        R.sub2 h6 (by simp only [PB] at h6 ⊢; omega)⟩
+        R.sub2 h6 (by simp only [PB] at h6 ⊢; omega_using [f])⟩
 
 theorem far_below {s₀ : State} (hp : Pre P L s₀) {kE eo kC co : Nat} (A : EncArgs P L kE eo kC co)
     {nY nU : Nat} (hnY : nY ≤ P.k) (hnU : nU ≤ P.k) : Far P L s₀ kC co nY nU (below s₀.sp 16) := by
@@ -202,20 +202,20 @@ theorem y_step {s₀ : State} (hp : Pre P L s₀) {kE eo kC co : Nat} (A : EncAr
     WP isa (P.encYAtWith keccak.callee j) s (EInv P L s₀ kC co mE mB v rv mv (j + 1) 0) := by
   have hw := hp.wf
   have hpo := po_y hw hj
-  have h1 : YH P + 1024 * j ≤ yOff P j := by simp only [yOff]; omega
+  have h1 : YH P + 1024 * j ≤ yOff P j := by simp only [yOff]; omega_using []
   have h2 : yOff P j + 1024 ≤ CB P := by lom
   refine WP.seq (WP.mono (prfCbd_ok hp (N := j) (off := yOff P j) (by lom) hpo h.kb h.r)
     fun s₁ ⟨kb₁, f₁, p₁, x₁⟩ => ?_)
-  have e₁ := h.frame hp kb₁ x₁ f₁ (far_pcW hp A (by omega) (by omega) h1 h2)
+  have e₁ := h.frame hp kb₁ x₁ f₁ (far_pcW hp A (by omega_using [hj]) (by omega_using []) h1 h2)
   refine WP.mono (ntt_ok hp hpo kb₁ p₁.1) fun s₂ ⟨kb₂, f₂, p₂, x₂⟩ => ?_
-  have e₂ := e₁.frame hp kb₂ x₂ f₂ (far_mul hp A (by omega) (by omega) h1 h2)
+  have e₂ := e₁.frame hp kb₂ x₂ f₂ (far_mul hp A (by omega_using [hj]) (by omega_using []) h1 h2)
   rw [p₁.2] at p₂
   refine ⟨e₂.kb, e₂.x24, e₂.r, e₂.m, e₂.a, fun j' hj' => ?_, fun i hi => absurd hi (Nat.not_lt_zero _), e₂.fr⟩
-  rcases (by omega : j' < j ∨ j' = j) with hj' | rfl
-  · have hy := po_y hw (j := j') (by omega)
+  rcases (by omega_using [hj'] : j' < j ∨ j' = j) with hj' | rfl
+  · have hy := po_y hw (j := j') (by omega_arith)
     refine polyIs_frame f₂ (fun r hr => by
       rcases mem2' hr with rfl | rfl
-      · exact papart hp hy hpo (by simp only [yOff]; omega)
+      · exact papart hp hy hpo (by simp only [yOff]; omega_using [hj'])
       · exact pns hp hy) (polyIs_frame f₁ (fun r hr => ?_) (h.y j' hj'))
     -- `ŷ[j']` is apart from what `prfCbdWith keccak.callee` writes
     rcases mem6 hr with rfl | rfl | rfl | rfl | rfl | rfl
@@ -224,7 +224,7 @@ theorem y_step {s₀ : State} (hp : Pre P L s₀) {kE eo kC co : Nat} (A : EncAr
     · exact below_R hp hp.scb (hp.fs hy.le)
     · exact sdisj hp hy.le (by lom) (.inr (by lom))
     · exact sdisj hp hy.le (by lom) (.inr (by lom))
-    · exact papart hp hy hpo (by simp only [yOff]; omega)
+    · exact papart hp hy hpo (by simp only [yOff]; omega_using [hj'])
   · exact p₂
 
 /-! ## `u` and `v` -/
@@ -236,18 +236,18 @@ theorem far_ct {s₀ : State} (hp : Pre P L s₀) {kE eo kC co : Nat} (A : EncAr
   have hw := hp.wf
   have hb := hp.lt A.hkC
   have fC := A.fC
-  have f' : o + l ≤ L.len (L.slot kC) := by omega
+  have f' : o + l ≤ L.len (L.slot kC) := by omega_using [f, fC]
   have hs : ∀ {o' l' : Nat}, o' + l' ≤ CB P → L.slot kC ≠ L.sc ∨ o' + l' ≤ o ∨ o + l ≤ o' := fun h' => by
     rcases A.sC with hC | hC
     · exact .inl hC
-    · exact .inr (.inl (by subst hC; omega))
+    · exact .inr (.inl (by subst hC; omega_using [h', h]))
   have g : ∀ {o' l' : Nat}, o' + l' ≤ CB P → (R (kA s₀) L.sc o' l').Disjoint (R (kA s₀) (L.slot kC) o l) :=
     fun h' => hp.args.rdisj hp.scb hb (hp.fs (by lom)) f' (.inr (.inl hp.scw)) (by
       rcases hs h' with e | e
       · exact .inl (Ne.symm e)
       · exact .inr e)
   exact ⟨g (by lom), g (by lom), g (by lom), g (by lom),
-    hp.args.rdisj hb hb (by omega) f' (.inl rfl) (.inr (.inl h)), ⟨_, by simp, R.sub2 (by omega) f⟩⟩
+    hp.args.rdisj hb hb (by omega_using [h, f, fC]) f' (.inl rfl) (.inr (.inl h)), ⟨_, by simp, R.sub2 (by omega_using [h]) f⟩⟩
 
 /-- `Â[j, i] ŷ[j]` into `h` (`TP` or `PP`). -/
 theorem uprod_ok {s₀ : State} (hp : Pre P L s₀) {kE eo kC co : Nat} (A : EncArgs P L kE eo kC co) {mE mB : Mem}
@@ -332,7 +332,7 @@ theorem u_step {s₀ : State} (hp : Pre P L s₀) (hc : Calls P) {kE eo kC co : 
   have e₅ := e₄.frame hp kb₅ x₅ f₅ fun r hr => by
     rw [List.mem_singleton.mp hr]; exact far_ct hp A (Nat.le_refl _) (by lom)
   refine ⟨e₅.kb, e₅.x24, e₅.r, e₅.m, e₅.a, e₅.y, fun i' hi' => ?_, e₅.fr⟩
-  rcases (by omega : i' < i ∨ i' = i) with hi' | rfl
+  rcases (by omega_using [hi'] : i' < i ∨ i' = i) with hi' | rfl
   · exact e₅.u i' hi'
   · rw [b₅, t₄.2]; rfl
 
@@ -348,12 +348,12 @@ theorem vprod_ok {s₀ : State} (hp : Pre P L s₀) {kE eo kC co : Nat} (A : Enc
       PolyIs s'.mem (sA L s₀ h) (multiplyNTTs (T j) (encY rv j)) := by
   have hw := hp.wf
   have fE := A.fE
-  have hs : L.slot kE ≠ L.sc := by have := A.rE; have := hp.scw; omega
+  have hs : L.slot kE ≠ L.sc := by have := A.rE; have := hp.scw; omega_arith
   have hjE := mul_succ_le (a := 384) hj
-  refine WPs.cons (WP.mono (dec12_ok hp (k := kE) (o := eo + 384 * j) A.hkE (by omega) (po_TH hw) (.inl hs) e.kb)
+  refine WPs.cons (WP.mono (dec12_ok hp (k := kE) (o := eo + 384 * j) A.hkE (by omega_using [hj, fE]) (po_TH hw) (.inl hs) e.kb)
     fun s₁ ⟨kb₁, f₁, d₁, x₁⟩ => ?_)
   have e₁ := e.frame hp kb₁ x₁ f₁ (far_one hp A (Nat.le_refl _) (Nat.le_refl _) (by lom) (by lom))
-  rw [e.kb.ro_bytes A.rE (by omega), hT j hj] at d₁
+  rw [e.kb.ro_bytes A.rE (by omega_using [hj, fE]), hT j hj] at d₁
   have y₁ := e₁.y j hj
   have ph : PO P h := by rcases hh with rfl | rfl; exacts [po_TP hw, po_PP hw]
   refine WPs.single (WP.mono (mul_ok hp ph (po_TH hw) (po_y hw hj) (.inl (by rcases hh with rfl | rfl <;> lom))
@@ -461,7 +461,7 @@ theorem ct_at {m : Mem} {p : Addr} {U : Nat → List Byte} {V : List Byte}
     | zero => intro _; rfl
     | succ n ih =>
       intro hn
-      rw [Nat.mul_succ, bytesAt_add, ih (by omega), hu n (by omega)]
+      rw [Nat.mul_succ, bytesAt_add, ih (by omega_using [hn]), hu n (by omega_using [hn])]
       exact (KPke.foldK_succ (op := fun a b => a ++ b) (fun x => List.nil_append x) _ n).symm
   rw [show P.ctLen = 32 * P.du * P.k + 32 * P.dv by simp only [KemLay.ctLen]; rw [Nat.mul_add, Nat.mul_assoc],
     bytesAt_add, cat P.k (Nat.le_refl _), hv]

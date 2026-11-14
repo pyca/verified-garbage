@@ -35,7 +35,7 @@ theorem rhoPi_ok {s : State} {A B : Spec.Sha3.State} (hp : Pairs s A B) :
     ⟨VChg.refl _ _,by rw [h1.v]; exact hp 1 (by decide),
       by intro i hi; rw [ite_eq_right (by simp [Done])];
          rw [h1.get (vreg i) (by
-           change vreg i ≠ vreg 25; rw [ne_eq,vreg_inj i (by omega) 25 (by decide)]; omega)]
+           change vreg i ≠ vreg 25; rw [ne_eq,vreg_inj i (by omega_using [hi]) 25 (by decide)]; omega_using [hi])]
          exact hp i hi⟩)
     fun s₂ ⟨hchg,_,vals⟩ => ⟨(h1.chg.trans hchg).mono (fun r _ => allV_mem r),?_⟩
   · obtain ⟨hd,hs,hk0,hkr,hfresh,hnext,_,_⟩ := cycle_facts k hk
@@ -49,13 +49,13 @@ theorem rhoPi_ok {s : State} {A B : Spec.Sha3.State} (hp : Pairs s A B) :
           ← cycle_word A hk,← cycle_word B hk,ite_eq_left ((done_next k _).mpr (Or.inr rfl))]
       · have h25n : vreg i ≠ VReg.v25 := by
           change vreg i ≠ vreg 25
-          rw [ne_eq,vreg_inj i (by omega) 25 (by decide)]; omega
+          rw [ne_eq,vreg_inj i (by omega_using [hi]) 25 (by decide)]; omega_using [hi]
         have h26n : vreg i ≠ VReg.v26 := by
           change vreg i ≠ vreg 26
-          rw [ne_eq,vreg_inj i (by omega) 26 (by decide)]; omega
+          rw [ne_eq,vreg_inj i (by omega_using [hi]) 26 (by decide)]; omega_using [hi]
         rw [hstep.get (vreg i) (by
           simp only [List.mem_cons,List.mem_singleton,List.not_mem_nil,or_false,not_or]
-          exact ⟨by rw [vreg_inj i (by omega) (dest k) (by omega)]; exact he,h25n,h26n⟩),hvals i hi]
+          exact ⟨by rw [vreg_inj i (by omega_using [hi]) (dest k) (by omega_using [hd])]; exact he,h25n,h26n⟩),hvals i hi]
         have hiff : Done (k+1) i ↔ Done k i := by rw [done_next,or_iff_left he]
         by_cases hd : Done k i
         · rw [ite_eq_left hd,ite_eq_left (hiff.mpr hd)]

@@ -72,9 +72,9 @@ theorem partialDigit_lt (d x j : Nat) : partialDigit d x j<2^j := by
   induction j with
   | zero => exact Nat.zero_lt_one
   | succ j ih =>
-    have h := Nat.mul_le_mul_right (2^j) (show bit x ((j+1)*d-1)≤1 from by have := bit_lt x ((j+1)*d-1); omega)
+    have h := Nat.mul_le_mul_right (2^j) (show bit x ((j+1)*d-1)≤1 from by have := bit_lt x ((j+1)*d-1); omega_using [this])
     simp only [Nat.one_mul] at h
-    rw [partialDigit,Nat.pow_succ]; omega
+    rw [partialDigit,Nat.pow_succ]; omega_using [ih, h]
 
 /-- Zero padding and repeated shifts expose the original exponent's comb row. -/
 theorem partialDigit_shifted (bits x width row : Nat)
@@ -90,7 +90,7 @@ theorem partialDigit_shifted (bits x width row : Nat)
     VG.Proof.Rsa.FixedBaseComb.shifted_tooth bits x width row 4 hr (by decide) hw]
   simp only [VG.Proof.Rsa.FixedBaseComb.digit,Nat.zero_mul,Nat.add_zero,Nat.one_mul,
     Nat.pow_zero,Nat.mul_one,Nat.zero_add]
-  omega
+  omega_using []
 
 theorem digitParts_ok {s : State} {base : Addr} {size o k d : Nat}
     (hs : Scr s base size) (ho : o+4*k≤size) (hd : 0<d) (cover : 5*d≤32*k)
@@ -102,19 +102,19 @@ theorem digitParts_ok {s : State} {base : Addr} {size o k d : Nat}
   | 0, _ => WP.block_nil ⟨rfl,by rw [B]; rfl,Keeps.refl _ _⟩
   | j+1, hj => by
     rw [List.range_succ,List.flatMap_append,List.flatMap_cons,List.flatMap_nil,List.append_nil]
-    refine WP.block_append (WP.mono (digitParts_ok hs ho hd cover B j (by omega)) fun u ⟨M,V,K⟩ => ?_)
+    refine WP.block_append (WP.mono (digitParts_ok hs ho hd cover B j (by omega_using [hj])) fun u ⟨M,V,K⟩ => ?_)
     have hu := hs.of_keeps K (by decide)
     have position : (j+1)*d-1<32*k := by
       have := Nat.mul_le_mul_right d hj
-      have := Nat.mul_le_mul_right d (show 1≤j+1 by omega)
+      have := Nat.mul_le_mul_right d (show 1≤j+1 by omega_using [])
       simp only [Nat.one_mul] at this
-      omega
+      omega_arith
     rw [List.append_assoc]
     refine WP.block_append (WP.mono (toothRead_ok hu ho position) fun v ⟨Mv,Vv,Kv⟩ => ?_)
     have Bv : (v.gpr .ebx).toNat=partialDigit d (val32 s.mem base o k) j := by
       rw [Kv.1 .ebx (by decide),V]
     rw [M] at Vv
-    exact WP.mono (addBit_ok (by omega) (bit_lt _ _) (partialDigit_lt _ _ _) Vv Bv)
+    exact WP.mono (addBit_ok (by omega_using [hj]) (bit_lt _ _) (partialDigit_lt _ _ _) Vv Bv)
       fun t ⟨Mt,Vt,Kt⟩ => ⟨Mt.trans (Mv.trans M),Vt,(K.trans (Kv.mono (by decide))).trans Kt⟩
 
 theorem digit_ok {s : State} {base : Addr} {size o k d : Nat}
@@ -129,7 +129,7 @@ theorem digit_ok {s : State} {base : Addr} {size o k d : Nat}
     fun v ⟨M,V,K⟩ => ?_)
   have Kv : Keeps [.eax,.ebx] s v := (U.keeps.mono (by decide)).trans K
   have hv := hs.of_keeps Kv (by decide)
-  refine wp_storeS (hv.ea (by omega)) (hv.write hw) fun t T => WP.block_nil ⟨?_,?_,Kv.trans (T.keeps _)⟩
+  refine wp_storeS (hv.ea (by omega_using [hw])) (hv.write hw) fun t T => WP.block_nil ⟨?_,?_,Kv.trans (T.keeps _)⟩
   · rw [T.mem,M,U.mem]; exact writeW32_outside _ _ _ (by decide)
   · rw [T.mem,w32_write_self,V,U.mem]
 

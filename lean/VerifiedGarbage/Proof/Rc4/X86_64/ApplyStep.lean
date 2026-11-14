@@ -31,8 +31,8 @@ theorem apply_before (s : State) (i j : Byte)
       Keep [.rcx, .r8, .r9, .r10] s t ∧ t.mem = s.mem := by
   have hi : InRegions (s.rd ++ s.wr) (s.gpr .rdi + (i + 1#8).setWidth 64) 1 := by
     rw [byte_addr (i + 1#8)]
-    exact region_offset _ _ _ _ _ (by have := (i + 1#8).isLt; omega)
-      (by have := (i + 1#8).isLt; omega) hp
+    exact region_offset _ _ _ _ _ (by have := (i + 1#8).isLt; omega_using [])
+      (by have := (i + 1#8).isLt; omega_using []) hp
   refine WP.mono (WP.keep (Q := fun t => t.gpr .rcx = (i + 1#8).setWidth 64 ∧
       t.gpr .r8 = (j + s.mem (s.gpr .rdi + BitVec.ofNat 64 (i + 1#8).toNat)).setWidth 64 ∧
       t.gpr .r9 = (j + s.mem (s.gpr .rdi + BitVec.ofNat 64 (i + 1#8).toNat)).setWidth 64 ∧
@@ -125,7 +125,7 @@ theorem apply_step (s : State) (i j : Byte)
   have uwr : u.wr = s.wr := uk.2.2.trans tk.2.2
   have hw : InRegions u.wr (u.gpr .rdi + BitVec.ofNat 64 ii.toNat) 1 := by
     rw [uwr, udi]
-    exact region_offset _ _ _ _ _ (by have := ii.isLt; omega) (by have := ii.isLt; omega) hp
+    exact region_offset _ _ _ _ _ (by have := ii.isLt; omega_using []) (by have := ii.isLt; omega_using []) hp
   rw [WP.block_append_iff]
   refine WP.mono (apply_middle u ii b ucx uax hw) fun v ⟨vm, v9, vk⟩ => ?_
   have ha : u.mem (u.gpr .rdi + BitVec.ofNat 64 ii.toNat) = a := by

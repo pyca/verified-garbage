@@ -23,27 +23,27 @@ theorem xorWord_byte (A : Spec.Sha3.State) (j k : Nat) (b : Byte) (w : BitVec 64
   apply ext_bytes
   intro i hi
   rw [byteOf_xorByte _ _ _ hi]
-  simp only [byteOf,xorWord_get _ _ _ _ (by omega : i/8<25)]
+  simp only [byteOf,xorWord_get _ _ _ _ (by omega_using [hi] : i/8<25)]
   by_cases he : i/8=j
-  · rw [ite_eq_left he,BitVec.extractLsb'_xor,hw _ (by omega)]
+  · rw [ite_eq_left he,BitVec.extractLsb'_xor,hw _ (by omega_using [])]
     by_cases hr : i%8=k
-    · rw [ite_eq_left hr,ite_eq_left (by omega : i=8*j+k)]
-    · rw [ite_eq_right hr,ite_eq_right (by omega : i≠8*j+k)]
+    · rw [ite_eq_left hr,ite_eq_left (by omega_using [he, hr] : i=8*j+k)]
+    · rw [ite_eq_right hr,ite_eq_right (by omega_using [hk, hr] : i≠8*j+k)]
       exact BitVec.xor_zero
-  · rw [ite_eq_right he,ite_eq_right (by omega : i≠8*j+k)]
+  · rw [ite_eq_right he,ite_eq_right (by omega_using [hk, he] : i≠8*j+k)]
 
 theorem xorWord_suffix (A : Spec.Sha3.State) (j : Nat) :
     xorWord A j 0x1f=xorByte A (8*j) 0x1f := by
   simpa only [Nat.add_zero] using xorWord_byte A j 0 0x1f 0x1f (by decide) (by
     intro r hr
-    rcases (show r=0 ∨ r=1 ∨ r=2 ∨ r=3 ∨ r=4 ∨ r=5 ∨ r=6 ∨ r=7 by omega) with
+    rcases (show r=0 ∨ r=1 ∨ r=2 ∨ r=3 ∨ r=4 ∨ r=5 ∨ r=6 ∨ r=7 by omega_using [hr]) with
       rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl <;> decide +kernel)
 
 theorem xorWord_terminal (A : Spec.Sha3.State) :
     xorWord A 16 0x8000000000000000=xorByte A 135 0x80 := by
   exact xorWord_byte A 16 7 0x80 0x8000000000000000 (by decide) (by
     intro r hr
-    rcases (show r=0 ∨ r=1 ∨ r=2 ∨ r=3 ∨ r=4 ∨ r=5 ∨ r=6 ∨ r=7 by omega) with
+    rcases (show r=0 ∨ r=1 ∨ r=2 ∨ r=3 ∨ r=4 ∨ r=5 ∨ r=6 ∨ r=7 by omega_using [hr]) with
       rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl <;> decide +kernel)
 
 theorem paddedState_bytes (A : Spec.Sha3.State) (j : Nat) :
@@ -68,17 +68,17 @@ theorem firstState_byte (m : Mem) (mu w1 : Addr) {j : Nat} (hj : j<200) :
   rw [byteOf_eq' _ hj]
   simp only [firstState,Vector.getElem_ofFn]
   by_cases h64 : j<64
-  · rw [ite_eq_left (by omega : j/8<8),ite_eq_left h64]
+  · rw [ite_eq_left (by omega_using [h64] : j/8<8),ite_eq_left h64]
     simp only [Mem.readW,BitVec.setWidth_eq]
-    rw [Mem.extractLsb'_read _ _ (by omega : j%8<64/8)]
-    simp only [laneAddr,BitVec.add_assoc,←BitVec.ofNat_add,show 8*(j/8)+j%8=j by omega]
-  · rw [ite_eq_right (by omega : ¬j/8<8),ite_eq_right h64]
+    rw [Mem.extractLsb'_read _ _ (by omega_using [] : j%8<64/8)]
+    simp only [laneAddr,BitVec.add_assoc,←BitVec.ofNat_add,show 8*(j/8)+j%8=j by omega_using []]
+  · rw [ite_eq_right (by omega_using [h64] : ¬j/8<8),ite_eq_right h64]
     by_cases h136 : j<136
-    · rw [ite_eq_left (by omega : j/8<17),ite_eq_left h136]
+    · rw [ite_eq_left (by omega_using [h136] : j/8<17),ite_eq_left h136]
       simp only [Mem.readW,BitVec.setWidth_eq]
-      rw [Mem.extractLsb'_read _ _ (by omega : j%8<64/8)]
-      simp only [laneAddr,BitVec.add_assoc,←BitVec.ofNat_add,show 8*(j/8-8)+j%8=j-64 by omega]
-    · rw [ite_eq_right (by omega : ¬j/8<17),ite_eq_right h136]
+      rw [Mem.extractLsb'_read _ _ (by omega_using [] : j%8<64/8)]
+      simp only [laneAddr,BitVec.add_assoc,←BitVec.ofNat_add,show 8*(j/8-8)+j%8=j-64 by omega_using [h64]]
+    · rw [ite_eq_right (by omega_using [h136] : ¬j/8<17),ite_eq_right h136]
       exact BitVec.extractLsb'_zero
 
 theorem firstState_eq (m : Mem) (mu w1 : Addr) :
@@ -100,9 +100,9 @@ theorem firstState_eq (m : Mem) (mu w1 : Addr) :
     simp only [bytesAt,List.getD_eq_getElem?_getD,List.getElem?_append,List.length_map,List.length_range,
       h64,↓reduceIte,List.getElem?_map]
     by_cases h136 : j<136
-    · rw [ite_eq_left h136,List.getElem?_range (by omega : j-64<72)]
+    · rw [ite_eq_left h136,List.getElem?_range (by omega_using [h136] : j-64<72)]
       rfl
-    · rw [ite_eq_right h136,List.getElem?_eq_none (by simp;omega)]
+    · rw [ite_eq_right h136,List.getElem?_eq_none (by simp;omega_using [h136])]
       rfl
 
 end VG.Proof.MlDsa.AArch64.Sign.CommitTail
@@ -134,21 +134,21 @@ theorem hashMessage_block (m : Mem) (mu w1 : Addr) {wlen i : Nat}
     block 136 (hashMessage m mu w1 wlen) (i+1)=
       bytesAt m (w1+BitVec.ofNat 64 (72+136*i)) 136 := by
   simp only [block,hashMessage,List.drop_append]
-  rw [List.drop_eq_nil_of_le (by simp [bytesAt];omega),List.nil_append,
+  rw [List.drop_eq_nil_of_le (by simp [bytesAt];omega_using []),List.nil_append,
     show (bytesAt m mu 64).length=64 by simp [bytesAt],
-    bytesAt_slice m w1 (by omega : 136*(i+1)-64+136≤wlen),
-    show 136*(i+1)-64=72+136*i by omega]
+    bytesAt_slice m w1 (by omega_using [hi] : 136*(i+1)-64+136≤wlen),
+    show 136*(i+1)-64=72+136*i by omega_using []]
 
 theorem hashMessage_tail (m : Mem) (mu w1 : Addr) {wlen n : Nat} (hn : 0<n)
     (hle : 136*n≤64+wlen) :
     (hashMessage m mu w1 wlen).drop (136*n)=
       bytesAt m (w1+BitVec.ofNat 64 (136*n-64)) (64+wlen-136*n) := by
   simp only [hashMessage,List.drop_append]
-  rw [List.drop_eq_nil_of_le (by simp [bytesAt];omega),List.nil_append,
+  rw [List.drop_eq_nil_of_le (by simp [bytesAt];omega_using [hn]),List.nil_append,
     show (bytesAt m mu 64).length=64 by simp [bytesAt],
-    bytesAt_drop m w1 (by omega : 136*n-64≤wlen)]
+    bytesAt_drop m w1 (by omega_using [hle] : 136*n-64≤wlen)]
   congr 1
-  omega
+  omega_using [hn]
 
 end VG.Proof.MlDsa.AArch64.Sign.CommitTail
 
@@ -171,9 +171,9 @@ theorem lowRun_full (m : Mem) (mu w1 : Addr) {wlen : Nat} (hw : 72≤wlen)
     rw [lowRun,absorbN_succ,hashMessage_first m mu w1 hw,firstState_eq]
     rfl
   | succ i ih =>
-    rw [lowRun,absorbAfter,ite_eq_left (by omega : i<(64+wlen)/136-1),xorWords_eq,
-      ih (by omega),absorbN_succ 136 (hashMessage m mu w1 wlen) (i+1),
-      hashMessage_block m mu w1 (wlen:=wlen) (i:=i) (by omega)]
+    rw [lowRun,absorbAfter,ite_eq_left (by omega_using [hi] : i<(64+wlen)/136-1),xorWords_eq,
+      ih (by omega_using [hi]),absorbN_succ 136 (hashMessage m mu w1 wlen) (i+1),
+      hashMessage_block m mu w1 (wlen:=wlen) (i:=i) (by omega_using [hi])]
 
 theorem lowRun_pad65 (m : Mem) (mu w1 : Addr) :
     lowRun 768 m w1 (firstState m mu w1) 7=

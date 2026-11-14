@@ -29,7 +29,7 @@ theorem ce_gpr (s : State) (rd wr : List Region) {r : Reg} (h : r ∉ linkRegs) 
   rw [State.withRegions_gpr, State.callEntry_gpr _ h]
 
 theorem rate_lt {rate : Nat} (h : rate ∈ rates) : rate < 2 ^ 64 := by
-  simp only [rates, List.mem_cons, List.not_mem_nil, or_false] at h; omega
+  simp only [rates, List.mem_cons, List.not_mem_nil, or_false] at h; omega_using [h]
 
 theorem ofNat_toNat' {n : Nat} (h : n < 2 ^ 64) : (BitVec.ofNat 64 n).toNat = n := by
   rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt h]
@@ -48,7 +48,7 @@ theorem call48 {n : String} {c : Prog isa} {k : Contract isa}
     · exact ⟨r, List.mem_append_left _ hr, fun _ h => h⟩
     · rw [List.mem_singleton] at hr; subst hr
       exact ⟨_, List.mem_append_right _ (List.mem_singleton_self _), below_sub hd (by decide)⟩) hcs hpost)
-    (by omega)
+    (by omega_using [hd])
 
 /-! ## `vg_keccak_absorb` -/
 

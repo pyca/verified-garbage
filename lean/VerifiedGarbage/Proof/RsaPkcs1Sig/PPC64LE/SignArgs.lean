@@ -32,14 +32,14 @@ theorem psa_le : (if pc then 112 else 96) ≤ 112 := by cases pc <;> decide
 theorem psa_sub (s : State) : Region.Sub (psaR pc s) (kR s) := frame_sub s (by cases pc <;> decide)
 
 theorem nCall_lt {n : Nat} (hn : n < nCallArgs pc) : n < 14 ∧ 1 + n < if pc then 15 else 13 := by
-  cases pc <;> simp only [nCallArgs, Bool.false_eq_true, ↓reduceIte] at hn ⊢ <;> omega
+  cases pc <;> simp only [nCallArgs, Bool.false_eq_true, ↓reduceIte] at hn ⊢ <;> omega_using [hn]
 
 /-- A slot of the frame above the Parameter Save Area. -/
 theorem psa_dis (s : State) {d n : Nat} (hd : 208 ≤ d) (hd' : d + n ≤ frameBytes) :
     ∀ r ∈ [psaR pc s], Region.Disjoint ⟨fb s + BitVec.ofNat 64 d, n⟩ r := fun r hr => by
   rw [List.mem_singleton.mp hr]
   have := psa_le (pc := pc)
-  exact Offset.disjoint _ (.inr (by omega)) (by unfold frameBytes at hd'; omega) (by omega)
+  exact Offset.disjoint _ (.inr (by omega_using [hd, this])) (by unfold frameBytes at hd'; omega_using [hd']) (by omega_using [this])
 
 /-- At the call of `vg_rsa_private_checked`, with `EM` holding `em`. -/
 structure AtCall (pc : Bool) (s t : State) (em : List Byte) : Prop extends Fr s t where
@@ -74,11 +74,11 @@ theorem copy_step {s w : State} (h : SPre pc s) (hw12 : w.gpr .r12 = fb s) (hrd 
   have hv : t.mem.readW (t.gpr .r12 + BitVec.ofNat 64 (arg (1 + n))) 64 = stackArg s (1 + n) := by
     rw [t12]; exact arg_readG h hmt hn'
   have ho : InRegions t.wr (t.gpr .r12 + BitVec.ofNat 64 (96 + 8 * n)) 8 := by
-    rw [t12, hc.keep.wr, hwr]; exact in_fr s _ (by omega) (by unfold frameBytes; omega)
-  have harg : arg (1 + n) < 2 ^ 15 ∧ arg (1 + n) % 4 = 0 := by unfold arg frameBytes; omega
+    rw [t12, hc.keep.wr, hwr]; exact in_fr s _ (by omega_using []) (by unfold frameBytes; omega_using [hn14])
+  have harg : arg (1 + n) < 2 ^ 15 ∧ arg (1 + n) % 4 = 0 := by unfold arg frameBytes; omega_using [hn14]
   apply WP.of_runBlock
   simp only [copyArg, runBlock_cons, runStep_some, exec_load_d (show Reg.r12 ≠ .r0 by decide) harg hin]
-  rw [exec_store_d (show Reg.r12 ≠ .r0 by decide) ⟨by omega, by omega⟩
+  rw [exec_store_d (show Reg.r12 ≠ .r0 by decide) ⟨by omega_using [hn14], by omega_using []⟩
     (by rw [gpr_write_of_ne _ _ (show Reg.r12 ≠ .r0 by decide)]; exact ho)]
   simp only [runStep_some, runBlock_nil, Option.some.injEq, exists_eq_left']
   rw [gpr_write_of_ne _ _ (show Reg.r12 ≠ .r0 by decide), gpr_write_self, mem_write, hv, t12]
@@ -87,10 +87,10 @@ theorem copy_step {s w : State} (h : SPre pc s) (hw12 : w.gpr .r12 = fb s) (hrd 
     rw [gpr_write_of_ne _ _ (by simpa using hr)]; exact hc.keep.gpr r hr
   · have := psa_le (pc := pc)
     have := hn
-    exact hc.mem.writeW (List.mem_singleton_self _) _ (Offset.contains _ (by omega)
-      (by cases pc <;> simp only [nCallArgs, Bool.false_eq_true, ↓reduceIte] at hn ⊢ <;> omega) (by omega))
+    exact hc.mem.writeW (List.mem_singleton_self _) _ (Offset.contains _ (by omega_using [])
+      (by cases pc <;> simp only [nCallArgs, Bool.false_eq_true, ↓reduceIte] at hn ⊢ <;> omega_arith) (by omega_arith))
   · rcases Nat.lt_succ_iff_lt_or_eq.mp hi with hi | rfl
-    · rw [Mem.readW_writeW_sep (Offset.sep _ (.inl (by omega)) (by omega) (by omega)) (by decide)]
+    · rw [Mem.readW_writeW_sep (Offset.sep _ (.inl (by omega_using [hi])) (by omega_arith) (by omega_using [hn14])) (by decide)]
       exact hc.psa i hi
     · rw [Mem.readW_writeW_self64]
 
@@ -136,11 +136,11 @@ theorem callArgs_ok {s u : State} (h : SPre pc s) (A : AtAft s u) {em : List Byt
     fun r hr => (kk r (by revert r; decide)).trans (A.hi r hr),
     A.mem.trans (hm.sub fun r hr => by rw [List.mem_singleton.mp hr]; exact ⟨_, List.mem_singleton_self _, psa_sub s⟩),
     A.sv.frame hm fun p hp => by
-      have := saved_offs p hp; exact hd (by unfold oSave at this; omega) (by unfold oSave frameBytes at *; omega),
+      have := saved_offs p hp; exact hd (by unfold oSave at this; omega_using [this]) (by unfold oSave frameBytes at *; omega_using [this]),
     ?_⟩, ?_, t3, t4, t5, t6, t7, t8, t9, t10, (kk _ (by decide)).trans A.r26, (kk _ (by decide)).trans A.r28,
     fun i hi => by rw [tm]; exact hc.psa i hi⟩
   · rw [hm.readW (Region.contains_self _ _) (hd (by decide) (by decide)) (by decide)]; exact A.ls
   · rw [← hem]
-    exact bytes_of_frame (s := u) hm (hd (by decide) (by unfold oEM frameBytes; omega)) (by omega)
+    exact bytes_of_frame (s := u) hm (hd (by decide) (by unfold oEM frameBytes; omega_using [hk])) (by omega_using [])
 
 end VG.Proof.RsaPkcs1Sig.PPC64LE.Sign

@@ -52,13 +52,13 @@ theorem svOf_add (S : Addr) (d : Nat) :
 theorem svOf_sub (S : Addr) {d n : Nat} (h : d + n ≤ 121) :
     Region.Sub ⟨svOf S + BitVec.ofNat 64 d, n⟩ ⟨S, 2176⟩ := by
   have := pad_lt (S + BitVec.ofNat 64 2048)
-  rw [svOf_add]; exact Offset.sub_base _ (by omega)
+  rw [svOf_add]; exact Offset.sub_base _ (by omega_using [h, this])
 
 /-- A slot at `svOf S + d`, above the working space of the block function. -/
 theorem svOf_ws (S : Addr) {d n : Nat} (h : d + n ≤ 121) :
     Region.Disjoint ⟨svOf S + BitVec.ofNat 64 d, n⟩ ⟨S, 2048⟩ := by
   have := pad_lt (S + BitVec.ofNat 64 2048)
-  rw [svOf_add]; exact Offset.disjoint_base _ (by omega) (by omega)
+  rw [svOf_add]; exact Offset.disjoint_base _ (by omega_using []) (by omega_using [h, this])
 
 /-- The precondition, by name: the schedule `W`, the subkeys `K`, the scratch
 buffer `S` and the rounds `R`. -/
@@ -113,7 +113,7 @@ theorem subkeysPre_wp {s₀ : State} {W K S : Addr} {R : Nat} (hp : SPre s₀ W 
   have kw := hp.k_wrap
   have sw := hp.scr_wrap
   have inK (d : Nat) (h : d + 1 ≤ 32) : InRegions s₀.wr (K + BitVec.ofNat 64 d) 1 := by
-    rw [hp.wr]; exact in_rw (r := ⟨K, 32⟩) (by simp) (Offset.contains_base _ h (by omega))
+    rw [hp.wr]; exact in_rw (r := ⟨K, 32⟩) (by simp) (Offset.contains_base _ h (by omega_using [h]))
   rw [subkeysPre, List.append_assoc, List.append_assoc, List.append_assoc, WP.block_append_iff]
   refine WP.mono (savePtr_ok .a3) fun s₁ e => ?_
   subst e
@@ -127,7 +127,7 @@ theorem subkeysPre_wp {s₀ : State} {W K S : Addr} {R : Nat} (hp : SPre s₀ W 
     show InRegions s₀.wr _ 8
     rw [hp.wr]
     have := pad_lt (S + BitVec.ofNat 64 2048)
-    exact ⟨⟨S, 2176⟩, by simp, by rw [svOf_add]; exact Offset.contains_base _ (by omega) (by omega)⟩
+    exact ⟨⟨S, 2176⟩, by simp, by rw [svOf_add]; exact Offset.contains_base _ (by omega_arith) (by omega_arith)⟩
   generalize ht : ({ (s₀.write .t0 (svOf S)) with
     mem := Spill.saveMem (s₀.write .t0 (svOf S)).mem ((s₀.write .t0 (svOf S)).gpr .t0)
       (s₀.write .t0 (svOf S)).gpr skSaved } : State) = t
@@ -144,7 +144,7 @@ theorem subkeysPre_wp {s₀ : State} {W K S : Addr} {R : Nat} (hp : SPre s₀ W 
   rw [WP.block_append_iff]
   refine WP.mono (Bytes.storeBytes_ok (tmp := .t1) (dst := .s1) (doff := 0) (bs := List.replicate 16 0)
     (by decide) (by decide) (by decide) (fun i hi => ?_)) fun s₄ h₄ => ?_
-  · rw [u₃.wr, u₂.wr, wrt, k₃, Nat.zero_add]; exact inK i (by simp at hi; omega)
+  · rw [u₃.wr, u₂.wr, wrt, k₃, Nat.zero_add]; exact inK i (by simp at hi; omega_using [hi])
   refine wp_mv fun s₅ u₅ => wp_li (by decide) fun s₆ u₆ => wp_mv fun s₇ u₇ => WP.block_nil ?_
   have rd₇ : s₇.rd = s₀.rd := by rw [u₇.rd, u₆.rd, u₅.rd, h₄.rd, u₃.rd, u₂.rd, rdt]
   have wr₇ : s₇.wr = s₀.wr := by rw [u₇.wr, u₆.wr, u₅.wr, h₄.wr, u₃.wr, u₂.wr, wrt]
@@ -160,11 +160,11 @@ theorem subkeysPre_wp {s₀ : State} {W K S : Addr} {R : Nat} (hp : SPre s₀ W 
     intro p hp' r hr
     simp only [List.mem_singleton] at hr; subst hr
     have := sk_bound p hp'
-    exact (hp.k_scr.symm.sub_left (svOf_sub S (by omega))).sub_right (Region.sub_prefix (by decide))
+    exact (hp.k_scr.symm.sub_left (svOf_sub S (by omega_using [this]))).sub_right (Region.sub_prefix (by decide))
   refine ⟨CallPre.mk ?_ ?_ ?_ ?_ ?_ hRr (hp.sch_k.sub_right (Region.sub_prefix (by decide)))
       (hp.sch_scr.sub_right (Region.sub_prefix (by decide)))
       ((hp.k_scr.sub_left (Region.sub_prefix (by decide))).sub_right (Region.sub_prefix (by decide)))
-      (by omega) ?_ ?_, ?_, ?_, fun r hr h1 h2 => ?_, ?_, ?_, ?_, rd₇, wr₇, ?_⟩
+      (by omega_using [kw]) ?_ ?_, ?_, ?_, fun r hr h1 h2 => ?_, ?_, ?_, ?_, rd₇, wr₇, ?_⟩
   · rw [u₇.other _ (by decide), u₆.other _ (by decide), u₅.other _ (by decide), h₄.gpr _ (by decide),
       u₃.other _ (by decide), u₂.other _ (by decide), gt _ (by decide), hp.a0]
   · rw [u₇.other _ (by decide), u₆.other _ (by decide), u₅.other _ (by decide), h₄.gpr _ (by decide),
@@ -204,7 +204,7 @@ theorem subkeysPre_wp {s₀ : State} {W K S : Addr} {R : Nat} (hp : SPre s₀ W 
     rw [this, hz j h₁]; rfl
   · have fa : Frame [⟨K, 16⟩, skSlots S] s₀.mem s₃.mem := by
       rw [m₃]
-      exact (Spill.saveMem_frame (lo := 16) (n := 24) sk_bound (by omega) s₀.mem (svOf S) _).mono (by simp)
+      exact (Spill.saveMem_frame (lo := 16) (n := 24) sk_bound (by omega_using []) s₀.mem (svOf S) _).mono (by simp)
     rw [mem₇]; exact fa.trans (f₃.mono (by simp))
   · rw [u₇.sp, u₆.sp, u₅.sp, h₄.sp, u₃.sp, u₂.sp, spt]
 
@@ -221,11 +221,11 @@ theorem subkeys_wp {s₀ : State} (h0 : subkeysRISCV64.pre s₀) :
   generalize hK : s₀.gpr .a2 = K at hp
   generalize hS : s₀.gpr .a3 = S at hp
   generalize hR : (s₀.gpr .a1).toNat = R at hp
-  have hRb : 16 * (R + 1) ≤ 240 := by rcases hp.rounds with h | h | h <;> omega
+  have hRb : 16 * (R + 1) ≤ 240 := by rcases hp.rounds with h | h | h <;> omega_using [h]
   have kw := hp.k_wrap
   have sw := hp.scr_wrap
   have inK (d : Nat) (h : d + 1 ≤ 32) : InRegions s₀.wr (K + BitVec.ofNat 64 d) 1 := by
-    rw [hp.wr]; exact in_rw (r := ⟨K, 32⟩) (by simp) (Offset.contains_base _ h (by omega))
+    rw [hp.wr]; exact in_rw (r := ⟨K, 32⟩) (by simp) (Offset.contains_base _ h (by omega_using [h]))
   have rIn (a : Addr) (h : InRegions s₀.wr a 1) : InRegions (s₀.rd ++ s₀.wr) a 1 := by
     obtain ⟨r, hr, hc⟩ := h; exact ⟨r, List.mem_append_right _ hr, hc⟩
   refine WP.seq (WP.mono (subkeysPre_wp hp) fun s₁ h₁ => ?_)
@@ -237,13 +237,13 @@ theorem subkeys_wp {s₀ : State} (h0 : subkeysRISCV64.pre s₀) :
   rw [subkeysPost, List.append_assoc, List.append_assoc]
   refine dbl_wp (K := K) (src := 0) (dst := 0) (by decide) (by decide) dbl_spec16
     (by rw [g₂ _ (by decide), h₁.s1]) (.inl rfl) (by decide)
-    (by decide) (by omega) (fun j hj => by rw [rdwr₂, Nat.zero_add]; exact rIn _ (inK j (by omega)))
-    (fun j hj => by rw [wr₂, Nat.zero_add]; exact inK j (by omega)) fun s₃ g₃ rd₃ wr₃ sp₃ f₃ b₃ => ?_
+    (by decide) (by omega_using [kw]) (fun j hj => by rw [rdwr₂, Nat.zero_add]; exact rIn _ (inK j (by omega_using [hj])))
+    (fun j hj => by rw [wr₂, Nat.zero_add]; exact inK j (by omega_using [hj])) fun s₃ g₃ rd₃ wr₃ sp₃ f₃ b₃ => ?_
   refine dbl_wp (K := K) (src := 0) (dst := 16) (by decide) (by decide) dbl_spec16
     (by rw [g₃ _ (by decide) (by decide) (by decide) (by decide), g₂ _ (by decide), h₁.s1]) (.inr (by decide))
-    (by decide) (by decide) (by omega)
-    (fun j hj => by rw [rd₃, wr₃, rdwr₂, Nat.zero_add]; exact rIn _ (inK j (by omega)))
-    (fun j hj => by rw [wr₃, wr₂]; exact inK (16 + j) (by omega)) fun s₄ g₄ rd₄ wr₄ sp₄ f₄ b₄ => ?_
+    (by decide) (by decide) (by omega_using [kw])
+    (fun j hj => by rw [rd₃, wr₃, rdwr₂, Nat.zero_add]; exact rIn _ (inK j (by omega_using [hj])))
+    (fun j hj => by rw [wr₃, wr₂]; exact inK (16 + j) (by omega_using [hj])) fun s₄ g₄ rd₄ wr₄ sp₄ f₄ b₄ => ?_
   -- The registers restored.
   have s2₄ : s₄.gpr .s2 = S := by
     rw [g₄ _ (by decide) (by decide) (by decide) (by decide), g₃ _ (by decide) (by decide) (by decide) (by decide),
@@ -254,15 +254,15 @@ theorem subkeys_wp {s₀ : State} (h0 : subkeysRISCV64.pre s₀) :
   rw [s2₄]
   -- The slots, kept by the call and the doublings.
   have slotS (p : Reg × Nat) (hp' : p ∈ skSaved) : Region.Sub ⟨svOf S + BitVec.ofNat 64 p.2, 8⟩ ⟨S, 2176⟩ := by
-    have := sk_bound p hp'; exact svOf_sub S (by omega)
+    have := sk_bound p hp'; exact svOf_sub S (by omega_using [this])
   have slotK (p : Reg × Nat) (hp' : p ∈ skSaved) (e : Nat) (he : e ≤ 16) :
       (⟨svOf S + BitVec.ofNat 64 p.2, 8⟩ : Region).Disjoint ⟨K + BitVec.ofNat 64 e, 16⟩ :=
-    (hp.k_scr.symm.sub_left (slotS p hp')).sub_right (Offset.sub_base _ (by omega))
+    (hp.k_scr.symm.sub_left (slotS p hp')).sub_right (Offset.sub_base _ (by omega_using [he]))
   have sv₂ := h₁.saved.frame c.frame fun p hp' r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
     · have := slotK p hp' 0 (by decide); rwa [BitVec.add_zero] at this
-    · exact svOf_ws S (by have := sk_bound p hp'; omega)
+    · exact svOf_ws S (by have := sk_bound p hp'; omega_using [this])
   have sv₄ : Spill.Saved (svOf S) (skG s₀ S) skSaved s₄.mem :=
     (sv₂.frame f₃ fun p hp' r hr => by
         simp only [List.mem_singleton] at hr; subst hr; exact slotK p hp' 0 (by decide)).frame f₄
@@ -288,7 +288,7 @@ theorem subkeys_wp {s₀ : State} (h0 : subkeysRISCV64.pre s₀) :
   · rw [r₆.sp, RegUpd.sp_write, sp₄, sp₃, c.sp, h₁.sp]
   · show bytesAt s₆.mem (s₀.gpr .a2) 32 = _
     have schB : bytesAt s₁.mem W (16 * (R + 1)) = bytesAt s₀.mem W (16 * (R + 1)) := by
-      refine Proof.Cmac.bytesAt_frame h₁.frame (fun r hr => ?_) (by omega)
+      refine Proof.Cmac.bytesAt_frame h₁.frame (fun r hr => ?_) (by omega_using [hRb])
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
       · exact (hp.sch_k.sub_left (Region.sub_prefix hRb)).sub_right (Region.sub_prefix (by decide))
@@ -300,7 +300,7 @@ theorem subkeys_wp {s₀ : State} (h0 : subkeysRISCV64.pre s₀) :
     have b4lo : bytesAt s₄.mem K 16 = bytesAt s₃.mem K 16 :=
       Proof.Cmac.bytesAt_frame16 f₄ fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr
-        exact (Offset.disjoint_base K (by decide) (by omega)).symm
+        exact (Offset.disjoint_base K (by decide) (by omega_using [])).symm
     have b4hi : bytesAt s₄.mem (K + BitVec.ofNat 64 16) 16 = Spec.Cmac.dbl 16 (bytesAt s₃.mem K 16) := by
       rw [BitVec.add_zero] at b₄; exact b₄
     rw [r₆.mem, RegUpd.mem_write, hK, Proof.Cmac.bytesAt_32, b4lo, b4hi, b3, L, hW, hR]

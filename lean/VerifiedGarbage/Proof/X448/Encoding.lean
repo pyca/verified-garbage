@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.X448.Pairs
 import VerifiedGarbage.Proof.X448.Bytes
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # X448: encoding pairs of limbs
@@ -33,17 +34,17 @@ theorem decoded_packed {m : Mem} {p : Addr} {f : Nat → Nat} (hf : ∀ i < 16, 
     (hc : ∀ i < 8, chunk m p i = f (2 * i) + radix * f (2 * i + 1)) :
     ∀ i < 16, decoded m p i = f i := by
   intro i hi
-  have h := hc (i / 2) (by omega)
-  have h0 := hf (2 * (i / 2)) (by omega)
+  have h := hc (i / 2) (by omega_using [hi])
+  have h0 := hf (2 * (i / 2)) (by omega_using [hi])
   have h1 : radix = 268435456 := rfl
   unfold decoded
   rw [h]
   split
   · rename_i he
-    have e : 2 * (i / 2) = i := by omega
+    have e : 2 * (i / 2) = i := by omega_using [he]
     rw [Nat.add_mul_mod_self_left, Nat.mod_eq_of_lt h0, e]
   · rename_i he
-    have e : 2 * (i / 2) + 1 = i := by omega
+    have e : 2 * (i / 2) + 1 = i := by omega_using [he]
     rw [Nat.add_mul_div_left _ _ (by decide), Nat.div_eq_of_lt h0, Nat.zero_add, e]
 
 theorem packed_bytes {m : Mem} {p : Addr} {f : Nat → Nat} (hf : ∀ i < 16, f i < radix)

@@ -71,7 +71,7 @@ theorem famR_keep {L : Lay} {Wb : List Nat} (hL : OkW L Wb) (h0 : 0 ∈ Wb) {W :
     (hf : Frame (L.RL W) m m') {b a e : Nat} (h : sepAll L.sizes (0, oP (b + a), 1024 * (e - a)) W = true)
     {F : Nat → Poly} (hp : ∀ j, a ≤ j → j < e → PolyIs m (L.A 0 (oP (b + j))) (F j)) :
     ∀ j, a ≤ j → j < e → PolyIs m' (L.A 0 (oP (b + j))) (F j) :=
-  fun j h1 h2 => polyIs_keepW hL hf (sepAll_sub h (by unfold oP; omega) (by unfold oP; omega)) h0 rfl (hp j h1 h2)
+  fun j h1 h2 => polyIs_keepW hL hf (sepAll_sub h (by unfold oP; omega_using [h1]) (by unfold oP; omega_using [h2])) h0 rfl (hp j h1 h2)
 
 /-! ## The checks' state -/
 
@@ -93,7 +93,7 @@ theorem KB.keep {p : Params} (hF : SFacts p) {STK : Nat} {σ : State} {t : Nat} 
   simp only [kbChk, Bool.and_eq_true] at hc
   obtain ⟨⟨c1, c2⟩, c3⟩ := hc
   have hL := h.l.k.sc.site.ok
-  have hct : cLen p ≤ 2 ^ 64 := by rcases hF.ct with e | e | e <;> omega
+  have hct : cLen p ≤ 2 ^ 64 := by rcases hF.ct with e | e | e <;> omega_using [e]
   exact ⟨⟨h.l.k.keep hk c1, (hk.cs .r27 (by decide)).trans h.l.r27, (hk.cs .r25 (by decide)).trans h.l.r25,
     h.l.t_lt, h.l.rej⟩, by rw [bytes_keepW hL hk.frame c2 (by decide) hct]; exact h.ct,
     polyIs_keepW hL hk.frame c3 (by decide) rfl h.c, h.some⟩
@@ -165,7 +165,7 @@ theorem IZ.keep {p : Params} (hF : SFacts p) {STK : Nat} {σ : State} {t nz ys :
 
 theorem IZ.weak {p : Params} {STK : Nat} {σ : State} {t r : Nat} {s : State} (h : IZ p STK σ t r r s)
     (hr : r < p.ℓ) : IZ p STK σ t r (r + 1) s ∧ PolyIs s.mem (SL p STK σ (yBase p + r)) (Yv p σ (p.ℓ * t) r) :=
-  ⟨⟨h.b, h.z, fun j hj hj' => h.y j (by omega) hj', h.w, h.r26, h.r24⟩, h.y r (Nat.le_refl _) hr⟩
+  ⟨⟨h.b, h.z, fun j hj hj' => h.y j (by omega_using [hj]) hj', h.w, h.r26, h.r24⟩, h.y r (Nat.le_refl _) hr⟩
 
 /-! ## `r₀` -/
 
@@ -197,7 +197,7 @@ theorem IQ.keep {p : Params} (hF : SFacts p) {STK : Nat} {σ : State} {t nr ws :
 
 theorem IQ.weak {p : Params} {STK : Nat} {σ : State} {t i : Nat} {s : State} (h : IQ p STK σ t i i s)
     (hi : i < p.k) : IQ p STK σ t i (i + 1) s ∧ PolyIs s.mem (SL p STK σ (wBase p + i)) (Wv p σ (p.ℓ * t) i) :=
-  ⟨⟨h.b, h.z, h.w', fun j hj hj' => h.w j (by omega) hj', h.r26, h.r24⟩, h.w i (Nat.le_refl _) hi⟩
+  ⟨⟨h.b, h.z, h.w', fun j hj hj' => h.w j (by omega_using [hj]) hj', h.r26, h.r24⟩, h.w i (Nat.le_refl _) hi⟩
 
 theorem IZ.iq {p : Params} {STK : Nat} {σ : State} {t : Nat} {s : State} (h : IZ p STK σ t p.ℓ p.ℓ s) :
     IQ p STK σ t 0 0 s :=
@@ -210,7 +210,7 @@ theorem zq_sub_sub (a : Zq) : a - a - a = -a := by
   apply Fin.ext
   have ha := a.isLt
   simp only [Fin.sub_def, Fin.neg_def, q] at *
-  omega
+  omega_using []
 
 theorem sub_sub_self (a : Poly) : sub (sub a a) a = neg a := by
   apply Vector.ext
@@ -233,7 +233,7 @@ theorem onesSum_le (f : Nat → Vector Bool n) : ∀ i, onesSum f i ≤ 256 * i
   | i + 1 => by
     rw [onesSum_succ]
     have := onesSum_le f i; have := hintOnes_le (f i)
-    omega
+    omega_arith
 
 /-- A hint kept by a part that writes apart from it. -/
 theorem hintIs_keepW {L : Lay} {Wb : List Nat} (hL : OkW L Wb) {W : List (Nat × Nat × Nat)} {m m' : Mem}
@@ -270,13 +270,13 @@ theorem IH.keep {p : Params} (hF : SFacts p) {STK : Nat} {σ : State} {t nc nh w
   exact ⟨h.b.keep hF hk c1, fun r hr => famR_keep hL h0 hk.frame c2 (fun j _ hj => h.z j hj) r (Nat.zero_le _) hr,
     fun i hi => famR_keep hL h0 hk.frame c3 (fun j _ hj => h.w'' j hj) i (Nat.zero_le _) hi,
     famR_keep hL h0 hk.frame c4 h.w',
-    fun i hi => hintIs_keepW hL hk.frame (sepAll_sub c5 (by unfold oP; omega) (by unfold oP; omega)) h0 (h.h i hi),
+    fun i hi => hintIs_keepW hL hk.frame (sepAll_sub c5 (by unfold oP; omega_using []) (by unfold oP; omega_using [hi])) h0 (h.h i hi),
     (hk.cs .r26 (by decide)).trans h.r26, (hk.cs .r24 (by decide)).trans h.r24⟩
 
 theorem IH.weak {p : Params} {STK : Nat} {σ : State} {t i : Nat} {s : State} (h : IH p STK σ t i i i s)
     (hi : i < p.k) :
     IH p STK σ t i i (i + 1) s ∧ PolyIs s.mem (SL p STK σ (wBase p + i)) (W'v p σ (p.ℓ * t) i) :=
-  ⟨⟨h.b, h.z, h.w'', fun j hj hj' => h.w' j (by omega) hj', h.h, h.r26, h.r24⟩, h.w' i (Nat.le_refl _) hi⟩
+  ⟨⟨h.b, h.z, h.w'', fun j hj hj' => h.w' j (by omega_using [hj]) hj', h.h, h.r26, h.r24⟩, h.w' i (Nat.le_refl _) hi⟩
 
 theorem IQ.ih {p : Params} {STK : Nat} {σ : State} {t : Nat} {s : State} (h : IQ p STK σ t p.k p.k s) :
     IH p STK σ t 0 0 0 s :=
@@ -350,7 +350,7 @@ theorem zR_piece {t r : Nat} (hr : r < p.ℓ) :
   -- its norm, into `r24`
   have hzc : ∀ σ s, IZ p STK σ t r (r + 1) s → SC2 p STK σ s := fun _ _ h => h.b.l.k.sc
   have p4 := normP_piece hP hS hzc (f := yBase p + r) (B := p.γ₁ - p.β) (fun σ => ⟨sptr_ok rfl (by clt hF), by csep hF⟩)
-    (fun σ => by csep hF) (by rcases hF.g1 with e | e <;> rw [e] <;> omega)
+    (fun σ => by csep hF) (by rcases hF.g1 with e | e <;> rw [e] <;> omega_using [])
     (F := fun σ => Zv p σ (p.ℓ * t) r)
     (fun σ s s' h k => h.keep hF k (by csep hF))
   have p5 := and24_piece (p := p) (STK := STK) (J := fun σ s => (IZ p STK σ t r (r + 1) s ∧
@@ -359,7 +359,7 @@ theorem zR_piece {t r : Nat} (hr : r < p.ℓ) :
     (J' := fun σ s => IZ p STK σ t (r + 1) (r + 1) s) (fun _ _ h => h.1.1.b.l.k.sc)
     fun σ s s' ⟨⟨h, hz⟩, h3⟩ r2 e24 => ⟨h.b.regs2 r2, fun j hj => by
         rw [r2.mem]
-        rcases (by omega : j < r ∨ j = r) with h' | rfl
+        rcases (by omega_using [hj] : j < r ∨ j = r) with h' | rfl
         exacts [h.z j h', hz],
       fun j hj hj' => by rw [r2.mem]; exact h.y j hj hj', fun i hi => by rw [r2.mem]; exact h.w i hi,
       by rw [r2.gpr .r26 (by decide) (by decide)]; exact h.r26,
@@ -426,7 +426,7 @@ theorem r0R_piece {t i : Nat} (hi : i < p.k) :
   have hB : p.γ₂ - p.β < 2 ^ 31 := by
     have hg := hF.g2; simp only [gamma2s, List.mem_cons, List.not_mem_nil, or_false] at hg
     have hq : q = 8380417 := rfl
-    rcases hg with e | e <;> rw [e] <;> omega
+    rcases hg with e | e <;> rw [e] <;> omega_using [hq]
   have p5 := normP_piece hP hS hrc (f := 2) (B := p.γ₂ - p.β) (fun σ => ⟨sptr_ok rfl (by decide), by csep hF⟩)
     (fun σ => by csep hF) hB (F := fun σ => R0v p σ (p.ℓ * t) i)
     (fun σ s s' h k => ⟨h.1.keep hF k (by csep hF),
@@ -438,7 +438,7 @@ theorem r0R_piece {t i : Nat} (hi : i < p.k) :
     fun σ s s' ⟨⟨⟨h, hw⟩, _⟩, h3⟩ r2 e24 => ⟨h.b.regs2 r2, fun j hj => by rw [r2.mem]; exact h.z j hj,
       fun j hj => by
         rw [r2.mem]
-        rcases (by omega : j < i ∨ j = i) with h' | rfl
+        rcases (by omega_using [hj] : j < i ∨ j = i) with h' | rfl
         exacts [h.w' j h', hw],
       fun j hj hj' => by rw [r2.mem]; exact h.w j hj hj',
       by rw [r2.gpr .r26 (by decide) (by decide)]; exact h.r26,
@@ -476,7 +476,7 @@ omit hP hS in
 theorem g2_lt : p.γ₂ < 2 ^ 31 := by
   have hg := hF.g2; simp only [gamma2s, List.mem_cons, List.not_mem_nil, or_false] at hg
   have hq : q = 8380417 := rfl
-  rcases hg with e | e <;> rw [e] <;> omega
+  rcases hg with e | e <;> rw [e] <;> omega_using [hq]
 
 theorem hR_piece {t i : Nat} (hi : i < p.k) :
     SPiece p STK (fun σ s => IH p STK σ t i i i s) (fun σ s => IH p STK σ t (i + 1) (i + 1) (i + 1) s) (hR P p i) := by
@@ -586,11 +586,11 @@ theorem hR_piece {t i : Nat} (hi : i < p.k) :
     have hk : KB p STK σ t s' := h.b.of_eq (fun r a _ b => g r a b) m rd wr sp
     refine ⟨hk, fun j hj => by rw [m]; exact h.z j hj, fun j hj => by
         rw [m]
-        rcases (by omega : j < i ∨ j = i) with h' | rfl
+        rcases (by omega_using [hj] : j < i ∨ j = i) with h' | rfl
         exacts [h.w'' j h', hw],
       fun j hj hj' => by rw [m]; exact h.w' j hj hj', fun j hj => by
         rw [m]
-        rcases (by omega : j < i ∨ j = i) with h' | rfl
+        rcases (by omega_using [hj] : j < i ∨ j = i) with h' | rfl
         exacts [h.h j h', hh], ?_, by rw [g .r24 (by decide) (by decide)]; exact h.r24⟩
     rw [e26, h.r26, hz, ← BitVec.ofNat_add, onesSum_succ]
   unfold hR normAt makeHintAt
@@ -643,17 +643,17 @@ theorem bit_ne {a : Prop} [Decidable a] : bit a≠0 ↔ a := by
 theorem seqOk_ok {f : Nat→Prog isa} {I : Nat→State→Prop} :
     ∀ (n a : Nat), (∀ k, a≤k → k<a+n → ∀ s, I k s → WP isa (f k) s (I (k+1))) →
       ∀ s, I a s → WP isa (seqOk f a n) s fun s'=>∃k,a≤k ∧ k≤a+n ∧ I k s' ∧ (k=a+n ∨ s'.gpr .r24=0)
-  | 0,a,_,s,h=>WP.block_nil ⟨a,Nat.le_refl _,by omega,h,.inl (by omega)⟩
+  | 0,a,_,s,h=>WP.block_nil ⟨a,Nat.le_refl _,by omega_using [],h,.inl (by omega_using [])⟩
   | n+1,a,h,s,hs=>by
     rw [seqOk]
-    refine WP.seq (WP.mono (h a (Nat.le_refl _) (by omega) s hs) fun s₁ h₁=>?_)
+    refine WP.seq (WP.mono (h a (Nat.le_refl _) (by omega_using []) s hs) fun s₁ h₁=>?_)
     apply WP.ite _ (VG.PPC64LE.eval_nonzero s₁ .r24)
     · intro _
-      refine WP.mono (seqOk_ok n (a+1) (fun k hk hk'=>h k (by omega) (by omega)) s₁ h₁) ?_
+      refine WP.mono (seqOk_ok n (a+1) (fun k hk hk'=>h k (by omega_using [hk]) (by omega_using [hk'])) s₁ h₁) ?_
       rintro s' ⟨k,hk,hk',hi,hd⟩
-      exact ⟨k,by omega,by omega,hi,hd.imp (fun _=>by omega) id⟩
+      exact ⟨k,by omega_using [hk],by omega_using [hk'],hi,hd.imp (fun _=>by omega_arith) id⟩
     · intro hb
-      exact WP.block_nil ⟨a+1,by omega,by omega,h₁,.inr (by simpa using hb)⟩
+      exact WP.block_nil ⟨a+1,by omega_using [],by omega_using [],h₁,.inr (by simpa using hb)⟩
 
 theorem IZ.done {p : Params} {STK : Nat} {σ : State} {t k : Nat} {s : State}
     (hk:k≤p.ℓ) (h:IZ p STK σ t k k s) (hd:k=p.ℓ ∨ s.gpr .r24=0) :
@@ -662,7 +662,7 @@ theorem IZ.done {p : Params} {STK : Nat} {σ : State} {t k : Nat} {s : State}
   · exact h.r24
   · rw [h.r24] at h0 ⊢
     have hn := bit_zero.mp h0
-    rw [bit_zero.mpr hn,bit_zero.mpr (fun ha=>hn fun j hj=>ha j (by omega))]
+    rw [bit_zero.mpr hn,bit_zero.mpr (fun ha=>hn fun j hj=>ha j (by omega_using [hk, hj]))]
 
 theorem IQ.done {p : Params} {STK : Nat} {σ : State} {t k : Nat} {s : State}
     (hk:k≤p.k) (h:IQ p STK σ t k k s) (hd:k=p.k ∨ s.gpr .r24=0) :
@@ -671,7 +671,7 @@ theorem IQ.done {p : Params} {STK : Nat} {σ : State} {t k : Nat} {s : State}
   · exact h.r24
   · rw [h.r24] at h0 ⊢
     have hn := bit_zero.mp h0
-    rw [bit_zero.mpr hn,bit_zero.mpr (fun ha=>hn ⟨ha.1,fun j hj=>ha.2 j (by omega)⟩)]
+    rw [bit_zero.mpr hn,bit_zero.mpr (fun ha=>hn ⟨ha.1,fun j hj=>ha.2 j (by omega_using [hk, hj])⟩)]
 
 theorem rejected_ko {p : Params} {STK : Nat} {σ : State} {t : Nat} {s : State}
     (h:KB p STK σ t s) (hn:¬PassV p σ (p.ℓ*t)) (hz:s.gpr .r24=0) : KO p STK σ t s :=
@@ -684,12 +684,12 @@ theorem sign_bit {S w : Nat} (hS : S < 2 ^ 62) (hw : w < 2 ^ 62) :
     apply BitVec.eq_of_toNat_eq
     rw [BitVec.toNat_ushiftRight, BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat]
     rw [Nat.shiftRight_eq_div_pow, show (1 : BitVec 64).toNat = 1 from rfl]
-    omega
+    omega_using [hw, h]
   · rw [VG.Proof.MlDsa.KeyGen.ifn h]
     apply BitVec.eq_of_toNat_eq
     rw [BitVec.toNat_ushiftRight, BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat]
     rw [Nat.shiftRight_eq_div_pow, show (0 : BitVec 64).toNat = 0 from rfl]
-    omega
+    omega_using [hS, h]
 
 theorem bit_and' {a b : Prop} [Decidable a] [Decidable b] : bit a &&& (if b then 1 else 0) = bit (a ∧ b) := by
   by_cases ha : a <;> by_cases hb : b <;> simp only [bit, ha, hb, ite_true, ite_false, and_true, and_false] <;> decide
@@ -717,7 +717,7 @@ include hP hF hS
 
 theorem cntt_piece {t : Nat} : SPiece p STK (KA p STK t) (KN p STK t) (nttAt P cP) := by
   have hk' := hF.k; have hl := hF.l; have hkl := hF.kl
-  have hc : cLen p ≤ 64 := by rcases hF.ct with e | e | e <;> omega
+  have hc : cLen p ≤ 64 := by rcases hF.ct with e | e | e <;> omega_using [e]
   have p1 := ipP_piece hS (I := fun σ s => ICd p STK t σ s ∧ (sampleInBall p.τ maxBounds.ball (CTv p σ (p.ℓ * t))).isSome)
     (fun _ _ h => h.1.1.l.k.sc) (t := ntt) hP.ntt (x := 0) (name := "vg_mldsa_ntt")
     (fun σ => ⟨⟨sptr_ok rfl (by decide), by csep hF⟩, ⟨sptr_ok rfl (by decide), by csep hF⟩,
@@ -728,7 +728,7 @@ theorem cntt_piece {t : Nat} : SPiece p STK (KA p STK t) (KN p STK t) (nttAt P c
       exact ⟨⟨h.1.1.keep k (by ssep hF [icChk, ikChk, sc2Chk, yBase, yhBase, wBase, s1Base, nSec])
         (k.cs .r25 (by decide)) (k.cs .r27 (by decide)), by
           have := h.1.2
-          rw [bytes_keepW h.1.1.l.k.sc.site.ok k.frame (by csep hF) (by decide) (by omega)]; exact this⟩, h.2⟩)
+          rw [bytes_keepW h.1.1.l.k.sc.site.ok k.frame (by csep hF) (by decide) (by omega_using [hc])]; exact this⟩, h.2⟩)
   exact Piece.mono p1 (fun σ s _ h => ⟨⟨h.1, h.2.2⟩, h.2.1⟩) fun _ _ _ h => h
 
 omit hP hF hS in
@@ -751,18 +751,18 @@ theorem kinit_piece {t : Nat} :
 omit hP hS in
 theorem onesOk_piece {t : Nat} : SPiece p STK (fun σ s => IH p STK σ t p.k p.k p.k s) (KO p STK · t) (.block (onesOk p)) := by
   have hk' := hF.k
-  refine ⟨fun σ s _ h => WP.mono (onesOk_run p (by have := hF.om; omega) s) fun s' ⟨e24, r2⟩ => ?_,
+  refine ⟨fun σ s _ h => WP.mono (onesOk_run p (by have := hF.om; omega_using [this]) s) fun s' ⟨e24, r2⟩ => ?_,
     srel2 (fun σ s h => h.b.l.k.sc) (onesOk_taint p)⟩
   have hS := onesSum_le (Hv p σ (p.ℓ * t)) p.k
   have hom := hF.om
   refine ⟨h.b.regs2 r2, (fun _ j hj => by rw [r2.mem]; exact h.z j hj), (fun _ j hj => by rw [r2.mem]; exact h.h j hj), ?_⟩
-  rw [e24, h.r26, h.r24, sign_bit (by omega) (by omega), bit_and']
+  rw [e24, h.r26, h.r24, sign_bit (by omega_using [hk', hS]) (by omega_using [hom]), bit_and']
   exact bit_congr passV_iff
 
 theorem hs_piece {t : Nat} :
     SPiece p STK (fun σ s => IH p STK σ t 0 0 0 s) (fun σ s => IH p STK σ t p.k p.k p.k s) (seqR (hR P p) 0 p.k) :=
   Piece.mono (Piece.seqR (I := fun i σ s => IH p STK σ t i i i s) p.k 0
-    fun i _ hi => hR_piece hP hF hS (by omega)) (fun _ _ _ h => h) fun _ _ _ h => by simpa using h
+    fun i _ hi => hR_piece hP hF hS (by omega_using [hi])) (fun _ _ _ h => h) fun _ _ _ h => by simpa using h
 
 end
 

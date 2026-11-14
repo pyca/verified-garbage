@@ -99,11 +99,11 @@ theorem preT_of {H : Spec.Mgf1.Hash} {ts : List FnTable} {s : State} (h : (encC 
   have ha : Region.Sub ⟨stackArgAddr s 0, 64⟩ ⟨stackArgAddr s 0, 96⟩ := Region.sub_prefix (by decide)
   have hb : Region.Sub ⟨stackArgAddr s 0, 80⟩ ⟨stackArgAddr s 0, 96⟩ := Region.sub_prefix (by decide)
   have hA : InRegions s.rd (stackArgAddr s 0) 96 := ⟨_, by rw [hrd]; simp, Region.contains_self _ _⟩
-  refine ⟨⟨⟨sp1, by omega, ?_, hwr, dOn, dOe, dOl, dOm, dOsd, dOs, dOa.sub_right ha, dns, des, dls, dms, dsds,
+  refine ⟨⟨⟨sp1, by omega_using [sp3], ?_, hwr, dOn, dOe, dOl, dOm, dOsd, dOs, dOa.sub_right ha, dns, des, dls, dms, dsds,
     dsa.sub_right ha, dRo, dRn, dRe, dRl, dRm, dRsd, dRs, dRa.sub_right ha, dKo, dKn, dKe, dKl, dKm, dKsd, dKs,
     dKa.sub_right ha, wO, wN, wE, wL, wM, wSd, wS, k1, k2, hsi, L1, L2,
-    by unfold Spec.RsaPss.publicScratchWords Spec.Rsa.publicScratchWords Spec.Rsa.modulusWords at hsl; omega⟩,
-    by omega, ?_, ?_, (dOa.sub_right hb).symm, (dsa.sub_right hb).symm, (dKa.sub_right hb).symm, dOq.symm,
+    by unfold Spec.RsaPss.publicScratchWords Spec.Rsa.publicScratchWords Spec.Rsa.modulusWords at hsl; omega_using [hsl]⟩,
+    by omega_using [sp3], ?_, ?_, (dOa.sub_right hb).symm, (dsa.sub_right hb).symm, (dKa.sub_right hb).symm, dOq.symm,
     dsq.symm, dKq.symm, wQ, pl⟩, sp3, hA, ⟨_, by rw [hrd]; simp [Sig.tableRegion], Region.contains_self _ _⟩,
     dOa.symm, dsa.symm, dKa.symm, dOt.symm, dst.symm, dKt.symm, wT,
     ⟨_, by rw [hrd]; simp [Sig.tableRegion], Region.contains_self _ _⟩, dOtL.symm, dstL.symm, dKtL.symm, wTL⟩

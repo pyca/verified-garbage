@@ -22,7 +22,7 @@ theorem loop_ok {s₀ : State} (hp : Pre s₀) {s : State}
   rw [eval_ne hp hk hz]
   by_cases hl : k + 1 = rr s₀
   · exact .inl ⟨by simp [hl], hl ▸ hi'⟩
-  · exact .inr ⟨by simp [hl], rr s₀ - (k + 1), by omega, k + 1, rfl, by omega, hi'⟩
+  · exact .inr ⟨by simp [hl], rr s₀ - (k + 1), by omega_using [hk], k + 1, rfl, by omega_using [hk, hl], hi'⟩
 
 /-! ## The epilogue -/
 
@@ -33,7 +33,7 @@ theorem restore_ok {s₀ : State} (hp : Pre s₀) {s : State} (h : Inv s₀ (rr 
     (by rw [h.words.rsi]; exact h.saved)) fun s' ⟨h₁, h₂, hm, _⟩ =>
     ⟨hm, Spill.calleeSaved_ok h₁ h₂ (by decide) h.rsp⟩
   have := saved_bound p hp'
-  rw [h.words.rsi, h.rd, h.wr, hp.rd, hp.wr]; exact InRegions.of_mem (by simp) (in_s s₀ (by omega))
+  rw [h.words.rsi, h.rd, h.wr, hp.rd, hp.wr]; exact InRegions.of_mem (by simp) (in_s s₀ (by omega_using [this]))
 
 theorem correct {s₀ : State} (hp : Pre s₀) :
     WP isa blockMixFused s₀ fun s' =>

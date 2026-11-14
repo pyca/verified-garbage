@@ -34,14 +34,14 @@ theorem putWs_byte {a : Addr} : ∀ {ws : List (BitVec 32)} {m : Mem} {p : Addr}
   | [], _, _, _, _ => rfl
   | w :: ws, m, p, ha, hp => by
     have e : (p + 4).toNat = p.toNat + 4 := by
-      rw [BitVec.toNat_add]; simp only [List.length_cons] at hp; simp; omega
+      rw [BitVec.toNat_add]; simp only [List.length_cons] at hp; simp; omega_using [hp]
     simp only [putWs]
-    rw [putWs_byte (by rw [e]; omega) (by rw [e]; simp only [List.length_cons] at hp; omega)]
+    rw [putWs_byte (by rw [e]; omega_using [ha]) (by rw [e]; simp only [List.length_cons] at hp; omega_using [hp])]
     refine Mem.write_apply fun h => ?_
     rw [BitVec.toNat_sub] at h
     simp only [List.length_cons] at hp
     have := a.isLt
-    omega
+    omega_using [ha, hp, h]
 
 /-- The memory: the key, the arguments that differ from `satState D`'s, and its. -/
 def memP (D : Nat) (a : Addr) : Byte :=
@@ -68,9 +68,9 @@ theorem withTabsP_key (D : Nat) (vs : List MVar) (gs : List TVar) (w : MVar) (wg
   have hlt : a.toNat < 0x48C0 := by
     simp only [keyIn, Bool.or_eq_true, Bool.and_eq_true, Nat.ble_eq, Nat.blt_eq] at ha; omega
   simp only [withTabs]
-  rw [putWs_byte (by show a.toNat < 0x300100; omega) (by simp [FnTable.words, Proof.HashTable.X86.tableOf,
+  rw [putWs_byte (by show a.toNat < 0x300100; omega_using [hlt]) (by simp [FnTable.words, Proof.HashTable.X86.tableOf,
       Proof.MdHashTable.X86.tableOf, Spec.MdHashTable.dataOf, Spec.HashTable.dataOf]),
-    putWs_byte (by show a.toNat < 0x300000; omega) (by simp [FnTable.words, Proof.MdHashTable.X86.tableOf,
+    putWs_byte (by show a.toNat < 0x300000; omega_using [hlt]) (by simp [FnTable.words, Proof.MdHashTable.X86.tableOf,
       Spec.MdHashTable.dataOf, Spec.HashTable.dataOf])]
   show memP D a = keyMem a
   simp only [memP, ha, Bool.cond_true]

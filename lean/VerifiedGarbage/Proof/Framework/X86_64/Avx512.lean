@@ -68,7 +68,7 @@ theorem State.zlane_setZ (s : State) (d r : XReg) (l0 l1 l2 l3 : BitVec 128) {i 
   simp only [State.zlane, State.lane, State.setZ, pick4]
   by_cases h : r = d
   · subst h
-    rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3) with rfl | rfl | rfl | rfl
+    rcases (by omega_using [hi] : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3) with rfl | rfl | rfl | rfl
     · simp
     · simp
     · simp only [ite_true, show ¬ (2 < 2) by decide, ite_false, show (2 : Nat) ≠ 0 by decide,
@@ -84,7 +84,7 @@ theorem State.zlane_setZ (s : State) (d r : XReg) (l0 l1 l2 l3 : BitVec 128) {i 
   · simp [h]
 
 theorem pick4_lanes (f : Nat → BitVec 128) {i : Nat} (hi : i < 4) : pick4 (f 0) (f 1) (f 2) (f 3) i = f i := by
-  rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3) with rfl | rfl | rfl | rfl <;> rfl
+  rcases (by omega_using [hi] : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3) with rfl | rfl | rfl | rfl <;> rfl
 
 @[simp] theorem zlane_zbin (op : ZBinOp) (d a b : XReg) (s : State) (r : XReg) {i : Nat} (hi : i < 4) :
     ((ZOp.zbin op d a b).exec s).zlane r i =
@@ -136,7 +136,7 @@ theorem State.zlane_setV128 (s : State) (d r : XReg) (lo hi : BitVec 128) {i : N
   simp only [State.zlane, State.lane, State.setV]
   by_cases h : r = d
   · subst h
-    rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3) with rfl | rfl | rfl | rfl <;> simp
+    rcases (by omega_using [hi4] : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3) with rfl | rfl | rfl | rfl <;> simp
   · simp [h]
 
 /-- `shuf4Lanes` with a concrete selector. -/
@@ -150,19 +150,19 @@ theorem State.zmm_extract (s : State) (r : XReg) {l q : Nat} (hl : l < 4) (hq : 
   apply BitVec.eq_of_getLsbD_eq; intro j hj
   simp only [State.zmm, State.ymm, State.zlane, State.lane, dword, BitVec.getLsbD_extractLsb',
     BitVec.getLsbD_append, decide_eq_true hj, Bool.true_and]
-  rcases (by omega : l = 0 ∨ l = 1 ∨ l = 2 ∨ l = 3) with rfl | rfl | rfl | rfl
-  · simp only [show 8 * (16 * 0 + 4 * q) + j < 256 by omega, show 8 * (16 * 0 + 4 * q) + j < 128 by omega,
+  rcases (by omega_using [hl] : l = 0 ∨ l = 1 ∨ l = 2 ∨ l = 3) with rfl | rfl | rfl | rfl
+  · simp only [show 8 * (16 * 0 + 4 * q) + j < 256 by omega_using [hq, hj], show 8 * (16 * 0 + 4 * q) + j < 128 by omega_using [hq, hj],
       ite_true, show (0 : Nat) < 2 by decide]
-    exact congrArg _ (by omega)
-  · simp only [show 8 * (16 * 1 + 4 * q) + j < 256 by omega, show ¬ 8 * (16 * 1 + 4 * q) + j < 128 by omega,
+    exact congrArg _ (by omega_using [])
+  · simp only [show 8 * (16 * 1 + 4 * q) + j < 256 by omega_using [hq, hj], show ¬ 8 * (16 * 1 + 4 * q) + j < 128 by omega_using [],
       ite_true, ite_false, show (1 : Nat) < 2 by decide, show (1 : Nat) ≠ 0 by decide]
-    exact congrArg _ (by omega)
-  · simp only [show ¬ 8 * (16 * 2 + 4 * q) + j < 256 by omega, ite_false, show ¬ (2 : Nat) < 2 by decide,
-      BitVec.getLsbD_extractLsb', decide_eq_true (show 32 * q + j < 128 by omega), Bool.true_and]
-    exact congrArg _ (by omega)
-  · simp only [show ¬ 8 * (16 * 3 + 4 * q) + j < 256 by omega, ite_false, show ¬ (3 : Nat) < 2 by decide,
-      BitVec.getLsbD_extractLsb', decide_eq_true (show 32 * q + j < 128 by omega), Bool.true_and]
-    exact congrArg _ (by omega)
+    exact congrArg _ (by omega_using [])
+  · simp only [show ¬ 8 * (16 * 2 + 4 * q) + j < 256 by omega_using [], ite_false, show ¬ (2 : Nat) < 2 by decide,
+      BitVec.getLsbD_extractLsb', decide_eq_true (show 32 * q + j < 128 by omega_using [hq, hj]), Bool.true_and]
+    exact congrArg _ (by omega_using [])
+  · simp only [show ¬ 8 * (16 * 3 + 4 * q) + j < 256 by omega_using [], ite_false, show ¬ (3 : Nat) < 2 by decide,
+      BitVec.getLsbD_extractLsb', decide_eq_true (show 32 * q + j < 128 by omega_using [hq, hj]), Bool.true_and]
+    exact congrArg _ (by omega_using [])
 
 /-! ## Doublewords -/
 

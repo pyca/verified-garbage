@@ -65,13 +65,13 @@ theorem prepPhase_trace {j w : Nat} (hj9 : 9 ≤ j) (hj : j ≤ 10) (hc : PrepHe
   unfold prepPhase
   have trace : RelCT isa (Both P) (prepHead j) fun _ _ => True :=
     RelCT.seq (aRel (F := Run Ex base bytes len args sp) (fun x h => (hP x h).1) hc.1 fun x h =>
-      copyDown_run hj9 (by omega) (by decide) (hP x h).1)
+      copyDown_run hj9 (by omega_using [hj]) (by decide) (hP x h).1)
       (RelCT.seq (prepare_relCT .wide) (RelCT.taint (A := taint) τA (fun _ _ h => h.1.agree h.2) hc.2))
   refine RelCT.seq (relCT_both (F := HalvRun Ex base bytes len args sp w 0) trace fun x h =>
     WP.mono (prepHead_ok (hP x h).1.1 hj9 hj (hP x h).2 hw3 hodd) fun v H => ⟨x, (hP x h).1, H⟩) ?_
   refine (RelCT.loop (I := fun m x y => ∃ k, m = (w - 1) / 2 ^ k ∧ m % 2 = 0 ∧ 0 < m ∧
       HalvRun Ex base bytes len args sp w k x ∧ HalvRun Ex base bytes len args sp w k y) (fun m => ?_) (w - 1)).mono
-    (fun x y h => ⟨0, by simp, by omega, by omega, h.1, h.2⟩) fun _ _ h => h
+    (fun x y h => ⟨0, by simp, by omega_using [hodd], by omega_using [hw3], h.1, h.2⟩) fun _ _ h => h
   refine relCT_exists fun k => ?_
   refine (relCT_both (P := fun x => m = (w - 1) / 2 ^ k ∧ m % 2 = 0 ∧ 0 < m ∧
       HalvRun Ex base bytes len args sp w k x)
@@ -95,7 +95,7 @@ theorem prepPhase_trace {j w : Nat} (hj9 : 9 ≤ j) (hj : j ≤ 10) (hc : PrepHe
     rw [ex] at e
     have ev : ((w - 1) / 2 ^ (k + 1)) % 2 = 0 := by simpa using e
     have half : (w - 1) / 2 ^ (k + 1) = m / 2 := by rw [hm, Nat.pow_succ, Nat.div_div_eq_div_mul]
-    exact ⟨m / 2, by omega, k + 1, half.symm, by rw [← half]; exact ev, by omega, Hx, Hy⟩
+    exact ⟨m / 2, by omega_using [hp], k + 1, half.symm, by rw [← half]; exact ev, by omega_using [hx, hp], Hx, Hy⟩
 
 /-- Runs at the same draw state draw alike until the phase ends. -/
 theorem drawLoop_trace {w : Nat} {T : List Byte} (G : TapeGeo Ex args base bytes sp T.length) (hw3 : 3 ≤ w)
@@ -128,7 +128,7 @@ theorem drawLoop_trace {w : Nat} {T : List Byte} (G : TapeGeo Ex args base bytes
   · rcases Ox with ⟨ex, cx, Dx, h1, h2, h3⟩ | ⟨ex, cx, Rx⟩ <;>
       rcases Oy with ⟨ey, cy, Dy, -, -, -⟩ | ⟨ey, cy, Ry⟩
     · exact ⟨by rw [ex, ey], fun e => (by rw [ex] at e; cases e),
-        fun _ => ⟨T.length - (c + o), by omega, drawN w n T c, c + o, rfl, h1, h3, Dx, Dy⟩⟩
+        fun _ => ⟨T.length - (c + o), by omega_using [hm, h2, h3], drawN w n T c, c + o, rfl, h1, h3, Dx, Dy⟩⟩
     · rw [cx] at cy; cases cy
     · rw [cx] at cy; cases cy
     · exact ⟨by rw [ex, ey], fun _ => ⟨Rx, Ry⟩, fun e => (by rw [ex] at e; cases e)⟩
@@ -146,7 +146,7 @@ theorem phase_trace {j w n c : Nat} {T : List Byte} (hj9 : 9 ≤ j) (hj : j ≤ 
     have := val32_lt x.mem base (lo len (.slot .wide j)) (cwc len .wide)
     change sv x.mem base len .wide j < _ at this
     have := (hP x h.1).2.2.1
-    omega
+    omega_arith
   unfold phase
   refine RelCT.assoc (RelCT.seq (relCT_both (F := DrawRun Ex base bytes len args sp w T n c)
     (RelCT.seq (prepPhase_trace hj9 hj hck hw3 hodd fun x h => ⟨(hP x h).1, (hP x h).2.2.1⟩)

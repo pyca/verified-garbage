@@ -26,7 +26,7 @@ theorem SearchPublic.carry (p : SearchPublic) : p.offset + p.plan.attempt.constr
   have hc : p.counter < 12288 := by
     rcases p.plan.attempt.construct.width with h | h | h <;> omega_using [p.bound, h]
   have hm := Nat.mul_le_mul_left p.counter (show p.plan.attempt.construct.hash.count + 1 ≤ 12 by
-    have := p.plan.attempt.construct.hash.count_le; omega)
+    have := p.plan.attempt.construct.hash.count_le; omega_using [this])
   dsimp only [SearchPublic.offset]
   omega_using [p.plan.attempt.construct.hash.count_le, hc, hm]
 

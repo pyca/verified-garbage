@@ -19,18 +19,18 @@ theorem CrtShared.power_sources {s : State} {g : CrtGeometry} {bs : Fin 7 → Li
       (g.sourceLength i.succ) (56 + 8 * i.val) (bs 1) (bs i.succ) s := by
   have sub := crt_region_sub_workspace h.buffers.workspace h.buffers.storageFits member
   refine ⟨⟨h.stack.nowrap, ⟨h.stack.read (by decide), h.stack.read (by decide),
-    h.stack.read (by have := i.isLt; omega), h.stack.read (by have := i.isLt; omega)⟩, h.stack.separate.sub_right sub, by have := i.isLt; omega,
+    h.stack.read (by have := i.isLt; omega_using []), h.stack.read (by have := i.isLt; omega_using [])⟩, h.stack.separate.sub_right sub, by have := i.isLt; omega_using [],
     h.stack.pointer 0, h.stack.count, h.stack.pointer i, ?_⟩,
     h.buffers.source 1, h.buffers.source i.succ, (h.buffers.sourceSeparate 1).sub_right sub,
     (h.buffers.sourceSeparate i.succ).sub_right sub,
-    by have := h.buffers.lengthValid.1; omega, (crt_width_valid h.buffers.lengthValid).2.2, ?_, ?_⟩
-  · simpa only [show 56 + 8 * i.val + 4 = 60 + 8 * i.val by omega] using h.stack.length i
+    by have := h.buffers.lengthValid.1; omega_using [this], (crt_width_valid h.buffers.lengthValid).2.2, ?_, ?_⟩
+  · simpa only [show 56 + 8 * i.val + 4 = 60 + 8 * i.val by omega_using []] using h.stack.length i
   · rcases exponent with rfl | rfl
     · exact h.buffers.pPositive
     · exact h.buffers.qPositive
   · have length := h.buffers.lengthValid.2
     rcases exponent with rfl | rfl
-    · change g.pLength < _; have := h.buffers.pShort; omega
-    · change g.qLength < _; have := h.buffers.qShort; omega
+    · change g.pLength < _; have := h.buffers.pShort; omega_using [length, this]
+    · change g.qLength < _; have := h.buffers.qShort; omega_using [length, this]
 
 end VG.Proof.Bignum.Arm

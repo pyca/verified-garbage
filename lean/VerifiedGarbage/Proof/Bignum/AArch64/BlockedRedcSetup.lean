@@ -33,12 +33,12 @@ theorem columnSetup_ok {s : State} {B : Addr} {Z eQ eN k : Nat}
       (t.gpr .x16 = off B (eQ + 64) ∧ t.gpr .x17 = off B (eN + 64) ∧
         t.gpr .x15 = BitVec.ofNat 64 (k - 1) ∧ t.mem = s.mem) ∧
       Keep [.x16, .x17, .x15] s t := by
-  have hd : 8 * k / 8 = k := by omega
+  have hd : 8 * k / 8 = k := by omega_using []
   have hsub : BitVec.ofNat 64 k - BitVec.ofNat 64 1 = BitVec.ofNat 64 (k - 1) :=
-    BitVec.ofNat_sub_ofNat_of_le _ _ (by omega) (by omega)
+    BitVec.ofNat_sub_ofNat_of_le _ _ (by omega_using []) (by omega_using [hk])
   refine WP.keep [.x16, .x17, .x15] ?_ rfl rfl rfl
   brun [columnSetup, h0, h8, h17, hw, hd, shr3_ofNat hk', hsub,
-    hs.ld (show 8 * sW + 8 ≤ Z by unfold sW; omega)]
+    hs.ld (show 8 * sW + 8 ≤ Z by unfold sW; omega_using [hZ])]
 
 theorem advanceRow_ok {s : State} {B : Addr} {eQ : Nat}
     (h8 : s.gpr .x8 = off B eQ) :
@@ -53,7 +53,7 @@ theorem redcInit_ok {s : State} {k : Nat}
     WP isa (.block [.lsr .x .x12 .x12 3, movi .x10 0]) s fun t =>
       (t.gpr .x12 = BitVec.ofNat 64 k ∧ t.gpr .x10 = 0 ∧ t.mem = s.mem) ∧
       Keep [.x12, .x10] s t := by
-  have hd : 8 * k / 8 = k := by omega
+  have hd : 8 * k / 8 = k := by omega_using []
   refine WP.keep [.x12, .x10] ?_ rfl rfl rfl
   brun [h12, shr3_ofNat hk, hd]
 

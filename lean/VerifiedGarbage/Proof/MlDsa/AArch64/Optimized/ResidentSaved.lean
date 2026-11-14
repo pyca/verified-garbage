@@ -39,7 +39,7 @@ theorem epi_ok (σ s : State) (base : Addr) (hbase : s.gpr .x19=base)
   rw [WP.block_append_iff]
   refine WP.mono (restoreG_ok a (fun i hi => by
     rw [ha.rd,ha.wr,a19]
-    simpa only [show 7968+8*(i+1)=7976+8*i by omega] using hrg (i+1) (by omega))) ?_
+    simpa only [show 7968+8*(i+1)=7976+8*i by omega_using []] using hrg (i+1) (by omega_using [hi]))) ?_
   intro b ⟨hb,hbg⟩
   refine wp_ldrx (a := base+BitVec.ofNat 64 7968) ⟨by decide,by decide⟩
     (by rw [hb.get .x19,a19])
@@ -56,7 +56,7 @@ theorem epi_ok (σ s : State) (base : Addr) (hbase : s.gpr .x19=base)
         exact hn i hi
       rw [ht.get (saved[i+1]!) (by simpa only [List.mem_singleton] using hn),hbg i hi,
         ham,ha.gpr .x19 (by decide),hbase]
-      simpa only [show 7968+8*(i+1)=7976+8*i by omega] using hs.gpr (i+1) (by omega)
+      simpa only [show 7968+8*(i+1)=7976+8*i by omega_using []] using hs.gpr (i+1) (by omega_using [hi])
   · exact ht.sp.trans (hb.sp.trans (ha.sp.trans hsp))
   · intro v hv
     have hp : ∀ v ∈ preservedV, ∃ i<8, v=vreg (8+i) := by decide
@@ -92,12 +92,12 @@ theorem Saved.keep {σ : State} {base : Addr} {m m' : Mem} {rs : List Region}
   · intro i hi
     rw [hf.readW (r := ⟨base+7968,144⟩)
       (Offset.contains base (d := 7968+8*i) (e := 7968) (n := 8) (k := 144)
-        (by omega) (by omega) (by decide)) hd (by decide)]
+        (by omega_using []) (by omega_using [hi]) (by decide)) hd (by decide)]
     exact h.gpr i hi
   · intro i hi
     rw [hf.readW (r := ⟨base+7968,144⟩)
       (Offset.contains base (d := 8048+8*i) (e := 7968) (n := 8) (k := 144)
-        (by omega) (by omega) (by decide)) hd (by decide)]
+        (by omega_using []) (by omega_using [hi]) (by decide)) hd (by decide)]
     exact h.vec i hi
 
 /-- Capture all scalar and SIMD ABI values before the resident code runs. -/
@@ -118,7 +118,7 @@ theorem save_ok (s : State)
   · intro i hi
     rw [hfb.readW (r := ⟨s.gpr .x4+7968,80⟩)
       (Offset.contains (s.gpr .x4) (d := 7968+8*i) (e := 7968) (n := 8) (k := 80)
-        (by omega) (by omega) (by decide)) (by
+        (by omega_using []) (by omega_using [hi]) (by decide)) (by
           intro r hr; simp only [List.mem_singleton] at hr; subst r
           exact Offset.disjoint _ (Or.inl (by decide)) (by decide) (by decide)) (by decide)]
     exact hga i hi

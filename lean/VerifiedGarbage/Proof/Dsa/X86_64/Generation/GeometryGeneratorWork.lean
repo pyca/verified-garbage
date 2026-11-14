@@ -26,32 +26,32 @@ theorem GenerationGeometry.parentRoom (p : GenerationGeometry) :
 
 theorem GenerationGeometry.gWork_separate (p : GenerationGeometry) {d n : Nat}
     (hd : q ≤ d) (hn : d + n ≤ g) : ∀ r ∈ p.gWork, (p.part d n).Disjoint r := by
-  have pn : p.pLen ≤ 384 := by rcases p.width with h | h | h <;> omega
+  have pn : p.pLen ≤ 384 := by rcases p.width with h | h | h <;> omega_using [h]
   have hb : d + n ≤ usedBytes p.pLen := by
     have hh := p.small_bound (d := g) (n := 0) (by decide) (by decide)
-    omega
+    omega_using [hn, hh]
   have ha := p.small_bound (d := arithmetic) (n := arithmeticBytes) (by decide) (by rfl)
-  have hg := p.small_bound (d := g) (n := p.pLen) (by decide) (by unfold arithmeticBytes; omega)
+  have hg := p.small_bound (d := g) (n := p.pLen) (by decide) (by unfold arithmeticBytes; omega_using [pn])
   intro r hr
   simp only [gWork, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl
-  · exact p.parts_disjoint hb ha (Or.inl (by unfold g arithmetic at *; omega))
+  · exact p.parts_disjoint hb ha (Or.inl (by unfold g arithmetic at *; omega_using [hn]))
   · simpa [GenerationGeometry.part, off] using
       p.parts_disjoint hb (e := 0) (k := Impl.Dsa.Layout.activeBytes) (by simpa using p.parentRoom)
-        (Or.inr (by unfold q Impl.Dsa.Layout.activeBytes at *; omega))
+        (Or.inr (by unfold q Impl.Dsa.Layout.activeBytes at *; omega_using [hd]))
   · exact p.parts_disjoint hb hg (Or.inl hn)
   · exact (p.frame_part hb).symm
 
 theorem GenerationTape.gWork {p : GenerationGeometry} (t : GenerationTape p) :
     ∀ r ∈ p.gWork, (⟨t.ptr, t.bytes.length⟩ : Region).Disjoint r := by
-  have pn : p.pLen ≤ 384 := by rcases p.width with h | h | h <;> omega
+  have pn : p.pLen ≤ 384 := by rcases p.width with h | h | h <;> omega_using [h]
   intro r hr
   simp only [GenerationGeometry.gWork, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl
   · exact t.part (p.small_bound (by decide) (by rfl))
   · simpa [GenerationGeometry.part, off] using
       t.part (d := 0) (n := Impl.Dsa.Layout.activeBytes) (by simpa using p.parentRoom)
-  · exact t.part (p.small_bound (by decide) (by unfold arithmeticBytes; omega))
+  · exact t.part (p.small_bound (by decide) (by unfold arithmeticBytes; omega_using [pn]))
   · exact t.frame
 
 end VG.Proof.Dsa.X86_64.Generation

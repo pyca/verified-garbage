@@ -47,7 +47,7 @@ theorem stepSt_ok {t : State} {y b k e : Nat} (S : St n m size base s₀ t) (hn 
   refine WP.seq (WP.mono (maskSt_ok S) fun s₁ ⟨S₁, i₁, M₁, V₁⟩ => ?_)
   have y₁ : wordsVal s₁.mem base (slot n 6) n = y * 2 ^ (64 * n) % m := by rw [wv (V₁ 6 (by decide)), hy]
   have b₁ : wordsVal s₁.mem base (slot n 5) n = b * 2 ^ (64 * n) % m := by rw [wv (V₁ 5 (by decide)), hb]
-  have bl₁ : wordsVal s₁.mem base (slot n 5) n < m := by rw [b₁]; exact Nat.mod_lt _ (by omega)
+  have bl₁ : wordsVal s₁.mem base (slot n 5) n < m := by rw [b₁]; exact Nat.mod_lt _ (by omega_using [hm1])
   refine WP.seq (WP.mono (mulSt_ok (o := 7) (a := 6) (b := 5) S₁ hn (by decide) (by decide) (by decide)
     (by decide) (by decide) (by decide) bl₁) fun s₂ ⟨S₂, i₂, L₂, P₂, V₂, M₂⟩ => ?_)
   have p₂ : wordsVal s₂.mem base (slot n 7) n = y * b * 2 ^ (64 * n) % m := by
@@ -59,7 +59,7 @@ theorem stepSt_ok {t : State} {y b k e : Nat} (S : St n m size base s₀ t) (hn 
   have b₃ : wordsVal s₃.mem base (slot n 5) n = b * 2 ^ (64 * n) % m := by
     rw [wv (V₃ 5 (by decide) (by decide)), wv (V₂ 5 (by decide) (by decide) (by decide)), b₁]
   refine WP.seq (WP.mono (mulSt_ok (o := 5) (a := 5) (b := 5) S₃ hn (by decide) (by decide) (by decide)
-    (by decide) (by decide) (by decide) (by rw [b₃]; exact Nat.mod_lt _ (by omega)))
+    (by decide) (by decide) (by decide) (by rw [b₃]; exact Nat.mod_lt _ (by omega_using [hm1])))
     fun s₄ ⟨S₄, i₄, L₄, P₄, V₄, _⟩ => ?_)
   have b₄ : wordsVal s₄.mem base (slot n 5) n = b * b * 2 ^ (64 * n) % m := by
     have v := VG.Proof.Dsa.mont_product cop (a := b) (b := b) (by rw [b₃, Nat.mod_mod])
@@ -80,7 +80,7 @@ theorem stepSt_ok {t : State} {y b k e : Nat} (S : St n m size base s₀ t) (hn 
   · rw [fu.gpr, uv.gpr, c₅, counter_sub hk32 hk]
   · rw [zu, uv.gpr, c₅, counter_sub hk32 hk, counter_zero hk32 hk]
   · rw [mu, wv (V₅ 6 (by decide) (by decide)), wv (V₄ 6 (by decide) (by decide) (by decide)), Y₃]
-    obtain ⟨e', rfl⟩ : ∃ e', e = e' + 1 := ⟨e - 1, by omega⟩
+    obtain ⟨e', rfl⟩ : ∃ e', e = e' + 1 := ⟨e - 1, by omega_using [he]⟩
     rw [val32_parity]
     by_cases hbit : w32 t.mem base (slot n 8) % 2 = 1
     · simp only [hbit, decide_true, ite_true]; exact p₂
@@ -107,7 +107,7 @@ theorem loopSt_ok {t : State} {a e : Nat} (S : St n m size base s₀ t) (hn : 2 
       (LoopInv n m size e (a ^ val32 t.mem base (slot n 8) e % m) (32 * e) (32 * e) base s₀) := by
   let steps := 32 * e
   let target := a ^ val32 t.mem base (slot n 8) e % m
-  have hspos : 0 < steps := by dsimp [steps]; omega
+  have hspos : 0 < steps := by dsimp [steps]; omega_using [he]
   have init : LoopInv n m size e target steps 0 base s₀ t := by
     refine ⟨S, ?_, ?_, ⟨1, a, ?_, hb, ?_⟩⟩
     · simpa only [Nat.sub_zero] using hc
@@ -119,28 +119,28 @@ theorem loopSt_ok {t : State} {a e : Nat} (S : St n m size base s₀ t) (hn : 2 
     ?_ steps t ⟨0, rfl, hspos, init⟩
   rintro k u ⟨i, rfl, hi, I⟩
   obtain ⟨y, b, Y, B, V⟩ := I.value
-  refine WP.mono (stepSt_ok I.st hn he hen Y B (by omega) (by dsimp [steps] at *; omega) I.counter)
+  refine WP.mono (stepSt_ok I.st hn he hen Y B (by omega_using [hi]) (by dsimp [steps] at *; omega_using [hk32]) I.counter)
     fun w ⟨S', count, zf, Y', B', E'⟩ => ?_
   have next : LoopInv n m size e target steps (i + 1) base s₀ w := by
     refine ⟨S', ?_, ?_, ⟨_, _, Y', B', ?_⟩⟩
-    · rw [count, show steps - i - 1 = steps - (i + 1) by omega]
+    · rw [count, show steps - i - 1 = steps - (i + 1) by omega_using []]
     · rw [E']
       have hp : 2 ^ (steps - i) = 2 ^ (steps - (i + 1)) * 2 := by
-        rw [show steps - i = steps - (i + 1) + 1 by omega, Nat.pow_succ]
+        rw [show steps - i = steps - (i + 1) + 1 by omega_using [hi], Nat.pow_succ]
       have bound := I.bound
       rw [hp] at bound
-      omega
+      omega_using [bound]
     · rw [E', exponent_step_value]
       exact V
   by_cases hdone : i + 1 = steps
   · refine .inl ⟨?_, ?_⟩
-    · have eq : steps - i = 1 := by omega
+    · have eq : steps - i = 1 := by omega_using [hdone]
       simp only [eval, zf, eq, decide_true, Option.map_some, Bool.not_true]
     · change LoopInv n m size e target steps steps base s₀ w
       rw [hdone] at next
       exact next
-  · refine .inr ⟨?_, steps - (i + 1), by omega, i + 1, rfl, by omega, next⟩
-    have ne : steps - i ≠ 1 := by omega
+  · refine .inr ⟨?_, steps - (i + 1), by omega_using [hi], i + 1, rfl, by omega_using [hi, hdone], next⟩
+    have ne : steps - i ≠ 1 := by omega_using [hdone]
     simp only [eval, zf, decide_eq_false ne, Option.map_some, Bool.not_false]
 
 theorem LoopInv.finished {e target steps : Nat} {t : State}
@@ -148,7 +148,7 @@ theorem LoopInv.finished {e target steps : Nat} {t : State}
     wordsVal t.mem base (slot n 6) n = target * 2 ^ (64 * n) % m := by
   have bound := I.bound
   simp only [Nat.sub_self, Nat.pow_zero] at bound
-  have ez : val32 t.mem base (slot n 8) e = 0 := by omega
+  have ez : val32 t.mem base (slot n 8) e = 0 := by omega_using [bound]
   obtain ⟨y, b, Y, _, V⟩ := I.value
   rw [ez, Nat.pow_zero, Nat.mul_one] at V
   rw [Y, Nat.mul_mod y, V, Nat.mul_mod_mod]

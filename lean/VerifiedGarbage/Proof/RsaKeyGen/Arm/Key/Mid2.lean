@@ -50,11 +50,11 @@ theorem dOne_vp {E : State → Prop} :
   refine (St.pcopy dOne_taint (by decide) (by simp) (by decide)).mono (fun _ _ h => h) fun σ s h => h.mono
     (fun j hj => ⟨by mem_sub, ?_⟩) (fun j hj => ⟨by mem_sub, ?_⟩)
   · have e1 := h.1.2
-    have : dv P σ = 1 := by unfold dv; rw [ite_eq_right (by omega), ite_eq_left e1]
+    have : dv P σ = 1 := by unfold dv; rw [ite_eq_right (by omega_using [e1]), ite_eq_left e1]
     rw [this]
     mem_cases <;> simp (config := {decide := true}) only [upd, ↓reduceIte, AH_one]
   · have e1 := h.1.2
-    have : okv P σ = !decide (lv P σ = 1) := by unfold okv; rw [ite_eq_right (by omega), ite_eq_left e1]
+    have : okv P σ = !decide (lv P σ = 1) := by unfold okv; rw [ite_eq_right (by omega_using [e1]), ite_eq_left e1]
     rw [this]
     mem_cases <;> simp (config := {decide := true}) only [upd, ↓reduceIte]
 

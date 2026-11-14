@@ -16,7 +16,7 @@ theorem umin_word (a b : BitVec 32) :
     (if a.toNat≤b.toNat then a else b) = BitVec.ofNat 32 (min a.toNat b.toNat) := by
   split
   · rw [Nat.min_eq_left (by assumption),BitVec.ofNat_toNat,BitVec.setWidth_eq]
-  · rw [Nat.min_eq_right (by omega),BitVec.ofNat_toNat,BitVec.setWidth_eq]
+  · rw [Nat.min_eq_right (by omega_arith),BitVec.ofNat_toNat,BitVec.setWidth_eq]
 
 theorem word_and (a b : BitVec 128) (e : Nat) :
     vword (a &&& b) e = vword a e &&& vword b e := by

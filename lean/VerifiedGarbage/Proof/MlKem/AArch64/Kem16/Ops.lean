@@ -59,7 +59,7 @@ theorem nttW_ok {s₀ s : State} (hp : Pre P L s₀) {off : Nat} (ho : PO P off)
       PolyIsW 16 t.mem (sA L s₀ off) (ntt F) ∧ t.gpr .x24 = s.gpr .x24 := by
   have hw := hp.wf
   have hc := covers_cons (cov_s hp hk ho.le) (cov_s hp hk (o:=NS) (l:=1024) (by kom))
-  have hc' := covers_cons (cov_s hp hk (o:=off) (l:=512) (by have := ho.le; omega))
+  have hc' := covers_cons (cov_s hp hk (o:=off) (l:=512) (by have := ho.le; omega_using [this]))
     (cov_s hp hk (o:=NS) (l:=512) (by kom))
   refine WP.mono (Ntt16.W.nttAtWithW_ok (by obtain ⟨_,hh⟩:=ho; kom) (by decide)
     (by rw [e28 hk]) (by rw [e28 hk]) (((ho.ns hp).sub_left (half_sub _)).sub_right (half_sub _))
@@ -82,7 +82,7 @@ theorem invW_ok {s₀ s : State} (hp : Pre P L s₀) {off : Nat} (ho : PO P off)
       t.gpr .x24 = s.gpr .x24 := by
   have hw := hp.wf
   have hc := covers_cons (cov_s hp hk ho.le) (cov_s hp hk (o:=NS) (l:=1024) (by kom))
-  have hc' := covers_cons (cov_s hp hk (o:=off) (l:=512) (by have := ho.le; omega))
+  have hc' := covers_cons (cov_s hp hk (o:=off) (l:=512) (by have := ho.le; omega_using [this]))
     (cov_s hp hk (o:=NS) (l:=512) (by kom))
   refine WP.mono (Ntt16.W.nttInvAtWithW_ok (by obtain ⟨_,hh⟩:=ho; kom) (by decide)
     (by rw [e28 hk]) (by rw [e28 hk]) (((ho.ns hp).sub_left (half_sub _)).sub_right (half_sub _))
@@ -114,8 +114,8 @@ theorem addW_read_ok {s₀ : State} (hp : Pre P L s₀) {f g : Nat} (hf : PO P f
   have cw := cov_s hp kb₂ ff
   have cr := cov_r hp kb₂ hp.scb fg
   refine WP.mono (AddSubW.addW_ok ⟨fun j hj => ?_, fun j hj => ?_, ?_, ?_, ?_⟩) fun s₃ ⟨k₃,f₃,p₃⟩ => ?_
-  · rw [x0]; exact cw _ _ (in_regions (List.mem_singleton_self _) (contains_off (by omega) (by decide)))
-  · rw [x1]; exact cr _ _ (in_regions (List.mem_singleton_self _) (contains_off (by omega) (by decide)))
+  · rw [x0]; exact cw _ _ (in_regions (List.mem_singleton_self _) (contains_off (by omega_using [hj]) (by decide)))
+  · rw [x1]; exact cr _ _ (in_regions (List.mem_singleton_self _) (contains_off (by omega_using [hj]) (by decide)))
   · rw [x0, x1]
     exact ((hp.args.rdisj hp.scb hp.scb (hp.fs ff) fg (.inl rfl) (.inr d)).sub_left (half_sub _)).sub_right
       (half_sub _)
@@ -145,8 +145,8 @@ theorem widenW_ok {s₀ : State} (hp : Pre P L s₀) {f g : Nat} (hf : PO P f) (
   have cr := cov_sr hp kb₂ ff
   refine WP.mono (Widen16.widen_ok (F := F) ⟨?_, fun j hj => ?_, fun j hj => ?_, ?_⟩) fun s₃ ⟨k₃,f₃,p₃⟩ => ?_
   · rw [x0, m₂]; exact pf
-  · rw [x0]; exact cr _ _ (in_regions (List.mem_singleton_self _) (contains_off (by omega) (by decide)))
-  · rw [x1]; exact cw _ _ (in_regions (List.mem_singleton_self _) (contains_off (by omega) (by decide)))
+  · rw [x0]; exact cr _ _ (in_regions (List.mem_singleton_self _) (contains_off (by omega_using [hj]) (by decide)))
+  · rw [x1]; exact cw _ _ (in_regions (List.mem_singleton_self _) (contains_off (by omega_using [hj]) (by decide)))
   · rw [x0, x1]; exact (papart hp hf hg d).sub_left (half_sub _)
   rw [x1] at f₃ p₃
   refine ⟨kb₂.frame k₃ f₃ (by decide) fun r hr => by rw [List.mem_singleton.mp hr]; exact hg.safe hp,
@@ -169,8 +169,8 @@ theorem narrowW_ok {s₀ : State} (hp : Pre P L s₀) {f g : Nat} (hf : PO P f) 
   have cr := cov_sr hp kb₂ ff
   refine WP.mono (Narrow16.narrow_ok (F := F) ⟨?_, fun j hj => ?_, fun j hj => ?_, ?_⟩) fun s₃ ⟨k₃,f₃,p₃⟩ => ?_
   · rw [x0, m₂]; exact pf
-  · rw [x0]; exact cr _ _ (in_regions (List.mem_singleton_self _) (contains_off (by omega) (by decide)))
-  · rw [x1]; exact cw _ _ (in_regions (List.mem_singleton_self _) (contains_off (by omega) (by decide)))
+  · rw [x0]; exact cr _ _ (in_regions (List.mem_singleton_self _) (contains_off (by omega_using [hj]) (by decide)))
+  · rw [x1]; exact cw _ _ (in_regions (List.mem_singleton_self _) (contains_off (by omega_using [hj]) (by decide)))
   · rw [x0, x1]; exact (papart hp hf hg d).sub_right (half_sub _)
   rw [x1] at f₃ p₃
   have f₃' : Frame [R (kA s₀) L.sc g 1024] s₂.mem s₃.mem :=
@@ -196,8 +196,8 @@ theorem dec12W_ok {s₀ : State} (hp : Pre P L s₀) {k o off : Nat} (hk4 : k < 
   have cw := cov_s hp kb₂ fo
   have cr := cov_r hp kb₂ hb f
   refine WP.mono (Codec12W.decW_ok ⟨fun j n hj => ?_, fun j hj => ?_, ?_⟩) fun s₃ ⟨k₃,f₃,p₃⟩ => ?_
-  · rw [x0]; exact cr _ _ (in_regions (List.mem_singleton_self _) (contains_off (by omega) (by decide)))
-  · rw [x1]; exact cw _ _ (in_regions (List.mem_singleton_self _) (contains_off (by omega) (by decide)))
+  · rw [x0]; exact cr _ _ (in_regions (List.mem_singleton_self _) (contains_off (by omega_using [hj]) (by decide)))
+  · rw [x1]; exact cw _ _ (in_regions (List.mem_singleton_self _) (contains_off (by omega_using [hj]) (by decide)))
   · rw [x0, x1]
     exact (hp.args.rdisj hb hp.scb f (hp.fs fo) (.inr (.inr hp.scw)) hs).sub_right (half_sub _)
   rw [x1] at f₃ p₃

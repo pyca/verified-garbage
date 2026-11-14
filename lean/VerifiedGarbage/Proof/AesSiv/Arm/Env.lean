@@ -92,24 +92,24 @@ include L
 
 /-- An offset into `W`, as a 64-bit address. -/
 theorem wA {d : Nat} (hd : d < 2576) : State.addr (w + BitVec.ofNat 32 d) = State.addr w + BitVec.ofNat 64 d :=
-  addr_add (by have := L.ww; omega)
+  addr_add (by have := L.ww; omega_using [hd, this])
 
 /-- An offset into the context, as a 64-bit address. -/
 theorem cA {d : Nat} (hd : d < 512) : State.addr (c + BitVec.ofNat 32 d) = State.addr c + BitVec.ofNat 64 d :=
-  addr_add (by have := L.cw; omega)
+  addr_add (by have := L.cw; omega_using [hd, this])
 
 /-- Parts of `W` are disjoint. -/
 theorem w_w {a n d m : Nat} (h : a + n ≤ d ∨ d + m ≤ a) (ha : a + n ≤ 2576) (hd : d + m ≤ 2576) :
     (⟨State.addr w + BitVec.ofNat 64 a, n⟩ : Region).Disjoint ⟨State.addr w + BitVec.ofNat 64 d, m⟩ :=
-  Offset.disjoint _ h (by have := L.ww; omega) (by have := L.ww; omega)
+  Offset.disjoint _ h (by have := L.ww; omega_using [ha]) (by have := L.ww; omega_using [hd])
 
 theorem wN {d : Nat} (hd : d < 2576) : (w + BitVec.ofNat 32 d).toNat = w.toNat + d := by
   have := L.ww
-  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := d) (by omega), Nat.mod_eq_of_lt (by omega)]
+  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := d) (by omega_using [hd]), Nat.mod_eq_of_lt (by omega_using [hd, this])]
 
 theorem cN {d : Nat} (hd : d < 512) : (c + BitVec.ofNat 32 d).toNat = c.toNat + d := by
   have := L.cw
-  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := d) (by omega), Nat.mod_eq_of_lt (by omega)]
+  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := d) (by omega_using [hd]), Nat.mod_eq_of_lt (by omega_using [hd, this])]
 
 theorem stk_w' {a n : Nat} (ha : a + n ≤ 2576) : (blw sp).Disjoint ⟨State.addr w + BitVec.ofNat 64 a, n⟩ :=
   L.stk_w.sub_right (wSub ha)
@@ -163,33 +163,33 @@ namespace Buf
 variable {w sp : BitVec 32} {s : State} {D : BitVec 32} {n : Nat} (h : Buf w sp s D n)
 include h
 
-theorem lt : n < 2 ^ 64 := by have := h.fit; omega
+theorem lt : n < 2 ^ 64 := by have := h.fit; omega_using [this]
 
 theorem of_eq {s' : State} (hrd : s'.rd = s.rd) (hwr : s'.wr = s.wr) : Buf w sp s' D n :=
   { h with rd := by rw [hrd, hwr]; exact h.rd }
 
 /-- Byte `j` of the buffer, for `j < n`, as a 64-bit address. -/
 theorem addr {j : Nat} (hj : j < n) : State.addr (D + BitVec.ofNat 32 j) = State.addr D + BitVec.ofNat 64 j :=
-  addr_add (by have := h.fit; omega)
+  addr_add (by have := h.fit; omega_using [hj, this])
 
 theorem toNat_add {j : Nat} (hj : j < n) : (D + BitVec.ofNat 32 j).toNat = D.toNat + j := by
   have := h.fit
-  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := j) (by omega), Nat.mod_eq_of_lt (by omega)]
+  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := j) (by omega_using [hj, this]), Nat.mod_eq_of_lt (by omega_using [hj, this])]
 
 /-- The first `k` bytes. -/
 theorem take {k : Nat} (hk : k ≤ n) : Buf w sp s D k where
   rd := covers_prefix h.rd hk
-  fit := by have := h.fit; omega
+  fit := by have := h.fit; omega_using [hk, this]
   w := h.w.sub_left (Region.sub_prefix hk)
   stk := h.stk.sub_right (Region.sub_prefix hk)
 
 /-- The `k` (at least one) bytes from `j` on. -/
 theorem sub {j k : Nat} (hjk : j + k ≤ n) (hk : 0 < k) : Buf w sp s (D + BitVec.ofNat 32 j) k := by
-  have ha := h.addr (j := j) (by omega)
+  have ha := h.addr (j := j) (by omega_using [hjk, hk])
   have hs : Region.Sub ⟨State.addr D + BitVec.ofNat 64 j, k⟩ ⟨State.addr D, n⟩ := Offset.sub_base _ hjk
   refine ⟨?_, ?_, ?_, ?_⟩
   · rw [ha]; exact covers_off h.rd hjk h.lt
-  · rw [h.toNat_add (by omega)]; have := h.fit; omega
+  · rw [h.toNat_add (by omega_using [hjk, hk])]; have := h.fit; omega_using [hjk, this]
   · rw [ha]; exact h.w.sub_left hs
   · rw [ha]; exact h.stk.sub_right hs
 
@@ -213,7 +213,7 @@ theorem ctxMac_frame {rs : List Region} {m m' : Mem} (hf : Frame rs m m') {C : A
     (hd : ∀ r ∈ rs, (⟨C, 512⟩ : Region).Disjoint r) {R : Nat} (hR : 16 * (R + 1) ≤ 240) :
     Spec.Siv.ctxMac m' C R = Spec.Siv.ctxMac m C R := by
   unfold Spec.Siv.ctxMac Spec.Siv.schedCiph
-  rw [Proof.Cmac.bytesAt_frame hf (fun r hr => (hd r hr).sub_left (Region.sub_prefix (by omega))) (by omega),
+  rw [Proof.Cmac.bytesAt_frame hf (fun r hr => (hd r hr).sub_left (Region.sub_prefix (by omega_using [hR]))) (by omega_using [hR]),
     Proof.Cmac.bytesAt_frame hf (p := C + 240)
       (fun r hr => (hd r hr).sub_left (Offset.sub_base C (d := 240) (n := 16) (by decide))) (by decide),
     Proof.Cmac.bytesAt_frame hf (p := C + 256)
@@ -224,7 +224,7 @@ theorem ctxCiph_frame {rs : List Region} {m m' : Mem} (hf : Frame rs m m') {C : 
     Spec.Siv.ctxCiph m' C R = Spec.Siv.ctxCiph m C R := by
   unfold Spec.Siv.ctxCiph Spec.Siv.schedCiph
   rw [Proof.Cmac.bytesAt_frame hf (p := C + 272)
-    (fun r hr => (hd r hr).sub_left (Offset.sub_base C (d := 272) (n := 16 * (R + 1)) (by omega))) (by omega)]
+    (fun r hr => (hd r hr).sub_left (Offset.sub_base C (d := 272) (n := 16 * (R + 1)) (by omega_using [hR]))) (by omega_using [hR])]
 
 theorem rounds_le {R : Nat} (hR : R = 10 ∨ R = 12 ∨ R = 14) : 16 * (R + 1) ≤ 240 := by
   rcases hR with rfl | rfl | rfl <;> decide

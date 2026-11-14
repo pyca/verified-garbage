@@ -37,8 +37,8 @@ open VG.Proof.TripleDes.X86_64.Bitsliced (chain chain_lane blockOut blockOut_cor
 
 theorem qw_readW (m : Mem) (a : Addr) {q : Nat} (hq : q < 4) :
     qw (m.readW a 256) q = m.readW (a + BitVec.ofNat 64 q * 8) 64 := by
-  have e := readW_extract m a (w := 256) (k := 8 * q) (n := 8) (by omega)
-  rw [show 8 * (8 * q) = 64 * q by omega, show 8 * 8 = 64 by rfl] at e
+  have e := readW_extract m a (w := 256) (k := 8 * q) (n := 8) (by omega_using [hq])
+  rw [show 8 * (8 * q) = 64 * q by omega_using [], show 8 * 8 = 64 by rfl] at e
   rw [qw, e]
   congr 2
   rw [BitVec.mul_comm, show (8 : BitVec 64) = BitVec.ofNat 64 8 from rfl, BitVec.ofNat_mul_ofNat]
@@ -51,7 +51,7 @@ theorem laneW_eq (s : State) {q i : Nat} (hq : q < 4) :
     BitVec.ofNat_mul_ofNat, BitVec.ofNat_add_ofNat]
   have e : ∀ a b : Nat, a = b → s.mem.readW (s.gpr .rsi + BitVec.ofNat 64 a) 64 =
       s.mem.readW (s.gpr .rsi + BitVec.ofNat 64 b) 64 := fun a b h => by rw [h]
-  exact e _ _ (by omega)
+  exact e _ _ (by omega_using [])
 
 /-- Lane `64 q + i` of 256-bit words is lane `i` of their quadwords `q`. -/
 theorem ipLane_qw {W : Nat → BitVec 256} {q i : Nat} (hi : i < 64) :
@@ -161,7 +161,7 @@ theorem batch_ok (d : Direction) {s : State} (h : BatchPre s) : WP isa (batch d)
       simp only [List.mem_singleton] at hr; subst hr; exact h.schedSep
   refine ⟨fun b hb => ?_, ?_, rdx₅, ?_, fun r hr a c => ?_, ?_, ?_, ?_⟩
   · have hq : b % 4 < 4 := Nat.mod_lt _ (by decide)
-    have hi : b / 4 < 64 := by omega
+    have hi : b / 4 < 64 := by omega_using [hb]
     have eb : 4 * (b / 4) + b % 4 = b := Nat.div_add_mod b 4
     -- lane 64 q + i before the passes: IP of the block
     have lane₂ : ipLane (words s₂) (64 * (b % 4) + b / 4) =
@@ -182,7 +182,7 @@ theorem batch_ok (d : Direction) {s : State} (h : BatchPre s) : WP isa (batch d)
     rw [word₅, VG.Proof.TripleDes.Bitslice.transpose_out _ _ j hj]
     have e₃ : ipLane (laneW s₃ (b % 4)) (b / 4) = ipLane (words s₃) (64 * (b % 4) + b / 4) :=
       (ipLane_qw hi).symm
-    rw [e₃, ipLane_congr q₃.words, chain_lane d _ _ (by omega), lane₂]
+    rw [e₃, ipLane_congr q₃.words, chain_lane d _ _ (by omega_using [hb]), lane₂]
     rfl
   · simp [s₅, cmpState, u₂, u₁, gpr_setReg, si₄]; rfl
   · have u₂d : u₂.gpr .rdx = s.gpr .rdx - 256 := by

@@ -142,9 +142,9 @@ theorem forceSample_ok {B p : Addr} {Z w N : Nat} {bs : List Byte} {s : State}
   refine WP.mono (forceStoredWitness_ok h.ready hEZ h.ptr hlen hmax h.writable h.source.out)
     fun t ⟨ht, hbytes, hf, hwords, hk⟩ => ?_
   rw [h.bytes] at hbytes
-  refine ⟨⟨ht, (hwords _ (by simp only [kOut, sFn]; omega)).trans h.ptr,
-    ?_, ?_, ?_⟩, hwords _ (by simp only [kU]; omega), ?_, hk⟩
-  · rw [hfl, hwords _ (by simp only [kUsedP, sFn]; omega)]; exact h.len
+  refine ⟨⟨ht, (hwords _ (by simp only [kOut, sFn]; omega_using [hz])).trans h.ptr,
+    ?_, ?_, ?_⟩, hwords _ (by simp only [kU]; omega_using [hEZ]), ?_, hk⟩
+  · rw [hfl, hwords _ (by simp only [kUsedP, sFn]; omega_using [hz])]; exact h.len
   · refine ⟨fun i hi => ?_, fun i hi => ?_, fun i hi => h.source.out i (by rwa [hfl] at hi)⟩
     · rw [hk.rd, hk.wr]
       exact h.source.rd i (by rwa [hfl] at hi)
@@ -162,7 +162,7 @@ theorem forceSample_ok {B p : Addr} {Z w N : Nat} {bs : List Byte} {s : State}
     apply hx ⟨p, bs.length⟩ (by simp)
     apply (Region.contains_self p bs.length).byte
     simp only [off, Offset.add_sub_cancel_left, BitVec.toNat_ofNat]
-    rw [Nat.mod_eq_of_lt (by omega : i < 2 ^ 64)]
+    rw [Nat.mod_eq_of_lt (by omega_using [hmax, hi] : i < 2 ^ 64)]
     exact hi
 
 end VG.Proof.Dsa.AArch64.Generation

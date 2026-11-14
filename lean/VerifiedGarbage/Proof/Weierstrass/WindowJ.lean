@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Weierstrass.Window
 public import VerifiedGarbage.Proof.Weierstrass.Booth
 public import VerifiedGarbage.Proof.Weierstrass.PrimeOrder
 import VerifiedGarbage.Proof.Weierstrass.WinJacMath
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # Signed windows in Jacobian coordinates, on any target
@@ -39,14 +40,14 @@ theorem PrimeOrder.zmul_eq (hO : PrimeOrder C) (hC : Law C) {P : Point C} (hP : 
   have hd := Window5.zmul_dvd hC hO hP hP0 h
   rw [← Int.natAbs_dvd_natAbs, Int.natAbs_natCast] at hd
   have := Nat.eq_zero_of_dvd_of_lt hd hab
-  omega
+  omega_using [this]
 
 theorem winPt_zmul (P : Point C) (k j : Nat) :
     winPt C P k j = zmul ((nib k j : Int) - 8) P := by
   unfold winPt zmul
   split
-  · rw [ite_eq_left_of_eq_true _ _ (eq_true (by omega))]; congr 1; omega
-  · rw [ite_eq_right_of_eq_false _ _ (eq_false (by omega))]; congr 2; omega
+  · rw [ite_eq_left_of_eq_true _ _ (eq_true (by omega_arith))]; congr 1; omega_using []
+  · rw [ite_eq_right_of_eq_false _ _ (eq_false (by omega_arith))]; congr 2; omega_using []
 
 /-- Iteration `j`'s operands, `[16 e]P` for `e = winE k J (j + 1)` and the
 point of digit `j`, are neither equal nor opposite if `16 e + 8 < n` and
@@ -63,12 +64,12 @@ theorem win_sep (hC : Law C) (hO : PrimeOrder C) {P : Point C} (hP : onCurve C P
     exact hR (by rw [Nat.mul_zero, Spec.Weierstrass.mul]; simp)
   rw [winPt_zmul, ← zmul_natCast]
   refine ⟨fun h => ?_, fun h => ?_⟩
-  · have := hO.zmul_eq hC hP hP0 (by omega) h
-    omega
+  · have := hO.zmul_eq hC hP hP0 (by omega_using [hn, hb]) h
+    omega_using [hn, h0, this]
   · rw [hC.add_zmul hP, show (.infinity : Point C) = zmul 0 P by
       rw [zmul, ite_eq_left_of_eq_true _ _ (eq_true (Int.le_refl _))]; simp [Spec.Weierstrass.mul]] at h
-    have := hO.zmul_eq hC hP hP0 (by omega) h
-    omega
+    have := hO.zmul_eq hC hP hP0 (by omega_using [hn, hb]) h
+    omega_using [h0, this]
 
 /-! ## The multiples shrink -/
 
@@ -76,15 +77,15 @@ theorem winE_succ_le {k J j : Nat} (hk : 8 * geom J ≤ k) (hj : j < J) :
     winE k J (j + 1) ≤ winE k J j := by
   have := winE_step hk hj
   have := nib_lt k j
-  omega
+  omega_arith
 
 theorem winE_le_of_le {k J : Nat} (hk : 8 * geom J ≤ k) {j : Nat} :
     ∀ {j'}, j ≤ j' → j' ≤ J → winE k J j' ≤ winE k J j
   | j', h, hJ => by
     rcases Nat.eq_or_lt_of_le h with rfl | h
     · exact Nat.le_refl _
-    · obtain ⟨i, rfl⟩ : ∃ i, j' = i + 1 := ⟨j' - 1, by omega⟩
-      exact Nat.le_trans (winE_succ_le hk (by omega)) (winE_le_of_le hk (by omega) (by omega))
+    · obtain ⟨i, rfl⟩ : ∃ i, j' = i + 1 := ⟨j' - 1, by omega_using [h]⟩
+      exact Nat.le_trans (winE_succ_le hk (by omega_using [hJ])) (winE_le_of_le hk (by omega_using [h]) (by omega_using [hJ]))
 
 /-- The multiples of a recoded scalar `d + 8 Σ_{i<J} 16^i`: `⌊(d + 8 Σ_{i<j} 16^i) / 16^j⌋`. -/
 theorem winE_recode {d J j : Nat} (hj : j ≤ J) :
@@ -103,7 +104,7 @@ theorem winE_two_bound {d J b n : Nat} (hJ : 2 ≤ J) (hd : d < 2 ^ b)
   rw [winE_recode hJ]
   have : (d + 8 * geom 2) / 16 ^ 2 ≤ (2 ^ b + 135) / 256 :=
     Nat.div_le_div_right (show d + 8 * geom 2 ≤ 2 ^ b + 135 by
-      show d + 8 * (0 + 1 + 16) ≤ _; omega)
-  omega
+      show d + 8 * (0 + 1 + 16) ≤ _; omega_using [hd])
+  omega_using [hb, this]
 
 end VG.Proof.Weierstrass

@@ -64,12 +64,12 @@ structure CtrPost (s : State) (K C D S : Addr) (R n : Nat) (s' : State) : Prop w
   ctr : blockAt s'.mem C = Nat.repeat Spec.Gcm.inc32 n (blockAt s.mem C)
 
 theorem toNat_rounds {R : Nat} (hR : R = 10 ∨ R = 12 ∨ R = 14) : (BitVec.ofNat 64 R).toNat = R := by
-  rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt (by omega)
+  rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt (by omega_using [hR])
 
 theorem CtrCall.toNat_n {s : State} {K C D S : Addr} {R n : Nat} (h : CtrCall s K C D S R n) :
     (BitVec.ofNat 64 n).toNat = n := by
   have := h.wrap
-  rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt (by omega)
+  rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt (by omega_using [this])
 
 theorem CtrCall.pre {s : State} {K C D S : Addr} {R n : Nat} (h : CtrCall s K C D S R n) :
     Proof.Aes.ctr32RISCV64.pre

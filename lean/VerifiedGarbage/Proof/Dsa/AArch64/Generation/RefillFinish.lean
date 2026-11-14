@@ -96,18 +96,18 @@ theorem ranOutCheck_run {s : State} {F S : Addr} {V : Nat → Byte} {W : Nat →
   have l120 : InRegions (s.rd ++ s.wr) (s.sp + BitVec.ofNat 64 120) 8 := by rw [L.sp]; exact L.ld (d := 120) (by decide)
   have l472 : InRegions (s.rd ++ s.wr) (s.sp + BitVec.ofNat 64 472) 8 := by rw [L.sp]; exact ctl_in' hv (k := 3) (by decide)
   have hsub : BitVec.ofNat 64 len - BitVec.ofNat 64 c = BitVec.ofNat 64 (len - c) := Offset.ofNat_sub_ofNat hc
-  have hp : pLen ≤ 384 := by omega
-  have e15 := shl_small pLen 15 (by omega)
+  have hp : pLen ≤ 384 := by omega_using [hp3]
+  have e15 := shl_small pLen 15 (by omega_using [hp3])
   have eb : BitVec.ofNat 64 (pLen * 2 ^ 15) + BitVec.ofNat 64 pLen = BitVec.ofNat 64 (32769 * pLen) := by
-    rw [← BitVec.ofNat_add]; congr 1; omega
+    rw [← BitVec.ofNat_add]; congr 1; omega_using []
   refine WP.keep [.x9, .x10, .x11, .x12, .x13] ?_ (by rcases hp3 with rfl | rfl | rfl <;> decide) rfl
     (by rcases hp3 with rfl | rfl | rfl <;> decide +kernel)
   simp only [Impl.Dsa.AArch64.Generation.Refill.ranOutCheck, Impl.Dsa.AArch64.Generation.Refill.ctl,
     Nat.reduceMul, Nat.reduceAdd]
   brun [State.write, exec_ldrSp (off := 120) (by decide), exec_ldrSp (off := 472) (by decide), w15, w3, l120, l472,
-    hsub, movi_small (show pLen < 2 ^ 16 by omega), movi_small (show 0 < 2 ^ 16 by decide),
+    hsub, movi_small (show pLen < 2 ^ 16 by omega_using [hp3]), movi_small (show 0 < 2 ^ 16 by decide),
     movi_small (show 1 < 2 ^ 16 by decide), exec_lsl_x (by decide : 15 < 64), e15, eb,
-    loop_subs_ge (show len - c < 2 ^ 64 by omega) (show 32769 * pLen < 2 ^ 64 by omega)]
+    loop_subs_ge (show len - c < 2 ^ 64 by omega_using [hl]) (show 32769 * pLen < 2 ^ 64 by omega_using [hp3])]
   by_cases h : 32769 * pLen ≤ len - c <;> simp [h]
 
 /-- The next tape's length. -/
@@ -117,23 +117,23 @@ theorem request_run {s : State} {L B pLen : Nat} (hL : L < 2 ^ 32) (hB : B < 2 ^
     WP isa (.block Impl.Dsa.AArch64.Generation.Refill.request) s fun t =>
       (t.gpr .x10 = BitVec.ofNat 64 (VG.Proof.Entropy.request (256 * pLen) B L) ∧ t.gpr .x11 = BitVec.ofNat 64 B ∧
         t.mem = s.mem) ∧ Keep [.x10, .x12, .x13] s t := by
-  have e8 := shl_small pLen 8 (by omega)
+  have e8 := shl_small pLen 8 (by omega_using [hp])
   refine WP.keep [.x10, .x12, .x13] ?_ (by decide) rfl (by decide +kernel)
   unfold Impl.Dsa.AArch64.Generation.Refill.request
   brun [State.write, exec_lsl_x (by decide : 8 < 64), e8, h9, h10, h11,
-    loop_subs_ge (show L < 2 ^ 64 by omega) (show pLen * 2 ^ 8 < 2 ^ 64 by omega)]
+    loop_subs_ge (show L < 2 ^ 64 by omega_using [hL]) (show pLen * 2 ^ 8 < 2 ^ 64 by omega_using [hp])]
   unfold VG.Proof.Entropy.request
   by_cases h1 : pLen * 2 ^ 8 ≤ L
   · simp only [h1, decide_true, ite_true, ← BitVec.ofNat_add,
-      loop_subs_ge (show L + L < 2 ^ 64 by omega) (show B < 2 ^ 64 by omega)]
+      loop_subs_ge (show L + L < 2 ^ 64 by omega_using [hL]) (show B < 2 ^ 64 by omega_using [hB])]
     by_cases h2 : B ≤ L + L
-    · simp only [h2, decide_true, ite_true]; congr 1; omega
-    · simp only [h2, decide_false, Bool.false_eq_true, ite_false]; congr 1; omega
+    · simp only [h2, decide_true, ite_true]; congr 1; omega_using [h2]
+    · simp only [h2, decide_false, Bool.false_eq_true, ite_false]; congr 1; omega_using [h1, h2]
   · simp only [h1, decide_false, Bool.false_eq_true, ite_false, ← BitVec.ofNat_add,
-      loop_subs_ge (show pLen * 2 ^ 8 + pLen * 2 ^ 8 < 2 ^ 64 by omega) (show B < 2 ^ 64 by omega)]
+      loop_subs_ge (show pLen * 2 ^ 8 + pLen * 2 ^ 8 < 2 ^ 64 by omega_using [hp]) (show B < 2 ^ 64 by omega_using [hB])]
     by_cases h2 : B ≤ pLen * 2 ^ 8 + pLen * 2 ^ 8
-    · simp only [h2, decide_true, ite_true]; congr 1; omega
-    · simp only [h2, decide_false, Bool.false_eq_true, ite_false]; congr 1; omega
+    · simp only [h2, decide_true, ite_true]; congr 1; omega_using [h2]
+    · simp only [h2, decide_false, Bool.false_eq_true, ite_false]; congr 1; omega_using [h1, h2]
 
 /-- The pointers to `state` and `used`, and the controller's status. -/
 theorem resultsStart_run {s : State} {F S : Addr} {V : Nat → Byte} {W : Nat → BitVec 64}
@@ -179,10 +179,10 @@ theorem prefixZ_run {s : State} {F : Addr} (hsp : s.sp = F) (hv : (⟨F, 480⟩ 
       (t.gpr .x11 = 0 ∧ t.gpr .x10 = 0 ∧ t.gpr .x12 = s.mem.readW (off F d) 64 ∧ t.mem = s.mem) ∧
         Keep [.x10, .x11, .x12] s t := by
   have l : InRegions (s.rd ++ s.wr) (s.sp + BitVec.ofNat 64 d) 8 := by
-    rw [hsp]; exact ⟨_, List.mem_append_right _ hv, Offset.contains_base F (by omega) (by omega)⟩
+    rw [hsp]; exact ⟨_, List.mem_append_right _ hv, Offset.contains_base F (by omega_using [hd]) (by omega_using [hd])⟩
   refine WP.keep [.x10, .x11, .x12] ?_ (by rcases hd with rfl | rfl <;> decide) rfl
     (by rcases hd with rfl | rfl <;> decide +kernel)
-  brun [State.write, exec_ldrSp (off := d) (by omega), l, movi_small (show 0 < 2 ^ 16 by decide)]
+  brun [State.write, exec_ldrSp (off := d) (by omega_using [hd]), l, movi_small (show 0 < 2 ^ 16 by decide)]
   simp only [off, hsp]
 
 /-! ## The words for `used` and `state` -/
@@ -265,8 +265,8 @@ theorem results_ok {v t : State} {n c : Nat} (hv : v.wr = ⟨refillBase s₀, 48
     WP isa (Impl.Dsa.AArch64.Generation.Refill.results pBytes) t (ResultsDone h v n c) := by
   obtain ⟨hs, W, hin, hm, c0, c1, fv, rdv, wrv, hx19, c3, cases⟩ := hd
   have hp3 : pBytes = 128 ∨ pBytes = 256 ∨ pBytes = 384 := by
-    have := h.lengths; unfold Spec.Dsa.generationLengthsValid at this; omega
-  have hp : pBytes ≤ 384 := by omega
+    have := h.lengths; unfold Spec.Dsa.generationLengthsValid at this; omega_using [this]
+  have hp : pBytes ≤ 384 := by omega_using [hp3]
   have wt : t.wr = ⟨refillBase s₀, 480⟩ :: s₀.wr := wrv.trans hv
   have env : ∀ x : State, x.sp = refillBase s₀ → x.wr = t.wr → ResEnv x (refillBase s₀) (s₀.gpr .x7) (s₀.gpr .x2) :=
     fun x hsp hw =>
@@ -278,17 +278,17 @@ theorem results_ok {v t : State} {n c : Nat} (hv : v.wr = ⟨refillBase s₀, 48
     have hr := h.randLength
     rw [h.width] at hr
     change (Spec.Rsa.bytesAt s₀.mem (s₀.gpr .x3) (s₀.gpr .x4).toNat).length < _
-    rw [bytesAt_length]; unfold Spec.Dsa.parameterEntropy at hr; omega
+    rw [bytesAt_length]; unfold Spec.Dsa.parameterEntropy at hr; omega_using [hp3, hr]
   have h15 : W 15 = BitVec.ofNat 64 (randTape h).bytes.length :=
     (hm.slots 15 (by simp [generationSlots])).trans ((refillContext h).withHs hs).randLengthSlot
   have hv480 : (⟨refillBase s₀, 480⟩ : Region) ∈ t.wr := by rw [wt]; exact List.mem_cons_self ..
   have packedSub : ∀ r ∈ [inState s₀, inUsed s₀, ctlRegion (refillBase s₀)],
       (⟨off (s₀.gpr .x5) packed, 2 * pBytes + Spec.Dsa.generationQLen pBytes⟩ : Region).Disjoint r := by
-    have qn : Spec.Dsa.generationQLen pBytes ≤ 32 := by unfold Spec.Dsa.generationQLen; split <;> omega
+    have qn : Spec.Dsa.generationQLen pBytes ≤ 32 := by unfold Spec.Dsa.generationQLen; split <;> omega_using []
     intro r hr
     exact ((results_regions h) r hr).2.2.2.symm.sub_left ((refillGeometry h).part_sub
       ((refillGeometry h).small_bound (d := packed) (n := 2 * pBytes + Spec.Dsa.generationQLen pBytes) (by decide)
-        (by unfold VG.Impl.Dsa.Generation.Layout.arithmeticBytes; omega)))
+        (by unfold VG.Impl.Dsa.Generation.Layout.arithmeticBytes; omega_using [hp3, qn])))
   -- the end, from the words stored
   have fin : ∀ {x y : State} {a b d : BitVec 64} {st : Nat}, x.mem = t.mem → x.sp = refillBase s₀ →
       x.rd = t.rd → x.wr = t.wr →
@@ -314,7 +314,7 @@ theorem results_ok {v t : State} {n c : Nat} (hv : v.wr = ⟨refillBase s₀, 48
     rcases out with o | ⟨h19, p, he, bytes⟩
     · exact Or.inl o
     · refine Or.inr ⟨h19, p, he, ?_⟩
-      rw [VG.Proof.Dsa.Generation.frame_bytesAt fw packedSub (by unfold Spec.Dsa.generationQLen; split <;> omega), xm]
+      rw [VG.Proof.Dsa.Generation.frame_bytesAt fw packedSub (by unfold Spec.Dsa.generationQLen; split <;> omega_using [hp3]), xm]
       exact bytes
   obtain ⟨V, R⟩ := hm.rep
   unfold Impl.Dsa.AArch64.Generation.Refill.results
@@ -350,7 +350,7 @@ theorem results_ok {v t : State} {n c : Nat} (hv : v.wr = ⟨refillBase s₀, 48
     obtain ⟨V₁, R₁⟩ := (genMem_keep hm m₁ k₁).rep
     have L₁ := (genMem_keep hm m₁ k₁).layout
     refine WP.seq (WP.mono (ranOutCheck_run L₁ R₁ (by rw [k₁.wr]; exact hv480) (by change ctlWord t₁.mem (refillBase s₀) 3 = _; rw [cw₁]; exact c3) h15 hc
-      (by omega) hp3) fun t₂ ⟨⟨x10₂, x9₂, x11₂, x12₂, m₂⟩, k₂⟩ => ?_)
+      (by omega_using [hlen]) hp3) fun t₂ ⟨⟨x10₂, x9₂, x11₂, x12₂, m₂⟩, k₂⟩ => ?_)
     have sp₂ : t₂.sp = refillBase s₀ := k₂.sp.trans sp₁
     have mt₂ : t₂.mem = t.mem := m₂.trans m₁
     by_cases hL : 32769 * pBytes ≤ (randTape h).bytes.length - c
@@ -366,7 +366,7 @@ theorem results_ok {v t : State} {n c : Nat} (hv : v.wr = ⟨refillBase s₀, 48
         ((k₃.gpr .x15 (by decide)).trans ((k₂.gpr .x15 (by decide)).trans x15₁)))
         fun t₄ ⟨m₄, sp₄, rd₄, wr₄⟩ => ?_
       have hL' : Spec.Dsa.parameterEntropy pBytes ≤ (randTape h).bytes.length - c := by
-        unfold Spec.Dsa.parameterEntropy; omega
+        unfold Spec.Dsa.parameterEntropy; omega_using [hL]
       refine fin mt₃ (k₃.sp.trans sp₂) (k₃.rd.trans (k₂.rd.trans k₁.rd)) (k₃.wr.trans (k₂.wr.trans k₁.wr))
         m₄ sp₄ rd₄ wr₄ ?_ ?_ ?_ ?_ (Or.inl ⟨by rw [h19]; decide, ?_⟩)
       all_goals simp only [htot, VG.Proof.Dsa.Generation.ranOutResult, hL', ↓reduceIte,
@@ -377,7 +377,7 @@ theorem results_ok {v t : State} {n c : Nat} (hv : v.wr = ⟨refillBase s₀, 48
       simp only [Impl.Dsa.AArch64.Generation.Refill.entropyWords, List.append_assoc]
       apply WP.block_append
       refine WP.mono (request_run (L := (randTape h).bytes.length - c) (B := Spec.Dsa.parameterEntropy pBytes)
-        (by omega) (by unfold Spec.Dsa.parameterEntropy; omega) hp x9₂ x10₂ x11₂) fun t₃ ⟨⟨x10₃, x11₃, m₃⟩, k₃⟩ => ?_
+        (by omega_using [hlen]) (by unfold Spec.Dsa.parameterEntropy; omega_using [hp3]) hp x9₂ x10₂ x11₂) fun t₃ ⟨⟨x10₃, x11₃, m₃⟩, k₃⟩ => ?_
       have sp₃ : t₃.sp = refillBase s₀ := k₃.sp.trans sp₂
       have mt₃ : t₃.mem = t.mem := m₃.trans mt₂
       apply WP.block_append
@@ -390,7 +390,7 @@ theorem results_ok {v t : State} {n c : Nat} (hv : v.wr = ⟨refillBase s₀, 48
         ((k₄.gpr .x15 (by decide)).trans ((k₃.gpr .x15 (by decide)).trans ((k₂.gpr .x15 (by decide)).trans x15₁))))
         fun t₅ ⟨m₅, sp₅, rd₅, wr₅⟩ => ?_
       have hL' : ¬Spec.Dsa.parameterEntropy pBytes ≤ (randTape h).bytes.length - c := by
-        unfold Spec.Dsa.parameterEntropy; omega
+        unfold Spec.Dsa.parameterEntropy; omega_using [hL]
       refine fin mt₄ (k₄.sp.trans sp₃) (k₄.rd.trans (k₃.rd.trans (k₂.rd.trans k₁.rd)))
         (k₄.wr.trans (k₃.wr.trans (k₂.wr.trans k₁.wr))) m₅ sp₅ rd₅ wr₅ ?_ ?_ ?_ ?_ (Or.inl ⟨by rw [h19]; decide, ?_⟩)
       all_goals simp only [htot, VG.Proof.Dsa.Generation.ranOutResult, hL', ↓reduceIte,

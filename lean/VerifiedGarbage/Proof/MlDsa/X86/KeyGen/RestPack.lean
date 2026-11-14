@@ -40,9 +40,9 @@ theorem small_mem {η : Nat} {x : IPoly} (h : Small η x) {i : Nat} (hi : i < 25
 
 theorem small_big {η : Nat} (hη : η ≤ 4) {x : IPoly} (hs : Small η x) :
     ∀ c ∈ x.toList, -4190208 ≤ c ∧ c ≤ 4190208 := fun c hc => by
-  have := hs c hc; omega
+  have := hs c hc; omega_arith
 
-theorem eta_le {p : Params} (hF : PFacts p) : p.η ≤ 4 := by rcases hF.eta with ⟨h, _⟩ | ⟨h, _⟩ <;> omega
+theorem eta_le {p : Params} (hF : PFacts p) : p.η ≤ 4 := by rcases hF.eta with ⟨h, _⟩ | ⟨h, _⟩ <;> omega_using [h]
 
 theorem eta_params {p : Params} (hF : PFacts p) : (p.η, p.η) ∈ Proof.MlDsa.bitPackParams := by
   rcases hF.eta with ⟨h, _⟩ | ⟨h, _⟩ <;> rw [h] <;> decide
@@ -66,7 +66,7 @@ theorem KR.sPoly {p : Params} {A : Nat → Poly} {S : Nat → IPoly} {np nr : Na
     PolyIs s.mem (Buf.addr s₀ (sB p r)) (toRq (S r)) := by
   by_cases hl : r < p.ℓ
   · have := h.s1 r hl; rwa [ifn (Nat.not_lt_zero r)] at this
-  · have := h.s2 (r - p.ℓ) (by omega); rwa [show p.ℓ + (r - p.ℓ) = r by omega] at this
+  · have := h.s2 (r - p.ℓ) (by omega_using [hr, hl]); rwa [show p.ℓ + (r - p.ℓ) = r by omega_using [hl]] at this
 
 section
 variable {P : Prims} (hP : PrimsOk P) {p : Params} (hF : PFacts p)
@@ -81,14 +81,14 @@ theorem packS_piece {r : Nat} (hr : r < p.ℓ + p.k) : KP p (KRx p r 0 0) (KRx p
     (eta_params hF) (lenS_eq p) (by layd) (Nat.le_of_eq (YK_stk p).symm) (ht := .block []) (by kernel_rfl)
     (fun s₀ s _ ⟨A, S, h, hs⟩ => ⟨h.ctx, hs.1, packIn (eta_le hF) hs (h.small r hr)⟩)
     fun s₀ s s' hp ⟨A, S, h, hs⟩ h' fr out => ⟨A, S, ?_⟩
-  have hpos : 0 < lenS p := by rcases hF.eta with ⟨_, e⟩ | ⟨_, e⟩ <;> omega
+  have hpos : 0 < lenS p := by rcases hF.eta with ⟨_, e⟩ | ⟨_, e⟩ <;> omega_using [e]
   have hle : 128 + lenS p * r + lenS p ≤ oT0 p := by
     simp only [oT0]; rw [Nat.add_assoc, ← Nat.mul_succ]; exact Nat.add_le_add_left (Nat.mul_le_mul_left _ hr) _
   have hsf : SafeR p r 0 [⟨2, 128 + lenS p * r, lenS p⟩] := SafeR.sk hF (Nat.le_of_lt hr) (Nat.zero_le _) hpos
-    (by omega) (.inr (Nat.le_refl _)) (.inl hle) (by rw [hF.sk]; omega)
-  have k := h.keep hp (N := 80) (by omega) hsf (fun _ _ => by layd) fr h'
+    (by omega_using []) (.inr (Nat.le_refl _)) (.inl hle) (by rw [hF.sk]; omega_using [hle])
+  have k := h.keep hp (N := 80) (by omega_using []) hsf (fun _ _ => by layd) fr h'
   refine { k with packs := fun r' hr' => ?_ }
-  rcases (by omega : r' < r ∨ r' = r) with hr' | rfl
+  rcases (by omega_using [hr'] : r' < r ∨ r' = r) with hr' | rfl
   · exact k.packs r' hr'
   · rw [out, hs.2, Proof.MlDsa.KeyGen.modPm_toRq (small_big (eta_le hF) (h.small r' hr))]
 
@@ -105,26 +105,26 @@ theorem nttS_piece {j : Nat} (hj : j < p.ℓ) :
   have hS := h.s1 j hj
   rw [ifn (Nat.lt_irrefl j)] at hS
   have hs : SafeR p (p.ℓ + p.k) 0 [sB p j, ssB 1024] :=
-    (SafeR.sc hF (Nat.le_refl _) (Nat.zero_le _) (by decide) (.inr (by simp only [oACC, oP]; omega))
-      (.inr (.inl (by simp only [oP]; omega))) (by simp only [scrLen, hF.sw, oP]; omega)).append (bs₁ := [_])
+    (SafeR.sc hF (Nat.le_refl _) (Nat.zero_le _) (by decide) (.inr (by simp only [oACC, oP]; omega_using []))
+      (.inr (.inl (by simp only [oP]; omega_using [hj]))) (by simp only [scrLen, hF.sw, oP]; omega_using [hj])).append (bs₁ := [_])
     (SafeR.sc (o := oSS) (l := 1024) hF (Nat.le_refl _) (Nat.zero_le _) (by decide) (.inr (by decide))
-      (.inl (by decide)) (by simp only [scrLen, hF.sw, oSS]; omega))
+      (.inl (by decide)) (by simp only [scrLen, hF.sw, oSS]; omega_using []))
   exact { ctx := h'
-          good := by rw [acc_keep hp (N := 80) (by omega) hs.acc fr]; exact h.good
+          good := by rw [acc_keep hp (N := 80) (by omega_using []) hs.acc fr]; exact h.good
           small := h.small
-          aS := fun e he => keepPolyD hp (stkN (by omega)) (hs.aS e he) fr (h.aS e he)
-          s2 := fun i hi => keepPolyD hp (stkN (by omega)) (hs.s2 i hi) fr (h.s2 i hi)
+          aS := fun e he => keepPolyD hp (stkN (by omega_using [])) (hs.aS e he) fr (h.aS e he)
+          s2 := fun i hi => keepPolyD hp (stkN (by omega_using [])) (hs.s2 i hi) fr (h.s2 i hi)
           s1 := fun j' hj' => if e : j' = j then by
               subst e; rw [ifp (Nat.lt_succ_self j'), ← hS.2]; exact out
             else by
-              have := keepPolyD hp (stkN (by omega)) (by layd) fr (h.s1 j' hj')
+              have := keepPolyD hp (stkN (by omega_using [])) (by layd) fr (h.s1 j' hj')
               by_cases hlt : j' < j
-              · rwa [ifp hlt, ← ifp (show j' < j + 1 by omega) (ntt (toRq (S j'))) (toRq (S j'))] at this
-              · rwa [ifn hlt, ← ifn (show ¬ j' < j + 1 by omega) (ntt (toRq (S j'))) (toRq (S j'))] at this
-          pk0 := by rw [keepBytes hp (stkN (by omega)) hs.pk0 fr]; exact h.pk0
-          sk0 := by rw [keepBytes hp (stkN (by omega)) hs.sk0 fr]; exact h.sk0
-          sk1 := by rw [keepBytes hp (stkN (by omega)) hs.sk1 fr]; exact h.sk1
-          packs := fun r hr => by rw [keepBytes hp (stkN (by omega)) (hs.packs r hr) fr]; exact h.packs r hr
+              · rwa [ifp hlt, ← ifp (show j' < j + 1 by omega_using [hlt]) (ntt (toRq (S j'))) (toRq (S j'))] at this
+              · rwa [ifn hlt, ← ifn (show ¬ j' < j + 1 by omega_using [e, hlt]) (ntt (toRq (S j'))) (toRq (S j'))] at this
+          pk0 := by rw [keepBytes hp (stkN (by omega_using [])) hs.pk0 fr]; exact h.pk0
+          sk0 := by rw [keepBytes hp (stkN (by omega_using [])) hs.sk0 fr]; exact h.sk0
+          sk1 := by rw [keepBytes hp (stkN (by omega_using [])) hs.sk1 fr]; exact h.sk1
+          packs := fun r hr => by rw [keepBytes hp (stkN (by omega_using [])) (hs.packs r hr) fr]; exact h.packs r hr
           rows := fun _ h => absurd h (Nat.not_lt_zero _) }
 
 end

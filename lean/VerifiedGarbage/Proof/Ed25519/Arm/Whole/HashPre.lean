@@ -131,7 +131,7 @@ theorem init_pre {t : State} {scr : BitVec 32} (ha : t.gpr .r0 = scr)
     (Proof.Sha512.initArm Spec.Sha512.H0_512).pre (t.callEntry.withRegions [] (initWr scr)) := by
   simp only [Proof.Sha512.initArm,State.withRegions_rd,State.withRegions_wr,
     State.withRegions_gpr,State.callEntry_gpr _ (by decide : Reg.r0 ∉ linkRegs),ha]
-  exact ⟨True.intro,rfl,by omega⟩
+  exact ⟨True.intro,rfl,by omega_using [hn]⟩
 
 theorem update_pre {t : State} {E scr p len : BitVec 32}
     (he : t.sp = E) (h0 : t.gpr .r0 = scr)
@@ -140,11 +140,11 @@ theorem update_pre {t : State} {E scr p len : BitVec 32}
     (hs : (CALLARGS E 12).Disjoint ⟨State.addr scr,8192⟩)
     (nc : scr.toNat+8192 ≤ 2^32) (np : p.toNat+len.toNat ≤ 2^32) (ne : E.toNat+12 ≤ 2^32) :
     Proof.Sha512.updateArm.pre (t.callEntry.withRegions (updateRd E p len) (hashWr scr)) := by
-  have ac : State.addr (scr+192) = State.addr scr+192 := addr_add (k := 192) (by omega)
+  have ac : State.addr (scr+192) = State.addr scr+192 := addr_add (k := 192) (by omega_using [nc])
   have wc : (scr+192).toNat+272 ≤ 2^32 := by
-    rw [BitVec.toNat_add_of_lt (by change scr.toNat+192<2^32; omega)]
+    rw [BitVec.toNat_add_of_lt (by change scr.toNat+192<2^32; omega_using [nc])]
     change scr.toNat+192+272≤2^32
-    omega
+    omega_using [nc]
   have sa (j : Nat) : stackArg (t.callEntry.withRegions (updateRd E p len) (hashWr scr)) j = stackArg t j := rfl
   have spa : stackArgAddr (t.callEntry.withRegions (updateRd E p len) (hashWr scr)) 0 = State.addr t.sp := by simp [stackArgAddr,State.withRegions_sp,State.callEntry_sp]
   simp only [Proof.Sha512.updateArm,sa,spa,State.withRegions_rd,State.withRegions_wr,
@@ -152,7 +152,7 @@ theorem update_pre {t : State} {E scr p len : BitVec 32}
     State.withRegions_sp,State.callEntry_sp]
   rw [hdp,hl,hw,he,ac]
   exact ⟨rfl,rfl,sha_work scr,hd.sub_right (sha_sub scr),hd.sub_right (work_sub scr),
-    hs.sub_right (sha_sub scr),hs.sub_right (work_sub scr),by omega,np,wc,ne⟩
+    hs.sub_right (sha_sub scr),hs.sub_right (work_sub scr),by omega_using [nc],np,wc,ne⟩
 
 theorem finalize_pre {t : State} {E scr out : BitVec 32}
     (he : t.sp = E) (h0 : t.gpr .r0 = scr)
@@ -162,11 +162,11 @@ theorem finalize_pre {t : State} {E scr out : BitVec 32}
     (hso : (CALLARGS E 8).Disjoint ⟨State.addr out,64⟩)
     (nc : scr.toNat+8192 ≤ 2^32) (no : out.toNat+64 ≤ 2^32) (ne : E.toNat+8 ≤ 2^32) :
     Proof.Sha512.finalizeArm.pre (t.callEntry.withRegions (finalizeRd E) (finalizeWr scr out)) := by
-  have ac : State.addr (scr+192) = State.addr scr+192 := addr_add (k := 192) (by omega)
+  have ac : State.addr (scr+192) = State.addr scr+192 := addr_add (k := 192) (by omega_using [nc])
   have wc : (scr+192).toNat+272 ≤ 2^32 := by
-    rw [BitVec.toNat_add_of_lt (by change scr.toNat+192<2^32; omega)]
+    rw [BitVec.toNat_add_of_lt (by change scr.toNat+192<2^32; omega_using [nc])]
     change scr.toNat+192+272≤2^32
-    omega
+    omega_using [nc]
   have sa (j : Nat) : stackArg (t.callEntry.withRegions (finalizeRd E) (finalizeWr scr out)) j = stackArg t j := rfl
   have spa : stackArgAddr (t.callEntry.withRegions (finalizeRd E) (finalizeWr scr out)) 0 = State.addr t.sp := by simp [stackArgAddr,State.withRegions_sp,State.callEntry_sp]
   simp only [Proof.Sha512.finalizeArm,sa,spa,State.withRegions_rd,State.withRegions_wr,
@@ -174,7 +174,7 @@ theorem finalize_pre {t : State} {E scr out : BitVec 32}
     State.withRegions_sp,State.callEntry_sp]
   rw [ho,hw,he,ac]
   exact ⟨rfl,rfl,(hd.sub_right (sha_sub scr)).symm,sha_work scr,hd.sub_right (work_sub scr),
-    hs.sub_right (sha_sub scr),hso,hs.sub_right (work_sub scr),by omega,no,wc,ne⟩
+    hs.sub_right (sha_sub scr),hso,hs.sub_right (work_sub scr),by omega_using [nc],no,wc,ne⟩
 
 /-- Hash calls only write prefixes of the outer scratch allocation. -/
 theorem hash_writes {E scr : BitVec 32} {wr : List Region} (hs : (⟨State.addr scr,8192⟩ : Region) ∈ wr) :

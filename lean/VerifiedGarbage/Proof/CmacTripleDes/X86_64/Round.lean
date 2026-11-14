@@ -81,14 +81,14 @@ theorem inputs_ok {s : State} (hok : Ok rCfg s) :
         exact inWord_rel (inW s) (i := 0) (by decide)
       · simp at h
     · simp only [rCfg] at hj
-      obtain rfl : j = 0 := by omega
+      obtain rfl : j = 0 := by omega_using [hj]
       simp only [linExt, Option.some.injEq] at h; subst h
       exact inWord_rel (inW s) (i := 1) (by decide)
   obtain ⟨s', hs', p⟩ := run lanes_sound hok hrel he
   refine ⟨s', hs', fun t ht q hq => ?_, p.rd, p.wr, fun r hr => p.other r ?_, p.frame⟩
   · have h := List.all_eq_true.mp hpost t (List.mem_range.mpr ht)
     simp only [beq_iff_eq] at h
-    exact outWord_rel (inG_lt t ht) (p.rel.slot t _ (by simp only [rCfg]; omega) h) q hq
+    exact outWord_rel (inG_lt t ht) (p.rel.slot t _ (by simp only [rCfg]; omega_using [ht]) h) q hq
   · rw [List.all_eq_true.mp inputs_kept r hr]; decide
 
 /-! ## The S-boxes -/
@@ -145,11 +145,11 @@ theorem sboxes_ok {s : State} (hok : Ok rCfg s) :
       cases h
       show (rowIn t).testBit (64 * (boxIn s p).toNat + p) = (slotW s t).getLsbD p
       have hc := (boxIn s p).isLt
-      rw [rowIn, testBit_rowsOf, decide_eq_true (by omega : 64 * (boxIn s p).toNat + p < 64 * 64),
-        Bool.true_and, show (64 * (boxIn s p).toNat + p) / 64 = (boxIn s p).toNat by omega,
+      rw [rowIn, testBit_rowsOf, decide_eq_true (by omega_using [hp] : 64 * (boxIn s p).toNat + p < 64 * 64),
+        Bool.true_and, show (64 * (boxIn s p).toNat + p) / 64 = (boxIn s p).toNat by omega_using [hp],
         BitVec.testBit_toNat, boxIn, getLsbD_ofBits, decide_eq_true ht6, Bool.true_and]
     · cases h
-  obtain ⟨s', hs', p₀⟩ := key 0 (by omega)
+  obtain ⟨s', hs', p₀⟩ := key 0 (by omega_using [])
   refine ⟨s', hs', fun i hi b hb => ?_, p₀.rd, p₀.wr, fun r hr => p₀.other r ?_, p₀.frame⟩
   · have hp : 6 * (7 - i) + off i b < 64 := by revert i b; decide
     obtain ⟨s'', hs'', p₁⟩ := key _ hp
@@ -225,14 +225,14 @@ theorem boxIn_eq {s s₁ : State}
     boxIn s₁ (6 * (7 - i) + o) = chunk ((s.gpr .r13).setWidth 32) ((keyW s).setWidth 48) i := by
   apply BitVec.eq_of_getLsbD_eq
   intro t ht
-  have hE := expSrc_lt (6 * (7 - i) + t) (by omega)
-  rw [boxIn, getLsbD_ofBits, decide_eq_true ht, Bool.true_and, h t ht _ (by omega),
-    getLsbD_chunk _ _ hi ht, inG, ite_eq_left (by omega), show (6 * (7 - i) + o) / 6 = 7 - i by omega]
+  have hE := expSrc_lt (6 * (7 - i) + t) (by omega_using [ht])
+  rw [boxIn, getLsbD_ofBits, decide_eq_true ht, Bool.true_and, h t ht _ (by omega_using [ho]),
+    getLsbD_chunk _ _ hi ht, inG, ite_eq_left (by omega_using [ho]), show (6 * (7 - i) + o) / 6 = 7 - i by omega_using [ho]]
   simp only [xorBits_cons, xorBits_nil, Bool.xor_false, bitOf, inW, BitVec.getLsbD_setWidth,
-    Nat.div_eq_of_lt (show expSrc (6 * (7 - i) + t) < 64 by omega),
-    Nat.mod_eq_of_lt (show expSrc (6 * (7 - i) + t) < 64 by omega),
-    show (64 + 6 * (7 - i) + t) / 64 = 1 by omega, show (64 + 6 * (7 - i) + t) % 64 = 6 * (7 - i) + t by omega,
-    hE, show 6 * (7 - i) + t < 48 by omega, decide_true, Bool.true_and, ite_true]
+    Nat.div_eq_of_lt (show expSrc (6 * (7 - i) + t) < 64 by omega_using [hE]),
+    Nat.mod_eq_of_lt (show expSrc (6 * (7 - i) + t) < 64 by omega_using [hE]),
+    show (64 + 6 * (7 - i) + t) / 64 = 1 by omega_using [ht], show (64 + 6 * (7 - i) + t) % 64 = 6 * (7 - i) + t by omega_using [ht],
+    hE, show 6 * (7 - i) + t < 48 by omega_using [ht], decide_true, Bool.true_and, ite_true]
   rfl
 
 theorem off_lt : ∀ i < 8, ∀ b < 4, off i b < 4 := by decide
@@ -261,22 +261,22 @@ theorem round_ok {s : State} (hok : Ok rCfg s) :
     intro p hp
     rw [o12 p hp, oG12]
     simp only [xorBits_cons, xorBits_nil, Bool.xor_false, bitOf, oW,
-      show (128 + p) / 64 = 2 by omega, show (128 + p) % 64 = p by omega]
+      show (128 + p) / 64 = 2 by omega_using [hp], show (128 + p) % 64 = p by omega_using [hp]]
     rw [ite_eq_right (by decide), ite_eq_right (by decide), r13₂]
   · apply BitVec.eq_of_getLsbD_eq
     intro j hj
     have hu := pSrc_lt j hj
-    have hi : 7 - pSrc j / 4 < 8 := by omega
-    have hb : pSrc j % 4 < 4 := by omega
+    have hi : 7 - pSrc j / 4 < 8 := by omega_using []
+    have hb : pSrc j % 4 < 4 := by omega_using []
     have ho := off_lt _ hi _ hb
     have hpos : outPos (pSrc j) = 6 * (7 - (7 - pSrc j / 4)) + off (7 - pSrc j / 4) (pSrc j % 4) := by
-      rw [outPos, show 7 - (7 - pSrc j / 4) = pSrc j / 4 by omega]
-    rw [BitVec.getLsbD_setWidth, decide_eq_true hj, Bool.true_and, o13 j (by omega), oG13, ite_eq_left hj,
+      rw [outPos, show 7 - (7 - pSrc j / 4) = pSrc j / 4 by omega_using [hu]]
+    rw [BitVec.getLsbD_setWidth, decide_eq_true hj, Bool.true_and, o13 j (by omega_using [hj]), oG13, ite_eq_left hj,
       BitVec.getLsbD_xor, BitVec.getLsbD_setWidth, decide_eq_true hj, Bool.true_and,
       getLsbD_roundFunction _ _ hj]
     simp only [xorBits_cons, xorBits_nil, Bool.xor_false, bitOf, oW]
-    rw [Nat.div_eq_of_lt (show outPos (pSrc j) < 64 by omega), Nat.mod_eq_of_lt (show outPos (pSrc j) < 64 by omega),
-      show (64 + j) / 64 = 1 by omega, show (64 + j) % 64 = j by omega, ite_eq_left rfl, ite_eq_right (by decide),
+    rw [Nat.div_eq_of_lt (show outPos (pSrc j) < 64 by omega_using [ho, hpos]), Nat.mod_eq_of_lt (show outPos (pSrc j) < 64 by omega_using [ho, hpos]),
+      show (64 + j) / 64 = 1 by omega_using [hj], show (64 + j) % 64 = j by omega_using [hj], ite_eq_left rfl, ite_eq_right (by decide),
       ite_eq_left rfl, r12₂, hpos, hy _ hi _ hb, boxIn_eq hx hi ho, Bool.xor_comm]
   · have hr : slotRegion rCfg s₁ = slotRegion rCfg s := by
       simp only [slotRegion]; rw [show rCfg.base = .r15 from rfl, k₁ .r15 (by simp [kept])]

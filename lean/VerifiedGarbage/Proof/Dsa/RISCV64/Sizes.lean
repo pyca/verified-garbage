@@ -92,7 +92,7 @@ theorem ptrY_ok {s : State} {L : Lay} {key sig : Addr} (hs : ScrL s L) (hL : L.O
   rw [WP.block_append_iff]
   refine WP.mono (ptrG_ok hs hL hr) fun u ⟨⟨a7, a8, mu⟩, ku⟩ => ?_
   refine WP.mono (WP.keep [.s7] (Q := fun t => t.gpr .s7 = off key (2 * L.pl + L.ql) ∧ t.mem = u.mem)
-    (by brun [a7, a8, off_off]; rw [show L.pl + L.ql + L.pl = 2 * L.pl + L.ql by omega]) (by rfl) (by rfl))
+    (by brun [a7, a8, off_off]; rw [show L.pl + L.ql + L.pl = 2 * L.pl + L.ql by omega_using []]) (by rfl) (by rfl))
     fun t ⟨⟨c7, mt⟩, kt⟩ => ⟨⟨c7, by rw [kt.gpr (by decide), a8], by rw [mt, mu]⟩, (ku.trans kt).mono (by decide)⟩
 
 /-! ## The scan of a number's octets -/
@@ -432,7 +432,7 @@ theorem sizes_ok {s : State} {L : Lay} {key sig : Addr} {d : Nat} {Q : State →
   have hqb : (significant (Spec.Rsa.bytesAt s.mem (off key L.pl) L.ql)).1 < 2 ^ 16 := by
     simp only [Nat.reducePow]; omega_arith
   obtain ⟨hin, hal⟩ := ScrL.hdr (hs.congr kB.2.2) hL (d := 16) (by decide) (by decide)
-  have hst : InRegions t₅.wr (off L.S 16) 8 := (hs.congr kB.2.2).st (by have := hL.z256; omega)
+  have hst : InRegions t₅.wr (off L.S 16) 8 := (hs.congr kB.2.2).st (by have := hL.z256; omega_using [this])
   have h6₅ : t₅.gpr .s6 = L.S := (kB.gpr (by decide)).trans hr.s6
   have hl₅ : word t₅.mem L.S 16 = pack L.pl L.ql 0 d := by rw [m5]; exact hlen
   refine WP.seq (WP.mono (WP.keep [.a3, .t3, .t4] (Q := fun t =>

@@ -32,14 +32,14 @@ theorem columns_ok {s : State} {base : Addr} (hs : Scr s base) {code : Nat → L
     intro n t hn ⟨tf, tm, tk⟩
     refine WP.mono (step n hn t (hs.of_keeps tk hr) tm tk) fun u ⟨um, uk⟩ => ?_
     have out : Outside base (TMP + 4 * n) 4 t.mem u.mem := by
-      rw [um]; exact writeW_outside _ _ _ (by simp only [TMP]; omega)
-    refine ⟨?_, tm.trans (out.mono (by omega) (by omega)), tk.trans uk⟩
+      rw [um]; exact writeW_outside _ _ _ (by simp only [TMP]; omega_using [hn])
+    refine ⟨?_, tm.trans (out.mono (by omega_using []) (by omega_using [hn])), tk.trans uk⟩
     intro i hi
     change (word u.mem base (TMP + 4 * i)).toNat = _
-    rw [um, word_write t.mem base (by simp only [TMP]; omega) (by simp only [TMP]; omega)]
+    rw [um, word_write t.mem base (by simp only [TMP]; omega_using [hn]) (by simp only [TMP]; omega_using [hn, hi])]
     by_cases h : i = n
     · rw [ite_eq_left h, h, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (Nat.lt_of_le_of_lt (hb n hn) (by decide))]
-    · rw [ite_eq_right h]; exact tf i (by omega)
+    · rw [ite_eq_right h]; exact tf i (by omega_using [hi, h])
   exact wp_range_flatMap (M := isa) (N := 28) inv st 28 (by decide) s
     ⟨fun _ hi => by omega, Outside.refl _ _ _ _, Keeps.refl _ _⟩
 

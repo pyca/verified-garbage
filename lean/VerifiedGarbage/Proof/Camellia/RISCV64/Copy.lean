@@ -66,8 +66,8 @@ theorem copyIn_word {A B : Addr} {c : Nat} (hB : B.toNat % 8 = 0) : CopiesWord w
   refine ⟨{ s₁ with mem := s₁.mem.writeW (s₁.gpr .t4 + BitVec.ofNat 64 d) (s₁.gpr t0) }, ?_, ?_,
     fun r h0 h1 h2 => u₁.other r h0 h1 h2, u₁.rd, u₁.wr⟩
   · rw [wordIn, runBlock_append', e₁, Option.bind_some]
-    simp only [runBlock_cons, runStep_some, runBlock_nil, exec_store_d (show d < 2048 by omega)
-      (by rw [h4, hdst, addr_add]; exact Spill.al8 hB (by omega))
+    simp only [runBlock_cons, runStep_some, runBlock_nil, exec_store_d (show d < 2048 by omega_using [hd])
+      (by rw [h4, hdst, addr_add]; exact Spill.al8 hB (by omega_using [hd]))
       (by rw [u₁.wr, h4]; exact hw)]
   · show s₁.mem.writeW _ _ = _
     rw [u₁.mem, h4, u₁.gpr]
@@ -76,8 +76,8 @@ theorem copyOut_word {A B : Addr} {c : Nat} (hA : A.toNat % 8 = 0) : CopiesWord 
   intro s j d _ hd hsrc _ hr hw
   let s₁ := s.write t0 (s.mem.readW (s.gpr .t3 + BitVec.ofNat 64 d) 64)
   have e₁ : runBlock isa [.load .d t0 .t3 d] s = some s₁ := by
-    simp only [runBlock_cons, runStep_some, runBlock_nil, exec_load_d (show d < 2048 by omega)
-      (by rw [hsrc, addr_add]; exact Spill.al8 hA (by omega)) hr]
+    simp only [runBlock_cons, runStep_some, runBlock_nil, exec_load_d (show d < 2048 by omega_using [hd])
+      (by rw [hsrc, addr_add]; exact Spill.al8 hA (by omega_using [hd])) hr]
     rfl
   have h4 : s₁.gpr .t4 = s.gpr .t4 := RegUpd.gpr_write_of_ne _ _ (by decide)
   obtain ⟨s₂, e₂, g₂, m₂, rd₂, wr₂, -⟩ := WP.runBlock_of (Words64.storeLE64_ok (s := s₁) (v := t0)
@@ -187,13 +187,13 @@ theorem copyInBlocks_wp {A B : Addr} {c : Nat} {s₀ : State} (hB8 : B.toNat % 8
     (hB : ∀ t < 2 * c, InRegions s₀.wr (B + BitVec.ofNat 64 (8 * t)) 8)
     (hsep : Region.Disjoint ⟨A, 16 * c⟩ ⟨B, 16 * c⟩) (hs : CopyInv A B c s₀ 0 s₀) :
     WP isa copyInBlocks s₀ (CopyInv A B c s₀ c) := by
-  rw [copyInBlocks_eq]; exact copyLoop_wp (copyIn_word hB8) hc (by omega) hA hB hsep hs
+  rw [copyInBlocks_eq]; exact copyLoop_wp (copyIn_word hB8) hc (by omega_using [hc8]) hA hB hsep hs
 
 theorem copyOutBlocks_wp {A B : Addr} {c : Nat} {s₀ : State} (hA8 : A.toNat % 8 = 0) (hc : 0 < c) (hc8 : c ≤ 8)
     (hA : ∀ t < 2 * c, InRegions (s₀.rd ++ s₀.wr) (A + BitVec.ofNat 64 (8 * t)) 8)
     (hB : ∀ t < 2 * c, InRegions s₀.wr (B + BitVec.ofNat 64 (8 * t)) 8)
     (hsep : Region.Disjoint ⟨A, 16 * c⟩ ⟨B, 16 * c⟩) (hs : CopyInv A B c s₀ 0 s₀) :
     WP isa copyOutBlocks s₀ (CopyInv A B c s₀ c) := by
-  rw [copyOutBlocks_eq]; exact copyLoop_wp (copyOut_word hA8) hc (by omega) hA hB hsep hs
+  rw [copyOutBlocks_eq]; exact copyLoop_wp (copyOut_word hA8) hc (by omega_using [hc8]) hA hB hsep hs
 
 end VG.Proof.Camellia.RISCV64

@@ -215,7 +215,7 @@ include L
 /-- Parts of `W` are disjoint. -/
 theorem w_w {a n d k : Nat} (h : a + n ≤ d ∨ d + k ≤ a) (ha : a + n ≤ 3816) (hd : d + k ≤ 3816) :
     (⟨W + BitVec.ofNat 64 a, n⟩ : Region).Disjoint ⟨W + BitVec.ofNat 64 d, k⟩ :=
-  Offset.disjoint _ h (by have := L.ww; omega) (by have := L.ww; omega)
+  Offset.disjoint _ h (by have := L.ww; omega_using [ha]) (by have := L.ww; omega_using [hd])
 
 theorem k_w' {d k : Nat} (hd : d + k ≤ 3816) : (⟨K, 240⟩ : Region).Disjoint ⟨W + BitVec.ofNat 64 d, k⟩ :=
   L.k_w.sub_right (wSub hd)
@@ -265,29 +265,29 @@ theorem of_eq {s' : State} (hrd : s'.rd = s.rd) (hwr : s'.wr = s.wr) : Buf K W S
 
 /-- The bytes from `k` on. -/
 theorem drop {k : Nat} (hk : k ≤ n) : Buf K W SP s (D + BitVec.ofNat 64 k) (n - k) where
-  rd := covers_off h.rd (by omega) h.lt
-  lt := by have := h.lt; omega
+  rd := covers_off h.rd (by omega_using [hk]) h.lt
+  lt := by have := h.lt; omega_using [this]
   wrap := by
     have := h.wrap
-    rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := k) (by have := h.lt; omega)]
+    rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := k) (by have := h.lt; omega_using [hk, this])]
     have := Nat.mod_le (D.toNat + k) (2 ^ 64)
-    omega
-  w := h.w.sub_left (Offset.sub_base D (by omega))
-  stk := h.stk.sub_right (Offset.sub_base D (by omega))
+    omega_arith
+  w := h.w.sub_left (Offset.sub_base D (by omega_using [hk]))
+  stk := h.stk.sub_right (Offset.sub_base D (by omega_using [hk]))
 
 /-- The first `k` bytes. -/
 theorem take {k : Nat} (hk : k ≤ n) : Buf K W SP s D k where
   rd := fun a m ⟨r, hr, hc⟩ => by
     simp only [List.mem_singleton] at hr; subst hr
-    exact h.rd a m ⟨_, List.mem_singleton_self _, by simp only [Region.Contains] at hc ⊢; omega⟩
-  lt := by have := h.lt; omega
-  wrap := by have := h.wrap; omega
+    exact h.rd a m ⟨_, List.mem_singleton_self _, by simp only [Region.Contains] at hc ⊢; omega_using [hk, hc]⟩
+  lt := by have := h.lt; omega_using [hk, this]
+  wrap := by have := h.wrap; omega_using [hk, this]
   w := h.w.sub_left (Region.sub_prefix hk)
   stk := h.stk.sub_right (Region.sub_prefix hk)
 
 /-- Bytes `[a, a + k)`. -/
 theorem slice {a k : Nat} (hk : a + k ≤ n) : Buf K W SP s (D + BitVec.ofNat 64 a) k :=
-  (h.drop (k := a) (by omega)).take (by omega)
+  (h.drop (k := a) (by omega_using [hk])).take (by omega_using [hk])
 
 end Buf
 
@@ -320,13 +320,13 @@ theorem kept_mut {K W SP D : Addr} {n : Nat} (L : Lay K W SP) (hD : (⟨D, n⟩ 
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl | rfl
-  · simpa using L.w_w (a := d) (n := k) (d := 0) (k := 144) (.inr (by omega)) (by omega) (by decide)
+  · simpa using L.w_w (a := d) (n := k) (d := 0) (k := 144) (.inr (by omega_using [hd])) (by omega_using [hd]) (by decide)
   · rcases hd with hd | hd
-    · exact L.w_w (.inl (by omega)) (by omega) (by decide)
-    · exact L.w_w (.inr (by omega)) (by omega) (by decide)
-  · exact L.w_w (.inl (by omega)) (by omega) (by decide)
-  · exact (L.stk_w' (by omega)).symm
-  · exact (hD.sub_right (Lay.wSub (by omega))).symm
+    · exact L.w_w (.inl (by omega_using [hd])) (by omega_using [hd]) (by decide)
+    · exact L.w_w (.inr (by omega_using [hd])) (by omega_using [hd]) (by decide)
+  · exact L.w_w (.inl (by omega_using [hd])) (by omega_using [hd]) (by decide)
+  · exact (L.stk_w' (by omega_using [hd])).symm
+  · exact (hD.sub_right (Lay.wSub (by omega_using [hd]))).symm
 
 end VG.Proof.AesGcmSiv.X86_64
 
@@ -385,15 +385,15 @@ theorem writeW128_app (m : Mem) (p : Addr) (hi lo : BitVec 64) :
   have ht := (x - p).isLt
   generalize (x - p).toNat = t at *
   by_cases h8 : t < 8
-  · simp only [show ¬ (t + (2 ^ 64 - 8)) % 2 ^ 64 < 8 by omega, h8, show t < 16 by omega, ↓reduceIte]
+  · simp only [show ¬ (t + (2 ^ 64 - 8)) % 2 ^ 64 < 8 by omega_using [h8], h8, show t < 16 by omega_using [h8], ↓reduceIte]
     ext j hj
-    simp only [BitVec.getElem_extractLsb', BitVec.getLsbD_append, show 8 * t + j < 64 by omega, ↓reduceIte]
+    simp only [BitVec.getElem_extractLsb', BitVec.getLsbD_append, show 8 * t + j < 64 by omega_using [h8, hj], ↓reduceIte]
   · by_cases h16 : t < 16
-    · simp only [show (t + (2 ^ 64 - 8)) % 2 ^ 64 = t - 8 by omega, show t - 8 < 8 by omega, h16, ↓reduceIte]
+    · simp only [show (t + (2 ^ 64 - 8)) % 2 ^ 64 = t - 8 by omega_using [ht, h8], show t - 8 < 8 by omega_using [h16], h16, ↓reduceIte]
       ext j hj
-      simp only [BitVec.getElem_extractLsb', BitVec.getLsbD_append, show ¬ 8 * t + j < 64 by omega, ↓reduceIte,
-        show 8 * t + j - 64 = 8 * (t - 8) + j by omega]
-    · simp only [show ¬ (t + (2 ^ 64 - 8)) % 2 ^ 64 < 8 by omega, h8, h16, ↓reduceIte]
+      simp only [BitVec.getElem_extractLsb', BitVec.getLsbD_append, show ¬ 8 * t + j < 64 by omega_using [h8], ↓reduceIte,
+        show 8 * t + j - 64 = 8 * (t - 8) + j by omega_using [h8]]
+    · simp only [show ¬ (t + (2 ^ 64 - 8)) % 2 ^ 64 < 8 by omega_using [ht, h16], h8, h16, ↓reduceIte]
 
 /-- 16 bytes read as two quadwords. -/
 theorem readW128_app (m : Mem) (a : Addr) :
@@ -410,14 +410,14 @@ theorem readW128_app (m : Mem) (a : Addr) :
     have e : (m.readW b 64).extractLsb' (8 * k) 8 = m (b + BitVec.ofNat 64 k) := by
       rw [← Mem.extractLsb'_read m b (n := 8) hk]; simp only [Mem.readW]; rfl
     rw [← e, BitVec.getLsbD_extractLsb']; simp [hi]
-  rw [show j = 8 * (j / 8) + j % 8 by omega, r (j / 8) (by omega) (j % 8) (by omega)]
+  rw [show j = 8 * (j / 8) + j % 8 by omega_using [], r (j / 8) (by omega_using [hj]) (j % 8) (by omega_using [])]
   by_cases h : j < 64
-  · simp only [show 8 * (j / 8) + j % 8 < 64 by omega, ↓reduceIte]
-    rw [r8 a (j / 8) (by omega) (j % 8) (by omega)]
-  · simp only [show ¬ 8 * (j / 8) + j % 8 < 64 by omega, ↓reduceIte]
-    rw [show 8 * (j / 8) + j % 8 - 64 = 8 * (j / 8 - 8) + j % 8 by omega,
-      r8 _ (j / 8 - 8) (by omega) (j % 8) (by omega), BitVec.add_assoc, ofNat_add_ofNat,
-      show 8 + (j / 8 - 8) = j / 8 by omega]
+  · simp only [show 8 * (j / 8) + j % 8 < 64 by omega_using [h], ↓reduceIte]
+    rw [r8 a (j / 8) (by omega_using [h]) (j % 8) (by omega_using [])]
+  · simp only [show ¬ 8 * (j / 8) + j % 8 < 64 by omega_using [h], ↓reduceIte]
+    rw [show 8 * (j / 8) + j % 8 - 64 = 8 * (j / 8 - 8) + j % 8 by omega_using [h],
+      r8 _ (j / 8 - 8) (by omega_using [hj]) (j % 8) (by omega_using []), BitVec.add_assoc, ofNat_add_ofNat,
+      show 8 + (j / 8 - 8) = j / 8 by omega_using [h]]
 
 /-- `punpcklqdq` of two registers `movq` wrote. -/
 theorem punpck_movq (a b : BitVec 64) :

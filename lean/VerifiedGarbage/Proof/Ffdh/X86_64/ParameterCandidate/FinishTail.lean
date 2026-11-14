@@ -32,7 +32,7 @@ theorem finishTail_ok {p : CandidateP} {used status : Nat} {s₀ s : State}
     fun u ⟨hax, hdu, hused, hout, hwords, ku⟩ => ?_
   refine WP.mono (VG.Proof.Ffdh.X86_64.exit_ok (h.base.scr.congr ku.2.2) hdu
     (by omega_using [h.base.header_room])
-    (fun i hi => (hwords i (by omega)).trans (hsaved i hi)))
+    (fun i hi => (hwords i (by omega_using [hi])).trans (hsaved i hi)))
     fun t ⟨hregs, hm, kt⟩ => ?_
   exact ⟨(kt.gpr (by decide)).trans hax, by rw [hm]; exact hused,
     by rw [hm]; exact hout, hregs, (ku.trans kt).mono (by decide)⟩

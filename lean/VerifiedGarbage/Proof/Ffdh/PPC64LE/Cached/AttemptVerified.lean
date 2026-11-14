@@ -85,8 +85,8 @@ theorem stackArg_rd {s : State} (h : cgContract.pre s) {i : Nat} (hi : i < 5) :
     InRegions (s.rd ++ s.wr) (stackArgAddr s i) 8 := by
   refine ⟨cgStack s, List.mem_append_left _ (by rw [h.2.1]; simp), ?_⟩
   rw [show stackArgAddr s i = stackArgAddr s 0 + BitVec.ofNat 64 (8 * i) by
-    simp only [stackArgAddr, Offset.add_add]; congr 2; omega]
-  exact Offset.contains_base _ (by have := h.1; omega) (by omega)
+    simp only [stackArgAddr, Offset.add_add]; congr 2; omega_using []]
+  exact Offset.contains_base _ (by have := h.1; omega_using [hi]) (by omega_using [hi])
 
 theorem T0_T1 {q : CG} {s : State} (h : T0 q s) :
     WP isa (.block ([.addSp .r11 104, .load .d .r11 .r11 0] : List Instr)) s (T1 q) := by
@@ -256,15 +256,15 @@ theorem cgOf_eq {s t : State} (hs : cgContract.pre s) (ht : cgContract.pre t) (h
         Spec.Rsa.bytesAt t.mem (t.gpr .r7) (t.gpr .r8).toNat := by rw [← h7, ← h8]; exact ed
     have e2 : Spec.Rsa.bytesAt s.mem (off (s.gpr .r7) (s.gpr .r9).toNat) (s.gpr .r9).toNat =
         Spec.Rsa.bytesAt t.mem (off (t.gpr .r7) (t.gpr .r9).toNat) (t.gpr .r9).toNat := by
-      rw [← h7, ← h9]; exact sl _ (by omega)
+      rw [← h7, ← h9]; exact sl _ (by omega_using [hL])
     unfold gxOf gcOf
     rw [e1, e2, h3, h5, h7, h8, h9, a1, a2]
   have hp : ∀ m : Mem, Spec.Rsa.os2ip ((Spec.Rsa.bytesAt m (s.gpr .r7) (s.gpr .r8).toNat).take (s.gpr .r9).toNat) =
       Spec.Rsa.os2ip (Spec.Rsa.bytesAt m (s.gpr .r7) (s.gpr .r9).toNat) := fun m => by
-    rw [Proof.Ffdh.take_bytesAt _ _ (by omega)]
+    rw [Proof.Ffdh.take_bytesAt _ _ (by omega_using [hL])]
   have hbT : ∀ P, Derive.bnd t.mem (s.gpr .r7) (s.gpr .r9).toNat (s.gpr .r8).toNat P =
       Derive.bnd s.mem (s.gpr .r7) (s.gpr .r9).toNat (s.gpr .r8).toNat P := fun P =>
-    Derive.bnd_congr fun hq => (sl _ (by omega)).symm
+    Derive.bnd_congr fun hq => (sl _ (by omega_using [hq])).symm
   have hpT : Spec.Rsa.os2ip (Spec.Rsa.bytesAt t.mem (s.gpr .r7) (s.gpr .r9).toNat) =
       Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (s.gpr .r7) (s.gpr .r9).toNat) := by rw [← hp, ← hp, ed]
   have hA : cgA t = cgA s := by
@@ -275,7 +275,7 @@ theorem cgOf_eq {s t : State} (hs : cgContract.pre s) (ht : cgContract.pre t) (h
     ((iff_of_eq (congrArg (· = 2) (List.cons.inj e2).1)).trans (Derive.keyStatus_two _ _))
   rw [hsc, htc, hA] at e3
   simp only [cgA, cgDom, ← h9, ← h10] at e3
-  rw [Derive.privateValid_dom (by omega) (by omega), Derive.privateValid_dom (by omega) (by omega)] at e3
+  rw [Derive.privateValid_dom (by omega_using [hk]) (by omega_using [hL]), Derive.privateValid_dom (by omega_using [hk]) (by omega_using [hL])] at e3
   have hv := Derive.bool_eq_of_false_iff e3
   have hgp : (gcOf t).p = (gcOf s).p := congrArg (fun x : XD => x.c.p) hgx.symm
   have ep : (gcOf s).p = Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (s.gpr .r7) (s.gpr .r9).toNat) := hp s.mem

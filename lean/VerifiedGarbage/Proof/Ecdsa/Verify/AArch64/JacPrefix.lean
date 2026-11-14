@@ -64,10 +64,10 @@ theorem bits_combReady (hc : CfgOk c) {s₀ s : State} {g : Reg → BitVec 64}
   have hn := hM.scr.nowrap
   have hp3 := hc.p_ge
   have F := hM.fixed
-  have hmont : ∀ x, c.mont x < c.C.p := fun x => Nat.mod_lt _ (by omega)
-  refine WP.mono_syms (bits_ok hM.scr h0 (by omega) (sl_le c h7 (i := U) (by decide))
-    (tbl_le h7) (sl_lt4096 h0 h7 (i := U) (by decide)) (by have := bitsAt0_le c h7; omega)
-    (Or.inl (by have := sl_below_bits c (i := U) (by decide) 0 0; omega)))
+  have hmont : ∀ x, c.mont x < c.C.p := fun x => Nat.mod_lt _ (by omega_using [hp3])
+  refine WP.mono_syms (bits_ok hM.scr h0 (by omega_using [h7]) (sl_le c h7 (i := U) (by decide))
+    (tbl_le h7) (sl_lt4096 h0 h7 (i := U) (by decide)) (by have := bitsAt0_le c h7; omega_using [this])
+    (Or.inl (by have := sl_below_bits c (i := U) (by decide) 0 0; omega_using [this])))
     fun s₁ ⟨b₁, k₁, O₁⟩ sy₁ => ?_
   have hs₁ := hM.scr.of_keepRegs k₁ (by decide)
   have U₁ : Unch base [(bitsAt c.n 0, 64 * c.n)] s.mem s₁.mem := O₁.unch
@@ -88,7 +88,7 @@ theorem bits_combReady (hc : CfgOk c) {s₀ s : State} {g : Reg → BitVec 64}
     rcases hx with rfl | rfl | rfl
     · show wordsVal s₁.mem base (c.sl AP) c.n < _; rw [F₁.ap]; exact hmont _
     · show wordsVal s₁.mem base (c.sl BM) c.n < _; rw [F₁.bm]; exact hmont _
-    · show wordsVal s₁.mem base (c.sl ZERO) c.n < _; rw [F₁.zero]; omega
+    · show wordsVal s₁.mem base (c.sl ZERO) c.n < _; rw [F₁.zero]; omega_using [hp3]
   · intro t ht
     show s₁.mem (off base (bitsAt c.n 0 + t)) = _
     rw [b₁ t ht]

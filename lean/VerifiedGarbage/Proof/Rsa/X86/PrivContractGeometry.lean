@@ -33,7 +33,7 @@ theorem privateGeometry_stack (s : State) :
 
 theorem privateGeometry_stackNat (s : State) (fit : stackBytes ≤ (s.gpr .esp).toNat) :
     (privateGeometry s).stack.toNat = (s.gpr .esp).toNat - 3344 := by
-  rw [privateGeometry_stack, sub_toNat (by unfold stackBytes at fit; omega)]
+  rw [privateGeometry_stack, sub_toNat (by unfold stackBytes at fit; omega_using [fit])]
 
 theorem privateGeometry_wholeStack (s : State) (fit : stackBytes ≤ (s.gpr .esp).toNat) :
     (privateGeometry s).wholeStack = ⟨(s.gpr .esp).setWidth 64 - BitVec.ofNat 64 stackBytes, stackBytes⟩ := by
@@ -48,8 +48,8 @@ theorem privateGeometry_arguments (s : State) (fit : stackBytes ≤ (s.gpr .esp)
   unfold PrivGeometry.argumentsRegion
   rw [privateGeometry_stack]
   change (⟨(s.gpr .esp - BitVec.ofNat 32 3344).setWidth 64 + BitVec.ofNat 64 3348, 80⟩ : Region) = _
-  rw [Taint.sub_setWidth (by unfold stackBytes at fit; omega : 3344 ≤ (s.gpr .esp).toNat)]
+  rw [Taint.sub_setWidth (by unfold stackBytes at fit; omega_using [fit] : 3344 ≤ (s.gpr .esp).toNat)]
   have aa : argAddr s 0 = (s.gpr .esp).setWidth 64 + 4 :=
-    byteAddr_add (by omega : (s.gpr .esp).toNat + 4 < 2 ^ 32)
+    byteAddr_add (by omega_using [high] : (s.gpr .esp).toNat + 4 < 2 ^ 32)
   rw [aa, show BitVec.ofNat 64 3348 = BitVec.ofNat 64 3344 + 4 from rfl, ← BitVec.add_assoc, BitVec.sub_add_cancel]
 end VG.Proof.Rsa.X86.PrivChecked

@@ -29,11 +29,11 @@ theorem selectStep_ok {s : State} {base : Addr} (hs : Scr s base) {i : Nat} (hi 
       t.mem = s.mem.writeW (off base (X2 + 8 * i))
         (if sw then word s.mem base (TMP + 8 * i) else word s.mem base (X2 + 8 * i)) ∧
       Keeps [.x4, .x5] s t := by
-  have lx := hs.read (d := X2 + 8 * i) (n := 8) (by simp only [X2, slot]; omega)
-  have ly := hs.read (d := TMP + 8 * i) (n := 8) (by simp only [TMP]; omega)
-  have wx := hs.write (d := X2 + 8 * i) (n := 8) (by simp only [X2, slot]; omega)
-  have xe : (X2 + 8 * i) % 8 = 0 ∧ X2 + 8 * i < 32768 := by simp only [X2, slot]; omega
-  have ye : (TMP + 8 * i) % 8 = 0 ∧ TMP + 8 * i < 32768 := by simp only [TMP]; omega
+  have lx := hs.read (d := X2 + 8 * i) (n := 8) (by simp only [X2, slot]; omega_using [hi])
+  have ly := hs.read (d := TMP + 8 * i) (n := 8) (by simp only [TMP]; omega_using [hi])
+  have wx := hs.write (d := X2 + 8 * i) (n := 8) (by simp only [X2, slot]; omega_using [hi])
+  have xe : (X2 + 8 * i) % 8 = 0 ∧ X2 + 8 * i < 32768 := by simp only [X2, slot]; omega_using [hi]
+  have ye : (TMP + 8 * i) % 8 = 0 ∧ TMP + 8 * i < 32768 := by simp only [TMP]; omega_using [hi]
   apply WP.of_runBlock
   simp only [selectStep, ld, st, runBlock_cons, runStep_some, runBlock_nil, exec, addr, Size.bytes,
     State.read, State.load, State.store, RegUpd.gpr_write, RegUpd.mem_write,
@@ -57,17 +57,17 @@ theorem select_ok {s : State} {base : Addr} (hs : Scr s base) {sw : Bool} (hc : 
     refine WP.mono (selectStep_ok (hs.of_keeps tk (by decide)) hn ((tk.1 _ (by decide)).trans hc))
       fun u ⟨um, uk⟩ => ?_
     have out : Outside base (X2 + 8 * n) 8 t.mem u.mem := by
-      rw [um]; exact writeW_outside _ _ _ (by simp only [X2, slot]; omega)
-    refine ⟨?_, (tm.mono (by omega) (by omega)).trans (out.mono (by omega) (by omega)), tk.trans uk⟩
+      rw [um]; exact writeW_outside _ _ _ (by simp only [X2, slot]; omega_using [hn])
+    refine ⟨?_, (tm.mono (by omega_using []) (by omega_using [])).trans (out.mono (by omega_using []) (by omega_using [])), tk.trans uk⟩
     intro i hi
     change (word u.mem base (X2 + 8 * i)).toNat = _
-    rw [um, word_write t.mem base (by simp only [X2, slot]; omega) (by simp only [X2, slot]; omega)]
+    rw [um, word_write t.mem base (by simp only [X2, slot]; omega_using [hn]) (by simp only [X2, slot]; omega_using [hn, hi])]
     by_cases h : i = n
     · rw [ite_eq_left h, h,
-        tm.word (Or.inr (by simp only [X2, slot, TMP]; omega)) (by simp only [TMP]; omega),
-        tm.word (Or.inr (by omega)) (by simp only [X2, slot]; omega)]
+        tm.word (Or.inr (by simp only [X2, slot, TMP]; omega_using [])) (by simp only [TMP]; omega_using [hn]),
+        tm.word (Or.inr (by omega_using [])) (by simp only [X2, slot]; omega_using [hn])]
       cases sw <;> rfl
-    · rw [ite_eq_right h]; exact tf i (by omega)
+    · rw [ite_eq_right h]; exact tf i (by omega_using [hi, h])
   exact wp_range_flatMap (M := isa) (N := 16) inv st 16 (by decide) s
     ⟨fun _ hi => by omega, Outside.refl _ _ _ _, Keeps.refl _ _⟩
 

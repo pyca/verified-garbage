@@ -33,7 +33,7 @@ theorem first_succ (m : Mem) (base : Addr) (src : Nat) (before : BitVec 32 × Bi
   | zero => rfl
   | succ count ih =>
     change first m base src (select before (pairAt m base (src + 8 * start))) (start + 1) (count + 1) = _
-    rw [ih, show start + 1 + count = start + (count + 1) by omega]
+    rw [ih, show start + 1 + count = start + (count + 1) by omega_using []]
     rfl
 
 theorem first_congr {m m' : Mem} {base : Addr} {src : Nat} (before : BitVec 32 × BitVec 32) (start count : Nat)
@@ -44,8 +44,8 @@ theorem first_congr {m m' : Mem} {base : Addr} {src : Nat} (before : BitVec 32 �
   | succ count ih =>
     change first m base src (select before (pairAt m base (src + 8 * start))) (start + 1) count =
       first m' base src (select before (pairAt m' base (src + 8 * start))) (start + 1) count
-    rw [same start (by omega)]
-    exact ih _ _ fun j index => same j (by omega)
+    rw [same start (by omega_using [])]
+    exact ih _ _ fun j index => same j (by omega_using [index])
 
 theorem pairStep_ok {t : State} {W : Addr} {L y : Nat} (hw : Ws t W L) (ebp : PtrAt t W .ebp y)
     (fit : y + 8 ≤ L) :
@@ -55,9 +55,9 @@ theorem pairStep_ok {t : State} {W : Addr} {L y : Nat} (hw : Ws t W L) (ebp : Pt
       Keeps [.eax, .ecx, .edx, .ebx, .esi, .ebp, .edi] t u := by
   unfold pairStep
   simp only [List.cons_append]
-  refine wp_movS (readSrc_ptr hw ebp (d := 0) (by omega)) fun a A _ => ?_
+  refine wp_movS (readSrc_ptr hw ebp (d := 0) (by omega_using [fit])) fun a A _ => ?_
   have ebpA : PtrAt a W .ebp y := by rw [PtrAt, A.other .ebp (by decide)]; exact ebp
-  refine wp_movS (readSrc_ptr (hw.of_keeps A.keeps) ebpA (d := 4) (by omega)) fun b B _ => ?_
+  refine wp_movS (readSrc_ptr (hw.of_keeps A.keeps) ebpA (d := 4) (by omega_using [fit])) fun b B _ => ?_
   refine WP.block_append (WP.mono (VG.Proof.RsaKeyGen.X86.LowPair.choose_ok b) fun c ⟨V, Mc, Kc⟩ => ?_)
   refine wp_addS rfl fun d D _ => wp_subZ rfl fun u U Z => WP.block_nil ?_
   have Kb : Keeps [.eax, .ecx] t b := (A.keeps.mono (by decide)).widen B.keeps
@@ -83,9 +83,9 @@ theorem scanLoop_ok {t₀ : State} {W : Addr} {L y N : Nat} (hw : Ws t₀ W L) (
       (t.gpr .edi).toNat = N - j ∧ (t.gpr .ebx, t.gpr .esi) = first t₀.mem W y (t₀.gpr .ebx, t₀.gpr .esi) 0 j) ?_
     ⟨Keeps.refl _ _, rfl, by simpa using ebp, by simpa using count, rfl⟩) fun u ⟨K, M, _, _, V⟩ => ⟨V, M, K⟩
   rintro j t index ⟨K, M, bp, edi, V⟩
-  refine WP.mono (pairStep_ok (hw.of_keeps K) bp (by omega)) fun u ⟨Vu, Mu, bpu, ediu, Z, Ku⟩ => ?_
+  refine WP.mono (pairStep_ok (hw.of_keeps K) bp (by omega_using [fit, index])) fun u ⟨Vu, Mu, bpu, ediu, Z, Ku⟩ => ?_
   obtain ⟨next, last⟩ := VG.Proof.Bignum.X86.PublicRt.count1_zf edi index
-  refine ⟨⟨K.trans Ku, Mu.trans M, by rw [show y + 8 * (j + 1) = y + 8 * j + 8 by omega]; exact bpu,
+  refine ⟨⟨K.trans Ku, Mu.trans M, by rw [show y + 8 * (j + 1) = y + 8 * j + 8 by omega_using []]; exact bpu,
     by rw [ediu]; exact next, ?_⟩, by rw [Z, last]⟩
   rw [Vu, V, M, first_succ, Nat.zero_add]
 
@@ -104,10 +104,10 @@ theorem Ready.keepStack {g : Geometry} (v : g.Valid) {c capacity : Nat} {p : Bit
   refine ⟨⟨⟨header.ws.of_keeps K, ?_, ?_, ?_, ?_⟩, S.modulus.keep v W (fun _ mem => nomatch mem)
     (fun _ mem => nomatch mem), S.caller.keepFrame K sp ?_, S.scratch.of_keeps K base sp⟩, W⟩
   · rw [PtrAt, K.1 .edi base]; exact header.base
-  · rw [read (by omega)]; exact header.width
-  · rw [read (by omega)]; exact header.stride
+  · rw [read (by omega_using [head])]; exact header.width
+  · rw [read (by omega_using [head])]; exact header.stride
   · intro j index
-    rw [read (by omega)]; exact header.pointers j index
+    rw [read (by omega_using [head, index])]; exact header.pointers j index
   · refine F.sub fun r mem => ?_
     obtain rfl := List.mem_singleton.mp mem
     exact ⟨_, List.mem_append_right _ (List.mem_singleton_self _), below_sub (by decide) S.caller.low⟩
@@ -126,7 +126,7 @@ theorem scanSetup_ok {g : Geometry} (v : g.Valid) {s : State} (C : Context g s) 
   refine WP.mono (Cb.ptr v 5 (by decide) .ebp (by decide) (by decide)) fun c ⟨P, Mc, Kc⟩ => ?_
   have Kc' : Keeps [.ebx, .esi, .ebp, .edx] s c := (Kb.mono (by decide)).widen Kc
   have Cc := C.keepMem Kc' (by decide) (by rw [Mc, B.mem, A.mem])
-  refine wp_movS (readSrc_ptr Cc.ws Cc.base (d := 48) (by have := v.headerFit; omega)) fun d D _ => ?_
+  refine wp_movS (readSrc_ptr Cc.ws Cc.base (d := 48) (by have := v.headerFit; omega_using [this])) fun d D _ => ?_
   have Kd : Keeps [.ebx, .esi, .ebp, .edx] s d := Kc'.widen D.keeps
   have Sd := St.keep Kd (by decide)
   refine wp_storeS (Sd.address 0 (by decide)) (ws_write Sd.ws (y := 0) (n := 4) (by decide)) fun e E => ?_
@@ -136,7 +136,7 @@ theorem scanSetup_ok {g : Geometry} (v : g.Valid) {s : State} (C : Context g s) 
   have mem : u.mem = s.mem.writeW (off (p.setWidth 64) 0) (s.gpr .edi) := by
     rw [U.mem, E.mem, memD, ediD]
   refine ⟨mem, ?_, ?_, ?_, ?_, ?_, ((Kd.mono (by decide)).widen (E.keeps [])).widen U.keeps⟩
-  · rw [mem]; exact writeW32_outside _ _ _ (by have := Sd.ws.nowrap; omega)
+  · rw [mem]; exact writeW32_outside _ _ _ (by have := Sd.ws.nowrap; omega_using [])
   · rw [PtrAt, U.other .ebp (by decide), E.gpr, D.other .ebp (by decide)]; exact P
   · rw [U.gpr, E.gpr, D.gpr, Nat.zero_add]
     change w32 c.mem g.W 48 = g.w
@@ -156,9 +156,9 @@ theorem scan_ok {g : Geometry} (v : g.Valid) {c capacity : Nat} {p : BitVec 32} 
   have low := S.caller.low
   have C := S.context
   unfold scan
-  refine WP.frameAlloc (by decide) (by decide) (by decide) (by rw [sp]; omega) (NoSp.of_all (by rfl)) ?_
+  refine WP.frameAlloc (by decide) (by decide) (by decide) (by rw [sp]; omega_using [low]) (NoSp.of_all (by rfl)) ?_
   have St : VG.Proof.RsaKeyGen.X86.Sieve.StackContext (s.gpr .esp - 20#32) (allocFrame 20 s) :=
-    VG.Proof.RsaKeyGen.X86.FilterStack.allocated_context (by rw [sp]; omega)
+    VG.Proof.RsaKeyGen.X86.FilterStack.allocated_context (by rw [sp]; omega_using [low])
   have Ci : Context g (allocFrame 20 s) :=
     ⟨⟨List.mem_cons_of_mem _ C.ws.wr, C.ws.nowrap⟩, by rw [PtrAt, allocFrame_gpr _ _ (by decide)]; exact C.base,
       C.width, C.stride, C.pointers⟩
@@ -174,7 +174,7 @@ theorem scan_ok {g : Geometry} (v : g.Valid) {c capacity : Nat} {p : BitVec 32} 
   have fit := v.arrayFit (j := 5) (by decide)
   have positive := v.minWidth
   unfold Geometry.words at fit
-  refine WP.seq (WP.mono (scanLoop_ok (Ci.ws.of_keeps Ka) (by omega) (by omega) P count)
+  refine WP.seq (WP.mono (scanLoop_ok (Ci.ws.of_keeps Ka) (by omega_using [positive]) (by omega_using [fit]) P count)
     fun b ⟨V, Mb, Kb⟩ => ?_)
   have Kab : Keeps [.eax, .ecx, .edx, .ebx, .esi, .ebp, .edi] (allocFrame 20 s) b :=
     (Ka.mono (by decide)).trans Kb
@@ -197,7 +197,7 @@ theorem scan_ok {g : Geometry} (v : g.Valid) {c capacity : Nat} {p : BitVec 32} 
     have read (d : Nat) (h : d + 4 ≤ g.L) : a.mem.readW (off g.W d) 32 = s.mem.readW (off g.W d) 32 :=
       W.read32 h fun _ mem => nomatch mem
     simp only [pairAt]
-    rw [read _ (by omega), read _ (by omega)]
+    rw [read _ (by omega_using [fit, index]), read _ (by omega_using [fit, index])]
   · rw [freed_mem, U.mem, Mb]
     exact frameA
 

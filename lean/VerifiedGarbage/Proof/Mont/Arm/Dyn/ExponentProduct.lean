@@ -32,8 +32,8 @@ theorem Context.of_outside {n size m d len : Nat} {base : Addr} {s t : State} (h
   have b0 := slot_bound (n := n) (i := 0) (by decide)
   have sz := h.size_le
   refine ⟨w, h.size_le, h.small, h.n0, ?_, h.gt_one, ?_⟩
-  · rw [O.val32 (by omega) (by simp only [stride] at b0; omega)]; exact h.modulus
-  · rw [O.w32 (by simp only [invO]; omega) (by decide)]; exact h.inverse
+  · rw [O.val32 (by omega_using [hl, h0]) (by simp only [stride] at b0; omega_using [nw, b0, sz])]; exact h.modulus
+  · rw [O.w32 (by simp only [invO]; omega_using [hd]) (by decide)]; exact h.inverse
 
 /-- The memory the conditional product changes. -/
 def productRanges (n : Nat) : List (Nat × Nat) :=
@@ -50,20 +50,20 @@ theorem exponentProduct_ok {n size m y b : Nat} {base : Addr} {s : State} (h : C
   have sm := h.small
   have nw := h.ws.nowrap
   have hn := h.n0
-  have hm0 : 0 < m := by have := h.gt_one; omega
+  have hm0 : 0 < m := by have := h.gt_one; omega_using [this]
   have b11 := slot_bound (n := n) (i := 11) (by decide)
   have h0 := slot_header n 0
   have h11 := slot_header n 11
-  have h8 : 8 ≤ size := by omega
-  have nw' : base.toNat + contextBytes n ≤ 2 ^ 32 := by omega
+  have h8 : 8 ≤ size := by omega_using [sz, b11, h11]
+  have nw' : base.toNat + contextBytes n ≤ 2 ^ 32 := by omega_using [sz, nw]
   unfold exponentProduct
-  refine WP.seq (WP.mono (exponentMask_ok h.ws (n := n) (by simp only [expS, stride] at *; omega)
-    (by simp only [expS, stride] at *; omega) (by omega)) fun s₁ ⟨w₁, M₁, O₁, R₁⟩ => ?_)
+  refine WP.seq (WP.mono (exponentMask_ok h.ws (n := n) (by simp only [expS, stride] at *; omega_using [sz, b11])
+    (by simp only [expS, stride] at *; omega_using [sm, b11]) (by omega_using [h8])) fun s₁ ⟨w₁, M₁, O₁, R₁⟩ => ?_)
   have c₁ := h.of_outside w₁ O₁ (by decide) (by decide)
   have keep₁ (i : Nat) (hi : i < 12) : val32 s₁.mem base (slot n i) (2 * n) = val32 s.mem base (slot n i) (2 * n) := by
     have hd := slot_header n i
     have bd := slot_bound (n := n) hi
-    exact O₁.val32 (by simp only [maskO]; omega) (by simp only [stride] at bd; omega)
+    exact O₁.val32 (by simp only [maskO]; omega_using [hd]) (by simp only [stride] at bd; omega_using [sm, bd])
   have hb₁ : val32 s₁.mem base (slot n 8) (2 * n) < m := by
     rw [keep₁ 8 (by decide), hb]; exact Nat.mod_lt _ hm0
   refine WP.seq (WP.mono (context_mul_ok c₁ (o := 10) (a := 9) (b := 8) (by decide) (by decide) (by decide) hb₁)
@@ -74,10 +74,10 @@ theorem exponentProduct_ok {n size m y b : Nat} {base : Addr} {s : State} (h : C
     have h10 := slot_header n 10
     have := K₂.mem.val32 (d := maskO) (k := 1) (fun r hr => by
       simp only [opRanges, List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl <;> simp only [maskO] <;> omega) (by decide)
+      rcases hr with rfl | rfl | rfl <;> simp only [maskO] <;> omega_arith) (by decide)
     simpa only [val32, Nat.mul_zero, Nat.add_zero] using this
-  refine WP.seq (wp_ldr (by decide) (c₂.ws.ea12 (by simp only [maskO]; omega)) (c₂.ws.read (d := maskO) (n := 4)
-    (by simp only [maskO]; omega)) fun s₃ u₃ => WP.block_nil ?_)
+  refine WP.seq (wp_ldr (by decide) (c₂.ws.ea12 (by simp only [maskO]; omega_using [h8])) (c₂.ws.read (d := maskO) (n := 4)
+    (by simp only [maskO]; omega_using [h8])) fun s₃ u₃ => WP.block_nil ?_)
   have w₃ := c₂.ws.of_upd u₃ (by decide)
   have b9 := slot_bound (n := n) (i := 9) (by decide)
   have b10 := slot_bound (n := n) (i := 10) (by decide)
@@ -89,13 +89,13 @@ theorem exponentProduct_ok {n size m y b : Nat} {base : Addr} {s : State} (h : C
     rw [mask₂, M₁]
     simp only [decide_eq_true_eq, expS]
     rfl
-  refine WP.mono (selectW_ok w₃ (k := 2 * n) (src := slot n 9) (tmp := slot n 10) (o := slot n 9) _ r3 (by omega)
-    (by simp only [stride] at *; omega) (by simp only [stride] at *; omega) (by simp only [stride] at *; omega)
-    (by simp only [stride] at *; omega) (by simp only [stride] at *; omega) (by simp only [stride] at *; omega)
-    (.inl rfl) (.inl (by simp only [stride] at *; omega))) fun t ⟨wt, W, O, R⟩ => ?_
+  refine WP.mono (selectW_ok w₃ (k := 2 * n) (src := slot n 9) (tmp := slot n 10) (o := slot n 9) _ r3 (by omega_using [hn])
+    (by simp only [stride] at *; omega_using [sz, b9]) (by simp only [stride] at *; omega_using [sz, b10]) (by simp only [stride] at *; omega_using [sz, b9])
+    (by simp only [stride] at *; omega_using [sm, b9]) (by simp only [stride] at *; omega_using [sm, b10]) (by simp only [stride] at *; omega_using [sm, b9])
+    (.inl rfl) (.inl (by simp only [stride] at *; omega_using [l910]))) fun t ⟨wt, W, O, R⟩ => ?_
   have m₃ : s₃.mem = s₂.mem := u₃.mem
   rw [m₃] at W O
-  rw [show 4 * (2 * n) = 8 * n by omega] at O
+  rw [show 4 * (2 * n) = 8 * n by omega_using []] at O
   refine ⟨c₂.of_slot wt O (by decide), ?_, ?_, ?_⟩
   · have vp : val32 s₂.mem base (slot n 10) (2 * n) = y * b * 2 ^ (64 * n) % m := by
       have v := VG.Proof.Dsa.mont_product h.coprime (a := y) (b := b)
@@ -110,7 +110,7 @@ theorem exponentProduct_ok {n size m y b : Nat} {base : Addr} {s : State} (h : C
         rw [W i hi]; simp only [hbit, decide_false, Bool.false_eq_true, ↓reduceIte], vy, ite_eq_right hbit]
   · have l1 := slot_le (n := n) (i := 1) (j := 9) (by decide)
     have l2 := slot_le (n := n) (i := 2) (j := 9) (by decide)
-    have e6 : slot n 6 = slot n 2 + 4 * stride n := by simp only [slot]; omega
+    have e6 : slot n 6 = slot n 2 + 4 * stride n := by simp only [slot]; omega_using []
     have l6 := slot_le (n := n) (i := 6) (j := 9) (by decide)
     have h1 := slot_header n 1
     refine ((Outs.of_outside O₁ (by simp [productRanges])).trans (K₂.mem.mono (by simp [productRanges]))).trans

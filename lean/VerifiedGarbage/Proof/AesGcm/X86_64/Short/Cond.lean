@@ -122,8 +122,8 @@ theorem condB3_ok {W : Addr} {nl al n : Nat} {s : State} (h : CondS W nl al n s)
   have hal' := h.alen
   have hn' := h.len
   have h15 := h.r15
-  have e₁ : BitVec.ofNat 64 (al + 15) >>> 4 = BitVec.ofNat 64 (nb16 al) := shr4 _ (by omega)
-  have e₂ : BitVec.ofNat 64 (n + 15) >>> 4 = BitVec.ofNat 64 (nb16 n) := shr4 _ (by omega)
+  have e₁ : BitVec.ofNat 64 (al + 15) >>> 4 = BitVec.ofNat 64 (nb16 al) := shr4 _ (by omega_using [hal])
+  have e₂ : BitVec.ofNat 64 (n + 15) >>> 4 = BitVec.ofNat 64 (nb16 n) := shr4 _ (by omega_using [hn])
   obtain ⟨s₅, run₅, cx₅, ax₅, k₅⟩ : ∃ s₅, runBlock isa [.mov .rcx (.mem (at_ .r15 alenO)), .alu .add .rcx (imm 15),
       .shift .shr .rcx 4, .mov .rdx (.mem (at_ .r15 lenO)), .alu .add .rdx (imm 15), .shift .shr .rdx 4,
       .alu .add .rcx (.reg .rdx)] s = some s₅ ∧ s₅.gpr .rcx = BitVec.ofNat 64 (nb16 al + nb16 n) ∧
@@ -134,7 +134,7 @@ theorem condB3_ok {W : Addr} {nl al n : Nat} {s : State} (h : CondS W nl al n s)
     · intro r a b c; simp [gpr_setReg, gpr_arithFlags, gpr_setFlags, b, c]
     all_goals rfl
   obtain ⟨s₆, run₆, -, cf₆, g₆, m₆, rd₆, wr₆⟩ :=
-    cmpImm_ok s₅ .rcx cx₅ (by simp only [nb16]; omega) (show 32 < 2 ^ 31 by decide)
+    cmpImm_ok s₅ .rcx cx₅ (by simp only [nb16]; omega_using [hal, hn]) (show 32 < 2 ^ 31 by decide)
   exact WP.block_append_iff.mpr (WP.of_runBlock ⟨s₅, run₅, WP.of_runBlock ⟨s₆, run₆, cf₆, by rw [g₆, ax₅],
     k₅.trans ⟨fun r _ _ _ => by rw [g₆], m₆, rd₆, wr₆⟩⟩⟩)
 
@@ -152,8 +152,8 @@ theorem condB4_ok {W : Addr} {nl al n : Nat} {s : State} (h : CondS W nl al n s)
   have e₁ : BitVec.ofNat 64 n <<< 4 = BitVec.ofNat 64 (16 * n) := by
     apply BitVec.eq_of_toNat_eq
     rw [BitVec.toNat_shiftLeft, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega),
-      Nat.shiftLeft_eq, Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega)]
-    omega
+      Nat.shiftLeft_eq, Nat.mod_eq_of_lt (by omega_using [hn]), Nat.mod_eq_of_lt (by omega_using [hn])]
+    omega_using []
   obtain ⟨s₅, run₅, cx₅, ax₅, k₅⟩ : ∃ s₅, runBlock isa [.mov .rdx (.mem (at_ .r15 lenO)), .mov .rcx (.reg .rdx),
       .shift .shl .rcx 4, .alu .add .rcx (.reg .rdx), .alu .add .rcx (.mem (at_ .r15 alenO))] s = some s₅ ∧
       s₅.gpr .rcx = BitVec.ofNat 64 (al + 17 * n) ∧ s₅.gpr .rax = s.gpr .rax ∧ CondKeep s s₅ := by
@@ -161,12 +161,12 @@ theorem condB4_ok {W : Addr} {nl al n : Nat} {s : State} (h : CondS W nl al n s)
     · simp only [gpr_setReg, gpr_arithFlags, gpr_setFlags, ite_true, reduceCtorEq, ite_false, hn', hal', e₁,
         ofNat_add_ofNat]
       congr 1
-      omega
+      omega_using []
     · simp [gpr_setReg, gpr_arithFlags, gpr_setFlags]
     · intro r a b c; simp [gpr_setReg, gpr_arithFlags, gpr_setFlags, b, c]
     all_goals rfl
   obtain ⟨s₆, run₆, -, cf₆, g₆, m₆, rd₆, wr₆⟩ :=
-    cmpImm_ok s₅ .rcx cx₅ (by omega) (show 17 < 2 ^ 31 by decide)
+    cmpImm_ok s₅ .rcx cx₅ (by omega_using [hal, hn]) (show 17 < 2 ^ 31 by decide)
   exact WP.block_append_iff.mpr (WP.of_runBlock ⟨s₅, run₅, WP.of_runBlock ⟨s₆, run₆, cf₆, by rw [g₆, ax₅],
     k₅.trans ⟨fun r _ _ _ => by rw [g₆], m₆, rd₆, wr₆⟩⟩⟩)
 
@@ -209,10 +209,10 @@ theorem cond_ok {s : State} {W : Addr} {nl al n : Nat} (h : CondS W nl al n s) (
         rw [ax₆] at ax₈
         refine WP.ite (decide (al + 17 * n < 17)) (eval_b cf₈) (fun h17 => ?_) (fun h17 => ?_)
         · have h17 : al + 17 * n < 17 := by simpa using h17
-          have hs : ¬IsShort nl al n := fun ⟨_, _, _, _, z⟩ => by omega
+          have hs : ¬IsShort nl al n := fun ⟨_, _, _, _, z⟩ => by omega_arith
           exact WP.block_nil ⟨by simp [ax₈, hs], k₂.trans (k₄.trans (k₆.trans k₈))⟩
         · have h17 : ¬al + 17 * n < 17 := by simpa using h17
-          have hs : IsShort nl al n := ⟨h12, h5.1, h5.2, h32, by omega⟩
+          have hs : IsShort nl al n := ⟨h12, h5.1, h5.2, h32, by omega_using [h17]⟩
           refine WP.of_runBlock ⟨_, by xrun [], ?_, ?_⟩
           · have e : (if IsShort nl al n then 1 else 0) = 1 := ite_eq_left_iff.mpr fun h => absurd hs h
             rw [e]

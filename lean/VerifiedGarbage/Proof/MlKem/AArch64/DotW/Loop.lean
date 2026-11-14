@@ -24,7 +24,7 @@ open VG.Proof.MlKem.AArch64.Dot
 theorem coeffAtW16_shift (m : Mem) (p : Addr) (j e : Nat) :
     coeffAtW 16 m (p + BitVec.ofNat 64 (2 * j)) e = coeffAtW 16 m p (j + e) := by
   simp only [coeffAtW]
-  rw [ptr_add, show 2 * j + 16 / 8 * e = 16 / 8 * (j + e) by omega]
+  rw [ptr_add, show 2 * j + 16 / 8 * e = 16 / 8 * (j + e) by omega_using []]
 
 /-- What the loop needs, from the state before it: the polynomials of each term, the output
 apart from them and from the table of `γ`. -/
@@ -73,7 +73,7 @@ def resultW (terms : List (Nat × Nat)) (F G : (Nat × Nat) → Nat → Nat) (Γ
 theorem coeffAtW16_frame {rs : List Region} {m m' : Mem} (hf : Frame rs m m') {q : Addr}
     (hd : ∀ r ∈ rs, (⟨q, 512⟩ : Region).Disjoint r) {i : Nat} (hi : i < 256) :
     coeffAtW 16 m' q i = coeffAtW 16 m q i :=
-  hf.readW (r := ⟨q, 512⟩) (contains_off (show 2 * i + 16 / 8 ≤ 512 by omega) (by decide)) hd (by decide)
+  hf.readW (r := ⟨q, 512⟩) (contains_off (show 2 * i + 16 / 8 ≤ 512 by omega_using [hi]) (by decide)) hd (by decide)
 
 theorem loop_inputW {s₀ s : State} {bf bg : Reg} {p t : Addr} {terms : List (Nat × Nat)}
     {F G : (Nat × Nat) → Nat → Nat} {Γ : Nat → Nat} {O : Nat → BitVec 16} {c : Nat}
@@ -82,34 +82,34 @@ theorem loop_inputW {s₀ s : State} {bf bg : Reg} {p t : Addr} {terms : List (N
     TermInputW s bf bg fg (blockValues F (2 * c) fg) (blockValues G (2 * c) fg) := by
   have addr (b : Reg) (hb : b ∉ clob) (off : Nat) : s.gpr b + BitVec.ofNat 64 off + s.gpr .x12 =
       s₀.gpr b + BitVec.ofNat 64 off + BitVec.ofNat 64 (2 * (16 * c)) := by
-    rw [h.keep.get b hb, h.x12, show 32 * c = 2 * (16 * c) by omega]
-  refine ⟨hd.baseF, hd.baseG, hd.offF fg hf, hd.offG fg hf, fun e he => hd.boundF fg hf _ (by omega),
-    fun e he => hd.boundG fg hf _ (by omega), fun e he => ?_, fun e he => ?_, fun i hi => ?_, fun i hi => ?_⟩
+    rw [h.keep.get b hb, h.x12, show 32 * c = 2 * (16 * c) by omega_using []]
+  refine ⟨hd.baseF, hd.baseG, hd.offF fg hf, hd.offG fg hf, fun e he => hd.boundF fg hf _ (by omega_using [hc, he]),
+    fun e he => hd.boundG fg hf _ (by omega_using [hc, he]), fun e he => ?_, fun e he => ?_, fun i hi => ?_, fun i hi => ?_⟩
   · rw [addr bf hd.baseF, coeffAtW16_shift, coeffAtW16_frame h.frame (fun r hr => by
-      rw [List.mem_singleton.mp hr]; exact (hd.apartF fg hf).symm) (by omega), hd.valueF fg hf _ (by omega)]
-    simp only [blockValues]; congr 1; omega
+      rw [List.mem_singleton.mp hr]; exact (hd.apartF fg hf).symm) (by omega_using [hc, he]), hd.valueF fg hf _ (by omega_using [hc, he])]
+    simp only [blockValues]; congr 1; omega_using []
   · rw [addr bg hd.baseG, coeffAtW16_shift, coeffAtW16_frame h.frame (fun r hr => by
-      rw [List.mem_singleton.mp hr]; exact (hd.apartG fg hf).symm) (by omega), hd.valueG fg hf _ (by omega)]
-    simp only [blockValues]; congr 1; omega
+      rw [List.mem_singleton.mp hr]; exact (hd.apartG fg hf).symm) (by omega_using [hc, he]), hd.valueG fg hf _ (by omega_using [hc, he])]
+    simp only [blockValues]; congr 1; omega_using []
   · rw [h.keep.rd, h.keep.wr, addr bf hd.baseF, ptr_add]
-    exact hd.readF fg hf _ (by omega)
+    exact hd.readF fg hf _ (by omega_using [hc, hi])
   · rw [h.keep.rd, h.keep.wr, addr bg hd.baseG, ptr_add]
-    exact hd.readG fg hf _ (by omega)
+    exact hd.readG fg hf _ (by omega_using [hc, hi])
 
 theorem loop_gammaW {s₀ s : State} {bf bg : Reg} {p t : Addr} {terms : List (Nat × Nat)}
     {F G : (Nat × Nat) → Nat → Nat} {Γ : Nat → Nat} {O : Nat → BitVec 16} {c : Nat}
     (hd : LoopDataW s₀ bf bg p t terms F G Γ) (hc : c < 16) (h : LoopInvW s₀ p t O c s) {i : Nat} (hi : i < 2) :
     Lanes (s.mem.read (s.gpr .x3 + BitVec.ofNat 64 (16 * i)) 16) (blockGamma Γ (2 * c + i)) := by
-  rw [h.x3, ptr_add, h.frame.read (r := ⟨t, 512⟩) (contains_off (by omega) (by decide))
+  rw [h.x3, ptr_add, h.frame.read (r := ⟨t, 512⟩) (contains_off (by omega_using [hc, hi]) (by decide))
     (fun r hr => by rw [List.mem_singleton.mp hr]; exact hd.tableApart.symm) (by decide),
-    show 32 * c + 16 * i = 16 * (2 * c + i) by omega]
-  exact hd.tableValue _ (by omega)
+    show 32 * c + 16 * i = 16 * (2 * c + i) by omega_using []]
+  exact hd.tableValue _ (by omega_using [hc, hi])
 
 theorem upper_block (F : (Nat × Nat) → Nat → Nat) (c : Nat) :
     (fun fg => upper (blockValues F (2 * c) fg)) = blockValues F (2 * c + 1) := by
   funext fg i
   simp only [upper, blockValues]
-  congr 1; omega
+  congr 1; omega_using []
 
 /-- A 16-bit result coefficient, from `dot`'s block and its pairs. -/
 theorem resultW_toNat (terms : List (Nat × Nat)) (F G : (Nat × Nat) → Nat → Nat) (Γ : Nat → Nat)
@@ -119,8 +119,8 @@ theorem resultW_toNat (terms : List (Nat × Nat)) (F G : (Nat × Nat) → Nat �
       else oddResult terms (blockValues F c) (blockValues G c) (e / 2) := by
   rw [resultW, result_block terms F G Γ c he, interleave, BitVec.toNat_ofNat, BitVec.toNat_ofNat]
   split
-  · simp only [evenResult]; omega
-  · simp only [oddResult]; omega
+  · simp only [evenResult]; omega_using []
+  · simp only [oddResult]; omega_using []
 
 theorem bodyW_partition (bf bg : Reg) (terms : List (Nat × Nat)) :
     Impl.MlKem.AArch64.DotW.bodyW bf bg terms =
@@ -157,37 +157,37 @@ theorem stepW_ok {s₀ s : State} {bf bg : Reg} {p t : Addr} {terms : List (Nat 
   refine WP.mono (computeW_ok terms (Γ := blockGamma Γ (2 * c)) (Γ' := blockGamma Γ (2 * c + 1))
     h.constants hd.count (fun _ hf => loop_inputW hd hc h hf)
     (fun i hi => by
-      rw [h.keep.rd, h.keep.wr, h.x3, ptr_add, show 32 * c + 16 * i = 16 * (2 * c + i) by omega]
-      exact hd.tableRead _ (by omega))
+      rw [h.keep.rd, h.keep.wr, h.x3, ptr_add, show 32 * c + 16 * i = 16 * (2 * c + i) by omega_using []]
+      exact hd.tableRead _ (by omega_using [hc, hi]))
     (by simpa only [Nat.mul_zero, Nat.add_zero] using loop_gammaW hd hc h (i := 0) (by decide))
     (by simpa only [Nat.mul_one] using loop_gammaW hd hc h (i := 1) (by decide))
-    (fun e he => show Γ _ < 3329 from hd.tableBound _ (by omega))
-    (fun e he => show Γ _ < 3329 from hd.tableBound _ (by omega))) fun s₁ ⟨k₁, c₁, l21, l23, l25, l27⟩ => ?_
+    (fun e he => show Γ _ < 3329 from hd.tableBound _ (by omega_using [hc, he]))
+    (fun e he => show Γ _ < 3329 from hd.tableBound _ (by omega_using [hc, he]))) fun s₁ ⟨k₁, c₁, l21, l23, l25, l27⟩ => ?_
   rw [upper_block, upper_block] at l25 l27
   rw [WP.block_append_iff]
   refine WP.mono (storeW_ok (p := p) (j := 16 * c) (O := resultW terms F G Γ)
-    (old := fun i => coeffAtW 16 s₀.mem p i) (by rw [k₁.get .x0]; exact h.x0) (by omega)
-    (fun i hi => by rw [k₁.wr, h.keep.wr]; exact hd.write _ (by omega)) c₁ l21 l23 l25 l27
+    (old := fun i => coeffAtW 16 s₀.mem p i) (by rw [k₁.get .x0]; exact h.x0) (by omega_using [hc])
+    (fun i hi => by rw [k₁.wr, h.keep.wr]; exact hd.write _ (by omega_using [hc, hi])) c₁ l21 l23 l25 l27
     (fun e he => Nat.mod_lt _ (by decide)) (fun e he => Nat.mod_lt _ (by decide))
     (fun e he => Nat.mod_lt _ (by decide)) (fun e he => Nat.mod_lt _ (by decide))
     (by rw [k₁.mem]; exact h.out) fun e he => ?_) fun s₂ ⟨k₂, c₂, f₂, o₂⟩ => ?_
   · unfold outW
     by_cases c8 : e < 8
-    · rw [ite_eq_left c8, show 16 * c + e = 8 * (2 * c) + e by omega, resultW_toNat _ _ _ _ _ c8]
-    · rw [ite_eq_right c8, show 16 * c + e = 8 * (2 * c + 1) + (e - 8) by omega,
-        resultW_toNat _ _ _ _ _ (by omega), show (e - 8) % 2 = e % 2 by omega]
+    · rw [ite_eq_left c8, show 16 * c + e = 8 * (2 * c) + e by omega_using [], resultW_toNat _ _ _ _ _ c8]
+    · rw [ite_eq_right c8, show 16 * c + e = 8 * (2 * c + 1) + (e - 8) by omega_using [c8],
+        resultW_toNat _ _ _ _ _ (by omega_using [he]), show (e - 8) % 2 = e % 2 by omega_using [c8]]
   refine WP.mono (bumpW_ok s₂) fun s₃ ⟨k₃, v₃, e0, e3, e12, e11⟩ => ?_
   have counter : (s₃.gpr .x11).toNat = 16 - (c + 1) := by
-    rw [e11, k₂.get .x11, k₁.get .x11, toNat_sub_n (by rw [h.x11]; simp only [BitVec.toNat_ofNat]; omega), h.x11]
+    rw [e11, k₂.get .x11, k₁.get .x11, toNat_sub_n (by rw [h.x11]; simp only [BitVec.toNat_ofNat]; omega_using [hc]), h.x11]
     simp only [BitVec.toNat_ofNat]
-    omega
+    omega_using []
   refine ⟨⟨((h.keep.trans ((k₁.keep.trans k₂).trans k₃.keep)).mono), h.frame.trans ?_,
-    ⟨by rw [v₃]; exact c₂.q, by rw [v₃]; exact c₂.m⟩, ?_, ?_, ?_, counter, ?_⟩, by rw [counter]; omega⟩
+    ⟨by rw [v₃]; exact c₂.q, by rw [v₃]; exact c₂.m⟩, ?_, ?_, ?_, counter, ?_⟩, by rw [counter]; omega_using [hc]⟩
   · rw [k₃.mem, ← k₁.mem]; exact f₂
-  · rw [e0, k₂.get .x0, k₁.get .x0, h.x0, ptr_add, show 2 * (16 * c) + 32 = 2 * (16 * (c + 1)) by omega]
-  · rw [e3, k₂.get .x3, k₁.get .x3, h.x3, ptr_add, show 32 * c + 32 = 32 * (c + 1) by omega]
-  · rw [e12, k₂.get .x12, k₁.get .x12, h.x12, ← BitVec.ofNat_add, show 32 * c + 32 = 32 * (c + 1) by omega]
-  · rw [k₃.mem, show 16 * (c + 1) = 16 * c + 16 by omega]; exact o₂
+  · rw [e0, k₂.get .x0, k₁.get .x0, h.x0, ptr_add, show 2 * (16 * c) + 32 = 2 * (16 * (c + 1)) by omega_using []]
+  · rw [e3, k₂.get .x3, k₁.get .x3, h.x3, ptr_add, show 32 * c + 32 = 32 * (c + 1) by omega_using []]
+  · rw [e12, k₂.get .x12, k₁.get .x12, h.x12, ← BitVec.ofNat_add, show 32 * c + 32 = 32 * (c + 1) by omega_using []]
+  · rw [k₃.mem, show 16 * (c + 1) = 16 * c + 16 by omega_using []]; exact o₂
 
 theorem loopW_ok {s₀ s : State} {bf bg : Reg} {p t : Addr} {terms : List (Nat × Nat)}
     {F G : (Nat × Nat) → Nat → Nat} {Γ : Nat → Nat}

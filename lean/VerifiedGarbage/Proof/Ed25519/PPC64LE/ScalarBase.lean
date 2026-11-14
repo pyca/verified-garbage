@@ -74,9 +74,9 @@ theorem combW_saves (lo n : Nat) (h1 : 1024 ≤ lo) (h2 : lo + n ≤ 1152) :
   have hG : SGN = 56 := rfl
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl
-  · exact Offset.disjoint _ (.inl (by omega)) (by omega) (by omega)
-  · exact Offset.disjoint _ (.inr (by omega)) (by omega) (by omega)
-  · exact Offset.disjoint _ (.inr (by omega)) (by omega) (by omega)
+  · exact Offset.disjoint _ (.inl (by omega_using [h2, hS])) (by omega_using [h2]) (by omega_using [hS])
+  · exact Offset.disjoint _ (.inr (by omega_using [h1, hG])) (by omega_using [h2]) (by omega_using [hG])
+  · exact Offset.disjoint _ (.inr (by omega_using [h1])) (by omega_using [h2]) (by omega_using [])
 
 /-- What an engine between `scalarBaseSetup` and `scalarBaseFinish` does, as the comb's: from the
 working space at `b` and the scalar at `p` in `r14`, the result `R` of the scalar's bytes at `FR`,
@@ -172,15 +172,15 @@ theorem baseWrap_ok {e : Prog isa} {R : List Byte → List Byte} (he : EngineOk 
   have hT6 : TblAt s6 (s.syms combSym) :=
     ⟨hp.tfit, ⟨TBL (s.syms combSym), by rw [hR6.rd, hp.rd]; simp, by
       simpa only [BitVec.add_zero] using Offset.contains_base (s.syms combSym) (d := 0) (n := 49152) (k := 49152)
-        (by omega) (by omega)⟩,
+        (by omega_using []) (by omega_using [])⟩,
       fun q hq => by
         have tw : (TBL (s.syms combSym)).Disjoint ⟨b, 8192⟩ := hb ▸ hp.tbl_ws
         rw [hm6, ← hp.words q hq,
-          hf5.readW (r := TBL (s.syms combSym)) (Offset.contains_base _ (by omega) (by omega))
+          hf5.readW (r := TBL (s.syms combSym)) (Offset.contains_base _ (by omega_using [hq]) (by omega_using [hq]))
             (by simp only [List.mem_singleton, forall_eq]; exact tw.sub_right (Offset.sub_base _ (by decide)))
             (by decide),
           (show s4.mem = s1.mem by rw [u4.mem, u3.mem, u2.mem])]
-        exact hf1.readW (r := TBL (s.syms combSym)) (Offset.contains_base _ (by omega) (by omega))
+        exact hf1.readW (r := TBL (s.syms combSym)) (Offset.contains_base _ (by omega_using [hq]) (by omega_using [hq]))
           (by simp only [List.mem_singleton, forall_eq]; exact tw) (by decide)⟩
   have hsym6 : s6.syms combSym = s.syms combSym := congrFun sy6 combSym
   have e27 : s6.gpr .r27 = s.gpr .r3 := by

@@ -112,7 +112,7 @@ theorem ctHashWith_xd {padding : Prog isa} (hp : padding.x86_64Depth = 0) :
   have := (scall_safe (s := sDigH) hf.dig).2
   simp only [ctHashWith, hp, seqs, ctInit, lenLoop, compLoop, select, digestOut, digestAt, byteLoop,
     Code.x86_64Depth, Nat.max_le]
-  omega
+  omega_arith
 
 include hf in
 theorem ctHash_xd : (ctHash f H).x86_64Depth ≤ 8 := ctHashWith_xd hf rfl
@@ -148,7 +148,7 @@ theorem fixedHash_xd : (fixedHash f H).x86_64Depth ≤ 8 := by
   have := (scall_safe (s := sCmpH) hf.comp).2
   have := (scall_safe (s := sDigH) hf.dig).2
   simp only [fixedHash, seqs, ctInit, lenLast_xd (H := H), compAll, digestAt, Code.x86_64Depth, Nat.max_le]
-  omega
+  omega_arith
 
 include hg in
 theorem mgfXor_safe : (mgfXor H g).allInstrs safeI = true := by
@@ -164,7 +164,7 @@ theorem mgfXor_xd : (mgfXor H g).x86_64Depth ≤ 16 := by
   have := (scall_safe (s := sFinG) hg.fin).2
   simp only [mgfXor, mgfRound, seqs, Impl.Mgf1.X86_64.Table.xorOut, Impl.Mgf1.X86_64.seqs,
     Impl.Mgf1.X86_64.byteLoop, Code.x86_64Depth, Nat.max_le]
-  omega
+  omega_arith
 
 include hH hf hg in
 theorem signEnc_safe : (signEnc f H g).allInstrs safeI = true := by
@@ -178,7 +178,7 @@ theorem signEnc_xd : (signEnc f H g).x86_64Depth ≤ 16 := by
   have := mgfXor_xd (H := H) hg
   simp only [signEnc, seqs, clearY, copyDigest, copySaltY, clearEm, putSalt, putH, byteLoop, Code.x86_64Depth,
     Nat.max_le]
-  omega
+  omega_arith
 
 /-- Code that is `safeI` and uses at most 16 bytes of stack keeps memory
 outside the writable regions and the 16 bytes below `rsp`. -/
@@ -186,7 +186,7 @@ theorem WP.keepIn {c : Prog isa} (hc : c.allInstrs safeI = true) (hd : c.x86_64D
     {Q : State → Prop} (h : WP isa c u Q) :
     WP isa c u fun v => Q v ∧ ∀ a, (∀ r ∈ u.wr, ¬ r.Contains a 1) → ¬ (below (u.gpr .rsp) 16).Contains a 1 →
       v.mem a = u.mem a := by
-  refine WP.mono (X86_64.WP.stackFrame (safe_sp hc) (by omega) h) fun v ⟨hq, hf⟩ => ⟨hq, fun a h1 h2 => ?_⟩
+  refine WP.mono (X86_64.WP.stackFrame (safe_sp hc) (by omega_using [hd]) h) fun v ⟨hq, hf⟩ => ⟨hq, fun a h1 h2 => ?_⟩
   refine Frame.below_mono hf hd (by decide) a fun r hr => ?_
   rcases List.mem_append.mp hr with hr | hr
   · exact h1 r hr

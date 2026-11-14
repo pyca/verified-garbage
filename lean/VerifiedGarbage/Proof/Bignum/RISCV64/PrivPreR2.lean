@@ -55,13 +55,13 @@ theorem dblAny_ok {s : State} {B : Addr} {Z w N x M : Nat} (hs : Scr s B Z)
   have e : ∀ j, slot w j = hdrBytes + j * (8 * (w + 2)) := fun _ => rfl
   have e0 := e 0; have e1 := e 1; have e4 := e 4
   have hh : hdrBytes = 256 := rfl
-  have hN0 : 0 < N := by omega
+  have hN0 : 0 < N := by omega_using [hxN]
   let Inv : Nat → State → Prop := fun j t =>
     wordsVal t.mem B (slot w 1) w = x * 2 ^ j % N ∧
       Outside B (slot w 1) (24 * (w + 2)) s.mem t.mem ∧ Keep dblLoopRegs s t
   refine wp_countdown (cnt := .a1) (N := M) hM' hM Inv (fun j _ t ⟨tx, to, tk⟩ _ => ?_)
     ⟨by rw [Nat.pow_zero, Nat.mul_one, Nat.mod_eq_of_lt hxN]; exact hx, Outside.refl _ _ _ _, Keep.refl _ _⟩ h1
-  have n0 : wordsVal t.mem B (slot w 0) w = N := by rw [Outside.wordsVal to (by omega) (by omega), hN]
+  have n0 : wordsVal t.mem B (slot w 0) w = N := by rw [Outside.wordsVal to (by omega_using [e0, e1]) (by omega_using [hw', e0, hh]), hN]
   refine WP.seq (WP.mono (doubleMod64_ok (hs.congr tk.2.2) ((tk.gpr (by decide)).trans h5)
     ((tk.gpr (by decide)).trans h6) ((tk.gpr (by decide)).trans h7) ((tk.gpr (by decide)).trans h2)
     ((tk.gpr (by decide)).trans ht0) hw hw' hZ (by rw [tx, n0]; exact Nat.mod_lt _ hN0))
@@ -193,7 +193,7 @@ theorem chunk1_s {R N S S' T C V i : Nat}
   have d2 := VG.ModArith.dvd_sub_of_mod_eq hT
   have d3 := VG.ModArith.dvd_sub_of_mod_eq (show (S * R ^ i + V) % N = 0 % N by rw [hS, Nat.zero_mod])
   refine VG.ModArith.mod_eq_of_dvd_sub ?_
-  have hle : T ≤ S' + N := by omega
+  have hle : T ≤ S' + N := by omega_using [hTN]
   have e : ((0 : Nat) : Int) - (((S' + N - T) * R ^ (i + 1) + (V + R ^ i * C) : Nat) : Int) =
       ((R ^ i : Nat) : Int) * (((S * 1 : Nat) : Int) - ((S' * R : Nat) : Int)) -
         ((R ^ i : Nat) : Int) * (((C * 1 : Nat) : Int) - ((T * R : Nat) : Int)) +
@@ -464,7 +464,7 @@ theorem neg_val {R N S V Y E : Nat} (hR : Nat.Coprime R N) (hSN : S < N)
     subst hY
     rcases Nat.eq_zero_or_pos S with rfl | hpos
     · simp
-    · rw [Nat.zero_add, Nat.mod_eq_of_lt (by omega : N - S < N), Nat.sub_add_cancel (by omega), Nat.mod_self]
+    · rw [Nat.zero_add, Nat.mod_eq_of_lt (by omega_using [hSN, hpos] : N - S < N), Nat.sub_add_cancel (by omega_using [hSN]), Nat.mod_self]
   have d1 := VG.ModArith.dvd_sub_of_mod_eq (show (Y + S) % N = 0 % N by rw [hYS, Nat.zero_mod])
   have d2 := VG.ModArith.dvd_sub_of_mod_eq (show (S * R + V) % N = 0 % N by rw [hS, Nat.zero_mod])
   have d3 := VG.ModArith.dvd_sub_of_mod_eq hV
@@ -486,15 +486,15 @@ def r2FRegs : List Reg := redRegs ++ r2PRegs
 theorem gt_flag {a e : Nat} (ha : a < 2 ^ 62) (he : e < 2 ^ 62) :
     ((BitVec.ofNat 64 a - BitVec.ofNat 64 e) >>> 63).toNat ≠ 0 ↔ a < e := by
   rw [BitVec.toNat_ushiftRight, BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow]
-  rw [Nat.mod_eq_of_lt (show a < 2 ^ 64 by omega), Nat.mod_eq_of_lt (show e < 2 ^ 64 by omega)]
+  rw [Nat.mod_eq_of_lt (show a < 2 ^ 64 by omega_using [ha]), Nat.mod_eq_of_lt (show e < 2 ^ 64 by omega_using [he])]
   constructor
   · intro h
     refine Nat.lt_of_not_le fun hc => h ?_
-    rw [show 2 ^ 64 - e + a = (a - e) + 2 ^ 64 by omega, Nat.add_mod_right, Nat.mod_eq_of_lt (by omega)]
-    exact Nat.div_eq_of_lt (by omega)
+    rw [show 2 ^ 64 - e + a = (a - e) + 2 ^ 64 by omega_using [ha, hc], Nat.add_mod_right, Nat.mod_eq_of_lt (by omega_using [ha])]
+    exact Nat.div_eq_of_lt (by omega_using [ha])
   · intro h
-    rw [Nat.mod_eq_of_lt (by omega)]
-    exact Nat.ne_of_gt (Nat.div_pos (by omega) (by decide))
+    rw [Nat.mod_eq_of_lt (by omega_using [ha, h])]
+    exact Nat.ne_of_gt (Nat.div_pos (by omega_using [he]) (by decide))
 
 theorem gt_bne {a e : Nat} (ha : a < 2 ^ 62) (he : e < 2 ^ 62) :
     (((BitVec.ofNat 64 a - BitVec.ofNat 64 e) >>> 63) != 0) = decide (a < e) := by

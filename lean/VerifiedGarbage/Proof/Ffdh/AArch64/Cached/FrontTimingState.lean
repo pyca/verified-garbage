@@ -101,7 +101,7 @@ def TailReady (q : BodyPublic) (s : State) : Prop :=
  ModState q.scalar.p s ∧ OutputReady (bodyOutput q) s
 
 def bodyRangePublic (q : BodyPublic) : RangePublic :=
- ⟨scalarWs q.scalar,by change 0<q.scalar.p.w;have :=q.scalar.p.positive;omega,q.scalar.p.width⟩
+ ⟨scalarWs q.scalar,by change 0<q.scalar.p.w;have :=q.scalar.p.positive;omega_using [this],q.scalar.p.width⟩
 
 theorem bodyComb_output (M : Mont) {q : BodyPublic} {s : State} (h : BodyReady q s) :
  WP isa (Comb.code M.mm) s (TailReady q) := by
@@ -210,20 +210,20 @@ theorem frontReady_import {q : FrontPublic} {s : State} (h : FrontReady q s) : I
    change i<2*q.body.scalar.p.w at hi
    change InRegions (s.rd++s.wr) (off q.body.scalar.p.ctx (24+8*i)) 8
    have count :=context_words_count h.view.canonical
-   have readable :=h.view.readable (3+i) (by change 3+i<q.count;rw [count];change _<3+34*((q.body.scalar.p.k+7)/8);rw [←q.body.scalar.words];omega)
+   have readable :=h.view.readable (3+i) (by change 3+i<q.count;rw [count];change _<3+34*((q.body.scalar.p.k+7)/8);rw [←q.body.scalar.words];omega_using [hi])
    simpa only [off,Nat.mul_add,Nat.reduceMul] using readable,
   fun i hi =>by
    change i<16*q.body.scalar.p.w at hi
    change q.body.scalar.p.Z≤ofs q.body.scalar.p.B (off q.body.scalar.p.ctx 24+BitVec.ofNat 64 i)
    have count :=context_words_count h.view.canonical
-   have outside :=h.view.outside (24+i) (by rw [count];change _<8*(3+34*((q.body.scalar.p.k+7)/8));rw [←q.body.scalar.words];omega)
+   have outside :=h.view.outside (24+i) (by rw [count];change _<8*(3+34*((q.body.scalar.p.k+7)/8));rw [←q.body.scalar.words];omega_using [hi])
    simpa only [off,BitVec.ofNat_add,BitVec.add_assoc] using outside⟩
 
 theorem frontImport_sample {q : FrontPublic} {s : State} (h : FrontReady q s) :
  WP isa importPrefix s (SampleReady (frontSample q)) := by
  obtain ⟨rb,h⟩:=h
  have ready :=frontReady_import (q:=q) ⟨rb,h⟩
- have domSize : q.body.scalar.p.k≤q.body.scalar.dom.length := by have :=q.body.scalar.shape;have :=q.body.scalar.domLength;omega
+ have domSize : q.body.scalar.p.k≤q.body.scalar.dom.length := by have :=q.body.scalar.shape;have :=q.body.scalar.domLength;omega_arith
  have values :=context_prefix domSize (VG.Proof.Ffdh.domainValid_mod q.checked) h.view.canonical
  have wEq : q.body.scalar.p.w=Spec.Rsa.modulusWords q.body.scalar.p.k :=q.body.scalar.words
  rw [←wEq,←q.body.scalar.modulus] at values

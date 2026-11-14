@@ -133,7 +133,7 @@ theorem or_disj (a b : BitVec 64) {k : Nat} (ha : a.toNat % 2 ^ k = 0) (hb : b.t
     (a ||| b).toNat = a.toNat + b.toNat := by
   rw [BitVec.toNat_or]
   have : a.toNat = 2 ^ k * (a.toNat / 2 ^ k) := by
-    have := Nat.div_add_mod a.toNat (2 ^ k); omega
+    have := Nat.div_add_mod a.toNat (2 ^ k); omega_using [ha, this]
   rw [this, ← Nat.two_pow_add_eq_or_of_lt hb]
 
 /-- `shld d, r, n`: `d 2ⁿ mod 2⁶⁴` and `r`'s top `n` bits. -/
@@ -149,12 +149,12 @@ theorem shld_ok (s : State) (d r : Reg) {n : Nat} (hn : 1 ≤ n ∧ n ≤ 63) :
     exact ⟨trivial, rfl⟩) (by cases d <;> rfl)) fun s' ⟨⟨e, m⟩, k⟩ => ⟨?_, m, k⟩
   rw [e]
   have h1 : ((s.gpr d) <<< n).toNat % 2 ^ n = 0 := by
-    rw [BitVec.toNat_shiftLeft, Nat.shiftLeft_eq, Nat.mod_mod_of_dvd _ (Nat.pow_dvd_pow 2 (by omega))]
+    rw [BitVec.toNat_shiftLeft, Nat.shiftLeft_eq, Nat.mod_mod_of_dvd _ (Nat.pow_dvd_pow 2 (by omega_using [hn]))]
     exact Nat.mul_mod_left _ _
   have h2 : ((s.gpr r) >>> (64 - n)).toNat < 2 ^ n := by
     rw [BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow]
     have := (s.gpr r).isLt
-    exact Nat.div_lt_of_lt_mul (by rw [← Nat.pow_add, show 64 - n + n = 64 by omega]; exact this)
+    exact Nat.div_lt_of_lt_mul (by rw [← Nat.pow_add, show 64 - n + n = 64 by omega_using [hn]]; exact this)
   rw [or_disj _ _ h1 h2, BitVec.toNat_shiftLeft, Nat.shiftLeft_eq, BitVec.toNat_ushiftRight,
     Nat.shiftRight_eq_div_pow]
 
@@ -208,7 +208,7 @@ theorem isqB_ok (t : State) :
   have h1 : ((t.gpr .r10) <<< 2).toNat % 2 ^ 1 = 0 := by
     rw [BitVec.toNat_shiftLeft, Nat.shiftLeft_eq]
     have : (t.gpr .r10).toNat * 2 ^ 2 % 2 ^ 64 % 2 = 0 := by
-      rw [Nat.mod_mod_of_dvd _ (by decide : 2 ∣ 2 ^ 64)]; omega
+      rw [Nat.mod_mod_of_dvd _ (by decide : 2 ∣ 2 ^ 64)]; omega_using []
     exact this
   rw [b, or_disj _ _ h1 (by decide), BitVec.toNat_shiftLeft, Nat.shiftLeft_eq]
   rfl
@@ -234,7 +234,7 @@ theorem isqC_ok {t : State} {x1 x0 y1 y0 : Nat} (h11 : t.gpr .r11 = BitVec.ofNat
       Nat.mod_eq_of_lt hy1, Nat.mod_eq_of_lt hy0]) rfl) fun t' ⟨⟨a, b, c, m⟩, k⟩ => ?_
   have hcmp : decide (x1 < y1 + (decide (x0 < y0)).toNat) = decide (x1 * 2 ^ 64 + x0 < y1 * 2 ^ 64 + y0) := by
     by_cases h : x0 < y0 <;> simp only [h, decide_true, decide_false, Bool.toNat_true, Bool.toNat_false] <;>
-      (apply decide_eq_decide.mpr; omega)
+      (apply decide_eq_decide.mpr; omega_arith)
   refine ⟨by rw [c, hcmp], fun hn => ?_, m, k⟩
   rw [← hcmp] at hn
   have s1 := sbb_toNat (BitVec.ofNat 64 x1) (BitVec.ofNat 64 y1) (decide (x0 < y0))
@@ -246,7 +246,7 @@ theorem isqC_ok {t : State} {x1 x0 y1 y0 : Nat} (h11 : t.gpr .r11 = BitVec.ofNat
   rw [a, b]
   simp only [decide_eq_false_iff_not, Nat.not_lt] at hn
   by_cases h : x0 < y0 <;> simp only [h, decide_true, decide_false, Bool.toNat_true, Bool.toNat_false] at s0 s1 hn ⊢ <;>
-    omega
+    omega_using [s0, s1]
 
 /-- `sbb rbx, rbx`: the carry as a mask. -/
 theorem sbbBx_ok {t : State} {c : Bool} (hcf : t.cf = some c) :
@@ -280,18 +280,18 @@ theorem isqE_ok {t : State} {s n : Nat} {c : Bool} (h10 : t.gpr .r10 = BitVec.of
   xrun [h10, hbx, hcx]
   refine ⟨?_, ofNat64_pred hn hn', ?_⟩
   · apply BitVec.eq_of_toNat_eq
-    have hs64 : s < 2 ^ 64 := by omega
+    have hs64 : s < 2 ^ 64 := by omega_using [hs]
     rw [BitVec.toNat_add, BitVec.toNat_add, BitVec.toNat_add, BitVec.toNat_ofNat, BitVec.toNat_ofNat,
       Nat.mod_eq_of_lt hs64, show (1 : BitVec 64).toNat = 1 from rfl]
     cases c
     · rw [mask_false, show (0 : BitVec 64).toNat = 0 from rfl]
       simp only [Bool.toNat_false, Nat.sub_zero]
-      omega
+      omega_using []
     · rw [mask_true, BitVec.toNat_allOnes]
       simp only [Bool.toNat_true]
-      omega
+      omega_using []
   · rw [ofNat64_pred hn hn']
-    exact ofNat_beq_zero' (by omega)
+    exact ofNat_beq_zero' (by omega_using [hn'])
 
 /-- After `i` steps of the first digit from `T = r8 2^64 + r9` (`< 2^128`): the
 root `s` of `T`'s top `2 i` bits in `r10`, its remainder in `(r11, r13)`, the
@@ -315,7 +315,7 @@ theorem pair_top {T i : Nat} (hi : i < 64) :
     show (2 : Nat) ^ 128 = 2 ^ (64 + 62) * 4 by rw [show (4 : Nat) = 2 ^ 2 from rfl, ← Nat.pow_add],
     Nat.mod_mul_right_div_self, pow4, pow4]
   congr 1
-  have e : 2 ^ (64 + 62) = 2 ^ (2 * i) * 2 ^ (2 * (63 - i)) := by rw [← Nat.pow_add]; congr 1; omega
+  have e : 2 ^ (64 + 62) = 2 ^ (2 * i) * 2 ^ (2 * (63 - i)) := by rw [← Nat.pow_add]; congr 1; omega_using [hi]
   rw [e, ← Nat.div_div_eq_div_mul, Nat.mul_div_cancel _ (Nat.two_pow_pos _)]
 
 /-- `T 4^(i + 1)`'s words from `T 4^i`'s. -/
@@ -330,7 +330,7 @@ theorem pair_shift {T i : Nat} :
   · -- `(4 P mod 2^128) / 2^64 = 4 (P mod 2^128 / 2^64) mod 2^64 + (P mod 2^64) / 2^62`.
     have h1 : P % 2 ^ 128 = P % 2 ^ 128 / 2 ^ 64 * 2 ^ 64 + P % 2 ^ 64 := by
       have := Nat.div_add_mod (P % 2 ^ 128) (2 ^ 64)
-      rw [Nat.mod_mod_of_dvd _ (by decide : 2 ^ 64 ∣ 2 ^ 128)] at this; omega
+      rw [Nat.mod_mod_of_dvd _ (by decide : 2 ^ 64 ∣ 2 ^ 128)] at this; omega_using []
     have h2 : P * 4 % 2 ^ 128 = P % 2 ^ 128 * 4 % 2 ^ 128 := by
       rw [Nat.mul_mod, Nat.mod_eq_of_lt (show (4 : Nat) < 2 ^ 128 by decide)]
     rw [h2]
@@ -338,9 +338,9 @@ theorem pair_shift {T i : Nat} :
     generalize hb : P % 2 ^ 64 = a0 at h1
     have ha0 : a0 < 2 ^ 64 := by rw [← hb]; exact Nat.mod_lt _ (by decide)
     have ha1 : a1 < 2 ^ 64 := by
-      have := Nat.mod_lt P (show 0 < 2 ^ 128 by decide); omega
+      have := Nat.mod_lt P (show 0 < 2 ^ 128 by decide); omega_using [h1]
     rw [h1]
-    omega
+    omega_using [hb]
   · rw [Nat.mul_mod, Nat.mod_eq_of_lt (show (4 : Nat) < 2 ^ 64 by decide)]
 
 theorem of_toNat {x : BitVec 64} {n : Nat} (h : x.toNat = n) : x = BitVec.ofNat 64 n := by
@@ -373,7 +373,7 @@ theorem isqStep_ok {t₀ : State} {T i : Nat} (hT : T < 2 ^ 128) (hi : i < 64) {
   -- The root and remainder so far.
   have hN : T / 4 ^ (64 - i) < 4 ^ i := by
     rw [Nat.div_lt_iff_lt_mul (Nat.pow_pos (show 0 < 4 by decide)), ← Nat.pow_add,
-      show i + (64 - i) = 64 by omega]
+      show i + (64 - i) = 64 by omega_using [hi]]
     exact Nat.lt_of_lt_of_le hT (by decide)
   generalize hNd : T / 4 ^ (64 - i) = N at hN h10 h11 h13
   obtain ⟨lo, hi'⟩ := VG.Proof.Rsa.RecoverDet.isqrt_spec N
@@ -381,18 +381,18 @@ theorem isqStep_ok {t₀ : State} {T i : Nat} (hT : T < 2 ^ 128) (hi : i < 64) {
   have hsi : s < 2 ^ i := by
     refine Nat.lt_of_not_le fun c => ?_
     have := Nat.mul_le_mul c c
-    rw [← Nat.pow_add, show i + i = 2 * i by omega, ← pow4] at this
-    omega
-  have hs63 : s < 2 ^ 63 := Nat.lt_of_lt_of_le hsi (Nat.pow_le_pow_right (by decide) (by omega))
+    rw [← Nat.pow_add, show i + i = 2 * i by omega_using [], ← pow4] at this
+    omega_using [hT, hi, h8, h9, hcx, hNd, hN, hs, lo, hi', h10, h11, h13, c, this]
+  have hs63 : s < 2 ^ 63 := Nat.lt_of_lt_of_le hsi (Nat.pow_le_pow_right (by decide) (by omega_using [hi]))
   have e1 : (s + 1) * (s + 1) = s * s + 2 * s + 1 := by grind
   generalize hr : N - s * s = r at h11 h13
-  have hr2 : r ≤ 2 * s := by omega
-  have hr64 : r < 2 ^ 64 := by omega
+  have hr2 : r ≤ 2 * s := by omega_using [hi', e1, hr]
+  have hr64 : r < 2 ^ 64 := by omega_using [hi', hs63, e1, hr]
   rw [Nat.div_eq_of_lt hr64] at h11
   rw [Nat.mod_eq_of_lt hr64] at h13
   -- The pair.
   have hP1 : T * 4 ^ i % 2 ^ 128 / 2 ^ 64 < 2 ^ 64 :=
-    Nat.div_lt_of_lt_mul (by have := Nat.mod_lt (T * 4 ^ i) (show 0 < 2 ^ 128 by decide); omega)
+    Nat.div_lt_of_lt_mul (by have := Nat.mod_lt (T * 4 ^ i) (show 0 < 2 ^ 128 by decide); omega_using [])
   have hδ := pair_top (T := T) hi
   generalize hδd : T / 4 ^ (63 - i) % 4 = δ at hδ
   have hδ4 : δ < 4 := by rw [← hδd]; exact Nat.mod_lt _ (by decide)
@@ -411,12 +411,12 @@ theorem isqStep_ok {t₀ : State} {T i : Nat} (hT : T < 2 ^ 128) (hi : i < 64) {
   rw [WP.block_append_iff]
   refine WP.mono (isqB_ok t₁) fun t₂ ⟨b14, b15, m₂, k₂⟩ => ?_
   have t₁10 : t₁.gpr .r10 = BitVec.ofNat 64 s := (k₁.gpr (by decide)).trans h10
-  rw [t₁10, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega : s < 2 ^ 64)] at b14 b15
+  rw [t₁10, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hs63] : s < 2 ^ 64)] at b14 b15
   rw [mul4_mod] at a13 b15
-  have hx1 : r / 2 ^ 62 < 2 ^ 64 := by omega
-  have hx0 : r % 2 ^ 62 * 4 + δ < 2 ^ 64 := by omega
-  have hy1 : s / 2 ^ 62 < 2 ^ 64 := by omega
-  have hy0 : s % 2 ^ 62 * 4 + 1 < 2 ^ 64 := by omega
+  have hx1 : r / 2 ^ 62 < 2 ^ 64 := by omega_using [hr64]
+  have hx0 : r % 2 ^ 62 * 4 + δ < 2 ^ 64 := by omega_arith
+  have hy1 : s / 2 ^ 62 < 2 ^ 64 := by omega_using [hs63]
+  have hy0 : s % 2 ^ 62 * 4 + 1 < 2 ^ 64 := by omega_using []
   have ex : r / 2 ^ 62 * 2 ^ 64 + (r % 2 ^ 62 * 4 + δ) = 4 * r + δ := split4 r δ
   have ey : s / 2 ^ 62 * 2 ^ 64 + (s % 2 ^ 62 * 4 + 1) = 4 * s + 1 := split4 s 1
   rw [WP.block_append_iff]
@@ -436,48 +436,48 @@ theorem isqStep_ok {t₀ : State} {T i : Nat} (hT : T < 2 ^ 128) (hi : i < 64) {
   have t₆cx : t₆.gpr .rcx = BitVec.ofNat 64 (64 - i) := by
     rw [k₆.gpr (by decide), k₅.gpr (by decide), k₄.gpr (by decide), k₃.gpr (by decide), k₂.gpr (by decide),
       k₁.gpr (by decide), hcx]
-  refine WP.mono (isqE_ok t₆10 hbx t₆cx (by omega) (by omega) (by omega)) fun t' ⟨e10, ecx, ez, m', k'⟩ => ?_
+  refine WP.mono (isqE_ok t₆10 hbx t₆cx (by omega_using [hs63]) (by omega_using [hi]) (by omega_using [])) fun t' ⟨e10, ecx, ez, m', k'⟩ => ?_
   -- The new root and remainder.
   have hN' : T / 4 ^ (64 - (i + 1)) = 4 * N + δ := by
     have e := VG.Proof.Rsa.RecoverDet.pair_succ T (63 - i)
-    rw [show 63 - i + 1 = 64 - i by omega, hNd, hδd] at e
-    rw [show 64 - (i + 1) = 63 - i by omega, e]
-  obtain ⟨sq, sr, -⟩ := VG.Proof.Rsa.RecoverDet.sqrt_step (t := N) (y := s) (r := r) (δ := δ) hs.symm (by omega) hδ4
+    rw [show 63 - i + 1 = 64 - i by omega_using [hi], hNd, hδd] at e
+    rw [show 64 - (i + 1) = 63 - i by omega_using [], e]
+  obtain ⟨sq, sr, -⟩ := VG.Proof.Rsa.RecoverDet.sqrt_step (t := N) (y := s) (r := r) (δ := δ) hs.symm (by omega_using [hNd, hN, lo, hi', hsi, hs63, e1, hr, hr2, hr64, a13, a11, b14, b15, hx1, hx0, hy1, hy0, ex, ey, hN']) hδ4
   obtain ⟨p8, p9⟩ := pair_shift (T := T) (i := i)
-  refine ⟨by rw [ez]; simp only [Option.some.injEq, decide_eq_decide]; omega, ?_, ?_, ?_, ?_, ?_, ?_,
+  refine ⟨by rw [ez]; simp only [Option.some.injEq, decide_eq_decide]; omega_using [hi], ?_, ?_, ?_, ?_, ?_, ?_,
     by rw [m', m₆, m₅, m₄, m₃, m₂, m₁, hm], (k.trans ((((k₁.trans k₂).trans (k₃.trans k₄)).trans (k₅.trans k₆)).trans k')).mono
       (by decide)⟩
   · rw [hN', sq, e10]; congr 1
     rw [← hc]
     by_cases h : 4 * s + 1 ≤ 4 * r + δ
-    · simp only [h, ↓reduceIte, decide_eq_false (show ¬ 4 * r + δ < 4 * s + 1 by omega), Bool.toNat_false, Nat.sub_zero]
-    · simp only [h, ↓reduceIte, decide_eq_true (show 4 * r + δ < 4 * s + 1 by omega), Bool.toNat_true, Nat.add_sub_cancel]
+    · simp only [h, ↓reduceIte, decide_eq_false (show ¬ 4 * r + δ < 4 * s + 1 by omega_arith), Bool.toNat_false, Nat.sub_zero]
+    · simp only [h, ↓reduceIte, decide_eq_true (show 4 * r + δ < 4 * s + 1 by omega_arith), Bool.toNat_true, Nat.add_sub_cancel]
   · -- The remainder's words.
     have hrem : 4 * N + δ - VG.Spec.Rsa.isqrt (4 * N + δ) * VG.Spec.Rsa.isqrt (4 * N + δ) =
-        if 4 * s + 1 ≤ 4 * r + δ then 4 * r + δ - (4 * s + 1) else 4 * r + δ := by omega
+        if 4 * s + 1 ≤ 4 * r + δ then 4 * r + δ - (4 * s + 1) else 4 * r + δ := by omega_arith
     rw [hN', hrem, k'.gpr (by decide), k₆.gpr (by decide), d11]
     have t₄11 : t₄.gpr .r11 = BitVec.ofNat 64 (r / 2 ^ 62) := by
       rw [k₄.gpr (by decide), k₃.gpr (by decide), k₂.gpr (by decide)]; exact of_toNat a11
     cases c
-    · have h : 4 * s + 1 ≤ 4 * r + δ := by simp only [decide_eq_false_iff_not] at hc; omega
+    · have h : 4 * s + 1 ≤ 4 * r + δ := by simp only [decide_eq_false_iff_not] at hc; omega_arith
       simp only [h, ↓reduceIte, Bool.false_eq_true]
       rw [k₄.gpr (by decide)]
       have := words_eq (hdif rfl) (BitVec.isLt _)
       rw [of_toNat this.1]
-    · have h : ¬ 4 * s + 1 ≤ 4 * r + δ := by simp only [decide_eq_true_eq] at hc; omega
+    · have h : ¬ 4 * s + 1 ≤ 4 * r + δ := by simp only [decide_eq_true_eq] at hc; omega_arith
       simp only [h, ↓reduceIte]
       rw [t₄11, (words_eq ex hx0).1]
   · have hrem : 4 * N + δ - VG.Spec.Rsa.isqrt (4 * N + δ) * VG.Spec.Rsa.isqrt (4 * N + δ) =
-        if 4 * s + 1 ≤ 4 * r + δ then 4 * r + δ - (4 * s + 1) else 4 * r + δ := by omega
+        if 4 * s + 1 ≤ 4 * r + δ then 4 * r + δ - (4 * s + 1) else 4 * r + δ := by omega_arith
     rw [hN', hrem, k'.gpr (by decide), k₆.gpr (by decide), k₅.gpr (by decide), d13]
     have t₃13 : t₃.gpr .r13 = BitVec.ofNat 64 (r % 2 ^ 62 * 4 + δ) := by
       rw [k₃.gpr (by decide), k₂.gpr (by decide)]; exact of_toNat a13
     cases c
-    · have h : 4 * s + 1 ≤ 4 * r + δ := by simp only [decide_eq_false_iff_not] at hc; omega
+    · have h : 4 * s + 1 ≤ 4 * r + δ := by simp only [decide_eq_false_iff_not] at hc; omega_arith
       simp only [h, ↓reduceIte, Bool.false_eq_true]
       have := words_eq (hdif rfl) (BitVec.isLt _)
       rw [of_toNat this.2]
-    · have h : ¬ 4 * s + 1 ≤ 4 * r + δ := by simp only [decide_eq_true_eq] at hc; omega
+    · have h : ¬ 4 * s + 1 ≤ 4 * r + δ := by simp only [decide_eq_true_eq] at hc; omega_arith
       simp only [h, ↓reduceIte]
       rw [t₃13, (words_eq ex hx0).2]
   · rw [k'.gpr (by decide), k₆.gpr (by decide), k₅.gpr (by decide), k₄.gpr (by decide), k₃.gpr (by decide),

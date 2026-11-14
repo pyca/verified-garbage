@@ -62,11 +62,11 @@ theorem mfacts {p : Params} (h : p = mlDsa44 ∨ p = mlDsa65 ∨ p = mlDsa87) : 
 
 theorem MFacts.kls {p : Params} (hF : MFacts p) (pr : Bool) : 128 ≤ kLS p pr ∧ kLS p pr < 2 ^ 15 := by
   have := hF.sk; have := hF.skl; have := hF.psk
-  cases pr <;> simp only [kLS, Bool.false_eq_true, ↓reduceIte] <;> simp only [preparedSecretKeyBytes] at * <;> omega
+  cases pr <;> simp only [kLS, Bool.false_eq_true, ↓reduceIte] <;> simp only [preparedSecretKeyBytes] at * <;> omega_arith
 
 theorem MFacts.klv {p : Params} (hF : MFacts p) (pr : Bool) : p.pkLen ≤ kLV p pr ∧ kLV p pr < 2 ^ 15 := by
   have := hF.pk; have := hF.ppk
-  cases pr <;> simp only [kLV, Bool.false_eq_true, ↓reduceIte] <;> simp only [preparedPublicKeyBytes] at * <;> omega
+  cases pr <;> simp only [kLV, Bool.false_eq_true, ↓reduceIte] <;> simp only [preparedPublicKeyBytes] at * <;> omega_arith
 
 /-- A prepared private key, kept by a change of memory apart from it. -/
 theorem preparedSecretKey_frame {p : Params} {m m' : Mem} {key : Addr} {rs : List Region} (hf : Frame rs m m')
@@ -74,12 +74,12 @@ theorem preparedSecretKey_frame {p : Params} {m m' : Mem} {key : Addr} {rs : Lis
     (hfit : key.toNat + preparedSecretKeyBytes p ≤ 2 ^ 64) (h : PreparedSecretKey p m key) :
     PreparedSecretKey p m' key := fun i hi => by
   have hb : p.skLen + 4 * n * i + 1024 ≤ preparedSecretKeyBytes p := by
-    show p.skLen + 4 * 256 * i + 1024 ≤ p.skLen + 4 * 256 * (p.ℓ + 2 * p.k); omega
+    show p.skLen + 4 * 256 * i + 1024 ≤ p.skLen + 4 * 256 * (p.ℓ + 2 * p.k); omega_using [hi]
   have hk : bytesAt m' key p.skLen = bytesAt m key p.skLen := by
     have hs : Region.Sub ⟨key, p.skLen⟩ ⟨key, preparedSecretKeyBytes p⟩ := by
-      have := Offset.sub_base key (d := 0) (n := p.skLen) (k := preparedSecretKeyBytes p) (by omega)
+      have := Offset.sub_base key (d := 0) (n := p.skLen) (k := preparedSecretKeyBytes p) (by omega_using [hb])
       rwa [BitVec.add_zero] at this
-    exact Proof.MlKem.bytesAt_frame hf (fun r hr => (hd r hr).sub_left hs) (by omega)
+    exact Proof.MlKem.bytesAt_frame hf (fun r hr => (hd r hr).sub_left hs) (by omega_using [hfit, hb])
   rw [hk]
   have hsub : Region.Sub (Proof.MlDsa.Verify.polyRegion (key + BitVec.ofNat 64 (p.skLen + 4 * n * i)))
       ⟨key, preparedSecretKeyBytes p⟩ := Offset.sub_base _ hb
@@ -92,12 +92,12 @@ theorem preparedPublicKey_frame {p : Params} {m m' : Mem} {key : Addr} {rs : Lis
     (hfit : key.toNat + preparedPublicKeyBytes p ≤ 2 ^ 64) (h : PreparedPublicKey p m key) :
     PreparedPublicKey p m' key := fun i hi => by
   have hb : p.pkLen + 4 * n * i + 1024 ≤ preparedPublicKeyBytes p := by
-    show p.pkLen + 4 * 256 * i + 1024 ≤ p.pkLen + 4 * 256 * (p.k); omega
+    show p.pkLen + 4 * 256 * i + 1024 ≤ p.pkLen + 4 * 256 * (p.k); omega_using [hi]
   have hk : bytesAt m' key p.pkLen = bytesAt m key p.pkLen := by
     have hs : Region.Sub ⟨key, p.pkLen⟩ ⟨key, preparedPublicKeyBytes p⟩ := by
-      have := Offset.sub_base key (d := 0) (n := p.pkLen) (k := preparedPublicKeyBytes p) (by omega)
+      have := Offset.sub_base key (d := 0) (n := p.pkLen) (k := preparedPublicKeyBytes p) (by omega_using [hb])
       rwa [BitVec.add_zero] at this
-    exact Proof.MlKem.bytesAt_frame hf (fun r hr => (hd r hr).sub_left hs) (by omega)
+    exact Proof.MlKem.bytesAt_frame hf (fun r hr => (hd r hr).sub_left hs) (by omega_using [hfit, hb])
   rw [hk]
   have hsub : Region.Sub (Proof.MlDsa.Verify.polyRegion (key + BitVec.ofNat 64 (p.pkLen + 4 * n * i)))
       ⟨key, preparedPublicKeyBytes p⟩ := Offset.sub_base _ hb

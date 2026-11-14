@@ -19,27 +19,27 @@ theorem sieveAny_mono {value a b : Nat} (bound : a ≤ b) (hit : sieveAny value 
     sieveAny value b = true := by
   simp only [sieveAny, List.any_eq_true, List.mem_range] at hit ⊢
   obtain ⟨i, hi, divides⟩ := hit
-  exact ⟨i, by omega, divides⟩
+  exact ⟨i, by omega_using [bound, hi], divides⟩
 
 theorem sieveAny_rsa {value bits : Nat} (large : 8161 < value) :
     sieveAny value (trialCount ((bits+7)/8)) = Spec.RsaKeyGen.obviouslyComposite bits value := by
   by_cases small : bits ≤ 1024
-  · have width : (bits+7)/8 ≤ 128 := by omega
+  · have width : (bits+7)/8 ≤ 128 := by omega_using [small]
     have same : Spec.RsaKeyGen.obviouslyComposite 1024 value =
         Spec.RsaKeyGen.obviouslyComposite bits value := by
       simp only [Spec.RsaKeyGen.obviouslyComposite, Spec.RsaKeyGen.trialPrimes,
-        show ¬1024<bits by omega, show ¬1024<1024 by omega, ite_false]
+        show ¬1024<bits by omega_using [small], show ¬1024<1024 by omega_using [], ite_false]
     have table := VG.Proof.RsaKeyGen.trialAny_eq (w:=16) large
     simpa only [trialCount, width, ite_true, VG.Proof.RsaKeyGen.trialAny,
-      show ¬17≤16 by omega, ite_false, Nat.reduceMul, sieveAny, same] using table
-  · have width : ¬(bits+7)/8 ≤ 128 := by omega
+      show ¬17≤16 by omega_using [], ite_false, Nat.reduceMul, sieveAny, same] using table
+  · have width : ¬(bits+7)/8 ≤ 128 := by omega_using [small]
     have same : Spec.RsaKeyGen.obviouslyComposite 1088 value =
         Spec.RsaKeyGen.obviouslyComposite bits value := by
       simp only [Spec.RsaKeyGen.obviouslyComposite, Spec.RsaKeyGen.trialPrimes,
-        show 1024<bits by omega, show 1024<1088 by omega, ite_true]
+        show 1024<bits by omega_using [small], show 1024<1088 by omega_using [], ite_true]
     have table := VG.Proof.RsaKeyGen.trialAny_eq (w:=17) large
     simpa only [trialCount, width, ite_false, VG.Proof.RsaKeyGen.trialAny,
-      show 17≤17 by omega, ite_true, Nat.reduceMul, sieveAny, same] using table
+      show 17≤17 by omega_using [], ite_true, Nat.reduceMul, sieveAny, same] using table
 
 theorem sieve_shape {value bits : Nat} (large : 8161 < value) (odd : value%2=1) :
     (!(sieveAny value (trialCount ((bits+7)/8)))) =

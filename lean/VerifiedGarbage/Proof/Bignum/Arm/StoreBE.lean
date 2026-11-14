@@ -22,7 +22,7 @@ theorem ReverseInv.i2osp {s0 s : State} {src dst : BitVec 32} {n : Nat}
   apply reversed_i2osp
   intro j hj
   have h := inv.copied j hj
-  rw [addr_add (by omega), reverse_source_addr src srcFit hj] at h
+  rw [addr_add (by omega_using [dstFit, hj]), reverse_source_addr src srcFit hj] at h
   exact h
 
 end VG.Proof.Bignum.Arm

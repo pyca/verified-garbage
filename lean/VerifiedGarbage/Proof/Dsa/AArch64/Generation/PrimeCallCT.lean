@@ -108,7 +108,7 @@ theorem primeCallTest_ct (T : PrimeTest) {bits : Nat} (hb : ProbablePrime.Suppor
   refine ⟨_, _, _, _, E₁.pre, E₂.pre, ?_, E₁.reads, E₁.writes, E₂.reads, E₂.writes⟩
   sig_pub [ProbablePrime.contract, Proof.Dsa.ProbablePrime.contract, Proof.Dsa.ProbablePrime.sig, abi, argRegs]
   have hl : (BitVec.ofNat 64 (a.rand.length - a.used)).toNat = a.rand.length - a.used := by
-    rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := i₁.tapeSize; omega)]
+    rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := i₁.tapeSize; omega_using [this])]
   rw [hsp₁, hsp₂, h0₁, h0₂, h2₁, h2₂, h3₁, h3₂, h1₁, h1₂, h4₁, h4₂, hl, E₁.candidate, E₂.candidate,
     E₁.tape, E₂.tape]
   exact ⟨rfl, rfl, rfl, rfl, rfl, rfl, rfl⟩
@@ -120,7 +120,7 @@ theorem primeCallStatus_ct (bits : Nat) :
     (by taint_decide) fun a t ⟨hsp, hx0⟩ => ?_) ?_
   · have hk := a.status_lt
     have hz : (BitVec.ofNat 32 a.status).setWidth 64 = BitVec.ofNat 64 a.status := by
-      apply BitVec.eq_of_toNat_eq; simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]; omega
+      apply BitVec.eq_of_toNat_eq; simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]; omega_using [hk]
     have run0 : WP isa (.block [.addImm .w .x0 .x0 0]) t fun u => u.gpr .x0 = BitVec.ofNat 64 a.status := by
       brun [exec_addImm_w_zero, State.write, hx0, hz]
     exact WP.mono (WP.keep [.x0] run0 (by decide)) fun u ⟨hu, ku⟩ => ⟨ku.sp.trans hsp, hu⟩

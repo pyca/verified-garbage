@@ -19,7 +19,7 @@ open VG.Proof.X25519.Arm (Rest wp_mov wp_mul op2_reg op2_lsl op2_lsr toNat_shl t
  theorem low_half (x : BitVec 32) : ((x <<< 16) >>> 16).toNat = x.toNat % 65536 := by
   rw [toNat_shr, toNat_shl]
   have := x.isLt
-  omega
+  omega_using []
 
  theorem cross_ok (s : State) (r : Reg) (h5 : r ≠ .r5)
     (h : (s.gpr .r5).toNat + (s.gpr .r6).toNat * 2 ^ 32 + (s.gpr r).toNat * 2 ^ 16 < 2 ^ 64) :
@@ -93,32 +93,32 @@ open VG.Proof.X25519.Arm (Rest wp_mov wp_mul op2_reg op2_lsl op2_lsr toNat_shl t
   have hx := x.isLt
   have hy := y.isLt
   have lt (a b : Nat) (ha : a < 65536) (hb : b < 65536) : a * b < 2 ^ 32 :=
-    Nat.lt_of_lt_of_le (Nat.mul_lt_mul_of_lt_of_le ha (Nat.le_of_lt hb) (by omega)) (by decide)
+    Nat.lt_of_lt_of_le (Nat.mul_lt_mul_of_lt_of_le ha (Nat.le_of_lt hb) (by omega_using [])) (by decide)
   have v00 : (s1.gpr .r5).toNat = x.toNat % 65536 * (y.toNat % 65536) := by
     rw [p00, toNat_mul_lt, lo, low_half]
-    apply lt <;> (first | rw [lo] | rw [low_half]) <;> omega
+    apply lt <;> (first | rw [lo] | rw [low_half]) <;> omega_using []
   have v11 : (s1.gpr .r6).toNat = x.toNat / 65536 * (y.toNat / 65536) := by
     rw [p11, toNat_mul_lt, hi, toNat_shr]
-    apply lt <;> (first | rw [hi] | rw [toNat_shr]) <;> omega
+    apply lt <;> (first | rw [hi] | rw [toNat_shr]) <;> omega_using []
   have v10 : (s1.gpr .r7).toNat = x.toNat / 65536 * (y.toNat % 65536) := by
     rw [p10, toNat_mul_lt, hi, low_half]
-    apply lt <;> (first | rw [hi] | rw [low_half]) <;> omega
+    apply lt <;> (first | rw [hi] | rw [low_half]) <;> omega_using []
   have total := partials_value x y
   have bound : x.toNat * y.toNat < 2 ^ 64 :=
-    Nat.lt_of_lt_of_le (Nat.mul_lt_mul_of_lt_of_le hx (Nat.le_of_lt hy) (by omega)) (by decide)
+    Nat.lt_of_lt_of_le (Nat.mul_lt_mul_of_lt_of_le hx (Nat.le_of_lt hy) (by omega_using [])) (by decide)
   rw [WP.block_append_iff]
-  refine WP.mono (cross_ok s1 .r7 (by decide) (by rw [v00, v11, v10]; omega)) fun s2 ⟨v2, f2⟩ => ?_
+  refine WP.mono (cross_ok s1 .r7 (by decide) (by rw [v00, v11, v10]; omega_using [total, bound])) fun s2 ⟨v2, f2⟩ => ?_
   rw [WP.block_append_iff]
   refine wp_mul fun s3 u3 => WP.block_nil ?_
   have v01 : (s3.gpr .r8).toNat = x.toNat % 65536 * (y.toNat / 65536) := by
     rw [u3.gpr, f2.regs .r2 (by simp), f1.regs .r2 (by simp),
       f2.regs .r8 (by simp), b1, toNat_mul_lt, lo, toNat_shr]
-    apply lt <;> (first | rw [lo] | rw [toNat_shr]) <;> omega
+    apply lt <;> (first | rw [lo] | rw [toNat_shr]) <;> omega_using []
   have v3 : (s3.gpr .r5).toNat + (s3.gpr .r6).toNat * 2 ^ 32 =
       x.toNat % 65536 * (y.toNat % 65536) +
       x.toNat / 65536 * (y.toNat / 65536) * 2 ^ 32 + x.toNat / 65536 * (y.toNat % 65536) * 2 ^ 16 := by
     rw [u3.other .r5 (by decide), u3.other .r6 (by decide), v2, v00, v11, v10]
-  refine WP.mono (cross_ok s3 .r8 (by decide) (by rw [v3, v01]; omega)) fun t ⟨v4, f4⟩ => ?_
+  refine WP.mono (cross_ok s3 .r8 (by decide) (by rw [v3, v01]; omega_using [total, bound])) fun t ⟨v4, f4⟩ => ?_
   refine ⟨?_, (frame_rest f1).trans ((frame_rest f2).mono (by simp) |>.trans
     ((u3.rest (by simp)).trans ((frame_rest f4).mono (by simp)))), ?_⟩
   · rw [v4, v3, v01]; exact total

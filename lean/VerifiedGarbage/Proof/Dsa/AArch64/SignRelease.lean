@@ -37,7 +37,7 @@ theorem signRelease_ok {L : ExecutionLayout} {s0 : State} (h0 : Ready L s0)
   have hword (d : Nat) (hd : d + 8 ≤ usedBytes) : word s1.mem L.base d = word s0.mem L.base d := by
     apply Mem.readW_congr
     intro i hi
-    exact hf1 _ (fun j hj => scr_ne_out hsep (by omega) (by omega) j hj)
+    exact hf1 _ (fun j hj => scr_ne_out hsep (by omega_using [hd, hi]) (by omega_using [hn]) j hj)
   have hmask := (hword Field.mask.offset (by decide)).trans hm
   refine WP.mono (result_ok (h0.scratch.congr hk1.wr) ((hk1.gpr .x0 (by decide)).trans h0.parent.x0)
     (by decide) hmask) fun s2 ⟨ha, hmem, hk2⟩ => ?_

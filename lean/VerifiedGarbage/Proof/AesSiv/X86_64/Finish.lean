@@ -66,7 +66,7 @@ theorem finish_wp (v : UpdateImpl) (h : Env s₀ C D P W R L) {s : State} (hr : 
   refine WP.seq (WP.of_runBlock ⟨s₁, run₁, ?_⟩)
   refine WP.ite (decide (L < 16)) cf₁ (fun hb => ?_) (fun hb => ?_)
   · exact WP.mono (finishShort_wp v.ctr h hr₁ (of_decide_eq_true hb) hout) fun _ p => p.of_mem m₁
-  · exact WP.mono (finishLong_wp v h hr₁ (by have := of_decide_eq_false hb; omega) hout) fun _ p => p.of_mem m₁
+  · exact WP.mono (finishLong_wp v h hr₁ (by have := of_decide_eq_false hb; omega_using [this]) hout) fun _ p => p.of_mem m₁
 
 /-! ## Constant time -/
 
@@ -84,9 +84,9 @@ theorem upd_keep (v : UpdateImpl) (h : Env s₀ C D P W R L) {s : State} (hr : R
   refine h'.frame.readW (Region.contains_self _ 8) (fun r hr' => ?_) (by decide)
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr'
   rcases hr' with rfl | rfl | rfl
-  · exact Offset.disjoint W (by omega) (by omega) (by omega)
-  · exact Offset.disjoint W (by omega) (by omega) (by omega)
-  · rw [hr.rsp]; exact (h.stk_w.sub_right (h.sW (by omega))).symm
+  · exact Offset.disjoint W (by omega_using [hout, this]) (by omega_using [this]) (by omega_using [hout])
+  · exact Offset.disjoint W (by omega_using [this]) (by omega_using [this]) (by omega_using [])
+  · rw [hr.rsp]; exact (h.stk_w.sub_right (h.sW (by omega_using [this]))).symm
 
 /-- The pair of runs, with the same arguments. -/
 abbrev RR (s₀ s₀' : State) (C D P W : Addr) (R L : Nat) (a b : State) : Prop :=
@@ -194,8 +194,8 @@ theorem long_rel (v : UpdateImpl) {s₀' : State} (h : Env s₀ C D P W R L) (h'
     show y.mem.readW _ 64 = _
     rw [m, zero2, (frame_store2 _ _ _).readW (w := 64) (Region.contains_self _ _) (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
-      exact Offset.disjoint W (d := dbOff) (n := 8) (e := out) (k := 16) (by simp only [dbOff]; omega)
-        (by simp only [dbOff]; omega) (by omega)) (by decide)]
+      exact Offset.disjoint W (d := dbOff) (n := 8) (e := out) (k := 16) (by simp only [dbOff]; omega_using [hout])
+        (by simp only [dbOff]; omega_using []) (by omega_using [hout])) (by decide)]
     exact ha
   have wU1 {σ x : State} (hσ : Env σ C D P W R L) (hx : Regs σ C D P W R L x)
       (hu : UArgs x C (W + BitVec.ofNat 64 out) P (W + BitVec.ofNat 64 256) R (kOf L)) (ha : A x) :
@@ -347,6 +347,6 @@ theorem finish_rel (v : UpdateImpl) {s₀' : State} (h : Env s₀ C D P W R L) (
   · by_cases hL : L < 16
     · exact RelCT.of_false fun a b hab => by
         have e := hab.2; rw [show isa.eval .b a = a.cf from rfl, hab.1.1.2] at e; simp [hL] at e
-    · exact (long_rel v h h' hq (by omega) hout).mono (fun _ _ p => ⟨p.1.1.1, p.1.2.1⟩) fun _ _ p => p
+    · exact (long_rel v h h' hq (by omega_using [hL]) hout).mono (fun _ _ p => ⟨p.1.1.1, p.1.2.1⟩) fun _ _ p => p
 
 end VG.Proof.AesSiv.X86_64

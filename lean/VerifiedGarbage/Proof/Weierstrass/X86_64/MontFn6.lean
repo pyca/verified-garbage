@@ -160,8 +160,8 @@ theorem sqr6_ok (adx : Bool) {s : State} {base : Addr} {Z : Nat} (hs : Scr s bas
   have hs₁ := hs.of_keeps k₁ (by decide)
   have hp₁ : PtrsAt [(.rbx, a), (.rsi, o)] s₁ := .two (by rw [k₁.1 _ (by decide), hbx, hs₁.rdi])
     (by rw [e₁, k₁.1 _ (by decide), hs.rdi, hsi])
-  have w₂ := sqrSA_ok (M := fnMod6 adx) hs₁ hm (by simp only [fnMod6, fnTmp6]; omega) (o := o) (a := a)
-    (by omega) (by omega) (by simp only [fnMod6, fnTmp6]; omega) (by simp only [fnMod6, fnTmp6]; omega)
+  have w₂ := sqrSA_ok (M := fnMod6 adx) hs₁ hm (by simp only [fnMod6, fnTmp6]; omega_using [hZ]) (o := o) (a := a)
+    (by omega_using [ho]) (by omega_using [ha]) (by simp only [fnMod6, fnTmp6]; omega_using [ho]) (by simp only [fnMod6, fnTmp6]; omega_using [ha])
     (by rw [k₁.2.1]; exact hA)
   rw [← sqrSA_reloc, ← reloc_unptr] at w₂
   rw [WP.block_append_iff]
@@ -175,7 +175,7 @@ theorem sqr6_ok (adx : Bool) {s : State} {base : Addr} {Z : Nat} (hs : Scr s bas
   have hp₃ : PtrsAt [(.rsi, o)] s₃ := .one (by
     rw [k₃.1 _ (by decide), k₂.gpr _ (by decide), k₃.1 .rdi (by decide), k₂.gpr .rdi (by decide)]
     exact hp₁ .rsi o rfl)
-  have w₄ := stores_ok sqWin6 hs₃ (o := o) (by simp only [sqWin6, List.length_cons, List.length_nil]; omega)
+  have w₄ := stores_ok sqWin6 hs₃ (o := o) (by simp only [sqWin6, List.length_cons, List.length_nil]; omega_using [ho])
     (by decide)
   rw [← storesW_reloc, ← reloc_unptr] at w₄
   refine WP.mono (wp_unptr (rs := [.rsi]) (by simp) _ storesW_keeps hp₃ w₄)
@@ -189,7 +189,7 @@ theorem sqr6_ok (adx : Bool) {s : State} {base : Addr} {Z : Nat} (hs : Scr s bas
       k₁.1 r (not_mem_of hr (by decide))]
   · rw [k₄.rd, k₃.2.2.1, k₂.rd, k₁.2.2.1]
   · rw [k₄.wr, k₃.2.2.2, k₂.wr, k₁.2.2.2]
-  · rw [O₄ x hx, k₃.2.1, O₂ x hx (by simp only [fnMod6, fnTmp6]; omega), hmem₁]
+  · rw [O₄ x hx, k₃.2.1, O₂ x hx (by simp only [fnMod6, fnTmp6]; omega_using [hx']), hmem₁]
   · rw [hval]; exact Nat.mod_lt _ (by rw [hm]; decide)
   · rw [hval, ← hmem₁]; exact res₂
 
@@ -215,8 +215,8 @@ theorem mul6_ok (adx : Bool) {s : State} {base : Addr} {Z : Nat} (hs : Scr s bas
   have hp₁ : PtrsAt [(.rbx, a), (.rsi, b)] s₁ := .two (by rw [k₁.1 _ (by decide), hbx, hs₁.rdi])
     (by rw [e₁, hcx, hs₁.rdi])
   have hmem₁ : s₁.mem = s.mem := k₁.2.1
-  have w₂ := mulRounds_ok (M := fnMod6 adx) hs₁ (modOkR6 adx (by omega) hm _ _) (a := a) (b := b)
-    (by simp only [fnMod6]; omega) (by simp only [fnMod6]; omega) (by rw [hmem₁]; exact hB)
+  have w₂ := mulRounds_ok (M := fnMod6 adx) hs₁ (modOkR6 adx (by omega_using [hZ]) hm _ _) (a := a) (b := b)
+    (by simp only [fnMod6]; omega_using [ha]) (by simp only [fnMod6]; omega_using [hb]) (by rw [hmem₁]; exact hB)
   rw [← mulRounds_reloc, ← reloc_unptr] at w₂
   rw [WP.block_append_iff]
   refine WP.mono (WP.vecKeep (mul_scal adx) (wp_unptr (rs := [.rbx, .rsi]) (by simp) _ (mul_keeps adx) hp₁ w₂))
@@ -236,8 +236,8 @@ theorem mul6_ok (adx : Bool) {s : State} {base : Addr} {Z : Nat} (hs : Scr s bas
       generalize (2 : Nat) ^ (64 * 6) = Q at hT' hm'
       by_contra hne
       have : Q * 2 ^ 64 ≤ Q * ((s₂.gpr (win 6 6 6)).toNat + 2 ^ 64 * (s₂.gpr (win 6 6 (6 + 1))).toNat) :=
-        Nat.mul_le_mul_left _ (by omega)
-      omega
+        Nat.mul_le_mul_left _ (by omega_using [hne])
+      omega_using [hZ, hm, hbx, hcx, hsi, ho, ha, hb, hB, hnw, x₁, e₁, eU, hT, hT', hm', hne, this]
     rw [this, Nat.mul_zero, Nat.add_zero]
   rw [WP.block_append_iff]
   refine WP.mono (WP.vecKeep csubR_scal (csubR_ok s₂ (ts := low6) (top := top6) rfl ⟨by decide, by decide⟩ hm
@@ -248,7 +248,7 @@ theorem mul6_ok (adx : Bool) {s : State} {base : Addr} {Z : Nat} (hs : Scr s bas
   have hs₄ := hs₃.of_keeps k₄ (by decide)
   have hp₄ : PtrsAt [(.rsi, o)] s₄ := .one (by
     rw [e₄, x₃, x₂, x₁, qword_lo, hsi, k₄.1 .rdi (by decide)])
-  have w₅ := stores_ok low6 hs₄ (o := o) (by simp only [low6, List.length_map, List.length_range]; omega)
+  have w₅ := stores_ok low6 hs₄ (o := o) (by simp only [low6, List.length_map, List.length_range]; omega_using [ho])
     (by decide)
   rw [← storesL_reloc, ← reloc_unptr] at w₅
   refine WP.mono (WP.vecKeep storesL_scal (wp_unptr (rs := [.rsi]) (by simp) _ storesL_keeps hp₄ w₅))

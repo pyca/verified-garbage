@@ -64,9 +64,9 @@ theorem jointLookup_generator_ok {c : Joint.Cfg} {C : Curve} {base T : Addr} {si
     · have := fastMagnitude_bound 9 u j
       rw [h9,jointGRows,h9]; simpa using this
   have hodd := (FastNaf.magnitude_odd_or_zero c.gw u j).resolve_left hm0
-  have ha : 1≤a := by dsimp [a]; omega
-  have ha32 : a≤jointGRows c := by dsimp [a]; omega
-  have he : 2*a-1=FastNaf.magnitude c.gw u j := by dsimp [a]; omega
+  have ha : 1≤a := by dsimp [a]; omega_using [hm0]
+  have ha32 : a≤jointGRows c := by dsimp [a]; omega_using [hmag]
+  have he : 2*a-1=FastNaf.magnitude c.gw u j := by dsimp [a]; omega_using [hodd]
   have hnodup := hL.entryNodup
   simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,or_false,not_or] at hnodup
   have hnot := hL.oneApart

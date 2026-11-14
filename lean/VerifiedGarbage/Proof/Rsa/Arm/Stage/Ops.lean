@@ -72,7 +72,7 @@ theorem KS.slot1 {d x v : Nat} (h : KS P σ A live AW liveW V ls s) (k : Keep P.
       have a1 := h.ls_ok d' hd''
       rw [upd_ne _ _ e', kw.slot a1.1 (fun e he => by
         simp only [List.mem_singleton] at he
-        rw [he]; have := a1.2.2; have := hd.2.2; omega), h.sl d' hd'']
+        rw [he]; have := a1.2.2; have := hd.2.2; omega_arith), h.sl d' hd'']
   · rcases List.mem_cons.mp hd' with rfl | hd''
     · exact hd
     · exact h.ls_ok d' hd''

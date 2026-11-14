@@ -98,7 +98,7 @@ theorem absorb_correct (s : State) (hs : absorbPPC.pre s) :
     ∃ t s', Exec isa absorb s t s' ∧ abiPreserved s s' ∧ absorbPPC.post s s' := by
   obtain ⟨hrd, hwr, dSD, dSW, dDW, fS, fD, fW⟩ := hs
   obtain ⟨t, s', he, h1, h2, h3⟩ := absorb_wp s ⟨hrd, hwr, dSD.symm, dDW, dSW, fS, fD, fW⟩
-  exact ⟨t, s', he, ⟨h1, Exec.sp he, h2⟩, fun key msg hr hc hl => h3 key msg hr (count_eq hc (by omega)).symm⟩
+  exact ⟨t, s', he, ⟨h1, Exec.sp he, h2⟩, fun key msg hr hc hl => h3 key msg hr (count_eq hc (by omega_using [hl])).symm⟩
 
 theorem finish_correct (s : State) (hs : finishPPC.pre s) :
     ∃ t s', Exec isa finish s t s' ∧ abiPreserved s s' ∧ finishPPC.post s s' := by

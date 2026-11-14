@@ -40,16 +40,16 @@ theorem below_sub_stack {E : BitVec 32} (hE : 24 ≤ E.toNat) {n : Nat} (hn : n 
 its return address), as an offset of the frame's base. -/
 theorem inner_below {E : BitVec 32} (hE : 24 ≤ E.toNat) :
     below (E - 4) 8 = ⟨E.setWidth 64 - BitVec.ofNat 64 12, 8⟩ := by
-  have e4 : (E - 4).toNat = E.toNat - 4 := sub_toNat (k := 4) (by omega)
-  have e : (E - 4).setWidth 64 = E.setWidth 64 - 4 := Taint.sub_setWidth (m := 4) (by omega)
+  have e4 : (E - 4).toNat = E.toNat - 4 := sub_toNat (k := 4) (by omega_using [hE])
+  have e : (E - 4).setWidth 64 = E.setWidth 64 - 4 := Taint.sub_setWidth (m := 4) (by omega_using [hE])
   show (⟨((E - 4) - BitVec.ofNat 32 8).setWidth 64, 8⟩ : Region) = _
-  rw [Taint.sub_setWidth (show 8 ≤ (E - 4).toNat by omega), e, BitVec.sub_sub]
+  rw [Taint.sub_setWidth (show 8 ≤ (E - 4).toNat by omega_using [hE, e4]), e, BitVec.sub_sub]
   rfl
 
 /-- That stack lies within the 12 bytes below the frame. -/
 theorem inner_sub_below {E : BitVec 32} (hE : 24 ≤ E.toNat) : Region.Sub (below (E - 4) 8) (below E 12) := by
   rw [inner_below hE, show below E 12 = ⟨E.setWidth 64 - BitVec.ofNat 64 12, 12⟩ from by
-    simp only [below, Taint.sub_setWidth (show 12 ≤ E.toNat by omega)]]
+    simp only [below, Taint.sub_setWidth (show 12 ≤ E.toNat by omega_using [hE])]]
   exact Region.sub_prefix (by decide)
 
 /-- That stack lies within the frame's stack. -/
@@ -61,8 +61,8 @@ theorem inner_frame {E : BitVec 32} (hE : 24 ≤ E.toNat) (hf : E.toNat + 256 �
     (hn : d + n ≤ 256) (hd : d < 256) :
     (below (E - 4) 8).Disjoint ⟨(E + BitVec.ofNat 32 d).setWidth 64, n⟩ := by
   rw [inner_below hE, show (E + BitVec.ofNat 32 d).setWidth 64 = E.setWidth 64 + BitVec.ofNat 64 d from
-    addr_eq (x := E) (k := d) (by omega)]
-  exact (Offset.disjoint_below (E.setWidth 64) (n := 12) (d := d) (k := n) (by omega)).symm.sub_left
+    addr_eq (x := E) (k := d) (by omega_using [hf, hd])]
+  exact (Offset.disjoint_below (E.setWidth 64) (n := 12) (d := d) (k := n) (by omega_using [hn])).symm.sub_left
     (Region.sub_prefix (by decide))
 
 /-- Outer read/write regions exclude the frame. The entry arguments remain in
@@ -128,10 +128,10 @@ theorem call_ok {E : BitVec 32} {g : Reg → BitVec 32} {m₀ : Mem} {rd wr : Li
     · exact ⟨FR E, List.mem_cons_self, hf⟩
     · exact ⟨R, List.mem_cons_of_mem _ hR, hs⟩
   have hcr : Covers (rd' ++ wr') (t.rd ++ t.wr) := by rw [h.rd, h.wr]; exact hcov
-  refine WP.call hv hsp (by rw [h.esp]; omega) hpre hcr hcw fun u hrd hwr hcs hf hg hp => ?_
+  refine WP.call hv hsp (by rw [h.esp]; omega_using [hE, hstack]) hpre hcr hcw fun u hrd hwr hcs hf hg hp => ?_
   have hf' : Frame (wr' ++ [below E 24]) t.mem u.mem := by
     rw [h.esp] at hf
-    exact Frame.below_mono hf (by omega) hE
+    exact Frame.below_mono hf (by omega_using [hstack]) hE
   refine hQ u ⟨hrd.trans h.rd, hwr.trans h.wr, (hcs .esp (by simp [calleeSaved])).trans h.esp,
     fun r hr hn => (hcs r hr).trans (h.cs r hr hn), h.frame.trans ?_⟩ hf' hg hp
   refine Frame.sub hf' fun r hr => ?_

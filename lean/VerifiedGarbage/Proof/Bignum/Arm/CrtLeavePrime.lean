@@ -19,7 +19,7 @@ theorem crt_leavePrime_ok (s : State) {base child : BitVec 32} {size : Nat}
     WP isa (.block leavePrime) s fun t => t.gpr .r0 = base ∧ t.mem = s.mem ∧ Rest [.r0] s t := by
   unfold leavePrime
   refine wp_ldr (a := off (State.addr child) 216) (by decide)
-    (by rw [ptr]; exact addr_add (by have := ws.nowrap; omega)) (ws.read fit) fun t h =>
+    (by rw [ptr]; exact addr_add (by have := ws.nowrap; omega_using [fit, this])) (ws.read fit) fun t h =>
     WP.block_nil ⟨h.gpr.trans link, h.mem, h.rest (by simp)⟩
 
 end VG.Proof.Bignum.Arm

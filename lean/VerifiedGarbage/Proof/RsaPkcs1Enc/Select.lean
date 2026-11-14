@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.Steps
 import VerifiedGarbage.Proof.Framework.PowLit
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # RSAES-PKCS1-v1_5 decryption with implicit rejection: the selection
@@ -23,20 +24,20 @@ open Spec.RsaPkcs1Enc
 
 /-- Before the last doubling, the mask is below `x`. -/
 theorem bitMask_lt {x j : Nat} (hx : x ≠ 0) (hj : j < bitLength x) : 2 ^ j - 1 < x := by
-  have : j ≤ x.log2 := by simp only [bitLength, hx, ↓reduceIte] at hj; omega
+  have : j ≤ x.log2 := by simp only [bitLength, hx, ↓reduceIte] at hj; omega_using [hj]
   have := (Nat.le_log2 hx).1 this
-  omega
+  omega_using [hx, this]
 
 /-- After the last doubling, it is not. -/
 theorem bitMask_ge {x : Nat} (hx : x ≠ 0) : x ≤ 2 ^ bitLength x - 1 := by
   have := Nat.lt_log2_self (n := x)
   simp only [bitLength, hx, ↓reduceIte]
-  omega
+  omega_using [this]
 
 theorem bitMask_le {x : Nat} (hx : x ≠ 0) : bitMask x ≤ 2 * x := by
   have h1 := Nat.log2_self_le hx
   simp only [bitMask, bitLength, hx, ↓reduceIte, Nat.pow_succ]
-  omega
+  omega_using [h1]
 
 
 /-! ## The validity and the output -/
@@ -57,7 +58,7 @@ def outByte (v ok : Bool) (kl i : Nat) (e a : Byte) : Byte :=
 
 theorem vEM_eq {EM : List Byte} {k : Nat} (hEM : EM.length = k) (hk : 2 ≤ k) : vEM EM k = valid EM := by
   rw [valid_eq, hEM, show EM.getD 1 0 = EM.getD 1 1 by
-    rw [List.getD_eq_getElem?_getD, List.getD_eq_getElem?_getD, List.getElem?_eq_getElem (by omega)]; rfl]
+    rw [List.getD_eq_getElem?_getD, List.getD_eq_getElem?_getD, List.getElem?_eq_getElem (by omega_using [hEM, hk])]; rfl]
   simp only [vEM, vOf]
   cases hf : firstZero EM k with
   | none => simp
@@ -73,7 +74,7 @@ theorem msgLength_le {EM : List Byte} : msgLength EM ≤ EM.length := by
   · exact Nat.zero_le _
 
 theorem lastN_length {l : Nat} {X : List Byte} (h : l ≤ X.length) : (lastN l X).length = l := by
-  simp [lastN]; omega
+  simp [lastN]; omega_using [h]
 
 /-- The output of the selection, for a successful private-key operation. -/
 theorem sel_eq {EM AM : List Byte} {k al : Nat} (hEM : EM.length = k) (hAM : AM.length = k) (hk : 11 ≤ k)
@@ -83,11 +84,11 @@ theorem sel_eq {EM AM : List Byte} {k al : Nat} (hEM : EM.length = k) (hAM : AM.
     (List.range k).map (fun i => outByte (vEM EM k) true (k - lselOf (vEM EM k) ((firstZero EM k).getD 0) al k) i
       (EM.getD i 1) (AM.getD i 0)) = List.replicate (k - M.length) 0 ++ M := by
   intro M
-  rw [vEM_eq hEM (by omega)]
+  rw [vEM_eq hEM (by omega_using [hk])]
   have hL : lselOf (valid EM) ((firstZero EM k).getD 0) al k = M.length := by
     simp only [lselOf, M]
     cases hv : valid EM
-    · simp [lastN_length (show al ≤ AM.length by omega)]
+    · simp [lastN_length (show al ≤ AM.length by omega_using [hAM, hal])]
     · simp only [↓reduceIte]
       rw [lastN_length msgLength_le, msgLength_eq, hEM]
       rw [valid_eq, hEM] at hv
@@ -98,7 +99,7 @@ theorem sel_eq {EM AM : List Byte} {k al : Nat} (hEM : EM.length = k) (hAM : AM.
   rw [hL]
   cases hv : valid EM
   · simp only [M, hv, Bool.false_eq_true, ↓reduceIte]
-    have hl : al ≤ AM.length := by omega
+    have hl : al ≤ AM.length := by omega_using [hAM, hal]
     rw [lastN_length hl, show k = AM.length from hAM.symm, out_eq hl]
     refine List.map_congr_left fun i hi => ?_
     simp only [outByte, and_true, Bool.false_eq_true, ↓reduceIte]

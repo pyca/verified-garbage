@@ -24,10 +24,10 @@ theorem codeWith_ct {g : PrivGeometry} {bs1 bs2 : Fin 8 → List Byte} {Q1 Q2 : 
   obtain ⟨s0, t0, ⟨⟨hs, q1⟩, ⟨ht, q2⟩, sp⟩, ps, pt⟩ := hp
   have ps' := push_pushed (s := s0)
     (rs := [.r0, .r1, .r2, .r3, .r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12, .lr])
-    (by decide) (by change 56 ≤ s0.sp.toNat; have := hs.stackFit; simp only [stackBytes] at this; omega)
+    (by decide) (by change 56 ≤ s0.sp.toNat; have := hs.stackFit; simp only [stackBytes] at this; omega_using [this])
   have pt' := push_pushed (s := t0)
     (rs := [.r0, .r1, .r2, .r3, .r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12, .lr])
-    (by decide) (by change 56 ≤ t0.sp.toNat; have := ht.stackFit; simp only [stackBytes] at this; omega)
+    (by decide) (by change 56 ≤ t0.sp.toNat; have := ht.stackFit; simp only [stackBytes] at this; omega_using [this])
   have es : pcPushed s0 = s := Option.some.inj (ps'.symm.trans ps)
   have et : pcPushed t0 = t := Option.some.inj (pt'.symm.trans pt)
   subst s; subst t

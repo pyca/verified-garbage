@@ -67,8 +67,8 @@ theorem save_ok (hc : CfgOk c) {s : State} {base : Addr} (hs : Scr s base size) 
   have hp := hc.p_lt
   have hp3 := hc.p_ge
   have hm1 : c.mont 1 < 2 ^ (64 * c.n) := by
-    have : c.mont 1 < c.C.p := Nat.mod_lt _ (by omega)
-    omega
+    have : c.mont 1 < c.C.p := Nat.mod_lt _ (by omega_using [hp3])
+    omega_using [hp, this]
   rw [save_eq]
   refine WP.block_append (WP.mono (copySl_ok hc hs (o := UX) (a := RX) (by decide) (by decide) (by decide))
     fun s₁ ⟨e₁, k₁, O₁⟩ => ?_)
@@ -192,7 +192,7 @@ theorem sum_ok (hc : CfgOk c) {s : State} {base : Addr} (hs : Scr s base size) (
   refine ⟨hs₃.of_rest k₄ (by decide), PK.rest.trans (K₄.mono (by decide)), U₄, ?_, ?_, ?_⟩
   · have hM₁ := I₁.mod
     refine ⟨hM₁.n0, hM₁.mo, hM₁.tmp, hM₁.sep, ?_, hM₁.inv, hM₁.red⟩
-    rw [U₄.wordsVal (fun w hw => ?_) (by have := hM₁.mo; omega)]
+    rw [U₄.wordsVal (fun w hw => ?_) (by have := hM₁.mo; omega_using [hn, this])]
     · exact hM.val
     · exact apart_slWk (c := c) h7 (i := MP) (by decide) (by decide) w hw
   · rw [z₄]; exact I₁.lt _ (hD DZ (by simp))
@@ -288,7 +288,7 @@ theorem scW_le (h7 : c.n < 10) : ∀ w ∈ scW c, w.1 + w.2 ≤ 8192 := by
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
   rcases hw with rfl | rfl
   · exact tbl_le h7
-  · have := sl_le c h7 (i := K) (by decide); dsimp only [size] at this ⊢; omega
+  · have := sl_le c h7 (i := K) (by decide); dsimp only [size] at this ⊢; omega_using [this]
 
 /-- The slots the two ladders and `save` write. -/
 abbrev ptsW : List Nat :=

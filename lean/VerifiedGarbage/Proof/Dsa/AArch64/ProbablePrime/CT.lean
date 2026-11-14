@@ -108,8 +108,8 @@ def callPublic {bits : Nat} (hb : Supported bits) {s : State} (A : PrimeABI bits
     rcases hb with rfl | rfl | rfl | rfl | rfl <;> decide
   large := by
     change 8161 < candidateOf bits s
-    have hlow := ((bitLength_iff_bounds (by have := hb.le; omega)).mp A.bits).1
-    have h2 : 2 ^ 159 ≤ 2 ^ (bits - 1) := Nat.pow_le_pow_right (by decide) (by have := hb.le; omega)
+    have hlow := ((bitLength_iff_bounds (by have := hb.le; omega_using [this])).mp A.bits).1
+    have h2 : 2 ^ 159 ≤ 2 ^ (bits - 1) := Nat.pow_le_pow_right (by decide) (by have := hb.le; omega_using [this])
     have : (8161 : Nat) < 2 ^ 159 := by decide
     exact Nat.lt_of_lt_of_le this (Nat.le_trans h2 hlow)
   policy := by
@@ -138,14 +138,14 @@ def framePublic {bits : Nat} (hb : Supported bits) {s : State} (A : PrimeABI bit
     intro k hk j hj
     have D0 : Region.Disjoint ⟨frameBase s, 272⟩ ⟨off (s.gpr .x0) arithmetic, arithmeticBytes⟩ :=
       (A.stackWs.sub_left (frame_sub s)).sub_right (ws_sub A (by decide))
-    exact D0.sep (frame_contains s (by omega))
-      (Offset.contains_base _ (by change 8 * j + 8 ≤ arithmeticBytes; unfold arithmeticBytes; omega) (by omega))
+    exact D0.sep (frame_contains s (by omega_using [hk]))
+      (Offset.contains_base _ (by change 8 * j + 8 ≤ arithmeticBytes; unfold arithmeticBytes; omega_using [hj]) (by omega_using [hj]))
   outside := by
     intro k hk i hi
     have D0 : Region.Disjoint ⟨frameBase s, 272⟩ ⟨off (s.gpr .x0) arithmetic, arithmeticBytes⟩ :=
       (A.stackWs.sub_left (frame_sub s)).sub_right (ws_sub A (by decide))
     rw [off_off]
-    exact out_scr D0 (frame_contains s (by omega))
+    exact out_scr D0 (frame_contains s (by omega_using [hk, hi]))
 
 theorem framePublic_eq {bits : Nat} (hb : Supported bits) {s₁ s₂ : State} (A₁ : PrimeABI bits s₁)
     (A₂ : PrimeABI bits s₂) (hv : view bits s₁ = view bits s₂) : framePublic hb A₁ = framePublic hb A₂ := by
@@ -167,7 +167,7 @@ theorem before_of_prepared {bits : Nat} (hb : Supported bits) {s : State} (A : P
   have hws : wsRegion s ∈ s.wr := by rw [A.wr]; exact List.mem_cons_self
   have hlen : len bits ≤ 384 := by rcases hb with rfl | rfl | rfl | rfl | rfl <;> decide
   refine ⟨⟨P.sp, fun k hk => ⟨_, List.mem_append_right _ (by rw [P.wr]; exact List.mem_cons_self),
-      frame_contains s (by omega)⟩, P.arena, P.tapePtr, ?_,
+      frame_contains s (by omega_using [hk])⟩, P.arena, P.tapePtr, ?_,
       by change word u.mem (frameBase s) 128 = BitVec.ofNat 64 0; rw [P.used]; rfl, P.tape, P.source,
       fun i hi => ?_, Nat.zero_le _⟩, P.scr, P.x0, rfl, rfl, rfl, rfl, rfl⟩
   · change word u.mem (frameBase s) 120 =
@@ -178,8 +178,8 @@ theorem before_of_prepared {bits : Nat} (hb : Supported bits) {s : State} (A : P
     change (wsRegion s).Contains (off (off (s.gpr .x0) witness) i) 1
     change i < len bits at hi
     rw [off_off]
-    exact Offset.contains_base _ (by have := A.size; have : witness + 384 ≤ domainCheck := (by decide); omega)
-      (by have : witness + 384 < 2 ^ 64 := (by decide); omega)
+    exact Offset.contains_base _ (by have := A.size; have : witness + 384 ≤ domainCheck := (by decide); omega_arith)
+      (by have : witness + 384 < 2 ^ 64 := (by decide); omega_using [hlen, hi, this])
 
 /-! ## The stages, each with the public view of the arguments -/
 
@@ -238,7 +238,7 @@ theorem load_ok {bits : Nat} {hb : Supported bits} {v : View} {u : State} (h : T
   obtain ⟨s, A, rfl, T⟩ := h
   obtain ⟨⟨_, inp, _⟩, hsp, hwr, _, _, _, _, hU⟩ := T
   have hx0 := inp.ws.x0
-  have h216 := inp.ws.scr.ld (d := 216) (by have := inp.ws.h256; omega)
+  have h216 := inp.ws.scr.ld (d := 216) (by have := inp.ws.h256; omega_using [this])
   have h136 : InRegions (u.rd ++ u.wr) (off (frameBase s) usedSlot) 8 :=
     ⟨_, List.mem_append_right _ (by rw [hwr]; exact List.mem_cons_self), frame_contains s (by decide)⟩
   have run : WP isa (.block exitLoad) u fun t => t.gpr .x4 = s.gpr .x4 := by

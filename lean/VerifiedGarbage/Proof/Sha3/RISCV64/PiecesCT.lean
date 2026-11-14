@@ -251,7 +251,7 @@ theorem hash_ct {N n : Nat} {sc f : Reg} {o : Nat} {ps : List Piece} {P : State 
     (relct_wp (relct_noMem rfl) fun a b hab => ⟨sa _ _ hab.1, sa _ _ hab.2⟩) ?_
   have hSA : ∀ {s₀ s : State}, HashOk N n sc f o ps s₀ → SA n sc f o s₀ s →
       SqueezeArgs s (s₀.gpr sc) (s₀.gpr f + BitVec.ofNat 64 o) 136 0 n :=
-    fun hh h => ⟨h.a0, h.a1, h.a2, h.a3, h.a4, rate136, by decide, by have := hh.pn; omega,
+    fun hh h => ⟨h.a0, h.a1, h.a2, h.a3, h.a4, rate136, by decide, by have := hh.pn; omega_using [this],
       by rw [h.rg.sp]; exact hh.env.spal, by rw [h.rg.sp]; exact hh.env.sp, hh.dsc.symm.sub_left (st_sub _ hh.env.big),
       by rw [h.rg.sp]; exact hh.env.d.sub_right (st_sub _ hh.env.big), by rw [h.rg.sp]; exact hh.dsp⟩
   have cS : ∀ {s₀ s : State}, HashOk N n sc f o ps s₀ → Rg s₀ s →

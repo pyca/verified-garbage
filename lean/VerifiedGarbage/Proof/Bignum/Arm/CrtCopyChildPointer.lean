@@ -23,12 +23,12 @@ theorem crt_copyChildPointer_ok (s : State) {base value : BitVec 32} {size src d
       t.mem = s.mem.writeW (off (State.addr base) dst) value ∧ Rest [.r1] s t := by
   unfold copyChildPointer
   refine wp_ldr (a := off (State.addr base) src) hs
-    (by rw [ptr]; exact addr_add (by have := ws.nowrap; omega)) (ws.read srcFit) fun u a => ?_
+    (by rw [ptr]; exact addr_add (by have := ws.nowrap; omega_using [srcFit, this])) (ws.read srcFit) fun u a => ?_
   refine wp_ldr (a := off (State.addr base) (child + slot)) hslot
-    (by rw [a.gpr, childPtr, Offset.add_add]; exact addr_add (by have := ws.nowrap; omega))
+    (by rw [a.gpr, childPtr, Offset.add_add]; exact addr_add (by have := ws.nowrap; omega_using [childFit, this]))
     (by rw [a.rd, a.wr]; exact ws.read childFit) fun v b => ?_
   refine wp_str (a := off (State.addr base) dst) hd
-    (by rw [b.other .r0 (by decide), a.other .r0 (by decide), ptr]; exact addr_add (by have := ws.nowrap; omega))
+    (by rw [b.other .r0 (by decide), a.other .r0 (by decide), ptr]; exact addr_add (by have := ws.nowrap; omega_using [dstFit, this]))
     (by rw [b.wr, a.wr]; exact ws.write dstFit) fun t c => WP.block_nil ?_
   refine ⟨?_, (a.rest (by simp)).trans ((b.rest (by simp)).trans (c.rest _))⟩
   rw [c.mem, b.mem, a.mem, b.gpr, a.mem, arrayPtr]

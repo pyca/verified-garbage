@@ -55,15 +55,15 @@ theorem sub_value_step {s0 s t : State} {base : BitVec 32} {size o a b n i : Nat
   have hb := ctx.bFits
   have sa := ctx.sepA
   have sb := ctx.sepB
-  have aold := inv.outside.w32 (d := a + 4 * i) (by omega) (by omega)
-  have bold := inv.outside.w32 (d := b + 4 * i) (by omega) (by omega)
+  have aold := inv.outside.w32 (d := a + 4 * i) (by omega_using [hi, sa]) (by omega_using [hi, hn, ha])
+  have bold := inv.outside.w32 (d := b + 4 * i) (by omega_using [hi, sb]) (by omega_using [hi, hn, hb])
   rw [aold, bold] at hv
-  have wr := writeW32_outside s.mem (State.addr base) (d := o + 4 * i) (t.gpr .r3) (by omega)
+  have wr := writeW32_outside s.mem (State.addr base) (d := o + 4 * i) (t.gpr .r3) (by omega_using [hi, hn, ho])
   rw [← hm] at wr
-  have low := wr.val32 (d := o) (k := i) (by omega) (by omega)
+  have low := wr.val32 (d := o) (k := i) (by omega_using []) (by omega_using [hi, hn, ho])
   have top : w32 t.mem (State.addr base) (o + 4 * i) = (t.gpr .r3).toNat := by
     rw [hm, w32_write_self]
-  refine ⟨(inv.outside.mono (Nat.le_refl _) (by omega)).trans (wr.mono (by omega) (by omega)), ?_⟩
+  refine ⟨(inv.outside.mono (Nat.le_refl _) (by omega_using [])).trans (wr.mono (by omega_using []) (by omega_using [])), ?_⟩
   rw [val32_succ, val32_succ, val32_succ, low, top, pow32_succ]
   have value := inv.value
   generalize 2 ^ (32 * i) = P at *

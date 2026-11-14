@@ -33,21 +33,21 @@ def jointGPos (c : Joint.Cfg) (j : Nat) : Nat := if c.gw=9 then 2*j else j
 
 theorem wbyte_lo_toNat (u j : Nat) : (FastNaf.wbyte u (2*j)).toNat=
     if FastNaf.negative 9 u j then 256-FastNaf.magnitude 9 u j else FastNaf.magnitude 9 u j := by
-  rw [fastWbyte_toNat,fastWord9_toNat,show 2*j/2=j by omega,show 2*j%2=0 by omega]
+  rw [fastWbyte_toNat,fastWord9_toNat,show 2*j/2=j by omega_using [],show 2*j%2=0 by omega_using []]
   have hb := fastMagnitude_bound 9 u j
   cases hn : FastNaf.negative 9 u j
-  · simp only [Bool.false_eq_true,ite_false] <;> omega
+  · simp only [Bool.false_eq_true,ite_false] <;> omega_using [hb]
   · have hp := FastNaf.negative_magnitude_pos 9 u j hn
-    simp only [ite_true] <;> omega
+    simp only [ite_true] <;> omega_using [hb, hp]
 
 theorem wbyte_hi_toNat (u j : Nat) : (FastNaf.wbyte u (2*j+1)).toNat=
     if FastNaf.negative 9 u j then 255 else 0 := by
-  rw [fastWbyte_toNat,fastWord9_toNat,show (2*j+1)/2=j by omega,show (2*j+1)%2=1 by omega]
+  rw [fastWbyte_toNat,fastWord9_toNat,show (2*j+1)/2=j by omega_using [],show (2*j+1)%2=1 by omega_using []]
   have hb := fastMagnitude_bound 9 u j
   cases hn : FastNaf.negative 9 u j
-  · simp only [Bool.false_eq_true,ite_false] <;> omega
+  · simp only [Bool.false_eq_true,ite_false] <;> omega_using [hb]
   · have hp := FastNaf.negative_magnitude_pos 9 u j hn
-    simp only [ite_true] <;> omega
+    simp only [ite_true] <;> omega_using [hb, hp]
 
 theorem setWidth64_zero_iff : ∀ x : BitVec 8,x.setWidth 64=0 ↔ x.toNat=0 := by decide +kernel
 
@@ -59,7 +59,7 @@ theorem jointGCell_zero_iff {c : Joint.Cfg} (hg : c.gw=7 ∨ c.gw=9) (u j : Nat)
     cases hn : FastNaf.negative 9 u j
     · simp only [Bool.false_eq_true,ite_false]
     · have hp := FastNaf.negative_magnitude_pos 9 u j hn
-      simp only [ite_true]; omega
+      simp only [ite_true]; omega_using [hb, hp]
   · have h7 := hg.resolve_right h9
     rw [jointGCell,ite_eq_right h9,h7,←FastNaf.byte_zero_iff 7 u j,setWidth64_zero_iff,
       ←BitVec.toNat_inj]
@@ -73,10 +73,10 @@ theorem nafRead2_ok {s : State} {base : Addr} {size bits j : Nat} {b : BitVec 8}
     WP isa (.block [.add .x .x16 .x0 .x19,.add .x .x16 .x16 .x19,.ldrb r .x16 bits]) s fun t =>
       t.gpr r=b.setWidth 64 ∧ t.gpr .x16=off base (2*j) ∧ Keeps [r,.x16] s t := by
   have hrr : InRegions (s.rd++s.wr) (off base (bits+2*j)) 1 :=
-    ⟨_,List.mem_append_right _ hs.wr,hs.contains (by omega) (by decide)⟩
+    ⟨_,List.mem_append_right _ hs.wr,hs.contains (by omega_using [hj]) (by decide)⟩
   have h2 : base+BitVec.ofNat 64 j+BitVec.ofNat 64 j=off base (2*j) := by
     simp only [off,BitVec.add_assoc,←BitVec.ofNat_add]
-    rw [show j+j=2*j by omega]
+    rw [show j+j=2*j by omega_using []]
   have he : off base (2*j)+BitVec.ofNat 64 bits=off base (bits+2*j) := by
     simp only [off,BitVec.add_assoc,←BitVec.ofNat_add]
     rw [Nat.add_comm (2*j)]
@@ -99,7 +99,7 @@ theorem nafRead1_ok {s : State} {base : Addr} {size bits j : Nat} {b : BitVec 8}
     WP isa (.block [.add .x .x16 .x0 .x19,.ldrb r .x16 bits]) s fun t =>
       t.gpr r=b.setWidth 64 ∧ t.gpr .x16=off base j ∧ Keeps [r,.x16] s t := by
   have hrr : InRegions (s.rd++s.wr) (off base (bits+j)) 1 :=
-    ⟨_,List.mem_append_right _ hs.wr,hs.contains (by omega) (by decide)⟩
+    ⟨_,List.mem_append_right _ hs.wr,hs.contains (by omega_using [hj]) (by decide)⟩
   have he : base+BitVec.ofNat 64 j+BitVec.ofNat 64 bits=off base (bits+j) := by
     simp only [off,BitVec.add_assoc,←BitVec.ofNat_add]
     rw [Nat.add_comm j]
@@ -121,7 +121,7 @@ theorem nafAdd2_ok {s : State} {base : Addr} {size j : Nat} (hs : Scr s base siz
       t.gpr .x16=off base (2*j) ∧ Keeps [.x16] s t := by
   have h2 : base+BitVec.ofNat 64 j+BitVec.ofNat 64 j=off base (2*j) := by
     simp only [off,BitVec.add_assoc,←BitVec.ofNat_add]
-    rw [show j+j=2*j by omega]
+    rw [show j+j=2*j by omega_using []]
   apply WP.of_runBlock
   simp only [runBlock_cons,runStep_some,runBlock_nil,exec,read_x,
     RegUpd.gpr_write,BitVec.setWidth_eq,hs.x0,h19,reduceCtorEq,ite_false,ite_true,h2,
@@ -138,10 +138,10 @@ theorem nafHiByte_ok {s : State} {base : Addr} {size bits j : Nat} {b : BitVec 8
     WP isa (.block [.ldrb .x3 .x16 (bits+1)]) s fun t =>
       t.gpr .x3=b.setWidth 64 ∧ Keeps [.x3] s t := by
   have hrr : InRegions (s.rd++s.wr) (off base (bits+(2*j+1))) 1 :=
-    ⟨_,List.mem_append_right _ hs.wr,hs.contains (by omega) (by decide)⟩
+    ⟨_,List.mem_append_right _ hs.wr,hs.contains (by omega_using [hj]) (by decide)⟩
   have he : off base (2*j)+BitVec.ofNat 64 (bits+1)=off base (bits+(2*j+1)) := by
     simp only [off,BitVec.add_assoc,←BitVec.ofNat_add]
-    rw [show 2*j+(bits+1)=bits+(2*j+1) by omega]
+    rw [show 2*j+(bits+1)=bits+(2*j+1) by omega_using []]
   apply WP.of_runBlock
   simp only [runBlock_cons,runStep_some,runBlock_nil,exec,State.load,addr,
     RegUpd.gpr_write,h16,Size.bits,Nat.mod_one,hb,and_self,he,hrr,
@@ -162,23 +162,23 @@ theorem jointFixedRead_ok {c : Joint.Cfg} {s : State} {base : Addr} {size u j : 
       (c.gw=9 → t.gpr .x3=(FastNaf.wbyte u (2*j+1)).setWidth 64) ∧ Keeps [.x2,.x3,.x16] s t := by
   by_cases h9 : c.gw=9
   · have hlen : jointGLen c=514 := by rw [jointGLen,ite_eq_left h9]
-    have g := hm (2*j) (by omega)
-    have g1 := hm (2*j+1) (by omega)
+    have g := hm (2*j) (by omega_using [hj, hlen])
+    have g1 := hm (2*j+1) (by omega_using [hj, hlen])
     rw [jointGByte,ite_eq_left h9] at g g1
     rw [Joint.fixedRead,ite_eq_left h9,
       show ([.add .x .x16 .x0 .x19,.add .x .x16 .x16 .x19,.ldrb .x2 .x16 c.gBits,
         .ldrb .x3 .x16 (c.gBits+1)] : List Instr)=[.add .x .x16 .x0 .x19,.add .x .x16 .x16 .x19,
         .ldrb .x2 .x16 c.gBits]++[.ldrb .x3 .x16 (c.gBits+1)] from rfl,WP.block_append_iff]
-    refine WP.mono (nafRead2_ok hs (by omega) (by omega) h19 g .x2 (by decide)) fun a ⟨a2,a16,ka⟩ => ?_
-    refine WP.mono (nafHiByte_ok (hs.of_keeps ka (by decide)) hB (by omega) a16 (by rw [ka.mem]; exact g1))
+    refine WP.mono (nafRead2_ok hs (by omega_using [hB]) (by omega_using [hj, hl, hlen]) h19 g .x2 (by decide)) fun a ⟨a2,a16,ka⟩ => ?_
+    refine WP.mono (nafHiByte_ok (hs.of_keeps ka (by decide)) hB (by omega_using [hj, hl, hlen]) a16 (by rw [ka.mem]; exact g1))
       fun t ⟨t3,kt⟩ => ⟨?_,?_,fun _ => t3,(ka.mono (by simp)).trans (kt.mono (by simp))⟩
     · rw [kt.gpr _ (by decide),a2,jointGCell,ite_eq_left h9]
     · rw [kt.gpr _ (by decide),a16,jointGPos,ite_eq_left h9]
   · have hlen : jointGLen c=257 := by rw [jointGLen,ite_eq_right h9]
-    have g := hm j (by omega)
+    have g := hm j (by omega_using [hj, hlen])
     rw [jointGByte,ite_eq_right h9] at g
     rw [Joint.fixedRead,ite_eq_right h9]
-    refine WP.mono (nafRead1_ok hs (by omega) (by omega) h19 g .x2 (by decide)) fun t ⟨t2,t16,kt⟩ =>
+    refine WP.mono (nafRead1_ok hs (by omega_using [hB]) (by omega_using [hj, hl, hlen]) h19 g .x2 (by decide)) fun t ⟨t2,t16,kt⟩ =>
       ⟨?_,?_,fun h => absurd h h9,kt.mono (by simp)⟩
     · rw [t2,jointGCell,ite_eq_right h9]
     · rw [t16,jointGPos,ite_eq_right h9]
@@ -206,10 +206,10 @@ theorem fixedSignByte_ok {s : State} {base : Addr} {size bits u j : Nat}
     WP isa (.block [.ldrb .x3 .x16 (bits+1),.lsr .x .x3 .x3 7]) s fun t =>
       t.gpr .x3=BitVec.ofNat 64 (FastNaf.negative 9 u j).toNat ∧ Keeps [.x3] s t := by
   have hrr : InRegions (s.rd++s.wr) (off base (bits+(2*j+1))) 1 :=
-    ⟨_,List.mem_append_right _ hs.wr,hs.contains (by omega) (by decide)⟩
+    ⟨_,List.mem_append_right _ hs.wr,hs.contains (by omega_using [hj]) (by decide)⟩
   have he : off base (2*j)+BitVec.ofNat 64 (bits+1)=off base (bits+(2*j+1)) := by
     simp only [off,BitVec.add_assoc,←BitVec.ofNat_add]
-    rw [show 2*j+(bits+1)=bits+(2*j+1) by omega]
+    rw [show 2*j+(bits+1)=bits+(2*j+1) by omega_using []]
   apply WP.of_runBlock
   simp only [runBlock_cons,runStep_some,runBlock_nil,exec,read_x,State.load,addr,
     RegUpd.gpr_write,BitVec.setWidth_eq,h16,Size.bits,Nat.mod_one,hb,and_self,he,hrr,
@@ -258,7 +258,7 @@ theorem jointFixedIndex_ok {c : Joint.Cfg} {s : State} {u j : Nat} (hg : c.gw=7 
     · simp only [Bool.false_eq_true,ite_false]
     · have hp := FastNaf.negative_magnitude_pos 9 u j hn
       simp only [ite_true]
-      congr 2; omega
+      congr 2; omega_using [hb]
   · have h7 := hg.resolve_right h9
     rw [jointGCell,ite_eq_right h9] at h2
     rw [Joint.fixedIndex,ite_eq_right h9]
@@ -276,23 +276,23 @@ theorem jointSignRead_ok {c : Joint.Cfg} {s : State} {base : Addr} {size u j : N
       t.gpr .x3=BitVec.ofNat 64 (FastNaf.negative c.gw u j).toNat ∧ Keeps [.x3,.x16] s t := by
   by_cases h9 : c.gw=9
   · have hlen : jointGLen c=514 := by rw [jointGLen,ite_eq_left h9]
-    have g := hm (2*j+1) (by omega)
+    have g := hm (2*j+1) (by omega_using [hj, hlen])
     rw [jointGByte,ite_eq_left h9] at g
     rw [Joint.signRead,ite_eq_left h9,
       show ([.add .x .x16 .x0 .x19,.add .x .x16 .x16 .x19,.ldrb .x3 .x16 (c.gBits+1),
         .lsr .x .x3 .x3 7] : List Instr)=[.add .x .x16 .x0 .x19,.add .x .x16 .x16 .x19]++
         [.ldrb .x3 .x16 (c.gBits+1),.lsr .x .x3 .x3 7] from rfl,WP.block_append_iff]
     refine WP.mono (nafAdd2_ok hs h19) fun a ⟨a16,ka⟩ => ?_
-    refine WP.mono (fixedSignByte_ok (u:=u) (hs.of_keeps ka (by decide)) hB (by omega) a16
+    refine WP.mono (fixedSignByte_ok (u:=u) (hs.of_keeps ka (by decide)) hB (by omega_using [hj, hl, hlen]) a16
       (by rw [ka.mem]; exact g)) fun t ⟨t3,kt⟩ => ⟨?_,(ka.mono (by simp)).trans (kt.mono (by simp))⟩
     rw [t3,h9]
   · have h7 := hg.resolve_right h9
     have hlen : jointGLen c=257 := by rw [jointGLen,ite_eq_right h9]
-    have g := hm j (by omega)
+    have g := hm j (by omega_using [hj, hlen])
     rw [jointGByte,ite_eq_right h9] at g
     rw [Joint.signRead,ite_eq_right h9]
-    refine WP.mono (nafSignRead_ok (K:=c.G) hs (by change c.gBits<4096; omega)
-      (by change c.gBits+j<size; omega) h19 g) fun t ⟨t3,kt⟩ => ⟨?_,kt⟩
+    refine WP.mono (nafSignRead_ok (K:=c.G) hs (by change c.gBits<4096; omega_using [hB])
+      (by change c.gBits+j<size; omega_using [hj, hl, hlen]) h19 g) fun t ⟨t3,kt⟩ => ⟨?_,kt⟩
     have hbn : nafNegative (FastNaf.byte 7 u j)=FastNaf.negative 7 u j := FastNaf.byte_negative 7 u j
     rw [t3,hbn,h7]
 

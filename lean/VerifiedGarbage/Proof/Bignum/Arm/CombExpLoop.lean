@@ -31,8 +31,8 @@ theorem rows_ok {base source table : BitVec 32} {len w bytes N M g x count : Nat
     ⟨positive,bound,h,hp,controls,counter,Frame.refl _ _,Rest.refl _ _⟩
   intro k t inv
   obtain ⟨hk,le,power,pt,control,counted,frame,rest⟩ := inv
-  have split : k-1+1=k := by omega
-  refine WP.mono (round_ok K t (i:=k-1) (by omega) (by omega)
+  have split : k-1+1=k := by omega_using [hk]
+  refine WP.mono (round_ok K t (i:=k-1) (by omega_using [hk, le]) (by omega_using [fits, le])
     (by simpa only [split] using power) pt control (by simpa only [split] using counted)) ?_
   rintro u ⟨powerU,pu,controlsU,counterU,zero,frameU,restU⟩
   by_cases last : k-1=0
@@ -43,7 +43,7 @@ theorem rows_ok {base source table : BitVec 32} {len w bytes N M g x count : Nat
     · simpa only [last] using powerU
     · simpa only [last] using counterU
   · right
-    refine ⟨?_,k-1,by omega,by omega,by omega,powerU,pu,controlsU,counterU,
+    refine ⟨?_,k-1,by omega_using [hk],by omega_using [last],by omega_using [le],powerU,pu,controlsU,counterU,
       frame.trans frameU,rest.trans restU⟩
     change some (!u.z)=some true
     simp only [zero,last,decide_false,Bool.not_false]

@@ -14,12 +14,12 @@ theorem imported_inverse_unique {p : Parameters} {a b : BitVec 64} {s t : VG.AAr
  have invA : (p.P%2^64*a.toNat+1)%2^64=0 := by
   have h:=left.inverse
   change ((word s.mem p.B (slot p.w 0)).toNat*a.toNat+1)%2^64=0 at h
-  rw [←wv_mod64 s.mem p.B (slot p.w 0) (n:=p.w) (by have :=p.positive;omega),left.modulus] at h
+  rw [←wv_mod64 s.mem p.B (slot p.w 0) (n:=p.w) (by have :=p.positive;omega_using [this]),left.modulus] at h
   exact h
  have invB : (p.P%2^64*b.toNat+1)%2^64=0 := by
   have h:=right.inverse
   change ((word t.mem p.B (slot p.w 0)).toNat*b.toNat+1)%2^64=0 at h
-  rw [←wv_mod64 t.mem p.B (slot p.w 0) (n:=p.w) (by have :=p.positive;omega),right.modulus] at h
+  rw [←wv_mod64 t.mem p.B (slot p.w 0) (n:=p.w) (by have :=p.positive;omega_using [this]),right.modulus] at h
   exact h
  exact minv_unique (by rw [Nat.mod_mod_of_dvd _ (by decide)];exact odd) invA invB
 

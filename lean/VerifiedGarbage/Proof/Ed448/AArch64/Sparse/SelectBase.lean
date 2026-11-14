@@ -56,16 +56,16 @@ theorem selectBase_ok {s:State} {base:Addr} (hs:Scr s base)
       s.syms baseSym+BitVec.ofNat 64 (8*(16*(m/2)+w)) := by
     intro w
     rw [off,Offset.add_add]
-    exact congrArg (fun n => s.syms baseSym+BitVec.ofNat 64 n) (by omega)
+    exact congrArg (fun n => s.syms baseSym+BitVec.ofNat 64 n) (by omega_using [])
   refine WP.mono (copyWords_ok (n:=16) (a:=0) (hs.of_keeps ka (by decide)) a8 (by decide) (by decide) (by decide)
     (fun w hw => by
       rw [ka.2.1,ka.2.2,ho w]
-      exact VG.CallLay.inRegions_sub ht.read (by omega) (by decide))
+      exact VG.CallLay.inRegions_sub ht.read (by omega_using [hm, hw]) (by decide))
     (fun w hw j hj => by
       rw [ho w,Offset.add_add]
-      exact Nat.le_trans (by decide) (ht.far _ (by omega)))) fun t ⟨tv,fo,kt⟩ => ?_
+      exact Nat.le_trans (by decide) (ht.far _ (by omega_using [hm, hw, hj])))) fun t ⟨tv,fo,kt⟩ => ?_
   refine ⟨fun w hw => ?_,?_,(ka.mono (by decide)).trans (kt.mono (by decide))⟩
-  · rw [tv w hw,ho w,am,ht.val _ (by omega)]
+  · rw [tv w hw,ho w,am,ht.val _ (by omega_using [hm, hw])]
   · rw [am] at fo
     exact fo
 

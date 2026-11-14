@@ -52,19 +52,19 @@ theorem half_bytes (x : BitVec 128) (k : Nat) :
   simp only [vhalf, vbyte, BitVec.getLsbD_extractLsb', BitVec.getLsbD_append,
     hi, decide_true, Bool.true_and]
   by_cases h : i < 8
-  · simp [h, show 8*(2*k)+i = 16*k+i by omega]
-  · simp [h, show i-8 < 8 by omega, show 8*(2*k+1)+(i-8) = 16*k+i by omega]
+  · simp [h, show 8*(2*k)+i = 16*k+i by omega_using []]
+  · simp [h, show i-8 < 8 by omega_using [hi], show 8*(2*k+1)+(i-8) = 16*k+i by omega_using [h]]
 
 theorem half_zip_zero (x : BitVec 128) {k : Nat} (hk : k < 8) :
     (vhalf (VPermOp.eval .zip1 .b16 x 0) k).toNat = (vbyte x k).toNat ∧
     (vhalf (VPermOp.eval .zip2 .b16 x 0) k).toNat = (vbyte x (8+k)).toNat := by
   rw [half_bytes, half_bytes,
-    VG.Proof.Blowfish.AArch64.vbyte_zip1 _ _ (by omega),
-    VG.Proof.Blowfish.AArch64.vbyte_zip1 _ _ (by omega),
-    VG.Proof.Blowfish.AArch64.vbyte_zip2 _ _ (by omega),
-    VG.Proof.Blowfish.AArch64.vbyte_zip2 _ _ (by omega)]
-  simp only [show (2*k+1)%2 = 1 by omega, show (2*k)%2 = 0 by omega,
-    show (2*k+1)/2 = k by omega, show (2*k)/2 = k by omega,
+    VG.Proof.Blowfish.AArch64.vbyte_zip1 _ _ (by omega_using [hk]),
+    VG.Proof.Blowfish.AArch64.vbyte_zip1 _ _ (by omega_using [hk]),
+    VG.Proof.Blowfish.AArch64.vbyte_zip2 _ _ (by omega_using [hk]),
+    VG.Proof.Blowfish.AArch64.vbyte_zip2 _ _ (by omega_using [hk])]
+  simp only [show (2*k+1)%2 = 1 by omega_using [], show (2*k)%2 = 0 by omega_using [],
+    show (2*k+1)/2 = k by omega_using [], show (2*k)/2 = k by omega_using [],
     ite_true, show ¬ (1 = 0) by decide, ite_false]
   constructor <;> rw [BitVec.toNat_append] <;> simp [vbyte]
 
@@ -78,8 +78,8 @@ theorem byte_zip_nibbles (x : BitVec 128) {k : Nat} (hk : k < 16) :
     VG.Proof.Blowfish.AArch64.vbyte_zip2 _ _ hk]
   by_cases h : k%2 = 0
   · simp only [h, ite_true, bne_self_eq_false]
-    exact ⟨byte_low x (by omega), byte_low x (by omega)⟩
+    exact ⟨byte_low x (by omega_using [hk]), byte_low x (by omega_using [hk])⟩
   · simp only [h, ite_false, show (k%2 != 0) = true from bne_iff_ne.mpr h]
-    exact ⟨byte_high x (by omega), byte_high x (by omega)⟩
+    exact ⟨byte_high x (by omega_using [hk]), byte_high x (by omega_using [hk])⟩
 
 end VG.Proof.MlKem.AArch64.Cbd16

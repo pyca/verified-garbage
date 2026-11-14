@@ -91,7 +91,7 @@ theorem scan_trace {g : Geometry} (v : g.Valid) {capacity : Nat} {p : BitVec 32}
       subst eq
       have sp := S.caller.sp
       have St : VG.Proof.RsaKeyGen.X86.Sieve.StackContext (p - 20#32) (allocFrame 20 s) := by
-        rw [← sp]; exact VG.Proof.RsaKeyGen.X86.FilterStack.allocated_context (by rw [sp]; have := S.caller.low; omega)
+        rw [← sp]; exact VG.Proof.RsaKeyGen.X86.FilterStack.allocated_context (by rw [sp]; have := S.caller.low; omega_using [this])
       have C := S.context
       have Ci : Context g (allocFrame 20 s) :=
         ⟨⟨List.mem_cons_of_mem _ C.ws.wr, C.ws.nowrap⟩, by rw [PtrAt, allocFrame_gpr _ _ (by decide)]; exact C.base,
@@ -120,8 +120,8 @@ theorem scan_trace {g : Geometry} (v : g.Valid) {capacity : Nat} {p : BitVec 32}
       · exact ptr_value A.ebp
       · change a.gpr .edi = BitVec.ofNat 32 g.w
         apply BitVec.eq_of_toNat_eq
-        rw [A.count, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]) loopRaw
-    (fun a A => WP.mono (scanLoop_ok A.ws (by omega) (by omega) A.ebp A.count) fun _ ⟨_, _, K⟩ =>
+        rw [A.count, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [maxWidth])]) loopRaw
+    (fun a A => WP.mono (scanLoop_ok A.ws (by omega_using [positive]) (by omega_using [fit]) A.ebp A.count) fun _ ⟨_, _, K⟩ =>
       A.stack.keep K (by decide))
   have restoreRaw : RelCT isa (VG.X86.Taint.Agree (τr [.esp])) (.block [.mov .edi (.mem (VG.Impl.Mont.X86.at_ .esp 0))])
       (fun _ _ => True) :=
@@ -167,7 +167,7 @@ theorem markerBlock_keep {g : Geometry} (v : g.Valid) {capacity : Nat} {p : BitV
   have Ksa : Keeps VG.Proof.RsaKeyGen.X86.Exponent.clob s a := Ka.mono (by decide)
   have head := v.headerFit
   refine WP.mono (VG.Proof.RsaKeyGen.X86.Header.storePair_ok (S.scratch.of_keeps Ksa (by decide)) (offset := 136)
-    (by omega)) fun t ⟨_, Ot, Kt⟩ => ?_
+    (by omega_using [head])) fun t ⟨_, Ot, Kt⟩ => ?_
   have O : Outside g.W 136 8 s.mem t.mem := by rw [← Ma]; exact Ot
   exact ⟨c, VG.Proof.RsaKeyGen.X86.Exponent.ready_keep v S (outs_prepared O ⟨(136, 8), by
     unfold VG.Proof.RsaKeyGen.X86.Exponent.preparedRanges VG.Proof.RsaKeyGen.X86.Exponent.ranges
@@ -233,7 +233,7 @@ theorem halfIf_trace {g : Geometry} (v : g.Valid) {capacity : Nat} {p : BitVec 3
   have sig := seg (X := Halved g capacity p) (Y := Halving g capacity p) [.esp, .edi] (baseRegs g p fun _ => 0)
     (fun _ ⟨_, S, _⟩ => base_vals S _) raw fun s ⟨c, S, top, _⟩ => by
       refine WP.mono (VG.Proof.RsaKeyGen.X86.SigMask.code_ok S.scratch
-        (by unfold VG.Impl.RsaKeyGen.X86.Exponent.markerOffset; omega)) fun t ⟨mask, M, K⟩ => ?_
+        (by unfold VG.Impl.RsaKeyGen.X86.Exponent.markerOffset; omega_using [head])) fun t ⟨mask, M, K⟩ => ?_
       have outs : Outs g.W (VG.Proof.RsaKeyGen.X86.Exponent.preparedRanges g) s.mem t.mem := by
         rw [M]; exact Outs.refl _ _ _
       exact ⟨c, VG.Proof.RsaKeyGen.X86.Exponent.ready_keep v S outs (K.mono (by decide)), by rw [M]; exact top, _, mask⟩

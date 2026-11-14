@@ -27,9 +27,9 @@ theorem random_zero_preserves_word {s t : State} {B op : Addr} {k d : Nat}
   apply hf
   intro j hj he
   have hleft : ((off B d + BitVec.ofNat 64 i) - off B d).toNat < 8 := by
-    rw [Mem.sub_ofNat_toNat _ (by omega)]; exact hi
+    rw [Mem.sub_ofNat_toNat _ (by omega_using [hi])]; exact hi
   have hright : ((off B d + BitVec.ofNat 64 i) - op).toNat < k := by
-    rw [he, Mem.sub_ofNat_toNat _ (by omega)]; exact hj
+    rw [he, Mem.sub_ofNat_toNat _ (by omega_using [hk, hj])]; exact hj
   exact hsep _ hleft hright
 
 /-- The intermediate memory records whether output clearing was required;

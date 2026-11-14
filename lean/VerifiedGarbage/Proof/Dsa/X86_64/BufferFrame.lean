@@ -20,16 +20,16 @@ theorem localCall_field {B : Addr} {o wx d k : Nat} {mem mem' : Mem}
   intro r hr
   simp only [localCallRanges, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl
-  · right; omega
-  · left; omega
-  · left; omega
+  · right; omega_using [hb]
+  · left; omega_using [ho, hb]
+  · left; omega_using [hd, hb]
 
 theorem callFrame_source {s t : State} {B src out : Addr} {Z o wx k : Nat} {bs : List Byte} {rs : List Reg}
     (hf : CallFrame B o wx out k s.mem t.mem) (hk : Keep rs s t)
     (hZ : 176 ≤ Z) (hhi : o + slot wx 8 + tabBytes wx ≤ Z) (hbound : Z ≤ 2 ^ 64)
     (hs : Src s B Z src bs)
     (hsep : ∀ i < bs.length, ∀ j < k, src + BitVec.ofNat 64 i ≠ out + BitVec.ofNat 64 j) : Src t B Z src bs := by
-  have hslot : 256 ≤ slot wx 8 := by unfold slot hdrBytes; omega
+  have hslot : 256 ≤ slot wx 8 := by unfold slot hdrBytes; omega_using []
   refine ⟨fun i hi => by rw [hk.2.1, hk.2.2]; exact hs.rd i hi, ?_, hs.out⟩
   intro i hi
   rw [hf _ (Or.inr (Nat.le_trans hZ (hs.out i hi))) ?_ (hsep i hi)]
@@ -38,15 +38,15 @@ theorem callFrame_source {s t : State} {B src out : Addr} {Z o wx k : Nat} {bs :
     simp only [workRanges, List.mem_singleton] at hr
     subst r
     have hp := hs.out i hi
-    rcases ofs_rebase B (src + BitVec.ofNat 64 i) (o := o) (by omega) with ⟨h1, h2⟩ | ⟨h1, h2⟩ <;>
-      simp only <;> right <;> omega
+    rcases ofs_rebase B (src + BitVec.ofNat 64 i) (o := o) (by omega_using [hhi, hbound, hslot]) with ⟨h1, h2⟩ | ⟨h1, h2⟩ <;>
+      simp only <;> right <;> omega_arith
 
 theorem source_bytesAt {s : State} {B p : Addr} {Z n : Nat} {bs : List Byte}
     (hb : Spec.Rsa.bytesAt s.mem p n = bs)
     (hr : ∀ i < n, InRegions (s.rd ++ s.wr) (p + BitVec.ofNat 64 i) 1)
     (ho : ∀ i < n, Z ≤ ofs B (p + BitVec.ofNat 64 i)) : Src s B Z p bs := by
   have hlen : bs.length = n := by rw [← hb]; simp [Spec.Rsa.bytesAt]
-  refine ⟨fun i hi => hr i (by omega), ?_, fun i hi => ho i (by omega)⟩
+  refine ⟨fun i hi => hr i (by omega_using [hlen, hi]), ?_, fun i hi => ho i (by omega_using [hlen, hi])⟩
   intro i hi
   subst bs
   simp only [Spec.Rsa.bytesAt, List.getElem_map, List.getElem_range]

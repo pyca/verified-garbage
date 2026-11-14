@@ -46,15 +46,15 @@ theorem Outside.frame_span {D : Addr} {d n : Nat} {m m' : Mem} (h : Outside D d 
   have hc := hx _ (List.mem_singleton_self _)
   simp only [Region.Contains] at hc
   refine h x (Classical.byContradiction fun hne => hc ?_)
-  have h₁ : d ≤ ofs D x := by omega
-  have h₂ : ofs D x < d + n := by omega
+  have h₁ : d ≤ ofs D x := by omega_using [hne]
+  have h₂ : ofs D x < d + n := by omega_using [hne]
   have e : (x - off D d).toNat = ofs D x - d := by
     simp only [ofs, off]
     rw [← BitVec.sub_sub]
     rw [BitVec.toNat_sub_of_le]
-    · rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
-    · rw [BitVec.le_def, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]; exact h₁
-  omega
+    · rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hn, hne])]
+    · rw [BitVec.le_def, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hn, hne])]; exact h₁
+  omega_using [hne, e]
 
 /-- A word read apart from a span that changed. -/
 theorem Outside.readW_far {D : Addr} {d n : Nat} {m m' : Mem} (h : Outside D d n m m')
@@ -66,13 +66,13 @@ theorem Outside.readW_far {D : Addr} {d n : Nat} {m m' : Mem} (h : Outside D d n
 /-- `[r + 0]` for `r = S + x`, `S + x + 4` within 32 bits. -/
 theorem ea_far {s : State} {S : Addr} {r : Reg} {x : Nat} (hp : PtrAt s S r x)
     (hx : S.toNat + x + 4 ≤ 2 ^ 32) : s.ea (at_ r 0) = off S x := by
-  rw [at_, ea_mk, addr_eq (by omega)]
+  rw [at_, ea_mk, addr_eq (by omega_using [])]
   apply BitVec.eq_of_toNat_eq
   simp only [off, BitVec.toNat_add, BitVec.toNat_setWidth, BitVec.toNat_ofNat]
   have hS : S.toNat < 2 ^ 64 := S.isLt
-  rw [Nat.mod_eq_of_lt (a := (s.gpr r).toNat) (by have := (s.gpr r).isLt; omega), hp]
-  repeat rw [Nat.mod_eq_of_lt (by omega)]
-  omega
+  rw [Nat.mod_eq_of_lt (a := (s.gpr r).toNat) (by have := (s.gpr r).isLt; omega_using []), hp]
+  repeat rw [Nat.mod_eq_of_lt (by omega_arith)]
+  omega_using []
 
 /-- A readable span at `S + x`. -/
 structure Span (s : State) (S : Addr) (x n : Nat) : Prop where
@@ -84,10 +84,10 @@ theorem Span.of_keeps {s t : State} {S : Addr} {x n : Nat} {rs : List Reg} (h : 
 
 theorem Span.sub {s : State} {S : Addr} {x n : Nat} (h : Span s S x n) {y k : Nat} (hy : x ≤ y)
     (hk : y + k ≤ x + n) : Span s S y k := by
-  refine ⟨?_, by have := h.fit; omega⟩
-  have := VG.CallLay.inRegions_sub h.read (off := y - x) (l := k) (by omega) (by have := h.fit; omega)
+  refine ⟨?_, by have := h.fit; omega_using [hk, this]⟩
+  have := VG.CallLay.inRegions_sub h.read (off := y - x) (l := k) (by omega_using [hy, hk]) (by have := h.fit; omega_using [this])
   rwa [show off S x + BitVec.ofNat 64 (y - x) = off S y by
-    rw [off, off, BitVec.add_assoc, BitVec.ofNat_add_ofNat]; congr 2; omega] at this
+    rw [off, off, BitVec.add_assoc, BitVec.ofNat_add_ofNat]; congr 2; omega_using [hy]] at this
 
 /-- A load through `r = S + x` of a readable span. -/
 theorem readSrc_far {s : State} {S : Addr} {r : Reg} {x : Nat} (hp : PtrAt s S r x) (hs : Span s S x 4) :
@@ -119,10 +119,10 @@ theorem selectLoop_far_ok {t₀ : State} {D S : Addr} {L : Nat} (hw : Ws t₀ D 
   rintro j t hj ⟨Kt, ebp, ebx, edi, O, V⟩
   have ht := hw.of_keeps Kt
   have ecx : t.gpr .ecx = cmask k := by rw [Kt.1 _ (by decide)]; exact hecx
-  have sj : Span t S (x + 4 * j) 4 := (hs.of_keeps Kt).sub (by omega) (by omega)
+  have sj : Span t S (x + 4 * j) 4 := (hs.of_keeps Kt).sub (by omega_using []) (by omega_using [hj])
   have xw : t.mem.readW (off S (x + 4 * j)) 32 = t₀.mem.readW (off S (x + 4 * j)) 32 :=
-    Outside.readW_far (n := 4 * N) (O.mono (Nat.le_refl _) (by omega)) (by omega)
-      (hdx.sub_left (Offset.sub S (by omega) (by omega)))
+    Outside.readW_far (n := 4 * N) (O.mono (Nat.le_refl _) (by omega_using [hj])) (by omega_using [hd, hn])
+      (hdx.sub_left (Offset.sub S (by omega_using []) (by omega_using [hj])))
   have dw : w32 t.mem D (d + 4 * j) = w32 t₀.mem D (d + 4 * j) :=
     O.w32 (by omega_using []) (by omega_using [hd, hj, hn])
   refine wp_movS (readSrc_ptr ht ebx (d := 0) (by omega_using [hd, hj])) fun s₁ u₁ _ => ?_
@@ -217,16 +217,16 @@ theorem rowAt_ok {is : List Instr} {Q : State → Prop} (h : In Ex base bytes le
     rw [U.other q hq.2.2.2, U₄.other q hq.1, U₃.other q hq.1, U₃'.other q hq.2.1, U₂.other q hq.1 hq.2.2.1,
       K₁.1 q (by simpa using hq.2.2.1)]
   · have ea : (s₁.gpr .eax).toNat = j := by
-      rw [K₁.1 _ (by decide), heax, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+      rw [K₁.1 _ (by decide), heax, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hj])]
     rw [PtrAt, U.gpr, U₄.gpr, U₃.gpr, U₃'.gpr, U₃'.other _ (by decide), U₂.eax, e₁, ea, BitVec.toNat_ofNat,
-      Nat.mod_eq_of_lt (by omega)]
+      Nat.mod_eq_of_lt (by omega_using [hb])]
     simp only [BitVec.toNat_add, BitVec.toNat_ofNat, ctxAddr, byteAddr, BitVec.toNat_setWidth]
     have a32 := (args ctxArg).isLt
-    rw [Nat.mod_eq_of_lt (a := (args ctxArg).toNat) (by omega)]
+    rw [Nat.mod_eq_of_lt (a := (args ctxArg).toNat) (by omega_using [])]
     rw [Nat.mod_eq_of_lt (a := j * bc len .wide) (by
-      have := Nat.mul_le_mul_right (bc len .wide) hj; omega)]
+      have := Nat.mul_le_mul_right (bc len .wide) hj; omega_using [hb, this])]
     rw [show BitVec.toNat (24 : BitVec 32) = 24 from rfl, Nat.mul_comm j]
-    omega
+    omega_using []
 
 /-- The context readable, apart from the working space. -/
 structure CtxRd (base : Addr) (bytes len : Nat) (args : Nat → BitVec 32) (s : State) : Prop where
@@ -240,13 +240,13 @@ theorem CtxRd.keep {t : State} {rs : List Reg} (C : CtxRd base bytes len args s)
 theorem CtxRd.afit (C : CtxRd base bytes len args s) : (args ctxArg).toNat + ctxBytes len ≤ 2 ^ 32 := by
   have fit := C.span.fit
   have hv : (byteAddr (args ctxArg)).toNat = (args ctxArg).toNat := by
-    simp only [byteAddr, BitVec.toNat_setWidth]; exact Nat.mod_eq_of_lt (by have := (args ctxArg).isLt; omega)
+    simp only [byteAddr, BitVec.toNat_setWidth]; exact Nat.mod_eq_of_lt (by have := (args ctxArg).isLt; omega_using [])
   simp only [ctxAddr] at fit
-  omega
+  omega_using [fit, hv]
 
 /-- A span of the context, within it. -/
 theorem CtxRd.row (C : CtxRd base bytes len args s) {d n : Nat} (hd : d + n ≤ ctxBytes len) :
-    Span s (ctxAddr args) d n := C.span.sub (Nat.zero_le _) (by omega)
+    Span s (ctxAddr args) d n := C.span.sub (Nat.zero_le _) (by omega_using [hd])
 
 /-- Entry `e` (at `ebp`) into slot 7 if it is the window word's; `ebp` past it. -/
 theorem combSelectStep_ok (h : In Ex base bytes len args s) (C : CtxRd base bytes len args s) {e D : Nat} (he : e < 32)
@@ -268,16 +268,16 @@ theorem combSelectStep_ok (h : In Ex base bytes len args s) (C : CtxRd base byte
   have e7 : lo len (.slot .wide 7) = numBase + 7 * st len .wide := rfl
   have nb : numBase = 3336 := rfl
   have wo : winOff = 4 := rfl
-  have ce : 2 + e ≤ 33 := by omega
-  have row := Nat.mul_le_mul_left (bc len .wide) (show 2 + e + 1 ≤ 34 by omega)
+  have ce : 2 + e ≤ 33 := by omega_using [he]
+  have row := Nat.mul_le_mul_left (bc len .wide) (show 2 + e + 1 ≤ 34 by omega_using [he])
   rw [Nat.mul_add, Nat.mul_one] at row
   unfold Generate.selectStep
   simp only [List.append_assoc]
   refine WP.seq (WP.block_append (WP.mono (VG.Proof.Mont.X86.Dynamic.windowMask_ok h.scratch (j := e)
-    (by omega) (by rw [← wo, hw]; exact hD) he) fun s₁ ⟨m₁, c₁, K₁⟩ => ?_))
+    (by omega_using [f7, est]) (by rw [← wo, hw]; exact hD) he) fun s₁ ⟨m₁, c₁, K₁⟩ => ?_))
   have h₁ := h.regs K₁ m₁
   refine ptrTo_ok (r := .ebx) (t := .edx) (x := .slot .wide 7) (by decide) (by decide) h₁.edi h₁.width h.upper'
-    (by omega) fun s₂ K₂ m₂ p₂ => ?_
+    (by omega_using [bl, f7]) fun s₂ K₂ m₂ p₂ => ?_
   have h₂ := h₁.regs K₂ m₂
   refine cntTo_ok (n := one .wide) (r := .edi) h₂.width h.upper' (by decide) fun s₃ K₃ m₃ e₃ => WP.block_nil ?_
   have K₁₃ : Keeps [.eax, .ebx, .ecx, .edx, .edi] s s₃ :=
@@ -288,20 +288,20 @@ theorem combSelectStep_ok (h : In Ex base bytes len args s) (C : CtxRd base byte
     rw [PtrAt, K₁₃.1 _ (by decide)]; exact hebp
   have ebx₃ : PtrAt s₃ base .ebx (lo len (.slot .wide 7)) := by rw [PtrAt, K₃.1 _ (by decide)]; exact p₂
   have edi₃ : (s₃.gpr .edi).toNat = 4 * cwc len .wide := by
-    rw [e₃, cb1, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]; exact bw
+    rw [e₃, cb1, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hb])]; exact bw
   have ecx₃ : s₃.gpr .ecx = cmask (decide (D = e)) := by
     rw [K₃.1 _ (by decide), K₂.1 _ (by decide), c₁, show w32 s.mem base 4 = D from hw]
     simp only [cmask, decide_eq_true_eq]
   have span : Span s₃ (ctxAddr args) (24 + bc len .wide * (2 + e)) (4 * cwc len .wide) :=
-    (C.keep K₁₃).row (by simp only [ctxBytes]; omega)
+    (C.keep K₁₃).row (by simp only [ctxBytes]; omega_using [bw, row])
   have dis : Region.Disjoint ⟨off (ctxAddr args) (24 + bc len .wide * (2 + e)), 4 * cwc len .wide⟩
       ⟨off base (lo len (.slot .wide 7)), 4 * cwc len .wide⟩ :=
-    (C.apart.sub_left (Offset.sub_base _ (by simp only [ctxBytes]; omega))).sub_right
-      (Offset.sub_base _ (by omega))
-  refine WP.seq (WP.mono (selectLoop_far_ok ws₃ (decide (D = e)) (by omega) span (by omega) dis ebp₃ ebx₃ edi₃ ecx₃)
+    (C.apart.sub_left (Offset.sub_base _ (by simp only [ctxBytes]; omega_using [bw, row]))).sub_right
+      (Offset.sub_base _ (by omega_using [he, bl, nw, f7, bw, g, hb, est, e7, nb, ce, row, e₃, edi₃]))
+  refine WP.seq (WP.mono (selectLoop_far_ok ws₃ (decide (D = e)) (by omega) span (by omega_using [he, bl, nw, f7, bw, g, hb, est, e7, nb, ce, row, e₃, edi₃]) dis ebp₃ ebx₃ edi₃ ecx₃)
     fun t ⟨O, V, _, pe, Kt⟩ => ?_)
   have K₀ : Keeps [.eax, .ebx, .ecx, .edx, .ebp, .edi] s t := (K₁₃.mono (by decide)).trans (Kt.mono (by decide))
-  have Oall : Outside base 0 bytes s.mem t.mem := by rw [← m₁₃]; exact O.mono (Nat.zero_le _) (by omega)
+  have Oall : Outside base 0 bytes s.mem t.mem := by rw [← m₁₃]; exact O.mono (Nat.zero_le _) (by omega_using [he, bl, nw, f7, bw, g, hb, est, e7, nb, ce, row, e₃, edi₃])
   refine wp_movS ((h.stack 16 (by decide)).keep K₀ (by decide) Oall).readSrc fun u U _ => WP.block_nil ?_
   have ed : u.gpr .edi = s.gpr .edi := by rw [U.gpr]; exact h.edi_eq
   have Ku : Keeps [.eax, .ebx, .ecx, .edx, .ebp] s u :=
@@ -310,8 +310,8 @@ theorem combSelectStep_ok (h : In Ex base bytes len args s) (C : CtxRd base byte
   have Ou : Outside base (lo len (.slot .wide 7)) (bc len .wide) s.mem u.mem := by
     rw [U.mem, ← m₁₃, bw]; exact O
   refine ⟨h.keep Ku (by decide) (by decide) (by rw [U.mem]; exact Oall), Ou, ?_, ?_, Ku⟩
-  · rw [PtrAt, U.other _ (by decide), pe, ← bw, show 2 + (e + 1) = (2 + e) + 1 by omega, Nat.mul_succ]
-    congr 1; omega
+  · rw [PtrAt, U.other _ (by decide), pe, ← bw, show 2 + (e + 1) = (2 + e) + 1 by omega_using [], Nat.mul_succ]
+    congr 1; omega_using []
   · simp only [sv]
     rw [U.mem, V, m₁₃]
     by_cases d : D = e <;> simp [d]
@@ -333,11 +333,11 @@ theorem select_ok (h : In Ex base bytes len args s) (C : CtxRd base bytes len ar
   have nb : numBase = 3336 := rfl
   have wo : winOff = 4 := rfl
   unfold Generate.select
-  refine WP.seq (WP.mono (zero_ok h (x := .slot .wide 7) (one_ok .wide) (by rw [cb1]; omega))
+  refine WP.seq (WP.mono (zero_ok h (x := .slot .wide 7) (one_ok .wide) (by rw [cb1]; omega_using [f7, est]))
     fun s₁ ⟨O₁, V₁, K₁⟩ => ?_)
   rw [cb1] at O₁
   rw [cw1] at V₁
-  have h₁ := h.keep K₁ (by decide) (by decide) (O₁.mono (Nat.zero_le _) (by omega))
+  have h₁ := h.keep K₁ (by decide) (by decide) (O₁.mono (Nat.zero_le _) (by omega_using [f7, est]))
   refine WP.seq (wp_movS rfl fun s₂ U₂ _ => rowAt_ok (r := .ebp) (j := 2) (h₁.regs U₂.keeps U₂.mem) (by decide)
     U₂.gpr fun s₃ K₃ m₃ p₃ => WP.block_nil ?_)
   have K₁₃ : Keeps [.eax, .ecx, .edx, .ebp] s s₃ :=
@@ -350,12 +350,12 @@ theorem select_ok (h : In Ex base bytes len args s) (C : CtxRd base bytes len ar
   have far : ∀ {m m' : Mem}, Outside base (lo len (.slot .wide 7)) (bc len .wide) m m' → ∀ j < 32,
       val32 m' (ctxAddr args) (24 + bc len .wide * (2 + j)) (cwc len .wide) =
         val32 m (ctxAddr args) (24 + bc len .wide * (2 + j)) (cwc len .wide) := fun {m m'} O j hj => by
-    have row := Nat.mul_le_mul_left (bc len .wide) (show 2 + j + 1 ≤ 34 by omega)
+    have row := Nat.mul_le_mul_left (bc len .wide) (show 2 + j + 1 ≤ 34 by omega_using [hj])
     rw [Nat.mul_add, Nat.mul_one] at row
-    refine val32_far (Outside.frame_span O (by omega)) (fun r hr => ?_) (by omega)
+    refine val32_far (Outside.frame_span O (by omega_using [nw, f7, hb])) (fun r hr => ?_) (by omega)
     obtain rfl := List.mem_singleton.mp hr
-    exact (C.apart.sub_left (Offset.sub_base _ (by simp only [ctxBytes]; omega))).sub_right
-      (Offset.sub_base _ (by omega))
+    exact (C.apart.sub_left (Offset.sub_base _ (by simp only [ctxBytes]; omega_using [bw, row]))).sub_right
+      (Offset.sub_base _ (by omega_using [f7, est]))
   refine WP.mono (wp_seqs_range Generate.selectStep (fun e u => In Ex base bytes len args u ∧
       Outside base (lo len (.slot .wide 7)) (bc len .wide) s.mem u.mem ∧
       PtrAt u (ctxAddr args) .ebp (24 + bc len .wide * (2 + e)) ∧
@@ -364,15 +364,15 @@ theorem select_ok (h : In Ex base bytes len args s) (C : CtxRd base bytes len ar
       Keeps [.eax, .ebx, .ecx, .edx, .ebp] s u) 32 (fun e he u ⟨Iu, Ou, pu, Vu, Ku⟩ => ?_)
     ⟨h₃, by rw [m₁₃]; exact O₁, p₃, by simp only [sv]; rw [m₁₃, V₁]; simp, K₁₃.mono (by decide)⟩)
     fun u ⟨Iu, Ou, _, Vu, Ku⟩ => ⟨Iu, Ou, by rw [Vu]; simp [hD], Ku⟩
-  have wu : w32 u.mem base winOff = D := by rw [Ou.w32 (by omega) (by omega)]; exact hw
+  have wu : w32 u.mem base winOff = D := by rw [Ou.w32 (by omega_using [est, e7, wo]) (by omega_using [wo])]; exact hw
   refine WP.mono (combSelectStep_ok Iu (C.keep Ku) he wu hD pu) fun v ⟨Iv, Ov, pv, Vv, Kv⟩ =>
     ⟨Iv, Ou.trans Ov, pv, ?_, Ku.trans Kv⟩
   rw [Vv, Vu, far Ou e he]
   by_cases d : D = e
   · subst d; simp
   · by_cases l : D < e
-    · simp [d, l, show D < e + 1 by omega]
-    · simp [d, l, show ¬ D < e + 1 by omega]
+    · simp [d, l, show D < e + 1 by omega_using [l]]
+    · simp [d, l, show ¬ D < e + 1 by omega_using [d, l]]
 
 end
 

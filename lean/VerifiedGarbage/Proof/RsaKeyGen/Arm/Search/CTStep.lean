@@ -152,8 +152,8 @@ theorem guard_ready (p : SearchPublic) (T : List Nat) (q : Pt) (s : State) (h : 
   unfold arg
   have c4 : pushBytes + 0 + 4 * 4 < 4096 := by decide
   ffrun [hl.arg_addr 4, hl.arg_read (j := 4) (by decide), hl.arg_value (j := 4) (by decide), randLen_arg hi,
-    hl.r8, hl.r5, BitVec.ofNat_sub_ofNat_of_le _ _ (show q.1 < 2 ^ 32 by omega) hu, c4,
-    toNat_small (n := p.len) (by omega), toNat_small (n := p.randLen - q.1) (by omega)]
+    hl.r8, hl.r5, BitVec.ofNat_sub_ofNat_of_le _ _ (show q.1 < 2 ^ 32 by omega_using [hv, rl, hu]) hu, c4,
+    toNat_small (n := p.len) (by omega_using [hv]), toNat_small (n := p.randLen - q.1) (by omega_using [hv, rl])]
   exact carry_eval (P := p.randLen - q.1 < p.len) (not_decide_le _ _)
 
 theorem live0'_pins (p : SearchPublic) (T : List Nat) : Pins (Live0' p T) [.r0, .r5, .r8] := by
@@ -192,13 +192,13 @@ theorem candidateStep_ct (c : Cand) (p : SearchPublic) (T : List Nat) :
       have := hl.used_le
       rw [eg] at ef
       have := of_decide_eq_false (Option.some.inj ef)
-      omega
+      omega_arith
     · rcases h₂ with ⟨⟨⟨lv, hk⟩, eg⟩, ef⟩
       refine ⟨lv, hk, ?_⟩
       obtain ⟨o, -, hl, -⟩ := lv
       have := hl.used_le
       rw [eg] at ef
       have := of_decide_eq_false (Option.some.inj ef)
-      omega
+      omega_arith
 
 end VG.Proof.RsaKeyGen.Arm.Search

@@ -64,7 +64,7 @@ theorem reduceHash_ok (s : State) (h1 : s.lane .xmm1 0 = poly) :
   refine WP.mono (WP.lane0 (ss := redSse) rfl (redSse_ok (s.proj 0) h1))
     fun t ⟨⟨hv, ho⟩, hi, hg⟩ => ⟨hv, ?_⟩
   refine ⟨hg rfl, ho.mem, ho.rd, ho.wr, fun r hr l hl => ?_⟩
-  rcases (by omega : l = 0 ∨ l = 1) with rfl | rfl
+  rcases (by omega_using [hl] : l = 0 ∨ l = 1) with rfl | rfl
   · exact ho.xmm r hr
   · apply hi r
     simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr

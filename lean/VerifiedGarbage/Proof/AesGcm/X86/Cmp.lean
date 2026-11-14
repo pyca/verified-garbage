@@ -75,7 +75,7 @@ theorem tagLenOk_pc {W : BitVec 32} {t : Nat} (ht : t < 2 ^ 32) :
     · refine Pc.mono Pc.nil (fun _ _ h => h) fun _ _ ⟨h, _⟩ => ?_
       have hl' : t < 4 := by simpa using hl
       have : Spec.Gcm.tagLenOk t = false := by
-        simp [Spec.Gcm.tagLenOk, show ¬ 4 ≤ t by omega]
+        simp [Spec.Gcm.tagLenOk, show ¬ 4 ≤ t by omega_using [hl']]
       rw [this]; exact h
     refine Pc.seq (Q := fun s₀ s => TlPost t s₀ s false ∧
         s.cf = some (decide (t < 17)))
@@ -86,7 +86,7 @@ theorem tagLenOk_pc {W : BitVec 32} {t : Nat} (ht : t < 2 ^ 32) :
     · have hl' : ¬ t < 4 := by simpa using hl
       have hu' : t < 17 := by simpa using hu
       have : Spec.Gcm.tagLenOk t = true := by
-        simp only [Spec.Gcm.tagLenOk, Bool.and_eq_true, decide_eq_true_eq]; omega
+        simp only [Spec.Gcm.tagLenOk, Bool.and_eq_true, decide_eq_true_eq]; omega_using [hl', hu']
       rw [this]
       exact Pc.taint [] (fun s₀ s ⟨h, _⟩ => WP.of_runBlock ⟨_, by xrun [], ⟨by mems [h.mem], by mems [h.rd],
         by mems [h.wr], fun r h₁ h₂ => by simp only [gpr_setReg_of_ne _ _ h₂]; exact h.other r h₁ h₂, by regs [h.ebx],
@@ -96,7 +96,7 @@ theorem tagLenOk_pc {W : BitVec 32} {t : Nat} (ht : t < 2 ^ 32) :
       have hl' : ¬ t < 4 := by simpa using hl
       have hu' : ¬ t < 17 := by simpa using hu
       have : Spec.Gcm.tagLenOk t = false := by
-        simp [Spec.Gcm.tagLenOk, show ¬ t ≤ 16 by omega]
+        simp [Spec.Gcm.tagLenOk, show ¬ t ≤ 16 by omega_using [hu']]
       rw [this]; exact h
   -- `ZF`.
   refine Pc.taint [] (fun s₀ s h => WP.of_runBlock ⟨_, by xrun [h.ecx], ⟨by mems [h.mem], by mems [h.rd],
@@ -115,7 +115,7 @@ theorem WEnv.keep {W : BitVec 32} {s s' : State} (h : WEnv W s) (hbp : s'.gpr .e
     (hwr : s'.wr = s.wr) : WEnv W s' := ⟨by rw [hbp, h.ebp], by rw [hwr]; exact h.wW, h.fw⟩
 
 theorem WEnv.aW {W : BitVec 32} {s : State} (h : WEnv W s) {o : Nat} (ho : o < 2560) :
-    w64 (W + BitVec.ofNat 32 o) = w64 W + BitVec.ofNat 64 o := w64_add (by have := h.fw; omega)
+    w64 (W + BitVec.ofNat 32 o) = w64 W + BitVec.ofNat 64 o := w64_add (by have := h.fw; omega_using [ho, this])
 
 theorem WEnv.wIn {W : BitVec 32} {s : State} (h : WEnv W s) {o n : Nat} (ho : o + n ≤ 2560) :
     InRegions s.wr (w64 W + BitVec.ofNat 64 o) n := in_off h.wW ho (by decide)
@@ -129,9 +129,9 @@ theorem bytesAt_pad (m : Mem) (p : Addr) (xs : List Byte) (hx : xs.length ≤ 16
   rw [bytesAt_writeBytes_prefix _ _ _ hx (by decide)]
   congr 1
   have z := zero4_bytes' m p
-  rw [show (16 : Nat) = xs.length + (16 - xs.length) by omega, bytesAt_add] at z
+  rw [show (16 : Nat) = xs.length + (16 - xs.length) by omega_using [hx], bytesAt_add] at z
   have := congrArg (List.drop xs.length) z
-  rwa [List.drop_left' (length_bytesAt _ _ _), show xs.length + (16 - xs.length) = 16 by omega, zeros,
+  rwa [List.drop_left' (length_bytesAt _ _ _), show xs.length + (16 - xs.length) = 16 by omega_using [hx], zeros,
     List.drop_replicate] at this
 
 /-- The copy of the `t` bytes at `S` to `W + d`, zeroed first. -/
@@ -144,13 +144,13 @@ theorem padLoop_ok {W S : BitVec 32} {d t : Nat} {m : Mem} {s : State} (he : WEn
         bytesAt m (w64 S) t ++ zeros (16 - t) ∧
       Frame [⟨w64 W + BitVec.ofNat 64 d, 16⟩] m s'.mem ∧
       (∀ r, r ≠ .eax → r ≠ .edi → r ≠ .edx → r ≠ .ecx → s'.gpr r = s.gpr r) ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
-  have ed := he.aW (o := d) (by omega)
+  have ed := he.aW (o := d) (by omega_using [hd])
   have hfw := he.fw
-  have c₂ : Covers [⟨w64 W + BitVec.ofNat 64 d, t⟩] s.wr := covers_off he.wW (by omega) (by decide)
+  have c₂ : Covers [⟨w64 W + BitVec.ofNat 64 d, t⟩] s.wr := covers_off he.wW (by omega_using [ht, hd]) (by decide)
   have sd' : (⟨w64 S, t⟩ : Region).Disjoint ⟨w64 W + BitVec.ofNat 64 d, t⟩ :=
-    sd.sub_right (Region.sub_prefix (by omega))
+    sd.sub_right (Region.sub_prefix (by omega_using [ht]))
   have lp : LoopPre s S (W + BitVec.ofNat 32 d) t := by
-    refine ⟨hdi, hdx, hcx, ht1, by omega, fS, by rw [toNat_add32 (by omega)]; omega, sR, by rw [ed]; exact c₂, ?_⟩
+    refine ⟨hdi, hdx, hcx, ht1, by omega_using [ht], fS, by rw [toNat_add32 (by omega_using [hd, hfw])]; omega_using [ht, hd, hfw], sR, by rw [ed]; exact c₂, ?_⟩
     rw [ed]; exact sd'
   refine WP.mono (copyLoop_ok s lp) fun s' c => ?_
   have cm := c.mem
@@ -159,23 +159,23 @@ theorem padLoop_ok {W S : BitVec 32} {d t : Nat} {m : Mem} {s : State} (he : WEn
     Cmac.frame_store4 _ _ _ _ _
   have hS : bytesAt (Cmac.zero4 m (w64 W + BitVec.ofNat 64 d)) (w64 S) t = bytesAt m (w64 S) t :=
     bytesAt_frame fz (fun r hr => by
-      simp only [List.mem_singleton] at hr; subst hr; exact sd) (by omega)
+      simp only [List.mem_singleton] at hr; subst hr; exact sd) (by omega_using [ht])
   have hlen := length_bytesAt (Cmac.zero4 m (w64 W + BitVec.ofNat 64 d)) (w64 S) t
   refine ⟨?_, ?_, c.other, c.rd, c.wr⟩
   · rw [cm, bytesAt_pad _ _ _ (by rw [hlen]; exact ht), hS, length_bytesAt]
   · rw [cm]
     exact fz.trans (writeBytes_frame _ _ _ (by
-      rw [hlen]; simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; omega))
+      rw [hlen]; simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; omega_using [ht]))
 
 theorem le4_inj {a b : BitVec 32} (h : Cmac.le4 a = Cmac.le4 b) : a = b := by
   apply BitVec.eq_of_getLsbD_eq
   intro i hi
-  have hk : i / 8 < 4 := by omega
+  have hk : i / 8 < 4 := by omega_using [hi]
   have e := congrArg (fun l => l.getD (i / 8) 0) h
   simp only [Cmac.getD_le4 _ hk] at e
   have := congrArg (fun x => x.getLsbD (i % 8)) e
-  simp only [BitVec.getLsbD_extractLsb', show i % 8 < 8 by omega, decide_true, Bool.true_and] at this
-  rwa [show 8 * (i / 8) + i % 8 = i by omega] at this
+  simp only [BitVec.getLsbD_extractLsb', show i % 8 < 8 by omega_using [], decide_true, Bool.true_and] at this
+  rwa [show 8 * (i / 8) + i % 8 = i by omega_using []] at this
 
 theorem xor_eq_zero32 (a b : BitVec 32) : (a ^^^ b = 0) ↔ a = b := by
   constructor
@@ -233,7 +233,7 @@ theorem cmpTail_ok {W : BitVec 32} {s : State} (he : WEnv W s) :
       have hne : ((a₀ ^^^ b₀) ||| (a₁ ^^^ b₁) ||| (a₂ ^^^ b₂) ||| (a₃ ^^^ b₃)).toNat ≠ 0 := fun h' =>
         h0 (BitVec.eq_of_toNat_eq (by simpa using h'))
       have hlt : ¬ ((a₀ ^^^ b₀) ||| (a₁ ^^^ b₁) ||| (a₂ ^^^ b₂) ||| (a₃ ^^^ b₃)).toNat < (BitVec.ofNat 32 1).toNat := by
-        rw [BitVec.toNat_ofNat]; omega
+        rw [BitVec.toNat_ofNat]; omega_using [hne]
       simp only [h, ↓reduceIte, decide_eq_false hlt]
       rfl
   · mems []
@@ -332,11 +332,11 @@ theorem cmp_ok {W : BitVec 32} {t o : Nat} {s : State} (he : WEnv W s) (hv : slo
       exact Lay.w_w (W := W) (a := 180) (n := 4) (d := 240) (k := 16) (by decide) (by decide) (by decide))]
     exact hv
   refine WP.seq (WP.of_runBlock ⟨_, by xrun [zero4, he.ebp, aW, wIn, rIn, readW_writeW_off, hv, hz, hv'], ?_⟩)
-  have eo := aW (o := o) (by omega)
+  have eo := aW (o := o) (by omega_using [ho])
   refine WP.seq (WP.mono (padLoop_ok (S := W + BitVec.ofNat 32 o) (d := 240) (t := t) (m := s.mem)
     (he.keep (by regs []) (by mems [])) (by mems []) (by regs [he.ebp]) (by regs [he.ebp]) (by regs []) ht1 ht
-    (by mems []; rw [eo]; exact covers_left (covers_off he.wW (by omega) (by decide)))
-    (by have := he.fw; rw [toNat_add32 (by omega)]; omega) (by rw [eo]; exact Lay.w_w (.inl (by omega)) (by omega) (by decide))
+    (by mems []; rw [eo]; exact covers_left (covers_off he.wW (by omega_using [ht, ho]) (by decide)))
+    (by have := he.fw; rw [toNat_add32 (by omega_using [ho, this])]; omega_using [ht, ho, this]) (by rw [eo]; exact Lay.w_w (.inl (by omega_using [ht, ho])) (by omega_using [ht, ho]) (by decide))
     (by decide)) fun s' ⟨b, f, g, rd, wr⟩ => ?_)
   have he' : WEnv W s' := ⟨by rw [g _ (by decide) (by decide) (by decide) (by decide)]; regs [he.ebp],
     by rw [wr]; mems [he.wW], he.fw⟩
@@ -388,7 +388,7 @@ theorem tagOut_ok {W T : BitVec 32} {o : Nat} {s : State} (he : WEnv W s) (ho : 
       s'.gpr .esp = s.gpr .esp ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
   have aW : ∀ {o}, o < 2560 → w64 (W + BitVec.ofNat 32 o) = w64 W + BitVec.ofNat 64 o := fun ho => he.aW ho
   have rIn : ∀ {o}, o + 4 ≤ 2560 → InRegions (s.rd ++ s.wr) (w64 W + BitVec.ofNat 64 o) 4 := fun ho => he.wIn' ho
-  have aT : ∀ {k}, k < 16 → w64 (T + BitVec.ofNat 32 k) = w64 T + BitVec.ofNat 64 k := fun hk => w64_add (by omega)
+  have aT : ∀ {k}, k < 16 → w64 (T + BitVec.ofNat 32 k) = w64 T + BitVec.ofNat 64 k := fun hk => w64_add (by omega_using [fT, hk])
   have tIn : ∀ {k}, k + 4 ≤ 16 → InRegions s.wr (w64 T + BitVec.ofNat 64 k) 4 := fun hk => in_off tW hk (by decide)
   rw [slotv_eq] at hT
   simp only [tpO] at hT

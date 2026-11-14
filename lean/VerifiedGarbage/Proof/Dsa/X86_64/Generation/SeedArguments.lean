@@ -53,6 +53,6 @@ theorem seedArguments_ok {s : State} {F S : Addr} {V : Nat → Byte} {W : Nat �
   right
   have hn := ha ⟨F, frameBytes⟩ (by simp)
   change ¬ ofs F a < frameBytes at hn
-  omega
+  omega_using [hn]
 
 end VG.Proof.Dsa.X86_64.Generation

@@ -43,11 +43,11 @@ theorem precomputePolicy_metadata {q : PrecomputePublic} {s : State} (h : Precom
  WP isa Policy.recognize s (PrecomputePolicyDone q) := by
  have room : 256≤q.p.Z :=(precomputeDomainPolicy q).room
  have records : PolicyTableAt q.p.B (s.syms Policy.tableSym) Policy.groups s :=by rw [h.symbol];exact h.records
- refine WP.mono (policyDomain_ok h.scratch room h.base (by have :=q.small;omega) q.large q.shape q.domLength q.checked
+ refine WP.mono (policyDomain_ok h.scratch room h.base (by have :=q.small;omega_using [this]) q.large q.shape q.domLength q.checked
   h.domain h.length h.domainLength h.source.toSource
-  (fun i hi =>Nat.le_trans (by change 8*sBits+8≤q.p.Z;have :=room;unfold sBits;omega) (h.source.scratchOutside i hi)) records) ?_
+  (fun i hi =>Nat.le_trans (by change 8*sBits+8≤q.p.Z;have :=room;unfold sBits;omega_using [room]) (h.source.scratchOutside i hi)) records) ?_
  rintro t ⟨bits,frame,rest⟩
- have inscr : InScr q.p.B q.p.Z s.mem t.mem :=InScr.of_outside frame (by change 8*sBits+8≤q.p.Z;have :=room;unfold sBits;omega)
+ have inscr : InScr q.p.B q.p.Z s.mem t.mem :=InScr.of_outside frame (by change 8*sBits+8≤q.p.Z;have :=room;unfold sBits;omega_using [room])
  have header (i : Nat) (hi : i<32) (ne : i≠sBits) :=header_other frame (by decide) hi ne
  exact ⟨⟨h.scratch.congr rest.wr,h.space.after rest,h.output.congr rest.wr,h.source.after (PublicFrame.of_inscr inscr) rest,
   by rw [rest.rd,rest.wr];exact h.span,(rest.gpr .x0 (by simp [recordClobbers])).trans h.base,

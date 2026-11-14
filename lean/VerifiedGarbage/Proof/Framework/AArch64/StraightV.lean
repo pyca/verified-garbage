@@ -143,14 +143,14 @@ theorem vdword_or (a b : BitVec 128) (q : Nat) : vdword (a ||| b) q = vdword a q
 theorem vdword_not (a : BitVec 128) {q : Nat} (hq : q < 2) : vdword (~~~a) q = ~~~vdword a q := by
   apply BitVec.eq_of_getLsbD_eq; intro j hj
   simp only [vdword, BitVec.getLsbD_extractLsb', BitVec.getLsbD_not, decide_eq_true hj,
-    Bool.true_and, decide_eq_true (show 64 * q + j < 128 by omega)]
+    Bool.true_and, decide_eq_true (show 64 * q + j < 128 by omega_using [hq, hj])]
 
 theorem vdword_zero (q : Nat) : vdword 0 q = 0 := by
   apply BitVec.eq_of_getLsbD_eq; intro j hj; simp [vdword]
 
 theorem vdword_dwords (a b : BitVec 64) {q : Nat} (hq : q < 2) :
     vdword (ofVDwords a b) q = if q = 0 then a else b := by
-  rcases (by omega : q = 0 ∨ q = 1) with rfl | rfl
+  rcases (by omega_using [hq] : q = 0 ∨ q = 1) with rfl | rfl
   · simp [vdword_ofVDwords_0]
   · simp [vdword_ofVDwords_1]
 
@@ -158,7 +158,7 @@ theorem vdword_map2 (f : (w : Nat) → BitVec w → BitVec w → BitVec w) (x y 
     (hq : q < 2) : vdword (VArr.d2.map2 f x y) q = f 64 (vdword x q) (vdword y q) := by
   simp only [VArr.map2]
   rw [vdword_dwords _ _ hq]
-  rcases (by omega : q = 0 ∨ q = 1) with rfl | rfl <;> rfl
+  rcases (by omega_using [hq] : q = 0 ∨ q = 1) with rfl | rfl <;> rfl
 
 /-- `bic`'s doublewords, as `bic` computes them. -/
 theorem bic_eq (x y : BitVec 64) : x &&& (y ^^^ BitVec.allOnes 64) = x &&& ~~~y := by
@@ -168,17 +168,17 @@ theorem bic_eq (x y : BitVec 64) : x &&& (y ^^^ BitVec.allOnes 64) = x &&& ~~~y 
 theorem shl_eq (x : BitVec 64) {n : Nat} (h1 : 1 ≤ n) (h2 : n ≤ 63) :
     (x &&& BitVec.allOnes 64 >>> n).rotateRight (64 - n) = x <<< n := by
   apply BitVec.eq_of_getLsbD_eq; intro i hi
-  rw [BitVec.getLsbD_rotateRight_of_lt (by omega)]
+  rw [BitVec.getLsbD_rotateRight_of_lt (by omega_using [h1])]
   simp only [BitVec.getLsbD_shiftLeft, BitVec.getLsbD_and, BitVec.getLsbD_ushiftRight,
     BitVec.getLsbD_allOnes]
   by_cases h : i < 64 - (64 - n)
   · simp only [h, ite_true]
-    simp [show i < n by omega, hi]
-    omega
+    simp [show i < n by omega_using [h], hi]
+    omega_using []
   · simp only [h, ite_false]
-    simp only [show ¬ i < n by omega, decide_true, hi, Bool.true_and,
-      show i - (64 - (64 - n)) = i - n by omega]
-    simp [show n + (i - n) < 64 by omega]
+    simp only [show ¬ i < n by omega_using [h2, h], decide_true, hi, Bool.true_and,
+      show i - (64 - (64 - n)) = i - n by omega_using [h2]]
+    simp [show n + (i - n) < 64 by omega_using [h2, hi]]
 
 /-! ## Relating abstract and machine states -/
 
@@ -207,13 +207,13 @@ theorem slot_sep (b : Addr) {j k : Nat} (hj : 16 * j < 2 ^ 64) (hk : 16 * k < 2 
   intro x h₁ h₂
   simp only [vAddr, Offset.sub_add_eq, Offset.toNat_sub_ofNat] at h₁ h₂
   have := (x - b).isLt
-  omega
+  omega_using [hj, hk, h, h₁, h₂]
 
 theorem slot_contains (b : Addr) {n k : Nat} (hk : k < n) (hn : 16 * n < 2 ^ 64) :
     (⟨b, 16 * n⟩ : Region).Contains (vAddr b k) (128 / 8) := by
   simp only [Region.Contains, vAddr]
-  rw [Offset.add_sub_cancel_left, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
-  omega
+  rw [Offset.add_sub_cancel_left, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hk, hn])]
+  omega_using [hk]
 
 theorem loc_some {c : Cfg} {n : Reg} {off k : Nat} (h : c.loc n off = some k) :
     n = c.base ∧ off = 16 * k ∧ k < c.slots ∧ off < 65536 := by
@@ -222,13 +222,13 @@ theorem loc_some {c : Cfg} {n : Reg} {off k : Nat} (h : c.loc n off = some k) :
   · rename_i h1
     cases h
     obtain ⟨hb, hm, hlt, h64⟩ := h1
-    exact ⟨hb, by omega, hlt, h64⟩
+    exact ⟨hb, by omega_using [hm], hlt, h64⟩
   · cases h
 
 theorem addr_slot {s : State} {n : Reg} {k : Nat} (hk : 16 * k < 65536) :
     addr s 16 n (16 * k) = some (vAddr (s.gpr n) k) := by
   simp only [addr, vAddr]
-  rw [ite_eq_left ⟨by omega, by omega⟩]
+  rw [ite_eq_left ⟨by omega_using [], by omega_using [hk]⟩]
 
 theorem read16_readW (m : Mem) (a : Addr) : m.read a 16 = m.readW a 128 := by
   simp [Mem.readW]
@@ -412,7 +412,7 @@ theorem step_ok (hD : ∀ q < 2, D.Sound (R q)) {e e' : Env α} {s : State} (hok
       · simp [exec, addr_slot h64, State.store, hin, write16_writeW]
       have hsep : ∀ j < c.slots, j ≠ k → Mem.Sep (vAddr (s.gpr c.base) j) (128 / 8)
           (vAddr (s.gpr c.base) k) (128 / 8) := fun j hj hjk =>
-        slot_sep _ (by have := hok.slots; omega) (by have := hok.slots; omega) hjk
+        slot_sep _ (by have := hok.slots; omega_using [hj, this]) (by have := hok.slots; omega_using [h64]) hjk
       refine ⟨⟨fun r' b hr' => hrel.reg r' b hr', fun j b hj hjb => ?_,
         fun r' w hw => hrel.gc r' w hw⟩,
         hok.congr rfl rfl, rfl, fun _ _ => rfl, rfl, rfl, rfl, rfl, fun _ _ => rfl, ?_⟩
@@ -497,8 +497,8 @@ theorem Ok.of_off {c : Cfg} {s : State} {r : Region} {off : Nat} (hr : r ∈ s.w
   slotIn k hk := ⟨r, hr, by
     simp only [Region.Contains, vAddr, hb]
     rw [BitVec.add_assoc, ← BitVec.ofNat_add, Offset.add_sub_cancel_left, BitVec.toNat_ofNat,
-      Nat.mod_eq_of_lt (by omega)]
-    omega⟩
-  slots := by omega
+      Nat.mod_eq_of_lt (by omega_using [hlen, hn, hk])]
+    omega_using [hlen, hk]⟩
+  slots := by omega_using [hlen, hn]
 
 end VG.AArch64.StraightV

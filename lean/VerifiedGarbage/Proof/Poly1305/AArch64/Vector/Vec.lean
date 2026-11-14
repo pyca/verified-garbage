@@ -22,7 +22,7 @@ theorem vec_ok {s₀ : State} {R : Nat} (hk : Radix64.Keys R s₀) (hn : 128 ≤
     (hw : ∀ k < 7, InRegions s₀.wr (svA (s₀.gpr .x0) k) 8)
     (hd : ∀ d, d + 16 ≤ (s₀.gpr .x3).toNat → InRegions (s₀.rd ++ s₀.wr) (s₀.gpr .x2 + BitVec.ofNat 64 d) 16) :
     WP isa vec s₀ fun t => ∃ M, Saved s₀ M ∧ VEnd s₀ R M t := by
-  have hq : 2 ≤ nq s₀ := by simp only [nq]; omega
+  have hq : 2 ≤ nq s₀ := by simp only [nq]; omega_using [hn]
   have hw' : ∀ k < 7, InRegions (s₀.rd ++ s₀.wr) (svA (s₀.gpr .x0) k) 8 := fun k hk => by
     obtain ⟨r, hr, hc⟩ := hw k hk
     exact ⟨r, List.mem_append_right _ hr, hc⟩

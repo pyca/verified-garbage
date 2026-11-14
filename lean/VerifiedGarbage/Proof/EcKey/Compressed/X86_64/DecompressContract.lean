@@ -75,7 +75,7 @@ theorem decompress_post_patch (C : Spec.Weierstrass.Curve)
     (decompressContract C root).post s (b.patch (hole (s.gpr .rsp)) hv u) := by
   have hn : 2 * C.len + 1 ≤ 2 ^ 64 := by
     obtain ⟨_, _, _, _, _, _, _, hf, _⟩ := hs
-    omega
+    omega_using [hf]
   have hb := Clear.wr_bytes hc (p := s.gpr .rdi) (n := 2 * C.len + 1)
     (by rw [hs.2.1]; simp) hn
   simpa only [decompressContract, State.patch_gpr, VG.X86_64.EcKey.bytesAt_patch hb] using hp

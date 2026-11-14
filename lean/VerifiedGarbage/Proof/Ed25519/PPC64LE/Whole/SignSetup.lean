@@ -75,7 +75,7 @@ theorem sign_slot {sn : Nat} {s : State} (hp : SignPre sn s) :
     ∀ d n, d + n ≤ 224 → (slotArea (s.gpr .r9) 224 signRegs).Disjoint ⟨s.gpr .r9 + BitVec.ofNat 64 d, n⟩ := by
   have hs : Region.Sub (slotArea (s.gpr .r9) 224 signRegs) ⟨s.gpr .r9, 288⟩ := Offset.sub_base _ (by decide)
   refine ⟨(hp.oF.symm.sub_left hs), (hp.cF.symm.sub_left hs), (hp.bF.symm.sub_left hs), fun d n h => ?_⟩
-  exact Offset.disjoint _ (.inr h) (by decide) (by omega)
+  exact Offset.disjoint _ (.inr h) (by decide) (by omega_using [h])
 
 theorem signV_r20 (s : State) : signV s .r20 = s.gpr .r3 := rfl
 theorem signV_r24 (s : State) : signV s .r24 = s.gpr .r8 := rfl
@@ -90,7 +90,7 @@ theorem signSetup_ok {sn : Nat} {s : State} (hp : SignPre sn s) :
   obtain ⟨-, -, -, hsl₄⟩ := sign_slot hp
   unfold signSetup
   refine save_ok (by decide) (by decide) (by decide)
-    (fun p hp' => in_base hF (hsl p hp') (by have := hsl p hp'; omega)) fun u hu _ hsv hfr => ?_
+    (fun p hp' => in_base hF (hsl p hp') (by have := hsl p hp'; omega_using [this])) fun u hu _ hsv hfr => ?_
   unfold mov
   simp only [List.cons_append, List.nil_append]
   refine wp_addi (by decide) (by decide) fun u₁ h₁ => wp_addi (by decide) (by decide) fun u₂ h₂ =>
@@ -112,15 +112,15 @@ theorem signSetup_ok {sn : Nat} {s : State} (hp : SignPre sn s) :
   have hP : (⟨s.gpr .r5, 32⟩ : Region) ∈ s.rd := by rw [hp.rd]; simp
   have hsep : ∀ i < 4, ∀ j < 4, Mem.Sep (s.gpr .r5 + BitVec.ofNat 64 (8 * i)) 8
       (s.gpr .r9 + BitVec.ofNat 64 (192 + 8 * j)) 8 := fun i hi j hj =>
-    hp.pF.sep (Offset.contains_base _ (by omega) (by omega)) (Offset.contains_base _ (by omega) (by omega))
+    hp.pF.sep (Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi])) (Offset.contains_base _ (by omega_using [hj]) (by omega_using [hj]))
   rw [← List.append_nil (copyIn .r5 .r25 192)]
   refine copy_ok (A := s.gpr .r5) (B := s.gpr .r9) (da := fun k => 8 * k) (db := fun k => 192 + 8 * k)
     (R := ⟨s.gpr .r9 + BitVec.ofNat 64 192, 32⟩) (by decide) (by decide) (by decide) (by decide) e5 e25
-    (fun k hk => ⟨by omega, by omega⟩) (fun k hk => ⟨by omega, by omega⟩)
-    (fun k hk => by rw [rd₆, wr₆]; exact in_base (List.mem_append_left _ hP) (by omega) (by omega))
-    (fun k hk => by rw [wr₆]; exact in_base hF (by omega) (by omega))
-    (fun k hk => Offset.contains _ (by omega) (by omega) (by omega)) hsep
-    (fun i hi j hj hij => Offset.sep _ (by omega) (by omega) (by omega)) fun t ht hft hw => WP.block_nil ?_
+    (fun k hk => ⟨by omega_using [hk], by omega_using []⟩) (fun k hk => ⟨by omega_using [hk], by omega_using []⟩)
+    (fun k hk => by rw [rd₆, wr₆]; exact in_base (List.mem_append_left _ hP) (by omega_using [hk]) (by omega_using [hk]))
+    (fun k hk => by rw [wr₆]; exact in_base hF (by omega_using [hk]) (by omega_using [hk]))
+    (fun k hk => Offset.contains _ (by omega_using []) (by omega_using [hk]) (by omega_using [])) hsep
+    (fun i hi j hj hij => Offset.sep _ (by omega_using [hij]) (by omega_using [hi]) (by omega_using [hj])) fun t ht hft hw => WP.block_nil ?_
   have fin : Frame [slotArea (s.gpr .r9) 224 signRegs, ⟨s.gpr .r9 + BitVec.ofNat 64 192, 32⟩] s.mem t.mem :=
     (hfr.mono (by simp)).trans (by rw [m₆] at hft; exact hft.mono (by simp))
   refine ⟨⟨by rw [ht.rd, rd₆], by rw [ht.wr, wr₆], by rw [ht.sp, sp₆], fun r hr => ?_, fun r hr hn => ?_, ?_,
@@ -152,7 +152,7 @@ theorem signSetup_ok {sn : Nat} {s : State} (hp : SignPre sn s) :
   · refine bytes32_of_words fun k hk => ?_
     have hw' := hw k hk
     have hr' : u.mem.readW (s.gpr .r5 + BitVec.ofNat 64 (8 * k)) 64 = s.mem.readW (s.gpr .r5 + BitVec.ofNat 64 (8 * k)) 64 :=
-      hfr.readW (r := ⟨s.gpr .r5, 32⟩) (Offset.contains_base _ (by omega) (by omega)) (fun r hr => by
+      hfr.readW (r := ⟨s.gpr .r5, 32⟩) (Offset.contains_base _ (by omega_using [hk]) (by omega_using [hk])) (fun r hr => by
         rw [List.mem_singleton.mp hr]; exact (hp.pF.sub_right (Offset.sub_base _ (by decide)))) (by decide)
     rw [Offset.add_add, hw', m₆, hr']
 
@@ -173,7 +173,7 @@ theorem signStep {sn : Nat} {s t t' : State} (hp : SignPre sn s) (h : SignInv s 
     · exact ⟨_, by simp, fun _ h => h⟩
     · exact ⟨⟨s.gpr .r3, 64⟩, by simp, Offset.sub_base _ (by decide)⟩
     · exact ⟨⟨s.gpr .r3, 64⟩, by simp, Region.sub_prefix (by decide)⟩
-    · exact ⟨⟨s.gpr .r9, 288⟩, by simp, Offset.sub_base _ (by omega)⟩
+    · exact ⟨⟨s.gpr .r9, 288⟩, by simp, Offset.sub_base _ (by omega_using [hdn])⟩
   · rcases hW r hr with rfl | rfl | rfl | rfl | rfl | ⟨d, n, hdn, rfl⟩
     · exact h₂
     · exact h₃

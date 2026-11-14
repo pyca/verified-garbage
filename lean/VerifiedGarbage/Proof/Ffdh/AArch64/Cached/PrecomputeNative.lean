@@ -49,10 +49,10 @@ theorem precomputeEntry_ok {s : State} {B : Addr} {Z : Nat}
  unfold Precompute.entry entryMemory
  brun [base,st,hdr_enc (show sCtx<32 by decide),hdr_enc (show sDom<32 by decide),
   hdr_enc (show sDL<32 by decide),hdr_enc (show sLen<32 by decide),
-  scratch.st (d:=8*sCtx) (by unfold sCtx;omega),
-  scratch.st (d:=8*sDom) (by unfold sDom;omega),
-  scratch.st (d:=8*sDL) (by unfold sDL;omega),
-  scratch.st (d:=8*sLen) (by unfold sLen;omega)]
+  scratch.st (d:=8*sCtx) (by unfold sCtx;omega_using [room]),
+  scratch.st (d:=8*sDom) (by unfold sDom;omega_using [room]),
+  scratch.st (d:=8*sDL) (by unfold sDL;omega_using [room]),
+  scratch.st (d:=8*sLen) (by unfold sLen;omega_using [room])]
 
 theorem entryMemory_header (m : Mem) (B ctx dom dl k : Addr) :
  word (entryMemory m B ctx dom dl k) B (8*sCtx)=ctx ∧
@@ -61,7 +61,7 @@ theorem entryMemory_header (m : Mem) (B ctx dom dl k : Addr) :
  word (entryMemory m B ctx dom dl k) B (8*sLen)=k := by
  have separate (m : Mem) (i j : Nat) (hi : i<32) (hj : j<32) (different : i≠j) (v : Addr) :
   word (m.writeW (off B (8*i)) v) B (8*j)=word m B (8*j) :=
-  Mem.readW_writeW_sep (Offset.sep B (by omega) (by omega) (by omega)) (by decide)
+  Mem.readW_writeW_sep (Offset.sep B (by omega_using [different]) (by omega_using [hj]) (by omega_using [hi])) (by decide)
  unfold entryMemory
  rw [separate _ sLen sCtx (by decide) (by decide) (by decide) _,
   separate _ sDL sCtx (by decide) (by decide) (by decide) _,
@@ -76,7 +76,7 @@ theorem entryMemory_range (m : Mem) (B ctx dom dl k : Addr) :
  intro x hx
  have store (m : Mem) (i : Nat) (low : 16≤i) (high : i<20) (v : Addr) :
   (m.writeW (off B (8*i)) v) x=m x :=
-  writeW_outside m B v (by omega) x (by omega)
+  writeW_outside m B v (by omega_using [high]) x (by omega_using [hx, low, high])
  unfold entryMemory
  rw [store _ sLen (by decide) (by decide),store _ sDL (by decide) (by decide),
   store _ sDom (by decide) (by decide),store _ sCtx (by decide) (by decide)]
@@ -84,15 +84,15 @@ theorem entryMemory_range (m : Mem) (B ctx dom dl k : Addr) :
 theorem entryMemory_frame (m : Mem) (B ctx dom dl k : Addr) (Z : Nat) (room : 256≤Z) :
  InScr B Z m (entryMemory m B ctx dom dl k) := by
  have frame := (Frame.refl [⟨B,Z⟩] m).writeW (r:=⟨B,Z⟩) (b:=off B (8*sCtx)) (by simp) ctx
-  (Offset.contains_base _ (by unfold sCtx;omega) (by decide))
+  (Offset.contains_base _ (by unfold sCtx;omega_using [room]) (by decide))
  have frame := frame.writeW (r:=⟨B,Z⟩) (b:=off B (8*sDom)) (by simp) dom
-  (Offset.contains_base _ (by unfold sDom;omega) (by decide))
+  (Offset.contains_base _ (by unfold sDom;omega_using [room]) (by decide))
  have frame := frame.writeW (r:=⟨B,Z⟩) (b:=off B (8*sDL)) (by simp) dl
-  (Offset.contains_base _ (by unfold sDL;omega) (by decide))
+  (Offset.contains_base _ (by unfold sDL;omega_using [room]) (by decide))
  have frame := frame.writeW (r:=⟨B,Z⟩) (b:=off B (8*sLen)) (by simp) k
-  (Offset.contains_base _ (by unfold sLen;omega) (by decide))
+  (Offset.contains_base _ (by unfold sLen;omega_using [room]) (by decide))
  intro x hx
- exact frame x (by intro r hr; simp only [List.mem_cons,List.not_mem_nil,or_false] at hr;subst r;change ¬ofs B x+1≤Z;omega)
+ exact frame x (by intro r hr; simp only [List.mem_cons,List.not_mem_nil,or_false] at hr;subst r;change ¬ofs B x+1≤Z;omega_using [hx])
 
 end VG.Proof.Ffdh.AArch64.Cached
 end
@@ -134,15 +134,15 @@ theorem metadataMemory_header (m : Mem) (B ctx : Addr) (N : Nat) :
 
 theorem metadataMemory_frame (m : Mem) (p : Parameters) (N : Nat) : PublicFrame p m (metadataMemory m p.B p.ctx N) := by
  have bytes := (Frame.refl (publicWrites p) m).writeW (r:=⟨p.B,p.Z⟩) (b:=off p.B (8*sBytes)) (by simp [publicWrites])
-  (BitVec.ofNat 64 ((N+7)/8)) (Offset.contains_base _ (by have := p.room;have := VG.Proof.Bignum.hdr_lt_slot p.w 8 (show sBytes<32 by decide);omega) (by decide))
+  (BitVec.ofNat 64 ((N+7)/8)) (Offset.contains_base _ (by have := p.room;have := VG.Proof.Bignum.hdr_lt_slot p.w 8 (show sBytes<32 by decide);omega_arith) (by decide))
  have rows := bytes.writeW (r:=⟨p.B,p.Z⟩) (b:=off p.B (8*sRows)) (by simp [publicWrites])
-  (BitVec.ofNat 64 (Spec.Rsa.FixedBaseComb.rows N)) (Offset.contains_base _ (by have := p.room;have := VG.Proof.Bignum.hdr_lt_slot p.w 8 (show sRows<32 by decide);omega) (by decide))
+  (BitVec.ofNat 64 (Spec.Rsa.FixedBaseComb.rows N)) (Offset.contains_base _ (by have := p.room;have := VG.Proof.Bignum.hdr_lt_slot p.w 8 (show sRows<32 by decide);omega_arith) (by decide))
  have bitHeader := rows.writeW (r:=⟨p.ctx,8*(3+34*p.w)⟩) (b:=p.ctx) (by simp [publicWrites])
-  (BitVec.ofNat 64 N) (by change (p.ctx-p.ctx).toNat+8≤8*(3+34*p.w);simp;omega)
+  (BitVec.ofNat 64 N) (by change (p.ctx-p.ctx).toNat+8≤8*(3+34*p.w);simp;omega_using [])
  have byteHeader := bitHeader.writeW (r:=⟨p.ctx,8*(3+34*p.w)⟩) (b:=off p.ctx 8) (by simp [publicWrites])
-  (BitVec.ofNat 64 ((N+7)/8)) (Offset.contains_base _ (by omega) (by decide))
+  (BitVec.ofNat 64 ((N+7)/8)) (Offset.contains_base _ (by omega_using []) (by decide))
  exact byteHeader.writeW (r:=⟨p.ctx,8*(3+34*p.w)⟩) (b:=off p.ctx 16) (by simp [publicWrites])
-  (BitVec.ofNat 64 (Spec.Rsa.FixedBaseComb.rows N)) (Offset.contains_base _ (by omega) (by decide))
+  (BitVec.ofNat 64 (Spec.Rsa.FixedBaseComb.rows N)) (Offset.contains_base _ (by omega_using []) (by decide))
 
 end VG.Proof.Ffdh.AArch64.Cached
 end
@@ -163,11 +163,11 @@ private theorem contextStore_workspace {p : Parameters} {s : State} (space : Con
  (m : Mem) {d : Nat} (inside : d+8≤8*(3+34*p.w)) (value : Addr) :
  ∀ x,ofs p.B x<p.Z→(m.writeW (off p.ctx d) value) x=m x := by
  intro x hx
- have fit : d+8≤2^64 := by have := p.width;omega
+ have fit : d+8≤2^64 := by have := p.width;omega_using [inside, this]
  have outside (i : Nat) (hi : i<8) : p.Z≤ofs p.B (off p.ctx d+BitVec.ofNat 64 i) := by
-  simpa only [off,BitVec.ofNat_add,BitVec.add_assoc] using space.outside (d+i) (by omega)
+  simpa only [off,BitVec.ofNat_add,BitVec.add_assoc] using space.outside (d+i) (by omega_using [inside, hi])
  apply writeW_outside m p.ctx value fit x
- exact (outside_shift_iff p.ctx x (by omega) fit).mpr (le_ofs_of_sep outside hx)
+ exact (outside_shift_iff p.ctx x (by omega_using [fit]) fit).mpr (le_ofs_of_sep outside hx)
 
 theorem metadataMemory_workspace {p : Parameters} {s : State} (space : ContextSpace p s) (N : Nat) :
  ∀ x,ofs p.B x<p.Z→metadataMemory s.mem p.B p.ctx N x=
@@ -175,9 +175,9 @@ theorem metadataMemory_workspace {p : Parameters} {s : State} (space : ContextSp
   (off p.B (8*sRows)) (BitVec.ofNat 64 (Spec.Rsa.FixedBaseComb.rows N))) x := by
  intro x hx
  unfold metadataMemory
- rw [contextStore_workspace space _ (d:=16) (by omega) _ x hx,
-  contextStore_workspace space _ (d:=8) (by omega) _ x hx]
- simpa only [off,BitVec.add_zero] using contextStore_workspace space _ (d:=0) (by omega) _ x hx
+ rw [contextStore_workspace space _ (d:=16) (by omega_using []) _ x hx,
+  contextStore_workspace space _ (d:=8) (by omega_using []) _ x hx]
+ simpa only [off,BitVec.add_zero] using contextStore_workspace space _ (d:=0) (by omega_using []) _ x hx
 
 theorem metadataMemory_controls {p : Parameters} {s : State} (space : ContextSpace p s)
  (scratch : Scr s p.B p.Z) (N : Nat) :
@@ -187,8 +187,8 @@ theorem metadataMemory_controls {p : Parameters} {s : State} (space : ContextSpa
  let m := (s.mem.writeW (off p.B (8*sBytes)) (BitVec.ofNat 64 ((N+7)/8))).writeW
   (off p.B (8*sRows)) (BitVec.ofNat 64 (Spec.Rsa.FixedBaseComb.rows N))
  have same (i : Nat) (hi : i<32) : word (metadataMemory s.mem p.B p.ctx N) p.B (8*i)=word m p.B (8*i) :=
-  workspace_word (by have := scratch.nowrap;omega) (metadataMemory_workspace space N)
-   (by have := hdr_lt_slot p.w 8 hi;have := p.room;omega)
+  workspace_word (by have := scratch.nowrap;omega_using [this]) (metadataMemory_workspace space N)
+   (by have := hdr_lt_slot p.w 8 hi;have := p.room;omega_arith)
  constructor
  · rw [same sBytes (by decide)]
    exact ((writeW_outside _ _ _ (by decide : 8*sRows+8≤2^64)).word
@@ -200,7 +200,7 @@ theorem metadataMemory_controls {p : Parameters} {s : State} (space : ContextSpa
    rw [same i hi]
    have separate {j : Nat} (hj : j<32) (different : i≠j) (m : Mem) (v : Addr) :
     word (m.writeW (off p.B (8*j)) v) p.B (8*i)=word m p.B (8*i) :=
-    (writeW_outside _ _ _ (by omega)).word (by omega) (by omega)
+    (writeW_outside _ _ _ (by omega_using [hj])).word (by omega_using [different]) (by omega_using [hi])
    exact (separate (by decide) notRows _ _).trans (separate (by decide) notBytes _ _)
 
 end VG.Proof.Ffdh.AArch64.Cached
@@ -232,10 +232,10 @@ theorem PublicSource.after {p : Parameters} {ptr : Addr} {bs : List Byte} {s t :
    rcases hr with rfl|rfl
    · have out := source.scratchOutside i hi
      change ¬ofs p.B (ptr+BitVec.ofNat 64 i)+1≤p.Z
-     omega
+     omega_using [out]
    · have out := source.contextOutside i hi
      change ¬ofs p.ctx (ptr+BitVec.ofNat 64 i)+1≤8*(3+34*p.w)
-     omega
+     omega_using [out]
 
 theorem PublicSource.toSrc {p : Parameters} {ptr : Addr} {bs : List Byte} {s : State}
  (source : PublicSource p ptr bs s) : Src s p.B p.Z ptr bs := by
@@ -246,14 +246,14 @@ theorem PublicSource.toSrc {p : Parameters} {ptr : Addr} {bs : List Byte} {s : S
 theorem PublicSource.take {p : Parameters} {ptr : Addr} {bs : List Byte} {s : State}
  (source : PublicSource p ptr bs s) (n : Nat) : PublicSource p ptr (bs.take n) s := by
  refine ⟨source.toSource.take n,?_,?_⟩
- all_goals intro i hi;have bound : i<bs.length := by rw [List.length_take] at hi;omega
+ all_goals intro i hi;have bound : i<bs.length := by rw [List.length_take] at hi;omega_using [hi]
  · exact source.scratchOutside i bound
  · exact source.contextOutside i bound
 
 theorem PublicSource.drop {p : Parameters} {ptr : Addr} {bs : List Byte} {s : State}
  (source : PublicSource p ptr bs s) (n : Nat) : PublicSource p (ptr+BitVec.ofNat 64 n) (bs.drop n) s := by
  refine ⟨source.toSource.drop n,?_,?_⟩
- all_goals intro i hi;have bound : n+i<bs.length := by rw [List.length_drop] at hi;omega
+ all_goals intro i hi;have bound : n+i<bs.length := by rw [List.length_drop] at hi;omega_using [hi]
  · simpa only [BitVec.ofNat_add,BitVec.add_assoc] using source.scratchOutside (n+i) bound
  · simpa only [BitVec.ofNat_add,BitVec.add_assoc] using source.contextOutside (n+i) bound
 
@@ -263,7 +263,7 @@ theorem PublicSource.generator {p : Parameters} {ptr : Addr} {dom : List Byte} {
  GeneratorSource p (ptr+BitVec.ofNat 64 p.k) ((dom.drop p.k).take p.k) s := by
  have bytes := (source.drop p.k).take p.k
  refine ⟨bytes.toSrc,?_,?_,bytes.contextOutside⟩
- · simp only [List.length_take,List.length_drop];omega
+ · simp only [List.length_take,List.length_drop];omega_using [length]
  · exact value.symm
 
 end VG.Proof.Ffdh.AArch64.Cached
@@ -293,9 +293,9 @@ theorem precomputeNative_ok (M : Mont) {s : State} {p : Parameters} {domPtr : Ad
  t.gpr .x0=1#64 ∧
  Spec.Rsa.wordsAt t.mem p.ctx (Spec.Ffdh.generationPrecomputedWords p.k)=VG.Proof.Ffdh.generationValues p.k dom ∧
  PublicFrame p s.mem t.mem ∧ Keep (.x0::mmRegs) s t := by
- have room : 256≤p.Z := by have := p.room;unfold slot at this;omega
- have positive : 0<p.k := by omega
- have shapeDom : dom.length=2*p.k ∨ dom.length=3*p.k := by omega
+ have room : 256≤p.Z := by have := p.room;unfold slot at this;omega_using [words, small, this]
+ have positive : 0<p.k := by omega_using [small]
+ have shapeDom : dom.length=2*p.k ∨ dom.length=3*p.k := by omega_using [shape, domLength]
  have bits : 0<p.N ∧ p.N≤8192 := by
   rw [policy]
   exact ⟨generation_bits_positive valid,generation_bits_bound positive large⟩
@@ -321,10 +321,10 @@ theorem precomputeNative_ok (M : Mont) {s : State} {p : Parameters} {domPtr : Ad
  rw [WP.seq_iff]
  refine WP.mono (policyDomain_ok (scratch.congr restA.wr) room baseA positive large shape domLength valid
   headers.2.1 headers.2.2.2 headers.2.2.1 sourceA.toSource
-  (fun i hi => Nat.le_trans (by unfold sBits;omega : 8*sBits+8≤p.Z) (source.scratchOutside i hi)) recordsA) ?_
+  (fun i hi => Nat.le_trans (by unfold sBits;omega_using [room] : 8*sBits+8≤p.Z) (source.scratchOutside i hi)) recordsA) ?_
  rintro b ⟨bitsB,frameB,restB⟩
  have inscrB : InScr p.B p.Z a.mem b.mem :=
-  InScr.of_outside frameB (by unfold sBits;omega)
+  InScr.of_outside frameB (by unfold sBits;omega_using [room])
  have publicB := PublicFrame.of_inscr (p:=p) inscrB
  have sourceB := sourceA.after publicB restB
  have headersB (i : Nat) (hi : i<32) (different : i≠sBits) : word b.mem p.B (8*i)=word a.mem p.B (8*i) :=
@@ -349,14 +349,14 @@ theorem precomputeNative_ok (M : Mont) {s : State} {p : Parameters} {domPtr : Ad
   (controls.2.2 i hi notBytes notRows).trans (headersB i hi different)
  have odd : p.P%2=1 := by rw [modulus];exact modFacts.1.1.1
  have normalized : 2^(64*(p.w-1))≤p.P := by rw [modulus,words];exact domain_normalized positive valid
- have nbLength : (dom.take p.k).length=p.k := by simp only [List.length_take];omega
+ have nbLength : (dom.take p.k).length=p.k := by simp only [List.length_take];omega_using [shape, domLength]
  have sourceMod := (sourceC.take p.k).toSrc
  have spanC : InRegions (c.rd++c.wr) domPtr p.k := by rw [total.rd,total.wr];exact span
  refine WP.mono (precomputeArithmetic_ok M (scratch.congr total.wr)
   (((restB.trans restC).gpr .x0 (by simp [recordClobbers])).trans baseA)
   (space.after total) sourceMod spanC nbLength modulus.symm odd normalized
-  (sourceC.generator (by omega) generator) words (by omega) (by omega)
-  (by rw [generator,modulus];have := facts.2.1;omega) bits
+  (sourceC.generator (by omega_using [shape, domLength]) generator) words (by omega_using [small]) (by omega_using [large])
+  (by rw [generator,modulus];have := facts.2.1;omega_using [this]) bits
   ((sameHeader sCtx (by decide) (by decide) (by decide) (by decide)).trans headers.1)
   ((sameHeader sDom (by decide) (by decide) (by decide) (by decide)).trans headers.2.1)
   ((sameHeader sLen (by decide) (by decide) (by decide) (by decide)).trans headers.2.2.2)

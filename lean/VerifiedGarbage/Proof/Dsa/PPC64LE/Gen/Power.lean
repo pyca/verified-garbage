@@ -78,9 +78,9 @@ theorem powA_ok {s : State} {S : Addr} {pLen : Nat} (hl : pLen = 128 ∨ pLen = 
   have hZ := pZ_eq hl
   have hnw := hs.nowrap
   have pb15 : pB + 256 < 2 ^ 15 := by decide
-  have pl15 : pLen < 2 ^ 15 := by omega
-  have w15 : pLen / 4 < 2 ^ 15 := by omega
-  have p15 : pLen + 16 < 2 ^ 15 := by omega
+  have pl15 : pLen < 2 ^ 15 := by omega_using [hl]
+  have w15 : pLen / 4 < 2 ^ 15 := by omega_using [hl]
+  have p15 : pLen + 16 < 2 ^ 15 := by omega_using [hl]
   have wd : 2 * pw pLen = pLen / 4 := by rcases hl with rfl | rfl | rfl <;> decide
   have wd2 : 8 * (pw pLen + 2) = pLen + 16 := by rcases hl with rfl | rfl | rfl <;> decide
   have e : ∀ j, slot (pw pLen) j = hdrBytes + j * (8 * (pw pLen + 2)) := fun _ => rfl
@@ -103,8 +103,8 @@ theorem powA_ok {s : State} {S : Addr} {pLen : Nat} (hl : pLen = 128 ∨ pLen = 
   unfold powA
   refine WP.seq (WP.seq (WP.seq (WP.mono hb fun s₁ ⟨⟨a21, a23, a31, a10, a11, a29, a12, a6, m1⟩, k1⟩ => ?_)))
   have en1 : Env s₁ (off S pB) (pZ pLen) (pw pLen) :=
-    ⟨hs.congr k1.wr, a10, a29, a11, a31, by omega, by omega, by rw [hZ]⟩
-  refine WP.mono (VG.Proof.Dsa.PPC64LE.loadArr_ok en1 (j := 0) (by decide) a12 a6 (by omega) (by omega)
+    ⟨hs.congr k1.wr, a10, a29, a11, a31, by omega_using [hl, wd], by omega_using [hl, wd], by rw [hZ]⟩
+  refine WP.mono (VG.Proof.Dsa.PPC64LE.loadArr_ok en1 (j := 0) (by decide) a12 a6 (by omega_using [hl]) (by omega_using [hl, wd])
     (fun i hi => by rw [k1.rd, k1.wr]; exact hrd i hi) (fun i hi x hx => hsep i hi x hx))
     fun s₂ ⟨⟨v0, top0, o2, b10⟩, k2⟩ => ?_
   rw [m1] at v0 o2
@@ -120,22 +120,22 @@ theorem powA_ok {s : State} {S : Addr} {pLen : Nat} (hl : pLen = 128 ∨ pLen = 
   have v0' : val32 s₅.mem (off S pB) (slot (pw pLen) 0) (2 * pw pLen) =
       Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (off S sPBE) pLen) := by rw [hm5]; exact v0
   refine WP.mono (r2_ok en5.hs ((k5.gpr .r8 (by decide)).trans a8) a9 en5.h10
-    ((k5.gpr .r5 (by decide)).trans ((k4.gpr .r5 (by decide)).trans a5)) en5.h11 (by omega) (by omega)
-    (by rw [e, hZ.symm.trans (e 28)]; omega) (by rw [v0']; exact hp)) fun t ⟨hr2, o7, k7⟩ => ?_
+    ((k5.gpr .r5 (by decide)).trans ((k4.gpr .r5 (by decide)).trans a5)) en5.h11 (by omega_using [hl, wd]) (by omega_using [hl, wd])
+    (by rw [e, hZ.symm.trans (e 28)]; omega_using []) (by rw [v0']; exact hp)) fun t ⟨hr2, o7, k7⟩ => ?_
   rw [v0'] at hr2
   have k1t := (((k1.trans k2).trans k3).trans ((k4.trans k5).trans k7))
   have k2t := (k2.trans k3).trans ((k4.trans k5).trans k7)
   refine ⟨⟨en5.keep k7 (by decide), (k2t.gpr .r21 (by decide)).trans a21, (k2t.gpr .r23 (by decide)).trans a23,
     ?_, ?_, hr2, ?_⟩, k1t.mono (by decide)⟩
   · show val32 t.mem (off S pB) (slot (pw pLen) 0) (2 * pw pLen) = _
-    rw [Outside.val32 o7 (by omega) (by omega), hm5]; exact v0
-  · rw [Outside.word o7 (by omega) (by omega), hm5]; exact top0
+    rw [Outside.val32 o7 (by omega_using [e0, e1]) (by omega_using [hl, wd, hh, e0]), hm5]; exact v0
+  · rw [Outside.word o7 (by omega_using [e0, e1]) (by omega_using [hl, wd, hh, e0]), hm5]; exact top0
   · rw [hm5] at o7
-    exact (o2.mono (by omega) (by omega)).trans (o7.mono (by omega) (by omega))
+    exact (o2.mono (by omega_using []) (by omega_using [])).trans (o7.mono (by omega_using [e0, e1]) (by omega_using [e0, e1]))
 
 theorem outs_within' {B : Addr} {rs : List (Nat × Nat)} {m m' : Mem} (h : Outs B rs m m') {lo hi : Nat}
     (hw : ∀ r ∈ rs, lo ≤ r.1 ∧ r.1 + r.2 ≤ hi) : Outside B lo (hi - lo) m m' :=
-  fun x hx => h x fun r hr => by have := hw r hr; omega
+  fun x hx => h x fun r hr => by have := hw r hr; omega_using [hx, this]
 
 /-- The code after h's pointer: h into array 4, its power, and the range check. -/
 abbrev powC (pLen qLen : Nat) : Prog isa :=
@@ -178,20 +178,20 @@ theorem powC_ok {s : State} {S H : Addr} {pLen qLen p : Nat} (hl : pLen = 128 �
   have sE15 : sE < 2 ^ 15 := by decide
   -- h into array 4.
   unfold powC
-  refine WP.seq (WP.mono (VG.Proof.Dsa.PPC64LE.loadArr_ok en (j := 4) (by decide) h12 h6 (by omega) (by omega)
+  refine WP.seq (WP.mono (VG.Proof.Dsa.PPC64LE.loadArr_ok en (j := 4) (by decide) h12 h6 (by omega_using [hl]) (by omega_using [wl])
     hHrd hHsep) fun s₂ ⟨⟨v4, top4, o2, a10⟩, k2⟩ => ?_)
   have en2 := VG.Proof.Dsa.PPC64LE.env_keep10 en k2 (by decide) a10
   -- `-p⁻¹`, and the exponent's pointer and length.
   refine WP.seq ?_
   rw [WP.block_append_iff]
   have p2 : val32 s₂.mem (off S pB) (slot (pw pLen) 0) (2 * pw pLen) = p := by
-    rw [Outside.val32 o2 (by omega) (by omega)]; exact hp0
+    rw [Outside.val32 o2 (by omega_using [e0, e4]) (by omega_using [hw', hh, e0])]; exact hp0
   have hlow : (word s₂.mem (off S pB) (slot (pw pLen) 0)).toNat % 2 = 1 := by
     have h1 := word_eq_w32 s₂.mem (off S pB) (slot (pw pLen) 0)
     have h2 : val32 s₂.mem (off S pB) (slot (pw pLen) 0) (2 * pw pLen - 1 + 1) =
         w32 s₂.mem (off S pB) (slot (pw pLen) 0) + 2 ^ 32 *
           val32 s₂.mem (off S pB) (slot (pw pLen) 0 + 4) (2 * pw pLen - 1) := rfl
-    rw [Nat.sub_add_cancel (by omega : 1 ≤ 2 * pw pLen), p2] at h2
+    rw [Nat.sub_add_cancel (by omega_using [hw4] : 1 ≤ 2 * pw pLen), p2] at h2
     omega
   refine WP.mono (Pub.minv_ok en2.hs en2.h10 (by omega) hlow) fun s₃ ⟨⟨r12lt, r12inv, m3⟩, k3⟩ => ?_
   refine WP.mono (VG.Proof.Bignum.PPC64LE.WP.keep [.r30, .r31] (Q := fun t => t.gpr .r30 = off S sE ∧
@@ -201,7 +201,7 @@ theorem powC_ok {s : State} {S H : Addr} {pLen qLen p : Nat} (hl : pLen = 128 �
   have k34 := k3.trans k4
   have p4 : val32 s₄.mem (off S pB) (slot (pw pLen) 0) (2 * pw pLen) = p := by rw [m4, m3]; exact p2
   have r1 : val32 s₄.mem (off S pB) (slot (pw pLen) 1) (2 * pw pLen) = 2 ^ (128 * pw pLen) % p := by
-    rw [m4, m3, Outside.val32 o2 (by omega) (by omega)]; exact hrr
+    rw [m4, m3, Outside.val32 o2 (by omega_using [e1, e4]) (by omega_using [hw', hh, e1])]; exact hrr
   have x4 : val32 s₄.mem (off S pB) (slot (pw pLen) 4) (2 * pw pLen) =
       Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem H pLen) := by rw [m4, m3]; exact v4
   have eE : Spec.Rsa.bytesAt s₄.mem (off S sE) (eBytes pLen qLen) =
@@ -214,15 +214,15 @@ theorem powC_ok {s : State} {S H : Addr} {pLen qLen p : Nat} (hl : pLen = 128 �
     · exact absurd rfl (hEsep i hi _ h)
     · exact .inr (Nat.le_trans (by omega : slot (pw pLen) 4 + 8 * (pw pLen + 1) ≤ pZ pLen) h)
   refine WP.seq (WP.mono (ModExp.powSecret_ok (D := off S sE) (L := eBytes pLen qLen) (en2.hs.congr k34.wr)
-    (by omega) (by omega) (by omega) ((k34.gpr .r10 (by decide)).trans en2.h10)
+    (by omega_using [hw4]) (by omega_using [hw']) (by omega) ((k34.gpr .r10 (by decide)).trans en2.h10)
     ((k34.gpr .r29 (by decide)).trans en2.h29) ((k34.gpr .r11 (by decide)).trans en2.h11)
     ((k4.gpr .r12 (by decide)).symm ▸ r12lt)
     (by rw [k4.gpr .r12 (by decide), m4, m3]; exact r12inv) (by rw [p4]; exact hp) (by rw [p4]; exact hpo)
-    (by rw [r1, p4]; exact Nat.mod_lt _ (by omega)) (by rw [a30]; exact (BitVec.add_zero _).symm) a31 heB
-    (by omega) (by rw [(k2.trans k34).rd, (k2.trans k34).wr]; exact hErd)
+    (by rw [r1, p4]; exact Nat.mod_lt _ (by omega_using [hp])) (by rw [a30]; exact (BitVec.add_zero _).symm) a31 heB
+    (by omega_using [heB']) (by rw [(k2.trans k34).rd, (k2.trans k34).wr]; exact hErd)
     (fun i hi x hx => hEsep i hi x hx)) fun s₅ ⟨⟨hpow, o5⟩, k5⟩ => ?_)
   rw [eE, p4, x4] at hpow
-  have v5 := hpow (by rw [r1, ← Nat.pow_add, show 64 * pw pLen + 64 * pw pLen = 128 * pw pLen by omega])
+  have v5 := hpow (by rw [r1, ← Nat.pow_add, show 64 * pw pLen + 64 * pw pLen = 128 * pw pLen by omega_using []])
   -- `r31` back, and array 4's word `w` zero.
   refine WP.seq ?_
   have k25 := (k2.trans k34).trans k5
@@ -233,8 +233,8 @@ theorem powC_ok {s : State} {S H : Addr} {pLen qLen p : Nat} (hl : pLen = 128 �
     (k5.gpr .r29 (by decide)).trans ((k34.gpr .r29 (by decide)).trans en2.h29)
   have a14 : off S (pB + slot (pw pLen) 0 + 8 * (pw pLen + 2) + 8 * (pw pLen + 2) + 8 * (pw pLen + 2) +
       8 * (pw pLen + 2) + 8 * (pw pLen + 2)) - 16#64 = off S (pB + (slot (pw pLen) 4 + 8 * pw pLen)) := by
-    rw [show (16#64 : BitVec 64) = BitVec.ofNat 64 16 from rfl, off, VG.Offset.add_ofNat_sub S (by omega)]
-    congr 2; omega
+    rw [show (16#64 : BitVec 64) = BitVec.ofNat 64 16 from rfl, off, VG.Offset.add_ofNat_sub S (by omega_using [])]
+    congr 2; omega_using [e0, e4]
   have st : InRegions s₅.wr (off S (pB + (slot (pw pLen) 4 + 8 * pw pLen))) 8 := by
     have h := ((en2.hs.congr k34.wr).congr k5.wr).st (show slot (pw pLen) 4 + 8 * pw pLen + 8 ≤ pZ pLen by omega)
     dsimp only [VG.Proof.Bignum.off, VG.Proof.Mont.off] at h ⊢
@@ -250,25 +250,25 @@ theorem powC_ok {s : State} {S H : Addr} {pLen qLen p : Nat} (hl : pLen = 128 �
   have en6 : Env s₆ (off S pB) (pZ pLen) (pw pLen) := ⟨en2.hs.congr k6'.wr, a10',
     (k6'.gpr .r29 (by decide)).trans en2.h29, (k6'.gpr .r11 (by decide)).trans en2.h11, a31', en.hw, en.hw', en.hZ⟩
   have wo : Outside (off S pB) (slot (pw pLen) 4 + 8 * pw pLen) 8 s₅.mem s₆.mem := by
-    rw [m6]; exact fun x hx => VG.Proof.Bignum.writeW_outside s₅.mem (off S pB) 0 (by omega) x hx
+    rw [m6]; exact fun x hx => VG.Proof.Bignum.writeW_outside s₅.mem (off S pB) 0 (by omega_using [hw', hh, e4]) x hx
   have top6 : word s₆.mem (off S pB) (slot (pw pLen) 4 + 8 * pw pLen) = 0 := by
     rw [m6]; exact VG.Proof.Bignum.word_writeW_self _ _ _ _
   have o5' : Outside (off S pB) (slot (pw pLen) 1) (slot (pw pLen) 8 - slot (pw pLen) 1) s₄.mem s₅.mem :=
     outs_within' o5 fun r hr => by
       simp only [Pub.powRs, List.map, List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> dsimp only <;> rw [e, e] <;> omega
+      rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> dsimp only <;> rw [e, e] <;> omega_arith
   have v6 : arr s₆.mem (off S pB) (pw pLen) 4 = Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem H pLen) ^
       Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (off S sE) (eBytes pLen qLen)) % p := by
     show val32 s₆.mem (off S pB) (slot (pw pLen) 4) (2 * pw pLen) = _
-    rw [Outside.val32 wo (by omega) (by omega)]; exact v5
+    rw [Outside.val32 wo (by omega_using []) (by omega_using [hw', hh, e4])]; exact v5
   have p6 : arr s₆.mem (off S pB) (pw pLen) 0 = p := by
     show val32 s₆.mem (off S pB) (slot (pw pLen) 0) (2 * pw pLen) = _
-    rw [Outside.val32 wo (by omega) (by omega), Outside.val32 o5' (by omega) (by omega)]; exact p4
+    rw [Outside.val32 wo (by omega_using [e0, e4]) (by omega_using [hw', hh, e0]), Outside.val32 o5' (by omega_using [e0, e1]) (by omega_using [hw', hh, e0])]; exact p4
   refine WP.mono (VG.Proof.Dsa.PPC64LE.elemRange_ok en6 top6) fun t ⟨⟨r0, v7, o7, en7⟩, k7⟩ => ?_
   rw [p6] at r0
   refine ⟨⟨by rw [v7]; exact v6, by rw [v7]; exact r0, en7, ?_⟩, ((k2.trans k6').trans k7).mono (by decide)⟩
   rw [m4, m3] at o5'
-  exact (((o2.mono (by omega) (by omega)).trans (o5'.mono (by omega) (by omega))).trans
-    (wo.mono (by omega) (by omega))).trans (o7.mono (by omega) (by omega))
+  exact (((o2.mono (by omega_using [e1, e4]) (by omega_using [e1, e4])).trans (o5'.mono (by omega_using []) (by omega_using [e1, e8]))).trans
+    (wo.mono (by omega_using [e1, e4]) (by omega_using [e1, e4]))).trans (o7.mono (by omega_using [e1, e3]) (by omega_using [e1, e3]))
 
 end VG.Proof.Dsa.PPC64LE.Gen

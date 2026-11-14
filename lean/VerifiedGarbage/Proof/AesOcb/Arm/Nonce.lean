@@ -80,9 +80,9 @@ theorem nonce_ok {p : Prm} (L : Lay p) {t : State} (E : Env p t) (A : Args p t.m
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
       · exact (L.k_w' (d := tmpO) (k := 16) (by decide)).sub_left
-          (Region.sub_prefix (show 16 * (p.R + 1) ≤ 256 by have := L.rounds_le; omega))
+          (Region.sub_prefix (show 16 * (p.R + 1) ≤ 256 by have := L.rounds_le; omega_using [this]))
       · exact (L.k_w' (d := botO) (k := 4) (by decide)).sub_left
-          (Region.sub_prefix (show 16 * (p.R + 1) ≤ 256 by have := L.rounds_le; omega))) (by have := L.rounds_le; omega)
+          (Region.sub_prefix (show 16 * (p.R + 1) ≤ 256 by have := L.rounds_le; omega_using [this]))) (by have := L.rounds_le; omega_using [this])
   have hO : (stretch (blockAtMem t₂.mem (State.addr p.W + BitVec.ofNat 64 tmpO))).extractLsb'
       (64 - ((Proof.Ocb.nonceN p.tl (bytesAt t.mem (State.addr p.N) p.nl)).extractLsb' 0 6).toNat) 128 =
       Spec.Ocb.offset0 (Spec.Ocb.aesWith p.R (sched p t.mem)) p.tl (bytesAt t.mem (State.addr p.N) p.nl) := by

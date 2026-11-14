@@ -18,7 +18,7 @@ theorem centered_signed {m : Mem} {p : Addr} {f : Poly}
   refine ⟨?_,?_⟩
   · intro i hi
     have := hb i hi
-    omega
+    omega_using [this]
   · intro i hi
     rw [← hv,VG.Proof.MlDsa.Arith.getElem!_eq _ hi]
     simp only [signedPolyAt,Vector.getElem_ofFn]

@@ -47,7 +47,7 @@ theorem encodable_lt {v : BitVec 32} (h : v.toNat < 256) : encodable v = true :=
     rw [hz]; exact decide_eq_true h⟩
 
 theorem toNat_ofNat_lt {j : Nat} (h : j < 256) : (BitVec.ofNat 32 j).toNat < 256 := by
-  rw [BitVec.toNat_ofNat]; omega
+  rw [BitVec.toNat_ofNat]; omega_using [h]
 
 /-- `s` with the memory `m`, kept folded in symbolic execution. -/
 abbrev putMem (s : State) (m : Mem) : State := { s with mem := m }
@@ -222,10 +222,10 @@ theorem WP.keep {c : Prog isa} {s : State} {Q : State → Prop} (rs : List Reg) 
 /-- The 32-bit address `c + off` within a buffer that does not wrap. -/
 theorem addr_off {c : BitVec 32} {n : Nat} (h : c.toNat + n ≤ 2 ^ 32) :
     ∀ off, off < n → State.addr (c + BitVec.ofNat 32 off) = State.addr c + BitVec.ofNat 64 off :=
-  fun _ ho => addr_add (by omega)
+  fun _ ho => addr_add (by omega_using [h, ho])
 
 theorem toNat_addr (a : BitVec 32) : (State.addr a).toNat = a.toNat := by
   simp only [State.addr, BitVec.toNat_setWidth]
-  exact Nat.mod_eq_of_lt (by have := a.isLt; omega)
+  exact Nat.mod_eq_of_lt (by have := a.isLt; omega_using [])
 
 end VG.Proof.Cast5.Arm

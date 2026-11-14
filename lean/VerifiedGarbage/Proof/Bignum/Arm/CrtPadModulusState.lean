@@ -22,8 +22,8 @@ theorem WorkspaceEq.of_outside {base : Addr} {size o n : Nat} {m m' : Mem}
   refine ⟨fun d k hk => Mem.read_congr ?_⟩
   intro i hi
   apply h
-  rw [ofs_off base (by omega)]
-  omega
+  rw [ofs_off base (by omega_using [fit, hk, hi])]
+  omega_using [sep, hk, hi]
 
 structure CrtPadInput (base : BitVec 32) (size len w d : Nat) (s : State) : Prop where
   workspace : Workspace s base size
@@ -47,19 +47,19 @@ theorem crt_padClear_ready (s : State) {base : BitVec 32} {size len w d : Nat}
   have nowrap := h.workspace.nowrap
   have separate := h.separate
   have fits := h.fits
-  refine WP.mono (crt_clearWide_ok s h.workspace (by omega) (by omega) (by decide) h.fits h.ptr
+  refine WP.mono (crt_clearWide_ok s h.workspace (by omega_using [small, separate, fits]) (by omega_using [small, separate, fits]) (by decide) h.fits h.ptr
     (h.layout.nativeCount h.main) h.link h.stackRead h.stackSep h.saved) ?_
   rintro t ⟨zero, outside, frame, ptrT, rest⟩
-  have eq := WorkspaceEq.of_outside (by omega : 8 * len < 2 ^ 64) h.separate outside
+  have eq := WorkspaceEq.of_outside (by omega_using [nowrap, separate, fits] : 8 * len < 2 ^ 64) h.separate outside
   have highZero : val32 t.mem (State.addr base) (d + 8 * w) (2 * w + 2) = 0 := by
-    rw [show 4 * w + 2 = 2 * w + (2 * w + 2) by omega, val32_append] at zero
+    rw [show 4 * w + 2 = 2 * w + (2 * w + 2) by omega_using [], val32_append] at zero
     have positive : 0 < 2 ^ (32 * (2 * w)) := Nat.two_pow_pos _
-    have high : 2 ^ (32 * (2 * w)) * val32 t.mem (State.addr base) (d + 4 * (2 * w)) (2 * w + 2) = 0 := by omega
+    have high : 2 ^ (32 * (2 * w)) * val32 t.mem (State.addr base) (d + 4 * (2 * w)) (2 * w + 2) = 0 := by omega_using [zero]
     rcases Nat.mul_eq_zero.mp high with bad | good
     · omega
-    · simpa only [show 4 * (2 * w) = 8 * w by omega] using good
+    · simpa only [show 4 * (2 * w) = 8 * w by omega_using []] using good
   exact ⟨⟨h.workspace.congr rest.wr, h.main.congr rest.wr, h.layout.congr eq,
-    h.separate, h.fits, ptrT, (eq.word (by omega)).trans h.link,
+    h.separate, h.fits, ptrT, (eq.word (by omega_using [small])).trans h.link,
     by rw [rest.rd, rest.wr, rest.sp]; exact h.stackRead,
     by rw [rest.sp]; exact h.stackSep, saved_base_kept frame h.stackSep h.saved rest.sp⟩,
     highZero, outside, rest⟩

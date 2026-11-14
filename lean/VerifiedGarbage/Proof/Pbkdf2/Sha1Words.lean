@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Pbkdf2.MdStep
 public import VerifiedGarbage.Proof.Sha1.Md
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # PBKDF2-HMAC-SHA-1's iteration on words
@@ -38,37 +39,37 @@ theorem be4 (x : Word) :
   apply BitVec.eq_of_getLsbD_eq
   intro i hi
   simp only [BitVec.getLsbD_append, BitVec.getLsbD_extractLsb']
-  rcases (show i < 8 ∨ (8 ≤ i ∧ i < 16) ∨ (16 ≤ i ∧ i < 24) ∨ (24 ≤ i ∧ i < 32) by omega) with h | h | h | h
+  rcases (show i < 8 ∨ (8 ≤ i ∧ i < 16) ∨ (16 ≤ i ∧ i < 24) ∨ (24 ≤ i ∧ i < 32) by omega_using [hi]) with h | h | h | h
   · simp [h]
-  · simp only [show ¬ i < 8 by omega, show i - 8 < 8 by omega, ite_true, ite_false, decide_true, Bool.true_and]
-    congr 1; omega
-  · simp only [show ¬ i < 8 by omega, show ¬ i - 8 < 8 by omega, show i - 8 - 8 < 8 by omega, ite_true,
+  · simp only [show ¬ i < 8 by omega_using [h], show i - 8 < 8 by omega_using [h], ite_true, ite_false, decide_true, Bool.true_and]
+    congr 1; omega_using [h]
+  · simp only [show ¬ i < 8 by omega_using [h], show ¬ i - 8 < 8 by omega_using [h], show i - 8 - 8 < 8 by omega_using [h], ite_true,
       ite_false, decide_true, Bool.true_and]
-    congr 1; omega
-  · simp only [show ¬ i < 8 by omega, show ¬ i - 8 < 8 by omega, show ¬ i - 8 - 8 < 8 by omega,
-      show i - 8 - 8 - 8 < 8 by omega, ite_false, decide_true, Bool.true_and]
-    congr 1; omega
+    congr 1; omega_using [h]
+  · simp only [show ¬ i < 8 by omega_using [h], show ¬ i - 8 < 8 by omega_using [h], show ¬ i - 8 - 8 < 8 by omega_using [h],
+      show i - 8 - 8 - 8 < 8 by omega_using [hi], ite_false, decide_true, Bool.true_and]
+    congr 1; omega_using [h]
 
 /-- The bytes of a word made of four bytes. -/
 theorem ex24 (a b c d : BitVec 8) : (a ++ b ++ c ++ d : Word).extractLsb' 24 8 = a := by
   apply BitVec.eq_of_getLsbD_eq; intro i hi
   simp only [BitVec.getLsbD_extractLsb', BitVec.getLsbD_append, hi, decide_true, Bool.true_and]
-  simp only [show ¬ 24 + i < 8 by omega, show ¬ 24 + i - 8 < 8 by omega, show ¬ 24 + i - 8 - 8 < 8 by omega,
+  simp only [show ¬ 24 + i < 8 by omega_using [], show ¬ 24 + i - 8 < 8 by omega_using [], show ¬ 24 + i - 8 - 8 < 8 by omega_using [],
     ite_false]
-  congr 1; omega
+  congr 1; omega_using []
 
 theorem ex16 (a b c d : BitVec 8) : (a ++ b ++ c ++ d : Word).extractLsb' 16 8 = b := by
   apply BitVec.eq_of_getLsbD_eq; intro i hi
   simp only [BitVec.getLsbD_extractLsb', BitVec.getLsbD_append, hi, decide_true, Bool.true_and]
-  simp only [show ¬ 16 + i < 8 by omega, show ¬ 16 + i - 8 < 8 by omega, show 16 + i - 8 - 8 < 8 by omega,
+  simp only [show ¬ 16 + i < 8 by omega_using [], show ¬ 16 + i - 8 < 8 by omega_using [], show 16 + i - 8 - 8 < 8 by omega_using [hi],
     ite_false, ite_true]
-  congr 1; omega
+  congr 1; omega_using []
 
 theorem ex8 (a b c d : BitVec 8) : (a ++ b ++ c ++ d : Word).extractLsb' 8 8 = c := by
   apply BitVec.eq_of_getLsbD_eq; intro i hi
   simp only [BitVec.getLsbD_extractLsb', BitVec.getLsbD_append, hi, decide_true, Bool.true_and]
-  simp only [show ¬ 8 + i < 8 by omega, show 8 + i - 8 < 8 by omega, ite_false, ite_true]
-  congr 1; omega
+  simp only [show ¬ 8 + i < 8 by omega_using [], show 8 + i - 8 < 8 by omega_using [hi], ite_false, ite_true]
+  congr 1; omega_using []
 
 theorem ex0 (a b c d : BitVec 8) : (a ++ b ++ c ++ d : Word).extractLsb' 0 8 = d := by
   apply BitVec.eq_of_getLsbD_eq; intro i hi
@@ -108,7 +109,7 @@ theorem tailBlock_digest (x : md.HV) : md.tailBlock 20 (md.digest x) = blk x := 
   obtain ⟨j, hj⟩ := j
   simp only [parseBlock, blk]
   rcases (show j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4 ∨ j = 5 ∨ j = 6 ∨ j = 7 ∨ j = 8 ∨ j = 9 ∨ j = 10 ∨ j = 11 ∨
-    j = 12 ∨ j = 13 ∨ j = 14 ∨ j = 15 by omega) with
+    j = 12 ∨ j = 13 ∨ j = 14 ∨ j = 15 by omega_using [hj]) with
     rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
   simp only [List.getD_cons_succ, List.getD_cons_zero, be4, Nat.reduceMul, Nat.reduceAdd, Nat.reduceLT,
     ↓reduceDIte, ↓reduceIte, Nat.reduceEqDiff] <;> decide

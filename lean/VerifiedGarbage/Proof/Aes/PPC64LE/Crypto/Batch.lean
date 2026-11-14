@@ -22,7 +22,7 @@ theorem rewind_ok (ctr : Bool) (N : Nat) (s : State) (hN : N ≤ 8) :
       Local [.r6] [] s t := by
   cases ctr <;> apply WP.of_runBlock
   · simp only [Bool.false_eq_true, ite_false, batchRegs, List.length_map, List.length_range,
-      runBlock_cons, runStep_some, reduceExec, ne_eq, reduceCtorEq, not_false_eq_true, show 16*N ≤ 2^15 by omega,
+      runBlock_cons, runStep_some, reduceExec, ne_eq, reduceCtorEq, not_false_eq_true, show 16*N ≤ 2^15 by omega_using [hN],
       and_self, ite_true,
       runBlock_nil, Option.some.injEq, exists_eq_left']
     exact ⟨by simp only [RegUpd.gpr_write_self], Local.write s .r6 _⟩
@@ -64,7 +64,7 @@ theorem batch_cipher_ok (inverse ctr : Bool) (N : Nat) (s : State) {nr : Nat} (h
     WP isa (.seq (.block ((batchRegs N).flatMap (Impl.Aes.PPC64LE.Crypto.readBlock ctr) ++
       (if ctr then [] else [.subi .r6 .r6 (16 * (batchRegs N).length)])))
       (Impl.Aes.PPC64LE.Crypto.aes inverse (batchRegs N))) s (BatchCipher inverse ctr s nr N) := by
-  have facts := batchFacts ⟨N, by omega⟩
+  have facts := batchFacts ⟨N, by omega_using [hN]⟩
   refine WP.seq (WP.mono (batch_read_ok ctr N s hN hp.zero hp.mask hc hr) fun t ht => ?_)
   have hpt : Inputs nr t := by
     refine ⟨(ht.effects.keep.gpr (by decide)).trans hp.zero,
@@ -88,7 +88,7 @@ theorem count_ok (N : Nat) (s : State) (hN : N ≤ 8) :
       t.gpr .r7 = s.gpr .r7 - BitVec.ofNat 64 N ∧ Local [.r7] [] s t := by
   apply WP.of_runBlock
   simp only [runBlock_cons, reduceExec, ne_eq, reduceCtorEq, not_false_eq_true,
-    show N ≤ 2^15 by omega, and_self, ite_true, runStep_some, runBlock_nil,
+    show N ≤ 2^15 by omega_using [hN], and_self, ite_true, runStep_some, runBlock_nil,
     Option.some.injEq, exists_eq_left']
   exact ⟨RegUpd.gpr_write_self .., Local.write s .r7 _⟩
 
@@ -118,7 +118,7 @@ theorem group_ok (inverse ctr : Bool) (N : Nat) (o : Reg) (s : State) {nr n k : 
     intro i hi
     rw [hptr, Offset.add_add]
     exact ⟨⟨D, 16*n⟩, hrd,
-      Offset.contains_base D (d := 16*k+16*i) (n := 16) (k := 16*n) (by omega) (by omega)⟩
+      Offset.contains_base D (d := 16*k+16*i) (n := 16) (k := 16*n) (by omega_using [hkn, hi]) (by omega_using [hkn, hsize, hi])⟩
   have hb := batch_cipher_ok inverse ctr N s hN hp hc hr
   rw [Impl.Aes.PPC64LE.Crypto.group]
   refine WP.seq (WP.mono (WP.seq_iff.mp hb) fun t ht => ?_)
@@ -126,7 +126,7 @@ theorem group_ok (inverse ctr : Bool) (N : Nat) (o : Reg) (s : State) {nr n k : 
   rw [WP.block_append_iff]
   have hzero : u.gpr .r0 = 0 := (hu.effects.keep.gpr (by decide)).trans hp.zero
   have hmask : u.vpr mask = byteMask := by
-    have facts := batchFacts ⟨N, by omega⟩
+    have facts := batchFacts ⟨N, by omega_using [hN]⟩
     exact (hu.effects.v mask (by simp [facts.2.2.1, mask, key, counterBase])).trans hp.mask
   have hwu : (⟨E, 16*n⟩ : Region) ∈ u.wr := by rw [hu.effects.keep.2.2]; exact hw
   have hru : (⟨D, 16*n⟩ : Region) ∈ u.rd ++ u.wr := by
@@ -141,7 +141,7 @@ theorem group_ok (inverse ctr : Bool) (N : Nat) (o : Reg) (s : State) {nr n k : 
   refine WP.mono (count_ok N v hN) fun w ⟨hl, he⟩ => ?_
   refine ⟨((hu.effects.keep.trans hv.keep).trans he.keep).mono (by simp), ?_, ?_, ?_, ?_, ?_, ?_⟩
   · exact (he.keep.gpr (by decide)).trans hv.ptr
-  · have facts := batchFacts ⟨N, by omega⟩
+  · have facts := batchFacts ⟨N, by omega_using [hN]⟩
     rw [he.v _ (by simp), hv.fixed _ (by simp [facts.2.2.2.1, counterBase, data]), hu.counter]
   · rw [hl, hv.keep.gpr (by decide), hu.effects.keep.gpr (by decide)]
   · rw [he.mem]; exact hv.processed

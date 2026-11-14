@@ -44,12 +44,12 @@ theorem scanBody_run {t : State} {p : Addr} {EM : List Byte} {k j : Nat} (hj : j
     fun t' ⟨h, k⟩ => ⟨h.1, h.2.1, h.2.2.1, h.2.2.2.1, h.2.2.2.2, k⟩
   have e1 : 0 + j = j := Nat.zero_add _
   xrun [ea_bxd (p := p) (j := j), hdi, hcx, e1, hin j hj, hEM j hj, h9, hdx, h10, ofNat_add_one, borrow_mask,
-    ofNat_sub_beq (show j + 1 < 2 ^ 64 by omega) (show k < 2 ^ 64 by omega)]
+    ofNat_sub_beq (show j + 1 < 2 ^ 64 by omega_using [hj, hk]) (show k < 2 ^ 64 by omega_using [hk])]
   have hz : ∀ b : Byte, decide ((BitVec.setWidth 64 b).toNat < BitVec.toNat (1 : BitVec 64)) =
       decide (b = 0) := by
     intro b
     rw [zext_toNat, one64_toNat]
-    exact decide_eq_decide.mpr ⟨fun h => BitVec.eq_of_toNat_eq (by simp; omega), fun h => by simp [h]⟩
+    exact decide_eq_decide.mpr ⟨fun h => BitVec.eq_of_toNat_eq (by simp; omega_using [h]), fun h => by simp [h]⟩
   rw [hz, show BitVec.signExtend 64 (BitVec.ofInt 32 (-1)) = BitVec.allOnes 64 by decide]
   rw [show firstZero EM (j + 1) = (match firstZero EM j with
     | some i => some i
@@ -79,7 +79,7 @@ theorem Ctx.outIn {s : State} (hp : DPre s) {R : BitVec 64} {EM : List Byte} {t 
   have hsi := hp.hsi
   have hw := hp.wO
   refine ⟨⟨s.gpr .rdi, (s.gpr .rsi).toNat⟩, by rw [hc.wr, hp.hwr]; simp, ?_⟩
-  exact Offset.contains_base _ (by unfold kOf at hi; omega) (by unfold kOf at hi; omega)
+  exact Offset.contains_base _ (by unfold kOf at hi; omega_using [hi, hsi]) (by unfold kOf at hi; omega_using [hi])
 
 theorem scanPart_step {s : State} (hp : DPre s) {R : BitVec 64} {EM : List Byte} {t : State} (h : AL s R EM t) :
     WP isa scanPart t (SC s R EM) := by
@@ -96,14 +96,14 @@ theorem scanPart_step {s : State} (hp : DPre s) {R : BitVec 64} {EM : List Byte}
     xrun [scanInit, ea_sp, hc.rsp, hs.ld (d := oOut) (by decide), hs.ld (d := oK) (by decide), hc.slots.sOut,
       hc.slots.sK, h8]) rfl) fun t₁ ⟨⟨hm₁, hdi₁, h9₁, hcx₁, hdx₁, h10₁⟩, k₁⟩ => ?_)
   have hc₁ : Ctx s R EM t₁ := hc.regs hp hm₁ k₁ (by decide)
-  refine WP.mono (wp_upto (a := 2) (N := kOf s) (by omega) (fun j u => Keep [.rax, .rsi, .r10, .rdx, .rcx] t₁ u ∧
+  refine WP.mono (wp_upto (a := 2) (N := kOf s) (by omega_using [hkk1]) (fun j u => Keep [.rax, .rsi, .r10, .rdx, .rcx] t₁ u ∧
       u.mem = t₁.mem ∧ u.gpr .rcx = BitVec.ofNat 64 j ∧ u.gpr .rdx = bmask (firstZero EM j).isSome ∧
       u.gpr .r10 = BitVec.ofNat 64 ((firstZero EM j).getD 0))
       (fun j h2 hj u ⟨ku, hmu, hcxu, hdxu, h10u⟩ => ?_) (fun _ h => h)
       ⟨Keep.refl _ _, rfl, hcx₁, by rw [hdx₁]; rfl, by rw [h10₁]; rfl⟩) fun t₂ ⟨k₂, hm₂, _, hdx₂, h10₂⟩ => ?_
-  · refine WP.mono (scanBody_run (p := s.gpr .rdi) hj (by omega) (fun i hi => by rw [hmu]; exact hc₁.em hi)
+  · refine WP.mono (scanBody_run (p := s.gpr .rdi) hj (by omega_using [hkk]) (fun i hi => by rw [hmu]; exact hc₁.em hi)
       (fun i hi => by
-        obtain ⟨r, hr, hcr⟩ := hc₁.outIn hp (i := i) (n := 1) (by omega)
+        obtain ⟨r, hr, hcr⟩ := hc₁.outIn hp (i := i) (n := 1) (by omega_using [hi])
         exact ⟨r, List.mem_append_right _ (by rw [ku.2.2]; exact hr), hcr⟩)
       ((ku.gpr (by decide)).trans hdi₁) ((ku.gpr (by decide)).trans h9₁) hcxu hdxu h10u h2)
       fun u' ⟨hm', hcx', hz, hdx', h10', k'⟩ => ⟨hz, (ku.trans k').mono (by decide), hm'.trans hmu, hcx', hdx', h10'⟩

@@ -47,7 +47,7 @@ theorem highWord_store (m : Mem) (base : BitVec 32) (v : BitVec 32) {i j : Nat}
     (hi : i < 16) (hj : j < 16) :
     (m.writeW (off (State.addr base) (8 * i)) v).readW (off (State.addr base) (8 * j + 4)) 32 =
       m.readW (off (State.addr base) (8 * j + 4)) 32 :=
-  Mem.readW_writeW_sep (Offset.sep _ (by omega) (by omega) (by omega)) (by decide)
+  Mem.readW_writeW_sep (Offset.sep _ (by omega_using []) (by omega_using [hj]) (by omega_using [hi])) (by decide)
 
 theorem highWord_writeLow (m : Mem) (base : BitVec 32) (values : List (Nat × BitVec 32))
     (bounds : ∀ e ∈ values, e.1 < 16) (j : Nat) (hj : j < 16) :

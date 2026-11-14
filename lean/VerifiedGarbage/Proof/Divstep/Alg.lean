@@ -7,6 +7,7 @@ import VerifiedGarbage.Proof.Divstep.Batch
 import Mathlib.Data.Finset.Attr
 import Mathlib.Tactic.SetLike
 import Mathlib.Algebra.Ring.Int.Defs
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # Inversion by batches of divsteps
@@ -78,7 +79,7 @@ theorem mredRaw_spec {p m t : Int} (hm : (p * m + 1) % 2 ^ 64 = 0) :
   have h1 : (2 : Int) ^ 64 ∣ p * m + 1 := Int.dvd_of_emod_eq_zero hm
   have h2 : (2 : Int) ^ 64 ∣ t * m - (t * m) % 2 ^ 64 := by
     have := Int.emod_add_ediv_mul (t * m) (2 ^ 64)
-    exact ⟨(t * m) / 2 ^ 64, by omega⟩
+    exact ⟨(t * m) / 2 ^ 64, by omega_using []⟩
   have : t + (t * m) % 2 ^ 64 * p = t * (p * m + 1) - (t * m - (t * m) % 2 ^ 64) * p := by grind
   rw [this]
   exact Int.dvd_sub (Int.dvd_mul_of_dvd_right h1) (Int.dvd_mul_of_dvd_left h2)
@@ -104,15 +105,15 @@ theorem mred_range {p m t : Int} (hp : 0 < p) (hm : (p * m + 1) % 2 ^ 64 = 0) (h
   have hk1 : (t * m) % 2 ^ 64 < 2 ^ 64 := Int.emod_lt_of_pos _ (by decide)
   rw [abs_le'] at ht
   have kl := Int.mul_nonneg hk0 hp.le
-  have ku := Int.mul_le_mul_of_nonneg_right (by omega : (t * m) % 2 ^ 64 ≤ 2 ^ 64 - 1) hp.le
+  have ku := Int.mul_le_mul_of_nonneg_right (by omega_using [] : (t * m) % 2 ^ 64 ≤ 2 ^ 64 - 1) hp.le
   rw [Int.sub_mul] at ku
   -- `-p < mredRaw t < 2p`.
-  have lo : -p < mredRaw p m t := by omega
-  have hi : mredRaw p m t < 2 * p := by omega
+  have lo : -p < mredRaw p m t := by omega_using [hp, ht, hraw, kl]
+  have hi : mredRaw p m t < 2 * p := by omega_using [hp, ht, hraw, ku]
   unfold mred norm
   split
-  · constructor <;> omega
-  · split <;> constructor <;> omega
+  · constructor <;> omega_arith
+  · split <;> constructor <;> omega_arith
 
 /-- The invariant: `f ≡ x a 2^(c i)`, `g ≡ x b 2^(c i)` modulo `p`, `c = 64 - N`, and
 `a`, `b` in `[0, p)`. -/
@@ -123,7 +124,7 @@ def IState.inv (s : IState) (p x : Int) (K : Int) : Prop :=
 theorem cancel_pow2 {p a b : Int} {N : Nat} (hp : p % 2 = 1) (hp0 : 0 < p) (h : 2 ^ N * a ≡ 2 ^ N * b [ZMOD p]) :
     a ≡ b [ZMOD p] := by
   have hc : Int.gcd p (2 ^ N) = 1 := Int.gcd_pow_right_of_gcd_eq_one (gcd_two hp)
-  have := Int.ModEq.cancel_left_div_gcd (by omega) h
+  have := Int.ModEq.cancel_left_div_gcd (by omega_using [hp0]) h
   rwa [hc, Int.ofNat_one, Int.ediv_one] at this
 
 theorem batch_inv {N : Nat} (hN : N ≤ 62) {p m x K : Int} (hp : p % 2 = 1) (hp0 : 0 < p)
@@ -145,8 +146,8 @@ theorem batch_inv {N : Nat} (hN : N ≤ 62) {p m x K : Int} (hp : p % 2 = 1) (hp
     intro y a ha
     by_cases hy : 0 ≤ y
     · rw [abs_of_nonneg hy, abs_of_nonneg (Int.mul_nonneg hy ha)]
-    · rw [abs_of_nonpos (by omega : y ≤ 0),
-        abs_of_nonpos (Int.mul_nonpos_of_nonpos_of_nonneg (by omega) ha)]
+    · rw [abs_of_nonpos (by omega_using [hy] : y ≤ 0),
+        abs_of_nonpos (Int.mul_nonpos_of_nonpos_of_nonneg (by omega_using [hy]) ha)]
       grind
   have small : ∀ y z : Int, |y| + |z| ≤ 2 ^ N → |y * s.a + z * s.b| ≤ 2 ^ 63 * p := by
     intro y z hyz
@@ -156,15 +157,15 @@ theorem batch_inv {N : Nat} (hN : N ≤ 62) {p m x K : Int} (hp : p % 2 = 1) (hp
         _ ≤ |y| * p + |z| * p := by
           exact add_le_add (Int.mul_le_mul_of_nonneg_left a1.le (abs_nonneg _))
             (Int.mul_le_mul_of_nonneg_left b1.le (abs_nonneg _))
-    have h62 : (2 : Int) ^ N ≤ 2 ^ 63 := (Int.pow_lt_pow_of_lt (by decide) (by omega)).le
+    have h62 : (2 : Int) ^ N ≤ 2 ^ 63 := (Int.pow_lt_pow_of_lt (by decide) (by omega_using [hN])).le
     have := Int.mul_le_mul_of_nonneg_right (Int.le_trans hyz h62) hp0.le
     rw [Int.add_mul] at this
-    omega
+    omega_arith
   have rA := mred_range hp0 hm (small t.u t.v bu)
   have rB := mred_range hp0 hm (small t.q t.r bq)
   have cA := mred_cong (p := p) (t := t.u * s.a + t.v * s.b) hm
   have cB := mred_cong (p := p) (t := t.q * s.a + t.r * s.b) hm
-  have e64 : (2 : Int) ^ 64 = 2 ^ N * 2 ^ (64 - N) := by rw [← pow_add]; congr 1; omega
+  have e64 : (2 : Int) ^ 64 = 2 ^ N * 2 ^ (64 - N) := by rw [← pow_add]; congr 1; omega_using [hN]
   refine ⟨?_, ?_, rA.1, rA.2, rB.1, rB.2⟩
   · apply cancel_pow2 (N := N) hp hp0
     show 2 ^ N * ((t.u * s.f + t.v * s.g) / 2 ^ N) ≡ _ [ZMOD p]
@@ -187,12 +188,12 @@ theorem batch_inv {N : Nat} (hN : N ≤ 62) {p m x K : Int} (hp : p % 2 = 1) (hp
 theorem invRun_inv {N : Nat} (hN : N ≤ 62) {p m x : Int} (hp : p % 2 = 1) (hp1 : 1 < p)
     (hm : (p * m + 1) % 2 ^ 64 = 0) : ∀ B, (invRun N p m x B).inv p x (2 ^ ((64 - N) * B))
   | 0 => by
-    refine ⟨?_, ?_, le_refl _, by simp only [invRun]; omega, by simp [invRun], by simp only [invRun]; omega⟩
+    refine ⟨?_, ?_, le_refl _, by simp only [invRun]; omega_using [hp1], by simp [invRun], by simp only [invRun]; omega_using [hp1]⟩
     · simp only [invRun, mul_zero, pow_zero, mul_one]
       exact Int.emod_self.trans (by simp)
     · simp [invRun, Int.ModEq]
   | B + 1 => by
-    have := batch_inv hN hp (by omega) hm ((invRun_dfg (N := N) (m := m) (x := x) hp B).2) (invRun_inv hN hp hp1 hm B)
+    have := batch_inv hN hp (by omega_using [hp1]) hm ((invRun_dfg (N := N) (m := m) (x := x) hp B).2) (invRun_inv hN hp hp1 hm B)
     simp only [invRun]
     rw [show (64 - N) * (B + 1) = (64 - N) * B + (64 - N) by grind, pow_add]
     exact this
@@ -211,7 +212,7 @@ theorem invRun_spec {N B : Nat} (hN : N ≤ 62) {p m x : Int} (hp : p % 2 = 1) (
   have hfa : s.f.natAbs = 1 := by
     have : s.f = (divsteps (N * B) (1, p, x)).2.1 := by rw [← hd]
     rw [this, hdone.2, hg]
-  have hf1 : s.f = 1 ∨ s.f = -1 := by omega
+  have hf1 : s.f = 1 ∨ s.f = -1 := by omega_using [hfa]
   refine ⟨hf1, ?_⟩
   -- `f ≡ x a 2^(c B)` and `f² = 1`.
   have := hI.1.mul_left s.f

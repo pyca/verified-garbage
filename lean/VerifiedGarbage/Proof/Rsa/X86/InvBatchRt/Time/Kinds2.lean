@@ -52,7 +52,7 @@ theorem relSlots {hc : VG.Taint.Hint VG.X86.Taint.T}
   leaf0 (fun s ps => by
     rw [show slots L = slots L ++ [] from (List.append_nil _).symm]
     exact slots_ok ps.1 ps.2.1 fun u H K O => WP.block_nil ⟨H, ps.2.2.keep K (by decide)
-      (O.mono (Nat.zero_le _) (by have := H.halfZ; simp only [slotBase, halfSlot] at this ⊢; omega)),
+      (O.mono (Nat.zero_le _) (by have := H.halfZ; simp only [slotBase, halfSlot] at this ⊢; omega_using [this])),
       trivial, trivial, trivial⟩) h
 
 /-- `delta = 1`. -/
@@ -61,15 +61,15 @@ theorem relWinOne (hG : Stable [.eax] G) (hfit : 160 + 16 * (8 * nw len + 8) ≤
     RelCT isa (Both L B Z len N n args sp C fun g => G g ∧ True) (.block [.mov .eax (.imm 1), .store (sc win) .eax])
       (Both L B Z len N n args sp C fun g => G g ∧ True) :=
   relOp (ws := [(win, 4)]) (by decide) hG (fun w hw => by
-      simp only [List.mem_singleton] at hw; subst w; exact ⟨.inr (by decide), by simp only [win]; omega⟩)
+      simp only [List.mem_singleton] at hw; subst w; exact ⟨.inr (by decide), by simp only [win]; omega_using [hfit]⟩)
     (fun s hb _ => by
       have hZ := hb.halfZ
       refine wp_movS rfl fun u₁ V₁ _ => ?_
       have hs₁ := hb.ws.ws.workspace.of_keeps V₁.keeps (by decide)
-      refine wp_storeS (hs₁.ea (by simp only [win, halfSlot] at hZ ⊢; omega))
-        (hs₁.write (d := win) (n := 4) (by simp only [win, halfSlot] at hZ ⊢; omega)) fun u₂ V₂ => WP.block_nil ?_
+      refine wp_storeS (hs₁.ea (by simp only [win, halfSlot] at hZ ⊢; omega_using [hfit]))
+        (hs₁.write (d := win) (n := 4) (by simp only [win, halfSlot] at hZ ⊢; omega_using [hfit])) fun u₂ V₂ => WP.block_nil ?_
       have O₂ : Outside B win 4 s.mem u₂.mem := by
-        rw [V₂.mem, V₁.mem]; exact writeW32_outside _ _ _ (by have := hb.nowrap; simp only [win]; omega)
+        rw [V₂.mem, V₁.mem]; exact writeW32_outside _ _ _ (by have := hb.nowrap; simp only [win]; omega_using [])
       exact ⟨hb.keepLow (V₁.keeps.trans (V₂.keeps _)) (by decide) (by decide) O₂ (by decide),
         V₁.keeps.trans (V₂.keeps _), O₂.unch, trivial⟩) h
 
@@ -84,22 +84,22 @@ theorem relInverse (hG : Stable [.eax, .ebx, .ecx, .edx, .ebp] G)
       (Both L B Z len N n args sp C fun g => G g ∧ True) := by
   have r2 : rv (kw len) (a 2) n = 160 + 2 * (8 * nw len + 8) := (rv_h0 rfl n (kw len / 2)).trans (rv_a len 2)
   refine relOp (ws := [(win + 28, 4)]) (by decide) hG (fun w hw => by
-      simp only [List.mem_singleton] at hw; subst w; exact ⟨.inr (by decide), by simp only [win]; omega⟩)
+      simp only [List.mem_singleton] at hw; subst w; exact ⟨.inr (by decide), by simp only [win]; omega_using [hfit]⟩)
     (fun s hb _ => ?_) h
   have hn := hb.nowrap
   simp only [List.append_assoc, List.cons_append, List.nil_append]
   refine ptr_ok hb.ws hb.slots hb.halfZ (r := .eax) (t := .edx) (x := a 2) (by decide) (by decide) (by decide)
-    (by decide) (by intro e; cases e) (by omega) fun u₈ K₈ m₈ p₈ => ?_
+    (by decide) (by intro e; cases e) (by omega_using [hfit, r2, hn]) fun u₈ K₈ m₈ p₈ => ?_
   have hw₈ := hb.ws.rt.of_keeps K₈
-  refine wp_movS (readSrc_ptr hw₈ p₈ (d := 0) (by omega)) fun u₉ V₉ _ => ?_
+  refine wp_movS (readSrc_ptr hw₈ p₈ (d := 0) (by omega_using [hfit, r2])) fun u₉ V₉ _ => ?_
   refine WP.block_append (WP.mono (inverse_frame u₉) fun u₁₀ ⟨K₁₀, M₁₀⟩ => ?_)
   have K₁₀' : Keeps [.eax, .ebx, .ecx, .edx, .ebp] s u₁₀ :=
     ((K₈.mono (by decide)).trans (V₉.keeps.mono (by decide))).trans (K₁₀.mono (by decide))
   have hs₁₀ := hb.ws.ws.workspace.of_keeps K₁₀' (by decide)
-  refine wp_storeS (hs₁₀.ea (by simp only [win]; omega)) (hs₁₀.write (d := win + 28) (n := 4) (by simp only [win]; omega))
+  refine wp_storeS (hs₁₀.ea (by simp only [win]; omega_using [hfit])) (hs₁₀.write (d := win + 28) (n := 4) (by simp only [win]; omega_using [hfit]))
     fun u₁₁ V₁₁ => WP.block_nil ?_
   have O₁₁ : Outside B (win + 28) 4 s.mem u₁₁.mem := by
-    rw [V₁₁.mem, M₁₀, V₉.mem, m₈]; exact writeW32_outside _ _ _ (by simp only [win]; omega)
+    rw [V₁₁.mem, M₁₀, V₉.mem, m₈]; exact writeW32_outside _ _ _ (by simp only [win]; omega_using [])
   exact ⟨hb.keepLow (K₁₀'.trans (V₁₁.keeps _)) (by decide) (by decide) O₁₁ (by decide), K₁₀'.trans (V₁₁.keeps _),
     O₁₁.unch, trivial⟩
 
@@ -121,27 +121,27 @@ theorem relBatches (hG : Stable [.eax, .ecx] G) (hn4 : 4 * n + 16 < 2 ^ 32) {hc 
       ((((K₁₂.mono (by decide)).trans (V₁₃.keeps.mono (by decide))).trans (V₁₄.keeps.mono (by decide))).trans
         (V₁₅.keeps.mono (by decide))).trans (V₁₆.keeps.mono (by decide))
     have hs₁₆ := hb.ws.ws.workspace.of_keeps K₁₆ (by decide)
-    refine wp_storeS (hs₁₆.ea (by omega)) (hs₁₆.write (d := 100) (n := 4) (by omega)) fun z Vz => WP.block_nil ?_
+    refine wp_storeS (hs₁₆.ea (by omega_using [hf16])) (hs₁₆.write (d := 100) (n := 4) (by omega_using [hf16])) fun z Vz => WP.block_nil ?_
     have m₁₆ : u₁₆.mem = s.mem := by rw [V₁₆.mem, V₁₅.mem, V₁₄.mem, V₁₃.mem, m₁₂]
-    have Oz : Outside B 100 4 s.mem z.mem := by rw [Vz.mem, m₁₆]; exact writeW32_outside _ _ _ (by omega)
+    have Oz : Outside B 100 4 s.mem z.mem := by rw [Vz.mem, m₁₆]; exact writeW32_outside _ _ _ (by omega_using [])
     have Kz := K₁₆.trans (Vz.keeps _)
-    refine ⟨hb.keepHigh Kz (by decide) (by decide) Oz (by decide) (by omega),
-      ps.2.1.keep Kz (by decide) (Oz.mono (Nat.zero_le _) (by omega)), ?_, hG _ _ Kz.1 ps.2.2.2.1, trivial⟩
+    refine ⟨hb.keepHigh Kz (by decide) (by decide) Oz (by decide) (by omega_using [hf16]),
+      ps.2.1.keep Kz (by decide) (Oz.mono (Nat.zero_le _) (by omega_using [hf16])), ?_, hG _ _ Kz.1 ps.2.2.2.1, trivial⟩
     show w32 z.mem B 100 = 3 * (n + 1)
     rw [Vz.mem, w32_write_self, V₁₆.gpr, V₁₅.gpr, V₁₅.other .ecx (by decide), V₁₄.gpr, V₁₄.other _ (by decide),
       V₁₃.gpr]
-    have e₁₂ : (u₁₂.gpr .eax).toNat = 4 * (n + 1) := by rw [c₁₂]; omega
+    have e₁₂ : (u₁₂.gpr .eax).toNat = 4 * (n + 1) := by rw [c₁₂]; omega_using []
     have e₁₃ : (u₁₂.gpr .eax >>> 2).toNat = n + 1 := by
-      rw [BitVec.toNat_ushiftRight, e₁₂, Nat.shiftRight_eq_div_pow]; omega
+      rw [BitVec.toNat_ushiftRight, e₁₂, Nat.shiftRight_eq_div_pow]; omega_using []
     simp only [BitVec.toNat_add, e₁₃]
-    omega) h
+    omega_using [hn4]) h
 
 theorem relStart (hG : Stable wordClob G) (hfit : 160 + 16 * (8 * nw len + 8) ≤ Z) {hc : VG.Taint.Hint VG.X86.Taint.T}
     (h : (VG.Taint.check sseTaint (τS L) (.block (start L)) hc).isSome = true) :
     RelCT isa (Both L B Z len N (nw len) args sp C fun g => G g ∧ True) (.block (start L))
       (Both L B Z len N (nw len) args sp C fun g => G g ∧ True) :=
   relOp (ws := [(win + 4, 24)]) (by decide) hG (fun w hw => by
-      simp only [List.mem_singleton] at hw; subst w; exact ⟨.inr (by decide), by simp only [win]; omega⟩)
+      simp only [List.mem_singleton] at hw; subst w; exact ⟨.inr (by decide), by simp only [win]; omega_using [hfit]⟩)
     (fun s hb _ => WP.mono (start_ok hb) fun _ ⟨H, _, K, O⟩ => ⟨H, K, O.unch, trivial⟩) h
 
 theorem relWordSteps (hG : Stable wordClob G) (hfit : 160 + 16 * (8 * nw len + 8) ≤ Z) {hc : VG.Taint.Hint VG.X86.Taint.T}
@@ -149,9 +149,9 @@ theorem relWordSteps (hG : Stable wordClob G) (hfit : 160 + 16 * (8 * nw len + 8
     RelCT isa (Both L B Z len N n args sp C fun g => G g ∧ True) (VG.Impl.Weierstrass.X86.Inv.wordSteps win 30)
       (Both L B Z len N n args sp C fun g => G g ∧ True) :=
   relOp (ws := [(win, 28)]) (by decide) hG (fun w hw => by
-      simp only [List.mem_singleton] at hw; subst w; exact ⟨.inr (by decide), by simp only [win]; omega⟩)
+      simp only [List.mem_singleton] at hw; subst w; exact ⟨.inr (by decide), by simp only [win]; omega_using [hfit]⟩)
     (fun s hb _ => WP.mono (VG.Proof.Weierstrass.X86.Inv.wordSteps_ok hb.ws.ws.workspace (t := win)
-      (by have := hb.halfZ; simp only [win, halfSlot] at this ⊢; omega) (by decide) (by decide))
+      (by have := hb.halfZ; simp only [win, halfSlot] at this ⊢; omega_using [hfit]) (by decide) (by decide))
       fun t ⟨_, K, O⟩ => ⟨hb.keepLow K (by decide) (by decide) O (by decide), K, O.unch, trivial⟩) h
 
 /-- The batch count down by one, its flags set by the new count. -/
@@ -168,9 +168,9 @@ theorem relCountDown {m : Nat} (hm : 1 ≤ m) (hm32 : m < 2 ^ 32) {hc : VG.Taint
     have hZ := hb.halfZ
     have hf16 := hb.fits16
     exact WP.mono (VG.Proof.Rsa.X86.GcdBatch.countDown_ok hb.ws.ws.workspace (d := 100)
-      (by simp only [halfSlot] at hZ; omega) hm hm32 ps.2.2.1) fun z ⟨c, zf, K, O⟩ =>
-      ⟨⟨hb.keepHigh K (by decide) (by decide) O (by decide) (by omega),
-        ps.2.1.keep K (by decide) (O.mono (Nat.zero_le _) (by omega)), c, trivial, trivial⟩, zf⟩) h).mono
+      (by simp only [halfSlot] at hZ; omega_using [hf16]) hm hm32 ps.2.2.1) fun z ⟨c, zf, K, O⟩ =>
+      ⟨⟨hb.keepHigh K (by decide) (by decide) O (by decide) (by omega_using [hf16]),
+        ps.2.1.keep K (by decide) (O.mono (Nat.zero_le _) (by omega_using [hf16])), c, trivial, trivial⟩, zf⟩) h).mono
     (fun _ _ h => h) fun _ _ ⟨⟨a, za⟩, ⟨b, zb⟩⟩ => ⟨⟨a, b⟩, za, zb⟩
 
 end VG.Proof.Rsa.X86.InvBatchRt.Time

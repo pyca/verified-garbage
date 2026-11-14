@@ -58,17 +58,17 @@ theorem sizes : (HH v).S = 96 ∧ (HH v).W ≤ 104 ∧ (HH v).D = 32 ∧ (HH v).
     (HH v).stream.F = 32 ∧ (HH v).stream.D = 32 ∧ (OK v).stream.Wb ≤ 608 := by
   refine ⟨rfl, ?_, rfl, rfl, rfl, rfl, rfl, ?_⟩
   · show (Proof.Pbkdf2.Md.X86_64.Sha256.hash v).W ≤ 104
-    rcases Proof.Pbkdf2.Md.X86_64.Sha256.hashW v with h | h | h <;> omega
+    rcases Proof.Pbkdf2.Md.X86_64.Sha256.hashW v with h | h | h <;> omega_using [h]
   · show v.callee.so + 48 ≤ 608
-    rcases v.hso with h | h | h <;> omega
+    rcases v.hso with h | h | h <;> omega_using [h]
 
 /-- `scratch + sWork` holds the HMAC functions' working space. -/
 theorem wFit : sWork + 8 * (HH v).W ≤ sMsg := by
-  have := (sizes v).2.1; unfold sWork sMsg; omega
+  have := (sizes v).2.1; unfold sWork sMsg; omega_using [this]
 
 /-- `scratch + sWork` holds the streaming functions' working space. -/
 theorem wbFit : sWork + (OK v).stream.Wb ≤ sMsg := by
-  have := (sizes v).2.2.2.2.2.2.2; unfold sWork sMsg; omega
+  have := (sizes v).2.2.2.2.2.2.2; unfold sWork sMsg; omega_using [this]
 
 theorem wScr : sWork + 8 * (HH v).W ≤ scrBytes := Nat.le_trans (wFit v) (by decide)
 
@@ -86,7 +86,7 @@ variable {v}
 
 theorem scD {s : State} {a n b m : Nat} (h : a + n ≤ b ∨ b + m ≤ a) (ha : a + n ≤ scrBytes) (hb : b + m ≤ scrBytes) :
     Region.Disjoint ⟨scA s a, n⟩ ⟨scA s b, m⟩ :=
-  Offset.disjoint (sc s) h (by unfold scrBytes at ha; omega) (by unfold scrBytes at hb; omega)
+  Offset.disjoint (sc s) h (by unfold scrBytes at ha; omega_using [ha]) (by unfold scrBytes at hb; omega_using [hb])
 
 theorem scSub {s : State} {a n : Nat} (ha : a + n ≤ scrBytes) : Region.Sub ⟨scA s a, n⟩ ⟨sc s, scrBytes⟩ :=
   Offset.sub_base _ ha
@@ -99,23 +99,23 @@ theorem stkD {s : State} (hp : DPre s) {n a m : Nat} (hn : n ≤ 8 + privStack) 
 theorem scS {s : State} {a n : Nat} (ha : a + n ≤ scrBytes) : Safe s ⟨scA s a, n⟩ := .inl (scSub ha)
 
 theorem belowS {s : State} (hp : DPre s) {n : Nat} (hn : n ≤ 8 + privStack) : Safe s (below (fb s) n) :=
-  .inr (.inl (VG.X86_64.below_sub hn (by have := (fb_toNat hp).2.2; unfold privStack at *; omega)))
+  .inr (.inl (VG.X86_64.below_sub hn (by have := (fb_toNat hp).2.2; unfold privStack at *; omega_using [])))
 
 theorem scCov {s : State} (hp : DPre s) {R : BitVec 64} {EM : List Byte} {t : State} (hc : Ctx s R EM t)
     {a n : Nat} (ha : a + n ≤ scrBytes) : Covers [⟨scA s a, n⟩] t.wr := by
   obtain ⟨h1, _⟩ := scr_len hp
   exact Covers.of_sub fun r hr => by
     rw [List.mem_singleton.mp hr]
-    exact ⟨scrR s, by rw [hc.wr, hp.hwr]; simp [scrR], a, rfl, by dsimp only [scrR]; omega⟩
+    exact ⟨scrR s, by rw [hc.wr, hp.hwr]; simp [scrR], a, rfl, by dsimp only [scrR]; omega_using [ha, h1]⟩
 
 /-- `(BitVec.ofNat 32 d).signExtend 64`, for `d < 2³¹`. -/
 theorem sx {d : Nat} (h : d < 2 ^ 31) : (BitVec.ofNat 32 d).signExtend 64 = BitVec.ofNat 64 d := by
   have hm : (BitVec.ofNat 32 d).msb = false := by
-    rw [BitVec.msb_eq_decide]; simp only [BitVec.toNat_ofNat, decide_eq_false_iff_not]; omega
+    rw [BitVec.msb_eq_decide]; simp only [BitVec.toNat_ofNat, decide_eq_false_iff_not]; omega_using [h]
   rw [BitVec.signExtend_eq_setWidth_of_msb_false hm]
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_setWidth, BitVec.toNat_ofNat, BitVec.toNat_ofNat]
-  omega
+  omega_using [h]
 
 /-! ## The hash of `D` -/
 
@@ -191,26 +191,26 @@ theorem hashD_step {s : State} (hp : DPre s) {R : BitVec 64} {EM : List Byte} {t
   have hc₂ := hc₁.after hp a₂ fun r hr => by
     rw [List.mem_singleton.mp hr, hS]; exact scS (by decide)
   have hD₂ : Spec.Rsa.bytesAt t₂.mem (scA s sD) (kOf s) = Spec.Rsa.i2osp (Spec.Rsa.os2ip (dB s)) (kOf s) := by
-    rw [bytes_keep a₂.frame (fun r hr => ?_) (by omega), hm₁]
+    rw [bytes_keep a₂.frame (fun r hr => ?_) (by omega_using [hkk]), hm₁]
     · exact h.D
     · rcases List.mem_append.mp hr with hr | hr
-      · rw [List.mem_singleton.mp hr, hS]; exact scD (.inr (by decide)) (by unfold sD scrBytes; omega) (by decide)
+      · rw [List.mem_singleton.mp hr, hS]; exact scD (.inr (by decide)) (by unfold sD scrBytes; omega_using [hkk]) (by decide)
       · rw [List.mem_singleton.mp hr, below_rsp hc₁]
-        exact (stkD hp (by decide) (by unfold sD scrBytes; omega)).symm
+        exact (stkD hp (by decide) (by unfold sD scrBytes; omega_using [hkk])).symm
   -- `update`
   refine WP.seq (WP.mono (shaUpdArgs_run hp hc₂) fun t₃ ⟨hc₃, hm₃, hdi₃, hsi₃, hdx₃, hcx₃, h8₃⟩ => ?_)
   have hD₃ := hm₃ ▸ hD₂
   have hr₃ : (OK v).stream.SH.Repr t₃.mem (scA s 0) [] := by rw [hm₃]; exact hr₂
   refine WP.seq (Proof.Pbkdf2.Md.X86_64.Calls.upd_call (OK v).stream (len := kOf s)
     { rdi := hdi₃, rdx := hdx₃, rcx := by rw [hcx₃], r8 := h8₃
-      cd := Covers.right (scCov hp hc₃ (by unfold sD scrBytes; omega))
+      cd := Covers.right (scCov hp hc₃ (by unfold sD scrBytes; omega_using [hkk]))
       cw := by rw [hS]; exact Covers.pair (scCov hp hc₃ (by decide)) (scCov hp hc₃ (wbScr v))
       st_sc := by rw [hS]; exact scD (.inl (by decide)) (by decide) (wbScr v)
-      d_st := by rw [hS]; exact scD (.inr (by decide)) (by unfold sD scrBytes; omega) (by decide)
-      d_sc := scD (.inr (wbBelow v (by decide))) (by unfold sD scrBytes; omega) (wbScr v)
+      d_st := by rw [hS]; exact scD (.inr (by decide)) (by unfold sD scrBytes; omega_using [hkk]) (by decide)
+      d_sc := scD (.inr (wbBelow v (by decide))) (by unfold sD scrBytes; omega_using [hkk]) (wbScr v)
       stk_st := by rw [below_rsp hc₃, hS]; exact stkD hp (by decide) (by decide)
-      stk_d := by rw [below_rsp hc₃]; exact stkD hp (by decide) (by unfold sD scrBytes; omega)
-      stk_sc := by rw [below_rsp hc₃]; exact stkD hp (by decide) (wbScr v) } (by omega)
+      stk_d := by rw [below_rsp hc₃]; exact stkD hp (by decide) (by unfold sD scrBytes; omega_using [hkk])
+      stk_sc := by rw [below_rsp hc₃]; exact stkD hp (by decide) (wbScr v) } (by omega_using [hkk])
     fun t₄ a₄ hu₄ => ?_)
   have hc₄ := hc₃.after hp a₄ fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -238,7 +238,7 @@ theorem hashD_step {s : State} (hp : DPre s) {R : BitVec 64} {EM : List Byte} {t
     · rw [hF]; exact scS (by decide)
     · exact scS (wbScr v)
   refine ⟨hc₆, ?_⟩
-  have := hf₆ _ (by rw [hm₅]; exact hr₄) (by simp [Spec.Sha256.bytesAt]; omega)
+  have := hf₆ _ (by rw [hm₅]; exact hr₄) (by simp [Spec.Sha256.bytesAt]; omega_using [hkk])
     (by rw [hsi₅]; simp [Spec.Sha256.bytesAt])
   rw [hF, hD] at this
   rw [List.take_of_length_le (by simp [Spec.Sha256.bytesAt])] at this

@@ -35,13 +35,13 @@ def rkG (k q : Nat) : List Nat :=
   if q < (if k % 2 = 0 then 32 else 16) then [xAtom (rkSrc (k / 2) (32 * (k % 2) + q))] else []
 
 theorem rkG_lo {j q : Nat} (hq : q < 32) : rkG (2 * j) q = [xAtom (rkSrc j q)] := by
-  simp [rkG, hq, show 2 * j / 2 = j by omega]
+  simp [rkG, hq, show 2 * j / 2 = j by omega_using []]
 
 theorem rkG_hi {j q : Nat} (hq : q < 16) : rkG (2 * j + 1) q = [xAtom (rkSrc j (32 + q))] := by
-  simp [rkG, hq, show (2 * j + 1) % 2 = 1 by omega, show (2 * j + 1) / 2 = j by omega]
+  simp [rkG, hq, show (2 * j + 1) % 2 = 1 by omega_using [], show (2 * j + 1) / 2 = j by omega_using []]
 
 theorem rkG_hi0 {j q : Nat} (hq : 16 ≤ q) : rkG (2 * j + 1) q = [] := by
-  simp [rkG, show (2 * j + 1) % 2 = 1 by omega, show ¬ q < 16 by omega]
+  simp [rkG, show (2 * j + 1) % 2 = 1 by omega_using [], show ¬ q < 16 by omega_using [hq]]
 
 def kPost (e : Env (Nat × Nat)) : Bool := (List.range 32).all fun k => e.slot k == some (outWord (rkG k))
 
@@ -96,7 +96,7 @@ theorem roundKeys_ok {s : State} (hok : Ok kCfg s) :
     intro k hk q hq
     have h := List.all_eq_true.mp hpost k (List.mem_range.mpr hk)
     simp only [beq_iff_eq] at h
-    have := outWord_rel (rkG_lt k hk) (p.rel.slot k _ (by simp only [kCfg]; omega) h)
+    have := outWord_rel (rkG_lt k hk) (p.rel.slot k _ (by simp only [kCfg]; omega_using [hk]) h)
     rw [p.base] at this
     exact this q hq
   have hx : W 0 ++ W 1 = s.gpr .r0 ++ s.gpr .r1 := rfl
@@ -106,18 +106,18 @@ theorem roundKeys_ok {s : State} (hok : Ok kCfg s) :
     rw [BitVec.getLsbD_append, getLsbD_expandDesKey _ hj hq]
     have hs := rkSrc_lt j hj q hq
     by_cases h32 : q < 32
-    · rw [ite_eq_left h32, hw (2 * j) (by omega) q h32, rkG_lo h32, xorBits_cons, xorBits_nil,
+    · rw [ite_eq_left h32, hw (2 * j) (by omega_using [hj]) q h32, rkG_lo h32, xorBits_cons, xorBits_nil,
         Bool.xor_false, bit_xAtom W hs, hx]
-    · rw [ite_eq_right h32, BitVec.getLsbD_setWidth, decide_eq_true (by omega : q - 32 < 16), Bool.true_and,
-        hw (2 * j + 1) (by omega) (q - 32) (by omega), rkG_hi (by omega), show 32 + (q - 32) = q by omega,
+    · rw [ite_eq_right h32, BitVec.getLsbD_setWidth, decide_eq_true (by omega_using [hq] : q - 32 < 16), Bool.true_and,
+        hw (2 * j + 1) (by omega_using [hj]) (q - 32) (by omega_using [hq]), rkG_hi (by omega_using [hq]), show 32 + (q - 32) = q by omega_using [h32],
         xorBits_cons, xorBits_nil, Bool.xor_false, bit_xAtom W hs, hx]
   · apply BitVec.eq_of_getLsbD_eq
     intro q hq
     rw [BitVec.getLsbD_ushiftRight]
     by_cases hq' : 16 + q < 32
-    · rw [hw (2 * j + 1) (by omega) (16 + q) hq', rkG_hi0 (by omega)]
+    · rw [hw (2 * j + 1) (by omega_using [hj]) (16 + q) hq', rkG_hi0 (by omega_using [])]
       simp
-    · rw [BitVec.getLsbD_of_ge _ _ (by omega)]
+    · rw [BitVec.getLsbD_of_ge _ _ (by omega_using [hq'])]
       simp
   · have h := roundKeys_kept hr
     simp [h]

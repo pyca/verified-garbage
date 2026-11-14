@@ -36,11 +36,11 @@ theorem restore_ok {s u : State} (h : contract.pre s) (ready : Ready s u)
   have read : ∀ p ∈ saved, InRegions (u.rd ++ u.wr) (addr (u.gpr .ebx) p.2) 4 := by
     intro p hp
     have fit : p.2 + 4 ≤ 48 := by revert p; decide
-    rw [base, ready.tracking.rd, ready.tracking.wr, addr_eq (by omega)]
+    rw [base, ready.tracking.rd, ready.tracking.wr, addr_eq (by omega_using [bound, room, fit])]
     exact ⟨scratch s, List.mem_append_right _ (by
       have wr := (geometry h).wr
       change s.wr = [scratch s, ⟨argAddr s 0, 20⟩] at wr
-      rw [wr]; exact List.mem_cons_self), Offset.contains_base _ (by omega) (by omega)⟩
+      rw [wr]; exact List.mem_cons_self), Offset.contains_base _ (by omega_using [room, fit]) (by omega_using [fit])⟩
   change WP isa (.block (restoreCode .ebx ([(.ebp, 36), (.esi, 40), (.edi, 44)] ++ [(.ebx, 32)]) ++ [])) u _
   refine restoreBase_ok _ (by decide) read (by rw [base]; exact ready.saved) fun t R => WP.block_nil ?_
   have stack : t.gpr .esp = s.gpr .esp :=

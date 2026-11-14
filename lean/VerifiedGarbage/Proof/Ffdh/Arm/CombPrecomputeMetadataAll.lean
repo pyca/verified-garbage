@@ -52,7 +52,7 @@ theorem combMetadata_ok (s : State) {base ctx : BitVec 32} {len N : Nat}
   have headPositive : 0<h := by
     dsimp [h]
     unfold VG.Proof.Ffdh.ScalarWidth.headBits VG.Proof.Ffdh.ScalarWidth.width
-    omega
+    omega_using [positive]
   have headBound : h≤8 := (VG.Proof.Ffdh.ScalarWidth.headBits_parts N).1
   have maskValue : (VG.Proof.Ffdh.ScalarWidth.mask N).setWidth 32=combLowMask h := by
     apply BitVec.eq_of_toNat_eq
@@ -61,10 +61,10 @@ theorem combMetadata_ok (s : State) {base ctx : BitVec 32} {len N : Nat}
   have widthPositive := VG.Proof.Ffdh.ScalarWidth.width_pos N
   have widthBound : VG.Proof.Ffdh.ScalarWidth.width N≤1024 := by
     unfold VG.Proof.Ffdh.ScalarWidth.width
-    omega
+    omega_using [bound]
   have rowsBound : VG.Spec.Rsa.FixedBaseComb.rows N≤1639 := by
     unfold VG.Spec.Rsa.FixedBaseComb.rows VG.Spec.Rsa.FixedBaseComb.teeth
-    omega
+    omega_using [bound]
   rw [metadata,WP.seq_iff]
   refine WP.mono (combBitCount_ok s locals headPositive headBound (savedMask.trans maskValue)) ?_
   rintro u ⟨countU,_zeroU,memU,restU⟩
@@ -79,7 +79,7 @@ theorem combMetadata_ok (s : State) {base ctx : BitVec 32} {len N : Nat}
     (restU.mono (by simp [combMetadataClobbers])).trans (restV.mono (by simp [combMetadataClobbers]))
   rw [restU.sp,memU] at memV frameV
   rw [WP.seq_iff]
-  refine WP.mono (combRowsCount_ok v (locals.after rV) positive (by omega) countV) ?_
+  refine WP.mono (combRowsCount_ok v (locals.after rV) positive (by omega_using [bound]) countV) ?_
   rintro w ⟨_countW,memW,frameW,restW⟩
   have rW : Rest combMetadataClobbers s w := rV.trans (restW.mono (by simp [combMetadataClobbers]))
   rw [rV.sp] at memW frameW
@@ -93,8 +93,8 @@ theorem combMetadata_ok (s : State) {base ctx : BitVec 32} {len N : Nat}
     intro r hr
     simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
     rcases hr with rfl|rfl
-    · exact Offset.disjoint _ sep16 (by omega) (by decide)
-    · exact Offset.disjoint _ sep44 (by omega) (by decide)
+    · exact Offset.disjoint _ sep16 (by omega_using [fit]) (by decide)
+    · exact Offset.disjoint _ sep44 (by omega_using [fit]) (by decide)
   have nSaved : w.mem.readW (off (State.addr w.sp) 16) 32=BitVec.ofNat 32 N := by
     rw [rW.sp]
     rw [frameW.readW (r := ⟨off (State.addr s.sp) 16,4⟩) (Region.contains_self _ _)
@@ -104,7 +104,7 @@ theorem combMetadata_ok (s : State) {base ctx : BitVec 32} {len N : Nat}
   have dSaved : w.mem.readW (off (State.addr w.sp) 44) 32=BitVec.ofNat 32 (VG.Spec.Rsa.FixedBaseComb.rows N) := by
     rw [rW.sp,memW,Mem.readW_writeW_self32]
   refine WP.mono (combHeader_ok w (locals.after rW) (ws.after rW) (by rw [rW.sp]; exact separate)
-    (by omega) (by omega) (by omega)
+    (by omega_using [bound]) (by omega_using [widthBound]) (by omega_using [rowsBound])
     ((localRead 4 (by decide) (by decide) (by decide)).trans savedCtx) nSaved
     ((localRead 20 (by decide) (by decide) (by decide)).trans savedWidth) dSaved) ?_
   rintro t ⟨memT,frameT,restT⟩

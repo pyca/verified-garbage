@@ -48,14 +48,14 @@ def C0k (v : VD) (s : State) : Prop := vkContract.pre s ∧ vdP s = v
 theorem frontK : ∀ v s, C0k v s → WP isa (.block Params.entry) s (P0 v) := by
   rintro _ s ⟨h, rfl⟩
   exact pfront_P0 (playOf_ok_of h.2.2.2.2.1 h.2.2.2.2.2.1 h.2.2.2.2.2.2.2.1) h.1 h.2.1 h.2.2.1 h.2.2.2.2.1
-    h.2.2.2.2.2.2.2.2.1 (by have := h.2.2.2.2.2.2.1; omega)
+    h.2.2.2.2.2.2.2.2.1 (by have := h.2.2.2.2.2.2.1; omega_using [this])
 
 /-- The public octets name y. -/
 theorem kyC0k : ∀ v s, C0k v s → KY v := by
   rintro _ s ⟨h, rfl⟩
   show 3 * (s.gpr .a2).toNat + (s.gpr .a3).toNat ≤ (s.gpr .a1).toNat
   have := h.2.2.2.2.2.2.1
-  omega
+  omega_using [this]
 
 abbrev RKk : Prog isa := andThen (.seq (.block ptrY) checkElem) ok1 fail0
 abbrev R3k : Prog isa := .seq setupP (andThen (.seq (.block ptrG) checkElem) RKk fail0)
@@ -208,7 +208,7 @@ theorem leak_all {s : State} (hs : vkContract.pre s) :
         (Spec.Rsa.bytesAt s.mem (s.gpr .a0) (s.gpr .a1).toNat) =
       (Spec.Rsa.bytesAt s.mem (s.gpr .a0) (s.gpr .a1).toNat).map (·.toNat) := by
   have := hs.2.2.2.2.2.2.1
-  rw [Spec.Dsa.publicBytesLeak, List.take_of_length_le (by rw [VG.Proof.Bignum.bytesAt_length]; omega)]
+  rw [Spec.Dsa.publicBytesLeak, List.take_of_length_le (by rw [VG.Proof.Bignum.bytesAt_length]; omega_using [this])]
 
 theorem validate_ct : ConstantTime isa vkContract.pre vkContract.pub Prevalidated.validate :=
   RelCT.constantTime (validate_rel.mono (fun s _ ⟨hs, ht, hp⟩ =>

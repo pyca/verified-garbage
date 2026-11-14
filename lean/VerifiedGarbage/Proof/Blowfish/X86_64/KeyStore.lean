@@ -31,10 +31,10 @@ theorem scratchOut_run {t : State} {B : Addr} (hB : t.gpr .rcx = B) (hw : InRegi
   have e0 : t.ea (mem .rcx 0) = B + BitVec.ofNat 64 0 := by rw [ea_mem, hB]
   have e16 : t₁.ea (mem .rcx 16) = B + BitVec.ofNat 64 16 := by rw [ea_mem]; exact congrArg (· + _) hB
   have h₁ : exec (.movdquStore (mem .rcx 0) xR) t = some t₁ := by
-    rw [exec_movdquStore (by rw [e0]; exact inRegions_off hw (by omega)), e0]
+    rw [exec_movdquStore (by rw [e0]; exact inRegions_off hw (by omega_using [])), e0]
   let M := (t.mem.writeW (B + BitVec.ofNat 64 0) (t.xmm xR)).writeW (B + BitVec.ofNat 64 16) (t.xmm xL)
   have h₂ : exec (.movdquStore (mem .rcx 16) xL) t₁ = some { t with mem := M } := by
-    rw [exec_movdquStore (by rw [e16]; exact inRegions_off hw (by omega)), e16]
+    rw [exec_movdquStore (by rw [e16]; exact inRegions_off hw (by omega_using [])), e16]
   rw [outWords, runBlock_cons, h₁, runStep_some, runBlock_cons, h₂, runStep_some, runBlock_nil]
 
 /-- The word at `rcx + o` into `r11` and the low doubleword of `d`. -/

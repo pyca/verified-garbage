@@ -45,7 +45,7 @@ theorem addConst_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size
       Outside base dst (8 * (n + 1)) s.mem t.mem := by
   have hn := hs.nowrap
   have hf := fresh_low_top n h7
-  have h10 : n < 10 := by omega
+  have h10 : n < 10 := by omega_using [h7]
   have hft := fresh_top_low_lt n h10
   have hl := low_len_lt n h10
   have hcl := low_top_clob n h7
@@ -57,9 +57,9 @@ theorem addConst_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size
   refine WP.mono (setConst_ok hs (n := n + 1) (o := dst) (x := c) hdst hd8 hc) fun s₁ ⟨e₁, k₁, O₁⟩ => ?_
   have hs₁ := hs.of_keepRegs k₁ (by decide)
   have vs₁ : wordsVal s₁.mem base src n = wordsVal s.mem base src n :=
-    O₁.wordsVal (by omega) (by omega)
+    O₁.wordsVal (by omega_using [hsep]) (by omega_using [hsrc, hn])
   rw [WP.block_append_iff]
-  refine WP.mono (loads_ok (low n) hs₁ (a := src) (by omega) hs8 hft.tail) fun s₂ ⟨e₂, k₂, _⟩ => ?_
+  refine WP.mono (loads_ok (low n) hs₁ (a := src) (by omega_using [hsrc, hl]) hs8 hft.tail) fun s₂ ⟨e₂, k₂, _⟩ => ?_
   have nx0 : Reg.x0 ∉ low n := fun h => x0_not_low_top n h7 (List.mem_append_left _ h)
   have hs₂ := hs₁.of_keeps k₂ nx0
   rw [WP.block_append_iff]
@@ -75,7 +75,7 @@ theorem addConst_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size
   rw [WP.block_append_iff]
   have hL' : low n ++ [top n] = t :: (ts ++ [top n]) := by rw [hts]; rfl
   rw [hL']
-  refine WP.mono (chainAdds_ok hs₃ (b := dst) (by rw [← hL', hL]; omega) hd8 (hL' ▸ hf))
+  refine WP.mono (chainAdds_ok hs₃ (b := dst) (by rw [← hL', hL]; omega_using [hdst]) hd8 (hL' ▸ hf))
     fun s₄ ⟨e₄, k₄⟩ => ?_
   rw [← hL'] at e₄ k₄ ⊢
   rw [hL, r₃, d₃] at e₄
@@ -86,8 +86,8 @@ theorem addConst_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size
   have r₄ : regsVal s₄ (low n ++ [top n]) = wordsVal s.mem base src n + c := by
     have := regsVal_lt s₄ (low n ++ [top n])
     rw [hL] at this
-    cases hc₄ : s₄.c <;> simp only [hc₄, Bool.toNat_false, Bool.toNat_true] at e₄ <;> omega
-  refine WP.mono (stores_ok (low n ++ [top n]) hs₄ (o := dst) (by rw [hL]; omega) hd8 hf.1)
+    cases hc₄ : s₄.c <;> simp only [hc₄, Bool.toNat_false, Bool.toNat_true] at e₄ <;> omega_arith
+  refine WP.mono (stores_ok (low n ++ [top n]) hs₄ (o := dst) (by rw [hL]; omega_using [hdst]) hd8 hf.1)
     fun s₅ ⟨e₅, k₅, O₅⟩ => ?_
   rw [hL] at e₅ O₅
   refine ⟨by rw [e₅, r₄], ?_, fun x hx => ?_⟩

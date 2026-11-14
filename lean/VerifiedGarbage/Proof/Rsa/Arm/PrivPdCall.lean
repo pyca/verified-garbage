@@ -58,10 +58,10 @@ theorem pd_call (v : CrtImpl) {g : PrivGeometry} {bs : Fin 8 → List Byte} {s :
   refine ⟨ht, slotsT, frame, rest, ?_⟩
   sig_post [Proof.Rsa.publicPrecomputedCheckedContract, Proof.Rsa.publicPrecomputedSig, abi, argRegs, reduceClassify, Loc.val, State.addr] at post
   have sa := fun {j} (hj : j < 6) => pdArgs_stack h args hj
-  have kfit : g.length < 2 ^ 32 := by have := h.valid.maxLength; omega
-  have efit : g.exponentLength < 2 ^ 32 := by have := h.valid.exponentFits; omega
+  have kfit : g.length < 2 ^ 32 := by have := h.valid.maxLength; omega_using [this]
+  have efit : g.exponentLength < 2 ^ 32 := by have := h.valid.exponentFits; omega_using [kfit, this]
   have pfit : 2 * Spec.Rsa.modulusWords g.length < 2 ^ 32 := by
-    have := h.valid.maxLength; simp only [Spec.Rsa.modulusWords]; omega
+    have := h.valid.maxLength; simp only [Spec.Rsa.modulusWords]; omega_using [kfit]
   simp only [args.output, args.outputLength, args.precomputation, args.precomputationLength,
     sa (by decide : 0 < 6), sa (by decide : 1 < 6), sa (by decide : 2 < 6), pdArgument,
     BitVec.toNat_ofNat, Nat.mod_eq_of_lt kfit, Nat.mod_eq_of_lt efit, Nat.mod_eq_of_lt pfit] at post

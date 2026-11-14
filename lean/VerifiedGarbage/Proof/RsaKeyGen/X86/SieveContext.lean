@@ -59,13 +59,13 @@ theorem Geometry.Valid.cursor_addr {g : Geometry} (v : g.Valid) {i : Nat} (index
   apply BitVec.eq_of_toNat_eq
   simp only [Geometry.cursor, BitVec.toNat_setWidth, BitVec.toNat_add, BitVec.toNat_ofNat]
   have table := g.table.isLt
-  omega
+  omega_using [index, bound]
 
 theorem Geometry.Valid.cursor_fit {g : Geometry} (v : g.Valid) {i : Nat} (index : i < 1024) :
     (g.cursor i).toNat + 8 ≤ 2 ^ 32 := by
   have bound := v.tableFit
   simp only [Geometry.cursor, BitVec.toNat_add, BitVec.toNat_ofNat]
-  omega
+  omega_using [index, bound]
 
 
 theorem outsideStack_frame {g : Geometry} {m m' : Mem}
@@ -78,7 +78,7 @@ theorem outsideStack_frame {g : Geometry} {m m' : Mem}
     by_contra bad
     apply nc
     change ofs (g.sp.setWidth 64) x + 1 ≤ 20
-    omega
+    omega_using [bad]
   exact bound
 
 theorem Context.keep {g : Geometry} (v : g.Valid) {c : Nat} {s t : State} (C : Context g c s)
@@ -93,7 +93,7 @@ theorem Context.keep {g : Geometry} (v : g.Valid) {c : Nat} {s t : State} (C : C
     exact C.tableRead i bound d mem
   · intro i bound
     have read := F.readW (r := g.tableRegion) (w := 64)
-      (Offset.contains_base _ (by omega : 8 * i + 8 ≤ 8192) (by omega))
+      (Offset.contains_base _ (by omega_using [bound] : 8 * i + 8 ≤ 8192) (by omega_using [bound]))
       (by intro r mem; obtain rfl := List.mem_singleton.mp mem; exact v.tableFar) (by decide)
     exact read.trans (C.tableWords i bound)
   · rw [← C.candidateValue]
@@ -101,7 +101,7 @@ theorem Context.keep {g : Geometry} (v : g.Valid) {c : Nat} {s t : State} (C : C
     intro i bound
     apply congrArg BitVec.toNat
     exact F.readW (r := g.candidateRegion) (w := 32)
-      (Offset.contains_base _ (by omega) (by have := v.candidateFit; omega))
+      (Offset.contains_base _ (by omega_using [bound]) (by have := v.candidateFit; omega_using [bound, this]))
       (by intro r mem; obtain rfl := List.mem_singleton.mp mem; exact v.candidateFar) (by decide)
 
 end VG.Proof.RsaKeyGen.X86.Sieve

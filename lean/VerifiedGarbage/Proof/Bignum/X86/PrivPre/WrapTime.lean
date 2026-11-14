@@ -125,9 +125,9 @@ theorem pc_pub (A₁ : PPABI s₁) (A₂ : PPABI s₂) (P : Pub s₁ s₂) {u₁
     (Spec.Rsa.publicPrecomputeContract abi 96).pub (u₁.callEntry.withRegions rd wr)
       (u₂.callEntry.withRegions rd wr) := by
   have h₁ : ∀ j < 6, arg (u₁.callEntry.withRegions rd wr) j = pubVal s₁ j := fun j hj => by
-    rw [callee_arg A₁ B₁ (by omega)]; exact V₁ j hj
+    rw [callee_arg A₁ B₁ (by omega_using [hj])]; exact V₁ j hj
   have h₂ : ∀ j < 6, arg (u₂.callEntry.withRegions rd wr) j = pubVal s₂ j := fun j hj => by
-    rw [callee_arg A₂ B₂ (by omega)]; exact V₂ j hj
+    rw [callee_arg A₂ B₂ (by omega_using [hj])]; exact V₂ j hj
   have cb₁ := callee_bytes (rd := rd) (wr := wr) A₁ B₁ (n_apart A₁) (arg s₁ 3).isLt
   have cb₂ := callee_bytes (rd := rd) (wr := wr) A₂ B₂ (n_apart A₂) (arg s₂ 3).isLt
   sig_pub [Spec.Rsa.publicPrecomputeContract, Spec.Rsa.publicPrecomputeSig, abi, argSlots, argVal, argBytes]
@@ -206,13 +206,13 @@ theorem copyPrimes_relCT (A₁ : PPABI s₁) (A₂ : PPABI s₂) (P : Pub s₁ s
     (fun x y h => ⟨saves_ok A₁ h.1, saves_ok A₂ h.2⟩) ?_
   refine seqCT (copyPrime_relCT A₁ A₂ P (j := 16) (.inl rfl) (.inl rfl) (.inl rfl))
     (fun x y h => ⟨WP.mono (copyPrime_ok A₁ h.1 (j := 16) (by decide) (.inl rfl) (.inl rfl)
-        (by simp only [dstOff] at parts₁ ⊢; omega)) fun _ h => h.1,
+        (by simp only [dstOff] at parts₁ ⊢; omega_using [parts₁])) fun _ h => h.1,
       WP.mono (copyPrime_ok A₂ h.2 (j := 16) (by decide) (.inl rfl) (.inl rfl)
-        (by simp only [dstOff] at parts₂ ⊢; omega)) fun _ h => h.1⟩) ?_
+        (by simp only [dstOff] at parts₂ ⊢; omega_using [parts₂])) fun _ h => h.1⟩) ?_
   refine seqCT (copyPrime_relCT A₁ A₂ P (j := 17) (.inr rfl) (.inr rfl) (.inr rfl))
-    (fun x y h => ⟨WP.mono (copyPrime_ok A₁ h.1 (j := 17) (by decide) (.inr rfl) (.inr rfl) (by omega))
+    (fun x y h => ⟨WP.mono (copyPrime_ok A₁ h.1 (j := 17) (by decide) (.inr rfl) (.inr rfl) (by omega_using [parts₁]))
         fun _ h => h.1,
-      WP.mono (copyPrime_ok A₂ h.2 (j := 17) (by decide) (.inr rfl) (.inr rfl) (by omega)) fun _ h => h.1⟩) ?_
+      WP.mono (copyPrime_ok A₂ h.2 (j := 17) (by decide) (.inr rfl) (.inr rfl) (by omega_using [parts₂])) fun _ h => h.1⟩) ?_
   exact espCT (fun x y h => Body.esp P h.1 h.2) (by taint_decide)
 
 theorem wrapBody_relCT {pcName prName : String} {pc : Prog isa}

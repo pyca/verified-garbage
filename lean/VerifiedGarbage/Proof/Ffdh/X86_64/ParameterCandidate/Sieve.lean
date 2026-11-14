@@ -57,7 +57,7 @@ private theorem firstHit_min {c N k : Nat} (h : k < firstHit c N) :
 
 theorem firstHit_pos {c N : Nat} (hN : 1 ≤ N) : 1 ≤ firstHit c N := by
   by_contra h
-  have h0 : firstHit c N = 0 := by omega
+  have h0 : firstHit c N = 0 := by omega_using [h]
   have := firstHit_spec c N
   rw [h0] at this
   omega
@@ -69,19 +69,19 @@ theorem firstHit_exit {c N j : Nat} (hj : j < firstHit c N) :
   by_cases he : j + 1 = firstHit c N
   · rw [he, show decide (firstHit c N = firstHit c N) = true from decide_eq_true rfl]
     rcases firstHit_spec c N with h | ⟨-, h⟩
-    · have : firstHit c N = N := by omega
+    · have : firstHit c N = N := by omega_using [hle, h]
       simp [this]
     · rw [h, Bool.or_true]
-  · have hlt : j + 1 < firstHit c N := by omega
+  · have hlt : j + 1 < firstHit c N := by omega_using [hj, he]
     have hn := firstHit_min hlt
     simp only [not_or, not_le, not_and, Bool.not_eq_true] at hn
-    have h1 : ¬ j + 1 = N := by omega
-    simp [he, h1, hn.2 (by omega)]
+    have h1 : ¬ j + 1 = N := by omega_using [hj, hle, he]
+    simp [he, h1, hn.2 (by omega_using [])]
 
 /-- Stopping early decides as the whole table does. -/
 theorem firstHit_any (c N : Nat) : anyPre c (4 * firstHit c N) = anyPre c (4 * N) := by
   rcases firstHit_spec c N with h | ⟨-, h⟩
-  · rw [show firstHit c N = N by have := firstHit_le c N; omega]
+  · rw [show firstHit c N = N by have := firstHit_le c N; omega_using [h, this]]
   · rw [h, anyPre_mono (Nat.mul_le_mul_left 4 (firstHit_le c N)) h]
 
 private theorem exit_bv {N k : Nat} (hk : k + 1 ≤ N) (hN : N < 2 ^ 64) (b : Bool) :
@@ -99,7 +99,7 @@ private theorem exit_bv {N k : Nat} (hk : k + 1 ≤ N) (hN : N < 2 ^ 64) (b : Bo
       intro he; apply h
       have := congrArg BitVec.toNat he
       simp only [BitVec.toNat_ofNat] at this
-      omega
+      omega_using [hk, hN, this]
   · rw [m1, BitVec.xor_self, BitVec.and_zero, Bool.or_true]
     rfl
 
@@ -114,8 +114,8 @@ four primes (`productReduce`, Montgomery reduction by `2^64` word by word:
 theorem carry_bit {X : Nat} (h : X < 2 ^ 65) :
     (BitVec.setWidth 64 (BitVec.ofBool (decide (2 ^ 64 ≤ X)))).toNat = X / 2 ^ 64 := by
   by_cases hx : 2 ^ 64 ≤ X
-  · simp [hx]; omega
-  · simp [hx]; omega
+  · simp [hx]; omega_using [h, hx]
+  · simp [hx]; omega_using [hx]
 
 /-- `redc64`'s result, from the machine's operations. -/
 theorem redc_bits (a b m Mv : BitVec 64) (hM : Mv.toNat < 2 ^ 62) :
@@ -140,14 +140,14 @@ theorem redc_bits (a b m Mv : BitVec 64) (hM : Mv.toNat < 2 ^ 62) :
     calc q * Mv.toNat < 2 ^ 64 * 2 ^ 62 := Nat.mul_lt_mul_of_lt_of_le hq2 (Nat.le_of_lt hM) (by decide)
       _ = 2 ^ 62 * 2 ^ 64 := Nat.mul_comm _ _
   have hPm : q * Mv.toNat % 2 ^ 64 < 2 ^ 64 := Nat.mod_lt _ (by decide)
-  rw [BitVec.toNat_ofNat, carry_bit (by omega), carry_bit (by omega)]
+  rw [BitVec.toNat_ofNat, carry_bit (by omega_using []), carry_bit (by omega_using [])]
   generalize (b.toNat + a.toNat) % 2 ^ 64 = lo at hlo ⊢
   generalize q * Mv.toNat / 2 ^ 64 = H at hP ⊢
   generalize q * Mv.toNat % 2 ^ 64 = L at hPm ⊢
-  have h1 : (b.toNat + a.toNat) / 2 ^ 64 ≤ 1 := by omega
-  have h2 : (L + lo) / 2 ^ 64 ≤ 1 := by omega
-  rw [Nat.mod_eq_of_lt (b := 2 ^ 64) (by omega : H < 2 ^ 64), Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega)]
-  omega
+  have h1 : (b.toNat + a.toNat) / 2 ^ 64 ≤ 1 := by omega_using []
+  have h2 : (L + lo) / 2 ^ 64 ≤ 1 := by omega_using [hlo, hPm]
+  rw [Nat.mod_eq_of_lt (b := 2 ^ 64) (by omega_using [hP] : H < 2 ^ 64), Nat.mod_eq_of_lt (by omega_using [hlo, hP, hPm]), Nat.mod_eq_of_lt (by omega_using [hlo, hP, hPm])]
+  omega_using []
 
 theorem sieve_imul (a b : BitVec 64) : BitVec.ofInt 64 (a.toInt * b.toInt) = a * b := by
   simp only [BitVec.ofInt_mul, BitVec.ofInt_toInt]
@@ -221,21 +221,21 @@ theorem prodBlock_ok {t : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} (hg :
   have e3 := tabWord_entry hi (show 3 < 4 by decide)
   rw [Nat.mul_zero, BitVec.ushiftRight_zero, Nat.add_zero] at e0
   simp only [Nat.reduceMul] at e1 e2 e3
-  have b0 := (tabEntry_facts (i := 4 * i) (by omega)).2.2
-  have b1 := (tabEntry_facts (i := 4 * i + 1) (by omega)).2.2
-  have b2 := (tabEntry_facts (i := 4 * i + 2) (by omega)).2.2
-  have b3 := (tabEntry_facts (i := 4 * i + 3) (by omega)).2.2
+  have b0 := (tabEntry_facts (i := 4 * i) (by omega_using [hi])).2.2
+  have b1 := (tabEntry_facts (i := 4 * i + 1) (by omega_using [hi])).2.2
+  have b2 := (tabEntry_facts (i := 4 * i + 2) (by omega_using [hi])).2.2
+  have b3 := (tabEntry_facts (i := 4 * i + 3) (by omega_using [hi])).2.2
   rw [BitVec.toNat_mul, BitVec.toNat_mul, BitVec.toNat_mul, e0, e1, e2, e3]
   unfold wordProd
   have h01 : tabEntry (4 * i) * tabEntry (4 * i + 1) < 2 ^ 26 :=
-    Nat.lt_of_lt_of_le (Nat.mul_lt_mul_of_lt_of_le b0 (Nat.le_of_lt b1) (by omega)) (by decide)
+    Nat.lt_of_lt_of_le (Nat.mul_lt_mul_of_lt_of_le b0 (Nat.le_of_lt b1) (by omega_using [])) (by decide)
   have h012 : tabEntry (4 * i) * tabEntry (4 * i + 1) * tabEntry (4 * i + 2) < 2 ^ 39 :=
-    Nat.lt_of_lt_of_le (Nat.mul_lt_mul_of_lt_of_le h01 (Nat.le_of_lt b2) (by omega)) (by decide)
+    Nat.lt_of_lt_of_le (Nat.mul_lt_mul_of_lt_of_le h01 (Nat.le_of_lt b2) (by omega_using [])) (by decide)
   have h0123 : tabEntry (4 * i) * tabEntry (4 * i + 1) * tabEntry (4 * i + 2) * tabEntry (4 * i + 3) < 2 ^ 52 :=
-    Nat.lt_of_lt_of_le (Nat.mul_lt_mul_of_lt_of_le h012 (Nat.le_of_lt b3) (by omega)) (by decide)
-  rw [Nat.mod_eq_of_lt (by omega : tabEntry (4 * i) * tabEntry (4 * i + 1) < 2 ^ 64),
-    Nat.mod_eq_of_lt (by omega : tabEntry (4 * i) * tabEntry (4 * i + 1) * tabEntry (4 * i + 2) < 2 ^ 64),
-    Nat.mod_eq_of_lt (by omega : tabEntry (4 * i) * tabEntry (4 * i + 1) * tabEntry (4 * i + 2) * tabEntry (4 * i + 3) < 2 ^ 64)]
+    Nat.lt_of_lt_of_le (Nat.mul_lt_mul_of_lt_of_le h012 (Nat.le_of_lt b3) (by omega_using [])) (by decide)
+  rw [Nat.mod_eq_of_lt (by omega_using [h01] : tabEntry (4 * i) * tabEntry (4 * i + 1) < 2 ^ 64),
+    Nat.mod_eq_of_lt (by omega_using [h012] : tabEntry (4 * i) * tabEntry (4 * i + 1) * tabEntry (4 * i + 2) < 2 ^ 64),
+    Nat.mod_eq_of_lt (by omega_using [h0123] : tabEntry (4 * i) * tabEntry (4 * i + 1) * tabEntry (4 * i + 2) * tabEntry (4 * i + 3) < 2 ^ 64)]
 
 /-- `productHead`: the table word's product `M` in `rbx`, `−M⁻¹` in `r15`, and
 the reduction's start. -/
@@ -610,7 +610,7 @@ theorem sievePrefixN_ok {s : State} {B : Addr} {Z w n : Nat} {minv : BitVec 64} 
     rw [ho₂.wv (k := w) (Or.inl (by omega_arith)) (by omega_arith), hm₁]
   have ho₂' : Outside B (slot w aTab) 2048 s.mem s₂.mem := by rw [← hm₁]; exact ho₂
   refine WP.mono (WP.keep [.rax] (Q := fun t => t.gpr .rax = BitVec.ofNat 64 n ∧ t.mem = s₂.mem)
-    (by xrun; apply BitVec.eq_of_toNat_eq; simp; omega) rfl)
+    (by xrun; apply BitVec.eq_of_toNat_eq; simp; omega_arith) rfl)
     fun t ⟨⟨hax, hmt⟩, kt⟩ => sieveStart_ok hTZ hg₂ hc₂ ho₂' htab₂ ((k₁.trans k₂).mono (by decide)) hax hmt kt
 
 /-- `sieveFirst`: ZF set iff none of the table's first `4 firstWords` entries
@@ -638,11 +638,11 @@ theorem sieve_shape {c bits : Nat} (hc : 8161 < c) (ho : c % 2 = 1) :
         Spec.RsaKeyGen.obviouslyComposite bits c := by
       unfold Spec.RsaKeyGen.obviouslyComposite Spec.RsaKeyGen.trialPrimes
       by_cases h : 1025 ≤ bits
-      · simp only [h, ↓reduceIte, show 1024 < 64 * 17 by decide, show 1024 < bits by omega]
-      · simp only [h, ↓reduceIte, show ¬ 1024 < 64 * 16 by decide, show ¬ 1024 < bits by omega]
+      · simp only [h, ↓reduceIte, show 1024 < 64 * 17 by decide, show 1024 < bits by omega_using [h]]
+      · simp only [h, ↓reduceIte, show ¬ 1024 < 64 * 16 by decide, show ¬ 1024 < bits by omega_using [h]]
     rw [hw, hb] at he
     exact he
-  have h53 : 53 ≤ 4 * sieveCount bits := by unfold sieveCount; split <;> omega
+  have h53 : 53 ≤ 4 * sieveCount bits := by unfold sieveCount; split <;> omega_using []
   rw [VG.Proof.Ffdh.ParameterCandidate.primeShape_sieve hc ho, ← htrial]
   cases hA : anyPre c (4 * sieveCount bits)
   · have h' : ((List.range 53).any fun i => c % VG.Impl.RsaKeyGen.tabEntry i == 0) = false := by

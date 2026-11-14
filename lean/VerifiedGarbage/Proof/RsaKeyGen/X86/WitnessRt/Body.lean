@@ -50,21 +50,21 @@ theorem body_ok {mont round : Prog isa} {montName roundName : String}
   have words : g.words = 2 * g.w := rfl
   have positive := v.minWidth
   unfold VG.Impl.RsaKeyGen.X86.WitnessRt.body
-  refine WP.seq (WP.mono (advance_ok v S source consumed (by omega))
+  refine WP.seq (WP.mono (advance_ok v S source consumed (by omega_using [randLenFit, enough]))
     fun a ⟨A, sourceA, usedA, Oa, Ka⟩ => ?_)
   let input := WitnessInput.geometryAt g rand used g.words
   have readA : InRegions (a.rd ++ a.wr) (rand.setWidth 64) randLen := by
     rw [Ka.2.1, Ka.2.2]; exact readable
-  have C := WitnessInput.context_okAt (used := used) (count := g.words) v A.ready.scratch randFit (by omega)
-    (by unfold Geometry.words; omega) (by omega) readA separate
+  have C := WitnessInput.context_okAt (used := used) (count := g.words) v A.ready.scratch randFit (by omega_using [words, positive])
+    (by unfold Geometry.words; omega_using []) (by omega_using [enough, words]) readA separate
   have inputSource : input.src.setWidth 64 = off (rand.setWidth 64) used :=
-    WitnessInput.source_address (by omega)
+    WitnessInput.source_address (by omega_using [randFit, enough, positive])
   have bytesA : Spec.Rsa.bytesAt a.mem (input.src.setWidth 64) (8 * g.w) =
       Spec.Rsa.bytesAt s.mem (off (rand.setWidth 64) used) (8 * g.w) := by
     rw [inputSource]
     apply VG.Proof.Bignum.scratch_bytes
-      (Oa.mono (o' := 0) (n' := g.L) (by decide) (by have := v.headerFit; omega))
-      (by have := randLenFit; omega)
+      (Oa.mono (o' := 0) (n' := g.L) (by decide) (by have := v.headerFit; omega_using [this]))
+      (by have := randLenFit; omega_using [bound])
     exact separate.sub_left (Offset.sub_base _ enough)
   refine WP.seq (WP.mono (round_ok montVerified montNoSp montStack roundVerified roundNoSp roundStack v length A
     C rfl sourceA
@@ -86,7 +86,7 @@ theorem body_ok {mont round : Prog isa} {montName roundName : String}
     exact WitnessStep.flag_value resultB
   refine WP.mono (WitnessCount.code_ok v B flagB uniformB (by change w32 b.mem g.W 176 + 1 < 2 ^ 32; rw [roundB]; exact roundsFit)
     (by change w32 b.mem g.W 192 + _ < 2 ^ 32; rw [uniB]; have := Bool.toNat_le (Spec.RsaKeyGen.witness (c - 1) (Spec.Rsa.os2ip
-      (Spec.Rsa.bytesAt s.mem (off (rand.setWidth 64) used) (8 * g.w)))).2; omega))
+      (Spec.Rsa.bytesAt s.mem (off (rand.setWidth 64) used) (8 * g.w)))).2; omega_using [uniformFit, this]))
     fun t ⟨T, countT, uniT, statusT, Ot, Kt⟩ => ?_
   dsimp only [VG.Impl.RsaKeyGen.X86.WitnessCount.roundsOffset, VG.Impl.RsaKeyGen.X86.WitnessCount.uniformOffset,
     VG.Impl.RsaKeyGen.X86.WitnessCount.statusOffset, VG.Impl.RsaKeyGen.X86.WitnessCount.checksOffset] at countT uniT statusT
@@ -96,7 +96,7 @@ theorem body_ok {mont round : Prog isa} {montName roundName : String}
   have usedB := (WitnessRound.header32 v Wb (d := 152) (by unfold WitnessRound.safeHeader; decide)).trans usedA
   have usedT : w32 t.mem g.W 152 = used + 8 * g.w := by
     have same := (WorkspaceFrame.of_outs B.ready.scratch.nowrap Ot).read32
-      (d := 152) (by have := v.headerFit; omega) (by
+      (d := 152) (by have := v.headerFit; omega_using [this]) (by
         intro r mem
         simp only [WitnessCount.ranges, WitnessCount.nextRanges, List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at mem
         rcases mem with (rfl | rfl) | rfl <;> left <;> decide)
@@ -109,14 +109,14 @@ theorem body_ok {mont round : Prog isa} {montName roundName : String}
     (Ot.mono (fun r mem => List.mem_append_right _ mem))
   have Fa : Frame ([⟨g.W, g.L⟩] ++ [below p 108]) s.mem a.mem :=
     (workspaceGlobalFrame (Outs.of_outside Oa (List.mem_singleton_self _))
-      (fun r mem => by obtain rfl := List.mem_singleton.mp mem; have := v.headerFit; omega)).mono
+      (fun r mem => by obtain rfl := List.mem_singleton.mp mem; have := v.headerFit; omega_using [this])).mono
       (fun r mem => List.mem_append_left _ mem)
   have Ft : Frame ([⟨g.W, g.L⟩] ++ [below p 108]) b.mem t.mem :=
     (workspaceGlobalFrame Ot (fun r mem => by
       simp only [WitnessCount.ranges, WitnessCount.nextRanges, List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at mem
       rcases mem with (rfl | rfl) | rfl <;> have := v.headerFit <;>
         simp only [VG.Impl.RsaKeyGen.X86.WitnessCount.roundsOffset, VG.Impl.RsaKeyGen.X86.WitnessCount.uniformOffset,
-          VG.Impl.RsaKeyGen.X86.WitnessCount.statusOffset] <;> omega)).mono
+          VG.Impl.RsaKeyGen.X86.WitnessCount.statusOffset] <;> omega_using [this])).mono
       (fun r mem => List.mem_append_left _ mem)
   exact ⟨T, usedT, countT, uniT, statusT, (Wa.trans Wb').trans Wt, (Fa.trans Fb).trans Ft,
     ((Ka.mono (by unfold WitnessStep.clob; decide)).widen Kb).widen Kt⟩

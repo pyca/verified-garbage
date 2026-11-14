@@ -54,8 +54,8 @@ theorem cswapSlot_ok {s : State} (hc : Ctx8 b s) {sw : Nat} (hsw : sw ≤ 1) (h1
   have hsep : offset a + 32 ≤ offset c ∨ offset c + 32 ≤ offset a := by
     have : a.val ≠ c.val := fun e => hac (Fin.ext e)
     simp only [offset]; omega_arith
-  refine WP.mono (cswap_ok (by omega_arith) (by omega_arith) hsep (by simp only [offset]; omega)
-    (by simp only [offset]; omega) hc.ctx hsw h11) fun t ht => ⟨ht.rest, ?_, ?_, ?_, fun i hia hic => ?_⟩
+  refine WP.mono (cswap_ok (by omega_arith) (by omega_arith) hsep (by simp only [offset]; omega_using [])
+    (by simp only [offset]; omega_using []) hc.ctx hsw h11) fun t ht => ⟨ht.rest, ?_, ?_, ?_, fun i hia hic => ?_⟩
   · refine ht.frame.sub fun r hr => ⟨_, List.mem_singleton_self _, ?_⟩
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl

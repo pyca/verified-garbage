@@ -43,8 +43,8 @@ theorem CrtHalfReady.after {s t : State} {g : CrtGeometry} {bs : Fin 7 → List 
   have op0 : Operand 0 := by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]
   have op4 : Operand 4 := by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]
   exact ⟨h.1.after_narrow ready frame rest,
-    (keeps_array_num keeps fits op0 (by omega)).trans h.2.1, h.2.2.1,
-    (keeps_array_num keeps fits op4 (by omega)).trans h.2.2.2.1, h.2.2.2.2⟩
+    (keeps_array_num keeps fits op0 (by omega_using [ho])).trans h.2.1, h.2.2.1,
+    (keeps_array_num keeps fits op4 (by omega_using [ho])).trans h.2.2.2.1, h.2.2.2.2⟩
 
 theorem CrtHalfReady.r2_lt {s : State} {g : CrtGeometry} {bs : Fin 7 → List Byte} {child : BitVec 32}
     {slot v M : Nat} (h : CrtHalfReady g bs child slot v M s) :
@@ -52,7 +52,7 @@ theorem CrtHalfReady.r2_lt {s : State} {g : CrtGeometry} {bs : Fin 7 → List By
   have positive := h.1.ready.modulus
   rw [h.2.1] at positive ⊢
   rw [h.2.2.2.1]
-  exact Nat.mod_lt _ (by omega)
+  exact Nat.mod_lt _ (by omega_using [positive])
 
 theorem crt_reduceHalf_ct {g : CrtGeometry} {bs1 bs2 : Fin 7 → List Byte} {child : BitVec 32}
     {slot v j M1 M2 : Nat} (hj : j < 8) :
@@ -97,7 +97,7 @@ theorem crt_reduceHalf_ct {g : CrtGeometry} {bs1 bs2 : Fin 7 → List Byte} {chi
   have w6 (s : State) {bs : Fin 7 → List Byte} {M : Nat} (h : H5 bs M s) : WP isa (subModArray 6 5 1) s (H3 bs M) := by
     refine (subModArray_ok s h.1.1.1.1.ready (o := 6) (a := 5) (b := 1) (op 6 (by simp)) (op 5 (by simp))
       (op 1 (by simp)) (by decide) (by decide) (by decide)
-      (by rw [h.2]; have := h.1.1.1.1.ready.modulus; omega) h.1.2).mono ?_
+      (by rw [h.2]; have := h.1.1.1.1.ready.modulus; omega_using [this]) h.1.2).mono ?_
     rintro t ⟨ready, _, keeps, frame, rest⟩
     exact ⟨h.1.1.1.after ready keeps (by simp) frame rest,
       (keeps_array_num keeps (fits s h.1.1.1) (op 7 (by simp)) (by decide)).trans h.1.1.2⟩
@@ -114,13 +114,13 @@ theorem crt_reduceHalf_ct {g : CrtGeometry} {bs1 bs2 : Fin 7 → List Byte} {chi
     intro s bs M h
     have := fits s h
     simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at this
-    omega
+    omega_using [this]
   have fit3 : ∀ (s : State) {bs : Fin 7 → List Byte} {M : Nat}, H bs M s →
       arrAt v 3 + 32 ≤ 8 * workspaceWords g.words := by
     intro s bs M h
     have := Nat.le_trans (array_end_le (w := v) (by decide : 3 < 8)) (fits s h)
     have := hv s h
-    omega
+    omega_arith
   intro s₁ s₂ tr1 tr2 u₁ u₂ hh e1 e2
   have sz := size s₁ hh.1
   have f3 := fit3 s₁ hh.1

@@ -26,7 +26,7 @@ theorem outs_workspace {m m' : Mem} {base : Addr} {size : Nat} {ranges : List (N
   right
   have bound := fit r hr
   change r.1 + r.2 ≤ (a - base).toNat
-  omega
+  omega_using [h, bound]
 
 theorem setup_frame_ok (s : State) {base : BitVec 32} {len w : Nat}
     (ws : Workspace s base (8 * len)) (hw : 2 ≤ w) (hw' : w < 2 ^ 31)
@@ -35,12 +35,12 @@ theorem setup_frame_ok (s : State) {base : BitVec 32} {len w : Nat}
     WP isa setup s fun t => Layout t.mem (State.addr base) len ∧
       wOf t.mem (State.addr base) = w ∧ t.gpr .r0 = base ∧
       Frame [⟨State.addr base, 8 * len⟩] s.mem t.mem ∧ Rest roundClobbers s t := by
-  have size : 128 ≤ 8 * len := by simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at fits; omega
+  have size : 128 ≤ 8 * len := by simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at fits; omega_using [fits]
   refine WP.mono (setup_ok s ws hw hw' fits ptr count zero) ?_
   rintro t ⟨layout, width, ptr, outside, rest⟩
   refine ⟨layout, width, ptr, outs_workspace outside ?_, rest.mono (by decide)⟩
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl <;> omega
+  rcases hr with rfl | rfl <;> omega_using [size]
 
 end VG.Proof.Bignum.Arm

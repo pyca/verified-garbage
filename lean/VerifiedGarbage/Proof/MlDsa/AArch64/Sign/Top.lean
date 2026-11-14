@@ -124,7 +124,7 @@ theorem sgLay (hsz : scrLen p < 2 ^ 32 ∧ p.skLen < 2 ^ 32 ∧ p.sigLen < 2 ^ 3
     fun b hb => bases_kept _ (sgB_bases p b hb), by rw [h.sp]; exact hsp⟩
   · intro b hb
     simp only [sgR, sgW, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hb
-    rcases hb with rfl | rfl | rfl | rfl | rfl <;> simp only <;> omega
+    rcases hb with rfl | rfl | rfl | rfl | rfl <;> simp only <;> omega_arith
   · simp only [sgR, sgW, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hb hb'
     have w : ∀ r, isW (sgW p) r = (r == .x28 || r == .x23) := fun r => by cases r <;> rfl
     rcases hb with rfl | rfl | rfl | rfl | rfl <;> rcases hb' with rfl | rfl | rfl | rfl | rfl <;>

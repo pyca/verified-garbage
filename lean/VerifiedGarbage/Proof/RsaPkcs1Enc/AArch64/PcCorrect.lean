@@ -39,11 +39,11 @@ theorem code_ok (c : PdChecked) {s : State}
     WP isa (Impl.RsaPkcs1Enc.AArch64.Precomputed.code c.name c.code) s fun s' =>
       abiPreserved s s' ∧ post c.stack s s' := by
   obtain ⟨hL, hrd, hwr, hpl, hsp⟩ := pre_of h
-  refine WP.frame (by omega) (WP.alloc (by decide) ?_ ?_)
+  refine WP.frame (by omega_using [hsp]) (WP.alloc (by decide) ?_ ?_)
   · show 1072 ≤ (s.sp - 16).toNat
-    rw [BitVec.toNat_sub_of_le (by show 16 ≤ s.sp.toNat; omega)]
+    rw [BitVec.toNat_sub_of_le (by show 16 ≤ s.sp.toNat; omega_using [hsp])]
     show 1072 ≤ s.sp.toNat - 16
-    omega
+    omega_using [hsp]
   · show WP isa (Impl.RsaPkcs1Enc.AArch64.Precomputed.body c.name c.code) (entered s) _
     rw [body_eq]
     refine WP.seq (WP.mono (entry_okX hL hrd hwr) fun t ⟨hc, hs⟩ => ?_)

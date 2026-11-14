@@ -46,6 +46,6 @@ theorem shift_ok (s : State) :
     change (b.gpr .ecx).toNat + 2 ^ 32 * (c.gpr .ebx).toNat + 2 ^ 64 * highCarry.toNat = _
     unfold pair
     dsimp only [input] at lo
-    omega
+    omega_using [hi, lo]
 
 end VG.Proof.RsaKeyGen.X86.Mod64

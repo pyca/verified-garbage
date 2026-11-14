@@ -74,14 +74,14 @@ theorem save_ok {s : State} {b : Addr} (hw : (⟨b, 8 * slots⟩ : Region) ∈ s
       refine ⟨by rw [savedSlot_eq]; omega, ⟨_, hw, ?_⟩, ?_⟩
       · rw [hb]; exact VG.Offset.contains_base b (by rw [savedSlot_eq]; omega) (by rw [savedSlot_eq]; omega)
       · rw [hb, savedRegion, wordAddr]
-        exact VG.Offset.contains _ (by omega) (by omega) (by rw [savedSlot_eq]; omega))
+        exact VG.Offset.contains _ (by omega_using []) (by omega) (by rw [savedSlot_eq]; omega_using []))
   refine ⟨s', by rw [hL]; exact e', fun i hi => ?_, g', rd', wr', f', fun k hk hk' => o' k ?_ hk'⟩
   · have := v' (savedSlot + i, sreg i) (by simp only [L, List.mem_map, List.mem_range]; exact ⟨i, hi, rfl⟩)
     simp only [slotW, g', hb] at this
     exact this
   · rw [hslots]
     simp only [List.mem_map, List.mem_range, not_exists, not_and]
-    intro i hi h; omega
+    intro i hi h; omega_using [hk, hi, h]
 
 theorem restore_ok {s₀ s : State} {b : Addr} (hw : (⟨b, 8 * slots⟩ : Region) ∈ s.wr) (hb : s.gpr sb = b)
     (hal : b.toNat % 8 = 0) (hs : Saved s₀ b s.mem) :
@@ -135,7 +135,7 @@ theorem setSlots_gen : ∀ (ms : List (Nat × BitVec 64)) (s : State), (s.gpr sb
     have hb₁ : s₁.gpr sb = s.gpr sb := g₁ _ (by decide) (by decide)
     let s₂ : State := { s₁ with mem := s₁.mem.writeW (wordAddr (s₁.gpr sb) k) (s₁.gpr t0) }
     have e₂ : runBlock isa [stS k t0] s₁ = some s₂ :=
-      stS_ok s₁ t0 (k := k) (by omega) (by rw [hb₁]; exact hal) (by rw [wr₁, hb₁]; exact hx.2)
+      stS_ok s₁ t0 (k := k) (by omega_using [hk]) (by rw [hb₁]; exact hal) (by rw [wr₁, hb₁]; exact hx.2)
     rw [List.map_cons, List.nodup_cons] at hnd
     have hb₂ : s₂.gpr sb = s.gpr sb := hb₁
     obtain ⟨s', e', v', g', rd', wr', f', o'⟩ := setSlots_gen ms s₂ (by rw [hb₂]; exact hal) hnd.2
@@ -144,7 +144,7 @@ theorem setSlots_gen : ∀ (ms : List (Nat × BitVec 64)) (s : State), (s.gpr sb
         exact ⟨this.1, by show InRegions s₁.wr _ 8; rw [wr₁, hb₁]; exact this.2⟩)
     have hs₂ : ∀ j, j ≠ k → j < 2 ^ 58 → slotW s₂ j = slotW s j := fun j hj hj58 => by
       show (s₁.mem.writeW _ _).readW (wordAddr (s₁.gpr sb) j) 64 = _
-      rw [Mem.readW_writeW_sep (slot_sep _ (by omega) (by omega) hj) (by decide), m₁, hb₁]
+      rw [Mem.readW_writeW_sep (slot_sep _ (by omega_using [hj58]) (by omega_using [hk]) hj) (by decide), m₁, hb₁]
     refine ⟨s', ?_, fun y hy => ?_, fun r h0 h1 => by rw [g' r h0 h1]; exact g₁ r h0 h1,
       rd'.trans rd₁, wr'.trans wr₁, ?_, fun j hj hj58 => ?_⟩
     · rw [setSlots_cons, runBlock_append', e₁, Option.bind_some, runBlock_append', e₂, Option.bind_some]
@@ -159,7 +159,7 @@ theorem setSlots_gen : ∀ (ms : List (Nat × BitVec 64)) (s : State), (s.gpr sb
       rw [show s.mem = s₁.mem from m₁.symm]
       refine (Frame.refl _ _).writeW (List.mem_singleton_self _) _ ?_
       rw [hb₁, wordAddr]
-      exact VG.Offset.contains_base _ (by rw [savedSlot_eq]; omega) (by omega)
+      exact VG.Offset.contains_base _ (by rw [savedSlot_eq]; omega_using [hk]) (by omega_using [hk])
     · simp only [List.map_cons, List.mem_cons, not_or] at hj
       rw [o' j hj.2 hj58]; exact hs₂ j hj.1 hj58
 
@@ -173,7 +173,7 @@ theorem setSlots_ok {s : State} {b : Addr} (hw : (⟨b, 8 * slots⟩ : Region) �
       have := mask_lt hkv
       refine ⟨this, ⟨_, hw, ?_⟩⟩
       rw [savedSlot_eq] at this
-      rw [hb]; exact VG.Offset.contains_base b (by rw [slots_eq]; omega) (by omega))
+      rw [hb]; exact VG.Offset.contains_base b (by rw [slots_eq]; omega_using [this]) (by omega_using [this]))
   rw [hb] at f'
   exact ⟨s', e', v', g', rd', wr', f'⟩
 

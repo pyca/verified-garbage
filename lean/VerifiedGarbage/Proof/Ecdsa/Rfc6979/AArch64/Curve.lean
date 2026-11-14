@@ -167,32 +167,32 @@ theorem sizesW (h : R.big = true) : R.E.n = 9 ∧ R.E.C.len = 66 ∧ nBits R.E.C
 
 theorem n4 : 4 ≤ R.E.n := by
   cases h : R.big
-  · rcases (R.sizesA h).1 with h | h | h <;> omega
-  · rw [(R.sizesW h).1]; omega
+  · rcases (R.sizesA h).1 with h | h | h <;> omega_using [h]
+  · rw [(R.sizesW h).1]; omega_using []
 
 theorem n9 : R.E.n ≤ 9 := by
   cases h : R.big
-  · rcases (R.sizesA h).1 with h | h | h <;> omega
+  · rcases (R.sizesA h).1 with h | h | h <;> omega_using [h]
   · rw [(R.sizesW h).1]
 
 /-- The scalars' bytes fill their words, the last possibly zero. -/
 theorem len_words : 8 ≤ R.E.C.len ∧ 8 * R.E.n ≤ R.E.C.len + 8 ∧ R.E.C.len ≤ 8 * R.E.n := by
   cases h : R.big
-  · have := R.sizesA h; have := R.n4; omega
-  · have := R.sizesW h; omega
+  · have := R.sizesA h; have := R.n4; omega_arith
+  · have := R.sizesW h; omega_using [this]
 
 /-- `nBits` is within the scalars' last byte, and `sh` the bits beyond it. -/
 theorem nBits_len : 8 * R.E.C.len < nBits R.E.C + 8 ∧ nBits R.E.C ≤ 8 * R.E.C.len ∧
     R.sh = 8 * R.E.C.len - nBits R.E.C := by
   rw [← R.sh_eq]
   cases h : R.big
-  · have := R.sizesA h; exact ⟨by omega, by omega, rfl⟩
-  · have := R.sizesW h; exact ⟨by omega, by omega, rfl⟩
+  · have := R.sizesA h; exact ⟨by omega_using [this], by omega_using [this], rfl⟩
+  · have := R.sizesW h; exact ⟨by omega_using [this], by omega_using [this], rfl⟩
 
 theorem n_ne : R.E.C.n ≠ 0 := fun h => by
   have h₁ := R.nBits_len; have h₂ := R.len_words
   have : nBits R.E.C = 1 := by show R.E.C.n.log2 + 1 = 1; rw [h]; rfl
-  omega
+  omega_using [h₁, h₂, this]
 
 end RfcCurve
 

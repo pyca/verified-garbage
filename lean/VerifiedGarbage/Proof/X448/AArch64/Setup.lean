@@ -27,13 +27,13 @@ def Saved (base : Addr) (g : Reg → BitVec 64) (m : Mem) : Prop :=
 
 theorem Saved.outside {base : Addr} {g : Reg → BitVec 64} {m m' : Mem} (h : Saved base g m)
     {o n : Nat} (ho : Outside base o n m m') (h16 : 16 ≤ o) : Saved base g m' :=
-  ⟨(ho.word (Or.inl (by omega)) (by decide)).trans h.1,
+  ⟨(ho.word (Or.inl (by omega_using [h16])) (by decide)).trans h.1,
     (ho.word (Or.inl h16) (by decide)).trans h.2⟩
 
 theorem Saved.outside2 {base : Addr} {g : Reg → BitVec 64} {m m' : Mem} (h : Saved base g m)
     {x nx y ny : Nat} (ho : Outside2 base x nx y ny m m') (hx : 16 ≤ x) (hy : 16 ≤ y) :
     Saved base g m' :=
-  ⟨(ho.word (Or.inl (by omega)) (Or.inl (by omega)) (by decide)).trans h.1,
+  ⟨(ho.word (Or.inl (by omega_using [hx])) (Or.inl (by omega_using [hy])) (by decide)).trans h.1,
     (ho.word (Or.inl hx) (Or.inl hy) (by decide)).trans h.2⟩
 
 def setupHead : List Instr :=
@@ -110,7 +110,7 @@ theorem setup_ok {s : State} {base p : Addr} (hc : s.gpr .x3 = base)
     rcases h with rfl | rfl | rfl | rfl <;> decide
   · intro r h; simp only [List.mem_singleton] at h; subst r; decide
   · exact (show Outside base 0 8192 t.mem u.mem from fun q h =>
-      um q (by simp only [X1, slot]; omega) (by simp only [X3, slot]; omega)).trans
+      um q (by simp only [X1, slot]; omega_using [h]) (by simp only [X3, slot]; omega_using [h])).trans
       (vm.mono (by decide) (by decide))
   · rw [decodeUCoordinate_eq (length_bytesAt _ _ _)]
     exact v0.trans uv0

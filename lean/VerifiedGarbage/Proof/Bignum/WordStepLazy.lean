@@ -29,7 +29,7 @@ namespace VG.Proof.Bignum.WordStep
 /-- The estimate lowered by one unless it is 0. -/
 theorem dec_bounds {q q0 : Nat} (h1 : q ≤ q0) (h2 : q0 ≤ q + 1) :
     q0 - (if 0 < q0 then 1 else 0) ≤ q ∧ q ≤ q0 - (if 0 < q0 then 1 else 0) + 1 := by
-  split <;> omega
+  split <;> omega_arith
 
 /-- A lazy step: for `q̂` with `q - 1 ≤ q̂ ≤ q`, `q = ⌊y / m⌋`, `t = y - q̂ m`
 modulo `2^K` (`t + q̂ m = y + 2^K b`, `b` the borrow) is `y - q̂ m`
@@ -47,17 +47,17 @@ theorem lazy_step {Y M qh T b K : Nat} (hM : 0 < M) (hle : qh ≤ Y / M)
     generalize qh * M = Q at h h1 h2 ⊢
     have hb0 : b = 0 := by
       rcases Nat.lt_or_ge b 1 with e | e
-      · omega
+      · omega_using [e]
       · have : 2 ^ K ≤ 2 ^ K * b := Nat.le_mul_of_pos_right _ e
-        omega
+        omega_using [hT, hd, h, h1, this]
     subst hb0
-    omega
+    omega_using [h]
   refine ⟨e, ?_, by rw [← e, Nat.add_mul_mod_self_right]⟩
   have hd := Nat.div_add_mod Y M
   have hm := Nat.mod_lt Y hM
   have h2 : M * (Y / M) ≤ qh * M + M := by
     rw [Nat.mul_comm qh, ← Nat.mul_succ]; exact Nat.mul_le_mul_left M hge
-  omega
+  omega_using [e, hd, hm, h2]
 
 /-- `(x >> s) | (y << t)`, `s + t = 64`, is `x / 2^s + (y mod 2^s) 2^t`. -/
 theorem shr_or_shl (x y : BitVec 64) {s t : Nat} (hst : s + t = 64) :
@@ -68,14 +68,14 @@ theorem shr_or_shl (x y : BitVec 64) {s t : Nat} (hst : s + t = 64) :
     Nat.shiftLeft_eq, e64, Nat.mul_mod_mul_right]
   have hlt : x.toNat / 2 ^ s < 2 ^ t := Nat.div_lt_of_lt_mul (by rw [← e64]; exact hx)
   rw [Nat.or_comm, Nat.mul_comm (y.toNat % 2 ^ s), ← Nat.two_pow_add_eq_or_of_lt hlt]
-  omega
+  omega_using []
 
 /-- Word `J` of `X` shifted right by `s < 64` bits, from `X`'s words `J` and
 `J + 1`. -/
 theorem shr_words (X J : Nat) {s : Nat} (hs : s < 64) :
     X / 2 ^ (64 * J + s) % 2 ^ 64 =
       X / 2 ^ (64 * J) % 2 ^ 64 / 2 ^ s + X / 2 ^ (64 * (J + 1)) % 2 ^ 64 % 2 ^ s * 2 ^ (64 - s) := by
-  have e64 : (2 : Nat) ^ 64 = 2 ^ s * 2 ^ (64 - s) := by rw [← Nat.pow_add]; congr 1; omega
+  have e64 : (2 : Nat) ^ 64 = 2 ^ s * 2 ^ (64 - s) := by rw [← Nat.pow_add]; congr 1; omega_using [hs]
   generalize hY : X / 2 ^ (64 * J) = Y
   have hH : X / 2 ^ (64 * (J + 1)) = Y / 2 ^ 64 := by
     rw [← hY, Nat.div_div_eq_div_mul, ← Nat.pow_add, Nat.mul_succ]
@@ -94,9 +94,9 @@ theorem shr_words (X J : Nat) {s : Nat} (hs : s < 64) :
   generalize hb : H % 2 ^ s = b at hH ⊢
   have hbl : b < 2 ^ s := hb ▸ Nat.mod_lt _ (Nat.two_pow_pos s)
   have hlow : b * 2 ^ (64 - s) + L / 2 ^ s < 2 ^ 64 := by
-    have := Nat.mul_le_mul_right (2 ^ (64 - s)) (show b + 1 ≤ 2 ^ s by omega)
+    have := Nat.mul_le_mul_right (2 ^ (64 - s)) (show b + 1 ≤ 2 ^ s by omega_using [hb])
     rw [Nat.add_mul, Nat.one_mul, ← e64] at this
-    omega
+    omega_using [hl, this]
   have hx : 2 ^ (64 - s) * H = 2 ^ 64 * A + b * 2 ^ (64 - s) := by
     rw [← hH, Nat.mul_add, e64, Nat.mul_left_comm, Nat.mul_comm b, Nat.mul_assoc]
   rw [hx, Nat.add_assoc, Nat.add_comm, Nat.add_mul_mod_self_left, Nat.mod_eq_of_lt hlow, Nat.add_comm]

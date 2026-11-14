@@ -42,7 +42,7 @@ theorem jointCachedFast_ok {K : WinCfg} {s : State} {base : Addr} {size tbl dst 
       CachedPoint K.M.n C (cachedEntryEnv K E tbl dst (FastNaf.byte 5 u j)) K.E dst
         (FastNaf.point C P 5 u j) := by
   have he : nafMagnitude (FastNaf.byte 5 u j)=FastNaf.magnitude 5 u j := FastNaf.byte_magnitude 5 u j
-  have ha : 1≤nafMagnitude (FastNaf.byte 5 u j) := by rw [he]; omega
+  have ha : 1≤nafMagnitude (FastNaf.byte 5 u j) := by rw [he]; omega_using [hmag]
   have ha' : nafMagnitude (FastNaf.byte 5 u j)≤15 := by
     rw [he]
     exact FastNaf.magnitude_le (Or.inl rfl) u j
@@ -51,14 +51,14 @@ theorem jointCachedFast_ok {K : WinCfg} {s : State} {base : Addr} {size tbl dst 
     exact (FastNaf.magnitude_odd_or_zero 5 u j).resolve_left hmag
   refine WP.mono (nafSignedCachedFields_ok hL hn hm hi ha ha' hodd h8 hy hz hp hc hP hC
     hD (by rw [he]; exact hQ) hEP hEC hDC hDE hZero heZero hApart) fun t ⟨kt,it⟩ => ?_
-  have hpoint := cachedEntryEnv_point (E:=E) (b:=FastNaf.byte 5 u j) (by omega) hy hz hDE
+  have hpoint := cachedEntryEnv_point (E:=E) (b:=FastNaf.byte 5 u j) (by omega_using [hn]) hy hz hDE
     (by rw [he]; exact hPoint)
   have ep : (if (FastNaf.byte 5 u j).toNat<128 then mul (FastNaf.magnitude 5 u j) P
       else negPt (mul (FastNaf.magnitude 5 u j) P))=FastNaf.point C P 5 u j := by
     rw [FastNaf.point,←FastNaf.byte_negative 5 u j]
     by_cases h : (FastNaf.byte 5 u j).toNat<128
-    · simp only [h,ite_true,show ¬128≤(FastNaf.byte 5 u j).toNat from by omega,decide_false,ite_false,Bool.false_eq_true]
-    · simp only [h,ite_false,show 128≤(FastNaf.byte 5 u j).toNat from by omega,decide_true,ite_true]
+    · simp only [h,ite_true,show ¬128≤(FastNaf.byte 5 u j).toNat from by omega_using [h],decide_false,ite_false,Bool.false_eq_true]
+    · simp only [h,ite_false,show 128≤(FastNaf.byte 5 u j).toNat from by omega_using [h],decide_true,ite_true]
   rw [ep] at hpoint
   exact ⟨kt,it,hpoint⟩
 

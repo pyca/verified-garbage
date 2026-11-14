@@ -37,7 +37,7 @@ theorem shift_eval (s : State) (r : Reg) {j : Nat} (hj : j < 8) :
   by_cases hz : j = 0
   · subst j; simp only [ite_true, Op2.eval, BitVec.ushiftRight_zero]
   · rw [ite_eq_right hz]
-    exact VG.Proof.X25519.Arm.op2_lsr (by omega)
+    exact VG.Proof.X25519.Arm.op2_lsr (by omega_using [hj, hz])
 
 theorem pack_bits (a b : BitVec 8) (j : Nat) :
     (((a.setWidth 32 >>> j) &&& 1) + (((b.setWidth 32 >>> j) &&& 1) <<< 1)).setWidth 8 =
@@ -49,9 +49,9 @@ theorem pack_bits (a b : BitVec 8) (j : Nat) :
   have h2 : (b.toNat >>> j) &&& 1 ≤ 1 := Nat.and_le_right
   simp only [BitVec.toNat_setWidth, BitVec.toNat_add, BitVec.toNat_and, BitVec.toNat_ushiftRight,
     BitVec.toNat_shiftLeft, BitVec.toNat_ofNat, Nat.shiftLeft_eq, pair2]
-  rw [Nat.mod_eq_of_lt (a := a.toNat) (by omega), Nat.mod_eq_of_lt (a := b.toNat) (by omega)]
+  rw [Nat.mod_eq_of_lt (a := a.toNat) (by omega_using []), Nat.mod_eq_of_lt (a := b.toNat) (by omega_using [])]
   change ((a.toNat >>> j &&& 1) + ((b.toNat >>> j &&& 1) * 2 ^ 1) % 2 ^ 32) % 2 ^ 32 % 2 ^ 8 = _
-  omega
+  omega_using []
 
 theorem vbitJ_ok {s : State} {base : Addr} (hs : Scr s base) {i : Nat} (hi : i < 57)
     (hp : s.gpr .r7 = s.gpr .r0 + BitVec.ofNat 32 (8 * i))
@@ -69,10 +69,10 @@ theorem vbitJ_ok {s : State} {base : Addr} (hs : Scr s base) {i : Nat} (hi : i <
     rw [v5.other _ (by decide), v4.other _ (by decide), v3.other _ (by decide), v2.other _ (by decide),
       v1.other _ (by decide)]
   have ea : State.addr (t5.gpr .r7 + BitVec.ofNat 32 (VBITS + j)) = off base (VBITS + (8 * i + j)) := by
-    rw [r7, hp, BitVec.add_assoc, ← BitVec.ofNat_add, hs.ea (by simp only [VBITS]; omega)]
-    congr 1; omega
-  refine wp_strb (by simp only [VBITS]; omega) ea
-    (by rw [v5.wr, v4.wr, v3.wr, v2.wr, v1.wr]; exact hs.write (by simp only [VBITS]; omega))
+    rw [r7, hp, BitVec.add_assoc, ← BitVec.ofNat_add, hs.ea (by simp only [VBITS]; omega_using [hi, hj])]
+    congr 1; omega_using []
+  refine wp_strb (by simp only [VBITS]; omega_using [hj]) ea
+    (by rw [v5.wr, v4.wr, v3.wr, v2.wr, v1.wr]; exact hs.write (by simp only [VBITS]; omega_using [hi, hj]))
     fun t6 v6 => WP.block_nil ⟨?_, ?_⟩
   · rw [v6.mem, v5.mem, v4.mem, v3.mem, v2.mem, v1.mem, v5.gpr]
     change s.mem.writeW _ ((t4.gpr .r1 + t4.gpr .r4 <<< 1).setWidth 8) = _
@@ -100,14 +100,14 @@ theorem vbyteBits_ok {s : State} {base : Addr} (hs : Scr s base) {i : Nat} (hi :
     · intro j hj
       rw [um, writeW8_apply]
       have eq : off base (VBITS + (8 * i + j)) = off base (VBITS + (8 * i + n)) ↔ j = n := by
-        rw [off_eq_iff base (by simp only [VBITS]; omega) (by simp only [VBITS]; omega)]
-        omega
+        rw [off_eq_iff base (by simp only [VBITS]; omega_using [hi, hn, hj]) (by simp only [VBITS]; omega_using [hi, hn])]
+        omega_using []
       by_cases he : j = n
       · rw [ite_eq_left (eq.mpr he), he]
-      · rw [ite_eq_right (fun h => he (eq.mp h))]; exact tf j (by omega)
+      · rw [ite_eq_right (fun h => he (eq.mp h))]; exact tf j (by omega_using [hj, he])
     · intro x hx
       rw [um]
-      exact writeW8_outside _ _ _ (by simp only [VBITS]; omega) (by omega)
+      exact writeW8_outside _ _ _ (by simp only [VBITS]; omega_using [hi, hn]) (by omega_using [hn, hx])
   exact wp_range_flatMap (M := isa) (N := 8) inv step 8 (by decide) s
     ⟨fun _ hj => by omega, Outside.refl _ _ _ _, Keeps.refl _ _⟩
 
@@ -131,13 +131,13 @@ theorem vbitHead_ok {s : State} {sq kq : Addr} (hsq : State.addr (s.gpr .r12) + 
   refine wp_dp (op2_reg _ _) fun t1 v1 => ?_
   have ea1 : State.addr (t1.gpr .r7 + BitVec.ofNat 32 57) = sq + BitVec.ofNat 64 i := by
     rw [v1.gpr]; change State.addr (s.gpr .r12 + s.gpr .r11 + BitVec.ofNat 32 57) = _
-    rw [hb, Offset.add_add, addr_add (by omega), ← hsq, Offset.add_add, Nat.add_comm]
+    rw [hb, Offset.add_add, addr_add (by omega_using [hfs, hi]), ← hsq, Offset.add_add, Nat.add_comm]
   refine wp_ldrb (by decide) ea1 (by rw [v1.rd, v1.wr]; exact hsr) fun t2 v2 => ?_
   refine wp_dp (op2_reg _ _) fun t3 v3 => ?_
   have ea3 : State.addr (t3.gpr .r7 + BitVec.ofNat 32 0) = kq + BitVec.ofNat 64 i := by
     rw [v3.gpr]; change State.addr (t2.gpr .r2 + t2.gpr .r11 + BitVec.ofNat 32 0) = _
     rw [v2.other _ (by decide), v1.other _ (by decide), v2.other _ (by decide), v1.other _ (by decide),
-      BitVec.add_zero, hb, addr_add (by omega), hkq]
+      BitVec.add_zero, hb, addr_add (by omega_using [hfk, hi]), hkq]
   refine wp_ldrb (by decide) ea3 (by rw [v3.rd, v3.wr, v2.rd, v2.wr, v1.rd, v1.wr]; exact hkr)
     fun t4 v4 => ?_
   refine wp_dp (op2_lsl (by decide)) fun t5 v5 => WP.block_nil ⟨?_, ?_, ?_, ?_, ?_⟩
@@ -150,7 +150,7 @@ theorem vbitHead_ok {s : State} {sq kq : Addr} (hsq : State.addr (s.gpr .r12) + 
     apply congrArg (t4.gpr .r0 + ·)
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.toNat_shiftLeft, BitVec.toNat_ofNat, Nat.shiftLeft_eq]
-    omega
+    omega_using []
   · rw [v5.mem, v4.mem, v3.mem, v2.mem, v1.mem]
   · exact rest_keeps ((v1.rest (by decide)).trans ((v2.rest (by decide)).trans ((v3.rest (by decide)).trans
       ((v4.rest (by decide)).trans (v5.rest (by decide))))))
@@ -211,26 +211,26 @@ theorem vbitsLoop_ok {s₀ : State} {base sq kq : Addr}
     fun s' ⟨b', z', keep', bits', o'⟩ => ?_
   obtain ⟨g', rd', wr'⟩ := keep'
   have hbs : s.mem (sq + BitVec.ofNat 64 i) = s₀.mem (sq + BitVec.ofNat 64 i) :=
-    hb.mem _ (by have := hsd i hi; simp only [VBITS]; omega)
+    hb.mem _ (by have := hsd i hi; simp only [VBITS]; omega_using [this])
   have hbk : s.mem (kq + BitVec.ofNat 64 i) = s₀.mem (kq + BitVec.ofNat 64 i) :=
-    hb.mem _ (by have := hkd i hi; simp only [VBITS]; omega)
+    hb.mem _ (by have := hkd i hi; simp only [VBITS]; omega_using [this])
   have inv : VBitsInv base sq kq s₀ s' (i + 1) := by
     refine ⟨hb.scr.of_keeps ⟨g', rd', wr'⟩ (by decide),
       (by rw [g' _ (by decide)]; exact hb.esq), (by rw [g' _ (by decide)]; exact hb.ekq),
       (by rw [g' _ (by decide)]; exact hb.fs), (by rw [g' _ (by decide)]; exact hb.fk), b',
       fun r hr => (g' r hr).trans (hb.gpr r hr),
-      rd'.trans hb.rd, wr'.trans hb.wr, hb.mem.trans (o'.mono (by omega) (by omega)),
+      rd'.trans hb.rd, wr'.trans hb.wr, hb.mem.trans (o'.mono (by omega_using []) (by omega_using [hi])),
       fun t ht => ?_⟩
     rcases Nat.lt_or_ge t (8 * i) with h | h
-    · rw [o' _ (by rw [ofs_off' base (by simp only [VBITS]; omega)]; omega), hb.bits t h]
-    · have e := bits' (t - 8 * i) (by omega)
-      rw [show 8 * i + (t - 8 * i) = t by omega, hbs, hbk] at e
-      rw [e, show t / 8 = i by omega, show t % 8 = t - 8 * i by omega]
+    · rw [o' _ (by rw [ofs_off' base (by simp only [VBITS]; omega_using [hi, ht])]; omega_using [h]), hb.bits t h]
+    · have e := bits' (t - 8 * i) (by omega_using [ht])
+      rw [show 8 * i + (t - 8 * i) = t by omega_using [h], hbs, hbk] at e
+      rw [e, show t / 8 = i by omega_using [ht, h], show t % 8 = t - 8 * i by omega_using [ht, h]]
   simp only [eval, z']
   rcases Nat.lt_or_ge (i + 1) 57 with h | h
-  · exact .inr ⟨by simp only [decide_eq_false (by omega : ¬i + 1 = 57), Bool.not_false],
-      57 - (i + 1), by omega, i + 1, rfl, h, inv⟩
-  · obtain rfl : i = 56 := by omega
+  · exact .inr ⟨by simp only [decide_eq_false (by omega_using [h] : ¬i + 1 = 57), Bool.not_false],
+      57 - (i + 1), by omega_using [hi], i + 1, rfl, h, inv⟩
+  · obtain rfl : i = 56 := by omega_using [hi, h]
     exact .inl ⟨rfl, inv⟩
 
 /-- `vbits`: byte `t` of `VBITS` is bit `t` of `S` plus twice bit `t` of `k`, for `t < 456`. -/
@@ -255,9 +255,9 @@ theorem vbits_ok {s : State} {base sq kq : Addr} (hs : Scr s base)
       by rw [ht.other .r2 (by decide)]; exact hkq, by rw [ht.other .r12 (by decide)]; exact hfs,
       by rw [ht.other .r2 (by decide)]; exact hfk, ht.gpr, keep.1, keep.2.1, keep.2.2,
       ht.mem ▸ Outside.refl _ _ _ _, fun _ hi => by omega⟩) fun s₁ h₁ => ?_)
-  refine WP.mono (vbitsLoop_ok hsr hkr hsd hkd 0 s₁ (by omega) h₁) fun s₂ h₂ => ?_
+  refine WP.mono (vbitsLoop_ok hsr hkr hsd hkd 0 s₁ (by omega_using []) h₁) fun s₂ h₂ => ?_
   refine ⟨h₂.gpr, h₂.rd, h₂.wr, h₂.mem, fun t ht => ?_⟩
-  rw [h₂.bits t (by omega)]
+  rw [h₂.bits t (by omega_using [ht])]
   unfold pair2
   rw [scalar_bit _ _ ht, scalar_bit _ _ ht]
 

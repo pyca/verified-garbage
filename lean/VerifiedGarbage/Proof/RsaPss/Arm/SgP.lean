@@ -58,7 +58,7 @@ theorem argAtX {D : Nat} {P : EP} {σ s : State} (hP : PreP P) (hi : In D P σ) 
     InRegions (s.rd ++ s.wr) ((P.lay D).fr (arg j)) 4 ∧
     s.mem.readW ((P.lay D).fr (arg j)) 32 = (P.lay D).argv.getD j 0 := by
   have hl : j < (P.lay D).argv.length := by
-    simp only [EP.argv, hP.xa, List.length_append, List.length_cons, List.length_nil]; omega
+    simp only [EP.argv, hP.xa, List.length_append, List.length_cons, List.length_nil]; omega_using [hj]
   have hA := hi.ok.nargs
   simp only [EP.argv, hP.xa, List.length_append, List.length_cons, List.length_nil] at hA
   exact ⟨hi.ok.addrB (by
@@ -115,8 +115,8 @@ theorem pa2_vp (G : Spec.Mgf1.Hash) (P : EP) (hP : PreP P) :
     simp only [stackArg, stackArgAddr, hu, hc.st.sp]
     rw [hc.aFr hg (4 * i) (by unfold frameBytes; omega_arith)]
   have keep : ∀ i, i < 16 → stackArg t i = stackArg s i := fun i hi' => by
-    rw [rd0 t sp i (by omega), rd0 s rfl i (by omega), m, Lay.readW_fr_other _ _ _ (by omega) (by omega) (by decide),
-      Lay.readW_fr_other _ _ _ (by omega) (by omega) (by decide)]
+    rw [rd0 t sp i (by omega_using [hi']), rd0 s rfl i (by omega_using [hi']), m, Lay.readW_fr_other _ _ _ (by omega_using [hi']) (by omega_using [hi']) (by decide),
+      Lay.readW_fr_other _ _ _ (by omega_using [hi']) (by omega_using [hi']) (by decide)]
   refine ⟨hc.st.write fr (fun r hr => ?_) rd wr sp, hk.keep h fr fun r hr => ?_, fun i hi' => ?_,
     { pa with
       r0 := t0.trans pa.r0, r1 := t1.trans pa.r1, r2 := t2.trans pa.r2, r3 := t3.trans pa.r3
@@ -150,7 +150,7 @@ theorem leak_st {P : EP} (hP : PreP P) {σ s : State} (hi : In h.D P σ) (hs : (
   have px := hi.pxT
   rw [hP.px] at px
   have le : Spec.Rsa.precomputedWords P.K ≤ P.prl := by
-    rw [hP.prlv, Spec.Rsa.privatePrecomputedWords]; omega
+    rw [hP.prlv, Spec.Rsa.privatePrecomputedWords]; omega_using []
   have rw := hs.ro_words (R := P.PRE) hP.mem (n := P.prl) rfl
   dsimp only at rw
   rw [← px.2]
@@ -431,10 +431,10 @@ theorem in_of_preP {hs ts : List FnTable} {s : State} (h : (specP hs ts).pre s) 
         Spec.Rsa.wordsAt s.mem (State.addr (stackArg s 20)) n := fun n hn =>
     wordsAt_frame hpush (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
-      exact (kPr.sub_left below).symm.sub_left (Region.sub_prefix (len' := (stackArg s 21).toNat * 8) (by omega)))
-      (by have := (stackArg s 21).isLt; omega)
+      exact (kPr.sub_left below).symm.sub_left (Region.sub_prefix (len' := (stackArg s 21).toNat * 8) (by omega_using [hn])))
+      (by have := (stackArg s 21).isLt; omega_using [hn])
   have le : Spec.Rsa.precomputedWords (s.gpr .r3).toNat ≤ (stackArg s 21).toNat := by
-    rw [prl, Spec.Rsa.privatePrecomputedWords]; omega
+    rw [prl, Spec.Rsa.privatePrecomputedWords]; omega_using []
   refine ⟨
     { ok := ?_
       kv := kv, el1 := el1, elK := elK, pl1 := pl1, plK := plK, ql1 := ql1, qlK := qlK, slK := slK

@@ -220,11 +220,11 @@ theorem double_field_ok {base : Addr} {E : Nat → Fe C} {s : State}
   apply ho (x+8*i) ((show ∀ x∈jointLive cfg,∀ i<4,
     Proof.P256.VerifyAllocated.observe .doubleRR (x+8*i) by decide +kernel) x hx i him)
   · have ha := JointLayout.layout.aligned.sl x (hi.sl x hx)
-    omega
+    omega_using [ha]
   · have hb := JointLayout.layout.lay.le x (hi.sl x hx)
     change i<4 at him
     change x+32≤8192 at hb
-    omega
+    omega_using [him, hb]
 
 theorem double_ok (hC : Law C) (ha : AM3 C)
     {base : Addr} {E : Nat → Fe C} {s : State}

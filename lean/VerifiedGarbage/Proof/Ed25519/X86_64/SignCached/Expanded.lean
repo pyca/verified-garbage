@@ -38,7 +38,7 @@ theorem seed_contains (hL : L.Ok) (h64 : L.seedLen = 64) {i : Nat} (hi : i < 8) 
   have hn := hL.ns
   show Region.Contains ⟨L.seed, L.seedLen⟩ _ 8
   rw [h64] at hn ⊢
-  have := Offset.contains L.seed (d := 8 * i) (n := 8) (e := 0) (k := 64) (by omega) (by omega) (by decide)
+  have := Offset.contains L.seed (d := 8 * i) (n := 8) (e := 0) (k := 64) (by omega_using []) (by omega_using [hi]) (by decide)
   simpa only [BitVec.ofNat_eq_ofNat, BitVec.add_zero] using this
 
 /-- The words at `seed` are those of the caller's memory. -/
@@ -67,23 +67,23 @@ theorem copy_word (hL : L.Ok) (h64 : L.seedLen = 64) {t : State} (hc : Ctx L g m
   rw [h64] at hn
   have hl : InRegions (t.rd ++ t.wr) (L.seed + BitVec.ofNat 64 (8 * i)) 8 :=
     ⟨L.SEED, by rw [hc.rd]; simp [Lay.inputs], seed_contains hL h64 hi⟩
-  have hw := hc.inFrW (d := 144 + 8 * i) (by omega) (by omega)
+  have hw := hc.inFrW (d := 144 + 8 * i) (by omega_using []) (by omega_using [hi])
   have hf : Frame [⟨L.B + BitVec.ofNat 64 (144 + 8 * i), 8⟩] t.mem
       (t.mem.writeW (L.B + BitVec.ofNat 64 (144 + 8 * i)) (m₀.readW (L.seed + BitVec.ofNat 64 (8 * i)) 64)) :=
     (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ _)
-  have e : 16 + (128 + 8 * i) = 144 + 8 * i := by omega
+  have e : 16 + (128 + 8 * i) = 144 + 8 * i := by omega_using []
   apply WP.of_runBlock
   simp only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, State.load64, State.store64,
     ea_base, ea_stk, hc.rsp, hr, add_add, e, hw, hl, ite_true, RegUpd.gpr_setReg, RegUpd.rd_setReg,
     RegUpd.wr_setReg, RegUpd.mem_setReg, Option.map_some, reduceCtorEq, ite_false,
     Option.some.injEq, exists_eq_left']
   rw [seed_word hL h64 hc hi]
-  exact ⟨hc.store (d := 144 + 8 * i) (n := 8) (by omega) (by omega) rfl rfl rfl rfl (by cs_tac) hf, trivial, rfl⟩
+  exact ⟨hc.store (d := 144 + 8 * i) (n := 8) (by omega_using []) (by omega_using [hi]) rfl rfl rfl rfl (by cs_tac) hf, trivial, rfl⟩
 
 /-- The digest's address, from the saved second argument. -/
 theorem seedPtr_ok {t : State} (hc : Ctx L g mx m₀ t) :
     WP isa (.block [.mov .rax (.mem (stk fSeed))]) t fun t' => Ctx L g mx m₀ t' ∧ t'.gpr .rax = L.seed := by
-  have hs := hc.inFr (d := 248) (by omega) (by omega)
+  have hs := hc.inFr (d := 248) (by omega_using []) (by omega_using [])
   apply WP.of_runBlock
   simp only [fSeed, runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, State.load64, ea_stk,
     RegUpd.gpr_setReg, hc.rsp, add_add,
@@ -102,13 +102,13 @@ theorem copy_prefix (hL : L.Ok) (h64 : L.seedLen = 64) (k : Nat) (hk : k ≤ 8) 
   | zero => exact WP.of_runBlock ⟨t, rfl, hc, hr, fun _ h => absurd h (Nat.not_lt_zero _)⟩
   | succ k ih =>
     rw [List.range_succ, List.flatMap_append, WP.block_append_iff]
-    refine WP.mono (ih (by omega)) fun u ⟨hu, hur, hw⟩ => ?_
+    refine WP.mono (ih (by omega_using [hk])) fun u ⟨hu, hur, hw⟩ => ?_
     simp only [List.flatMap_cons, List.flatMap_nil, List.append_nil]
-    refine WP.mono (copy_word hL h64 hu hur k (by omega)) fun w ⟨hw', hwr, hm⟩ => ⟨hw', hwr, fun j hj => ?_⟩
+    refine WP.mono (copy_word hL h64 hu hur k (by omega_using [hk])) fun w ⟨hw', hwr, hm⟩ => ⟨hw', hwr, fun j hj => ?_⟩
     rw [hm]
     rcases Nat.lt_succ_iff_lt_or_eq.mp hj with hj | rfl
     · rw [Mem.readW_writeW_sep (Offset.sep L.B (d := 144 + 8 * j) (n := 8) (e := 144 + 8 * k) (k := 8)
-        (by omega) (by omega) (by omega)) (by decide)]
+        (by omega_using [hj]) (by omega_arith) (by omega_using [hk])) (by decide)]
       exact hw j hj
     · exact Mem.readW_writeW_self64 _ _ _
 
@@ -149,7 +149,7 @@ theorem signE_ok (v : Compress) {s : State} (h : signLocalE.pre s) :
   have hL := lay_ok h (by decide)
   have hc := push_ctx h
   obtain ⟨seed, -, hE, hpk⟩ := expanded_key h
-  refine WP.frame (rs := pushRs) (by decide) (by decide) (by decide) (by show 8 * 31 ≤ _; have := h.1; omega)
+  refine WP.frame (rs := pushRs) (by decide) (by decide) (by decide) (by show 8 * 31 ≤ _; have := h.1; omega_using [this])
     (WP.mono (bodyFrom_ok v hL (copy_ok hL rfl hc) hL.message_bound hE hpk)
       fun u ⟨hu, ho⟩ => ⟨hu.rsp.trans hc.rsp.symm, hu.wr.trans hc.wr.symm, ?_, ?_⟩)
   · have hrsp : (popped .rax pushRs.length u).gpr .rsp = s.gpr .rsp := by
@@ -166,7 +166,7 @@ theorem signE_ok (v : Compress) {s : State} (h : signLocalE.pre s) :
         rcases hr with rfl | rfl | rfl
         · exact hL.ro
         · exact hL.rc
-        · exact Offset.disjoint_base _ (by omega) (by omega)
+        · exact Offset.disjoint_base _ (by omega_using []) (by omega_using [])
   · intro seed' _ hE'
     show Spec.Ed25519.bytesAt (popped .rax pushRs.length u).mem (lay 64 s).out 64 = _
     rw [popped_mem, ho]
@@ -221,9 +221,9 @@ theorem sat_digest : Spec.Ed25519.bytesAt satMemE 0x2000 64 = satDigest := by
     have hi' : i < 64 := by simpa only [Spec.Ed25519.bytesAt, List.length_map, List.length_range] using hi
     have ha : ((0x2000 : Addr) + BitVec.ofNat 64 i).toNat = 0x2000 + i := by
       change (0x2000 + i % 2 ^ 64) % 2 ^ 64 = 0x2000 + i
-      omega
+      omega_using [hi']
     simp only [Spec.Ed25519.bytesAt, List.getElem_map, List.getElem_range, satMemE, ha,
-      show ¬ 0x2000 + i < 0x2000 from by omega, show 0x2000 + i < 0x3000 from by omega, ite_false, ite_true,
+      show ¬ 0x2000 + i < 0x2000 from by omega_using [], show 0x2000 + i < 0x3000 from by omega_using [hi'], ite_false, ite_true,
       Nat.add_sub_cancel_left, List.getElem?_eq_getElem hj, Option.getD_some]
 
 theorem sat_keyE : Spec.Ed25519.bytesAt satMemE 0x3000 32 = satKey := by
@@ -233,9 +233,9 @@ theorem sat_keyE : Spec.Ed25519.bytesAt satMemE 0x3000 32 = satKey := by
     have hi' : i < 32 := by simpa only [Spec.Ed25519.bytesAt, List.length_map, List.length_range] using hi
     have ha : ((0x3000 : Addr) + BitVec.ofNat 64 i).toNat = 0x3000 + i := by
       change (0x3000 + i % 2 ^ 64) % 2 ^ 64 = 0x3000 + i
-      omega
+      omega_using [hi']
     simp only [Spec.Ed25519.bytesAt, List.getElem_map, List.getElem_range, satMemE, ha,
-      show ¬ 0x3000 + i < 0x2000 from by omega, show ¬ 0x3000 + i < 0x3000 from by omega, ite_false,
+      show ¬ 0x3000 + i < 0x2000 from by omega_using [], show ¬ 0x3000 + i < 0x3000 from by omega_using [], ite_false,
       Nat.add_sub_cancel_left, List.getElem?_eq_getElem hj, Option.getD_some]
 
 /-- The memory of the contract's witness: `satMemE`, and the comb's tables at `0x100000`. -/
@@ -248,14 +248,14 @@ theorem satMemTE_bytes {p : Addr} {n : Nat} (hp : p.toNat + n ≤ 0x100000) :
   refine List.map_congr_left fun i hi => ?_
   have hi' := List.mem_range.mp hi
   unfold satMemTE
-  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show i < 2 ^ 64 by omega)]
-  simp only [show ¬ 0x100000 ≤ (p.toNat + i) % 2 ^ 64 by omega, ite_false]
+  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show i < 2 ^ 64 by omega_using [hp, hi'])]
+  simp only [show ¬ 0x100000 ≤ (p.toNat + i) % 2 ^ 64 by omega_using [hp, hi'], ite_false]
 
 theorem satMemTE_held : ∀ i < Impl.Ed25519.X86_64.combWordCount,
     satMemTE.readW (0x100000 + BitVec.ofNat 64 (8 * i)) 64 = Impl.Ed25519.X86_64.combWords.getD i 0 := by
   intro i hi
   rw [← constMem_held (0x100000 : Addr) Impl.Ed25519.X86_64.combWords
-    (by rw [Proof.Ed25519.X86_64.combWords_length]; simp only [Impl.Ed25519.X86_64.combWordCount]; omega) i
+    (by rw [Proof.Ed25519.X86_64.combWords_length]; simp only [Impl.Ed25519.X86_64.combWordCount]; omega_using []) i
     (by rw [Proof.Ed25519.X86_64.combWords_length]; exact hi)]
   refine Mem.readW_congr fun b hb => ?_
   unfold satMemTE
@@ -263,7 +263,7 @@ theorem satMemTE_held : ∀ i < Impl.Ed25519.X86_64.combWordCount,
   rw [show (0x100000 : Addr) = BitVec.ofNat 64 0x100000 from rfl, Offset.add_add, ← BitVec.ofNat_add,
     BitVec.toNat_ofNat]
   simp only [Impl.Ed25519.X86_64.combWordCount] at hi
-  omega
+  omega_using [hi, hb]
 
 /-- A state satisfying the precondition. -/
 def satStateTE : State where

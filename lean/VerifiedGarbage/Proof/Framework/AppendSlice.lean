@@ -41,27 +41,27 @@ theorem Sig.bufs_append_slice (pb : Nat) (nm : String) (e : Elem) (ln : String) 
     simp only [List.flatMap_cons, Param.words.eq_1, List.length_append, List.length_cons,
       List.length_nil] at h
     simp only [List.cons_append, Sig.bufs]
-    exact Sig.bufs_append_slice pb nm e ln x y ps vs (by omega)
+    exact Sig.bufs_append_slice pb nm e ln x y ps vs (by omega_using [h])
   | (_, .array ..) :: ps, v :: vs, h => by
     simp only [List.flatMap_cons, Param.words.eq_2, List.length_append, List.length_cons,
       List.length_nil] at h
     simp only [List.cons_append, Sig.bufs]
-    rw [Sig.bufs_append_slice pb nm e ln x y ps vs (by omega)]
+    rw [Sig.bufs_append_slice pb nm e ln x y ps vs (by omega_using [h])]
   | (_, .slice ..) :: ps, v :: l :: vs, h => by
     simp only [List.flatMap_cons, Param.words.eq_3, List.length_append, List.length_cons,
       List.length_nil] at h
     simp only [List.cons_append, Sig.bufs]
-    rw [Sig.bufs_append_slice pb nm e ln x y ps vs (by omega)]
+    rw [Sig.bufs_append_slice pb nm e ln x y ps vs (by omega_using [h])]
   | (_, .slices ..) :: ps, v :: l :: vs, h => by
     simp only [List.flatMap_cons, Param.words.eq_4, List.length_append, List.length_cons,
       List.length_nil] at h
     simp only [List.cons_append, Sig.bufs]
-    exact Sig.bufs_append_slice pb nm e ln x y ps vs (by omega)
+    exact Sig.bufs_append_slice pb nm e ln x y ps vs (by omega_using [h])
   | (_, .table _) :: ps, v :: vs, h => by
     simp only [List.flatMap_cons, Param.words.eq_5, List.length_append, List.length_cons,
       List.length_nil] at h
     simp only [List.cons_append, Sig.bufs]
-    exact Sig.bufs_append_slice pb nm e ln x y ps vs (by omega)
+    exact Sig.bufs_append_slice pb nm e ln x y ps vs (by omega_using [h])
   | [], _ :: _, h => by simp at h
   | (_, .int ..) :: _, [], h => by simp [Param.words.eq_1] at h
   | (_, .array ..) :: _, [], h => by simp [Param.words.eq_2] at h
@@ -84,29 +84,29 @@ theorem Sig.alignedBufs_append_slice (pb : Nat) (nm : String) (e : Elem) (ln : S
     simp only [List.flatMap_cons, Param.words.eq_1, List.length_append, List.length_cons,
       List.length_nil] at h
     simp only [List.cons_append, Sig.alignedBufs]
-    exact Sig.alignedBufs_append_slice pb nm e ln x y ps vs (by omega)
+    exact Sig.alignedBufs_append_slice pb nm e ln x y ps vs (by omega_using [h])
   | (_, .array _ e' _) :: ps, v :: vs, h => by
     simp only [List.flatMap_cons, Param.words.eq_2, List.length_append, List.length_cons,
       List.length_nil] at h
     simp only [List.cons_append, Sig.alignedBufs]
-    rw [Sig.alignedBufs_append_slice pb nm e ln x y ps vs (by omega)]
+    rw [Sig.alignedBufs_append_slice pb nm e ln x y ps vs (by omega_using [h])]
     split <;> rfl
   | (_, .slice _ e' _) :: ps, v :: l :: vs, h => by
     simp only [List.flatMap_cons, Param.words.eq_3, List.length_append, List.length_cons,
       List.length_nil] at h
     simp only [List.cons_append, Sig.alignedBufs]
-    rw [Sig.alignedBufs_append_slice pb nm e ln x y ps vs (by omega)]
+    rw [Sig.alignedBufs_append_slice pb nm e ln x y ps vs (by omega_using [h])]
     split <;> rfl
   | (_, .slices ..) :: ps, v :: l :: vs, h => by
     simp only [List.flatMap_cons, Param.words.eq_4, List.length_append, List.length_cons,
       List.length_nil] at h
     simp only [List.cons_append, Sig.alignedBufs]
-    exact Sig.alignedBufs_append_slice pb nm e ln x y ps vs (by omega)
+    exact Sig.alignedBufs_append_slice pb nm e ln x y ps vs (by omega_using [h])
   | (_, .table _) :: ps, v :: vs, h => by
     simp only [List.flatMap_cons, Param.words.eq_5, List.length_append, List.length_cons,
       List.length_nil] at h
     simp only [List.cons_append, Sig.alignedBufs]
-    rw [Sig.alignedBufs_append_slice pb nm e ln x y ps vs (by omega)]
+    rw [Sig.alignedBufs_append_slice pb nm e ln x y ps vs (by omega_using [h])]
   | [], _ :: _, h => by simp at h
   | (_, .int ..) :: _, [], h => by simp [Param.words.eq_1] at h
   | (_, .array ..) :: _, [], h => by simp [Param.words.eq_2] at h
@@ -127,27 +127,27 @@ theorem Sig.lists_append_slice (pb : Nat) (m : Mem) (nm : String) (e : Elem) (ln
     simp only [List.flatMap_cons, Param.words.eq_1, List.length_append, List.length_cons,
       List.length_nil] at h
     simp only [List.cons_append, Sig.lists]
-    exact Sig.lists_append_slice pb m nm e ln x y ps vs (by omega)
+    exact Sig.lists_append_slice pb m nm e ln x y ps vs (by omega_using [h])
   | (_, .array ..) :: ps, v :: vs, h => by
     simp only [List.flatMap_cons, Param.words.eq_2, List.length_append, List.length_cons,
       List.length_nil] at h
     simp only [List.cons_append, Sig.lists]
-    exact Sig.lists_append_slice pb m nm e ln x y ps vs (by omega)
+    exact Sig.lists_append_slice pb m nm e ln x y ps vs (by omega_using [h])
   | (_, .slice ..) :: ps, v :: l :: vs, h => by
     simp only [List.flatMap_cons, Param.words.eq_3, List.length_append, List.length_cons,
       List.length_nil] at h
     simp only [List.cons_append, Sig.lists]
-    exact Sig.lists_append_slice pb m nm e ln x y ps vs (by omega)
+    exact Sig.lists_append_slice pb m nm e ln x y ps vs (by omega_using [h])
   | (_, .slices ..) :: ps, v :: l :: vs, h => by
     simp only [List.flatMap_cons, Param.words.eq_4, List.length_append, List.length_cons,
       List.length_nil] at h
     simp only [List.cons_append, Sig.lists]
-    rw [Sig.lists_append_slice pb m nm e ln x y ps vs (by omega)]
+    rw [Sig.lists_append_slice pb m nm e ln x y ps vs (by omega_using [h])]
   | (_, .table _) :: ps, v :: vs, h => by
     simp only [List.flatMap_cons, Param.words.eq_5, List.length_append, List.length_cons,
       List.length_nil] at h
     simp only [List.cons_append, Sig.lists]
-    rw [Sig.lists_append_slice pb m nm e ln x y ps vs (by omega)]
+    rw [Sig.lists_append_slice pb m nm e ln x y ps vs (by omega_using [h])]
   | [], _ :: _, h => by simp at h
   | (_, .int ..) :: _, [], h => by simp [Param.words.eq_1] at h
   | (_, .array ..) :: _, [], h => by simp [Param.words.eq_2] at h
@@ -168,27 +168,27 @@ theorem Sig.descs_append_slice (pb : Nat) (nm : String) (e : Elem) (ln : String)
     simp only [List.flatMap_cons, Param.words.eq_1, List.length_append, List.length_cons,
       List.length_nil] at h
     simp only [List.cons_append, Sig.descs]
-    exact Sig.descs_append_slice pb nm e ln x y ps vs (by omega)
+    exact Sig.descs_append_slice pb nm e ln x y ps vs (by omega_using [h])
   | (_, .array ..) :: ps, v :: vs, h => by
     simp only [List.flatMap_cons, Param.words.eq_2, List.length_append, List.length_cons,
       List.length_nil] at h
     simp only [List.cons_append, Sig.descs]
-    exact Sig.descs_append_slice pb nm e ln x y ps vs (by omega)
+    exact Sig.descs_append_slice pb nm e ln x y ps vs (by omega_using [h])
   | (_, .slice ..) :: ps, v :: l :: vs, h => by
     simp only [List.flatMap_cons, Param.words.eq_3, List.length_append, List.length_cons,
       List.length_nil] at h
     simp only [List.cons_append, Sig.descs]
-    exact Sig.descs_append_slice pb nm e ln x y ps vs (by omega)
+    exact Sig.descs_append_slice pb nm e ln x y ps vs (by omega_using [h])
   | (_, .slices ..) :: ps, v :: l :: vs, h => by
     simp only [List.flatMap_cons, Param.words.eq_4, List.length_append, List.length_cons,
       List.length_nil] at h
     simp only [List.cons_append, Sig.descs]
-    rw [Sig.descs_append_slice pb nm e ln x y ps vs (by omega)]
+    rw [Sig.descs_append_slice pb nm e ln x y ps vs (by omega_using [h])]
   | (_, .table _) :: ps, v :: vs, h => by
     simp only [List.flatMap_cons, Param.words.eq_5, List.length_append, List.length_cons,
       List.length_nil] at h
     simp only [List.cons_append, Sig.descs]
-    exact Sig.descs_append_slice pb nm e ln x y ps vs (by omega)
+    exact Sig.descs_append_slice pb nm e ln x y ps vs (by omega_using [h])
   | [], _ :: _, h => by simp at h
   | (_, .int ..) :: _, [], h => by simp [Param.words.eq_1] at h
   | (_, .array ..) :: _, [], h => by simp [Param.words.eq_2] at h
@@ -216,7 +216,7 @@ theorem RegionBelow.refl (a : Region × Bool) : RegionBelow a a := ⟨⟨rfl, Na
 
 theorem Region.Prefix.sub {a b : Region} (h : Region.Prefix a b) : Region.Sub a b := fun x hx => by
   obtain ⟨hb, hl⟩ := h
-  simp only [Region.Contains, ← hb] at *; omega
+  simp only [Region.Contains, ← hb] at *; omega_using [hx, hl]
 
 /-- Entries within entries, their writability and-ed with the same flag. -/
 theorem forall₂_below_map (wa : Bool) {l l' : List (Region × Bool)} (h : List.Forall₂ RegionBelow l l') :
@@ -269,7 +269,7 @@ theorem covers_filter {l l' : List (Region × Bool)} (h : ∀ a ∈ l, ∃ b ∈
   obtain ⟨b, hb, hab⟩ := h a ha
   refine ⟨b.1, List.mem_map.mpr ⟨b, List.mem_filter.mpr ⟨hb, by rw [← hab.2]; exact haf⟩, rfl⟩, ?_⟩
   obtain ⟨hb', hl⟩ := hab.1
-  simp only [Region.Contains, ← hb'] at hc ⊢; omega
+  simp only [Region.Contains, ← hb'] at hc ⊢; omega_using [hc, hl]
 
 /-- A parameter's word index, in a longer parameter list. -/
 theorem Sig.wordIndex_append : ∀ (ps q : List (String × Param)) (x : String) (k : Nat),
@@ -448,7 +448,7 @@ theorem Verified.withSlice {T : Target} (R : RegionModel T.isa)
       have hpl := Sig.pubs_length sig.params A.ptrBits
       have hlt : i < (sig.params.flatMap (·.2.pubs)).length := by
         by_contra hge
-        rw [getD_of_ge _ _ (by omega)] at hi
+        rw [getD_of_ge _ _ (by omega_using [hge])] at hi
         cases hi
       have hw' : List.map (fun x => ArgWord.bits A.ptrBits x) ((sig.withSlice nm e ln).words A.ptrBits) =
           List.map (fun x => ArgWord.bits A.ptrBits x) (sig.words A.ptrBits) ++
@@ -463,8 +463,8 @@ theorem Verified.withSlice {T : Target} (R : RegionModel T.isa)
           (sig.params.flatMap fun p => p.2.words A.ptrBits).length := by
         rw [List.length_map]; rfl
       have := hpi i (by rw [hp', getD_append_lt _ _ _ hlt]; exact hi)
-      rw [hw', getD_append_lt _ _ _ (by omega), getD_append_lt _ _ _ (by omega),
-        getD_append_lt _ _ _ (by omega)] at this
+      rw [hw', getD_append_lt _ _ _ (by omega_using [hpl, hlt, lw]), getD_append_lt _ _ _ (by omega_using [hpl, hlt, l₁]),
+        getD_append_lt _ _ _ (by omega_using [hpl, hlt, l₂])] at this
       exact this
     refine ⟨?_, hpo, hpd⟩
     cases leak <;> cases leak' <;> simp only at hpA ⊢

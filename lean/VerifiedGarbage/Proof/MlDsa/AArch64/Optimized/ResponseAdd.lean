@@ -15,7 +15,7 @@ open VG.Proof.MlKem.AArch64 (VChg wp_vop wp_ldrq wp_strq)
 def laneVector (f : Nat → BitVec 32) : BitVec 128 := ofVWords (f 0) (f 1) (f 2) (f 3)
 theorem laneVector_word (f : Nat → BitVec 32) {e : Nat} (he : e<4) : vword (laneVector f) e=f e := by
   rw [laneVector,VG.Proof.MlKem.AArch64.vword_ofVWords _ _ _ _ he]
-  have h : e=0 ∨ e=1 ∨ e=2 ∨ e=3 := by omega
+  have h : e=0 ∨ e=1 ∨ e=2 ∨ e=3 := by omega_using [he]
   rcases h with rfl | rfl | rfl | rfl <;> rfl
 
 def addInput (s : State) (off e : Nat) : BitVec 32 :=

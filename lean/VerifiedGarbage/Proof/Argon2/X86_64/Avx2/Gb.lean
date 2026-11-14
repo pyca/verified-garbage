@@ -108,15 +108,15 @@ theorem rotateRight_32 (h l : BitVec 32) : (h ++ l).rotateRight 32 = l ++ h := b
   apply BitVec.eq_of_getLsbD_eq; intro j hj
   simp only [BitVec.getLsbD_rotateRight, BitVec.getLsbD_append]
   by_cases h1 : j < 32
-  · simp [h1, show ¬ 32 % 64 + j < 32 by omega]
-  · simp [h1, decide_eq_true (show j < 64 by omega), show j - 32 < 32 by omega]
+  · simp [h1, show ¬ 32 % 64 + j < 32 by omega_using []]
+  · simp [h1, decide_eq_true (show j < 64 by omega_using [hj]), show j - 32 < 32 by omega_using [hj]]
 
 theorem qword_shuf_b1 (x : BitVec 128) {i : Nat} (hi : i < 2) :
     qword (shufDwords x 0xb1) i = (qword x i).rotateRight 32 := by
   have e : shufDwords x 0xb1 = ofDwords (dword x 1) (dword x 0) (dword x 3) (dword x 2) := by
     simp only [shufDwords]; rfl
   rw [e, qword_ofDwords _ _ _ _ hi, qword_eq]
-  rcases (by omega : i = 0 ∨ i = 1) with rfl | rfl
+  rcases (by omega_using [hi] : i = 0 ∨ i = 1) with rfl | rfl
   · simp only [ite_true, rotateRight_32]
   · simp only [show (1 : Nat) ≠ 0 by decide, ite_false, rotateRight_32]
 
@@ -130,8 +130,8 @@ theorem getLsbD_qword (x : BitVec 128) {q i : Nat} (hi : i < 64) :
 
 theorem getLsbD_qword_ofBytes (f : Nat → BitVec 8) {i m : Nat} (hi : i < 2) (hm : m < 64) :
     (qword (ofBytes f) i).getLsbD m = (f (8 * i + m / 8)).getLsbD (m % 8) := by
-  rw [getLsbD_qword _ hm, show 64 * i + m = 8 * (8 * i + m / 8) + m % 8 by omega,
-    getLsbD_ofBytes _ (by omega) (Nat.mod_lt _ (by omega))]
+  rw [getLsbD_qword _ hm, show 64 * i + m = 8 * (8 * i + m / 8) + m % 8 by omega_using [],
+    getLsbD_ofBytes _ (by omega_using [hi, hm]) (Nat.mod_lt _ (by omega_using []))]
 
 theorem pshufb_rot24_bytes (a : BitVec 128) :
     XBinOp.eval .pshufb a rot24Mask = ofBytes fun j => byte a (8 * (j / 8) + (j % 8 + 3) % 8) := by
@@ -148,17 +148,17 @@ theorem qword_bytes_rot (a : BitVec 128) (n : Nat) (hn : n < 8) {i : Nat} (hi : 
       (qword a i).rotateRight (8 * n) := by
   apply BitVec.eq_of_getLsbD_eq; intro m hm
   rw [getLsbD_qword_ofBytes _ hi hm, BitVec.getLsbD_rotateRight]
-  have h8 : m % 8 < 8 := Nat.mod_lt _ (by omega)
+  have h8 : m % 8 < 8 := Nat.mod_lt _ (by omega_using [])
   simp only [byte, BitVec.getLsbD_extractLsb', h8,
-    decide_true, Bool.true_and, Nat.mod_eq_of_lt (show 8 * n < 64 by omega)]
+    decide_true, Bool.true_and, Nat.mod_eq_of_lt (show 8 * n < 64 by omega_using [hn])]
   by_cases h : m < 64 - 8 * n
   · simp only [h, ite_true]
-    rw [getLsbD_qword _ (by omega)]
-    exact congrArg _ (by omega)
+    rw [getLsbD_qword _ (by omega_using [h])]
+    exact congrArg _ (by omega_using [h])
   · simp only [h, ite_false]
-    rw [decide_eq_true (by omega), Bool.true_and,
-      getLsbD_qword _ (by omega)]
-    exact congrArg _ (by omega)
+    rw [decide_eq_true (by omega_using [hm]), Bool.true_and,
+      getLsbD_qword _ (by omega_using [hm])]
+    exact congrArg _ (by omega_using [hn, hm, h])
 
 theorem qword_pshufb_rot24 (a : BitVec 128) {i : Nat} (hi : i < 2) :
     qword (XBinOp.eval .pshufb a rot24Mask) i = (qword a i).rotateRight 24 := by
@@ -176,7 +176,7 @@ theorem rot63_eq (x : Word) : (x + x) ^^^ x >>> 63 = x.rotateRight 63 := by
     BitVec.getLsbD_rotateRight]
   by_cases h : j = 0
   · subst j; simp
-  · simp only [BitVec.getLsbD_of_ge x (63 + j) (by omega), Bool.xor_false]
+  · simp only [BitVec.getLsbD_of_ge x (63 + j) (by omega_using [h]), Bool.xor_false]
     simp [h]
 
 /-! ## Quadwords of registers after an instruction -/
@@ -241,7 +241,7 @@ theorem xorRot24_qw {d a : XReg} (hd : d ≠ .xmm14) (s : State) (hm : Masks s)
       if r = d then (qw s d k ^^^ qw s a k).rotateRight 24 else qw s r k := by
   have h2 : k % 2 < 2 := Nat.mod_lt _ (by decide)
   simp only [xorRot24Ops, vrun, qw_vbin, VBinOp.sse, lane_vbin256, hd.symm, ite_true,
-    ite_false, (hm (k / 2) (by omega)).1, qword_pshufb_rot24 _ h2, qword_pxor, qw_lane]
+    ite_false, (hm (k / 2) (by omega_using [hk])).1, qword_pshufb_rot24 _ h2, qword_pxor, qw_lane]
   split <;> rfl
 
 theorem xorRot16_qw {d a : XReg} (hd : d ≠ .xmm15) (s : State) (hm : Masks s)
@@ -250,7 +250,7 @@ theorem xorRot16_qw {d a : XReg} (hd : d ≠ .xmm15) (s : State) (hm : Masks s)
       if r = d then (qw s d k ^^^ qw s a k).rotateRight 16 else qw s r k := by
   have h2 : k % 2 < 2 := Nat.mod_lt _ (by decide)
   simp only [xorRot16Ops, vrun, qw_vbin, VBinOp.sse, lane_vbin256, hd.symm, ite_true,
-    ite_false, (hm (k / 2) (by omega)).2, qword_pshufb_rot16 _ h2, qword_pxor, qw_lane]
+    ite_false, (hm (k / 2) (by omega_using [hk])).2, qword_pshufb_rot16 _ h2, qword_pxor, qw_lane]
   split <;> rfl
 
 theorem xorRot63_qw {d a : XReg} (hd : d ≠ .xmm4) (s : State) {r : XReg}
@@ -357,17 +357,17 @@ theorem words_get (s : State) (j : Nat) (hj : j < 16) :
   simp only [words, Vector.getElem_ofFn]
 
 theorem cases_div4 {j : Nat} (hj : j < 16) : j / 4 = 0 ∨ j / 4 = 1 ∨ j / 4 = 2 ∨ j / 4 = 3 := by
-  omega
+  omega_using [hj]
 
 theorem gb_words {s : State} (h : Masks s) : words (vrun gbOps s) = mixColumns (words s) := by
   apply Vector.ext
   intro j hj
   have g := gb_qw h (k := j % 4) (Nat.mod_lt _ (by decide))
-  rw [words_get _ _ hj, Proof.Argon2.mixColumns_get _ _ hj, words_get _ _ (by omega),
-    words_get _ _ (by omega), words_get _ _ (by omega), words_get _ _ (by omega),
-    show j % 4 / 4 = 0 by omega, show (4 + j % 4) / 4 = 1 by omega, show (8 + j % 4) / 4 = 2 by omega,
-    show (12 + j % 4) / 4 = 3 by omega, Nat.mod_mod, show (4 + j % 4) % 4 = j % 4 by omega,
-    show (8 + j % 4) % 4 = j % 4 by omega, show (12 + j % 4) % 4 = j % 4 by omega]
+  rw [words_get _ _ hj, Proof.Argon2.mixColumns_get _ _ hj, words_get _ _ (by omega_using []),
+    words_get _ _ (by omega_using []), words_get _ _ (by omega_using []), words_get _ _ (by omega_using []),
+    show j % 4 / 4 = 0 by omega_using [], show (4 + j % 4) / 4 = 1 by omega_using [], show (8 + j % 4) / 4 = 2 by omega_using [],
+    show (12 + j % 4) / 4 = 3 by omega_using [], Nat.mod_mod, show (4 + j % 4) % 4 = j % 4 by omega_using [],
+    show (8 + j % 4) % 4 = j % 4 by omega_using [], show (12 + j % 4) % 4 = j % 4 by omega_using []]
   rcases cases_div4 hj with e | e | e | e <;> rw [e] <;> simp only [vreg, mixAt] <;> rw [← g]
 
 theorem masks_diag {s : State} (h : Masks s) : Masks (vrun diagOps s) :=
@@ -380,25 +380,25 @@ theorem diag_words (s : State) : words (vrun diagOps s) = rotRows 1 (words s) :=
   apply Vector.ext
   intro j hj
   have hk : j % 4 < 4 := Nat.mod_lt _ (by decide)
-  rw [words_get _ _ hj, Proof.Argon2.rotRows_get _ _ _ hj, words_get _ _ (by omega),
-    show (4 * (j / 4) + (j % 4 + 1 * (j / 4)) % 4) / 4 = j / 4 by omega,
-    show (4 * (j / 4) + (j % 4 + 1 * (j / 4)) % 4) % 4 = (j % 4 + j / 4) % 4 by omega]
+  rw [words_get _ _ hj, Proof.Argon2.rotRows_get _ _ _ hj, words_get _ _ (by omega_using [hj]),
+    show (4 * (j / 4) + (j % 4 + 1 * (j / 4)) % 4) / 4 = j / 4 by omega_using [],
+    show (4 * (j / 4) + (j % 4 + 1 * (j / 4)) % 4) % 4 = (j % 4 + j / 4) % 4 by omega_using []]
   simp only [diagOps, vrun]
   rcases cases_div4 hj with e | e | e | e <;> rw [e] <;>
-    simp (disch := omega) only [vreg, qw_vpermq, sel4_39, sel4_4e, sel4_93, ↓reduceIte,
+    simp (disch := omega_using []) only [vreg, qw_vpermq, sel4_39, sel4_4e, sel4_93, ↓reduceIte,
       reduceCtorEq, Nat.add_zero, Nat.mod_mod]
 
 theorem undiag_words (s : State) : words (vrun undiagOps s) = rotRows 3 (words s) := by
   apply Vector.ext
   intro j hj
   have hk : j % 4 < 4 := Nat.mod_lt _ (by decide)
-  rw [words_get _ _ hj, Proof.Argon2.rotRows_get _ _ _ hj, words_get _ _ (by omega),
-    show (4 * (j / 4) + (j % 4 + 3 * (j / 4)) % 4) / 4 = j / 4 by omega,
-    show (4 * (j / 4) + (j % 4 + 3 * (j / 4)) % 4) % 4 = (j % 4 + 3 * (j / 4)) % 4 by omega]
+  rw [words_get _ _ hj, Proof.Argon2.rotRows_get _ _ _ hj, words_get _ _ (by omega_using [hj]),
+    show (4 * (j / 4) + (j % 4 + 3 * (j / 4)) % 4) / 4 = j / 4 by omega_using [],
+    show (4 * (j / 4) + (j % 4 + 3 * (j / 4)) % 4) % 4 = (j % 4 + 3 * (j / 4)) % 4 by omega_using []]
   simp only [undiagOps, vrun]
   rcases cases_div4 hj with e | e | e | e <;> rw [e] <;>
-    simp (disch := omega) only [vreg, qw_vpermq, sel4_39, sel4_4e, sel4_93, ↓reduceIte,
-      reduceCtorEq, Nat.add_zero, Nat.mod_mod, Nat.mul_zero, Nat.mul_one] <;> congr 1 <;> omega
+    simp (disch := omega_using []) only [vreg, qw_vpermq, sel4_39, sel4_4e, sel4_93, ↓reduceIte,
+      reduceCtorEq, Nat.add_zero, Nat.mod_mod, Nat.mul_zero, Nat.mul_one] <;> congr 1 <;> omega_using []
 
 theorem round_masks {s : State} (h : Masks s) : Masks (vrun roundOps s) := by
   simp only [roundOps, vrun_append]

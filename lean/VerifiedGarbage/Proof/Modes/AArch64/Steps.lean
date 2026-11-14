@@ -108,7 +108,7 @@ theorem movz_ok (s : State) (d : Reg) {v : Nat} (hv : v < 2 ^ 16) :
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.toNat_shiftLeft, BitVec.toNat_setWidth, BitVec.toNat_ofNat, Nat.mul_zero,
       Nat.shiftLeft_zero]
-    omega
+    omega_using [hv]
   simp only [runBlock_cons, exec, Size.bits, show 16 * 0 < 64 by decide, ite_true, e, runStep_some,
     runBlock_nil]
 
@@ -142,7 +142,7 @@ theorem stS_ok {s : State} {b : Addr} {k : Nat} (r : Reg) (hb : s.gpr sb = b) (h
     (hw : InRegions s.wr (wordAddr b k) 8) :
     ∃ s', runBlock isa [stS k r] s = some s' ∧ s'.mem = s.mem.writeW (wordAddr b k) (s.gpr r) ∧
       s'.gpr = s.gpr ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
-  obtain ⟨s', e, m, g, rd, wr⟩ := str_ok s r sb (off := 8 * k) ⟨by omega, hk⟩ (by rw [hb]; exact hw)
+  obtain ⟨s', e, m, g, rd, wr⟩ := str_ok s r sb (off := 8 * k) ⟨by omega_using [], hk⟩ (by rw [hb]; exact hw)
   exact ⟨s', e, by rw [m, hb], g, rd, wr⟩
 
 /-- `ldr d, [sb, #8 k]`. -/
@@ -150,7 +150,7 @@ theorem ldS_ok {s : State} {b : Addr} {k : Nat} (d : Reg) (hb : s.gpr sb = b) (h
     (hr : InRegions (s.rd ++ s.wr) (wordAddr b k) 8) :
     ∃ s', runBlock isa [ldS d k] s = some s' ∧ s'.gpr d = s.mem.readW (wordAddr b k) 64 ∧
       (∀ r, r ≠ d → s'.gpr r = s.gpr r) ∧ s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
-  obtain ⟨s', e, v, o, m, rd, wr⟩ := ldr_ok s d sb (off := 8 * k) ⟨by omega, hk⟩ (by rw [hb]; exact hr)
+  obtain ⟨s', e, v, o, m, rd, wr⟩ := ldr_ok s d sb (off := 8 * k) ⟨by omega_using [], hk⟩ (by rw [hb]; exact hr)
   exact ⟨s', e, by rw [v, hb], o, m, rd, wr⟩
 
 theorem inRd {s : State} {a : Addr} {n : Nat} (h : InRegions s.wr a n) : InRegions (s.rd ++ s.wr) a n :=
@@ -159,7 +159,7 @@ theorem inRd {s : State} {a : Addr} {n : Nat} (h : InRegions s.wr a n) : InRegio
 /-- Slot `k` of a scratch buffer of `n` slots at `B` is writable. -/
 theorem slot_wr {rs : List Region} {B : Addr} {n : Nat} (h : (⟨B, 8 * n⟩ : Region) ∈ rs) (hn : 8 * n < 2 ^ 64)
     {k : Nat} (hk : k < n) : InRegions rs (wordAddr B k) 8 :=
-  ⟨_, h, VG.Offset.contains_base B (by omega) (by omega)⟩
+  ⟨_, h, VG.Offset.contains_base B (by omega_using [hk]) (by omega_using [hn, hk])⟩
 
 theorem readW_slot_write {m : Mem} {b : Addr} {j k : Nat} (v : BitVec 64) (hj : 8 * j < 2 ^ 64)
     (hk : 8 * k < 2 ^ 64) :

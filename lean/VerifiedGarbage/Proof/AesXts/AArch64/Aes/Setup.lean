@@ -42,7 +42,7 @@ theorem common_ok' {s₀ : State} (hp : KPre s₀) : WP isa (.block keysCommon) 
   have hx1 : s₀.gpr .x1 = BitVec.ofNat 64 (bnr s₀) := by simp [bnr]
   have hx3 : s₀.gpr .x3 = BitVec.ofNat 64 (bnb s₀) := by simp [bnb]
   rw [keysCommon, WP.block_append_iff]
-  refine WP.mono (loads_ok s₀ (fun j hj => hp.key_in (by omega)) 13 (Nat.le_refl _))
+  refine WP.mono (loads_ok s₀ (fun j hj => hp.key_in (by omega_using [hj])) 13 (Nat.le_refl _))
     fun s₁ ⟨e₁, f₁⟩ => ?_
   have g : ∀ r, s₁.gpr r = s₀.gpr r := fun r => f₁.gpr r (by simp)
   have e9 : s₁.gpr .x0 + s₁.gpr .x1 <<< 4 = bkp s₀ + BitVec.ofNat 64 (16 * bnr s₀) := by
@@ -53,7 +53,7 @@ theorem common_ok' {s₀ : State} (hp : KPre s₀) : WP isa (.block keysCommon) 
   rw [WP.block_cons_iff]; refine ⟨_, exec_ldrq (off := 0) (by decide) (by
     simp only [State.write, State.read, ite_true, reduceCtorEq, ite_false, BitVec.setWidth_eq, e9,
       BitVec.add_zero, rdwr]
-    exact hp.key_in (by omega)), ?_⟩
+    exact hp.key_in (by omega_using [hR])), ?_⟩
   rw [WP.block_cons_iff]; refine ⟨_, exec_subImm_x (imm := 10) (by decide), ?_⟩
   rw [WP.block_cons_iff]; refine ⟨_, exec_subImm_x (imm := 12) (by decide), ?_⟩
   rw [WP.block_cons_iff]; refine ⟨_, exec_lsr_x (sh := 3) (by decide), WP.block_nil ?_⟩
@@ -70,7 +70,7 @@ theorem common_ok' {s₀ : State} (hp : KPre s₀) : WP isa (.block keysCommon) 
       BitVec.setWidth_eq, g, hx1]; rfl
   · simp only [State.setV, State.write, State.read, ite_true, reduceCtorEq, ite_false,
       BitVec.setWidth_eq, g, hx3]
-    exact ushr3 (by omega)
+    exact ushr3 (by omega_using [hn])
   · simp only [State.setV, State.write, h1, h2, h3, h4, ite_false, g]
   · exact f₁.mem
 
@@ -89,20 +89,20 @@ theorem encSetup_ok' {s₀ : State} (hp : KPre s₀) : WP isa (.block encSetup) 
   refine WP.mono (common_ok' hp) fun s₁ c₁ => ?_
   have e9' : bkp s₀ + BitVec.ofNat 64 (16 * bnr s₀) - BitVec.ofNat 64 16 =
       bkp s₀ + BitVec.ofNat 64 (16 * (bnr s₀ - 1)) := by
-    rw [Offset.add_ofNat_sub _ (by omega), show 16 * bnr s₀ - 16 = 16 * (bnr s₀ - 1) by omega]
+    rw [Offset.add_ofNat_sub _ (by omega_using [hR]), show 16 * bnr s₀ - 16 = 16 * (bnr s₀ - 1) by omega_using []]
   rw [WP.block_cons_iff]; refine ⟨_, exec_subImm_x (imm := 16) (by decide), ?_⟩
   rw [WP.block_cons_iff]; refine ⟨_, exec_ldrq (off := 0) (by decide) (by
     simp only [State.write, State.read, ite_true, BitVec.setWidth_eq, c₁.x9,
       e9', BitVec.add_zero, c₁.rd, c₁.wr]
-    exact hp.key_in (by omega)), WP.block_nil ?_⟩
-  have hL : ∀ j, j ≤ bnr s₀ → 16 * j + 16 ≤ 16 * (bnr s₀ + 1) := fun j hj => by omega
+    exact hp.key_in (by omega_using [hR])), WP.block_nil ?_⟩
+  have hL : ∀ j, j ≤ bnr s₀ → 16 * j + 16 ≤ 16 * (bnr s₀ + 1) := fun j hj => by omega_using [hj]
   refine ⟨⟨hR, fun j hj => ?_, ?_, ?_, ?_, ?_⟩, ?_, fun r h1 h2 h3 h4 => ?_, ?_, ?_, ?_⟩
   · simp only [State.setV, State.write, (kreg_ne j).1, ite_false]
-    rw [c₁.kreg j (by omega)]
-    exact keyIs_readW _ _ (hL j (by omega))
+    rw [c₁.kreg j (by omega_using [hR, hj])]
+    exact keyIs_readW _ _ (hL j (by omega_using [hj]))
   · simp only [State.setV, State.write, State.read, ite_true, BitVec.setWidth_eq, c₁.x9, e9',
       BitVec.add_zero, c₁.mem]
-    exact keyIs_readW _ _ (hL _ (by omega))
+    exact keyIs_readW _ _ (hL _ (by omega_using []))
   · simp only [State.setV, State.write, reduceCtorEq, ite_false, c₁.v30]
     exact keyIs_readW _ _ (hL _ (Nat.le_refl _))
   · simp only [State.setV, State.write, reduceCtorEq, ite_false, c₁.x6]
@@ -119,9 +119,9 @@ theorem decSetup_ok' {s₀ : State} (hp : KPre s₀) : WP isa (.block decSetup) 
   refine WP.mono (common_ok' hp) fun s₁ c₁ => ?_
   rw [WP.block_cons_iff]; refine ⟨_, exec_ldrq (off := 208) (by decide) (by
     rw [c₁.gpr _ (by decide) (by decide) (by decide) (by decide), c₁.rd, c₁.wr]
-    exact hp.key_in (by omega)), WP.block_nil ?_⟩
+    exact hp.key_in (by omega_using [])), WP.block_nil ?_⟩
   refine WP.mono (imcs_ok _ 13 (Nat.le_refl _)) fun s₂ ⟨e₂, o₂, g₂, m₂, rd₂, wr₂⟩ => ?_
-  have hL : ∀ j, j ≤ bnr s₀ → 16 * j + 16 ≤ 16 * (bnr s₀ + 1) := fun j hj => by omega
+  have hL : ∀ j, j ≤ bnr s₀ → 16 * j + 16 ≤ 16 * (bnr s₀ + 1) := fun j hj => by omega_using [hj]
   have x0 : s₁.gpr .x0 = bkp s₀ := c₁.gpr _ (by decide) (by decide) (by decide) (by decide)
   have pre : ∀ j, 1 ≤ j → j ≤ 13 → j < bnr s₀ →
       KeyIs ((s₁.setV .v29 (s₁.mem.readW (s₁.gpr .x0 + BitVec.ofNat 64 208) 128)).v (dreg j))
@@ -130,24 +130,24 @@ theorem decSetup_ok' {s₀ : State} (hp : KPre s₀) : WP isa (.block decSetup) 
     by_cases h13 : j = 13
     · subst h13
       simp only [Impl.Aes.AArch64.Aese.dreg, ite_true, setV_v_self, x0, c₁.mem]
-      have := keyIs_readW s₀.mem (bkp s₀) (L := 16 * (bnr s₀ + 1)) (j := 13) (hL 13 (by omega))
+      have := keyIs_readW s₀.mem (bkp s₀) (L := 16 * (bnr s₀ + 1)) (j := 13) (hL 13 (by omega_using [h3]))
       simpa using this
     · simp only [Impl.Aes.AArch64.Aese.dreg, h13, ite_false]
-      rw [setV_v_of_ne _ _ (kreg_ne j).1, c₁.kreg j (by omega)]
-      exact keyIs_readW _ _ (hL j (by omega))
+      rw [setV_v_of_ne _ _ (kreg_ne j).1, c₁.kreg j (by omega_using [h2, h13])]
+      exact keyIs_readW _ _ (hL j (by omega_using [h3]))
   refine ⟨⟨hR, ?_, fun j h1 h2 => ?_, ?_, ?_, ?_⟩, ?_, fun r h1 h2 h3 h4 => ?_, ?_, ?_, ?_⟩
   · rw [o₂ _ fun j hj => (dreg_ne j hj).1.symm, setV_v_of_ne _ _ (by decide), c₁.v30]
     exact keyIs_readW _ _ (hL _ (Nat.le_refl _))
-  · have hj13 : j ≤ 13 := by omega
-    have := e₂ (j - 1) (by omega)
-    rw [show j - 1 + 1 = j by omega, ite_eq_left (by omega)] at this
+  · have hj13 : j ≤ 13 := by omega_using [hR, h2]
+    have := e₂ (j - 1) (by omega_using [hj13])
+    rw [show j - 1 + 1 = j by omega_using [h1], ite_eq_left (by omega_using [hj13])] at this
     rw [this]
     exact keyIs_aesimc (pre j h1 hj13 h2)
   · rw [o₂ _ fun j hj => (dreg_ne j hj).2.symm, setV_v_of_ne _ _ (by decide)]
-    have := c₁.kreg 0 (by omega)
+    have := c₁.kreg 0 (by omega_using [])
     simp only [Impl.Aes.AArch64.Aese.kreg] at this
     rw [this]
-    exact keyIs_readW _ _ (hL 0 (by omega))
+    exact keyIs_readW _ _ (hL 0 (by omega_using []))
   · rw [g₂]; simp only [State.setV]; exact c₁.x6
   · rw [g₂]; simp only [State.setV]; exact c₁.x7
   · rw [g₂]; simp only [State.setV, c₁.x13]

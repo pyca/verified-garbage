@@ -58,7 +58,7 @@ theorem selSetX_ok (s : State) {a : Nat} (ha : a < 2 ^ 31) (h8 : s.gpr .r8 = Bit
     [.xop (.movq .xmm13 .r8), .xop (.pshufd .xmm13 .xmm13 0)] ++ ([.mov32 .rcx (.imm 1)] ++
       ([.xop (.movq .xmm12 .rcx), .xop (.pshufd .xmm12 .xmm12 0)] ++
         [.xop (.bin .movdqa .xmm11 .xmm12)])) from rfl, WP.block_append_iff]
-  refine WP.mono (bcastX_ok s .xmm13 .r8 (by omega) h8) fun s₁ ⟨b₁, k₁⟩ => ?_
+  refine WP.mono (bcastX_ok s .xmm13 .r8 (by omega_using [ha]) h8) fun s₁ ⟨b₁, k₁⟩ => ?_
   rw [WP.block_append_iff]
   refine WP.mono (show WP isa (.block [.mov32 .rcx (.imm 1)]) s₁ (fun s₂ =>
       s₂.gpr .rcx = BitVec.ofNat 64 1 ∧ XKeep [.rcx] (fun _ => False) s₁ s₂) by
@@ -98,7 +98,7 @@ theorem selMaskX_ok (s : State) {a m : Nat} (ha : a < 2 ^ 31) (hm : m < 2 ^ 31)
   refine ⟨?_, ?_, ⟨fun _ _ => rfl, rfl, rfl, rfl, fun r hr => ?_⟩⟩
   · rw [RegUpd.xmm_setXmm_of_ne _ _ (by decide), RegUpd.xmm_setXmm_self, RegUpd.xmm_setXmm_self,
       RegUpd.xmm_setXmm_of_ne _ _ (by decide), h13, XBinOp.eval, h11, pcmpeqd_bcast,
-      ofNat32_eq (show a < 2 ^ 32 by omega) (show m < 2 ^ 32 by omega)]
+      ofNat32_eq (show a < 2 ^ 32 by omega_using [ha]) (show m < 2 ^ 32 by omega_using [hm])]
   · simp only [RegUpd.xmm_setXmm_self, RegUpd.xmm_setXmm_of_ne _ _ (show ¬ XReg.xmm11 = .xmm15 by decide),
       RegUpd.xmm_setXmm_of_ne _ _ (show ¬ XReg.xmm12 = .xmm15 by decide), h11, h12, paddd_bcast,
       ← BitVec.ofNat_add]
@@ -123,16 +123,16 @@ theorem selEntryX_ok {st np : Nat} {s : State} {X : Addr} {a m : Nat} (hn : np �
       XKeep [] (fun r => (∃ c < np, r = selAcc c) ∨ r = .xmm11 ∨ r = .xmm14 ∨ r = .xmm15) s t := by
   rw [selEntryX, WP.block_append_iff]
   refine WP.mono (selMaskX_ok s ha hm h13 h12 h11) fun s₁ ⟨x₁, c₁, k₁⟩ => ?_
-  refine WP.mono (selSteps_ok (X := X) (po := (16 * ·)) (by omega) np (Nat.le_refl _) s₁
+  refine WP.mono (selSteps_ok (X := X) (po := (16 * ·)) (by omega_using [hn]) np (Nat.le_refl _) s₁
     (by rw [k₁.gpr _ List.not_mem_nil, hx]) (by rw [k₁.rd, k₁.wr]; exact hr)) fun t ⟨a₂, k₂⟩ =>
     ⟨fun c hc => ?_, ?_, ?_⟩
-  · obtain ⟨n11, -, -, -, n15⟩ := selAcc_neX c (by omega)
-    rw [a₂ c (by omega), ite_eq_left_of_eq_true _ _ (eq_true hc), x₁, k₁.mem,
+  · obtain ⟨n11, -, -, -, n15⟩ := selAcc_neX c (by omega_using [hn, hc])
+    rw [a₂ c (by omega_using [hn, hc]), ite_eq_left_of_eq_true _ _ (eq_true hc), x₁, k₁.mem,
       k₁.xmm _ (by rintro (h | h); exacts [n11 h, n15 h]), hacc c hc]
     exact accVal_step _ _ _ (16 * ·) _ _ _ hm1
   · rw [k₂.xmm _ (by
       rintro (⟨c, hc, h⟩ | h)
-      · exact (selAcc_neX c (by omega)).1 h.symm
+      · exact (selAcc_neX c (by omega_using [hn, hc])).1 h.symm
       · exact absurd h (by decide)), c₁]
   · exact (k₁.mono (fun _ h => h) fun r h => by
       rcases h with h | h
@@ -157,24 +157,24 @@ theorem selEntriesFromX_ok {st np : Nat} {X : Addr} {a lo : Nat} (hn : np ≤ 10
   | 0, _, s, _, _, _, h11, _, h0 => WP.block_nil ⟨h0, h11, XKeep.refl _ _ _⟩
   | h + 1, hh, s, hx, h13, h12, h11, hr, h0 => by
     rw [List.range_succ, List.flatMap_append, List.flatMap_singleton, WP.block_append_iff]
-    refine WP.mono (selEntriesFromX_ok hn ha h (by omega) s hx h13 h12 h11 (fun e he => hr e (by omega)) h0)
+    refine WP.mono (selEntriesFromX_ok hn ha h (by omega_using [hh]) s hx h13 h12 h11 (fun e he => hr e (by omega_using [he])) h0)
       fun s₁ ⟨a₁, c₁, k₁⟩ => ?_
     have n13 : ¬ ((∃ c < np, XReg.xmm13 = selAcc c) ∨ XReg.xmm13 = .xmm11 ∨ XReg.xmm13 = .xmm14 ∨
         XReg.xmm13 = .xmm15) := by
       rintro (⟨c, hc, h⟩ | h | h | h)
-      · exact (selAcc_neX c (by omega)).2.2.1 h.symm
+      · exact (selAcc_neX c (by omega_using [hn, hc])).2.2.1 h.symm
       all_goals exact absurd h (by decide)
     have n12 : ¬ ((∃ c < np, XReg.xmm12 = selAcc c) ∨ XReg.xmm12 = .xmm11 ∨ XReg.xmm12 = .xmm14 ∨
         XReg.xmm12 = .xmm15) := by
       rintro (⟨c, hc, h⟩ | h | h | h)
-      · exact (selAcc_neX c (by omega)).2.1 h.symm
+      · exact (selAcc_neX c (by omega_using [hn, hc])).2.1 h.symm
       all_goals exact absurd h (by decide)
-    refine WP.mono (selEntryX_ok (X := X) (m := lo + h + 1) hn (by omega) hh ha
+    refine WP.mono (selEntryX_ok (X := X) (m := lo + h + 1) hn (by omega_using []) hh ha
       (by rw [k₁.gpr _ List.not_mem_nil, hx]) (by rw [k₁.xmm _ n13, h13])
       (by rw [k₁.xmm _ n12, h12]) c₁
-      (fun c hc => by rw [k₁.rd, k₁.wr, Nat.add_sub_cancel]; exact hr h (by omega) c hc)
+      (fun c hc => by rw [k₁.rd, k₁.wr, Nat.add_sub_cancel]; exact hr h (by omega_using []) c hc)
       (fun c hc => by rw [a₁ c hc, k₁.mem, Nat.add_sub_cancel])) fun t ⟨a₂, c₂, k₂⟩ =>
       ⟨fun c hc => by rw [a₂ c hc, k₁.mem, ← Nat.add_assoc], by
-        rw [show lo + (h + 1) + 1 = lo + h + 1 + 1 by omega]; exact c₂, k₁.trans k₂⟩
+        rw [show lo + (h + 1) + 1 = lo + h + 1 + 1 by omega_using []]; exact c₂, k₁.trans k₂⟩
 
 end VG.Proof.Weierstrass.X86_64

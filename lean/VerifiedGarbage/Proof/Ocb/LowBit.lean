@@ -28,16 +28,16 @@ theorem ntz_spec (n : Nat) : 0 < n → ∃ u, n = 2 ^ ntz n * u ∧ u % 2 = 1 :=
   refine Nat.strongRecOn n ?_
   intro n ih h0
   rcases Nat.mod_two_eq_zero_or_one n with he | ho
-  · obtain ⟨u, hu, hu2⟩ := ih (n / 2) (by omega) (by omega)
+  · obtain ⟨u, hu, hu2⟩ := ih (n / 2) (by omega_using [h0]) (by omega_using [h0, he])
     refine ⟨u, ?_, hu2⟩
     rw [ntz_even h0 he, Nat.pow_succ, Nat.mul_comm (2 ^ ntz (n / 2)) 2, Nat.mul_assoc, ← hu]
-    omega
+    omega_using [he]
   · exact ⟨n, by rw [ntz_odd ho]; simp, ho⟩
 
 theorem two_pow_ntz_le {n : Nat} (h0 : 0 < n) : 2 ^ ntz n ≤ n := by
   obtain ⟨u, hu, hu2⟩ := ntz_spec n h0
   generalize ntz n = t at hu ⊢
-  rw [hu]; exact Nat.le_mul_of_pos_right _ (by omega)
+  rw [hu]; exact Nat.le_mul_of_pos_right _ (by omega_using [hu2])
 
 /-- An odd `u`'s lowest set bit is 1. -/
 theorem and_neg_odd (u : BitVec 64) (h : u.getLsbD 0 = true) : u &&& (0#64 - u) = 1#64 := by
@@ -46,13 +46,13 @@ theorem and_neg_odd (u : BitVec 64) (h : u.getLsbD 0 = true) : u &&& (0#64 - u) 
     simp only [BitVec.getLsbD_and, BitVec.getLsbD_not, BitVec.getLsbD_one]
     rcases Nat.eq_zero_or_pos i with rfl | hp
     · simp [h]
-    · simp [show i ≠ 0 by omega]
+    · simp [show i ≠ 0 by omega_using [hp]]
   rw [BitVec.zero_sub, BitVec.neg_eq_not_add, BitVec.add_eq_or_of_and_eq_zero _ _ h1]
   apply BitVec.eq_of_getLsbD_eq; intro i hi
   simp only [BitVec.getLsbD_and, BitVec.getLsbD_or, BitVec.getLsbD_not, BitVec.getLsbD_one]
   rcases Nat.eq_zero_or_pos i with rfl | hp
   · simp [h]
-  · simp [show i ≠ 0 by omega, hi]
+  · simp [show i ≠ 0 by omega_using [hp], hi]
 
 theorem and_neg_shl (y : BitVec 64) (t : Nat) :
     (y <<< t) &&& (0#64 - (y <<< t)) = (y &&& (0#64 - y)) <<< t := by
@@ -64,12 +64,12 @@ theorem lowbit {n : Nat} (h0 : 0 < n) (h : n < 2 ^ 64) :
     BitVec.ofNat 64 n &&& (0#64 - BitVec.ofNat 64 n) = BitVec.ofNat 64 (2 ^ ntz n) := by
   obtain ⟨u, hu, hu2⟩ := ntz_spec n h0
   generalize ntz n = t at hu ⊢
-  have hu1 : 1 ≤ u := by omega
-  have hp : 2 ^ t ≤ n := by rw [hu]; exact Nat.le_mul_of_pos_right _ (by omega)
+  have hu1 : 1 ≤ u := by omega_using [hu2]
+  have hp : 2 ^ t ≤ n := by rw [hu]; exact Nat.le_mul_of_pos_right _ (by omega_using [hu2])
   have hun : u ≤ n := by rw [hu]; exact Nat.le_mul_of_pos_left _ (Nat.two_pow_pos _)
   have e : BitVec.ofNat 64 n = BitVec.ofNat 64 u <<< t := by
     apply BitVec.eq_of_toNat_eq
-    rw [BitVec.toNat_shiftLeft, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := u) (by omega),
+    rw [BitVec.toNat_shiftLeft, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := u) (by omega_using [h, hun]),
       Nat.shiftLeft_eq, hu, Nat.mul_comm]
   have ho : (BitVec.ofNat 64 u).getLsbD 0 = true := by
     simp [BitVec.getLsbD_ofNat, Nat.testBit_zero, hu2]
@@ -77,6 +77,6 @@ theorem lowbit {n : Nat} (h0 : 0 < n) (h : n < 2 ^ 64) :
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_shiftLeft, BitVec.toNat_ofNat, Nat.shiftLeft_eq]
   simp only [BitVec.toNat_ofNat]
-  rw [Nat.mod_eq_of_lt (a := 1) (by decide), Nat.one_mul, Nat.mod_eq_of_lt (by omega)]
+  rw [Nat.mod_eq_of_lt (a := 1) (by decide), Nat.one_mul, Nat.mod_eq_of_lt (by omega_using [h, hp])]
 
 end VG.Proof.Ocb

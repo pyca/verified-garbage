@@ -18,7 +18,7 @@ open VG.Proof.X25519.Arm (Rest wp_mov op2_reg)
 theorem slots_fit {size : Nat} (hz : 204 ≤ size) : Pow.Fit size slots := by
   intro x hx
   simp only [slots, List.mem_cons, List.not_mem_nil, or_false] at hx
-  rcases hx with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> exact ⟨by decide, by omega⟩
+  rcases hx with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> exact ⟨by decide, by omega_using [hz]⟩
 
 theorem slots_words : ∀ r ∈ Pow.words slots, 168 ≤ r.1 ∧ r.1 + r.2 ≤ 204 := by decide
 
@@ -42,7 +42,7 @@ theorem words_scratch : ∀ r ∈ Pow.words slots,
     ∃ r' ∈ scratch, r'.1 ≤ r.1 ∧ r.1 + r.2 ≤ r'.1 + r'.2 := by
   intro r hr
   have H := slots_words r hr
-  exact ⟨(168, 36), by simp [scratch], by omega, by omega⟩
+  exact ⟨(168, 36), by simp [scratch], by omega_using [H], by omega_using [H]⟩
 
 theorem run_scratch : ∀ r ∈ runRanges,
     ∃ r' ∈ scratch, r'.1 ≤ r.1 ∧ r.1 + r.2 ≤ r'.1 + r'.2 :=
@@ -62,19 +62,19 @@ theorem body_ok {s : State} {base : Addr} {size pLen qLen nP nQ P Q G Y : Nat}
   unfold body save
   refine WP.seq (wp_mov (op2_reg s .r0) fun s₁ U => ?_)
   have W₁ : Ws s₁ base size := ⟨by rw [U.gpr]; exact E.wb, U.wr ▸ E.wr, E.nowrap⟩
-  refine WP.mono (Pow.stores_ok slots W₁ (slots_fit (by omega)) (by unfold Pow.Apart; decide)) fun s₂ ⟨Saved, O, R⟩ => ?_
+  refine WP.mono (Pow.stores_ok slots W₁ (slots_fit (by omega_using [big])) (by unfold Pow.Apart; decide)) fun s₂ ⟨Saved, O, R⟩ => ?_
   have S₂ : Sched s₂ base size pLen qLen nP nQ := ⟨W₁.of_rest R (by decide), big, wp, wq, qp, q32⟩
   refine WP.seq (WP.mono (publicKey_ok S₂
     (input_stores (input_mem Ip U.mem U.rd U.wr) R O)
     (input_stores (input_mem Iq U.mem U.rd U.wr) R O)
     (input_stores (input_mem Ig U.mem U.rd U.wr) R O)
     (input_stores (input_mem Iy U.mem U.rd U.wr) R O) hP hPo hQ hQo) fun s₃ ⟨F, V, Run⟩ => ?_)
-  refine WP.mono (Pow.loads_ok slots (Run.ws S₂.ws) (slots_fit (by omega)) (by decide) (by decide))
+  refine WP.mono (Pow.loads_ok slots (Run.ws S₂.ws) (slots_fit (by omega_using [big])) (by decide) (by decide))
     fun t ⟨L, R₄, M⟩ => ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · have K := maskW_keep O (by
       intro r hr
       have H := slots_words r hr
-      exact .inr (by omega))
+      exact .inr (by omega_using [H]))
     rw [show maskW base t = maskW base s₃ from congrArg (fun m => m.readW (off base 116) 32) M,
       F, K]
     rw [show maskW base s₁ = maskW base s from congrArg (fun m => m.readW (off base 116) 32) U.mem]

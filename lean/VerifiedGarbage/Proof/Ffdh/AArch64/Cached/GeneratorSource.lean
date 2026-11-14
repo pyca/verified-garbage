@@ -27,7 +27,7 @@ theorem GeneratorSource.after_entry {p : Parameters} {ptr : Addr} {bs : List Byt
  refine ⟨⟨?_,?_,h.source.out⟩,h.length,h.value,h.separate⟩
  · intro i hi;rw [rest.rd,rest.wr];exact h.source.rd i hi
  · intro i hi
-   rw [frame _ (Or.inr (by have := entry_within p inside;have := h.separate i hi;omega))]
+   rw [frame _ (Or.inr (by have := entry_within p inside;have := h.separate i hi;omega_arith))]
    exact h.source.val i hi
 
 end VG.Proof.Ffdh.AArch64.Cached

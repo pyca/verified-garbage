@@ -23,8 +23,8 @@ theorem compareStatus_ok (s : State) {status test : Nat} (small : status < 4) (t
     simp only [instrs, List.mem_singleton] at hi
     subst i
     rfl) (by rfl)
-  have casesStatus : status = 0 ∨ status = 1 ∨ status = 2 ∨ status = 3 := by omega
-  have casesTest : test = 0 ∨ test = 1 ∨ test = 2 ∨ test = 3 := by omega
+  have casesStatus : status = 0 ∨ status = 1 ∨ status = 2 ∨ status = 3 := by omega_using [small]
+  have casesTest : test = 0 ∨ test = 1 ∨ test = 2 ∨ test = 3 := by omega_using [testSmall]
   rcases casesStatus with rfl | rfl | rfl | rfl <;>
     rcases casesTest with rfl | rfl | rfl | rfl <;> ffrun [value]
 

@@ -87,13 +87,13 @@ theorem stP_ok {row i : Nat} (hrow : row < 4) (hi : i < 4) {x : XReg} (_hx13 : x
   refine ⟨fun k hk => ?_, f₁.trans f₃, fun r l h13 => ?_, g₃.trans g₁, r₃.trans r₁, w₃.trans w₁⟩
   · rw [m₃ k hk, m₁ k hk]
     by_cases h2 : 64 * (i + 4) + 16 * row ≤ k ∧ k < 64 * (i + 4) + 16 * row + 16
-    · rw [ite_eq_left h2, ite_eq_left (by omega), show k / 64 / 4 = 1 by omega,
-        show k - (64 * (i + 4) + 16 * row) = k % 16 by omega]
+    · rw [ite_eq_left h2, ite_eq_left (by omega_using [hrow, h2]), show k / 64 / 4 = 1 by omega_using [hk, h2],
+        show k - (64 * (i + 4) + 16 * row) = k % 16 by omega_using [h2]]
     · rw [ite_eq_right h2]
       by_cases h1 : 64 * i + 16 * row ≤ k ∧ k < 64 * i + 16 * row + 16
-      · rw [ite_eq_left h1, ite_eq_left (by omega), show k / 64 / 4 = 0 by omega,
-          show k - (64 * i + 16 * row) = k % 16 by omega]
-      · rw [ite_eq_right h1, ite_eq_right (by omega)]
+      · rw [ite_eq_left h1, ite_eq_left (by omega_using [hrow, h1]), show k / 64 / 4 = 0 by omega_using [hrow, hi, h1],
+          show k - (64 * i + 16 * row) = k % 16 by omega_using [h1]]
+      · rw [ite_eq_right h1, ite_eq_right (by omega_using [h2, h1])]
   · rw [l₃ r l, ite_eq_right h13, l₁ r l]
 
 theorem storeRow_ok {row : Nat} (hrow : row < 4) {x0 x1 x2 x3 : XReg}
@@ -147,9 +147,9 @@ theorem storeRow_out {buf : Addr} {g : Reg → BitVec 64} {rd w : List Region} (
   rw [d₂ k hk]
   by_cases hr : k % 64 / 16 = row
   · rw [ite_eq_left hr, ite_eq_left hr, serialize_row _ hrow hr]
-    obtain ⟨b0, b1, b2, b3⟩ := hB (k / 64 / 4) (by omega) hrow
-    have e : 4 * (k / 64 / 4) + k / 64 % 4 = k / 64 := by omega
-    rcases (by omega : k / 64 % 4 = 0 ∨ k / 64 % 4 = 1 ∨ k / 64 % 4 = 2 ∨ k / 64 % 4 = 3) with q | q | q | q <;>
+    obtain ⟨b0, b1, b2, b3⟩ := hB (k / 64 / 4) (by omega_using [hk]) hrow
+    have e : 4 * (k / 64 / 4) + k / 64 % 4 = k / 64 := by omega_using []
+    rcases (by omega_using [] : k / 64 % 4 = 0 ∨ k / 64 % 4 = 1 ∨ k / 64 % 4 = 2 ∨ k / 64 % 4 = 3) with q | q | q | q <;>
       rw [q] at e ⊢
     · rw [List.getD_cons_zero, b0, e]
     · rw [List.getD_cons_succ, List.getD_cons_zero, b1, e]
@@ -180,7 +180,7 @@ theorem finishK_ok {st buf : Addr} {vs : Nat → CState} {s : State} (hh : Holds
     (storeRow_out hrcx hk (by decide) (by decide) (by decide) (by decide) (by decide)))
     fun s' ⟨m₀, m₁, m₂, m₃, _, d₀, d₁, d₃, d₂, F, g, rd, wr⟩ => ⟨fun k hk => ?_, F, g, rd, wr⟩
   rw [d₂ k hk, d₃ k hk, d₁ k hk, d₀ k hk]
-  rcases (by omega : k % 64 / 16 = 0 ∨ k % 64 / 16 = 1 ∨ k % 64 / 16 = 2 ∨ k % 64 / 16 = 3)
+  rcases (by omega_using [] : k % 64 / 16 = 0 ∨ k % 64 / 16 = 1 ∨ k % 64 / 16 = 2 ∨ k % 64 / 16 = 3)
     with h | h | h | h <;> simp only [h, Nat.reduceEqDiff, ite_true, ite_false]
 
 end VG.Proof.ChaCha20Poly1305.X86_64.Stitch

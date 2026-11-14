@@ -36,9 +36,9 @@ theorem test_ok {mont round : Prog isa} {montName roundName : String}
     have eqPower : 2 ^ (64 * E.width - 1) = 2 ^ (64 * E.width - 2) * 2 := by
       rw [← Nat.pow_succ]
       congr 1
-      omega
+      omega_using [width]
     rw [eqPower]
-    omega
+    omega_using [lower]
   refine WP.mono (MrExponentRt.tested_frame_ok montVerified montNoSp montStack roundVerified roundNoSp roundStack
     (v.parameters_valid entropy D.input.memory.entropyLength) v.width_bounds.1 v.width_bounds.2 rfl rfl rfl rfl
     D.input.scratch (D.input.capacity_eq v)

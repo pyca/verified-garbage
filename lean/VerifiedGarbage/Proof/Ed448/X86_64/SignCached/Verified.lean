@@ -50,10 +50,10 @@ theorem sat_seed : Spec.Ed448.bytesAt satMem 0x2000 57 = satSeed := by
   have hi' := List.mem_range.mp hi
   have ha : ((0x2000 : Addr) + BitVec.ofNat 64 i).toNat = 0x2000 + i := by
     change (0x2000 + i % 2 ^ 64) % 2 ^ 64 = 0x2000 + i
-    omega
+    omega_using [hi']
   have hne : (0x2000 : Addr) + BitVec.ofNat 64 i ≠ 0x80012 := fun h => by
-    have := congrArg BitVec.toNat h; rw [ha] at this; simp at this; omega
-  simp only [satMem, hne, ↓reduceIte, ha, show 0x2000 + i < 0x3000 from by omega, true_or]
+    have := congrArg BitVec.toNat h; rw [ha] at this; simp at this; omega_using [hi', this]
+  simp only [satMem, hne, ↓reduceIte, ha, show 0x2000 + i < 0x3000 from by omega_using [hi'], true_or]
 
 theorem sat_key : Spec.Ed448.bytesAt satMem 0x3000 57 = satKey := by
   apply List.ext_getElem
@@ -62,11 +62,11 @@ theorem sat_key : Spec.Ed448.bytesAt satMem 0x3000 57 = satKey := by
     have hi' : i < 57 := by simpa only [Spec.Ed448.bytesAt, List.length_map, List.length_range] using hi
     have ha : ((0x3000 : Addr) + BitVec.ofNat 64 i).toNat = 0x3000 + i := by
       change (0x3000 + i % 2 ^ 64) % 2 ^ 64 = 0x3000 + i
-      omega
+      omega_using [hi']
     have hne : (0x3000 : Addr) + BitVec.ofNat 64 i ≠ 0x80012 := fun h => by
-      have := congrArg BitVec.toNat h; rw [ha] at this; simp at this; omega
+      have := congrArg BitVec.toNat h; rw [ha] at this; simp at this; omega_using [hi', this]
     simp only [Spec.Ed448.bytesAt, List.getElem_map, List.getElem_range, satMem, hne, ↓reduceIte, ha,
-      show ¬ (0x3000 + i < 0x3000 ∨ 0x3039 ≤ 0x3000 + i) from by omega, Nat.add_sub_cancel_left,
+      show ¬ (0x3000 + i < 0x3000 ∨ 0x3039 ≤ 0x3000 + i) from by omega_using [hi'], Nat.add_sub_cancel_left,
       List.getElem?_eq_getElem hj, Option.getD_some]
 
 def satState : State where

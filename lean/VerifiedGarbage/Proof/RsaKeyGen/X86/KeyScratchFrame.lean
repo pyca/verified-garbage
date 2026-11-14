@@ -20,7 +20,7 @@ theorem outs_scratch_frame {B : Addr} {Z : Nat} {rs : List (Nat × Nat)} {m m' :
     apply O a
     intro r hr
     have H := fit r hr
-    omega
+    omega_using [ha, H]
   simpa only [off, BitVec.ofNat_eq_ofNat, BitVec.add_zero] using
     VG.Proof.Bignum.outside_frame outside (by simpa only [Nat.zero_add] using size)
 
@@ -28,13 +28,13 @@ theorem stage_scratch_frame {s : State} {B : Addr} {Z n : Nat} {js : List Nat} {
     (h : Ws s B Z n 32) (indices : ∀ j ∈ js, j < 32) (O : Outs B (stageRanges n js) m m') :
     Frame [⟨B, Z⟩] m m' := by
   have head := h.hdr_le
-  apply outs_scratch_frame (by have := h.workspace.nowrap; omega) O
+  apply outs_scratch_frame (by have := h.workspace.nowrap; omega_using [this]) O
   intro r hr
   rcases List.mem_append.mp hr with temp | output
   · simp only [exponentTemps, List.mem_cons, List.not_mem_nil, or_false] at temp
     rcases temp with rfl | rfl
     · unfold kOk hdr at *
-      omega
+      omega_using [head]
     · exact Nat.le_trans (arr_mono (by decide : 15 ≤ 32)) h.fits
   · simp only [ranges, List.map_nil, List.append_nil, List.mem_map] at output
     obtain ⟨j, hj, rfl⟩ := output
@@ -44,7 +44,7 @@ theorem Input.output_preserved {E : Environment} {s : State} {m m' : Mem} {i : N
     (h : Input E s) (hi : i < 7) (F : Frame [E.workspaceRegion] m m') :
     Spec.Rsa.bytesAt m' (E.outputRegion i).base (E.outputRegion i).len =
       Spec.Rsa.bytesAt m (E.outputRegion i).base (E.outputRegion i).len := by
-  apply VG.Proof.Rsa.rsa_bytes_frame F (by change E.outputLength i < 2 ^ 64; have H := h.valid.outFit i hi; omega)
+  apply VG.Proof.Rsa.rsa_bytes_frame F (by change E.outputLength i < 2 ^ 64; have H := h.valid.outFit i hi; omega_using [H])
   intro r hr
   obtain rfl := List.mem_singleton.mp hr
   exact h.valid.outputScratch i hi
@@ -53,7 +53,7 @@ theorem Input.exponent_preserved {E : Environment} {s : State} {m m' : Mem}
     (h : Input E s) (F : Frame [E.workspaceRegion] m m') :
     Spec.Rsa.bytesAt m' E.exponentRegion.base E.exponentRegion.len =
       Spec.Rsa.bytesAt m E.exponentRegion.base E.exponentRegion.len := by
-  apply VG.Proof.Rsa.rsa_bytes_frame F (by change E.exponentLength < 2 ^ 64; have H := h.valid.exponentLength; omega)
+  apply VG.Proof.Rsa.rsa_bytes_frame F (by change E.exponentLength < 2 ^ 64; have H := h.valid.exponentLength; omega_using [H])
   intro r hr
   obtain rfl := List.mem_singleton.mp hr
   exact h.valid.exponentScratch

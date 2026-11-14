@@ -39,7 +39,7 @@ bytes at `D₀` (`padMulT_ok`'s `hbig`). -/
 theorem pad_big {rs : List Region} {D₀ P : Addr} {N m : Nat} (h : Covers [⟨D₀, N⟩] rs) (hN : N < 2 ^ 64)
     (hP : P = D₀ + BitVec.ofNat 64 (N - m)) (hm : m < 16) :
     16 ≤ N → m ≠ 0 → m < 16 ∧ ∃ E, E + BitVec.ofNat 64 (16 - m) = P ∧ InRegions rs E 16 := fun h16 _ =>
-  ⟨hm, D₀ + BitVec.ofNat 64 (N - 16), by rw [hP, Offset.add_add]; congr 2; omega, in_off h (by omega) hN⟩
+  ⟨hm, D₀ + BitVec.ofNat 64 (N - 16), by rw [hP, Offset.add_add]; congr 2; omega_using [hm, h16], in_off h (by omega_using [h16]) hN⟩
 
 /-- `padVec`'s loads: the 16 bytes ending the `r` bytes at `x12`, moved down
 into the padded block in `A`. -/
@@ -52,7 +52,7 @@ theorem padPre_run {E : Addr} {r : Nat} (hr : r < 16) {s : State}
       Others [.x9, .x11] s s' ∧ s'.mem = s.mem ∧ s'.sp = s.sp ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
   have h16 : (BitVec.setWidth 64 (16#16) <<< 0 : BitVec 64) = BitVec.ofNat 64 16 := by decide
   have hsub : BitVec.ofNat 64 16 - BitVec.ofNat 64 r = BitVec.ofNat 64 (16 - r) :=
-    BitVec.ofNat_sub_ofNat_of_le _ _ (by omega) (by omega)
+    BitVec.ofNat_sub_ofNat_of_le _ _ (by omega_using [hr]) (by omega_using [hr])
   have hx11 : E + BitVec.ofNat 64 (16 - r) - BitVec.ofNat 64 (16 - r) = E := BitVec.add_sub_cancel _ _
   refine ⟨_, by
     simp only [shift, List.cons_append, List.nil_append]
@@ -78,7 +78,7 @@ theorem padMulT_ok (hM : MulKey) {Ctx St W SP : Addr} {H y : Block} {P : Addr} {
       Env Ctx St W SP s' ∧
       Others [.x9, .x11, .x12, .x13, .x14, .x15] s s' ∧ Frame [⟨W + BitVec.ofNat 64 96, 16⟩] s.mem s'.mem ∧
       (∀ r, r ∉ [A, LO, MID, HI, T, Y] → s'.v r = s.v r) := by
-  refine WP.ite (decide (n = 0)) (eval_zero h13 (by omega)) (fun ht => ?_) (fun hf' => ?_)
+  refine WP.ite (decide (n = 0)) (eval_zero h13 (by omega_using [hn])) (fun ht => ?_) (fun hf' => ?_)
   · have h0 : n = 0 := of_decide_eq_true ht
     subst h0
     exact WP.block_nil ⟨by rw [show bytesAt s.mem P 0 = [] from rfl]; exact hy, hk, he, fun _ _ => rfl,
@@ -94,14 +94,14 @@ theorem padMulT_ok (hM : MulKey) {Ctx St W SP : Addr} {H y : Block} {P : Addr} {
     rcases hr with rfl | rfl | rfl <;> decide)) r₁.sp r₁.rd r₁.wr
   have hk₁ : HKey H s₁ := hk.of_v (by rw [v₁]) (by rw [v₁]) (by rw [v₁])
   refine WP.seq (WP.of_runBlock ⟨s₁, run₁, ?_⟩)
-  refine WP.ite (decide (N / 16 = 0)) (eval_zero x9₁ (by omega)) (fun _ => ?_) (fun hf => ?_)
+  refine WP.ite (decide (N / 16 = 0)) (eval_zero x9₁ (by omega_using [hN])) (fun _ => ?_) (fun hf => ?_)
   · refine WP.mono (padMul_ok hM (y := y) he₁ hk₁ (by rw [v₁]; exact hy) (by rw [r₁.others _ (by decide), h12])
       (by rw [r₁.others _ (by decide), h13]) hn (by rw [r₁.rd, r₁.wr]; exact hP) hPW)
       fun s' ⟨y', k', e', o', f', v'⟩ => ⟨by rw [y', r₁.mem], k', e', fun r hr => by
         rw [o' r hr, r₁.others r (by
           simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr ⊢; exact hr.1)],
         by rw [← r₁.mem]; exact f', fun r hr => by rw [v' r hr, v₁]⟩
-  have hbN : 16 ≤ N := by have := of_decide_eq_false hf; omega
+  have hbN : 16 ≤ N := by have := of_decide_eq_false hf; omega_using [this]
   obtain ⟨hn16, E, hE, hEr⟩ := hbig hbN h0
   obtain ⟨s₂, run₂, a₂, v₂, g₂, m₂, sp₂, rd₂, wr₂⟩ := padPre_run (s := s₁) (E := E) hn16
     (by rw [r₁.others _ (by decide), h12, hE]) (by rw [r₁.others _ (by decide), h13])
@@ -127,7 +127,7 @@ theorem padMulT_ok (hM : MulKey) {Ctx St W SP : Addr} {H y : Block} {P : Addr} {
         (by rw [o₄.wr, o₃.wr]), fun r hr => ?_, ?_, fun r hr => ?_⟩
   · have hne : bytesAt s.mem P n ≠ [] := fun e => h0 (by simpa [length_bytesAt] using congrArg List.length e)
     have hY₂ : s₂.v Y = s.v Y := vv Y (by decide) (by decide)
-    rw [m₄, e₃, a₂, hY₂, hy, r₁.mem, Tail.pad_vec _ _ (by omega) hn16, hE, rev64b_read, ← ext8_xor, hk₃.t, hM,
+    rw [m₄, e₃, a₂, hY₂, hy, r₁.mem, Tail.pad_vec _ _ (by omega_using [h0]) hn16, hE, rev64b_read, ← ext8_xor, hk₃.t, hM,
       BitVec.xor_comm, Tail.blockAt_padMem _ _ hn]
     simp only [padStep, hne, ↓reduceIte, length_bytesAt]
   · rw [o₄.gpr, o₃.gpr, g₂ r (by

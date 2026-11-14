@@ -68,7 +68,7 @@ theorem same_of {s₁ s₂ : State} (h : (Spec.RsaPkcs1Enc.decryptContract RISCV
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
     exacts [h3, h4, h5, h6, h7, h8, h9, h10]
   · simp only [nA, Bool.false_eq_true, ↓reduceIte] at hi
-    rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 ∨ i = 8 ∨ i = 9 ∨
+    rcases (by omega_using [hi] : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 ∨ i = 8 ∨ i = 9 ∨
       i = 10 ∨ i = 11 ∨ i = 12 ∨ i = 13 ∨ i = 14) with
       rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
     exacts [a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14]
@@ -280,7 +280,7 @@ theorem macInit_rel {P : State → State → Prop} {k : Nat} (hk : k + 32 ≤ sc
     have hS : hH.SH.stateBytes = 96 := rfl
     simp only [initG, State.withRegions_gpr, State.withRegions_rd, State.withRegions_wr,
       State.withRegions_sp, State.callEntry_sp, c0, c1, c2, c3, P.sp, hS]
-    exact ⟨trivial, trivial, scDisj (.inl (by decide)) hi hu, scDisj (.inr (by unfold sSt sOuter at *; omega)) hk hi,
+    exact ⟨trivial, trivial, scDisj (.inl (by decide)) hi hu, scDisj (.inr (by unfold sSt sOuter at *; omega_using [hk1])) hk hi,
       scDisj (.inr hk1) hk hu, fb_al h, fb_ge h X, lowSc h X hi, lowSc h X hu, lowSc h X hk⟩
   have cov : ∀ {s t : State} {R : BitVec 64} {EM : List Byte}, DPre pc s → Post s R EM t →
       Covers ([scR s k 32] ++ [scR s sSt 96, scR s sOuter 96]) (t.rd ++ t.wr) ∧
@@ -321,7 +321,7 @@ theorem macFin_rel {P : State → State → Prop} {o : Nat} (ho : o + 32 ≤ scr
     have hD : hH.SH.digestBytes = 32 := rfl
     simp only [finG, State.withRegions_gpr, State.withRegions_rd, State.withRegions_wr,
       State.withRegions_sp, State.callEntry_sp, c0, c1, c3, P.sp, hS, hD]
-    exact ⟨trivial, trivial, scDisj (.inl (by decide)) hi hu, scDisj (.inl (by unfold sSt sOuter at *; omega)) hi ho,
+    exact ⟨trivial, trivial, scDisj (.inl (by decide)) hi hu, scDisj (.inl (by unfold sSt sOuter at *; omega_using [ho1])) hi ho,
       scDisj (.inl ho1) hu ho, fb_al h, fb_ge h X, lowSc h X hi, lowSc h X hu, lowSc h X ho⟩
   have cov : ∀ {s t : State} {R : BitVec 64} {EM : List Byte}, DPre pc s → Post s R EM t →
       Covers ([scR s sOuter 96] ++ [scR s sSt 96, scR s o 32]) (t.rd ++ t.wr) ∧

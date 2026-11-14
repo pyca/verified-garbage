@@ -50,16 +50,16 @@ theorem Inputs.argsEq {base : Addr} {bytes len : Nat} {args other : Nat → BitV
     have bound : i + 1 < 18 := by
       simp only [componentArguments, List.mem_cons, List.not_mem_nil, or_false] at hi
       rcases hi with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide
-    rw [← eq i (by omega), ← eq (i + 1) bound]; exact H.fits i hi
+    rw [← eq i (by omega_using [bound]), ← eq (i + 1) bound]; exact H.fits i hi
   · intro i hi
     have bound : i + 1 < 18 := by
       simp only [componentArguments, List.mem_cons, List.not_mem_nil, or_false] at hi
       rcases hi with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide
-    rw [← eq i (by omega), ← eq (i + 1) bound]; exact H.readable i hi
+    rw [← eq i (by omega_using [bound]), ← eq (i + 1) bound]; exact H.readable i hi
   · intro i hi
     have bound : i + 1 < 18 := by
       simp only [componentArguments, List.mem_cons, List.not_mem_nil, or_false] at hi
       rcases hi with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide
-    rw [← eq i (by omega), ← eq (i + 1) bound]; exact H.apart i hi
+    rw [← eq i (by omega_using [bound]), ← eq (i + 1) bound]; exact H.apart i hi
 
 end VG.Proof.Bignum.X86.Crt

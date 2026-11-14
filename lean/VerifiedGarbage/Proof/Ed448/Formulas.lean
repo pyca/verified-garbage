@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Impl.Ed448.Formulas
 public import VerifiedGarbage.Proof.Ed448.Ref
 public import Mathlib.Logic.Function.Basic
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # Ed448: the point formulas' field programs, evaluated
@@ -83,6 +84,6 @@ theorem doubleOps_keep (e : Fin 22 → Fe) (i : Fin 22) (hi : 3 ≤ i.val ∧ i.
   evalOps_keep _ _ _ fun op hop => by
     have : ∀ op ∈ doubleOps, fopDest op < 3 ∨ (12 ≤ fopDest op ∧ fopDest op < 20) := by decide
     have := this op hop
-    omega
+    omega_using [hi, this]
 
 end VG.Proof.Ed448

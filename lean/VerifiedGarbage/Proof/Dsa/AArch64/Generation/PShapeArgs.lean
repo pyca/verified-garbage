@@ -31,7 +31,7 @@ theorem pShapeArgs_ok {s : State} {F S op hp : Addr} {len count plen : Nat}
     rw [L.sp]
     exact L.ld (d := 0) (n := 8) (by decide)
   have hload := exec_ldrSp (t := .x2) (off := 0) (by decide) hperm
-  have hoff : (count + 1) * len - plen < 4096 := by omega
+  have hoff : (count + 1) * len - plen < 4096 := by omega_using [hn]
   refine WP.mono (WP.keep [.x2, .x12, .x9] (Q := fun t =>
     t.gpr .x2 = op ∧ t.gpr .x12 = off hp ((count + 1) * len - plen) ∧
     t.gpr .x9 = BitVec.ofNat 64 plen ∧ t.mem = s.mem) ?_ rfl rfl rfl)
@@ -41,6 +41,6 @@ theorem pShapeArgs_ok {s : State} {F S op hp : Addr} {len count plen : Nat}
     L.ld (d := 32) (n := 8) (by decide), h0, h4, exec_addImm_x' hoff, off]
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat,
-    Nat.mod_eq_of_lt (by omega : plen < 2 ^ 16), Nat.mod_eq_of_lt (by omega : plen < 2 ^ 64)]
+    Nat.mod_eq_of_lt (by omega_using [hl] : plen < 2 ^ 16), Nat.mod_eq_of_lt (by omega_using [hl] : plen < 2 ^ 64)]
 
 end VG.Proof.Dsa.AArch64.Generation

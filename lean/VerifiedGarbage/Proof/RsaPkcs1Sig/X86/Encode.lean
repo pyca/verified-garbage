@@ -26,8 +26,8 @@ theorem encode_ok {s0 : State} {x : BitVec 32} {k : Nat} (pre : EPre s0 x k) :
   · intro absent s same
     have large : hashes.length ≤ x.toNat := by
       by_contra no
-      have member : x.toNat < hashes.length := by omega
-      exact absent _ member (by omega)
+      have member : x.toNat < hashes.length := by omega_using [no]
+      exact absent _ member (by omega_using [])
     refine WP.mono (noLens_ok s) fun s1 ⟨m1, l1, info⟩ => ?_
     exact unchecked_ok pre (ofId_ge large) ((same.keeps _).trans l1) (m1.trans same.2.1) info
 

@@ -65,7 +65,7 @@ theorem preservedV_not_kept : ∀ q ∈ preservedV, q ≠ .v19 ∧ q ≠ .v20 :=
 theorem rates_select {r : Nat} (hr : r ∈ Spec.Sha3.rates) : r ∈ [72, 104, 136, 144] ++ [168] := by
   simp only [Spec.Sha3.rates, List.mem_cons, List.not_mem_nil, or_false] at hr
   simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false]
-  omega
+  omega_using [hr]
 
 theorem body_ok (b : State) (hp : BulkPre b) (c : Nat) (A : Spec.Sha3.State) (s : State)
     (h : Loop b c A s) (hc : c + rate b ≤ len b) :
@@ -112,13 +112,13 @@ theorem body_ok (b : State) (hp : BulkPre b) (c : Nat) (A : Spec.Sha3.State) (s 
   have hvk : ∀ q ∈ [VReg.v19, .v20, .v21, .v30, .v31], u.v q = s.v q := fun q hq => by
     obtain ⟨a, b', c', d⟩ := kept_not_temps q hq
     rw [hku.v q a b' c' d, hv]
-  refine (advance_ok u (data b + BitVec.ofNat 64 c) (len b - c) (rate b) (by omega) (by omega)
-    (by have := hp.len_upper; omega) ?_ ?_ ?_).mono fun s' ⟨ha, h19, h20, he⟩ => ?_
+  refine (advance_ok u (data b + BitVec.ofNat 64 c) (len b - c) (rate b) (by omega_using [hc]) (by omega_using [hrb])
+    (by have := hp.len_upper; omega_using [this]) ?_ ?_ ?_).mono fun s' ⟨ha, h19, h20, he⟩ => ?_
   · rw [hvk .v19 (by simp)]; exact h.dp
   · rw [hvk .v20 (by simp)]; exact h.left
   · rw [hvk .v21 (by simp)]; exact h.rt
   refine ⟨Spec.Sha3.keccakF (Spec.Sha3.xorBytes A (bytesAt s₁.mem (data b + BitVec.ofNat 64 c) (rate b))),
-    ⟨by omega, ?_, ⟨⟨?_, ?_, ?_⟩, ?_, ?_, ?_, ?_⟩, ?_, ?_, ?_, ?_, ?_⟩, ?_⟩
+    ⟨by omega_using [hc], ?_, ⟨⟨?_, ?_, ?_⟩, ?_, ?_, ?_, ?_⟩, ?_, ?_, ?_, ?_, ?_⟩, ?_⟩
   · rw [Nat.add_mod, h.aligned, Nat.mod_self, Nat.zero_add, Nat.zero_mod]
   · exact ha.rd.trans hcu.keep.rd
   · exact ha.wr.trans hcu.keep.wr
@@ -147,7 +147,7 @@ theorem body_ok (b : State) (hp : BulkPre b) (c : Nat) (A : Spec.Sha3.State) (s 
     have hal : (msg ++ bytesAt b.mem (data b) c).length % rate b = 0 := by
       simp only [List.length_append, VG.Proof.Sha3.bytesAt_length, Nat.add_mod, halign,
         h.aligned, Nat.zero_add, Nat.zero_mod]
-    rw [← Sha3.Vector.rep_whole hrb.1 (by omega) _ _ hal (VG.Proof.Sha3.bytesAt_length _ _ _),
+    rw [← Sha3.Vector.rep_whole hrb.1 (by omega_using [hrb]) _ _ hal (VG.Proof.Sha3.bytesAt_length _ _ _),
       List.append_assoc, ← bytesAt_add]
   · simpa only [Nat.sub_sub] using he
 
@@ -164,10 +164,10 @@ theorem loop_ok (b : State) (hp : BulkPre b) (A₀ : Spec.Sha3.State) (s₀ : St
       refine ⟨?_, len b - (c + rate b), ?_, c + rate b, A', h', rfl, ?_⟩
       · simpa only [hk, decide_true] using he
       · have := (Sha3.Vector.Resident.rate_bounds hp).1
-        omega
-      · omega
+        omega_using [hn, hc, this]
+      · omega_using [hc, hk]
     · left
       exact ⟨by simpa only [hk, decide_false] using he, c + rate b, A', h'⟩
-  · exact ⟨0, A₀, h₀, by omega, by simpa only [Nat.zero_add] using hp.enough⟩
+  · exact ⟨0, A₀, h₀, by omega_using [], by simpa only [Nat.zero_add] using hp.enough⟩
 
 end VG.Proof.Sha3.AArch64.Scalar.Resident

@@ -53,15 +53,15 @@ theorem sampleLoad_ct : RelCT isa (Two SampleBefore)
     (loadPadded_ct (by decide) (by decide) (by decide) (by taint_decide) (by taint_decide))
   obtain ⟨mi, h⟩ := h
   exact ⟨⟨mi, h.ready.good⟩, p.prime.dims.z,
-    by have := p.prime.dims.w4; dsimp [SamplePublic.padded]; omega,
-    by have := p.prime.dims.w128; dsimp [SamplePublic.padded]; omega, h.ptr, h.len⟩
+    by have := p.prime.dims.w4; dsimp [SamplePublic.padded]; omega_using [this],
+    by have := p.prime.dims.w128; dsimp [SamplePublic.padded]; omega_using [this], h.ptr, h.len⟩
 
 theorem sampleLoad_state {p : SamplePublic} {s : State} (h : SampleBefore p s) :
     WP isa (Impl.Dsa.X86_64.Generation.loadPadded aXm kOut kUsedP) s (SampleLoaded p) := by
   obtain ⟨mi, h⟩ := h
-  have hl : 1 ≤ p.bytes.length := by rw [p.length]; have := p.prime.len2; omega
+  have hl : 1 ≤ p.bytes.length := by rw [p.length]; have := p.prime.len2; omega_using [this]
   have hb : p.bytes.length < 2 ^ 31 := by
-    rw [p.length]; have := p.prime.lenDraw; have := p.prime.drawMax; omega
+    rw [p.length]; have := p.prime.lenDraw; have := p.prime.drawMax; omega_arith
   exact WP.mono (loadWitness_ok h.ready p.prime.dims (by decide) (by decide) h.ptr h.len h.source
     hl hb (by rw [p.length]; exact p.prime.lenWords)) fun _ ht => ⟨mi, ht.1, ht.2.1⟩
 
@@ -70,8 +70,8 @@ theorem sampleRange_ct : RelCT isa (Two SampleLoaded)
   refine two_map (fun p : SamplePublic => p.padded.workspace) (fun p s h => ?_) witnessRange_ct
   obtain ⟨mi, h, _⟩ := h
   exact ⟨⟨mi, h.good, p.prime.dims.z⟩,
-    by have := p.prime.dims.w4; dsimp [SamplePublic.padded, PaddedPublic.workspace]; omega,
-    by have := p.prime.dims.w128; dsimp [SamplePublic.padded, PaddedPublic.workspace]; omega⟩
+    by have := p.prime.dims.w4; dsimp [SamplePublic.padded, PaddedPublic.workspace]; omega_using [this],
+    by have := p.prime.dims.w128; dsimp [SamplePublic.padded, PaddedPublic.workspace]; omega_using [this]⟩
 
 theorem sampleRange_state {p : SamplePublic} {s : State} (h : SampleLoaded p s) :
     WP isa Impl.Ffdh.X86_64.ParameterCandidate.witnessRange s

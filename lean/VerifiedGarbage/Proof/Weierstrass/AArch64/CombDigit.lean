@@ -33,15 +33,15 @@ def bmask (b : Bool) : BitVec 64 := if b then BitVec.allOnes 64 else 0
 /-- `|k - 8|`, the magnitude of the digit of the nibble `k`. -/
 def mag (k : Nat) : Nat := if 8 ≤ k then k - 8 else 8 - k
 
-theorem mag_le {k : Nat} (h : k < 16) : mag k ≤ 8 := by unfold mag; split <;> omega
+theorem mag_le {k : Nat} (h : k < 16) : mag k ≤ 8 := by unfold mag; split <;> omega_arith
 
 /-! ## The nibble -/
 
 theorem shl2 {j : Nat} (hj : j < 2 ^ 62) : BitVec.ofNat 64 j <<< 2 = BitVec.ofNat 64 (4 * j) := by
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_shiftLeft, BitVec.toNat_ofNat, Nat.shiftLeft_eq]
-  rw [Nat.mod_eq_of_lt (by omega : j < 2 ^ 64)]
-  omega
+  rw [Nat.mod_eq_of_lt (by omega_using [hj] : j < 2 ^ 64)]
+  omega_using []
 
 /-- `x16 = x0 + 4 x19`. -/
 theorem combIndex_ok (s : State) {base : Addr} {size : Nat} (hs : Scr s base size) {j : Nat}
@@ -84,7 +84,7 @@ theorem nib_eq (k j : Nat) : nib k j = (k.testBit (4 * j)).toNat + 2 * (k.testBi
   have h3 := hb 3
   simp only [Nat.add_zero, Nat.pow_zero, Nat.div_one] at h0
   rw [h0, h1, h2, h3, nib]
-  omega
+  omega_using []
 
 /-- `x2` = nibble `j` of `k`, from the table of `k`'s bits at `d`. -/
 theorem nibble_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) (bits : Nat)
@@ -105,16 +105,16 @@ theorem nibble_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) 
       .add .x .x2 .x2 .x4, .add .x .x2 .x2 .x2, .ldrb .x4 .x16 (bits + 1),
       .add .x .x2 .x2 .x4, .add .x .x2 .x2 .x2, .ldrb .x4 .x16 bits, .add .x .x2 .x2 .x4] from rfl,
     WP.block_append_iff]
-  refine WP.mono (combIndex_ok s hs (by omega) hx) fun a ⟨a16, ka⟩ => ?_
+  refine WP.mono (combIndex_ok s hs (by omega_using [hj, hN, hn]) hx) fun a ⟨a16, ka⟩ => ?_
   have hr : ∀ i < 4, InRegions (a.rd ++ a.wr) (off base (bits + (4 * j + i))) 1 := fun i hi =>
-    ⟨_, List.mem_append_right _ (ka.wr ▸ hs.wr), hs.contains (by omega) (by decide)⟩
+    ⟨_, List.mem_append_right _ (ka.wr ▸ hs.wr), hs.contains (by omega_using [hj, hN, hi]) (by decide)⟩
   have he : ∀ i, a.gpr .x16 + BitVec.ofNat 64 (bits + i) = off base (bits + (4 * j + i)) :=
     fun i => by
       rw [a16, BitVec.add_assoc, BitVec.ofNat_add_ofNat]
-      exact congrArg (off base) (by omega)
+      exact congrArg (off base) (by omega_using [])
   have hv : ∀ i < 4, ((a.mem.read (off base (bits + (4 * j + i))) 1).setWidth 32).setWidth 64 =
       BitVec.ofNat 64 (k.testBit (4 * j + i)).toNat := fun i hi => by
-    rw [read1_zext, ka.mem, hbits _ (by omega)]
+    rw [read1_zext, ka.mem, hbits _ (by omega_using [hj, hi])]
     exact (bool_ext _).trans rfl
   have e0 := he 0
   have e1 := he 1
@@ -134,8 +134,8 @@ theorem nibble_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) 
   simp only [runBlock_cons, runStep_some, runBlock_nil, exec, read_x,
     State.load, addr, Size.bits, RegUpd.gpr_write, RegUpd.mem_write,
     RegUpd.rd_write, RegUpd.wr_write, BitVec.setWidth_eq, Nat.mod_one,
-    show bits + 3 < 4096 * 1 by omega, show bits + 2 < 4096 * 1 by omega,
-    show bits + 1 < 4096 * 1 by omega, show bits < 4096 * 1 by omega,
+    show bits + 3 < 4096 * 1 by omega_using [hb4], show bits + 2 < 4096 * 1 by omega_using [hb4],
+    show bits + 1 < 4096 * 1 by omega_using [hb4], show bits < 4096 * 1 by omega_using [hb4],
     and_self, e0, e1, e2, e3, r0, r1, r2, r3, v0, v1, v2, v3,
     ite_true, ite_false, reduceCtorEq, Option.map_some, Option.bind_some,
     Option.some.injEq, exists_eq_left']
@@ -192,11 +192,11 @@ theorem masks_ok (s : State) {a : Nat} (ha : a < 9) (hx : s.gpr .x2 = BitVec.ofN
     List.nil_append, List.append_nil, List.getD_cons_zero, List.getD_cons_succ,
     Nat.reduceAdd, Nat.reduceLT, ↓reduceIte,
     runBlock_cons, runStep_some, runBlock_nil, exec, read_x, Size.bits,
-    show (63 : Nat) < 64 from by decide, show ∀ k < 9, k < 4096 from fun k hk => by omega,
+    show (63 : Nat) < 64 from by decide, show ∀ k < 9, k < 4096 from fun k hk => by omega_using [hk],
     RegUpd.gpr_write, BitVec.setWidth_eq, hx, h9, reduceCtorEq,
     Option.some.injEq, exists_eq_left']
   refine ⟨fun m hm => ?_, ⟨fun r hr => ?_, rfl, rfl, rfl, rfl⟩⟩
-  · have : m = 0 ∨ m = 1 ∨ m = 2 ∨ m = 3 ∨ m = 4 ∨ m = 5 ∨ m = 6 ∨ m = 7 ∨ m = 8 := by omega
+  · have : m = 0 ∨ m = 1 ∨ m = 2 ∨ m = 3 ∨ m = 4 ∨ m = 5 ∨ m = 6 ∨ m = 7 ∨ m = 8 := by omega_using [hm]
     rcases this with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
       simp only [List.getD_cons_zero, List.getD_cons_succ, ite_true, ite_false,
         reduceCtorEq] <;>

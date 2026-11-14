@@ -113,7 +113,7 @@ theorem cmpAnd_okS {L : Lay} {Wb : List Nat} {STK : Nat} {s : State} (hs : Site 
   rw [hs.base (baseReg_of pa.1)] at g3
   rw [hs.base (baseReg_of pb.1)] at g4
   refine WP.seq (wp_loop_nz (CmpInv (lpa L a) (lpa L b) n s₁) (N := n) hn
-      (fun k hk s h => cmp_step (by omega) (by rw [rd, wr]; exact cr) hk h) (fun s₂ h => ?_)
+      (fun k hk s h => cmp_step (by omega_using [hn']) (by rw [rd, wr]; exact cr) hk h) (fun s₂ h => ?_)
     ⟨by rw [g3]; simp [lpa, Lay.A], by rw [g4]; simp [lpa, Lay.A], by rw [g26, Nat.sub_zero], fun _ _ _ => rfl,
       rfl, rfl, rfl, rfl, by rw [g12]; decide,
       by rw [g12]; exact ⟨fun _ _ h => absurd h (Nat.not_lt_zero _), fun _ => rfl⟩⟩)
@@ -156,10 +156,10 @@ theorem cmp_ok {p : Params} (hF : VFacts p) {STK : Nat} {σ s : State} (h : KF p
     refine ⟨vptr_ok rfl (by decide), ?_⟩; rcases hct with e | e | e <;> vsep hF [e]
   have pb : PtrIn (vlay p STK σ) (.r28, 0) p.ctildeLen := by
     refine ⟨vptr_ok rfl (by decide), ?_⟩; have := hF.sig; have := hF.hint; vsep hF
-  refine WP.mono (cmpAnd_okS hk5.vc.site pa pb (by omega) (by omega))
+  refine WP.mono (cmpAnd_okS hk5.vc.site pa pb (by omega_using [hct]) (by omega_using [hct]))
     fun s' ⟨r24, rs, m, rd, wr, sp⟩ => ⟨A', cc, hh, R, hk5.vc.congr rs m sp rd wr, hk5.hh, hk5.hint.1, hk5.gd, ?_⟩
   have e4 : bytesAt s.mem (lpa (vlay p STK σ) (.r28, 0)) p.ctildeLen = Proof.MlDsa.Verify.vCt p (sgOf p σ) := by
-    have := sig_slice hk5.vc (o := 0) (l := p.ctildeLen) (by have := hF.sig; have := hF.hint; omega)
+    have := sig_slice hk5.vc (o := 0) (l := p.ctildeLen) (by have := hF.sig; have := hF.hint; omega_arith)
     rw [List.drop_zero] at this
     exact this
   have e0 : bytesAt s.mem (lpa (vlay p STK σ) (sc oCT)) p.ctildeLen = _ := hb

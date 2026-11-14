@@ -187,8 +187,8 @@ theorem decryptPrecomputed_postOut (stack : Nat) :
       List.nil_append, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq] at hb
     have hol : outLen.toNat = nLen.toNat := hpre.2.1
     have hby : Spec.Rsa.bytesAt m₂ out nLen.toNat = Spec.Rsa.bytesAt m₁ out nLen.toNat :=
-      VG.Proof.Rsa.X86_64.bytesAt_agree (by simp only [Elem.size]; omega)
-        (by have := outLen.isLt; simp only [Elem.size]; omega) hb.1
+      VG.Proof.Rsa.X86_64.bytesAt_agree (by simp only [Elem.size]; omega_using [hol])
+        (by have := outLen.isLt; simp only [Elem.size]; omega_using []) hb.1
     have hw : Spec.Rsa.wordsAt m₂ msgLen 1 = Spec.Rsa.wordsAt m₁ msgLen 1 := by
       simp only [Spec.Rsa.wordsAt, List.range, List.range.loop, List.map_cons, List.map_nil, Nat.mul_zero,
         BitVec.add_zero]

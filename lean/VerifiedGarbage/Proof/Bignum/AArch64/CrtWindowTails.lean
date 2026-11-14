@@ -40,19 +40,19 @@ theorem expTail_ok (W : Window) {s t : State} {P ep : Addr} {w i : Nat}
       have nz : BitVec.ofNat 64 (bs.length-i) ≠ 0 := by
         intro he
         have he' := congrArg BitVec.toNat he
-        simp only [BitVec.toNat_ofNat,Nat.mod_eq_of_lt (show bs.length-i < 2 ^ 64 by omega)] at he'
+        simp only [BitVec.toNat_ofNat,Nat.mod_eq_of_lt (show bs.length-i < 2 ^ 64 by omega_using [hL])] at he'
         change bs.length-i = 0 at he'
-        omega
+        omega_using [hi, hz, he']
       rw [beq_eq_false_iff_ne.mpr nz]; rfl
-    · refine WP.mono (count_loop (cr := .x3) (n := bs.length-i) (by omega)
+    · refine WP.mono (count_loop (cr := .x3) (n := bs.length-i) (by omega_using [hi, hz])
         (fun j => PrefixInv s P w mi X Xc Q x ep bs (i+j) ((8*j)%5)) ?_ ?_) fun u hu => ?_
       · intro j hj u hu
-        refine WP.mono (tailBody_ok W hw hw' hR (by omega) hread hbytes hout hu)
+        refine WP.mono (tailBody_ok W hw hw' hR (by omega_using [hj]) hread hbytes hout hu)
           fun v ⟨hv,h3v⟩ => ⟨?_,?_⟩
-        · have hb : ((8*j)%5+8)%5 = (8*(j+1))%5 := by omega
+        · have hb : ((8*j)%5+8)%5 = (8*(j+1))%5 := by omega_using []
           simpa only [hb,Nat.add_assoc] using hv
-        · rw [h3v,cnt_ne (by omega)]
-          omega
+        · rw [h3v,cnt_ne (by omega_using [hL])]
+          omega_using [hj]
       · simpa only [Nat.add_zero,Nat.mul_zero,Nat.zero_mod] using ha
       · simpa only [Nat.add_sub_of_le hi] using hu
 

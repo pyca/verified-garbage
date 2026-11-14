@@ -78,7 +78,7 @@ theorem body_ok (s : State) (p : Params) (lane : Nat) (h : Ready p lane s)
   · intro r hr bx
     exact (keeps.regs r (by simpa only [List.mem_cons, List.not_mem_nil, or_false] using bx)).trans (reduced.regs r hr)
   · rw [keeps.mem]; exact reduced.frame
-  · rw [flag, added, word, ReferenceMap.word_nat (lane + 1) (by have bound := h.lanesBound; have active := h.active; omega),
+  · rw [flag, added, word, ReferenceMap.word_nat (lane + 1) (by have bound := h.lanesBound; have active := h.active; omega_using [bound, active]),
       ReferenceMap.word_nat p.lanes (Nat.lt_trans h.lanesBound (by decide))]
   · intro active
     refine ⟨reduced.ready.of_state bp (keeps.regs .r12 (by decide)) keeps.mem keeps.rd keeps.wr,
@@ -120,9 +120,9 @@ theorem clear_ok (s : State) (p : Params) (h : Ready p s)
   have metadata (d : Nat) (bound : d + 8 ≤ 272) :
       t.mem.readW (off (t.gpr .rbp) d) 64 = s.mem.readW (off (s.gpr .rbp) d) 64 := by
     rw [bp]
-    exact frame.readW (r := ⟨s.gpr .rbp, 272⟩) (Offset.contains_base _ bound (by omega))
+    exact frame.readW (r := ⟨s.gpr .rbp, 272⟩) (Offset.contains_base _ bound (by omega_using [bound]))
       (by intro r hr; simp only [List.mem_singleton] at hr; subst r
-          exact h.frame.symm.sub_right (Region.sub_prefix (by omega))) (by decide)
+          exact h.frame.symm.sub_right (Region.sub_prefix (by omega_using [nonempty]))) (by decide)
   have base : matrix t = matrix s := metadata 232 (by decide)
   refine ⟨?_, ?_, base, keeps, frame, mx⟩
   · refine ⟨h.positive, h.minimum, h.bound, ?_, ?_, ?_, (keeps.1 .r12 (by decide)).trans h.length⟩
@@ -141,17 +141,17 @@ theorem clear_ok (s : State) (p : Params) (h : Ready p s)
       have bounds := Proof.Argon2.lastIndex_bounds p h.positive h.minimum lane active
       simpa only [Proof.Argon2.matrixCell, Nat.zero_mul, BitVec.add_zero] using
         Proof.Argon2.matrixCell_disjoint (matrix s) p.blocks (Proof.Argon2.lastIndex p lane) 0 h.bound
-          bounds.2 (by omega) (by omega)
+          bounds.2 (by omega_using [nonempty]) (by omega_using [bounds])
 
 theorem Cleared.frame_word {p : Params} {s t : State} {memory : Array Block}
     (ready : Ready p s) (done : Cleared s t p memory) (d : Nat) (bound : d + 8 ≤ 272) :
     t.mem.readW (off (t.gpr .rbp) d) 64 = s.mem.readW (off (s.gpr .rbp) d) 64 := by
   rw [done.keeps.1 .rbp (by decide)]
-  exact done.frame.readW (r := ⟨s.gpr .rbp, 272⟩) (Offset.contains_base _ bound (by omega))
+  exact done.frame.readW (r := ⟨s.gpr .rbp, 272⟩) (Offset.contains_base _ bound (by omega_using [bound]))
     (by intro r hr; simp only [List.mem_singleton] at hr; subst r
         exact ready.frame.symm.sub_right (Region.sub_prefix (by
           have nonempty := Proof.Argon2.lastIndex_bounds p ready.positive ready.minimum 0 ready.positive
-          omega))) (by decide)
+          omega_using [nonempty]))) (by decide)
 
 end VG.Proof.Argon2.X86_64.ReductionState
 end
@@ -203,9 +203,9 @@ theorem loop_ok (count : Nat) (s : State) (p : Params) (lane : Nat) (h : Ready p
       refine ⟨_, a, .loopExit run ?_, done.finished last⟩
       simp only [eval, done.cf, last, Nat.lt_irrefl, decide_false]
     | succ n =>
-      have active : lane + 1 < p.lanes := by omega
+      have active : lane + 1 < p.lanes := by omega_using [endLane]
       obtain ⟨restTrace, t, restRun, finished⟩ := ih a (lane + 1) (done.next active) _
-        done.represented (by omega) (by omega)
+        done.represented (by omega_using []) (by omega_using [endLane])
       refine ⟨_, t, .loopNext run ?_ restRun, finished.prepend done⟩
       simp only [eval, done.cf, active, decide_true]
 
@@ -349,7 +349,7 @@ theorem pointers_rel (p : Params) (lane : Nat) :
     have q : 0 < p.laneLen := by
       have eq := Proof.Argon2.laneLen_segments p h.left.positive
       have minimum := h.left.minimum
-      omega
+      omega_using [eq, minimum]
     exact ⟨ReducePointers.code_ok s lane p.laneLen q h.left.read h.leftLane h.left.length,
       ReducePointers.code_ok t lane p.laneLen q h.right.read h.rightLane h.right.length⟩)
   refine full.mono (fun _ _ h => h) ?_
@@ -455,7 +455,7 @@ theorem loop_rel (p : Params) (lane count : Nat) (leftMemory rightMemory : Array
         have active : j + 1 < p.lanes := by
           simp only [eval, done.cf, Option.some.injEq, decide_eq_true_eq] at taken
           exact taken
-        exact ⟨n, by omega, j + 1, _, _, by omega, by omega, next active⟩
+        exact ⟨n, by omega_using [], j + 1, _, _, by omega_using [endLane], by omega_using [endLane, active], next active⟩
   exact (RelCT.loop I steps count).mono
     (fun _ _ h => ⟨lane, leftAcc, rightAcc, endLane, positive, h⟩) (fun _ _ h => h)
 
@@ -563,11 +563,11 @@ theorem frame_word {s t : State} {p : Params} {memory : Array Block} {acc : Bloc
     (d : Nat) (bound : d + 8 ≤ 272) :
     t.mem.readW (off (t.gpr .rbp) d) 64 = s.mem.readW (off (s.gpr .rbp) d) 64 := by
   rw [done.regs .rbp (by simp [calleeSaved]) (by decide)]
-  exact done.frame.readW (r := ⟨s.gpr .rbp, 272⟩) (Offset.contains_base _ bound (by omega))
+  exact done.frame.readW (r := ⟨s.gpr .rbp, 272⟩) (Offset.contains_base _ bound (by omega_using [bound]))
     (by intro r hr; simp only [List.mem_singleton] at hr; subst r
         exact ready.allocation.frame.symm.sub_right (Region.sub_prefix (by
           have nonempty := Proof.Argon2.lastIndex_bounds p ready.allocation.positive ready.allocation.minimum 0 ready.allocation.positive
-          omega))) (by decide)
+          omega_using [nonempty]))) (by decide)
 
 theorem output_ready {s t : State} {p : Params} {memory : Array Block} {acc : Block}
     (ready : Ready p s) (done : ReduceLanes.Finished s t p memory acc) : FinalOutput.Ready p t := by

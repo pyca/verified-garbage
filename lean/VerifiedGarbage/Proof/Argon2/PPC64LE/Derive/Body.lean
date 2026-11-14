@@ -148,7 +148,7 @@ theorem sp_add (s₀ : State) (x : Nat) : s₀.sp + BitVec.ofNat 64 x = at' s₀
 
 /-- The arguments in the Parameter Save Area. -/
 theorem stackArg_eq (s₀ : State) (i : Nat) : stackArgAddr s₀ i = at' s₀ (416 + 8 * (8 + i)) := by
-  rw [stackArgAddr, sp_add, show 384 + (32 + 8 * (8 + i)) = 416 + 8 * (8 + i) by omega]
+  rw [stackArgAddr, sp_add, show 384 + (32 + 8 * (8 + i)) = 416 + 8 * (8 + i) by omega_using []]
 
 theorem callR_eq (s₀ : State) : below (E s₀) 48 = callR s₀ := by
   show (⟨s₀.sp - BitVec.ofNat 64 336 - BitVec.ofNat 64 48, 48⟩ : Region) = ⟨s₀.sp - BitVec.ofNat 64 384, 48⟩
@@ -213,15 +213,15 @@ theorem frame_disj {d n : Nat} (h₁ : 48 ≤ d ∧ d + n ≤ 80 ∨ 152 ≤ d �
   intro r hr
   simp only [bodyW, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl | rfl | rfl
-  · exact stk_disj hp (by omega) _ (by simp)
-  · exact stk_disj hp (by omega) _ (by simp)
-  · exact stk_disj hp (by omega) _ (by simp)
-  · exact Offset.disjoint _ (by omega) (by omega) (by omega)
-  · exact Offset.disjoint _ (by omega) (by omega) (by omega)
+  · exact stk_disj hp (by omega_using [h₁]) _ (by simp)
+  · exact stk_disj hp (by omega_using [h₁]) _ (by simp)
+  · exact stk_disj hp (by omega_using [h₁]) _ (by simp)
+  · exact Offset.disjoint _ (by omega_using [h₁]) (by omega_using [h₁]) (by omega_using [])
+  · exact Offset.disjoint _ (by omega_using [h₁]) (by omega_using [h₁]) (by omega_using [])
   · have e : B s₀ = B s₀ + BitVec.ofNat 64 0 := (BitVec.add_zero _).symm
     show Region.Disjoint _ ⟨B s₀, 48⟩
     rw [e]
-    exact Offset.disjoint _ (by omega) (by omega) (by omega)
+    exact Offset.disjoint _ (by omega_using [h₁]) (by omega_using [h₁]) (by omega_using [])
 
 omit hp in
 theorem argR_eq : argR s₀ = ⟨at' s₀ 480, 80⟩ := by
@@ -232,19 +232,19 @@ theorem argR_eq : argR s₀ = ⟨at' s₀ 480, 80⟩ := by
 theorem arg_disj {d n : Nat} (h₁ : 480 ≤ d) (h₂ : d + n ≤ 560) :
     ∀ r ∈ bodyW s₀, Region.Disjoint ⟨at' s₀ d, n⟩ r := by
   have sub : Region.Sub ⟨at' s₀ d, n⟩ (argR s₀) := by
-    rw [argR_eq]; exact Offset.sub _ h₁ (by omega)
+    rw [argR_eq]; exact Offset.sub _ h₁ (by omega_using [h₂])
   intro r hr
   simp only [bodyW, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl | rfl | rfl
   · exact (hp.ro_w _ (by simp) _ (by simp)).sub_left sub
   · exact (hp.ro_w _ (by simp) _ (by simp)).sub_left sub
   · exact (hp.ro_w _ (by simp) _ (by simp)).sub_left sub
-  · exact Offset.disjoint _ (by omega) (by omega) (by omega)
-  · exact Offset.disjoint _ (by omega) (by omega) (by omega)
+  · exact Offset.disjoint _ (by omega_using [h₁]) (by omega_using [h₂]) (by omega_using [])
+  · exact Offset.disjoint _ (by omega_using [h₁]) (by omega_using [h₂]) (by omega_using [])
   · have e : B s₀ = B s₀ + BitVec.ofNat 64 0 := (BitVec.add_zero _).symm
     show Region.Disjoint _ ⟨B s₀, 48⟩
     rw [e]
-    exact Offset.disjoint _ (by omega) (by omega) (by omega)
+    exact Offset.disjoint _ (by omega_using [h₁]) (by omega_using [h₂]) (by omega_using [])
 
 theorem Inv.slot {s : State} (h : Inv s₀ s) {d : Nat} (h₁ : 152 ≤ d) (h₂ : d + 8 ≤ 256) :
     s.mem.readW (at' s₀ d) 64 = (setupMem s₀).readW (at' s₀ d) 64 :=
@@ -255,7 +255,7 @@ slots. -/
 theorem Inv.saved {s : State} (h : Inv s₀ s) {r : Reg} {d : Nat}
     (hr : (r, d) ∈ savedSlots ++ argSlots) : lw s₀ s d = s₀.gpr r := by
   have := slots_in _ hr
-  rw [lw, E_add, h.slot hp (by simp only at this; omega) (by simp only at this; omega), ← E_add,
+  rw [lw, E_add, h.slot hp (by simp only at this; omega_using [this]) (by simp only at this; omega_using [this]), ← E_add,
     setupMem_slot s₀ hr]
 
 theorem Inv.lr {s : State} (h : Inv s₀ s) : lw s₀ s 104 = s₀.lr := by
@@ -265,7 +265,7 @@ theorem Inv.lr {s : State} (h : Inv s₀ s) : lw s₀ s 104 = s₀.lr := by
 theorem Inv.arg {s : State} (h : Inv s₀ s) {i : Nat} (hi : i < 18) :
     s.mem.readW (E s₀ + BitVec.ofNat 64 (argOff i)) 64 = arg s₀ i := by
   by_cases h8 : i < 8
-  · rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7) with
+  · rcases (by omega_using [h8] : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7) with
       rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
     · exact h.saved hp (r := .r3) (d := 144) (by decide)
     · exact h.saved hp (r := .r4) (d := 152) (by decide)
@@ -275,16 +275,16 @@ theorem Inv.arg {s : State} (h : Inv s₀ s) {i : Nat} (hi : i < 18) :
     · exact h.saved hp (r := .r8) (d := 184) (by decide)
     · exact h.saved hp (r := .r9) (d := 192) (by decide)
     · exact h.saved hp (r := .r10) (d := 200) (by decide)
-  · obtain ⟨k, rfl⟩ : ∃ k, i = 8 + k := ⟨i - 8, by omega⟩
+  · obtain ⟨k, rfl⟩ : ∃ k, i = 8 + k := ⟨i - 8, by omega_using [h8]⟩
     have ea : E s₀ + BitVec.ofNat 64 (argOff (8 + k)) = at' s₀ (416 + 8 * (8 + k)) := by
       have e : argOff (8 + k) = 368 + 8 * (8 + k) := by
-        simp only [argOff, locals]; rw [ite_eq_right_iff.mpr (by omega)]
-      rw [E_add, e, show 48 + (368 + 8 * (8 + k)) = 416 + 8 * (8 + k) by omega]
-    rw [ea, h.frame.readW (Region.contains_self _ _) (arg_disj hp (by omega) (by omega)) (by decide),
+        simp only [argOff, locals]; rw [ite_eq_right_iff.mpr (by omega_using [])]
+      rw [E_add, e, show 48 + (368 + 8 * (8 + k)) = 416 + 8 * (8 + k) by omega_using []]
+    rw [ea, h.frame.readW (Region.contains_self _ _) (arg_disj hp (by omega_using []) (by omega_using [hi])) (by decide),
       (setupMem_frame s₀).readW (Region.contains_self _ _) (fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr
-        exact Offset.disjoint _ (by omega) (by omega) (by omega)) (by decide),
-      ← stackArg_eq, show 8 + k = k + 8 by omega]
+        exact Offset.disjoint _ (by omega_using []) (by omega_using [hi]) (by omega_using [])) (by decide),
+      ← stackArg_eq, show 8 + k = k + 8 by omega_using []]
     rfl
 
 theorem Inv.arg32 {s : State} (h : Inv s₀ s) {i : Nat} (hi : i < 18) :

@@ -58,9 +58,9 @@ theorem mulArgs_ok (s : State) {o a b : Nat} (ho : o < 65536) (ha : a < 65536) (
     RegUpd.gpr_write, BitVec.setWidth_eq, BitVec.add_zero, ite_false, reduceCtorEq,
     Option.some.injEq, exists_eq_left']
   refine ⟨trivial, trivial, ?_, ?_, ?_, fun r hr => ?_, rfl, rfl, rfl, rfl, rfl⟩
-  · simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]; omega
-  · simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]; omega
-  · simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]; omega
+  · simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]; omega_using [ho]
+  · simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]; omega_using [ha]
+  · simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]; omega_using [hb]
   · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
     simp only [hr.1, hr.2.1, hr.2.2.1, hr.2.2.2.1, hr.2.2.2.2, ite_false]
 
@@ -75,7 +75,7 @@ theorem mulCall_ok {s : State} {base : Addr} (hs : Scr s base) {o a b : Nat}
   have hA : ACC = 3584 := rfl
   unfold Point56.mulCall
   rw [WP.seq_iff]
-  refine WP.mono (mulArgs_ok s (o := o) (a := a) (b := b) (by omega) (by omega) (by omega))
+  refine WP.mono (mulArgs_ok s (o := o) (a := a) (b := b) (by omega_using [ho, hA]) (by omega_using [ha, hA]) (by omega_using [hb, hA]))
     fun s1 ⟨g19, g0, g1, g2, g3, gk, m1, r1, w1, sp1, v1⟩ => ?_
   rw [WP.seq_iff]
   have g0' : s1.gpr .x0 = base := by rw [g0, hs.x3]

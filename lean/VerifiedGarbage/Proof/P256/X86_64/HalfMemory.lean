@@ -18,7 +18,7 @@ open VG.Proof.Mont VG.Proof.Mont.X86_64 VG.Proof.X25519.X86_64
 private theorem regsVal_four (s : State) :
     regsVal s [.r8,.r9,.r10,.r11]=val4 (s.gpr .r8) (s.gpr .r9) (s.gpr .r10) (s.gpr .r11) := by
   simp only [regsVal,val4]
-  omega
+  omega_using []
 
 /-- A canonical input yields its canonical modular half, preserving all memory
 outside the output. No separation between input and output is needed. -/

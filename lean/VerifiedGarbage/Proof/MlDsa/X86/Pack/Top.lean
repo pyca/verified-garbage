@@ -89,13 +89,13 @@ theorem coeff_keep (hL : iL s₀ = 1024) {i : Nat} (hi : i < 256) :
 /-- The input bytes after the push. -/
 theorem bytes_keep {n : Nat} (hn : n ≤ iL s₀) : bytesAt (P0 s₀).mem (iA iP s₀) n = bytesAt s₀.mem (iA iP s₀) n :=
   Proof.MlKem.bytesAt_frame hp.push_frame (fun r hr => (hp.in_frame r hr).sub_left (Region.sub_prefix hn))
-    (by have := hp.i_fit; omega)
+    (by have := hp.i_fit; omega_using [hn, this])
 
 /-- The leaf's frame and return address are apart from the output. -/
 theorem leafW : ∀ r ∈ [outR oP oL s₀], (frameR s₀).Disjoint r ∧ (retR s₀).Disjoint r := by
   simp only [List.mem_singleton, forall_eq]; rw [← hp.stk_eq]; exact ⟨hp.stk_o, hp.ret_o⟩
 
-theorem leafE : 16 ≤ (E0 s₀).toNat ∧ (E0 s₀).toNat + 4 ≤ 2 ^ 32 := ⟨hp.sp, by have := hp.sp'; omega⟩
+theorem leafE : 16 ≤ (E0 s₀).toNat ∧ (E0 s₀).toNat + 4 ≤ 2 ^ 32 := ⟨hp.sp, by have := hp.sp'; omega_using [this]⟩
 
 /-- The input buffer, after the push. -/
 theorem inR_mem : inR iP iL s₀ ∈ (P0 s₀).rd ++ (P0 s₀).wr := by rw [hp.P0_rd]; simp
@@ -219,11 +219,11 @@ theorem coeffAt_low {m : Mem} (hm : ∀ a : Addr, a.toNat < 0x5000 → m a = 0) 
     (hp : p.toNat + 1024 ≤ 0x5000) {i : Nat} (hi : i < 256) : coeffAt m p i = 0 := by
   rw [coeffAt, Mem.readW_congr (m' := fun _ => 0) fun j hj => hm _ ?_]
   · simp [Mem.readW, Mem.read]
-  · rw [BitVec.toNat_add, BitVec.toNat_add, BitVec.toNat_ofNat, BitVec.toNat_ofNat]; omega
+  · rw [BitVec.toNat_add, BitVec.toNat_add, BitVec.toNat_ofNat, BitVec.toNat_ofNat]; omega_using [hp, hi, hj]
 
 /-- The memory of a witness: `ws` at `0x5000 + a` for each `(a, ws)`, zero elsewhere. -/
 theorem ite_low {a b : Addr} {x y : Byte} (ha : a.toNat < 0x5000) (hb : 0x5000 ≤ b.toNat) :
     (if a = b then x else y) = y :=
-  ite_eq_right_iff.mpr fun h => absurd (congrArg BitVec.toNat h) (by omega)
+  ite_eq_right_iff.mpr fun h => absurd (congrArg BitVec.toNat h) (by omega_using [ha, hb])
 
 end VG.Proof.MlDsa.X86.Pack

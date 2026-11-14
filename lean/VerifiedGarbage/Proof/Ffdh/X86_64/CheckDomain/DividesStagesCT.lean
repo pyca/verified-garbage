@@ -39,10 +39,10 @@ theorem divouter_scan (p : CdP) (s : State) (h : DivOuter p s) : ScanPre sQ p.qs
   have hl := h.1.base.qlen h.2.2.1
   have hk := h.1.base.k1
   have hk' := h.1.base.k2
-  have hne : p.qb ≠ [] := by intro he; simp [he] at hl; omega
+  have hne : p.qb ≠ [] := by intro he; simp [he] at hl; omega_using [hk, hl]
   exact ⟨h.1.outer, h.1.q,
     by rw [hl]; exact h.1.base.hdr (sK, BitVec.ofNat 64 p.k) (by simp [CdP.headers]),
-    hne, show p.qb.length < 2 ^ 32 by rw [hl]; omega,
+    hne, show p.qb.length < 2 ^ 32 by rw [hl]; omega_using [hk'],
     (h.1.base.dom.drop (2 * p.k)).take p.k, by decide⟩
 
 theorem divouter_scanned (p : CdP) (s : State) (h : DivOuter p s) :

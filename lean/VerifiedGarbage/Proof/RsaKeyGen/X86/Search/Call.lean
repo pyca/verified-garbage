@@ -81,7 +81,7 @@ theorem call_covers {p : SearchPublic} {o s₀ u : State} {used : Nat} (h : Fr p
     rcases hr with rfl | rfl | rfl | rfl
     · exact ⟨eR o, by simp, 0, (BitVec.add_zero _).symm, by simp⟩
     · exact ⟨pR o, by simp, 0, (BitVec.add_zero _).symm, by simp⟩
-    · exact ⟨rR o, by simp, used, win_base A hu, show used + ((arg o 8).toNat - used) ≤ (arg o 8).toNat by omega⟩
+    · exact ⟨rR o, by simp, used, win_base A hu, show used + ((arg o 8).toNat - used) ≤ (arg o 8).toNat by omega_using [hu]⟩
     · exact ⟨tR o, by simp, 0, (BitVec.add_zero _).symm, by simp⟩
   · obtain ⟨r', hr', off, hb⟩ := hw r hr
     exact ⟨r', List.mem_append_right _ hr', off, hb⟩
@@ -105,7 +105,7 @@ theorem saved_frame {p : SearchPublic} {o : State} (h : SearchInput p o) {rs : L
   have keep (k : Nat) (hk : k < 4) : m'.readW ((p.S1 + BitVec.ofNat 32 (4 * k)).setWidth 64) 32 =
       m.readW ((p.S1 + BitVec.ofNat 32 (4 * k)).setWidth 64) 32 := by
     rw [saved_addr h hk]
-    exact hf.readW (Offset.contains _ (by omega) (by omega) (by omega)) hd (by decide)
+    exact hf.readW (Offset.contains _ (by omega_using []) (by omega_using [hk]) (by omega_using [])) hd (by decide)
   obtain ⟨h0, h1, h2, h3⟩ := hs
   exact ⟨(keep 0 (by decide)).trans h0, (keep 1 (by decide)).trans h1, (keep 2 (by decide)).trans h2,
     (keep 3 (by decide)).trans h3⟩
@@ -117,9 +117,9 @@ theorem below_call {p : SearchPublic} {o u : State} (h : SearchInput p o) (he : 
   rw [he, SearchPublic.S2, h.sp_eq]
   change (⟨(o.gpr .esp - BitVec.ofNat 32 60 - BitVec.ofNat 32 n).setWidth 64, n⟩ : Region) = _
   rw [BitVec.sub_sub, ← BitVec.ofNat_add]
-  have e := addr_sub A (k := 60 + n) (d := 0) (by omega) (by omega)
+  have e := addr_sub A (k := 60 + n) (d := 0) (by omega_using [hn]) (by omega_using [])
   simp only [addr, BitVec.add_zero] at e
-  rw [e, show 216 - (60 + n) + 0 = 156 - n by omega]
+  rw [e, show 216 - (60 + n) + 0 = 156 - n by omega_using []]
 
 /-- What the candidate reads, on its entry, with its return address
 written: the search's. -/
@@ -148,11 +148,11 @@ theorem entry_bytes {p : SearchPublic} {o s₀ u : State} {used : Nat} (F : Fr p
   have A := F.input.abi
   have rB := A.rBound
   have hlen : (arg o 8 - BitVec.ofNat 32 used).toNat = (arg o 8).toNat - used := by
-    rw [BitVec.toNat_sub, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := used) (by have := (arg o 8).isLt; omega)]
-    have := (arg o 8).isLt; omega
-  have eRand := entry_read F v (r := rR o) (.inr (.inr rfl)) A.lowRand (by change (arg o 8).toNat ≤ _; omega)
-  refine ⟨entry_read F v (r := eR o) (.inl rfl) A.lowE (by have := A.eBound; change (arg o 4).toNat ≤ _; omega),
-    entry_read F v (r := pR o) (.inr (.inl rfl)) A.lowP (by have := A.pBound; change (arg o 6).toNat ≤ _; omega), ?_⟩
+    rw [BitVec.toNat_sub, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := used) (by have := (arg o 8).isLt; omega_using [hu])]
+    have := (arg o 8).isLt; omega_using [hu]
+  have eRand := entry_read F v (r := rR o) (.inr (.inr rfl)) A.lowRand (by change (arg o 8).toNat ≤ _; omega_using [])
+  refine ⟨entry_read F v (r := eR o) (.inl rfl) A.lowE (by have := A.eBound; change (arg o 4).toNat ≤ _; omega_using []),
+    entry_read F v (r := pR o) (.inr (.inl rfl)) A.lowP (by have := A.pBound; change (arg o 6).toNat ≤ _; omega_using []), ?_⟩
   rw [hlen, win_base A hu, bytesAt_drop]
   exact congrArg (List.drop used) eRand
 
@@ -167,15 +167,15 @@ theorem candidateRun_ok (c : Cand) {p : SearchPublic} {o s : State} {used remain
   have h1 : 216 ≤ (o.gpr .esp).toNat := A.stackLow
   have hpr : p.randLen = (arg o 8).toNat := by rw [← hi.2]; rfl
   have hsn : (s.gpr .esp).toNat = (o.gpr .esp).toNat - 16 := by
-    rw [hb.sp, SearchPublic.S1, hi.sp_eq]; exact VG.X86.sub_toNat (by omega)
+    rw [hb.sp, SearchPublic.S1, hi.sp_eq]; exact VG.X86.sub_toNat (by omega_using [h1])
   unfold candidateRun
   rw [show 4 * callWords = 44 from rfl]
-  refine WP.frameAlloc (by decide) (by decide) (by decide) (by omega) (body_noSp c) ?_
+  refine WP.frameAlloc (by decide) (by decide) (by decide) (by omega_using [h1, hsn]) (body_noSp c) ?_
   refine WP.seq (WP.mono (arguments_ok hb.alloc h.esi) fun u ⟨F, a⟩ => ?_)
-  obtain ⟨cov, covW⟩ := call_covers F (used := used) (by omega)
+  obtain ⟨cov, covW⟩ := call_covers F (used := used) (by omega_using [hroom, hv, hpr])
   have hun : (u.gpr .esp).toNat = (o.gpr .esp).toNat - 60 := by
-    rw [F.esp, SearchPublic.S2, hi.sp_eq]; exact VG.X86.sub_toNat (by omega)
-  refine WP.of_syms (WP.call c.verified.1 c.noSp (by have := c.stack; omega)
+    rw [F.esp, SearchPublic.S2, hi.sp_eq]; exact VG.X86.sub_toNat (by omega_using [h1])
+  refine WP.of_syms (WP.call c.verified.1 c.noSp (by have := c.stack; omega_using [h1, hun, this])
     (call_pre hi hroom F.esp a F.syms F.frame) cov covW fun u' hrd hwr hcs hf _ ⟨s₂, hm₂, hg₂, hpost⟩ sy => ?_)
   have hp := hpost
   sig_post [VG.Proof.RsaKeyGen.X86.Candidate.contract, Proof.RsaKeyGen.candidateContract,
@@ -192,9 +192,9 @@ theorem candidateRun_ok (c : Cand) {p : SearchPublic} {o s : State} {used remain
   have hsl := c.stack
   have rB := A.rBound
   have hlen : (arg o 8 - BitVec.ofNat 32 used).toNat = (arg o 8).toNat - used := by
-    rw [BitVec.toNat_sub, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := used) (by have := (arg o 8).isLt; omega)]
-    have := (arg o 8).isLt; omega
-  obtain ⟨eE, eP, eW⟩ := entry_bytes F (used := used) (by omega) (u.unknowns 0)
+    rw [BitVec.toNat_sub, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := used) (by have := (arg o 8).isLt; omega_using [hroom, hpr])]
+    have := (arg o 8).isLt; omega_using [hroom, hpr]
+  obtain ⟨eE, eP, eW⟩ := entry_bytes F (used := used) (by omega_using [hroom, hv, hpr]) (u.unknowns 0)
   simp only [eE, eP, eW] at hp
   have hpl : p.len = (arg o 1).toNat := by rw [← hi.2]; rfl
   have heB : p.eB = searchE o := by rw [← hi.2]; rfl
@@ -205,10 +205,10 @@ theorem candidateRun_ok (c : Cand) {p : SearchPublic} {o s : State} {used remain
   rw [BitVec.setWidth_append_eq_right, hg₂ .eax (by decide)] at hr
   have keep (r : Reg) (hr : r ∈ calleeSaved) (hne : r ≠ .esp) : (freed 44 u').gpr r = s.gpr r := by
     rw [freed_gpr _ _ hne, hcs r hr, F.keep r (by revert hr; revert hne; cases r <;> decide) hne]
-  have bc := below_call hi F.esp (n := stackUse c.code + 4) (by omega)
+  have bc := below_call hi F.esp (n := stackUse c.code + 4) (by omega_using [hsl])
   have Fs : Region.Sub (frR o) (lowR o) := low_sub (by decide)
   have Bs : Region.Sub (below (u.gpr .esp) (stackUse c.code + 4)) (lowR o) := by
-    rw [bc]; exact low_sub (by omega)
+    rw [bc]; exact low_sub (by omega_using [hsl])
   have Ps : Region.Sub ⟨low o + BitVec.ofNat 64 200, 16⟩ (lowR o) := low_sub (by decide)
   have fr : Frame (changes o) u.mem u'.mem := hf.sub fun r hr => by
     simp only [callWr, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -224,8 +224,8 @@ theorem candidateRun_ok (c : Cand) {p : SearchPublic} {o s : State} {used remain
     · exact A.lowO.sub_left Ps
     · exact A.lowU.sub_left Ps
     · exact A.lowB.sub_left Ps
-    · exact Offset.disjoint _ (by omega) (by omega) (by omega)
-    · rw [bc]; exact Offset.disjoint _ (by omega) (by omega) (by omega)) hf F.saved
+    · exact Offset.disjoint _ (by omega_using []) (by omega_using []) (by omega_using [])
+    · rw [bc]; exact Offset.disjoint _ (by omega_using [hsl]) (by omega_using []) (by omega_using [hsl])) hf F.saved
   refine ⟨⟨⟨hi, hrd.trans F.rd, ?_, sy.trans F.syms, ?_, sv, F.frame.trans fr⟩, h.used_le, h.remaining_le,
     (keep .esi (by decide) (by decide)).trans h.esi, (keep .edi (by decide) (by decide)).trans h.edi,
     (keep .ebx (by decide) (by decide)).trans h.ebx⟩, ?_, ?_, ?_⟩

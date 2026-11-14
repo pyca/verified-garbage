@@ -82,7 +82,7 @@ theorem body_wp {s₀ : State} (hp : Pre s₀) : WP isa BatchCtr32.ctr32 s₀ (P
   have plain₁ : ∀ j < N s₀, bytesAt s₁.mem (dataAddr (Dp s₀) j) 16 = bytesAt s₀.mem (dataAddr (Dp s₀) j) 16 :=
     fun j hj => bytes_frame p.frame fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
-      exact hp.ds.sub_left (Offset.sub_base _ (by change 16 * j + 16 ≤ 16 * N s₀; omega))
+      exact hp.ds.sub_left (Offset.sub_base _ (by change 16 * j + 16 ≤ 16 * N s₀; omega_using [hj]))
   refine WP.seq (WP.mono (loopOrEmpty_wp (s₀.gpr .r3).isLt p.base p.data p.left p.z hp.fitB hp.fitD
     (by rw [p.wr]; exact hw) (by rw [p.wr]; exact hd) hp.ds p.table p.counter) fun s₂ l => ?_)
   have base₂ : s₂.gpr sb = Sc s₀ := (l.regs _ (by simp [sb])).trans p.base
@@ -109,7 +109,7 @@ theorem body_wp {s₀ : State} (hp : Pre s₀) : WP isa BatchCtr32.ctr32 s₀ (P
     intro j hj
     rw [bytes_frame c.frame (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
-      exact hp.id.symm.sub_left (Offset.sub_base _ (by change 16 * j + 16 ≤ 16 * N s₀; omega))),
+      exact hp.id.symm.sub_left (Offset.sub_base _ (by change 16 * j + 16 ≤ 16 * N s₀; omega_using [hj]))),
       l.blocks j hj, Batch32Loop.outBlock, plain₁ j hj]
   refine WP.mono (restore_wp ((c.regs _ (by decide) (by decide)).trans base₂) hp.fitB
     (by rw [c.wr, l.wr, p.wr]; exact hw) saved₃) fun s₄ ⟨regs, mem, _, _, sp⟩ => ?_

@@ -61,7 +61,7 @@ theorem DescEq.frame {m m' : Mem} {a : BitVec 32} {N : Nat} {dsc : Nat → Nat �
     (hd : ∀ r ∈ rs, (⟨State.addr a, 8 * N⟩ : Region).Disjoint r) : DescEq m' a N dsc := fun i hi j hj => by
   rw [← h i hi j hj]
   exact hf.readW (r := ⟨State.addr a + BitVec.ofNat 64 (8 * i + 4 * j), 4⟩) (Region.contains_self _ _)
-    (fun r hr => (hd r hr).sub_left (Offset.sub_base _ (by omega))) (by decide)
+    (fun r hr => (hd r hr).sub_left (Offset.sub_base _ (by omega_using [hi, hj]))) (by decide)
 
 /-- After code that keeps the stack arguments: writes apart from them, the
 same regions and an environment. -/
@@ -110,7 +110,7 @@ theorem SivA.next {w sp T : BitVec 32} {s s' : State} (h : SivA w sp T s) (hrd :
 /-- The third stack argument: `siv`'s address. -/
 theorem SivA.arg {c w sp D T : BitVec 32} {R n : Nat} {s : State} (hc : CtrI c w sp R D n s)
     (h : SivA w sp T s) : stackArg s 2 = T := by
-  rw [stackArg, stackArgAddr, hc.env.sp, addr_add (by have := hc.afit; omega), h.m2]
+  rw [stackArg, stackArgAddr, hc.env.sp, addr_add (by have := hc.afit; omega_using [this]), h.m2]
 
 section
 variable {c w sp : BitVec 32} {R : Nat} (L : Lay c w sp) (hR : R = 10 ∨ R = 12 ∨ R = 14)
@@ -181,11 +181,11 @@ theorem loadArgs_ct {D : BitVec 32} {n : Nat} :
   obtain ⟨_, hA⟩ : ∃ h, (Taint.check VG.Arm.taint (argTaint [] (4 * 2))
       (.block [.ldrSp .r6 0, .ldrSp .r5 4]) h).isSome = true := ⟨_, by taint_decide⟩
   exact CT.argTaint _ _ (fun _ _ _ _ r hr => by simp at hr) (fun s₁ s₂ h₁ h₂ => by rw [h₁.env.sp, h₂.env.sp])
-    (fun s h => ⟨by rw [h.env.sp]; have := h.afit; omega, fun r hr => by
+    (fun s h => ⟨by rw [h.env.sp]; have := h.afit; omega_using [this], fun r hr => by
       rw [h.env.sp]; exact (h.wa r hr).sub_left (Region.sub_prefix (by decide))⟩)
-    (fun s₁ s₂ h₁ h₂ => argMem_of (by rw [h₁.env.sp, h₂.env.sp]) (by rw [h₁.env.sp]; have := h₁.afit; omega)
+    (fun s₁ s₂ h₁ h₂ => argMem_of (by rw [h₁.env.sp, h₂.env.sp]) (by rw [h₁.env.sp]; have := h₁.afit; omega_using [this])
       fun i hi => by
-        rcases (show i = 0 ∨ i = 1 by omega) with rfl | rfl
+        rcases (show i = 0 ∨ i = 1 by omega_using [hi]) with rfl | rfl
         · rw [h₁.arg.1, h₂.arg.1]
         · rw [h₁.arg.2, h₂.arg.2]) hA
 
@@ -195,10 +195,10 @@ theorem loadArgs_wp {D : BitVec 32} {n : Nat} {s : State} (h : CtrI c w sp R D n
       s'.gpr .r5 = BitVec.ofNat 32 n) ∧ s'.gpr .r0 = s.gpr .r0 := by
   have hsp := h.env.sp
   refine wp_ldrSp (a := State.addr sp + BitVec.ofNat 64 0) (by decide)
-    (by rw [hsp]; exact addr_add (by have := h.afit; omega)) (in_off h.args (by decide) (by decide))
+    (by rw [hsp]; exact addr_add (by have := h.afit; omega_using [])) (in_off h.args (by decide) (by decide))
     fun s₁ u₁ => ?_
   refine wp_ldrSp (a := State.addr sp + BitVec.ofNat 64 4) (by decide)
-    (by rw [u₁.sp, hsp]; exact addr_add (by have := h.afit; omega))
+    (by rw [u₁.sp, hsp]; exact addr_add (by have := h.afit; omega_using [this]))
     (by rw [u₁.rd, u₁.wr]; exact in_off h.args (by decide) (by decide)) fun s₂ u₂ => WP.block_nil ?_
   have he : Env c w sp R s₂ := h.env.keep (fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -237,9 +237,9 @@ theorem encS2v_ct {a D T : BitVec 32} {N n : Nat} {dsc : Nat → Nat → BitVec 
           fun i hi => by
             have e : ∀ {s : State}, E0 c w sp a D T R N n dsc s → ∀ {k : Nat}, k < 4 →
                 stackArg s k = s.mem.readW (State.addr sp + BitVec.ofNat 64 (4 * k)) 32 := fun h k hk => by
-              rw [stackArg, stackArgAddr, h.pre.hsp, addr_add (by have := h.pre.afit; omega)]
+              rw [stackArg, stackArgAddr, h.pre.hsp, addr_add (by have := h.pre.afit; omega_using [hk, this])]
             rw [e h₁ hi, e h₂ hi]
-            rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 by omega) with rfl | rfl | rfl | rfl
+            rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 by omega_using [hi]) with rfl | rfl | rfl | rfl
             · rw [show 4 * 0 = 0 from rfl, BitVec.add_zero, h₁.pre.a0, h₂.pre.a0]
             · rw [h₁.pre.a1, h₂.pre.a1]
             · rw [h₁.pre.a2, h₂.pre.a2]
@@ -280,7 +280,7 @@ theorem sivOut_wp {D T : BitVec 32} {n : Nat} {s : State}
     WP isa (.block sivOut) s (Env c w sp R) := by
   obtain ⟨hc, ht, hw⟩ := h
   have a8 : State.addr (s.sp + BitVec.ofNat 32 8) = State.addr sp + BitVec.ofNat 64 8 := by
-    rw [hc.env.sp]; exact addr_add (by have := hc.afit; omega)
+    rw [hc.env.sp]; exact addr_add (by have := hc.afit; omega_using [this])
   obtain ⟨s', run, -, -, g, rd, wr, sp'⟩ := sivOut_ok L hc.env (T := T)
     (by rw [a8]; exact in_off hc.args (by decide) (by decide)) (by rw [a8]; exact ht.m2) hw ht.fit
     (ht.t_w.sub_right (Region.sub_prefix (by decide)))
@@ -296,11 +296,11 @@ theorem sivOut_ct {D T : BitVec 32} {n : Nat} :
   exact CT.argTaint _ _ (fun s₁ s₂ h₁ h₂ r hr => by
       simp only [List.mem_singleton] at hr; subst hr; rw [h₁.1.env.r11, h₂.1.env.r11])
     (fun s₁ s₂ h₁ h₂ => by rw [h₁.1.env.sp, h₂.1.env.sp])
-    (fun s h => ⟨by rw [h.1.env.sp]; have := h.1.afit; omega, fun r hr => by
+    (fun s h => ⟨by rw [h.1.env.sp]; have := h.1.afit; omega_using [this], fun r hr => by
       rw [h.1.env.sp]; exact (h.1.wa r hr).sub_left (Region.sub_prefix (by decide))⟩)
-    (fun s₁ s₂ h₁ h₂ => argMem_of (by rw [h₁.1.env.sp, h₂.1.env.sp]) (by rw [h₁.1.env.sp]; have := h₁.1.afit; omega)
+    (fun s₁ s₂ h₁ h₂ => argMem_of (by rw [h₁.1.env.sp, h₂.1.env.sp]) (by rw [h₁.1.env.sp]; have := h₁.1.afit; omega_using [this])
       fun i hi => by
-        rcases (show i = 0 ∨ i = 1 ∨ i = 2 by omega) with rfl | rfl | rfl
+        rcases (show i = 0 ∨ i = 1 ∨ i = 2 by omega_using [hi]) with rfl | rfl | rfl
         · rw [h₁.1.arg.1, h₂.1.arg.1]
         · rw [h₁.1.arg.2, h₂.1.arg.2]
         · rw [SivA.arg h₁.1 h₁.2.1, SivA.arg h₂.1 h₂.2.1]) hA
@@ -311,7 +311,7 @@ theorem sivIn_wp {D T : BitVec 32} {n : Nat} {s : State} (h : CtrI c w sp R D n 
     WP isa (.block sivIn) s (CtrI c w sp R D n) := by
   obtain ⟨hc, ht⟩ := h
   have a8 : State.addr (s.sp + BitVec.ofNat 32 8) = State.addr sp + BitVec.ofNat 64 8 := by
-    rw [hc.env.sp]; exact addr_add (by have := hc.afit; omega)
+    rw [hc.env.sp]; exact addr_add (by have := hc.afit; omega_using [this])
   obtain ⟨s', run, -, f, g, rd, wr, sp'⟩ := sivIn_ok L hc.env (T := T)
     (by rw [a8]; exact in_off hc.args (by decide) (by decide)) (by rw [a8]; exact ht.m2) ht.rd ht.fit
     (ht.t_w.sub_right (Region.sub_prefix (by decide)))
@@ -329,11 +329,11 @@ theorem sivIn_ct {D T : BitVec 32} {n : Nat} :
   exact CT.argTaint _ _ (fun s₁ s₂ h₁ h₂ r hr => by
       simp only [List.mem_singleton] at hr; subst hr; rw [h₁.1.env.r11, h₂.1.env.r11])
     (fun s₁ s₂ h₁ h₂ => by rw [h₁.1.env.sp, h₂.1.env.sp])
-    (fun s h => ⟨by rw [h.1.env.sp]; have := h.1.afit; omega, fun r hr => by
+    (fun s h => ⟨by rw [h.1.env.sp]; have := h.1.afit; omega_using [this], fun r hr => by
       rw [h.1.env.sp]; exact (h.1.wa r hr).sub_left (Region.sub_prefix (by decide))⟩)
-    (fun s₁ s₂ h₁ h₂ => argMem_of (by rw [h₁.1.env.sp, h₂.1.env.sp]) (by rw [h₁.1.env.sp]; have := h₁.1.afit; omega)
+    (fun s₁ s₂ h₁ h₂ => argMem_of (by rw [h₁.1.env.sp, h₂.1.env.sp]) (by rw [h₁.1.env.sp]; have := h₁.1.afit; omega_using [this])
       fun i hi => by
-        rcases (show i = 0 ∨ i = 1 ∨ i = 2 by omega) with rfl | rfl | rfl
+        rcases (show i = 0 ∨ i = 1 ∨ i = 2 by omega_using [hi]) with rfl | rfl | rfl
         · rw [h₁.1.arg.1, h₂.1.arg.1]
         · rw [h₁.1.arg.2, h₂.1.arg.2]
         · rw [SivA.arg h₁.1 h₁.2, SivA.arg h₂.1 h₂.2]) hA
@@ -363,11 +363,11 @@ theorem cmpLoad_ct {D : BitVec 32} {n : Nat} :
   obtain ⟨_, hA⟩ : ∃ h, (Taint.check VG.Arm.taint (argTaint [.r9, .r10, .r11] (4 * 2))
       (.block (compare ++ [.ldrSp .r6 0, .ldrSp .r5 4])) h).isSome = true := ⟨_, by taint_decide⟩
   exact CT.argTaint _ _ (fun s₁ s₂ h₁ h₂ => env_regs h₁.env h₂.env) (fun s₁ s₂ h₁ h₂ => by rw [h₁.env.sp, h₂.env.sp])
-    (fun s h => ⟨by rw [h.env.sp]; have := h.afit; omega, fun r hr => by
+    (fun s h => ⟨by rw [h.env.sp]; have := h.afit; omega_using [this], fun r hr => by
       rw [h.env.sp]; exact (h.wa r hr).sub_left (Region.sub_prefix (by decide))⟩)
-    (fun s₁ s₂ h₁ h₂ => argMem_of (by rw [h₁.env.sp, h₂.env.sp]) (by rw [h₁.env.sp]; have := h₁.afit; omega)
+    (fun s₁ s₂ h₁ h₂ => argMem_of (by rw [h₁.env.sp, h₂.env.sp]) (by rw [h₁.env.sp]; have := h₁.afit; omega_using [this])
       fun i hi => by
-        rcases (show i = 0 ∨ i = 1 by omega) with rfl | rfl
+        rcases (show i = 0 ∨ i = 1 by omega_using [hi]) with rfl | rfl
         · rw [h₁.arg.1, h₂.arg.1]
         · rw [h₁.arg.2, h₂.arg.2]) hA
 

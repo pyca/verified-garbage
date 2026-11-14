@@ -52,7 +52,7 @@ theorem crt_copyChildPointer_ct {base child : BitVec 32} {size src dst : Nat} {s
     exact h.1.2.1.trans h.2.2.1.symm
   have wp (s : State) (h : P s) : WP isa (.block [.ldr .r1 .r0 src]) s Q := by
     refine wp_ldr (a := off (State.addr base) src) hs
-      (by rw [h.2.1]; exact addr_add (by have := h.1.nowrap; omega)) (h.1.read fit) fun t j => WP.block_nil ?_
+      (by rw [h.2.1]; exact addr_add (by have := h.1.nowrap; omega_using [fit, this])) (h.1.read fit) fun t j => WP.block_nil ?_
     exact ⟨(j.other .r0 (by decide)).trans h.2.1, j.gpr.trans h.2.2⟩
   have tail : RelCT isa (fun s t => Q s ∧ Q t) (.block [.ldr .r1 .r1 slot, .str .r1 .r0 dst]) (fun _ _ => True) := by
     apply RelCT.taint (A := taint) (Taint.ofRegs [.r0, .r1]) _ (hc := .block []) (by

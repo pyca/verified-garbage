@@ -39,7 +39,7 @@ theorem aad_wp {c : Cx} (L : Lay c) {s : State} (E : Env c s) {y : Nat} (hy : y 
     refine WP.block_nil ⟨PK.refl _, Frame.refl _ _, ?_⟩
     simp [adataBlocks, length_bytesAt, h0, Spec.Cmac.chain]
   · have h0 : c.al ≠ 0 := by simpa using hf
-    refine WP.seq (WP.mono (aadHead_wp L E hy hA hs5 hs6 (by omega)) fun s₁ H => ?_)
+    refine WP.seq (WP.mono (aadHead_wp L E hy hA hs5 hs6 (by omega_using [h0])) fun s₁ H => ?_)
     have hk : headLen c.al ≤ c.al := Nat.min_le_left _ _
     have hB := (hA.drop hk).of_eq H.abs.pk.rd H.abs.pk.wr
     refine WP.mono (absorbPad_wp L (E.of_pk H.abs.pk) hy hB H.s5 H.s6) fun s₂ A =>
@@ -55,7 +55,7 @@ theorem mac_wp {c : Cx} (L : Lay c) {s : State} (E : Env c s) (S : Slots c s.mem
     WP isa (mac y) s (Absorbed c y s
       (Spec.Cmac.chain (Spec.Ccm.ctxCiph s.mem c.K c.R) (Spec.Ccm.zeros 16)
         (Spec.Ccm.format c.tl nonce (bytesAt s.mem c.A c.al) (bytesAt s.mem c.D c.n)))) := by
-  have hn15 : nonce.length ≤ 15 := by have := L.h13; omega
+  have hn15 : nonce.length ≤ 15 := by have := L.h13; omega_using [hnl, this]
   unfold mac
   refine WP.seq (wp_ld (a := c.W + BitVec.ofNat 64 216) (by decide) (by rw [E.s1]; rfl)
     (L.alW (by decide) (by decide)) (E.perm.wR (by decide)) fun s₁ u₁ => ?_)

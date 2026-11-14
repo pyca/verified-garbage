@@ -29,9 +29,9 @@ theorem WorkspaceEq.of_outs_offset {base child : Addr} {d n : Nat} {ranges : Lis
   apply outside
   intro r hr
   rw [address, show off (base + BitVec.ofNat 64 d) k =
-    off base (d + k) by simp only [off, Offset.add_add], ofs_off base (by omega)]
+    off base (d + k) by simp only [off, Offset.add_add], ofs_off base (by omega_using [fit, hk, hi])]
   have := sep r hr
-  omega
+  omega_using [hk, hi, this]
 
 theorem CrtShared.validation_child_eq {s t : State} {g : CrtGeometry} {bs : Fin 7 → List Byte}
     (h : CrtShared g bs s) (outside : Outs (State.addr g.base) (crtValidationWrites g.words) s.mem t.mem) :
@@ -43,18 +43,18 @@ theorem CrtShared.validation_child_eq {s t : State} {g : CrtGeometry} {bs : Fin 
   have small := h.main.toCrtLayoutState.size
   have bounds : 3 * stride g.words ≤ g.size := by
     simp only [totalBytes, narrowOffset, modulusOffset, compareOffset, productOffset] at size
-    omega
+    omega_using [size]
   constructor
-  · apply WorkspaceEq.of_outs_offset paddr (by change stride g.words + stride g.words < _; omega) _ outside
+  · apply WorkspaceEq.of_outs_offset paddr (by change stride g.words + stride g.words < _; omega_arith) _ outside
     intro r hr
     simp only [crtValidationWrites, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl <;>
-      simp only [pOffset, productOffset, modulusOffset, compareOffset, stride] <;> omega
-  · apply WorkspaceEq.of_outs_offset qaddr (by change 2 * stride g.words + stride g.words < _; omega) _ outside
+      simp only [pOffset, productOffset, modulusOffset, compareOffset, stride] <;> omega_arith
+  · apply WorkspaceEq.of_outs_offset qaddr (by change 2 * stride g.words + stride g.words < _; omega_arith) _ outside
     intro r hr
     simp only [crtValidationWrites, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl <;>
-      simp only [qOffset, productOffset, modulusOffset, compareOffset, stride] <;> omega
+      simp only [qOffset, productOffset, modulusOffset, compareOffset, stride] <;> omega_arith
 
 theorem CrtShared.validation_main {s t : State} {g : CrtGeometry} {bs : Fin 7 → List Byte}
     (h : CrtShared g bs s) (outside : Outs (State.addr g.base) (crtValidationWrites g.words) s.mem t.mem) :
@@ -67,21 +67,21 @@ theorem CrtShared.validation_main {s t : State} {g : CrtGeometry} {bs : Fin 7 �
     rcases hr with rfl | rfl | rfl | rfl
     · exact Or.inl rfl
     · right; exact Nat.le_refl _
-    · right; simp only [modulusOffset, compareOffset, productOffset]; omega
-    · right; simp only [compareOffset, productOffset]; omega
+    · right; simp only [modulusOffset, compareOffset, productOffset]; omega_using []
+    · right; simp only [compareOffset, productOffset]; omega_using []
   have head := control_buffers_header outside (by
     intro r hr
     rcases lower r hr with rfl | bound
     · exact Nat.le_refl _
-    · change 128 ≤ r.1; change 3 * (8 * workspaceWords g.words) ≤ r.1 at bound; omega)
+    · change 128 ≤ r.1; change 3 * (8 * workspaceWords g.words) ≤ r.1 at bound; omega_using [small, bound])
   have word (d : Nat) (hd : d = 224 ∨ d = 228 ∨ d = 232 ∨ d = 236 ∨ d = 240) :
       t.mem.readW (off (State.addr g.base) d) 32 = s.mem.readW (off (State.addr g.base) d) 32 := by
     apply outs_readW outside
     · intro r hr
       rcases lower r hr with rfl | bound
-      · simp only; omega
-      · left; change 3 * (8 * workspaceWords g.words) ≤ r.1 at bound; omega
-    · omega
+      · simp only; omega_using [hd]
+      · left; change 3 * (8 * workspaceWords g.words) ≤ r.1 at bound; omega_using [small, hd, bound]
+    · omega_using [hd]
   refine ⟨⟨h.main.toCrtLayoutState.of_header_eq head,
     (word 224 (by simp)).trans h.main.p, (word 228 (by simp)).trans h.main.q,
     (word 232 (by simp)).trans h.main.product, (word 236 (by simp)).trans h.main.compare,
@@ -91,9 +91,9 @@ theorem CrtShared.validation_main {s t : State} {g : CrtGeometry} {bs : Fin 7 �
   apply outside.val32
   · intro r hr
     rcases lower r hr with rfl | bound
-    · right; simp only [arrAt, Proof.Rsa.Mont.hdrBytes]; omega
-    · left; change 3 * (8 * workspaceWords g.words) ≤ r.1 at bound; omega
-  · have := h.buffers.context.main.nowrap; omega
+    · right; simp only [arrAt, Proof.Rsa.Mont.hdrBytes]; omega_using []
+    · left; change 3 * (8 * workspaceWords g.words) ≤ r.1 at bound; omega_using [end0, bound]
+  · have := h.buffers.context.main.nowrap; omega_using [end0, this]
 
 theorem CrtShared.after_validation {s t : State} {g : CrtGeometry} {bs : Fin 7 → List Byte} {rs : List Reg}
     (h : CrtShared g bs s) (outside : Outs (State.addr g.base) (crtValidationWrites g.words) s.mem t.mem)

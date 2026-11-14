@@ -23,7 +23,7 @@ theorem stage_cover_temp {n d count : Nat} {js : List Nat}
 
 theorem stage_cover_bank {n k : Nat} {js : List Nat} (width : k ≤ n) :
     StageCovers n js hdr (4 * (15 * (k + 2))) :=
-  stage_cover_temp (Nat.le_refl _) (by unfold S; omega)
+  stage_cover_temp (Nat.le_refl _) (by unfold S; omega_using [width])
 
 theorem stage_cover_array {n j count : Nat} {js : List Nat} (member : j ∈ js) (bound : count ≤ S n) :
     StageCovers n js (arr n j) count :=

@@ -371,10 +371,10 @@ theorem tabJ_of (hL : L.Ok) (hP16 : 16 ≤ L.P) (hc : Ctx L g vv m₀ t) (hp : P
   have hT : TABJ L m₀ j ∈ L.X := by rw [hp.hx]; rcases hj with rfl | rfl <;> simp
   have cT : ∀ d, d + 8 ≤ 88 → (TABJ L m₀ j).Contains (tabJ L m₀ j + BitVec.ofNat 64 d) 8 := fun d hd => by
     show (⟨tabJ L m₀ j, 88⟩ : Region).Contains _ _
-    exact Offset.contains_base _ hd (by have := hL.xw _ hT; simp only [Sig.tableRegion] at this; omega)
+    exact Offset.contains_base _ hd (by have := hL.xw _ hT; simp only [Sig.tableRegion] at this; omega_using [hd])
   have hj' : 288 ≤ arg j ∧ arg j + 8 ≤ 368 := by rcases hj with rfl | rfl <;> decide
   have cA : L.ARGS.Contains (L.Q + BitVec.ofNat 64 (arg j)) 8 :=
-    Offset.contains _ hj'.1 (by omega) (by omega)
+    Offset.contains _ hj'.1 (by omega_using [hA, hj']) (by omega_using [hA])
   have mT : TABJ L m₀ j ∈ t.rd ++ t.wr := List.mem_append_left _ (by rw [hc.rd]; simp [hT])
   have mA : L.ARGS ∈ t.rd ++ t.wr := List.mem_append_left _ (by rw [hc.rd]; simp)
   have dT : ∀ r ∈ Table.mgfRs L.Q L.scr, (TABJ L m₀ j).Disjoint r := by
@@ -393,24 +393,24 @@ theorem tabJ_of (hL : L.Ok) (hP16 : 16 ≤ L.P) (hc : Ctx L g vv m₀ t) (hp : P
     · exact hL.xO _ hT
     · exact hL.xS _ hT
     · exact (hL.xK _ hT).symm
-  refine ⟨ok, fun j hj => ⟨_, mT, cT _ (by omega)⟩, ⟨_, mT, cT 48 (by decide)⟩, ⟨_, mA, cA⟩, fun m hf => ?_⟩
+  refine ⟨ok, fun j hj => ⟨_, mT, cT _ (by omega_using [hj])⟩, ⟨_, mT, cT 48 (by decide)⟩, ⟨_, mA, cA⟩, fun m hf => ?_⟩
   have rt : ∀ d, d + 8 ≤ 88 →
       m.readW (tabJ L m₀ j + BitVec.ofNat 64 d) 64 = m₀.readW (tabJ L m₀ j + BitVec.ofNat 64 d) 64 :=
     fun d hd => (hf.readW (cT d hd) dT (by decide)).trans (hc.frame.readW (cT d hd) dT0 (by decide))
   refine ⟨⟨(rt _ (by decide)).trans hm.1, (rt _ (by decide)).trans hm.2.1, (rt _ (by decide)).trans hm.2.2⟩,
     (rt 48 (by decide)).trans hD, ?_⟩
   have ka : ∀ r ∈ Table.mgfRs L.Q L.scr, Region.Disjoint ⟨L.Q + BitVec.ofNat 64 (arg j), 8⟩ r := by
-    have hs : Region.Sub ⟨L.Q + BitVec.ofNat 64 (arg j), 8⟩ L.ARGS := Offset.sub _ hj'.1 (by omega)
+    have hs : Region.Sub ⟨L.Q + BitVec.ofNat 64 (arg j), 8⟩ L.ARGS := Offset.sub _ hj'.1 (by omega_using [hA, hj'])
     intro r hr
     simp only [Table.mgfRs, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
     · have := Offset.disjoint L.Q (d := arg j) (n := 8) (e := 0) (k := frameBytes)
-        (.inr (by unfold frameBytes; omega)) (by omega) (by decide)
+        (.inr (by unfold frameBytes; omega_using [hj'])) (by omega_using [hj']) (by decide)
       rwa [BitVec.add_zero] at this
     · exact (hL.sA.symm.sub_left hs).sub_right hL.ours_scr
-    · exact Offset.disjoint_below _ (by omega)
+    · exact Offset.disjoint_below _ (by omega_using [hj'])
   exact (hf.readW (Region.contains_self _ _) ka (by decide)).trans
-    (arg_keep hL hc (d := arg j) hj'.1 (by omega))
+    (arg_keep hL hc (d := arg j) hj'.1 (by omega_using [hA, hj']))
 
 /-- MGF1's table, at our stack argument 9. -/
 theorem tab_of (hL : L.Ok) (hP16 : 16 ≤ L.P) (hc : Ctx L g vv m₀ t) (hp : PreOk L m₀)

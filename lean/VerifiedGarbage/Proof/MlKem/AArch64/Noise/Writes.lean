@@ -25,30 +25,30 @@ theorem writes_apart {L : KemLay} (wf : L.Wf) (room : Room L) (kg : Bool) (B : A
     (hg : off+len≤outOff L kg (n+1) ∨ outOff L kg (n+1)+1024≤off) :
     ∀r∈writes L kg B n, (Region.mk (B+BitVec.ofNat 64 off) len).Disjoint r := by
   have lim := layout_limits wf kg
-  have f0 := outOff_fits wf room kg (by omega : n<2*L.k)
+  have f0 := outOff_fits wf room kg (by omega_using [hn] : n<2*L.k)
   have f1 := outOff_fits wf room kg hn
   have sep {o k : Nat} (h : off+len≤o ∨ o+k≤off) (fit : o+k≤L.scl) :=
-    Offset.disjoint B h (by omega : off+len≤2^64) (by omega : o+k≤2^64)
+    Offset.disjoint B h (by omega_using [hfit, lim] : off+len≤2^64) (by omega_using [lim, fit] : o+k≤2^64)
   intro r hr
   simp only [writes,pairWrites,List.mem_cons,List.not_mem_nil,or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
   · change (Region.mk (B+BitVec.ofNat 64 off) len).Disjoint
       ⟨B+BitVec.ofNat 64 (scratchOff kg)+BitVec.ofNat 64 1800,48⟩
     rw [BitVec.add_assoc,← BitVec.ofNat_add]
-    exact sep (by omega) (by omega)
-  · exact sep (by omega) (by omega)
+    exact sep (by omega_using [hss]) (by omega_using [lim])
+  · exact sep (by omega_using [hss]) (by omega_using [lim])
   · change (Region.mk (B+BitVec.ofNat 64 off) len).Disjoint
       ⟨B+BitVec.ofNat 64 (scratchOff kg)+BitVec.ofNat 64 400,128⟩
     rw [BitVec.add_assoc,← BitVec.ofNat_add]
-    exact sep (by omega) (by omega)
+    exact sep (by omega_using [hss]) (by omega_using [lim])
   · change (Region.mk (B+BitVec.ofNat 64 off) len).Disjoint
       ⟨B+BitVec.ofNat 64 (scratchOff kg)+BitVec.ofNat 64 528,128⟩
     rw [BitVec.add_assoc,← BitVec.ofNat_add]
-    exact sep (by omega) (by omega)
+    exact sep (by omega_using [hss]) (by omega_using [lim])
   · change (Region.mk (B+BitVec.ofNat 64 off) len).Disjoint
       ⟨B+BitVec.ofNat 64 (scratchOff kg)+BitVec.ofNat 64 1536,136⟩
     rw [BitVec.add_assoc,← BitVec.ofNat_add]
-    exact sep (by omega) (by omega)
+    exact sep (by omega_using [hss]) (by omega_using [lim])
   · exact sep hf f0
   · exact sep hg f1
   · exact sep hns lim.2.2.1
@@ -59,8 +59,8 @@ theorem writes_old_far {L : KemLay} (wf : L.Wf) (room : Room L) (kg : Bool) (B :
   have lim := layout_limits wf kg
   have lo := outOff_low wf room kg j
   change nttOff kg+1024≤_ at lo
-  have f := outOff_fits wf room kg (by omega : j<2*L.k)
-  exact writes_apart wf room kg B hn f (Or.inr (by omega)) (Or.inr lo)
-    (Or.inl (outOff_order wf room kg hj)) (Or.inl (outOff_order wf room kg (by omega)))
+  have f := outOff_fits wf room kg (by omega_using [hn, hj] : j<2*L.k)
+  exact writes_apart wf room kg B hn f (Or.inr (by omega_using [lim, lo])) (Or.inr lo)
+    (Or.inl (outOff_order wf room kg hj)) (Or.inl (outOff_order wf room kg (by omega_using [hj])))
 
 end VG.Proof.MlKem.AArch64.Noise

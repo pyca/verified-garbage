@@ -27,7 +27,7 @@ theorem freezeFold_ok (s : State) (hz : s.gpr .x10 = 0) (h19 : s.gpr .x11 = 19)
   have hm (x : Word) : ((x >>> 63) * 19).toNat = 19 * (x.toNat / 2 ^ 63) := by
     rw [BitVec.toNat_mul, BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow,
       show (19 : Word).toNat = 19 from rfl, Nat.mul_comm]
-    exact Nat.mod_eq_of_lt (by have := x.isLt; omega)
+    exact Nat.mod_eq_of_lt (by have := x.isLt; omega_using [])
   apply WP.of_runBlock
   simp only [freezeFold, runBlock_cons, runStep_some, runBlock_nil, exec, read_x,
     RegUpd.gpr_write, RegUpd.gpr_addWithCarry, RegUpd.c_addWithCarry,
@@ -129,6 +129,6 @@ theorem freeze_ok {s : State} {base : Addr} (hs : Scr s base large) {a : Nat} (h
     simp only [P] at h b3 ⊢
     omega_using [h, b3]
   · simp only [decide_eq_false h, Bool.false_eq_true, ite_false]
-    exact (Nat.mod_eq_of_lt (by omega)).symm
+    exact (Nat.mod_eq_of_lt (by omega_using [h])).symm
 
 end VG.Proof.Ed25519.AArch64

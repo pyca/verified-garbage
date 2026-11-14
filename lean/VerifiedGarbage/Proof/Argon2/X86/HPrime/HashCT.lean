@@ -47,11 +47,11 @@ theorem absorbFixed_blk {B E : BitVec 32} {s : State} (c : Ctx B E s) {offset si
   refine ⟨c.of_regs (o _ (by decide) (by decide) (by decide) (by decide))
     (o _ (by decide) (by decide) (by decide) (by decide)) w, ?_, ?_, ?_, ?_, ?_⟩
   · rw [u₅.other _ (by decide), u₄.gpr, u₃.gpr, u₂.other _ (by decide), u₁.other _ (by decide), c.ebx]
-  · rw [u₅.gpr, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+  · rw [u₅.gpr, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hlt])]
   · rw [u₅.other _ (by decide), u₄.other _ (by decide), u₃.other _ (by decide),
       u₂.other _ (by decide), u₁.gpr]
   · rw [u₅.other _ (by decide), u₄.other _ (by decide), u₃.other _ (by decide), u₂.gpr]
-  · rw [setWidth_add (by omega), show s₅.rd ++ s₅.wr = s.rd ++ s.wr by
+  · rw [setWidth_add (by omega_using [ho, hs]), show s₅.rd ++ s₅.wr = s.rd ++ s.wr by
       rw [w, u₅.rd, u₄.rd, u₃.rd, u₂.rd, u₁.rd]]
     exact Covers.right hcov
 
@@ -68,17 +68,17 @@ theorem absorbFixed_rel {B E : BitVec 32} {offset size : Nat} (ho : B.toNat + of
     RelCT isa (fun s₁ s₂ => FixedIn B E offset size s₁ ∧ FixedIn B E offset size s₂)
       (absorbFixed offset size) fun _ _ => True := by
   have eD : (B + BitVec.ofNat 32 offset).setWidth 64 = B.setWidth 64 + BitVec.ofNat 64 offset :=
-    setWidth_add (by omega)
+    setWidth_add (by omega_using [ho, hs])
   have dTo : (B + BitVec.ofNat 32 offset).toNat = B.toNat + offset := by
-    rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := offset) (by omega)]; omega
+    rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := offset) (by omega_using [ho, hs])]; omega_using [ho, hs]
   unfold absorbFixed
   refine RelCT.seq (rel_taint [.esp, .ebx] (fun s₁ s₂ ⟨c₁, _⟩ ⟨c₂, _⟩ r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
       · rw [c₁.esp, c₂.esp]
       · rw [c₁.ebx, c₂.ebx]) hc
-    (fun s ⟨c, h⟩ => absorbFixed_blk c ho hs (by omega) h) (fun s ⟨c, h⟩ => absorbFixed_blk c ho hs (by omega) h))
-    (update_rel (by rw [dTo]; omega) (by rw [eD]; exact Offset.disjoint_base _ hlo (by omega))
+    (fun s ⟨c, h⟩ => absorbFixed_blk c ho hs (by omega_using [ho, hlo]) h) (fun s ⟨c, h⟩ => absorbFixed_blk c ho hs (by omega_using [ho, hlo]) h))
+    (update_rel (by rw [dTo]; omega_using [ho]) (by rw [eD]; exact Offset.disjoint_base _ hlo (by omega_using [ho]))
       (by rw [eD]; exact hstk))
 
 /-- The instructions before `absorbFixed`'s call, from `esp` and `ebx` public. -/
@@ -99,7 +99,7 @@ theorem next_rel {B E : BitVec 32} {n : Nat} (hn₁ : 1 ≤ n) (hn₂ : n ≤ 64
       ⟨r, c.of_regs (cs _ (by decide)) (cs _ (by decide)) wr⟩
   have fx : ∀ s, Repr b (Spec.Blake2.init b n 0) s.mem (B.setWidth 64) [] ∧ Ctx B E s →
       WP isa (absorbFixed 768 64) s fun t => Ctx B E t := fun s ⟨r, c⟩ =>
-    (absorbFixed_ok c (offset := 768) (size := 64) (by have := c.fits; omega) (by decide) (by decide)
+    (absorbFixed_ok c (offset := 768) (size := 64) (by have := c.fits; omega_using [this]) (by decide) (by decide)
       (c.cov (by decide)) (c.stk_sub (by decide) (by decide)) r).mono fun t ⟨_, k⟩ => k.ctx c
   have fin : ∀ s, Ctx B E s → WP isa (.block [.mov .ecx (.imm 64), .mov .edx (.imm 0)]) s
       (FinalizeIn B E 64 0) := fun s c =>
@@ -112,7 +112,7 @@ theorem next_rel {B E : BitVec 32} {n : Nat} (hn₁ : 1 ≤ n) (hn₂ : n ≤ 64
     (RelCT.seq (R := fun s₁ s₂ => Ctx B E s₁ ∧ Ctx B E s₂) ?_
       (RelCT.seq (R := fun s₁ s₂ => FinalizeIn B E 64 0 s₁ ∧ FinalizeIn B E 64 0 s₂) ?_ finalize_rel))
   · refine rel_wp (RelCT.of_pre fun s₁ _ ⟨⟨_, c₁⟩, _⟩ =>
-      (absorbFixed_rel (B := B) (E := E) (offset := 768) (size := 64) (by have := c₁.fits; omega)
+      (absorbFixed_rel (B := B) (E := E) (offset := 768) (size := 64) (by have := c₁.fits; omega_using [this])
         (by decide) (by decide) (c₁.stk_sub (by decide) (by decide)) fixed_check_768).mono
       (fun s₁ s₂ ⟨⟨_, c₁⟩, ⟨_, c₂⟩⟩ => ⟨⟨c₁, c₁.cov (by decide)⟩, ⟨c₂, c₂.cov (by decide)⟩⟩)
       fun _ _ h => h) fx fx

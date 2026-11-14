@@ -25,7 +25,7 @@ theorem plus_zero (p : Addr) : plus p 0 = p := by simp [plus]
 
 theorem access {rs : List Region} {p : Addr} (h : InRegions rs p 64)
  {off n : Nat} (ho : off+n≤64) : InRegions rs (plus p off) n :=
- Covers.one h _ _ ⟨_,by simp,Offset.contains_base p ho (by omega)⟩
+ Covers.one h _ _ ⟨_,by simp,Offset.contains_base p ho (by omega_using [ho])⟩
 
 theorem ea_at (s : State) (b : Reg) (d : Nat) :
  s.ea (at_ b d) = plus (s.gpr b) d := VG.Proof.Scrypt.X86_64.BlockMix.ea_at s b d
@@ -48,7 +48,7 @@ theorem raw_natural {v : Vector Spec.Scrypt.Word 16} {s : State} {m : Mem} {p : 
  simp only [memWords,Vector.getElem_ofFn,bufAt,ofInt_natCast]
  exact congrArg (fun a => m.readW a 32) (by
    simp only [plus,BitVec.add_assoc,← BitVec.ofNat_add]
-   exact congrArg (fun n => p + BitVec.ofNat 64 n) (by omega))
+   exact congrArg (fun n => p + BitVec.ofNat 64 n) (by omega_using []))
 
 theorem natural_load {s : State} {b : Reg} {off : Nat} {p : Addr}
  (hb : plus (s.gpr b) off = p) (hi : InRegions (s.rd++s.wr) p 64) :

@@ -46,25 +46,25 @@ theorem halveBody_ok {s0 s : State} {dst : BitVec 32} {bs : List Byte} {i : Nat}
   rintro t ⟨⟨ptr, word, carry, count, zero, mem⟩, rest⟩
   have original : s.mem (State.addr (s.gpr .r0)) = bs[i]?.getD 0 := by
     rw [inv.dest, inv.outside _ (fun j hj same => by
-      have := ctx.distinct i more j (by omega) same
-      omega), bytes i more]
+      have := ctx.distinct i more j (by omega_using [more, hj]) same
+      omega_using [hj, this]), bytes i more]
   have newByte : (((s.mem (State.addr (s.gpr .r0))).setWidth 32 >>> 1 |||
       s.gpr .r2).setWidth 8) =
         VG.Proof.Ffdh.ParameterCandidate.halfByte (carryAt 0 bs i) (bs[i]?.getD 0) := by
     rw [original, inv.carry]
     exact halfByte_encoding _ (carryAt_le (by decide) bs i)
-  refine ⟨⟨by omega, ?_, ?_, ?_, ?_, ?_, ?_, inv.rest.trans rest⟩, ?_⟩
+  refine ⟨⟨by omega_using [more], ?_, ?_, ?_, ?_, ?_, ?_, inv.rest.trans rest⟩, ?_⟩
   · rw [ptr, inv.dest, BitVec.add_assoc]
     change dst + (BitVec.ofNat 32 i + BitVec.ofNat 32 1) = _
     rw [← BitVec.ofNat_add]
   · rw [count, inv.count]
     change BitVec.ofNat 32 (bs.length - i) - BitVec.ofNat 32 1 = _
-    rw [BitVec.ofNat_sub_ofNat_of_le _ _ (by decide) (by omega)]
+    rw [BitVec.ofNat_sub_ofNat_of_le _ _ (by decide) (by omega_using [more])]
     congr 1
   · rw [carry, original, halfByte_carry, carryAt_next 0 more]
     simp only [List.getElem?_eq_getElem more, Option.getD_some]
   · intro j hj
-    have same : j = i := by omega
+    have same : j = i := by omega_using [hj]
     subst j
     rw [word, original, inv.carry, halfByte_value _ (carryAt_le (by decide) bs i)]
   · intro j hj
@@ -75,17 +75,17 @@ theorem halveBody_ok {s0 s : State} {dst : BitVec 32} {bs : List Byte} {i : Nat}
       rw [← inv.dest]
       exact newByte
     · have different : State.addr (dst + BitVec.ofNat 32 j) ≠ State.addr (dst + BitVec.ofNat 32 i) :=
-        fun h => same (ctx.distinct j (by omega) i more h)
+        fun h => same (ctx.distinct j (by omega_using [more, hj]) i more h)
       rw [ite_eq_right different]
-      exact inv.shifted j (by omega)
+      exact inv.shifted j (by omega_using [hj, same])
   · intro a ha
-    rw [mem, VG.WriteBytes.writeW8_apply, inv.dest, ite_eq_right (ha i (by omega))]
-    exact inv.outside a fun j hj => ha j (by omega)
+    rw [mem, VG.WriteBytes.writeW8_apply, inv.dest, ite_eq_right (ha i (by omega_using []))]
+    exact inv.outside a fun j hj => ha j (by omega_using [hj])
   · rw [zero, inv.count]
     change (BitVec.ofNat 32 (bs.length - i) - BitVec.ofNat 32 1 == 0) = _
-    rw [BitVec.ofNat_sub_ofNat_of_le _ _ (by decide) (by omega),
-      ofNat_beq_zero (by have := ctx.countFits; omega)]
-    simp only [show bs.length - i - 1 = 0 ↔ i + 1 = bs.length by omega]
+    rw [BitVec.ofNat_sub_ofNat_of_le _ _ (by decide) (by omega_using [more]),
+      ofNat_beq_zero (by have := ctx.countFits; omega_using [this])]
+    simp only [show bs.length - i - 1 = 0 ↔ i + 1 = bs.length by omega_using [more]]
 
 theorem halveLoop_ok (s : State) {dst : BitVec 32} {bs : List Byte}
     (ctx : MaskCtx s dst bs.length) (positive : 0 < bs.length)
@@ -98,7 +98,7 @@ theorem halveLoop_ok (s : State) {dst : BitVec 32} {bs : List Byte}
   refine WP.loop (M := isa) inv ?_ bs.length s ?_
   · intro k t h
     obtain ⟨i, hik, hk, hi⟩ := h
-    refine WP.mono (halveBody_ok ctx bytes hi (by omega)) ?_
+    refine WP.mono (halveBody_ok ctx bytes hi (by omega_using [hik, hk])) ?_
     rintro u ⟨hu, hz⟩
     by_cases last : i + 1 = bs.length
     · left
@@ -106,11 +106,11 @@ theorem halveLoop_ok (s : State) {dst : BitVec 32} {bs : List Byte}
       change some (!u.z) = some false
       simp only [hz, last, decide_true, Bool.not_true]
     · right
-      refine ⟨?_, k - 1, by omega, i + 1, by omega, by omega, hu⟩
+      refine ⟨?_, k - 1, by omega_using [hk], i + 1, by omega_using [hik, hk], by omega_using [hik, hk, last], hu⟩
       change some (!u.z) = some true
       simp only [hz, last, decide_false, Bool.not_false]
-  · refine ⟨0, by omega, positive, ?_⟩
-    exact ⟨by omega, by simpa using dest, by simpa using count,
+  · refine ⟨0, by omega_using [], positive, ?_⟩
+    exact ⟨by omega_using [], by simpa using dest, by simpa using count,
       by simpa [carryAt] using carry, by intro j hj; omega, by intro j hj; omega,
       by intros; rfl, Rest.refl _ _⟩
 
@@ -122,7 +122,7 @@ theorem HalfInv.encoding {s0 s : State} {dst : BitVec 32} {bs : List Byte}
   · intro j hj hj'
     have bound : j < bs.length := by rwa [VG.Proof.Bignum.bytesAt_length] at hj
     have byte := inv.shifted j bound
-    rw [VG.Arm.addr_add (by omega : dst.toNat + j < 2 ^ 32)] at byte
+    rw [VG.Arm.addr_add (by omega_using [fits, bound] : dst.toNat + j < 2 ^ 32)] at byte
     simp only [Spec.Rsa.bytesAt, List.getElem_map, List.getElem_range]
     rw [halfOctets_get 0 bound]
     simpa only [List.getElem?_eq_getElem bound, Option.getD_some] using byte

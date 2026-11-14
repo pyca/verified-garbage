@@ -24,12 +24,12 @@ theorem initFields_ok {s : State} (hc : Ctx b s) :
     WP isa (.block initFields) s fun t => Rest [.a4] s t ∧ Frame [FA b] s.mem t.mem := by
   unfold initFields
   refine wp_li (by decide) fun s1 u1 => ?_
-  refine WP.mono (stores_ok (r := .a4) (o := 64) (n := 176) (by omega) (by omega)
+  refine WP.mono (stores_ok (r := .a4) (o := 64) (n := 176) (by omega_using []) (by omega_using [])
     (hc.of_rest (u1.rest (ws := [.a4]) (by decide)) (by decide))) fun t ⟨_, h2, _, h4⟩ =>
       ⟨(u1.rest (by decide)).trans (h4.mono (by decide)), ?_⟩
   rw [← u1.mem]
   exact h2.sub fun r hr => ⟨_, List.mem_singleton_self _, by
-    rw [List.mem_singleton.mp hr]; exact Region.sub_prefix (by omega)⟩
+    rw [List.mem_singleton.mp hr]; exact Region.sub_prefix (by omega_using [])⟩
 
 end
 

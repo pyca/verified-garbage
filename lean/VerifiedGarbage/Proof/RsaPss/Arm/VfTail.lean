@@ -38,11 +38,11 @@ theorem K2.keep {P : EP} {τ : State} {m m' : Mem} {rs : List Region} (hk : K2 h
   refine ⟨hi, hfi, ⟨slot_keep hf (fun r hr => (ha r hr).1) b2, slot_keep hf (fun r hr => (ha r hr).2.1) b3⟩,
     fun i hi' => ?_, fun i hi' => ?_, slot_keep hf (fun r hr => (ha r hr).2.2.1) hp,
     slot_keep hf (fun r hr => (ha r hr).2.2.2.1) hac⟩
-  · have e := kb (lo P + i) (by omega)
+  · have e := kb (lo P + i) (by omega_using [hsum, hK, hi'])
     rw [← Nat.add_assoc] at e
     rw [e]; exact hd i hi'
-  · have e := kb (lo P + dbN h P + i) (by omega)
-    rw [show oEm + (lo P + dbN h P + i) = oEm + lo P + dbN h P + i by omega] at e
+  · have e := kb (lo P + dbN h P + i) (by omega_using [hsum, hK, hi'])
+    rw [show oEm + (lo P + dbN h P + i) = oEm + lo P + dbN h P + i by omega_using []] at e
     rw [e]; exact hh i hi'
 
 theorem away2_ctW {L : Lay} {scr : BitVec 32} (hg : Geo L scr) {T : Nat} (hT : T ≤ 2048) :
@@ -97,8 +97,8 @@ theorem tail_vp {g : RsaOaep.Arm.OHash} {f : MdFns} {fg : Impl.RsaOaep.Arm.Fns} 
     (VP.blk (blkOk rfl) (fun _ _ _ _ h₁ h₂ => h₁.1.st.sp.trans h₂.1.st.sp.symm) fun τ s ⟨hc, hk, hd⟩ => ?_)
     (VP.seq (G := fun τ s => Ctx (P.lay h.D) P.scr τ s ∧ Kt h P msg nbm τ s.mem ∧
         (s.gpr .r2 = 0 ↔ HOk h P τ (msg τ)))
-      ((cmp_vp (hg.rbuf (o := oDig) (n := h.D) (by omega) hD0)
-        (hg.rbuf (o := oEm + lo P + dbN h P) (n := h.D) (by omega) hD0) hD0 (Inv := Kt h P msg nbm)
+      ((cmp_vp (hg.rbuf (o := oDig) (n := h.D) (by omega_using [hD, e2, e3]) hD0)
+        (hg.rbuf (o := oEm + lo P + dbN h P) (n := h.D) (by omega_using [hsum, hK, e1, e2]) hD0) hD0 (Inv := Kt h P msg nbm)
         (f := fun τ i => (h.ok.SH.H.hash (msg τ)).getD i 0) (g := fun τ i => (seedV h P τ).getD i 0)).mono
         (fun τ s ⟨⟨hc, hk, hd⟩, r0, r1, lr, r2⟩ => ⟨hc, hk, r0, r1, lr, r2, fun i hi => ?_, fun i hi => ?_⟩)
         fun τ s h' => h')
@@ -108,13 +108,13 @@ theorem tail_vp {g : RsaOaep.Arm.OHash} {f : MdFns} {fg : Impl.RsaOaep.Arm.Fns} 
         t.gpr .lr = BitVec.ofNat 32 h.D ∧ t.gpr .r2 = 0 := by
       prun [cmpSet, atDb, atS, addSlot, sp0, ld, mw, hc.st.sp, hc.aFr hg, hc.rFr hg, hc.slotS, hk.1.2.2.1.1,
         hk.1.2.2.1.2, movw_val (show oEm < 2 ^ 16 by decide), movw_val (show oDig < 2 ^ 16 by decide),
-        movw_val (show 0 < 2 ^ 16 by decide), movw_val (show dig h.sh < 2 ^ 16 by show h.D < 2 ^ 16; omega),
+        movw_val (show 0 < 2 ^ 16 by decide), movw_val (show dig h.sh < 2 ^ 16 by show h.D < 2 ^ 16; omega_using [hD]),
         BitVec.add_assoc, BitVec.ofNat_add_ofNat]
       rfl
     exact WP.mono hw fun t ⟨m, rd, wr, sp, r0, r1, lr, r2⟩ =>
       ⟨⟨hc.regs rd wr sp m, m ▸ hk, m ▸ hd⟩, r0, r1, lr, r2⟩
-  · rw [hg.byteAt_scr (by omega)]; exact hd i hi
-  · rw [hg.byteAt_scr (by omega)]; exact hk.1.2.2.2.2.1 i hi
+  · rw [hg.byteAt_scr (by omega_using [hD, e2, e3, hi])]; exact hd i hi
+  · rw [hg.byteAt_scr (by omega_using [hsum, hK, e1, e2, hi])]; exact hk.1.2.2.2.2.1 i hi
   · have hw : WP isa (.block result) s fun t => t.mem = s.mem ∧ t.rd = s.rd ∧ t.wr = s.wr ∧ t.sp = s.sp ∧
         t.gpr .r0 = ((acc2 h P τ ||| s.gpr .r2) ||| 0 - (acc2 h P τ ||| s.gpr .r2)) >>> 31 ^^^ 1 := by
       prun [result, sp0, ld, mw, hc.st.sp, hc.aFr hg, hc.rFr hg, hk.1.2.2.2.2.2.2,

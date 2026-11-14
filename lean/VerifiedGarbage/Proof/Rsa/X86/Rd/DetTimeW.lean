@@ -57,8 +57,8 @@ theorem det_relCT_of {g : Geo} (pg : PubG g) (n a : Nat) (three : 3 ≤ n) (smal
     (divAR : RelCT isa (RA (PA1 g n) (PA1 g n)) divA (RA (DA1 g n) (DA1 g n))) :
     RelCT isa (RA (D0W g n) (D0W g n)) det (RA (fun _ => True) (fun _ => True)) := by
   have t13 : VG.Proof.Bignum.ShiftStages.tz (n - 1) < 2 ^ 13 :=
-    Nat.lt_of_lt_of_le (VG.Proof.Bignum.ShiftStages.tz_lt (by omega) (Nat.lt_of_le_of_lt (Nat.sub_le n 1) hn'))
-      (by simp only [VG.Proof.Rsa.X86.WordRt.wq]; omega)
+    Nat.lt_of_lt_of_le (VG.Proof.Bignum.ShiftStages.tz_lt (by omega_using [three]) (Nat.lt_of_le_of_lt (Nat.sub_le n 1) hn'))
+      (by simp only [VG.Proof.Rsa.X86.WordRt.wq]; omega_using [ha1])
   unfold det
   simp only [seqs]
   refine VG.RelCT.seq (deMinus_relCT n) ?_
@@ -70,7 +70,7 @@ theorem det_relCT_of {g : Geo} (pg : PubG g) (n a : Nat) (three : 3 ≤ n) (smal
   refine VG.RelCT.seq (divB_relCT pg n a ha ha0 ha1 haw hn') ?_
   refine VG.RelCT.seq (square_relCT pg n) ?_
   refine VG.RelCT.seq (minus4n_relCT pg) ?_
-  refine VG.RelCT.seq (sqrt_relCT pg a ha (by omega) ha1 haw) ?_
+  refine VG.RelCT.seq (sqrt_relCT pg a ha (by omega_using [ha0]) ha1 haw) ?_
   exact factorsPubW.relCT'
 
 /-- `det`'s timing: its pieces in turn, between their stages. -/

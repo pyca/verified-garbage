@@ -437,7 +437,7 @@ theorem Src.sub {s : State} {L : Lay} {D : Addr} {n : Nat} (h : Src s L D n) {o 
 /-- The first octets of a buffer apart from `scratch`. -/
 theorem Src.take {s : State} {L : Lay} {D : Addr} {n : Nat} (h : Src s L D n) {k : Nat} (hk : k ≤ n) :
     Src s L D k :=
-  ⟨fun i hi => h.rd i (by omega), fun i hi => h.sep i (by omega)⟩
+  ⟨fun i hi => h.rd i (by omega_using [hk, hi]), fun i hi => h.sep i (by omega_using [hk, hi])⟩
 
 /-- A buffer's bytes are apart from a working space within `scratch`. -/
 theorem Src.sepIn {s : State} {L : Lay} {D : Addr} {n : Nat} (h : Src s L D n) {a Z : Nat}

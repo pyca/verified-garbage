@@ -25,7 +25,7 @@ private theorem small_neg (x : Spec.X448.Fe) :
       (Spec.X448.P - 39081) * x.val + 39081 * Spec.X448.P := by
     have hx := x.isLt
     unfold Spec.X448.P at *
-    omega
+    omega_using []
   have hm := congrArg (fun n => n % Spec.X448.P) h
   simpa only [Nat.add_mod, Nat.mul_mod, Nat.mod_self, Nat.zero_mul, Nat.mul_zero,
     Nat.add_zero, Nat.zero_mod, Nat.mod_mod] using hm

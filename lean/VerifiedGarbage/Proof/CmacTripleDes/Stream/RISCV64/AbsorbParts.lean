@@ -83,7 +83,7 @@ theorem absSave_wp {s₀ : State} {St D S : Addr} {n L : Nat} (hp : APre s₀ St
     rw [t₀]
     show InRegions s₀.wr _ 8
     rw [hp.wr]
-    exact ⟨⟨S, 688⟩, by simp, sv_contains S (by omega) (by decide)⟩
+    exact ⟨⟨S, 688⟩, by simp, sv_contains S (by omega_using [this]) (by decide)⟩
   generalize ht : ({ (s₀.write .t0 (sv S)) with
     mem := Spill.saveMem (s₀.write .t0 (sv S)).mem ((s₀.write .t0 (sv S)).gpr .t0)
       (s₀.write .t0 (sv S)).gpr absSaved } : State) = t
@@ -129,13 +129,13 @@ theorem absFlag_wp {u t : State} {n L : Nat} {St D S : Addr} (hL : L < 2 ^ 64)
     rw [u₂.gpr, u₁.gpr, u₁.other _ (by decide), t0]
     apply BitVec.eq_of_toNat_eq
     rw [BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat, BitVec.toNat_ofNat]
-    omega
+    omega_using [hl]
   refine ⟨by rw [u₃.other _ (by decide), u₂.other _ (by decide), u₁.other _ (by decide), t0],
     by rw [u₃.other _ (by decide), t1₂], ?_, fun r a b c => ?_, by rw [u₃.mem, u₂.mem, u₁.mem, m],
     by rw [u₃.rd, u₂.rd, u₁.rd, rd], by rw [u₃.wr, u₂.wr, u₁.wr, wr], by rw [u₃.sp, u₂.sp, u₁.sp, sp]⟩
   · rw [u₃.gpr, t1₂, u₂.other _ (by decide), u₁.other _ (by decide), g _ (by decide), h3]
     congr 1
-    simp only [BitVec.lt_def, toNat_ofNat (show 8 - held n < 2 ^ 64 by omega), toNat_ofNat hL]
+    simp only [BitVec.lt_def, toNat_ofNat (show 8 - held n < 2 ^ 64 by omega_using []), toNat_ofNat hL]
   · rw [u₃.other _ c, u₂.other _ b, u₁.other _ b, g _ a]
 
 theorem flag_wp {u : State} {n L : Nat} {St D S : Addr} (hn : n < 2 ^ 64) (hL : L < 2 ^ 64)

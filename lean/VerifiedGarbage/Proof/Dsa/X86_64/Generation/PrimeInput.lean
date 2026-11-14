@@ -49,7 +49,7 @@ theorem PrimeInput.advance {P : PrimeParams} {mi mi' : BitVec 64} {used : Nat} {
     have hk32 : k < 32 := by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hmem
       rcases hmem with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide
-    exact hf.word_eq (hh k hmem) (by omega)
+    exact hf.word_eq (hh k hmem) (by omega_using [hk32])
   refine ⟨hg, hn, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · exact (hword kOut (by simp)).trans h.ptr
   · exact (hword kUsedP (by simp)).trans h.len
@@ -66,7 +66,7 @@ theorem primeInputSetup_ok (M : Mont) {P : PrimeParams} {mi : BitVec 64} {used :
     (h : PrimeInput P mi used s) (hw : P.w ≤ 48) :
     WP isa (Impl.Dsa.X86_64.Generation.primeSetup M.mm) s fun t =>
       ∃ mi', PrimeState P mi' used t ∧ Frm P.B (modulusRanges P.w) s.mem t.mem ∧ Keep mmRegs s t := by
-  refine WP.mono (primeSetup_ok M h.good P.dims h.n P.odd (by have := P.n3; omega) hw)
+  refine WP.mono (primeSetup_ok M h.good P.dims h.n P.odd (by have := P.n3; omega_using [this]) hw)
     fun t ⟨mi', ht, hf, hk⟩ => ?_
   have hi := h.advance ht.good ht.n hf hk (by
     have hroom := P.room

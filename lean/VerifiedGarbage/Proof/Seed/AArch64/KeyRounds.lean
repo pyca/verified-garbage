@@ -24,12 +24,12 @@ open VG VG.AArch64 VG.AArch64.RegUpd VG.Impl.Seed.AArch64 VG.Proof.Seed
 theorem hi_append (a b : BitVec 32) : ((a ++ b) >>> 32).setWidth 32 = a := by
   ext i hi
   simp only [BitVec.getElem_setWidth, BitVec.getLsbD_ushiftRight, BitVec.getLsbD_append]
-  simp [show ¬ (32 + i < 32) by omega, hi]
+  simp [show ¬ (32 + i < 32) by omega_using [], hi]
 
 theorem split64 (t : BitVec 64) : t.extractLsb' 32 32 ++ t.setWidth 32 = t := by
   apply BitVec.eq_of_getLsbD_eq; intro i hi
   simp only [BitVec.getLsbD_append, BitVec.getLsbD_extractLsb', BitVec.getLsbD_setWidth]
-  split <;> simp_all <;> (congr 1; omega)
+  split <;> simp_all <;> (congr 1; omega_arith)
 
 theorem ror56 (t : BitVec 64) : t.rotateRight 56 = t.rotateLeft 8 := by
   apply BitVec.eq_of_getLsbD_eq; intro i hi
@@ -58,10 +58,10 @@ theorem keyRounds_ok (key : Spec.Seed.Block) {s₀ : State} (h : Room s₀)
   | 0, _ => ⟨s₀, runBlock_nil, h10, h11, fun i hi => by omega, fun _ _ _ _ _ _ => rfl, rfl, rfl, rfl,
       Frame.refl _ _⟩
   | n + 1, hn => by
-    obtain ⟨s, hs, inv⟩ := keyRounds_ok key h h10 h11 n (by omega)
+    obtain ⟨s, hs, inv⟩ := keyRounds_ok key h h10 h11 n (by omega_using [hn])
     have r9 : s.gpr .x5 = s₀.gpr .x5 := inv.regs _ (by decide) (by decide) (by decide) (by decide) (by decide)
     obtain ⟨s', hs', l0, l1, lk, x3', x4', regs', rd', wr', sp', f'⟩ :=
-      keyRound_ok (j := n) (by omega) (room_congr h r9 inv.wr)
+      keyRound_ok (j := n) (by omega_using [hn]) (room_congr h r9 inv.wr)
     refine ⟨s', ?_, ⟨?_, ?_, fun i hi => ?_, fun r a b c d e => ?_, by rw [sp', inv.sp], by rw [rd', inv.rd],
       by rw [wr', inv.wr], ?_⟩⟩
     · rw [List.range_succ, List.flatMap_append, List.flatMap_singleton]
@@ -77,21 +77,21 @@ theorem keyRounds_ok (key : Spec.Seed.Block) {s₀ : State} (h : Room s₀)
       · rfl
       · simp only [ky, ror56]; exact (split64 _).symm
     · have g0 : gInput key (2 * n) = (keyWords key n).1 + (keyWords key n).2.2.1 - Spec.Seed.kc.getD n 0 := by
-        simp only [gInput, show 2 * n / 2 = n by omega, show 2 * n % 2 = 0 by omega, ite_true]
+        simp only [gInput, show 2 * n / 2 = n by omega_using [], show 2 * n % 2 = 0 by omega_using [], ite_true]
       have g1 : gInput key (2 * n + 1) =
           (keyWords key n).2.1 - (keyWords key n).2.2.2 + Spec.Seed.kc.getD n 0 := by
-        simp only [gInput, show (2 * n + 1) / 2 = n by omega, show (2 * n + 1) % 2 = 1 by omega]
+        simp only [gInput, show (2 * n + 1) / 2 = n by omega_using [], show (2 * n + 1) % 2 = 1 by omega_using []]
         rfl
       by_cases hi0 : i = 2 * n
       · subst hi0
-        rw [l0, g0, gIn0, inv.x3, inv.x4, kx, ky, hi_append, hi_append, kcs_eq n (by omega)]
+        rw [l0, g0, gIn0, inv.x3, inv.x4, kx, ky, hi_append, hi_append, kcs_eq n (by omega_using [hn])]
       by_cases hi1 : i = 2 * n + 1
       · subst hi1
         rw [l1, g1, gIn1, inv.x3, inv.x4, kx, ky, BitVec.setWidth_append_eq_right,
-          BitVec.setWidth_append_eq_right, kcs_eq n (by omega)]
-      · rw [lk _ (gSlot_mem i) _ (Nat.mod_lt _ (by decide)) (gIn_apart _ (by omega) _ (by omega) hi0)
-          (gIn_apart _ (by omega) _ (by omega) hi1)]
-        exact inv.lanes i (by omega)
+          BitVec.setWidth_append_eq_right, kcs_eq n (by omega_using [hn])]
+      · rw [lk _ (gSlot_mem i) _ (Nat.mod_lt _ (by decide)) (gIn_apart _ (by omega_using [hn, hi]) _ (by omega_using [hn]) hi0)
+          (gIn_apart _ (by omega_using [hn, hi]) _ (by omega_using [hn]) hi1)]
+        exact inv.lanes i (by omega_using [hi, hi0, hi1])
     · rw [regs' r a b c d e, inv.regs r a b c d e]
     · have : arraysR s = arraysR s₀ := by simp only [arraysR, r9]
       rw [this] at f'

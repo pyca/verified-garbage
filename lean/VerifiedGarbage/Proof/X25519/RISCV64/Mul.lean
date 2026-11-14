@@ -52,7 +52,7 @@ theorem stores_ok {r : Reg} {o n : Nat} (ho : o + 4 * n ≤ 2048) (ho4 : o % 4 =
     WP.block_nil ⟨fun j hj => ?_, ?_, by rw [u2.gpr, h3], h4.trans (u2.rest _)⟩
   · rw [u2.mem]
     rcases Nat.lt_succ_iff_lt_or_eq.mp hj with hj | rfl
-    · rw [wd_write_other _ _ _ (by omega) (by omega_using [ho, hm, hj]) (by omega_using [ho, hm])]; exact h1 j hj
+    · rw [wd_write_other _ _ _ (by omega_using [hj]) (by omega_using [ho, hm, hj]) (by omega_using [ho, hm])]; exact h1 j hj
     · rw [wd_write_self, h3, toNat_lo32]
   · rw [u2.mem]
     exact (h2.sub fun r hr => ⟨_, List.mem_singleton_self _, by
@@ -65,7 +65,7 @@ theorem zeroAcc_ok (hA : acc + 64 ≤ 2048) (hA4 : acc % 4 = 0) {s : State} (hc 
   unfold zeroAcc
   refine wp_li (by decide) fun s1 u1 => ?_
   have hc1 := hc.of_rest (u1.rest (ws := [.a4]) (by decide)) (by decide)
-  refine WP.mono (stores_ok (r := .a4) (o := acc) (n := 8) (by omega) hA4 hc1) fun s' ⟨h1, h2, _, h4⟩ =>
+  refine WP.mono (stores_ok (r := .a4) (o := acc) (n := 8) (by omega_using [hA]) hA4 hc1) fun s' ⟨h1, h2, _, h4⟩ =>
     ⟨fun j hj => by rw [accw, h1 j hj, u1.gpr]; rfl, by rw [← u1.mem]; exact h2,
       (u1.rest (by decide)).trans (h4.mono (by decide))⟩
 

@@ -46,7 +46,7 @@ theorem WKeep.scr {base : Addr} {s s' : State} (h : WKeep base s s') (hs : Scr s
 
 /-- The memory outside `[960, 1648)`. -/
 theorem IKeep.out {base : Addr} {s s' : State} (h : IKeep base s s') : Outside base 960 688 s.mem s'.mem :=
-  fun p hp => h.mem p (by omega) (by simp only [ACC]; omega)
+  fun p hp => h.mem p (by omega_using [hp]) (by simp only [ACC]; omega_using [hp])
 
 theorem IKeep.trans {base : Addr} {s₁ s₂ s₃ : State} (h₁ : IKeep base s₁ s₂)
     (h₂ : IKeep base s₂ s₃) : IKeep base s₁ s₃ :=
@@ -118,7 +118,7 @@ theorem setRbx_ok (s : State) (k : Nat) (hk : k < 2 ^ 32) :
   refine ⟨?_, fun r hr => by simp only [RegUpd.gpr_setReg, hr, ite_false], rfl, rfl, rfl⟩
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]
-  rw [Nat.mod_eq_of_lt hk, Nat.mod_eq_of_lt (by omega)]
+  rw [Nat.mod_eq_of_lt hk, Nat.mod_eq_of_lt (by omega_using [hk])]
 
 /-- `rbx -= 1`, from `rbx = k + 1`: the flag `ZF` says whether `k = 0`. -/
 theorem decRbx_ok {s : State} {k : Nat} (hk : k < 2 ^ 32)
@@ -132,12 +132,12 @@ theorem decRbx_ok {s : State} {k : Nat} (hk : k < 2 ^ 32)
   have zf : (BitVec.ofNat 64 k == 0) = decide (k = 0) := by
     rcases Nat.eq_zero_or_pos k with rfl | h
     · rfl
-    · rw [decide_eq_false (by omega)]
+    · rw [decide_eq_false (by omega_using [h])]
       apply beq_false_of_ne
       intro h'
       have := congrArg BitVec.toNat h'
-      rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)] at this
-      exact absurd this (by simp; omega)
+      rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hk])] at this
+      exact absurd this (by simp; omega_using [h])
   apply WP.of_runBlock
   simp only [runBlock_cons, runStep_some, runBlock_nil, exec, execAlu, readSrc, Option.bind_some,
     Option.some.injEq, exists_eq_left', hb', RegUpd.gpr_setReg_self, RegUpd.mem_setReg,
@@ -168,22 +168,22 @@ theorem sqLoop_ok {s₀ : State} {base : Addr} (hs₀ : Scr s₀ base) (o : Inde
     s.gpr .rbx = BitVec.ofNat 64 m ∧
     E s.mem base = Function.update (E s₀.mem base) o (sqn x (n - m))) ?_ m s ⟨h1, h2, hk, hb, he⟩
   intro m s ⟨h1, h2, hk, hb, he⟩
-  obtain ⟨m, rfl⟩ : ∃ m', m = m' + 1 := ⟨m - 1, by omega⟩
+  obtain ⟨m, rfl⟩ : ∃ m', m = m' + 1 := ⟨m - 1, by omega_using [h1]⟩
   rw [WP.block_append_iff]
   refine WP.mono (sqrI_ok hf (hk.scr hs₀) o o ho) fun s1 ⟨k1, b1, e1⟩ => ?_
-  refine WP.mono (decRbx_ok (by omega) (b1.trans hb)) fun s2 ⟨b2, g2, m2, rd2, wr2, z2⟩ => ?_
+  refine WP.mono (decRbx_ok (by omega_using [hn, h2]) (b1.trans hb)) fun s2 ⟨b2, g2, m2, rd2, wr2, z2⟩ => ?_
   have k2 : IKeep base s₀ s2 := hk.trans (k1.trans ⟨fun r _ hr => g2 r hr, rd2, wr2,
     by rw [m2]; exact Outside2.refl _ _ _ _ _ _⟩)
   have e2 : E s2.mem base = Function.update (E s₀.mem base) o (sqn x (n - m)) := by
     rw [m2, e1, he, opMul_update]
     congr 2
-    rw [show n - m = (n - (m + 1)) + 1 by omega]
+    rw [show n - m = (n - (m + 1)) + 1 by omega_using [h2]]
     rfl
   simp only [eval, z2, Option.map_some]
   rcases Nat.eq_zero_or_pos m with rfl | hm
   · exact .inl ⟨rfl, k2, by rw [e2, Nat.sub_zero]⟩
-  · exact .inr ⟨by simp only [decide_eq_false (by omega : ¬m = 0), Bool.not_false], m, by omega,
-      by omega, by omega, k2, b2, e2⟩
+  · exact .inr ⟨by simp only [decide_eq_false (by omega_using [hm] : ¬m = 0), Bool.not_false], m, by omega_using [],
+      by omega_using [hm], by omega_using [h2], k2, b2, e2⟩
 
 include hf in
 /-- `sqn o a n`: slot `o` becomes slot `a` squared `n` times (`o` may be `a`). -/
@@ -200,11 +200,11 @@ theorem sqnI (base : Addr) (o a : Index) (ho : ISlot o) (n : Nat) (hn : 1 ≤ n)
   refine WP.seq ?_
   rw [WP.block_append_iff]
   refine WP.mono (sqrI_ok hf hs o a ho) fun s1 ⟨k1, _, e1⟩ => ?_
-  refine WP.mono (setRbx_ok s1 (n - 1) (by omega)) fun s2 ⟨b2, g2, m2, rd2, wr2⟩ => ?_
+  refine WP.mono (setRbx_ok s1 (n - 1) (by omega_using [hn'])) fun s2 ⟨b2, g2, m2, rd2, wr2⟩ => ?_
   have k2 : IKeep base s s2 := k1.trans ⟨fun r _ hr => g2 r hr, rd2, wr2,
     by rw [m2]; exact Outside2.refl _ _ _ _ _ _⟩
-  refine sqLoop_ok hf hs o ho (E s.mem base a) n hn' (n - 1) s2 (by omega) (by omega) k2 b2 ?_
-  rw [m2, e1, show n - (n - 1) = 1 by omega]
+  refine sqLoop_ok hf hs o ho (E s.mem base a) n hn' (n - 1) s2 (by omega_using [hn, h1]) (by omega_using [hn]) k2 b2 ?_
+  rw [m2, e1, show n - (n - 1) = 1 by omega_using [hn]]
   rfl
 
 /-! ## The inversion -/

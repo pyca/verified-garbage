@@ -42,7 +42,7 @@ theorem policyWidth_rule (N k : Nat) (dom : List Byte) (gs : List Policy.Group)
      VG.Impl.Ffdh.AArch64.Cached.Policy.recognizeList gs k dom))
    by_cases yes : k=g.len ∧ dom=g.domain.take dom.length
    · have reverse : g.len=k ∧ dom=g.domain.take dom.length := ⟨yes.1.symm,yes.2⟩
-     rw [ite_eq_left yes,ite_eq_left reverse,ite_eq_right (by have := positive g (by simp);omega)]
+     rw [ite_eq_left yes,ite_eq_left reverse,ite_eq_right (by have := positive g (by simp);omega_using [this])]
    · have no : ¬(g.len=k ∧ dom=g.domain.take dom.length) := fun h => yes ⟨h.1.symm,h.2⟩
      rw [ite_eq_right yes,ite_eq_right no]
      exact ih (fun a ha => positive a (by simp [ha]))

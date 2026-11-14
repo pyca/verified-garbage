@@ -58,7 +58,7 @@ theorem expandKey_wp {s : State} (h : KeyPre s) : WP isa Impl.Blowfish.PPC64LE.e
   have slot : ∀ p ∈ saved, Region.Sub ⟨B + BitVec.ofNat 64 p.2, 8⟩ ⟨B, 32⟩ := fun p hp =>
     Offset.sub_base _ (saved_lt' p hp)
   have keyIn : ∀ c < L, (⟨K, L⟩ : Region).Contains (K + BitVec.ofNat 64 c) 1 := fun c hc =>
-    Offset.contains_base _ (by omega) (by omega)
+    Offset.contains_base _ (by omega_using [hc]) (by omega_using [hc])
   -- frames that miss the key
   have keyFrame : ∀ {m m' : Mem} {r : Region}, (⟨K, L⟩ : Region).Disjoint r → Frame [r] m m' →
       bytesAt m' K L = bytesAt m K L := fun hd hf =>
@@ -68,7 +68,7 @@ theorem expandKey_wp {s : State} (h : KeyPre s) : WP isa Impl.Blowfish.PPC64LE.e
   apply WP.seq
   rw [save_eq']
   refine Spill.save_ok (by decide) saved_fits' (fun p hp =>
-    ⟨_, bR, Offset.contains_base _ (saved_lt' p hp) (by have := saved_lt' p hp; omega)⟩) ?_
+    ⟨_, bR, Offset.contains_base _ (saved_lt' p hp) (by have := saved_lt' p hp; omega_using [this])⟩) ?_
   let M₀ := Spill.saveMem s.mem B s.gpr saved
   have F₀ : Frame [⟨B, 32⟩] s.mem M₀ := Spill.saveMem_frame_base (fun p hp => saved_lt' p hp) (by decide) _ _ _
   rw [initSchedule_eq]
@@ -88,10 +88,10 @@ theorem expandKey_wp {s : State} (h : KeyPre s) : WP isa Impl.Blowfish.PPC64LE.e
   apply WP.seq
   refine WP.mono (keyP_run E) fun t₂ I₂ => ?_
   have hS₂ : ∀ o < 4096, t₂.mem (S + BitVec.ofNat 64 o) = Impl.Blowfish.initByte o := fun o ho => by
-    rw [← hT o (by omega)]
+    rw [← hT o (by omega_using [ho])]
     refine I₂.frame _ fun r hr hc => ?_
     simp only [List.mem_singleton] at hr; subst hr
-    exact Offset.disjoint S (d := o) (n := 1) (e := 4096) (k := 4 * 18) (.inl (by omega)) (by omega) (by omega)
+    exact Offset.disjoint S (d := o) (n := 1) (e := 4096) (k := 4 * 18) (.inl (by omega_using [ho])) (by omega_using [ho]) (by omega_using [])
       _ (Region.contains_self _ _) hc
   have hK₂ : scheduleAt t₂.mem S = keyed (bytesAt s.mem K L) := by
     refine keyed_of_mem hS₂ fun i hi => ?_
@@ -124,14 +124,14 @@ theorem expandKey_wp {s : State} (h : KeyPre s) : WP isa Impl.Blowfish.PPC64LE.e
       simp only [List.mem_singleton] at hr; subst hr
       exact (dSlots p hp _ List.mem_cons_self).sub_right (by
         rw [← Offset.add_add_eq S (a := 4096) (b := 0) rfl, BitVec.add_zero]
-        exact Offset.sub_base S (by omega))
+        exact Offset.sub_base S (by omega_using []))
     have s₃ : Spill.Saved B s.gpr saved t₃.mem := by rw [m₃]; exact s₂
     exact s₃.frame I₅.frame dSlots
   refine WP.mono (Spill.restore_wp (by decide) r6 saved_fits' (by decide) (fun p hp => ?_) hsv)
     fun s' R => ⟨?_, fun r hr => ?_⟩
   · rw [I₅.keep.2.1, I₅.keep.2.2, k₃.2.1, k₃.2.2, r₂.1, r₂.2]
     exact ⟨_, List.mem_append_right _ bR, Offset.contains_base _ (saved_lt' p hp)
-      (by have := saved_lt' p hp; omega)⟩
+      (by have := saved_lt' p hp; omega_using [this])⟩
   · rw [R.mem, I₅.sched, expandKey_eq]
   · obtain ⟨p, hp, rfl⟩ := List.mem_map.mp hr
     exact R.gpr p hp

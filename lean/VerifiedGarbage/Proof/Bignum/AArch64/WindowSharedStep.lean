@@ -23,7 +23,7 @@ theorem square_ok {s : State} {P : Addr} {w : Nat} {mi : BitVec 64} {X Xc : Nat}
       (∀ k < 32, word t.mem P (8*k) = word s.mem P (8*k)) ∧
       Frm P (crtWinRanges w) s.mem t.mem ∧ Keep WindowRaw.regs s t := by
   refine WP.mono (WindowArithmetic.square_ok hc.good.scr hc.good.x0 hc.good.hdr
-    (Nat.le_refl _) hw (by omega) hmod (by decide) (by decide) (by decide) (by decide) hc.inv)
+    (Nat.le_refl _) hw (by omega_using [hw']) hmod (by decide) (by decide) (by decide) (by decide) hc.inv)
     fun t ⟨ht,ha,kt⟩ => ?_
   rw [hc.n] at ht
   have hf : Frm P (crtWinRanges w) s.mem t.mem := Frm.of_arrays ha (by simp [crtWinRanges, aY])
@@ -35,8 +35,8 @@ theorem decrement_ok {s : State} {P : Addr} {w j : Nat} {mi : BitVec 64} {X Xc :
     WP isa (.block [ldh .x3 Crt.sBit, .subImm .x .x3 .x3 1, sth .x3 Crt.sBit]) s fun t =>
       (t.mem = s.mem.writeW (off P (8*Crt.sBit)) (BitVec.ofNat 64 (5-(j+1))) ∧
         t.gpr .x3 = BitVec.ofNat 64 (5-(j+1))) ∧ Keep [.x3] s t := by
-  simpa only [show 5-j-1 = 5-(j+1) by omega] using
-    WindowFive.crtBitEnd_ok hc hb (by omega)
+  simpa only [show 5-j-1 = 5-(j+1) by omega_using []] using
+    WindowFive.crtBitEnd_ok hc hb (by omega_using [hj])
 
 theorem step_ok {s : State} {P : Addr} {w j A k : Nat} {mi : BitVec 64} {X Xc : Nat}
     (hc : TableCtx s P w mi X Xc) (hw : 16 ≤ w) (hw' : w < 2^30) (hmod : w % 8 = 0)
@@ -58,8 +58,8 @@ theorem step_ok {s : State} {P : Addr} {w j A k : Nat} {mi : BitVec 64} {X Xc : 
   have ft : Frm P (crtWinRanges w) u.mem t.mem := Frm.of_outside hwrite (by simp [crtWinRanges])
   have hy : wv t.mem P (slot w aY) w = wv u.mem P (slot w aY) w := by
     apply hwrite.wv
-    · have := hdr_lt_slot w aY (show Crt.sBit < 32 by decide); omega
-    · have := slot_le (w := w) (show aY < 8 by decide); have := cu.good.scr.nowrap; omega
+    · have := hdr_lt_slot w aY (show Crt.sBit < 32 by decide); omega_using [this]
+    · have := slot_le (w := w) (show aY < 8 by decide); have := cu.good.scr.nowrap; omega_arith
   refine ⟨cu.of_win ft kt.wr (kt.gpr .x0 (by decide)),?_,?_,h3,?_,fu.trans ft,(ku.trans kt).mono (by decide)⟩
   · rw [hy]; exact CrtWindowFive.square_scale hu hv
   · rw [hm,word_writeW_self]

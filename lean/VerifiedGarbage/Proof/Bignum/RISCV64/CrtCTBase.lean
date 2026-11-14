@@ -129,7 +129,7 @@ theorem loadS_L1 {d : List (BitVec 64) × List (BitVec 64) × List Byte} {s : St
   have hst : InRegions (s.rd ++ s.wr) (s.sp + BitVec.ofNat 64 64) 8 := by
     refine ⟨stackArgs s, List.mem_append_left _ (by rw [hrd]; exact List.mem_append_left _ (by simp [baseRd])), ?_⟩
     show (s.sp + BitVec.ofNat 64 64 - (s.sp + BitVec.ofNat 64 (8 * 0))).toNat + 8 ≤ 80
-    rw [show 8 * 0 = 0 from rfl, Offset.sub_toNat s.sp (by omega) (by omega)]; omega
+    rw [show 8 * 0 = 0 from rfl, Offset.sub_toNat s.sp (by omega_using []) (by omega_using [])]; omega_using []
   have hsa : (s.sp + BitVec.ofNat 64 64).toNat % 8 = 0 := by
     rw [BitVec.toNat_add, BitVec.toNat_ofNat]; omega_arith
   refine WP.mono (WP.keep [.t0] (Q := fun t => t.gpr .t0 = stackArg s 8) ?_ (by rfl) (by rfl))

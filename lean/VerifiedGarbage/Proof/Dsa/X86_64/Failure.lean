@@ -38,7 +38,7 @@ theorem signFailure_ok {s : State} {B : Addr} {Z k q : Nat} {op : Addr} (hs : Sc
       (∀ x, (∀ j < k, x ≠ op + BitVec.ofNat 64 j) → t.mem x = s.mem x) ∧ Keep mmRegs s t := by
   have hn := hs.nowrap
   have h256 : 256 ≤ Z := Nat.le_trans (by decide) hZ
-  have hl : ∀ i < 32, InRegions (s.rd ++ s.wr) (off B (8 * i)) 8 := fun i hi => hs.ld (by omega)
+  have hl : ∀ i < 32, InRegions (s.rd ++ s.wr) (off B (8 * i)) 8 := fun i hi => hs.ld (by omega_using [h256, hi])
   unfold SignVerify.signFailure seqs
   refine WP.seq (WP.mono (WP.keep [.rsi, .rcx, .rax] (Q := fun t => t.gpr .rsi = op ∧
       t.gpr .rcx = BitVec.ofNat 64 k ∧ t.gpr .rax = 0 ∧ t.mem = s.mem) (by
@@ -46,9 +46,9 @@ theorem signFailure_ok {s : State} {B : Addr} {Z k q : Nat} {op : Addr} (hs : Sc
       hs.ld (Nat.le_trans (VG.Proof.Dsa.field_bounds .out).2 hZ),
       hs.ld (Nat.le_trans (VG.Proof.Dsa.field_bounds .qLen).2 hZ), hO, hK]
     rw [BitVec.ofNat_add_ofNat, hkq, Nat.two_mul]) rfl) fun s₁ ⟨⟨hsi, hcx, hax, hm₁⟩, k₁⟩ => ?_)
-  refine WP.seq (WP.mono (wp_upto (a := 0) (N := k) (by omega) (FailInv s₁ op k) ?_ (fun t h => h)
+  refine WP.seq (WP.mono (wp_upto (a := 0) (N := k) (by omega_using [hk1]) (FailInv s₁ op k) ?_ (fun t h => h)
     ⟨Keep.refl _ _, by rw [hsi, show BitVec.ofNat 64 0 = 0#64 from rfl, BitVec.add_zero], by rw [hcx, Nat.sub_zero],
-      fun i hi => absurd hi (by omega), fun x _ => rfl⟩) fun t₂ hI => ?_)
+      fun i hi => absurd hi (by omega_using []), fun x _ => rfl⟩) fun t₂ hI => ?_)
   · intro j _ hj t hI
     have hst : InRegions t.wr (op + BitVec.ofNat 64 j) 1 := by
       rw [hI.keep.2.2, k₁.2.2]; exact hout j hj
@@ -58,24 +58,24 @@ theorem signFailure_ok {s : State} {B : Addr} {Z k q : Nat} {op : Addr} (hs : Sc
         t'.gpr .rsi = op + BitVec.ofNat 64 (j + 1) ∧ t'.gpr .rcx = BitVec.ofNat 64 (k - (j + 1)) ∧
         t'.zf = some (decide (j + 1 = k))) (by
       xrun [State.ea, at0, hI.rsi, hI.rcx, show BitVec.ofInt 64 0 = 0#64 from rfl, BitVec.add_zero, hst, hax',
-        ofNat64_pred (show 1 ≤ k - j by omega) (by omega), BitVec.add_assoc, ofNat_add_one,
-        ofNat64_beq_zero (show k - j - 1 < 2 ^ 64 by omega)]
-      exact ⟨by rw [show k - j - 1 = k - (j + 1) by omega], decide_eq_decide.mpr (by omega)⟩) rfl)
+        ofNat64_pred (show 1 ≤ k - j by omega_using [hj]) (by omega_using [hk']), BitVec.add_assoc, ofNat_add_one,
+        ofNat64_beq_zero (show k - j - 1 < 2 ^ 64 by omega_using [hk'])]
+      exact ⟨by rw [show k - j - 1 = k - (j + 1) by omega_using []], decide_eq_decide.mpr (by omega_using [hj])⟩) rfl)
       fun t' ⟨⟨hm, hsi', hcx', hz⟩, k'⟩ => ⟨hz, (hI.keep.trans k').mono (by decide), hsi', hcx', ?_, ?_⟩
     · intro i hi
       rw [hm, writeW8_apply]
       by_cases hij : i = j
       · subst hij; simp
-      · rw [ite_eq_right_of_eq_false _ _ (eq_false (out_ne (by omega) (by omega) hij))]
-        exact hI.bytes i (by omega)
+      · rw [ite_eq_right_of_eq_false _ _ (eq_false (out_ne (by omega_using [hk', hj, hi]) (by omega_using [hk', hj]) hij))]
+        exact hI.bytes i (by omega_using [hi, hij])
     · intro x hx
-      rw [hm, writeW8_apply, ite_eq_right_of_eq_false _ _ (eq_false (hx j (by omega)))]
-      exact hI.frame x fun i hi => hx i (by omega)
+      rw [hm, writeW8_apply, ite_eq_right_of_eq_false _ _ (eq_false (hx j (by omega_using [])))]
+      exact hI.frame x fun i hi => hx i (by omega_using [hi])
   -- The saved registers.
   have hw₂ : ∀ i < 32, word t₂.mem B (8 * i) = word s.mem B (8 * i) := fun i hi => by
     apply Mem.readW_congr
     intro b hb
-    rw [hI.frame _ (fun j hj => scr_ne_out hsep (d := 8 * i) (i := b) (by omega) (by omega) j (by omega)), hm₁]
+    rw [hI.frame _ (fun j hj => scr_ne_out hsep (d := 8 * i) (i := b) (by omega_using [h256, hi, hb]) (by omega_using [hn]) j (by omega_using [hj])), hm₁]
   have k12 := k₁.trans hI.keep
   have hl₂ : ∀ i < 32, InRegions (t₂.rd ++ t₂.wr) (off B (8 * i)) 8 := fun i hi => by
     rw [k12.2.1, k12.2.2]; exact hl i hi
@@ -94,7 +94,7 @@ theorem signFailure_ok {s : State} {B : Addr} {Z k q : Nat} {op : Addr} (hs : Sc
     exact List.map_congr_left fun i hi => by rw [hm]; exact hI.bytes i (List.mem_range.mp hi)
   · rw [k₃.gpr (by decide), hI.keep.gpr (by decide), hax]
   · intro i hi
-    rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 by omega) with rfl | rfl | rfl | rfl | rfl | rfl
+    rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 by omega_using [hi]) with rfl | rfl | rfl | rfl | rfl | rfl
     · exact h0
     · exact h1
     · exact h2

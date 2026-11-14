@@ -65,7 +65,7 @@ theorem absorbSave_wp {s : State} (hp : AbsorbPre s) {is : List Instr} {Q : Stat
     (k : ∀ t, ASaved s t → WP isa (.block is) t Q) : WP isa (.block (absorbSave ++ is)) s Q := by
   have hW : (⟨s.gpr .r7, 688⟩ : Region) ∈ s.wr := by rw [hp.wr]; simp
   have sl : ∀ off, off + 8 ≤ 688 → InRegions s.wr (s.gpr .r7 + BitVec.ofNat 64 off) 8 := fun off h =>
-    ⟨_, hW, VG.Offset.contains_base _ h (by omega)⟩
+    ⟨_, hW, VG.Offset.contains_base _ h (by omega_using [h])⟩
   simp only [absorbSave, mr, List.cons_append, List.nil_append]
   refine wp_mflr fun s₁ u₁ => ?_
   refine wp_std (a := s.gpr .r7 + BitVec.ofNat 64 lrOff) (by decide) (by decide) (by rw [u₁.other _ (by decide)])
@@ -196,8 +196,8 @@ structure Copied (m : Mem) (src dst : Addr) (n : Nat) (m' : Mem) : Prop where
 theorem state_ne_data {S D : Addr} {len : Nat} (hd : Region.Disjoint ⟨D, len⟩ ⟨S, 416⟩)
     (hD : D.toNat + len ≤ 2 ^ 64) {i j : Nat} (hi : i < len) (hj : j < 416) :
     D + BitVec.ofNat 64 i ≠ S + BitVec.ofNat 64 j := fun e =>
-  hd _ (VG.Offset.contains_base _ (show i + 1 ≤ len by omega) (by omega))
-    (by rw [e]; exact VG.Offset.contains_base _ (show j + 1 ≤ 416 by omega) (by omega))
+  hd _ (VG.Offset.contains_base _ (show i + 1 ≤ len by omega_using [hi]) (by omega_using [hD, hi]))
+    (by rw [e]; exact VG.Offset.contains_base _ (show j + 1 ≤ 416 by omega_using [hj]) (by omega_using [hj]))
 
 /-- `toHeld n` and the copy: `count` bytes of the data at `r29` after the
 `h` bytes held back. -/
@@ -220,19 +220,19 @@ theorem toHeld_copy_wp {u : State} {S D W : Addr} {len h : Nat} (he : PathEnv u 
   have rd₄ : t₄.rd = u.rd := by rw [u₄.rd, u₃.rd, u₂.rd, u₁.rd]
   have wr₄ : t₄.wr = u.wr := by rw [u₄.wr, u₃.wr, u₂.wr, u₁.wr]
   have m₄ : t₄.mem = u.mem := by rw [u₄.mem, u₃.mem, u₂.mem, u₁.mem]
-  refine copyLoop_wp (src := D) (dst := S + BitVec.ofNat 64 (408 + h)) (n := cnt) (by omega)
+  refine copyLoop_wp (src := D) (dst := S + BitVec.ofNat 64 (408 + h)) (n := cnt) (by omega_using [hch])
     (by rw [u₄.other _ (by decide), u₃.gpr, u₂.other _ (by decide), u₁.other _ (by decide), he.r29])
     (by rw [u₄.other _ (by decide), u₃.other _ (by decide), u₂.gpr, u₁.gpr, u₁.other _ (by decide), he.r3, he.r8,
       VG.Offset.add_add])
     (by rw [u₄.gpr, u₃.other _ hn10, u₂.other _ hn11, u₁.other _ hn11, hc])
     (fun i hi => by
       rw [rd₄, wr₄]
-      exact ⟨_, List.mem_append_left _ he.data, VG.Offset.contains_base _ (show i + 1 ≤ len by omega) (by omega)⟩)
+      exact ⟨_, List.mem_append_left _ he.data, VG.Offset.contains_base _ (show i + 1 ≤ len by omega_using [hcl, hi]) (by omega_using [hch, hi])⟩)
     (fun i hi => by
       rw [wr₄, VG.Offset.add_add]
-      exact ⟨_, he.state, VG.Offset.contains_base _ (show 408 + h + i + 1 ≤ 416 by omega) (by omega)⟩)
+      exact ⟨_, he.state, VG.Offset.contains_base _ (show 408 + h + i + 1 ≤ 416 by omega_using [hch, hi]) (by omega_using [hch, hi])⟩)
     (fun i hi i' hi' => by
-      rw [VG.Offset.add_add]; exact state_ne_data he.dataState hD (by omega) (by omega))
+      rw [VG.Offset.add_add]; exact state_ne_data he.dataState hD (by omega_using [hcl, hi]) (by omega_using [hch, hi']))
     fun v hv => ?_
   exact k v hv.r10 (fun r h0 h10 h11 h12 => by rw [hv.regs r h0 h10 h11 h12, g₄ r h10 h11 h12])
     (by rw [hv.rd, rd₄]) (by rw [hv.wr, wr₄])
@@ -242,15 +242,15 @@ theorem toHeld_copy_wp {u : State} {S D W : Addr} {len h : Nat} (he : PathEnv u 
 theorem Copied.frame {m m' : Mem} {src S W : Addr} {a n : Nat} (hc : Copied m src (S + BitVec.ofNat 64 a) n m')
     (ha : a + n ≤ 416) : Frame [⟨S, 416⟩, ⟨W, 520⟩] m m' := fun x hx =>
   hc.rest x fun i hi e => hx _ List.mem_cons_self (by
-    rw [e, VG.Offset.add_add]; exact VG.Offset.contains_base _ (show a + i + 1 ≤ 416 by omega) (by omega))
+    rw [e, VG.Offset.add_add]; exact VG.Offset.contains_base _ (show a + i + 1 ≤ 416 by omega_using [ha, hi]) (by omega_using [ha, hi]))
 
 theorem fill_wp {u : State} {S D W : Addr} {len h : Nat} (he : PathEnv u S D W len h) (hf : len ≤ 8 - h) :
     WP isa fillPath u fun v => PathOut u S W v ∧ Copied u.mem D (S + BitVec.ofNat 64 (408 + h)) len v.mem := by
   have hh := he.hh
-  exact toHeld_copy_wp he (by decide) (by decide) he.r6 (Nat.le_refl _) (by omega)
+  exact toHeld_copy_wp he (by decide) (by decide) he.r6 (Nat.le_refl _) (by omega_using [hf, hh])
     fun v _ hv rd wr hc => ⟨⟨fun r hr _ _ _ => by
       obtain ⟨h0, -, -, -, -, -, -, -, h10, h11, h12⟩ := preserved_ne r hr
       exact hv r h0 h10 h11 h12, by rw [hv _ (by decide) (by decide) (by decide) (by decide), he.r5], rd, wr,
-      hc.frame (by omega)⟩, hc⟩
+      hc.frame (by omega_using [hf, hh])⟩, hc⟩
 
 end VG.Proof.CmacTripleDes.Stream.PPC64LE

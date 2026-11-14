@@ -42,8 +42,8 @@ theorem CoeffsIn.write16 {m : Mem} {p : Addr} {S S' : Nat → Prop} [DecidablePr
     CoeffsIn (m.write (coeffAddr p t) 16 x) p S' G old := fun i hi => by
   rw [coeffAt_write16 _ _ ht _ hi, h i hi]
   by_cases c : t ≤ i ∧ i < t + 4
-  · rw [ite_eq_left c, ite_eq_left ((hS i hi).2 (Or.inr c)), hx _ (by omega),
-      show t + (i - t) = i by omega]
+  · rw [ite_eq_left c, ite_eq_left ((hS i hi).2 (Or.inr c)), hx _ (by omega_using [c]),
+      show t + (i - t) = i by omega_using [c]]
   · rw [ite_eq_right c]
     by_cases c' : S i
     · rw [ite_eq_left c', ite_eq_left ((hS i hi).2 (Or.inl c'))]
@@ -84,36 +84,36 @@ theorem step {s₀ : State} {F : Poly} (hd : WidenData s₀ F) {k : Nat} (hk : k
     (h : Inv s₀ F k s) :
     WP isa (.block widenBody) s fun t => Inv s₀ F (k + 1) t ∧ ((t.gpr .x10).toNat ≠ 0 ↔ k + 1 ≠ 32) := by
   have srcAt : s.gpr .x0 + BitVec.ofNat 64 0 = s₀.gpr .x0 + BitVec.ofNat 64 (2 * (8 * k)) := by
-    rw [h.x0, BitVec.add_zero]; congr 2; omega
+    rw [h.x0, BitVec.add_zero]; congr 2; omega_using []
   refine wp_ldrq (a := s₀.gpr .x0 + BitVec.ofNat 64 (2 * (8 * k))) (by decide) srcAt ?_ fun s1 h1 => ?_
-  · rw [h.rd, h.wr]; exact hd.read _ (by omega)
+  · rw [h.rd, h.wr]; exact hd.read _ (by omega_using [hk])
   have ld : ∀ e < 8, (vhalf (s1.v .v0) e).toNat = (F[8 * k + e]!).val := fun e he => by
     rw [h1.v, vhalf_read_coeff _ _ _ he]
     have hf : coeffAtW 16 s.mem (s₀.gpr .x0) (8 * k + e) = coeffAtW 16 s₀.mem (s₀.gpr .x0) (8 * k + e) :=
       coeffAtW16_congr (bytes_frame h.frame (fun r hr => by
-        rw [List.mem_singleton.mp hr]; exact hd.apart) (by decide)) (by rw [n_eq]; omega)
-    rw [hf, polyIsW_toNat hd.src (by rw [n_eq]; omega)]
+        rw [List.mem_singleton.mp hr]; exact hd.apart) (by decide)) (by rw [n_eq]; omega_using [hk, he])
+    rw [hf, polyIsW_toNat hd.src (by rw [n_eq]; omega_using [hk, he])]
   have z1 : ∀ e < 8, vhalf (s1.v .v29) e = 0 := fun e he => by rw [h1.other _ (by decide)]; exact h.zero e he
   refine wp_vop (d := .v1) rfl fun s2 h2 => ?_
   refine wp_vop (d := .v2) rfl fun s3 h3 => ?_
   have w1 : ∀ e < 4, vword (s3.v .v1) e = G F (8 * k + e) := fun e he => BitVec.eq_of_toNat_eq (by
     rw [h3.other _ (by decide), h2.v, G_toNat, (vword_zip_zero z1 he).1]
-    exact ld e (by omega))
+    exact ld e (by omega_using [he]))
   have w2 : ∀ e < 4, vword (s3.v .v2) e = G F (8 * k + 4 + e) := fun e he => BitVec.eq_of_toNat_eq (by
-    rw [h3.v, G_toNat, show 8 * k + 4 + e = 8 * k + (4 + e) by omega,
+    rw [h3.v, G_toNat, show 8 * k + 4 + e = 8 * k + (4 + e) by omega_using [],
       h2.other .v0 (by decide), h2.other .v29 (by decide), (vword_zip_zero z1 he).2]
-    exact ld _ (by omega))
+    exact ld _ (by omega_using [he]))
   have g3 : s3.gpr = s.gpr := by rw [h3.gpr, h2.gpr, h1.gpr]
   have dst0 : s3.gpr .x1 + BitVec.ofNat 64 0 = coeffAddr (s₀.gpr .x1) (8 * k) := by
-    rw [g3, h.x1, BitVec.add_zero, coeffAddr]; congr 2; omega
+    rw [g3, h.x1, BitVec.add_zero, coeffAddr]; congr 2; omega_using []
   refine wp_strq (a := coeffAddr (s₀.gpr .x1) (8 * k)) (by decide) dst0 ?_ fun s4 h4 => ?_
   · rw [h3.wr, h2.wr, h1.wr, h.wr, coeffAddr]
-    exact hd.write _ (by omega)
+    exact hd.write _ (by omega_using [hk])
   have dst1 : s4.gpr .x1 + BitVec.ofNat 64 16 = coeffAddr (s₀.gpr .x1) (8 * k + 4) := by
-    rw [h4.gpr, g3, h.x1, coeffAddr, ptr_add]; congr 2; omega
+    rw [h4.gpr, g3, h.x1, coeffAddr, ptr_add]; congr 2; omega_using []
   refine wp_strq (a := coeffAddr (s₀.gpr .x1) (8 * k + 4)) (by decide) dst1 ?_ fun s5 h5 => ?_
   · rw [h4.wr, h3.wr, h2.wr, h1.wr, h.wr, coeffAddr]
-    exact hd.write _ (by omega)
+    exact hd.write _ (by omega_using [hk])
   have scalar : WP isa (.block [.addImm .x .x0 .x0 16, .addImm .x .x1 .x1 32, .subImm .x .x10 .x10 1]) s5
       fun t => Only [.x0, .x1, .x10] s5 t ∧ t.gpr .x0 = s5.gpr .x0 + 16 ∧
         t.gpr .x1 = s5.gpr .x1 + 32 ∧ (t.gpr .x10).toNat = 32 - (k + 1) := by
@@ -124,7 +124,7 @@ theorem step {s₀ : State} {F : Poly} (hd : WidenData s₀ F) {k : Nat} (hk : k
     · rw [h8.get .x1, e7, h6.get .x1]; rfl
     · have cnt : (s7.gpr .x10).toNat = 32 - k := by
         rw [h7.get .x10, h6.get .x10, h5.gpr, h4.gpr, g3, h.count]
-      rw [e8, toNat_sub_n (by rw [cnt]; simp; omega), cnt]; simp; omega
+      rw [e8, toNat_sub_n (by rw [cnt]; simp; omega_using [hk]), cnt]; simp; omega_using []
   refine WP.mono (WP.keepV (by decide) scalar) ?_
   intro t ⟨⟨ht, p0, p1, cnt⟩, vt⟩
   have g5 : s5.gpr = s.gpr := by rw [h5.gpr, h4.gpr, g3]
@@ -133,7 +133,7 @@ theorem step {s₀ : State} {F : Poly} (hd : WidenData s₀ F) {k : Nat} (hk : k
   have mt : t.mem = (s.mem.write (coeffAddr (s₀.gpr .x1) (8 * k)) 16 (s3.v .v1)).write
       (coeffAddr (s₀.gpr .x1) (8 * k + 4)) 16 (s3.v .v2) := by
     rw [ht.mem, h5.mem, h4.mem, h4.v, h3.mem, h2.mem, h1.mem]
-  refine ⟨⟨fun r hr => ?_, ?_, ?_, ?_, ?_, ?_, cnt, ?_, fun r hr => ?_, ?_, ?_⟩, by rw [cnt]; omega⟩
+  refine ⟨⟨fun r hr => ?_, ?_, ?_, ?_, ?_, ?_, cnt, ?_, fun r hr => ?_, ?_, ?_⟩, by rw [cnt]; omega_using [hk]⟩
   · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
     rw [ht.gpr r (by simp [hr.1, hr.2.1, hr.2.2]), g5, h.gpr r (by simp [hr.1, hr.2.1, hr.2.2])]
   · rw [ht.rd, h5.rd, h4.rd, h3.rd, h2.rd, h1.rd, h.rd]
@@ -147,14 +147,14 @@ theorem step {s₀ : State} {F : Poly} (hd : WidenData s₀ F) {k : Nat} (hk : k
     have hr2 : r ≠ .v2 := by revert r hr; decide
     rw [vv r hr0 hr1 hr2]; exact h.vcs r hr
   · rw [mt]
-    refine (h.out.write16 (S' := fun i => i < 8 * k + 4) (t := 8 * k) (by omega) w1
-      (fun i _ => by omega)).write16 (by omega) w2 (fun i _ => by omega)
+    refine (h.out.write16 (S' := fun i => i < 8 * k + 4) (t := 8 * k) (by omega_using [hk]) w1
+      (fun i _ => by omega_using [])).write16 (by omega_using [hk]) w2 (fun i _ => by omega_using [])
   · rw [mt]
-    have c0 := Offset.contains_base (s₀.gpr .x1) (d := 32 * k) (n := 16) (k := 1024) (by omega) (by omega)
-    have c1 := Offset.contains_base (s₀.gpr .x1) (d := 32 * k + 16) (n := 16) (k := 1024) (by omega) (by omega)
+    have c0 := Offset.contains_base (s₀.gpr .x1) (d := 32 * k) (n := 16) (k := 1024) (by omega_using [hk]) (by omega_using [hk])
+    have c1 := Offset.contains_base (s₀.gpr .x1) (d := 32 * k + 16) (n := 16) (k := 1024) (by omega_using [hk]) (by omega_using [hk])
     refine (h.frame.write (List.mem_singleton_self _) _ ?_).write (List.mem_singleton_self _) _ ?_
-    · rw [coeffAddr, show 4 * (8 * k) = 32 * k by omega]; exact c0
-    · rw [coeffAddr, show 4 * (8 * k + 4) = 32 * k + 16 by omega]; exact c1
+    · rw [coeffAddr, show 4 * (8 * k) = 32 * k by omega_using []]; exact c0
+    · rw [coeffAddr, show 4 * (8 * k + 4) = 32 * k + 16 by omega_using []]; exact c1
 
 theorem init (s : State) : WP isa (.block [.movz .x .x10 32 0, .vop (.movi0 .v29)]) s fun t =>
     ∀ F, Inv s F 0 t := by
@@ -166,7 +166,7 @@ theorem init (s : State) : WP isa (.block [.movz .x .x10 32 0, .vop (.movi0 .v29
   · rw [h2.gpr, h1.get .x1 (by decide)]; exact (BitVec.add_zero _).symm
   · rw [h2.v]; simp [vhalf]
   · rw [h2.other _ (by revert r hr; decide)]; exact h1.vcs r hr
-  · rw [ite_eq_right (by omega), h2.mem, h1.mem]
+  · rw [ite_eq_right (by omega_using []), h2.mem, h1.mem]
   · rw [h2.mem, h1.mem]; exact Frame.refl _ _
 
 theorem widen_ok {s : State} {F : Poly} (hd : WidenData s F) :

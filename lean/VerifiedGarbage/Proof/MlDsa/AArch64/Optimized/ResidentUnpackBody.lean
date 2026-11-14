@@ -35,10 +35,10 @@ theorem one_ok (s : State) {d g : Nat} (hd : d=18 ∨ d=20) (hg : g<4)
       (∀ v, v≠Unpack.outRegs[g]! → v≠.v24 → t.v v=s.v v) ∧
       t.mem=s.mem.write (s.gpr .x4+BitVec.ofNat 64 (16*g)) 16 (parsedVector s d g) ∧
       t.rd=s.rd ∧ t.wr=s.wr ∧ t.sp=s.sp := by
-  have hn : ¬ d=10 := by omega
+  have hn : ¬ d=10 := by omega_using [hd]
   let r := Unpack.outRegs[g]!
   have hr : r≠.v0 ∧ r≠.v1 ∧ r≠.v2 ∧ r≠.v20 ∧ r≠.v21 ∧ r≠.v22 ∧ r≠.v23 ∧ r≠.v24 := by
-    rcases (show g=0 ∨ g=1 ∨ g=2 ∨ g=3 by omega) with rfl | rfl | rfl | rfl <;> decide
+    rcases (show g=0 ∨ g=1 ∨ g=2 ∨ g=3 by omega_using [hg]) with rfl | rfl | rfl | rfl <;> decide
   have code : Unpack.one d g =
       [.vop (.tblN false 3 r .v0 Unpack.idxRegs[g]!)] ++
       [.vop (.mul r r .v23),.vop (.shift .ushr .s4 r r (if d=20 then 4 else 6)),
@@ -66,7 +66,7 @@ theorem one_ok (s : State) {d g : Nat} (hd : d=18 ∨ d=20) (hg : g<4)
       ha.other .v22 (Ne.symm hr.2.2.2.2.2.1),ha.other .v21 (Ne.symm hr.2.2.2.2.1),
       ha.other .v20 (Ne.symm hr.2.2.2.1)]
     rfl
-  refine wp_strq (by omega) rfl (by simpa only [hb.1.wr,ha.wr,hb.1.gpr,ha.gpr] using hw)
+  refine wp_strq (by omega_using [hg]) rfl (by simpa only [hb.1.wr,ha.wr,hb.1.gpr,ha.gpr] using hw)
     fun t ht => WP.block_nil_iff.mpr ?_
   refine ⟨ht.gpr.trans (hb.1.gpr.trans ha.gpr),?_,?_,
     ht.rd.trans (hb.1.rd.trans ha.rd),ht.wr.trans (hb.1.wr.trans ha.wr),
@@ -106,7 +106,7 @@ theorem loads_ok (s : State) {d : Nat} (hd : d=18 ∨ d=20)
   refine wp_ldrq (by decide) rfl (by simpa only [ha.gpr,ha.rd,ha.wr] using h1) fun b hb => ?_
   let c := b.write .x .x9 (b.gpr .x0+BitVec.ofNat 64 (2*d-16))
   have hc : exec (.addImm .x .x9 .x0 (2*d-16)) b=some c := by
-    simp only [exec,show 2*d-16<4096 by omega,ite_true,State.read,c,Size.bits,BitVec.setWidth_eq]
+    simp only [exec,show 2*d-16<4096 by omega_using [hd],ite_true,State.read,c,Size.bits,BitVec.setWidth_eq]
   refine WP.block_cons_iff.mpr ⟨c,hc,?_⟩
   have cg : c.gpr .x9=s.gpr .x0+BitVec.ofNat 64 (2*d-16) := by
     simp only [c,RegUpd.gpr_write,Size.bits,BitVec.setWidth_eq,ite_true,hb.gpr,ha.gpr]
@@ -151,7 +151,7 @@ theorem gatherValue_congr {v w : VReg → BitVec 128} (h0 : v .v0=w .v0)
   split
   · rename_i h
     unfold tableByte
-    have hi : ix/16=0 ∨ ix/16=1 ∨ ix/16=2 := by omega
+    have hi : ix/16=0 ∨ ix/16=1 ∨ ix/16=2 := by omega_using [h]
     rcases hi with hi | hi | hi
     · simp only [hi,show Nat.repeat VReg.succ 0 .v0=.v0 from rfl,h0]
     · simp only [hi,show Nat.repeat VReg.succ 1 .v0=.v1 from rfl,h1]
@@ -197,7 +197,7 @@ private theorem init_code {d : Nat} (hd : d=18 ∨ d=20) : Unpack.init d =
     (Unpack.vector .v20 [8380417,8380417,8380417,8380417]) ++
     (Unpack.vector .v21 [2^(d-1),2^(d-1),2^(d-1),2^(d-1)]) ++
     ([.movz .x .x11 16 0] : List Instr) := by
-    have hn : ¬ d=10 := by omega
+    have hn : ¬ d=10 := by omega_using [hd]
     simp only [Unpack.init,ite_eq_right hn,show List.range 4=[0,1,2,3] from rfl,
       List.flatMap_cons,List.flatMap_nil,List.append_nil,
       show Unpack.idxRegs[0]! = .v16 from rfl,show Unpack.idxRegs[1]! = .v17 from rfl,
@@ -267,7 +267,7 @@ theorem init_ok (s : State) {d : Nat} (hd : d=18 ∨ d=20) :
   · intro e he; rw [v21]; exact (hl e he).2.2.2
   · intro e he; rw [v20]; exact (hl e he).2.2.1
   · intro g hg
-    rcases (show g=0 ∨ g=1 ∨ g=2 ∨ g=3 by omega) with rfl | rfl | rfl | rfl
+    rcases (show g=0 ∨ g=1 ∨ g=2 ∨ g=3 by omega_using [hg]) with rfl | rfl | rfl | rfl
     · exact v16
     · exact v17
     · exact v18
@@ -311,7 +311,7 @@ theorem advance_ok (s : State) {d : Nat} (hd : d=18 ∨ d=20) :
   let a := s.write .x .x0 (s.gpr .x0+BitVec.ofNat 64 (2*d))
   let b := a.write .x .x4 (a.gpr .x4+64)
   let t := b.write .x .x11 (b.gpr .x11-1)
-  refine WP.block_cons_iff.mpr ⟨a,by simp [isa,exec,show 2*d<4096 by omega,State.read,a],?_⟩
+  refine WP.block_cons_iff.mpr ⟨a,by simp [isa,exec,show 2*d<4096 by omega_using [hd],State.read,a],?_⟩
   refine WP.block_cons_iff.mpr ⟨b,rfl,?_⟩
   refine WP.block_cons_iff.mpr ⟨t,rfl,?_⟩
   apply WP.block_nil_iff.mpr
@@ -355,7 +355,7 @@ theorem groupMem_frame (s : State) (d : Nat) {n : Nat} (hn : n≤4) :
   induction n with
   | zero => exact Frame.refl _ _
   | succ n ih =>
-    exact (ih (by omega)).write (r := ⟨s.gpr .x4,64⟩) (by simp) _ (Offset.contains_base _ (by omega) (by omega))
+    exact (ih (by omega_using [hn])).write (r := ⟨s.gpr .x4,64⟩) (by simp) _ (Offset.contains_base _ (by omega_using [hn]) (by omega_using [hn]))
 
 theorem groupMem_read (s : State) (d : Nat) {n g : Nat} (hn : n≤4) (hg : g<n) :
     (groupMem s d n).read (s.gpr .x4+BitVec.ofNat 64 (16*g)) 16=parsedVector s d g := by
@@ -367,8 +367,8 @@ theorem groupMem_read (s : State) (d : Nat) {n g : Nat} (hn : n≤4) (hg : g<n) 
     · subst g
       simpa only [Mem.readW,Mem.writeW,Nat.reduceMul,Nat.reduceDiv,BitVec.setWidth_eq] using
         Mem.readW_writeW_self (groupMem s d n) _ 16 (parsedVector s d n) (by decide)
-    · rw [Mem.read_write_sep (Offset.sep _ (by omega) (by omega) (by omega)) (by decide)]
-      exact ih (by omega) (by omega)
+    · rw [Mem.read_write_sep (Offset.sep _ (by omega_using [he]) (by omega_using [hn, hg]) (by omega_using [hn])) (by decide)]
+      exact ih (by omega_using [hn]) (by omega_using [hg, he])
 
 theorem GroupKeep.parsed {s t : State} (h : GroupKeep s t) (d g : Nat) :
     parsedVector t d g=parsedVector s d g :=
@@ -390,13 +390,13 @@ theorem groups_ok (s : State) {d n : Nat} (hd : d=18 ∨ d=20) (hn : n≤4)
     rw [List.range_succ,List.flatMap_append]
     simp only [List.flatMap_cons,List.flatMap_nil,List.append_nil]
     rw [WP.block_append_iff]
-    refine WP.mono (ih (by omega)) ?_
+    refine WP.mono (ih (by omega_using [hn])) ?_
     intro a ha
-    have hn4 : n<4 := by omega
+    have hn4 : n<4 := by omega_using [hn]
     have hnidx : Unpack.idxRegs[n]! ∉groupTemps := by
-      rcases (show n=0 ∨ n=1 ∨ n=2 ∨ n=3 by omega) with rfl | rfl | rfl | rfl <;> decide
+      rcases (show n=0 ∨ n=1 ∨ n=2 ∨ n=3 by omega_using [hn]) with rfl | rfl | rfl | rfl <;> decide
     have hout : Unpack.outRegs[n]! ∈groupTemps := by
-      rcases (show n=0 ∨ n=1 ∨ n=2 ∨ n=3 by omega) with rfl | rfl | rfl | rfl <;> decide
+      rcases (show n=0 ∨ n=1 ∨ n=2 ∨ n=3 by omega_using [hn]) with rfl | rfl | rfl | rfl <;> decide
     refine WP.mono (one_ok a hd hn4 (by rw [ha.1.vec _ hnidx]; exact hi n hn4)
       (by simpa only [ha.1.wr,ha.1.gpr] using hw n hn4)) ?_
     intro t ht
@@ -435,7 +435,7 @@ theorem ParseReady.keep {d : Nat} {s t : State} (h : ParseReady d s)
   · intro e he; rw [hv .v21 (by decide)]; exact h.constants.bound e he
   · intro e he; rw [hv .v20 (by decide)]; exact h.constants.modulus e he
   · intro g hg
-    rw [hv _ (by rcases (show g=0 ∨ g=1 ∨ g=2 ∨ g=3 by omega) with rfl | rfl | rfl | rfl <;> decide)]
+    rw [hv _ (by rcases (show g=0 ∨ g=1 ∨ g=2 ∨ g=3 by omega_using [hg]) with rfl | rfl | rfl | rfl <;> decide)]
     exact h.indices g hg
 
 structure BodyPost (d : Nat) (s t : State) : Prop where
@@ -457,7 +457,7 @@ private theorem body_code {d : Nat} (hd : d=18 ∨ d=20) : Unpack.body d =
     ([.ldrq .v0 .x0 0,.ldrq .v1 .x0 16,.addImm .x .x9 .x0 (2*d-16),.ldrq .v2 .x9 0] : List Instr) ++
     ((List.range 4).flatMap (Unpack.one d)) ++
     ([.addImm .x .x0 .x0 (2*d),.addImm .x .x4 .x4 64,.subImm .x .x11 .x11 1] : List Instr) := by
-  simp only [Unpack.body,ite_eq_right (by omega : ¬ d=10),List.cons_append,List.nil_append]
+  simp only [Unpack.body,ite_eq_right (by omega_using [hd] : ¬ d=10),List.cons_append,List.nil_append]
 
 /-- One fixed-count parser iteration consumes sixteen packed fields and
 produces their canonical coefficients in sixty-four bytes. -/

@@ -295,7 +295,7 @@ theorem initial_ok {w16 : Bool} {s : State} {a b : Nat} (ha : a<65536) (hb : b<6
   refine WP.seq (WP.mono (count_loop (n:=2) (cr:=.x6) (body:=oneBody w16) (by decide)
     (InitialInv w16 A B (s.gpr .x19) (s.gpr .x28+BitVec.ofNat 64 a) (s.gpr .x28+BitVec.ofNat 64 b) s)
     (fun k hk v hv => ?_) i0) fun u hu => ?_)
-  · rcases (show k=0 ∨ k=1 by omega) with rfl|rfl
+  · rcases (show k=0 ∨ k=1 by omega_using [hk]) with rfl|rfl
     · exact initialStep0_ok pre hv
     · exact initialStep1_ok pre hv
   obtain ⟨ku,fu,cu,u22,ca,sa,cb,sb⟩ := hu

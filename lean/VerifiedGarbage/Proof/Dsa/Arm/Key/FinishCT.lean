@@ -38,7 +38,7 @@ theorem finTest_ok {s₀ t : State} (A : KeyABI s₀) (F : RFin s₀ t) :
       RReady s₀ u ∧ Saved s₀ u.mem ∧ u.z = decide ((rResult s₀).status = 1) := by
   have hR := rResult_status_le A
   refine wp_ld F.ready (by decide) fun t₁ u₁ => wp_cmp (op2_imm (by decide)) fun t₂ f₂ z₂ => WP.block_nil ?_
-  rw [u₁.gpr, F.status, one_beq (by omega)] at z₂
+  rw [u₁.gpr, F.status, one_beq (by omega_using [hR])] at z₂
   exact ⟨(F.ready.upd u₁).fupd f₂, by rw [f₂.mem, u₁.mem]; exact F.saved, z₂⟩
 
 /-- Ready, with public data `p.1`. -/

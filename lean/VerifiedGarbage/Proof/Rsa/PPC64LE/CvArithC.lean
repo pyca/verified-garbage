@@ -115,35 +115,35 @@ theorem divWD_ok {s : State} {B : Addr} {Z w a r : Nat} (h : Ws s B Z w nArr)
   rw [← List.append_nil (VG.Impl.Rsa.PPC64LE.Keys.clrLow aDD)]
   refine clrLow_ok h1 (by decide) (by decide) fun t2 h2 k2 v2 x2 top2 => WP.block_nil ?_
   rw [wp_seqs_cons (List.cons_ne_nil _ _)]
-  refine WP.mono (VG.Proof.Rsa.PPC64LE.KeyDiv.fixTop_ok h2 (m := aDD) (by decide) (by decide) hw (by omega))
+  refine WP.mono (VG.Proof.Rsa.PPC64LE.KeyDiv.fixTop_ok h2 (m := aDD) (by decide) (by decide) hw (by omega_using [hw16]))
     fun t3 ⟨m3, h3, k3⟩ => ?_
   have hd2 : num t2.mem B w aDD = 2 * (num s.mem B w a / 2) := by rw [v2, v1]
   have hdv : wordsVal t2.mem B (arr w aDD) (w / 4) = 2 * (num s.mem B w a / 2) := by
     rw [wordsVal_eq_val32]
-    exact VG.Proof.Rsa.PPC64LE.MontKey.val32_low hd2 (by omega)
-      (by rw [show 32 * (2 * (w / 4)) = 64 * (w / 4) by omega]; omega)
+    exact VG.Proof.Rsa.PPC64LE.MontKey.val32_low hd2 (by omega_using [])
+      (by rw [show 32 * (2 * (w / 4)) = 64 * (w / 4) by omega_using []]; omega_using [hlt])
   have ft := VG.Proof.Rsa.PPC64LE.KeyDiv.fixTop_val (mem := t2.mem) (B := B) (d := arr w aDD) (wd := w / 4)
-    (by omega) (by omega)
+    (by omega_using [hw16]) (by omega_using [fD])
   rw [← m3] at ft
   obtain ⟨hT, hfix⟩ := ft
   have o3 : Outside B (arr w aDD + 8 * (w / 4 - 1)) 8 t2.mem t3.mem := by
-    rw [m3]; exact writeW_outside _ B _ (by omega)
+    rw [m3]; exact writeW_outside _ B _ (by omega_using [fD])
   have kD : KeyWorkspace.Keep B w [aDD] [] t2.mem t3.mem :=
-    KeyWorkspace.Keep.of_arr (o := aDD) o3 (by simp only [S]; omega) (by simp)
+    KeyWorkspace.Keep.of_arr (o := aDD) o3 (by simp only [S]; omega_using []) (by simp)
   have dd3 : num t3.mem B w aD = num s.mem B w aD := by
     rw [kD.num (by decide) (by simp) (fit _ (by decide)), k2.num (by decide) (by simp) (fit _ (by decide)),
       k1.num (by decide) (by simp) (fit _ (by decide))]
   rw [show ∀ x : Prog isa, seqs [x] = x from fun _ => rfl]
   refine WP.mono (VG.Proof.Rsa.PPC64LE.KeyDiv.divW_ok h3 (by decide) r1 (by decide) (by decide) (by decide)
-    (Ne.symm r5) (by decide) (by decide) r3 r4 r2 (by decide) (by decide) (by decide) (by decide) hw (by omega) hT)
+    (Ne.symm r5) (by decide) (by decide) r3 r4 r2 (by decide) (by decide) (by decide) (by decide) hw (by omega_using [hw16]) hT)
     fun t ⟨tr, ht, kt, mt⟩ => ⟨ht, ?_, fun _ hb => by rw [tr, dd3, hfix (by rw [hdv]; exact hb), hdv], ?_, ?_⟩
   · exact ((k1.mono (by simp) (by simp)).trans ((k2.mono (by simp) (by simp)).trans
       (kD.mono (by simp) (by simp)))).trans (mt.mono (by simp) (by simp))
   · have v3 : w32 t3.mem B (arr w aDD + 4 * w) = 0 := by
-      rw [o3.w32 (by omega) (by omega), top2, top1, top]
+      rw [o3.w32 (by omega_using [hw16]) (by omega_using [fD]), top2, top1, top]
     rw [← v3]
     exact congrArg BitVec.toNat (VG.Proof.Rsa.PPC64LE.InvBatch.keep_word mt (b := 32) (o := 4 * w)
-      (by simp only [S]; omega) (fun x hx => by
+      (by simp only [S]; omega_using []) (fun x hx => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
         rcases hx with rfl | rfl | rfl
         exacts [r3, by decide, by decide]) (fun d hd => absurd hd (by simp)) (fit _ (by decide)))
@@ -175,17 +175,17 @@ theorem partC_ok {s : State} {B : Addr} {Z w pL qL : Nat} (h : Ws s B Z w nArr)
   have fit : ∀ j < nArr, arr w j + S w ≤ 2 ^ 64 := fun j hj => h.fit64 hj
   unfold partC
   rw [wp_seqs_cons (List.cons_ne_nil _ _)]
-  refine WP.mono (shape_ok h.r29 h20 h22 (by omega) hpw hqw) fun s1 ⟨z1, m1, k1⟩ => ?_
+  refine WP.mono (shape_ok h.r29 h20 h22 (by omega_using [this]) hpw hqw) fun s1 ⟨z1, m1, k1⟩ => ?_
   have h1 := h.of_keep k1
   have g1 : ∀ x ∈ [Reg.r20, .r22], s1.gpr x = s.gpr x := fun x hx => k1.gpr x (by revert x hx; decide)
   rw [show ∀ x : Prog isa, seqs [x] = x from fun _ => rfl]
   refine WP.ite (s1.gpr .r0 == 0) (eval_zero s1 .r0) (fun hz => ?_) (fun hz => ?_)
   · -- By words: the inverse's tail, then the divisions.
     obtain ⟨p8, hpw2, hpq, p32⟩ := z1.1 (by simpa using hz)
-    have hw : w = 4 * (w / 4) := by omega
+    have hw : w = 4 * (w / 4) := by omega_using [p8, hpw2]
     have hS : S w = 4 * (w + 2) := rfl
     rw [wp_seqs_cons (by simp [VG.Impl.Rsa.PPC64LE.CrtValues.divW])]
-    refine WP.mono (tail_ok h1 hw (by omega)) fun t1 ⟨h1', K1, v1, x1⟩ => ?_
+    refine WP.mono (tail_ok h1 hw (by omega_using [hpw2, p32])) fun t1 ⟨h1', K1, v1, x1⟩ => ?_
     rw [m1] at K1 v1
     have kp : ∀ j, j = aP ∨ j = aQ ∨ j = aD → num t1.mem B w j = num s.mem B w j := fun j hj => by
       rcases hj with rfl | rfl | rfl <;> exact K1.num (by decide) (by simp) (fit _ (by decide))
@@ -193,12 +193,12 @@ theorem partC_ok {s : State} {B : Addr} {Z w pL qL : Nat} (h : Ws s B Z w nArr)
       rw [KeyWorkspace.Keep.word K1 (i := w) (by omega_arith) (by decide) (by simp) (fit _ (by decide)), top]
     rw [wp_seqs_append (by simp [VG.Impl.Rsa.PPC64LE.CrtValues.divW])
       (by simp [VG.Impl.Rsa.PPC64LE.CrtValues.divW])]
-    refine WP.mono (divWD_ok h1' (.inl rfl) (.inl rfl) top1 hw (by omega)
-      (by rw [kp aP (.inl rfl), show 64 * (w / 4) = 8 * pL by omega]; exact hP)) fun t2 ⟨h2, k2, v2, top2, x2⟩ => ?_
+    refine WP.mono (divWD_ok h1' (.inl rfl) (.inl rfl) top1 hw (by omega_using [hpw2, p32])
+      (by rw [kp aP (.inl rfl), show 64 * (w / 4) = 8 * pL by omega_using [p8, hpw2]]; exact hP)) fun t2 ⟨h2, k2, v2, top2, x2⟩ => ?_
     have q2 : num t2.mem B w aQ = num s.mem B w aQ := by
       rw [k2.num (by decide) (by simp) (fit _ (by decide)), kp aQ (.inr (.inl rfl))]
-    refine WP.mono (divWD_ok h2 (.inr rfl) (.inr rfl) top2 hw (by omega)
-      (by rw [q2, show 64 * (w / 4) = 8 * qL by omega]; exact hQ)) fun t ⟨h3, k3, v3, _, x3⟩ => ?_
+    refine WP.mono (divWD_ok h2 (.inr rfl) (.inr rfl) top2 hw (by omega_using [hpw2, p32])
+      (by rw [q2, show 64 * (w / 4) = 8 * qL by omega_using [p8, hpw2, hpq]]; exact hQ)) fun t ⟨h3, k3, v3, _, x3⟩ => ?_
     have d2 : num t2.mem B w aD = num s.mem B w aD := by
       rw [k2.num (by decide) (by simp) (fit _ (by decide)), kp aD (.inr (.inr rfl))]
     have hs : KeyCheck.Shape w pL qL := ⟨p8, hpw2, hpq, p32⟩

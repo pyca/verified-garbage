@@ -86,7 +86,7 @@ theorem finish_ok (v : HPrime.Backend) (s : State) (h : Space s)
     intro i hi
     rw [dstW, ← kw.x19]
     rcases hW.output with ⟨r, hr, hc⟩
-    exact ⟨r, hr, hc.byte (by rw [Offset.add_sub_cancel_left, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega : i < 2 ^ 64)]; exact hi)⟩
+    exact ⟨r, hr, hc.byte (by rw [Offset.add_sub_cancel_left, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hi] : i < 2 ^ 64)]; exact hi)⟩
   have sepW : (⟨w.gpr .x24 + 768, 64⟩ : Region).Disjoint ⟨w.gpr .x22, 64⟩ := by
     rw [dstW, ← kw.x19]
     exact (hW.frameWork.sub_left (Region.sub_prefix (by decide : 64 ≤ 272))).symm.sub_left
@@ -194,12 +194,12 @@ theorem remaining_ok (v : HPrime.Backend) (ps : List (Nat × Nat))
     have tailReady : ∀ q ∈ ps, InputReady s q.1 q.2 := fun q hq =>
       ready q (List.mem_cons_of_mem p hq)
     have size : inputSize s (p :: ps) = 4 + (wordAt s p.2).toNat + inputSize s ps := rfl
-    refine WP.seq ((absorb_ok v s p.1 p.2 hp d repr count (by rw [size] at bound; omega)).mono ?_)
+    refine WP.seq ((absorb_ok v s p.1 p.2 hp d repr count (by rw [size] at bound; omega_using [bound])).mono ?_)
     rintro u ⟨reprU, countU, ku⟩
     refine (ih u (space.keeps ku) (fun q hq => (tailReady q hq).keeps ku)
       _ reprU countU ?_).mono ?_
     · rw [inputSize_keeps ps tailReady ku, Proof.Argon2.appendInput_length, inputBytes_length]
-      rw [size] at bound; omega
+      rw [size] at bound; omega_using [bound]
     · rintro t ⟨digestT, ft⟩
       refine ⟨?_, ft.before ku⟩
       rw [ku.x19] at digestT
@@ -226,7 +226,7 @@ theorem code_ok (v : HPrime.Backend) (s : State) (space : Space s)
     change 24 + (4 + (wordAt s passwordLenOffset).toNat +
       (4 + (wordAt s saltLenOffset).toNat + (4 + (wordAt s secretLenOffset).toNat +
       (4 + (wordAt s adLenOffset).toNat + 0)))) < 2 ^ 64
-    omega
+    omega_using [hp, hs, hk, ha]
   refine (remaining_ok v inputs u (space.keeps ku) (fun p hp => (ready p hp).keeps ku)
     _ reprU count (by rw [inputSize_keeps inputs ready ku]; exact bound)).mono ?_
   rintro t ⟨digestT, ft⟩

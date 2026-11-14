@@ -41,7 +41,7 @@ theorem wordsAt_append' (m : Mem) (p : Addr) (a b : Nat) :
 theorem val32_of_wordsAt {m : Mem} {p : Addr} {d w V : Nat}
     (h : Spec.Rsa.wordsAt m (p + BitVec.ofNat 64 d) w = Spec.Rsa.toWords V w) (hV : V < 2 ^ (64 * w)) :
     val32 m p d (2 * w) = V := by
-  rw [← VG.Proof.Bignum.read_eq_val32, show 4 * (2 * w) = 8 * w by omega, VG.Proof.Bignum.read_eq_wv,
+  rw [← VG.Proof.Bignum.read_eq_val32, show 4 * (2 * w) = 8 * w by omega_using [], VG.Proof.Bignum.read_eq_wv,
     ← Nat.mod_eq_of_lt hV]
   refine VG.Proof.Bignum.wv_of_words fun i hi => ?_
   have := congrArg (fun l => l[i]?) h
@@ -63,7 +63,7 @@ variable {s : State}
 /-- The first `n` bytes of `pre`. -/
 theorem pre_sub (n k : Nat) (h : n ≤ k) (P : Addr) :
     Region.Sub ⟨P, n⟩ ⟨P, k⟩ := by
-  have := Offset.sub P (d := 0) (n := n) (e := 0) (k := k) (Nat.zero_le _) (by omega)
+  have := Offset.sub P (d := 0) (n := n) (e := 0) (k := k) (Nat.zero_le _) (by omega_using [h])
   simpa only [off, BitVec.ofNat_eq_ofNat, BitVec.add_zero] using this
 
 /-- Factor `i`'s cached value, from the contract's `pre`, for a factor above one. -/
@@ -80,19 +80,19 @@ theorem preR2_of (A : CrtABIP s) {i : Nat} (hi : i ≤ 1)
   have pb := A.preBound
   unfold Spec.Rsa.lenValid at lv
   have pwq : preOff (arg s) i + 8 * preW (arg s) i ≤ (arg s 19).toNat * 8 := by
-    rcases (by omega : i = 0 ∨ i = 1) with rfl | rfl <;> simp [preOff, preW] <;> omega
+    rcases (by omega_using [hi] : i = 0 ∨ i = 1) with rfl | rfl <;> simp [preOff, preW] <;> omega_using [plen]
   have below' : Region.Disjoint (below (s.gpr .esp) 96) ⟨argumentPointer s 18, (arg s 19).toNat * 8⟩ := by
     simp only [below]; rw [VG.X86.Taint.sub_setWidth A.stackLow]; exact A.belowPre
   have sub := pre_sub _ _ pwq (argumentPointer s 18)
-  refine ⟨⟨VG.Proof.Dsa.X86.stackArgument_of (count := 20) (by have := A.stackBound; omega) (by decide)
-      (by rw [A.rd, A.wr]; simp) A.scratchArgs.symm, rfl⟩, hi, ?_, ?_, by omega, by omega,
-    ⟨⟨argumentPointer s 18, (arg s 19).toNat * 8⟩, by rw [A.rd]; simp, ?_⟩, by simp only [preArg]; omega,
+  refine ⟨⟨VG.Proof.Dsa.X86.stackArgument_of (count := 20) (by have := A.stackBound; omega_using [this]) (by decide)
+      (by rw [A.rd, A.wr]; simp) A.scratchArgs.symm, rfl⟩, hi, ?_, ?_, by omega_using [lv, pl], by omega_using [pp],
+    ⟨⟨argumentPointer s 18, (arg s 19).toNat * 8⟩, by rw [A.rd]; simp, ?_⟩, by simp only [preArg]; omega_using [pb, pwq],
     A.scratchPre.symm.sub_left sub, ?_,
-    by have := A.stackBound; omega, below'.symm.sub_left sub⟩
-  · rcases (by omega : i = 0 ∨ i = 1) with rfl | rfl <;> simp only [Nat.reduceMul, Nat.reduceAdd] <;> omega
-  · rcases (by omega : i = 0 ∨ i = 1) with rfl | rfl <;> simp only [Nat.reduceMul, Nat.reduceAdd] <;> omega
+    by have := A.stackBound; omega_using [this], below'.symm.sub_left sub⟩
+  · rcases (by omega_using [hi] : i = 0 ∨ i = 1) with rfl | rfl <;> simp only [Nat.reduceMul, Nat.reduceAdd] <;> omega_arith
+  · rcases (by omega_using [hi] : i = 0 ∨ i = 1) with rfl | rfl <;> simp only [Nat.reduceMul, Nat.reduceAdd] <;> omega_arith
   · have := Offset.contains_base (argumentPointer s 18) (d := 0) (n := preOff (arg s) i + 8 * preW (arg s) i)
-      (k := (arg s 19).toNat * 8) (by omega) (by decide)
+      (k := (arg s 19).toNat * 8) (by omega_using [pwq]) (by decide)
     simp only [BitVec.add_zero] at this
     exact this
   · have W := A.preValue
@@ -103,27 +103,27 @@ theorem preR2_of (A : CrtABIP s) {i : Nat} (hi : i ≤ 1)
     have lt : ∀ j, componentValue s.mem (arg s) j < 2 ^ (64 * Spec.Rsa.primeWords (arg s (j + 1)).toNat) := by
       intro j
       refine Nat.lt_of_lt_of_le (comp_lt s.mem (arg s) j) (Nat.pow_le_pow_right (by decide) ?_)
-      simp only [Spec.Rsa.primeWords, Spec.Rsa.modulusWords]; omega
-    rcases (by omega : i = 0 ∨ i = 1) with rfl | rfl
+      simp only [Spec.Rsa.primeWords, Spec.Rsa.modulusWords]; omega_using []
+    rcases (by omega_using [hi] : i = 0 ∨ i = 1) with rfl | rfl
     · have E1' : Spec.Rsa.wordsAt s.mem (argumentPointer s 18 + BitVec.ofNat 64 0)
           (Spec.Rsa.primeWords (arg s 7).toNat) = Spec.Rsa.toWords
             (2 ^ (128 * Spec.Rsa.primeWords (arg s 7).toNat) % componentValue s.mem (arg s) 6)
             (Spec.Rsa.primeWords (arg s 7).toNat) := by
         rw [show argumentPointer s 18 + BitVec.ofNat 64 0 = argumentPointer s 18 from BitVec.add_zero _]
         exact E1
-      exact val32_of_wordsAt (p := argumentPointer s 18) (d := 0) E1' (Nat.lt_trans (Nat.mod_lt _ (by omega)) (lt 6))
+      exact val32_of_wordsAt (p := argumentPointer s 18) (d := 0) E1' (Nat.lt_trans (Nat.mod_lt _ (by omega_using [hp])) (lt 6))
     · exact val32_of_wordsAt (p := argumentPointer s 18) (d := 8 * Spec.Rsa.primeWords (arg s 7).toNat) E2
-        (Nat.lt_trans (Nat.mod_lt _ (by omega)) (lt 8))
+        (Nat.lt_trans (Nat.mod_lt _ (by omega_using [hp])) (lt 8))
 
 /-- Argument 18 and factor `i`'s cached value, apart from the output. -/
 theorem preOut_of (A : CrtABIP s) {i : Nat} (hi : i ≤ 1) : PreOut s (arg s) (arg s 3).toNat i := by
   have plen := A.preLength
   have pwq : preOff (arg s) i + 8 * preW (arg s) i ≤ (arg s 19).toNat * 8 := by
-    rcases (by omega : i = 0 ∨ i = 1) with rfl | rfl <;> simp [preOff, preW] <;> omega
+    rcases (by omega_using [hi] : i = 0 ∨ i = 1) with rfl | rfl <;> simp [preOff, preW] <;> omega_using [plen]
   have pb := A.preBound
   have ol := A.outLength
   have O : VG.Proof.Dsa.X86.StackArgument s (argumentPointer s 0) (arg s 1).toNat preArg :=
-    VG.Proof.Dsa.X86.stackArgument_of (count := 20) (by have := A.stackBound; omega) (by decide) (by rw [A.rd, A.wr]; simp)
+    VG.Proof.Dsa.X86.stackArgument_of (count := 20) (by have := A.stackBound; omega_using [this]) (by decide) (by rw [A.rd, A.wr]; simp)
       A.outArgs.symm
   refine ⟨?_, ?_⟩
   · rw [← ol]; exact O.apart
@@ -214,8 +214,8 @@ theorem operationP_ok {s : State} (A : CrtABIP s) :
       Spec.Rsa.written t.mem (argumentPointer s 0) (arg s 3).toNat (t.gpr .eax)
         (specResult s.mem (arg s)) ∧ abiPreserved s t := by
   have R := A.res
-  have low : 48 ≤ (arg s 17).toNat * 8 := by have := R.used; omega
-  have high : (arg s 17).toNat * 8 ≤ 2 ^ 64 := by have := A.scratchBound; omega
+  have low : 48 ≤ (arg s 17).toNat * 8 := by have := R.used; omega_using [this]
+  have high : (arg s 17).toNat * 8 ≤ 2 ^ 64 := by have := A.scratchBound; omega_using []
   unfold CrtRt.code
   rw [entry_eq]
   refine WP.seq (WP.mono (Crt.installedG_ok R) fun u ⟨I, S, K, O⟩ => ?_)
@@ -226,7 +226,7 @@ theorem operationP_ok {s : State} (A : CrtABIP s) :
   have B (i : Nat) (hi : i ∈ componentArguments) :
       Spec.Rsa.bytesAt u.mem (byteAddr (arg s i)) (arg s (i + 1)).toNat =
         Spec.Rsa.bytesAt s.mem (byteAddr (arg s i)) (arg s (i + 1)).toNat := by
-    apply VG.Proof.Bignum.scratch_bytes O (by have := (arg s (i + 1)).isLt; omega)
+    apply VG.Proof.Bignum.scratch_bytes O (by have := (arg s (i + 1)).isLt; omega_using [])
     simp only [componentArguments, List.mem_cons, List.not_mem_nil, or_false] at hi
     rcases hi with rfl | rfl | rfl | rfl | rfl | rfl | rfl
     · exact A.nScratch
@@ -240,7 +240,7 @@ theorem operationP_ok {s : State} (A : CrtABIP s) :
     unfold componentValue; rw [B i hi]
   -- `pre`'s values, through the entry, which changes only the working space.
   have Fe : Frame [⟨argumentPointer s 16, (arg s 17).toNat * 8⟩] s.mem u.mem := by
-    have F := VG.Proof.Bignum.outside_frame O (by omega)
+    have F := VG.Proof.Bignum.outside_frame O (by omega_using [])
     simpa only [off, BitVec.add_zero] using F
   have keepP : ∀ {i p : Nat}, PreR2 s (argumentPointer s 16) ((arg s 17).toNat * 8) (arg s 3).toNat (arg s) i p →
       PreR2 u (argumentPointer s 16) ((arg s 17).toNat * 8) (arg s 3).toNat (arg s) i p := fun P =>
@@ -258,7 +258,7 @@ theorem operationP_ok {s : State} (A : CrtABIP s) :
   rw [espu] at F
   have Whole : Frame [⟨argumentPointer s 16, (arg s 17).toNat * 8⟩,
       ⟨argumentPointer s 0, (arg s 3).toNat⟩, below (s.gpr .esp) 96] s.mem v.mem := by
-    have Start := VG.Proof.Bignum.outside_frame O (by omega)
+    have Start := VG.Proof.Bignum.outside_frame O (by omega_using [])
     simp only [BitVec.add_zero] at Start
     exact (Start.mono (by intro r hr; simp only [List.mem_singleton] at hr; subst r; simp)).trans
       (frameRt_full F low)

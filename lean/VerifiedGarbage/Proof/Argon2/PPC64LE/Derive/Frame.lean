@@ -45,7 +45,7 @@ theorem restore_ok {s₀ : State} (hp : DPre s₀) {s : State} (h : Inv s₀ s) 
     (fun p hp' => by
       show InRegions (a.rd ++ a.wr) _ _
       rw [ua.rd, ua.wr]
-      exact loc_in' h (by have := bounds p hp'; omega) (by have := bounds p hp'; omega))
+      exact loc_in' h (by have := bounds p hp'; omega_using [this]) (by have := bounds p hp'; omega_using [this]))
     (fun p hp' => by
       show a.mem.readW _ _ = _
       rw [ua.mem]
@@ -66,7 +66,7 @@ theorem restore_ok {s₀ : State} (hp : DPre s₀) {s : State} (h : Inv s₀ s) 
 theorem frames_ok {s₀ : State} (hp : DPre s₀) {Q : Mem → Prop}
     (hb : WP isa Impl.Argon2.PPC64LE.Derive.body (entry s₀) fun t => BodyDone s₀ t ∧ Q t.mem) :
     WP isa Impl.Argon2.PPC64LE.Derive.derive s₀ fun u => abiPreserved s₀ u ∧ Q u.mem := by
-  refine WP.alloc (by decide) (by have := hp.sp_lo; show 336 ≤ _; omega) (hb.mono fun t ⟨d, q⟩ => ?_)
+  refine WP.alloc (by decide) (by have := hp.sp_lo; show 336 ≤ _; omega_using [this]) (hb.mono fun t ⟨d, q⟩ => ?_)
   refine ⟨⟨d.regs, ?_, d.lr⟩, q⟩
   show t.sp + BitVec.ofNat 64 336 = _
   rw [d.sp, BitVec.sub_add_cancel]

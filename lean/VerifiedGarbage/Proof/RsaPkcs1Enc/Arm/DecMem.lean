@@ -33,21 +33,21 @@ variable (h : In P σ)
 include h
 
 theorem sl8 : 8448 ≤ P.sl * 8 := by
-  have := h.slK; have := h.k64; simp only [Spec.Rsa.scratchWords] at *; omega
+  have := h.slK; have := h.k64; simp only [Spec.Rsa.scratchWords] at *; omega_arith
 
 theorem scr_fit : P.scr.toNat + P.sl * 8 ≤ 2 ^ 32 := by
   have := h.ok.fits P.SCR (by simp); simpa [Proof.X25519.Arm.addr_toNat] using this
 
 theorem scrA {o : Nat} (ho : o < 8448) : State.addr (P.scr + BitVec.ofNat 32 o) = State.addr P.scr + BitVec.ofNat 64 o :=
-  addr_add (by have := h.scr_fit; have := h.sl8; omega)
+  addr_add (by have := h.scr_fit; have := h.sl8; omega_arith)
 
 theorem scr_toNat {o : Nat} (ho : o < 8448) : (P.scr + BitVec.ofNat 32 o).toNat = P.scr.toNat + o := by
   have := h.scr_fit; have := h.sl8
-  rw [Proof.X25519.Arm.toNat_add_lt (by rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]; omega),
-    BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+  rw [Proof.X25519.Arm.toNat_add_lt (by rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [ho])]; omega_arith),
+    BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [ho])]
 
 theorem sc_sub {o n : Nat} (hn : o + n ≤ 8448) : Region.Sub (sc P o n) P.SCR :=
-  Offset.sub_base _ (by have := h.sl8; omega)
+  Offset.sub_base _ (by have := h.sl8; omega_using [hn, this])
 
 theorem sc_ro {o n : Nat} (hn : o + n ≤ 8448) {R : Region} (hR : R ∈ P.lay.ro) : (sc P o n).Disjoint R :=
   (h.ok.rw_ro (w := P.SCR) (by simp) hR).sub_left (h.sc_sub hn)
@@ -72,17 +72,17 @@ theorem low_sc {o n : Nat} (hn : o + n ≤ 8448) : P.lay.LOW.Disjoint (sc P o n)
   (h.ok.low_buf (R := P.SCR) (.inr (by simp))).sub_right (h.sc_sub hn)
 
 theorem fit_sc {o n : Nat} (hn : o + n ≤ 8448) (ho : o < 8448) : (P.scr + BitVec.ofNat 32 o).toNat + n ≤ 2 ^ 32 := by
-  rw [h.scr_toNat (by omega)]; have := h.scr_fit; have := h.sl8; omega
+  rw [h.scr_toNat (by omega_using [ho])]; have := h.scr_fit; have := h.sl8; omega_arith
 
 end In
 
 theorem sc_sep {o n o' n' : Nat} (hs : o + n ≤ o' ∨ o' + n' ≤ o) (h₁ : o + n ≤ 8448) (h₂ : o' + n' ≤ 8448) :
     (sc P o n).Disjoint (sc P o' n') :=
-  Offset.disjoint _ hs (by omega) (by omega)
+  Offset.disjoint _ hs (by omega_using [h₁]) (by omega_using [h₂])
 
 theorem St.sc_w {s : State} (hs : S P σ s) {o n : Nat} (hn : o + n ≤ 8448) :
     InRegions s.wr (State.addr P.scr + BitVec.ofNat 64 o) n :=
-  ⟨P.SCR, by rw [hs.2.wr, hs.1.ok.wr]; simp, Offset.contains_base _ (by have := hs.1.sl8; omega) (by omega)⟩
+  ⟨P.SCR, by rw [hs.2.wr, hs.1.ok.wr]; simp, Offset.contains_base _ (by have := hs.1.sl8; omega_using [hn, this]) (by omega_using [hn])⟩
 
 theorem St.sc_r {s : State} (hs : S P σ s) {o n : Nat} (hn : o + n ≤ 8448) :
     InRegions (s.rd ++ s.wr) (State.addr P.scr + BitVec.ofNat 64 o) n :=

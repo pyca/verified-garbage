@@ -24,7 +24,7 @@ open VG.Proof.RsaOaep.AArch64 VG.Impl.RsaOaep.AArch64
 theorem frameWord_write {F : Addr} {k : Nat} (hk : k < nW) (m : Mem) (v : BitVec 64) :
     Frame [⟨F, frameBytes⟩] m (m.writeW (VG.Proof.Bignum.off F (8 * k)) v) :=
   (Frame.refl _ _).writeW (r := ⟨F, frameBytes⟩) (by simp) _
-    (Offset.contains_base _ (by unfold nW frameBytes at *; omega) (by unfold nW frameBytes at *; omega))
+    (Offset.contains_base _ (by unfold nW frameBytes at *; omega_using [hk]) (by unfold nW frameBytes at *; omega_using [hk]))
 
 theorem initialRep (m : Mem) (F S : Addr) :
     Rep m F S (fun i => m (VG.Proof.Bignum.off S i)) (fun k => VG.Proof.Bignum.word m F (8 * k)) := ⟨fun _ _ => rfl, fun _ _ => rfl⟩

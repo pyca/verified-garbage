@@ -48,6 +48,6 @@ structure Mid (s t : State) : Prop where
 
 /-- `EM₁` is in the frame. -/
 theorem em1_sub {K : Nat} {s : State} (hp : PreR K s) : Region.Sub (em1R s) (kR K s) :=
-  frame_sub K s (by have := hp.k2; unfold oEM1 frameBytes; omega)
+  frame_sub K s (by have := hp.k2; unfold oEM1 frameBytes; omega_using [this])
 
 end VG.Proof.RsaPkcs1Sig.AArch64.Rec

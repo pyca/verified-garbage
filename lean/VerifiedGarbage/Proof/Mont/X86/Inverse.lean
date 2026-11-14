@@ -33,14 +33,14 @@ theorem neg_inv {a x : Nat} (hx : x < 2 ^ 32) (h : ((a : Int) * x - 1) % (2 ^ 32
     (a * ((2 ^ 32 - x + 0) % 2 ^ 32) + 1) % 2 ^ 32 = 0 := by
   have hr : (((2 ^ 32 - x + 0) % 2 ^ 32 : Nat) : Int) % 2 ^ 32 = -(x : Int) % 2 ^ 32 := by
     rw [Int.natCast_emod, show ((2 ^ 32 : Nat) : Int) = 2 ^ 32 from rfl, Int.emod_emod]
-    omega
+    omega_using [hx]
   have h2 : ((a * ((2 ^ 32 - x + 0) % 2 ^ 32) + 1 : Nat) : Int) % 2 ^ 32 =
       (-((a : Int) * x - 1)) % 2 ^ 32 := by
     rw [Int.natCast_add, Int.natCast_mul, Int.add_emod, Int.mul_emod, hr, ← Int.mul_emod,
       ← Int.add_emod]
     congr 1
     rw [Int.mul_neg]
-    omega
+    omega_using []
   have h3 : (-((a : Int) * x - 1)) % 2 ^ 32 = 0 :=
     Int.emod_eq_zero_of_dvd (Int.dvd_neg.mpr (Int.dvd_of_emod_eq_zero h))
   have h4 := h2.trans h3
@@ -59,7 +59,7 @@ theorem newton_val (a x : BitVec 32) :
     rw [BitVec.toNat_sub, show (2 : BitVec 32).toNat = 2 from rfl,
       Int.natCast_emod, show ((2 ^ 32 : Nat) : Int) = 2 ^ 32 from rfl, Int.emod_emod]
     have hy := y.isLt
-    omega
+    omega_using []
   rw [ofNat_mod, Int.natCast_mul, Int.mul_emod, sub_mod,
     Int.sub_emod, ofNat_mod, Int.natCast_mul, ← Int.sub_emod, ← Int.mul_emod]
 
@@ -110,7 +110,7 @@ theorem inverse_ok (s : State) (hodd : (s.gpr .ebx).toNat % 2 = 1) :
       simpa only [Int.natCast_mul, Int.natCast_emod, show ((8 : Nat) : Int) = 8 from rfl,
         show ((1 : Nat) : Int) = 1 from rfl] using congrArg (fun n : Nat => (n : Int)) h1
     show (((s.gpr .ebx).toNat : Int) * (s.gpr .ebx).toNat - 1) % 8 = 0
-    omega
+    omega_using [h1]
   refine WP.block_append (WP.mono (newton_step_ok t₀ (j := 3) (by decide) e₀) fun t₁ ⟨e₁, k₁, hm₁⟩ => ?_)
   refine WP.block_append (WP.mono (newton_step_ok t₁ (j := 6) (by decide) e₁) fun t₂ ⟨e₂, k₂, hm₂⟩ => ?_)
   refine WP.block_append (WP.mono (newton_step_ok t₂ (j := 12) (by decide) e₂) fun t₃ ⟨e₃, k₃, hm₃⟩ => ?_)
@@ -140,11 +140,11 @@ theorem setupInverse_ok {s : State} {base : Addr} {size mo inv : Nat}
   refine WP.block_append (WP.mono (inverse_ok s₁ (by rw [u₁.gpr]; exact hodd)) fun s₂ ⟨hv, k₂, hm₂⟩ => ?_)
   have k : Keeps clob s s₂ := (u₁.keeps.mono (by decide)).widen k₂
   have hs₂ := hs.of_keeps k (by decide)
-  refine wp_storeS (hs₂.ea (by omega)) (hs₂.write hi) fun t mt => WP.block_nil ⟨?_, ?_, k.widen (mt.keeps [])⟩
+  refine wp_storeS (hs₂.ea (by omega_using [hi])) (hs₂.write hi) fun t mt => WP.block_nil ⟨?_, ?_, k.widen (mt.keeps [])⟩
   · rw [mt.mem, w32_write_self]
     rw [u₁.gpr] at hv
     exact hv
   · rw [mt.mem, hm₂, u₁.mem]
-    exact writeW32_outside _ _ _ (by have := hs.nowrap; omega)
+    exact writeW32_outside _ _ _ (by have := hs.nowrap; omega_using [hi, this])
 
 end VG.Proof.Mont.X86.Dynamic

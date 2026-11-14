@@ -93,7 +93,7 @@ theorem loadWords_ok {s : State} {B src : Addr} {Z ed k w : Nat} {bs : List Byte
     (hs : Scr s B Z) (h1 : s.gpr .x1 = src) (h2 : s.gpr .x2 = BitVec.ofNat 64 k)
     (h8 : s.gpr .x8 = off B ed) (hk : k = 8 * w) (hk1 : 0 < k) (hk' : k < 2 ^ 31)
     (hl : bs.length = k) (hed : ed + 8 * w ≤ Z) (hsrc : InRegions (s.rd ++ s.wr) src k)
-    (hb : ∀ i (hi : i < k), s.mem (src + BitVec.ofNat 64 i) = bs[i]'(by omega))
+    (hb : ∀ i (hi : i < k), s.mem (src + BitVec.ofNat 64 i) = bs[i]'(by omega_using [hl, hi]))
     (hsep : ∀ i < k, ofs B (src + BitVec.ofNat 64 i) < ed ∨ ed + 8 * w ≤ ofs B (src + BitVec.ofNat 64 i)) :
     WP isa loadWords s fun t => wv t.mem B ed w = Spec.Rsa.os2ip bs ∧
       Outside B ed (8 * w) s.mem t.mem ∧ Keep [.x1, .x2, .x3, .x5] s t := by
@@ -109,7 +109,7 @@ theorem loadWords_ok {s : State} {B src : Addr} {Z ed k w : Nat} {bs : List Byte
   refine WP.mono (count_loop (cr := .x2) (n := w) (by omega) (LWInv a B Z ed k w src bs)
     (fun j hj t h => loadWordsStep_ok hk hk' hl hed hr (fun i hi => by rw [hm]; exact hb i hi) hsep hj h) h0)
     fun t h => ⟨?_, by rw [← hm]; exact h.out, (ka.trans h.keep).mono (by decide)⟩
-  rw [wv_digits w fun q hq => h.words q (by omega) hq, Nat.mod_eq_of_lt]
+  rw [wv_digits w fun q hq => h.words q (by omega_using []) hq, Nat.mod_eq_of_lt]
   have hlt := VG.Proof.Rsa.lt_of_os2ip bs
   rw [hl, hk, pow256] at hlt
   exact hlt
@@ -138,19 +138,19 @@ theorem loadW_ok {s : State} {B : Addr} {Z ed k w : Nat} {src : Addr} {bs : List
       a.mem = s.mem) (by brun [h2]) (by decide) (by decide) (by decide +kernel)) fun a ⟨⟨h4, hm⟩, ka⟩ => ?_)
   have hs' := hs.congr ka.wr
   have hr : InRegions (a.rd ++ a.wr) src k := by rw [ka.rd, ka.wr]; exact hsrc
-  have hb' : ∀ i (hi : i < k), a.mem (src + BitVec.ofNat 64 i) = bs[i]'(by omega) :=
+  have hb' : ∀ i (hi : i < k), a.mem (src + BitVec.ofNat 64 i) = bs[i]'(by omega_using [hk, hi]) :=
     fun i hi => by rw [hm]; exact hbytes i hi
   have a1 := (ka.gpr .x1 (by decide)).trans h1
   have a2 := (ka.gpr .x2 (by decide)).trans h2
   have a8 := (ka.gpr .x8 (by decide)).trans h8
-  refine WP.ite (decide (k % 8 = 0)) (by rw [eval_zero, h4, and7_zero (by omega)]) ?_ ?_
+  refine WP.ite (decide (k % 8 = 0)) (by rw [eval_zero, h4, and7_zero (by omega_using [hk'])]) ?_ ?_
   · intro h8'
     have h8' := of_decide_eq_true h8'
-    refine WP.mono (loadWords_ok hs' a1 a2 a8 (w := w) (by omega) (by omega) hk' hk hed hr hb' hsep)
+    refine WP.mono (loadWords_ok hs' a1 a2 a8 (w := w) (by omega_using [hw, h8']) (by omega_using [hk1]) hk' hk hed hr hb' hsep)
       fun t ⟨hv, ho, kt⟩ => ⟨hv, by rw [← hm]; exact ho, (ka.trans kt).mono (by decide)⟩
   · intro _
     refine WP.mono (loadBE_ok hs' a1 a2 a8 hk hk1 hk' hw hed
-      (fun i hi => VG.CallLay.inRegions_sub hr (by omega) (by omega)) hb' hsep)
+      (fun i hi => VG.CallLay.inRegions_sub hr (by omega_using [hi]) (by omega_using [hk'])) hb' hsep)
       fun t ⟨hv, ho, kt⟩ => ⟨hv, by rw [← hm]; exact ho, (ka.trans kt).mono (by decide)⟩
 
 end VG.Proof.Bignum.AArch64.WordIO

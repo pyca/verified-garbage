@@ -54,11 +54,11 @@ theorem Lt_length_le (σ : State) (k n : Nat) : (Lt σ k n).length ≤ 256 := rn
 
 theorem sx_ofNat {n : Nat} (h : n < 2 ^ 31) : BitVec.signExtend 64 (BitVec.ofNat 32 n) = BitVec.ofNat 64 n := by
   have hm : (BitVec.ofNat 32 n).msb = false := by
-    rw [BitVec.msb_eq_decide]; simp only [BitVec.toNat_ofNat, decide_eq_false_iff_not]; omega
+    rw [BitVec.msb_eq_decide]; simp only [BitVec.toNat_ofNat, decide_eq_false_iff_not]; omega_using [h]
   rw [BitVec.signExtend_eq_setWidth_of_msb_false hm]
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_setWidth, BitVec.toNat_ofNat, BitVec.toNat_ofNat]
-  omega
+  omega_using [h]
 
 /-- A byte the frame's regions are apart from is unchanged. -/
 theorem frame_byte {rs : List Region} {m m' : Mem} (hf : Frame rs m m') {R : Region} (hd : ∀ r ∈ rs, R.Disjoint r)
@@ -71,7 +71,7 @@ include hp
 
 omit hp in
 /-- Polynomial `K` lies in `a`. -/
-theorem sub_poly {K : Nat} (hK : K < 4) : Region.Sub (pR (Proof.MlKem.poly4 (aP σ) K)) (aR σ) := Offset.sub_base _ (by omega)
+theorem sub_poly {K : Nat} (hK : K < 4) : Region.Sub (pR (Proof.MlKem.poly4 (aP σ) K)) (aR σ) := Offset.sub_base _ (by omega_using [hK])
 
 /-- A part of the scratch space is apart from polynomial `K`. -/
 theorem scr_poly {K : Nat} (hK : K < 4) {a n : Nat} (h : a + n ≤ 8192) :
@@ -86,8 +86,8 @@ theorem poly_poly {K k : Nat} (hK : K < 4) (hk : k < 4) (hne : k ≠ K) :
     ∀ r ∈ [pR (Proof.MlKem.poly4 (aP σ) K)], (VG.Proof.MlDsa.Sample.polyR (Proof.MlKem.poly4 (aP σ) k)).Disjoint r := by
   intro r hr
   simp only [List.mem_singleton] at hr; subst hr
-  exact Offset.disjoint (aP σ) (d := 1024 * k) (n := 1024) (e := 1024 * K) (k := 1024) (by omega) (by omega)
-    (by omega)
+  exact Offset.disjoint (aP σ) (d := 1024 * k) (n := 1024) (e := 1024 * K) (k := 1024) (by omega_using [hne]) (by omega_using [hk])
+    (by omega_using [hK])
 
 /-- Writes to polynomial `K` keep `Env`. -/
 theorem env_poly {K : Nat} (hK : K < 4) {s s' : State} (he : EnvK σ s)
@@ -97,7 +97,7 @@ theorem env_poly {K : Nat} (hK : K < 4) {s s' : State} (he : EnvK σ s)
   refine ⟨hrd.trans he.rd, hwr.trans he.wr, by rw [hg .rbx (by simp), he.rbx], by rw [hg .r12 (by simp), he.r12],
     by rw [hg .r13 (by simp), he.r13], by rw [hg .rsp (by simp), he.rsp], by rw [hg .r15 (by simp), he.r15],
     fun i hi => ?_, he.frame.trans (hf.sub fun r hr => ?_)⟩
-  · rw [hf.readW (Region.contains_self _ _) (scr_poly hp hK (by simp only [oSave]; omega)) (by decide)]
+  · rw [hf.readW (Region.contains_self _ _) (scr_poly hp hK (by simp only [oSave]; omega_using [hi])) (by decide)]
     exact he.saved i hi
   · simp only [List.mem_singleton] at hr; subst hr; exact ⟨aR σ, by simp, hsub⟩
 
@@ -107,7 +107,7 @@ theorem coeffsWr {K : Nat} (hK : K < 4) {s : State} (he : EnvK σ s) : CoeffsWr 
   rw [he.wr, hp.wr]
   refine ⟨aR σ, by simp, ?_⟩
   rw [VG.Proof.MlDsa.Sample.coeffAddr, Proof.MlKem.poly4, Offset.add_add]
-  exact Offset.contains_base _ (by omega) (by omega)
+  exact Offset.contains_base _ (by omega_using [hK, hj]) (by omega_using [hK, hj])
 
 end
 
@@ -119,7 +119,7 @@ include hp
 
 omit hp in
 theorem sxP {K : Nat} (hK : K < 4) : BitVec.signExtend 64 (BitVec.ofNat 32 (1024 * K)) =
-    BitVec.ofNat 64 (1024 * K) := sx_ofNat (by omega)
+    BitVec.ofNat 64 (1024 * K) := sx_ofNat (by omega_using [hK])
 
 end
 

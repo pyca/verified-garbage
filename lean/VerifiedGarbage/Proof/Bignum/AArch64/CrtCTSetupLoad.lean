@@ -61,21 +61,21 @@ theorem LPre.zero {j sp sl : Nat} {p : BPub} {s : State} (h : LPre j sp sl p s) 
   have hi := hc.hi
   have hlo := hc.lo
   have h8 := hdr_lt_slot p.x.w 8 (show 31 < 32 by decide)
-  have h256 : 256 ≤ slot p.x.wx 8 := by unfold slot hdrBytes; omega
+  have h256 : 256 ≤ slot p.x.wx 8 := by unfold slot hdrBytes; omega_using []
   have hJ := slot_le (w := p.x.wx) hj
   have hJ0 := hdr_lt_slot p.x.wx j (show 31 < 32 by decide)
-  have ho64 : p.x.o < 2 ^ 64 := by omega
+  have ho64 : p.x.o < 2 ^ 64 := by omega_using [hn, hi, h256]
   have hr : ∀ r ∈ [(slot p.x.wx j, 8 * (p.x.wx + 2))], 8 * 17 ≤ r.1 ∧ r.1 + r.2 ≤ slot p.x.wx 8 := by
-    simp only [List.mem_singleton, forall_eq]; omega
-  refine WP.mono (zeroArr_ok hc.good (Nat.le_refl _) (by omega) hj) fun t ⟨_, ho₁, k₁⟩ => ?_
+    simp only [List.mem_singleton, forall_eq]; omega_using [hJ, hJ0]
+  refine WP.mono (zeroArr_ok hc.good (Nat.le_refl _) (by omega_using [hwx, hw30]) hj) fun t ⟨_, ho₁, k₁⟩ => ?_
   have f₁ : Frm (off p.x.B p.x.o) [(slot p.x.wx j, 8 * (p.x.wx + 2))] s.mem t.mem := Frm.of_outside ho₁ (by simp)
   have hb : ∀ i < 32, word t.mem p.x.B (8 * i) = word s.mem p.x.B (8 * i) := fun i hi' =>
-    f₁.word_below (fun r hr' => (hr r hr').2) (by omega) ho64 (by omega)
+    f₁.word_below (fun r hr' => (hr r hr').2) (by omega_using [hn, hi]) ho64 (by omega_using [hlo, h8, hi'])
   refine ⟨minv, bs, hc.of_frm f₁ hr k₁.wr (k₁.gpr .x0 (by decide)), hw2, hwx, hw30, hj, hsp, hsl,
     (hb sp hsp).trans hp, (hb sl hsl).trans hl, hbl, hsrc.congrK ?_ k₁, hk1, hk', hkw⟩
-  exact InScr.of_frm (f₁.rebase ho64 fun r hr' => by have := (hr r hr').2; omega) fun r hr' => by
+  exact InScr.of_frm (f₁.rebase ho64 fun r hr' => by have := (hr r hr').2; omega_using [hn, hi, this]) fun r hr' => by
     simp only [shiftRanges, List.map_cons, List.map_nil, List.mem_singleton] at hr'
-    subst hr'; simp only; omega
+    subst hr'; simp only; omega_using [hi, hJ]
 
 theorem pins_lpre {j sp sl : Nat} : Pins (LPre j sp sl) [.x0] :=
   pins_of (fun p _ => off p.x.B p.x.o) fun _ _ ⟨_, _, hc, _⟩ r hr => by

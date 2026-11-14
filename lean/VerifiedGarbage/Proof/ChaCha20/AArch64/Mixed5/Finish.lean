@@ -91,7 +91,7 @@ theorem finish_ok {s₀ s : State} (hp : CP s₀) (h : Spilled s₀ s) :
     simp only [block,Vector.getElem_zipWith,Fin.getElem_fin]
   have hout : ∀ r j : Fin 4, InRegions c.wr
       (c.gpr .x1 + BitVec.ofNat 64 (64 * j + 16 * r)) 16 := by
-    intro r j; rw [hwc,hcb1]; exact hp.data _ _ (by omega)
+    intro r j; rw [hwc,hcb1]; exact hp.data _ _ (by omega_using [])
   refine (VG.Proof.ChaCha20.AArch64.Neon4.finishBlocks_ok hvc' hout).mono fun d ⟨hd,hfd,hcd⟩ => ?_
   have hfd' : Frame [firstR s₀] c.mem d.mem := by simpa only [hcb1] using hfd
   have hfc : Frame [sr s₀] s.mem c.mem := by rw [hbc.mem,← ham]; exact hfb
@@ -114,11 +114,11 @@ theorem finish_ok {s₀ s : State} (hp : CP s₀) (h : Spilled s₀ s) :
       exact hp.st_d.sub_right (Region.sub_prefix (by decide : 256 ≤ 320))),hbc.mem]
     rw [← hb0]; exact hcntb
   · intro r
-    rw [hfd'.read (r := lowBuf s₀) (Offset.contains_base _ (by omega) (by omega))
+    rw [hfd'.read (r := lowBuf s₀) (Offset.contains_base _ (by omega_using []) (by omega_using []))
       (by intro q hq; simp only [List.mem_singleton] at hq; subst q
           exact (hp.d_b.sub_left (Region.sub_prefix (by decide : 256 ≤ 320))).symm.sub_left
             (Region.sub_prefix (by decide : 64 ≤ 320))) (by decide),
-      hfc.read (r := lowBuf s₀) (Offset.contains_base _ (by omega) (by omega))
+      hfc.read (r := lowBuf s₀) (Offset.contains_base _ (by omega_using []) (by omega_using []))
       (by intro q hq; simp only [List.mem_singleton] at hq; subst q
           exact hp.st_b.symm.sub_left (Region.sub_prefix (by decide : 64 ≤ 320))) (by decide)]
     exact h.read16 r
@@ -130,6 +130,6 @@ theorem finish_ok {s₀ s : State} (hp : CP s₀) (h : Spilled s₀ s) :
       rcases hq with rfl | rfl
       · exact hp.st_d.symm
       · exact hp.d_b.sub_right (Region.sub_prefix (by decide : 64 ≤ 320)))
-      (by change 320 ≤ 2 ^ 64; decide) (by change k < 320; omega)]
+      (by change 320 ≤ 2 ^ 64; decide) (by change k < 320; omega_using [hk])]
 
 end VG.Proof.ChaCha20.AArch64.Mixed5

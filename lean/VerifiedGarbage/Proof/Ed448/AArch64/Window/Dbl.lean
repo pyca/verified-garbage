@@ -65,7 +65,7 @@ theorem dblOps_ok (x y z : Index) (hx : x.val < 10) (hy : y.val < 10) (hz : z.va
       Bnd Mb t.mem base (slot x.val) ∧ Bnd Mb t.mem base (slot y.val) ∧ Bnd Mb t.mem base (slot z.val) ∧
       EV t.mem base = dblEnv x y z (EV s.mem base) := by
   have n : ∀ {i : Index}, i.val < 10 → ∀ k : Index, 10 ≤ k.val → k ≠ i := fun hi k hk h => by
-    rw [h] at hk; omega
+    rw [h] at hk; omega_using [hi, hk]
   have nn' : ∀ {i j : Index}, i ≠ j → i ∉ [j] := fun h hm => h (List.mem_singleton.mp hm)
   rw [dblOps_eq]
   refine addSubOp (o₁ := 16) (o₂ := 17) (a := z) (b := z) hs hb hzb hzb (by decide)

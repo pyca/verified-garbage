@@ -109,7 +109,7 @@ theorem body_piece : Piece Pre Pub (fun s₀ s => s = P0 s₀) Fin
     (fun _ _ _ ⟨⟨h, _⟩, hx⟩ => ⟨h, hx⟩) fun _ _ _ h => h
   have := h₀.b_mem
   simp only [bN, simpleBitPackBounds, t1Max_eq, List.mem_cons, List.not_mem_nil, or_false] at this h15 h43 ⊢
-  omega
+  omega_arith
 
 theorem piece : Piece Pre Pub (fun s₀ s => s = s₀) (fun s₀ s' => LeafPost (Fin s₀) s₀ s')
     Impl.MlDsa.X86.Pack.simpleBitPack :=

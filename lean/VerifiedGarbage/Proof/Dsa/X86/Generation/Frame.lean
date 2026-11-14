@@ -40,16 +40,16 @@ theorem frameWith_ok {inner : Prog isa} (hns : NoSp (.seq inner (.block Compact.
   have keepAt : ∀ (k : Nat), k + 4 ≤ 20 → t.mem.readW (addr ((entered s).gpr .esp) k) 32 =
       (entered s).mem.readW (addr ((entered s).gpr .esp) k) 32 := fun k hk => by
     have address : addr ((entered s).gpr .esp) k = ((entered s).gpr .esp).setWidth 64 + BitVec.ofNat 64 k :=
-      addr_eq (by omega)
+      addr_eq (by omega_using [eNat, hk])
     rw [address]
     exact Mem.readW_congr fun j hj => O _ (by
       rw [show ((entered s).gpr .esp).setWidth 64 + BitVec.ofNat 64 k + BitVec.ofNat 64 j =
           ((entered s).gpr .esp).setWidth 64 + BitVec.ofNat 64 (k + j) by
         rw [BitVec.add_assoc, ← BitVec.ofNat_add]]
-      exact Offset.contains_base _ (by omega) (by omega))
+      exact Offset.contains_base _ (by omega_using [hk, hj]) (by omega_using [hk, hj]))
   have read (i : Nat) (hi : i < 4) :
       readSrc t (.mem (at_ .esp (4 * i))) = some (s.gpr (savedRegisters[3 - i]'(by
-        change 3 - i < 4; omega))) := by
+        change 3 - i < 4; omega_using []))) := by
     have access : InRegions (t.rd ++ t.wr) (addr (t.gpr .esp) (4 * i)) 4 := by
       rw [K.2.1, K.2.2, sp]
       refine ⟨below (s.gpr .esp) 16, List.mem_append_right _ (List.mem_cons_self), ?_⟩
@@ -60,12 +60,12 @@ theorem frameWith_ok {inner : Prog isa} (hns : NoSp (.seq inner (.block Compact.
         rfl
       rw [region]
       have address : addr ((entered s).gpr .esp) (4 * i) =
-          ((entered s).gpr .esp).setWidth 64 + BitVec.ofNat 64 (4 * i) := addr_eq (by omega)
+          ((entered s).gpr .esp).setWidth 64 + BitVec.ofNat 64 (4 * i) := addr_eq (by omega_using [eNat, hi])
       rw [address]
-      exact Offset.contains_base _ (by omega) (by omega)
+      exact Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi])
     have value : t.mem.readW (addr (t.gpr .esp) (4 * i)) 32 =
         (entered s).mem.readW (addr ((entered s).gpr .esp) (4 * i)) 32 := by
-      rw [sp]; exact keepAt _ (by omega)
+      rw [sp]; exact keepAt _ (by omega_using [hi])
     change t.load32 (addr (t.gpr .esp) (4 * i)) = _
     rw [State.load32, ite_eq_left access, value]
     exact congrArg some (pushed_word (rs := savedRegisters) (by decide) stackFit hi)

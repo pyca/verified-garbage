@@ -104,7 +104,7 @@ theorem main_ok (backend : MontBackend) (s : State) {p : Inputs} {slots : List N
         by rw [restSZ.sp]; exact calls.scalarBelow, by rw [restSZ.sp]; exact calls.outputBelow⟩
       stable h4 h32 h40 h44 h56 saved odd
       (readyW.of_mem memZ restZ ptrZ) (by rw [memZ]; exact modW) (by rw [memZ]; exact r2W)
-      (scalarW.after_workspace frameZ restZ) positive (by have := p.maxLength; omega) scalarCount
+      (scalarW.after_workspace frameZ restZ) positive (by have := p.maxLength; omega_using [scalarLength, this]) scalarCount
       (output.after restSZ) workspaceSep (by rw [restSZ.sp]; exact stackSep)) ?_
     rintro t ⟨status_t, bytes, frameT⟩
     refine ⟨⟨by rw [status, ite_eq_left valid]; exact status_t, ?_⟩, ?_⟩

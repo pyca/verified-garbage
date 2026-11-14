@@ -47,7 +47,7 @@ include hF
 theorem ballTail_vpiece : VPiece p S (VB1 p) (VB p) (.seq (.block and24) (VG.Impl.MlDsa.AArch64.Optimized.MatrixMask.code (cP p) 256)) := by
   have hkl := hF.kl; have hl := hF.l; have hk := hF.k; have hsc := hF.scr
   refine ⟨fun σ s hp h => ?_, taintRel [.x28] (fun x y ⟨σ₁, σ₂, p₁, p₂, pub, h₁, h₂⟩ =>
-    (vc_two hF p₁ p₂ pub h₁.1.vz.vc h₂.1.vz.vc).x28) (vectorTail_taint _ (by omega))⟩
+    (vc_two hF p₁ p₂ pub h₁.1.vz.vc h₂.1.vz.vc).x28) (vectorTail_taint _ (by omega_using [hkl, hl, hk]))⟩
   have L := h.1.vz.vc.lay hF hp
   obtain ⟨hv, hred, hout⟩ := h
   have hr01 := Proof.MlDsa.KeyGen.outcome_01 hout

@@ -39,7 +39,7 @@ theorem loop_ok (d : Spec.Rc2.Direction) (n : Nat) :
   | zero => intro s hn; omega
   | succ n ih =>
     intro s hn bound hp count
-    obtain ⟨t₁, s₁, exec₁, h₁⟩ := body_ok d s (n + 1) hn (by omega) count (hp.head hn)
+    obtain ⟨t₁, s₁, exec₁, h₁⟩ := body_ok d s (n + 1) hn (by omega_using [bound]) count (hp.head hn)
     by_cases hz : n = 0
     · subst n
       refine ⟨_, s₁, Exec.loopExit exec₁ ?_, ?_⟩
@@ -52,9 +52,9 @@ theorem loop_ok (d : Spec.Rc2.Direction) (n : Nat) :
           simp only [Spec.Rc2.blocksAt, List.range_zero, List.map_nil, Proof.Rc2.cbcBlocks]
           exact h₁.iv
     · have hp₁ := h₁.tail hp
-      obtain ⟨t₂, s₂, exec₂, h₂⟩ := ih s₁ (by omega) (by omega) hp₁ (by simpa using h₁.count)
+      obtain ⟨t₂, s₂, exec₂, h₂⟩ := ih s₁ (by omega_using [hz]) (by omega_using [bound]) hp₁ (by simpa using h₁.count)
       refine ⟨_, s₂, Exec.loopNext exec₁ ?_ exec₂, ?_⟩
-      · have he : n + 1 ≠ 1 := by omega
+      · have he : n + 1 ≠ 1 := by omega_using [hz]
         simp only [eval_nonzeroCount, h₁.flag, he, decide_false, Option.map_some, Bool.not_false]
       · have key := h₁.schedule (hp.head hn)
         have tail := h₁.tailData hp bound
@@ -70,12 +70,12 @@ theorem loop_ok (d : Spec.Rc2.Direction) (n : Nat) :
           exact congrArg (s.gpr .x1 + ·) (by
             change BitVec.ofNat 64 8 + BitVec.ofNat 64 (8 * n) = _
             rw [← BitVec.ofNat_add]
-            exact congrArg (BitVec.ofNat 64) (by omega))
+            exact congrArg (BitVec.ofNat 64) (by omega_using []))
         · intro r hr hs hb
           exact (h₂.reg r hr hs hb).trans (h₁.reg r hr hs hb)
         · intro r hr hb
           exact (h₂.callee r hr hb).trans (h₁.callee r hr hb)
-        · exact (h₁.frame hn).trans (loopFrame_slice (i := 1) h₂.mem (by omega) vi bi h₁.ptr)
+        · exact (h₁.frame hn).trans (loopFrame_slice (i := 1) h₂.mem (by omega_using []) vi bi h₁.ptr)
         · have first := firstBlock_frame h₁ hp bound h₂.mem
           rw [blocksAt_cons, first, h₁.data, data, blocksAt_cons]
           rfl
@@ -86,7 +86,7 @@ theorem maybeLoop_ok (d : Spec.Rc2.Direction) (s : State) (n : Nat) (bound : 8 *
     (hp : StepPre s n) (count : s.gpr .x24 = BitVec.ofNat 64 n)
     (flag : zeroCount s = some (s.gpr .x24 == 0) := rfl) :
     WP isa (.ite (.zero .x .x24) (.block []) (.loop (Impl.Rc2.AArch64.Cbc.body d) (.nonzero .x .x24))) s (LoopPost d s n) := by
-  have eqZero := counter_eq n 0 (by omega) (by decide)
+  have eqZero := counter_eq n 0 (by omega_using [bound]) (by decide)
   simp only [BitVec.sub_zero] at eqZero
   have flag' : zeroCount s = some (decide (n = 0)) := by
     rw [flag, count]
@@ -103,14 +103,14 @@ theorem maybeLoop_ok (d : Spec.Rc2.Direction) (s : State) (n : Nat) (bound : 8 *
   · apply WP.ite false (by simp only [eval_zeroCount, flag', hz, decide_false])
     · simp
     · intro _
-      exact loop_ok d n s (by omega) bound hp count
+      exact loop_ok d n s (by omega_using [hz]) bound hp count
 
 theorem LoopPost.scratchRead {d : Spec.Rc2.Direction} {s s' : State} {n : Nat}
     (h : LoopPost d s n s') (hp : StepPre s n) (i : Nat) (lo : 264 ≤ i) (hi : i + 8 ≤ 512) :
     s'.mem.readW (s.gpr .x2 + BitVec.ofNat 64 i) 64 = s.mem.readW (s.gpr .x2 + BitVec.ofNat 64 i) 64 := by
   have sub : Region.Sub ⟨s.gpr .x2 + BitVec.ofNat 64 i, 8⟩ (bufR s) := Offset.sub_base _ hi
   have sep : (Region.mk (s.gpr .x2 + BitVec.ofNat 64 i) 8).Disjoint ⟨s.gpr .x2, 264⟩ :=
-    Offset.disjoint_base _ lo (by omega)
+    Offset.disjoint_base _ lo (by omega_using [hi])
   apply h.mem.readW (r := ⟨s.gpr .x2 + BitVec.ofNat 64 i, 8⟩) (Region.contains_self _ _)
     (hn := by decide)
   simpa only [loopWrites, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq] using

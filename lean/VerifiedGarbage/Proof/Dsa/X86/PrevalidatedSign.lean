@@ -71,17 +71,17 @@ theorem prevalidatedSignCompute_ok {base : Addr} {size pLen qLen p q g x k diges
   dsimp only
   have L := M.lengths
   have A := M.aligned
-  have nq : (qLen + 7) / 8 ≤ 48 := by omega
+  have nq : (qLen + 7) / 8 ≤ 48 := by omega_using [L]
   unfold PrevalidatedSign.compute Core.sequence
   dsimp only [List.foldr]
-  refine WP.seq (WP.mono (stageMinusQ_ok M (by have := M.qLarge; omega)
+  refine WP.seq (WP.mono (stageMinusQ_ok M (by have := M.qLarge; omega_using [this])
     (by decide) (M.scalarFit (by decide))) fun s1 ⟨M1, R1⟩ => ?_)
   have E1 := R1.toStageFrame.execution (.inl ⟨by decide, M.scalarFit (by decide)⟩)
   have Q1 : operandValue s1 base (.local qMinusTwo) qLen = q - 2 :=
     R1.scalar_value M (by decide) (Nat.lt_of_le_of_lt (Nat.sub_le _ _) M.valueBounds.2)
   have F1 := R1.toStageFrame.mask_keep (by decide)
   have K1 := E1.buffer K (by decide)
-  refine WP.seq (WP.mono (stageRange_ok M1 (by omega) (by omega) (by omega)
+  refine WP.seq (WP.mono (stageRange_ok M1 (by omega_using [L]) (by omega_using [L]) (by omega_using [A])
     M1.qReady (K1.ready (M1.context nq)) false) fun s2 ⟨M2, F2, A2⟩ => ?_)
   have E2 := A2.execution (.inr ⟨rfl, rfl⟩)
   have E12 := E1.trans E2
@@ -92,10 +92,10 @@ theorem prevalidatedSignCompute_ok {base : Addr} {size pLen qLen p q g x k diges
     ((E12.value G (by decide) M.extent).trans hg) ((E12.value K (by decide) M.extent).trans hk)
     ((E12.value X (by decide) M.extent).trans hx) ((E12.value D (by decide) M.extent).trans hD)
     Q2) fun s3 ⟨M3, R3, S3, E3, F3⟩ => ?_)
-  refine WP.seq (WP.seq (WP.mono (stageZero_ok M3 (by omega) (by omega) (by omega)
+  refine WP.seq (WP.seq (WP.mono (stageZero_ok M3 (by omega_using [L]) (by omega_using [L]) (by omega_using [A])
     (M3.scalarReady (by decide) nq) true) fun s4 ⟨M4, F4, A4⟩ => ?_))
   have E4 := A4.execution (.inr ⟨rfl, rfl⟩)
-  refine WP.mono (stageZero_ok M4 (by omega) (by omega) (by omega) (M4.scalarReady (by decide) nq) true)
+  refine WP.mono (stageZero_ok M4 (by omega_using [L]) (by omega_using [L]) (by omega_using [A]) (M4.scalarReady (by decide) nq) true)
     fun sf ⟨Mf, F5, A5⟩ => ?_
   refine WP.block_nil ⟨Mf, ?_, ?_, ?_, (((E12.trans E3).trans E4).trans (A5.execution (.inr ⟨rfl, rfl⟩)))⟩
   · rw [A5.scalar_keep_mask M4 (by decide), A4.scalar_keep_mask M3 (by decide), R3]
@@ -155,21 +155,21 @@ theorem prevalidatedSignBody_ok {base : Addr} {size pLen qLen p q g x k digestLe
   · simpa only [Of, decide_eq_true_eq] using R2
   · simpa only [Of, decide_eq_true_eq] using S2
   · intro a ha hb hstack
-    have C := VG.Proof.Dsa.X86.Layout.context_bound (by have := M.lengths; omega : (qLen + 7) / 8 ≤ 48)
-    rw [Of, O2 a (by change 15712 ≤ ofs base a at ha; omega) hb]
+    have C := VG.Proof.Dsa.X86.Layout.context_bound (by have := M.lengths; omega_using [this] : (qLen + 7) / 8 ≤ 48)
+    rw [Of, O2 a (by change 15712 ≤ ofs base a at ha; omega_using [C, ha]) hb]
     apply E1.mem a ?_ (.inr hstack)
     intro pair hp
     simp only [runRanges, List.mem_cons, List.not_mem_nil, or_false] at hp
     rcases hp with rfl | rfl | rfl <;>
       change 15712 ≤ ofs base a at ha <;> right <;> change _ ≤ ofs base a <;>
       simp only [VG.Impl.Mont.X86.Dynamic.contextBytes, VG.Impl.Mont.X86.Dynamic.slot,
-        VG.Impl.Mont.X86.Dynamic.stride, Layout.field, r, usedBytes] <;> omega
+        VG.Impl.Mont.X86.Dynamic.stride, Layout.field, r, usedBytes] <;> omega_using [ha]
   · intro regs saved
     rw [Of]
     exact O2.saved ha
-      (by have C := VG.Proof.Dsa.X86.Layout.context_bound (by have := M.lengths; omega : (qLen + 7) / 8 ≤ 48); omega)
-      (by have H : 15712 ≤ size := M.extent; omega)
-      (by have := M.scr.nowrap; omega) (E1.saved saved)
+      (by have C := VG.Proof.Dsa.X86.Layout.context_bound (by have := M.lengths; omega_using [this] : (qLen + 7) / 8 ≤ 48); omega_using [C])
+      (by have H : 15712 ≤ size := M.extent; omega_using [H])
+      (by have := M.scr.nowrap; omega_using [this]) (E1.saved saved)
 
 theorem prevalidatedSignBody_spec {base : Addr} {size pLen qLen p q g y x k digestLen n : Nat} {s0 : State}
     {out : BitVec 32} {key nonce digest : List Byte}
@@ -270,9 +270,9 @@ theorem prevalidatedSignSized_spec {base : Addr} {size pLen qLen p q g y x k tot
       StackOutputFrame (s.gpr .esp) base (out.setWidth 64) usedBytes (2 * qLen) s.mem sf.mem ∧
       ∀ regs, VG.X86.Spill.Saved s.mem (off base) regs Entry.savedRegisters →
         VG.X86.Spill.Saved sf.mem (off base) regs Entry.savedRegisters := by
-  have bound : 8248 ≤ size := by have H : 15712 ≤ size := extent; omega
-  have sz : 8272 ≤ size := by have H : 15712 ≤ size := extent; omega
-  have L : 20 ≤ qLen ∧ qLen ≤ 32 := by unfold Spec.Dsa.lengthsValid at widths; omega
+  have bound : 8248 ≤ size := by have H : 15712 ≤ size := extent; omega_using [H]
+  have sz : 8272 ≤ size := by have H : 15712 ≤ size := extent; omega_using [H]
+  have L : 20 ≤ qLen ∧ qLen ≤ 32 := by unfold Spec.Dsa.lengthsValid at widths; omega_using [widths]
   unfold PrevalidatedSign.sized
   refine WP.seq (WP.mono (shapeModuli_ok scr extent widths P Q hp hq) fun t ⟨F, Z, Mt, K, O⟩ => ?_)
   by_cases shape : shapeValid p q
@@ -285,7 +285,7 @@ theorem prevalidatedSignSized_spec {base : Addr} {size pLen qLen p q g y x k tot
     have Bw := shape_digest_width shape
     have hP : pointerValue base t (.input .digestPrefixLen) =
         BitVec.ofNat 32 (min total (Spec.Dsa.bitLength q / 8)) :=
-      BitVec.eq_of_toNat_eq (by rw [Dp, BitVec.toNat_ofNat]; omega)
+      BitVec.eq_of_toNat_eq (by rw [Dp, BitVec.toNat_ofNat]; omega_using [hd])
     have Dt := D.keep_shape O K (by decide) (by decide)
     have Db := D.bytes_keep_shape O K (by decide) (by decide) bound
     have digestValue : operandValue t base (.input .digest)
@@ -298,7 +298,7 @@ theorem prevalidatedSignSized_spec {base : Addr} {size pLen qLen p q g y x k tot
       (X.keep_shape O K (by decide) (by decide))
       (N.keep_shape O K (by decide) (by decide))
       (Dt.prefix (Nat.min_le_left _ _))
-      (by omega) hP
+      (by omega_using [Bw]) hP
       ((G.value_keep_shape O K (by decide) (by decide) bound).trans hg)
       ((X.value_keep_shape O K (by decide) (by decide) bound).trans hx)
       ((N.value_keep_shape O K (by decide) (by decide) bound).trans hk)
@@ -309,24 +309,24 @@ theorem prevalidatedSignSized_spec {base : Addr} {size pLen qLen p q g y x k tot
     refine ⟨V, B, (K.mono (by decide)).trans Kf, ?_, fun regs saved => Saved regs (shapeFrame_saved O saved)⟩
     intro a hbase hout hstack
     exact (F a hbase hout (by rw [K.1 .esp (by decide)]; exact hstack)).trans
-      (shapeFrame_outside O a (.inr (by change 15712 ≤ ofs base a at hbase; omega)))
+      (shapeFrame_outside O a (.inr (by change 15712 ≤ ofs base a at hbase; omega_using [hbase])))
   · refine WP.ite true (by simp only [eval, Z, shape, decide_false, Bool.not_false])
       (fun _ => ?_) (fun h => Bool.noConfusion h)
     have rejected : Spec.Dsa.signBytes pLen qLen key nonce digest = none :=
       signBytes_invalid_shape (by simpa only [keyValue] using shape)
-    refine WP.mono (signFailure_ok (scr.of_keeps K (by decide)) (by change 8256 ≤ size; omega)
-      (by omega) L.2 ((shapeFrame_field O (by decide)).trans ho)
+    refine WP.mono (signFailure_ok (scr.of_keeps K (by decide)) (by change 8256 ≤ size; omega_using [sz])
+      (by omega_using [L]) L.2 ((shapeFrame_field O (by decide)).trans ho)
       ((shapeFrame_field O (by decide)).trans hc) hf
-      (by intro i hi; rw [K.2.2]; exact hw i 1 (by omega))) fun sf ⟨B, V, Of, Kf⟩ => ?_
+      (by intro i hi; rw [K.2.2]; exact hw i 1 (by omega_using [hi]))) fun sf ⟨B, V, Of, Kf⟩ => ?_
     have F : OutputFrame base (out.setWidth 64) 0 (2 * qLen) t.mem sf.mem :=
-      fun a _ hb => Of a (.inr (by omega))
+      fun a _ hb => Of a (.inr (by omega_using [hb]))
     refine ⟨by rw [V, rejected]; rfl, by rw [rejected]; exact B,
       (K.mono (by decide)).trans (Kf.mono (by decide)), ?_, ?_⟩
     · intro a hbase hout hstack
-      exact (F a (by omega) hout).trans
-        (shapeFrame_outside O a (.inr (by change 15712 ≤ ofs base a at hbase; omega)))
+      exact (F a (by omega_using []) hout).trans
+        (shapeFrame_outside O a (.inr (by change 15712 ≤ ofs base a at hbase; omega_using [hbase])))
     · intro regs saved
-      exact F.saved ha (by decide) sz (by have := scr.nowrap; omega) (shapeFrame_saved O saved)
+      exact F.saved ha (by decide) sz (by have := scr.nowrap; omega_using [this]) (shapeFrame_saved O saved)
 
 theorem prevalidatedSigningInstalled_spec {s t : State} (A : SigningABI s)
     (I : Installed (argumentPointer s 9) ((arg s 10).toNat * 8) Entry.signArguments 2 4 6 s t)
@@ -347,7 +347,7 @@ theorem prevalidatedSigningInstalled_spec {s t : State} (A : SigningABI s)
         VG.X86.Spill.Saved sf.mem (off (argumentPointer s 9)) regs Entry.savedRegisters := by
   dsimp only
   have L : 0 < (arg s 4).toNat ∧ 0 < (arg s 6).toNat := by
-    have H := A.lengths; unfold Spec.Dsa.lengthsValid at H; omega
+    have H := A.lengths; unfold Spec.Dsa.lengthsValid at H; omega_using [H]
   obtain ⟨Key, KeyBytes⟩ := I.input (by decide : (2, .p) ∈ Entry.signArguments) A.keyBound
     (by rw [A.rd, A.wr]; simp) A.keyScratch A.room
     (by rw [callStack_eq A.stackLow]; exact A.belowKey.symm)
@@ -359,22 +359,22 @@ theorem prevalidatedSigningInstalled_spec {s t : State} (A : SigningABI s)
     (by rw [callStack_eq A.stackLow]; exact A.belowDigest.symm)
   obtain ⟨Qptr, Gptr, Yptr, Xptr⟩ := I.pointers (by decide)
   obtain ⟨P, Q, G, Y, X, KeyValue⟩ := privateKey_buffers Key L.1 L.2
-    (by have := A.keyLength; omega) KeyBytes Qptr Gptr Yptr Xptr
+    (by have := A.keyLength; omega_using [this]) KeyBytes Qptr Gptr Yptr Xptr
   apply prevalidatedSignSized_spec (out := arg s 0) I.scr A.used A.lengths P Q G X Nonce D rfl rfl rfl rfl rfl
     (congrArg BitVec.toNat (I.arguments (8, .digestLen) (by decide))) DigestBytes
     (I.arguments (0, .out) (by decide))
     (by simpa only [BitVec.ofNat_toNat, BitVec.setWidth_eq] using I.arguments (6, .qLen) (by decide))
-    (by have := A.outBound; have := A.outLength; omega)
+    (by have := A.outBound; have := A.outLength; omega_arith)
     ?_ (by rw [← A.outLength]; exact A.outScratch.symm)
     (by simpa only [Spec.Rsa.bytesAt, List.length_map, List.length_range] using A.keyLength)
     (by simp only [Spec.Rsa.bytesAt, List.length_map, List.length_range]) KeyValue
     (congrArg Spec.Dsa.decodeBE NonceBytes.symm) valid
   intro e k he
   rw [I.keeps.2.2, A.wr]
-  refine ⟨_, List.mem_cons_self, Offset.contains_base _ (by have := A.outLength; omega) ?_⟩
+  refine ⟨_, List.mem_cons_self, Offset.contains_base _ (by have := A.outLength; omega_using [he, this]) ?_⟩
   have := A.outBound
   have := A.outLength
-  omega
+  omega_using [he]
 
 theorem prevalidatedSigningOperation_spec {s : State} (A : SigningABI s)
     (valid : Spec.Dsa.validatePrivateKeyBytes (arg s 4).toNat (arg s 6).toNat
@@ -392,11 +392,11 @@ theorem prevalidatedSigningOperation_spec {s : State} (A : SigningABI s)
         (arg s 1).toNat s.mem sf.mem ∧
       sf.rd = s.rd ∧ sf.wr = s.wr := by
   dsimp only
-  have sz : 8272 ≤ (arg s 10).toNat * 8 := by have H : 15712 ≤ (arg s 10).toNat * 8 := A.used; omega
+  have sz : 8272 ≤ (arg s 10).toNat * 8 := by have H : 15712 ≤ (arg s 10).toNat * 8 := A.used; omega_using [H]
   unfold PrevalidatedSign.sign Core.sequence
   dsimp only [List.foldr]
   refine WP.seq (WP.mono (signingEntry_ok A) fun t I => ?_)
-  refine WP.seq (generationDispatch_ok _ _ I.scr (by change 8256 ≤ _; omega)
+  refine WP.seq (generationDispatch_ok _ _ I.scr (by change 8256 ≤ _; omega_using [sz])
     (supportedWidths_member A.lengths) (by decide)
     (congrArg BitVec.toNat (I.arguments (4, .pLen) (by decide)))
     (congrArg BitVec.toNat (I.arguments (6, .qLen) (by decide))) ?_)
@@ -407,8 +407,8 @@ theorem prevalidatedSigningOperation_spec {s : State} (A : SigningABI s)
       ((arg s 10).toNat * 8) (arg s 1).toNat s.mem v.mem := by
     intro a hb ho hstack
     have H := A.used
-    exact (O a (by omega) (by rw [← A.outLength]; exact ho)
-      (by rw [J.keeps.1 .esp (by decide)]; exact hstack)).trans (J.outside a (.inr (by omega)))
+    exact (O a (by omega_using [hb, H]) (by rw [← A.outLength]; exact ho)
+      (by rw [J.keeps.1 .esp (by decide)]; exact hstack)).trans (J.outside a (.inr (by omega_using [hb])))
   have Esp : v.gpr .esp = s.gpr .esp := (K.1 _ (by decide)).trans (J.keeps.1 _ (by decide))
   refine WP.seq (WP.mono (entryRestore_ok (J.scr.of_keeps K (by decide)) sz (Saved s.gpr J.saved))
     fun sf R => WP.block_nil ?_)

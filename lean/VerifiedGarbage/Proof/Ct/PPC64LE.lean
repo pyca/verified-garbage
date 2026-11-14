@@ -89,10 +89,10 @@ theorem step_ok (s₀ s : State) (hp : contract.pre s₀)
   have hn := (s₀.gpr .r4).isLt
   have hA : InRegions (s.rd ++ s.wr) (s₀.gpr .r3 + BitVec.ofNat 64 i) 1 := by
     rw [hk.2.1, hk.2.2, hp.1, hp.2, List.append_nil]
-    exact ⟨⟨s₀.gpr .r3, (s₀.gpr .r4).toNat⟩, by simp, Offset.contains_base _ (by omega) (by omega)⟩
+    exact ⟨⟨s₀.gpr .r3, (s₀.gpr .r4).toNat⟩, by simp, Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi])⟩
   have hB : InRegions (s.rd ++ s.wr) (s₀.gpr .r5 + BitVec.ofNat 64 i) 1 := by
     rw [hk.2.1, hk.2.2, hp.1, hp.2, hlen, List.append_nil]
-    exact ⟨⟨s₀.gpr .r5, (s₀.gpr .r4).toNat⟩, by simp, Offset.contains_base _ (by omega) (by omega)⟩
+    exact ⟨⟨s₀.gpr .r5, (s₀.gpr .r4).toNat⟩, by simp, Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi])⟩
   have hadd : BitVec.ofNat 64 i + 1#64 = BitVec.ofNat 64 (i + 1) := by rw [BitVec.ofNat_add]
   unfold step
   refine WP.mono (keep (Q := fun t => t.gpr .r3 = s₀.gpr .r3 ∧ t.mem = s₀.mem ∧
@@ -125,9 +125,9 @@ theorem loop_ok (s₀ : State) (hp : contract.pre s₀) (hlen : s₀.gpr .r6 = s
     have hne : BitVec.ofNat 64 (j + 1) ≠ s₀.gpr .r4 := by
       intro hh
       have := congrArg BitVec.toNat hh
-      rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := (s₀.gpr .r4).isLt; dsimp [n] at *; omega)] at this
+      rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := (s₀.gpr .r4).isLt; dsimp [n] at *; omega_using [hj])] at this
       exact he this
-    refine ⟨?_, n - (j + 1), by omega, j + 1, by omega, rfl, hout⟩
+    refine ⟨?_, n - (j + 1), by omega_using [hj, hr], j + 1, by omega_using [hj, he], rfl, hout⟩
     simp only [VG.PPC64LE.eval, State.read, BitVec.setWidth_eq, hz, bne, sub_zero,
       beq_eq_false_iff_ne.mpr hne]
     rfl

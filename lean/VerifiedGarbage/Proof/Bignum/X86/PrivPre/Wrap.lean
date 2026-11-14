@@ -54,8 +54,8 @@ theorem x_of_pc {s : State} (A : PPABI s) {m : Mem} {ws : List (BitVec 64)} (hp 
   have hNl : N < 2 ^ (8 * (arg s 3).toNat) := by
     have := VG.Proof.Bignum.os2ip_lt (nBytes s)
     rwa [hlen, VG.Proof.Bignum.pow256_eq] at this
-  have hw8 : (arg s 3).toNat ≤ 8 * w := by simp only [w, Spec.Rsa.modulusWords]; omega
-  have hNw : N < 2 ^ (64 * w) := Nat.lt_of_lt_of_le hNl (Nat.pow_le_pow_right (by decide) (by omega))
+  have hw8 : (arg s 3).toNat ≤ 8 * w := by simp only [w, Spec.Rsa.modulusWords]; omega_using []
+  have hNw : N < 2 ^ (64 * w) := Nat.lt_of_lt_of_le hNl (Nat.pow_le_pow_right (by decide) (by omega_using [hw8]))
   unfold Spec.Rsa.publicPrecompute at hp
   rw [hlen] at hp
   simp only at hp
@@ -68,14 +68,14 @@ theorem x_of_pc {s : State} (A : PPABI s) {m : Mem} {ws : List (BitVec 64)} (hp 
       obtain ⟨⟨⟨h1, -⟩, -⟩, -⟩ := hv'
       have := beq_iff_eq.mp h1
       show 0 < Spec.Rsa.os2ip (nBytes s)
-      omega
+      omega_using [this]
     have hR : 2 ^ (128 * w) % N < 2 ^ (64 * w) := Nat.lt_trans (Nat.mod_lt _ hpos) hNw
     obtain ⟨-, hwv⟩ := VG.Proof.Bignum.pre_words hw hNw hR
     have rd := VG.Proof.Bignum.read_eq_wv m (argumentPointer s 0) (8 * w) w
     rw [hwv] at rd
     have sp := VG.Proof.Mont.read_toNat_add m (8 * w - (arg s 3).toNat) (arg s 3).toNat
       (off (argumentPointer s 0) (8 * w))
-    rw [show 8 * w - (arg s 3).toNat + (arg s 3).toNat = 8 * w by omega, rd] at sp
+    rw [show 8 * w - (arg s 3).toNat + (arg s 3).toNat = 8 * w by omega_using [hw8], rd] at sp
     have hx : xPre s m = (m.read (off (argumentPointer s 0) (8 * w)) (arg s 3).toNat).toNat := by
       show (m.read ((inV s).setWidth 64) (arg s 3).toNat).toNat = _
       rw [inV_ptr A]
@@ -127,16 +127,16 @@ theorem body_ok {pcName prName : String} {pc : Prog isa}
   have l := A.lengths
   simp only [Spec.Rsa.lenValid] at l
   have pw5 : Spec.Rsa.primeWords (arg s 5).toNat ≤ Spec.Rsa.modulusWords (arg s 3).toNat := by
-    have := A.pLength; simp only [Spec.Rsa.primeWords, Spec.Rsa.modulusWords]; omega
+    have := A.pLength; simp only [Spec.Rsa.primeWords, Spec.Rsa.modulusWords]; omega_using [l, this]
   have pw7 : Spec.Rsa.primeWords (arg s 7).toNat ≤ Spec.Rsa.modulusWords (arg s 3).toNat := by
-    have := A.qLength; simp only [Spec.Rsa.primeWords, Spec.Rsa.modulusWords]; omega
+    have := A.qLength; simp only [Spec.Rsa.primeWords, Spec.Rsa.modulusWords]; omega_using [l, this]
   have hW : 16 * Spec.Rsa.modulusWords (arg s 3).toNat = dstOff s none := rfl
   -- the regions the frame's words and `pre`'s parts are in
   have topSub : ∀ {d n : Nat}, d + n ≤ 196 → Region.Sub ⟨bot s + BitVec.ofNat 64 d, n⟩ (topR s) :=
     fun h => Offset.sub_base _ (by simpa [stackBytes] using h)
   let rest : Region := ⟨off (argumentPointer s 0) (dstOff s none),
     8 * Spec.Rsa.primeWords (arg s 5).toNat + 8 * Spec.Rsa.primeWords (arg s 7).toNat⟩
-  have restSub : Region.Sub rest (preR s) := Offset.sub_base _ (by simp only [dstOff] at parts ⊢; omega)
+  have restSub : Region.Sub rest (preR s) := Offset.sub_base _ (by simp only [dstOff] at parts ⊢; omega_using [parts])
   have s80 : ∀ {r : Region}, (topR s).Disjoint r → (⟨slot s statusOffset, 4⟩ : Region).Disjoint r :=
     fun h => h.sub_left (topSub (d := 100 + statusOffset) (by decide))
   unfold body
@@ -199,17 +199,17 @@ theorem body_ok {pcName prName : String} {pc : Prog isa}
       · subst hr; exact ⟨topR s, by simp, topSub (d := 100 + (statusOffset + 4)) (by decide)⟩
     have W : Spec.Rsa.wordsAt u₇.mem (argumentPointer s 0) (2 * Spec.Rsa.modulusWords (arg s 3).toNat) =
         Spec.Rsa.wordsAt u₂.mem (argumentPointer s 0) (2 * Spec.Rsa.modulusWords (arg s 3).toNat) := by
-      refine VG.Proof.Rsa.wordsAt_frame F₂₇ (by simp only [dstOff] at parts; omega) fun r hr => ?_
+      refine VG.Proof.Rsa.wordsAt_frame F₂₇ (by simp only [dstOff] at parts; omega_using [parts]) fun r hr => ?_
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl
-      · exact A.belowPre.symm.sub_left (Region.sub_prefix (by simp only [dstOff] at parts; omega))
-      · exact A.preWs.sub_left (Region.sub_prefix (by simp only [dstOff] at parts; omega))
-      · exact Offset.base_disjoint _ (by simp only [dstOff]; omega) (by simp only [dstOff] at parts ⊢; omega)
+      · exact A.belowPre.symm.sub_left (Region.sub_prefix (by simp only [dstOff] at parts; omega_using [parts]))
+      · exact A.preWs.sub_left (Region.sub_prefix (by simp only [dstOff] at parts; omega_using [parts]))
+      · exact Offset.base_disjoint _ (by simp only [dstOff]; omega_using []) (by simp only [dstOff] at parts ⊢; omega_using [parts])
     have W₃ : Spec.Rsa.wordsAt u₃.mem (argumentPointer s 0) (2 * Spec.Rsa.modulusWords (arg s 3).toNat) =
         Spec.Rsa.wordsAt u₂.mem (argumentPointer s 0) (2 * Spec.Rsa.modulusWords (arg s 3).toNat) := by
-      refine VG.Proof.Rsa.wordsAt_frame F₃ (by simp only [dstOff] at parts; omega) fun r hr => ?_
+      refine VG.Proof.Rsa.wordsAt_frame F₃ (by simp only [dstOff] at parts; omega_using [parts]) fun r hr => ?_
       obtain rfl := List.mem_singleton.mp hr
-      exact A.belowPre.symm.sub_left (Region.sub_prefix (by simp only [dstOff] at parts; omega)) |>.sub_right
+      exact A.belowPre.symm.sub_left (Region.sub_prefix (by simp only [dstOff] at parts; omega_using [parts])) |>.sub_right
         (topSub (d := 100 + 0) (by decide))
     refine ⟨?_, ?_, ?_, ?_⟩
     · unfold PcOut at O₂
@@ -218,15 +218,15 @@ theorem body_ok {pcName prName : String} {pc : Prog isa}
     · intro hX
       rw [val32_frame F₇ (fun r hr => by
           obtain rfl := List.mem_singleton.mp hr
-          exact preTop (by simp only [dstOff] at parts ⊢; omega) (by decide))
-          (by simp only [Spec.Rsa.modulusWords] at pw5; omega), P₆,
+          exact preTop (by simp only [dstOff] at parts ⊢; omega_using [parts]) (by decide))
+          (by simp only [Spec.Rsa.modulusWords] at pw5; omega_using [pw5]), P₆,
         ws_keep F₅ (fun r hr => by obtain rfl := List.mem_singleton.mp hr; exact (s80 A.belowWs).symm)
           (slot_fit A (by decide) pw5)]
       exact O₄.2.1 hX
     · intro hX
       rw [val32_frame F₇ (fun r hr => by
           obtain rfl := List.mem_singleton.mp hr
-          exact preTop (by omega) (by decide)) (by simp only [Spec.Rsa.modulusWords] at pw7; omega), Q₆,
+          exact preTop (by omega_using [parts]) (by decide)) (by simp only [Spec.Rsa.modulusWords] at pw7; omega_using [parts]), Q₆,
         ws_keep F₅ (fun r hr => by obtain rfl := List.mem_singleton.mp hr; exact (s80 A.belowWs).symm)
           (slot_fit A (by decide) pw7)]
       exact O₄.2.2 hX

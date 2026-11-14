@@ -34,17 +34,17 @@ theorem count_zf {x : BitVec 32} {N j : Nat} (hx : x.toNat = 4 * (N - j)) (hj : 
   have h4 : (x - 4).toNat = 4 * (N - (j + 1)) := by
     rw [BitVec.toNat_sub, hx]
     rw [show (4 : BitVec 32).toNat = 4 from rfl]
-    omega
+    omega_using [hx, hj]
   refine ⟨h4, ?_⟩
   by_cases h : j + 1 = N
   · simp only [h, decide_true, beq_iff_eq]
-    apply BitVec.eq_of_toNat_eq; rw [h4]; simp; omega
+    apply BitVec.eq_of_toNat_eq; rw [h4]; simp; omega_using [h]
   · simp only [h, decide_false, beq_eq_false_iff_ne, ne_eq]
     intro hz
     have := congrArg BitVec.toNat hz
     rw [h4] at this
     simp at this
-    omega
+    omega_using [hj, h, this]
 
 /-- One step of a row, the multiplier at `[edi + mo]`. -/
 theorem mulStepAt_ok {mo : Nat} {t : State} {W : Addr} {L : Nat} (hw : Ws t W L) {S bx w j N : Nat}
@@ -62,15 +62,15 @@ theorem mulStepAt_ok {mo : Nat} {t : State} {W : Addr} {L : Nat} (hw : Ws t W L)
       Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] t u := by
   have hn := hw.nowrap
   simp only [Rt.mulStepAt]
-  refine wp_movS (readSrc_ptr hw hedi (d := mo) (by omega)) fun s₀ u₀ _ => ?_
+  refine wp_movS (readSrc_ptr hw hedi (d := mo) (by omega_using [hm])) fun s₀ u₀ _ => ?_
   have hw₀ := hw.of_keeps u₀.keeps
   have hecx₀ : PtrAt s₀ W .ecx (bx + 4 * j) := by rw [PtrAt, u₀.other _ (by decide)]; exact hecx
-  refine wp_movS (readSrc_ptr hw₀ hecx₀ (d := 0) (by omega)) fun s₁ u₁ _ => ?_
+  refine wp_movS (readSrc_ptr hw₀ hecx₀ (d := 0) (by omega_using [hb])) fun s₁ u₁ _ => ?_
   refine wp_mul fun s₂ m₂ => ?_
   have K₂ : Keeps [.eax, .edx] t s₂ := ((u₀.keeps.mono (by decide)).widen u₁.keeps).widen m₂.keeps
   have hw₂ := hw.of_keeps K₂
   have hp₂ : PtrAt s₂ W .ebp (w + 4 * j) := by rw [PtrAt, K₂.1 _ (by decide)]; exact hebp
-  refine wp_addS (readSrc_ptr hw₂ hp₂ (d := 0) (by omega)) fun s₃ u₃ c₃ => ?_
+  refine wp_addS (readSrc_ptr hw₂ hp₂ (d := 0) (by omega_using [ht])) fun s₃ u₃ c₃ => ?_
   refine wp_adcS rfl c₃ fun s₄ u₄ c₄ => ?_
   refine wp_addS rfl fun s₅ u₅ c₅ => ?_
   refine wp_adcS rfl c₅ fun s₆ u₆ c₆ => ?_
@@ -78,7 +78,7 @@ theorem mulStepAt_ok {mo : Nat} {t : State} {W : Addr} {L : Nat} (hw : Ws t W L)
   have K₆ : Keeps [.eax, .edx] t s₆ := (K₄.widen u₅.keeps).widen u₆.keeps
   have hw₆ := hw.of_keeps K₆
   have hp₆ : PtrAt s₆ W .ebp (w + 4 * j) := by rw [PtrAt, K₆.1 _ (by decide)]; exact hebp
-  refine wp_storeS (ea_ptr hw₆ hp₆ (d := 0) (by omega)) (ws_write hw₆ (y := w + 4 * j + 0) (n := 4) (by omega))
+  refine wp_storeS (ea_ptr hw₆ hp₆ (d := 0) (by omega_using [ht])) (ws_write hw₆ (y := w + 4 * j + 0) (n := 4) (by omega_using [ht]))
     fun s₇ m₇ => ?_
   refine wp_movS rfl fun s₈ u₈ _ => ?_
   refine wp_addS rfl fun s₉ u₉ _ => ?_
@@ -132,9 +132,9 @@ theorem mulStepAt_ok {mo : Nat} {t : State} {W : Addr} {L : Nat} (hw : Ws t W L)
   · rw [u₁₁.other _ (by decide), u₁₀.other _ (by decide), u₉.other _ (by decide),
       u₈.gpr, m₇.gpr, dx₆, hpost.2, Nat.add_right_comm]
   · rw [PtrAt, u₁₁.other _ (by decide), ecx₁₀, ptr_add hecx 4]
-    rw [show (4 : BitVec 32).toNat = 4 from rfl]; omega
+    rw [show (4 : BitVec 32).toNat = 4 from rfl]; omega_using []
   · rw [PtrAt, u₁₁.other _ (by decide), ebp₁₀, ptr_add hebp 4]
-    rw [show (4 : BitVec 32).toNat = 4 from rfl]; omega
+    rw [show (4 : BitVec 32).toNat = 4 from rfl]; omega_using []
 
 
 end VG.Proof.Mont.X86.Rt

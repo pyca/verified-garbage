@@ -46,7 +46,7 @@ theorem recipSetup_ok {s : State} {B : Addr} {Z W : Nat} (h : Ws s B Z W) :
   refine WP.mono (base2_ok aM aV (r₁ := .r10) (r₂ := .r8) (by decide) (by decide) (by decide)
     ((k₁.gpr (by decide)).trans h.rdi) h9 (by decide)) fun t₂ ⟨h10, h8, hm₂, k₂⟩ => ?_
   refine WP.mono (WP.keep [.r12] (Q := fun t => t.gpr .r12 = BitVec.ofNat 64 (W / 2) ∧ t.mem = t₂.mem)
-    (by xrun [(k₂.gpr (by decide) : t₂.gpr .r12 = _), h12, shr1_ofNat W (by omega)]) rfl)
+    (by xrun [(k₂.gpr (by decide) : t₂.gpr .r12 = _), h12, shr1_ofNat W (by omega_using [hw])]) rfl)
     fun t ⟨⟨h12', hm₃⟩, k₃⟩ => ?_
   exact ⟨(k₃.gpr (by decide)).trans h10, (k₃.gpr (by decide)).trans h8, h12',
     hm₃.trans (hm₂.trans hm₁), ((k₁.trans k₂).trans k₃).mono (by decide)⟩
@@ -62,7 +62,7 @@ def xw (W : Nat) : Option Nat → Nat
   | some k => W / 2 + k
 
 theorem j0_add {W : Nat} (top : Option Nat) (hW : 2 ≤ W) : j0 W top + (W / 2 - 1) = xw W top := by
-  cases top <;> simp only [j0, xw] <;> omega
+  cases top <;> simp only [j0, xw] <;> omega_using [hW]
 
 /-- `start top`: the first digit's index into `rax`, `r12` halved. -/
 theorem start_ok {s : State} {W : Nat} {top : Option Nat} (h12 : s.gpr .r12 = BitVec.ofNat 64 W)
@@ -74,20 +74,20 @@ theorem start_ok {s : State} {W : Nat} {top : Option Nat} (h12 : s.gpr .r12 = Bi
     refine WP.mono (WP.keep [.rax, .r12] (Q := fun t => t.gpr .rax = BitVec.ofNat 64 (j0 W none) ∧
       t.gpr .r12 = BitVec.ofNat 64 (W / 2) ∧ t.mem = s.mem)
       (by
-        xrun [start, h12, shr1_ofNat W (by omega)]
+        xrun [start, h12, shr1_ofNat W (by omega_using [hW])]
         apply BitVec.eq_of_toNat_eq
         have e1 : (1 : BitVec 64).toNat = 1 := rfl
         simp only [j0, BitVec.toNat_add, BitVec.toNat_sub, BitVec.toNat_ofNat, e1]
-        omega) rfl) fun t ⟨⟨ha, h12', hm⟩, k⟩ => ⟨ha, h12', hm, k⟩
+        omega_using []) rfl) fun t ⟨⟨ha, h12', hm⟩, k⟩ => ⟨ha, h12', hm, k⟩
   | some k =>
     have := hk k rfl
     refine WP.mono (WP.keep [.rax, .r12] (Q := fun t => t.gpr .rax = BitVec.ofNat 64 (j0 W (some k)) ∧
       t.gpr .r12 = BitVec.ofNat 64 (W / 2) ∧ t.mem = s.mem)
       (by
-        xrun [start, h12, shr1_ofNat W (by omega)]
+        xrun [start, h12, shr1_ofNat W (by omega_using [hW])]
         apply BitVec.eq_of_toNat_eq
         simp only [j0, BitVec.toNat_setWidth, BitVec.toNat_ofNat]
-        omega) rfl) fun t ⟨⟨ha, h12', hm⟩, k⟩ => ⟨ha, h12', hm, k⟩
+        omega_using [this]) rfl) fun t ⟨⟨ha, h12', hm⟩, k⟩ => ⟨ha, h12', hm, k⟩
 
 /-- A first digit's index computation: from `W` in `r12`, `st` leaves the index `j` in `rax` and
 `W / 2` in `r12`, and changes nothing else; the dividend's `j + (W / 2 - 1)` words fit in `W`. -/
@@ -102,16 +102,16 @@ structure StartOk (st : List Instr) (W j : Nat) : Prop where
 /-- `start top`'s index is `j0 W top`. -/
 theorem start_startOk {W : Nat} (hW : 6 ≤ W) (hW' : W < 2 ^ 30) {top : Option Nat}
     (hk : ∀ k, top = some k → k ≤ W / 2) : StartOk (start top) W (j0 W top) where
-  pos := by cases top <;> simp only [j0] <;> omega
+  pos := by cases top <;> simp only [j0] <;> omega_using []
   fit := by
-    rw [j0_add top (by omega)]; cases top with
-    | none => simp only [xw]; omega
-    | some k => have := hk k rfl; simp only [xw]; omega
+    rw [j0_add top (by omega_using [hW])]; cases top with
+    | none => simp only [xw]; omega_using []
+    | some k => have := hk k rfl; simp only [xw]; omega_using [this]
   lt := by
     cases top with
-    | none => simp only [j0]; omega
-    | some k => have := hk k rfl; simp only [j0]; omega
-  run h12 := start_ok h12 (by omega) fun k e => by have := hk k e; omega
+    | none => simp only [j0]; omega_using [hW']
+    | some k => have := hk k rfl; simp only [j0]; omega_using [hW', this]
+  run h12 := start_ok h12 (by omega_using [hW']) fun k e => by have := hk k e; omega_using [hW', this]
 
 /-- `seedSetupWith st`: `rsi` at the dividend's word `j₀`, `rbx` at the remainder, `r12 = W / 2 - 1`. -/
 theorem seedSetupWith_ok {s : State} {B : Addr} {Z W : Nat} (h : Ws s B Z W) {st : List Instr} {j : Nat}
@@ -137,7 +137,7 @@ theorem seedSetupWith_ok {s : State} {B : Addr} {Z W : Nat} (h : Ws s B Z W) {st
       xrun [ha₂]
       apply BitVec.eq_of_toNat_eq
       simp only [BitVec.toNat_shiftLeft, BitVec.toNat_ofNat, Nat.shiftLeft_eq]
-      omega) rfl) fun t₃ ⟨⟨ha₃, hm₃⟩, k₃⟩ => ?_
+      omega_using []) rfl) fun t₃ ⟨⟨ha₃, hm₃⟩, k₃⟩ => ?_
   have k13 := (k₁.trans k₂).trans k₃
   rw [WP.block_append_iff]
   refine WP.mono (base_ok aD (r := .rsi) (by decide) ((k13.gpr (by decide)).trans h.rdi)
@@ -153,7 +153,7 @@ theorem seedSetupWith_ok {s : State} {B : Addr} {Z W : Nat} (h : Ws s B Z W) {st
     (by
       xrun [(k₆.gpr (by decide) : t₆.gpr .r12 = _), (k₅.gpr (by decide) : t₅.gpr .r12 = _),
         (k₄.gpr (by decide) : t₄.gpr .r12 = _), (k₃.gpr (by decide) : t₃.gpr .r12 = _), h12₂,
-        ofNat64_pred (show 1 ≤ W / 2 by omega) (by omega)]) rfl) fun t ⟨⟨h12', hm₇⟩, k₇⟩ => ?_
+        ofNat64_pred (show 1 ≤ W / 2 by omega_using [hw1]) (by omega_using [hw])]) rfl) fun t ⟨⟨h12', hm₇⟩, k₇⟩ => ?_
   exact ⟨(k₇.gpr (by decide)).trans ((k₆.gpr (by decide)).trans hsi₅), (k₇.gpr (by decide)).trans hbx, h12',
     by rw [hm₇, hm₆, hm₅, hm₄, hm₃, hm₂, hm₁], ((k15.trans k₆).trans k₇).mono (by decide)⟩
 
@@ -174,7 +174,7 @@ theorem seedWith_ok {s : State} {B : Addr} {Z W : Nat} (h : Ws s B Z W) (hW : 6 
   refine WP.seq (WP.mono (seedSetupWith_ok h hst)
     fun s₁ ⟨hsi, hbx, h12, m₁, k₁⟩ => ?_)
   have hs₁ := h.scr.congr k₁.2.2
-  refine WP.mono (copyWords_ok hsi hbx h12 (by omega) (by omega) (by omega_arith)
+  refine WP.mono (copyWords_ok hsi hbx h12 (by omega_using [hW]) (by omega_using [hw]) (by omega_arith)
     (fun i hi => hs₁.ld (by omega_arith)) (fun i hi => hs₁.st (by omega_arith))
     (fun i hi b hb => by rw [ofs_off B (by omega_arith)]; omega_arith)) fun t ⟨hv, _, o', k₂⟩ => ?_
   rw [m₁] at hv o'
@@ -202,7 +202,7 @@ theorem countSetupWith_ok {s : State} {B : Addr} {Z W : Nat} (h : Ws s B Z W)
     t.mem = t₃.mem.writeW (off B (slot W aV + 16)) (BitVec.ofNat 64 (j))) (by
       xrun [State.ea, wm, (k₃.gpr (by decide) : t₃.gpr .rbp = _), hbp, ha₃,
         BitVec.ofInt_natCast, off_add,
-        hs.st (d := slot W aV + 16) (by omega)]) rfl) fun t ⟨hm, k₄⟩ => ?_
+        hs.st (d := slot W aV + 16) (by omega_using [hv])]) rfl) fun t ⟨hm, k₄⟩ => ?_
   exact ⟨(k₄.gpr (by decide)).trans ha₃, by rw [hm, hm₃, hm₂, hm₁], (((k₁.trans k₂).trans k₃).trans k₄).mono (by decide)⟩
 
 /-- Decrement the public word counter and set the loop's condition. -/
@@ -225,8 +225,8 @@ theorem next_ok {s : State} {B : Addr} {Z W j : Nat} (h : Ws s B Z W)
     t.zf = some (decide (j = 1)) ∧
     t.mem = t₂.mem.writeW (off B (slot W aV + 16)) (BitVec.ofNat 64 (j - 1))) (by
       xrun [State.ea, wm, hbp, BitVec.ofInt_natCast, off_add,
-        hs.ld (d := slot W aV + 16) (by omega), hs.st (d := slot W aV + 16) (by omega),
-        hm₂, hm₁, hc, ofNat64_pred hj (by omega), ofNat64_beq_zero (show j - 1 < 2 ^ 64 by omega)]
+        hs.ld (d := slot W aV + 16) (by omega_using [hv]), hs.st (d := slot W aV + 16) (by omega_using [hv]),
+        hm₂, hm₁, hc, ofNat64_pred hj (by omega_using [hjW, hw]), ofNat64_beq_zero (show j - 1 < 2 ^ 64 by omega_using [hjW, hw])]
       simp only [show (j - 1 = 0) ↔ j = 1 by omega_using [hj]]) rfl) fun t ⟨⟨ha, hz, hm⟩, k₃⟩ => ?_
   exact ⟨ha, hz, by rw [hm, hm₂, hm₁], ((k₁.trans k₂).trans k₃).mono (by decide)⟩
 
@@ -248,7 +248,7 @@ theorem stepLoad_ok {s : State} {B : Addr} {Z W j : Nat} (h : Ws s B Z W)
   have hs := h.scr.congr (k₁.trans k₂).2.2
   refine WP.mono (WP.keep [.rcx] (Q := fun t => t.gpr .rcx = BitVec.ofNat 64 j) (by
     xrun [State.ea, wm, hbp, BitVec.ofInt_natCast, off_add,
-      hs.ld (d := slot W aV + 16) (by omega), hm₂, hm₁, hc]) rfl) fun t ⟨hcx, k₃⟩ => ?_
+      hs.ld (d := slot W aV + 16) (by omega_using [hv]), hm₂, hm₁, hc]) rfl) fun t ⟨hcx, k₃⟩ => ?_
   exact ⟨(((k₁.trans k₂).trans k₃).gpr (by decide)).trans h.rdi,
     ((k₂.trans k₃).gpr (by decide)).trans h12, ((k₂.trans k₃).gpr (by decide)).trans h9,
     (k₃.gpr (by decide)).trans hbp, (k₃.gpr (by decide)).trans h11, hcx⟩
@@ -283,9 +283,9 @@ theorem stepSetup_ok {s : State} {B : Addr} {Z W j : Nat} (h : Ws s B Z W)
   refine WP.mono (WP.keep [.rcx, .rdx] (Q := fun t =>
     t.mem = t₂.mem.writeW (off B (slot W aV + 8)) (word s.mem B (slot W aD + 8 * (j - 1)))) (by
     xrun [State.ea, wm, ix, hbp, BitVec.ofInt_natCast, off_add,
-      hs.ld (d := slot W aV + 16) (by omega), hs.st (d := slot W aV + 8) (by omega),
-      hm₂, hm₁, hc, ofNat64_pred hj (by omega), addr0 h11 (rfl : BitVec.ofNat 64 (j - 1) = _),
-      hs.ld (d := slot W aD + 8 * (j - 1)) (by omega)]) rfl) fun t₃ ⟨hm₃, k₃⟩ => ?_
+      hs.ld (d := slot W aV + 16) (by omega_using [hv]), hs.st (d := slot W aV + 8) (by omega_using [hv]),
+      hm₂, hm₁, hc, ofNat64_pred hj (by omega_using [hjW, hw]), addr0 h11 (rfl : BitVec.ofNat 64 (j - 1) = _),
+      hs.ld (d := slot W aD + 8 * (j - 1)) (by omega_using [hj, hjW, hd])]) rfl) fun t₃ ⟨hm₃, k₃⟩ => ?_
   rw [WP.block_append_iff]
   have k03 := (k₁.trans k₂).trans k₃
   refine WP.mono (base3_ok aR aM aT (r₁ := .rbx) (r₂ := .r10) (r₃ := .r8)
@@ -294,7 +294,7 @@ theorem stepSetup_ok {s : State} {B : Addr} {Z W j : Nat} (h : Ws s B Z W)
     (by decide) (by decide)) fun t₄ ⟨hbx, h10, h8, hm₄, k₄⟩ => ?_
   refine WP.mono (WP.keep [.r12] (Q := fun t => t.gpr .r12 = BitVec.ofNat 64 (W / 2) ∧ t.mem = t₄.mem)
     (by xrun [(k₄.gpr (by decide) : t₄.gpr .r12 = _), (k₃.gpr (by decide) : t₃.gpr .r12 = _),
-      (k₂.gpr (by decide) : t₂.gpr .r12 = _), h12, shr1_ofNat W (by omega)]) rfl)
+      (k₂.gpr (by decide) : t₂.gpr .r12 = _), h12, shr1_ofNat W (by omega_using [hw])]) rfl)
     fun t ⟨⟨h12', hm₅⟩, k₅⟩ => ?_
   exact ⟨(k₅.gpr (by decide)).trans hbx, (k₅.gpr (by decide)).trans h10,
     (k₅.gpr (by decide)).trans h8, (((k₃.trans k₄).trans k₅).gpr (by decide)).trans hbp,

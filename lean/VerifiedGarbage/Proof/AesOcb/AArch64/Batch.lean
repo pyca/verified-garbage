@@ -59,14 +59,14 @@ theorem vBlock_words (x : BitVec 128) :
       simp only [Proof.Cmac.le8, List.getElem_map, List.getElem_range]
       apply BitVec.eq_of_getLsbD_eq
       intro k hk
-      simp only [BitVec.getLsbD_extractLsb', show k < 8 by omega, decide_true, Bool.true_and,
-        show 8*j+k < 64 by omega, Nat.zero_add]
+      simp only [BitVec.getLsbD_extractLsb', show k < 8 by omega_using [hk], decide_true, Bool.true_and,
+        show 8*j+k < 64 by omega_using [h, hk], Nat.zero_add]
     · rw [List.getElem_append_right (by simpa [Proof.Cmac.le8] using Nat.le_of_not_gt h)]
       simp only [Proof.Cmac.le8, List.length_map, List.length_range, List.getElem_map, List.getElem_range]
       apply BitVec.eq_of_getLsbD_eq
       intro k hk
-      simp only [BitVec.getLsbD_extractLsb', show k < 8 by omega, decide_true, Bool.true_and,
-        show 8*(j-8)+k < 64 by omega, show 64+(8*(j-8)+k) = 8*j+k by omega]
+      simp only [BitVec.getLsbD_extractLsb', show k < 8 by omega_using [hk], decide_true, Bool.true_and,
+        show 8*(j-8)+k < 64 by omega_using [hj, hk], show 64+(8*(j-8)+k) = 8*j+k by omega_using [h]]
 
 theorem cachedIncrement_ok {K W D : Addr} {R n : Nat} {SP : Addr} {s : State}
     (E : Env K W D R n SP s) {v : VReg} {l : Block} {i : Nat}
@@ -98,7 +98,7 @@ theorem PassInv.of_temp {K W D : Addr} {R n : Nat} {SP : Addr} {m i : Nat} {O0 l
       blockAtMem u.mem (W + BitVec.ofNat 64 a) = blockAtMem t.mem (W + BitVec.ofNat 64 a) :=
     blockAtMem_frame fr fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
-      exact Offset.disjoint W (.inl ha) (by omega) (by decide)
+      exact Offset.disjoint W (.inl ha) (by omega_using [ha]) (by decide)
   refine { P with
     env := P.env.keep (fun r hr => g r (by
       simp only [envRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -118,7 +118,7 @@ theorem PassInv.of_temp {K W D : Addr} {R n : Nat} {SP : Addr} {m i : Nat} {O0 l
   intro k hk
   rw [blockAtMem_frame fr (fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr
-    exact (hD.slice (a := 16*k) (k := 16) (by omega)).w.sub_right (Lay.wSub (by decide))), P.blk k hk]
+    exact (hD.slice (a := 16*k) (k := 16) (by omega_using [hk])).w.sub_right (Lay.wSub (by decide))), P.blk k hk]
 
 theorem block_keepsVec {is : List Instr} {s t : State} {v : VReg}
     (h : runBlock isa is s = some t) (hv : ∀ i ∈ is, vdstOf i ≠ some v) : t.v v = s.v v := by
@@ -142,8 +142,8 @@ theorem cacheDouble_ok {W : Addr} {s : State} (v : VReg) {a : Nat}
   have wW : ∀ {d n : Nat}, d + n ≤ 2560 → InRegions s.wr (W + BitVec.ofNat 64 d) n := fun h =>
     Proof.AesGcm.AArch64.in_off hw h (by decide)
   obtain ⟨u, run, B⟩ := dbl_ok (b := .x19) (a := a) (d := lO) ha (by decide) h19 h19 (by decide)
-    (Proof.AesGcm.AArch64.in_left (wW (by omega)))
-    (Proof.AesGcm.AArch64.in_left (wW (by omega))) (wW (by decide)) (wW (by decide))
+    (Proof.AesGcm.AArch64.in_left (wW (by omega_using [haW])))
+    (Proof.AesGcm.AArch64.in_left (wW (by omega_using [haW]))) (wW (by decide)) (wW (by decide))
   have load := loadV_run (s := u) v (a := lO) (by decide) (by rw [B.gpr _ (by decide), h19])
     (by rw [B.rd, B.wr]; exact Proof.AesGcm.AArch64.in_left (wW (by decide)))
   refine ⟨_, by rw [runBlock_append, run, Option.bind_some, load], ?_, ?_, fun r hr => ?_⟩
@@ -187,14 +187,14 @@ theorem batchLastIncrement_ok {K W D : Addr} {R n : Nat} {SP : Addr} {s : State}
     simp only [t,gpr_write,ite_true,BitVec.setWidth_eq,P.gpr .x25 (by decide),h25,
       Proof.AesGcm.AArch64.lsr_ofNat _ _ hi]
   have hntz : ntz (8*k+8) = 2 + ntz ((8*k+8)/2^2) := by
-    rw [Proof.Ocb.ntz_even (by omega) (by omega),
-      show (8*k+8)/2 = 4*k+4 by omega,Proof.Ocb.ntz_even (by omega) (by omega)]
-    simp only [show (4*k+4)/2 = 2*k+2 by omega, show (8*k+8)/2^2 = 2*k+2 by omega]
-    omega
+    rw [Proof.Ocb.ntz_even (by omega_using []) (by omega_using []),
+      show (8*k+8)/2 = 4*k+4 by omega_using [],Proof.Ocb.ntz_even (by omega_using []) (by omega_using [])]
+    simp only [show (4*k+4)/2 = 2*k+2 by omega_using [], show (8*k+8)/2^2 = 2*k+2 by omega_using []]
+    omega_using []
   refine WP.seq (WP.of_runBlock ⟨t,run,?_⟩)
   refine WP.mono (lNtzLoop_ok (s := t)
     (by simp only [t,gpr_write,reduceCtorEq,ite_false]; rw [P.gpr _ (by decide),E.x19])
-    (by change Covers _ u.wr; rw [P.wr]; exact E.perm.w) hi (by omega) (by omega) hntz h14
+    (by change Covers _ u.wr; rw [P.wr]; exact E.perm.w) hi (by omega_using []) (by omega_using []) hntz h14
     (by change blockAtMem u.mem _ = _; simpa only [show ntz 4 = 2 by decide] using P.val)) fun z Q => ?_
   refine ⟨P.frame.trans Q.frame,Q.val,fun r hr => ?_,Q.sp.trans P.sp,Q.rd.trans P.rd,Q.wr.trans P.wr⟩
   rw [Q.gpr r hr]
@@ -215,17 +215,17 @@ theorem passCount_ok {K W D : Addr} {R n : Nat} {SP : Addr} {m i : Nat} {O0 l : 
   refine ⟨P.of_temp hD (Frame.refl _ _) (fun r hr => ?_) rfl rfl rfl, ?_, rfl⟩
   · have h : r ≠ .x9 := fun h => hr (by simp [ntzRegs, h])
     simp [gpr_write, h]
-  · simp [gpr_write, P.x24, lsr_ofNat _ _ (show m-i < 2^64 by omega)]
+  · simp [gpr_write, P.x24, lsr_ofNat _ _ (show m-i < 2^64 by omega_using [hm])]
 
 theorem ntz_eight_two (k : Nat) : ntz (8*k+2) = 1 := by
-  rw [Proof.Ocb.ntz_even (by omega) (by omega), show (8*k+2)/2 = 4*k+1 by omega,
-    Proof.Ocb.ntz_odd (by omega)]
+  rw [Proof.Ocb.ntz_even (by omega_using []) (by omega_using []), show (8*k+2)/2 = 4*k+1 by omega_using [],
+    Proof.Ocb.ntz_odd (by omega_using [])]
 theorem ntz_eight_four (k : Nat) : ntz (8*k+4) = 2 := by
-  rw [Proof.Ocb.ntz_even (by omega) (by omega), show (8*k+4)/2 = 4*k+2 by omega,
-    Proof.Ocb.ntz_even (by omega) (by omega), show (4*k+2)/2 = 2*k+1 by omega,
-    Proof.Ocb.ntz_odd (by omega)]
+  rw [Proof.Ocb.ntz_even (by omega_using []) (by omega_using []), show (8*k+4)/2 = 4*k+2 by omega_using [],
+    Proof.Ocb.ntz_even (by omega_using []) (by omega_using []), show (4*k+2)/2 = 2*k+1 by omega_using [],
+    Proof.Ocb.ntz_odd (by omega_using [])]
 theorem ntz_eight_six (k : Nat) : ntz (8*k+6) = 1 := by
-  rw [Proof.Ocb.ntz_even (by omega) (by omega), show (8*k+6)/2 = 4*k+3 by omega,
-    Proof.Ocb.ntz_odd (by omega)]
+  rw [Proof.Ocb.ntz_even (by omega_using []) (by omega_using []), show (8*k+6)/2 = 4*k+3 by omega_using [],
+    Proof.Ocb.ntz_odd (by omega_using [])]
 
 end VG.Proof.AesOcb.AArch64

@@ -337,7 +337,7 @@ theorem bodyRest_ok (h : RIn base bytes len args s) (hX : xv s.mem base len < 2 
     · exact .inr (Nat.le_trans hb hd)
     · rw [e]; rcases hdo with hdo | hdo
       · exact .inl hdo
-      · exact .inr (by omega)
+      · exact .inr (by omega_using [hl, hdo])
   have keepA : ∀ {o : Nat} {sp : BitVec 32} {v : State} {m m' : Mem}, 16 ≤ o → o ≤ 17 →
       RIn base bytes len args v → CallRoom sp base bytes → Frame (frameR base sp (factorR len o)) m m' →
       w32 m' base accOff = w32 m base accOff := by
@@ -363,7 +363,7 @@ theorem bodyRest_ok (h : RIn base bytes len args s) (hX : xv s.mem base len < 2 
   -- The factor `p`.
   refine WP.seq (WP.mono (factor_ok h₂ (f := 10) (i := 7) (o := 16) (p := componentValue s.mem args 6) (by decide)
     (by decide) (by decide) (by decide) (by decide) (by rw [k₂ (by omega_arith) (by omega_arith), p₁])
-    (by omega) b7 (component_lt s.mem args 6) (by rw [X₂]; exact hX))
+    (by omega_using [p7]) b7 (component_lt s.mem args 6) (by rw [X₂]; exact hX))
     fun u₄ ⟨F₄, V₄, K₄⟩ => ?_)
   have h₄ := h₂.keepF K₄ (by decide) (by decide) F₄ (fun q hq => (factorR_props h₂ (by decide) (by decide) q hq).1)
   have sp₄ : u₄.gpr .esp = s.gpr .esp := (K₄.1 _ (by decide)).trans sp₂
@@ -377,7 +377,7 @@ theorem bodyRest_ok (h : RIn base bytes len args s) (hX : xv s.mem base len < 2 
     rw [keepR (o := 16) (by decide) (by decide) h₂ h.room F₄ (by omega_arith) (by omega_arith) (.inl (by omega_arith)),
       k₂ (by omega_arith) (by omega_arith), q₁]
   refine WP.seq (WP.mono (factor_ok h₄ (f := 11) (i := 9) (o := 17) (p := componentValue s.mem args 8) (by decide)
-    (by decide) (by decide) (by decide) (by decide) q₄ (by omega) b9 (component_lt s.mem args 8) (by rw [X₄]; exact hX))
+    (by decide) (by decide) (by decide) (by decide) q₄ (by omega_using [p9]) b9 (component_lt s.mem args 8) (by rw [X₄]; exact hX))
     fun u₆ ⟨F₆, V₆, K₆⟩ => ?_)
   rw [sp₄] at F₆
   have h₆ := h₄.keepF K₆ (by decide) (by decide) (by rw [sp₄]; exact F₆)
@@ -473,7 +473,7 @@ theorem bodyR_props (h : RIn base bytes len args s) :
     · refine ⟨valR_fit h q hq, ?_⟩
       simp only [valR, List.mem_cons, List.not_mem_nil, or_false] at hq
       rcases hq with rfl | rfl | rfl | rfl <;> dsimp only <;>
-        simp only [accOff, multOff, prodOff, mulAOff] at * <;> omega
+        simp only [accOff, multOff, prodOff, mulAOff] at * <;> omega_using []
     · exact ⟨(factorR_props h (o := 16) (by decide) (by decide) q hq).1, factorR_saved q hq⟩
   · exact ⟨(factorR_props h (o := 17) (by decide) (by decide) q hq).1, factorR_saved q hq⟩
 

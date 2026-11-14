@@ -31,11 +31,11 @@ theorem entry_ok {s : State} {B : Addr} {Z : Nat}
   refine WP.keep [.x0,.x4,.x7,.x10] ?_ rfl rfl rfl
   unfold VG.Impl.Ffdh.AArch64.VettedValidation.entry entryMemory
   brun [base,st,execAdr,hdr_enc (show sBits<32 by decide),
-    scratch.st (d:=8*sDom) (by unfold sDom;omega),
-    scratch.st (d:=8*sDL) (by unfold sDL;omega),
-    scratch.st (d:=8*sLen) (by unfold sLen;omega),
-    scratch.st (d:=8*sCtx) (by unfold sCtx;omega),
-    scratch.st (d:=8*sBits) (by unfold sBits;omega)]
+    scratch.st (d:=8*sDom) (by unfold sDom;omega_using [room]),
+    scratch.st (d:=8*sDL) (by unfold sDL;omega_using [room]),
+    scratch.st (d:=8*sLen) (by unfold sLen;omega_using [room]),
+    scratch.st (d:=8*sCtx) (by unfold sCtx;omega_using [room]),
+    scratch.st (d:=8*sBits) (by unfold sBits;omega_using [room])]
   exact ⟨rfl,rfl⟩
 
 theorem entryMemory_header (m : Mem) (B dom dl k words : Addr) :
@@ -46,7 +46,7 @@ theorem entryMemory_header (m : Mem) (B dom dl k words : Addr) :
     word (entryMemory m B dom dl k words) B (8*sBits)=4095#64 := by
   have separate (m : Mem) (i j : Nat) (hi : i<32) (hj : j<32) (different : i≠j) (v : Addr) :
       word (m.writeW (off B (8*i)) v) B (8*j)=word m B (8*j) :=
-    Mem.readW_writeW_sep (Offset.sep B (by omega) (by omega) (by omega)) (by decide)
+    Mem.readW_writeW_sep (Offset.sep B (by omega_using [different]) (by omega_using [hj]) (by omega_using [hi])) (by decide)
   unfold entryMemory
   rw [separate _ sBits sDom (by decide) (by decide) (by decide),separate _ sCtx sDom (by decide) (by decide) (by decide),
     separate _ sLen sDom (by decide) (by decide) (by decide),separate _ sDL sDom (by decide) (by decide) (by decide),word_writeW_self,
@@ -61,7 +61,7 @@ theorem entryMemory_range (m : Mem) (B dom dl k words : Addr) :
   intro x hx
   have store (m : Mem) (i : Nat) (low : 16≤i) (high : i<21) (v : Addr) :
       (m.writeW (off B (8*i)) v) x=m x :=
-    writeW_outside m B v (by omega) x (by omega)
+    writeW_outside m B v (by omega_using [high]) x (by omega_using [hx, low, high])
   unfold entryMemory
   rw [store _ sBits (by decide) (by decide),store _ sCtx (by decide) (by decide),
     store _ sLen (by decide) (by decide),store _ sDL (by decide) (by decide),

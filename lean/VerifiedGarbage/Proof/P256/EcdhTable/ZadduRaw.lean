@@ -71,15 +71,15 @@ theorem zaddu_raw_ok (hC : Law C) (ha : AM3 C) (hO : PrimeOrder C)
     have hh := congrArg (fun q : (Fe C × Fe C × Fe C) × (Fe C × Fe C) =>
       InvJ C q.2.1 q.2.2 q.1.2.2 P) ht
     exact hh.mpr jd
-  have hz : r 10≠0 := fun hh => Window5.mul_ne_infinity hO hP p0 (by omega)
+  have hz : r 10≠0 := fun hh => Window5.mul_ne_infinity hO hP p0 (by omega_using [])
     (by
       have hn : 17≤C.n := by decide
-      omega) ((js'.z_zero_iff hC).mp hh)
+      omega_using [hm15, hn]) ((js'.z_zero_iff hC).mp hh)
   have v0 := vals (i:=0) (by decide)
   have v1 := vals (i:=1) (by decide)
   have hv : ∀i<5,tmv C 4 base t (selectedSlot i)=r (8+i) ∧ wordsVal t.mem base (selectedSlot i) 4<C.p := by
     intro i hi
-    have : i=0∨i=1∨i=2∨i=3∨i=4 := by omega
+    have : i=0∨i=1∨i=2∨i=3∨i=4 := by omega_using [hi]
     rcases this with rfl|rfl|rfl|rfl|rfl
     · exact vals (i:=8) (by decide)
     · exact vals (i:=9) (by decide)

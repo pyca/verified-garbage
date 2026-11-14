@@ -58,16 +58,16 @@ theorem transpose_ok {s : State} (h : Room s) :
       simp only [Option.some.injEq] at hsl
       subst hsl
       have e : sl s j = words s (j - 8) := by
-        simp only [words, stSlot]; rw [show 8 + (j - 8) = j by omega]
+        simp only [words, stSlot]; rw [show 8 + (j - 8) = j by omega_using [hk]]
       show LaneRel 12 _ _ (s.mem.readW (wordAddr (s.gpr .rcx) j) 64)
       rw [show s.mem.readW (wordAddr (s.gpr .rcx) j) 64 = sl s j from rfl, e]
-      exact inWord_rel (words s) (by omega)
+      exact inWord_rel (words s) (by omega_using [hk])
     · cases hsl
   obtain ⟨s', hs', p⟩ := run lanes_sound hok hrel he
   refine ⟨s', hs', fun j hj => ?_, p.rd, p.wr, p.base, p.ext, p.frame⟩
   have hpj := List.all_eq_true.mp hpost j (List.mem_range.mpr hj)
-  have hs := p.rel.slot (stSlot j) _ (by unfold stSlot; show 8 + j < 72; omega) (beq_iff_eq.mp hpj)
-  have bits := outWord_rel (fun q hq a ha => by simp at ha; omega) hs
+  have hs := p.rel.slot (stSlot j) _ (by unfold stSlot; show 8 + j < 72; omega_using [hj]) (beq_iff_eq.mp hpj)
+  have bits := outWord_rel (fun q hq a ha => by simp at ha; omega_using [hj, hq, ha]) hs
   apply BitVec.eq_of_getLsbD_eq
   intro b hb
   have hsj : words s' j = s'.mem.readW (wordAddr (s'.gpr stateCfg.base) (stSlot j)) 64 := rfl

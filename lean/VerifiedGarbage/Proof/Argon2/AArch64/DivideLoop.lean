@@ -52,15 +52,15 @@ theorem advance_ok (s : State) :
 theorem shifted_bit (x : BitVec 64) (N k : Nat) (hk : k < 32) (hx : x.toNat = N * 2 ^ k) :
     (x.getLsbD 31).toNat = N / 2 ^ (31 - k) % 2 := by
   rw [← BitVec.testBit_toNat, Nat.toNat_testBit, hx,
-    show 2 ^ 31 = 2 ^ (31 - k) * 2 ^ k by rw [← Nat.pow_add]; congr 1; omega,
+    show 2 ^ 31 = 2 ^ (31 - k) * 2 ^ k by rw [← Nat.pow_add]; congr 1; omega_using [hk],
     Nat.mul_div_mul_right _ _ (Nat.two_pow_pos k)]
 
 theorem prefix_split (N k : Nat) (hk : k < 32) :
     N / 2 ^ (32 - (k + 1)) = 2 * (N / 2 ^ (32 - k)) + N / 2 ^ (31 - k) % 2 := by
   have h := Nat.mod_add_div (N / 2 ^ (31 - k)) 2
-  rw [Nat.div_div_eq_div_mul, ← Nat.pow_succ, show (31 - k).succ = 32 - k by omega] at h
-  rw [show 32 - (k + 1) = 31 - k by omega]
-  omega
+  rw [Nat.div_div_eq_div_mul, ← Nat.pow_succ, show (31 - k).succ = 32 - k by omega_using [hk]] at h
+  rw [show 32 - (k + 1) = 31 - k by omega_using []]
+  omega_using [h]
 
 theorem loopBody_ok (s₀ : State) (hn : (s₀.gpr .x0).toNat < 2 ^ 32)
     (hd : 0 < (s₀.gpr .x1).toNat) (hd' : (s₀.gpr .x1).toNat < 2 ^ 32)
@@ -69,7 +69,7 @@ theorem loopBody_ok (s₀ : State) (hn : (s₀.gpr .x0).toNat < 2 ^ 32)
   have hqmul := Nat.le_mul_of_pos_right (s.gpr .x5).toNat hd
   have hprefix := Nat.div_le_self (s₀.gpr .x0).toNat (2 ^ (32 - k))
   have he := h.equation
-  have hq : (s.gpr .x5).toNat < 2 ^ 32 := by omega
+  have hq : (s.gpr .x5).toNat < 2 ^ 32 := by omega_using [hn, hqmul, hprefix, he]
   have hr : (s.gpr .x4).toNat < 2 ^ 32 := Nat.lt_trans h.remainder hd'
   unfold loopBody
   refine WP.seq ((bit_ok s 31 (by decide) hr hq (by rw [h.divisor]; exact hd')).mono ?_)
@@ -82,19 +82,19 @@ theorem loopBody_ok (s₀ : State) (hn : (s₀.gpr .x0).toNat < 2 ^ 32)
   have a0 : a.gpr .x0 = s.gpr .x0 := ka.regs .x0 (by decide)
   have a1 : a.gpr .x1 = s.gpr .x1 := ka.regs .x1 (by decide)
   rw [h.divisor] at ha4 ha5
-  refine ⟨by omega, ?_, ?_, ?_, ?_, ?_, ?_⟩
+  refine ⟨by omega_using [hk], ?_, ?_, ?_, ?_, ?_, ?_⟩
   · have small : (s₀.gpr .x0).toNat * 2 ^ (k + 1) < 2 ^ 64 := by
-      have : 2 ^ (k + 1) ≤ 2 ^ 32 := Nat.pow_le_pow_right (by decide) (by omega)
+      have : 2 ^ (k + 1) ≤ 2 ^ 32 := Nat.pow_le_pow_right (by decide) (by omega_using [hk])
       calc (s₀.gpr .x0).toNat * 2 ^ (k + 1) < 2 ^ 32 * 2 ^ 32 :=
             Nat.mul_lt_mul_of_lt_of_le hn this (Nat.two_pow_pos _)
         _ = 2 ^ 64 := by decide
     rw [Nat.pow_succ, ← Nat.mul_assoc] at small
-    rw [dbl, a0, BitVec.toNat_add, h.shifted, Nat.mod_eq_of_lt (by omega), Nat.pow_succ,
+    rw [dbl, a0, BitVec.toNat_add, h.shifted, Nat.mod_eq_of_lt (by omega_using [small]), Nat.pow_succ,
       ← Nat.mul_assoc]
-    omega
+    omega_using []
   · rw [kt.regs .x1 (by decide), a1, h.divisor]
   · rw [cnt, ka.regs .x15 (by decide), h.count,
-      show (1 : BitVec 64) = BitVec.ofNat 64 1 from rfl, Offset.ofNat_sub_ofNat (by omega)]
+      show (1 : BitVec 64) = BitVec.ofNat 64 1 from rfl, Offset.ofNat_sub_ofNat (by omega_using [hk])]
     congr 1
   · rw [kt.regs .x4 (by decide), ha4]; exact hs.2
   · rw [kt.regs .x4 (by decide), kt.regs .x5 (by decide), ha4, ha5, prefix_split _ k hk, ← bit]
@@ -141,18 +141,18 @@ theorem loopCode_ok (s : State) (hn : (s.gpr .x0).toNat < 2 ^ 32)
     rw [Bool.eq_iff_iff, bne_iff_ne, decide_eq_true_iff, ne_eq, ne_eq]
     refine not_congr ⟨fun eq => ?_, fun eq => by rw [eq]; rfl⟩
     have num := congrArg BitVec.toNat eq
-    simpa only [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega : 32 - (k + 1) < 2 ^ 64),
+    simpa only [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [] : 32 - (k + 1) < 2 ^ 64),
       show (0 : BitVec 64).toNat = 0 from rfl] using num
   by_cases done : k + 1 = 32
   · refine .inl ⟨?_, ?_⟩
-    · simpa only [show 32 - (k + 1) = 0 by omega, ne_eq, not_true_eq_false, decide_false] using flag
+    · simpa only [show 32 - (k + 1) = 0 by omega_using [done], ne_eq, not_true_eq_false, decide_false] using flag
     · have he := next.equation
       rw [done, Nat.sub_self, Nat.pow_zero, Nat.div_one] at he
       obtain ⟨hq, hr⟩ := VG.Proof.Argon2.divide_result hd he next.remainder
       exact ⟨hq, hr, next.keeps⟩
-  · refine .inr ⟨?_, 32 - (k + 1), by omega, k + 1, rfl, by omega, next⟩
+  · refine .inr ⟨?_, 32 - (k + 1), by omega_using [hk], k + 1, rfl, by omega_using [hk, done], next⟩
     change eval (.nonzero .x .x15) t = some true
     rw [flag]
-    exact congrArg some (decide_eq_true (by omega : 32 - (k + 1) ≠ 0))
+    exact congrArg some (decide_eq_true (by omega_using [hk, done] : 32 - (k + 1) ≠ 0))
 
 end VG.Proof.Argon2.AArch64.Divide

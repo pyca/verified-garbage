@@ -61,7 +61,7 @@ theorem dotAt_pre {s s1 : State} {count : Nat} {out a b scratch : Ptr}
     Abi.constRegions,Abi.constsHeld,InverseTable.expandedWords_length,stackBelow]
   simp only [hy,Args.r0 h1,Args.r1 h1,Args.r2 h1,Args.r3 h1,
     Args.mem h1,Arg.val]
-  have he : count*256*4=1024*count := by omega
+  have he : count*256*4=1024*count := by omega_using []
   rw [he]
   exact ⟨rfl,h.held,h.tableFit,h.tableApart _ (by simp),h.tableApart _ (by simp),h.tableAligned,rfl,rfl,h.outA,h.outB,h.outScratch,h.aScratch,
     h.bScratch,h.outFit,h.aFit,h.bFit,h.scratchFit,h.positiveA,h.positiveB⟩

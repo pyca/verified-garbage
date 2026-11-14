@@ -60,8 +60,8 @@ theorem ld_piece : Piece Pre Pub (fun s₀ s => s = P0 s₀) S1 (.block ldScratc
   · subst e
     have fit := hp.sp'
     have a₁ := P0_argAddr s₀ 1
-    have i₁ := P0_argIn (s₀ := s₀) (n := 2) (i := 1) (by omega) fit (by simp [hp.wr])
-    have v₁ := P0_arg hp.sp (n := 2) (i := 1) (by omega) fit (by
+    have i₁ := P0_argIn (s₀ := s₀) (n := 2) (i := 1) (by omega_using []) fit (by simp [hp.wr])
+    have v₁ := P0_arg hp.sp (n := 2) (i := 1) (by omega_using []) fit (by
       simpa [← hp.stk_eq'] using hp.stk_a)
     simp only [Nat.mul_one, Nat.reduceAdd] at a₁
     apply WP.of_runBlock
@@ -91,8 +91,8 @@ theorem setup_piece (T : List Nat) (z : Nat) {hh : Taint.Hint VG.X86.Taint.T}
     refine table_spec T (p := sA s₀) _ s _
       (fun k hk => by
         show (s.gpr .eax + BitVec.ofNat 32 (4 * k)).setWidth 64 = _
-        rw [h.eax, ea_off (by omega)])
-      (fun k hk => hp.in_s h.wr (by omega)) fun s₁ o₁ f₁ c₁ => ?_
+        rw [h.eax, ea_off (by omega_using [fs, hk])])
+      (fun k hk => hp.in_s h.wr (by omega_using [hk])) fun s₁ o₁ f₁ c₁ => ?_
     have esp₁ : s₁.gpr .esp = (P0 s₀).gpr .esp := by rw [o₁.gpr .esp (by decide), h.esp]
     have eax₁ : s₁.gpr .eax = sP s₀ := by rw [o₁.gpr .eax (by decide), h.eax]
     have wr₁ : s₁.wr = (P0 s₀).wr := o₁.wr.trans h.wr
@@ -108,10 +108,10 @@ theorem setup_piece (T : List Nat) (z : Nat) {hh : Taint.Hint VG.X86.Taint.T}
       simp only [List.mem_singleton, forall_eq]
       exact (hp.s_a.symm.sub_left fun x hx => by
         have := hp.arg_in (i := 0) (by decide)
-        simp only [Region.Contains] at hx this ⊢; omega)
+        simp only [Region.Contains] at hx this ⊢; omega_using [hx])
     have v0 : s₁.mem.readW (argAddr s₀ 0) 32 = fP s₀ := by
       rw [f₁.readW (Region.contains_self _ _) hsa (by decide), h.mem]
-      exact P0_arg hp.sp (n := 2) (i := 0) (by omega) fit (by simpa [← hp.stk_eq'] using hp.stk_a)
+      exact P0_arg hp.sp (n := 2) (i := 0) (by omega_using []) fit (by simpa [← hp.stk_eq'] using hp.stk_a)
     apply WP.of_runBlock
     simp only [reduceCtorEq, ↓reduceIte, Nat.reducePow, runBlock_cons, runStep_some, runBlock_nil, exec, execAlu,
       readSrc, State.ea, at_, State.load32, State.store32, State.setReg, arithFlags, State.setFlags,
@@ -122,7 +122,7 @@ theorem setup_piece (T : List Nat) (z : Nat) {hh : Taint.Hint VG.X86.Taint.T}
     · exact (hs1.mono fun r hr => by simp at hr ⊢; exact .inr (.inl hr)).writeW (by simp) _
         (hp.arg_in (by decide))
     · intro k hk
-      rw [coeffAt_eq, Mem.readW_writeW_sep (Region.Disjoint.sep hp.s_a (coeff_contains _ (by rw [n_eq]; omega))
+      rw [coeffAt_eq, Mem.readW_writeW_sep (Region.Disjoint.sep hp.s_a (coeff_contains _ (by rw [n_eq]; omega_using [hk]))
         (hp.arg_in (by decide))) (by decide), ← coeffAt_eq, c₁ k hk]
     · rw [Mem.readW_writeW_sep (arg01_sep hp) (by decide), v0]
     · exact Mem.readW_writeW_self32 _ _ _

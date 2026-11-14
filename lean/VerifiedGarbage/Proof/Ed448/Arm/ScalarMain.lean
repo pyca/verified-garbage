@@ -58,7 +58,7 @@ theorem reduceSetup_ok {s : State} (h : ReducePre s) :
   have hO := OUT_eq
   refine WP.append (saveAt_ok rfl h.f2 hw) fun u ⟨su, fu, gu, ku⟩ => ?_
   refine wp_str (a := State.addr (s.gpr .r2) + BitVec.ofNat 64 32) (by decide)
-    (by rw [gu]; exact addr_add (by have := h.f2; omega))
+    (by rw [gu]; exact addr_add (by have := h.f2; omega_using [hO, this]))
     (by rw [ku.wr]; exact in_base hw (by decide) (by decide)) fun v hv => ?_
   refine wp_mov (op2_reg _ _) fun w hw' => wp_mov (op2_reg _ _) fun x hx =>
     wp_movw fun t ht => WP.block_nil ?_
@@ -71,8 +71,8 @@ theorem reduceSetup_ok {s : State} (h : ReducePre s) :
   · rw [ht.other _ (by decide), hx.other _ (by decide), hw'.gpr, hv.gpr, gu]
   · rw [ht.other _ (by decide), hx.gpr, hw'.other _ (by decide), hv.gpr, gu]
   · intro i hi
-    rw [mt, Mem.readW_writeW_sep (Offset.sep _ (d := 4 * i) (e := 32) (n := 4) (k := 4) (by omega)
-      (by omega) (by omega)) (by decide)]
+    rw [mt, Mem.readW_writeW_sep (Offset.sep _ (d := 4 * i) (e := 32) (n := 4) (k := 4) (by omega_using [hi])
+      (by omega_using [hi]) (by omega_using [])) (by decide)]
     exact su i hi
   · rw [mt]; exact Mem.readW_writeW_self32 _ _ _
   · rw [mt]
@@ -96,16 +96,16 @@ theorem scalarReduce_correct {s : State} (h : ReducePre s) :
   refine WP.seq (WP.mono (reduceSetup_ok h) fun u ⟨hcu, h6u, pu, su, ou, ku, fu⟩ => ?_)
   have wide : (⟨State.addr (s.gpr .r1), 114⟩ : Region) ∈ s.rd ++ s.wr := by rw [h.rd]; simp
   refine WP.seq (WP.mono (reduce114_ok RA_buf hcu h6u pu h.f1
-    (fun n hn => by rw [ku.rd, ku.wr]; exact in_base wide (by omega) (by omega))
+    (fun n hn => by rw [ku.rd, ku.wr]; exact in_base wide (by omega_using [hn]) (by omega_using [hn]))
     (fun r hr => h.wide_ws.sub_right (reduce_regions_sub hr))) fun v ⟨kv, lv, vv⟩ => ?_)
   have sv : Saved (State.addr (s.gpr .r2)) s.gpr v.mem :=
     su.frame kv.frame fun r hr i hi => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl <;> exact Offset.disjoint _ (.inl (by omega)) (by omega) (by decide)
+      rcases hr with rfl | rfl <;> exact Offset.disjoint _ (.inl (by omega_arith)) (by omega_using [hi]) (by decide)
   have ov : v.mem.readW (State.addr (s.gpr .r2) + BitVec.ofNat 64 OUT) 32 = s.gpr .r0 := by
     rw [kv.frame.readW (Region.contains_self _ _) (fun r hr => ?_) (by decide), ou]
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl <;> exact Offset.disjoint _ (.inl (by omega)) (by omega) (by decide)
+    rcases hr with rfl | rfl <;> exact Offset.disjoint _ (.inl (by omega_arith)) (by omega_using [hO]) (by decide)
   refine WP.mono (finish_ok (by decide) (hcu.of_rest kv.rest (by decide)) lv ov h.f0
     (by rw [kv.rest.wr, ku.wr, h.wr]; simp) h.out_ws sv) fun t ⟨gt, kt, _, bt⟩ => ?_
   refine ⟨⟨fun r hr => ?_, by rw [kt.sp, kv.rest.sp, ku.sp]⟩, ?_⟩

@@ -89,7 +89,7 @@ theorem tag_ct [VG.Proof.Gcm.PPC64LE.GhashLaw] {o : Nat} (ho : o = 0 ∨ o = 112
     exact CT.taint _ (fun s₁ s₂ ⟨_, a₁, b₁, d₁, c₁, h₁, _⟩ ⟨_, a₂, b₂, d₂, c₂, h₂, _⟩ =>
       ⟨h₁.sp.trans h₂.sp.symm, fun r hr => pinK h₁ h₂ (a₁.trans a₂.symm)
         (b₁.trans b₂.symm) (d₁.trans d₂.symm) (c₁.trans c₂.symm) hr⟩) hc
-  · refine WP.mono (tagArgs_ok (o := o) (by omega) (by omega) he)
+  · refine WP.mono (tagArgs_ok (o := o) (by omega_using [ho]) (by omega_using [ho]) he)
       fun s' ⟨_, a3, a4, a5, a6, a7, hg, hk⟩ => ⟨V, a, b, d, e, he.keep (fun r hr => hg r (by revert r; decide)
         (by revert r; decide) (by revert r; decide) (by revert r; decide) (by revert r; decide)) hk.sp hk.rd
         hk.wr, by rw [hk.wr]; exact hx, a3, a4, a5, a6, a7⟩

@@ -38,12 +38,12 @@ theorem KS.fwEq (h : KS P σ A live V ls s) {o : Nat} (ho' : o + 4 ≤ 112) : fw
 theorem In.fwRead (pre : In P σ) {o : Nat} (ho' : o + 4 ≤ 112) (h4 : o % 4 = 0) :
     InRegions (σ.rd ++ σ.wr) (off (State.addr P.sp) o) 4 := by
   have spf := pre.spFit
-  rcases (by omega : o + 4 ≤ 56 ∨ 56 ≤ o) with c | c
+  rcases (by omega_using [h4] : o + 4 ≤ 56 ∨ 56 ≤ o) with c | c
   · exact ⟨⟨State.addr P.sp, 56⟩, List.mem_append_right _ (by rw [pre.wr]; simp),
-      Offset.contains_base _ c (by omega)⟩
-  · have read := CallLay.inRegions_sub pre.rdA (off := o - 56) (l := 4) (by omega) (by decide)
+      Offset.contains_base _ c (by omega_using [ho'])⟩
+  · have read := CallLay.inRegions_sub pre.rdA (off := o - 56) (l := 4) (by omega_using [ho']) (by decide)
     rwa [show off (State.addr P.sp) 56 + BitVec.ofNat 64 (o - 56) = off (State.addr P.sp) o by
-      simp only [off]; rw [Offset.add_add]; congr 2; omega] at read
+      simp only [off]; rw [Offset.add_add]; congr 2; omega_using [c]] at read
 
 /-- `ldr t, [sp, #o]` of a frame word. -/
 theorem KS.ldrSp (h : KS P σ A live V ls s) {o : Nat} (ho' : o + 4 ≤ 112) (h4 : o % 4 = 0) {t : Reg} {rest : List Instr}
@@ -52,8 +52,8 @@ theorem KS.ldrSp (h : KS P σ A live V ls s) {o : Nat} (ho' : o + 4 ≤ 112) (h4
   have pre := h.pre
   have spf := pre.spFit
   have ea : State.addr (s.sp + BitVec.ofNat 32 o) = off (State.addr P.sp) o := by
-    rw [h.sp, pre.sp]; exact addr_add (by omega)
-  refine wp_loadStack (by omega) ea ?_ fun s' u => k s' (by rw [← h.fwEq ho']; exact u)
+    rw [h.sp, pre.sp]; exact addr_add (by omega_using [ho', spf])
+  refine wp_loadStack (by omega_using [ho']) ea ?_ fun s' u => k s' (by rw [← h.fwEq ho']; exact u)
   rw [h.rd, h.wr]
   exact pre.fwRead ho' h4
 
@@ -82,7 +82,7 @@ theorem St.pcnt8 : VP (St P E A L V LS) (.block cnt8)
       rw [u.gpr, r6]
       apply BitVec.eq_of_toNat_eq
       rw [BitVec.toNat_shiftLeft, Nat.shiftLeft_eq, BitVec.toNat_ofNat, BitVec.toNat_ofNat]
-      omega
+      omega_using []
 
 /-- `r6 := 64`. -/
 theorem St.pmov64 : VP (St P E A L V LS) (.block [.mov .r6 (.imm 64)])

@@ -29,23 +29,23 @@ theorem powerLoop_step {n e m g x i : Nat} {base : Addr} {s t : State}
     WP isa (VG.Impl.Mont.X86.Comb.powerStep n e (context n) pub) t fun u =>
       PowerLoop n e m g x (i+1) base s u ∧ u.zf=some (decide (i+1=rows e)) := by
   have hb := power_bounds h
-  refine WP.mono (powerStep_ok h pub I.ctx I.table I.acc (by omega) (by omega) I.count)
+  refine WP.mono (powerStep_ok h pub I.ctx I.table I.acc (by omega_using [hi]) (by omega_using [hb]) I.count)
     fun u ⟨Cu,Tu,Au,Eu,ESI,Z,O,K⟩ => ?_
   refine ⟨⟨Cu,Tu,?_,?_,?_,I.mem.trans O,I.keeps.trans K⟩,?_⟩
   · rw [I.exp] at Au
-    have shift : rows e-1-(rows e-1-i)=i := by omega
-    have digit := partialDigit_shifted (32*e) x (32*expWords e) (rows e-1-i) (by change rows e-1-i<rows e; omega) hb.2.2.2.2.1
+    have shift : rows e-1-(rows e-1-i)=i := by omega_using [hi]
+    have digit := partialDigit_shifted (32*e) x (32*expWords e) (rows e-1-i) (by change rows e-1-i<rows e; omega_using [hi]) hb.2.2.2.2.1
     change VG.Proof.Mont.X86.Comb.partialDigit (rows e) ((x*2^(rows e-1-(rows e-1-i)))%2^(32*expWords e)) 5 = _ at digit
     rw [shift] at digit
     rw [digit] at Au
-    have next : rows e-(i+1)=rows e-1-i := by omega
-    have prev : rows e-i=(rows e-1-i)+1 := by omega
+    have next : rows e-(i+1)=rows e-1-i := by omega_using []
+    have prev : rows e-i=(rows e-1-i)+1 := by omega_using [hi]
     rw [next]
-    rw [prev,←high_step (32*e) x (rows e-1-i) (by change rows e-1-i<rows e; omega)] at Au
+    rw [prev,←high_step (32*e) x (rows e-1-i) (by change rows e-1-i<rows e; omega_using [hi])] at Au
     exact Au
   · rw [Eu,I.exp,Nat.mod_mul_mod,Nat.pow_succ,Nat.mul_assoc]
   · simpa only [Nat.sub_sub] using ESI
-  · simpa only [show (rows e-i=1) ↔ (i+1=rows e) by omega] using Z
+  · simpa only [show (rows e-i=1) ↔ (i+1=rows e) by omega_using []] using Z
 
 theorem powerLoop_initial {n e m g x : Nat} {base : Addr} {s : State}
     (h : Supported n e) (C : Context n m base (layout n e).size s)
@@ -56,7 +56,7 @@ theorem powerLoop_initial {n e m g x : Nat} {base : Addr} {s : State}
     PowerLoop n e m g x 0 base s s := by
   have padded : e≤expWords e := by
     rcases h with ⟨rfl,rfl⟩|⟨rfl,rfl⟩|⟨rfl,rfl⟩|⟨rfl,rfl⟩|⟨rfl,rfl⟩ <;> decide
-  have xb : x<2^(32*expWords e) := Nat.lt_of_lt_of_le bound (Nat.pow_le_pow_right (by decide) (by omega))
+  have xb : x<2^(32*expWords e) := Nat.lt_of_lt_of_le bound (Nat.pow_le_pow_right (by decide) (by omega_using [padded]))
   have init : PowerLoop n e m g x 0 base s s := by
     refine ⟨C,T,?_,?_,?_,Outs.refl _ _ _,Keeps.refl _ _⟩
     · rw [Nat.sub_zero,show rows e=Spec.Rsa.FixedBaseComb.rows (32*e) from rfl,high_top,VG.Proof.Bignum.powMod_eq,Nat.pow_zero,Nat.mod_mul_mod,Nat.one_mul,A]

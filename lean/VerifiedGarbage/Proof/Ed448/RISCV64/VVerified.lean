@@ -89,7 +89,7 @@ theorem a5_digit {S K : Nat} {w z l : State} {t2v : BitVec 64} {m : Nat} (hm : m
     l.gpr .a5 = dByte (digitAt false (if e = 2 then S else K) m) := by
   have hA : ACC = 952 := rfl
   have hT : TB = 2104 := rfl
-  rw [h5, byte_hi hc.stp.frame (by omega) (by omega), dig_byte hfx.1 (by omega) he]
+  rw [h5, byte_hi hc.stp.frame (by omega_using [hA, hT]) (by omega_using [hm, he, hT]), dig_byte hfx.1 (by omega_using [hm]) he]
 
 theorem base_rel {S K : Nat} {w₁ w₂ z₁ z₂ : State} (hv₁ : VCtx b w₁) (hv₂ : VCtx b w₂)
     (hf₁ : JFix b S K w₁.mem) (hf₂ : JFix b S K w₂.mem) (hw : w₁.sp = w₂.sp) {m : Nat} (hm : m < 464)
@@ -104,8 +104,8 @@ theorem base_rel {S K : Nat} {w₁ w₂ z₁ z₂ : State} (hv₁ : VCtx b w₁)
       rcases hr with rfl | rfl
       · rw [y₁.a0, y₂.a0]
       · rw [c₁.t1, c₂.t1]))
-    (loadDigit_ok y₁ (n := m) (e := 2) (by omega) (by decide) c₁.t1)
-    (loadDigit_ok y₂ (n := m) (e := 2) (by omega) (by decide) c₂.t1) fun l₁ l₂ ⟨r₁, _, e₁⟩ ⟨r₂, _, e₂⟩ => ?_
+    (loadDigit_ok y₁ (n := m) (e := 2) (by omega_using [hm]) (by decide) c₁.t1)
+    (loadDigit_ok y₂ (n := m) (e := 2) (by omega_using [hm]) (by decide) c₂.t1) fun l₁ l₂ ⟨r₁, _, e₁⟩ ⟨r₂, _, e₂⟩ => ?_
   have d₁ := a5_digit hm c₁ hf₁ (.inl rfl) e₁
   have d₂ := a5_digit hm c₂ hf₂ (.inl rfl) e₂
   refine rel_ite (by rw [eval_nonzero, d₁]) (by rw [eval_nonzero, d₂]) (fun _ => baseBody_ct (eq2_regs
@@ -130,8 +130,8 @@ theorem key_rel {S K : Nat} {w₁ w₂ z₁ z₂ : State} (hv₁ : VCtx b w₁) 
       rcases hr with rfl | rfl
       · rw [y₁.a0, y₂.a0]
       · rw [c₁.t1, c₂.t1]))
-    (loadDigit_ok y₁ (n := m) (e := 3) (by omega) (by decide) c₁.t1)
-    (loadDigit_ok y₂ (n := m) (e := 3) (by omega) (by decide) c₂.t1) fun l₁ l₂ ⟨r₁, _, e₁⟩ ⟨r₂, _, e₂⟩ => ?_
+    (loadDigit_ok y₁ (n := m) (e := 3) (by omega_using [hm]) (by decide) c₁.t1)
+    (loadDigit_ok y₂ (n := m) (e := 3) (by omega_using [hm]) (by decide) c₂.t1) fun l₁ l₂ ⟨r₁, _, e₁⟩ ⟨r₂, _, e₂⟩ => ?_
   have d₁ := a5_digit hm c₁ hf₁ (.inr rfl) e₁
   have d₂ := a5_digit hm c₂ hf₂ (.inr rfl) e₂
   refine rel_ite (by rw [eval_nonzero, d₁]) (by rw [eval_nonzero, d₂]) (fun _ => keyBody_ct (eq2_regs
@@ -174,17 +174,17 @@ theorem loop_rel {S K : Nat} {w₁ w₂ : State} (hv₁ : VCtx b w₁) (hv₂ : 
   rcases n with _ | m
   · exact RelCT.of_false fun a b' h => absurd h.1 (by decide)
   · intro s₁ s₂ t₁ t₂ s₁' s₂' ⟨hn1, hn2, hs₁, hs₂⟩ e₁ e₂
-    have hm : m < 464 := by omega
+    have hm : m < 464 := by omega_using [hn2]
     have r := ((step_rel hv₁ hv₂ hf₁ hf₂ hw hm hs₁ hs₂).wp
       (F₁ := fun (t : State) => WInv b S K w₁ m t ∧ (t.gpr .t1 != 0) = decide (m ≠ 0))
       (F₂ := fun (t : State) => WInv b S K w₂ m t ∧ (t.gpr .t1 != 0) = decide (m ≠ 0)) fun a b' ⟨ha, hb⟩ => by
         subst ha hb; exact ⟨jointStep_ok hv₁ hf₁ hm hs₁, jointStep_ok hv₂ hf₂ hm hs₂⟩)
       s₁ s₂ t₁ t₂ s₁' s₂' ⟨rfl, rfl⟩ e₁ e₂
     obtain ⟨ht, -, ⟨g₁, z₁⟩, ⟨g₂, z₂⟩⟩ := r
-    refine ⟨ht, ⟨by rw [eval_nonzero, eval_nonzero, z₁, z₂], fun _ => trivial, fun hc => ⟨m, by omega, ?_⟩⟩⟩
+    refine ⟨ht, ⟨by rw [eval_nonzero, eval_nonzero, z₁, z₂], fun _ => trivial, fun hc => ⟨m, by omega_using [], ?_⟩⟩⟩
     rw [eval_nonzero, z₁] at hc
     have : m ≠ 0 := by simpa using hc
-    exact ⟨by omega, by omega, g₁, g₂⟩
+    exact ⟨by omega_using [this], by omega_using [hn2], g₁, g₂⟩
 
 theorem jointLoop_rel {S K : Nat} (hS : S < Impl.Ed448.WnafWide.scalarLimit)
     (hK : K < Impl.Ed448.WnafWide.scalarLimit) {u₁ u₂ : State} (hv₁ : VCtx b u₁) (hv₂ : VCtx b u₂)
@@ -202,11 +202,11 @@ theorem jointLoop_rel {S K : Nat} (hS : S < Impl.Ed448.WnafWide.scalarLimit)
     hf.sub fun r hr => ⟨FA b, by simp, by
       have hA : ACC = 952 := rfl
       simp only [R3, List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl <;> exact Offset.sub_base _ (by omega)⟩
+      rcases hr with rfl | rfl | rfl <;> exact Offset.sub_base _ (by omega_arith)⟩
   have dk : ∀ {u w : State}, Frame (R3 b RX RY RZ) u.mem w.mem → FS w.mem b DK = FS u.mem b DK := fun hf =>
     fsD hf fun r hr => by
       simp only [R3, List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl <;> exact Offset.disjoint _ (by omega) (by omega) (by omega)
+      rcases hr with rfl | rfl | rfl <;> exact Offset.disjoint _ (by omega_arith) (by omega_using [hDK]) (by omega_arith)
   have start : ∀ {w : State}, VCtx b w → ptOf (FS w.mem b) = Spec.Ed448.identity →
       w.gpr .t1 = BitVec.ofNat 64 464 → FS w.mem b DK = Spec.Ed448.d → WInv b S K w 464 w :=
     fun hv hp ht hd => ⟨⟨_, ⟨hv.ctx, R64.Stp.refl _ _, rfl, ht, fun _ _ => rfl⟩⟩, hd, fun a _ => by

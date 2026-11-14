@@ -178,12 +178,12 @@ theorem verifyMessageCached_ct {p : Params} {pr : Bool} {STK S : Nat} (hF : MFac
     · simp only [State.withRegions_mem, State.callEntry_mem, ce_gpr _ _ _ (show Reg.r3 ∉ linkRegs by decide),
         ce_gpr _ _ _ (show Reg.r4 ∉ linkRegs by decide), ce_gpr _ _ _ (show Reg.r5 ∉ linkRegs by decide),
         hab.1.r3, hab.1.r4, hab.1.r5, hab.2.r3, hab.2.r4, hab.2.r5]
-      rw [v_keep k₁ (R := ⟨s₁.gpr .r3, p.pkLen⟩) (by have := hF.pk; show p.pkLen < 2 ^ 64; omega)
+      rw [v_keep k₁ (R := ⟨s₁.gpr .r3, p.pkLen⟩) (by have := hF.pk; show p.pkLen < 2 ^ 64; omega_using [this])
           (hp₁.kc.sub_left hp₁.subK) (hp₁.bk.sub_right hp₁.subK),
-        hab.1.ms.mu, v_keep k₁ (R := vsigR p s₁) (by have := hF.sgl; show p.sigLen < 2 ^ 64; omega) hp₁.gc hp₁.bg,
-        v_keep k₂ (R := ⟨s₂.gpr .r3, p.pkLen⟩) (by have := hF.pk; show p.pkLen < 2 ^ 64; omega)
+        hab.1.ms.mu, v_keep k₁ (R := vsigR p s₁) (by have := hF.sgl; show p.sigLen < 2 ^ 64; omega_using [this]) hp₁.gc hp₁.bg,
+        v_keep k₂ (R := ⟨s₂.gpr .r3, p.pkLen⟩) (by have := hF.pk; show p.pkLen < 2 ^ 64; omega_using [this])
           (hp₂.kc.sub_left hp₂.subK) (hp₂.bk.sub_right hp₂.subK),
-        hab.2.ms.mu, v_keep k₂ (R := vsigR p s₂) (by have := hF.sgl; show p.sigLen < 2 ^ 64; omega) hp₂.gc hp₂.bg]
+        hab.2.ms.mu, v_keep k₂ (R := vsigR p s₂) (by have := hF.sgl; show p.sigLen < 2 ^ 64; omega_using [this]) hp₂.gc hp₂.bg]
       simp only [pkB, vsigB, fmtB, ctxB, msgB] at ek em ec eg ⊢
       rw [ek, em, ec, eg, p7]
   · -- `ctx_len ≥ 256`.

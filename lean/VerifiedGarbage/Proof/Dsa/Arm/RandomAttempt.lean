@@ -55,13 +55,13 @@ theorem call_frame_byte {s₀ : State} (A : RandomABI s₀) {m m' : Mem} (hf : F
     {d : Nat} (h₂ : d < frameBytes) : m' (off (rBase s₀) d) = m (off (rBase s₀) d) := by
   have hF : frameBytes = 112 := rfl
   rw [rBase_off]
-  have hs : (rStack s₀).Contains (off (rLow s₀) (32 + d)) 1 := Offset.contains_base _ (by omega) (by omega)
+  have hs : (rStack s₀).Contains (off (rLow s₀) (32 + d)) 1 := Offset.contains_base _ (by omega_using [h₂, hF]) (by omega_using [h₂, hF])
   refine hf _ fun r hr => ?_
   simp only [callWrites, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl
   · exact A.stackOut _ hs
   · exact A.stackScratch _ hs
-  · exact (Offset.disjoint_base (rLow s₀) (d := 32 + d) (n := 1) (k := 32) (by omega) (by omega)) _
+  · exact (Offset.disjoint_base (rLow s₀) (d := 32 + d) (n := 1) (k := 32) (by omega_using []) (by omega_using [h₂, hF])) _
       (Region.contains_self _ _)
 
 theorem call_frame_slot {s₀ : State} (A : RandomABI s₀) {m m' : Mem} (hf : Frame (callWrites s₀) m m')
@@ -70,7 +70,7 @@ theorem call_frame_slot {s₀ : State} (A : RandomABI s₀) {m m' : Mem} (hf : F
     have : i < 4 := hi
     rw [show off (rBase s₀) d + BitVec.ofNat 64 i = off (rBase s₀) (d + i) by
       rw [off, off, BitVec.add_assoc, BitVec.ofNat_add_ofNat]]
-    exact call_frame_byte A hf (by omega)
+    exact call_frame_byte A hf (by omega_using [h₂, hi])
 
 /-- The call keeps the sampler's state. -/
 theorem Smp.after_call {s₀ t u : State} (A : RandomABI s₀) {used d : Nat} (S : Smp s₀ used d t)
@@ -83,7 +83,7 @@ theorem Smp.after_call {s₀ t u : State} (A : RandomABI s₀) {used d : Nat} (S
   · rw [call_frame_slot A hf (by decide)]; exact S.mask
   · rw [call_frame_slot A hf (by decide)]; exact S.usedW
   · rw [call_frame_slot A hf (by decide)]; exact S.drawsW
-  · rw [call_frame_byte A hf (by unfold oNonce frameBytes; omega)]; exact S.pad i hi
+  · rw [call_frame_byte A hf (by unfold oNonce frameBytes; omega_using [hql, hi])]; exact S.pad i hi
 
 theorem Saved.after_call {s₀ : State} (A : RandomABI s₀) {m m' : Mem} (sv : Saved s₀ m)
     (hf : Frame (callWrites s₀) m m') : Saved s₀ m' :=
@@ -99,7 +99,7 @@ theorem finHead_ok {s₀ u : State} (h : RReady s₀ u) {k : Nat} (hst : k ≤ 1
       v.z = decide (k = 0) := by
   refine wp_st h (by decide) fun v₁ m₁ h₁ => wp_cmp0 fun v₂ f₂ z₂ => WP.block_nil ?_
   refine ⟨h₁.fupd f₂, (m₁.rest _).trans (f₂.rest _), by rw [f₂.mem, m₁.mem, he], ?_⟩
-  rw [z₂, m₁.gpr, he, ofNat_beq_zero (by omega)]
+  rw [z₂, m₁.gpr, he, ofNat_beq_zero (by omega_using [hst])]
 
 /-- Spend an attempt. -/
 theorem finDec_ok {s₀ v₂ : State} (h₂ : RReady s₀ v₂) {f : Nat}
@@ -109,10 +109,10 @@ theorem finDec_ok {s₀ v₂ : State} (h₂ : RReady s₀ v₂) {f : Nat}
         v₅.mem = v₂.mem.writeW (off (rBase s₀) oAttempts) (BitVec.ofNat 32 f) ∧ v₅.z = decide (f = 0) := by
   refine wp_ld h₂ (by decide) fun v₃ u₃ => wp_dec fun v₄ u₄ z₄ =>
     wp_stF ((h₂.upd u₃).upd u₄) (by decide) fun v₅ m₅ h₅ zz₅ _ => WP.block_nil ?_
-  have e₄ : v₄.gpr .r0 = BitVec.ofNat 32 f := by rw [u₄.gpr, u₃.gpr, ha, ofNat_sub_one (by omega)]; rfl
+  have e₄ : v₄.gpr .r0 = BitVec.ofNat 32 f := by rw [u₄.gpr, u₃.gpr, ha, ofNat_sub_one (by omega_using [])]; rfl
   refine ⟨h₅, (u₃.rest (by decide)).trans ((u₄.rest (by decide)).trans (m₅.rest _)), by
     rw [m₅.mem, e₄, u₄.mem, u₃.mem], ?_⟩
-  rw [zz₅, z₄, u₃.gpr, ha, ofNat_sub_one (by omega), Nat.add_sub_cancel, ofNat_beq_zero (by omega)]
+  rw [zz₅, z₄, u₃.gpr, ha, ofNat_sub_one (by omega_using []), Nat.add_sub_cancel, ofNat_beq_zero (by omega_using [hf])]
 
 /-- Record the signer's status `st`, and spend an attempt on a failure. -/
 theorem callFinish_ok {s₀ u : State} (h : RReady s₀ u) {k f : Nat} (hst : k ≤ 1)
@@ -152,7 +152,7 @@ theorem callFinish_ok {s₀ u : State} (h : RReady s₀ u) {k f : Nat} (hst : k 
         fun _ => ⟨?_, ?_⟩⟩
       · rw [hm₇, slot_write_ne _ _ _ (by decide) (by decide) (by decide), hm₅, slot_write_self]
       · rw [hm₇, slot_write_self]; simp only [hf0, ↓reduceIte]
-  · have h1 : k = 1 := by omega
+  · have h1 : k = 1 := by omega_using [hst, h0]
     subst h1
     refine WP.ite false (by rw [eval_eq, z₂]; rfl) (fun e => Bool.noConfusion e) (fun _ => WP.block_nil ?_)
     refine ⟨h₂, k₂.mono (by decide), o₂, fun _ => ⟨?_, ?_⟩, fun e => absurd e (by decide)⟩
@@ -170,7 +170,7 @@ theorem Smp.after_finish {s₀ t u : State} (A : RandomABI s₀) {used d : Nat} 
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
       · exact h₁
-      · exact h₂) (by omega)
+      · exact h₂) (by omega_using [h₀])
   refine ⟨hr, (hs _ (by decide) (by decide) (by decide)).trans S.q,
     (hs _ (by decide) (by decide) (by decide)).trans S.width,
     (hs _ (by decide) (by decide) (by decide)).trans S.mask, (hs _ (by decide) (by decide) (by decide)).trans S.usedW,
@@ -178,8 +178,8 @@ theorem Smp.after_finish {s₀ t u : State} (A : RandomABI s₀) {used d : Nat} 
   have hle : ∀ r ∈ ([(oAttempts, 4), (oStatus, 4)] : List (Nat × Nat)), r.1 + r.2 ≤ oNonce := by decide
   rw [hm _ fun r hr => by
     have := hle r hr
-    rw [ofs_off0 _ (by unfold oNonce; omega)]
-    right; omega]
+    rw [ofs_off0 _ (by unfold oNonce; omega_using [hql, hi])]
+    right; omega_using [this]]
   exact S.pad i hi
 
 /-- Stores to the frame keep bytes apart from the stack. -/
@@ -196,13 +196,13 @@ theorem frameOuts_bytes {s₀ : State} {m m' : Mem} {rs : List (Nat × Nat)}
   unfold frameBytes at hb
   by_cases hx : ofs (rBase s₀) (p + BitVec.ofNat 64 i) < 112
   · exfalso
-    refine hd _ ?_ (Offset.contains_base p (d := i) (n := 1) (k := n) (by omega) (by omega))
+    refine hd _ ?_ (Offset.contains_base p (d := i) (n := 1) (k := n) (by omega_using [hi]) (by omega_using [hn, hi]))
     have he : p + BitVec.ofNat 64 i = off (rBase s₀) (ofs (rBase s₀) (p + BitVec.ofNat 64 i)) := by
       simp only [ofs, off, BitVec.ofNat_toNat, BitVec.setWidth_eq]
       rw [BitVec.add_comm (rBase s₀), BitVec.sub_add_cancel]
     rw [he, rBase_off]
-    exact Offset.contains_base _ (by omega) (by omega)
-  · right; omega
+    exact Offset.contains_base _ (by omega_using [hx]) (by omega_using [hx])
+  · right; omega_using [hb, hx]
 
 /-- The signer's input is the specification's, with the sampled nonce. -/
 theorem callResult_eq {s₀ t : State} (A : RandomABI s₀) (h : RReady s₀ t) {k : Nat}
@@ -239,7 +239,7 @@ theorem one_beq {k : Nat} (hk : k < 2 ^ 32) : (BitVec.ofNat 32 k - 1 == 0) = dec
     have := congrArg BitVec.toNat e
     simp only [BitVec.toNat_sub, BitVec.toNat_ofNat, show (1 : BitVec 32).toNat = 1 from rfl,
       show (0 : BitVec 32).toNat = 0 from rfl] at this
-    omega
+    omega_using [hk, h, this]
 
 /-- What an attempt from `used` with `f + 1` attempts left leaves: another
 attempt to make after a retry, which its signing trace records, or the result. -/
@@ -265,7 +265,7 @@ theorem attempt_ok (S : Signer) (name : String) {s₀ t : State} (A : RandomABI 
   have h₂ := h₁.fupd fv₂
   have m₂ : u₂.mem = u₁.mem := fv₂.mem
   have hle := sampleStatus_le (spl s₀ 128 used)
-  rw [r0₁, one_beq (by omega)] at z₂
+  rw [r0₁, one_beq (by omega_using [hle])] at z₂
   cases hsc : (spl s₀ 128 used).scalar with
   | none =>
     have hst : VG.Proof.Dsa.Random.sampleStatus (spl s₀ 128 used) ≠ 1 := by
@@ -279,8 +279,8 @@ theorem attempt_ok (S : Signer) (name : String) {s₀ t : State} (A : RandomABI 
     · rw [m₂, O.status]
       intro e
       have := congrArg BitVec.toNat e
-      rw [toNat_imm (by omega)] at this
-      exact absurd this (by show _ ≠ 4; omega)
+      rw [toNat_imm (by omega_using [hle])] at this
+      exact absurd this (by show _ ≠ 4; omega_using [hle])
     · have e : (rResult s₀).used = used + (spl s₀ 128 used).used := (Nat.zero_add _).symm.trans hused
       rw [e]; exact S'.mem A h₂ m₂
     · rw [m₂, O.status]; exact congrArg (BitVec.ofNat 32) hstat.symm
@@ -322,13 +322,13 @@ theorem attempt_ok (S : Signer) (name : String) {s₀ t : State} (A : RandomABI 
       by_cases hf0 : f = 0
       · subst hf0
         obtain ⟨-, hstat, hused⟩ := R'.exhausted
-        refine .inr ⟨by rw [st₅]; decide, ⟨⟨d', ?_⟩, by rw [st₅, hstat]; rfl, fun e => absurd e (by omega), sv₅⟩,
+        refine .inr ⟨by rw [st₅]; decide, ⟨⟨d', ?_⟩, by rw [st₅, hstat]; rfl, fun e => absurd e (by omega_using [hstat]), sv₅⟩,
           fun h => absurd h.2 (by decide)⟩
         have e : (rResult s₀).used = used + (spl s₀ 128 used).used := (Nat.zero_add _).symm.trans hused
         rw [e]; exact S₅
-      · refine .inl ⟨by rw [st₅]; simp only [hf0, ↓reduceIte], by omega, ⟨⟨d', S₅⟩, at₅, sv₅, R'⟩,
+      · refine .inl ⟨by rw [st₅]; simp only [hf0, ↓reduceIte], by omega_using [hf0], ⟨⟨d', S₅⟩, at₅, sv₅, R'⟩,
           ?_⟩
-        obtain ⟨f', rfl⟩ : ∃ f', f = f' + 1 := ⟨f - 1, by omega⟩
+        obtain ⟨f', rfl⟩ : ∃ f', f = f' + 1 := ⟨f - 1, by omega_using [hf0]⟩
         exact VG.Proof.Dsa.random_sign_trace_retry _ _ _ _ hsc hsb
 
 end VG.Proof.Dsa.Arm

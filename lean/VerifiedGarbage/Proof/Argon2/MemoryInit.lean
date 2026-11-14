@@ -25,7 +25,7 @@ theorem parseBlock_bytesAt (m : Mem) (p : Addr) : parseBlock (bytesAt m p 1024) 
     Proof.Blake2.read_eq_leBytes, BitVec.setWidth_eq]
   apply Proof.Blake2.leBytes_congr
   intro k hk
-  have bound : 8 * j + k < 1024 := by omega
+  have bound : 8 * j + k < 1024 := by omega_using [hj, hk]
   simp only [bytesAt, List.getD_eq_getElem?_getD, List.getElem?_map,
     List.getElem?_range bound, Option.map_some, Option.getD_some,
     BitVec.ofNat_add, BitVec.add_assoc]

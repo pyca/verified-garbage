@@ -34,7 +34,7 @@ theorem tableInit_ok {g : Geometry} (v : g.Valid) {capacity c : Nat} {p : BitVec
     simp only [List.mem_cons, List.not_mem_nil, or_false] at known
     rcases known with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide
   · exact ((array_roundFrame S.data.context.ws.nowrap (by unfold roundArray aTable; simp) Oa).trans
-      (array_roundFrame Sa.data.context.ws.nowrap (by unfold roundArray aTable; omega) Ob)).trans
+      (array_roundFrame Sa.data.context.ws.nowrap (by unfold roundArray aTable; omega_using []) Ob)).trans
         (array_roundFrame Sb.data.context.ws.nowrap (by unfold roundArray aY; simp) Ot)
 
 end VG.Proof.MillerRabin.X86

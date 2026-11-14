@@ -25,8 +25,8 @@ theorem Stage.loadWord {g : Geometry} (v : g.Valid) {capacity c : Nat} {p : BitV
       Stage g capacity c p A Js (setAt (setAt V sValue word) sWindows 8#32) windowFields t ∧
       WorkspaceFrame g (roundWrites g) s.mem t.mem ∧ Keeps [.eax, .edx, .ebp] s t := by
   have header := v.headerFit
-  have wf : sWindows + 4 ≤ g.L := by unfold sWindows; omega
-  have vf : sValue + 4 ≤ g.L := by unfold sValue; omega
+  have wf : sWindows + 4 ≤ g.L := by unfold sWindows; omega_using [header]
+  have vf : sValue + 4 ≤ g.L := by unfold sValue; omega_using [header]
   have scratch : ∀ d ∈ [sValue, sWindows], scratchWord d := by
     intro d mem
     simp only [List.mem_cons, List.not_mem_nil, or_false] at mem

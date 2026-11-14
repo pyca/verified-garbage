@@ -34,8 +34,8 @@ theorem symmetricColumn_ok {s : State} {base : Addr} (hs : Scr s base) {f : Nat 
   have vs := (hs.of_keeps uk (by decide)).of_keeps vk (by decide)
   refine WP.mono (store_ok vs hk) fun t ⟨tm, tk⟩ => ?_
   refine ⟨?_, ?_, uk'.trans (vk.trans (tk.mono (by decide)))⟩
-  · rw [tm, coeff_put _ base _ _ (by simp only [ACC]; omega)
-      (by simp only [ACC]; omega), ite_eq_left rfl, vv, Nat.zero_add]
+  · rw [tm, coeff_put _ base _ _ (by simp only [ACC]; omega_using [hk])
+      (by simp only [ACC]; omega_using [hk]), ite_eq_left rfl, vv, Nat.zero_add]
   · rw [tm, vm, um]
-    exact putCoeff_outside _ _ _ _ (by simp only [ACC]; omega)
+    exact putCoeff_outside _ _ _ _ (by simp only [ACC]; omega_using [hk])
 end VG.Proof.Curve448.AArch64

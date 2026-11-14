@@ -59,7 +59,7 @@ theorem narrow_covers (s : State) {ws : Addr} {len : Nat} (hw : s.wr = [⟨ws, l
     Covers ((narrow s ws).rd ++ (narrow s ws).wr) (s.rd ++ s.wr) ∧ Covers (narrow s ws).wr s.wr := by
   have h : Covers [⟨ws, 8 * slots⟩] s.wr := Covers.of_sub fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr
-    exact ⟨⟨ws, len⟩, by rw [hw]; simp, 0, by rw [BitVec.add_zero], by show 0 + 8 * slots ≤ len; omega⟩
+    exact ⟨⟨ws, len⟩, by rw [hw]; simp, 0, by rw [BitVec.add_zero], by show 0 + 8 * slots ≤ len; omega_using [hl]⟩
   exact ⟨Covers.append (Covers.refl _) h, h⟩
 
 /-- A run from the narrowed state is a run from `s`, to the state with `s`'s regions. -/
@@ -77,9 +77,9 @@ theorem keeps_of_frame {m m' : Mem} {ws : Addr} {wsLen : Nat} {rs : List (Nat ×
   hf _ fun r hr hc => by
     simp only [List.mem_singleton] at hr; subst hr
     simp only [Region.Contains] at hc
-    rw [Mem.sub_ofNat_toNat ws (by omega)] at hc
+    rw [Mem.sub_ofNat_toNat ws (by omega_using [fit, hi])] at hc
     have := hrs i hout
-    omega
+    omega_using [hc, this]
 
 /-! ## The preparation -/
 
@@ -109,25 +109,25 @@ theorem helperAbi_of {c : Prog isa} {s s' : State} {t : List Leak} (he : Exec is
   refine ⟨fun r hr => ?_, Exec.sp he, hv⟩
   simp only [preserved, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
-  · exact h₁ 0 (by omega)
-  · exact h₁ 1 (by omega)
-  · exact h₁ 2 (by omega)
-  · exact h₁ 3 (by omega)
-  · exact h₁ 4 (by omega)
-  · exact h₁ 5 (by omega)
-  · exact h₁ 6 (by omega)
-  · exact h₁ 7 (by omega)
-  · exact h₁ 8 (by omega)
-  · exact h₁ 9 (by omega)
+  · exact h₁ 0 (by omega_using [])
+  · exact h₁ 1 (by omega_using [])
+  · exact h₁ 2 (by omega_using [])
+  · exact h₁ 3 (by omega_using [])
+  · exact h₁ 4 (by omega_using [])
+  · exact h₁ 5 (by omega_using [])
+  · exact h₁ 6 (by omega_using [])
+  · exact h₁ 7 (by omega_using [])
+  · exact h₁ 8 (by omega_using [])
+  · exact h₁ 9 (by omega_using [])
   · exact h₃
 
 theorem prep_correct (s : State) (hs : prepAArch64.pre s) :
     ∃ t s', Exec isa prepareKeys s t s' ∧ abiPreserved s s' ∧ prepAArch64.post s s' := by
   obtain ⟨hrd, hwr, dSS, fitK, fitW, -, hsz⟩ := hs
   rw [size_eq] at hsz
-  have hl : 8 * slots ≤ (s.gpr .x3).toNat * 8 := by omega
+  have hl : 8 * slots ≤ (s.gpr .x3).toNat * 8 := by omega_using [hsz]
   have w := prepareBody_wp (s₀ := narrow s (s.gpr .x2)) hrd rfl
-    (dSS.sub_right (Region.sub_prefix hl)) fitK (by show (s.gpr .x2).toNat + 8 * slots ≤ 2 ^ 64; omega)
+    (dSS.sub_right (Region.sub_prefix hl)) fitK (by show (s.gpr .x2).toNat + 8 * slots ≤ 2 ^ 64; omega_using [fitW, hsz])
   obtain ⟨t, s', he, ⟨h₁, h₂⟩, h₃⟩ := WP.gprs (rs := [.x30]) w (by lit_decide) (by lit_decide)
   have f := (Exec.regions he (by lit_decide)).2.2.2
   have he' := exec_widen hwr hl he
@@ -138,7 +138,7 @@ theorem prep_correct (s : State) (hs : prepAArch64.pre s) :
     exact h₂
   · have := hi _ (List.mem_singleton_self _)
     simp only at this
-    omega
+    omega_using [this]
 
 /-! ## A batch -/
 
@@ -173,12 +173,12 @@ theorem blocks_of (B : Addr) {m m' : Mem} {k : Spec.Sm4.Schedule} {d : Spec.Sm4.
 theorem mask_byte {m m' : Mem} {B : Addr} {k k' : Spec.Sm4.Schedule} {d d' : Dir}
     (h : WordsAt m B k d) (h' : WordsAt m' B k' d') {i : Nat} (hi : 8 * evenSlot ≤ i ∧ i < 8 * (grpSlot + 1)) :
     m' (B + BitVec.ofNat 64 i) = m (B + BitVec.ofNat 64 i) := by
-  have hw : (evenSlot ≤ i / 8 ∧ i / 8 ≤ grpSlot) ∨ (tableSlot ≤ i / 8 ∧ i / 8 < tableEnd) := .inl (by omega)
-  rw [word_byte_addr, byte_of_readW m' (wordAddr B (i / 8)) (j := i % 8) (by omega),
-    byte_of_readW m (wordAddr B (i / 8)) (j := i % 8) (by omega), h _ hw, h' _ hw]
+  have hw : (evenSlot ≤ i / 8 ∧ i / 8 ≤ grpSlot) ∨ (tableSlot ≤ i / 8 ∧ i / 8 < tableEnd) := .inl (by omega_using [hi])
+  rw [word_byte_addr, byte_of_readW m' (wordAddr B (i / 8)) (j := i % 8) (by omega_using []),
+    byte_of_readW m (wordAddr B (i / 8)) (j := i % 8) (by omega_using []), h _ hw, h' _ hw]
   have hm : ∀ (k : Spec.Sm4.Schedule) (d : Dir), preparedWord k d (i / 8) =
       (keyMasks.find? (·.1 = i / 8)).elim 0 (·.2) := fun _ _ => by
-    have hc : i / 8 < tableSlot := by rw [tableSlot_eq]; rw [grpSlot_eq] at hi; omega
+    have hc : i / 8 < tableSlot := by rw [tableSlot_eq]; rw [grpSlot_eq] at hi; omega_using [hi]
     simp only [preparedWord, hc, ↓reduceIte]
   rw [hm, hm]
 
@@ -186,10 +186,10 @@ theorem crypt_correct (s : State) (hs : cryptAArch64.pre s) :
     ∃ t s', Exec isa cryptPrepared s t s' ∧ abiPreserved s s' ∧ cryptAArch64.post s s' := by
   obtain ⟨-, hwr, fitW, hsz, k₀, d₀, hH⟩ := hs
   rw [size_eq] at hsz
-  have hl : 8 * slots ≤ (s.gpr .x1).toNat * 8 := by omega
+  have hl : 8 * slots ≤ (s.gpr .x1).toNat * 8 := by omega_using [hsz]
   have hwN : (⟨(narrow s (s.gpr .x0)).gpr .x0, 8 * slots⟩ : Region) ∈ (narrow s (s.gpr .x0)).wr := by simp
   have fitN : ((narrow s (s.gpr .x0)).gpr .x0).toNat + 8 * slots ≤ 2 ^ 64 := by
-    show (s.gpr .x0).toNat + 8 * slots ≤ 2 ^ 64; omega
+    show (s.gpr .x0).toNat + 8 * slots ≤ 2 ^ 64; omega_using [fitW, hsz]
   obtain ⟨t, s', he, ⟨h₁, hR, hF, -, -, -⟩, h₃⟩ := WP.gprs (rs := [.x30])
     (cryptBody_wp hwN fitN (readyAt_of_words (words_of_holds hH))) (by lit_decide) (by lit_decide)
   have he' := exec_widen hwr hl he
@@ -205,12 +205,12 @@ theorem crypt_correct (s : State) (hs : cryptAArch64.pre s) :
     simp only [layout, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq] at hout
     rw [evenSlot_eq, grpSlot_eq, tableSlot_eq, savedSlot_eq, slots_eq] at hout
     by_cases hm : 384 ≤ i ∧ i < 408
-    · exact mask_byte (words_of_holds hH) (words_of_readyAt hR) (by rw [evenSlot_eq, grpSlot_eq]; omega)
+    · exact mask_byte (words_of_holds hH) (words_of_readyAt hR) (by rw [evenSlot_eq, grpSlot_eq]; omega_using [hm])
     · refine hF _ fun r hr hc => ?_
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl <;> simp only [Region.Contains, narrow, State.withRegions_gpr] at hc
-      · rw [Mem.sub_ofNat_toNat _ (by omega), tableSlot_eq] at hc; omega
-      · rw [VG.Offset.sub_toNat' _ (by rw [savedSlot_eq]; omega) (by omega), savedSlot_eq] at hc
-        split at hc <;> omega
+      · rw [Mem.sub_ofNat_toNat _ (by omega_using [fitW, hi]), tableSlot_eq] at hc; omega_using [hout, hm, hc]
+      · rw [VG.Offset.sub_toNat' _ (by rw [savedSlot_eq]; omega_using []) (by omega_using [fitW, hi]), savedSlot_eq] at hc
+        split at hc <;> omega_arith
 
 end VG.Proof.Sm4.AArch64

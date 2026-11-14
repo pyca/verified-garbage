@@ -64,10 +64,10 @@ theorem sub3_vp {o a b : Nat} (cert : Cert7 (sub3 o a b)) (ho : o < nArrs) (ha :
   have lt : num t.mem G.KB G.w o < 2 ^ (32 * G.w) := val32_lt _ _ _ _
   have alt : c.A a < 2 ^ (32 * G.w) := va ▸ val32_lt _ _ _ _
   generalize 2 ^ (32 * G.w) = M at v lt alt
-  rcases (by omega : (t.gpr .r11).toNat = 0 ∨ (t.gpr .r11).toNat = 1) with e | e <;> rw [e] at v
-  · omega
+  rcases (by omega_using [br] : (t.gpr .r11).toNat = 0 ∨ (t.gpr .r11).toNat = 1) with e | e <;> rw [e] at v
+  · omega_using [v]
   · have : M * 1 = M := Nat.mul_one M
-    omega
+    omega_using [hle, v, lt]
 
 /-- `[o] := [b]` if the header word `sl` is 1, else `[a]`. -/
 theorem sel_vp {o a b sl : Nat} (cert : Cert7 (sel o a b sl)) (ho : o < nArrs) (ha : a ∈ c.live) (hb : b ∈ c.live)

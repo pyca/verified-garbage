@@ -52,8 +52,8 @@ theorem rotate16_ok (s : State) (r : Reg) (hr : r ≠ .esi)
     (n : Nat) (hn : 1 ≤ n) (hn' : n < 16) :
     ∃ s', runBlock isa (rotate16 r n) s = some s' ∧
       s'.gpr r = (x.rotateLeft n).setWidth 32 ∧ Keep [r, .esi] s s' := by
-  have hleft : 1 ≤ 32 - n ∧ 32 - n ≤ 31 := by omega
-  have hright : 1 ≤ 16 - n ∧ 16 - n ≤ 31 := by omega
+  have hleft : 1 ≤ 32 - n ∧ 32 - n ≤ 31 := by omega_using [hn, hn']
+  have hright : 1 ≤ 16 - n ∧ 16 - n ≤ 31 := by omega_using [hn']
   refine ⟨_, by
     simp only [hleft, hright, and_self, rotate16, rr, runBlock_cons, runStep_some, runBlock_nil,
       reduceExec, execAlu, execShift, readSrc, Option.bind_some, Option.map_some,
@@ -100,10 +100,10 @@ theorem mixKey_ok (s : State) (j : Nat) (hj : j < 64)
     ∃ s', runBlock isa (mixKey j) s = some s' ∧
       s'.gpr .esi = ((Spec.Rc2.scheduleAt s.mem (addr32 (arg s 0))).getD j 0).setWidth 32 ∧
       Keep [.esi, .edi] s s' := by
-  have lo := readable (2 * j) (by omega)
-  have hi := readable (2 * j + 1) (by omega)
-  have loAddr := addr_add (by omega : (arg s 0).toNat + 2 * j < 2 ^ 32)
-  have hiAddr := addr_add (by omega : (arg s 0).toNat + (2 * j + 1) < 2 ^ 32)
+  have lo := readable (2 * j) (by omega_using [hj])
+  have hi := readable (2 * j + 1) (by omega_using [hj])
+  have loAddr := addr_add (by omega_using [hj, fit] : (arg s 0).toNat + 2 * j < 2 ^ 32)
+  have hiAddr := addr_add (by omega_using [hj, fit] : (arg s 0).toNat + (2 * j + 1) < 2 ^ 32)
   simp only [arg, argAddr, Nat.mul_zero, Nat.add_zero, ← addr_eq_def] at stackRead lo hi loAddr hiAddr ⊢
   refine ⟨_, by
     simp only [reduceCtorEq, ↓reduceIte, Nat.reduceLeDiff, Nat.reduceEqDiff, and_self, mixKey, memOp, State.ea, runBlock_cons,

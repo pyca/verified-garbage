@@ -46,7 +46,7 @@ theorem ofNat64_pred {n : Nat} (h : 1 ≤ n) (hn : n < 2 ^ 64) :
     BitVec.ofNat 64 n - 1#64 = BitVec.ofNat 64 (n - 1) := by
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_sub, BitVec.toNat_ofNat]
-  rw [Nat.mod_eq_of_lt (show n - 1 < 2 ^ 64 by omega)]
-  omega
+  rw [Nat.mod_eq_of_lt (show n - 1 < 2 ^ 64 by omega_using [hn])]
+  omega_using [h, hn]
 
 end VG.Proof.RsaKeyGen.AArch64

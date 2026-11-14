@@ -44,7 +44,7 @@ section
 variable {p : Params} {σ : State}
 
 theorem seedE_ij {i j : Nat} (hj : j < p.ℓ) : seedE p σ (p.ℓ * i + j) = aSeed (rhoOf p σ) i j := by
-  have hl : 0 < p.ℓ := by omega
+  have hl : 0 < p.ℓ := by omega_using [hj]
   have e1 : (p.ℓ * i + j) / p.ℓ = i := by
     rw [Nat.add_comm, Nat.add_mul_div_left _ _ hl, Nat.div_eq_of_lt hj, Nat.zero_add]
   have e2 : (p.ℓ * i + j) % p.ℓ = j := by
@@ -58,7 +58,7 @@ theorem expandA_max (hok : ∀ e < p.k * p.ℓ, (rejNTTPoly maxBounds.rejNTT (se
 theorem signMu_min_A (h : ∃ e < p.k * p.ℓ, rejNTTPoly minBounds.rejNTT (seedE p σ e) = none) :
     signMu p minBounds (skOf p σ) (muOf σ) (rndOf σ) = none := by
   obtain ⟨e, he, hn⟩ := h
-  have hl : 0 < p.ℓ := Nat.pos_of_ne_zero fun h0 => by rw [h0, Nat.mul_zero] at he; omega
+  have hl : 0 < p.ℓ := Nat.pos_of_ne_zero fun h0 => by rw [h0, Nat.mul_zero] at he; omega_using [he]
   exact Proof.MlDsa.Sign.signMu_none_A (Proof.MlDsa.Sign.expandA_none
     ⟨e / p.ℓ, (Nat.div_lt_iff_lt_mul hl).mpr he, e % p.ℓ, Nat.mod_lt _ hl, hn⟩)
 
@@ -78,7 +78,7 @@ theorem signMu_max (hp : ParamsOk p) (hA : expandA p maxBounds (rhoOf p σ) = so
     (hpass : PassV p σ (p.ℓ * t)) :
     signMu p maxBounds (skOf p σ) (muOf σ) (rndOf σ) = some (sigV p σ (p.ℓ * t)) :=
   Proof.MlDsa.Sign.signMu_some hA (Proof.MlDsa.Sign.signLoop_pass _ _ _ _ _ _ _ hr (show t < maxBounds.sign by
-    show t < 1000; omega) (iter_pass hp hs hpass))
+    show t < 1000; omega_using [ht]) (iter_pass hp hs hpass))
 
 end
 
@@ -97,14 +97,14 @@ theorem SC1.tf {p : Params} (hF : SFacts p) {STK : Nat} {σ s : State} (h : SC1 
   have hs := h.site
   have hscr := hF.scr
   exact ⟨hs.s11, h.sav, h.pres, h.sp, fun o h₁ h₂ => mem_rd_wr' (Lay.covers (L := slay1 p STK σ) (o := o)
-    (l := 8) (hs.cw 0 (by decide) (by decide)) (by rw [slay1_size0]; omega) _ _
+    (l := 8) (hs.cw 0 (by decide) (by decide)) (by rw [slay1_size0]; omega_using [hscr, h₂]) _ _
     ⟨_, List.mem_singleton_self _, Region.contains_self _ _⟩)⟩
 
 theorem SC2.tf {p : Params} (hF : SFacts p) {STK : Nat} {σ s : State} (h : SC2 p STK σ s) : TF p STK σ s := by
   have hs := h.site
   have hscr := hF.scr
   exact ⟨hs.s11, h.sav, h.pres, h.sp, fun o h₁ h₂ => mem_rd_wr' (Lay.covers (L := slay2 p STK σ) (o := o)
-    (l := 8) (hs.cw 0 (by decide) (by decide)) (by rw [slay2_size0]; omega) _ _
+    (l := 8) (hs.cw 0 (by decide) (by decide)) (by rw [slay2_size0]; omega_using [hscr, h₂]) _ _
     ⟨_, List.mem_singleton_self _, Region.contains_self _ _⟩)⟩
 
 /-- Before the return: `s4`, and the signature in `sig` if it is 1. -/
@@ -278,7 +278,7 @@ theorem sign_verified {P : Prims} {S : Nat} (hP : SPrimsOk P S) (h48 : 1168 ≤ 
     Verified RISCV64.target (sign P p) (Proof.MlDsa.signWithCacheContract p RISCV64.abi S) := by
   have hF := sfacts hp3
   have hp : ParamsOk p := by rcases hp3 with rfl | rfl | rfl <;> exact ⟨by decide, by decide, by decide⟩
-  obtain ⟨n, rfl⟩ : ∃ n, S = n + 1 := ⟨S - 1, by omega⟩
+  obtain ⟨n, rfl⟩ : ∃ n, S = n + 1 := ⟨S - 1, by omega_using [h48]⟩
   refine ⟨fun s hs => sign_ok hP hF (Nat.le_refl _) hp (spre_of hs) h48,
     fun s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hpub e₁ e₂ => ?_, ⟨signSat p, hsat⟩⟩
   sig_pub [Proof.MlDsa.signWithCacheContract, Proof.MlDsa.signWithCacheSig, Spec.MlDsa.signSig, RISCV64.abi,

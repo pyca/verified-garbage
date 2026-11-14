@@ -40,7 +40,7 @@ theorem clInit_run {s : State} (hp : DPre s) {R : BitVec 64} {EM : List Byte} {t
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.toNat_ushiftRight, BitVec.toNat_add, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow, Nat.reducePow,
       show (BitVec.signExtend 64 (31 : BitVec 32)).toNat = 31 from rfl]
-    unfold nbOf kOf; omega
+    unfold nbOf kOf; omega_using [hk2]
   · have hfw : Frame [⟨off (fb s) oI, 16⟩] t.mem t'.mem := by
       rw [hm]
       exact ((Frame.refl _ _).writeW (List.mem_singleton_self _) _
@@ -71,7 +71,7 @@ theorem clLoop_step {s : State} (hp : DPre s) {R : BitVec 64} {EM : List Byte} {
     rw [kh₁ _ _ (by decide) (by decide) (by simp)]; exact h.kdk
   refine WP.mono (prf_loop (v := v) hp (msg := msgCL) (L := 10) (N := 8) (dst := sCL) rfl (by decide) (by decide)
     (by decide) (by decide) (by decide) (kdk_len hk₁) msgCL_len
-    (fun _ _ hc hi hdi hax _ => msgCL_run hp hc (by omega) hdi hax)
+    (fun _ _ hc hi hdi hax _ => msgCL_run hp hc (by omega_using [hi]) hdi hax)
     (fun _ _ hc hi hI _ => incr8_ok hp hc hi hI) (pinv0 hc₁ hI₁ hNB₁ hk₁)) fun t₂ h₂ => ⟨h₂.ctx, ?_, h₂.key, h₂.sNB⟩
   have hb := h₂.blk
   rw [irprf_eq, show (256 + 31) / 32 = 8 from rfl]
@@ -109,8 +109,8 @@ theorem amLoop_step {s : State} (hp : DPre s) {R : BitVec 64} {EM : List Byte} {
   have hk2 := hp.k2
   have hkk : kOf s ≤ 1024 := hk2
   have hk64 : 64 ≤ kOf s := hk1
-  have hnb : nbOf s ≤ 32 := by unfold nbOf; omega
-  have hnb0 : 0 < nbOf s := by unfold nbOf; omega
+  have hnb : nbOf s ≤ 32 := by unfold nbOf; omega_using [hkk]
+  have hnb0 : 0 < nbOf s := by unfold nbOf; omega_using [hk64]
   refine WP.seq (WP.mono (amInit_run hp h.ctx) fun t₁ ⟨hc₁, hI₁, hNB₁, kh₁⟩ => ?_)
   have hk₁ : Spec.Rsa.bytesAt t₁.mem (scA s sKDK) 32 = kdkOf s := by
     rw [kh₁ _ _ (by decide) (by decide) (by simp)]; exact h.key
@@ -118,16 +118,16 @@ theorem amLoop_step {s : State} (hp : DPre s) {R : BitVec 64} {EM : List Byte} {
       Spec.RsaPkcs1Enc.irprf (kdkOf s) (Spec.RsaPkcs1Enc.ascii "length") 256 := by
     rw [kh₁ _ _ (by decide) (by decide) (by simp)]; exact h.cl
   refine WP.mono (prf_loop (v := v) hp (msg := msgAM (kOf s)) (L := 11) (N := nbOf s) (dst := sAM) rfl (by decide)
-    (by decide) (by unfold sAM scrBytes; omega) hnb0 hnb (kdk_len hk₁) (msgAM_len _)
-    (fun _ _ hc hi hdi hax h9 => msgAM_run hp hc (by omega) hdi hax h9)
+    (by decide) (by unfold sAM scrBytes; omega_using [hnb]) hnb0 hnb (kdk_len hk₁) (msgAM_len _)
+    (fun _ _ hc hi hdi hax h9 => msgAM_run hp hc (by omega_using [hnb, hi]) hdi hax h9)
     (fun _ _ hc hi hI hNB => incrNB_ok hp hc hi hI hNB) (pinv0 hc₁ hI₁ (hNB₁.trans h.sNB) hk₁))
     fun t₂ h₂ => ⟨h₂.ctx, ?_, ?_⟩
-  · rw [h₂.keep _ _ (by decide) (by decide) (by simp; unfold sCL sMsg sAM; omega)]; exact hcl₁
+  · rw [h₂.keep _ _ (by decide) (by decide) (by simp; unfold sCL sMsg sAM; omega_using [])]; exact hcl₁
   · have hb := h₂.blk
     rw [irprf_eq, show (kOf s + 31) / 32 = nbOf s from rfl]
     have hl : (List.flatMap (fun j => Spec.Hmac.hmac Spec.Hmac.sha256 (kdkOf s) (msgAM (kOf s) j))
         (List.range (nbOf s))).length = 32 * nbOf s := by rw [← hb, blen]
-    rw [show (32 * nbOf s) = kOf s + (32 * nbOf s - kOf s) by unfold nbOf; omega, bytesAt_add] at hb
+    rw [show (32 * nbOf s) = kOf s + (32 * nbOf s - kOf s) by unfold nbOf; omega_using [], bytesAt_add] at hb
     have := congrArg (List.take (kOf s)) hb
     rw [List.take_left' (blen _ _ _)] at this
     exact this

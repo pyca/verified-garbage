@@ -31,9 +31,9 @@ theorem pc_push_saved (s : State) (fit : 56 ≤ s.sp.toNat) :
   have bound : sp.toNat + 56 ≤ 2 ^ 32 := by
     rw [show sp = s.sp - BitVec.ofNat 32 56 from rfl, FrameStack.sub_toNat' fit]
     have := s.sp.isLt
-    omega
+    omega_using []
   have address (k : Nat) (hk : k < 56) : State.addr (sp + BitVec.ofNat 32 k) = off (State.addr sp) k :=
-    addr_add (by omega)
+    addr_add (by omega_using [bound, hk])
   have memEq : (pcPushed s).mem = Spill.saveMem s.mem (State.addr sp) s.gpr pcAllSaved := by
     change storeWords s.mem sp _ = _
     simp only [storeWords, List.map_cons, List.map_nil, Spill.saveMem, pcAllSaved]

@@ -37,22 +37,22 @@ theorem JTblOkO.unch (hL : JacWinLay K size) {base : Addr} {P : Point C} {M : Na
     (hn : base.toNat + size ≤ 2 ^ 64) (hM : M ≤ 16)
     (hW : ∀ w ∈ W, ∀ i < 5 * M, jg K i + 8 * K.M.n ≤ w.1 ∨ w.1 + w.2 ≤ jg K i) :
     JTblOkO K C base P M s' := fun m h1 hm =>
-  (hT m h1 hm).congr fun c hc => jgWord_unch hL hU hn (by omega) fun w hw => hW w hw _ (by omega)
+  (hT m h1 hm).congr fun c hc => jgWord_unch hL hU hn (by omega_using [hM, hm, hc]) fun w hw => hW w hw _ (by omega_using [h1, hm, hc])
 
 /-- A program's writes keep entries `1 … M` if the loop may write them. -/
 theorem JTblOkO.loopW (hL : JacWinLay K size) {base : Addr} {P : Point C} {M : Nat} {s s' : State}
     (hT : JTblOkO K C base P M s) (hU : Unch base (jwLoopW K) s.mem s'.mem) (hn : base.toNat + size ≤ 2 ^ 64)
     (hM : M ≤ 16) : JTblOkO K C base P M s' :=
-  hT.unch hL hU hn hM fun w hw i hi => loopW_apart hL (by omega) w hw
+  hT.unch hL hU hn hM fun w hw i hi => loopW_apart hL (by omega_using [hM, hi]) w hw
 
 /-- Storing entry `M + 1` keeps entries `1 … M`. -/
 theorem JTblOkO.store (hL : JacWinLay K size) {base : Addr} {P : Point C} {M : Nat} {s s' : State}
     (hT : JTblOkO K C base P M s)
     (hO : Outside base (jg K (5 * M)) (40 * K.M.n) s.mem s'.mem) (hn : base.toNat + size ≤ 2 ^ 64)
     (hM : M ≤ 15) : JTblOkO K C base P M s' :=
-  hT.unch hL (outside_grid5 hO) hn (by omega) fun w hw i hi => by
+  hT.unch hL (outside_grid5 hO) hn (by omega_using [hM]) fun w hw i hi => by
     obtain ⟨c, hc, rfl⟩ := List.mem_map.mp hw
-    refine jg_sep K ?_; omega
+    refine jg_sep K ?_; omega_using [hi]
 
 /-- What the odd method reads and never writes, at the start: zero, `P`, and
 the table of the bits of `oq J k = (k + 32^J - 1) / 2`. -/
@@ -151,6 +151,6 @@ theorem dblsO_ok (hL : JacWinLay K size) (hC : Law C) {dbl : Pt → Prog isa} (h
     ⟨⟨?_, b₂, by rw [k₂.2.1]; exact (U.trans U₁).mono fun w hw => (List.mem_append.mp hw).elim id id⟩, c₂⟩
   have := R₁.rbxKeeps hL k₂
   rwa [hC.add_mul_mul hQ, show 2 ^ (5 - i) * e + 2 ^ (5 - i) * e = 2 ^ (5 - (i - 1)) * e by
-    rw [show 5 - (i - 1) = 5 - i + 1 by omega, Nat.pow_succ]; grind] at this
+    rw [show 5 - (i - 1) = 5 - i + 1 by omega_using [h1, h5], Nat.pow_succ]; grind] at this
 
 end VG.Proof.Weierstrass.X86_64

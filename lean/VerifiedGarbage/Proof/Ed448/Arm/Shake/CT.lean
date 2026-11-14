@@ -274,7 +274,7 @@ theorem hdr_ct (ha : Args E n val m₁) (hb : Args E n val m₂) {j off : Nat} (
         hdrBytes (val j)) := by
   have hf := hk.fits
   have hj' := hj.1
-  refine Whole.rel_wp ((hdr_sp_ct j off (by omega)).mono
+  refine Whole.rel_wp ((hdr_sp_ct j off (by omega_using [ho])).mono
     (fun _ _ h => h.1.1.sp.trans h.2.1.sp.symm) (fun _ _ _ => trivial)) ?_ ?_
   · intro t ⟨hc, _⟩; exact WP.mono (hk.hdr_ok hc ha hj hcl ho) fun _ ⟨hu, _, hb⟩ => ⟨hu, hb⟩
   · intro t ⟨hc, _⟩; exact WP.mono (hk.hdr_ok hc hb hj hcl ho) fun _ ⟨hu, _, hb⟩ => ⟨hu, hb⟩
@@ -331,7 +331,7 @@ theorem sqzStep_ct (ha : Args E n val m₁) (hb : Args E n val m₂) {sc : Nat} 
       (Two E ins outs g₁ g₂ m₁ m₂ fun _ => True) :=
   (hk.setup_ct ha hb (sqzValues sc d) (sqzStack sc) (by simp [sqzValues])
     (by simp only [sqzValues, List.forall_mem_cons]
-        exact ⟨hsc.valid (by decide), valid_const (by decide), valid_const (by decide), valid_frame (by omega),
+        exact ⟨hsc.valid (by decide), valid_const (by decide), valid_const (by decide), valid_frame (by omega_using [hd]),
           fun _ h => nomatch h⟩)
     (by simp [sqzValues, preserved]) (by simp [sqzStack])
     (by simp only [sqzStack, List.forall_mem_cons]

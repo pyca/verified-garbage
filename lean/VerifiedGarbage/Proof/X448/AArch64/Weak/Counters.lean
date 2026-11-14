@@ -31,7 +31,7 @@ theorem setCounter_ok (s : State) (k : Nat) (hk : k < 2 ^ 16) :
   refine ⟨?_, fun r hr => by simp only [RegUpd.gpr_write, hr, ite_false], rfl, rfl, rfl⟩
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]
-  rw [Nat.mod_eq_of_lt hk, Nat.mod_eq_of_lt (by omega)]
+  rw [Nat.mod_eq_of_lt hk, Nat.mod_eq_of_lt (by omega_using [hk])]
 
 /-- Decrement the counter; the result is zero precisely on the last iteration. -/
 theorem decCounter_ok {s : State} {k : Nat} (hk : k < 2 ^ 16)
@@ -44,12 +44,12 @@ theorem decCounter_ok {s : State} {k : Nat} (hk : k < 2 ^ 16)
   have zero : (BitVec.ofNat 64 k == 0) = decide (k = 0) := by
     rcases Nat.eq_zero_or_pos k with rfl | h
     · rfl
-    · rw [decide_eq_false (by omega)]
+    · rw [decide_eq_false (by omega_using [h])]
       apply beq_false_of_ne
       intro h'
       have := congrArg BitVec.toNat h'
-      rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)] at this
-      exact absurd this (by simp; omega)
+      rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hk])] at this
+      exact absurd this (by simp; omega_using [h])
   apply WP.of_runBlock
   simp only [runBlock_cons, runStep_some, runBlock_nil, exec, Nat.reduceLT, ite_true,
     State.read, BitVec.setWidth_eq, hb', RegUpd.gpr_write_self, zero,

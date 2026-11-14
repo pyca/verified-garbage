@@ -43,9 +43,9 @@ theorem jointWindow_ct (M : Mont) (Sq : MontS) :
       (fun _ _ ⟨_, _, _, _, _, _, _, _, _, _, _, hI, _⟩ => ⟨_, hI.ctx.good, Nat.le_refl _⟩)
       Sq.ct) fun q s ⟨hj, t₀, minv, n, xc, g, y, a, b, v, z, hI, hw, hw', hR, hv, hz⟩ => by
         have hp : (256 * v + z) * 4 ^ q.2 < 2 ^ 56 := by
-          have : 4 ^ q.2 ≤ 4 ^ 3 := Nat.pow_le_pow_right (by decide) (by omega)
+          have : 4 ^ q.2 ≤ 4 ^ 3 := Nat.pow_le_pow_right (by decide) (by omega_using [hj])
           have := Nat.mul_le_mul_left (256 * v + z) this
-          omega
+          omega_using [hv, hz, this]
         have tab : CTab s.mem (off q.1.B q.1.o) q.1.wx n False 0 :=
           ⟨hI.tab.tab, hI.tab.lt, fun h _ _ => False.elim h⟩
         have hnR : n ≤ 2 ^ (64 * q.1.wx) := by rw [← hI.ctx.n]; exact Nat.le_of_lt (wv_lt _ _ _ _)

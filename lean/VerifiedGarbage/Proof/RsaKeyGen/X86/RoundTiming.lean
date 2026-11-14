@@ -44,7 +44,7 @@ theorem setup_ready {g : Geometry} (v : g.Valid) {capacity : Nat} {p : BitVec 32
   refine ⟨⟨c, b, Da, odd, large, by rw [A.mem]; exact witness⟩, ?_, A.gpr⟩
   apply BitVec.eq_of_toNat_eq
   rw [A.other .edi (by decide), S.ready.scratch.edi_toNat, BitVec.toNat_ofNat]
-  exact (Nat.mod_eq_of_lt (by have := S.ready.scratch.nowrap; have := v.headerFit; omega)).symm
+  exact (Nat.mod_eq_of_lt (by have := S.ready.scratch.nowrap; have := v.headerFit; omega_arith)).symm
 
 def InputPair (g : Geometry) (capacity : Nat) (p : BitVec 32) (s t : State) : Prop :=
   Pair g [.edi] s t ∧ Input g capacity p s ∧ Input g capacity p t

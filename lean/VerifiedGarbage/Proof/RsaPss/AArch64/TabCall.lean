@@ -334,7 +334,7 @@ theorem HT.keep {H : Impl.Pbkdf2.Md.AArch64.Hash} {dn : String} {f : MdFns} {F :
     (hd : ∀ r ∈ rs, Region.Disjoint ⟨F, frameBytes⟩ r) : HT H dn f F m' sy := by
   have k : ∀ d, d + 8 ≤ frameBytes → m'.readW (off F d) 64 = m.readW (off F d) 64 := fun d hd' =>
     hf.readW (r := ⟨off F d, 8⟩) (Region.contains_self _ _)
-      (fun r hr => (hd r hr).sub_left (Offset.sub_base F (by unfold frameBytes at *; omega))) (by decide)
+      (fun r hr => (hd r hr).sub_left (Offset.sub_base F (by unfold frameBytes at *; omega_using [hd']))) (by decide)
   exact ⟨(k _ (by decide)).trans h.wi, (k _ (by decide)).trans h.wc, (k _ (by decide)).trans h.wd, h.fi, h.fc,
     h.fd⟩
 

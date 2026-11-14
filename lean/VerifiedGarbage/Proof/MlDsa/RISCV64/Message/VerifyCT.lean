@@ -114,11 +114,11 @@ theorem verifyCall_ct {p : Params} {q : Bool} {STK S : Nat} {X₁ X₂ : List Re
       ce_gpr _ _ _ (show Reg.a1 ∉ linkRegs by decide), ce_gpr _ _ _ (show Reg.a2 ∉ linkRegs by decide),
       hab.1.a0, hab.1.a1, hab.1.a2, hab.2.a0, hab.2.a1, hab.2.a2]
     have ks := pkE_sub hF q
-    have hl : p.pkLen < 2 ^ 64 := by have := hF.pk; omega
+    have hl : p.pkLen < 2 ^ 64 := by have := hF.pk; omega_using [this]
     rw [v_keep k₁ (R := ⟨s₁.gpr .a0, p.pkLen⟩) hl (hp₁.kc.sub_left (ks s₁)) (hp₁.bk.sub_right (ks s₁)),
-      hab.1.ms.mu, v_keep k₁ (R := vsigR p s₁) (by have := hF.sgl; show p.sigLen < 2 ^ 64; omega) hp₁.gc hp₁.bg,
+      hab.1.ms.mu, v_keep k₁ (R := vsigR p s₁) (by have := hF.sgl; show p.sigLen < 2 ^ 64; omega_using [this]) hp₁.gc hp₁.bg,
       v_keep k₂ (R := ⟨s₂.gpr .a0, p.pkLen⟩) hl (hp₂.kc.sub_left (ks s₂)) (hp₂.bk.sub_right (ks s₂)),
-      hab.2.ms.mu, v_keep k₂ (R := vsigR p s₂) (by have := hF.sgl; show p.sigLen < 2 ^ 64; omega) hp₂.gc hp₂.bg]
+      hab.2.ms.mu, v_keep k₂ (R := vsigR p s₂) (by have := hF.sgl; show p.sigLen < 2 ^ 64; omega_using [this]) hp₂.gc hp₂.bg]
     simp only [pkB, vsigB, fmtB, ctxB, msgB] at ek em ec eg ⊢
     rw [ek, em, ec, eg, p7]
 

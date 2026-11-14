@@ -38,8 +38,8 @@ theorem geFlag27_ok {s : State} {x y : Nat} (h27 : s.gpr .r27 = BitVec.ofNat 64 
 theorem cOp_none {s0 : State} {w : Nat} (hw : oL s0 = 8 * w) (hw1 : 1 ≤ w) (h : ¬ oL s0 ≤ rL s0) :
     cOp s0 = none := by
   unfold cOp Spec.RsaKeyGen.candidateOp
-  rw [hw, VG.Proof.RsaKeyGen.candidateStep_eq _ _ _ _ (by omega),
-    VG.Proof.RsaKeyGen.ite_f (by rw [bytesAt_length]; omega)]
+  rw [hw, VG.Proof.RsaKeyGen.candidateStep_eq _ _ _ _ (by omega_using [hw1]),
+    VG.Proof.RsaKeyGen.ite_f (by rw [bytesAt_length]; omega_using [hw, h])]
 
 /-- The body's state, with the registers the entry set. -/
 structure BR (s0 s : State) : Prop where
@@ -67,12 +67,12 @@ theorem zeroS {s0 s : State} (hb : Bx s0 s) (hr : Regs s0 s) (sy : s.syms = s0.s
   simp only [Spec.RsaKeyGen.primeLenValid] at hv
   have hfo := hp.fo
   have eO : oL s0 = (s0.gpr .r4).toNat := rfl
-  refine WP.mono_syms (zeroOut_ok (L := oL s0) hr.r23 (by rw [hr.r24, eO, ofNat_toNat64]) (by omega)
-    (by omega) (fun i hi => ⟨cO s0, by rw [hb.wr, bodyWr, hp.wr]; simp,
-      Offset.contains_base _ (d := i) (by simp only [oL] at hi; omega) (by omega)⟩) (by omega))
+  refine WP.mono_syms (zeroOut_ok (L := oL s0) hr.r23 (by rw [hr.r24, eO, ofNat_toNat64]) (by omega_using [hv, eO])
+    (by omega_using [hv, eO]) (fun i hi => ⟨cO s0, by rw [hb.wr, bodyWr, hp.wr]; simp,
+      Offset.contains_base _ (d := i) (by simp only [oL] at hi; omega_using [hi]) (by omega_using [eO, hi])⟩) (by omega_using [hfo, eO]))
     fun t₁ ⟨z₁, o₁, k₁⟩ sy₁ => ?_
   have c₁ : Ctx s0 t₁ := by
-    refine ⟨hb.step k₁.sp k₁.rd k₁.wr ((frame_of_outside (Z := oL s0) o₁ (by omega)).mono (by simp)) (k₁.gpr _ (by decide)),
+    refine ⟨hb.step k₁.sp k₁.rd k₁.wr ((frame_of_outside (Z := oL s0) o₁ (by omega_using [])).mono (by simp)) (k₁.gpr _ (by decide)),
       (k₁.gpr _ (by decide)).trans hr.r23, (k₁.gpr _ (by decide)).trans hr.r24,
       (k₁.gpr _ (by decide)).trans hr.r25, ?_⟩
     apply List.ext_getElem (by simp [Spec.Rsa.bytesAt])
@@ -96,7 +96,7 @@ theorem flagS {s0 s : State} (h : BR s0 s) :
   have hv := hp.valid
   simp only [Spec.RsaKeyGen.primeLenValid] at hv
   exact WP.mono_syms (geFlag27_ok (x := rL s0) (y := oL s0) (h.regs.r27.trans (ofNat_toNat64 _).symm)
-      (h.regs.r24.trans (ofNat_toNat64 _).symm) (by simp only [rL]; omega) (by simp only [oL]; omega))
+      (h.regs.r24.trans (ofNat_toNat64 _).symm) (by simp only [rL]; omega_using []) (by simp only [oL]; omega_using [hv]))
     fun t₂ ⟨⟨a5, m₂⟩, k₂⟩ sy₂ => ⟨h.keep k₂ m₂ sy₂, a5⟩
 
 theorem iteS {trial : Prog isa} (D : DivOk trial) (R : RoundImpl) {s0 s : State} (hT : TabOk s0)
@@ -110,7 +110,7 @@ theorem iteS {trial : Prog isa} (D : DivOk trial) (R : RoundImpl) {s0 s : State}
   refine WP.ite _ (eval_zero_ofNat _ _ (by split <;> decide) a5) (fun hz => ?_) (fun hz => ?_)
   · have hav : ¬ oL s0 ≤ rL s0 := by
       intro hc; simp only [hc, ↓reduceIte] at hz; exact absurd hz (by decide)
-    exact finNone_post c₂ (cOp_none hw (by omega) hav)
+    exact finNone_post c₂ (cOp_none hw (by omega_using [hw4]) hav)
   · have hav : oL s0 ≤ rL s0 := by
       by_contra hc; simp only [hc, ↓reduceIte] at hz; exact absurd hz (by decide)
     exact main_ok D R ⟨c₂, hr.r21, hr.r30, hr.r18, hr.r19, hr.r26, hr.r27, hr.r31, hr.r11, hav, sy, hT⟩

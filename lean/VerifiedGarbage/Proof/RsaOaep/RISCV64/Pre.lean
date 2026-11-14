@@ -138,7 +138,7 @@ theorem preO_of {H : Spec.Mgf1.Hash} {ts : List FnTable} {s : State} (h : (encSp
     e1, e2, hs, hp, hl, al3, al5, al8, al7⟩ := h
   have hl := hl H hH
   rw [hl] at hrd osd sds ksd wsd
-  exact ⟨spal, sp1, by omega, hrd, hwr, on, oe, ol, om, osd, osc, op, otl, ot, oa, ns, es, ls, ms, sds, sp, stl, st,
+  exact ⟨spal, sp1, by omega_using [sp2], hrd, hwr, on, oe, ol, om, osd, osc, op, otl, ot, oa, ns, es, ls, ms, sds, sp, stl, st,
     sa, ko, kn, ke, kl, km, ksd, ksc, kp, ktl, kt, ka, wo, wn, we, wl, wm, wsd, wsc, wp, wtl, wt, k1, k2, ok, e1, e2,
     hs, hp, al3, al5, al8, al7⟩
 
@@ -169,19 +169,19 @@ variable {D : Nat} {s : State} (P : PreO D s)
 include P
 
 theorem scLen : oRsa ≤ (stackArg s 5).toNat * 8 := by
-  have := P.hs; unfold Spec.RsaPss.publicScratchWords at this; unfold oRsa; omega
+  have := P.hs; unfold Spec.RsaPss.publicScratchWords at this; unfold oRsa; omega_using [this]
 
 theorem sc_sub : Region.Sub (SC S s) (scR s) := Region.sub_prefix (scLen P)
 
 theorem scR_contains {o n : Nat} (h : o + n ≤ oRsa) : (scR s).Contains (off (S s) o) n :=
-  Offset.contains_base _ (by have := scLen P; omega) (by unfold oRsa at h; omega)
+  Offset.contains_base _ (by have := scLen P; omega_using [h, this]) (by unfold oRsa at h; omega_using [h])
 
 theorem PreO.fits : Fits S s where
   sp1 := P.sp1
   sp16 := P.spal
   sc := ⟨scR s, by rw [P.hwr]; simp, rfl, scLen P⟩
   ksc := P.ksc.sub_right (sc_sub P)
-  wS := by show (stackArg s 4).toNat + oRsa ≤ 2 ^ 64; have := P.wsc; have := scLen P; omega
+  wS := by show (stackArg s 4).toNat + oRsa ≤ 2 ^ 64; have := P.wsc; have := scLen P; omega_arith
 
 end
 
@@ -200,7 +200,7 @@ end
 
 /-- The stack arguments are in `aR`. -/
 theorem in_aR {s : State} {j : Nat} (hj : j < 10) : (aR s).Contains (stackArgAddr s j) 8 := by
-  rw [stackArgAddr_eq s j]; exact Offset.contains_base _ (by omega) (by omega)
+  rw [stackArgAddr_eq s j]; exact Offset.contains_base _ (by omega_using [hj]) (by omega_using [hj])
 
 /-- After the saves and the prologue. -/
 structure Entered (s t : State) : Prop where
@@ -218,11 +218,11 @@ include P
 theorem arg_al {j : Nat} (hj : j < 10) : (stackArgAddr s j).toNat % 8 = 0 := by
   have := P.spal; have := P.sp2
   have e : (stackArgAddr s j).toNat = s.sp.toNat + 8 * j := by
-    simp only [stackArgAddr, BitVec.toNat_add, BitVec.toNat_ofNat]; omega
-  rw [e]; omega
+    simp only [stackArgAddr, BitVec.toNat_add, BitVec.toNat_ofNat]; omega_using [hj, this]
+  rw [e]; omega_arith
 
 theorem fb_al8 : (fb s).toNat % 8 = 0 := by
-  have := fb_al (PreO.fits P); omega
+  have := fb_al (PreO.fits P); omega_using [this]
 
 /-- A load of our stack argument `j` through `t6`, the entry stack pointer. -/
 theorem wp_arg {t : State} {r : Reg} {j : Nat} {is : List Instr} {Q : State → Prop} (hj : j < 10)

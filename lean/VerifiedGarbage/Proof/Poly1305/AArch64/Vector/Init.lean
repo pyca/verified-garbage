@@ -75,7 +75,7 @@ theorem times5_ok (R S : Nat → VReg) (hRS : ∀ i < 5, 1 ≤ i → ∀ j < 5, 
       (∀ r, (∀ j < 5, 1 ≤ j → r ≠ S j) → t.v r = s.v r) ∧
       t.gpr = s.gpr ∧ t.mem = s.mem ∧ t.rd = s.rd ∧ t.wr = s.wr ∧ t.sp = s.sp := by
   have hmem : ∀ j, j ∈ [1, 2, 3, 4] ↔ 1 ≤ j ∧ j < 5 := by
-    intro j; simp only [List.mem_cons, List.not_mem_nil, or_false]; omega
+    intro j; simp only [List.mem_cons, List.not_mem_nil, or_false]; omega_using []
   refine WP.mono (times5_aux R S hRS hS [1, 2, 3, 4] (fun j hj => (hmem j).mp hj) (by decide) s
     fun j hj => hb j ((hmem j).mp hj).2 ((hmem j).mp hj).1)
     fun t ⟨h5, hv, hk⟩ => ⟨fun j hj h1 => h5 j ((hmem j).mpr ⟨h1, hj⟩),
@@ -99,10 +99,10 @@ theorem readW_write8_sep {m : Mem} {a b : Addr} (h : Mem.Sep a 8 b 8) (v : BitVe
   rw [Mem.read_write_sep h (by decide)]
 
 theorem svA_sep (st : Addr) {j k : Nat} (hj : j < 7) (hk : k < 7) (h : j ≠ k) :
-    Mem.Sep (svA st j) 8 (svA st k) 8 := Offset.sep st (by omega) (by omega) (by omega)
+    Mem.Sep (svA st j) 8 (svA st k) 8 := Offset.sep st (by omega_using [h]) (by omega_using [hj]) (by omega_using [hk])
 
 theorem svA_in (st : Addr) {k : Nat} (hk : k < 7) : (svR st).Contains (svA st k) 8 :=
-  Offset.contains st (by omega) (by omega) (by omega)
+  Offset.contains st (by omega_using []) (by omega_using [hk]) (by omega_using [])
 
 theorem save_aux (st : Addr) :
     ∀ (ks : List Nat), (∀ k ∈ ks, k < 7) → ks.Nodup → ∀ s : State, s.gpr .x0 = st →
@@ -125,7 +125,7 @@ theorem save_aux (st : Addr) :
     obtain ⟨hnk, hnd'⟩ := List.nodup_cons.mp hnd
     simp only [List.flatMap_cons, List.cons_append, List.nil_append]
     refine WP.block_cons_iff.mpr ⟨_, exec_umov s .x9 (V (8 + k)) (by decide), ?_⟩
-    refine WP.block_cons_iff.mpr ⟨_, exec_str ⟨by omega, by omega⟩ (by
+    refine WP.block_cons_iff.mpr ⟨_, exec_str ⟨by omega_using [], by omega_using [hk]⟩ (by
       simp only [RegUpd.wr_write, RegUpd.gpr_write_of_ne _ _ _ (show ¬ Reg.x0 = Reg.x9 by decide), hx0]
       exact hw k List.mem_cons_self), ?_⟩
     simp only [RegUpd.gpr_write_self, RegUpd.gpr_write_of_ne _ _ _ (show ¬ Reg.x0 = Reg.x9 by decide), hx0,
@@ -179,7 +179,7 @@ theorem restore_aux (st : Addr) :
     have hks' : ∀ j ∈ ks, j < 7 := fun j hj => hks j (List.mem_cons_of_mem _ hj)
     obtain ⟨hnk, hnd'⟩ := List.nodup_cons.mp hnd
     simp only [List.flatMap_cons, List.cons_append, List.nil_append]
-    refine WP.block_cons_iff.mpr ⟨_, exec_ldr ⟨by omega, by omega⟩ (by rw [hx0]; exact hr k List.mem_cons_self), ?_⟩
+    refine WP.block_cons_iff.mpr ⟨_, exec_ldr ⟨by omega_using [], by omega_using [hk]⟩ (by rw [hx0]; exact hr k List.mem_cons_self), ?_⟩
     refine WP.block_cons_iff.mpr ⟨_, exec_vo rfl, ?_⟩
     set u := (s.write .x .x9 (s.mem.read (s.gpr .x0 + BitVec.ofNat 64 (72 + 8 * k)) 8)).setV (V (8 + k))
       (setLane ((s.write .x .x9 (s.mem.read (s.gpr .x0 + BitVec.ofNat 64 (72 + 8 * k)) 8)).v (V (8 + k))) 64 0
@@ -227,10 +227,10 @@ theorem loadH_ok (s : State) (hm : (s.gpr .x16).toNat = 2 ^ 26 - 1) :
     vstep
   refine WP.block_nil_iff.mpr ⟨fun h6 i hi => ?_, fun i hi => ?_, fun r hr => ?_, ?_, ?_, ?_, ?_, ?_⟩
   · rw [← l1 h6 i hi]
-    rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 by omega) with rfl | rfl | rfl | rfl | rfl <;>
+    rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 by omega_using [hi]) with rfl | rfl | rfl | rfl | rfl <;>
       vstep <;> simp only [ln, vdword_setLane _ (show 0 < 2 by decide) (show 0 < 2 by decide), ite_true, X,
         RegUpd.gpr_setV]
-  · rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 by omega) with rfl | rfl | rfl | rfl | rfl <;>
+  · rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 by omega_using [hi]) with rfl | rfl | rfl | rfl | rfl <;>
       vstep <;> simp only [ln, vdword_setLane _ (show 0 < 2 by decide) (show 1 < 2 by decide),
         show (1 : Nat) ≠ 0 by decide, ite_false] <;> rfl
   · have := hr 0 (by decide); have := hr 1 (by decide); have := hr 2 (by decide)
@@ -270,11 +270,11 @@ theorem tail_ok (s : State) :
   refine WP.block_nil_iff.mpr ⟨fun e he => ?_, fun e he => ?_, ?_, fun r hr => ?_, fun r h1 h2 => ?_,
     rfl, rfl, rfl, rfl⟩
   · allstep
-    rcases (show e = 0 ∨ e = 1 by omega) with rfl | rfl
+    rcases (show e = 0 ∨ e = 1 by omega_using [he]) with rfl | rfl
     · simp only [ln, vdword_ofVDwords_0]
     · simp only [ln, vdword_ofVDwords_1]
   · allstep
-    rcases (show e = 0 ∨ e = 1 by omega) with rfl | rfl
+    rcases (show e = 0 ∨ e = 1 by omega_using [he]) with rfl | rfl
     · simp only [ln, vdword_ofVDwords_0]; rfl
     · simp only [ln, vdword_ofVDwords_1]; rfl
   · allstep; rfl

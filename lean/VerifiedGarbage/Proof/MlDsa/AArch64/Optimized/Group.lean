@@ -174,7 +174,7 @@ theorem groupProducts_indexed (r : Ren) (gap group : Nat) (hv : ValidGroup gap g
     repeat constructor
   · rcases hg with rfl | rfl <;>
       simp [groupProducts, groupIndexedProducts, groupSteps, List.range_succ, prodTemps] <;> (repeat constructor)
-  · have h : group = 0 ∨ group = 1 ∨ group = 2 ∨ group = 3 := by omega
+  · have h : group = 0 ∨ group = 1 ∨ group = 2 ∨ group = 3 := by omega_using [hg]
     rcases h with rfl | rfl | rfl | rfl <;>
       simp [groupProducts, groupIndexedProducts, groupSteps, List.range_succ, prodTemps] <;> (repeat constructor)
 
@@ -186,7 +186,7 @@ theorem groupIndices_shape (gap group : Nat) (hv : ValidGroup gap group) :
   rcases hv with ⟨rfl,rfl⟩ | ⟨rfl,hg⟩ | ⟨rfl,hg⟩
   · decide
   · rcases hg with rfl | rfl <;> decide
-  · have h : group = 0 ∨ group = 1 ∨ group = 2 ∨ group = 3 := by omega
+  · have h : group = 0 ∨ group = 1 ∨ group = 2 ∨ group = 3 := by omega_using [hg]
     rcases h with rfl | rfl | rfl | rfl <;> decide
 
 /-- The generator's list indexing selects exactly the seven well-bounded
@@ -197,7 +197,7 @@ theorem renGroup_eq (r : Ren) (gap group : Nat) (hv : ValidGroup gap group)
   rcases hv with ⟨rfl,rfl⟩ | ⟨rfl,hg⟩ | ⟨rfl,hg⟩
   · rfl
   · rcases hg with rfl | rfl <;> rfl
-  · have h : group = 0 ∨ group = 1 ∨ group = 2 ∨ group = 3 := by omega
+  · have h : group = 0 ∨ group = 1 ∨ group = 2 ∨ group = 3 := by omega_using [hg]
     rcases h with rfl | rfl | rfl | rfl <;> rfl
 
 theorem renGroup_code (r : Ren) (gap group : Nat) (hv : ValidGroup gap group)

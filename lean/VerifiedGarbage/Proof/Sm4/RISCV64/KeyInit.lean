@@ -44,28 +44,28 @@ theorem storeAll_ok (r : Reg) : ∀ (ks : List Nat) {s : State} {b : Addr}, s.gp
   | k :: ks, s, b, hb, hw, hal, hk => by
     have hk0 : k < tableSlot := hk k List.mem_cons_self
     rw [tableSlot_eq] at hk0
-    have e₁ := stS_ok s r (k := k) (by omega) (by rw [hb]; exact hal) ⟨_, hw, by
-      rw [hb]; exact VG.Offset.contains_base b (by rw [slots_eq]; omega) (by omega)⟩
+    have e₁ := stS_ok s r (k := k) (by omega_using [hk0]) (by rw [hb]; exact hal) ⟨_, hw, by
+      rw [hb]; exact VG.Offset.contains_base b (by rw [slots_eq]; omega_using [hk0]) (by omega_using [hk0])⟩
     let s₁ : State := { s with mem := s.mem.writeW (wordAddr (s.gpr sb) k) (s.gpr r) }
     obtain ⟨s', e', v', o', g', rd', wr', f'⟩ := storeAll_ok r ks (s := s₁) hb hw hal
       fun k h => hk k (List.mem_cons_of_mem _ h)
     have hslot : ∀ j < slots, slotW s₁ j = if j = k then s.gpr r else slotW s j := fun j hj => by
       simp only [slotW, s₁]
-      exact readW_slot_write _ hj (by rw [slots_eq]; omega)
+      exact readW_slot_write _ hj (by rw [slots_eq]; omega_using [hk0])
     refine ⟨s', by rw [List.map_cons, show (stS k r :: ks.map fun k => stS k r) = [stS k r] ++ ks.map fun k => stS k r
         from rfl, Interleave.runBlock_append, e₁, Option.bind_some]; exact e', fun j hj => ?_, fun j hj hn => ?_,
       by rw [g'], by rw [rd'], by rw [wr'], ?_⟩
     · rcases List.mem_cons.mp hj with rfl | hj'
       · by_cases hin : j ∈ ks
         · rw [v' j hin]
-        · rw [o' j (by rw [slots_eq]; omega) hin, hslot j (by rw [slots_eq]; omega), ite_eq_left rfl]
+        · rw [o' j (by rw [slots_eq]; omega_using [hk0]) hin, hslot j (by rw [slots_eq]; omega_using [hk0]), ite_eq_left rfl]
       · rw [v' j hj']
     · simp only [List.mem_cons, not_or] at hn
       rw [o' j hj hn.2, hslot j hj, ite_eq_right hn.1]
     · refine Frame.trans (fun x hx => ?_) f'
       simp only [s₁, Mem.writeW, Mem.write, wordAddr, hb]
       exact ite_eq_right fun h => hx _ (List.mem_singleton_self _) (VG.Offset.sub_base b
-        (show 8 * k + 8 ≤ 8 * slots by rw [slots_eq]; omega) _ (by simp only [Region.Contains]; omega))
+        (show 8 * k + 8 ≤ 8 * slots by rw [slots_eq]; omega_using [hk0]) _ (by simp only [Region.Contains]; omega_using [h]))
 
 /-! ## `MK ⊕ FK` -/
 
@@ -80,7 +80,7 @@ theorem keyWord_ok (s : State) (h : Nat) (hh : h < 2)
       s'.rd = s.rd ∧ s'.wr = s.wr := by
   obtain ⟨s₁, e₁, v₁, o₁, m₁, rd₁, wr₁, -⟩ := Interleave.runBlock_of_WP (Bytes.loadLE64_ok (s := s)
     (d := t0) (tmp := t2) (hi := m 1) (n := .a0) (off := 8 * h) (by decide) (by decide) (by decide)
-    (by decide) (by decide) (by decide) (by omega)
+    (by decide) (by decide) (by decide) (by omega_using [hh])
     (by have := hr 0 (by decide); simpa using this) (by have := hr 1 (by decide); simpa using this))
   obtain ⟨s₂, e₂, h₂⟩ := Interleave.runBlock_of_WP (ByteLoad.li64_ok (s := s₁) (d := t1) (tmp := t2)
     (by decide) (fkWord h))
@@ -97,7 +97,7 @@ theorem keyWord_ok (s : State) (h : Nat) (hh : h < 2)
   · rw [RegUpd.gpr_write_of_ne _ _ h0, g₂ r h1 h2, o₁ r h0 h2 h3]
 
 theorem tailAt_lt {b h : Nat} (hb : b < 16) (hh : h < 2) : tailAt b h < tableSlot := by
-  simp only [tailAt, tailSlot_eq, tableSlot_eq]; omega
+  simp only [tailAt, tailSlot_eq, tableSlot_eq]; omega_using [hb, hh]
 
 /-- Half `h` of the key, XOR `FK`, to the sixteen blocks. -/
 theorem loadHalf_ok {s : State} {b : Addr} (h : Nat) (hh : h < 2) (hb : s.gpr sb = b)
@@ -158,7 +158,7 @@ theorem ckStores_ok {A : Addr} (hal : A.toNat % 8 = 0) :
   | [], s, _, _, _, _ => ⟨s, rfl, by simp, fun _ _ _ => rfl, fun _ _ _ => rfl, rfl, rfl, Frame.refl _ _⟩
   | (k, v) :: ms, s, ha, hw, hk, hnd => by
     have hk0 : k < 256 := hk _ List.mem_cons_self
-    obtain ⟨s₁, e₁, m₁, g₁, rd₁, wr₁⟩ := ckOne_ok (d := 8 * k) v ha (by omega) (Spill.al8 hal (by omega))
+    obtain ⟨s₁, e₁, m₁, g₁, rd₁, wr₁⟩ := ckOne_ok (d := 8 * k) v ha (by omega_using [hk0]) (Spill.al8 hal (by omega_using []))
       (hw k hk0)
     have ha₁ : s₁.gpr .a4 = A := by rw [g₁ _ (by decide) (by decide), ha]
     rw [List.map_cons, List.nodup_cons] at hnd
@@ -169,7 +169,7 @@ theorem ckStores_ok {A : Addr} (hal : A.toNat % 8 = 0) :
         rw [m₁, show A + BitVec.ofNat 64 (8 * k) = wordAddr A k from rfl]
         split
         · rename_i h; subst h; exact Mem.readW_writeW_self64 _ _ _
-        · rename_i h; exact Mem.readW_writeW_sep (slot_sep A (by omega) (by omega) h) (by decide)
+        · rename_i h; exact Mem.readW_writeW_sep (slot_sep A (by omega_using [hj]) (by omega_using [hk0]) h) (by decide)
     refine ⟨s', by
       rw [List.flatMap_cons, Interleave.runBlock_append, e₁, Option.bind_some]; exact e', fun kv hkv => ?_,
       fun j hj hn => ?_, fun r h0 h1 => by rw [g' r h0 h1, g₁ r h0 h1], by rw [rd', rd₁], by rw [wr', wr₁], ?_⟩
@@ -180,6 +180,6 @@ theorem ckStores_ok {A : Addr} (hal : A.toNat % 8 = 0) :
       rw [o' j hj hn.2, hslot j hj, ite_eq_right hn.1]
     · refine Frame.trans ?_ f'
       rw [m₁]
-      exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (VG.Offset.contains_base A (by omega) (by omega))
+      exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (VG.Offset.contains_base A (by omega_using [hk0]) (by omega_using [hk0]))
 
 end VG.Proof.Sm4.RISCV64

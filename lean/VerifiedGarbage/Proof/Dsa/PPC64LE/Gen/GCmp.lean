@@ -48,7 +48,7 @@ theorem sub3b_vp {a b : Nat} (cert : CertK (sub3 aTmp a b)) (ha : a ∈ c.live) 
   generalize 2 ^ (32 * G.w) = M at v lt blt
   have m1 : M * 1 = M := Nat.mul_one M
   have m0 : M * 0 = 0 := Nat.mul_zero M
-  rcases (by omega : (t.gpr .r9).toNat = 0 ∨ (t.gpr .r9).toNat = 1) with e | e <;> rw [e] at v ⊢ <;> split <;> omega
+  rcases (by omega_using [br] : (t.gpr .r9).toNat = 0 ∨ (t.gpr .r9).toNat = 1) with e | e <;> rw [e] at v ⊢ <;> split <;> omega_arith
 
 /-- The header word `d` := `[a] < [b]`. -/
 theorem ltS_vp {d a b : Nat} (c1 : CertK (sub3 aTmp a b)) (c2 : CertK (.block (stBorrow d)))
@@ -89,8 +89,8 @@ theorem andCmp_vp {d a b : Nat} (cert : CertK (.block (andS d a b ++ ([.load .w 
   have hx : WP isa (.block [.load .w .r0 .r31 d]) t₁ fun t₂ =>
       (t₂.gpr .r0 = (t₁.mem.readW (t₁.gpr .r31 + BitVec.ofNat 64 d) 32).setWidth 64 ∧ t₂.mem = t₁.mem) ∧
         VG.Proof.Bignum.PPC64LE.Keep [.r0] t₁ t₂ :=
-    WP.wr (exec_load_w (show Reg.r31 ≠ .r0 by decide) (show d < 2 ^ 15 by omega)
-      (by rw [w₁.r31]; exact w₁.scr.ld (show d + 4 ≤ kz G.pLen by omega))) fun t₂ u sp lr => WP.block_nil
+    WP.wr (exec_load_w (show Reg.r31 ≠ .r0 by decide) (show d < 2 ^ 15 by omega_using [d4])
+      (by rw [w₁.r31]; exact w₁.scr.ld (show d + 4 ≤ kz G.pLen by omega_using [hz, d4]))) fun t₂ u sp lr => WP.block_nil
       ⟨⟨u.gpr, u.mem⟩, ⟨fun r hr => u.other r (by simpa using hr), u.rd, u.wr, sp, lr⟩⟩
   refine WP.mono hx fun t₂ ⟨⟨u0, m2⟩, k2⟩ => ?_
   have v : slot t₂.mem G.KB d = (if c.KV a = 1 ∧ c.KV b = 1 then 1 else 0) := by rw [m2, v₁, va, vb]

@@ -38,6 +38,6 @@ theorem ReadEnv.after_arrays {p : Parameters} {bs : List Byte} {s t : State} {rs
 theorem ReadEnv.after_header {p : Parameters} {bs : List Byte} {s t : State} {rs : List Reg} {i : Nat}
  (h : ReadEnv p bs s) (frame : Outside p.B (8*i) 8 s.mem t.mem) (rest : Keep rs s t)
  (within : i<32) : ReadEnv p bs t :=
- h.after_inscr (InScr.of_outside frame (by have := hdr_lt_slot p.w 8 within;have := p.room;omega)) rest
+ h.after_inscr (InScr.of_outside frame (by have := hdr_lt_slot p.w 8 within;have := p.room;omega_arith)) rest
 
 end VG.Proof.Ffdh.AArch64.Cached

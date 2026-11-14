@@ -46,13 +46,13 @@ theorem row_ctx_next {a : Nat} (ha : a < 8)
     ⟨hg.scr, Keep.refl _ _, h.ptr, Outside.refl _ _ _ _, h.value⟩
   refine WP.mono (row_ok hg.x0 h.zero hh hsize ha hk hj hA hI h.count)
     fun t ⟨ht, ht12⟩ => ?_
-  have hlen : 2 * (8 * (blocks L)) = 16 * (blocks L) := by omega
+  have hlen : 2 * (8 * (blocks L)) = 16 * (blocks L) := by omega_using []
   have hframe := Square.scratch_arrays (s := s) (t := t) (B := L.B) (w := 8 * blocks L) (by simpa only [productBase, hlen] using ht.frame)
   have hHt : Hdr t.mem L.B L.w mi := he ▸ hframe.hdr hh
   have hCount : t.gpr .x12 = BitVec.ofNat 64 (blocks L - (j + 1)) := by
     exact (ht12.trans (congrArg (· - BitVec.ofNat 64 1) h.count)).trans
-      ((BitVec.ofNat_sub_ofNat_of_le _ _ (by omega) (by omega)).trans
-        (congrArg (BitVec.ofNat 64) (by omega)))
+      ((BitVec.ofNat_sub_ofNat_of_le _ _ (by omega_using []) (by omega_using [hj])).trans
+        (congrArg (BitVec.ofNat 64) (by omega_using [])))
   refine ⟨⟨⟨⟨mi, ⟨ht.scr, (ht.keep.gpr .x0 (by decide)).trans hg.x0, hHt⟩, hz⟩, h.fast.2⟩,
     ht.ptr, hCount, (ht.keep.gpr .x7 (by decide)).trans h.zero, ?_⟩, ?_⟩
   · have hn := hg.scr.nowrap
@@ -61,12 +61,12 @@ theorem row_ctx_next {a : Nat} (ha : a < 8)
         Square.crossValue s.mem L.B (slot (8*blocks L) a) (8*(j+1)) := by
       apply Square.crossValue_congr
       intro i hi
-      exact ht.frame.word (by omega) (by omega)
+      exact ht.frame.word (by omega_using [hj, hA, hi]) (by omega_using [hj, hsize, hn, hAZ, hi])
     rw [hc]
     exact ht.value
   · rw [eval_nonzero, hCount, ne_zero_iff, BitVec.toNat_ofNat,
-      Nat.mod_eq_of_lt (show blocks L - (j + 1) < 2 ^ 64 by omega)]
+      Nat.mod_eq_of_lt (show blocks L - (j + 1) < 2 ^ 64 by omega_using [hk])]
     simp only [Option.some.injEq, decide_eq_decide]
-    omega
+    omega_using []
 
 end VG.Proof.Bignum.AArch64.SquareEight

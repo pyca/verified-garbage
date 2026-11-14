@@ -82,9 +82,9 @@ theorem shr59_word (x y : BitVec 64) :
   have e : y.toNat * 2 ^ 5 % 2 ^ 64 = y.toNat % 2 ^ 59 * 32 := by
     rw [show (2 : Nat) ^ 64 = 2 ^ 59 * 32 from rfl, show (2 : Nat) ^ 5 = 32 from rfl, Nat.mul_mod_mul_right]
   rw [e]
-  have : x.toNat / 2 ^ 59 < 32 := by omega
+  have : x.toNat / 2 ^ 59 < 32 := by omega_using []
   have : y.toNat % 2 ^ 59 < 2 ^ 59 := Nat.mod_lt _ (by decide)
-  omega
+  omega_using []
 
 /-- After `j` words of `shrBody`: `D_j + 2^(64 j) (T_j / 2^59) = T_{j+1} / 2^59`. -/
 theorem pow59 (j : Nat) : 2 ^ (64 * (j + 1)) = 2 ^ 59 * (2 ^ (64 * j) * 32) := by
@@ -99,8 +99,8 @@ theorem maskOf_toNat (x : BitVec 64) :
   rw [BitVec.toNat_sub, BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow]
   rw [show (BitVec.setWidth 64 (0 : BitVec 32)).toNat = 0 from rfl]
   by_cases h : 2 ^ 63 ≤ x.toNat
-  · simp only [h, ↓reduceIte, show x.toNat / 2 ^ 63 = 1 by omega]
-  · simp only [h, ↓reduceIte, show x.toNat / 2 ^ 63 = 0 by omega]
+  · simp only [h, ↓reduceIte, show x.toNat / 2 ^ 63 = 1 by omega_using [h]]
+  · simp only [h, ↓reduceIte, show x.toNat / 2 ^ 63 = 0 by omega_using [h]]
 
 theorem shr_top {V S n : Nat} (hV : V < 2 ^ (64 * (n + 1))) :
     (V + 2 ^ (64 * (n + 1)) * S) / 2 ^ 59 % 2 ^ (64 * (n + 1)) = V / 2 ^ 59 + 2 ^ (64 * n) * (S % 2 ^ 59 * 32) := by
@@ -114,7 +114,7 @@ theorem shr_top {V S n : Nat} (hV : V < 2 ^ (64 * (n + 1))) :
   have h1 : V / 2 ^ 59 < 2 ^ (64 * n) * 32 := by
     rw [Nat.div_lt_iff_lt_mul (by decide)]; rw [pow59] at hV; grind
   have h2 : S % 2 ^ 59 < 2 ^ 59 := Nat.mod_lt _ (by decide)
-  have h3 : 2 ^ (64 * n) * 32 * (S % 2 ^ 59) ≤ 2 ^ (64 * n) * 32 * (2 ^ 59 - 1) := Nat.mul_le_mul_left _ (by omega)
+  have h3 : 2 ^ (64 * n) * 32 * (S % 2 ^ 59) ≤ 2 ^ (64 * n) * 32 * (2 ^ 59 - 1) := Nat.mul_le_mul_left _ (by omega_using [])
   rw [Nat.mod_eq_of_lt (by rw [pow64_succ]; grind)]
   grind
 
@@ -133,7 +133,7 @@ theorem wvM_congr {m m' : Mem} {p : Addr} {d n : Nat} {k : BitVec 64}
     (h : ∀ i < n, word m' p (d + 8 * i) = word m p (d + 8 * i)) : wvM m' p d k n = wvM m p d k n := by
   induction n with
   | zero => rfl
-  | succ n ih => simp only [wvM]; rw [ih fun i hi => h i (by omega), h n (by omega)]
+  | succ n ih => simp only [wvM]; rw [ih fun i hi => h i (by omega_using [hi]), h n (by omega_using [])]
 
 /-! ### Absolute values and masks -/
 
@@ -148,17 +148,17 @@ theorem abs_word (x : BitVec 64) :
   · have e : BitVec.setWidth 64 (0 : BitVec 32) - x >>> 63 = BitVec.allOnes 64 := by
       apply BitVec.eq_of_toNat_eq; rw [hm]; simp only [h, ↓reduceIte]; rfl
     have ht : x.toInt = (x.toNat : Int) - 2 ^ 64 := by
-      rw [BitVec.toInt_eq_toNat_cond]; simp only [show ¬ (2 * x.toNat < 2 ^ 64) by omega, ↓reduceIte]; omega
-    have hn : x.toInt.natAbs = 2 ^ 64 - x.toNat := by rw [ht]; omega
-    rw [e, hn, show decide (x.toInt < 0) = true by rw [ht]; simp; omega, mask_true]
+      rw [BitVec.toInt_eq_toNat_cond]; simp only [show ¬ (2 * x.toNat < 2 ^ 64) by omega_using [h], ↓reduceIte]; omega_using []
+    have hn : x.toInt.natAbs = 2 ^ 64 - x.toNat := by rw [ht]; omega_using []
+    rw [e, hn, show decide (x.toInt < 0) = true by rw [ht]; simp; omega_using [], mask_true]
     refine ⟨?_, rfl⟩
     apply BitVec.eq_of_toNat_eq
     rw [BitVec.xor_allOnes, BitVec.toNat_sub, BitVec.toNat_not, BitVec.toNat_allOnes, BitVec.toNat_ofNat]
-    omega
+    omega_using []
   · have e : BitVec.setWidth 64 (0 : BitVec 32) - x >>> 63 = 0 := by
       apply BitVec.eq_of_toNat_eq; rw [hm]; simp only [h, ↓reduceIte]; rfl
     have ht : x.toInt = (x.toNat : Int) := by
-      rw [BitVec.toInt_eq_toNat_cond]; simp only [show 2 * x.toNat < 2 ^ 64 by omega, ↓reduceIte]
+      rw [BitVec.toInt_eq_toNat_cond]; simp only [show 2 * x.toNat < 2 ^ 64 by omega_using [h], ↓reduceIte]
     rw [e, ht, show decide ((x.toNat : Int) < 0) = false by simp, mask_false]
     refine ⟨?_, rfl⟩
     show (x ^^^ 0#64) - 0#64 = _
@@ -186,11 +186,11 @@ theorem wvM_mask (m : Mem) (p : Addr) (d : Nat) (c : Bool) :
       rw [ih', mask_true, BitVec.xor_allOnes, BitVec.toNat_not, pow64_succ, Nat.mul_sub, Nat.mul_sub,
         Nat.mul_one]
       have h1 : 2 ^ (64 * N) * (word m p (d + 8 * N)).toNat ≤ 2 ^ (64 * N) * (2 ^ 64 - 1) :=
-        Nat.mul_le_mul_left _ (by omega)
+        Nat.mul_le_mul_left _ (by omega_using [])
       have hq : 2 ^ (64 * N) * (2 ^ 64 - 1) = 2 ^ (64 * N) * 2 ^ 64 - 2 ^ (64 * N) := Nat.mul_sub_one _ _
       have h2 : 1 ≤ 2 ^ (64 * N) := Nat.one_le_two_pow
       have := Nat.mul_le_mul_left (2 ^ (64 * N)) (show 1 ≤ 2 ^ 64 by decide)
-      omega
+      omega_using [hl, h1]
 
 /-- `|u| X' + (|u| if u < 0)` for `X'` the words of `X` complemented under the mask of
 `u < 0`: `u X` modulo `2^(64 N)`. -/
@@ -203,15 +203,15 @@ theorem lin_term (m : Mem) (p : Addr) (d N : Nat) (u : Int) :
   · simp only [h, decide_true, ↓reduceIte]
     have e : u.natAbs * (2 ^ (64 * N) - 1 - wv m p d N) + u.natAbs + u.natAbs * wv m p d N =
         u.natAbs * 2 ^ (64 * N) := by
-      rw [← Nat.mul_add_one, ← Nat.mul_add]; congr 1; omega
+      rw [← Nat.mul_add_one, ← Nat.mul_add]; congr 1; omega_using [hl]
     have e' := congrArg (fun z : Nat => (z : Int)) e
     simp only [Int.natCast_add, Int.natCast_mul, Int.natCast_pow] at e' ⊢
-    have hu : (u.natAbs : Int) = -u := by omega
+    have hu : (u.natAbs : Int) = -u := by omega_using [h]
     rw [hu] at e' ⊢
     rw [show -u * ((2 ^ (64 * N) - 1 - wv m p d N : Nat) : Int) + -u = u * wv m p d N + 2 ^ (64 * N) * (-u) by
       grind, Int.add_mul_emod_self_left]
   · simp only [h, decide_false, Bool.false_eq_true, ↓reduceIte, Nat.add_zero, Int.natCast_mul]
-    rw [show (u.natAbs : Int) = u by omega]
+    rw [show (u.natAbs : Int) = u by omega_using [h]]
 
 /-! ## The Montgomery reduction by a word -/
 
@@ -220,7 +220,7 @@ theorem wv_succ_low (m : Mem) (p : Addr) (e : Nat) :
     ∀ N, wv m p e (N + 1) = (word m p e).toNat + 2 ^ 64 * wv m p (e + 8) N
   | 0 => by simp [wv]
   | N + 1 => by
-    rw [wv, wv_succ_low m p e N, wv, show e + 8 * (N + 1) = e + 8 + 8 * N by omega, pow64_succ]
+    rw [wv, wv_succ_low m p e N, wv, show e + 8 * (N + 1) = e + 8 + 8 * N by omega_using [], pow64_succ]
     grind
 
 end VG.Proof.Rsa.X86_64.InvB

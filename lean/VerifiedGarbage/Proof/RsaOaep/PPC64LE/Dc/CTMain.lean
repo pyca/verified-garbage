@@ -134,8 +134,8 @@ theorem DXT.toL {G H : Hash} (hH : HashOK H) {f : Fns} {a t : State} (h : DXT G 
   show LabX H (bx s m (rcOf (privO s)))
   unfold LabX
   rw [a9, a10, h13]
-  exact ⟨by show lR s ∈ s.rd; rw [P.hrd]; simp, (P.ls.sub_right (sc_sub P)).sub_right (sc_in (by omega)),
-    (P.ls.sub_right (sc_sub P)).sub_right (sc_in (by omega)),
+  exact ⟨by show lR s ∈ s.rd; rw [P.hrd]; simp, (P.ls.sub_right (sc_sub P)).sub_right (sc_in (by omega_arith)),
+    (P.ls.sub_right (sc_sub P)).sub_right (sc_in (by omega_arith)),
     P.kl.sub_left fun a ha => kR_sub a (cR_sub (withMem s m) a ha), BitVec.isLt _⟩
 
 /-- `DXT` with the check passed. -/
@@ -195,10 +195,10 @@ theorem seed_wp {G H : Hash} {f : Fns} (hD0 : 0 < H.D) (hD64 : H.D ≤ 64) {a t 
   have hk2 := kA_le h.1.dx
   have ek : kA a = (a.gpr .r7).toNat := rfl
   obtain ⟨-, r14, r15, -, -, -, -⟩ := h.1.dx.pins
-  refine WP.of_syms (wp_addi (h := by omega) fun t₁ o₁ e₁ => wp_subi (h := by omega) fun t₂ o₂ e₂ =>
-    wp_addi (h := by omega) fun t₃ o₃ e₃ => wp_li (by omega) fun t₄ o₄ e₄ => wp_nil fun y => ?_)
+  refine WP.of_syms (wp_addi (h := by omega_using [hD64, hE]) fun t₁ o₁ e₁ => wp_subi (h := by omega_using [hD64]) fun t₂ o₂ e₂ =>
+    wp_addi (h := by omega_using [hE]) fun t₃ o₃ e₃ => wp_li (by omega_using [hD64]) fun t₄ o₄ e₄ => wp_nil fun y => ?_)
   have k₄ : Only [.r24, .r25, .r26, .r27] t t₄ := (o₁.trans (o₂.trans (o₃.trans o₄))).mono
-  refine ⟨⟨⟨h.1.only k₄ y, ?_, ?_, ?_, ?_⟩, ⟨by omega, by omega, .inr (by omega), by omega⟩⟩, hk⟩
+  refine ⟨⟨⟨h.1.only k₄ y, ?_, ?_, ?_, ?_⟩, ⟨by omega_using [hD64, hk2], by omega_using [hD64], .inr (by omega_using []), by omega_using [hD0]⟩⟩, hk⟩
   · rw [o₄.get .r24, o₃.get .r24, o₂.get .r24, e₁, r14, hE, Nat.zero_add]
   · rw [o₄.get .r25, o₃.get .r25, e₂, o₁.get .r15, r15, sub_r15 (by omega)]
   · rw [o₄.get .r26, e₃, o₂.get .r14, o₁.get .r14, r14, hE]
@@ -213,10 +213,10 @@ theorem db_wp {G H : Hash} {f : Fns} (hD64 : H.D ≤ 64) {a t : State} (h : DK G
   have hk2 := kA_le h.1.dx
   have ek : kA a = (a.gpr .r7).toNat := rfl
   obtain ⟨-, r14, r15, -, -, -, -⟩ := h.1.dx.pins
-  refine WP.of_syms (wp_addi (h := by omega) fun t₁ o₁ e₁ => wp_li (by omega) fun t₂ o₂ e₂ =>
-    wp_addi (h := by omega) fun t₃ o₃ e₃ => wp_subi (h := by omega) fun t₄ o₄ e₄ => wp_nil fun y => ?_)
+  refine WP.of_syms (wp_addi (h := by omega_using [hE]) fun t₁ o₁ e₁ => wp_li (by omega_using [hD64]) fun t₂ o₂ e₂ =>
+    wp_addi (h := by omega_using [hD64, hE]) fun t₃ o₃ e₃ => wp_subi (h := by omega_using [hD64]) fun t₄ o₄ e₄ => wp_nil fun y => ?_)
   have k₄ : Only [.r24, .r25, .r26, .r27] t t₄ := (o₁.trans (o₂.trans (o₃.trans o₄))).mono
-  refine ⟨⟨⟨h.1.only k₄ y, ?_, ?_, ?_, ?_⟩, ⟨by omega, by omega, .inl (by omega), by omega⟩⟩, hk⟩
+  refine ⟨⟨⟨h.1.only k₄ y, ?_, ?_, ?_, ?_⟩, ⟨by omega_using [hD64], by omega_using [hD64, hk2], .inl (by omega_using []), by omega⟩⟩, hk⟩
   · rw [o₄.get .r24, o₃.get .r24, o₂.get .r24, e₁, r14, hE]
   · rw [o₄.get .r25, o₃.get .r25, e₂]
   · rw [o₄.get .r26, e₃, o₂.get .r14, o₁.get .r14, r14, hE, Nat.zero_add]
@@ -286,7 +286,7 @@ theorem decMain_ct : RelCT isa (Two (DK G H f H.D)) (decMain H f) fun _ _ => Tru
       ⟨⟨⟨_, s, m, P, T, p, y, hm, b', y'.trans sy⟩, hk⟩, ?_⟩
     obtain ⟨idx, he, hi⟩ := scan_idx (fun i => view t.mem (Sd s) (1 + 2 * H.D + i)) (t.gpr .r24)
       (kk s - (2 * H.D + 1))
-    exact ⟨idx, by unfold kk at *; omega, i'.trans he⟩
+    exact ⟨idx, by unfold kk at *; omega_using [hk2, hi], i'.trans he⟩
   -- The buffer.
   refine two_seq (Ψ := DI G H f H.D) (clearBuf_taint (dk_pins (an := id) (fun _ _ h => h.1) [.r14]))
     (fun a t ⟨⟨⟨_, s, m, P, T, p, y, hm, b, sy⟩, hk⟩, idx, hi, h25⟩ => WP.mono_syms (clearBuf_ok P b)
@@ -373,7 +373,7 @@ theorem code_ct (pc : Bool) {f : Fns} (hl : H.D ∈ lens) :
   refine RelCT.seq hlen ?_
   -- The code for that length.
   refine RelCT.seq (two_post (Ψ := fun a u => ∃ pc s, PreD pc s ∧ PubD a s ∧ Saves s u)
-    (byLen_ct (D := H.D) (Φ := A₃) (by omega) (fun _ _ h => h.2)
+    (byLen_ct (D := H.D) (Φ := A₃) (by omega_using [hD64]) (fun _ _ h => h.2)
       (fun _ _ _ h₁ h₂ => h₁.1.dxt.dx.pins.1.trans h₂.1.dxt.dx.pins.1.symm)
       (fun _ _ _ ⟨h, r3⟩ o y => ⟨h.only o y, by rw [o.get .r3]; exact r3⟩) ?_ hl lens_certs)
     fun a v ⟨⟨_, s, P, T, p, g, A, sy⟩, h3⟩ => ?_)
@@ -389,7 +389,7 @@ theorem code_ct (pc : Bool) {f : Fns} (hl : H.D ∈ lens) :
     rw [eval_nonzero, h₁.r3] at c₁
     have hk : HK H.D a := by simp at c₁; omega
     exact ⟨a, ⟨h₁.dxt, hk⟩, ⟨h₂.dxt, hk⟩⟩
-  · refine byLen_ok (D := H.D) (by omega)
+  · refine byLen_ok (D := H.D) (by omega_using [hD64])
       (F := fun u => AfterPriv s u ∧ u.syms = s.syms ∧ u.gpr .r3 = BitVec.ofNat 64 H.D)
       (fun _ h => h.2.2) (fun u u' ⟨A', y', r3'⟩ o y => ⟨A'.only P o, y.trans y', by rw [o.get .r3]; exact r3'⟩)
       ?_ hl (fun x hx => (lens_certs x hx).1) v ⟨A, sy, h3⟩

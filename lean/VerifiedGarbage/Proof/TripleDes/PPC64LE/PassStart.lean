@@ -16,7 +16,7 @@ def passOffset (component : Nat) (direction : Direction) : Nat :=
 
 theorem passOffset_bound : ∀ c < 3, ∀ d : Direction, passOffset c d < 2 ^ 15 := by
   intro c hc d
-  cases d <;> simp only [passOffset, reduceCtorEq, ite_true, ite_false] <;> omega
+  cases d <;> simp only [passOffset, reduceCtorEq, ite_true, ite_false] <;> omega_using [hc]
 
 theorem passStart_ok (component : Nat) (hc : component < 3) (direction : Direction)
     (s : State) :

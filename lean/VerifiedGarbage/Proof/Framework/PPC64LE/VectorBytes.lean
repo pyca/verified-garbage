@@ -40,20 +40,20 @@ theorem vbyte_append (x u : BitVec 64) {k : Nat} (hk : k < 8) : vbyte (x ++ u) (
   simp only [vbyte, BitVec.getLsbD_extractLsb', BitVec.getLsbD_append, hi, decide_true, Bool.true_and]
   split
   · omega
-  · congr 1; omega
+  · congr 1; omega_using [hk]
 
 theorem gbyte_vdword (v : BitVec 128) {k : Nat} (hk : k < 8) : gbyte (vdword v 0) k = vbyte v (7 - k) := by
   apply BitVec.eq_of_getLsbD_eq; intro i hi
   simp only [vdword, vbyte, BitVec.getLsbD_extractLsb', hi, decide_true, Bool.true_and]
-  rw [show 64 * (1 - 0) + (8 * k + i) = 8 * (15 - (7 - k)) + i by omega]
-  simp only [show 8 * k + i < 64 by omega, decide_true, Bool.true_and]
+  rw [show 64 * (1 - 0) + (8 * k + i) = 8 * (15 - (7 - k)) + i by omega_using [hk]]
+  simp only [show 8 * k + i < 64 by omega_using [hk, hi], decide_true, Bool.true_and]
 
 theorem toNat_and_0f (b : BitVec 8) : (b &&& 0x0f).toNat < 16 := by
   rw [BitVec.toNat_and]; exact Nat.lt_of_le_of_lt Nat.and_le_right (by decide)
 
 theorem toNat_shr4 (b : BitVec 8) : (b >>> 4).toNat < 16 := by
   rw [BitVec.toNat_ushiftRight]; have := b.isLt
-  rw [Nat.shiftRight_eq_div_pow]; omega
+  rw [Nat.shiftRight_eq_div_pow]; omega_using []
 
 /-! ## Vector instructions -/
 
@@ -90,7 +90,7 @@ theorem vperm_byte {T c : BitVec 128} {t : Vector Byte 16} (hT : TabOk T t) {i :
       let j := (vbyte c i).toNat % 32
       if j < 16 then vbyte T j else vbyte T (j - 16)) i = t.getD (vbyte c i).toNat 0 := by
   rw [vbyte_packed _ hi]
-  have hm : (vbyte c i).toNat % 32 = (vbyte c i).toNat := Nat.mod_eq_of_lt (by omega)
+  have hm : (vbyte c i).toNat % 32 = (vbyte c i).toNat := Nat.mod_eq_of_lt (by omega_using [hc])
   simp only [hm, hc, ite_true]
   exact hT _ hc
 
@@ -107,8 +107,8 @@ theorem vperm_byte2 {T U c : BitVec 128} {t u : Vector (BitVec 8) 16} (hT : TabO
   have hm : (vbyte c i).toNat % 32 = (vbyte c i).toNat := Nat.mod_eq_of_lt hc
   simp only [hm]
   split
-  · exact hT _ (by omega)
-  · exact hU _ (by omega)
+  · exact hT _ (by omega_arith)
+  · exact hU _ (by omega_using [hc])
 
 
 theorem exec_vor {s : State} {d n m : VReg} :

@@ -49,7 +49,7 @@ theorem running_step (M : Mont) {p : Parameters} {bs : List Byte} {E i : Nat} {s
  rw [WP.seq_iff]
  let v := VG.Proof.Rsa.FixedBaseComb.digit p.N (Spec.Rsa.os2ip bs) i
  have hv : v<32 := VG.Proof.Rsa.FixedBaseComb.digit_lt _ _ _
- refine WP.mono (select_ok goodB p.room (by have := p.positive;omega) p.width hv tableB digitB
+ refine WP.mono (select_ok goodB p.room (by have := p.positive;omega_using [this]) p.width hv tableB digitB
   readsB.tableRead readsB.tableOutside) ?_
  rintro c ⟨goodC,selectedC,frameC,keepC⟩
  have powerC := powerB.after_arrays goodC frameC (by decide) (by decide) (by decide) (by decide)
@@ -63,7 +63,7 @@ theorem running_step (M : Mont) {p : Parameters} {bs : List Byte} {E i : Nat} {s
  rintro d ⟨powerD,frameD,keepD⟩
  have runD := runC.after_arrays powerD frameD keepD (by simp)
  refine WP.mono (decrement_control_ok powerD.good p.room (by decide : 16≤sI) (by decide : sI<32)
-  (by omega : 0<i+1) runD.counter) ?_
+  (by omega_using [] : 0<i+1) runD.counter) ?_
  rintro t ⟨goodT,counterT,indexT,frameT,keepT⟩
  have powerT := powerD.after_header goodT frameT (by decide : sI<32)
  have tableT : TablePointer p.B p.table t :=

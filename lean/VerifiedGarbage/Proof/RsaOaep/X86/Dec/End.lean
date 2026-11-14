@@ -42,7 +42,7 @@ theorem mlV_eq {P : EP} {σ : State} (ht : 0 < tN h P) :
   unfold mlV okW maskOf
   by_cases hc : okP h g P σ
   · rw [ifp hc, ifp hc, BitVec.and_allOnes, Offset.ofNat_sub_ofNat (w := 32) (by omega),
-      Offset.ofNat_sub_ofNat (w := 32) (by omega)]
+      Offset.ofNat_sub_ofNat (w := 32) (by omega_using [hl, htN])]
   · rw [ifn hc, ifn hc]; exact BitVec.and_zero
 
 theorem okW_one (P : EP) (σ : State) : okW h g P σ &&& 1 = if okP h g P σ then 1 else 0 := by
@@ -58,10 +58,10 @@ theorem Bp_getD (P : EP) (σ : State) (j : Nat) : Bp h g P σ j = (sL (tN h P) (
   unfold Bp
   by_cases e : j < tN h P
   · rw [ifp e, sL_getD e]
-  · rw [ifn e, List.getD_eq_getElem?_getD, List.getElem?_eq_none (by rw [sL_length]; omega)]; rfl
+  · rw [ifn e, List.getD_eq_getElem?_getD, List.getElem?_eq_none (by rw [sL_length]; omega_using [e])]; rfl
 
 theorem mlV_lt (P : EP) (σ : State) (hK : P.K ≤ 1024) : mlV h g P σ < 2 ^ 32 := by
-  unfold mlV; split <;> omega
+  unfold mlV; split <;> omega_arith
 
 /-- `msg_len` in `esi`, the length in `eax`. -/
 abbrev O4 (P : EP) (σ s : State) : Prop :=
@@ -99,7 +99,7 @@ theorem mlHead_vp (P : EP) : VP (O3 h g P) (.block ((mlSet h.H).take 5)) (O4 h g
   rw [u5.other _ (by decide), u4.gpr, u3.gpr, u2.gpr, u1.gpr, u3.mem, u2.mem, u1.mem,
     hg.aFr ok sPos (by decide), hg.aFr ok sOk (by decide), hk.2.1, hk.2.2]
   show BitVec.ofNat 32 P.K - _ - _ &&& _ = _
-  exact mlV_eq h g (show 0 < tN h P by show 0 < P.K - (2 * h.H.D + 1); omega)
+  exact mlV_eq h g (show 0 < tN h P by show 0 < P.K - (2 * h.H.D + 1); omega_using [hfit])
 
 theorem mlRest_vp (P : EP) : VP (O4 h g P) (.block ((mlSet h.H).drop 5)) (O5 h g P) := by
   refine VP.taint [.esp, .esi] mlRest_taint (fun _ _ _ _ h₁ h₂ r hr => by
@@ -111,13 +111,13 @@ theorem mlRest_vp (P : EP) : VP (O4 h g P) (.block ((mlSet h.H).drop 5)) (O5 h g
   have fit := ml_fit hi
   have hK := hi.k1024
   have win : ∀ d, d + 4 ≤ 8 → InRegions s.wr (P.ml.setWidth 64 + BitVec.ofNat 64 d) 4 := fun d hd =>
-    ⟨P.ML, hc.st.inRw (by simp), Offset.contains_base _ hd (by omega)⟩
+    ⟨P.ML, hc.st.inRw (by simp), Offset.contains_base _ hd (by omega_using [hd])⟩
   simp only [mlSet, mi, List.drop_succ_cons, List.drop_zero]
   refine wp_storeS (a := P.ml.setWidth 64 + BitVec.ofNat 64 0)
-    (by show s.ea ⟨.esi, 0⟩ = _; rw [ea_at, si]; exact addr_eq (by omega)) (win 0 (by decide)) fun t1 m1 => ?_
+    (by show s.ea ⟨.esi, 0⟩ = _; rw [ea_at, si]; exact addr_eq (by omega_using [])) (win 0 (by decide)) fun t1 m1 => ?_
   refine wp_movi fun t2 u2 => ?_
   refine wp_storeS (a := P.ml.setWidth 64 + BitVec.ofNat 64 4)
-    (by show t2.ea ⟨.esi, 4⟩ = _; rw [ea_at, u2.other _ (by decide), m1.gpr, si]; exact addr_eq (by omega))
+    (by show t2.ea ⟨.esi, 4⟩ = _; rw [ea_at, u2.other _ (by decide), m1.gpr, si]; exact addr_eq (by omega_using [fit]))
     (by rw [u2.wr, m1.wr]; exact win 4 (by decide)) fun t3 m3 => WP.block_nil ?_
   have mm : t3.mem = (s.mem.writeW (P.ml.setWidth 64 + BitVec.ofNat 64 0) (BitVec.ofNat 32 (mlV h g P σ))).writeW
       (P.ml.setWidth 64 + BitVec.ofNat 64 4) (BitVec.ofNat 32 0) := by
@@ -163,7 +163,7 @@ theorem end_vp (P : EP) : VP (O3 h g P) (.seq (.block (mlSet h.H)) (.block decRe
   have ec : (ctB P σ).length = P.nB.length := by rw [ctB_length, nB_length hi]
   have hfv : faultV (rV P σ) = if rV P σ = 2 then 2 else 0 := faultV_r (oc P σ)
   have htN : tN h P = P.K - (2 * h.H.D + 1) := rfl
-  have ht : 0 < tN h P := by omega
+  have ht : 0 < tN h P := by omega_using [hfit, htN]
   have hil := idx_lt h g (P := P) (σ := σ) ht
   rw [Res, Proof.RsaOaep.decrypt_eq ec, decOut_eq h g P σ hfit hk.1.2.2.2, hfv]
   have hz : ¬ okP h g P σ → Spec.Rsa.bytesAt s.mem (P.out.setWidth 64) P.K = Spec.RsaOaep.zeros P.K :=
@@ -178,10 +178,10 @@ theorem end_vp (P : EP) : VP (O3 h g P) (.seq (.block (mlSet h.H)) (.block decRe
       rw [ifp ha, ifp hc]
       refine ⟨by decide, ?_, ?_⟩
       · refine Proof.RsaOaep.out_list (T := sL (tN h P) (T h g P σ)) (idx := idx h g P σ)
-          (by rw [sL_length]; omega) (by rw [sL_length]; exact hil) fun i hi' => ?_
+          (by rw [sL_length]; omega_using [htN]) (by rw [sL_length]; exact hil) fun i hi' => ?_
         rw [hb i hi', ifp hc, Bp_getD]
       · rw [hml, mlV, ifp hc, List.length_drop, sL_length]
-        congr 1; show P.K - (2 * h.H.D + 2) - idx h g P σ = P.K - (2 * h.H.D + 1) - (idx h g P σ + 1); omega
+        congr 1; show P.K - (2 * h.H.D + 2) - idx h g P σ = P.K - (2 * h.H.D + 1) - (idx h g P σ + 1); omega_using []
     · have hn : ¬ okP h g P σ := fun e => ha e.2
       rw [ifn ha, ifn hn]
       exact ⟨by decide, hz hn, hm0 hn⟩

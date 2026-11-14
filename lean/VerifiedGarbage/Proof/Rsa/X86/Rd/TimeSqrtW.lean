@@ -77,7 +77,7 @@ theorem wfE {g : Geo} {u : State} (ds : List Nat) (h : EdiFree g u) :
   have pu := ps.keep K sp O
   have wsu := hs.wsArg.keep K sp O
   have wr : (⟨g.B, g.Z⟩ : Region) ∈ u.wr := K.2.2 ▸ hs.ws.workspace.wr
-  refine VG.X86.Taint.Wf.entry rfl rfl ⟨fun _ => ⟨List.Forall₂.cons (show 160 ≤ g.Z by omega) List.Forall₂.nil,
+  refine VG.X86.Taint.Wf.entry rfl rfl ⟨fun _ => ⟨List.Forall₂.cons (show 160 ≤ g.Z by omega_using [hf]) List.Forall₂.nil,
     List.pairwise_singleton _ _, fun r hr => by
       cases hr with
       | head => exact hn
@@ -89,7 +89,7 @@ theorem wfE {g : Geo} {u : State} (ds : List Nat) (h : EdiFree g u) :
   simp only [τE, τK, τ0, List.mem_singleton] at hp
   subst p
   refine ⟨by simp only [τE, τK, τ0, VG.Proof.Rsa.X86.InvBatchRt.Time.argBytes, wid,
-    VG.Impl.Rsa.X86.RecoverRt.lay]; omega, ?_⟩
+    VG.Impl.Rsa.X86.RecoverRt.lay]; omega_using [], ?_⟩
   have v := wsu.value
   change u.mem.readW (addr (u.gpr .esp) (4 + 4 * wid.ws)) 32 = _ at v
   show addr (u.mem.readW (addr (u.gpr .esp) (4 + 4 * wid.ws)) 32) 0 = g.B
@@ -98,7 +98,7 @@ theorem wfE {g : Geo} {u : State} (ds : List Nat) (h : EdiFree g u) :
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_setWidth, BitVec.toNat_ofNat]
   have := g.B.isLt
-  rw [Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega)]
+  rw [Nat.mod_eq_of_lt (by omega_using []), Nat.mod_eq_of_lt (by omega_using [hn, hf])]
 
 theorem EdiFree.pub {g : Geo} {u : State} (h : EdiFree g u) : Public wid g.args g.B g.Z g.sp u :=
   let ⟨_, _, ⟨_, _, ps⟩, K, sp, O⟩ := h
@@ -126,8 +126,8 @@ theorem agreeE {g : Geo} {s t : State} {ds : List Nat} (hds : ∀ d ∈ ds, d + 
     simp only at h₁ h₂
     change s.mem (g.B + BitVec.ofNat 64 k) = t.mem (g.B + BitVec.ofNat 64 k)
     have e : g.B + BitVec.ofNat 64 k = off g.B d + BitVec.ofNat 64 (k - d) := by
-      simp only [off]; rw [VG.Offset.add_add]; congr 2; omega
-    rw [e, Mem.readW_byte s.mem _ (show k - d < 4 by omega), Mem.readW_byte t.mem _ (show k - d < 4 by omega)]
+      simp only [off]; rw [VG.Offset.add_add]; congr 2; omega_using [h₁]
+    rw [e, Mem.readW_byte s.mem _ (show k - d < 4 by omega_using [h₂]), Mem.readW_byte t.mem _ (show k - d < 4 by omega_using [h₂])]
     exact congrArg _ (BitVec.eq_of_toNat_eq (eq d hd))
   · intro k h4 hk
     change s.mem (VG.X86.Taint.argByte s (VG.X86.Taint.depth (τE ds).stk + k)) =
@@ -136,7 +136,7 @@ theorem agreeE {g : Geo} {s t : State} {ds : List Nat} (hds : ∀ d ∈ ds, d + 
       VG.X86.Taint.argByte_eq ps.argsOk.1 h4 hk, VG.X86.Taint.argByte_eq pt.argsOk.1 h4 hk,
       Mem.readW_byte s.mem _ (Nat.mod_lt _ (by decide)), Mem.readW_byte t.mem _ (Nat.mod_lt _ (by decide))]
     have hi : (k - 4) / 4 < wid.ws + 2 := by
-      simp only [τE, τK, τ0, VG.Proof.Rsa.X86.InvBatchRt.Time.argBytes] at hk; omega
+      simp only [τE, τK, τ0, VG.Proof.Rsa.X86.InvBatchRt.Time.argBytes] at hk; omega_using [hk]
     exact congrArg _ ((ps.arguments _ hi).value.trans (pt.arguments _ hi).value.symm)
 
 /-- A leaf whose start is `edi` aside, checked from `τE ds`. -/
@@ -207,7 +207,7 @@ theorem SqG.mlen (ga : SqG g a) (h : P0 g u) : MLen u g.B g.Z nl a := by
 
 /-- `W' + 3` words fit in a wide array. -/
 theorem SqG.kw (ga : SqG g a) : 2 * wq a + 2 ≤ kw (16 * g.n + 24) := by
-  rw [kw_wid]; have := ga.2.1; change 2 * wq a + 2 ≤ 2 * (2 * g.n + 2) + 2; simp only [Geo.w, VG.Impl.Rsa.X86.Recover.width] at this; omega
+  rw [kw_wid]; have := ga.2.1; change 2 * wq a + 2 ≤ 2 * (2 * g.n + 2) + 2; simp only [Geo.w, VG.Impl.Rsa.X86.Recover.width] at this; omega_using [this]
 
 /-- A step to a state that keeps the frame, `sCt` outside what it writes. -/
 theorem P0.next {s t : State} {rs : List Reg} (h : P0 g s) (ht : RtWs wid t g.B g.Z (16 * g.n + 24) 22)
@@ -247,7 +247,7 @@ theorem est_w (h : SQ g a j u) : WP isa (.block estX) u (SW g a j) := by
 theorem ms_w (h : SW g a j u) : WP isa mulSubX u (SW g a j) := by
   obtain ⟨ga, j1, j2, p, hC⟩ := h
   have hW := ga.kw
-  refine WP.mono (mulSubX_ok p.1 (ga.mlen p) hC j1 j2 (by omega) rfl) fun v ⟨hv, k, _, _, _, K⟩ => ⟨ga, j1, j2,
+  refine WP.mono (mulSubX_ok p.1 (ga.mlen p) hC j1 j2 (by omega_using [j2, hW]) rfl) fun v ⟨hv, k, _, _, _, K⟩ => ⟨ga, j1, j2,
     p.next hv K (by decide) (VG.Proof.Rsa.X86.KeyRt.keep_outside p.1.ws k (by decide) (by simp)), ?_⟩
   rw [k.slot (by decide) (by simp)]; exact hC
 
@@ -259,46 +259,46 @@ theorem P0.fits (h : P0 g u) :
   have fd := h.1.ws.arr_fit (j := sqD) (by decide)
   have fz := h.1.ws.arr_fit (j := sqZ) (by decide)
   simp only [S] at fd fz
-  refine ⟨fd, fz, ?_, ?_⟩ <;> simp only [arr, VG.Impl.Rsa.X86.Keys.hdr] <;> omega
+  refine ⟨fd, fz, ?_, ?_⟩ <;> simp only [arr, VG.Impl.Rsa.X86.Keys.hdr] <;> omega_using []
 
 theorem toE_w (h : SW g a j u) : WP isa (.block toE) u (SW g a j) := by
   have F := h.2.2.2.1.fits
   obtain ⟨ga, j1, j2, p, hC⟩ := h
   have hW := ga.kw
-  refine WP.mono (toE_ok p.1 (ga.mlen p) hC j1 j2 (by omega)) fun v ⟨hv, O, _, K⟩ => ⟨ga, j1, j2,
-    p.next hv K (by decide) (O.mono (Nat.zero_le _) (by omega)), ?_⟩
-  rw [slot, O.w32 (.inl (by simp only [sCt]; omega)) (by simp only [sCt]; omega)]; exact hC
+  refine WP.mono (toE_ok p.1 (ga.mlen p) hC j1 j2 (by omega_using [j2, hW])) fun v ⟨hv, O, _, K⟩ => ⟨ga, j1, j2,
+    p.next hv K (by decide) (O.mono (Nat.zero_le _) (by omega_using [F, j2, hW])), ?_⟩
+  rw [slot, O.w32 (.inl (by simp only [sCt]; omega_using [F])) (by simp only [sCt]; omega_using [])]; exact hC
 
 theorem upd_w (h : SW g a j u) : WP isa (.block updX) u (SW g a j) := by
   have F := h.2.2.2.1.fits
   obtain ⟨ga, j1, j2, p, hC⟩ := h
   have hW := ga.kw
-  refine WP.mono (updX_ok p.1 (ga.mlen p) hC j1 j2 (by omega)) fun v ⟨hv, O, _, K⟩ => ⟨ga, j1, j2,
-    p.next hv K (by decide) (O.mono (Nat.zero_le _) (by omega)), ?_⟩
-  rw [slot, O.w32 (.inl (by simp only [sCt]; omega)) (by simp only [sCt]; omega)]; exact hC
+  refine WP.mono (updX_ok p.1 (ga.mlen p) hC j1 j2 (by omega_using [j2, hW])) fun v ⟨hv, O, _, K⟩ => ⟨ga, j1, j2,
+    p.next hv K (by decide) (O.mono (Nat.zero_le _) (by omega_using [F, j2, hW])), ?_⟩
+  rw [slot, O.w32 (.inl (by simp only [sCt]; omega_using [F])) (by simp only [sCt]; omega_using [])]; exact hC
 
 theorem cb_w (h : SW g a j u) : WP isa copyBackX u (SW g a j) := by
   have F := h.2.2.2.1.fits
   obtain ⟨ga, j1, j2, p, hC⟩ := h
   have hW := ga.kw
-  refine WP.mono (copyBackX_ok p.1 (ga.mlen p) hC j1 j2 (by omega)) fun v ⟨hv, O, _, K⟩ => ⟨ga, j1, j2,
-    p.next hv K (by decide) (O.mono (Nat.zero_le _) (by omega)), ?_⟩
-  rw [slot, O.w32 (.inl (by simp only [sCt]; omega)) (by simp only [sCt]; omega)]; exact hC
+  refine WP.mono (copyBackX_ok p.1 (ga.mlen p) hC j1 j2 (by omega_using [j2, hW])) fun v ⟨hv, O, _, K⟩ => ⟨ga, j1, j2,
+    p.next hv K (by decide) (O.mono (Nat.zero_le _) (by omega_using [F, j2, hW])), ?_⟩
+  rw [slot, O.w32 (.inl (by simp only [sCt]; omega_using [F])) (by simp only [sCt]; omega_using [])]; exact hC
 
 theorem fixHL_w (h : SW g a j u) : WP isa (.seq fixHd fixLp) u (SF g a j) := by
   obtain ⟨ga, j1, j2, p, hC⟩ := h
   have hW := ga.kw
-  exact WP.mono (fixHL_ok p.1 (ga.mlen p) hC j1 j2 (by omega)) fun v ⟨K, O, hC', d⟩ =>
+  exact WP.mono (fixHL_ok p.1 (ga.mlen p) hC j1 j2 (by omega_using [j2, hW])) fun v ⟨K, O, hC', d⟩ =>
     ⟨ga, j1, j2, u, p, K, O, hC', d⟩
 
 theorem fixTl_w (h : SF g a j u) : WP isa fixTl u (SW g a j) := by
   obtain ⟨ga, j1, j2, s, p, K, O, hC, cb, hd⟩ := h
   have F := p.fits
   have hW := ga.kw
-  refine fixTail_ok p.1 (ga.mlen p) j1 j2 (by omega) K O hC hd fun t Kt Ot _ => ?_
-  have Ot' : Outside g.B 0 g.Z s.mem t.mem := O.trans (Ot.mono (Nat.zero_le _) (by omega))
+  refine fixTail_ok p.1 (ga.mlen p) j1 j2 (by omega_using [j2, hW]) K O hC hd fun t Kt Ot _ => ?_
+  have Ot' : Outside g.B 0 g.Z s.mem t.mem := O.trans (Ot.mono (Nat.zero_le _) (by omega_using [j2, F, hW]))
   refine ⟨ga, j1, j2, p.next (p.1.keep Kt (by decide) (by decide) Ot') Kt (by decide) Ot', ?_⟩
-  rw [slot, Ot.w32 (.inl (by simp only [sCt]; omega)) (by simp only [sCt]; omega)]; exact hC
+  rw [slot, Ot.w32 (.inl (by simp only [sCt]; omega_using [F])) (by simp only [sCt]; omega_using [])]; exact hC
 
 theorem dec_w (h : SW g a j u) : WP isa (.block decCt) u fun _ => True := by
   have ws := h.2.2.2.1.1.ws
@@ -488,7 +488,7 @@ theorem nbBody_rel {g : Geo} (pg : PubG g) {a j : Nat} (hj : 2 ^ j < 32) :
   refine VG.RelCT.seq (leafQ (Q := QB a (2 ^ j) [aD, aZero] [wT, wR] nbL) pg (fun _ => 0) (ds := []) (by simp)
     (by simp) (fun g' s ⟨ga, s0, A, AW, V, h, f⟩ => WP.mono (h.copy_W (o := wT) (a := wR) (by decide) (by simp)
       (by decide) (by decide)) fun _ ⟨h', _⟩ => ⟨ga, s0, A, _, V, h', f⟩) c_cpZ) ?_
-  refine VG.RelCT.seq (sqTimes pg hb (by omega) (by simp) c_dblTX fun g' s0 A AW V s h =>
+  refine VG.RelCT.seq (sqTimes pg hb (by omega_using [hj]) (by simp) c_dblTX fun g' s0 A AW V s h =>
     WP.mono (h.add_W (o := wT) (a := wT) (b := wT) (by decide) (by simp) (by simp) (by decide))
       fun _ ⟨hv, _⟩ => ⟨A, _, hv.mono (fun _ hj => ⟨hj, rfl⟩) (fun _ hj => ⟨List.mem_cons_of_mem _ hj, rfl⟩)
         (fun _ hd => ⟨hd, rfl⟩)⟩) ?_
@@ -570,31 +570,31 @@ theorem nwStages_rel {g : Geo} (pg : PubG g) {a : Nat} :
     (fun _ h => h.onView) (fun _ _ h => h.onView) (fun _ _ h => h.onView)
     (fun _ _ ⟨_, _, _, _, _, _, _, k, _⟩ => k.ws) ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ c_xsInit c_xsLim c_xsHalf
   · rintro g' s u ⟨ga, s0, A, AW, V, X, zf, h, hz, hK, hZ, hv, hlt, h1⟩ k hs K
-    have hwq : wq a ≤ 256 := by simp only [wq]; have := ga.2.2.1; omega
+    have hwq : wq a ≤ 256 := by simp only [wq]; have := ga.2.2.1; omega_using [this]
     refine ⟨ga, s0, A, V, X, zf, h1, wst_init h (fun _ _ => rfl) hz hK hZ hv hlt ?_ k hs (K.mono (by decide))⟩
-    rw [show 2 * wq a - 2 ^ (8 + 1) = 0 by omega, Nat.mul_zero, Nat.pow_zero]; exact h1
+    rw [show 2 * wq a - 2 ^ (8 + 1) = 0 by omega_using [hwq], Nat.mul_zero, Nat.pow_zero]; exact h1
   · rintro g' j u - ⟨_, _, _, _, _, _, _, AW', V', hu, -, -, -, hC, -⟩
     exact ⟨hu.ws, by rw [hu.sl _ (by simp), hC]⟩
   · rintro g' j u - ⟨ga, _, _, _, _, _, _, AW', V', hu, -⟩ is Q k
-    have hwq : wq a ≤ 256 := by simp only [wq]; have := ga.2.2.1; omega
+    have hwq : wq a ≤ 256 := by simp only [wq]; have := ga.2.2.1; omega_using [this]
     rw [List.append_assoc]
     refine VG.Proof.Rsa.X86.WordRt.width4_ok (hu.mlen ga.1 ga.2.2.1) fun v U m e => wp_addS rfl fun w W _ => ?_
     refine k w ((U.mono (by decide)).trans (W.keeps.mono (by decide))) (by rw [W.mem, m]) ?_
-    rw [W.gpr, e, BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega)]
-    omega
+    rw [W.gpr, e, BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hwq]), Nat.mod_eq_of_lt (by omega_using [hwq])]
+    omega_using []
   · rintro g' j u v - ⟨ga, s0, A, V, X, zf, h1, AW', V', hu, r⟩ K m
     exact ⟨ga, s0, A, V, X, zf, h1, AW', V', hu.of_rest K (fun x hx => hx) m, r⟩
   · rintro g' j u - ⟨ga, s0, A, V, X, zf, h1, AW', V', hu, hsq', hz', hzb', hC, hv', hlt', -⟩ hj
     refine ⟨ga, s0, A, V, X, zf, h1, AW', V', hu, hsq', hz', hzb', hC, hv', hlt', ?_⟩
-    rw [show 2 * wq a - 2 ^ j = 0 by omega, Nat.mul_zero, Nat.pow_zero]
+    rw [show 2 * wq a - 2 ^ j = 0 by omega_using [hj], Nat.mul_zero, Nat.pow_zero]
     rw [hv']; exact Nat.le_trans h1 (Nat.le_mul_of_pos_right _ (Nat.two_pow_pos _))
   · rintro g' j u - ⟨_, _, _, _, _, _, _, AW', V', hu, -, -, -, hC, -⟩
     exact ⟨hu.ws, by rw [hu.sl _ (by simp), hC]⟩
   · rintro g' j u v _ ⟨ga, s0, A, V, X, zf, h1, P⟩ k hs K
     refine ⟨fun hj => ⟨ga, s0, A, V, X, zf, h1, ?_⟩, fun hj => ⟨ga, s0, A, V, X, zf, h1, ?_⟩⟩
     · have P' := P.reslot k hs K
-      have e : 2 ^ j = 2 * 2 ^ (j - 1) := by rw [← Nat.pow_succ']; congr 1; omega
-      rw [show j - 1 + 1 = j by omega, show 4 * 2 ^ (j - 1) = 2 * 2 ^ j by omega]
+      have e : 2 ^ j = 2 * 2 ^ (j - 1) := by rw [← Nat.pow_succ']; congr 1; omega_using [hj]
+      rw [show j - 1 + 1 = j by omega_using [hj], show 4 * 2 ^ (j - 1) = 2 * 2 ^ j by omega_using [e]]
       exact P'
     · subst hj
       exact P.reslot k hs K
@@ -605,7 +605,7 @@ theorem nwStages_rel {g : Geo} (pg : PubG g) {a : Nat} :
       simp only [List.mem_singleton] at hd; subst hd
       exact (hu.sl _ (by simp)).trans hC
     · rintro g' u ⟨ga, s0, A, V, X, zf, h1, P⟩
-      exact WP.mono (wordStage_ok ga.1 ga.2.2.1 ga.2.1 h1 (by omega) P) fun _ P' => ⟨ga, s0, A, V, X, zf, h1, P'⟩
+      exact WP.mono (wordStage_ok ga.1 ga.2.2.1 ga.2.1 h1 (by omega_using [hl]) P) fun _ P' => ⟨ga, s0, A, V, X, zf, h1, P'⟩
 
 /-- `normX`'s bit stages, related. -/
 theorem nbStages_rel {g : Geo} (pg : PubG g) {a : Nat} :
@@ -617,15 +617,15 @@ theorem nbStages_rel {g : Geo} (pg : PubG g) {a : Nat} :
     (fun _ h => h.p0 pg) (fun _ _ h => h.p0 pg) (fun _ h => h.onView) (fun _ _ h => h.onView)
     (fun _ _ ⟨_, _, _, _, _, _, _, _, _, k, _⟩ => k.ws) ?_ ?_ ?_ ?_ c_xbInit c_xbHalf
   · rintro g' s u ⟨ga, s0, A, V, X, zf, _, P⟩ k e K
-    have hwq : 1 ≤ wq a := by simp only [wq]; have := ga.2.2.2; omega
+    have hwq : 1 ≤ wq a := by simp only [wq]; have := ga.2.2.2; omega_using [this]
     exact ⟨ga, s0, A, V, X, zf, bst_init hwq P k e (K.mono (by decide))⟩
   · rintro g' j u - - ⟨_, _, _, _, _, _, AW', V', hu, -, -, hB, -⟩
     exact ⟨hu.ws, by rw [hu.sl _ (by simp), hB]⟩
   · rintro g' j u v _ _ ⟨ga, s0, A, V, X, zf, Q⟩ k e K
     refine ⟨fun hj => ⟨ga, s0, A, V, X, zf, ?_⟩, fun hj => ⟨ga, s0, A, V, X, zf, ?_⟩⟩
     · have Q' := Q.reslot k e K
-      have e2 : 2 ^ j = 2 * 2 ^ (j - 1) := by rw [← Nat.pow_succ']; congr 1; omega
-      rw [show j - 1 + 1 = j by omega, show 2 ^ (j - 1) = 2 ^ j / 2 by omega]
+      have e2 : 2 ^ j = 2 * 2 ^ (j - 1) := by rw [← Nat.pow_succ']; congr 1; omega_arith
+      rw [show j - 1 + 1 = j by omega_arith, show 2 ^ (j - 1) = 2 ^ j / 2 by omega_using [e2]]
       exact Q'
     · subst hj
       exact Q.reslot k e K
@@ -665,10 +665,10 @@ theorem normX_rel {g : Geo} (pg : PubG g) {a : Nat} :
     (fun g' s ⟨ga, s0, A, AW, V, h, hlt⟩ => WP.mono (zeroX_ok h rfl)
       fun _ ⟨AW₂, V₂, h₂, _, hz₂, hK₂, hZ₂, hv₂⟩ => by
         have hlt' : AW wR < 2 ^ (64 * wq a) := hlt
-        have hw : 1 ≤ 64 * wq a := by simp only [wq]; have := ga.2.2.2; omega
+        have hw : 1 ≤ 64 * wq a := by simp only [wq]; have := ga.2.2.2; omega_using [this]
         refine ⟨ga, s0, A, AW₂, V₂, AW wR, V₂ sZf, h₂, rfl, hK₂, hZ₂, hv₂, ?_, ?_⟩ <;> rw [hz₂] <;> split
-        · rename_i e; rw [e]; exact Nat.one_lt_two_pow (by omega)
-        all_goals omega) c_zx) ?_
+        · rename_i e; rw [e]; exact Nat.one_lt_two_pow (by omega_using [hw])
+        all_goals omega_arith) c_zx) ?_
   exact VG.RelCT.seq (nwStages_rel pg) ((nbStages_rel pg).mono (fun _ _ h => h) fun _ _ _ => trivial)
 
 /-! ## `finishX` -/
@@ -737,7 +737,7 @@ theorem fwStages_rel {g : Geo} (pg : PubG g) {a : Nat} :
   · rintro g' j u - ⟨_, _, _, _, _, h, f⟩
     exact ⟨h.ws, by rw [h.sl _ (by simp), f]⟩
   · rintro g' j u - ⟨ga, _, _, _, _, h, _⟩ is Q k
-    have w4 : 4 * wq a < 2 ^ 32 := by simp only [wq]; have := ga.2.2.1; omega
+    have w4 : 4 * wq a < 2 ^ 32 := by simp only [wq]; have := ga.2.2.1; omega_using [this]
     exact VG.Proof.Rsa.X86.WordRt.width4_ok (h.mlen ga.1 ga.2.2.1) (r := .eax)
       fun u' K m e => k u' (K.mono (by decide)) m (by rw [e, BitVec.toNat_ofNat, Nat.mod_eq_of_lt w4])
   · rintro g' j u v - ⟨ga, s0, A, AW, V, h, f⟩ K m
@@ -750,15 +750,15 @@ theorem fwStages_rel {g : Geo} (pg : PubG g) {a : Nat} :
     refine ⟨fun hj0 => ⟨ga, s0, A, AW, _, h', ?_⟩, fun _ => ⟨ga, s0, A, AW, _, h', trivial⟩⟩
     show upd V _ _ _ = _
     rw [upd_self]
-    have : 2 ^ j = 2 * 2 ^ (j - 1) := by rw [← Nat.pow_succ']; congr 1; omega
-    omega
+    have : 2 ^ j = 2 * 2 ^ (j - 1) := by rw [← Nat.pow_succ']; congr 1; omega_using [hj0]
+    omega_using [this]
   · intro j _ hl
     refine leafQ pg (fun _ => 4 * 2 ^ j) (by decide)
       (fun _ V f d hd => by simp only [List.mem_singleton] at hd; subst hd; exact f) ?_ c_fWBody
     rintro g' u ⟨ga, s0, A, AW, V, h, f⟩
     have cW : 2 ^ j < g'.W := by
       have := ga.2.1; simp only [Geo.W, Geo.w, VG.Impl.Rsa.X86.Recover.wide, VG.Impl.Rsa.X86.Recover.width] at this ⊢
-      omega
+      omega_using [hl, this]
     simp only [seqs]
     refine WP.seq (WP.mono (h.wordFlag (by simp) (by simp) (h.vlt (by simp)) (h.vlt (by simp)))
       fun u₁ ⟨h₁, _⟩ => ?_)
@@ -766,7 +766,7 @@ theorem fwStages_rel {g : Geo} (pg : PubG g) {a : Nat} :
       (by simp) (by rw [upd_ne _ _ (by decide)]; omega) (by decide)) fun u₂ ⟨h₂, _, _⟩ => ?_)
     refine WP.mono (h₂.sel_W (o := sqD) (a := sqD) (b := wT) (sl := sStg) (by decide) (by simp) (by simp)
       (by simp) (by rw [upd_self]; split <;> decide) (.inr (by decide)) (by decide)) fun u₃ ⟨h₃, _⟩ => ?_
-    refine ⟨ga, s0, A, _, _, h₃.mono (fun _ hj => ⟨hj, rfl⟩) (fun _ hj => ⟨by simp at hj ⊢; omega, rfl⟩)
+    refine ⟨ga, s0, A, _, _, h₃.mono (fun _ hj => ⟨hj, rfl⟩) (fun _ hj => ⟨by simp at hj ⊢; omega_using [hj], rfl⟩)
       (fun d hd => ⟨List.mem_cons_of_mem _ hd, rfl⟩), ?_⟩
     show upd V sStg _ sC4 = _
     rw [upd_ne _ _ (show sC4 ≠ sStg by decide)]; exact f
@@ -785,7 +785,7 @@ theorem fbBody_rel {g : Geo} (pg : PubG g) {a j : Nat} (hj : 2 ^ j < 32) :
   refine VG.RelCT.seq (leafQ (Q := QB a (2 ^ j) [aD, aZero] [wT, sqD] (sStg :: sB :: lsN)) pg (fun _ => 0)
     (ds := []) (by simp) (by simp) (fun g' s ⟨ga, s0, A, AW, V, h, f⟩ => WP.mono (h.copy_W (o := wT) (a := sqD)
       (by decide) (by simp) (by decide) (by decide)) fun _ ⟨h', _⟩ => ⟨ga, s0, A, _, V, h', f⟩) c_cpD) ?_
-  refine VG.RelCT.seq (sqTimes pg hb (by omega) (by simp) c_hfT fun g' s0 A AW V s h => by
+  refine VG.RelCT.seq (sqTimes pg hb (by omega_using [hj]) (by simp) c_hfT fun g' s0 A AW V s h => by
     refine WP.seq (wp_movS (v := 0) rfl fun t₁ U _ => WP.block_nil ?_)
     have P₁ := h.of_rest U.keeps (by decide) U.mem
     exact WP.mono (P₁.half_W (j := wT) (by simp) (by rw [U.gpr]; rfl) (by decide)) fun _ ⟨hv, _⟩ =>
@@ -794,7 +794,7 @@ theorem fbBody_rel {g : Geo} (pg : PubG g) {a j : Nat} (hj : 2 ^ j < 32) :
   exact leafQ pg (fun _ => 0) (ds := []) (by simp) (by simp)
     (fun g' s ⟨ga, s0, A, AW, V, h, f⟩ => WP.mono (h.sel_W (o := sqD) (a := sqD) (b := wT) (sl := sStg) (by decide)
       (by simp) (by simp) (by simp) f.1 (.inr (by decide)) (by decide)) fun _ ⟨h', _⟩ =>
-        ⟨ga, s0, A, _, V, h'.mono (fun _ hj => ⟨hj, rfl⟩) (fun _ hj => ⟨by simp at hj ⊢; omega, rfl⟩)
+        ⟨ga, s0, A, _, V, h'.mono (fun _ hj => ⟨hj, rfl⟩) (fun _ hj => ⟨by simp at hj ⊢; omega_using [hj], rfl⟩)
           (fun d hd => ⟨List.mem_cons_of_mem _ hd, rfl⟩), f.2⟩) c_selD
 
 /-- `finishX`'s bit stages, related. -/
@@ -817,8 +817,8 @@ theorem fbStages_rel {g : Geo} (pg : PubG g) {a : Nat} :
     refine ⟨fun hj0 => ⟨ga, s0, A, AW, _, h', ?_⟩, fun _ => ⟨ga, s0, A, AW, _, h', trivial⟩⟩
     show upd V _ _ _ = _
     rw [upd_self]
-    have : 2 ^ j = 2 * 2 ^ (j - 1) := by rw [← Nat.pow_succ']; congr 1; omega
-    omega
+    have : 2 ^ j = 2 * 2 ^ (j - 1) := by rw [← Nat.pow_succ']; congr 1; omega_using [hj0]
+    omega_using [this]
   · intro j _ hj
     have := Nat.pow_le_pow_right (n := 2) (by decide) hj
     exact fbBody_rel pg (by simp at this; omega)
@@ -835,7 +835,7 @@ theorem finishX_rel {g : Geo} (pg : PubG g) {a : Nat} :
     refine wp_movS (h₂.readSlot (d := sStg) (by simp)) fun u₃ U₃ _ => ?_
     have h₃ := h₂.of_rest U₃.keeps (by decide) U₃.mem
     refine WP.mono (h₃.storeSlot (d := sOk5) (by decide) .eax) fun u₄ ⟨h₄, _, _⟩ => ⟨ga, s0, A, AW, _,
-      h₄.mono (fun _ hj => ⟨hj, rfl⟩) (fun _ hj => ⟨by simp at hj ⊢; omega, rfl⟩)
+      h₄.mono (fun _ hj => ⟨hj, rfl⟩) (fun _ hj => ⟨by simp at hj ⊢; omega_using [hj], rfl⟩)
         (fun d hd => ⟨List.mem_cons_of_mem _ (List.mem_cons_of_mem _ hd), rfl⟩), trivial⟩
   refine relSeqs (x := fF3) (xs := [fF4]) (y := fF5) (ys := [fF6, fF7, fF8, fF9])
     (R := Both (FQ a lsN (fun _ => True) g)) (leafQ pg (fun _ => 0) (ds := []) (by simp) (by simp) ?_ c_f34) ?_
@@ -843,7 +843,7 @@ theorem finishX_rel {g : Geo} (pg : PubG g) {a : Nat} :
     refine WP.seq (wp_movS (v := 0) rfl fun u U _ => WP.block_nil ?_)
     have hu := h.of_rest U.keeps (by decide) U.mem
     exact WP.mono (hu.half_W (j := sqD) (by simp) (by rw [U.gpr]; rfl) (by decide)) fun _ ⟨h', _⟩ =>
-      ⟨ga, s0, A, _, V, h'.mono (fun _ hj => ⟨hj, rfl⟩) (fun _ hj => ⟨by simp at hj ⊢; omega, rfl⟩)
+      ⟨ga, s0, A, _, V, h'.mono (fun _ hj => ⟨hj, rfl⟩) (fun _ hj => ⟨by simp at hj ⊢; omega_using [hj], rfl⟩)
         (fun d hd => ⟨hd, rfl⟩), trivial⟩
   refine VG.RelCT.seq (fwStages_rel pg) (VG.RelCT.seq (leafQ (Q := FQ a lsN fun _ => True) pg (fun _ => 0)
     (ds := []) (by simp) (by simp) ?_ c_f6) (VG.RelCT.seq (fbStages_rel pg) ?_))
@@ -931,7 +931,7 @@ theorem cnt_w {a : Nat} {g : Geo} {u : State} (h : SFX a g u) :
       ([.shift .shr .eax 2, .alu .sub .eax (.imm 1), .store (sc sCt) .eax] : List Instr))) u fun v =>
       SL a (wq a - 1) g v ∧ v.zf = some (decide (wq a - 1 = 0)) := by
   obtain ⟨ga, s0, A, AW2, V2, h2, z, V0, X, X₀, s₀, r₀, e2, hR2, nf⟩ := h
-  have hw1 : 1 ≤ wq a := by simp only [wq]; have := ga.2.2.2; omega
+  have hw1 : 1 ≤ wq a := by simp only [wq]; have := ga.2.2.2; omega_using [this]
   have ha1 := ga.2.2.1
   refine VG.Proof.Rsa.X86.WordRt.width4_ok (h2.mlen ga.1 ha1) fun u3 K3 m3 e3 => ?_
   have h3 := h2.of_rest K3 (by decide) m3
@@ -941,7 +941,7 @@ theorem cnt_w {a : Nat} {g : Geo} {u : State} (h : SFX a g u) :
   have v5 : (u5.gpr .eax).toNat = wq a - 1 := by
     rw [U5.gpr, U4.gpr, e3, BitVec.toNat_sub, BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow]
     simp only [BitVec.toNat_ofNat, Nat.reducePow]
-    simp only [wq] at hw1 ⊢; omega
+    simp only [wq] at hw1 ⊢; omega_using [hw1, ha1]
   refine WP.mono (h5.storeSlot (d := sCt) (by decide) .eax) fun u6 ⟨h6, zf6, _⟩ => ?_
   rw [v5] at h6
   refine ⟨⟨ga, s0, A, AW2, _, h6, z, upd_self _ _ _, V0, X, X₀, s₀, r₀, ?_, ?_, nf⟩, ?_⟩
@@ -975,7 +975,7 @@ theorem digits_rel {g : Geo} (pg : PubG g) {a : Nat} :
   · intro s t tr ur sf tf ⟨⟨⟨hs, zs⟩, ⟨ht, _⟩⟩, c⟩ es et
     have e : wq a - 1 ≠ 0 := by simpa [eval, zs] using c
     let L : Nat → State → Prop := fun k u => SL a (wq a - 1 - k) g u
-    have R := relLoop (body := stepX) (c := .ne) L (K := wq a - 1) (by omega) (fun k hk => ?_) (fun k u hk hu => ?_)
+    have R := relLoop (body := stepX) (c := .ne) L (K := wq a - 1) (by omega_using [e]) (fun k hk => ?_) (fun k u hk hu => ?_)
     · obtain ⟨tr', h⟩ := R s t tr ur sf tf ⟨by simpa [L] using hs, by simpa [L] using ht⟩ es et
       refine ⟨tr', ?_⟩
       have h' : L (wq a - 1) sf ∧ L (wq a - 1) tf := h
@@ -983,17 +983,17 @@ theorem digits_rel {g : Geo} (pg : PubG g) {a : Nat} :
       exact h'
     · refine (stepX_rel (g := g) (a := a) (j := wq a - 1 - k)).mono (fun s t ⟨hs, ht⟩ => ⟨?_, ?_⟩) (fun _ _ h => h)
       · obtain ⟨ga, s0, A, V0, X, X₀, hI, _⟩ := (show SL a (wq a - 1 - k) g s from hs).sqI
-        exact ⟨ga, by omega, by omega, (show SL a (wq a - 1 - k) g s from hs).p0 pg, s0, A, V0, X, hI⟩
+        exact ⟨ga, by omega_using [hk], by omega_using [e], (show SL a (wq a - 1 - k) g s from hs).p0 pg, s0, A, V0, X, hI⟩
       · obtain ⟨ga, s0, A, V0, X, X₀, hI, _⟩ := (show SL a (wq a - 1 - k) g t from ht).sqI
-        exact ⟨ga, by omega, by omega, (show SL a (wq a - 1 - k) g t from ht).p0 pg, s0, A, V0, X, hI⟩
+        exact ⟨ga, by omega_using [hk], by omega_using [e], (show SL a (wq a - 1 - k) g t from ht).p0 pg, s0, A, V0, X, hI⟩
     · obtain ⟨ga, s0, A, V0, X, X₀, hI, z, nf⟩ := (show SL a (wq a - 1 - k) g u from hu).sqI
-      refine WP.mono (stepX_ok hI ga.1 ga.2.2.1 ga.2.1 (by omega) (by omega)) fun v ⟨zv, I⟩ => ⟨?_, ?_⟩
+      refine WP.mono (stepX_ok hI ga.1 ga.2.2.1 ga.2.1 (by omega_using [hk]) (by omega_using [e])) fun v ⟨zv, I⟩ => ⟨?_, ?_⟩
       · show SL a (wq a - 1 - (k + 1)) g v
-        rw [show wq a - 1 - (k + 1) = wq a - 1 - k - 1 by omega]; exact I.sl ga z nf
-      · have : (wq a - 1 - k - 1 = 0) ↔ ¬ (k + 1 < wq a - 1) := by omega
+        rw [show wq a - 1 - (k + 1) = wq a - 1 - k - 1 by omega_using []]; exact I.sl ga z nf
+      · have : (wq a - 1 - k - 1 = 0) ↔ ¬ (k + 1 < wq a - 1) := by omega_using []
         simp only [eval, zv, Option.map_some]
         congr 1
-        by_cases h1 : k + 1 < wq a - 1 <;> simp [h1] <;> omega
+        by_cases h1 : k + 1 < wq a - 1 <;> simp [h1] <;> omega_using [h1]
 
 theorem SM.n0 {a : Nat} {g : Geo} {s : State} (h : SM a g s) : N0 a g s :=
   let ⟨ga, s0, A, AW, V, k, _⟩ := h

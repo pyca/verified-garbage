@@ -24,7 +24,7 @@ theorem body6_ok {to : Bool} {s₀ : State} (hp : GPre to s₀) {c : Nat} (hc : 
   rw [← List.append_assoc]
   rw [WP.block_append_iff]
   exact WP.mono (advance_ok hp hc hI₁) fun s₂ ⟨hI₂, _⟩ =>
-    cmpEdi_ok (by decide) (by omega) hI₂
+    cmpEdi_ok (by decide) (by omega_using [hc]) hI₂
 
 /-- The tail body advances one block and exposes its public zero flag. -/
 theorem body1_ok {to : Bool} {s₀ : State} (hp : GPre to s₀) {c : Nat} (hc : c < nBlk s₀)
@@ -32,7 +32,7 @@ theorem body1_ok {to : Bool} {s₀ : State} (hp : GPre to s₀) {c : Nat} (hc : 
     WP isa (Impl.Aes.X86.AesNi.body1 to) s fun s' =>
       Inv to s₀ (c + 1) (c + 1) s' ∧ s'.zf = some (decide (nBlk s₀ - (c + 1) = 0)) := by
   refine blocks_ok hp [.xmm0] (.inr rfl) _ hc hI fun s₁ hI₁ => ?_
-  exact advance_ok (n := 1) hp (by omega) hI₁
+  exact advance_ok (n := 1) hp (by omega_using [hc]) hI₁
 
 
 /-- Both public count loops terminate and encrypt every requested block. -/
@@ -53,12 +53,12 @@ theorem loops_ok {to : Bool} {s₀ : State} (hp : GPre to s₀) {s : State} (hI 
         refine WP.mono (body6_ok hp hc hI) fun s' ⟨hI', hcf'⟩ => ?_
         by_cases hlt : nBlk s₀ - (c + 6) < 6
         · exact .inl ⟨by simp [eval, hcf', hlt], c + 6, hlt, hI'⟩
-        · exact .inr ⟨by simp [eval, hcf', hlt], nBlk s₀ - (c + 6), by omega, c + 6, rfl, by omega, hI'⟩
+        · exact .inr ⟨by simp [eval, hcf', hlt], nBlk s₀ - (c + 6), by omega_using [hc], c + 6, rfl, by omega_using [hlt], hI'⟩
       exact WP.loop (M := isa) I6 hstep (nBlk s₀) s ⟨0, rfl, by simpa using h, hI⟩
   refine WP.seq (WP.mono (testEdi_ok hI₂) fun s₃ ⟨hI₃, hzf⟩ => ?_)
   refine WP.seq (WP.mono (Q := Inv to s₀ (nBlk s₀) (nBlk s₀)) ?_ fun s₄ hI₄ => hQ _ hI₄)
   refine WP.ite (decide (nBlk s₀ - c = 0)) (by simp [eval, hzf]) (fun h => ?_) (fun h => ?_)
-  · have : c = nBlk s₀ := by have := hI₃.le; simp at h; omega
+  · have : c = nBlk s₀ := by have := hI₃.le; simp at h; omega_using [this, h]
     exact WP.block_nil (this ▸ hI₃)
   · let I1 : Nat → State → Prop := fun m s => ∃ c, m = nBlk s₀ - c ∧ c < nBlk s₀ ∧ Inv to s₀ c c s
     have hstep : ∀ m s, I1 m s → WP isa (body1 to) s (fun s' =>
@@ -67,10 +67,10 @@ theorem loops_ok {to : Bool} {s₀ : State} (hp : GPre to s₀) {s : State} (hI 
       rintro m s ⟨c, rfl, hc, hI⟩
       refine WP.mono (body1_ok hp hc hI) fun s' ⟨hI', hzf'⟩ => ?_
       by_cases hlast : nBlk s₀ - (c + 1) = 0
-      · have : c + 1 = nBlk s₀ := by omega
+      · have : c + 1 = nBlk s₀ := by omega_using [hc, hlast]
         exact .inl ⟨by simp [eval, hzf', hlast], this ▸ hI'⟩
-      · exact .inr ⟨by simp [eval, hzf', hlast], nBlk s₀ - (c + 1), by omega, c + 1, rfl, by omega, hI'⟩
-    have hlt : c < nBlk s₀ := by have := hI₃.le; simp at h; omega
+      · exact .inr ⟨by simp [eval, hzf', hlast], nBlk s₀ - (c + 1), by omega_using [hc], c + 1, rfl, by omega_using [hlast], hI'⟩
+    have hlt : c < nBlk s₀ := by have := hI₃.le; simp at h; omega_using [h]
     exact WP.loop (M := isa) I1 hstep (nBlk s₀ - c) s₃ ⟨c, rfl, hlt, hI₃⟩
 
 

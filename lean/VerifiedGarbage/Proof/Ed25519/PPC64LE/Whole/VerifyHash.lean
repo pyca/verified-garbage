@@ -87,11 +87,11 @@ theorem verStep {s t t' : State} (hp : VerPre s) (h : VerInv s t) (hrd : t'.rd =
   · rcases hW r hr with rfl | rfl | ⟨d, n, hdn, rfl⟩
     · exact ⟨_, by simp, fun _ h => h⟩
     · exact ⟨_, by simp, fun _ h => h⟩
-    · exact ⟨⟨s.gpr .r8, 192⟩, by simp, Offset.sub_base _ (by omega)⟩
+    · exact ⟨⟨s.gpr .r8, 192⟩, by simp, Offset.sub_base _ (by omega_using [hdn])⟩
   · rcases hW r hr with rfl | rfl | ⟨d, n, hdn, rfl⟩
     · exact hp.cF.symm.sub_left hs
     · exact hp.bF.symm.sub_left hs
-    · exact Offset.disjoint _ (.inr hdn) (by decide) (by omega)
+    · exact Offset.disjoint _ (.inr hdn) (by decide) (by omega_using [hdn])
 
 /-- An input, while the body runs. -/
 theorem ver_input {s t : State} (h : VerInv s t) {p : Addr} {n : Nat} (hn : n < 2 ^ 64)
@@ -117,7 +117,7 @@ theorem verSetup_ok {s : State} (hp : VerPre s) :
   have hF : (⟨s.gpr .r8, 192⟩ : Region) ∈ s.wr := by rw [hp.wr]; simp
   have hsl : ∀ p ∈ slots 128 verifyRegs, p.2 + 8 ≤ 192 := by decide
   refine save_ok (by decide) (by decide) (by decide)
-    (fun p hp' => in_base hF (hsl p hp') (by have := hsl p hp'; omega)) fun u hu _ hsv hfr => ?_
+    (fun p hp' => in_base hF (hsl p hp') (by have := hsl p hp'; omega_using [this])) fun u hu _ hsv hfr => ?_
   unfold mov
   refine wp_addi (by decide) (by decide) fun u₁ h₁ => wp_addi (by decide) (by decide) fun u₂ h₂ =>
     wp_addi (by decide) (by decide) fun u₃ h₃ => wp_addi (by decide) (by decide) fun u₄ h₄ =>
@@ -241,8 +241,8 @@ theorem verifyHash_ok (C : ShaOK) {s : State} (hp : VerPre s) : WP isa verifyHas
     · exact .inr (.inl (by rw [h₅.sp])))
   have dg : bytesAt t₆.mem (s.gpr .r8 + BitVec.ofNat 64 64) 64 =
       Spec.Sha512.sha512 (bytesAt s.mem (s.gpr .r6) 32 ++ bytesAt s.mem (s.gpr .r3) 32 ++ vmsgB s) :=
-    hd₆ _ r₅ (by simp [bytesAt]; omega)
-      (by rw [h₅.regs _ (by decide), cnt_eq, verV_r22]; simp [bytesAt]; congr 1; omega)
+    hd₆ _ r₅ (by simp [bytesAt]; omega_using [hlen])
+      (by rw [h₅.regs _ (by decide), cnt_eq, verV_r22]; simp [bytesAt]; congr 1; omega_using [])
   -- `scalar_reduce`.
   have ce : ∀ (u : State) q, q ∉ linkRegs → ∀ rd wr, (u.callEntry.withRegions rd wr).gpr q = u.gpr q :=
     fun _ q hq _ _ => by rw [State.withRegions_gpr, State.callEntry_gpr _ hq]
@@ -287,7 +287,7 @@ theorem verifyHash_ok (C : ShaOK) {s : State} (hp : VerPre s) : WP isa verifyHas
   have hFw₈ : (⟨s.gpr .r8, 192⟩ : Region) ∈ t₈.wr := ver_Fw hp h₈
   have e25 : t₈.gpr .r25 = s.gpr .r8 := h₈.regs _ (by decide)
   have inF : ∀ (u : State), u.wr = t₈.wr → ∀ d, d + 8 ≤ 192 → InRegions u.wr (s.gpr .r8 + BitVec.ofNat 64 d) 8 :=
-    fun u hu d hd => by rw [hu]; exact in_base hFw₈ hd (by omega)
+    fun u hu d hd => by rw [hu]; exact in_base hFw₈ hd (by omega_using [hd])
   refine wp_li (d := .r8) (imm := 0) (by decide) fun u₁ e₁ => ?_
   refine wp_stdd (a := s.gpr .r8 + BitVec.ofNat 64 32) (by decide) ⟨by decide, by decide⟩
     (by rw [e₁.other _ (by decide), e25]) (inF _ e₁.wr 32 (by decide)) fun u₂ e₂ => ?_
@@ -314,7 +314,7 @@ theorem verifyHash_ok (C : ShaOK) {s : State} (hp : VerPre s) : WP isa verifyHas
     rw [g₄.other _ p6, g₃.other _ p5, g₂.other _ p4, g₁.other _ p3, e₅.gpr, e₄.gpr, e₃.gpr, e₂.gpr,
       e₁.other _ (by revert hr; cases r <;> decide)]
   have cont : ∀ d, 32 ≤ d → d + 8 ≤ 64 → Region.Contains ⟨s.gpr .r8 + BitVec.ofNat 64 32, 32⟩
-      (s.gpr .r8 + BitVec.ofNat 64 d) (64 / 8) := fun d h₁ h₂ => Offset.contains _ h₁ (by omega) (by omega)
+      (s.gpr .r8 + BitVec.ofNat 64 d) (64 / 8) := fun d h₁ h₂ => Offset.contains _ h₁ (by omega_using [h₂]) (by omega_using [])
   have fv : Frame [⟨s.gpr .r8 + BitVec.ofNat 64 32, 32⟩] t₈.mem v₄.mem := by
     rw [mv]
     exact ((((Frame.refl _ _).writeW (List.mem_singleton_self _) _ (cont 32 (by decide) (by decide))).writeW
@@ -323,11 +323,11 @@ theorem verifyHash_ok (C : ShaOK) {s : State} (hp : VerPre s) : WP isa verifyHas
   have rr : ∀ (x : Mem) (i j : Nat) (v : BitVec 64), i + 8 ≤ j ∨ j + 8 ≤ i → i + 8 ≤ 192 → j + 8 ≤ 192 →
       (x.writeW (s.gpr .r8 + BitVec.ofNat 64 j) v).readW (s.gpr .r8 + BitVec.ofNat 64 i) 64 =
         x.readW (s.gpr .r8 + BitVec.ofNat 64 i) 64 :=
-    fun x i j v h hi hj => Mem.readW_writeW_sep (Offset.sep _ h (by omega) (by omega)) (by decide)
+    fun x i j v h hi hj => Mem.readW_writeW_sep (Offset.sep _ h (by omega_using [hi]) (by omega_using [hj])) (by decide)
   have hz : ∀ k < 4, v₄.mem.readW (s.gpr .r8 + BitVec.ofNat 64 32 + BitVec.ofNat 64 (8 * k)) 64 = 0 := by
     intro k hk
     rw [mv, Offset.add_add]
-    have : k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3 := by omega
+    have : k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3 := by omega_using [hk]
     rcases this with rfl | rfl | rfl | rfl
     · rw [show 32 + 8 * 0 = 32 from rfl, rr _ 32 56 _ (by decide) (by decide) (by decide),
         rr _ 32 48 _ (by decide) (by decide) (by decide), rr _ 32 40 _ (by decide) (by decide) (by decide),

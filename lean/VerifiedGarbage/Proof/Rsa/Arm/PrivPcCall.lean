@@ -16,7 +16,7 @@ theorem PrivContext.precomputationWrite {g : PrivGeometry} {bs : Fin 8 → List 
     (h : PrivContext g bs s) : InRegions s.wr (State.addr g.precomputation) (16 * Spec.Rsa.modulusWords g.length) := by
   rw [PrivGeometry.precomputation, h.valid.offsetAddr (by decide)]
   exact ⟨_, h.inner.writable, Offset.contains_base _
-    (by have := h.valid.maxLength; simp only [oPre, frameBytes, Spec.Rsa.modulusWords]; omega) (by decide : oPre < 2 ^ 64)⟩
+    (by have := h.valid.maxLength; simp only [oPre, frameBytes, Spec.Rsa.modulusWords]; omega_using [this]) (by decide : oPre < 2 ^ 64)⟩
 
 theorem pcCovers {g : PrivGeometry} {bs : Fin 8 → List Byte} {s : State} (h : PrivContext g bs s) :
     Covers (pcRd g ++ pcWr g) (s.rd ++ s.wr) ∧ Covers (pcWr g) s.wr := by
@@ -33,7 +33,7 @@ theorem pcWrites_sub {g : PrivGeometry} (h : g.Valid) :
   rcases hr with rfl | rfl
   · refine ⟨g.innerRegion, by simp [bodyWrites], ?_⟩
     rw [PrivGeometry.precomputation, h.offsetAddr (by decide)]
-    exact Offset.sub_base _ (by have := h.maxLength; simp only [oPre, frameBytes, Spec.Rsa.modulusWords]; omega)
+    exact Offset.sub_base _ (by have := h.maxLength; simp only [oPre, frameBytes, Spec.Rsa.modulusWords]; omega_using [this])
   · exact ⟨g.workspaceRegion, by simp [bodyWrites], fun _ hx => hx⟩
 
 theorem pcWrites_slots {g : PrivGeometry} (h : g.Valid) :
@@ -43,7 +43,7 @@ theorem pcWrites_slots {g : PrivGeometry} (h : g.Valid) :
   rcases hr with rfl | rfl
   · rw [PrivGeometry.precomputation, h.offsetAddr (by decide)]
     exact Offset.disjoint _ (Or.inl (by decide : 64 + 24 ≤ oPre)) (by decide)
-      (by have := h.maxLength; simp only [oPre, Spec.Rsa.modulusWords]; omega)
+      (by have := h.maxLength; simp only [oPre, Spec.Rsa.modulusWords]; omega_using [this])
   · exact h.stackWorkspace.sub_left (fun x hx => h.innerSub x
       (Offset.sub_base _ (by decide : 64 + 24 ≤ frameBytes) x hx))
 
@@ -73,9 +73,9 @@ theorem pc_call (v : CrtImpl) {g : PrivGeometry} {bs : Fin 8 → List Byte} {s :
   unfold PcPost
   refine ⟨ht, slotsT, frame, rest, ?_⟩
   sig_post [Spec.Rsa.publicPrecomputeContract, Spec.Rsa.publicPrecomputeSig, abi, argRegs, reduceClassify, Loc.val, State.addr] at post
-  have kfit : g.length < 2 ^ 32 := by have := h.valid.maxLength; omega
+  have kfit : g.length < 2 ^ 32 := by have := h.valid.maxLength; omega_using [this]
   have pfit : 2 * Spec.Rsa.modulusWords g.length < 2 ^ 32 := by
-    have := h.valid.maxLength; simp only [Spec.Rsa.modulusWords]; omega
+    have := h.valid.maxLength; simp only [Spec.Rsa.modulusWords]; omega_using [kfit]
   simp only [args.output, args.outputLength, args.modulus, args.length, BitVec.toNat_ofNat,
     Nat.mod_eq_of_lt kfit, Nat.mod_eq_of_lt pfit] at post
   rw [BitVec.setWidth_append_eq_right] at post

@@ -68,22 +68,22 @@ theorem prevalidatedCompute_ok {base : Addr} {size pLen qLen p q g y digestLen d
   dsimp only
   have L := M.lengths
   have A := M.aligned
-  have nq : (qLen + 7) / 8 ≤ 48 := by omega
+  have nq : (qLen + 7) / 8 ≤ 48 := by omega_using [L]
   unfold Prevalidated.compute Core.sequence
   dsimp only [List.foldr]
-  refine WP.seq (WP.mono (stageMinusQ_ok M (by have := M.qLarge; omega)
+  refine WP.seq (WP.mono (stageMinusQ_ok M (by have := M.qLarge; omega_using [this])
     (by decide) (M.scalarFit (by decide))) fun s1 ⟨M1, R1⟩ => ?_)
   have E1 := R1.toStageFrame.execution (.inl ⟨by decide, M.scalarFit (by decide)⟩)
   have Q1 : operandValue s1 base (.local qMinusTwo) qLen = q - 2 :=
     R1.scalar_value M (by decide) (Nat.lt_of_le_of_lt (Nat.sub_le _ _) M.valueBounds.2)
   have F1 := R1.toStageFrame.mask_keep (by decide)
   have R1' := E1.buffer R (by decide)
-  refine WP.seq (WP.seq (WP.mono (stageRange_ok M1 (by omega) (by omega) (by omega)
+  refine WP.seq (WP.seq (WP.mono (stageRange_ok M1 (by omega_using [L]) (by omega_using [L]) (by omega_using [A])
     M1.qReady (R1'.ready (M1.context nq)) false) fun s2 ⟨M2, F2, A2⟩ => ?_))
   have E2 := A2.execution (.inr ⟨rfl, rfl⟩)
   have E12 := E1.trans E2
   have S2 := E12.buffer S (by decide)
-  refine WP.mono (stageRange_ok M2 (by omega) (by omega) (by omega) M2.qReady (S2.ready (M2.context nq)) false)
+  refine WP.mono (stageRange_ok M2 (by omega_using [L]) (by omega_using [L]) (by omega_using [A]) M2.qReady (S2.ready (M2.context nq)) false)
     fun s3 ⟨M3, F3, A3⟩ => ?_
   have E3 := A3.execution (.inr ⟨rfl, rfl⟩)
   have E123 := E12.trans E3
@@ -96,7 +96,7 @@ theorem prevalidatedCompute_ok {base : Addr} {size pLen qLen p q g y digestLen d
     ((E123.value D (by decide) M.extent).trans hD) Q3) fun s4 ⟨M4, U4, E4, F4⟩ => ?_)
   have E1234 := E123.trans E4
   have R4 := E1234.buffer R (by decide)
-  refine WP.seq (WP.mono (stageEqual_ok M4 (by omega) (by omega) (by omega) (M4.scalarReady (by decide) nq)
+  refine WP.seq (WP.mono (stageEqual_ok M4 (by omega_using [L]) (by omega_using [L]) (by omega_using [A]) (M4.scalarReady (by decide) nq)
     (R4.ready (M4.context nq))) fun sf ⟨Mf, F5, A5⟩ => ?_)
   refine WP.block_nil ⟨Mf, ?_, E1234.trans (A5.execution (.inr ⟨rfl, rfl⟩))⟩
   rw [F5, F4, F3, F2, F1, U4, E1234.value R (by decide) M.extent,
@@ -168,7 +168,7 @@ theorem prevalidatedSized_spec {base : Addr} {size pLen qLen p q g y total rv sv
       Keeps powerClob s sf ∧ StackOutside (s.gpr .esp) base usedBytes s.mem sf.mem ∧
       ∀ regs, VG.X86.Spill.Saved s.mem (off base) regs Entry.savedRegisters →
         VG.X86.Spill.Saved sf.mem (off base) regs Entry.savedRegisters := by
-  have bound : 8248 ≤ size := by have H : 15712 ≤ size := extent; omega
+  have bound : 8248 ≤ size := by have H : 15712 ≤ size := extent; omega_using [H]
   have checks : shapeValid p q ∧ publicChecks p q g y := by
     rw [VG.Proof.Dsa.validatePublicKeyBytes_eq widths keyLen keyValue] at valid
     exact of_decide_eq_true valid
@@ -181,7 +181,7 @@ theorem prevalidatedSized_spec {base : Addr} {size pLen qLen p q g y total rv sv
     rw [hd] at Dp
     have hP : pointerValue base t (.input .digestPrefixLen) =
         BitVec.ofNat 32 (min total (Spec.Dsa.bitLength q / 8)) :=
-      BitVec.eq_of_toNat_eq (by rw [Dp, BitVec.toNat_ofNat]; have B := shape_digest_width shape; omega)
+      BitVec.eq_of_toNat_eq (by rw [Dp, BitVec.toNat_ofNat]; have B := shape_digest_width shape; omega_using [hd])
     have Dt := D.keep_shape O K (by decide) (by decide)
     have Db := D.bytes_keep_shape O K (by decide) (by decide) bound
     have digestValue : operandValue t base (.input .digest)
@@ -194,7 +194,7 @@ theorem prevalidatedSized_spec {base : Addr} {size pLen qLen p q g y total rv sv
       (R.keep_shape O K (by decide) (by decide))
       (S.keep_shape O K (by decide) (by decide))
       (Dt.prefix (Nat.min_le_left _ _))
-      (by have B := shape_digest_width shape; omega) hP
+      (by have B := shape_digest_width shape; omega_using [B]) hP
       ((G.value_keep_shape O K (by decide) (by decide) bound).trans hg)
       ((Y.value_keep_shape O K (by decide) (by decide) bound).trans hy)
       ((R.value_keep_shape O K (by decide) (by decide) bound).trans hr)
@@ -204,7 +204,7 @@ theorem prevalidatedSized_spec {base : Addr} {size pLen qLen p q g y total rv sv
       fun sf ⟨V, E⟩ => ?_
     exact ⟨V, (K.mono (by decide)).trans E.keeps,
       (fun a ha hstack => ((execution_outside E) a ha (by rw [K.1 .esp (by decide)]; exact hstack)).trans
-        ((shapeFrame_outside O) a (.inr (by change 15712 ≤ ofs base a at ha; omega)))),
+        ((shapeFrame_outside O) a (.inr (by change 15712 ≤ ofs base a at ha; omega_using [ha])))),
       fun regs saved => E.saved (shapeFrame_saved O saved)⟩
   · exact absurd checks.1 shape
 
@@ -221,7 +221,7 @@ theorem prevalidatedInstalled_spec {s t : State} (A : VerifyingABI s)
       ∀ regs, VG.X86.Spill.Saved t.mem (off (argumentPointer s 8)) regs Entry.savedRegisters →
         VG.X86.Spill.Saved sf.mem (off (argumentPointer s 8)) regs Entry.savedRegisters := by
   have L : 0 < (arg s 2).toNat ∧ 0 < (arg s 3).toNat := by
-    have H := A.lengths; unfold Spec.Dsa.lengthsValid at H; omega
+    have H := A.lengths; unfold Spec.Dsa.lengthsValid at H; omega_using [H]
   obtain ⟨Key, KeyBytes⟩ := I.input (by decide : (0, .p) ∈ Entry.verifyArguments) A.keyBound
     (by rw [A.rd, A.wr]; simp) A.keyScratch A.room
     (by rw [callStack_eq A.stackLow]; exact A.belowKey.symm)
@@ -232,7 +232,7 @@ theorem prevalidatedInstalled_spec {s t : State} (A : VerifyingABI s)
     (by rw [A.rd, A.wr]; simp) A.digestScratch A.room
     (by rw [callStack_eq A.stackLow]; exact A.belowDigest.symm)
   obtain ⟨Qptr, Gptr, Yptr, _⟩ := I.pointers (by decide)
-  obtain ⟨P, Q, G, Y, KeyValue⟩ := publicKey_buffers Key L.1 L.2 (by have := A.keyLength; omega) KeyBytes
+  obtain ⟨P, Q, G, Y, KeyValue⟩ := publicKey_buffers Key L.1 L.2 (by have := A.keyLength; omega_using [this]) KeyBytes
     Qptr Gptr Yptr
   have qPtr := I.arguments (3, .qLen) (by decide)
   have Sptr : pointerValue (argumentPointer s 8) t .signatureS =
@@ -241,15 +241,15 @@ theorem prevalidatedInstalled_spec {s t : State} (A : VerifyingABI s)
       pointerValue (argumentPointer s 8) t (.input .qLen) = _
     rw [qPtr]
     simp only [BitVec.ofNat_toNat, BitVec.setWidth_eq]
-  have S := Sig.slice L.2 (by have := A.signatureLength; omega) Sptr
-  have R := Sig.prefix (by have := A.signatureLength; omega : (arg s 3).toNat ≤ (arg s 5).toNat)
+  have S := Sig.slice L.2 (by have := A.signatureLength; omega_using [this]) Sptr
+  have R := Sig.prefix (by have := A.signatureLength; omega_using [this] : (arg s 3).toNat ≤ (arg s 5).toNat)
   have Rbytes := Sig.slice_bytes (dest := .input .signature) (offset := 0) L.2
-    (by have := A.signatureLength; omega) (by simp)
-  have Sbytes := Sig.slice_bytes L.2 (by have := A.signatureLength; omega) Sptr
+    (by have := A.signatureLength; omega_using [this]) (by simp)
+  have Sbytes := Sig.slice_bytes L.2 (by have := A.signatureLength; omega_using [this]) Sptr
   rw [SigBytes, List.drop_zero] at Rbytes
   rw [SigBytes, List.take_of_length_le (by
     simp only [List.length_drop, Spec.Rsa.bytesAt, List.length_map, List.length_range]
-    have := A.signatureLength; omega)] at Sbytes
+    have := A.signatureLength; omega_using [this])] at Sbytes
   apply prevalidatedSized_spec I.scr A.used A.lengths P Q G Y R S D rfl rfl rfl rfl rfl rfl
     (congrArg BitVec.toNat (I.arguments (7, .digestLen) (by decide))) DigestBytes
     (by simpa only [Spec.Rsa.bytesAt, List.length_map, List.length_range] using A.keyLength)
@@ -267,11 +267,11 @@ theorem prevalidatedOperation_spec {s : State} (A : VerifyingABI s)
       abiPreserved s sf ∧
       StackOutside (s.gpr .esp) (argumentPointer s 8) ((arg s 9).toNat * 8) s.mem sf.mem ∧
       sf.rd = s.rd ∧ sf.wr = s.wr := by
-  have sz : 8272 ≤ (arg s 9).toNat * 8 := by have H : 15712 ≤ (arg s 9).toNat * 8 := A.used; omega
+  have sz : 8272 ≤ (arg s 9).toNat * 8 := by have H : 15712 ≤ (arg s 9).toNat * 8 := A.used; omega_using [H]
   unfold Prevalidated.verify Core.sequence
   dsimp only [List.foldr]
   refine WP.seq (WP.mono (verifyingEntry_ok A) fun t I => ?_)
-  refine WP.seq (generationDispatch_ok Prevalidated.sized _ I.scr (by change 8256 ≤ _; omega)
+  refine WP.seq (generationDispatch_ok Prevalidated.sized _ I.scr (by change 8256 ≤ _; omega_using [sz])
     (supportedWidths_member A.lengths) (by decide)
     (congrArg BitVec.toNat (I.arguments (2, .pLen) (by decide)))
     (congrArg BitVec.toNat (I.arguments (3, .qLen) (by decide))) ?_)
@@ -279,7 +279,7 @@ theorem prevalidatedOperation_spec {s : State} (A : VerifyingABI s)
   have J := I.compare Ku Ou
   refine WP.mono (prevalidatedInstalled_spec A J valid) fun v ⟨Value, K, O, Saved⟩ => ?_
   have Ov : StackOutside (s.gpr .esp) (argumentPointer s 8) ((arg s 9).toNat * 8) s.mem v.mem :=
-    fun a ha hstack => (O a (by have := A.used; omega)
+    fun a ha hstack => (O a (by have := A.used; omega_using [ha, this])
       (by rw [J.keeps.1 .esp (by decide)]; exact hstack)).trans
         (J.outside a (.inr (by simpa only [Nat.zero_add] using ha)))
   have Esp : v.gpr .esp = s.gpr .esp := (K.1 _ (by decide)).trans (J.keeps.1 _ (by decide))

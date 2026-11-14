@@ -75,11 +75,11 @@ theorem hash_piece : VP p (CI p · p.ℓ true p.k) (CH p)
     (hash2 vS 0 200 136 0x1f ⟨1, 0, 64⟩ (sb oB (p.k * w1Len p)) (sb oCT p.ctildeLen)) := by
   have hw := hF.w1; have hct := hF.ct
   refine hash2_piece (Y := YV p) 0 200 136 0x1f ⟨1, 0, 64⟩ (sb oB (p.k * w1Len p)) (sb oCT p.ctildeLen)
-    Proof.MlKem.rate136 (by lvd) (by rw [YV_stk]; omega) (by decide) (by show p.k * w1Len p < 2 ^ 32; omega)
-    (by show p.ctildeLen < 2 ^ 32; omega) (by native_taint_decide) (h₁ := .block []) (by kernel_rfl)
+    Proof.MlKem.rate136 (by lvd) (by rw [YV_stk]; omega_using []) (by decide) (by show p.k * w1Len p < 2 ^ 32; omega_using [hw])
+    (by show p.ctildeLen < 2 ^ 32; omega_using [hct]) (by native_taint_decide) (h₁ := .block []) (by kernel_rfl)
     (h₂ := .block []) (by kernel_rfl) (h₃ := .block []) (by kernel_rfl) (h₄ := .block []) (by kernel_rfl)
     (fun _ _ _ ⟨_, _, _, h⟩ => h.ctx) fun s₀ s s' hp ⟨hh, A, C, h⟩ h' fr out => ⟨hh, A, C,
-      h.keep hp (N := 40) (by omega) (by safeCs hF (Nat.le_refl p.k)) (fun i hi => by lvd) (by lvd) fr h', ?_⟩
+      h.keep hp (N := 40) (by omega_using []) (by safeCs hF (Nat.le_refl p.k)) (fun i hi => by lvd) (by lvd) fr h', ?_⟩
   rw [out, sponge_H, Ctx.roBytes hp h.ctx (b := ⟨1, 0, 64⟩) (by lvd) rfl]
   refine congrArg (fun x => Spec.MlDsa.H (vMu s₀ ++ x) p.ctildeLen) ?_
   have a0 := Buf.addr_eq hp (b := sb oB (p.k * w1Len p)) (by lvd)
@@ -101,7 +101,7 @@ theorem mask_and {P : Prop} [Decidable P] {x : Bool} (hx : x = true ↔ P) :
 theorem cmp_piece' : VP p (CH p) (VFin p) (cmpAnd (sb oCT p.ctildeLen) ⟨2, 0, p.ctildeLen⟩ p.ctildeLen) := by
   have hct := hF.ct
   refine cmpAnd_piece (Y := YV p) (a := sb oCT p.ctildeLen) (b := ⟨2, 0, p.ctildeLen⟩) rfl (by lvd) (by lvd)
-    (by lvd) rfl (by show p.ctildeLen < 2 ^ 32; omega) (h₁ := .block []) (by kernel_rfl) (by native_taint_decide)
+    (by lvd) rfl (by show p.ctildeLen < 2 ^ 32; omega_using [hct]) (h₁ := .block []) (by kernel_rfl) (by native_taint_decide)
     (by native_taint_decide) (fun _ _ _ ⟨_, _, _, h, _⟩ => h.ctx) fun s₀ s s' hp ⟨hh, A, C, h, hct'⟩ h' m' => ⟨h', ?_⟩
   have ea : accV s₀ s' = accV s₀ s &&& Proof.MlKem.X86.Decaps.mask
       (ctOf p s₀ hh A C = vCt p (vSig p s₀)) := by
@@ -134,12 +134,12 @@ theorem compute_piece : VP p (fun s₀ s => SC p s₀ s ∧ T1Ok p s₀) (fun s�
   unfold compute
   refine Piece.seq (B := fun s₀ s => CI p s₀ p.ℓ false 0 s ∧ T1Ok p s₀)
     (piece_pure (T1Ok p) ((seqR_piece (I := fun j => (CI p · j false 0)) p.ℓ 0
-      fun j _ hj => nttZ_piece hP hF (by omega)).mono (fun _ _ _ h => ci_of_sc h)
+      fun j _ hj => nttZ_piece hP hF (by omega_using [hj])).mono (fun _ _ _ h => ci_of_sc h)
         fun _ _ _ h => by simpa using h)) ?_
   refine (piece_pure (T1Ok p) (nttC_piece hP hF)).seq ?_
   refine Piece.seq (B := fun s₀ s => CI p s₀ p.ℓ true p.k s ∧ T1Ok p s₀)
     ((seqR_piece (I := fun r s₀ s => CI p s₀ p.ℓ true r s ∧ T1Ok p s₀) p.k 0
-      fun r _ hr => row_piece hP hF (by omega)).mono (fun _ _ _ h => h) fun _ _ _ h => by simpa using h) ?_
+      fun r _ hr => row_piece hP hF (by omega_using [hr])).mono (fun _ _ _ h => h) fun _ _ _ h => by simpa using h) ?_
   exact piece_pure (T1Ok p) ((hash_piece hF).seq (cmp_piece' hF))
 
 end

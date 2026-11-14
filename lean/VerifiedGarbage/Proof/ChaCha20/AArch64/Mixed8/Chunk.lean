@@ -46,12 +46,12 @@ theorem lastFrom_ok (r : Reg) {s₀ s : State} (hp : CP s₀) (hsr : SrcOK r s�
   have hi : ∀ k : Fin 8, InRegions (s.rd ++ s.wr) (s.gpr .x3 + BitVec.ofNat 64 (16 * k.val)) 16 := by
     intro k
     rw [h.rd,h.wr,h.x3]
-    obtain ⟨r,hr,hc⟩ := hp.buffer (16 * k.val) 16 (by omega)
+    obtain ⟨r,hr,hc⟩ := hp.buffer (16 * k.val) 16 (by omega_using [])
     exact ⟨r,List.mem_append_right _ hr,hc⟩
   have hs : ∀ k : Fin 8, InRegions (s.rd ++ s.wr) (s.gpr r + BitVec.ofNat 64 (384 + 16 * k.val)) 16 := by
-    intro k; rw [h.rd,h.wr,hr]; exact hsr.src _ _ (by omega)
+    intro k; rw [h.rd,h.wr,hr]; exact hsr.src _ _ (by omega_using [])
   have ho : ∀ k : Fin 8, InRegions s.wr (s.gpr .x1 + BitVec.ofNat 64 (384 + 16 * k.val)) 16 := by
-    intro k; rw [h.wr,h.x1]; exact hp.data _ _ (by omega)
+    intro k; rw [h.wr,h.x1]; exact hp.data _ _ (by omega_using [])
   have hdis : (scalarBuf s₀).Disjoint (lastR s₀) :=
     (hp.d_b.symm.sub_left (Region.sub_prefix (by decide : 128 ≤ 320))).sub_right
       (Offset.sub_base _ (by decide : 384 + 128 ≤ 512))
@@ -83,22 +83,22 @@ theorem lastFrom_ok (r : Reg) {s₀ s : State} (hp : CP s₀) (hsr : SrcOK r s�
         intro r hr; have he := List.mem_singleton.mp hr; subst r
         exact Offset.base_disjoint _ (by decide : 384 ≤ 384) (by decide : 384 + 128 ≤ 2 ^ 64))
         (by decide : 384 ≤ 2 ^ 64) hk',h.data k hk']
-    · have htail : k - 384 < 128 := by omega
+    · have htail : k - 384 < 128 := by omega_using [hk]
       have he : (lastR s₀).base + BitVec.ofNat 64 (k - 384) = s₀.gpr .x1 + BitVec.ofNat 64 k := by
-        dsimp [lastR]; rw [BitVec.add_assoc,← BitVec.ofNat_add,show 384 + (k - 384) = k by omega]
+        dsimp [lastR]; rw [BitVec.add_assoc,← BitVec.ofNat_add,show 384 + (k - 384) = k by omega_using [hk']]
       have hes : s₀.gpr r + BitVec.ofNat 64 384 + BitVec.ofNat 64 (k - 384) =
           s₀.gpr r + BitVec.ofNat 64 k := by
-        rw [BitVec.add_assoc,← BitVec.ofNat_add,show 384 + (k - 384) = k by omega]
+        rw [BitVec.add_assoc,← BitVec.ofNat_add,show 384 + (k - 384) = k by omega_using [hk']]
       have hm := hu ((lastR s₀).base + BitVec.ofNat 64 (k - 384))
       rw [VG.Offset.add_sub_cancel_left,BitVec.toNat_ofNat,
-        Nat.mod_eq_of_lt (by omega : k - 384 < 2 ^ 64)] at hm
+        Nat.mod_eq_of_lt (by omega_using [hk] : k - 384 < 2 ^ 64)] at hm
       have hslot : (k - 384) / 16 ∈ (List.finRange 8).map Fin.val ++ [] := by
         apply List.mem_append_left
         exact List.mem_map_of_mem (f := Fin.val)
-          (List.mem_finRange (⟨(k - 384) / 16,by omega⟩ : Fin 8))
-      rw [ite_eq_left ⟨hslot,by omega⟩,he,hes] at hm
+          (List.mem_finRange (⟨(k - 384) / 16,by omega_using [hk]⟩ : Fin 8))
+      rw [ite_eq_left ⟨hslot,by omega_using [hk]⟩,he,hes] at hm
       dsimp only at hm
-      have hbuf := h.buf (⟨(k - 384) / 16,by omega⟩ : Fin 8)
+      have hbuf := h.buf (⟨(k - 384) / 16,by omega_using [hk]⟩ : Fin 8)
       rw [hbuf,
         VG.Proof.ChaCha20.AArch64.Rows6.output_byte] at hm
       have hplain : s.mem (s₀.gpr r + BitVec.ofNat 64 k) = s₀.mem (s₀.gpr r + BitVec.ofNat 64 k) := by
@@ -113,8 +113,8 @@ theorem lastFrom_ok (r : Reg) {s₀ s : State} (hp : CP s₀) (hsr : SrcOK r s�
             · exact (hd.sub_left hsl).sub_right (Region.sub_prefix (by decide : 384 ≤ 512)))
           (by decide : 128 ≤ 2 ^ 64) htail
         rwa [hes] at hp'
-      rw [hplain,show 6 + (k - 384) / 64 = k / 64 by omega,
-        show (k - 384) % 64 = k % 64 by omega] at hm
+      rw [hplain,show 6 + (k - 384) / 64 = k / 64 by omega_using [hk'],
+        show (k - 384) % 64 = k % 64 by omega_using [hk']] at hm
       exact hm
   · have hpre : Frame [sr s₀,scalarBuf s₀,dr s₀] s₀.mem s.mem := h.frame.sub (by
       intro r hr

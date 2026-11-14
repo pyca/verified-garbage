@@ -48,8 +48,8 @@ theorem hv_le (σ : State) (k : Nat) : (hv P σ k).2 ≤ k := by
     generalize halveStep^[k] (cv P σ - 1, 0) = st at ih' ⊢
     unfold halveStep
     split
-    · show st.2 + 1 ≤ k + 1; omega
-    · show st.2 ≤ k + 1; omega
+    · show st.2 + 1 ≤ k + 1; omega_using [ih']
+    · show st.2 ≤ k + 1; omega_using [ih']
 
 theorem hv_succ (σ : State) (k : Nat) : hv P σ (k + 1) = halveStep (hv P σ k) := by
   rw [hv, Function.iterate_succ_apply']; rfl
@@ -59,8 +59,8 @@ theorem hv_done (σ : State) (pre : In P σ) :
     hv P σ (8 * P.L) = ((Spec.Rsa.splitTwos (cv P σ - 1)).2, (Spec.Rsa.splitTwos (cv P σ - 1)).1) := by
   obtain ⟨hodd, hlo, hhi⟩ := cv_shape (σ := σ) pre
   have sz := pre.sizes
-  have : 2 ^ 1 ≤ 2 ^ (P.bits - 1) := Nat.pow_le_pow_right (by decide) (by omega)
-  exact VG.Proof.Rsa.halve_done (by omega) (by omega)
+  have : 2 ^ 1 ≤ 2 ^ (P.bits - 1) := Nat.pow_le_pow_right (by decide) (by omega_using [sz])
+  exact VG.Proof.Rsa.halve_done (by omega_using [hlo, this]) (by omega_using [hhi])
 
 /-- `m := c − 1`, `t := 0` and the count `8 out_len`. -/
 theorem halfInit_vp {E : State → Prop} : VP (S3 P E) halfInit (HS P E 0) := by
@@ -85,7 +85,7 @@ theorem halfInit_vp {E : State → Prop} : VP (S3 P E) halfInit (HS P E 0) := by
     have hw1 := hw.of_upd u1 (by decide) (by decide) (by decide)
     refine h1.str hw1 (d := sCnt) (by decide) fun t ht hwt _ => WP.block_nil ⟨e, ?_, hwt⟩
     have c : (s1.gpr .r1).toNat = 8 * P.L := by
-      rw [u1.gpr, r1, BitVec.toNat_shiftLeft, Nat.shiftLeft_eq, BitVec.toNat_ofNat]; omega
+      rw [u1.gpr, r1, BitVec.toNat_shiftLeft, Nat.shiftLeft_eq, BitVec.toNat_ofNat]; omega_using [k2]
     rw [c] at ht
     refine ht.mono (fun j hj => ⟨by mem_sub, ?_⟩) fun j hj => ⟨by mem_sub, ?_⟩
     · dsimp only
@@ -97,7 +97,7 @@ theorem halfInit_vp {E : State → Prop} : VP (S3 P E) halfInit (HS P E 0) := by
     · dsimp only
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hj
       rcases hj with rfl | rfl | rfl | rfl | rfl | rfl
-      · rw [upd_self]; simp only [VH, upd_self]; omega
+      · rw [upd_self]; simp only [VH, upd_self]; omega_using []
       · rw [upd_ne _ _ (by decide), upd_self]; simp (config := {decide := true}) only [VH, upd, ↓reduceIte, hv]; rfl
       all_goals simp (config := {decide := true}) only [VH, upd, ↓reduceIte]
 

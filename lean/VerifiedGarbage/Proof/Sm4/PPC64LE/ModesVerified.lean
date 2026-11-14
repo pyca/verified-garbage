@@ -78,7 +78,7 @@ theorem seqPre_of {post : State → State → Prop} {M : Mode} (c : Impl.Modes.P
   have eV : ivR s c = ⟨s.gpr .r4, 16⟩ := by rw [← e16]
   refine ⟨⟨by rw [hwr, hT]; simp, by rw [hT]; exact fS⟩, by rw [eV, hwr]; simp, fun _ => by rw [eV, hwr]; simp,
     by rw [e16]; exact fV, by rw [hwr, hstep]; simp, by rw [hstep]; exact fD, by rw [hstep, eS]; exact dDS,
-    by rw [eV, eS]; exact dVS, fun _ => by rw [eV, hstep]; exact dVD, ⟨by omega, by rw [e16]; omega⟩, hL⟩
+    by rw [eV, eS]; exact dVS, fun _ => by rw [eV, hstep]; exact dVD, ⟨by omega_using [hstep], by rw [e16]; omega_using [hstep]⟩, hL⟩
 
 theorem keyArgs_of {post : State → State → Prop} {M : Mode} (c : Impl.Modes.PPC64LE.Core) (hT : c.total = slots + 6)
     (hstep : M.step = 16) {s : State} (h : (modeContract 16 post).pre s) :

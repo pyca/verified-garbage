@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Spec.RsaKeyGen.Generation
 public import VerifiedGarbage.Spec.Ffdh.Generation
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # The entropy requests the searches' code makes
 
@@ -27,7 +28,7 @@ theorem request_valid {floor cap available : Nat} (hfloor : 0 < floor) (hroom : 
   unfold request
   have h₁ := Nat.le_max_left available floor
   have h₂ := Nat.le_max_right available floor
-  exact ⟨Nat.lt_min.mpr ⟨by omega, hroom⟩, Nat.min_le_right _ _⟩
+  exact ⟨Nat.lt_min.mpr ⟨by omega_using [hfloor], hroom⟩, Nat.min_le_right _ _⟩
 
 /-- The length the code writes after the result `r`: `f` of the octets left
 for more entropy, and 0 otherwise. -/
@@ -90,7 +91,7 @@ one the contract allows. -/
 theorem first_valid {bits : Nat} (h : 512 ≤ bits) :
     Spec.Entropy.RequestValid (Spec.Ffdh.parameterEntropy bits) 0 (512 * ((bits + 7) / 8)) := by
   unfold Spec.Entropy.RequestValid Spec.Ffdh.parameterEntropy
-  omega
+  omega_using [h]
 
 theorem requested_requests {bits : Nat} {r : Spec.Ffdh.ParameterSearchResult}
     (h : ∀ k a u, r = .entropy k a u → Spec.Entropy.RequestValid (Spec.Ffdh.parameterEntropy bits) a

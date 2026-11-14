@@ -46,7 +46,7 @@ variable {g : Geo} {s0 s : State} {A : Nat → Nat} {live : List Nat}
 theorem KS.pre0 (pg : PubG g) (h : KS g s0 A live AW liveW V ls s) :
     Pre0 wid g.B g.Z (16 * g.n + 24) 22 g.args g.sp s :=
   ⟨h.rtW, by decide, ⟨h.argsOk pg, h.sp, fun i hi => h.arg (h.start.2 i hi).1 (by
-    change i < 12 at hi; omega)⟩⟩
+    change i < 12 at hi; omega_using [hi])⟩⟩
 
 /-- The geometry of the views: only the working space writable. -/
 def Geo.vw (g : Geo) : Geo := { g with wr := [⟨g.B, g.Z⟩] }
@@ -99,8 +99,8 @@ theorem agreeK {B : Addr} {Z len N : Nat} {args : Nat → BitVec 32} {sp : BitVe
     simp only at h₁ h₂
     change s.mem (B + BitVec.ofNat 64 k) = t.mem (B + BitVec.ofNat 64 k)
     have e : B + BitVec.ofNat 64 k = off B d + BitVec.ofNat 64 (k - d) := by
-      simp only [off]; rw [VG.Offset.add_add]; congr 2; omega
-    rw [e, Mem.readW_byte s.mem _ (show k - d < 4 by omega), Mem.readW_byte t.mem _ (show k - d < 4 by omega)]
+      simp only [off]; rw [VG.Offset.add_add]; congr 2; omega_using [h₁]
+    rw [e, Mem.readW_byte s.mem _ (show k - d < 4 by omega_using [h₂]), Mem.readW_byte t.mem _ (show k - d < 4 by omega_using [h₂])]
     exact congrArg _ (BitVec.eq_of_toNat_eq (eq d hd))
 
 
@@ -211,18 +211,18 @@ theorem relLoop {body : Prog isa} {c : Cond} (L : Nat → State → Prop) {K : N
     (Q := fun s t => L K s ∧ L K t)
     (fun remaining s t => ∃ k, k + remaining = K ∧ 0 < remaining ∧ L k s ∧ L k t)
     (fun remaining s t tr ur sf tf ⟨k, sum, pos, hs, ht⟩ es et => by
-      have trace := (rel k (by omega) _ _ _ _ _ _ ⟨hs, ht⟩ es et).1
-      obtain ⟨is, zs⟩ := wpRes (step k s (by omega) hs) es
-      obtain ⟨it, zt⟩ := wpRes (step k t (by omega) ht) et
+      have trace := (rel k (by omega_using [sum, pos]) _ _ _ _ _ _ ⟨hs, ht⟩ es et).1
+      obtain ⟨is, zs⟩ := wpRes (step k s (by omega_using [sum, pos]) hs) es
+      obtain ⟨it, zt⟩ := wpRes (step k t (by omega_using [sum, pos]) ht) et
       refine ⟨trace, by rw [zs, zt], fun done => ?_, fun more => ?_⟩
       · rw [zs] at done
         simp only [Option.some.injEq, decide_eq_false_iff_not] at done
-        have last : k + 1 = K := by omega
+        have last : k + 1 = K := by omega_using [sum, pos, done]
         exact ⟨last ▸ is, last ▸ it⟩
       · rw [zs] at more
         simp only [Option.some.injEq, decide_eq_true_eq] at more
-        exact ⟨remaining - 1, by omega, k + 1, by omega, by omega, is, it⟩) K
-  exact loop.mono (fun s t ⟨hs, ht⟩ => ⟨0, by omega, pos, hs, ht⟩) (fun _ _ h => h)
+        exact ⟨remaining - 1, by omega_using [pos], k + 1, by omega_using [sum, pos], by omega_using [sum, more], is, it⟩) K
+  exact loop.mono (fun s t ⟨hs, ht⟩ => ⟨0, by omega_using [], pos, hs, ht⟩) (fun _ _ h => h)
 
 /-- A loop run `K ≥ 1` times, its body related from each count's stage to the next, the stages
 saying whether another run follows. -/
@@ -233,18 +233,18 @@ theorem relLoopB {body : Prog isa} {c : Cond} (L : Nat → State → Prop) {K : 
   have loop := VG.RelCT.loop (M := isa) (body := body) (c := c) (Q := Both (L K))
     (fun remaining s t => ∃ k, k + remaining = K ∧ 0 < remaining ∧ L k s ∧ L k t)
     (fun remaining s t tr ur sf tf ⟨k, sum, pos, hs, ht⟩ es et => by
-      obtain ⟨trace, is, it⟩ := rel k (by omega) _ _ _ _ _ _ ⟨hs, ht⟩ es et
-      have zs := fl (k + 1) sf (by omega) (by omega) is
-      have zt := fl (k + 1) tf (by omega) (by omega) it
+      obtain ⟨trace, is, it⟩ := rel k (by omega_using [sum, pos]) _ _ _ _ _ _ ⟨hs, ht⟩ es et
+      have zs := fl (k + 1) sf (by omega_using []) (by omega_using [sum, pos]) is
+      have zt := fl (k + 1) tf (by omega_using []) (by omega_using [sum, pos]) it
       refine ⟨trace, by rw [zs, zt], fun done => ?_, fun more => ?_⟩
       · rw [zs] at done
         simp only [Option.some.injEq, decide_eq_false_iff_not] at done
-        have last : k + 1 = K := by omega
+        have last : k + 1 = K := by omega_using [sum, pos, done]
         exact ⟨last ▸ is, last ▸ it⟩
       · rw [zs] at more
         simp only [Option.some.injEq, decide_eq_true_eq] at more
-        exact ⟨remaining - 1, by omega, k + 1, by omega, by omega, is, it⟩) K
-  exact loop.mono (fun s t ⟨hs, ht⟩ => ⟨0, by omega, pos, hs, ht⟩) (fun _ _ h => h)
+        exact ⟨remaining - 1, by omega_using [pos], k + 1, by omega_using [sum, pos], by omega_using [sum, more], is, it⟩) K
+  exact loop.mono (fun s t ⟨hs, ht⟩ => ⟨0, by omega_using [], pos, hs, ht⟩) (fun _ _ h => h)
 
 theorem exec_seqs_append {y : Prog isa} {ys : List (Prog isa)} :
     ∀ {x : Prog isa} {xs : List (Prog isa)} {s t : State} {tr : List Leak},
@@ -465,24 +465,24 @@ theorem relWordStagesL {g : Geo} {k lim : Nat} {limit : List Instr} {body : Prog
     refine storeHdr (hw.rest U₁.keeps) (by decide) .eax fun s₂ K₂ e₂ k₂ _ _ => WP.block_nil ?_
     refine ⟨?_, fun h => absurd h (Nat.lt_irrefl 0)⟩
     rw [ite_eq_left (Nat.zero_le _), Nat.sub_zero]
-    exact hinit g' s s₂ hs' (by rw [U₁.mem] at K₂; exact K₂) (by rw [e₂, U₁.gpr, ofNat_lt_toNat (by omega)])
+    exact hinit g' s s₂ hs' (by rw [U₁.mem] at K₂; exact K₂) (by rw [e₂, U₁.gpr, ofNat_lt_toNat (by omega_using [p20])])
       (U₁.keeps.trans (k₂.mono (by simp)))
-  refine (relLoopB (WL Pre Fin k g) (K := k + 1) (by omega) (fun i hi => ?_)
+  refine (relLoopB (WL Pre Fin k g) (K := k + 1) (by omega_using []) (fun i hi => ?_)
       (fun i s hi _ hs => hs.2 hi)).mono (fun _ _ h => h) (fun s t ⟨hs, ht⟩ => ⟨?_, ?_⟩)
   rotate_left
-  · have := hs.1; rwa [ite_eq_right (by omega)] at this
-  · have := ht.1; rwa [ite_eq_right (by omega)] at this
+  · have := hs.1; rwa [ite_eq_right (by omega_using [])] at this
+  · have := ht.1; rwa [ite_eq_right (by omega_using [])] at this
   obtain ⟨j, hjd⟩ : ∃ j, j = k - i := ⟨_, rfl⟩
-  have hj : j ≤ k := by omega
+  have hj : j ≤ k := by omega_using [hjd]
   have pj : 2 ^ j ≤ 2 ^ 20 := Nat.le_trans (Nat.pow_le_pow_right (by decide) hj) p20
   have Pi : ∀ g' s, WL Pre Fin k g' i s → Pre g' j s := fun g' s h => by
-    have := h.1; rwa [ite_eq_left (by omega), ← hjd] at this
+    have := h.1; rwa [ite_eq_left (by omega_using [hi]), ← hjd] at this
   simp only [VG.Impl.Rsa.X86.Keys.seqs]
   refine VG.RelCT.seq (R := Both (fun s => Pre g j s ∧ isa.eval .b s = some (decide (4 * 2 ^ j < lim))))
     (leafP (P := fun g' => WL Pre Fin k g' i)
       (Q := fun g' s => Pre g' j s ∧ isa.eval .b s = some (decide (4 * 2 ^ j < lim)))
       (fun _ => 4 * 2 ^ j) hds (fun s h => p0Pre j s (Pi g s h))
-      (fun s h => ⟨by rw [ite_eq_left (by omega), ← hjd]; exact vPre j s (Pi g s h),
+      (fun s h => ⟨by rw [ite_eq_left (by omega_using [hi]), ← hjd]; exact vPre j s (Pi g s h),
         fun hi => by rw [eval_view]; exact h.2 hi⟩)
       (fun s h d hd => by
         simp only [List.mem_singleton] at hd; subst hd; exact (hpre g j s hj (Pi g s h)).2)
@@ -500,7 +500,7 @@ theorem relWordStagesL {g : Geo} {k lim : Nat} {limit : List Instr} {body : Prog
     refine VG.Proof.Mont.X86.Square.wp_cmpCF (v := u₂.gpr .eax) rfl fun u₃ F₃ c₃ => WP.block_nil ?_
     have Pu := hstable g' j v u₃ hj P (K₁.trans ((U₂.keeps.mono (by simp)).trans (fupd_keeps F₃ _)))
       (by rw [F₃.mem, U₂.mem, m₁])
-    have ecx : (u₂.gpr .ecx).toNat = 4 * 2 ^ j := by rw [U₂.gpr, m₁, sv, ofNat_lt_toNat (by omega)]
+    have ecx : (u₂.gpr .ecx).toNat = 4 * 2 ^ j := by rw [U₂.gpr, m₁, sv, ofNat_lt_toNat (by omega_using [pj])]
     have eax : (u₂.gpr .eax).toNat = lim := by rw [U₂.other _ (by decide), e₁]
     rw [ecx, eax] at c₃
     exact ⟨Pu, c₃⟩
@@ -511,14 +511,14 @@ theorem relWordStagesL {g : Geo} {k lim : Nat} {limit : List Instr} {body : Prog
       simp [hl] at e
   · refine VG.RelCT.block_nil fun s t ⟨⟨hs, ht⟩, e⟩ => ?_
     rw [hs.2] at e
-    have hl : lim ≤ 4 * 2 ^ j := by simp at e; omega
+    have hl : lim ≤ 4 * 2 ^ j := by simp at e; omega_using [e]
     exact ⟨hskip g j s hj hs.1 hl, hskip g j t hj ht.1 hl⟩
   · obtain ⟨wt, st⟩ := hpost g' j t hj Po
     refine wp_movS (readHdr wt (by decide)) fun t₁ T₁ _ => ?_
     refine VG.Proof.Bignum.X86.PublicRt.wp_shr (by decide) fun t₂ T₂ => ?_
     have e₂ : (t₂.gpr .eax).toNat = 2 * 2 ^ j := by
-      rw [T₂.gpr, BitVec.toNat_ushiftRight, T₁.gpr, st, ofNat_lt_toNat (by omega), Nat.shiftRight_eq_div_pow]
-      omega
+      rw [T₂.gpr, BitVec.toNat_ushiftRight, T₁.gpr, st, ofNat_lt_toNat (by omega_using [pj]), Nat.shiftRight_eq_div_pow]
+      omega_using []
     have w₂ : WsG g' t₂ := wt.rest (T₁.keeps.trans T₂.keeps)
     refine storeHdr w₂ (by decide) .eax fun t₃ K₃ s₃ k₃ _ _ => ?_
     refine VG.Proof.Mont.X86.Square.wp_cmpCF (v := BitVec.ofNat 32 4) rfl fun t₄ F₄ c₄ => WP.block_nil ?_
@@ -529,17 +529,17 @@ theorem relWordStagesL {g : Geo} {k lim : Nat} {limit : List Instr} {body : Prog
     rw [k₃.1 .eax (by simp), e₂, ofNat_lt_toNat (by decide)] at c₄
     have ev : isa.eval .ae t₄ = t₄.cf.map (!·) := rfl
     rcases Nat.eq_zero_or_pos j with hj0 | hj0
-    · refine ⟨by rw [ite_eq_right (by omega)]; exact N.2 hj0, fun _ => ?_⟩
+    · refine ⟨by rw [ite_eq_right (by omega_using [hjd, hj0])]; exact N.2 hj0, fun _ => ?_⟩
       rw [ev, c₄, hj0]
       simp only [Nat.pow_zero, Option.map_some]
       congr 1
       simp only [Nat.reduceMul, Nat.reduceLT, decide_true, Bool.not_true]
-      exact (decide_eq_false (by omega)).symm
-    · refine ⟨by rw [ite_eq_left (by omega), show k - (i + 1) = j - 1 by omega]; exact N.1 hj0, fun _ => ?_⟩
+      exact (decide_eq_false (by omega_using [hjd, hj0])).symm
+    · refine ⟨by rw [ite_eq_left (by omega_using [hjd, hj0]), show k - (i + 1) = j - 1 by omega_using [hjd]]; exact N.1 hj0, fun _ => ?_⟩
       have : ¬ 2 * 2 ^ j < 4 := by have := Nat.pow_le_pow_right (n := 2) (by decide) hj0; omega
       rw [ev, c₄]
       simp only [this, decide_false, Option.map_some, Bool.not_false]
-      exact congrArg some (decide_eq_true (by omega)).symm
+      exact congrArg some (decide_eq_true (by omega_using [hjd, hj0])).symm
 
 /-- `bitStagesL`'s halving of `sB`. -/
 abbrev halfB (m : Nat) : List Instr := [.mov .eax (.mem (sc sB)), .shift .shr .eax 1, .store (sc sB) .eax,
@@ -579,16 +579,16 @@ theorem relBitStagesL {g : Geo} {k m : Nat} {body : Prog isa}
     refine storeHdr (hw.rest U₁.keeps) (by decide) .eax fun s₂ K₂ e₂ k₂ _ _ => WP.block_nil ?_
     refine ⟨?_, fun h => absurd h (Nat.lt_irrefl 0)⟩
     rw [ite_eq_left (Nat.zero_le _), Nat.sub_zero]
-    exact hinit g' s s₂ hs' (by rw [U₁.mem] at K₂; exact K₂) (by rw [e₂, U₁.gpr, ofNat_lt_toNat (by omega)])
+    exact hinit g' s s₂ hs' (by rw [U₁.mem] at K₂; exact K₂) (by rw [e₂, U₁.gpr, ofNat_lt_toNat (by omega_using [p20])])
       (U₁.keeps.trans (k₂.mono (by simp)))
-  refine (relLoopB (BL Pre Fin k m g) (K := k - m + 1) (by omega) (fun i hi => ?_)
+  refine (relLoopB (BL Pre Fin k m g) (K := k - m + 1) (by omega_using []) (fun i hi => ?_)
       (fun i s hi _ hs => hs.2 hi)).mono (fun _ _ h => h) (fun s t ⟨hs, ht⟩ => ⟨?_, ?_⟩)
   rotate_left
-  · have := hs.1; rwa [ite_eq_right (by omega)] at this
-  · have := ht.1; rwa [ite_eq_right (by omega)] at this
+  · have := hs.1; rwa [ite_eq_right (by omega_using [])] at this
+  · have := ht.1; rwa [ite_eq_right (by omega_using [])] at this
   obtain ⟨j, hjd⟩ : ∃ j, j = k - i := ⟨_, rfl⟩
-  have hj : j ≤ k := by omega
-  have hmj : m ≤ j := by omega
+  have hj : j ≤ k := by omega_using [hjd]
+  have hmj : m ≤ j := by omega_using [hmk, hi, hjd]
   have pj : 2 ^ j ≤ 2 ^ 20 := Nat.le_trans (Nat.pow_le_pow_right (by decide) hj) p20
   refine VG.RelCT.seq ((rbody j hmj hj).mono (fun s t ⟨hs, ht⟩ => ⟨?_, ?_⟩) fun _ _ h => h)
     (leafP (P := fun g' s => Post g' j s) (Q := fun g' => BL Pre Fin k m g' (i + 1)) (fun _ => 2 ^ j)
@@ -596,13 +596,13 @@ theorem relBitStagesL {g : Geo} {k m : Nat} {body : Prog isa}
       (fun s h d hd => by
         simp only [List.mem_singleton] at hd; subst hd; exact (hpost g j s hmj hj h).2)
       (fun g' t Po => ?_) chalf)
-  · have := hs.1; rwa [ite_eq_left (by omega), ← hjd] at this
-  · have := ht.1; rwa [ite_eq_left (by omega), ← hjd] at this
+  · have := hs.1; rwa [ite_eq_left (by omega_using [hi]), ← hjd] at this
+  · have := ht.1; rwa [ite_eq_left (by omega_using [hi]), ← hjd] at this
   obtain ⟨wt, st⟩ := hpost g' j t hmj hj Po
   refine wp_movS (readHdr wt (by decide)) fun t₁ T₁ _ => ?_
   refine VG.Proof.Bignum.X86.PublicRt.wp_shr (by decide) fun t₂ T₂ => ?_
   have e₂ : (t₂.gpr .eax).toNat = 2 ^ j / 2 := by
-    rw [T₂.gpr, BitVec.toNat_ushiftRight, T₁.gpr, st, ofNat_lt_toNat (by omega), Nat.shiftRight_eq_div_pow,
+    rw [T₂.gpr, BitVec.toNat_ushiftRight, T₁.gpr, st, ofNat_lt_toNat (by omega_using [pj]), Nat.shiftRight_eq_div_pow,
       Nat.pow_one]
   have w₂ : WsG g' t₂ := wt.rest (T₁.keeps.trans T₂.keeps)
   refine storeHdr w₂ (by decide) .eax fun t₃ K₃ s₃ k₃ _ _ => ?_
@@ -611,22 +611,22 @@ theorem relBitStagesL {g : Geo} {k m : Nat} {body : Prog isa}
   have Nx := hnext g' j t t₄ hmj hj Po (by rw [F₄.mem, ← m₂]; exact K₃) (by rw [F₄.mem, s₃, e₂])
     ((T₁.keeps.mono (by simp)).trans ((T₂.keeps.mono (by simp)).trans ((k₃.mono (by simp)).trans
       (fupd_keeps F₄ _))))
-  rw [k₃.1 .eax (by simp), e₂, ofNat_lt_toNat (by omega)] at c₄
+  rw [k₃.1 .eax (by simp), e₂, ofNat_lt_toNat (by omega_using [pm])] at c₄
   have ev : isa.eval .ae t₄ = t₄.cf.map (!·) := rfl
   rcases Nat.eq_or_lt_of_le hmj with hjm | hlt
   · have : 2 ^ m / 2 < 2 ^ m := Nat.div_lt_self (Nat.two_pow_pos _) (by decide)
-    refine ⟨by rw [ite_eq_right (by omega)]; exact Nx.2 hjm.symm, fun _ => ?_⟩
+    refine ⟨by rw [ite_eq_right (by omega_using [hjd, hjm])]; exact Nx.2 hjm.symm, fun _ => ?_⟩
     rw [ev, c₄, ← hjm]
     simp only [this, decide_true, Option.map_some, Bool.not_true]
-    exact congrArg some (decide_eq_false (by omega)).symm
+    exact congrArg some (decide_eq_false (by omega_using [hjd, hjm])).symm
   · have : ¬ 2 ^ j / 2 < 2 ^ m := by
-      have e : 2 ^ j = 2 ^ (j - 1) * 2 := by rw [← Nat.pow_succ]; congr 1; omega
+      have e : 2 ^ j = 2 ^ (j - 1) * 2 := by rw [← Nat.pow_succ]; congr 1; omega_using [hlt]
       rw [e, Nat.mul_div_cancel _ (by decide)]
-      exact Nat.not_lt.mpr (Nat.pow_le_pow_right (by decide) (by omega))
-    refine ⟨by rw [ite_eq_left (by omega), show k - (i + 1) = j - 1 by omega]; exact Nx.1 hlt, fun _ => ?_⟩
+      exact Nat.not_lt.mpr (Nat.pow_le_pow_right (by decide) (by omega_using [hlt]))
+    refine ⟨by rw [ite_eq_left (by omega_using [hjd, hlt]), show k - (i + 1) = j - 1 by omega_using [hjd]]; exact Nx.1 hlt, fun _ => ?_⟩
     rw [ev, c₄]
     simp only [this, decide_false, Option.map_some, Bool.not_false]
-    exact congrArg some (decide_eq_true (by omega)).symm
+    exact congrArg some (decide_eq_true (by omega_using [hjd, hlt])).symm
 
 /-- `timesH`'s count down in `sBc`. -/
 abbrev downBc : List Instr := [.mov .eax (.mem (sc sBc)), .alu .sub .eax (.imm 1), .store (sc sBc) .eax]
@@ -681,9 +681,9 @@ theorem relTimesH {g : Geo} {b : Nat} {body : Prog isa}
   refine wp_movS (readHdr wt (by decide)) fun t₁ T₁ _ => ?_
   refine VG.Proof.Mont.X86.Rt.wp_subZ (v := BitVec.ofNat 32 1) rfl fun t₂ T₂ z₂ => ?_
   have e₂ : (t₂.gpr .eax).toNat = b - (i + 1) := by
-    rw [T₂.gpr, T₁.gpr, st, BitVec.toNat_sub, ofNat_lt_toNat (x := b - i) (by omega),
+    rw [T₂.gpr, T₁.gpr, st, BitVec.toNat_sub, ofNat_lt_toNat (x := b - i) (by omega_using [hb32]),
       ofNat_lt_toNat (x := 1) (by decide)]
-    omega
+    omega_using [hb32, hi]
   have w₂ : WsG g' t₂ := wt.rest (T₁.keeps.trans T₂.keeps)
   refine storeHdr w₂ (by decide) .eax fun t₃ K₃ s₃ k₃ zf₃ _ => WP.block_nil ?_
   have m₂ : t₂.mem = t.mem := by rw [T₂.mem, T₁.mem]
@@ -693,19 +693,19 @@ theorem relTimesH {g : Geo} {b : Nat} {body : Prog isa}
     rw [← T₂.gpr]
     by_cases h : i + 1 = b
     · simp only [h, decide_true, beq_iff_eq]
-      apply BitVec.eq_of_toNat_eq; rw [e₂]; simp; omega
+      apply BitVec.eq_of_toNat_eq; rw [e₂]; simp; omega_using [h]
     · simp only [h, decide_false, beq_eq_false_iff_ne, ne_eq]
-      intro e; have := congrArg BitVec.toNat e; rw [e₂] at this; simp at this; omega
+      intro e; have := congrArg BitVec.toNat e; rw [e₂] at this; simp at this; omega_using [hi, h, this]
   rw [zz] at z₂
   have ev : isa.eval .ne t₃ = t₃.zf.map (!·) := rfl
   by_cases h : i + 1 = b
-  · refine ⟨by rw [ite_eq_right (by omega)]; exact Nx.2 h, fun _ => ?_⟩
+  · refine ⟨by rw [ite_eq_right (by omega_using [h])]; exact Nx.2 h, fun _ => ?_⟩
     rw [ev, zf₃, z₂]
     simp [h]
-  · refine ⟨by rw [ite_eq_left (by omega)]; exact Nx.1 (by omega), fun _ => ?_⟩
+  · refine ⟨by rw [ite_eq_left (by omega_using [hi, h])]; exact Nx.1 (by omega_using [hi, h]), fun _ => ?_⟩
     rw [ev, zf₃, z₂]
     simp only [h, decide_false, Option.map_some, Bool.not_false]
-    exact congrArg some (decide_eq_true (by omega)).symm
+    exact congrArg some (decide_eq_true (by omega_using [hi, h])).symm
 
 end
 

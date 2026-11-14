@@ -62,15 +62,15 @@ theorem hashLabelT_ok {H : Hash} (hH : HashOK H) {f : Fns} {p : Addr} (T : TabS 
   have hl : lR s ∈ (withMem s m).rd := by show lR s ∈ s.rd; rw [P.hrd]; simp
   have hb : Spec.Rsa.bytesAt t₇.mem (stackArg s 9) (stackArg s 10).toNat =
       Spec.Rsa.bytesAt m (stackArg s 9) (stackArg s 10).toNat :=
-    bytes_m P b₇ (R := lR s) P.kl P.ls.symm (by show (stackArg s 10).toNat ≤ _; have := (stackArg s 10).isLt; omega)
+    bytes_m P b₇ (R := lR s) P.kl P.ls.symm (by show (stackArg s 10).toNat ≤ _; have := (stackArg s 10).isLt; omega_using [])
   refine WP.seq (WP.mono (updT_ok PF T hH b₇ (y₇.trans y₂) (dat := stackArg s 9) (len := (stackArg s 10).toNat)
     (by rw [o₇.get .r3, o₆.get .r3, o₅.get .r3, o₄.get .r3, e₃, b₂.r14])
     (by rw [o₇.get .r5, o₆.get .r5, e₅, o₄.get .r18, o₃.get .r18, Base.r18 b₂])
     (by rw [o₇.get .r6, e₆, o₅.get .r19, o₄.get .r19, o₃.get .r19, Base.r19 b₂])
     (by rw [e₇, o₆.get .r14, o₅.get .r14, o₄.get .r14, o₃.get .r14, b₂.r14])
     (Covers.left (by rw [b₇.rd]; exact Covers.of_mem fun r hr => by rw [List.mem_singleton.mp hr]; exact hl))
-    ((P.ls.sub_right (sc_sub P)).sub_right (sc_in (by omega)))
-    ((P.ls.sub_right (sc_sub P)).sub_right (sc_in (by omega)))
+    ((P.ls.sub_right (sc_sub P)).sub_right (sc_in (by omega_arith)))
+    ((P.ls.sub_right (sc_sub P)).sub_right (sc_in (by omega_arith)))
     (P.kl.sub_left fun a ha => kR_sub a (cR_sub (withMem s m) a ha))) fun t₈ ⟨⟨b₈, g₈, s₈, r₈⟩, y₈⟩ => ?_)
   refine WP.seq (WP.of_syms (wp_addi fun t₉ o₉ e₉ => wp_mov fun t₁₀ o₁₀ e₁₀ => wp_addi fun t₁₁ o₁₁ e₁₁ =>
     wp_addi fun t₁₂ o₁₂ e₁₂ => wp_nil fun y₁₂ => ?_))
@@ -90,7 +90,7 @@ theorem hashLabelT_ok {H : Hash} (hH : HashOK H) {f : Fns} {p : Addr} (T : TabS 
   · have e : ∀ {a b : State}, a.mem = b.mem → ∀ rgs, Same (Sd s) a b rgs := fun e rgs => Same.of_mem e.symm rgs
     exact ((((((e o₁.mem.symm _).trans (s₂.mono (by simp))).trans (e k₇.mem.symm _)).trans
       (s₈.mono (by simp))).trans (e k₁₂.mem.symm _)).trans s')
-  · exact r' _ hr (by rw [bytesAt_length]; have := (stackArg s 10).isLt; omega)
+  · exact r' _ hr (by rw [bytesAt_length]; have := (stackArg s 10).isLt; omega_using [])
       (by rw [g4, bytesAt_length, BitVec.ofNat_toNat, BitVec.setWidth_eq])
 
 end

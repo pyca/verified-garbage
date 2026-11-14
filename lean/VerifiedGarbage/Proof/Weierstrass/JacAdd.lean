@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Weierstrass.JacAdd
 public import VerifiedGarbage.Proof.Weierstrass.Jac
+import VerifiedGarbage.Proof.Framework.Omega
 
 @[expose] public section
 
@@ -260,7 +261,7 @@ theorem jacMixedInit_rename {F : Type _} {S : RcbSlots} {p q o : Pt}
   have hy : p.y ≠ S.t2 := by
     intro he
     have hh := hA.inj (w := 2) (by decide) 12 he
-    omega
+    omega_using [hh]
   unfold jacMixedInit
   rw [Function.update_of_ne hy]
   change (fun i => Function.update (Function.update E (rcbσ S p q o 2) (E p.x))

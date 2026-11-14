@@ -51,7 +51,7 @@ theorem load_ok (s : State) (offset component : Nat) (hc : component < 3)
   simp only [List.append_assoc]
   rw [WP.block_append_iff]
   refine WP.mono (loadBE64_ok (d := .t0) (tmp := .t1) (n := .a0) (by decide) (by decide)
-    (by decide) (by omega) hr) fun u₁ e₁ => ?_
+    (by decide) (by omega_using [ho]) hr) fun u₁ e₁ => ?_
   subst e₁
   rw [WP.block_append_iff]
   have hcode : permuteCode Spec.TripleDes.pc1 64 .t2 .t0 .t3 = instrs keyPermutation1.lit :=
@@ -75,7 +75,7 @@ theorem load_ok (s : State) (offset component : Nat) (hc : component < 3)
   simp only [List.cons_append, List.nil_append, mask]
   refine wp_srl (by decide) fun u₃ h₃ => wp_mv fun u₄ h₄ => wp_sll (by decide) fun u₅ h₅ =>
     wp_srl (by decide) fun u₆ h₆ => wp_li (imm := 0) (by decide) fun u₇ h₇ =>
-    wp_addi (by omega) fun u₈ h₈ => WP.block_nil ?_
+    wp_addi (by omega_using [hc]) fun u₈ h₈ => WP.block_nil ?_
   have g : ∀ r, r ≠ .a3 → r ≠ .a4 → r ≠ .a6 → r ≠ .a5 → u₈.gpr r = u₂.gpr r := fun r a b c d => by
     rw [h₈.other r d, h₇.other r c, h₆.other r b, h₅.other r b, h₄.other r b, h₃.other r a]
   refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, fun r hr => ?_⟩
@@ -109,7 +109,7 @@ theorem rotate28_ok (s : State) (r : Reg) (hr : r ≠ .t0)
     WP isa (.block (Impl.TripleDes.RISCV64.Key.rotate28 r n)) s fun s' =>
       s'.gpr r = (x.rotateLeft n).setWidth 64 ∧ Only [r, .t0] s s' := by
   simp only [Impl.TripleDes.RISCV64.Key.rotate28, mask, List.cons_append, List.nil_append]
-  refine wp_srl (by omega) fun u₁ h₁ => wp_sll (by omega) fun u₂ h₂ => wp_xor fun u₃ h₃ =>
+  refine wp_srl (by omega_using []) fun u₁ h₁ => wp_sll (by omega_using [hn']) fun u₂ h₂ => wp_xor fun u₃ h₃ =>
     wp_sll (by decide) fun u₄ h₄ => wp_srl (by decide) fun u₅ h₅ => WP.block_nil ?_
   refine ⟨?_, ⟨fun r' hr' => ?_, ?_, ?_, ?_, ?_⟩⟩
   · rw [h₅.gpr, h₄.gpr, h₃.gpr, h₂.gpr, h₂.other _ (Ne.symm hr), h₁.gpr, h₁.other _ hr, hx]
@@ -168,7 +168,7 @@ theorem rotation_ok (s : State) (c d : BitVec 28) (j : Nat) (hj : j < 16)
         WP isa rest u' P) :
       WP isa (.seq (.block [.addi .t0 .a6 (-(k : Int))]) rest) u P := by
     apply WP.seq
-    refine wp_subi (by omega) fun u' h' => WP.block_nil (hrest u' ?_ ?_)
+    refine wp_subi (by omega_using [hk]) fun u' h' => WP.block_nil (hrest u' ?_ ?_)
     · exact ⟨fun r hr => (h'.other r (by simpa using hr)).trans (hu.reg r hr),
         h'.mem.trans hu.mem, h'.rd.trans hu.rd, h'.wr.trans hu.wr, h'.sp.trans hu.sp⟩
     · rw [eval_zero, h'.gpr, hu.reg .a6 (by simp), hjreg]

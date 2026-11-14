@@ -60,7 +60,7 @@ theorem combPrecompute_input (s : State)
   simp only [State.addr] at reserved
   rw [reserved] at stackOut stackDom stackWs stackArgs
   have inner : (belowA s.sp 128).Sub (belowA s.sp 176) := belowA_sub (by decide) stackFit
-  have fit128 : 128 ≤ s.sp.toNat := by omega
+  have fit128 : 128 ≤ s.sp.toNat := by omega_using [stackFit]
   have ws : Workspace s p.base (8*p.len) := ⟨wsFit,by rw [wr]; simp [State.addr]⟩
   have domRead : InRegions (s.rd ++ s.wr) (State.addr p.domain) p.dom.length :=
     ⟨_,List.mem_append_left _ (by rw [rd]; simp [State.addr]),Region.contains_self _ _⟩
@@ -75,10 +75,10 @@ theorem combPrecompute_input (s : State)
     change p.k ≤ 8 * p.w at small
     simp only [CombBuilder.bytes,Spec.Ffdh.generationPrecomputedWords,Spec.Rsa.FixedBaseComb.precomputedWords,Spec.Rsa.precomputedWords,Spec.Rsa.FixedBaseComb.entries]
     change p.k ≤ 8 * (3 + (2*p.w + 32*p.w))
-    omega
+    omega_using [small]
   have outSub : (⟨State.addr p.output,p.k⟩ : Region).Sub ⟨State.addr p.output,CombBuilder.bytes p⟩ := by
     simpa only [off,BitVec.add_zero] using
-      (Offset.sub_base (State.addr p.output) (d := 0) (n := p.k) (k := CombBuilder.bytes p) (by omega))
+      (Offset.sub_base (State.addr p.output) (d := 0) (n := p.k) (k := CombBuilder.bytes p) (by omega_using [outSize]))
   have callSep : (⟨State.addr p.output,CombBuilder.bytes p⟩ : Region).Disjoint (belowA (entered s).sp 48) := by
     rw [entered_sp]
     exact stackOut.symm.sub_right (belowA_inner (a := 48) (k := 128) (by decide) stackFit)
@@ -86,15 +86,15 @@ theorem combPrecompute_input (s : State)
     (by rw [privateAlias]; exact (stackOut.symm.sub_left outSub))
     (by rw [publicAlias]; exact (stackOut.symm.sub_left outSub))
     (by rw [entropyAlias]; exact (stackOut.symm.sub_left outSub))
-    (by rw [privateAlias]; omega)
+    (by rw [privateAlias]; omega_using [outFit, outSize])
   have incoming (i : Nat) (hi : i < 3) : IncomingWord (stackArg s i) (128+4*i) (entered s) := by
     have start : stackArgAddr s 0 = State.addr s.sp := by simp [stackArgAddr]
-    have addr : stackArgAddr s i = off (State.addr s.sp) (4*i) := addr_add (by omega)
+    have addr : stackArgAddr s i = off (State.addr s.sp) (4*i) := addr_add (by omega_using [argFit, hi])
     have sub : (⟨stackArgAddr s i,4⟩ : Region).Sub ⟨stackArgAddr s 0,12⟩ := by
-      rw [start,addr]; exact Offset.sub_base _ (by omega)
-    refine enteredIncoming s fit128 (by omega) ?_ (stackArgs.sub_left inner |>.sub_right sub) rfl
+      rw [start,addr]; exact Offset.sub_base _ (by omega_using [hi])
+    refine enteredIncoming s fit128 (by omega_using [argFit, hi]) ?_ (stackArgs.sub_left inner |>.sub_right sub) rfl
     refine ⟨⟨stackArgAddr s 0,12⟩,List.mem_append_left _ (by rw [rd]; simp),?_⟩
-    rw [start,addr]; exact Offset.contains_base _ (by omega) (by omega)
+    rw [start,addr]; exact Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi])
   refine ⟨stackFit,args,?_,?_,output,domain,?_,calls,?_,outWs.symm,outDom.symm,?_,callSep,valid,environment,?_⟩
   · have h := incoming 0 (by decide)
     have eq : stackArg s 0 = BitVec.ofNat 32 p.k := by rw [←count,BitVec.ofNat_toNat,BitVec.setWidth_eq]
@@ -111,7 +111,7 @@ theorem combPrecompute_input (s : State)
     · exact stackOut.sub_left (fun a h => inner a (saved_sub_reserved s fit128 a h))
     · exact saved_separate_locals s fit128
     · have shifted : (pcPushed s).sp = (entered s).sp + BitVec.ofNat 32 72 := (BitVec.sub_add_cancel _ _).symm
-      have fit : (entered s).sp.toNat + 72 < 2^32 := by rw [entered_nat s fit128]; have := s.sp.isLt; omega
+      have fit : (entered s).sp.toNat + 72 < 2^32 := by rw [entered_nat s fit128]; have := s.sp.isLt; omega_using []
       rw [shifted,VG.Arm.addr_add fit,belowA,addr_sub' calls.stack.fit]
       exact (Offset.disjoint_below_above _ (m:=48) (a:=72) (l:=56) (by decide)).symm
 

@@ -83,7 +83,7 @@ theorem Inv.keep {d : DD} {s t : State} (h : Inv d s) (hb : Base d.x.c s) (he : 
     ofs d.x.c.S y < d.x.c.Z → off d.x.X i ≠ y) (hm : Body d.x.c.S d.x.c.w s.mem t.mem) : Inv d t := by
   have hZ := hb.env.hZ
   refine ⟨h.1, (bnd_congr fun hq => hm.bytesAt hZ fun i hi => by
-    rw [off_off']; exact hb.sepD _ (by omega)).trans h.2.1, ?_⟩
+    rw [off_off']; exact hb.sepD _ (by omega_using [hq, hi])).trans h.2.1, ?_⟩
   have ex : xval d.x t = xval d.x s := by simp only [xval]; rw [hm.bytesAt hZ he]
   rw [ex]; exact h.2.2
 
@@ -110,15 +110,15 @@ theorem ExtX.keep {x : XD} {s t : State} {rs : List Reg} (h : ExtX x s) (k : Kee
   wX := by
     have := Domain.slot_eq x.c.w 0
     show word t.mem x.c.S 64 = _
-    rw [Outside.word hm (Or.inl (by omega)) (by omega)]; exact h.wX
+    rw [Outside.word hm (Or.inl (by omega_using [this])) (by omega_using [])]; exact h.wX
   wXL := by
     have := Domain.slot_eq x.c.w 0
     show word t.mem x.c.S 72 = _
-    rw [Outside.word hm (Or.inl (by omega)) (by omega)]; exact h.wXL
+    rw [Outside.word hm (Or.inl (by omega_using [this])) (by omega_using [])]; exact h.wXL
   wO := by
     have := Domain.slot_eq x.c.w 0
     show word t.mem x.c.S 80 = _
-    rw [Outside.word hm (Or.inl (by omega)) (by omega)]; exact h.wO
+    rw [Outside.word hm (Or.inl (by omega_using [this])) (by omega_using [])]; exact h.wO
   rdX := by rw [k.rd, k.wr]; exact h.rdX
   sepX := h.sepX
   scrO := h.scrO.congr k.wr
@@ -222,7 +222,7 @@ theorem F0 {d : DD} {s : State} (h : Z0 d s) : WP isa (.block dpFront) s (ZB d) 
   obtain ⟨hpre, rfl⟩ := h
   refine WP.mono (dp_front hpre) fun t ⟨⟨hb, he⟩, _, hby, _⟩ => ⟨⟨hb, he⟩, rfl,
     bnd_congr fun hq => hby _ _ fun i hi => by
-      rw [off_off']; exact hb.sepD _ (by simp only [ddOf, dxOf] at hq hi ⊢; omega), ?_⟩
+      rw [off_off']; exact hb.sepD _ (by simp only [ddOf, dxOf] at hq hi ⊢; omega_using [hq, hi]), ?_⟩
   have ex : xval (dxOf s) t = xval (dxOf s) s := by simp only [xval]; rw [hby _ _ he.sepX]
   show 0 < xval (dxOf s) t ∧ xval (dxOf s) t < bnd s.mem (s.gpr .r5) (s.gpr .r7).toNat (s.gpr .r6).toNat
     (dxOf s).c.p ↔ decide _ = true
@@ -232,8 +232,8 @@ theorem F0 {d : DD} {s : State} (h : Z0 d s) : WP isa (.block dpFront) s (ZB d) 
 theorem ZB_loadP {d : DD} {s : State} (h : ZB d s) : WP isa loadP s (Z4 d) := by
   obtain ⟨⟨hb, he⟩, hi⟩ := h
   have hk := hb.k64
-  refine WP.mono (loadP_ok hb.env hb.r21 hb.r28 rfl hk hb.k1024 (fun i hi => hb.rdD i (by have := hb.kL; omega))
-    (fun i hi => hb.sepD i (by have := hb.kL; omega))) fun t ⟨⟨pt, ct, bt⟩, kt⟩ => ?_
+  refine WP.mono (loadP_ok hb.env hb.r21 hb.r28 rfl hk hb.k1024 (fun i hi => hb.rdD i (by have := hb.kL; omega_using [hi, this]))
+    (fun i hi => hb.sepD i (by have := hb.kL; omega_using [hi, this]))) fun t ⟨⟨pt, ct, bt⟩, kt⟩ => ?_
   have ep : Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem d.x.c.D d.x.c.k) = d.x.c.p := by
     rw [← Proof.Ffdh.take_bytesAt _ _ hb.kL, hb.bD]
   rw [ep] at pt ct
@@ -266,12 +266,12 @@ theorem TR1 {d : DD} {s : State} (h : Z4 d s ∧ s.gpr .r0 = 0) : WP isa (.block
   have hwd : d.x.c.w = (d.x.c.k + 7) / 8 := rfl
   have e28 := Domain.slot_eq d.x.c.w 28
   have rdQ : d.x.c.L = 3 * d.x.c.k → ∀ i < d.x.c.k, InRegions (s.rd ++ s.wr) (off (off d.x.c.D (2 * d.x.c.k)) i) 1 :=
-    fun hq i hi => by rw [off_off']; exact hb.rdD _ (by omega)
+    fun hq i hi => by rw [off_off']; exact hb.rdD _ (by omega_using [hq, hi])
   have sepQ : d.x.c.L = 3 * d.x.c.k → ∀ i < d.x.c.k, ∀ y, ofs d.x.c.S y < d.x.c.Z →
-      off (off d.x.c.D (2 * d.x.c.k)) i ≠ y := fun hq i hi => by rw [off_off']; exact hb.sepD _ (by omega)
-  have hrange := xRange_ok hb.env hb.r23 hb.r21 hb.r27 hb.r28 (by omega) (by omega)
-    (by rcases hb.hL with h | h <;> omega) (by omega) he.xl1 he.xlk he.wX he.wXL he.rdX he.sepX rdQ sepQ
-    (by rw [hp]; omega)
+      off (off d.x.c.D (2 * d.x.c.k)) i ≠ y := fun hq i hi => by rw [off_off']; exact hb.sepD _ (by omega_using [hq, hi])
+  have hrange := xRange_ok hb.env hb.r23 hb.r21 hb.r27 hb.r28 (by omega_using [hk]) (by omega_using [hwd])
+    (by rcases hb.hL with h | h <;> omega_using [hk', h]) (by omega_using [hk']) he.xl1 he.xlk he.wX he.wXL he.rdX he.sepX rdQ sepQ
+    (by rw [hp]; omega_using [hf])
   unfold xRange at hrange
   refine wp_split (WP.mono (xLoadPre_ok hb.env hb.r23 he.wX he.wXL) fun t ⟨⟨a10, a12, a6, _⟩, kt⟩ =>
     ⟨a10, a12, a6, (kt.gpr .r11 (by decide)).trans hb.env.h11, (kt.gpr .r21 (by decide)).trans hb.r21,
@@ -301,14 +301,14 @@ theorem TB {d : DD} {s : State} (h : R2 d s ∧ s.gpr .r26 = 0) :
   have e8 := Domain.slot_eq d.x.c.w 8
   have e28 := Domain.slot_eq d.x.c.w 28
   refine WP.mono (WP.keep [.r27] (Q := fun t => t.gpr .r27 = off d.x.O 0 ∧ t.mem = s.mem) (by
-      prun [hb.r23, hb.env.hs.ld (d := 80) (n := 8) (by omega), he.wO]) (by decide)) fun t ⟨⟨a27, mt⟩, kt⟩ => ?_
+      prun [hb.r23, hb.env.hs.ld (d := 80) (n := 8) (by omega_using [hZ, e28]), he.wO]) (by decide)) fun t ⟨⟨a27, mt⟩, kt⟩ => ?_
   have k10 := (kt.gpr .r10 (by decide)).trans hb.env.h10
   have k29 := (kt.gpr .r29 (by decide)).trans hb.env.h29
   have k28 := (kt.gpr .r28 (by decide)).trans hb.r28
   have k23 := (kt.gpr .r23 (by decide)).trans hb.r23
   refine ⟨⟨a27, k10, k29, k28, k23, (kt.gpr .r11 (by decide)).trans hb.env.h11⟩, ?_⟩
   refine WP.mono (Pub.output_ok (b := false) (hb.env.hs.congr kt.wr) (he.scrO.congr kt.wr) k10 k29 k28 a27
-    (by rw [kt.gpr .r26 (by decide), hz]; rfl) (by omega) (by omega) (by omega) he.sepO) fun u ⟨_, ku⟩ => ?_
+    (by rw [kt.gpr .r26 (by decide), hz]; rfl) (by omega_using [hk]) (by omega_using [hwd]) (by omega_using [hZ, e8, e28]) he.sepO) fun u ⟨_, ku⟩ => ?_
   show u.gpr .r23 = d.x.c.S
   rw [ku.gpr .r23 (by decide), k23]
 
@@ -346,9 +346,9 @@ theorem TG2 {d : DD} {s : State} (h : G2 d s) : WP isa exPre s (X5 d.x) := by
   have hpk : d.x.c.p < 256 ^ d.x.c.k := by
     have := VG.Proof.Bignum.os2ip_lt (d.x.c.db.take d.x.c.k)
     rwa [hb.take_len] at this
-  refine WP.mono (exPower_split hb.env hb.r23 he.r9 hb.r28 (by omega) (by omega) he.xl1 (by omega) hb.rdY hb.sepY
+  refine WP.mono (exPower_split hb.env hb.r23 he.r9 hb.r28 (by omega_using [hk]) (by omega_using [hwd]) he.xl1 (by omega_using [hk', hxk]) hb.rdY hb.sepY
     he.rdX he.sepX he.wX he.wXL (by rw [hp]; exact hf.1) (by rw [hp]; exact hf.2)
-    (by rw [hp]; exact top_of_valid hv (by omega) (by omega)))
+    (by rw [hp]; exact top_of_valid hv (by omega_using [hwd]) (by omega_using [hk, hwd])))
     fun s₆ ⟨⟨a30, a31, g10, g29, g11, g23, g28⟩, hw⟩ => ⟨⟨a30, a31, g10, g29, g11, g23, g28⟩, WP.mono hw
       fun t ⟨⟨z5, p5, b5, r10₅⟩, k5⟩ => ?_⟩
   have k29 := (k5.gpr .r29 (by decide)).trans hb.env.h29
@@ -356,12 +356,12 @@ theorem TG2 {d : DD} {s : State} (h : G2 d s) : WP isa exPre s (X5 d.x) := by
   have k23 := (k5.gpr .r23 (by decide)).trans hb.r23
   have k28 := (k5.gpr .r28 (by decide)).trans hb.r28
   refine ⟨⟨r10₅, k29, k11, k23, k28⟩, WP.mono (exOut_split (O := d.x.O) (hb.env.hs.congr k5.wr)
-    (he.scrO.congr k5.wr) r10₅ k29 k11 k23 k28 hb.env.hw hb.env.hw' hZ (by omega) (by omega) ?_ he.sepO
-    (by rw [p5, hp]; omega) (by rw [z5, p5]; exact Nat.mod_lt _ (by rw [hp]; omega)) (by rw [p5, hp]; exact hpk))
+    (he.scrO.congr k5.wr) r10₅ k29 k11 k23 k28 hb.env.hw hb.env.hw' hZ (by omega_using [hk]) (by omega_using [hwd]) ?_ he.sepO
+    (by rw [p5, hp]; omega_using [hf]) (by rw [z5, p5]; exact Nat.mod_lt _ (by rw [hp]; omega_using [hf])) (by rw [p5, hp]; exact hpk))
     fun s₃ ⟨⟨a27, b10, b29, b28, b23, b11⟩, hw'⟩ => ⟨⟨a27, b10, b29, b28, b23, b11⟩, WP.mono hw'
       fun u ⟨_, ku⟩ => (ku.gpr .r23 (by decide)).trans k23⟩⟩
   show word t.mem d.x.c.S 80 = _
-  rw [Outside.word b5 (Or.inl (by omega)) (by omega)]; exact he.wO
+  rw [Outside.word b5 (Or.inl (by omega_using [e0])) (by omega_using [])]; exact he.wO
 
 /-! ## Constant time -/
 
@@ -441,19 +441,19 @@ theorem ddOf_eq {s t : State} (hs : dpContract.pre s) (h3 : s.gpr .r3 = t.gpr .r
     simp only [dxOf]
     rw [← h3, ← h5, ← h6, ← h7, ← h8, ← h9, ← h10, ← a0, ed]
     simp only [off]
-    rw [sl _ (by omega)]
+    rw [sl _ (by omega_using [hL])]
   have hbnd : bnd s.mem (s.gpr .r5) (s.gpr .r7).toNat (s.gpr .r6).toNat (dxOf s).c.p =
       bnd t.mem (t.gpr .r5) (t.gpr .r7).toNat (t.gpr .r6).toNat (dxOf t).c.p := by
     rw [← hdx, ← h5, ← h6, ← h7]
-    exact (bnd_congr fun hq => (sl _ (by omega)).symm).symm
+    exact (bnd_congr fun hq => (sl _ (by omega_using [hq])).symm).symm
   have hp : ∀ m : Mem, Spec.Rsa.os2ip ((Spec.Rsa.bytesAt m (s.gpr .r5) (s.gpr .r6).toNat).take (s.gpr .r7).toNat) =
       Spec.Rsa.os2ip (Spec.Rsa.bytesAt m (s.gpr .r5) (s.gpr .r7).toNat) := fun m => by
-    rw [Proof.Ffdh.take_bytesAt _ _ (by omega)]
+    rw [Proof.Ffdh.take_bytesAt _ _ (by omega_using [hL])]
   have e3 := (Proof.Ffdh.PPC64LE.Derive.keyStatus_two _ _).symm.trans
     ((iff_of_eq (congrArg (· = 2) (List.cons.inj e2).1)).trans (Proof.Ffdh.PPC64LE.Derive.keyStatus_two _ _))
   rw [← h5, ← h6, ← h7, ← h8, ← h9] at e3
-  rw [Proof.Ffdh.PPC64LE.Derive.privateValid_dom (by omega) (by omega),
-    Proof.Ffdh.PPC64LE.Derive.privateValid_dom (by omega) (by omega)] at e3
+  rw [Proof.Ffdh.PPC64LE.Derive.privateValid_dom (by omega_using [hk]) (by omega_using [hL]),
+    Proof.Ffdh.PPC64LE.Derive.privateValid_dom (by omega_using [hk]) (by omega_using [hL])] at e3
   have hv := bool_eq_of_false_iff e3
   simp only [ddOf, DD.mk.injEq]
   refine ⟨hdx, hbnd, ?_⟩
@@ -462,7 +462,7 @@ theorem ddOf_eq {s t : State} (hs : dpContract.pre s) (h3 : s.gpr .r3 = t.gpr .r
       Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (s.gpr .r5) (s.gpr .r7).toNat) := by rw [← hp, ← hp, ed]
   have hbT : ∀ P, bnd t.mem (s.gpr .r5) (s.gpr .r7).toNat (s.gpr .r6).toNat P =
       bnd s.mem (s.gpr .r5) (s.gpr .r7).toNat (s.gpr .r6).toNat P := fun P =>
-    bnd_congr fun hq => (sl _ (by omega)).symm
+    bnd_congr fun hq => (sl _ (by omega_using [hq])).symm
   rw [hpT, hbT] at hv
   rw [hbT, show (dxOf s).c.p = Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (s.gpr .r5) (s.gpr .r7).toNat) from hp s.mem]
   simp only [xval, dxOf]

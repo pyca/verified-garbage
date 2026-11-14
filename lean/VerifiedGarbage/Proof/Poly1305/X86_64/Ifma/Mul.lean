@@ -79,12 +79,12 @@ theorem MulPre.env {s : State} (hp : MulPre s) : EnvOK s mulB := by
     have e2 := hp.s2 k hk
     simp only [hv, yv, sv, hreg, yreg, sreg] at h0 h1 h2 y0 y1 y2 e1 e2
     cases r <;> simp only [mulB]
-    all_goals omega
+    all_goals omega_arith
   · have := BitVec.isLt (s.mem.readW (s.gpr .rdi + BitVec.ofInt 64 (d : Int)) 64)
     simp only [mulB]
     split
     · subst d; have := hp.mask; simp only [envOf, Avx512.envOf] at this; rw [this]
-    · omega
+    · omega_using []
 
 /-- What `mul` leaves: `H` times `Y`, carried, `Y` and `S` as they were, and
 the rest but the sums and scratch registers as they were. -/
@@ -120,10 +120,10 @@ theorem MulPre.mul_mod {s : State} (hp : MulPre s) {k : Nat} (hk : k < 8) :
     have y2 := hp.y k hk 2 (by decide)
     have e1 := hp.s1 k hk
     have e2 := hp.s2 k hk
-    rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2) with rfl | rfl | rfl
+    rcases (by omega_using [hi] : i = 0 ∨ i = 1 ∨ i = 2) with rfl | rfl | rfl
     · have : sv s k 0 = sv s k 2 := rfl
-      omega
-    · omega
-    · omega
+      omega_using [y2, e2, this]
+    · omega_using [y1, e1]
+    · omega_using [y2, e2]
 
 end VG.Proof.Poly1305.X86_64.Ifma

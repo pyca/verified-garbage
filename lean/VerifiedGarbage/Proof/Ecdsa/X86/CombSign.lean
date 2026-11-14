@@ -22,7 +22,7 @@ structure CombSignPre (c : Cfg) (s : State) : Prop extends
 variable {c : Cfg}
 
 theorem CombSignPre.sp4 {s : State} (hp : CombSignPre c s) : 4 ≤ (s.gpr .esp).toNat := by
-  have := Cfg.stk_ge c; have := hp.toPre.sp_lo; omega
+  have := Cfg.stk_ge c; have := hp.toPre.sp_lo; omega_arith
 
 /-- The complete comb signing function computes the existing specification
 and preserves the cdecl ABI, including the return address. -/
@@ -36,7 +36,7 @@ theorem signComb_ok (hc : CfgOk c) (hC : Law c.C) (hT : CombTbls c)
   refine WP.seq (WP.mono (symFrame_ok d.tsym s₀ hp.sp4) fun s₁ P => ?_)
   have hp₁ := hp.toPre.symAddr P hp.sp4
   have he := P.gpr .esp (by decide)
-  have ha : ∀ j < 5, arg s₁ j = arg s₀ j := fun j hj => P.arg hp.sp4 (by have := hp.sp_fit; omega)
+  have ha : ∀ j < 5, arg s₁ j = arg s₀ j := fun j hj => P.arg hp.sp4 (by have := hp.sp_fit; omega_using [hj, this])
   have htbl := hp.tbls.symAddr (Nat.le_trans (by decide) (Cfg.stk_ge c)) hp.toPre.sp_lo P
   have ht : TblMem s₁ ((s₀.syms d.tsym).setWidth 64) (c.combWords d) ∧
       (∀ i < (c.combWords d).length, ∀ b < 8,
@@ -57,10 +57,10 @@ theorem signComb_ok (hc : CfgOk c) (hC : Law c.C) (hT : CombTbls c)
       rcases hr with rfl | rfl | rfl | rfl | rfl <;> decide))
   · have hr := hAbi.2
     rw [he] at hr
-    exact hr.trans (P.ret hp.sp4 (by have := hp.sp_fit; omega))
-  · have hd := prefix_bytesAt P hp.d_stack (by have := hp.d_fit; change c.C.len ≤ 2 ^ 64; omega)
-    have hh := prefix_bytesAt P hp.digest_stack (by have := hp.digest_fit; change c.C.len ≤ 2 ^ 64; omega)
-    have hk := prefix_bytesAt P hp.k_stack (by have := hp.k_fit; change c.C.len ≤ 2 ^ 64; omega)
+    exact hr.trans (P.ret hp.sp4 (by have := hp.sp_fit; omega_using [this]))
+  · have hd := prefix_bytesAt P hp.d_stack (by have := hp.d_fit; change c.C.len ≤ 2 ^ 64; omega_using [this])
+    have hh := prefix_bytesAt P hp.digest_stack (by have := hp.digest_fit; change c.C.len ≤ 2 ^ 64; omega_using [this])
+    have hk := prefix_bytesAt P hp.k_stack (by have := hp.k_fit; change c.C.len ≤ 2 ^ 64; omega_using [this])
     simpa only [SignPost, ptr, ha 0 (by decide), ha 1 (by decide), ha 2 (by decide),
       ha 3 (by decide), hd, hh, hk] using post
 

@@ -49,9 +49,9 @@ theorem pd_contract_ct : ConstantTime isa (Proof.Rsa.publicPrecomputedCheckedCon
   have eEq := congrArg (List.map (BitVec.ofNat 8)) expEq
   simp only [List.map_map, Function.comp_def, BitVec.ofNat_toNat, BitVec.setWidth_eq, List.map_id'] at preEq eEq
   have first := VG.Proof.Bignum.wv_of_wordsAt (c := 0) (w := Spec.Rsa.modulusWords (s.gpr .r1).toNat) preEq
-    (by rw [pd_contract_length s hs]; omega)
+    (by rw [pd_contract_length s hs]; omega_using [])
   have second := VG.Proof.Bignum.wv_of_wordsAt (c := Spec.Rsa.modulusWords (s.gpr .r1).toNat)
-    (w := Spec.Rsa.modulusWords (s.gpr .r1).toNat) preEq (by rw [pd_contract_length s hs]; omega)
+    (w := Spec.Rsa.modulusWords (s.gpr .r1).toNat) preEq (by rw [pd_contract_length s hs]; omega_using [])
   rw [← read_eq_wv, ← read_eq_wv] at first second
   simp only [Nat.mul_zero, BitVec.add_zero] at first
   simp only [State.addr] at it

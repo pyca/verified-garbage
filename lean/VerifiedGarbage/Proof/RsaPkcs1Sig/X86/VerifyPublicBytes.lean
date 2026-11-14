@@ -21,7 +21,7 @@ theorem bytesAt_of_words {m m' : Mem} {p : Addr} {n : Nat}
   refine List.map_congr_left ?_
   intro i hi
   have hi := List.mem_range.mp hi
-  have wi : i / 8 < n := by omega
+  have wi : i / 8 < n := by omega_using [hi]
   have W := congrArg (fun xs : List (BitVec 64) => xs[i / 8]?) words
   simp only [Spec.Rsa.wordsAt, List.getElem?_map, List.getElem?_range wi, Option.map_some, Option.some.injEq] at W
   have B := congrArg (fun v : BitVec 64 => v.extractLsb' (8 * (i % 8)) 8) W
@@ -29,7 +29,7 @@ theorem bytesAt_of_words {m m' : Mem} {p : Addr} {n : Nat}
     (m'.read (p + BitVec.ofNat 64 (8 * (i / 8))) 8).extractLsb' (8 * (i % 8)) 8 at B
   rw [Mem.extractLsb'_read _ _ (Nat.mod_lt _ (by decide : 0 < 8)),
     Mem.extractLsb'_read _ _ (Nat.mod_lt _ (by decide : 0 < 8)), Offset.add_add,
-    show 8 * (i / 8) + i % 8 = i by omega] at B
+    show 8 * (i / 8) + i % 8 = i by omega_using []] at B
   exact B
 
 end VG.Proof.RsaPkcs1Sig.X86.Ver

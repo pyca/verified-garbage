@@ -23,10 +23,10 @@ theorem copyStep_ok {s : State} {base : Addr} (hs : Scr s base) {o a i : Nat}
     (ho : o + 128 ≤ 8192) (ha : a + 128 ≤ 8192) (ho8 : o % 8 = 0) (ha8 : a % 8 = 0) (hi : i < 16) :
     WP isa (.block [ld .x4 (a + 8 * i), st .x4 (o + 8 * i)]) s fun t =>
       t.mem = s.mem.writeW (off base (o + 8 * i)) (word s.mem base (a + 8 * i)) ∧ Keeps clob s t := by
-  have l := hs.read (d := a + 8 * i) (n := 8) (by omega)
-  have w := hs.write (d := o + 8 * i) (n := 8) (by omega)
-  have ae : (a + 8 * i) % 8 = 0 ∧ a + 8 * i < 32768 := ⟨by omega, by omega⟩
-  have oe : (o + 8 * i) % 8 = 0 ∧ o + 8 * i < 32768 := ⟨by omega, by omega⟩
+  have l := hs.read (d := a + 8 * i) (n := 8) (by omega_using [ha, hi])
+  have w := hs.write (d := o + 8 * i) (n := 8) (by omega_using [ho, hi])
+  have ae : (a + 8 * i) % 8 = 0 ∧ a + 8 * i < 32768 := ⟨by omega_using [ha8], by omega_using [ha, hi]⟩
+  have oe : (o + 8 * i) % 8 = 0 ∧ o + 8 * i < 32768 := ⟨by omega_using [ho8], by omega_using [ho, hi]⟩
   apply WP.of_runBlock
   simp only [ld, st, runBlock_cons, runStep_some, runBlock_nil, exec, addr, Size.bytes,
     State.read, State.load, State.store, RegUpd.gpr_write, RegUpd.mem_write,
@@ -51,18 +51,18 @@ theorem copy_ok {s : State} {base : Addr} (hs : Scr s base) {o a : Nat}
     intro n t hn ⟨tf, ta, tm, tk⟩
     refine WP.mono (copyStep_ok (hs.of_keeps tk (by decide)) ho ha ho8 ha8 hn) fun u ⟨um, uk⟩ => ?_
     have out : Outside base (o + 8 * n) 8 t.mem u.mem := by
-      rw [um]; exact writeW_outside _ _ _ (by omega)
-    refine ⟨?_, ?_, tm.trans (out.mono (by omega) (by omega)), tk.trans uk⟩
+      rw [um]; exact writeW_outside _ _ _ (by omega_using [ho, hn])
+    refine ⟨?_, ?_, tm.trans (out.mono (by omega_using []) (by omega_using [hn])), tk.trans uk⟩
     · intro i hi
       change (word u.mem base (o + 8 * i)).toNat = _
-      rw [um, word_write t.mem base (by omega) (by omega)]
+      rw [um, word_write t.mem base (by omega_using [ho, hn]) (by omega_using [ho, hn, hi])]
       by_cases h : i = n
-      · rw [ite_eq_left h, h]; exact ta n (by omega) hn
-      · rw [ite_eq_right h]; exact tf i (by omega)
+      · rw [ite_eq_left h, h]; exact ta n (by omega_using []) hn
+      · rw [ite_eq_right h]; exact tf i (by omega_using [hi, h])
     · intro i hi hi'
       change (word u.mem base (a + 8 * i)).toNat = _
-      rw [out.word (by rcases hsep with h | h | h <;> omega) (by omega)]
-      exact ta i (by omega) hi'
+      rw [out.word (by rcases hsep with h | h | h <;> omega_arith) (by omega_using [ha, hi'])]
+      exact ta i (by omega_using [hi]) hi'
   refine WP.mono (wp_range_flatMap (M := isa) (N := 16) inv st 16 (by decide) s ?_)
     fun t ⟨tf, _, tm, tk⟩ => ⟨tf, tm, tk⟩
   exact ⟨fun _ hi => by omega, fun _ _ _ => rfl, Outside.refl _ _ _ _, Keeps.refl _ _⟩

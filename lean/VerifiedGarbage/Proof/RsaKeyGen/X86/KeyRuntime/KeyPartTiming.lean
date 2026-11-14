@@ -46,11 +46,11 @@ theorem keyPart_rest_public : Public (seqs [crtPart, primeProduct aN aPa aQa, fi
 theorem keyPart_trace (B : Addr) (Z n k : Nat) (width : n = 2 * k) (positive : 0 < k) :
     RelCT isa (Both (fun s => Ws s B Z n 32 ∧ num s.mem B n aPa < 2 ^ (32 * k))) keyPart
       (VG.X86.Taint.Agree runtimeTaint) := by
-  have small : k ≤ n := by omega
-  have half : n / 2 = k := by omega
+  have small : k ≤ n := by omega_using [width]
+  have half : n / 2 = k := by omega_using [width]
   have three : 3 < 2 ^ (32 * k) := by
-    have := Nat.pow_le_pow_right (by decide : 1 ≤ 2) (show 32 ≤ 32 * k by omega)
-    omega
+    have := Nat.pow_le_pow_right (by decide : 1 ≤ 2) (show 32 ≤ 32 * k by omega_using [positive])
+    omega_using [this]
   intro s₁ s₂ tr₁ tr₂ t₁ t₂ P E₁ E₂
   have layout := VG.Proof.RsaKeyGen.X86.Key.inverse_array_layout P.1.1.old small (a := aQa) (b := aDen)
     (by decide) (by decide) (by decide) (by decide)

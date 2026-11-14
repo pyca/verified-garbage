@@ -59,7 +59,7 @@ theorem fillCompress_ok {s : State} {pass slice lane index ctr : Nat} {st : Fill
         (blockAt s.mem (matrixCell (memB s₀) R)) := by
   have L8 := laneLen_ge hp
   obtain ⟨cl, _⟩ := cell_fits hp hl (col := (slice * (prm s₀).segmentLen + index + (prm s₀).laneLen - 1) %
-    (prm s₀).laneLen) (Nat.mod_lt _ (by omega))
+    (prm s₀).laneLen) (Nat.mod_lt _ (by omega_using [L8]))
   unfold Impl.Argon2.Arm.Derive.fillCompress
   refine WP.seq ((prevPointer_ok hp h.inv h.pr h.pos hl hs hi).mono fun s₁ ⟨a₁, k₁⟩ => ?_)
   generalize (lane * (prm s₀).laneLen + (slice * (prm s₀).segmentLen + index + (prm s₀).laneLen - 1) %
@@ -114,7 +114,7 @@ theorem fillWrite_ok {s : State} {pass slice lane index ctr : Nat} {st : FillSta
     rw [f₅.gpr, u₄.other _ (by decide), u₃.gpr, lw_mem u₂.mem, lw_mem u₁.mem, hcur]
   have hsf := hp.scr_fits
   have eP : State.addr (scrP s₀ + BitVec.ofNat 32 4096) = scrB s₀ + BitVec.ofNat 64 4096 := scr_addr hp (by decide)
-  have Pfit : (scrP s₀ + BitVec.ofNat 32 4096).toNat + 1024 ≤ 2 ^ 32 := by rw [add_nat (by omega)]; omega
+  have Pfit : (scrP s₀ + BitVec.ofNat 32 4096).toNat + 1024 ≤ 2 ^ 32 := by rw [add_nat (by omega_using [hsf])]; omega_using [hsf]
   have Pw : ∃ R ∈ [scrR s₀, memR s₀], ∃ off, State.addr (scrP s₀ + BitVec.ofNat 32 4096) =
       R.base + BitVec.ofNat 64 off ∧ off + 1024 ≤ R.len :=
     ⟨scrR s₀, by simp, 4096, eP, by show 4096 + 1024 ≤ 16384; decide⟩

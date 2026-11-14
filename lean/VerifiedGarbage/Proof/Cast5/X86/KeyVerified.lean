@@ -51,8 +51,8 @@ theorem τKey_wf {s : State} (h : keyX.pre s) : VG.X86.Taint.Wf τKey s := by
     · simp only [toNat_setWidth]; exact h.fitS
   · simp only [hw, List.mem_cons, List.not_mem_nil, or_false]
     rintro r (rfl | rfl)
-    · exact VG.X86.Taint.frame_disjoint (n := 16) (by have := h.spfit; omega) h.dRK h.dAK
-    · exact VG.X86.Taint.frame_disjoint (n := 16) (by have := h.spfit; omega) h.dRS h.dAS
+    · exact VG.X86.Taint.frame_disjoint (n := 16) (by have := h.spfit; omega_using [this]) h.dRK h.dAK
+    · exact VG.X86.Taint.frame_disjoint (n := 16) (by have := h.spfit; omega_using [this]) h.dRS h.dAS
   · intro p hp
     simp only [τKey, List.mem_singleton] at hp
     subst hp
@@ -83,10 +83,10 @@ theorem τKey_agree {s₁ s₂ : State} (h₁ : keyX.pre s₁) (h₂ : keyX.pre 
   · rw [h₁.wrEq, h₂.wrEq, args 2 (by decide), args 3 (by decide)]
   · simp only [τKey] at hk
     rw [show VG.X86.Taint.depth τKey.stk = 0 from rfl, Nat.zero_add]
-    rw [VG.X86.Taint.argByte_eq (by have := h₁.spfit; omega) h4 hk,
-      VG.X86.Taint.argByte_eq (by have := h₂.spfit; omega) h4 hk,
+    rw [VG.X86.Taint.argByte_eq (by have := h₁.spfit; omega_using [this]) h4 hk,
+      VG.X86.Taint.argByte_eq (by have := h₂.spfit; omega_using [this]) h4 hk,
       Mem.readW_byte s₁.mem _ (Nat.mod_lt _ (by decide)), Mem.readW_byte s₂.mem _ (Nat.mod_lt _ (by decide))]
-    exact congrArg _ (args ((k - 4) / 4) (by omega))
+    exact congrArg _ (args ((k - 4) / 4) (by omega_using [hk]))
   · simp only [List.mem_singleton] at hn
     subst hn
     exact sy
@@ -157,9 +157,9 @@ theorem keySatMem_held : ∀ i < s5678.length,
     apply Mem.readW_congr
     intro j hj
     have e : ((0x100000 : Addr) + BitVec.ofNat 64 (8 * i) + BitVec.ofNat 64 j - 0x100000).toNat = 8 * i + j := by
-      rw [Offset.add_add, Offset.add_sub_cancel_left, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+      rw [Offset.add_add, Offset.add_sub_cancel_left, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hi, hj])]
     unfold keySatMem
-    rw [e, ite_eq_left (show 8 * i + j < 4096 by omega)]
+    rw [e, ite_eq_left (show 8 * i + j < 4096 by omega_using [hi, hj])]
   exact hm.trans (constMem_held 0x100000 s5678 (by rw [s5678_length]; decide) i (by rw [s5678_length]; exact hi))
 
 /-- A state satisfying key expansion's precondition. -/
@@ -181,7 +181,7 @@ theorem keySat_arg (j : Nat) (hj : j < 4) : arg keySat j = keyArgs.readW (argAdd
   change keySatMem _ = _
   unfold keySatMem
   have : ∀ j < 4, ∀ b < 4, ¬ (argAddr keySat j + BitVec.ofNat 64 b - 0x100000).toNat < 4096 := by decide
-  rw [ite_eq_right (this j hj b (by omega))]
+  rw [ite_eq_right (this j hj b (by omega_using [hb]))]
 
 theorem key_sat : (Spec.Cast5.expandKeyContract (X86.abi.withConsts keyConsts) 4).pre keySat := by
   have a0 : arg keySat 0 = 0x1000 := (keySat_arg 0 (by decide)).trans (by decide)
@@ -215,7 +215,7 @@ theorem key_implies : keyX.Implies (Spec.Cast5.expandKeyContract (X86.abi.withCo
       X86.argBytes, keyConsts_eq, Abi.withConsts] at h
     obtain ⟨hsp, hsy, h0, h1, h2, h3⟩ := h
     refine ⟨hsp, fun i hi => ?_, hsy⟩
-    rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 by omega) with rfl | rfl | rfl | rfl
+    rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 by omega_using [hi]) with rfl | rfl | rfl | rfl
     · exact h0
     · exact h1
     · exact h2

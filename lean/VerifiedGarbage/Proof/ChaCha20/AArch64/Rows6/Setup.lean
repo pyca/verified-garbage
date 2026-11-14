@@ -26,7 +26,7 @@ theorem input_same {s s' : State} (h : LoadSame s s') (k : Fin 24) (j : Nat) :
 theorem vword_read16 (m : Mem) (a : Addr) (j : Nat) (hj : j < 4) :
     vword (m.read a 16) j = m.readW (a + BitVec.ofNat 64 (4 * j)) 32 := by
   rw [read16, vword_ofVWords _ _ _ _ hj]
-  rcases (by omega : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3) with rfl | rfl | rfl | rfl <;> rfl
+  rcases (by omega_using [hj] : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3) with rfl | rfl | rfl | rfl <;> rfl
 
 theorem inputRowInto_ok (s : State) (k : Fin 24) (d : VReg)
     (hin : InRegions (s.rd ++ s.wr) (s.gpr .x0 + BitVec.ofNat 64 (16 * (k.val % 4))) 16)
@@ -34,9 +34,9 @@ theorem inputRowInto_ok (s : State) (k : Fin 24) (d : VReg)
     WP isa (.block (inputRowInto k d)) s fun u =>
       (∀ j, j < 4 → vword (u.v d) j = input s k j) ∧
       (∀ r, r ≠ d → u.v r = s.v r) ∧ LoadSame s u := by
-  have ha : 16 * (k.val % 4) % 16 = 0 ∧ 16 * (k.val % 4) < 4096 * 16 := by omega
+  have ha : 16 * (k.val % 4) % 16 = 0 ∧ 16 * (k.val % 4) < 4096 * 16 := by omega_using []
   change InRegions (s.rd ++ s.wr) (s.gpr .x0 + BitVec.ofNat 64 48) 4 at hctr
-  have hb : k.val / 4 < 4096 := by omega
+  have hb : k.val / 4 < 4096 := by omega_using []
   unfold inputRowInto
   split
   · rename_i hk
@@ -120,8 +120,8 @@ theorem input_ctr (s : State) (k : Fin 24) (j : Nat) (hj : j < 4) :
     input s k j = (pack (fun b => ctr (stateAt s.mem (s.gpr .x0)) b) j)[k] := by
   rw [pack_get]
   simp only [Nat.mod_eq_of_lt hj, ctr, Vector.getElem_set, stateAt, Vector.getElem_ofFn]
-  have he : (12 = 4 * (k.val % 4) + j) ↔ (k.val % 4 = 3 ∧ j = 0) := by omega
-  have hoff : 16 * (k.val % 4) + 4 * j = 4 * (4 * (k.val % 4) + j) := by omega
+  have he : (12 = 4 * (k.val % 4) + j) ↔ (k.val % 4 = 3 ∧ j = 0) := by omega_using [hj]
+  have hoff : 16 * (k.val % 4) + 4 * j = 4 * (4 * (k.val % 4) + j) := by omega_using []
   simp only [input, he, hoff]
   split
   · rename_i h

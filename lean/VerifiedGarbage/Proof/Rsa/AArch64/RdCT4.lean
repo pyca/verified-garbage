@@ -110,13 +110,13 @@ theorem apHead_ok {I : RpIn} {m₀ : Mem} {c : Bool} {s : State} (g : G I m₀ (
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.toNat_sub, BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow]
     simp only [Wk, vk] at *
-    omega) (by decide) (by decide) (by decide +kernel)) fun t ⟨⟨h11, h13, h7, mt⟩, kt⟩ => ?_
+    omega_using [hk2]) (by decide) (by decide) (by decide +kernel)) fun t ⟨⟨h11, h13, h7, mt⟩, kt⟩ => ?_
   have hm : t.mem = t₆.mem := by rw [mt, m₉, m₈, m₇]
   refine ⟨g₆.same hm (((k₇.trans k₈).trans k₉).trans kt) (by decide), ?_, fun r hr => ?_⟩
   · have hn := g₆.ws.scr.nowrap
     have zA' := g₆.ws.sl (j := wA) (by decide)
     show wv t.mem I.B (slot (Wk I.k) wA) (Wk I.k + 2) = 0
-    rw [hm, Frm.hdrW_wv f₆ (slot_ge _ _) (by omega), m₅, m₄, Frm.hdrW_wv f₃ (slot_ge _ _) (by omega)]
+    rw [hm, Frm.hdrW_wv f₆ (slot_ge _ _) (by omega_using [hn, zA']), m₅, m₄, Frm.hdrW_wv f₃ (slot_ge _ _) (by omega_using [hn, zA'])]
     exact z
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl
@@ -152,10 +152,10 @@ theorem aProd_ct : CTW (GC vk XT) (GC vk XT) aProd := by
       refine WP.mono (mulRowsLow_ok (ea := slot (vk I.k) gT) (eb := slot (Wk I.k) wX) (eA := slot (Wk I.k) wA)
         (wa := vk I.k) (W := Wk I.k) g.ws.scr (by rw [pin .x11 (by simp)]; rfl) (by rw [pin .x9 (by simp)]; rfl)
         (by rw [pin .x13 (by simp)]; rfl) (by rw [pin .x12 (by simp)]; rfl) (by rw [pin .x8 (by simp)]; rfl)
-        (by rw [pin .x7 (by simp)]; rfl) (by simp only [vk]; omega) (by simp only [Wk]; omega)
-        (by simp only [Wk, vk]; omega) zA (by have := g.ws.hZ; simp only [slot, hdrBytes, gT, Wk] at *; omega)
-        (by omega) (by simp only [slot, hdrBytes, gT, wA, Wk]; omega)
-        (by simp only [slot, hdrBytes, wX, wA, Wk]; omega) z) fun t ⟨_, o, k⟩ =>
+        (by rw [pin .x7 (by simp)]; rfl) (by simp only [vk]; omega_using []) (by simp only [Wk]; omega_using [])
+        (by simp only [Wk, vk]; omega_using [hk2]) zA (by have := g.ws.hZ; simp only [slot, hdrBytes, gT, Wk] at *; omega_using [zg])
+        (by omega_using [zX]) (by simp only [slot, hdrBytes, gT, wA, Wk]; omega_using [])
+        (by simp only [slot, hdrBytes, wX, wA, Wk]; omega_using []) z) fun t ⟨_, o, k⟩ =>
         ⟨I, m₀, c, rfl, g.out (by decide) (Nat.le_refl _) o k (by decide), L, trivial⟩
     rw [show clearTop wA ++ setNar = setWid ++ (ws ++ (base wA .x16 ++ [.lsl .x .x3 .x12 3, .add .x .x16 .x16 .x3,
       movi .x7 0, st .x7 .x16, st .x7 .x16 8] ++ setNar)) by simp only [clearTop, List.append_assoc]]
@@ -212,7 +212,7 @@ theorem divQN_rel {α : Type} {Φ : α → State → Prop} (B : α → Addr) (Z 
     (hΦ : ∀ a s, Φ a s → DQH s (B a) (Z a) (eU a) (eR a) (eM a) (eT a) (L a) (wm a)) :
     RelCT isa (Two Φ) divQN fun _ _ => True := by
   rw [divQN_eq]
-  have hN : ∀ a s, Φ a s → 0 < L a - wm a + 1 := fun _ _ _ => by omega
+  have hN : ∀ a s, Φ a s → 0 < L a - wm a + 1 := fun _ _ _ => by omega_using []
   refine VG.Proof.Bignum.AArch64.RelCT.seqs_append (by simp) (by simp) (RelCT.seq (two_post (Ψ := fun a t =>
       0 < L a - wm a + 1 ∧ DQL (B a) (Z a) (eU a) (eR a) (eM a) (eT a) (L a) (wm a) 0 t)
     (two_taint [.x0, .x6, .x7, .x8, .x9, .x11, .x12, .x13]
@@ -236,12 +236,12 @@ theorem divQN_rel {α : Type} {Φ : α → State → Prop} (B : α → Addr) (Z 
     refine WP.mono (dqStep_ok (hh.hs.congr k.wr) ((k.gpr .x0 (by decide)).trans hh.h0)
       ((k.gpr .x11 (by decide)).trans hh.h11) ((k.gpr .x9 (by decide)).trans hh.h9)
       ((k.gpr .x6 (by decide)).trans hh.h6) ((k.gpr .x7 (by decide)).trans hh.h7)
-      hh.hw (by have := hh.hL'; omega) (by have := hh.hL'; omega) hh.hU8 (Nat.le_trans (Nat.le_add_left 8 _) hh.hHR) hh.hH hh.hHR hh.hHM
-      hh.hHT (by have := hh.hUZ; omega) hh.hRZ hh.hMZ hh.hTZ (by have := hh.sUR; omega) (by have := hh.sUM; omega)
-      (by have := hh.sUT; omega) hh.sRM hh.sRT hh.sMT hz hd hM0 hUw hj hI) fun t' ⟨hI', hc⟩ => ?_
+      hh.hw (by have := hh.hL'; omega_arith) (by have := hh.hL'; omega_arith) hh.hU8 (Nat.le_trans (Nat.le_add_left 8 _) hh.hHR) hh.hH hh.hHR hh.hHM
+      hh.hHT (by have := hh.hUZ; omega_arith) hh.hRZ hh.hMZ hh.hTZ (by have := hh.sUR; omega_arith) (by have := hh.sUM; omega_arith)
+      (by have := hh.sUT; omega_arith) hh.sRM hh.sRT hh.sMT hz hd hM0 hUw hj hI) fun t' ⟨hI', hc⟩ => ?_
     refine ⟨?_, fun _ => ⟨s, s₀, z, hh, k, hz, hd, hUw, hI'⟩, fun _ => trivial⟩
     rw [VG.Proof.MlKem.AArch64.eval_nonzero, VG.Proof.MlKem.AArch64.ne_zero_iff]
-    exact congrArg some (decide_eq_decide.mpr (hc.trans (by omega)))
+    exact congrArg some (decide_eq_decide.mpr (hc.trans (by omega_using [hj])))
 
 /-- `m < n`, and'ed into the mask. -/
 theorem cmpTail_w : CTW (GC Wk XT) (GC Wk XT) (seqs [.block (ws ++ [movi .x7 0, mov .x14 .x12, .subs .x .x3 .x7 .x7] ++
@@ -256,8 +256,8 @@ theorem cmpTail_w : CTW (GC Wk XT) (GC Wk XT) (seqs [.block (ws ++ [movi .x7 0, 
     have hw2 := g.ws.w2
     simp only [seqs]
     refine WP.seq (WP.mono (cmpSet_ok' g.ws wA wN) fun s₇ ⟨⟨h16, h17, h14, _, _, h7, hc, m₇⟩, k₇⟩ => ?_)
-    refine WP.seq (WP.mono (cmpLoop_ok (g.ws.scr.congr k₇.wr) h16 h17 h14 hc (by omega) (by omega) (by omega)
-      (by omega)) fun s₈ ⟨_, m₈, k₈⟩ => ?_)
+    refine WP.seq (WP.mono (cmpLoop_ok (g.ws.scr.congr k₇.wr) h16 h17 h14 hc (by omega_using [hw1]) (by omega_using [hw2]) (by omega_using [sA])
+      (by omega_using [sN])) fun s₈ ⟨_, m₈, k₈⟩ => ?_)
     have g₈ := (g.same m₇ k₇ (by decide)).same m₈ k₈ (by decide)
     rw [WP.block_append_iff]
     refine WP.mono (borrowMask_ok s₈ ((k₈.gpr .x7 (by decide)).trans h7)) fun s₉ ⟨⟨h15, m₉, _⟩, k₉⟩ => ?_
@@ -283,8 +283,8 @@ theorem clrTop_w : CTW (GC Wk XT) (GC Wk XT) (seqs [.block (ws ++ base wA .x16 +
     have hZW := g.ws.hZ
     have qA : slot (Wk I.k) wA = 256 + 7 * (8 * (Wk I.k + 2)) := rfl
     have qW16 : slot (Wk I.k) 16 = 256 + 16 * (8 * (Wk I.k + 2)) := rfl
-    have hv9 : 9 ≤ vk I.k := by simp only [vk]; omega
-    have hv2 : vk I.k ≤ 200 := by simp only [vk]; omega
+    have hv9 : 9 ≤ vk I.k := by simp only [vk]; omega_using [hk1]
+    have hv2 : vk I.k ≤ 200 := by simp only [vk]; omega_using [hk2]
     have hW : Wk I.k = 2 * vk I.k + 2 := rfl
     simp only [seqs]
     refine WP.seq ?_
@@ -297,15 +297,15 @@ theorem clrTop_w : CTW (GC Wk XT) (GC Wk XT) (seqs [.block (ws ++ base wA .x16 +
       have e1 : BitVec.ofNat 64 (Wk I.k) >>> 1 = BitVec.ofNat 64 (vk I.k + 1) := by
         apply BitVec.eq_of_toNat_eq
         simp only [BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow]
-        simp only [Wk, vk] at *; omega
+        simp only [Wk, vk] at *; omega_using [hk2]
       have e2 : (BitVec.ofNat 64 (vk I.k + 1) + BitVec.ofNat 64 3) <<< 3 = BitVec.ofNat 64 (8 * (vk I.k + 4)) := by
-        rw [BitVec.ofNat_add_ofNat, shl_ofNat (show (vk I.k + 1 + 3) * 2 ^ 3 < 2 ^ 64 by omega)]; congr 1; omega
-      brun [h16₁₁, h12₁₁, e1, e2, off_add, ofNat_sub_ofNat (show 3 ≤ vk I.k + 1 by omega) (by omega)]
+        rw [BitVec.ofNat_add_ofNat, shl_ofNat (show (vk I.k + 1 + 3) * 2 ^ 3 < 2 ^ 64 by omega_using [hv2])]; congr 1; omega_using []
+      brun [h16₁₁, h12₁₁, e1, e2, off_add, ofNat_sub_ofNat (show 3 ≤ vk I.k + 1 by omega_using [hv9]) (by omega_using [hv2])]
       congr 1) (by decide) (by decide) (by decide +kernel)) fun s₁₂ ⟨⟨h16₁₂, h14₁₂, h7₁₂, m₁₂⟩, k₁₂⟩ => ?_
     have g₁₂ : G I m₀ (Wk I.k) c s₁₂ := g.same (by rw [m₁₂, m₁₁, m₁₀]) ((k₁₀.trans k₁₁).trans k₁₂) (by decide)
-    refine WP.mono (clearN_ok g₁₂.ws.scr h16₁₂ h14₁₂ h7₁₂ (by omega) (by omega) (by omega))
+    refine WP.mono (clearN_ok g₁₂.ws.scr h16₁₂ h14₁₂ h7₁₂ (by omega_using [hv9]) (by omega_using [hv2]) (by omega_using [hZW, qA, qW16, hW]))
       fun s₁₃ ⟨_, o₁₃, k₁₃⟩ => ⟨I, m₀, c, rfl, g₁₂.out (j := wA) (n := 8 * (Wk I.k + 2)) (by decide) (Nat.le_refl _)
-        (o₁₃.mono (by omega) (by omega)) k₁₃ (by decide), L, trivial⟩
+        (o₁₃.mono (by omega_using []) (by omega_using [hW])) k₁₃ (by decide), L, trivial⟩
 
 /-- `divA`'s state at the division. -/
 def DQC (a : Pub) (s : State) : Prop :=
@@ -337,7 +337,7 @@ theorem divA_ct : CTW (GC vk XA) (GC Wk XO) divA := by
       exact WP.mono (divA1_ok g L.1 rfl hN hlo hNk) fun t ⟨gt, hh, _, _, _, _, kS⟩ =>
         ⟨⟨I, m₀, c, rfl, gt, L, by
           show wv t.mem I.B (slot (vk I.k) nOne) (vk I.k + 2) = 1
-          rw [kS _ _ (slot_ge _ _) (by simp only [slot, hdrBytes, nOne, nN, wN]; omega)]; exact xo⟩, hh⟩
+          rw [kS _ _ (slot_ge _ _) (by simp only [slot, hdrBytes, nOne, nN, wN]; omega_using [])]; exact xo⟩, hh⟩
     simp only [seqs]
     refine RelCT.seq (two_post (Ψ := GC Wk XO) (divQN_rel (Φ := DQC) (fun a => a.1.B) (fun a => a.1.Z)
       (fun a => slot (Wk a.1.k) wA) (fun a => slot (Wk a.1.k) wX) (fun a => slot (vk a.1.k) 0)
@@ -348,8 +348,8 @@ theorem divA_ct : CTW (GC vk XA) (GC Wk XO) divA := by
       have hk2 := L.1.k2
       have hn := g.ws.scr.nowrap
       have hZW := g.ws.hZ
-      have hv9 : 9 ≤ vk I.k := by simp only [vk]; omega
-      have hv2 : vk I.k ≤ 200 := by simp only [vk]; omega
+      have hv9 : 9 ≤ vk I.k := by simp only [vk]; omega_using [hk1]
+      have hv2 : vk I.k ≤ 200 := by simp only [vk]; omega_using [hk2]
       have qN : slot (Wk I.k) wN = 256 + 4 * (8 * (Wk I.k + 2)) := rfl
       have qX : slot (Wk I.k) wX = 256 + 6 * (8 * (Wk I.k + 2)) := rfl
       have qA : slot (Wk I.k) wA = 256 + 7 * (8 * (Wk I.k + 2)) := rfl
@@ -360,18 +360,18 @@ theorem divA_ct : CTW (GC vk XA) (GC Wk XO) divA := by
       refine WP.mono hh.ok fun s₉ ⟨_, _, _, f₉', _, k₉'⟩ => ?_
       have f₉ : Frm I.B [(slot (Wk I.k) wA, 8 * (Wk I.k - (vk I.k - 1) + 1)), (slot (Wk I.k) wX, 8 * (vk I.k - 1 + 1)),
         (slot (Wk I.k) wT, 32), (8 * sCnt, 8)] s.mem s₉.mem := f₉'
-      rw [show vk I.k - 1 + 1 = vk I.k by omega, show Wk I.k - (vk I.k - 1) + 1 = vk I.k + 4 by omega] at f₉
+      rw [show vk I.k - 1 + 1 = vk I.k by omega_using [hv9], show Wk I.k - (vk I.k - 1) + 1 = vk I.k + 4 by omega_using [hv9, hW]] at f₉
       refine ⟨I, m₀, c, rfl, g.frmOwn (sl := sCnt) ⟨by decide, by decide, by decide⟩
         (rs := [(slot (Wk I.k) wA, 8 * (vk I.k + 4)), (slot (Wk I.k) wX, 8 * vk I.k), (slot (Wk I.k) wT, 32)]) f₉
-        (by simp only [List.mem_cons, List.not_mem_nil, or_false]; rintro r (rfl | rfl | rfl) <;> dsimp only <;> omega)
-        (by simp only [List.mem_cons, List.not_mem_nil, or_false]; rintro r (rfl | rfl | rfl) <;> dsimp only <;> omega)
+        (by simp only [List.mem_cons, List.not_mem_nil, or_false]; rintro r (rfl | rfl | rfl) <;> dsimp only <;> omega_arith)
+        (by simp only [List.mem_cons, List.not_mem_nil, or_false]; rintro r (rfl | rfl | rfl) <;> dsimp only <;> omega_arith)
         k₉' (by decide), L, ?_⟩
       have xo' : wv s.mem I.B (slot (vk I.k) nOne) (vk I.k + 2) = 1 := xo
       show wv s₉.mem I.B (slot (vk I.k) nOne) (vk I.k + 2) = 1
       rw [f₉.wv_eq (fun r hr => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-        rcases hr with rfl | rfl | rfl | rfl <;> dsimp only <;> simp only [slot, hdrBytes, nOne, wA, wX, wT] <;> omega)
-        (by simp only [slot, hdrBytes, nOne]; omega)]
+        rcases hr with rfl | rfl | rfl | rfl <;> dsimp only <;> simp only [slot, hdrBytes, nOne, wA, wX, wT] <;> omega_arith)
+        (by simp only [slot, hdrBytes, nOne]; omega_using [hv2])]
       exact xo'
     exact ((CTW.app (by simp) (by simp) clrTop_w cmpTail_w).mono (fun _ _ h => h.map fun _ => trivial)
       fun _ _ h => h).1
@@ -387,7 +387,7 @@ theorem XS_out {w : Nat → Nat} {X : Pub → State → Prop} {a : Pub} {s t : S
     (hsl : sl < 32) {bnd : DP → Nat} {j n : Nat} (o : Outside a.1.B (slot (w a.1.k) j) n s.mem t.mem)
     (x : XS sl bnd a s) : XS sl bnd a t := by
   obtain ⟨T, hT, hb, hT'⟩ := x
-  exact ⟨T, (o.word (.inl (by have := slot_ge (w a.1.k) j; omega)) (by omega)).trans hT, hb, hT'⟩
+  exact ⟨T, (o.word (.inl (by have := slot_ge (w a.1.k) j; omega_using [hsl, this])) (by omega_using [hsl])).trans hT, hb, hT'⟩
 
 /-- A count in slot `sl`, kept by `setNar` and `setWid`. -/
 theorem XS_hdr {w : Nat → Nat} {X : Pub → State → Prop} {a : Pub} {s t : State} (h : GC w X a s) {sl : Nat}
@@ -403,9 +403,9 @@ theorem CTW.pairs {f g : Nat → Prog isa} {Ψ : Pub → State → Prop} :
   | 1, _, hf, hg => CTW.cons (by simp) (hf 0 (by decide)) (CTW.one (hg 0 (by decide)))
   | M + 2, _, hf, hg => by
     rw [List.range_succ, List.flatMap_append, List.flatMap_singleton]
-    exact CTW.app (List.ne_nil_of_mem (List.mem_flatMap.mpr ⟨0, List.mem_range.mpr (by omega), List.mem_cons_self⟩))
-      (by simp) (CTW.pairs (M := M + 1) (by omega) (fun m hm => hf m (by omega)) fun m hm => hg m (by omega))
-      (CTW.cons (by simp) (hf (M + 1) (by omega)) (CTW.one (hg (M + 1) (by omega))))
+    exact CTW.app (List.ne_nil_of_mem (List.mem_flatMap.mpr ⟨0, List.mem_range.mpr (by omega_using []), List.mem_cons_self⟩))
+      (by simp) (CTW.pairs (M := M + 1) (by omega_using []) (fun m hm => hf m (by omega_using [hm])) fun m hm => hg m (by omega_using [hm]))
+      (CTW.cons (by simp) (hf (M + 1) (by omega_using [])) (CTW.one (hg (M + 1) (by omega_using []))))
 
 /-- The divisor's leading zero words' count's bound. -/
 abbrev bV (P : DP) : Nat := vk P.k
@@ -424,8 +424,8 @@ theorem dstage_ct {w : Nat → Nat} (wide : Bool) {j : Nat} (hj : j < 16) {k : N
   obtain ⟨_, h1⟩ := h1
   obtain ⟨_, h2⟩ := h2
   obtain ⟨_, h3⟩ := h3
-  exact wstage_ct wide true stable_true hj (by decide) (by decide) (by decide) false (by omega)
-    (fun P T h => by cases wide <;> simp only [nw, bV, Bool.false_eq_true, ↓reduceIte, Wk] at * <;> omega) h1 h2 h3
+  exact wstage_ct wide true stable_true hj (by decide) (by decide) (by decide) false (by omega_using [hk])
+    (fun P T h => by cases wide <;> simp only [nw, bV, Bool.false_eq_true, ↓reduceIte, Wk] at * <;> omega_using [h]) h1 h2 h3
 
 /-- `divB`'s pieces up to the division. -/
 abbrev dbA : List (Prog isa) := [.block (setNar ++ ones), zeroA nM1, addA nM1 (2 * wA) nOne, zeroA nD,
@@ -478,11 +478,11 @@ theorem divBP_rel : RelCT isa (Two (GC Wk XO)) (seqs divBP) fun _ _ => True := b
     have hk1 := L.1.k1
     refine WP.mono (hiZ_ok g L.1) fun t ⟨g', _, hz, _⟩ => ⟨I, m₀, c, rfl, g', L, ⟨_, hz, ?_, ?_⟩, trivial⟩
     · show _ < vk I.k
-      have : 1 ≤ vk I.k := by simp only [vk]; omega
-      omega
+      have : 1 ≤ vk I.k := by simp only [vk]; omega_using []
+      omega_using [this]
     · have := L.1.k2
-      have : vk I.k < 200 := by simp only [vk]; omega
-      omega
+      have : vk I.k < 200 := by simp only [vk]; omega_using [this]
+      omega_using [this]
   · -- `x` into wide array `wM`.
     refine CTW.cons (by simp) (setWid_w (Y := XB) fun _ _ _ h f _ => ⟨XS_hdr h (by decide) (by decide) (by decide) f
       h.x.1, trivial⟩) ?_
@@ -539,8 +539,8 @@ theorem divB_ct : CTW (GC Wk XO) (GC vk XO) divB := by
       have hn := g.ws.scr.nowrap
       have hZW := g.ws.hZ
       have hW : Wk I.k = 2 * vk I.k + 2 := rfl
-      have hv9 : 9 ≤ vk I.k := by simp only [vk]; omega
-      have hv2 : vk I.k ≤ 200 := by simp only [vk]; omega
+      have hv9 : 9 ≤ vk I.k := by simp only [vk]; omega_using [hk1]
+      have hv2 : vk I.k ≤ 200 := by simp only [vk]; omega_using [hk2]
       have qM : slot (Wk I.k) wM = 256 + 5 * (8 * (Wk I.k + 2)) := rfl
       have qT : slot (Wk I.k) wT = 256 + 9 * (8 * (Wk I.k + 2)) := rfl
       have q4 : slot (vk I.k) nRem = 256 + 4 * (8 * (vk I.k + 2)) := rfl
@@ -549,11 +549,11 @@ theorem divB_ct : CTW (GC Wk XO) (GC vk XO) divB := by
       refine WP.mono hh.ok fun s₁₇ ⟨_, _, _, f₁₇', _, k₁₇⟩ => ?_
       have f₁₇ : Frm I.B [(slot (Wk I.k) wM, 8 * (2 * vk I.k - vk I.k + 1)), (slot (vk I.k) nRem, 8 * (vk I.k + 1)),
         (slot (Wk I.k) wT, 32), (8 * sCnt, 8)] s.mem s₁₇.mem := f₁₇'
-      rw [show 2 * vk I.k - vk I.k + 1 = vk I.k + 1 by omega] at f₁₇
+      rw [show 2 * vk I.k - vk I.k + 1 = vk I.k + 1 by omega_using []] at f₁₇
       exact ⟨I, m₀, c, rfl, g.frmOwn (sl := sCnt) ⟨by decide, by decide, by decide⟩
         (rs := [(slot (Wk I.k) wM, 8 * (vk I.k + 1)), (slot (vk I.k) nRem, 8 * (vk I.k + 1)), (slot (Wk I.k) wT, 32)]) f₁₇
-        (by simp only [List.mem_cons, List.not_mem_nil, or_false]; rintro r (rfl | rfl | rfl) <;> dsimp only <;> omega)
-        (by simp only [List.mem_cons, List.not_mem_nil, or_false]; rintro r (rfl | rfl | rfl) <;> dsimp only <;> omega)
+        (by simp only [List.mem_cons, List.not_mem_nil, or_false]; rintro r (rfl | rfl | rfl) <;> dsimp only <;> omega_arith)
+        (by simp only [List.mem_cons, List.not_mem_nil, or_false]; rintro r (rfl | rfl | rfl) <;> dsimp only <;> omega_arith)
         k₁₇ (by decide), L, trivial⟩
     refine (?_ : CTW (GC Wk XT) (GC vk XT) (seqs divBT)).1
     refine CTW.cons (by simp) (setNar_w (Y := XT) (by intros; trivial)) ?_
@@ -606,7 +606,7 @@ theorem sqHead_ok {I : RpIn} {m₀ : Mem} {c : Bool} {s : State} (g : G I m₀ (
   · have hn := g.ws.scr.nowrap
     have := g.ws.sl (j := wSq) (by decide)
     show wv t.mem I.B (slot (Wk I.k) wSq) (Wk I.k + 2) = 0
-    rw [hm, Frm.hdrW_wv f₈ (slot_ge _ _) (by omega), m₇, m₆]
+    rw [hm, Frm.hdrW_wv f₈ (slot_ge _ _) (by omega_using [hn, this]), m₇, m₆]
     exact z
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl

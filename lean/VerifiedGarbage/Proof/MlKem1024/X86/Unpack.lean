@@ -37,7 +37,7 @@ theorem decomp_spec' {d : Nat} (hd : d ∈ Proof.MlKem1024.compressWidths) (is :
     (k : ∀ s', Only [.eax, .edx] s s' → (s'.gpr .eax).toNat = dv d y → WP isa (.block is) s' P) :
     WP isa (.block (decompOp d ++ is)) s P := by
   have hd' : 1 ≤ d ∧ d ≤ 31 ∧ y < 2048 := by
-    rcases mem_compressWidths1024 hd with rfl | rfl <;> refine ⟨by decide, by decide, ?_⟩ <;> omega
+    rcases mem_compressWidths1024 hd with rfl | rfl <;> refine ⟨by decide, by decide, ?_⟩ <;> omega_using [hy]
   rw [WP.block_append_iff]
   apply WP.of_runBlock
   simp only [reduceCtorEq, ↓reduceIte, Nat.reducePow, decompOp, runBlock_cons, runStep_some, runBlock_nil, exec,
@@ -51,8 +51,8 @@ theorem decomp_spec' {d : Nat} (hd : d ∈ Proof.MlKem1024.compressWidths) (is :
       rcases mem_compressWidths1024 hd with rfl | rfl <;> decide
     rw [toNat_shr]
     rw [BitVec.toNat_add]; simp only [BitVec.toNat_ofNat, h]
-    rw [show (3329 : BitVec 32).toNat = 3329 from rfl, Nat.mod_eq_of_lt (a := y * 3329) (by omega),
-      Nat.mod_eq_of_lt (a := 2 ^ (d - 1)) (by omega), Nat.mod_eq_of_lt (by omega), dv, q_eq, Nat.mul_comm y]
+    rw [show (3329 : BitVec 32).toNat = 3329 from rfl, Nat.mod_eq_of_lt (a := y * 3329) (by omega_using [hd']),
+      Nat.mod_eq_of_lt (a := 2 ^ (d - 1)) (by omega_using [hp]), Nat.mod_eq_of_lt (by omega_using [hd', hp]), dv, q_eq, Nat.mul_comm y]
 
 /-- `decSt d j` writes `dv d y` to `[edi + 4j]`, from `eax = y < 2ᵈ`. -/
 theorem decSt_spec {d : Nat} (hd : d ∈ Proof.MlKem1024.compressWidths) (j : Nat) (is : List Instr)
@@ -105,26 +105,26 @@ theorem bySteps_spec (o : Nat) (x : Nat → Nat) :
         refine Nat.le_trans ?_ hb
         rw [hsplit, ← Nat.mul_assoc]
         exact Nat.le_mul_of_pos_right _ hpj
-      omega
-    have hx := (hc j (by omega)).lt
+      omega_using [this]
+    have hx := (hc j (by omega_using [])).lt
     rw [bySteps, byteStep, List.append_assoc, List.cons_append]
-    refine wp_ldb (hc j (by omega)) fun s₁ o₁ v₁ => ?_
+    refine wp_ldb (hc j (by omega_using [])) fun s₁ o₁ v₁ => ?_
     refine wp_ror (by decide) (by decide) fun s₂ o₂ e₂ => wp_addr fun s₃ o₃ e₃ => ?_
     have oo := (o₁.trans o₂).trans o₃
     have v₃ : (s₃.gpr .ebx).toNat = A * 2 ^ 8 + x j := by
       have r := ror_shl (d := 8) (A := A) (by decide) (by decide) (s₁.gpr .ebx)
         (by rw [o₁.gpr _ (by decide), hA]) hAl
       rw [e₃, BitVec.toNat_add, e₂, r, o₂.gpr .eax (by decide), v₁]
-      omega
-    refine bySteps_spec o x j is s₃ P _ (fun i hi => (hc i (by omega)).of_only oo (by decide)) v₃ ?_
+      omega_using [hAl, hx]
+    refine bySteps_spec o x j is s₃ P _ (fun i hi => (hc i (by omega_using [hi])).of_only oo (by decide)) v₃ ?_
       fun s₄ o₄ v₄ => k s₄ ((oo.trans o₄).mono fun r hr => by
         simp only [List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hr ⊢
         rcases hr with ((h | h) | h) | h | h <;> simp only [h, true_or, or_true]) ?_
-    · have : A * 2 ^ 8 + x j + 1 ≤ (A + 1) * 2 ^ 8 := by rw [Nat.add_mul]; omega
+    · have : A * 2 ^ 8 + x j + 1 ≤ (A + 1) * 2 ^ 8 := by rw [Nat.add_mul]; omega_using [hx]
       refine Nat.le_trans (Nat.mul_le_mul_right _ this) ?_
       rw [Nat.mul_assoc, ← hsplit]; exact hb
     · rw [v₄, pk, hsplit, Nat.add_mul, Nat.mul_assoc]
-      omega
+      omega_using []
 
 /-- `ldW o n` loads the `n + 1` bytes at `esi + o` into `ebx`, as the number whose base-2⁸ digits
 they are. -/
@@ -133,13 +133,13 @@ theorem ldW_spec (o n : Nat) (hn : n ≤ 3) (x : Nat → Nat) (is : List Instr) 
     (k : ∀ s', Only [.ebx, .eax, .ebx] s s' → (s'.gpr .ebx).toNat = pk 8 x (n + 1) → WP isa (.block is) s' P) :
     WP isa (.block (ldW o n ++ is)) s P := by
   rw [ldW, List.cons_append]
-  refine wp_ldb (hc n (by omega)) fun s₁ o₁ v₁ => ?_
-  have hx := (hc n (by omega)).lt
-  refine bySteps_spec o x n is s₁ P _ (fun i hi => (hc i (by omega)).of_only o₁ (by decide)) v₁ ?_
+  refine wp_ldb (hc n (by omega_using [])) fun s₁ o₁ v₁ => ?_
+  have hx := (hc n (by omega_using [])).lt
+  refine bySteps_spec o x n is s₁ P _ (fun i hi => (hc i (by omega_using [hi])).of_only o₁ (by decide)) v₁ ?_
     fun s₂ o₂ v₂ => k s₂ (o₁.trans o₂) ?_
-  · have : 2 ^ (8 * n) ≤ 2 ^ 24 := Nat.pow_le_pow_right (by decide) (by omega)
-    calc (x n + 1) * 2 ^ (8 * n) ≤ 2 ^ 8 * 2 ^ 24 := Nat.mul_le_mul (by omega) this
+  · have : 2 ^ (8 * n) ≤ 2 ^ 24 := Nat.pow_le_pow_right (by decide) (by omega_using [hn])
+    calc (x n + 1) * 2 ^ (8 * n) ≤ 2 ^ 8 * 2 ^ 24 := Nat.mul_le_mul (by omega_using [hx]) this
       _ = 2 ^ 32 := by decide
-  · rw [v₂, pk]; omega
+  · rw [v₂, pk]; omega_using []
 
 end VG.Proof.MlKem1024.X86

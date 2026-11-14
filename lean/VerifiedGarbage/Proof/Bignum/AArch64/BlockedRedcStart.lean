@@ -29,8 +29,8 @@ theorem startHeader_ok {s : State} {B : Addr} {Z : Nat}
        t.gpr .x15 = word s.mem B (8 * sMinv) ∧ t.mem = s.mem) ∧
       Keep [.x17, .x15] s t := by
   refine WP.keep [.x17, .x15] ?_ rfl rfl rfl
-  brun [h0, hs.ld (show 8 * sArr Public.aN + 8 ≤ Z by unfold sArr Public.aN; omega),
-    hs.ld (show 8 * sMinv + 8 ≤ Z by unfold sMinv; omega)]
+  brun [h0, hs.ld (show 8 * sArr Public.aN + 8 ≤ Z by unfold sArr Public.aN; omega_using [hZ]),
+    hs.ld (show 8 * sMinv + 8 ≤ Z by unfold sMinv; omega_using [hZ])]
 
 /-- The first block produces all eight reduction coefficients. The frame
 holds for every inverse; its arithmetic relation requires a valid inverse. -/
@@ -65,7 +65,7 @@ theorem startBlock_ok {s : State} {B : Addr} {Z eQ eN : Nat} {inv : Word}
   have d15 := (kd.gpr .x15 (by decide)).trans h15
   refine WP.mono (cancelPrefix_ok (hs.congr kad.wr)
     ((kad.gpr .x8 (by decide)).trans h8) d17 ((kad.gpr .x7 (by decide)).trans h7)
-    hQ (by omega) (by omega) (Nat.le_refl 8)) fun t hI => ?_
+    hQ (by omega_using [hN]) (by omega_using [hQN]) (Nat.le_refl 8)) fun t hI => ?_
   have hA := (congrArg blockValue (keep_accumulator (kb.trans kd) (by decide))).trans
     ((blockValue_congr hav).trans (blockValue_words s.mem B eQ))
   have hn0 := congrArg (fun m : Mem => word m B eN) hdm

@@ -64,7 +64,7 @@ theorem componentSchedule_readW (m : Mem) (p : Addr) (c j : Nat) (hc : c < 3) (h
       (m.readW (p + BitVec.ofNat 64 (8 * (16 * c + j))) 64).setWidth 48 := by
   rw [vector_getD _ j hj 0]
   simp only [componentSchedule, Vector.getElem_ofFn]
-  rw [vector_getD _ (16 * c + j) (by omega) 0, scheduleAt_readW m p _ (by omega)]
+  rw [vector_getD _ (16 * c + j) (by omega_using [hc, hj]) 0, scheduleAt_readW m p _ (by omega_using [hc, hj])]
 
 theorem scheduleAt_eq_of_frame {rs : List Region} {m m' : Mem} (p : Addr)
     (hf : Frame rs m m')
@@ -73,7 +73,7 @@ theorem scheduleAt_eq_of_frame {rs : List Region} {m m' : Mem} (p : Addr)
   intro i hi
   rw [scheduleAt_readW m' p i hi, scheduleAt_readW m p i hi]
   exact hf.readW (r := ⟨p, 384⟩)
-    (Offset.contains_base p (by omega) (by omega)) hd (by decide)
+    (Offset.contains_base p (by omega_using [hi]) (by omega_using [hi])) hd (by decide)
 
 
 end VG.Proof.TripleDes

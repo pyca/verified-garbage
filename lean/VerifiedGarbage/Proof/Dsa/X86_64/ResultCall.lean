@@ -31,13 +31,13 @@ theorem resultCall_ok {s : State} {B : Addr} {Z o w wx m value k : Nat}
       Good t B Z w parentMinv ∧ ChildReady t.mem B o wx m minv ∧
       Spec.Rsa.bytesAt t.mem (pointerValue s.mem B output.pointer) k = Spec.Dsa.encodeBE k value ∧
       CallFrame B o wx (pointerValue s.mem B output.pointer) k s.mem t.mem ∧ Keep coreRegs s t := by
-  have hslot : 256 ≤ slot w 8 := by unfold slot hdrBytes; omega
+  have hslot : 256 ≤ slot w 8 := by unfold slot hdrBytes; omega_using []
   have hn := hg.scr.nowrap
   refine WP.seq ?_
   rw [WP.block_append_iff]
   refine WP.mono (operand_context hg hZ output houtp (by decide) (by decide) (by decide) (by decide) (by decide))
     fun u ⟨hgu, hup, hul, _, hf, hk⟩ => ?_
-  have hchild := call_ready child hf (by decide) (by decide) (by omega) (by omega)
+  have hchild := call_ready child hf (by decide) (by decide) (by omega_using [hlo, hslot]) (by omega_using [hhi, hn])
   refine WP.mono (enter_ok hgu hchild.header hlo hhi ho) fun v ⟨hcv, hmem, hkv⟩ => ?_
   have hm : ModCtx v (off B o) (slot wx 8) wx minv m :=
     ⟨hcv.good, by rw [hmem]; exact hchild.modulus, by rw [hmem]; exact hchild.inverse⟩

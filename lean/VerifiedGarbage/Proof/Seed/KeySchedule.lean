@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Seed.Rounds
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # The key schedule, as `G` of 32 inputs
@@ -69,24 +70,24 @@ theorem keyBody_fold (key : Block) : ∀ n, n ≤ 16 →
       ite_false]
     rfl
   | n + 1, hn => by
-    rw [List.range_succ, List.foldl_append, keyBody_fold key n (by omega), List.foldl_cons, List.foldl_nil]
+    rw [List.range_succ, List.foldl_append, keyBody_fold key n (by omega_using [hn]), List.foldl_cons, List.foldl_nil]
     have hk : ∀ i (hi : i < 32), (((partialKeys key n).set! (2 * n) (g (gInput key (2 * n)))).set! (2 * n + 1)
         (g (gInput key (2 * n + 1))) : Vector Word 32)[i] = (partialKeys key (n + 1))[i] := by
       intro i hi
       rw [Vector.getElem_set! hi, Vector.getElem_set! hi]
       simp only [partialKeys, Vector.getElem_ofFn]
       split
-      · subst i; simp only [show 2 * n + 1 < 2 * (n + 1) by omega, ite_true]
+      · subst i; simp only [show 2 * n + 1 < 2 * (n + 1) by omega_using [], ite_true]
       · split
-        · subst i; simp only [show 2 * n < 2 * (n + 1) by omega, ite_true]
+        · subst i; simp only [show 2 * n < 2 * (n + 1) by omega_using [], ite_true]
         · rename_i h1 h2
           by_cases hlt : i < 2 * n
           · rw [ite_eq_left_iff.mpr (fun h => absurd hlt h), ite_eq_left_iff.mpr (fun h => by omega)]
           · rw [ite_eq_right_iff.mpr (fun h => absurd h hlt), ite_eq_right_iff.mpr (fun h => by omega)]
     have g0 : gInput key (2 * n) = (keyWords key n).1 + (keyWords key n).2.2.1 - kc.getD n 0 := by
-      simp only [gInput, show 2 * n / 2 = n by omega, show 2 * n % 2 = 0 by omega, ite_true]
+      simp only [gInput, show 2 * n / 2 = n by omega_using [], show 2 * n % 2 = 0 by omega_using [], ite_true]
     have g1 : gInput key (2 * n + 1) = (keyWords key n).2.1 - (keyWords key n).2.2.2 + kc.getD n 0 := by
-      simp only [gInput, show (2 * n + 1) / 2 = n by omega, show (2 * n + 1) % 2 = 1 by omega]
+      simp only [gInput, show (2 * n + 1) / 2 = n by omega_using [], show (2 * n + 1) % 2 = 1 by omega_using []]
       rfl
     have hpk : ((partialKeys key n).set! (2 * n) (g ((keyWords key n).1 + (keyWords key n).2.2.1 - kc.getD n 0))).set!
         (2 * n + 1) (g ((keyWords key n).2.1 - (keyWords key n).2.2.2 + kc.getD n 0)) = partialKeys key (n + 1) := by
@@ -117,6 +118,6 @@ theorem expandKey_eq (key : Block) : expandKey key = Vector.ofFn fun i => g (gIn
   rw [h, keyBody_fold key 16 (by decide)]
   apply Vector.ext
   intro i hi
-  simp only [partialKeys, Vector.getElem_ofFn, show i < 2 * 16 by omega, ite_true]
+  simp only [partialKeys, Vector.getElem_ofFn, show i < 2 * 16 by omega_using [hi], ite_true]
 
 end VG.Proof.Seed

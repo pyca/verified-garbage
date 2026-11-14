@@ -54,10 +54,10 @@ theorem shifts_byte (L : BitVec 32) {k : Nat} (hk : k < 4) :
   simp only [BitVec.getLsbD_ushiftRight, BitVec.getLsbD_shiftLeft, BitVec.getLsbD_setWidth,
     BitVec.getLsbD_extractLsb']
   by_cases h : i < 8
-  · simp [h, show 24 + i < 32 by omega, show ¬ 24 + i < 24 - 8 * k by omega]
+  · simp [h, show 24 + i < 32 by omega_using [h], show ¬ 24 + i < 24 - 8 * k by omega_using []]
     rw [decide_eq_true hi, Bool.true_and]
-    exact congrArg _ (by omega)
-  · simp [h, show ¬ 24 + i < 32 by omega]
+    exact congrArg _ (by omega_using [hk])
+  · simp [h, show ¬ 24 + i < 32 by omega_using [h]]
 
 theorem exec_mov32_imm (s : State) (d : Reg) (v : BitVec 32) :
     exec (.mov32 d (.imm v)) s = some (s.setReg32 d v) := rfl
@@ -125,10 +125,10 @@ theorem lookup_run {sch : Reg} {S : Addr} {s : State} (E : LookEnv sch S s) {j :
   have hidx : t₁.xmm idxReg = bcast x := by
     simp (disch := decide) only [t₁, iops, List.foldl, XOp.exec, xmm_setXmm_self, eval_movdqa]
     refine bcast_low _ _ ?_
-    rw [psrld_dword0 _ _ (by decide), pslld_dword0 _ _ (by simp; omega)]
-    simp only [BitVec.toNat_ofNat, show (24 - 8 * (3 - j)) % 2 ^ 8 = 24 - 8 * (3 - j) by omega,
+    rw [psrld_dword0 _ _ (by decide), pslld_dword0 _ _ (by simp; omega_using [])]
+    simp only [BitVec.toNat_ofNat, show (24 - 8 * (3 - j)) % 2 ^ 8 = 24 - 8 * (3 - j) by omega_using [],
       show 24 % 2 ^ 8 = 24 from rfl]
-    exact shifts_byte _ (by omega)
+    exact shifts_byte _ (by omega_using [])
   obtain ⟨t₂, r₂, k₂, x₂, g₂, e₂⟩ := loadConst_run t₁ (dst := kReg) (by decide) evenStart
   let pops : List XOp := (List.range 4).map fun b => .bin .pxor (accReg b) (accReg b)
   let t₃ := pops.foldl (fun t op => op.exec t) t₂
@@ -156,7 +156,7 @@ theorem lookup_run {sch : Reg} {S : Addr} {s : State} (E : LookEnv sch S s) {j :
       xmm_setXmm_of_ne _ _ h9, xmm_setXmm_of_ne _ _ h10, xmm_setXmm_of_ne _ _ h11]
     rw [x₂ _ h2 h3, x₁ _ h1]
   have a₄ : ∀ b < 4, t₄.xmm (accReg b) = 0 := fun b hb => by
-    rcases (by omega : b = 0 ∨ b = 1 ∨ b = 2 ∨ b = 3) with rfl | rfl | rfl | rfl <;>
+    rcases (by omega_using [hb] : b = 0 ∨ b = 1 ∨ b = 2 ∨ b = 3) with rfl | rfl | rfl | rfl <;>
       simp (disch := decide) only [t₄, t₃, pops_eq, List.foldl, XOp.exec, State.setReg32, xmm_setReg,
         xmm_setXmm_of_ne, xmm_setXmm_self, accReg, List.getD_cons_zero, List.getD_cons_succ, reduceXBinOpEval,
         BitVec.xor_self] <;> rfl
@@ -190,11 +190,11 @@ theorem lookup_run {sch : Reg} {S : Addr} {s : State} (E : LookEnv sch S s) {j :
       by rw [x₄ _ (by decide), E.ones], by rw [x₄ _ (by decide), E.sixteen], by rw [x₄ _ (by decide), E.low]⟩
     rw [hrd₄, hwr₄]; exact E.rd off h
   have I0 : RowInv sch S x j t₄ 0 t₄ :=
-    ⟨by omega, r8₄, r9₄, k₄, fun b hb => by rw [a₄ b hb, scanAcc_zero], fun _ _ => rfl, fun _ _ _ => rfl,
+    ⟨by omega_using [], r8₄, r9₄, k₄, fun b hb => by rw [a₄ b hb, scanAcc_zero], fun _ _ => rfl, fun _ _ _ => rfl,
       state_eta t₄⟩
   apply WP.seq
   refine WP.mono (WP.loop (M := isa) (Q := RowInv sch S x j t₄ 16)
-    (fun m u => ∃ r, r < 16 ∧ m = 16 - r ∧ RowInv sch S x j t₄ r u) ?_ 16 t₄ ⟨0, by omega, rfl, I0⟩)
+    (fun m u => ∃ r, r < 16 ∧ m = 16 - r ∧ RowInv sch S x j t₄ r u) ?_ 16 t₄ ⟨0, by omega_using [], rfl, I0⟩)
     fun v Iv => ?_
   · intro m u ⟨r, hr, hm, I⟩
     obtain ⟨u', ru, I', zu⟩ := row_run SE hr I
@@ -205,10 +205,10 @@ theorem lookup_run {sch : Reg} {S : Addr} {s : State} (E : LookEnv sch S s) {j :
     · left; exact ⟨by rw [ev, h]; rfl, h ▸ I'⟩
     · right
       have nz : BitVec.ofNat 64 (16 - (r + 1)) ≠ 0 := by
-        intro h'; have := congrArg BitVec.toNat h'; simp at this; omega
+        intro h'; have := congrArg BitVec.toNat h'; simp at this; omega_using [hr, h, this]
       exact ⟨by rw [ev, show (BitVec.ofNat 64 (16 - (r + 1)) == 0) = false from beq_false_of_ne nz]; rfl,
-        16 - (r + 1), by omega, r + 1,
-        by omega, rfl, I'⟩
+        16 - (r + 1), by omega_using [hr, hm], r + 1,
+        by omega_using [hr, h], rfl, I'⟩
   -- the entry from the planes' accumulators
   obtain ⟨w0, rw0, a0, k0, e0⟩ := reduce_run v (b := 0) (by decide)
   obtain ⟨w1, rw1, a1, k1, e1⟩ := reduce_run w0 (b := 1) (by decide)
@@ -226,7 +226,7 @@ theorem lookup_run {sch : Reg} {S : Addr} {s : State} (E : LookEnv sch S s) {j :
     exact cat_run rw0 (cat_run rw1 (cat_run rw2 (cat_run rw3 runBlock_nil)))
   · have r3 : ∀ b < 4, w3.xmm (accReg b) = reduceV (v.xmm (accReg b)) := by
       intro b hb
-      rcases (by omega : b = 0 ∨ b = 1 ∨ b = 2 ∨ b = 3) with rfl | rfl | rfl | rfl
+      rcases (by omega_using [hb] : b = 0 ∨ b = 1 ∨ b = 2 ∨ b = 3) with rfl | rfl | rfl | rfl
       · rw [k3 _ (by decide) (by decide), k2 _ (by decide) (by decide), k1 _ (by decide) (by decide), a0]
       · rw [k3 _ (by decide) (by decide), k2 _ (by decide) (by decide), a1, k0 _ (by decide) (by decide)]
       · rw [k3 _ (by decide) (by decide), a2, k1 _ (by decide) (by decide), k0 _ (by decide) (by decide)]

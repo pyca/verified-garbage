@@ -32,8 +32,8 @@ theorem decodeByte_ok {s : State} {p : Addr} {i j : Nat}
       (t.gpr .x4).toNat = 256 * (s.gpr .x4).toNat + (s.mem (off p (7 * i + (6 - j)))).toNat ∧
       t.mem = s.mem ∧ Keeps [.x4, .x5, .x7] s t := by
   have byteb := (s.mem (off p (7 * i + (6 - j)))).isLt
-  have mulb : (s.gpr .x4).toNat * 256 < 2 ^ 64 := by omega
-  have enc : (7 * i + (6 - j)) % 1 = 0 ∧ 7 * i + (6 - j) < 4096 := by omega
+  have mulb : (s.gpr .x4).toNat * 256 < 2 ^ 64 := by omega_using [hb]
+  have enc : (7 * i + (6 - j)) % 1 = 0 ∧ 7 * i + (6 - j) < 4096 := by omega_using [hi]
   apply WP.of_runBlock
   simp only [decodeByte, runBlock_cons, runStep_some, runBlock_nil, exec, State.read,
     Size.bits, Nat.reduceLT, BitVec.setWidth_eq, addr, enc, and_self,
@@ -44,9 +44,9 @@ theorem decodeByte_ok {s : State} {p : Addr} {i j : Nat}
   · simp only [BitVec.toNat_add, BitVec.toNat_shiftLeft, BitVec.toNat_setWidth, Nat.shiftLeft_eq]
     change (((s.gpr .x4).toNat * 256) % 2 ^ 64 +
       ((s.mem (off p (7 * i + (6 - j)))).toNat % 2 ^ 32) % 2 ^ 64) % 2 ^ 64 = _
-    rw [Nat.mod_eq_of_lt mulb, Nat.mod_eq_of_lt (by omega : (s.mem (off p (7 * i + (6 - j)))).toNat < 2 ^ 32),
-      Nat.mod_eq_of_lt (by omega : (s.mem (off p (7 * i + (6 - j)))).toNat < 2 ^ 64)]
-    omega
+    rw [Nat.mod_eq_of_lt mulb, Nat.mod_eq_of_lt (by omega_using [] : (s.mem (off p (7 * i + (6 - j)))).toNat < 2 ^ 32),
+      Nat.mod_eq_of_lt (by omega_using [] : (s.mem (off p (7 * i + (6 - j)))).toNat < 2 ^ 64)]
+    omega_using [hb]
   · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
     simp only [RegUpd.gpr_write, hr.1, hr.2.2, ite_false]
 
@@ -78,10 +78,10 @@ theorem readSeven_ok {s : State} {p : Addr} {i : Nat} (hp : s.gpr .x2 = p) (hi :
     have ub : (u.gpr .x4).toNat < 2 ^ 48 := by
       rw [uv]
       have h := suffix_bound s.mem p i n
-      have hpow : 256 ^ n ≤ 256 ^ 6 := Nat.pow_le_pow_right (by decide) (by omega)
+      have hpow : 256 ^ n ≤ 256 ^ 6 := Nat.pow_le_pow_right (by decide) (by omega_using [hn])
       exact Nat.lt_of_lt_of_le h hpow
     have ur : InRegions (u.rd ++ u.wr) (off p (7 * i + (6 - n))) 1 := by
-      rw [uk.2.1, uk.2.2, tk.2.1, tk.2.2]; exact hr _ (by omega)
+      rw [uk.2.1, uk.2.2, tk.2.1, tk.2.2]; exact hr _ (by omega_using [])
     refine WP.mono (decodeByte_ok up hi ub ur) fun v ⟨vv, vm, vk⟩ => ⟨?_, vm.trans um, uk.trans vk⟩
     rw [vv, uv, um, suffix_succ _ _ _ hn]
   refine WP.mono (wp_range_flatMap (M := isa) (N := 7) inv step 7 (by decide) t

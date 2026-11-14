@@ -32,7 +32,7 @@ theorem mixKey_run {s : State} {b c d : Reg} {i : Nat}
   let f := e.write .w .x10 (e.read .w .x10 ^^^ e.read .w c)
   let g := f.write .w .x10 (f.read .w .x10 ^^^ f.read .w d)
   refine ⟨g,?_,?_,?_,rfl,rfl,rfl,rfl,rfl⟩
-  · rw [mixKey,runBlock_cons,exec_ldr_w ⟨by omega,by omega⟩ hr,runStep_some,
+  · rw [mixKey,runBlock_cons,exec_ldr_w ⟨by omega_using [],by omega_using [hi]⟩ hr,runStep_some,
       runBlock_cons,exec_logic,runStep_some,runBlock_cons,exec_logic,runStep_some,
       runBlock_cons,exec_logic,runStep_some,runBlock_nil]
   · simp only [g,f,e,a,gpr_write_self,State.read,Size.bits,
@@ -96,9 +96,9 @@ theorem round_run {s : State} {i : Nat} (hi : i < 32) (hc : Constants s) (ht : T
         BitVec.setWidth_setWidth_of_le _ (by decide : 32 ≤ 64),BitVec.setWidth_eq]
       rw [cra,val]
       simp only [VG.Proof.Sm4.sround,ite_true,VG.Impl.Sm4.Lin.t_enc]
-      rw [show (i%4+1)%4 = (i+1)%4 by omega,
-        show (i%4+2)%4 = (i+2)%4 by omega,
-        show (i%4+3)%4 = (i+3)%4 by omega]
+      rw [show (i%4+1)%4 = (i+1)%4 by omega_using [],
+        show (i%4+2)%4 = (i+2)%4 by omega_using [],
+        show (i%4+3)%4 = (i+3)%4 by omega_using []]
       rfl
     · have hreg : wordReg w ≠ ra := fun e => h (wordReg_inj w hw _ (Nat.mod_lt _ (by decide)) e)
       rw [words,other _ hreg (wordReg_ne w hw).1 (wordReg_ne w hw).2]

@@ -40,18 +40,18 @@ theorem pHash_ct {g : Geo} (G : GeoOk g) {E : Env} (v : E.Valid) (hq : E.qLen = 
   have bd := G.bounds
   have hN := G.N
   have Ap := hRanges_apart G v hj
-  have hjq : (j + 1) * g.qLen ≤ (g.count + 1) * g.qLen := Nat.mul_le_mul_right _ (by omega)
+  have hjq : (j + 1) * g.qLen ≤ (g.count + 1) * g.qLen := Nat.mul_le_mul_right _ (by omega_using [hj])
   refine both_post ?_ fun a s h => WP.mono (pHash_ok G v hq h.1 h.2.1 h.2.2.1 h.2.2.2.1
-    (by have := h.2.2.2.2; omega) hj)
+    (by have := h.2.2.2.2; omega_using [hj, this]) hj)
     fun t ⟨B', _, C, _⟩ => ⟨B', h.2.1, ?_, ?_, h.2.2.2.2⟩
   rotate_left
-  · rw [Env.Chg.word v C (by simp only [fSeed, hdr]; omega) (fun o ho => ⟨(Ap o ho).1, by
+  · rw [Env.Chg.word v C (by simp only [fSeed, hdr]; omega_using [sz]) (fun o ho => ⟨(Ap o ho).1, by
       simp only [hRanges, List.mem_cons, List.not_mem_nil, or_false] at ho
-      rcases ho with rfl | rfl | rfl <;> simp only [hashAt, sState, sHScr, sX, fSeed, hdr] <;> omega⟩),
+      rcases ho with rfl | rfl | rfl <;> simp only [hashAt, sState, sHScr, sX, fSeed, hdr] <;> omega_arith⟩),
       h.2.2.1]
-  · rw [Env.Chg.word v C (by simp only [fOffset, hdr]; omega) (fun o ho => ⟨(Ap o ho).1, by
+  · rw [Env.Chg.word v C (by simp only [fOffset, hdr]; omega_using [sz]) (fun o ho => ⟨(Ap o ho).1, by
       simp only [hRanges, List.mem_cons, List.not_mem_nil, or_false] at ho
-      rcases ho with rfl | rfl | rfl <;> simp only [hashAt, sState, sHScr, sX, fOffset, hdr] <;> omega⟩),
+      rcases ho with rfl | rfl | rfl <;> simp only [hashAt, sState, sHScr, sX, fOffset, hdr] <;> omega_arith⟩),
       h.2.2.2.1]
   unfold Geo.pHash
   simp only [seqs]
@@ -63,11 +63,11 @@ theorem pHash_ct {g : Geo} (G : GeoOk g) {E : Env} (v : E.Valid) (hq : E.qLen = 
   · refine VG.X86.WP.mono_syms (seedIn_ok G v hq h.1 h.2.1 h.2.2.1) fun t₁ ⟨_, F₁, K₁⟩ sy₁ => ?_
     have C₁ : E.Chg (hRanges g j) s.mem t₁.mem := Env.Chg.of_frame F₁ fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
-      exact Env.in_range (o := (sState, 128)) (by simp [hRanges]) (by omega) (by simp only [sState]; omega)
+      exact Env.in_range (o := (sState, 128)) (by simp [hRanges]) (by omega_using []) (by simp only [sState]; omega_using [nl, bd])
     refine ⟨h.1.keep v C₁ Ap (K₁.1 _ (by decide)) (K₁.1 _ (by decide)) K₁.2.1 K₁.2.2 sy₁, ?_, h.2.2.2.2⟩
-    rw [Env.Chg.word v C₁ (by simp only [fOffset, hdr]; omega) (fun o ho => ⟨(Ap o ho).1, by
+    rw [Env.Chg.word v C₁ (by simp only [fOffset, hdr]; omega_using [sz]) (fun o ho => ⟨(Ap o ho).1, by
       simp only [hRanges, List.mem_cons, List.not_mem_nil, or_false] at ho
-      rcases ho with rfl | rfl | rfl <;> simp only [hashAt, sState, sHScr, sX, fOffset, hdr] <;> omega⟩),
+      rcases ho with rfl | rfl | rfl <;> simp only [hashAt, sState, sHScr, sX, fOffset, hdr] <;> omega_arith⟩),
       h.2.2.2.1]
   -- `seed + offset + j`'s addend and the end of the seed.
   refine RelCT.seq (both_post (Ψ := fun a t => Base E t ∧
@@ -78,7 +78,7 @@ theorem pHash_ct {g : Geo} (G : GeoOk g) {E : Env} (v : E.Valid) (hq : E.qLen = 
         rfl (by decide +kernel) (by decide +kernel))) fun a t h => ?_) ?_
   · refine scr_ok fun t₂ e₂ g₂ m₂ rd₂ wr₂ sy₂ =>
       ld_ok (Scr.of_eq h.1.scr (g₂ _ (by decide)) (g₂ _ (by decide)) wr₂) (d := fOffset)
-        (by simp only [fOffset, hdr]; omega) fun t₃ u₃ => wp_addi fun t₄ u₄ => WP.block_nil ?_
+        (by simp only [fOffset, hdr]; omega_using [sz]) fun t₃ u₃ => wp_addi fun t₄ u₄ => WP.block_nil ?_
     have edi₄ : t₄.gpr .edi = t.gpr .edi := by rw [u₄.other _ (by decide), u₃.other _ (by decide), g₂ _ (by decide)]
     have esp₄ : t₄.gpr .esp = t.gpr .esp := by rw [u₄.other _ (by decide), u₃.other _ (by decide), g₂ _ (by decide)]
     refine ⟨h.1.regs (by rw [u₄.mem, u₃.mem, m₂]) edi₄ esp₄ (by rw [u₄.rd, u₃.rd, rd₂]) (by rw [u₄.wr, u₃.wr, wr₂])
@@ -98,13 +98,13 @@ theorem pHash_ct {g : Geo} (G : GeoOk g) {E : Env} (v : E.Valid) (hq : E.qLen = 
       (tcheckE _ _ (addBE 1) (addBE_erase _) (by decide +kernel) (by decide +kernel))) fun a t h => ?_) ?_
   · have hs := h.1.scr
     refine VG.X86.WP.mono_syms (addBE_ok hs (o := sState + g.H.N) (n := g.qLen) (c := a.2 + j)
-      (by omega) (by simp only [sState]; omega) h.2.2.2 (by rw [h.2.1, h.1.edi]) h.2.2.1) fun t₅ ⟨_, F₅, K₅, _⟩ sy₅ => ?_
+      (by omega_using [bd]) (by simp only [sState]; omega_using [sz, nl, bd]) h.2.2.2 (by rw [h.2.1, h.1.edi]) h.2.2.1) fun t₅ ⟨_, F₅, K₅, _⟩ sy₅ => ?_
     refine h.1.keep v (os := [(sState, 128)]) (Env.Chg.of_frame F₅ fun r hr => ?_) (fun o ho => ?_)
       (K₅.1 _ (by decide)) (K₅.1 _ (by decide)) K₅.2.1 K₅.2.2 sy₅
     · simp only [List.mem_singleton] at hr; subst hr
-      exact Env.in_range (o := (sState, 128)) (List.mem_singleton_self _) (by omega) (by simp only [sState]; omega)
+      exact Env.in_range (o := (sState, 128)) (List.mem_singleton_self _) (by omega_using []) (by simp only [sState]; omega_using [nl, bd])
     · simp only [List.mem_singleton] at ho; subst ho
-      simp only [sState, fOut, fWitLen, hdr]; omega
+      simp only [sState, fOut, fWitLen, hdr]; omega_using [sz]
   -- The hash.
   exact both_map (fun _ => ()) (fun _ _ h => h) (hash_ct G v _)
 
@@ -115,7 +115,7 @@ theorem pX_ct {g : Geo} (G : GeoOk g) {E : Env} (v : E.Valid) (hq : E.qLen = g.q
     (tcheckE _ _ (.block (orByte 0 0x80 ++ orByte 0 1)) rfl (by decide +kernel) (by decide +kernel)))
   simp only [List.mem_map, List.mem_range] at hp
   obtain ⟨j, hj, rfl⟩ := hp
-  exact pHash_ct G v hq (by omega)
+  exact pHash_ct G v hq (by omega_using [hj])
 
 /-- p's arithmetic: its trace depends only on `esp` and `edi`, which it keeps. -/
 theorem pArith_ct {g : Geo} (G : GeoOk g) :
@@ -152,23 +152,23 @@ theorem paCopy_ok {g : Geo} (G : GeoOk g) {E : Env} (v : E.Valid) {k offset Q us
   have lay : (VG.Impl.Dsa.X86.ProbablePrime.layout (8 * g.pLen)).size ≤ 8 * ppWords := by
     rcases G.lengths with ⟨h, _⟩ | ⟨h, _⟩ | ⟨h, _⟩ <;> rw [h] <;> decide
   have candLe : (VG.Impl.Dsa.X86.ProbablePrime.layout (8 * g.pLen)).candidate + g.pLen ≤ 8 * ppWords := by
-    simp only [VG.Impl.Dsa.X86.ProbablePrime.layout] at lay ⊢; omega
+    simp only [VG.Impl.Dsa.X86.ProbablePrime.layout] at lay ⊢; omega_using [lay]
   refine VG.X86.WP.mono_syms (copyS_ok F.base.scr
     (dst := sPP + (VG.Impl.Dsa.X86.ProbablePrime.layout (8 * g.pLen)).candidate) (src := sPk) (n := g.pLen)
-    (by omega) (by simp only [sPP, ppWords] at candLe ⊢; omega) (by simp only [sPk]; omega)
-    (by right; simp only [sPP, sPk]; omega)) fun t₆ ⟨R₆, F₆, K₆⟩ sy₆ => ?_
+    (by omega_using [bd]) (by simp only [sPP, ppWords] at candLe ⊢; omega_using [sz, candLe]) (by simp only [sPk]; omega_using [sz, bd])
+    (by right; simp only [sPP, sPk]; omega_using [bd])) fun t₆ ⟨R₆, F₆, K₆⟩ sy₆ => ?_
   have pp : (sPP, 8 * ppWords) ∈ paRanges g := by simp [paRanges]
   have C₆ : E.Chg [(sPP, 8 * ppWords)] s₅.mem t₆.mem := Env.Chg.of_frame F₆ fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr
-    exact Env.in_range (List.mem_singleton_self _) (by omega) (by omega)
+    exact Env.in_range (List.mem_singleton_self _) (by omega_using []) (by omega_using [candLe])
   have App : E.Apart [(sPP, 8 * ppWords)] := fun o ho => Apa o (by simp only [List.mem_singleton] at ho; rw [ho]; exact pp)
   refine ⟨F.base.keep v C₆ App (K₆.1 _ (by decide)) (K₆.1 _ (by decide)) K₆.2.1 K₆.2.2 sy₆, ?_, hu, ?_, F.odd,
-    (VG.Proof.Dsa.bitLength_iff_bounds (by omega)).mpr ⟨by omega, F.lt⟩⟩
-  · rw [Env.Chg.word v C₆ (by simp only [fUsed, hdr]; omega) (fun o ho => by
-      simp only [List.mem_singleton] at ho; subst ho; simp only [sPP, ppWords, fUsed, hdr]; omega), F.used]
+    (VG.Proof.Dsa.bitLength_iff_bounds (by omega_using [bd])).mpr ⟨by omega_using [hge], F.lt⟩⟩
+  · rw [Env.Chg.word v C₆ (by simp only [fUsed, hdr]; omega_using [sz]) (fun o ho => by
+      simp only [List.mem_singleton] at ho; subst ho; simp only [sPP, ppWords, fUsed, hdr]; omega_using [sz]), F.used]
   · unfold Proof.Dsa.ProbablePrime.candidateAt
     have b8 : (VG.Impl.Dsa.X86.ProbablePrime.layout (8 * g.pLen)).bits / 8 = g.pLen := by
-      show 8 * g.pLen / 8 = g.pLen; omega
+      show 8 * g.pLen / 8 = g.pLen; omega_using []
     rw [b8, VG.Offset.add_add, R₆, F.pk, VG.Proof.Dsa.decodeBE_encodeBE (by rw [e256]; exact F.lt)]
 
 theorem pAttempt_ct {g : Geo} (G : GeoOk g) {E : Env} (v : E.Valid) (hq : E.qLen = g.qLen) :
@@ -218,9 +218,9 @@ theorem pAttempt_ct {g : Geo} (G : GeoOk g) {E : Env} (v : E.Valid) (hq : E.qLen
       t.mem.readW (off E.base fRes) 32 = BitVec.ofNat 32 (Proof.Dsa.ProbablePrime.status
         (Spec.Dsa.probablePrime (pcand g E a.1 a.2.1 a.2.2.1) (E.witT.drop a.2.2.2))) :=
     fun a t h => by obtain ⟨u, _, P⟩ := h; exact P.res
-  refine cmpF_ct (by simp only [fRes, hdr]; omega) (by decide) _ hb hw (fun _ => status_lt _)
+  refine cmpF_ct (by simp only [fRes, hdr]; omega_using [sz]) (by decide) _ hb hw (fun _ => status_lt _)
     (stImm_ct (fun a t h => h.1.base hb) _ _) ?_
-  refine cmpF_ct (Φ := fun a t => CmpAfter _ a t ∧ _) (by simp only [fRes, hdr]; omega) (by decide) _
+  refine cmpF_ct (Φ := fun a t => CmpAfter _ a t ∧ _) (by simp only [fRes, hdr]; omega_using [sz]) (by decide) _
     (fun a t h => h.1.base hb) (fun a t h => by obtain ⟨⟨u, hu, _, m, _⟩, _⟩ := h; rw [m]; exact hw a u hu)
     (fun _ => status_lt _) (stImm_ct (fun a t h => h.1.base (fun a t h => h.1.base hb)) _ _)
     (RelCT.nil fun _ _ _ => trivial)

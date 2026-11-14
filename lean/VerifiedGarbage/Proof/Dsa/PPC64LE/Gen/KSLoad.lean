@@ -46,7 +46,7 @@ theorem past_of_disjoint' {B : Addr} {Z : Nat} {r : Region} (hd : r.Disjoint ⟨
     (ha : r.Contains a 1) : Z ≤ (a - B).toNat := by
   have := hd a ha
   simp only [Region.Contains] at this
-  omega
+  omega_using [this]
 
 section
 variable {G : GP} {c : Cfg} {X : State → Prop}
@@ -84,7 +84,7 @@ theorem loadAt_vp {j n : Nat} {P : Addr} {bs : List Byte} (cert : CertL j)
     have := h.arrs.get hjl; rw [hj0] at this; exact this
   have w96 : G.w ≤ 96 := by simp only [GP.w]; rcases l with e | e | e <;> rw [e] <;> decide
   have hc : ∀ i < n, (⟨P, n⟩ : Region).Contains (P + BitVec.ofNat 64 i) 1 := fun i hi =>
-    Offset.contains_base _ (by omega) (by omega)
+    Offset.contains_base _ (by omega_using [hi]) (by omega_using [hnw, w96, hi])
   refine h.ksWPr hR rfl (P := fun t => Ws t G.KB (kz G.pLen) G.w nArrs ∧ KKeep G.KB G.w [j] [] s.mem t.mem ∧
       num t.mem G.KB G.w j = Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem P n) ∧
       VG.Proof.Bignum.PPC64LE.Keep [.r0, .r5, .r6, .r8] (s.withRegions (s.rd ++ [⟨P, n⟩]) [G.rK]) t ∧
@@ -103,9 +103,9 @@ theorem loadAt_vp {j n : Nat} {P : Addr} {bs : List Byte} (cert : CertL j)
     have fi := hw.arr_fit hi
     by_cases e : i = j
     · subst e
-      rw [VG.Proof.Mont.Outside.w32 o (.inr (Nat.le_refl _)) (by have := hw.fit64 hi; simp only [S] at this; omega)]
+      rw [VG.Proof.Mont.Outside.w32 o (.inr (Nat.le_refl _)) (by have := hw.fit64 hi; simp only [S] at this; omega_using [this])]
       exact top i hi hne
-    · rw [k.word (j := i) (i := G.w) (by simp only [S]; omega) (by simpa using Ne.symm e) (by simp)
+    · rw [k.word (j := i) (i := G.w) (by simp only [S]; omega_using []) (by simpa using Ne.symm e) (by simp)
         (hw.fit64 hi)]
       exact top i hi hne
 
@@ -134,7 +134,7 @@ theorem loadZ_vp {j n : Nat} {P : Addr} {bs : List Byte} (cert : CertL j)
     have := h.arrs.get hjl; rw [hj0] at this; exact this
   have w96 : G.w ≤ 96 := by simp only [GP.w]; rcases h.lens with e | e | e <;> rw [e] <;> decide
   have hc : ∀ i < n, (⟨P, n⟩ : Region).Contains (P + BitVec.ofNat 64 i) 1 := fun i hi =>
-    Offset.contains_base _ (by omega) (by omega)
+    Offset.contains_base _ (by omega_using [hi]) (by omega_using [hnw, w96, hi])
   refine h.ksWPr hR rfl (P := fun t => Ws t G.KB (kz G.pLen) G.w nArrs ∧ KKeep G.KB G.w [j] [] s.mem t.mem ∧
       num t.mem G.KB G.w j = Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem P n) ∧
       VG.Proof.Bignum.PPC64LE.Keep [.r0, .r5, .r6, .r8] (s.withRegions (s.rd ++ [⟨P, n⟩]) [G.rK]) t) ?_ ?_
@@ -180,7 +180,7 @@ theorem loadS_vp {j o n : Nat} {bs : List Byte} (cert : CertL j)
     simp only [hn] at b
     refine ⟨(Covers.of_sub (rs' := [G.rScr]) fun r hr => by
       rw [List.mem_singleton] at hr; subst hr
-      exact ⟨G.rScr, List.mem_singleton_self _, o, rfl, show o + n ≤ G.scrLen * 8 by omega⟩).trans
+      exact ⟨G.rScr, List.mem_singleton_self _, o, rfl, show o + n ≤ G.scrLen * 8 by omega_using [ok]⟩).trans
       (Covers.of_mem fun r hr => by rw [List.mem_singleton] at hr; subst hr; exact List.mem_append_right _ inS),
       (gi.kdisj ok.2.1 ok.2.2).symm, b⟩
 

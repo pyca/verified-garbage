@@ -16,7 +16,7 @@ open VG VG.Spec.Ffdh VG.Proof.Ffdh.SievedGeneration VG.Proof.Ffdh.ParameterCandi
 theorem candidateUsed_bound (p : SearchParams) (used : Nat) :
     candidateUsed p used ≤ p.c.bytes.length - used := by
   unfold candidateUsed
-  split <;> omega
+  split <;> omega_using []
 
 theorem candidate_short (p : SearchParams) (used : Nat)
     (short : p.c.bytes.length - used < p.c.length) : candidateResult p used = none := by

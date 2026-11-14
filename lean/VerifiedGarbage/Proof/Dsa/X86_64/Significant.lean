@@ -102,8 +102,8 @@ theorem significantByte_ok {s : State} {p : Addr} {found : Nat × Byte} {remaini
   have hvc := ((hku.trans hkv).gpr (show Reg.rcx ∉ [Reg.rax, Reg.r8] ++ [Reg.rax, Reg.r8, Reg.r9] by decide)).trans hcx
   have hsub := ofNat64_pred h1 h64
   have he : (BitVec.ofNat 64 (remaining - 1) == 0) = decide (remaining = 1) := by
-    rw [ofNat_beq_zero (by omega), Bool.eq_iff_iff, decide_eq_true_iff, decide_eq_true_iff]
-    omega
+    rw [ofNat_beq_zero (by omega_using [h64]), Bool.eq_iff_iff, decide_eq_true_iff, decide_eq_true_iff]
+    omega_using [h1]
   refine WP.mono (WP.keep [.rsi, .rcx] (Q := fun t =>
     t.gpr .rsi = p + 1 ∧ t.gpr .rcx = BitVec.ofNat 64 (remaining - 1) ∧
     t.zf = some (decide (remaining = 1)) ∧ t.mem = v.mem) ?_ rfl)

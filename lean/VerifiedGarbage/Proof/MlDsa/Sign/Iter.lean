@@ -71,7 +71,7 @@ theorem modPm_ofInt {x : Int} (h₁ : -((q - 1) / 2 : Nat) ≤ x) (h₂ : x ≤ 
     modPm (ofInt x).val q = x := by
   unfold modPm
   dsimp only
-  split <;> (rename_i hc; simp only [ofInt, Fin.val_ofNat, q_eq] at *; omega)
+  split <;> (rename_i hc; simp only [ofInt, Fin.val_ofNat, q_eq] at *; omega_using [h₁, h₂, hc])
 
 theorem normZq_ofInt {x : Int} (h₁ : -((q - 1) / 2 : Nat) ≤ x) (h₂ : x ≤ ((q - 1) / 2 : Nat)) :
     normZq (ofInt x) = x.natAbs := by
@@ -83,7 +83,7 @@ theorem lowBits_range {γ₂ : Nat} (h : γ₂ ∈ gamma2s) (r : Zq) :
   have hr := r.isLt
   rcases mem_gamma2s h with rfl | rfl <;>
   · simp only [lowBits, decompose, modPm, q_eq] at *
-    split <;> split <;> simp only <;> omega
+    split <;> split <;> simp only <;> omega_arith
 
 /-- `HighBits(r)` is at most `(q - 1)/(2γ₂) - 1`. -/
 theorem highBits_le {γ₂ : Nat} (h : γ₂ ∈ gamma2s) (r : Zq) : (highBits γ₂ r).toNat ≤ (q - 1) / (2 * γ₂) - 1 := by
@@ -91,7 +91,7 @@ theorem highBits_le {γ₂ : Nat} (h : γ₂ ∈ gamma2s) (r : Zq) : (highBits �
   have : 0 < VG.Proof.MlDsa.Round.hbM γ₂ := by rcases mem_gamma2s h with rfl | rfl <;> decide
   have := Nat.mod_lt (VG.Proof.MlDsa.Round.hbF γ₂ r.val) this
   simp only [VG.Proof.MlDsa.Round.hbM] at *
-  omega
+  omega_using [this]
 
 /-- The norm of a polynomial of `LowBits`, as the implementation stores it in `R_q`. -/
 theorem normR_lowBits {γ₂ : Nat} (h : γ₂ ∈ gamma2s) (w : Poly) :
@@ -102,7 +102,7 @@ theorem normR_lowBits {γ₂ : Nat} (h : γ₂ ∈ gamma2s) (w : Poly) :
   refine List.map_congr_left fun c _ => ?_
   have := lowBits_range h c
   simp only [Function.comp]
-  rw [normZq_ofInt (by omega) (by omega)]
+  rw [normZq_ofInt (by omega_using [hq, this]) (by omega_using [hq, this])]
 
 /-! ## The iteration, polynomial by polynomial -/
 
@@ -189,7 +189,7 @@ theorem iterOut_eq (hp : ParamsOk p) :
       if passF p A S1 S2 T0 ρ'' κ c then
         some ((List.range p.ℓ).map (zF p S1 ρ'' κ c), (List.range p.k).map (hF p A S2 T0 ρ'' κ c))
       else none := by
-  have hγ₂ : 0 < p.γ₂ := by have := hp.pos₂; omega
+  have hγ₂ : 0 < p.γ₂ := by have := hp.pos₂; omega_using [this]
   simp only [iterOut, List.map_map]
   have ez : addVec ((List.range p.ℓ).map (toRq ∘ yF p ρ'' κ))
       ((List.range p.ℓ).map ((fun s => nttInv (multiplyNTT (ntt (toRq c)) s)) ∘ S1)) =
@@ -207,14 +207,14 @@ theorem iterOut_eq (hp : ParamsOk p) :
   rw [ez, ew', ect, List.map_map, eh]
   have c1 : normRq ((List.range p.ℓ).map (zF p S1 ρ'' κ c)) ≥ p.γ₁ - p.β ↔
       ¬ ∀ r < p.ℓ, normRq [zF p S1 ρ'' κ c r] < p.γ₁ - p.β := by
-    rw [← normRq_range_lt _ hp.pos₁]; omega
+    rw [← normRq_range_lt _ hp.pos₁]; omega_using []
   have c2 : normR ((List.range p.k).map ((fun ri => Vector.map (lowBits p.γ₂) ri) ∘ w'F p A S2 ρ'' κ c)) ≥
       p.γ₂ - p.β ↔ ¬ ∀ i < p.k, normRq [r0F p A S2 ρ'' κ c i] < p.γ₂ - p.β := by
     rw [ge_iff_le, ← Nat.not_lt, normR_lt_iff _ hp.pos₂]
     simp only [List.mem_map, List.mem_range, Function.comp, forall_exists_index, and_imp,
       forall_apply_eq_imp_iff₂, r0F, normR_lowBits hp.γ₂]
   have c3 : normRq ((List.range p.k).map (ct0F T0 c)) ≥ p.γ₂ ↔ ¬ ∀ i < p.k, normRq [ct0F T0 c i] < p.γ₂ := by
-    rw [← normRq_range_lt _ hγ₂]; omega
+    rw [← normRq_range_lt _ hγ₂]; omega_using []
   have c4 : ((List.range p.k).map (hF p A S2 T0 ρ'' κ c)).map (fun hi => (hi.toList.filter id).length) =
       (List.range p.k).map fun i => hintOnes [hF p A S2 T0 ρ'' κ c i] := by
     simp only [List.map_map, hintOnes_single]; rfl
@@ -223,9 +223,9 @@ theorem iterOut_eq (hp : ParamsOk p) :
   · by_cases h2 : ∀ i < p.k, normRq [r0F p A S2 ρ'' κ c i] < p.γ₂ - p.β
     · by_cases h3 : ∀ i < p.k, normRq [ct0F T0 c i] < p.γ₂
       · by_cases h4 : ((List.range p.k).map fun i => hintOnes [hF p A S2 T0 ρ'' κ c i]).sum ≤ p.ω
-        · rw [ifn (by rw [c1, c2, c3]; rintro (h | h | h | h); exacts [h h1, h h2, h h3, by omega]),
+        · rw [ifn (by rw [c1, c2, c3]; rintro (h | h | h | h); exacts [h h1, h h2, h h3, by omega_using [h4, h]]),
             ifp (show passF p A S1 S2 T0 ρ'' κ c from ⟨h1, h2, h3, h4⟩)]
-        · rw [ifp (by rw [c1, c2, c3]; exact .inr (.inr (.inr (by omega)))), ifn (fun h => h4 h.2.2.2)]
+        · rw [ifp (by rw [c1, c2, c3]; exact .inr (.inr (.inr (by omega_using [h4])))), ifn (fun h => h4 h.2.2.2)]
       · rw [ifp (by rw [c1, c2, c3]; exact .inr (.inr (.inl h3))), ifn (fun h => h3 h.2.2.1)]
     · rw [ifp (by rw [c1, c2, c3]; exact .inr (.inl h2)), ifn (fun h => h2 h.2.1)]
   · rw [ifp (by rw [c1, c2, c3]; exact .inl h1), ifn (fun h => h1 h.1)]
@@ -254,7 +254,7 @@ theorem prefix_findIdx (n : Nat) (q : Nat → Bool) {k : Nat} (hk : k ≤ n) :
   · intro h
     refine Nat.le_of_not_lt fun hlt => ?_
     have hl : (List.range n).findIdx q < (List.range n).length := by
-      rw [List.length_range]; omega
+      rw [List.length_range]; omega_using [hk, hlt]
     have := List.findIdx_getElem (w := hl)
     rw [List.getElem_range, h _ hlt] at this
     cases this
@@ -276,7 +276,7 @@ theorem signRejectTag_eqF {p : Params} (hp : ParamsOk p) (b : Bounds) (A : Nat �
         else if ¬ ∀ i < p.k, normRq [r0F p A S2 ρ'' κ c i] < p.γ₂ - p.β then
           2 + 5 * (List.range p.k).findIdx fun i => decide (normRq [r0F p A S2 ρ'' κ c i] ≥ p.γ₂ - p.β)
         else if ¬ ∀ i < p.k, normRq [ct0F T0 c i] < p.γ₂ then 3 else 4 := by
-  have hγ₂ : 0 < p.γ₂ := by have := hp.pos₂; omega
+  have hγ₂ : 0 < p.γ₂ := by have := hp.pos₂; omega_using [this]
   unfold signRejectTag
   rw [signCommit_eq]
   dsimp only
@@ -296,14 +296,14 @@ theorem signRejectTag_eqF {p : Params} (hp : ParamsOk p) (b : Bounds) (A : Nat �
     rw [ez, ew', ect, List.map_map]
     have c1 : normRq ((List.range p.ℓ).map (zF p S1 ρ'' κ c)) ≥ p.γ₁ - p.β ↔
         ¬ ∀ r < p.ℓ, normRq [zF p S1 ρ'' κ c r] < p.γ₁ - p.β := by
-      rw [← normRq_range_lt _ hp.pos₁]; omega
+      rw [← normRq_range_lt _ hp.pos₁]; omega_using []
     have c2 : normR ((List.range p.k).map ((fun ri => Vector.map (lowBits p.γ₂) ri) ∘ w'F p A S2 ρ'' κ c)) ≥
         p.γ₂ - p.β ↔ ¬ ∀ i < p.k, normRq [r0F p A S2 ρ'' κ c i] < p.γ₂ - p.β := by
       rw [ge_iff_le, ← Nat.not_lt, normR_lt_iff _ hp.pos₂]
       simp only [List.mem_map, List.mem_range, Function.comp, forall_exists_index, and_imp,
         forall_apply_eq_imp_iff₂, r0F, normR_lowBits hp.γ₂]
     have c3 : normRq ((List.range p.k).map (ct0F T0 c)) ≥ p.γ₂ ↔ ¬ ∀ i < p.k, normRq [ct0F T0 c i] < p.γ₂ := by
-      rw [← normRq_range_lt _ hγ₂]; omega
+      rw [← normRq_range_lt _ hγ₂]; omega_using []
     simp only [c1, c2, c3]
     simp only [List.findIdx_map, Function.comp_def, normR_lowBits hp.γ₂, r0F]
     rfl

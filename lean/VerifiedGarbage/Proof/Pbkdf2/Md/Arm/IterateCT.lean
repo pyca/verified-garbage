@@ -97,17 +97,17 @@ theorem load_st (hR : md.Reloc) {o : Nat} (ho : o + H.N ≤ 2 * (H.N + H.B)) (ho
   have hB := hz.B_range
   rw [← List.append_nil (H.loadKey o)]
   exact load_ok hz hp hR h.toRegs ho ho4 fun s' g rd wr sp f _ => WP.block_nil
-    ⟨h.toRegs.write (fun r hr => g r (ne12 r hr)) rd wr sp (frame_scr (a := H.hvO) (by simp only [Hash.hvO]; omega) f),
+    ⟨h.toRegs.write (fun r hr => g r (ne12 r hr)) rd wr sp (frame_scr (a := H.hvO) (by simp only [Hash.hvO]; omega_arith) f),
       (g _ (by decide)).trans h.r5,
-      (Memory.frame_bytesAt f (fun r hr => blk_disj hz hp (by omega) r (by simp at hr; simp [hr])) (by omega)).trans
+      (Memory.frame_bytesAt f (fun r hr => blk_disj hz hp (by omega_arith) r (by simp at hr; simp [hr])) (by omega_using [hB])).trans
         h.pad⟩
 
 theorem cmp_st (hf : CompOk md H.so H.compC) {s : State} (h : St H sc md s₀ v s) :
     WP isa H.compressBlock s (St H sc md s₀ v) := by
   have := hz.N64; have := hp.fits; have := hz.DN; have := hz.pad; have := hz.NL
-  have : H.B ≤ 128 := by rcases hz.B with h | h <;> omega
+  have : H.B ≤ 128 := by rcases hz.B with h | h <;> omega_using [h]
   exact cmp_ok hz hp hf h.toRegs fun s' h' x5 f _ =>
-    ⟨h', x5.trans h.r5, (Memory.frame_bytesAt f (blk_disj hz hp (by omega)) (by omega)).trans h.pad⟩
+    ⟨h', x5.trans h.r5, (Memory.frame_bytesAt f (blk_disj hz hp (by omega_arith)) (by omega_using [this])).trans h.pad⟩
 
 theorem mid_st (ho : OutOk md H.out) (hR : md.Reloc) {s : State} (h : St H sc md s₀ v s) :
     WP isa (.block (H.digest ++ H.loadKey (H.N + H.B))) s (St H sc md s₀ v) := by
@@ -115,9 +115,9 @@ theorem mid_st (ho : OutOk md H.out) (hR : md.Reloc) {s : State} (h : St H sc md
   have hB := hz.B_range
   have hB4 := hz.B4
   refine digest_ok hz hp ho h.toRegs h.pad fun s' g rd wr sp f _ p => ?_
-  exact load_st hz hp hR (by omega) (by omega)
+  exact load_st hz hp hR (by omega_using []) (by omega_using [this, hB4])
     ⟨h.toRegs.write (fun r hr => g r (ne9 r hr) (ne10 r hr) (ne12 r hr)) rd wr sp
-      (frame_scr (a := H.blkO) (by simp only [Hash.blkO]; omega) f),
+      (frame_scr (a := H.blkO) (by simp only [Hash.blkO]; omega_arith) f),
       (g _ (by decide) (by decide) (by decide)).trans h.r5, p⟩
 
 /-! ## Two runs -/
@@ -160,7 +160,7 @@ theorem body_rel (ho : OutOk md H.out) (hR : md.Reloc) (hf : CompOk md H.so H.co
       St H sc md s₀' (BitVec.ofNat 32 (r + 1)) s') (.block (H.loadKey 0))
       fun s s' => St H sc md s₀ (BitVec.ofNat 32 (r + 1)) s ∧ St H sc md s₀' (BitVec.ofNat 32 (r + 1)) s' :=
     blk_rel hp hp' hq (G := fun t₀ => St H sc md t₀ (BitVec.ofNat 32 (r + 1))) hc.load
-      fun hp _ h => load_st hz hp hR (by omega) rfl h
+      fun hp _ h => load_st hz hp hR (by omega_using []) rfl h
   have dl : RelCT isa (fun s s' => St H sc md s₀ (BitVec.ofNat 32 (r + 1)) s ∧
       St H sc md s₀' (BitVec.ofNat 32 (r + 1)) s') (.block (H.digest ++ H.loadKey (H.N + H.B)))
       fun s s' => St H sc md s₀ (BitVec.ofNat 32 (r + 1)) s ∧ St H sc md s₀' (BitVec.ofNat 32 (r + 1)) s' :=
@@ -190,7 +190,7 @@ theorem loop_rel (ho : OutOk md H.out) (hR : md.Reloc) (hf : CompOk md H.so H.co
       have hc'' : some (m != 0) = some true := z.symm.trans hc'
       cases m with
       | zero => cases hc''
-      | succ m => exact ⟨m, by omega, i, i'⟩) n
+      | succ m => exact ⟨m, by omega_using [], i, i'⟩) n
 
 end
 
@@ -216,7 +216,7 @@ theorem iterate_rel {H : Hash} (hH : HashOK H) (hc : Checks H) {sc : Nat} {s₀ 
     rel_agree (argTaint [.r0, .r1, .r2, .r3] 4) (fun s s' e e' => by
         rw [e, e']
         refine agree_argTaint (fun r hr => ?_) hq.sp (aw hp) (aw hp')
-          (argMem_of (j := 1) hq.sp hp.spf fun i hi => by rw [show i = 0 by omega]; exact hq.a0)
+          (argMem_of (j := 1) hq.sp hp.spf fun i hi => by rw [show i = 0 by omega_using [hi]]; exact hq.a0)
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl | rfl | rfl
         · exact hq.r0

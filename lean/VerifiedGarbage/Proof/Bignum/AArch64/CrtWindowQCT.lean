@@ -36,7 +36,7 @@ theorem pow_q3_wide (W : Window) (M : Mont) (S : Selector) {p : PhasePub} {s : S
     hsln,hep,hel,_,hL1,hL2,he⟩ := h
   exact WP.mono (powPhase_ok W M S hg hw28 hlo hwide hwx2 hwx hsl hslv hws hX hX1 hXodd hnY hyl hyc
     hsd hsln hep hel hL1 hL2 he) fun _ ⟨hc,hX',_⟩ =>
-      ⟨mx,X,hc,hX',hX1,hwx2,(by omega : (CrtCTQ.sp p).x.wx < 2 ^ 28)⟩
+      ⟨mx,X,hc,hX',hX1,hwx2,(by omega_using [hw28, hwx] : (CrtCTQ.sp p).x.wx < 2 ^ 28)⟩
 
 theorem qPhase_ct (W : Window) (M : Mont) (S : Selector) (hU : UnitCT M sWsQ)
     (hP : PowCT W M S sWsQ sDq sQlen) : QPhaseCT W M S := by
@@ -48,7 +48,7 @@ theorem qPhase_ct (W : Window) (M : Mont) (S : Selector) (hU : UnitCT M sWsQ)
   refine RelCT.seqs_append (by simp) (by simp [powSteps]) (RelCT.seq
     (two_post (Ψ := fun p => PwPreWide sWsQ sDq sQlen (CrtCTQ.sp p))
       (two_map (fun p : PhasePub => (⟨p.B,p.Z,p.w⟩ : Ws))
-        (fun _ _ ⟨⟨_,_,_,hg,_,_,hlo,hhi,_⟩,_⟩ => ⟨_,hg,by dsimp only; omega⟩)
+        (fun _ _ ⟨⟨_,_,_,hg,_,_,hlo,hhi,_⟩,_⟩ => ⟨_,hg,by dsimp only; omega_using [hlo, hhi]⟩)
         (M.ct (by unfold MmUse; decide))) fun _ _ h => mm_pwPre_wide M h) ?_)
   exact RelCT.seqs_append (by simp [powSteps]) (by simp) (RelCT.seq
     (two_post (Ψ := CrtCTQ.Q3) (two_map CrtCTQ.sp (fun _ _ h => h) hP)

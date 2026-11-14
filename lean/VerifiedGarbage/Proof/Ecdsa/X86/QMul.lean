@@ -248,7 +248,7 @@ theorem mulFn_spOk {gx gy ao : Nat} {C : Impl.Weierstrass.Mul.Curve} (hC : c.mul
     simp [hi]
   · have := h.2
     simp only [Cfg.mulAt, stackUse, frameBytes, List.length_cons, List.length_nil, Nat.max_le] at this
-    omega
+    omega_using [this]
 
 /-- `R = [k]P` for the point at `gx`, `gy`, `ONEP`: the call of
 `vg_<curve>_mul` if the curve has it, from `k` at `K`'s slot, else the ladder

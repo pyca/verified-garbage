@@ -21,7 +21,7 @@ theorem Inputs.exactWidth (p : Inputs) (valid : Spec.Ffdh.domainValid p.k p.dom 
     exact h.2
   have bound := VG.Proof.Bignum.os2ip_lt (p.dom.take p.k)
   rw [p.pLength] at bound
-  exact VG.Proof.Ffdh.octets_bitLength (by have := p.minLength; omega) top bound
+  exact VG.Proof.Ffdh.octets_bitLength (by have := p.minLength; omega_using [this]) top bound
 
 theorem exchangeResult_spec {p : Inputs} {yb xb : List Byte} {t : State}
     (valid : Spec.Ffdh.domainValid p.k p.dom = true)
@@ -32,7 +32,7 @@ theorem exchangeResult_spec {p : Inputs} {yb xb : List Byte} {t : State}
   have modulus := VG.Proof.Ffdh.domainValid_mod valid
   rw [p.domainP] at modulus
   have facts := VG.Proof.Bignum.valid_facts modulus p.minLength
-  have operation := VG.Proof.Ffdh.exchangeOp_eq (k := p.k) (X := Spec.Rsa.os2ip xb) peer (by rw [p.domainP]; omega)
+  have operation := VG.Proof.Ffdh.exchangeOp_eq (k := p.k) (X := Spec.Rsa.os2ip xb) peer (by rw [p.domainP]; omega_using [facts])
     (by rw [p.domainP]; exact p.exactWidth valid)
   rw [p.domainP] at operation
   rw [operation]

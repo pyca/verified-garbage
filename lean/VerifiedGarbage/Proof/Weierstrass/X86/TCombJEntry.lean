@@ -122,7 +122,7 @@ theorem tentryJ_ok {K : TCombCfg} {C : Curve} {base : Addr} {size k i : Nat} {T 
   refine WP.mono (select_ok K hs₁ hnn (by omega_using [hHle]) (by have := hL.tbl; omega_using [this]) hL.ptr_le hexy hEy hEz
     (by
       have := ap (x := K.E.x) (y := K.E.z) (by tcomb_mem) (by tcomb_mem) (by nd_ne hnd)
-      have := ap (x := K.E.y) (y := K.E.z) (by tcomb_mem) (by tcomb_mem) (by nd_ne hnd); omega) hzl (by dsimp only [TCombCfg.toComb] at h0x h0y; omega_using [hexy, h0x, h0y]) h0z (Nat.lt_trans hV.one_lt hpn)
+      have := ap (x := K.E.y) (y := K.E.z) (by tcomb_mem) (by tcomb_mem) (by nd_ne hnd); omega_arith) hzl (by dsimp only [TCombCfg.toComb] at h0x h0y; omega_using [hexy, h0x, h0y]) h0z (Nat.lt_trans hV.one_lt hpn)
     (by rw [k₁.2.1]; exact hz) hx₁ m₁ hmag (T := s.mem.readW (off base K.ptr) 32)
     (by rw [k₁.2.1]) (by rw [haddr]; exact hreg) (by rw [haddr, haddrNat]; exact hbound)) fun s₂ S₂ => ?_
   rw [haddr] at S₂

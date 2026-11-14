@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.Bswap
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # GHASH: byte reversal of 64-bit halves
@@ -21,7 +22,7 @@ theorem getLsbD_byteRev64 (a : BitVec 64) (i : Nat) (hi : i < 64) :
 theorem byteRev64_byteRev64 (a : BitVec 64) : byteRev64 (byteRev64 a) = a := by
   apply BitVec.eq_of_getLsbD_eq
   intro i hi
-  rw [getLsbD_byteRev64 _ _ hi, getLsbD_byteRev64 _ _ (by omega)]
-  congr 1; omega
+  rw [getLsbD_byteRev64 _ _ hi, getLsbD_byteRev64 _ _ (by omega_using [])]
+  congr 1; omega_using [hi]
 
 end VG.Proof.Gcm

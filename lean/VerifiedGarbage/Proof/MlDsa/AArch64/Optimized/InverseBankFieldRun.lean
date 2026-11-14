@@ -25,10 +25,10 @@ theorem runValues_field (i n : Nat) (hin : i+n≤7) (v : Vector (BitVec 128) 8) 
   induction n generalizing i v w with
   | zero => exact ⟨hv,hf⟩
   | succ n ih =>
-    have hi : i<7 := by omega
+    have hi : i<7 := by omega_using [hin]
     have hp := stageValues_bound ⟨i,hi⟩ v (fun _ => (negZetaNat (root i) : Int)) hb hs hv
     have hfield := stageValues_field ⟨i,hi⟩ v w hu (root i) hb hs hv hf
-    have h := ih (i := i+1) (by omega) _ _ hp hfield
+    have h := ih (i := i+1) (by omega_using [hin]) _ _ hp hfield
     simpa only [runValues,runOps,InverseTraversal.run_append,Nat.add_assoc,Nat.add_comm 1 n] using h
 
 theorem stageBound_zero (v : Vector (BitVec 128) 8) (b : Int) :

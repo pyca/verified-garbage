@@ -171,7 +171,7 @@ theorem verified_keep {c : Prog isa} {k : Contract isa} (hv : Verified target c 
   have he' := Exec.widen he₁ (rd := s.rd) (wr := s.wr) (by simpa using (Covers.refl _).append hw) (by simpa using hw)
   simp only [State.withRegions_withRegions, State.withRegions_self] at he'
   obtain ⟨-, rfl⟩ := Exec.det he he'
-  have hf := Exec.stackFrame hsp he₁ (by omega)
+  have hf := Exec.stackFrame hsp he₁ (by omega_using [hd])
   simp only [State.withRegions_wr, State.withRegions_gpr, State.withRegions_mem] at hf
   simp only [State.withRegions_mem]
   refine hf x fun r hr => ?_
@@ -180,7 +180,7 @@ theorem verified_keep {c : Prog isa} {k : Contract isa} (hv : Verified target c 
   · rw [List.mem_singleton] at hr
     subst hr
     exact fun hc => hx _ (List.mem_append_right _ (List.mem_singleton_self _))
-      (Offset.sub_below _ (by omega) (by omega) x hc)
+      (Offset.sub_below _ (by omega_using [hd]) (by omega_using [hd]) x hc)
 
 /-- The bytes of `scratch` (`len` bytes at `p`) from its `n`-th on, which a
 run as in `verified_keep` leaves as they were if the regions it may write are
@@ -193,14 +193,14 @@ theorem verified_keepTail {c : Prog isa} {k : Contract isa} (hv : Verified targe
     (hws : ∀ r ∈ wr, r = ⟨p, n⟩ ∨ r.Disjoint ⟨p, len⟩) (hstk : (below (s.gpr .rsp) 32).Disjoint ⟨p, len⟩)
     {i : Nat} (hi : n ≤ i) (hil : i < len) :
     s'.mem (p + BitVec.ofNat 64 i) = s.mem (p + BitVec.ofNat 64 i) := by
-  have hil' : i < 2 ^ 64 := by have := p.isLt; omega
-  have hin : (⟨p, len⟩ : Region).Contains (p + BitVec.ofNat 64 i) 1 := Offset.contains_base p (by omega) hil'
+  have hil' : i < 2 ^ 64 := by have := p.isLt; omega_using [hp, hil]
+  have hin : (⟨p, len⟩ : Region).Contains (p + BitVec.ofNat 64 i) 1 := Offset.contains_base p (by omega_using [hil]) hil'
   refine verified_keep hv hsp hd hpre hwr he fun r hr => ?_
   rcases List.mem_append.mp hr with hr | hr
   · rcases hws r hr with rfl | hdj
     · simp only [Region.Contains]
       rw [Mem.sub_ofNat_toNat p hil']
-      omega
+      omega_using [hi]
     · exact fun hc => hdj _ hc hin
   · rw [List.mem_singleton] at hr
     subst hr

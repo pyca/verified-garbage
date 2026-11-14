@@ -93,8 +93,8 @@ include h
 
 theorem k64 : 64 ≤ P.K := h.kv.1
 theorem k1024 : P.K ≤ 1024 := h.kv.2
-theorem pl8 : 8 ≤ P.pl := by have := h.plK; have := h.mlK; omega
-theorem em_len : P.pl + P.ml + 3 = P.K := by have := h.plK; have := h.mlK; omega
+theorem pl8 : 8 ≤ P.pl := by have := h.plK; have := h.mlK; omega_arith
+theorem em_len : P.pl + P.ml + 3 = P.K := by have := h.plK; have := h.mlK; omega_arith
 
 end In
 

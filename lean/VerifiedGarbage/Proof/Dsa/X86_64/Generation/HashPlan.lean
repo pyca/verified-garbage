@@ -52,26 +52,26 @@ def HashPlan.changed (p : HashPlan) : List Region :=
 theorem HashPlan.size (p : HashPlan) :
     0 < p.len ∧ p.len ≤ 32 ∧ (p.count + 1) * p.len < 2 ^ 31 := by
   have hc := p.count_le
-  rcases p.width with h | h <;> rw [h] <;> omega
+  rcases p.width with h | h <;> rw [h] <;> omega_using [hc]
 
 theorem HashPlan.dest_sub (p : HashPlan) (j : Nat) :
     Region.Sub ⟨p.dest j, p.len⟩ ⟨p.output, (p.count + 1) * p.len⟩ := by
   apply Offset.sub_base
-  have h := Nat.mul_le_mul_right p.len (show p.count - j + 1 ≤ p.count + 1 by omega)
+  have h := Nat.mul_le_mul_right p.len (show p.count - j + 1 ≤ p.count + 1 by omega_using [])
   simpa only [Nat.add_mul, Nat.one_mul] using h
 
 theorem HashPlan.dest_sep (p : HashPlan) (j : Nat) : HashBufferSeparate p.F p.S (p.dest j) p.len where
   frame i hi k hk := by
     have hbound : (p.count - j) * p.len + i < (p.count + 1) * p.len := by
-      have h := Nat.mul_le_mul_right p.len (show p.count - j + 1 ≤ p.count + 1 by omega)
+      have h := Nat.mul_le_mul_right p.len (show p.count - j + 1 ≤ p.count + 1 by omega_using [])
       rw [Nat.add_mul, Nat.one_mul] at h
-      omega
+      omega_using [hi, h]
     simpa only [HashPlan.dest, off_off] using p.output_sep.frame _ hbound k hk
   scratch i hi k hk := by
     have hbound : (p.count - j) * p.len + i < (p.count + 1) * p.len := by
-      have h := Nat.mul_le_mul_right p.len (show p.count - j + 1 ≤ p.count + 1 by omega)
+      have h := Nat.mul_le_mul_right p.len (show p.count - j + 1 ≤ p.count + 1 by omega_using [])
       rw [Nat.add_mul, Nat.one_mul] at h
-      omega
+      omega_using [hi, h]
     simpa only [HashPlan.dest, off_off] using p.output_sep.scratch _ hbound k hk
 
 theorem HashPlan.dest_disjoint (p : HashPlan) {j k : Nat} (hj : j ≤ p.count)
@@ -80,14 +80,14 @@ theorem HashPlan.dest_disjoint (p : HashPlan) {j k : Nat} (hj : j ≤ p.count)
   apply Offset.disjoint
   · rcases Nat.lt_or_gt_of_ne hne with h | h
     · right
-      have hm := Nat.mul_le_mul_right p.len (show p.count - k + 1 ≤ p.count - j by omega)
+      have hm := Nat.mul_le_mul_right p.len (show p.count - k + 1 ≤ p.count - j by omega_using [hk, h])
       simpa only [Nat.add_mul, Nat.one_mul] using hm
     · left
-      have hm := Nat.mul_le_mul_right p.len (show p.count - j + 1 ≤ p.count - k by omega)
+      have hm := Nat.mul_le_mul_right p.len (show p.count - j + 1 ≤ p.count - k by omega_using [hj, h])
       simpa only [Nat.add_mul, Nat.one_mul] using hm
   all_goals
-    have hmj := Nat.mul_le_mul_right p.len (show p.count - j + 1 ≤ p.count + 1 by omega)
-    have hmk := Nat.mul_le_mul_right p.len (show p.count - k + 1 ≤ p.count + 1 by omega)
+    have hmj := Nat.mul_le_mul_right p.len (show p.count - j + 1 ≤ p.count + 1 by omega_using [])
+    have hmk := Nat.mul_le_mul_right p.len (show p.count - k + 1 ≤ p.count + 1 by omega_using [])
     rw [Nat.add_mul, Nat.one_mul] at hmj hmk
     omega_using [p.size.2.2, hmj, hmk]
 

@@ -16,17 +16,17 @@ theorem argument_offset {s : State} (E : Entry s) {i : Nat} (index : i < 2) :
   have bound := E.stackBound
   apply BitVec.eq_of_toNat_eq
   simp only [argAddr, BitVec.toNat_setWidth, BitVec.toNat_add, BitVec.toNat_ofNat]
-  omega
+  omega_using [index, bound]
 
 theorem Entry.pushed_arg {s : State} (E : Entry s) {i : Nat} (index : i < 2) :
     (entered s).mem.readW (argAddr s i) 32 = arg s i := by
   have saved := pushed_frame (rs := Compact.savedRegisters) (s := s) (by decide)
-    (by change 16 ≤ (s.gpr .esp).toNat; have := E.stackFit; omega)
+    (by change 16 ≤ (s.gpr .esp).toNat; have := E.stackFit; omega_using [this])
   have separate : (⟨argAddr s 0, 8⟩ : Region).Disjoint (below (s.gpr .esp) 16) :=
     E.stackArgsSeparate'.symm.sub_right (below_sub (by decide) E.stackFit)
   have contains : (⟨argAddr s 0, 8⟩ : Region).Contains (argAddr s i) 4 := by
     rw [argument_offset E index]
-    exact Offset.contains_base _ (by omega) (by omega)
+    exact Offset.contains_base _ (by omega_using [index]) (by omega_using [index])
   exact saved.readW contains (by
     intro r hr; obtain rfl := List.mem_singleton.mp hr; exact separate) (by decide)
 
@@ -38,7 +38,7 @@ theorem Entry.read_arg {s : State} (E : Entry s) {i : Nat} (index : i < 2) :
     rw [entered, Compact.entered, pushed_rd, E.rd]
     refine ⟨_, List.mem_append_left _ (List.mem_singleton_self _), ?_⟩
     rw [argument_offset E index]
-    exact Offset.contains_base _ (by omega) (by omega)
+    exact Offset.contains_base _ (by omega_using [index]) (by omega_using [index])
   rw [State.load32, ite_eq_left access, E.pushed_arg index]
 
 theorem lengthRegion_entered (s : State) :
@@ -55,7 +55,7 @@ theorem Entry.length_sub {s : State} (E : Entry s) :
   intro x hx
   apply Region.Contains.byte (Offset.contains_base (argAddr s 0) (by decide : 4 + 4 ≤ 8) (by decide))
   change (x - (argAddr s 0 + BitVec.ofNat 64 4)).toNat + 1 ≤ 4 at hx
-  omega
+  omega_using [hx]
 
 theorem Entry.caller {s : State} (E : Entry s) :
     Caller (geometry s) (arg s 1).toNat ((entered s).gpr .esp) (entered s) := by
@@ -66,9 +66,9 @@ theorem Entry.caller {s : State} (E : Entry s) :
     E.argSeparate.symm.sub_left E.length_sub, E.stackArgsSeparate'.symm.sub_left E.length_sub |>.sub_right sub, ?_⟩
   · rw [entered, Compact.entered, pushed_esp]
     change 80 ≤ (s.gpr .esp - 16#32).toNat
-    rw [sub_toNat (by have := E.stackFit; omega)]
+    rw [sub_toNat (by have := E.stackFit; omega_using [this])]
     have := E.stackFit
-    omega
+    omega_using [this]
   · change readSrc (entered s) (.mem (VG.Impl.Mont.X86.Compact.arg 1)) = some (BitVec.ofNat 32 (arg s 1).toNat)
     rw [BitVec.ofNat_toNat, BitVec.setWidth_eq]
     exact E.read_arg (by decide : 1 < 2)

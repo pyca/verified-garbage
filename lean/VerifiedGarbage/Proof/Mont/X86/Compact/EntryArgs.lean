@@ -30,7 +30,7 @@ theorem argument_address (s : State) (i : Nat) :
     (entered s).ea (Compact.arg i) = argAddr s i := by
   change (((entered s).gpr .esp + BitVec.ofNat 32 (20 + 4 * i)).setWidth 64) = _
   rw [entered, pushed_esp, show 4 * savedRegisters.length = 16 from rfl,
-    show 20 + 4 * i = 16 + (4 + 4 * i) by omega, BitVec.ofNat_add,
+    show 20 + 4 * i = 16 + (4 + 4 * i) by omega_using [], BitVec.ofNat_add,
     ← BitVec.add_assoc, BitVec.sub_add_cancel]
   rfl
 

@@ -104,7 +104,7 @@ theorem loadFour_ok {g : Nat} (hg : IsG g) {s : State} (hc : HighConstants g s)
     (((h0.trans h1).trans h2).trans h3).mono (by simp)
   refine k a3 hh c3 ?_
   intro j hj e he
-  rcases (show j=0 ∨ j=1 ∨ j=2 ∨ j=3 by omega) with rfl | rfl | rfl | rfl
+  rcases (show j=0 ∨ j=1 ∨ j=2 ∨ j=3 by omega_using [hj]) with rfl | rfl | rfl | rfl
   · change vword (a3.v .v0) e = _
     rw [h3.get .v0 (by decide), h2.get .v0 (by decide), h1.get .v0 (by decide), w0 e he]
   · change vword (a3.v .v1) e = _

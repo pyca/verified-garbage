@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Cast5.Table
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # Constant-time CAST5 table scans: lane selection in groups of four -/
 
@@ -38,7 +39,7 @@ theorem mux_bit (a b x : BitVec 32) :
   · have hv : x &&& 1 = 0 := BitVec.eq_of_toNat_eq (by rw [hn, h]; rfl)
     rw [hv, ite_eq_left h]
     simp only [BitVec.sub_self, BitVec.and_zero, BitVec.xor_zero]
-  · have hv : x &&& 1 = 1 := BitVec.eq_of_toNat_eq (by change (x &&& 1).toNat = 1; rw [hn]; have := Nat.mod_lt x.toNat (by decide : 0 < 2); omega)
+  · have hv : x &&& 1 = 1 := BitVec.eq_of_toNat_eq (by change (x &&& 1).toNat = 1; rw [hn]; have := Nat.mod_lt x.toNat (by decide : 0 < 2); omega_using [h])
     rw [hv, ite_eq_right h, show (0 - (1 : BitVec 32)) = BitVec.allOnes 32 by rfl,
       BitVec.and_allOnes, BitVec.xor_comm b a, ← BitVec.xor_assoc, BitVec.xor_self, BitVec.zero_xor]
 
@@ -56,10 +57,10 @@ theorem acc_tile (m : Mem) (T : Addr) (idx : Nat → BitVec 32) {q : Nat} (hq : 
   by_cases he : idx k >>> 2 = BitVec.ofNat 32 q
   · have hdiv : (idx k).toNat / 4 = q := by
       have h := congrArg BitVec.toNat he
-      rw [hn, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)] at h
+      rw [hn, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hq])] at h
       exact h
-    have hold : ¬ (idx k).toNat < 4 * q := by omega
-    have hnew : (idx k).toNat < 4 * (q + 1) := by omega
+    have hold : ¬ (idx k).toNat < 4 * q := by omega_using [hdiv]
+    have hnew : (idx k).toNat < 4 * (q + 1) := by omega_using [hdiv]
     simp only [acc, ite_eq_right hold, ite_eq_left hnew, ite_eq_left he, and_ones', zero_or']
     unfold tileVal
     rw [mux_bit, mux_bit, mux_bit]
@@ -67,20 +68,20 @@ theorem acc_tile (m : Mem) (T : Addr) (idx : Nat → BitVec 32) {q : Nat} (hq : 
       rw [BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow]
     rw [hs]
     rcases (show (idx k).toNat % 4 = 0 ∨ (idx k).toNat % 4 = 1 ∨
-      (idx k).toNat % 4 = 2 ∨ (idx k).toNat % 4 = 3 by omega) with h | h | h | h
-    · rw [ite_eq_left (by omega), ite_eq_left (by omega), show (idx k).toNat = 4 * q by omega]
-    · rw [ite_eq_left (by omega), ite_eq_right (by omega), show (idx k).toNat = 4 * q + 1 by omega]
-    · rw [ite_eq_right (by omega), ite_eq_left (by omega), show (idx k).toNat = 4 * q + 2 by omega]
-    · rw [ite_eq_right (by omega), ite_eq_right (by omega), show (idx k).toNat = 4 * q + 3 by omega]
+      (idx k).toNat % 4 = 2 ∨ (idx k).toNat % 4 = 3 by omega_using []) with h | h | h | h
+    · rw [ite_eq_left (by omega_using [h]), ite_eq_left (by omega_using [h]), show (idx k).toNat = 4 * q by omega_using [hdiv, h]]
+    · rw [ite_eq_left (by omega_using [h]), ite_eq_right (by omega_using [h]), show (idx k).toNat = 4 * q + 1 by omega_using [hdiv, h]]
+    · rw [ite_eq_right (by omega_using [h]), ite_eq_left (by omega_using [h]), show (idx k).toNat = 4 * q + 2 by omega_using [hdiv, h]]
+    · rw [ite_eq_right (by omega_using [h]), ite_eq_right (by omega_using [h]), show (idx k).toNat = 4 * q + 3 by omega_using [hdiv, h]]
   · have hdiv : (idx k).toNat / 4 ≠ q := by
       intro h
       apply he
       apply BitVec.eq_of_toNat_eq
-      rw [hn, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega), h]
+      rw [hn, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hq]), h]
     rw [ite_eq_right he, and_zero', or_zero']
     unfold acc
     by_cases h : (idx k).toNat < 4 * q
-    · rw [ite_eq_left h, ite_eq_left (by omega)]
-    · rw [ite_eq_right h, ite_eq_right (by omega)]
+    · rw [ite_eq_left h, ite_eq_left (by omega_using [h])]
+    · rw [ite_eq_right h, ite_eq_right (by omega_using [hdiv, h])]
 
 end VG.Proof.Cast5

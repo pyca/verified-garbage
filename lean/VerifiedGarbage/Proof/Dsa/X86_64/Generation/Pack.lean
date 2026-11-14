@@ -88,16 +88,16 @@ theorem pack_ok {s : State} {F S : Addr} {V : Nat → Byte} {W : Nat → BitVec 
   unfold Impl.Dsa.X86_64.Generation.pack
   change WP isa (.seq _ (.seq _ _)) s _
   have first := packInto_ok (d := 0) L R (by decide : Impl.Dsa.Generation.Layout.p < 2 ^ 31)
-    (by omega) hl.2.2 (by omega) sp hwr hF hS
+    (by omega_using [hp, hl]) hl.2.2 (by omega_using [hp]) sp hwr hF hS
   simp only [Nat.add_zero, hp] at first
   refine WP.seq (WP.mono first fun u ⟨bu, Lu, Ru, _, fu, ku⟩ => ?_)
   have second := packInto_ok (d := pLen) Lu Ru (by decide : q < 2 ^ 31)
-    (by omega) hl.2.2 (by omega) (sq.congrK fu ku)
+    (by omega_using [hq, hl]) hl.2.2 (by omega_using [hq]) (sq.congrK fu ku)
     (fun i hi => by rw [ku.2.2]; exact hwr i hi) hF hS
   simp only [hq] at second
   refine WP.seq (WP.mono second fun v ⟨bv, Lv, Rv, fv, iv, kv⟩ => ?_)
   have third := packInto_ok (d := pLen + qLen) Lv Rv (by decide : g < 2 ^ 31)
-    (by omega) hl.2.2 (by omega) (sg.congrK (fu.trans iv) (ku.trans kv))
+    (by omega_using [hg, hl]) hl.2.2 (by omega_using [hg]) (sg.congrK (fu.trans iv) (ku.trans kv))
     (fun i hi => by rw [kv.2.2, ku.2.2]; exact hwr i hi) hF hS
   simp only [hg] at third
   simp only [Impl.Bignum.X86_64.seqs, Nat.add_assoc]
@@ -108,23 +108,23 @@ theorem pack_ok {s : State} {F S : Addr} {V : Nat → Byte} {W : Nat → BitVec 
   · have preserveP : Spec.Rsa.bytesAt t.mem (off (W 5) packed) pLen = pb := by
       rw [VG.Proof.Dsa.Generation.frame_bytesAt ft (by
         intro r hr; rcases List.mem_singleton.mp hr with rfl
-        exact Offset.base_disjoint _ (by omega) (by omega)) (by omega),
+        exact Offset.base_disjoint _ (by omega_using []) (by omega_using [hl])) (by omega_using [hl]),
         VG.Proof.Dsa.Generation.frame_bytesAt fv (by
           intro r hr; rcases List.mem_singleton.mp hr with rfl
-          exact Offset.base_disjoint _ (by omega) (by omega)) (by omega)]
+          exact Offset.base_disjoint _ (by omega_using []) (by omega_using [hl])) (by omega_using [hl])]
       simpa [off] using bu
     have preserveQ : Spec.Rsa.bytesAt t.mem (off (off (W 5) packed) pLen) qLen = qb := by
       rw [VG.Proof.Dsa.Generation.frame_bytesAt ft (by
         intro r hr; rcases List.mem_singleton.mp hr with rfl
-        exact Offset.disjoint _ (Or.inl (by omega)) (by omega) (by omega)) (by omega)]
+        exact Offset.disjoint _ (Or.inl (by omega_using [])) (by omega_using [hl]) (by omega_using [hl])) (by omega_using [hl])]
       exact bv
-    rw [show 2 * pLen + qLen = (pLen + qLen) + pLen by omega,
+    rw [show 2 * pLen + qLen = (pLen + qLen) + pLen by omega_using [],
       VG.Proof.Dsa.Generation.bytesAt_append, VG.Proof.Dsa.Generation.bytesAt_append,
       preserveP, preserveQ, bt]
   · intro a ha
     apply inside a
     have hn := ha ⟨off (W 5) packed, 2 * pLen + qLen⟩ (by simp)
     change ¬ ofs (off (W 5) packed) a < 2 * pLen + qLen at hn
-    omega
+    omega_using [hn]
 
 end VG.Proof.Dsa.X86_64.Generation

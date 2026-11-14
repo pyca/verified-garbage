@@ -103,17 +103,17 @@ theorem kd_of {v : VD} {s : State} (h : C0dc v s) : KD v := by
   obtain ⟨hc, rfl⟩ := h
   have hP := dcParams hc
   obtain ⟨-, -, -, -, -, -, -, -, -, -, -, -, -, -, -, hpl, -, -, -⟩ := hc.1
-  have b0 := vdD_bytes s (o := 0) (k := (s.gpr .a4).toNat) (by omega)
+  have b0 := vdD_bytes s (o := 0) (k := (s.gpr .a4).toNat) (by omega_using [hpl])
   rw [off, BitVec.add_zero] at b0
   have ep : pOf s.mem (dlayOf s) (s.gpr .a2) = (vdD s).p := by rw [pOf]; exact congrArg _ b0
   have eq : qOf s.mem (dlayOf s) (s.gpr .a2) = (vdD s).q := by
-    rw [qOf]; exact congrArg _ (vdD_bytes s (by simp only [dlayOf]; omega))
+    rw [qOf]; exact congrArg _ (vdD_bytes s (by simp only [dlayOf]; omega_using [hpl]))
   have eg : gOf s.mem (dlayOf s) (s.gpr .a2) = (vdD s).g := by
-    rw [gOf]; exact congrArg _ (vdD_bytes s (by simp only [dlayOf]; omega))
+    rw [gOf]; exact congrArg _ (vdD_bytes s (by simp only [dlayOf]; omega_using [hpl]))
   rw [ParamsOk, ep, eq, eg] at hP
   obtain ⟨⟨hsz, hq, hp'⟩, ⟨g1, g2⟩, hd, hg⟩ := hP
   have bd := VG.Proof.Dsa.supported_bounds hsz
-  exact ⟨⟨hsz, hp', hq, (pmod_iff (by omega) (by omega)).mp hd⟩, ⟨g1, g2⟩, hg⟩
+  exact ⟨⟨hsz, hp', hq, (pmod_iff (by omega_using [hp']) (by omega_using [bd])).mp hd⟩, ⟨g1, g2⟩, hg⟩
 
 theorem kdcX1 {v : VD} {u : State} (h : ΦX1dc v u) : KD v := at_pure (G := KD) (fun _ _ h => kd_of h) h.1
 theorem kdcX2 {v : VD} {u : State} (h : ΦX2dc v u) : KD v := at_pure (G := KD) (fun _ _ h => kdcX1 h) h.1

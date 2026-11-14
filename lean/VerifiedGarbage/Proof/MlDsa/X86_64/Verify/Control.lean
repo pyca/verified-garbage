@@ -86,17 +86,17 @@ theorem seqR_ok {f : Nat → Prog isa} {I : Nat → State → Prop} :
   | 0, a, _, s, hs => WP.block_nil hs
   | n + 1, a, h, s, hs => by
     rw [seqR]
-    refine WP.seq (WP.mono (h a (Nat.le_refl _) (by omega) s hs) fun s₁ h₁ => ?_)
-    rw [show a + (n + 1) = a + 1 + n by omega]
-    exact seqR_ok n (a + 1) (fun k hk hk' => h k (by omega) (by omega)) s₁ h₁
+    refine WP.seq (WP.mono (h a (Nat.le_refl _) (by omega_using []) s hs) fun s₁ h₁ => ?_)
+    rw [show a + (n + 1) = a + 1 + n by omega_using []]
+    exact seqR_ok n (a + 1) (fun k hk hk' => h k (by omega_using [hk]) (by omega_using [hk'])) s₁ h₁
 
 theorem seqR_tr {f : Nat → Prog isa} {R : Nat → State → State → Prop} :
     ∀ (n a : Nat), (∀ k, a ≤ k → k < a + n → RelCT isa (R k) (f k) (R (k + 1))) →
       RelCT isa (R a) (seqR f a n) (R (a + n))
   | 0, _, _ => nil_tr
   | n + 1, a, h => by
-    rw [seqR, show a + (n + 1) = a + 1 + n by omega]
-    exact RelCT.seq (h a (Nat.le_refl _) (by omega)) (seqR_tr n (a + 1) fun k hk hk' => h k (by omega) (by omega))
+    rw [seqR, show a + (n + 1) = a + 1 + n by omega_using []]
+    exact RelCT.seq (h a (Nat.le_refl _) (by omega_using [])) (seqR_tr n (a + 1) fun k hk hk' => h k (by omega_using [hk]) (by omega_using [hk']))
 
 
 /-! ## The comparison -/
@@ -111,7 +111,7 @@ theorem sbb_val (x r : BitVec 64) :
       show BitVec.setWidth 32 (0#64 - BitVec.setWidth 64 (BitVec.ofBool true)) = BitVec.allOnes 32 by decide,
       BitVec.and_allOnes]
   · rw [ifn h, show decide (x.toNat < (1 : BitVec 64).toNat) = false by
-      simp only [decide_eq_false_iff_not]; intro h'; exact h (BitVec.eq_of_toNat_eq (by simp at h' ⊢; omega))]
+      simp only [decide_eq_false_iff_not]; intro h'; exact h (BitVec.eq_of_toNat_eq (by simp at h' ⊢; omega_using [h']))]
     apply BitVec.eq_of_toNat_eq; simp
 
 theorem cmpEnd_ok (s : State) :
@@ -143,7 +143,7 @@ theorem or_xor_zero {d : BitVec 64} {x y : Byte} :
   have := congrArg BitVec.toNat h
   simp only [BitVec.toNat_setWidth] at this
   have hx := x.isLt; have hy := y.isLt
-  rwa [Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega)] at this
+  rwa [Nat.mod_eq_of_lt (by omega_using []), Nat.mod_eq_of_lt (by omega_using [])] at this
 
 /-- `r15 ← 0` unless the `n` bytes at `a` and `b` are equal. -/
 theorem cmpAnd_ok {rbs wbs : List (Reg × Nat)} {s : State} (L : Lay rbs wbs s) {a b : Ptr} {n : Nat} (hn : 0 < n)
@@ -173,25 +173,25 @@ theorem cmpAnd_ok {rbs wbs : List (Reg × Nat)} {s : State} (L : Lay rbs wbs s) 
   have ec : s2.gpr .rcx = BitVec.ofNat 64 n := by
     rw [k2.gpr (by decide)]
     exact h1.1.1 _ (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_self ..)))
-  refine WP.seq (WP.mono (wp_countdown (cnt := .rcx) (N := n) (by omega) hn (fun k s' =>
+  refine WP.seq (WP.mono (wp_countdown (cnt := .rcx) (N := n) (by omega_using [hn']) hn (fun k s' =>
       s'.gpr .rsi = pa s a + BitVec.ofNat 64 k ∧ s'.gpr .rdi = pa s b + BitVec.ofNat 64 k ∧ s'.mem = s.mem ∧
       (s'.gpr .rdx = 0 ↔ ∀ j < k, s.mem (pa s a + BitVec.ofNat 64 j) = s.mem (pa s b + BitVec.ofNat 64 j)) ∧
       Keep argRegs s s')
     (fun k hk s' ⟨hsi, hdi, hm, hd, kk⟩ _ => ?_) (fun _ h => h)
     ⟨by rw [ea]; simp, by rw [eb]; simp, hm12, by rw [hd2]; simp, k12⟩ ec)
     fun s3 ⟨_, _, hm3, hd3, k3⟩ => ?_)
-  · refine WP.mono (cmpBody_ok s' (by rw [kk.2.1, kk.2.2, hsi]; exact inRegions_byte ra hk (by omega))
-      (by rw [kk.2.1, kk.2.2, hdi]; exact inRegions_byte rb hk (by omega)))
+  · refine WP.mono (cmpBody_ok s' (by rw [kk.2.1, kk.2.2, hsi]; exact inRegions_byte ra hk (by omega_using [hn']))
+      (by rw [kk.2.1, kk.2.2, hdi]; exact inRegions_byte rb hk (by omega_using [hn'])))
       fun s'' ⟨⟨hd', hsi', hdi', hcx, hz, hm'⟩, k'⟩ => ⟨⟨?_, ?_, hm'.trans hm, ?_, (kk.trans k').mono (by simp)⟩, hcx, hz⟩
     · rw [hsi', hsi, show (1 : BitVec 64) = BitVec.ofNat 64 1 from rfl, BitVec.add_assoc, ← BitVec.ofNat_add]
     · rw [hdi', hdi, show (1 : BitVec 64) = BitVec.ofNat 64 1 from rfl, BitVec.add_assoc, ← BitVec.ofNat_add]
     · rw [hd', or_xor_zero, hd, hsi, hdi, hm]
       constructor
       · rintro ⟨h, e⟩ j hj
-        rcases (by omega : j < k ∨ j = k) with hj | rfl
+        rcases (by omega_using [hj] : j < k ∨ j = k) with hj | rfl
         · exact h j hj
         · exact e
-      · intro h; exact ⟨fun j hj => h j (by omega), h k (by omega)⟩
+      · intro h; exact ⟨fun j hj => h j (by omega_using [hj]), h k (by omega_using [])⟩
   · refine WP.mono (cmpEnd_ok s3) fun s4 ⟨⟨h15', hm4⟩, k4⟩ => ⟨?_, ?_⟩
     · exact postB_of_keep (k3.trans k4) (by decide) (by rw [hm4, hm3]; exact Frame.refl _ _)
     · have hr15 : s3.gpr .r15 = flag P := by rw [k3.gpr (by decide), h15]

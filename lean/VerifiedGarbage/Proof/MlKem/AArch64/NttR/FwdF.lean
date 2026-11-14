@@ -43,7 +43,7 @@ def regF (s₀ : State) : List Region := [⟨s₀.gpr .x0, 512⟩, ⟨s₀.syms 
 
 theorem ctxF {s₀ : State} (hi : InF s₀) : Ctx rsF s₀ := by
   have h2 : rsF.length = 2 := rfl
-  have cases2 : ∀ k < rsF.length, k = 0 ∨ k = 1 := fun k hk => by rw [h2] at hk; omega
+  have cases2 : ∀ k < rsF.length, k = 0 ∨ k = 1 := fun k hk => by rw [h2] at hk; omega_using [hk]
   refine Ctx.of (fun k => (regF s₀).getD k ⟨0, 0⟩) (by decide) (fun k hk => ?_) (fun k hk => ?_)
     (fun k hk a ha => ?_) (fun k hk hw a ha => ?_) (fun k k' hk hk' hne => ?_)
   · rcases cases2 k hk with rfl | rfl <;> decide
@@ -78,21 +78,21 @@ theorem initF_rel {s₀ : State} (hi : InF s₀) : Rel rsF s₀ (Lf (Wi s₀)) (
       rw [slot_zero]
       trivial
   · have h2 : rsF.length = 2 := rfl
-    rcases (by omega : k = 0 ∨ k = 1) with rfl | rfl
+    rcases (by omega_using [hk, h2] : k = 0 ∨ k = 1) with rfl | rfl
     · have hj' : j < 32 := hj
       rw [initF_f j hj' e he]
       refine (Hd.mk (by decide)).2 ?_
-      rw [eval_mk, Nat.zero_mod, Nat.mod_eq_of_lt (show 8 * j + e < 512 by omega)]
+      rw [eval_mk, Nat.zero_mod, Nat.mod_eq_of_lt (show 8 * j + e < 512 by omega_using [he, hj'])]
       apply BitVec.eq_of_toNat_eq
       show (vhalf (s₀.mem.read (s₀.gpr .x0 + BitVec.ofNat 64 0 + BitVec.ofNat 64 (16 * j)) 16) e).toNat = _
-      rw [ptr_zero, show 16 * j = 2 * (8 * j) by omega, vhalf_read_coeff _ _ _ he]
+      rw [ptr_zero, show 16 * j = 2 * (8 * j) by omega_using [], vhalf_read_coeff _ _ _ he]
       rfl
     · have hj' : j < 58 := hj
       have ea : caddr rsF s₀ 1 j = s₀.syms name + BitVec.ofNat 64 (0 + 16 * j) := by
         show s₀.syms name + BitVec.ofNat 64 0 + BitVec.ofNat 64 (16 * j) = _
         rw [ptr_zero, Nat.zero_add]
       have hv := vhalf_table (m := s₀.mem) (p := s₀.syms name) (off := 0) (N := 116)
-        (H := tab) (fun j hj => by rw [Nat.zero_add]; exact hi.table j hj) (i := j) (by omega) he
+        (H := tab) (fun j hj => by rw [Nat.zero_add]; exact hi.table j hj) (i := j) (by omega_using [hj']) he
       rw [initF_t hj' he, ea, hv]
       exact Hd.cT _
 
@@ -109,12 +109,12 @@ theorem fwdF_run (s₀ : State) (hi : InF s₀) :
     refine WP.mono (runP_ok (model (Wi s₀)) (ctxF hi) 16 _ (initF_rel hi) hx) fun s' h' => ⟨h'.sp, ?_⟩
     refine polyIsW_of_toNat fun i hi' => ?_
     have hi256 : i < 256 := hi'
-    have hm := h'.mem 0 (by decide) (i / 8) (by show i / 8 < 32; omega) (i % 8) (Nat.mod_lt _ (by decide))
-    rw [hout _ (by omega) _ (Nat.mod_lt _ (by decide)), show 8 * (i / 8) + i % 8 = i by omega] at hm
+    have hm := h'.mem 0 (by decide) (i / 8) (by show i / 8 < 32; omega_using [hi256]) (i % 8) (Nat.mod_lt _ (by decide))
+    rw [hout _ (by omega_using [hi256]) _ (Nat.mod_lt _ (by decide)), show 8 * (i / 8) + i % 8 = i by omega_using []] at hm
     have hv := (Hd.mk (by decide)).1 hm
-    rw [eval_mk, Nat.mod_eq_of_lt (show i < 512 by omega)] at hv
+    rw [eval_mk, Nat.mod_eq_of_lt (show i < 512 by omega_using [hi256])] at hv
     have hr := vhalf_read_coeff s'.mem (s₀.gpr .x0) (8 * (i / 8)) (Nat.mod_lt i (show 0 < 8 by decide))
-    rw [show 8 * (i / 8) + i % 8 = i by omega, show 2 * (8 * (i / 8)) = 16 * (i / 8) by omega] at hr
+    rw [show 8 * (i / 8) + i % 8 = i by omega_using [], show 2 * (8 * (i / 8)) = 16 * (i / 8) by omega_using []] at hr
     rw [← hr]
     change (vhalf (s'.mem.read (s₀.gpr .x0 + BitVec.ofNat 64 0 + BitVec.ofNat 64 (16 * (i / 8))) 16)
       (i % 8)) = _ at hv

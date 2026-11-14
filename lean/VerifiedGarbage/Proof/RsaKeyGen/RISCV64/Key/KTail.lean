@@ -40,12 +40,12 @@ theorem sel_flag (c : Prop) [Decidable c] (a b : Nat) :
 
 /-- A product of flags, as a flag. -/
 theorem mul01 {x y : Nat} (hx : x ≤ 1) (hy : y ≤ 1) : x * y = if x = 1 ∧ y = 1 then 1 else 0 := by
-  rcases (show x = 0 ∨ x = 1 by omega) with rfl | rfl <;> rcases (show y = 0 ∨ y = 1 by omega) with rfl | rfl <;>
+  rcases (show x = 0 ∨ x = 1 by omega_using [hx]) with rfl | rfl <;> rcases (show y = 0 ∨ y = 1 by omega_using [hy]) with rfl | rfl <;>
     decide
 
 /-- The negation of a flag, as a flag. -/
 theorem sub01 {x : Nat} (hx : x ≤ 1) : 1 - x = if x = 0 then 1 else 0 := by
-  rcases (show x = 0 ∨ x = 1 by omega) with rfl | rfl <;> decide
+  rcases (show x = 0 ∨ x = 1 by omega_using [hx]) with rfl | rfl <;> decide
 
 section
 variable {s0 s : State} {V F : Nat → Nat}
@@ -208,25 +208,25 @@ theorem maskPart_ok (e : KE s0 V F s) (b0 : F X0 ≤ 1) (b1 : F X1 ≤ 1) (b3 : 
     (bb := by rw [p1 X6 (by decide)]; exact b6) (k := fun t2 e2 => ?_)
   obtain ⟨F2, e2, g2, p2⟩ := e2.fx
   have c8 : ∀ {x y : Nat}, x ≤ 1 → y ≤ 1 → x * y ≤ 1 := fun hx hy => Nat.mul_le_mul hx hy
-  refine andSE e2 (d := X8) (a := X8) (b := X1) (ba := by rw [g2, g1, p1 X6 (by decide)]; exact c8 (by omega) b6)
+  refine andSE e2 (d := X8) (a := X8) (b := X1) (ba := by rw [g2, g1, p1 X6 (by decide)]; exact c8 (by omega_using []) b6)
     (bb := by rw [p2 X1 (by decide), p1 X1 (by decide)]; exact b1) (k := fun t3 e3 => ?_)
   obtain ⟨F3, e3, g3, p3⟩ := e3.fx
   refine andSE e3 (d := X8) (a := X8) (b := X0) (ba := ?_)
     (bb := by rw [p3 X0 (by decide), p2 X0 (by decide), p1 X0 (by decide)]; exact b0)
     (k := fun t4 e4 => ?_)
   · rw [g3, g2, p2 X1 (by decide), p1 X1 (by decide), p1 X6 (by decide)]
-    exact c8 (c8 (by omega) b6) b1
+    exact c8 (c8 (by omega_using []) b6) b1
   obtain ⟨F4, e4, g4, p4⟩ := e4.fx
   refine bitOfE e4 (d := X2) (j := aQ) (k := fun t5 e5 => ?_)
   obtain ⟨F5, e5, g5, p5⟩ := e5.fx
   have h8 : F4 X8 ≤ 1 := by
     rw [g4, g3, g2, p3 X0 (by decide), p2 X0 (by decide), p2 X1 (by decide), p1 X0 (by decide),
       p1 X1 (by decide), p1 X6 (by decide)]
-    exact c8 (c8 (c8 (by omega) b6) b1) b0
+    exact c8 (c8 (c8 (by omega_using []) b6) b1) b0
   refine andSE e5 (d := X8) (a := X8) (b := X2) (ba := by rw [p5 X8 (by decide)]; exact h8)
     (bb := by rw [g5]; omega_arith) (k := fun t6 e6 => ?_)
   obtain ⟨F6, e6, g6, p6⟩ := e6.fx
-  refine andSE e6 (d := X8) (a := X8) (b := X3) (ba := by rw [g6, p5 X8 (by decide), g5]; exact c8 h8 (by omega))
+  refine andSE e6 (d := X8) (a := X8) (b := X3) (ba := by rw [g6, p5 X8 (by decide), g5]; exact c8 h8 (by omega_using []))
     (bb := by vsimp [p6, p5, p4, p3, p2, p1]; exact b3) (k := fun t7 e7 => WP.block_nil ?_)
   obtain ⟨F7, e7, g7, p7⟩ := e7.fx
   rw [wp_seqs_append (by simp [ltS]) (by simp)]
@@ -238,17 +238,17 @@ theorem maskPart_ok (e : KE s0 V F s) (b0 : F X0 ≤ 1) (b1 : F X1 ≤ 1) (b3 : 
   have c7 : F8 X7 = F X7 := by vsimp [p8, p7, p6, p5, p4, p3, p2, p1]
   have h87 : F7 X8 ≤ 1 := by
     rw [g7, g6, p5 X8 (by decide), g5]
-    exact c8 (c8 h8 (by omega)) (by vsimp [p6, p5, p4, p3, p2, p1]; exact b3)
+    exact c8 (c8 h8 (by omega_using [])) (by vsimp [p6, p5, p4, p3, p2, p1]; exact b3)
   refine andNotSE e8 (d := X4) (a := X5) (b := X2) (ba := by rw [c5]; exact b5)
     (bb := by rw [g8]; exact flag01 _) (k := fun t9 e9 => ?_)
   obtain ⟨F9, e9, g9, p9⟩ := e9.fx
   refine andSE e9 (d := X8) (a := X8) (b := X4) (ba := by rw [p9 X8 (by decide), p8 X8 (by decide)]; exact h87)
-    (bb := by rw [g9, c5, g8]; exact c8 (by omega) (flag01 _)) (k := fun t10 e10 => ?_)
+    (bb := by rw [g9, c5, g8]; exact c8 (by omega_using []) (flag01 _)) (k := fun t10 e10 => ?_)
   obtain ⟨F10, e10, g10, p10⟩ := e10.fx
   refine andNotSE e10 (d := X8) (a := X7) (b := X8)
     (ba := by rw [p10 X7 (by decide), p9 X7 (by decide), c7]; exact b7)
     (bb := by
-      rw [g10, p9 X8 (by decide), p8 X8 (by decide), g9, c5, g8]; exact c8 h87 (c8 (by omega) (flag01 _)))
+      rw [g10, p9 X8 (by decide), p8 X8 (by decide), g9, c5, g8]; exact c8 h87 (c8 (by omega_using []) (flag01 _)))
     (k := fun t e11 => WP.block_nil ?_)
   obtain ⟨F11, e11, g11, p11⟩ := e11.fx
   refine ⟨V8, F11, e11, fun j a => by rw [o8 j a, o1 j a], fun d a b c => ?_, ?_⟩
@@ -256,7 +256,7 @@ theorem maskPart_ok (e : KE s0 V F s) (b0 : F X0 ≤ 1) (b1 : F X1 ≤ 1) (b3 : 
   · rw [g11, p10 X7 (by decide), p9 X7 (by decide), c7, g10, p9 X8 (by decide), p8 X8 (by decide), g9, c5, g8,
       g7, g6, p5 X8 (by decide), g5, g4, g3, g2, g1]
     vsimp [p6, p5, p4, p3, p2, p1, o1]
-    have hq1 : V aQ % 2 ≤ 1 := by omega
+    have hq1 : V aQ % 2 ≤ 1 := by omega_using []
     simp (disch := first | with_reducible assumption | exact flag01 _) only [mul01, sub01, flag_one, flag_zero, and_assoc]
 
 end

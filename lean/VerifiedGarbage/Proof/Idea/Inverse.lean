@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Spec.Idea
 public import Mathlib.Data.Nat.Prime.Defs
 import VerifiedGarbage.Proof.Framework.Pratt
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # IDEA: the ⊙-inverse by squaring and multiplying
@@ -42,10 +43,10 @@ theorem residue_ofNat {v : Nat} (h₁ : 1 ≤ v) (h₂ : v ≤ 65536) : residue 
   · rename_i h
     have := congrArg BitVec.toNat h
     rw [BitVec.toNat_ofNat, show (0 : BitVec 16).toNat = 0 from rfl] at this
-    omega
+    omega_using [h₁, h₂, this]
   · rename_i h
     have hv : v ≠ 65536 := by rintro rfl; exact h rfl
-    simp only [BitVec.toNat_ofNat]; omega
+    simp only [BitVec.toNat_ofNat]; omega_using [h₂, hv]
 
 theorem ofNat_residue (a : Word) : BitVec.ofNat 16 (residue a) = a := by
   unfold residue
@@ -58,12 +59,12 @@ theorem mod_pos {x y : Nat} (hx : 0 < x) (hx' : x ≤ 65536) (hy : 0 < y) (hy' :
     0 < x * y % 65537 := by
   refine Nat.pos_of_ne_zero fun h => ?_
   rcases (Nat.Prime.dvd_mul prime).mp (Nat.dvd_of_mod_eq_zero h) with h | h
-  · have := Nat.le_of_dvd hx h; omega
-  · have := Nat.le_of_dvd hy h; omega
+  · have := Nat.le_of_dvd hx h; omega_using [hx, hx', h]
+  · have := Nat.le_of_dvd hy h; omega_using [hy, hy', h]
 
 theorem residue_mul (x y : Word) : residue (mul x y) = residue x * residue y % 65537 := by
   have h := mod_pos (residue_pos' x) (residue_le' x) (residue_pos' y) (residue_le' y)
-  exact residue_ofNat h (by omega)
+  exact residue_ofNat h (by omega_using [])
 
 /-- `t := (t ⊙ t) ⊙ a`, `k` times from `t = a`. -/
 def chain (a : Word) : Nat → Word
@@ -76,11 +77,11 @@ theorem residue_chain (a : Word) (k : Nat) :
   | zero =>
     simp only [chain, Nat.zero_add, Nat.pow_one, Nat.add_one_sub_one, Nat.pow_one]
     have := residue_le' a; have := residue_pos' a
-    omega
+    omega_arith
   | succ k ih =>
     rw [chain, residue_mul, residue_mul, ih]
     have e : 2 ^ (k + 1 + 1) - 1 = (2 ^ (k + 1) - 1) + (2 ^ (k + 1) - 1) + 1 := by
-      rw [Nat.pow_succ]; have := Nat.one_le_two_pow (n := k + 1); omega
+      rw [Nat.pow_succ]; have := Nat.one_le_two_pow (n := k + 1); omega_using [this]
     rw [e, ← Nat.mul_mod, Nat.mod_mul_mod]
     simp only [Nat.pow_add, Nat.pow_one]
 
@@ -92,12 +93,12 @@ theorem powMod_eq (a e m : Nat) : powMod a e m = a ^ e % m := by
     · rename_i h; subst h; simp
     · rename_i h
       simp only
-      rw [ih (e / 2) (by omega), ← Nat.mul_mod, ← Nat.pow_add]
+      rw [ih (e / 2) (by omega_using [h]), ← Nat.mul_mod, ← Nat.pow_add]
       split
       · rename_i h2
-        rw [show e / 2 + e / 2 = e by omega]
+        rw [show e / 2 + e / 2 = e by omega_using [h2]]
       · rename_i h2
-        rw [Nat.mod_mul_mod, ← Nat.pow_succ, Nat.succ_eq_add_one, show e / 2 + e / 2 + 1 = e by omega]
+        rw [Nat.mod_mul_mod, ← Nat.pow_succ, Nat.succ_eq_add_one, show e / 2 + e / 2 + 1 = e by omega_using [h2]]
 
 theorem chain_inv (a : Word) : chain a 15 = inv a := by
   rw [inv, powMod_eq, ← residue_chain, ofNat_residue]

@@ -53,7 +53,7 @@ theorem yValue_ok {s : State} {L : Lay} {key x out : Addr} {p : Nat} (hL : L.Ok)
   have hql := hL.ql
   have hpl := hL.pl
   have hbe := hL.buf_end
-  have hqZ : L.qOff + 1600 ≤ L.Z := by simp only [Lay.bOff] at hbe; omega
+  have hqZ : L.qOff + 1600 ≤ L.Z := by simp only [Lay.bOff] at hbe; omega_using [hbe]
   have e0 := Lay.slot_eq L.wp 0; have e1 := Lay.slot_eq L.wp 1; have e4 := Lay.slot_eq L.wp 4
   have e7 := Lay.slot_eq L.wp 7; have e8 := Lay.slot_eq L.wp 8; have e24 := Lay.slot_eq L.wp 24; have e28 := Lay.slot_eq L.wp 28
   have hq28 : L.qOff = slot L.wp 28 := rfl
@@ -69,13 +69,13 @@ theorem yValue_ok {s : State} {L : Lay} {key x out : Addr} {p : Nat} (hL : L.Ok)
   -- `g^x mod p` into array 4.
   refine WP.seq (WP.mono (powSrc_ok (N := off key (L.pl + L.ql)) (E := x) (p := p) hL
       (hr.keep k12) (hin.keep k12 (by decide))
-      ((hk.keep k12.rd k12.wr).sub (o := L.pl + L.ql) (k := L.pl) (by omega)) b12 (hx.keep k12.rd k12.wr)
+      ((hk.keep k12.rd k12.wr).sub (o := L.pl + L.ql) (k := L.pl) (by omega_using [])) b12 (hx.keep k12.rd k12.wr)
       ((k2.gpr .r24 (by decide)).trans a24) (by rw [hm2]; exact hp0) hp hpo (by rw [hm2]; exact hrr))
     fun s₃ ⟨⟨v4, in3, o3⟩, k3⟩ => ?_)
   rw [hm2] at v4 o3
   have k13 := k12.trans k3
   have y4 : arr s₃.mem L.S L.wp 4 = gOf s.mem L key ^ kOf s.mem L x % p := v4
-  have hyp : gOf s.mem L key ^ kOf s.mem L x % p < p := Nat.mod_lt _ (by omega)
+  have hyp : gOf s.mem L key ^ kOf s.mem L x % p < p := Nat.mod_lt _ (by omega_using [hp])
   generalize gOf s.mem L key ^ kOf s.mem L x % p = y at y4 hyp ⊢
   -- 0 into array 7, `r22 :=` all ones.
   refine WP.seq (WP.mono (zeroArr_ok in3.env (j := 7) (by decide)) fun s₄ ⟨⟨z7, o4⟩, k4⟩ => ?_)
@@ -84,17 +84,17 @@ theorem yValue_ok {s : State} {L : Lay} {key x out : Addr} {p : Nat} (hL : L.Ok)
     (by prun []; rfl) (by decide)) fun s₅ ⟨⟨a22, m5⟩, k5⟩ => ?_)
   have en5 := en4.keep k5 (by decide)
   have y5 : arr s₅.mem L.S L.wp 4 = y := by
-    rw [m5, arr, Outside.val32 o4 (by omega) (by omega)]; exact y4
+    rw [m5, arr, Outside.val32 o4 (by omega_using [e4, e7]) (by omega_using [hw, e4])]; exact y4
   -- `r22 &=` the masks of `y ≠ 0` and `y ≠ 1`.
   refine WP.seq (WP.mono (nonZero_ok en5 (a := 4) (c := 0) (by decide) (by rw [m5]; exact z7) a22)
     fun s₆ ⟨⟨b22, m6⟩, k6⟩ => ?_)
   rw [y5] at b22
   have en6 := en5.keep k6 (by decide)
-  refine WP.seq (WP.mono (Pub.oneP_ok en6.hs (by omega) (by omega) (by omega) en6.h10 en6.h29 en6.h11)
+  refine WP.seq (WP.mono (Pub.oneP_ok en6.hs (by omega_using [hw]) (by omega_using [hw]) (by omega_using [e8, e28, hq28]) en6.h10 en6.h29 en6.h11)
     fun s₇ ⟨⟨v7, o7⟩, k7⟩ => ?_)
   have en7 := en6.keep k7 (by decide)
   have y7 : arr s₇.mem L.S L.wp 4 = y := by
-    rw [arr, Outside.val32 o7 (by omega) (by omega), m6]; exact y5
+    rw [arr, Outside.val32 o7 (by omega_using [e4, e7]) (by omega_using [hw, e4]), m6]; exact y5
   refine WP.seq (WP.mono (nonZero_ok en7 (a := 4) (c := 1) (by decide) v7
     ((k7.gpr .r22 (by decide)).trans b22)) fun s₈ ⟨⟨c22, m8⟩, k8⟩ => ?_)
   rw [y7, Bool.true_and] at c22
@@ -108,11 +108,11 @@ theorem yValue_ok {s : State} {L : Lay} {key x out : Addr} {p : Nat} (hL : L.Ok)
   have k910 := k9.trans k10
   have hm10 : s₁₀.mem = s₇.mem := by rw [m10, m9, m8]
   refine WP.mono (storeBE_ok (j := 4) (O := L.Buf) (k := L.pl) (en8.keep k910 (by decide)) (by decide)
-    (ScrL.bufN (hs.congr (k18.trans k910).wr) hL (by omega)) ((k10.gpr .r12 (by decide)).trans c12) c6
-    (by omega) (by omega) (combBufPastP hL)) fun t ⟨⟨vt, ot⟩, kt⟩ => ?_
+    (ScrL.bufN (hs.congr (k18.trans k910).wr) hL (by omega_using [])) ((k10.gpr .r12 (by decide)).trans c12) c6
+    (by omega_using [hpl]) (by omega_using [hw8]) (combBufPastP hL)) fun t ⟨⟨vt, ot⟩, kt⟩ => ?_
   rw [hm10] at vt ot
   have hplt : p < 2 ^ (8 * L.pl) := by
-    rw [← hp0, ← hw8, show 8 * (8 * L.wp) = 32 * (2 * L.wp) by omega]; exact val32_lt _ _ _ _
+    rw [← hp0, ← hw8, show 8 * (8 * L.wp) = 32 * (2 * L.wp) by omega_using []]; exact val32_lt _ _ _ _
   have y7' : val32 s₇.mem L.S (slot L.wp 4) (2 * L.wp) = y := y7
   have hm6 : s₆.mem = s₄.mem := by rw [m6, m5]
   have o47 : Outside L.S (slot L.wp 7) (8 * L.wp) s₃.mem s₇.mem := by
@@ -121,11 +121,11 @@ theorem yValue_ok {s : State} {L : Lay} {key x out : Addr} {p : Nat} (hL : L.Ok)
   refine ⟨⟨?_, (kt.gpr .r22 (by decide)).trans ((k910.gpr .r22 (by decide)).trans c22),
     ⟨en8.keep (k910.trans kt) (by decide), (kall.gpr .r21 (by decide)).trans hin.h21,
       (kall.gpr .r23 (by decide)).trans hin.h23⟩,
-    ((Body.ofP hL o3 (by omega) (by omega)).trans (Body.ofP hL o47 (by omega) (by omega))).trans
-      (Body.ofBuf hL ot (by omega)),
-    ((comb_pbody_keepQ hL (o3.mono (by omega) (by omega))).trans
-      (comb_pbody_keepQ hL (o47.mono (by omega) (by omega)))).trans (combBufKeepQ ot (by omega))⟩,
+    ((Body.ofP hL o3 (by omega_using [e1]) (by omega_using [e1, e24, e28, hq28])).trans (Body.ofP hL o47 (by omega_using [e7]) (by omega_using [e7, e28, hq28]))).trans
+      (Body.ofBuf hL ot (by omega_using [])),
+    ((comb_pbody_keepQ hL (o3.mono (by omega_using [e1]) (by omega_using [e1, e24, e28, hq28]))).trans
+      (comb_pbody_keepQ hL (o47.mono (by omega_using [e7]) (by omega_using [e7, e28, hq28])))).trans (combBufKeepQ ot (by omega_using [hpl]))⟩,
     kall.mono (by decide)⟩
-  rw [vt, read_low (w := L.wp) _ _ (by omega) (by rw [y7']; exact Nat.lt_trans hyp hplt), y7']
+  rw [vt, read_low (w := L.wp) _ _ (by omega_using [hw8]) (by rw [y7']; exact Nat.lt_trans hyp hplt), y7']
 
 end VG.Proof.Dsa.PPC64LE

@@ -117,18 +117,18 @@ theorem kv_of {v : VD} {s : State} (h : C0p v s) : KV v := by
   have hkl := hp.2.2.2.2.2.2.2.2.2.2.2.1
   have hK : KeyOk s.mem (layOf s) (s.gpr .a0) := by
     have e := validate_spec (m := s.mem) (L := layOf s) (key := s.gpr .a0) hv
-    rw [show 3 * (layOf s).pl + (layOf s).ql = (s.gpr .a1).toNat by simp only [layOf]; omega] at e
+    rw [show 3 * (layOf s).pl + (layOf s).ql = (s.gpr .a1).toNat by simp only [layOf]; omega_using [hkl]] at e
     exact of_decide_eq_true (e.symm.trans hval)
-  have b0 := vd_bytes s (o := 0) (k := (s.gpr .a2).toNat) (by omega)
+  have b0 := vd_bytes s (o := 0) (k := (s.gpr .a2).toNat) (by omega_using [])
   rw [off, BitVec.add_zero] at b0
   have ep : pOf s.mem (layOf s) (s.gpr .a0) = (vdOf s).p := by rw [pOf]; exact congrArg _ b0
-  have eq : qOf s.mem (layOf s) (s.gpr .a0) = (vdOf s).q := by rw [qOf]; exact congrArg _ (vd_bytes s (by simp only [layOf]; omega))
-  have eg : gOf s.mem (layOf s) (s.gpr .a0) = (vdOf s).g := by rw [gOf]; exact congrArg _ (vd_bytes s (by simp only [layOf]; omega))
-  have ey : yOf s.mem (layOf s) (s.gpr .a0) = (vdOf s).y := by rw [yOf]; exact congrArg _ (vd_bytes s (by simp only [layOf]; omega))
+  have eq : qOf s.mem (layOf s) (s.gpr .a0) = (vdOf s).q := by rw [qOf]; exact congrArg _ (vd_bytes s (by simp only [layOf]; omega_using []))
+  have eg : gOf s.mem (layOf s) (s.gpr .a0) = (vdOf s).g := by rw [gOf]; exact congrArg _ (vd_bytes s (by simp only [layOf]; omega_using []))
+  have ey : yOf s.mem (layOf s) (s.gpr .a0) = (vdOf s).y := by rw [yOf]; exact congrArg _ (vd_bytes s (by simp only [layOf]; omega_using []))
   rw [KeyOk, ep, eq, eg, ey] at hK
   obtain ⟨⟨hsz, hq, hp'⟩, ⟨⟨g1, g2⟩, ⟨y1, y2⟩⟩, hd, hg, hy⟩ := hK
   have bd := VG.Proof.Dsa.supported_bounds hsz
-  exact ⟨⟨hsz, hp', hq, (pmod_iff (by omega) (by omega)).mp hd⟩, ⟨⟨g1, g2⟩, hg⟩, ⟨⟨y1, y2⟩, hy⟩,
+  exact ⟨⟨hsz, hp', hq, (pmod_iff (by omega_using [hp']) (by omega_using [bd])).mp hd⟩, ⟨⟨g1, g2⟩, hg⟩, ⟨⟨y1, y2⟩, hy⟩,
     gC0 _ _ ⟨hp, rfl⟩⟩
 
 theorem kvX1 {v : VD} {u : State} (h : ΦX1p v u) : KV v := at_pure (G := KV) (fun _ _ h => kv_of h) h.1
@@ -154,7 +154,7 @@ theorem pinsRp_2 : Pins (At ΦRp FRp 2) [.s6, .s11, .ra, .a7, .s5, .t0, .s7, .s8
 theorem setupQ_P1 {v : VD} {s : State} (h : P1 v s) (hk : KM v) :
     WP isa setupQ s fun t => SR3 v t := by
   obtain ⟨B, l, hsz⟩ := h
-  refine WP.mono (setupQ_ok B.ok B.scr B.regs (B.hk.take (by have := B.kn; omega))) fun t ⟨⟨_, q0, qtop, qb⟩, k⟩ => ?_
+  refine WP.mono (setupQ_ok B.ok B.scr B.regs (B.hk.take (by have := B.kn; omega_using [this]))) fun t ⟨⟨_, q0, qtop, qb⟩, k⟩ => ?_
   have hb := qb.body B.ok
   exact ⟨⟨⟨B.body k hb, by rw [Lens, hb.word (by decide)]; exact l, hsz⟩, hk.2.1, hk.2.2.1⟩, hk.2.2.2,
     by rw [q0, B.q], qtop⟩

@@ -71,7 +71,7 @@ theorem storeWords4 (m : Mem) (p : BitVec 32) (a b c d : BitVec 32) (hp : p.toNa
     rw [BitVec.add_assoc, BitVec.add_assoc]; exact congrArg (p + ·) (by decide)
   show (((m.writeW (State.addr p) a).writeW (State.addr (p + BitVec.ofNat 32 4)) b).writeW
     (State.addr (p + 4 + 4)) c).writeW (State.addr (p + 4 + 4 + 4)) d = _
-  rw [e12, e8, addr_add (by omega), addr_add (by omega), addr_add (by omega)]
+  rw [e12, e8, addr_add (by omega_using [hp]), addr_add (by omega_using [hp]), addr_add (by omega_using [hp])]
 
 /-- What the four words read back as. -/
 theorem storeWords4_read (m : Mem) (p : BitVec 32) (a b c d : BitVec 32) (hp : p.toNat + 16 ≤ 2 ^ 32) :
@@ -81,14 +81,14 @@ theorem storeWords4_read (m : Mem) (p : BitVec 32) (a b c d : BitVec 32) (hp : p
     (storeWords m p [a, b, c, d]).readW (State.addr p + BitVec.ofNat 64 12) 32 = d := by
   rw [storeWords4 m p a b c d hp]
   have sb : ∀ {e : Nat}, 4 ≤ e → e + 4 ≤ 16 → Mem.Sep (State.addr p) (32 / 8) (State.addr p + BitVec.ofNat 64 e)
-      (32 / 8) := fun h₁ h₂ => Offset.sep_base _ h₁ (by omega)
+      (32 / 8) := fun h₁ h₂ => Offset.sep_base _ h₁ (by omega_using [h₂])
   have so : ∀ {i j : Nat}, i + 4 ≤ j ∨ j + 4 ≤ i → i + 4 ≤ 16 → j + 4 ≤ 16 →
       Mem.Sep (State.addr p + BitVec.ofNat 64 i) (32 / 8) (State.addr p + BitVec.ofNat 64 j) (32 / 8) :=
-    fun h h₁ h₂ => Offset.sep _ h (by omega) (by omega)
+    fun h h₁ h₂ => Offset.sep _ h (by omega_using [h₁]) (by omega_using [h₂])
   have s0 : ∀ {j : Nat}, 4 ≤ j → j + 4 ≤ 16 →
       Mem.Sep (State.addr p + BitVec.ofNat 64 j) (32 / 8) (State.addr p) (32 / 8) := fun {j} h₁ h₂ => by
-    have := Offset.sep (State.addr p) (d := j) (e := 0) (n := 4) (k := 4) (.inr (by omega)) (by omega)
-      (by omega)
+    have := Offset.sep (State.addr p) (d := j) (e := 0) (n := 4) (k := 4) (.inr (by omega_using [h₁])) (by omega_using [h₂])
+      (by omega_using [])
     rwa [BitVec.add_zero] at this
   refine ⟨?_, ?_, ?_, ?_⟩
   · rw [Mem.readW_writeW_sep (sb (by decide) (by decide)) (by decide),
@@ -109,12 +109,12 @@ theorem cwPush_read (s : State) (hsp : 16 ≤ s.sp.toNat) :
     (cwPush s).mem.readW (State.addr (s.sp - BitVec.ofNat 32 16) + BitVec.ofNat 64 12) 32 = s.gpr .lr :=
   storeWords4_read s.mem _ _ _ _ _ (by
     show (s.sp - BitVec.ofNat 32 16).toNat + 16 ≤ 2 ^ 32
-    rw [sub_toNat' hsp]; have := s.sp.isLt; omega)
+    rw [sub_toNat' hsp]; have := s.sp.isLt; omega_using [])
 
 /-- The frame's words, in its region. -/
 theorem frame_contains (p : BitVec 32) {k : Nat} (hk : k + 4 ≤ 16) :
     (⟨State.addr p, 16⟩ : Region).Contains (State.addr p + BitVec.ofNat 64 k) 4 :=
-  Offset.contains_base _ (by omega) (by omega)
+  Offset.contains_base _ (by omega_using [hk]) (by omega_using [hk])
 
 /-! ## The blocks -/
 
@@ -142,10 +142,10 @@ theorem movwt {n : Nat} (hn : n < 2 ^ 32) :
       BitVec.ofNat 32 n := by
   apply BitVec.eq_of_toNat_eq
   have key : (n / 2 ^ 16) <<< 16 ||| n % 2 ^ 16 = n := by
-    rw [← Nat.shiftLeft_add_eq_or_of_lt (Nat.mod_lt _ (by decide)), Nat.shiftLeft_eq]; omega
-  have e1 : n / 2 ^ 16 % 2 ^ 16 = n / 2 ^ 16 := Nat.mod_eq_of_lt (by omega)
-  have e2 : n % 2 ^ 16 % 2 ^ 32 = n % 2 ^ 16 := Nat.mod_eq_of_lt (by omega)
-  have e3 : n % 2 ^ 16 % 2 ^ 16 = n % 2 ^ 16 := Nat.mod_eq_of_lt (by omega)
+    rw [← Nat.shiftLeft_add_eq_or_of_lt (Nat.mod_lt _ (by decide)), Nat.shiftLeft_eq]; omega_using []
+  have e1 : n / 2 ^ 16 % 2 ^ 16 = n / 2 ^ 16 := Nat.mod_eq_of_lt (by omega_using [hn])
+  have e2 : n % 2 ^ 16 % 2 ^ 32 = n % 2 ^ 16 := Nat.mod_eq_of_lt (by omega_using [])
+  have e3 : n % 2 ^ 16 % 2 ^ 16 = n % 2 ^ 16 := Nat.mod_eq_of_lt (by omega_using [])
   have e5 : n % 2 ^ 32 = n := Nat.mod_eq_of_lt hn
   simp only [BitVec.toNat_append, BitVec.extractLsb'_toNat, BitVec.toNat_setWidth, BitVec.toNat_ofNat,
     Nat.shiftRight_zero, e1, e2, e3, e5, key]
@@ -219,8 +219,8 @@ theorem frame_disj_below (sp : BitVec 32) {a : Nat} (h : a + 16 ≤ sp.toNat) :
     Region.Disjoint (belowA sp 16) (belowA (sp - BitVec.ofNat 32 16) a) := by
   show Region.Disjoint ⟨State.addr (sp - BitVec.ofNat 32 16), 16⟩
     ⟨State.addr (sp - BitVec.ofNat 32 16 - BitVec.ofNat 32 a), a⟩
-  rw [addr_sub' (k := a) (by rw [sub_toNat' (by omega)]; omega)]
-  exact Offset.base_disjoint_below _ (by omega)
+  rw [addr_sub' (k := a) (by rw [sub_toNat' (by omega_using [h])]; omega_using [h])]
+  exact Offset.base_disjoint_below _ (by omega_using [h])
 
 theorem cwPush_frame (s : State) (hsp : 16 ≤ s.sp.toNat) :
     Frame [belowA s.sp 16] s.mem (cwPush s).mem := by
@@ -607,7 +607,7 @@ theorem cw_slots (hN : nsaa sig = 0) (hl : Sig.noLists sig.params = true) {s : S
 theorem frame_addr {s : State} (hsb : 16 ≤ s.sp.toNat) {k : Nat} (hk : k < 16) :
     State.addr (s.sp - BitVec.ofNat 32 16 + BitVec.ofNat 32 k) =
       State.addr (s.sp - BitVec.ofNat 32 16) + BitVec.ofNat 64 k :=
-  addr_add (by rw [sub_toNat' hsb]; have := s.sp.isLt; omega)
+  addr_add (by rw [sub_toNat' hsb]; have := s.sp.isLt; omega_using [hk])
 
 /-- A run of `callWipe` from the caller's state `s`: it keeps what the
 calling convention requires, its postcondition is the first function's if
@@ -655,9 +655,9 @@ theorem cw_wp {name zname : String} {body zcode : Prog isa} {zst : Nat}
     have := @hrd 0 (by decide); rwa [BitVec.add_zero] at this
   have hin : ∀ k ∈ [4, 12, 8], InRegions (g.rd ++ g.wr) (State.addr (g.sp + BitVec.ofNat 32 k)) 4 := by
     intro k hk
-    have hk' : k + 4 ≤ 16 := by simp only [List.mem_cons, List.not_mem_nil, or_false] at hk; omega
+    have hk' : k + 4 ≤ 16 := by simp only [List.mem_cons, List.not_mem_nil, or_false] at hk; omega_using [hk]
     refine ⟨_, List.mem_append_right _ (by rw [hwrg]; exact List.mem_cons_self ..), ?_⟩
-    rw [hspg, frame_addr h16 (by omega)]; exact frame_contains _ hk'
+    rw [hspg, frame_addr h16 (by omega_using [hk'])]; exact frame_contains _ hk'
   refine WP.block ⟨_, restoreRet_run hin, ?_⟩
   show abiPreserved s (cwFinal g) ∧ (sig.contract abi pre post wa (stack + 16) leak).post s (cwFinal g) ∧
     Spec.Zeroize.bytesAt (cwFinal g).mem ((s.gpr r).setWidth 64) n = Spec.Zeroize.zeros n
@@ -773,9 +773,9 @@ theorem Verified.callWipe' {post' : sig.Post abi.ptrBits} {name zname : String}
     show (sig.params.flatMap fun p => p.2.words 32).length = _
     rw [hps, List.flatMap_append, List.flatMap_cons]
     simp only [List.length_append, Param.words.eq_2, List.length_cons, List.length_nil]
-    omega
+    omega_using []
   have hiL : (ps₁.flatMap fun p => p.2.words 32).length < (locs sig).length := by
-    rw [locs, classify_length, widths, List.length_map, hL]; omega
+    rw [locs, classify_length, widths, List.length_map, hL]; omega_using []
   have hli : (locs sig)[(ps₁.flatMap fun p => p.2.words 32).length] = .reg r := by
     rw [← hr, List.getD_eq_getElem?_getD, List.getElem?_eq_getElem hiL, Option.getD_some]
   have hget : ∀ s : State, (armArgs sig s).getD (ps₁.flatMap fun p => p.2.words 32).length 0 =
@@ -789,7 +789,7 @@ theorem Verified.callWipe' {post' : sig.Post abi.ptrBits} {name zname : String}
     intro s
     rw [← hget s, hps]
     exact Sig.bufs_mem_array (pb := 32) ps₂ ps₁ (armArgs sig s)
-      (by rw [armArgs_length]; show _ < (sig.words abi.ptrBits).length; rw [hL]; omega)
+      (by rw [armArgs_length]; show _ < (sig.words abi.ptrBits).length; rw [hL]; omega_using [])
   -- Its address is public.
   have hpubA : ∀ s₁ s₂, (sig.contract abi pre post wa (stack + 16) leak).pub s₁ s₂ → s₁.gpr r = s₂.gpr r := by
     intro s₁ s₂ hp
@@ -800,8 +800,8 @@ theorem Verified.callWipe' {post' : sig.Post abi.ptrBits} {name zname : String}
       rw [hps]; exact (Sig.pub_array (pb := 32) ps₁ ps₂).2
     have h2 := congrArg BitVec.toNat (((pubL_arm hl).mp hp).2 _ hP)
     rw [BitVec.toNat_setWidth, BitVec.toNat_setWidth, hW, hget, hget, BitVec.toNat_setWidth,
-      BitVec.toNat_setWidth, Nat.mod_eq_of_lt (a := (s₁.gpr r).toNat) (by have := (s₁.gpr r).isLt; omega),
-      Nat.mod_eq_of_lt (a := (s₂.gpr r).toNat) (by have := (s₂.gpr r).isLt; omega),
+      BitVec.toNat_setWidth, Nat.mod_eq_of_lt (a := (s₁.gpr r).toNat) (by have := (s₁.gpr r).isLt; omega_using []),
+      Nat.mod_eq_of_lt (a := (s₂.gpr r).toNat) (by have := (s₂.gpr r).isLt; omega_using []),
       Nat.mod_eq_of_lt (s₁.gpr r).isLt, Nat.mod_eq_of_lt (s₂.gpr r).isLt] at h2
     exact BitVec.eq_of_toNat_eq h2
   -- The postcondition reads the memory on return only within the buffers apart from the array.
@@ -892,9 +892,9 @@ theorem Verified.callWipe' {post' : sig.Post abi.ptrBits} {name zname : String}
           g.wr = ⟨State.addr (σ.sp - BitVec.ofNat 32 16), 16⟩ :: σ.wr → g.sp = σ.sp - BitVec.ofNat 32 16 →
           ∀ k ∈ [4, 12, 8], InRegions (g.rd ++ g.wr) (State.addr (g.sp + BitVec.ofNat 32 k)) 4 := by
         intro g σ h16 hw he k hk
-        have hk' : k + 4 ≤ 16 := by simp only [List.mem_cons, List.not_mem_nil, or_false] at hk; omega
+        have hk' : k + 4 ≤ 16 := by simp only [List.mem_cons, List.not_mem_nil, or_false] at hk; omega_using [hk]
         refine ⟨_, List.mem_append_right _ (by rw [hw]; exact List.mem_cons_self ..), ?_⟩
-        rw [he, frame_addr h16 (by omega)]; exact frame_contains _ hk'
+        rw [he, frame_addr h16 (by omega_using [hk'])]; exact frame_contains _ hk'
       refine ⟨_, cwRestore g₂, _, restoreRet_run (hin g₁ σ₁ hs₁ hw₁ e₁), ?_, trivial⟩
       rw [restoreRet_run (hin g₂ σ₂ hs₂ hw₂ e₂), e₁, e₂, hsp12]
 

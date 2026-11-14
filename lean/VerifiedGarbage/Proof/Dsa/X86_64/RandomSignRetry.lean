@@ -43,8 +43,8 @@ theorem random_callFinish_ok {s : State} {B : Addr} {attempts : Nat} (success : 
       have hun : word u.mem B Random.oAttempts = BitVec.ofNat 64 attempts := by
         rw [hum, (writeW_outside _ B _ (by decide)).word (by decide) (by decide), hn]
       have hz : (BitVec.ofNat 64 (attempts - 1) == 0) = decide (attempts = 1) := by
-        rw [ofNat64_beq_zero (by omega)]
-        exact decide_eq_decide.mpr (by omega)
+        rw [ofNat64_beq_zero (by omega_using [hbound])]
+        exact decide_eq_decide.mpr (by omega_using [hpos])
       refine WP.seq (WP.mono (WP.keep [.rax] (Q := fun v =>
           v.mem = u.mem.writeW (off B Random.oAttempts) (BitVec.ofNat 64 (attempts - 1)) ∧
           v.zf = some (decide (attempts = 1))) (by
@@ -67,7 +67,7 @@ theorem random_retry_outside (m : Mem) (B : Addr) (success : Bool) (attempts : N
     Outside B 152 48 m (randomRetryMem m B success attempts) := by
   have step (m : Mem) (d : Nat) (v : BitVec 64) (hd : 152 ≤ d ∧ d + 8 ≤ 200) :
       Outside B 152 48 m (m.writeW (off B d) v) :=
-    (writeW_outside _ _ _ (by omega)).mono hd.1 hd.2
+    (writeW_outside _ _ _ (by omega_using [hd])).mono hd.1 hd.2
   cases success with
   | true => exact step _ _ _ (by decide)
   | false =>

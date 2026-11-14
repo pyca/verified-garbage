@@ -95,7 +95,7 @@ theorem roundArgs_ok {s : State} {base : BitVec 32} {capacity w : Nat}
     WP isa (.block [.ldrSp .r0 0, .ldrSp .r1 36]) s fun t =>
       (t.gpr .r0 = base ∧ t.gpr .r1 = BitVec.ofNat 32 capacity ∧ t.mem = s.mem) ∧ Rest [.r0, .r1] s t := by
   have read36 : InRegions (s.rd ++ s.wr) (State.addr (s.sp + 36#32)) 4 := by
-    rw [VG.Arm.addr_add (by have := stack.nowrap; omega)]
+    rw [VG.Arm.addr_add (by have := stack.nowrap; omega_using [this])]
     exact stack.read (by decide)
   refine withRest_all [.r0, .r1] ?_ (by rfl) (by rfl)
   ffrun [BitVec.add_zero, ready.stackRead, ready.saved, read36, saved]
@@ -124,7 +124,7 @@ theorem roundKernel_ok (v : RoundImpl) {s : State} {base : BitVec 32} {capacity 
   have stackU : Workspace u u.sp 72 := by rw [restU.sp]; exact stack.congr restU.wr
   have savedU : u.mem.readW (State.addr (u.sp + 36#32)) 32 = BitVec.ofNat 32 capacity := by
     have separate : (⟨State.addr (s.sp + 36#32), 4⟩ : Region).Disjoint ⟨State.addr base, 8 * capacity⟩ := by
-      rw [VG.Arm.addr_add (by have := stack.nowrap; omega)]
+      rw [VG.Arm.addr_add (by have := stack.nowrap; omega_using [this])]
       exact stackSep.sub_left (Offset.sub_base _ (by decide : 36 + 4 ≤ 72))
     rw [restU.sp, frameU.readW (r := ⟨State.addr (s.sp + 36#32), 4⟩) (Region.contains_self _ _)
       (by intro r hr; rw [List.mem_singleton] at hr; subst r; exact separate) (by decide)]
@@ -139,9 +139,9 @@ theorem roundKernel_ok (v : RoundImpl) {s : State} {base : BitVec 32} {capacity 
     rw [dataA.modulus, memA, encodedU, Nat.mod_mul_mod]
   have preparedA := dataA.prepared (by
     rw [memA, encodedU]
-    exact Nat.mod_lt _ (by have := data.large; omega))
+    exact Nat.mod_lt _ (by have := data.large; omega_using [this]))
   refine WP.seq (WP.mono (sharedRoundCall_ok v workspaceA ptrA lengthA
-    (by have := ready.workspace.nowrap; omega) dataA.data.width dataA.layout preparedA
+    (by have := ready.workspace.nowrap; omega_using [this]) dataA.data.width dataA.layout preparedA
     (by rw [restA.sp, restU.sp]; exact stackBelow)
     (by rw [restA.sp, restU.sp]; exact belowSep) encodedA) ?_)
   rintro t ⟨flagT, keepsT, frameT, restT⟩

@@ -36,31 +36,31 @@ theorem publicHead_ok {K : TCombCfg} {s : State} {base T : Addr} {size k j : Nat
     have := hL.bits
     have := hL.kbytes
     unfold TCombCfg.zw at *
-    omega
+    omega_arith
   have hwi : K.w * (j - 1) + K.w ≤ K.w * K.J := by
-    rw [← Nat.mul_succ, show (j - 1).succ = j by omega]
+    rw [← Nat.mul_succ, show (j - 1).succ = j by omega_using [hj]]
     exact Nat.mul_le_mul_left K.w hjn
   have hHle : K.H ≤ 128 := by
     unfold TCombCfg.H
-    exact Nat.le_trans (Nat.pow_le_pow_right (by decide) (show K.w - 1 ≤ 7 by omega)) (by decide)
+    exact Nat.le_trans (Nat.pow_le_pow_right (by decide) (show K.w - 1 ≤ 7 by omega_using [hw])) (by decide)
   have hmag : magH K.H (combWin K.w k (j - 1)) ≤ K.H := by
     apply magH_le
     have e : 2 ^ K.w = 2 * K.H := by
-      unfold TCombCfg.H; rw [← Nat.pow_succ']; congr 1; omega
+      unfold TCombCfg.H; rw [← Nat.pow_succ']; congr 1; omega_using [hw]
     rw [← e]; exact combWin_lt _ _ _
   rw [publicHead, List.append_assoc, List.append_assoc, WP.block_append_iff]
-  refine WP.mono_syms (decCounter_ok s hj (by omega) hx) fun a ⟨a19, ka⟩ sa => ?_
+  refine WP.mono_syms (decCounter_ok s hj (by omega_using [hjn, hJ]) hx) fun a ⟨a19, ka⟩ sa => ?_
   rw [WP.block_append_iff]
   refine WP.mono_syms (digitW_ok K (hs.of_keeps ka (by decide)) (k := k)
-    (N := K.w * K.J) (by omega) (by omega) hwi hbsize (by
+    (N := K.w * K.J) (by omega_using [hw]) (by omega_using [hw]) hwi hbsize (by
       have := hL.bitsw
-      have := Nat.mul_le_mul_left K.w (show 1 ≤ K.J by omega)
-      omega) a19
+      have := Nat.mul_le_mul_left K.w (show 1 ≤ K.J by omega_using [hJ])
+      omega_arith) a19
     (fun t ht => by rw [ka.mem]; exact hb t ht)) fun b ⟨b2, kb⟩ sb => ?_
   rw [WP.block_append_iff]
   refine WP.mono (selSetup_ok K (j := j - 1) (T := T) (by rw [kb.gpr _ (by decide), a19])
     (by rw [sb, sa, hT]) hL.tbl.2) fun c ⟨c16, c7, c5, _, kc⟩ => ?_
-  refine WP.mono (directAddress_ok K (a := magH K.H (combWin K.w k (j - 1))) (by omega) (by have := hL.n8; omega) c16
+  refine WP.mono (directAddress_ok K (a := magH K.H (combWin K.w k (j - 1))) (by omega_using [hHle, hmag]) (by have := hL.n8; omega_using [this]) c16
     (by rw [kc.gpr _ (by decide), b2]) c5 c7) fun t ⟨t16, _, kt⟩ => ?_
   refine ⟨?_, ?_, ?_, t16⟩
   · rw [kt.gpr _ (by decide), kc.gpr _ (by decide), kb.gpr _ (by decide),
@@ -188,7 +188,7 @@ theorem publicLoop_ct {K : TCombCfg} {C : Spec.Weierstrass.Curve} {base T : Addr
           intro hz
           simp only [eval, State.read, xa, hz] at ht
           cases ht
-        exact ⟨j - 1, by omega, by omega, by omega, ia, ib⟩
+        exact ⟨j - 1, by omega_using [hj], by omega_using [hz], by omega_using [hjn], ia, ib⟩
       · exact RelCT.of_false fun _ _ h => hjn h.2.1
     · exact RelCT.of_false fun _ _ h => hj h.1
   exact (RelCT.loop I hstep K.J).mono

@@ -57,7 +57,7 @@ theorem exponentCheck_trace {s t : State} {ep : BitVec 32} {eb : List Byte}
         have Si := wp_result (exponentInit_ok ptrS countS readS bytesS) Ei
         have Ti := wp_result (exponentInit_ok ptrT countT readT bytesT) Fi
         have L := (exponentLoop_relCT ep eb fit countFit eb.length _ _ _ _ _ _
-          ⟨0, by omega, positive, Si, Ti⟩ El Fl).1
+          ⟨0, by omega_using [], positive, Si, Ti⟩ El Fl).1
         rw [(Init _ _ _ _ _ _ trivial Ei Fi).1, L]
   have Test : RelCT isa (VG.X86.Taint.Agree (τr [.ebx, .edx])) exponentTest (fun _ _ => True) := by
     apply RelCT.taint (A := taint) (τr [.ebx, .edx]) (fun _ _ h => h)

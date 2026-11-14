@@ -34,13 +34,13 @@ theorem cmp4_vp {n : Nat} : VP (GQ P E n) (.block [.ldr .r1 .r8 sStat, .cmp .r1 
     rcases h with ⟨h0, e, k, hw⟩ | ⟨hp, h1, h2, mr, ⟨e, k, hw⟩, m⟩
     · refine k.ldr hw (d := sStat) (by simp) (r := .r1) (by decide) fun s1 k1 hw1 u1 => ?_
       refine wp_cmp (op2_imm (by decide)) fun t f z => WP.block_nil ⟨?_, fun _ => ⟨e, k1.of_rest (f.rest []) f.mem,
-        hw1.of (by rw [f.gpr]) (by rw [f.gpr]) (by rw [f.gpr]) f.wr⟩, fun h => absurd h (by omega)⟩
+        hw1.of (by rw [f.gpr]) (by rw [f.gpr]) (by rw [f.gpr]) f.wr⟩, fun h => absurd h (by omega_using [h0])⟩
       rw [isa_eq, z, u1.gpr, h0]
       simp only [upd_self]
       unfold statQ
       split <;> decide
     · refine k.ldr hw (d := sStat) (by simp) (r := .r1) (by decide) fun s1 k1 hw1 u1 => ?_
-      refine wp_cmp (op2_imm (by decide)) fun t f z => WP.block_nil ⟨?_, fun h => absurd h (by omega),
+      refine wp_cmp (op2_imm (by decide)) fun t f z => WP.block_nil ⟨?_, fun h => absurd h (by omega_using [hp]),
         fun _ => ⟨h1, h2, mr, ⟨e, (k1.of_rest (f.rest []) f.mem).mono (fun j hj => ⟨hj, rfl⟩)
           (fun d hd => ⟨List.mem_cons_of_mem _ hd, upd_ne _ _ (by revert hd; revert d; decide)⟩),
           hw1.of (by rw [f.gpr]) (by rw [f.gpr]) (by rw [f.gpr]) f.wr⟩,
@@ -53,8 +53,8 @@ theorem cmp4_vp {n : Nat} : VP (GQ P E n) (.block [.ldr .r1 .r8 sStat, .cmp .r1 
 theorem body_vp (v : RoundImpl) (hE : ∀ σ, E σ → In P σ ∧ EM P σ) (n : Nat) :
     VP (MRI P E (n + 1)) (mrBody v.name v.code)
       (fun σ s => isa.eval .eq s = some (decide (0 < n)) ∧ (n = 0 → QS P E σ s) ∧ (0 < n → MRI P E n σ s)) := by
-  refine VP.ofImp (p := n ≤ Nt P) (fun σ s h => by have := h.2.1; omega) fun hn => ?_
-  have hk : Nt P + 1 - (n + 1) = Nt P - n := by omega
+  refine VP.ofImp (p := n ≤ Nt P) (fun σ s h => by have := h.2.1; omega_using [this]) fun hn => ?_
+  have hk : Nt P + 1 - (n + 1) = Nt P - n := by omega_using []
   simp only [mrBody, seqs]
   refine (VP.seq (avFlag_vp (E := fun σ => E σ ∧ MrAt (cv P σ) (chP P) (taP P σ) (tmP P σ) P.L (rB P σ) (Nt P - n) n)
     (k := Nt P - n) (fun σ e => by have := e.2.used; rwa [rB_length] at this))
@@ -69,7 +69,7 @@ theorem body_vp (v : RoundImpl) (hE : ∀ σ, E σ → In P σ ∧ EM P σ) (n :
       fun σ s ⟨⟨⟨e, mr⟩, h, hw⟩, m⟩ => ?_
     obtain ⟨pre, hm⟩ := hE σ e
     obtain ⟨-, hwb, -, -⟩ := mr_facts pre hm
-    obtain ⟨hn0, hres⟩ := VG.Proof.RsaKeyGen.mrAt_short mr hwb (by have := pre.k1; omega)
+    obtain ⟨hn0, hres⟩ := VG.Proof.RsaKeyGen.mrAt_short mr hwb (by have := pre.k1; omega_using [this])
       (by rw [rB_length]; exact hna)
     have hres' : resP P σ = none := hres
     refine .inl ⟨hn0, e, h.mono (fun j hj => ⟨hj, rfl⟩) fun d hd => ⟨by revert hd; revert d; decide, ?_⟩, hw⟩

@@ -36,10 +36,10 @@ theorem dbl_sub {p n : Nat} (hp : p < 2 ^ 30) (hn : n < 2 ^ 31) :
   constructor
   · intro e; have := congrArg BitVec.toNat e
     simp only [BitVec.toNat_sub, BitVec.toNat_add, BitVec.toNat_ofNat] at this
-    rw [show (0 : BitVec 32).toNat = 0 from rfl] at this; omega
+    rw [show (0 : BitVec 32).toNat = 0 from rfl] at this; omega_using [hp, hn, this]
   · intro e; apply BitVec.eq_of_toNat_eq
     simp only [BitVec.toNat_sub, BitVec.toNat_add, BitVec.toNat_ofNat]
-    rw [show (0 : BitVec 32).toNat = 0 from rfl]; omega
+    rw [show (0 : BitVec 32).toNat = 0 from rfl]; omega_using [e]
 
 theorem top_clear (x : BitVec 32) : (x ^^^ -1) >>> 31 = 0 ↔ 2 ^ 31 ≤ x.toNat := by
   rw [show (-1 : BitVec 32) = BitVec.allOnes 32 from rfl, BitVec.xor_allOnes]
@@ -47,10 +47,10 @@ theorem top_clear (x : BitVec 32) : (x ^^^ -1) >>> 31 = 0 ↔ 2 ^ 31 ≤ x.toNat
   · intro e; have := congrArg BitVec.toNat e
     rw [BitVec.toNat_ushiftRight, BitVec.toNat_not, Nat.shiftRight_eq_div_pow,
       show (0 : BitVec 32).toNat = 0 from rfl] at this
-    have := x.isLt; omega
+    have := x.isLt; omega_arith
   · intro e; apply BitVec.eq_of_toNat_eq
     rw [BitVec.toNat_ushiftRight, BitVec.toNat_not, Nat.shiftRight_eq_div_pow, show (0 : BitVec 32).toNat = 0 from rfl]
-    have := x.isLt; omega
+    have := x.isLt; omega_using [e]
 
 theorem or_zero (a b : BitVec 32) : a ||| b = 0 ↔ a = 0 ∧ b = 0 := by
   change a ||| b = 0#32 ↔ a = 0#32 ∧ b = 0#32
@@ -110,11 +110,11 @@ theorem balanced_ok {s : State} (h : RtWs L s B Z len N) {nl pl ql n sl an ap aq
       rw [U11.other .eax (by decide), U10.other .eax (by decide), U9.other .eax (by decide),
         U8.other .eax (by decide), U7.other .eax (by decide), U6.other .eax (by decide), U5.other .eax (by decide),
         U4.other .eax (by decide), U3.other .eax (by decide), U2.other .eax (by decide), U1.gpr, BitVec.toNat_ofNat,
-        Nat.mod_eq_of_lt (by omega)]
+        Nat.mod_eq_of_lt (by omega_using [han])]
     rw [eax11, show (128 : BitVec 32).toNat = 128 from rfl]
   -- `n`'s top word.
   refine arrPtr_ok (lenSrc h14) h14.lenLe h14.edi (r := .ebx) (t := .edx) (j := n) (by decide) (by decide)
-    (by omega) fun u1 K1 m1 p1 _ => ?_
+    (by omega_using [fn, nw]) fun u1 K1 m1 p1 _ => ?_
   refine bytesB_ok (r := .eax) ((lenSrc h14).keep K1 (by decide) m1) h.lenLe fun u2 K2 m2 e2 =>
     wp_addS rfl fun u3 V3 _ => wp_subS rfl fun u4 V4 _ => ?_
   have K4 : Keeps [.eax, .ebx, .ecx, .edx] s u4 := (K14.mono (by decide)).trans
@@ -124,8 +124,8 @@ theorem balanced_ok {s : State} (h : RtWs L s B Z len N) {nl pl ql n sl an ap aq
   have p4 : PtrAt u4 B .ebx (arr (kw len) n + 4 * (kw len - 1)) := by
     rw [PtrAt, V4.gpr, BitVec.toNat_sub, V3.gpr, BitVec.toNat_add, K2.1 .ebx (by decide), p1, e2,
       show (4 : BitVec 32).toNat = 4 from rfl]
-    have := B.isLt; omega
-  refine wp_movS (readSrc_ptr (h.rt.of_keeps K4) p4 (d := 0) (by omega)) fun u5 V5 _ =>
+    have := B.isLt; omega_using [wpos]
+  refine wp_movS (readSrc_ptr (h.rt.of_keeps K4) p4 (d := 0) (by omega_using [fn])) fun u5 V5 _ =>
     wp_logicS (Or.inr rfl) rfl fun u6 V6 => VG.Proof.Bignum.X86.PublicRt.wp_shr (by decide) fun u7 V7 =>
       wp_orS rfl fun u8 V8 => ?_
   have K8 : Keeps [.eax, .ebx, .ecx, .edx] s u8 := K4.trans
@@ -153,13 +153,13 @@ theorem balanced_ok {s : State} (h : RtWs L s B Z len N) {nl pl ql n sl an ap aq
     · intro hc; apply BitVec.eq_of_toNat_eq
       rw [VG.Proof.Bignum.X86.R2Words.sbb_self, show (0 : BitVec 32).toNat = 0 from rfl]; simp [hc]
   have key7 : (BitVec.ofNat 32 an &&& 7).toNat = an % 8 := by
-    rw [and7, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show an < 2 ^ 32 by omega)]
+    rw [and7, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show an < 2 ^ 32 by omega_using [han])]
   have h7 : (BitVec.ofNat 32 an &&& 7 = 0) ↔ an % 8 = 0 := by
     constructor
     · intro e; have := congrArg BitVec.toNat e
       rw [key7] at this; simpa using this
     · intro e; apply BitVec.eq_of_toNat_eq; rw [key7, e]; rfl
-  rw [hm, h7, dbl_sub (by omega) (by omega), dbl_sub (by omega) (by omega)]
+  rw [hm, h7, dbl_sub (by omega_using [hap]) (by omega_using [han]), dbl_sub (by omega_using [haq]) (by omega_using [han])]
   simp only [Bal, mw, w32, Nat.not_lt]
   constructor
   · rintro ⟨⟨⟨⟨a, b⟩, c⟩, d⟩, e⟩; exact ⟨a, b, c, d, e⟩
@@ -172,14 +172,14 @@ theorem balanced_ok {s : State} (h : RtWs L s B Z len N) {nl pl ql n sl an ap aq
 theorem factor_top {K p q n : Nat} (hn : 2 ^ (2 * K - 1) ≤ n) (hq : q < 2 ^ K)
     (hpq : p * q = n) : 2 ^ (K - 1) < p := by
   refine Nat.lt_of_not_le fun hle => ?_
-  have e : 2 ^ (2 * K - 1) = 2 ^ (K - 1) * 2 ^ K := by rw [← Nat.pow_add]; congr 1; omega
+  have e : 2 ^ (2 * K - 1) = 2 ^ (K - 1) * 2 ^ K := by rw [← Nat.pow_add]; congr 1; omega_using []
   have : p * q < 2 ^ (K - 1) * 2 ^ K :=
     Nat.lt_of_le_of_lt (Nat.mul_le_mul_right q hle) (Nat.mul_lt_mul_of_pos_left hq (Nat.two_pow_pos _))
-  omega
+  omega_using [hn, hpq, e, this]
 
 theorem top_factor {K p : Nat} (lo : 2 ^ (K - 1) < p) (hi : p < 2 ^ K) :
     (2 ^ (K - 1) ≤ p ∧ p < 2 ^ K) ∧ (2 ^ (K - 1) ≤ 2 * (p / 2) ∧ 2 * (p / 2) < 2 ^ K) :=
-  ⟨⟨Nat.le_of_lt lo, hi⟩, ⟨by omega, by omega⟩⟩
+  ⟨⟨Nat.le_of_lt lo, hi⟩, ⟨by omega_using [lo], by omega_using [hi]⟩⟩
 
 /-- Under the guard: `p`'s width is a sound divisor's, and where `p q = n`, `p`, `p - 1` and
 `q - 1` have their top bits set. -/
@@ -189,14 +189,14 @@ theorem bal_top {an ap aq top w P Q N : Nat} (bal : Bal an ap aq top) (hkw : kw 
       (P * Q = N → Top (wq ap) P ∧ Top (wq ap) (2 * (P / 2)) ∧ Top (wq ap) (2 * (Q / 2))) := by
   obtain ⟨h8, hpa, hqa, h128, ht⟩ := bal
   have hw : w = an / 4 := by
-    rw [← hkw]; simp only [kw, Spec.Rsa.modulusWords]; omega
-  have hwq : wq ap = ap / 4 := by simp only [wq]; omega
-  have hK : 32 * wq ap = 8 * ap := by rw [hwq]; omega
+    rw [← hkw]; simp only [kw, Spec.Rsa.modulusWords]; omega_using [h8]
+  have hwq : wq ap = ap / 4 := by simp only [wq]; omega_using [h8, hpa]
+  have hK : 32 * wq ap = 8 * ap := by rw [hwq]; omega_using [h8, hpa]
   have hn : 2 ^ (2 * (8 * ap) - 1) ≤ N := by
     have := htop.mp ht
-    rwa [show 32 * w = 2 * (8 * ap) by rw [hw]; omega] at this
-  have hq' : Q < 2 ^ (8 * ap) := by rwa [show 8 * aq = 8 * ap by omega] at hq
-  refine ⟨by omega, by omega, fun hpq => ?_⟩
+    rwa [show 32 * w = 2 * (8 * ap) by rw [hw]; omega_using [h8, hpa]] at this
+  have hq' : Q < 2 ^ (8 * ap) := by rwa [show 8 * aq = 8 * ap by omega_using [hpa, hqa]] at hq
+  refine ⟨by omega_using [hpa, h128, hwq], by omega_using [hpa, h128, hw, hwq], fun hpq => ?_⟩
   simp only [Top, hK]
   have pt := top_factor (factor_top hn hq' hpq) hp
   have qt := top_factor (factor_top hn hp (by rw [Nat.mul_comm]; exact hpq)) hq'
@@ -206,7 +206,7 @@ theorem sub0_beq (x : BitVec 32) : (x - 0 == 0) = decide (x.toNat = 0) := by
   rw [Bool.eq_iff_iff, beq_iff_eq, decide_eq_true_iff, ← BitVec.toNat_inj, BitVec.toNat_sub]
   have := x.isLt
   show (2 ^ 32 - 0 + x.toNat) % 2 ^ 32 = 0 ↔ _
-  constructor <;> intro h <;> omega
+  constructor <;> intro h <;> omega_using [h]
 
 /-- `ifBalanced sl word other`: `word` where `sl` is zero, else `other`, each from a state that only
 `eax` and the flags tell apart. -/
@@ -218,7 +218,7 @@ theorem ifBalanced_ok {s : State} (h : RtWs L s B Z len N) {sl : Nat} (hsl : sl 
   unfold VG.Impl.Rsa.X86.WordModRt.ifBalanced
   have hz := h.ws.hdr_le
   simp only [VG.Impl.Rsa.X86.Keys.hdr] at hsl hz
-  refine WP.seq (wp_movS (readSrc_sc h.ws.workspace (by omega))
+  refine WP.seq (wp_movS (readSrc_sc h.ws.workspace (by omega_using [hsl, hz]))
     fun u U _ => wp_cmpi fun t T _ z => WP.block_nil ?_)
   have K : Keeps [.eax] s t := U.keeps.trans (T.keeps [.eax])
   have M : t.mem = s.mem := T.mem.trans U.mem

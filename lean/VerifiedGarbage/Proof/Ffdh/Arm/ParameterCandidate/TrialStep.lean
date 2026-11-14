@@ -42,13 +42,13 @@ theorem trialStep_ok (s : State) {n acc divisor inverse : Nat}
     by_cases last : n = 1
     · simp only [last, ite_true, show (0 : BitVec 32) = 0#32 from rfl,
         BitVec.or_zero, Nat.add_zero, BitVec.toNat_setWidth]
-      exact Nat.mod_eq_of_lt (by have := (s.mem (State.addr (s.gpr .r0 - 1))).isLt; omega)
+      exact Nat.mod_eq_of_lt (by have := (s.mem (State.addr (s.gpr .r0 - 1))).isLt; omega_using [])
     · rw [ite_eq_right last, ite_eq_right last, trialDigit_value]
   have digitBound : trialDigitNat s.mem (s.gpr .r0) n < 2 ^ 16 := by
     have lo := (s.mem (State.addr (s.gpr .r0 - 1))).isLt
     have hi := (s.mem (State.addr (s.gpr .r0 - 2))).isLt
     unfold trialDigitNat
-    split <;> omega
+    split <;> omega_using []
   refine VG.Proof.Bignum.Arm.TrialDivision16.redc_ok digitValue digitBound
     ((rest.gpr .r2 (by simp)).trans accValue) accBound
     (by rw [rest.gpr .r4 (by simp)]; exact invValue)
@@ -63,8 +63,8 @@ theorem trialStep_ok (s : State) {n acc divisor inverse : Nat}
     change (BitVec.ofNat 32 (n - min 2 n) - (0 : BitVec 32) == (0 : BitVec 32)) = _
     rw [show (0 : BitVec 32) = 0#32 from rfl, BitVec.sub_zero]
     change (BitVec.ofNat 32 (n - min 2 n) == (0 : BitVec 32)) = _
-    rw [ofNat_beq_zero (by omega : n - min 2 n < 2 ^ 32)]
-    simp only [show n - min 2 n = 0 ↔ n ≤ 2 by omega]
+    rw [ofNat_beq_zero (by omega_using [fits] : n - min 2 n < 2 ^ 32)]
+    simp only [show n - min 2 n = 0 ↔ n ≤ 2 by omega_using []]
   · rw [final.mem, memory, mem]
   · exact (rest.mono (by simp)).trans ((keep.mono (by simp)).trans (final.rest _))
 

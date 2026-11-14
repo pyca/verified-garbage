@@ -38,7 +38,7 @@ theorem enter_ok {s : State} {B : Addr} {Z o w wx : Nat} {parentMinv minv : BitV
   congr 1
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]
-  omega
+  omega_using [ho]
 
 /-- Return through the child's parent link; all parent fields and operand
 buffers retain the memory frame established by the arithmetic routine. -/

@@ -60,14 +60,14 @@ abbrev qb : List Byte := (p.params.drop p.pLen).take p.qLen
 abbrev gb : List Byte := (p.params.drop (p.pLen + p.qLen)).take p.pLen
 
 theorem pbLength : p.pb.length = p.pLen := by
-  simp only [List.length_take, p.paramsLength]; omega
-theorem qbLength : p.qb.length = p.qLen := component_length (by rw [p.paramsLength]; omega)
-theorem gbLength : p.gb.length = p.pLen := component_length (by rw [p.paramsLength]; omega)
+  simp only [List.length_take, p.paramsLength]; omega_using []
+theorem qbLength : p.qb.length = p.qLen := component_length (by rw [p.paramsLength]; omega_using [])
+theorem gbLength : p.gb.length = p.pLen := component_length (by rw [p.paramsLength]; omega_using [])
 
 theorem pPositive : 0 < p.pb.length := by
-  rw [p.pbLength]; have := p.lengths; unfold Spec.Dsa.lengthsValid at this; omega
+  rw [p.pbLength]; have := p.lengths; unfold Spec.Dsa.lengthsValid at this; omega_using [this]
 theorem qPositive : 0 < p.qb.length := by
-  rw [p.qbLength]; have := p.lengths; unfold Spec.Dsa.lengthsValid at this; omega
+  rw [p.qbLength]; have := p.lengths; unfold Spec.Dsa.lengthsValid at this; omega_using [this]
 
 abbrev accepted : Bool := shapeAccepted p.pb p.qb p.pPositive p.qPositive
 
@@ -109,9 +109,9 @@ theorem ParametersPre.sources {p : ParametersInput} {original s : State} (h : Pa
   have hsrc := h.paramsSource.congrK hm hk
   refine ⟨source_take hsrc, ?_, ?_⟩
   · rw [h.pLength]
-    exact source_slice hsrc (by rw [p.paramsLength]; omega)
+    exact source_slice hsrc (by rw [p.paramsLength]; omega_using [])
   · rw [h.pLength, h.qLength, Offset.add_add]
-    exact source_slice hsrc (by rw [p.paramsLength]; omega)
+    exact source_slice hsrc (by rw [p.paramsLength]; omega_using [])
 
 structure ParametersShapePost (p : ParametersInput) (original : State)
     (hp : original.gpr .rdx = BitVec.ofNat 64 p.pLen)
@@ -131,9 +131,9 @@ theorem parametersShape_ok {p : ParametersInput} {s0 : State} (h : ParametersPre
   have hinside : InScr p.base usedBytes s0.mem s1.mem := InScr.of_outside he.frame (by decide)
   obtain ⟨hps, hqs, _⟩ := h.sources hinside (he.keep.mono (by decide))
   have hp64 : p.pb.length < 2 ^ 64 := by
-    rw [p.pbLength]; have := p.lengths; unfold Spec.Dsa.lengthsValid at this; omega
+    rw [p.pbLength]; have := p.lengths; unfold Spec.Dsa.lengthsValid at this; omega_using [this]
   have hq64 : p.qb.length < 2 ^ 64 := by
-    rw [p.qbLength]; have := p.lengths; unfold Spec.Dsa.lengthsValid at this; omega
+    rw [p.qbLength]; have := p.lengths; unfold Spec.Dsa.lengthsValid at this; omega_using [this]
   refine WP.mono (domainShape_ok (n := 0) (h.scratch.congr he.keep.2.2) he.base (by decide)
     (he.fields .p (by decide) (by decide)) (he.fields .q (by decide) (by decide))
     ((he.fields .pLen (by decide) (by decide)).trans (by rw [p.pbLength]; exact h.pLength))
@@ -219,7 +219,7 @@ theorem parametersInitialize_ok {p : ParametersInput} {original st : State} (h :
     hr'.inputOperand .y .pLen (by decide) (by decide) hgs' hpl,
     hr'.inputOperand .q .qLen (by decide) (by decide) hqs' (by rw [p.qbLength]; exact h.qLength)⟩,
     hm.trans ((hs.fields .mask).trans (congrArg mask ha)),
-    fun i hi => (hf.word (Or.inl (by omega)) (by omega)).trans (hs.saved i hi),
+    fun i hi => (hf.word (Or.inl (by omega_using [hi])) (by omega_using [hi])).trans (hs.saved i hi),
     hframe, hkeep.mono (by decide)⟩
 
 /-- The signer's checks of the domain, with g as the public value. -/
@@ -236,7 +236,7 @@ theorem parametersBody_ok (M : Mont) (Sq : MontS) {L : ExecutionLayout} {p : Par
   refine WP.seq (WP.mono (signingKey_ok M Sq hr hp hq hpo hqo hpf hqf ho.generator ho.publicValue
     ho.subgroup hgl hgl hql hqv hm) fun u ⟨hu, hmu, _, hfu, hku⟩ => ?_)
   refine WP.mono (result_ok hu.scratch hu.parent.rdi (by decide) hmu) fun v ⟨hret, hsave, hmem, hkv⟩ => ?_
-  exact ⟨hret, fun i hi => (hsave i hi).trans (hfu.word (Or.inl (by omega)) (by omega)),
+  exact ⟨hret, fun i hi => (hsave i hi).trans (hfu.word (Or.inl (by omega_using [hi])) (by omega_using [hi])),
     by rw [hmem]; exact hfu, (hku.trans hkv).mono (by decide)⟩
 
 theorem parametersSuccess_ok (M : Mont) (Sq : MontS) {p : ParametersInput} {original st : State}

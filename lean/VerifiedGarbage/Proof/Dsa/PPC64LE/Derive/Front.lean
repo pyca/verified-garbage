@@ -71,7 +71,7 @@ theorem dlayOf_ok {s : State} (h : dContract.pre s) : (dlayOf s).Ok := by
   obtain ⟨-, -, -, -, -, -, -, -, -, -, -, -, -, nw, hv, -, -, hsw⟩ := h
   simp only [Spec.Dsa.scratchWords] at hsw
   simp only [Spec.Dsa.lengthsValid] at hv
-  exact ⟨by simp only [dlayOf]; omega, by simp only [dlayOf]; omega, by simp only [dlayOf]; omega, nw⟩
+  exact ⟨by simp only [dlayOf]; omega_using [hv], by simp only [dlayOf]; omega_using [hv], by simp only [dlayOf]; omega_using [hsw], nw⟩
 
 /-- The registers `Derive.entry` writes. -/
 def dentryRegs : List Reg := [.r0, .r2, .r11, .r21, .r26, .r27, .r28]
@@ -87,8 +87,8 @@ theorem dfront_ok {s : State} (h : dContract.pre s) :
         Outside (s.gpr .r10) 0 256 s.mem t.mem) ∧ Keep dentryRegs s t := by
   have hL := dlayOf_ok h
   have hZ := hL.z256
-  have hpl : (s.gpr .r7).toNat < 2 ^ 16 := by have := hL.pl; simp only [dlayOf] at this; omega
-  have hql : (s.gpr .r9).toNat < 2 ^ 16 := by have := hL.ql; simp only [dlayOf] at this; omega
+  have hpl : (s.gpr .r7).toNat < 2 ^ 16 := by have := hL.pl; simp only [dlayOf] at this; omega_using [this]
+  have hql : (s.gpr .r9).toNat < 2 ^ 16 := by have := hL.ql; simp only [dlayOf] at this; omega_using [this]
   obtain ⟨-, -, hwr, -, -, -, -, -, -, -, -, -, -, nw, -⟩ := h
   unfold Derive.entry
   simp only [List.append_assoc]
@@ -98,7 +98,7 @@ theorem dfront_ok {s : State} (h : dContract.pre s) :
     Scr.of_mem (by rw [ht, hwr]; simp [dlayOf]) nw
   have hin : ∀ i < 19, InRegions s₁.wr (off (savW (s₁.gpr .r11)) (8 * i)) 8 := fun i hi => by
     rw [← saveOff_eq, a11]
-    exact (hscr s₁ k1.wr).st (d := 104 + 8 * i) (by simp only [dlayOf] at hZ ⊢; omega)
+    exact (hscr s₁ k1.wr).st (d := 104 + 8 * i) (by simp only [dlayOf] at hZ ⊢; omega_using [hZ, hi])
   refine WP.block_append (WP.mono (save_ok s₁ hin) fun s₂ hS => ?_)
   have k12 := k1.trans hS.keep
   have h21 : s₂.gpr .r21 = s.gpr .r10 := hS.r21.trans a11

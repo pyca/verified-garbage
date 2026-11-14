@@ -47,7 +47,7 @@ theorem step_fwd {k : Nat} (hk : k + 4 < 4096) {x : BitVec 32} {s s' : State} {t
   obtain ⟨s₂, t₂, r₂, e₂, h₂, rfl⟩ := seq_inv h₁
   obtain ⟨s₃, t₃, r₃, e₃, h₃, rfl⟩ := seq_inv h₂
   obtain ⟨s₄, t₄, t₅, e₄, e₅, rfl⟩ := seq_inv h₃
-  obtain ⟨hr₁, rfl, rfl⟩ := ldr_block (by omega : k < 4096) e₁
+  obtain ⟨hr₁, rfl, rfl⟩ := ldr_block (by omega_using [hk] : k < 4096) e₁
   -- `rowProduct`
   have p1 : (s.setReg .r2 (inW k s)).gpr .r1 = x &&& mask16 := by
     simp only [gpr_setReg, reduceCtorEq, ↓reduceIte]; exact h1
@@ -77,19 +77,19 @@ theorem step_fwd {k : Nat} (hk : k + 4 < 4096) {x : BitVec 32} {s s' : State} {t
     simp only [s₃, gpr_setReg, reduceCtorEq, ↓reduceIte]
     rw [prod, Nat.mul_comm]; simp only [gpr_setReg, ↓reduceIte]
   have hb := mac_bound (inW k s) x (accW k s) (s.gpr .r11)
-  obtain ⟨_, _, w₄, ⟨lo, sumA, sumC⟩, f₄⟩ := rowMac_ok s₃ (by rw [p3, a3, c3]; omega)
+  obtain ⟨_, _, w₄, ⟨lo, sumA, sumC⟩, f₄⟩ := rowMac_ok s₃ (by rw [p3, a3, c3]; omega_using [hb])
   rw [(Exec.det w₄ e₄).2] at sumA sumC f₄
   have t₄0 : t₄ = [] := execBlock_noMem (by decide) (Exec.block_iff.mp e₄)
   subst t₄0
   have g40 : s₄.gpr .r0 = s.gpr .r0 := by
     rw [f₄.regs .r0 (by decide)]; simp only [s₃, gpr_setReg, reduceCtorEq, ↓reduceIte]; exact g0
-  obtain ⟨hw₅, rfl, rfl⟩ := str_block (by omega : k < 4096) e₅
+  obtain ⟨hw₅, rfl, rfl⟩ := str_block (by omega_using [hk] : k < 4096) e₅
   have lo3 : s₄.gpr .r3 = BitVec.ofNat 32 (stepSum k x s) := by
     refine toNat_lo (hi := s₄.gpr .r11) ?_
-    rw [sumC, sumA, p3, a3, c3, stepSum]; omega
+    rw [sumC, sumA, p3, a3, c3, stepSum]; omega_using []
   have hi11 : s₄.gpr .r11 = BitVec.ofNat 32 (stepSum k x s / 2 ^ 32) := by
     refine toNat_hi (lo := s₄.gpr .r3) ?_
-    rw [sumC, sumA, p3, a3, c3, stepSum]; omega
+    rw [sumC, sumA, p3, a3, c3, stepSum]; omega_using []
   have hi4 : s₄.gpr .r4 = BitVec.ofNat 32
       (((inW k s).toNat * x.toNat + (0 : BitVec 32).toNat + (accW k s).toNat) / 2 ^ 32) := by
     refine toNat_hi (lo := lo) ?_

@@ -101,10 +101,10 @@ structure XPost (enc : Bool) (s : State) (W T D S : BitVec 32) (N R : Nat) (s' :
   tw : bytesAt s'.mem (State.addr T) 16 = Spec.Xts.next (bytesAt s.mem (State.addr T) 16) N
 
 theorem toNat_n {N : Nat} (h : N < 2 ^ 28) : (BitVec.ofNat 32 N).toNat = N := by
-  rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt (by omega)
+  rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt (by omega_using [h])
 
 theorem toNat_r {R : Nat} (h : R = 10 ∨ R = 12 ∨ R = 14) : (BitVec.ofNat 32 R).toNat = R := by
-  rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt (by omega)
+  rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt (by omega_using [h])
 
 /-- The regions the callee is given. -/
 abbrev xRd (sp W : BitVec 32) : List Region := [⟨State.addr W, 240⟩, ⟨State.addr sp - BitVec.ofNat 64 8, 8⟩]
@@ -119,17 +119,17 @@ namespace XPre
 variable {s : State} {W T D S : BitVec 32} {N R : Nat} (h : XPre s W T D S N R)
 include h
 
-theorem h8 : 4 * [Reg.r12, .lr].length ≤ s.sp.toNat := by have := h.sp16; simp; omega
+theorem h8 : 4 * [Reg.r12, .lr].length ≤ s.sp.toNat := by have := h.sp16; simp; omega_using [this]
 
 theorem below_sub : Region.Sub ⟨State.addr s.sp - BitVec.ofNat 64 8, 8⟩ (stk16 s.sp) :=
-  Argon2.Arm.stkR_sub (by decide) (by have := h.sp16; omega)
+  Argon2.Arm.stkR_sub (by decide) (by have := h.sp16; omega_using [this])
 
 omit h in
 theorem view_sp : (xView s W T D S N).sp = s.sp - BitVec.ofNat 32 8 := rfl
 
 theorem view_below : (⟨State.addr (xView s W T D S N).sp - BitVec.ofNat 64 8, 8⟩ : Region) =
     ⟨State.addr s.sp - BitVec.ofNat 64 16, 8⟩ := by
-  rw [view_sp, addr_sub' (by have := h.sp16; omega), BitVec.sub_sub, ← BitVec.ofNat_add]
+  rw [view_sp, addr_sub' (by have := h.sp16; omega_using [this]), BitVec.sub_sub, ← BitVec.ofNat_add]
 
 omit h in
 theorem below2_sub : Region.Sub ⟨State.addr s.sp - BitVec.ofNat 64 16, 8⟩ (stk16 s.sp) :=
@@ -152,14 +152,14 @@ theorem pre (enc : Bool) : (modeArm (AesXts.xtsMode enc)).pre (xView s W T D S N
   have hR := toNat_r h.rounds
   have hN := toNat_n h.n
   have hsp : (xView s W T D S N).sp.toNat = s.sp.toNat - 8 := by
-    rw [view_sp]; exact sub_toNat' (by have := h.sp16; omega)
+    rw [view_sp]; exact sub_toNat' (by have := h.sp16; omega_using [this])
   simp only [modeArm, h.arg0, h.arg1, h.argAddr, view_gpr .r0 (by decide), view_gpr .r1 (by decide),
     view_gpr .r2 (by decide), view_gpr .r3 (by decide), h.r0, h.r1, h.r2, h.r3, hR, hN, State.withRegions_rd,
     State.withRegions_wr, h.view_below, hsp]
   refine ⟨trivial, trivial, h.wt, h.wd, h.ws, h.td, h.ts, h.ds, (h.stkT.sub_left h.below_sub).symm,
     (h.stkD.sub_left h.below_sub).symm, (h.stkS.sub_left h.below_sub).symm, h.stkW.sub_left below2_sub,
     h.stkT.sub_left below2_sub, h.stkD.sub_left below2_sub, h.stkS.sub_left below2_sub,
-    h.fitW, h.fitT, h.fitD, h.fitS, by have := h.sp16; omega, by have := s.sp.isLt; omega, h.rounds⟩
+    h.fitW, h.fitT, h.fitD, h.fitS, by have := h.sp16; omega_using [this], by have := s.sp.isLt; omega_using [], h.rounds⟩
 
 theorem cov : Covers (xRd s.sp W ++ xWr T D S N) ((pushed [.r12, .lr] s).rd ++ (pushed [.r12, .lr] s).wr) := by
   intro x n' ⟨r, hr, hc⟩
@@ -171,7 +171,7 @@ theorem cov : Covers (xRd s.sp W ++ xWr T D S N) ((pushed [.r12, .lr] s).rd ++ (
     · exact List.mem_append_left _ h'
     · exact List.mem_append_right _ (by rw [pushed_wr]; exact List.mem_cons_of_mem _ h')
   · refine ⟨_, List.mem_append_right _ (by rw [pushed_wr]; exact List.mem_cons_self ..), ?_⟩
-    rwa [show 4 * [Reg.r12, .lr].length = 8 from rfl, addr_sub' (by have := h.sp16; omega)]
+    rwa [show 4 * [Reg.r12, .lr].length = 8 from rfl, addr_sub' (by have := h.sp16; omega_using [this])]
   all_goals
     obtain ⟨r', hr', hc'⟩ := h.writes x n' ⟨_, by simp, hc⟩
     exact ⟨r', List.mem_append_right _ (by rw [pushed_wr]; exact List.mem_cons_of_mem _ hr'), hc'⟩
@@ -188,7 +188,7 @@ theorem push_keeps {X : Region} (hX : (stk16 s.sp).Disjoint X) (hn : X.len ≤ 2
     bytesAt (pushed [.r12, .lr] s).mem X.base X.len = bytesAt s.mem X.base X.len :=
   Proof.Cmac.bytesAt_frame h.fp (fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr
-    exact (hX.sub_left (Argon2.Arm.stkR_sub (a := 4 * [Reg.r12, .lr].length) (b := 16) (by decide) (by have := h.sp16; omega))).symm) hn
+    exact (hX.sub_left (Argon2.Arm.stkR_sub (a := 4 * [Reg.r12, .lr].length) (b := 16) (by decide) (by have := h.sp16; omega_using [this]))).symm) hn
 
 end XPre
 
@@ -203,19 +203,19 @@ theorem xts_call (enc : Bool) {s : State} {W T D S : BitVec 32} {N R : Nat} (h :
   have hR := toNat_r h.rounds
   have hN := toNat_n h.n
   refine Argon2.Arm.frameCall_ok (rs := [.r12, .lr]) (t := .r12) (by decide) (by decide) (by decide)
-    (n := xname enc) (c := xcode enc) (xts_ok enc) (K := 16) (by have := xts_stack enc; simp; omega) h.sp16 (h.pre enc) h.cov h.covW ?_
+    (n := xname enc) (c := xcode enc) (xts_ok enc) (K := 16) (by have := xts_stack enc; simp; omega_using [this]) h.sp16 (h.pre enc) h.cov h.covW ?_
   intro s₂ a hpost
-  have hRb : 16 * (R + 1) ≤ 240 := by rcases h.rounds with h' | h' | h' <;> omega
+  have hRb : 16 * (R + 1) ≤ 240 := by rcases h.rounds with h' | h' | h' <;> omega_using [h']
   have eW : bytesAt (pushed [.r12, .lr] s).mem (State.addr W) (16 * (R + 1)) =
       bytesAt s.mem (State.addr W) (16 * (R + 1)) :=
-    h.push_keeps (X := ⟨State.addr W, 16 * (R + 1)⟩) (h.stkW.sub_right (Region.sub_prefix hRb)) (by dsimp only; omega)
+    h.push_keeps (X := ⟨State.addr W, 16 * (R + 1)⟩) (h.stkW.sub_right (Region.sub_prefix hRb)) (by dsimp only; omega_using [hR])
   have eT : bytesAt (pushed [.r12, .lr] s).mem (State.addr T) 16 = bytesAt s.mem (State.addr T) 16 :=
     h.push_keeps (X := ⟨State.addr T, 16⟩) h.stkT (by simp)
   have eD : Spec.Cbc.blocksAt (pushed [.r12, .lr] s).mem (State.addr D) N = Spec.Cbc.blocksAt s.mem (State.addr D) N :=
     blocksAt_frame h.fp (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
-      exact (h.stkD.sub_left (Argon2.Arm.stkR_sub (a := 4 * [Reg.r12, .lr].length) (b := 16) (by decide) (by have := h.sp16; omega))).symm)
-      (by have := h.fitD; omega)
+      exact (h.stkD.sub_left (Argon2.Arm.stkR_sub (a := 4 * [Reg.r12, .lr].length) (b := 16) (by decide) (by have := h.sp16; omega_using [this]))).symm)
+      (by have := h.fitD; omega_using [hN])
   simp only [modeArm, AesXts.xtsMode, State.withRegions_mem, State.callEntry_mem, h.arg0,
     XPre.view_gpr .r0 (by decide), XPre.view_gpr .r1 (by decide), XPre.view_gpr .r2 (by decide),
     XPre.view_gpr .r3 (by decide), h.r0, h.r1, h.r2, h.r3, hR, hN, Proof.AesXts.Unit.length_blocksAt,

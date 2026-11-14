@@ -34,7 +34,7 @@ theorem body_eq (stage : List Instr) (privN : String) (priv : Prog isa) (v : Com
 theorem rOf_setWidth (x : BitVec 64) : (rOf x).setWidth 32 = x.setWidth 32 := by
   apply BitVec.eq_of_toNat_eq
   simp only [rOf, BitVec.toNat_setWidth]
-  omega
+  omega_using []
 
 theorem rOf_one (x : BitVec 64) : decide (rOf x = 1) = decide (x.setWidth 32 = 1) := by
   have : rOf x = 1 ↔ x.setWidth 32 = 1 := by
@@ -96,11 +96,11 @@ theorem result_ok {P : Nat} {s : State} (h : (decSpec P).pre s) {x0c : BitVec 64
     rw [hO] at hres
     obtain ⟨hr, hb⟩ := hres
     have hok : decide (rOf x0c = 1) = true := by rw [rOf_one, hr]; rfl
-    rw [Proof.RsaPkcs1Enc.decryptWith_of_ok hC (by rw [hn]; omega) (eO.trans hO)]
+    rw [Proof.RsaPkcs1Enc.decryptWith_of_ok hC (by rw [hn]; omega_using [hk64]) (eO.trans hO)]
     subst hb
     have hEMl := bytesAt_length mc (lay P s).out (lay P s).k.toNat
     have hal := Proof.RsaPkcs1Enc.altLength_le (lay P s).k.toNat (clOf kd)
-    obtain ⟨hL1, hmap⟩ := Proof.RsaPkcs1Enc.sel_eq hEMl hAM (by omega) hal
+    obtain ⟨hL1, hmap⟩ := Proof.RsaPkcs1Enc.sel_eq hEMl hAM (by omega_using [hk64]) hal
     have hM : Spec.RsaPkcs1Enc.implicitDecode (dOf (lay P s) s.mem) (cOf (lay P s) s.mem)
         (Spec.Rsa.bytesAt mc (lay P s).out (lay P s).k.toNat) =
         (if Spec.RsaPkcs1Enc.valid (Spec.Rsa.bytesAt mc (lay P s).out (lay P s).k.toNat) then
@@ -127,7 +127,7 @@ theorem result_ok {P : Nat} {s : State} (h : (decSpec P).pre s) {x0c : BitVec 64
     rw [hO] at hres
     obtain ⟨hr, -⟩ := hres
     have hok : decide (rOf x0c = 1) = false := by rw [rOf_one, hr]; rfl
-    rw [Proof.RsaPkcs1Enc.decryptWith_of_fault hC (by rw [hn]; omega) (eO.trans hO)]
+    rw [Proof.RsaPkcs1Enc.decryptWith_of_fault hC (by rw [hn]; omega_using [hk64]) (eO.trans hO)]
     refine ⟨by rw [hx0, rOf_setWidth, hr], ?_, ?_⟩
     · rw [hbytes, List.map_congr_left (g := fun _ => (0 : Byte)) fun i hi => by
         rw [hout i (List.mem_range.mp hi), hok, Proof.RsaPkcs1Enc.outByte_false]]
@@ -147,11 +147,11 @@ theorem decW_ok (v : Compress) {P : Nat} (hP : 16 ≤ P) {s : State} {R₀ X : L
   have hpQ := hL.pQ
   have hsp : P + 240 ≤ s.sp.toNat := spec_sp (s := s.withRegions R₀ s.wr) h
   have hP16 : 16 ≤ (layW P s X pre prl).P := hP
-  refine WP.frame (by omega) (WP.alloc (by decide) ?_ ?_)
+  refine WP.frame (by omega_using [hsp]) (WP.alloc (by decide) ?_ ?_)
   · show 224 ≤ (s.sp - 16).toNat
-    rw [BitVec.toNat_sub_of_le (by show 16 ≤ s.sp.toNat; omega)]
+    rw [BitVec.toNat_sub_of_le (by show 16 ≤ s.sp.toNat; omega_using [hsp])]
     show 224 ≤ s.sp.toNat - 16
-    omega
+    omega_using [hsp]
   · show WP isa (bodyWith (HH v) stage name priv) (entered s) _
     rw [body_eq]
     refine WP.seq (WP.mono hcall fun t hw => ?_)
@@ -194,7 +194,7 @@ theorem dec_ok (v : Compress) (pv : PrivImpl) {s : State} (h : (decSpec (pv.S + 
     WP isa (code (HH v) pv.name pv.code) s fun s' => abiPreserved s s' ∧ (decSpec (pv.S + 1)).post s s' := by
   have hS := pv.S15
   have hL := lay_ok h
-  exact decW_ok v (by omega) (R₀ := s.rd) (X := []) h setup pv.name pv.code
+  exact decW_ok v (by omega_using [hS]) (R₀ := s.rd) (X := []) h setup pv.name pv.code
     (WP.mono (entry_ok h) fun t ⟨hc, hr⟩ => priv_call pv hL rfl hc hr)
 
 end VG.Proof.RsaPkcs1Enc.AArch64.Dec

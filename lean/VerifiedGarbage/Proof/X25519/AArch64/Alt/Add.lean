@@ -45,8 +45,8 @@ theorem addChain_ok {s : State} {base : Addr} (hs : Scr s base large) {a b : Nat
   have _hcap := workSize_le large
   obtain ⟨aa, ab, ac⟩ := ha
   obtain ⟨ba, bb, bc⟩ := hb
-  have a16 : (a + 16) % 8 = 0 := by omega
-  have b16 : (b + 16) % 8 = 0 := by omega
+  have a16 : (a + 16) % 8 = 0 := by omega_using [aa]
+  have b16 : (b + 16) % 8 = 0 := by omega_using [ba]
   have w3 : Reg.x3 ≠ .x0 := by decide
   have w4 : Reg.x4 ≠ .x0 := by decide
   have w5 : Reg.x5 ≠ .x0 := by decide
@@ -55,12 +55,12 @@ theorem addChain_ok {s : State} {base : Addr} (hs : Scr s base large) {a b : Nat
   have w8 : Reg.x8 ≠ .x0 := by decide
   apply WP.of_runBlock
   simp only [runBlock_cons, runStep_some, runBlock_nil,
-    ldp_sc hs aa (by omega) (by omega) (by decide : Reg.x3 ≠ .x4),
-    ldp_sc ((hs.write w3 _).write w4 _) ba (by omega) (by omega) (by decide : Reg.x7 ≠ .x8),
+    ldp_sc hs aa (by omega_using [ab]) (by omega_using [ac]) (by decide : Reg.x3 ≠ .x4),
+    ldp_sc ((hs.write w3 _).write w4 _) ba (by omega_using [bb]) (by omega_using [bc]) (by decide : Reg.x7 ≠ .x8),
     ldp_sc (((((hs.write w3 _).write w4 _).write w7 _).write w8 _).awc w3 _ _ _ |>.awc w4 _ _ _)
-      a16 (by omega) (by omega) (by decide : Reg.x5 ≠ .x6),
+      a16 (by omega_using [ab]) (by omega_using [ac]) (by decide : Reg.x5 ≠ .x6),
     ldp_sc ((((((((hs.write w3 _).write w4 _).write w7 _).write w8 _).awc w3 _ _ _).awc w4 _ _ _).write
-      w5 _).write w6 _) b16 (by omega) (by omega) (by decide : Reg.x7 ≠ .x8),
+      w5 _).write w6 _) b16 (by omega_using [bb]) (by omega_using [bc]) (by decide : Reg.x7 ≠ .x8),
     exec_adds_x, exec_adcs_x, Option.some.injEq, exists_eq_left']
   simp only [RegUpd.mem_write, RegUpd.mem_addWithCarry, RegUpd.gpr_write,
     RegUpd.gpr_addWithCarry, RegUpd.c_addWithCarry, RegUpd.c_write, reduceCtorEq,
@@ -73,7 +73,7 @@ theorem addChain_ok {s : State} {base : Addr} (hs : Scr s base large) {a b : Nat
       (word s.mem base (a + 16)) (word s.mem base (a + 24))
       (word s.mem base b) (word s.mem base (b + 8))
       (word s.mem base (b + 16)) (word s.mem base (b + 24)) false
-    rw [show a + 16 + 8 = a + 24 by omega, show b + 16 + 8 = b + 24 by omega]
+    rw [show a + 16 + 8 = a + 24 by omega_using [], show b + 16 + 8 = b + 24 by omega_using []]
     dsimp only [fe, addCarry, carryOut, Size.bits] at h ⊢
     rw [Bool.toNat_false, Nat.add_zero] at h
     exact h
@@ -110,7 +110,7 @@ theorem addFold_ok (s : State) (hz : s.gpr .x17 = 0)
     dsimp only [addCarry, carryOut, Size.bits] at e0 e1 e2 e3 ⊢
     have z : (0 : BitVec 64).toNat = 0 := rfl
     simp only [val4, Bool.toNat_false, Nat.add_zero, z] at e0 e1 e2 e3 hb ⊢
-    omega
+    omega_using [hb, hv, e0, e1, e2, e3]
   · intro r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
     simp only [RegUpd.gpr_write, RegUpd.gpr_addWithCarry, hr.1, hr.2.1,
@@ -131,7 +131,7 @@ theorem addTwice4_ok {s : State} {base : Addr} (hs : Scr s base large) {o a b : 
   rw [WP.block_append_iff]
   have hc := Bool.toNat_le s₁.c
   have _hv := val4_lt (s₁.gpr .x3) (s₁.gpr .x4) (s₁.gpr .x5) (s₁.gpr .x6)
-  refine WP.mono (addFold_ok s₁ ((k1.gpr _ (by decide)).trans hz) (by omega))
+  refine WP.mono (addFold_ok s₁ ((k1.gpr _ (by decide)).trans hz) (by omega_using [hsum, e1, _hv]))
     fun s₂ ⟨e2, k2⟩ => ?_
   have hs₂ := hs₁.of_keeps k2 (by decide)
   refine WP.mono (store4_ok hs₂ ho.1 ho.2.1 ho.2.2 .x3 .x4 .x5 .x6) fun t ht => ?_
@@ -145,8 +145,8 @@ theorem addTwice4_ok {s : State} {base : Addr} (hs : Scr s base large) {o a b : 
       not_false_eq_true]), k1.gpr _ (by simp only [List.mem_cons, List.not_mem_nil, or_false, hr,
       not_false_eq_true])]
   · rw [mem_withMem, ← m2]
-    exact st4_outside _ _ (by omega) _ _ _ _
-  · rw [mem_withMem, fe_st4 _ _ (by omega), e2]
-    omega
+    exact st4_outside _ _ (by omega_using [_hcap, _ho]) _ _ _ _
+  · rw [mem_withMem, fe_st4 _ _ (by omega_using [_hcap, _ho]), e2]
+    omega_using [e1]
 
 end VG.Proof.X25519.AArch64.Alt

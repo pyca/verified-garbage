@@ -34,16 +34,16 @@ theorem context_readEnv {p : Parameters} {s : State} {count : Nat} {dom bs : Lis
   congr 2
   ring
  have fit (j i : Nat) (hj : j<32) (hi : i<p.w) : 3+(2+j)*p.w+i<count := by
-  have multiple := Nat.mul_le_mul_right p.w (show 2+j≤33 by omega)
+  have multiple := Nat.mul_le_mul_right p.w (show 2+j≤33 by omega_using [hj])
   rw [countEq]
-  omega
+  omega_using [hi, multiple]
  refine ⟨scalar,scalarLength,scalarOutside,?_,?_,?_⟩
  · intro j hj i hi
    rw [address]
    exact readable _ (fit j i hj hi)
  · intro j hj i hi b hb
    rw [address,BitVec.add_assoc,←BitVec.ofNat_add]
-   exact outside _ (by have := fit j i hj hi;omega)
+   exact outside _ (by have := fit j i hj hi;omega_using [hb, this])
  · intro j hj
    have entry := context_table_entry length valid canonical hj
    have equal : wv s.mem p.table (8*p.w*j) p.w=wv s.mem p.ctx (24+16*p.w+8*p.w*j) p.w := by
@@ -82,7 +82,7 @@ theorem ContextView.after_inscr {s t : State} {B ctx : Addr} {Z count k : Nat} {
     simp only [Spec.Rsa.wordsAt,List.getElem_map,List.getElem_range]
     apply Mem.readW_congr
     intro j hj
-    have outside := view.outside (8*i+j) (by omega)
+    have outside := view.outside (8*i+j) (by omega_using [bound, hj])
     exact frame _ (by simpa only [BitVec.ofNat_add,BitVec.add_assoc] using outside)
  refine ⟨?_,?_,view.outside⟩
  · unfold Spec.Ffdh.generationContextAt
@@ -105,16 +105,16 @@ theorem ContextView.after_output {s t : State} {B ctx out : Addr} {Z count k : N
     intro r hr
     simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
     rcases hr with rfl|rfl
-    · have sep := view.outside (8*i+j) (by omega)
+    · have sep := view.outside (8*i+j) (by omega_using [bound, hj])
       have h : Z≤ofs B (ctx+BitVec.ofNat 64 (8*i)+BitVec.ofNat 64 j) :=
        by simpa only [BitVec.ofNat_add,BitVec.add_assoc] using sep
       change ¬ofs B (ctx+BitVec.ofNat 64 (8*i)+BitVec.ofNat 64 j)+1≤Z
-      omega
-    · have sep := outside (8*i+j) (by omega)
+      omega_using [h]
+    · have sep := outside (8*i+j) (by omega_using [bound, hj])
       have h : k≤ofs out (ctx+BitVec.ofNat 64 (8*i)+BitVec.ofNat 64 j) :=
        by simpa only [BitVec.ofNat_add,BitVec.add_assoc] using sep
       change ¬ofs out (ctx+BitVec.ofNat 64 (8*i)+BitVec.ofNat 64 j)+1≤k
-      omega
+      omega_using [h]
  refine ⟨?_,?_,view.outside⟩
  · unfold Spec.Ffdh.generationContextAt
    rw [words]

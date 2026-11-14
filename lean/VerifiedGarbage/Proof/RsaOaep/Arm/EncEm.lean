@@ -95,7 +95,7 @@ theorem em1_vp (P : EP) :
   refine VP.seq (G := fun σ s => (Ctx (P.lay h.H.D) P.scr σ s ∧ K0 h P σ) ∧ s.gpr .r0 = P.scr + BitVec.ofNat 32 oEm ∧
       s.gpr .r2 = 0 ∧ s.gpr .lr = BitVec.ofNat 32 P.K)
     (VP.blk (blkOk rfl) (fun _ _ _ _ h₁ h₂ => h₁.1.st.sp.trans h₂.1.st.sp.symm) fun σ s ⟨hc, hi, hf⟩ => ?_)
-    ((zero_vp (hg.wbuf (o := oEm) (n := P.K) (by oomega) (by omega)) (by omega) (Inv := fun σ _ => K0 h P σ)
+    ((zero_vp (hg.wbuf (o := oEm) (n := P.K) (by oomega) (by omega_using [hK0])) (by omega_using [hK0]) (Inv := fun σ _ => K0 h P σ)
       fun σ m m' hm _ => hm).mono (fun σ s ⟨⟨hc, hm⟩, r0, r2, lr⟩ => ⟨hc, hm, r0, r2, lr⟩)
       fun σ s ⟨hc, hm, hz⟩ => ⟨⟨hc, hm⟩, fun i hi => by rw [emV, ← hg.byteAt_scr (by oomega)]; exact hz i hi⟩)
   obtain ⟨⟨a3, r3, v3⟩, -⟩ := argV h hi hc.st
@@ -137,7 +137,7 @@ theorem em2_vp (P : EP) :
   have hsd : RBuf (P.lay h.H.D) P.seed h.H.D := by
     have hf := hi₀.ok.fits (P.SEED h.H.D) (by simp)
     simp only [Proof.X25519.Arm.addr_toNat] at hf
-    exact ⟨hf, by omega, ⟨P.SEED h.H.D, by simp, Region.contains_self _ _⟩⟩
+    exact ⟨hf, by omega_using [hD], ⟨P.SEED h.H.D, by simp, Region.contains_self _ _⟩⟩
   have sep : Region.Disjoint ⟨State.addr P.seed, h.H.D⟩ ⟨State.addr (P.scr + BitVec.ofNat 32 (oEm + 1)), h.H.D⟩ := by
     rw [hg.addr (by oomega)]
     exact (ok.rw_ro (w := P.SCR) (r := P.SEED h.H.D) (by simp) (by simp)).symm.sub_right
@@ -158,7 +158,7 @@ theorem em2_vp (P : EP) :
     have hw : WP isa (.block (seedSet h.H)) s fun t => t.mem = s.mem ∧ t.rd = s.rd ∧ t.wr = s.wr ∧ t.sp = s.sp ∧
         t.gpr .r0 = P.scr + BitVec.ofNat 32 (oEm + 1) ∧ t.gpr .r1 = P.seed ∧ t.gpr .lr = BitVec.ofNat 32 h.H.D := by
       prun [seedSet, atS, sp0, ld, mw, hc.st.sp, hc.aFr hg, hc.rFr hg, hc.slotS, a10, r10, v10, arg_lt,
-        movw_val (show oEm + 1 < 2 ^ 16 by decide), movw_val (show h.H.D < 2 ^ 16 by omega)]
+        movw_val (show oEm + 1 < 2 ^ 16 by decide), movw_val (show h.H.D < 2 ^ 16 by omega_using [hD])]
     refine WP.mono hw fun t ⟨m, rd, wr, sp, r0, r1, lr⟩ => ⟨⟨hc.regs rd wr sp m, ⟨hi, hf⟩, ?_, fun i h1 h2 => ?_⟩,
       r0, r1, lr, ?_⟩
     · rw [emV, m]; exact hz 0 (by omega)
@@ -204,11 +204,11 @@ theorem z2_emv {P : EP} {σ : State} {m : Mem} (hz : Z2 h P (seedB h P σ) m) : 
   obtain ⟨z0, sd, zr⟩ := hz
   simp only [e2]
   by_cases h1 : 1 ≤ i ∧ i < 1 + h.H.D
-  · rw [ite_eq_left h1, show i = 1 + (i - 1) by omega, sd _ (by omega), Nat.add_sub_cancel_left]
+  · rw [ite_eq_left h1, show i = 1 + (i - 1) by omega_using [h1], sd _ (by omega_using [h1]), Nat.add_sub_cancel_left]
   · rw [ite_eq_right h1]
     by_cases h0 : i = 0
     · subst h0; exact z0
-    · exact zr i (by omega) hi
+    · exact zr i (by omega_using [h1, h0]) hi
 
 theorem add_ofNat_sub {x : BitVec 32} {a b : Nat} (hb : b ≤ a) :
     x + BitVec.ofNat 32 a - BitVec.ofNat 32 b = x + BitVec.ofNat 32 (a - b) := by
@@ -239,8 +239,8 @@ theorem tblL_of {D : Nat} {P : EP} {σ : State} (hi : In D P σ) :
   simp only [Sig.tableRegion, Proof.X25519.Arm.addr_toNat] at hf
   refine ⟨P.TABL, by simp, fun o ho => ?_⟩
   show (⟨State.addr P.tabL, 11 * (32 / 8)⟩ : Region).Contains (State.addr (P.tabL + BitVec.ofNat 32 o)) 4
-  rw [VG.Arm.addr_add (by omega)]
-  exact Offset.contains_base _ (by omega) (by omega)
+  rw [VG.Arm.addr_add (by omega_using [hf, ho])]
+  exact Offset.contains_base _ (by omega_using [ho]) (by omega_using [ho])
 
 /-- What the label's hash keeps, with its table's address in its slot. -/
 abbrev L0 (P : EP) (σ : State) (m : Mem) : Prop :=
@@ -345,7 +345,7 @@ theorem em4_vp (P : EP) :
         t.gpr .lr = BitVec.ofNat 32 h.H.D := by
       prun [lhSet, atS, sp0, ld, mw, hc.st.sp, hc.aFr hg, hc.rFr hg, hc.slotS,
         movw_val (show oEm + 1 + h.H.D < 2 ^ 16 by oomega), movw_val (show oDig < 2 ^ 16 by decide),
-        movw_val (show h.H.D < 2 ^ 16 by omega)]
+        movw_val (show h.H.D < 2 ^ 16 by omega_using [hD])]
     refine WP.mono hw fun t ⟨m, rd, wr, sp, r0, r1, lr⟩ => ⟨⟨hc.regs rd wr sp m, ⟨hi, hf⟩, fun i hi _ => ?_⟩,
       r0, r1, lr, fun i hi => ?_⟩
     · rw [m]; exact he i hi
@@ -361,8 +361,8 @@ theorem em4_vp (P : EP) :
     by_cases hr : 1 + h.H.D ≤ i ∧ i < 1 + 2 * h.H.D
     · rw [ite_eq_left hr, emV, show oEm + i = oEm + 1 + h.H.D + (i - (1 + h.H.D)) by oomega,
         ← hg.byteAt_scr (by oomega)]
-      exact hb _ (by omega)
-    · rw [ite_eq_right hr]; exact ho i hi (by omega)
+      exact hb _ (by omega_using [hr])
+    · rw [ite_eq_right hr]; exact ho i hi (by omega_using [hr])
 
 theorem put1_cert : ∃ hc, (VG.Taint.check VG.Arm.taint (Taint.ofRegs [.r0, .lr])
     (.block put1) hc).isSome = true := ⟨_, by taint_decide⟩
@@ -396,7 +396,7 @@ theorem em5_vp (P : EP) :
         t.gpr .lr = BitVec.ofNat 32 P.ml := by
       prun [msgPos, atS, sp0, ld, mw, hc.st.sp, hc.aFr hg, hc.rFr hg, hc.slotS, a3, r3, v3, a8, r8, v8, a9, r9, v9,
         arg_lt, movw_val (show oEm < 2 ^ 16 by decide), BitVec.add_assoc, BitVec.ofNat_add_ofNat,
-        add_ofNat_sub (x := P.scr) (a := oEm + P.K) (b := P.ml) (by omega),
+        add_ofNat_sub (x := P.scr) (a := oEm + P.K) (b := P.ml) (by omega_using [hfit]),
         add_ofNat_sub_one (x := P.scr) (a := oEm + P.K - P.ml) (by oomega)]
       rw [show oEm + P.K - P.ml - 1 = oEm + (P.K - P.ml - 1) by oomega]
     exact WP.mono hw fun t ⟨m, rd, wr, sp, r0, r1, lr⟩ => ⟨⟨⟨hc.regs rd wr sp m, hi, hf'⟩, m ▸ he⟩, r0, r1, lr⟩
@@ -417,14 +417,14 @@ theorem em5_vp (P : EP) :
       rfl
     refine WP.mono hw fun t ⟨m, rd, wr, sp, t0, t1, tl, z⟩ => ?_
     have fr : Frame [sR P.scr (oEm + (P.K - P.ml - 1)) 1] s.mem t.mem := by
-      rw [m]; exact frame_byte P.scr _ _ (Nat.le_refl _) (by omega) (by oomega)
+      rw [m]; exact frame_byte P.scr _ _ (Nat.le_refl _) (by omega_using []) (by oomega)
     refine ⟨⟨⟨ctxW hg hc fr (fun r hr => .inl ⟨oEm + (P.K - P.ml - 1), 1, by oomega,
       by simpa using hr⟩) rd wr sp, hi, hf'⟩,
       fun i hi' => ?_⟩, by rw [t0, show oEm + (P.K - P.ml - 1) + 1 = oEm + (P.K - P.ml) by oomega], t1, tl, z⟩
     rw [emV, m, sa_write P.scr _ _ (by oomega) (by oomega)]
     by_cases e : i = P.K - P.ml - 1
-    · rw [ite_eq_left (by omega)]; exact (ite_eq_left e).symm
-    · rw [ite_eq_right (by omega)]; exact (he i hi').trans (ite_eq_right e).symm
+    · rw [ite_eq_left (by omega_using [e])]; exact (ite_eq_left e).symm
+    · rw [ite_eq_right (by omega_using [e])]; exact (he i hi').trans (ite_eq_right e).symm
 
 /-- The message at the end of `EM`, if it is not empty. -/
 theorem em6_vp (P : EP) :
@@ -447,16 +447,16 @@ theorem em6_vp (P : EP) :
   refine VP.ite (fun _ _ _ _ h₁ h₂ => by rw [VG.Proof.X25519.Arm.eval_eq, VG.Proof.X25519.Arm.eval_eq, h₁.2.2.2.2,
       h₂.2.2.2.2]) (VP.block_nil fun σ s ⟨⟨⟨hc, he⟩, _, _, _, z⟩, e⟩ => ⟨hc, fun i hi => ?_⟩) ?_
   · have h0 : P.ml = 0 := by rw [VG.Proof.X25519.Arm.eval_eq, z] at e; simpa using e
-    rw [he i hi]; exact (ite_eq_right (by omega)).symm
+    rw [he i hi]; exact (ite_eq_right (by omega_using [h0])).symm
   by_cases h0 : P.ml = 0
   · exact VP.empty fun σ s ⟨⟨_, _, _, _, z⟩, e⟩ => by
       rw [VG.Proof.X25519.Arm.eval_eq, z, decide_eq_true h0] at e; exact absurd e (by decide)
   have hm := hi₀.ok.fits P.MSG (by simp)
   simp only [Proof.X25519.Arm.addr_toNat] at hm
   have hmsg : RBuf (P.lay h.H.D) P.msg P.ml := ⟨hm, hi₀.ml32, ⟨P.MSG, by simp, Region.contains_self _ _⟩⟩
-  refine (copy_vp (hg.wbuf (o := oEm + (P.K - P.ml)) (n := P.ml) (by oomega) (by omega)) hmsg
+  refine (copy_vp (hg.wbuf (o := oEm + (P.K - P.ml)) (n := P.ml) (by oomega) (by omega_using [h0])) hmsg
     (by rw [hg.addr (by oomega)]; exact (hg.ro ok (by oomega) (R := P.MSG) (by simp)).symm)
-    (by omega) (f := fun σ i => (msgB P σ).getD i 0)
+    (by omega_using [h0]) (f := fun σ i => (msgB P σ).getD i 0)
     (Inv := fun σ m => K0 h P σ ∧ ∀ i < P.K, i < P.K - P.ml → emV P.scr m i = e4 h P σ i)
     fun σ m m' ⟨k, ho⟩ hf' => ?_).mono
     (fun σ s ⟨⟨⟨⟨hc, hi, hf'⟩, he⟩, r0, r1, lr, _⟩, _⟩ => ⟨hc, ⟨⟨hi, hf'⟩, fun i hi _ => he i hi⟩, r0, r1, lr,
@@ -479,8 +479,8 @@ theorem em6_vp (P : EP) :
     by_cases hr : P.K - P.ml ≤ i ∧ i < P.K
     · rw [ite_eq_left hr, emV, show oEm + i = oEm + (P.K - P.ml) + (i - (P.K - P.ml)) by oomega,
         ← hg.byteAt_scr (by oomega)]
-      exact hs _ (by omega)
-    · rw [ite_eq_right hr]; exact ho i hi (by omega)
+      exact hs _ (by omega_using [h0, hi])
+    · rw [ite_eq_right hr]; exact ho i hi (by omega_using [hi, hr])
 
 /-! ## `EM` -/
 
@@ -488,20 +488,20 @@ theorem e5_emAt {P : EP} {σ : State} (hf : fits h P) {m : Mem} (he : EMv P m (e
     Proof.RsaOaep.EmAt (emV P.scr m) P.K h.H.D (seedB h P σ) (lhB h P σ) (msgB P σ) P.ml := by
   have hfit : 2 * h.H.D + 2 + P.ml ≤ P.K := hf
   refine ⟨?_, fun i hi => ?_, fun i hi => ?_, fun i h1 h2 => ?_, ?_, fun i hi => ?_⟩
-  · rw [he 0 (by omega)]; simp only [e5, e4, e3, e2]
-    rw [ite_eq_right (by omega), ite_eq_right (by omega), ite_eq_right (by omega), ite_eq_right (by omega)]
-  · rw [he _ (by omega)]; simp only [e5, e4, e3, e2]
-    rw [ite_eq_right (by omega), ite_eq_right (by omega), ite_eq_right (by omega), ite_eq_left (by omega),
+  · rw [he 0 (by omega_using [hfit])]; simp only [e5, e4, e3, e2]
+    rw [ite_eq_right (by omega_using [hfit]), ite_eq_right (by omega_using [hfit]), ite_eq_right (by omega_using []), ite_eq_right (by omega_using [])]
+  · rw [he _ (by omega_using [hfit, hi])]; simp only [e5, e4, e3, e2]
+    rw [ite_eq_right (by omega_using [hfit, hi]), ite_eq_right (by omega_using [hfit, hi]), ite_eq_right (by omega_using [hi]), ite_eq_left (by omega_using [hi]),
       Nat.add_sub_cancel_left]
-  · rw [he _ (by omega)]; simp only [e5, e4, e3]
-    rw [ite_eq_right (by omega), ite_eq_right (by omega), ite_eq_left (by omega),
-      show 1 + h.H.D + i - (1 + h.H.D) = i by omega]
-  · rw [he _ (by omega)]; simp only [e5, e4, e3, e2]
-    rw [ite_eq_right (by omega), ite_eq_right (by omega), ite_eq_right (by omega), ite_eq_right (by omega)]
-  · rw [he _ (by omega)]; simp only [e5, e4]
-    rw [ite_eq_right (by omega)]; exact ite_eq_left trivial
-  · rw [he _ (by omega)]; simp only [e5]
-    rw [ite_eq_left (by omega), show P.K - P.ml + i - (P.K - P.ml) = i by omega]
+  · rw [he _ (by omega_using [hfit, hi])]; simp only [e5, e4, e3]
+    rw [ite_eq_right (by omega_using [hfit, hi]), ite_eq_right (by omega_using [hfit, hi]), ite_eq_left (by omega_using [hi]),
+      show 1 + h.H.D + i - (1 + h.H.D) = i by omega_using []]
+  · rw [he _ (by omega_using [h2])]; simp only [e5, e4, e3, e2]
+    rw [ite_eq_right (by omega_using [h2]), ite_eq_right (by omega_using [h2]), ite_eq_right (by omega_using [h1]), ite_eq_right (by omega_using [h1])]
+  · rw [he _ (by omega_using [hfit])]; simp only [e5, e4]
+    rw [ite_eq_right (by omega_using [hfit])]; exact ite_eq_left trivial
+  · rw [he _ (by omega_using [hfit, hi])]; simp only [e5]
+    rw [ite_eq_left (by omega_using [hfit, hi]), show P.K - P.ml + i - (P.K - P.ml) = i by omega_using []]
 
 /-- `EM` before masking, from the checks' state when the message fits. -/
 theorem em_vp (P : EP) {f : Fns} (hTL : ∀ σ, P.TL σ → TabFacts h.H f P.tabL P.aiL P.auL P.afL σ)

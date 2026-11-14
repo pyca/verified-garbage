@@ -43,7 +43,7 @@ theorem zeroizeOut : PostOut (zeroizeContract X86_64.abi) (zeroizeSig.retBits 64
     simp only [bytesAt]
     refine List.map_congr_left fun i hi => ?_
     have := List.mem_range.mp hi
-    exact (hb _ (Offset.contains_base _ (by simp only [Elem.size]; omega) (by omega))).symm
+    exact (hb _ (Offset.contains_base _ (by simp only [Elem.size]; omega_using [e64, this]) (by omega_using [e64, this]))).symm
 
 def zeroizeKs : List Nat := keep_for% Spec.Zeroize.zeroizeApi.sig 0 Impl.Zeroize.X86_64.zeroize []
 

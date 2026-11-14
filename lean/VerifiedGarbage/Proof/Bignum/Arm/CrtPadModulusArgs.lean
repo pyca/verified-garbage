@@ -21,7 +21,7 @@ theorem crt_padModulusArgs_ok (s : State) {base dst : BitVec 32} {size : Nat}
   have enc : ∀ i : Fin 8, encodable (BitVec.ofNat 32 i.val) = true := by decide
   unfold padModulusArgs
   refine wp_ldr (a := off (State.addr base) 240) (by decide)
-    (by rw [ptr]; exact addr_add (by have := ws.nowrap; omega)) (ws.read fit) fun u h => ?_
+    (by rw [ptr]; exact addr_add (by have := ws.nowrap; omega_using [fit, this])) (ws.read fit) fun u h => ?_
   refine wp_mov (op2_imm (enc operand)) fun t j => WP.block_nil ?_
   exact ⟨(j.other .r4 (by decide)).trans (h.gpr.trans link), j.gpr,
     j.mem.trans h.mem, (h.rest (by simp)).trans (j.rest (by simp))⟩

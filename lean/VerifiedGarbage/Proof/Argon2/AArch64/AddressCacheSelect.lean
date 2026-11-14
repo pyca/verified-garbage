@@ -112,7 +112,7 @@ theorem Saved.read {s t : State} (h : Saved s t) (d : Nat)
     (hd : d + 8 ≤ 8 ∨ 16 ≤ d) (bound : d + 8 ≤ 272) :
     t.mem.readW (off (t.gpr .x19) d) 64 = s.mem.readW (off (s.gpr .x19) d) 64 := by
   rw [h.regs, h.mem]
-  exact Mem.readW_writeW_sep (Offset.sep _ hd (by omega) (by decide)) (by decide)
+  exact Mem.readW_writeW_sep (Offset.sep _ hd (by omega_using [bound]) (by decide)) (by decide)
 
 theorem Saved.words {s t : State} {p : Params} {pass lane slice old counter : Nat}
     (h : Saved s t) (words : AddressHeader.Words p pass lane slice old s)

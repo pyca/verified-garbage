@@ -59,14 +59,14 @@ theorem secret_step {p : Params}
     · subst j
       rw [ht.pa (p := (.x26, p.skLen + 1024 * i)) (show Reg.x26 ∈ keptRegs by decide)]
       exact hpoly
-    · exact h.lay.keepPoly ht (row_keep_prior p.skLen (p.ℓ + 2 * p.k) hi (by omega)) (h.polys j (by omega))
+    · exact h.lay.keepPoly ht (row_keep_prior p.skLen (p.ℓ + 2 * p.k) hi (by omega_using [hj, he])) (h.polys j (by omega_using [hj, he]))
 
 theorem secret_polys {p : Params}
     (hp : p = mlDsa44 ∨ p = mlDsa65 ∨ p = mlDsa87)
     {σ s : State} {key : List Byte} (h : SecretInv p σ key 0 s) :
     WP isa (seqR (secretPoly p) 0 (p.ℓ + 2 * p.k)) s (SecretInv p σ key (p.ℓ + 2 * p.k)) := by
   simpa only [Nat.zero_add] using seqR_ok (p.ℓ + 2 * p.k) 0
-    (fun i _ hi s h => secret_step hp (by omega) h) s h
+    (fun i _ hi s h => secret_step hp (by omega_using [hi]) h) s h
 
 theorem secret_body {p : Params}
     (hp : p = mlDsa44 ∨ p = mlDsa65 ∨ p = mlDsa87) (s : State)
@@ -80,7 +80,7 @@ theorem secret_body {p : Params}
       [((.x26, 0), p.skLen)] (.x25, 0) p.skLen = true := by
     simp only [keepB, List.all_cons, List.all_nil, Bool.and_true, sep25_26, in25,
       Bool.and_eq_true, decide_eq_true_eq]
-    omega
+    omega_using []
   have hinit : SecretInv p s (bytesAt s.mem (pa s (.x25, 0)) p.skLen) 0 u := by
     refine ⟨L.post hu, hu.mono (by simp [secretWrites]), h24, L.keepBytes hu hkeep, ?_, ?_⟩
     · rwa [hu.pa (p := (.x26, 0)) (by decide)]

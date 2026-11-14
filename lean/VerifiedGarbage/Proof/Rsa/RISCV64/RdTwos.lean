@@ -77,10 +77,10 @@ theorem gcd_ok [InvLaw] {s : State} {B : Addr} {Z w N : Nat} (h : Ws s B Z w N)
   unfold gcd
   -- The inputs.
   rw [wp_seqs_cons (List.cons_ne_nil _ _)]
-  refine WP.mono (copy_ok h (o := Impl.Rsa.RISCV64.InvBatch.aX) (a := aX2) (by rdidx) (by rdidx) (by omega)
+  refine WP.mono (copy_ok h (o := Impl.Rsa.RISCV64.InvBatch.aX) (a := aX2) (by rdidx) (by rdidx) (by omega_using [hN'])
     (by rdidx)) fun t1 ⟨h1', k1, e1, r1, _⟩ => ?_
   rw [wp_seqs_cons (List.cons_ne_nil _ _)]
-  refine WP.mono (copy_ok h1' (o := Impl.Rsa.RISCV64.InvBatch.aMin) (a := aU) (by rdidx) (by rdidx) (by omega)
+  refine WP.mono (copy_ok h1' (o := Impl.Rsa.RISCV64.InvBatch.aMin) (a := aU) (by rdidx) (by rdidx) (by omega_using [hN'])
     (by rdidx)) fun t2 ⟨h2, k2, e2, r2, _⟩ => ?_
   rw [k1.num (by decide) (by simp) (fit _ (by rdidx)), hu] at e2
   rw [hx] at e1
@@ -93,14 +93,14 @@ theorem gcd_ok [InvLaw] {s : State} {B : Addr} {Z w N : Nat} (h : Ws s B Z w N)
   · brun [h2.s9]
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.toNat_add, BitVec.toNat_ofNat]
-    omega
+    omega_using []
   have h3 := h2.of_keep k3
-  have ctx : InvBatch.Ctx t3 B Z w N (2 * w) := ⟨h3, s83, by omega, by omega, by omega, hw⟩
+  have ctx : InvBatch.Ctx t3 B Z w N (2 * w) := ⟨h3, s83, by omega_using [hw], by omega_using [], by omega_using [hN], hw⟩
   -- The GCD.
   rw [wp_seqs_cons (List.cons_ne_nil _ _)]
   refine WP.mono (InvLaw.gcd_ok ctx hN' (x := x) (m := u) (by rw [m3]; exact e1')
-    (by rw [← e1, show 32 * (2 * w) = 64 * w by omega]; exact wordsVal_lt _ _ _ _) (by rw [m3]; exact e2)
-    (by rw [← hu, show 32 * (2 * w) = 64 * w by omega]; exact wordsVal_lt _ _ _ _)
+    (by rw [← e1, show 32 * (2 * w) = 64 * w by omega_using []]; exact wordsVal_lt _ _ _ _) (by rw [m3]; exact e2)
+    (by rw [← hu, show 32 * (2 * w) = 64 * w by omega_using []]; exact wordsVal_lt _ _ _ _)
     hodd) fun t4 ⟨h4, K4, k4, g4⟩ => ?_
   have u4 : num t4.mem B w Impl.Rsa.RISCV64.InvBatch.aMin = u := by
     rw [K4.num (by decide) (by simp) (fit _ (by rdidx)), m3, e2]
@@ -110,37 +110,37 @@ theorem gcd_ok [InvLaw] {s : State} {B : Addr} {Z w N : Nat} (h : Ws s B Z w N)
   -- 1 where `u = 1`.
   rw [wp_seqs_cons (List.cons_ne_nil _ _)]
   refine WP.mono (eqS_ok h4 (d := sU1) (a := Impl.Rsa.RISCV64.InvBatch.aMin) (b := aOne) (by rdidx) (by rdidx)
-    (by omega) (by rdidx) (by decide)) fun t5 ⟨h5, K5, v5, k5⟩ => ?_
+    (by omega_using [hN']) (by rdidx) (by decide)) fun t5 ⟨h5, K5, v5, k5⟩ => ?_
   rw [u4, o4] at v5
   rw [wp_seqs_cons (List.cons_ne_nil _ _)]
   refine WP.mono (sel_ok h5 (o := Impl.Rsa.RISCV64.InvBatch.aY) (a := Impl.Rsa.RISCV64.InvBatch.aGcd) (b := aOne)
-    (sl := sU1) (by rdidx) (by rdidx) (by rdidx) (by omega) (by decide) (by rdidx) (by rdidx) (by decide)
+    (sl := sU1) (by rdidx) (by rdidx) (by rdidx) (by omega_using [hN']) (by decide) (by rdidx) (by rdidx) (by decide)
     (by rw [v5]; split <;> decide)) fun t6 ⟨h6, K6, v6, k6⟩ => ?_
   -- Into `wG`.
   refine WP.mono (copy_ok h6 (o := 2 * wG) (a := Impl.Rsa.RISCV64.InvBatch.aY) (by rdidx) (by rdidx)
-    (by omega) (by rdidx)) fun t ⟨h7, K7, v7, k7, o7⟩ => ?_
+    (by omega_using [hN']) (by rdidx)) fun t ⟨h7, K7, v7, k7, o7⟩ => ?_
   have F6 : Frame B w (gcdArrs.take 12) [sU1] s.mem t6.mem :=
     (k1.mono (by decide) (by simp)).trans ((k2.mono (by decide) (by simp)).trans
       ((show Frame B w (gcdArrs.take 12) [sU1] t2.mem t3.mem by rw [m3]; exact Frame.refl _ _ _ _ _).trans
         ((K4.mono (by decide) (by simp)).trans ((K5.mono (by simp) (by simp)).trans (K6.mono (by decide) (by simp))))))
   refine ⟨h7, F6.join K7 (by simp) (by simp) (by simp) (by simp), ?_, ?_, ?_⟩
   · simp only [hiW]
-    rw [o7.wordsVal (.inr (by omega)) fG]
+    rw [o7.wordsVal (.inr (by omega_using [])) fG]
     refine F6.words (fun j hj => ?_) (fun e he => ?_) fG
     · have := (show ∀ j ∈ gcdArrs.take 12, j < 13 by decide) j hj
-      have := arr_end (w := w) (show j < 2 * wG by unfold wG; omega)
-      omega
+      have := arr_end (w := w) (show j < 2 * wG by unfold wG; omega_using [this])
+      omega_using [this]
     · simp only [List.mem_cons, List.not_mem_nil, or_false] at he
       subst he
       have := hdr_le_arr w (2 * wG)
-      simp only [sU1, hdr_eq] at *; omega
+      simp only [sU1, hdr_eq] at *; omega_using [this]
   · rw [v7, v6, v5]
     by_cases e : u = 1
     · simp only [e, ↓reduceIte, Nat.one_ne_zero]
       rw [K5.num (by decide) (by simp [sU1, hdr_eq]) (fit _ (by rdidx)), o4, Nat.gcd_one_right]
     · simp only [e, ↓reduceIte]
       rw [K5.num (by decide) (by simp [sU1, hdr_eq]) (fit _ (by rdidx))]
-      exact g4 (by omega)
+      exact g4 (by omega_using [hodd, e])
   · exact Keep.trans' (Keep.trans' (Keep.trans' (Keep.trans' (Keep.trans' (Keep.trans' (r1.mono (by decide))
       (r2.mono (by decide))) (k3.mono (by decide))) (k4.mono (by decide))) (k5.mono (by decide)))
       (k6.mono (by decide))) (k7.mono (by decide))

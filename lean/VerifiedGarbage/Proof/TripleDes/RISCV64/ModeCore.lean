@@ -114,18 +114,18 @@ theorem prepare_wp (d : Direction) {s : State} {B : Addr} {rs : List Region} {k 
     h₃.gpr
     (fun i hi => by
       rw [a2, ard, awr]
-      exact ⟨_, hin, Offset.contains_base _ (by omega) (by omega)⟩)
+      exact ⟨_, hin, Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi])⟩)
     (fun i hi => by
       rw [a0, awr, Offset.add_add]
-      exact hS.low _ _ (by simp only [dirCore, keyOff]; omega))
+      exact hS.low _ _ (by simp only [dirCore, keyOff]; omega_using [hi]))
     (by
       rw [a0, a2]
       have hs : Region.Sub ⟨B + BitVec.ofNat 64 keyOff, 384⟩ ⟨B, 8 * 118⟩ :=
-        Offset.sub_base _ (by simp only [keyOff]; omega)
+        Offset.sub_base _ (by simp only [keyOff]; omega_using [])
       have h : Region.Disjoint ⟨B + BitVec.ofNat 64 keyOff, 384⟩ ⟨s.gpr .a0, 384⟩ :=
         Region.Disjoint.sub_left (Region.Disjoint.symm dK) hs
       intro x hx hy
-      exact h x (by simp only [Region.Contains]; omega) (by simp only [Region.Contains]; omega)))
+      exact h x (by simp only [Region.Contains]; omega_using [hx]) (by simp only [Region.Contains]; omega_using [hy])))
     fun t ⟨tc, tf, tk⟩ => ?_
   rw [a0, a2, am] at tc
   rw [a0, am] at tf
@@ -159,10 +159,10 @@ theorem crypt_wp (d : Direction) {s : State} {B : Addr} {ws : List Region} {k : 
   obtain ⟨hk, _⟩ := hR
   have hlow : (⟨B, 944⟩ : Region) ∈ s.wr := hS.whole (by cases d <;> decide)
   have hpre : BlockPre k sb bufOff s := by
-    refine ⟨by decide, by decide, by rw [hB]; omega, fun o ho => ?_, by rw [hB]; exact hk,
+    refine ⟨by decide, by decide, by rw [hB]; omega_using [hal], fun o ho => ?_, by rw [hB]; exact hk,
       ⟨_, hlow, ?_⟩, ?_⟩
-    · rw [hB]; exact ⟨_, hlow, Offset.contains_base _ (by omega) (by omega)⟩
-    · rw [hB]; exact Offset.contains_base _ (by decide) (by omega)
+    · rw [hB]; exact ⟨_, hlow, Offset.contains_base _ (by omega_using [ho]) (by omega_using [ho])⟩
+    · rw [hB]; exact Offset.contains_base _ (by decide) (by omega_using [hbo])
     · simp only [workRegion, hB, bufOff, bufSlot]
       exact Offset.disjoint _ (.inl (by decide)) (by decide) (by decide)
   show WP isa (block d sb bufOff) s _

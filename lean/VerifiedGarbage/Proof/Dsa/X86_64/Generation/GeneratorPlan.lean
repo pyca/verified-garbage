@@ -79,7 +79,7 @@ theorem GeneratorMemory.frame {p : GeneratorPlan} {W W' : Nat → BitVec 64} {s 
     (hb : W' 5 = p.B) (hh : W' 21 = p.hp)
     (hf : Frame p.changed s.mem t.mem) (hrd : t.rd = s.rd) (hwr : t.wr = s.wr) :
     GeneratorMemory p W' t := by
-  have hn : p.len < 2 ^ 64 := by rcases p.width with hh | hh | hh <;> omega
+  have hn : p.len < 2 ^ 64 := by rcases p.width with hh | hh | hh <;> omega_using [hh]
   have fp : ∀ r ∈ p.changed, (⟨off p.B Impl.Dsa.Generation.Layout.p, p.pb.length⟩ : Region).Disjoint r := by
     rw [p.pLength]; exact p.pSeparate
   have fh : ∀ r ∈ p.changed, (⟨p.hp, p.hb.length⟩ : Region).Disjoint r := by

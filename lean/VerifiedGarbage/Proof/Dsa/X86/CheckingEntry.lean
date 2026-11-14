@@ -15,7 +15,7 @@ open VG VG.X86 VG.X86.Spill VG.Proof.Mont VG.Proof.Mont.X86 VG.Impl.Dsa.Layout V
 theorem checkingEntry_ok {s : State} (A : CheckingABI s) :
     WP isa (.block Generate.checkEntry) s fun t =>
       Installed (argumentPointer s 4) ((arg s 5).toNat * 8) Generate.checkArguments 0 2 3 s t := by
-  have sz : 8272 ≤ (arg s 5).toNat * 8 := by have H : 15712 ≤ (arg s 5).toNat * 8 := A.used; omega
+  have sz : 8272 ≤ (arg s 5).toNat * 8 := by have H : 15712 ≤ (arg s 5).toNat * 8 := A.used; omega_using [H]
   apply WP.mono (installArguments_ok Generate.checkArguments (scratchArg := 4)
     (keyArg := 0) (pLenArg := 2) (qLenArg := 3)
     (A.stackArgument (by decide : 4 < 6)).readSrc rfl A.scratchBound sz

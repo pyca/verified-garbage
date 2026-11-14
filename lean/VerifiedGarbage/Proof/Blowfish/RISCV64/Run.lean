@@ -60,12 +60,12 @@ theorem bit_mask (q : BitVec 64) {c : Nat} (hc : c < 64) :
   have key : (q <<< (63 - c)).getLsbD 63 = q.getLsbD c := by
     rw [BitVec.getLsbD_shiftLeft]
     simp only [show (63 : Nat) < 64 by decide, decide_true, Bool.true_and,
-      show ¬ (63 < 63 - c) by omega, decide_false, Bool.not_false, show 63 - (63 - c) = c by omega]
+      show ¬ (63 < 63 - c) by omega_using [], decide_false, Bool.not_false, show 63 - (63 - c) = c by omega_using [hc]]
   rw [show (if 63 + i < 64 then (q <<< (63 - c)).getLsbD (63 + i) else (q <<< (63 - c)).getLsbD (64 - 1)) =
-    (q <<< (63 - c)).getLsbD 63 by split; (congr 1; omega); rfl, key]
+    (q <<< (63 - c)).getLsbD 63 by split; (congr 1; omega_arith); rfl, key]
   cases q.getLsbD c
   · simp
-  · simp only [ite_true, BitVec.getLsbD_allOnes, hi, decide_true, show ¬ 64 ≤ i by omega, decide_false,
+  · simp only [ite_true, BitVec.getLsbD_allOnes, hi, decide_true, show ¬ 64 ≤ i by omega_using [hi], decide_false,
       Bool.not_false, Bool.and_true]
 
 end VG.Proof.Blowfish.RISCV64

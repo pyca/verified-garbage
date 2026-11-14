@@ -86,8 +86,8 @@ theorem Stage.lastSquares {g : Geometry} (v : g.Valid) {capacity c : Nat} {p : B
         ([sThreshold, sSquares] ++ wordFields) t ∧
       WorkspaceFrame g (roundWrites g) s.mem t.mem ∧ Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s t := by
   have header := v.headerFit
-  have tf : sThreshold + 4 ≤ g.L := by unfold sThreshold; omega
-  have sf : sSquares + 4 ≤ g.L := by unfold sSquares; omega
+  have tf : sThreshold + 4 ≤ g.L := by unfold sThreshold; omega_using [header]
+  have sf : sSquares + 4 ≤ g.L := by unfold sSquares; omega_using [header]
   have scratch : ∀ d ∈ [sThreshold, sSquares], scratchWord d := by
     intro d mem
     simp only [List.mem_cons, List.not_mem_nil, or_false] at mem

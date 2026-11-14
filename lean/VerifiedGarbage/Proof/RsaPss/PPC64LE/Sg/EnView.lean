@@ -50,16 +50,16 @@ theorem mPrime_bytes (m : Mem) (S : Addr) {D : Nat} (dig salt : List Byte) (hd :
     Spec.Rsa.bytesAt (writeBytes (writeBytes (writeBytes m (off S oY) (List.replicate 8 0)) (off S (oY + 8)) dig)
       (off S (oY + 8 + D)) salt) (off S oY) (8 + D + salt.length) = Spec.RsaPss.zeros 8 ++ dig ++ salt := by
   rw [bytesAt_eq_view]
-  refine range_ext (by simp [Spec.RsaPss.zeros, hd]; omega) fun i hi => ?_
-  rw [view_wb _ _ (by omega) (by omega), view_wb _ _ (by rw [hd]; omega) (by omega),
-    view_wb _ _ (by simp; omega) (by omega), getD_app, getD_app]
+  refine range_ext (by simp [Spec.RsaPss.zeros, hd]; omega_using []) fun i hi => ?_
+  rw [view_wb _ _ (by omega_using [hl]) (by omega_using [hl, hi]), view_wb _ _ (by rw [hd]; omega_using [hl]) (by omega_using [hl, hi]),
+    view_wb _ _ (by simp; omega_using [hl]) (by omega_using [hl, hi]), getD_app, getD_app]
   simp only [List.length_replicate, hd, Spec.RsaPss.zeros, List.length_append, getD_rep0]
   by_cases h1 : i < 8
-  · rw [ifn (by omega), ifn (by omega), ifp ⟨by omega, by omega⟩, ifp (by omega), ifp h1]
+  · rw [ifn (by omega_using [h1]), ifn (by omega_using [h1]), ifp ⟨by omega_using [], by omega_using [h1]⟩, ifp (by omega_using [h1]), ifp h1]
   by_cases h2 : i < 8 + D
-  · rw [ifn (by omega), ifp ⟨by omega, by omega⟩, ifp (by omega), ifn h1, show oY + i - (oY + 8) = i - 8 by omega]
-  · rw [ifp ⟨by omega, by omega⟩, ifn (by omega), show oY + i - (oY + 8 + D) = i - (8 + D) by omega,
-      show i - (8 + D) = i - 8 - D by omega]
+  · rw [ifn (by omega_using [h2]), ifp ⟨by omega_using [h1], by omega_using [h2]⟩, ifp (by omega_using [h2]), ifn h1, show oY + i - (oY + 8) = i - 8 by omega_using []]
+  · rw [ifp ⟨by omega_using [h2], by omega_using [hi]⟩, ifn (by omega_using [h2]), show oY + i - (oY + 8 + D) = i - (8 + D) by omega_using [],
+      show i - (8 + D) = i - 8 - D by omega_using []]
 
 /-- `EM` before masking, at offset `o < k`: zeros, `0x01`, the salt, `H` and
 `0xbc`. -/
@@ -78,11 +78,11 @@ theorem emPre_of {m m₁ m₂ m₃ : Mem} {S : Addr} {k D sl : Nat} {salt h : Li
   have hE : oEm = 0 := rfl
   have hR : oRsa = 8192 := rfl
   subst h₁ h₂ h₃
-  rw [view_w8 _ _ (by omega) (by omega), view_wb _ _ (by rw [hh]; omega) (by omega),
-    view_wb _ _ (by rw [hs]; omega) (by omega), view_w8 _ _ (by omega) (by omega),
-    view_wb _ _ (by simp; omega) (by omega)]
+  rw [view_w8 _ _ (by omega_using [hk, hE, hR]) (by omega_using [hk, ho, hR]), view_wb _ _ (by rw [hh]; omega_using [hk, hfit, hE, hR]) (by omega_using [hk, ho, hR]),
+    view_wb _ _ (by rw [hs]; omega_using [hk, hfit, hE, hR]) (by omega_using [hk, ho, hR]), view_w8 _ _ (by omega_using [hk, hE, hR]) (by omega_using [hk, ho, hR]),
+    view_wb _ _ (by simp; omega_using [hk, hE, hR]) (by omega_using [hk, ho, hR])]
   simp only [emPre, hE, Nat.zero_add, hs, hh, List.length_replicate, getD_rep0]
-  rcases (by omega : o = k - 1 ∨ (k - D - 1 ≤ o ∧ o < k - 1) ∨ (k - sl - D - 1 ≤ o ∧ o < k - D - 1) ∨
+  rcases (by omega_using [ho] : o = k - 1 ∨ (k - D - 1 ≤ o ∧ o < k - 1) ∨ (k - sl - D - 1 ≤ o ∧ o < k - D - 1) ∨
       o = k - sl - D - 2 ∨ o < k - sl - D - 2) with h | h | h | h | h <;>
     simp (disch := omega) only [↓ite_eq_left, ↓ite_eq_right]
 
@@ -93,7 +93,7 @@ theorem emT_of {k D sl lo db : Nat} (salt h mk : List Byte) (c : Byte) (hh : h.l
     (hV : ∀ o < k, V o = emPre k D sl salt h o) {o : Nat} (ho : o < k) :
     (if o = lo then mixV V mk lo db o &&& c else mixV V mk lo db o) = RsaPss.emT lo db sl salt h mk c o := by
   simp only [RsaPss.emT, mixV, hV o ho, emPre, hh]
-  rcases (by omega : o < lo ∨ (lo ≤ o ∧ o < k - sl - D - 2) ∨ o = k - sl - D - 2 ∨
+  rcases (by omega_using [ho] : o < lo ∨ (lo ≤ o ∧ o < k - sl - D - 2) ∨ o = k - sl - D - 2 ∨
       (k - sl - D - 1 ≤ o ∧ o < k - D - 1) ∨ (k - D - 1 ≤ o ∧ o < k - 1) ∨ o = k - 1) with h | h | h | h | h | h
   · simp (disch := omega) only [↓ite_eq_left, ↓ite_eq_right]
   · by_cases h5 : o = lo
@@ -102,9 +102,9 @@ theorem emT_of {k D sl lo db : Nat} (salt h mk : List Byte) (c : Byte) (hh : h.l
   · by_cases h5 : o = lo
     · subst h5; simp (disch := omega) only [↓ite_eq_left, ↓ite_eq_right]
     · simp (disch := omega) only [↓ite_eq_left, ↓ite_eq_right]
-  · rw [show o - (k - sl - D - 1) = o - lo - (db - sl) by omega]
+  · rw [show o - (k - sl - D - 1) = o - lo - (db - sl) by omega_using [hdb, hfit]]
     simp (disch := omega) only [↓ite_eq_left, ↓ite_eq_right]
-  · rw [show o - (k - D - 1) = o - lo - db by omega]
+  · rw [show o - (k - D - 1) = o - lo - db by omega_using [hdb, hfit]]
     simp (disch := omega) only [↓ite_eq_left, ↓ite_eq_right]
   · simp (disch := omega) only [↓ite_eq_left, ↓ite_eq_right]
 

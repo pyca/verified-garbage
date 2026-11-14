@@ -46,10 +46,10 @@ open VG.Proof.MlDsa.Sample (polyR coeffAddr)
 def polyP (σ : State) (k : Nat) : Addr := aP σ+BitVec.ofNat 64 (1024*k)
 
 theorem poly_sub (σ : State) {k : Nat} (hk : k < 4) : Region.Sub (polyR (polyP σ k)) (aR σ) :=
-  Offset.sub_base (aP σ) (by omega)
+  Offset.sub_base (aP σ) (by omega_using [hk])
 
 theorem buf_sub (σ : State) {k : Nat} (hk : k < 4) : Region.Sub (⟨bufP σ k,1008⟩ : Region) (scrR σ) :=
-  Offset.sub_base (scr σ) (by dsimp only [VG.Impl.MlDsa.AArch64.Sample.Rej4.oBuf]; omega)
+  Offset.sub_base (scr σ) (by dsimp only [VG.Impl.MlDsa.AArch64.Sample.Rej4.oBuf]; omega_using [hk])
 
 theorem buf_poly {σ : State} (hp : Pre σ) {j k : Nat} (hj : j < 4) (hk : k < 4) :
     (⟨bufP σ j,1008⟩ : Region).Disjoint (polyR (polyP σ k)) :=
@@ -62,7 +62,7 @@ theorem coeffs_in {σ s : State} (hp : Pre σ) (hw : s.wr = σ.wr) {k : Nat} (hk
   refine ⟨aR σ,by simp,?_⟩
   unfold coeffAddr polyP
   rw [Offset.add_add]
-  exact Offset.contains_base _ (by omega) (by omega)
+  exact Offset.contains_base _ (by omega_using [hk, hi]) (by omega_using [hk, hi])
 
 theorem Env.polyStep {σ s t : State} (hp : Pre σ) {k : Nat} (hk : k < 4) (he : Env σ s)
     (hf : Frame [polyR (polyP σ k)] s.mem t.mem)
@@ -83,7 +83,7 @@ theorem Ready.polyStep {σ s t : State} (hp : Pre σ) {k : Nat} (hk : k < 4) (h 
   rw [← h.out j hj i hi]
   exact hf _ (fun r hr hc => by
     rw [List.mem_singleton.mp hr] at hc
-    exact buf_poly hp hj hk _ (Offset.contains_base _ (by omega) (by omega)) hc)
+    exact buf_poly hp hj hk _ (Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi])) hc)
 end VG.Proof.MlDsa.AArch64.Sample.Rej4
 end
 
@@ -107,7 +107,7 @@ abbrev parseRegs : List Reg := [.x0,.x2,.x3,.x4,.x5,.x6,.x7,.x8,.x9,.x10,.x11,.x
 theorem sampleArgs_ok {σ s : State} (he : Env σ s) {k : Nat} (hk : k < 4) :
     WP isa (.block ([.addImm .x .x25 .x19 (1008*k),.addImm .x .x26 .x21 (1024*k)] : List Instr)) s
       fun t => Only [.x25,.x26] s t ∧ t.gpr .x25 = at' σ (1008*k) ∧ t.gpr .x26 = polyP σ k := by
-  refine wp_addImm (by omega) fun u h1 e1 => wp_addImm (by omega) fun t h2 e2 => wp_nil ⟨?_,?_,?_⟩
+  refine wp_addImm (by omega_using [hk]) fun u h1 e1 => wp_addImm (by omega_using [hk]) fun t h2 e2 => wp_nil ⟨?_,?_,?_⟩
   · exact (h1.trans h2).mono (by simp)
   · rw [h2.get .x25,e1,he.x19]; rfl
   · rw [e2,h1.get .x21,he.x21]; rfl
@@ -130,8 +130,8 @@ theorem retZ_ok {σ s : State} {k : Nat} (h4 : (s.gpr .x4).toNat = 256-(L σ k).
     simp only [VG.Spec.MlDsa.n] at hl
     change (L σ k).length ≤ 256 at hl
     split
-    · rw [hn1]; omega
-    · rw [hn0]; omega
+    · rw [hn1]; omega_arith
+    · rw [hn0]; omega_arith
   rw [e3,h2.get .x27,h1.get .x27,er]
 
 theorem sample_ok {σ s : State} (hp : Pre σ) (h : Ready σ s) {k : Nat} (hk : k < 4) :
@@ -152,12 +152,12 @@ theorem sample_ok {σ s : State} (hp : Pre σ) (h : Ready σ s) {k : Nat} (hk : 
     ⟨he2.out k hk,fun j hj => by
       unfold bufP at'
       rw [Offset.add_add]
-      exact in_scr_rd hp he2.env.rd he2.env.wr (by dsimp only [oBuf]; omega),
+      exact in_scr_rd hp he2.env.rd he2.env.wr (by dsimp only [oBuf]; omega_using [hk, hj]),
       coeffs_in hp he2.env.wr hk,buf_poly hp hk hk,by
         rw [h2.get .x25,e25]
         unfold at' bufP
         rw [Offset.add_add]
-        exact congrArg (fun d => scr σ+BitVec.ofNat 64 d) (by dsimp only [oBuf]; omega),
+        exact congrArg (fun d => scr σ+BitVec.ofNat 64 d) (by dsimp only [oBuf]; omega_using []),
       (h2.get .x26).trans e26⟩
   refine WP.seq (WP.mono (VG.Proof.MlDsa.AArch64.Sample.RejNtt.loop_ok (G_length _ _) hlp)
     fun s3 h3 => ?_)

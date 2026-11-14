@@ -17,14 +17,14 @@ theorem scratch_words {base p : Addr} {bytes n : Nat} {m m' : Mem}
     (O : Outside base 0 bytes m m') (fit : bytes ≤ 2 ^ 64)
     (countFit : 8 * n ≤ 2 ^ 64) (sep : Region.Disjoint ⟨p, 8 * n⟩ ⟨base, bytes⟩) :
     Spec.Rsa.wordsAt m' p n = Spec.Rsa.wordsAt m p n := by
-  have F := outside_frame O (by omega)
+  have F := outside_frame O (by omega_using [fit])
   simp only [BitVec.add_zero] at F
   unfold Spec.Rsa.wordsAt
   apply List.map_congr_left
   intro i hi
   have bound := List.mem_range.mp hi
   apply F.readW (r := ⟨p, 8 * n⟩)
-    (Offset.contains_base _ (by omega) (by omega)) ?_ (by decide)
+    (Offset.contains_base _ (by omega_using [bound]) (by omega_using [countFit, bound])) ?_ (by decide)
   intro r hr
   obtain rfl := List.mem_singleton.mp hr
   exact sep

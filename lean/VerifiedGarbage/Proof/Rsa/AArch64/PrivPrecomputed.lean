@@ -146,11 +146,11 @@ theorem satisfiablePre : ∃ s, (Proof.Rsa.privateCheckedPrecomputedContract abi
   simp only [a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, ha]
   have kd : ∀ (b : BitVec 64) (n : Nat), b.toNat + n ≤ 2 ^ 20 →
       Region.Disjoint ⟨0x10000000000 - BitVec.ofNat 64 stackBytes, stackBytes⟩ ⟨b, n⟩ := fun b n h =>
-    Region.disjoint_of_le (.inr (by dsimp only; rw [hkb]; simp only [stackBytes]; omega))
-      (by dsimp only; rw [hkb]; simp only [stackBytes]; omega) (by dsimp only; omega)
+    Region.disjoint_of_le (.inr (by dsimp only; rw [hkb]; simp only [stackBytes]; omega_using [h]))
+      (by dsimp only; rw [hkb]; simp only [stackBytes]; omega_using []) (by dsimp only; omega_using [h])
   have kt : Region.Disjoint ⟨0x10000000000 - BitVec.ofNat 64 stackBytes, stackBytes⟩ ⟨0x10000000000, 112⟩ :=
-    Region.disjoint_of_le (.inl (by dsimp only; rw [hkb, hsp]; simp only [stackBytes]; omega))
-      (by dsimp only; rw [hkb]; simp only [stackBytes]; omega) (by dsimp only; rw [hsp]; omega)
+    Region.disjoint_of_le (.inl (by dsimp only; rw [hkb, hsp]; simp only [stackBytes]; omega_using []))
+      (by dsimp only; rw [hkb]; simp only [stackBytes]; omega_using []) (by dsimp only; rw [hsp]; omega_using [])
   sig_and_intros
   rotate_right
   · exact preState_key
@@ -178,7 +178,7 @@ theorem private_checked_precomputed_implies : chkPA.Implies (Proof.Rsa.privateCh
       scpr sca ko kn ke ki kp kq kdp kdq kqi ksc kpr ka bo bn be bi bp bq bdp bdq bqi bsc bpr lv olk ilk
       el1 elk pl1 plk ql1 qlk dpl qil dql slk prl
     have s96 := sub96 (stackArgAddr s 0)
-    exact ⟨⟨spl, by omega, trivial, wr, on, oe, oi, op, oq, odp, odq, oqi, osc, oa.sub_right s96, nsc, esc,
+    exact ⟨⟨spl, by omega_using [sph], trivial, wr, on, oe, oi, op, oq, odp, odq, oqi, osc, oa.sub_right s96, nsc, esc,
       isc, psc, qsc, dpsc, dqsc, qisc, sca.sub_right s96, ko, kn, ke, ki, kp, kq, kdp, kdq, kqi, ksc,
       ka.sub_right s96, bo, bn, be, bi, bp, bq, bdp, bdq, bqi, bsc, lv, olk, ilk, el1, elk, pl1, plk, ql1,
       qlk, dpl, qil, dql, slk⟩, sph, rd, opr, oa, scpr, sca, kpr, ka, bpr, prl, h⟩
@@ -360,7 +360,7 @@ theorem arg_slot12 (s : State) : stackArgAddr s 12 = (lay s).B + BitVec.ofNat 64
   bv_omega
 
 theorem sub_prefix (p : Addr) {a b : Nat} (h : a ≤ b) : Region.Sub ⟨p, a⟩ ⟨p, b⟩ := by
-  simpa using Offset.sub_base p (d := 0) (n := a) (k := b) (by omega)
+  simpa using Offset.sub_base p (d := 0) (n := a) (k := b) (by omega_using [h])
 
 theorem sub_arg12 (s : State) : Region.Sub ⟨stackArgAddr s 12, 8⟩ ⟨stackArgAddr s 0, 112⟩ :=
   Offset.sub s.sp (d := 96) (n := 8) (e := 0) (k := 112) (by decide) (by decide)
@@ -383,7 +383,7 @@ theorem publicPrecompute_of_private {nB pB qB : List Byte} {W : List (BitVec 64)
         · simp only [Option.some.injEq] at hp
           subst hp
           simp only [List.length_append, Spec.Rsa.toWords, List.length_map, List.length_range]
-          omega
+          omega_using []
         · cases hp
       rw [List.append_assoc, List.take_left' hl]
   · cases h
@@ -400,7 +400,7 @@ theorem preIn {s : State} (h : chkPA.pre s) : PreIn (layW s (XP s)) s.mem := by
   have hpw : (lay s).pw ≤ (stackArg s 13).toNat := by
     rw [prl]
     simp only [Lay.pw, lay, Spec.Rsa.privatePrecomputedWords, Spec.Rsa.precomputedWords, Spec.Rsa.modulusWords]
-    omega
+    omega_using []
   have hpw' : (layW s (XP s)).pw ≤ (stackArg s 13).toNat := hpw
   have hpw2 : 2 * Spec.Rsa.modulusWords (s.gpr .x3).toNat ≤ (stackArg s 13).toNat := hpw
   have e12 := arg_slot12 s
@@ -414,10 +414,10 @@ theorem preIn {s : State} (h : chkPA.pre s) : PreIn (layW s (XP s)) s.mem := by
   · show Region.Disjoint ⟨stackArg s 10, (stackArg s 11).toNat * 8⟩ ⟨(lay s).B + BitVec.ofNat 64 (arg 12), 8⟩
     rw [← e12]; exact sca.sub_right (sub_arg12 s)
   · show (stackArg s 12).toNat + (lay s).pw * 8 ≤ 2 ^ 64
-    omega
-  · exact opr.sub_right (sub_prefix _ (by omega))
-  · exact scpr.sub_right (sub_prefix _ (by omega))
-  · exact kpr.sub_right (sub_prefix _ (by omega))
+    omega_using [bpr, hpw]
+  · exact opr.sub_right (sub_prefix _ (by omega_using [hpw']))
+  · exact scpr.sub_right (sub_prefix _ (by omega_using [hpw']))
+  · exact kpr.sub_right (sub_prefix _ (by omega_using [hpw']))
   · show Spec.Rsa.publicPrecompute (Spec.Rsa.bytesAt s.mem (s.gpr .x2) (s.gpr .x3).toNat) =
       some (Spec.Rsa.wordsAt s.mem (stackArg s 12) (lay s).pw)
     rw [publicPrecompute_of_private hk, Proof.Rsa.bytesAt_length', wordsAt_take _ _ hpw2]
@@ -450,10 +450,10 @@ theorem narrowP_covers {s : State} (h : chkPA.pre s) :
   have hpw : (lay s).pw ≤ (stackArg s 13).toNat := by
     rw [prl]
     simp only [Lay.pw, lay, Spec.Rsa.privatePrecomputedWords, Spec.Rsa.precomputedWords, Spec.Rsa.modulusWords]
-    omega
+    omega_using []
   refine Covers.of_sub fun r hr => ?_
   have self : ∀ r ∈ s.rd ++ s.wr, ∃ r' ∈ s.rd ++ s.wr, ∃ off, r.base = r'.base + BitVec.ofNat 64 off ∧
-      off + r.len ≤ r'.len := fun r hr => ⟨r, hr, 0, (BitVec.add_zero _).symm, by omega⟩
+      off + r.len ≤ r'.len := fun r hr => ⟨r, hr, 0, (BitVec.add_zero _).symm, by omega_using []⟩
   have m8 : ∀ r ∈ (rd0 s).take 8, ∃ r' ∈ s.rd ++ s.wr, ∃ off, r.base = r'.base + BitVec.ofNat 64 off ∧
       off + r.len ≤ r'.len := fun r hr => self r (by rw [rd]; exact List.mem_append_left _ (List.mem_append_left _ hr))
   have ma : (⟨stackArgAddr s 0, 112⟩ : Region) ∈ s.rd ++ s.wr := by rw [rd]; simp
@@ -462,9 +462,9 @@ theorem narrowP_covers {s : State} (h : chkPA.pre s) :
     List.not_mem_nil, or_false] at hr
   rcases hr with ((rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl) | (rfl | rfl)) | hw
   iterate 8 exact m8 _ (by simp [rd0])
-  · exact ⟨_, ma, 0, (BitVec.add_zero _).symm, by dsimp only; omega⟩
-  · exact ⟨_, ma, 96, by simp only [stackArgAddr, BitVec.add_assoc, BitVec.ofNat_add_ofNat], by dsimp only; omega⟩
-  · exact ⟨_, mp, 0, (BitVec.add_zero _).symm, by dsimp only; omega⟩
+  · exact ⟨_, ma, 0, (BitVec.add_zero _).symm, by dsimp only; omega_using []⟩
+  · exact ⟨_, ma, 96, by simp only [stackArgAddr, BitVec.add_assoc, BitVec.ofNat_add_ofNat], by dsimp only; omega_using []⟩
+  · exact ⟨_, mp, 0, (BitVec.add_zero _).symm, by dsimp only; omega_using [hpw]⟩
   · exact self _ (List.mem_append_right _ hw)
 
 /-- The code, from the narrowed call. -/

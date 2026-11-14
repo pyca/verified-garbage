@@ -44,9 +44,9 @@ theorem generateNative_ok (M : Mont) {p : Parameters} {s : State} {dom rb : List
   Spec.Rsa.bytesAt t.mem yp p.k=Spec.Rsa.i2osp (Spec.Rsa.powMod a.g x a.p) p.k
  else Spec.Rsa.bytesAt t.mem p.src p.k=List.replicate p.k 0 ∧ Spec.Rsa.bytesAt t.mem yp p.k=List.replicate p.k 0) ∧
  Keep (.x0::mmRegs) s t := by
- have room : 256≤p.Z := by have := p.room;dsimp only [slot,hdrBytes] at this;omega
- have count3 : 3≤count := by rw [context_words_count view.canonical];omega
- have domSize : p.k≤dom.length := by omega
+ have room : 256≤p.Z := by have := p.room;dsimp only [slot,hdrBytes] at this;omega_using [this]
+ have count3 : 3≤count := by rw [context_words_count view.canonical];omega_using []
+ have domSize : p.k≤dom.length := by omega_using [shape, domLength]
  have head (i : Nat) (hi : i<3) := context_header domSize (VG.Proof.Ffdh.domainValid_mod valid) view.canonical hi
  have head0 : word s.mem p.ctx 0=BitVec.ofNat 64 p.N := by simpa [word,off,policy] using head 0 (by decide)
  have head1 : word s.mem p.ctx 8=BitVec.ofNat 64 ((p.N+7)/8) := by simpa [word,off,policy] using head 1 (by decide)
@@ -54,9 +54,9 @@ theorem generateNative_ok (M : Mont) {p : Parameters} {s : State} {dom rb : List
  unfold Generate.code
  rw [WP.seq_iff]
  refine WP.mono (generateEntry_ok scratch room readB readCtx stackB stackCtx
-  (fun i hi =>view.readable i (by omega)) (fun i hi =>view.outside i (by omega)) head0 head1 head2) ?_
+  (fun i hi =>view.readable i (by omega_using [count3, hi])) (fun i hi =>view.outside i (by omega_using [count3, hi])) head0 head1 head2) ?_
  rintro u ⟨baseU,memU,frameU,restU⟩
- have frame : InScr p.B p.Z s.mem u.mem := InScr.of_outside frameU (by omega)
+ have frame : InScr p.B p.Z s.mem u.mem := InScr.of_outside frameU (by omega_using [room])
  have headers := generationEntry_headers s.mem p.B p.src yp dp (BitVec.ofNat 64 dl) (BitVec.ofNat 64 p.k) rp p.ctx
   (BitVec.ofNat 64 p.N) (BitVec.ofNat 64 ((p.N+7)/8)) (BitVec.ofNat 64 (Spec.Rsa.FixedBaseComb.rows p.N))
  simp only [xArg,yArg,domArg,dlArg,lenArg,randArg] at memU

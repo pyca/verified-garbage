@@ -41,7 +41,7 @@ theorem b2n_eq0 (b : Bool) : decide (b2n b = 0) = !b := by cases b <;> rfl
 
 theorem usedR_drop {σ : State} (hL : P.L ≤ P.rl) {x : Spec.RsaKeyGen.Candidate}
     (h : res P σ = some (x, (rB P σ).drop P.L)) : usedR P σ = P.L := by
-  unfold usedR; rw [h]; dsimp only; rw [List.length_drop, rB_length]; omega
+  unfold usedR; rw [h]; dsimp only; rw [List.length_drop, rB_length]; omega_using [hL]
 
 theorem outR_close {σ : State} (h : res P σ = some (.close, (rB P σ).drop P.L)) :
     outR P σ = List.replicate P.L 0 := by unfold outR; rw [h]
@@ -137,7 +137,7 @@ theorem candBody_vp [VG.Proof.Rsa.Arm.Keys.InvLaw] (v : RoundImpl) :
       by rw [u]; unfold usedR; rw [hr]⟩
   · refine VP.ofImp (p := ¬ P.rl < P.L) (fun σ s h => by
       have t := h.2; rw [isa_eq, h.1.2] at t; simpa using t) fun hl => ?_
-    exact (main_vp v (E := In P) fun σ e => ⟨e, by omega⟩).mono (fun σ s h => h.1.1) fun _ _ h => h
+    exact (main_vp v (E := In P) fun σ e => ⟨e, by omega_using [hl]⟩).mono (fun σ s h => h.1.1) fun _ _ h => h
 
 end
 

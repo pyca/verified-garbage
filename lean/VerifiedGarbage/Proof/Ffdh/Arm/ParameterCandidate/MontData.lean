@@ -32,7 +32,7 @@ theorem numAt_lowWord (m : Mem) (base : Addr) (w j : Nat) (positive : 0 < w) :
       2 ^ 64 * wordsVal m base (arrAt w j + 8) (w - 1) := by
     unfold numAt
     rw [read_eq_wordsVal]
-    exact congrArg (fun n => wordsVal m base (arrAt w j) n) (show w = (w - 1) + 1 by omega)
+    exact congrArg (fun n => wordsVal m base (arrAt w j) n) (show w = (w - 1) + 1 by omega_using [positive])
   rw [split, Nat.add_mul_mod_self_left, Nat.mod_eq_of_lt (word m base (arrAt w j)).isLt]
 
 theorem MontData.after_reads {base : BitVec 32} {capacity w : Nat} {m m' : Mem}
@@ -51,12 +51,12 @@ theorem MontData.after_reads {base : BitVec 32} {capacity w : Nat} {m m' : Mem}
     refine ⟨h.layout.1, h.layout.2.1, h.layout.2.2.1, ?_⟩
     intro j hj
     unfold wordAt
-    rw [readHeader (8 * arrWord j) (by simp only [arrWord]; omega)]
+    rw [readHeader (8 * arrWord j) (by simp only [arrWord]; omega_using [hj])]
     exact h.layout.2.2.2 j hj
   have wordEq : word m' (State.addr base) (arrAt w 0) = word m (State.addr base) (arrAt w 0) := by
     apply BitVec.eq_of_toNat_eq
-    rw [← numAt_lowWord m' (State.addr base) w 0 (by omega),
-      ← numAt_lowWord m (State.addr base) w 0 (by omega), numberEq]
+    rw [← numAt_lowWord m' (State.addr base) w 0 (by omega_using [wmin]),
+      ← numAt_lowWord m (State.addr base) w 0 (by omega_using [wmin]), numberEq]
   refine ⟨⟨layout', widthEq.trans h.width, ?_, ?_⟩, numberEq⟩
   · rw [wordEq]
     unfold wordAt
@@ -71,7 +71,7 @@ theorem MontData.after_value {base : BitVec 32} {capacity w : Nat} {m m' : Mem} 
     (numberEq : numAt m' (State.addr base) w 0 = numAt m (State.addr base) w 0) :
     MontData base capacity w m' ∧ numAt m' (State.addr base) w 0 = numAt m (State.addr base) w 0 :=
   h.after_reads (fun _ bound => frame.readW (r := ⟨State.addr base, 128⟩)
-    (Offset.contains_base _ bound (by omega)) header (by decide)) numberEq
+    (Offset.contains_base _ bound (by omega_using [bound])) header (by decide)) numberEq
 
 theorem MontData.after_frame {base : BitVec 32} {capacity w : Nat} {m m' : Mem} {regions : List Region}
     (h : MontData base capacity w m) (frame : Frame regions m m')
@@ -83,7 +83,7 @@ theorem MontData.after_frame {base : BitVec 32} {capacity w : Nat} {m m' : Mem} 
   have numberEq : numAt m' (State.addr base) w 0 = numAt m (State.addr base) w 0 := by
     unfold numAt
     rw [frame.read (r := ⟨off (State.addr base) (arrAt w 0), 8 * w⟩)
-      (Region.contains_self _ _) modulus (by omega)]
+      (Region.contains_self _ _) modulus (by omega_using [wmax])]
   exact h.after_value frame header numberEq
 
 theorem MontData.ready {s : State} {base : BitVec 32} {capacity w : Nat}

@@ -158,7 +158,7 @@ theorem disj (p : Addr) {d e : Int} {k w : Nat} (hk : k < 4) (hw : w ≤ 64) (hd
     ¬ ((p + BitVec.ofInt 64 d + BitVec.ofNat 64 k) - (p + BitVec.ofInt 64 e)).toNat < w := by
   have := p.isLt
   simp only [BitVec.toNat_sub, BitVec.toNat_add, BitVec.toNat_ofInt, BitVec.toNat_ofNat]
-  omega
+  omega_using [hk, hw, hd, he, h]
 
 /-- What a fact `keep` keeps refers to the same register and bytes after `i`. -/
 theorem keep_slot {i : Instr} {b : Reg} {d : Int} (h : keep i (.slot b d) = true) {s s' : State}
@@ -188,7 +188,7 @@ theorem keep_slot {i : Instr} {b : Reg} {d : Int} (h : keep i (.slot b d) = true
     rw [hea]
     have he : -2 ^ 31 ≤ m.disp ∧ m.disp < 2 ^ 31 := by
       simp only [plain, Bool.and_eq_true, decide_eq_true_eq] at hpl; exact hpl.2
-    exact disj _ (by omega) hw64 hd he hdj
+    exact disj _ (by omega_using [hk]) hw64 hd he hdj
 
 theorem keep_hold {i : Instr} {f : F} (h : keep i f = true) {s₁ s₂ s₁' s₂' : State}
     (e₁ : exec i s₁ = some s₁') (e₂ : exec i s₂ = some s₂') (hf : Hold s₁ s₂ f) : Hold s₁' s₂' f := by
@@ -205,7 +205,7 @@ theorem sw32 (x : BitVec 32) : (x.setWidth 64).setWidth 32 = x := by
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_setWidth]
   have := x.isLt
-  omega
+  omega_using []
 
 theorem adds_hold {fs : List F} {i : Instr} {f : F} (hf : f ∈ adds fs i) {s₁ s₂ s₁' s₂' : State}
     (e₁ : exec i s₁ = some s₁') (e₂ : exec i s₂ = some s₂') (hi : Inv fs s₁ s₂) : Hold s₁' s₂' f := by

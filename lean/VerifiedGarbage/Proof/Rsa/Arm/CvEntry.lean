@@ -28,7 +28,7 @@ theorem entry_eq : entry = .ldrSp .r12 (4 * 10) :: (saveL.map (fun p => Instr.st
     (([.mov .r8 (.reg .r12), .mov .r3 (.reg .r2)] : List Instr) ++ (.ldrSp .r4 (4 * 2) :: .ldrSp .r6 (4 * 3) :: modulusCheck))) := rfl
 
 theorem saveL_mem {i : Nat} (hi : i < 11) : (savedReg i, 20 + 4 * i) ∈ saveL := by
-  rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 ∨ i = 8 ∨ i = 9 ∨ i = 10)
+  rcases (by omega_using [hi] : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 ∨ i = 8 ∨ i = 9 ∨ i = 10)
     with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide
 
 /-- The bytes of `n`. -/
@@ -44,10 +44,10 @@ theorem entry_ok {s0 : State} (h : CvPre s0) :
   rw [entry_eq]
   have hrd : rA s0 ∈ s0.rd := by rw [h.rd]; simp
   refine wp_ldrSp hrd h.sp48 (by decide) fun s1 u1 => ?_
-  have hz : 64 ≤ cvZ s0 := Nat.le_trans (by simp only [arr, hdr, nArr, S]; omega) fits
-  refine save_slots_ok (lo := 20) (hi := 64) (by decide) (by rw [u1.gpr]; simp only [cvZ] at hz; omega)
+  have hz : 64 ≤ cvZ s0 := Nat.le_trans (by simp only [arr, hdr, nArr, S]; omega_using []) fits
+  refine save_slots_ok (lo := 20) (hi := 64) (by decide) (by rw [u1.gpr]; simp only [cvZ] at hz; omega_using [fS, hz])
     (fun d h1 h2 => ⟨rS s0, by rw [u1.wr, h.wr]; simp, by
-      rw [u1.gpr]; exact Offset.contains_base _ (by simp only [cvZ] at hz; omega) (by omega)⟩) ?_
+      rw [u1.gpr]; exact Offset.contains_base _ (by simp only [cvZ] at hz; omega_using [hz, h2]) (by omega_using [h2])⟩) ?_
   -- The state after the stores.
   have b2 : Base s0 { s1 with mem := saveMem s1.mem (State.addr (s1.gpr .r12)) s1.gpr saveL } := by
     refine ⟨h, u1.sp, u1.rd, u1.wr, ?_, fun i hi => ?_⟩
@@ -56,7 +56,7 @@ theorem entry_ok {s0 : State} (h : CvPre s0) :
       · rw [← u1.mem]
         exact saveMem_frame _ _ _ (by decide) _ (by decide)
       · simp only [List.mem_singleton] at hr; subst hr
-        exact Region.sub_prefix (by simp only [cvZ] at hz; omega)
+        exact Region.sub_prefix (by simp only [cvZ] at hz; omega_using [hz])
     · have sv := saveMem_saved (lo := 20) (hi := 64) (State.addr (s1.gpr .r12)) s1.gpr s1.mem saveL (by decide)
         _ (saveL_mem hi)
       simp only [u1.gpr] at sv
@@ -65,7 +65,7 @@ theorem entry_ok {s0 : State} (h : CvPre s0) :
       rw [u1.gpr]
       erw [sv]
       have : savedReg i ≠ .r12 := by
-        rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 ∨ i = 8 ∨ i = 9 ∨ i = 10)
+        rcases (by omega_using [hi] : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 ∨ i = 8 ∨ i = 9 ∨ i = 10)
           with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide
       rw [u1.other _ this]
   refine wp_mov (op2_reg _ _) fun s3 u3 => ?_
@@ -77,7 +77,7 @@ theorem entry_ok {s0 : State} (h : CvPre s0) :
   refine wp_ldrSp b5.rA_mem (by rw [b5.sp]; exact h.sp48) (by decide) fun s6 u6 => ?_
   have b6 := b5.of_rest (u6.rest (ws := [.r6]) (by simp)) u6.mem
   have nfit := h.fN
-  refine WP.mono (modulusCheck_ok s6 (src := stackArg s0 2) (k := cvK s0) kb.1 kb.2 (by simp only [cvK]; omega)
+  refine WP.mono (modulusCheck_ok s6 (src := stackArg s0 2) (k := cvK s0) kb.1 kb.2 (by simp only [cvK]; omega_using [nfit])
     ?_ (by rw [u6.other _ (by decide), u5.gpr, b4.arg (by decide)])
     (by rw [u6.gpr, b5.arg (by decide)]; simp only [cvK, BitVec.ofNat_toNat, BitVec.setWidth_eq])) ?_
   · refine ⟨rN s0, List.mem_append_left _ (by rw [b6.rd, h.rd]; simp), Region.contains_self _ _⟩
@@ -97,7 +97,7 @@ theorem entry_ok {s0 : State} (h : CvPre s0) :
         refine List.map_congr_left fun i hi => ?_
         simp only [List.mem_range] at hi
         exact b6.frame.bytes (R := rN s0)
-          (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact h.nS) (by simp; omega) hi
+          (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact h.nS) (by simp; omega_using []) hi
       rw [z, e]
 
 end VG.Proof.Rsa.Arm.CrtValues

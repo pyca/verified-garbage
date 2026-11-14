@@ -89,8 +89,8 @@ theorem zeroOut_ct {sPtr sLen : Nat} (hP : sPtr < 32) (hL : sLen < 32) (ptr : Cv
       obtain ⟨hp, hl, -⟩ := hA p s h
       obtain ⟨I, rfl, hs, hdi, -, -, L, -⟩ := h
       have hn := hs.nowrap
-      have h256 : 8 * 32 ≤ I.Z := by have := L.z; have := L.k1; omega
-      have hl' : ∀ i < 32, InRegions (s.rd ++ s.wr) (off I.B (8 * i)) 8 := fun i hi => hs.ld (by omega)
+      have h256 : 8 * 32 ≤ I.Z := by have := L.z; have := L.k1; omega_arith
+      have hl' : ∀ i < 32, InRegions (s.rd ++ s.wr) (off I.B (8 * i)) 8 := fun i hi => hs.ld (by omega_using [h256, hi])
       refine WP.mono (WP.keep [.rsi, .rcx, .rax] (Q := fun t => t.gpr .rsi = ptr I.pub ∧
         t.gpr .rcx = BitVec.ofNat 64 (len I.pub)) (by
         xrun [State.ea, hdr, hdi, hdrOff, hl' sPtr hP, hl' sLen hL]
@@ -104,14 +104,14 @@ theorem zeroOut_ct {sPtr sLen : Nat} (hP : sPtr < 32) (hL : sLen < 32) (ptr : Cv
       obtain ⟨I, rfl, hs, hdi, ha, hW, L, O⟩ := h
       dsimp only [CvIn.pub] at hp hl hwr hsep hl1 hl2 ⊢
       have hn := hs.nowrap
-      have h256 : 8 * 32 ≤ I.Z := by have := L.z; have := L.k1; omega
+      have h256 : 8 * 32 ≤ I.Z := by have := L.z; have := L.k1; omega_arith
       refine WP.mono (zeroOut_ok hs hdi h256 hP hL hp hl hl1 hl2 ⟨fun i hi => by rw [hW]; exact hwr i hi, hsep⟩)
         fun t ⟨_, hx, k⟩ => ?_
       have fw : ∀ i < 32, Bignum.word t.mem I.B (8 * i) = Bignum.word s.mem I.B (8 * i) :=
         fun i hi => (frm_scr hsep hx).word_eq (fun r hr => by rw [List.mem_singleton.mp hr]; exact Or.inl (by omega))
-          (by omega)
+          (by omega_using [hi])
       exact ⟨I, rfl, hs.congr k.2.2, (k.gpr (by decide)).trans hdi, ha.congr fun i hi => fw i (by
-        unfold argSlot at hi; omega), k.2.2.trans hW, L, O⟩
+        unfold argSlot at hi; omega_using [hi]), k.2.2.trans hW, L, O⟩
 
 theorem failExit_ct : RelCT isa (Two GF) (.block (([.mov32 .rax (.imm 0)] : List Instr) ++ Impl.Bignum.X86_64.Public.exit))
     fun _ _ => True :=
@@ -130,9 +130,9 @@ theorem fail_ct : RelCT isa (Two GF) fail fun _ _ => True := by
     obtain ⟨I, rfl, -, -, ha, -, L, O⟩ := h
     dsimp only [CvIn.pub]
     have := L.k2
-  · exact ⟨ha.dp, ha.pl, O.dp, O.sdp, L.pl1, by have := L.pl2; omega⟩
-  · exact ⟨ha.dq, ha.ql, O.dq, O.sdq, L.ql1, by have := L.ql2; omega⟩
-  · exact ⟨ha.qi, ha.pl, O.qi, O.sqi, L.pl1, by have := L.pl2; omega⟩
+  · exact ⟨ha.dp, ha.pl, O.dp, O.sdp, L.pl1, by have := L.pl2; omega_arith⟩
+  · exact ⟨ha.dq, ha.ql, O.dq, O.sdq, L.ql1, by have := L.ql2; omega_arith⟩
+  · exact ⟨ha.qi, ha.pl, O.qi, O.sqi, L.pl1, by have := L.pl2; omega_arith⟩
 
 /-- `vg_rsa_crt_values` leaks the same in runs that agree on the public
 data. -/

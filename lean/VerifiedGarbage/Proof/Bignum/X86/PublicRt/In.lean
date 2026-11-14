@@ -51,7 +51,7 @@ theorem RtIn.dimensions (h : RtIn base bytes len args s) :
   have := h.lower
   have := h.upper
   unfold Spec.Rsa.modulusWords
-  omega
+  omega_arith
 
 end
 

@@ -55,18 +55,18 @@ theorem vn0_ok {s t : State} (hp : VPre tsH tsG s) (L : Lay t (fb s) (stackArg s
   have hk1 := hp.k1
   have hn : t.mem (s.gpr .rdi) = s.mem (s.gpr .rdi) := by
     have := hf.bytes (R := ⟨s.gpr .rdi, (s.gpr .rsi).toNat⟩) (vin_apart hp.dKn hp.dns)
-      (by dsimp only; have := hp.wN; omega) (i := 0) (by dsimp only; omega)
+      (by dsimp only; have := hp.wN; omega_using []) (i := 0) (by dsimp only; omega_using [hk1])
     simpa using this
   have hin : InRegions (t.rd ++ t.wr) (s.gpr .rdi) 1 := by
     rw [hrd]
     apply hp.hrd.left
     exact ⟨⟨s.gpr .rdi, (s.gpr .rsi).toNat⟩, by simp, by
-      simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; omega⟩
+      simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; omega_using [hk1]⟩
   refine WP.mono (WP.keep [.rsi, .rax] (Q := fun t' => t'.mem = t.mem ∧
       t'.gpr .rax = BitVec.ofNat 64 (s.mem (s.gpr .rdi)).toNat ∧
       t'.zf = some (decide ((s.mem (s.gpr .rdi)).toNat = 0))) ?_ rfl) fun t' ⟨h, k⟩ => ⟨k, h⟩
   xrun [n0, ea_sp, ea_at0, L.rsp, L.ld (d := sN) (by decide), R.rd (d := sN) 18 rfl (by decide), h18, hin, hn]
-  rw [zext8, BitVec.and_self, ofNat_beq_zero (by have := (s.mem (s.gpr .rdi)).isLt; omega)]
+  rw [zext8, BitVec.and_self, ofNat_beq_zero (by have := (s.mem (s.gpr .rdi)).isLt; omega_using [])]
   exact ⟨rfl, rfl⟩
 
 theorem expectedSaltLen_eq (slen : BitVec 64) (any : BitVec 32) :

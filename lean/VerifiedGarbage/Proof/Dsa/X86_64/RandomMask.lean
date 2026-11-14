@@ -47,41 +47,41 @@ theorem randomMaskValue_eq (n : Nat) (hpos : 0 < n) (hbound : n < 256) :
     randomMaskValue n = BitVec.ofNat 64 (2 ^ (n.log2 + 1) - 1) := by
   unfold randomMaskValue
   split
-  · have hlog : n.log2 = 0 := (Nat.log2_eq_iff (by omega)).mpr ⟨by omega, by omega⟩
+  · have hlog : n.log2 = 0 := (Nat.log2_eq_iff (by omega_using [hpos])).mpr ⟨by omega_using [hpos], by omega_arith⟩
     rw [hlog]
     rfl
   ·
     split
-    · have hlog : n.log2 = 1 := (Nat.log2_eq_iff (by omega)).mpr ⟨by omega, by omega⟩
+    · have hlog : n.log2 = 1 := (Nat.log2_eq_iff (by omega_using [hpos])).mpr ⟨by omega_arith, by omega_arith⟩
       rw [hlog]
       rfl
     ·
       split
-      · have hlog : n.log2 = 2 := (Nat.log2_eq_iff (by omega)).mpr ⟨by omega, by omega⟩
+      · have hlog : n.log2 = 2 := (Nat.log2_eq_iff (by omega_using [hpos])).mpr ⟨by omega_arith, by omega_arith⟩
         rw [hlog]
         rfl
       ·
         split
-        · have hlog : n.log2 = 3 := (Nat.log2_eq_iff (by omega)).mpr ⟨by omega, by omega⟩
+        · have hlog : n.log2 = 3 := (Nat.log2_eq_iff (by omega_using [hpos])).mpr ⟨by omega_arith, by omega_arith⟩
           rw [hlog]
           rfl
         ·
           split
-          · have hlog : n.log2 = 4 := (Nat.log2_eq_iff (by omega)).mpr ⟨by omega, by omega⟩
+          · have hlog : n.log2 = 4 := (Nat.log2_eq_iff (by omega_using [hpos])).mpr ⟨by omega_arith, by omega_arith⟩
             rw [hlog]
             rfl
           ·
             split
-            · have hlog : n.log2 = 5 := (Nat.log2_eq_iff (by omega)).mpr ⟨by omega, by omega⟩
+            · have hlog : n.log2 = 5 := (Nat.log2_eq_iff (by omega_using [hpos])).mpr ⟨by omega_arith, by omega_arith⟩
               rw [hlog]
               rfl
             ·
               split
-              · have hlog : n.log2 = 6 := (Nat.log2_eq_iff (by omega)).mpr ⟨by omega, by omega⟩
+              · have hlog : n.log2 = 6 := (Nat.log2_eq_iff (by omega_using [hpos])).mpr ⟨by omega_arith, by omega_arith⟩
                 rw [hlog]
                 rfl
               ·
-                have hlog : n.log2 = 7 := (Nat.log2_eq_iff (by omega)).mpr ⟨by omega, by omega⟩
+                have hlog : n.log2 = 7 := (Nat.log2_eq_iff (by omega_using [hpos])).mpr ⟨by omega_arith, by omega_using [hbound]⟩
                 rw [hlog]
                 rfl
 

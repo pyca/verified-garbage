@@ -139,7 +139,7 @@ theorem body_vp (P : EP) (g : OHash) {f : Fns} (hT : ∀ σ, P.T σ → TabFacts
     (fne : f.init ≠ [] ∧ f.upd ≠ [] ∧ f.fin ≠ []) (v : Proof.Rsa.Arm.CrtImpl) :
     VP (Sy (S P)) (decBody f (Proof.Rsa.Arm.privName v) (Proof.Rsa.Arm.privCode v)) (Sy (Fin h.G g.G P)) := by
   refine VP.cont4 (VP.syms ((start_vp P).seq ((pa_vp P).seq ((call_vp P v).seq (len_vp h P hTL)))))
-    (byLen_vp (D := h.H.D) (by have := h.D_le; omega) (fun _ _ hs => hs.1.2)
+    (byLen_vp (D := h.H.D) (by have := h.D_le; omega_using [this]) (fun _ _ hs => hs.1.2)
       (fun σ s v ⟨⟨⟨hc, hi, he, r0, hk⟩, r1⟩, sy⟩ => ⟨⟨⟨hc.regs rfl rfl rfl rfl, hi, he, r0, hk⟩, r1⟩, sy⟩) ?_
       h.lens lens_certs)
   show VP _ (decTail (ofLen h.H.D) f) _

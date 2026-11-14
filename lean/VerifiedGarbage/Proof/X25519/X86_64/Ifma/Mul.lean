@@ -124,8 +124,8 @@ theorem mulG0_nat (E : Env) (l : Nat) : ∀ k < 5, (mulG0.reg k).nat E l =
 theorem mulG1_nat (E : Env) : ∀ l < 4, ∀ k < 5, (mulG1.reg k).nat E l =
     mulNatG (if l < 2 then E.v k l else 0) (fun i => E.v (10 + i) l) (fun j => E.v (5 + j) l) k := by
   intro l hl k hk
-  rcases (by omega : k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3 ∨ k = 4) with rfl | rfl | rfl | rfl | rfl <;>
-    rcases (by omega : l = 0 ∨ l = 1 ∨ l = 2 ∨ l = 3) with rfl | rfl | rfl | rfl <;> rfl
+  rcases (by omega_using [hk] : k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3 ∨ k = 4) with rfl | rfl | rfl | rfl | rfl <;>
+    rcases (by omega_using [hl] : l = 0 ∨ l = 1 ∨ l = 2 ∨ l = 3) with rfl | rfl | rfl | rfl <;> rfl
 
 /-- The bounds of a product's operands alone. -/
 def mulG0B : Bnds :=

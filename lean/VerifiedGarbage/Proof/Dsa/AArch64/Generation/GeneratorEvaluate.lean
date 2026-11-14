@@ -52,7 +52,7 @@ theorem generatorEvaluate_ok (M : Mont) {s : State} {B F S hp : Addr}
     have hn := ha ⟨B, activeBytes⟩ (by simp)
     change ¬ ofs B a < activeBytes at hn
     unfold activeBytes at hn
-    omega
+    omega_using [hn]
   have frame := fg.trans ft
   have Rt := rep_of_disjoint_frame R frame hF hS
   have keep := ku.trans kt

@@ -51,7 +51,7 @@ section
 variable {s₀ : State} (hp : DPre s₀)
 include hp
 
-theorem laneLen_ge : 8 ≤ (prm s₀).laneLen := by rw [hp.laneLen_eq]; have := hp.segLen_two; omega
+theorem laneLen_ge : 8 ≤ (prm s₀).laneLen := by rw [hp.laneLen_eq]; have := hp.segLen_two; omega_using [this]
 
 theorem laneLen_le : (prm s₀).laneLen ≤ blocksN s₀ := by
   rw [hp.blocks_eq]; exact Nat.le_mul_of_pos_left _ hp.lanes_pos
@@ -64,9 +64,9 @@ theorem cell_fits {lane col : Nat} (hl : lane < lanesN s₀) (hc : col < (prm s�
       (lane * (prm s₀).laneLen + col) * 1024 + 1024 ≤ blocksN s₀ * 1024 := by
   have : lane * (prm s₀).laneLen + col < blocksN s₀ := by
     have e := hp.blocks_eq
-    have := Nat.mul_le_mul_right (prm s₀).laneLen (show lane + 1 ≤ lanesN s₀ by omega)
+    have := Nat.mul_le_mul_right (prm s₀).laneLen (show lane + 1 ≤ lanesN s₀ by omega_using [hl])
     rw [Nat.succ_mul] at this
-    omega
+    omega_using [hc, e, this]
   have h2 : (lane * (prm s₀).laneLen + col + 1) * 1024 ≤ blocksN s₀ * 1024 :=
     Nat.mul_le_mul_right 1024 this
   rw [Nat.succ_mul] at h2
@@ -89,7 +89,7 @@ theorem blockAddr_ok {s : State} (h : Inv s₀ s) (pr : Prm s₀ s) {lane col : 
   have e₄ : s₄.gpr .r3 = BitVec.ofNat 64 ((lane * (prm s₀).laneLen + col) * 1024) := by
     rw [u₄.gpr, u₃.gpr, u₂.gpr, u₂.other .r4 (by decide), u₁.gpr, u₁.other .r3 (by decide),
       u₁.other .r4 (by decide), ha, hcx, pr.laneLen, ofNat_mul_ofNat, BitVec.ofNat_add_ofNat,
-      ofNat_shl' (by omega)]
+      ofNat_shl' (by omega_using [cl, hb])]
   refine wp_lda hp i₄ (i := 13) (by decide) fun s₅ u₅ => wp_add fun s₆ u₆ => k s₆ ?_ ?_
   · rw [u₆.gpr, u₅.gpr, u₅.other _ (by decide), e₄]
   · exact (((((Only.of_upd u₁).trans (Only.of_upd u₂)).trans (Only.of_upd u₃)).trans
@@ -159,21 +159,21 @@ theorem prevColumn_ok {s : State} (h : Inv s₀ s) (pr : Prm s₀ s) {col : Nat}
   unfold Impl.Argon2.PPC64LE.Derive.prevColumn
   refine WP.seq (WP.ite (decide (col = 0)) ?_ ?_ ?_)
   · rw [show isa.eval _ s = VG.PPC64LE.eval _ s from rfl, MdStream.PPC64LE.eval_zero, hx,
-      MdStream.PPC64LE.ofNat_beq_zero (by omega)]
+      MdStream.PPC64LE.ofNat_beq_zero (by omega_arith)]
   · intro hz
     refine wp_ldloc h (d := laneLenOff) (by decide) fun s₂ u₂ => WP.block_nil ?_
     refine wp_subi (by decide) fun t u => WP.block_nil ⟨?_, ?_⟩
     · have c0 : col = 0 := of_decide_eq_true hz
-      rw [u.gpr, u₂.gpr, pr.laneLen, c0, MdStream.PPC64LE.sub_ofNat (by omega), Nat.zero_add,
-        Nat.mod_eq_of_lt (by omega)]
+      rw [u.gpr, u₂.gpr, pr.laneLen, c0, MdStream.PPC64LE.sub_ofNat (by omega_using [hc]), Nat.zero_add,
+        Nat.mod_eq_of_lt (by omega_using [hc])]
     · exact ((Only.of_upd u₂).trans (Only.of_upd u)).mono (by simp)
   · intro hz
     refine WP.block_nil (wp_subi (by decide) fun t u => WP.block_nil ⟨?_, ?_⟩)
     · have c0 : col ≠ 0 := of_decide_eq_false hz
-      rw [u.gpr, hx, MdStream.PPC64LE.sub_ofNat (by omega)]
+      rw [u.gpr, hx, MdStream.PPC64LE.sub_ofNat (by omega_using [c0])]
       congr 1
-      rw [show col + (prm s₀).laneLen - 1 = col - 1 + (prm s₀).laneLen by omega, Nat.add_mod_right,
-        Nat.mod_eq_of_lt (by omega)]
+      rw [show col + (prm s₀).laneLen - 1 = col - 1 + (prm s₀).laneLen by omega_using [c0], Nat.add_mod_right,
+        Nat.mod_eq_of_lt (by omega_using [hc])]
     · exact (Only.of_upd u).mono (by simp)
 
 /-- `prevPointer`: `r3 :=` the address of the previous block. -/
@@ -197,7 +197,7 @@ theorem prevPointer_ok {s : State} (h : Inv s₀ s) (pr : Prm s₀ s) {pass slic
   refine wp_ldloc i₂ (d := laneOff) (by decide) fun s₃ u₃ => ?_
   have i₃ := i₂.upd u₃
   rw [← List.append_nil Impl.Argon2.PPC64LE.Derive.blockAddr]
-  refine blockAddr_ok hp i₃ (pr.of_mem (by rw [u₃.mem, m₂])) hl (Nat.mod_lt _ (by omega))
+  refine blockAddr_ok hp i₃ (pr.of_mem (by rw [u₃.mem, m₂])) hl (Nat.mod_lt _ (by omega_using [hc]))
     (by rw [u₃.gpr, lw_mem m₂, ps.lane]) (by rw [u₃.other _ (by decide), c₂])
     fun t a k => WP.block_nil ⟨a, ?_⟩
   exact (((k₁.trans k₂).trans (Only.of_upd u₃)).trans k).mono (by simp)

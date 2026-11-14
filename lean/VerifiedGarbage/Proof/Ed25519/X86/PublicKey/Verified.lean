@@ -59,7 +59,7 @@ theorem argValue_eq (pub : pkPub s₁ s₂) {v : Value} (hv : Whole.valid 3 v) :
   | frame d => exact congrArg (· + BitVec.ofNat 32 d) (esp_eq pub)
   | caller i d =>
     apply congrArg (· + BitVec.ofNat 32 d)
-    rcases (show i = 0 ∨ i = 1 ∨ i = 2 by change i < 3 at hv; omega) with rfl | rfl | rfl
+    rcases (show i = 0 ∨ i = 1 ∨ i = 2 by change i < 3 at hv; omega_using [hv]) with rfl | rfl | rfl
     · exact pub.2.1
     · exact pub.2.2.1
     · exact pub.2.2.2.1
@@ -84,8 +84,8 @@ theorem setup_ct (h₁ : Facts n s₁) (h₂ : Facts n s₂) (pub : pkPub s₁ s
 theorem call_args_eq (h₁ : Facts n s₁) (h₂ : Facts n s₂) (pub : pkPub s₁ s₂) {vs : List Value} (hn : vs.length ≤ 6) (hv : ∀ v ∈ vs, Whole.valid 3 v)
     {a b : State} (h : Two n s₁ s₂ (Slots vs) a b) {j : Nat} (hj : j < vs.length) :
     arg a.callEntry j = arg b.callEntry j := by
-  rw [Whole.call_arg h.1.esp h₁.toBounds.call (by have := h₁.toBounds.frame; omega) (by omega),
-    Whole.call_arg h.2.1.esp h₂.toBounds.call (by have := h₂.toBounds.frame; omega) (by omega),
+  rw [Whole.call_arg h.1.esp h₁.toBounds.call (by have := h₁.toBounds.frame; omega_using [this]) (by omega_using [hn, hj]),
+    Whole.call_arg h.2.1.esp h₂.toBounds.call (by have := h₂.toBounds.frame; omega_using [this]) (by omega_using [hn, hj]),
     h.2.2.1 j hj, h.2.2.2 j hj]
   exact argValue_eq pub (hv _ (List.getElem_mem hj))
 
@@ -143,7 +143,7 @@ theorem wipe_ct (h₁ : Facts n s₁) (h₂ : Facts n s₂) (pub : pkPub s₁ s�
   refine two_wp h₁ h₂ (Whole.block_rel (fun _ _ h => two_esp pub h) (by native_taint_decide)) ?_
   intro s t h hc _
   exact WP.mono (Whole.Ctx.zeroWords hc (start := 8) (count := 56)
-    (by have := h.toBounds.frame; omega) (by decide)) fun _ hu => ⟨hu.1, trivial⟩
+    (by have := h.toBounds.frame; omega_using [this]) (by decide)) fun _ hu => ⟨hu.1, trivial⟩
 
 /-- The frame's body after any `first` whose runs are related. -/
 theorem bodyFrom_ct (h₁ : Facts n s₁) (h₂ : Facts n s₂) (pub : pkPub s₁ s₂) {first : Prog isa}
@@ -179,7 +179,7 @@ theorem copy_ok {s t : State} (h : Facts 64 s) (hc : Ctx 64 s t) :
     WP isa copyExpanded t fun u => Ctx 64 s u ∧
       Spec.Sha512.bytesAt u.mem ((esp s).setWidth 64 + 192) 64 =
         Spec.Ed25519.bytesAt s.mem ((arg s 1).setWidth 64) 64 := by
-  refine WP.mono (Whole.copyExpanded_ok hc (by have := h.toBounds.frame; omega)
+  refine WP.mono (Whole.copyExpanded_ok hc (by have := h.toBounds.frame; omega_using [this])
     (original_arg_readable h hc (j := 1) (by decide)) (original_arg h hc (j := 1) (by decide)) h.seed
     (by rw [hc.rd]; exact List.mem_append_left _ List.mem_cons_self) (digest_disjoint h))
     fun u ⟨hu, hb⟩ => ⟨hu, hb.trans (seed_same h hc)⟩
@@ -195,7 +195,7 @@ theorem copy_ct (h₁ : Facts 64 s₁) (h₂ : Facts 64 s₂) (pub : pkPub s₁ 
       (Two 64 s₁ s₂ fun _ _ => True) := by
     refine two_wp h₁ h₂ (RelCT.taint (A := taint) (τr [.esp, .ecx]) (fun a b h => agree_regs fun r hr => ?_)
       (by native_taint_decide)) fun s t h hc he =>
-        WP.mono (Whole.copyWords_ok hc (by have := h.toBounds.frame; omega) he h.seed
+        WP.mono (Whole.copyWords_ok hc (by have := h.toBounds.frame; omega_using [this]) he h.seed
           (by rw [hc.rd]; exact List.mem_append_left _ List.mem_cons_self) (digest_disjoint h))
           fun _ hu => ⟨hu.1, trivial⟩
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -312,7 +312,7 @@ theorem pkSatE_arg (j : Nat) (hj : j < 3) :
   rw [satMemWith_out]
   have : ∀ j < 3, ∀ b < 4, 8 * 32 * 96 ≤ (argAddr pkSatStateE j + BitVec.ofNat 64 b - 0x100000).toNat := by
     decide
-  exact this j hj b (by omega)
+  exact this j hj b (by omega_using [hb])
 
 theorem satE_digest : Spec.Ed25519.bytesAt (satMemWith pkSatMemE) 0x2000 64 = satDigestE := by
   have out : ∀ i < 64, 8 * 32 * 96 ≤ ((0x2000 : Addr) + BitVec.ofNat 64 i - 0x100000).toNat := by
@@ -323,12 +323,12 @@ theorem satE_digest : Spec.Ed25519.bytesAt (satMemWith pkSatMemE) 0x2000 64 = sa
     have hi' : i < 64 := by simpa only [Spec.Ed25519.bytesAt, List.length_map, List.length_range] using hi
     have ha : ((0x2000 : Addr) + BitVec.ofNat 64 i).toNat = 0x2000 + i := by
       change (0x2000 + i % 2 ^ 64) % 2 ^ 64 = 0x2000 + i
-      omega
+      omega_using [hi']
     simp only [Spec.Ed25519.bytesAt, List.getElem_map, List.getElem_range]
     rw [satMemWith_out _ (out i hi')]
     unfold pkSatMemE
-    simp only [ha, show ¬ 0x2000 + i < 0x2000 from by omega, ite_false,
-      show 0x2000 + i < 0x2040 from by omega, ite_true, Nat.add_sub_cancel_left,
+    simp only [ha, show ¬ 0x2000 + i < 0x2000 from by omega_using [], ite_false,
+      show 0x2000 + i < 0x2040 from by omega_using [hi'], ite_true, Nat.add_sub_cancel_left,
       List.getElem?_eq_getElem hj, Option.getD_some]
 
 theorem pkE_sat :
@@ -368,7 +368,7 @@ theorem pkWideE_implies :
       Abi.withConsts, Abi.constRegions, Abi.constsHeld, stackBelow] at h
     obtain ⟨h280, hsp, hd, held, hfit, hdw, -, hstk, -, ht, hw, os, oc, oa, sc, -, ca, ro, -, rc, -,
       ko, ks, kc, -, f0, f1, f2, -⟩ := h
-    refine ⟨?_, hw, os, oc, sc, oa.symm, ca.symm, ro, rc, ko, ks, kc, f0, f1, f2, h280, by omega,
+    refine ⟨?_, hw, os, oc, sc, oa.symm, ca.symm, ro, rc, ko, ks, kc, f0, f1, f2, h280, by omega_using [hsp],
       held, hfit, ?_⟩
     · rw [← List.take_append_drop (s.rd.length - 1) s.rd, ht, hd]; rfl
     · intro r hr

@@ -25,9 +25,9 @@ theorem words_outside_bytes {B op : Addr} {Z len : Nat} {m m' : Mem}
   intro j hj he
   have hs' := hs j hj
   rw [← he] at hs'
-  have heq := ofs_off B (d := d + i) (i := 0) (by omega)
+  have heq := ofs_off B (d := d + i) (i := 0) (by omega_using [hz, hd, hi])
   simp only [BitVec.add_zero, Nat.add_zero] at heq
   rw [heq] at hs'
-  omega
+  omega_using [hd, hi, hs']
 
 end VG.Proof.Bignum

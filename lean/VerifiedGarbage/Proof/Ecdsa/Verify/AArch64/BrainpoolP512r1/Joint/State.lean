@@ -68,7 +68,7 @@ theorem Changes.point {base : Addr} {W : List (Nat × Nat)} {s t : State}
     (hsep : ∀ x ∈ coordinates p,∀ w ∈ W,x+64 ≤ w.1 ∨ w.1+w.2 ≤ x) :
     PointAt base t p P := by
   have e (x : Nat) (hx : x ∈ coordinates p) : num base t x = num base s x :=
-    h.mem.wordsVal (hsep x hx) (by have := hs.nowrap; have := hle x hx; have hn8 : cfg.n = 8 := rfl; omega)
+    h.mem.wordsVal (hsep x hx) (by have := hs.nowrap; have := hle x hx; have hn8 : cfg.n = 8 := rfl; omega_using [this, hn8])
   refine ⟨fun x hx => Nat.lt_of_le_of_lt (Nat.le_of_eq (e x hx)) (hp.1 x hx),?_⟩
   change Rep C (toM _ _ (num base t p.x)) (toM _ _ (num base t p.y))
     (toM _ _ (num base t p.z)) P

@@ -102,7 +102,7 @@ theorem build0_wp {c : Cx} (L : Lay c) {σ : State} (E : Env c σ) :
   · rw [u₄.other _ (by decide), u₃.other _ (by decide), u₂.other _ (by decide), u₁.gpr]
   · rw [u₄.other _ (by decide), u₃.other _ (by decide), u₂.gpr, u₁.other _ (by decide), E.r14]; rfl
   · rw [u₄.gpr, u₃.gpr, u₂.other _ (by decide), u₁.other _ (by decide), E.r17,
-      ofNat_lsr 1 (by rcases L.rounds with h | h <;> rw [h] <;> decide), ofNat_sub (by omega) (by omega),
+      ofNat_lsr 1 (by rcases L.rounds with h | h <;> rw [h] <;> decide), ofNat_sub (by omega_using [hR]) (by omega_using [hR]),
       Nat.pow_one, Nat.sub_zero]
   · rw [u₄.mem, u₃.mem, u₂.mem, u₁.mem]; exact Frame.refl _ _
 
@@ -125,13 +125,13 @@ theorem buildStep_wp {c : Cx} (L : Lay c) {σ : State} {i : Nat} (hi : i < cnt c
   have wr₃ : t₃.wr = t.wr := by rw [u₃.wr, u₂.wr, u₁.wr]
   have r4₃ : t₃.gpr .r4 = kbP c.W i := by rw [g₃ _ (by decide) (by decide) (by decide), I.r4]
   refine wp_stw (a := kbP c.W i) (by decide) (by decide) (by rw [r4₃, BitVec.add_zero])
-    (by rw [wr₃]; exact E.perm.wW (by omega)) fun t₄ u₄ => ?_
+    (by rw [wr₃]; exact E.perm.wW (by omega_using [hi, hc])) fun t₄ u₄ => ?_
   refine wp_stw (a := kbP c.W i + BitVec.ofNat 64 4) (by decide) (by decide) (by rw [u₄.gpr, r4₃])
-    (by rw [u₄.wr, wr₃, Offset.add_add]; exact E.perm.wW (by omega)) fun t₅ u₅ => ?_
+    (by rw [u₄.wr, wr₃, Offset.add_add]; exact E.perm.wW (by omega_using [hi, hc])) fun t₅ u₅ => ?_
   refine wp_stw (a := kbP c.W i + BitVec.ofNat 64 8) (by decide) (by decide) (by rw [u₅.gpr, u₄.gpr, r4₃])
-    (by rw [u₅.wr, u₄.wr, wr₃, Offset.add_add]; exact E.perm.wW (by omega)) fun t₆ u₆ => ?_
+    (by rw [u₅.wr, u₄.wr, wr₃, Offset.add_add]; exact E.perm.wW (by omega_using [hi, hc])) fun t₆ u₆ => ?_
   refine wp_stw (a := kbP c.W i + BitVec.ofNat 64 12) (by decide) (by decide) (by rw [u₆.gpr, u₅.gpr, u₄.gpr, r4₃])
-    (by rw [u₆.wr, u₅.wr, u₄.wr, wr₃, Offset.add_add]; exact E.perm.wW (by omega)) fun t₇ u₇ => ?_
+    (by rw [u₆.wr, u₅.wr, u₄.wr, wr₃, Offset.add_add]; exact E.perm.wW (by omega_using [hi, hc])) fun t₇ u₇ => ?_
   refine wp_addi (by decide) (by decide) fun t₈ u₈ => wp_addi (by decide) (by decide) fun t₉ u₉ =>
     wp_subi (by decide) (by decide) fun t₁₀ u₁₀ => WP.block_nil ?_
   have pk : PK t t₁₀ := (PK.ofUpd u₁).trans ((PK.ofUpd u₂).trans ((PK.ofUpd u₃).trans ((PK.ofMupd u₄).trans
@@ -145,23 +145,23 @@ theorem buildStep_wp {c : Cx} (L : Lay c) {σ : State} {i : Nat} (hi : i < cnt c
       I.r25, setWidth_32_64, setWidth_32_64, setWidth_32_64]
     rfl
   have fS : Frame [⟨kbP c.W i, 16⟩] t.mem t₁₀.mem := by rw [hm]; exact Proof.Cmac.frame_store4 _ _ _ _ _
-  refine ⟨E.of_pk pk, I.pk.trans pk, ?_, ?_, ?_, by omega, ?_, fun l hl => ?_⟩
+  refine ⟨E.of_pk pk, I.pk.trans pk, ?_, ?_, ?_, by omega_using [hi], ?_, fun l hl => ?_⟩
   · rw [u₁₀.other _ (by decide), u₉.other _ (by decide), u₈.gpr, g₇, g₃ _ (by decide) (by decide) (by decide),
       I.r25, ofNat_add]
   · rw [u₁₀.other _ (by decide), u₉.gpr, u₈.other _ (by decide), g₇, r4₃, Offset.add_add,
-      show 496 + 16 * i + 16 = 496 + 16 * (i + 1) by omega]
+      show 496 + 16 * i + 16 = 496 + 16 * (i + 1) by omega_using []]
   · rw [u₁₀.gpr, u₉.other _ (by decide), u₈.other _ (by decide), g₇, g₃ _ (by decide) (by decide) (by decide),
-      I.r5, ofNat_sub (by omega) (by omega), Nat.sub_sub]
+      I.r5, ofNat_sub (by omega_using [hi]) (by omega_using [hc]), Nat.sub_sub]
   · exact I.frame.trans (fS.sub fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
-      exact ⟨_, List.mem_cons_self, Offset.sub _ (by omega) (by omega)⟩)
+      exact ⟨_, List.mem_cons_self, Offset.sub _ (by omega_using []) (by omega_using [hi, hc])⟩)
   · by_cases e : l = i
     · subst e
       rw [hm, bldMem_bytes, nonce_blocks L I.frame]
     · rw [Proof.Cmac.bytesAt_frame fS (fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr
-        exact L.w_w (.inl (by omega)) (by omega) (by omega)) (by decide)]
-      exact I.blk l (by omega)
+        exact L.w_w (.inl (by omega_using [hl, e])) (by omega_using [hi, hc, hl]) (by omega_using [hi, hc])) (by decide)]
+      exact I.blk l (by omega_using [hl, e])
 
 /-- `deriveBuild`: the blocks `little_endian_uint32(i) ‖ nonce`. -/
 theorem build_wp {c : Cx} (L : Lay c) {σ : State} (E : Env c σ) : WP isa deriveBuild σ (BInv c σ (cnt c)) := by
@@ -169,13 +169,13 @@ theorem build_wp {c : Cx} (L : Lay c) {σ : State} (E : Env c σ) : WP isa deriv
   unfold deriveBuild
   refine WP.seq (WP.mono (build0_wp L E) fun t₀ I₀ => ?_)
   refine WP.loop (M := isa) (fun m t => ∃ i, m = cnt c - i ∧ i < cnt c ∧ BInv c σ i t) ?_
-    (cnt c - 0) _ ⟨0, rfl, by omega, I₀⟩
+    (cnt c - 0) _ ⟨0, rfl, by omega_using [hc], I₀⟩
   rintro m t ⟨i, rfl, hi, I⟩
   refine WP.mono (buildStep_wp L hi I) fun t' I' => ?_
-  have ev := VG.Proof.Gather.PPC64LE.eval_nonzero I'.r5 (by omega)
+  have ev := VG.Proof.Gather.PPC64LE.eval_nonzero I'.r5 (by omega_using [hc])
   by_cases he : i + 1 = cnt c
-  · left; exact ⟨ev.trans (by simp; omega), he ▸ I'⟩
-  · right; exact ⟨ev.trans (by simp; omega), cnt c - (i + 1), by omega, i + 1, rfl, by omega, I'⟩
+  · left; exact ⟨ev.trans (by simp; omega_using [he]), he ▸ I'⟩
+  · right; exact ⟨ev.trans (by simp; omega_using [hi, he]), cnt c - (i + 1), by omega_using [hi], i + 1, rfl, by omega_using [hi, he], I'⟩
 
 /-! ## The call -/
 
@@ -193,7 +193,7 @@ theorem ciph_k {c : Cx} (L : Lay c) {rs : List Region} (hrs : ∀ r ∈ rs, Regi
     (hf : Frame rs m m') : Spec.GcmSiv.ctxCiph m' c.K c.R = Spec.GcmSiv.ctxCiph m c.K c.R := by
   unfold Spec.GcmSiv.ctxCiph
   rw [Proof.Cmac.bytesAt_frame hf (fun r hr => (L.k_w.sub_right (hrs r hr)).sub_left (Region.sub_prefix L.rb))
-    (by have := L.rb; omega)]
+    (by have := L.rb; omega_using [this])]
 
 /-- `deriveArgs`: the arguments of the call. -/
 theorem dargs_wp {c : Cx} (L : Lay c) {t : State} (E : Env c t) (h25 : t.gpr .r25 = BitVec.ofNat 64 (cnt c)) :
@@ -209,7 +209,7 @@ theorem dargs_wp {c : Cx} (L : Lay c) {t : State} (E : Env c t) (h25 : t.gpr .r2
   refine ⟨pk, by rw [u₅.mem, u₄.mem, u₃.mem, u₂.mem, u₁.mem],
     by rw [u₅.other _ (by decide), u₄.other _ (by decide), u₃.other _ (by decide), u₂.other _ (by decide),
       u₁.other _ (by decide)],
-    bargs L E₅ E₅.perm.k (k := cnt c) (by omega) (L.k_w' (by omega)) (L.k_w' (by decide)) ?_ ?_ ?_ ?_ ?_⟩
+    bargs L E₅ E₅.perm.k (k := cnt c) (by omega_using [hc]) (L.k_w' (by omega_using [hc])) (L.k_w' (by decide)) ?_ ?_ ?_ ?_ ?_⟩
   · rw [u₅.other _ (by decide), u₄.other _ (by decide), u₃.other _ (by decide), u₂.other _ (by decide), u₁.gpr,
       E.r16]
   · rw [u₅.other _ (by decide), u₄.other _ (by decide), u₃.other _ (by decide), u₂.gpr, u₁.other _ (by decide),
@@ -233,7 +233,7 @@ theorem call_wp {c : Cx} (L : Lay c) {σ t : State} (I : BInv c σ (cnt c) t) :
     B.frame.sub fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
-      · exact ⟨_, List.mem_cons_self, Offset.sub _ (by omega) (by omega)⟩
+      · exact ⟨_, List.mem_cons_self, Offset.sub _ (by omega_using []) (by omega_using [hc])⟩
       · exact ⟨_, List.mem_cons_of_mem _ List.mem_cons_self, fun _ h => h⟩
   have hk : Spec.GcmSiv.ctxCiph t₅.mem c.K c.R = Spec.GcmSiv.ctxCiph σ.mem c.K c.R := by
     rw [m₅]; exact ciph_k L (fun r hr => by
@@ -281,10 +281,10 @@ theorem keepStep_wp {c : Cx} (L : Lay c) {σ ρ : State} (C : CallOut c σ ρ) {
   have E := I.env
   unfold keepBody
   refine wp_ld (a := kbP c.W j) (by decide) (by decide) (by rw [I.r5, BitVec.add_zero])
-    (E.perm.wR (by omega)) fun t₁ u₁ => ?_
+    (E.perm.wR (by omega_using [hj, hc])) fun t₁ u₁ => ?_
   refine wp_std (a := c.W + BitVec.ofNat 64 (16 + 8 * j)) (by decide) (by decide)
     (by rw [u₁.other _ (by decide), I.r4, BitVec.add_zero])
-    (by rw [u₁.wr]; exact E.perm.wW (by omega)) fun t₂ u₂ => ?_
+    (by rw [u₁.wr]; exact E.perm.wW (by omega_using [hj, hc])) fun t₂ u₂ => ?_
   refine wp_addi (by decide) (by decide) fun t₃ u₃ => wp_addi (by decide) (by decide) fun t₄ u₄ =>
     wp_subi (by decide) (by decide) fun t₅ u₅ => WP.block_nil ?_
   have pk : PK t t₅ := (PK.ofUpd u₁).trans ((PK.ofMupd u₂).trans ((PK.ofUpd u₃).trans ((PK.ofUpd u₄).trans
@@ -293,20 +293,20 @@ theorem keepStep_wp {c : Cx} (L : Lay c) {σ ρ : State} (C : CallOut c σ ρ) {
     rw [u₅.mem, u₄.mem, u₃.mem, u₂.mem, u₁.gpr, u₁.mem]
   have fW : Frame [⟨c.W + BitVec.ofNat 64 (16 + 8 * j), 8⟩] t.mem t₅.mem := by
     rw [hm]; exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ _)
-  refine ⟨E.of_pk pk, I.pk.trans pk, ?_, ?_, ?_, by omega, ?_, ?_⟩
+  refine ⟨E.of_pk pk, I.pk.trans pk, ?_, ?_, ?_, by omega_using [hj], ?_, ?_⟩
   · rw [u₅.gpr, u₄.other _ (by decide), u₃.other _ (by decide), u₂.gpr, u₁.other _ (by decide), I.r25,
-      ofNat_sub (by omega) (by omega), Nat.sub_sub]
+      ofNat_sub (by omega_using [hj]) (by omega_using [hc]), Nat.sub_sub]
   · rw [u₅.other _ (by decide), u₄.other _ (by decide), u₃.gpr, u₂.gpr, u₁.other _ (by decide), I.r5,
-      Offset.add_add, show 496 + 16 * j + 16 = 496 + 16 * (j + 1) by omega]
+      Offset.add_add, show 496 + 16 * j + 16 = 496 + 16 * (j + 1) by omega_using []]
   · rw [u₅.other _ (by decide), u₄.gpr, u₃.other _ (by decide), u₂.gpr, u₁.other _ (by decide), I.r4,
-      Offset.add_add, show 16 + 8 * j + 8 = 16 + 8 * (j + 1) by omega]
+      Offset.add_add, show 16 + 8 * j + 8 = 16 + 8 * (j + 1) by omega_using []]
   · exact I.frame.trans (fW.sub fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
-      exact ⟨_, List.mem_cons_self, Offset.sub _ (by omega) (by omega)⟩)
+      exact ⟨_, List.mem_cons_self, Offset.sub _ (by omega_using []) (by omega_using [hj, hc])⟩)
   · -- The bytes kept so far, and the first 8 of block `j`.
     have hb : bytesAt t.mem (kbP c.W j) 16 = bytesAt ρ.mem (kbP c.W j) 16 :=
       Proof.Cmac.bytesAt_frame I.frame (fun r hr => by
-        simp only [List.mem_singleton] at hr; subst hr; exact L.w_w (.inr (by omega)) (by omega) (by decide))
+        simp only [List.mem_singleton] at hr; subst hr; exact L.w_w (.inr (by omega_using [])) (by omega_using [hj, hc]) (by decide))
         (by decide)
     have e16 := Proof.Cmac.bytesAt_add t.mem (kbP c.W j) 8 8
     have last : bytesAt t₅.mem (c.W + BitVec.ofNat 64 (16 + 8 * j)) 8 =
@@ -315,9 +315,9 @@ theorem keepStep_wp {c : Cx} (L : Lay c) {σ ρ : State} (C : CallOut c σ ρ) {
         List.take_left' (Proof.Cmac.bytesAt_length _ _ _)]
     have keep : bytesAt t₅.mem (c.W + BitVec.ofNat 64 16) (8 * j) = bytesAt t.mem (c.W + BitVec.ofNat 64 16) (8 * j) :=
       Proof.Cmac.bytesAt_frame fW (fun r hr => by
-        simp only [List.mem_singleton] at hr; subst hr; exact L.w_w (.inl (by omega)) (by omega) (by omega))
-        (by omega)
-    rw [show 8 * (j + 1) = 8 * j + 8 by omega, Proof.Cmac.bytesAt_add, GcmSiv.halves_succ, ← I.out, keep,
+        simp only [List.mem_singleton] at hr; subst hr; exact L.w_w (.inl (by omega_using [])) (by omega_using [hj, hc]) (by omega_using [hj, hc]))
+        (by omega_using [hj, hc])
+    rw [show 8 * (j + 1) = 8 * j + 8 by omega_using [], Proof.Cmac.bytesAt_add, GcmSiv.halves_succ, ← I.out, keep,
       Offset.add_add, last]
 
 /-- `deriveKeep`. -/
@@ -327,13 +327,13 @@ theorem keep_wp {c : Cx} (L : Lay c) {σ ρ : State} (C : CallOut c σ ρ) :
   unfold deriveKeep
   refine WP.seq (WP.mono (keep0_wp L C) fun t₀ I₀ => ?_)
   refine WP.loop (M := isa) (fun m t => ∃ j, m = cnt c - j ∧ j < cnt c ∧ KInv c σ ρ j t) ?_
-    (cnt c - 0) _ ⟨0, rfl, by omega, I₀⟩
+    (cnt c - 0) _ ⟨0, rfl, by omega_using [hc], I₀⟩
   rintro m t ⟨j, rfl, hj, I⟩
   refine WP.mono (keepStep_wp L C hj I) fun t' I' => ?_
-  have ev := VG.Proof.Gather.PPC64LE.eval_nonzero I'.r25 (by omega)
+  have ev := VG.Proof.Gather.PPC64LE.eval_nonzero I'.r25 (by omega_using [hc])
   by_cases he : j + 1 = cnt c
-  · left; exact ⟨ev.trans (by simp; omega), he ▸ I'⟩
-  · right; exact ⟨ev.trans (by simp; omega), cnt c - (j + 1), by omega, j + 1, rfl, by omega, I'⟩
+  · left; exact ⟨ev.trans (by simp; omega_using [he]), he ▸ I'⟩
+  · right; exact ⟨ev.trans (by simp; omega_using [hj, he]), cnt c - (j + 1), by omega_using [hj], j + 1, rfl, by omega_using [hj, he], I'⟩
 
 /-! ## `derive` -/
 
@@ -369,8 +369,8 @@ theorem DOut.keys {c : Cx} (L : Lay c) {σ t : State} (I : DOut c σ t) :
       (bytesAt t.mem (c.W + BitVec.ofNat 64 16) 16,
         bytesAt t.mem (c.W + BitVec.ofNat 64 32) (Spec.GcmSiv.keyLen c.R)) := by
   have hR := L.rounds
-  have hk : Spec.GcmSiv.keyLen c.R / 8 + 2 = cnt c := by unfold Spec.GcmSiv.keyLen cnt; omega
-  have hl : 8 * cnt c = 16 + Spec.GcmSiv.keyLen c.R := by unfold Spec.GcmSiv.keyLen cnt; omega
+  have hk : Spec.GcmSiv.keyLen c.R / 8 + 2 = cnt c := by unfold Spec.GcmSiv.keyLen cnt; omega_using [hR]
+  have hl : 8 * cnt c = 16 + Spec.GcmSiv.keyLen c.R := by unfold Spec.GcmSiv.keyLen cnt; omega_using [hR]
   have e := I.out
   rw [hl, Proof.Cmac.bytesAt_add, Offset.add_add] at e
   rw [GcmSiv.deriveKeys_eq (GcmSiv.ctxCiph_length σ.mem _ c.R), hk, ← e,

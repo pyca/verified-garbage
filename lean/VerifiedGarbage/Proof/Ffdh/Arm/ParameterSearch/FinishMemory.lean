@@ -40,7 +40,7 @@ theorem SearchDone.output_after_used {p : SearchParams} {result : Spec.Ffdh.Para
     (frame : Frame [⟨State.addr p.c.usedPtr, 8⟩] s.mem m) : searchOutput p result m := by
   unfold searchOutput at *
   have fit : p.c.out.toNat + p.c.length ≤ 2 ^ 32 := p.c.outputFits
-  exact (VG.Proof.Bignum.Arm.rsa_bytes_frame frame (by omega)
+  exact (VG.Proof.Bignum.Arm.rsa_bytes_frame frame (by omega_using [fit])
     (by intro r hr; obtain rfl := List.mem_singleton.mp hr; exact p.c.outputUsed)).trans h.output
 
 theorem SearchDone.policy_after_used {p : SearchParams} {result : Spec.Ffdh.ParameterSearchResult}
@@ -54,7 +54,7 @@ theorem SearchDone.policy_after_used {p : SearchParams} {result : Spec.Ffdh.Para
     intro j hj
     have bound : j < 4 := List.mem_range.mp hj
     exact frame.readW (r := ⟨State.addr p.control, 128⟩)
-      (Offset.contains_base _ (by omega) (by omega))
+      (Offset.contains_base _ (by omega_using [bound]) (by omega_using [bound]))
       (by intro r hr; obtain rfl := List.mem_singleton.mp hr; exact p.controlUsed) (by decide)
   exact same.trans h.policy
 

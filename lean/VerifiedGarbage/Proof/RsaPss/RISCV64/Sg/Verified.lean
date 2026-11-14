@@ -148,7 +148,7 @@ theorem mPrime_ct : RelCT isa (Two (M pc D W)) (mPrime H) fun _ _ => True := by
   unfold mPrime
   refine two_seq (Ψ := M pc D W) (zeros8_taint (mpin (fun _ _ h => h.1.bs) [.s0]))
     (fun a t h => h.step fun s P p b sp _ _ => WP.mono (zeros_ok P b) fun _ ⟨b', m'⟩ =>
-      ⟨b', by rw [m']; exact sp.wb (.inr (by omega)) (by rw [List.length_replicate]; omega)⟩) ?_
+      ⟨b', by rw [m']; exact sp.wb (.inr (by omega_using [hY, hP])) (by rw [List.length_replicate]; omega_using [hY, hR])⟩) ?_
   let Ψ := fun (a t : State) => M pc D W a t ∧ t.gpr .a4 = stackArg a 8 ∧ t.gpr .a1 = off (Ss a) (oY + 8) ∧
     t.gpr .a5 = BitVec.ofNat 64 D
   have hΨ : ∀ a t, M pc D W a t →
@@ -162,7 +162,7 @@ theorem mPrime_ct : RelCT isa (Two (M pc D W)) (mPrime H) fun _ _ => True := by
       m.step fun s P p b sp _ _ =>
       WP.mono (digCopy_ok P hD0 hD64 b (by rw [e4, p.1.args 8 (by decide)]) (by rw [e1, ss_eq p]) e5)
         fun _ ⟨b', m'⟩ => ⟨b', by
-          rw [m']; exact sp.wb (.inr (by omega)) (by rw [bytesAt_length]; omega)⟩)) ?_
+          rw [m']; exact sp.wb (.inr (by omega_using [hY, hP])) (by rw [bytesAt_length]; omega_using [hD64, hY, hR])⟩)) ?_
   refine two_seq (Ψ := fun a t => M pc D W a t ∧ t.gpr .a1 = off (Ss a) (oY + 8 + D))
     (saltDst_taint H (mpin (fun _ _ h => h.1.bs) [.s0]))
     (fun a t h => h.lift fun s P p b sp _ _ => WP.mono (saltDst_ok hD hD64 b) fun t' ⟨o, e⟩ =>
@@ -173,12 +173,12 @@ theorem mPrime_wp {a t : State} (h : M pc D W a t) : WP isa (mPrime H) t (M pc D
   have hY : oY = 2048 := rfl
   have hP : oP = 1352 := rfl
   have hR : oRsa = 8192 := rfl
-  exact h.step fun s P p b sp _ hf => WP.mono (mPrime_ok P hD hD0 hD64 b (by have := P.k2; unfold kk at hf; omega))
+  exact h.step fun s P p b sp _ hf => WP.mono (mPrime_ok P hD hD0 hD64 b (by have := P.k2; unfold kk at hf; omega_using [hf, this]))
     fun _ ⟨b', m'⟩ => ⟨b', by
       have := P.k2; unfold kk at hf
       rw [m']
-      exact ((sp.wb (.inr (by omega)) (by rw [List.length_replicate]; omega)).wb (.inr (by omega))
-        (by rw [bytesAt_length]; omega)).wb (.inr (by omega)) (by rw [bytesAt_length]; omega)⟩
+      exact ((sp.wb (.inr (by omega_using [hY, hP])) (by rw [List.length_replicate]; omega_using [hY, hR])).wb (.inr (by omega_using [hY, hP]))
+        (by rw [bytesAt_length]; omega_using [hD64, hY, hR])).wb (.inr (by omega_using [hY, hP])) (by rw [bytesAt_length]; omega_using [hY, hR, hf, this])⟩
 
 omit hD0 in
 /-- `0x01` and the salt in `EM`, in both runs. -/
@@ -191,18 +191,18 @@ theorem putSalt_ct : RelCT isa (Two (M pc D W)) (putSalt H) fun _ _ => True := b
   have := loN_le s
   have k2 : kk s ≤ 1024 := P.k2
   have hP : oP = 1352 := rfl
-  exact WP.mono (saltHead_ok P hD hD64 b (by omega)) fun t' ⟨b', m', a1⟩ =>
-    ⟨⟨b', by rw [m']; exact sp.w8 (by omega) _⟩, by rw [a1, ss_eq p, p.1.pKk, p.1.args 11 (by decide)]⟩
+  exact WP.mono (saltHead_ok P hD hD64 b (by omega_using [hf])) fun t' ⟨b', m', a1⟩ =>
+    ⟨⟨b', by rw [m']; exact sp.w8 (by omega_using [k2, hP]) _⟩, by rw [a1, ss_eq p, p.1.pKk, p.1.args 11 (by decide)]⟩
 
 omit hD0 in
 theorem putSalt_wp {a t : State} (h : M pc D W a t) : WP isa (putSalt H) t (M pc D W a) :=
-  h.step fun s P p b sp _ hf => WP.mono (putSalt_ok P hD hD64 b (by have := loN_le s; omega)) fun _ ⟨b', m'⟩ =>
+  h.step fun s P p b sp _ hf => WP.mono (putSalt_ok P hD hD64 b (by have := loN_le s; omega_using [hf])) fun _ ⟨b', m'⟩ =>
     ⟨b', by
       have k2 : kk s ≤ 1024 := P.k2
       have hP : oP = 1352 := rfl
       have hR : oRsa = 8192 := rfl
       rw [m']
-      exact (sp.w8 (by omega) _).wb (.inl (by rw [bytesAt_length]; omega)) (by rw [bytesAt_length]; omega)⟩
+      exact (sp.w8 (by omega_using [k2, hP]) _).wb (.inl (by rw [bytesAt_length]; omega_using [hf, k2, hP])) (by rw [bytesAt_length]; omega_using [hf, k2, hR])⟩
 
 end
 
@@ -212,7 +212,7 @@ abbrev qD (D : Nat) (a : State) : Nat × Nat × Nat × Nat := (kk a - D - 1, D, 
 theorem qD_fit {D : Nat} {a : State} (C : Ck D a) : MFit (qD D a).1 (qD D a).2.1 (qD D a).2.2.1 (qD D a).2.2.2 := by
   have := C.fit; have := C.k2; have := loN_le a
   show MFit (kk a - D - 1) D (loN a) (kk a - loN a - D - 1)
-  exact ⟨by omega, by omega, .inr (by omega), by omega⟩
+  exact ⟨by omega_arith, by omega_arith, .inr (by omega_arith), by omega_arith⟩
 
 /-- MGF1's arguments, in a run. -/
 abbrev MA (pc : Bool) (D : Nat) (W : VT) (a t : State) : Prop :=
@@ -252,38 +252,38 @@ theorem main_ct : RelCT isa (Two (M pc Hs.len W)) (signMain W.H W.M.be W.f W.g p
       (fun a t h => h.lift fun s P p b sp _ _ => wp_mov fun t₁ o₁ e₁ => wp_nil
         ⟨⟨b.only (fits P) o₁, by rw [o₁.mem]; exact sp⟩, by rw [e₁, Base.ssl b, p.1.args 11 (by decide)]⟩)
       ((hashFixedG_ct (signOkT pc Hs.len W).s (sTab pc Hs.len W) cH hF (fun P => P.1.als) (fun a => stackArg a 11)).mono
-        (fun _ _ ⟨a, h₁, h₂⟩ => ⟨a, ⟨h₁.1.1.bt, h₁.2, by have := h₁.1.2.fit; have := h₁.1.2.k2; omega⟩,
-          ⟨h₂.1.1.bt, h₂.2, by have := h₂.1.2.fit; have := h₂.1.2.k2; omega⟩⟩) fun _ _ h => h))
+        (fun _ _ ⟨a, h₁, h₂⟩ => ⟨a, ⟨h₁.1.1.bt, h₁.2, by have := h₁.1.2.fit; have := h₁.1.2.k2; omega_arith⟩,
+          ⟨h₂.1.1.bt, h₂.2, by have := h₂.1.2.fit; have := h₂.1.2.k2; omega_arith⟩⟩) fun _ _ h => h))
     (fun a t ⟨⟨s, P, p, b, sp, y⟩, C⟩ => by
       have hf := (ck_s p.1 C).2
       unfold hashM
       exact WP.seq (WP.of_syms (wp_mov fun t₁ o₁ e₁ => wp_nil fun y₁ => WP.mono
         (hashFixedG_ok (fits P.1) hF P.2.1 P.1.als hHl.symm (sl := (stackArg s 11).toNat)
           (by rw [e₁, Base.ssl b, ofNat_toNat]) (b.only (fits P.1) o₁) (y₁.trans y)
-          (by have := P.1.k2; unfold kk at hf; omega)) fun _ ⟨⟨b', _, s', _⟩, y'⟩ =>
+          (by have := P.1.k2; unfold kk at hf; omega_using [hf, this])) fun _ ⟨⟨b', _, s', _⟩, y'⟩ =>
           ⟨⟨s, P, p, b', (show Spilled s t₁.mem by rw [o₁.mem]; exact sp).same s' (by
             have := Fh.1; have hY : oY = 2048 := rfl
             simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq]
-            omega), y'⟩, C⟩))) ?_
+            omega_using [Fh, hSt, hDg, hP, hCs, hY]), y'⟩, C⟩))) ?_
   -- `EM`.
   refine two_seq (Ψ := M pc Hs.len W) (clearEm_taint (mpin (fun _ _ h => h.1.bs) [.s0]))
     (fun a t h => h.step fun s P p b sp _ _ => WP.mono (clearEm_ok P b) fun _ ⟨b', m'⟩ =>
       ⟨b', by
         rw [m']
-        exact sp.wb (.inl (by rw [List.length_replicate]; omega)) (by rw [List.length_replicate]; omega)⟩) ?_
+        exact sp.wb (.inl (by rw [List.length_replicate]; omega_using [hP])) (by rw [List.length_replicate]; omega_using [hR])⟩) ?_
   refine two_seq (Ψ := M pc Hs.len W) (putSalt_ct hHl.symm hD64) (fun a t h => putSalt_wp hHl.symm hD64 h) ?_
   refine two_seq (Ψ := M pc Hs.len W) (putH_taint W.H (mpin (fun _ _ h => h.1.bs) [.s0, .s1]))
-    (fun a t h => h.step fun s P p b sp _ hf => WP.mono (putH_ok P hHl.symm hD0 hD64 b (by omega))
+    (fun a t h => h.step fun s P p b sp _ hf => WP.mono (putH_ok P hHl.symm hD0 hD64 b (by omega_using [hf]))
       fun _ ⟨b', m'⟩ => ⟨b', by
         have k2 : kk s ≤ 1024 := P.k2
         rw [m']
-        exact (sp.wb (.inl (by rw [bytesAt_length]; omega)) (by rw [bytesAt_length]; omega)).w8 (by omega) _⟩) ?_
+        exact (sp.wb (.inl (by rw [bytesAt_length]; omega_using [hD64, hP, k2])) (by rw [bytesAt_length]; omega_using [hD64, hR, k2])).w8 (by omega_using [hP, k2]) _⟩) ?_
   -- `maskedDB`.
   refine two_seq (Ψ := MgfS pc Hs.len W) (dbArgs_taint W.H (mpin (fun _ _ h => h.1.bs) []))
     (fun a t ⟨⟨s, P, p, b, sp, y⟩, C⟩ => ?_) ?_
   · have h0 := (ck_s p.1 C).1
     have hf := (ck_s p.1 C).2
-    exact WP.mono_syms (dbArgs_ok P.1 hHl.symm hD64 b h0 (by omega)) fun t' ⟨b', m', e6, e7, e8, e9⟩ y' =>
+    exact WP.mono_syms (dbArgs_ok P.1 hHl.symm hD64 b h0 (by omega_using [hf])) fun t' ⟨b', m', e6, e7, e8, e9⟩ y' =>
       ⟨⟨s, P, p, b', y'.trans y, by rw [e6, ss_eq p.1, p.1.1.pKk], e7, by rw [e8, ss_eq p.1, p.1.1.pLoN p.1.2],
         by rw [e9, p.1.1.pKk, p.1.1.pLoN p.1.2]⟩, ⟨s, P.1, p.1, by rw [m']; exact sp⟩, C⟩
   refine two_seq (Ψ := M pc Hs.len W) ((mgf_ct hG cG hFG hGh hGl hGv).mono
@@ -291,10 +291,10 @@ theorem main_ct : RelCT isa (Two (M pc Hs.len W)) (signMain W.H W.M.be W.f W.g p
     (fun a t ⟨⟨s, P, p, b, y, h6, h7, h8, h9⟩, ⟨s', P', p', sp⟩, C⟩ => WP.mono (mgfXorT_ok (fits P.1) hG hFG P.2.2
       hGh hGl hGv (qD_fit C) b y (by rw [h6, ss_eq p.1]) h7 (by rw [h8, ss_eq p.1]) h9) fun t'' ⟨⟨b'', v''⟩, y''⟩ =>
         ⟨⟨s, P, p, b'', ((sp.anchor p').ofAnchor p.1).mix v''
-          (by show loN a + (kk a - loN a - Hs.len - 1) ≤ oP; have := C.k2; have := loN_le a; omega), y''⟩, C⟩) ?_
+          (by show loN a + (kk a - loN a - Hs.len - 1) ≤ oP; have := C.k2; have := loN_le a; omega_arith), y''⟩, C⟩) ?_
   refine two_seq (Ψ := M pc Hs.len W) (clearTop_taint (mpin (fun _ _ h => h.1.bs) [.s0, .s3]))
     (fun a t h => h.step fun s P p b sp h0 _ => WP.mono (clearTop_ok P b sp h0) fun _ ⟨b', m'⟩ =>
-      ⟨b', by have := loN_le s; rw [m']; exact sp.w8 (by omega) _⟩) ?_
+      ⟨b', by have := loN_le s; rw [m']; exact sp.w8 (by omega_using [hP, this]) _⟩) ?_
   -- The private operation.
   exact priv_ct.mono (fun _ _ ⟨a, h₁, h₂⟩ => ⟨a, h₁.1, h₂.1⟩) fun _ _ h => h
 
@@ -331,7 +331,7 @@ theorem checks_ct : RelCT isa (Two (En pc Hs.len W)) (checks W.H W.M.be W.f W.g 
       isa.eval (.nonzero .a0) t = some false → E2 a t := fun {a t} ⟨⟨⟨s, P, p, E, y, h0⟩, c⟩, hc⟩ => by
     rw [eval_nonzero, c] at hc
     have : ¬ kk a - loN a < W.H.D + 2 := by simpa using hc
-    exact ⟨s, P, p, E, y, h0, by rw [p.1.1.pKk, p.1.1.pLoN p.1.2]; omega⟩
+    exact ⟨s, P, p, E, y, h0, by rw [p.1.1.pKk, p.1.1.pLoN p.1.2]; omega_using [this]⟩
   -- The salt's length.
   refine two_seq (Ψ := fun a t => E2 a t ∧
       (t.gpr .a0 != 0) = decide (kk a - loN a - (W.H.D + 2) < (stackArg a 11).toNat))
@@ -350,7 +350,7 @@ theorem checks_ct : RelCT isa (Two (En pc Hs.len W)) (checks W.H W.M.be W.f W.g 
     have hn : ¬ kk a - loN a - (W.H.D + 2) < (stackArg a 11).toNat := by simpa using hc
     have k2 : kk s ≤ 1024 := P.1.k2
     rw [p.1.1.byte p.1.2, p.1.1.pKk, p.1.1.pLoN p.1.2] at *
-    exact ⟨⟨s, P, p, E.base, E.sp, y⟩, ⟨h0, by rw [hHl]; omega, k2⟩⟩
+    exact ⟨⟨s, P, p, E.base, E.sp, y⟩, ⟨h0, by rw [hHl]; omega_using [hem, hn], k2⟩⟩
   exact (main_ct cH hF hHl hG cG hFG hGh hGl hGv).mono (fun _ _ ⟨a, h₁, h₂⟩ => ⟨a, e4 h₁, e4 h₂⟩) fun _ _ h => h
 
 variable {Hh : Spec.Mgf1.Hash} (hHh : ∀ x, Hs.hash x = W.hH.SH.H.hash x) (hHv : Proof.Mgf1.Valid Hs)

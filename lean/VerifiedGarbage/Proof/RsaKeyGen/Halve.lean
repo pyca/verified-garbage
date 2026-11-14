@@ -27,9 +27,9 @@ theorem testBit_half_word (a b : BitVec 64) {q : Nat} (hq : q < 64) :
     Nat.shiftLeft_eq, Nat.testBit_mod_two_pow, Nat.testBit_mul_two_pow, Nat.pow_one,
     show a.toNat / 2 = a.toNat / 2 ^ 1 from rfl, Nat.testBit_div_two_pow]
   by_cases h : q < 63
-  · simp only [h, ↓reduceIte, hq, decide_true, Bool.true_and, show ¬ 63 ≤ q by omega, decide_false,
+  · simp only [h, ↓reduceIte, hq, decide_true, Bool.true_and, show ¬ 63 ≤ q by omega_using [h], decide_false,
       Bool.false_and, Bool.or_false]
-  · have : q = 63 := by omega
+  · have : q = 63 := by omega_using [hq, h]
     subst this
     have h64 : a.toNat.testBit 64 = false := Nat.testBit_lt_two_pow a.isLt
     simp [h64]

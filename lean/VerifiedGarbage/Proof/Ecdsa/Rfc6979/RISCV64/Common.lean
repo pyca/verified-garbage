@@ -349,7 +349,7 @@ structure Sz (P : Rfc) : Prop where
 /-- The stack HMAC's functions use, with the hash function's below them. -/
 theorem x_le (H : Hash) (hN : H.N ≤ 64) (hb : H.b = 6 ∨ H.b = 7) (hD : H.D ≤ 64) (hF : H.F ≤ 208) :
     H.ibytes + H.F ≤ 512 ∧ H.fbytes + H.F ≤ 512 := by
-  rcases hb with h | h <;> simp only [Hash.ibytes, Hash.iso, Hash.fbytes, Hash.fso, Hash.S, Hash.B, h] <;> omega
+  rcases hb with h | h <;> simp only [Hash.ibytes, Hash.iso, Hash.fbytes, Hash.fso, Hash.S, Hash.B, h] <;> omega_using [hN, hD, hF]
 
 theorem sizes (P : Rfc) : Sz P := by
   have hl := P.hH.lay
@@ -367,13 +367,13 @@ theorem sizes (P : Rfc) : Sz P := by
   have hQw : 24 ≤ P.Q ∧ P.Q ≤ 72 ∧ P.Q ≤ 8 * P.kit.nw ∧ 8 * P.kit.nw ≤ P.Q + 8 ∧ 32 ≤ 8 * P.kit.nw ∧
       8 * P.kit.nw ≤ 72 ∧ (64 < P.Q → P.kit.nw = 9) := by
     simp only [Rfc.Q]
-    rcases P.kit.Qw with h | ⟨h1, h2⟩ | ⟨h1, h2⟩ | ⟨h1, h2⟩ <;> omega
+    rcases P.kit.Qw with h | ⟨h1, h2⟩ | ⟨h1, h2⟩ | ⟨h1, h2⟩ <;> omega_arith
   obtain ⟨q1, q2, q3, q4, q5, q6, q7⟩ := hQw
-  refine ⟨hN, hB, hS, by show P.H.N + P.H.B ≤ 192; rcases hB with h | h <;> omega, ⟨hD0, hD⟩,
+  refine ⟨hN, hB, hS, by show P.H.N + P.H.B ≤ 192; rcases hB with h | h <;> omega_using [hN, h], ⟨hD0, hD⟩,
     ⟨q1, q2, hQ, q3, q4, q5, q6⟩, ⟨hbig, fun h => q7 (hbig.mp h)⟩,
     ⟨P.hG, fun h => by rw [hGv, h]; rfl, fun h => by rw [hGv, h]; rfl⟩, hF, ?_⟩
   have := x_le P.H hN.2 P.hH.hb hD hF
-  exact ⟨by show _ ≤ 512; omega, by show _ ≤ 512; omega, by show _ ≤ 512; omega, rfl⟩
+  exact ⟨by show _ ≤ 512; omega_using [this], by show _ ≤ 512; omega_using [this], by show _ ≤ 512; omega_using [hF], rfl⟩
 
 section
 variable {P : Rfc} {s₀ : State} (hp : Pre P s₀)
@@ -386,7 +386,7 @@ theorem part_sub {o n : Nat} (h : o + n ≤ frB) : Region.Sub (sR s₀ o n) (frR
 omit hp in
 theorem part_disj {a m b n : Nat} (h : a + m ≤ b ∨ b + n ≤ a) (ha : a + m ≤ 4096) (hb : b + n ≤ 4096) :
     Region.Disjoint (sR s₀ a m) (sR s₀ b n) :=
-  Offset.disjoint _ h (by omega) (by omega)
+  Offset.disjoint _ h (by omega_using [ha]) (by omega_using [hb])
 
 omit hp in
 theorem scr_sub {o n : Nat} (h : o + n ≤ 8192) : Region.Sub (cR s₀ o n) (scrR s₀) :=
@@ -394,7 +394,7 @@ theorem scr_sub {o n : Nat} (h : o + n ≤ 8192) : Region.Sub (cR s₀ o n) (scr
 
 theorem scr_disj {a m b n : Nat} (h : a + m ≤ b ∨ b + n ≤ a) (ha : a + m ≤ 8192) (hb : b + n ≤ 8192) :
     Region.Disjoint (cR s₀ a m) (cR s₀ b n) :=
-  Offset.disjoint _ h (by have := hp.nc; omega) (by have := hp.nc; omega)
+  Offset.disjoint _ h (by have := hp.nc; omega_using [ha]) (by have := hp.nc; omega_using [hb])
 
 theorem fr_wr {s : State} (hwr : s.wr = s₀.wr) : frR s₀ ∈ s.wr := by rw [hwr, hp.wr]; simp
 theorem out_wr {s : State} (hwr : s.wr = s₀.wr) : outR P s₀ ∈ s.wr := by rw [hwr, hp.wr]; simp
@@ -402,19 +402,19 @@ theorem scr_wr {s : State} (hwr : s.wr = s₀.wr) : scrR s₀ ∈ s.wr := by rw 
 
 theorem in_fr {s : State} (hwr : s.wr = s₀.wr) {o n : Nat} (h : o + n ≤ frB) :
     InRegions s.wr (sA s₀ o) n :=
-  ⟨_, fr_wr hp hwr, Offset.contains_base _ h (by have := hp.top; have : frB = 512 := rfl; omega)⟩
+  ⟨_, fr_wr hp hwr, Offset.contains_base _ h (by have := hp.top; have : frB = 512 := rfl; omega_using [h, this])⟩
 
 theorem in_fr' {s : State} (hwr : s.wr = s₀.wr) {o n : Nat} (h : o + n ≤ frB) :
     InRegions (s.rd ++ s.wr) (sA s₀ o) n :=
-  ⟨_, List.mem_append_right _ (fr_wr hp hwr), Offset.contains_base _ h (by have := hp.top; have : frB = 512 := rfl; omega)⟩
+  ⟨_, List.mem_append_right _ (fr_wr hp hwr), Offset.contains_base _ h (by have := hp.top; have : frB = 512 := rfl; omega_using [h, this])⟩
 
 /-- The frame is apart from the stack below it. -/
 theorem f_s : (frR s₀).Disjoint (stk P s₀) :=
-  Offset.base_disjoint_below _ (by have := hp.top; have := hp.spX; have := s₀.sp.isLt; omega)
+  Offset.base_disjoint_below _ (by have := hp.top; have := hp.spX; have := s₀.sp.isLt; omega_arith)
 
 /-- The stack below the stack pointer, within `stk`. -/
 theorem below_stk {n : Nat} (hn : n ≤ P.X) : Region.Sub (below s₀.sp n) (stk P s₀) :=
-  below_sub hn (by have := hp.spX; have := s₀.sp.isLt; omega)
+  below_sub hn (by have := hp.spX; have := s₀.sp.isLt; omega_arith)
 
 end
 
@@ -487,7 +487,7 @@ theorem Wk.ok (hp : Pre P s₀) {r : Region} (h : Wk P s₀ r) :
     Region.Disjoint (svR s₀) r ∧ ∃ r' ∈ wrs P s₀, Region.Sub r r' := by
   have sv : Region.Sub (svR s₀) (frR s₀) := part_sub (by decide)
   rcases h with ⟨o, n, rfl, h₁, h₂⟩ | h | h | ⟨n, rfl, hn⟩
-  · exact ⟨part_disj (s₀ := s₀) (.inl h₁) (by decide) (by simp only [frB] at h₂; omega),
+  · exact ⟨part_disj (s₀ := s₀) (.inl h₁) (by decide) (by simp only [frB] at h₂; omega_using [h₂]),
       _, by simp, part_sub (s₀ := s₀) h₂⟩
   · exact ⟨(hp.f_o.sub_left sv).sub_right h, _, by simp, h⟩
   · exact ⟨(hp.f_c.sub_left sv).sub_right h, _, by simp, h⟩
@@ -514,12 +514,12 @@ theorem KR.dBytes (hp : Pre P s₀) {s : State} (hk : KR P s₀ s) :
     · exact hp.f_d.symm
     · exact hp.o_d.symm
     · exact hp.d_c
-    · exact hp.b_d.symm) (by have := (sizes P).Q; omega)
+    · exact hp.b_d.symm) (by have := (sizes P).Q; omega_using [this])
 
 /-- A word of the table is as on entry. -/
 theorem KR.tabW (hp : Pre P s₀) {s : State} (hk : KR P s₀ s) {o : Nat} (ho : o + 8 ≤ 48) :
     s.mem.readW (tab s₀ + BitVec.ofNat 64 o) 64 = s₀.mem.readW (tab s₀ + BitVec.ofNat 64 o) 64 :=
-  hk.frame.readW (r := tabR s₀) (Offset.contains_base _ ho (by have := hp.nt; omega))
+  hk.frame.readW (r := tabR s₀) (Offset.contains_base _ ho (by have := hp.nt; omega_using [ho]))
     (fun r hr => hp.t_wr r hr) (by decide)
 
 end
@@ -531,12 +531,12 @@ theorem hi_sdepth : sdepth P.H.init ≤ P.H.ibytes + P.H.F := by
   have := P.hH.initSd; have := P.hH.updSd; have := P.hH.finSd
   simp only [Hash.init, Hash.initMain, Hash.longKey, Hash.padKey, Hash.updBlock, Hash.callInit, Hash.callUpd,
     Hash.callFin, Hash.keyLoop, Hash.padLoop, sdepth, Instr.frameBytes]
-  omega
+  omega_arith
 
 theorem hf_sdepth : sdepth P.H.finalize ≤ P.H.fbytes + P.H.F := by
   have := P.hH.updSd; have := P.hH.finSd
   simp only [Hash.finalize, Hash.finalizeMain, Hash.callUpd, Hash.callFin, sdepth, Instr.frameBytes]
-  omega
+  omega_arith
 
 theorem hi_ok : ∀ s, (hiK P.H P.hH.SH).pre s → ∃ t s', Exec isa P.H.init s t s' ∧
     abiPreserved s s' ∧ (hiK P.H P.hH.SH).post s s' := fun _ hs => by
@@ -595,13 +595,13 @@ theorem hi_call {s : State} {inn ou k : Addr} {kl : Nat} (h : HiArgs P s inn ou 
   have c3 : (s.callEntry.gpr .a3).toNat = kl := by rw [State.callEntry_gpr _ (by decide), h.a3]
   refine WP.callAny (k := hiK P.H P.hH.SH) (hi_ok P) (rd := [⟨k, kl⟩])
     (wr := [⟨inn, P.hH.SH.stateBytes⟩, ⟨ou, P.hH.SH.stateBytes⟩]) h.pre (by rw [hS]; exact h.hc)
-    (by rw [hS]; exact h.hw) ?_ (by have := hi_sdepth P; have := hl.ibytes; have := hl.F; omega)
+    (by rw [hS]; exact h.hw) ?_ (by have := hi_sdepth P; have := hl.ibytes; have := hl.F; omega_arith)
   intro s' hrd hwr hsp' hf hcs hpost
   simp only [hiK, initG, State.withRegions_gpr, State.withRegions_mem, State.callEntry_mem, c0, c1, c2,
     c3] at hpost
   refine hQ s' ⟨hrd, hwr, hsp', hcs, ?_⟩ hpost.1 hpost.2
   rw [hS] at hf
-  exact Frame.below_mono hf (hi_sdepth P) (by have := hl.ibytes; have := hl.F; omega)
+  exact Frame.below_mono hf (hi_sdepth P) (by have := hl.ibytes; have := hl.F; omega_arith)
 
 /-- Two runs of a call of HMAC's `init` with the same arguments. -/
 theorem hi_rel {Q : State → State → Prop} {inn ou k : Addr} {kl : Nat}
@@ -672,13 +672,13 @@ theorem hf_call {s : State} {inn ou o : Addr} (h : HfArgs P s inn ou o) {Q : Sta
   have c3 : s.callEntry.gpr .a3 = o := (State.callEntry_gpr _ (by decide)).trans h.a3
   refine WP.callAny (k := hfK P.H P.hH.SH) (hf_ok P) (rd := [⟨ou, P.hH.SH.stateBytes⟩])
     (wr := [⟨inn, P.hH.SH.stateBytes⟩, ⟨o, P.hH.SH.digestBytes⟩]) h.pre (by rw [hS, hD]; exact h.hc)
-    (by rw [hS, hD]; exact h.hw) ?_ (by have := hf_sdepth P; have := hl.fbytes; have := hl.F; omega)
+    (by rw [hS, hD]; exact h.hw) ?_ (by have := hf_sdepth P; have := hl.fbytes; have := hl.F; omega_arith)
   intro s' hrd hwr hsp' hf hcs hpost
   simp only [hfK, finG, State.withRegions_gpr, State.withRegions_mem, State.callEntry_mem, c0, c1, c2, c3,
     hD, hB] at hpost
   refine hQ s' ⟨hrd, hwr, hsp', hcs, ?_⟩ hpost
   rw [hS, hD] at hf
-  exact Frame.below_mono hf (hf_sdepth P) (by have := hl.fbytes; have := hl.F; omega)
+  exact Frame.below_mono hf (hf_sdepth P) (by have := hl.fbytes; have := hl.F; omega_arith)
 
 /-- Two runs of a call of HMAC's `finalize` with the same arguments. -/
 theorem hf_rel {Q : State → State → Prop} {inn ou o : Addr}

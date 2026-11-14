@@ -70,11 +70,11 @@ theorem movi_val (v : Nat) :
   have e1 : BitVec.ofNat 16 (v / 65536) = (BitVec.ofNat 32 v).extractLsb' 16 16 := by
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.extractLsb'_toNat, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow]
-    omega
+    omega_using []
   have e2 : BitVec.ofNat 16 v = (BitVec.ofNat 32 v).extractLsb' 0 16 := by
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.extractLsb'_toNat, BitVec.toNat_ofNat, Nat.shiftRight_zero]
-    omega
+    omega_using []
   rw [e1, e2]; exact movw_movt _
 
 theorem movi_ok (d : Reg) (v : Nat) (s : State) :
@@ -259,7 +259,7 @@ theorem callR_ok {D : Nat} {n : String} {c : Prog isa} {k : Contract isa}
       ∃ s1, ArgsIn as s s1 ∧ Keep argRegs s s1 ∧ k.post (s1.callEntry.withRegions rd wr) (s'.withRegions rd wr) := by
   refine WP.seq (WP.mono (setArgs_ok as ha s) fun s1 ⟨hA, k1⟩ => ?_)
   refine WP.callF hv (hpre s1 hA k1) (by rw [k1.rd, k1.wr]; exact hc) (by rw [k1.wr]; exact hw)
-    (by rw [k1.sp]; omega) fun s' hrd hwr hsp' hf hcs hpost => ?_
+    (by rw [k1.sp]; omega_using [hsu, hsp]) fun s' hrd hwr hsp' hf hcs hpost => ?_
   have hcs' : CS s s' := CS.trans k1.cs hcs
   rw [k1.mem, k1.sp] at hf
   exact ⟨⟨hrd.trans k1.rd, hwr.trans k1.wr, fun r hr => hcs' r (bases_cs r hr).1 (bases_cs r hr).2,
@@ -277,13 +277,13 @@ theorem ne12_pres : ∀ r ∈ preserved, r ≠ .lr → r ≠ .r12 := by decide
 
 theorem argR_contains {s : State} {x : Addr} {m : Nat} (h : (argR s).Contains x m) :
     (belowA s.sp 8).Contains x m := by
-  simp only [Region.Contains, belowA] at h ⊢; omega
+  simp only [Region.Contains, belowA] at h ⊢; omega_using [h]
 
 theorem sp_sub8 {sp : BitVec 32} (h : 8 ≤ sp.toNat) : (sp - BitVec.ofNat 32 8).toNat = sp.toNat - 8 := by
-  rw [BitVec.toNat_sub, BitVec.toNat_ofNat]; omega
+  rw [BitVec.toNat_sub, BitVec.toNat_ofNat]; omega_using [h]
 
 theorem argR_sub (s : State) : Region.Sub (argR s) (belowA s.sp 8) := fun x hx => by
-  simp only [Region.Contains, belowA] at hx ⊢; omega
+  simp only [Region.Contains, belowA] at hx ⊢; omega_using [hx]
 
 /-- The moves of the arguments, then a call of verified code in a frame that
 pushes its fifth and sixth arguments (`r12`, `lr`). -/
@@ -299,7 +299,7 @@ theorem callS_ok {D : Nat} {n : String} {c : Prog isa} {k : Contract isa}
         (∀ r, r ≠ .r12 → s₂.gpr r = s'.gpr r) ∧
         k.post ((pushed [.r12, .lr] s1).callEntry.withRegions (rd ++ [argR s]) wr)
           (s₂.withRegions (rd ++ [argR s]) wr) := by
-  have h8 : 8 ≤ s.sp.toNat := by omega
+  have h8 : 8 ≤ s.sp.toNat := by omega_using [hsu, hsp]
   refine WP.seq (WP.mono (setArgs_ok as ha s) fun s1 ⟨hA, k1⟩ => ?_)
   have h8' : 8 ≤ s1.sp.toNat := by rw [k1.sp]; exact h8
   refine WP.frame (rs := [.r12, .lr]) (r := .r12) rfl (by simpa using h8') (by decide) ?_
@@ -321,12 +321,12 @@ theorem callS_ok {D : Nat} {n : String} {c : Prog isa} {k : Contract isa}
     obtain ⟨r', hr', hc'⟩ := hw x m hx
     exact ⟨r', List.mem_cons_of_mem _ hr', hc'⟩
   · rw [VG.Arm.pushed_sp, k1.sp, show BitVec.ofNat 32 (4 * [Reg.r12, Reg.lr].length) = BitVec.ofNat 32 8 from rfl,
-      sp_sub8 h8]; omega
+      sp_sub8 h8]; omega_using [hsu, hsp]
   · have hcs₂ : CS s s₂ := fun r hr hl => by rw [hcs r hr hl, VG.Arm.pushed_gpr]; exact k1.cs r hr hl
     have hsp₂' : s₂.sp = s.sp - BitVec.ofNat 32 8 := by rw [hsp₂, VG.Arm.pushed_sp, k1.sp]; rfl
     have f₁ := push2_frame h8'
     rw [k1.mem] at f₁
-    have hsu' : 8 + stackUse c ≤ s.sp.toNat := by omega
+    have hsu' : 8 + stackUse c ≤ s.sp.toNat := by omega_using [hsu, hsp]
     refine ⟨⟨by simp only [popped_rd, hrd, VG.Arm.pushed_rd, k1.rd], by simp only [popped_wr, hwr, hwp, List.tail_cons],
       fun r hr => (popped_gpr (ne12_pres r (bases_cs r hr).1 (bases_cs r hr).2) _ _).trans
         (hcs₂ r (bases_cs r hr).1 (bases_cs r hr).2), by rw [popped_sp, hsp₂']; exact BitVec.sub_add_cancel _ _, ?_⟩,
@@ -338,12 +338,12 @@ theorem callS_ok {D : Nat} {n : String} {c : Prog isa} {k : Contract isa}
     · simp only [List.mem_singleton] at hr; subst hr
       show ∃ r', r' ∈ wr ++ [belowA s.sp D] ∧ (belowA s1.sp 8).Sub r'
       rw [k1.sp]
-      exact ⟨_, List.mem_append_right _ (List.mem_singleton_self _), belowA_sub (by omega)⟩
+      exact ⟨_, List.mem_append_right _ (List.mem_singleton_self _), belowA_sub (by omega_using [hsu])⟩
     · simp only [List.mem_append, List.mem_singleton] at hr
       rcases hr with hr | rfl
       · exact ⟨r, List.mem_append_left _ hr, fun _ h => h⟩
       · exact ⟨_, List.mem_append_right _ (List.mem_singleton_self _),
-          fun x h => belowA_sub (show 8 + stackUse c ≤ D by omega) x (belowA_push hsu' x h)⟩
+          fun x h => belowA_sub (show 8 + stackUse c ≤ D by omega_using [hsu]) x (belowA_push hsu' x h)⟩
 
 /-! ## Two runs of a call -/
 

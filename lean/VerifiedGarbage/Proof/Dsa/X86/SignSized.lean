@@ -55,32 +55,32 @@ theorem signSized_spec {base : Addr} {size pLen qLen p q g y x k total : Nat}
       Keeps powerClob s sf ∧ StackOutputFrame (s.gpr .esp) base (out.setWidth 64) usedBytes (2 * qLen) s.mem sf.mem ∧
       ∀ regs, VG.X86.Spill.Saved s.mem (off base) regs Entry.savedRegisters →
         VG.X86.Spill.Saved sf.mem (off base) regs Entry.savedRegisters := by
-  have bound : 8248 ≤ size := by have H : 15712 ≤ size := extent; omega
-  have sz : 8272 ≤ size := by have H : 15712 ≤ size := extent; omega
-  have L : 20 ≤ qLen ∧ qLen ≤ 32 := by unfold Spec.Dsa.lengthsValid at widths; omega
+  have bound : 8248 ≤ size := by have H : 15712 ≤ size := extent; omega_using [H]
+  have sz : 8272 ≤ size := by have H : 15712 ≤ size := extent; omega_using [H]
+  have L : 20 ≤ qLen ∧ qLen ≤ 32 := by unfold Spec.Dsa.lengthsValid at widths; omega_using [widths]
   apply sized_ok true scr extent widths P Q hp hq
   · intro t invalid K O
     have rejected : Spec.Dsa.signBytes pLen qLen key nonce digest = none :=
       signBytes_invalid_shape (by simpa only [keyValue] using invalid)
-    refine WP.mono (signFailure_ok (scr.of_keeps K (by decide)) (by change 8256 ≤ size; omega)
-      (by omega) L.2 ((shapeFrame_field O (by decide)).trans ho)
+    refine WP.mono (signFailure_ok (scr.of_keeps K (by decide)) (by change 8256 ≤ size; omega_using [sz])
+      (by omega_using [L]) L.2 ((shapeFrame_field O (by decide)).trans ho)
       ((shapeFrame_field O (by decide)).trans hc) hf
-      (by intro i hi; rw [K.2.2]; exact hw i 1 (by omega))) fun sf ⟨B, V, Of, Kf⟩ => ?_
+      (by intro i hi; rw [K.2.2]; exact hw i 1 (by omega_using [hi]))) fun sf ⟨B, V, Of, Kf⟩ => ?_
     have F : OutputFrame base (out.setWidth 64) 0 (2 * qLen) t.mem sf.mem :=
-      fun a _ hb => Of a (.inr (by omega))
+      fun a _ hb => Of a (.inr (by omega_using [hb]))
     refine ⟨by rw [V, rejected]; rfl, by rw [rejected]; exact B,
       (K.mono (by decide)).trans (Kf.mono (by decide)), ?_, ?_⟩
     · intro a hbase hout hstack
-      exact (F a (by omega) hout).trans (shapeFrame_outside O a (.inr (by change 15712 ≤ ofs base a at hbase; omega)))
+      exact (F a (by omega_using []) hout).trans (shapeFrame_outside O a (.inr (by change 15712 ≤ ofs base a at hbase; omega_using [hbase])))
     · intro regs saved
-      exact F.saved ha (by decide) sz (by have := scr.nowrap; omega) (shapeFrame_saved O saved)
+      exact F.saved ha (by decide) sz (by have := scr.nowrap; omega_using [this]) (shapeFrame_saved O saved)
   · intro t valid M Dp mask K O
     dsimp only [ite_true]
     rw [hd] at Dp
     have Bw := shape_digest_width valid
     have hP : pointerValue base t (.input .digestPrefixLen) =
         BitVec.ofNat 32 (min total (Spec.Dsa.bitLength q / 8)) :=
-      BitVec.eq_of_toNat_eq (by rw [Dp, BitVec.toNat_ofNat]; omega)
+      BitVec.eq_of_toNat_eq (by rw [Dp, BitVec.toNat_ofNat]; omega_using [hd])
     have Dt := D.keep_shape O K (by decide) (by decide)
     have Db := D.bytes_keep_shape O K (by decide) (by decide) bound
     have digestValue : operandValue t base (.input .digest)
@@ -93,7 +93,7 @@ theorem signSized_spec {base : Addr} {size pLen qLen p q g y x k total : Nat}
       (X.keep_shape O K (by decide) (by decide))
       (N.keep_shape O K (by decide) (by decide))
       (Dt.prefix (Nat.min_le_left _ _))
-      (by have B := shape_digest_width valid; omega) hP
+      (by have B := shape_digest_width valid; omega_using [Bw]) hP
       ((G.value_keep_shape O K (by decide) (by decide) bound).trans hg)
       ((Y.value_keep_shape O K (by decide) (by decide) bound).trans hy)
       ((X.value_keep_shape O K (by decide) (by decide) bound).trans hx)
@@ -104,6 +104,6 @@ theorem signSized_spec {base : Addr} {size pLen qLen p q g y x k total : Nat}
       fun sf ⟨V, B, Kf, F, Saved⟩ => ?_
     refine ⟨V, B, (K.mono (by decide)).trans Kf, ?_, fun regs saved => Saved regs (shapeFrame_saved O saved)⟩
     intro a hbase hout hstack
-    exact (F a hbase hout (by rw [K.1 .esp (by decide)]; exact hstack)).trans (shapeFrame_outside O a (.inr (by change 15712 ≤ ofs base a at hbase; omega)))
+    exact (F a hbase hout (by rw [K.1 .esp (by decide)]; exact hstack)).trans (shapeFrame_outside O a (.inr (by change 15712 ≤ ofs base a at hbase; omega_using [hbase])))
 
 end VG.Proof.Dsa.X86

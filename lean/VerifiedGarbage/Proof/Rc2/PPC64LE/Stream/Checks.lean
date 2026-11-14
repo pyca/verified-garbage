@@ -25,15 +25,15 @@ theorem range_bne {x b : Nat} (hx : x < 2 ^ 64) (hb : b < 64) :
     ((BitVec.ofNat 64 x - 1#64) >>> b != 0#64) = !decide (1 ≤ x ∧ x ≤ 2 ^ b) := by
   rw [bne_zero_toNat]
   congr 1
-  have hp : 2 ^ b ≤ 2 ^ 63 := Nat.pow_le_pow_right (by decide) (by omega)
+  have hp : 2 ^ b ≤ 2 ^ 63 := Nat.pow_le_pow_right (by decide) (by omega_using [hb])
   have hp1 : 1 ≤ 2 ^ b := Nat.one_le_two_pow
   simp only [BitVec.toNat_ushiftRight, BitVec.toNat_sub, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow]
   rw [Nat.mod_eq_of_lt hx]
   apply decide_eq_decide.mpr
   rw [Nat.div_eq_zero_iff]
   by_cases h : x = 0
-  · subst h; omega
-  · rw [show (2 ^ 64 - 1 % 2 ^ 64 + x) % 2 ^ 64 = x - 1 by omega]; omega
+  · subst h; omega_using [hp, hp1]
+  · rw [show (2 ^ 64 - 1 % 2 ^ 64 + x) % 2 ^ 64 = x - 1 by omega_using [hx, h]]; omega_using [hp1, h]
 
 /-- The code `checks` leaves in `r3` for invalid lengths. -/
 def errCode (keyLen bits : Nat) : Nat :=
@@ -67,7 +67,7 @@ theorem checks_run (s : State) :
   have c₁ := range_bne (x := (s.gpr .r4).toNat) (b := 7) (s.gpr .r4).isLt (by decide)
   rw [e4] at c₁
   refine WP.ite _ (by rw [eval_nonzero, a₁, c₁]) (fun h => ?_) (fun h => ?_)
-  · have hk : ¬(1 ≤ (s.gpr .r4).toNat ∧ (s.gpr .r4).toNat ≤ 128) := by simp at h; omega
+  · have hk : ¬(1 ≤ (s.gpr .r4).toNat ∧ (s.gpr .r4).toNat ≤ 128) := by simp at h; omega_using [h]
     refine WP.mono (WP.keep [.r3] (c := .block [.li .r3 1]) (Q := fun t => t.gpr .r3 = 1#64 ∧ t.mem = t₁.mem)
       (by rrun) (by rfl) rfl) fun t ⟨⟨a, m⟩, k⟩ =>
       ⟨by rw [m, m₁], (k₁.trans k).mono (by simp), ?_, fun _ => ?_, fun hv => absurd hv.1 hk⟩
@@ -82,7 +82,7 @@ theorem checks_run (s : State) :
     have c₂ := range_bne (x := (s.gpr .r5).toNat) (b := 10) (s.gpr .r5).isLt (by decide)
     rw [e5] at c₂
     refine WP.ite _ (by rw [eval_nonzero, a₂, c₂]) (fun h => ?_) (fun h => ?_)
-    · have hb : ¬(1 ≤ (s.gpr .r5).toNat ∧ (s.gpr .r5).toNat ≤ 1024) := by simp at h; omega
+    · have hb : ¬(1 ≤ (s.gpr .r5).toNat ∧ (s.gpr .r5).toNat ≤ 1024) := by simp at h; omega_using [h]
       refine WP.mono (WP.keep [.r3] (c := .block [.li .r3 2]) (Q := fun t => t.gpr .r3 = 2#64 ∧ t.mem = t₂.mem)
         (by rrun) (by rfl) rfl) fun t ⟨⟨a, m⟩, k⟩ =>
         ⟨by rw [m, m₂, m₁], ((k₁.trans k₂).trans k).mono (by simp), ?_, fun _ => ?_, fun hv => absurd hv.2.1 hb⟩

@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.RsaKeyGen.MrIter
 import VerifiedGarbage.Proof.RsaKeyGen.CandSpec
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # DSA's probable-prime test: Miller–Rabin, witness by witness
@@ -58,9 +59,9 @@ theorem dmrAt_next (h : DMrAt c ch a m D r k n) (hwb : witnessBytes c = D) (hD :
   have l1 : dres c ch a m r = loop (mrStep c ch a m) (dmrS c D r (k + 1)) (r.drop (D * (k + 1))) := by
     rw [h.loop, e]; rfl
   have ic := iters_cont (c := c) (ch := ch) (a := a) (m := m) (r := r) (i := (dmrS c D r (k + 1)).1)
-    (uni := (dmrS c D r (k + 1)).2) (u := D * (k + 1)) hg hwb hD (by rw [Nat.mul_succ]; omega) (by omega)
-  rw [← l1, show D * (k + 1) - D = D * k by rw [Nat.mul_succ]; omega, h.iters] at ic
-  exact ⟨by omega, ⟨l1, hg, by omega, by omega⟩⟩
+    (uni := (dmrS c D r (k + 1)).2) (u := D * (k + 1)) hg hwb hD (by rw [Nat.mul_succ]; omega_using []) (by omega_using [hav, hk])
+  rw [← l1, show D * (k + 1) - D = D * k by rw [Nat.mul_succ]; omega_using [], h.iters] at ic
+  exact ⟨by omega_using [ic], ⟨l1, hg, by omega_using [ic], by omega_using [hav, hk]⟩⟩
 
 /-- The witness passes and no more are needed: `c` is probably prime. -/
 theorem dmrAt_done (h : DMrAt c ch a m D r k n) (hwb : witnessBytes c = D) (hD : 0 < D)
@@ -78,8 +79,8 @@ theorem dmrAt_done (h : DMrAt c ch a m D r k n) (hwb : witnessBytes c = D) (hD :
   have := h.iters
   rw [l1] at this
   simp only [shapeOf, Option.map_some, itersOf, List.length_drop] at this
-  rw [show r.length - (r.length - (D * k + D)) - D * k = D by omega, Nat.div_self hD] at this
-  omega
+  rw [show r.length - (r.length - (D * k + D)) - D * k = D by omega_using [hav], Nat.div_self hD] at this
+  omega_using [this]
 
 /-- The witness fails: `c` is composite. -/
 theorem dmrAt_fail (h : DMrAt c ch a m D r k n) (hwb : witnessBytes c = D) (hD : 0 < D)
@@ -94,8 +95,8 @@ theorem dmrAt_fail (h : DMrAt c ch a m D r k n) (hwb : witnessBytes c = D) (hD :
   have := h.iters
   rw [l1] at this
   simp only [shapeOf, Option.map_some, itersOf, List.length_drop] at this
-  rw [show r.length - (r.length - (D * k + D)) - D * k = D by omega, Nat.div_self hD] at this
-  omega
+  rw [show r.length - (r.length - (D * k + D)) - D * k = D by omega_using [hav], Nat.div_self hD] at this
+  omega_using [this]
 
 /-- Too few octets left for the witness. -/
 theorem dmrAt_short (h : DMrAt c ch a m D r k n) (hwb : witnessBytes c = D) (hD : 0 < D)
@@ -107,8 +108,8 @@ theorem dmrAt_short (h : DMrAt c ch a m D r k n) (hwb : witnessBytes c = D) (hD 
   have := h.iters
   rw [l1] at this
   simp only [shapeOf, Option.map_none, itersOf] at this
-  rw [Nat.div_eq_of_lt (by omega)] at this
-  omega
+  rw [Nat.div_eq_of_lt (by omega_using [hD, hav])] at this
+  omega_using [this]
 
 /-- The iterations from the start: at least one, the first draw's. -/
 theorem iters_start (hwb : witnessBytes c = D) (hD : 0 < D) :
@@ -118,14 +119,14 @@ theorem iters_start (hwb : witnessBytes c = D) (hD : 0 < D) :
   have hd : r'.drop D = r := by simp [r']
   have hl : r'.length = r.length + D := by simp [r', Nat.add_comm]
   have := (iters_cont (c := c) (ch := ch) (a := a) (m := m) (r := r') (i := 1) (uni := 0) (u := D) hg hwb hD
-    (Nat.le_refl _) (by omega)).2
+    (Nat.le_refl _) (by omega_using [hl])).2
   rw [hd, hl] at this
   unfold dres
   generalize loop (mrStep c ch a m) (1, 0) r = x at this ⊢
   rcases x with _ | ⟨b, rest⟩
   · simp only [shapeOf, Option.map_none, itersOf]; exact Nat.le_add_left 1 _
   · simp only [shapeOf, Option.map_some, itersOf] at this ⊢
-    rw [show r.length + D - rest.length - D = r.length - rest.length - 0 by omega] at this
+    rw [show r.length + D - rest.length - D = r.length - rest.length - 0 by omega_using []] at this
     exact this
 
 /-- The start. -/
@@ -135,7 +136,7 @@ theorem dmrAt_zero (hwb : witnessBytes c = D) (hD : 0 < D) :
   refine ⟨by simp [dmrS], hg, ?_, by simp⟩
   have := iters_start (ch := ch) (a := a) (m := m) (r := r) hwb hD
   rw [Nat.mul_zero]
-  omega
+  omega_using [this]
 
 end
 

@@ -84,7 +84,7 @@ theorem selectRoot_ok (hc : CfgOk c) {base : Addr} {s : State} (hw : WsReg s bas
       (.block (Impl.EcKey.Compressed.PPC64LE.parityMask c ++ sel c.n (c.sl QY) (c.sl QY) (c.sl W0))))) s _
   -- `QY = ACC · 1`, out of Montgomery form.
   refine WP.seq (WP.mono (slMul_ok hc.fp hc.fpk hc.fpm h7 hw (o := QY) (a := ACC) (b := ONE)
-    (by decide) (by decide) (by decide) (by rw [hOne]; omega)) fun s₁ ⟨k₁, U₁, lt₁, e₁⟩ => ?_)
+    (by decide) (by decide) (by decide) (by rw [hOne]; omega_using [hp3])) fun s₁ ⟨k₁, U₁, lt₁, e₁⟩ => ?_)
   have hw₁ := hw.of_rk k₁
   have v₁ : ∀ {i}, i < 45 → i ≠ QY → sv c base s₁ i = sv c base s i := fun hi h₁ =>
     sv_unch U₁ h7 hn hi (apart_callW h7 hi h₁)
@@ -94,29 +94,29 @@ theorem selectRoot_ok (hc : CfgOk c) {base : Addr} {s : State} (hw : WsReg s bas
     simpa only [Fin.val_ofNat, Nat.mod_eq_of_lt lt₁] using congrArg Fin.val normal
   -- `W0 = 0 - QY`.
   refine WP.seq (WP.mono (slSub_ok hc.fp hc.fpk hc.fpm h7 hw₁ (o := W0) (a := ZERO) (b := QY)
-    (by decide) (by decide) (by decide) (by rw [v₁ (by decide) (by decide), hZero]; omega) lt₁)
+    (by decide) (by decide) (by decide) (by rw [v₁ (by decide) (by decide), hZero]; omega_using [hp3]) lt₁)
     fun s₂ ⟨k₂, U₂, e₂⟩ => ?_)
   have hw₂ := hw₁.of_rk k₂
   have v₂ : ∀ {i}, i < 45 → i ≠ W0 → sv c base s₂ i = sv c base s₁ i := fun hi h₁ =>
     sv_unch U₂ h7 hn hi (apart_callW h7 hi h₁)
   have y₂ : sv c base s₂ QY = sv c base s₁ QY := v₂ (by decide) (by decide)
   have zero₁ : sv c base s₁ ZERO = 0 := (v₁ (by decide) (by decide)).trans hZero
-  have negLt : sv c base s₂ W0 < c.C.p := by rw [e₂]; exact Nat.mod_lt _ (by omega)
+  have negLt : sv c base s₂ W0 < c.C.p := by rw [e₂]; exact Nat.mod_lt _ (by omega_using [hp3])
   have negVal : Fin.ofNat c.C.p (sv c base s₂ W0) = -(Fin.ofNat c.C.p (sv c base s₁ QY)) := by
     apply Fin.ext
     simp only [Fin.val_ofNat, Fin.neg_def]
     rw [e₂, zero₁, Nat.zero_add, Nat.mod_mod, Nat.mod_eq_of_lt lt₁]
   have hDw : ∀ w ∈ callW c QY ++ callW c W0, c.sl D + 8 ≤ w.1 ∨ w.1 + w.2 ≤ c.sl D := fun w hw' =>
     (apart_append (apart_callW h7 (i := D) (o := QY) (by decide) (by decide))
-      (apart_callW h7 (i := D) (o := W0) (by decide) (by decide)) w hw').imp (fun h => by omega) id
-  have tag₂ : word s₂.mem base (c.sl D) = word s.mem base (c.sl D) := (U₁.trans U₂).word hDw (by omega)
+      (apart_callW h7 (i := D) (o := W0) (by decide) (by decide)) w hw').imp (fun h => by omega_using [h0, h]) id
+  have tag₂ : word s₂.mem base (c.sl D) = word s.mem base (c.sl D) := (U₁.trans U₂).word hDw (by omega_using [hD])
   -- The parity's mask, and the selection.
   rw [WP.block_append_iff]
-  refine WP.mono (parityMask_ok c hw₂.ws hw₂.at3 h0 (by omega) (by omega)) fun s₃ ⟨mask₃, k₃, m₃⟩ => ?_
+  refine WP.mono (parityMask_ok c hw₂.ws hw₂.at3 h0 (by omega_using [hY]) (by omega_using [hD])) fun s₃ ⟨mask₃, k₃, m₃⟩ => ?_
   refine WP.mono (sel_ok (decide ((word s₂.mem base (c.sl D)).toNat % 2 ≠ sv c base s₂ QY % 2)) c.n
     (k₃.ws hw₂.ws) (k₃.at hw₂.at3) (by rw [mask₃]; simp only [mask64, decide_eq_true_eq])
-    (sl_al c _) (sl_al c _) (sl_al c _) (by omega) (by omega) (by omega) (Or.inl (Nat.le_refl _))
-    (by have := sl_apart c (i := QY) (j := W0) (by decide); omega)) fun s₄ ⟨e₄, k₄, O₄⟩ => ?_
+    (sl_al c _) (sl_al c _) (sl_al c _) (by omega_using [hY]) (by omega_using [hY]) (by omega_using [hW]) (Or.inl (Nat.le_refl _))
+    (by have := sl_apart c (i := QY) (j := W0) (by decide); omega_using [this])) fun s₄ ⟨e₄, k₄, O₄⟩ => ?_
   rw [m₃] at e₄
   have K : Rk fnClob s s₄ := (k₁.trans k₂).trans ((k₃.rk (rs' := fnClob)).trans (k₄.rk (rs' := fnClob)))
   refine ⟨hw.of_rk K, K, ?_, ?_, ?_⟩

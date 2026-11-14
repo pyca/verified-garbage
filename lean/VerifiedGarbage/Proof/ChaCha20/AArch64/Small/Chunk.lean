@@ -21,7 +21,7 @@ def selected (n : Nat) : List Nat :=
 
 theorem selected_mem (n : Nat) (hn : n ≤ 4) (k : Nat) (hk : k < 16) :
     k ∈ selected n ↔ k < 4*n :=
-  (show ∀ n < 5, ∀ k < 16, k ∈ selected n ↔ k < 4*n by decide) n (by omega) k hk
+  (show ∀ n < 5, ∀ k < 16, k ∈ selected n ↔ k < 4*n by decide) n (by omega_using [hn]) k hk
 
 theorem finish_ok {n : Nat} (hn : n ≤ 4) {s : State} {vs : Nat → CState} (h : VG.Proof.ChaCha20.AArch64.Neon4.Holds vs s)
     (halias : s.gpr .x1 = s.gpr .x6 ∨ (⟨s.gpr .x1, 64*n⟩ : Region).Disjoint ⟨s.gpr .x6, 64*n⟩)
@@ -37,15 +37,15 @@ theorem finish_ok {n : Nat} (hn : n ≤ 4) {s : State} {vs : Nat → CState} (h 
   have hfit : ∀ r : Fin 4, ∀ j ∈ lanes n, 16 * slot r j + 16 ≤ 64 * n := by
     intro r j hj
     have hjn : j.val < n := by simpa [lanes] using hj
-    unfold slot; omega
+    unfold slot; omega_using [hjn]
   refine (finishRowsForTo_ok .x6 (lanes n) hj (List.finRange 4) (List.nodup_finRange 4)
-    (DataTo.nil s.mem (s.gpr .x1) (s.gpr .x6) (64*n) (output vs)) rfl rfl halias (by omega)
+    (DataTo.nil s.mem (s.gpr .x1) (s.gpr .x6) (64*n) (output vs)) rfl rfl halias (by omega_using [hn])
     (fun r _ i j => h (VG.Impl.ChaCha20.AArch64.Neon4.rowWord r i) j j.isLt)
     (fun _ _ _ _ => List.not_mem_nil) hfit hin hout).mono fun u ⟨hd,hs⟩ => ⟨?_,hd.frame,hs⟩
   intro k hk
-  have hk256 : k < 256 := by omega
-  rw [hd _, Offset.add_sub_cancel_left, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega : k < 2^64),
-    ite_eq_left ⟨List.mem_append_left _ ((selected_mem n hn (k/16) (by omega)).mpr (by omega)),hk⟩,
+  have hk256 : k < 256 := by omega_using [hn, hk]
+  rw [hd _, Offset.add_sub_cancel_left, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hk256] : k < 2^64),
+    ite_eq_left ⟨List.mem_append_left _ ((selected_mem n hn (k/16) (by omega_using [hk256])).mpr (by omega_using [hk])),hk⟩,
     output_byte vs hk256]
 
 theorem chunk_ok {sve : Bool} (n : Nat) (hn : n ≤ 4) (s : State)

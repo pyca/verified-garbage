@@ -25,7 +25,7 @@ theorem Environment.Valid.candidateAddress {E : Environment} (v : E.Valid) :
   change ((E.workspace.toNat + 256) % 2 ^ 32) % 2 ^ 64 =
     (E.workspace.toNat % 2 ^ 64 + 256) % 2 ^ 64
   have := E.workspace.isLt
-  omega
+  omega_using [space, width, fit]
 
 theorem Environment.Valid.sieveCandidateSub {E : Environment} (v : E.Valid) :
     E.sieveGeometry.candidateRegion.Sub E.workspaceRegion := by
@@ -34,7 +34,7 @@ theorem Environment.Valid.sieveCandidateSub {E : Environment} (v : E.Valid) :
   exact Offset.sub_base E.base (by
     have fit := v.slotFit (j := 0) (by decide)
     change 256 + 0 * (8 * (E.width + 2)) + 8 * E.width ≤ E.size at fit
-    omega)
+    omega_using [fit])
 
 theorem Environment.Valid.sieveStackSub {E : Environment} (v : E.Valid) :
     E.sieveGeometry.stackRegion.Sub (below E.p 136) :=
@@ -49,8 +49,8 @@ theorem Environment.Valid.sieve_valid {E : Environment} (v : E.Valid) : E.sieveG
     change (E.workspace.toNat + 256) % 2 ^ 32 = E.workspace.toNat + 256
     have fit := v.workspaceFit
     have := E.workspace.isLt
-    omega
-  refine ⟨by change 0 < E.width; omega, by change E.width ≤ 128; omega, ?_, ?_, ?_, v.tableFit, ?_, ?_⟩
+    omega_using [width, candidateFit, fit]
+  refine ⟨by change 0 < E.width; omega_using [width], by change E.width ≤ 128; omega_using [width], ?_, ?_, ?_, v.tableFit, ?_, ?_⟩
   · change 0 < VG.Impl.RsaKeyGen.X86.Sieve.tableCount E.width
     unfold VG.Impl.RsaKeyGen.X86.Sieve.tableCount
     split <;> decide
@@ -61,7 +61,7 @@ theorem Environment.Valid.sieve_valid {E : Environment} (v : E.Valid) : E.sieveG
     rw [candidateNat]
     have fit := v.workspaceFit
     change 256 + 0 * (8 * (E.width + 2)) + 8 * E.width ≤ E.size at candidateFit
-    omega
+    omega_using [fit, candidateFit]
   · exact ((v.stackFar E.workspaceRegion (List.mem_append_left _
       (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ List.mem_cons_self)))).sub_left v.sieveCandidateSub).sub_right v.sieveStackSub
   · exact (v.stackFar E.tableRegion (List.mem_append_right _

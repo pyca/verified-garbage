@@ -98,11 +98,11 @@ theorem apart_k {q : Nat} (hq : q ≤ n s) : Apart s q (kR M s) where
 
 /-- The first `q` blocks are apart from what the calls write. -/
 theorem apart_dq {q : Nat} (hq : q ≤ n s) : Apart s q ⟨D s, 16 * q⟩ where
-  c := hp.c_d.symm.sub_left (Region.sub_prefix (by omega))
-  y := hp.y_d.symm.sub_left (Region.sub_prefix (by omega))
-  d := Offset.base_disjoint _ (Nat.le_refl _) (by have := hp.w_d; omega)
-  s5 := (hp.d_s.sub_left (Region.sub_prefix (by omega))).sub_right (s5_sub (by decide))
-  t := hp.t_d.symm.sub_left (Region.sub_prefix (by omega))
+  c := hp.c_d.symm.sub_left (Region.sub_prefix (by omega_using [hq]))
+  y := hp.y_d.symm.sub_left (Region.sub_prefix (by omega_using [hq]))
+  d := Offset.base_disjoint _ (Nat.le_refl _) (by have := hp.w_d; omega_using [hq, this])
+  s5 := (hp.d_s.sub_left (Region.sub_prefix (by omega_using [hq]))).sub_right (s5_sub (by decide))
+  t := hp.t_d.symm.sub_left (Region.sub_prefix (by omega_using [hq]))
 
 omit hp in
 /-- Ready through a call that writes apart from it. -/
@@ -116,7 +116,7 @@ theorem Ready.frame {q : Nat} {st st' : State} (h : Ready s q st) {rs : List Reg
 theorem keep_sch {m m' : Mem} {rs : List Region} (hf : Frame rs m m') (hd : ∀ r' ∈ rs, (kR M s).Disjoint r') :
     Spec.Aes.bytesAt m' (K s) (16 * (R s + 1)) = Spec.Aes.bytesAt m (K s) (16 * (R s + 1)) := by
   have hRb : 16 * (R s + 1) ≤ 256 := by rcases hp.rounds with h | h | h <;> simp only [R, h] <;> decide
-  exact bytesAt_frame hf (fun r hr => (hd r hr).sub_left (Region.sub_prefix (Nat.le_trans hRb M.ge))) (by have := hp.w_k; omega)
+  exact bytesAt_frame hf (fun r hr => (hd r hr).sub_left (Region.sub_prefix (Nat.le_trans hRb M.ge))) (by have := hp.w_k; omega_using [hRb])
 
 theorem wR_k : ∀ r ∈ wR s, (kR M s).Disjoint r := by
   intro r hr
@@ -148,7 +148,7 @@ theorem tail_calls (first second : Prog isa) {q : Nat} {ys : List Block} {st : S
   refine WP.ite (decide (n s - q = 0)) (by simp only [eval, hz]) (fun e => ?_) (fun e => ?_)
   · simp only [decide_eq_true_eq] at e
     exact WP.block_nil (h0 st₁ M e)
-  · exact hc st₁ M (by simp at e; omega)
+  · exact hc st₁ M (by simp at e; omega_using [e])
 
 /-- The data left is apart from what `vg_ghash` writes. -/
 theorem dq_gh {q : Nat} (hq : q ≤ n s) :
@@ -182,7 +182,7 @@ theorem c_gh : ∀ r ∈ [yR s, (⟨S5 s, 256⟩ : Region), below (SP s) 8], (cR
 
 omit hp in
 /-- The hash subkey is in the key context. -/
-theorem h_sub : Region.Sub ⟨K s + BitVec.ofNat 64 240, 16⟩ (kR M s) := Offset.sub_base _ (by have := M.ge; omega)
+theorem h_sub : Region.Sub ⟨K s + BitVec.ofNat 64 240, 16⟩ (kR M s) := Offset.sub_base _ (by have := M.ge; omega_using [this])
 
 /-- The encryption of the blocks left, from `Mid`. -/
 theorem encCalls_ok (v : GcmImpl) {q : Nat} {st₁ : State}
@@ -219,11 +219,11 @@ theorem encCalls_ok (v : GcmImpl) {q : Nat} {st₁ : State}
     rw [m₄, blockAt_frame f₃ (y_ctr hp hq), m₂]; exact M.y
   have hfirst : blocksAt st₅.mem (D s) q = ctr32 (ciph s) (cb s) (blocksAt s.mem (D s) q) := by
     rw [← M.data]
-    exact blocksAt_frame f₅ (fun r hr => ((apart_dq hp hq).gh r hr)) (by omega) |>.trans (by
-      rw [m₄]; exact (blocksAt_frame f₃ (fun r hr => ((apart_dq hp hq).ctr r hr)) (by omega)).trans (by rw [m₂]))
+    exact blocksAt_frame f₅ (fun r hr => ((apart_dq hp hq).gh r hr)) (by omega_using [hlt, hw]) |>.trans (by
+      rw [m₄]; exact (blocksAt_frame f₃ (fun r hr => ((apart_dq hp hq).ctr r hr)) (by omega_using [hlt, hw])).trans (by rw [m₂]))
   have hsecond : blocksAt st₅.mem (dq s q) (n s - q) =
       ctr32 (ciph s) (Nat.repeat inc32 q (cb s)) (blocksAt s.mem (dq s q) (n s - q)) := by
-    rw [blocksAt_frame f₅ (dq_gh hp hq) (by omega), hx]
+    rw [blocksAt_frame f₅ (dq_gh hp hq) (by omega_using [hw]), hx]
   have hall : ctr32 (ciph s) (cb s) (blocksAt s.mem (D s) (n s)) =
       ctr32 (ciph s) (cb s) (blocksAt s.mem (D s) q) ++
         ctr32 (ciph s) (Nat.repeat inc32 q (cb s)) (blocksAt s.mem (dq s q) (n s - q)) := by
@@ -265,12 +265,12 @@ theorem decCalls_ok (v : GcmImpl) {q : Nat} {st₁ : State}
   have hC₄ : blockAt st₄.mem (C s) = Nat.repeat inc32 q (cb s) := by
     rw [m₄, blockAt_frame f₃ (c_gh hp), m₂]; exact M.ctr
   have hD₄ : blocksAt st₄.mem (dq s q) (n s - q) = blocksAt s.mem (dq s q) (n s - q) := by
-    rw [m₄, blocksAt_frame f₃ (dq_gh hp hq) (by omega)]; exact hP₂
+    rw [m₄, blocksAt_frame f₃ (dq_gh hp hq) (by omega_using [hw])]; exact hP₂
   have out₅ := g'.out
   rw [hK, hC₄, hD₄] at out₅
   have hfirst : blocksAt st₅.mem (D s) q = ctr32 (ciph s) (cb s) (blocksAt s.mem (D s) q) := by
-    rw [← M.data, blocksAt_frame f₅ (fun r hr => ((apart_dq hp hq).ctr r hr)) (by omega), m₄,
-      blocksAt_frame f₃ (fun r hr => ((apart_dq hp hq).gh r hr)) (by omega), m₂]
+    rw [← M.data, blocksAt_frame f₅ (fun r hr => ((apart_dq hp hq).ctr r hr)) (by omega_using [hlt, hw]), m₄,
+      blocksAt_frame f₃ (fun r hr => ((apart_dq hp hq).gh r hr)) (by omega_using [hlt, hw]), m₂]
   refine ⟨⟨fun r hr => by rw [g'.saved r hr, sv₄ r hr, g.saved r hr, sv₂ r hr, M.saved r hr], ?_⟩, ?_, ?_, ?_⟩
   · show st₅.mem.readW (SP s) 64 = s.mem.readW (SP s) 64
     rw [f₅.readW (Region.contains_self _ _) ((apart_ret hp hq).ctr) (by decide), m₄,

@@ -38,13 +38,13 @@ open VG.Spec.Rsa (isqrt)
 
 /-- A root and remainder with `s² + r = A` and `r ≤ 2 s`: `s` is the root. -/
 theorem sqrt_of_rem {s r A : Nat} (h : s * s + r = A) (hr : r ≤ 2 * s) : isqrt A = s :=
-  VG.Proof.Rsa.RecoverDet.isqrt_eq (by omega) (by
-    rw [Nat.add_mul, Nat.mul_add, Nat.mul_one, Nat.one_mul]; omega)
+  VG.Proof.Rsa.RecoverDet.isqrt_eq (by omega_using [h]) (by
+    rw [Nat.add_mul, Nat.mul_add, Nat.mul_one, Nat.one_mul]; omega_using [h, hr])
 
 /-- With `s² + r = A` and `r ≤ 2 s`, `A` is a square exactly where `r = 0`. -/
 theorem square_iff_rem {s r A : Nat} (h : s * s + r = A) (hr : r ≤ 2 * s) :
     isqrt A * isqrt A = A ↔ r = 0 := by
-  rw [sqrt_of_rem h hr]; omega
+  rw [sqrt_of_rem h hr]; omega_using [h]
 
 /-! ## A digit -/
 
@@ -64,7 +64,7 @@ theorem step_inv {β s r A P q : Nat} (h : s * s + r = A) (hq : IsDigit β s (r 
   rw [e2] at hi
   rw [e1, ← h, Nat.add_mul (s * s) r (β * β)]
   generalize (2 * s * β + q) * q = K at lo hi ⊢
-  refine ⟨by omega, by omega⟩
+  refine ⟨by omega_using [lo], by omega_using [hi]⟩
 
 /-- Every root `s` and number `R` have a digit. -/
 theorem digit_exists (β s R : Nat) : ∃ q, IsDigit β s R q := by
@@ -73,14 +73,14 @@ theorem digit_exists (β s R : Nat) : ∃ q, IsDigit β s R q := by
   generalize VG.Spec.Rsa.isqrt (s * β * (s * β) + R) = t at lo hi
   have ht : s * β ≤ t := by
     refine Nat.le_of_not_lt fun h => ?_
-    have := Nat.mul_self_le_mul_self (show t + 1 ≤ s * β by omega)
-    omega
-  obtain ⟨q, rfl⟩ : ∃ q, t = s * β + q := ⟨t - s * β, by omega⟩
+    have := Nat.mul_self_le_mul_self (show t + 1 ≤ s * β by omega_using [h])
+    omega_using [hi, this]
+  obtain ⟨q, rfl⟩ : ∃ q, t = s * β + q := ⟨t - s * β, by omega_using [ht]⟩
   refine ⟨q, ?_, ?_⟩
   · have e : (s * β + q) * (s * β + q) = s * β * (s * β) + (2 * s * β + q) * q := by grind
-    omega
+    omega_using [lo, e]
   · have e : (s * β + q + 1) * (s * β + q + 1) = s * β * (s * β) + (2 * s * β + (q + 1)) * (q + 1) := by grind
-    omega
+    omega_using [hi, e]
 
 /-- The digit is below `β` where `r ≤ 2 s` and `P < β²`. -/
 theorem digit_lt {β s r P q : Nat} (hr : r ≤ 2 * s) (hP : P < β * β)
@@ -91,7 +91,7 @@ theorem digit_lt {β s r P q : Nat} (hr : r ≤ 2 * s) (hP : P < β * β)
   have m2 : r * (β * β) ≤ 2 * s * β * β := by
     rw [Nat.mul_assoc (2 * s)]; exact Nat.mul_le_mul_right _ hr
   rw [Nat.add_mul] at m1
-  omega
+  omega_using [hP, hq, m1, m2]
 
 /-- The digit is at most the quotient by `2 s β`. -/
 theorem digit_le_div {β s R q : Nat} (hd : 0 < 2 * s * β) (hq : (2 * s * β + q) * q ≤ R) :
@@ -99,7 +99,7 @@ theorem digit_le_div {β s R q : Nat} (hd : 0 < 2 * s * β) (hq : (2 * s * β + 
   refine (Nat.le_div_iff_mul_le hd).mpr ?_
   have : q * (2 * s * β) ≤ (2 * s * β + q) * q := by
     rw [Nat.mul_comm q]; exact Nat.mul_le_mul_right _ (Nat.le_add_right _ _)
-  omega
+  omega_using [hq, this]
 
 /-- Where `β ≤ 2 s` (a normalized root), the quotient by `2 s β` is at most the digit plus one. -/
 theorem div_le_digit_succ {β s R q : Nat} (hβ : β ≤ 2 * s) (hd : 0 < 2 * s * β) (hqβ : q < β)
@@ -108,14 +108,14 @@ theorem div_le_digit_succ {β s R q : Nat} (hβ : β ≤ 2 * s) (hd : 0 < 2 * s 
     Nat.le_trans (Nat.mul_le_mul hqβ hqβ) (by rw [Nat.mul_comm (2 * s)]; exact Nat.mul_le_mul_left _ hβ)
   have e : (2 * s * β + (q + 1)) * (q + 1) = 2 * s * β * (q + 1) + (q + 1) * (q + 1) := by grind
   have e' : 2 * s * β * (q + 2) = 2 * s * β * (q + 1) + 2 * s * β := by grind
-  have : R < 2 * s * β * (q + 2) := by rw [e'] ; rw [e] at hq; omega
+  have : R < 2 * s * β * (q + 2) := by rw [e'] ; rw [e] at hq; omega_using [hq, hsq]
   exact Nat.lt_succ_iff.mp ((Nat.div_lt_iff_lt_mul hd).mpr (by rw [Nat.mul_comm]; exact this))
 
 /-- A correction: the digit down by one adds `2 s β + 2 q - 1` back to the remainder. -/
 theorem correction_step (a q : Nat) (hq : 1 ≤ q) :
     (a + q) * q = (a + (q - 1)) * (q - 1) + (a + 2 * q - 1) := by
-  obtain ⟨p, rfl⟩ : ∃ p, q = p + 1 := ⟨q - 1, by omega⟩
-  rw [Nat.add_sub_cancel, show a + 2 * (p + 1) - 1 = a + 2 * p + 1 by omega]
+  obtain ⟨p, rfl⟩ : ∃ p, q = p + 1 := ⟨q - 1, by omega_using [hq]⟩
+  rw [Nat.add_sub_cancel, show a + 2 * (p + 1) - 1 = a + 2 * p + 1 by omega_using []]
   grind
 
 /-! ## Normalization -/
@@ -130,11 +130,11 @@ theorem two_pow_dvd_of_sq : ∀ (c : Nat) {s X : Nat}, s * s = 4 ^ c * X → 2 ^
       · exfalso
         have h1 : s * s % 2 = 1 := by rw [Nat.mul_mod, e]
         have h2 : s * s = 4 * (4 ^ c * X) := by rw [h]; grind
-        omega
-    obtain ⟨t, rfl⟩ : ∃ t, s = 2 * t := ⟨s / 2, by omega⟩
+        omega_using [h1, h2]
+    obtain ⟨t, rfl⟩ : ∃ t, s = 2 * t := ⟨s / 2, by omega_using [he]⟩
     have ht : t * t = 4 ^ c * X := by
       have : 4 * (t * t) = 4 * (4 ^ c * X) := by rw [show 4 * (t * t) = 2 * t * (2 * t) by grind, h]; grind
-      omega
+      omega_using [this]
     rw [Nat.pow_succ, Nat.mul_comm (2 ^ c) 2]
     exact Nat.mul_dvd_mul_left 2 (two_pow_dvd_of_sq c ht)
 
@@ -159,16 +159,16 @@ theorem norm_sqrt (c X : Nat) : isqrt (4 ^ c * X) / 2 ^ c = isqrt X := by
       rw [show 2 ^ c * (t + 1) * (2 ^ c * (t + 1)) = 2 ^ c * 2 ^ c * ((t + 1) * (t + 1)) by
         simp only [Nat.mul_assoc, Nat.mul_left_comm]]
       exact Nat.mul_lt_mul_of_pos_left hi (Nat.mul_pos p p)
-    omega
+    omega_arith
   -- `2^c t ≤ s`: else `(s + 1)² ≤ 4^c t² ≤ 4^c X`.
   have h2 : 2 ^ c * t ≤ s := by
     refine Nat.le_of_not_lt fun hs => ?_
-    have h' : s + 1 ≤ 2 ^ c * t := by omega
+    have h' : s + 1 ≤ 2 ^ c * t := by omega_using [hs]
     have := Nat.mul_le_mul h' h'
     have : 2 ^ c * t * (2 ^ c * t) ≤ 2 ^ c * 2 ^ c * X := by
       rw [show 2 ^ c * t * (2 ^ c * t) = 2 ^ c * 2 ^ c * (t * t) by simp only [Nat.mul_assoc, Nat.mul_left_comm]]
       exact Nat.mul_le_mul_left _ lo
-    omega
+    omega_arith
   exact Nat.div_eq_of_lt_le (by rw [Nat.mul_comm]; exact h2) (by rw [Nat.mul_comm]; exact h1)
 
 /-- `4^c X` is a square exactly where `X` is. -/

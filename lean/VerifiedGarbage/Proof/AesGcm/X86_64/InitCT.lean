@@ -111,7 +111,7 @@ theorem initC_ok {cl : Nat} (hcl : 256 ≤ cl) {s : State} (hp : Proof.AesGcm.in
   have pC₀ : Covers [⟨s.gpr .rdx, cl⟩] s.wr := by rw [hwr']; exact covers_of_mem (List.mem_cons_self ..)
   replace d_cs := d_cs.sub_left c256
   replace k_c := k_c.sub_right c256
-  replace wc : (s.gpr .rdx).toNat + 256 ≤ 2 ^ 64 := by omega
+  replace wc : (s.gpr .rdx).toNat + 256 ≤ 2 ^ 64 := by omega_using [hcl, wc]
   generalize hCtx : s.gpr .rdx = Ctx at *
   generalize hW : s.gpr .rcx = W at *
   generalize hSP : s.gpr .rsp = SP at *
@@ -151,11 +151,11 @@ theorem initC_ok {cl : Nat} (hcl : 256 ≤ cl) {s : State} (hp : Proof.AesGcm.in
       (⟨Ctx + BitVec.ofNat 64 d, n⟩ : Region).Disjoint ⟨W + BitVec.ofNat 64 e, k⟩ := fun d n hd e k he =>
     (d_cs.sub_left (Offset.sub_base _ hd)).sub_right (Lay.wSub he)
   have dK0 : (⟨Ctx, 240⟩ : Region).Disjoint ⟨Ctx + BitVec.ofNat 64 240, 16⟩ :=
-    Offset.base_disjoint Ctx (by decide) (by omega)
+    Offset.base_disjoint Ctx (by decide) (by omega_using [])
   have pC' : Covers [⟨Ctx, 256⟩] s₄.wr := by rw [wr₄]; exact pC
   have pW' : Covers [⟨W, 2560⟩] s₄.wr := by rw [wr₄]; exact pW
   refine ⟨hdi₄, hsi₄, hdx₄, hcx₄, h8₄, h9₄, hR', ?_, ?_, dK0, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
-  · rw [BitVec.toNat_add, BitVec.toNat_ofNat]; have := Nat.mod_le (Ctx.toNat + 240 % 2 ^ 64) (2 ^ 64); omega
+  · rw [BitVec.toNat_add, BitVec.toNat_ofNat]; have := Nat.mod_le (Ctx.toNat + 240 % 2 ^ 64) (2 ^ 64); omega_using [wc]
   · simpa using dCW 0 240 (by decide) 96 16 (by decide)
   · simpa using dCW 0 240 (by decide) 512 2048 (by decide)
   · exact (dCW 240 16 (by decide) 96 16 (by decide)).symm
@@ -365,11 +365,11 @@ theorem initCF_ok {s : State} (hp : Proof.AesGcm.initPreF s) {R : Nat} (hR' : R 
       (⟨Ctx + BitVec.ofNat 64 d, n⟩ : Region).Disjoint ⟨W + BitVec.ofNat 64 e, k⟩ := fun d n hd e k he =>
     (d_cs.sub_left (Offset.sub_base _ hd)).sub_right (Offset.sub_base _ he)
   have dK0 : (⟨Ctx, 240⟩ : Region).Disjoint ⟨Ctx + BitVec.ofNat 64 240, 16⟩ :=
-    Offset.base_disjoint Ctx (by decide) (by omega)
+    Offset.base_disjoint Ctx (by decide) (by omega_using [])
   have pC' : Covers [⟨Ctx, 256⟩] s₄.wr := by rw [wr₄]; exact pC
   have pW' : Covers [⟨W, 176⟩] s₄.wr := by rw [wr₄]; exact pW
   refine ⟨hdi₄, hsi₄, hdx₄, hcx₄, h8₄, h9₄, hR', ?_, ?_, dK0, ?_, ?_, ?_, ?_, ?_, ?_⟩
-  · rw [BitVec.toNat_add, BitVec.toNat_ofNat]; have := Nat.mod_le (Ctx.toNat + 240 % 2 ^ 64) (2 ^ 64); omega
+  · rw [BitVec.toNat_add, BitVec.toNat_ofNat]; have := Nat.mod_le (Ctx.toNat + 240 % 2 ^ 64) (2 ^ 64); omega_using [wc]
   · simpa using dCW 0 240 (by decide) 96 16 (by decide)
   · exact (dCW 240 16 (by decide) 96 16 (by decide)).symm
   · rw [g4sp]; exact k_c.sub_right (Region.sub_prefix (by decide))

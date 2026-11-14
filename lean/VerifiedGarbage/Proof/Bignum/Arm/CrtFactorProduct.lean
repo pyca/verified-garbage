@@ -73,8 +73,8 @@ open VG.Proof.X25519.Arm (Rest)
 theorem val32_zero_prefix {mem : Mem} {B : Addr} {d n k : Nat} (h : val32 mem B d n = 0) (hk : k ≤ n) :
     val32 mem B d k = 0 := by
   have a := val32_append mem B d k (n - k)
-  rw [show k + (n - k) = n by omega, h] at a
-  omega
+  rw [show k + (n - k) = n by omega_using [hk], h] at a
+  omega_using [a]
 
 /-- The product of the first `m` words of `a` and `n` of `b`, its output of
 `4 w + 2` words cleared first, by `count`'s counts. -/
@@ -98,27 +98,27 @@ theorem crt_factorProductWith_ok (s : State) {base : BitVec 32} {size o a b cp c
   rw [factorProductWith, WP.seq_iff]
   refine WP.mono (crt_productClear_ready s h) ?_
   rintro u ⟨inputU, zeroU, outsideU, frameU, restU⟩
-  have aU := outsideU.val32 (d := a) (k := m) (by omega) (by omega)
-  have bU := outsideU.val32 (d := b) (k := n) (by omega) (by omega)
+  have aU := outsideU.val32 (d := a) (k := m) (by omega_using [hm', sepA]) (by omega_using [hm', nowrap, aFits])
+  have bU := outsideU.val32 (d := b) (k := n) (by omega_using [hn', sepB]) (by omega_using [hn', nowrap, bFits])
   -- The cleared output: its first `m + n + 2` words, and those above them.
   have split := val32_append u.mem (State.addr base) o (m + n + 2) (2 * w + 2 * w + 2 - (m + n + 2))
-  rw [show m + n + 2 + (2 * w + 2 * w + 2 - (m + n + 2)) = 2 * w + 2 * w + 2 by omega, zeroU] at split
+  rw [show m + n + 2 + (2 * w + 2 * w + 2 - (m + n + 2)) = 2 * w + 2 * w + 2 by omega_using [hm', hn'], zeroU] at split
   have pos := Nat.two_pow_pos (32 * (m + n + 2))
-  have zeroLo : val32 u.mem (State.addr base) o (m + n + 2) = 0 := by omega
+  have zeroLo : val32 u.mem (State.addr base) o (m + n + 2) = 0 := by omega_using [split]
   have zeroHi : val32 u.mem (State.addr base) (o + 4 * (m + n + 2)) (2 * w + 2 * w + 2 - (m + n + 2)) = 0 := by
     rcases Nat.eq_zero_or_pos (val32 u.mem (State.addr base) (o + 4 * (m + n + 2))
       (2 * w + 2 * w + 2 - (m + n + 2))) with z | z
     · exact z
-    · have := Nat.le_mul_of_pos_right (2 ^ (32 * (m + n + 2))) z; omega
+    · have := Nat.le_mul_of_pos_right (2 ^ (32 * (m + n + 2))) z; omega_using [split, pos, this]
   have hcU : CountFrom count base size m n u := hc.after restU.sp restU.rd restU.wr frameU
-    (outside_read32 outsideU (d := 48) (by omega) (by omega))
+    (outside_read32 outsideU (d := 48) (by omega_using [oHeader]) (by omega_using []))
   rw [WP.seq_iff]
   refine WP.mono (crt_productArgsWith_ready u inputU hcU hm hm' hn hn' zeroLo) ?_
   rintro v ⟨start, outsideV, frameV, restV⟩
-  have aV := outsideV.val32 (d := a) (k := m) (by omega) (by omega)
-  have bV := outsideV.val32 (d := b) (k := n) (by omega) (by omega)
-  have hiV := outsideV.val32 (d := o + 4 * (m + n + 2)) (k := 2 * w + 2 * w + 2 - (m + n + 2)) (by omega)
-    (by omega)
+  have aV := outsideV.val32 (d := a) (k := m) (by omega_using [aHeader]) (by omega_using [hm', nowrap, aFits])
+  have bV := outsideV.val32 (d := b) (k := n) (by omega_using [bHeader]) (by omega_using [hn', nowrap, bFits])
+  have hiV := outsideV.val32 (d := o + 4 * (m + n + 2)) (k := 2 * w + 2 * w + 2 - (m + n + 2)) (by omega_using [oHeader])
+    (by omega_using [hm, hm', hn, hn', nowrap, aFits, bFits, aHeader, bHeader, outFits, sepA, sepB, oHeader])
   have initial := start.initial
   have p := initial.aPtr
   have out := initial.oPtr
@@ -130,7 +130,7 @@ theorem crt_factorProductWith_ok (s : State) {base : BitVec 32} {size o a b cp c
   rw [aV, bV, aU, bU] at value
   have hiT := outsideT.val32 (d := o + 4 * (m + n + 2)) (k := 2 * w + 2 * w + 2 - (m + n + 2))
     (by intro r hr; simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-        rcases hr with rfl | rfl <;> simp only <;> omega) (by omega)
+        rcases hr with rfl | rfl <;> simp only <;> omega_arith) (by omega_using [hm, hm', hn, hn', nowrap, aFits, bFits, aHeader, bHeader, outFits, sepA, sepB, oHeader])
   have widened : Outs (State.addr base) [(128, 20), (o, 4 * (2 * w + 2 * w + 2))] v.mem t.mem := by
     intro x hx
     apply outsideT x
@@ -138,13 +138,13 @@ theorem crt_factorProductWith_ok (s : State) {base : BitVec 32} {size o a b cp c
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
     · have hfirst := hx (128, 20) (by simp)
-      omega
+      omega_using [hfirst]
     · have hsecond := hx (o, 4 * (2 * w + 2 * w + 2)) (by simp)
       simp only at hsecond ⊢
-      omega
+      omega_using [hm', hn', hsecond]
   refine ⟨?_, (Outs.of_outside outsideU (by simp)).trans ((Outs.of_outside outsideV (by simp)).trans widened),
     ptrT, frameU.trans (frameV.trans frameT), restU.trans ((restV.mono (by decide)).trans restT)⟩
-  rw [show 2 * w + 2 * w + 2 = m + n + 2 + (2 * w + 2 * w + 2 - (m + n + 2)) by omega, val32_append, value, hiT,
+  rw [show 2 * w + 2 * w + 2 = m + n + 2 + (2 * w + 2 * w + 2 - (m + n + 2)) by omega_using [hm', hn'], val32_append, value, hiT,
     hiV, zeroHi, Nat.mul_zero, Nat.add_zero]
 
 theorem crt_factorProduct_ok (s : State) {base : BitVec 32} {size o a b cp cq w : Nat} {coefficient : Bool}

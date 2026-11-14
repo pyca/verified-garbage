@@ -16,7 +16,7 @@ namespace VG.Proof.MillerRabin.X86
 private theorem double_eq_shift (x : BitVec 32) : x + x = x <<< 1 := by
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_add, BitVec.toNat_shiftLeft, Nat.shiftLeft_eq]
-  omega
+  omega_using []
 
 def markerFold (lo hi : BitVec 32) : BitVec 32 :=
   let x1 := lo ||| hi
@@ -57,7 +57,7 @@ theorem markerCalc_ok {s : State} {W : Addr} {L d : Nat} (hw : Ws s W L)
       t.gpr .eax = markerFold (s.mem.readW (off W d) 32) (s.mem.readW (off W (d + 4)) 32) ∧
       t.mem = s.mem ∧ Keeps [.eax, .ebx, .edx] s t := by
   unfold markerCalc
-  refine wp_movS (readSrc_ptr hw ptr (d := 0) (by omega)) fun s1 u1 _ => ?_
+  refine wp_movS (readSrc_ptr hw ptr (d := 0) (by omega_using [fit])) fun s1 u1 _ => ?_
   have bp1 : PtrAt s1 W .ebp d := by rw [PtrAt, u1.other .ebp (by decide)]; exact ptr
   refine wp_orS (readSrc_ptr (hw.of_keeps u1.keeps) bp1 (d := 4) fit) fun s2 u2 => ?_
   refine wp_movS rfl fun s3 u3 _ => ?_

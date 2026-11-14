@@ -117,7 +117,7 @@ theorem openShort_rel (gh : Gh8Ok) {tb : List Instr} {to : Bool} {Ctx W SP Np A 
         (by rw [o₁.env.sp, o₂.env.sp])
         (by agree_tac [x4₁, x4₂, x5₁, x5₂, x6₁, x6₂, x7₁, x7₂, o₁.env.x19, o₂.env.x19, o₁.env.x20, o₂.env.x20,
           o₁.env.x21, o₂.env.x21, o₁.x23, o₂.x23]) ⟨_, by taint_decide⟩)
-      (shortHead_ok L hJ₁ x4₁ x5₁ x6₁ x7₁ (by omega)) (shortHead_ok L hJ₂ x4₂ x5₂ x6₂ x7₂ (by omega))
+      (shortHead_ok L hJ₁ x4₁ x5₁ x6₁ x7₁ (by omega_using [hhi])) (shortHead_ok L hJ₂ x4₂ x5₂ x6₂ x7₂ (by omega_using [hhi]))
       fun τ₁ τ₂ ⟨e₁, a₁, l₁, c₁, n₁, d₁, r₁, t₁', f₁, rd₁, wr₁⟩ ⟨e₂, a₂, l₂, c₂, n₂, d₂, r₂, t₂', f₂, rd₂, wr₂⟩ => ?_)
     refine RelCT.assoc' (htbrel τ₁ τ₂ e₁.sp e₂.sp (fun r hr => ?_) (by rw [rd₁, o₁.rd₀]) (by rw [wr₁, o₁.wr₀])
       (F₁.trans (f₁.sub j0W)) (by rw [rd₂, o₂.rd₀]) (by rw [wr₂, o₂.wr₀]) (F₂.trans (f₂.sub j0W)))
@@ -162,7 +162,7 @@ theorem openShort_rel (gh : Gh8Ok) {tb : List Instr} {to : Bool} {Ctx W SP Np A 
         have sO : u.mem.readW (W + BitVec.ofNat 64 320) 64 = O := (hm.out : OutIn Ctx W D O n u).sO
         rw [List.append_assoc, WP.block_append_iff]
         obtain ⟨t₂, run₂, x12t₂, g₂', m₂', _, sp₂', rd₂', wr₂'⟩ := Stitch.atP_ok (c := (n + 15) / 16) .x12
-          Impl.AesGcm.AArch64.Stitch.b1O 1 (by decide) (by unfold Impl.AesGcm.AArch64.Stitch.b1O; omega) u he.x19
+          Impl.AesGcm.AArch64.Stitch.b1O 1 (by decide) (by unfold Impl.AesGcm.AArch64.Stitch.b1O; omega_using [hhi]) u he.x19
           hm.x25 (by decide)
         refine WP.of_runBlock ⟨t₂, run₂, ?_⟩
         have he₂ : Env Ctx (W + BitVec.ofNat 64 16) W SP t₂ := he.keep (fun r hr => g₂' r (by
@@ -187,9 +187,9 @@ theorem openShort_rel (gh : Gh8Ok) {tb : List Instr} {to : Bool} {Ctx W SP Np A 
             ⟨sp.trans hm.env.sp, g _ (by decide) (by decide) (by decide)⟩
         · unfold Impl.AesGcm.AArch64.Stitch.plainOutG
           refine WP.seq (WP.mono (pl hm) fun _ ⟨x11, x12, x13, sp, x24, rd, wr⟩ =>
-            WP.mono (Stitch.copyQ_ok _ ⟨x12, x11, x13, by omega,
-              by rw [rd, wr]; exact covers_left (covers_off hm.env.perm.w (by omega) (by decide)),
-              by rw [wr]; exact hm.ow.wr, (hm.ow.ok.w.sub_right (Lay.wSub (by omega))).symm⟩)
+            WP.mono (Stitch.copyQ_ok _ ⟨x12, x11, x13, by omega_using [hhi],
+              by rw [rd, wr]; exact covers_left (covers_off hm.env.perm.w (by omega_using [hhi]) (by decide)),
+              by rw [wr]; exact hm.ow.wr, (hm.ow.ok.w.sub_right (Lay.wSub (by omega_using [hhi]))).symm⟩)
               fun _ ⟨_, g, sp', _, _⟩ => ⟨sp'.trans (sp.trans hm.env.sp), (g _ (by decide)).trans x24⟩)
       refine rel_seq (rel_ite (eval_zero hm₁.x24 (hlt σ₁)) (eval_zero x24₂ (hlt σ₁))
           (fun _ => wipeTo_rel hm₁.env hm₂.env ou₁.sO ou₂.sO hm₁.sN hm₂.sN) (fun _ => ?_))
@@ -401,7 +401,7 @@ theorem openSelS_rel (v : GcmImpl) (cl : Prog isa) (hMK : MulKey) (gh : Gh8Ok) {
     -- `shortThr`, on the length, which is public.
     refine rel_seq (rel_taint [.x7] (by rw [v₁.env.sp, v₂.env.sp])
         (by agree_tac [kk₁ .x7 (by simp), kk₂ .x7 (by simp)]) ⟨_, by taint_decide⟩)
-      (shortThr_ok u₁ x7u₁ (by omega)) (shortThr_ok u₂ x7u₂ (by omega)) fun w₁ w₂ ⟨y9₁, s₁'⟩ ⟨y9₂, s₂'⟩ => ?_
+      (shortThr_ok u₁ x7u₁ (by omega_using [hnb])) (shortThr_ok u₂ x7u₂ (by omega_using [hnb])) fun w₁ w₂ ⟨y9₁, s₁'⟩ ⟨y9₂, s₂'⟩ => ?_
     have v₁ := v₁.of_regs s₁'
     have v₂ := v₂.of_regs s₂'
     have y12₁ : w₁.gpr .x12 = Tg := by rw [s₁'.others _ (by decide), y12₁]
@@ -410,14 +410,14 @@ theorem openSelS_rel (v : GcmImpl) (cl : Prog isa) (hMK : MulKey) (gh : Gh8Ok) {
       rw [s₁'.others r (by simp at hr; rcases hr with rfl | rfl | rfl | rfl <;> decide), kk₁ r hr]
     have kk₂ : ∀ r ∈ [Reg.x4, .x5, .x6, .x7], w₂.gpr r = σ₁.gpr r := fun r hr => by
       rw [s₂'.others r (by simp at hr; rcases hr with rfl | rfl | rfl | rfl <;> decide), kk₂ r hr]
-    refine rel_ite (eval_zero y9₁ (by omega)) (eval_zero y9₂ (by omega)) (fun hz => ?_) (fun _ => ?_)
+    refine rel_ite (eval_zero y9₁ (by omega_using [])) (eval_zero y9₂ (by omega_using [])) (fun hz => ?_) (fun _ => ?_)
     · have h96 := of_decide_eq_true hz
       have x7w₁ : w₁.gpr .x7 = BitVec.ofNat 64 (σ₁.gpr .x7).toNat := by rw [kk₁ .x7 (by simp), ofNat_toNat']
       have x7w₂ : w₂.gpr .x7 = BitVec.ofNat 64 (σ₁.gpr .x7).toNat := by rw [kk₂ .x7 (by simp), ofNat_toNat']
       -- `shortMin`, on the length, which is public.
       refine rel_seq (rel_taint [.x7] (by rw [v₁.env.sp, v₂.env.sp])
           (by agree_tac [x7w₁, x7w₂]) ⟨_, by taint_decide⟩)
-        (shortMin_ok w₁ x7w₁ (by omega)) (shortMin_ok w₂ x7w₂ (by omega)) fun z₁ z₂ ⟨m9₁, t₁⟩ ⟨m9₂, t₂⟩ => ?_
+        (shortMin_ok w₁ x7w₁ (by omega_using [hnb])) (shortMin_ok w₂ x7w₂ (by omega_using [hnb])) fun z₁ z₂ ⟨m9₁, t₁⟩ ⟨m9₂, t₂⟩ => ?_
       have v₁ := v₁.of_regs t₁
       have v₂ := v₂.of_regs t₂
       have y12₁ : z₁.gpr .x12 = Tg := by rw [t₁.others _ (by decide), y12₁]
@@ -426,8 +426,8 @@ theorem openSelS_rel (v : GcmImpl) (cl : Prog isa) (hMK : MulKey) (gh : Gh8Ok) {
         rw [t₁.others r (by simp at hr; rcases hr with rfl | rfl | rfl | rfl <;> decide), kk₁ r hr]
       have kk₂ : ∀ r ∈ [Reg.x4, .x5, .x6, .x7], z₂.gpr r = σ₁.gpr r := fun r hr => by
         rw [t₂.others r (by simp at hr; rcases hr with rfl | rfl | rfl | rfl <;> decide), kk₂ r hr]
-      exact rel_ite (eval_zero m9₁ (by omega)) (eval_zero m9₂ (by omega))
-        (fun _ => fastP hc v₁ v₂ y12₁ y12₂ kk₁ kk₂) (fun _ => short hc (by omega) v₁ v₂ y12₁ y12₂ kk₁ kk₂)
+      exact rel_ite (eval_zero m9₁ (by omega_using [])) (eval_zero m9₂ (by omega_using []))
+        (fun _ => fastP hc v₁ v₂ y12₁ y12₂ kk₁ kk₂) (fun _ => short hc (by omega_using [h96]) v₁ v₂ y12₁ y12₂ kk₁ kk₂)
     -- `thr`, on the length, which is public.
     refine rel_seq (rel_taint [.x7] (by rw [v₁.env.sp, v₂.env.sp])
         (by agree_tac [kk₁ .x7 (by simp), kk₂ .x7 (by simp)]) ⟨_, by taint_decide⟩)
@@ -496,9 +496,9 @@ theorem openWithSh_ct (v : GcmImpl) (cl : Prog isa) (hMK : MulKey) (gh : Gh8Ok) 
   have hq₀ := hq
   obtain ⟨q0, -, -, -, -, -, q6, q7, qsp, qa⟩ := hq
   have hgh₂ := @hgh σ₂
-  rw [← q0, ← qa w (by omega), ← q6, ← q7] at hgh₂
+  rw [← q0, ← qa w (by omega_using []), ← q6, ← q7] at hgh₂
   have htb₂ := htbP p₂
-  rw [← q0, ← qa w (by omega), ← q6, ← q7, ← qsp] at htb₂
+  rw [← q0, ← qa w (by omega_using []), ← q6, ← q7, ← qsp] at htb₂
   exact openSelS_rel v cl hMK gh o₁ o₂ x12₁ x12₂ k₁ k₂ hb
     (fun s' _ _ _ _ c sY sS hr hw hsp hf => hgh p₁ c sY sS hr hw hsp hf)
     (fun s' _ _ _ _ c sY sS hr hw hsp hf => hgh₂ p₂ c sY sS hr hw (hsp.trans qsp) hf)
@@ -558,10 +558,10 @@ theorem openToWithSh_ct (v : GcmImpl) (cl : Prog isa) (hMK : MulKey) (gh : Gh8Ok
   have hR₁ : rounds (σ₁.gpr .x1) := T₁.rounds
   have hR₂ : rounds (σ₂.gpr .x1) := T₂.rounds
   obtain ⟨q0, q1, q2, q3, q4, q5, q6, q7, qsp, qa⟩ := hq
-  have qw : stackArg σ₁ w = stackArg σ₂ w := qa w (by omega)
-  have qd : stackArg σ₁ 0 = stackArg σ₂ 0 := qa 0 (by omega)
-  have qg : stackArg σ₁ 2 = stackArg σ₂ 2 := qa 2 (by omega)
-  have qt : stackArg σ₁ 3 = stackArg σ₂ 3 := qa 3 (by omega)
+  have qw : stackArg σ₁ w = stackArg σ₂ w := qa w (by omega_using [])
+  have qd : stackArg σ₁ 0 = stackArg σ₂ 0 := qa 0 (by omega_using [])
+  have qg : stackArg σ₁ 2 = stackArg σ₂ 2 := qa 2 (by omega_using [hw])
+  have qt : stackArg σ₁ 3 = stackArg σ₂ 3 := qa 3 (by omega_using [hw])
   have ka : (Code.block (openEntryG true w) : Prog isa).allInstrs
       (fun i => [Reg.x4, .x5, .x6, .x7].all fun r => !clobbers i r) = true := by
     rcases hw with rfl | rfl <;> decide
@@ -576,8 +576,8 @@ theorem openToWithSh_ct (v : GcmImpl) (cl : Prog isa) (hMK : MulKey) (gh : Gh8Ok
     · exact q7.symm
   rw [openWithSG_eq]
   refine rel_seq (openEntryTo_rel hw T₁ T₂ qw qsp (by agree_tac [q0, q1, q2, q3, q4, q5, q6, q7]))
-    (WP.gprs (rs := [.x4, .x5, .x6, .x7]) (openEntryTo_ok (by omega) h₁) ka kc)
-    (WP.gprs (rs := [.x4, .x5, .x6, .x7]) (openEntryTo_ok (by omega) h₂) ka kc)
+    (WP.gprs (rs := [.x4, .x5, .x6, .x7]) (openEntryTo_ok (by omega_using [hw]) h₁) ka kc)
+    (WP.gprs (rs := [.x4, .x5, .x6, .x7]) (openEntryTo_ok (by omega_using [hw]) h₂) ka kc)
     fun s₁ s₂ ⟨⟨o₁, x12₁⟩, k₁⟩ ⟨⟨o₂, x12₂⟩, k₂⟩ => ?_
   rw [← q0, ← q1, ← q2, ← q3, ← q4, ← q5, ← q6, ← q7, ← qsp, ← qw, ← qd, ← qg, ← qt] at o₂
   rw [← qg] at x12₂

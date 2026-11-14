@@ -39,7 +39,7 @@ theorem loadWord_ok {r : Reg} (hr : r ≠ .t3 ∧ r ≠ .a1) (k : Nat) (hk : k <
       t.mem = s.mem) ?_ (by simp [writesOnly, Code.allInstrs_eq, instrs, loadWord, dstOf]) rfl)
     fun t ⟨⟨h₁, h₂⟩, hk⟩ => ⟨h₁, h₂, hk⟩
   unfold loadWord
-  mrun [ha, h0, h1, hr.1, Ne.symm hr.1, hr.2, Ne.symm hr.2, show 2 * k < 2048 by omega, show 2 * k + 1 < 2048 by omega]
+  mrun [ha, h0, h1, hr.1, Ne.symm hr.1, hr.2, Ne.symm hr.2, show 2 * k < 2048 by omega_using [hk], show 2 * k + 1 < 2048 by omega_using [hk]]
   exact bytes16 _ _
 
 /-- The bytes of the block at `a` can be read. -/
@@ -86,8 +86,8 @@ theorem rounds_ok (z : Spec.Idea.Schedule) (x : Spec.Idea.State) :
   | 0, _, s, hx, _ => WP.block_nil ⟨hx, rfl, Keep.refl _ _⟩
   | n + 1, hn, s, hx, hk => by
     rw [List.range_succ, List.flatMap_append, List.flatMap_singleton, WP.block_append_iff]
-    refine WP.mono (rounds_ok z x n (by omega) s hx hk) fun s₁ ⟨x₁, m₁, e₁⟩ => ?_
-    refine WP.mono (round_ok n (by omega) z _ s₁ x₁ (hk.keep e₁ m₁ (by decide) (by decide)))
+    refine WP.mono (rounds_ok z x n (by omega_using [hn]) s hx hk) fun s₁ ⟨x₁, m₁, e₁⟩ => ?_
+    refine WP.mono (round_ok n (by omega_using [hn]) z _ s₁ x₁ (hk.keep e₁ m₁ (by decide) (by decide)))
       fun s₂ ⟨x₂, m₂, e₂⟩ => ⟨?_, m₂.trans m₁, (e₁.trans e₂).mono (by decide)⟩
     simp only [roundsSpec, List.range_succ, List.foldl_append, List.foldl_cons, List.foldl_nil]
     exact x₂
@@ -145,8 +145,8 @@ theorem storeWord_ok (r : Reg) (k : Nat) (hk : k < 4) (s : State) {a : Addr}
       (by rfl) rfl)
     fun t ⟨h, hk⟩ => ⟨h, hk⟩
   unfold storeWord
-  mrun [ha, h0, h1, show 2 * k < 2048 by omega,
-    show 2 * k + 1 < 2048 by omega]
+  mrun [ha, h0, h1, show 2 * k < 2048 by omega_using [hk],
+    show 2 * k + 1 < 2048 by omega_using [hk]]
 
 /-- The bytes of the block at `a` can be written. -/
 def BlockWrite (s : State) (a : Addr) : Prop :=
@@ -154,7 +154,7 @@ def BlockWrite (s : State) (a : Addr) : Prop :=
 
 theorem frame_write1 {a : Addr} {m m' : Mem} {j : Nat} (v : BitVec 8) (hj : j < 8)
     (h : Frame [⟨a, 8⟩] m m') : Frame [⟨a, 8⟩] m (m'.write (a + BitVec.ofNat 64 j) 1 v) :=
-  h.write (List.mem_singleton_self _) (n := 1) v (Offset.contains_base a (by omega) (by omega))
+  h.write (List.mem_singleton_self _) (n := 1) v (Offset.contains_base a (by omega_using [hj]) (by omega_using [hj]))
 
 theorem store_ok (y : Spec.Idea.State) (s : State) {a : Addr} (ha : s.gpr .a1 = a)
     (hw : BlockWrite s a) (hy : OutHolds y s) :
@@ -194,7 +194,7 @@ theorem store_ok (y : Spec.Idea.State) (s : State) {a : Addr} (ha : s.gpr .a1 = 
     intro i hi
     simp only [Spec.Idea.blockAt, Vector.getElem_ofFn, m₄, encodeBlock_get _ hi]
     obtain rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨
-        i = 5 ∨ i = 6 ∨ i = 7 := by omega
+        i = 5 ∨ i = 6 ∨ i = 7 := by omega_using [hi]
     all_goals simp (disch := decide) only [write1_apply, Nat.reduceMul, Nat.reduceAdd, Nat.reduceDiv,
       Nat.reduceMod, Nat.reduceSub, Nat.reduceEqDiff, ↓reduceIte, lo8, hi8, BitVec.ushiftRight_zero]
   · rw [m₄]

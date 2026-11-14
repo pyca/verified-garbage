@@ -5,6 +5,7 @@ import VerifiedGarbage.Proof.Weierstrass.JacMadd
 public import VerifiedGarbage.Proof.Weierstrass.JacAdd
 public import VerifiedGarbage.Proof.Weierstrass.PrimeOrder
 public import VerifiedGarbage.Proof.Weierstrass.Window5
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-! Architecture-independent masked Jacobian window arithmetic, including invalid scalars. -/
 
@@ -39,7 +40,7 @@ theorem jstep_point (hC : Law C) (hM3 : AM3 C) (hO : PrimeOrder C) {P : Point C}
     rw [Window5.winPt_zero h0, add_infinity]
     exact h1
   · simp only [h0, ↓reduceIte]
-    obtain ⟨J2, z2⟩ := h2 (by omega)
+    obtain ⟨J2, z2⟩ := h2 (by omega_using [h0])
     have hQ := hC.onCurve_mul hP (32 * e)
     have hW : onCurve C (Window5.winPt C P k' i) = true := Window5.onCurve_winPt hC hP k' i
     by_cases hz : Z1 = 0
@@ -90,7 +91,7 @@ theorem jstep_pt (hC : Law C) (hM3 : AM3 C) (hO : PrimeOrder C) {P : Point C} (h
   · simp only [h0, ↓reduceIte]
     exact ⟨Q1, hQ1, nk _, h1⟩
   · simp only [h0, ↓reduceIte]
-    obtain ⟨J2, z2⟩ := h2 (by omega)
+    obtain ⟨J2, z2⟩ := h2 (by omega_using [h0])
     have hW : onCurve C (Window5.winPt C P k' i) = true := Window5.onCurve_winPt hC hP k' i
     by_cases hz : Z1 = 0
     · simp only [hz, ↓reduceIte]

@@ -38,13 +38,13 @@ theorem blk_val {lo hi : Nat} (hlo : lo < 2 ^ 64) (hhi : hi < 2 ^ 64) :
     val (blk lo hi) = lo + 2 ^ 64 * hi + 2 ^ 128 := by
   have := hlo; have := hhi
   simp only [val, blk]
-  omega
+  omega_using [hlo]
 
 theorem blk_lt (lo : Nat) {hi : Nat} (hhi : hi < 2 ^ 64) : ∀ i < 5, blk lo hi i < 2 ^ 26 := by
   intro i hi'
   have := hhi
-  rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 by omega) with rfl | rfl | rfl | rfl | rfl <;>
-    simp only [blk] <;> omega
+  rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 by omega_using [hi']) with rfl | rfl | rfl | rfl | rfl <;>
+    simp only [blk] <;> omega_arith
 
 /-- The block at `p`: its words. -/
 abbrev blo (m : Mem) (p : Addr) : Nat := ln (m.read p 16) 0
@@ -76,8 +76,8 @@ theorem split_ok {s : State} {off : Nat} (ho : off % 16 = 0) (ho' : off + 16 < 4
   have r1 := hr 1 (by decide)
   simp only [bAddr, Nat.mul_zero, Nat.add_zero, Nat.mul_one] at r0 r1
   simp only [split]
-  refine WP.block_cons_iff.mpr ⟨_, exec_ldrq ⟨ho, by omega⟩ r0, ?_⟩
-  refine WP.block_cons_iff.mpr ⟨_, exec_ldrq ⟨by omega, by omega⟩ (by simpa only [RegUpd.gpr_setV,
+  refine WP.block_cons_iff.mpr ⟨_, exec_ldrq ⟨ho, by omega_using [ho']⟩ r0, ?_⟩
+  refine WP.block_cons_iff.mpr ⟨_, exec_ldrq ⟨by omega_using [ho], by omega_using [ho']⟩ (by simpa only [RegUpd.gpr_setV,
     RegUpd.rd_setV, RegUpd.wr_setV] using r1), ?_⟩
   simp only [RegUpd.gpr_setV, RegUpd.mem_setV]
   generalize hA : s.mem.read (s.gpr .x2 + BitVec.ofNat 64 off) 16 = A
@@ -111,25 +111,25 @@ theorem split_ok {s : State} {off : Nat} (ho : off % 16 = 0) (ho' : off + 16 < 4
     have hP := hp e he
     have hZ1 : ln (VPermOp.eval .zip1 .d2 A B) e = blo s.mem (bAddr s off e) := by
       rw [ln, zip1_ln _ _ he]
-      rcases (show e = 0 ∨ e = 1 by omega) with rfl | rfl
+      rcases (show e = 0 ∨ e = 1 by omega_using [he]) with rfl | rfl
       · simp only [ite_true, ← hA, bAddr, Nat.mul_zero, Nat.add_zero]
       · simp only [show (1 : Nat) ≠ 0 by decide, ite_false, ← hB, bAddr, Nat.mul_one]
     have hZ2 : ln (VPermOp.eval .zip2 .d2 A B) e = bhi s.mem (bAddr s off e) := by
       rw [ln, zip2_ln _ _ he]
-      rcases (show e = 0 ∨ e = 1 by omega) with rfl | rfl
+      rcases (show e = 0 ∨ e = 1 by omega_using [he]) with rfl | rfl
       · simp only [ite_true, ← hA, bAddr, Nat.mul_zero, Nat.add_zero]
       · simp only [show (1 : Nat) ≠ 0 by decide, ite_false, ← hB, bAddr, Nat.mul_one]
     have hlo : blo s.mem (bAddr s off e) < 2 ^ 64 := (vdword _ 0).isLt
     have hhi : bhi s.mem (bAddr s off e) < 2 ^ 64 := (vdword _ 1).isLt
-    rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 by omega) with rfl | rfl | rfl | rfl | rfl <;>
+    rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 by omega_using [hi]) with rfl | rfl | rfl | rfl | rfl <;>
       simp (disch := decide) only [RegUpd.v_setV_self, RegUpd.v_setV_of_ne]
     · rw [ln_and_mask _ _ hM, hZ1]; simp only [blk]
     · rw [ln_and_mask _ _ hM, ln_ushr _ _ _ he, hZ1]; simp only [blk]
-    · rw [ln_and_mask _ _ hM, ln_sli _ _ he (by rw [ln_ushr _ _ _ he, hZ1]; omega), ln_ushr _ _ _ he,
+    · rw [ln_and_mask _ _ hM, ln_sli _ _ he (by rw [ln_ushr _ _ _ he, hZ1]; omega_using [hlo]), ln_ushr _ _ _ he,
         hZ1, hZ2]
       simp only [blk]
     · rw [ln_and_mask _ _ hM, ln_ushr _ _ _ he, hZ2]; simp only [blk]
-    · rw [ln_or_pad _ _ hP (by rw [ln_ushr _ _ _ he, hZ2]; omega), ln_ushr _ _ _ he, hZ2]; simp only [blk]
+    · rw [ln_or_pad _ _ hP (by rw [ln_ushr _ _ _ he, hZ2]; omega_using [hhi]), ln_ushr _ _ _ he, hZ2]; simp only [blk]
   · refine ⟨?_, ?_, ?_, ?_, ?_, fun r hr => ?_⟩
     · simp only [RegUpd.gpr_setV]
     · simp only [RegUpd.mem_setV]

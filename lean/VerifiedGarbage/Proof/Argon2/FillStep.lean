@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Spec.Argon2
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-! Expose the reviewed filling step's random word, matrix update and leakage log. -/
 
@@ -26,7 +27,7 @@ def update (p : Params) (pass lane slice index : Nat) (blocks : Array Block) (wo
   blocks.set! current (if pass = 0 then next else xorBlock next (blocks[current]?.getD zeroBlock))
 
 theorem not_skipped (pass slice index : Nat) (active : pass ≠ 0 ∨ slice ≠ 0 ∨ 2 ≤ index) :
-    ¬(pass = 0 ∧ slice = 0 ∧ index < 2) := by omega
+    ¬(pass = 0 ∧ slice = 0 ∧ index < 2) := by omega_using [active]
 
 theorem memory (p : Params) (pass lane slice index : Nat) (s : FillState)
     (active : pass ≠ 0 ∨ slice ≠ 0 ∨ 2 ≤ index) :

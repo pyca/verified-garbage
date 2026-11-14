@@ -28,7 +28,7 @@ theorem identity_step (s₀ s : State) {r : Nat} (hr : r < 256)
       t.gpr .t2 = BitVec.ofNat 64 (r + 1) - BitVec.ofNat 64 256 := by
   obtain ⟨hm, hrd, hwr, hp7, h0, h1, h2, h3⟩ := h
   have hw : InRegions s₀.wr (s₀.gpr .a7 + BitVec.ofNat 64 r) 1 :=
-    region_offset _ _ _ _ _ (by omega) (by omega) hp
+    region_offset _ _ _ _ _ (by omega_using [hr]) (by omega_using [hr]) hp
   have hadd : BitVec.ofNat 64 r + 1#64 = BitVec.ofNat 64 (r + 1) := by
     rw [BitVec.ofNat_add]
   unfold identityStep
@@ -48,8 +48,8 @@ theorem identity_loop (s₀ s : State) {r : Nat} (hr : r < 256)
     rw [Steps.eval_nonzero, hz, hend]
     rfl
   · right
-    refine ⟨?_, 256 - (j + 1), by omega, j + 1, by omega, rfl, hu⟩
-    rw [Steps.eval_nonzero, hz, bne, sub256_ne j (by omega)]
+    refine ⟨?_, 256 - (j + 1), by omega_using [hj, hrem], j + 1, by omega_using [hj, hend], rfl, hu⟩
+    rw [Steps.eval_nonzero, hz, bne, sub256_ne j (by omega_using [hj, hend])]
     rfl
 
 /-! ## One round -/
@@ -65,7 +65,7 @@ theorem schedule_before (s : State) (i j : Byte)
         t.mem = s.mem := by
   have hi : InRegions (s.rd ++ s.wr) (s.gpr .a7 + s.gpr .a3) 1 := by
     rw [hcx, byte_addr i]
-    exact region_offset _ _ _ _ _ (by have := i.isLt; omega) (by have := i.isLt; omega) hp
+    exact region_offset _ _ _ _ _ (by have := i.isLt; omega_using []) (by have := i.isLt; omega_using []) hp
   refine WP.mono (WP.keep (Q := fun t => t.gpr .a4 = (j + s.mem (s.gpr .a7 + BitVec.ofNat 64 i.toNat) +
       s.mem (s.gpr .a0 + s.gpr .t3)).setWidth 64 ∧ t.mem = s.mem) [.t0, .a4, .t2] ?_
       (by decide +kernel)) fun t ⟨h, hk⟩ => ⟨h.1, hk, h.2⟩
@@ -134,7 +134,7 @@ theorem schedule_step (s : State) (i j : Byte)
   rw [tm, tp] at uax um
   have hw : InRegions u.wr (u.gpr .a7 + BitVec.ofNat 64 i.toNat) 1 := by
     rw [uk.2.2, tk.2.2, up]
-    exact region_offset _ _ _ _ _ (by have := i.isLt; omega) (by have := i.isLt; omega) hp
+    exact region_offset _ _ _ _ _ (by have := i.isLt; omega_using []) (by have := i.isLt; omega_using []) hp
   refine WP.mono (schedule_after u i b ucx uax hw) fun v ⟨vm, v3, vcx, vz, vk⟩ => ?_
   refine ⟨?_, ?_, (vk.gpr (by decide)).trans u4, vcx, vz, (tk.trans uk).trans vk⟩
   · rw [vm, um, up]
@@ -172,14 +172,14 @@ theorem schedule_inv_step (s₀ s : State) {r : Nat} (hr : r < 256)
   have hi : s.gpr .a3 = (BitVec.ofNat 8 r).setWidth 64 := by
     rw [h.i, byte_addr, hrt]
   have hpoint : InRegions s.wr (s.gpr .a7) 256 := by rw [h.wr, h.p]; exact hp
-  have hmod := Nat.mod_lt r (show 0 < (s₀.gpr .a1).toNat by omega)
+  have hmod := Nat.mod_lt r (show 0 < (s₀.gpr .a1).toNat by omega_using [hlen])
   have hkeypoint : InRegions (s.rd ++ s.wr) (s.gpr .a0 + s.gpr .t3) 1 := by
     rw [h.rd, h.wr, h.key, h.off]
-    exact region_offset _ _ _ _ _ (by omega) (by omega) hk
+    exact region_offset _ _ _ _ _ (by omega_using [hmod]) (by omega_using [hmod]) hk
   have hkeybyte : s.mem (s.gpr .a0 + s.gpr .t3) = key.getD (r % key.length) 0 := by
     rw [h.key, h.off]
     have hsep := hs (s₀.gpr .a0 + BitVec.ofNat 64 (r % (s₀.gpr .a1).toNat))
-      (by rw [Mem.sub_ofNat_toNat _ (by omega)]; exact hmod)
+      (by rw [Mem.sub_ofNat_toNat _ (by omega_using [hmod])]; exact hmod)
     rw [h.frame _ hsep]
     dsimp only [key, keyAt]
     rw [bytes_length, bytes_get _ _ _ _ hmod]
@@ -206,7 +206,7 @@ theorem schedule_inv_step (s₀ s : State) {r : Nat} (hr : r < 256)
   · rw [t4, hrt, htablebyte, hkeybyte, hnext]
   · rw [tcx, hcast]
   · rw [t3, h.off, h.len]
-    exact offNext_eq r _ (by omega) hlen.2
+    exact offNext_eq r _ (by omega_using [hlen]) hlen.2
   · rw [tz, hcast]
 
 /-- All 256 scheduling rounds realize the complete specified permutation. -/
@@ -227,8 +227,8 @@ theorem schedule_loop (s₀ s : State) {r : Nat} (hr : r < 256)
     rw [Steps.eval_nonzero, hz, hend]
     rfl
   · right
-    refine ⟨?_, 256 - (j + 1), by omega, j + 1, by omega, rfl, hu⟩
-    rw [Steps.eval_nonzero, hz, bne, sub256_ne j (by omega)]
+    refine ⟨?_, 256 - (j + 1), by omega_using [hj, hrem], j + 1, by omega_using [hj, hend], rfl, hu⟩
+    rw [Steps.eval_nonzero, hz, bne, sub256_ne j (by omega_using [hj, hend])]
     rfl
 
 end VG.Proof.Rc4.RISCV64

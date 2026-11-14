@@ -47,7 +47,7 @@ theorem src_stateAt {m₀ m : Mem} {D E : Addr} {n k j : Nat} {F : Nat → Spec.
     simp only [Spec.Aes.stateAt, Vector.getElem_ofFn]
     rw [Offset.add_add]
     exact hf.bytes (R := ⟨D, 16*n⟩) (by simpa only [List.mem_singleton, forall_eq] using hd) hn
-      (show 16*j+i < 16*n by omega)
+      (show 16*j+i < 16*n by omega_using [hjn, hi])
 
 theorem input_state (ctr : Bool) (s : State) (icb : Spec.Gcm.Block) {m₀ : Mem} {D : Addr}
     {k : Nat} (hptr : s.gpr .r6 = D + BitVec.ofNat 64 (16*k))
@@ -57,7 +57,7 @@ theorem input_state (ctr : Bool) (s : State) (icb : Spec.Gcm.Block) {m₀ : Mem}
     aesState (readValue ctr s i) = inputState ctr icb m₀ D (k+i) := by
   cases ctr
   · simp only [readValue, inputState, Bool.false_eq_true, ite_false, hptr, Offset.add_add, load_state]
-    rw [show 16*k+16*i = 16*(k+i) by omega]
+    rw [show 16*k+16*i = 16*(k+i) by omega_using []]
     exact hsrc
   · rw [counter_readValue s icb k i (hc rfl)]
     simp only [inputState, ite_true]

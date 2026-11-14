@@ -232,7 +232,7 @@ theorem mulModBody_ok {s0 u : State} {B : Addr} {Z w N z y x a m t k i : Nat} (h
   · rw [c', inv.cnt]
     apply BitVec.eq_of_toNat_eq
     rw [BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat, BitVec.toNat_ofNat]
-    omega
+    omega_using [hik]
   · rw [y', inv.yv, Nat.div_div_eq_div_mul, Nat.pow_succ]
   · obtain ⟨va, vx⟩ := inv.value hZ hA hX hM
     have M0 : 0 < num s0.mem B w m := by omega_arith

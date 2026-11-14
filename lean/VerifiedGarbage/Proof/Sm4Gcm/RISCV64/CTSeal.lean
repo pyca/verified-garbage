@@ -96,8 +96,8 @@ theorem oneA_ok {s₀ : State} {off : Nat} {W : Addr} (hoff : off = 0 ∨ off = 
     WP isa (.block [.addSp .t1 0, .load .d .t1 .t1 off]) s₀ fun sA =>
       sA.gpr .t1 = W ∧ (∀ r, r ≠ .t1 → sA.gpr r = s₀.gpr r) ∧ Keeps s₀ sA := by
   refine Steps.wp_addSp (imm := 0) (by decide) fun sA uA => ?_
-  refine Steps.wp_ld (off := off) (a := s₀.sp + BitVec.ofNat 64 off) (by omega) (by rw [uA.gpr, add_ofNat_zero])
-    (Spill.al8 (by omega) (by omega)) (by rw [uA.rd, uA.wr]; exact hWi) fun sB uB => WP.block_nil ?_
+  refine Steps.wp_ld (off := off) (a := s₀.sp + BitVec.ofNat 64 off) (by omega_using [hoff]) (by rw [uA.gpr, add_ofNat_zero])
+    (Spill.al8 (by omega_using [hsa]) (by omega_using [hoff])) (by rw [uA.rd, uA.wr]; exact hWi) fun sB uB => WP.block_nil ?_
   exact ⟨by rw [uB.gpr, uA.mem, hWv], fun r hr => by rw [uB.other r hr, uA.other r hr],
     ⟨by rw [uB.mem, uA.mem], by rw [uB.rd, uA.rd], by rw [uB.wr, uA.wr], by rw [uB.sp, uA.sp]⟩⟩
 
@@ -169,7 +169,7 @@ theorem sealBody_ct [VG.Proof.Gcm.RISCV64.GhashLaw] : CT (fun s => OneT c W sp N
     · have hx := Nat.mod_lt (x ++ zeros (padLen x.length)).length (show 16 > 0 by decide)
       rw [← b] at hab ⊢
       exact hab.congr (blockAt_frame oc.frame (stp_crFrame e.1.st hd (by decide)))
-        (bytesAt_frame oc.frame (stp_crFrame e.1.st hd (by omega)) (by omega))
+        (bytesAt_frame oc.frame (stp_crFrame e.1.st hd (by omega_using [])) (by omega_using []))
   -- `oneTag 0`
   refine CT.seq (J := fun s => ∃ V : Reg → BitVec 64, V .s0 = W ∧ V .s9 = T ∧ Env V sp s ∧
     Covers [⟨T, 16⟩] s.wr) ((oneTag_ct L (.inl rfl)).mono fun s ⟨hT, _⟩ => hT.1)

@@ -34,8 +34,8 @@ theorem dotNat_field (a b : Nat → BitVec 32) (f g : Nat → Poly) (count : Nat
   | succ count ih =>
     rw [dotNat,Int.natCast_add,ofInt_add,Int.natCast_mul,ofInt_mul,
       dotPoly_succ,add_get _ _ hi,mul_get _ _ hi]
-    rw [ih (fun j hj => ha j (by omega)) (fun j hj => hb j (by omega)),
-      ha count (by omega),hb count (by omega)]
+    rw [ih (fun j hj => ha j (by omega_using [hj])) (fun j hj => hb j (by omega_using [hj])),
+      ha count (by omega_using []),hb count (by omega_using [])]
 
 theorem centeredDot_field (a b : Nat → BitVec 32) (f g : Nat → Poly) {count : Nat}
     (hc : count≤7) (ha : ∀j<count,(a j).toNat<3*q) (hb : ∀j<count,(b j).toNat<3*q)

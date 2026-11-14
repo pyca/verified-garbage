@@ -47,7 +47,7 @@ theorem call_piece {k : Contract isa} {rs : List Reg} {nm : String} {c : Prog is
       B s₀ s') :
     Piece (TPre Y) (TPub Y lk) A B (callWith rs nm c) :=
   Piece.callWith hv.1 hv.2.1 hsp hne hrs rd wr
-    (fun s₀ s hp ha => by rw [(hk s₀ s hp ha).1.esp, E1_nat s₀ hp.E0_big]; have := hp.sp; omega)
+    (fun s₀ s hp ha => by rw [(hk s₀ s hp ha).1.esp, E1_nat s₀ hp.E0_big]; have := hp.sp; omega_using [hN, this])
     (fun s₀ s hp ha => (hk s₀ s hp ha).2)
     (fun s₀ s₀' s s' hp hp' hq ha ha' => by
       obtain ⟨e₁, e₂, e₃⟩ := hpub s₀ s₀' s s' hp hp' hq ha ha'
@@ -59,7 +59,7 @@ theorem call_piece {k : Contract isa} {rs : List Reg} {nm : String} {c : Prog is
       rcases List.mem_append.mp hr with hr | hr
       · exact hW s₀ hp r hr
       · rw [List.mem_singleton] at hr; subst hr
-        exact ⟨cR Y s₀, TPre.cW, below_sub (by omega) (by rw [E1_nat s₀ hp.E0_big]; have := hp.sp; omega)⟩)
+        exact ⟨cR Y s₀, TPre.cW, below_sub (by omega_using [hN]) (by rw [E1_nat s₀ hp.E0_big]; have := hp.sp; omega_using [this])⟩)
 
 /-- `call_piece`, for `callRet`: the value the callee returns stays in `eax`. -/
 theorem callR_piece {k : Contract isa} {rs : List Reg} {nm : String} {c : Prog isa}
@@ -77,7 +77,7 @@ theorem callR_piece {k : Contract isa} {rs : List Reg} {nm : String} {c : Prog i
         k.post ((pushed rs s).callEntry.withRegions (rd s₀) (wr s₀)) s₂) → B s₀ s') :
     Piece (TPre Y) (TPub Y lk) A B (callRet rs nm c) :=
   Piece.callRet hv.1 hv.2.1 hsp hne hrs rd wr
-    (fun s₀ s hp ha => by rw [(hk s₀ s hp ha).1.esp, E1_nat s₀ hp.E0_big]; have := hp.sp; omega)
+    (fun s₀ s hp ha => by rw [(hk s₀ s hp ha).1.esp, E1_nat s₀ hp.E0_big]; have := hp.sp; omega_using [hN, this])
     (fun s₀ s hp ha => (hk s₀ s hp ha).2)
     (fun s₀ s₀' s s' hp hp' hq ha ha' => by
       obtain ⟨e₁, e₂, e₃⟩ := hpub s₀ s₀' s s' hp hp' hq ha ha'
@@ -89,7 +89,7 @@ theorem callR_piece {k : Contract isa} {rs : List Reg} {nm : String} {c : Prog i
       rcases List.mem_append.mp hr with hr | hr
       · exact hW s₀ hp r hr
       · rw [List.mem_singleton] at hr; subst hr
-        exact ⟨cR Y s₀, TPre.cW, below_sub (by omega) (by rw [E1_nat s₀ hp.E0_big]; have := hp.sp; omega)⟩)
+        exact ⟨cR Y s₀, TPre.cW, below_sub (by omega_using [hN]) (by rw [E1_nat s₀ hp.E0_big]; have := hp.sp; omega_using [this])⟩)
 
 /-! ## The callee's view of the stack -/
 
@@ -99,19 +99,19 @@ theorem entry_regions {E : BitVec 32} {k K : Nat} (hE : 4 * k + 4 + K ≤ E.toNa
       (⟨(E - BitVec.ofNat 32 (4 * k + 4)).setWidth 64, 4⟩ : Region).Disjoint R ∧
       (⟨(E - BitVec.ofNat 32 (4 * k + 4)).setWidth 64 - BitVec.ofNat 64 K, K⟩ : Region).Disjoint R := by
   have hr : Region.Sub ⟨(E - BitVec.ofNat 32 (4 * k + 4)).setWidth 64, 4⟩ (below E (4 * k + 4 + K)) := by
-    have := below_inner (sp := E) (a := 4) (b := 4 * k + 4 + K) (k := 4 * k) (by omega) hE
+    have := below_inner (sp := E) (a := 4) (b := 4 * k + 4 + K) (k := 4 * k) (by omega_using []) hE
     have e : (⟨(E - BitVec.ofNat 32 (4 * k + 4)).setWidth 64, 4⟩ : Region) = below (E - BitVec.ofNat 32 (4 * k)) 4 := by
       simp only [below]; congr 2; rw [BitVec.ofNat_add]; bv_omega
     rw [e]; exact this
   have hs : Region.Sub ⟨(E - BitVec.ofNat 32 (4 * k + 4)).setWidth 64 - BitVec.ofNat 64 K, K⟩
       (below E (4 * k + 4 + K)) := by
-    have := below_inner (sp := E) (a := K) (b := 4 * k + 4 + K) (k := 4 * k + 4) (by omega) hE
+    have := below_inner (sp := E) (a := K) (b := 4 * k + 4 + K) (k := 4 * k + 4) (by omega_using []) hE
     have e : (⟨(E - BitVec.ofNat 32 (4 * k + 4)).setWidth 64 - BitVec.ofNat 64 K, K⟩ : Region) =
         below (E - BitVec.ofNat 32 (4 * k + 4)) K := by
       simp only [below]
-      rw [Taint.sub_setWidth (show K ≤ (E - BitVec.ofNat 32 (4 * k + 4)).toNat by rw [sub_toNat (by omega)]; omega)]
+      rw [Taint.sub_setWidth (show K ≤ (E - BitVec.ofNat 32 (4 * k + 4)).toNat by rw [sub_toNat (by omega_using [hE])]; omega_using [hE])]
     rw [e]; exact this
-  exact ⟨(hR.sub_left (below_sub (by omega) hE)).symm, hR.sub_left hr, hR.sub_left hs⟩
+  exact ⟨(hR.sub_left (below_sub (by omega_using []) hE)).symm, hR.sub_left hr, hR.sub_left hs⟩
 
 theorem entry_self {E : BitVec 32} {k K : Nat} (hE : 4 * k + 4 + K ≤ E.toNat) :
     (⟨(E - BitVec.ofNat 32 (4 * k + 4)).setWidth 64, 4⟩ : Region).Disjoint (below E (4 * k)) ∧
@@ -120,20 +120,20 @@ theorem entry_self {E : BitVec 32} {k K : Nat} (hE : 4 * k + 4 + K ≤ E.toNat) 
   constructor
   · intro x h₁ h₂
     simp only [Region.Contains] at h₁ h₂
-    rw [Taint.sub_setWidth (by omega)] at h₁
-    rw [Taint.sub_setWidth (by omega)] at h₂
+    rw [Taint.sub_setWidth (by omega_using [hE])] at h₁
+    rw [Taint.sub_setWidth (by omega_using [hE])] at h₂
     have := E.isLt
     have hE' : (E.setWidth 64).toNat = E.toNat := by
-      simp only [BitVec.toNat_setWidth]; exact Nat.mod_eq_of_lt (by omega)
+      simp only [BitVec.toNat_setWidth]; exact Nat.mod_eq_of_lt (by omega_using [])
     generalize E.setWidth 64 = X at *
     bv_omega
   · intro x h₁ h₂
     simp only [Region.Contains] at h₁ h₂
-    rw [Taint.sub_setWidth (by omega)] at h₁
-    rw [Taint.sub_setWidth (by omega)] at h₂
+    rw [Taint.sub_setWidth (by omega_using [hE])] at h₁
+    rw [Taint.sub_setWidth (by omega_using [hE])] at h₂
     have := E.isLt
     have hE' : (E.setWidth 64).toNat = E.toNat := by
-      simp only [BitVec.toNat_setWidth]; exact Nat.mod_eq_of_lt (by omega)
+      simp only [BitVec.toNat_setWidth]; exact Nat.mod_eq_of_lt (by omega_using [])
     generalize E.setWidth 64 = X at *
     bv_omega
 
@@ -159,11 +159,11 @@ theorem covers_of {s : State} {n : Nat} {rd wr : List Region}
 
 theorem ctx_E {s₀ s : State} (hp : TPre Y s₀) (h : Ctx Y s₀ s) {N : Nat} (hN : N + 16 ≤ Y.stk) :
     N ≤ (s.gpr .esp).toNat := by
-  rw [h.esp, E1_nat s₀ hp.E0_big]; have := hp.sp; omega
+  rw [h.esp, E1_nat s₀ hp.E0_big]; have := hp.sp; omega_using [hN, this]
 
 theorem stk_sub {s₀ : State} (hp : TPre Y s₀) {a b : Nat} (hab : a ≤ b) (hN : b + 16 ≤ Y.stk) :
     Region.Sub (below (E1 s₀) a) (below (E1 s₀) b) :=
-  below_sub hab (by rw [E1_nat s₀ hp.E0_big]; have := hp.sp; omega)
+  below_sub hab (by rw [E1_nat s₀ hp.E0_big]; have := hp.sp; omega_using [hN, this])
 
 /-! ## The Keccak functions -/
 
@@ -189,14 +189,14 @@ theorem absorb_call (sa so wa wo : Nat) (bD : Buf) (rate pos : Nat) (hr : rate �
     (fun s₀ s₀' _ _ hq => ⟨hq.E1, hq.ptr hS', hq.ptr hD, hq.ptr hW'⟩)
     (fun s₀ s s' hp ha e₁ e₂ e₃ fr post => ?_)
   · obtain ⟨h, ha⟩ := hA s₀ s hp ha
-    have hE : 40 ≤ (E1 s₀).toNat := by rw [E1_nat s₀ hp.E0_big]; have := hp.sp; omega
+    have hE : 40 ≤ (E1 s₀).toNat := by rw [E1_nat s₀ hp.E0_big]; have := hp.sp; omega_using [hN, this]
     exact ⟨h.esp, ha, ⟨hE, Buf.fit hp hS', Buf.fit hp hW', Buf.disj hp hS' hW' dSW,
-      Buf.stkD hp hS' (by omega), Buf.stkD hp hW' (by omega)⟩, Buf.fit hp hD, Buf.disj hp hD hS' dDS,
-      Buf.disj hp hD hW' dDW, Buf.stkD hp hD (by omega), Buf.within hp hD h.rd h.wr,
+      Buf.stkD hp hS' (by omega_using [hN]), Buf.stkD hp hW' (by omega_using [hN])⟩, Buf.fit hp hD, Buf.disj hp hD hS' dDS,
+      Buf.disj hp hD hW' dDW, Buf.stkD hp hD (by omega_using [hN]), Buf.within hp hD h.rd h.wr,
       Buf.withinW hp hS' (Lay.okW_iff.mp hS).2 h.wr, Buf.withinW hp hW' (Lay.okW_iff.mp hW).2 h.wr⟩
   · have h := (hA s₀ s hp ha).1
     exact hQ s₀ s s' hp ha (h.call e₁ e₂ e₃ fr (Buf.frSub hp (bs := [⟨sa, so, 200⟩, ⟨wa, wo, 640⟩])
-      (by simp [hS, hW]) (by omega))) e₃ fr post
+      (by simp [hS, hW]) (by omega_using [hN]))) e₃ fr post
 
 /-- A call of `vg_keccak_pad`. -/
 theorem pad_call (sa so wa wo : Nat) (rate pos sfx : Nat) (hr : rate ∈ rates) (hpos : pos < rate)
@@ -218,13 +218,13 @@ theorem pad_call (sa so wa wo : Nat) (rate pos sfx : Nat) (hr : rate ∈ rates) 
     rate pos sfx hr hpos (fun s₀ s hp ha => ?_) (fun s₀ s₀' _ _ hq => ⟨hq.E1, hq.ptr hS', hq.ptr hW'⟩)
     (fun s₀ s s' hp ha e₁ e₂ e₃ fr post => ?_)
   · obtain ⟨h, ha⟩ := hA s₀ s hp ha
-    have hE : 40 ≤ (E1 s₀).toNat := by rw [E1_nat s₀ hp.E0_big]; have := hp.sp; omega
+    have hE : 40 ≤ (E1 s₀).toNat := by rw [E1_nat s₀ hp.E0_big]; have := hp.sp; omega_using [hN, this]
     exact ⟨h.esp, ha, ⟨hE, Buf.fit hp hS', Buf.fit hp hW', Buf.disj hp hS' hW' dSW,
-      Buf.stkD hp hS' (by omega), Buf.stkD hp hW' (by omega)⟩,
+      Buf.stkD hp hS' (by omega_using [hN]), Buf.stkD hp hW' (by omega_using [hN])⟩,
       Buf.withinW hp hS' (Lay.okW_iff.mp hS).2 h.wr, Buf.withinW hp hW' (Lay.okW_iff.mp hW).2 h.wr⟩
   · have h := (hA s₀ s hp ha).1
     exact hQ s₀ s s' hp ha (h.call e₁ e₂ e₃ fr (Buf.frSub hp (bs := [⟨sa, so, 200⟩, ⟨wa, wo, 640⟩])
-      (by simp [hS, hW]) (by omega))) e₃ fr post
+      (by simp [hS, hW]) (by omega_using [hN]))) e₃ fr post
 
 /-- A call of `vg_keccak_squeeze`, into `bO`. -/
 theorem squeeze_call (sa so wa wo : Nat) (bO : Buf) (rate pos : Nat) (hr : rate ∈ rates) (hpos : pos ≤ rate)
@@ -249,15 +249,15 @@ theorem squeeze_call (sa so wa wo : Nat) (bO : Buf) (rate pos : Nat) (hr : rate 
     (fun s₀ s₀' _ _ hq => ⟨hq.E1, hq.ptr hS', hq.ptr hO', hq.ptr hW'⟩)
     (fun s₀ s s' hp ha e₁ e₂ e₃ fr r₁ r₂ => ?_)
   · obtain ⟨h, ha⟩ := hA s₀ s hp ha
-    have hE : 40 ≤ (E1 s₀).toNat := by rw [E1_nat s₀ hp.E0_big]; have := hp.sp; omega
+    have hE : 40 ≤ (E1 s₀).toNat := by rw [E1_nat s₀ hp.E0_big]; have := hp.sp; omega_using [hN, this]
     exact ⟨h.esp, ha, ⟨hE, Buf.fit hp hS', Buf.fit hp hW', Buf.disj hp hS' hW' dSW,
-      Buf.stkD hp hS' (by omega), Buf.stkD hp hW' (by omega)⟩, Buf.fit hp hO', Buf.disj hp hS' hO' dSO,
-      Buf.disj hp hO' hW' dOW, Buf.stkD hp hO' (by omega),
+      Buf.stkD hp hS' (by omega_using [hN]), Buf.stkD hp hW' (by omega_using [hN])⟩, Buf.fit hp hO', Buf.disj hp hS' hO' dSO,
+      Buf.disj hp hO' hW' dOW, Buf.stkD hp hO' (by omega_using [hN]),
       Buf.withinW hp hS' (Lay.okW_iff.mp hS).2 h.wr, Buf.withinW hp hO' (Lay.okW_iff.mp hO).2 h.wr,
       Buf.withinW hp hW' (Lay.okW_iff.mp hW).2 h.wr⟩
   · have h := (hA s₀ s hp ha).1
     exact hQ s₀ s s' hp ha (h.call e₁ e₂ e₃ fr (Buf.frSub hp (bs := [⟨sa, so, 200⟩, bO, ⟨wa, wo, 640⟩])
-      (by simp [hS, hW, hO]) (by omega))) e₃ fr r₁ r₂
+      (by simp [hS, hW, hO]) (by omega_using [hN]))) e₃ fr r₁ r₂
 
 /-! ## Helpers for the primitives -/
 
@@ -283,10 +283,10 @@ theorem fr_conv {s₀ : State} (hp : TPre Y s₀) {bs : List Buf} {a N : Nat} (h
 theorem ent_keep {s₀ s : State} (hp : TPre Y s₀) (h : Ctx Y s₀ s) {rs : List Reg} (hrs : Reg.esp ∉ rs)
     (fit : 4 * rs.length + 4 + 16 ≤ Y.stk) {b : Buf} (hb : Y.ok b = true) :
     ∀ i < b.len, (pushed rs s).callEntry.mem (b.addr s₀ + BitVec.ofNat 64 i) = s.mem (b.addr s₀ + BitVec.ofNat 64 i) :=
-  fun _ hi => (callEntry_frame (ctx_E hp h (N := 4 * rs.length + 4) (by omega)) hrs).bytes (R := b.rgn s₀)
+  fun _ hi => (callEntry_frame (ctx_E hp h (N := 4 * rs.length + 4) (by omega_using [fit])) hrs).bytes (R := b.rgn s₀)
     (fun r hr => by
       rw [List.mem_singleton] at hr; subst hr; rw [h.esp]
-      exact (Buf.stkD hp hb (N := 4 * rs.length + 4) (by omega)).symm)
-    (by show b.len ≤ 2 ^ 64; have := Buf.fit hp hb; omega) hi
+      exact (Buf.stkD hp hb (N := 4 * rs.length + 4) (by omega_using [fit])).symm)
+    (by show b.len ≤ 2 ^ 64; have := Buf.fit hp hb; omega_using [this]) hi
 
 end VG.Proof.MlKem.X86.Top

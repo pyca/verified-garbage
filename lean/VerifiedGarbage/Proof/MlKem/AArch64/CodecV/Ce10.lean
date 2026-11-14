@@ -46,7 +46,7 @@ theorem vbyte_tbl2 {s : State} {n m d : VReg} {i : Nat} (hi : i < 16) {k : Nat} 
   rw [vbyte_ofVBytes _ hi, hk, ite_eq_left hk', tableByte]
   by_cases h : k < 16
   · rw [ite_eq_left h, Nat.div_eq_of_lt h, Nat.mod_eq_of_lt h]; rfl
-  · rw [ite_eq_right h, show k / 16 = 1 by omega, show k % 16 = k - 16 by omega]; rfl
+  · rw [ite_eq_right h, show k / 16 = 1 by omega_using [hk', h], show k % 16 = k - 16 by omega_using [hk', h]]; rfl
 
 theorem ce10Idx_eq : ∀ j < 16, ce10Idx.getD j 255 = 8 * (j / 5) + j % 5 := by decide
 theorem ce10IdxHi_eq : ∀ j < 4, ce10IdxHi.getD j 255 = 25 + j := by decide
@@ -71,19 +71,19 @@ theorem ce10Math_ok {s : State} (hc : CConsts width10 s) (h20 : s.v .v20 = idxVe
   have hY : ∀ i, Y i < 2 ^ 10 := fun i => cf_lt width10 _
   let Z : Nat → Nat := fun i => Y (2 * i) + Y (2 * i + 1) * 2 ^ 10
   have hZ : ∀ i, Z i < 2 ^ 20 := fun i => by
-    have := hY (2 * i); have := hY (2 * i + 1); simp only [Z]; omega
+    have := hY (2 * i); have := hY (2 * i + 1); simp only [Z]; omega_arith
   rw [WP.block_append_iff]
   refine WP.mono (pairV_ok (b := 10) (f := Y) (by decide) (by decide) (by decide) (by decide) m0 m1
     fun i _ => hY i) fun s2 ⟨c2, p0⟩ => ?_
   rw [WP.block_append_iff]
   refine WP.mono (pairV_ok (b := 10) (f := fun i => Y (8 + i)) (by decide) (by decide) (by decide)
     (by decide) (Lanes.chg c2 (by decide) m2)
-    ((Lanes.chg c2 (by decide) m3).congr fun i _ => by show Y (12 + i) = Y (8 + (4 + i)); congr 1; omega)
+    ((Lanes.chg c2 (by decide) m3).congr fun i _ => by show Y (12 + i) = Y (8 + (4 + i)); congr 1; omega_using [])
     fun i _ => hY _) fun s3 ⟨c3, p1⟩ => ?_
   have q0 : Lanes (s3.v .v4) fun i => Z i := Lanes.chg c3 (by decide) p0
   have q1 : Lanes (s3.v .v5) fun i => Z (4 + i) := p1.congr fun i _ => by
     show Y (8 + 2 * i) + Y (8 + (2 * i + 1)) * 2 ^ 10 = Y (2 * (4 + i)) + Y (2 * (4 + i) + 1) * 2 ^ 10
-    rw [show 8 + 2 * i = 2 * (4 + i) by omega, show 8 + (2 * i + 1) = 2 * (4 + i) + 1 by omega]
+    rw [show 8 + 2 * i = 2 * (4 + i) by omega_using [], show 8 + (2 * i + 1) = 2 * (4 + i) + 1 by omega_using []]
   rw [WP.block_append_iff]
   refine WP.mono (dpairV_ok (b := 20) (by decide) (by decide) q0 fun i _ => hZ i) fun s4 ⟨c4, d0⟩ => ?_
   rw [WP.block_append_iff]
@@ -92,15 +92,15 @@ theorem ce10Math_ok {s : State} (hc : CConsts width10 s) (h20 : s.v .v20 = idxVe
   have e0 : DLanes (s5.v .v4) fun l => grp10 Y l := fun l hl => by
     rw [c5.get .v4 (by decide), d0 l hl]
     simp only [Z, grp10]
-    rw [show 2 * (2 * l) + 1 = 4 * l + 1 by omega, show 2 * (2 * l) = 4 * l by omega,
-      show 2 * (2 * l + 1) + 1 = 4 * l + 3 by omega, show 2 * (2 * l + 1) = 4 * l + 2 by omega]
+    rw [show 2 * (2 * l) + 1 = 4 * l + 1 by omega_using [], show 2 * (2 * l) = 4 * l by omega_using [],
+      show 2 * (2 * l + 1) + 1 = 4 * l + 3 by omega_using [], show 2 * (2 * l + 1) = 4 * l + 2 by omega_using []]
   have e1 : DLanes (s5.v .v5) fun l => grp10 Y (2 + l) := fun l hl => by
     rw [d1 l hl]
     simp only [Z, grp10]
-    rw [show 4 + 2 * l = 2 * (2 + l) by omega, show 4 + (2 * l + 1) = 2 * (2 + l) + 1 by omega,
-      show 2 * (2 * (2 + l)) + 1 = 4 * (2 + l) + 1 by omega, show 2 * (2 * (2 + l)) = 4 * (2 + l) by omega,
-      show 2 * (2 * (2 + l) + 1) + 1 = 4 * (2 + l) + 3 by omega,
-      show 2 * (2 * (2 + l) + 1) = 4 * (2 + l) + 2 by omega]
+    rw [show 4 + 2 * l = 2 * (2 + l) by omega_using [], show 4 + (2 * l + 1) = 2 * (2 + l) + 1 by omega_using [],
+      show 2 * (2 * (2 + l)) + 1 = 4 * (2 + l) + 1 by omega_using [], show 2 * (2 * (2 + l)) = 4 * (2 + l) by omega_using [],
+      show 2 * (2 * (2 + l) + 1) + 1 = 4 * (2 + l) + 3 by omega_using [],
+      show 2 * (2 * (2 + l) + 1) = 4 * (2 + l) + 2 by omega_using []]
   have g20 : s5.v .v20 = idxVec ce10Idx := by
     rw [c5.get .v20 (by decide), c4.get .v20 (by decide), c3.get .v20 (by decide), c2.get .v20 (by decide),
       c1.get .v20 (by decide), h20]
@@ -112,11 +112,11 @@ theorem ce10Math_ok {s : State} (hc : CConsts width10 s) (h20 : s.v .v20 = idxVe
       else vbyte (s5.v .v5) (8 * l + b - 16)).toNat = grp10 Y l / 2 ^ (8 * b) % 2 ^ 8 := by
     intro l hl b hb
     by_cases h : l < 2
-    · rw [ite_eq_left (by omega), toNat_vbyte_dword _ hb, e0 l h]
-    · rw [ite_eq_right (by omega),
-        show 8 * l + b - 16 = 8 * (l - 2) + b by omega, toNat_vbyte_dword _ hb, e1 (l - 2) (by omega)]
+    · rw [ite_eq_left (by omega_using [hb, h]), toNat_vbyte_dword _ hb, e0 l h]
+    · rw [ite_eq_right (by omega_using [h]),
+        show 8 * l + b - 16 = 8 * (l - 2) + b by omega_using [h], toNat_vbyte_dword _ hb, e1 (l - 2) (by omega_using [hl])]
       dsimp only
-      rw [show 2 + (l - 2) = l by omega]
+      rw [show 2 + (l - 2) = l by omega_using [h]]
   refine wp_vop (by simp only [VOp.eval]; rfl) fun s6 h6 => wp_vop (by simp only [VOp.eval]; rfl)
     fun t h7 => wp_nil ⟨?_, ?_, ?_⟩
   · exact ((((c1.trans c2).trans c3).trans c4).trans (c5.trans (h6.chg.trans h7.chg))).mono
@@ -124,14 +124,14 @@ theorem ce10Math_ok {s : State} (hc : CConsts width10 s) (h20 : s.v .v20 = idxVe
     rw [h7.get .v6 (by decide), h6.v]
     have hk : (vbyte (s5.v .v20) j).toNat = 8 * (j / 5) + j % 5 := by
       rw [g20, toNat_idxVec _ (by decide) hj, ce10Idx_eq j hj]
-    rw [vbyte_tbl2 hj hk (by omega), show VReg.v4.succ = .v5 from rfl]
-    exact tb (j / 5) (by omega) (j % 5) (by omega)
+    rw [vbyte_tbl2 hj hk (by omega_using [hj]), show VReg.v4.succ = .v5 from rfl]
+    exact tb (j / 5) (by omega_using [hj]) (j % 5) (by omega_using [])
   · intro j hj
     rw [h7.v]
     have hk : (vbyte (s6.v .v21) j).toNat = 8 * 3 + (1 + j) := by
-      rw [h6.get .v21 (by decide), g21, toNat_idxVec _ (by decide) (by omega), ce10IdxHi_eq j hj]; omega
-    rw [vbyte_tbl2 (by omega) hk (by omega), show VReg.v4.succ = .v5 from rfl, h6.get .v4 (by decide),
+      rw [h6.get .v21 (by decide), g21, toNat_idxVec _ (by decide) (by omega_using [hj]), ce10IdxHi_eq j hj]; omega_using []
+    rw [vbyte_tbl2 (by omega_using [hj]) hk (by omega_using [hj]), show VReg.v4.succ = .v5 from rfl, h6.get .v4 (by decide),
       h6.get .v5 (by decide)]
-    exact tb 3 (by decide) (1 + j) (by omega)
+    exact tb 3 (by decide) (1 + j) (by omega_using [hj])
 
 end VG.Proof.MlKem.AArch64.CodecV

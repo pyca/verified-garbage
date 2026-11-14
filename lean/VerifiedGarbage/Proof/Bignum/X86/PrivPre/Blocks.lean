@@ -80,7 +80,7 @@ theorem maskArgs_ok (A : PPABI s) (B : Body s t) :
     simp only [Spec.Rsa.lenValid] at l
     have := A.pLength
     have := A.qLength
-    omega
+    omega_arith
 
 end
 end VG.Proof.Bignum.X86.PrivPre

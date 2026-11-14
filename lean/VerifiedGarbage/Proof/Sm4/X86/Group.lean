@@ -55,11 +55,11 @@ theorem countR_wp {s : State} {v : Nat} (hn : s.gpr .ebp = BitVec.ofNat 32 v) (h
   refine WP.seq (WP.of_runBlock ⟨s₂, e₂, ?_⟩)
   refine WP.ite (decide (v < 8)) ((eval_b s₂).trans cf₂) (fun h => ?_) (fun h => ?_)
   · refine WP.block_nil ⟨?_, o₂, m₂, rd₂, wr₂⟩
-    rw [RegUpd.gpr_arithFlags, r₁, hn, Nat.min_eq_left (by simp at h; omega)]
+    rw [RegUpd.gpr_arithFlags, r₁, hn, Nat.min_eq_left (by simp at h; omega_using [h])]
   · obtain ⟨s₃, e₃, r₃, o₃, m₃, rd₃, wr₃⟩ := movI_ok s₂ .ecx 8
     refine WP.of_runBlock ⟨s₃, e₃, ?_, fun r hr => by rw [o₃ r hr, o₂ r hr], by rw [m₃, m₂],
       by rw [rd₃, rd₂], by rw [wr₃, wr₂]⟩
-    rw [r₃, Nat.min_eq_right (by simp at h; omega)]; rfl
+    rw [r₃, Nat.min_eq_right (by simp at h; omega_using [h])]; rfl
 
 /-- The data pointer and the blocks left from their slots to `esi` and
 `ebp`, and `ecx := min(ebp, 8)`. -/
@@ -105,7 +105,7 @@ theorem stDN_ok (s : State) {b : BitVec 32} (hb : s.gpr .edi = b) (hw : ScrIn s.
 
 theorem toNat_add32 (D : BitVec 32) {d : Nat} (h : D.toNat + d < 2 ^ 32) :
     (D + BitVec.ofNat 32 d).toNat = D.toNat + d := by
-  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega : d < 2 ^ 32), Nat.mod_eq_of_lt h]
+  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [h] : d < 2 ^ 32), Nat.mod_eq_of_lt h]
 
 theorem setWidth_add {D : BitVec 32} {d : Nat} (h : D.toNat + d < 2 ^ 32) :
     (D + BitVec.ofNat 32 d).setWidth 64 = D.setWidth 64 + BitVec.ofNat 64 d := addr_eq h
@@ -122,8 +122,8 @@ theorem slot_keep {rs : List Region} {m m' : Mem} {b : BitVec 32} (hfit : b.toNa
     {k : Nat} (hk1 : lo ≤ k) (hk2 : k < hi) :
     m'.readW (wordAddr b k) 32 = m.readW (wordAddr b k) 32 := by
   rw [slots_eq] at hfit hhi
-  rw [slot_addr (by omega)]
-  exact hf.readW (VG.Offset.contains _ (by omega) (by omega) (by omega)) hd (by decide)
+  rw [slot_addr (by omega_using [hfit, hhi, hk2])]
+  exact hf.readW (VG.Offset.contains _ (by omega_using [hk1]) (by omega_using [hk2]) (by omega_using [hhi, hk1, hk2])) hd (by decide)
 
 /-- What the data loop keeps in the scratch buffer: the table and the saved
 registers, in the slots from `tableSlot` to `dSlot`. -/
@@ -135,10 +135,10 @@ theorem ScrOk.frame {s₀ : State} {b : BitVec 32} {E : Nat → Spec.Sm4.Word} {
     (h : ScrOk s₀ b E m) (hfit : b.toNat + 4 * slots ≤ 2 ^ 32) {rs : List Region}
     (hf : Frame rs m m') (hd : ∀ r ∈ rs, (slotsRegion b tableSlot dSlot).Disjoint r) : ScrOk s₀ b E m' := by
   refine ⟨fun e he => (h.keys e he).congr fun j hj => ?_, fun i hi => ?_⟩
-  · exact slot_keep hfit (by decide) hf hd (by omega) (by rw [dSlot_eq, tableSlot_eq]; omega)
+  · exact slot_keep hfit (by decide) hf hd (by omega_using []) (by rw [dSlot_eq, tableSlot_eq]; omega_using [he, hj])
   · rw [← h.saved i hi]
-    exact slot_keep hfit (by decide) hf hd (by rw [savedSlot_eq, tableSlot_eq]; omega)
-      (by rw [savedSlot_eq, dSlot_eq]; omega)
+    exact slot_keep hfit (by decide) hf hd (by rw [savedSlot_eq, tableSlot_eq]; omega_using [])
+      (by rw [savedSlot_eq, dSlot_eq]; omega_using [hi])
 
 /-- The slots of the data pointer and the count are in the scratch buffer. -/
 theorem dn_sub {b : BitVec 32} (hfit : b.toNat + 4 * slots ≤ 2 ^ 32) :
@@ -155,9 +155,9 @@ theorem dn_disj {b : BitVec 32} (hfit : b.toNat + 4 * slots ≤ 2 ^ 32) :
       (slotsRegion b tableSlot dSlot).Disjoint r := fun r hr => by
   rw [slots_eq] at hfit
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl <;> rw [slot_addr (by (try simp only [dSlot_eq, nSlot_eq]); omega)] <;>
-    exact VG.Offset.disjoint _ (by (try simp only [tableSlot_eq, dSlot_eq, nSlot_eq]); omega)
-      (by (try simp only [tableSlot_eq, dSlot_eq]); omega) (by (try simp only [dSlot_eq, nSlot_eq]); omega)
+  rcases hr with rfl | rfl <;> rw [slot_addr (by (try simp only [dSlot_eq, nSlot_eq]); omega_using [hfit])] <;>
+    exact VG.Offset.disjoint _ (by (try simp only [tableSlot_eq, dSlot_eq, nSlot_eq]); omega_using [])
+      (by (try simp only [tableSlot_eq, dSlot_eq]); omega_using []) (by (try simp only [dSlot_eq, nSlot_eq]); omega_using [])
 
 /-! ## The data loop -/
 
@@ -457,12 +457,12 @@ theorem dataLoop_wp {s₀ : State} {b D : BitVec 32} {n : Nat} {E : Nat → Spec
     {s : State} (hi : GInv s₀ b D n E 0 s) :
     WP isa (.loop group .ne) s (GDone s₀ b D n E) := by
   refine WP.loop (M := isa) (fun m s => ∃ k, m = n - 8 * k ∧ GInv s₀ b D n E k s) (fun m s hs => ?_) n s
-    ⟨0, by omega, hi⟩
+    ⟨0, by omega_using [], hi⟩
   obtain ⟨k, rfl, hk⟩ := hs
   refine WP.mono (dataGroup_wp hp hk) fun s' h => ?_
   rcases h with ⟨z, d⟩ | ⟨z, d⟩
   · exact .inl ⟨(eval_ne s').trans (by rw [z]; rfl), d⟩
   · exact .inr ⟨(eval_ne s').trans (by rw [z]; rfl), n - 8 * (k + 1),
-      by have := d.lt; have := hk.lt; omega, k + 1, rfl, d⟩
+      by have := d.lt; have := hk.lt; omega_arith, k + 1, rfl, d⟩
 
 end VG.Proof.Sm4.X86

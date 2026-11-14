@@ -64,10 +64,10 @@ theorem loop_ok [CompressImpl] (count : Nat) (s : State) (p : Params) (pass lane
       · simp only [eval, done.cf, last, Nat.lt_irrefl, decide_false]
       · exact done.finished last
     | succ n =>
-      have active : index + 1 < p.segmentLen := by omega
+      have active : index + 1 < p.segmentLen := by omega_using [endIndex]
       obtain ⟨nextCounter, nextReady⟩ := done.next active
       obtain ⟨restTrace, t, restRun, finished⟩ := ih a (index + 1) nextCounter nextReady
-        (fillBlock p pass slice lane index state) done.represented (by omega) (by omega)
+        (fillBlock p pass slice lane index state) done.represented (by omega_using []) (by omega_using [endIndex])
       refine ⟨_, t, .loopNext run ?_ restRun, finished.prepend done⟩
       simp only [eval, done.cf, active, decide_true]
 

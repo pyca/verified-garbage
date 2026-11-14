@@ -67,12 +67,12 @@ theorem finalizeArgs_ok (hc : Ctx L g m₀ s) (hL : L.Ok) (ha : Arguments L m₀
     have hr : InRegions (u.rd ++ u.wr) (addr L.E 276) 4 := by
       refine ⟨L.ARGS, ?_, ?_⟩
       · rw [hu.rd]; simp [Lay.inputs]
-      · rw [addr_eq (by have := hL.top; omega)]
+      · rw [addr_eq (by have := hL.top; omega_using [this])]
         exact Offset.contains _ (e := 260) (k := 24) (d := 276) (n := 4) (by decide) (by decide) (by decide)
     have hx : u.mem.readW (addr L.E 276) 32 = L.len := by
-      rw [addr_eq (by have := hL.top; omega)]
+      rw [addr_eq (by have := hL.top; omega_using [this])]
       exact (hu.arg_word hL (j := 4) (by decide)).trans (ha.1 4 (by decide))
-    refine WP.mono (Whole.Ctx.count hu (index := 4) (n := n) (by have := hL.top; omega) hr hx)
+    refine WP.mono (Whole.Ctx.count hu (index := 4) (n := n) (by have := hL.top; omega_using [this]) hr hx)
       fun t ⟨ht, hft, hlo, hhi⟩ => ⟨ht, hf.trans (count_frame hft),
         (count_keep hft (.inl rfl)).trans aa,
         (count_keep hft (.inr (.inl rfl))).trans ad,
@@ -92,7 +92,7 @@ open VG VG.X86 VG.Impl.Ed25519.X86.SignCached
 variable {L : Lay} {g : Reg → BitVec 32} {m₀ : Mem} {s : State}
 
 theorem digest_addr (hL : L.Ok) : (L.E + 192).setWidth 64 = L.E.setWidth 64 + 192 :=
-  addr_eq (x := L.E) (k := 192) (by have := hL.top; omega)
+  addr_eq (x := L.E) (k := 192) (by have := hL.top; omega_using [this])
 
 theorem digestWithin (hL : L.Ok) : Whole.Within ⟨(L.E + 192).setWidth 64, 64⟩ L.FR :=
   ⟨192, digest_addr hL, by change 192 + 64 ≤ 256; decide⟩
@@ -112,8 +112,8 @@ theorem finalize_step (hc : Ctx L g m₀ s) (hL : L.Ok) (ha : Arguments L m₀)
   have H := hashSpace hL
   have fit : (L.E + 192).toNat + 64 ≤ 2 ^ 32 := by
     rw [BitVec.toNat_add, show (192 : BitVec 32).toNat = 192 from rfl,
-      Nat.mod_eq_of_lt (by have := hL.top; omega)]
-    have := hL.top; omega
+      Nat.mod_eq_of_lt (by have := hL.top; omega_using [this])]
+    have := hL.top; omega_using [this]
   have hd : Region.Disjoint ⟨(L.E + 192).setWidth 64, 64⟩ L.SCR :=
     hL.kc.sub_left (fun p hp => Whole.frame_sub L.E p ((digestWithin hL).sub p hp))
   have hp := Whole.finalize_pre hu.esp H a0 a3 a4 hd (digest_below hL) (by

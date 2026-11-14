@@ -47,9 +47,9 @@ theorem squareLoop_ok {code : Prog isa} {name : String}
   obtain ⟨St, Ot, Kt⟩ := H
   have yBound : squareValues A c g.w r q F i aY < c := by
     rw [squareValues, setAt_self]
-    exact squareState_lt A (by omega : 0 < c) g.w r q F Ylt i
+    exact squareState_lt A (by omega_using [odd] : 0 < c) g.w r q F Ylt i
   refine WP.mono (squareStep_ok verified noSp stack v St length odd yBound yKnown minusKnown
-    (by omega : 0 < q - i) (by omega : q - i < 2 ^ 31) rBound (squareState A c g.w r q F i).2
+    (by omega_using [index] : 0 < q - i) (by omega_using [qBound] : q - i < 2 ^ 31) rBound (squareState A c g.w r q F i).2
     known ?_ ?_ ?_) fun u ⟨Su, Z, Ou, Ku⟩ => ?_
   · change setAt (setAt V sSquares (BitVec.ofNat 32 (q - i))) sFlag _ sSquares = _
     rfl
@@ -65,6 +65,6 @@ theorem squareLoop_ok {code : Prog isa} {name : String}
     refine ⟨⟨Snext, Ot.trans Ou, Kt.trans Ku⟩, ?_⟩
     rw [Z]
     congr 1
-    exact decide_eq_decide.mpr (by omega)
+    exact decide_eq_decide.mpr (by omega_using [])
 
 end VG.Proof.MillerRabin.X86

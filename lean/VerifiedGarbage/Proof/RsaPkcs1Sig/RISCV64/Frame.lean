@@ -42,7 +42,7 @@ abbrev sR (s : State) : Region := ⟨stackArg s 1, (stackArg s 2).toNat * 8⟩
 abbrev aR (s : State) : Region := ⟨stackArgAddr s 0, 40⟩
 
 theorem fb_toNat {s : State} (h : frameBytes ≤ s.sp.toNat) : (fb s).toNat + frameBytes = s.sp.toNat := by
-  simp only [fb, BitVec.toNat_sub, BitVec.toNat_ofNat]; unfold frameBytes at *; omega
+  simp only [fb, BitVec.toNat_sub, BitVec.toNat_ofNat]; unfold frameBytes at *; omega_using [h]
 
 /-- A region of the frame is in the stack the function uses. -/
 theorem frame_sub (s : State) {d n : Nat} (h : d + n ≤ frameBytes) :
@@ -50,7 +50,7 @@ theorem frame_sub (s : State) {d n : Nat} (h : d + n ≤ frameBytes) :
 
 theorem frame_contains (s : State) {d n : Nat} (h : d + n ≤ frameBytes) :
     (kR s).Contains (fb s + BitVec.ofNat 64 d) n :=
-  Offset.contains_base _ h (by unfold frameBytes at h; omega)
+  Offset.contains_base _ h (by unfold frameBytes at h; omega_using [h])
 
 /-- The frame is writable. -/
 theorem in_fr (s : State) (rs : List Region) {d n : Nat} (h : d + n ≤ frameBytes) :
@@ -72,7 +72,7 @@ theorem stackArgAddr_eq (s : State) (j : Nat) :
   simp only [stackArgAddr, Nat.mul_zero, BitVec.add_zero]
 
 theorem in_aR {s : State} {j : Nat} (hj : j < 5) : (aR s).Contains (stackArgAddr s j) 8 := by
-  rw [stackArgAddr_eq s j]; exact Offset.contains_base _ (by omega) (by omega)
+  rw [stackArgAddr_eq s j]; exact Offset.contains_base _ (by omega_using [hj]) (by omega_using [hj])
 
 /-! ## The saves -/
 
@@ -151,8 +151,8 @@ theorem Mid.frameMem (h : Mid S s a b c d t) (hks : (kR s).Disjoint S) {e n : Na
       Region.Disjoint ⟨fb s + BitVec.ofNat 64 d', k⟩ r := fun hk r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
-    · exact Offset.disjoint _ (.inl (by omega)) (by unfold oRa at hk; omega) (by unfold frameBytes at hen; omega)
-    · exact hks.sub_left (frame_sub s (by unfold oRa frameBytes at *; omega))
+    · exact Offset.disjoint _ (.inl (by omega_using [he, hk])) (by unfold oRa at hk; omega_using [hk]) (by unfold frameBytes at hen; omega_using [hen])
+    · exact hks.sub_left (frame_sub s (by unfold oRa frameBytes at *; omega_using [hk]))
   refine ⟨h.mem.trans (hm.sub fun r hr => ?_), h.sv.frame_in saved_offs hm (hd (by decide))⟩
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl
@@ -193,7 +193,7 @@ theorem words_of_frame {S : Region} {s : State} {m : Mem} (hf : Frame [kR s, S] 
   simp only [Spec.Rsa.wordsAt]
   refine List.map_congr_left fun i hi => hf.readW (r := ⟨p, n * 8⟩) ?_ (fun r hr => ?_) (by decide)
   · have := List.mem_range.mp hi
-    exact Offset.contains_base _ (by omega) (by omega)
+    exact Offset.contains_base _ (by omega_using [this]) (by omega_using [hl, this])
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
     · exact hk.symm
@@ -214,12 +214,12 @@ theorem save_ok {s u : State} (hsp : u.sp = fb s) (hwr : u.wr = kR s :: s.wr) (h
   rw [hsp, BitVec.add_zero] at e₁
   refine Spill.save_ok (b := .t0) (l := saved) (by rw [e₁]; exact hal) saved_ho (fun p hp => ?_) ?_
   · have := saved_offs p hp
-    rw [e₁, o₁.wr, hwr]; exact in_fr s _ (by unfold oSave frameBytes at *; omega)
+    rw [e₁, o₁.wr, hwr]; exact in_fr s _ (by unfold oSave frameBytes at *; omega_using [this])
   refine k _ ⟨fun r hr => o₁.gpr r hr, o₁.rd, o₁.wr, o₁.sp⟩ e₁ ?_ ?_
   · show Frame [kR s] s.mem (Spill.saveMem u₁.mem (u₁.gpr .t0) u₁.gpr saved)
     rw [e₁, o₁.mem]
     exact hm.trans (Spill.saveMem_frame_base (fun p hp => by
-      have := saved_offs p hp; unfold oSave frameBytes at *; omega) (by decide) _ _ _)
+      have := saved_offs p hp; unfold oSave frameBytes at *; omega_using [this]) (by decide) _ _ _)
   · show Spill.Saved (fb s) s.gpr saved (Spill.saveMem u₁.mem (u₁.gpr .t0) u₁.gpr saved)
     rw [e₁]
     refine fun p hp => (Spill.saveMem_saved (by decide) _ _ _ p hp).trans ?_
@@ -246,7 +246,7 @@ theorem Saves.keep {s t w : State} {rs : List Reg} (h : Saves s t) (o : Kept rs 
   wr := o.wr.trans h.wr
   hi := fun r hr => (o.gpr _ (not_kept hrs (List.mem_append_right _ hr))).trans (h.hi r hr)
   sv := h.sv.frame hm fun p hp r hr => (hR r hr).sub_left (frame_sub s (by
-    have := saved_offs p hp; unfold oSave frameBytes at *; omega))
+    have := saved_offs p hp; unfold oSave frameBytes at *; omega_using [this]))
 
 /-- The restores: the caller's registers and return address are back, and
 `a0` and memory are kept. -/
@@ -261,7 +261,7 @@ theorem restore_ok {s w : State} (hm : Saves s w) (hal : (fb s).toNat % 8 = 0) :
     e₁ saved_ho (by decide)
     (fun p hp => by
       have := saved_offs p hp
-      rw [o₁.rd, o₁.wr, hm.wr]; exact in_fr' s _ _ (by unfold oSave frameBytes at *; omega))
+      rw [o₁.rd, o₁.wr, hm.wr]; exact in_fr' s _ _ (by unfold oSave frameBytes at *; omega_using [this]))
     (by rw [o₁.mem]; exact hm.sv)) fun w' hr => ⟨⟨fun r hr' => ?_, ?_, ?_⟩, ?_, ?_⟩
   · show w'.gpr r = s.gpr r
     rcases preserved_split hr' with h | h

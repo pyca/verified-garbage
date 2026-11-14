@@ -17,13 +17,13 @@ theorem scanFrame_table {g : Geometry} (v : g.Valid) {m m' : Mem}
     {j : Nat} (index : j < 16) :
     val32 m' g.W (g.array (aTable + j)) g.words = val32 m g.W (g.array (aTable + j)) g.words := by
   have header := v.arrayHeader (aTable + j)
-  have sep := g.arrayBefore (show aX < aTable + j by unfold aX aTable; omega)
-  have fit := v.arrayFit (j := aTable + j) (by unfold aTable; omega)
-  refine O.val32 ?_ (by omega)
+  have sep := g.arrayBefore (show aX < aTable + j by unfold aX aTable; omega_using [])
+  have fit := v.arrayFit (j := aTable + j) (by unfold aTable; omega_using [index])
+  refine O.val32 ?_ (by omega_using [nowrap, fit])
   intro r hr
   simp only [scanWrites, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl
-  · right; unfold sEq1; omega
+  · right; unfold sEq1; omega_using [header]
   · exact Or.inr sep
 
 theorem scanFrame_value {g : Geometry} (v : g.Valid) {m m' : Mem}

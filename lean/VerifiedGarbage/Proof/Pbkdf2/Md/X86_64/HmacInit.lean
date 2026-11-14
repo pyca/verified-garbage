@@ -329,18 +329,18 @@ theorem writeBytes_over (m : Mem) (q : Addr) (xs ys zs : List Byte) {j : Nat}
   have hd := (a - q).isLt
   simp only [writeBytes, Offset.sub_add_eq, Offset.toNat_sub_ofNat, hz]
   generalize (a - q).toNat = d at hd ⊢
-  rw [Nat.mod_eq_of_lt (a := j) (by omega)]
+  rw [Nat.mod_eq_of_lt (a := j) (by omega_using [hx, hy])]
   by_cases hdj : j ≤ d
-  · rw [show 2 ^ 64 - j + d = (d - j) + 2 ^ 64 by omega, Nat.add_mod_right, Nat.mod_eq_of_lt (a := d - j) (by omega)]
+  · rw [show 2 ^ 64 - j + d = (d - j) + 2 ^ 64 by omega_using [hd, hdj], Nat.add_mod_right, Nat.mod_eq_of_lt (a := d - j) (by omega_using [hd])]
     by_cases hdx : d < xs.length
     · rw [ite_eq_left hdx, ite_eq_left hdx, h d hdx]
       by_cases hdy : d - j < ys.length
-      · rw [ite_eq_left hdy, ite_eq_left ⟨hdj, by omega⟩]
-      · rw [ite_eq_right hdy, ite_eq_right (by omega)]
-    · rw [ite_eq_right hdx, ite_eq_right hdx, ite_eq_right (by omega)]
-  · rw [Nat.mod_eq_of_lt (a := 2 ^ 64 - j + d) (by omega), ite_eq_right (by omega)]
+      · rw [ite_eq_left hdy, ite_eq_left ⟨hdj, by omega_using [hdy]⟩]
+      · rw [ite_eq_right hdy, ite_eq_right (by omega_using [hdy])]
+    · rw [ite_eq_right hdx, ite_eq_right hdx, ite_eq_right (by omega_using [hy, hdx])]
+  · rw [Nat.mod_eq_of_lt (a := 2 ^ 64 - j + d) (by omega_using [hd, hdj]), ite_eq_right (by omega_using [hx, hy])]
     by_cases hdx : d < xs.length
-    · rw [ite_eq_left hdx, ite_eq_left hdx, h d hdx, ite_eq_right (by omega)]
+    · rw [ite_eq_left hdx, ite_eq_left hdx, h d hdx, ite_eq_right (by omega_using [hdj])]
     · rw [ite_eq_right hdx, ite_eq_right hdx]
 
 /-- Sixteen more bytes of the key. -/
@@ -357,13 +357,13 @@ theorem ipadBlk_add16 (m mk : Mem) (P K : Addr) {B j : Nat} (v : BitVec 128) (hB
   simp only [ipadBlk, bytesAt, List.getD_eq_getElem?_getD, List.getElem?_map, List.getElem?_range hi,
     Option.map_some, Option.getD_some]
   by_cases hi' : j ≤ i ∧ i < j + 16
-  · rw [ite_eq_left hi', List.getElem?_range (by omega), ite_eq_left hi'.2]
+  · rw [ite_eq_left hi', List.getElem?_range (by omega_using [hi']), ite_eq_left hi'.2]
     simp only [Option.map_some, Option.getD_some]
-    rw [add_ofNat, show j + (i - j) = i by omega]
+    rw [add_ofNat, show j + (i - j) = i by omega_using [hi']]
   · rw [ite_eq_right hi']
     by_cases hij : i < j
-    · rw [ite_eq_left hij, ite_eq_left (by omega)]
-    · rw [ite_eq_right hij, ite_eq_right (by omega)]
+    · rw [ite_eq_left hij, ite_eq_left (by omega_using [hij])]
+    · rw [ite_eq_right hij, ite_eq_right (by omega_using [hi', hij])]
 
 /-- One more 16 bytes of the outer buffer, after `16 n` of them: the inner
 buffer's, XORed with `0x6a` in every byte. -/
@@ -380,13 +380,13 @@ theorem xorOpad_mem16 (m : Mem) (A Q : Addr) (n : Nat) (c : BitVec 128) (hc : vb
       (by rw [hl, List.length_map, bytesAt_length]; exact hlt)
   · intro x hx hy
     rw [hl] at hy
-    apply hsep x _ (by omega)
+    apply hsep x _ (by omega_using [hy])
     rw [show x - A = (x - (A + BitVec.ofNat 64 (16 * n))) + BitVec.ofNat 64 (16 * n) by
         rw [← BitVec.sub_sub, BitVec.sub_add_cancel],
-      BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := 16 * n) (by omega)]
+      BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := 16 * n) (by omega_using [hlt])]
     have := Nat.mod_le ((x - (A + BitVec.ofNat 64 (16 * n))).toNat + 16 * n) (2 ^ 64)
-    omega
-  · omega
+    omega_using [hx]
+  · omega_using []
 
 theorem mask64 : ∀ j < 4, BitVec.ofNat 64 (16 * j) &&& (BitVec.ofNat 32 (64 - 16)).signExtend 64 =
     BitVec.ofNat 64 (16 * j) := by decide
@@ -398,13 +398,13 @@ theorem mask128 : ∀ j < 8, BitVec.ofNat 64 (16 * j) &&& (BitVec.ofNat 32 (128 
 theorem and_mask16 {B : Nat} (hB : B = 64 ∨ B = 128) {j : Nat} (hj : 16 * j + 16 ≤ B) :
     BitVec.ofNat 64 (16 * j) &&& (BitVec.ofNat 32 (B - 16)).signExtend 64 = BitVec.ofNat 64 (16 * j) := by
   rcases hB with rfl | rfl
-  · exact mask64 j (by omega)
-  · exact mask128 j (by omega)
+  · exact mask64 j (by omega_using [hj])
+  · exact mask128 j (by omega_using [hj])
 
 theorem shr4 (x : BitVec 64) : x >>> 4 = BitVec.ofNat 64 (x.toNat / 16) := by
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow,
-    Nat.mod_eq_of_lt (by have := x.isLt; omega)]
+    Nat.mod_eq_of_lt (by have := x.isLt; omega_using [])]
 
 theorem ea_keyAt (s : State) : s.ea H.keyAt = s.gpr .rbx + BitVec.ofNat 64 H.P.N + s.gpr .r10 := by
   simp only [State.ea, Hash.keyAt, ofInt_natCast, show BitVec.ofNat 64 1 = 1 from rfl]
@@ -518,7 +518,7 @@ theorem KeyInv.key {s : State} {m mk : Mem} {P K : Addr} {kl : Nat} (hr : KeyReg
     {t : State} (h : KeyInv s m mk P K H.P.B j t) {i : Nat} (hi : i < kl) :
     t.mem (K + BitVec.ofNat 64 i) = mk (K + BitVec.ofNat 64 i) := by
   have hkl := hr.kl_le
-  have hB : H.P.B ≤ 128 := by rcases hr.hB with h | h <;> omega
+  have hB : H.P.B ≤ 128 := by rcases hr.hB with h | h <;> omega_using [h]
   have hl : (ipadBlk mk K H.P.B j).length = H.P.B := ipadBlk_length _ _ _ _
   rw [h.mem, ← hr.key i hi]
   refine (writeBytes_frame m P _ (R := ⟨P, H.P.B⟩) (by rw [hl]; exact Region.contains_self _ _)).bytes
@@ -535,19 +535,19 @@ theorem key_step16 {s : State} {m mk : Mem} {P K : Addr} {kl : Nat} (hr : KeyReg
       fun t' => (KeyInv s m mk P K H.P.B (16 * (j + 1)) t' ∧ t'.xmm .xmm0 = s.xmm .xmm0 ∧
         t'.gpr .rcx = BitVec.ofNat 64 (kl / 16 - (j + 1))) ∧ t'.zf = some (decide (j + 1 = kl / 16)) := by
   have hkl := hr.kl_le
-  have hB : H.P.B ≤ 128 := by rcases hr.hB with h | h <;> omega
-  have hj16 : 16 * j + 16 ≤ kl := by omega
+  have hB : H.P.B ≤ 128 := by rcases hr.hB with h | h <;> omega_using [h]
+  have hj16 : 16 * j + 16 ≤ kl := by omega_using [hj]
   refine wp_loadXor (a := K + BitVec.ofNat 64 (16 * j)) (by decide)
     (by rw [ea_byteAt _ _ _ _ h.r14, h.other _ (by decide) (by decide) (by decide) (by decide), hr.rbp,
       BitVec.add_zero])
     (by rw [h.rd, h.wr]; exact hr.kin _ 16 hj16) fun t₀ g₀ m₀ rd₀ wr₀ x₀ xo₀ => ?_
   refine wp_movX fun t₁ u₁ x₁ => wp_andiX fun t₂ u₂ x₂ => ?_
   have h10 : t₂.gpr .r10 = BitVec.ofNat 64 (16 * j) := by
-    rw [u₂.gpr, u₁.gpr, g₀, h.r14, and_mask16 hr.hB (by omega)]
+    rw [u₂.gpr, u₁.gpr, g₀, h.r14, and_mask16 hr.hB (by omega_using [hj, hkl])]
   refine wp_movdquStoreX (a := P + BitVec.ofNat 64 (16 * j))
     (by rw [ea_keyAt, h10, u₂.other _ (by decide), u₁.other _ (by decide), g₀,
       h.other _ (by decide) (by decide) (by decide) (by decide), hr.rbx])
-    (by rw [u₂.wr, u₁.wr, wr₀, h.wr]; exact hr.bout _ 16 (by omega)) fun t₃ g₃ m₃ rd₃ wr₃ x₃ => ?_
+    (by rw [u₂.wr, u₁.wr, wr₀, h.wr]; exact hr.bout _ 16 (by omega_using [hj, hkl])) fun t₃ g₃ m₃ rd₃ wr₃ x₃ => ?_
   refine wp_addiX fun t₄ u₄ x₄ => wp_subiX fun t₅ u₅ x₅ z₅ => WP.block_nil ?_
   have hv : vbytes (t.mem.readW (K + BitVec.ofNat 64 (16 * j)) 128 ^^^ t.xmm .xmm0) =
       (bytesAt mk (K + BitVec.ofNat 64 (16 * j)) 16).map (· ^^^ ipad) := by
@@ -557,7 +557,7 @@ theorem key_step16 {s : State} {m mk : Mem} {P K : Addr} {kl : Nat} (hr : KeyReg
     refine List.map_congr_left fun i hi => ?_
     have hi := List.mem_range.mp hi
     rw [add_ofNat]
-    exact h.key hr (by omega)
+    exact h.key hr (by omega_using [hj, hi])
   have c₄ : t₄.gpr .rcx = BitVec.ofNat 64 (kl / 16 - j) := by
     rw [u₄.other _ (by decide), g₃, u₂.other _ (by decide), u₁.other _ (by decide), g₀, hc]
   refine ⟨⟨⟨by rw [u₅.rd, u₄.rd, rd₃, u₂.rd, u₁.rd, rd₀, h.rd], by rw [u₅.wr, u₄.wr, wr₃, u₂.wr, u₁.wr, wr₀, h.wr],
@@ -568,10 +568,10 @@ theorem key_step16 {s : State} {m mk : Mem} {P K : Addr} {kl : Nat} (hr : KeyReg
     by rw [x₅, x₄, x₃, x₂, x₁, xo₀ _ (by decide), hx], ?_⟩, ?_⟩
   · rw [u₅.mem, u₄.mem, m₃, x₂, x₁, x₀, u₂.mem, u₁.mem, m₀]
     generalize t.mem.readW (K + BitVec.ofNat 64 (16 * j)) 128 ^^^ t.xmm .xmm0 = v at hv ⊢
-    rw [h.mem, ipadBlk_add16 _ _ _ _ _ (by omega) (by omega) hv, Nat.mul_succ]
-  · rw [u₅.gpr, c₄, sx_one, ofNat_pred (by omega)]; rfl
-  · rw [z₅, c₄, sx_one, show (1 : BitVec 64) = BitVec.ofNat 64 1 from rfl, sub_beq (by omega) (by omega)]
-    exact congrArg some (decide_eq_decide.mpr (by omega))
+    rw [h.mem, ipadBlk_add16 _ _ _ _ _ (by omega_using [hB]) (by omega_using [hj, hkl]) hv, Nat.mul_succ]
+  · rw [u₅.gpr, c₄, sx_one, ofNat_pred (by omega_using [hj])]; rfl
+  · rw [z₅, c₄, sx_one, show (1 : BitVec 64) = BitVec.ofNat 64 1 from rfl, sub_beq (by omega_using [hkl, hB]) (by omega_using [])]
+    exact congrArg some (decide_eq_decide.mpr (by omega_using []))
 
 /-- The 16-byte key loop, skipped for a key shorter than that. -/
 theorem key16_ok {s : State} {m mk : Mem} {P K : Addr} {kl : Nat} (hr : KeyRegs H s m mk P K kl)
@@ -596,7 +596,7 @@ theorem key_step {s : State} {m mk : Mem} {P K : Addr} {kl : Nat} (hr : KeyRegs 
       .store8 H.keyAt .rax, .alu .add .r14 (.imm 1), .alu .cmp .r14 (.reg .r13)]) t
       fun t' => KeyInv s m mk P K H.P.B (j + 1) t' ∧ t'.zf = some (decide (j + 1 = kl)) := by
   have hkl := hr.kl_le
-  have hB : H.P.B ≤ 128 := by rcases hr.hB with h | h <;> omega
+  have hB : H.P.B ≤ 128 := by rcases hr.hB with h | h <;> omega_using [h]
   have hl : (ipadBlk mk K H.P.B j).length = H.P.B := ipadBlk_length _ _ _ _
   have hbyte : t.mem (K + BitVec.ofNat 64 j) = mk (K + BitVec.ofNat 64 j) := h.key hr hj
   refine wp_movzx8 (a := K + BitVec.ofNat 64 j)
@@ -694,7 +694,7 @@ theorem keys_ok {s : State} (hk : KR H s₀ (inn s₀) s) :
   obtain ⟨hN4, hB4, hN, hB0, hB, -⟩ := sizes hH hp
   have hkl := hp.kl_le
   have hd := hH.dims.B
-  have eB : 16 * (H.P.B / 16) = H.P.B := by rcases hd with h | h <;> omega
+  have eB : 16 * (H.P.B / 16) = H.P.B := by rcases hd with h | h <;> omega_using [h]
   have si := stOk_in (H := H) hp
   have so := stOk_out (H := H) hp
   have bI : Region.Sub ⟨bufOf H (inn s₀), H.P.B⟩ ⟨inn s₀, H.S⟩ := Offset.sub_base _ (Nat.le_refl _)
@@ -748,7 +748,7 @@ theorem keys_ok {s : State} (hk : KR H s₀ (inn s₀) s) :
   have hz₇ : t₇.zf = some (decide (16 * (kl s₀ / 16) = kl s₀)) := by
     rw [z₇, h₆.r14, h₆.other _ (by decide) (by decide) (by decide) (by decide), hr.r13,
       sub_beq (by omega_using [hkl, hB]) (by omega_using [hkl, hB])]
-  refine WP.seq (WP.mono (key_ok hr (by omega) h₇ hz₇) fun t ht => ?_)
+  refine WP.seq (WP.mono (key_ok hr (by omega_using []) h₇ hz₇) fun t ht => ?_)
   have Gt : ∀ r, r ≠ .rax → r ≠ .r14 → r ≠ .r10 → r ≠ .rcx → t.gpr r = s.gpr r := fun r h1 h2 h3 h4 => by
     rw [ht.other r h1 h2 h3 h4, G₅ r h1 h2 h4]
   have bxt : t.gpr .rbx = inn s₀ := by rw [Gt _ (by decide) (by decide) (by decide) (by decide), hk.rbx]
@@ -1290,7 +1290,7 @@ theorem pair_ok {name : String} {code : Prog isa} (hf : MdStream.X86_64.PairOk h
       · exact ⟨stkR s₀, by simp, b8⟩
   have fe : Frame [below (t.gpr .rsp) 8] t.mem s₁.callEntry.mem := by
     rw [← hsp, ← ha.mem]
-    exact Frame.writeW (Frame.refl _ _) (List.mem_singleton_self _) _ (below_call _ (by omega) (by omega))
+    exact Frame.writeW (Frame.refl _ _) (List.mem_singleton_self _) _ (below_call _ (by omega_using []) (by omega_using []))
   have one : ∀ {X : Region}, (below (t.gpr .rsp) 8).Disjoint X → ∀ r ∈ [below (t.gpr .rsp) 8], X.Disjoint r :=
     fun h r hr => by rw [List.mem_singleton.mp hr]; exact h.symm
   rw [stateAt_keep hH hp fe (one ((si.stk.sub_left b8).sub_right hvI)),

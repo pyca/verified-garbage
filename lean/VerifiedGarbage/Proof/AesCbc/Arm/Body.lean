@@ -54,7 +54,7 @@ theorem UPre.blk_sv {k : Nat} (hk : k < N s₀) : (⟨blk s₀ k, 16⟩ : Region
 theorem UPre.iv_sv : (ivR s₀).Disjoint ⟨Sv s₀, 16⟩ := hp.iv_scr.sub_right (UPre.scr_sub (by decide))
 
 theorem UPre.sv_scr : (⟨Sv s₀, 16⟩ : Region).Disjoint ⟨State.addr (S s₀), 2048⟩ :=
-  Offset.disjoint_base _ (by decide) (by have := hp.scr_fit; omega)
+  Offset.disjoint_base _ (by decide) (by have := hp.scr_fit; omega_using [])
 
 /-- The arguments of a call on block `k`, with the working space at the start
 of the scratch buffer. -/
@@ -68,7 +68,7 @@ theorem UPre.blkCall {k : Nat} (hk : k < N s₀) {s : State}
   have hdf := hp.data_fit
   have hsc := hp.scr_fit
   refine ⟨r0, by rw [r1]; simp [R], r2, by rw [r3]; rfl, r12, hp.rounds, by rw [sp]; exact hp.sp8, hp.sch_fit,
-    by rw [qN]; omega, by omega, ?_, hp.sch_scr.sub_right (Region.sub_prefix (by decide)), ?_,
+    by rw [qN]; omega_using [hk, hdf], by omega_using [hsc], ?_, hp.sch_scr.sub_right (Region.sub_prefix (by decide)), ?_,
     by rw [hb]; exact hp.b_sch, ?_, by rw [hb]; exact hp.b_scr.sub_right (Region.sub_prefix (by decide)), ?_, ?_⟩
   · rw [hd]; exact hp.sch_data.sub_right (UPre.data_sub hk)
   · rw [hd]; exact (hp.data_scr.sub_left (UPre.data_sub hk)).sub_right (Region.sub_prefix (by decide))
@@ -81,7 +81,7 @@ theorem UPre.blkCall {k : Nat} (hk : k < N s₀) {s : State}
     refine Covers.of_sub fun r hr => ?_
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
-    · exact ⟨dataR s₀, by simp, 16 * k, rfl, by simp; omega⟩
+    · exact ⟨dataR s₀, by simp, 16 * k, rfl, by simp; omega_using [hk]⟩
     · exact ⟨scrR s₀, by simp, 0, by simp, by simp⟩
 
 end
@@ -93,7 +93,7 @@ theorem covBlk {k : Nat} (hk : k < N s₀) {rs : List Region} (h : dataR s₀ �
     Covers [⟨blk s₀ k, 16⟩] rs :=
   Covers.of_sub fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr
-    exact ⟨dataR s₀, h, 16 * k, rfl, by simp; omega⟩
+    exact ⟨dataR s₀, h, 16 * k, rfl, by simp; omega_using [hk]⟩
 
 theorem covIv {rs : List Region} (h : ivR s₀ ∈ rs) : Covers [⟨State.addr (Iv s₀), 16⟩] rs :=
   Covers.of_sub fun r hr => by
@@ -227,7 +227,7 @@ theorem advance_wp {M : Mode} {s₀ : State} (hp : UPre s₀) {k : Nat} (hk : k 
   refine wp_add (op2_imm (by decide)) fun s₃ u₃ => wp_subs (op2_imm (by decide)) fun s₄ u₄ z₄ => WP.block_nil ?_
   have r8₃ : s₃.gpr .r8 = BitVec.ofNat 32 (N s₀ - k) := by rw [u₃.other _ (by decide), h8]
   have dec : BitVec.ofNat 32 (N s₀ - k) - 1 = BitVec.ofNat 32 (N s₀ - (k + 1)) := by
-    rw [show (1 : BitVec 32) = BitVec.ofNat 32 1 from rfl, sub_ofNat (by omega)]; rfl
+    rw [show (1 : BitVec 32) = BitVec.ofNat 32 1 from rfl, sub_ofNat (by omega_using [hk])]; rfl
   have g : ∀ r, r ≠ .r7 → r ≠ .r8 → s₄.gpr r = s.gpr r := fun r h7 h8' => by
     rw [u₄.other _ h8', u₃.other _ h7]
   refine ⟨⟨by rw [g _ (by decide) (by decide), h.r4], by rw [g _ (by decide) (by decide), h.r5],
@@ -236,8 +236,8 @@ theorem advance_wp {M : Mode} {s₀ : State} (hp : UPre s₀) {k : Nat} (hk : k 
     by rw [u₄.sp, u₃.sp, h.sp], by rw [u₄.rd, u₃.rd, h.rd], by rw [u₄.wr, u₃.wr, h.wr],
     by rw [u₄.mem, u₃.mem]; exact hf, by rw [u₄.mem, u₃.mem]; exact hd, by rw [u₄.mem, u₃.mem]; exact hi⟩, ?_⟩
   · rw [u₄.other _ (by decide), u₃.gpr, h.r7, show (16 : BitVec 32) = BitVec.ofNat 32 16 from rfl,
-      Offset.add_add_eq _ (c := 16 * (k + 1)) (by omega)]
-  · rw [z₄, r8₃, dec]; exact ofNat_beq_zero (by omega)
+      Offset.add_add_eq _ (c := 16 * (k + 1)) (by omega_using [])]
+  · rw [z₄, r8₃, dec]; exact ofNat_beq_zero (by omega_using [hdf])
 
 /-! ## Moving blocks -/
 
@@ -305,8 +305,8 @@ theorem encA_wp {s₀ : State} (hp : UPre s₀) {k : Nat} (hk : k < N s₀)
   have hd := hp.dataA hk
   have rw₀ : s.rd ++ s.wr = [schR s₀, argsR s₀, ivR s₀, dataR s₀, scrR s₀] := by rw [h.rd, h.wr, hp.rd, hp.wr]; rfl
   have w₀ : s.wr = [ivR s₀, dataR s₀, scrR s₀] := by rw [h.wr, hp.wr]
-  refine xorIn_wp (by decide) (by decide) (by decide) (by decide) (by rw [h.r6]; omega)
-    (by rw [h.r7, qN]; omega) (by rw [h.r6, add0, rw₀]; exact covIv (by simp))
+  refine xorIn_wp (by decide) (by decide) (by decide) (by decide) (by rw [h.r6]; omega_using [hiv])
+    (by rw [h.r7, qN]; omega_using [hk, hdf]) (by rw [h.r6, add0, rw₀]; exact covIv (by simp))
     (by rw [h.r7, add0, hd, w₀]; exact covBlk hk (by simp)) fun s₁ g₁ => ?_
   have m₁ : s₁.mem = Proof.Cmac.xor4Mem s.mem (blk s₀ k) (blk s₀ k) (State.addr (Iv s₀)) := by
     rw [g₁.mem, h.r7, h.r6, add0, add0, hd]
@@ -353,8 +353,8 @@ theorem encBody_ok : BodyOk (cbcMode true) encBody := by
   have rw₂ : s₂.rd ++ s₂.wr = [schR s₀, argsR s₀, ivR s₀, dataR s₀, scrR s₀] := by
     rw [rg₂.rd, rg₂.wr, hp.rd, hp.wr]; rfl
   rw [encPost_eq]
-  refine copy_wp (by decide) (by decide) (by decide) (by decide) (by rw [rg₂.r7, qN]; omega)
-    (by rw [rg₂.r6]; omega) (by rw [rg₂.r7, add0, hd, rw₂]; exact covBlk hk (by simp))
+  refine copy_wp (by decide) (by decide) (by decide) (by decide) (by rw [rg₂.r7, qN]; omega_using [hk, hdf])
+    (by rw [rg₂.r6]; omega_using [hiv]) (by rw [rg₂.r7, add0, hd, rw₂]; exact covBlk hk (by simp))
     (by rw [rg₂.r6, add0, w₂]; exact covIv (by simp)) fun s₃ g₃ => ?_
   have m₃ : s₃.mem = copy4Mem s₂.mem (State.addr (Iv s₀)) (blk s₀ k) := by
     rw [g₃.mem, rg₂.r6, rg₂.r7, add0, add0, hd]
@@ -376,7 +376,7 @@ theorem encBody_ok : BodyOk (cbcMode true) encBody := by
       Proof.Cmac.bytesAt_frame (copy4Mem_frame s₂.mem (State.addr (Iv s₀)) (blk s₀ k)) (one (hp.blk_iv hk))
         (by decide)]
   have hl : (outK (cbcMode true) s₀ k).length = k := by
-    rw [outK, Mode.length_out]; simp [Spec.Cbc.blocksAt]; omega
+    rw [outK, Mode.length_out]; simp [Spec.Cbc.blocksAt]; omega_using [hk]
   have outSucc :
       outK (cbcMode true) s₀ (k + 1) = outK (cbcMode true) s₀ k ++ [bytesAt s₃.mem (blk s₀ k) 16] := by
     rw [newBlk]
@@ -407,8 +407,8 @@ theorem decA_wp {s₀ : State} (hp : UPre s₀) {k : Nat} (hk : k < N s₀)
   have rw₀ : s.rd ++ s.wr = [schR s₀, argsR s₀, ivR s₀, dataR s₀, scrR s₀] := by rw [h.rd, h.wr, hp.rd, hp.wr]; rfl
   have w₀ : s.wr = [ivR s₀, dataR s₀, scrR s₀] := by rw [h.wr, hp.wr]
   rw [decPre_eq]
-  refine copy_wp (by decide) (by decide) (by decide) (by decide) (by rw [h.r7, qN]; omega)
-    (by rw [h.r10]; omega) (by rw [h.r7, add0, hd, rw₀]; exact covBlk hk (by simp))
+  refine copy_wp (by decide) (by decide) (by decide) (by decide) (by rw [h.r7, qN]; omega_using [hk, hdf])
+    (by rw [h.r10]; omega_using [hsc]) (by rw [h.r7, add0, hd, rw₀]; exact covBlk hk (by simp))
     (by rw [h.r10, w₀]; exact covSv (by simp)) fun s₁ g₁ => ?_
   have m₁ : s₁.mem = copy4Mem s.mem (Sv s₀) (blk s₀ k) := by rw [g₁.mem, h.r10, h.r7, add0, hd]
   refine WP.mono (callArgs_wp hp hk (h.regs.of g₁.gpr g₁.sp g₁.rd g₁.wr)) fun s₂ a => ?_
@@ -447,8 +447,8 @@ theorem decBody_ok : BodyOk (cbcMode false) decBody := by
   have rw₂ : s₂.rd ++ s₂.wr = [schR s₀, argsR s₀, ivR s₀, dataR s₀, scrR s₀] := by
     rw [rg₂.rd, rg₂.wr, hp.rd, hp.wr]; rfl
   rw [decPost_eq]
-  refine xorIn_wp (by decide) (by decide) (by decide) (by decide) (by rw [rg₂.r6]; omega)
-    (by rw [rg₂.r7, qN]; omega) (by rw [rg₂.r6, add0, rw₂]; exact covIv (by simp))
+  refine xorIn_wp (by decide) (by decide) (by decide) (by decide) (by rw [rg₂.r6]; omega_using [hiv])
+    (by rw [rg₂.r7, qN]; omega_using [hk, hdf]) (by rw [rg₂.r6, add0, rw₂]; exact covIv (by simp))
     (by rw [rg₂.r7, add0, hd, w₂]; exact covBlk hk (by simp)) fun s₃ g₃ => ?_
   have m₃ : s₃.mem = Proof.Cmac.xor4Mem s₂.mem (blk s₀ k) (blk s₀ k) (State.addr (Iv s₀)) := by
     rw [g₃.mem, rg₂.r7, rg₂.r6, add0, add0, hd]
@@ -457,8 +457,8 @@ theorem decBody_ok : BodyOk (cbcMode false) decBody := by
   have w₃ : s₃.wr = [ivR s₀, dataR s₀, scrR s₀] := by rw [rg₃.wr, hp.wr]
   have rw₃ : s₃.rd ++ s₃.wr = [schR s₀, argsR s₀, ivR s₀, dataR s₀, scrR s₀] := by
     rw [rg₃.rd, rg₃.wr, hp.rd, hp.wr]; rfl
-  refine copy_wp (by decide) (by decide) (by decide) (by decide) (by rw [rg₃.r10]; omega)
-    (by rw [rg₃.r6]; omega) (by rw [rg₃.r10, rw₃]; exact covSv (by simp))
+  refine copy_wp (by decide) (by decide) (by decide) (by decide) (by rw [rg₃.r10]; omega_using [hsc])
+    (by rw [rg₃.r6]; omega_using [hiv]) (by rw [rg₃.r10, rw₃]; exact covSv (by simp))
     (by rw [rg₃.r6, add0, w₃]; exact covIv (by simp)) fun s₄ g₄ => ?_
   have m₄ : s₄.mem = copy4Mem s₃.mem (State.addr (Iv s₀)) (Sv s₀) := by
     rw [g₄.mem, rg₃.r6, rg₃.r10, add0]
@@ -500,7 +500,7 @@ theorem decBody_ok : BodyOk (cbcMode false) decBody := by
       Proof.Cmac.bytesAt_frame (Proof.Cmac.xor4Mem_frame _ _ _ _) (one (hp.blk_sv hk).symm) (by decide),
       Proof.Cmac.bytesAt_frame f₂ callSv (by decide), a.mem, copy4Mem_bytes _ (hp.blk_sv hk).symm, hblk]
   have hl : (outK (cbcMode false) s₀ k).length = k := by
-    rw [outK, Mode.length_out]; simp [Spec.Cbc.blocksAt]; omega
+    rw [outK, Mode.length_out]; simp [Spec.Cbc.blocksAt]; omega_using [hk]
   have outSucc :
       outK (cbcMode false) s₀ (k + 1) = outK (cbcMode false) s₀ k ++ [bytesAt s₄.mem (blk s₀ k) 16] := by
     rw [newBlk]

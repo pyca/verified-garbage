@@ -23,7 +23,7 @@ theorem combine_run (u : State) {j : Nat} (hj : j < 4) :
     WP isa (.block [combine j]) u fun t =>
       t.gpr .lr = (if j = 0 then u.gpr .r5 else if j = 2 then u.gpr .lr ^^^ u.gpr .r5
         else u.gpr .lr + u.gpr .r5) ∧ t.mem = u.mem := by
-  rcases (by omega : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3) with rfl | rfl | rfl | rfl <;>
+  rcases (by omega_using [hj] : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3) with rfl | rfl | rfl | rfl <;>
     brun [combine]
 
 /-- S-box `j`'s lookup, then its accumulation, from `fAcc … (j - 1)` (or
@@ -38,7 +38,7 @@ theorem step_run {s₀ : State} (E : LookEnv s₀) {j : Nat} (hj : j < 4) {u : S
   apply WP.seq
   refine WP.mono (lookup_run Eu hj) fun v ⟨v5, vk, vm⟩ => ?_
   refine WP.mono (WP.keep [.lr] (combine_run v hj) (by
-    rcases (by omega : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3) with rfl | rfl | rfl | rfl <;> decide))
+    rcases (by omega_using [hj] : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3) with rfl | rfl | rfl | rfl <;> decide))
     fun t ⟨⟨t3, tm⟩, tk⟩ => hQ t ?_ ((k.trans vk).trans tk |>.mono (by decide)) (by rw [tm, vm, hm])
   have e0 : u.gpr .r0 = s₀.gpr .r0 := k.gpr (by decide)
   have e1 : u.gpr .r1 = s₀.gpr .r1 := k.gpr (by decide)

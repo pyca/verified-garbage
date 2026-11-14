@@ -47,13 +47,13 @@ theorem Ready.block_cover {p : Params} {s : State} (h : Ready p s) (k : Nat) (ac
       intro r hr
       simp only [List.mem_singleton] at hr
       subst r
-      exact ⟨⟨matrix s, p.blocks * 1024⟩, by simp, k * 1024, rfl, by change k * 1024 + 1024 ≤ p.blocks * 1024; omega⟩)
+      exact ⟨⟨matrix s, p.blocks * 1024⟩, by simp, k * 1024, rfl, by change k * 1024 + 1024 ≤ p.blocks * 1024; omega_using [active]⟩)
   exact fun a n ha => h.write a n (sub a n ha)
 
 theorem Ready.accumulator_cover {p : Params} {s : State} (h : Ready p s) :
     Covers [⟨matrix s, 1024⟩] s.wr := by
   have nonempty := Proof.Argon2.lastIndex_bounds p h.positive h.minimum 0 h.positive
-  simpa only [Proof.Argon2.matrixCell, Nat.zero_mul, BitVec.add_zero] using h.block_cover 0 (by omega)
+  simpa only [Proof.Argon2.matrixCell, Nat.zero_mul, BitVec.add_zero] using h.block_cover 0 (by omega_using [nonempty])
 
 theorem Ready.of_keeps {p : Params} {s t : State} (h : Ready p s)
     (k : Divide.Keeps ReducePointers.changed s t) : Ready p t := by
@@ -99,7 +99,7 @@ theorem code_ok (s : State) (p : Params) (lane : Nat) (h : Ready p s) (active : 
   have q : 0 < p.laneLen := by
     have eq := Proof.Argon2.laneLen_segments p h.positive
     have minimum := h.minimum
-    omega
+    omega_using [eq, minimum]
   unfold Impl.Argon2.AArch64.ReduceLane.code
   refine WP.seq ((ReducePointers.code_ok s lane p.laneLen q h.read laneWord h.length).mono ?_)
   rintro a ⟨dest, src, keeps⟩
@@ -118,7 +118,7 @@ theorem code_ok (s : State) (p : Params) (lane : Nat) (h : Ready p s) (active : 
     rw [src', dest']
     simpa only [Proof.Argon2.matrixCell, Nat.zero_mul, BitVec.add_zero] using
       Proof.Argon2.matrixCell_disjoint (matrix a) p.blocks (Proof.Argon2.lastIndex p lane) 0 ha.bound
-        lastBounds.2 (by omega) (by omega)
+        lastBounds.2 (by omega_using [lastBounds]) (by omega_using [lastBounds])
   refine (ReduceBlock.code_ok a sourceRead destWrite sep).mono ?_
   rintro t ⟨written, frame, copied, mx⟩
   rw [dest'] at frame written
@@ -128,7 +128,7 @@ theorem code_ok (s : State) (p : Params) (lane : Nat) (h : Ready p s) (active : 
     rw [bp]
     exact frame.readW (r := ⟨a.gpr .x19, 272⟩) (Offset.contains_base _ (by decide) (by decide))
       (by intro r hr; simp only [List.mem_singleton] at hr; subst r
-          exact ha.frame.symm.sub_right (Region.sub_prefix (by omega))) (by decide)
+          exact ha.frame.symm.sub_right (Region.sub_prefix (by omega_using [lastBounds]))) (by decide)
   refine ⟨?_, ?_, base'.trans base, ?_, copied.2.1.trans keeps.rd, copied.2.2.trans keeps.wr,
     ?_, mx.trans keeps.sp⟩
   · refine ⟨ha.positive, ha.minimum, ha.bound, ?_, ?_, ?_, (copied.1 .x20 (by decide) (by decide) (by decide) (by decide)).trans ha.length⟩
@@ -147,7 +147,7 @@ theorem code_ok (s : State) (p : Params) (lane : Nat) (h : Ready p s) (active : 
       have bounds := Proof.Argon2.lastIndex_bounds p ha.positive ha.minimum j hj
       simpa only [Proof.Argon2.matrixCell, Nat.zero_mul, BitVec.add_zero] using
         Proof.Argon2.matrixCell_disjoint (matrix a) p.blocks (Proof.Argon2.lastIndex p j) 0 ha.bound
-          bounds.2 (by omega) (by omega)
+          bounds.2 (by omega_using [lastBounds]) (by omega_using [bounds])
   · intro r hr
     have ne : r ≠ .x8 ∧ r ≠ .x13 ∧ r ≠ .x14 ∧ r ≠ .x15 := by
       simp only [FillCompress.loopRegs, List.mem_cons, List.not_mem_nil, or_false] at hr

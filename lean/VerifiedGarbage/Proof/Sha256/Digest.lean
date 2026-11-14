@@ -75,7 +75,7 @@ theorem finalize224Post_local (pb : Nat) :
   simp only [Spec.Sha256.finalize224Sig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
     forall_eq_or_imp, forall_eq] at hb
   have hs : ∀ i < 96, m₂ (st + BitVec.ofNat 64 i) = m₁ (st + BitVec.ofNat 64 i) := fun i hi =>
-    (hb.1 _ (Offset.contains_base _ (by simp only [Elem.size]; omega) (by omega))).symm
+    (hb.1 _ (Offset.contains_base _ (by simp only [Elem.size]; omega_using [hi]) (by omega_using [hi]))).symm
   intro msg hr hc
   exact h msg (reprFrom_congr (fun i hi => (hs i hi).symm) hr) hc
 

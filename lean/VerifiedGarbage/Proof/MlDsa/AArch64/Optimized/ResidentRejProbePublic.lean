@@ -29,8 +29,8 @@ theorem quarterValues_eq {s t : State} (hs : Constants s) (ht : Constants t)
   unfold quarterValues
   rw [candidates_word _ _ _ he4 (hs.mask e he4),candidates_word _ _ _ he4 (ht.mask e he4),
     Offset.add_add,Offset.add_add]
-  rw [show 12*j+3*e=3*(4*j+e) by omega]
-  exact he _ (by omega)
+  rw [show 12*j+3*e=3*(4*j+e) by omega_using []]
+  exact he _ (by omega_using [hj, he4])
 
 theorem quarterMask_eq {s t : State} (hs : Constants s) (ht : Constants t)
     (he : CandidatesEq s t 16) : quarterMask (wideInitial s) 4=quarterMask (wideInitial t) 4 := by
@@ -42,8 +42,8 @@ theorem quarterMask_eq {s t : State} (hs : Constants s) (ht : Constants t)
   have eqc (j : Nat) (hj : j<4) :
       candidate s.mem (s.gpr .x2+BitVec.ofNat 64 (12*j+3*e))=
       candidate t.mem (t.gpr .x2+BitVec.ofNat 64 (12*j+3*e)) := by
-    rw [show 12*j+3*e=3*(4*j+e) by omega]
-    exact he _ (by omega)
+    rw [show 12*j+3*e=3*(4*j+e) by omega_using []]
+    exact he _ (by omega_using [he4, hj])
   exact ⟨fun h j hj => by rw [← eqc j hj]; exact h j hj,
     fun h j hj => by rw [eqc j hj]; exact h j hj⟩
 
@@ -68,14 +68,14 @@ theorem InputEq.candidate {σ τ : State} {b : Addr} {n j : Nat}
   unfold ResidentRej.candidate
   have h1 : b+BitVec.ofNat 64 (3*j)+1=b+BitVec.ofNat 64 (3*j+1) := by bv_omega_arith
   have h2 : b+BitVec.ofNat 64 (3*j)+2=b+BitVec.ofNat 64 (3*j+2) := by bv_omega_arith
-  rw [h1,h2,h _ (by omega),h _ (by omega),h _ (by omega)]
+  rw [h1,h2,h _ (by omega_using [hj]),h _ (by omega_using [hj]),h _ (by omega_using [hj])]
 
 theorem ParseInv.candidates_eq {σ τ s t : State} {b p : Addr} {n d k : Nat}
     {L : List VG.Spec.MlDsa.Zq} (hs : StreamLayout σ b p n) (ht : StreamLayout τ b p n)
     (he : InputEq σ τ b n) (ps : ParseInv σ b p n L d s) (pt : ParseInv τ b p n L d t)
     (hk : d+k≤n) : CandidatesEq s t k := by
   intro j hj
-  rw [ps.candidate hs (by omega),pt.candidate ht (by omega)]
-  exact he.candidate (by omega)
+  rw [ps.candidate hs (by omega_using [hk, hj]),pt.candidate ht (by omega_using [hk, hj])]
+  exact he.candidate (by omega_using [hk, hj])
 
 end VG.Proof.MlDsa.AArch64.Optimized.ResidentRej

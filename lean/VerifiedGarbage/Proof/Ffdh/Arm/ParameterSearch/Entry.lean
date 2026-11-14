@@ -111,7 +111,7 @@ theorem entry_fields (p : SearchParams) (m : Mem)
   intro j member
   have bound : j < 16 := by
     simp only [searchSlots, List.mem_cons, List.not_mem_nil, or_false] at member
-    omega
+    omega_using [member]
   rw [lowWord_writeLow _ _ _ (entryValues_bound p) j bound]
   simp only [searchSlots, List.mem_cons, List.not_mem_nil, or_false] at member
   rcases member with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl

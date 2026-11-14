@@ -52,22 +52,22 @@ theorem exCtx_of {s : State} (h : exPre s) : ExCtx s := by
   obtain ⟨hsp, hrd, hwr, _, _, _, dos, _, dds, dxs, dys, _, wO, wD, wX, wY, wS,
     _, _, _, _, _, _, ⟨hk1, hk2⟩, hdl, hol, hyl, hxl1, hxl2, hsl⟩ := h
   unfold Spec.Rsa.scratchWords at hsl
-  refine ⟨hk1, hk2, hdl, hol, hyl, hxl1, hxl2, by omega, Scr.of_mem (by rw [hwr]; simp) wS,
-    src_of_region (by rw [hrd]; simp) (by omega) dds,
-    src_of_region (by rw [hrd]; simp) (by omega) dxs,
-    src_of_region (by rw [hrd]; simp) (by omega) dys, ?_, ?_, ?_⟩
+  refine ⟨hk1, hk2, hdl, hol, hyl, hxl1, hxl2, by omega_using [hsl], Scr.of_mem (by rw [hwr]; simp) wS,
+    src_of_region (by rw [hrd]; simp) (by omega_using []) dds,
+    src_of_region (by rw [hrd]; simp) (by omega_using []) dxs,
+    src_of_region (by rw [hrd]; simp) (by omega_using []) dys, ?_, ?_, ?_⟩
   · intro i hi
     refine ⟨⟨stackArgAddr s 0, 40⟩, by rw [hrd]; simp, ?_⟩
     rw [show stackArgAddr s i = stackArgAddr s 0 + BitVec.ofNat 64 (8 * i) by
       simp only [stackArgAddr, Nat.zero_add, Nat.mul_one, Offset.add_add]
       congr 2
-      omega]
-    exact Offset.contains_base _ (by omega) (by omega)
+      omega_using []]
+    exact Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi])
   · intro i hi
     rw [hwr]
-    exact ⟨⟨s.gpr .rdi, (s.gpr .rsi).toNat⟩, by simp, contains_byte _ (by omega) (by omega)⟩
+    exact ⟨⟨s.gpr .rdi, (s.gpr .rsi).toNat⟩, by simp, contains_byte _ (by omega_using [hol, hi]) (by omega_using [])⟩
   · intro i hi
-    exact out_scr dos (contains_byte _ (by omega) (by omega))
+    exact out_scr dos (contains_byte _ (by omega_using [hol, hi]) (by omega_using []))
 
 end VG.Proof.Ffdh.X86_64.Exchange
 end
@@ -94,9 +94,9 @@ theorem entry_base {s : State} (c : ExCtx s) :
       Keep (.rdi :: mmRegs) s t := by
   have hZ := c.hZ
   have hk := c.k1
-  refine WP.mono (exEntry_ok rfl (fun i hi => c.hs.st (by omega)) c.ha)
+  refine WP.mono (exEntry_ok rfl (fun i hi => c.hs.st (by omega_using [hZ, hi])) c.ha)
     fun t ⟨hd, hs, hh, hf, k⟩ => ?_
-  have hi : InScr (exOf s).B (exOf s).Z s.mem t.mem := InScr.of_outside hf (by dsimp only [exOf]; omega)
+  have hi : InScr (exOf s).B (exOf s).Z s.mem t.mem := InScr.of_outside hf (by dsimp only [exOf]; omega_using [hZ])
   refine ⟨⟨c.k1, c.k2, c.dl, bytesAt_length _ _ _, ?_, bytesAt_length _ _ _,
     c.xl1, c.xl2, c.hZ, c.hs.congr k.2.2, c.dom.congrK hi k, c.x.congrK hi k, c.y.congrK hi k,
     ?_, (fun i hi => by rw [k.2.2]; exact c.out i hi), c.sep⟩, hd, hi, hs, k.mono (by decide)⟩
@@ -115,23 +115,23 @@ theorem dom_base {p : ExP} {xb : List Byte} {s : State} (h : Base p xb s) (hdi :
       (∀ i < 6, word t.mem p.B (8 * i) = word s.mem p.B (8 * i)) ∧ Keep (.rdi :: mmRegs) s t := by
   have hZ := h.hZ
   have hk := h.k1
-  refine WP.mono (domHead_ok h.scr hdi (by omega) h.k1 h.k2
+  refine WP.mono (domHead_ok h.scr hdi (by omega_using [hZ]) h.k1 h.k2
     (h.hdr (sDom, p.dp) (by simp [ExP.headers]))
     (h.hdr (sK, BitVec.ofNat 64 p.k) (by simp [ExP.headers])) (h.dom.take p.k) h.plen)
     fun t ⟨hz, _, _, hf, hd, k⟩ => ?_
   have hi : InScr p.B p.Z s.mem t.mem := InScr.of_frm hf (by
     simp only [List.mem_cons, List.not_mem_nil, or_false]
-    rintro r (rfl | rfl) <;> simp only <;> unfold sG sQ sFn at * <;> omega)
+    rintro r (rfl | rfl) <;> simp only <;> unfold sG sQ sFn at * <;> omega_using [hZ])
   have hh : ∀ i < 32, i ≠ sG → i ≠ sQ → word t.mem p.B (8 * i) = word s.mem p.B (8 * i) :=
     fun i hi hg hq => hf.word_eq (by
       simp only [List.mem_cons, List.not_mem_nil, or_false]
-      rintro r (rfl | rfl) <;> simp only <;> unfold sG sQ sFn at * <;> omega) (by omega)
+      rintro r (rfl | rfl) <;> simp only <;> unfold sG sQ sFn at * <;> omega_arith) (by omega_using [hi])
   refine ⟨h.keep hi k ?_, hz, hd, hi, ?_, k.mono (by decide)⟩
   · intro e he
     simp only [ExP.headers, List.mem_cons, List.not_mem_nil, or_false] at he
     rcases he with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
       exact hh _ (by dsimp only; decide) (by dsimp only; decide) (by dsimp only; decide)
   · intro i hi
-    exact hh i (by omega) (by unfold sG sFn; omega) (by unfold sQ sFn; omega)
+    exact hh i (by omega_using [hi]) (by unfold sG sFn; omega_using [hi]) (by unfold sQ sFn; omega_using [hi])
 
 end VG.Proof.Ffdh.X86_64.Exchange

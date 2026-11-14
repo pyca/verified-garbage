@@ -49,11 +49,11 @@ theorem nzMask_ok (s : State) (hz : s.gpr .x7 = 0) :
     rw [hn, show BitVec.toNat (0 : BitVec 64) = 0 from rfl, Bool.toNat_true]
     by_cases h : s.gpr .x1 = 0
     · have h' : (s.gpr .x1).toNat = 0 := by rw [h]; rfl
-      rw [decide_eq_true (by omega)]
+      rw [decide_eq_true (by omega_using [h'])]
       simp only [mask, h, ne_eq, not_true_eq_false, ite_false]
       decide
     · have h' : (s.gpr .x1).toNat ≠ 0 := fun e => h (BitVec.eq_of_toNat_eq e)
-      rw [decide_eq_false (by omega)]
+      rw [decide_eq_false (by omega_using [h'])]
       simp only [mask, h, ne_eq, not_false_eq_true, ite_true]
       decide
   · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
@@ -67,10 +67,10 @@ theorem nonzero_ok (c : Cfg) {s : State} {base : Addr} {size : Nat} (hs : Scr s 
   rw [Cfg.nonzero, List.append_assoc, WP.block_append_iff, ← List.singleton_append, WP.block_append_iff]
   refine WP.mono (zero7_ok s) fun s₀ ⟨z₀, k₀⟩ => ?_
   have hs₀ := hs.of_keeps k₀ (by decide)
-  refine WP.mono (ld_ok hs₀ (d := a) (by omega) ha8 .x1) fun s₁ ⟨e₁, k₁, _⟩ => ?_
+  refine WP.mono (ld_ok hs₀ (d := a) (by omega_using [hn, ha]) ha8 .x1) fun s₁ ⟨e₁, k₁, _⟩ => ?_
   have hs₁ := hs₀.of_keeps k₁ (by decide)
   rw [WP.block_append_iff]
-  refine WP.mono (ors_ok hs₁ ha8 (c.n - 1) (by omega)) fun s₂ ⟨e₂, k₂⟩ => ?_
+  refine WP.mono (ors_ok hs₁ ha8 (c.n - 1) (by omega_using [hn, ha])) fun s₂ ⟨e₂, k₂⟩ => ?_
   rw [e₁, k₁.mem, k₀.mem] at e₂
   have hz : s₂.gpr .x1 = 0 ↔ wordsVal s.mem base a c.n = 0 := by
     rw [e₂, wordsVal_eq_zero_iff]
@@ -78,9 +78,9 @@ theorem nonzero_ok (c : Cfg) {s : State} {base : Addr} {size : Nat} (hs : Scr s 
     · intro ⟨h₀, h⟩ j hj
       rcases j with _ | j
       · simpa using h₀
-      · exact h j (by omega)
+      · exact h j (by omega_using [hj])
     · intro h
-      exact ⟨by simpa using h 0 hn, fun j hj => h (j + 1) (by omega)⟩
+      exact ⟨by simpa using h 0 hn, fun j hj => h (j + 1) (by omega_using [hj])⟩
   have hz₂ : s₂.gpr .x7 = 0 := by rw [k₂.gpr _ (by decide), k₁.gpr _ (by decide), z₀]
   refine WP.mono (nzMask_ok s₂ hz₂) fun s₃ ⟨e₃, k₃⟩ => ⟨?_, ?_⟩
   · rw [e₃]
@@ -107,10 +107,10 @@ theorem ltStep_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) 
       (!s'.c) = decide ((word s.mem base (a + 8 * j)).toNat < (word s.mem base (m + 8 * j)).toNat + (!c).toNat) ∧
       Keeps [.x1, .x2, .x16] s s' := by
   rw [hcode, ← List.singleton_append, WP.block_append_iff]
-  refine WP.mono (ld_ok hs ha (by omega) .x1) fun s₁ ⟨l₁, k₁, c₁⟩ => ?_
+  refine WP.mono (ld_ok hs ha (by omega_using [ha8]) .x1) fun s₁ ⟨l₁, k₁, c₁⟩ => ?_
   have hs₁ := hs.of_keeps k₁ (by decide)
   rw [← List.singleton_append, WP.block_append_iff]
-  refine WP.mono (ld_ok hs₁ hm (by omega) .x2) fun s₂ ⟨l₂, k₂, c₂⟩ => ?_
+  refine WP.mono (ld_ok hs₁ hm (by omega_using [hm8]) .x2) fun s₂ ⟨l₂, k₂, c₂⟩ => ?_
   refine WP.mono (subc_ok s₂ .x16 .x1 .x2 first (c := c) (by rw [c₂, c₁, hc])) fun s₃ ⟨_, c₃, k₃⟩ => ⟨?_, ?_⟩
   · rw [c₃, not_carryOut, l₂, k₂.gpr .x1 (by decide), l₁, k₁.mem]
   · exact ((k₁.mono (by sub_regs)).trans (k₂.mono (by sub_regs))).trans (k₃.mono (by sub_regs))
@@ -123,14 +123,14 @@ theorem ltSteps_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size)
       Keeps [.x1, .x2, .x16] s s'
   | 0, ha, hm => by
     rw [show (List.range (0 + 1)).flatMap (ltStep a m) = ltStep a m 0 from rfl]
-    refine WP.mono (ltStep_ok hs true (c := true) rfl rfl (by omega) (by omega) ha8 hm8) fun s' ⟨c', k'⟩ => ⟨?_, k'⟩
+    refine WP.mono (ltStep_ok hs true (c := true) rfl rfl (by omega_using [ha]) (by omega_using [hm]) ha8 hm8) fun s' ⟨c', k'⟩ => ⟨?_, k'⟩
     rw [c']
     simp only [wordsVal, Nat.mul_zero, Nat.add_zero, Bool.not_true, Bool.toNat_false]
     rfl
   | k + 1, ha, hm => by
     rw [List.range_succ, List.flatMap_append, List.flatMap_singleton, WP.block_append_iff]
-    refine WP.mono (ltSteps_ok hs ha8 hm8 k (by omega) (by omega)) fun s₁ ⟨c₁, k₁⟩ => ?_
-    refine WP.mono (ltStep_ok (hs.of_keeps k₁ (by decide)) false (c := s₁.c) rfl rfl (by omega) (by omega) ha8 hm8)
+    refine WP.mono (ltSteps_ok hs ha8 hm8 k (by omega_using [ha]) (by omega_using [hm])) fun s₁ ⟨c₁, k₁⟩ => ?_
+    refine WP.mono (ltStep_ok (hs.of_keeps k₁ (by decide)) false (c := s₁.c) rfl rfl (by omega_using [ha]) (by omega_using [hm]) ha8 hm8)
       fun s₂ ⟨c₂, k₂⟩ => ⟨?_, (k₁.mono (by sub_regs)).trans (k₂.mono (by sub_regs))⟩
     rw [c₂, c₁, k₁.mem, wordsVal_succ_top s.mem base a (k + 1), wordsVal_succ_top s.mem base m (k + 1)]
     exact decide_eq_decide.mpr (lt_top (wordsVal_lt _ _ _ _) (wordsVal_lt _ _ _ _)).symm
@@ -142,7 +142,7 @@ theorem ltN_ok (c : Cfg) {s : State} {base : Addr} {size : Nat} (hs : Scr s base
     WP isa (.block (c.ltN a)) s fun s' =>
       s'.gpr .x2 = mask (wordsVal s.mem base a c.n < wordsVal s.mem base (c.sl MN) c.n) ∧
       Keeps [.x1, .x2, .x7, .x16] s s' := by
-  obtain ⟨k, hk⟩ : ∃ k, c.n = k + 1 := ⟨c.n - 1, by omega⟩
+  obtain ⟨k, hk⟩ : ∃ k, c.n = k + 1 := ⟨c.n - 1, by omega_using [hn]⟩
   rw [ltN_eq, ← List.singleton_append, WP.block_append_iff]
   refine WP.mono (zero7_ok s) fun s₀ ⟨z₀, k₀⟩ => ?_
   rw [WP.block_append_iff, hk]
@@ -187,7 +187,7 @@ theorem andFlag_ok (c : Cfg) {s : State} {base : Addr} {size : Nat} (hs : Scr s 
   · dsimp only; rw [k₂.sp, k₁.sp]
   · dsimp only
     rw [hm]
-    exact writeW_outside _ _ _ (by have := hs.nowrap; omega)
+    exact writeW_outside _ _ _ (by have := hs.nowrap; omega_using [hf, this])
 
 /-- `checkRange a`: the flag `&=` the mask of `0 < [a] < [MN]`. -/
 theorem checkRange_ok (c : Cfg) {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {a : Nat}

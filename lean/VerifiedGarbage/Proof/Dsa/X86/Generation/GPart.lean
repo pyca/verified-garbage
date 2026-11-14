@@ -45,24 +45,24 @@ theorem range_keeps {g : Geo} (G : GeoOk g) {E : Env} (v : E.Valid) {s t : State
   have sz := v.size_ge
   have bd := G.bounds
   have n32 : g.n32 = g.pLen / 4 := rfl
-  have nle : g.n32 ≤ 96 := by omega
+  have nle : g.n32 ≤ 96 := by omega_using [bd, n32]
   have rA := rRanges_apart v
   have keepR : ∀ {d : Nat}, 9728 + 400 * 10 ≤ d ∨ d + 4 * g.n32 ≤ 9728 + 400 * 8 → d + 4 * g.n32 ≤ E.size →
       fLo + 4 ≤ d ∨ d + 4 * g.n32 ≤ fLo →
       val32 t.mem E.base d g.n32 = val32 s.mem E.base d g.n32 := fun h₁ h₂ h₃ =>
     Env.Chg.val32 v R.chg h₂ fun o ho => ⟨(rA o ho).1, by
       simp only [rRanges, List.mem_cons, List.not_mem_nil, or_false] at ho
-      rcases ho with rfl | rfl | rfl <;> simp only [aTmp, aH, arr, fLo, hdr] at h₃ ⊢ <;> omega⟩
+      rcases ho with rfl | rfl | rfl <;> simp only [aTmp, aH, arr, fLo, hdr] at h₃ ⊢ <;> omega_arith⟩
   have fGR : t.mem.readW (off E.base fG) 32 = BitVec.ofNat 32 F := by
-    rw [Env.Chg.word v R.chg (by simp only [fG, hdr]; omega) (fun o ho => ⟨(rA o ho).1, by
+    rw [Env.Chg.word v R.chg (by simp only [fG, hdr]; omega_using [sz]) (fun o ho => ⟨(rA o ho).1, by
       simp only [rRanges, List.mem_cons, List.not_mem_nil, or_false] at ho
-      rcases ho with rfl | rfl | rfl <;> simp only [aTmp, aH, arr, fLo, fG, hdr] <;> omega⟩), hF]
-  exact ⟨by rw [keepR (by simp only [aP, arr]; omega) (by simp only [aP, arr]; omega)
-      (by left; simp only [aP, arr, fLo, hdr]; omega), hP],
-    by rw [keepR (by simp only [aE, arr]; omega) (by simp only [aE, arr]; omega)
-      (by left; simp only [aE, arr, fLo, hdr]; omega), hE],
-    by rw [keepR (by simp only [aOne, arr]; omega) (by simp only [aOne, arr]; omega)
-      (by left; simp only [aOne, arr, fLo, hdr]; omega), hone], fGR⟩
+      rcases ho with rfl | rfl | rfl <;> simp only [aTmp, aH, arr, fLo, fG, hdr] <;> omega_using []⟩), hF]
+  exact ⟨by rw [keepR (by simp only [aP, arr]; omega_using []) (by simp only [aP, arr]; omega_using [sz, nle])
+      (by left; simp only [aP, arr, fLo, hdr]; omega_using []), hP],
+    by rw [keepR (by simp only [aE, arr]; omega_using [nle]) (by simp only [aE, arr]; omega_using [sz, nle])
+      (by left; simp only [aE, arr, fLo, hdr]; omega_using []), hE],
+    by rw [keepR (by simp only [aOne, arr]; omega_using [nle]) (by simp only [aOne, arr]; omega_using [sz, nle])
+      (by left; simp only [aOne, arr, fLo, hdr]; omega_using []), hone], fGR⟩
 
 theorem gStep_ok {g : Geo} (G : GeoOk g) {E : Env} (v : E.Valid) (hp : E.pLen = g.pLen) {s : State} (B : Base E s)
     {j p x F : Nat} (hj : (j + 1) * E.pLen ≤ E.hsLen)
@@ -117,7 +117,7 @@ theorem gRanges_apart {g : Geo} (G : GeoOk g) {E : Env} (v : E.Valid) : E.Apart 
     · exact rRanges_apart v o h
     · exact wRanges_apart G v o h
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at h
-    rcases h with rfl | rfl <;> simp only [fH, fHLeft, fOut, fWitLen, hdr] <;> omega
+    rcases h with rfl | rfl <;> simp only [fH, fHLeft, fOut, fWitLen, hdr] <;> omega_using [sz]
 
 /-- What the generator keeps. -/
 structure GKeep (E : Env) (g : Geo) (s t : State) : Prop where
@@ -154,7 +154,7 @@ theorem ptr_add (x : BitVec 64) (c : Nat) :
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_add, BitVec.toNat_setWidth, BitVec.toNat_ofNat]
   rw [Nat.mod_mod_of_dvd _ (by decide : 2 ^ 32 ∣ 2 ^ 64)]
-  omega
+  omega_using []
 
 /-- At the loop's head, before `h` number `j`. -/
 structure GLoop (E : Env) (g : Geo) (p Q : Nat) (Rg : Option Nat) (s : State) (j : Nat) (t : State) : Prop where
@@ -180,7 +180,7 @@ theorem gkeep_arrs {g : Geo} (G : GeoOk g) {E : Env} (v : E.Valid) {s t : State}
       simp only [gRanges, rRanges, wRanges, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil,
         or_false] at ho
       rcases ho with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
-        simp only [aTmp, aH, arr, fLo, sPk, fG, fH, fHLeft, hdr] at h₀ h₁ h₂ ⊢ <;> omega⟩
+        simp only [aTmp, aH, arr, fLo, sPk, fG, fH, fHLeft, hdr] at h₀ h₁ h₂ ⊢ <;> omega_arith⟩
 
 /-- Whether the loop goes on after `h` number `j`. -/
 def gCont (E : Env) (p x j : Nat) : Bool :=
@@ -365,37 +365,37 @@ theorem gInit_ok {g : Geo} (G : GeoOk g) {E : Env} (v : E.Valid) {s : State} (B 
   have K₀ : GKeep E g s s := ⟨B, Env.Chg.refl _ _, rfl, rfl, rfl⟩
   have ws : ∀ (m : Mem) {d e : Nat}, d + 4 ≤ sState → e + 4 ≤ sState → (d + 4 ≤ e ∨ e + 4 ≤ d) → ∀ y,
       (m.writeW (off E.base e) y).readW (off E.base d) 32 = m.readW (off E.base d) 32 :=
-    fun m d e h₁ h₂ h y => word_store_other v m (by simp only [sState] at h₁; omega)
-      (by simp only [sState] at h₂; omega) h y
-  refine ld_ok B.scr (d := fHs) (by simp only [fHs, hdr]; omega) fun s₁ u₁ =>
+    fun m d e h₁ h₂ h y => word_store_other v m (by simp only [sState] at h₁; omega_using [sz, h₁])
+      (by simp only [sState] at h₂; omega_using [sz, h₂]) h y
+  refine ld_ok B.scr (d := fHs) (by simp only [fHs, hdr]; omega_using [sz]) fun s₁ u₁ =>
     st_ok (Scr.of_eq B.scr (u₁.other _ (by decide)) (u₁.other _ (by decide)) u₁.wr) (d := fH)
-      (by simp only [fH, hdr]; omega) fun s₂ M₂ => ?_
+      (by simp only [fH, hdr]; omega_using [sz]) fun s₂ M₂ => ?_
   have K₂ := K₀.store G v (d := fH) (by simp [gRanges]) _ (by rw [M₂.mem, u₁.mem]) (by rw [M₂.gpr, u₁.other _ (by decide)])
     (by rw [M₂.gpr, u₁.other _ (by decide)]) (by rw [M₂.rd, u₁.rd]) (by rw [M₂.wr, u₁.wr]) (by rw [M₂.syms, u₁.syms])
-  refine ld_ok K₂.base.scr (d := fHsLen) (by simp only [fHsLen, hdr]; omega) fun s₃ u₃ =>
+  refine ld_ok K₂.base.scr (d := fHsLen) (by simp only [fHsLen, hdr]; omega_using [sz]) fun s₃ u₃ =>
     st_ok (Scr.of_eq K₂.base.scr (u₃.other _ (by decide)) (u₃.other _ (by decide)) u₃.wr) (d := fHLeft)
-      (by simp only [fHLeft, hdr]; omega) fun s₄ M₄ => ?_
+      (by simp only [fHLeft, hdr]; omega_using [sz]) fun s₄ M₄ => ?_
   have K₄ := K₂.store G v (d := fHLeft) (by simp [gRanges]) _ (by rw [M₄.mem, u₃.mem])
     (by rw [M₄.gpr, u₃.other _ (by decide)]) (by rw [M₄.gpr, u₃.other _ (by decide)]) (by rw [M₄.rd, u₃.rd])
     (by rw [M₄.wr, u₃.wr]) (by rw [M₄.syms, u₃.syms])
   refine wp_movi fun s₅ u₅ => st_ok (Scr.of_eq K₄.base.scr (u₅.other _ (by decide)) (u₅.other _ (by decide)) u₅.wr)
-    (d := fG) (by simp only [fG, hdr]; omega) fun s₆ M₆ => WP.block_nil ?_
+    (d := fG) (by simp only [fG, hdr]; omega_using [sz]) fun s₆ M₆ => WP.block_nil ?_
   have K₆ := K₄.store G v (d := fG) (by simp [gRanges, wRanges]) _ (by rw [M₆.mem, u₅.mem])
     (by rw [M₆.gpr, u₅.other _ (by decide)]) (by rw [M₆.gpr, u₅.other _ (by decide)]) (by rw [M₆.rd, u₅.rd])
     (by rw [M₆.wr, u₅.wr]) (by rw [M₆.syms, u₅.syms])
   have m₆ : s₆.mem = ((s.mem.writeW (off E.base fH) (s.mem.readW (off E.base fHs) 32)).writeW (off E.base fHLeft)
       (s.mem.readW (off E.base fHsLen) 32)).writeW (off E.base fG) (4 : BitVec 32) := by
     rw [M₆.mem, u₅.mem, u₅.gpr, M₄.mem, u₃.mem, u₃.gpr, M₂.mem, u₁.mem, u₁.gpr,
-      ws _ (by simp only [fHsLen, sState, hdr]; omega) (by simp only [fH, sState, hdr]; omega)
-      (by simp only [fHsLen, fH, hdr]; omega)]
-  refine ⟨K₆, ?_, ?_, by rw [m₆, Mem.readW_writeW_self32]; rfl, by omega, by rw [List.drop_zero],
+      ws _ (by simp only [fHsLen, sState, hdr]; omega_using []) (by simp only [fH, sState, hdr]; omega_using [])
+      (by simp only [fHsLen, fH, hdr]; omega_using [])]
+  refine ⟨K₆, ?_, ?_, by rw [m₆, Mem.readW_writeW_self32]; rfl, by omega_using [], by rw [List.drop_zero],
     by rw [List.drop_zero, Nat.zero_add]⟩
-  · rw [m₆, ws _ (by simp only [fH, sState, hdr]; omega) (by simp only [fG, sState, hdr]; omega)
-      (by simp only [fH, fG, hdr]; omega), ws _ (by simp only [fH, sState, hdr]; omega)
-      (by simp only [fHLeft, sState, hdr]; omega) (by simp only [fH, fHLeft, hdr]; omega),
+  · rw [m₆, ws _ (by simp only [fH, sState, hdr]; omega_using []) (by simp only [fG, sState, hdr]; omega_using [])
+      (by simp only [fH, fG, hdr]; omega_using []), ws _ (by simp only [fH, sState, hdr]; omega_using [])
+      (by simp only [fHLeft, sState, hdr]; omega_using []) (by simp only [fH, fHLeft, hdr]; omega_using []),
       Mem.readW_writeW_self32, hsW, Nat.zero_mul, BitVec.add_zero]
-  · rw [m₆, ws _ (by simp only [fHLeft, sState, hdr]; omega) (by simp only [fG, sState, hdr]; omega)
-      (by simp only [fHLeft, fG, hdr]; omega), Mem.readW_writeW_self32, hsLenW, Nat.zero_mul, Nat.sub_zero]
+  · rw [m₆, ws _ (by simp only [fHLeft, sState, hdr]; omega_using []) (by simp only [fG, sState, hdr]; omega_using [])
+      (by simp only [fHLeft, fG, hdr]; omega_using []), Mem.readW_writeW_self32, hsLenW, Nat.zero_mul, Nat.sub_zero]
 
 /-- The generator over the whole `h` tape. -/
 theorem gPart_ok {g : Geo} (G : GeoOk g) {E : Env} (v : E.Valid) (hp : E.pLen = g.pLen) {s : State} (B : Base E s)
@@ -417,10 +417,10 @@ theorem gPart_ok {g : Geo} (G : GeoOk g) {E : Env} (v : E.Valid) (hp : E.pLen = 
   refine WP.loop (M := isa) (fun m t => ∃ j, j + m = E.hsLen / E.pLen + 1 ∧
       GLoop E g p Q (Spec.Dsa.generator p Q (hList E)) s j t)
     (fun m t ⟨j, hm', L⟩ => WP.mono (gBody_ok G v hp hx' hone hpm1 hP hE hxl hp1 hodd hplt L) fun t' h => ?_)
-    (E.hsLen / E.pLen + 1) s₆ ⟨0, by omega, L₀⟩
+    (E.hsLen / E.pLen + 1) s₆ ⟨0, by omega_using [], L₀⟩
   rcases h with ⟨z, _, K, res, fh⟩ | ⟨z, _, hj1, L'⟩
   · exact .inl ⟨z, K, res, fh⟩
-  · have : j + 1 ≤ E.hsLen / E.pLen := (Nat.le_div_iff_mul_le (by omega)).mpr hj1
-    exact .inr ⟨z, m - 1, by omega, j + 1, by omega, L'⟩
+  · have : j + 1 ≤ E.hsLen / E.pLen := (Nat.le_div_iff_mul_le (by omega_using [pl])).mpr hj1
+    exact .inr ⟨z, m - 1, by omega_using [hm', this], j + 1, by omega_using [hm', this], L'⟩
 
 end VG.Proof.Dsa.X86.Generation

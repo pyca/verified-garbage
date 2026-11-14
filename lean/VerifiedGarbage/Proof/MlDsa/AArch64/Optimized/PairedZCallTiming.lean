@@ -60,7 +60,7 @@ theorem pairedZAt_pre {s s1 : State} {c secret y unused work : Ptr} {gamma bound
       (s1.callEntry.withRegions [⟨pa s c,1024⟩,⟨pa s secret,2048⟩,⟨s.syms "VG_MLDSA_INV_PAIR",4096⟩]
         [⟨pa s y,2048⟩,⟨pa s work,2176⟩]) := by
   have hb : s1.gpr .x6=BitVec.ofNat 64 bound := h1.imm (by simp [pairedZArgs])
-  have hb32 := imm32 (v:=bound) (by have := h.boundHigh; omega)
+  have hb32 := imm32 (v:=bound) (by have := h.boundHigh; omega_using [this])
   sig_pre [pairedZContract,pairedZSig,abi,argRegs,pairedConsts_eq,Abi.withConsts,
     Abi.constRegions,Abi.constsHeld,PairedTable.expandedWords_length,stackBelow]
   simp only [hy,Args.r0 h1,Args.r1 h1,Args.r2 h1,Args.r4 h1,Args.mem h1,Arg.val,hb,hb32]
@@ -97,7 +97,7 @@ theorem pairedZAt_ok {S : Nat} (hS : S<2^64) {nm : String} {s : State}
   refine WP.mono (callAtSyms_ok hS (pairedZ_callee S) (pairedZArgs_ok hc hs hy hu hw) (by simp)
     (fun s1 h1 hy => pairedZAt_pre h h1 hy) h.readable h.writable) fun t ⟨hP,s1,h1,hq⟩ => ⟨hP,?_⟩
   have hb : s1.gpr .x6=BitVec.ofNat 64 bound := h1.imm (by simp [pairedZArgs])
-  have hb32 := imm32 (v:=bound) (by have := h.boundHigh; omega)
+  have hb32 := imm32 (v:=bound) (by have := h.boundHigh; omega_using [this])
   sig_post [pairedZContract,pairedZSig,abi,argRegs,pairedConsts_eq,Abi.withConsts] at hq
   rw [Args.r0 h1,Args.r1 h1,Args.r2 h1,Args.mem h1,hb,hb32] at hq
   exact hq

@@ -268,7 +268,7 @@ private theorem iteration_pair (c : Cand) (n : Nat) :
     refine ⟨(nextPoint q).k + 1, ?_, nextPoint q, rfl, h₁.2, h₂.2, hsp⟩
     have := hb.1
     simp only [nextPoint]
-    omega
+    omega_using [hn, this]
   · simp only [SCTStep, hb, ite_false] at h₁ h₂
     exact ⟨h₁.trans h₂.symm, fun _ => trivial, fun ht => absurd (ht.symm.trans h₁) (by decide)⟩
 

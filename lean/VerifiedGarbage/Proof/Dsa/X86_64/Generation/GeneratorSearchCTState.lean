@@ -52,7 +52,7 @@ theorem generatorSearch_available {len : Nat} {p : GeneratorSearchPublic} {s : S
     GeneratorSearchAvailable len p s := by
   have he : p.exhausted = false := Option.some.inj (h.2.symm.trans hb)
   have hn := of_decide_eq_false he
-  exact ⟨h.1, by have hb := p.bound; omega⟩
+  exact ⟨h.1, by have hb := p.bound; omega_using [hn, hb]⟩
 
 theorem generatorSearch_take {len : Nat} {p : GeneratorSearchPublic} {s : State}
     (h : GeneratorSearchAvailable len p s) :

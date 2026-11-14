@@ -23,21 +23,21 @@ def pdWr (g : PrivGeometry) : List Region := [g.outputRegion, g.workspaceRegion,
 theorem pdArgs_values {g : PrivGeometry} {bs : Fin 8 → List Byte} {s : State}
     (h : PrivContext g bs s) (a : Arguments g (pdArgument g) 10 s) {j : Nat} (hj : j < 10) :
     arg (s.callEntry.withRegions (pdRd g) (pdWr g)) j = pdArgument g j := by
-  rw [arg_withRegions, arg_callEntry (by rw [h.sp]; have := h.valid.stackLow; omega)
-    (by rw [h.sp]; have := h.valid.stackHigh; omega)]
+  rw [arg_withRegions, arg_callEntry (by rw [h.sp]; have := h.valid.stackLow; omega_using [this])
+    (by rw [h.sp]; have := h.valid.stackHigh; omega_using [hj, this])]
   change s.mem.readW (addr (s.gpr .esp) (4 * j)) 32 = _
-  rw [h.address (by omega)]
+  rw [h.address (by omega_using [hj])]
   exact a j hj
 
 theorem pdCall_pre {g : PrivGeometry} {bs : Fin 8 → List Byte} {s : State}
     (h : PrivContext g bs s) (a : Arguments g (pdArgument g) 10 s) :
     (Proof.Rsa.publicPrecomputedCheckedContract abi 96).pre (s.callEntry.withRegions (pdRd g) (pdWr g)) := by
   have sa := fun {j} (hj : j < 10) => pdArgs_values h a hj
-  have kfit : g.length < 2 ^ 32 := by have := h.valid.maxLength; omega
-  have efit : g.exponentLength < 2 ^ 32 := by have := h.valid.exponentFits; omega
-  have wfit : g.scratchLength < 2 ^ 32 := by have := h.valid.workspaceFit; omega
+  have kfit : g.length < 2 ^ 32 := by have := h.valid.maxLength; omega_using [this]
+  have efit : g.exponentLength < 2 ^ 32 := by have := h.valid.exponentFits; omega_using [kfit, this]
+  have wfit : g.scratchLength < 2 ^ 32 := by have := h.valid.workspaceFit; omega_using [this]
   have pfit : 2 * Spec.Rsa.modulusWords g.length < 2 ^ 32 := by
-    have := h.valid.maxLength; simp only [Spec.Rsa.modulusWords]; omega
+    have := h.valid.maxLength; simp only [Spec.Rsa.modulusWords]; omega_using [kfit]
   sig_pre [Proof.Rsa.publicPrecomputedCheckedContract, Proof.Rsa.publicPrecomputedSig, abi, argSlots, argVal, argBytes, stackBelow]
   simp only [sa (by decide : 0 < 10), sa (by decide : 1 < 10), sa (by decide : 2 < 10),
     sa (by decide : 3 < 10), sa (by decide : 4 < 10), sa (by decide : 5 < 10),
@@ -45,14 +45,14 @@ theorem pdCall_pre {g : PrivGeometry} {bs : Fin 8 → List Byte} {s : State}
     sa (by decide : 9 < 10), pdArgument, BitVec.toNat_ofNat,
     Nat.mod_eq_of_lt kfit, Nat.mod_eq_of_lt efit, Nat.mod_eq_of_lt wfit, Nat.mod_eq_of_lt pfit,
     argAddr_withRegions, argAddr_callEntry, h.sp, Nat.mul_zero, BitVec.add_zero]
-  rw [show 2 * Spec.Rsa.modulusWords g.length * 8 = 16 * Spec.Rsa.modulusWords g.length by omega,
+  rw [show 2 * Spec.Rsa.modulusWords g.length * 8 = 16 * Spec.Rsa.modulusWords g.length by omega_using [],
     show g.scratchLength * 8 = 8 * g.scratchLength from Nat.mul_comm _ _]
   have preSub : (⟨byteAddr g.precomputation, 16 * Spec.Rsa.modulusWords g.length⟩ : Region).Sub g.innerRegion := by
     rw [PrivGeometry.precomputation, h.valid.offsetAddr (by decide)]
-    exact Offset.sub_base _ (by have := h.valid.maxLength; simp only [precomputeOffset, VG.Impl.Rsa.X86.PrivChecked.frameBytes, Spec.Rsa.modulusWords]; omega)
+    exact Offset.sub_base _ (by have := h.valid.maxLength; simp only [precomputeOffset, VG.Impl.Rsa.X86.PrivChecked.frameBytes, Spec.Rsa.modulusWords]; omega_using [this])
   have tempSub : (⟨byteAddr g.temporary, g.length⟩ : Region).Sub g.innerRegion := by
     rw [PrivGeometry.temporary, h.valid.offsetAddr (by decide)]
-    exact Offset.sub_base _ (by have := h.valid.maxLength; simp only [candidateOffset, VG.Impl.Rsa.X86.PrivChecked.frameBytes]; omega)
+    exact Offset.sub_base _ (by have := h.valid.maxLength; simp only [candidateOffset, VG.Impl.Rsa.X86.PrivChecked.frameBytes]; omega_using [this])
   have preStack : (⟨byteAddr g.precomputation, 16 * Spec.Rsa.modulusWords g.length⟩ : Region).Sub g.wholeStack :=
     fun x hx => h.valid.innerSub x (preSub x hx)
   have tempStack : (⟨byteAddr g.temporary, g.length⟩ : Region).Sub g.wholeStack :=
@@ -63,16 +63,16 @@ theorem pdCall_pre {g : PrivGeometry} {bs : Fin 8 → List Byte} {s : State}
   have preArgs : (⟨byteAddr g.precomputation, 16 * Spec.Rsa.modulusWords g.length⟩ : Region).Disjoint ⟨byteAddr g.stack, 40⟩ := by
     rw [PrivGeometry.precomputation, h.valid.offsetAddr (by decide)]
     exact Offset.disjoint_base _ (by decide : 40 ≤ precomputeOffset)
-      (by have := h.valid.maxLength; simp only [precomputeOffset, Spec.Rsa.modulusWords]; omega)
+      (by have := h.valid.maxLength; simp only [precomputeOffset, Spec.Rsa.modulusWords]; omega_using [kfit])
   have tempArgs : (⟨byteAddr g.temporary, g.length⟩ : Region).Disjoint ⟨byteAddr g.stack, 40⟩ := by
     rw [PrivGeometry.temporary, h.valid.offsetAddr (by decide)]
     exact Offset.disjoint_base _ (by decide : 40 ≤ candidateOffset)
-      (by have := h.valid.maxLength; simp only [candidateOffset]; omega)
-  have low : (g.stack - 4).toNat = g.stack.toNat - 4 := sub_toNat (k := 4) (by have := h.valid.stackLow; omega)
+      (by have := h.valid.maxLength; simp only [candidateOffset]; omega_using [kfit])
+  have low : (g.stack - 4).toNat = g.stack.toNat - 4 := sub_toNat (k := 4) (by have := h.valid.stackLow; omega_using [this])
   have retSub : (⟨(g.stack - 4).setWidth 64, 4⟩ : Region).Sub g.calleeRegion :=
     VG.X86.below_sub (by decide : 4 ≤ 100) h.valid.stackLow
   have belowSub : (⟨(g.stack - 4).setWidth 64 - 96#64, 96⟩ : Region).Sub g.calleeRegion := by
-    rw [← VG.X86.Taint.sub_setWidth (by rw [low]; have := h.valid.stackLow; omega : 96 ≤ (g.stack - 4).toNat)]
+    rw [← VG.X86.Taint.sub_setWidth (by rw [low]; have := h.valid.stackLow; omega_using [this] : 96 ≤ (g.stack - 4).toNat)]
     exact VG.X86.below_inner (by decide : 96 + 4 ≤ 100) h.valid.stackLow
   have cOut := h.valid.stackOutput.sub_left h.valid.calleeSub
   have cPre := h.valid.calleeInner.sub_right preSub
@@ -81,7 +81,7 @@ theorem pdCall_pre {g : PrivGeometry} {bs : Fin 8 → List Byte} {s : State}
   have cWork := h.valid.stackWorkspace.sub_left h.valid.calleeSub
   have cArgs := h.valid.calleeInner.sub_right argSub
   rw [low]
-  exact ⟨by have := h.valid.stackLow; omega, by have := h.valid.stackHigh; omega, rfl, rfl,
+  exact ⟨by have := h.valid.stackLow; omega_using [this], by have := h.valid.stackHigh; omega_using [this], rfl, rfl,
     (h.valid.stackOutput.sub_left preStack).symm, h.valid.outputSources 1,
     (h.valid.stackOutput.sub_left tempStack).symm, h.valid.outputWorkspace,
     (h.valid.stackOutput.sub_left argStack).symm,

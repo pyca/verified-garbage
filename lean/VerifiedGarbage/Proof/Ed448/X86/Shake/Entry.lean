@@ -43,7 +43,7 @@ variable {s : State} {n : Nat}
 
 theorem arg_address (s : State) (j : Nat) : addr (base s) (260 + 4 * j) = argAddr s j := by
   simp only [addr, base, argAddr]
-  rw [show 260 + 4 * j = 256 + (4 + 4 * j) by omega, BitVec.ofNat_add,
+  rw [show 260 + 4 * j = 256 + (4 + 4 * j) by omega_using [], BitVec.ofNat_add,
     ← BitVec.add_assoc, BitVec.sub_add_cancel]
 
 theorem args_val (s : State) (n : Nat) : Args (base s) n (arg s) s.mem := fun i _ => by
@@ -51,28 +51,28 @@ theorem args_val (s : State) (n : Nat) : Args (base s) n (arg s) s.mem := fun i 
 
 theorem stack_eq (hb : 280 ≤ (s.gpr .esp).toNat) : Whole.STK (base s) = below (s.gpr .esp) 280 := by
   simp only [Whole.STK, below, base]
-  rw [Taint.sub_setWidth (by omega : 256 ≤ (s.gpr .esp).toNat),
+  rw [Taint.sub_setWidth (by omega_using [hb] : 256 ≤ (s.gpr .esp).toNat),
     Taint.sub_setWidth hb, BitVec.sub_sub]
   rfl
 
 theorem base_toNat (hb : 280 ≤ (s.gpr .esp).toNat) : (base s).toNat = (s.gpr .esp).toNat - 256 :=
-  sub_toNat (by omega)
+  sub_toNat (by omega_using [hb])
 
 theorem argAddr64 (ha : (s.gpr .esp).toNat + 4 + 4 * n ≤ 2 ^ 32) {j : Nat} (hj : j < n) :
     argAddr s j = (s.gpr .esp).setWidth 64 + BitVec.ofNat 64 (4 + 4 * j) :=
-  addr_eq (by omega)
+  addr_eq (by omega_using [ha, hj])
 
 theorem args_stack (hb : 280 ≤ (s.gpr .esp).toNat) (ha : (s.gpr .esp).toNat + 4 + 4 * n ≤ 2 ^ 32) (hn : 0 < n) :
     (ARGS s n).Disjoint (below (s.gpr .esp) 280) := by
   change Region.Disjoint ⟨argAddr s 0, 4 * n⟩ ⟨((s.gpr .esp) - BitVec.ofNat 32 280).setWidth 64, 280⟩
   rw [argAddr64 ha hn, Taint.sub_setWidth hb]
-  exact (Offset.disjoint_below_above _ (m := 280) (a := 4 + 4 * 0) (l := 4 * n) (by omega)).symm
+  exact (Offset.disjoint_below_above _ (m := 280) (a := 4 + 4 * 0) (l := 4 * n) (by omega_using [ha])).symm
 
 theorem args_contains (ha : (s.gpr .esp).toNat + 4 + 4 * n ≤ 2 ^ 32) {j : Nat} (hj : j < n) :
     (ARGS s n).Contains (argAddr s j) 4 := by
   change (⟨argAddr s 0, 4 * n⟩ : Region).Contains _ _
-  rw [argAddr64 ha (by omega), argAddr64 ha hj]
-  exact Offset.contains _ (by omega) (by omega) (by omega)
+  rw [argAddr64 ha (by omega_using [hj]), argAddr64 ha hj]
+  exact Offset.contains _ (by omega_using []) (by omega_using [hj]) (by omega_using [ha])
 
 /-- The layout facts the calls need, from the precondition's. -/
 theorem kit {sc : Nat} {ins outs : List Region} (hb : 280 ≤ (s.gpr .esp).toNat)
@@ -81,7 +81,7 @@ theorem kit {sc : Nat} {ins outs : List Region} (hb : 280 ≤ (s.gpr .esp).toNat
     (io : ∀ r ∈ ins, ∀ R ∈ outs, r.Disjoint R) (is : ∀ r ∈ ins, r.Disjoint (below (s.gpr .esp) 280))
     (hargs : ARGS s n ∈ ins) : Kit (base s) (arg s sc) n ins outs := by
   have hE := base_toNat hb
-  refine ⟨by omega, by omega, hnc, so, fun R hR => stack_eq hb ▸ ko R hR, fun r hr R hR => ?_,
+  refine ⟨by omega_using [hb, hE], by omega_using [hb, ha, hE], hnc, so, fun R hR => stack_eq hb ▸ ko R hR, fun r hr R hR => ?_,
     fun i hi => ⟨ARGS s n, hargs, by rw [arg_address]; exact args_contains ha hi⟩⟩
   rcases List.mem_append.mp hR with hR | hR
   · exact io r hr R hR
@@ -93,7 +93,7 @@ theorem push_ctx {ins outs : List Region} (hrd : s.rd = ins) (hwr : s.wr = outs)
     (hb : 280 ≤ (s.gpr .esp).toNat) :
     Whole.Ctx (base s) s.gpr s.mem ins outs (pushed (List.replicate 64 .eax) s) := by
   have hf := pushed_frame (s := s) (rs := List.replicate 64 .eax) (by simp)
-    (by simp only [List.length_replicate]; omega)
+    (by simp only [List.length_replicate]; omega_using [hb])
   refine ⟨(pushed_rd _ _).trans hrd, ?_, ?_, fun r _ hn => pushed_gpr _ _ hn, ?_⟩
   · rw [pushed_wr, hwr]
     simp only [List.length_replicate]

@@ -35,7 +35,7 @@ theorem saltFits_ok {H : Impl.Pbkdf2.Md.X86_64.Hash} (hD : H.D + 2 < 2 ^ 31) (u 
   refine WP.mono (WP.keep [.rax] (Q := fun u' => u'.mem = u.mem ∧ u'.gpr .rax = BitVec.ofNat 64 (a - (H.D + 2)) ∧
     u'.cf = some (decide (a - (H.D + 2) < b.toNat))) ?_ rfl) fun u' ⟨h, k⟩ => ⟨k, h⟩
   xrun [saltFits, hax, hdx, VG.Proof.MlKem.X86_64.sx_ofNat hD, VG.Offset.ofNat_sub_ofNat ha]
-  rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+  rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [ha'])]
 
 theorem dbSlots_ok {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byte} {W : Nat → BitVec 64}
     (R : Rep u.mem F S V W) {a lo : Nat} (hlo : W 26 = BitVec.ofNat 64 lo)

@@ -65,12 +65,12 @@ theorem hash_ct (hL : L.Ok) (ha : Arguments L m₁) (hb : Arguments L m₂) :
   have x3 := input_ct (g₁ := g₁) (g₂ := g₂) hL ha hb P2 (Nat.mod_lt _ (by decide)) (src := .caller 5 0)
     (len := .const 57) ⟨by decide, by decide⟩ (valid_const (by decide)) (R := L.SIG) (by simp [Lay.inputs])
     (by simp only [argVal, Lay.value, BitVec.add_zero]; exact ⟨0, (BitVec.add_zero _).symm, by simp⟩)
-    (by simp only [argVal, Lay.value, BitVec.add_zero]; have := hL.ns; simp; omega)
+    (by simp only [argVal, Lay.value, BitVec.add_zero]; have := hL.ns; simp; omega_using [this])
   let P3 : Nat := (P2 + (argVal L.E L.value (.const 57)).toNat) % 136
   have x4 := input_ct (g₁ := g₁) (g₂ := g₂) hL ha hb P3 (Nat.mod_lt _ (by decide)) (src := .caller 0 0)
     (len := .const 57) ⟨by decide, by decide⟩ (valid_const (by decide)) (R := L.PK) (by simp [Lay.inputs])
     (by simp only [argVal, Lay.value, BitVec.add_zero]; exact ⟨0, (BitVec.add_zero _).symm, by simp⟩)
-    (by simp only [argVal, Lay.value, BitVec.add_zero]; have := hL.np; simp; omega)
+    (by simp only [argVal, Lay.value, BitVec.add_zero]; have := hL.np; simp; omega_using [this])
   let P4 : Nat := (P3 + (argVal L.E L.value (.const 57)).toNat) % 136
   have x5 := input_ct (g₁ := g₁) (g₂ := g₂) hL ha hb P4 (Nat.mod_lt _ (by decide)) (src := .caller 3 0)
     (len := .caller 4 0) ⟨by decide, by decide⟩ ⟨by decide, by decide⟩ (R := L.MSG) (by simp [Lay.inputs])

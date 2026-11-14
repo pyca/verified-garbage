@@ -37,7 +37,7 @@ theorem validateCore_ok (M : Mont) {s : State} {F S : Addr}
     intro a ha
     have hn := ha ⟨p.base, Impl.Dsa.Layout.usedBytes⟩ (by simp)
     change ¬ ofs p.base a < Impl.Dsa.Layout.usedBytes at hn
-    rw [ft a (by omega), hm]
+    rw [ft a (by omega_using [hn]), hm]
   have Rt := rep_of_disjoint_frame R frame
     (by intro r hr; rcases List.mem_singleton.mp hr with rfl; exact hF)
     (by intro r hr; rcases List.mem_singleton.mp hr with rfl; exact hS)

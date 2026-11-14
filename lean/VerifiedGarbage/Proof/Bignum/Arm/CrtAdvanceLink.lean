@@ -21,7 +21,7 @@ theorem crt_advanceLink_ok (s : State) {base : BitVec 32} {size d : Nat}
   unfold advanceLink
   refine wp_dp (op2_reg _ _) fun u h => ?_
   refine wp_str (a := off (State.addr base) d) hd
-    (by rw [h.other .r0 (by decide), ptr]; exact addr_add (by have := ws.nowrap; omega))
+    (by rw [h.other .r0 (by decide), ptr]; exact addr_add (by have := ws.nowrap; omega_using [fit, this]))
     (by rw [h.wr]; exact ws.write fit) fun t j => WP.block_nil ?_
   have restJ : Rest [] u t := j.rest []
   refine ⟨?_, ?_, (h.rest (by simp)).trans (restJ.mono (by simp))⟩

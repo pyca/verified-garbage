@@ -47,10 +47,10 @@ theorem step_ok {C : Curve} {base : Addr} {P G : Point C} {s₀ s : State} {u v 
  rw [P521Joint.step]
  apply WP.assoc
  refine WP.seq (WP.mono_syms (jointDouble_ok hL hp hC hM3 hF
-  (jointPoint_curve hC hG hP u v (j+1)) (by change j<577; omega) h) fun a ha sy=>?_) 
+  (jointPoint_curve hC hG hP u v (j+1)) (by change j<577; omega_using [hj]) h) fun a ha sy=>?_) 
  refine WP.mono (digits_ok hL hp hC hM3 hone hP
   (hC.onCurve_add (jointPoint_curve hC hG hP u v (j+1)) (jointPoint_curve hC hG hP u v (j+1)))
-  hF fixed (by omega) (sy.trans sym) ha) fun t ht=>?_
+  hF fixed (by omega_using [hj]) (sy.trans sym) ha) fun t ht=>?_
  rw [jointPoint_step hC hG hP] at ht
  exact ht
 
@@ -64,9 +64,9 @@ theorem peerStep_ok {C : Curve} {base : Addr} {P A : Point C} {s₀ s : State} {
   JointDigitPost P521Joint.K C base 8192 P s₀ t j (add (add A A) (Naf5.point C P v j)) := by
  rw [PubNaf.step]
  apply WP.assoc
- refine WP.seq (WP.mono (jointDouble_ok hL hp hC hM3 hF hA (by change j<577; omega) h) fun a ha=>?_)
+ refine WP.seq (WP.mono (jointDouble_ok hL hp hC hM3 hF hA (by change j<577; omega_using [hj]) h) fun a ha=>?_)
  exact jointDigit_ok hL hp hC hM3 hone hP (hC.onCurve_add hA hA) ha.st hF ha.cache
-  (by change j<577; omega) ha.x19 ha.dlt ha.d
+  (by change j<577; omega_using [hj]) ha.x19 ha.dlt ha.d
 
 theorem loop_ok {C : Curve} {base : Addr} {P G : Point C} {s₀ s : State} {u v : Nat}
  (hL : NafLay P521Joint.K 8192) (hp : UnitMod C.p (2^(64*P521Joint.K.M.n))) (hC : Law C)
@@ -79,8 +79,8 @@ theorem loop_ok {C : Curve} {base : Addr} {P G : Point C} {s₀ s : State} {u v 
  let I := fun j t=>JointDigitPost P521Joint.K C base 8192 P s₀ t j (jointPoint G P u v j) ∧ t.syms=s₀.syms
  apply countLoop_ok (Inv:=I) (n:=576) (by decide)
  · intro j a hj0 hjn hi
-   have e : j-1+1=j := by omega
-   refine WP.mono_syms (step_ok (j:=j-1) hL hp hC hM3 hone hP hG hF fixed (by omega) hi.2
+   have e : j-1+1=j := by omega_using [hj0]
+   refine WP.mono_syms (step_ok (j:=j-1) hL hp hC hM3 hone hP hG hF fixed (by omega_using [hjn]) hi.2
     (by rw [e]; exact hi.1)) fun t ht sy=>?_
    exact ⟨⟨ht,sy.trans hi.2⟩,ht.x19⟩
  · intro t ht

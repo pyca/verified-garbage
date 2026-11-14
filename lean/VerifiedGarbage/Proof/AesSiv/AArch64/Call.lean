@@ -49,7 +49,7 @@ theorem finalize_raw_wp (v : Ctr32Impl) {s₀ : State} (h0 : finalizeAArch64.pre
   generalize hL : (s₀.gpr .x4).toNat = L at hp
   generalize hR' : (s₀.gpr .x1).toNat = R at hp
   have hR := hp.rounds
-  have hRb : 16 * (R + 1) ≤ 240 := by rcases hR with h | h | h <;> omega
+  have hRb : 16 * (R + 1) ≤ 240 := by rcases hR with h | h | h <;> omega_using [h]
   have sw := hp.scr_wrap
   refine WP.seq (WP.mono (finPre_wp hp) fun s₁ h₁ => ?_)
   refine WP.seq (WP.mono (ctr_call v h₁.pre) fun s₂ h₂ => ?_)
@@ -65,16 +65,16 @@ theorem finalize_raw_wp (v : Ctr32Impl) {s₀ : State} (h0 : finalizeAArch64.pre
     refine h₂.frame.readW (r := ⟨S + BitVec.ofNat 64 d, 8⟩) (Region.contains_self _ _) (fun r hr => ?_) (by decide)
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
-    · exact Offset.disjoint S (by omega) (by omega) (by omega)
-    · exact (hp.st_scr.symm.sub_left (FPre.scrD (by omega)))
-    · exact Offset.disjoint_base _ (by omega) (by omega)
+    · exact Offset.disjoint S (by omega_using [h₁']) (by omega_using [h₂']) (by omega_using [])
+    · exact (hp.st_scr.symm.sub_left (FPre.scrD (by omega_using [h₂'])))
+    · exact Offset.disjoint_base _ (by omega_using [h₁']) (by omega_using [h₂'])
   have sch : Spec.Aes.bytesAt s₁.mem W (16 * (R + 1)) = Spec.Aes.bytesAt s₀.mem W (16 * (R + 1)) :=
     Proof.Cmac.bytesAt_frame h₁.frame (fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl
-      · exact (hp.key_scr.sub_left (Region.sub_prefix (by omega))).sub_right (FPre.scrD (by decide))
-      · exact hp.key_st.sub_left (Region.sub_prefix (by omega))
-      · exact (hp.key_scr.sub_left (Region.sub_prefix (by omega))).sub_right (FPre.scrD (by decide))) (by omega)
+      · exact (hp.key_scr.sub_left (Region.sub_prefix (by omega_using [hR]))).sub_right (FPre.scrD (by decide))
+      · exact hp.key_st.sub_left (Region.sub_prefix (by omega_using [hR]))
+      · exact (hp.key_scr.sub_left (Region.sub_prefix (by omega_using [hR]))).sub_right (FPre.scrD (by decide))) (by omega_using [hR])
   refine ⟨⟨fun r hr => ?_, by rw [sp₃, h₂.sp, h₁.sp]⟩, ?_⟩
   · by_cases h19 : r = .x19
     · subst h19; rw [x19₃, slots 2064 (by decide) (by decide), h₁.slot19]
@@ -104,7 +104,7 @@ theorem finr_call (v : Ctr32Impl) (nm : String) {s : State} {K St P S : Addr} {L
     (h : FArgs s K St P S L R) :
     WP isa (.call nm (Impl.CmacAes.AArch64.finalize v.callee)) s (FRPost s K St P S L R) := by
   have hR := toNat_rounds h.rounds
-  have hL := toNat_ofNat (n := L) (by have := h.len; omega)
+  have hL := toNat_ofNat (n := L) (by have := h.len; omega_using [this])
   refine WP.call (k := finalizeRawAArch64) (finalize_raw_correct v) h.pre h.reads h.writes ?_
     (finalize_noFrames v)
   intro s' hrd hwr hsp hf hsaved _ hpost

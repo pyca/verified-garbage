@@ -126,7 +126,7 @@ theorem loadY_ok (s : State) (h0 : ∀ l < 2, s.lane .xmm0 l = revMask) (hy : In
     Option.map_some, Option.some.injEq, exists_eq_left', m0]
   refine ⟨?_, trivial, trivial, fun r h2 l hl => ?_, trivial, trivial, trivial⟩
   · rw [BitVec.ofInt_natCast, BitVec.add_zero]; exact (VG.Proof.Gcm.X86_64.blockAt_eq _ _).symm
-  · rcases (by omega : l = 0 ∨ l = 1) with rfl | rfl <;> simp [h2]
+  · rcases (by omega_using [hl] : l = 0 ∨ l = 1) with rfl | rfl <;> simp [h2]
 
 /-- The hashing loop's state: `g` groups absorbed into `Y` (in `xmm2`). -/
 structure HInv (s₀ : State) (P : Nat → Nat → Block) (g : Nat) (s : State) : Prop where
@@ -152,8 +152,8 @@ theorem hsetup_ok {s₀ : State} (hp : HPre s₀) :
   have hr11 : s₁.gpr .r11 = pp s₀ := g₁ _ (by decide)
   rw [WP.block_append_iff]
   refine WP.mono (storesK_ok .r11 pregs 0 s₁ (fun k hk => by
-      rw [wr₁, hr11]; exact in_sub_int hp.p_in (by simp [pregs] at hk; omega))
-    (by rw [hr11]; simp [pregs]; omega)) fun s₂ ⟨sv, fr, g₂, rd₂, wr₂, l₂⟩ => ?_
+      rw [wr₁, hr11]; exact in_sub_int hp.p_in (by simp [pregs] at hk; omega_using [hk]))
+    (by rw [hr11]; simp [pregs]; omega_using [hwp])) fun s₂ ⟨sv, fr, g₂, rd₂, wr₂, l₂⟩ => ?_
   rw [hr11, Nat.mul_zero, BitVec.add_zero, show 32 * pregs.length = 256 from rfl, m₁] at fr
   replace fr : Frame [pR s₀] s₀.mem s₂.mem := fr.sub fun r hr => ⟨pR s₀, List.mem_singleton_self _, by
     simp only [List.mem_singleton] at hr; subst hr; exact Region.sub_prefix (by decide)⟩
@@ -165,7 +165,7 @@ theorem hsetup_ok {s₀ : State} (hp : HPre s₀) :
   · rw [g₃, g₂, g₁ _ (by decide), Nat.mul_zero, Nat.sub_zero]; simp
   · rw [g₃, g₂, g₁ r h1]
   · rw [m₃, show pp s₀ + BitVec.ofNat 64 (32 * k + 16 * l) = s₁.gpr .r11 + BitVec.ofNat 64 (32 * (0 + k) + 16 * l)
-      by rw [hr11, Nat.zero_add], sv k (by simp [pregs]; omega) l hl, pregs_get]
+      by rw [hr11, Nat.zero_add], sv k (by simp [pregs]; omega_using [hk]) l hl, pregs_get]
   · rw [m₃]; exact fr
   · rw [lk _ (by decide) l hl, l₂]; exact l0 l hl
   · rw [lk _ (by decide) l hl, l₂]; exact l1 l hl
@@ -199,15 +199,15 @@ theorem hbody_ok {s₀ : State} (hp : HPre s₀) {P : Nat → Nat → Block} (hf
             (Region.contains_self _ _)
             (fun r hr => by
               simp only [List.mem_singleton] at hr; subst hr
-              exact hp.p_x.symm.sub_left (Offset.sub_base _ (by omega))) (by decide),
-          readW_ofBytes, show 256 * g + 16 * i = 16 * (16 * g + i) by omega]
+              exact hp.p_x.symm.sub_left (Offset.sub_base _ (by omega_using [hg, hi]))) (by decide),
+          readW_ofBytes, show 256 * g + 16 * i = 16 * (16 * g + i) by omega_using []]
       pv := fun k hk l hl => by rw [f₂.mem]; exact hI.pw k hk l hl
       ina := fun k hk => by
         rw [f₂.rd, f₂.wr, hI.rd, hI.wr, BitVec.ofInt_natCast, hoff]
-        exact in_sub hp.x_in (by omega)
+        exact in_sub hp.x_in (by omega_using [hg, hk])
       inp := fun k hk => by
         rw [f₂.rd, f₂.wr, hI.rd, hI.wr]
-        exact in_rdwr (in_sub_int hp.p_in (by omega)) }
+        exact in_rdwr (in_sub_int hp.p_in (by omega_using [hk])) }
   rw [WP.block_append_iff]
   refine WP.mono (ghRun_ok (yl := yl) 8 (Nat.le_refl _) s₂ hE₂ z₂
     (fun l hl => by rw [f₂.lane _ (by decide) l hl])) fun s₃ ⟨hE₃, p₃, _, f₃⟩ => ?_
@@ -228,7 +228,7 @@ theorem hbody_ok {s₀ : State} (hp : HPre s₀) {P : Nat → Nat → Block} (hf
   have g₄ : s₄.gpr = s.gpr := by rw [f₄.gpr, f₃.gpr, f₂.gpr]
   have m₄ : s₄.mem = s.mem := by rw [f₄.mem, f₃.mem, f₂.mem]
   have hr9 : s₄.gpr .r9 - 16 = BitVec.ofNat 64 (nb s₀ - 16 * (g + 1)) := by
-    rw [g₄, hI.r9, show (16 : BitVec 64) = BitVec.ofNat 64 16 from rfl, ofNat_sub_ofNat (by omega) (by omega)]
+    rw [g₄, hI.r9, show (16 : BitVec 64) = BitVec.ofNat 64 16 from rfl, ofNat_sub_ofNat (by omega_using [hg]) (by omega_using [hw])]
     congr 1
   refine ⟨⟨?_, by rw [fr9, hr9], fun r h1 h2 h3 => by rw [fg r h2 h3, g₄]; exact hI.gpr r h1 h2 h3,
     fun k hk l hl => by rw [fm, m₄]; exact hI.pw k hk l hl, by rw [fm, m₄]; exact hI.frame,
@@ -249,7 +249,7 @@ theorem hbody_ok {s₀ : State} (hp : HPre s₀) {P : Nat → Nat → Block} (hf
     · simp only [h, decide_false]
       exact beq_false_of_ne fun h' => h (by
         have := congrArg BitVec.toNat h'
-        rwa [toNat_ofNat_lt (by omega)] at this)
+        rwa [toNat_ofNat_lt (by omega_using [hw])] at this)
 
 /-- `Y` stored. -/
 theorem hfin_ok {s₀ : State} (hp : HPre s₀) {P : Nat → Nat → Block} {g : Nat} (hg : nb s₀ = 16 * g) {s : State}
@@ -286,10 +286,10 @@ theorem hash_ok {s₀ : State} (hp : HPre s₀) : WP isa hash s₀ (HPost s₀) 
     refine WP.mono (hbody_ok hp hf hg hI) fun s' ⟨hI', hzf⟩ => ?_
     by_cases h0 : nb s₀ - 16 * (g + 1) = 0
     · exact .inl ⟨by simp only [eval, hzf, h0, decide_true, Option.map_some, Bool.not_true],
-        g + 1, by omega, hI'⟩
+        g + 1, by omega_using [hg, h0], hI'⟩
     · exact .inr ⟨by simp only [eval, hzf, h0, decide_false, Option.map_some, Bool.not_false],
-        nb s₀ - 16 * (g + 1), by omega, g + 1, rfl, by omega, hI'⟩
-  exact WP.mono (WP.loop (M := isa) I hstep (nb s₀ - 16 * 0) s₁ ⟨0, rfl, by omega, hI₁⟩)
+        nb s₀ - 16 * (g + 1), by omega_using [hg], g + 1, rfl, by omega_using [hm, h0], hI'⟩
+  exact WP.mono (WP.loop (M := isa) I hstep (nb s₀ - 16 * 0) s₁ ⟨0, rfl, by omega_using [h16], hI₁⟩)
     fun s ⟨g, hg, hI⟩ => hfin_ok hp hg hI
 
 end Hash

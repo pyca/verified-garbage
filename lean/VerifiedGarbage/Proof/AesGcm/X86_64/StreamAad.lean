@@ -55,7 +55,7 @@ theorem streamAad_run (v : GcmImpl) {N gs : Nat} [G : GhFits v N gs] {s : State}
   generalize hn : (s.gpr .r8).toNat = n at *
   have L : Lay Ctx St W SP N := Lay.of wc ws ww d_cs d_cw d_sw k_c k_s k_w hN hN'
   have pW : Covers [⟨W, N⟩] s.wr := by rw [hwr]; exact covers_of_mem (by simp)
-  obtain ⟨s₁, run₁, hg₁, hrd₁, hwr₁, hsv₁, f₁⟩ := save_ok s .r9 hW pW (by omega)
+  obtain ⟨s₁, run₁, hg₁, hrd₁, hwr₁, hsv₁, f₁⟩ := save_ok s .r9 hW pW (by omega_using [hN])
   obtain ⟨s₂, run₂, h15, h14, h13, h12, hbp, hbx, hg₂, hm₂, hrd₂, hwr₂⟩ : ∃ s₂, runBlock isa
       [.mov .r15 (.reg .r9), .mov .r14 (.reg .rsi), .mov .r13 (.reg .rdi), .mov .r12 (.reg .rcx),
         .mov .rbp (.reg .r8), .mov .rbx (.reg .rdx), .alu .and .rbx (imm 15)] s₁ = some s₂ ∧
@@ -81,7 +81,7 @@ theorem streamAad_run (v : GcmImpl) {N gs : Nat} [G : GhFits v N gs] {s : State}
   have dsv : ∀ r ∈ [savedR W], (⟨D, n⟩ : Region).Disjoint r := by
     intro r hr; simp only [List.mem_singleton] at hr; subst hr; exact d_dw.sub_right (Lay.wSub L.le)
   have hdata : bytesAt s₂.mem D n = bytesAt s.mem D n := by
-    rw [hm₂]; exact bytesAt_frame f₁ dsv (by omega)
+    rw [hm₂]; exact bytesAt_frame f₁ dsv (by omega_using [hn])
   have hH : blockAt s₂.mem (Ctx + BitVec.ofNat 64 240) = ctxH s.mem Ctx := by
     rw [hm₂, ctxH_eq, blockAt_frame f₁ fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact L.ctx_w (by decide) L.le]
@@ -89,12 +89,12 @@ theorem streamAad_run (v : GcmImpl) {N gs : Nat} [G : GhFits v N gs] {s : State}
     rw [hrd₂, hrd₁, hwr₂, hwr₁, hrd]
     exact covers_of_mem (List.mem_append_left _ (List.mem_cons_of_mem _ (List.mem_singleton_self _)))
   have hai : AbsIn Ctx St W SP 16 (ctxH s.mem Ctx) x D n s₂ N :=
-    ⟨he₂, h12, hbp, hbx, ⟨rdD, by have := (s.gpr .r8).isLt; omega, wd, d_ds, d_dw, k_d⟩, hH⟩
+    ⟨he₂, h12, hbp, hbx, ⟨rdD, by have := (s.gpr .r8).isLt; omega_using [hn], wd, d_ds, d_dw, k_d⟩, hH⟩
   refine WP.seq (WP.block_append (WP.of_runBlock ⟨s₁, run₁, WP.of_runBlock ⟨s₂, run₂, ?_⟩⟩))
   refine WP.seq (WP.mono (absorb_ok v L (yo := 16) (.inr rfl) hai) fun s₃ ho => ?_)
   have he₃ := ho.env
   have hsv₃ : SavedAt s₃.mem W s := (hm₂ ▸ hsv₁).frame ho.frame (saved_absFrame L G.fit (.inr rfl))
-  obtain ⟨s₄, run₄, hsv, hother, hm₄, hrd₄, hwr₄⟩ := restore_ok s₃ he₃.r15 (covers_left he₃.perm.w) hsv₃ (by omega)
+  obtain ⟨s₄, run₄, hsv, hother, hm₄, hrd₄, hwr₄⟩ := restore_ok s₃ he₃.r15 (covers_left he₃.perm.w) hsv₃ (by omega_using [hN])
   refine WP.of_runBlock ⟨s₄, run₄, ⟨?_, ?_⟩, ?_, fun ha => ?_⟩
   · intro r hr
     simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -131,7 +131,7 @@ theorem streamAad_run (v : GcmImpl) {N gs : Nat} [G : GhFits v N gs] {s : State}
     have ha₂ : Absorbed s₂.mem (St + BitVec.ofNat 64 16) (St + BitVec.ofNat 64 32) (ctxH s.mem Ctx) x := by
       rw [hm₂]
       refine ha.congr (blockAt_frame f₁ fun r hr => dS r hr 16 16 (by decide)) (bytesAt_frame f₁
-        (fun r hr => dS r hr 32 (x.length % 16) (by omega)) (by omega))
+        (fun r hr => dS r hr 32 (x.length % 16) (by omega_using [])) (by omega_using []))
     rw [hm₄, ← hdata]
     exact ho.abs ha₂
 
@@ -153,9 +153,9 @@ theorem streamAad_wp (v : GcmImpl) {N gs : Nat} [G : GhFits v N gs] {s : State}
     intro d k hk r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
-    · exact Offset.disjoint _ (by omega) (by omega) (by omega)
-    · exact d_sw.sub_left (Lay.stSub (by omega))
-    · exact (k_s.sub_right (Lay.stSub (by omega))).symm
+    · exact Offset.disjoint _ (by omega_using [hk]) (by omega_using [hk]) (by omega_using [])
+    · exact d_sw.sub_left (Lay.stSub (by omega_using [hk]))
+    · exact (k_s.sub_right (Lay.stSub (by omega_using [hk]))).symm
   rw [Proof.Gcm.streamRepr_iff, ofNat_lit, ofNat_lit, ofNat_lit, ofNat_lit] at hr ⊢
   obtain ⟨hj, ha, hc⟩ := hr
   refine ⟨?_, ?_, ?_⟩

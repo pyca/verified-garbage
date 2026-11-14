@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.Amm52
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # Almost Montgomery multiplication in radix `2⁵²`, of any number of limbs
@@ -31,15 +32,15 @@ def step (N : Nat) (o : Ops) (L : Nat → Nat) (b : Nat) (j : Nat) : Nat :=
 
 theorem shifted_val {N : Nat} (hN : 2 ≤ N) {l : Nat → Nat} (h0 : l 0 % 2 ^ 52 = 0) :
     lval (shifted N l) N * 2 ^ 52 = lval l N := by
-  obtain ⟨n, rfl⟩ : ∃ n, N = n + 1 := ⟨N - 1, by omega⟩
-  have hn : n ≠ 0 := by omega
+  obtain ⟨n, rfl⟩ : ∃ n, N = n + 1 := ⟨N - 1, by omega_using [hN]⟩
+  have hn : n ≠ 0 := by omega_using [hN]
   rw [lval_succ_shift l n]
   have e1 : lval (shifted (n + 1) l) (n + 1) = lval (shifted (n + 1) l) n :=
     lval_succ_of (n := n) (by simp [shifted])
   have e2 : lval (shifted (n + 1) l) n =
       lval (fun j => l (j + 1)) n + lval (fun j => if j = 0 then l 0 / 2 ^ 52 else 0) n := by
     rw [← lval_add]; exact lval_congr fun j hj => by
-      simp only [shifted, show j + 1 < n + 1 by omega, ite_true]
+      simp only [shifted, show j + 1 < n + 1 by omega_using [hj], ite_true]
   have e3 : ∀ k, lval (fun j => if j = 0 then l 0 / 2 ^ 52 else 0) k = if k = 0 then 0 else l 0 / 2 ^ 52 := by
     intro k; induction k with
     | zero => rw [lval_zero]; rfl
@@ -53,7 +54,7 @@ theorem shifted_val {N : Nat} (hN : 2 ≤ N) {l : Nat → Nat} (h0 : l 0 % 2 ^ 5
   rw [h0] at this
   rw [Nat.add_mul, Nat.mul_comm (lval _ n)]
   simp only [hn, ite_false]
-  omega
+  omega_using [h0]
 
 /-- Operands of `N` limbs of 52 bits, with `m₀ k₀ ≡ -1 (mod 2⁵²)`. -/
 structure Ok (N : Nat) (o : Ops) : Prop where
@@ -94,8 +95,8 @@ theorem step_val {N : Nat} (hN : 2 ≤ N) {o : Ops} (ho : Ok N o) (L : Nat → N
     exact lval_congr fun j hj => by rw [Nat.mul_comm (hi _ _), lo_hi (ho.m j hj) hu]
   have hs : step N o L b =
       fun j => (fun j => shifted N (low o L b) j + hi (o.a j) b) j + hi (o.m j) (stepU o L b) := rfl
-  rw [hs, lval_add, lval_add, Nat.add_mul, Nat.add_mul, shifted_val hN (low0_dvd (by omega) ho L b), hl]
-  omega
+  rw [hs, lval_add, lval_add, Nat.add_mul, Nat.add_mul, shifted_val hN (low0_dvd (by omega_using [hN]) ho L b), hl]
+  omega_using [ha, hm]
 
 /-- A bound on the limbs kept by a step: below `S` before, below `S + 2⁵⁶`
 after, while `S ≤ 2⁶³`. -/
@@ -104,17 +105,17 @@ theorem step_lt {N : Nat} {o : Ops} {L : Nat → Nat} {b S : Nat} (hS : S ≤ 2 
   intro j hj
   have hl : ∀ j < N, low o L b j < S + 2 ^ 53 := fun j hj => by
     have := hL j hj; have := lo_lt (o.a j) b; have := lo_lt (o.m j) (stepU o L b)
-    unfold low; omega
+    unfold low; omega_arith
   have hc : low o L b 0 / 2 ^ 52 ≤ 2 ^ 12 := by
-    have := hl 0 (by omega)
-    exact Nat.le_of_lt_succ (Nat.div_lt_of_lt_mul (by omega))
+    have := hl 0 (by omega_using [hj])
+    exact Nat.le_of_lt_succ (Nat.div_lt_of_lt_mul (by omega_using [hS, this]))
   have := hi_lt (o.a j) b
   have := hi_lt (o.m j) (stepU o L b)
   unfold step shifted
   split
-  · have := hl (j + 1) (by omega)
-    split <;> omega
-  · omega
+  · have := hl (j + 1) (by omega_arith)
+    split <;> omega_arith
+  · omega_arith
 
 /-- The steps for the limbs `b 0, …, b (n - 1)` from `L`. -/
 def steps (N : Nat) (o : Ops) (b : Nat → Nat) : Nat → (Nat → Nat) → (Nat → Nat)
@@ -135,15 +136,15 @@ theorem steps_val {N : Nat} (hN : 2 ≤ N) {o : Ops} (ho : Ok N o) {b : Nat → 
     intro
     have h0 : steps N o b 0 L = L := rfl
     rw [h0, lval_zero, lval_zero]
-    omega
+    omega_using []
   | succ n ih =>
     intro hn
-    have e := step_val hN ho (steps N o b n L) (hb n (by omega))
+    have e := step_val hN ho (steps N o b n L) (hb n (by omega_using [hn]))
     have hs : steps N o b (n + 1) L = step N o (steps N o b n L) (b n) := rfl
     have hu : stepsU N o b L n = stepU o (steps N o b n L) (b n) := rfl
-    rw [hs, show 52 * (n + 1) = 52 + 52 * n by omega, Nat.pow_add, ← Nat.mul_assoc, lval_succ b n,
+    rw [hs, show 52 * (n + 1) = 52 + 52 * n by omega_using [], Nat.pow_add, ← Nat.mul_assoc, lval_succ b n,
       lval_succ (stepsU N o b L) n, hu]
-    exact Amm52.steps_alg e (ih (by omega))
+    exact Amm52.steps_alg e (ih (by omega_using [hn]))
 
 theorem steps_lt {N : Nat} {o : Ops} {b : Nat → Nat} {L : Nat → Nat} (hN : N ≤ 127)
     (hL : ∀ j < N, L j < 2 ^ 56) :
@@ -153,7 +154,7 @@ theorem steps_lt {N : Nat} {o : Ops} {b : Nat → Nat} {L : Nat → Nat} (hN : N
   | zero => intro _ j hj; rw [Nat.zero_add, Nat.one_mul]; exact hL j hj
   | succ n ih =>
     intro hn j hj
-    have h := step_lt (o := o) (b := b n) (S := (n + 1) * 2 ^ 56) (by omega) (ih (by omega)) j hj
+    have h := step_lt (o := o) (b := b n) (S := (n + 1) * 2 ^ 56) (by omega_using [hN, hn]) (ih (by omega_using [hn])) j hj
     rw [show (n + 1 + 1) * 2 ^ 56 = (n + 1) * 2 ^ 56 + 2 ^ 56 by rw [Nat.add_mul, Nat.one_mul]]
     exact h
 
@@ -165,6 +166,6 @@ theorem carryIn_zero {N : Nat} {L : Nat → Nat} (h : lval L N < 2 ^ (52 * N)) :
   · exact h0
   · exfalso
     have : R ≤ carryIn L N * R := Nat.le_mul_of_pos_left _ h0
-    omega
+    omega_using [e, h, this]
 
 end VG.Proof.Bignum.Amm52N

@@ -36,7 +36,7 @@ open VG.Proof.Gcm (Absorbed)
 theorem lensBlock_mod (L c : Nat) : Proof.Gcm.lensBlock (L % 2 ^ 64) c = Proof.Gcm.lensBlock L c := by
   simp only [Proof.Gcm.lensBlock]
   rw [← Proof.Gcm.be64_mod (8 * (L % 2 ^ 64)), ← Proof.Gcm.be64_mod (8 * L)]
-  congr 2; omega
+  congr 2; omega_using []
 
 theorem toNat_of_eq {x : BitVec 64} {L : Nat} (h : x = BitVec.ofNat 64 L) : x.toNat = L % 2 ^ 64 := by
   rw [h, BitVec.toNat_ofNat]
@@ -126,7 +126,7 @@ theorem saved_tagFrame {o : Nat} (ho : o = 0 ∨ o = 112) : ∀ r ∈ tagFrame s
   rcases hr with rfl | rfl | rfl | rfl
   · simpa using L.saved_st (d := 0) (k := 32) (by decide)
   · exact saved_w (by decide) (.inl (by decide))
-  · exact saved_w (by omega) (.inl (by omega))
+  · exact saved_w (by omega_using [ho]) (.inl (by omega_using [ho]))
   · exact saved_w (by decide) (.inr (by decide))
 
 end
@@ -153,7 +153,7 @@ theorem fin_out {s₀ s : State} {m₀ : Mem} {rs : List Region} (hf₀ : Frame 
       (ctxH s₀.mem (s₀.gpr .r3)) (ghashInput a ct) := by
     rw [h30]
     exact hab.congr (blockAt_frame hf₀ (dS (d := 16) (by decide)))
-      (bytesAt_frame hf₀ (dS (d := 32) (k := (ghashInput a ct).length % 16) (by omega)) (by omega))
+      (bytesAt_frame hf₀ (dS (d := 32) (k := (ghashInput a ct).length % 16) (by omega_using [])) (by omega_using []))
   rw [hf.out hab₀,
     h29, ciph_keep hf₀ hdc hR, h30,
     blockAt_frame hf₀ (by simpa using dS (d := 0) (k := 16) (by decide)), hj,

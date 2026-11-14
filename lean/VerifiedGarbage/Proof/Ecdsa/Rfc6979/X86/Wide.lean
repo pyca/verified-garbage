@@ -164,16 +164,16 @@ theorem zeroK_ok (hL : L.Ok) {o : Nat} (ho₁ : 152 ≤ o) (ho₂ : o + 72 ≤ 5
   | k + 1, hk, u, hc, hax => by
     have := hL.nB
     rw [List.range_succ, List.map_append, List.map_singleton, WP.block_append_iff]
-    refine WP.mono (zeroK_ok hL ho₁ ho₂ k (by omega) hc hax) fun u₁ ⟨hc₁, hg₁, hf₁, hb₁⟩ => ?_
-    refine WP.mono (zeroF_ok hL hc₁ (by rw [hg₁, hax]) (o := o + 4 * k) (by omega) (by omega))
+    refine WP.mono (zeroK_ok hL ho₁ ho₂ k (by omega_using [hk]) hc hax) fun u₁ ⟨hc₁, hg₁, hf₁, hb₁⟩ => ?_
+    refine WP.mono (zeroF_ok hL hc₁ (by rw [hg₁, hax]) (o := o + 4 * k) (by omega_using [ho₁]) (by omega_using [ho₂, hk]))
       fun u₂ ⟨hc₂, hg₂, hf₂, hb₂⟩ => ?_
     refine ⟨hc₂, hg₂.trans hg₁, hf₁.trans (hf₂.sub fun r hr => ⟨_, List.mem_singleton_self _,
-      by simp only [List.mem_singleton] at hr; subst hr; exact Offset.sub _ (by omega) (by omega)⟩), ?_⟩
-    rw [show 4 * (k + 1) = 4 * k + 4 by omega, Proof.Hmac.Common.bytesAt_add, Offset.add_add,
-      show 76 + o + 4 * k = 76 + (o + 4 * k) by omega, hb₂ 4 (Nat.le_refl _),
+      by simp only [List.mem_singleton] at hr; subst hr; exact Offset.sub _ (by omega_using []) (by omega_using [hk])⟩), ?_⟩
+    rw [show 4 * (k + 1) = 4 * k + 4 by omega_using [], Proof.Hmac.Common.bytesAt_add, Offset.add_add,
+      show 76 + o + 4 * k = 76 + (o + 4 * k) by omega_using [], hb₂ 4 (Nat.le_refl _),
       bytesAt_frame hf₂ (fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr
-        exact Offset.disjoint _ (by omega) (by omega) (by omega)) (by omega), hb₁, List.replicate_append_replicate]
+        exact Offset.disjoint _ (by omega_using []) (by omega_using [ho₂, hk]) (by omega_using [ho₂, hk])) (by omega_using [hk]), hb₁, List.replicate_append_replicate]
 
 /-- Eighteen zero words at `esp + o`, above `B`. -/
 theorem zero18_ok (hL : L.Ok) {o : Nat} (ho₁ : 152 ≤ o) (ho₂ : o + 72 ≤ 512) {u : State} (hc : Ctx L g m₀ u) :
@@ -227,7 +227,7 @@ theorem candTop_ok (hL : L.Ok) (hW : P.R.big = true) (hsh : P.R.sh ≠ 0) (hsh8 
   have hbc : (cfgOf P).big = true := hW
   rw [Cfg.candTop, hbc, ite_eq_left_of_eq_true _ _ (eq_self true), hsc]
   refine WP.seq (WP.mono (scrPtr_ok hL hc) fun u₁ ⟨hc₁, hm₁, hdi₁, _⟩ => ?_)
-  refine WP.mono (conv_ok hL hW hc₁ hdi₁ (o := fT) (s := P.R.sh) (by decide) (by decide) (by omega) (by omega))
+  refine WP.mono (conv_ok hL hW hc₁ hdi₁ (o := fT) (s := P.R.sh) (by decide) (by decide) (by omega_using [hsh]) (by omega_using [hsh8]))
     fun u₂ ⟨hc₂, _, hf₂, hb₂⟩ => ?_
   rw [hm₁] at hf₂ hb₂
   exact ⟨hc₂, hf₂, hb₂⟩

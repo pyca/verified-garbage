@@ -31,7 +31,7 @@ theorem leNum_bytesAt_mv (m : Mem) (p : Addr) :
     ∀ (o n : Nat), X25519.leNum (Spec.X448.bytesAt m (off p o) (8 * n)) = mv m p o n
   | _, 0 => by simp [Spec.X448.bytesAt, X25519.leNum, mv]
   | o, n + 1 => by
-    rw [show 8 * (n + 1) = 8 + 8 * n by omega, bytesAt_add, X25519.leNum_append, length_bytesAt,
+    rw [show 8 * (n + 1) = 8 + 8 * n by omega_using [], bytesAt_add, X25519.leNum_append, length_bytesAt,
       leNum_bytesAt_read, mv, show off p o + BitVec.ofNat 64 8 = off p (o + 8) by
         simp only [off, BitVec.add_assoc, BitVec.ofNat_add],
       leNum_bytesAt_mv m p (o + 8) n]
@@ -52,8 +52,8 @@ theorem loadU_ok (s : State) {p : Addr} (hp : s.gpr .rdx = p)
   apply WP.of_runBlock
   simp only [List.range, List.range.loop, List.map_cons, List.map_nil, w, W, List.getD_cons_succ,
     List.getD_cons_zero, runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, State.load64,
-    ea_at, hp, hr 0 (by omega), hr 8 (by omega), hr 16 (by omega), hr 24 (by omega),
-    hr 32 (by omega), hr 40 (by omega), hr 48 (by omega), Nat.reduceMul,
+    ea_at, hp, hr 0 (by omega_using []), hr 8 (by omega_using []), hr 16 (by omega_using []), hr 24 (by omega_using []),
+    hr 32 (by omega_using []), hr 40 (by omega_using []), hr 48 (by omega_using []), Nat.reduceMul,
     RegUpd.gpr_setReg, RegUpd.mem_setReg, RegUpd.rd_setReg, RegUpd.wr_setReg,
     ite_true, ite_false, reduceCtorEq, Option.map_some, Option.some.injEq, exists_eq_left']
   refine ⟨?_, fun r hr => ?_, rfl, rfl, rfl⟩
@@ -72,7 +72,7 @@ theorem saved_lt : ∀ rd ∈ saved, rd.2 + 8 ≤ 48 := by decide
 theorem Saved.outside {base : Addr} {g : Reg → BitVec 64} {m m' : Mem} (h : Saved base g m)
     {o n : Nat} (ho : Outside base o n m m') (h48 : 48 ≤ o) : Saved base g m' := fun rd hrd => by
   have := saved_lt rd hrd
-  exact (ho.word (by omega) (by omega)).trans (h rd hrd)
+  exact (ho.word (by omega_using [h48, this]) (by omega_using [this])).trans (h rd hrd)
 
 theorem save_ok {s : State} {base : Addr} (hc : s.gpr .rcx = base)
     (hw : (⟨base, 8192⟩ : Region) ∈ s.wr) :
@@ -81,13 +81,13 @@ theorem save_ok {s : State} {base : Addr} (hc : s.gpr .rcx = base)
       Saved base s.gpr s'.mem := by
   refine WP.mono (Spill.save_ok .rcx saved s fun p hp => ?_) fun s' ⟨hg, hrd, hwr, hm⟩ =>
     ⟨hg, hrd, hwr, ?_, ?_⟩
-  · have := saved_lt p hp; rw [hc]; exact ⟨_, hw, contains_sc (by omega)⟩
+  · have := saved_lt p hp; rw [hc]; exact ⟨_, hw, contains_sc (by omega_using [this])⟩
   · rw [hm, hc]
     intro x hx
     refine Spill.saveMem_frame_base _ _ _ _ saved_lt (by decide) x fun r hr hx' => ?_
     rw [List.mem_singleton.mp hr] at hx'
     simp only [Region.Contains, ofs] at hx hx'
-    omega
+    omega_using [hx, hx']
   · rw [hm, hc]; exact Spill.saveMem_saved _ _ _ _ (by decide)
 
 /-! ## The initial values -/
@@ -131,7 +131,7 @@ theorem stores_E {s : State} {base : Addr} (hs : Scr s base) (i : Index) (rs : L
       Outside base (slot i.val) 56 s.mem s'.mem ∧
       (∀ r, s'.gpr r = s.gpr r) ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
   have hi := slot_lt i
-  refine WP.mono (stores_ok hs (slot i.val) rs (by rw [hl]; simp only [ACC] at hi; omega))
+  refine WP.mono (stores_ok hs (slot i.val) rs (by rw [hl]; simp only [ACC] at hi; omega_using [hi]))
     fun s' ⟨e, o, g, rd, wr⟩ => ?_
   rw [hl] at e o
   refine ⟨?_, o, g, rd, wr⟩
@@ -180,8 +180,8 @@ theorem ladderInit_ok {s : State} {base : Addr} (hs : Scr s base) :
     funext i
     have := slot_ge i; have := slot_lt i
     simp only [E, F]
-    rw [m', ((writeW_outside _ _ _ (by decide)).fe (d := slot i.val) (Or.inr (by simp only [SWAP]; omega))
-      (by simp only [ACC] at *; omega))]
+    rw [m', ((writeW_outside _ _ _ (by decide)).fe (d := slot i.val) (Or.inr (by simp only [SWAP]; omega_arith))
+      (by simp only [ACC] at *; omega_using [this]))]
   have one : toFe (rv s₆ [.rdx, .rax, .rax, .rax, .rax, .rax, .rax]) = 1 := by
     simp only [rv, rax₆, rdx₆]; rfl
   have zero : toFe (rv s₇ [.rax, .rax, .rax, .rax, .rax, .rax, .rax]) = 0 := by
@@ -191,14 +191,14 @@ theorem ladderInit_ok {s : State} {base : Addr} (hs : Scr s base) :
   have w₄ : rv s₄ W = rv s W := rv_congr fun r _ => g₄ r
   have o' : Outside base 48 1424 s.mem s'.mem := by
     have q : ∀ (i : Index) {m m' : Mem}, Outside base (slot i.val) 56 m m' →
-        Outside base 48 1424 m m' := fun i {_ _} h => Outside.mono h (by have := slot_ge i; omega)
-          (by have := i.isLt; simp only [slot]; omega)
+        Outside base 48 1424 m m' := fun i {_ _} h => Outside.mono h (by have := slot_ge i; omega_using [this])
+          (by have := i.isLt; simp only [slot]; omega_using [])
     refine ((((q 0 o₄).trans (q 3 o₅)).trans ?_).trans ((q 1 o₇).trans ((q 2 o₈).trans (q 4 o₉)))).trans ?_
     · rw [k₆.2.1]; exact Outside.refl _ _ _ _
     · intro x hx
       rw [m']
-      exact (writeW_outside _ _ _ (by decide)).mono (by simp only [SWAP]; omega)
-        (by simp only [SWAP]; omega) x hx
+      exact (writeW_outside _ _ _ (by decide)).mono (by simp only [SWAP]; omega_using [])
+        (by simp only [SWAP]; omega_using []) x hx
   refine ⟨⟨by rw [g']; exact hs₉.rdi, wr' ▸ hs₉.wr, hn⟩, G, ?_, ?_, o', ?_⟩
   · rw [rd', rd₉, rd₈, rd₇, k₆.2.2.1, rd₅, rd₄]
   · rw [wr', wr₉, wr₈, wr₇, k₆.2.2.2, wr₅, wr₄]
@@ -251,16 +251,16 @@ theorem ladderInit_post {s s₂ s₃ : State} {base : Addr} {u : Spec.X448.Fe}
   have hs₃ := hs₂.of_keeps k₃ (by decide)
   refine WP.mono (ladderInit_ok hs₃) fun s' ⟨hs', G, rd', wr', o', e0, e1, e2, e3, e4, sw⟩ => ?_
   have o₃ : Outside base 0 8192 s.mem s₃.mem := by
-    rw [k₃.2.1]; exact o₂.mono (by omega) (by omega)
+    rw [k₃.2.1]; exact o₂.mono (by omega_using []) (by omega_using [])
   refine ⟨hs', ?_, fun r hr => ?_, by rw [rd', k₃.2.2.1, rd₂], by rw [wr', k₃.2.2.2, wr₂],
-    o₃.trans (o'.mono (by omega) (by omega)), ?_, by rw [e0, hu], e1, e2, by rw [e3, hu], e4, sw⟩
+    o₃.trans (o'.mono (by omega_using []) (by omega_using [])), ?_, by rw [e0, hu], e1, e2, by rw [e3, hu], e4, sw⟩
   · rw [G _ (by decide), k₃.1 _ (by decide), r15₂]
   · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
     rw [G r (by simp [hr.1, hr.2.2.1]), k₃.1 r (by simp [W, hr.2.2.2.2.1, hr.2.2.2.2.2.1, hr.2.2.2.2.2.2.1,
       hr.2.2.2.2.2.2.2.1, hr.2.2.2.2.2.2.2.2.1, hr.2.2.2.2.2.2.2.2.2.1, hr.2.2.2.2.2.2.2.2.2.2.1]),
       hs r (by simp [hr.2.1, hr.2.2.1, hr.2.2.2.1, hr.2.2.2.2.2.2.2.2.2.2.2])]
   · have sv : Saved base s.gpr s₃.mem := by rw [k₃.2.1]; exact sv₂
-    exact sv.outside o' (by omega)
+    exact sv.outside o' (by omega_using [])
 
 /-- `setup`: the ladder's initial state, from the u-coordinate at `p`. -/
 theorem setup_ok {s : State} {base p : Addr} (hc : s.gpr .rcx = base)

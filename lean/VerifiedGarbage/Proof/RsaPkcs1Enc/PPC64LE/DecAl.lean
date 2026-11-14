@@ -29,7 +29,7 @@ theorem borrow (a b : Nat) (ha : a < 2 ^ 63) (hb : b < 2 ^ 63) :
     (BitVec.ofNat 64 a - BitVec.ofNat 64 b) >>> 63 = BitVec.ofNat 64 (if b ≤ a then 0 else 1) := by
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_ushiftRight, BitVec.toNat_sub, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow]
-  split <;> omega
+  split <;> omega_arith
 
 /-- The select by a mask from a borrow. -/
 theorem xor_sel (a c : BitVec 64) (p : Prop) [Decidable p] :
@@ -65,24 +65,24 @@ theorem maskStep_ok {x j : Nat} (hx1 : 1 ≤ x) (hx : x < 2 ^ 32) (hj : j < Spec
     WP isa (.block [.add .r8 .r8 .r8, .addi .r8 .r8 1, .sub .r10 .r8 .r9, .lsr .d .r10 .r10 63]) u
       fun w => (w.mem = u.mem ∧ Keep [.r8, .r10] u w ∧ w.gpr .r8 = BitVec.ofNat 64 (2 ^ (j + 1) - 1)) ∧
         ((w.gpr .r10).toNat ≠ 0 ↔ j + 1 ≠ Spec.RsaPkcs1Enc.bitLength x) := by
-  have hlt := Proof.RsaPkcs1Enc.bitMask_lt (x := x) (j := j) (by omega) hj
+  have hlt := Proof.RsaPkcs1Enc.bitMask_lt (x := x) (j := j) (by omega_using [hx1]) hj
   have hpj : 2 ^ (j + 1) < 2 ^ 34 := by
-    rw [Nat.pow_succ]; generalize 2 ^ j = p at *; omega
+    rw [Nat.pow_succ]; generalize 2 ^ j = p at *; omega_using [hx, hlt]
   have e8 : BitVec.ofNat 64 (2 ^ j - 1) + BitVec.ofNat 64 (2 ^ j - 1) + BitVec.ofNat 64 1 =
       BitVec.ofNat 64 (2 ^ (j + 1) - 1) := by
     rw [show 2 ^ (j + 1) = 2 ^ j * 2 from Nat.pow_succ ..] at hpj ⊢
     exact dbl _ Nat.one_le_two_pow hpj
   refine WP.mono maskBody_ok fun w ⟨⟨wm, w8, w10⟩, kw⟩ => ⟨⟨wm, kw, by rw [w8, hu8, e8]⟩, ?_⟩
-  rw [w10, hu8, hu9, e8, borrow _ _ (by omega) (by omega), BitVec.toNat_ofNat]
+  rw [w10, hu8, hu9, e8, borrow _ _ (by omega_using [hpj]) (by omega_using [hx]), BitVec.toNat_ofNat]
   by_cases he : j + 1 = Spec.RsaPkcs1Enc.bitLength x
-  · have h1 := Proof.RsaPkcs1Enc.bitMask_ge (x := x) (by omega)
+  · have h1 := Proof.RsaPkcs1Enc.bitMask_ge (x := x) (by omega_using [hx1])
     rw [he]
-    simp only [show x ≤ 2 ^ Spec.RsaPkcs1Enc.bitLength x - 1 from h1, ↓reduceIte]; omega
-  · have h1 := Proof.RsaPkcs1Enc.bitMask_lt (x := x) (j := j + 1) (by omega) (by omega)
-    simp only [show ¬ x ≤ 2 ^ (j + 1) - 1 by omega, ↓reduceIte]; omega
+    simp only [show x ≤ 2 ^ Spec.RsaPkcs1Enc.bitLength x - 1 from h1, ↓reduceIte]; omega_using []
+  · have h1 := Proof.RsaPkcs1Enc.bitMask_lt (x := x) (j := j + 1) (by omega_using [hx1]) (by omega_using [hj, he])
+    simp only [show ¬ x ≤ 2 ^ (j + 1) - 1 by omega_using [h1], ↓reduceIte]; omega_using [he]
 
 theorem bitLength_pos {x : Nat} (hx1 : 1 ≤ x) : 0 < Spec.RsaPkcs1Enc.bitLength x := by
-  simp only [Spec.RsaPkcs1Enc.bitLength]; split <;> omega
+  simp only [Spec.RsaPkcs1Enc.bitLength]; split <;> omega_arith
 
 theorem maskLoop_ok {t₀ : State} {x : Nat} (hx1 : 1 ≤ x) (hx : x < 2 ^ 32) (h8 : t₀.gpr .r8 = BitVec.ofNat 64 0)
     (h9 : t₀.gpr .r9 = BitVec.ofNat 64 x) :
@@ -102,10 +102,10 @@ theorem cand_bv (a b : Byte) {M : Nat} (hM : M < 2 ^ 64) :
   have hl : (256 * a.toNat + b.toNat) &&& M ≤ 256 * a.toNat + b.toNat := Nat.and_le_left
   simp only [BitVec.toNat_and, BitVec.toNat_add, BitVec.toNat_shiftLeft, BitVec.toNat_setWidth,
     BitVec.toNat_ofNat, Nat.shiftLeft_eq]
-  rw [Nat.mod_eq_of_lt (a := a.toNat) (by omega), Nat.mod_eq_of_lt (a := b.toNat) (by omega),
-    Nat.mod_eq_of_lt (a := M) hM, Nat.mod_eq_of_lt (a := a.toNat * 2 ^ 8) (by omega),
-    Nat.mod_eq_of_lt (a := a.toNat * 2 ^ 8 + b.toNat) (by omega), show a.toNat * 2 ^ 8 = 256 * a.toNat by omega,
-    Nat.mod_eq_of_lt (by omega)]
+  rw [Nat.mod_eq_of_lt (a := a.toNat) (by omega_using []), Nat.mod_eq_of_lt (a := b.toNat) (by omega_using []),
+    Nat.mod_eq_of_lt (a := M) hM, Nat.mod_eq_of_lt (a := a.toNat * 2 ^ 8) (by omega_using []),
+    Nat.mod_eq_of_lt (a := a.toNat * 2 ^ 8 + b.toNat) (by omega_using []), show a.toNat * 2 ^ 8 = 256 * a.toNat by omega_using [],
+    Nat.mod_eq_of_lt (by omega_using [hl])]
 
 theorem alBody_ok {t : State} (h0 : InRegions (t.rd ++ t.wr) (t.gpr .r11 + BitVec.ofNat 64 0) 1)
     (h1 : InRegions (t.rd ++ t.wr) (t.gpr .r11 + BitVec.ofNat 64 1) 1) :
@@ -144,18 +144,18 @@ theorem alLoop_ok {t₀ : State} {x M : Nat} {CL : List Byte} {B : Addr}
       u.gpr .r6 = BitVec.ofNat 64 ((List.range j).foldl (altStep (x + 11) CL) 0))
     (fun j hj u ⟨um, ku, u11, u6⟩ _ => ?_) ⟨rfl, Keep.refl _ _, by rw [h11]; exact (BitVec.add_zero _).symm, h6⟩
     h7 |>.mono fun u ⟨a, b, _, c⟩ => ⟨a, b, c⟩
-  have hr0 := hr (2 * j) (by omega)
-  have hr1 := hr (2 * j + 1) (by omega)
+  have hr0 := hr (2 * j) (by omega_using [hj])
+  have hr1 := hr (2 * j + 1) (by omega_using [hj])
   rw [← ku.rd, ← ku.wr] at hr0 hr1
   have u8 : u.gpr .r8 = BitVec.ofNat 64 M := (ku.gpr _ (by decide)).trans h8
   have u9 : u.gpr .r9 = BitVec.ofNat 64 x := (ku.gpr _ (by decide)).trans h9
   refine WP.mono (alBody_ok (by rw [u11, BitVec.add_zero]; exact hr0) (by rw [u11, Offset.add_add]; exact hr1))
     fun w ⟨⟨wm, w11, w7, w6⟩, kw⟩ => ⟨⟨wm.trans um, ku.trans' kw, by rw [w11, u11, Offset.add_add]; rfl, ?_⟩, w7⟩
-  rw [w6, u6, u8, u9, u11, BitVec.add_zero, Offset.add_add, um, hm _ (by omega), hm _ (by omega),
-    cand_bv _ _ (by omega), Proof.RsaPkcs1Enc.foldl_range_succ]
+  rw [w6, u6, u8, u9, u11, BitVec.add_zero, Offset.add_add, um, hm _ (by omega_using [hj]), hm _ (by omega_using [hj]),
+    cand_bv _ _ (by omega_using [hMl]), Proof.RsaPkcs1Enc.foldl_range_succ]
   have hc : (256 * (CL.getD (2 * j) 0).toNat + (CL.getD (2 * j + 1) 0).toNat) &&& M < 2 ^ 32 :=
     Nat.lt_of_le_of_lt Nat.and_le_right hMl
-  rw [borrow _ _ (by omega) (by omega), xor_sel]
+  rw [borrow _ _ (by omega_using [hx]) (by omega_using [hc]), xor_sel]
   have he : (256 * (CL.getD (2 * j) 0).toNat + (CL.getD (2 * j + 1) 0).toNat) &&& M =
       Spec.Rsa.os2ip [CL.getD (2 * j) 0, CL.getD (2 * j + 1) 0] % 2 ^ Spec.RsaPkcs1Enc.bitLength (x + 11 - 11) := by
     rw [Proof.RsaPkcs1Enc.cand_eq, Nat.add_sub_cancel, hM, Proof.RsaPkcs1Enc.bitMask, Nat.and_two_pow_sub_one_eq_mod]
@@ -194,10 +194,10 @@ theorem maskPart_ok {t : State} (hl : AMR s R EM kd t) : WP isa maskPart t (MK s
     prun [fp, exec_addSp0, hc.sp, c1, i1, hc.sl.k]
   have e9 : s.gpr .r7 - BitVec.ofNat 64 11 = BitVec.ofNat 64 ((s.gpr .r7).toNat - 11) := by
     apply BitVec.eq_of_toNat_eq
-    rw [BitVec.toNat_sub_of_le (by rw [BitVec.le_def, BitVec.toNat_ofNat]; omega), BitVec.toNat_ofNat,
-      BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega)]
+    rw [BitVec.toNat_sub_of_le (by rw [BitVec.le_def, BitVec.toNat_ofNat]; omega_using [hk64]), BitVec.toNat_ofNat,
+      BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using []), Nat.mod_eq_of_lt (by omega_using [])]
   rw [e9] at x9
-  exact WP.mono (maskLoop_ok (x := (s.gpr .r7).toNat - 11) (by omega) (by omega) x8 x9) fun u ⟨um, ku, u8⟩ =>
+  exact WP.mono (maskLoop_ok (x := (s.gpr .r7).toNat - 11) (by omega_using [hk64]) (by omega_using [hk]) x8 x9) fun u ⟨um, ku, u8⟩ =>
     ⟨hl.regs ((k₁.mono (by decide)).trans' (ku.mono (by decide))) (um.trans m₁), u8,
       (ku.gpr _ (by decide)).trans x9⟩
 
@@ -223,14 +223,14 @@ theorem alPart_ok {t : State} (hm : MK s R EM kd t) : WP isa alPart t (AL s R EM
     prun [fp, exec_addSp0, hc.sp, c1, c2, i1, hc.sl.scr, exec_addi (show Reg.r11 ≠ .r0 by decide) c2]
   have hc₁ : Post s R EM t₁ := hc.regs k₁.rd k₁.wr k₁.sp m₁ fun r hr => k₁.gpr r (by revert r; decide)
   have hcl : Spec.Rsa.bytesAt t.mem (scA s sCL) 256 = clOf kd := hm.amr.cl
-  have hM := Proof.RsaPkcs1Enc.bitMask_le (x := (s.gpr .r7).toNat - 11) (by omega)
+  have hM := Proof.RsaPkcs1Enc.bitMask_le (x := (s.gpr .r7).toNat - 11) (by omega_using [hk64])
   refine WP.mono (alLoop_ok (x := (s.gpr .r7).toNat - 11) (M := bitMask ((s.gpr .r7).toNat - 11)) (CL := clOf kd)
-    (B := scA s sCL) (by omega) rfl (by omega)
+    (B := scA s sCL) (by omega_using [hk]) rfl (by omega_using [hk, hM])
     (fun i hi => by rw [← hcl, bytes_getD _ _ hi, m₁])
-    (fun i hi => by rw [Offset.add_add]; exact scInR h hc₁.wr (a := sCL + i) (n := 1) (by unfold sCL scrBytes; omega))
+    (fun i hi => by rw [Offset.add_add]; exact scInR h hc₁.wr (a := sCL + i) (n := 1) (by unfold sCL scrBytes; omega_using [hi]))
     (by rw [k₁.gpr _ (by decide), hm.r8]) (by rw [k₁.gpr _ (by decide), hm.r9]) x11 x7 x6) fun u ⟨um, ku, u6⟩ =>
     ⟨hm.amr.regs ((k₁.mono (by decide)).trans' (ku.mono (by decide))) (um.trans m₁),
-      by rw [u6, Nat.sub_add_cancel (by omega)]; rfl⟩
+      by rw [u6, Nat.sub_add_cancel (by omega_using [hk64])]; rfl⟩
 
 end
 

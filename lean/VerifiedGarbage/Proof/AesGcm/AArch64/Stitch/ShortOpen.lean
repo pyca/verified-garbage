@@ -53,7 +53,7 @@ theorem resBit_ok {b : Nat} (hb : b ≤ 1) (s : State) (h10 : s.gpr .x10 = BitVe
   refine WP.of_runBlock ⟨_, by arun [], ?_⟩
   refine ⟨?_, by others_tac, rfl, rfl, rfl, rfl⟩
   simp only [gpr_write, ite_true, reduceCtorEq, ite_false, h10]
-  rcases (by omega : b = 0 ∨ b = 1) with rfl | rfl <;> rfl
+  rcases (by omega_using [hb] : b = 0 ∨ b = 1) with rfl | rfl <;> rfl
 
 /-- `openShortG` up to the branch on the tags. -/
 def openShortA (tb : List Instr) : Prog isa :=
@@ -557,8 +557,8 @@ theorem openShortB_ok {to : Bool} {Ctx W SP Np A D O Tg : Addr} {R al n tl : Nat
   simp only [tagEqS] at x24₁₇
   generalize hJ0 : Spec.Gcm.j0 (ctxH s₀.mem Ctx) (bytesAt s₀.mem Np 12) = J at pt₁₇
   generalize hc : (n + 15) / 16 = c at x25₁₇ pt₁₇
-  have hc6 : c ≤ 6 := by omega
-  have hcn : n ≤ 16 * c := by omega
+  have hc6 : c ≤ 6 := by omega_using [hhi, hc]
+  have hcn : n ≤ 16 * c := by omega_using [hc]
   have hw : ∀ {v : State}, v.wr = s₀.wr → Covers [⟨W, 2560⟩] v.wr := fun h => by
     rw [h, ← wr₁₇]; exact he₁₇.perm.w
   unfold openShortB
@@ -612,7 +612,7 @@ theorem openShortB_ok {to : Bool} {Ctx W SP Np A D O Tg : Addr} {R al n tl : Nat
     refine WP.seq ?_
     rw [List.append_assoc, WP.block_append_iff]
     obtain ⟨t₂, run₂, x12t₂, g₂', m₂', _, sp₂', rd₂', wr₂'⟩ := Stitch.atP_ok (c := c) .x12
-      Impl.AesGcm.AArch64.Stitch.b1O 1 (by decide) (by unfold Impl.AesGcm.AArch64.Stitch.b1O; omega) u he₁₇.x19
+      Impl.AesGcm.AArch64.Stitch.b1O 1 (by decide) (by unfold Impl.AesGcm.AArch64.Stitch.b1O; omega_using [hc6]) u he₁₇.x19
       x25₁₇ (by decide)
     refine WP.of_runBlock ⟨t₂, run₂, ?_⟩
     have he₂ : Env Ctx (W + BitVec.ofNat 64 16) W SP t₂ := he₁₇.keep (fun r hr => g₂' r (by
@@ -642,9 +642,9 @@ theorem openShortB_ok {to : Bool} {Ctx W SP Np A D O Tg : Addr} {R al n tl : Nat
       rw [r₁₈.rd, rd₂', rd₁₇]
     have wr₁₈ : s₁₈.wr = s₀.wr := by
       rw [r₁₈.wr, wr₂', wr₁₇]
-    refine WP.mono (Stitch.copyQ_ok s₁₈ ⟨x12₁₈, x11₁₈, x13₁₈, by omega,
-      by rw [rd₁₈, wr₁₈]; exact covers_left (covers_off (hw rfl) (by omega) (by decide)),
-      by rw [r₁₈.wr, wr₂']; exact ow₁₇.wr, (doW.sub_right (Lay.wSub (by omega))).symm⟩)
+    refine WP.mono (Stitch.copyQ_ok s₁₈ ⟨x12₁₈, x11₁₈, x13₁₈, by omega_using [hhi],
+      by rw [rd₁₈, wr₁₈]; exact covers_left (covers_off (hw rfl) (by omega_using [hhi]) (by decide)),
+      by rw [r₁₈.wr, wr₂']; exact ow₁₇.wr, (doW.sub_right (Lay.wSub (by omega_using [hhi]))).symm⟩)
       fun s₁₉ ⟨m₁₉, g₁₉, sp₁₉, rd₁₉, wr₁₉⟩ => ?_
     have he₁₉ : Env Ctx (W + BitVec.ofNat 64 16) W SP s₁₉ := he₁₇.keep (fun r hr => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -658,7 +658,7 @@ theorem openShortB_ok {to : Bool} {Ctx W SP Np A D O Tg : Addr} {R al n tl : Nat
       (fun _ => ⟨?_, ?_⟩) fun h => absurd heq h
     · rw [g₁₉ _ (by decide), r₁₈.others _ (by decide), g₂' _ (by decide), x24₁₇]
       simp [heq]
-    · rw [m₁₉, selfB _ _ _ (lb _ _ _) (by omega), m₁₈, pt₁₇]
+    · rw [m₁₉, selfB _ _ _ (lb _ _ _) (by omega_using [hhi]), m₁₈, pt₁₇]
 
 /-- `openShortG to`, from the state `open` (or `open_to`) leaves once the
 received tag is at `W`, for a record of at most 96 bytes. -/

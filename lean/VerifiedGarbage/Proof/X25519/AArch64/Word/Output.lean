@@ -28,7 +28,7 @@ theorem restore_ok {s : State} {base : Addr} (hb : s.gpr .x0 = base)
   simp only [VG.Impl.Ed25519.AArch64.ld, saved, List.map_cons, List.map_nil, runBlock_cons, runStep_some, runBlock_nil,
     exec, addr, Size.bytes, State.load, RegUpd.gpr_write, RegUpd.mem_write, RegUpd.rd_write,
     RegUpd.wr_write, hb, BitVec.setWidth_eq, Nat.reduceMod, Nat.reduceMul, Nat.reduceLT, and_self,
-    hr 0 (by omega), hr 8 (by omega), hr 16 (by omega), hr 24 (by omega), hr 32 (by omega), hr 40 (by omega),
+    hr 0 (by omega_using []), hr 8 (by omega_using []), hr 16 (by omega_using []), hr 24 (by omega_using []), hr 32 (by omega_using []), hr 40 (by omega_using []),
     ite_true, ite_false, reduceCtorEq, Option.bind_some, Option.map_some, Option.some.injEq, exists_eq_left']
   refine ⟨fun rd hrd => ?_, ⟨?_, rfl, rfl, rfl, rfl⟩⟩
   · have e := hsv rd hrd
@@ -45,11 +45,11 @@ theorem out_ok {s : State} {q : Addr} (hq : s.gpr .x1 = q) (hw : (⟨q, 32⟩ : 
     WP isa (.block [.str .x .x4 .x1 0, .str .x .x5 .x1 8, .str .x .x6 .x1 16, .str .x .x7 .x1 24]) s
       fun t => t = { s with mem := st4 s.mem q 0 (s.gpr .x4) (s.gpr .x5) (s.gpr .x6) (s.gpr .x7) } := by
   have w : ∀ d, d + 8 ≤ 32 → InRegions s.wr (off q d) 8 :=
-    fun d hd => ⟨_, hw, Offset.contains_base q hd (by omega)⟩
+    fun d hd => ⟨_, hw, Offset.contains_base q hd (by omega_using [hd])⟩
   apply WP.of_runBlock
   simp only [runBlock_cons, runStep_some, runBlock_nil, exec, addr, Size.bytes, State.store, read_x,
     hq, BitVec.setWidth_eq, Nat.reduceMod, Nat.reduceMul, Nat.reduceLT, and_self, ite_true,
-    w 0 (by omega), w 8 (by omega), w 16 (by omega), w 24 (by omega),
+    w 0 (by omega_using []), w 8 (by omega_using []), w 16 (by omega_using []), w 24 (by omega_using []),
     Option.bind_some, Option.some.injEq, exists_eq_left']
   rfl
 
@@ -69,7 +69,7 @@ theorem saved_output {base q : Addr} {m : Mem} {g : Reg → BitVec 64}
     simp only [saved,List.mem_cons,List.not_mem_nil,or_false] at hr
     rcases hr with rfl|rfl|rfl|rfl|rfl|rfl <;> decide
   change (st4 m q 0 w0 w1 w2 w3).readW (off base rd.2) 64 = g rd.1
-  rw [hf.readW (a := off base rd.2) (w := 64) (r := ⟨base,4096⟩) (Offset.contains_base base hh (by omega))
+  rw [hf.readW (a := off base rd.2) (w := 64) (r := ⟨base,4096⟩) (Offset.contains_base base hh (by omega_using [hh]))
     (by simp only [List.mem_singleton,forall_eq]; exact hd.symm) (by decide)]
   exact hs rd hr
 

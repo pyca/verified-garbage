@@ -47,13 +47,13 @@ theorem ReadyW.data {s : State} {p t : Addr} {terms : List (Nat × Nat)}
   · intro fg hf; exact ((h.apartF fg hf).sub_left (half_sub p)).sub_right (half_sub _)
   · intro fg hf; exact ((h.apartG fg hf).sub_left (half_sub p)).sub_right (half_sub _)
   · intro fg hf o ho
-    exact h.readF fg hf _ _ (in_regions (List.mem_singleton_self _) (contains_off (by omega) (by decide)))
+    exact h.readF fg hf _ _ (in_regions (List.mem_singleton_self _) (contains_off (by omega_using [ho]) (by decide)))
   · intro fg hf o ho
-    exact h.readG fg hf _ _ (in_regions (List.mem_singleton_self _) (contains_off (by omega) (by decide)))
+    exact h.readG fg hf _ _ (in_regions (List.mem_singleton_self _) (contains_off (by omega_using [ho]) (by decide)))
   · intro o ho
-    exact h.write _ _ (in_regions (List.mem_singleton_self _) (contains_off (by omega) (by decide)))
+    exact h.write _ _ (in_regions (List.mem_singleton_self _) (contains_off (by omega_using [ho]) (by decide)))
   · intro c hc
-    exact h.tableRead _ _ (in_regions (List.mem_singleton_self _) (contains_off (by omega) (by decide)))
+    exact h.tableRead _ _ (in_regions (List.mem_singleton_self _) (contains_off (by omega_using [hc]) (by decide)))
   · intro c hc; exact h.table.lanes hc
   · intro i _; exact (gamma i).isLt
 

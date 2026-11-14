@@ -71,9 +71,9 @@ theorem RS.store {s t : State} {pass slice lane index ctr : Nat} {st : FillState
     RS s₀ pass slice lane index ctr st J1 J2 t := by
   refine ⟨h.fs.store hp it hd hd' ha hm, ?_, ?_⟩
   · show t.mem.readW _ 32 = _
-    rw [hm, lw_store hp (by omega) (by decide) (by simp [j1Off] at h1 ⊢; omega)]; exact h.j1
+    rw [hm, lw_store hp (by omega_using [hd]) (by decide) (by simp [j1Off] at h1 ⊢; omega_using [ha, h1])]; exact h.j1
   · show t.mem.readW _ 32 = _
-    rw [hm, lw_store hp (by omega) (by decide) (by simp [j2Off] at h2 ⊢; omega)]; exact h.j2
+    rw [hm, lw_store hp (by omega_using [hd]) (by decide) (by simp [j2Off] at h2 ⊢; omega_using [ha, h2])]; exact h.j2
 
 /-- The block of `refLane`: J₂ mod lanes, to the locals, and Z in the first
 slice of the first pass. -/
@@ -103,10 +103,10 @@ theorem refLaneBlk_ok {s : State} {pass slice lane index ctr : Nat} {st : FillSt
     wp_cmp (op2_imm (by decide)) fun t f z => WP.block_nil ?_
   have h₇ := h₅.of_only (((Only.of_upd u₆).trans (Only.of_upd u₇)).trans (Only.of_fupd f)) (by decide)
   have r : s₃.gpr .r0 = BitVec.ofNat 32 (J2.toNat % lanesN s₀) := BitVec.eq_of_toNat_eq (by
-    rw [r₃, u₂.other _ (by decide), u₁.gpr, h.j2, toNat32 (by have := J2.isLt; have := Nat.mod_le J2.toNat (lanesN s₀); omega)])
+    rw [r₃, u₂.other _ (by decide), u₁.gpr, h.j2, toNat32 (by have := J2.isLt; have := Nat.mod_le J2.toNat (lanesN s₀); omega_using [this])])
   refine ⟨h₇, ?_, by rw [lw_mem f.mem, lw_mem u₇.mem, lw_mem u₆.mem, lw_mem u₅.mem, v₄, r]⟩
   rw [MdStream.Arm.eval_eq, z, u₇.gpr, u₆.other _ (by decide), u₅.gpr, u₆.gpr, lw_mem u₅.mem, h₄.fs.pos.slice,
-    h₄.fs.pos.pass, sub_zero32, or_zero hpass (by omega)]
+    h₄.fs.pos.pass, sub_zero32, or_zero hpass (by omega_using [hs])]
 
 /-- `refLane`: the reference lane, to the locals. -/
 theorem refLane_ok {s : State} {pass slice lane index ctr : Nat} {st : FillState} {J1 J2 : BitVec 32}
@@ -160,7 +160,7 @@ theorem refStart_ok {s : State} {pass slice lane index ctr : Nat} {st : FillStat
     refine WP.ite (decide (slice = 3)) (by
       show VG.Arm.eval .eq _ = _
       rw [MdStream.Arm.eval_eq, z₆, u₅.gpr, h₄.fs.pos.slice, show (3 : BitVec 32) = BitVec.ofNat 32 3 from rfl,
-        MdStream.Arm.sub_beq (by omega) (by decide)]) (fun hb' => ?_) fun hb' => ?_
+        MdStream.Arm.sub_beq (by omega_using [hs]) (by decide)]) (fun hb' => ?_) fun hb' => ?_
     · refine WP.block_nil ⟨h₆, by rw [lw_mem m₆, r₂], ?_⟩
       rw [lw_mem m₆, v₂, u₁.gpr, startV, ite_eq_right hp0, of_decide_eq_true hb', ll, Nat.mod_self]; rfl
     · have hs3 : slice ≠ 3 := of_decide_eq_false hb'
@@ -174,7 +174,7 @@ theorem refStart_ok {s : State} {pass slice lane index ctr : Nat} {st : FillStat
       · exact h₁₀.store hp it (d := startOff) (by decide) (by decide) (by decide) (by decide) (by decide) mt
       · rw [ot _ (by decide) (by decide), lw_mem m₁₀, r₂]
       · have : (slice + 1) * (prm s₀).segmentLen < (prm s₀).laneLen := by
-          rw [ll]; exact Nat.mul_lt_mul_of_pos_right (by omega) (by omega)
+          rw [ll]; exact Nat.mul_lt_mul_of_pos_right (by omega_using [hs, hs3]) (by omega_using [s2])
         rw [vt, u₁₀.gpr, u₉.other _ (by decide), u₈.gpr, u₇.gpr, u₉.gpr, lw_mem u₈.mem, lw_mem u₇.mem,
           h₆.fs.pr.segLen, lw_mem (show s₆.mem = s₂.mem from m₆), h₂.fs.pos.slice,
           show (1 : BitVec 32) = BitVec.ofNat 32 1 from rfl, BitVec.ofNat_add_ofNat, ofNat_mul_ofNat,
@@ -207,7 +207,7 @@ theorem countBase_ok {s : State} {pass slice lane index ctr : Nat} {st : FillSta
       wp_sub (op2_reg _ _) fun t u => WP.block_nil ⟨(((k₂.trans (Only.of_upd u₃)).trans (Only.of_upd u₄)).trans
         (Only.of_upd u)).mono (by simp), ?_⟩
     rw [u.gpr, u₄.other _ (by decide), u₃.gpr, u₄.gpr, lw_mem u₃.mem, h₂.fs.pr.laneLen, h₂.fs.pr.segLen,
-      MdStream.Arm.sub_ofNat (by omega), baseV, ite_eq_right (of_decide_eq_false hb)]
+      MdStream.Arm.sub_ofNat (by omega_using [ll]), baseV, ite_eq_right (of_decide_eq_false hb)]
 
 end
 

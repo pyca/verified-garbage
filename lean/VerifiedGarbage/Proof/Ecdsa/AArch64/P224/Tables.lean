@@ -4,6 +4,7 @@ public import VerifiedGarbage.Impl.Ecdsa.P224.AArch64
 public import VerifiedGarbage.Proof.Framework.ConstMem
 import VerifiedGarbage.Proof.Weierstrass.TCombWords
 import VerifiedGarbage.Proof.P224.Comb7Shape
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # ECDSA over P-224 on AArch64: the comb's tables in a static
@@ -51,6 +52,6 @@ tables). -/
 theorem satMem_held : ∀ i < p224.combWords.length,
     satMem.readW (0x100000 + BitVec.ofNat 64 (8 * i)) 64 = p224.combWords.getD i 0 := by
   unfold satMem
-  exact constMem_held _ _ (by rw [p224_combWords_length]; omega)
+  exact constMem_held _ _ (by rw [p224_combWords_length]; omega_using [])
 
 end VG.Proof.Ecdsa.AArch64.P224

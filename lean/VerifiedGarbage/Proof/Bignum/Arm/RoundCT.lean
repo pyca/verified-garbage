@@ -52,7 +52,7 @@ theorem productStage_ready {base : BitVec 32} {size tmp a b mod acc n i : Nat} (
   have nowrap := h.ctx.workspace.nowrap
   have fits := h.ctx.mFits
   have sep := h.ctx.accM
-  have modulus := outside.val32 (d := mod) (k := n) (by omega) (by omega)
+  have modulus := outside.val32 (d := mod) (k := n) (by omega_using [sep]) (by omega_using [nowrap, fits])
   refine ⟨h.ctx.congr keep.wr, ptr, inv, header, ?_, ?_⟩
   · rw [modulus]; exact inverse
   · rw [product, modulus]

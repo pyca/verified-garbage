@@ -37,7 +37,7 @@ theorem window_ok {s : State} {P : Addr} {w : Nat} {mi : BitVec 64}
       ((show wv t.mem P (slot w aY) w * (2^(64*w))^32 % X =
         wv s.mem P (slot w aY) w^32 * wv s.mem P (slot w (8+v)) w % X from vt).trans hm)
   · intro k hk he hj hn' hb
-    apply ft.word_eq _ (by have := hdr_lt_slot w 8 hk; have := hc.scrT.nowrap; omega)
+    apply ft.word_eq _ (by have := hdr_lt_slot w 8 hk; have := hc.scrT.nowrap; omega_using [hk])
     intro r hr
     simp only [rawWindowRanges,List.mem_cons,List.not_mem_nil,or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
@@ -45,7 +45,7 @@ theorem window_ok {s : State} {P : Addr} {w : Nat} {mi : BitVec 64}
       | (have := hdr_lt_slot w aAcc hk; simp only; omega)
       | (have := hdr_lt_slot w aTmp hk; simp only; omega)
       | (have := hdr_lt_slot w aY hk; simp only; omega)
-      | (have := hdr_lt_slot w Crt.aT hk; simp only; omega)
+      | (have := hdr_lt_slot w Crt.aT hk; simp only; omega_using [this])
       | (simp only; omega)
 
 def window : Window := ⟨code,window_ok,code_ct⟩

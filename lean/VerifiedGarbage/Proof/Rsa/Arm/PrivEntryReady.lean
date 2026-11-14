@@ -22,7 +22,7 @@ theorem PrivEntryInput.enteredSource {g : PrivGeometry} {bs : Fin 8 → List Byt
     simp only [List.mem_singleton] at hr
     subst r
     exact ((h.valid.stackSources i).sub_left h.valid.savedSub).symm
-  exact (rsa_bytes_frame h.enteredFrame (by have := (h.source i).fits; omega) sep).trans (h.source i).bytes
+  exact (rsa_bytes_frame h.enteredFrame (by have := (h.source i).fits; omega_using [this]) sep).trans (h.source i).bytes
 
 theorem PrivEntryInput.enteredArguments {g : PrivGeometry} {bs : Fin 8 → List Byte} {s : State}
     (h : PrivEntryInput g bs s) (j : Nat) (hj : j < 16) :
@@ -33,7 +33,7 @@ theorem PrivEntryInput.enteredArguments {g : PrivGeometry} {bs : Fin 8 → List 
     subst r
     exact (h.valid.stackArguments.sub_left h.valid.savedSub).symm
   have eq := (WorkspaceEq.of_frame (base := g.argumentsRegion.base) (size := 64) (by decide) h.enteredFrame sep).word
-    (d := 4 * j) (bits := 32) (by omega)
+    (d := 4 * j) (bits := 32) (by omega_using [hj])
   have address : off g.argumentsRegion.base (4 * j) = off (State.addr g.stack) (arg j) :=
     Offset.add_add _ (frameBytes + 56) (4 * j)
   rw [address] at eq
@@ -47,7 +47,7 @@ theorem PrivEntryInput.ready {g : PrivGeometry} {bs : Fin 8 → List Byte} {s : 
   refine ⟨h.stackFit, ⟨h.valid, h.enteredSp, ?_, h.enteredSource,
     entered_write h.outputWrite, entered_write h.workspaceWrite, ?_, h.enteredArguments⟩,
     h.output, h.modulus, h.count⟩
-  · refine ⟨by have := h.valid.stackHigh; omega, ?_⟩
+  · refine ⟨by have := h.valid.stackHigh; omega_using [this], ?_⟩
     change (⟨State.addr g.stack, frameBytes⟩ : Region) ∈
       ⟨State.addr (entered s).sp, frameBytes⟩ :: (pcPushed s).wr
     rw [h.enteredSp]

@@ -194,19 +194,19 @@ theorem body_ct (wide : Bool) (n : Nat) :
       RomixArgs L (blkAt L (L.pp - n)) t) (.call (roMixName wide) (Impl.Scrypt.RISCV64.roMix wide))
       (Two fun L m₀ t => Aligned L wide ∧ 0 < n ∧ n ≤ L.pp ∧ Mid L m₀ (L.pp - n) t) :=
     two_call RoMix.roMix_correct (RoMix.roMix_ct wide) (fun _ => []) (fun L => romixWr L (L.pp - n))
-      (fun _ _ _ _ hL _ ⟨hal, h0, hn, _, ha⟩ => romix_pre hL (by omega) hal ha)
+      (fun _ _ _ _ hL _ ⟨hal, h0, hn, _, ha⟩ => romix_pre hL (by omega_using [h0, hn]) hal ha)
       (fun _ _ _ _ _ _ _ _ hk c₁ c₂ ⟨_, h0, hn, b₁, a₁⟩ ⟨_, _, _, b₂, a₂⟩ =>
-        romix_pub_two hk c₁ c₂ (by omega) b₁ b₂ a₁ a₂ wide)
-      (fun _ _ _ hL ⟨_, h0, hn, _⟩ => romix_sub hL (by omega))
-      (fun _ _ _ hL ⟨_, h0, hn, _⟩ => romix_wsub hL (by omega))
+        romix_pub_two hk c₁ c₂ (by omega_using [h0, hn]) b₁ b₂ a₁ a₂ wide)
+      (fun _ _ _ hL ⟨_, h0, hn, _⟩ => romix_sub hL (by omega_using [h0, hn]))
+      (fun _ _ _ hL ⟨_, h0, hn, _⟩ => romix_wsub hL (by omega_using [h0, hn]))
       (fun _ _ _ _ hL hc ⟨hal, h0, hn, hb, ha⟩ =>
-        WP.mono (call_step hL (by omega) hc hal hb ha) fun _ ⟨hc', hm⟩ => ⟨hc', hal, h0, hn, hm⟩)
+        WP.mono (call_step hL (by omega_using [h0, hn]) hc hal hb ha) fun _ ⟨hc', hm⟩ => ⟨hc', hal, h0, hn, hm⟩)
   have c : RelCT isa (Two fun L m₀ t => Aligned L wide ∧ 0 < n ∧ n ≤ L.pp ∧ Mid L m₀ (L.pp - n) t)
       (.block nextBlock)
       (Two fun L m₀ t => Aligned L wide ∧ 0 < n ∧ n ≤ L.pp ∧ InvB L m₀ (L.pp - n + 1) t ∧
         (t.gpr .t0 != 0) = decide (L.pp - n + 1 ≠ L.pp)) :=
     two_blk (by taint_decide) fun _ _ _ _ hL hc ⟨hal, h0, hn, hm⟩ =>
-      WP.mono (next_step hL (by omega) hc hm) fun _ ⟨hc', hb, hz⟩ => ⟨hc', hal, h0, hn, hb, hz⟩
+      WP.mono (next_step hL (by omega_using [h0, hn]) hc hm) fun _ ⟨hc', hb, hz⟩ => ⟨hc', hal, h0, hn, hb, hz⟩
   exact a.seq (b.seq c)
 
 theorem loop_ct (wide : Bool) :
@@ -224,9 +224,9 @@ theorem loop_ct (wide : Bool) :
         exact ⟨e, hL, hk, c₁, c₂, show InvB e.L _ e.L.pp a from hl ▸ b₁,
           show InvB e.L _ e.L.pp b from hl ▸ b₂⟩
       · have hl : e.L.pp - n + 1 ≠ e.L.pp := by simpa using ht
-        have e₁ : e.L.pp - (n - 1) = e.L.pp - n + 1 := by omega
-        exact ⟨n - 1, by omega, e, hL, hk, c₁, c₂, ⟨hal, by omega, by omega, e₁ ▸ b₁⟩,
-          ⟨hal₂, by omega, by omega, e₁ ▸ b₂⟩⟩) n
+        have e₁ : e.L.pp - (n - 1) = e.L.pp - n + 1 := by omega_using [h0, hn]
+        exact ⟨n - 1, by omega_using [h0], e, hL, hk, c₁, c₂, ⟨hal, by omega_using [h0, hn, hl], by omega_using [hn], e₁ ▸ b₁⟩,
+          ⟨hal₂, by omega_using [h0, hn, hl], by omega_using [hn], e₁ ▸ b₂⟩⟩) n
   refine (RelCT.exists_ h).mono (fun a b ⟨e, hL, hk, c₁, c₂, ⟨hal₁, b₁⟩, ⟨hal₂, b₂⟩⟩ => ⟨e.L.pp, e, hL, hk,
     c₁, c₂, ⟨hal₁, hL.pp_pos, Nat.le_refl _, by rw [Nat.sub_self]; exact b₁⟩,
     ⟨hal₂, hL.pp_pos, Nat.le_refl _, by rw [Nat.sub_self]; exact b₂⟩⟩) fun _ _ h => h
@@ -406,7 +406,7 @@ theorem pbk_sdepth : sdepth pbkCode ≤ 992 := by
     Impl.Pbkdf2.Whole.RISCV64.Fns.callIt, Impl.Pbkdf2.Whole.RISCV64.Fns.block,
     Impl.Pbkdf2.Whole.RISCV64.Fns.outLen, Impl.Pbkdf2.Whole.RISCV64.Fns.outLoop,
     Impl.Hmac.Stream.RISCV64.Hash.callUpd, sdepth, Instr.frameBytes, h4]
-  omega
+  omega_using [h1, h2, h3, h5]
 
 /-- `vg_scrypt` calling `vg_pbkdf2_hmac_sha256`. -/
 theorem scrypt_verified :

@@ -162,7 +162,7 @@ theorem hdrMem_bytes (m : Mem) (F : Addr) (c : Nat) : bytesAt (hdrMem m F c) F 1
     have hi' : i < 10 := by simpa [bytesAt] using hi
     simp only [bytesAt, List.getElem_map, List.getElem_range]
     have ne : ∀ j, j < 10 → i ≠ j → F + BitVec.ofNat 64 i ≠ F + BitVec.ofNat 64 j := fun j hj h =>
-      off_ne F (by omega) (by omega) h
+      off_ne F (by omega_using [hi']) (by omega_using [hj]) h
     unfold hdrMem
     rw [Proof.Sha3.writeW8_apply, Proof.Sha3.writeW8_apply]
     by_cases h9 : i = 9
@@ -170,16 +170,16 @@ theorem hdrMem_bytes (m : Mem) (F : Addr) (c : Nat) : bytesAt (hdrMem m F c) F 1
     by_cases h8 : i = 8
     · subst h8; simp [hdrBytes]
     rw [ite_eq_right (ne 9 (by decide) h9), ite_eq_right (ne 8 (by decide) h8)]
-    have hi8 : i < 8 := by omega
+    have hi8 : i < 8 := by omega_using [hi', h9, h8]
     simp only [Mem.writeW, Mem.write, Offset.add_sub_cancel_left, BitVec.toNat_ofNat,
-      Nat.mod_eq_of_lt (show i < 2 ^ 64 by omega), show i < 64 / 8 by omega, ↓reduceIte, BitVec.setWidth_eq]
+      Nat.mod_eq_of_lt (show i < 2 ^ 64 by omega_using [hi']), show i < 64 / 8 by omega_using [hi', h9, h8], ↓reduceIte, BitVec.setWidth_eq]
     rw [sigWord_bytes i hi8]
-    simp only [hdrBytes, List.getElem_append_left (by simp; omega : i < ("SigEd448".toList.map _).length)]
-    rw [List.getElem?_eq_getElem (by simp; omega), Option.getD_some]
+    simp only [hdrBytes, List.getElem_append_left (by simp; omega_using [hi', h9, h8] : i < ("SigEd448".toList.map _).length)]
+    rw [List.getElem?_eq_getElem (by simp; omega_using [hi', h9, h8]), Option.getD_some]
 
 theorem hdrMem_frame (m : Mem) (F : Addr) (c : Nat) : Frame [⟨F, 10⟩] m (hdrMem m F c) := by
   have h : ∀ j, j + 1 ≤ 10 → (⟨F, 10⟩ : Region).Contains (F + BitVec.ofNat 64 j) (8 / 8) := fun j hj =>
-    Offset.contains_base F (by omega) (by omega)
+    Offset.contains_base F (by omega_using [hj]) (by omega_using [hj])
   refine (((Frame.refl _ _).writeW List.mem_cons_self _ ?_).writeW List.mem_cons_self _ (h 8 (by decide))).writeW
     List.mem_cons_self _ (h 9 (by decide))
   simpa using Offset.contains_base F (d := 0) (n := 64 / 8) (k := 10) (by decide) (by decide)
@@ -223,7 +223,7 @@ theorem hdr_ok {s : State} {f c : Reg} (hf5 : f ≠ .a5) (hf6 : f ≠ .a6) {F : 
       rw [h₇.gpr, h₆.other _ hc5, h₅.gpr, g c hc5 hc6, hc]
       apply BitVec.eq_of_toNat_eq
       simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]
-      omega
+      omega_using []
     rw [ht.mem, h₇.mem, h₆.mem, h₅.mem, e9, e8, v, h₄.mem, h₃.mem, h₂.mem, h₁.mem]
   · rw [ht.rd, h₇.rd, h₆.rd, h₅.rd, h₄.rd, h₃.rd, h₂.rd, h₁.rd]
   · rw [ht.wr, h₇.wr, h₆.wr, h₅.wr, wr₄]
@@ -283,8 +283,8 @@ theorem signSetup_ok {s u : State} (hp : SignPre s) (hu : Upd s u .t0 (sF s)) :
   have hP : (pkR s) ∈ t₁.rd := by rw [h₁'.rd, hp.rd]; simp
   -- `pk`, copied to `384(F)`.
   refine copyIn_ok (P := s.gpr .a2) (F := sF s) (o := 384) (n := 57) (by decide) (by decide) g2 g11 (by decide)
-    (fun i hi => in_base (List.mem_append_left _ hP) (by omega) (by omega))
-    (fun i hi => in_base hFw₁ (by omega) (by omega))
+    (fun i hi => in_base (List.mem_append_left _ hP) (by omega_using [hi]) (by omega_using [hi]))
+    (fun i hi => in_base hFw₁ (by omega_using [hi]) (by omega_using [hi]))
     (hp.fP.symm.sub_right (Offset.sub_base _ (by decide))) fun t₂ r₂ f₂ b₂ => ?_
   have h₂ : SInv s t₂ := h₁'.step signRegs_pres r₂.rd r₂.wr r₂.sp
     (fun r hr => r₂.gpr r fun e => by rw [List.mem_singleton] at e; revert hr; rw [e]; decide) f₂
@@ -295,7 +295,7 @@ theorem signSetup_ok {s u : State} (hp : SignPre s) (hu : Upd s u .t0 (sF s)) :
   -- The header.
   refine hdr_ok (F := sF s) (cl := (s.gpr .a4).toNat) (by decide) (by decide)
     (by rw [h₂.regs _ (by decide)]; rfl) (by rw [h₂.regs _ (by decide)]; exact (ofNat_toNat _).symm)
-    (fun j hj => in_base hFw₂ (by omega) (by omega))
+    (fun j hj => in_base hFw₂ (by omega_using [hj]) (by omega_using [hj]))
     (by simpa using in_base (d := 0) (n := 8) hFw₂ (by decide) (by decide)) hp.alF (by decide) (by decide)
     fun t ht hrd hwr hsp hg => WP.block_nil ⟨?_, ?_, ?_⟩
   · refine h₂.step signRegs_pres hrd hwr hsp

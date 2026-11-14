@@ -80,10 +80,10 @@ theorem carry_frame {s : State} {W : Addr} {L x : Nat} (hw : Ws s W L) (P : PtrA
   have K2 : Keeps [.eax] s e2 := E1.keeps.trans E2.keeps
   have hw2 := hw.of_keeps K2
   have P2 : PtrAt e2 W .ebp x := by rw [PtrAt, K2.1 .ebp (by decide)]; exact P
-  refine wp_storeS (ea_ptr hw2 P2 (d := 0) (by omega)) (ws_write hw2 (y := x + 0) (n := 4) (by omega))
+  refine wp_storeS (ea_ptr hw2 P2 (d := 0) (by omega_using [fit])) (ws_write hw2 (y := x + 0) (n := 4) (by omega_using [fit]))
     fun e E => WP.block_nil ⟨?_, K2.widen (E.keeps [])⟩
   rw [E.mem, E2.mem, E1.mem, Nat.add_zero]
-  exact writeW32_outside _ _ _ (by have := hw.nowrap; omega)
+  exact writeW32_outside _ _ _ (by have := hw.nowrap; omega_using [fit, this])
 
 /-- The selection's mask, whatever the carry. -/
 theorem below_frame {h : State} {W : Addr} {L x : Nat} (hw : Ws h W L) (P : PtrAt h W .ebp x) (fit : x + 4 ≤ L)
@@ -92,7 +92,7 @@ theorem below_frame {h : State} {W : Addr} {L x : Nat} (hw : Ws h W L) (P : PtrA
       (∃ b, i.gpr .ecx = cmask b) ∧ i.gpr .edi = h.mem.readW (off (q.setWidth 64) 0) 32 ∧ i.mem = h.mem ∧
       Keeps [.eax, .ecx, .edi] h i := by
   unfold VG.Impl.RsaKeyGen.X86.PrepareRt.below
-  refine wp_movS (readSrc_ptr hw P (d := 0) (by omega)) fun i1 I1 _ => ?_
+  refine wp_movS (readSrc_ptr hw P (d := 0) (by omega_using [fit])) fun i1 I1 _ => ?_
   refine VG.Proof.Bignum.X86.PublicRt.wp_carry (c := c1) (by rw [I1.other .ecx (by decide)]; exact mask)
     fun i2 I2 cf2 => ?_
   refine wp_sbbS rfl cf2 fun i3 I3 cf3 => wp_sbb_self cf3 fun i4 I4 => wp_movS rfl fun i5 I5 _ => ?_
@@ -137,7 +137,7 @@ theorem sum_trace (v : g.Valid) :
     RelCT isa (fun s t => Base g q k s ∧ Base g q k t) sum (fun u z => Base g q k u ∧ Base g q k z) := by
   obtain ⟨fit6, -, many, -⟩ := WitnessRt.fits v
   have a26 : g.array 2 + 4 * g.words + 4 ≤ g.array 6 := by
-    unfold Geometry.array Geometry.words Proof.Rsa.Mont.arrAt Proof.Rsa.Mont.hdrBytes; omega
+    unfold Geometry.array Geometry.words Proof.Rsa.Mont.arrAt Proof.Rsa.Mont.hdrBytes; omega_using []
   unfold sum
   let Loop : State → Prop := At g q k fun a s => PtrAt s g.W .ebx (g.array 6) ∧ PtrAt s g.W .ebp (g.array 2) ∧
     (s.gpr .edx).toNat = 4 * g.words ∧ s.gpr .ecx = cmask false ∧ s.gpr .edi = a.gpr .edi
@@ -152,8 +152,8 @@ theorem sum_trace (v : g.Valid) :
       else if r = .ebp then BitVec.ofNat 32 (g.W.toNat + g.array 2) else BitVec.ofNat 32 (4 * g.words))
       (fun s ⟨_, _, Px, Pa, edx, _⟩ r mem => ?_) doubleLoop_raw fun s ⟨a, B, Px, Pa, edx, ecx, edi⟩ =>
         WP.mono (VG.Proof.Bignum.X86.PublicRt.doubleLoop_ok B.ws (x := g.array 6) (a := g.array 2) (N := g.words)
-          (by omega) fit6 (by omega) (Or.inl (by omega)) Px Pa edx ecx) fun _ ⟨O, P, _, K⟩ =>
-          ⟨a, B.step K (by decide) (O.mono (o' := g.array 2) (n' := 4 * g.words + 4) (by omega) (by omega))
+          (by omega_using [many]) fit6 (by omega_using [fit6, a26]) (Or.inl (by omega_using [a26])) Px Pa edx ecx) fun _ ⟨O, P, _, K⟩ =>
+          ⟨a, B.step K (by decide) (O.mono (o' := g.array 2) (n' := 4 * g.words + 4) (by omega_using []) (by omega_using []))
             (by simp [doubleRanges]), P, (K.1 .edi (by decide)).trans edi⟩
     simp only [List.mem_cons, List.not_mem_nil, or_false] at mem
     rcases mem with rfl | rfl | rfl
@@ -161,8 +161,8 @@ theorem sum_trace (v : g.Valid) :
     · exact ptr_value Pa
     · exact nat_at edx
   · exact ptrSeg .ebp (g.array 2 + 4 * g.words) (fun _ ⟨_, _, P, _⟩ => P) (rawBlock (by decide +kernel))
-      fun s ⟨a, B, P, edi⟩ => WP.mono (carry_frame B.ws P (by omega)) fun _ ⟨O, K⟩ =>
-        ⟨a, B.step K (by decide) (O.mono (o' := g.array 2) (n' := 4 * g.words + 4) (by omega) (by omega))
+      fun s ⟨a, B, P, edi⟩ => WP.mono (carry_frame B.ws P (by omega_using [fit6, a26])) fun _ ⟨O, K⟩ =>
+        ⟨a, B.step K (by decide) (O.mono (o' := g.array 2) (n' := 4 * g.words + 4) (by omega_using []) (by omega_using []))
           (by simp [doubleRanges]), (K.1 .edi (by decide)).trans edi⟩
 
 
@@ -174,7 +174,7 @@ theorem reduce_trace (v : g.Valid) :
     RelCT isa (fun s t => Base g q k s ∧ Base g q k t) reduce (fun u z => Masked g q k u ∧ Masked g q k z) := by
   obtain ⟨fit6, -, many, -⟩ := WitnessRt.fits v
   have a26 : g.array 2 + 4 * g.words + 4 ≤ g.array 6 := by
-    unfold Geometry.array Geometry.words Proof.Rsa.Mont.arrAt Proof.Rsa.Mont.hdrBytes; omega
+    unfold Geometry.array Geometry.words Proof.Rsa.Mont.arrAt Proof.Rsa.Mont.hdrBytes; omega_using []
   have a02 : g.array 0 + 4 * g.words ≤ g.array 2 := g.arrayBefore (by decide)
   unfold reduce
   let Loop : State → Prop := At g q k fun _ s => PtrAt s g.W .ebp (g.array 2) ∧ PtrAt s g.W .ebx (g.array 0) ∧
@@ -188,7 +188,7 @@ theorem reduce_trace (v : g.Valid) :
     else if r = .edi then BitVec.ofNat 32 (g.W.toNat + g.array 6) else BitVec.ofNat 32 (4 * g.words))
     (fun s ⟨_, _, Pa, Pm, Pd, edx, _⟩ r mem => ?_) reduceLoop_raw fun s ⟨a, B, Pa, Pm, Pd, edx, ecx⟩ =>
       WP.mono (VG.Proof.Bignum.X86.PublicRt.reduceLoop_ok B.ws (a := g.array 2) (m := g.array 0) (d := g.array 6)
-        (N := g.words) (by omega) (by omega) (by omega) fit6 (Or.inr (by omega)) (Or.inr (by omega)) Pa Pm Pd edx ecx)
+        (N := g.words) (by omega_using [many]) (by omega_using [fit6, a26]) (by omega_using [fit6, a26, a02]) fit6 (Or.inr (by omega_using [a26])) (Or.inr (by omega_using [a26, a02])) Pa Pm Pd edx ecx)
         fun _ ⟨O, P, ⟨c, mask, _⟩, K⟩ => ⟨a, B.step K (by decide) O (by simp [doubleRanges]), P, c, mask⟩
   simp only [List.mem_cons, List.not_mem_nil, or_false] at mem
   rcases mem with rfl | rfl | rfl | rfl
@@ -206,10 +206,10 @@ theorem below_trace (v : g.Valid) (apart : (⟨g.W, g.L⟩ : Region).Disjoint �
       (fun u z => Choosing g q k u ∧ Choosing g q k z) := by
   obtain ⟨fit6, -, -, -⟩ := WitnessRt.fits v
   have a26 : g.array 2 + 4 * g.words + 4 ≤ g.array 6 := by
-    unfold Geometry.array Geometry.words Proof.Rsa.Mont.arrAt Proof.Rsa.Mont.hdrBytes; omega
+    unfold Geometry.array Geometry.words Proof.Rsa.Mont.arrAt Proof.Rsa.Mont.hdrBytes; omega_using []
   refine seg [.ebp, .esp] (fun r => if r = .ebp then BitVec.ofNat 32 (g.W.toNat + (g.array 2 + 4 * g.words))
     else q) (fun s ⟨_, B, P, _⟩ r mem => ?_) (rawBlock (by decide +kernel)) fun s ⟨a, B, P, b, mask⟩ =>
-      WP.mono (below_frame B.ws P (by omega) B.stack mask) fun _ ⟨chosen, edi, M, K⟩ =>
+      WP.mono (below_frame B.ws P (by omega_using [fit6, a26]) B.stack mask) fun _ ⟨chosen, edi, M, K⟩ =>
         ⟨a, B.same K (by decide) M, by rw [edi, B.saved v apart], chosen⟩
   simp only [List.mem_cons, List.not_mem_nil, or_false] at mem
   rcases mem with rfl | rfl
@@ -229,20 +229,20 @@ theorem next_done (v : g.Valid) (apart : (⟨g.W, g.L⟩ : Region).Disjoint ⟨q
   have esiT1 : (t1.gpr .esi).toNat = (k + 1) - 0 := by
     rw [T1.other .esi (by decide), B.2.2.1 .esi (by decide), I.count, BitVec.toNat_ofNat,
       Nat.mod_eq_of_lt I.bound, Nat.sub_zero]
-  obtain ⟨step, last⟩ := VG.Proof.Bignum.X86.PublicRt.count1_zf esiT1 (by omega)
-  refine ⟨by rw [zt, last]; congr 1; exact decide_eq_decide.mpr (by omega), fun positive => ?_⟩
+  obtain ⟨step, last⟩ := VG.Proof.Bignum.X86.PublicRt.count1_zf esiT1 (by omega_using [])
+  refine ⟨by rw [zt, last]; congr 1; exact decide_eq_decide.mpr (by omega_using []), fun positive => ?_⟩
   have O : Outs g.W (doubleRanges g) a.mem t.mem := by rw [Mt]; exact B.2.1
   refine ⟨Context.restore I.context Kall.2.2 edi O (doubleRanges_above v), I.stack.keep Kall (by decide),
-    by rw [Mt, B.saved v apart, edi], ?_, by have := I.bound; omega⟩
+    by rw [Mt, B.saved v apart, edi], ?_, by have := I.bound; omega_using [esiT1]⟩
   apply BitVec.eq_of_toNat_eq
-  rw [T.gpr, step, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := I.bound; omega)]
-  omega
+  rw [T.gpr, step, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := I.bound; omega_using [esiT1])]
+  omega_using [positive]
 
 theorem select_trace (v : g.Valid) (apart : (⟨g.W, g.L⟩ : Region).Disjoint ⟨q.setWidth 64, 20⟩) :
     RelCT isa (fun s t => Choosing g q k s ∧ Choosing g q k t) select (fun u z => Done g q k u ∧ Done g q k z) := by
   obtain ⟨fit6, -, many, -⟩ := WitnessRt.fits v
   have a26 : g.array 2 + 4 * g.words + 4 ≤ g.array 6 := by
-    unfold Geometry.array Geometry.words Proof.Rsa.Mont.arrAt Proof.Rsa.Mont.hdrBytes; omega
+    unfold Geometry.array Geometry.words Proof.Rsa.Mont.arrAt Proof.Rsa.Mont.hdrBytes; omega_using []
   unfold select
   let Loop : State → Prop := At g q k fun _ s => PtrAt s g.W .ebp (g.array 2) ∧ PtrAt s g.W .ebx (g.array 6) ∧
     (s.gpr .edi).toNat = 4 * g.words ∧ ∃ b, s.gpr .ecx = cmask b
@@ -256,7 +256,7 @@ theorem select_trace (v : g.Valid) (apart : (⟨g.W, g.L⟩ : Region).Disjoint �
       else if r = .ebx then BitVec.ofNat 32 (g.W.toNat + g.array 6) else BitVec.ofNat 32 (4 * g.words))
       (fun s ⟨_, _, Pa, Pd, count, _⟩ r mem => ?_) selectLoop_raw fun s ⟨a, B, Pa, Pd, count, b, mask⟩ =>
         WP.mono (VG.Proof.Bignum.X86.PublicRt.selectLoop_ok B.ws (x := g.array 2) (d := g.array 6) (N := g.words) b
-          (by omega) (by omega) fit6 (Or.inr (by omega)) Pa Pd count mask) fun _ ⟨O, _, _, K⟩ =>
+          (by omega_using [many]) (by omega_using [fit6, a26]) fit6 (Or.inr (by omega_using [a26])) Pa Pd count mask) fun _ ⟨O, _, _, K⟩ =>
           ⟨a, B.step K (by decide) O (by simp [doubleRanges]), trivial⟩
     simp only [List.mem_cons, List.not_mem_nil, or_false] at mem
     rcases mem with rfl | rfl | rfl
@@ -291,6 +291,6 @@ theorem doublings_trace {g : Geometry} {q : BitVec 32} (v : g.Valid)
     intro zero
     simp only [eval, zu, zero, decide_true, Option.map_some, Bool.not_true] at again
     cases again
-  exact ⟨j, by omega, j - 1, by omega, U positive, Z positive⟩
+  exact ⟨j, by omega_using [], j - 1, by omega_using [positive], U positive, Z positive⟩
 
 end VG.Proof.RsaKeyGen.X86.PrepareRt

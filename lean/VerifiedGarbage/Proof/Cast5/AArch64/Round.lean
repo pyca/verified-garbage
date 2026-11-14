@@ -34,7 +34,7 @@ theorem rotateStep_ok (s : State) {b : Nat} (hb : b < 5) {a kb : BitVec 32}
       t.gpr .x13 = (if b < 4 then kb >>> 1 else kb).setWidth 64 ∧ t.mem = s.mem ∧ t.rd = s.rd ∧
       t.wr = s.wr ∧ t.v = s.v := by
   have hn : 32 - 2 ^ b < 32 := by
-    rcases (show b = 0 ∨ b = 1 ∨ b = 2 ∨ b = 3 ∨ b = 4 by omega) with h | h | h | h | h <;>
+    rcases (show b = 0 ∨ b = 1 ∨ b = 2 ∨ b = 3 ∨ b = 4 by omega_using [hb]) with h | h | h | h | h <;>
       subst h <;> decide
   unfold rotateStep
   by_cases h4 : b < 4
@@ -85,19 +85,19 @@ def idx (i : BitVec 32) : Nat → BitVec 32
 theorem idx_toNat (i : BitVec 32) {k : Nat} (hk : k < 4) :
     (idx i k).toNat = i.toNat / 2 ^ (8 * k) % 256 := by
   have := i.isLt
-  rcases (show k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3 by omega) with rfl | rfl | rfl | rfl <;>
+  rcases (show k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3 by omega_using [hk]) with rfl | rfl | rfl | rfl <;>
     simp only [idx, BitVec.toNat_ushiftRight, BitVec.toNat_shiftLeft, Nat.shiftRight_eq_div_pow,
-      Nat.shiftLeft_eq] <;> omega
+      Nat.shiftLeft_eq] <;> omega_using []
 
 theorem idx_lt (i : BitVec 32) {k : Nat} (hk : k < 4) : (idx i k).toNat < 256 := by
-  rw [idx_toNat i hk]; omega
+  rw [idx_toNat i hk]; omega_using []
 
 theorem idx_byte (i : BitVec 32) {k : Nat} (hk : k < 4) :
     BitVec.ofNat 8 (idx i k).toNat = Spec.Cast5.byte i (3 - k) := by
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_ofNat, idx_toNat i hk]
   simp only [Spec.Cast5.byte, BitVec.toNat_setWidth, BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow]
-  rcases (show k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3 by omega) with rfl | rfl | rfl | rfl <;> omega
+  rcases (show k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3 by omega_using [hk]) with rfl | rfl | rfl | rfl <;> omega_using []
 
 theorem spread_ok (s : State) {i : BitVec 32} (hax : s.gpr .x4 = i.setWidth 64) :
     WP isa (.block spread) s fun t =>

@@ -28,7 +28,7 @@ theorem storeBEArgs_ok (s : State) (src : Nat) {k : Nat} (hk : 0 < k)
       u₁.other .ecx (by decide), count]
     change (s.gpr .edi + BitVec.ofNat 32 src) + BitVec.ofNat 32 k - BitVec.ofNat 32 1 = _
     rw [BitVec.sub_eq_add_neg, BitVec.add_assoc, ← BitVec.sub_eq_add_neg,
-      Offset.ofNat_sub_ofNat (by omega)]
+      Offset.ofNat_sub_ofNat (by omega_using [hk])]
   · rw [u₄.mem, u₃.mem, u₂.mem, u₁.mem]
 
 end VG.Proof.Bignum.X86

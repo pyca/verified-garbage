@@ -39,7 +39,7 @@ abbrev mbit (m : BitVec 32) : BitVec 32 := BitVec.ofNat 32 (m.toNat / (2 ^ 32 - 
 theorem mbit_toNat (m : BitVec 32) : (mbit m).toNat = m.toNat / (2 ^ 32 - 1) := by
   have := m.isLt
   simp only [mbit, BitVec.toNat_ofNat]
-  exact Nat.mod_eq_of_lt (by omega)
+  exact Nat.mod_eq_of_lt (by omega_using [])
 
 /-- A word ANDed with the mask is the multiplier times the word. -/
 theorem and_mask {m : BitVec 32} (hm : m = 0 ∨ m = BitVec.allOnes 32) (w : BitVec 32) :
@@ -76,7 +76,7 @@ theorem add3 (A M c : BitVec 32) :
   have k11 : ((0 : BitVec 32) + 0 + 1 + 0 + 1).toNat = 2 := rfl
   by_cases h1 : 2 ^ 32 ≤ A.toNat + M.toNat <;> by_cases h2 : 2 ^ 32 ≤ (A + M).toNat + c.toNat <;>
     simp only [h1, h2, decide_true, decide_false, ↓reduceIte, Bool.false_eq_true, k00, k01, k10, k11]
-  all_goals omega
+  all_goals omega_using [e1, e2, h1, h2]
 
 /-- One word of the row. -/
 theorem maskWord_ok {s0 s : State} {base : BitVec 32} {size o b n i : Nat}
@@ -91,10 +91,10 @@ theorem maskWord_ok {s0 s : State} {base : BitVec 32} {size o b n i : Nat}
     exact ⟨R, List.mem_append_right _ hR, hsub⟩
   have r1s : s.gpr .r1 = s0.gpr .r1 := inv.rest.gpr _ (by decide)
   simp only [maskWord]
-  refine wp_ldr (by decide) (row_addr (d := b + 4 * i) ctx inv.inPtr (by omega)) (rd _ (by omega)) fun s1 u1 => ?_
+  refine wp_ldr (by decide) (row_addr (d := b + 4 * i) ctx inv.inPtr (by omega_using [hi, hb])) (rd _ (by omega_using [hi, hb])) fun s1 u1 => ?_
   refine wp_ldr (a := off (State.addr base) (o + 4 * i)) (by decide)
-    (by rw [u1.other _ (by decide)]; exact row_addr (d := o + 4 * i) ctx inv.outPtr (by omega))
-    (by rw [u1.rd, u1.wr]; exact rd _ (by omega)) fun s2 u2 => ?_
+    (by rw [u1.other _ (by decide)]; exact row_addr (d := o + 4 * i) ctx inv.outPtr (by omega_using [hi, ho]))
+    (by rw [u1.rd, u1.wr]; exact rd _ (by omega_using [hi, ho])) fun s2 u2 => ?_
   refine wp_dp (op2_reg _ _) fun s3 u3 => ?_
   refine wp_adds (op2_reg _ _) fun s4 u4 c4 => ?_
   refine wp_adc (op2_imm (by decide)) fun s5 u5 c5 => ?_
@@ -105,8 +105,8 @@ theorem maskWord_ok {s0 s : State} {base : BitVec 32} {size o b n i : Nat}
       u3.other _ (by decide), u2.other _ (by decide), u1.other _ (by decide)]
   have wr7 : s7.wr = s0.wr := by
     rw [u7.wr, u6.wr, u5.wr, u4.wr, u3.wr, u2.wr, u1.wr]; exact inv.rest.wr
-  refine wp_str (by decide) (by rw [p7]; exact row_addr (d := o + 4 * i) ctx inv.outPtr (by omega))
-    (row_writable ctx wr7 (by omega)) fun s8 u8 => ?_
+  refine wp_str (by decide) (by rw [p7]; exact row_addr (d := o + 4 * i) ctx inv.outPtr (by omega_using [hi, ho]))
+    (row_writable ctx wr7 (by omega_using [hi, ho])) fun s8 u8 => ?_
   refine wp_dp (op2_imm (by decide)) fun s9 u9 => ?_
   refine wp_dp (op2_imm (by decide)) fun s10 u10 => ?_
   refine wp_subs (op2_imm (by decide)) fun t u11 z11 => WP.block_nil ?_
@@ -134,7 +134,7 @@ theorem maskWord_ok {s0 s : State} {base : BitVec 32} {size o b n i : Nat}
       u5.other _ (by decide), e11, c4, e10, u4.gpr, e2, e3, add3]
     simp only [w32]
     rw [← and_mask hm (s.mem.readW (off (State.addr base) (b + 4 * i)) 32)]
-    omega
+    omega_using []
   obtain ⟨outside, value⟩ := row_value_step_of (x := mbit (s0.gpr .r1)) ctx inv.outside inv.value hi mt hv
   have keep : ∀ r, r ∉ ([.r2, .r3, .r4, .r11] : List Reg) → s8.gpr r = s.gpr r := fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
@@ -142,7 +142,7 @@ theorem maskWord_ok {s0 s : State} {base : BitVec 32} {size o b n i : Nat}
       u2.other _ hr.2.1, u1.other _ hr.1]
   have lr10 : s10.gpr .lr = BitVec.ofNat 32 (n - i) := by
     rw [u10.other _ (by decide), u9.other _ (by decide), keep .lr (by decide), inv.count]
-  refine ⟨⟨by omega, ?_, ?_, ?_, ?_, outside, value, ?_⟩, ?_⟩
+  refine ⟨⟨by omega_using [hi], ?_, ?_, ?_, ?_, outside, value, ?_⟩, ?_⟩
   · rw [u11.other _ (by decide), u10.other _ (by decide), u9.gpr, dpVal, keep .r0 (by decide), inv.outPtr]
     change base + BitVec.ofNat 32 (o + 4 * i) + BitVec.ofNat 32 4 = _
     rw [VG.Offset.add_add]
@@ -153,7 +153,7 @@ theorem maskWord_ok {s0 s : State} {base : BitVec 32} {size o b n i : Nat}
     congr 1
   · rw [u11.gpr, lr10]
     change BitVec.ofNat 32 (n - i) - BitVec.ofNat 32 1 = _
-    rw [BitVec.ofNat_sub_ofNat_of_le _ _ (by decide) (by omega)]
+    rw [BitVec.ofNat_sub_ofNat_of_le _ _ (by decide) (by omega_using [hi])]
     congr 1
   · rw [u11.other _ (by decide), u10.other _ (by decide), u9.other _ (by decide), keep .r10 (by decide), inv.zero]
   · exact inv.rest.trans <| (u1.rest (by simp)).trans <| (u2.rest (by simp)).trans <| (u3.rest (by simp)).trans <|
@@ -162,8 +162,8 @@ theorem maskWord_ok {s0 s : State} {base : BitVec 32} {size o b n i : Nat}
       (u11.rest (by simp))
   · rw [z11, lr10]
     change (BitVec.ofNat 32 (n - i) - BitVec.ofNat 32 1 == 0) = _
-    rw [BitVec.ofNat_sub_ofNat_of_le _ _ (by decide) (by omega), ofNat_beq_zero (by omega)]
-    simp only [show n - i - 1 = 0 ↔ i + 1 = n by omega]
+    rw [BitVec.ofNat_sub_ofNat_of_le _ _ (by decide) (by omega_using [hi]), ofNat_beq_zero (by omega_using [ho, hn])]
+    simp only [show n - i - 1 = 0 ↔ i + 1 = n by omega_using [hi]]
 
 /-- `maskRow`: `n > 0` words of `[o] += m & [b]` plus the carry, `m` all ones or zero (`r1`). -/
 theorem maskRow_ok (s : State) {base : BitVec 32} {size o b n : Nat}
@@ -184,13 +184,13 @@ theorem maskRow_ok (s : State) {base : BitVec 32} {size o b n : Nat}
       by rw [u1.other _ (by decide), hcount]; rfl, u1.gpr, by rw [u1.mem]; exact Outside.refl _ _ _ _,
       by rw [u1.mem, u1.other _ (by decide)]; simp [val32], u1.rest (by simp)⟩
   refine WP.mono (WP.loop (M := isa) (Q := MaskRowInv s base o b n n)
-    (fun k t => ∃ i, i + k = n ∧ 0 < k ∧ MaskRowInv s base o b n i t) ?_ n s1 ⟨0, by omega, hn, I0⟩) fun t I => ?_
+    (fun k t => ∃ i, i + k = n ∧ 0 < k ∧ MaskRowInv s base o b n i t) ?_ n s1 ⟨0, by omega_using [], hn, I0⟩) fun t I => ?_
   · rintro k t ⟨i, hik, hk, hi⟩
-    refine WP.mono (maskWord_ok ctx hi (by omega) hm) fun u ⟨hu, hz⟩ => ?_
+    refine WP.mono (maskWord_ok ctx hi (by omega_using [hik, hk]) hm) fun u ⟨hu, hz⟩ => ?_
     by_cases he : i + 1 = n
     · exact Or.inl ⟨by change some (!u.z) = some false; simp only [hz, he, decide_true, Bool.not_true], he ▸ hu⟩
     · exact Or.inr ⟨by change some (!u.z) = some true; simp only [hz, he, decide_false, Bool.not_false],
-        k - 1, by omega, i + 1, by omega, by omega, hu⟩
+        k - 1, by omega_using [hk], i + 1, by omega_using [hik, hk], by omega_using [hik, hk, he], hu⟩
   refine ⟨I.outPtr, I.inPtr, I.outside, I.rest.gpr _ (by decide), ?_, I.rest⟩
   rw [I.value, mbit_toNat]
 

@@ -16,7 +16,7 @@ open VG.Impl.Ed25519.X86.PublicKey (callWith)
 variable {L : Lay} {g : Reg → BitVec 32} {m₀ : Mem} {s : State}
 
 theorem hashSpace (h : L.Ok) : Whole.HashSpace L.E L.scr :=
-  ⟨h.below, by have := h.top; omega, h.nc, h.kc⟩
+  ⟨h.below, by have := h.top; omega_using [this], h.nc, h.kc⟩
 
 theorem shaWithin (L : Lay) : Whole.Within (Whole.SHA L.scr) L.SCR :=
   ⟨0, by simp, by change 0 + 192 ≤ 8192; decide⟩
@@ -81,7 +81,7 @@ theorem OutArgs.slot {vs : List Value} {t : State} (h : OutArgs L vs t) (hL : L.
     {j : Nat} (hj : j < vs.length) (hlen : vs.length ≤ 6) :
     Whole.slots L.E t j = value L (vs[j]'hj) := by
   have e := h j hj
-  rw [addr_eq (by have := hL.top; omega)] at e
+  rw [addr_eq (by have := hL.top; omega_using [hj, hlen, this])] at e
   exact e
 
 theorem init_step (hc : Ctx L g m₀ s) (hL : L.Ok) (ha : Arguments L m₀) :

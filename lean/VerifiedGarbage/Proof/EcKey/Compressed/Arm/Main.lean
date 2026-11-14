@@ -24,7 +24,7 @@ theorem compress_key (c : Cfg) (s : State) :
     if KeyOk c s then some (BitVec.ofNat 8 (2 + keyY c s % 2) :: toBytes c.C.len (keyX c s)) else none := by
   have hlen : (Spec.Ecdsa.bytesAt s.mem (ptr s .r1) (1 + 2 * c.C.len)).length = 2 * c.C.len + 1 := by
     rw [length_bytesAt]
-    omega
+    omega_using []
   have hhead : (Spec.Ecdsa.bytesAt s.mem (ptr s .r1) (1 + 2 * c.C.len)).head? =
       some (s.mem (ptr s .r1)) := by rw [peer_bytes]; rfl
   have hx : ofBytes (((Spec.Ecdsa.bytesAt s.mem (ptr s .r1) (1 + 2 * c.C.len)).drop 1).take c.C.len) =
@@ -42,7 +42,7 @@ theorem compress_key (c : Cfg) (s : State) :
       exact ⟨h4, hx, hy, he⟩
   change Spec.EcKey.compressPublicKey c.C
     (Spec.Ecdsa.bytesAt s.mem (ptr s .r1) (2 * c.C.len + 1)) = _
-  rw [show 2 * c.C.len + 1 = 1 + 2 * c.C.len by omega, compress_eq hlen hhead hx hy]
+  rw [show 2 * c.C.len + 1 = 1 + 2 * c.C.len by omega_using [], compress_eq hlen hhead hx hy]
   simp only [hv]
 
 theorem compress_correct (c : Cfg) (hc : CfgOk c)
@@ -51,16 +51,16 @@ theorem compress_correct (c : Cfg) (hc : CfgOk c)
       abiPreserved s s' ∧ (compressContract c.C).post s s' := by
   obtain ⟨hrd, hwr, hpo, hpw, how, hfit, hpkfit, hwfit⟩ := hs
   have hp : InputPre c (1 + 2 * c.C.len) s :=
-    ⟨by rw [hrd, show 1 + 2 * c.C.len = 2 * c.C.len + 1 by omega]; simp,
+    ⟨by rw [hrd, show 1 + 2 * c.C.len = 2 * c.C.len + 1 by omega_using []]; simp,
       by rw [hwr]; simp, by simpa only [Nat.add_comm] using hpw,
-      by omega, hwfit⟩
+      by omega_using [hpkfit], hwfit⟩
   have hrun : WP isa (Impl.EcKey.Compressed.Arm.compress c) s fun s' =>
       (compressContract c.C).post s s' ∧
       (∀ rd ∈ Cfg.saved, s'.gpr rd.1 = s.gpr rd.1) ∧ s'.sp = s.sp := by
     apply front_ok hc hp
     intro t F
     refine WP.mono (finish_ok hc F.scr F.out
-      (by omega) (by rw [F.wr, hwr]; simp [Nat.add_comm])
+      (by omega_using [hfit]) (by rw [F.wr, hwr]; simp [Nat.add_comm])
       (by simpa only [Nat.add_comm] using
         how.sub_right (by simpa using Region.sub_prefix (by decide : size ≤ 8192)))
       F.saved (decide (KeyOk c s)) (by simp only [F.flag, decide_eq_true_eq]))

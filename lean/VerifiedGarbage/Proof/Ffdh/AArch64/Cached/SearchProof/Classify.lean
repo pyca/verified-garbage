@@ -35,7 +35,7 @@ theorem test_ok {s : State} {st k : Nat} (h9 : s.gpr .x9 = BitVec.ofNat 64 st) (
     (hk : k = 1 ∨ k = 2 ∨ k = 3) :
     WP isa (.block (test k)) s fun t =>
       (isa.eval (.zero .x .x10) t = some (decide (st = k)) ∧ t.mem = s.mem) ∧ Keep [.x10] s t := by
-  have hk4 : k < 4 := by omega
+  have hk4 : k < 4 := by omega_using [hk]
   rcases hk with rfl | rfl | rfl <;>
   · refine WP.keep [.x10] ?_ (by decide) (by decide) (by decide +kernel)
     unfold test
@@ -64,9 +64,9 @@ theorem output_frame {p : KeyPublic} {original : State} (hi : KeyInput p origina
     rwa [hi.y_eq, show inCtl original = ⟨p.control, 128⟩ by rw [← hi.2]; rfl] at this
   constructor <;> simp only [Spec.Rsa.bytesAt] <;> refine List.map_congr_left fun i hi => ?_
   · exact hf.bytes (fun r hr => by obtain rfl := List.mem_singleton.mp hr; exact hx)
-      (show p.len ≤ 2 ^ 64 by omega) (List.mem_range.mp hi)
+      (show p.len ≤ 2 ^ 64 by omega_using [hk]) (List.mem_range.mp hi)
   · exact hf.bytes (fun r hr => by obtain rfl := List.mem_singleton.mp hr; exact hy)
-      (show p.len ≤ 2 ^ 64 by omega) (List.mem_range.mp hi)
+      (show p.len ≤ 2 ^ 64 by omega_using [hk]) (List.mem_range.mp hi)
 
 /-- The octets consumed by an attempt. -/
 def advanceValues (p : KeyPublic) (used : Nat) : List (Nat × BitVec 64) :=
@@ -98,10 +98,10 @@ theorem key_advance_ok {p : KeyPublic} {original s : State} {used keys scalars :
     apply BitVec.eq_of_toNat_eq
     rw [BitVec.toNat_sub_of_le (by
       simp only [BitVec.le_def, BitVec.toNat_ofNat]
-      rw [Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega)]; omega)]
+      rw [Nat.mod_eq_of_lt (by omega_using [hroom, hlen]), Nat.mod_eq_of_lt (by omega_using [hlen])]; omega_using [hroom])]
     simp only [BitVec.toNat_ofNat]
-    rw [Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega)]
-    omega
+    rw [Nat.mod_eq_of_lt (by omega_using [hlen]), Nat.mod_eq_of_lt (by omega_using [hroom, hlen]), Nat.mod_eq_of_lt (by omega_using [hlen])]
+    omega_using []
   have e11 : BitVec.ofNat 64 used + BitVec.ofNat 64 p.len = BitVec.ofNat 64 (used + p.len) := by
     rw [← BitVec.ofNat_add]
   refine WP.keep [.x9, .x11, .x12, .x13, .x14] ?_ (by decide) (by decide) (by decide +kernel)
@@ -122,7 +122,7 @@ theorem key_classify_head {p : KeyPublic} {original s : State} {used keys scalar
       isa.eval (.zero .x .x10) t =
         some (decide (attemptStatus .cached p.a p.len ((keyRand original).drop used) = 1)) := by
   have hst : attemptStatus .cached p.a p.len ((keyRand original).drop used) < 4 := by
-    rcases attemptStatus_cases (policy:=.cached) p.a p.len ((keyRand original).drop used) with he | he | he <;> omega
+    rcases attemptStatus_cases (policy:=.cached) p.a p.len ((keyRand original).drop used) with he | he | he <;> omega_using [he]
   rw [WP.block_append_iff]
   refine WP.mono (key_advance_ok h hroom) fun v ⟨⟨hmv, h9⟩, kv⟩ => ?_
   have hb := advanceValues_bound p used
@@ -147,7 +147,7 @@ theorem key_classify_head {p : KeyPublic} {original s : State} {used keys scalar
     apply BitVec.eq_of_toNat_eq
     have := hp.1
     simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat] at this ⊢
-    omega
+    omega_using [this]
   refine WP.mono (test_ok h9' hst (.inl rfl)) fun t ⟨⟨he, hmt⟩, kt⟩ => ?_
   exact ⟨hv.keep kt hmt, hpv.keep hmt (by rw [kt.gpr .x0 (by decide)]),
     (kt.gpr .x9 (by decide)).trans h9', he⟩
@@ -177,7 +177,7 @@ theorem key_terminal_done {p : KeyPublic} {original s : State} {used keys scalar
     WP isa (.block (terminal status)) s (KeyDone p original r) := by
   refine WP.mono (key_terminal_live h hst) fun t ⟨ht, hm⟩ => ?_
   have hb := terminalValues_bound status
-  have hst0 : status ≠ 0 := by omega
+  have hst0 : status ≠ 0 := by omega_using [hst]
   have hw (j : Nat) (hj : j < 16) : word t.mem p.control (8 * j) =
       controllerValue (terminalValues status) j (word s.mem p.control (8 * j)) := by
     rw [hm, writeController_word _ _ _ hb j hj]

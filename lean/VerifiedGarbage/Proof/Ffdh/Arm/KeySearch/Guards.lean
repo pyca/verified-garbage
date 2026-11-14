@@ -21,7 +21,7 @@ theorem budgetGuard_ok (s : State) {base : BitVec 32} {j n : Nat}
       (t.z = decide (n = 0) ∧ t.mem = s.mem) ∧ Rest [.r9] s t := by
   refine withRest_all [.r9] ?_ (by rfl) (by rfl)
   unfold VG.Impl.Ffdh.Arm.KeySearch.ldf lowWord at *
-  ffrun [(by omega : 8 * j < 4096), h.addr slot, h.read slot, value]
+  ffrun [(by omega_using [slot] : 8 * j < 4096), h.addr slot, h.read slot, value]
   change (BitVec.ofNat 32 n - 0#32 == 0#32) = decide (n = 0)
   rw [BitVec.sub_zero]
   exact ofNat_beq_zero fits
@@ -38,9 +38,9 @@ theorem roomGuard_ok (s : State) {base : BitVec 32} {remaining width : Nat}
     h.read (by decide : 10 < 16), h.read (by decide : 2 < 16), length, count,
     BitVec.toNat_ofNat, Nat.mod_eq_of_lt remainingFit, Nat.mod_eq_of_lt widthFit]
   by_cases room : width ≤ remaining
-  · simp only [room, decide_true, ite_true, show ¬remaining < width by omega, decide_false]
+  · simp only [room, decide_true, ite_true, show ¬remaining < width by omega_using [room], decide_false]
     rfl
-  · simp only [room, decide_false, show remaining < width by omega, decide_true]
+  · simp only [room, decide_false, show remaining < width by omega_using [room], decide_true]
     rfl
 
 theorem statusGuard_ok (s : State) {base : BitVec 32} {status : Nat}
@@ -51,7 +51,7 @@ theorem statusGuard_ok (s : State) {base : BitVec 32} {status : Nat}
   refine withRest_all [.r9] ?_ (by rfl) (by rfl)
   unfold VG.Impl.Ffdh.Arm.KeySearch.ldf lowWord at *
   ffrun [h.addr (by decide : 14 < 16), h.read (by decide : 14 < 16), value]
-  have casesStatus : status = 0 ∨ status = 1 ∨ status = 2 ∨ status = 3 ∨ status = 4 := by omega
+  have casesStatus : status = 0 ∨ status = 1 ∨ status = 2 ∨ status = 3 ∨ status = 4 := by omega_using [small]
   rcases casesStatus with rfl | rfl | rfl | rfl | rfl <;> rfl
 
 end VG.Proof.Ffdh.Arm.KeySearch

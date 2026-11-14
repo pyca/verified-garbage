@@ -53,7 +53,7 @@ theorem MatB16.single {k oa : Nat} {ρ : List Byte} {e : Nat} {rbs wbs : List (R
   refine ⟨?_, fun e' he' f hf => ?_⟩
   · rw [h15, hsb, and_acc h.r15]
     exact ite_congr (propext allOk_succ.symm) (fun _ => rfl) (fun _ => rfl)
-  · rcases (by omega : e' < e ∨ e' = e) with he' | rfl
+  · rcases (by omega_using [he'] : e' < e ∨ e' = e) with he' | rfl
     · exact Lx.keepPoly16 hP (kA e' he') (h.mat e' he' f hf)
     · rw [hP.pa rbx_bases]
       exact hres f (by rw [hsb]; exact hf)
@@ -72,11 +72,11 @@ theorem MatB16.four {k oa : Nat} {ρ : List Byte} {e : Nat} {rbs wbs : List (Reg
   refine ⟨?_, fun e' he' f hf => ?_⟩
   · rw [h15, hsb, and_acc h.r15]
     exact ite_congr (propext allOk_add4.symm) (fun _ => rfl) (fun _ => rfl)
-  · rcases (by omega : e' < e ∨ e ≤ e') with he'' | he''
+  · rcases (by omega_using [] : e' < e ∨ e ≤ e') with he'' | he''
     · exact Lx.keepPoly16 hP (kA e' he'') (h.mat e' he'' f hf)
-    · have := hres (e' - e) (by omega) f (by rw [hsb, Nat.add_sub_cancel' he'']; exact hf)
+    · have := hres (e' - e) (by omega_using [he']) f (by rw [hsb, Nat.add_sub_cancel' he'']; exact hf)
       rw [hP.pa rbx_bases]
-      rwa [show oa + 512 * e + 512 * (e' - e) = oa + 512 * e' by omega] at this
+      rwa [show oa + 512 * e + 512 * (e' - e) = oa + 512 * e' by omega_using [he'']] at this
 
 theorem MatB16.zero (k oa : Nat) (ρ : List Byte) {s : State} (h15 : s.gpr .r15 = 1) : MatB16 k oa ρ 0 s :=
   ⟨by rw [h15, ifp (allOk_zero _ _)], fun _ h => absurd h (Nat.not_lt_zero _)⟩
@@ -92,27 +92,27 @@ theorem ents16_ok (p : String × Prog isa) (k oa : Nat) (scr : Ptr) {I : Nat →
       WP isa (ents16 p k oa scr e n) s (I (e + n))
   | 0, e, _, _, s, hs => by simp only [ents16]; exact WP.block_nil hs
   | 1, e, he, hq, s, hs => by
-    simp only [ents16]; exact h1 e (by omega) (by omega) s hs
+    simp only [ents16]; exact h1 e (by omega_using [he]) (by omega_using [he, hq]) s hs
   | 2, e, he, hq, s, hs => by
     simp only [ents16]
-    exact WP.seq (WP.mono (h1 e (by omega) (by omega) s hs) fun s₁ h₁ =>
-      ents16_ok p k oa scr h1 h4 1 (e + 1) (by omega) (by omega) s₁ h₁)
+    exact WP.seq (WP.mono (h1 e (by omega_using [he]) (by omega_using [he, hq]) s hs) fun s₁ h₁ =>
+      ents16_ok p k oa scr h1 h4 1 (e + 1) (by omega_using [he]) (by omega_using [he, hq]) s₁ h₁)
   | 3, e, he, hq, s, hs => by
     simp only [ents16]
-    refine WP.seq (WP.mono (h1 e (by omega) (by omega) s hs) fun s₁ h₁ => ?_)
-    have := ents16_ok p k oa scr h1 h4 2 (e + 1) (by omega) (by omega) s₁ h₁
-    rwa [show e + 1 + 2 = e + 3 by omega] at this
+    refine WP.seq (WP.mono (h1 e (by omega_using [he]) (by omega_using [he, hq]) s hs) fun s₁ h₁ => ?_)
+    have := ents16_ok p k oa scr h1 h4 2 (e + 1) (by omega_using [he]) (by omega_using [he, hq]) s₁ h₁
+    rwa [show e + 1 + 2 = e + 3 by omega_using []] at this
   | 4, e, he, hq, s, hs => by
     simp only [ents16]
-    have := h4 (e / 4) (by omega) s (by rwa [show 4 * (e / 4) = e by omega])
-    rwa [show 4 * (e / 4) = e by omega] at this
+    have := h4 (e / 4) (by omega_using [he]) s (by rwa [show 4 * (e / 4) = e by omega_using [he, hq]])
+    rwa [show 4 * (e / 4) = e by omega_using [he, hq]] at this
   | n + 5, e, he, hq, s, hs => by
     simp only [ents16]
-    have := h4 (e / 4) (by omega) s (by rwa [show 4 * (e / 4) = e by omega])
-    rw [show 4 * (e / 4) = e by omega] at this
+    have := h4 (e / 4) (by omega_using [he]) s (by rwa [show 4 * (e / 4) = e by omega_using [he, hq]])
+    rw [show 4 * (e / 4) = e by omega_using [he, hq]] at this
     refine WP.seq (WP.mono this fun s₁ h₁ => ?_)
-    have := ents16_ok p k oa scr h1 h4 (n + 1) (e + 4) (by omega) (by omega) s₁ h₁
-    rwa [show e + 4 + (n + 1) = e + (n + 5) by omega] at this
+    have := ents16_ok p k oa scr h1 h4 (n + 1) (e + 4) (by omega_using [he]) (by omega_using [hq]) s₁ h₁
+    rwa [show e + 4 + (n + 1) = e + (n + 5) by omega_using []] at this
 
 theorem samples16_ok' (p : String × Prog isa) (k oa : Nat) (scr : Ptr) {I : Nat → State → Prop}
     (h1 : ∀ e < k * k, 4 * (k * k / 4) ≤ e → ∀ s, I e s →
@@ -120,7 +120,7 @@ theorem samples16_ok' (p : String × Prog isa) (k oa : Nat) (scr : Ptr) {I : Nat
     (h4 : ∀ q < k * k / 4, ∀ s, I (4 * q) s →
       WP isa (quad16 p k (4 * q) (sc (oa + 512 * (4 * q))) scr) s (I (4 * q + 4)))
     {s : State} (h : I 0 s) : WP isa (samples16 p k oa scr) s (I (k * k)) := by
-  have := ents16_ok p k oa scr h1 h4 (k * k) 0 (by omega) (by omega) s h
+  have := ents16_ok p k oa scr h1 h4 (k * k) 0 (by omega_using []) (by omega_using []) s h
   rwa [Nat.zero_add] at this
 
 /-- `ents16_ok`, for constant time. -/
@@ -131,25 +131,25 @@ theorem ents16_tr (p : String × Prog isa) (k oa : Nat) (scr : Ptr) {R : Nat →
       RelCT isa (R (4 * q)) (quad16 p k (4 * q) (sc (oa + 512 * (4 * q))) scr) (R (4 * q + 4))) :
     ∀ n e, e + n = k * k → (e % 4 = 0 ∨ 4 * (k * k / 4) ≤ e) → RelCT isa (R e) (ents16 p k oa scr e n) (R (e + n))
   | 0, e, _, _ => by simp only [ents16]; exact nil_tr
-  | 1, e, he, hq => by simp only [ents16]; exact h1 e (by omega) (by omega)
+  | 1, e, he, hq => by simp only [ents16]; exact h1 e (by omega_using [he]) (by omega_using [he, hq])
   | 2, e, he, hq => by
     simp only [ents16]
-    exact RelCT.seq (h1 e (by omega) (by omega)) (ents16_tr p k oa scr h1 h4 1 (e + 1) (by omega) (by omega))
+    exact RelCT.seq (h1 e (by omega_using [he]) (by omega_using [he, hq])) (ents16_tr p k oa scr h1 h4 1 (e + 1) (by omega_using [he]) (by omega_using [he, hq]))
   | 3, e, he, hq => by
     simp only [ents16]
-    have := ents16_tr p k oa scr h1 h4 2 (e + 1) (by omega) (by omega)
-    rw [show e + 1 + 2 = e + 3 by omega] at this
-    exact RelCT.seq (h1 e (by omega) (by omega)) this
+    have := ents16_tr p k oa scr h1 h4 2 (e + 1) (by omega_using [he]) (by omega_using [he, hq])
+    rw [show e + 1 + 2 = e + 3 by omega_using []] at this
+    exact RelCT.seq (h1 e (by omega_using [he]) (by omega_using [he, hq])) this
   | 4, e, he, hq => by
     simp only [ents16]
-    have := h4 (e / 4) (by omega)
-    rwa [show 4 * (e / 4) = e by omega] at this
+    have := h4 (e / 4) (by omega_using [he])
+    rwa [show 4 * (e / 4) = e by omega_using [he, hq]] at this
   | n + 5, e, he, hq => by
     simp only [ents16]
-    have := h4 (e / 4) (by omega)
-    rw [show 4 * (e / 4) = e by omega] at this
-    have h' := ents16_tr p k oa scr h1 h4 (n + 1) (e + 4) (by omega) (by omega)
-    rw [show e + 4 + (n + 1) = e + (n + 5) by omega] at h'
+    have := h4 (e / 4) (by omega_using [he])
+    rw [show 4 * (e / 4) = e by omega_using [he, hq]] at this
+    have h' := ents16_tr p k oa scr h1 h4 (n + 1) (e + 4) (by omega_using [he]) (by omega_using [hq])
+    rw [show e + 4 + (n + 1) = e + (n + 5) by omega_using []] at h'
     exact RelCT.seq this h'
 
 theorem samples16_tr' (p : String × Prog isa) (k oa : Nat) (scr : Ptr) {R : Nat → State → State → Prop}
@@ -158,7 +158,7 @@ theorem samples16_tr' (p : String × Prog isa) (k oa : Nat) (scr : Ptr) {R : Nat
     (h4 : ∀ q < k * k / 4,
       RelCT isa (R (4 * q)) (quad16 p k (4 * q) (sc (oa + 512 * (4 * q))) scr) (R (4 * q + 4))) :
     RelCT isa (R 0) (samples16 p k oa scr) (R (k * k)) := by
-  have := ents16_tr p k oa scr h1 h4 (k * k) 0 (by omega) (by omega)
+  have := ents16_tr p k oa scr h1 h4 (k * k) 0 (by omega_using []) (by omega_using [])
   rwa [Nat.zero_add] at this
 
 end VG.Proof.MlKem.X86_64

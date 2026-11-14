@@ -126,9 +126,9 @@ theorem tailN_ok {s : State} {B : Addr} {Z w : Nat} (hs : Scr s B Z)
     (by rw [c0, i7]) (by rw [g₂' .t0 (by decide), it0]) j1
     (by rw [m0₂, g₂' .t1 (by decide)]; exact hinv) hw2 hw' (by omega_arith)
     (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith) hz
-    (by rw [v₂ hb hb2, v₂ (by omega) (by decide)]; exact hB))
+    (by rw [v₂ hb hb2, v₂ (by omega_using [hn]) (by decide)]; exact hB))
     fun s₃' ⟨⟨tlt, teq, out₃⟩, k₃⟩ => ?_)
-  rw [v₂ (by omega) (by decide)] at tlt teq
+  rw [v₂ (by omega_using [hn]) (by decide)] at tlt teq
   rw [v₂ ha ha2, v₂ hb hb2] at teq
   rw [wordsVal_succ_top] at tlt teq
   -- `a6` and `a7` back at the temporary and `m`.

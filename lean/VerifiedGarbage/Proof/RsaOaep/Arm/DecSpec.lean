@@ -25,7 +25,7 @@ open VG.Proof.Mgf1 (ifp ifn)
 variable (h g : OHash)
 
 theorem take1_map_range (f : Nat → Byte) {n : Nat} (hn : 0 < n) : ((List.range n).map f).take 1 = [f 0] := by
-  obtain ⟨k, rfl⟩ : ∃ k, n = k + 1 := ⟨n - 1, by omega⟩
+  obtain ⟨k, rfl⟩ : ∃ k, n = k + 1 := ⟨n - 1, by omega_using [hn]⟩
   simp [List.range_succ_eq_map]
 
 theorem lhB_length (P : EP) (σ : State) : (lhB h P σ).length = h.H.D := by
@@ -51,7 +51,7 @@ theorem decode_eq' (P : EP) (σ : State) (hfit : 2 * h.H.D + 2 ≤ P.K) :
     (fun x _ => by rw [Nat.sub_add_eq])
   rw [Proof.RsaOaep.decode_eq g.valid (labB P σ) hfit h.glen h5,
     show srcB (V5 h g P σ) (1 + 2 * h.H.D) (P.K - (2 * h.H.D + 1)) = sL (tN h P) (T h g P σ) from rfl,
-    RsaPss.dropWhile_lz, take1_map_range _ (by omega)]
+    RsaPss.dropWhile_lz, take1_map_range _ (by omega_using [hfit])]
   have hc : ([V P σ 0] = [0x00] ∧ srcB (V5 h g P σ) (1 + h.H.D) h.H.D = h.G.hash (labB P σ)) ↔ hdOk h g P σ := by
     simp only [lh_iff h g P σ, List.cons.injEq, and_true]
   have hl : RsaPss.lz (sL (tN h P) (T h g P σ)) ≤ tN h P := lzS_le (tN h P) (T h g P σ)
@@ -76,7 +76,7 @@ theorem decode_eq' (P : EP) (σ : State) (hfit : 2 * h.H.D + 2 ≤ P.K) :
       split
       · rename_i heq; exact absurd (List.cons.inj heq).1 hne
       · rfl
-    · rw [List.drop_eq_nil_of_le (by rw [sL_length]; show tN h P ≤ lzS (tN h P) (T h g P σ); omega)]
+    · rw [List.drop_eq_nil_of_le (by rw [sL_length]; show tN h P ≤ lzS (tN h P) (T h g P σ); omega_using [hlt])]
 
 /-- What decryption returns, when `k ≥ 2 hLen + 2`. -/
 theorem decOut_eq (P : EP) (σ : State) (hfit : 2 * h.H.D + 2 ≤ P.K) (hk : OcK P σ) :

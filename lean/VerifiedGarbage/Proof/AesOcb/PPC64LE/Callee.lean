@@ -38,7 +38,7 @@ theorem toNat_ofNat_lt {n : Nat} (h : n < 2 ^ 64) : (BitVec.ofNat 64 n).toNat = 
   rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt h
 
 theorem toNat_rounds {R : Nat} (hR : R = 10 ∨ R = 12 ∨ R = 14) : (BitVec.ofNat 64 R).toNat = R :=
-  toNat_ofNat_lt (by omega)
+  toNat_ofNat_lt (by omega_using [hR])
 
 theorem callEntry_gpr' (s : State) {r : Reg} (h : r ∉ linkRegs) : s.callEntry.gpr r = s.gpr r :=
   State.callEntry_gpr _ h
@@ -71,7 +71,7 @@ structure BPost (f : Nat → List Byte → Spec.Aes.State → Spec.Aes.State) (s
   out : Spec.Aes.statesAt s'.mem D n = (Spec.Aes.statesAt s.mem D n).map (f R (bytesAt s.mem K (16 * (R + 1))))
 
 theorem BCall.n_lt {s : State} {K D S : Addr} {R n : Nat} (h : BCall s K D S R n) : n < 2 ^ 64 := by
-  have := h.wrap; omega
+  have := h.wrap; omega_using [this]
 
 theorem BCall.pre {f : Nat → List Byte → Spec.Aes.State → Spec.Aes.State} {s : State} {K D S : Addr} {R n : Nat}
     (h : BCall s K D S R n) :

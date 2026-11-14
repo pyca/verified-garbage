@@ -83,7 +83,7 @@ variable {m₁ m₂ : Mem} {p : Addr} {L : Nat}
 region of at least `n` bytes there. -/
 theorem agree_le (h : ∀ a, Region.Contains ⟨p, L⟩ a 1 → m₁ a = m₂ a) {n : Nat} (hn : n ≤ L) :
     ∀ i < n, m₂ (p + BitVec.ofNat 64 i) = m₁ (p + BitVec.ofNat 64 i) :=
-  fun i hi => Proof.Camellia.agree_of h i (by omega)
+  fun i hi => Proof.Camellia.agree_of h i (by omega_using [hn, hi])
 
 theorem aesBytesAt_of (h : ∀ a, Region.Contains ⟨p, L⟩ a 1 → m₁ a = m₂ a) {n : Nat} (hn : n ≤ L) :
     Spec.Aes.bytesAt m₂ p n = Spec.Aes.bytesAt m₁ p n := by
@@ -99,11 +99,11 @@ theorem cbcBlocksAt_of (h : ∀ a, Region.Contains ⟨p, L⟩ a 1 → m₁ a = m
   refine List.map_congr_left fun j hj => ?_
   have := List.mem_range.mp hj
   rw [VG.Offset.add_add]
-  exact agree_le h hn _ (by omega)
+  exact agree_le h hn _ (by omega_arith)
 
 theorem blocksAt_of (h : ∀ a, Region.Contains ⟨p, L⟩ a 1 → m₁ a = m₂ a) {n : Nat} (hn : n * 16 ≤ L) :
     blocksAt m₂ p n = blocksAt m₁ p n :=
-  Proof.Camellia.blocksAt_congr fun i hi => agree_le h hn i (by omega)
+  Proof.Camellia.blocksAt_congr fun i hi => agree_le h hn i (by omega_using [hi])
 
 end
 

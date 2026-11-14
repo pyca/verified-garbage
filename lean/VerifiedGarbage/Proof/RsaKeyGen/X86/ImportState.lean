@@ -84,22 +84,22 @@ theorem StateAt.step {g : Geometry} {s₀ s : State} (C : Context g s₀) {i : N
   refine WP.mono (step_ok s _ _ source destination hr hw) fun t ⟨M, Ps, Pd, Pc, Z, K⟩ => ?_
   have input : s.mem.readW (g.sourceAt i) 32 = s₀.mem.readW (g.sourceAt i) 32 :=
     S.frame.readW (r := g.sourceRegion) (w := 32)
-      (Offset.contains_base _ (by omega) (by have := C.sourceFit; omega))
+      (Offset.contains_base _ (by omega_using [index]) (by have := C.sourceFit; omega_using [index, this]))
       (by intro r mem; obtain rfl := List.mem_singleton.mp mem; exact C.separate) (by decide)
-  refine ⟨⟨by omega, ?_, ?_, ?_, ?_, ?_, S.keeps.trans K⟩, ?_⟩
+  refine ⟨⟨by omega_using [index], ?_, ?_, ?_, ?_, ?_, S.keeps.trans K⟩, ?_⟩
   · rw [Ps, S.source]
     unfold Geometry.sourcePtr
     rw [BitVec.add_assoc]
     change g.src + (BitVec.ofNat 32 (4 * i) + BitVec.ofNat 32 4) = _
-    rw [← BitVec.ofNat_add, show 4 * i + 4 = 4 * (i + 1) by omega]
+    rw [← BitVec.ofNat_add, show 4 * i + 4 = 4 * (i + 1) by omega_using []]
   · rw [Pd, S.destination]
     unfold Geometry.destPtr
     rw [BitVec.sub_sub]
     change _ - (BitVec.ofNat 32 (4 * i) + BitVec.ofNat 32 4) = _
-    rw [← BitVec.ofNat_add, show 4 * i + 4 = 4 * (i + 1) by omega]
+    rw [← BitVec.ofNat_add, show 4 * i + 4 = 4 * (i + 1) by omega_using []]
   · rw [Pc, S.count]
     change BitVec.ofNat 32 (g.count - i) - BitVec.ofNat 32 1 = _
-    rw [BitVec.ofNat_sub_ofNat_of_le _ _ (by decide) (by omega)]
+    rw [BitVec.ofNat_sub_ofNat_of_le _ _ (by decide) (by omega_using [index])]
     congr 1
   · intro j copied
     rw [M]
@@ -108,18 +108,18 @@ theorem StateAt.step {g : Geometry} {s₀ s : State} (C : Context g s₀) {i : N
       rw [Mem.readW_writeW_self32, input]
     · have sep : Mem.Sep (g.destAt j) 4 (g.destAt i) 4 := by
         apply Offset.sep (g.dst.setWidth 64)
-        · omega
-        · have := C.destFit; omega
-        · have := C.destFit; omega
+        · omega_using [index, copied, same]
+        · have := C.destFit; omega_using [this]
+        · have := C.destFit; omega_using [this]
       rw [Mem.readW_writeW_sep sep (by decide)]
-      exact S.copied j (by omega)
+      exact S.copied j (by omega_using [copied, same])
   · rw [M]
     exact S.frame.writeW (List.mem_singleton_self _) _
-      (Offset.contains_base _ (by omega) (by have := C.destFit; omega))
+      (Offset.contains_base _ (by omega_using [index]) (by have := C.destFit; omega_using [this]))
   · rw [Z, S.count]
     change some (BitVec.ofNat 32 (g.count - i) - BitVec.ofNat 32 1 == 0) = _
-    rw [BitVec.ofNat_sub_ofNat_of_le _ _ (by decide) (by omega),
-      ofNat_beq_zero (by have := C.sourceFit; omega)]
-    simp only [show g.count - i - 1 = 0 ↔ i + 1 = g.count by omega]
+    rw [BitVec.ofNat_sub_ofNat_of_le _ _ (by decide) (by omega_using [index]),
+      ofNat_beq_zero (by have := C.sourceFit; omega_using [this])]
+    simp only [show g.count - i - 1 = 0 ↔ i + 1 = g.count by omega_using [index]]
 
 end VG.Proof.RsaKeyGen.X86.Import

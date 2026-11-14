@@ -51,7 +51,7 @@ theorem mont28_ok {s : State} {B : Addr} {Z w : Nat} (h : MCtx s B Z w) {o a b :
   have hw := h.hw
   have hw' := h.hw'
   have h8 := slot_lt (w := w) (show 8 < 28 by decide)
-  refine WP.mono (Pub.montOpN_ok h.hs (n := 28) (by decide) (by omega) ha hb (by omega) (by omega) ha2 hb2
+  refine WP.mono (Pub.montOpN_ok h.hs (n := 28) (by decide) (by omega_using [ho]) ha hb (by omega_using [ho]) (by omega_using [ho]) ha2 hb2
     (by omega_arith) (by omega_arith) h.hZ h.h10 h.h29 h.h11 h.h12 h.inv hB) fun t ⟨⟨hlt, heq, hout⟩, k⟩ =>
     ⟨⟨hlt, heq, hout, ?_⟩, k⟩
   refine congrArg BitVec.toNat (Mem.readW_congr fun i hi => hout _ fun r hr => ?_)

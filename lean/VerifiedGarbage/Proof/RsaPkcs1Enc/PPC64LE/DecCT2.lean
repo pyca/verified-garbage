@@ -33,7 +33,7 @@ include h
 
 theorem initCall_pp {u : State} (hu : PP s u) (u3 : u.gpr .r3 = scA s sSt) : WP isa initCall u (PP s) := by
   obtain ⟨R, EM, hu⟩ := hu
-  have hs : 48 ≤ u.sp.toNat := by rw [hu.sp]; have := fb_ge h; omega
+  have hs : 48 ≤ u.sp.toNat := by rw [hu.sp]; have := fb_ge h; omega_using [this]
   exact hH.callInit_ok u3 ⟨hs, by rw [hu.sp]; exact lowD h (by decide) (by decide)⟩
     (scCovR h hu.wr (by decide)) (scCov h hu.wr (by decide)) fun v hrd hwr hsp hf hcs _ =>
       ⟨R, EM, hu.call h hrd hwr hsp hcs (by decide) hf fun r hr => by
@@ -43,8 +43,8 @@ theorem updCall_pp {u : State} (hu : PP s u) (u3 : u.gpr .r3 = scA s sSt) (u5 : 
     (u6 : u.gpr .r6 = s.gpr .r7) (u7 : u.gpr .r7 = scA s sWork) : WP isa updCall u (PP s) := by
   obtain ⟨R, EM, hu⟩ := hu
   have hk := h.k2
-  have hs : 48 ≤ u.sp.toNat := by rw [hu.sp]; have := fb_ge h; omega
-  have lk : sD + (s.gpr .r7).toNat ≤ scrBytes := by unfold sD scrBytes; omega
+  have hs : 48 ≤ u.sp.toNat := by rw [hu.sp]; have := fb_ge h; omega_using [this]
+  have lk : sD + (s.gpr .r7).toNat ≤ scrBytes := by unfold sD scrBytes; omega_using [hk]
   exact hH.callUpd_ok (len := (s.gpr .r7).toNat) u3 u5 (by rw [u6]) u7 (scD h (by decide) (by decide) (by decide))
     (scD h (.inr (by decide)) lk (by decide)) (scD h (.inr (by decide)) lk (by decide)) hs
     (by rw [hu.sp]; exact lowD h (by decide) (by decide)) (by rw [hu.sp]; exact lowD h (by decide) lk)
@@ -58,7 +58,7 @@ theorem updCall_pp {u : State} (hu : PP s u) (u3 : u.gpr .r3 = scA s sSt) (u5 : 
 theorem finCall_pp {u : State} (hu : PP s u) (u3 : u.gpr .r3 = scA s sSt) (u5 : u.gpr .r5 = scA s sDH)
     (u6 : u.gpr .r6 = scA s sWork) : WP isa finCall u (PP s) := by
   obtain ⟨R, EM, hu⟩ := hu
-  have hs : 48 ≤ u.sp.toNat := by rw [hu.sp]; have := fb_ge h; omega
+  have hs : 48 ≤ u.sp.toNat := by rw [hu.sp]; have := fb_ge h; omega_using [this]
   exact hH.callFin_ok u3 u5 u6 (scD h (by decide) (by decide) (by decide))
     (scD h (by decide) (by decide) (by decide)) (scD h (by decide) (by decide) (by decide)) hs
     (by rw [hu.sp]; exact lowD h (by decide) (by decide)) (by rw [hu.sp]; exact lowD h (by decide) (by decide))

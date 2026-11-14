@@ -35,16 +35,16 @@ theorem context_prefix {m : Mem} {ctx : Addr} {count k : Nat} {dom : List Byte}
  have countEq : count=3+34*w := context_words_count canonical
  have bound : P<2^(64*w) := by
   have h := os2ip_lt (dom.take k)
-  have len : (dom.take k).length=k := by simp only [List.length_take];omega
+  have len : (dom.take k).length=k := by simp only [List.length_take];omega_using [length]
   rw [len,pow256_eq] at h
-  exact Nat.lt_of_lt_of_le h (Nat.pow_le_pow_right (by decide) (by dsimp [w,Spec.Rsa.modulusWords];omega))
+  exact Nat.lt_of_lt_of_le h (Nat.pow_le_pow_right (by decide) (by dsimp [w,Spec.Rsa.modulusWords];omega_using []))
  have positive : 0<P := by
   have h := valid
   simp only [Spec.Rsa.modulusValid,Bool.and_eq_true,beq_iff_eq,decide_eq_true_eq] at h
   change 0<Spec.Rsa.os2ip (dom.take k)
-  omega
+  omega_using [h]
  have prefixWords : Spec.Rsa.wordsAt m (off ctx 24) (2*w)=Spec.Rsa.toWords P w++Spec.Rsa.toWords (2^(128*w)%P) w := by
-  have slice := VG.Proof.Mont.wordsAt_slice m ctx 0 count 3 (2*w) (by omega)
+  have slice := VG.Proof.Mont.wordsAt_slice m ctx 0 count 3 (2*w) (by omega_using [countEq])
   have src := context_words length valid canonical
   simp only [VG.Proof.Mont.off,BitVec.add_zero,Nat.zero_add] at slice
   rw [src] at slice
@@ -80,26 +80,26 @@ theorem sampleFrame_header {p : Parameters} {s t : State} {N i : Nat}
  (scratch : Scr s p.B p.Z) (inside : i<32) (different : i≠sMask)
  (same : ∀ q,ofs p.B q<p.Z→t.mem q=(s.mem.writeW (off p.B (8*sMask)) (sampleMask N)) q) :
  word t.mem p.B (8*i)=word s.mem p.B (8*i) := by
- rw [workspace_word (by have := scratch.nowrap;omega) same
-  (by have := hdr_lt_slot p.w 8 inside;have := p.room;omega)]
+ rw [workspace_word (by have := scratch.nowrap;omega_using [this]) same
+  (by have := hdr_lt_slot p.w 8 inside;have := p.room;omega_arith)]
  exact header_other (writeW_outside _ _ _ (by decide : 8*sMask+8≤2^64)) (by decide) inside different
 
 theorem FieldInitial.after_sample {p : Parameters} {s t : State} {N : Nat}
  (field : FieldInitial p s) (good : Good t p.B p.Z p.w p.mi)
  (same : ∀ q,ofs p.B q<p.Z→t.mem q=(s.mem.writeW (off p.B (8*sMask)) (sampleMask N)) q) : FieldInitial p t := by
- have nowrap : slot p.w 8≤2^64 := by have := field.good.scr.nowrap;have := p.room;omega
+ have nowrap : slot p.w 8≤2^64 := by have := field.good.scr.nowrap;have := p.room;omega_arith
  have masked := writeW_outside s.mem p.B (sampleMask N) (by decide : 8*sMask+8≤2^64)
  have arrays (a : Nat) (ha : a<8) : wv t.mem p.B (slot p.w a) p.w=wv s.mem p.B (slot p.w a) p.w := by
   have within := Nat.le_trans (slot_le (w:=p.w) ha) p.room
-  apply Eq.trans _ (masked.wv (Or.inr (hdr_lt_slot p.w a (show sMask<32 by decide))) (by have := slot_le (w:=p.w) ha;omega))
+  apply Eq.trans _ (masked.wv (Or.inr (hdr_lt_slot p.w a (show sMask<32 by decide))) (by have := slot_le (w:=p.w) ha;omega_using [nowrap, this]))
   apply wv_congr
   intro i hi
-  exact workspace_word (by have := field.good.scr.nowrap;omega) same (by omega)
+  exact workspace_word (by have := field.good.scr.nowrap;omega_using [this]) same (by omega_using [within, hi])
  have wordSame : word t.mem p.B (slot p.w 0)=word s.mem p.B (slot p.w 0) := by
-  rw [workspace_word (by have := field.good.scr.nowrap;omega) same
-   (by have := slot_le (w:=p.w) (show 0<8 by decide);have := p.room;have := p.positive;omega)]
+  rw [workspace_word (by have := field.good.scr.nowrap;omega_using [this]) same
+   (by have := slot_le (w:=p.w) (show 0<8 by decide);have := p.room;have := p.positive;omega_arith)]
   exact masked.word (Or.inr (hdr_lt_slot p.w 0 (show sMask<32 by decide)))
-   (by have := slot_le (w:=p.w) (show 0<8 by decide);have := p.positive;omega)
+   (by have := slot_le (w:=p.w) (show 0<8 by decide);have := p.positive;omega_arith)
  refine ⟨good,(arrays 0 (by decide)).trans field.modulus,?_,(arrays 4 (by decide)).trans field.r2⟩
  rw [wordSame]
  exact field.inverse
@@ -151,7 +151,7 @@ theorem generateFront_ok {p : Parameters} {s : State} {dom rb : List Byte} {dp r
  Initial q bs t ∧ Spec.Rsa.os2ip bs=Spec.Rsa.os2ip rb%2^p.N ∧
  Src t p.B p.Z dp dom ∧ word t.mem p.B (8*sDom)=dp ∧
  word t.mem p.B (8*sDL)=BitVec.ofNat 64 dl ∧ word t.mem p.B (8*sY)=yp ∧ Keep mmRegs s t := by
- have domSize : p.k≤dom.length := by omega
+ have domSize : p.k≤dom.length := by omega_using [shape, domLength]
  have validMod := VG.Proof.Ffdh.domainValid_mod valid
  have prefixValues := context_prefix domSize validMod view.canonical
  have wEq : p.w=Spec.Rsa.modulusWords p.k := words
@@ -164,10 +164,10 @@ theorem generateFront_ok {p : Parameters} {s : State} {dom rb : List Byte} {dp r
  rw [WP.seq_iff]
  refine WP.mono (importPrefix_ok scratch base p.room words positive size controls.length controls.context
   (fun i hi =>by
-   have h := view.readable (3+i) (by omega)
+   have h := view.readable (3+i) (by omega_using [countEq, hi])
    simpa only [off,Nat.mul_add] using h)
   (fun i hi =>by
-   have h := view.outside (24+i) (by omega)
+   have h := view.outside (24+i) (by omega_using [countEq, hi])
    simpa only [off,BitVec.ofNat_add,BitVec.add_assoc] using h)
   prefixValues.1 prefixValues.2 odd) ?_
  rintro a ⟨mi,goodA,modulusA,inverseA,r2A,frameA,restA⟩
@@ -201,7 +201,7 @@ theorem generateFront_ok {p : Parameters} {s : State} {dom rb : List Byte} {dp r
   obtain ⟨r,hr,contains⟩ := writeX i hi
   exact ⟨r,List.mem_append_right _ (by rw [total.wr];exact hr),contains⟩)
  have readsT : ReadEnv q bs t := context_readEnv wEq modulus generator policy table domSize validMod viewT.canonical
-  actual bsLength (fun i hi =>outsideX i (by omega)) viewT.readable viewT.outside
+  actual bsLength (fun i hi =>outsideX i (by omega_using [bsLength, hi])) viewT.readable viewT.outside
  have headerT (i : Nat) (lo : 16≤i) (hi : i<32) (different : i≠sMask) : word t.mem p.B (8*i)=word s.mem p.B (8*i) :=
   (sampleFrame_header (p:=q) goodA.scr hi different sameT).trans (headerA i lo hi)
  refine ⟨mi,⟨fieldT,?_,readsT⟩,valueT,domainT,?_,?_,?_,total⟩

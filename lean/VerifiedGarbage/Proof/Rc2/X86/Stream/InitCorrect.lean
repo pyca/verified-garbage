@@ -103,28 +103,28 @@ include hp
 
 theorem argAddr_eq (i : Nat) (hi : i < 7) :
     addr (E s₀) (4 + 4 * i) = (E s₀).setWidth 64 + BitVec.ofNat 64 (4 + 4 * i) := by
-  have := hp.sp_fit; exact addr_eq (by omega)
+  have := hp.sp_fit; exact addr_eq (by omega_using [hi, this])
 
 theorem arg_sub {i : Nat} (hi : i < 7) : Region.Sub ⟨addr (E s₀) (4 + 4 * i), 4⟩ (argR s₀) := by
   show Region.Sub _ ⟨addr (E s₀) (4 + 4 * 0), 28⟩
   rw [hp.argAddr_eq i hi, hp.argAddr_eq 0 (by decide)]
-  exact Offset.sub _ (by omega) (by omega)
+  exact Offset.sub _ (by omega_using []) (by omega_using [hi])
 
 theorem rin {s : State} (hrd : s.rd = s₀.rd) {i : Nat} (hi : i < 7) :
     InRegions (s.rd ++ s.wr) (addr (E s₀) (4 + 4 * i)) 4 := by
   refine ⟨argR s₀, by simp [hrd, hp.rd], ?_⟩
   show (⟨addr (E s₀) (4 + 4 * 0), 28⟩ : Region).Contains _ _
   rw [hp.argAddr_eq i hi, hp.argAddr_eq 0 (by decide)]
-  exact Offset.contains _ (by omega) (by omega) (by have := hp.sp_fit; omega)
+  exact Offset.contains _ (by omega_using []) (by omega_using [hi]) (by have := hp.sp_fit; omega_using [])
 
 theorem scr_addr {d : Nat} (hd : d + 4 ≤ 576) : addr (scr s₀) d = sA s₀ + BitVec.ofNat 64 d := by
-  have := hp.s_fit; exact addr_eq (by omega)
+  have := hp.s_fit; exact addr_eq (by omega_using [hd, this])
 
 theorem scr_sub {d : Nat} (hd : d + 4 ≤ 576) : Region.Sub ⟨addr (scr s₀) d, 4⟩ (scR s₀) := by
   rw [hp.scr_addr hd]; exact Offset.sub_base _ hd
 
 theorem ctx_addr {d : Nat} (hd : d + 4 ≤ 144) : addr (ctx s₀) d = cA s₀ + BitVec.ofNat 64 d := by
-  have := hp.c_fit; exact addr_eq (by omega)
+  have := hp.c_fit; exact addr_eq (by omega_using [hd, this])
 
 end Pre
 
@@ -170,7 +170,7 @@ theorem pred_lt (x : BitVec 32) {n : Nat} (hn : n < 2 ^ 32) :
     decide ((x - BitVec.ofNat 32 1).toNat < n) = decide (1 ≤ x.toNat ∧ x.toNat ≤ n) := by
   rw [decide_eq_decide, BitVec.toNat_sub, BitVec.toNat_ofNat]
   have := x.isLt
-  omega
+  omega_using [hn]
 
 theorem checks_ok {s₀ : State} (hp : Pre s₀) {Q : State → Prop}
     (hQ : ∀ t, Common s₀ t → t.mem = s₀.mem → t.gpr .eax = BitVec.ofNat 32 (code s₀) →
@@ -285,22 +285,22 @@ theorem initArgs_ok {s₀ s : State} (hp : Pre s₀) (hi : il s₀ = 8) (hc : Co
     WP isa (.block initArgs) s Q := by
   have hif := hp.i_fit
   have hcf := hp.c_fit
-  have iv4 : addr (iv s₀) 4 = ivA s₀ + BitVec.ofNat 64 4 := addr_eq (by omega)
+  have iv4 : addr (iv s₀) 4 = ivA s₀ + BitVec.ofNat 64 4 := addr_eq (by omega_using [hi, hif])
   have c128 : addr (ctx s₀) 128 = cA s₀ + BitVec.ofNat 64 128 := hp.ctx_addr (by decide)
   have c132 : addr (ctx s₀) 132 = cA s₀ + BitVec.ofNat 64 132 := hp.ctx_addr (by decide)
   have ivIn₀ : InRegions (s₀.rd ++ s₀.wr) (addr (iv s₀) 0) 4 := by
-    rw [addr_eq (by have := (iv s₀).isLt; omega)]
-    exact ⟨ivR s₀, by simp [hp.rd], Offset.contains_base _ (by omega) (by omega)⟩
+    rw [addr_eq (by have := (iv s₀).isLt; omega_using [])]
+    exact ⟨ivR s₀, by simp [hp.rd], Offset.contains_base _ (by omega_using [hi]) (by omega_using [])⟩
   have ivIn₄ : InRegions (s₀.rd ++ s₀.wr) (addr (iv s₀) 4) 4 := by
-    rw [iv4]; exact ⟨ivR s₀, by simp [hp.rd], Offset.contains_base _ (by omega) (by omega)⟩
+    rw [iv4]; exact ⟨ivR s₀, by simp [hp.rd], Offset.contains_base _ (by omega_using [hi]) (by omega_using [])⟩
   have iv0 : addr (iv s₀) 0 = ivA s₀ := by
-    rw [addr_eq (by have := (iv s₀).isLt; omega)]; exact BitVec.add_zero _
+    rw [addr_eq (by have := (iv s₀).isLt; omega_using [])]; exact BitVec.add_zero _
   have cvC (d : Nat) (hd : 128 ≤ d) (hd' : d + 4 ≤ 136) : (cvR s₀).Contains (cA s₀ + BitVec.ofNat 64 d) 4 :=
-    Offset.contains _ hd (by omega) (by omega)
+    Offset.contains _ hd (by omega_using [hd']) (by omega_using [])
   have cvIn (d : Nat) (hd : 128 ≤ d) (hd' : d + 4 ≤ 136) : InRegions s₀.wr (cA s₀ + BitVec.ofNat 64 d) 4 :=
-    ⟨ctxR s₀, by simp [hp.wr], Offset.contains_base _ (by omega) (by omega)⟩
+    ⟨ctxR s₀, by simp [hp.wr], Offset.contains_base _ (by omega_using [hd']) (by omega_using [hd'])⟩
   have scC (d : Nat) (hd : d + 4 ≤ 576) : (scR s₀).Contains (addr (scr s₀) d) 4 := by
-    rw [hp.scr_addr hd]; exact Offset.contains_base _ hd (by omega)
+    rw [hp.scr_addr hd]; exact Offset.contains_base _ hd (by omega_using [hd])
   have scIn (d : Nat) (hd : d + 4 ≤ 576) : InRegions s₀.wr (addr (scr s₀) d) 4 :=
     ⟨scR s₀, by simp [hp.wr], scC d hd⟩
   simp only [initArgs, save, List.cons_append, List.nil_append]
@@ -325,7 +325,7 @@ theorem initArgs_ok {s₀ s : State} (hp : Pre s₀) (hi : il s₀ = 8) (hc : Co
     have r₄ : s₄.mem.readW (ivA s₀ + BitVec.ofNat 64 4) 32 = s₀.mem.readW (ivA s₀ + BitVec.ofNat 64 4) 32 := by
       rw [u₄.mem, u₃.mem, u₂.mem, u₁.mem, hm, c128]
       refine Mem.readW_writeW_sep (Region.Disjoint.sep (hp.i_c.sub_right cv_sub) ?_ ?_) (by decide)
-      · exact Offset.contains_base _ (by omega) (by omega)
+      · exact Offset.contains_base _ (by omega_using [hi]) (by omega_using [])
       · exact contains_prefix _ (by decide)
     have m₄ : s₄.mem = s₀.mem.writeW (cA s₀ + BitVec.ofNat 64 128) (s₀.mem.readW (ivA s₀) 32) := by
       rw [u₄.mem, u₃.gpr, u₃.mem, u₂.mem, u₁.mem, hm, iv0, c128]
@@ -410,7 +410,7 @@ theorem setWidth_append (a b : BitVec 32) : BitVec.setWidth 32 (a ++ b) = b := b
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_setWidth, BitVec.toNat_append, ← Nat.shiftLeft_add_eq_or_of_lt b.isLt, Nat.shiftLeft_eq]
   have := b.isLt
-  omega
+  omega_using []
 
 /-- What the call of `vg_rc2_expand_key(key, key_len, effective_bits, ctx, scratch)` needs. -/
 theorem keyCallPre_ok {s₀ s : State} (hp : Pre s₀) (hk : 1 ≤ kl s₀ ∧ kl s₀ ≤ 128)
@@ -422,7 +422,7 @@ theorem keyCallPre_ok {s₀ s : State} (hp : Pre s₀) (hk : 1 ≤ kl s₀ ∧ k
   have hEf := hp.sp_fit
   have hesp : s.gpr .esp = E s₀ := hc.esp
   have fit : 4 * rs5.length + 4 ≤ (s.gpr .esp).toNat := by
-    rw [hesp]; simp only [List.length_cons, List.length_nil]; omega
+    rw [hesp]; simp only [List.length_cons, List.length_nil]; omega_using [hlo]
   have hrs : Reg.esp ∉ rs5 := by decide
   have a0 : arg (pushed rs5 s).callEntry 0 = key s₀ := by rw [callEntry_arg fit hrs (by simp)]; exact eax
   have a1 : arg (pushed rs5 s).callEntry 1 = arg s₀ 1 := by rw [callEntry_arg fit hrs (by simp)]; exact ecx
@@ -435,7 +435,7 @@ theorem keyCallPre_ok {s₀ s : State} (hp : Pre s₀) (hk : 1 ≤ kl s₀ ∧ k
     rw [callEntry_argAddr0, hesp]; rfl
   have kA' : Region.Sub ⟨(E s₀ - BitVec.ofNat 32 20).setWidth 64, 20⟩ (stkR s₀) := below_sub (by decide) hlo
   have kR : Region.Sub ⟨(E s₀ - BitVec.ofNat 32 24).setWidth 64, 4⟩ (stkR s₀) := by
-    have := below_inner (sp := E s₀) (a := 4) (b := 24) (k := 20) (by omega) hlo
+    have := below_inner (sp := E s₀) (a := 4) (b := 24) (k := 20) (by omega_using []) hlo
     rw [show E s₀ - BitVec.ofNat 32 24 = E s₀ - BitVec.ofNat 32 20 - BitVec.ofNat 32 4 by
       rw [← VG.Offset.sub_add_eq]; rfl]
     exact this
@@ -450,8 +450,8 @@ theorem keyCallPre_ok {s₀ s : State} (hp : Pre s₀) (hk : 1 ≤ kl s₀ ∧ k
     refine ⟨trivial, trivial, hp.k_c.sub_right sch_sub, hp.k_s.sub_right bS,
       (hp.c_s.sub_left sch_sub).sub_right bS, (hp.t_c.sub_left kA').sub_right sch_sub,
       (hp.t_s.sub_left kA').sub_right bS, (hp.t_c.sub_left kR).sub_right sch_sub,
-      (hp.t_s.sub_left kR).sub_right bS, hp.k_fit, by have := hp.c_fit; omega,
-      by have := hp.s_fit; omega, by rw [sub_toNat (by omega)]; omega, hk.1, hk.2, he.1, he.2⟩
+      (hp.t_s.sub_left kR).sub_right bS, hp.k_fit, by have := hp.c_fit; omega_using [this],
+      by have := hp.s_fit; omega_using [this], by rw [sub_toNat (by omega_using [hlo])]; omega_using [], hk.1, hk.2, he.1, he.2⟩
   · refine Covers.of_sub fun r hr => ?_
     simp only [callRd, callWr, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil,
       or_false] at hr
@@ -481,11 +481,11 @@ theorem keyCall_ok {s₀ s : State} (hp : Pre s₀) (hk : 1 ≤ kl s₀ ∧ kl s
   have hEf := hp.sp_fit
   have hesp : s.gpr .esp = E s₀ := hc.esp
   have fit : 4 * rs5.length + 4 ≤ (s.gpr .esp).toNat := by
-    rw [hesp]; simp only [List.length_cons, List.length_nil]; omega
+    rw [hesp]; simp only [List.length_cons, List.length_nil]; omega_using [hlo]
   have hrs : Reg.esp ∉ rs5 := by decide
   have hesp : s.gpr .esp = E s₀ := hc.esp
   have fit : 4 * rs5.length + 4 ≤ (s.gpr .esp).toNat := by
-    rw [hesp]; simp only [List.length_cons, List.length_nil]; have := hp.sp_lo; omega
+    rw [hesp]; simp only [List.length_cons, List.length_nil]; have := hp.sp_lo; omega_using [hlo]
   have hrs : Reg.esp ∉ rs5 := by decide
   have a0 : arg (pushed rs5 s).callEntry 0 = key s₀ := by rw [callEntry_arg fit hrs (by simp)]; exact eax
   have a1 : arg (pushed rs5 s).callEntry 1 = arg s₀ 1 := by rw [callEntry_arg fit hrs (by simp)]; exact ecx
@@ -494,14 +494,14 @@ theorem keyCall_ok {s₀ s : State} (hp : Pre s₀) (hk : 1 ≤ kl s₀ ∧ kl s
   have sing {r r' : Region} (h : r.Disjoint r') : ∀ x ∈ [r'], r.Disjoint x := fun x hx => by
     simp only [List.mem_singleton] at hx; subst hx; exact h
   refine WP.callWith (k := keyContract) key_body_correct key_nosp (by simp) hrs
-    (by rw [key_stack, hesp]; simp only [List.length_cons, List.length_nil]; have := hp.sp_lo; omega)
+    (by rw [key_stack, hesp]; simp only [List.length_cons, List.length_nil]; have := hp.sp_lo; omega_using [hlo])
     (keyCallPre_ok hp hk he hc eax ecx edx esi ebx) fun s' rd' wr' cs f ⟨s₂, m₂, post⟩ => ?_
   · have ce := callEntry_frame fit hrs
     have kE : Region.Sub (below (s.gpr .esp) (4 * rs5.length + 4)) (stkR s₀) := by
       rw [hesp]; exact fun _ h => h
     simp only [keyContract, arg_withRegions, State.withRegions_mem, a0, a1, a2, a3, m₂, addr32] at post
-    rw [Proof.Rc2.bytesAt_frame ce _ _ (by omega) (sing ((hp.t_k.sub_left kE).symm)),
-      Proof.Rc2.bytesAt_frame hc.frame _ _ (by omega) (fun r hr => by
+    rw [Proof.Rc2.bytesAt_frame ce _ _ (by omega_using [hk]) (sing ((hp.t_k.sub_left kE).symm)),
+      Proof.Rc2.bytesAt_frame hc.frame _ _ (by omega_using [hk]) (fun r hr => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl
         · exact hp.k_c.sub_right cv_sub
@@ -537,7 +537,7 @@ theorem init_correct (s₀ : State) (hs : initContract.pre s₀) :
   refine WP.seq (checks_ok hp fun s c m a b e => ?_)
   refine WP.seq (wp_test fun s₁ f₁ hz => WP.block_nil ?_)
   have hz' : s₁.zf = some (decide (code s₀ = 0)) := by
-    rw [hz, a, BitVec.and_self, ofNat_beq_zero (by have := code_lt s₀; omega)]
+    rw [hz, a, BitVec.and_self, ofNat_beq_zero (by have := code_lt s₀; omega_using [this])]
   have c₁ := c.fupd f₁
   refine WP.ite (!decide (code s₀ = 0)) (by show s₁.zf.map (!·) = _; rw [hz']; rfl)
     (fun hb => WP.block_nil ?_) (fun hb => ?_)
@@ -551,7 +551,7 @@ theorem init_correct (s₀ : State) (hs : initContract.pre s₀) :
       exacts [b, e, c.edi, c.ebp, c.esp]
     · refine init_post_error (m := s₀.mem) (m' := s₁.mem) (key := kA s₀) (iv := ivA s₀) (ctx := cA s₀)
         (keyLen := kl s₀) (effectiveBits := eb s₀) (ivLen := il s₀) ?_ hbad
-      rw [setWidth_append, f₁.gpr, a, toNat_ofNat_lt (by have := code_lt s₀; omega)]
+      rw [setWidth_append, f₁.gpr, a, toNat_ofNat_lt (by have := code_lt s₀; omega_using [this])]
       exact hcode
   · have h0 : code s₀ = 0 := of_decide_eq_true (by revert hb; cases decide (code s₀ = 0) <;> simp)
     obtain ⟨hk, he, hi⟩ := code_ok h0
@@ -569,11 +569,11 @@ theorem init_correct (s₀ : State) (hs : initContract.pre s₀) :
         s'.mem.readW (addr (scr s₀) d) 32 = t.mem.readW (addr (scr s₀) d) 32 := by
       refine f.readW (Region.contains_self _ _) (sep3 ?_ ?_ ?_) (by decide)
       · exact (hp.c_s.sub_left sch_sub).symm.sub_left (hp.scr_sub hd')
-      · rw [hp.scr_addr hd']; exact Offset.disjoint_base _ hd (by omega)
+      · rw [hp.scr_addr hd']; exact Offset.disjoint_base _ hd (by omega_using [hd'])
       · exact hp.t_s.symm.sub_left (hp.scr_sub hd')
     have scIn (d : Nat) (hd : d + 4 ≤ 576) : InRegions (s'.rd ++ s'.wr) (addr (scr s₀) d) 4 := by
       rw [wr', ct.wr, hp.wr, hp.scr_addr hd]
-      exact ⟨scR s₀, by simp, Offset.contains_base _ hd (by omega)⟩
+      exact ⟨scR s₀, by simp, Offset.contains_base _ hd (by omega_using [hd])⟩
     have ebx' : s'.gpr .ebx = scr s₀ := by rw [cs _ (by simp [calleeSaved])]; exact eb'
     simp only [restore, List.cons_append, List.nil_append]
     refine wp_ldm (o := 516) ebx' (scIn 516 (by decide)) fun s₂ u₂ => ?_

@@ -302,7 +302,7 @@ theorem original_preserved {m m' : Mem} {p : Addr}
   apply Vector.ext
   intro i hi
   have he : m'.readW (off p (8 * i)) 64 = m.readW (off p (8 * i)) 64 :=
-    hf.readW (r := ⟨p, 1024⟩) (Offset.contains_base p (by omega) (by omega))
+    hf.readW (r := ⟨p, 1024⟩) (Offset.contains_base p (by omega_using [hi]) (by omega_using [hi]))
       (by
         intro r hr
         simp only [List.mem_singleton] at hr

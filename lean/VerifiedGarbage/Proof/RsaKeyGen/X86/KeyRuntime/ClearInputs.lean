@@ -29,29 +29,29 @@ theorem clearInputs_ok {s : State} {B : Addr} {Z n : Nat} (h : Ws s B Z n 32) :
   refine WP.seq (WP.mono (clear_ok h .modulus (by decide) (k := 32) (by decide) (by decide))
     fun u ⟨hu, Ou, zero, Ku⟩ => ?_)
   have lowZero (j : Nat) (hj : j < 32) : num u.mem B n j = 0 := by
-    have H := VG.Proof.Rsa.KeyWorkspace.val32_zero_part (zero j hj) (a := 0) (c := n) (by simp only [Width.words]; omega)
+    have H := VG.Proof.Rsa.KeyWorkspace.val32_zero_part (zero j hj) (a := 0) (c := n) (by simp only [Width.words]; omega_using [])
     simp only [Nat.mul_zero, Nat.add_zero] at H
     exact H
-  refine WP.mono (small_ok hu .modulus 1 (j := aOne) (by change arr n aOne + _ ≤ Z; simp only [Width.words]; omega))
+  refine WP.mono (small_ok hu .modulus 1 (j := aOne) (by change arr n aOne + _ ≤ Z; simp only [Width.words]; omega_using [oneFit]))
     fun t ⟨ht, Ot, value, Kt⟩ => ?_
   change Outside B (arr n aOne) (4 * (n + 2)) u.mem t.mem at Ot
   change val32 t.mem B (arr n aOne) (n + 2) = 1 at value
   have outer : Outside B VG.Impl.Rsa.X86.Keys.hdr (4 * (32 * (n + 2))) s.mem u.mem := by
     simpa only [Width.words] using Ou
   refine ⟨ht, ?_, ?_, ?_, Ku.trans (Kt.mono (by decide))⟩
-  · refine (Outs.of_outside (outer.mono (Nat.le_refl _) (by unfold S; omega)) (List.mem_singleton_self _)).trans
+  · refine (Outs.of_outside (outer.mono (Nat.le_refl _) (by unfold S; omega_using [])) (List.mem_singleton_self _)).trans
       (Outs.of_outside (Ot.mono (o' := VG.Impl.Rsa.X86.Keys.hdr) (n' := 32 * S n) ?_ ?_) (List.mem_singleton_self _))
-    · unfold VG.Proof.Rsa.X86.Keys.arr; omega
-    · unfold VG.Proof.Rsa.X86.Keys.arr S aOne; omega
+    · unfold VG.Proof.Rsa.X86.Keys.arr; omega_using []
+    · unfold VG.Proof.Rsa.X86.Keys.arr S aOne; omega_using []
   · change val32 t.mem B (arr n aOne) n = 1
-    rw [VG.Proof.RsaKeyGen.WordBounds32.low_eq (by omega : n ≤ n + 2)
-      (by rw [value]; exact Nat.one_lt_two_pow (by have := h.size; omega)), value]
+    rw [VG.Proof.RsaKeyGen.WordBounds32.low_eq (by omega_using [] : n ≤ n + 2)
+      (by rw [value]; exact Nat.one_lt_two_pow (by have := h.size; omega_using [this])), value]
   · intro j hj different
     change val32 t.mem B (arr n j) n = 0
     have D := VG.Proof.Rsa.X86.Keys.arr_disj (w := n) different
     have fit := h.arr_fit hj
     unfold S at D fit
-    rw [Ot.val32 (by omega) (by omega)]
+    rw [Ot.val32 (by omega_using [D]) (by omega_using [nowrap, fit])]
     exact lowZero j hj
 
 end VG.Proof.RsaKeyGen.X86.KeyRuntime

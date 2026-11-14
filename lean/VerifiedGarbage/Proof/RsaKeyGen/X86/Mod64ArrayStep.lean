@@ -356,20 +356,20 @@ theorem ArrayState.step {g : ArrayGeometry} (v : g.Valid) {candidate exponent i 
     (by rw [A.context.exponentEq]; exact A.bound)) fun b ⟨value, bound, _, Mb, Kb⟩ => ?_)
   have Cb := A.context.keepReadonly Kb (by decide) (by decide) Mb
   rw [A.context.exponentEq, A.value, inputWord,
-    show g.n - i = (g.n - 1 - i) + 1 by omega, high_mod_step] at value
+    show g.n - i = (g.n - 1 - i) + 1 by omega_using [index], high_mod_step] at value
   rw [A.context.exponentEq] at bound
   have Pb : b.mem.readW (off (g.sp.setWidth 64) 0) 32 = g.pointer i := by rw [Mb]; exact A.pointer
   have Nb : b.mem.readW (off (g.sp.setWidth 64) 4) 32 = BitVec.ofNat 32 (g.n - i) := by rw [Mb]; exact A.count
-  have countBound : g.n - i < 2 ^ 32 := by have := v.sourceFit; have := Cb.scratch.nowrap; omega
-  refine WP.mono (advance_ok v Cb (by omega) countBound Pb Nb) fun t ⟨Ct, P, N, Z, O, K⟩ => ?_
+  have countBound : g.n - i < 2 ^ 32 := by have := v.sourceFit; have := Cb.scratch.nowrap; omega_arith
+  refine WP.mono (advance_ok v Cb (by omega_using [index]) countBound Pb Nb) fun t ⟨Ct, P, N, Z, O, K⟩ => ?_
   refine ⟨⟨Ct, P, ?_, ?_, ?_⟩, ?_, ?_, ((Ka.mono (by decide)).trans Kb).widen K⟩
-  · rw [show g.n - i - 1 = g.n - (i + 1) by omega] at N
+  · rw [show g.n - i - 1 = g.n - (i + 1) by omega_using []] at N
     exact N
   · rw [K.1 .ecx (by decide), K.1 .ebx (by decide), value,
-      show g.n - 1 - i = g.n - (i + 1) by omega]
+      show g.n - 1 - i = g.n - (i + 1) by omega_using []]
   · rw [K.1 .ecx (by decide), K.1 .ebx (by decide)]
     exact bound
-  · simpa only [show g.n - i - 1 = 0 ↔ i + 1 = g.n by omega] using Z
+  · simpa only [show g.n - i - 1 = 0 ↔ i + 1 = g.n by omega_using [index]] using Z
   · rw [Mb, Ma] at O
     exact O
 

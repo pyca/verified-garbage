@@ -37,22 +37,22 @@ theorem stage_ok {s : State} {base : Addr} (hs : Scr s base)
     rw [WP.block_append_iff]
     refine WP.mono (heval n hn t (hs.of_keeps tk (by decide)) tm) fun u ⟨uv, um, uk⟩ => ?_
     refine WP.mono (storeAt_ok ((hs.of_keeps tk (by decide)).of_keeps uk (by decide))
-      (o := TMP) (k := n) (by simp only [TMP]; omega) (by decide)) fun v ⟨vm, vk⟩ => ?_
+      (o := TMP) (k := n) (by simp only [TMP]; omega_using [hn]) (by decide)) fun v ⟨vm, vk⟩ => ?_
     have out : Outside base (TMP + 16 * n) 16 t.mem v.mem := by
-      rw [vm, um]; exact putCoeff_outside _ _ _ _ (by simp only [TMP]; omega)
-    refine ⟨?_, tm.trans (out.mono (by omega) (by omega)), tk.trans (uk.trans (vk.mono (by decide)))⟩
+      rw [vm, um]; exact putCoeff_outside _ _ _ _ (by simp only [TMP]; omega_using [hn])
+    refine ⟨?_, tm.trans (out.mono (by omega_using []) (by omega_using [hn])), tk.trans (uk.trans (vk.mono (by decide)))⟩
     intro i hi
-    rw [vm, coeff_put _ base _ _ (by simp only [TMP]; omega) (by simp only [TMP]; omega)]
+    rw [vm, coeff_put _ base _ _ (by simp only [TMP]; omega_using [hn]) (by simp only [TMP]; omega_using [hn, hi])]
     by_cases h : i = n
     · subst i; rw [ite_eq_left rfl]; exact uv
-    · rw [ite_eq_right h, um]; exact tf i (by omega)
+    · rw [ite_eq_right h, um]; exact tf i (by omega_using [hi, h])
   exact wp_range_flatMap (M := isa) (N := 8) inv step 8 (by decide) s
     ⟨fun _ hi => by omega, Outside.refl _ _ _ _, Keeps.refl _ _⟩
 
 theorem input_limb {base : Addr} {a : Nat} {m m' : Mem}
     (h : Outside base TMP 128 m m') (ha : Slot a) {i : Nat} (hi : i < 8) :
     limbs m' base a i = limbs m base a i :=
-  h.limbs (Or.inl (Nat.le_trans ha (by decide))) (Nat.le_trans ha (by decide)) (by omega)
+  h.limbs (Or.inl (Nat.le_trans ha (by decide))) (Nat.le_trans ha (by decide)) (by omega_using [hi])
 
 theorem stage_normalize {s : State} {base : Addr} (hs : Scr s base)
     {code : Nat → List Instr} {o : Nat} (ho : Slot o) (ho8 : o % 8 = 0)
@@ -74,10 +74,10 @@ theorem small_carry {f : Nat → Nat} {n : Nat} (h : ∀ i < n, f i < radix * 6)
   induction n with
   | zero => simp only [carry]; decide
   | succ n ih =>
-    have hi := ih (fun i hi => h i (by omega))
-    have hn := h n (by omega)
+    have hi := ih (fun i hi => h i (by omega_using [hi]))
+    have hn := h n (by omega_using [])
     simp only [carry, radix] at *
-    omega
+    omega_using [hi, hn]
 
 theorem pointFinish_ok {s : State} {base : Addr} (hs : Scr s base) {o : Nat}
     (ho : Slot o) (ho8 : o % 8 = 0) {f : Nat → Nat}
@@ -91,7 +91,7 @@ theorem pointFinish_ok {s : State} {base : Addr} (hs : Scr s base) {o : Nat}
     have hd := digit_lt f i
     have hc := small_carry hb
     simp only [folded, weakBound]
-    split <;> omega
+    split <;> omega_arith
   rw [Impl.Curve448.AArch64.pointFinish, List.append_assoc, WP.block_append_iff]
   refine WP.mono (tailPass_ok hs (o := TMP) (by decide) (by decide) (Or.inl rfl) false
     (fun _ => rfl) hf cap) fun u ⟨uf, uc, um, uk⟩ => ?_
@@ -122,7 +122,7 @@ theorem stage_point {s : State} {base : Addr} (hs : Scr s base)
     have hd := digit_lt f i
     have hc := small_carry hb
     simp only [folded, weakBound]
-    split <;> omega
+    split <;> omega_arith
   · rw [show fe t.mem base o = valN (folded f) 8 from valN_congr tf, folded_mod]
 
 end VG.Proof.Curve448.AArch64

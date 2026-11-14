@@ -51,7 +51,7 @@ theorem drawPrefix_ok {p : WitnessParams} {rp : Addr} {used : Nat} {bs : List By
       subst hr
       change 8 * j + 8 ≤ 96 ∨ 120 ≤ 8 * j
       omega_using [h12, h13, h14]
-    · omega
+    · omega_using [hj]
   have hsrc := source_take (h.rand.congrK hfai k) p.len
   have ho : OutOk u p.O p.Z p.op p.len :=
     ⟨fun i hi => by rw [k.2.2]; exact h.out.wr i hi, h.out.sep⟩
@@ -60,7 +60,7 @@ theorem drawPrefix_ok {p : WitnessParams} {rp : Addr} {used : Nat} {bs : List By
     ((hstatic _ (by decide) (by decide) (by decide) (by decide)).trans h.outPtr)
     ((hstatic _ (by decide) (by decide) (by decide) (by decide)).trans h.len)
     hdi hsi hbp hcx hdx hsrc ho
-    (fun i hi j hj => h.apart i hi j (by rw [List.length_take] at hj; omega))
+    (fun i hi j hj => h.apart i hi j (by rw [List.length_take] at hj; omega_using [hj]))
     (by rw [List.length_take, Nat.min_eq_left havail]))
     fun v ⟨hrv, hsiv, hcxv, hv, hwO, hwIv, hfv, kv⟩ => ?_)
   have hkov := k.trans kv
@@ -87,7 +87,7 @@ theorem drawPrefix_ok {p : WitnessParams} {rp : Addr} {used : Nat} {bs : List By
       simp only [List.mem_singleton] at hr
       subst hr
       unfold slot VG.Impl.Bignum.hdrBytes aXm
-      omega), hwIv (8 * VG.Impl.Rsa.X86_64.Crt.sLink) p.space_bounds.2.1,
+      omega_using []), hwIv (8 * VG.Impl.Rsa.X86_64.Crt.sLink) p.space_bounds.2.1,
       hwI (8 * VG.Impl.Rsa.X86_64.Crt.sLink) p.space_bounds.2.1]
     exact h.link
   have hf : DrawFrame p s.mem t.mem :=

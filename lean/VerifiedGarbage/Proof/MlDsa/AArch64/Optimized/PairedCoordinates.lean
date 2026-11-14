@@ -18,11 +18,11 @@ theorem checkAddr_coeff (m : Mem) (out : Addr) (u : Nat) (i : Fin 2 × Fin 8)
   rw [VG.Proof.MlDsa.AArch64.Arith.Neon.vword_read16 _ _ he]
   simp only [checkAddr,coeffAt,pairPolyPtr,BitVec.add_assoc,←BitVec.ofNat_add]
   rw [show 16*u+(1024*i.1.val+128*i.2.val)+4*e=
-    1024*i.1.val+4*(4*u+32*i.2.val+e) by omega]
+    1024*i.1.val+4*(4*u+32*i.2.val+e) by omega_using []]
 
 theorem paired_coordinate {k : Nat} (hk : k<n) :
     k=4*(k%32/4)+32*(k/32)+k%4 ∧ k%32/4<8 ∧ k/32<8 ∧ k%4<4 := by
   change k<256 at hk
-  omega
+  omega_using [hk]
 
 end VG.Proof.MlDsa.AArch64.Optimized.Paired

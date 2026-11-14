@@ -148,7 +148,7 @@ theorem s_in' {d k : Nat} (h : d + k ≤ 2112) : InRegions (s.rd ++ s.wr) (S s +
 
 /-- The stack argument `i` (of three) is readable. -/
 theorem a_in {i : Nat} (hi : i < 3) : InRegions (s.rd ++ s.wr) (SP s + BitVec.ofNat 64 (8 * (i + 1))) 8 :=
-  ⟨aR s, by rw [hp.rd]; simp, Offset.contains _ (by omega) (by omega) (by have := hp.w_sp; omega)⟩
+  ⟨aR s, by rw [hp.rd]; simp, Offset.contains _ (by omega_using []) (by omega_using [hi]) (by have := hp.w_sp; omega_using [])⟩
 
 omit hp in
 /-- The slots of the arguments are in `scratch`, apart from the powers. -/
@@ -160,8 +160,8 @@ theorem keep_a {m m' : Mem} (hf : Frame (wR s) m m') {i : Nat} (hi : i < 3) :
   hf.readW (r := ⟨SP s + BitVec.ofNat 64 (8 * (i + 1)), 8⟩) (Region.contains_self _ _) (fun r hr => by
     have hs : Region.Sub ⟨SP s + BitVec.ofNat 64 (8 * (i + 1)), 8⟩ (aR s) := by
       have e : SP s + BitVec.ofNat 64 (8 * (i + 1)) = SP s + BitVec.ofNat 64 8 + BitVec.ofNat 64 (8 * i) := by
-        rw [BitVec.add_assoc, ← BitVec.ofNat_add]; congr 2; omega
-      rw [e]; exact Offset.sub_base _ (by omega)
+        rw [BitVec.add_assoc, ← BitVec.ofNat_add]; congr 2; omega_using []
+      rw [e]; exact Offset.sub_base _ (by omega_using [hi])
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl
     · exact hp.c_a.symm.sub_left hs
@@ -196,7 +196,7 @@ theorem entry_ok : WP isa (.block entry) s fun s₁ => s₁.gpr .r11 = S s ∧
   have e₂ : s.mem.readW (s.gpr .rsp + BitVec.ofNat 64 24) 64 = S s := rfl
   have sep : ∀ a d : Nat, a + 8 ≤ d ∨ d + 8 ≤ a → a + 8 ≤ 2112 → d + 8 ≤ 2112 →
       Mem.Sep (S s + BitVec.ofNat 64 a) (64 / 8) (S s + BitVec.ofNat 64 d) (64 / 8) :=
-    fun a d h ha hd => Offset.sep _ h (by omega) (by omega)
+    fun a d h ha hd => Offset.sep _ h (by omega_using [ha]) (by omega_using [hd])
   have s₁₂ := sep 0 8 (by decide) (by decide) (by decide)
   have s₁₃ := sep 0 16 (by decide) (by decide) (by decide)
   have s₁₄ := sep 0 24 (by decide) (by decide) (by decide)
@@ -231,7 +231,7 @@ theorem entry_ok : WP isa (.block entry) s fun s₁ => s₁.gpr .r11 = S s ∧
   all_goals try simp (disch := first | decide | with_reducible assumption) only [gpr_setReg, ite_true, reduceCtorEq, ↓reduceIte,
     Mem.readW_writeW_self64, Mem.readW_writeW_sep, Nat.mul_zero, BitVec.add_zero, hn]
   · have c : ∀ d, d + 8 ≤ 56 → (kR' s).Contains (S s + BitVec.ofNat 64 d) (64 / 8) :=
-      fun d h₂ => Offset.contains_base _ h₂ (by omega)
+      fun d h₂ => Offset.contains_base _ h₂ (by omega_using [h₂])
     have c0 : (kR' s).Contains (S s) (64 / 8) := by simpa using c 0 (by decide)
     exact (((((((Frame.refl _ _).writeW (List.mem_singleton_self _) _ c0).writeW
       (List.mem_singleton_self _) _ (c 8 (by decide))).writeW

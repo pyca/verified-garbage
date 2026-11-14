@@ -63,7 +63,7 @@ theorem isZero_ok (s : State) :
   by_cases h : s.gpr .rdx = 0
   · rw [h]; decide
   · have h' : ¬ (s.gpr .rdx).toNat < 1 := fun h' => h (BitVec.eq_of_toNat_eq (by
-      show _ = 0; omega))
+      show _ = 0; omega_using [h']))
     rw [ite_eq_right h, decide_eq_false h']
     decide
 
@@ -89,13 +89,13 @@ theorem diffWords_ok {s : State} {base : Addr} (hs : Scr s base) {o : Nat} (ho :
     WP isa (.block (diffWords o)) s fun t =>
       (t.gpr .rdx = 0 ↔ ∀ i < 7, word s.mem base (o + 8 * i) = s.gpr (w i)) ∧ t.mem = s.mem ∧
       (∀ r, r ≠ .rax → r ≠ .rdx → t.gpr r = s.gpr r) ∧ t.rd = s.rd ∧ t.wr = s.wr := by
-  have r0 : InRegions (s.rd ++ s.wr) (base + BitVec.ofNat 64 (o + 8 * 0)) 8 := hs.read (by omega)
-  have r1 : InRegions (s.rd ++ s.wr) (base + BitVec.ofNat 64 (o + 8 * 1)) 8 := hs.read (by omega)
-  have r2 : InRegions (s.rd ++ s.wr) (base + BitVec.ofNat 64 (o + 8 * 2)) 8 := hs.read (by omega)
-  have r3 : InRegions (s.rd ++ s.wr) (base + BitVec.ofNat 64 (o + 8 * 3)) 8 := hs.read (by omega)
-  have r4 : InRegions (s.rd ++ s.wr) (base + BitVec.ofNat 64 (o + 8 * 4)) 8 := hs.read (by omega)
-  have r5 : InRegions (s.rd ++ s.wr) (base + BitVec.ofNat 64 (o + 8 * 5)) 8 := hs.read (by omega)
-  have r6 : InRegions (s.rd ++ s.wr) (base + BitVec.ofNat 64 (o + 8 * 6)) 8 := hs.read (by omega)
+  have r0 : InRegions (s.rd ++ s.wr) (base + BitVec.ofNat 64 (o + 8 * 0)) 8 := hs.read (by omega_using [ho])
+  have r1 : InRegions (s.rd ++ s.wr) (base + BitVec.ofNat 64 (o + 8 * 1)) 8 := hs.read (by omega_using [ho])
+  have r2 : InRegions (s.rd ++ s.wr) (base + BitVec.ofNat 64 (o + 8 * 2)) 8 := hs.read (by omega_using [ho])
+  have r3 : InRegions (s.rd ++ s.wr) (base + BitVec.ofNat 64 (o + 8 * 3)) 8 := hs.read (by omega_using [ho])
+  have r4 : InRegions (s.rd ++ s.wr) (base + BitVec.ofNat 64 (o + 8 * 4)) 8 := hs.read (by omega_using [ho])
+  have r5 : InRegions (s.rd ++ s.wr) (base + BitVec.ofNat 64 (o + 8 * 5)) 8 := hs.read (by omega_using [ho])
+  have r6 : InRegions (s.rd ++ s.wr) (base + BitVec.ofNat 64 (o + 8 * 6)) 8 := hs.read (by omega_using [ho])
   erun [diffWords, List.range_succ, List.range_zero, List.nil_append, List.flatMap_append,
     List.flatMap_cons, List.flatMap_nil, List.append_nil, List.cons_append, w, W, hs.rdi, r0, r1, r2, r3, r4,
     r5, r6]
@@ -109,7 +109,7 @@ theorem val7_inj {f g : Nat → Nat} (hf : ∀ i < 7, f i < 2 ^ 64) (hg : ∀ i 
   constructor
   · intro h
     have d : ∀ {a b c e : Nat}, a < 2 ^ 64 → c < 2 ^ 64 → a + 2 ^ 64 * b = c + 2 ^ 64 * e →
-        a = c ∧ b = e := fun ha hc h => by omega
+        a = c ∧ b = e := fun ha hc h => by omega_using [ha, hc, h]
     simp only [val7] at h
     obtain ⟨e0, h⟩ := d (hf 0 (by decide)) (hg 0 (by decide)) h
     obtain ⟨e1, h⟩ := d (hf 1 (by decide)) (hg 1 (by decide)) h
@@ -150,7 +150,7 @@ theorem E_bad {base : Addr} {m m' : Mem} (h : Outside base BAD 80 m m') : E m' b
   funext i
   have := slot_lt i
   simp only [VG.Impl.X448.X86_64.ACC] at this
-  exact VG.Proof.X448.X86_64.E_outside h i (Or.inl (by simp only [BAD]; omega))
+  exact VG.Proof.X448.X86_64.E_outside h i (Or.inl (by simp only [BAD]; omega_using [this]))
 
 theorem CKeep.E {base : Addr} {s t : State} (h : CKeep base s t) : E t.mem base = E s.mem base :=
   E_bad h.mem
@@ -189,7 +189,7 @@ theorem eqSlots_ok {s : State} {base : Addr} (hs : Scr s base) (a b : Index) :
     have hA : mv s3.mem base CAN 7 = fe s.mem base (VG.Impl.X448.X86_64.slot a.val) % Spec.X448.P := by
       rw [k3.2.1, ← v1]; exact v2
     have hB : rv s3 W = fe s.mem base (VG.Impl.X448.X86_64.slot b.val) % Spec.X448.P := by
-      rw [v3]; exact congrArg (· % Spec.X448.P) (O2.mv (Or.inl (by simp only [BAD]; omega)) (by omega))
+      rw [v3]; exact congrArg (· % Spec.X448.P) (O2.mv (Or.inl (by simp only [BAD]; omega_using [hb])) (by omega_using [hb]))
     have key : (∀ i < 7, word s3.mem base (CAN + 8 * i) = s3.gpr (w i)) ↔
         mv s3.mem base CAN 7 = rv s3 W := by
       rw [mv7, rvW, val7_inj (fun i _ => BitVec.isLt _) (fun i _ => BitVec.isLt _)]
@@ -272,7 +272,7 @@ theorem sCheck_ok {s : State} {base p : Addr} (hs : Scr s base) (hp : s.gpr .rsi
   refine WP.mono (storeK_ok hs) fun s1 ⟨k1, o1, g1, rd1, wr1⟩ => ?_
   have hs1 : Scr s1 base := ⟨(g1 _ (by decide)).trans hs.rdi, wr1 ▸ hs.wr, hs.nowrap⟩
   have hb1 : ∀ i < 57, s1.mem (p + BitVec.ofNat 64 i) = s.mem (p + BitVec.ofNat 64 i) :=
-    fun i hi => o1 _ (Or.inr (by have := hfar i hi; simp only [KC]; omega))
+    fun i hi => o1 _ (Or.inr (by have := hfar i hi; simp only [KC]; omega_using [this]))
   rw [WP.block_append_iff]
   refine WP.mono (loadsS_ok s1 ((g1 _ (by decide)).trans hp) (fun i hi => by
     rw [rd1, wr1]; exact hr8 i hi)) fun s2 ⟨v2, k2⟩ => ?_
@@ -301,7 +301,7 @@ theorem sCheck_ok {s : State} {base p : Addr} (hs : Scr s base) (hp : s.gpr .rsi
       rw [v2, ← VG.Proof.X448.X86_64.leNum_bytesAt_mv, Proof.Ed448.decodeLE_eq]
       refine congrArg Proof.X25519.leNum ?_
       simp only [Spec.X448.bytesAt, Spec.Ed448.bytesAt, off, BitVec.add_zero]
-      exact List.map_congr_left fun i hi => hb1 i (by simp at hi; omega)
+      exact List.map_congr_left fun i hi => hb1 i (by simp at hi; omega_using [hi])
     have hb : s3.mem (p + BitVec.ofNat 64 56) = s.mem (p + BitVec.ofNat 64 56) := by
       rw [m3]; exact hb1 56 (by decide)
     rw [hkv, len7, show rv s2 (Reg.r8 :: [.r9, .r10, .r11, .r12, .r13, .r14]) = rv s2 W from rfl, hy,

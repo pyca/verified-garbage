@@ -101,7 +101,7 @@ theorem SearchLive.terminal {p : SearchParams} {used remaining status : Nat} {s 
     · intro j member
       have bounds : j < 16 ∧ j ≠ 13 ∧ ¬ (j = 0 ∨ j = 3) := by
         simp only [searchSlots, List.mem_cons, List.not_mem_nil, or_false] at member
-        omega
+        omega_using [member]
       rw [mem, terminalMem_low _ _ _ j bounds.1, ite_eq_right bounds.2.1, ite_eq_right bounds.2.2]
       exact h.saved j member
   refine ⟨live, ?_, ?_, frame, rest⟩
@@ -136,7 +136,7 @@ theorem SearchLive.request {p : SearchParams} {used remaining : Nat} {s : State}
     · intro j member
       have bounds : j < 16 ∧ j ≠ 13 ∧ j ≠ 3 := by
         simp only [searchSlots, List.mem_cons, List.not_mem_nil, or_false] at member
-        omega
+        omega_using [member]
       rw [mem, requestMem_low _ _ _ j bounds.1, ite_eq_right bounds.2.1, ite_eq_right bounds.2.2]
       exact h.saved j member
   refine ⟨live, ?_, ?_, frame, rest⟩

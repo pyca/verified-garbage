@@ -35,27 +35,27 @@ theorem xored_zero (t : List Byte) (ys : List (List Byte)) : xored t ys 0 = ys :
 
 theorem length_prefix (t : List Byte) {ys : List (List Byte)} {i : Nat} (hi : i ≤ ys.length) :
     (List.zipWith Spec.Cbc.xor (ys.take i) (tweaks t i)).length = i := by
-  simp [length_tweaks]; omega
+  simp [length_tweaks]; omega_using [hi]
 
 /-- Block `i` is still the original one. -/
 theorem xored_getElem (t : List Byte) {ys : List (List Byte)} {i : Nat} (hi : i < ys.length) :
     (xored t ys i)[i]? = ys[i]? := by
-  rw [xored, List.getElem?_append_right (by rw [length_prefix t (by omega)]), length_prefix t (by omega),
+  rw [xored, List.getElem?_append_right (by rw [length_prefix t (by omega_using [hi])]), length_prefix t (by omega_using [hi]),
     Nat.sub_self, List.getElem?_drop, Nat.add_zero]
 
 /-- Block `i` with its tweak XORed in. -/
 theorem xored_step (t : List Byte) {ys : List (List Byte)} {i : Nat} (hi : i < ys.length) :
     (xored t ys i).set i (Spec.Cbc.xor ys[i] (next t i)) = xored t ys (i + 1) := by
-  rw [xored, set_prefix _ _ _ (length_prefix t (by omega)) hi, xored, List.take_add_one,
+  rw [xored, set_prefix _ _ _ (length_prefix t (by omega_using [hi])) hi, xored, List.take_add_one,
     List.getElem?_eq_getElem hi, tweaks_succ]
   simp only [Option.toList_some]
-  rw [List.zipWith_append (by rw [List.length_take, length_tweaks]; omega)]
+  rw [List.zipWith_append (by rw [List.length_take, length_tweaks]; omega_using [hi])]
   rfl
 
 /-- All the blocks with their tweaks XORed in. -/
 theorem xored_all (t : List Byte) {ys : List (List Byte)} {n : Nat} (h : ys.length = n) :
     xored t ys n = List.zipWith Spec.Cbc.xor ys (tweaks t n) := by
-  rw [xored, List.take_of_length_le (by omega), List.drop_of_length_le (by omega), List.append_nil]
+  rw [xored, List.take_of_length_le (by omega_using [h]), List.drop_of_length_le (by omega_using [h]), List.append_nil]
 
 /-- The tweaks XORed in, the blocks enciphered (or deciphered), and the
 tweaks XORed in again. -/

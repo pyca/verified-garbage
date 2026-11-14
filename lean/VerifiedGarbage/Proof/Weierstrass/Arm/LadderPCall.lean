@@ -62,7 +62,7 @@ theorem copyPt_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) 
       O₁.val32 (d := a.y) (by omega_using [xay]) (by omega_using [iay, hn])]
   · rw [e₃, O₂.val32 (d := a.z) (by omega_using [yaz]) (by omega_using [iaz, hn]),
       O₁.val32 (d := a.z) (by omega_using [xaz]) (by omega_using [iaz, hn])]
-  · rw [show 4 * (2 * n) = 8 * n by omega] at O₁ O₂ O₃
+  · rw [show 4 * (2 * n) = 8 * n by omega_using []] at O₁ O₂ O₃
     exact ((Outs.of_outside O₁ (by simp)).trans (Outs.of_outside O₂ (by simp))).trans
       (Outs.of_outside O₃ (by simp))
 
@@ -140,7 +140,7 @@ theorem ptCall_ok {S : Impl.Weierstrass.Mont.Modulus} {m k : Nat} [NeZero m] (hm
   have g0 : s₂.gpr .r0 = s.gpr .r12 := by rw [u₂.gpr, u₁.other _ (by decide)]
   have hf₂ : Far s₂ base 8192 := hf.of_rest k₂
   have hcov : Covers [⟨base, 8192⟩] s₂.wr := by
-    have h := hf₂.write (d := 0) (n := 8192) (by omega)
+    have h := hf₂.write (d := 0) (n := 8192) (by omega_using [])
     simp only [off, BitVec.add_zero] at h
     exact Covers.one h
   have e0 : ∀ t : State, t.gpr .r0 = s.gpr .r12 → State.addr (t.gpr .r0) = base := fun t h => by

@@ -37,7 +37,7 @@ theorem valAt_eq (m : Mem) (b : Addr) (o : BitVec 32) : Proof.X25519.Field32.val
 theorem valAt_ofNat (m : Mem) (b : Addr) (i : Slot) :
     Proof.X25519.Field32.valAt m b (BitVec.ofNat 32 (offset i)) = V m b (offset i) := by
   have := slot_range i
-  rw [valAt_eq, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+  rw [valAt_eq, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [this])]
 
 theorem elemAt_eq (m : Mem) (b : Addr) (i : Slot) :
     Proof.Ed25519.Point32.elemAt m b (offset i) = env m b i :=
@@ -54,13 +54,13 @@ theorem pointAt_q (m : Mem) (b : Addr) :
 /-- A byte of the working space outside `[e, e + k)` is in no region of a frame there. -/
 theorem byte_out {b : Addr} {i e k : Nat} (hi : i + 1 ≤ 8192) (he : e + k ≤ 8192) (h : i < e ∨ e + k ≤ i) :
     ¬ (⟨b + BitVec.ofNat 64 e, k⟩ : Region).Contains (b + BitVec.ofNat 64 i) 1 := fun hc =>
-  Offset.disjoint b (d := i) (n := 1) (e := e) (k := k) (by omega) (by omega) (by omega) _ (Region.contains_self _ _) hc
+  Offset.disjoint b (d := i) (n := 1) (e := e) (k := k) (by omega_using [h]) (by omega_using [hi]) (by omega_using [he]) _ (Region.contains_self _ _) hc
 
 /-- `pow250`'s `Keeps₂`, from its frame. -/
 theorem keeps_pow {b : Addr} {m m' : Mem} (hf : Frame [PR b] m m') : Proof.X25519.Field32.Keeps₂ b m m' := by
   intro i hi hown
   simp only [Proof.X25519.Field32.wsBytes, Proof.X25519.Field32.eAt, Proof.X25519.Field32.ownEnd] at hi hown
-  exact hf _ fun r hr => by rw [List.mem_singleton.mp hr]; exact byte_out (by omega) (by omega) hown
+  exact hf _ fun r hr => by rw [List.mem_singleton.mp hr]; exact byte_out (by omega_using [hi]) (by omega_using []) hown
 
 /-- What the point addition writes: the sum, the temporaries and the product's limbs. -/
 abbrev addW (b : Addr) : List Region :=
@@ -74,9 +74,9 @@ theorem keeps_add {b : Addr} {m m' : Mem} (hf : Frame (addW b) m m') : Proof.Ed2
   refine hf _ fun r hr => ?_
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl
-  · exact byte_out (by omega) (by omega) hp
-  · exact byte_out (by omega) (by omega) ht
-  · exact byte_out (by omega) (by omega) (by omega)
+  · exact byte_out (by omega_using [hi]) (by omega_using []) hp
+  · exact byte_out (by omega_using [hi]) (by omega_using []) ht
+  · exact byte_out (by omega_using [hi]) (by omega_using [hA]) (by omega_using [ho, hA])
 
 /-- A power, as the contract states it. -/
 theorem val_of_env {m m' : Mem} {b : Addr} {i j : Slot} {e : Nat}

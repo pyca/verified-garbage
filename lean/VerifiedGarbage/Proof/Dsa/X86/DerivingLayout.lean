@@ -57,7 +57,7 @@ theorem derivingInstalled_ready {s t : State} (A : DerivingABI s)
     (I : Installed (argumentPointer s 7) ((arg s 8).toNat * 8) Generate.deriveArguments 2 4 6 s t) :
     ShapeCallReady (derivingLayout s A) (arg s 4).toNat t := by
   have L : 0 < (arg s 4).toNat ∧ 0 < (arg s 6).toNat := by
-    have H := A.lengths; unfold Spec.Dsa.lengthsValid at H; omega
+    have H := A.lengths; unfold Spec.Dsa.lengthsValid at H; omega_using [H]
   obtain ⟨Params, Bytes⟩ := I.input (by decide : (2, .p) ∈ Generate.deriveArguments) A.keyBound
     (by rw [A.rd, A.wr]; simp) A.keyScratch A.room
     (by rw [callStack_eq A.stackLow]; exact A.belowKey.symm)
@@ -66,7 +66,7 @@ theorem derivingInstalled_ready {s t : State} (A : DerivingABI s)
     (by rw [callStack_eq A.stackLow]; exact A.belowScalar.symm)
   obtain ⟨Qptr, Gptr, _⟩ := I.pointers (by decide)
   obtain ⟨P, Q, G, Value⟩ := parameters_buffers Params L.1 L.2
-    (by have := A.keyLength; omega) Bytes Qptr Gptr
+    (by have := A.keyLength; omega_using [this]) Bytes Qptr Gptr
   refine ⟨I.keeps.1 .esp (by decide), I.scr, ?_, ?_, ?_, ?_,
     congrArg BitVec.toNat (I.arguments (4, .digestLen) (by decide))⟩
   · intro input hi
@@ -115,8 +115,8 @@ theorem derivingInstalled_output {s t : State} (A : DerivingABI s)
     change i < 3 * (arg s 4).toNat + 2 * (arg s 6).toNat at hi
     rw [I.keeps.2.2, A.wr]
     refine ⟨_, List.mem_cons_self, Offset.contains_base _ ?_ ?_⟩
-    · have := A.outLength; omega
-    · have := A.outBound; have := A.outLength; omega
+    · have := A.outLength; omega_using [hi, this]
+    · have := A.outBound; have := A.outLength; omega_using [hi]
   · change Region.Disjoint ⟨(pointerValue (argumentPointer s 7) t (.input .p)).setWidth 64, 2 * (arg s 4).toNat + (arg s 6).toNat⟩
       ⟨argumentPointer s 0, 3 * (arg s 4).toNat + 2 * (arg s 6).toNat⟩
     rw [I.arguments (2, .p) (by decide), ← A.keyLength, ← A.outLength]

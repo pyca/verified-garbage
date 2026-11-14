@@ -32,7 +32,7 @@ theorem wordsAt_frame {rs : List Region} {m m' : Mem} (hf : Frame rs m m') {p : 
   simp only [Spec.Rsa.wordsAt]
   refine List.map_congr_left fun i hi => ?_
   have hi := List.mem_range.mp hi
-  exact hf.readW (r := ⟨p, n * 8⟩) (Offset.contains_base _ (by omega) (by omega)) hd (by decide)
+  exact hf.readW (r := ⟨p, n * 8⟩) (Offset.contains_base _ (by omega_using [hi]) (by omega_using [hn, hi])) hd (by decide)
 
 theorem bytesAt_length (m : Mem) (p : Addr) (n : Nat) : (Spec.Rsa.bytesAt m p n).length = n := by
   simp [Spec.Rsa.bytesAt]
@@ -78,7 +78,7 @@ theorem _root_.VG.Frame.byte1 {rs : List Region} {m m' : Mem} (hf : Frame rs m m
 theorem sub_one_ofNat {k : Nat} (h : k + 1 < 2 ^ 32) : BitVec.ofNat 32 (k + 1) - 1 = BitVec.ofNat 32 k := by
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat, show (1 : BitVec 32).toNat = 1 from rfl]
-  rw [Nat.mod_eq_of_lt (a := k + 1) h, show 2 ^ 32 - 1 + (k + 1) = k + 2 ^ 32 by omega, Nat.add_mod_right]
+  rw [Nat.mod_eq_of_lt (a := k + 1) h, show 2 ^ 32 - 1 + (k + 1) = k + 2 ^ 32 by omega_using [], Nat.add_mod_right]
 
 /-- `subs`'s Z flag of a down-counter, as `bne`'s condition. -/
 theorem ne_counter {k : Nat} (h : k + 1 < 2 ^ 32) :
@@ -90,9 +90,9 @@ theorem ne_counter {k : Nat} (h : k + 1 < 2 ^ 32) :
       rw [beq_eq_false_iff_ne]
       intro e
       have := congrArg BitVec.toNat e
-      rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)] at this
+      rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [h])] at this
       exact hk this
-    rw [this]; simp; omega
+    rw [this]; simp; omega_using [hk]
 
 /-- An immediate below 256 is encodable (rotation 0). -/
 theorem encodable_of_lt {v : BitVec 32} (h : v.toNat < 256) : VG.Arm.encodable v = true :=

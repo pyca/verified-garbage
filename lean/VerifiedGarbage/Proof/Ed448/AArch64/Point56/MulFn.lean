@@ -81,7 +81,7 @@ theorem ptrOk_of {s : State} {ws x : Addr} {r : Reg} (hr : s.gpr r = ws + x)
   rw [hr, Nat.zero_add]
   apply BitVec.eq_of_toNat_eq
   simp only [off, BitVec.toNat_add, BitVec.toNat_ofNat]
-  omega
+  omega_using []
 
 theorem mulKept_lanes : ∀ k ∈ Point56.mulKept, k.2.2 < 2 := by decide
 theorem mulKept_nodup_lanes : (Point56.mulKept.map fun k => (k.2.1, k.2.2)).Nodup := by decide
@@ -107,9 +107,9 @@ theorem mulFn_ok {s : State} (h : MulPre s) : WP isa Point56.mulFn s fun u => Mu
   rw [hg] at g10 g30 g1 g3 gk
   have hs : Scr s₁ (s.gpr .x0) := ⟨g3, g12, by rw [gw, hw]; exact h.wr, h.nowrap⟩
   have hA : ACC = 3584 := rfl
-  have pa : PtrOk s₁ (s.gpr .x0) .x10 0 (s.gpr .x2).toNat := ptrOk_of g10 (by have := h.a; omega)
-  have pb : PtrOk s₁ (s.gpr .x0) .x30 0 (s.gpr .x3).toNat := ptrOk_of g30 (by have := h.b; omega)
-  have po : PtrOk s₁ (s.gpr .x0) .x1 0 (s.gpr .x1).toNat := ptrOk_of g1 (by have := h.o; omega)
+  have pa : PtrOk s₁ (s.gpr .x0) .x10 0 (s.gpr .x2).toNat := ptrOk_of g10 (by have := h.a; omega_using [hA, this])
+  have pb : PtrOk s₁ (s.gpr .x0) .x30 0 (s.gpr .x3).toNat := ptrOk_of g30 (by have := h.b; omega_using [hA, this])
+  have po : PtrOk s₁ (s.gpr .x0) .x1 0 (s.gpr .x1).toNat := ptrOk_of g1 (by have := h.o; omega_using [hA, this])
   have fa : ∀ i < 8, limbs s₁.mem (s.gpr .x0) (s.gpr .x2).toNat i < Ib := by
     rw [gm, hm]; exact h.fa
   have fb : ∀ i < 8, limbs s₁.mem (s.gpr .x0) (s.gpr .x3).toNat i < Ib := by

@@ -20,14 +20,14 @@ open VG.Proof.Ffdh.ParameterCandidate
 private theorem top_machine {j : Nat} (hj : j < 8) (b : Byte) :
     ((b.setWidth 64 &&& BitVec.ofNat 64 (2 ^ j - 1)) ||| BitVec.ofNat 64 (2 ^ j)).setWidth 8 = topByte j b := by
   have hb := b.isLt
-  have hp : 2 ^ j ≤ 128 := show 2 ^ j ≤ 2 ^ 7 from Nat.pow_le_pow_right (by decide) (by omega)
+  have hp : 2 ^ j ≤ 128 := show 2 ^ j ≤ 2 ^ 7 from Nat.pow_le_pow_right (by decide) (by omega_using [hj])
   apply BitVec.eq_of_toNat_eq
   rw [topByte_value hj]
   simp only [BitVec.toNat_setWidth, BitVec.toNat_or, BitVec.toNat_and, BitVec.toNat_ofNat]
-  rw [Nat.mod_eq_of_lt (show b.toNat < 2 ^ 64 by omega),
-    Nat.mod_eq_of_lt (show 2 ^ j - 1 < 2 ^ 64 by omega), Nat.mod_eq_of_lt (show 2 ^ j < 2 ^ 64 by omega),
+  rw [Nat.mod_eq_of_lt (show b.toNat < 2 ^ 64 by omega_using []),
+    Nat.mod_eq_of_lt (show 2 ^ j - 1 < 2 ^ 64 by omega_using [hp]), Nat.mod_eq_of_lt (show 2 ^ j < 2 ^ 64 by omega_using [hp]),
     Nat.and_two_pow_sub_one_eq_mod, Nat.or_two_pow_eq_add_of_lt (Nat.mod_lt _ (Nat.two_pow_pos _)),
-    Nat.mod_eq_of_lt (show b.toNat % 2 ^ j + 2 ^ j < 2 ^ 8 by have := Nat.mod_lt b.toNat (Nat.two_pow_pos j); omega)]
+    Nat.mod_eq_of_lt (show b.toNat % 2 ^ j + 2 ^ j < 2 ^ 8 by have := Nat.mod_lt b.toNat (Nat.two_pow_pos j); omega_using [hp])]
 
 theorem firstByte_ok {s : State} {rp op : Addr} {len j : Nat} {b : Byte}
     (hl : 2 ≤ len) (hk : len < 2 ^ 31) (hj : j < 8)

@@ -28,7 +28,7 @@ variable {tsH tsG : List FnTable}
 
 theorem fb_toNat {s : State} (hp : SPre tsH tsG s) : (fb s).toNat + frameBytes = (s.gpr .rsp).toNat := by
   have := hp.sp1; unfold signStack Proof.Rsa.X86_64.stackBytes at this
-  simp only [fb, BitVec.toNat_sub, BitVec.toNat_ofNat]; unfold frameBytes at *; omega
+  simp only [fb, BitVec.toNat_sub, BitVec.toNat_ofNat]; unfold frameBytes at *; omega_using [this]
 
 theorem SPre.geo {s : State} (hp : SPre tsH tsG s) : Geo (fb s) (stackArg s 14) := by
   have hF := fb_toNat hp
@@ -37,14 +37,14 @@ theorem SPre.geo {s : State} (hp : SPre tsH tsG s) : Geo (fb s) (stackArg s 14) 
   have hk := hp.k1
   have wS := hp.wS
   have sS : Region.Sub ⟨stackArg s 14, oRsa⟩ ⟨stackArg s 14, (stackArg s 15).toNat * 8⟩ :=
-    Region.sub_prefix (by unfold oRsa; omega)
-  refine ⟨by omega, by unfold oRsa; omega, ((hp.dKs.sub_left (frame_sub s)).sub_right sS),
+    Region.sub_prefix (by unfold oRsa; omega_using [hsl])
+  refine ⟨by omega_using [hF, this], by unfold oRsa; omega_using [hsl, wS], ((hp.dKs.sub_left (frame_sub s)).sub_right sS),
     ((hp.dKs.sub_left (ret_sub s)).sub_right sS)⟩
 
 /-- The address of stack argument `j`, from the frame. -/
 theorem argAddr (s : State) (j : Nat) : off (fb s) (frameBytes + 8 + 8 * j) = stackArgAddr s j := by
   simp only [off, fb, stackArgAddr]
-  rw [show frameBytes + 8 + 8 * j = frameBytes + 8 * (j + 1) by omega, BitVec.ofNat_add, ← BitVec.add_assoc,
+  rw [show frameBytes + 8 + 8 * j = frameBytes + 8 * (j + 1) by omega_using [], BitVec.ofNat_add, ← BitVec.add_assoc,
     BitVec.sub_add_cancel]
 
 theorem allocState_gpr' (bytes : Nat) (s : State) (r : Reg) :
@@ -59,8 +59,8 @@ theorem arg_read {s : State} (hp : SPre tsH tsG s) {m : Mem} (hf : Frame [frR s]
   rw [argAddr]
   refine hf.readW (r := ⟨stackArgAddr s 0, 144⟩) ?_ (fun r' hr' => ?_) (by decide)
   · rw [show stackArgAddr s j = stackArgAddr s 0 + BitVec.ofNat 64 (8 * j) by
-      simp only [stackArgAddr, BitVec.add_assoc, BitVec.ofNat_add_ofNat]; congr 2; omega]
-    exact Offset.contains_base _ (by omega) (by omega)
+      simp only [stackArgAddr, BitVec.add_assoc, BitVec.ofNat_add_ofNat]; congr 2; omega_using []]
+    exact Offset.contains_base _ (by omega_using [hj]) (by omega_using [hj])
   · simp only [List.mem_singleton] at hr'; subst hr'
     exact (hp.dKa.sub_left (frame_sub s)).symm
 
@@ -71,19 +71,19 @@ theorem copy1_ok {s : State} (hp : SPre tsH tsG s) {u : State} (hsp : u.gpr .rsp
       u'.mem = u.mem.writeW (off (fb s) d) (stackArg s j) ∧ Frame [frR s] s.mem u'.mem := by
   have hF := fb_toNat hp
   have := hp.sp2
-  have hsc : Scr u (fb s) frameBytes := Scr.of_mem hfr (by omega)
+  have hsc : Scr u (fb s) frameBytes := Scr.of_mem hfr (by omega_using [hF])
   have hin : InRegions (u.rd ++ u.wr) (off (fb s) (frameBytes + 8 + 8 * j)) 8 := by
     rw [argAddr]; exact hp.argIn hrd hj
   refine WP.mono (WP.keep [.rax] (Q := fun u' => u'.mem = u.mem.writeW (off (fb s) d) (stackArg s j)) ?_ rfl)
     fun u' ⟨hm, k⟩ => ⟨k, hm, hm ▸ hf.writeW (List.mem_singleton_self _) _
-      (Offset.contains_base _ (by omega) (by omega))⟩
+      (Offset.contains_base _ (by omega_using [hd]) (by omega_using [hd, hF]))⟩
   xrun [arg, ea_sp, hsp, hin, arg_read hp hf hj, hsc.st (d := d) hd]
 
 theorem frame_w {s : State} (hp : SPre tsH tsG s) {m m' : Mem} (hf : Frame [frR s] m m') {d : Nat}
     (hd : d + 8 ≤ frameBytes) (v : BitVec 64) : Frame [frR s] m (m'.writeW (off (fb s) d) v) := by
   have hF := fb_toNat hp
   have := hp.sp2
-  exact hf.writeW (List.mem_singleton_self _) _ (Offset.contains_base _ (by omega) (by omega))
+  exact hf.writeW (List.mem_singleton_self _) _ (Offset.contains_base _ (by omega_using [hd]) (by omega_using [hd, hF]))
 
 /-- The slots `signPrologue` stores to, and what. -/
 def proW (s : State) : Nat → BitVec 64 :=
@@ -112,7 +112,7 @@ theorem signPro_ok {s : State} (hp : SPre tsH tsG s) :
   set A := allocState frameBytes s with hA
   have hsp : A.gpr .rsp = fb s := rfl
   have hfr : frR s ∈ A.wr := List.mem_cons_self ..
-  have hsc : Scr A (fb s) frameBytes := Scr.of_mem hfr (by omega)
+  have hsc : Scr A (fb s) frameBytes := Scr.of_mem hfr (by omega_using [hF])
   have R0 : Rep s.mem (fb s) (stackArg s 14) (fun o => s.mem (off (stackArg s 14) o))
       (fun k => word s.mem (fb s) (8 * k)) := ⟨fun _ _ => rfl, fun _ _ => rfl⟩
   rw [signPrologue_eq, WP.block_append_iff, WP.block_append_iff, WP.block_append_iff, WP.block_append_iff,
@@ -157,11 +157,11 @@ theorem signPro_ok {s : State} (hp : SPre tsH tsG s) :
   have h392 : frameBytes = 392 := rfl
   have hss : signStack = 3656 := rfl
   have := hp.sp1
-  refine ⟨k16, ⟨(k16.gpr (by decide)).trans hsp, k16.2.2 ▸ hfr, by omega, by omega, ?_, ?_, G'.dFS, G'.dRS⟩, R6, f6⟩
+  refine ⟨k16, ⟨(k16.gpr (by decide)).trans hsp, k16.2.2 ▸ hfr, by omega_using [hF, h392, hss, this], by omega_arith, ?_, ?_, G'.dFS, G'.dRS⟩, R6, f6⟩
   · have hsl := hp.hsl
     have hk := hp.k1
     refine ⟨⟨stackArg s 14, 0, (stackArg s 15).toNat * 8, by rw [k16.2.2, hA]; simp [allocState, hp.hwr], (BitVec.add_zero _).symm,
-      by unfold oRsa; omega, hp.wS.trans' (by omega)⟩, G'.Sw⟩
+      by unfold oRsa; omega_using [hsl], hp.wS.trans' (by omega_using [])⟩, G'.Sw⟩
   · rw [show sScr = 8 * 21 from rfl]
     exact (R6.fr 21 (by decide)).trans (by simp [proW, upd])
 

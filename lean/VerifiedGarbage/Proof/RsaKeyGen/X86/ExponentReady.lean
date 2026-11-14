@@ -21,10 +21,10 @@ theorem prepared_preserve {g : Geometry} (v : g.Valid) {s t : Mem} (O : Outs g.W
     simp only [preparedRanges, ranges, List.mem_cons, List.not_mem_nil, or_false] at mem
     rcases index with rfl | rfl | rfl | rfl <;> rcases mem with rfl | rfl | rfl <;>
       simp only [Geometry.array, Geometry.words, Proof.Rsa.Mont.arrAt, Proof.Rsa.Mont.hdrBytes,
-        VG.Impl.RsaKeyGen.X86.Exponent.markerOffset] <;> omega
+        VG.Impl.RsaKeyGen.X86.Exponent.markerOffset] <;> omega_using []
   · have bound := v.maxWidth
     rcases index with rfl | rfl | rfl | rfl <;>
-      simp only [Geometry.array, Geometry.words, Proof.Rsa.Mont.arrAt, Proof.Rsa.Mont.hdrBytes] <;> omega
+      simp only [Geometry.array, Geometry.words, Proof.Rsa.Mont.arrAt, Proof.Rsa.Mont.hdrBytes] <;> omega_using [bound]
 
 /-- `Ready` kept by writes to the exponent's ranges. -/
 theorem ready_keep {g : Geometry} (v : g.Valid) {s t : State} {c capacity : Nat} {p : BitVec 32}
@@ -36,7 +36,7 @@ theorem ready_keep {g : Geometry} (v : g.Valid) {s t : State} {c capacity : Nat}
   have fits : ∀ r ∈ preparedRanges g, r.1 + r.2 ≤ g.L := by
     intro r mem
     simp only [preparedRanges, ranges, List.mem_cons, List.not_mem_nil, or_false] at mem
-    rcases mem with rfl | rfl | rfl <;> simp only [VG.Impl.RsaKeyGen.X86.Exponent.markerOffset] <;> omega
+    rcases mem with rfl | rfl | rfl <;> simp only [VG.Impl.RsaKeyGen.X86.Exponent.markerOffset] <;> omega_arith
   have metadata : ∀ r ∈ preparedRanges g, (128 ≤ r.1 ∧ r.1 + r.2 ≤ 224) ∨ 256 ≤ r.1 := by
     intro r mem
     simp only [preparedRanges, ranges, List.mem_cons, List.not_mem_nil, or_false] at mem
@@ -46,7 +46,7 @@ theorem ready_keep {g : Geometry} (v : g.Valid) {s t : State} {c capacity : Nat}
     · right; exact v.arrayHeader 27
   have F := WorkspaceFrame.of_outs S.scratch.nowrap O
   refine ⟨Prepared.keepGaps v S.context K (by unfold clob; decide) O metadata,
-    S.modulus.keep v F (fun r mem => by have := metadata r mem; omega) ?_,
+    S.modulus.keep v F (fun r mem => by have := metadata r mem; omega_using [this]) ?_,
     S.caller.keepOuts K (by unfold clob; decide) O fits,
     S.scratch.of_keeps K (by unfold clob; decide)⟩
   intro r mem
@@ -54,8 +54,8 @@ theorem ready_keep {g : Geometry} (v : g.Valid) {s t : State} {c capacity : Nat}
   have top := v.arrayHeader 0
   have before := g.arrayBefore (i := 0) (j := 27) (by decide)
   rcases mem with rfl | rfl | rfl
-  · right; unfold VG.Impl.RsaKeyGen.X86.Exponent.markerOffset; omega
-  · left; unfold Geometry.words; omega
+  · right; unfold VG.Impl.RsaKeyGen.X86.Exponent.markerOffset; omega_using [top]
+  · left; unfold Geometry.words; omega_using []
   · left; exact before
 
 theorem ready_ok {g : Geometry} (v : g.Valid) {s : State} {c capacity : Nat} {p : BitVec 32}
@@ -69,10 +69,10 @@ theorem ready_ok {g : Geometry} (v : g.Valid) {s : State} {c capacity : Nat} {p 
   have outFit := Prepared.paddedFit v (j := 27) (by decide)
   have apart := Prepared.paddedBefore g (i := 0) (j := 27) (by decide)
   have head := v.headerFit
-  refine WP.mono (code_ok S.scratch (by have := v.minWidth; omega)
-    (by have := v.arrayFit (j := 5) (by decide); unfold Geometry.words at this; omega)
-    (by omega) (by omega) (by have := v.arrayHeader 0; unfold VG.Impl.RsaKeyGen.X86.Exponent.markerOffset; omega)
-    (by omega) S.modulus.candidate minusOne odd large) fun t ⟨E, marker, O, K⟩ => ?_
+  refine WP.mono (code_ok S.scratch (by have := v.minWidth; omega_using [this])
+    (by have := v.arrayFit (j := 5) (by decide); unfold Geometry.words at this; omega_using [this])
+    (by omega_using [srcFit]) (by omega_using [outFit]) (by have := v.arrayHeader 0; unfold VG.Impl.RsaKeyGen.X86.Exponent.markerOffset; omega_using [this])
+    (by omega_using [apart]) S.modulus.candidate minusOne odd large) fun t ⟨E, marker, O, K⟩ => ?_
   exact ⟨ready_keep v S O K, E, marker, O, K⟩
 
 end VG.Proof.RsaKeyGen.X86.Exponent

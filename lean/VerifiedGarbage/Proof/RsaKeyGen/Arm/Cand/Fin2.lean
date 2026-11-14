@@ -112,9 +112,9 @@ theorem finPrime_vp (hC : aC ∈ L) (hU : sUsed ∈ LS) (hlt : ∀ σ, E σ → 
   have pre := h.pre
   have hm : slot s.mem P.B VG.Impl.Rsa.Arm.CrtValues.sMask = 1 := by
     have := h.sl sMask (by simp); dsimp only at this; rw [upd_self] at this; exact this
-  have hW : P.L ≤ 4 * P.W := by simp only [CP.W]; omega
+  have hW : P.L ≤ 4 * P.W := by simp only [CP.W]; omega_using []
   refine WP.mono (store_ok' hw (Z := P.Z) (w := P.W) (dst := P.oP) (k := P.L) (j := aC) (R := P.rO) (by decide)
-    (h.live_lt aC hC) pre.sO.symm (by rw [h.wr]; exact pre.oW) rfl (by have := pre.k1; omega) hW pre.fO p10 p11
+    (h.live_lt aC hC) pre.sO.symm (by rw [h.wr]; exact pre.oW) rfl (by have := pre.k1; omega_using [this]) hW pre.fO p10 p11
     (by rw [hm]) (Nat.le_trans (by decide) pre.hdr_Z)) fun t ⟨hwt, bt, ft, rt⟩ => ?_
   refine ⟨⟨e, (St.of_out (A := A) (L := L) (V := fun σ => upd (V σ) sMask 1) (LS := sMask :: LS) h hw ft rt).1,
     hwt⟩, ?_⟩

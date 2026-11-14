@@ -64,7 +64,7 @@ theorem finish_ok {p : GenPublic} {original d y : State} {final : KeySearchResul
         y.mem.readW (p.F + BitVec.ofNat 64 d) 64 :=
     (Frame.writeW (Frame.refl _ _) (List.mem_singleton_self (rU p)) v
       (by rw [BitVec.add_zero]; exact Region.contains_self _ _)).readW
-      (r := p.frame) (Offset.contains_base _ hd (by omega)) (fun q hq => by
+      (r := p.frame) (Offset.contains_base _ hd (by omega_using [hd])) (fun q hq => by
         obtain rfl := List.mem_singleton.mp hq
         exact g.input.frame_disjoint_writes (r := inUsed original) (by simp [inWrites]) |>.sub_right
           (by rw [g.used_region]; exact fun _ h => h)) (by decide)
@@ -104,7 +104,7 @@ theorem done_post {p : GenPublic} {s d t : State} (hp : GenInput p s)
     exact Frame.writeW (Frame.refl _ _) (List.mem_singleton_self _) _
       (by rw [BitVec.add_zero]; exact Region.contains_self _ _)
   have hword (j : Nat) (hj : j < 7) : word t.mem p.stp (8 * j) = word d.mem p.stp (8 * j) :=
-    hfr.readW (r := cS p) (Offset.contains_base _ (by omega) (by have := hf.nT; omega))
+    hfr.readW (r := cS p) (Offset.contains_base _ (by omega_using [hj]) (by have := hf.nT; omega_using [hj]))
       (fun q hq => by obtain rfl := List.mem_singleton.mp hq; exact hf.uT.symm) (by decide)
   have hbytes {R : Region} (hR : Region.Sub R (cK p) ∨ Region.Sub R (cS p)) (hn : R.len ≤ 2 ^ 64) :
       Spec.Rsa.bytesAt t.mem R.base R.len = Spec.Rsa.bytesAt d.mem R.base R.len := by
@@ -116,9 +116,9 @@ theorem done_post {p : GenPublic} {s d t : State} (hp : GenInput p s)
     exacts [(hf.kU.sub_left hR), (hf.uT.symm.sub_left hR)]
   refine ⟨?_, ?_, ?_, req, ?_, ?_, ?_⟩
   · have := keyStatus_lt (genResult s)
-    rw [hax, BitVec.toNat_setWidth, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega)]
+    rw [hax, BitVec.toNat_setWidth, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [this]), Nat.mod_eq_of_lt (by omega_using [this])]
   · rw [hkp, hL, ← hkey]
-    exact hbytes (R := ⟨p.kp, 9 * p.L⟩) (.inl fun _ h => h) (by show 9 * p.L ≤ 2 ^ 64; have := hf.nK; omega)
+    exact hbytes (R := ⟨p.kp, 9 * p.L⟩) (.inl fun _ h => h) (by show 9 * p.L ≤ 2 ^ 64; have := hf.nK; omega_using [this])
   · rw [hup]
     show [t.mem.readW (p.up + BitVec.ofNat 64 (8 * 0)) 64] = _
     rw [Nat.mul_zero, hm, Mem.readW_writeW_self64]
@@ -142,7 +142,7 @@ theorem iteration_sdepth (v : RoundImpl) : sdepth (iteration (searchCall v) keyC
   have hk := keyCode_sdepth
   simp only [iteration, seqs, searchRun, searchCall, classify, accepted, keyRun, keyCall, exhaustedGen, fail,
     afterKey, clearAll, clear, Impl.Bignum.RISCV64.countLoop, sdepth, Instr.frameBytes, Search.searchCode, hk]
-  omega
+  omega_using [this]
 
 theorem clearAround_sdepth : sdepth clearAround = 0 := by
   simp only [clearAround, seqs, clear, Impl.Bignum.RISCV64.countLoop, sdepth, Nat.max_self]
@@ -161,10 +161,10 @@ theorem gen_body_ok [InvLaw] (v : RoundImpl) {s t' : State} (hp : GenInput (genO
     · cases hpB
     · cases hpB
       obtain ⟨hL1, -, -⟩ := hf.len
-      refine bytes_kept hfb ?_ (by show (genOfState s).L ≤ 2 ^ 64; have := hf.nK; omega)
+      refine bytes_kept hfb ?_ (by show (genOfState s).L ≤ 2 ^ 64; have := hf.nK; omega_using [this])
       have hd := hp.stack_disjoint (r := inKey s) (by simp [inWrites])
       rw [hl.key_region] at hd
-      exact hd.sub_right (slot_sub _ (by omega))
+      exact hd.sub_right (slot_sub _ (by omega_using []))
   have hinv : GenInv (genOfState s) s (genResult s) (genMeasure (genOfState s) 0 (genProgress s)) w :=
     ⟨0, genProgress s, rfl, hw, [], by rw [consume_zero]; rfl⟩
   exact gen_loop v hinv
@@ -184,12 +184,12 @@ theorem gen_frame_ok [InvLaw] (v : RoundImpl) {s t' : State} (hp : GenInput (gen
   have hsu : stackUse = 656 := rfl
   have hroom' : stackUse ≤ s.sp.toNat := by rw [← hsp0]; exact hroom
   have htsp : t'.sp = (genOfState s).F := kk.sp.trans (alloc_sp hp)
-  have hsp16 : 16 ≤ t'.sp.toNat := by rw [htsp, hp.F_toNat, hsp0]; omega
+  have hsp16 : 16 ≤ t'.sp.toNat := by rw [htsp, hp.F_toNat, hsp0]; omega_using [hsu, hroom']
   unfold body
   refine Search.WP.frameRegAny hsp16 ?_ (WP.mono (gen_body_ok v hp hl hfb) fun d hd => ⟨d, hd, rfl⟩) (by
     have := iteration_sdepth v
     simp only [sdepth, clearAround_sdepth]
-    omega)
+    omega_using [this])
   intro R hR
   rw [kk.wr, alloc_wr hp] at hR
   rw [htsp, F_16_sp]
@@ -211,7 +211,7 @@ theorem gen_correct_ok [InvLaw] (v : RoundImpl) {s : State} (h : genPre s) :
   have hsu : stackUse = 656 := rfl
   have hroom' : stackUse ≤ s.sp.toNat := by rw [← hsp0]; exact hroom
   unfold genCode code
-  refine WP.alloc (by decide) (by show 112 ≤ s.sp.toNat; omega) ?_
+  refine WP.alloc (by decide) (by show 112 ≤ s.sp.toNat; omega_using [hsu, hroom']) ?_
   simp only [seqs]
   refine WP.seq (WP.block_append_iff.mpr (VG.RISCV64.WP.mono_syms (entryHead_ok hp) fun u ⟨⟨hx, hmu⟩, ku⟩ hyu =>
     VG.RISCV64.WP.mono_syms (entryWords_ok hp hx hmu ku) fun t ⟨hmt, kt⟩ hyt => ?_))

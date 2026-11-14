@@ -61,7 +61,7 @@ theorem SignAt.frame {b : Addr} {sg : Bool} {m m' : Mem} (h : SignAt b sg m) (hf
   have hS : SIGN = 24 := rfl
   unfold SignAt
   rw [hf.readW (Region.contains_self _ _) (fun r hr => by
-    rw [List.mem_singleton.mp hr]; exact Offset.disjoint _ (.inl (by omega)) (by omega) (by omega)) (by decide)]
+    rw [List.mem_singleton.mp hr]; exact Offset.disjoint _ (.inl (by omega_using [hS])) (by omega_using [hS]) (by omega_using [])) (by decide)]
   exact h
 
 /-- `ld t, off(n)`. -/
@@ -83,7 +83,7 @@ theorem env_FR {m m' : Mem} (hf : Frame [⟨b + BitVec.ofNat 64 FR, 64⟩] m m')
   funext fun i => env_keep hf i fun r hr => by
     have := slot_range i
     have hX : FR = 864 := rfl
-    rw [List.mem_singleton.mp hr]; exact Offset.disjoint _ (.inl (by omega)) (by omega) (by omega)
+    rw [List.mem_singleton.mp hr]; exact Offset.disjoint _ (.inl (by omega_using [this, hX])) (by omega_using [this]) (by omega_using [hX])
 
 theorem recoverInvalid_ok (s : State) :
     WP isa recoverInvalid s fun t => DKeep b s t ∧ t.mem = s.mem ∧ DecodeResult b none t :=

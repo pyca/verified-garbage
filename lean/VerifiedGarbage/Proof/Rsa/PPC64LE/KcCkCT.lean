@@ -139,7 +139,7 @@ theorem pins_K1' : Pins K1' [.r7, .r8] := by
 theorem ck_entry {s0 : State} (h : ckP.pre s0) : WP isa (entry 8 VG.Impl.Rsa.PPC64LE.CheckKey.moves) s0 (ckE s0) := by
   have hp := ck_kpre h
   obtain ⟨-, hrd, -, -, de, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, ⟨hk, hk'⟩, e1, e2, -⟩ := id h
-  exact entry_ok hp (by decide) ck_moves (by decide) rfl (CrtValues.ofNat_toNat64 _) e1 (by omega)
+  exact entry_ok hp (by decide) ck_moves (by decide) rfl (CrtValues.ofNat_toNat64 _) e1 (by omega_using [hk', e2])
     (by rw [hrd]; simp) de
 
 theorem K1_of {d : KD} {s : State} (hs : K0 d s) :
@@ -280,7 +280,7 @@ theorem KC1_of {d : KD} {s : State} (h : KS d s) :
   have S3 := S.of_keep k3 m3
   have wn' : (s0.gpr .r3).toNat + kK s0 ≤ 2 ^ 64 := wn
   have hc : ∀ i < kK s0, (⟨s0.gpr .r3, kK s0⟩ : Region).Contains (off (s0.gpr .r3) i) 1 := fun i hi =>
-    Offset.contains_base _ (by omega) (by omega)
+    Offset.contains_base _ (by omega_using [hi]) (by omega_using [wn', hi])
   have h10 : t3.gpr .r10 = BitVec.ofNat 64 (kK s0) := by rw [u10, S.2.1.r15]; exact CrtValues.ofNat_toNat64 _
   refine WP.mono (CrtValues.check1_ok (N := s0.gpr .r3) (k := kK s0) (nb := nB s0)
     (by rw [u9, S.2.1.r14]; simp [off]) h10 hk (len_bytes _ _ _)
@@ -288,15 +288,15 @@ theorem KC1_of {d : KD} {s : State} (h : KS d s) :
     (fun i hi => by
       rw [S3.1.frame _ (CrtValues.past_of_disjoint dn (hc i hi))]; simp [Spec.Rsa.bytesAt, off]))
     fun t4 ⟨⟨i0, i11, im⟩, k4⟩ => ⟨s0, hs, S3.of_keep k4 im, by rw [k4.gpr _ (by decide), h10],
-      by rw [i0, getD_of_lt (l := nB s0) (i := kK s0 - 1) (by simp only [len_bytes, kK]; omega)], by rw [i11,
-          getD_of_lt (l := nB s0) (i := 0) (by simp only [len_bytes, kK]; omega)]⟩
+      by rw [i0, getD_of_lt (l := nB s0) (i := kK s0 - 1) (by simp only [len_bytes, kK]; omega_using [hk])], by rw [i11,
+          getD_of_lt (l := nB s0) (i := 0) (by simp only [len_bytes, kK]; omega_using [hk])]⟩
 
 theorem KC2_of {d : KD} {s : State} (h : KC1 d s) : WP isa VG.Impl.Rsa.PPC64LE.CrtValues.check2 s (KC2 d) := by
   obtain ⟨s0, hs, S, h10, i0, i11⟩ := h
   obtain ⟨-, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, ⟨hk, hk'⟩, -⟩ := id hs.1
   refine WP.mono (CrtValues.check2_ok h10 hk hk' (len_bytes _ _ _)
-    (by rw [i0, getD_of_lt (l := nB s0) (i := kK s0 - 1) (by simp only [len_bytes, kK]; omega)]) (by rw [i11,
-        getD_of_lt (l := nB s0) (i := 0) (by simp only [len_bytes, kK]; omega)]))
+    (by rw [i0, getD_of_lt (l := nB s0) (i := kK s0 - 1) (by simp only [len_bytes, kK]; omega_using [hk])]) (by rw [i11,
+        getD_of_lt (l := nB s0) (i := 0) (by simp only [len_bytes, kK]; omega_using [hk])]))
     fun t ⟨hv, tm, kt⟩ => ⟨s0, hs, S.of_keep kt tm, hv⟩
 
 theorem nv_iff {d : KD} {s₁ s₂ : State} (h₁ : KC2 d s₁) (h₂ : KC2 d s₂) :

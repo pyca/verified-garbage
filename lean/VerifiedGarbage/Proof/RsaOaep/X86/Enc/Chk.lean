@@ -49,7 +49,7 @@ abbrev Res (P : EP) (σ : State) (m : Mem) (r : BitVec 32) : Prop :=
 /-- The end of the body. -/
 abbrev Fin (P : EP) (σ s : State) : Prop := S h P σ s ∧ Res h g P σ s.mem (s.gpr .eax)
 
-theorem enc_arg {j : Nat} (hj : j < 18) {D : Nat} {P : EP} : j < ((P.lay D).argv).length := by simp; omega
+theorem enc_arg {j : Nat} (hj : j < 18) {D : Nat} {P : EP} : j < ((P.lay D).argv).length := by simp; omega_using [hj]
 
 /-- An argument's place may be read. -/
 theorem argR {D : Nat} {P : EP} {σ t : State} (hg : Geo (P.lay D) P.scr) (ct : Ctx (P.lay D) P.scr σ t) {j : Nat}
@@ -66,13 +66,13 @@ theorem chk_z {K c ml : Nat} (hK : K < 2 ^ 32) (hc : c < 2 ^ 32) (hml : ml < 2 ^
   rw [BitVec.and_self]
   simp only [x, toNat_ofNat_lt hK, toNat_ofNat_lt hc, toNat_ofNat_lt hml]
   by_cases hcK : K < c
-  · have h1 : decide (c + ml ≤ K) = false := decide_eq_false (by omega)
+  · have h1 : decide (c + ml ≤ K) = false := decide_eq_false (by omega_using [hcK])
     rw [decide_eq_true hcK, h1]
     simp
-  · rw [decide_eq_false hcK, sub_ofNat (by omega), toNat_ofNat_lt (by omega)]
+  · rw [decide_eq_false hcK, sub_ofNat (by omega_using [hcK]), toNat_ofNat_lt (by omega_using [hK])]
     by_cases e : K - c < ml
-    · rw [decide_eq_true e, decide_eq_false (by omega)]; simp
-    · rw [decide_eq_false e, decide_eq_true (by omega)]; simp
+    · rw [decide_eq_true e, decide_eq_false (by omega_using [e])]; simp
+    · rw [decide_eq_false e, decide_eq_true (by omega_using [hcK, e])]; simp
 
 /-! ## The checks -/
 
@@ -104,7 +104,7 @@ theorem chk_vp (P : EP) : VP (S h P) (.block (encChk h.H)) (C0 h P) := by
   have m4 : t4.mem = s.mem := by rw [u4.mem, u3.mem, u2.mem, u1.mem]
   rw [u4.other _ (by decide), e3, m4, hg.aArg ok 9 (enc_arg (by decide)), hs.arg (enc_arg (by decide))] at u6
   rw [u7.gpr, u6.other _ (by decide), u6.gpr, f5.gpr, u4.gpr, e2]
-  exact congrArg some (chk_z (by omega) (by omega) hi.ml32)
+  exact congrArg some (chk_z (by omega_using [hK]) (by omega_using [hD]) hi.ml32)
 
 /-! ## A message that does not fit -/
 
@@ -145,9 +145,9 @@ theorem fail_vp (P : EP) : VP (fun σ s => C0 h P σ s ∧ isa.eval .ne s = some
     have hK := hi₀.k1024
     have hfo := hi₀.ok.fits P.OUT (by simp)
     simp only [BitVec.toNat_setWidth] at hfo
-    rw [Nat.mod_eq_of_lt (by have := P.out.isLt; omega)] at hfo
-    have wb : WBuf (P.lay h.H.D) P.out P.K := ⟨hfo, by omega, ⟨P.OUT, by simp, Region.contains_self _ _⟩⟩
-    refine (zero_vp (scr := P.scr) wb (by have := hi₀.k64; omega)
+    rw [Nat.mod_eq_of_lt (by have := P.out.isLt; omega_using [])] at hfo
+    have wb : WBuf (P.lay h.H.D) P.out P.K := ⟨hfo, by omega_using [hK], ⟨P.OUT, by simp, Region.contains_self _ _⟩⟩
+    refine (zero_vp (scr := P.scr) wb (by have := hi₀.k64; omega_using [this])
       (Inv := fun σ _ => In h.H.D P σ ∧ ¬ fits h P) fun _ _ _ hi _ => hi).mono
       (fun σ s ⟨hc, hi, hf, si, cx, ax⟩ => ⟨hc, ⟨hi, hf⟩, si, cx, ax⟩) fun σ s ⟨hc, ⟨hi, hf⟩, hz⟩ => ?_
     refine ⟨hc, hi, hf, ?_⟩
@@ -161,7 +161,7 @@ theorem fail_vp (P : EP) : VP (fun σ s => C0 h P σ s ∧ isa.eval .ne s = some
     simp only [mi]
     refine wp_movi fun t u => WP.block_nil ⟨⟨hi, hc.st.upd u (by decide)⟩, fun _ => ?_⟩
     have en : Spec.RsaOaep.encrypt h.G g.G P.nB P.eB (labB P σ) (msgB P σ) (seedB h P σ) = none :=
-      Proof.RsaOaep.encrypt_none (by rw [nB_length hi, msgB_length, h.glen]; simp only [fits] at hf; omega)
+      Proof.RsaOaep.encrypt_none (by rw [nB_length hi, msgB_length, h.glen]; simp only [fits] at hf; omega_using [hf])
     rw [en, u.gpr, u.mem]
     exact ⟨rfl, hz⟩
 

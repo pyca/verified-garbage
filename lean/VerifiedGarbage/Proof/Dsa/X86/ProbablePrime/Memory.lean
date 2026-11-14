@@ -66,7 +66,7 @@ theorem Tail.candidate {E : Environment} (v : E.Valid) {m m' : Mem} (T : Tail E 
   have index := List.mem_range.mp hi
   have room := v.room
   rw [off, Offset.add_add]
-  exact T _ (by omega) (by omega)
+  exact T _ (by omega_using []) (by omega_using [index, room])
 
 theorem Memory.keep {E : Environment} (v : E.Valid) {c : Nat} {entropy : List Byte} {s t : State}
     (M : Memory E c entropy s) {regs : List Reg} (K : Keeps regs s t) (F : WorkFrame E s.mem t.mem)
@@ -75,12 +75,12 @@ theorem Memory.keep {E : Environment} (v : E.Valid) {c : Nat} {entropy : List By
     Memory E c entropy t := by
   refine ⟨M.usedWrite.of_keeps K, ?_, ?_, ?_, ?_, symbol.trans M.symbol, (T.candidate v).trans M.candidate⟩
   · rw [K.2.1, K.2.2]; exact M.randRead
-  · rw [VG.Proof.RsaKeyGen.frame_bytesAt F v.randFar (by have := v.randLengthFit; omega)]
+  · rw [VG.Proof.RsaKeyGen.frame_bytesAt F v.randFar (by have := v.randLengthFit; omega_using [this])]
     exact M.entropy
   · rw [K.2.1, K.2.2]; exact M.tableRead
   · intro i index
     rw [F.readW (r := E.tableRegion)
-      (Offset.contains_base _ (by change 8 * i + 8 ≤ 8192; omega) (by omega)) v.tableFar (by decide)]
+      (Offset.contains_base _ (by change 8 * i + 8 ≤ 8192; omega_using [index]) (by omega_using [index])) v.tableFar (by decide)]
     exact M.table i index
 
 end VG.Proof.Dsa.X86.ProbablePrime

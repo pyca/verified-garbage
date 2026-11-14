@@ -48,7 +48,7 @@ theorem cmpR8_ok (s : State) {n k : Nat} (h8 : s.gpr .r8 = BitVec.ofNat 64 n) (h
       t.zf = some (decide (n = k)) ∧ t.gpr = s.gpr ∧ t.mem = s.mem ∧ t.rd = s.rd ∧ t.wr = s.wr ∧
         t.mxcsr = s.mxcsr := by
   xrun [h8, se_ofNat hk]
-  exact ⟨ofNat_sub_beq (j := n) (N := k) (by omega) (by omega), rfl⟩
+  exact ⟨ofNat_sub_beq (j := n) (N := k) (by omega_using [hn]) (by omega_using [hk]), rfl⟩
 
 /-- `sub r8, 1`. -/
 theorem subR8_ok (s : State) :
@@ -69,20 +69,20 @@ theorem arrSel_ok {p : Nat} {Q : State → Prop} :
       WP isa (arrSel l p ps) s Q
   | [], _, _, hi, _, _, _ => absurd hi (Nat.not_lt_zero _)
   | [(j, o)], i, s, hi, _, _, h => by
-    obtain rfl : i = 0 := by simp only [List.length_singleton] at hi; omega
+    obtain rfl : i = 0 := by simp only [List.length_singleton] at hi; omega_using [hi]
     exact h s rfl rfl rfl rfl rfl
   | (j, o) :: q :: ps, i, s, hi, hl, h8, h => by
     simp only [List.length_cons] at hi hl h8
     simp only [arrSel, List.length_cons]
-    refine WP.seq (WP.mono (cmpR8_ok s h8 (by omega) (by omega)) fun t ⟨hz, hg, hm, hrd, hwr, hx⟩ => ?_)
+    refine WP.seq (WP.mono (cmpR8_ok s h8 (by omega_using [hl]) (by omega_using [hl])) fun t ⟨hz, hg, hm, hrd, hwr, hx⟩ => ?_)
     refine WP.ite (decide (ps.length + 1 + 1 - i = ps.length + 1 + 1)) (by simp only [eval, hz])
       (fun ht => ?_) (fun hf => ?_)
-    · obtain rfl : i = 0 := by simp only [decide_eq_true_eq] at ht; omega
+    · obtain rfl : i = 0 := by simp only [decide_eq_true_eq] at ht; omega_using [ht]
       exact h t hg hm hrd hwr hx
-    · have hi0 : i ≠ 0 := by simp only [decide_eq_false_iff_not] at hf; omega
-      obtain ⟨i, rfl⟩ : ∃ i', i = i' + 1 := ⟨i - 1, by omega⟩
-      exact arrSel_ok (q :: ps) i t (by simp only [List.length_cons]; omega) (by simp only [List.length_cons]; omega)
-        (by rw [hg, h8]; simp only [List.length_cons]; congr 1; omega)
+    · have hi0 : i ≠ 0 := by simp only [decide_eq_false_iff_not] at hf; omega_using [hf]
+      obtain ⟨i, rfl⟩ : ∃ i', i = i' + 1 := ⟨i - 1, by omega_using [hi0]⟩
+      exact arrSel_ok (q :: ps) i t (by simp only [List.length_cons]; omega_using [hi]) (by simp only [List.length_cons]; omega_using [hl])
+        (by rw [hg, h8]; simp only [List.length_cons]; congr 1; omega_using [])
         fun s' hg' hm' hrd' hwr' hx' => h s' (hg'.trans hg) (hm'.trans hm) (hrd'.trans hrd) (hwr'.trans hwr)
           (hx'.trans hx)
 

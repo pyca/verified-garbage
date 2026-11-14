@@ -54,7 +54,7 @@ theorem stores_ok {r : Reg} {o n : Nat} (ho : o + 4 * n ≤ 4096) {s : State} (h
     WP.block_nil ⟨fun j hj => ?_, ?_, by rw [u2.gpr, h3], h4.trans (u2.rest _)⟩
   · rw [u2.mem]
     rcases Nat.lt_succ_iff_lt_or_eq.mp hj with hj | rfl
-    · rw [wd_write_other _ _ _ (by omega) (by omega_using [ho, hm, hj]) (by omega_using [ho, hm])]; exact h1 j hj
+    · rw [wd_write_other _ _ _ (by omega_using [hj]) (by omega_using [ho, hm, hj]) (by omega_using [ho, hm])]; exact h1 j hj
     · rw [wd_write_self, h3, toNat_lo32]
   · rw [u2.mem]
     exact (h2.sub fun r hr => ⟨_, List.mem_singleton_self _, by
@@ -67,7 +67,7 @@ theorem zeroAcc_ok (hA : acc + 64 ≤ 4096) {s : State} (hc : Ctx b s) :
   unfold zeroAcc
   refine wp_li (by decide) fun s1 u1 => ?_
   have hc1 := hc.of_rest (u1.rest (ws := [.r7]) (by decide)) (by decide)
-  refine WP.mono (stores_ok (r := .r7) (o := acc) (n := 8) (by omega) hc1) fun s' ⟨h1, h2, _, h4⟩ =>
+  refine WP.mono (stores_ok (r := .r7) (o := acc) (n := 8) (by omega_using [hA]) hc1) fun s' ⟨h1, h2, _, h4⟩ =>
     ⟨fun j hj => by rw [accw, h1 j hj, u1.gpr]; rfl, by rw [← u1.mem]; exact h2,
       (u1.rest (by decide)).trans (h4.mono (by decide))⟩
 
@@ -222,7 +222,7 @@ theorem mul_ok (hA : acc + 64 ≤ 4096) {o x y : Nat} (ho : o + 32 ≤ acc) (hx 
       V s'.mem b o % P = (V s.mem b x * V s.mem b y) % P := by
   unfold mulAt
   refine WP.append (product_ok hx hy hA hA4 hx4 hy4 hc) fun s1 ⟨hc1, hr1, hf1, hv1⟩ =>
-    WP.mono (reduce38_ok hA hA4 (by omega) ho4 hc1) fun s2 ⟨hr2, hf2, hv2⟩ =>
+    WP.mono (reduce38_ok hA hA4 (by omega_using [hA, ho]) ho4 hc1) fun s2 ⟨hr2, hf2, hv2⟩ =>
       ⟨hr1.trans hr2, ?_, by rw [hv2, hv1]⟩
   exact (hf1.mono fun r hr => by simp [List.mem_singleton.mp hr]).trans
     (hf2.mono fun r hr => by simp [List.mem_singleton.mp hr])

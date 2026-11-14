@@ -29,7 +29,7 @@ theorem endSetup_ok {s : State} {B : Addr} {Z e w : Nat}
       (t.gpr .x12 = BitVec.ofNat 64 w ∧ t.gpr .x16 = off B (e + 8 * w) ∧ t.mem = s.mem) ∧
       Keep [.x12, .x16] s t := by
   refine WP.keep [.x12, .x16] ?_ rfl rfl rfl
-  brun [h0, h8, hW, shl3_ofNat hw, hs.ld (show 8 * sW + 8 ≤ Z by unfold sW; omega)]
+  brun [h0, h8, hW, shl3_ofNat hw, hs.ld (show 8 * sW + 8 ≤ Z by unfold sW; omega_using [hZ])]
 
 theorem endStores_ok {s : State} {B : Addr} {Z e w : Nat}
     (hs : Scr s B Z) (h16 : s.gpr .x16 = off B (e + 8 * w))
@@ -41,21 +41,21 @@ theorem endStores_ok {s : State} {B : Addr} {Z e w : Nat}
   refine WP.mono (WP.keep [] (Q := fun t =>
     t.mem = (s.mem.writeW (off B (e + 8 * w)) (s.gpr .x10)).writeW
       (off B (e + 8 * w + 8)) (0 : Word))
-    (by brun [h16, h7, hs.st (show e + 8 * w + 8 ≤ Z by omega),
-      hs.st (show e + 8 * w + 8 + 8 ≤ Z by omega)]) rfl rfl rfl) fun t ⟨hm, kt⟩ => ?_
+    (by brun [h16, h7, hs.st (show e + 8 * w + 8 ≤ Z by omega_using [hT]),
+      hs.st (show e + 8 * w + 8 + 8 ≤ Z by omega_using [hT])]) rfl rfl rfl) fun t ⟨hm, kt⟩ => ?_
   refine ⟨⟨?_, ?_⟩, kt⟩
   · have he : wv ((s.mem.writeW (off B (e + 8 * w)) (s.gpr .x10)).writeW
           (off B (e + 8 * w + 8)) (0 : Word)) B e (w + 2) =
         wv s.mem B e w + 2 ^ (64 * w) * (s.gpr .x10).toNat := by
-      rewrite [show e + 8 * w + 8 = e + 8 * (w + 1) by omega,
-        show w + 2 = (w + 1) + 1 by omega,
-        wv_writeW_top _ B e (w + 1) _ (by omega), wv_writeW_top _ B e w _ (by omega)]
+      rewrite [show e + 8 * w + 8 = e + 8 * (w + 1) by omega_using [],
+        show w + 2 = (w + 1) + 1 by omega_using [],
+        wv_writeW_top _ B e (w + 1) _ (by omega_using [hT, hn]), wv_writeW_top _ B e w _ (by omega_using [hT, hn])]
       simp only [show (0 : Word).toNat = 0 from rfl, Nat.mul_zero, Nat.add_zero]
     exact (congrArg (fun m : Mem => wv m B e (w + 2)) hm).trans he
-  · have ho := ((writeW_outside s.mem B (s.gpr .x10) (d := e + 8 * w) (by omega)).mono (n' := 16)
-      (Nat.le_refl _) (by omega)).trans
+  · have ho := ((writeW_outside s.mem B (s.gpr .x10) (d := e + 8 * w) (by omega_using [hT, hn])).mono (n' := 16)
+      (Nat.le_refl _) (by omega_using [])).trans
       ((writeW_outside (s.mem.writeW (off B (e + 8 * w)) (s.gpr .x10)) B (0 : Word)
-        (d := e + 8 * w + 8) (by omega)).mono (by omega) (by omega))
+        (d := e + 8 * w + 8) (by omega_using [hT, hn])).mono (by omega_using []) (by omega_using []))
     intro x hx
     exact (congrArg (fun m : Mem => m x) hm).trans (ho x hx)
 
@@ -64,6 +64,6 @@ theorem endModulus_ok {s : State} {B : Addr} {Z : Nat}
     WP isa (.block [ldh .x10 (sArr Public.aN)]) s fun t =>
       (t.gpr .x10 = word s.mem B (8 * sArr Public.aN) ∧ t.mem = s.mem) ∧ Keep [.x10] s t := by
   refine WP.keep [.x10] ?_ rfl rfl rfl
-  brun [h0, hs.ld (show 8 * sArr Public.aN + 8 ≤ Z by unfold sArr Public.aN; omega)]
+  brun [h0, hs.ld (show 8 * sArr Public.aN + 8 ≤ Z by unfold sArr Public.aN; omega_using [hZ])]
 
 end VG.Proof.Bignum.AArch64.BlockedRedc

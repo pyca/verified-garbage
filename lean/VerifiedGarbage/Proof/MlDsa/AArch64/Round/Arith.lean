@@ -57,18 +57,18 @@ theorem fX_toNat {g : Nat} (hg : IsG g) {a : BitVec 64} (ha : a.toNat < q) :
   have hS : dShift g = hbShift g := rfl
   have e1 : ((a + BitVec.ofNat 64 127) >>> 7).toNat = (a.toNat + 127) / 128 := by
     rw [BitVec.toNat_ushiftRight, BitVec.toNat_add, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow]
-    congr 1; omega
+    congr 1; omega_using [ha, hq]
   have e2 : (((a + BitVec.ofNat 64 127) >>> 7) * BitVec.ofNat 64 (hbMul g)).toNat =
       (a.toNat + 127) / 128 * hbMul g := by
-    rw [BitVec.toNat_mul, e1, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := hbMul g) (by omega)]
+    rw [BitVec.toNat_mul, e1, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := hbMul g) (by omega_using [hM])]
     exact Nat.mod_eq_of_lt (Nat.lt_of_le_of_lt (Nat.mul_le_mul (Nat.le_refl _) (Nat.le_of_lt hM))
-      (by omega))
+      (by omega_using [ha, hq]))
   have e3 : (((a + BitVec.ofNat 64 127) >>> 7) * BitVec.ofNat 64 (hbMul g) + BitVec.ofNat 64 (hbAdd g)).toNat =
       (a.toNat + 127) / 128 * hbMul g + hbAdd g := by
     have : (a.toNat + 127) / 128 * hbMul g < 2 ^ 40 :=
-      Nat.lt_of_le_of_lt (Nat.mul_le_mul (Nat.le_refl _) (Nat.le_of_lt hM)) (by omega)
-    rw [BitVec.toNat_add, e2, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := hbAdd g) (by omega)]
-    omega
+      Nat.lt_of_le_of_lt (Nat.mul_le_mul (Nat.le_refl _) (Nat.le_of_lt hM)) (by omega_using [ha, hq])
+    rw [BitVec.toNat_add, e2, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := hbAdd g) (by omega_using [hA])]
+    omega_using [hA, this]
   rw [fX, BitVec.toNat_ushiftRight, e3, Nat.shiftRight_eq_div_pow, hS]
 
 theorem r1X_toNat {g : Nat} (hg : IsG g) {a : BitVec 64} (ha : a.toNat < q) :
@@ -82,11 +82,11 @@ theorem r1X_toNat {g : Nat} (hg : IsG g) {a : BitVec 64} (ha : a.toNat < q) :
   generalize hF : hbF g a.toNat = F at hf hle
   have hs : ((fX g a - BitVec.ofNat 64 (dMod g)) >>> 63).toNat = if F < hbM g then 1 else 0 := by
     rw [BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow, BitVec.toNat_sub, hf, hmv]
-    split <;> omega
+    split <;> omega_arith
   rw [r1X, BitVec.toNat_mul, hs, hf]
   split
-  · rw [Nat.mul_one, Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega)]
-  · rw [Nat.mul_zero, show F = hbM g by omega, Nat.mod_self]
+  · rw [Nat.mul_one, Nat.mod_eq_of_lt (by omega_using [hf]), Nat.mod_eq_of_lt (by omega_arith)]
+  · rw [Nat.mul_zero, show F = hbM g by omega_arith, Nat.mod_self]
 
 theorem r1X_lt {g : Nat} (hg : IsG g) {a : BitVec 64} (ha : a.toNat < q) : (r1X g a).toNat < hbM g := by
   rw [r1X_toNat hg ha]; exact Nat.mod_lt _ (hbM_pos hg)

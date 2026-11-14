@@ -37,8 +37,8 @@ theorem SavedFrame.install {s t : State} {values : Nat → BitVec 32} {slots : L
     simp only [Bool.and_eq_true, beq_iff_eq, decide_eq_true_eq] at bounds
     have separate : (⟨State.addr (s.sp + BitVec.ofNat 32 e), 4⟩ : Region).Disjoint
         ⟨State.addr (s.sp + BitVec.ofNat 32 d), 4⟩ := by
-      rw [VG.Arm.addr_add (by have := h.space.nowrap; omega), VG.Arm.addr_add (by have := h.space.nowrap; omega)]
-      exact Offset.disjoint _ (by omega) (by omega) (by omega)
+      rw [VG.Arm.addr_add (by have := h.space.nowrap; omega_using [bounds, this]), VG.Arm.addr_add (by have := h.space.nowrap; omega_using [fit, this])]
+      exact Offset.disjoint _ (by omega_using [aligned, same, bounds]) (by omega_using [bounds]) (by omega_using [fit])
     rw [Mem.readW_writeW_sep (separate.sep (Region.contains_self _ 4) (Region.contains_self _ 4)) (by decide)]
     exact h.saved e old
 
@@ -64,7 +64,7 @@ structure CandidateIncoming (p : CandidateParams) (s : State) : Prop where
 
 theorem CandidateIncoming.after {s t : State} {p : CandidateParams} {rs : List Reg}
     (h : CandidateIncoming p s) (changed : Frame [⟨State.addr s.sp, 72⟩] s.mem t.mem) (rest : Rest rs s t) :
-    CandidateIncoming p t := ⟨fun i hi => (h.word i hi).after (by omega) changed rest⟩
+    CandidateIncoming p t := ⟨fun i hi => (h.word i hi).after (by omega_using []) changed rest⟩
 
 structure EntryContext (p : CandidateParams) (slots : List Nat) (s : State) : Prop where
   saved : SavedFrame (candidateValues p 0) slots s
@@ -84,17 +84,17 @@ theorem wp_entryStore {s : State} {p : CandidateParams} {slots : List Nat} {d : 
       Rest [] s t → WP isa (.block is) t Q) :
     WP isa (.block (.str r .r12 d :: is)) s Q := by
   have write : InRegions s.wr (State.addr (s.sp + BitVec.ofNat 32 d)) 4 := by
-    rw [VG.Arm.addr_add (by have := h.saved.space.nowrap; omega)]
+    rw [VG.Arm.addr_add (by have := h.saved.space.nowrap; omega_using [fit, this])]
     exact h.saved.space.write fit
-  refine wp_str (a := State.addr (s.sp + BitVec.ofNat 32 d)) (by omega) (by rw [h.pointer]) write fun t stored => ?_
+  refine wp_str (a := State.addr (s.sp + BitVec.ofNat 32 d)) (by omega_using [fit]) (by rw [h.pointer]) write fun t stored => ?_
   have memory : t.mem = s.mem.writeW (State.addr (s.sp + BitVec.ofNat 32 d)) (candidateValues p 0 d) := by
     rw [stored.mem, value]
   have rest := stored.rest []
   have frame : Frame [⟨State.addr s.sp, 72⟩] s.mem t.mem := by
     rw [memory]
     refine (Frame.refl _ _).writeW (r := ⟨State.addr s.sp, 72⟩) (by simp) _ ?_
-    rw [VG.Arm.addr_add (by have := h.saved.space.nowrap; omega)]
-    exact Offset.contains_base _ fit (by omega)
+    rw [VG.Arm.addr_add (by have := h.saved.space.nowrap; omega_using [fit, this])]
+    exact Offset.contains_base _ fit (by omega_using [fit])
   exact next t ⟨h.saved.install valid aligned fit memory rest, h.incoming.after frame rest,
     (rest.gpr .r12 (by simp)).trans (h.pointer.trans rest.sp.symm)⟩ frame rest
 
@@ -105,7 +105,7 @@ theorem wp_entryCopy {s : State} {p : CandidateParams} {slots : List Nat} {i d :
     (next : ∀ t, EntryContext p (d :: slots) t → Frame [⟨State.addr s.sp, 72⟩] s.mem t.mem →
       Rest [.r0] s t → WP isa (.block is) t Q) :
     WP isa (.block (.ldrSp .r0 (128 + 4 * i) :: .str .r0 .r12 d :: is)) s Q := by
-  refine wp_load_incoming .r0 (h.incoming.word i index) (by omega) fun u value memory rest => ?_
+  refine wp_load_incoming .r0 (h.incoming.word i index) (by omega_using [index]) fun u value memory rest => ?_
   have context := h.after_memory memory rest (by simp)
   refine wp_entryStore context valid aligned fit (value.trans equal) fun t contextT frameT restT => ?_
   rw [memory, rest.sp] at frameT

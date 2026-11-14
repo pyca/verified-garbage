@@ -37,10 +37,10 @@ theorem bytesAt_window {m : Mem} {base n : Nat} {l : List Byte} (hl : l.length =
   · intro i h₁ h₂
     have hi : i < n := by simp only [Spec.Rsa.bytesAt, List.length_map, List.length_range] at h₁; exact h₁
     have e : (BitVec.ofNat 64 base + BitVec.ofNat 64 i).toNat = base + i := by
-      rw [BitVec.toNat_add, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega),
-        Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega)]
+      rw [BitVec.toNat_add, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hb, hi]),
+        Nat.mod_eq_of_lt (by omega_using [hb]), Nat.mod_eq_of_lt (by omega_using [hl, hb, h₂])]
     simp only [Spec.Rsa.bytesAt, List.getElem_map, List.getElem_range]
-    rw [hm _ (by omega) (by omega), e, Nat.add_sub_cancel_left, List.getElem?_eq_getElem h₂, Option.getD_some]
+    rw [hm _ (by omega_using [e]) (by omega_using [hi, e]), e, Nat.add_sub_cancel_left, List.getElem?_eq_getElem h₂, Option.getD_some]
 
 theorem prevalidatedSat_key :
     Spec.Rsa.bytesAt prevalidatedSatState.mem 0x1000 404 = VG.Proof.Dsa.validKeyWitness :=

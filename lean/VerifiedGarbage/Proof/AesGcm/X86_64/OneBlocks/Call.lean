@@ -70,7 +70,7 @@ structure BlkCall (M : Gcm.X86_64.Stitch.CtxMode) (s : State) (K C Y D S : Addr)
   ok : M.ok s.mem K
 
 theorem sep_of_disj {a b : Addr} {n k : Nat} (h : (⟨a, n⟩ : Region).Disjoint ⟨b, k⟩) : Mem.Sep a n b k :=
-  fun x h₁ h₂ => h x (by simp only [Region.Contains]; omega) (by simp only [Region.Contains]; omega)
+  fun x h₁ h₂ => h x (by simp only [Region.Contains]; omega_using [h₁]) (by simp only [Region.Contains]; omega_using [h₂])
 
 namespace BlkCall
 
@@ -117,9 +117,9 @@ theorem arg_eq : stackArg (s.callEntry.withRegions (rd M s K) (wr C Y D S q)) 0 
 
 theorem pre : Proof.AesGcm.blocksPreM M (s.callEntry.withRegions (rd M s K) (wr C Y D S q)) := by
   have hq : (BitVec.ofNat 64 q).toNat = q := by
-    rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt (by have := h.w_d; omega)
+    rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt (by have := h.w_d; omega_using [this])
   have hR : (BitVec.ofNat 64 R).toNat = R := by
-    rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt (by rcases h.rounds with h | h | h <;> omega)
+    rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt (by rcases h.rounds with h | h | h <;> omega_using [h])
   have hsa := stackArgAddr_eq (s := s) (rd M s K) (wr C Y D S q)
   have harg := h.arg_eq
   have hok : M.ok (s.callEntry.withRegions (rd M s K) (wr C Y D S q)).mem K := by
@@ -335,14 +335,14 @@ theorem entry_eqs :
   refine ⟨bytesAt_frame fE (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
       exact ((h.t_k.sub_left rs).sub_right (Region.sub_prefix (Nat.le_trans hRb M.ge))).symm)
-      (by have := h.w_k; have := M.ge; omega),
+      (by have := h.w_k; have := M.ge; omega_using [hRb]),
     blockAt_frame fE (disj_below (h.t_c.sub_left rs)), blockAt_frame fE (disj_below (h.t_y.sub_left rs)),
     blocksAt_frame fE (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
-      rw [Nat.mul_comm]; exact (h.t_d.sub_left rs).symm) (by have := h.w_d; omega),
+      rw [Nat.mul_comm]; exact (h.t_d.sub_left rs).symm) (by have := h.w_d; omega_using [this]),
     blockAt_frame fE (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
-      exact ((h.t_k.sub_left rs).sub_right (Offset.sub_base (d := 240) _ (by have := M.ge; omega))).symm)⟩
+      exact ((h.t_k.sub_left rs).sub_right (Offset.sub_base (d := 240) _ (by have := M.ge; omega_using [this]))).symm)⟩
 
 end BlkCall
 
@@ -355,9 +355,9 @@ theorem blkE_call {M : Gcm.X86_64.Stitch.CtxMode} (B : BlkFn M) {s : State} {K C
       blockAt s'.mem C = Nat.repeat Spec.Gcm.inc32 q (blockAt s.mem C) ∧
       blockAt s'.mem Y = ghashFrom (blockAt s.mem (K + 240)) (blockAt s.mem Y) (blocksAt s'.mem D q) := by
   have hq : (BitVec.ofNat 64 q).toNat = q := by
-    rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt (by have := h.w_d; omega)
+    rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt (by have := h.w_d; omega_using [this])
   have hR : (BitVec.ofNat 64 R).toNat = R := by
-    rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt (by rcases h.rounds with h | h | h <;> omega)
+    rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt (by rcases h.rounds with h | h | h <;> omega_using [h])
   refine WP.call (k := Proof.AesGcm.encryptBlocksX86_64M M) B.encOk
     B.encNosp (by rw [B.encDepth]; decide)
     (rd := BlkCall.rd M s K) (wr := BlkCall.wr C Y D S q) h.pre h.reads h.writes ?_
@@ -381,9 +381,9 @@ theorem blkD_call {M : Gcm.X86_64.Stitch.CtxMode} (B : BlkFn M) {s : State} {K C
       blockAt s'.mem C = Nat.repeat Spec.Gcm.inc32 q (blockAt s.mem C) ∧
       blockAt s'.mem Y = ghashFrom (blockAt s.mem (K + 240)) (blockAt s.mem Y) (blocksAt s.mem D q) := by
   have hq : (BitVec.ofNat 64 q).toNat = q := by
-    rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt (by have := h.w_d; omega)
+    rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt (by have := h.w_d; omega_using [this])
   have hR : (BitVec.ofNat 64 R).toNat = R := by
-    rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt (by rcases h.rounds with h | h | h <;> omega)
+    rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt (by rcases h.rounds with h | h | h <;> omega_using [h])
   refine WP.call (k := Proof.AesGcm.decryptBlocksX86_64M M) B.decOk
     B.decNosp (by rw [B.decDepth]; decide)
     (rd := BlkCall.rd M s K) (wr := BlkCall.wr C Y D S q) h.pre h.reads h.writes ?_

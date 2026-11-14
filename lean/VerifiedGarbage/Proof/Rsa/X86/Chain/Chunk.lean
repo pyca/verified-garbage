@@ -46,14 +46,14 @@ theorem chunk_ok {s : State} {base : Addr} {size a b d n k : Nat} {op : AluOp} {
   have reg (r : Reg) (h : r≠.eax ∧ r≠.ecx) : v₁.gpr r=s.gpr r := Kr.1 r (by simpa using h)
   refine ⟨by rw [mem];simpa only [U.mem] using O,keep.trans (E.keeps.mono (by decide)),?_,?_,?_,?_,c,?_,?_⟩
   · rw [PtrAt,E.other _ (by decide),D.other _ (by decide),B.other _ (by decide),A.gpr,reg _ (by decide)]
-    simpa only [BitVec.toNat_ofNat,Nat.mod_eq_of_lt (by omega : 4*k<2^32)] using ptr_add pa (BitVec.ofNat 32 (4*k))
+    simpa only [BitVec.toNat_ofNat,Nat.mod_eq_of_lt (by omega_using [count, kn] : 4*k<2^32)] using ptr_add pa (BitVec.ofNat 32 (4*k))
   · rw [PtrAt,E.other _ (by decide),D.other _ (by decide),B.gpr,A.other _ (by decide),reg _ (by decide)]
-    simpa only [BitVec.toNat_ofNat,Nat.mod_eq_of_lt (by omega : 4*k<2^32)] using ptr_add pb (BitVec.ofNat 32 (4*k))
+    simpa only [BitVec.toNat_ofNat,Nat.mod_eq_of_lt (by omega_using [count, kn] : 4*k<2^32)] using ptr_add pb (BitVec.ofNat 32 (4*k))
   · rw [PtrAt,E.other _ (by decide),D.gpr,B.other _ (by decide),A.other _ (by decide),reg _ (by decide)]
-    simpa only [BitVec.toNat_ofNat,Nat.mod_eq_of_lt (by omega : 4*k<2^32)] using ptr_add pd (BitVec.ofNat 32 (4*k))
+    simpa only [BitVec.toNat_ofNat,Nat.mod_eq_of_lt (by omega_using [count, kn] : 4*k<2^32)] using ptr_add pd (BitVec.ofNat 32 (4*k))
   · rw [E.gpr,D.other _ (by decide),B.other _ (by decide),A.other _ (by decide),reg _ (by decide),BitVec.toNat_sub,count,
-      BitVec.toNat_ofNat,Nat.mod_eq_of_lt (by omega : 4*k<2^32)]
-    omega
+      BitVec.toNat_ofNat,Nat.mod_eq_of_lt (by omega_using [count, kn] : 4*k<2^32)]
+    omega_using [count, kn]
   · rw [E.other _ (by decide),D.other _ (by decide),B.other _ (by decide),A.other _ (by decide),S.gpr]
   · rw [mem]
     simpa only [U.mem] using V

@@ -11,13 +11,13 @@ open VG VG.Arm VG.Impl.Rsa.Arm.PrivChecked VG.Proof.Bignum.Arm
 
 theorem PrivFnInput.pushAlloc {g : PrivGeometry} {bs : Fin 8 → List Byte} {s : State}
     (h : PrivFnInput g bs s) : isa.push (.alloc frameBytes) (pcPushed s) = some (entered s) := by
-  have stackFit : 56 ≤ s.sp.toNat := by have := h.stackFit; simp only [stackBytes] at this; omega
+  have stackFit : 56 ≤ s.sp.toNat := by have := h.stackFit; simp only [stackBytes] at this; omega_using [this]
   have allocation : frameBytes ≤ (pcPushed s).sp.toNat := by
     change frameBytes ≤ (s.sp - BitVec.ofNat 32 56).toNat
     rw [FrameStack.sub_toNat' stackFit]
     have := h.stackFit
     simp only [stackBytes, frameBytes] at *
-    omega
+    omega_using [this]
   have hn : 0 < frameBytes ∧ frameBytes < 4096 ∧ frameBytes % 8 = 0 ∧ encodable (BitVec.ofNat 32 frameBytes) = true := by decide
   simp only [isa, push, hn.1, hn.2.1, hn.2.2.1, hn.2.2.2, allocation, and_self, ite_true]
   rfl

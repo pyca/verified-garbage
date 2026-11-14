@@ -44,8 +44,8 @@ structure ExpPost (p : Prm) (t t' : State) : Prop where
 
 theorem keyLen_lsl {R : Nat} (hR : R = 10 ∨ R = 14) :
     (BitVec.ofNat 64 R - BitVec.ofNat 64 6) <<< 2 = BitVec.ofNat 64 (Spec.GcmSiv.keyLen R) := by
-  rw [ofNat_sub (by omega) (by omega), ofNat_lsl]
-  congr 1; unfold Spec.GcmSiv.keyLen; omega
+  rw [ofNat_sub (by omega_using [hR]) (by omega_using [hR]), ofNat_lsl]
+  congr 1; unfold Spec.GcmSiv.keyLen; omega_using []
 
 /-- The arguments of `expand`'s call. -/
 theorem expArgs_ok {p : Prm} (L : Lay p) {t : State} (E : Env p t) :
@@ -68,12 +68,12 @@ theorem expArgs_ok {p : Prm} (L : Lay p) {t : State} (E : Env p t) :
   case x1 => simp [gpr_write, keyLen_lsl hl']
   case x2 => simp [gpr_write]
   case x3 => simp [gpr_write]
-  case len => omega
-  case kc => exact L.w_w (.inl (by omega)) (by omega) (by decide)
-  case ks => exact L.w_w (.inl (by omega)) (by omega) (by decide)
+  case len => omega_using [hl]
+  case kc => exact L.w_w (.inl (by omega_using [hl])) (by omega_using [hl]) (by decide)
+  case ks => exact L.w_w (.inl (by omega_using [hl])) (by omega_using [hl]) (by decide)
   case cs => exact L.w_w (.inl (by decide)) (by decide) (by decide)
   case rd =>
-    exact covers_append (covers_cons (E.perm.wCR (by omega)) covers_nil)
+    exact covers_append (covers_cons (E.perm.wCR (by omega_using [hl])) covers_nil)
       (covers_cons (E.perm.wCR (by decide)) (covers_cons (E.perm.wCR (by decide)) covers_nil))
   case wr => exact covers_cons (E.perm.wC (by decide)) (covers_cons (E.perm.wC (by decide)) covers_nil)
 
@@ -106,7 +106,7 @@ def hkeyMem (m : Mem) (W : Addr) : Mem :=
 
 theorem hkeyMem_frame (m : Mem) (W : Addr) : Frame [⟨W + BitVec.ofNat 64 64, 32⟩] m (hkeyMem m W) := by
   have ct : ∀ e, 64 ≤ e → e + 8 ≤ 96 → (⟨W + BitVec.ofNat 64 64, 32⟩ : Region).Contains (W + BitVec.ofNat 64 e) (64 / 8) :=
-    fun e h₁ h₂ => Offset.contains W h₁ (by omega) (by decide)
+    fun e h₁ h₂ => Offset.contains W h₁ (by omega_using [h₂]) (by decide)
   exact ((((Frame.refl _ _).writeW (List.mem_singleton_self _) _ (ct 64 (by decide) (by decide))).writeW
     (List.mem_singleton_self _) _ (ct 72 (by decide) (by decide))).writeW (List.mem_singleton_self _) _
     (ct 80 (by decide) (by decide))).writeW (List.mem_singleton_self _) _ (ct 88 (by decide) (by decide))
@@ -190,7 +190,7 @@ theorem keys_ok (v : GcmImpl) {p : Prm} (L : Lay p) {σ : State} (E : Env p σ) 
   have dK : ∀ {d k : Nat}, d + k ≤ 64 → 16 ≤ d → ∀ r ∈ [(⟨p.W + BitVec.ofNat 64 240, 240⟩ : Region),
       ⟨p.W + BitVec.ofNat 64 1760, 512⟩], (⟨p.W + BitVec.ofNat 64 d, k⟩ : Region).Disjoint r := fun h₁ h₂ r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl <;> exact L.w_w (.inl (by omega)) (by omega) (by decide)
+    rcases hr with rfl | rfl <;> exact L.w_w (.inl (by omega_using [h₁])) (by omega_using [h₁]) (by decide)
   have f₃ : Frame (keyR p.W) t₂.mem t₃.mem := X.frame.sub fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl <;> exact ⟨_, k2, Offset.sub p.W (by decide) (by decide)⟩
@@ -200,7 +200,7 @@ theorem keys_ok (v : GcmImpl) {p : Prm} (L : Lay p) {σ : State} (E : Env p σ) 
       exact ⟨_, k0, Offset.sub p.W (by decide) (by decide)⟩
   have dH : ∀ {d k : Nat}, d + k ≤ 64 → ∀ r ∈ [(⟨p.W + BitVec.ofNat 64 64, 32⟩ : Region)],
       (⟨p.W + BitVec.ofNat 64 d, k⟩ : Region).Disjoint r := fun h r hr => by
-    simp only [List.mem_singleton] at hr; subst hr; exact L.w_w (.inl h) (by omega) (by decide)
+    simp only [List.mem_singleton] at hr; subst hr; exact L.w_w (.inl h) (by omega_using [h]) (by decide)
   have dH' : ∀ r ∈ [(⟨p.W + BitVec.ofNat 64 64, 32⟩ : Region)],
       (⟨p.W + BitVec.ofNat 64 240, 240⟩ : Region).Disjoint r := fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr; exact L.w_w (.inr (by decide)) (by decide) (by decide)
@@ -219,7 +219,7 @@ theorem keys_ok (v : GcmImpl) {p : Prm} (L : Lay p) {σ : State} (E : Env p σ) 
     rw [hk.2, ← X.ciph]
     unfold Spec.GcmSiv.ctxCiph
     rw [hm₄, Proof.AesGcm.AArch64.bytesAt_frame (hkeyMem_frame _ _) (fun r hr =>
-      (dH' r hr).sub_left (Region.sub_prefix L.rounds_le)) (by omega)]
+      (dH' r hr).sub_left (Region.sub_prefix L.rounds_le)) (by omega_using [hR])]
   · rw [hm₄, hkeyMem_key, ← hm₄, a₄]
   · rw [hm₄]; exact hkeyMem_acc _ _
 

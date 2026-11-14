@@ -41,22 +41,22 @@ theorem digit_eq {W y M qh T1 b : Nat} (hM0 : 0 < M) (hMW : 2 * M < W / 2)
   by_cases hneg : W / 2 ≤ T1
   · have hv : (y : Int) - (qh * M : Nat) < 0 := hn.mp hneg
     simp only [hneg, ite_true]
-    have hlt : y < qh * M := by omega
+    have hlt : y < qh * M := by omega_using [hv]
     have hq : y / M < qh := Nat.lt_of_mul_lt_mul_right (Nat.lt_of_le_of_lt hdm hlt)
     generalize y / M = q at hq hle ⊢
-    omega
+    omega_using [hq, hle]
   · have hv : ¬ ((y : Int) - (qh * M : Nat) < 0) := fun h => hneg (hn.mpr h)
     simp only [hneg, ite_false]
-    have hq0 : qh * M ≤ y := by omega
+    have hq0 : qh * M ≤ y := by omega_using [hv]
     have hq : qh ≤ y / M := (Nat.le_div_iff_mul_le hM0).mpr hq0
     generalize y / M = q at hq hge ⊢
-    omega
+    omega_using [hq, hge]
 
 /-- `A 2^64 + a` as the remainder's part and a multiple of `m`. -/
 theorem split_step (A a M : Nat) :
     A * 2 ^ 64 + a = (A % M * 2 ^ 64 + a) + M * (A / M * 2 ^ 64) := by
   calc A * 2 ^ 64 + a = (M * (A / M) + A % M) * 2 ^ 64 + a := by rw [Nat.div_add_mod]
-    _ = (A % M * 2 ^ 64 + a) + M * (A / M * 2 ^ 64) := by rw [Nat.add_mul, Nat.mul_assoc]; omega
+    _ = (A % M * 2 ^ 64 + a) + M * (A / M * 2 ^ 64) := by rw [Nat.add_mul, Nat.mul_assoc]; omega_using []
 
 /-- The quotient of `A 2^64 + a` by `m`, from `A`'s: `⌊A / m⌋ 2^64` and the
 digit `⌊((A mod m) 2^64 + a) / m⌋`. -/
@@ -88,7 +88,7 @@ theorem norm_bounds {n K : Nat} (lo : 2 ^ (64 * K) ≤ n) (hi : n < 2 ^ (64 * K)
   have hP := Nat.two_pow_pos (64 * K)
   generalize 2 ^ (64 * K) = P at lo hi hP
   have ht0 : n / P ≠ 0 := by
-    intro h; rw [Nat.div_eq_zero_iff_lt hP] at h; omega
+    intro h; rw [Nat.div_eq_zero_iff_lt hP] at h; omega_using [lo, h]
   have htl : n / P < 2 ^ 64 := (Nat.div_lt_iff_lt_mul hP).mpr (by rw [Nat.mul_comm]; exact hi)
   generalize ht : n / P = t at ht0 htl
   have l1 : 2 ^ Nat.log2 t ≤ t := Nat.log2_self_le ht0
@@ -97,8 +97,8 @@ theorem norm_bounds {n K : Nat} (lo : 2 ^ (64 * K) ≤ n) (hi : n < 2 ^ (64 * K)
     have := Nat.lt_of_le_of_lt l1 htl
     exact (Nat.pow_lt_pow_iff_right (by decide)).mp this
   generalize hz : 63 - Nat.log2 t = z
-  have e63 : 2 ^ Nat.log2 t * 2 ^ z = 2 ^ 63 := by rw [← Nat.pow_add]; congr 1; omega
-  have e64 : 2 ^ (Nat.log2 t + 1) * 2 ^ z = 2 ^ 64 := by rw [← Nat.pow_add]; congr 1; omega
+  have e63 : 2 ^ Nat.log2 t * 2 ^ z = 2 ^ 63 := by rw [← Nat.pow_add]; congr 1; omega_using [hlog, hz]
+  have e64 : 2 ^ (Nat.log2 t + 1) * 2 ^ z = 2 ^ 64 := by rw [← Nat.pow_add]; congr 1; omega_using [hlog, hz]
   have hd : n = t * P + n % P := by rw [← ht]; exact (Nat.div_add_mod' n P).symm
   have hr : n % P < P := Nat.mod_lt _ hP
   have tz1 : 2 ^ 63 ≤ t * 2 ^ z := by rw [← e63]; exact Nat.mul_le_mul_right _ l1
@@ -106,9 +106,9 @@ theorem norm_bounds {n K : Nat} (lo : 2 ^ (64 * K) ≤ n) (hi : n < 2 ^ (64 * K)
   constructor
   · calc P * 2 ^ 63 ≤ P * (t * 2 ^ z) := Nat.mul_le_mul_left _ tz1
       _ = t * P * 2 ^ z := by rw [Nat.mul_comm P, Nat.mul_right_comm]
-      _ ≤ n * 2 ^ z := Nat.mul_le_mul_right _ (by omega)
+      _ ≤ n * 2 ^ z := Nat.mul_le_mul_right _ (by omega_using [hd])
   · calc n * 2 ^ z = (t * P + n % P) * 2 ^ z := by rw [← hd]
-      _ < (t * P + P) * 2 ^ z := Nat.mul_lt_mul_of_pos_right (by omega) (Nat.two_pow_pos _)
+      _ < (t * P + P) * 2 ^ z := Nat.mul_lt_mul_of_pos_right (by omega_using [hr]) (Nat.two_pow_pos _)
       _ = P * ((t + 1) * 2 ^ z) := by
         rw [Nat.add_mul, Nat.add_mul, Nat.one_mul, Nat.mul_add, Nat.mul_comm t P, Nat.mul_assoc]
       _ ≤ P * 2 ^ 64 := Nat.mul_le_mul_left _ tz2

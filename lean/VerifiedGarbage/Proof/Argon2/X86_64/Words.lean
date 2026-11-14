@@ -30,7 +30,7 @@ theorem working_write (m : Mem) (p : Addr) (i : Fin 128) (v : Word) :
     simp only [ite_true, word, Mem.readW_writeW_self64]
   · simp only [h, ite_false, word]
     exact Mem.readW_writeW_sep
-      (Offset.sep p (by omega) (by omega) (by omega)) (by decide)
+      (Offset.sep p (by omega_using [h]) (by omega_using [hj]) (by omega_using [])) (by decide)
 
 theorem working_storeMix (m : Mem) (p : Addr) (a b c d : Fin 128)
     (v : Word × Word × Word × Word) :
@@ -43,7 +43,7 @@ theorem storeMix_frame (m : Mem) (p : Addr) (a b c d : Fin 128)
     Frame [⟨off p 1024, 1024⟩] m (storeMix m p a.val b.val c.val d.val v) := by
   have inside (i : Fin 128) :
       (⟨off p 1024, 1024⟩ : Region).Contains (off p (1024 + 8 * i.val)) 8 := by
-    exact Offset.contains p (by omega) (by omega) (by omega)
+    exact Offset.contains p (by omega_using []) (by omega_using []) (by omega_using [])
   exact ((((Frame.refl [⟨off p 1024, 1024⟩] m).writeW (by simp) v.1 (inside a)).writeW
     (by simp) v.2.1 (inside b)).writeW (by simp) v.2.2.1 (inside c)).writeW
     (by simp) v.2.2.2 (inside d)

@@ -53,7 +53,7 @@ theorem cadd_val {m : BitVec 16} (h1 : -3329 < m.toInt) (h2 : m.toInt < 3329) {T
   have n := toNat_of_toInt (a := caddW m) (by rw [c]; exact Int.emod_nonneg _ (by decide))
   rw [c] at n
   obtain ⟨k, hk⟩ := hd
-  omega
+  omega_using [hv, n, hk]
 
 theorem mulmod (a b n : Nat) : a % n * b % n = a * b % n := by
   rw [Nat.mul_mod, Nat.mod_mod, ← Nat.mul_mod]

@@ -61,14 +61,14 @@ theorem xRange_ok {s : State} {B D X : Addr} {Z w k L xl : Nat} (h : Env s B Z w
   unfold xRange
   refine WP.seq (WP.mono (xLoadPre_ok h h23 hX hXL) fun s₁ ⟨⟨a10, a12, a6, m1⟩, k1⟩ => ?_)
   refine WP.seq (WP.mono (xLoadRest_ok (h.hs.congr k1.wr) ((k1.gpr .r23 (by decide)).trans h23) a10 a12 a6
-    ((k1.gpr .r29 (by decide)).trans h.h29) ((k1.gpr .r11 (by decide)).trans h.h11) hxl (by omega) (by omega)
-    (by omega) (by rw [k1.rd, k1.wr]; exact hrdX) hsepX) fun s₂ ⟨⟨x2, top2, o2, a10₂⟩, k2⟩ => ?_)
+    ((k1.gpr .r29 (by decide)).trans h.h29) ((k1.gpr .r11 (by decide)).trans h.h11) hxl (by omega_using [hkw, hxk]) (by omega_using [hw'])
+    (by omega_using [hZ, e8, e28]) (by rw [k1.rd, k1.wr]; exact hrdX) hsepX) fun s₂ ⟨⟨x2, top2, o2, a10₂⟩, k2⟩ => ?_)
   rw [m1] at x2 o2
   have k12 := k1.trans k2
   have e2 : Env s₂ B Z w := ⟨h.hs.congr k12.wr, a10₂, (k12.gpr .r29 (by decide)).trans h.h29,
     (k12.gpr .r11 (by decide)).trans h.h11, (k12.gpr .r31 (by decide)).trans h.h31, h.hw, hw', hZ⟩
-  have b2 : Body B w s.mem s₂.mem := Body.of o2 (by omega) (by omega)
-  have p2 : arr s₂.mem B w 0 = arr s.mem B w 0 := by rw [arr, Outside.val32 o2 (by omega) (by omega)]
+  have b2 : Body B w s.mem s₂.mem := Body.of o2 (by omega_using [e0, e4]) (by omega_using [e4, e28])
+  have p2 : arr s₂.mem B w 0 = arr s.mem B w 0 := by rw [arr, Outside.val32 o2 (by omega_using [e0, e4]) (by omega_using [hw', e0])]
   have hq2 : bnd s₂.mem D k L (arr s.mem B w 0) = bnd s.mem D k L (arr s.mem B w 0) := by
     unfold bnd
     by_cases hq : L = 3 * k
@@ -113,22 +113,22 @@ theorem dpBody_ok {s : State} {B D X O : Addr} {Z w k L xl p x g b : Nat} (h : E
   have hw' := h.hw'
   have e0 := slot_eq w 0; have e8 := slot_eq w 8; have e28 := slot_eq w 28
   have rdQ : L = 3 * k → ∀ i < k, InRegions (s.rd ++ s.wr) (off (off D (2 * k)) i) 1 := fun hq i hi => by
-    rw [off_off']; exact hrdD _ (by omega)
+    rw [off_off']; exact hrdD _ (by omega_using [hq, hi])
   have sepQ : L = 3 * k → ∀ i < k, ∀ x, ofs B x < Z → off (off D (2 * k)) i ≠ x := fun hq i hi => by
-    rw [off_off']; exact hsepD _ (by omega)
+    rw [off_off']; exact hsepD _ (by omega_using [hq, hi])
   have rdG : ∀ i < k, InRegions (s.rd ++ s.wr) (off (off D k) i) 1 := fun i hi => by
-    rw [off_off']; exact hrdD _ (by omega)
+    rw [off_off']; exact hrdD _ (by omega_using [hL, hi])
   have sepG : ∀ i < k, ∀ x, ofs B x < Z → off (off D k) i ≠ x := fun i hi => by
-    rw [off_off']; exact hsepD _ (by omega)
+    rw [off_off']; exact hsepD _ (by omega_using [hL, hi])
   unfold dpBody
-  refine WP.seq (WP.mono (xRange_ok h h23 h21 h27 h28 (by omega) (by omega) (by omega) (by omega) hxl hxk hX hXL
-    hrdX hsepX rdQ sepQ (by omega)) fun s₁ ⟨⟨a26, p1, b1, a10⟩, k1⟩ => ?_)
+  refine WP.seq (WP.mono (xRange_ok h h23 h21 h27 h28 (by omega_using [hk]) (by omega_using [hwk]) (by omega_using [hk', hL]) (by omega_using [hk']) hxl hxk hX hXL
+    hrdX hsepX rdQ sepQ (by omega_using [hP, hp2])) fun s₁ ⟨⟨a26, p1, b1, a10⟩, k1⟩ => ?_)
   rw [hx, hP, hb] at a26
   rw [hP] at p1
   have e1 : Env s₁ B Z w := ⟨hs.congr k1.wr, a10, (k1.gpr .r29 (by decide)).trans h.h29,
     (k1.gpr .r11 (by decide)).trans h.h11, (k1.gpr .r31 (by decide)).trans h.h31, hw, hw', hZ⟩
   have hw1 : ∀ d, d + 8 ≤ 256 → word s₁.mem B d = word s.mem B d := fun d hd => by
-    rw [Outside.word b1 (by omega) (by omega)]
+    rw [Outside.word b1 (by omega_using [e0, hd]) (by omega_using [hd])]
   have g23 : s₁.gpr .r23 = B := (k1.gpr .r23 (by decide)).trans h23
   have g28 : s₁.gpr .r28 = BitVec.ofNat 64 k := (k1.gpr .r28 (by decide)).trans h28
   refine WP.ite (s₁.gpr .r26 == 0) (eval_zero _ _) (fun hv => ?_) (fun hv => ?_)
@@ -136,24 +136,24 @@ theorem dpBody_ok {s : State} {B D X O : Addr} {Z w k L xl p x g b : Nat} (h : E
     rw [a26, mask_beq_zero, Bool.not_eq_true', decide_eq_false_iff_not] at hv
     unfold dpBad
     refine WP.seq (WP.mono (WP.keep [.r27] (Q := fun t => t.gpr .r27 = off O 0 ∧ t.mem = s₁.mem) (by
-        prun [g23, (hs.congr k1.wr).ld (d := 80) (n := 8) (by omega),
-          show s₁.mem.readW (off B 80) 64 = off O 0 from (hw1 80 (by omega)).trans hO])
+        prun [g23, (hs.congr k1.wr).ld (d := 80) (n := 8) (by omega_using [hZ, e28]),
+          show s₁.mem.readW (off B 80) 64 = off O 0 from (hw1 80 (by omega_using [])).trans hO])
       (by decide)) fun s₂ ⟨⟨a27, m2⟩, k2⟩ => ?_)
     have k12 := k1.trans k2
     refine WP.seq (WP.mono (Pub.output_ok (b := false) (hs.congr k12.wr) (ho.congr k12.wr)
       ((k2.gpr .r10 (by decide)).trans a10) ((k12.gpr .r29 (by decide)).trans h.h29)
       ((k2.gpr .r28 (by decide)).trans g28) a27 (by rw [k2.gpr .r26 (by decide), a26, decide_eq_false hv])
-      (by omega) (by omega) (by omega) hsepO) fun s₃ ⟨⟨ob, ot, _⟩, k3⟩ => ?_)
+      (by omega_using [hk]) (by omega_using [hwk]) (by omega_using [hZ, e8, e28]) hsepO) fun s₃ ⟨⟨ob, ot, _⟩, k3⟩ => ?_)
     refine WP.mono (li_ok s₃ 2 (by decide)) fun t ⟨⟨t3, tm⟩, kt⟩ => ⟨⟨?_, ?_, fun d hd => ?_, fun Q n hB hO => ?_⟩,
       ((k12.trans k3).trans kt).mono (by decide)⟩
     · rw [tm, ite_eq_right fun hc => hv hc.1]
       exact Pub.zero_bytes fun i hi => by rw [ob i hi]; rfl
     · rw [t3, ite_eq_left hv]
     · rw [tm]
-      refine (Pub.Outside.word_apart (d := d) ot hsepB (by omega) (by omega) hs.nowrap).trans ?_
+      refine (Pub.Outside.word_apart (d := d) ot hsepB (by omega_using []) (by omega_using [hZ, e28, hd]) hs.nowrap).trans ?_
       show Mont.word s₂.mem B _ = _
-      rw [m2, hw1 _ (by omega)]
-    · rw [tm, outside_bytesAt ot (by omega) hO, m2, b1.bytesAt hZ hB]
+      rw [m2, hw1 _ (by omega_using [hd])]
+    · rw [tm, outside_bytesAt ot (by omega_using []) hO, m2, b1.bytesAt hZ hB]
   · -- In range.
     rw [a26, mask_beq_zero, Bool.not_eq_false', decide_eq_true_eq] at hv
     unfold dpGood
@@ -163,9 +163,9 @@ theorem dpBody_ok {s : State} {B D X O : Addr} {Z w k L xl p x g b : Nat} (h : E
     have e2 := e1.keep k2 (by decide)
     have b12 : Body B w s.mem s₂.mem := by rw [m2]; exact b1
     refine WP.seq (WP.mono (exPower_ok (Y := off D k) (X := X) (k := k) (xl := xl) e2
-      ((k2.gpr .r23 (by decide)).trans g23) a9 ((k2.gpr .r28 (by decide)).trans g28) (by omega) (by omega) hxl
-      (by omega) (by rw [k12.rd, k12.wr]; exact rdG) sepG (by rw [k12.rd, k12.wr]; exact hrdX) hsepX
-      (by rw [m2]; exact (hw1 64 (by omega)).trans hX) (by rw [m2]; exact (hw1 72 (by omega)).trans hXL)
+      ((k2.gpr .r23 (by decide)).trans g23) a9 ((k2.gpr .r28 (by decide)).trans g28) (by omega_using [hk]) (by omega_using [hwk]) hxl
+      (by omega_using [hk', hxk]) (by rw [k12.rd, k12.wr]; exact rdG) sepG (by rw [k12.rd, k12.wr]; exact hrdX) hsepX
+      (by rw [m2]; exact (hw1 64 (by omega_using [])).trans hX) (by rw [m2]; exact (hw1 72 (by omega_using [])).trans hXL)
       (by rw [m2, p1]; exact hp2) (by rw [m2, p1]; exact hodd)
       (by rw [m2, p1]; exact hpt)) fun s₃ ⟨⟨z3, p3, b3, r10₃⟩, k3⟩ => ?_)
     rw [b12.bytesAt hZ sepG, b12.bytesAt hZ hsepX, hg, hx, m2, p1] at z3
@@ -174,10 +174,10 @@ theorem dpBody_ok {s : State} {B D X O : Addr} {Z w k L xl p x g b : Nat} (h : E
     refine WP.seq (WP.mono (exOut_ok (O := O) (k := k) (hs.congr k13.wr) (ho.congr k13.wr) r10₃
       ((k13.gpr .r29 (by decide)).trans h.h29) ((k13.gpr .r11 (by decide)).trans h.h11)
       ((k3.gpr .r23 (by decide)).trans ((k2.gpr .r23 (by decide)).trans g23))
-      ((k3.gpr .r28 (by decide)).trans ((k2.gpr .r28 (by decide)).trans g28)) hw hw' hZ (by omega) (by omega)
-      (by show Mont.word s₃.mem B 80 = _; rw [Outside.word b3 (by omega) (by omega), m2]
-          exact (hw1 80 (by omega)).trans hO) hsepO
-      (by rw [p3]; omega) (by rw [z3, p3]; exact Nat.mod_lt _ (by omega)) (by rw [p3]; exact hpk))
+      ((k3.gpr .r28 (by decide)).trans ((k2.gpr .r28 (by decide)).trans g28)) hw hw' hZ (by omega_using [hk]) (by omega_using [hwk])
+      (by show Mont.word s₃.mem B 80 = _; rw [Outside.word b3 (by omega_using [e0]) (by omega_using []), m2]
+          exact (hw1 80 (by omega_using [])).trans hO) hsepO
+      (by rw [p3]; omega_using [hp2]) (by rw [z3, p3]; exact Nat.mod_lt _ (by omega_using [hp2])) (by rw [p3]; exact hpk))
       fun s₄ ⟨⟨ob, o3, m, bm, om⟩, k4⟩ => ?_)
     rw [z3, p3] at ob o3
     refine WP.mono (status_ok s₄ (1 < g ^ x % p ∧ g ^ x % p < p - 1) o3) fun t ⟨⟨t3, tm⟩, kt⟩ =>
@@ -188,9 +188,9 @@ theorem dpBody_ok {s : State} {B D X O : Addr} {Z w k L xl p x g b : Nat} (h : E
       · rw [ite_eq_right hc, ite_eq_right fun h' => hc h'.2]
     · rw [t3]; exact congrArg _ (ite_eq_right (fun h' => h' hv)).symm
     · rw [tm]
-      refine (Pub.Outside.word_apart (d := d) om hsepB (by omega) (by omega) hs.nowrap).trans ?_
+      refine (Pub.Outside.word_apart (d := d) om hsepB (by omega_using []) (by omega_using [hZ, e28, hd]) hs.nowrap).trans ?_
       show Mont.word m B _ = _
-      rw [Outside.word bm (by omega) (by omega), Outside.word b3 (by omega) (by omega), m2, hw1 _ (by omega)]
-    · rw [tm, outside_bytesAt om (by omega) hO, bm.bytesAt hZ hB, b3.bytesAt hZ hB, m2, b1.bytesAt hZ hB]
+      rw [Outside.word bm (by omega_using [e0, hd]) (by omega_using [hd]), Outside.word b3 (by omega_using [e0, hd]) (by omega_using [hd]), m2, hw1 _ (by omega_using [hd])]
+    · rw [tm, outside_bytesAt om (by omega_using []) hO, bm.bytesAt hZ hB, b3.bytesAt hZ hB, m2, b1.bytesAt hZ hB]
 
 end VG.Proof.Ffdh.PPC64LE.Derive

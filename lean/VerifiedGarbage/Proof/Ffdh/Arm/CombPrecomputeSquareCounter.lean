@@ -23,8 +23,8 @@ theorem squaresInit_raw (s : State) {base : BitVec 32} {len d : Nat}
     (saved : s.mem.readW (off (State.addr s.sp) 44) 32=BitVec.ofNat 32 d) :
     WP isa (.block squaresInit) s fun t =>
       t.mem=s.mem.writeW (off (State.addr s.sp) 68) (BitVec.ofNat 32 d) ∧ Rest [.r3,.r12] s t := by
-  have a44 : State.addr (s.sp+BitVec.ofNat 32 44)=off (State.addr s.sp) 44 := addr_add (by have := locals.space.nowrap; omega)
-  have a68 : State.addr (s.sp+BitVec.ofNat 32 68)=off (State.addr s.sp) 68 := addr_add (by have := locals.space.nowrap; omega)
+  have a44 : State.addr (s.sp+BitVec.ofNat 32 44)=off (State.addr s.sp) 44 := addr_add (by have := locals.space.nowrap; omega_using [this])
+  have a68 : State.addr (s.sp+BitVec.ofNat 32 68)=off (State.addr s.sp) 68 := addr_add (by have := locals.space.nowrap; omega_using [this])
   have read := locals.read (d:=44) (by decide)
   have write := locals.space.write (off:=68) (by decide)
   refine withRest_all (c:=.block squaresInit) [.r3,.r12] ?_ (by rfl) rfl
@@ -36,14 +36,14 @@ theorem squaresNext_raw (s : State) {base : BitVec 32} {len n : Nat}
     (saved : s.mem.readW (off (State.addr s.sp) 68) 32=BitVec.ofNat 32 n) :
     WP isa (.block squaresNext) s fun t =>
       (t.mem=s.mem.writeW (off (State.addr s.sp) 68) (BitVec.ofNat 32 (n-1)) ∧ t.z=decide (n-1=0)) ∧ Rest [.r3,.r12] s t := by
-  have a68 : State.addr (s.sp+BitVec.ofNat 32 68)=off (State.addr s.sp) 68 := addr_add (by have := locals.space.nowrap; omega)
+  have a68 : State.addr (s.sp+BitVec.ofNat 32 68)=off (State.addr s.sp) 68 := addr_add (by have := locals.space.nowrap; omega_using [this])
   have read := locals.read (d:=68) (by decide)
   have write := locals.space.write (off:=68) (by decide)
   have sub : BitVec.ofNat 32 n-1=BitVec.ofNat 32 (n-1) := BitVec.ofNat_sub_ofNat_of_le _ _ (by decide) positive
-  have val : (BitVec.ofNat 32 (n-1)).toNat=n-1 := Nat.mod_eq_of_lt (by omega)
+  have val : (BitVec.ofNat 32 (n-1)).toNat=n-1 := Nat.mod_eq_of_lt (by omega_using [fit])
   refine withRest_all (c:=.block squaresNext) [.r3,.r12] ?_ (by rfl) rfl
   unfold squaresNext VG.Impl.Ffdh.Arm.Domain.st
   ffrun [a68,read,write,saved,sub,val,off,BitVec.add_zero,subFlags]
-  exact ofNat_beq_zero (by omega)
+  exact ofNat_beq_zero (by omega_using [fit])
 
 end VG.Proof.Ffdh.Arm.CombBuilder

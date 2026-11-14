@@ -30,7 +30,7 @@ theorem pairTrials_ok {s : State} {dst base : BitVec 32} {n value i : Nat}
   rintro u ⟨⟨prime,memU⟩,restU⟩
   have ctxU := ctx.after_memory memU restU
   refine WP.mono (trialPair_ok u dst ctxU.read.positive ctxU.read.countFits ctxU.read.bufferFits
-    (by omega : i<1024) prime (ctxU.read.frame.read (by decide)) (ctxU.read.frame.read (by decide))
+    (by omega_using [more, bound] : i<1024) prime (ctxU.read.frame.read (by decide)) (ctxU.read.frame.read (by decide))
     ctxU.read.out ctxU.read.width ctxU.read.readable) ?_
   rintro t ⟨flag,memory,rest⟩
   refine ⟨?_,memory.trans memU,(restU.mono (by simp)).trans rest⟩

@@ -29,7 +29,7 @@ theorem output_word {m m' : Mem} {base p : Addr} {n d : Nat} (h : Outside p 0 n 
   apply Mem.readW_congr
   intro i hi
   rw [Offset.add_add]
-  exact h _ (Or.inr (Nat.le_trans (by omega : 0 + n ≤ 56) (hfar _ (by omega))))
+  exact h _ (Or.inr (Nat.le_trans (by omega_using [hn] : 0 + n ≤ 56) (hfar _ (by omega_using [hd, hi]))))
 
 theorem output_ok {s : State} {base p : Addr} (hs : Scr s base) (hb : Bounded s.mem base X2)
     (hp : State.addr (s.gpr .r8) = p)
@@ -44,24 +44,24 @@ theorem output_ok {s : State} {base p : Addr} (hs : Scr s base) (hb : Bounded s.
     intro n t hn ⟨tf, tm, tk⟩
     have eq : ∀ j < 28, limbs t.mem base X2 j = limbs s.mem base X2 j := by
       intro j hj
-      exact congrArg BitVec.toNat (output_word tm (by omega) (by simp only [X2, slot]; omega) hfar)
+      exact congrArg BitVec.toNat (output_word tm (by omega_using [hn]) (by simp only [X2, slot]; omega_using [hj]) hfar)
     have tb : Bounded t.mem base X2 := by intro j hj; rw [eq j hj]; exact hb j hj
     refine WP.mono (packLimb_ok (p := p) (hs.of_keeps tk (by decide)) tb hn (by rw [tk.1 _ (by decide)]; exact hp)
       (by rw [tk.1 _ (by decide)]; exact hfit)
-      (by intro j hj; rw [tk.2.2]; exact hw _ (by omega))) fun u ⟨uv, um, uk⟩ => ?_
-    refine ⟨?_, (tm.mono (by decide) (by omega)).trans (um.mono (by omega) (by omega)), tk.trans uk⟩
+      (by intro j hj; rw [tk.2.2]; exact hw _ (by omega_using [hn, hj]))) fun u ⟨uv, um, uk⟩ => ?_
+    refine ⟨?_, (tm.mono (by decide) (by omega_using [])).trans (um.mono (by omega_using []) (by omega_using [])), tk.trans uk⟩
     intro i hi
     by_cases h : i = n
     · subst i; exact uv.trans (eq n hn)
     · have byte : ∀ j < 2, u.mem (off p (2 * i + j)) = t.mem (off p (2 * i + j)) := by
         intro j hj
-        exact um _ (Or.inl (by rw [ofs_off' p (by omega)]; omega))
+        exact um _ (Or.inl (by rw [ofs_off' p (by omega_using [hn, hi, hj])]; omega_using [hi, h, hj]))
       simp only [decoded, byteN]
       have b0 := byte 0 (by decide)
       have b1 := byte 1 (by decide)
       simp only [off, Nat.add_zero] at b0 b1
       rw [b0, b1]
-      exact tf i (by omega)
+      exact tf i (by omega_using [hi, h])
   refine WP.mono (wp_range_flatMap (M := isa) (N := 28) inv st 28 (by decide) s
     ⟨fun _ hi => by omega, Outside.refl _ _ _ _, Keeps.refl _ _⟩) fun t ⟨tf, tm, tk⟩ =>
     ⟨packed_bytes tf, tm, tk⟩

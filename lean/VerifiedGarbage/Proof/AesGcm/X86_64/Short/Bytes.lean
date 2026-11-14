@@ -49,10 +49,10 @@ theorem xb_gctr {m : Mem} {D K : Addr} {n : Nat} {ciph : Block → Block} {J : B
     List.getElem?_range hin, Option.map_some, Option.getD_some]
   congr 1
   simp only [ksByte]
-  rw [← repeat_inc32_succ, ← hK (i / 16) (by omega), Proof.Aes.toBytes_blockAt _ _ (by omega : i % 16 < 16),
-    add_ofNat_ofNat, show 16 * (i / 16) + i % 16 = i by omega]
+  rw [← repeat_inc32_succ, ← hK (i / 16) (by omega_using [hin]), Proof.Aes.toBytes_blockAt _ _ (by omega_using [] : i % 16 < 16),
+    add_ofNat_ofNat, show 16 * (i / 16) + i % 16 = i by omega_using []]
 
-theorem padLen_eq (x : Nat) : padLen x = 16 * nb16 x - x := by simp only [padLen, nb16]; omega
+theorem padLen_eq (x : Nat) : padLen x = 16 * nb16 x - x := by simp only [padLen, nb16]; omega_using []
 
 /-- The additional data and the text, each padded to whole blocks, are
 `ghashInput` padded. -/
@@ -64,7 +64,7 @@ theorem padded_layout (a c : List Byte) :
   · rw [padded, Proof.Gcm.ghashInput_of_ne hc, padLen_eq, padLen_eq]
     simp only [List.length_append, Proof.Gcm.length_zeros]
     congr 2
-    simp only [nb16]; omega
+    simp only [nb16]; omega_using []
 
 theorem ofBytes_zeros16 : ofBytes (zeros 16) = 0 := by decide
 

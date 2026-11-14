@@ -41,27 +41,27 @@ theorem fastPrepOf_ok {step : Prog isa} {s : State} {base : Addr} {size n src bi
     KeepRegs (nafPrepClobN n) s t ∧ Outside base bits (64*n+8) s.mem t.mem
   refine WP.seq (WP.mono (fastPrepInit_ok (w:=w) hn hs hsrc hb) fun a ⟨ia,ka,oa⟩ => ?_)
   refine WP.loop (M:=isa) (fun m t => 1≤m ∧ m≤64*n+1 ∧ I m t) (fun m t ⟨hm,hm',hi⟩ => ?_)
-    (64*n+1) a ⟨by omega,by omega,by simpa only [Nat.sub_self] using ia,ka,oa⟩
-  have hj : 64*n+1-m<64*n+1 := by omega
+    (64*n+1) a ⟨by omega_using [],by omega_using [],by simpa only [Nat.sub_self] using ia,ka,oa⟩
+  have hj : 64*n+1-m<64*n+1 := by omega_using [hm]
   have hv : FastNaf.residual w k (64*n+1-m)≤2^(64*n) := by
-    have h := FastNaf.residual_boundB w (Nat.le_of_lt hk) (j:=64*n+1-m) (by omega)
-    exact Nat.le_trans h (Nat.pow_le_pow_right (by decide) (by omega))
+    have h := FastNaf.residual_boundB w (Nat.le_of_lt hk) (j:=64*n+1-m) (by omega_using [hm])
+    exact Nat.le_trans h (Nat.pow_le_pow_right (by decide) (by omega_using []))
   have hd := fastDelta_bounds hw k (64*n+1-m)
   refine WP.mono (hS hi.1 hb hj hv) fun u ⟨iu,cf,ku,ou⟩ => ?_
   have ki := hi.2.1.trans ku
   have oi := hi.2.2.trans ou
   by_cases he : 64*n+1≤64*n+1-m+fastDelta w k (64*n+1-m)
-  · refine Or.inl ⟨?_,⟨_,he,by omega,iu⟩,ki,oi⟩
+  · refine Or.inl ⟨?_,⟨_,he,by omega_using [hm, hd],iu⟩,ki,oi⟩
     change u.cf=some false
     rw [cf]
     congr 1
-    exact decide_eq_false (by omega)
-  · refine Or.inr ⟨?_,m-fastDelta w k (64*n+1-m),by omega,by omega,by omega,?_,ki,oi⟩
+    exact decide_eq_false (by omega_using [he])
+  · refine Or.inr ⟨?_,m-fastDelta w k (64*n+1-m),by omega_using [hm, hd],by omega_using [he],by omega_using [hm'],?_,ki,oi⟩
     · change u.cf=some true
       rw [cf]
       congr 1
-      exact decide_eq_true (by omega)
-    · rw [show 64*n+1-(m-fastDelta w k (64*n+1-m))=64*n+1-m+fastDelta w k (64*n+1-m) from by omega]
+      exact decide_eq_true (by omega_using [he])
+    · rw [show 64*n+1-(m-fastDelta w k (64*n+1-m))=64*n+1-m+fastDelta w k (64*n+1-m) from by omega_using [hm', he]]
       exact iu
 
 theorem fastPrep_ok {s : State} {base : Addr} {size n src bits w : Nat} (hn : n=4 ∨ n=6 ∨ n=9)
@@ -79,7 +79,7 @@ theorem fastPrepDigitsOf_ok {step : Prog isa} {s : State} {base : Addr} {size n 
       KeepRegs (nafPrepClobN n) s t ∧ Outside base bits (64*n+8) s.mem t.mem := by
   refine WP.mono (fastPrepOf_ok hn hw hS hs hsrc hb) fun t ⟨⟨j,hj,_,hi⟩,kt,ot⟩ => ⟨?_,kt,ot⟩
   intro i hi'
-  simpa only [show i<j from by omega,ite_true] using hi.digits i hi'
+  simpa only [show i<j from by omega_using [hj, hi'],ite_true] using hi.digits i hi'
 
 theorem fastPrepDigits_ok {s : State} {base : Addr} {size n src bits w : Nat} (hn : n=4 ∨ n=6 ∨ n=9)
     (hw : FastNaf.Width w) (hs : Scr s base size) (hsrc : src+8*n≤size) (hb : bits+64*n+8≤size) :

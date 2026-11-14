@@ -39,8 +39,8 @@ theorem testBit_leNat : ∀ (v : List Byte) (k : Nat), (leNat v).testBit k = (v.
       rw [Nat.div_eq_of_lt h, Nat.mod_eq_of_lt h]
       rfl
     · rename_i h
-      rw [testBit_leNat v, show k / 8 = (k - 8) / 8 + 1 by omega, List.getD_cons_succ,
-        show k % 8 = (k - 8) % 8 by omega]
+      rw [testBit_leNat v, show k / 8 = (k - 8) / 8 + 1 by omega_using [h], List.getD_cons_succ,
+        show k % 8 = (k - 8) % 8 by omega_using [h]]
 
 theorem bytesToBits_size (v : List Byte) : (bytesToBits v).size = 8 * v.length := by
   simp only [bytesToBits, List.size_toArray]
@@ -48,7 +48,7 @@ theorem bytesToBits_size (v : List Byte) : (bytesToBits v).size = 8 * v.length :
   | nil => rfl
   | cons c v ih =>
     simp only [List.flatMap_cons, List.length_append, List.length_map, List.length_range, ih, List.length_cons]
-    omega
+    omega_using []
 
 /-- Bit `k` of the bits of `v`. -/
 theorem bytesToBits_getD_testBit (v : List Byte) (k : Nat) :
@@ -56,8 +56,8 @@ theorem bytesToBits_getD_testBit (v : List Byte) (k : Nat) :
   rw [testBit_leNat]
   by_cases hk : k < 8 * v.length
   · exact bytesToBits_getD v hk
-  · rw [Array.getD_eq_getD_getElem?, Array.getElem?_eq_none (by rw [bytesToBits_size]; omega),
-      List.getD_eq_getElem?_getD, List.getElem?_eq_none (by omega)]
+  · rw [Array.getD_eq_getD_getElem?, Array.getElem?_eq_none (by rw [bytesToBits_size]; omega_using [hk]),
+      List.getD_eq_getElem?_getD, List.getElem?_eq_none (by omega_using [hk])]
     simp
 
 /-- The integer of `c` bits of `X` from bit `P`. -/
@@ -68,7 +68,7 @@ theorem bitsToInteger_testBit (X : Nat) : ∀ (c P : Nat),
     rw [List.range_succ_eq_map, List.map_cons, List.map_map]
     have ih := bitsToInteger_testBit X c (P + 1)
     have e : ((fun j => X.testBit (P + j)) ∘ Nat.succ) = fun j => X.testBit (P + 1 + j) := by
-      funext j; simp only [Function.comp]; congr 1; omega
+      funext j; simp only [Function.comp]; congr 1; omega_using []
     simp only [bitsToInteger, List.foldr_cons] at ih ⊢
     rw [e, ih, Nat.add_zero]
     apply Nat.eq_of_testBit_eq
@@ -78,14 +78,14 @@ theorem bitsToInteger_testBit (X : Nat) : ∀ (c P : Nat),
       Nat.testBit_div_two_pow]
     split
     · rename_i h
-      have : i = 0 := by omega
+      have : i = 0 := by omega_using [h]
       subst this
       have := testBit_eq X P
-      cases hb : X.testBit P <;> rw [hb] at this <;> simp at this <;> simp <;> omega
+      cases hb : X.testBit P <;> rw [hb] at this <;> simp at this <;> simp <;> omega_using [this]
     · rename_i h
-      rw [Nat.testBit_mod_two_pow, Nat.testBit_div_two_pow, show i - 1 + (P + 1) = i + P by omega]
+      rw [Nat.testBit_mod_two_pow, Nat.testBit_div_two_pow, show i - 1 + (P + 1) = i + P by omega_using [h]]
       congr 1
-      exact decide_eq_decide.mpr (by omega)
+      exact decide_eq_decide.mpr (by omega_using [h])
 
 /-- Coefficient `i` of `BitUnpack(v, a, b)`: `b` minus the `c` bits of
 `leNat v` from bit `ic`, for `c = bitlen (a + b)`. -/
@@ -102,7 +102,7 @@ theorem leNat_take_bits (L : List Byte) {k P c : Nat} (h : P + c ≤ 8 * k) :
   rw [Nat.testBit_mod_two_pow, Nat.testBit_mod_two_pow, Nat.testBit_div_two_pow, Nat.testBit_div_two_pow,
     testBit_leNat, testBit_leNat]
   by_cases hj : j < c
-  · rw [List.getD_eq_getElem?_getD, List.getD_eq_getElem?_getD, List.getElem?_take_of_lt (by omega)]
+  · rw [List.getD_eq_getElem?_getD, List.getD_eq_getElem?_getD, List.getElem?_take_of_lt (by omega_using [h, hj])]
   · simp [hj]
 
 /-- The width `c = 1 + bitlen (γ₁ - 1)` of the coefficients of `ExpandMask`. -/
@@ -118,14 +118,14 @@ theorem expandMask_getElem (ρ : List Byte) {γ : Nat} (hγ : γ = 2 ^ 17 ∨ γ
     (toRq (bitUnpack (H ρ (32 * (1 + bitlen (γ - 1)))) (γ - 1) γ))[i]! =
       ofInt ((γ : Int) - (leNat (H ρ 640) / 2 ^ (i * emC γ) % 2 ^ emC γ : Nat)) := by
   obtain ⟨e1, e2, _⟩ := emC_eq hγ
-  have hc : emC γ ≤ 20 := by unfold emC; split <;> omega
+  have hc : emC γ ≤ 20 := by unfold emC; split <;> omega_using []
   rw [getElem!_pos _ i hi]
   simp only [toRq, Vector.getElem_map]
   rw [bitUnpack_getElem _ _ _ hi, e1, e2,
-    ← H_take ρ (show 32 * emC γ ≤ 640 by omega), leNat_take_bits _ (by
+    ← H_take ρ (show 32 * emC γ ≤ 640 by omega_using [hc]), leNat_take_bits _ (by
       have : i * emC γ + emC γ ≤ 256 * emC γ := by
-        have := Nat.mul_le_mul_right (emC γ) (show i + 1 ≤ 256 by omega); rw [Nat.add_mul] at this; omega
-      omega)]
+        have := Nat.mul_le_mul_right (emC γ) (show i + 1 ≤ 256 by omega_using [hi]); rw [Nat.add_mul] at this; omega_using [this]
+      omega_using [this])]
 
 /-! ## The sign bits of `SampleInBall` -/
 

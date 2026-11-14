@@ -16,7 +16,7 @@ def pdArgument (g : PrivGeometry) (j : Nat) : BitVec 32 :=
 
 theorem pdPrefixMem_arguments (g : PrivGeometry) (s : State) (j : Nat) (hj : j < 6) :
     (pdPrefixMem g s).readW (off (State.addr g.stack) (4 * j)) 32 = pdArgument g j := by
-  rcases (show j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4 ∨ j = 5 by omega) with
+  rcases (show j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4 ∨ j = 5 by omega_using [hj]) with
     rfl | rfl | rfl | rfl | rfl | rfl
   · unfold pdPrefixMem pdArgument
     rw [outside_read32 (writeW32_outside _ _ (d := 20) _ (by decide)) (d := 0) (by decide) (by decide),

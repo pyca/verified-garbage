@@ -38,9 +38,9 @@ theorem positiveRowW_ok {p : Params} {S : Nat} {σ s : State} {t i : Nat}
   have hA j (hj : j<p.ℓ) : PolyIs s.mem
       (pa s (aP p i 0)+BitVec.ofNat 64 (1024*j)) (Am p σ i j) := by
     have he : p.ℓ*i+j<p.k*p.ℓ := by
-      have hl := Nat.mul_le_mul_left p.ℓ (show i+1≤p.k by omega)
+      have hl := Nat.mul_le_mul_left p.ℓ (show i+1≤p.k by omega_using [hi])
       simp only [Nat.mul_add,Nat.mul_one] at hl
-      rw [Nat.mul_comm p.k p.ℓ]; omega
+      rw [Nat.mul_comm p.k p.ℓ]; omega_using [hj, hl]
     have hv := h.masks.l.k.d.im.A (p.ℓ*i+j) he
     rw [aVal_ij hj] at hv
     change PolyIs s.mem (pa s (pS (aBase p+(p.ℓ*i+j)))) _ at hv
@@ -78,7 +78,7 @@ theorem positiveRows_ok {p : Params} {S : Nat} {σ s : State} {t : Nat}
     WP isa (VG.Impl.MlDsa.AArch64.Call.seqR
       (Impl.MlDsa.AArch64.Sign.Optimized.rowW p) 0 p.k) s (PositiveICw p S σ t p.k) := by
   simpa only [Nat.zero_add] using seqR_ok (I := fun i s => PositiveICw p S σ t i s) p.k 0
-    (fun i _ hi s hs => positiveRowW_ok hp (by omega) hs) s ⟨h,by simp [Fam]⟩
+    (fun i _ hi s hs => positiveRowW_ok hp (by omega_using [hi]) hs) s ⟨h,by simp [Fam]⟩
 
 end VG.Proof.MlDsa.AArch64.Sign
 end
@@ -139,7 +139,7 @@ theorem positivePackRows_ok {P : Prims} {S : Nat} (hP : PrimsOk P S) {p : Params
   simp only [cChk,Bool.and_eq_true,List.all_eq_true,List.mem_range] at hc
   obtain ⟨⟨⟨⟨_,_⟩,hh⟩,_⟩,_⟩ := hc
   simpa only [Nat.zero_add] using seqR_ok (I := fun i s => PositiveICh p S σ t i s) p.k 0
-    (fun i _ hi s hs => positiveW1R_ok hP hp (by omega) (hh i (by omega)) hs) s
+    (fun i _ hi s hs => positiveW1R_ok hP hp (by omega_using [hi]) (hh i (by omega_using [hi])) hs) s
     ⟨h,by simp [w1Enc]; rfl⟩
 
 end VG.Proof.MlDsa.AArch64.Sign

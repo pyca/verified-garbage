@@ -42,7 +42,7 @@ theorem loadCount_ok (signed : Bool) (b count : Nat) (hn : count≤4) (s : State
   refine wp_range_flatMap (M:=isa) I (fun j t hj ht=>?_) count (Nat.le_refl _) s ?_
   · rcases ht with ⟨hk,hct,hvals⟩
     rw [loadCode,←List.append_nil (if signed then convert (regAt j) else [])]
-    refine loadOne_ok signed b regAt_reserved hct ⟨by omega,by omega⟩ ?_ fun u hu hcu hv => WP.block_nil_iff.mpr ?_
+    refine loadOne_ok signed b regAt_reserved hct ⟨by omega_using [],by omega_using [hn, hj]⟩ ?_ fun u hu hcu hv => WP.block_nil_iff.mpr ?_
     · simpa only [hk.rd,hk.wr,hk.gpr] using hin j hj
     · refine ⟨(hk.trans hu).mono ?_,hcu,?_⟩
       · intro r hr
@@ -55,8 +55,8 @@ theorem loadCount_ok (signed : Bool) (b count : Nat) (hn : count≤4) (s : State
         by_cases hij : i=j
         · subst i
           rw [hv e he,hk.mem,hk.gpr]
-        · have hi' : i<j := by omega
-          rw [hu.get (regAt i) (by simp [regAt_distinct (by omega) (by omega) hij,
+        · have hi' : i<j := by omega_using [hi, hij]
+          rw [hu.get (regAt i) (by simp [regAt_distinct (by omega_using [hn, hj, hi]) (by omega_using [hn, hj]) hij,
             show regAt i≠VReg.v4 by have := regAt_reserved (j:=i); simp only [List.mem_cons,List.not_mem_nil,or_false,not_or] at this; exact this.1])]
           exact hvals i hi' e he
   · exact ⟨VChg.refl _ _,hc,by intro j hj; omega⟩

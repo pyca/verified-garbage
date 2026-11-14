@@ -67,7 +67,7 @@ theorem runBlock_cat_some {a b : List Instr} {s s₁ s₂ : State} (h₁ : runBl
 
 theorem eq_of_qw {x y : BitVec 512} (h : ∀ q < 8, qw x q = qw y q) : x = y := by
   apply BitVec.eq_of_getLsbD_eq; intro i hi
-  have e := congrArg (fun z => z.getLsbD (i % 64)) (h (i / 64) (by omega))
+  have e := congrArg (fun z => z.getLsbD (i % 64)) (h (i / 64) (by omega_using [hi]))
   simp only [getLsbD_qw _ (Nat.mod_lt i (by decide) : i % 64 < 64), Nat.div_add_mod] at e
   exact e
 
@@ -97,15 +97,15 @@ theorem varEnv_rel {s : State} (regs : List XReg) :
     obtain ⟨i, hi, rfl⟩ := h
     obtain ⟨hlt, heq, -⟩ := List.idxOf?_eq_some_iff.mp hi
     simp only [VarRel, varN]
-    rw [xorSet_two_pow _ (by omega)]
-    simp only [varVals, show ¬ 64 + i < 64 by omega, ite_false, Nat.add_sub_cancel_left]
+    rw [xorSet_two_pow _ (by omega_using [hlt])]
+    simp only [varVals, show ¬ 64 + i < 64 by omega_using [], ite_false, Nat.add_sub_cancel_left]
     simp [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem hlt, heq]
   slot k a hk h q hq := by
     have hk' : k < 64 := hk
     simp only [varEnv, hk', ite_true, Option.some.injEq] at h
     subst h
     simp only [VarRel, varN]
-    rw [xorSet_two_pow _ (by omega)]
+    rw [xorSet_two_pow _ (by omega_using [hk'])]
     simp only [varVals, hk', ite_true, laneW, words, stateCfg]
   gc _ _ h := by cases h
   xc _ _ h := by cases h
@@ -137,15 +137,15 @@ theorem varEnv_relB (b : Reg) {n : Nat} (hn : n ≤ 64) {s : State} (regs : List
     obtain ⟨i, hi, rfl⟩ := h
     obtain ⟨hlt, heq, -⟩ := List.idxOf?_eq_some_iff.mp hi
     simp only [VarRel, varN]
-    rw [xorSet_two_pow _ (by omega)]
-    simp only [varValsB, show ¬ 64 + i < 64 by omega, ite_false, Nat.add_sub_cancel_left]
+    rw [xorSet_two_pow _ (by omega_using [hlt])]
+    simp only [varValsB, show ¬ 64 + i < 64 by omega_using [], ite_false, Nat.add_sub_cancel_left]
     simp [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem hlt, heq]
   slot k a hk h q hq := by
     have hk' : k < 64 := Nat.lt_of_lt_of_le hk hn
     simp only [varEnv, hk', ite_true, Option.some.injEq] at h
     subst h
     simp only [VarRel, varN]
-    rw [xorSet_two_pow _ (by omega)]
+    rw [xorSet_two_pow _ (by omega_using [hk'])]
     simp only [varValsB, hk', ite_true, wordsB]
   gc _ _ h := by cases h
   xc _ _ h := by cases h
@@ -171,7 +171,7 @@ theorem xorSet_two_pow_xor {V : Nat → BitVec 64} {a b N : Nat} (ha : a < N) (h
 theorem zmm_vpxord (s : State) (d a b : XReg) :
     ((ZOp.zbin .vpxord d a b).exec s).zmm d = s.zmm a ^^^ s.zmm b := by
   apply eq_of_qw; intro q hq
-  rw [qw_zmm _ _ hq, zlane_zbin _ _ _ _ _ _ (by omega), qw_xor, qw_zmm _ _ hq, qw_zmm _ _ hq]
+  rw [qw_zmm _ _ hq, zlane_zbin _ _ _ _ _ _ (by omega_using [hq]), qw_xor, qw_zmm _ _ hq, qw_zmm _ _ hq]
   simp only [ite_true, ZBinOp.sse, XBinOp.eval, qword_xor]
 
 /-- The all-zero or all-one quadword. -/
@@ -189,7 +189,7 @@ theorem getLsbD_maskZ (b : Bool) {P : Nat} (hP : P < 512) : (maskZ b).getLsbD P 
 theorem bcast_mask (s : State) (x : XReg) (r : Reg) (b : Bool) (hr : s.gpr r = maskVal b) :
     ((ZOp.vpbroadcastq x x).exec ((VOp.vmovq x r).exec s)).zmm x = maskZ b := by
   apply eq_of_qw; intro q hq
-  rw [qw_zmm _ _ hq, zlane_vpbroadcastq _ _ _ _ (by omega)]
+  rw [qw_zmm _ _ hq, zlane_vpbroadcastq _ _ _ _ (by omega_using [hq])]
   simp only [ite_true, VOp.exec, State.setV, hr]
   rw [qword_app _ _ (Nat.mod_lt _ (by decide)), qword_app _ _ (by decide)]
   have e : qw (maskZ b) q = maskVal b := by
@@ -198,7 +198,7 @@ theorem bcast_mask (s : State) (x : XReg) (r : Reg) (b : Bool) (hr : s.gpr r = m
     · simp only [maskVal, maskZ, ite_true]
       apply BitVec.eq_of_getLsbD_eq; intro i hi
       rw [getLsbD_qw _ hi]
-      simp only [BitVec.getLsbD_allOnes, hi, show 64 * q + i < 512 by omega, decide_true]
+      simp only [BitVec.getLsbD_allOnes, hi, show 64 * q + i < 512 by omega_using [hq, hi], decide_true]
   rw [e]
   split <;> rfl
 

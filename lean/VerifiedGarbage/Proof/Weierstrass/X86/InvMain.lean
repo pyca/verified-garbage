@@ -30,14 +30,14 @@ theorem runFacts {p x : Nat} {m : Int} (hp : (p : Int) % 2 = 1) (hp1 : 1 < p)
     (hm : ((p : Int) * m + 1) % 2 ^ 32 = 0) (hx : x < p) {k : Nat} (hk : k < 20) :
     BatchFacts (Divstep.W32.invRun 30 p m x k) p := by
   obtain ⟨hd, hf, hfb, hgb, ha0, ha1, hb0, hb1⟩ :=
-    Divstep.W32.invRun_bounds (N := 30) (by decide) hp (by omega) hm (Int.natCast_nonneg x) (by omega) k
+    Divstep.W32.invRun_bounds (N := 30) (by decide) hp (by omega_using [hp1]) hm (Int.natCast_nonneg x) (by omega_using [hx]) k
   refine ⟨?_, hf, hfb, hgb, ?_, ?_, ?_, ?_⟩
   · push_cast at hd
-    omega
+    omega_using [hk, hd]
   · rw [abs_of_nonneg ha0]
-    omega
+    omega_using [ha1]
   · rw [abs_of_nonneg hb0]
-    omega
+    omega_using [hb1]
   · exact Divstep.msteps_bnd _ _ _ 30
   · have H := Divstep.msteps_mat (d := (Divstep.W32.invRun 30 p m x k).d)
       (g := (Divstep.W32.invRun 30 p m x k).g) hf 30
@@ -55,10 +55,10 @@ theorem finish_sign {P : InvCfg} {base : Addr} {s : State} {f : Int}
   constructor
   · intro h
     rw [h, Int.emod_eq_of_lt (by decide) (by decide)] at E'
-    rw [ite_eq_right (by omega)]
+    rw [ite_eq_right (by omega_using [E'])]
   · intro h
     rw [h, show (-1 : Int) % 2 ^ 32 = 2 ^ 32 - 1 by decide] at E'
-    rw [ite_eq_left (by omega)]
+    rw [ite_eq_left (by omega_using [E'])]
 
 theorem invPow_ok {P : InvCfg} {base : Addr} {size p : Nat} [NeZero p]
     (hpr : p.Prime) (hT : InvToM p) (L : InvLay P size) (hp2 : 2 < p)
@@ -76,20 +76,20 @@ theorem invPow_ok {P : InvCfg} {base : Addr} {size p : Nat} [NeZero p]
   have hp256 : p < 2 ^ 256 := by rw [← hm]; exact val32_lt _ _ _ _
   have oddNat : p % 2 = 1 := by
     rcases Nat.even_or_odd p with ⟨k, hk⟩ | ⟨k, hk⟩
-    · exact absurd (hpr.eq_one_or_self_of_dvd 2 ⟨k, by omega⟩) (by omega)
-    · omega
+    · exact absurd (hpr.eq_one_or_self_of_dvd 2 ⟨k, by omega_using [hk]⟩) (by omega_using [hp2])
+    · omega_using [hk]
   have odd : (p : Int) % 2 = 1 := by exact_mod_cast oddNat
   have hinv := minv32_inv hM.inv
   have hinvI : ((p : Int) * (minv32 P.M).toNat + 1) % 2 ^ 32 = 0 := by exact_mod_cast hinv
-  have hCm : P.C < p := by rw [hC.C]; exact Nat.mod_lt _ (by omega)
-  have hCnm : P.Cn < p := by rw [hC.Cn]; have := hC.Cpos; omega
+  have hCm : P.C < p := by rw [hC.C]; exact Nat.mod_lt _ (by omega_using [hp2])
+  have hCnm : P.Cn < p := by rw [hC.Cn]; have := hC.Cpos; omega_using [hp2, this]
   have modU : ∀ {mem' : Mem}, Unch base [(P.tbl, 320), (P.M.tmp, 32)] s.mem mem' →
       ModOkW P.M size p mem' base := by
     intro mem' U
     refine ⟨hM.n0, hM.mo, hM.tmp, hM.sep, ?_, hM.inv, hM.red⟩
     rw [L.n4, wordsVal_eq_val32, Outs.val32 U (by
       simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq]
-      constructor <;> omega) (by omega), hm]
+      constructor <;> omega_arith) (by omega_using [hn, hmod]), hm]
   unfold InvCfg.inv
   refine WP.seq (WP.mono (init_ok hs L hm) fun s₁ ⟨I₁, C₁, K₁, O₁⟩ => ?_)
   have hs₁ := hs.of_keeps K₁ (by decide)
@@ -97,8 +97,8 @@ theorem invPow_ok {P : InvCfg} {base : Addr} {size p : Nat} [NeZero p]
     fun q hq => O₁ q (hq (P.tbl, 320) (by simp))
   have hm₁ : val32 s₁.mem base P.M.mo 8 = p := by
     simpa only [L.n4, wordsVal_eq_val32] using (modU U₁).val
-  refine WP.seq (WP.mono (run_ok hs₁ L.toWorkLay (by omega) hp256 hm₁ hinv I₁ C₁
-    (fun _ hk => runFacts odd (by omega) hinvI hX hk)) fun s₂ ⟨I₂, K₂, U₂⟩ => ?_)
+  refine WP.seq (WP.mono (run_ok hs₁ L.toWorkLay (by omega_using [hp2]) hp256 hm₁ hinv I₁ C₁
+    (fun _ hk => runFacts odd (by omega_using [hp2]) hinvI hX hk)) fun s₂ ⟨I₂, K₂, U₂⟩ => ?_)
   have hs₂ := hs₁.of_keeps K₂ (by decide)
   have U : Unch base [(P.tbl, 320), (P.M.tmp, 32)] s.mem s₂.mem :=
     fun q hq => (U₂ q hq).trans (U₁ q hq)
@@ -119,13 +119,13 @@ theorem invPow_ok {P : InvCfg} {base : Addr} {size p : Nat} [NeZero p]
   have spec : X ≠ 0 → (I.f = 1 ∨ I.f = -1) ∧
       (X : Int) * (I.f * I.a) * 2 ^ 40 ≡ 1 [ZMOD p] := by
     intro hX0
-    exact Divstep.W32.invRun_spec (N := 30) (B := 20) (by decide) odd (by omega) hinvI done (by
+    exact Divstep.W32.invRun_spec (N := 30) (B := 20) (by decide) odd (by omega_using [hp2]) hinvI done (by
       rw [Int.gcd_natCast_natCast]
-      exact Nat.coprime_of_lt_prime (by omega) hX hpr)
+      exact Nat.coprime_of_lt_prime (by omega_using [hX0]) hX hpr)
   have signs := finish_sign I₂.f
   refine hT (K := 2 ^ 40) (f := I.f) hp2 hR hX ?_ ?_ ?_ E₃
   · intro hX0
-    have Z := (Divstep.W32.invRun_zero (N := 30) (p := p) (m := (minv32 P.M).toNat) (by omega) 20).2
+    have Z := (Divstep.W32.invRun_zero (N := 30) (p := p) (m := (minv32 P.M).toNat) (by omega_using [hp2]) 20).2
     have ia : I.a = 0 := by
       change (Divstep.W32.invRun 30 p (minv32 P.M).toNat X 20).a = 0
       change X = 0 at hX0

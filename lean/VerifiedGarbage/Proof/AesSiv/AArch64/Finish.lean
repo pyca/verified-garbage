@@ -77,12 +77,12 @@ theorem finish_wp (v : Proof.CmacAes.AArch64.UpdateImpl) (h : Env s₀ C D P W R
   have hr₁ : Regs s₀ C D P W R L s₁ := hr.keep' (fun r hr' => g₁ r (dec_ne (by decide) hr')) sp₁ rd₁ wr₁
   have hg₁ : Hold2 s s₁ := ⟨g₁ _ (by decide), g₁ _ (by decide)⟩
   refine WP.seq (WP.of_runBlock ⟨s₁, run₁, ?_⟩)
-  have ev := eval_zero (s := s₁) (r := .x9) (x := L / 16) (by have := h.lt; omega) x9₁
+  have ev := eval_zero (s := s₁) (r := .x9) (x := L / 16) (by have := h.lt; omega_using [this]) x9₁
   by_cases hL : L < 16
-  · refine WP.ite true (by rw [ev]; simp; omega) (fun _ => ?_) (fun h => by cases h)
+  · refine WP.ite true (by rw [ev]; simp; omega_using [hL]) (fun _ => ?_) (fun h => by cases h)
     exact WP.mono (finishShort_wp v h hr₁ hL hout) fun _ p => p.of_mem m₁ hg₁
-  · refine WP.ite false (by rw [ev]; simp; omega) (fun h => by cases h) (fun _ => ?_)
-    exact WP.mono (finishLong_wp v h hr₁ (by omega) hout) fun _ p => p.of_mem m₁ hg₁
+  · refine WP.ite false (by rw [ev]; simp; omega_using [hL]) (fun h => by cases h) (fun _ => ?_)
+    exact WP.mono (finishLong_wp v h hr₁ (by omega_using [hL]) hout) fun _ p => p.of_mem m₁ hg₁
 
 /-! ## Constant time -/
 
@@ -306,16 +306,16 @@ theorem finish_rel (v : Proof.CmacAes.AArch64.UpdateImpl) {s₀' : State} (h : E
     (F₂ := fun (y : State) => Regs s₀' C D P W R L y ∧ y.gpr .x9 = BitVec.ofNat 64 (L / 16))
     fun a b hab => ⟨w hab.1, w hab.2⟩
   have ev {y : State} (hy : y.gpr .x9 = BitVec.ofNat 64 (L / 16)) :=
-    eval_zero (s := y) (r := .x9) (x := L / 16) (by have := h.lt; omega) hy
+    eval_zero (s := y) (r := .x9) (x := L / 16) (by have := h.lt; omega_using [this]) hy
   refine (a.mono (fun _ _ h => h) fun _ _ h => h.2).seq (RelCT.ite (fun a b hab => by
     rw [ev hab.1.2, ev hab.2.2]) ?_ ?_)
   · by_cases hL : L < 16
     · exact (short_rel v h h' hq hL hout).mono (fun _ _ p => ⟨p.1.1.1, p.1.2.1⟩) fun _ _ p => p
     · exact RelCT.of_false fun a b hab => by
-        have e := hab.2; rw [ev hab.1.1.2] at e; simp at e; omega
+        have e := hab.2; rw [ev hab.1.1.2] at e; simp at e; omega_using [hL, e]
   · by_cases hL : L < 16
     · exact RelCT.of_false fun a b hab => by
-        have e := hab.2; rw [ev hab.1.1.2] at e; simp at e; omega
-    · exact (long_rel v h h' hq (by omega) hout).mono (fun _ _ p => ⟨p.1.1.1, p.1.2.1⟩) fun _ _ p => p
+        have e := hab.2; rw [ev hab.1.1.2] at e; simp at e; omega_using [hL, e]
+    · exact (long_rel v h h' hq (by omega_using [hL]) hout).mono (fun _ _ p => ⟨p.1.1.1, p.1.2.1⟩) fun _ _ p => p
 
 end VG.Proof.AesSiv.AArch64

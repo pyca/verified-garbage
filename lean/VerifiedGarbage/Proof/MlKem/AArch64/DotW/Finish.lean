@@ -34,13 +34,13 @@ theorem termsW_ok {bf bg : Reg} (terms : List (Nat × Nat)) {F G : (Nat × Nat) 
     simp only [List.length_cons] at hn
     rw [List.flatMap_cons, WP.block_append_iff]
     have h := hin fg (by simp)
-    refine WP.mono (fullTermW_ok h hc ha hlo hhi (by omega)) fun s₁ ⟨hk, hc₁, ha₁⟩ => ?_
+    refine WP.mono (fullTermW_ok h hc ha hlo hhi (by omega_using [hn])) fun s₁ ⟨hk, hc₁, ha₁⟩ => ?_
     refine WP.mono (ih hc₁ ha₁ (n := n + 1)
-      (fun e he => (hlo e he).next (h.boundF _ (by omega)) (h.boundF _ (by omega))
-        (h.boundG _ (by omega)) (h.boundG _ (by omega)))
-      (fun e he => (hhi e he).next (h.boundF _ (by omega)) (h.boundF _ (by omega))
-        (h.boundG _ (by omega)) (h.boundG _ (by omega)))
-      (by omega) (fun fg hf => (hin fg (by simp [hf])).keep hk)) fun s₂ ⟨hk₂, hc₂, ha₂⟩ => ?_
+      (fun e he => (hlo e he).next (h.boundF _ (by omega_using [he])) (h.boundF _ (by omega_using [he]))
+        (h.boundG _ (by omega_using [he])) (h.boundG _ (by omega_using [he])))
+      (fun e he => (hhi e he).next (h.boundF _ (by omega_using [he])) (h.boundF _ (by omega_using [he]))
+        (h.boundG _ (by omega_using [he])) (h.boundG _ (by omega_using [he])))
+      (by omega_using [hn]) (fun fg hf => (hin fg (by simp [hf])).keep hk)) fun s₂ ⟨hk₂, hc₂, ha₂⟩ => ?_
     exact ⟨(hk.trans hk₂).mono (by simp), hc₂, ha₂⟩
 
 section
@@ -77,7 +77,7 @@ theorem finishR_ok {s : State} {a b c g t : VReg}
     WP isa (.block (Impl.MlKem.AArch64.DotW.finishR a b c g t ++ rest)) s Q := by
   simp only [Impl.MlKem.AArch64.DotW.finishR, List.append_assoc, List.cons_append, List.nil_append]
   refine vbar_ok (d := b) (t := t) hbt ht16 ht17 (hc := hc) (hf := lb)
-    (hlt := fun e he => by have := bb e he; omega) (k := fun s₁ h₁ l₁ b₁ => ?_)
+    (hlt := fun e he => by have := bb e he; omega_using [this]) (k := fun s₁ h₁ l₁ b₁ => ?_)
   have a₁ : Lanes (s₁.v a) A := by rw [h₁.get a (by simp [hat, hab])]; exact la
   have g₁ : Lanes (s₁.v g) G := by rw [h₁.get g (by simp [hgt, hgb])]; exact lg
   let R := fun e => B e - B e * 645083 / 2 ^ 31 * 3329
@@ -85,14 +85,14 @@ theorem finishR_ok {s : State} {a b c g t : VReg}
   have br : ∀ e < 4, R e * G e ≤ 2 * 3329 * 3329 := fun e he =>
     Nat.mul_le_mul (Nat.le_of_lt (b₁ e he).1) (Nat.le_of_lt (bg e he))
   have bylt : ∀ e < 4, A e + R e * G e < 2 ^ 31 := fun e he => by
-    have := ba e he; have := br e he; omega
+    have := ba e he; have := br e he; omega_arith
   refine wp_vop (d := a) rfl fun s₂ h₂ => ?_
   have l₂ : Lanes (s₂.v a) (fun e => A e + R e * G e) := by
     rw [h₂.v]
     exact (lanes_mla a₁ l₁ g₁).congr fun e he => by
       have := bylt e he
-      rw [Nat.mod_eq_of_lt (show R e * G e < 2 ^ 32 by omega),
-        Nat.mod_eq_of_lt (show A e + R e * G e < 2 ^ 32 by omega)]
+      rw [Nat.mod_eq_of_lt (show R e * G e < 2 ^ 32 by omega_using [this]),
+        Nat.mod_eq_of_lt (show A e + R e * G e < 2 ^ 32 by omega_using [this])]
   have c₂ := (hc.chg h₁ (by simp [hb16.symm, ht16.symm]) (by simp [hb17.symm, ht17.symm])).chg h₂.chg
     (by simp [ha16.symm]) (by simp [ha17.symm])
   rw [← List.cons_append, ← List.cons_append]
@@ -103,7 +103,7 @@ theorem finishR_ok {s : State} {a b c g t : VReg}
     exact lc
   rw [← List.cons_append, ← List.cons_append]
   refine reduceR_ok (d := c) (t := t) hct ht16 ht17 hc16 hc17 c₃ cval
-    (fun e he => by have := bc e he; omega) fun s₄ h₄ l₄ => ?_
+    (fun e he => by have := bc e he; omega_using [this]) fun s₄ h₄ l₄ => ?_
   refine k s₄ (((h₁.trans h₂.chg).trans h₃).trans h₄) ?_ l₄
   rw [h₄.get a (by simp [hat, hac])]
   refine l₃.congr fun e he => ?_

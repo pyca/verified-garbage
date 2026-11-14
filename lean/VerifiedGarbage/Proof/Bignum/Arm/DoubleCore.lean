@@ -33,14 +33,14 @@ theorem doubleCore_ok (s : State) {base : BitVec 32} {size out tmp a b mod acc n
   rw [doubleCore, WP.seq_iff]
   refine WP.mono (doubleProduct_ok s ready two) ?_
   rintro u ⟨value, finish, outside, rest⟩
-  have modEq := outside.val32 (d := mod) (k := n) (by omega) (by omega)
+  have modEq := outside.val32 (d := mod) (k := n) (by omega_using [sep]) (by omega_using [nowrap, mFits])
   have ru : CsubCtx u base size out acc mod tmp n := {
     reduce with sub := { reduce.sub with writable := by rw [rest.wr]; exact reduce.sub.writable } }
-  refine WP.mono (montFinish_ok u ru (by omega) ctx.tmpFits finish.ptr finish.count
+  refine WP.mono (montFinish_ok u ru (by omega_using [count]) ctx.tmpFits finish.ptr finish.count
     finish.outPtr finish.accPtr finish.mPtr ?_) ?_
   · rw [value, modEq]
     have := ready.round.operand
-    omega
+    omega_using [this]
   · rintro t ⟨val, frame, keep⟩
     refine ⟨?_, ?_, rest.trans keep⟩
     · rw [val, value, modEq]

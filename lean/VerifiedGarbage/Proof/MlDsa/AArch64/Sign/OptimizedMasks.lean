@@ -152,8 +152,8 @@ theorem positivePairSeed_ok {p : Params} {D : Nat} {σ s : State} {t r j : Nat}
     rw [show 64=32+32 from rfl,VG.Proof.MlKem.bytesAt_add,pa_sc_add,
       hA.l.st.lay.keepBytes hb ck1,b0,b1,List.take_append_drop]
   have hx' : p.ℓ*t+(r+j)<2^16 := by
-    have := Nat.mul_le_mul_left p.ℓ (show t≤813 by have := h.l.t_lt; omega)
-    omega
+    have := Nat.mul_le_mul_left p.ℓ (show t≤813 by have := h.l.t_lt; omega_using [this])
+    omega_using [hx, this]
   refine WP.mono_syms (maskPairNonce_okB hB.l.st.lay hj hr hx' ck cwn hB.l.kap)
     fun u ⟨hu,_,hbn⟩ hyu => ?_
   have hab := PPostB.trans ha hb (ws := [(sc (oMP+66*j),32),(sc (oMP+66*j+32),32)])
@@ -183,7 +183,7 @@ theorem positiveFinish_ok {p : Params} {S : Nat} {σ s : State} {t n r : Nat}
     fun u ⟨hu,_,hqu⟩ hsym => ?_
   have H := h.step hu hsym hc
   have hyu := hy.keep h.l.st.lay hu hykeep
-  refine ⟨⟨H.l,fun j hj => hyu j (by omega),H.yh.snoc ?_⟩,hyu⟩
+  refine ⟨⟨H.l,fun j hj => hyu j (by omega_using [hr, hj]),H.yh.snoc ?_⟩,hyu⟩
   change PosPolyIs u.mem (pa u (yhP p r)) _
   rw [hu.pa (h.l.st.lay.ptrBs ho)]
   rw [hf.2] at hqu
@@ -233,8 +233,8 @@ theorem positivePairR_ok {D : Nat}
     · show PolyIs _ _ _
       rw [hcP.pa (pS_bases _)]
       exact hy1
-  refine WP.seq (WP.mono (positiveFinish_ok (by omega) cf0 hC hy) fun d ⟨hD,hyD⟩ => ?_)
-  exact WP.mono (positiveFinish_ok (by omega) cf1 hD hyD) fun _ hu => hu.1
+  refine WP.seq (WP.mono (positiveFinish_ok (by omega_using []) cf0 hC hy) fun d ⟨hD,hyD⟩ => ?_)
+  exact WP.mono (positiveFinish_ok (by omega_using []) cf1 hD hyD) fun _ hu => hu.1
 
 
 def positiveMaskChk (p : Params) (r : Nat) : Bool :=
@@ -250,7 +250,7 @@ theorem positiveMaskR_ok {P : Prims} {S : Nat} (hP : PrimsOk P S) {p : Params}
   obtain ⟨c1,k1,w1,cm,c2,cf,hx,hr,hγ⟩ := hc
   have ht := h.l.t_lt
   have hx' : p.ℓ*t+r<2^16 := by
-    have := Nat.mul_le_mul_left p.ℓ (show t≤813 by omega); omega
+    have := Nat.mul_le_mul_left p.ℓ (show t≤813 by omega_using [ht]); omega_using [hx, this]
   unfold Impl.MlDsa.AArch64.Sign.Optimized.maskR
   refine WP.seq (WP.mono_syms (setKappa_okB h.l.st.lay hr hx' k1 w1 h.l.kap)
     fun s1 ⟨hP1,_,hb1⟩ hy1 => ?_)
@@ -265,7 +265,7 @@ theorem positiveMaskR_ok {P : Prims} {S : Nat} (hP : PrimsOk P S) {p : Params}
     I2.y.snoc (by
       show PolyIs _ _ _
       rw [hP2.pa (pS_bases _)]; exact hq2)
-  exact WP.mono (positiveFinish_ok (by omega) cf I2 hy) fun _ hu => hu.1
+  exact WP.mono (positiveFinish_ok (by omega_using []) cf I2 hy) fun _ hu => hu.1
 
 def positiveMasksChk (p : Params) : Bool :=
   (List.range (p.ℓ/2)).all (fun j => positivePairStepChk p (2*j)) &&
@@ -283,11 +283,11 @@ theorem positiveMasksPaired_ok {P : Prims} {S : Nat} (hP : PrimsOk P S)
   unfold Impl.MlDsa.AArch64.Sign.Optimized.masksPaired
   refine WP.seq (WP.mono (seqR_ok (I:=fun j => PositiveICm p S σ t (2*j)) (p.ℓ/2) 0
     (fun j _ hj u hu => ?_) s ⟨h,fun _ h => by omega,fun _ h => by omega⟩) fun a ha => ?_)
-  · simpa only [Nat.mul_add,Nat.mul_one] using positivePairR_ok C (hc.1 j (by omega)) hu
-  · have he : 2*(p.ℓ/2)+p.ℓ%2=p.ℓ := by omega
+  · simpa only [Nat.mul_add,Nat.mul_one] using positivePairR_ok C (hc.1 j (by omega_using [hj])) hu
+  · have he : 2*(p.ℓ/2)+p.ℓ%2=p.ℓ := by omega_using []
     rw [Nat.zero_add] at ha
     have hw := seqR_ok (I:=fun r => PositiveICm p S σ t r) (p.ℓ%2) (2*(p.ℓ/2))
-      (fun r _ hr u hu => positiveMaskR_ok hP (hc.2 r (by omega)) hu) a ha
+      (fun r _ hr u hu => positiveMaskR_ok hP (hc.2 r (by omega_using [hr])) hu) a ha
     simpa only [he] using hw
 
 theorem positiveMasks_ok {P : Prims} {S : Nat} (hP : PrimsOk P S)
@@ -298,7 +298,7 @@ theorem positiveMasks_ok {P : Prims} {S : Nat} (hP : PrimsOk P S)
   · exact positiveMasksPaired_ok hP hP.expandMaskPair hc h
   · simp only [positiveMasksChk,Bool.and_eq_true,List.all_eq_true,List.mem_range] at hc
     simpa only [Nat.zero_add] using seqR_ok (I:=fun r => PositiveICm p S σ t r) p.ℓ 0
-      (fun r _ hr _ hh => positiveMaskR_ok hP (hc.2 r (by omega)) hh) s
+      (fun r _ hr _ hh => positiveMaskR_ok hP (hc.2 r (by omega_using [hr])) hh) s
       ⟨h,fun _ h => by omega,fun _ h => by omega⟩
 
 end VG.Proof.MlDsa.AArch64.Sign

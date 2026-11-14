@@ -302,7 +302,7 @@ theorem half64_arith (x y : BitVec 64) :
       simp only [BitVec.getElem_and, BitVec.getElem_ushiftRight, BitVec.getElem_shiftLeft]
       by_cases h : i < 63
       · simp [h]
-      · have : i = 63 := by omega
+      · have : i = 63 := by omega_using [hi, h]
         subst this
         simp
     rw [← BitVec.add_eq_or_of_and_eq_zero _ _ hd, BitVec.toNat_add, h1, h2]

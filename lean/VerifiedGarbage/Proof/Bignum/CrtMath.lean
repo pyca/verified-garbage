@@ -3,6 +3,7 @@ module
 public import Aesop.BuiltinRules
 import VerifiedGarbage.Proof.Framework.ModArith
 import VerifiedGarbage.Proof.Framework.PowLit
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # Multiword arithmetic: the mathematics of RSA with the CRT
@@ -43,11 +44,11 @@ theorem crt_h {P R QI m₁ m₂ a b h : Nat} (hP : 0 < P) (hR : Nat.Coprime R P)
     (ha : a % P = m₁ * R % P) (hb : b % P = m₂ * R % P) (hbP : b < P)
     (hh : h * R % P = (a + P - b) % P * QI % P) (hhP : h < P) :
     ((((m₁ : Int) - m₂) * QI) % (P : Int)).toNat = h := by
-  have hP' : (0 : Int) < P := by omega
+  have hP' : (0 : Int) < P := by omega_using [hP]
   -- `w = z mod P` for `z = (m₁ - m₂) qInv`, as a natural.
   generalize hz : ((m₁ : Int) - m₂) * QI = z
-  have hw : (((z % P).toNat : Nat) : Int) = z % P := Int.toNat_of_nonneg (Int.emod_nonneg _ (by omega))
-  have hwP : (z % P).toNat < P := by have := Int.emod_lt_of_pos z hP'; omega
+  have hw : (((z % P).toNat : Nat) : Int) = z % P := Int.toNat_of_nonneg (Int.emod_nonneg _ (by omega_using [hP]))
+  have hwP : (z % P).toNat < P := by have := Int.emod_lt_of_pos z hP'; omega_using [hP, this]
   generalize (z % P).toNat = w at hw hwP ⊢
   -- `w R ≡ h R`, each difference below a multiple of `P`.
   have hwh : w * R % P = h * R % P := by
@@ -57,7 +58,7 @@ theorem crt_h {P R QI m₁ m₂ a b h : Nat} (hP : 0 < P) (hR : Nat.Coprime R P)
     obtain ⟨k₃, e₃⟩ := ModArith.dvd_sub_of_mod_eq hh
     obtain ⟨k₄, e₄⟩ := ModArith.dvd_sub_of_mod_eq (Nat.mod_mod (a + P - b) P)
     have e₅ := Int.mul_ediv_add_emod z P
-    have e₆ : ((a + P - b : Nat) : Int) = a + P - b := by omega
+    have e₆ : ((a + P - b : Nat) : Int) = a + P - b := by omega_using [hP, ha, hb, hbP, hh, hhP, hP', hw, hwP, e₁, e₂, e₃, e₄, e₅]
     refine ⟨-k₃ - k₄ * QI + (1 - k₁ + k₂) * QI + z / P * R, ?_⟩
     push_cast at e₁ e₂ e₃ e₄ ⊢
     rw [e₆] at e₄

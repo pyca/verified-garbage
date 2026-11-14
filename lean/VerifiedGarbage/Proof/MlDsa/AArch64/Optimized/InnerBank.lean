@@ -25,16 +25,16 @@ theorem innerCoreValues_field (v : Vector (BitVec 128) 8) (w : Poly) {gap g u : 
   intro i e he
   rw [coreValues_int v hg _ hb hs hv i he,Traversal.run_innerRegGroup,
     Traversal.innerRegBlock_get _ hg.bounds.1 hg.bounds.2 hu (Nat.le_refl _) _ i.isLt he,
-    show 2*gap*g+gap+gap=2*gap*g+2*gap by omega]
+    show 2*gap*g+gap+gap=2*gap*g+2*gap by omega_using []]
   by_cases hl : 2*gap*g≤i.val ∧ i.val<2*gap*g+gap
   · rw [ite_eq_left hl,ite_eq_left hl,ofInt_add,fastMul_field,Traversal.ofInt_zetaNat,hf i e he]
-    have hidx : i.val+gap<8 := by have := hg.bounds.2; omega
+    have hidx : i.val+gap<8 := by have := hg.bounds.2; omega_using [hl, this]
     have hae : v[i.val+gap]! = v[i.val+gap] := getElem!_pos v _ hidx
     rw [hae,hf ⟨i.val+gap,hidx⟩ e he,Fin.mul_comm]
   · rw [ite_eq_right hl,ite_eq_right hl]
     by_cases hr : 2*gap*g+gap≤i.val ∧ i.val<2*gap*g+2*gap
     · rw [ite_eq_left hr,ite_eq_left hr,ofInt_sub,fastMul_field,Traversal.ofInt_zetaNat,hf i e he]
-      have hidx : i.val-gap<8 := by omega
+      have hidx : i.val-gap<8 := by omega_using []
       have hae : v[i.val-gap]! = v[i.val-gap] := getElem!_pos v _ hidx
       rw [hae,hf ⟨i.val-gap,hidx⟩ e he,Fin.mul_comm]
     · rw [ite_eq_right hr,ite_eq_right hr,hf i e he]
@@ -57,16 +57,16 @@ theorem innerValues_field (v : Vector (BitVec 128) 8) (w : Poly) (ps : List (Nat
   | cons p ps ih =>
     have hp := hps p (by simp)
     have hs' : b+16760834<2147483648 := by
-      simp only [List.length_cons,Int.natCast_add,Int.natCast_one] at hs; omega
+      simp only [List.length_cons,Int.natCast_add,Int.natCast_one] at hs; omega_using [hs]
     have hb' := coreValues_bound v hp (fun _ => (zetaNat (root p.1 p.2) : Int)) hb hs' hv
     have hf' := innerCoreValues_field v w hp hu (root p.1 p.2) hb hs' hv hf
     have hh := ih (coreValues v p.1 p.2 (fun _ => (zetaNat (root p.1 p.2) : Int)))
       (Traversal.run (innerGroupSchedule u root p) w) (fun a ha => hps a (by simp [ha]))
-      (b := b+16760834) (by omega) (by
+      (b := b+16760834) (by omega_using [hb]) (by
         simp only [List.length_cons,Int.natCast_add,Int.natCast_one] at hs
-        omega) hb' hf'
+        omega_using [hs]) hb' hf'
     simpa only [innerValues,List.length_cons,Int.natCast_add,Int.natCast_one,List.flatMap_cons,
       Traversal.run_append,show b+16760834*((ps.length : Int)+1)=
-        (b+16760834)+16760834*(ps.length : Int) by omega] using hh
+        (b+16760834)+16760834*(ps.length : Int) by omega_using []] using hh
 
 end VG.Proof.MlDsa.AArch64.Optimized

@@ -32,7 +32,7 @@ theorem Tables.frame {s t : State} (h : Tables s)
  · rw [hs]; exact h.shuffle.frame hf h.shuffleApart
  · rw [hs]; intro i hi
    rw [hf.readW (r:=⟨s.syms "VG_MLKEM_GAMMA",512⟩)
-    (Offset.contains_base _ (by omega) (by omega)) h.gammaApart (by decide)]
+    (Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi])) h.gammaApart (by decide)]
    exact h.gamma i hi
 
 theorem Tables.frameStack {s t : State} (h : Tables s)
@@ -64,17 +64,17 @@ theorem Tables.frameStack {s t : State} (h : Tables s)
  · rw [hs]; exact h.shuffle.frame hf sh
  · rw [hs]; intro i hi
    rw [hf.readW (r:=⟨s.syms "VG_MLKEM_GAMMA",512⟩)
-    (Offset.contains_base _ (by omega) (by omega)) ga (by decide)]
+    (Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi])) ga (by decide)]
    exact h.gamma i hi
  · rw [hs]; intro i hi
    rw [hf.readW (r:=⟨s.syms "VG_MLKEM_NTT16_ZETAS",512⟩)
-    (Offset.contains_base _ (by omega) (by omega)) fw (by decide)]
+    (Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi])) fw (by decide)]
    exact h.transforms.forward.1 i hi
 
 theorem Tables.execDepth {s t : State} {c : Prog isa} {tr : List Leak}
  (h : Tables s) (he : Exec isa c s tr t) (hn : c.aarch64Depth≤1) : Tables t := by
  obtain ⟨hr,hw,hsp⟩:=VG.AArch64.Exec.rdwr he
- have hf := Frame.below_mono (VG.AArch64.Exec.frameSp he (by omega)) (b:=16) (by omega) (by decide)
+ have hf := Frame.below_mono (VG.AArch64.Exec.frameSp he (by omega_using [hn])) (b:=16) (by omega_using [hn]) (by decide)
  exact h.frameStack (VG.AArch64.Exec.syms he) hr hw hsp hf
 
 theorem WP.tablesDepth {s : State} {c : Prog isa} {Q : State→Prop}

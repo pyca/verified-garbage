@@ -53,10 +53,10 @@ theorem group_ok (sha3 : Bool) {s₀ s : State} (hp : UPre s₀) (rs : List VReg
   have h31 : .v31 ∉ rs := by rcases hrs with rfl | rfl <;> decide
   have h16 : .v16 ∉ rs := hbr.v16
   have hlen : rs.length ≤ 8 := by rcases hrs with rfl | rfl <;> decide
-  refine WP.seq (WP.mono (ldData_ok rs 0 s hbr.1 (by omega) (fun k hk => by
-    rw [hI.x2, Offset.add_add_eq (Dp s₀) (show 16*c+16*(0+k)=16*(c+k) by omega)]
+  refine WP.seq (WP.mono (ldData_ok rs 0 s hbr.1 (by omega_using [hlen]) (fun k hk => by
+    rw [hI.x2, Offset.add_add_eq (Dp s₀) (show 16*c+16*(0+k)=16*(c+k) by omega_using [])]
     exact ⟨dataR s₀, List.mem_append_right _ (by rw [hI.wr,hp.wr]; simp),
-      Offset.contains_base _ (by omega) (by have := hp.data_wrap; omega)⟩)) fun u ⟨hload,fl⟩ => ?_)
+      Offset.contains_base _ (by omega_using [hc, hk]) (by have := hp.data_wrap; omega_using [hc, hk, this])⟩)) fun u ⟨hload,fl⟩ => ?_)
   have hku := hI.keys.of_v hbr fl.v (fl.gpr _ (by simp)) (fl.gpr _ (by simp))
   refine WP.seq (WP.mono (rounds_ok hbr hku) fun v ⟨ha,fa⟩ => ?_)
   have hg : v.gpr = s.gpr := by funext r; rw [fa.gpr,fl.gpr r (by simp)]
@@ -65,15 +65,15 @@ theorem group_ok (sha3 : Bool) {s₀ s : State} (hp : UPre s₀) (rs : List VReg
   have hkv := hku.of_frame fa hbr
   rw [WP.block_append_iff]
   refine WP.mono (finishData_ok sha3 (m₀ := s₀.mem) (D := Dp s₀) (n := N s₀) (c := c)
-    (F := output s₀) (chain := chaining s₀) (by have := hp.data_wrap; omega)
-    (fun _ _ => rfl) rs 0 v hbr.1 h31 h16 (hg ▸ hI.x2) (by omega) (by simpa using hc)
+    (F := output s₀) (chain := chaining s₀) (by have := hp.data_wrap; omega_using [this])
+    (fun _ _ => rfl) rs 0 v hbr.1 h31 h16 (hg ▸ hI.x2) (by omega_using [hlen]) (by simpa using hc)
     (by rw [fa.wr,fl.wr,hI.wr,hp.wr]; simp) (by simpa only [Nat.add_zero,hm] using hI.data)
     (by simpa using hv) (fun k hk i hi => by
       have hval := congrArg (fun a : Spec.Aes.State => a.getD i 0) (ha _ (List.getElem_mem hk))
       rw [getD_st _ hi] at hval
       rw [hload k hk, Nat.zero_add, hI.x2,
-        Offset.add_add_eq (Dp s₀) (show 16*c+16*k=16*(c+k) by omega),
-        st_readW, ecbInv_orig hI.data (by omega) (by omega)] at hval
+        Offset.add_add_eq (Dp s₀) (show 16*c+16*k=16*(c+k) by omega_using []),
+        st_readW, ecbInv_orig hI.data (by omega_using []) (by omega_using [hc, hk])] at hval
       rw [hval]
       exact (getD_ofFn (f := fun i =>
         (Spec.Aes.invCipher (R s₀) (wK s₀) (Spec.Aes.stateAt s₀.mem (blk s₀ (c+k)))).getD i.1 0 ^^^

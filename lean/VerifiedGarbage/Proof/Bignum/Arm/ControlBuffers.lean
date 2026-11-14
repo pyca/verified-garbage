@@ -18,9 +18,9 @@ theorem outs_readW {m m' : Mem} {base : Addr} {ranges : List (Nat × Nat)}
   intro i hi
   apply h
   intro r hr
-  rw [ofs_off base (by omega)]
+  rw [ofs_off base (by omega_using [fit, hi])]
   have := sep r hr
-  omega
+  omega_using [hi, this]
 
 theorem CrtLayoutState.of_header_eq {base : BitVec 32} {len w : Nat} {m m' : Mem}
     (h : CrtLayoutState base len w m) (eq : WorkspaceEq (State.addr base) 128 m m') :
@@ -32,7 +32,7 @@ theorem CrtLayoutState.of_header_eq {base : BitVec 32} {len w : Nat} {m m' : Mem
   refine ⟨h.layout.1, h.layout.2.1, h.layout.2.2.1, ?_⟩
   intro j hj
   unfold wordAt
-  rw [eq.word (bits := 64) (by simp only [Proof.Rsa.Mont.arrWord]; omega)]
+  rw [eq.word (bits := 64) (by simp only [Proof.Rsa.Mont.arrWord]; omega_using [hj])]
   exact h.layout.2.2.2 j hj
 
 theorem control_buffers_header {base : Addr} {m m' : Mem} {ranges : List (Nat × Nat)}
@@ -41,8 +41,8 @@ theorem control_buffers_header {base : Addr} {m m' : Mem} {ranges : List (Nat ×
   intro i hi
   apply h
   intro r hr
-  rw [ofs_off base (by omega)]
+  rw [ofs_off base (by omega_using [hk, hi])]
   have := lower r hr
-  omega
+  omega_using [hk, hi, this]
 
 end VG.Proof.Bignum.Arm

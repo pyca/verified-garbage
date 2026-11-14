@@ -79,23 +79,23 @@ theorem sigmaStores_ok (x : BitVec 64) (s : State) (hal : (s.gpr kp).toNat % 8 =
     (hw : ∀ j < 8, InRegions s.wr (s.gpr kp + BitVec.ofNat 64 (8 * j)) 8) :
     ∃ s', runBlock isa ((List.range 8).flatMap (sigmaStore x)) s = some s' ∧ SigInv x s 8 s' := by
   refine WP.runBlock_of (wp_range_flatMap (M := isa) (SigInv x s) (fun k s₁ hk h => ?_) 8 (Nat.le_refl _) s
-    ⟨fun _ h => absurd h (by omega), Frame.refl _ _, fun _ _ _ => rfl, rfl, rfl⟩)
+    ⟨fun _ h => absurd h (by omega_using []), Frame.refl _ _, fun _ _ _ => rfl, rfl, rfl⟩)
   rw [sigmaStore, WP.block_append_iff (M := isa)]
   refine WP.mono (Words64.movImm64_ok (s := s₁) (d := t0) (tmp := t1) (by decide) (keyPlane x k))
     fun s₂ ⟨v₂, g₂, m₂, rd₂, wr₂, _⟩ => ?_
   have hkp : s₂.gpr kp = s.gpr kp := by rw [g₂ _ (by decide) (by decide), h.regs _ (by decide) (by decide)]
-  refine Steps.wp_sd (a := wordAddr (s.gpr kp) k) (by omega) (by rw [hkp])
-    (Spill.al8 hal (by omega)) (by rw [wr₂, h.wr]; exact hw k hk) fun s₃ u₃ => WP.block_nil ?_
+  refine Steps.wp_sd (a := wordAddr (s.gpr kp) k) (by omega_using [hk]) (by rw [hkp])
+    (Spill.al8 hal (by omega_using [])) (by rw [wr₂, h.wr]; exact hw k hk) fun s₃ u₃ => WP.block_nil ?_
   have hm₃ : s₃.mem = s₁.mem.writeW (wordAddr (s.gpr kp) k) (keyPlane x k) := by rw [u₃.mem, m₂, v₂]
   refine ⟨fun j hj => ?_, ?_, fun r h0 h1 => by rw [u₃.gpr, g₂ r h0 h1, h.regs r h0 h1],
     by rw [u₃.rd, rd₂, h.rd], by rw [u₃.wr, wr₂, h.wr]⟩
   · rw [hm₃]
     by_cases hjk : j = k
     · subst hjk; exact Mem.readW_writeW_self64 _ _ _
-    · rw [Mem.readW_writeW_sep (slot_sep _ (by omega) (by omega) hjk) (by decide)]
-      exact h.planes j (by omega)
+    · rw [Mem.readW_writeW_sep (slot_sep _ (by omega_using [hk, hj]) (by omega_using [hk]) hjk) (by decide)]
+      exact h.planes j (by omega_using [hj, hjk])
   · rw [hm₃]
-    exact h.frame.trans (frame_writeW _ (by rw [wordAddr]; exact VG.Offset.sub_base _ (by omega)))
+    exact h.frame.trans (frame_writeW _ (by rw [wordAddr]; exact VG.Offset.sub_base _ (by omega_using [hk])))
 
 /-- `sigmaOne x`: the planes of `x` to the entry at `kp`, and `kp` to the next. -/
 theorem sigmaOne_ok (x : BitVec 64) (s : State) (hal : (s.gpr kp).toNat % 8 = 0)

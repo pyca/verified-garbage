@@ -102,18 +102,18 @@ theorem Written.trans {s u t : State} {xs ys : List Byte} (first : Written s xs 
   refine ⟨?_, fun r hr h1 h2 => (last.regs r hr h1 h2).trans (first.regs r hr h1 h2),
     last.rd.trans first.rd, last.wr.trans first.wr, last.sp.trans first.sp, ?_, ?_⟩
   · rw [last.output, first.output, List.length_append, BitVec.ofNat_add, BitVec.add_assoc]
-  · exact (extend 0 xs.length (by omega) (by simpa only [BitVec.add_zero] using first.frame)).trans
-      (extend xs.length ys.length (by omega) tf)
+  · exact (extend 0 xs.length (by omega_using []) (by simpa only [BitVec.add_zero] using first.frame)).trans
+      (extend xs.length ys.length (by omega_using []) tf)
   · have before : bytesAt t.mem (s.gpr .s2) xs.length = bytesAt u.mem (s.gpr .s2) xs.length := by
       apply Proof.Blake2.bytesAt_congr
       intro i hi
-      apply tf.bytes (R := ⟨s.gpr .s2, xs.length⟩) _ (show xs.length ≤ 2 ^ 64 by omega) hi
+      apply tf.bytes (R := ⟨s.gpr .s2, xs.length⟩) _ (show xs.length ≤ 2 ^ 64 by omega_using [bound]) hi
       intro r hr
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
       · exact (sep.sub_left (Region.sub_prefix (show 832 ≤ 16384 by decide))).symm.sub_left
-          (Region.sub_prefix (show xs.length ≤ xs.length + ys.length by omega))
-      · exact Offset.base_disjoint _ (by omega) (by omega)
+          (Region.sub_prefix (show xs.length ≤ xs.length + ys.length by omega_using []))
+      · exact Offset.base_disjoint _ (by omega_using []) (by omega_using [bound])
     rw [List.length_append, Proof.Blake2.bytesAt_add, before, first.bytes, ← first.output, last.bytes]
 
 end VG.Proof.Argon2.RISCV64.HPrime
@@ -137,24 +137,24 @@ theorem Space.advance {s t : State} {xs : List Byte} {n k : Nat}
     (h : Space s n) (written : Written s xs t) (size : xs.length + k ≤ n) : Space t k := by
   have suffix : Region.Sub ⟨t.gpr .s2, k⟩ ⟨s.gpr .s2, n⟩ := by
     rw [written.output]; exact Offset.sub_base _ size
-  refine ⟨by have := h.bound; omega, ?_, ?_, ?_⟩
+  refine ⟨by have := h.bound; omega_using [size, this], ?_, ?_, ?_⟩
   · rw [written.wr, written.s4]; exact h.work
   · intro i hi
     rw [written.wr, written.output, BitVec.add_assoc, ← BitVec.ofNat_add]
-    exact h.out (xs.length + i) (by omega)
+    exact h.out (xs.length + i) (by omega_using [size, hi])
   · rw [written.s4]; exact h.sep.sub_right suffix
 
 theorem Space.keeps {s t : State} {n : Nat} (h : Space s n) (k : Keeps s t) : Space t n :=
   h.advance (Written.of_keeps k) (by simp only [List.length_nil, Nat.zero_add, Nat.le_refl])
 
 theorem Space.prefix {s : State} {n k : Nat} (h : Space s n) (hk : k ≤ n) : Space s k := by
-  refine ⟨by have := h.bound; omega, h.work, fun i hi => h.out i (by omega),
+  refine ⟨by have := h.bound; omega_using [hk, this], h.work, fun i hi => h.out i (by omega_using [hk, hi]),
     h.sep.sub_right (Region.sub_prefix hk)⟩
 
 theorem Space.join {s u t : State} {xs ys : List Byte} {n : Nat} (h : Space s n)
     (first : Written s xs u) (last : Written u ys t) (size : xs.length + ys.length ≤ n) :
     Written s (xs ++ ys) t :=
-  first.trans last (by have := h.bound; omega)
+  first.trans last (by have := h.bound; omega_using [size, this])
     (h.sep.sub_right (Region.sub_prefix size))
 
 theorem copyRemaining_ok (s : State) (n : Nat) (space : Space s n)
@@ -168,10 +168,10 @@ theorem copyRemaining_ok (s : State) (n : Nat) (space : Space s n)
   have outA : ∀ i < n, InRegions a.wr (a.gpr .s2 + BitVec.ofNat 64 i) 1 := by
     rw [dst, ha.wr]; exact space.out
   have sepA : (⟨a.gpr .s4 + 768, n⟩ : Region).Disjoint ⟨a.gpr .s2, n⟩ := by
-    rw [base, dst]; exact space.sep.sub_left (Offset.sub_base _ (by omega : 768 + n ≤ 16384))
+    rw [base, dst]; exact space.sep.sub_left (Offset.sub_base _ (by omega_using [hi] : 768 + n ≤ 16384))
   refine (copy_ok a n lo hi (ha.gpr.trans count) workA outA sepA).mono ?_
   intro t ht
-  have result := Written.of_copied ht (by have := space.bound; omega)
+  have result := Written.of_copied ht (by have := space.bound; omega_using [hi])
   refine ⟨?_, fun r hr h1 h2 => ?_, result.rd.trans ha.rd, result.wr.trans ha.wr, result.sp.trans ha.sp, ?_, ?_⟩
   · simpa only [dst, ha.mem, base] using result.output
   · exact (result.regs r hr h1 h2).trans (ha.other r (preserved_ne hr))

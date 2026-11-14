@@ -137,7 +137,7 @@ theorem sub_lo {c : Cx} {d k : Nat} (h : d + k ≤ 128) :
 
 theorem sub_hi {c : Cx} {d k : Nat} (h₁ : 240 ≤ d) (h₂ : d + k ≤ 3824) :
     ∃ r' ∈ mutR c, Region.Sub ⟨c.W + BitVec.ofNat 64 d, k⟩ r' :=
-  ⟨⟨c.W + BitVec.ofNat 64 240, 3584⟩, by simp, Offset.sub _ h₁ (by omega)⟩
+  ⟨⟨c.W + BitVec.ofNat 64 240, 3584⟩, by simp, Offset.sub _ h₁ (by omega_using [h₂])⟩
 
 theorem sub_data {c : Cx} : ∃ r' ∈ mutR c, Region.Sub ⟨c.D, c.n⟩ r' := ⟨_, by simp, fun _ h => h⟩
 
@@ -201,12 +201,12 @@ theorem entry_wp {c : Cx} {s : State} (Ar : Args c s) : WP isa (.block entry) s 
   have rd₃ : s₃.rd = s.rd := by rw [u₃.rd, u₂.rd, u₁.rd]
   have wr₃ : s₃.wr = s.wr := by rw [u₃.wr, u₂.wr, u₁.wr]
   refine save_ok (b := .r11) (by decide) (by decide) (fun p hp => by
-    rw [W₃, wr₃]; exact Ar.perm.wW (by have := saved_bound p hp; omega)) ?_
+    rw [W₃, wr₃]; exact Ar.perm.wW (by have := saved_bound p hp; omega_using [this])) ?_
   rw [W₃]
   generalize hmS : saveMem s₃.mem c.W s₃.gpr saved = mS
   have m₃ : s₃.mem = s.mem := by rw [u₃.mem, u₂.mem, u₁.mem]
   have fS : Frame [⟨c.W + BitVec.ofNat 64 128, 96⟩] s.mem mS := by
-    rw [← hmS, m₃]; exact Spill.saveMem_frame saved_bound (by omega) _ _ _
+    rw [← hmS, m₃]; exact Spill.saveMem_frame saved_bound (by omega_using []) _ _ _
   have svS : Saved c.W s₃.gpr saved mS := by rw [← hmS]; exact saveMem_saved (by decide) _ _ _
   refine wp_std (a := c.W + BitVec.ofNat 64 224) (by decide) (by decide) (by show s₃.gpr .r11 + _ = _; rw [W₃]; rfl)
     (by show InRegions s₃.wr _ 8; rw [wr₃]; exact Ar.perm.wW (by decide)) fun s₅ u₅ => ?_
@@ -268,7 +268,7 @@ theorem entry_wp {c : Cx} {s : State} (Ar : Args c s) : WP isa (.block entry) s 
     · have hv : mS.readW (c.W + BitVec.ofNat 64 p.2) 64 = s₃.gpr p.1 := svS p hp
       have d224 : Mem.Sep (c.W + BitVec.ofNat 64 p.2) (64 / 8) (c.W + BitVec.ofNat 64 224) (64 / 8) := by
         have := saved_bound p hp
-        exact (L.w_w (n := 8) (k := 8) (.inl (by omega)) (by omega) (by decide)).sep (Region.contains_self _ _)
+        exact (L.w_w (n := 8) (k := 8) (.inl (by omega_using [this])) (by omega_using [this]) (by decide)).sep (Region.contains_self _ _)
           (Region.contains_self _ _)
       rw [m₁₄, Mem.readW_writeW_sep d224 (by decide), hv]
       have h1 : p.1 ≠ .r0 ∧ p.1 ≠ .r11 ∧ p.1 ≠ .r12 :=
@@ -313,7 +313,7 @@ theorem exit_wp {c : Cx} {s₀ s : State} (E : Env c s) (sv : Saved c.W (saveG s
     (by decide) (fun p hp => by
       have := saved_bound p hp
       rw [u₂.rd, u₂.wr, u₁.rd, u₁.wr]
-      exact E.perm.wR (by omega)) sv₂) fun s' R => ?_
+      exact E.perm.wR (by omega_using [this])) sv₂) fun s' R => ?_
   have lr₂ : s₂.lr = s₀.lr := by
     rw [u₂.lr, u₁.gpr, sv (.r0, lrO) List.mem_cons_self]
     simp [saveG, State.write]

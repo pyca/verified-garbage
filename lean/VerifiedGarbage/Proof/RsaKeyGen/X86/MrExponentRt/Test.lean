@@ -83,21 +83,21 @@ theorem tested_frame_ok {mont round : Prog isa} {montName roundName : String}
     v.geometry.headerFit capacity fit separate ?_
   intro a Sa Ca _ Fa Ka
   have workspaceFar : (⟨P.g.W, P.g.L⟩ : Region).Disjoint (below (s.gpr .esp) 28) :=
-    FilterStack.allocated_apart (by omega) S.nowrap
-      (by rcases separate with h | h; exact Or.inl h; exact Or.inr (by omega))
+    FilterStack.allocated_apart (by omega_using [fit]) S.nowrap
+      (by rcases separate with h | h; exact Or.inl h; exact Or.inr (by omega_using [h]))
   have Wa : WorkspaceFrame P.g [] s.mem a.mem := by
     intro i index _
     exact Fa.bytes (R := ⟨P.g.W, P.g.L⟩)
       (by intro r mem; obtain rfl := List.mem_singleton.mp mem; exact workspaceFar)
-      (by change P.g.L ≤ 2 ^ 64; have := S.nowrap; omega) index
+      (by change P.g.L ≤ 2 ^ 64; have := S.nowrap; omega_using [this]) index
   have I : Prepare.Input P.g P.candidate P.capacity P.p a P.seed := by
-    refine ⟨Sa, ?_, ?_, ?_, v.odd, by have := v.large; omega, top⟩
+    refine ⟨Sa, ?_, ?_, ?_, v.odd, by have := v.large; omega_using [this], top⟩
     · rw [privateEq]; exact Ca
     · rw [Wa.val32 (v.geometry.arrayFit (by decide)) (by intro r mem; nomatch mem)]; exact candidate
     · rw [Wa.val32 (v.geometry.arrayFit (by decide)) (by intro r mem; nomatch mem)]; exact minusOne
   have entropyA : Spec.Rsa.bytesAt a.mem (P.rand.setWidth 64) P.randLen = P.entropy := by
     rw [frame_bytesAt Fa (by intro r mem; obtain rfl := List.mem_singleton.mp mem; exact randPrivateFar)
-      (by have := v.randLenFit; omega)]
+      (by have := v.randLenFit; omega_using [this])]
     exact entropy
   refine WP.mono (body_ok montVerified montNoSp montStack roundVerified roundNoSp roundStack v width bound seed checks
     bytes words I
@@ -108,10 +108,10 @@ theorem tested_frame_ok {mont round : Prog isa} {montName roundName : String}
       rcases List.mem_append.mp mem with mem | mem
       · exact List.mem_append_left _ mem
       · exact List.mem_append_right _ (List.mem_cons_of_mem _ mem)) entropyA
-    (by rw [Wa.read32 (by have := v.geometry.headerFit; omega) (by intro r mem; nomatch mem)]; exact randPtr)
-    (by rw [w32, Wa.read32 (by have := v.geometry.headerFit; omega) (by intro r mem; nomatch mem)]; exact randLength)
-    (by rw [w32, Wa.read32 (by have := v.geometry.headerFit; omega) (by intro r mem; nomatch mem)]; exact used) enough
-    (by rw [Wa.read32 (by have := v.geometry.headerFit; omega) (by intro r mem; nomatch mem)]; exact len))
+    (by rw [Wa.read32 (by have := v.geometry.headerFit; omega_using [this]) (by intro r mem; nomatch mem)]; exact randPtr)
+    (by rw [w32, Wa.read32 (by have := v.geometry.headerFit; omega_using [this]) (by intro r mem; nomatch mem)]; exact randLength)
+    (by rw [w32, Wa.read32 (by have := v.geometry.headerFit; omega_using [this]) (by intro r mem; nomatch mem)]; exact used) enough
+    (by rw [Wa.read32 (by have := v.geometry.headerFit; omega_using [this]) (by intro r mem; nomatch mem)]; exact len))
     fun t ⟨T, result, Wt, Ft, Kt⟩ => ?_
   have outerFrame : Frame [⟨P.g.W, P.g.L⟩, below (s.gpr .esp) 136] s.mem t.mem := by
     have first : Frame [⟨P.g.W, P.g.L⟩, below (s.gpr .esp) 136] s.mem a.mem :=

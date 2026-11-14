@@ -22,7 +22,7 @@ theorem unch_same {base : Addr} {W : List (Nat × Nat)} {a b c : Mem}
 theorem slot_frame {c : Cfg} {base : Addr} {a b : Mem} {i len : Nat} {slots : List Nat}
     (hi : i ∈ slots) (hlen : len ≤ 8 * c.n) (h : Outside base (c.sl i) len a b) :
     Unch base (slW c slots) a b :=
-  (h.mono (o' := c.sl i) (n' := 8 * c.n) (Nat.le_refl _) (by omega)).unch.mono fun w hw => by
+  (h.mono (o' := c.sl i) (n' := 8 * c.n) (Nat.le_refl _) (by omega_using [hlen])).unch.mono fun w hw => by
     obtain rfl := List.mem_singleton.mp hw
     exact List.mem_map_of_mem hi
 

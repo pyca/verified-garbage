@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Argon2.Permutation
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # P on several rows or columns
@@ -38,13 +39,13 @@ theorem rows_disjoint : Disjoint rowIndex :=
   ⟨rowIndex_injective, fun a b j j' h e => h (Fin.ext (by
     have := congrArg Fin.val e
     simp only [rowIndex] at this
-    omega))⟩
+    omega_using [this]))⟩
 
 theorem cols_disjoint : Disjoint colIndex :=
   ⟨colIndex_injective, fun a b j j' h e => h (Fin.ext (by
     have := congrArg Fin.val e
     simp only [colIndex] at this
-    omega))⟩
+    omega_using [this]))⟩
 
 /-- P on set `a` leaves set `r ≠ a` alone. -/
 theorem gather_permuteAt {index : Fin 8 → Fin 16 → Fin 128} (hd : Disjoint index) {a r : Fin 8}
@@ -91,45 +92,45 @@ theorem foldl_pairs (index : Fin 8 → Fin 16 → Fin 128) (b : Block) :
 /-- Word `i` of a block after P on all rows. -/
 theorem rows_get (b : Block) (i : Nat) (hi : i < 128) :
     ((List.finRange 8).foldl (fun b r => permuteAt (rowIndex r) b) b)[i] =
-      (permute (gather (rowIndex ⟨i / 16, by omega⟩) b))[i % 16]'(by omega) := by
+      (permute (gather (rowIndex ⟨i / 16, by omega_using [hi]⟩) b))[i % 16]'(by omega_using []) := by
   have := foldl_at rows_disjoint (List.finRange 8) (List.nodup_finRange 8)
-    (List.mem_finRange ⟨i / 16, by omega⟩) b ⟨i % 16, by omega⟩
-  simpa only [rowIndex, Fin.getElem_fin, show 16 * (i / 16) + i % 16 = i by omega] using this
+    (List.mem_finRange ⟨i / 16, by omega_using [hi]⟩) b ⟨i % 16, by omega_using []⟩
+  simpa only [rowIndex, Fin.getElem_fin, show 16 * (i / 16) + i % 16 = i by omega_using []] using this
 
 /-- Word `i` of a block after P on columns `2c` and `2c + 1`. -/
 theorem colPair_get {c : Nat} (hc : c < 4) (b : Block) (i : Nat) (hi : i < 128) :
     (permuteAt (colIndex ⟨(2 * c + 1) % 8, Nat.mod_lt _ (by decide)⟩)
       (permuteAt (colIndex ⟨2 * c % 8, Nat.mod_lt _ (by decide)⟩) b))[i] =
       if i % 16 / 4 = c then
-        (permute (gather (colIndex ⟨i % 16 / 2, by omega⟩) b))[2 * (i / 16) + i % 2]'(by omega)
+        (permute (gather (colIndex ⟨i % 16 / 2, by omega_using []⟩) b))[2 * (i / 16) + i % 2]'(by omega_using [hi])
       else b[i] := by
   have hv : 16 * ((2 * (i / 16) + i % 2) / 2) + 2 * (i % 16 / 2) + (2 * (i / 16) + i % 2) % 2 = i := by
-    omega
+    omega_using []
   by_cases h1 : i % 16 / 2 = 2 * c + 1
-  · have ec : (⟨i % 16 / 2, by omega⟩ : Fin 8) = ⟨(2 * c + 1) % 8, Nat.mod_lt _ (by decide)⟩ :=
-      Fin.ext (by simp only; omega)
+  · have ec : (⟨i % 16 / 2, by omega_using []⟩ : Fin 8) = ⟨(2 * c + 1) % 8, Nat.mod_lt _ (by decide)⟩ :=
+      Fin.ext (by simp only; omega_using [h1])
     have := permuteAt_at _ (colIndex_injective ⟨(2 * c + 1) % 8, Nat.mod_lt _ (by decide)⟩)
-      (permuteAt (colIndex ⟨2 * c % 8, Nat.mod_lt _ (by decide)⟩) b) ⟨2 * (i / 16) + i % 2, by omega⟩
-    rw [gather_permuteAt cols_disjoint (fun h => by have := congrArg Fin.val h; simp only at this; omega),
+      (permuteAt (colIndex ⟨2 * c % 8, Nat.mod_lt _ (by decide)⟩) b) ⟨2 * (i / 16) + i % 2, by omega_using [hi]⟩
+    rw [gather_permuteAt cols_disjoint (fun h => by have := congrArg Fin.val h; simp only at this; omega_using [this]),
       ← ec] at this
-    rw [ite_eq_left_of_eq_true _ _ (eq_true (by omega))]
+    rw [ite_eq_left_of_eq_true _ _ (eq_true (by omega_using [h1]))]
     simpa only [colIndex, Fin.getElem_fin, ← ec, hv] using this
   · by_cases h0 : i % 16 / 2 = 2 * c
-    · have ec : (⟨i % 16 / 2, by omega⟩ : Fin 8) = ⟨2 * c % 8, Nat.mod_lt _ (by decide)⟩ :=
-        Fin.ext (by simp only; omega)
+    · have ec : (⟨i % 16 / 2, by omega_using []⟩ : Fin 8) = ⟨2 * c % 8, Nat.mod_lt _ (by decide)⟩ :=
+        Fin.ext (by simp only; omega_using [h0])
       have := permuteAt_at _ (colIndex_injective ⟨2 * c % 8, Nat.mod_lt _ (by decide)⟩) b
-        ⟨2 * (i / 16) + i % 2, by omega⟩
+        ⟨2 * (i / 16) + i % 2, by omega_using [hi]⟩
       rw [← permuteAt_outside (colIndex ⟨(2 * c + 1) % 8, Nat.mod_lt _ (by decide)⟩) _ _
         (fun j' => cols_disjoint.disj _ _ j' _
-          (fun h => by have := congrArg Fin.val h; simp only at this; omega)), ← ec] at this
-      rw [ite_eq_left_of_eq_true _ _ (eq_true (by omega))]
+          (fun h => by have := congrArg Fin.val h; simp only at this; omega_using [this])), ← ec] at this
+      rw [ite_eq_left_of_eq_true _ _ (eq_true (by omega_using [h0]))]
       simpa only [colIndex, Fin.getElem_fin, ← ec, hv] using this
-    · rw [ite_eq_right_of_eq_false _ _ (eq_false (by omega))]
+    · rw [ite_eq_right_of_eq_false _ _ (eq_false (by omega_using [h1, h0]))]
       have := permuteAt_outside (colIndex ⟨(2 * c + 1) % 8, Nat.mod_lt _ (by decide)⟩)
         (permuteAt (colIndex ⟨2 * c % 8, Nat.mod_lt _ (by decide)⟩) b) ⟨i, hi⟩
-        (fun j' h => by have := congrArg Fin.val h; simp only [colIndex] at this; omega)
+        (fun j' h => by have := congrArg Fin.val h; simp only [colIndex] at this; omega_using [hc, h1, this])
       rw [permuteAt_outside (colIndex ⟨2 * c % 8, Nat.mod_lt _ (by decide)⟩) b ⟨i, hi⟩ (fun j' h => by
-          have := congrArg Fin.val h; simp only [colIndex] at this; omega)] at this
+          have := congrArg Fin.val h; simp only [colIndex] at this; omega_using [hc, h0, this])] at this
       simpa only [Fin.getElem_fin] using this
 
 end VG.Proof.Argon2

@@ -105,7 +105,7 @@ theorem BPre.key_in {s₀ : State} (h : BPre s₀) {d : Nat} (hd : 224 ≤ d) (h
   rw [h.rd, h.wr]
   refine ⟨bR s₀, by simp, ?_⟩
   simp only [bR, h.bp]
-  exact Offset.contains (st s₀) (e := 64) (k := 320) (by omega) (by omega) (by decide)
+  exact Offset.contains (st s₀) (e := 64) (k := 320) (by omega_using [hd]) (by omega_using [hd']) (by decide)
 
 /-- A chunk of the loop, absorbing the 512 bytes at `dp s₀ + w`: the chunk's
 source when decrypting, the output before it when encrypting (in place). -/
@@ -135,7 +135,7 @@ theorem body_ok (enc : Bool) {s₀ : State} (hp : BPre s₀) (hin : enc = true �
     · rw [hrw, hp.rd, hp.wr]
       refine ⟨dR s₀, by simp, ?_⟩
       rw [BitVec.add_assoc, ← BitVec.ofNat_add]
-      exact Offset.contains_base _ (by omega) (by omega)
+      exact Offset.contains_base _ (by omega_using [hw, hd]) (by omega_using [hw, hL, hd])
     · rw [hrw, hx0]; exact hp.key_in (by decide) (by decide)
     · rw [hrw, hx0]; exact hp.key_in (by decide) (by decide)
     · intro r hr

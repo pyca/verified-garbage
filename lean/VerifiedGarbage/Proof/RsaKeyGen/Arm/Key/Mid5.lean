@@ -91,30 +91,30 @@ theorem small_vp {E : State → Prop} (hE : ∀ σ, E σ → In P σ) :
   simp only [smallPart, seqs, List.cons_append, List.nil_append]
   refine VP.seq (St.pcopy cOne_taint (by decide) (by simp) (by decide)) ?_
   refine VP.seq (St.psetHi (i := fun P => P.K / 4) cHi_taint (by simp) (by decide) (by decide) (by decide)
-    (fun σ _ pre => by have := pre.k8; have := pre.k1; simp only [KP.W]; omega)
+    (fun σ _ pre => by have := pre.k8; have := pre.k1; simp only [KP.W]; omega_arith)
     fun σ _ pre => ?_) ?_
   · simp (config := {decide := true}) only [upd, ↓reduceIte, AH_one]
-    exact Nat.one_lt_two_pow (by have := pre.k1; omega)
+    exact Nat.one_lt_two_pow (by have := pre.k1; omega_using [this])
   refine VP.assoc (VP.seq (St.pltS ltSm_taint (by simp) (by simp) (by decide) (by decide) (by decide)) ?_)
   refine (VP.block_append (St.pandS (d := sFl) (a := sSm) (b := sOk)
     (X := fun σ => decide (dv P σ < 1 + 2 ^ (8 * P.K))) (Y := fun σ => okv P σ) fl_taint (by simp) (by simp)
     (by decide) (fun σ _ => ?_) (fun σ _ => ?_)) (St.pisOne isFl_taint (by simp) fun σ _ => by
       rw [upd_self]; exact b2n_le' _)).mono (fun _ _ h => h) fun σ s ⟨h, z⟩ => ⟨?_, ?_⟩
   · have k := (hE σ ‹_›).k8
-    have e8 : 32 * (P.K / 4) = 8 * P.K := by omega
+    have e8 : 32 * (P.K / 4) = 8 * P.K := by omega_using [k]
     have o1 : (1 : Nat) % 2 ^ 32 = 1 := by decide
     simp (config := {decide := true}) only [upd, ↓reduceIte, AH_one, e8, o1, Nat.mul_one]
   · simp (config := {decide := true}) only [upd, ↓reduceIte]
   · have k := h.2.1.pre.k8
-    have e8 : 32 * (P.K / 4) = 8 * P.K := by omega
+    have e8 : 32 * (P.K / 4) = 8 * P.K := by omega_using [k]
     refine h.mono (fun j hj => ⟨by mem_sub, ?_⟩) (fun j hj => ⟨by mem_sub, ?_⟩)
     · have o1 : (1 : Nat) % 2 ^ 32 = 1 := by decide
       mem_cases <;> simp (config := {decide := true}) only [upd, ↓reduceIte, AH_one, e8, o1, Nat.mul_one]
     · have : (decide (dv P σ < 1 + 2 ^ (8 * P.K)) && okv P σ) = smv P σ := by
-        unfold smv; rw [Bool.and_comm]; congr 2; exact propext ⟨fun h => by omega, fun h => by omega⟩
+        unfold smv; rw [Bool.and_comm]; congr 2; exact propext ⟨fun h => by omega_using [h], fun h => by omega_using [h]⟩
       mem_cases <;> simp (config := {decide := true}) only [V5, upd, ↓reduceIte, this]
   · have : (decide (dv P σ < 1 + 2 ^ (8 * P.K)) && okv P σ) = smv P σ := by
-      unfold smv; rw [Bool.and_comm]; congr 2; exact propext ⟨fun h => by omega, fun h => by omega⟩
+      unfold smv; rw [Bool.and_comm]; congr 2; exact propext ⟨fun h => by omega_using [h], fun h => by omega_using [h]⟩
     rw [z]; simp only [upd_self, this]
 
 end

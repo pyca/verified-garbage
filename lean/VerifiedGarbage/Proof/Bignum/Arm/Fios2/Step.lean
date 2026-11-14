@@ -33,36 +33,36 @@ theorem step_ok (s : State) {base : BitVec 32} {size d bb mm k : Nat}
       t.mem = s.mem.writeW (off (State.addr base) (d + k)) (t.gpr .r6) ∧
       Rest [.r3, .r5, .r6, .r7, .r8, .r11] s t := by
   rw [VG.Impl.Bignum.Arm.Fios2.step, WP.seq_iff]
-  refine wp_ldr (a := off (State.addr base) (d + (k + 8))) (by omega) (ws.ea pd (by omega))
-    (ws.read (by omega)) fun u hu => WP.block_nil ?_
+  refine wp_ldr (a := off (State.addr base) (d + (k + 8))) (by omega_using [hk]) (ws.ea pd (by omega_using [fd]))
+    (ws.read (by omega_using [fd])) fun u hu => WP.block_nil ?_
   have ru : Rest [.r3, .r5, .r6, .r7, .r8, .r11] s u := hu.rest (by decide)
   have wu := ws.congr ru.wr
   rw [WP.seq_iff]
-  refine WP.mono (macAt_ok u wu ((ru.gpr .r12 (by decide)).trans pb) (by omega) (by omega)
+  refine WP.mono (macAt_ok u wu ((ru.gpr .r12 (by decide)).trans pb) (by omega_using [fb]) (by omega_using [hk])
     (c := .r7) (x := .r1) (by decide) (by decide) (by decide)) ?_
   rintro v ⟨vv, vm, rv⟩
   have r1 := rv.trans (Rest.refl _ _) |>.mono (ws' := [.r3, .r5, .r6, .r7, .r8, .r11]) (by decide)
   have kv : Rest [.r3, .r5, .r6, .r7, .r8, .r11] s v := ru.trans r1
   rw [WP.seq_iff]
-  refine WP.mono (macAt_ok v (ws.congr kv.wr) ((kv.gpr .r4 (by decide)).trans pm) (by omega) (by omega)
+  refine WP.mono (macAt_ok v (ws.congr kv.wr) ((kv.gpr .r4 (by decide)).trans pm) (by omega_using [fm]) (by omega_using [hk])
     (c := .r8) (x := .r2) (by decide) (by decide) (by decide)) ?_
   rintro w ⟨ww, wm, rw'⟩
   have kw : Rest [.r3, .r5, .r6, .r7, .r8, .r11] s w := kv.trans (rw'.mono (by decide))
   rw [WP.seq_iff]
-  refine WP.mono (macAt_ok w (ws.congr kw.wr) ((kw.gpr .r12 (by decide)).trans pb) (by omega) (by omega)
+  refine WP.mono (macAt_ok w (ws.congr kw.wr) ((kw.gpr .r12 (by decide)).trans pb) (by omega_using [fb]) (by omega_using [hk])
     (c := .r5) (x := .r9) (by decide) (by decide) (by decide)) ?_
   rintro x ⟨xv, xm, rx⟩
   have kx : Rest [.r3, .r5, .r6, .r7, .r8, .r11] s x := kw.trans (rx.mono (by decide))
   rw [WP.seq_iff]
-  refine WP.mono (macAt_ok x (ws.congr kx.wr) ((kx.gpr .r4 (by decide)).trans pm) (by omega) (by omega)
+  refine WP.mono (macAt_ok x (ws.congr kx.wr) ((kx.gpr .r4 (by decide)).trans pm) (by omega_using [fm]) (by omega_using [hk])
     (c := .r11) (x := .r10) (by decide) (by decide) (by decide)) ?_
   rintro y ⟨yv, ym, ry⟩
   have ky : Rest [.r3, .r5, .r6, .r7, .r8, .r11] s y := kx.trans (ry.mono (by decide))
   have my : y.mem = s.mem := ym.trans (xm.trans (wm.trans (vm.trans hu.mem)))
   have py : y.gpr .r0 = base + BitVec.ofNat 32 d := (ky.gpr .r0 (by decide)).trans pd
-  refine wp_str (a := off (State.addr base) (d + k)) (by omega)
-    (by simpa only [Nat.add_assoc] using (ws.congr ky.wr).ea py (imm := k) (by omega))
-    (by rw [ky.wr]; exact ws.write (by omega)) fun t ht => WP.block_nil ?_
+  refine wp_str (a := off (State.addr base) (d + k)) (by omega_using [hk])
+    (by simpa only [Nat.add_assoc] using (ws.congr ky.wr).ea py (imm := k) (by omega_using [fd]))
+    (by rw [ky.wr]; exact ws.write (by omega_using [fd])) fun t ht => WP.block_nil ?_
   refine ⟨?_, by rw [ht.mem, my, ht.gpr], ky.trans (ht.rest _)⟩
   -- the carries and scalars through the four products
   have c8v : v.gpr .r8 = u.gpr .r8 := rv.gpr .r8 (by decide)
@@ -98,6 +98,6 @@ theorem step_ok (s : State) {base : BitVec 32} {size d bb mm k : Nat}
   rw [Nat.mul_comm (s.gpr .r1).toNat, Nat.mul_comm (s.gpr .r2).toNat, Nat.mul_comm (s.gpr .r9).toNat,
     Nat.mul_comm (s.gpr .r10).toNat]
   simp only [Nat.add_assoc] at vv ww xv yv ⊢
-  omega
+  omega_using [vv, ww, xv, yv]
 
 end VG.Proof.Bignum.Arm.Fios2

@@ -261,13 +261,13 @@ theorem setupPart_ok {s t₃ : State} {B : Addr} {Z k : Nat} {op np ip pp qp dpp
       have := kf₄ r hr
       have := slot_le (w := (k + 7) / 8) hj
       have := hdr_lt_slot ((k + 7) / 8) j (show 31 < 32 by decide)
-      omega) (by have := slot_le (w := (k + 7) / 8) hj; omega)
+      omega) (by have := slot_le (w := (k + 7) / 8) hj; omega_using [hn, hZ, this])
   have hnw₄ : word t₄.mem B (slot ((k + 7) / 8) Public.aN) = word t₃.mem B (slot ((k + 7) / 8) Public.aN) :=
     f₄.word_eq (fun r hr => by
       have := kf₄ r hr
       have := slot_le (w := (k + 7) / 8) (show Public.aN < 8 by decide)
       have := hdr_lt_slot ((k + 7) / 8) Public.aN (show 31 < 32 by decide)
-      omega) (by have := slot_le (w := (k + 7) / 8) (show Public.aN < 8 by decide); omega)
+      omega) (by have := slot_le (w := (k + 7) / 8) (show Public.aN < 8 by decide); omega_using [hn, hZ, this])
   have hM₄ : word t₄.mem B (8 * Public.sMask) = word t₃.mem B (8 * Public.sMask) := by
     refine f₄.word_eq (fun r hr => ?_) (by unfold Public.sMask sFn; omega_arith)
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr

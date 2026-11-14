@@ -71,13 +71,13 @@ theorem updS : FrameStack.armStack decFns.updC ≤ 624 := by
   have := armStack_zero Proof.Pbkdf2.Stream.Arm.sha256OK.updNF
   simp only [decFns, Impl.StackScratch.Arm.withStackScratch, FrameStack.armStack] at this ⊢
   simp only [Proof.Pbkdf2.Stream.Arm.sha256H] at this
-  omega
+  omega_using [this]
 
 theorem finS : FrameStack.armStack decFns.finC ≤ 624 := by
   have := armStack_zero Proof.Pbkdf2.Stream.Arm.sha256OK.finNF
   simp only [decFns, Impl.StackScratch.Arm.withStackScratch, FrameStack.armStack] at this ⊢
   simp only [Proof.Pbkdf2.Stream.Arm.sha256H] at this
-  omega
+  omega_using [this]
 
 theorem hiS : FrameStack.armStack decFns.hiC ≤ 1656 := by decide +kernel
 
@@ -86,6 +86,6 @@ theorem hfS : FrameStack.armStack decFns.hfC ≤ 880 := by
   have e := frame_eq
   simp only [decFns, Impl.StackScratch.Arm.withStackScratch, FrameStack.armStack] at this ⊢
   simp only [Proof.Pbkdf2.Whole.Arm.sha256F, Proof.Pbkdf2.Whole.Arm.fnsOf] at this
-  omega
+  omega_using [this, e]
 
 end VG.Proof.RsaPkcs1Enc.Arm

@@ -23,8 +23,8 @@ theorem Context.address {g : Geometry} {bs : Fin 5 → List Byte} {s : State}
 theorem Context.readArg {g : Geometry} {bs : Fin 5 → List Byte} {s : State}
     (h : Context g bs s) {j : Nat} (hj : j < 13) :
     InRegions (s.rd ++ s.wr) (addr (s.gpr .esp) (VG.Impl.RsaPkcs1Sig.X86.Verify.frameBytes + 20 + 4 * j)) 4 := by
-  rw [h.address (by omega)]
-  have read := CallLay.inRegions_sub (off := 4 * j) h.argumentsRead (l := 4) (by omega) (by decide)
+  rw [h.address (by omega_using [hj])]
+  have read := CallLay.inRegions_sub (off := 4 * j) h.argumentsRead (l := 4) (by omega_using [hj]) (by decide)
   change InRegions (s.rd ++ s.wr)
     (byteAddr g.stack + BitVec.ofNat 64 (VG.Impl.RsaPkcs1Sig.X86.Verify.frameBytes + 20) + BitVec.ofNat 64 (4 * j)) 4 at read
   rw [Offset.add_add] at read
@@ -33,7 +33,7 @@ theorem Context.readArg {g : Geometry} {bs : Fin 5 → List Byte} {s : State}
 theorem Context.argumentValue {g : Geometry} {bs : Fin 5 → List Byte} {s : State}
     (h : Context g bs s) {j : Nat} (hj : j < 13) :
     s.mem.readW (addr (s.gpr .esp) (VG.Impl.RsaPkcs1Sig.X86.Verify.frameBytes + 20 + 4 * j)) 32 = g.argument j := by
-  rw [h.address (by omega)]
+  rw [h.address (by omega_using [hj])]
   exact h.arguments j hj
 
 theorem copyArgument_ok (s : State) {g : Geometry} {bs : Fin 5 → List Byte}
@@ -45,10 +45,10 @@ theorem copyArgument_ok (s : State) {g : Geometry} {bs : Fin 5 → List Byte}
   unfold copyArgument incoming stackAt
   refine wp_ldm rfl (h.readArg hi) fun u U => ?_
   refine wp_stm (B := s.gpr .esp) (U.other .esp (by decide))
-    (by rw [U.wr, h.address (by omega)]; exact h.inner.write (by simp only [VG.Impl.RsaPkcs1Sig.X86.Verify.frameBytes]; omega))
+    (by rw [U.wr, h.address (by omega_using [hj])]; exact h.inner.write (by simp only [VG.Impl.RsaPkcs1Sig.X86.Verify.frameBytes]; omega_using [hj]))
     fun t T => WP.block_nil ?_
   have M : t.mem = s.mem.writeW (byteAddr g.stack + BitVec.ofNat 64 (4 * j)) (g.argument i) := by
-    rw [T.mem, U.gpr, U.mem, h.argumentValue hi, h.address (by omega)]
+    rw [T.mem, U.gpr, U.mem, h.argumentValue hi, h.address (by omega_using [hj])]
   have K : Keeps [.eax] s t := U.keeps.trans (T.keeps _)
   have F : Frame [⟨byteAddr g.stack + BitVec.ofNat 64 (4 * j), 4⟩] s.mem t.mem := by
     rw [M]
@@ -56,6 +56,6 @@ theorem copyArgument_ok (s : State) {g : Geometry} {bs : Fin 5 → List Byte}
   refine ⟨h.after (F.sub ?_) K (K.1 .esp (by decide)), M, F, K⟩
   intro r hr
   obtain rfl := List.mem_singleton.mp hr
-  exact ⟨g.innerRegion, by simp [bodyWrites], Offset.sub_base _ (by simp only [VG.Impl.RsaPkcs1Sig.X86.Verify.frameBytes]; omega)⟩
+  exact ⟨g.innerRegion, by simp [bodyWrites], Offset.sub_base _ (by simp only [VG.Impl.RsaPkcs1Sig.X86.Verify.frameBytes]; omega_using [hj])⟩
 
 end VG.Proof.RsaPkcs1Sig.X86.Ver

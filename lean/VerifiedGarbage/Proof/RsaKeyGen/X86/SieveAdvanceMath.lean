@@ -27,7 +27,7 @@ theorem nextCount_word {q : Nat} (positive : 0 < q) (bound : q < 2 ^ 32) (hit : 
     exact BitVec.and_zero
 
 theorem nextCount_lt {q : Nat} (positive : 0 < q) (hit : Bool) : nextCount q hit < q := by
-  cases hit <;> simp [nextCount] <;> omega
+  cases hit <;> simp [nextCount] <;> omega_using [positive]
 
 theorem countWord_zero {n : Nat} (bound : n < 2 ^ 32) :
     (BitVec.ofNat 32 n == 0#32) = decide (n = 0) := by

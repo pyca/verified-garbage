@@ -33,8 +33,8 @@ theorem partSum_succ (r : Nat) (a b : Nat → Nat) (N k : Nat) :
   by_cases e : i+j=k
   · simp [e]
   · by_cases lt : i+j<k
-    · simp [lt,e,show i+j<k+1 by omega]
-    · simp [lt,e,show ¬ i+j<k+1 by omega]
+    · simp [lt,e,show i+j<k+1 by omega_using [lt]]
+    · simp [lt,e,show ¬ i+j<k+1 by omega_using [e, lt]]
 
 theorem partSum_done (r : Nat) (a b : Nat → Nat) {N k : Nat} (hk : 2*N≤k) :
     partSum r a b N k=value r a N*value r b N := by
@@ -44,7 +44,7 @@ theorem partSum_done (r : Nat) (a b : Nat → Nat) {N k : Nat} (hk : 2*N≤k) :
   intro i hi
   apply NatSum.congr
   intro j hj
-  rw [ite_eq_left (by omega), Nat.pow_add]
+  rw [ite_eq_left (by omega_using [hk, hi, hj]), Nat.pow_add]
   ac_rfl
 
 theorem coeff_range (a b : Nat → Nat) (N k : Nat) :
@@ -54,13 +54,13 @@ theorem coeff_range (a b : Nat → Nat) (N k : Nat) :
   intro i hi
   by_cases e : i≤k ∧ k-i<N
   · rw [single N (k-i)]
-    · simp [e,show i+(k-i)=k by omega]
-    · intro j hj hne; exact ite_eq_right (by omega)
+    · simp [e,show i+(k-i)=k by omega_using [e]]
+    · intro j hj hne; exact ite_eq_right (by omega_using [hne])
     · simp [e.2]
   · rw [ite_eq_right e]
     apply eq_zero
     intro j hj
-    exact ite_eq_right (by omega)
+    exact ite_eq_right (by omega_using [e, hj])
 
 /-- One multiplication for each pair strictly above the diagonal. -/
 def crossCoeff (a : Nat → Nat) (N k : Nat) : Nat :=
@@ -101,20 +101,20 @@ theorem coeff_square (a : Nat → Nat) (N k : Nat) :
   simp only [split,add]
   rw [swap,diag]
   unfold crossCoeff
-  omega
+  omega_using []
 
 theorem diagCoeff_value (a : Nat → Nat) (N k : Nat) :
     diagCoeff a N k=if k%2=0 ∧ k/2<N then a (k/2)*a (k/2) else 0 := by
   unfold diagCoeff
   by_cases e : k%2=0 ∧ k/2<N
   · rw [ite_eq_left e,single N (k/2)]
-    · simp [show 2*(k/2)=k by omega]
-    · intro j hj hne; exact ite_eq_right (by omega)
+    · simp [show 2*(k/2)=k by omega_using [e]]
+    · intro j hj hne; exact ite_eq_right (by omega_using [hne])
     · simp [e.2]
   · rw [ite_eq_right e]
     apply eq_zero
     intro i hi
-    exact ite_eq_right (by omega)
+    exact ite_eq_right (by omega_using [e, hi])
 
 theorem crossCoeff_range (a : Nat → Nat) (N k : Nat) :
     crossCoeff a N k=sum (fun i => if i≤k ∧ k-i<N ∧ i<k-i then a i*a (k-i) else 0) N := by
@@ -123,20 +123,20 @@ theorem crossCoeff_range (a : Nat → Nat) (N k : Nat) :
   intro i hi
   by_cases e : i≤k ∧ k-i<N ∧ i<k-i
   · rw [single N (k-i)]
-    · simp [e,show i+(k-i)=k by omega]
-    · intro j hj hne; exact ite_eq_right (by omega)
+    · simp [e,show i+(k-i)=k by omega_using [e]]
+    · intro j hj hne; exact ite_eq_right (by omega_using [hne])
     · simp [e.2.1]
   · rw [ite_eq_right e]
     apply eq_zero
     intro j hj
-    exact ite_eq_right (by omega)
+    exact ite_eq_right (by omega_using [e, hj])
 
 theorem crossCoeff_scan (a : Nat → Nat) {N k : Nat} (hk : k<2*N) :
     crossCoeff a N k=sum (fun j => a (k+1-N+j)*a (k-(k+1-N+j))) ((k+1)/2-(k+1-N)) := by
-  rw [crossCoeff_range, ← interval (fun i => a i*a (k-i)) N (k+1-N) ((k+1)/2) (by omega)]
+  rw [crossCoeff_range, ← interval (fun i => a i*a (k-i)) N (k+1-N) ((k+1)/2) (by omega_using [hk])]
   apply NatSum.congr
   intro i hi
-  have e : (i≤k ∧ k-i<N ∧ i<k-i) ↔ (k+1-N≤i ∧ i<(k+1)/2) := by omega
+  have e : (i≤k ∧ k-i<N ∧ i<k-i) ↔ (k+1-N≤i ∧ i<(k+1)/2) := by omega_using []
   simp only [e]
 
 theorem coeff_bound {a b : Nat → Nat} {N k B : Nat}
@@ -160,9 +160,9 @@ theorem coeff_prefix_scan (q m : Nat → Nat) (N k : Nat) :
   unfold prefixDigits
   by_cases lt : i<k
   · rw [ite_eq_left lt]
-    have e : (i≤k ∧ k-i<N) ↔ (k+1-N≤i ∧ i<min k N) := by omega
+    have e : (i≤k ∧ k-i<N) ↔ (k+1-N≤i ∧ i<min k N) := by omega_using [hi, lt]
     simp only [e]
-  · rw [ite_eq_right lt, Nat.zero_mul, ite_self, ite_eq_right (by omega)]
+  · rw [ite_eq_right lt, Nat.zero_mul, ite_self, ite_eq_right (by omega_using [lt])]
 
 theorem partSum_prefix_succ (r : Nat) (q m : Nat → Nat) (N k : Nat) :
     partSum r (prefixDigits q (k+1)) m N (k+1)=partSum r (prefixDigits q k) m N (k+1)+
@@ -175,11 +175,11 @@ theorem partSum_prefix_succ (r : Nat) (q m : Nat → Nat) (N k : Nat) :
     · subst i
       by_cases je : j=0
       · subst j; simp
-      · have bound : ¬ k+j<k+1 := by omega
+      · have bound : ¬ k+j<k+1 := by omega_using [je]
         simp [je,bound]
     · by_cases il : i<k
-      · simp [ie,il,show i<k+1 by omega]
-      · have bound : ¬ i+j<k+1 := by omega
+      · simp [ie,il,show i<k+1 by omega_using [il]]
+      · have bound : ¬ i+j<k+1 := by omega_using [ie, il]
         simp [ie,bound]
   unfold partSum
   simp only [cell,add]
@@ -189,13 +189,13 @@ theorem partSum_prefix_succ (r : Nat) (q m : Nat → Nat) (N k : Nat) :
     · rw [single N 0]
       · simp
       · intro j hj hne; simp [hne]
-      · simp [show 0<N by omega]
+      · simp [show 0<N by omega_using [hk]]
     · intro i hi hne; simp [hne]
     · simp [hk]
   · rw [ite_eq_right hk]
     apply eq_zero
     intro i hi
-    have ne : i≠k := by omega
+    have ne : i≠k := by omega_using [hk, hi]
     simp [ne]
 
 theorem partSum_congr_left (r : Nat) {a b : Nat → Nat} (m : Nat → Nat) (N k : Nat)
@@ -219,6 +219,6 @@ theorem qPart_step (r : Nat) (old new m : Nat → Nat) (N k q : Nat)
   rw [partSum_prefix_succ,same,partSum_succ]
   by_cases hk : k<N
   · rw [ite_eq_left hk,digit hk,Nat.add_mul,Nat.add_assoc]
-  · rw [ite_eq_right hk,zero (by omega),Nat.zero_mul,Nat.add_zero,Nat.add_zero]
+  · rw [ite_eq_right hk,zero (by omega_using [hk]),Nat.zero_mul,Nat.add_zero,Nat.add_zero]
 
 end VG.Proof.Mont.Column

@@ -24,18 +24,18 @@ theorem pdArgs_stack {g : PrivGeometry} {bs : Fin 8 → List Byte} {s : State}
     stackArg (s.callEntry.withRegions (pdRd g) (pdWr g)) j = pdArgument g j := by
   simp only [stackArg, stackArgAddr, State.withRegions_mem, State.callEntry_mem,
     State.withRegions_sp, State.callEntry_sp, h.sp]
-  rw [addr_add (by have := h.valid.stackHigh; simp only [frameBytes] at this; omega)]
+  rw [addr_add (by have := h.valid.stackHigh; simp only [frameBytes] at this; omega_using [hj, this])]
   exact a.arguments j hj
 
 theorem pdCall_pre {g : PrivGeometry} {bs : Fin 8 → List Byte} {s : State}
     (h : PrivContext g bs s) (a : PdArgs g s) :
     (Proof.Rsa.publicPrecomputedCheckedContract abi 56).pre (s.callEntry.withRegions (pdRd g) (pdWr g)) := by
   have sa := fun {j} (hj : j < 6) => pdArgs_stack h a hj
-  have kfit : g.length < 2 ^ 32 := by have := h.valid.maxLength; omega
-  have efit : g.exponentLength < 2 ^ 32 := by have := h.valid.exponentFits; omega
-  have wfit : g.scratchLength < 2 ^ 32 := by have := h.valid.workspaceFit; omega
+  have kfit : g.length < 2 ^ 32 := by have := h.valid.maxLength; omega_using [this]
+  have efit : g.exponentLength < 2 ^ 32 := by have := h.valid.exponentFits; omega_using [kfit, this]
+  have wfit : g.scratchLength < 2 ^ 32 := by have := h.valid.workspaceFit; omega_using [this]
   have pfit : 2 * Spec.Rsa.modulusWords g.length < 2 ^ 32 := by
-    have := h.valid.maxLength; simp only [Spec.Rsa.modulusWords]; omega
+    have := h.valid.maxLength; simp only [Spec.Rsa.modulusWords]; omega_using [kfit]
   sig_pre [Proof.Rsa.publicPrecomputedCheckedContract, Proof.Rsa.publicPrecomputedSig, abi, argRegs, reduceClassify, Loc.val, State.addr]
   simp only [h.sp, a.output, a.outputLength, a.precomputation, a.precomputationLength,
     sa (by decide : 0 < 6), sa (by decide : 1 < 6), sa (by decide : 2 < 6),
@@ -44,14 +44,14 @@ theorem pdCall_pre {g : PrivGeometry} {bs : Fin 8 → List Byte} {s : State}
     Nat.mod_eq_of_lt wfit, Nat.mod_eq_of_lt pfit]
   have argAddr : stackArgAddr (s.callEntry.withRegions (pdRd g) (pdWr g)) 0 = State.addr g.stack := by
     simp [stackArgAddr, h.sp]
-  rw [argAddr, show 2 * Spec.Rsa.modulusWords g.length * 8 = 16 * Spec.Rsa.modulusWords g.length by omega,
+  rw [argAddr, show 2 * Spec.Rsa.modulusWords g.length * 8 = 16 * Spec.Rsa.modulusWords g.length by omega_using [],
     show g.scratchLength * 8 = 8 * g.scratchLength from Nat.mul_comm _ _]
   have preSub : (⟨State.addr g.precomputation, 16 * Spec.Rsa.modulusWords g.length⟩ : Region).Sub g.innerRegion := by
     rw [PrivGeometry.precomputation, h.valid.offsetAddr (by decide)]
-    exact Offset.sub_base _ (by have := h.valid.maxLength; simp only [oPre, frameBytes, Spec.Rsa.modulusWords]; omega)
+    exact Offset.sub_base _ (by have := h.valid.maxLength; simp only [oPre, frameBytes, Spec.Rsa.modulusWords]; omega_using [this])
   have tempSub : (⟨State.addr g.temporary, g.length⟩ : Region).Sub g.innerRegion := by
     rw [PrivGeometry.temporary, h.valid.offsetAddr (by decide)]
-    exact Offset.sub_base _ (by have := h.valid.maxLength; simp only [oM, frameBytes]; omega)
+    exact Offset.sub_base _ (by have := h.valid.maxLength; simp only [oM, frameBytes]; omega_using [this])
   have preStack : (⟨State.addr g.precomputation, 16 * Spec.Rsa.modulusWords g.length⟩ : Region).Sub g.wholeStack :=
     fun x hx => h.valid.innerSub x (preSub x hx)
   have tempStack : (⟨State.addr g.temporary, g.length⟩ : Region).Sub g.wholeStack :=
@@ -62,7 +62,7 @@ theorem pdCall_pre {g : PrivGeometry} {bs : Fin 8 → List Byte} {s : State}
   have callee : (⟨g.stack.setWidth 64 - BitVec.ofNat 64 56, 56⟩ : Region) = g.calleeRegion := by
     unfold PrivGeometry.calleeRegion FrameStack.belowA
     rw [FrameStack.addr_sub' h.valid.stackLow]; rfl
-  refine ⟨h.valid.stackLow, by have := h.valid.stackHigh; omega, rfl, rfl,
+  refine ⟨h.valid.stackLow, by have := h.valid.stackHigh; omega_using [this], rfl, rfl,
     (h.valid.stackOutput.sub_left preStack).symm, h.valid.outputSources 1,
     (h.valid.stackOutput.sub_left tempStack).symm, h.valid.outputWorkspace,
     (h.valid.stackOutput.sub_left argStack).symm,

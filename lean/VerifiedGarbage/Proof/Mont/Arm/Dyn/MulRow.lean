@@ -41,17 +41,17 @@ theorem macD_ok {s : State} {base : Addr} {size : Nat} (hs : Ws s base size) {K 
   have hd := hdig_lt (s.gpr .r7).toNat h
   have hx := step_lt hu hd ht hc
   have hmul : (s.gpr .r2).toNat * hdig (s.gpr .r7).toNat h < 2 ^ 32 := by
-    have := Nat.mul_le_mul (Nat.le_of_lt_succ hu) (Nat.le_of_lt_succ hd); omega
+    have := Nat.mul_le_mul (Nat.le_of_lt_succ hu) (Nat.le_of_lt_succ hd); omega_using [hx]
   simp only [macD]
   refine wp_half hh h6 fun s₁ u₁ => ?_
   have w₁ := hs.of_upd u₁ (by decide)
   have e10 : s₁.gpr .r10 = s₁.gpr .r12 + BitVec.ofNat 32 K := by
     simp only [u₁.get, reduceCtorEq, ↓reduceIte]; exact h10
-  refine wp_ldr (by omega) (w₁.ea e10 (by omega)) (w₁.read (by omega)) fun s₂ u₂ => wp_mla fun s₃ u₃ => ?_
+  refine wp_ldr (by omega_using [hh]) (w₁.ea e10 (by omega_using [hK])) (w₁.read (by omega_using [hK])) fun s₂ u₂ => wp_mla fun s₃ u₃ => ?_
   refine wp_dp (op2_reg _ _) fun s₄ u₄ => wp_dp (op2_reg _ _) fun s₅ u₅ => ?_
   have w₅ := (((w₁.of_upd u₂ (by decide)).of_upd u₃ (by decide)).of_upd u₄ (by decide)).of_upd u₅ (by decide)
-  refine wp_str (by omega) (w₅.ea (by simp only [u₅.get, u₄.get, u₃.get, u₂.get, reduceCtorEq, ↓reduceIte]; exact e10)
-    (by omega)) (w₅.write (by omega)) fun s₆ m₆ => wp_mov (op2_lsr (by decide)) fun s₇ u₇ => WP.block_nil ?_
+  refine wp_str (by omega_using [hh]) (w₅.ea (by simp only [u₅.get, u₄.get, u₃.get, u₂.get, reduceCtorEq, ↓reduceIte]; exact e10)
+    (by omega_using [hK])) (w₅.write (by omega_using [hK])) fun s₆ m₆ => wp_mov (op2_lsr (by decide)) fun s₇ u₇ => WP.block_nil ?_
   have ew : w32 s.mem base (K + 4 * h) = (s.mem.readW (off base (K + 4 * h)) 32).toNat := rfl
   have v4 : (s₄.gpr .r5).toNat =
       (s.gpr .r2).toNat * hdig (s.gpr .r7).toNat h + w32 s.mem base (K + 4 * h) + (s.gpr .r3).toNat := by
@@ -60,7 +60,7 @@ theorem macD_ok {s : State} {base : Addr} {size : Nat} (hs : Ws s base size) {K 
     have hm : (s.gpr .r2 * BitVec.ofNat 32 (hdig (s.gpr .r7).toNat h)).toNat =
         (s.gpr .r2).toNat * hdig (s.gpr .r7).toNat h := by
       rw [BitVec.toNat_mul, toNat_ofNat_dig, Nat.mod_eq_of_lt hmul]
-    refine (toNat_add_eq (toNat_add_eq hm rfl ?_) rfl ?_).trans ?_ <;> omega
+    refine (toNat_add_eq (toNat_add_eq hm rfl ?_) rfl ?_).trans ?_ <;> omega_arith
   refine ⟨?_, ?_, ?_⟩
   · rw [u₇.mem, m₆.mem, u₅.mem, u₄.mem, u₃.mem, u₂.mem, u₁.mem]
     congr 1
@@ -75,9 +75,9 @@ theorem macD_ok {s : State} {base : Addr} {size : Nat} (hs : Ws s base size) {K 
 theorem pval_two (m : Mem) (base : Addr) (d j : Nat) :
     pval m base d (2 * j + 2) = pval m base d (2 * j) + hdig (w32 m base (d + 4 * j)) 0 * 2 ^ (32 * j) +
       hdig (w32 m base (d + 4 * j)) 1 * (2 ^ 16 * 2 ^ (32 * j)) := by
-  rw [show 2 * j + 2 = 2 * j + 1 + 1 by omega, pval, pval]
-  simp only [pdig, show (2 * j + 1) / 2 = j by omega, show 2 * j / 2 = j by omega, show (2 * j + 1) % 2 = 1 by omega,
-    show 2 * j % 2 = 0 by omega, show 16 * (2 * j) = 32 * j by omega, show 16 * (2 * j + 1) = 16 + 32 * j by omega,
+  rw [show 2 * j + 2 = 2 * j + 1 + 1 by omega_using [], pval, pval]
+  simp only [pdig, show (2 * j + 1) / 2 = j by omega_using [], show 2 * j / 2 = j by omega_using [], show (2 * j + 1) % 2 = 1 by omega_using [],
+    show 2 * j % 2 = 0 by omega_using [], show 16 * (2 * j) = 32 * j by omega_using [], show 16 * (2 * j + 1) = 16 + 32 * j by omega_using [],
     Nat.pow_add]
 
 /-- An iteration of a row, as numbers. -/

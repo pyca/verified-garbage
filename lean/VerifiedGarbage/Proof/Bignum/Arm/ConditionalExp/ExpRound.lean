@@ -31,14 +31,14 @@ theorem expRound_ok (s : State) {base : BitVec 32} {len w M x E V c : Nat}
   have size : 256 ≤ 8 * len := by
     have := h.ready.layout.2.2.1
     simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at this
-    omega
+    omega_using [this]
   rw [expBitRound, WP.seq_iff]
   refine WP.mono (expBit_ok s h hv byte) ?_
   rintro u ⟨stateU, keepsU, frameU, restU⟩
   have byteU := (keeps_header_readW keepsU size (d := 200) (bits := 32) (by decide)).trans byte
   have countU := (keeps_header_readW keepsU size (d := 192) (bits := 32) (by decide)).trans count
   rw [WP.seq_iff]
-  refine WP.mono (expShift_ok u stateU.ready.workspace (by omega) stateU.ready.ptr byteU) ?_
+  refine WP.mono (expShift_ok u stateU.ready.workspace (by omega_using [size]) stateU.ready.ptr byteU) ?_
   rintro v ⟨memV, restV⟩
   obtain ⟨stateV, frameV⟩ := stateU.after_header (d := 200) (by decide) (by decide) memV restV
     ((restV.gpr .r0 (by decide)).trans stateU.ready.ptr)
@@ -49,7 +49,7 @@ theorem expRound_ok (s : State) {base : BitVec 32} {len w M x E V c : Nat}
     rw [← memV] at outside
     rw [outside_read32 outside (d := 192) (by decide) (by decide)]
     exact countU
-  refine WP.mono (expDecrement_ok v stateV.ready.workspace (by omega) stateV.ready.ptr hc hc' countV) ?_
+  refine WP.mono (expDecrement_ok v stateV.ready.workspace (by omega_using [size]) stateV.ready.ptr hc hc' countV) ?_
   rintro t ⟨memT, flag, restT⟩
   obtain ⟨stateT, frameT⟩ := stateV.after_header (d := 192) (by decide) (by decide) memT restT
     ((restT.gpr .r0 (by decide)).trans stateV.ready.ptr)
@@ -65,8 +65,8 @@ theorem expRound_ok (s : State) {base : BitVec 32} {len w M x E V c : Nat}
     have outsideT := writeW32_outside v.mem (State.addr base) (d := 192) (BitVec.ofNat 32 (c - 1)) (by decide)
     rw [← memV] at outsideV
     rw [← memT] at outsideT
-    rw [outside_read32 outsideT (d := d) (by omega) (by omega),
-      outside_read32 outsideV (d := d) (by omega) (by omega),
-      keeps_header_readW keepsU size (d := d) (bits := 32) (by omega)]
+    rw [outside_read32 outsideT (d := d) (by omega_using [hd]) (by omega_using [hd]),
+      outside_read32 outsideV (d := d) (by omega_using [hd]) (by omega_using [hd]),
+      keeps_header_readW keepsU size (d := d) (bits := 32) (by omega_using [hd])]
 
 end VG.Proof.Bignum.Arm.ConditionalExp

@@ -19,13 +19,13 @@ private theorem tableStride (n : Nat) (bound : n ≤ 1024) :
   have shift : BitVec.ofNat 32 (n + 7) >>> 3 = BitVec.ofNat 32 ((n + 7) / 8) := by
     apply BitVec.eq_of_toNat_eq
     rw [BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow, BitVec.toNat_ofNat, BitVec.toNat_ofNat,
-      Nat.mod_eq_of_lt (by omega : n + 7 < 2 ^ 32),
-      Nat.mod_eq_of_lt (by omega : (n + 7) / 8 < 2 ^ 32)]
+      Nat.mod_eq_of_lt (by omega_using [bound] : n + 7 < 2 ^ 32),
+      Nat.mod_eq_of_lt (by omega_using [bound] : (n + 7) / 8 < 2 ^ 32)]
   rw [BitVec.shiftLeft_eq_mul_twoPow]
   change (((BitVec.ofNat 32 n + BitVec.ofNat 32 7) >>> 3) + BitVec.ofNat 32 2) * BitVec.ofNat 32 8 = _
   rw [BitVec.ofNat_add_ofNat, shift, BitVec.ofNat_add_ofNat, BitVec.ofNat_mul_ofNat]
   congr 1
-  omega
+  omega_using []
 
 private theorem tableAddress (base : BitVec 32) (n : Nat) :
     (34 * BitVec.ofNat 32 (8 * ((n + 7) / 8 + 2)) + base) + 256 =
@@ -34,7 +34,7 @@ private theorem tableAddress (base : BitVec 32) (n : Nat) :
   rw [BitVec.ofNat_mul_ofNat, BitVec.add_comm _ base, BitVec.add_assoc, BitVec.ofNat_add_ofNat]
   have equal : 34 * (8 * ((n + 7) / 8 + 2)) + 256 = arrAt ((n + 7) / 8) 34 := by
     simp only [arrAt, VG.Proof.Rsa.Mont.hdrBytes]
-    omega
+    omega_using []
   exact congrArg (fun d : Nat => base + BitVec.ofNat 32 d) equal
 
 theorem tablePointer_ok (s : State) (base : BitVec 32) (n : Nat) (bound : n ≤ 1024)

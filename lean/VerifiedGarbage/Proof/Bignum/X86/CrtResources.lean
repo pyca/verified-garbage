@@ -20,16 +20,16 @@ theorem CrtABI.space {s : State} (A : CrtABI s) :
       (arg s 17).toNat * 8 := by
   have H := Crt.shared_scratch A.lengths.1
   have := A.scratchLength
-  omega
+  omega_using [H, this]
 
 theorem CrtABI.used {s : State} (A : CrtABI s) : 224 ≤ (arg s 17).toNat * 8 := by
   have H := A.space
   rw [Crt.size_eq] at H
-  omega
+  omega_using [H]
 
 theorem CrtABI.stackArgument {s : State} (A : CrtABI s) {i : Nat} (hi : i < 18) :
     StackArgument s (argumentPointer s 16) ((arg s 17).toNat * 8) i := by
-  apply stackArgument_of (count := 18) (by have := A.stackBound; omega) hi
+  apply stackArgument_of (count := 18) (by have := A.stackBound; omega_using [this]) hi
   · rw [A.rd, A.wr]; simp
   · exact A.scratchArgs.symm
 
@@ -38,7 +38,7 @@ theorem CrtABI.stack {s : State} (A : CrtABI s) :
   apply VG.Proof.Weierstrass.X86.stkOk_of (by decide : 20 ≤ 96) A.stackLow
   · have H := A.scratchBound
     simpa only [argumentPointer, BitVec.toNat_setWidth, Nat.mod_eq_of_lt (Nat.lt_trans (arg s 16).isLt (by decide : 2 ^ 32 < 2 ^ 64))] using H
-  · have H : 224 ≤ (arg s 17).toNat * 8 := A.used; omega
+  · have H : 224 ≤ (arg s 17).toNat * 8 := A.used; omega_using [H]
   · exact A.belowScratch
 
 theorem CrtABI.room {s : State} (A : CrtABI s) :

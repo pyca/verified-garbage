@@ -40,7 +40,7 @@ theorem srcOff_lt {q : Pos} (hq : q.2 < 16) : srcOff q < 4096 := by
   obtain ⟨a, i⟩ := q
   have := off_lt a
   simp only [srcOff] at hq ⊢
-  omega
+  omega_using [hq, this]
 
 theorem gather_ok (s : State) {a b c d : Pos} (ha : a.2 < 16) (hb : b.2 < 16) (hc : c.2 < 16)
     (hd : d.2 < 16)
@@ -92,7 +92,7 @@ theorem tail_ok (s : State) {e : Nat} (he : 5 ≤ e) {wd : Option (Arr × Nat)}
   have d1 : vword (L v) 1 = v 1 := vword_L v (by decide)
   have d2 : vword (L v) 2 = v 2 := vword_L v (by decide)
   have d3 : vword (L v) 3 = v 3 := vword_L v (by decide)
-  have he4 : 8 - e < 4 := by omega
+  have he4 : 8 - e < 4 := by omega_using [he]
   unfold tail
   cases wd with
   | none =>
@@ -103,9 +103,9 @@ theorem tail_ok (s : State) {e : Nat} (he : 5 ≤ e) {wd : Option (Arr × Nat)}
     have hq4 := hq a q rfl
     have := off_lt a
     have ho : (off a + 4 * q) % 4 = 0 ∧ off a + 4 * q < 16384 := by
-      cases a <;> simp only [off, xOff, zOff] <;> omega
+      cases a <;> simp only [off, xOff, zOff] <;> omega_using [hq4]
     have eq : InRegions (s.rd ++ s.wr) (s.gpr .x3 + BitVec.ofNat 64 (off a + 4 * q)) 4 :=
-      CallLay.inRegions_sub hw (by omega) (by decide)
+      CallLay.inRegions_sub hw (by omega_using [hq4, this]) (by decide)
     crun [h1, d0, d1, d2, d3, he4, ho, eq, rev32_eq]
     rfl
 
@@ -125,12 +125,12 @@ theorem ofNat_setWidth8 (x : BitVec 8) : BitVec.ofNat 8 (x.setWidth 32).toNat = 
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_ofNat, BitVec.toNat_setWidth]
   have := x.isLt
-  omega
+  omega_using []
 
 theorem gIdx_lt (m : Mem) (p : Addr) (a b c d : Pos) {k : Nat} (_ : k < 4) :
     (gIdx m p a b c d k).toNat < 256 := by
   have (x : Byte) : (x.setWidth 32).toNat < 256 := by
-    rw [BitVec.toNat_setWidth]; have := x.isLt; omega
+    rw [BitVec.toNat_setWidth]; have := x.isLt; omega_using []
   match k with
   | 0 => exact this _
   | 1 => exact this _
@@ -149,7 +149,7 @@ theorem line_ok (s : State) (st : XZ) (l : Impl.Cast5.Line) (hl : lineOk l = tru
   simp only [lineOk, Bool.and_eq_true, decide_eq_true_eq] at hl
   obtain ⟨⟨⟨⟨⟨⟨ha, hb⟩, hc⟩, hd⟩, he5⟩, _⟩, hwd⟩ := hl
   have hin (q : Pos) (hq : q.2 < 16) : InRegions (s.rd ++ s.wr) (s.gpr .x3 + BitVec.ofNat 64 (srcOff q)) 1 :=
-    CallLay.inRegions_sub hw (by obtain ⟨a', i'⟩ := q; have := off_lt a'; simp only [srcOff] at hq ⊢; omega)
+    CallLay.inRegions_sub hw (by obtain ⟨a', i'⟩ := q; have := off_lt a'; simp only [srcOff] at hq ⊢; omega_using [hq, this])
       (by decide)
   rw [line_eq]
   refine WP.seq (WP.mono_syms (WP.keep [.x9] (gather_ok s ha hb hc hd (hin _ ha) (hin _ hb) (hin _ hc)

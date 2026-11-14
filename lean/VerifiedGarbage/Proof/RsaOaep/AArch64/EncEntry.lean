@@ -252,7 +252,7 @@ theorem prologue_ok {H : Spec.Mgf1.Hash} {ts : List FnTable} {P : Nat} {s : Stat
     intro j hj
     rw [U, moveMem_read argMoves_ok _ _ (fun p hp => by
       have := (argMoves_ok p hp).2.1; unfold frameBytes at this; omega_arith) (by omega_arith),
-      hi₂ _ (by omega_arith) (by omega_arith), eArg j (by omega)]
+      hi₂ _ (by omega_arith) (by omega_arith), eArg j (by omega_using [hj])]
   have uMv : ∀ p ∈ argMoves, u.mem.readW ((lay H.len P s).Q + BitVec.ofNat 64 p.2) 64 = stackArg s p.1 := by
     intro p hp
     have := argMoves_lt p hp

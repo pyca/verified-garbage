@@ -73,10 +73,10 @@ theorem genStep_ok {s₀ : State} (hp : UPre s₀) {n : Nat} (hn : n < 8) {s : S
   have a8 : s.gpr .r8 + BitVec.ofInt 64 ((bufOff + 16 * n + 8 : Nat) : Int) = slot s₀ n + BitVec.ofNat 64 8 := by
     rw [h.r8, ofInt_natCast, slot, BitVec.add_assoc, ← BitVec.ofNat_add]
   have in0 : InRegions s.wr (slot s₀ n) 8 := ⟨scrR s₀, by rw [hW]; simp,
-    Offset.contains_base _ (by simp only [bufOff]; omega) (by simp only [bufOff]; omega)⟩
+    Offset.contains_base _ (by simp only [bufOff]; omega_using [hn]) (by simp only [bufOff]; omega_using [hn])⟩
   have in8 : InRegions s.wr (slot s₀ n + BitVec.ofNat 64 8) 8 := ⟨scrR s₀, by rw [hW]; simp, by
     rw [slot, BitVec.add_assoc, ← BitVec.ofNat_add]
-    exact Offset.contains_base _ (by simp only [bufOff]; omega) (by simp only [bufOff]; omega)⟩
+    exact Offset.contains_base _ (by simp only [bufOff]; omega_using [hn]) (by simp only [bufOff]; omega_using [hn])⟩
   rw [genStep, WP.block_append_iff]
   have st₁ : WP isa (.block [.store (at_ .r8 (bufOff + 16 * n)) .rax, .store (at_ .r8 (bufOff + 16 * n + 8)) .rcx]) s
       fun s₁ => s₁.mem = (s.mem.writeW (slot s₀ n) (s.gpr .rax)).writeW (slot s₀ n + BitVec.ofNat 64 8) (s.gpr .rcx) ∧
@@ -97,15 +97,15 @@ theorem genStep_ok {s₀ : State} (hp : UPre s₀) {n : Nat} (hn : n < 8) {s : S
     by rw [rd₂, rd₁, h.rd], by rw [wr₂, wr₁, h.wr],
     h.frame.trans (fS.sub fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
-      exact ⟨scrR s₀, by simp, slot_scr (j := n) (by omega)⟩), fun j hj => ?_,
+      exact ⟨scrR s₀, by simp, slot_scr (j := n) (by omega_using [hn])⟩), fun j hj => ?_,
     by rw [hg _ (by decide) (by decide) (by decide), h.rdx], ?_⟩
   · by_cases hjn : j = n
     · subst hjn
       rw [m₂, m₁, Proof.Cmac.bytesAt_store2, ← h.tw]
     · rw [AesCbc.X86_64.bytesAt_frame fS (fun r hr => by
           simp only [List.mem_singleton] at hr; subst hr
-          exact Offset.disjoint _ (by omega) (by simp only [bufOff]; omega) (by simp only [bufOff]; omega))
-        (by decide), h.buf j (by omega)]
+          exact Offset.disjoint _ (by omega_using [hjn]) (by simp only [bufOff]; omega_using [hn, hj]) (by simp only [bufOff]; omega_using [hn]))
+        (by decide), h.buf j (by omega_using [hj, hjn])]
   · rw [rax₂, rcx₂, mulAlpha_le8, g₁, h.tw]; rfl
 
 theorem gen_ok {s₀ : State} (hp : UPre s₀) {s : State} (h : SInv s₀ 0 s) :
@@ -113,9 +113,9 @@ theorem gen_ok {s₀ : State} (hp : UPre s₀) {s : State} (h : SInv s₀ 0 s) :
   | 0, _ => WP.block_nil h
   | n + 1, hn => by
     rw [List.range_succ, List.flatMap_append, WP.block_append_iff]
-    refine WP.mono (gen_ok hp h n (by omega)) fun s₁ h₁ => ?_
+    refine WP.mono (gen_ok hp h n (by omega_using [hn])) fun s₁ h₁ => ?_
     simp only [List.flatMap_cons, List.flatMap_nil, List.append_nil]
-    exact genStep_ok hp (by omega) h₁
+    exact genStep_ok hp (by omega_using [hn]) h₁
 
 /-- The last round key's address, `rdi + 16 · rounds`, into `r10`. -/
 theorem lastKey_ok {s₀ : State} {s : State} (h : SInv s₀ 8 s) :

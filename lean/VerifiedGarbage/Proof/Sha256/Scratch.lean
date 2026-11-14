@@ -26,11 +26,11 @@ open VG.Spec.Sha256
 theorem reprFrom_congr {iv : HashValue} {mem mem' : Mem} {p : Addr} {m : List Byte}
     (h : ∀ i < 96, mem' (p + BitVec.ofNat 64 i) = mem (p + BitVec.ofNat 64 i))
     (hr : ReprFrom iv mem p m) : ReprFrom iv mem' p m := by
-  refine ⟨by rw [Stream.stateAt_congr fun i hi => h i (by omega)]; exact hr.1, ?_⟩
+  refine ⟨by rw [Stream.stateAt_congr fun i hi => h i (by omega_using [hi])]; exact hr.1, ?_⟩
   rw [← hr.2]
   apply Stream.bytesAt_congr
   intro i hi
-  have := h (32 + i) (by omega)
+  have := h (32 + i) (by omega_using [hi])
   rwa [show p + 32 + BitVec.ofNat 64 i = p + BitVec.ofNat 64 (32 + i) by
     simp only [BitVec.ofNat_add]; rw [BitVec.add_assoc]; rfl]
 
@@ -51,13 +51,13 @@ theorem updatePost_local (pb : Nat) : ∀ vs m₁ m₂ m' r, vs.length = (update
   simp only [updateSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
     forall_eq] at hb
   have hs : ∀ i < 96, m₂ (st + BitVec.ofNat 64 i) = m₁ (st + BitVec.ofNat 64 i) := fun i hi =>
-    (hb.1 _ (Offset.contains_base _ (by simp only [Elem.size]; omega) (by omega))).symm
+    (hb.1 _ (Offset.contains_base _ (by simp only [Elem.size]; omega_using [hi]) (by omega_using [hi]))).symm
   have hd : ∀ i < (ln.setWidth pb).toNat, m₂ (dt + BitVec.ofNat 64 i) = m₁ (dt + BitVec.ofNat 64 i) :=
     fun i hi => by
       have := Nat.mod_le ln.toNat (2 ^ pb)
       have := ln.isLt
       rw [BitVec.toNat_setWidth] at hi
-      exact (hb.2 _ (Offset.contains_base _ (by simp only [Elem.size]; omega) (by omega))).symm
+      exact (hb.2 _ (Offset.contains_base _ (by simp only [Elem.size]; omega_arith) (by omega_arith))).symm
   intro iv msg hr hc
   rw [show bytesAt m₂ (ArgWord.addr.ofRaw dt) ((ArgWord.int pb).ofRaw ln).toNat =
     bytesAt m₁ dt (ln.setWidth pb).toNat from Stream.bytesAt_congr hd]
@@ -79,7 +79,7 @@ theorem finalizePost_local (pb : Nat) :
   simp only [finalizeSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
     forall_eq] at hb
   have hs : ∀ i < 96, m₂ (st + BitVec.ofNat 64 i) = m₁ (st + BitVec.ofNat 64 i) := fun i hi =>
-    (hb.1 _ (Offset.contains_base _ (by simp only [Elem.size]; omega) (by omega))).symm
+    (hb.1 _ (Offset.contains_base _ (by simp only [Elem.size]; omega_using [hi]) (by omega_using [hi]))).symm
   intro iv msg hr hc
   exact h iv msg (reprFrom_congr (fun i hi => (hs i hi).symm) hr) hc
 

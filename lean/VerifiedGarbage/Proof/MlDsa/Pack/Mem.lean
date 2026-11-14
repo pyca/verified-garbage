@@ -30,7 +30,7 @@ theorem coeffAt_eq (m : Mem) (p : Addr) (i : Nat) : coeffAt m p i = m.readW (coe
 abbrev polyRegion (p : Addr) : Region := ⟨p, 1024⟩
 
 theorem coeff_contains (p : Addr) {i : Nat} (hi : i < 256) : (polyRegion p).Contains (coeffAddr p i) 4 :=
-  Offset.contains_base p (by omega) (by omega)
+  Offset.contains_base p (by omega_using [hi]) (by omega_using [hi])
 
 theorem n_eq : n = 256 := rfl
 

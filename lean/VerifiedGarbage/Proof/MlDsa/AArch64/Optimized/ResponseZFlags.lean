@@ -48,7 +48,7 @@ theorem addInput_shift {s : State} {m : Mem} {p a : Addr} {u i : Nat}
     addInput s (16*i)=zWords m p a (4*u+i) := by
   funext e
   simp only [addInput,zWords,hm,h0,h1,BitVec.add_assoc,← BitVec.ofNat_add]
-  rw [show 64*u+16*i=16*(4*u+i) by omega]
+  rw [show 64*u+16*i=16*(4*u+i) by omega_using []]
 
 theorem addGroup_step {s : State} {d : ZData} {p a : Addr} {B : BitVec 32} {u i : Nat}
     (hi : i<4) (hr : ZReady B s) (hm : s.mem=d.mem) (hf : s.v .v31=d.flags)
@@ -61,9 +61,9 @@ theorem addGroup_step {s : State} {d : ZData} {p a : Addr} {B : BitVec 32} {u i 
       t.mem=(zStep p a B (4*u+i) d).mem ∧ t.v .v31=(zStep p a B (4*u+i) d).flags := by
   have hinput := addInput_shift (i := i) hm h0 h1
   have haddr : s.gpr .x0+BitVec.ofNat 64 (16*i)=p+BitVec.ofNat 64 (16*(4*u+i)) := by
-    rw [h0,BitVec.add_assoc,← BitVec.ofNat_add,show 64*u+16*i=16*(4*u+i) by omega]
+    rw [h0,BitVec.add_assoc,← BitVec.ofNat_add,show 64*u+16*i=16*(4*u+i) by omega_using []]
   rw [← List.append_nil (addGroup (16*i))]
-  refine addGroup_ok (by omega) ha hb hw hr.q hr.c fun t hk hmem hflag => WP.block_nil_iff.mpr ?_
+  refine addGroup_ok (by omega_using [hi]) ha hb hw hr.q hr.c fun t hk hmem hflag => WP.block_nil_iff.mpr ?_
   refine ⟨hk,hr.frame (by decide) hk.vec,?_,?_⟩
   · simpa only [zStep,hm,haddr,hinput] using hmem
   · apply vec_ext
@@ -88,7 +88,7 @@ open VG.Proof.MlDsa.AArch64.Arith.Neon (coeffAt_write16 vword_read16 vector_cont
 theorem zWords_coeff (m : Mem) (p a : Addr) (j : Nat) {e : Nat} (he : e<4) :
     zWords m p a j e=reduceWord (coeffAt m p (4*j+e)+coeffAt m a (4*j+e)) := by
   unfold zWords
-  rw [show 16*j=4*(4*j) by omega]
+  rw [show 16*j=4*(4*j) by omega_using []]
   change reduceWord (vword (m.read (coeffAddr p (4*j)) 16) e+
     vword (m.read (coeffAddr a (4*j)) 16) e)=_
   rw [VG.Proof.MlDsa.AArch64.Arith.Neon.vword_read16 _ _ he,VG.Proof.MlDsa.AArch64.Arith.Neon.vword_read16 _ _ he,coeffAddr_add,coeffAddr_add]
@@ -100,12 +100,12 @@ theorem zStep_coeff (d : ZData) (p a : Addr) (B : BitVec 32) {j k : Nat}
       if 4*j≤k ∧ k<4*j+4 then reduceWord (coeffAt d.mem p k+coeffAt d.mem a k)
       else coeffAt d.mem p k := by
   simp only [zStep]
-  rw [show 16*j=4*(4*j) by omega]
+  rw [show 16*j=4*(4*j) by omega_using []]
   change coeffAt (d.mem.write (coeffAddr p (4*j)) 16 _) p k=_
-  rw [coeffAt_write16 _ _ (by omega) _ hk]
+  rw [coeffAt_write16 _ _ (by omega_using [hj]) _ hk]
   split
   · rename_i h
-    rw [laneVector_word _ (by omega),zWords_coeff _ _ _ _ (by omega),show 4*j+(k-4*j)=k by omega]
+    rw [laneVector_word _ (by omega_using [h]),zWords_coeff _ _ _ _ (by omega_using [h]),show 4*j+(k-4*j)=k by omega_using [h]]
   · rfl
 
 theorem zRun_frame (m : Mem) (p a : Addr) (B : BitVec 32) {j : Nat} (hj : j≤64) :
@@ -115,9 +115,9 @@ theorem zRun_frame (m : Mem) (p a : Addr) (B : BitVec 32) {j : Nat} (hj : j≤64
   | succ j ih =>
     rw [zRun_next]
     simp only [zStep]
-    rw [show 16*j=4*(4*j) by omega]
+    rw [show 16*j=4*(4*j) by omega_using []]
     change Frame [pR p] m ((zRun m p a B j).mem.write (coeffAddr p (4*j)) 16 _)
-    exact (ih (by omega)).write (by simp) _ (vector_contains p (by omega))
+    exact (ih (by omega_using [hj])).write (by simp) _ (vector_contains p (by omega_using [hj]))
 
 def ZPrefix (initial current : Mem) (p a : Addr) (done : Nat) : Prop :=
   ∀k<256,coeffAt current p k=if k<done then
@@ -129,17 +129,17 @@ theorem zRun_prefix (m : Mem) (p a : Addr) (B : BitVec 32)
   induction j with
   | zero => intro k hk; simp [zRun]
   | succ j ih =>
-    have hp := ih (by omega)
+    have hp := ih (by omega_using [hj])
     have ha : ∀k<256,coeffAt (zRun m p a B j).mem a k=coeffAt m a k := by
       intro k hk
-      exact coeffAt_frame (zRun_frame m p a B (by omega)) (by simpa using hd.symm) hk
+      exact coeffAt_frame (zRun_frame m p a B (by omega_using [hj])) (by simpa using hd.symm) hk
     intro k hk
-    rw [zRun_next,zStep_coeff _ _ _ _ (by omega) hk]
+    rw [zRun_next,zStep_coeff _ _ _ _ (by omega_using [hj]) hk]
     by_cases before : k<4*j
-    · rw [ite_eq_right (by omega),hp k hk,ite_eq_left before,ite_eq_left (by omega)]
+    · rw [ite_eq_right (by omega_using [before]),hp k hk,ite_eq_left before,ite_eq_left (by omega_using [before])]
     · by_cases inside : k<4*j+4
-      · rw [ite_eq_left (by omega),hp k hk,ite_eq_right before,ha k hk,ite_eq_left (by omega)]
-      · rw [ite_eq_right (by omega),hp k hk,ite_eq_right before,ite_eq_right (by omega)]
+      · rw [ite_eq_left (by omega_using [before, inside]),hp k hk,ite_eq_right before,ha k hk,ite_eq_left (by omega_using [inside])]
+      · rw [ite_eq_right (by omega_using [inside]),hp k hk,ite_eq_right before,ite_eq_right (by omega_using [inside])]
 
 theorem zRun_coeff (m : Mem) (p a : Addr) (B : BitVec 32)
     (hd : (pR p).Disjoint (pR a)) {k : Nat} (hk : k<256) :
@@ -170,19 +170,19 @@ theorem addReduced_mask (a b : BitVec 32) (B : Nat) (ha : a.toNat<8380417)
   have hwidth : BitVec.ofNat 32 B+(BitVec.ofNat 32 B-1)=BitVec.ofNat 32 (2*B-1) := by bv_omega
   have hn := addReduced_norm a b B ha hb hB hB'
   unfold normMask maskWord
-  rw [hwidth,hlo,BitVec.toNat_ofNat,Nat.mod_eq_of_lt (by omega)]
+  rw [hwidth,hlo,BitVec.toNat_ofNat,Nat.mod_eq_of_lt (by omega_using [hB'])]
   by_cases h : B≤normZq (ofInt ((a.toNat:Int)+b.toInt))
-  · rw [decide_eq_true h,ite_eq_left (by have := mt hn.mp (show ¬normZq (ofInt ((a.toNat:Int)+b.toInt))<B by omega); omega)]
+  · rw [decide_eq_true h,ite_eq_left (by have := mt hn.mp (show ¬normZq (ofInt ((a.toNat:Int)+b.toInt))<B by omega_using [h]); omega_using [hn, h])]
     rfl
-  · rw [decide_eq_false h,ite_eq_right (by have := hn.mpr (by omega); omega)]
+  · rw [decide_eq_false h,ite_eq_right (by have := hn.mpr (by omega_using [h]); omega_using [hn, h])]
     rfl
 
 theorem zWords_current (m : Mem) (p a : Addr) (B : BitVec 32)
     (hd : (pR p).Disjoint (pR a)) {j e : Nat} (hj : j<64) (he : e<4) :
     zWords (zRun m p a B j).mem p a j e=
       reduceWord (coeffAt m p (4*j+e)+coeffAt m a (4*j+e)) := by
-  rw [zWords_coeff _ _ _ _ he,zRun_prefix m p a B hd (by omega) _ (by omega),ite_eq_right (by omega)]
-  rw [coeffAt_frame (zRun_frame m p a B (by omega)) (by simpa using hd.symm) (by rw [n_eq]; omega)]
+  rw [zWords_coeff _ _ _ _ he,zRun_prefix m p a B hd (by omega_using [hj]) _ (by omega_using [hj, he]),ite_eq_right (by omega_using [])]
+  rw [coeffAt_frame (zRun_frame m p a B (by omega_using [hj])) (by simpa using hd.symm) (by rw [n_eq]; omega_using [hj, he])]
 
 theorem zRun_flags (m : Mem) (p a : Addr) (B : Nat)
     (hd : (pR p).Disjoint (pR a)) (hB : 1≤B) (hB' : B≤524288)
@@ -196,8 +196,8 @@ theorem zRun_flags (m : Mem) (p a : Addr) (B : Nat)
     intro e he
     rw [zRun_next]
     simp only [zStep,laneVector_word _ he]
-    rw [ih (by omega) e he,zWords_current m p a _ hd (by omega) he,
-      addReduced_mask _ _ B (ha _ (by omega)) (hb _ (by omega)) hB hB',maskWord_or]
+    rw [ih (by omega_using [hj]) e he,zWords_current m p a _ hd (by omega_using [hj]) he,
+      addReduced_mask _ _ B (ha _ (by omega_using [hj, he])) (hb _ (by omega_using [hj, he])) hB hB',maskWord_or]
     rfl
 
 end VG.Proof.MlDsa.AArch64.Optimized.Response

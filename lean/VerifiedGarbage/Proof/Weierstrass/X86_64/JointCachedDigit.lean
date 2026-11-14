@@ -195,7 +195,7 @@ theorem jointCachedDigit_ok {c : Joint.Cfg} {C : Curve} {base : Addr} {size u v 
   have hbytes : c.K.bits+j<size := by
     have hh := hL.lookup.layout.stableBounds (c.K.bits,64*c.K.M.n+1) (by simp [jointStableRanges])
     dsimp only at hh
-    omega
+    omega_using [hj, hh]
   rw [Joint.cachedDigit]
   simp only [Code.inline]
   apply WP.seq

@@ -117,11 +117,11 @@ theorem candidatePair_ok {s : State} {p : CandidateParams} {consumed : Nat}
   have frame : Frame [⟨State.addr (s.sp + 64#32), 4⟩] s.mem t.mem := changed
   refine ⟨h.after_aux (by decide : 44 ≤ 64) (by decide : 64 + 4 ≤ 68) frame rest,
     ctx.table, flag, ?_, frame, rest.mono (by simp [sieveRegs, roundClobbers])⟩
-  refine rsa_bytes_frame frame (by have := p.length_bounds; omega) ?_
+  refine rsa_bytes_frame frame (by have := p.length_bounds; omega_using [this]) ?_
   intro r hr
   rw [List.mem_singleton] at hr
   subst r
-  rw [VG.Arm.addr_add (by have := h.saved.space.nowrap; omega)]
+  rw [VG.Arm.addr_add (by have := h.saved.space.nowrap; omega_using [this])]
   exact h.stackOutput.symm.sub_right (Offset.sub_base _ (by decide : 64 + 4 ≤ 72))
 
 end VG.Proof.Ffdh.Arm.ParameterCandidate

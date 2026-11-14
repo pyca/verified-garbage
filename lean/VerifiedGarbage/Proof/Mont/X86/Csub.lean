@@ -58,12 +58,12 @@ theorem selects_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size)
   | n + 1, hsrc, htmp, ho, hso, hto => by
     have hn := hs.nowrap
     rw [selK_succ]
-    refine WP.block_append (WP.mono (selects_ok hs k hm n (by omega) (by omega) (by omega) (by omega) (by omega))
+    refine WP.block_append (WP.mono (selects_ok hs k hm n (by omega_using [hsrc]) (by omega_using [htmp]) (by omega_using [ho]) (by omega_using [hso]) (by omega_using [hto]))
       fun s₁ ⟨O₁, V₁, K₁⟩ => ?_)
     have hs₁ := hs.of_keeps K₁ (by decide)
-    refine wp_movS (readSrc_sc hs₁ (d := src + 4 * n) (by omega)) fun s₂ u₂ _ => ?_
+    refine wp_movS (readSrc_sc hs₁ (d := src + 4 * n) (by omega_using [hsrc])) fun s₂ u₂ _ => ?_
     have hs₂ := hs₁.of_keeps u₂.keeps (by decide)
-    refine wp_movS (readSrc_sc hs₂ (d := tmp + 4 * n) (by omega)) fun s₃ u₃ _ => ?_
+    refine wp_movS (readSrc_sc hs₂ (d := tmp + 4 * n) (by omega_using [htmp])) fun s₃ u₃ _ => ?_
     have hs₃ := hs₂.of_keeps u₃.keeps (by decide)
     refine wp_logicS (.inr rfl) rfl fun s₄ u₄ => ?_
     refine wp_logicS (.inl rfl) rfl fun s₅ u₅ => ?_
@@ -71,13 +71,13 @@ theorem selects_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size)
     have k₆ : Keeps [.ebx, .edx] s s₆ := (((K₁.widen u₂.keeps).widen u₃.keeps).widen u₄.keeps |>.widen
       u₅.keeps).widen u₆.keeps
     have hs₆ := hs.of_keeps k₆ (by decide)
-    refine wp_storeS (hs₆.ea (d := o + 4 * n) (by omega)) (hs₆.write (d := o + 4 * n) (n := 4) (by omega))
+    refine wp_storeS (hs₆.ea (d := o + 4 * n) (by omega_using [ho])) (hs₆.write (d := o + 4 * n) (n := 4) (by omega_using [ho]))
       fun s₇ m₇ => WP.block_nil ?_
     have mem₆ : s₆.mem = s₁.mem := by rw [u₆.mem, u₅.mem, u₄.mem, u₃.mem, u₂.mem]
     have W : Outside base (o + 4 * n) 4 s₁.mem s₇.mem := by
-      rw [m₇.mem, mem₆]; exact writeW32_outside _ _ _ (by omega)
-    refine ⟨(O₁.mono (o' := o) (n' := 4 * (n + 1)) (Nat.le_refl _) (by omega)).trans
-      (W.mono (o' := o) (n' := 4 * (n + 1)) (by omega) (by omega)), ?_,
+      rw [m₇.mem, mem₆]; exact writeW32_outside _ _ _ (by omega_using [ho, hn])
+    refine ⟨(O₁.mono (o' := o) (n' := 4 * (n + 1)) (Nat.le_refl _) (by omega_using [])).trans
+      (W.mono (o' := o) (n' := 4 * (n + 1)) (by omega_using []) (by omega_using [])), ?_,
       k₆.trans (m₇.keeps _)⟩
     have eax₄ : s₄.gpr .eax = s.gpr .eax := by
       rw [u₄.other _ (by decide), u₃.other _ (by decide), u₂.other _ (by decide), K₁.1 _ (by decide)]
@@ -89,12 +89,12 @@ theorem selects_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size)
       rfl
     rw [select_val] at ebx₆
     rw [val32_succ, val32_succ, ← V₁, m₇.mem, mem₆,
-      (writeW32_outside s₁.mem base (d := o + 4 * n) (s₆.gpr .ebx) (by omega)).val32 (by omega) (by omega),
+      (writeW32_outside s₁.mem base (d := o + 4 * n) (s₆.gpr .ebx) (by omega_using [ho, hn])).val32 (by omega_using []) (by omega_using [ho, hn]),
       w32_write_self, ebx₆]
     congr 1
     cases k
-    · exact congrArg (2 ^ (32 * n) * ·) (O₁.w32 (by omega) (by omega))
-    · exact congrArg (2 ^ (32 * n) * ·) (O₁.w32 (by omega) (by omega))
+    · exact congrArg (2 ^ (32 * n) * ·) (O₁.w32 (by omega_using [hso]) (by omega_using [hsrc, hn]))
+    · exact congrArg (2 ^ (32 * n) * ·) (O₁.w32 (by omega_using [hto]) (by omega_using [htmp, hn]))
 
 /-- The mask from a borrow: `sbb eax, eax`, then `xor eax, -1`. -/
 theorem mask_val (x : BitVec 32) (b : Bool) :
@@ -115,12 +115,12 @@ theorem csub_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M
       val32 u.mem base o N = val32 s.mem base src (N + 1) % m ∧
       Keeps [.eax, .ebx, .edx] s u := by
   have hn := hs.nowrap
-  obtain ⟨k, rfl⟩ : ∃ k, N = k + 1 := ⟨N - 1, by omega⟩
+  obtain ⟨k, rfl⟩ : ∃ k, N = k + 1 := ⟨N - 1, by omega_using [hN]⟩
   simp only [csub, diffs_eq, selects_eq, hNw, List.append_assoc, List.cons_append, List.nil_append]
-  refine WP.block_append (WP.mono (chainSub_ok hs k (by omega) (by omega) (by omega) (by omega) (by omega))
+  refine WP.block_append (WP.mono (chainSub_ok hs k (by omega_using [htmp]) (by omega_using [hsrc]) (by omega_using [hmo]) (by omega_using [hts]) (by omega_using [htm]))
     fun s₁ ⟨O₁, ⟨c, hc, V₁⟩, K₁⟩ => ?_)
   have hs₁ := hs.of_keeps K₁ (by decide)
-  refine wp_movS (readSrc_sc hs₁ (d := src + 4 * (k + 1)) (by omega)) fun s₂ u₂ cf₂ => ?_
+  refine wp_movS (readSrc_sc hs₁ (d := src + 4 * (k + 1)) (by omega_using [hsrc])) fun s₂ u₂ cf₂ => ?_
   refine wp_sbbS rfl (by rw [cf₂]; exact hc) fun s₃ u₃ c₃ => ?_
   refine wp_sbbS rfl c₃ fun s₄ u₄ _ => ?_
   refine wp_logicS (.inr rfl) rfl fun s₅ u₅ => ?_
@@ -133,10 +133,10 @@ theorem csub_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M
   have mem₅ : s₅.mem = s₁.mem := by rw [u₅.mem, u₄.mem, u₃.mem, u₂.mem]
   have z : (0 : BitVec 32).toNat = 0 := rfl
   have top : (s₂.gpr .eax).toNat = w32 s.mem base (src + 4 * (k + 1)) := by
-    rw [u₂.gpr, ← O₁.w32 (by omega) (by omega)]
+    rw [u₂.gpr, ← O₁.w32 (by omega_using [hts]) (by omega_using [hn, hsrc])]
   rw [top, z, Nat.zero_add] at mask
-  have hsrcN : val32 s₁.mem base src (k + 1) = val32 s.mem base src (k + 1) := O₁.val32 (by omega) (by omega)
-  refine WP.mono (selects_ok hs₅ _ mask (k + 1) (by omega) (by omega) (by omega) (by omega) (by omega))
+  have hsrcN : val32 s₁.mem base src (k + 1) = val32 s.mem base src (k + 1) := O₁.val32 (by omega_using [hts]) (by omega_using [hn, hsrc])
+  refine WP.mono (selects_ok hs₅ _ mask (k + 1) (by omega_using [hsrc]) (by omega_using [htmp]) (by omega_using [ho]) (by omega_using [hos]) (by omega_using [hot]))
     fun u ⟨O, V, K⟩ => ⟨(Outs.of_outside O₁ (by simp)).trans (Outs.of_outside (mem₅ ▸ O) (by simp)), ?_,
       k₅.trans (K.mono (by decide))⟩
   rw [V, mem₅]

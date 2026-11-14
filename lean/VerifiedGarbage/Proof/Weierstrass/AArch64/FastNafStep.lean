@@ -31,7 +31,7 @@ theorem fast_skip_div {w : Nat} (hw : FastNaf.Width w) (k j : Nat)
     (ho : FastNaf.residual w k j%2≠0) :
     2*FastNaf.residual w k (j+1)/2^w=FastNaf.residual w k (j+w) := by
   rw [FastNaf.residual_succ,FastNaf.next_odd hw _ ho,FastNaf.residual_skip hw k j ho]
-  rcases hw with rfl | rfl <;> simp only [Nat.reduceSub,Nat.reducePow] <;> omega
+  rcases hw with rfl | rfl <;> simp only [Nat.reduceSub,Nat.reducePow] <;> omega_using []
 
 theorem fastOdd_ok {s : State} {base : Addr} {size bits w k j : Nat}
     (hI : FastPrepCore base size bits w k j s) (hw : FastNaf.Width w)

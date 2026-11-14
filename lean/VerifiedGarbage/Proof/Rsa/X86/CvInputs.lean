@@ -74,17 +74,17 @@ theorem Inputs.argsAbove {g : CallGeometry} {s : State} (h : Inputs g s) {i : Na
   have address : (stackAddress s i).toNat = (s.gpr .esp).toNat + 4 + 4 * i := by
     simp only [stackAddress, addr, BitVec.toNat_setWidth, BitVec.toNat_add, BitVec.toNat_ofNat]
     have := (s.gpr .esp).isLt
-    omega
+    omega_using [hi, high]
   have b : (below (s.gpr .esp) 52).base.toNat = (s.gpr .esp).toNat - 52 := by
     change ((s.gpr .esp - 52#32).setWidth 64).toNat = _
     rw [BitVec.toNat_setWidth, sub_toNat low]
-    exact Nat.mod_eq_of_lt (by have := (s.gpr .esp).isLt; omega)
+    exact Nat.mod_eq_of_lt (by have := (s.gpr .esp).isLt; omega_using [])
   intro a ha hb
   simp only [Region.Contains, BitVec.toNat_sub] at ha hb
   rw [b] at hb
   rw [address] at ha
   have := a.isLt
-  omega
+  omega_using [hi, low, ha, hb]
 
 /-- `Inputs.after`, for code that also writes the stack below `esp` that a call uses. -/
 theorem Inputs.afterBelow {g : CallGeometry} {s t : State} {regs : List Reg} (h : Inputs g s)

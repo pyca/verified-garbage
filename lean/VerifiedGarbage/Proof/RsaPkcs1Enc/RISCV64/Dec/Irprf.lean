@@ -37,7 +37,7 @@ structure PInv (s : State) (R : BitVec 64) (EM : List Byte) (kd : List Byte) (ds
 
 theorem counter_ne {n k : Nat} (hk : k + 1 ≤ n) (hn : n < 2 ^ 64) :
     (BitVec.ofNat 64 (n - (k + 1))).toNat ≠ 0 ↔ k + 1 ≠ n := by
-  rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]; omega
+  rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hn])]; omega_using [hk]
 
 section
 variable {s : State} (h : DPre pc s) {R : BitVec 64} {EM : List Byte}
@@ -57,16 +57,16 @@ theorem prfLoop_ok {label : List Nat} {len count : List Instr} {dst N : Nat}
     (h0 : PInv s R EM kd dst textF t₀ 0 t₀) :
     WP isa (.loop (prfBody label len dst count) (.nonzero .t1)) t₀ (PInv s R EM kd dst textF t₀ N) := by
   refine VG.Proof.Bignum.RISCV64.count_loop hN0 (PInv s R EM kd dst textF t₀) (fun i hi u hu => ?_) h0
-  refine WP.mono (prfBody_ok h hu.toPost hu.kdk hu.ctr (by omega) hd1 (by omega) hdst hn (htl i)
+  refine WP.mono (prfBody_ok h hu.toPost hu.kdk hu.ctr (by omega_using [hN, hi]) hd1 (by omega_using [hd2, hi]) hdst hn (htl i)
     (hmsg i hi) (fun v hv => hcount v (hv.trans hu.nb))) fun w hw =>
     ⟨⟨hw.toPost, ?_, hw.ctr, hw.nb.trans hu.nb, fun j hj => ?_, fun a l h₁ h₂ => ?_⟩, ?_⟩
-  · rw [hw.keep _ _ (by decide) (by unfold scrBytes at hd2; decide) (.inl (by unfold sKDK sCL at *; omega)),
+  · rw [hw.keep _ _ (by decide) (by unfold scrBytes at hd2; decide) (.inl (by unfold sKDK sCL at *; omega_using [hd1])),
       hu.kdk]
   · rcases Nat.lt_succ_iff_lt_or_eq.mp hj with hj | rfl
-    · rw [hw.keep _ _ (by unfold sDH sCL at *; omega) (by omega) (.inl (by omega)), hu.out j hj]
+    · rw [hw.keep _ _ (by unfold sDH sCL at *; omega_using [hd1]) (by omega_arith) (.inl (by omega_using [hj])), hu.out j hj]
     · exact hw.out
-  · rw [hw.keep _ _ h₁ (by omega) (.inl (by omega)), hu.keep a l h₁ h₂]
-  · rw [hw.left, hC i hi]; exact counter_ne hi (by omega)
+  · rw [hw.keep _ _ h₁ (by omega_using [hd2, h₂]) (.inl (by omega_using [h₂])), hu.keep a l h₁ h₂]
+  · rw [hw.left, hC i hi]; exact counter_ne hi (by omega_using [hN])
 
 end
 
@@ -85,14 +85,14 @@ theorem flatMap_range_congr {α : Type} {f g : Nat → List α} (n : Nat) (h : �
   induction n with
   | zero => rfl
   | succ n ih =>
-    rw [List.range_succ, List.flatMap_append, List.flatMap_append, ih (fun j hj => h j (by omega)),
-      List.flatMap_cons, List.flatMap_cons, List.flatMap_nil, List.flatMap_nil, h n (by omega)]
+    rw [List.range_succ, List.flatMap_append, List.flatMap_append, ih (fun j hj => h j (by omega_using [hj])),
+      List.flatMap_cons, List.flatMap_cons, List.flatMap_nil, List.flatMap_nil, h n (by omega_using [])]
 
 theorem bytes_blocks (s : State) (m : Mem) (o : Nat) : ∀ n, Spec.Rsa.bytesAt m (scA s o) (32 * n) =
     (List.range n).flatMap fun j => Spec.Rsa.bytesAt m (scA s (o + 32 * j)) 32
   | 0 => rfl
   | n + 1 => by
-    rw [show 32 * (n + 1) = 32 * n + 32 by omega, bytesAt_add, bytes_blocks s m o n, List.range_succ,
+    rw [show 32 * (n + 1) = 32 * n + 32 by omega_using [], bytesAt_add, bytes_blocks s m o n, List.range_succ,
       List.flatMap_append, List.flatMap_cons, List.flatMap_nil, List.append_nil, Offset.add_add]
 
 theorem bytesAt_take (m : Mem) (p : Addr) {k n : Nat} (h : k ≤ n) :
@@ -109,7 +109,7 @@ theorem nb_eq {k : BitVec 64} (hk : k.toNat ≤ 1024) :
     (k + BitVec.ofNat 64 31) >>> 5 = BitVec.ofNat 64 ((k.toNat + 31) / 32) := by
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_ushiftRight, BitVec.toNat_add, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow]
-  omega
+  omega_using [hk]
 
 /-! ## The loops -/
 
@@ -158,8 +158,8 @@ theorem clLoop_ok {t : State} {kd : List Byte} (hp : Post s R EM t)
     (textF := fun i => Spec.Rsa.i2osp i 2 ++ Spec.RsaPkcs1Enc.ascii "length" ++ Spec.Rsa.i2osp (8 * 256) 2)
     (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
     (fun i => by simp [Proof.RsaPkcs1Enc.i2osp_length, ascii_length, lengthLabel])
-    (fun i hi => Offset.ofNat_sub_ofNat (by omega))
-    (fun i hi u hu x8 => msgCL_ok (by rw [hu.s0]) x8 (by omega) (hu.msgW h))
+    (fun i hi => Offset.ofNat_sub_ofNat (by omega_using [hi]))
+    (fun i hi u hu x8 => msgCL_ok (by rw [hu.s0]) x8 (by omega_using [hi]) (hu.msgW h))
     (fun u _ => count8_ok u)
     ⟨P₁, by rw [O.mem, hkd], f₁ ▸ (p₂.get .s8 ▸ p₃.get .s8 ▸ rfl), rfl,
       fun j hj => absurd hj (Nat.not_lt_zero _), fun _ _ _ _ => rfl⟩) fun t₂ h₂ =>
@@ -180,21 +180,21 @@ theorem amLoop_ok {t : State} {kd : List Byte} (hl : CLR s R EM kd t) : WP isa a
   refine WP.seq (wp_li (imm := 0) (by decide) fun t₁ p₁ f₁ => wp_nil ?_)
   have P₁ : Post s R EM t₁ := hl.toPost.keep h p₁.keep (ws := []) (by rw [p₁.mem]; exact Frame.refl _ _)
     (fun r hr => nomatch hr)
-  have hN0 : 0 < ((s.gpr .a4).toNat + 31) / 32 := by omega
+  have hN0 : 0 < ((s.gpr .a4).toNat + 31) / 32 := by omega_using [hk64]
   refine WP.mono (prfLoop_ok h (label := messageLabel) (len := amLen) (count := [mov .t1 .s9])
     (dst := sAM) (N := ((s.gpr .a4).toNat + 31) / 32) (C := BitVec.ofNat 64 (((s.gpr .a4).toNat + 31) / 32))
     (t₀ := t₁)
     (textF := fun i => Spec.Rsa.i2osp i 2 ++ Spec.RsaPkcs1Enc.ascii "message" ++
       Spec.Rsa.i2osp (8 * (s.gpr .a4).toNat) 2)
-    hN0 (by omega) (by decide) (by unfold sAM scrBytes; omega) (by decide) (by decide)
+    hN0 (by omega_using [hk]) (by decide) (by unfold sAM scrBytes; omega_using [hk]) (by decide) (by decide)
     (fun i => by simp [Proof.RsaPkcs1Enc.i2osp_length, ascii_message, messageLabel])
-    (fun i hi => Offset.ofNat_sub_ofNat (by omega))
-    (fun i hi u hu x8 => msgAM_ok (by rw [hu.s0]) x8 hu.s1 (by omega) hk (hu.msgW h))
+    (fun i hi => Offset.ofNat_sub_ofNat (by omega_using [hi]))
+    (fun i hi u hu x8 => msgAM_ok (by rw [hu.s0]) x8 hu.s1 (by omega_using [hk, hi]) hk (hu.msgW h))
     (fun u hu => count_ok u _ (by rw [hu, p₁.get .s9, hl.nb]))
     ⟨P₁, by rw [p₁.mem, hl.kdk], f₁, rfl, fun j hj => absurd hj (Nat.not_lt_zero _),
       fun _ _ _ _ => rfl⟩) fun t₂ h₂ => ⟨h₂.toPost, ?_, ?_⟩
   · rw [h₂.keep _ _ (by decide) (by decide), p₁.mem, hl.cl]
-  · exact irprf_bytes rfl (fun j hj => h₂.out j hj) (by omega)
+  · exact irprf_bytes rfl (fun j hj => h₂.out j hj) (by omega_using [])
 
 end
 

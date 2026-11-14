@@ -80,6 +80,6 @@ theorem candidateEntry_ok {s : State} {p : CandidateParams}
   refine ⟨contextT.saved.project ?_ (by intro d hd; rfl), changed10.trans frameT, finalRest⟩
   intro d hd
   simp only [candidateSlots, List.mem_cons, List.not_mem_nil, or_false] at hd ⊢
-  omega
+  omega_using [hd]
 
 end VG.Proof.Ffdh.Arm.ParameterCandidate

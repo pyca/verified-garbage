@@ -39,7 +39,7 @@ theorem half_combine {M l c : Nat} (pos : 0 < M) :
   rcases Nat.eq_zero_or_pos (c % M) with zero | positive
   · rw [zero, Nat.sub_zero, Nat.mod_self, Nat.sub_zero, Nat.add_mod_right, Nat.mod_mod, Nat.add_mod l c, zero,
       Nat.add_zero, Nat.mod_mod]
-  · rw [Nat.mod_eq_of_lt (by omega : M - c % M < M), show l % M + M - (M - c % M) = l % M + c % M by omega,
+  · rw [Nat.mod_eq_of_lt (by omega_using [pos, positive] : M - c % M < M), show l % M + M - (M - c % M) = l % M + c % M by omega_using [hc],
       ← Nat.add_mod]
 
 /-- A cleared array is zero. -/
@@ -64,7 +64,7 @@ theorem CrtCopyCtx.after_narrow {s t : State} {g : CrtGeometry} {bs : Fin 7 → 
   have eqM := h.shared.eq_of_frame h.shared.buffers.context.main (by simp [crtRegions]) frame' sepM
   exact ⟨h.shared.after_narrow (frame.mono (by simp)) rest, ready, h.childWs.congr rest.wr, h.member,
     h.layout.congr eqC, h.sep, h.slotFit, h.slotSmall,
-    by rw [eqM.word (d := slot) (bits := 32) (by have := h.slotFit; omega)]; exact h.link, h.le⟩
+    by rw [eqM.word (d := slot) (bits := 32) (by have := h.slotFit; omega_using [this])]; exact h.link, h.le⟩
 
 theorem CrtShared.copyCtx {s : State} {g : CrtGeometry} {bs : Fin 7 → List Byte} {child : BitVec 32}
     {slot v : Nat} (h : CrtShared g bs s) (kind : CrtChild g child slot)
@@ -104,11 +104,11 @@ theorem CrtCopyCtx.after_copyOut {s t : State} {g : CrtGeometry} {bs : Fin 7 →
   have fitsC : arrAt g.words 8 ≤ 8 * workspaceWords g.words := h.layout.width ▸ h.layout.layout.2.2.1
   have endJ := Nat.le_trans (array_end_le (w := g.words) hj) fitsC
   have words : g.words ≤ 128 := (crt_width_valid h.shared.buffers.lengthValid).2.1
-  have wsSmall : workspaceWords g.words ≤ 16 * 128 + 64 := by simp only [workspaceWords]; omega
+  have wsSmall : workspaceWords g.words ≤ 16 * 128 + 64 := by simp only [workspaceWords]; omega_using [words]
   have le := h.le
-  have frameC := outside_workspace outside (size := 8 * workspaceWords g.words) (by omega)
-  have keeps := outside_array_prefix_keeps outside (by omega : 8 * workspaceWords g.words < 2 ^ 64)
-    (by omega : 8 * v ≤ 8 * (g.words + 2))
+  have frameC := outside_workspace outside (size := 8 * workspaceWords g.words) (by omega_using [endJ, le])
+  have keeps := outside_array_prefix_keeps outside (by omega_using [wsSmall] : 8 * workspaceWords g.words < 2 ^ 64)
+    (by omega_using [le] : 8 * v ≤ 8 * (g.words + 2))
   have layoutT : CrtLayoutState child (workspaceWords g.words) g.words t.mem := by
     have kl := keeps_layout h.layout.layout (by rw [h.layout.width]; exact keeps)
     exact ⟨kl.2, kl.1.trans h.layout.width⟩
@@ -142,7 +142,7 @@ theorem crt_reduceHalf_ok (s : State) {g : CrtGeometry} {bs : Fin 7 → List Byt
   have op : ∀ q, q = 0 ∨ q = 1 ∨ q = 4 ∨ q = 5 ∨ q = 6 ∨ q = 7 → Operand q := by
     intro q hq
     rcases hq with rfl | rfl | rfl | rfl | rfl | rfl <;> simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]
-  have positive : 0 < M := by have := h.ready.modulus; omega
+  have positive : 0 < M := by have := h.ready.modulus; omega_using [odd]
   -- `h`, the high limbs, into array 1.
   rw [reduceHalf, WP.seq_iff]
   refine WP.mono (clearArrayWide_ok s h.ready (o := 1) (by decide) (by decide)) ?_

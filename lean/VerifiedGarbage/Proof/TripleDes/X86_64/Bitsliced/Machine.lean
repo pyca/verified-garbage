@@ -55,7 +55,7 @@ theorem sl_of_spill {s s' : State} (hc : s'.gpr .rcx = s.gpr .rcx)
   intro r hr
   simp only [List.mem_singleton] at hr; subst hr
   exact Offset.disjoint_base (s.gpr .rcx) (d := 8 * j) (n := 8) (k := 8 * spills)
-    (by unfold spills at hj ⊢; omega) (by omega)
+    (by unfold spills at hj ⊢; omega_using [hj]) (by omega_using [hj'])
 
 theorem spill_sub (s : State) : Region.Sub (spillR s) (scratchR s) := Region.sub_prefix (by decide)
 
@@ -95,7 +95,7 @@ theorem readW_stMem (s : State) {k : Nat} (hk : k < 128) (v : BitVec 64) {j : Na
   split
   · subst j; exact Mem.readW_writeW_self64 _ _ _
   · rename_i hne
-    rw [Mem.readW_writeW_sep (slot_sep _ (by omega) (by omega) hne) (by decide)]
+    rw [Mem.readW_writeW_sep (slot_sep _ (by omega_using [hj]) (by omega_using [hk]) hne) (by decide)]
     rfl
 
 theorem stMem_frame {s : State} {k : Nat} (hk : k < 128) (v : BitVec 64) :
@@ -166,15 +166,15 @@ theorem varEnv_rel {s : State} (regs : List Reg) :
     obtain ⟨i, hi, rfl⟩ := h
     obtain ⟨hlt, heq, -⟩ := List.idxOf?_eq_some_iff.mp hi
     simp only [VarRel, varN]
-    rw [xorSet_two_pow _ (by omega)]
-    simp only [varVals, show ¬ 128 + i < 128 by omega, ite_false, Nat.add_sub_cancel_left]
+    rw [xorSet_two_pow _ (by omega_using [hlt])]
+    simp only [varVals, show ¬ 128 + i < 128 by omega_using [], ite_false, Nat.add_sub_cancel_left]
     simp [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem hlt, heq]
   slot k a hk h := by
     have hk' : k < 128 := hk
     simp only [varEnv, hk', ite_true, Option.some.injEq] at h
     subst h
     simp only [VarRel, varN]
-    rw [xorSet_two_pow _ (by omega)]
+    rw [xorSet_two_pow _ (by omega_using [hk'])]
     simp only [varVals, hk', ite_true, sl, varsCfg]
   ext _ _ hk := by simp [varsCfg] at hk
 

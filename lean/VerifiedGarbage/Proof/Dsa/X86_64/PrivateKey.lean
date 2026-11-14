@@ -36,14 +36,14 @@ theorem privateKey_ok (M : Mont) (Sq : MontS) {L : ExecutionLayout} {s0 : State}
       Spec.Rsa.bytesAt s4.mem (off L.base qMinusTwo) L.qLen = Spec.Rsa.bytesAt s0.mem (off L.base qMinusTwo) L.qLen ∧
       Outside L.base 128 (usedBytes - 128) s0.mem s4.mem ∧ Keep coreRegs s0 s4 := by
   obtain ⟨hql, hqu, hqp, hpu⟩ := L.widths
-  have ht : t + L.pLen ≤ usedBytes := by unfold t usedBytes; omega
-  have hqm : qMinusTwo + L.qLen ≤ usedBytes := by unfold qMinusTwo usedBytes; omega
+  have ht : t + L.pLen ≤ usedBytes := by unfold t usedBytes; omega_using [hpu]
+  have hqm : qMinusTwo + L.qLen ≤ usedBytes := by unfold qMinusTwo usedBytes; omega_using [hqu]
   have hqm0 := h0.readLocal .q qMinusTwo (by decide) hqm
   have hqml : (Spec.Rsa.bytesAt s0.mem (off L.base qMinusTwo) (ModulusSide.q.length L)).length = L.qLen := by
     simp only [Spec.Rsa.bytesAt, List.length_map, List.length_range, ModulusSide.length]
   unfold Checks.privateKey
   refine WP.seq (WP.mono (readyRange_ok h0 .q Core.privateScalar (by trivial) hx.active
-    (by rw [hxl]; omega) (by simp only [hxl, ModulusSide.words, ModulusSide.length]; exact Nat.le_refl _)
+    (by rw [hxl]; omega_using [hql]) (by simp only [hxl, ModulusSide.words, ModulusSide.length]; exact Nat.le_refl _)
     false hm) fun s1 h1 => ?_)
   have hqm1 := h1.preserve h0 (Nat.le_refl _) (by decide) (by trivial) hqm0
   have hg1 := h1.preserve h0 (by decide) (by decide) (by simp [stablePointer, Core.generator]) hg
@@ -51,25 +51,25 @@ theorem privateKey_ok (M : Mont) (Sq : MontS) {L : ExecutionLayout} {s0 : State}
   have hx1 := h1.preserve h0 (by decide) (by decide) (by simp [stablePointer, Core.privateScalar]) hx
   have hn1 := h1.preserve h0 (by decide) (by decide) (by simp [stablePointer, Core.nonce]) hn
   refine WP.seq (WP.mono (readyRange_ok h1.ready .q Core.nonce (by trivial) hn1.active
-    (by rw [hnl]; omega) (by simp only [hnl, ModulusSide.words, ModulusSide.length]; exact Nat.le_refl _)
+    (by rw [hnl]; omega_using [hql]) (by simp only [hnl, ModulusSide.words, ModulusSide.length]; exact Nat.le_refl _)
     false h1.mask) fun s2 h2 => ?_)
   have hqm2 := h2.preserve h1.ready (Nat.le_refl _) (by decide) (by trivial) hqm1
   have hg2 := h2.preserve h1.ready (by decide) (by decide) (by simp [stablePointer, Core.generator]) hg1
   have hy2 := h2.preserve h1.ready (by decide) (by decide) (by simp [stablePointer, Core.publicValue]) hy1
   have hx2 := h2.preserve h1.ready (by decide) (by decide) (by simp [stablePointer, Core.privateScalar]) hx1
   refine WP.seq (WP.mono (readyPow_ok M Sq h2.ready .p hp hop Core.generator Core.privateScalar (by trivial) (by trivial)
-    hg2.active hx2.active (by rw [hgl]; omega)
+    hg2.active hx2.active (by rw [hgl]; omega_using [hql, hqp])
     (by simp only [hgl, ModulusSide.words, ModulusSide.length]; exact Nat.le_refl _)
-    (by rw [hxl]; omega) (by rw [hxl]; omega) t (by decide) ht) fun s3 h3 => ?_)
+    (by rw [hxl]; omega_using [hql]) (by rw [hxl]; omega_using [hqu]) t (by decide) ht) fun s3 h3 => ?_)
   have hqm3 := h3.local (by decide) ht hqm2 (by rw [hqml]; exact hqm)
-    (Or.inl (by rw [hqml]; unfold qMinusTwo t; omega))
+    (Or.inl (by rw [hqml]; unfold qMinusTwo t; omega_using [hqu]))
   have hy3 := h3.external (by decide) ht hy2
   have hm3 := (h3.fields (by decide) ht .mask).trans h2.mask
   refine WP.mono (readyEqual_ok h3.ready (Core.element t) Core.publicValue
     (by change t < 2 ^ 31; decide) (by trivial) (h3.output (by decide) ht) hy3.active
     (by simp only [encodeBE_length, ModulusSide.length, hyl])
-    (by simp only [encodeBE_length, ModulusSide.length]; omega)
-    (by simp only [encodeBE_length, ModulusSide.length]; omega) false hm3) fun s4 h4 => ?_
+    (by simp only [encodeBE_length, ModulusSide.length]; omega_using [hql, hqp])
+    (by simp only [encodeBE_length, ModulusSide.length]; omega_using [hpu]) false hm3) fun s4 h4 => ?_
   have hqm4 := h4.preserve h3.ready (Nat.le_refl _) (by decide) (by trivial) hqm3
   have hqm4bytes := operand_bytesAt hqm4
   rw [hqml] at hqm4bytes

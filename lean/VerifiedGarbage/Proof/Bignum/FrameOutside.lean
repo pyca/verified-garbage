@@ -21,7 +21,7 @@ theorem frame_outside {base : Addr} {d len : Nat} {m m' : Mem}
   have I := Offset.lt_iff a base fit
   change (a - off base d).toNat < len ↔ d ≤ ofs base a ∧ ofs base a < d + len at I
   change (a - off base d).toNat + 1 ≤ len at hc
-  have := I.mp (by omega)
-  omega
+  have := I.mp (by omega_using [hc])
+  omega_using [ha, I, hc]
 
 end VG.Proof.Bignum

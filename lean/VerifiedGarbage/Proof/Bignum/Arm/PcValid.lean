@@ -57,14 +57,14 @@ theorem pcValid_ok (s : State) {base dst src : BitVec 32} {len k : Nat}
   have rz : Rest roundClobbers s z := rv.trans (restZ.mono (by decide))
   have frameZ : Frame [⟨State.addr base, 8 * len⟩] s.mem z.mem := by rw [memZ]; exact frameV
   have stackZ := stack.after_workspace frameZ rz
-  have inputZ := rsa_bytes_frame frameZ (by omega : k < 2 ^ 64)
+  have inputZ := rsa_bytes_frame frameZ (by omega_using [hk'] : k < 2 ^ 64)
     (by intro r hr; simp only [List.mem_singleton] at hr; subst r; exact srcSep)
   have stackReadZ : InRegions (z.rd ++ z.wr) (State.addr z.sp) 4 := by
     simpa only [VG.Proof.Mont.off, BitVec.add_zero] using stackZ.read (d := 0) (by decide)
   have stackSepZ := stackZ.separate.sub_left (Region.sub_prefix (show 4 ≤ 16 by decide))
   rw [WP.seq_iff]
   refine WP.mono (kernel.correct z (ws.congr rz.wr) (by rw [memZ]; exact layoutV)
-    (by rw [memZ]; exact widthV) (by omega) bytesFit srcFit
+    (by rw [memZ]; exact widthV) (by omega_using [hk]) bytesFit srcFit
     (by rw [rz.rd, rz.wr]; exact read) srcSep ((restZ.gpr .r0 (by decide)).trans ptrV)
     sourceZ countZ stackReadZ stackSepZ stackZ.savedBase
     (by rw [inputZ]; exact large) (by rw [inputZ]; exact odd) countFit) ?_

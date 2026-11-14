@@ -46,7 +46,7 @@ theorem g16_lanes {s : State} (h : Room s) (hm : MasksIn s) :
     intro r hr
     simp only [List.mem_singleton] at hr; subst hr
     exact Offset.disjoint_base (s.gpr .r9) (d := 8 * k + 4 * b) (n := 4) (k := 8 * 69)
-      (by omega) (by omega)
+      (by omega_using [hk69]) (by omega_using [hb, hb'])
   · refine hfr.sub fun r hr => ?_
     simp only [List.mem_singleton] at hr; subst hr
     exact ⟨workR s, List.mem_singleton_self _, Region.sub_prefix (by simp [gCfg])⟩
@@ -115,13 +115,13 @@ theorem masks_of_arrays {s s' : State} (hm : MasksIn s) (hr9 : s'.gpr .r9 = s.gp
   refine hfr.readW (r := ⟨wordAddr (s.gpr .r9) kv.1, 8⟩) (Region.contains_self _ _) ?_ (by decide)
   intro r hr
   simp only [List.mem_singleton] at hr; subst hr
-  exact Offset.disjoint _ (Or.inl (by omega)) (by omega) (by omega)
+  exact Offset.disjoint _ (Or.inl (by omega_using [hlt])) (by omega_using [hlt]) (by omega_using [])
 
 theorem scratch_of_arrays {s s' : State} (hfr : Frame [arraysR s] s.mem s'.mem) :
     Frame [workR s] s.mem s'.mem :=
   hfr.sub fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr
-    exact ⟨workR s, List.mem_singleton_self _, Offset.sub_base _ (by omega)⟩
+    exact ⟨workR s, List.mem_singleton_self _, Offset.sub_base _ (by omega_using [])⟩
 
 theorem exec_add_imm (s : State) (d : Reg) (v : BitVec 32) :
     ∃ t, exec (.alu .add d (.imm v)) s = some t ∧ t.gpr d = s.gpr d + v.signExtend 64 ∧
@@ -288,7 +288,7 @@ theorem round_ok (d : Spec.Seed.Direction) {s : State} (h : Room s) (hm : MasksI
     rw [← hm9 kv hkv]
     show s12.mem.readW (wordAddr (s12.gpr .r9) kv.1) 64 = s9.mem.readW (wordAddr (s9.gpr .r9) kv.1) 64
     rw [mem12, mem11, r9_12, ← r9_10]
-    exact hlow kv.1 (by omega)
+    exact hlow kv.1 (by omega_using [hlt])
   · exact room_congr h r9_12 (by rw [wr12, wr11, wr10, wr9, wr8, wr7, wr6, wr5, wr4, wr3]; rfl)
   · rw [rd12, rd11, rd10, rd9, rd8, rd7, rd6, rd5, rd4, rd3]; rfl
   · rw [wr12, wr11, wr10, wr9, wr8, wr7, wr6, wr5, wr4, wr3]; rfl

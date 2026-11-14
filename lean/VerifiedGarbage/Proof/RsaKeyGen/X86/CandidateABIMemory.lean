@@ -37,7 +37,7 @@ theorem entry_memory {s : State} (h : contract.pre s) :
   have A := call_layout h
   have v := call_valid h
   have M := call_memory h
-  have fit : 16 ≤ (s.gpr .esp).toNat := by have := A.low; omega
+  have fit : 16 ≤ (s.gpr .esp).toNat := by have := A.low; omega_using [this]
   have F : Frame [(⟨(callEnvironment s).p.setWidth 64, 16⟩ : Region)] s.mem (Compact.entered s).mem :=
     pushed_frame (rs := Compact.savedRegisters) (by decide) fit
   have read {a : Addr} {n : Nat} (R : InRegions (s.rd ++ s.wr) a n) :
@@ -59,7 +59,7 @@ theorem entry_memory {s : State} (h : contract.pre s) :
     List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ List.mem_cons_self))
   have same := F.readW (r := (callEnvironment s).tableRegion) (w := 64)
     (a := off ((callEnvironment s).table.setWidth 64) (8 * i))
-    (Offset.contains_base _ (by change 8 * i + 8 ≤ 8192; omega) (by omega))
+    (Offset.contains_base _ (by change 8 * i + 8 ≤ 8192; omega_using [index]) (by omega_using [index]))
     (by intro r mem; obtain rfl := List.mem_singleton.mp mem; exact v.savedFar _ (List.mem_append_right _ tableMem)) (by decide)
   exact same.trans (M.table i index)
 

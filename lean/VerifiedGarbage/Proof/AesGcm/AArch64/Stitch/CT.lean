@@ -85,8 +85,8 @@ theorem stitched_rel {tb : List Instr} {k : Prog isa} {u₁ u₂ : State} {n : N
     rw [RegUpd.gpr_write_self]
     simp only [State.read, BitVec.setWidth_eq, Size.bits, h]
     exact Gcm.AArch64.Stitch.ushr7 hn
-  refine rel_ite (Proof.Aes.AArch64.Aese.eval_zero (e9 h26₁) (by omega))
-    (Proof.Aes.AArch64.Aese.eval_zero (e9 h26₂) (by omega))
+  refine rel_ite (Proof.Aes.AArch64.Aese.eval_zero (e9 h26₁) (by omega_using [hn]))
+    (Proof.Aes.AArch64.Aese.eval_zero (e9 h26₂) (by omega_using [hn]))
     (fun _ => by exact rel_taint [] (by simp only [RegUpd.sp_write, hsp]) (by agree_tac []) ⟨_, by taint_decide⟩)
     fun _ => ?_
   rw [List.nil_append]
@@ -179,11 +179,11 @@ theorem ctE'_ok (hMK : MulKey) {o : Nat} (ho : o = 0 ∨ o = 112) {to : Bool} {H
   have x26₁₀ : s₁₀.gpr .x26 = BitVec.ofNat 64 n := by
     rw [r₁₀.others _ (by decide), o₉.gpr, g₈ _ (by decide), h.x26]
   refine WP.seq (WP.mono (WP.with_rdwr (padMulT_ok hMK (y := blockAt s₈.mem (s₈.gpr .x20 + BitVec.ofNat 64 16)) he₁₀ hk₁₀
-    (by rw [v₁₀, l₉, rev64b_read]) x12₁₀ x13₁₀ (by omega) hdj.rd
+    (by rw [v₁₀, l₉, rev64b_read]) x12₁₀ x13₁₀ (by omega_using [hlt]) hdj.rd
     (hdj.w.sub_right (Lay.wSub (by decide))) x26₁₀ (dataOk_of h.data).lt
     (pad_big ((dataOk_of h.data).of_eq (by rw [r₁₀.rd, o₉.rd, rd₈]) (by rw [r₁₀.wr, o₉.wr, wr₈])).rd
       (dataOk_of h.data).lt
-      (by rw [hD₂, Offset.add_add]; congr 2; omega) (by omega))))
+      (by rw [hD₂, Offset.add_add]; congr 2; omega_using [hn₂, hjn]) (by omega_using [hlt]))))
     fun s₁₁ ⟨⟨y₁₁, hk₁₁, he₁₁, og₁₁, f₁₁, v₁₁⟩, rd₁₁, wr₁₁⟩ => ?_)
   unfold Impl.AesGcm.AArch64.Fast.lensTagAt
   simp only [List.append_assoc]
@@ -396,8 +396,8 @@ theorem runWithSX_rel (v : GcmImpl) (cl : Prog isa) (hMK : MulKey) (gh : Gh8Ok) 
   obtain ⟨x4₂, x5₂, x6₂, x7₂⟩ := hx₂
   have hn := hd₁.ok.lt
   have hpn : Stitch.pre n ≤ n := Nat.mul_div_le n 128
-  have hP16 : Stitch.pre n % 16 = 0 := by simp only [Stitch.pre]; omega
-  have subR : Region.Sub ⟨D + BitVec.ofNat 64 (Stitch.pre n), n - Stitch.pre n⟩ ⟨D, n⟩ := Offset.sub_base D (by omega)
+  have hP16 : Stitch.pre n % 16 = 0 := by simp only [Stitch.pre]; omega_using []
+  have subR : Region.Sub ⟨D + BitVec.ofNat 64 (Stitch.pre n), n - Stitch.pre n⟩ ⟨D, n⟩ := Offset.sub_base D (by omega_using [hpn])
   unfold Impl.AesGcm.AArch64.Stitch.runWithS
   have chunk : RelCT isa (Eq2 σ₁ σ₂) (.seq Impl.AesGcm.AArch64.Fast.front (.seq (Impl.AesGcm.AArch64.Stitch.stitched []
       tb Impl.Gcm.AArch64.Stitch.enc) (.block (Impl.AesGcm.AArch64.Stitch.whole ++
@@ -433,8 +433,8 @@ theorem runWithSX_rel (v : GcmImpl) (cl : Prog isa) (hMK : MulKey) (gh : Gh8Ok) 
     (ctAS_ok L hMK gh hJ₂ ha₂ hal x4₂ x5₂ x6₂ x7₂ hd₂ h22₂ hR h28₂ hf₂ hrd₂ hwr₂ htb₂)
     fun s₃ t₃ ⟨m₁, c₁⟩ ⟨m₂, c₂⟩ => ?_)
   refine rel_seq (cryptAlT_rel L v c₁ c₂ hP16 (by rw [m₁.x26, m₂.x26]))
-    (WP.with_rdwr (cryptAlT_ok L v (icb := 0) c₁ hP16 m₁.x26 hn (tail_big m₁.data.wr hn rfl (by omega))))
-    (WP.with_rdwr (cryptAlT_ok L v (icb := 0) c₂ hP16 m₂.x26 hn (tail_big m₂.data.wr hn rfl (by omega))))
+    (WP.with_rdwr (cryptAlT_ok L v (icb := 0) c₁ hP16 m₁.x26 hn (tail_big m₁.data.wr hn rfl (by omega_using [hpn]))))
+    (WP.with_rdwr (cryptAlT_ok L v (icb := 0) c₂ hP16 m₂.x26 hn (tail_big m₂.data.wr hn rfl (by omega_using [hpn]))))
     fun s₄ t₄ ⟨o₁, rd₁, wr₁⟩ ⟨o₂, rd₂, wr₂⟩ => ?_
   have M₁ := Mid.cryptS L m₁ subR c₁.data o₁ rd₁ wr₁
   have M₂ := Mid.cryptS L m₂ subR c₂.data o₂ rd₂ wr₂
@@ -456,7 +456,7 @@ theorem runWithSX_rel (v : GcmImpl) (cl : Prog isa) (hMK : MulKey) (gh : Gh8Ok) 
     (hexW r hr).sub_left (stW (by decide))
   have hexK : ∀ r ∈ ex, (keyR W).Disjoint r := fun r hr => (hexW r hr).sub_left (Lay.wSub (by decide))
   have hDd : Region.Sub ⟨D + BitVec.ofNat 64 (Stitch.pre n) + BitVec.ofNat 64 0, 16 * ((n - Stitch.pre n - 0) / 16)⟩
-      ⟨D, n⟩ := fun x hx => subR x (Offset.sub_base _ (by omega) x hx)
+      ⟨D, n⟩ := fun x hx => subR x (Offset.sub_base _ (by omega_using []) x hx)
   refine rel_seq (hrel a₁.call a₂.call sY sS a₁.env.sp a₂.env.sp r₁ w₁ fr₁ r₂ w₂ fr₂ hDd)
     (WP.with_rdwr (absCall2WithX_ok L (.inr rfl) (Q := fun _ => True) hexH hexB a₁
       (WP.mono (hgh₁ a₁.call sY sS r₁ w₁ a₁.env.sp fr₁ hDd) fun _ g => ⟨g, trivial⟩)))
@@ -468,8 +468,8 @@ theorem runWithSX_rel (v : GcmImpl) (cl : Prog isa) (hMK : MulKey) (gh : Gh8Ok) 
   refine RelCT.seq_assoc3 (rel_seq (rel_taint [.x19, .x20, .x21, .x23, .x24, .x26] (by rw [N₁.env.sp, N₂.env.sp])
       (by agree_tac [N₁.env.x19, N₂.env.x19, N₁.env.x20, N₂.env.x20, N₁.env.x21, N₂.env.x21, b₁.x23, b₂.x23,
         b₁.x24, b₂.x24, N₁.x26, N₂.x26]) ⟨_, by taint_decide⟩)
-    (ctE'_ok L hMK (.inl rfl) N₁ b₁ l₁ (by rw [show n - (n - Stitch.pre n) = Stitch.pre n by omega]) (by omega))
-    (ctE'_ok L hMK (.inl rfl) N₂ b₂ l₂ (by rw [show n - (n - Stitch.pre n) = Stitch.pre n by omega]) (by omega)) fun s₁₆ t₁₆ ⟨_, _, _, _, T₁, k28₁⟩ ⟨_, _, _, _, T₂, k28₂⟩ => ?_)
+    (ctE'_ok L hMK (.inl rfl) N₁ b₁ l₁ (by rw [show n - (n - Stitch.pre n) = Stitch.pre n by omega_using [hpn]]) (by omega_using []))
+    (ctE'_ok L hMK (.inl rfl) N₂ b₂ l₂ (by rw [show n - (n - Stitch.pre n) = Stitch.pre n by omega_using [hpn]]) (by omega_using [])) fun s₁₆ t₁₆ ⟨_, _, _, _, T₁, k28₁⟩ ⟨_, _, _, _, T₂, k28₂⟩ => ?_)
   refine rel_seq (rel_ctr v.ctr T₁.call T₂.call (by rw [T₁.env.sp, T₂.env.sp]))
     (tagCall_ok L v (.inl rfl) T₁) (tagCall_ok L v (.inl rfl) T₂) fun s₁₇ t₁₇ O₁ O₂ => ?_
   exact rel_taint [.x19, .x28] (by rw [O₁.env.sp, O₂.env.sp])

@@ -24,12 +24,12 @@ theorem ranges_apart {g : Geometry} {d bytes : Nat} (safe : protectedHeader d by
     simp only [Geometry.array, Geometry.words, Proof.Rsa.Mont.arrAt, Proof.Rsa.Mont.hdrBytes,
       VG.Impl.RsaKeyGen.X86.Exponent.markerOffset]
     unfold protectedHeader at safe
-    omega
+    omega_using [safe]
 
 theorem metadata32 {g : Geometry} (v : g.Valid) {m m' : Mem}
     (W : WorkspaceFrame g (ranges g) m m') {d : Nat} (safe : protectedHeader d 4) :
     m'.readW (off g.W d) 32 = m.readW (off g.W d) 32 := by
-  apply W.read32 (by have := v.headerFit; unfold protectedHeader at safe; omega)
+  apply W.read32 (by have := v.headerFit; unfold protectedHeader at safe; omega_using [safe, this])
   exact fun _ mem => ranges_apart safe mem
 
 end VG.Proof.RsaKeyGen.X86.Prepare

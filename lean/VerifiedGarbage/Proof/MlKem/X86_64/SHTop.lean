@@ -86,7 +86,7 @@ def Post3 (w16 : Bool) (s s' : State) : Prop :=
 theorem end3G_ok {H : Mem → Prop} {s : State} (h : Done3 w16 σ H s) :
     WP isa (.block epi) s fun s' => Post3 w16 σ s' ∧ H s'.mem ∧ gprPreserved σ s' := by
   have hin : ∀ i < 5, InRegions (s.rd ++ s.wr) (scr σ + BitVec.ofNat 64 (oSave + 8 * i)) 8 := fun i hi =>
-    in_scr' hp h.env.rd h.env.wr (by simp only [oSave]; omega)
+    in_scr' hp h.env.rd h.env.wr (by simp only [oSave]; omega_using [hi])
   rw [epi_eq]
   refine WP.mono (WP.keep [.rax, .r14, .r13, .r12, .rbp, .rbx] (Q := fun s' => s'.mem = s.mem ∧
       (s'.gpr .rax).setWidth 32 = (s.gpr .r14).setWidth 32 ∧
@@ -115,7 +115,7 @@ theorem end3G_ok {H : Mem → Prop} {s : State} (h : Done3 w16 σ H s) :
     · rw [k.gpr (by decide)]; exact h.env.r15
   · rw [hm]
     exact h.env.frame.readW (Region.contains_self _ _) (by
-      simpa using ⟨hp.ret_a, hp.ret_scr, Offset.base_disjoint_below (σ.gpr .rsp) (n := 24) (k := 8) (by omega)⟩)
+      simpa using ⟨hp.ret_a, hp.ret_scr, Offset.base_disjoint_below (σ.gpr .rsp) (n := 24) (k := 8) (by omega_using [])⟩)
       (by decide)
 
 /-- The runs after the squeezes, keeping `H`. -/

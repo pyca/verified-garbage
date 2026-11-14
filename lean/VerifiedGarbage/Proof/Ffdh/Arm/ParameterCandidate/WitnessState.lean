@@ -68,7 +68,7 @@ structure WitnessState (p : WitnessParams) (used passed : Nat) (s : State) : Pro
 
 theorem witnessSlots_bound {d : Nat} (member : d ∈ witnessSlots) : d + 4 ≤ 72 := by
   simp only [witnessSlots, List.mem_cons, List.not_mem_nil, or_false] at member
-  omega
+  omega_using [member]
 
 theorem WitnessState.after_frame {s t : State} {p : WitnessParams} {used passed nextUsed nextPassed : Nat}
     {rs : List Reg} (h : WitnessState p used passed s)
@@ -86,15 +86,15 @@ theorem WitnessState.after_frame {s t : State} {p : WitnessParams} {used passed 
   · rw [rest.rd, rest.wr]; exact h.tapeRead
   · rw [rest.sp]; exact h.tapeStack
   · rw [rest.sp]; exact h.tapeBelow
-  · refine (rsa_bytes_frame changed (by have := h.tapeCount; omega) ?_).trans h.tapeBytes
+  · refine (rsa_bytes_frame changed (by have := h.tapeCount; omega_using [this]) ?_).trans h.tapeBytes
     intro r hr
     simp only [witnessRegions, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl
     · exact h.tapeScratch
     · exact h.tapeBelow
-    · rw [VG.Arm.addr_add (by have := h.saved.space.nowrap; omega)]
+    · rw [VG.Arm.addr_add (by have := h.saved.space.nowrap; omega_using [this])]
       exact h.tapeStack.sub_right (Offset.sub_base _ (by decide : 40 + 4 ≤ 72))
-    · rw [VG.Arm.addr_add (by have := h.saved.space.nowrap; omega)]
+    · rw [VG.Arm.addr_add (by have := h.saved.space.nowrap; omega_using [this])]
       exact h.tapeStack.sub_right (Offset.sub_base _ (by decide : 56 + 4 ≤ 72))
 
 theorem WitnessState.after_memory {s t : State} {p : WitnessParams} {used passed : Nat} {rs : List Reg}

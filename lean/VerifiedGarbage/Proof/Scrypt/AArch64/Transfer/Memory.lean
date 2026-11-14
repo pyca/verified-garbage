@@ -4,6 +4,7 @@ import VerifiedGarbage.Proof.Sha256.Stream
 import VerifiedGarbage.Proof.Framework.RegionsSub
 public import VerifiedGarbage.Proof.Framework.WriteBytes
 public import VerifiedGarbage.Spec.Scrypt.Contract
+import VerifiedGarbage.Proof.Framework.Omega
 
 @[expose] public section
 namespace VG.Proof.Scrypt.AArch64.Transfer
@@ -16,7 +17,7 @@ theorem writeW_xor (w : Nat) (m m' : Mem) (d a b : Addr) :
     m.writeW d (m'.readW a (8*w) ^^^ m'.readW b (8*w)) =
       writeBytes m d (xorBytes (bytesAt m' a w) (bytesAt m' b w)) := by
   simp only [Mem.writeW, Mem.readW]
-  rw [show 8*w / 8 = w by omega, BitVec.setWidth_eq, BitVec.setWidth_eq, BitVec.setWidth_eq,
+  rw [show 8*w / 8 = w by omega_using [], BitVec.setWidth_eq, BitVec.setWidth_eq, BitVec.setWidth_eq,
     write_eq_writeBytes]
   congr 1
   apply List.ext_getElem (by simp [xorBytes, bytesAt])
@@ -35,22 +36,22 @@ theorem xor_mem (w : Nat) (m : Mem) {d x y : Addr} {n k : Nat} (hk : k < n) (hlt
           (y + BitVec.ofNat 64 (w * k)) (8*w)) =
       writeBytes m d (xorBytes (bytesAt m x (w * (k + 1))) (bytesAt m y (w * (k + 1)))) := by
   have hwk : w*k+w ≤ w*n := by
-    simpa only [Nat.mul_succ] using Nat.mul_le_mul_left w (by omega : k+1 ≤ n)
+    simpa only [Nat.mul_succ] using Nat.mul_le_mul_left w (by omega_using [hk] : k+1 ≤ n)
   have hl : (xorBytes (bytesAt m x (w * k)) (bytesAt m y (w * k))).length = w * k := by
     rw [xorBytes_length _ _ (by simp [bytesAt]), bytesAt_length]
   -- The words of `x` and `y` are not in the part of `d` written so far.
   have sx : Region.Disjoint ⟨x + BitVec.ofNat 64 (w * k), w⟩
       ⟨d, (xorBytes (bytesAt m x (w * k)) (bytesAt m y (w * k))).length⟩ := by
-    rw [hl]; exact (hdx.symm.sub_left (sub_off (by omega) (by omega))).sub_right
-      (Region.sub_prefix (by omega))
+    rw [hl]; exact (hdx.symm.sub_left (sub_off (by omega_using [hwk]) (by omega_using [hlt, hwk]))).sub_right
+      (Region.sub_prefix (by omega_using [hwk]))
   have sy : Region.Disjoint ⟨y + BitVec.ofNat 64 (w * k), w⟩
       ⟨d, (xorBytes (bytesAt m x (w * k)) (bytesAt m y (w * k))).length⟩ := by
-    rw [hl]; exact (hdy.symm.sub_left (sub_off (by omega) (by omega))).sub_right
-      (Region.sub_prefix (by omega))
-  rw [writeW_xor w, bytesAt_writeBytes_sep _ _ sx (by omega), bytesAt_writeBytes_sep _ _ sy (by omega)]
+    rw [hl]; exact (hdy.symm.sub_left (sub_off (by omega_using [hwk]) (by omega_using [hlt, hwk]))).sub_right
+      (Region.sub_prefix (by omega_using [hwk]))
+  rw [writeW_xor w, bytesAt_writeBytes_sep _ _ sx (by omega_using [hlt, hwk]), bytesAt_writeBytes_sep _ _ sy (by omega_using [hlt, hwk])]
   have e := writeBytes_append m d _ (xorBytes (bytesAt m (x + BitVec.ofNat 64 (w * k)) w)
     (bytesAt m (y + BitVec.ofNat 64 (w * k)) w))
-    (by rw [hl, xorBytes_length _ _ (by simp [bytesAt]), bytesAt_length]; omega)
+    (by rw [hl, xorBytes_length _ _ (by simp [bytesAt]), bytesAt_length]; omega_using [hlt, hwk])
   rw [hl] at e
   rw [e, Nat.mul_succ, bytesAt_add, bytesAt_add, xorBytes, xorBytes, xorBytes,
     List.zipWith_append (by simp [bytesAt])]

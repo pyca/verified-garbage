@@ -61,7 +61,7 @@ private theorem searchLoop_step (remaining : Nat) :
     have hb := (of_decide_eq_true cont).2
     rw [show p.plan.attempt.construct.len = pLen from next.2.2.2.1] at hb
     exact hb
-  refine ⟨32 * pLen - (p.counter + 1), by omega, p.next cont, ⟨rfl, next⟩, ⟨rfl, ht.2 cont⟩, hsp⟩
+  refine ⟨32 * pLen - (p.counter + 1), by omega_using [hr, bound], p.next cont, ⟨rfl, next⟩, ⟨rfl, ht.2 cont⟩, hsp⟩
 
 theorem pSearchLoop_ct : RelCT isa (Two (SearchBefore pLen qLen))
     (.loop (pSearchIteration (pAttempt G1 G256 T.run pLen qLen)

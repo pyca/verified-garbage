@@ -75,7 +75,7 @@ theorem significantByte_ct : RelCT isa (Two ScanBytePre) Checks.significantByte 
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.toNat_setWidth, BitVec.zeroExtend]
     have := p.value.isLt
-    omega
+    omega_using []
   refine RelCT.seq (two_post (Ψ := fun (p : ScanBytePublic) t =>
     t.gpr .x1 = p.pointer ∧ t.gpr .x9 = BitVec.ofNat 64 p.remaining) significantChoose_ct ?_) ?_
   · intro p s ⟨hsi, hcx, h8, h9, ha, hz⟩

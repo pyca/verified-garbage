@@ -15,7 +15,7 @@ open VG.Proof.Mont VG.Proof.Mont.X86 VG.Proof.Mont.X86.Rt
 theorem Context.readScalar {g : Geometry} {s : State} (C : Context g s)
     (d : Nat) (fit : d + 4 ≤ g.L) :
     readSrc s (.mem (slot d)) = some (s.mem.readW (off g.W d) 32) := by
-  simpa only [slot, VG.Impl.MillerRabin.X86.at_, VG.Impl.Mont.X86.at_, Nat.zero_add] using readSrc_ptr C.ws C.base (d := d) (by omega)
+  simpa only [slot, VG.Impl.MillerRabin.X86.at_, VG.Impl.Mont.X86.at_, Nat.zero_add] using readSrc_ptr C.ws C.base (d := d) (by omega_using [fit])
 
 theorem Context.readScalarAfter {g : Geometry} {s t : State} (C : Context g s)
     {rs : List Reg} (K : Keeps rs s t) (base : .edi ∉ rs) (mem : t.mem = s.mem)
@@ -32,12 +32,12 @@ theorem scalarStore_ok {g : Geometry} (v : g.Valid) {s : State} (C : Context g s
   have bound : d + 4 ≤ g.L := by
     have := v.headerFit
     unfold scratchWord at scratch
-    omega
-  refine wp_storeS (ea_ptr C.ws C.base (d := d) (by omega))
-    (ws_write C.ws (y := 0 + d) (n := 4) (by omega)) fun t T => WP.block_nil ?_
+    omega_using [scratch, this]
+  refine wp_storeS (ea_ptr C.ws C.base (d := d) (by omega_using [bound]))
+    (ws_write C.ws (y := 0 + d) (n := 4) (by omega_using [bound])) fun t T => WP.block_nil ?_
   have O : Outside g.W d 4 s.mem t.mem := by
     rw [T.mem, Nat.zero_add]
-    exact writeW32_outside _ _ _ (by have := C.ws.nowrap; omega)
+    exact writeW32_outside _ _ _ (by have := C.ws.nowrap; omega_using [bound, this])
   refine ⟨?_, O, T.keeps [], C.keepScalar (T.keeps []) (by decide) O scratch⟩
   rw [T.mem, Nat.zero_add, Mem.readW_writeW_self32]
 

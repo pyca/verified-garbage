@@ -52,7 +52,7 @@ theorem tailKMain_ok (vl pre : Bool) {R0 R1 : BitVec 64} (hk : Key R0 R1) {X : N
   have F₁ : Frame [slotsR buf] s.mem s₁.mem := by
     rw [m₁]; exact W2_frame _ (by decide) y₁ y₂ (Frame.refl _ _)
   have q₁ : bytesAt s₁.mem q (16 * total pre) = bytesAt s.mem q (16 * total pre) := by
-    have := bytes_frame F₁ dqs (by cases pre <;> decide) (j := 0) (n := 16 * total pre) (by omega)
+    have := bytes_frame F₁ dqs (by cases pre <;> decide) (j := 0) (n := 16 * total pre) (by omega_using [])
     simpa using this
   have h0 : SR pre buf q R0 R1 X (fun j => ctr (stateAt s.mem st) j) s₁ 0 s₁ :=
     ⟨hh, h15, Frame.refl _ _, fun _ _ => rfl, rfl, rfl, by

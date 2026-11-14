@@ -31,11 +31,11 @@ theorem runValues_final_six (i n : Nat) (hin : i+n≤6) (v : Vector (BitVec 128)
   induction n generalizing i v w with
   | zero => exact ⟨hv,hf⟩
   | succ n ih =>
-    have hi : i<6 := by omega
-    have hp := stageValues_bound ⟨i,by omega⟩ v (finalZ i) (by decide) (by decide) hv
-    have hfield := stridedStageValues_field ⟨i,by omega⟩ v w hu (finalIndex i) (by decide) (by decide) hv hf
+    have hi : i<6 := by omega_using [hin]
+    have hp := stageValues_bound ⟨i,by omega_using [hin]⟩ v (finalZ i) (by decide) (by decide) hv
+    have hfield := stridedStageValues_field ⟨i,by omega_using [hin]⟩ v w hu (finalIndex i) (by decide) (by decide) hv hf
     rw [← finalZ_index hi] at hfield
-    have h := ih (i := i+1) (by omega) _ _ hp hfield
+    have h := ih (i := i+1) (by omega_using [hin]) _ _ hp hfield
     simpa only [runValues,stridedRunOps,InverseTraversal.run_append,Nat.add_assoc,Nat.add_comm 1 n] using h
 
 theorem stridedOps_eq {u : Nat} (hu : u<8) :

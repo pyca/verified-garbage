@@ -93,13 +93,13 @@ private theorem sub_tape {r : Addr} {n used len : Nat}
 
 private theorem nowrap_tape {r : Addr} {n used len : Nat} (hn : r.toNat + n ≤ 2 ^ 64)
     (hu : used + len ≤ n) : (r + BitVec.ofNat 64 used).toNat + len ≤ 2 ^ 64 := by
-  have hul : used < 2 ^ 64 ∨ len = 0 := by omega
+  have hul : used < 2 ^ 64 ∨ len = 0 := by omega_using [hn, hu]
   rcases hul with hul | hz
   · rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hul]
     have := Nat.mod_le (r.toNat + used) (2 ^ 64)
     by_cases hz : r.toNat + used < 2 ^ 64
-    · rw [Nat.mod_eq_of_lt hz]; omega
-    · omega
+    · rw [Nat.mod_eq_of_lt hz]; omega_using [hn, hu]
+    · omega_using [hn, hu]
   · subst hz; simp only [Nat.add_zero]; exact Nat.le_of_lt (BitVec.isLt _)
 
 theorem rA_eq (p : KeyPublic) : callSp p + BitVec.ofNat 64 96 = p.sp - BitVec.ofNat 64 96 := by
@@ -181,7 +181,7 @@ theorem writeController_word17 (m : Mem) (B : Addr) (values : List (Nat × BitVe
     change _ = if j = e.1 then e.2 else word m B (8 * j)
     by_cases hje : j = e.1
     · subst hje; rw [ite_eq_left rfl]; exact word_writeW_self _ _ _ _
-    · rw [ite_eq_right hje]; exact hdrStore_hdr _ _ _ (by omega) (by omega) (Ne.symm hje)
+    · rw [ite_eq_right hje]; exact hdrStore_hdr _ _ _ (by omega_using [he]) (by omega_using [hj]) (Ne.symm hje)
 
 /-- The attempt's register arguments. -/
 def KeyArgs (p : KeyPublic) (used : Nat) (t : State) : Prop :=
@@ -216,7 +216,7 @@ theorem base_arguments_ok {p : KeyPublic} {original s : State} {used keys scalar
     intro e he
     refine ⟨frameR 144 s, List.mem_cons_self .., ?_⟩
     simp only [frameR, e0]
-    exact Offset.contains_base _ he (by omega)
+    exact Offset.contains_base _ he (by omega_using [he])
   have hl : ∀ d, d + 8 ≤ 128 →
       InRegions ((allocated 144 s).rd ++ (allocated 144 s).wr) (p.control + BitVec.ofNat 64 d) 8 :=
     fun d hd => by
@@ -395,15 +395,15 @@ theorem call_args {p : KeyPublic} {u : State} {m : Mem} (hu : u.sp = callSp p)
     unfold stackArg stackArgAddr
     rw [hu, hm]
     rw [show callSp p + BitVec.ofNat 64 (32 + 8 * (8 + j)) = callSp p + BitVec.ofNat 64 (8 * (12 + j)) by
-      congr 2; omega]
-    exact writeController_word17 _ _ _ (callValues_bound p) (12 + j) (by omega)
+      congr 2; omega_using []]
+    exact writeController_word17 _ _ _ (callValues_bound p) (12 + j) (by omega_using [hj])
   refine ⟨?_, ?_, ?_, ?_, ?_⟩ <;> [rw [hw 0 (by decide)]; rw [hw 1 (by decide)]; rw [hw 2 (by decide)];
     rw [hw 3 (by decide)]; rw [hw 4 (by decide)]] <;>
     simp only [callValues, baseValues, ctxValues, List.cons_append, List.nil_append, controllerValue,
       List.foldl_cons, List.foldl_nil, Nat.reduceEqDiff, Nat.reduceAdd, ite_true, ite_false]
 
 theorem callSp_toNat {p : KeyPublic} (hf : 192 ≤ p.sp.toNat) : (callSp p).toNat = p.sp.toNat - 192 := by
-  rw [callSp_eq, BitVec.toNat_sub_of_le (by simp only [BitVec.le_def, BitVec.toNat_ofNat]; omega)]
+  rw [callSp_eq, BitVec.toNat_sub_of_le (by simp only [BitVec.le_def, BitVec.toNat_ofNat]; omega_using [hf])]
   simp only [BitVec.toNat_ofNat]
 
 /-- What an attempt at `used` leaves: its status, and the key pair for 1,
@@ -540,7 +540,7 @@ theorem KeyInput.context_frame {p : KeyPublic} {s : State} (h : KeyInput p s) {m
   · have inside : i < (stackArg s 6).toNat := List.mem_range.mp hi
     have size := h.nowrap (r := inContext s) (by simp [inReads])
     change (stackArg s 5).toNat + (stackArg s 6).toNat * 8 ≤ 2 ^ 64 at size
-    exact Offset.contains_base _ (by omega) (by omega)
+    exact Offset.contains_base _ (by omega_using [inside]) (by omega_using [inside, size])
   · exact h.read_disjoint (by simp [inReads])
   · decide
 
@@ -566,7 +566,7 @@ theorem call_attempt_pre (h : KeyLive p original used keys scalars s) (hroom : u
   have hdl : (BitVec.ofNat 64 p.dlen).toNat = p.dlen := by
     rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt hf.dlen64]
   have hzw : (BitVec.ofNat 64 (p.Z / 8)).toNat = p.Z / 8 := by
-    rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := hf.ns; omega)]
+    rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := hf.ns; omega_using [this])]
   have cx : (⟨p.ctx, p.ctxLen * 8⟩ : Region) = inContext original := by rw [← h.input.2]; rfl
   have xx : rX p = inX original := h.input.x_eq.symm
   have yy : rY p = inY original := h.input.y_eq.symm
@@ -574,7 +574,7 @@ theorem call_attempt_pre (h : KeyLive p original used keys scalars s) (hroom : u
   have nc : p.ctx.toNat + p.ctxLen * 8 ≤ 2 ^ 64 := by
     have n := h.input.nowrap (r := inContext original) (by simp [inReads]); rw [← cx] at n; exact n
   have hcl : (BitVec.ofNat 64 p.ctxLen).toNat = p.ctxLen := by
-    rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+    rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [nc])]
   have xc : (rX p).Disjoint ⟨p.ctx, p.ctxLen * 8⟩ := by
     rw [xx, cx]; exact h.input.write_disjoint (by simp [inWrites]) (by simp [inReads])
   have yc : (rY p).Disjoint ⟨p.ctx, p.ctxLen * 8⟩ := by
@@ -595,7 +595,7 @@ theorem call_attempt_pre (h : KeyLive p original used keys scalars s) (hroom : u
     call_stackArg, hsa, h0, h1, h2, h3, h4, r3, r4, r5, r6, r7, r8, r9, r10, hlen, hdl, hzw, hcl, hf.z8,
     State.withRegions_rd, State.withRegions_wr, State.withRegions_sp, State.callEntry_sp, hu,
     State.withRegions_mem, State.callEntry_mem, hdom]
-  exact ⟨by omega, rfl, rfl, hf.xy, hf.xd, hf.xr, hf.xs, xc, hf.xa, hf.yd, hf.yr, hf.ys, yc, hf.ya, hf.ds,
+  exact ⟨by omega_using [hsp], rfl, rfl, hf.xy, hf.xd, hf.xr, hf.xs, xc, hf.xa, hf.yd, hf.yr, hf.ys, yc, hf.ya, hf.ds,
     hf.rs, sc, hf.sa, hf.nx, hf.ny, hf.nd, hf.nr, hf.ns, nc, hf.len, hf.dlen, trivial, trivial, trivial,
     hf.scratch, h.input.domain_valid, canonical.1, by rw [h.input.context_frame hfr]; exact canonical.2⟩
 
@@ -608,9 +608,9 @@ theorem key_attempt_run (a : Attempt) (h : KeyLive p original used keys scalars 
   have hroom' : 144 ≤ s.sp.toNat := by
     have := hf.room
     have h48 : (p.sp - 48).toNat = p.sp.toNat - 48 := by
-      rw [BitVec.toNat_sub_of_le (by simp only [BitVec.le_def]; show 48 ≤ _; omega)]; rfl
+      rw [BitVec.toNat_sub_of_le (by simp only [BitVec.le_def]; show 48 ≤ _; omega_using [this])]; rfl
     rw [h.sp, h48]
-    omega
+    omega_using [this]
   unfold attemptRun
   refine WP.alloc (by decide) hroom' ?_
   refine WP.seq (WP.mono (key_arguments_ok h) fun u ⟨⟨ha, hm⟩, k⟩ => ?_)

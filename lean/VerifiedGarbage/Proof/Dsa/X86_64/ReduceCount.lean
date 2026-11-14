@@ -32,23 +32,23 @@ theorem reduceCount_ok {s : State} {B : Addr} {Z o w wx m n : Nat} {minv : BitVe
   have hsub : BitVec.ofNat 64 n - 1 = BitVec.ofNat 64 (n - 1) :=
     ofNat64_pred h1 h64
   have hzero : (BitVec.ofNat 64 (n - 1) == 0) = decide (n = 1) := by
-    rw [ofNat_beq_zero (by omega)]
+    rw [ofNat_beq_zero (by omega_using [h64])]
     rw [Bool.eq_iff_iff, decide_eq_true_iff, decide_eq_true_iff]
-    omega
+    omega_using [h1]
   refine WP.mono (WP.keep [.rax] (Q := fun t =>
     t.mem = s.mem.writeW (off (off B o) (8 * Crt.sRem)) (BitVec.ofNat 64 (n - 1)) ∧
     t.zf = some (decide (n = 1))) ?_ rfl) fun t ⟨⟨hmem, hz⟩, hk⟩ => ?_
   · unfold Arithmetic.reduceCount
     xrun [State.ea, hdr, hc.rdi, hdrOff, hn, hsub, hzero,
-      hc.good.scr.ld (show 8 * Crt.sRem + 8 ≤ slot wx 8 by omega),
-      hc.good.scr.st (show 8 * Crt.sRem + 8 ≤ slot wx 8 by omega)]
+      hc.good.scr.ld (show 8 * Crt.sRem + 8 ≤ slot wx 8 by omega_using [hslot]),
+      hc.good.scr.st (show 8 * Crt.sRem + 8 ≤ slot wx 8 by omega_using [hslot])]
   have ho : Outside (off B o) (8 * Crt.sRem) 8 s.mem t.mem := by
     rw [hmem]; exact writeW_outside _ _ _ (by decide)
   have hf : Frm (off B o) (workRanges wx) s.mem t.mem := by
     intro x hx
     apply ho x
     have h := hx (136, slot wx 8 + tabBytes wx - 136) (List.mem_singleton_self _)
-    have : 256 ≤ slot wx 8 := by unfold slot hdrBytes; omega
+    have : 256 ≤ slot wx 8 := by unfold slot hdrBytes; omega_using []
     unfold Crt.sRem sFn at *
     omega
   have ht := hc.of_frmT hf (workRanges_ok wx) hk.2.2 (hk.gpr (by decide))

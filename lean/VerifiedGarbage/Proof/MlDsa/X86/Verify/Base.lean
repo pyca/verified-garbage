@@ -149,12 +149,12 @@ theorem sepS {p : Params} {o₁ l₁ o₂ l₂ : Nat} (h : o₁ + l₁ ≤ o₂ 
 
 theorem sepRS {p : Params} {a o₁ l₁ o₂ l₂ : Nat} (ha : a < 3 ∨ a = 4) : (YV p).sep ⟨a, o₁, l₁⟩ ⟨3, o₂, l₂⟩ = true := by
   unfold Lay.sep
-  rw [ite_eq_right_iff.mpr fun h => absurd h (show a ≠ 3 by omega)]
+  rw [ite_eq_right_iff.mpr fun h => absurd h (show a ≠ 3 by omega_using [ha])]
   exact Bool.or_eq_true_iff.mpr (.inr rfl)
 
 theorem sepSR {p : Params} {a o₁ l₁ o₂ l₂ : Nat} (ha : a < 3 ∨ a = 4) : (YV p).sep ⟨3, o₁, l₁⟩ ⟨a, o₂, l₂⟩ = true := by
   unfold Lay.sep
-  rw [ite_eq_right_iff.mpr fun h => absurd h (show 3 ≠ a by omega)]
+  rw [ite_eq_right_iff.mpr fun h => absurd h (show 3 ≠ a by omega_using [ha])]
   exact Bool.or_eq_true_iff.mpr (.inl rfl)
 
 theorem apart_nil' {Y : Lay} {b : Buf} (h : Y.ok b = true) : Y.apart b [] = true := by
@@ -299,10 +299,10 @@ theorem pre_of {p : Params} {s₀ : State} (h : (verifyCoreContract p X86.abi 96
     simp only [below]; rw [Taint.sub_setWidth h1]
   rw [hs] at s0 s1 s2 s3 s4 sg
   have c5 : ∀ i, i < (YV p).n → i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 := fun i hi => by
-    rw [YV_n] at hi; omega
-  have e3 : (scratchWords p - 128 * p.k) * 8 = scrLenV p := by simp only [scrLenV]; omega
+    rw [YV_n] at hi; omega_using [hi]
+  have e3 : (scratchWords p - 128 * p.k) * 8 = scrLenV p := by simp only [scrLenV]; omega_using []
   rw [e3] at h4 d0s d1s d2s ds4 dsg r3 s3 f3
-  refine ⟨⟨h1, by rw [YV_stk]; omega, by rw [YV_n]; omega, ?_, ?_, ?_, ?_, ?_,
+  refine ⟨⟨h1, by rw [YV_stk]; omega_using [], by rw [YV_n]; omega, ?_, ?_, ?_, ?_, ?_,
     ?_, ?_, sg, ?_, by rw [YV_sc, YV_n]; decide⟩, kp⟩
   · intro i hi hw
     rw [h3]
@@ -351,7 +351,7 @@ theorem pub_of {p : Params} {s₀ s₀' : State} (h : (verifyCoreContract p X86.
   obtain ⟨e₁, e₂, e₃, e₄, e₅, e₆, e₇⟩ := h
   refine ⟨e₁, fun i hi => ?_, ?_⟩
   · rw [YV_n] at hi
-    obtain rfl | rfl | rfl | rfl | rfl : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 := by omega
+    obtain rfl | rfl | rfl | rfl | rfl : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 := by omega_using [hi]
     exacts [e₃, e₄, e₅, e₆, e₇]
   · simp only [lkV, vPk, vMu, vSig, addr0]
     exact Proof.MlDsa.KeyGen.leakBytes_inj e₂

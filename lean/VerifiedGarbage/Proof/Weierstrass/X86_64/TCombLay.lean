@@ -79,7 +79,7 @@ theorem TblMem.unch {s s' : State} {T : Addr} {ws : List (BitVec 64)} (h : TblMe
         s.mem (T + BitVec.ofNat 64 (8 * i) + BitVec.ofNat 64 b)) :
     TblMem s' T ws :=
   ⟨hrd ▸ h.rd, fun i hi => by
-    rw [← h.val i hi]; exact Mem.readW_congr fun b hb => hm i hi b (by omega)⟩
+    rw [← h.val i hi]; exact Mem.readW_congr fun b hb => hm i hi b (by omega_using [hb])⟩
 
 /-- The tables survive a change of the working space, which they are past. -/
 theorem TblMem.of_unch {s s' : State} {T : Addr} {ws : List (BitVec 64)} {base : Addr} {size : Nat}
@@ -87,7 +87,7 @@ theorem TblMem.of_unch {s s' : State} {T : Addr} {ws : List (BitVec 64)} {base :
     (hU : Unch base W s.mem s'.mem) (hW : ∀ w ∈ W, w.1 + w.2 ≤ size)
     (hout : ∀ i < ws.length, ∀ b < 8, size ≤ ofs base (T + BitVec.ofNat 64 (8 * i) + BitVec.ofNat 64 b)) :
     TblMem s' T ws :=
-  h.unch hrd fun i hi b hb => hU _ fun w hw => Or.inr (by have := hW w hw; have := hout i hi b hb; omega)
+  h.unch hrd fun i hi b hb => hU _ fun w hw => Or.inr (by have := hW w hw; have := hout i hi b hb; omega_arith)
 
 /-- The `x` and `y` of entry `m` of table `j`, in Montgomery form, at
 `16 n m` and `16 n m + 8 n` bytes into the table, at `T + 16 n H j`. -/

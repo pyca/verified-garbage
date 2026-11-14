@@ -63,7 +63,7 @@ theorem hashFill_ok {K W : Addr} (L : Lay K W) {t : State} (h31 : t.gpr .r31 = W
     WP isa hashFill t (FillPost W A l j i c t) := by
   unfold hashFill xorW
   rw [List.append_assoc]
-  refine WP.seq (WP.mono (lNtz_ok (i := j + i + 1) h31 hw (by omega) (by omega) h26 hl0) fun t₁ P₁ => ?_)
+  refine WP.seq (WP.mono (lNtz_ok (i := j + i + 1) h31 hw (by omega_using []) (by omega_using [hj]) h26 hl0) fun t₁ P₁ => ?_)
   have h31₁ : t₁.gpr .r31 = W := by rw [P₁.gpr _ (by decide), h31]
   have ww : ∀ {d : Nat}, d + 8 ≤ 2560 → InRegions t₁.wr (W + BitVec.ofNat 64 d) 8 :=
     fun h => by rw [P₁.wr]; exact in_off hw h (by decide)
@@ -94,7 +94,7 @@ theorem hashFill_ok {K W : Addr} (L : Lay K W) {t : State} (h31 : t.gpr .r31 = W
     blockAtMem_frame fr₂ fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl <;> exact hAW.sub_right (Lay.wSub (by decide))
-  have hb : 384 + 16 * i + 16 ≤ 2560 := by omega
+  have hb : 384 + 16 * i + 16 ≤ 2560 := by omega_using [hi, hc]
   have dS : (⟨W + BitVec.ofNat 64 (384 + 16 * i), 16⟩ : Region).Disjoint ⟨A + BitVec.ofNat 64 (16 * (j + i)), 16⟩ :=
     (hAW.sub_right (Lay.wSub hb)).symm
   have hS0 : W + BitVec.ofNat 64 (384 + 16 * i) + BitVec.ofNat 64 0 = W + BitVec.ofNat 64 (384 + 16 * i) :=
@@ -106,11 +106,11 @@ theorem hashFill_ok {K W : Addr} (L : Lay K W) {t : State} (h31 : t.gpr .r31 = W
     (by rw [rd₂, wr₂]; exact in_off (d := 8) (n := 8) hA (by decide) (by decide))
     (by rw [rd₂, wr₂]; exact in_left (in_off hw (by decide) (by decide)))
     (by rw [rd₂, wr₂]; exact in_left (in_off hw (by decide) (by decide)))
-    (by rw [wr₂, hS0]; exact in_off hw (by omega) (by decide))
-    (by rw [wr₂, Offset.add_add]; exact in_off hw (by omega) (by decide))
+    (by rw [wr₂, hS0]; exact in_off hw (by omega_using [hb]) (by decide))
+    (by rw [wr₂, Offset.add_add]; exact in_off hw (by omega_using [hb]) (by decide))
     (by rw [hS0]; exact dS.symm.sep (Offset.contains_base _ (by decide) (by decide)) (contains_pre _ (by decide)))
-    (by rw [hS0]; exact (L.w_w (a := ohO + 8) (n := 8) (d := 384 + 16 * i) (k := 8) (.inl (by simp only [ohO]; omega))
-      (by decide) (by omega)).sep (Region.contains_self _ _) (contains_pre _ (by decide)))) fun t₃ B₃ => ?_)
+    (by rw [hS0]; exact (L.w_w (a := ohO + 8) (n := 8) (d := 384 + 16 * i) (k := 8) (.inl (by simp only [ohO]; omega_using []))
+      (by decide) (by omega_using [hb])).sep (Region.contains_self _ _) (contains_pre _ (by decide)))) fun t₃ B₃ => ?_)
   have v₃ := B₃.val
   rw [hS0] at v₃
   refine wp_addi (by decide) (by decide) fun t₄ u₄ => wp_addi (by decide) (by decide) fun t₅ u₅ =>
@@ -125,17 +125,17 @@ theorem hashFill_ok {K W : Addr} (L : Lay K W) {t : State} (h31 : t.gpr .r31 = W
     exact (fr₂.mono (by simp)).trans (fs.mono (by simp))
   · rw [u₇.mem, u₆.mem, u₅.mem, u₄.mem, blockAtMem_frame fs (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
-      exact L.w_w (a := ohO) (n := 16) (d := 384 + 16 * i) (k := 16) (.inl (by simp only [ohO]; omega)) (by decide)
-        (by omega)), oh₂]
+      exact L.w_w (a := ohO) (n := 16) (d := 384 + 16 * i) (k := 16) (.inl (by simp only [ohO]; omega_using [])) (by decide)
+        (by omega_using [hb])), oh₂]
   · rw [u₇.mem, u₆.mem, u₅.mem, u₄.mem, v₃, BitVec.add_zero, eA, oh₂]
   · rw [u₇.other _ (by decide), u₆.other _ (by decide), u₅.gpr, u₄.other _ (by decide), B₃.gpr _ (by decide), h24₂,
-      Offset.add_add, show 16 * (j + i) + 16 = 16 * (j + i + 1) by omega]
+      Offset.add_add, show 16 * (j + i) + 16 = 16 * (j + i + 1) by omega_using []]
   · rw [u₇.other _ (by decide), u₆.gpr, u₅.other _ (by decide), u₄.other _ (by decide), B₃.gpr _ (by decide), h26₂,
       ← BitVec.ofNat_add]
   · rw [u₇.other _ (by decide), u₆.other _ (by decide), u₅.other _ (by decide), u₄.gpr, B₃.gpr _ (by decide), h11₂,
-      Offset.add_add, show 384 + 16 * i + 16 = 384 + 16 * (i + 1) by omega]
+      Offset.add_add, show 384 + 16 * i + 16 = 384 + 16 * (i + 1) by omega_using []]
   · rw [u₇.gpr, u₆.other _ (by decide), u₅.other _ (by decide), u₄.other _ (by decide), B₃.gpr _ (by decide), h25₂,
-      Offset.ofNat_sub_ofNat (by omega), Nat.sub_sub]
+      Offset.ofNat_sub_ofNat (by omega_using [hi]), Nat.sub_sub]
   · simp only [fillRegs, List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
     rw [u₇.other _ hr.2.2.2.2.2.2.2.2.1, u₆.other _ hr.2.2.2.2.2.2.2.2.2, u₅.other _ hr.2.2.2.2.2.2.2.1,
       u₄.other _ hr.2.2.2.2.2.1, g₃ r (by simp [hr.1, hr.2.1, hr.2.2.1, hr.2.2.2.1, hr.2.2.2.2.1, hr.2.2.2.2.2.2.1])]

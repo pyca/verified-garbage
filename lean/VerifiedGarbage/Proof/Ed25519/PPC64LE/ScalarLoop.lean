@@ -50,14 +50,14 @@ theorem wp_subc {d n m : Reg}
       WP isa (.block is) s' Q) :
     WP isa (.block (.subc d n m :: is)) s Q := by
   have := (s.gpr n).isLt; have := (s.gpr m).isLt
-  exact WP.cons exec_subc (k _ (UpdC.writeCarry _ _ (by omega)))
+  exact WP.cons exec_subc (k _ (UpdC.writeCarry _ _ (by omega_using [])))
 
 theorem wp_sube {d n m : Reg}
     (k : ∀ s', UpdC s s' d ((s.gpr n).toNat + (2 ^ 64 - 1 - (s.gpr m).toNat) + s.ca.toNat) →
       WP isa (.block is) s' Q) :
     WP isa (.block (.sube d n m :: is)) s Q := by
   have := (s.gpr n).isLt; have := (s.gpr m).isLt; have : s.ca.toNat ≤ 1 := Bool.toNat_le _
-  exact WP.cons exec_sube (k _ (UpdC.writeCarry _ _ (by omega)))
+  exact WP.cons exec_sube (k _ (UpdC.writeCarry _ _ (by omega_using [this])))
 
 /-- `lis`, `ori`, `sldi`, `oris`, `ori`: a 64-bit constant. -/
 theorem movImm64_ok {d : Reg} {v : BitVec 64} (k : ∀ s', Upd s s' d v → WP isa (.block is) s' Q) :
@@ -210,7 +210,7 @@ theorem foldSub_ok :
   refine wp_subc fun s1 u1 => wp_sube fun s2 u2 => wp_sube fun s3 u3 =>
     wp_w (exec_li (imm := 0) (by decide)) fun s4 u4 c4 => wp_sube fun s5 u5 =>
     wp_addze fun s6 u6 => wp_subi (by decide) (by decide) fun s7 u7 =>
-    WP.block_nil ⟨1 - s5.ca.toNat, by omega, ?_, ?_, ?_, ?_⟩
+    WP.block_nil ⟨1 - s5.ca.toNat, by omega_using [], ?_, ?_, ?_, ?_⟩
   · have e1 := u1.val; have e2 := u2.val; have e3 := u3.val; have e5 := u5.val
     have c5 := u5.ca
     rw [c4] at e5
@@ -366,7 +366,7 @@ theorem scalarWord_ok {p : Addr} (h14 : s.gpr .r14 = p) {k : Nat}
   simp only [List.cons_append, List.nil_append]
   refine wp_subi (by decide) (by decide) fun s1 u1 => wp_add fun s2 u2 => ?_
   have e15 : s1.gpr .r15 = BitVec.ofNat 64 (8 * k) := by
-    rw [u1.gpr, h15, show 8 * (k + 1) = 8 * k + 8 by omega, BitVec.ofNat_add, BitVec.add_sub_cancel]
+    rw [u1.gpr, h15, show 8 * (k + 1) = 8 * k + 8 by omega_using [], BitVec.ofNat_add, BitVec.add_sub_cancel]
   have e7 : s2.gpr .r7 + BitVec.ofNat 64 0 = p + BitVec.ofNat 64 (8 * k) := by
     rw [BitVec.add_zero, u2.gpr, u1.other _ (by decide), h14, e15]
   refine wp_w (exec_load_d (by decide) ⟨by decide, by decide⟩
@@ -389,17 +389,17 @@ theorem store_ok {b : Addr} (hc : Ctx b s) :
       V t.mem b SR = R4 s ∧ Rest [] s t ∧ Frame [⟨b + BitVec.ofNat 64 SR, 32⟩] s.mem t.mem := by
   unfold scalarStore
   have hS : SR = 160 := rfl
-  refine sd0_ok hc (by omega) (by omega) fun s1 u1 => ?_
+  refine sd0_ok hc (by omega_using [hS]) (by omega_using [hS]) fun s1 u1 => ?_
   have hc1 : Ctx b s1 := hc.of_rest (u1.rest []) (by decide)
-  refine sd0_ok hc1 (by omega) (by omega) fun s2 u2 => ?_
+  refine sd0_ok hc1 (by omega_using [hS]) (by omega_using [hS]) fun s2 u2 => ?_
   have hc2 : Ctx b s2 := hc1.of_rest (u2.rest []) (by decide)
-  refine sd0_ok hc2 (by omega) (by omega) fun s3 u3 => ?_
+  refine sd0_ok hc2 (by omega_using [hS]) (by omega_using [hS]) fun s3 u3 => ?_
   have hc3 : Ctx b s3 := hc2.of_rest (u3.rest []) (by decide)
-  refine sd0_ok hc3 (by omega) (by omega) fun s4 u4 => WP.block_nil ⟨?_, ?_, ?_⟩
+  refine sd0_ok hc3 (by omega_using [hS]) (by omega_using [hS]) fun s4 u4 => WP.block_nil ⟨?_, ?_, ?_⟩
   · rw [V_eq4]
     simp only [val4, ew, R4, u4.mem, u3.mem, u2.mem, u1.mem, u3.gpr, u2.gpr, u1.gpr, hS,
       Nat.reduceMul, Nat.reduceAdd]
-    simp (disch := omega) only [dw_write_self, dw_write_other]
+    simp (disch := omega_using []) only [dw_write_self, dw_write_other]
     omega_arith
   · exact ⟨fun r _ => by rw [u4.gpr, u3.gpr, u2.gpr, u1.gpr], by rw [u4.rd, u3.rd, u2.rd, u1.rd],
       by rw [u4.wr, u3.wr, u2.wr, u1.wr], by rw [u4.sp, u3.sp, u2.sp, u1.sp]⟩
@@ -408,9 +408,9 @@ theorem store_ok {b : Addr} (hc : Ctx b s) :
     have hw : ∀ d, 160 ≤ d → d + 8 ≤ 192 → ∀ {m m' : Mem}, Frame [⟨b + BitVec.ofNat 64 160, 32⟩] m m' →
         ∀ v : BitVec 64, Frame [⟨b + BitVec.ofNat 64 160, 32⟩] m (m'.writeW (b + BitVec.ofNat 64 d) v) :=
       fun d h1 h2 _ _ f v => f.writeW (List.mem_singleton_self _) _
-        (Offset.contains b h1 (by omega) (by omega))
-    exact hw 184 (by omega) (by omega) (hw 176 (by omega) (by omega) (hw 168 (by omega) (by omega)
-      (hw 160 (by omega) (by omega) (Frame.refl _ _) _) _) _) _
+        (Offset.contains b h1 (by omega_using [h2]) (by omega_using []))
+    exact hw 184 (by omega_using []) (by omega_using []) (hw 176 (by omega_using []) (by omega_using []) (hw 168 (by omega_using []) (by omega_using [])
+      (hw 160 (by omega_using []) (by omega_using []) (Frame.refl _ _) _) _) _) _
 
 end
 
@@ -441,26 +441,26 @@ theorem engine_ok {b : Addr} {s : State} (hc : Ctx b s) {p : Addr} (h14 : s.gpr 
   refine WP.seq (WP.mono (WP.loop (M := isa) (fun n t => 1 ≤ n ∧ EngInv p s n t)
     (Q := fun t => EngInv p s 0 t) ?_ 8 s1 ⟨by decide, i1⟩) fun t ht => ?_)
   · intro n t ⟨hn, h⟩
-    obtain ⟨k, rfl⟩ : ∃ k, n = k + 1 := ⟨n - 1, by omega⟩
-    have hk : k < 8 := by have := h.le; omega
+    obtain ⟨k, rfl⟩ : ∃ k, n = k + 1 := ⟨n - 1, by omega_using [hn]⟩
+    have hk : k < 8 := by have := h.le; omega_using [this]
     have hr : R4 t < L := by rw [h.val]; exact Nat.mod_lt _ order_pos
     refine WP.mono (scalarWord_ok (p := p) (k := k) (by rw [h.rest.gpr _ (by decide), h14]) h.r15
       h.r16 h.r19 (by rw [h.rest.rd, h.rest.wr]; exact hin k hk) hr) fun t' ⟨vt, r15, kt, mt⟩ => ?_
     have hv : R4 t' = decodeLE (bytesAt s.mem (p + BitVec.ofNat 64 (8 * k)) (64 - 8 * k)) % L := by
       rw [vt, h.val, h.mem, words_step _ _ _ hk, mod_inner]
-    have i' : EngInv p s k t' := ⟨by omega, h.rest.trans (kt.mono (by decide)), by rw [mt, h.mem],
+    have i' : EngInv p s k t' := ⟨by omega_using [hk], h.rest.trans (kt.mono (by decide)), by rw [mt, h.mem],
       r15, by rw [kt.gpr _ (by decide), h.r16], by rw [kt.gpr _ (by decide), h.r19], hv⟩
     rw [eval_nonzero, r15]
     by_cases hk0 : k = 0
     · subst hk0
       exact .inl ⟨by decide, i'⟩
-    · have h8 : 8 * k ≠ 0 := by omega
-      exact .inr ⟨by rw [ofNat_ne_zero (by omega)]; simp [h8], k, by omega, ⟨by omega, i'⟩⟩
+    · have h8 : 8 * k ≠ 0 := by omega_using [hk0]
+      exact .inr ⟨by rw [ofNat_ne_zero (by omega_using [hk])]; simp [h8], k, by omega_using [], ⟨by omega_using [hk0], i'⟩⟩
   · refine WP.mono (store_ok (hc.of_rest ht.rest (by decide))) fun u ⟨vu, ru, fu⟩ =>
       ⟨ht.rest.trans (ru.mono (by decide)), ?_, ?_⟩
     · rw [← ht.mem]
       exact fu.sub fun r hr => ⟨_, List.mem_singleton_self _, by
-        rw [List.mem_singleton.mp hr]; exact Offset.sub _ (by omega) (by omega)⟩
+        rw [List.mem_singleton.mp hr]; exact Offset.sub _ (by omega_using []) (by omega_using [])⟩
     · rw [vu, ht.val, Nat.mul_zero, Nat.sub_zero, show BitVec.ofNat 64 0 = 0#64 from rfl,
         BitVec.add_zero]
 

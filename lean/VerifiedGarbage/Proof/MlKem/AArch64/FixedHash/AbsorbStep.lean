@@ -32,20 +32,20 @@ theorem absorbWord_piece_ok {s₀ s : State} {sc : Reg} {st wk rate pos i : Nat}
    rw [gs,BitVec.add_assoc,←BitVec.ofNat_add]
  have cs : (STr sc st s₀).Contains (s.gpr sc+BitVec.ofNat 64 (st+pos)) 8 := by
    rw [addr]
-   exact Offset.contains_base _ (by have:= (rate_bounds hS.hrate).2; omega) (by have:= (rate_bounds hS.hrate).2; omega)
+   exact Offset.contains_base _ (by have:= (rate_bounds hS.hrate).2; omega_using [hpos, this]) (by have:= (rate_bounds hS.hrate).2; omega_using [hd])
  refine WP.mono (absorbWord_ok nb ns.1 ns.2.1 ns.2.2 ho hd ?_ ?_) fun t ⟨kt,mt⟩=> ?_
  · rw [hg.rd,hg.wr,gb]
    apply hp.cov
    refine ⟨preg s₀ p,List.mem_singleton_self _,?_⟩
    rw [BitVec.ofNat_add,←BitVec.add_assoc]
-   exact Offset.contains_base _ hi (by have:=hp.len; omega)
+   exact Offset.contains_base _ hi (by have:=hp.len; omega_using [ho])
  · rw [hg.wr]
    exact hS.cov _ _ ⟨_,List.mem_cons_self ..,cs⟩
  · refine ⟨⟨fun r hr hn=>kt.gpr r (by revert r hr; decide),kt.sp,kt.rd,kt.wr,?_,kt.vcs⟩,?_⟩
    · rw [mt]
      exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ cs
    · rw [mt,addr,gb]
-     exact absorbWord_state _ _ _ (by have:= (rate_bounds hS.hrate).2; omega)
+     exact absorbWord_state _ _ _ (by have:= (rate_bounds hS.hrate).2; omega_using [hpos, this])
 theorem absorbByte_piece_ok {s₀ s : State} {sc : Reg} {st wk rate pos i : Nat} {p : Piece}
  (hS : HSetup sc st wk rate s₀) (hp : PieceOk sc st wk s₀ false p) (hg : Rg s₀ s)
  (hi : i+1≤p.len) (ho : p.off+i<65536) (hpos : pos+1≤rate)
@@ -67,13 +67,13 @@ theorem absorbByte_piece_ok {s₀ s : State} {sc : Reg} {st wk rate pos i : Nat}
    rw [gs,BitVec.add_assoc,←BitVec.ofNat_add]
  have cs : (STr sc st s₀).Contains (s.gpr sc+BitVec.ofNat 64 (st+pos)) 1 := by
    rw [addr]
-   exact Offset.contains_base _ (by have:= (rate_bounds hS.hrate).2; omega) (by have:= (rate_bounds hS.hrate).2; omega)
+   exact Offset.contains_base _ (by have:= (rate_bounds hS.hrate).2; omega_using [hpos, this]) (by have:= (rate_bounds hS.hrate).2; omega_using [hd])
  refine WP.mono (absorbByte_ok nb ns.1 ns.2.1 ns.2.2 ho hd ?_ ?_) fun t ⟨kt,mt⟩=> ?_
  · rw [hg.rd,hg.wr,gb]
    apply hp.cov
    refine ⟨preg s₀ p,List.mem_singleton_self _,?_⟩
    rw [BitVec.ofNat_add,←BitVec.add_assoc]
-   exact Offset.contains_base _ hi (by have:=hp.len; omega)
+   exact Offset.contains_base _ hi (by have:=hp.len; omega_using [ho])
  · rw [hg.wr]
    exact hS.cov _ _ ⟨_,List.mem_cons_self ..,cs⟩
  · refine ⟨⟨fun r hr hn=>kt.gpr r (by revert r hr; decide),kt.sp,kt.rd,kt.wr,?_,kt.vcs⟩,?_⟩
@@ -82,5 +82,5 @@ theorem absorbByte_piece_ok {s₀ s : State} {sc : Reg} {st wk rate pos i : Nat}
    · rw [mt,addr,gb]
      simpa [bytesAt,Proof.Sha3.xorAt_single] using
        absorbByte_state s.mem (s₀.gpr sc+BitVec.ofNat 64 st)
-         (s₀.gpr p.base+BitVec.ofNat 64 (p.off+i)) (by have:= (rate_bounds hS.hrate).2; omega)
+         (s₀.gpr p.base+BitVec.ofNat 64 (p.off+i)) (by have:= (rate_bounds hS.hrate).2; omega_using [hpos, this])
 end VG.Proof.MlKem.AArch64.FixedHash

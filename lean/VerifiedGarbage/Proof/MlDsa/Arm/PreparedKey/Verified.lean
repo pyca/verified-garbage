@@ -41,8 +41,8 @@ theorem writes_in (bytes count : Nat) :
   · rw [in8]; simp
   · rw [in7]; simp
   · simp at hw
-  · rw [in8, decide_eq_true_eq]; have : 1024 * i + 1024 ≤ 1024 * count := by omega
-    omega
+  · rw [in8, decide_eq_true_eq]; have : 1024 * i + 1024 ≤ 1024 * count := by omega_using [hi]
+    omega_using [hi]
 
 theorem writes_sub (bytes count : Nat) (u : State) :
     ∀ R ∈ (writes bytes count).map (toR u), ∃ b ∈ input bytes ++ output bytes count,

@@ -40,7 +40,7 @@ def fnPost (s s' : State) : Prop :=
 theorem rOf_setWidth (x : BitVec 64) : (rOf x).setWidth 32 = x.setWidth 32 := by
   apply BitVec.eq_of_toNat_eq
   simp only [rOf, BitVec.toNat_setWidth]
-  omega
+  omega_using []
 
 theorem rOf_one (x : BitVec 64) : decide (rOf x ^^^ BitVec.ofNat 64 1 = 0) = decide (x.setWidth 32 = 1) := by
   have : rOf x ^^^ BitVec.ofNat 64 1 = 0 ↔ x.setWidth 32 = 1 := by
@@ -91,11 +91,11 @@ theorem result_ok {s : State} (h : DPre pc s) {x : BitVec 64} {mc : Mem} {t : St
     rw [hO] at hres
     obtain ⟨hr, hb⟩ := hres
     have hok : decide (rOf x ^^^ BitVec.ofNat 64 1 = 0) = true := by rw [rOf_one, hr]; rfl
-    rw [Proof.RsaPkcs1Enc.decryptWith_of_ok hC (by rw [hn]; omega) hO]
+    rw [Proof.RsaPkcs1Enc.decryptWith_of_ok hC (by rw [hn]; omega_using [hk]) hO]
     subst hb
     have hEMl := Proof.Rsa.bytesAt_length' mc (s.gpr .r3) (s.gpr .r7).toNat
     have hal := Proof.RsaPkcs1Enc.altLength_le (s.gpr .r7).toNat (clOf kd)
-    obtain ⟨hL1, hmap⟩ := Proof.RsaPkcs1Enc.sel_eq hEMl hAM (by omega) hal
+    obtain ⟨hL1, hmap⟩ := Proof.RsaPkcs1Enc.sel_eq hEMl hAM (by omega_using [hk]) hal
     have hM : Spec.RsaPkcs1Enc.implicitDecode (dOf s) (cOf s) (Spec.Rsa.bytesAt mc (s.gpr .r3) (s.gpr .r7).toNat) =
         (if Spec.RsaPkcs1Enc.valid (Spec.Rsa.bytesAt mc (s.gpr .r3) (s.gpr .r7).toNat) then
           Spec.RsaPkcs1Enc.lastN (Spec.RsaPkcs1Enc.msgLength (Spec.Rsa.bytesAt mc (s.gpr .r3) (s.gpr .r7).toNat))
@@ -121,7 +121,7 @@ theorem result_ok {s : State} (h : DPre pc s) {x : BitVec 64} {mc : Mem} {t : St
     rw [hO] at hres
     obtain ⟨hr, -⟩ := hres
     have hok : decide (rOf x ^^^ BitVec.ofNat 64 1 = 0) = false := by rw [rOf_one, hr]; rfl
-    rw [Proof.RsaPkcs1Enc.decryptWith_of_fault hC (by rw [hn]; omega) hO]
+    rw [Proof.RsaPkcs1Enc.decryptWith_of_fault hC (by rw [hn]; omega_using [hk]) hO]
     refine ⟨by rw [hx, rOf_setWidth, hr], ?_, ?_⟩
     · rw [hbytes, List.map_congr_left (g := fun _ => (0 : Byte)) fun i hi => by
         rw [hout i (List.mem_range.mp hi), hok, Proof.RsaPkcs1Enc.outByte_false]]
@@ -135,7 +135,7 @@ theorem codeG_correct (s : State) (h : DPre pc s) (X : pc = true → PreX s) :
     WP isa (codeG pc) s fun t => abiPreserved s t ∧ fnPost s t := by
   have hk := h.k2
   unfold codeG
-  refine WP.alloc ⟨by decide, by decide, by decide⟩ (by have := h.sp1; unfold stackBytes at this; omega) ?_
+  refine WP.alloc ⟨by decide, by decide, by decide⟩ (by have := h.sp1; unfold stackBytes at this; omega_using [this]) ?_
   unfold body
   refine WP.seq (WP.mono (setup_ok h) fun t₁ A => ?_)
   refine WP.seq (call_ok h X A fun t₂ A₂ => ?_)

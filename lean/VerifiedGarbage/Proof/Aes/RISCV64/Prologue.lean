@@ -105,8 +105,8 @@ theorem storeKs_ok {ks : List (Nat × BitVec 64)} {s : State} {X : Addr} {N : Na
     have b₁ : s₁.gpr sb = s.gpr sb := g₁ _ (by decide) (by decide)
     have hs₁ : Scr s₁ X N := hs.congr wr₁ b₁
     simp only [List.singleton_append, stS]
-    refine wp_sd (a := wordAddr (s.gpr sb) k) (by omega) (by rw [b₁]) (wordAddr_al hs.al k (by omega))
-      ⟨⟨X, N⟩, hs₁.wr, hs.contains (by omega) (by omega)⟩ fun s₂ u₂ => ?_
+    refine wp_sd (a := wordAddr (s.gpr sb) k) (by omega_using [hN, hk0]) (by rw [b₁]) (wordAddr_al hs.al k (by omega_using [hN, hk0]))
+      ⟨⟨X, N⟩, hs₁.wr, hs.contains (by omega_using [hk0]) (by omega_using [hN])⟩ fun s₂ u₂ => ?_
     have hs₂ : Scr s₂ X N := hs₁.congr u₂.wr (by rw [u₂.gpr])
     have b₂ : s₂.gpr sb = s.gpr sb := by rw [u₂.gpr, b₁]
     obtain ⟨hnk, hnd'⟩ := List.nodup_cons.mp hnd
@@ -126,7 +126,7 @@ theorem storeKs_ok {ks : List (Nat × BitVec 64)} {s : State} {X : Addr} {N : Na
           simp only [List.mem_map]; exact ⟨(j', w'), hj', e.symm⟩)
         have h1 := hk _ (List.mem_cons_of_mem _ hj')
         simp only at h1
-        exact Offset.disjoint (s.gpr sb) (by omega) (by omega) (by omega)
+        exact Offset.disjoint (s.gpr sb) (by omega_using [hne]) (by omega_using [hN, hk0]) (by omega)
       · exact mk₃ j w hj
     · simp only [ksRegions, List.map_cons]
       refine Frame.trans (m₂ ▸ ?_) (f₃.mono fun r hr => List.mem_cons_of_mem _ hr)
@@ -149,17 +149,17 @@ theorem maskInit_ok {s : State} {X : Addr} (hs : Scr s X 2048) :
   simp only [ksRegions, List.mem_map] at hr
   obtain ⟨⟨j, w⟩, hj, rfl⟩ := hr
   rcases allKs_in _ hj with hk | hk
-  · exact ⟨_, List.mem_cons_self .., Offset.sub _ (by simp only at hk ⊢; omega) (by simp only at hk ⊢; omega)⟩
+  · exact ⟨_, List.mem_cons_self .., Offset.sub _ (by simp only at hk ⊢; omega_using [hk]) (by simp only at hk ⊢; omega_using [hk])⟩
   · exact ⟨_, List.mem_cons_of_mem _ (List.mem_cons_self ..),
-      Offset.sub _ (by simp only at hk ⊢; omega) (by simp only at hk ⊢; omega)⟩
+      Offset.sub _ (by simp only at hk ⊢; omega_using [hk]) (by simp only at hk ⊢; omega_using [hk])⟩
 
 /-! ## The key loop's setup -/
 
 theorem ofNat_shl4 {R : Nat} (h : R < 2 ^ 60) : BitVec.ofNat 64 R <<< 4 = BitVec.ofNat 64 (16 * R) := by
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_shiftLeft, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.shiftLeft_eq,
-    Nat.mod_eq_of_lt (a := R) (by omega)]
-  congr 1; omega
+    Nat.mod_eq_of_lt (a := R) (by omega_using [h])]
+  congr 1; omega_using []
 
 /-- `a0 := schedule + 16 rounds`, `a2 := a5 + lastKey`, `a1 := rounds + 1`. -/
 theorem keySetup_wp {s : State} {R : Nat} (hR : s.gpr .a1 = BitVec.ofNat 64 R) (hR' : R ≤ 14)
@@ -176,7 +176,7 @@ theorem keySetup_wp {s : State} {R : Nat} (hR : s.gpr .a1 = BitVec.ofNat 64 R) (
     (by rw [u₄.rd, u₃.rd, u₂.rd, u₁.rd]) (by rw [u₄.wr, u₃.wr, u₂.wr, u₁.wr])
     (by rw [u₄.sp, u₃.sp, u₂.sp, u₁.sp])
   · rw [u₄.other _ (by decide), u₃.other _ (by decide), u₂.gpr, u₁.other _ (by decide), u₁.gpr, hR,
-      ofNat_shl4 (by omega)]
+      ofNat_shl4 (by omega_using [hR'])]
   · rw [u₄.other _ (by decide), u₃.gpr, u₂.other _ (by decide), u₁.other _ (by decide)]
   · rw [u₄.gpr, u₃.other _ (by decide), u₂.other _ (by decide), u₁.other _ (by decide), hR,
       BitVec.ofNat_add]

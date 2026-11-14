@@ -36,7 +36,7 @@ theorem saveWord_ok {s : State} {j : Nat} (hj : j < 6)
     (hw : InRegions s.wr (s.sp + BitVec.ofNat 64 (256 + 8 * j)) 8) :
     WP isa (.block (saveWord j)) s fun t => EntryStep s t ∧
       t.mem = s.mem.writeW (s.sp + BitVec.ofNat 64 (256 + 8 * j)) (s.gpr (argReg j)) := by
-  have hs : 256 + 8 * j < 4096 := by omega
+  have hs : 256 + 8 * j < 4096 := by omega_using [hj]
   apply WP.of_runBlock
   simp only [saveWord, runBlock_cons, runStep_some, runBlock_nil, exec, State.store, Size.bits,
     Size.bytes, State.read, addr, hs, RegUpd.gpr_write, RegUpd.wr_write,
@@ -57,22 +57,22 @@ theorem savePrefix_ok {s : State} (hw : (⟨s.sp, 320⟩ : Region) ∈ s.wr) :
   | 0, _ => WP.block_nil ⟨.refl s, Frame.refl _ _, fun _ h => by omega⟩
   | n + 1, hn => by
     rw [List.range_succ, List.flatMap_append, List.flatMap_singleton, WP.block_append_iff]
-    refine WP.mono (savePrefix_ok hw n (by omega)) fun u hu => ?_
+    refine WP.mono (savePrefix_ok hw n (by omega_using [hn])) fun u hu => ?_
     have uw : InRegions u.wr (u.sp + BitVec.ofNat 64 (256 + 8 * n)) 8 := by
       rw [hu.step.sp, hu.step.wr]
-      exact ⟨_, hw, Offset.contains_base _ (by omega) (by omega)⟩
-    refine WP.mono (saveWord_ok (by omega) uw) fun t ⟨ht, mt⟩ => ?_
+      exact ⟨_, hw, Offset.contains_base _ (by omega_using [hn]) (by omega_using [hn])⟩
+    refine WP.mono (saveWord_ok (by omega_using [hn]) uw) fun t ⟨ht, mt⟩ => ?_
     rw [hu.step.sp, hu.step.regs _ (argReg_ne15 n)] at mt
     refine ⟨hu.step.trans ht, ?_, fun j hj => ?_⟩
     · rw [mt]
       exact hu.frame.writeW (List.mem_singleton_self _) _
-        (Offset.contains _ (e := 256) (k := 48) (by omega) (by omega) (by decide))
+        (Offset.contains _ (e := 256) (k := 48) (by omega_using []) (by omega_using [hn]) (by decide))
     · rw [mt]
       by_cases hjn : j = n
       · subst j; exact Mem.readW_writeW_self64 _ _ _
       · rw [Mem.readW_writeW_sep ?_ (by decide)]
-        · exact hu.words j (by omega)
-        · exact Offset.sep _ (by omega) (by omega) (by omega)
+        · exact hu.words j (by omega_using [hj, hjn])
+        · exact Offset.sep _ (by omega_using [hjn]) (by omega_using [hn, hj]) (by omega_using [hn])
 
 theorem saveArgs_ok {s : State} (hw : (⟨s.sp, 320⟩ : Region) ∈ s.wr) :
     WP isa (.block saveArgs) s (Saved s 6) := savePrefix_ok hw 6 (by decide)
@@ -112,16 +112,16 @@ theorem ck_sub (s : State) : Region.Sub (CK (base s)) (below s.sp 352) := by
     Offset.sub_sub_ofNat _ _ _
   change (x - (s.sp - BitVec.ofNat 64 336 - BitVec.ofNat 64 16)).toNat + 1 ≤ 16 at hx
   rw [e] at hx
-  omega
+  omega_using [hx]
 
 theorem stk_sub (s : State) : Region.Sub ⟨base s, 336⟩ (below s.sp 352) :=
   below_sub (by decide) (by decide)
 
 theorem base_16 {s : State} (h : 352 ≤ s.sp.toNat) : 16 ≤ (base s).toNat := by
   change 16 ≤ (s.sp - 336#64).toNat
-  rw [BitVec.toNat_sub_of_le (by change 336 ≤ s.sp.toNat; omega)]
+  rw [BitVec.toNat_sub_of_le (by change 336 ≤ s.sp.toNat; omega_using [h])]
   change 16 ≤ s.sp.toNat - 336
-  omega
+  omega_using [h]
 
 theorem saved_ctx {s p : State} (hs : Saved (entered s) 6 p) :
     Ctx (base s) s.gpr s.v p.mem (bodyRd s) s.wr (p.withRegions (bodyRd s) (bodyWr s)) := by
@@ -162,13 +162,13 @@ theorem wrap_ok {body : Prog isa} (hn : body.aarch64Depth ≤ 1) {s : State}
         Ctx (base s) s.gpr s.v p.mem (bodyRd s) s.wr u ∧ P p.mem u.mem (u.gpr .x0)) :
     WP isa (wrap body) s fun t => abiPreserved s t ∧
       ∃ m, Frame [below s.sp 336] s.mem m ∧ P m t.mem (t.gpr .x0) := by
-  refine WP.frame (by omega) (WP.alloc (by decide) ?_ ?_)
+  refine WP.frame (by omega_using [hsp]) (WP.alloc (by decide) ?_ ?_)
   · change 320 ≤ (s.sp - 16).toNat
-    rw [BitVec.toNat_sub_of_le (by change 16 ≤ s.sp.toNat; omega)]
+    rw [BitVec.toNat_sub_of_le (by change 16 ≤ s.sp.toNat; omega_using [hsp])]
     change 320 ≤ s.sp.toNat - 16
-    omega
+    omega_using [hsp]
   · refine WP.seq (WP.mono (saveArgs_ok (s := entered s) (by simp [entered_wr, entered_sp])) fun p hp => ?_)
-    refine WP.narrowF (hb p hp) ?_ ?_ ?_ (by omega)
+    refine WP.narrowF (hb p hp) ?_ ?_ ?_ (by omega_using [hn])
     · refine Covers.of_sub fun r hr => ?_
       simp only [bodyRd, bodyWr, List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hr
       rw [hp.step.rd, hp.step.wr, entered_wr]
@@ -194,7 +194,7 @@ theorem wrap_ok {body : Prog isa} (hn : body.aarch64Depth ≤ 1) {s : State}
           exact Offset.disjoint_base _ (by decide) (by decide)
         · exact (hw r hr).sub_left (below_sub (by decide : 16 ≤ 352) (by decide))
         · rw [hp.step.sp, entered_sp, ← base_lr]
-          exact (Offset.below_disjoint (base s) (m := 16 * body.aarch64Depth) (l := 336) (by omega)).symm.sub_left
+          exact (Offset.below_disjoint (base s) (m := 16 * body.aarch64Depth) (l := 336) (by omega_using [hn])).symm.sub_left
             (Offset.sub_base _ (by decide : 320 + 16 ≤ 336))
       have lr : u.mem.read (base s + 320) 8 = s.gpr .x30 := by
         rw [base_lr, hf.read (r := ⟨s.sp - 16, 16⟩) (by simp [Region.Contains]) lr_sep (by decide)]

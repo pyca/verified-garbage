@@ -124,8 +124,8 @@ theorem args_out {t : State} (h : Pre F t) {s : State} (hsp : s.gpr .esp = E t) 
   rw [e, hwr, h.wr]
   simp only [List.mem_cons, List.not_mem_nil, or_false]
   rintro r (rfl | rfl)
-  · exact Taint.frame_disjoint (by have := h.spf; omega) h.r_o h.o_a.symm
-  · exact Taint.frame_disjoint (by have := h.spf; omega) h.r_s h.s_a.symm
+  · exact Taint.frame_disjoint (by have := h.spf; omega_using [this]) h.r_o h.o_a.symm
+  · exact Taint.frame_disjoint (by have := h.spf; omega_using [this]) h.r_s h.s_a.symm
 
 section
 variable {s₀ s₀' : State} (hp : Pre F s₀) (hp' : Pre F s₀') (hq : PubEq s₀ s₀')
@@ -229,7 +229,7 @@ theorem hashKey_rel :
       have ekp : kp F t₀ = dO t₀ F.hkO := by simp only [kp, hlt, ↓reduceIte]
       have ekl : kl F t₀ = F.H.D := by simp only [kl, hlt, ↓reduceIte]
       refine ⟨k', by rw [ekp]; exact d, by rw [ekl]; exact c, ?_⟩
-      rw [ekp, ekl, dO_addr hp₀ (hz.hkO_lt), m, b, blockKey_hash hz hF.hH (by rw [bytesAt_length]; omega)
+      rw [ekp, ekl, dO_addr hp₀ (hz.hkO_lt), m, b, blockKey_hash hz hF.hH (by rw [bytesAt_length]; omega_using [hlt])
         (hash_len hF.hH b)])
   exact r1.seq (r2.seq (r3.seq (r4.seq (r5.seq (r6.seq r7)))))
 
@@ -256,7 +256,7 @@ theorem key_rel :
       · rw [u₂.other _ (by decide), c, ekl, BitVec.ofNat_toNat, BitVec.setWidth_eq]
       · rw [u₂.mem, ekp, ekl, k.pwBytes hp₀]
     · have := of_decide_eq_false ((ev h.1.1).symm.trans h.2 |> Option.some.inj)
-      have hlt : pwl s₀ < F.H.B + 1 := by omega
+      have hlt : pwl s₀ < F.H.B + 1 := by omega_using [this]
       exact ⟨⟨h.1.1, hlt⟩, h.1.2, by rw [hq.pwlEq]; exact hlt⟩
 
 end
@@ -446,7 +446,7 @@ theorem step_rel (n : Nat) :
   · have hl : k + 1 = nbk F s₀ := by simpa using hf
     exact ⟨hl ▸ j, by rw [hq.nbkEq, ← hl]; exact j'⟩
   · have hl : k + 1 ≠ nbk F s₀ := by simpa using ht
-    exact ⟨nbk F s₀ - (k + 1), by omega, k + 1, rfl, by omega, j, j'⟩
+    exact ⟨nbk F s₀ - (k + 1), by omega_using [hk], k + 1, rfl, by omega_using [hk, hl], j, j'⟩
 
 omit hp hp' hq hc in
 theorem skip_check : ∃ hc, (VG.Taint.check taint (τr []) (.block []) hc).isSome = true :=
@@ -482,7 +482,7 @@ theorem loop_rel :
     rw [ev h.1.1.2] at z
     have e : ol s₀ ≠ 0 := by simpa using z
     have : nbk F s₀ ≠ 0 := fun h => e (e0.1 h)
-    exact ⟨0, rfl, by omega, h.1.1.1, h.1.2.1⟩
+    exact ⟨0, rfl, by omega_using [this], h.1.1.1, h.1.2.1⟩
 
 include hF in
 /-- `pbkdf2` in two runs with the same public arguments. -/

@@ -177,10 +177,10 @@ theorem loop_ct (hN : 0 < N) :
         have hstop : t + 1 = N ∨ (Lf η X₁ (t + 1)).length = 256 := by
           by_cases e : t + 1 = N
           · exact .inl e
-          · exact .inr (by have := not_and.mp hc e; omega)
+          · exact .inr (by have := not_and.mp hc e; omega_using [hle₁, this])
         refine ⟨t + 1, ?_, ?_⟩
-        · rw [Lf_stop (by omega) hstop]; exact i₁
-        · rw [Lf_stop (by omega) (hstop.imp id fun h => hl ▸ h)]; exact i₂
+        · rw [Lf_stop (by omega_using [ht]) hstop]; exact i₁
+        · rw [Lf_stop (by omega_using [ht]) (hstop.imp id fun h => hl ▸ h)]; exact i₂
       · have hc : t + 1 ≠ N ∧ (Lf η X₁ (t + 1)).length < 256 := by
           have e' : (a.gpr .r12 != 0) = true := by rw [eval_nonzero] at e; exact Option.some.inj e
           rw [z₁] at e'; simpa using e'

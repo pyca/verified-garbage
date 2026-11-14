@@ -91,15 +91,15 @@ theorem extract_setLane64 (x : BitVec 128) (y : BitVec 64) {i j : Nat} (hi : i <
     (setLane x 64 i y).extractLsb' (64 * j) 64 = if i = j then y else x.extractLsb' (64 * j) 64 := by
   apply BitVec.eq_of_getLsbD_eq
   intro k hk
-  rcases (by omega : i = 0 ∨ i = 1) with rfl | rfl <;>
-    rcases (by omega : j = 0 ∨ j = 1) with rfl | rfl <;>
+  rcases (by omega_using [hi] : i = 0 ∨ i = 1) with rfl | rfl <;>
+    rcases (by omega_using [hj] : j = 0 ∨ j = 1) with rfl | rfl <;>
     simp only [setLane, BitVec.getLsbD_extractLsb', BitVec.getLsbD_or, BitVec.getLsbD_and,
       BitVec.getLsbD_not, BitVec.getLsbD_shiftLeft, BitVec.getLsbD_setWidth, BitVec.getLsbD_allOnes,
       hk, decide_true, Bool.true_and, ite_true, ite_false, Nat.mul_zero, Nat.mul_one,
       Nat.sub_zero, reduceCtorEq] <;>
-    (have h1 : k < 128 := by omega
-     have h2 : 64 + k < 128 := by omega
-     have h3 : ¬ 64 + k < 64 := by omega
+    (have h1 : k < 128 := by omega_using [hk]
+     have h2 : 64 + k < 128 := by omega_using [hk]
+     have h3 : ¬ 64 + k < 64 := by omega_using []
      simp [h1, h2, h3, hk])
 
 /-- An instruction that keeps lane `l` of `v` keeps it. -/

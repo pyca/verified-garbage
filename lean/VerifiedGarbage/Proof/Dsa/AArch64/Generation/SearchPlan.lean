@@ -78,12 +78,12 @@ theorem SearchMemory.frame {p : SearchPlan} {W W' : Nat → BitVec 64} {s t : St
   hashWrite i hi := by rw [hwr]; exact h.hashWrite i hi
   seed := by
     rw [VG.Proof.Dsa.Generation.frame_bytesAt hf p.seedSeparate (by
-      rcases p.attempt.construct.hash.width with hh | hh <;> omega)]
+      rcases p.attempt.construct.hash.width with hh | hh <;> omega_using [hh])]
     exact h.seed
   scratch := h.scratch.congr hwr
   qSource := source_of_frame h.qSource hf p.qSeparate (by
     rw [p.attempt.construct.qLength]
-    rcases p.attempt.construct.hash.width with hh | hh <;> omega) hrd hwr
+    rcases p.attempt.construct.hash.width with hh | hh <;> omega_using [hh]) hrd hwr
   tape := source_of_frame h.tape hf p.tapeSeparate p.attempt.randMax hrd hwr
   shapedWrite i hi := by rw [hwr]; exact h.shapedWrite i hi
   pWrite i hi := by rw [hwr]; exact h.pWrite i hi

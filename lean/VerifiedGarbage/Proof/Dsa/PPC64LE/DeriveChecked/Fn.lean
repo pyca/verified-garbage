@@ -60,23 +60,23 @@ theorem deriveChecked_correct (s : State) (h : dcContract.pre s) :
       (⟨A, n⟩ : Region).Disjoint ⟨s.gpr .r10, (stackArg s 0).toNat * 8⟩ → A.toNat + n ≤ 2 ^ 64 → n < 2 ^ 64 →
       k ≤ n → ∀ t : State, t.rd = s.rd → t.wr = s.wr → Src t (dlayOf s) A k :=
     fun hm hd hnw hn hk t hr hw => ⟨fun i hi => ⟨_, by rw [hr, hw]; exact hm,
-      Offset.contains_base _ (by omega) (by omega)⟩, fun i hi => Pub.ne_of_disjoint hd (by omega) i (by omega)⟩
+      Offset.contains_base _ (by omega_using [hk, hi]) (by omega_using [hnw, hk, hi])⟩, fun i hi => Pub.ne_of_disjoint hd (by omega_using [hnw]) i (by omega_using [hk, hi])⟩
   have h4 : (s.gpr .r4).toNat = 3 * (dlayOf s).pl + 2 * (dlayOf s).ql := hol
   have h6 : (s.gpr .r6).toNat = 2 * (dlayOf s).pl + (dlayOf s).ql := hpl
   have srcK := mkSrc (A := s.gpr .r5) (k := 2 * (dlayOf s).pl + (dlayOf s).ql)
-    (List.mem_append_left _ (by rw [hrd]; simp)) dPS nwP (s.gpr .r6).isLt (by omega)
+    (List.mem_append_left _ (by rw [hrd]; simp)) dPS nwP (s.gpr .r6).isLt (by omega_using [h6])
   have srcX := mkSrc (A := s.gpr .r8) (k := (dlayOf s).ql) (List.mem_append_left _ (by rw [hrd]; simp)) dXS nwX
     (s.gpr .r9).isLt (Nat.le_refl _)
   have srcO := mkSrc (A := s.gpr .r3) (k := 3 * (dlayOf s).pl + 2 * (dlayOf s).ql)
-    (List.mem_append_right _ (by rw [hwr]; simp)) dOS nwO (s.gpr .r4).isLt (by omega)
+    (List.mem_append_right _ (by rw [hwr]; simp)) dOS nwO (s.gpr .r4).isLt (by omega_using [h4])
   have scrO : ∀ t : State, t.wr = s.wr → Scr t (s.gpr .r3) (3 * (dlayOf s).pl + 2 * (dlayOf s).ql) := fun t ht =>
-    Scr.of_mem (by rw [ht, hwr, ← h4]; simp) (by omega)
+    Scr.of_mem (by rw [ht, hwr, ← h4]; simp) (by omega_using [nwO, h4])
   have hko : ∀ i < 2 * (dlayOf s).pl + (dlayOf s).ql, ∀ y, ofs (s.gpr .r3) y < 3 * (dlayOf s).pl + 2 * (dlayOf s).ql →
       off (s.gpr .r5) i ≠ y := fun i hi y hy =>
-    Pub.ne_of_disjoint (Region.Disjoint.symm dOP) (by omega) i (by omega) y (by rw [h4]; exact hy)
+    Pub.ne_of_disjoint (Region.Disjoint.symm dOP) (by omega_using []) i (by omega_using [h6, hi]) y (by rw [h4]; exact hy)
   have hxo : ∀ i < (dlayOf s).ql, ∀ y, ofs (s.gpr .r3) y < 3 * (dlayOf s).pl + 2 * (dlayOf s).ql →
       off (s.gpr .r8) i ≠ y := fun i hi y hy =>
-    Pub.ne_of_disjoint (Region.Disjoint.symm dOX) (by omega) i (by simp only [dlayOf] at hi ⊢; omega) y
+    Pub.ne_of_disjoint (Region.Disjoint.symm dOX) (by omega_using []) i (by simp only [dlayOf] at hi ⊢; omega_using [hi]) y
       (by rw [h4]; exact hy)
   -- A change in `out` keeps the saved registers.
   have outSep : ∀ {m m' : Mem}, Outside (s.gpr .r3) 0 (3 * (dlayOf s).pl + 2 * (dlayOf s).ql) m m' → ∀ i < 19,
@@ -84,8 +84,8 @@ theorem deriveChecked_correct (s : State) (h : dcContract.pre s) :
     Outside.word_sep (Zp := 3 * (dlayOf s).pl + 2 * (dlayOf s).ql) ho (fun x hx => by
         by_contra hc
         exact (srcO s rfl rfl).sep (VG.Proof.Bignum.ofs (s.gpr .r3) x)
-          (by simp only [VG.Proof.Bignum.ofs] at hc ⊢; omega) x hx (off_ofs _ x))
-      (by omega) (by simp only [saveOff]; omega) hL.nowrap
+          (by simp only [VG.Proof.Bignum.ofs] at hc ⊢; omega_using [hc]) x hx (off_ofs _ x))
+      (by omega_using []) (by simp only [saveOff]; omega_using [hZ, hi]) hL.nowrap
   have hspec : dRes s = if ParamsOk s.mem (dlayOf s) (s.gpr .r5) ∧ DeriveOk (pOf s.mem (dlayOf s) (s.gpr .r5))
         (qOf s.mem (dlayOf s) (s.gpr .r5)) (gOf s.mem (dlayOf s) (s.gpr .r5)) (kOf s.mem (dlayOf s) (s.gpr .r8))
       then some (Spec.Rsa.bytesAt s.mem (s.gpr .r5) (2 * (dlayOf s).pl + (dlayOf s).ql) ++
@@ -104,9 +104,9 @@ theorem deriveChecked_correct (s : State) (h : dcContract.pre s) :
   refine WP.seq (WP.mono (dfront_ok hpre) fun s₁ ⟨⟨hr₁, scr₁, r2₁, sav₁, out₁⟩, k₁⟩ => ?_)
   have hwr' : ∀ u : State, ScrL u (dlayOf s) → ∀ i < 19, InRegions u.wr (off (savW (s.gpr .r10)) (8 * i)) 8 :=
     fun u hu i hi => by
-      rw [← saveOff_eq]; exact hu.st (d := 104 + 8 * i) (by simp only [dlayOf] at hZ ⊢; omega)
+      rw [← saveOff_eq]; exact hu.st (d := 104 + 8 * i) (by simp only [dlayOf] at hZ ⊢; omega_using [hZ, hi])
   have Out₁ : Outside (dlayOf s).S 0 (dlayOf s).Z s.mem s₁.mem :=
-    out₁.mono (Nat.le_refl _) (by simp only [dlayOf] at hZ ⊢; omega)
+    out₁.mono (Nat.le_refl _) (by simp only [dlayOf] at hZ ⊢; omega_using [hZ])
   obtain ⟨ep₁, eq₁, eg₁⟩ := params_kept (srcK s rfl rfl) Out₁
   have ek₁ : kOf s₁.mem (dlayOf s) (s.gpr .r8) = kOf s.mem (dlayOf s) (s.gpr .r8) := by
     simp only [kOf]; rw [(srcX s rfl rfl).kept Out₁]

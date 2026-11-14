@@ -22,7 +22,7 @@ private theorem zeroFlag (s : State) (d : Reg) (a b : BitVec 64) (c : Bool) :
 private theorem publicSub (k dl : Nat) (size : k<2^31) (shape : dl=2*k ∨ dl=3*k) :
  BitVec.ofNat 64 dl+ ~~~BitVec.ofNat 64 (2*k)+1#64=BitVec.ofNat 64 (dl-2*k) := by
  rw [BitVec.add_assoc,←BitVec.neg_eq_not_add,←BitVec.sub_eq_add_neg]
- exact BitVec.ofNat_sub_ofNat_of_le dl (2*k) (by omega) (by omega)
+ exact BitVec.ofNat_sub_ofNat_of_le dl (2*k) (by omega_using [size]) (by omega_using [shape])
 
 theorem policySource_ok {s : State} {B dom : Addr} {Z k dl : Nat}
  (scratch : Scr s B Z) (room : 256≤Z) (base : s.gpr .x0=B)
@@ -35,7 +35,7 @@ theorem policySource_ok {s : State} {B dom : Addr} {Z k dl : Nat}
  have shift : BitVec.ofNat 64 k <<< 1=BitVec.ofNat 64 (2*k) := by
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_shiftLeft,BitVec.toNat_ofNat,Nat.shiftLeft_eq]
-  omega
+  omega_using []
  have choose : (if decide (BitVec.ofNat 64 (dl-2*k)=0#64) then dom else dom+BitVec.ofNat 64 (2*k))=
   (if dl=2*k then dom else off dom (2*k)) := by
   rcases shape with eq | eq
@@ -46,14 +46,14 @@ theorem policySource_ok {s : State} {B dom : Addr} {Z k dl : Nat}
      intro zero
      have := congrArg BitVec.toNat zero
      simp only [BitVec.toNat_ofNat] at this
-     omega
-    simp only [ne,decide_false,ite_false,show ¬3*k=2*k by omega]
+     omega_using [positive, size, this]
+    simp only [ne,decide_false,ite_false,show ¬3*k=2*k by omega_using [positive]]
     rfl
  refine WP.keep [.x1,.x2,.x3,.x4,.x10] ?_ rfl rfl rfl
  unfold Policy.boundSource
  brun [base,hdr_enc (show sDom<32 by decide),hdr_enc (show sLen<32 by decide),hdr_enc (show sDL<32 by decide),
-  scratch.ld (d:=8*sDom) (by unfold sDom;omega),scratch.ld (d:=8*sLen) (by unfold sLen;omega),
-  scratch.ld (d:=8*sDL) (by unfold sDL;omega),pointer,length,domainLength,shift,
+  scratch.ld (d:=8*sDom) (by unfold sDom;omega_using [room]),scratch.ld (d:=8*sLen) (by unfold sLen;omega_using [room]),
+  scratch.ld (d:=8*sDL) (by unfold sDL;omega_using [room]),pointer,length,domainLength,shift,
   exec_cselc_x,CondCode.holds,RegUpd.zf_write,zeroFlag,Bool.toNat_true,publicSub k dl size shape,choose]
 
 end VG.Proof.Ffdh.AArch64.Cached

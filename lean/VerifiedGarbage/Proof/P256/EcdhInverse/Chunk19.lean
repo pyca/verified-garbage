@@ -54,7 +54,7 @@ theorem chunk19Rows_ok (s : State) (d : Int)
   apply WP.block_append
   refine WP.mono (encode_parity_ok s d hd hz) fun a ⟨ha,ka⟩ => ?_
   apply WP.block_append
-  refine WP.mono (rounds_ok ha (encoded_bounds s d) 10 (by change |d|+20<2^62; omega))
+  refine WP.mono (rounds_ok ha (encoded_bounds s d) 10 (by change |d|+20<2^62; omega_using [hbound]))
     fun b ⟨hb,kb⟩ => ?_
   apply WP.block_append
   refine WP.mono (Matrix.first_ok b) fun c ⟨ca,cb,cc,cd,_,cz,_,_,kc⟩ => ?_
@@ -73,7 +73,7 @@ theorem chunk19Rows_ok (s : State) (d : Int)
   have hd8 : |(msteps 10 (encoded s d)).d|+2*(8:Nat)<2^62 := by
     change |(msteps 10 (encoded s d)).d|≤|d|+2*10 at h10
     norm_num at h10 ⊢
-    omega
+    omega_using [hbound, h10]
   apply WP.block_append
   refine WP.mono (rounds_ok hc (rowBounds_steps (encoded_bounds s d) 10) 8 hd8)
     fun e ⟨he,ke⟩ => ?_
@@ -86,7 +86,7 @@ theorem chunk19Rows_ok (s : State) (d : Int)
     have := neg_abs_le (msteps 18 (encoded s d)).d
     have := le_abs_self (msteps 18 (encoded s d)).d
     norm_num at h18 ⊢
-    omega
+    omega_arith
   refine WP.mono (lastStep_ok he' hd18 (rowBounds_steps (encoded_bounds s d) 18))
     fun t ⟨td,tf,tg,tz,kt⟩ => ?_
   have em : mstep (msteps 18 (encoded s d))=msteps 19 (encoded s d) := (msteps_succ ..).symm
@@ -120,7 +120,7 @@ theorem chunk19_ok (s : State) (d : Int)
   simp only [List.append_assoc]
   apply WP.block_append
   have hodd := encoded_odd s d hf
-  have hc := msteps_cong hodd (encoded_cong s d) 19 (by omega)
+  have hc := msteps_cong hodd (encoded_cong s d) 19 (by omega_using [])
   obtain ⟨cd,cu,cv,cq,cr,_,_⟩ := hc
   have hm := msteps_mat (d:=d) (g:=(encoded s d).g) hodd 19
   have hb := msteps_bnd d (encoded s d).f (encoded s d).g 19

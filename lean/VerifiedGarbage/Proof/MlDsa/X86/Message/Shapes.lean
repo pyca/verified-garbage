@@ -103,12 +103,12 @@ theorem sShape {p : Params} {K : KeyArg} (hK : K.Ok p.skLen) : Shape (SPre p K) 
   siLt _ _ := by show 7 < 8; decide
   E _ _ := rfl
   ok _ h₀ h8 := slay_ok hK h₀ h8
-  e16 s₀ h₀ := ⟨by show 16 ≤ (s₀.gpr .esp).toNat; have := h₀.sp; omega,
-    by show (s₀.gpr .esp).toNat + 4 ≤ _; have := h₀.spA; omega⟩
+  e16 s₀ h₀ := ⟨by show 16 ≤ (s₀.gpr .esp).toNat; have := h₀.sp; omega_using [this],
+    by show (s₀.gpr .esp).toNat + 4 ≤ _; have := h₀.spA; omega_using [this]⟩
   fit _ h₀ := by show _ + 4 + 4 * 8 ≤ _; have := h₀.spA; omega
   fd s₀ h₀ := by
-    rw [frame_eq (by have := h₀.sp; omega)]
-    exact (stk_eq h₀.sp ▸ h₀.kArgs).sub_left (below_sub (by omega) h₀.sp)
+    rw [frame_eq (by have := h₀.sp; omega_using [this])]
+    exact (stk_eq h₀.sp ▸ h₀.kArgs).sub_left (below_sub (by omega_using []) h₀.sp)
   ain _ h₀ := List.mem_append_right _ (by
     rw [h₀.wr]; exact List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_singleton_self _)))
   n5 _ _ := by show 5 ≤ 8; decide
@@ -149,29 +149,29 @@ theorem vShape {p : Params} {K : KeyArg} (hK : K.Ok p.pkLen) {n : Nat} {T : Stat
   argv s₀ h₀ := vlay_argv h₀.hn s₀
   ctxLen _ _ := rfl
   scr _ _ := rfl
-  siLt _ h₀ := by show 6 < n; have := h₀.hn; omega
+  siLt _ h₀ := by show 6 < n; have := h₀.hn; omega_using [this]
   E _ _ := rfl
   ok _ h₀ h8 := vlay_ok hK h₀ h8
-  e16 s₀ h₀ := ⟨by show 16 ≤ (s₀.gpr .esp).toNat; have := h₀.sp; omega,
-    by show (s₀.gpr .esp).toNat + 4 ≤ _; have := h₀.spA; omega⟩
+  e16 s₀ h₀ := ⟨by show 16 ≤ (s₀.gpr .esp).toNat; have := h₀.sp; omega_using [this],
+    by show (s₀.gpr .esp).toNat + 4 ≤ _; have := h₀.spA; omega_using [this]⟩
   fit _ h₀ := by show _ + 4 + 4 * n ≤ _; have := h₀.spA; omega
   fd s₀ h₀ := by
-    rw [frame_eq (by have := h₀.sp; omega)]
-    exact (stk_eq h₀.sp ▸ h₀.kArgs).sub_left (below_sub (by omega) h₀.sp)
+    rw [frame_eq (by have := h₀.sp; omega_using [this])]
+    exact (stk_eq h₀.sp ▸ h₀.kArgs).sub_left (below_sub (by omega_using []) h₀.sp)
   ain _ h₀ := List.mem_append_right _ (by
     rw [h₀.wr]; exact List.mem_cons_of_mem _ (List.mem_singleton_self _))
-  n5 _ h₀ := by show 5 ≤ n; have := h₀.hn; omega
+  n5 _ h₀ := by show 5 ≤ n; have := h₀.hn; omega_using [this]
   pubE _ _ _ _ hq := hq.esp
-  pubA _ _ h₀ _ hq := ⟨hq.args 4 (by have := h₀.hn; omega), hq.args 6 (by have := h₀.hn; omega)⟩
+  pubA _ _ h₀ _ hq := ⟨hq.args 4 (by have := h₀.hn; omega_using [this]), hq.args 6 (by have := h₀.hn; omega_using [this])⟩
   pubL s₀ s₀' h₀ _ hq := by
     have hn := h₀.hn
     have e : ((List.range (n - 7)).map fun i => arg s₀ (7 + i)) = (List.range (n - 7)).map fun i => arg s₀' (7 + i) :=
-      List.map_congr_left fun i hi => hq.args _ (by rw [List.mem_range] at hi; omega)
-    exact ⟨hq.esp, by simp only [vlay, hq.args 0 (by omega), hq.args 1 (by omega),
-      hq.args 2 (by omega), hq.args 3 (by omega), hq.args 4 (by omega), hq.args 5 (by omega),
-      hq.args 6 (by omega), e], by simp only [Lay.X32, vlay, hq.args 6 (by omega)], rfl,
-    hq.args 0 (by omega), hq.args 1 (by omega), hq.args 2 (by omega), hq.args 3 (by omega),
-    hq.args 4 (by omega)⟩
+      List.map_congr_left fun i hi => hq.args _ (by rw [List.mem_range] at hi; omega_using [hi])
+    exact ⟨hq.esp, by simp only [vlay, hq.args 0 (by omega_using [hn]), hq.args 1 (by omega_using [hn]),
+      hq.args 2 (by omega_using [hn]), hq.args 3 (by omega_using [hn]), hq.args 4 (by omega_using [hn]), hq.args 5 (by omega_using [hn]),
+      hq.args 6 (by omega_using [hn]), e], by simp only [Lay.X32, vlay, hq.args 6 (by omega_using [hn])], rfl,
+    hq.args 0 (by omega_using [hn]), hq.args 1 (by omega_using [hn]), hq.args 2 (by omega_using [hn]), hq.args 3 (by omega_using [hn]),
+    hq.args 4 (by omega_using [hn])⟩
 
 /-- A shape, for a stronger precondition. -/
 theorem Shape.pre_mono {Pre Pre' : State → Prop} {Pub : State → State → Prop} {lay : State → Lay} {si : Nat}

@@ -30,9 +30,9 @@ theorem finish_ok (sha3 : Bool) (b : VReg) (j : Nat) (s : State) (hb : b ≠ .v3
     rw [WP.block_cons_iff]
     refine ⟨_, rfl, ?_⟩
     rw [WP.block_cons_iff]
-    refine ⟨_, exec_ldrq (by omega) (inRegions_wr hin), ?_⟩
+    refine ⟨_, exec_ldrq (by omega_using [hj]) (inRegions_wr hin), ?_⟩
     rw [WP.block_cons_iff]
-    refine ⟨_, exec_strq (by omega) hin, WP.block_nil ?_⟩
+    refine ⟨_, exec_strq (by omega_using [hj]) hin, WP.block_nil ?_⟩
     refine ⟨?_, ?_, rfl, rfl, rfl, rfl, fun r h1 h2 => by simp [State.setV, h1, h2]⟩
     · simp [State.setV, hb, Ne.symm hb]
     · simp [State.setV]
@@ -40,9 +40,9 @@ theorem finish_ok (sha3 : Bool) (b : VReg) (j : Nat) (s : State) (hb : b ≠ .v3
     rw [WP.block_cons_iff]
     refine ⟨_, rfl, ?_⟩
     rw [WP.block_cons_iff]
-    refine ⟨_, exec_ldrq (by omega) (inRegions_wr hin), ?_⟩
+    refine ⟨_, exec_ldrq (by omega_using [hj]) (inRegions_wr hin), ?_⟩
     rw [WP.block_cons_iff]
-    refine ⟨_, exec_strq (by omega) hin, WP.block_nil ?_⟩
+    refine ⟨_, exec_strq (by omega_using [hj]) hin, WP.block_nil ?_⟩
     refine ⟨?_, ?_, rfl, rfl, rfl, rfl, fun r h1 h2 => by simp [State.setV, h1, h2]⟩
     · simp [State.setV, hb]
     · simp [State.setV]
@@ -83,10 +83,10 @@ theorem finishData_ok (sha3 : Bool) {m₀ : Mem} {D : Addr} {n c : Nat} {F : Nat
     have h16' : .v16 ∉ bs := fun h => h16 (List.mem_cons_of_mem _ h)
     simp only [List.length_cons] at hj hc
     have ha : s.gpr .x2 + BitVec.ofNat 64 (16*j) = D + BitVec.ofNat 64 (16*(c+j)) := by
-      rw [hx, Offset.add_add_eq D (show 16*c+16*j=16*(c+j) by omega)]
+      rw [hx, Offset.add_add_eq D (show 16*c+16*j=16*(c+j) by omega_using [])]
     rw [finishData, WP.block_append_iff]
-    refine WP.mono (finish_ok sha3 b j s hb31 (by omega) (by
-      rw [ha]; exact ⟨_, hw, Offset.contains_base D (by omega) (by omega)⟩))
+    refine WP.mono (finish_ok sha3 b j s hb31 (by omega_using [hj]) (by
+      rw [ha]; exact ⟨_, hw, Offset.contains_base D (by omega_using [hc]) (by omega_using [hn, hc])⟩))
       fun t ⟨hm,hv,hg,hsp,hrd,hwr,ho⟩ => ?_
     rw [ha] at hm hv
     have hB : ∀ i < 16, vbyte (s.v b ^^^ s.v .v16 ^^^ s.v .v31) i = (F (c+j)).getD i 0 := by
@@ -94,19 +94,19 @@ theorem finishData_ok (sha3 : Bool) {m₀ : Mem} {D : Addr} {n c : Nat} {F : Nat
       have hz := hF 0 (by simp) i hi
       change vbyte (s.v b ^^^ s.v .v16) i ^^^ vbyte (chain (c+j)) i = (F (c+j)).getD i 0 at hz
       simpa only [vbyte_xor,hC] using hz
-    have hs := Aese.ecbInv_write hn (by omega) hD hB
+    have hs := Aese.ecbInv_write hn (by omega_using [hc]) hD hB
     rw [← hm] at hs
     have hC' : t.v .v31 = chain (c+(j+1)) := by
-      rw [hv, original_word hD (Nat.le_refl _) (by omega),
-        ← hnext (c+j) (by omega), show c+j+1=c+(j+1) by omega]
+      rw [hv, original_word hD (Nat.le_refl _) (by omega_using [hc]),
+        ← hnext (c+j) (by omega_using [hc]), show c+j+1=c+(j+1) by omega_using []]
     refine WP.mono (finishData_ok sha3 (m₀ := m₀) (D := D) (n := n) (c := c) (F := F) (chain := chain) hn hnext bs (j+1) t (List.nodup_cons.mp hnd).2 h31' h16'
-      (hg ▸ hx) (by omega) (by omega) (hwr ▸ hw)
-      (by rw [show c+(j+1)=c+j+1 by omega]; exact hs.1) hC' (fun k hk i hi => by
+      (hg ▸ hx) (by omega_using [hj]) (by omega_using [hc]) (hwr ▸ hw)
+      (by rw [show c+(j+1)=c+j+1 by omega_using []]; exact hs.1) hC' (fun k hk i hi => by
         rw [ho _ (fun h => hbs (h ▸ List.getElem_mem hk)) (fun h => h31' (h ▸ List.getElem_mem hk)),
-          ho .v16 hb16.symm (by decide), show c+(j+1)+k=c+j+(k+1) by omega]
-        exact hF (k+1) (by simp; omega) i hi))
+          ho .v16 hb16.symm (by decide), show c+(j+1)+k=c+j+(k+1) by omega_using []]
+        exact hF (k+1) (by simp; omega_using [hk]) i hi))
       fun u ⟨hu,hv',hf',hg',hsp',hrd',hwr',ho'⟩ => ?_
-    have he : c+(j+1)+bs.length = c+j+(b::bs).length := by simp; omega
+    have he : c+(j+1)+bs.length = c+j+(b::bs).length := by simp; omega_using []
     rw [he] at hu hv'
     exact ⟨hu,hv',hs.2.trans hf',hg'.trans hg,hsp'.trans hsp,hrd'.trans hrd,hwr'.trans hwr,
       fun r hr hrs => (ho' r hr (fun h => hrs (List.mem_cons_of_mem _ h))).trans

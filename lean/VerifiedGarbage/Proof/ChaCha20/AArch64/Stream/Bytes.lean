@@ -67,7 +67,7 @@ theorem D_ne {D : Addr} {c j k : Nat} (hc : c ≤ 2 ^ 32) (hj : j < c) (hk : k <
   have e : BitVec.ofNat 64 j = BitVec.ofNat 64 k := by
     have e := congrArg (· - D) he; simpa using e
   have := congrArg BitVec.toNat e
-  rw [BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega)] at this
+  rw [BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hc, hj]), Nat.mod_eq_of_lt (by omega_using [hc, hk])] at this
   exact h this
 
 /-- A byte read is outside the bytes written. -/
@@ -75,7 +75,7 @@ theorem not_contains {D K : Addr} {c i : Nat}
     (hs : ∀ j < c, ∀ k < c, D + BitVec.ofNat 64 j ≠ K + BitVec.ofNat 64 k) (hi : i < c)
     (h : (⟨D, c⟩ : Region).Contains (K + BitVec.ofNat 64 i) 1) : False := by
   simp only [Region.Contains] at h
-  refine hs (K + BitVec.ofNat 64 i - D).toNat (by omega) i hi ?_
+  refine hs (K + BitVec.ofNat 64 i - D).toNat (by omega_using [h]) i hi ?_
   rw [BitVec.ofNat_toNat, BitVec.setWidth_eq, BitVec.add_comm, BitVec.sub_add_cancel]
 
 /-- The loop's body. -/
@@ -90,7 +90,7 @@ theorem byte_step {s : State} {D K : Addr} {c i : Nat} (hp : BPre s D K c) (hi :
     obtain ⟨r, hr, hc⟩ := hp.wD i hi; exact ⟨r, by rw [h.rd, h.wr]; exact List.mem_append_right _ hr, hc⟩
   have i₂ : InRegions (s₁.rd ++ s₁.wr) (K + BitVec.ofNat 64 i) 1 := by rw [h.rd, h.wr]; exact hp.rK i hi
   have o₁ : InRegions s₁.wr (D + BitVec.ofNat 64 i) 1 := by rw [h.wr]; exact hp.wD i hi
-  have cd : (⟨D, c⟩ : Region).Contains (D + BitVec.ofNat 64 i) 1 := Offset.contains_base D (by omega) (by omega)
+  have cd : (⟨D, c⟩ : Region).Contains (D + BitVec.ofNat 64 i) 1 := Offset.contains_base D (by omega_using [hi]) (by omega_using [hi, hc])
   unfold body
   refine wp_ldrb (a := D + BitVec.ofNat 64 i) (by decide) (by rw [h.x22]; exact BitVec.add_zero _) i₁
     fun s₂ u₂ => ?_
@@ -128,7 +128,7 @@ theorem byte_step {s : State} {D K : Addr} {c i : Nat} (hp : BPre s D K c) (hi :
   · rw [u₉.other _ (by decide), u₈.other _ (by decide), u₇.gpr, u₆.other _ (by decide), g₅.gpr,
       u₄.other _ (by decide), u₃.other _ (by decide), u₂.other _ (by decide), h.x1, add_ofNat]
   · rw [u₉.other _ (by decide), u₈.gpr, u₇.other _ (by decide), u₆.other _ (by decide), g₅.gpr,
-      u₄.other _ (by decide), u₃.other _ (by decide), u₂.other _ (by decide), h.x2, sub_ofNat (by omega),
+      u₄.other _ (by decide), u₃.other _ (by decide), u₂.other _ (by decide), h.x2, sub_ofNat (by omega_using [hi]),
       Nat.sub_sub]
   · rw [u₉.gpr, u₈.other _ (by decide), u₇.other _ (by decide), u₆.other _ (by decide), g₅.gpr,
       u₄.other _ (by decide), u₃.other _ (by decide), u₂.other _ (by decide), h.x23, BitVec.sub_sub,
@@ -139,8 +139,8 @@ theorem byte_step {s : State} {D K : Addr} {c i : Nat} (hp : BPre s D K c) (hi :
     · simp only [D_ne hc hk' hi he, ite_false]
       rw [h.data k hk']
       by_cases h₁ : k < i
-      · simp [h₁, show k < i + 1 by omega]
-      · simp [h₁, show ¬ k < i + 1 by omega]
+      · simp [h₁, show k < i + 1 by omega_using [h₁]]
+      · simp [h₁, show ¬ k < i + 1 by omega_using [he, h₁]]
 
 
 theorem xorBytes_eq : xorBytes = .ite (.zero .x .x2) (.block []) (.loop (.block body) (.nonzero .x .x2)) := rfl
@@ -158,7 +158,7 @@ theorem xorBytes_ok {s : State} {D K : Addr} {c : Nat} (hp : BPre s D K c) :
   rw [xorBytes_eq]
   refine WP.ite (decide (c = 0)) (by
       have e : isa.eval (.zero .x .x2) s = some (s.gpr .x2 == 0) := Proof.ChaCha20.AArch64.Xor.eval_zero s .x2
-      rw [e, hp.x2, Proof.ChaCha20.AArch64.Xor.ofNat_beq_zero (by omega)])
+      rw [e, hp.x2, Proof.ChaCha20.AArch64.Xor.ofNat_beq_zero (by omega_using [hc])])
     (fun h0 => WP.block_nil (M := isa) ?_) (fun h0 => ?_)
   · simp only [decide_eq_true_eq] at h0; subst h0; exact (LInv.zero hp).post
   · simp only [decide_eq_false_iff_not] at h0
@@ -168,10 +168,10 @@ theorem xorBytes_ok {s : State} {D K : Addr} {c : Nat} (hp : BPre s D K c) :
         (isa.eval (.nonzero .x .x2) s'' = some true ∧ ∃ n' < n, Inv n' s'')) := by
       rintro n s' ⟨i, rfl, hi, hI⟩
       refine WP.mono (byte_step hp hi hI) fun s'' h' => ?_
-      have hz := eval_nonzero_ofNat s'' .x2 (by omega) h'.x2
+      have hz := eval_nonzero_ofNat s'' .x2 (by omega_using [hc]) h'.x2
       by_cases hl : i + 1 = c
-      · exact .inl ⟨by rw [hz]; simp; omega, LInv.post (hl ▸ h')⟩
-      · exact .inr ⟨by rw [hz]; simp; omega, c - (i + 1), by omega, i + 1, rfl, by omega, h'⟩
-    exact WP.loop (M := isa) Inv hstep c s ⟨0, by simp, by omega, LInv.zero hp⟩
+      · exact .inl ⟨by rw [hz]; simp; omega_using [hl], LInv.post (hl ▸ h')⟩
+      · exact .inr ⟨by rw [hz]; simp; omega_using [hi, hl], c - (i + 1), by omega_using [hi], i + 1, rfl, by omega_using [hi, hl], h'⟩
+    exact WP.loop (M := isa) Inv hstep c s ⟨0, by simp, by omega_using [h0], LInv.zero hp⟩
 
 end VG.Proof.ChaCha20.AArch64.Stream

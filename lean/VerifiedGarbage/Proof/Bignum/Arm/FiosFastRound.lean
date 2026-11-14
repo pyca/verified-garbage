@@ -104,7 +104,7 @@ theorem round_law : MontPipeline.RoundLaw VG.Impl.Bignum.Arm.FiosFast.round := b
   let c : Fios.Ctx u base size acc b mod n :=
     ⟨ctx.workspace.congr restU.wr,ctx.accFits,ctx.bFits,ctx.mFits,ctx.accB,ctx.accM⟩
   rw [WP.seq_iff]
-  refine WP.mono (code_ok u c (by omega) even p0 p12 p4 cnt carryA carryM ?_ ?_) ?_
+  refine WP.mono (code_ok u c (by omega_using [count]) even p0 p12 p4 cnt carryA carryM ?_ ?_) ?_
   · simpa only [memU,p2] using hInv
   · intro q hq
     rw [memU,scalar]

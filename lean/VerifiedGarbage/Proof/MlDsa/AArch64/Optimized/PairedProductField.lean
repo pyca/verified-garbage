@@ -29,11 +29,11 @@ theorem valuesAt_frame_slice {m m' : Mem} {p a b : Addr} {u : Nat} (hu : u<8)
   intro j hj
   have ra : m'.read (a+BitVec.ofNat 64 (128*u+16*j)) 16=
       m.read (a+BitVec.ofNat 64 (128*u+16*j)) 16 :=
-    hf.read (Offset.contains_base a (by omega : 128*u+16*j+16≤1024) (by omega))
+    hf.read (Offset.contains_base a (by omega_using [hu, hj] : 128*u+16*j+16≤1024) (by omega_using [hu, hj]))
       (by intro r hr; simp only [List.mem_singleton] at hr; subst r; exact ha) (by decide)
   have rb : m'.read (b+BitVec.ofNat 64 (128*u+(1024*poly.val+16*j))) 16=
       m.read (b+BitVec.ofNat 64 (128*u+(1024*poly.val+16*j))) 16 :=
-    hf.read (Offset.contains_base b (by omega : 128*u+(1024*poly.val+16*j)+16≤2048) (by omega))
+    hf.read (Offset.contains_base b (by omega_using [hu, hj] : 128*u+(1024*poly.val+16*j)+16≤2048) (by omega_using [hu, hj]))
       (by intro r hr; simp only [List.mem_singleton] at hr; subst r; exact hb) (by decide)
   simp only [valuesAt,Vector.getElem_ofFn,BitVec.add_assoc,←BitVec.ofNat_add,ra,rb]
 
@@ -43,7 +43,7 @@ theorem firstPass_valuesAt {m : Mem} {p a b : Addr} {u : Nat} (hu : u<8)
     (hb : (⟨b,2048⟩ : Region).Disjoint ⟨p,2048⟩) :
     valuesAt (firstPassMem m p a b u) (a+BitVec.ofNat 64 (128*u)) (b+BitVec.ofNat 64 (128*u))=
       valuesAt m (a+BitVec.ofNat 64 (128*u)) (b+BitVec.ofNat 64 (128*u)) :=
-  valuesAt_frame_slice hu (firstPass_frame (by omega)) ha hb
+  valuesAt_frame_slice hu (firstPass_frame (by omega_using [hu])) ha hb
 end VG.Proof.MlDsa.AArch64.Optimized.Paired
 
 end
@@ -105,7 +105,7 @@ theorem pair16_sep (base : Addr) {i j : Fin 2 × Fin 8} (hne : j≠i) :
     by_contra h
     simp only [not_or,Classical.not_not] at h
     exact hne (Prod.ext (Fin.ext h.1) (Fin.ext h.2))
-  exact Offset.sep base (by omega) (by omega) (by omega)
+  exact Offset.sep base (by omega_using [hd]) (by omega_using []) (by omega_using [])
 
 /-- Each stored 16-byte first-pass vector is recovered exactly from its own bank. -/
 theorem writePair_read16 (v : Values) (base : Addr) (m : Mem) (p : Fin 2) (j : Fin 8) :
@@ -132,7 +132,7 @@ theorem writePair_slice_other (v : Values) (base : Addr) (m : Mem)
   apply storeValues_read_other
   intro i _
   simp only [BitVec.add_assoc,←BitVec.ofNat_add]
-  exact Offset.sep base (by omega) (by omega) (by omega)
+  exact Offset.sep base (by omega_using [hu, hk, hne]) (by omega_using [hk]) (by omega_using [hu])
 
 /-- Every completed local slice contains the original-input product followed by
 exactly the first five inverse layers, independent of later scratch writes. -/
@@ -149,9 +149,9 @@ theorem firstPass_read_written {m : Mem} {p a b : Addr} {n u : Nat}
   | succ n ih =>
     by_cases he : u=n
     · subst u
-      rw [firstPassMem,writePair_read16,firstPass_valuesAt (by omega) ha hb]
-    · rw [firstPassMem,writePair_slice_other _ _ _ (by omega) (by omega) he]
-      exact ih (by omega) (by omega)
+      rw [firstPassMem,writePair_read16,firstPass_valuesAt (by omega_using [hn]) ha hb]
+    · rw [firstPassMem,writePair_slice_other _ _ _ (by omega_using [hn]) (by omega_using [hn, hu]) he]
+      exact ih (by omega_using [hn]) (by omega_using [hu, he])
 end VG.Proof.MlDsa.AArch64.Optimized.Paired
 
 end
@@ -177,7 +177,7 @@ theorem firstPass_finalBank {m : Mem} {p a b : Addr} {u : Nat} (hu : u<8)
   have had : (p+BitVec.ofNat 64 (16*u))+BitVec.ofNat 64 (1024*poly.val+128*j)=
       (p+BitVec.ofNat 64 (128*j))+BitVec.ofNat 64 (1024*poly.val+16*u) := by
     simp only [BitVec.add_assoc,←BitVec.ofNat_add]
-    rw [show 16*u+(1024*poly.val+128*j)=128*j+(1024*poly.val+16*u) by omega]
+    rw [show 16*u+(1024*poly.val+128*j)=128*j+(1024*poly.val+16*u) by omega_using []]
   rw [had]
   exact firstPass_read_written (by decide) hj ha hb poly ⟨u,hu⟩
 
@@ -190,7 +190,7 @@ theorem readPair_workFrame {m m' : Mem} {p : Addr} {u : Nat} {W : List Region}
   apply Vector.ext
   intro j hj
   simp only [readPair,Vector.getElem_ofFn,BitVec.add_assoc,←BitVec.ofNat_add]
-  exact hf.read (Offset.contains_base p (by omega : 16*u+(1024*poly.val+128*j)+16≤2048) (by omega)) hd (by decide)
+  exact hf.read (Offset.contains_base p (by omega_using [hu, hj] : 16*u+(1024*poly.val+128*j)+16≤2048) (by omega_using [hu, hj])) hd (by decide)
 end VG.Proof.MlDsa.AArch64.Optimized.Paired
 
 end
@@ -208,7 +208,7 @@ theorem valuesAt_word (m : Mem) (a b : Addr) (poly : Fin 2) (j : Fin 8) {e : Nat
       (vword (m.read (a+BitVec.ofNat 64 (16*j.val)) 16) e)
       (vword (m.read (b+BitVec.ofNat 64 (1024*poly.val+16*j.val)) 16) e) := by
   simp only [valuesAt,Vector.getElem_ofFn]
-  rcases (show e=0 ∨ e=1 ∨ e=2 ∨ e=3 by omega) with rfl | rfl | rfl | rfl <;> simp only [vword_ofVWords_0,vword_ofVWords_1,vword_ofVWords_2,vword_ofVWords_3]
+  rcases (show e=0 ∨ e=1 ∨ e=2 ∨ e=3 by omega_using [he]) with rfl | rfl | rfl | rfl <;> simp only [vword_ofVWords_0,vword_ofVWords_1,vword_ofVWords_2,vword_ofVWords_3]
 
 /-- The paired SIMD layout contains the same pointwise products as the scalar polynomial view. -/
 theorem valuesAt_coeff (m : Mem) (a b : Addr) (u : Nat) (poly : Fin 2) (j : Fin 8)
@@ -218,8 +218,8 @@ theorem valuesAt_coeff (m : Mem) (a b : Addr) (u : Nat) (poly : Fin 2) (j : Fin 
         (coeffAt m (b+BitVec.ofNat 64 (1024*poly.val)) (32*u+4*j.val+e)) := by
   rw [valuesAt_word _ _ _ _ _ he,VG.Proof.MlDsa.AArch64.Arith.Neon.vword_read16 _ _ he,VG.Proof.MlDsa.AArch64.Arith.Neon.vword_read16 _ _ he]
   simp only [coeffAt,BitVec.add_assoc,←BitVec.ofNat_add]
-  rw [show 128*u+16*j.val+4*e=4*(32*u+4*j.val+e) by omega,
-    show 128*u+(1024*poly.val+16*j.val)+4*e=1024*poly.val+4*(32*u+4*j.val+e) by omega]
+  rw [show 128*u+16*j.val+4*e=4*(32*u+4*j.val+e) by omega_using [],
+    show 128*u+(1024*poly.val+16*j.val)+4*e=1024*poly.val+4*(32*u+4*j.val+e) by omega_using []]
 
 end VG.Proof.MlDsa.AArch64.Optimized.Paired
 

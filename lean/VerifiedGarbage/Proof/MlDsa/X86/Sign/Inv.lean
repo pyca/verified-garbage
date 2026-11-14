@@ -55,9 +55,9 @@ theorem rgn_sub {Y : Lay} {s₀ : State} (hp : TPre Y s₀) {c d : Buf} (hc : Y.
   have ea : c.addr s₀ = (d.ptr s₀).setWidth 64 + BitVec.ofNat 64 (c.off - d.off) := by
     show c.addr s₀ = d.addr s₀ + _
     rw [Buf.addr_eq hp hc, Buf.addr_eq hp hd, BitVec.add_assoc, ← BitVec.ofNat_add, e,
-      show d.off + (c.off - d.off) = c.off by omega]
+      show d.off + (c.off - d.off) = c.off by omega_using [h₁]]
   rw [ea]
-  exact sub_of_contains (contains_at (by omega) (Buf.fit hp hd))
+  exact sub_of_contains (contains_at (by omega_using [h₁, h₂]) (Buf.fit hp hd))
 
 /-- The frame of a piece, widened to the buffers `ds`. -/
 theorem frIn {s₀ : State} (hp : TPre (Y p) s₀) {bs ds : List Buf} {N M : Nat} (hNM : N ≤ M) (hM : M ≤ 80)
@@ -70,7 +70,7 @@ theorem frIn {s₀ : State} (hp : TPre (Y p) s₀) {bs ds : List Buf} {N M : Nat
       exact ⟨_, List.mem_append_left _ (List.mem_map_of_mem hd), rgn_sub hp hc' hd' i⟩
     · rw [List.mem_singleton] at hr; subst hr
       exact ⟨_, List.mem_append_right _ (List.mem_singleton_self _),
-        stk_sub hp hNM (by show M + 16 ≤ 96; omega)⟩
+        stk_sub hp hNM (by show M + 16 ≤ 96; omega_using [hM])⟩
 
 /-! ## Families of slots -/
 
@@ -119,7 +119,7 @@ def OutC (p : Params) (nh : Nat) (c : Buf) : Prop :=
     Out p (oP 5) (oP (5 + nh)) c ∧ Out p oOK (oOK + 4) c ∧ Out p oONES (oONES + 4) c
 
 theorem PS.w1pos {p : Params} (ps : PS p) : 0 < p.k * w1Len p :=
-  Nat.mul_pos (by have := ps.hk; omega) (by rcases ps.hw1Len with h | h <;> omega)
+  Nat.mul_pos (by have := ps.hk; omega_using [this]) (by rcases ps.hw1Len with h | h <;> omega_using [h])
 
 /-- The facts of `PS p` that the offsets need, in the context. -/
 tactic_template "ofs" : tactic => `(tactic| (
@@ -163,7 +163,7 @@ theorem aP_eq {i j : Nat} : aP p i j = pS (5 + 4 * p.k + 3 * p.ℓ + (p.ℓ * i 
 omit ps in
 theorem aIdx {i j : Nat} (hi : i < p.k) (hj : j < p.ℓ) : p.ℓ * i + j < p.k * p.ℓ := by
   have : p.ℓ * i + p.ℓ ≤ p.ℓ * p.k := by rw [← Nat.mul_succ]; exact Nat.mul_le_mul_left _ hi
-  rw [Nat.mul_comm p.k]; omega
+  rw [Nat.mul_comm p.k]; omega_using [hj, this]
 
 end
 
@@ -180,27 +180,27 @@ theorem apart_of {b : Buf} (hb : (Y p).ok b = true) (hbs : b.arg = SC) {bs : Lis
 theorem Fam.keep {s₀ : State} (hp : TPre (Y p) s₀) (ps : PS p) {bs : List Buf} {N : Nat} (hN : N ≤ 80)
     {m m' : Mem} (fr : Frame (FR s₀ bs N) m m') {b n : Nat} (hb : b + n ≤ nS p)
     (h : ∀ c ∈ bs, Out p (oP b) (oP (b + n)) c) {f : Nat → Poly} (hf : Fam s₀ m b n f) : Fam s₀ m' b n f :=
-  fun j hj => polyIs_congr (VG.Proof.MlKem.X86.Top.keep hp (N := N) (by show N + 16 ≤ 96; omega)
-    (apart_of (slot_ok' ps (Nat.lt_of_lt_of_le (by omega : b + j < b + n) hb)) rfl fun c hc => by
+  fun j hj => polyIs_congr (VG.Proof.MlKem.X86.Top.keep hp (N := N) (by show N + 16 ≤ 96; omega_using [hN])
+    (apart_of (slot_ok' ps (Nat.lt_of_lt_of_le (by omega_using [hj] : b + j < b + n) hb)) rfl fun c hc => by
       obtain ⟨h₁, h₂⟩ := h c hc
-      exact ⟨h₁, fun e => by simp only [oP] at h₂ ⊢; have := h₂ e; omega⟩) fr) (hf j hj)
+      exact ⟨h₁, fun e => by simp only [oP] at h₂ ⊢; have := h₂ e; omega_using [hj, this]⟩) fr) (hf j hj)
 
 theorem keepB {s₀ : State} (hp : TPre (Y p) s₀) {bs : List Buf} {N : Nat} (hN : N ≤ 80)
     {m m' : Mem} (fr : Frame (FR s₀ bs N) m m') {o l : Nat} (hc : (Y p).ok (sc o l) = true)
     (h : ∀ c ∈ bs, Out p o (o + l) c) : bytesAt m' (Buf.addr s₀ (sc o l)) l = bytesAt m (Buf.addr s₀ (sc o l)) l :=
-  keepBytes hp (N := N) (by show N + 16 ≤ 96; omega) (apart_of hc rfl h) fr
+  keepBytes hp (N := N) (by show N + 16 ≤ 96; omega_using [hN]) (apart_of hc rfl h) fr
 
 theorem keepW' {s₀ : State} (hp : TPre (Y p) s₀) {bs : List Buf} {N : Nat} (hN : N ≤ 80)
     {m m' : Mem} (fr : Frame (FR s₀ bs N) m m') {o : Nat} (hc : (Y p).ok (sc o 4) = true)
     (h : ∀ c ∈ bs, Out p o (o + 4) c) : m'.readW (Buf.addr s₀ (sc o 4)) 32 = m.readW (Buf.addr s₀ (sc o 4)) 32 :=
-  keepW hp (N := N) (by show N + 16 ≤ 96; omega) (apart_of hc rfl h) fr
+  keepW hp (N := N) (by show N + 16 ≤ 96; omega_using [hN]) (apart_of hc rfl h) fr
 
 theorem keepP {s₀ : State} (hp : TPre (Y p) s₀) (ps : PS p) {bs : List Buf} {N : Nat} (hN : N ≤ 80)
     {m m' : Mem} (fr : Frame (FR s₀ bs N) m m') {j : Nat} (hj : j < nS p)
     (h : ∀ c ∈ bs, Out p (oP j) (oP (j + 1)) c) {f : Poly} (hf : PolyIs m (Buf.addr s₀ (pS j)) f) :
     PolyIs m' (Buf.addr s₀ (pS j)) f := by
-  have := Fam.keep hp ps hN fr (b := j) (n := 1) (by omega) h (f := fun _ => f) fun i hi => by
-    rw [show i = 0 by omega]; exact hf
+  have := Fam.keep hp ps hN fr (b := j) (n := 1) (by omega_using [hj]) h (f := fun _ => f) fun i hi => by
+    rw [show i = 0 by omega_using [hi]]; exact hf
   exact this 0 (by decide)
 
 /-- The first `r` slots of a family, and the rest. -/
@@ -208,6 +208,6 @@ theorem Fam.snoc {s₀ : State} {m : Mem} {b n : Nat} {f : Nat → Poly} (h : Fa
     (h' : PolyIs m (Buf.addr s₀ (pS (b + n))) (f n)) : Fam s₀ m b (n + 1) f := fun j hj => by
   by_cases e : j < n
   · exact h j e
-  · rw [show j = n by omega]; exact h'
+  · rw [show j = n by omega_using [hj, e]]; exact h'
 
 end VG.Proof.MlDsa.X86.Sign

@@ -35,7 +35,7 @@ theorem signGeometry_stack (s : State) :
 
 theorem signGeometry_stackNat (s : State) (fit : sigStack ≤ (s.gpr .esp).toNat) :
     (signGeometry s).stack.toNat = (s.gpr .esp).toNat - 1136 := by
-  rw [signGeometry_stack, sub_toNat (by unfold sigStack at fit; omega)]
+  rw [signGeometry_stack, sub_toNat (by unfold sigStack at fit; omega_using [fit])]
 
 theorem signGeometry_wholeStack (s : State) (fit : sigStack ≤ (s.gpr .esp).toNat) :
     (signGeometry s).wholeStack = ⟨(s.gpr .esp).setWidth 64 - BitVec.ofNat 64 sigStack, sigStack⟩ := by
@@ -50,8 +50,8 @@ theorem signGeometry_arguments (s : State) (fit : sigStack ≤ (s.gpr .esp).toNa
   unfold Geometry.argumentsRegion
   rw [signGeometry_stack]
   change (⟨(s.gpr .esp - BitVec.ofNat 32 1136).setWidth 64 + BitVec.ofNat 64 1140, 84⟩ : Region) = _
-  rw [Taint.sub_setWidth (by unfold sigStack at fit; omega : 1136 ≤ (s.gpr .esp).toNat)]
+  rw [Taint.sub_setWidth (by unfold sigStack at fit; omega_using [fit] : 1136 ≤ (s.gpr .esp).toNat)]
   have aa : argAddr s 0 = (s.gpr .esp).setWidth 64 + 4 :=
-    byteAddr_add (by omega : (s.gpr .esp).toNat + 4 < 2 ^ 32)
+    byteAddr_add (by omega_using [high] : (s.gpr .esp).toNat + 4 < 2 ^ 32)
   rw [aa, show BitVec.ofNat 64 1140 = BitVec.ofNat 64 1136 + 4 from rfl, ← BitVec.add_assoc, BitVec.sub_add_cancel]
 end VG.Proof.RsaPkcs1Sig.X86.Sgn

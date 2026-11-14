@@ -50,7 +50,7 @@ theorem verify_verified {P : Prims} (hP : PrimsOk P) (p : Params)
     { wp := fun s₀ s h₀ ha => ((body_piece hP hF).wp s₀ s h₀.1 ⟨ha, h₀.2⟩).mono fun _ h => ⟨h.1.1.1, h.1⟩
       ct := fun s₀ s₀' h₀ h₀' hq => ((body_piece hP hF).ct s₀ s₀' h₀.1 h₀'.1 hq).mono
         (fun _ _ ⟨a, a'⟩ => ⟨⟨a, h₀.2⟩, ⟨a', h₀'.2⟩⟩) fun _ _ h => h }
-  have hl := Piece.leaf (W (YV p)) (body_nosp hP p) (fun _ hp => ⟨hp.1.E0_big, by have := hp.1.sp'; omega⟩)
+  have hl := Piece.leaf (W (YV p)) (body_nosp hP p) (fun _ hp => ⟨hp.1.E0_big, by have := hp.1.sp'; omega_using [this]⟩)
     (fun _ hp => hp.1.hW) (fun _ _ _ _ hq => hq.1) (hb.mono (fun _ _ _ h => h)
       fun _ _ _ h => ⟨⟨h.1.frame, h.1.esp, h.1.rd, h.1.wr⟩, h.2⟩)
   refine Piece.verified ((hl.pre_mono (fun _ h => ⟨(pre_of h).1, t1Ok_of hF (pre_of h).1 (pre_of h).2⟩)

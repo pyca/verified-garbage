@@ -48,7 +48,7 @@ theorem crossRow_ok {s : State} {B : Addr} {Z e eb i : Nat}
   refine WP.seq (WP.mono (WP.keep [.x1, .x2, .x16, .x17] (Q := fun t =>
     t.gpr .x1 = word s.mem B (eb+8*i) ∧ t.gpr .x16 = off B e ∧
     t.gpr .x17 = off B eb ∧ t.gpr .x2 = 0 ∧ t.c = false ∧ t.mem = s.mem)
-    (by brun [h11, h5, h9, h7, hs.ld (show eb+8*i+8 ≤ Z by omega)]) rfl rfl rfl)
+    (by brun [h11, h5, h9, h7, hs.ld (show eb+8*i+8 ≤ Z by omega_using [hb])]) rfl rfl rfl)
     fun u ⟨⟨h1, h16, h17, h2, hcf, hm⟩, ku⟩ => ?_)
   have u7 := (ku.gpr .x7 (by decide)).trans h7
   have u13 := (ku.gpr .x13 (by decide)).trans h13
@@ -56,8 +56,8 @@ theorem crossRow_ok {s : State} {B : Addr} {Z e eb i : Nat}
     ⟨hs.congr ku.wr, Keep.refl _ _, by rw [h16]; rfl, by rw [h17]; rfl,
       Outside.refl _ _ _ _, by simp only [carry, h2, hcf, Bool.toNat_false]; rfl,
       by simp only [carry, h2, hcf, Bool.toNat_false]; decide⟩
-  refine WP.seq (WP.mono (tiledRow_ok u7 (by omega) (by omega) (by omega)
-    (by omega) (Or.inr rfl) u13 h0) fun v hI => ?_)
+  refine WP.seq (WP.mono (tiledRow_ok u7 (by omega_using [hA]) (by omega_using [hb]) (by omega_using [sb])
+    (by omega_using [hi]) (Or.inr rfl) u13 h0) fun v hI => ?_)
   have v7 := (hI.keep.gpr .x7 (by decide)).trans u7
   rw [WP.block_append_iff]
   refine WP.mono (carryOut_ok v v7 hI.carry_lt) fun c ⟨⟨hmc, hcarry⟩, kc⟩ => ?_
@@ -66,18 +66,18 @@ theorem crossRow_ok {s : State} {B : Addr} {Z e eb i : Nat}
   have c5 := (kAll.gpr .x5 (by decide)).trans h5
   have c11 := (kAll.gpr .x11 (by decide)).trans h11
   have c13 := (kAll.gpr .x13 (by decide)).trans h13
-  refine WP.mono (crossTail_ok (hs.congr kAll.wr) c16 c5 c11 c13 (by omega))
+  refine WP.mono (crossTail_ok (hs.congr kAll.wr) c16 c5 c11 c13 (by omega_using [hA]))
     fun t ⟨⟨htm, ht5, ht11, ht13, ht6⟩, kt⟩ => ?_
   refine ⟨?_, ?_, ht5, ht11, ht13, ?_, (kAll.trans kt).mono (by decide)⟩
-  · rw [htm, wv_writeW_top _ B e i _ (by omega), hmc, hcarry]
+  · rw [htm, wv_writeW_top _ B e i _ (by omega_using [hA, hn]), hmc, hcarry]
     have hv := hI.val
     rw [hm, h1] at hv
     exact hv
   · have ho := hI.out
     rw [hm] at ho
     rw [htm, hmc]
-    exact (ho.mono (o' := e) (n' := 8*(i+1)) (Nat.le_refl _) (by omega)).trans
-      ((writeW_outside v.mem B (c.gpr .x2) (d := e+8*i) (by omega)).mono (by omega) (by omega))
+    exact (ho.mono (o' := e) (n' := 8*(i+1)) (Nat.le_refl _) (by omega_using [])).trans
+      ((writeW_outside v.mem B (c.gpr .x2) (d := e+8*i) (by omega_using [hA, hn])).mono (by omega_using []) (by omega_using []))
   · rw [ht6, kAll.gpr .x6 (by decide)]
 
 end VG.Proof.Bignum.AArch64.Square

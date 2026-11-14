@@ -101,7 +101,7 @@ theorem Stg.vd_keep {g : Geo} {s0 s : State} {A : Nat → Nat} {live : List Nat}
     (h : Stg g s0 A live c s) {js ds : List Nat} {m' : Mem} (k : Keep g.B g.w js ds s.mem m')
     (hj : ∀ j ∈ js, j ≠ aVD) (hd : ∀ d ∈ ds, d + 4 ≤ hdr) :
     w32 m' g.B (arr g.w aVD + 4 * g.w) = 0 := by
-  rw [k.word (by simp only [S]; omega) hj hd (h.ws.ws.fit64 (by decide)), h.vdTop]
+  rw [k.word (by simp only [S]; omega_using []) hj hd (h.ws.ws.fit64 (by decide)), h.vdTop]
 
 /-- The arrays through a step that writes none of them. -/
 theorem Stg.arrs_keep {g : Geo} {s0 s : State} {A : Nat → Nat} {live : List Nat} {c : Bool}

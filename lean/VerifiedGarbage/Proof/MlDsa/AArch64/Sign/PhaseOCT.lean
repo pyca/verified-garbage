@@ -38,8 +38,8 @@ theorem hint_coeffs {x y : State} {k : Nat} {f : Nat → Vector Bool n} (hx : HF
     rw [pS_hint s (i / 256)]
     simp only [coeffAt]
     rw [BitVec.add_assoc (pa s (Impl.MlDsa.AArch64.Sign.hP 0)) (BitVec.ofNat 64 (1024 * (i / 256))), ← BitVec.ofNat_add,
-      show 1024 * (i / 256) + 4 * (i % 256) = 4 * i by omega]
-  have hq : i / 256 < k := by omega
+      show 1024 * (i / 256) + 4 * (i % 256) = 4 * i by omega_using []]
+  have hq : i / 256 < k := by omega_using [hi]
   have hj : i % 256 < n := Nat.mod_lt _ (by decide)
   have ex := (hx _ hq).2 0 (by decide) _ hj
   have ey := (hy _ hq).2 0 (by decide) _ hj

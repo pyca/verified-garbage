@@ -37,7 +37,7 @@ theorem save_ok (s : State)
   refine Spill.save_ok _ s _ (fun p hp => ?_) (WP.block_nil ⟨rfl, rfl, rfl,
     Spill.saveMem_saved _ _ _ _ slots_ok, Spill.saveMem_frame _ _ _ (by decide) _ (by decide)⟩)
   obtain ⟨i, hi, he⟩ := slot_index p hp
-  exact ⟨by omega, by omega, he ▸ hw i hi⟩
+  exact ⟨by omega_using [hi, he], by omega_using [fit, hi, he], he ▸ hw i hi⟩
 
 theorem restore_ok (original s : State) (hsaved : Saved original s)
     (fit : (s.gpr .r3).toNat + 256 ≤ 2 ^ 32)
@@ -52,7 +52,7 @@ theorem restore_ok (original s : State) (hsaved : Saved original s)
     fun s' hl ho hm hrd hwr _ => WP.block_nil ⟨?_, ⟨fun r hr => ho r (hregs ▸ hr), hm, hrd, hwr⟩⟩
   · obtain ⟨i, hi, he⟩ := slot_index p hp
     have hne : ∀ p ∈ slotsOf Impl.TripleDes.Arm.Key.savedRegs, p.1 ≠ .r3 := by decide
-    exact ⟨hne p hp, by omega, by omega, he ▸ hread i hi⟩
+    exact ⟨hne p hp, by omega_using [hi, he], by omega_using [fit, hi, he], he ▸ hread i hi⟩
   · exact Spill.restored_of (hsaved.restored hl) fun r hr => hregs ▸ hr
 
 end VG.Proof.TripleDes.Arm.Key

@@ -45,7 +45,7 @@ theorem paddingWord_ok {s : State} {A B : Spec.Sha3.State} {j : Nat} (hj : j<25)
       Pairs t (xorWord A j (imm.setWidth 64 <<< (16*shift))) B := by
   unfold paddingWord
   let w : BitVec 64 := imm.setWidth 64 <<< (16*shift)
-  refine WP.cons (s':=s.write .x .x7 w) (by simp [exec,w,Size.bits,Nat.mul_comm]; omega) ?_
+  refine WP.cons (s':=s.write .x .x7 w) (by simp [exec,w,Size.bits,Nat.mul_comm]; omega_using [hs]) ?_
   have hu := Upd.write64 s .x7 w
   refine wp_vop (d:=.v25) rfl fun a ha =>
     wp_vop (d:=.v25) rfl fun b hb =>
@@ -54,7 +54,7 @@ theorem paddingWord_ok {s : State} {A B : Spec.Sha3.State} {j : Nat} (hj : j<25)
     (RegKeep.vupd ht)).mono (by simp),ht.mem.trans (hb.mem.trans (ha.mem.trans hu.mem)),?_⟩
   have hj25 : vreg j≠.v25 := by
     change vreg j≠vreg 25
-    rw [ne_eq,vreg_inj j (by omega) 25 (by decide)]; omega
+    rw [ne_eq,vreg_inj j (by omega_using [hj]) 25 (by decide)]; omega_using [hj]
   have hv25 : b.v .v25=ofVDwords w 0 := by
     rw [hb.v,ha.v,ha.gpr,hu.gpr]
     apply vec64_ext
@@ -67,12 +67,12 @@ theorem paddingWord_ok {s : State} {A B : Spec.Sha3.State} {j : Nat} (hj : j<25)
   intro i hi
   have hi25 : vreg i≠.v25 := by
     change vreg i≠vreg 25
-    rw [ne_eq,vreg_inj i (by omega) 25 (by decide)]; omega
+    rw [ne_eq,vreg_inj i (by omega_using [hi]) 25 (by decide)]; omega_using [hi]
   by_cases he : i=j
   · subst i
     rw [ht.v,hv25,hb.get _ hj25,ha.get _ hj25,hu.vec,hp j hj,pair_xor,xorWord_get _ _ _ _ hj,
       ite_eq_left rfl,show B[j]! ^^^ (0:BitVec 64)=B[j]! from BitVec.xor_zero]
-  · have he' : vreg i≠vreg j := by rw [ne_eq,vreg_inj i (by omega) j (by omega)]; exact he
+  · have he' : vreg i≠vreg j := by rw [ne_eq,vreg_inj i (by omega_using [hi]) j (by omega_using [hj])]; exact he
     rw [ht.get _ he',hb.get _ hi25,ha.get _ hi25,hu.vec,hp i hi,xorWord_get _ _ _ _ hi,ite_eq_right he]
 
 end VG.Proof.MlDsa.AArch64.Sign.CommitTail

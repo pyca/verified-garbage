@@ -119,7 +119,7 @@ theorem keyF_implies : (Spec.Sm4.expandKeyContract AArch64.abi 3168).Implies key
   pre s hs := by
     obtain ⟨hsp, hrd, hwr, dKS, dSK, dSS, fK, fS⟩ := hs
     sig_pre [Spec.Sm4.expandKeyContract, Spec.Sm4.expandKeySig, AArch64.abi, AArch64.argRegs]
-    exact ⟨by omega, hrd, hwr, dKS, dSK.sub_left (key_stk _), dSS.sub_left (key_stk _), fK, fS⟩
+    exact ⟨by omega_using [hsp], hrd, hwr, dKS, dSK.sub_left (key_stk _), dSS.sub_left (key_stk _), fK, fS⟩
   post s s' _ h := by
     sig_reduce [Spec.Sm4.expandKeyContract, Spec.Sm4.expandKeySig, AArch64.abi, AArch64.argRegs] at h
     exact h

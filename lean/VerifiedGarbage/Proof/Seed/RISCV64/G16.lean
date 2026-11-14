@@ -105,7 +105,7 @@ theorem ks_disjoint (S : Addr) {j : Nat} (hj : j < 13) :
     Region.Disjoint ⟨wordAddr (S + BitVec.ofNat 64 (8 * kSlot)) j, 8⟩ ⟨S, 8 * 40⟩ := by
   simp only [wordAddr]
   rw [Offset.add_add]
-  exact Offset.disjoint_base _ (by unfold kSlot; omega) (by unfold kSlot; omega)
+  exact Offset.disjoint_base _ (by unfold kSlot; omega_using []) (by unfold kSlot; omega_using [hj])
 
 /-- A constant word. -/
 theorem const_rel {k : Nat} (A : Nat) (v : BitVec 64) : LaneRel k A (v.toNat, 0) v := by
@@ -138,8 +138,8 @@ theorem g16_ok {s : State} (hok : Ok gCfg s)
     split at h
     · rename_i hk'
       simp only [Option.some.injEq] at h; subst h
-      have := inWord_rel In (i := k - 40) (k := 9) (by omega)
-      simpa [In, slotW, tSlot, show 40 + (k - 40) = k by omega, gCfg] using this
+      have := inWord_rel In (i := k - 40) (k := 9) (by omega_using [hk'])
+      simpa [In, slotW, tSlot, show 40 + (k - 40) = k by omega_using [hk'], gCfg] using this
     · cases h
   obtain ⟨e1, he1, hp1⟩ := of_check _ _ _ g16In_check
   obtain ⟨s1, hs1, p1⟩ := run lanes_sound laneRel_fun hok hrel1 he1
@@ -162,7 +162,7 @@ theorem g16_ok {s : State} (hok : Ok gCfg s)
       | shr _ _ => cases hj'.1
   -- The S-box.
   have hokS : Ok Proof.Aes.RISCV64.sboxCfg s1 :=
-    { slotIn := fun k hk => p1.ok.slotIn k (by simp [Proof.Aes.RISCV64.sboxCfg, gCfg] at hk ⊢; omega)
+    { slotIn := fun k hk => p1.ok.slotIn k (by simp [Proof.Aes.RISCV64.sboxCfg, gCfg] at hk ⊢; omega_using [hk])
       extIn := fun _ hk => (by cases hk)
       baseAl := fun _ => p1.ok.baseAl (by decide)
       extAl := fun h => (by cases h)
@@ -198,7 +198,7 @@ theorem g16_ok {s : State} (hok : Ok gCfg s)
     have hr : q j = r := by simpa using List.find?_some hf
     have hj := List.mem_range.mp (List.mem_of_find?_eq_some hf)
     subst hr
-    exact inWord_rel S (k := 9) (by omega)
+    exact inWord_rel S (k := 9) (by omega_using [hj])
   obtain ⟨e2, he2, hp2⟩ := of_check _ _ _ g16Out_check
   obtain ⟨s3, hs3, p2⟩ := run lanes_sound laneRel_fun hok2 hrel2 he2
   simp only [post2, List.all_eq_true, List.mem_range, Bool.and_eq_true, beq_iff_eq] at hp2
@@ -209,7 +209,7 @@ theorem g16_ok {s : State} (hok : Ok gCfg s)
     have hi' := hp2 i hi
     simp only [decide_eq_true_eq] at hi'
     have hl : LaneRel 9 (assign S (2 ^ 9)) (gConst.toNat, mk 64 (l2 i) 64) (Out i) := by
-      have := p2.rel.slot _ _ (by simp [tSlot, gCfg]; omega) hi'.1
+      have := p2.rel.slot _ _ (by simp [tSlot, gCfg]; omega_using [hi]) hi'.1
       simpa [Out, slotW, gCfg, p2.base, hb2] using this
     intro t ht
     rw [outWordC_rel (fun p hp a ha => hi'.2 p hp a ha) hl t ht, BitVec.testBit_toNat]
@@ -229,7 +229,7 @@ theorem g16_ok {s : State} (hok : Ok gCfg s)
       refine ⟨slotRegion gCfg s, List.mem_singleton_self _, ?_⟩
       show Region.Sub ⟨s1.gpr sb, 8 * 40⟩ ⟨s.gpr sb, 8 * 48⟩
       rw [hb1]
-      exact Region.sub_prefix (by omega)
+      exact Region.sub_prefix (by omega_using [])
     · have := p2.frame
       simp only [slotRegion] at this ⊢
       rw [show s2.gpr gCfg.base = s.gpr gCfg.base from hb2] at this

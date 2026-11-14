@@ -150,7 +150,7 @@ theorem nafTable_step_relCT {F : Impl.Weierstrass.Mont.Modulus} {wk : Nat} {K : 
     have hx := hL.tbl K.R.x (by simp [winOther])
     have hz := hL.tbl K.R.z (by simp [winOther])
     rw [hL.rxz] at hz
-    omega
+    omega_using [hz]
   have slots : ∀ x∈rcbW K.S K.D++rcbR K.S K.R (Naf.twice K),x∈nafSlots K := by
     intro x hx
     rcases List.mem_append.mp hx with hx|hx
@@ -175,8 +175,8 @@ theorem nafTable_step_relCT {F : Impl.Weierstrass.Mont.Modulus} {wk : Nat} {K : 
   apply RelCT.seq cp
   apply RelCT.block_append
   apply RelCT.seq (nafTableStore_relCT (base:=base) (j:=m) (E:=copyPointEnv e K.R K.D)
-    hL.lay hW hL.n hL.rxy hL.rxz hm8 (by have := hL.table_le; omega)
-    (nafTblPt_mem K hL.n (by omega) (by omega)) (fun _ hx => List.mem_append_left _ hx) sep hc.store)
+    hL.lay hW hL.n hL.rxy hL.rxz hm8 (by have := hL.table_le; omega_using [this])
+    (nafTblPt_mem K hL.n (by omega_using []) (by omega_using [hm8])) (fun _ hx => List.mem_append_left _ hx) sep hc.store)
   have adv := keepsField_relCT (counter:=BitVec.ofNat 32 m) (counter':=BitVec.ofNat 32 (m+1))
     (M:=K.M) (base:=base) (size:=size) (m:=C.p) (Sl:=(·∈nafSlots K))
     (V:=jacCoords (K.tblPt (m+1))++(jacCoords K.R++(jacCoords K.D++nafTableLive K m)))
@@ -219,19 +219,19 @@ theorem nafTable_relCT {counter : BitVec 32} {F : Impl.Weierstrass.Mont.Modulus}
     intro j
     by_cases hj : 1≤j
     · by_cases hj7 : j≤7
-      · refine (nafTable_step_relCT hL hW hJ hm hOne (m:=8-j) (by omega) hc).mono
+      · refine (nafTable_step_relCT hL hW hJ hm hOne (m:=8-j) (by omega_using [hj]) hc).mono
           (P':=I j) (fun _ _ h => h.2.2) ?_
         intro s t ⟨hp,cs,ct⟩
         refine ⟨cs.trans ct.symm,fun he => ?_,fun he => ?_⟩
         · change s.cf=some false at he
           have hn := of_decide_eq_false (Option.some.inj (cs.symm.trans he))
-          have hj1 : j=1 := by omega
+          have hj1 : j=1 := by omega_using [hj, hn]
           subst j
           exact hp
         · change s.cf=some true at he
           have hy := of_decide_eq_true (Option.some.inj (cs.symm.trans he))
-          refine ⟨j-1,by omega,by omega,by omega,?_⟩
-          rw [show 8-(j-1)=8-j+1 from by omega]
+          refine ⟨j-1,by omega_using [hj],by omega_using [hy],by omega_using [hj7],?_⟩
+          rw [show 8-(j-1)=8-j+1 from by omega_using [hj, hj7]]
           exact hp
       · exact RelCT.of_false (fun _ _ h => hj7 h.2.1)
     · exact RelCT.of_false (fun _ _ h => hj h.1)

@@ -18,13 +18,13 @@ open VG VG.Arm VG.Proof.Mont
 
 theorem keyView_stride (w : Nat) : VG.Proof.Rsa.Arm.Keys.S (2 * w + 2) = 8 * (w + 2) := by
   simp only [VG.Proof.Rsa.Arm.Keys.S]
-  omega
+  omega_using []
 
 theorem keyView_array (w j : Nat) :
     96 + VG.Proof.Rsa.Arm.Keys.arr (2 * w + 2) j = Proof.Rsa.Mont.arrAt w j := by
   change 96 + (160 + j * VG.Proof.Rsa.Arm.Keys.S (2 * w + 2)) = 256 + j * (8 * (w + 2))
   rw [keyView_stride]
-  omega
+  omega_using []
 
 theorem keyView_number (m : Mem) (base : BitVec 32) (w j : Nat)
     (fits : base.toNat + 96 < 2 ^ 32) :
@@ -34,7 +34,7 @@ theorem keyView_number (m : Mem) (base : BitVec 32) (w j : Nat)
   unfold VG.Proof.Rsa.Arm.Keys.num
   rw [VG.Arm.addr_add fits, VG.Proof.Rsa.Arm.CrtValues.val32_off, keyView_array, val32_append,
     VG.Proof.Bignum.Arm.numAt_native,
-    show 32 * (2 * w) = 64 * w by omega, show 4 * (2 * w) = 8 * w by omega]
+    show 32 * (2 * w) = 64 * w by omega_using [], show 4 * (2 * w) = 8 * w by omega_using []]
 
 theorem keyView_low (m : Mem) (base : BitVec 32) (w j : Nat)
     (fits : base.toNat + 96 < 2 ^ 32) :
@@ -47,7 +47,7 @@ theorem numAt_lt (m : Mem) (base : Addr) (w j : Nat) :
     Proof.Rsa.Mont.numAt m base w j < 2 ^ (64 * w) := by
   have bound := (m.read (base + BitVec.ofNat 64 (Proof.Rsa.Mont.arrAt w j)) (8 * w)).isLt
   change _ < 2 ^ (8 * (8 * w)) at bound
-  simpa only [Proof.Rsa.Mont.numAt, show 8 * (8 * w) = 64 * w by omega] using bound
+  simpa only [Proof.Rsa.Mont.numAt, show 8 * (8 * w) = 64 * w by omega_using []] using bound
 
 theorem keyView_number_mod (m : Mem) (base : BitVec 32) (w j : Nat)
     (fits : base.toNat + 96 < 2 ^ 32) :
@@ -65,9 +65,9 @@ theorem keyView_number_low (m : Mem) (base : BitVec 32) (w j : Nat)
   have top : val32 m (State.addr base) (Proof.Rsa.Mont.arrAt w j + 8 * w) 2 = 0 := by
     by_contra nonzero
     have scale := Nat.mul_le_mul_left (2 ^ (64 * w)) (show 1 ≤
-      val32 m (State.addr base) (Proof.Rsa.Mont.arrAt w j + 8 * w) 2 by omega)
+      val32 m (State.addr base) (Proof.Rsa.Mont.arrAt w j + 8 * w) 2 by omega_using [nonzero])
     rw [Nat.mul_one] at scale
-    omega
+    omega_using [small, split, scale]
   rw [top, Nat.mul_zero, Nat.add_zero] at split
   exact split.symm
 

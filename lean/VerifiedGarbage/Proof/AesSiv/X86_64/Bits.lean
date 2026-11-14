@@ -43,8 +43,8 @@ theorem toBytes_be128 (x : Nat) : Spec.Gcm.toBytes (BitVec.ofNat 128 x) = Spec.S
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.extractLsb'_toNat, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow]
   have : 2 ^ 128 = 2 ^ (8 * (15 - i)) * 2 ^ (128 - 8 * (15 - i)) := by
-    rw [← Nat.pow_add]; congr 1; omega
-  rw [this, Nat.mod_mul_right_div_self, Nat.mod_mod_of_dvd _ (Nat.pow_dvd_pow 2 (by omega)),
+    rw [← Nat.pow_add]; congr 1; omega_using []
+  rw [this, Nat.mod_mul_right_div_self, Nat.mod_mod_of_dvd _ (Nat.pow_dvd_pow 2 (by omega_using [])),
     show 256 ^ (15 - i) = 2 ^ (8 * (15 - i)) by rw [Nat.pow_mul]]
 
 theorem beNat_eq (q : List Byte) : Spec.Gcm.ofBytes q = BitVec.ofNat 128 (Spec.Siv.beNat q) := rfl
@@ -69,14 +69,14 @@ theorem add_words (hi lo : BitVec 64) {k : Nat} (hk : k < 2 ^ 64) :
   have hh := hi.isLt
   simp only [BitVec.toNat_append, BitVec.toNat_add, BitVec.toNat_setWidth, BitVec.toNat_ofBool,
     BitVec.toNat_ofNat, show (0 : BitVec 64).toNat = 0 from rfl]
-  rw [Nat.mod_eq_of_lt hk, Nat.mod_eq_of_lt (show k < 2 ^ 128 by omega),
+  rw [Nat.mod_eq_of_lt hk, Nat.mod_eq_of_lt (show k < 2 ^ 128 by omega_using [hk]),
     ← Nat.shiftLeft_add_eq_or_of_lt (Nat.mod_lt _ (by decide)),
     ← Nat.shiftLeft_add_eq_or_of_lt hl, Nat.shiftLeft_eq, Nat.shiftLeft_eq]
   by_cases h : 2 ^ 64 ≤ lo.toNat + k
   · rw [decide_eq_true h, Bool.toNat_true]
-    omega
+    omega_using [hk, h]
   · rw [decide_eq_false h, Bool.toNat_false]
-    omega
+    omega_using [h]
 
 /-- `add 1` on the low word and `adc 0` on the high word increment the
 128-bit integer `hi ++ lo`. -/
@@ -97,7 +97,7 @@ theorem dbl4 (x : Nat) (_h : 16 * x < 2 ^ 64) :
       BitVec.ofNat 64 (16 * x) := by
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_add, BitVec.toNat_ofNat]
-  omega
+  omega_using []
 
 /-! ## The counter `Q` -/
 
@@ -128,11 +128,11 @@ theorem counter_words (w₀ w₁ : BitVec 64) :
     · omega
     · rfl
   · rw [getD_le8_append _ _ hk, getD_le8_append _ _ hk]
-    simp only [show ¬ k < 8 by omega, ↓reduceIte]
-    rw [extractLsb'_and, qmask_byte (k - 8) (by omega)]
+    simp only [show ¬ k < 8 by omega_using [h8], ↓reduceIte]
+    rw [extractLsb'_and, qmask_byte (k - 8) (by omega_using [hk])]
     by_cases hk' : k = 8 ∨ k = 12
-    · simp only [show (k - 8 = 0 ∨ k - 8 = 4) = True from eq_true (by omega), hk', ite_true]
-    · simp only [show (k - 8 = 0 ∨ k - 8 = 4) = False from eq_false (by omega), hk', ite_false]
+    · simp only [show (k - 8 = 0 ∨ k - 8 = 4) = True from eq_true (by omega_using [hk']), hk', ite_true]
+    · simp only [show (k - 8 = 0 ∨ k - 8 = 4) = False from eq_false (by omega_using [h8, hk']), hk', ite_false]
       apply BitVec.eq_of_getLsbD_eq; intro j hj
       simp only [BitVec.getLsbD_and]
       have : (0xff : Byte).getLsbD j = true := by revert j; decide
@@ -158,17 +158,17 @@ theorem eqz (a : BitVec 64) :
     apply Nat.div_eq_of_lt
     by_cases hm : a.toNat < 2 ^ 63
     · calc _ ≤ (2 ^ 64 - 1 + a.toNat) % 2 ^ 64 := Nat.and_le_right
-        _ < 2 ^ 63 := by rw [show 2 ^ 64 - 1 + a.toNat = (a.toNat - 1) + 2 ^ 64 by omega, Nat.add_mod_right,
-            Nat.mod_eq_of_lt (by omega)]; omega
+        _ < 2 ^ 63 := by rw [show 2 ^ 64 - 1 + a.toNat = (a.toNat - 1) + 2 ^ 64 by omega_using [h0], Nat.add_mod_right,
+            Nat.mod_eq_of_lt (by omega_using [])]; omega_using [hm]
     · calc _ ≤ 2 ^ 64 - 1 - a.toNat := Nat.and_le_left
-        _ < 2 ^ 63 := by omega
+        _ < 2 ^ 63 := by omega_using [hm]
 
 theorem le8_inj {a b : BitVec 64} (h : le8 a = le8 b) : a = b := by
   apply BitVec.eq_of_getLsbD_eq; intro j hj
   have := congrArg (fun l => (l.getD (j / 8) 0).getLsbD (j % 8)) h
-  simp only [getD_le8 _ (show j / 8 < 8 by omega), BitVec.getLsbD_extractLsb',
-    show j % 8 < 8 by omega, decide_true, Bool.true_and] at this
-  rwa [show 8 * (j / 8) + j % 8 = j by omega] at this
+  simp only [getD_le8 _ (show j / 8 < 8 by omega_using [hj]), BitVec.getLsbD_extractLsb',
+    show j % 8 < 8 by omega_using [], decide_true, Bool.true_and] at this
+  rwa [show 8 * (j / 8) + j % 8 = j by omega_using []] at this
 
 theorem or_xor_eq_zero (v₀ t₀ v₁ t₁ : BitVec 64) :
     ((v₀ ^^^ t₀) ||| (v₁ ^^^ t₁)) = 0 ↔ v₀ = t₀ ∧ v₁ = t₁ := by

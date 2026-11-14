@@ -105,7 +105,7 @@ theorem pre_of {s₀ : State} (h : (Proof.MlKem.Scrubbed.keyGenBodyContract X86.
     simp only [below]; rw [Taint.sub_setWidth h1]
   rw [hs] at h20 h21 h22 h23 h24
   have c4 : ∀ i, i < (Y L768).n → i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 := fun i hi => by
-    simp only [Y, Lay.n, List.length_cons, List.length_nil] at hi; omega
+    simp only [Y, Lay.n, List.length_cons, List.length_nil] at hi; omega_using [hi]
   refine ⟨h1, by decide, by simp only [Y, Lay.n, List.length_cons, List.length_nil]; omega, ?_, ?_, ?_, ?_, ?_,
     ?_, ?_, h24, ?_, by decide⟩
   · intro i hi hw
@@ -152,7 +152,7 @@ theorem pub_of {s₀ s₀' : State} (h : (Proof.MlKem.Scrubbed.keyGenBodyContrac
   obtain ⟨e₁, e₂, e₃, e₄, e₅, e₆⟩ := h
   refine ⟨e₁, fun i hi => ?_, ?_⟩
   · simp only [Y, Lay.n, List.length_cons, List.length_nil] at hi
-    obtain rfl | rfl | rfl | rfl : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 := by omega
+    obtain rfl | rfl | rfl | rfl : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 := by omega_using [hi]
     exacts [e₃, e₄, e₅, e₆]
   · simp only [lk, d, addr0]
     exact map_toNat_inj e₂

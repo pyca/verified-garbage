@@ -42,7 +42,7 @@ theorem signByte_val (w : BitVec 64) :
   simp only [BitVec.toNat_setWidth, BitVec.toNat_ushiftRight, BitVec.toNat_shiftLeft, BitVec.toNat_ofNat,
     Nat.shiftLeft_eq, Nat.shiftRight_eq_div_pow, Nat.reducePow]
   have := w.isLt
-  omega
+  omega_using []
 
 /-- The top bit of byte 56 of the output: the low bit of `X2`'s first word. -/
 theorem signByte_ok {s : State} {base p : Addr} (hs : Scr s base) (hp : s.gpr .x1 = p)
@@ -67,13 +67,13 @@ theorem signByte_ok {s : State} {base p : Addr} (hs : Scr s base) (hp : s.gpr .x
 /-- A legacy slot (sixteen limbs below `2^28`) is a weak one. -/
 theorem bounded_of_legacy {m : Mem} {base : Addr} {o : Nat} (h : VG.Proof.X448.AArch64.Bounded m base o) :
     VG.Proof.Curve448.AArch64.Bounded m base o := fun i hi =>
-  Nat.lt_trans (h i (by omega)) (by decide)
+  Nat.lt_trans (h i (by omega_using [hi])) (by decide)
 
 /-- The low bit of sixteen 28-bit limbs is that of the first. -/
 theorem valN_mod_two (f : Nat → Nat) : VG.Proof.X448.valN f 16 % 2 = f 0 % 2 := by
   rw [show (16 : Nat) = 1 + 15 from rfl, VG.Proof.X448.valN_split]
   simp only [VG.Proof.X448.valN, VG.Proof.X448.radix, Nat.pow_zero, Nat.one_mul, Nat.zero_add, Nat.pow_one]
-  omega
+  omega_using []
 
 theorem bytesAt_57 (m : Mem) (p : Addr) :
     Spec.Ed448.bytesAt m p 57 = Spec.X448.bytesAt m p 56 ++ [m (p + BitVec.ofNat 64 56)] := by

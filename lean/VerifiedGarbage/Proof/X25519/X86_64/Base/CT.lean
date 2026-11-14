@@ -55,7 +55,7 @@ private theorem start_ok {base k T out : Addr} {s : State} (hs : BaseStart base 
       simp only [List.mem_singleton] at hr; subst hr; rw [← hb]; exact hh2)
       (by rw [rb, wb, ra, wa]) (by rw [bsy, asy]), far⟩, ob.trans ho⟩
   · intro q hq
-    exact ⟨⟨k, 32⟩, by rw [rb, ra, hr, hk]; simp, Offset.contains_base _ (by omega) (by omega)⟩
+    exact ⟨⟨k, 32⟩, by rw [rb, ra, hr, hk]; simp, Offset.contains_base _ (by omega_using [hq]) (by omega_using [hq])⟩
   · intro q hq
     rw [hk, hb] at hd
     exact farScratch hd hq (by decide)

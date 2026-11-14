@@ -189,7 +189,7 @@ theorem seedE_pin {H : Hash} {sd : Addr} (hsd : W 29 = sd) (hD' : H.D ≤ 64) :
         simp only [List.mem_cons, List.not_mem_nil, or_false]
         rintro p (rfl | rfl | rfl) <;> with_reducible assumption)
   oaep_run [scr, Mgf1.scr, Impl.RsaOaep.AArch64.lay, sScr, sSeed, h96, h232, L.sp, hs, rsd,
-    show oEm + 1 < 4096 by decide, imm16 (show H.D < 65536 by omega)]
+    show oEm + 1 < 4096 by decide, imm16 (show H.D < 65536 by omega_using [hD'])]
 
 theorem lhE_pin {H : Hash} (hD' : H.D ≤ 64) :
     WP isa (.block (scr .x11 oDig ++ scr .x12 (oEm + 1 + H.D) ++
@@ -205,7 +205,7 @@ theorem lhE_pin {H : Hash} (hD' : H.D ≤ 64) :
         simp only [List.mem_cons, List.not_mem_nil, or_false]
         rintro p (rfl | rfl | rfl) <;> with_reducible assumption)
   oaep_run [scr, Mgf1.scr, Impl.RsaOaep.AArch64.lay, sScr, h96, L.sp, hs, show oDig < 4096 by decide,
-    show oEm + 1 + H.D < 4096 by unfold oEm; omega, imm16 (show H.D < 65536 by omega)]
+    show oEm + 1 + H.D < 4096 by unfold oEm; omega_using [hD'], imm16 (show H.D < 65536 by omega_using [hD'])]
 
 include R in
 theorem msgE_pin {k mLen : Nat} {msg : Addr} (hk : W 21 = BitVec.ofNat 64 k) (hml : W 28 = BitVec.ofNat 64 mLen)
@@ -227,7 +227,7 @@ theorem msgE_pin {k mLen : Nat} {msg : Addr} (hk : W 21 = BitVec.ofNat 64 k) (hm
   have e1 : S + BitVec.ofNat 64 oEm + BitVec.ofNat 64 k - BitVec.ofNat 64 mLen - BitVec.ofNat 64 1 =
       off S (k - mLen - 1) := by
     rw [show oEm = 0 from rfl, show BitVec.ofNat 64 0 = 0#64 from rfl, BitVec.add_zero, hsub, hsub,
-      Offset.ofNat_sub_ofNat (by omega), Offset.ofNat_sub_ofNat (by omega)]
+      Offset.ofNat_sub_ofNat (by omega_using [hkm]), Offset.ofNat_sub_ofNat (by omega_using [hkm])]
   refine WP.mono (Q := fun (u' : State) => u'.sp = u.sp ∧ u'.gpr .x11 = msg ∧
       u'.gpr .x12 = off S (k - mLen - 1) ∧ u'.gpr .x13 = BitVec.ofNat 64 mLen) ?_
     fun u' ⟨hs, x11, x12, x13⟩ => pin_list [(Reg.x11, msg), (.x12, off S (k - mLen - 1)),

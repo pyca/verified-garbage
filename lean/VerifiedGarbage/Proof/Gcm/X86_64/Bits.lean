@@ -36,8 +36,8 @@ theorem shl1 (a b : BitVec 64) :
   rw [toNat_append, BitVec.toNat_shiftLeft, toNat_append, BitVec.toNat_add,
     BitVec.toNat_add, BitVec.toNat_add, BitVec.toNat_setWidth, BitVec.toNat_ofBool, Nat.shiftLeft_eq]
   by_cases h : 2 ^ 64 ≤ b.toNat + b.toNat
-  · rw [decide_eq_true h]; simp only [Bool.toNat_true]; omega
-  · rw [decide_eq_false h]; simp only [Bool.toNat_false]; omega
+  · rw [decide_eq_true h]; simp only [Bool.toNat_true]; omega_using [h]
+  · rw [decide_eq_false h]; simp only [Bool.toNat_false]; omega_using [h]
 
 /-- … and leaves the most significant bit in CF. -/
 theorem shl1_cf (a b : BitVec 64) :
@@ -47,8 +47,8 @@ theorem shl1_cf (a b : BitVec 64) :
   show _ = a.msb
   rw [BitVec.msb_eq_decide]
   by_cases h : 2 ^ 64 ≤ b.toNat + b.toNat
-  · rw [decide_eq_true h]; simp only [Bool.toNat_true]; apply decide_eq_decide.mpr; omega
-  · rw [decide_eq_false h]; simp only [Bool.toNat_false]; apply decide_eq_decide.mpr; omega
+  · rw [decide_eq_true h]; simp only [Bool.toNat_true]; apply decide_eq_decide.mpr; omega_using []
+  · rw [decide_eq_false h]; simp only [Bool.toNat_false]; apply decide_eq_decide.mpr; omega_using []
 
 /-- The 16 bytes as 8 bytes. -/
 theorem bytesAt_16 (m : Mem) (p : Addr) : Spec.Aes.bytesAt m p 16 =

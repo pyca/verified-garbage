@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.RsaKeyGen.X86.SigMask
 public import VerifiedGarbage.Proof.RsaKeyGen.MrWindow
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # Period-four alignment masks work identically on both native halves -/
 
@@ -25,6 +26,6 @@ theorem combined_pair (low high : BitVec 32) : combined (high ++ low) = low ||| 
   intro i hi
   simp only [combined, BitVec.getLsbD_or, BitVec.getLsbD_setWidth, BitVec.getLsbD_ushiftRight,
     BitVec.getLsbD_append]
-  simp [hi, show ¬ 32 + i < 32 by omega, show 32 + i - 32 = i by omega]
+  simp [hi, show ¬ 32 + i < 32 by omega_using [], show 32 + i - 32 = i by omega_using []]
 
 end VG.Proof.RsaKeyGen.X86.SigMask

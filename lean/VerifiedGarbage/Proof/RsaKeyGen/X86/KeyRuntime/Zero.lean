@@ -23,10 +23,10 @@ theorem zero_ok {s : State} {B : Addr} {Z n N : Nat} (h : Ws s B Z n N)
   have nowrap := h.old.workspace.nowrap
   have nBound := h.old.wle
   have wBound : w.words n ≤ 1024 := by
-    cases w <;> simp only [Width.words] <;> omega
+    cases w <;> simp only [Width.words] <;> omega_arith
   unfold zero
   simp only [List.append_assoc]
-  refine WP.seq (h.ptr_ok out (by decide) (by decide) (by omega) fun u K1 m1 P1 => ?_)
+  refine WP.seq (h.ptr_ok out (by decide) (by decide) (by omega_using [fit, nowrap]) fun u K1 m1 P1 => ?_)
   have hu := h.keep K1 (by rw [m1]; exact Outside.refl _ _ _ _)
   refine hu.bytes_ok w .ecx fun v K2 m2 count => ?_
   refine wp_addS rfl fun a A _ => wp_movS rfl fun b U _ => WP.block_nil ?_
@@ -40,12 +40,12 @@ theorem zero_ok {s : State} {B : Addr} {Z n N : Nat} (h : Ws s B Z n N)
   have ecx : (b.gpr .ecx).toNat = 4 * (w.words n + 2) := by
     rw [U.other _ (by decide), A.gpr, BitVec.toNat_add, count]
     change (4 * Width.words n w + 8) % 2 ^ 32 = _
-    rw [Nat.mod_eq_of_lt (by omega)]
-    omega
+    rw [Nat.mod_eq_of_lt (by omega_using [wBound])]
+    omega_using []
   refine WP.mono (VG.Proof.Bignum.X86.PublicRt.zeroLoop_ok (h.full.rt.of_keeps K)
-    (by omega : 0 < w.words n + 2) fit pointer ecx U.gpr) fun t ⟨O, V, Kt⟩ => ?_
+    (by omega_using [] : 0 < w.words n + 2) fit pointer ecx U.gpr) fun t ⟨O, V, Kt⟩ => ?_
   rw [m] at O
   have allK := K.trans (Kt.mono (by decide))
-  exact ⟨h.keep allK (O.mono (Nat.zero_le _) (by omega)), O, V, allK⟩
+  exact ⟨h.keep allK (O.mono (Nat.zero_le _) (by omega_using [fit])), O, V, allK⟩
 
 end VG.Proof.RsaKeyGen.X86.KeyRuntime

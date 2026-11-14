@@ -77,7 +77,7 @@ theorem fastMul_ok {d tmp zr br qr : VReg}
       h₁.get d hdt, h₁.get zr (Ne.symm htz), hzw e he4,
       h₂.get tmp (Ne.symm hdt), h₁.v, VG.AArch64.vword_ofVWords _ _ _ _ he4,
       h₂.get qr (Ne.symm hdq), h₁.get qr (Ne.symm htq), hqw e he4]
-    rcases (show e = 0 ∨ e = 1 ∨ e = 2 ∨ e = 3 by omega) with rfl | rfl | rfl | rfl <;> rfl
+    rcases (show e = 0 ∨ e = 1 ∨ e = 2 ∨ e = 3 by omega_using [he4]) with rfl | rfl | rfl | rfl <;> rfl
 
 /-- The chosen renaming schedule writes the difference into a free register
 and leaves the sum in the first input register. -/

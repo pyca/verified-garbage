@@ -22,11 +22,11 @@ theorem order_leave {p : CdP} {mi : BitVec 64} {s : State} (h : QWork p mi s) :
     WP isa (.block [leave]) s (StepPost p s (Scanned p)) := by
   have hk := h.base.k1
   have hk' := h.base.k2
-  have ew : 8 * p.w ≤ p.k + 7 ∧ p.k ≤ 8 * p.w := by unfold CdP.w; omega
+  have ew : 8 * p.w ≤ p.k + 7 ∧ p.k ≤ 8 * p.w := by unfold CdP.w; omega_using []
   refine WP.mono (leave_ok h.ctx) fun t ⟨hd, hm, k⟩ => ?_
   have hb := h.base.keep (by rw [hm]; exact InScr.refl _ _ _) k (fun _ _ => by rw [hm])
   have hc := h.ctx.toMem.congr hm k.2.2
-  have ho := Outer.of_mem hc hd (room_k hk h.base.hZ) (by omega) (by omega)
+  have ho := Outer.of_mem hc hd (room_k hk h.base.hZ) (by omega_using [hk, ew]) (by omega_using [hk', ew])
   exact ⟨⟨⟨hb, ho, by rw [hm]; exact h.g, by rw [hm]; exact h.q⟩,
       by rw [hm]; exact h.ep, by rw [hm]; exact h.el⟩,
     by rw [hm]; exact InScr.refl _ _ _, (fun _ _ => by rw [hm]), k.mono (by decide)⟩
@@ -38,7 +38,7 @@ theorem scanned_reset {p : CdP} {s : State} (h : Scanned p s) (hm : p.mv = true)
   WP.mono (reset_p h.parent hm) fun t ⟨mi, hw, hd, hi, hh, k⟩ =>
     ⟨⟨mi, hw, hd, (hh _ (by decide) (by decide)).trans h.ep,
       (hh _ (by decide) (by decide)).trans h.el⟩, hi,
-      (fun i hi => hh i (by omega) (by unfold sWs sFn; omega)), k⟩
+      (fun i hi => hh i (by omega_using [hi]) (by unfold sWs sFn; omega_using [hi])), k⟩
 
 private theorem subgroup_eq (M : Mont) (E : CrtExpL M) (R : R2Impl M) :
     VG.Impl.Ffdh.X86_64.Domain.CheckDomain.subgroup M.mm E.code (.seq (.block r2Head) R.code) =

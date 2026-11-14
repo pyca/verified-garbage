@@ -101,14 +101,14 @@ theorem pub_view {a s t : State} (S : ESib H G (PP H ts T₁ T) a s) (h : EWPP s
   · rw [e_entry_regs, h.rdi, h.rsi, h.rdx, h.rcx, h.r8, h.r9, h.he.rsp, S.fb, S.gpr (r := .rdi) (by decide),
       S.gpr (r := .rcx) (by decide), S.2.2.2.1, S.2.2.2.2.1, S.gpr (r := .r8) (by decide),
       S.gpr (r := .r9) (by decide)]
-  · rw [stackArg_entry h.he.rsp (by have := hp.sp1; unfold encStack frameBytes at *; omega) _ _
-      (by have := hp.sp2; unfold frameBytes at *; omega), h.w i hi, pw_sib S]
+  · rw [stackArg_entry h.he.rsp (by have := hp.sp1; unfold encStack frameBytes at *; omega_using [hF, this]) _ _
+      (by have := hp.sp2; unfold frameBytes at *; omega_using [hF, hi]), h.w i hi, pw_sib S]
   · simp only [State.withRegions_gpr, State.callEntry_gpr _ (show Reg.rdx ≠ .rsp by decide),
       State.callEntry_gpr _ (show Reg.rcx ≠ .rsp by decide), h.rdx, h.rcx]
     rw [State.withRegions_mem, pre_words hp hfE, S.2.2.2.2.2.1]
   · simp only [State.withRegions_gpr, State.callEntry_gpr _ (show Reg.r8 ≠ .rsp by decide),
       State.callEntry_gpr _ (show Reg.r9 ≠ .rsp by decide), h.r8, h.r9]
-    rw [entryBytes h.he _ _ hp.d_stk_e hp.d_out_e hp.d_e_scr.symm (by have := hp.wE; omega)]
+    rw [entryBytes h.he _ _ hp.d_stk_e hp.d_out_e hp.d_e_scr.symm (by have := hp.wE; omega_using [])]
     exact S.2.1.2.2.2.symm
 
 theorem call_ct (v : PublicImpl) : RelCT isa (Two (EAt H G (PP H ts T₁ T) EWPP)) (.call v.name v.code)
@@ -190,7 +190,7 @@ theorem encMask_ct {w₁ w : MdHash} (hw₁ : w₁ ∈ vs) (hw : w ∈ vs) {rest
       ((s.gpr .rcx).toNat - (w₁.H.D + 1)) ∧ 2 * w₁.H.D + 2 + (stackArg s 3).toNat ≤ (s.gpr .rcx).toNat ∧
       t.syms = s.syms)
     (e_taintF (fun _ _ _ h => h.1) [] [] (by decide) nopin ⟨_, dbArgs_taint w₁.H.D hD65⟩)
-    fun s t hs h => WP.mono_syms (ew_dbArgs (Hm := w₁.H.stream) (by omega) (by have := h.2.1; omega) h.1)
+    fun s t hs h => WP.mono_syms (ew_dbArgs (Hm := w₁.H.stream) (by omega_using [hz]) (by have := h.2.1; omega_using [hsD, this]) h.1)
       fun _ e sy => ⟨e, h.2.1, sy.trans h.2.2⟩) ?_
   refine RelCT.seq (e_postS (J' := EK w₁.H.D) (two_map (fun a => mqtE w ⟨fb a, stackArg a 6, [outR a, scrR a],
       oEm + 1, w₁.H.D, oEm + 1 + w₁.H.D, (a.gpr .rcx).toNat - (w₁.H.D + 1)⟩ a)
@@ -207,7 +207,7 @@ theorem encMask_ct {w₁ w : MdHash} (hw₁ : w₁ ∈ vs) (hw : w ∈ vs) {rest
   refine RelCT.seq (e_post (J' := fun s t => EWM s t (oEm + 1 + w₁.H.D) ((s.gpr .rcx).toNat - (w₁.H.D + 1)) (oEm + 1)
       w₁.H.D ∧ 2 * w₁.H.D + 2 + (stackArg s 3).toNat ≤ (s.gpr .rcx).toNat ∧ t.syms = s.syms)
     (e_taintF (fun _ _ _ h => h.1) [] [] (by decide) nopin ⟨_, seedArgs_taint w₁.H.D hD65⟩)
-    fun s t hs h => WP.mono_syms (ew_seedArgs (Hm := w₁.H.stream) (by omega) (by have := h.2.1; omega) h.1)
+    fun s t hs h => WP.mono_syms (ew_seedArgs (Hm := w₁.H.stream) (by omega_using [hz]) (by have := h.2.1; omega_using [hsD, this]) h.1)
       fun _ e sy => ⟨e, h.2.1, sy.trans h.2.2⟩) ?_
   refine RelCT.seq (e_postS (J' := EK w₁.H.D) (two_map (fun a => mqtE w ⟨fb a, stackArg a 6, [outR a, scrR a],
       oEm + 1 + w₁.H.D, (a.gpr .rcx).toNat - (w₁.H.D + 1), oEm + 1, w₁.H.D⟩ a)

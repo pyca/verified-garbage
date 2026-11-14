@@ -21,30 +21,30 @@ theorem copyCtx_of_regions (s : State) (src dst : BitVec 32) {n : Nat}
     (write : InRegions s.wr (byteAddr dst) n)
     (sep : Region.Disjoint ⟨byteAddr src, n⟩ ⟨byteAddr dst, n⟩) :
     CopyCtx s src dst n := by
-  have ds (j : Nat) (hj : j < n) := byteAddr_add (a := dst) (k := j) (by omega)
+  have ds (j : Nat) (hj : j < n) := byteAddr_add (a := dst) (k := j) (by omega_using [dstFit, hj])
   have sc (i : Nat) (hi : i < n) :
       (⟨byteAddr src, n⟩ : Region).Contains (byteAddr src + BitVec.ofNat 64 i) 1 :=
-    Offset.contains_base _ (by omega) (by omega)
+    Offset.contains_base _ (by omega_using [hi]) (by omega_using [hn, hi])
   have dc (j : Nat) (hj : j < n) :
       (⟨byteAddr dst, n⟩ : Region).Contains (byteAddr dst + BitVec.ofNat 64 j) 1 :=
-    Offset.contains_base _ (by omega) (by omega)
+    Offset.contains_base _ (by omega_using [hj]) (by omega_using [hn, hj])
   refine ⟨hn, ?_, ?_, ?_, ?_⟩
   · intro i hi
-    rw [byteAddr_add (by omega)]
+    rw [byteAddr_add (by omega_using [srcFit, hi])]
     obtain ⟨r, hr, hc⟩ := read
-    exact ⟨r, hr, hc.byte (by rw [Mem.sub_ofNat_toNat _ (by omega)]; omega)⟩
+    exact ⟨r, hr, hc.byte (by rw [Mem.sub_ofNat_toNat _ (by omega_using [hn, hi])]; omega_using [hi])⟩
   · intro j hj
     rw [ds j hj]
     obtain ⟨r, hr, hc⟩ := write
-    exact ⟨r, hr, hc.byte (by rw [Mem.sub_ofNat_toNat _ (by omega)]; omega)⟩
+    exact ⟨r, hr, hc.byte (by rw [Mem.sub_ofNat_toNat _ (by omega_using [hn, hj])]; omega_using [hj])⟩
   · intro i hi j hj he
-    rw [byteAddr_add (by omega : src.toNat + i < 2 ^ 32), ds j hj] at he
+    rw [byteAddr_add (by omega_using [srcFit, hi] : src.toNat + i < 2 ^ 32), ds j hj] at he
     exact sep _ (he ▸ sc i hi) (dc j hj)
   · intro i hi j hj he
     rw [ds i hi, ds j hj] at he
     have e := congrArg (fun a => (a - byteAddr dst).toNat) he
-    simpa only [Mem.sub_ofNat_toNat _ (by omega : i < 2 ^ 64),
-      Mem.sub_ofNat_toNat _ (by omega : j < 2 ^ 64)] using e
+    simpa only [Mem.sub_ofNat_toNat _ (by omega_using [hn, hi] : i < 2 ^ 64),
+      Mem.sub_ofNat_toNat _ (by omega_using [hn, hj] : j < 2 ^ 64)] using e
 
 theorem CopyInv.frame {s0 s : State} {src dst : BitVec 32} {n i : Nat}
     (inv : CopyInv s0 src dst n i s) (fit : dst.toNat + n ≤ 2 ^ 32) :
@@ -53,7 +53,7 @@ theorem CopyInv.frame {s0 s : State} {src dst : BitVec 32} {n i : Nat}
   apply inv.outside a
   intro j hj he
   apply ha ⟨byteAddr dst, n⟩ (by simp)
-  rw [he, byteAddr_add (by have := inv.index; omega)]
-  exact Offset.contains_base _ (by have := inv.index; omega) (by have := inv.index; omega)
+  rw [he, byteAddr_add (by have := inv.index; omega_using [fit, hj, this])]
+  exact Offset.contains_base _ (by have := inv.index; omega_using [hj, this]) (by have := inv.index; omega_using [fit, hj, this])
 
 end VG.Proof.Bignum.X86

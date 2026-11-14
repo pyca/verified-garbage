@@ -62,20 +62,20 @@ theorem storeUsed_ok (h : In Ex base bytes len args s) {up : BitVec 32} {out : R
   have wIn : ∀ t : State, t.wr = s.wr → ∀ d, d + 4 ≤ 8 → InRegions t.wr (byteAddr up + BitVec.ofNat 64 d) 4 :=
     fun t ht d hd => by rw [ht]; exact VG.CallLay.inRegions_sub U.wr hd (by decide)
   refine wp_storeS (show t₁.ea (at_ .ecx 0) = byteAddr up + BitVec.ofNat 64 0 from by
-      show byteAddr (t₁.gpr .ecx + BitVec.ofNat 32 0) = _; rw [ec]; exact byteAddr_add (by omega))
+      show byteAddr (t₁.gpr .ecx + BitVec.ofNat 32 0) = _; rw [ec]; exact byteAddr_add (by omega_using []))
     (wIn t₁ U₁.wr 0 (by decide)) fun t₂ M₂ => ?_
   refine wp_movi fun t₃ U₃ => ?_
   refine wp_storeS (show t₃.ea (at_ .ecx 4) = byteAddr up + BitVec.ofNat 64 4 from by
       show byteAddr (t₃.gpr .ecx + BitVec.ofNat 32 4) = _
-      rw [U₃.other _ (by decide), M₂.gpr, ec]; exact byteAddr_add (by omega))
+      rw [U₃.other _ (by decide), M₂.gpr, ec]; exact byteAddr_add (by omega_using [fit]))
     (by rw [U₃.wr, M₂.wr]; exact wIn t₁ U₁.wr 4 (by decide)) fun t₄ M₄ => ?_
   have mem₄ : t₄.mem = (s.mem.writeW (byteAddr up + BitVec.ofNat 64 0) (BitVec.ofNat 32 k)).writeW
       (byteAddr up + BitVec.ofNat 64 4) (0 : BitVec 32) := by
     rw [M₄.mem, U₃.gpr, U₃.mem, M₂.mem, U₁.other _ (by decide), U₁.mem, he]
   have F : Frame [⟨byteAddr up, 8⟩] s.mem t₄.mem := by
     rw [mem₄]
-    exact ((Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Offset.contains_base _ (by decide) (by omega))).writeW
-      (List.mem_singleton_self _) _ (Offset.contains_base _ (by decide) (by omega))
+    exact ((Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Offset.contains_base _ (by decide) (by omega_using []))).writeW
+      (List.mem_singleton_self _) _ (Offset.contains_base _ (by decide) (by omega_using []))
   have K : Keeps [.eax, .ecx] s t₄ :=
     ((U₁.keeps.mono (by decide)).trans ((M₂.keeps [.eax, .ecx]).trans (U₃.keeps.mono (by decide)))).trans
       (M₄.keeps [.eax, .ecx])
@@ -90,7 +90,7 @@ theorem storeUsed_ok (h : In Ex base bytes len args s) {up : BitVec 32} {out : R
   rw [Proof.Rc2.Word32.read64_pair, hi, lo]
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_append, BitVec.toNat_ofNat, BitVec.ofNat_eq_ofNat]
-  rw [Nat.zero_mod, Nat.zero_shiftLeft, Nat.zero_or, Nat.mod_eq_of_lt hk, Nat.mod_eq_of_lt (by omega)]
+  rw [Nat.zero_mod, Nat.zero_shiftLeft, Nat.zero_or, Nat.mod_eq_of_lt hk, Nat.mod_eq_of_lt (by omega_using [hk])]
 
 /-- A result: the status `r`, `out` and `used`, the changes within them and `fR`, and the
 registers. -/
@@ -124,7 +124,7 @@ theorem finish_ok (h : In Ex base bytes len args s) {up : BitVec 32}
   · rw [U'.mem]
     have := h.upper
     exact frame_bytes F (fun r hr => by
-      rw [List.mem_singleton.mp hr]; exact U.out) (by omega)
+      rw [List.mem_singleton.mp hr]; exact U.out) (by omega_using [this])
   · rw [U'.mem, W]
   · rw [U'.mem]; exact F
   · exact K.trans (U'.keeps.mono (by decide))
@@ -142,10 +142,10 @@ theorem zeroOut_ok (h : In Ex base bytes len args s) (Ox : OutAt args base bytes
   refine WP.seq (show WP isa (.block ([.mov .ecx (.imm 0)] ++ [.store (sc accOff) .ecx])) s _ from
     WP.block_append (wp_movS rfl fun u a _ => WP.block_nil ?_))
   have hu : In Ex base bytes len args u := h.regs a.keeps a.mem
-  refine WP.mono (storeMask_ok hu (d := accOff) (c := false) (by omega) a.gpr) fun v ⟨I, O, W, _, K⟩ => ?_
-  have S : Step Ex base bytes len args s v := (Step.regs h a.mem a.keeps).trans (Step.word hu (by omega) O K)
+  refine WP.mono (storeMask_ok hu (d := accOff) (c := false) (by omega_using [ao, nb]) a.gpr) fun v ⟨I, O, W, _, K⟩ => ?_
+  have S : Step Ex base bytes len args s v := (Step.regs h a.mem a.keeps).trans (Step.word hu (by omega_using [ao]) O K)
   have kv : Kept base len [] [accOff] s.mem v.mem := by
-    rw [← a.mem]; exact kept_word hu (by omega) (by decide) O
+    rw [← a.mem]; exact kept_word hu (by omega_using [ao, nb]) (by decide) O
   refine WP.mono (export_ok I (p := 0) (l := 1) (c := false) (by decide) (by decide) I.outLen
     (by rw [S.esp]; exact Ox.keep rfl S.keeps) (BitVec.eq_of_toNat_eq W) rfl (fun e => nomatch e))
     fun t ⟨B, _, F, Kt, It, kt⟩ => ⟨?_, ?_, S.keeps.trans Kt, It, kv.mono.trans kt.mono⟩
@@ -225,17 +225,17 @@ theorem acceptOut_ok (h : In Ex base bytes len args s) (Ox : OutAt args base byt
   refine WP.seq (show WP isa (.block ([.mov .ecx (.imm (BitVec.allOnes 32))] ++ [.store (sc accOff) .ecx])) u₁ _ from
     WP.block_append (wp_movS rfl fun u a _ => WP.block_nil ?_))
   have hu' : In Ex base bytes len args u := h₁.regs a.keeps a.mem
-  refine WP.mono (storeMask_ok hu' (d := accOff) (c := true) (by omega) a.gpr) fun v ⟨I, O, W, _, K⟩ => ?_
-  have S : Step Ex base bytes len args s v := S₁.trans ((Step.regs h₁ a.mem a.keeps).trans (Step.word hu' (by omega) O K))
+  refine WP.mono (storeMask_ok hu' (d := accOff) (c := true) (by omega_using [ao, nb]) a.gpr) fun v ⟨I, O, W, _, K⟩ => ?_
+  have S : Step Ex base bytes len args s v := S₁.trans ((Step.regs h₁ a.mem a.keeps).trans (Step.word hu' (by omega_using [ao]) O K))
   have kv : Kept base len [19] [accOff] s.mem v.mem :=
-    k₁.mono.trans (by rw [← a.mem]; exact (kept_word hu' (by omega) (by decide) O).mono)
+    k₁.mono.trans (by rw [← a.mem]; exact (kept_word hu' (by omega_using [ao, nb]) (by decide) O).mono)
   have V : val32 v.mem base (lo len (.slot .wide 19)) (cwc len .wide) = p := by
     have := lo_wide len 19
     have f := slot_fit1 h (j := 19) (by decide)
     rw [cb1] at f
     have bw := bc_eq_cwc len .wide
     have bl := h.bytes_lt
-    rw [O.val32 (.inr (by omega)) (by omega), a.mem, V₁, hp]
+    rw [O.val32 (.inr (by omega_using [ao, nb, this])) (by omega_using [f, bw, bl]), a.mem, V₁, hp]
   refine WP.mono (export_ok I (p := 0) (l := 1) (c := true) (by decide) (by decide) I.outLen
     (by rw [S.esp]; exact Ox.keep rfl S.keeps) (BitVec.eq_of_toNat_eq W) V (fun _ => hpl))
     fun u₂ ⟨B, _, F₂, K₂, I₂, k₂⟩ => ⟨by rw [B]; rfl, ?_, S.keeps.trans K₂, I₂, kv.trans k₂.mono⟩

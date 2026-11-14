@@ -193,7 +193,7 @@ theorem Wf.entryRoom {τ : T} {s : State} (hstk : τ.stk = []) (h : WfEntry τ s
 
 theorem Wf.entry {τ : T} {s : State} (hstk : τ.stk = []) (hroom : τ.room = 0) (h : WfEntry τ s) :
     Wf τ s :=
-  Wf.entryRoom hstk h fun h => by omega
+  Wf.entryRoom hstk h fun h => by omega_using [hroom, h]
 
 /-- Every public byte lies within its region. -/
 def SlotsOk (τ : T) : Prop := ∀ i k, τ.slots.has i k = true → k < τ.lens.getD i 0
@@ -466,7 +466,7 @@ theorem region_bound {τ : T} {s : State} (hw : Wf τ s) {i : Nat} (hi : 0 < τ.
   have := region_len hw hne i
   rw [hr] at this ⊢
   have := (hw.lens hne).2.2 _ (List.getElem_mem hi')
-  omega
+  omega_arith
 
 /-- `[x + d]`, for `x + k` the base address `b` of a region containing byte `d - k`. -/
 theorem addr_offset {x : BitVec 32} {k d : Nat} {b : Addr} (e : addr x k = b) (hk : k ≤ d)
@@ -640,7 +640,7 @@ theorem storeSlots_ok {τ : T} (hok : SlotsOk τ) (m : MemOp) (w : Nat) (p : Boo
         rcases Bool.or_eq_true _ _ ▸ hk with hk | hk
         · exact hok j k hk
         · simp only [Bool.and_eq_true, decide_eq_true_eq] at hk
-          obtain ⟨⟨rfl, -⟩, hk⟩ := hk; simp only; omega
+          obtain ⟨⟨rfl, -⟩, hk⟩ := hk; simp only; omega_arith
       · rw [Slots.has_remove, Bool.and_eq_true] at hk
         exact hok j k hk.1
     · split at hk <;> [exact hok j k hk; simp at hk]
@@ -1688,7 +1688,7 @@ theorem pushRegs_mem (s : State) (rs : List Reg) (hrs : .esp ∉ rs)
         (Taint.belowSp s (4 * (xs.length + 1))).Contains y 1 ∧ ¬ (y - (s.gpr .esp - 4).setWidth 64).toNat < 4 := by
       intro y hy
       simp only [Taint.belowSp, Region.Contains, hsp₁] at hy ⊢
-      rw [Taint.sub_setWidth (by omega)] at hy ⊢
+      rw [Taint.sub_setWidth (by omega_arith)] at hy ⊢
       rw [show (s.gpr .esp - 4).setWidth 64 = (s.gpr .esp).setWidth 64 - BitVec.ofNat 64 4 from
         Taint.sub_setWidth (m := 4) (by omega_using [hn])] at hy ⊢
       generalize (s.gpr .esp).setWidth 64 = E at *
@@ -1761,7 +1761,7 @@ theorem call_sound {τ τ' : T} {s₁ s₂ s₁' s₂' : State} (ha : Agree τ s
     rw [State.callEntry_esp, show (4 : BitVec 32) = BitVec.ofNat 32 4 from rfl,
       Offset.toNat_sub_ofNat]
     have := (s.gpr .esp).isLt
-    omega
+    omega_arith
   have hf₁ := frames_call ha.wf₁ (s' := s₁.callEntry) rfl (esp4 ha.wf₁)
   have hf₂ := frames_call ha.wf₂ (s' := s₂.callEntry) rfl (esp4 ha.wf₂)
   refine ⟨by simp [hsp], ha.moveSp ⟨fun r hr' => ?_, ha.rf.2⟩ rfl rfl rfl rfl rfl rfl rfl

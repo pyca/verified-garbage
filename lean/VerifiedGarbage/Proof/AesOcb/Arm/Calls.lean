@@ -80,9 +80,9 @@ theorem blkCall_of {p : Prm} (L : Lay p) {t : State} (E : Env p t) {D : BitVec 3
   exact {
     r0 := h0, r1 := h1, r2 := h2, r3 := h3, r12 := h12, rounds := L.rounds
     hsp := by rw [E.sp]; exact L.sp8
-    fitK := by have := L.kw; omega
+    fitK := by have := L.kw; omega_using [this]
     fitD := fD
-    fitS := by rw [L.wN (by decide)]; simp only [scrO]; omega
+    fitS := by rw [L.wN (by decide)]; simp only [scrO]; omega_using [fw]
     kd := dk.sub_left (Region.sub_prefix (by decide))
     ks := by rw [eS]; exact (L.k_w' (by decide)).sub_left (Region.sub_prefix (by decide))
     ds := by rw [eS]; exact ds
@@ -123,16 +123,16 @@ theorem encOne_ok {p : Prm} (L : Lay p) {t : State} (E : Env p t) {d : Nat} (hd 
     (he : encodable (BitVec.ofNat 32 d) = true) :
     WP isa (encOne d) t (CallPost encF p (State.addr p.W + BitVec.ofNat 64 d) 1 t) := by
   have fw := L.ww
-  have ed : State.addr (p.W + BitVec.ofNat 32 d) = State.addr p.W + BitVec.ofNat 64 d := L.wA (by omega)
+  have ed : State.addr (p.W + BitVec.ofNat 32 d) = State.addr p.W + BitVec.ofNat 64 d := L.wA (by omega_using [hd])
   refine WP.seq (WP.of_runBlock ⟨_, by orun [encOne, callArgs, E.r9, E.r10, E.r11, he], ?_⟩)
   have := blkFrame_ok encF L (t := ((((((t.setReg .r0 p.K).setReg .r1 (BitVec.ofNat 32 p.R)).setReg .r12
     (p.W + BitVec.ofNat 32 scrO)).setReg .r2 (p.W + BitVec.ofNat 32 d)).setReg .r3 (BitVec.ofNat 32 1))))
     (D := p.W + BitVec.ofNat 32 d) (n := 1) (E.of_others (rs := [.r0, .r1, .r2, .r3, .r12]) (by others_tac)
       (by rfl) (by rfl) (by rfl)) (by simp [gpr_setReg]) (by simp [gpr_setReg]) (by simp [gpr_setReg])
-      (by simp [gpr_setReg]) (by simp [gpr_setReg]) (by rw [L.wN (by omega)]; omega)
-      (by rw [ed]; exact E.perm.wC (by omega)) (by rw [ed]; exact L.k_w' (by omega))
-      (by rw [ed]; exact L.w_w (.inl (by simp only [scrO]; omega)) (by omega) (by decide))
-      (by rw [ed]; exact L.bw' (by omega))
+      (by simp [gpr_setReg]) (by simp [gpr_setReg]) (by rw [L.wN (by omega_using [hd])]; omega_using [hd, fw])
+      (by rw [ed]; exact E.perm.wC (by omega_using [hd])) (by rw [ed]; exact L.k_w' (by omega_using [hd]))
+      (by rw [ed]; exact L.w_w (.inl (by simp only [scrO]; omega_using [hd])) (by omega_using [hd]) (by decide))
+      (by rw [ed]; exact L.bw' (by omega_using [hd]))
   rw [ed] at this
   refine WP.mono (encFrame_eq ▸ this) fun t' P => ⟨?_, ?_, ?_, fun r hr => ?_, ?_, ?_⟩
   · rw [P.rd]; rfl

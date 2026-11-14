@@ -50,24 +50,24 @@ theorem readW_pair (m : Mem) (a : Addr) {L : Nat} (hL : L < 2 ^ 32) :
       rw [show a + BitVec.ofNat 64 i - (a + BitVec.ofNat 64 4) = BitVec.ofNat 64 i - BitVec.ofNat 64 4 by
         rw [Offset.add_sub_add_left]]
       rw [BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat]
-      omega
+      omega_using [h4]
     simp only [Mem.writeW]
     rw [Mem.write_apply e1]
-    simp only [Mem.write, Mem.sub_ofNat_toNat a (by omega : i < 2 ^ 64), show i < 32 / 8 by omega, ↓reduceIte]
+    simp only [Mem.write, Mem.sub_ofNat_toNat a (by omega_using [hi] : i < 2 ^ 64), show i < 32 / 8 by omega_using [h4], ↓reduceIte]
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.extractLsb'_toNat, BitVec.toNat_setWidth, BitVec.toNat_ofNat]
     rw [Nat.mod_eq_of_lt (show L < 2 ^ (8 * (32 / 8)) from hL),
       Nat.mod_eq_of_lt (show L < 2 ^ (8 * 8) from Nat.lt_of_lt_of_le hL (by decide))]
     rw [show 8 * (32 / 8) = 32 from rfl, Nat.mod_eq_of_lt hL]
   · have e : a + BitVec.ofNat 64 i = a + BitVec.ofNat 64 4 + BitVec.ofNat 64 (i - 4) := by
-      rw [Offset.add_add, show 4 + (i - 4) = i by omega]
+      rw [Offset.add_add, show 4 + (i - 4) = i by omega_using [h4]]
     simp only [Mem.writeW, Mem.write]
-    rw [e, Mem.sub_ofNat_toNat _ (by omega : i - 4 < 2 ^ 64)]
-    simp only [show i - 4 < 32 / 8 by omega, ↓reduceIte]
+    rw [e, Mem.sub_ofNat_toNat _ (by omega_using [hi] : i - 4 < 2 ^ 64)]
+    simp only [show i - 4 < 32 / 8 by omega_using [hi], ↓reduceIte]
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.extractLsb'_toNat, BitVec.toNat_setWidth, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow]
-    have : 2 ^ 32 ≤ 2 ^ (8 * i) := Nat.pow_le_pow_right (by decide) (by omega)
-    rw [Nat.div_eq_of_lt (by omega : L % 2 ^ 64 < 2 ^ (8 * i))]
+    have : 2 ^ 32 ≤ 2 ^ (8 * i) := Nat.pow_le_pow_right (by decide) (by omega_using [h4])
+    rw [Nat.div_eq_of_lt (by omega_using [hL, this] : L % 2 ^ 64 < 2 ^ (8 * i))]
     simp
 
 end VG.Proof.RsaOaep.X86

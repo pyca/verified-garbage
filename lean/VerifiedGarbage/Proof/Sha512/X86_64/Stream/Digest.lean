@@ -42,7 +42,7 @@ theorem out64_take {n : Nat} (hn : n ≤ 8) (s : State) (hin : InRegions (s.rd +
     (hout : InRegions s.wr (s.gpr .rbp) (8 * n)) (hd : Region.Disjoint ⟨s.gpr .rbx, 64⟩ ⟨s.gpr .rbp, 8 * n⟩) :
     WP isa (.block (out64 n)) s fun s' => (∀ r, r ≠ .rax → s'.gpr r = s.gpr r) ∧ s'.rd = s.rd ∧
       s'.wr = s.wr ∧ s'.mem = writeBytes s.mem (s.gpr .rbp) ((md.digest (md.stateAt s.mem (s.gpr .rbx))).take (8 * n)) :=
-  (out64_ok (n := n) (by omega) (inRegions_prefix hin (by omega)) hout (hd.sub_left (Region.sub_prefix (by omega)))).mono
+  (out64_ok (n := n) (by omega_using [hn]) (inRegions_prefix hin (by omega_using [hn])) hout (hd.sub_left (Region.sub_prefix (by omega_using [hn])))).mono
     fun _ ⟨g, rd, wr, m⟩ => ⟨g, rd, wr, by rw [m, digest_take _ _ hn]⟩
 
 /-- `out64 3 ++ outHi 3` writes the first 28 bytes of the digest. -/
@@ -180,7 +180,7 @@ theorem Finalize.verifiedDigestS {so : Nat} (h : so = 0 ∨ so = 192) {o : List 
     Verified X86_64.target (finalizeDigest { paramsS so with out := o } f)
       (finalizeDigestX86_64S iv D digest (so + 48)) :=
   have h := MdStream.X86_64.Finalize.verifiedD (P := { paramsS so with out := o })
-    ⟨dims.B, dims.N, dims.L, show so ≤ 2048 by omega⟩ hs ht ((calleeS hf hv).withOut o) hm
+    ⟨dims.B, dims.N, dims.L, show so ≤ 2048 by omega_using [h]⟩ hs ht ((calleeS hf hv).withOut o) hm
   h.of_implies ⟨fun _ h => h, fun _ _ _ h m hr hl hc => (h iv m hr hl hc).trans (hdg m),
     fun _ _ _ _ h => h, h.2.2⟩
 

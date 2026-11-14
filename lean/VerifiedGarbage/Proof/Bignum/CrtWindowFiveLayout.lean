@@ -19,10 +19,10 @@ def offQ32 (w pl : Nat) : Nat := slot w 8 + slot (wsWords pl) 8 + tabBytes32 (ws
 
 theorem ent32_le (w : Nat) {j : Nat} (hj : j < 32) :
     slot w (8 + j) + 8 * (w + 2) ≤ slot w 8 + tabBytes32 w := by
-  have h := Nat.mul_le_mul_right (8 * (w + 2)) (show 8 + j + 1 ≤ 40 by omega)
+  have h := Nat.mul_le_mul_right (8 * (w + 2)) (show 8 + j + 1 ≤ 40 by omega_using [hj])
   unfold slot tabBytes32
   rw [Nat.add_mul, Nat.one_mul] at h
-  omega
+  omega_using [h]
 
 /-- Even if each prime workspace is as wide as the modulus workspace,
 both 32-entry tables fit within the unchanged `16 * n_len` words. -/
@@ -31,7 +31,7 @@ theorem scratch32_fits {k wp wq : Nat} (hk : 128 ≤ k)
     slot ((k + 7) / 8) 8 + slot wp 8 + tabBytes32 wp + slot wq 8 + tabBytes32 wq ≤
       8 * (16 * k) := by
   unfold slot hdrBytes tabBytes32
-  omega
+  omega_using [hk, hp, hq]
 
 /-- The public length guard also bounds the possibly nonstandard prime widths. -/
 theorem prime_scratch32_fits {k pl ql : Nat} (hk : 128 ≤ k)
@@ -39,7 +39,7 @@ theorem prime_scratch32_fits {k pl ql : Nat} (hk : 128 ≤ k)
     offQ32 ((k + 7) / 8) pl + slot (wsWords ql) 8 + tabBytes32 (wsWords ql) ≤
       8 * (16 * k) := by
   apply scratch32_fits hk
-  · unfold wsWords; omega
-  · unfold wsWords; omega
+  · unfold wsWords; omega_using [hk, hp]
+  · unfold wsWords; omega_using [hk, hq]
 
 end VG.Proof.Bignum.CrtWindowFive

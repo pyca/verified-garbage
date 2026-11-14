@@ -73,7 +73,7 @@ theorem word_ok (s : State) (h : AddressCalls.Ready s) :
     have cover := AddressCalls.work_cover s h 6144 1024 (by decide)
     have writable := cover _ _ ⟨⟨off (AddressCalls.work s) 6144, 1024⟩, by simp,
       Offset.contains_base _ (d := 8 * ((s.gpr .x23).toNat % 128)) (n := 8) (k := 1024)
-        (by have := Nat.mod_lt (s.gpr .x23).toNat (by decide : 0 < 128); omega) (by omega)⟩
+        (by have := Nat.mod_lt (s.gpr .x23).toNat (by decide : 0 < 128); omega_using []) (by omega_using [])⟩
     obtain ⟨r, hr, hc⟩ := writable
     exact ⟨r, List.mem_append_right _ hr, hc⟩
   refine (wordRead_ok a read).mono ?_

@@ -36,16 +36,16 @@ theorem combSlots_eq (c : Cfg) (d : CombData) : combSlots (c.combCfg d).toComb =
 theorem zw_le {d : CombData} (hd : CombOk c d) : 4 * (c.combCfg d).zw ≤ 4 := by
   have := hd.cover
   show 4 * ((d.w * c.combJ d.w - 64 * c.n + 3) / 4) ≤ 4
-  omega
+  omega_using [this]
 
 theorem combJ_bounds {d : CombData} (hc : CfgOk c) (hd : CombOk c d) :
     1 ≤ c.combJ d.w ∧ c.combJ d.w ≤ 64 * c.n + 8 := by
   have h0 := hc.n0
   have hc' := hd.cover
   have hw := hd.w
-  have : c.combJ d.w ≤ d.w * c.combJ d.w := Nat.le_mul_of_pos_left _ (by omega)
-  refine ⟨Nat.pos_of_ne_zero fun h => ?_, by omega⟩
-  rw [h, Nat.mul_zero] at hc'; omega
+  have : c.combJ d.w ≤ d.w * c.combJ d.w := Nat.le_mul_of_pos_left _ (by omega_using [hw])
+  refine ⟨Nat.pos_of_ne_zero fun h => ?_, by omega_using [hc', this]⟩
+  rw [h, Nat.mul_zero] at hc'; omega_using [h0, hc']
 
 theorem combLay {d : CombData} (hc : CfgOk c) (hd : CombOk c d) : CombLay (c.combCfg d).toComb size := by
   have hn := hc.n0
@@ -55,13 +55,13 @@ theorem combLay {d : CombData} (hc : CfgOk c) (hd : CombOk c d) : CombLay (c.com
   refine ⟨?_, rcbApart_of hn (lw := [T0, T1, T2, T3, T4, T5, DX, DY, DZ])
       (lr := [AP, EM, RX, RY, RZ, TX, TY, TZ]) rfl rfl (by decide) (by decide), ?_,
     map_sl_nodup hn (l := [RX, RY, RZ, TX, TY, TZ, PT, T0, T1, T2, T3, T4, T5, DX, DY, DZ])
-      (by decide), ⟨by rw [hJ]; omega, by rw [hJ]; omega⟩, ?_, ?_, ?_⟩
+      (by decide), ⟨by rw [hJ]; omega_using [hJb], by rw [hJ]; omega_using [h7, hJb]⟩, ?_, ?_, ?_⟩
   · exact lay_map hc rfl rfl rfl (l := [AP, EM, ZERO, RX, RY, RZ, TX, TY, TZ, PT, T0, T1, T2, T3,
       T4, T5, DX, DY, DZ]) (by decide)
   · exact map_sl_disj hn (l₁ := [AP, EM, ZERO])
       (l₂ := [RX, RY, RZ, TX, TY, TZ, PT, T0, T1, T2, T3, T4, T5, DX, DY, DZ]) (by decide)
-  · rw [hJ]; show c.wk + 4 * c.combJ d.w ≤ 8192; rw [wk_eq]; omega
-  · show c.wk + 3 < 4096; rw [wk_eq]; omega
+  · rw [hJ]; show c.wk + 4 * c.combJ d.w ≤ 8192; rw [wk_eq]; omega_using [h7, hJb]
+  · show c.wk + 3 < 4096; rw [wk_eq]; omega_using [hn]
   · intro w hw
     rw [combW_eq] at hw
     obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hw
@@ -92,15 +92,15 @@ theorem tcombLay {d : CombData} (hc : CfgOk c) (hd : CombOk c d) : TCombLay (c.c
   · intro x hx
     simp only [List.mem_cons] at hx
     rcases hx with rfl | rfl | hx
-    · exact .inl (by change 64 ≤ c.sl MP; rw [sl_eq]; omega)
-    · exact .inl (by change 64 ≤ c.sl TMP; rw [sl_eq]; omega)
+    · exact .inl (by change 64 ≤ c.sl MP; rw [sl_eq]; omega_using [])
+    · exact .inl (by change 64 ≤ c.sl TMP; rw [sl_eq]; omega_using [])
     · rw [combSlots_eq] at hx
       obtain ⟨i, _, rfl⟩ := List.mem_map.mp hx
-      exact .inl (by change 64 ≤ c.sl i; rw [sl_eq]; omega)
-  · change 64 ≤ c.wk; rw [wk_eq]; omega
-  · exact .inl (by change 64 ≤ bitsAt c.n 0; rw [bitsAt_eq]; omega)
-  · rw [hbits, hk, bitsAt_eq]; change _ ≤ 8192; omega
-  · rw [hbits, hk, bitsAt_eq]; omega
+      exact .inl (by change 64 ≤ c.sl i; rw [sl_eq]; omega_using [])
+  · change 64 ≤ c.wk; rw [wk_eq]; omega_using [h7]
+  · exact .inl (by change 64 ≤ bitsAt c.n 0; rw [bitsAt_eq]; omega_using [])
+  · rw [hbits, hk, bitsAt_eq]; change _ ≤ 8192; omega_using [h7, hz]
+  · rw [hbits, hk, bitsAt_eq]; omega_using []
   · intro w hw
     rw [combW_eq] at hw
     obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hw
@@ -114,14 +114,14 @@ theorem tcombLay {d : CombData} (hc : CfgOk c) (hd : CombOk c d) : TCombLay (c.c
       have : ∀ i ∈ [AP, EM, ZERO, RX, RY, RZ, TX, TY, TZ, PT, T0, T1, T2, T3, T4, T5, DX, DY, DZ], i < 45 := by decide
       exact .inr (sl_below_bits c (this i hi) 0 _)
   · show 64 + 8 * c.n * 21 = 64 + 8 * c.n * 20 + 8 * c.n
-    rw [Nat.mul_succ]; omega
+    rw [Nat.mul_succ]; omega_using []
   · show 16 * c.n * 2 ^ (d.w - 1) < 2 ^ 31
-    have : 2 ^ (d.w - 1) ≤ 2 ^ 7 := Nat.pow_le_pow_right (by decide) (by have := hd.w; omega)
-    have : 16 * c.n * 2 ^ (d.w - 1) ≤ 16 * 6 * 2 ^ 7 := Nat.mul_le_mul (by have := hd.n; omega) this
-    omega
+    have : 2 ^ (d.w - 1) ≤ 2 ^ 7 := Nat.pow_le_pow_right (by decide) (by have := hd.w; omega_using [this])
+    have : 16 * c.n * 2 ^ (d.w - 1) ≤ 16 * 6 * 2 ^ 7 := Nat.mul_le_mul (by have := hd.n; omega_using [this]) this
+    omega_using [this]
 
 theorem mont_lt (hc : CfgOk c) (x : Nat) : c.mont x < c.C.p :=
-  Nat.mod_lt _ (by have := hc.p_ge; omega)
+  Nat.mod_lt _ (by have := hc.p_ge; omega_using [this])
 
 /-- The comb's constants, from its tables' facts. -/
 theorem tcombVals {d : CombData} (hc : CfgOk c) (hC : Law c.C)

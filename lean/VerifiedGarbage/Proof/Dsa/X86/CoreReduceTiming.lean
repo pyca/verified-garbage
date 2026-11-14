@@ -75,14 +75,14 @@ theorem coreReduce_relCT (base : Addr) (size qLen inputLen output : Nat) (input 
       pointerValue base s (.input .q) = pointerValue base t (.input .q) ∧
       pointerValue base s input = pointerValue base t input ∧ s.gpr .esp = t.gpr .esp)
       (Core.reduce qLen src input output) (VG.X86.Taint.Agree (workspaceTaint true)) := by
-  have hn48 : (qLen + 7) / 8 ≤ 48 := by omega
+  have hn48 : (qLen + 7) / 8 ≤ 48 := by omega_using [hmax]
   have Hn : contextBytes ((qLen + 7) / 8) ≤ 8192 :=
     Nat.le_trans (VG.Proof.Dsa.X86.Layout.context_bound hn48) (by decide)
   have sz : 8256 ≤ size := hz
   have bound : slot ((qLen + 7) / 8) 0 + 8 * ((qLen + 7) / 8) ≤ contextBytes ((qLen + 7) / 8) := by
     have H := slot_bound (n := (qLen + 7) / 8) (i := 0) (by decide)
     simp only [stride] at H
-    omega
+    omega_using [H]
   unfold Core.reduce
   dsimp only
   apply RelCT.assoc
@@ -99,10 +99,10 @@ theorem coreReduce_relCT (base : Addr) (size qLen inputLen output : Nat) (input 
           (Core.load ((qLen + 7) / 8) qLen (slot ((qLen + 7) / 8) 0) (.input .q)) σ
           fun u => Scr u base size ∧ pointerValue base u input = pointerValue base σ input := by
         intro σ R
-        refine WP.mono (coreLoad_ok R.scr hz (by omega) h4 (by omega) hw4
+        refine WP.mono (coreLoad_ok R.scr hz (by omega_using [Hn, sz, bound]) h4 (by omega_using []) hw4
           R.modulusReady.toReadableComponent (R.modulusReady.slot (by decide))) fun u ⟨_, K, O⟩ => ?_
         exact ⟨R.scr.of_keeps K (by decide),
-          pointerValue_keep K (by decide) (O.mono (by omega) (by omega)) Hn input⟩
+          pointerValue_keep K (by decide) (O.mono (by omega_using []) (by omega_using [bound])) Hn input⟩
       exact ⟨go s P, go t Q⟩
   have headCT := RelCT.seq loadCT (RelCT.block_append (RelCT.seq ((pointer_relCT input base size hz).mono
       (fun _ _ ⟨_, σ₁, σ₂, ⟨_, _, _, I, _⟩, ⟨S₁, E₁⟩, ⟨S₂, E₂⟩⟩ => ⟨S₁, S₂, by rw [E₁, E₂, I]⟩) (fun _ _ h => h))
@@ -119,7 +119,7 @@ theorem coreReduce_relCT (base : Addr) (size qLen inputLen output : Nat) (input 
         WP.mono (reduceHead_ok R.len R.scr hz R.room rfl h4 hmax hw4 R.modulusReady R.inputReady R.stack
           R.lenFit rfl R.large R.odd) fun w ⟨C, _, K⟩ => ⟨C, K⟩
       exact ⟨go s P, go t Q⟩
-  have hn : 0 < (qLen + 7) / 8 := by omega
+  have hn : 0 < (qLen + 7) / 8 := by omega_using [h4]
   refine RelCT.seq (R := Red.CallReady ((qLen + 7) / 8)) (head.mono (fun _ _ h => h) ?_) ?_
   · rintro w₁ w₂ ⟨_, σ₁, σ₂, ⟨_, _, _, I, SP⟩, ⟨C₁, K₁⟩, ⟨C₂, K₂⟩⟩
     rw [← I] at C₂

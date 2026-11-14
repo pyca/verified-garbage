@@ -56,9 +56,9 @@ theorem preP_ofP {s : State} (h : (Proof.Rsa.privateCheckedPrecomputedContract a
   obtain ⟨sp1, sp2, hrd, hwr, on, oe, oi, op, oq, odp, odq, oqi, os, oP, oa, ns, es, is, ps, qs, dps, dqs, qis, sP,
     sa, ko, kn, ke, ki, kp, kq, kdp, kdq, kqi, ks, kP, ka, wo, wn, we, wi, wp, wq, wdp, wdq, wqi, ws, wP, ⟨k1, k2⟩,
     h4, h10, e1, e2, p1, p2, q1, q2, h5, h9, h7, hs, hpl, hk⟩ := h
-  exact ⟨⟨sp1, by omega, hrd, hwr, on, oe, oi, op, oq, odp, odq, oqi, os, oa, ns, es, is, ps, qs, dps, dqs, qis, sa,
+  exact ⟨⟨sp1, by omega_using [sp2], hrd, hwr, on, oe, oi, op, oq, odp, odq, oqi, os, oa, ns, es, is, ps, qs, dps, dqs, qis, sa,
     ko, kn, ke, ki, kp, kq, kdp, kdq, kqi, ks, ka, wo, wn, we, wi, wp, wq, wdp, wdq, wqi, ws, k1, k2, h4, h10, e1,
-    e2, p1, p2, q1, q2, h5, h9, h7, hs⟩, ⟨oP, sP, kP, wP, hpl, by omega, hk⟩⟩
+    e2, p1, p2, q1, q2, h5, h9, h7, hs⟩, ⟨oP, sP, kP, wP, hpl, by omega_using [sp2], hk⟩⟩
 
 theorem pre_of_prePX {s : State} (h : PreP true s) (X : PreX s) :
     (Proof.Rsa.privateCheckedPrecomputedContract abi frameBytes).pre s := by
@@ -70,12 +70,12 @@ theorem pre_of_prePX {s : State} (h : PreP true s) (X : PreX s) :
   rw [e]
   sig_pre [Proof.Rsa.privateCheckedPrecomputedContract, Proof.Rsa.privateCheckedPrecomputedSig,
     Proof.Rsa.privateCheckedSig, abi, argRegs, stackArgs_fourteen, List.append_eq, List.range, List.range.loop]
-  exact ⟨sp1, by omega, hrd, hwr, on, oe, oi, op, oq, odp, odq, oqi, os, oP, oa, ns, es, is, ps, qs, dps, dqs, qis, sP,
+  exact ⟨sp1, by omega_using [sp3], hrd, hwr, on, oe, oi, op, oq, odp, odq, oqi, os, oP, oa, ns, es, is, ps, qs, dps, dqs, qis, sP,
     sa, ko, kn, ke, ki, kp, kq, kdp, kdq, kqi, ks, kP, ka, wo, wn, we, wi, wp, wq, wdp, wdq, wqi, ws, wP, ⟨k1, k2⟩,
     h4, h10, e1, e2, p1, p2, q1, q2, h5, h9, h7, hs, hpl, hk⟩
 
 theorem in_aR14 {s : State} {j : Nat} (hj : j < 14) : (aR true s).Contains (stackArgAddr s j) 8 := by
-  rw [stackArgAddr_eq s j]; exact Offset.contains_base _ (by simp only [↓reduceIte]; omega) (by omega)
+  rw [stackArgAddr_eq s j]; exact Offset.contains_base _ (by simp only [↓reduceIte]; omega_using [hj]) (by omega_using [hj])
 
 theorem arg_inP {s t : State} (h : PreP true s) (hrd : t.rd = s.rd) {j : Nat} (hj : j < 14) :
     InRegions (t.rd ++ t.wr) (fb s + BitVec.ofNat 64 (arg j)) 8 := by
@@ -221,8 +221,8 @@ theorem preCopy_ok {s t : State} (h : PreP true s) (X : PreX s) (A : AtCopy s t)
           (show Reg.r4 ≠ .r0 by decide) c0 (by
             simp only [VG.Proof.Bignum.PPC64LE.gpr_write, reduceCtorEq, ↓reduceIte, VG.Proof.Bignum.PPC64LE.wr_write, j4,
               BitVec.add_zero]; exact hst)]
-      exact ⟨by rw [Mont.off, show 8 * (i + 1) = 8 * i + 8 by omega],
-        by rw [Mont.off, show oPre + 8 * (i + 1) = oPre + 8 * i + 8 by omega]⟩
+      exact ⟨by rw [Mont.off, show 8 * (i + 1) = 8 * i + 8 by omega_using []],
+        by rw [Mont.off, show oPre + 8 * (i + 1) = oPre + 8 * i + 8 by omega_using []]⟩
     · exact M.store (d := oPre + 8 * i) (.inl (by unfold oLr oPre; omega_arith)) (by unfold oPre frameBytes; omega_arith)
         _ (fun r hr => k.gpr r (by revert r; decide)) k.sp k.rd k.wr am
     · exact crtOutM_store h C (by unfold oM oPre; omega_arith) (by unfold oPre frameBytes; omega_arith) _ am
@@ -251,7 +251,7 @@ theorem publicPrecompute_length {nB : List Byte} {w : List (BitVec 64)}
   split at h
   · cases h
     simp only [List.length_append, Spec.Rsa.toWords, List.length_map, List.length_range,
-      Spec.Rsa.precomputedWords]; omega
+      Spec.Rsa.precomputedWords]; omega_using []
   · cases h
 
 theorem preValOk_of {s : State} (X : PreX s) (hp : PreHyp s) : PreValOk true s := fun ws hw => by
@@ -330,7 +330,7 @@ theorem primes_of_hyp {s : State} (X : PreX s) {m : Mem}
         rw [publicPrecompute_length hw, Proof.Rsa.bytesAt_length']
       have hL : (stackArg s 13).toNat = Spec.Rsa.precomputedWords (s.gpr .r6).toNat +
           (Spec.Rsa.primeWords (stackArg s 1).toNat + Spec.Rsa.primeWords (stackArg s 3).toNat) := by
-        rw [X.pl]; unfold Spec.Rsa.privatePrecomputedWords; omega
+        rw [X.pl]; unfold Spec.Rsa.privatePrecomputedWords; omega_using []
       rw [wordsAt_off, ← hL, hm, ← hpre, List.append_assoc, ← hl, List.drop_left]
   · cases hpre
 
@@ -343,7 +343,7 @@ theorem r2Rs_sub {s : State} (X : PreX s) : Region.Sub (r2Rs s) (preR s) := by
   refine Offset.sub_base _ ?_
   rw [X.pl]
   unfold Spec.Rsa.privatePrecomputedWords Spec.Rsa.primeWords Spec.Rsa.modulusWords Proof.Bignum.wsWords
-  omega
+  omega_using []
 
 /-- `vg_rsa_private_crt_precomputed`'s precondition at the call, after
 `crtPtr`. -/
@@ -424,7 +424,7 @@ theorem coversP {s t u : State} (h : PreP true s) (X : PreX s) (A : AtCrt s t) (
   have := X.pl
   unfold Spec.Rsa.privatePrecomputedWords Spec.Rsa.primeWords Spec.Rsa.modulusWords at this
   simp only [Proof.Bignum.wsWords]
-  omega
+  omega_using [this]
 
 /-- After `vg_rsa_private_crt_precomputed`, called from the state `u` after
 `crtPtr`, from the state `t` at the call of the CRT. -/

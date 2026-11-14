@@ -59,7 +59,7 @@ theorem init_post {s₀ s' : State}
   have hf : Frame [⟨s₀.gpr .rdi, 96⟩] s₀.mem (writeState s₀.mem (s₀.gpr .rdi) iv) := by
     have c : ∀ k, k < 8 → (⟨s₀.gpr .rdi, 96⟩ : Region).Contains
         (s₀.gpr .rdi + BitVec.ofInt 64 ((4 * k : Nat) : Int)) (32 / 8) :=
-      fun k hk => contains_offset' (by omega) (by omega)
+      fun k hk => contains_offset' (by omega_using [hk]) (by omega_using [hk])
     simp only [writeState]
     refine (((((((((Frame.refl _ _).writeW ?_ _ (c 0 ?_)).writeW ?_ _ (c 1 ?_)).writeW ?_ _
       (c 2 ?_)).writeW ?_ _ (c 3 ?_)).writeW ?_ _ (c 4 ?_)).writeW ?_ _ (c 5 ?_)).writeW ?_ _
@@ -88,7 +88,7 @@ theorem init_correct {s₀ : State} (hp : (Proof.Sha256.initX86_64 iv).pre s₀)
     WP isa (initWith iv) s₀ fun s' => gprPreserved s₀ s' ∧ (Proof.Sha256.initX86_64 iv).post s₀ s' := by
   obtain ⟨hrd, hwr, hret⟩ := hp
   have o : ∀ q, q < 2 → InRegions s₀.wr (s₀.gpr .rdi + BitVec.ofInt 64 ((16 * q : Nat) : Int)) 16 :=
-    fun q hq => ⟨⟨s₀.gpr .rdi, 96⟩, by simp [hwr], contains_offset' (by omega) (by omega)⟩
+    fun q hq => ⟨⟨s₀.gpr .rdi, 96⟩, by simp [hwr], contains_offset' (by omega_using [hq]) (by omega_using [hq])⟩
   rw [initWith_eq]
   refine MdStream.X86_64.wp_movImm64' (MdStream.X86_64.wp_movqx (MdStream.X86_64.wp_movImm64'
     (MdStream.X86_64.wp_movqx (MdStream.X86_64.wp_xbin ?_))))

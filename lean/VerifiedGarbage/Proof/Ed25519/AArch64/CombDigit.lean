@@ -62,14 +62,14 @@ theorem combNibble_ok {s : State} {base : Addr} (hs : Scr s base) {S i p o : Nat
       t.gpr .x2 = BitVec.ofNat 64 (nib S i) ∧ Keeps [.x2, .x3] s t := by
   have _hcap : workSize true = 8192 := rfl
   have hr : ∀ j < 4, InRegions (s.rd ++ s.wr) (off base (768 + (4 * i + j))) 1 := fun j hj =>
-    ⟨_, List.mem_append_right _ hs.wr, Offset.contains_base _ (by omega) (by omega)⟩
+    ⟨_, List.mem_append_right _ hs.wr, Offset.contains_base _ (by omega_using [hi, _hcap, hj]) (by omega_using [hi, hj])⟩
   have he : ∀ j, off base p + BitVec.ofNat 64 (o + j) = off base (768 + (4 * i + j)) :=
     fun j => by
       rw [BitVec.add_assoc, ← BitVec.ofNat_add]
-      exact congrArg (off base) (by omega)
+      exact congrArg (off base) (by omega_using [hpo])
   have hv : ∀ j < 4, ((s.mem (off base (768 + (4 * i + j)))).setWidth 32).setWidth 64 =
       BitVec.ofNat 64 ((S / 2 ^ (4 * i + j)) % 2) := fun j hj => by
-    rw [hb _ (by omega)]; exact bit_ext _ (Nat.mod_lt _ (by decide))
+    rw [hb _ (by omega_using [hi, hj])]; exact bit_ext _ (Nat.mod_lt _ (by decide))
   have e0 := he 0
   have e1 := he 1
   have e2 := he 2
@@ -88,8 +88,8 @@ theorem combNibble_ok {s : State} {base : Addr} (hs : Scr s base) {S i p o : Nat
   simp only [combNibble, runBlock_cons, runStep_some, runBlock_nil, exec, read_x,
     State.load, addr, Size.bits, RegUpd.gpr_write, RegUpd.mem_write,
     RegUpd.rd_write, RegUpd.wr_write, BitVec.setWidth_eq, Nat.mod_one,
-    show o + 3 < 4096 * 1 by omega, show o + 2 < 4096 * 1 by omega, show o + 1 < 4096 * 1 by omega,
-    show o < 4096 * 1 by omega,
+    show o + 3 < 4096 * 1 by omega_using [ho], show o + 2 < 4096 * 1 by omega_using [ho], show o + 1 < 4096 * 1 by omega_using [ho],
+    show o < 4096 * 1 by omega_using [ho],
     Nat.reduceMul, and_self, hp, e0, e1, e2, e3,
     r0, r1, r2, r3, read_byte, v0, v1, v2, v3,
     ite_true, ite_false, reduceCtorEq, Option.map_some, Option.bind_some,
@@ -101,7 +101,7 @@ theorem combNibble_ok {s : State} {base : Addr} (hs : Scr s base) {S i p o : Nat
   · rw [nib_bits]
     simp only [← BitVec.ofNat_add]
     congr 1
-    omega
+    omega_using []
   · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
     simp only [RegUpd.gpr_write, hr.1, hr.2, ite_false]
 

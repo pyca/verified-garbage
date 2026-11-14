@@ -119,7 +119,7 @@ theorem extract_dup (x : BitVec 64) : (ofVDwords x x).extractLsb' 0 64 = x := by
     Nat.zero_add, ite_true]
 
 theorem lt8 {k : Nat} (hk : k < 8) :
-    k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3 ∨ k = 4 ∨ k = 5 ∨ k = 6 ∨ k = 7 := by omega
+    k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3 ∨ k = 4 ∨ k = 5 ∨ k = 6 ∨ k = 7 := by omega_using [hk]
 
 theorem modeSave_run (s : State) :
     ∃ s', runBlock isa modeSave s = some s' ∧
@@ -227,10 +227,10 @@ theorem crypt_wp {up : Bool} {s : State} {B : Addr} {k : Schedule} (hB : s.gpr s
   -- The batch.
   have hS₂ : SchedIn s₂ .x0 := fun off n h => by
     rw [x0₂, rd₂]
-    exact ⟨_, List.mem_append_left _ hS.rd, Offset.contains_base p h (by omega)⟩
+    exact ⟨_, List.mem_append_left _ hS.rd, Offset.contains_base p h (by omega_using [h])⟩
   have hW₂ : ∀ j < 8, InRegions s₂.wr (s₂.gpr .x4 + BitVec.ofNat 64 (16 * j)) 16 := fun j hj => by
     rw [x4B, wr₂]
-    exact ⟨_, hw, Offset.contains_base B (by omega) (by omega)⟩
+    exact ⟨_, hw, Offset.contains_base B (by omega_using [hj]) (by omega_using [hj])⟩
   rw [batchOf_eq]
   refine WP.seq (WP.mono (batch_ok up hS₂ c₂ hW₂) fun s₃ P => ?_)
   -- `v8`–`v15` and `sb` back.

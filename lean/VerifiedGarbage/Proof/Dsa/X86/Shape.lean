@@ -65,11 +65,11 @@ theorem shape_ok {s : State} {base : Addr} {size pLen qLen p q : Nat}
     have widths : Spec.Dsa.bitLength q = 160 ∨ Spec.Dsa.bitLength q = 224 ∨ Spec.Dsa.bitLength q = 256 := by
       have H := hv.1
       unfold Spec.Dsa.supportedSizes at H
-      omega
+      omega_using [H]
     rw [Dw, digestWidth_value widths]
   have Ksw := Ksv.widen Kw
   refine WP.seq (wp_movS (readSrc_sc (hs.of_keeps Ksw (by decide))
-    (d := Layout.field .mask) (by change 8248 ≤ size; omega)) fun x ux _ => ?_)
+    (d := Layout.field .mask) (by change 8248 ≤ size; omega_using [hsaved])) fun x ux _ => ?_)
   refine wp_cmpS rfl fun y uy Zy => WP.block_nil ?_
   refine WP.block_nil ⟨?_, ?_, ?_, (Ksw.widen ux.keeps).widen (uy.keeps []), ?_⟩
   · simpa only [shapeWord, uy.mem, ux.mem] using Vw
@@ -89,8 +89,8 @@ theorem shape_ok {s : State} {base : Addr} {size pLen qLen p q : Nat}
       · have H := ha (Layout.field .digestPrefixLen, 8) (by simp)
         change ofs base a < 8240 ∨ 8248 ≤ ofs base a at H
         change ofs base a < 8244 ∨ 8248 ≤ ofs base a
-        omega
+        omega_using [H]
     rw [uy.mem, ux.mem]
-    exact Opre'.trans (Outs.of_outside (Ow.mono (n' := 8) (Nat.le_refl _) (by omega)) (by simp))
+    exact Opre'.trans (Outs.of_outside (Ow.mono (n' := 8) (Nat.le_refl _) (by omega_using [])) (by simp))
 
 end VG.Proof.Dsa.X86

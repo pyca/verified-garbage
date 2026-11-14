@@ -55,8 +55,8 @@ theorem stageValues_word (i : Nat) (v : Vector (BitVec 128) 8) (z : Nat → Int)
 
 theorem stage_bound_safe {b : Int} (hb : 8380417≤b) (hs : 8*b<2147483648)
     {d : Nat} (hd : d<3) : 8380417≤2^d*b ∧ 2*(2^d*b)<2147483648 := by
-  have hh : d=0 ∨ d=1 ∨ d=2 := by omega
-  rcases hh with rfl | rfl | rfl <;> simp only [Int.reducePow] <;> omega
+  have hh : d=0 ∨ d=1 ∨ d=2 := by omega_using [hd]
+  rcases hh with rfl | rfl | rfl <;> simp only [Int.reducePow] <;> omega_using [hb, hs]
 
 theorem stageValues_bound (i : Fin 7) (v : Vector (BitVec 128) 8) (z : Nat → Int)
     {b : Int} (hb : 8380417≤b) (hs : 8*b<2147483648) (hv : StageBound v i.val b) :
@@ -119,7 +119,7 @@ theorem stageValues_field (i : Fin 7) (v : Vector (BitVec 128) 8) (w : Poly)
   rw [stageOps,InverseTraversal.run_innerRegGroup,
     InverseTraversal.innerRegBlock_get _ (step_bounds i).1 (step_bounds i).2 hu (Nat.le_refl _) _ k.isLt he]
   rw [show 2*steps[i.val]!.1*steps[i.val]!.2+steps[i.val]!.1+steps[i.val]!.1=
-      2*steps[i.val]!.1*steps[i.val]!.2+2*steps[i.val]!.1 by omega]
+      2*steps[i.val]!.1*steps[i.val]!.2+2*steps[i.val]!.1 by omega_using []]
   change ofInt (_ : BitVec 32).toInt =
     if leftSide i.val k.val then
       w[InverseTraversal.innerLoc u k.val e]! + w[InverseTraversal.innerLoc u (k.val+steps[i.val]!.1) e]!

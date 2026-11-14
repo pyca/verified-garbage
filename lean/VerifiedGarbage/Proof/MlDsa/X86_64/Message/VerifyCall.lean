@@ -49,14 +49,14 @@ theorem preparedPk_congr {p : Params} {m m' : Mem} {a : Addr}
   have hl : p.pkLen + 1024 * p.k = preparedPublicKeyBytes p := by
     simp only [preparedPublicKeyBytes, n]
   have hpk : bytesAt m' a p.pkLen = bytesAt m a p.pkLen := by
-    rw [← Proof.MlKem.bytesAt_take m' a (show p.pkLen ≤ preparedPublicKeyBytes p by omega), hb,
-      Proof.MlKem.bytesAt_take m a (show p.pkLen ≤ preparedPublicKeyBytes p by omega)]
+    rw [← Proof.MlKem.bytesAt_take m' a (show p.pkLen ≤ preparedPublicKeyBytes p by omega_using [hl]), hb,
+      Proof.MlKem.bytesAt_take m a (show p.pkLen ≤ preparedPublicKeyBytes p by omega_using [hl])]
   intro i hi
   rw [hpk]
   have e4 : 4 * n * i = 1024 * i := by simp only [n]
   have hk : p.pkLen + 4 * n * i + 1024 ≤ preparedPublicKeyBytes p := by
-    rw [e4]; have : 1024 * i + 1024 ≤ 1024 * p.k := by omega
-    omega
+    rw [e4]; have : 1024 * i + 1024 ≤ 1024 * p.k := by omega_using [hi]
+    omega_using [hl, hi]
   refine polyStored_iff.mpr (PreparedKey.polyIs_of_copy ?_ (polyStored_iff.mp (h i hi)))
   rw [← Proof.MlKem.bytesAt_slice _ _ hk, hb, Proof.MlKem.bytesAt_slice _ _ hk]
 
@@ -65,7 +65,7 @@ theorem verifyArgs_ok {p : Params} {prep : Bool} (hp : p ∈ params) : (verifyAr
   have : flagOf prep < 2 ^ 31 := by cases prep <;> decide
   simp only [verifyArgs, Impl.MlDsa.X86_64.Message.aMu, List.all_cons, List.all_nil, Arg.ok, fKey, fSig,
     fScr, Bool.and_true, Bool.and_eq_true, decide_eq_true_eq]
-  omega
+  omega_arith
 
 /-- The working space of the verification function on `μ`. -/
 abbrev rScrV (p : Params) (L : Lay) : Region := ⟨L.scr, Verify.scrLen p⟩
@@ -97,14 +97,14 @@ def VOk (p : Params) (prep : Bool) (L : Lay) (m : Mem) : Prop :=
   ∃ σ, VPre p prep σ ∧ (σ.gpr .r8).toNat < 256 ∧ vlay p prep σ = L ∧ σ.mem = m
 
 theorem scrV_sub (p : Params) (L : Lay) : Region.Sub (rScrV p L) ⟨L.scr, mScrLen p⟩ :=
-  Region.sub_prefix (by rw [mScr_eq]; simp only [Verify.scrLen, oE]; omega)
+  Region.sub_prefix (by rw [mScr_eq]; simp only [Verify.scrLen, oE]; omega_using [])
 
 theorem VOk.facts {p : Params} {prep : Bool} {L : Lay} {m : Mem} (h : VOk p prep L m) : VFacts p prep L := by
   obtain ⟨σ, hσ, _, rfl, -⟩ := h
   exact ⟨rfl, rfl, by simp [vlay, hσ.rd],
-    ⟨vScr p σ, by simp [vlay, hσ.wr], within_base _ (by rw [mScr_eq]; simp only [Verify.scrLen, oE]; omega)⟩,
+    ⟨vScr p σ, by simp [vlay, hσ.wr], within_base _ (by rw [mScr_eq]; simp only [Verify.scrLen, oE]; omega_using [])⟩,
     ⟨vScr p σ, by simp [vlay, hσ.wr],
-      (within_off (vlay p prep σ).X (d := 840) (n := 64) (k := 1024) (by omega)).trans (vlay_X p prep σ)⟩,
+      (within_off (vlay p prep σ).X (d := 840) (n := 64) (k := 1024) (by omega_using [])).trans (vlay_X p prep σ)⟩,
     hσ.sigScr, hσ.pkScr, hσ.stkSig, hσ.stkScr, hσ.nSig, hσ.nScr, by simp [vlay, hσ.rd],
     hσ.scrTr.sub_left (vlay_X p prep σ).sub, hσ.stkTr⟩
 
@@ -136,7 +136,7 @@ theorem mu_scrV {p : Params} (hp : p ∈ params) {L : Lay} (hE : oE p = L.E) :
     Region.Disjoint ⟨L.MU, 64⟩ (rScrV p L) := by
   show Region.Disjoint ⟨L.scr + BitVec.ofNat 64 L.E + BitVec.ofNat 64 840, 64⟩ ⟨L.scr, Verify.scrLen p⟩
   rw [add_add, ← hE]
-  exact Offset.disjoint_base _ (by simp only [Verify.scrLen, oE]; omega) (by have := oE_lt hp; omega)
+  exact Offset.disjoint_base _ (by simp only [Verify.scrLen, oE]; omega_using []) (by have := oE_lt hp; omega_using [this])
 
 /-- The precondition of the verification function on `μ`, on entry to it. -/
 theorem verifyK_pre {p : Params} {prep : Bool} (hp : p ∈ params) {L : Lay} (hL : L.Ok) (F : VFacts p prep L)
@@ -156,12 +156,12 @@ theorem verifyK_pre {p : Params} {prep : Bool} (hp : p ∈ params) {L : Lay} (hL
       L.key := fun hpr' => by
     refine preparedPk_congr ?_ (hpr hpr')
     have hk : L.keyLen = preparedPublicKeyBytes p := by rw [F.key]; simp [keyLenV, hpr']
-    rw [State.withRegions_mem, ← hk, hc1.ce_bytesAt (p := L.key) (hL.stk_r hL.kKey (by omega))
-      (by have := hL.nKey; omega), hm.1.2.1, hc.bytesAt_eq hL.xKey hL.kKey (by have := hL.nKey; omega)]
+    rw [State.withRegions_mem, ← hk, hc1.ce_bytesAt (p := L.key) (hL.stk_r hL.kKey (by omega_using []))
+      (by have := hL.nKey; omega_using [this]), hm.1.2.1, hc.bytesAt_eq hL.xKey hL.kKey (by have := hL.nKey; omega_using [this])]
   have hsub := scrV_sub p L
   have hX : Within L.XS ⟨L.scr, mScrLen p⟩ := ⟨L.E, rfl, by rw [mScr_eq, F.e]⟩
   have hmu : Region.Sub ⟨L.MU, 64⟩ ⟨L.scr, mScrLen p⟩ :=
-    ((within_off L.X (d := 840) (n := 64) (k := 1024) (by omega)).trans hX).sub
+    ((within_off L.X (d := 840) (n := 64) (k := 1024) (by omega_using [])).trans hX).sub
   have hB := hL.nB
   have hE := oE_lt hp
   have hrsp : t1.callEntry.gpr .rsp = L.B + BitVec.ofNat 64 32 := by
@@ -171,18 +171,18 @@ theorem verifyK_pre {p : Params} {prep : Bool} (hp : p ∈ params) {L : Lay} (hL
     State.callEntry_gpr _ (by decide : Reg.rdi ≠ .rsp), State.callEntry_gpr _ (by decide : Reg.rsi ≠ .rsp),
     State.callEntry_gpr _ (by decide : Reg.rdx ≠ .rsp), State.callEntry_gpr _ (by decide : Reg.rcx ≠ .rsp),
     hrsp, e1, e2, e3, e4, below32]
-  · rw [toNat_add_ofNat (by omega)]; omega
+  · rw [toNat_add_ofNat (by omega_using [hB])]; omega_using []
   · exact F.keyScr.sub_right hsub
   · exact mu_scrV hp F.e
   · exact F.sigScr.sub_right hsub
-  · exact hL.stk_r hL.kKey (by omega)
-  · exact hL.stk_x (d := 32) (n := 8) (e := 840) (k := 64) (by omega) (by omega)
-  · exact hL.stk_r F.kSig (by omega)
-  · exact hL.stk_r (F.kScr.sub_right hsub) (by omega)
-  · exact hL.kKey.sub_left (Region.sub_prefix (by omega))
-  · exact (hL.kX.sub_left (Region.sub_prefix (by omega))).sub_right (Offset.sub_base _ (by omega))
-  · exact F.kSig.sub_left (Region.sub_prefix (by omega))
-  · exact (F.kScr.sub_right hsub).sub_left (Region.sub_prefix (by omega))
+  · exact hL.stk_r hL.kKey (by omega_using [])
+  · exact hL.stk_x (d := 32) (n := 8) (e := 840) (k := 64) (by omega_using []) (by omega_using [])
+  · exact hL.stk_r F.kSig (by omega_using [])
+  · exact hL.stk_r (F.kScr.sub_right hsub) (by omega_using [])
+  · exact hL.kKey.sub_left (Region.sub_prefix (by omega_using []))
+  · exact (hL.kX.sub_left (Region.sub_prefix (by omega_using []))).sub_right (Offset.sub_base _ (by omega_using []))
+  · exact F.kSig.sub_left (Region.sub_prefix (by omega_using []))
+  · exact (F.kScr.sub_right hsub).sub_left (Region.sub_prefix (by omega_using []))
   · exact hL.nKey
   · show L.MU.toNat + 64 ≤ 2 ^ 64
     have hn : L.scr.toNat + (L.E + 1024) ≤ 2 ^ 64 := by rw [← F.e, ← mScr_eq]; exact F.nScr
@@ -196,7 +196,7 @@ theorem verifyK_pre {p : Params} {prep : Bool} (hp : p ∈ params) {L : Lay} (hL
     rw [toNat_add_ofNat (Nat.lt_of_lt_of_le hlt hn), Nat.add_assoc]
     exact Nat.le_trans (Nat.add_le_add_left (Nat.add_le_add_left (by decide : 840 + 64 ≤ 1024) e) _) hn
   · exact F.nSig
-  · have := F.nScr; simp only [mScrLen, Verify.scrLen, messageScratchWords] at this ⊢; omega
+  · have := F.nScr; simp only [mScrLen, Verify.scrLen, messageScratchWords] at this ⊢; omega_using [this]
   · exact fun h => hkey' (h8 h)
 
 /-- The call of the verification function on `μ`. -/
@@ -219,7 +219,7 @@ theorem verifyCall_ok {p : Params} {prep : Bool} {n : String} {c : Prog isa} (hV
   have hrsp1 : t1.gpr .rsp = L.SP := hc1.rsp
   have hK := keyLenV_ge hp prep
   have hkl : p.pkLen ≤ L.keyLen := by rw [F.key]; exact hK.2.2
-  refine WP.call_mx hV.ok hV.nosp (by omega) hpre ?_ ?_ fun s' hrd hwr hcs hf _ hpost hmx => ?_
+  refine WP.call_mx hV.ok hV.nosp (by omega_using [hdep]) hpre ?_ ?_ fun s' hrd hwr hcs hf _ hpost hmx => ?_
   · rw [hc1.rd, hc1.wr]
     refine covers_of_within fun r hr => ?_
     simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -249,10 +249,10 @@ theorem verifyCall_ok {p : Params} {prep : Bool} {n : String} {c : Prog isa} (hV
   · simp only [verifyK, Verify.vPk, Verify.vMu, Verify.vSig, State.withRegions_mem,
       gpr_ce t1 _ _ (by decide : Reg.rdi ≠ .rsp), gpr_ce t1 _ _ (by decide : Reg.rsi ≠ .rsp),
       gpr_ce t1 _ _ (by decide : Reg.rdx ≠ .rsp), e1, e2, e3, Verify.res] at hq
-    rw [hc1.ce_bytesAt (p := L.key) (n := p.pkLen) ((hL.stk_r hL.kKey (by omega)).sub_right (Region.sub_prefix hkl))
-      (by have := hL.nKey; omega),
-      hc1.ce_bytesAt (p := L.MU) (hL.stk_x (d := 32) (n := 8) (e := 840) (k := 64) (by omega) (by omega)) (by omega),
-      hc1.ce_bytesAt (p := L.sig) (hL.stk_r F.kSig (by omega)) (by have := F.nSig; omega), hm',
+    rw [hc1.ce_bytesAt (p := L.key) (n := p.pkLen) ((hL.stk_r hL.kKey (by omega_using [])).sub_right (Region.sub_prefix hkl))
+      (by have := hL.nKey; omega_using [hK]),
+      hc1.ce_bytesAt (p := L.MU) (hL.stk_x (d := 32) (n := 8) (e := 840) (k := 64) (by omega_using []) (by omega_using [])) (by omega_using []),
+      hc1.ce_bytesAt (p := L.sig) (hL.stk_r F.kSig (by omega_using [])) (by have := F.nSig; omega_using [this]), hm',
       hg₂ _ (by decide)] at hq
     exact hq
 

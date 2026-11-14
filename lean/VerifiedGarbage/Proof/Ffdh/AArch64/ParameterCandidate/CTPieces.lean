@@ -72,7 +72,7 @@ def SI (L : WsP) (k : Nat) (s : State) : Prop :=
 /-- After the loop. -/
 def SIE (L : WsP) (s : State) : Prop := Ws s L.B L.Z L.w
 
-theorem trialN_le (w : Nat) : trialN w ≤ 256 ∧ 1 ≤ trialN w := by unfold trialN; split <;> omega
+theorem trialN_le (w : Nat) : trialN w ≤ 256 ∧ 1 ≤ trialN w := by unfold trialN; split <;> omega_using []
 
 theorem sieveIter_ok {L : WsP} {k : Nat} {s : State} (hk : k < trialN L.w) (h : SI L k s) :
     WP isa (seqs (([.block [ld .x17 .x9, next .x9]] : List (Prog isa)) ++ trialEntry 0 ++ trialEntry 1 ++
@@ -81,15 +81,15 @@ theorem sieveIter_ok {L : WsP} {k : Nat} {s : State} (hk : k < trialN L.w) (h : 
         (k + 1 = trialN L.w → SIE L t) := by
   obtain ⟨hw, hT, h9, h10, h7, h8, htab, h1⟩ := h
   have hN := trialN_le L.w
-  refine WP.mono (tlIter_ok (s₀ := s) rfl hT (by omega) htab ⟨hw, h7, h8, rfl, Keep.refl _ _⟩ h9 h1)
+  refine WP.mono (tlIter_ok (s₀ := s) rfl hT (by omega_using [hk, hN]) htab ⟨hw, h7, h8, rfl, Keep.refl _ _⟩ h9 h1)
     fun t ⟨⟨hI, h9', h1'⟩, h10'⟩ => ⟨?_, fun _ => ⟨hI.ws, hT, h9', ?_, hI.x7, hI.x8, fun i hi => by
       rw [hI.mem]; exact htab i hi, by rw [h1', hI.mem]⟩, fun _ => hI.ws⟩
-  · rw [eval_nonzero, h10', h10, sub1_bne (by omega) (by omega)]
-    exact congrArg some (decide_eq_decide.mpr (by omega))
+  · rw [eval_nonzero, h10', h10, sub1_bne (by omega_using [hk]) (by omega_using [hN])]
+    exact congrArg some (decide_eq_decide.mpr (by omega_using []))
   · rw [h10', h10]
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.toNat_sub, BitVec.toNat_ofNat]
-    omega
+    omega_using [hk]
 
 theorem sieveBody_ct : RelCT isa (Two fun (a : WsP × Nat) s => a.2 < trialN a.1.w ∧ SI a.1 a.2 s)
     (seqs (([.block [ld .x17 .x9, next .x9]] : List (Prog isa)) ++ trialEntry 0 ++ trialEntry 1 ++
@@ -102,7 +102,7 @@ theorem sieveBody_ct : RelCT isa (Two fun (a : WsP × Nat) s => a.2 < trialN a.1
     (fun p s h => ?_)) ?_)
   · obtain ⟨hk, hw, hT, h9, -, h7, h8, htab, -⟩ := h
     have hN := trialN_le p.1.w
-    exact WP.mono (tlLoad_ok hT (by omega) htab ⟨hw, h7, h8, rfl, Keep.refl _ _⟩ h9) fun t ⟨⟨h17, _, hm⟩, k⟩ =>
+    exact WP.mono (tlLoad_ok hT (by omega_using [hk, hN]) htab ⟨hw, h7, h8, rfl, Keep.refl _ _⟩ h9) fun t ⟨⟨h17, _, hm⟩, k⟩ =>
       ⟨hw.congr' (rs := []) (fun x _ => by rw [hm]) (by simp) k (by decide), by omega, h17,
         (k.gpr .x7 (by decide)).trans h7, (k.gpr .x8 (by decide)).trans h8⟩
   refine two_map (Φ' := TBI) (fun a : WsP × Nat => (fpubOf a.1, a.2)) (fun _ _ h => h) ?_
@@ -139,10 +139,10 @@ theorem halvePass_ok {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w) :
       .seq (.block (ws ++ base aN .x16 ++ [mov .x17 .x16, movi .x7 0, .subImm .x .x15 .x7 1])) (seqs halfPass) := rfl
   rw [e]
   refine WP.seq (WP.mono (halveHead_ok h) fun s₁ ⟨⟨h16, h17, h15, h12, hm₁⟩, k₁⟩ => ?_)
-  refine WP.mono (halfPass_ok (mb := true) (h.scr.congr k₁.wr) h16 h17 h15 h12 hw1 (by omega) (by omega) (by omega)
+  refine WP.mono (halfPass_ok (mb := true) (h.scr.congr k₁.wr) h16 h17 h15 h12 hw1 (by omega_using [hw2]) (by omega_using [sN]) (by omega_using [sN])
     (.inl rfl)) fun t ⟨_, o, k₂⟩ => ?_
   rw [hm₁] at o
-  exact h.congr' (Frm.of_outside (o.mono (o' := slot w aN) (n' := 8 * (w + 2)) (by omega) (by omega))
+  exact h.congr' (Frm.of_outside (o.mono (o' := slot w aN) (n' := 8 * (w + 2)) (by omega_using []) (by omega_using []))
     (List.mem_singleton_self _)) (fun r hr => by rw [List.mem_singleton.mp hr]; exact KMut.ofSlot _ _ _)
     (k₁.trans k₂) (by decide)
 

@@ -42,7 +42,7 @@ theorem p521_nBits : Spec.Ecdsa.nBits Spec.P521.curve = 521 := by
   show Spec.P521.curve.n.log2 + 1 = 521
   have h₁ : 520 ≤ Spec.P521.curve.n.log2 := (Nat.le_log2 (by decide +kernel)).mpr (by decide +kernel)
   have h₂ : Spec.P521.curve.n.log2 < 521 := (Nat.log2_lt (by decide +kernel)).mpr (by decide +kernel)
-  omega
+  omega_using [h₁, h₂]
 
 /-! ## The curve's blocks, and the signature with the HMAC of a table -/
 

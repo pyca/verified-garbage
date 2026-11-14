@@ -47,7 +47,7 @@ theorem matrixCopy_ok {p : Params} (hF : PFacts p) {S : Nat} {σ s : State}
   · subst k
     rw [sc_pa ht,hbytes,hs.k1.sa]
   · rw [L.keepBytes ht (by layd)]
-    exact hr k (by omega)
+    exact hr k (by omega_using [hk, hkj])
 
 theorem matrixPrefixes_ok {p : Params} (hF : PFacts p) {S : Nat} {σ s : State}
     (hp : kgPre p S σ) (hs : KSamp p σ 0 0 s) :
@@ -56,7 +56,7 @@ theorem matrixPrefixes_ok {p : Params} (hF : PFacts p) {S : Nat} {σ s : State}
   exact wp_range_flatMap (M := isa) (N := 4)
     (fun j t => KSamp p σ 0 0 t ∧ MatrixPrefixes p σ j t)
     (fun j t hj ht => matrixCopy_ok hF hp (Nat.zero_le _) hj ht.1 ht.2)
-    4 (by omega) s ⟨hs,fun _ h => False.elim (Nat.not_lt_zero _ h)⟩
+    4 (by omega_using []) s ⟨hs,fun _ h => False.elim (Nat.not_lt_zero _ h)⟩
 
 /-- Updating the two row/column bytes leaves the hoisted seed prefix intact. -/
 theorem matrixNonce_ok {p : Params} (hF : PFacts p) {S : Nat} {σ s : State}
@@ -67,7 +67,7 @@ theorem matrixNonce_ok {p : Params} (hF : PFacts p) {S : Nat} {σ s : State}
   have L := hs.ks.k1.kc.lay hF hp
   unfold setSR
   refine WP.mono (setTwo_ok L (o := oSA4+34*j+32) (a := (e+j)%p.ℓ) (b := (e+j)/p.ℓ)
-    (by dsimp only [oSA4]; omega) (by layd) (by layd)) fun t ⟨ht,hkeep,hbytes⟩ => ?_
+    (by dsimp only [oSA4]; omega_using [hj]) (by layd) (by layd)) fun t ⟨ht,hkeep,hbytes⟩ => ?_
   refine ⟨⟨hs.ks.keep hF hp ht (by unfold k1Chk kcChk; layd) (fun k hk => by lay)
     (fun _ h => False.elim (Nat.not_lt_zero _ h)) (hkeep.get .x24),?_⟩,
     hr.keep L ht (fun k hk => by layd)⟩
@@ -77,7 +77,7 @@ theorem matrixNonce_ok {p : Params} (hF : PFacts p) {S : Nat} {σ s : State}
     rw [bytes34,L.keepBytes ht (by layd),hr j hj,sc_add,sc_pa ht,hbytes,
       Proof.MlDsa.KeyGen.seedA_eq]
   · rw [L.keepBytes ht (by layd)]
-    exact hs.done k (by omega)
+    exact hs.done k (by omega_using [hk, hkj])
 
 theorem matrixPrefixes_tr {Q : State → State → Prop}
     (hq : ∀x y,Q x y → x.sp=y.sp ∧ x.gpr .x28=y.gpr .x28) :

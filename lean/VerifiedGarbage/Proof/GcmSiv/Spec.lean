@@ -41,7 +41,7 @@ theorem byte_mod {x n k : Nat} (h : k + 8 ≤ n) : x % 2 ^ n / 2 ^ k % 2 ^ 8 = x
   apply Nat.eq_of_testBit_eq; intro i
   simp only [Nat.testBit_mod_two_pow, Nat.testBit_div_two_pow]
   by_cases hi : i < 8
-  · simp only [hi, decide_true, Bool.true_and, show i + k < n by omega]
+  · simp only [hi, decide_true, Bool.true_and, show i + k < n by omega_using [h, hi]]
   · simp only [hi, decide_false, Bool.false_and]
 
 /-- A number from `k` on: its byte at `k`, then the rest. -/
@@ -56,7 +56,7 @@ theorem le4_le32 (i : Nat) : Proof.Cmac.le4 ((BitVec.ofNat 64 i).setWidth 32) = 
   simp only [Proof.Cmac.le4, Spec.GcmSiv.le32, List.getElem_map, List.getElem_range]
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.extractLsb'_toNat, BitVec.toNat_setWidth, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow]
-  rw [Nat.mod_mod_of_dvd _ (Nat.pow_dvd_pow 2 (by decide : 32 ≤ 64)), byte_mod (by omega), Nat.pow_mul]
+  rw [Nat.mod_mod_of_dvd _ (Nat.pow_dvd_pow 2 (by decide : 32 ≤ 64)), byte_mod (by omega_using [hj]), Nat.pow_mul]
 
 /-- The first 8 bytes of `CIPH(little_endian_uint32(i) ‖ nonce)`, for `i < k`,
 one after the other. -/
@@ -98,7 +98,7 @@ theorem leNat_le8 (a : BitVec 64) : Spec.GcmSiv.leNat (Proof.Cmac.le8 a) = a.toN
     BitVec.extractLsb'_toNat, Nat.shiftRight_eq_div_pow]
   generalize a.toNat = x at h ⊢
   have h7 : x / 2 ^ (8 * 7) % 2 ^ 8 + 256 * 0 = x / 2 ^ (8 * 7) := by
-    rw [Nat.mul_zero, Nat.add_zero, Nat.mod_eq_of_lt (Nat.div_lt_of_lt_mul (by omega))]
+    rw [Nat.mul_zero, Nat.add_zero, Nat.mod_eq_of_lt (Nat.div_lt_of_lt_mul (by omega_using [h]))]
   rw [h7, byte_step x (8 * 6), byte_step x (8 * 5), byte_step x (8 * 4), byte_step x (8 * 3),
     byte_step x (8 * 2), byte_step x (8 * 1), byte_step x (8 * 0), Nat.mul_zero, Nat.pow_zero, Nat.div_one]
 
@@ -108,8 +108,8 @@ theorem ofBytes_le8 (a b : BitVec 64) : Spec.GcmSiv.ofBytes (Proof.Cmac.le8 a ++
   rw [Spec.GcmSiv.ofBytes, BitVec.toNat_ofNat, leNat_append, leNat_le8, leNat_le8, Proof.Cmac.length_le8,
     BitVec.toNat_append, ← Nat.shiftLeft_add_eq_or_of_lt a.isLt, Nat.shiftLeft_eq]
   have := a.isLt; have := b.isLt
-  rw [Nat.mod_eq_of_lt (by omega)]
-  omega
+  rw [Nat.mod_eq_of_lt (by omega_using [])]
+  omega_using []
 
 /-- POLYVAL's field element of 16 bytes in memory: two little-endian loads. -/
 theorem ofBytes_bytesAt (m : Mem) (p : Addr) :
@@ -127,15 +127,15 @@ theorem toBytes_append (a b : BitVec 64) : Spec.GcmSiv.toBytes (b ++ a) = Proof.
     simp only [Proof.Cmac.le8, List.getElem_map, List.getElem_range]
     apply BitVec.eq_of_getLsbD_eq; intro j hj
     simp only [BitVec.getLsbD_extractLsb', hj, decide_true, Bool.true_and, BitVec.getLsbD_append,
-      show 8 * i + j < 64 by omega, ↓reduceIte]
+      show 8 * i + j < 64 by omega_using [h8, hj], ↓reduceIte]
   · rw [List.getElem_append_right (by simpa [Proof.Cmac.le8] using h8)]
     simp only [Proof.Cmac.le8, List.getElem_map, List.getElem_range, Proof.Cmac.length_le8]
     apply BitVec.eq_of_getLsbD_eq; intro j hj
     simp only [BitVec.getLsbD_extractLsb', hj, decide_true, Bool.true_and, BitVec.getLsbD_append,
-      show ¬ (8 * i + j < 64) by omega, ↓reduceIte]
+      show ¬ (8 * i + j < 64) by omega_using [h8], ↓reduceIte]
     congr 1
     simp only [List.length_map, List.length_range]
-    omega
+    omega_using [h8]
 
 /-- `little_endian_uint64(x)`: the bytes of the word `x`. -/
 theorem le64_le8 (x : Nat) : Spec.GcmSiv.le64 x = Proof.Cmac.le8 (BitVec.ofNat 64 x) := by
@@ -145,7 +145,7 @@ theorem le64_le8 (x : Nat) : Spec.GcmSiv.le64 x = Proof.Cmac.le8 (BitVec.ofNat 6
   simp only [Proof.Cmac.le8, Spec.GcmSiv.le64, List.getElem_map, List.getElem_range]
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.extractLsb'_toNat, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow]
-  rw [byte_mod (by omega), Nat.pow_mul]
+  rw [byte_mod (by omega_using [hj]), Nat.pow_mul]
 
 /-! ## POLYVAL's field elements of a string -/
 
@@ -156,13 +156,13 @@ theorem elems_of_lt {bs : List Byte} (h : bs.length < 16) : elems bs = [] := by
 
 theorem elems_cons {bs : List Byte} (h : 16 ≤ bs.length) :
     elems bs = ofBytes (bs.take 16) :: elems (bs.drop 16) := by
-  obtain ⟨n, hn⟩ : ∃ n, bs.length / 16 = n + 1 := ⟨bs.length / 16 - 1, by omega⟩
-  have hn' : (bs.drop 16).length / 16 = n := by simp only [List.length_drop]; omega
+  obtain ⟨n, hn⟩ : ∃ n, bs.length / 16 = n + 1 := ⟨bs.length / 16 - 1, by omega_using [h]⟩
+  have hn' : (bs.drop 16).length / 16 = n := by simp only [List.length_drop]; omega_using [hn]
   simp only [elems, hn, hn', List.range_succ_eq_map, List.map_cons, List.map_map]
   refine congrArg _ (List.map_congr_left fun i _ => ?_)
   simp only [Function.comp, List.drop_drop]
   congr 3
-  omega
+  omega_using []
 
 theorem elems_append_aux (ys : List Byte) (n : Nat) :
     ∀ xs : List Byte, xs.length = 16 * n → elems (xs ++ ys) = elems xs ++ elems ys := by
@@ -170,15 +170,15 @@ theorem elems_append_aux (ys : List Byte) (n : Nat) :
   | zero => intro xs hx; rw [List.eq_nil_of_length_eq_zero hx]; rfl
   | succ n ih =>
     intro xs hx
-    rw [elems_cons (bs := xs ++ ys) (by simp; omega), elems_cons (bs := xs) (by omega),
-      List.take_append_of_le_length (by omega), List.drop_append_of_le_length (by omega),
-      ih _ (by simp; omega), List.cons_append]
+    rw [elems_cons (bs := xs ++ ys) (by simp; omega_using [hx]), elems_cons (bs := xs) (by omega_using [hx]),
+      List.take_append_of_le_length (by omega_using [hx]), List.drop_append_of_le_length (by omega_using [hx]),
+      ih _ (by simp; omega_using [hx]), List.cons_append]
 
 theorem elems_append {xs ys : List Byte} (hx : xs.length % 16 = 0) : elems (xs ++ ys) = elems xs ++ elems ys :=
-  elems_append_aux ys (xs.length / 16) xs (by omega)
+  elems_append_aux ys (xs.length / 16) xs (by omega_using [hx])
 
 theorem elems_single {bs : List Byte} (h : bs.length = 16) : elems bs = [ofBytes bs] := by
-  rw [elems_cons (by omega), List.take_of_length_le (by omega), elems_of_lt (by simp; omega)]
+  rw [elems_cons (by omega_using [h]), List.take_of_length_le (by omega_using [h]), elems_of_lt (by simp; omega_using [h])]
 
 /-- The field elements of the `n` blocks at `p`. -/
 theorem elems_bytesAt (m : Mem) (p : Addr) (n : Nat) :
@@ -188,7 +188,7 @@ theorem elems_bytesAt (m : Mem) (p : Addr) (n : Nat) :
   refine List.map_congr_left fun i hi => ?_
   have hi := List.mem_range.mp hi
   congr 1
-  apply List.ext_getElem (by simp [Spec.Aes.bytesAt]; omega)
+  apply List.ext_getElem (by simp [Spec.Aes.bytesAt]; omega_using [hi])
   intro j h₁ h₂
   simp only [Spec.Aes.bytesAt, List.length_map, List.length_range] at h₁
   simp only [Spec.Aes.bytesAt, List.getElem_map, List.getElem_range, List.getElem_take, List.getElem_drop]
@@ -198,28 +198,28 @@ theorem length_pad16 (bs : List Byte) : (pad16 bs).length = bs.length + (16 - bs
   simp [pad16, zeros]
 
 theorem pad16_mod (bs : List Byte) : (pad16 bs).length % 16 = 0 := by
-  rw [length_pad16]; omega
+  rw [length_pad16]; omega_using []
 
 /-- A string padded: its whole blocks, then its last bytes padded. -/
 theorem pad16_split (bs : List Byte) :
     pad16 bs = bs.take (16 * (bs.length / 16)) ++ pad16 (bs.drop (16 * (bs.length / 16))) := by
   simp only [pad16, List.length_drop, ← List.append_assoc, List.take_append_drop]
-  congr 3; omega
+  congr 3; omega_using []
 
 /-- The field elements of a padded string. -/
 theorem elems_pad16 (bs : List Byte) :
     elems (pad16 bs) = elems (bs.take (16 * (bs.length / 16))) ++
       (if bs.length % 16 = 0 then [] else [ofBytes (bs.drop (16 * (bs.length / 16)) ++ zeros (16 - bs.length % 16))]) := by
-  rw [pad16_split, elems_append (by simp; omega)]
+  rw [pad16_split, elems_append (by simp; omega_using [])]
   congr 1
   split
   · rename_i h
-    rw [List.drop_eq_nil_of_le (by omega)]; rfl
+    rw [List.drop_eq_nil_of_le (by omega_using [h])]; rfl
   · rename_i h
-    rw [pad16, List.length_drop, elems_single (by simp [zeros]; omega)]
+    rw [pad16, List.length_drop, elems_single (by simp [zeros]; omega_using [h])]
     congr 3
-    have : bs.length - 16 * (bs.length / 16) = bs.length % 16 := by omega
-    rw [this, Nat.mod_mod, Nat.mod_eq_of_lt (a := 16 - bs.length % 16) (by omega)]
+    have : bs.length - 16 * (bs.length / 16) = bs.length % 16 := by omega_using []
+    rw [this, Nat.mod_mod, Nat.mod_eq_of_lt (a := 16 - bs.length % 16) (by omega_using [h])]
 
 /-! ## The tag input -/
 
@@ -243,13 +243,13 @@ theorem setWidth_byte_lo (w : BitVec 32) {j : Nat} (hj : j < 4) :
     (w.setWidth 64).extractLsb' (8 * j) 8 = w.extractLsb' (8 * j) 8 := by
   ext k hk
   simp only [BitVec.getElem_extractLsb', BitVec.getLsbD_setWidth]
-  simp; omega
+  simp; omega_using [hj, hk]
 
 theorem setWidth_byte_hi (w : BitVec 32) {j : Nat} (hj : 4 ≤ j) :
     (w.setWidth 64).extractLsb' (8 * j) 8 = 0 := by
   ext k hk
   simp only [BitVec.getElem_extractLsb', BitVec.getLsbD_setWidth]
-  simp [BitVec.getLsbD_of_ge w (8 * j + k) (by omega)]
+  simp [BitVec.getLsbD_of_ge w (8 * j + k) (by omega_using [hj])]
 
 theorem mask_bytes : ∀ j < 7, (0x7FFFFFFFFFFFFFFF#64).extractLsb' (8 * j) 8 = BitVec.allOnes 8 := by decide
 theorem and_255 (x : BitVec 8) : x &&& 255#8 = x := by
@@ -262,26 +262,26 @@ theorem tagOf_words (a b n₀ : BitVec 64) (n₁ : BitVec 32) :
   intro i h₁ h₂
   have hi : i < 16 := by simpa [tagOf] using h₁
   simp only [tagOf, List.getElem_map, List.getElem_range, List.getD_eq_getElem?_getD]
-  rcases (by omega : i < 8 ∨ 8 ≤ i ∧ i < 12 ∨ 12 ≤ i ∧ i < 15 ∨ i = 15) with h | h | h | h
-  · simp only [show i < 12 by omega, ↓reduceIte]
-    rw [List.getElem?_append_left (by simp [length_le8]; omega),
-      List.getElem?_append_left (by simp [length_le8]; omega), List.getElem_append_left (by simp [length_le8]; omega)]
+  rcases (by omega_using [hi] : i < 8 ∨ 8 ≤ i ∧ i < 12 ∨ 12 ≤ i ∧ i < 15 ∨ i = 15) with h | h | h | h
+  · simp only [show i < 12 by omega_using [h], ↓reduceIte]
+    rw [List.getElem?_append_left (by simp [length_le8]; omega_using [h]),
+      List.getElem?_append_left (by simp [length_le8]; omega_using [h]), List.getElem_append_left (by simp [length_le8]; omega_using [h])]
     simp [le8, h, BitVec.extractLsb'_xor]
-  · simp only [show i < 12 by omega, ↓reduceIte]
-    rw [List.getElem?_append_right (by simp [length_le8]; omega),
-      List.getElem?_append_right (by simp [length_le8]; omega), List.getElem_append_right (by simp [length_le8]; omega)]
+  · simp only [show i < 12 by omega_using [h], ↓reduceIte]
+    rw [List.getElem?_append_right (by simp [length_le8]; omega_using [h]),
+      List.getElem?_append_right (by simp [length_le8]; omega_using [h]), List.getElem_append_right (by simp [length_le8]; omega_using [h])]
     simp only [length_le8]
-    have hj : i - 8 < 4 := by omega
+    have hj : i - 8 < 4 := by omega_using [h]
     simp [le8, le4, hj, BitVec.extractLsb'_xor, BitVec.extractLsb'_and, setWidth_byte_lo _ hj,
-      mask_bytes (i - 8) (by omega), show i - 8 < 8 by omega, and_255]
-  · simp only [show ¬ i < 12 by omega, show i ≠ 15 by omega, ↓reduceIte]
-    rw [List.getElem?_append_right (by simp [length_le8]; omega),
-      List.getElem_append_right (by simp [length_le8]; omega)]
+      mask_bytes (i - 8) (by omega_using [h]), show i - 8 < 8 by omega_using [hi], and_255]
+  · simp only [show ¬ i < 12 by omega_using [h], show i ≠ 15 by omega_using [h], ↓reduceIte]
+    rw [List.getElem?_append_right (by simp [length_le8]; omega_using [h]),
+      List.getElem_append_right (by simp [length_le8]; omega_using [h])]
     simp only [length_le8]
-    simp [le8, BitVec.extractLsb'_xor, BitVec.extractLsb'_and, setWidth_byte_hi _ (show 4 ≤ i - 8 by omega),
-      mask_bytes (i - 8) (by omega), show i - 8 < 8 by omega, and_255]
+    simp [le8, BitVec.extractLsb'_xor, BitVec.extractLsb'_and, setWidth_byte_hi _ (show 4 ≤ i - 8 by omega_using [h]),
+      mask_bytes (i - 8) (by omega_using [h]), show i - 8 < 8 by omega_using [hi], and_255]
   · subst h
-    simp [le8, BitVec.extractLsb'_xor, BitVec.extractLsb'_and, setWidth_byte_hi _ (show 4 ≤ 7 by omega)]
+    simp [le8, BitVec.extractLsb'_xor, BitVec.extractLsb'_and, setWidth_byte_hi _ (show 4 ≤ 7 by omega_using [])]
 
 end VG.Proof.GcmSiv
 

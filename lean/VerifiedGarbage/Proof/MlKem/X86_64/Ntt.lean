@@ -151,8 +151,8 @@ theorem fwdLay_ok {sP : Addr} (len k : Nat) (hlen : len ∈ [8, 16, 32, 64, 128]
   exact vlay_ok vbfly_spec nttBlk_ok hlen 2 (fun c => 128 / len + c) (by rw [hk]; rfl)
     (fun c hc => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hlen
-      rcases hlen with rfl | rfl | rfl | rfl | rfl <;> omega)
-    (fun c _ => step_fwd (zi := fun c => 128 / len + c) (dz := 2) _ 1 (by decide) (fun _ => by omega) c)
+      rcases hlen with rfl | rfl | rfl | rfl | rfl <;> omega_using [hc])
+    (fun c _ => step_fwd (zi := fun c => 128 / len + c) (dz := 2) _ 1 (by decide) (fun _ => by omega_using []) c)
     hc hsi hS hT hw
 
 theorem fwdLay4_ok {sP : Addr} {F : Poly} (s : State) (hc : VConsts s) (hsi : s.gpr .rsi = sP)
@@ -160,7 +160,7 @@ theorem fwdLay4_ok {sP : Addr} {F : Poly} (s : State) (hc : VConsts s) (hsi : s.
     WP isa (vlay4 vbfly 32 0x50 4) s fun s' => S16 s'.mem (spW sP) (nttLayer F 4) ∧ BInv sP s s' := by
   rw [nttLayer_eq, show 128 / 4 = 32 from rfl]
   exact vlay4_ok vbfly_spec nttBlk_ok 32 0x50 4 (fun c => 32 + c) (fun i => 32 + 2 * i) rfl (by decide)
-    (by decide) (fun i _ => step_fwd (zi := fun i => 32 + 2 * i) (dz := 4) _ 2 (by decide) (fun _ => by omega) i)
+    (by decide) (fun i _ => step_fwd (zi := fun i => 32 + 2 * i) (dz := 4) _ 2 (by decide) (fun _ => by omega_using []) i)
     hc hsi hS hT hw
 
 theorem fwdLay2_ok {sP : Addr} {F : Poly} (s : State) (hc : VConsts s) (hsi : s.gpr .rsi = sP)
@@ -168,7 +168,7 @@ theorem fwdLay2_ok {sP : Addr} {F : Poly} (s : State) (hc : VConsts s) (hsi : s.
     WP isa (vlay2 vbfly 64 0xE4 8) s fun s' => S16 s'.mem (spW sP) (nttLayer F 2) ∧ BInv sP s s' := by
   rw [nttLayer_eq, show 128 / 2 = 64 from rfl]
   exact vlay2_ok vbfly_spec nttBlk_ok 64 0xE4 8 (fun c => 64 + c) (fun i => 64 + 4 * i) rfl (by decide)
-    (by decide) (fun i _ => step_fwd (zi := fun i => 64 + 4 * i) (dz := 8) _ 4 (by decide) (fun _ => by omega) i)
+    (by decide) (fun i _ => step_fwd (zi := fun i => 64 + 4 * i) (dz := 8) _ 4 (by decide) (fun _ => by omega_using []) i)
     hc hsi hS hT hw
 
 end VG.Proof.MlKem.X86_64

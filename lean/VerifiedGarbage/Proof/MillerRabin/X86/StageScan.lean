@@ -213,17 +213,17 @@ theorem Stage.scan {g : Geometry} (v : g.Valid) {capacity c : Nat} {p : BitVec 3
     simp only [scanWrites, List.mem_cons, List.not_mem_nil, or_false] at mem
     rcases mem with rfl | rfl
     · right; decide
-    · left; dsimp only; omega) (by
+    · left; dsimp only; omega_using [head]) (by
     intro r mem
     simp only [scanWrites, List.mem_cons, List.not_mem_nil, or_false] at mem
     rcases mem with rfl | rfl
-    · right; have := v.arrayHeader 0; unfold sEq1; omega
+    · right; have := v.arrayHeader 0; unfold sEq1; omega_using [this]
     · exact Or.inl (g.arrayBefore (by decide : 0 < aX)))
   have C := S.caller.keepOuts K (by decide) O (by
     intro r mem
     simp only [scanWrites, List.mem_cons, List.not_mem_nil, or_false] at mem
     rcases mem with rfl | rfl
-    · have := v.headerFit; unfold sEq1; dsimp only; omega
+    · have := v.headerFit; unfold sEq1; dsimp only; omega_using [this]
     · exact v.arrayFit (by decide : aX < 28))
   refine ⟨⟨D, M, C, ?_⟩, ?_, K⟩
   · intro j mem
@@ -235,6 +235,6 @@ theorem Stage.scan {g : Geometry} (v : g.Valid) {capacity c : Nat} {p : BitVec 3
     simp only [scanWrites, List.mem_cons, List.not_mem_nil, or_false] at mem
     rcases mem with rfl | rfl
     · exact scalar_roundRange g (d := sEq1) (by unfold scratchWord sEq1; simp)
-    · exact array_roundRange g (j := aX) (by unfold roundArray aX; simp) (by unfold Geometry.words; omega)
+    · exact array_roundRange g (j := aX) (by unfold roundArray aX; simp) (by unfold Geometry.words; omega_using [])
 
 end VG.Proof.MillerRabin.X86

@@ -436,8 +436,8 @@ theorem byte_exec (hd : Dims P) (hs : ShapeD H D) {s₀ : State} (hp : PreD P D 
     WP isa (bytePad P) s Q := by
   unfold bytePad
   rw [WP.seq_iff]
-  refine wp_clamp P (w := 1) (c := n) (by have := h.n_lt; have := lim_le (P := P) k; omega)
-    (by have := hd.B; omega) h.r13 fun s' v vx => ?_
+  refine wp_clamp P (w := 1) (c := n) (by have := h.n_lt; have := lim_le (P := P) k; omega_arith)
+    (by have := hd.B; omega_using [this]) h.r13 fun s' v vx => ?_
   rw [← WP.seq_iff]
   have hne : ∀ r ∈ [Reg.rbx, .r15, .rbp, .r12, .rsp, .r14], r ≠ .r10 := by decide
   have h' : LInv H s₀ k n mk s' :=

@@ -63,7 +63,7 @@ theorem checkPublicEntry_ok (s : State) {p : Inputs}
   rw [restX.sp, restW.sp, restV.sp, restU.sp] at frameY
   have fullY := fullX.trans frameY
   refine wp_loadStack (a := off (State.addr y.sp) 132) (by decide)
-    (addr_add (by have := incomingY.fits; omega)) incomingY.readable fun z loaded => ?_
+    (addr_add (by have := incomingY.fits; omega_using [this])) incomingY.readable fun z loaded => ?_
   have restZ : Rest [.r0] y z := loaded.rest (by simp)
   have argsZ := argsY.of_mem loaded.mem restZ
   have baseZ : z.gpr .r0 = p.base := loaded.gpr.trans incomingY.value

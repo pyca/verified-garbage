@@ -96,7 +96,7 @@ theorem validateEntry_ok {s0 : State} {B digest digestLen : Addr} {Z : Nat}
     hptr.1, hptr.2.1, hptr.2.2.1, hptr.2.2.2, ?_, ?_, ?_, (hk123.trans hk4).mono (by decide)⟩
   · exact ⟨(hsame .out (by decide)).trans hunused.1, (hsame .nonce (by decide)).trans hunused.2⟩
   · intro i hi
-    exact ((hf4.word (Or.inl (by omega)) (by omega)).trans (entry_saved_frame hf3 hi)).trans
+    exact ((hf4.word (Or.inl (by omega_using [hi])) (by omega_using [hi])).trans (entry_saved_frame hf3 hi)).trans
       ((hsaved i hi).trans (hk1.gpr (by simpa using saved_ne_r11 hi)))
   · have hwide2 : Outside B 0 pWorkspace s0.mem s2.mem := by
       rw [← hmem1]
@@ -122,15 +122,15 @@ theorem validatingShape_ok {p : VerifyingInput} {s0 : State} (h : ValidatingPre 
   have hkey := h.keySource.congrK hinside he.keep
   have hps : Src s1 p.base usedBytes (s0.gpr .rdi) p.components.p := source_take hkey
   have hqs : Src s1 p.base usedBytes (s0.gpr .rdi + BitVec.ofNat 64 p.pLen) p.components.q :=
-    source_slice hkey (by rw [p.keyLength]; omega)
+    source_slice hkey (by rw [p.keyLength]; omega_using [])
   have hp1 : 0 < p.components.p.length := by
-    rw [p.components.pLength]; have := p.lengths; unfold Spec.Dsa.lengthsValid at this; omega
+    rw [p.components.pLength]; have := p.lengths; unfold Spec.Dsa.lengthsValid at this; omega_using [this]
   have hq1 : 0 < p.components.q.length := by
-    rw [p.components.qLength]; have := p.lengths; unfold Spec.Dsa.lengthsValid at this; omega
+    rw [p.components.qLength]; have := p.lengths; unfold Spec.Dsa.lengthsValid at this; omega_using [this]
   have hp64 : p.components.p.length < 2 ^ 64 := by
-    rw [p.components.pLength]; have := p.lengths; unfold Spec.Dsa.lengthsValid at this; omega
+    rw [p.components.pLength]; have := p.lengths; unfold Spec.Dsa.lengthsValid at this; omega_using [this]
   have hq64 : p.components.q.length < 2 ^ 64 := by
-    rw [p.components.qLength]; have := p.lengths; unfold Spec.Dsa.lengthsValid at this; omega
+    rw [p.components.qLength]; have := p.lengths; unfold Spec.Dsa.lengthsValid at this; omega_using [this]
   refine WP.mono (domainShape_ok (h.scratch.congr he.keep.2.2) he.base (by decide) he.p
     (by rw [he.q, h.pLength]) (by rw [he.pLen, h.pLength, p.components.pLength])
     (by rw [he.qLen, h.qLength, p.components.qLength]) hps hqs hp1 hp64 hq1 hq64 rfl rfl
@@ -166,13 +166,13 @@ theorem validatingOperands {p : VerifyingInput} {original s : State}
     rw [hp, hq, Offset.add_add]
   have yptr : L.fields .y = original.gpr .rdi + BitVec.ofNat 64 (2 * p.pLen + p.qLen) := by
     change original.gpr .rdi + original.gpr .rdx + original.gpr .rcx + original.gpr .rdx = _
-    rw [hp, hq, Offset.add_add, Offset.add_add, show p.pLen + (p.qLen + p.pLen) = 2 * p.pLen + p.qLen by omega]
+    rw [hp, hq, Offset.add_add, Offset.add_add, show p.pLen + (p.qLen + p.pLen) = 2 * p.pLen + p.qLen by omega_using []]
   have hqsrc : Src s p.base usedBytes (L.fields .q) p.components.q := by
-    rw [qptr]; exact source_slice hkey (by rw [p.keyLength]; omega)
+    rw [qptr]; exact source_slice hkey (by rw [p.keyLength]; omega_using [])
   have hgsrc : Src s p.base usedBytes (L.fields .g) p.components.g := by
-    rw [gptr]; exact source_slice hkey (by rw [p.keyLength]; omega)
+    rw [gptr]; exact source_slice hkey (by rw [p.keyLength]; omega_using [])
   have hysrc : Src s p.base usedBytes (L.fields .y) p.components.y := by
-    rw [yptr]; exact source_slice hkey (by rw [p.keyLength]; omega)
+    rw [yptr]; exact source_slice hkey (by rw [p.keyLength]; omega_using [])
   have hpfield : L.fields .pLen = BitVec.ofNat 64 p.pLen := hp
   have hqfield : L.fields .qLen = BitVec.ofNat 64 p.qLen := hq
   exact ⟨h.inputOperand .g .pLen (by decide) (by decide) hgsrc
@@ -202,7 +202,7 @@ theorem validatingInitialize_ok {p : VerifyingInput} {original s : State} (h : V
   have hqs : Src s L.base usedBytes (L.fields .q) p.components.q := by
     change Src s p.base usedBytes (original.gpr .rdi + original.gpr .rdx) p.components.q
     rw [h.pLength]
-    exact source_slice hkey (by rw [p.keyLength]; omega)
+    exact source_slice hkey (by rw [p.keyLength]; omega_using [])
   obtain ⟨_, hpo, hqo⟩ := p.shapeFacts ha
   refine WP.mono (workspacesReady_ok (L := L) hs.scratch hs.rdi hs.fields hps hqs p.components.pLength
     p.components.qLength rfl rfl hpo hqo) fun t ⟨pi, qi, hr, hf, hm, hk⟩ => ?_
@@ -213,7 +213,7 @@ theorem validatingInitialize_ok {p : VerifyingInput} {original s : State} (h : V
     hkeep.mono (by decide)⟩
   · exact hm.trans ((hs.fields .mask).trans (congrArg mask ha))
   · intro i hi
-    exact (hf.word (Or.inl (by omega)) (by omega)).trans (hs.saved i hi)
+    exact (hf.word (Or.inl (by omega_using [hi])) (by omega_using [hi])).trans (hs.saved i hi)
 
 def ValidatingPost (p : VerifyingInput) (original t : State) : Prop :=
   t.gpr .rax = BitVec.ofNat 64 (Spec.Dsa.validatePublicKeyBytes p.pLen p.qLen p.key).toNat ∧
@@ -248,7 +248,7 @@ theorem validatingBody_ok (M : Mont) (Sq : MontS) {p : VerifyingInput} {original
   refine WP.mono (result_ok ht.scratch ht.parent.rdi (by decide) hmask) fun u ⟨hret, hsaved, hmem, hku⟩ => ?_
   refine ⟨?_, fun i hi => ?_, ?_, ((hk.trans hkeep).trans hku).mono (by decide)⟩
   · rw [he]; exact hret
-  · exact ((hsaved i hi).trans (hframe.word (Or.inl (by omega)) (by omega))).trans (hsave i hi)
+  · exact ((hsaved i hi).trans (hframe.word (Or.inl (by omega_using [hi])) (by omega_using [hi]))).trans (hsave i hi)
   · rw [hmem]
     exact hf.trans (InScr.of_outside hframe (by decide))
 

@@ -52,8 +52,8 @@ theorem preA_wp {M : Mode} {s₀ : State} (hp : UPre s₀) {k : Nat} (hk : k < N
   have hd := hp.dataA hk
   have rw₀ : s.rd ++ s.wr = [schR s₀, argsR s₀, ivR s₀, dataR s₀, scrR s₀] := by rw [h.rd, h.wr, hp.rd, hp.wr]; rfl
   have w₀ : s.wr = [ivR s₀, dataR s₀, scrR s₀] := by rw [h.wr, hp.wr]
-  refine xorIn_wp (by decide) (by decide) (by decide) (by decide) (by rw [h.r6]; omega)
-    (by rw [h.r7, qN]; omega) (by rw [h.r6, add0, rw₀]; exact covIv (by simp))
+  refine xorIn_wp (by decide) (by decide) (by decide) (by decide) (by rw [h.r6]; omega_using [hiv])
+    (by rw [h.r7, qN]; omega_using [hk, hdf]) (by rw [h.r6, add0, rw₀]; exact covIv (by simp))
     (by rw [h.r7, add0, hd, w₀]; exact covBlk hk (by simp)) fun s₁ g₁ => ?_
   have m₁ : s₁.mem = Proof.Cmac.xor4Mem s.mem (blk s₀ k) (blk s₀ k) (State.addr (Iv s₀)) := by
     rw [g₁.mem, h.r7, h.r6, add0, add0, hd]
@@ -96,8 +96,8 @@ theorem body_ok' (enc : Bool) (F : BlkFn)
   have rw₂ : s₂.rd ++ s₂.wr = [schR s₀, argsR s₀, ivR s₀, dataR s₀, scrR s₀] := by
     rw [rg₂.rd, rg₂.wr, hp.rd, hp.wr]; rfl
   rw [post_eq]
-  refine xorIn_wp (by decide) (by decide) (by decide) (by decide) (by rw [rg₂.r6]; omega)
-    (by rw [rg₂.r7, qN]; omega) (by rw [rg₂.r6, add0, rw₂]; exact covIv (by simp))
+  refine xorIn_wp (by decide) (by decide) (by decide) (by decide) (by rw [rg₂.r6]; omega_using [hiv])
+    (by rw [rg₂.r7, qN]; omega_using [hk, hdf]) (by rw [rg₂.r6, add0, rw₂]; exact covIv (by simp))
     (by rw [rg₂.r7, add0, hd, w₂]; exact covBlk hk (by simp)) fun s₃ g₃ => ?_
   have m₃ : s₃.mem = Proof.Cmac.xor4Mem s₂.mem (blk s₀ k) (blk s₀ k) (State.addr (Iv s₀)) := by
     rw [g₃.mem, rg₂.r7, rg₂.r6, add0, add0, hd]
@@ -107,9 +107,9 @@ theorem body_ok' (enc : Bool) (F : BlkFn)
   have rw₃ : s₃.rd ++ s₃.wr = [schR s₀, argsR s₀, ivR s₀, dataR s₀, scrR s₀] := by
     rw [rg₃.rd, rg₃.wr, hp.rd, hp.wr]; rfl
   obtain ⟨s₄, run₄, g₄, sp₄, mem₄, rd₄, wr₄⟩ := mulA_ok s₃ (Q := State.addr (Iv s₀)) (by rw [rg₃.r6])
-    (by rw [rg₃.r6]; omega)
-    (fun d n hdn => by rw [rw₃]; exact ⟨ivR s₀, by simp, Offset.contains_base _ hdn (by omega)⟩)
-    (fun d n hdn => by rw [w₃]; exact ⟨ivR s₀, by simp, Offset.contains_base _ hdn (by omega)⟩)
+    (by rw [rg₃.r6]; omega_using [hiv])
+    (fun d n hdn => by rw [rw₃]; exact ⟨ivR s₀, by simp, Offset.contains_base _ hdn (by omega_using [hdn])⟩)
+    (fun d n hdn => by rw [w₃]; exact ⟨ivR s₀, by simp, Offset.contains_base _ hdn (by omega_using [hdn])⟩)
   rw [WP.block_append_iff]
   refine WP.of_runBlock ⟨s₄, run₄, ?_⟩
   have f₄ : Frame [ivR s₀] s₃.mem s₄.mem := by rw [mem₄]; exact alphaMem_frame _ _
@@ -123,7 +123,7 @@ theorem body_ok' (enc : Bool) (F : BlkFn)
     · exact (hp.blk_iv hk).symm
     · exact hp.iv_scr.sub_right (Region.sub_prefix (by decide))
     · exact hp.b_iv.symm
-  have hlt : ((blks s₀).take k).length = k := by simp [Spec.Cbc.blocksAt]; omega
+  have hlt : ((blks s₀).take k).length = k := by simp [Spec.Cbc.blocksAt]; omega_using [hk]
   have ivIn : bytesAt s₂.mem (State.addr (Iv s₀)) 16 = chainK (AesXts.xtsMode enc) s₀ k := by
     rw [Proof.Cmac.bytesAt_frame f₂ callIv (by decide), a.mem,
       Proof.Cmac.bytesAt_frame (Proof.Cmac.xor4Mem_frame _ _ _ _) (one (hp.blk_iv hk).symm) (by decide), h.iv]
@@ -139,7 +139,7 @@ theorem body_ok' (enc : Bool) (F : BlkFn)
     rw [mem₄, alphaMem_bytes, m₃,
       Proof.Cmac.bytesAt_frame (Proof.Cmac.xor4Mem_frame _ _ _ _) (one (hp.blk_iv hk).symm) (by decide), ivIn]
   have hl : (outK (AesXts.xtsMode enc) s₀ k).length = k := by
-    rw [outK, Mode.length_out]; simp [Spec.Cbc.blocksAt]; omega
+    rw [outK, Mode.length_out]; simp [Spec.Cbc.blocksAt]; omega_using [hk]
   have outSucc :
       outK (AesXts.xtsMode enc) s₀ (k + 1) = outK (AesXts.xtsMode enc) s₀ k ++ [bytesAt s₄.mem (blk s₀ k) 16] := by
     rw [newBlk]

@@ -58,10 +58,10 @@ theorem setup_ok {X : List Byte} {a b : Addr} {τ : Nat} {s : State}
     exact readW_leNat _ _ _ hbuf
   · rw [hu.get .x10,o₉.get .x10,o₈.get .x10,o₇.get .x10,o₆.get .x10,o₅.get .x10,o₄.get .x10,e₃,
       BitVec.toNat_sub,e₂,o₂.get .x27,o₁.get .x27,h27]
-    simp; omega
+    simp; omega_arith
   · rw [hu.get .x11,o₉.get .x11,o₈.get .x11,o₇.get .x11,o₆.get .x11,o₅.get .x11,e₄,
       o₃.get .x27,o₂.get .x27,o₁.get .x27,h27]
-    omega
+    omega_arith
   · rw [hu.get .x12,o₉.get .x12,e₈,toNat_sub_n (by rw [e₇,q_eq]; decide),e₇,q_eq]; rfl
   · rw [hu.get .x15,e₉]; rfl
   · rw [mu]; intro j hj
@@ -97,18 +97,18 @@ theorem first_ok {X : List Byte} (hX : X.length=136) {a b : Addr} {τ : Nat} {s 
     (hsep : (⟨b,136⟩ : Region).Disjoint (polyR a))
     (hz : ∀ j<256,coeffAt s.mem a j=0) :
     WP isa Impl.MlDsa.AArch64.Optimized.Ball.first s (FirstPost X a τ s) := by
-  refine WP.seq (WP.mono (setup_ok h25 h26 h27 (by omega) hinw (fun j hj => hbuf j (by omega)) hz)
+  refine WP.seq (WP.mono (setup_ok h25 h26 h27 (by omega_arith) hinw (fun j hj => hbuf j (by omega_using [hj])) hz)
     fun t ⟨kt,mt,t2,t5,tp⟩ => ?_)
   have len : (X.drop 8).length=128 := by rw [List.length_drop,hX]
   have addr (j : Nat) : b+8+BitVec.ofNat 64 j=b+BitVec.ofNat 64 (8+j) := by
     rw [BitVec.add_assoc,BitVec.ofNat_add]; rfl
   refine WP.mono (chunk_ok (L := X.drop 8) (b := b+8) (τ := τ) (h := signs X)
-    (by rw [len]; decide) (by rw [len]; decide) (by omega) tp t2 (by rw [len]; exact t5)
+    (by rw [len]; decide) (by rw [len]; decide) (by omega_using []) tp t2 (by rw [len]; exact t5)
     (fun j hj => ?_) (fun j hj => ?_) (by rw [kt.wr]; exact hw) ?_
-    (fun j hj hjn => sign_bit (by omega) hj hjn hτ)) fun u hu => ?_
-  · rw [mt,addr,hbuf _ (by rw [len] at hj; omega)]
+    (fun j hj hjn => sign_bit (by omega_arith) hj hjn hτ)) fun u hu => ?_
+  · rw [mt,addr,hbuf _ (by rw [len] at hj; omega_using [hj])]
     simp only [List.getD_eq_getElem?_getD,List.getElem?_drop]
-  · rw [kt.rd,kt.wr,addr]; exact hin _ (by rw [len] at hj; omega)
+  · rw [kt.rd,kt.wr,addr]; exact hin _ (by rw [len] at hj; omega_using [hj])
   · exact hsep.sub_left (Offset.sub_base b (d := 8) (by rw [len]))
   · refine ⟨(kt.trans hu.keep).mono (by decide),?_,?_⟩
     · rw [← mt]; exact hu.frame

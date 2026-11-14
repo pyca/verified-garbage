@@ -213,9 +213,9 @@ theorem roundT_tr {F S p ai au af : Addr} {src srcLen dst dstLen c : Nat} (hf : 
         (hg _ (by decide)).trans x0, (hg _ (by decide)).trans x1, (hg _ (by decide)).trans x2,
         (hg _ (by decide)).trans x3, (hg _ (by decide)).trans x4⟩)
       (by taint_decide) (by taint_decide) (by decide)
-      (lr_upd hG (BitVec.ofNat 64 0) (a := src) (len := srcLen) (by omega) (by omega) (by omega) fun _ _ h => h.2))
-    fun t V W L R ⟨hx, x0, _, x2, x3, x4⟩ => WP.mono (wp_sy (updT_ok hG L R hx.2.1 hx.2.2.2.at (by omega)
-      (by omega) (by omega) x0 x2 x3 x4)) fun u ⟨⟨Lu, Su, Ru, _⟩, sy⟩ => ⟨_, W, Lu, Ru, hx.step Su sy⟩).seq ?_
+      (lr_upd hG (BitVec.ofNat 64 0) (a := src) (len := srcLen) (by omega_using [c1, c5, hfs]) (by omega_using [hfs]) (by omega_using [c1, c4, hfs]) fun _ _ h => h.2))
+    fun t V W L R ⟨hx, x0, _, x2, x3, x4⟩ => WP.mono (wp_sy (updT_ok hG L R hx.2.1 hx.2.2.2.at (by omega_using [c1, c5, hfs])
+      (by omega_using [hfs]) (by omega_using [c1, c4, hfs]) x0 x2 x3 x4)) fun u ⟨⟨Lu, Su, Ru, _⟩, sy⟩ => ⟨_, W, Lu, Ru, hx.step Su sy⟩).seq ?_
   -- The counter, and `update` with it.
   refine (lr_wp (X' := fun W t => X W t ∧ t.gpr .x0 = off S oSt ∧
       t.gpr .x1 = BitVec.ofNat 64 srcLen ∧ t.gpr .x2 = off S oCtr ∧ t.gpr .x3 = BitVec.ofNat 64 4 ∧
@@ -224,7 +224,7 @@ theorem roundT_tr {F S p ai au af : Addr} {src srcLen dst dstLen c : Nat} (hf : 
         exact RelCT.block_append (lr_seq_tr [.x2] (fun _ => off S oCtr) (by taint_decide) (by taint_decide)
           fun t V W L R _ => WP.mono (scr_pin L .x2 (o := oCtr) (by decide)) fun u ⟨hs, x2⟩ =>
             ⟨hs, fun r hr => by rw [List.mem_singleton.mp hr]; exact x2⟩))
-    fun t V W L R hx => WP.mono (wp_sy (updCtr_ok L R hx.1.1.hsl hx.1.2.1 (by omega) []))
+    fun t V W L R hx => WP.mono (wp_sy (updCtr_ok L R hx.1.1.hsl hx.1.2.1 (by omega_using [hc, hdb, hcD]) []))
       fun u ⟨⟨Lu, Su, Ru, x0, x1, x2, x3, x4⟩, sy⟩ => ⟨_, W, Lu, Ru, hx.step Su sy, x0, x1, x2, x3, x4⟩).seq ?_
   refine (lr_wp (X' := X) (lr_tcall 1 (X := fun W t => X W t ∧ t.gpr .x0 = off S oSt ∧
       t.gpr .x1 = BitVec.ofNat 64 srcLen ∧ t.gpr .x2 = off S oCtr ∧ t.gpr .x3 = BitVec.ofNat 64 4 ∧
@@ -233,9 +233,9 @@ theorem roundT_tr {F S p ai au af : Addr} {src srcLen dst dstLen c : Nat} (hf : 
         (hg _ (by decide)).trans x0, (hg _ (by decide)).trans x1, (hg _ (by decide)).trans x2,
         (hg _ (by decide)).trans x3, (hg _ (by decide)).trans x4⟩)
       (by taint_decide) (by taint_decide) (by decide)
-      (lr_upd hG (BitVec.ofNat 64 srcLen) (a := oCtr) (len := 4) (by omega) (by omega) (by omega) fun _ _ h => h.2))
+      (lr_upd hG (BitVec.ofNat 64 srcLen) (a := oCtr) (len := 4) (by omega_using [c3, c5]) (by omega_using [hzS, c1, c3]) (by omega_using [c3, c4]) fun _ _ h => h.2))
     fun t V W L R ⟨hx, x0, _, x2, x3, x4⟩ => WP.mono (wp_sy (updT_ok hG L R hx.2.1 hx.2.2.2.at (a := oCtr)
-      (len := 4) (by omega) (by omega) (by omega) x0 x2 x3 x4)) fun u ⟨⟨Lu, Su, Ru, _⟩, sy⟩ =>
+      (len := 4) (by omega_using [c3, c5]) (by omega_using [hzS, c1, c3]) (by omega_using [c3, c4]) x0 x2 x3 x4)) fun u ⟨⟨Lu, Su, Ru, _⟩, sy⟩ =>
         ⟨_, W, Lu, Ru, hx.step Su sy⟩).seq ?_
   -- `finalize`.
   refine (lr_wp (X' := fun W t => X W t ∧ t.gpr .x0 = off S oSt ∧
@@ -258,18 +258,18 @@ theorem roundT_tr {F S p ai au af : Addr} {src srcLen dst dstLen c : Nat} (hf : 
       (fun r => if r = .x11 then off S oDig else if r = .x12 then off S (dst + c * G.D)
         else BitVec.ofNat 64 (min G.D (dstLen - c * G.D)))
       (by taint_decide) (by taint_decide)
-      fun t V W L R hx => WP.mono (xorHeadT_ok L R (D := G.D) (by omega) (by omega) hx.2.2.1 hx.1.1.hdst
+      fun t V W L R hx => WP.mono (xorHeadT_ok L R (D := G.D) (by omega_using [hzF, hzDF]) (by omega_using [hdb]) hx.2.2.1 hx.1.1.hdst
         hx.1.1.hdl hx.1.2.2 hc []) fun u ⟨Su, _, x11, x12, x14⟩ => ⟨Su.sp, by
           simp only [List.mem_cons, List.not_mem_nil, or_false]
           rintro r (rfl | rfl | rfl) <;> simp [x11, x12, x14]⟩)
-    fun t V W L R hx => WP.mono (wp_sy (xorOutT_ok L R hfd hzD (by omega) hx.2.2.1 hx.1.1.hdst hx.1.1.hdl
+    fun t V W L R hx => WP.mono (wp_sy (xorOutT_ok L R hfd hzD (by omega_using [hzF, hzDF]) hx.2.2.1 hx.1.1.hdst hx.1.1.hdl
       hx.1.2.2 hc [])) fun u ⟨⟨Lu, Su, Ru⟩, sy⟩ => ⟨_, W, Lu, Ru, hx.step Su sy⟩).seq ?_
   -- The next counter.
   refine lr_wp (lr_taint [] (by taint_decide) nopin)
     fun t V W L R hx => WP.mono (wp_sy (nextCtrT_ok L R (D := G.D) hx.1.2.1 hx.1.2.2 hx.1.1.hdl hx.2.2.1
-        (by omega) (by omega) []))
+        (by omega_using [hc, hzF, hzDF, hdb]) (by omega_using [hdb]) []))
       fun u ⟨⟨Lu, Su, x12, Ru⟩, sy⟩ => ⟨_, _, Lu, Ru, ⟨⟨hx.1.1.of_eq fun k h1 h2 => by
-        simp only [upd]; rw [ifn (by omega), ifn (by omega)], by simp [upd], by simp [upd, Nat.succ_mul]⟩,
+        simp only [upd]; rw [ifn (by omega_using [h2]), ifn (by omega_using [h2])], by simp [upd], by simp [upd, Nat.succ_mul]⟩,
         by simp only [upd]; exact hx.2.1, by simp only [upd]; exact hx.2.2.1, hx.2.2.2.step Su sy⟩,
         by rw [x12, Nat.succ_mul]⟩
 
@@ -284,14 +284,14 @@ theorem mgfXorT_tr {F S p ai au af : Addr} {sArg : Nat} (hsa : sArg < 32768 ∧ 
     RelCT isa (LR F S X) (Impl.RsaOaep.AArch64.Mgf1.Table.mgfXor lay sArg sTab sD f) fun _ _ => True := by
   obtain ⟨-, -, -, -, hzD⟩ := sizes hG
   replace hzD : 0 < G.D := hzD
-  have hN : 0 < (dstLen + G.D - 1) / G.D := (lt_ceil hzD).mpr (by have := hf.pos; omega)
+  have hN : 0 < (dstLen + G.D - 1) / G.D := (lt_ceil hzD).mpr (by have := hf.pos; omega_using [this])
   unfold Impl.RsaOaep.AArch64.Mgf1.Table.mgfXor seqs seqs
   -- The table's address to its slot, and in `x10`.
   refine (lr_wp (X' := fun W t => MArgs W S src srcLen dst dstLen ∧ W 32 = p ∧ TT G f F S p ai au af t ∧
       t.gpr .x10 = p) (lr_taint [] htA nopin) fun t V W L R hx => ?_).seq ?_
   · obtain ⟨hA, T, hai, hau, haf⟩ := hX W t hx
     refine WP.mono (wp_sy (tabArg_ok (G := G) hsa L R T)) fun u ⟨⟨Lu, Su, Ru, x10⟩, sy⟩ =>
-      ⟨V, _, Lu, Ru, hA.of_eq fun k h1 h2 => by simp only [upd]; rw [ifn (by omega)], by simp [upd],
+      ⟨V, _, Lu, Ru, hA.of_eq fun k h1 h2 => by simp only [upd]; rw [ifn (by omega_using [h2])], by simp [upd],
         ⟨⟨t, sArg, T, Su, sy⟩, by rw [sy]; exact hai, by rw [sy]; exact hau, by rw [sy]; exact haf⟩, x10⟩
   -- The digest length to its slot, the counter and `done` to 0.
   refine (lr_wp (X' := MXT G f S p ai au af F src srcLen dst dstLen 0)
@@ -305,7 +305,7 @@ theorem mgfXorT_tr {F S p ai au af : Addr} {sArg : Nat} (hsa : sArg < 32768 ∧ 
     refine WP.mono (wp_sy (tabHead_ok (G := G) L R x10 hrd hD [] dst dstLen)) fun v ⟨I, syv⟩ => ?_
     obtain ⟨V', W', R', h17, h18, hW, -⟩ := I.rep
     refine ⟨V', W', I.L, R', ⟨(hA.of_eq fun k h1 h2 => by
-        rw [hW k (by unfold nW frameBytes; omega) (by omega) (by omega)]; simp only [upd]; rw [ifn (by omega)]),
+        rw [hW k (by unfold nW frameBytes; omega_using [h2]) (by omega_using [h2]) (by omega_using [h2])]; simp only [upd]; rw [ifn (by omega_using [h2])]),
       h17, by rw [h18, Nat.zero_mul]⟩, ?_, ?_, hT.step I.st syv⟩
     · rw [hW 32 (by decide) (by decide) (by decide)]; simp only [upd]; exact h32
     · rw [hW 33 (by decide) (by decide) (by decide)]; simp [upd]
@@ -314,8 +314,8 @@ theorem mgfXorT_tr {F S p ai au af : Addr} {sArg : Nat} (hsa : sArg < 32768 ∧ 
     (roundT_tr hG hf ((lt_ceil hzD).mp hc)).mono (fun _ _ h => h)
       fun a b ⟨⟨Va, Wa, La, Ra, xa, ca⟩, ⟨Vb, Wb, Lb, Rb, xb, cb⟩⟩ =>
         ⟨⟨⟨Va, Wa, La, Ra, xa⟩, ⟨Vb, Wb, Lb, Rb, xb⟩⟩,
-          by rw [ca]; exact decide_eq_decide.mpr (by rw [← lt_ceil hzD]; omega),
-          by rw [cb]; exact decide_eq_decide.mpr (by rw [← lt_ceil hzD]; omega)⟩).mono
+          by rw [ca]; exact decide_eq_decide.mpr (by rw [← lt_ceil hzD]; omega_using [hc]),
+          by rw [cb]; exact decide_eq_decide.mpr (by rw [← lt_ceil hzD]; omega_using [hc])⟩).mono
     (fun _ _ h => h) fun _ _ _ => trivial
 
 end VG.Proof.RsaOaep.AArch64.Table

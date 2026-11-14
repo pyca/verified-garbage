@@ -160,9 +160,9 @@ def LI (n : Nat) (s₁ s₂ : State) : Prop :=
 theorem li_brel {n : Nat} {s₁ s₂ : State} (h : LI n s₁ s₂) : BRel s₁ s₂ := by
   obtain ⟨σ₁, σ₂, t, p₁, p₂, hq, _, ht, l₁, l₂⟩ := h
   have rs : ∀ {σ s}, sbK.pre σ → BAt σ t s → InRegions (s.rd ++ s.wr) (s.gpr .rsi) 1 := fun hp h => by
-    rw [h.rsi, at_add]; exact inScrRd (spOk hp) h.env (by omega)
+    rw [h.rsi, at_add]; exact inScrRd (spOk hp) h.env (by omega_using [ht])
   have bt : ∀ {σ s}, BAt σ t s → s.mem (s.gpr .rsi) = (X σ).getD (8 + t) 0 := fun h => by
-    rw [h.rsi, at_add, show 848 + t = 840 + (8 + t) by omega, ← at_add, out_getD h.out (by omega)]
+    rw [h.rsi, at_add, show 848 + t = 840 + (8 + t) by omega_using [], ← at_add, out_getD h.out (by omega_using [ht])]
   refine ⟨fun r hr => ?_, by rw [bt l₁, bt l₂, pub_X hq], rs p₁ l₁, rs p₂ l₂⟩
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl | rfl
@@ -185,8 +185,8 @@ theorem loop_ct (n : Nat) :
     obtain ⟨l₁', z₁⟩ := f₁ (σ₁, t) ⟨p₁, ht, l₁⟩
     obtain ⟨l₂', z₂⟩ := f₂ (σ₂, t) ⟨p₂, ht, l₂⟩
     have ez : (BitVec.ofNat 64 (264 - t) - 1 == 0) = decide (t + 1 = 264) := by
-      rw [ofNat64_pred (by omega) (by omega), ofNat64_beq_zero (by omega)]
-      exact decide_eq_decide.mpr (by omega)
+      rw [ofNat64_pred (by omega_using [ht]) (by omega_using []), ofNat64_beq_zero (by omega_using [])]
+      exact decide_eq_decide.mpr (by omega_using [ht])
     rw [ez] at z₁ z₂
     refine ⟨by show x'.zf.map _ = y'.zf.map _; rw [z₁, z₂], fun hf => ?_, fun ht' => ?_⟩
     · have : t + 1 = 264 := by
@@ -197,7 +197,7 @@ theorem loop_ct (n : Nat) :
     · have : t + 1 ≠ 264 := by
         have : x'.zf.map (!·) = some true := ht'
         rw [z₁] at this; simpa using this
-      exact ⟨264 - (t + 1), by omega, σ₁, σ₂, t + 1, p₁, p₂, hq, rfl, by omega, l₁', l₂'⟩
+      exact ⟨264 - (t + 1), by omega_using [hn, ht], σ₁, σ₂, t + 1, p₁, p₂, hq, rfl, by omega_using [ht, this], l₁', l₂'⟩
 
 theorem hok : ∀ σ, sbK.pre σ → SpOk (spOf σ) σ := fun _ hp => spOk hp
 
@@ -214,7 +214,7 @@ theorem tail_ct : RelCT isa (Rel2 sbK.pre sbK.pub fun σ => J6 136 272 (spOf σ)
       (taintSp hpub (J := fun P σ s => ZDone σ s) (fun _ _ h => h.env) [] nil_regs (by taint_decide)))
     (RelCT.seq (RelCT.mono (relInv (I' := fun σ s => BAt σ 0 s) (fun σ s _ h => h) (RelCT.mono
         (taintRel [] nil_regs (by taint_decide)) (fun _ _ _ => trivial) fun _ _ _ => trivial))
-      (fun _ _ h => h) fun _ _ ⟨σ₁, σ₂, p₁, p₂, hq, l₁, l₂⟩ => ⟨σ₁, σ₂, 0, p₁, p₂, hq, rfl, by omega, l₁, l₂⟩)
+      (fun _ _ h => h) fun _ _ ⟨σ₁, σ₂, p₁, p₂, hq, l₁, l₂⟩ => ⟨σ₁, σ₂, 0, p₁, p₂, hq, rfl, by omega_using [], l₁, l₂⟩)
       (loop_ct 264))) ?_
   exact taintSp hpub (J := fun P σ s => BAt σ 264 s) (fun _ _ h => h.env) [] nil_regs (by taint_decide)
 

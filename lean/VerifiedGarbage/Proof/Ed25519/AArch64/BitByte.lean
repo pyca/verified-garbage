@@ -18,7 +18,7 @@ open VG VG.AArch64 VG.Impl.Ed25519.AArch64
 theorem sub_toNat_lt_one (x a : Addr) : (x - a).toNat < 1 ↔ x = a := by
   constructor
   · intro h
-    have h0 : x - a = 0 := BitVec.eq_of_toNat_eq (by rw [show (0 : Addr).toNat = 0 from rfl]; omega)
+    have h0 : x - a = 0 := BitVec.eq_of_toNat_eq (by rw [show (0 : Addr).toNat = 0 from rfl]; omega_using [h])
     calc x = x - a + a := (BitVec.sub_add_cancel x a).symm
       _ = a := by rw [h0]; exact BitVec.zero_add a
   · rintro rfl; simp
@@ -57,15 +57,15 @@ theorem expandScalarBit_ok {s : State} {base : Addr} (hs : Scr s base)
       t.mem = s.mem.writeW (off base (768 + (8 * i + j))) (BitVec.ofNat 8 ((b.toNat >>> j) &&& 1)) := by
   have _hcap : workSize true = 8192 := rfl
   have hw : InRegions s.wr (off base (768 + (8 * i + j))) 1 :=
-    ⟨_, hs.wr, Offset.contains_base _ (by omega) (by omega)⟩
+    ⟨_, hs.wr, Offset.contains_base _ (by omega_using [hi, hj, _hcap]) (by omega_using [hi, hj])⟩
   have he : off base (8 * i) + BitVec.ofNat 64 (768 + j) = off base (768 + (8 * i + j)) := by
-    rw [Offset.add_add]; exact congrArg (off base) (by omega)
+    rw [Offset.add_add]; exact congrArg (off base) (by omega_using [])
   apply WP.of_runBlock
   simp only [expandScalarBit, runBlock_cons, runStep_some, runBlock_nil, exec, State.read,
-    show j < Size.x.bits from by change j < 64; omega,
+    show j < Size.x.bits from by change j < 64; omega_using [hj],
     addr, State.store, RegUpd.gpr_write, RegUpd.wr_write, RegUpd.mem_write,
     BitVec.setWidth_eq, hp, hone, hb, he, hw, Nat.mod_one,
-    show 768 + j < 4096 * 1 from by omega, and_self,
+    show 768 + j < 4096 * 1 from by omega_using [hj], and_self,
     ite_true, ite_false, reduceCtorEq, bit_byte b j hj,
     Option.bind_some, Option.some.injEq, exists_eq_left']
   refine ⟨fun r hr => ?_, rfl, True.intro, rfl, ?_⟩
@@ -93,20 +93,20 @@ theorem scalarBitPrefix_ok {s : State} {base : Addr} (hs : Scr s base)
   | succ n ih =>
     rw [List.range_succ, List.flatMap_append, List.flatMap_cons, List.flatMap_nil,
       List.append_nil, WP.block_append_iff]
-    refine WP.mono (ih hs (by omega) hp hone hb) fun t ⟨hk, hv⟩ => ?_
-    refine WP.mono (expandScalarBit_ok (hk.scratch hs) i n hi (by omega)
+    refine WP.mono (ih hs (by omega_using [hn]) hp hone hb) fun t ⟨hk, hv⟩ => ?_
+    refine WP.mono (expandScalarBit_ok (hk.scratch hs) i n hi (by omega_using [hn])
       ((hk.gpr _ (by decide)).trans hp) ((hk.gpr _ (by decide)).trans hone) b ((hk.gpr _ (by decide)).trans hb))
       fun u ⟨ug, ur, uw, usp, um⟩ => ?_
     refine ⟨⟨fun r hr => (ug r hr).trans (hk.gpr r hr), ur.trans hk.rd, uw.trans hk.wr, usp.trans hk.sp, ?_⟩, ?_⟩
     · intro p hp
-      rw [um, writeW8_outside _ _ _ (by omega) (by omega), hk.mem p (by omega)]
+      rw [um, writeW8_outside _ _ _ (by omega_using [hi, hn]) (by omega_using [hp]), hk.mem p (by omega_using [hp])]
     · intro j hj
       rw [um, writeW8_apply]
       by_cases h : j = n
       · subst j; rw [ite_eq_left rfl]
       · rw [ite_eq_right (fun he => h (by
-          have hh := (off_eq_iff base (by omega) (by omega)).mp he
-          omega))]
-        exact hv j (by omega)
+          have hh := (off_eq_iff base (by omega_using [hi, hn, hj]) (by omega_using [hi, hn])).mp he
+          omega_using [hh]))]
+        exact hv j (by omega_using [hj, h])
 
 end VG.Proof.Ed25519.AArch64

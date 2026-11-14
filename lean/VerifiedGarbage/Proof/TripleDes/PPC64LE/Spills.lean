@@ -37,7 +37,7 @@ theorem ConstsAt.of_frame {s t : State} (h : ConstsAt s) (hb : t.gpr .r5 = s.gpr
   exact hf.readW (r := ⟨wordAddr (s.gpr .r5) (15 + c), 8⟩) (Region.contains_self _ _)
     (fun q hq => by
       obtain rfl := List.mem_singleton.mp hq
-      exact Offset.disjoint _ (Or.inl (by omega)) (by omega) (by omega)) (by decide)
+      exact Offset.disjoint _ (Or.inl (by omega_using [hc])) (by omega_using [hc]) (by omega_using [])) (by decide)
 
 theorem ConstsAt.congr {s t : State} (h : ConstsAt s) (hb : t.gpr .r5 = s.gpr .r5)
     (hm : t.mem = s.mem) : ConstsAt t :=

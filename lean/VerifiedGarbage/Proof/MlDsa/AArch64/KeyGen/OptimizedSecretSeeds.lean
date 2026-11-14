@@ -38,7 +38,7 @@ theorem secretSlot_ok {p : Params} (hF : PFacts p) {S : Nat} {σ : State} (hp : 
     (fun k hk=>by layd) (fun k hk=>by layd) (hk1.get .x24)
   have L1:=h1.k1.kc.lay hF hp
   refine WP.mono (setTwo_ok L1 (o := 1408+66*j+64) (a := nonce j) (b := 0)
-    (by omega) (by layd) (by layd)) fun t ⟨hP2,hk2,hb2⟩=>?_
+    (by omega_using [hj]) (by layd) (by layd)) fun t ⟨hP2,hk2,hb2⟩=>?_
   refine ⟨h1.keep hF hp hP2 (by unfold k1Chk kcChk; layd)
     (fun k hk=>by layd) (fun k hk=>by layd) (hk2.get .x24),fun k hk=>?_⟩
   by_cases he : k=j
@@ -48,7 +48,7 @@ theorem secretSlot_ok {p : Params} (hF : PFacts p) {S : Nat} {σ : State} (hp : 
       sc_add,←sc_pa hP1,hb2,VG.Proof.MlDsa.KeyGen.seedS_eq _ hn]
     rfl
   · rw [L1.keepBytes hP2 (by layd),L.keepBytes hP1 (by layd)]
-    exact h.done k (by omega)
+    exact h.done k (by omega_using [hk, he])
 
 
 def secretSeedsCode (nonce : Nat→Nat) : List Instr :=
@@ -60,7 +60,7 @@ theorem secretSeeds_ok {p : Params} (hF : PFacts p) {S : Nat} {σ : State} (hp :
     {s : State} (h : KSamp p σ (p.k*p.ℓ) r s) :
     WP isa (.block (secretSeedsCode nonce)) s (SecretSeeds p σ r nonce 4) := by
   exact wp_range_flatMap (M := isa) (N := 4) (fun j t=>SecretSeeds p σ r nonce j t)
-    (fun j t hj ht=>secretSlot_ok hF hp hr hj (hn j hj) ht) 4 (by omega) s
+    (fun j t hj ht=>secretSlot_ok hF hp hr hj (hn j hj) ht) 4 (by omega_using []) s
     ⟨h,fun _ hi=>False.elim (Nat.not_lt_zero _ hi)⟩
 
 end VG.Proof.MlDsa.AArch64.KeyGen.Optimized

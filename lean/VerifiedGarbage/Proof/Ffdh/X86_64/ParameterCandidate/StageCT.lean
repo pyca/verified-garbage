@@ -58,7 +58,7 @@ private theorem load_number (q : Bool) (c : Checks) (d : CandidatePublic) (s : S
     fun j hj => hb.scr.ld (by omega_using [hj, hb.header_room])
   have hlinkrd := hg.scr.ld (show 8 * sLink + 8 ≤ d.p.Z - 256 by
     have hz := (hb.phase_dims q).z
-    change 136 ≤ d.p.Z - 256; unfold slot hdrBytes at hz; omega)
+    change 136 ≤ d.p.Z - 256; unfold slot hdrBytes at hz; omega_using [hz])
   have hout := hb.hdr (oOut, d.p.op) (by simp [CandidateP.headers])
   have hlen := hb.hdr (oLen, BitVec.ofNat 64 d.p.k) (by simp [CandidateP.headers])
   refine WP.mono (WP.keep [.rax, .rsi, .rcx] (Q := fun t => t.gpr .rsi = d.p.op ∧

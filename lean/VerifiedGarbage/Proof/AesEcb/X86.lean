@@ -142,7 +142,7 @@ theorem encrypt_verified (v : BlocksImpl) :
       ("data", .slice true (.array .u8 16) "n")]) (ps₂ := []) (i := 4) (j := 4)
     (Verified.tail_of_written (Proof.Aes.encryptBlocks_keyed (enc_verified v)) (enc_written v) args_length)
     Proof.Zeroize.X86.verified
-    (by decide) rfl rfl (by decide) (Nat.le_trans v.encWrittenLe (by decide)) (by have := v.encWrittenLe; omega)
+    (by decide) rfl rfl (by decide) (Nat.le_trans v.encWrittenLe (by decide)) (by have := v.encWrittenLe; omega_using [this])
     (by decide) v.encNosp (by rw [v.encStack]) zeroize_noSp zeroize_stack (by decide)
     (pre_local 32) (postTail_local 32 _ _) (postTail_out 32 _ v.encWrittenLe) (wipedTail 32 _ _) (sat' _)
 
@@ -155,7 +155,7 @@ theorem decrypt_verified (v : BlocksImpl) :
       ("data", .slice true (.array .u8 16) "n")]) (ps₂ := []) (i := 4) (j := 4)
     (Verified.tail_of_written (Proof.Aes.decryptBlocks_keyed (dec_verified v)) (dec_written v) args_length)
     Proof.Zeroize.X86.verified
-    (by decide) rfl rfl (by decide) (Nat.le_trans v.decWrittenLe (by decide)) (by have := v.decWrittenLe; omega)
+    (by decide) rfl rfl (by decide) (Nat.le_trans v.decWrittenLe (by decide)) (by have := v.decWrittenLe; omega_using [this])
     (by decide) v.decNosp (by rw [v.decStack]) zeroize_noSp zeroize_stack (by decide)
     (pre_local 32) (postTail_local 32 _ _) (postTail_out 32 _ v.decWrittenLe) (wipedTail 32 _ _) (sat' _)
 

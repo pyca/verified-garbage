@@ -808,7 +808,7 @@ theorem fin_vp (hg : Geo L scr) (G : Hash) (hG : HashOK G) {o c : Nat} (ho1 : o 
 /-- The load of the table's word `k`, through `r4`, its address. -/
 theorem tword_cert {k : Nat} (hk : k < 3) :
     ∃ hc, (VG.Taint.check VG.Arm.taint (Taint.ofRegs [.r4]) (.block [.ldr .r4 .r4 (4 * k)]) hc).isSome = true := by
-  rcases (show k = 0 ∨ k = 1 ∨ k = 2 by omega) with rfl | rfl | rfl <;> exact ⟨_, by taint_decide⟩
+  rcases (show k = 0 ∨ k = 1 ∨ k = 2 by omega_using [hk]) with rfl | rfl | rfl <;> exact ⟨_, by taint_decide⟩
 
 /-- The load of the table's digest length (its word 4), through `r0`, to its slot. -/
 theorem tabD_cert :

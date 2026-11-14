@@ -145,7 +145,7 @@ theorem initTail_wp {u : State} {S B : Addr} (h3 : u.gpr .r3 = S) (h4 : u.gpr .r
       (∀ r ∈ preserved, r ≠ .r30 → r ≠ .r31 → f.gpr r = u.gpr r) → Q f) :
     WP isa (.block (initSubkeys ++ initRestore)) u Q := by
   have inS : ∀ off, off + 8 ≤ 416 → InRegions u.wr (S + BitVec.ofNat 64 off) 8 := fun off h =>
-    ⟨_, hS, VG.Offset.contains_base _ h (by omega)⟩
+    ⟨_, hS, VG.Offset.contains_base _ h (by omega_using [h])⟩
   -- The slots of the working space are apart from the state's.
   have sep : ∀ off, off + 8 ≤ 640 → ∀ off', off' + 8 ≤ 416 →
       Region.Disjoint ⟨B + BitVec.ofNat 64 off, 8⟩ ⟨S + BitVec.ofNat 64 off', 8⟩ := fun off h off' h' =>
@@ -266,8 +266,8 @@ theorem init_wp (s : State) (hp : InitPre s) :
       t.mem.readW (s.gpr .r6 + BitVec.ofNat 64 off) 64 := fun off h1 h2 => by
     rw [fv.readW (Region.contains_self _ _) (fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr
-        exact VG.Offset.disjoint_base _ (by omega) (by omega)) (by decide),
-      mu, readW_sep64 (VG.Offset.disjoint _ (.inr (by omega)) (by omega) (by omega)),
+        exact VG.Offset.disjoint_base _ (by omega_using [h1]) (by omega_using [h2])) (by decide),
+      mu, readW_sep64 (VG.Offset.disjoint _ (.inr (by omega_using [h1])) (by omega_using [h2]) (by omega_using [])),
       f₁.readW (Region.contains_self _ _) (fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr; exact slotSched off h2) (by decide)]
   refine ⟨fun r hr => ?_, ?_, ?_⟩
@@ -285,7 +285,7 @@ theorem init_wp (s : State) (hp : InitPre s) :
       readW_sep64 (VG.Offset.disjoint _ (by decide) (by decide) (by decide)), Mem.readW_writeW_self64]
   · -- Frames of the memory through the steps.
     have cB : ∀ off, off + 8 ≤ 640 → (⟨s.gpr .r6, 640⟩ : Region).Contains (s.gpr .r6 + BitVec.ofNat 64 off) (64 / 8) :=
-      fun off h => VG.Offset.contains_base _ h (by omega)
+      fun off h => VG.Offset.contains_base _ h (by omega_using [h])
     have F0 : Frame [⟨s.gpr .r6, 640⟩] s.mem t.mem := by
       rw [ht.mem]
       exact (((Frame.refl _ _).writeW List.mem_cons_self _ (cB lrOff (by decide))).writeW List.mem_cons_self _
@@ -298,7 +298,7 @@ theorem init_wp (s : State) (hp : InitPre s) :
         exact ⟨_, List.mem_singleton_self _, Region.sub_prefix (by decide)⟩
     have cS : ∀ off, 384 ≤ off → off + 8 ≤ 408 →
         (⟨s.gpr .r3 + BitVec.ofNat 64 384, 24⟩ : Region).Contains (s.gpr .r3 + BitVec.ofNat 64 off) (64 / 8) :=
-      fun off h1 h2 => VG.Offset.contains _ h1 (by omega) (by omega)
+      fun off h1 h2 => VG.Offset.contains _ h1 (by omega_using [h2]) (by omega_using [])
     have F4 : Frame [⟨s.gpr .r3 + BitVec.ofNat 64 384, 24⟩] v.mem f.mem := by
       rw [mf, VG.Offset.add_add]
       exact (((Frame.refl _ _).writeW List.mem_cons_self _ (cS 384 (by decide) (by decide))).writeW
@@ -307,7 +307,7 @@ theorem init_wp (s : State) (hp : InitPre s) :
         Region.Disjoint ⟨s.gpr .r3, 384⟩ r := fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
-      · exact VG.Offset.base_disjoint _ (by decide) (by omega)
+      · exact VG.Offset.base_disjoint _ (by decide) (by omega_using [])
       · exact hp.stateScr.sub_left (Region.sub_prefix (by decide))
     have Fu : Frame [⟨s.gpr .r3 + BitVec.ofNat 64 384, 24⟩, ⟨s.gpr .r6, 640⟩] t₁.mem u.mem := F2.mono (by simp)
     have Ff : Frame [⟨s.gpr .r3 + BitVec.ofNat 64 384, 24⟩, ⟨s.gpr .r6, 640⟩] t₁.mem f.mem :=
@@ -316,7 +316,7 @@ theorem init_wp (s : State) (hp : InitPre s) :
         Spec.TripleDes.bytesAt s.mem (s.gpr .r4) (s.gpr .r5).toNat :=
       List.map_congr_left fun i hi => F0.bytes (R := ⟨s.gpr .r4, (s.gpr .r5).toNat⟩)
         (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact hp.keyScr)
-        (by have := (s.gpr .r5).isLt; show (s.gpr .r5).toNat ≤ 2 ^ 64; omega) (List.mem_range.mp hi)
+        (by have := (s.gpr .r5).isLt; show (s.gpr .r5).toNat ≤ 2 ^ 64; omega_using []) (List.mem_range.mp hi)
     rw [keyEq] at sch₁
     have schU : Spec.TripleDes.scheduleAt u.mem (s.gpr .r3) =
         Spec.TripleDes.expandKey (Spec.TripleDes.bytesAt s.mem (s.gpr .r4) (s.gpr .r5).toNat) := by
@@ -335,7 +335,7 @@ theorem init_wp (s : State) (hp : InitPre s) :
             (0 : BitVec 64) (Region.contains_self _ _)).bytes (R := ⟨s.gpr .r3 + BitVec.ofNat 64 384, 16⟩)
             (fun r hr => by
               simp only [List.mem_singleton] at hr; subst hr
-              exact VG.Offset.disjoint _ (.inl (by decide)) (by omega) (by omega)) (by show 16 ≤ 2 ^ 64; decide)
+              exact VG.Offset.disjoint _ (.inl (by decide)) (by omega_using []) (by omega_using [])) (by show 16 ≤ 2 ^ 64; decide)
             (List.mem_range.mp hi)
       show Spec.Aes.bytesAt f.mem (s.gpr .r3 + BitVec.ofNat 64 384) 16 = _
       rw [mf, drop, Proof.Cmac.bytesAt_store2, hL]

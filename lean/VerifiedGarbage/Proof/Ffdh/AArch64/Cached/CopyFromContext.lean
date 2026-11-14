@@ -20,17 +20,17 @@ theorem copyFromContext_ok {s : State} {B ctx : Addr} {Z w a d : Nat} {mi : BitV
  Good t B Z w mi ∧ wv t.mem B (slot w a) w=wv s.mem ctx d w ∧ Arrays B w [a] s.mem t.mem ∧
  t.gpr .x16=off ctx (d+8*w) ∧ Keep mmRegs s t := by
  have arrayRoom := Nat.le_trans (slot_le (w:=w) array) room
- have fit : slot w a+8*w≤2^64 := by have := good.scr.nowrap;omega
- refine WP.mono (copyWords_ok source output count (by omega) size fit readable
-  (fun i hi =>good.scr.st (by omega)) (fun i hi b hb =>Or.inr (by
-   have sep := outside (8*i+b) (by omega)
+ have fit : slot w a+8*w≤2^64 := by have := good.scr.nowrap;omega_using [arrayRoom, this]
+ refine WP.mono (copyWords_ok source output count (by omega_using [positive]) size fit readable
+  (fun i hi =>good.scr.st (by omega_using [arrayRoom, hi])) (fun i hi b hb =>Or.inr (by
+   have sep := outside (8*i+b) (by omega_using [hi, hb])
    have eq : off ctx (d+8*i)+BitVec.ofNat 64 b=off ctx d+BitVec.ofNat 64 (8*i+b) := by
     simp only [off,BitVec.ofNat_add,BitVec.add_assoc]
    rw [eq]
-   omega))) ?_
+   omega_using [arrayRoom, sep]))) ?_
  rintro t ⟨value,_,frame,pointer,_,rest⟩
  have arrays : Arrays B w [a] s.mem t.mem :=
-  Arrays.of_outside (j:=a) (by simp) frame (by omega) (by omega)
+  Arrays.of_outside (j:=a) (by simp) frame (by omega_using []) (by omega_using [])
  have total : Keep mmRegs s t := rest.mono (by simp [mmRegs])
  exact ⟨good_after_arrays good arrays total ((total.gpr .x0 (by simp [mmRegs])).trans good.x0),value,arrays,pointer,total⟩
 

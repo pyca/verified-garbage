@@ -21,13 +21,13 @@ theorem crt_wideSum_fits {a b c w : Nat} (ha : a < 2 ^ (64 * w))
   have positive : 0 < R := Nat.two_pow_pos _
   have product : a * b ≤ R * R := Nat.mul_le_mul (Nat.le_of_lt ha) (Nat.le_of_lt hb)
   have square : R ≤ R * R := by
-    have := Nat.mul_le_mul_left R (by omega : 1 ≤ R)
+    have := Nat.mul_le_mul_left R (by omega_using [positive] : 1 ≤ R)
     simpa only [Nat.mul_one] using this
   have twice : R * R + R * R ≤ R * R * 2 ^ 64 := by
     have := Nat.mul_le_mul_left (R * R) (by decide : 2 ≤ 2 ^ 64)
     simpa only [Nat.mul_two] using this
-  have bound : a * b + c < R * R * 2 ^ 64 := by omega
-  simpa only [show 32 * (4 * w + 2) = (64 * w + 64 * w) + 64 by omega, Nat.pow_add] using bound
+  have bound : a * b + c < R * R * 2 ^ 64 := by omega_using [hc, product, square]
+  simpa only [show 32 * (4 * w + 2) = (64 * w + 64 * w) + 64 by omega_using [], Nat.pow_add] using bound
 
 theorem CrtShared.recombine_input {s : State} {g : CrtGeometry} {bs : Fin 7 → List Byte}
     (h : CrtShared g bs s) (ready : LayoutFrameReady g.base (workspaceWords g.words) g.words s) :
@@ -36,17 +36,17 @@ theorem CrtShared.recombine_input {s : State} {g : CrtGeometry} {bs : Fin 7 → 
   have size := h.buffers.storageFits
   have fits : modulusOffset g.words + 4 * (4 * g.words + 2) ≤ g.size := Nat.le_trans (crt_modulus_end_le _) size
   have sep : productOffset g.words + 4 * (4 * g.words + 2) ≤ modulusOffset g.words := by
-    simp only [modulusOffset, compareOffset, productBytes, productWords]; omega
+    simp only [modulusOffset, compareOffset, productBytes, productWords]; omega_using []
   refine ⟨h.product_input ready true, h.pad_input ready,
-    ⟨h.buffers.workspace.nowrap, by omega, by omega, Or.inl (by omega), h.buffers.workspace.writable⟩,
-    by simp only [productOffset, stride]; omega, sep, ?_⟩
+    ⟨h.buffers.workspace.nowrap, by omega_using [fits, sep], by omega_using [fits], Or.inl (by omega_using [sep]), h.buffers.workspace.writable⟩,
+    by simp only [productOffset, stride]; omega_using [], sep, ?_⟩
   apply crt_wideSum_fits
-  · simpa only [show 32 * (2 * g.words) = 64 * g.words by omega] using
+  · simpa only [show 32 * (2 * g.words) = 64 * g.words by omega_using []] using
       val32_lt s.mem (State.addr g.base) (crtProductA g.words true) (2 * g.words)
-  · simpa only [show 32 * (2 * g.words) = 64 * g.words by omega] using
+  · simpa only [show 32 * (2 * g.words) = 64 * g.words by omega_using []] using
       val32_lt s.mem (State.addr g.base) (crtProductB g.words) (2 * g.words)
   · rw [numAt_native]
-    simpa only [show 32 * (2 * g.words) = 64 * g.words by omega] using
+    simpa only [show 32 * (2 * g.words) = 64 * g.words by omega_using []] using
       val32_lt s.mem (State.addr g.base) (Proof.Rsa.Mont.arrAt g.words 1) (2 * g.words)
 
 end VG.Proof.Bignum.Arm

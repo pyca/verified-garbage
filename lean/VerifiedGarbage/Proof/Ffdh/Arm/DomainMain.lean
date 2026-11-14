@@ -37,7 +37,7 @@ theorem domainMain_ok (s : State) {p : Inputs} {slots : List Nat} {yb : List Byt
   have extend {m m' : Mem} (f : Frame [⟨State.addr p.base, 8 * p.len⟩] m m') : Frame (prepareAtWrites p s) m m' :=
     f.mono (by intro r hr; rw [List.mem_singleton] at hr; subst r; exact List.mem_cons_self)
   have pStack : Region.Disjoint ⟨State.addr p.domain, p.k⟩ ⟨State.addr s.sp, 72⟩ :=
-    h.domainStack.sub_left (Region.sub_prefix (by rw [p.domainLength]; split <;> omega))
+    h.domainStack.sub_left (Region.sub_prefix (by rw [p.domainLength]; split <;> omega_using []))
   rw [VG.Impl.Ffdh.Arm.Domain.CheckDomain.main, WP.seq_iff]
   refine WP.mono (prepareAt_ok s 24 h stable h24 h32 h0 h.pBytes p.pLength pStack large odd) ?_
   rintro u ⟨contextU, readyU, modU, r2U, frameU, restU⟩
@@ -50,7 +50,7 @@ theorem domainMain_ok (s : State) {p : Inputs} {slots : List Nat} {yb : List Byt
     · exact valueStack.sub_right (Offset.sub_base _ (by decide)))
   rw [WP.seq_iff]
   refine WP.mono (importAt_ok u 1 56 32 contextU stable h56 h32 readyU (by decide) (by decide)
-    valueU (by rw [length]; have := p.minLength; omega) (by rw [length]; exact p.width.2.2.2.1)
+    valueU (by rw [length]; have := p.minLength; omega_using [this]) (by rw [length]; exact p.width.2.2.2.1)
     (by change BitVec.ofNat 32 p.k = _; rw [length])) ?_
   rintro v ⟨contextV, readyV, y, keepsV, frameV, restV⟩
   have bound : arrAt p.w 8 ≤ 8 * p.len := readyV.width ▸ readyV.layout.2.2.1

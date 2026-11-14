@@ -40,7 +40,7 @@ theorem toNat_add_mul8 {p : Addr} {k : Nat} (hal : p.toNat % 8 = 0) (hk : 8 * k 
     (p + BitVec.ofNat 64 (8 * k)).toNat % 8 = 0 := by
   rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := 8 * k) hk]
   have := p.isLt
-  omega
+  omega_using [hal]
 
 /-- After `k` doublewords of `copyLoopW` from `s₀`. -/
 structure CopyWInv (tmp src dst cnt : Reg) (N : Nat) (s₀ : State) (k : Nat) (s : State) : Prop where
@@ -65,7 +65,7 @@ theorem copyLoopW_ok {tmp src dst cnt : Reg} (h1 : tmp ≠ src) (h2 : tmp ≠ ds
       (∀ i < 8 * N, t.mem (s.gpr dst + BitVec.ofNat 64 i) = s.mem (s.gpr src + BitVec.ofNat 64 i)) ∧
       Frame [⟨s.gpr dst, 8 * N⟩] s.mem t.mem ∧ Keep [tmp, src, dst, cnt] s t := by
   refine WP.loop (M := isa) (fun n t => ∃ k, n = N - k ∧ CopyWInv tmp src dst cnt N s k t) ?_ N s
-    ⟨0, rfl, hN, by simp, by simp, by simp [hc], fun j hj => absurd hj (by omega), Frame.refl _ _,
+    ⟨0, rfl, hN, by simp, by simp, by simp [hc], fun j hj => absurd hj (by omega_using []), Frame.refl _ _,
       Keep.refl _ _⟩
   rintro n t ⟨k, rfl, I⟩
   have hk := I.le
@@ -73,16 +73,16 @@ theorem copyLoopW_ok {tmp src dst cnt : Reg} (h1 : tmp ≠ src) (h2 : tmp ≠ ds
     rw [I.keep.2.1, I.keep.2.2]; exact hr k hk
   have hdst : InRegions t.wr (s.gpr dst + BitVec.ofNat 64 (8 * k)) 8 := by
     rw [I.keep.2.2]; exact hw k hk
-  have als : (s.gpr src + BitVec.ofNat 64 (8 * k)).toNat % 8 = 0 := toNat_add_mul8 has (by omega)
-  have ald : (s.gpr dst + BitVec.ofNat 64 (8 * k)).toNat % 8 = 0 := toNat_add_mul8 had (by omega)
+  have als : (s.gpr src + BitVec.ofNat 64 (8 * k)).toNat % 8 = 0 := toNat_add_mul8 has (by omega_using [hN', hk])
+  have ald : (s.gpr dst + BitVec.ofNat 64 (8 * k)).toNat % 8 = 0 := toNat_add_mul8 had (by omega_using [hN', hk])
   -- The doubleword read is the source's: the destination is elsewhere.
   have hword : t.mem.readW (s.gpr src + BitVec.ofNat 64 (8 * k)) 64 =
       s.mem.readW (s.gpr src + BitVec.ofNat 64 (8 * k)) 64 :=
     I.frame.readW (Region.contains_self _ _) (fun r hr x h₁ h₂ => by
       simp only [List.mem_singleton] at hr; subst hr
       simp only [Region.Contains] at h₁ h₂
-      rw [Offset.toNat_sub_add x (s.gpr src) (by omega)] at h₁
-      exact hsep x h₂ (by omega)) (by decide)
+      rw [Offset.toNat_sub_add x (s.gpr src) (by omega_using [hN', hk])] at h₁
+      exact hsep x h₂ (by omega_using [hk, h₁])) (by decide)
   have e : WP isa (.block [.load .d tmp src 0, .store .d tmp dst 0, .addi src src 8, .addi dst dst 8,
       .addi cnt cnt (-1)]) t fun u =>
       u.mem = t.mem.writeW (s.gpr dst + BitVec.ofNat 64 (8 * k))
@@ -95,31 +95,31 @@ theorem copyLoopW_ok {tmp src dst cnt : Reg} (h1 : tmp ≠ src) (h2 : tmp ≠ ds
   refine WP.mono (WP.keep [tmp, src, dst, cnt] e (by
       simp [writesOnly, Code.allInstrs_eq, instrs, dstOf]) rfl) fun u ⟨⟨um, us, ud, uc⟩, uk⟩ => ?_
   have hc' : u.gpr cnt = BitVec.ofNat 64 (N - (k + 1)) := by
-    rw [uc, show (1#64 : BitVec 64) = BitVec.ofNat 64 1 from rfl, Offset.ofNat_sub_ofNat (by omega)]
+    rw [uc, show (1#64 : BitVec 64) = BitVec.ofNat 64 1 from rfl, Offset.ofNat_sub_ofNat (by omega_using [hk])]
     congr 1
   have hcopied : ∀ j < 8 * (k + 1), u.mem (s.gpr dst + BitVec.ofNat 64 j) =
       s.mem (s.gpr src + BitVec.ofNat 64 j) := by
     intro j hj
     rw [um]
     by_cases e : 8 * k ≤ j
-    · obtain ⟨r, hr, rfl⟩ : ∃ r, r < 8 ∧ j = 8 * k + r := ⟨j - 8 * k, by omega, by omega⟩
+    · obtain ⟨r, hr, rfl⟩ : ∃ r, r < 8 ∧ j = 8 * k + r := ⟨j - 8 * k, by omega_using [hj], by omega_using [e]⟩
       rw [← Offset.add_add, writeW_readW_byte _ _ _ _ hr, byte_readW t.mem _ hr, hword, ← byte_readW s.mem _ hr,
         Offset.add_add]
     · have hsep' : Mem.Sep (s.gpr dst + BitVec.ofNat 64 j) 1 (s.gpr dst + BitVec.ofNat 64 (8 * k)) 8 :=
-        Offset.sep _ (.inl (by omega)) (by omega) (by omega)
+        Offset.sep _ (.inl (by omega_using [e])) (by omega_using [hN', hk, hj]) (by omega_using [hN', hk])
       have := Mem.read_write_sep (m := t.mem) (v := (t.mem.readW (s.gpr src + BitVec.ofNat 64 (8 * k)) 64))
         hsep' (by decide)
       rw [read_one, read_one] at this
       rw [show t.mem.writeW _ _ = t.mem.write _ 8 _ from (write_eight _ _ _).symm, this,
-        I.copied j (by omega)]
+        I.copied j (by omega_using [e])]
   have hframe : Frame [⟨s.gpr dst, 8 * N⟩] s.mem u.mem := by
     rw [um]
-    exact I.frame.writeW (List.mem_singleton_self _) _ (Offset.contains_base _ (by omega) (by omega))
+    exact I.frame.writeW (List.mem_singleton_self _) _ (Offset.contains_base _ (by omega_using [hk]) (by omega_using [hN', hk]))
   have hkeep : Keep [tmp, src, dst, cnt] s u := (I.keep.trans uk).mono (by simp)
-  rw [Steps.eval_nonzero, hc', ofNat_bne_zero' (by omega)]
+  rw [Steps.eval_nonzero, hc', ofNat_bne_zero' (by omega_using [hN'])]
   by_cases e : k + 1 = N
-  · exact .inl ⟨by simp [e], fun i hi => hcopied i (by omega), hframe, hkeep⟩
-  · refine .inr ⟨by simp; omega, N - (k + 1), by omega, k + 1, rfl, by omega, ?_, ?_, hc', hcopied, hframe,
+  · exact .inl ⟨by simp [e], fun i hi => hcopied i (by omega_using [e, hi]), hframe, hkeep⟩
+  · refine .inr ⟨by simp; omega_using [hk, e], N - (k + 1), by omega_using [hk], k + 1, rfl, by omega_using [hk, e], ?_, ?_, hc', hcopied, hframe,
       hkeep⟩
     · rw [us, show (8#64 : BitVec 64) = BitVec.ofNat 64 8 from rfl, Offset.add_add]; congr 2
     · rw [ud, show (8#64 : BitVec 64) = BitVec.ofNat 64 8 from rfl, Offset.add_add]; congr 2
@@ -187,9 +187,9 @@ theorem copyAny_ok {tmp src dst cnt : Reg} (h1 : tmp ≠ src) (h2 : tmp ≠ dst)
       rw [vc, uc, hc]
       apply BitVec.eq_of_toNat_eq
       rw [BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hN',
-        Nat.shiftRight_eq_div_pow, Nat.mod_eq_of_lt (by omega)]
-    have hNe : 8 * (N / 8) = N := by omega
-    refine WP.mono (copyLoopW_ok h1 h2 h3 h4 h5 h6 v (N := N / 8) (by omega) (by omega) vc'
+        Nat.shiftRight_eq_div_pow, Nat.mod_eq_of_lt (by omega_using [hN'])]
+    have hNe : 8 * (N / 8) = N := by omega_using [h8]
+    refine WP.mono (copyLoopW_ok h1 h2 h3 h4 h5 h6 v (N := N / 8) (by omega_using [hN, h8]) (by omega_using [hN']) vc'
       (by rw [vs]; exact hal.1) (by rw [vd]; exact hal.2)
       (fun i hi => by rw [vs, vrd, vwr]; exact hr8 i hi hal.1)
       (fun i hi => by rw [vd, vwr]; exact hw8 i hi hal.2)

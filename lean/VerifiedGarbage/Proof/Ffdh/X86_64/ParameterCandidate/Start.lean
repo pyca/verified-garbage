@@ -55,7 +55,7 @@ theorem candidateEntry_base {s : State} (c : PcCtx s) :
         apply BitVec.eq_of_toNat_eq
         simp only [BitVec.toNat_ofNat, BitVec.toNat_setWidth]
       simpa only [CandidateP.headers, candidateOfState, BitVec.ofNat_toNat, BitVec.setWidth_eq, hg] using hh
-  refine ⟨⟨hbase, by omega, ?_, ?_, hused⟩, hd, hstatus, hframe, hsaved, k.mono (by decide)⟩
+  refine ⟨⟨hbase, by omega_using [], ?_, ?_, hused⟩, hd, hstatus, hframe, hsaved, k.mono (by decide)⟩
   · simpa only [candidateOfState, off, BitVec.ofNat_toNat, BitVec.add_zero] using hptr
   · simpa only [candidateOfState, bytesAt_length, Nat.sub_zero, BitVec.ofNat_toNat, BitVec.setWidth_eq] using hleft
 

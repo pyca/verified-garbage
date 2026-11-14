@@ -119,7 +119,7 @@ theorem afterEncP_ok (v : CrtImpl) (w : CrtPImpl) {g : Geometry} {bs : Fin 8 →
     refine WP.seq (WP.mono (callArgsP_ok hc Hc) ?_)
     rintro a ⟨ha, Ha, args, F, K⟩
     have retained : Spec.Rsa.bytesAt a.mem (byteAddr g.temporary) g.length = em := by
-      exact (VG.Proof.Rsa.rsa_bytes_frame F (by have := h.valid.maxLength; omega)
+      exact (VG.Proof.Rsa.rsa_bytes_frame F (by have := h.valid.maxLength; omega_using [this])
         (by intro r hr; obtain rfl := List.mem_singleton.mp hr; exact hc.temporaryArgsP)).trans bytes
     refine WP.seq (WP.mono (private_callP v w ha Ha args retained) ?_)
     rintro b ⟨hb, _, Fb, Kb, out⟩
@@ -127,7 +127,7 @@ theorem afterEncP_ok (v : CrtImpl) (w : CrtPImpl) {g : Geometry} {bs : Fin 8 →
     rintro t ⟨ht, _, ax, Ft, Kt⟩
     have output : Spec.Rsa.bytesAt t.mem (byteAddr g.output) g.length =
         Spec.Rsa.bytesAt b.mem (byteAddr g.output) g.length :=
-      VG.Proof.Rsa.rsa_bytes_frame Ft (by have := h.valid.maxLength; omega)
+      VG.Proof.Rsa.rsa_bytes_frame Ft (by have := h.valid.maxLength; omega_using [this])
         (by intro r hr; obtain rfl := List.mem_singleton.mp hr
             exact (h.valid.stackOutput.sub_left h.valid.innerSub).symm)
     refine ⟨ht, ?_, ?_, (C.keeps clobbers).trans ((K.mono (by decide)).trans
@@ -170,12 +170,12 @@ theorem signFnP_ok (v : CrtImpl) (w : CrtPImpl) (s : State) {g : Geometry} {bs :
       Spec.Rsa.writtenOutcome t.mem (byteAddr g.output) g.length (t.gpr .eax)
         (result g bs) := by
   have stackFit : 16 ≤ (s.gpr .esp).toNat := by
-    have := h.stackFit; unfold sigStack at this; omega
+    have := h.stackFit; unfold sigStack at this; omega_using [this]
   have allocation : VG.Impl.RsaPkcs1Sig.X86.Sign.frameBytes ≤ ((pushed savedRegisters s).gpr .esp).toNat := by
     rw [pushed_esp, show 4 * savedRegisters.length = 16 from rfl, sub_toNat stackFit]
     have := h.stackFit
     simp only [sigStack, VG.Impl.RsaPkcs1Sig.X86.Sign.frameBytes] at *
-    omega
+    omega_using [this]
   unfold code
   refine WP.frame (rs := savedRegisters) (by decide) (by decide) (by decide) stackFit
     (innerP_noSp v w) ?_
@@ -193,7 +193,7 @@ theorem signFnP_ok (v : CrtImpl) (w : CrtPImpl) (s : State) {g : Geometry} {bs :
   have fit : ((pushed savedRegisters s).gpr .esp).toNat + 16 ≤ 2 ^ 32 := by
     rw [pushed_esp, show 4 * savedRegisters.length = 16 from rfl, sub_toNat stackFit]
     have := (s.gpr .esp).isLt
-    omega
+    omega_using []
   have read (d : Nat) (hd : d + 4 ≤ 16) :
       InRegions ((VG.Proof.Dsa.X86.freed VG.Impl.RsaPkcs1Sig.X86.Sign.frameBytes u).rd ++
         (VG.Proof.Dsa.X86.freed VG.Impl.RsaPkcs1Sig.X86.Sign.frameBytes u).wr)
@@ -205,8 +205,8 @@ theorem signFnP_ok (v : CrtImpl) (w : CrtPImpl) (s : State) {g : Geometry} {bs :
     rw [show (s.gpr .esp - 16) = (pushed savedRegisters s).gpr .esp from (pushed_esp savedRegisters s).symm]
     change (⟨byteAddr ((pushed savedRegisters s).gpr .esp), 16⟩ : Region).Contains
       (byteAddr ((pushed savedRegisters s).gpr .esp + BitVec.ofNat 32 d)) 4
-    rw [byteAddr_add (by omega : ((pushed savedRegisters s).gpr .esp).toNat + d < 2 ^ 32)]
-    exact Offset.contains_base _ hd (by omega)
+    rw [byteAddr_add (by omega_using [fit, hd] : ((pushed savedRegisters s).gpr .esp).toNat + d < 2 ^ 32)]
+    exact Offset.contains_base _ hd (by omega_using [hd])
   refine WP.mono (restore_ok (VG.Proof.Dsa.X86.freed VG.Impl.RsaPkcs1Sig.X86.Sign.frameBytes u)
     (read 4 (by decide)) (read 8 (by decide)) (read 0 (by decide))) ?_
   rintro t ⟨edi, ebp, esi, memT, restT⟩

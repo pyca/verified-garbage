@@ -37,7 +37,7 @@ abbrev buWord (B y : Nat) : BitVec 32 := (subModQ (BitVec.ofNat 64 B) (BitVec.of
 theorem buFin_ok (B d : Nat) : FinOk buFin d (buWord B) (BitVec.ofNat 64 B) (BitVec.ofNat 64 q) :=
   fun j s h12 h13 hj hout _ =>
   wp_sub fun s₁ o₁ e₁ => wp_lsr (by decide) fun s₂ o₂ e₂ => wp_madd fun s₃ o₃ e₃ =>
-    wp_strw ⟨by omega, by omega⟩ (by rw [o₃.get .x4, o₂.get .x4, o₁.get .x4])
+    wp_strw ⟨by omega_using [], by omega_using [hj]⟩ (by rw [o₃.get .x4, o₂.get .x4, o₁.get .x4])
       (by rw [o₃.wr, o₂.wr, o₁.wr]; exact hout) fun s₄ h₄ => wp_nil ⟨by
         rw [h₄.mem, o₃.mem, o₂.mem, o₁.mem, e₃, e₂, o₂.get .x10, o₂.get .x13, e₁, o₁.get .x13, h12, h13,
           buWord, BitVec.ofNat_toNat, BitVec.setWidth_eq]; rfl,
@@ -48,7 +48,7 @@ abbrev t1Word (y : Nat) : BitVec 32 := (BitVec.ofNat 64 y <<< 13).setWidth 32
 
 theorem t1Fin_ok (K12 K13 : BitVec 64) : FinOk t1Fin 10 t1Word K12 K13 := fun j s _ _ hj hout _ =>
   wp_lsl (by decide) fun s₁ o₁ e₁ =>
-    wp_strw ⟨by omega, by omega⟩ (by rw [o₁.get .x4]) (by rw [o₁.wr]; exact hout) fun s₂ h₂ => wp_nil ⟨by
+    wp_strw ⟨by omega_using [], by omega_using [hj]⟩ (by rw [o₁.get .x4]) (by rw [o₁.wr]; exact hout) fun s₂ h₂ => wp_nil ⟨by
       rw [h₂.mem, o₁.mem, e₁, t1Word, BitVec.ofNat_toNat, BitVec.setWidth_eq], (o₁.keep.trans h₂.keep).mono⟩
 
 /-- A field of `d ≤ 20` bits of the input. -/
@@ -81,9 +81,9 @@ theorem bu_wp {s₀ : State} (hp : bitUnpackK.pre s₀) :
     have hy := field_lt (inNum s₀.mem (s₀.gpr .x0) d) d i hs.d20
     have hy' := hy
     unfold inNum at hy'
-    rw [hc' i hi, buWord, BitVec.toNat_setWidth, subModQ_toNat (by omega) (by omega),
+    rw [hc' i hi, buWord, BitVec.toNat_setWidth, subModQ_toNat (by omega_using [hq, hB19]) (by omega_using [hq, hy]),
       Nat.mod_eq_of_lt (Nat.lt_of_lt_of_le (Nat.mod_lt _ (show 0 < q by decide)) (by decide)),
-      toRq, Vector.getElem_map, bitUnpack_get _ _ _ hi, hlen, hd, hB, ofInt_sub (by omega)]
+      toRq, Vector.getElem_map, bitUnpack_get _ _ _ hi, hlen, hd, hB, ofInt_sub (by omega_using [hq, hy'])]
   unfold Impl.MlDsa.AArch64.Pack.bitUnpack
   refine WP.seq ?_
   rw [← List.append_nil (Impl.MlKem.AArch64.movImm _ _)]
@@ -95,14 +95,14 @@ theorem bu_wp {s₀ : State} (hp : bitUnpackK.pre s₀) :
   refine sel_ok (by decide) (fun s₃ o₃ h => ?_) (fun s₃ o₃ h => ?_)
   · rw [h1] at h
     exact go (d := 3) (c := 8) (nb := 3) ⟨by decide, by decide, rfl, by decide, by decide, rfl, rfl⟩
-      (by omega) (by omega) s₃ (by rw [o₃.get .x0, h0]) (by rw [o₃.get .x4, h4]) (by rw [o₃.get .x13, h13])
+      (by omega_using [hc, h]) (by omega_using [hlen, h]) s₃ (by rw [o₃.get .x0, h0]) (by rw [o₃.get .x4, h4]) (by rw [o₃.get .x13, h13])
       (by rw [o₃.rd, o₂.rd]) (by rw [o₃.wr, o₂.wr]) (by rw [o₃.mem, o₂.mem])
   have k₃ := o₂.trans o₃
   rw [h1] at h
   refine sel_ok (by decide) (fun s₄ o₄ h' => ?_) (fun s₄ o₄ h' => ?_)
   · rw [o₃.get .x1, h1] at h'
     exact go (d := 4) (c := 2) (nb := 1) ⟨by decide, by decide, rfl, by decide, by decide, rfl, rfl⟩
-      (by omega) (by omega) s₄ (by rw [o₄.get .x0, k₃.get .x0]) (by rw [o₄.get .x4, k₃.get .x4])
+      (by omega_using [hc, h']) (by omega_using [hlen, h']) s₄ (by rw [o₄.get .x0, k₃.get .x0]) (by rw [o₄.get .x4, k₃.get .x4])
       (by rw [o₄.get .x13, o₃.get .x13, h13]) (by rw [o₄.rd, k₃.rd]) (by rw [o₄.wr, k₃.wr])
       (by rw [o₄.mem, k₃.mem])
   have k₄ := k₃.trans o₄
@@ -110,7 +110,7 @@ theorem bu_wp {s₀ : State} (hp : bitUnpackK.pre s₀) :
   refine sel_ok (by decide) (fun s₅ o₅ h'' => ?_) (fun s₅ o₅ h'' => ?_)
   · rw [o₄.get .x1, o₃.get .x1, h1] at h''
     exact go (d := 13) (c := 8) (nb := 13) ⟨by decide, by decide, rfl, by decide, by decide, rfl, rfl⟩
-      (by omega) (by omega) s₅ (by rw [o₅.get .x0, k₄.get .x0]) (by rw [o₅.get .x4, k₄.get .x4])
+      (by omega_using [hc, h'']) (by omega_using [hlen, h'']) s₅ (by rw [o₅.get .x0, k₄.get .x0]) (by rw [o₅.get .x4, k₄.get .x4])
       (by rw [o₅.get .x13, o₄.get .x13, o₃.get .x13, h13]) (by rw [o₅.rd, k₄.rd]) (by rw [o₅.wr, k₄.wr])
       (by rw [o₅.mem, k₄.mem])
   have k₅ := k₄.trans o₅
@@ -118,12 +118,12 @@ theorem bu_wp {s₀ : State} (hp : bitUnpackK.pre s₀) :
   refine sel_ok (by decide) (fun s₆ o₆ h''' => ?_) (fun s₆ o₆ h''' => ?_)
   · rw [o₅.get .x1, o₄.get .x1, o₃.get .x1, h1] at h'''
     exact go (d := 18) (c := 4) (nb := 9) ⟨by decide, by decide, rfl, by decide, by decide, rfl, rfl⟩
-      (by omega) (by omega) s₆ (by rw [o₆.get .x0, k₅.get .x0]) (by rw [o₆.get .x4, k₅.get .x4])
+      (by omega_using [hc, h''']) (by omega_using [hlen, h''']) s₆ (by rw [o₆.get .x0, k₅.get .x0]) (by rw [o₆.get .x4, k₅.get .x4])
       (by rw [o₆.get .x13, o₅.get .x13, o₄.get .x13, o₃.get .x13, h13]) (by rw [o₆.rd, k₅.rd])
       (by rw [o₆.wr, k₅.wr]) (by rw [o₆.mem, k₅.mem])
   · rw [o₅.get .x1, o₄.get .x1, o₃.get .x1, h1] at h'''
     exact go (d := 20) (c := 2) (nb := 5) ⟨by decide, by decide, rfl, by decide, by decide, rfl, rfl⟩
-      (by omega) (by omega) s₆ (by rw [o₆.get .x0, k₅.get .x0]) (by rw [o₆.get .x4, k₅.get .x4])
+      (by omega_using [hc, h, h', h'', h''']) (by omega_using [hc, h, h', h'', h''']) s₆ (by rw [o₆.get .x0, k₅.get .x0]) (by rw [o₆.get .x4, k₅.get .x4])
       (by rw [o₆.get .x13, o₅.get .x13, o₄.get .x13, o₃.get .x13, h13]) (by rw [o₆.rd, k₅.rd])
       (by rw [o₆.wr, k₅.wr]) (by rw [o₆.mem, k₅.mem])
 
@@ -174,8 +174,8 @@ theorem t1_wp {s₀ : State} (hp : unpackT1K.pre s₀) :
     fun s' ⟨hc, _, _⟩ => ?_
   refine polyIs_of_toNat fun i hi => ?_
   have hy : inNum s₀.mem (s₀.gpr .x0) 10 / 2 ^ (10 * i) % 2 ^ 10 < 2 ^ 10 := Nat.mod_lt _ (by decide)
-  rw [hc i hi, t1Word, BitVec.toNat_setWidth, toNat_lsl_n (by rw [BitVec.toNat_ofNat]; omega),
-    BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show _ < 2 ^ 64 by omega), Nat.mod_eq_of_lt (show _ < 2 ^ 32 by omega),
+  rw [hc i hi, t1Word, BitVec.toNat_setWidth, toNat_lsl_n (by rw [BitVec.toNat_ofNat]; omega_using []),
+    BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show _ < 2 ^ 64 by omega_using []), Nat.mod_eq_of_lt (show _ < 2 ^ 32 by omega_using []),
     Vector.getElem_map, simpleBitUnpack_get _ _ hi, show bitlen t1Max = 10 by decide, ofInt_t1 hy]
 
 theorem unpackT1_correct (s : State) (hs : unpackT1K.pre s) :

@@ -44,7 +44,7 @@ theorem failureStep_ok {s : State} {out : BitVec 32} {len i : Nat}
   have A : s.ea (at_ .esi 0) = out.setWidth 64 + BitVec.ofNat 64 i := by
     change addr (s.gpr .esi) 0 = _
     rw [hp]
-    simpa only [addr, BitVec.add_zero] using addr_eq (x := out) (k := i) (by omega)
+    simpa only [addr, BitVec.add_zero] using addr_eq (x := out) (k := i) (by omega_using [hi, hf])
   unfold failureStep
   refine VG.Proof.Weierstrass.X86.wp_store8' A hw fun u su => ?_
   refine wp_addS rfl fun v uv _ => ?_
@@ -54,19 +54,19 @@ theorem failureStep_ok {s : State} {out : BitVec 32} {len i : Nat}
     exact (BitVec.ofNat_add i 1).symm
   · rw [vt.gpr, uv.other _ (by decide), su.gpr, hc,
       show (1 : BitVec 32) = BitVec.ofNat 32 1 from by decide]
-    simpa only [Nat.sub_sub] using sub_ofNat (a := len - i) (b := 1) (by omega)
+    simpa only [Nat.sub_sub] using sub_ofNat (a := len - i) (b := 1) (by omega_using [hi])
   · rw [Z, uv.other _ (by decide), su.gpr, hc,
       show (1 : BitVec 32) = BitVec.ofNat 32 1 from by decide]
-    have H := sub_beq (a := len - i) (b := 1) (by omega) (by decide)
+    have H := sub_beq (a := len - i) (b := 1) (by omega_using [hl]) (by decide)
     rw [H]
-    simp only [show len - i = 1 ↔ i + 1 = len by omega]
+    simp only [show len - i = 1 ↔ i + 1 = len by omega_using []]
   · rw [vt.mem, uv.mem, su.mem]
     change Prefix (s.mem.writeW _ ((s.gpr .eax).setWidth 8)) _ _
     rw [hz]
     change Prefix (s.mem.writeW _ (0 : BitVec 8)) _ _
-    exact prefix_writeW zeroed (by omega)
+    exact prefix_writeW zeroed (by omega_using [hi, hf])
   · rw [vt.mem, uv.mem, su.mem]
-    exact (writeW8_outside _ _ _ (by omega)).mono (Nat.zero_le _) (by omega)
+    exact (writeW8_outside _ _ _ (by omega_using [hi, hf])).mono (Nat.zero_le _) (by omega_using [hi])
   · exact ((su.keeps []).mono (by simp)).trans ((uv.keeps.mono (by decide)).trans (vt.keeps.mono (by decide)))
 
 end VG.Proof.Dsa.X86
@@ -107,7 +107,7 @@ theorem failureLoop_ok {s : State} {out : BitVec 32} {len : Nat}
     · simp only [eval, Z, done, decide_true, Option.map_some, Bool.not_true]
     · have H := prefix_spec (done ▸ next.bytes)
       exact H
-  · refine .inr ⟨?_, len - (i + 1), by omega, i + 1, rfl, by omega, next⟩
+  · refine .inr ⟨?_, len - (i + 1), by omega_using [hi], i + 1, rfl, by omega_using [hi, done], next⟩
     simp only [eval, Z, decide_eq_false done, Option.map_some, Bool.not_false]
 
 end VG.Proof.Dsa.X86

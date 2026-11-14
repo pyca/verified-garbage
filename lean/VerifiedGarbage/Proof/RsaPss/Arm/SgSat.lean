@@ -41,9 +41,9 @@ theorem putWs_out {m : Mem} {a : Addr} : ∀ {p : Addr} {ws : List (BitVec 64)},
   | _, [], _, _, _ => rfl
   | p, w :: ws, h, hp, ha => by
     simp only [List.length_cons] at h hp
-    have h4 := add4_toNat (p := p) (by omega)
+    have h4 := add4_toNat (p := p) (by omega_using [hp])
     simp only [putWs]
-    rw [putWs_out (by rw [h4]; omega) (by rw [h4]; omega) ha, readW_sep32 (by omega) ha (by omega)]
+    rw [putWs_out (by rw [h4]; omega_using [h]) (by rw [h4]; omega_using [hp]) ha, readW_sep32 (by omega_using [h]) ha (by omega_using [hp])]
 
 /-- The words `putWs` writes. -/
 theorem putWs_held {m : Mem} : ∀ {p : Addr} {ws : List (BitVec 64)}, p.toNat + 4 * ws.length < 2 ^ 64 →
@@ -51,19 +51,19 @@ theorem putWs_held {m : Mem} : ∀ {p : Addr} {ws : List (BitVec 64)}, p.toNat +
   | _, [], _ => fun i hi => absurd hi (Nat.not_lt_zero _)
   | p, w :: ws, hp => by
     simp only [List.length_cons] at hp
-    have h4 := add4_toNat (p := p) (by omega)
+    have h4 := add4_toNat (p := p) (by omega_using [hp])
     intro i hi
     simp only [putWs]
     cases i with
     | zero =>
       rw [show p + BitVec.ofNat 64 (32 / 8 * 0) = p from BitVec.add_zero p,
-        putWs_out (.inl (by rw [h4])) (by rw [h4]; omega) (by omega), Mem.readW_writeW_self32]
+        putWs_out (.inl (by rw [h4])) (by rw [h4]; omega_using [hp]) (by omega_using [hp]), Mem.readW_writeW_self32]
       simp
     | succ i =>
-      have := putWs_held (m := m.writeW p (w.setWidth 32)) (p := p + 4) (ws := ws) (by rw [h4]; omega) i
-        (by simp at hi; omega)
+      have := putWs_held (m := m.writeW p (w.setWidth 32)) (p := p + 4) (ws := ws) (by rw [h4]; omega_using [hp]) i
+        (by simp at hi; omega_using [hi])
       rw [show p + BitVec.ofNat 64 (32 / 8 * (i + 1)) = p + 4 + BitVec.ofNat 64 (32 / 8 * i) by
-        rw [BitVec.add_assoc]; congr 1; apply BitVec.eq_of_toNat_eq; simp; omega]
+        rw [BitVec.add_assoc]; congr 1; apply BitVec.eq_of_toNat_eq; simp; omega_using []]
       simpa using this
 
 /-- The words of a table, its functions at the addresses `symsOf32 ns`. -/
@@ -92,7 +92,7 @@ theorem withTabs_below (s : State) {a : Addr} (ha : a.toNat + 4 ≤ 0x300000) :
     (withTabs s mvs vs w wg).mem.readW a 32 = s.mem.readW a 32 := by
   refine Mem.readW_congr fun i hi => ?_
   have : (a + BitVec.ofNat 64 i).toNat < 0x300000 := by
-    simp only [BitVec.toNat_add, BitVec.toNat_ofNat]; omega
+    simp only [BitVec.toNat_add, BitVec.toNat_ofNat]; omega_using [ha, hi]
   simp only [withTabs, tabMem, Nat.blt_eq.mpr this, Bool.cond_true]
 
 /-- A stack argument below `0x300000`, as in `s`. -/
@@ -111,7 +111,7 @@ theorem tabMem_above {m : Mem} {p : Addr} {ws : List (BitVec 64)}
   rw [← h i hi]
   refine Mem.readW_congr fun k hk => ?_
   have : ¬ (p + BitVec.ofNat 64 (32 / 8 * i) + BitVec.ofNat 64 k).toNat < 0x300000 := by
-    simp only [BitVec.toNat_add, BitVec.toNat_ofNat]; omega
+    simp only [BitVec.toNat_add, BitVec.toNat_ofNat]; omega_using [hp, hl, hi, hk]
   have hb : Nat.blt (p + BitVec.ofNat 64 (32 / 8 * i) + BitVec.ofNat 64 k).toNat 0x300000 = false := by
     rw [Bool.eq_false_iff]; intro hc; exact this (Nat.blt_eq.mp hc)
   simp only [tabMem, hb, Bool.cond_false]
@@ -130,9 +130,9 @@ theorem withTabs_heldH (s : State) :
   rw [tw_words _ rfl]
   refine tabMem_above (by decide) (by rw [hl]; decide) fun i hi => ?_
   rw [hl] at hi
-  rw [putWs_out (.inl (by simp only [BitVec.toNat_add, BitVec.toNat_ofNat, c1, c2, Nat.reduceDiv]; omega))
+  rw [putWs_out (.inl (by simp only [BitVec.toNat_add, BitVec.toNat_ofNat, c1, c2, Nat.reduceDiv]; omega_using [hi]))
     (by simp [tw, HashTable.Arm.tableOf, MdHashTable.Arm.tableOf, Spec.MdHashTable.dataOf, Spec.HashTable.dataOf])
-    (by simp only [BitVec.toNat_add, BitVec.toNat_ofNat, c1, Nat.reduceDiv]; omega)]
+    (by simp only [BitVec.toNat_add, BitVec.toNat_ofNat, c1, Nat.reduceDiv]; omega_using [])]
   exact putWs_held (by rw [hl]; decide) i (by rw [hl]; exact hi)
 
 theorem withTabs_heldG (s : State) :
@@ -193,7 +193,7 @@ theorem sat_args (D : Nat) : ∀ j < 20, (stackArgAddr (satState D) j).toNat + 4
 
 /-- A region within `⟨p, 64⟩`, apart from what that is apart from. -/
 theorem dig_disj {A : Region} {p : Addr} {D : Nat} (hD : D ≤ 64) (h : A.Disjoint ⟨p, 64⟩) : A.Disjoint ⟨p, D⟩ :=
-  h.sub_right fun a ha => by simp only [Region.Contains] at ha ⊢; omega
+  h.sub_right fun a ha => by simp only [Region.Contains] at ha ⊢; omega_using [hD, ha]
 
 theorem sat_b16 : ∀ j < 20, stackArg (satState 16) j = satArgs 16 j := by decide
 theorem sat_b20 : ∀ j < 20, stackArg (satState 20) j = satArgs 20 j := by decide
@@ -218,7 +218,7 @@ theorem sign_pre_of {hs ts : List FnTable} {D : Nat} (hD : D ≤ 64) {s : State}
   have g3 : s.gpr .r3 = 64 := by rw [hg]; rfl
   have sp0 : s.sp = 0x8000 := hsp
   have e0 : stackArgAddr s 0 = 0x8000 := by simp only [stackArgAddr, sp0]; decide
-  have hD' : (BitVec.ofNat 32 D).toNat = D := by rw [BitVec.toNat_ofNat]; omega
+  have hD' : (BitVec.ofNat 32 D).toNat = D := by rw [BitVec.toNat_ofNat]; omega_using [hD]
   sig_pre [Spec.RsaPss.signMdTableContract, Spec.RsaPss.signMdTableSig, Spec.MdHashTable.param,
     Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Spec.MdHashTable.dataWords, Abi.withTables, Sig.wordIndex, abi,
     argRegs, reduceClassify, Loc.val]
@@ -247,7 +247,7 @@ theorem sign_pre_of {hs ts : List FnTable} {D : Nat} (hD : D ≤ 64) {s : State}
     | (rw [hD']; exact dig_disj hD (Region.disjoint_of_sep (by decide)))
     | (rw [hD']; exact (dig_disj hD (Region.disjoint_of_sep (by decide))).symm)
     | (rw [hD']; apply Region.disjoint_of_sep; simp [Region.sep]; omega)
-    | (rw [hD']; simp; omega)
+    | (rw [hD']; simp; omega_using [hD])
     | skip
 
 theorem sign_sat_of {mvs : List MVar} {vs : List TVar} {w : MVar} {wg : TVar} (hw : w ∈ mvs) (hwg : wg ∈ vs)
@@ -265,7 +265,7 @@ theorem sign_sat_of {mvs : List MVar} {vs : List TVar} {w : MVar} {wg : TVar} (h
       rw [e3] at hA
       rw [hA, Option.some.injEq] at hH
       subst hH
-      rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega), hlen]
+      rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hD]), hlen]
 
 /-- Signing's contract, with the tables of `mvs` and `vs`, is satisfiable. -/
 theorem sign_sat {mvs : List MVar} {vs : List TVar} {w : MVar} {wg : TVar} (hw : w ∈ mvs) (hwg : wg ∈ vs)
@@ -322,7 +322,7 @@ def satStateP (D : Nat) : State where
 theorem sat_argsP (D : Nat) : ∀ j < 22, (stackArgAddr (satStateP D) j).toNat + 4 ≤ 0x300000 := fun j hj => by
   have c0 : (0x8000 : BitVec 32).toNat = 0x8000 := rfl
   simp only [stackArgAddr, satStateP, State.addr, BitVec.toNat_add, BitVec.toNat_ofNat, BitVec.toNat_setWidth, c0]
-  omega
+  omega_using [hj]
 
 theorem satP_b16 : ∀ j < 22, stackArg (satStateP 16) j = BitVec.ofNat 32 ((satArgsP 16).getD j 0) := by decide
 theorem satP_b20 : ∀ j < 22, stackArg (satStateP 20) j = BitVec.ofNat 32 ((satArgsP 20).getD j 0) := by decide
@@ -340,7 +340,7 @@ theorem satP_key (D : Nat) {mvs : List MVar} {vs : List TVar} {w : MVar} {wg : T
   key_pre_of fun a ha => by
     have hk : a.toNat < 0x48C0 := by
       simp only [keyIn, Bool.or_eq_true, Bool.and_eq_true, Nat.ble_eq, Nat.blt_eq] at ha; omega
-    have h1 : Nat.blt a.toNat 0x300000 = true := Nat.blt_eq.mpr (by omega)
+    have h1 : Nat.blt a.toNat 0x300000 = true := Nat.blt_eq.mpr (by omega_using [hk])
     have h2 : (Nat.ble 0x8000 a.toNat && Nat.blt a.toNat 0x8058) = false := by
       rw [Bool.eq_false_iff]; intro h; simp only [Bool.and_eq_true, Nat.ble_eq] at h; omega
     show (bif _ then _ else _) = _
@@ -367,7 +367,7 @@ theorem sign_pre_ofP {hs ts : List FnTable} {D : Nat} (hD : D ≤ 64) {s : State
   have g3 : s.gpr .r3 = 64 := by rw [hg]; rfl
   have sp0 : s.sp = 0x8000 := hsp
   have e0 : stackArgAddr s 0 = 0x8000 := by simp only [stackArgAddr, sp0]; decide
-  have hD' : (BitVec.ofNat 32 D).toNat = D := by rw [BitVec.toNat_ofNat]; omega
+  have hD' : (BitVec.ofNat 32 D).toNat = D := by rw [BitVec.toNat_ofNat]; omega_using [hD]
   sig_pre [Spec.RsaPss.signPrecomputedMdTableContract, Spec.RsaPss.signPrecomputedMdTableSig, Spec.MdHashTable.param,
     Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Spec.MdHashTable.dataWords, Abi.withTables, Sig.wordIndex, abi,
     argRegs, reduceClassify, Loc.val]
@@ -397,7 +397,7 @@ theorem sign_pre_ofP {hs ts : List FnTable} {D : Nat} (hD : D ≤ 64) {s : State
     | (rw [hD']; exact dig_disj hD (Region.disjoint_of_sep (by decide)))
     | (rw [hD']; exact (dig_disj hD (Region.disjoint_of_sep (by decide))).symm)
     | (rw [hD']; apply Region.disjoint_of_sep; simp [Region.sep]; omega)
-    | (rw [hD']; simp; omega)
+    | (rw [hD']; simp; omega_using [hD])
 
 theorem sign_sat_ofP {mvs : List MVar} {vs : List TVar} {w : MVar} {wg : TVar} (hw : w ∈ mvs) (hwg : wg ∈ vs)
     (hl : (allNames mvs vs).length < 2 ^ 24) {D : Nat} (hD : D ≤ 64) (hlen : w.h.G.len = D)
@@ -414,7 +414,7 @@ theorem sign_sat_ofP {mvs : List MVar} {vs : List TVar} {w : MVar} {wg : TVar} (
       rw [e3] at hA
       rw [hA, Option.some.injEq] at hH
       subst hH
-      rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega), hlen]) (satP_key D)
+      rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hD]), hlen]) (satP_key D)
 
 /-- The precomputed signing's contract, with the tables of `mvs` and `vs`, is
 satisfiable. -/

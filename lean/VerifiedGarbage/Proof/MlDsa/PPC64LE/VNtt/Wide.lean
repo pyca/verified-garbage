@@ -95,7 +95,7 @@ abbrev Env := EnvK scrK
 theorem EnvK.inRS {K : Nat → Nat} {s₀ s : State} (hp : Pre s₀) (h : EnvK K s₀ s) {b : Nat} (hb : b + 4 ≤ 256) :
     InRegions (s.rd ++ s.wr) (S s₀ + BitVec.ofNat 64 (4 * b)) 16 := by
   rw [h.rd, h.wr, hp.rd, hp.wr]
-  exact ⟨polyRegion (S s₀), by simp, VG.Offset.contains_base (k := 1024) _ (by omega) (by omega)⟩
+  exact ⟨polyRegion (S s₀), by simp, VG.Offset.contains_base (k := 1024) _ (by omega_using [hb]) (by omega_using [hb])⟩
 
 theorem EnvK.inR {K : Nat → Nat} {s₀ s : State} (hp : Pre s₀) (h : EnvK K s₀ s) {j : Nat} (hj : j + 4 ≤ 256) :
     InRegions (s.rd ++ s.wr) (coeffAddr (F s₀) j) 16 := by
@@ -154,14 +154,14 @@ theorem tab_write {K : Nat → Nat} {s₀ : State} (hp : Pre s₀) {m : Mem} (h 
     (hj : j + 4 ≤ 256) (v : BitVec 128) : Tab K (S s₀) (m.write (coeffAddr (F s₀) j) 16 v) := fun p hp0 hp1 => by
   rw [← h p hp0 hp1]
   simp only [Mem.readW]
-  rw [Mem.read_write_sep (Region.Disjoint.sep hp.disj.symm (Offset.contains_base _ (by omega) (by omega))
+  rw [Mem.read_write_sep (Region.Disjoint.sep hp.disj.symm (Offset.contains_base _ (by omega_using [hp1]) (by omega_using [hp1]))
     (vector_contains _ hj)) (by decide)]
 
 /-- `z'` of a block of `len ≥ 4`, in lane 0 of a load from `S + 4(k - 1)`. -/
 theorem vword_wide {s₀ : State} {m : Mem} (h : Tab scrK (S s₀) m) {k : Nat} (hk1 : 1 ≤ k) (hk : k < 64) :
     (vword (swapDwords (m.read (S s₀ + BitVec.ofNat 64 (4 * (k - 1))) 16)) 0).toNat = shoup (zeta k) := by
   rw [vword_load _ _ (by decide), show (0 : Nat) ^^^ 1 = 1 from rfl, BitVec.add_assoc, ← BitVec.ofNat_add,
-    show 4 * (k - 1) + 4 * 1 = 4 * k by omega, h k (by omega) (by omega), BitVec.toNat_ofNat,
+    show 4 * (k - 1) + 4 * 1 = 4 * k by omega_using [hk1], h k (by omega_using [hk1]) (by omega_using [hk]), BitVec.toNat_ofNat,
     Nat.mod_eq_of_lt (shoup_lt (zeta_lt _)), scrK_wide hk]
 
 /-! ## Four butterflies -/
@@ -190,8 +190,8 @@ theorem lanes_bfly_v {P : Poly} {m : Mem} {p : Addr} (hP : PolyIs m p P) {j len 
   intro A B
   have hx := xor1_lt he
   refine bfly_lanes he ?_ ?_ (hz e he) (hzp e he) (hq e he)
-  · rw [vword_loadC _ _ _ he]; exact polyIs_toNat hP (by show _ < 256; omega)
-  · rw [vword_loadC _ _ _ he]; exact polyIs_toNat hP (by show _ < 256; omega)
+  · rw [vword_loadC _ _ _ he]; exact polyIs_toNat hP (by show _ < 256; omega_using [hj, hx])
+  · rw [vword_loadC _ _ _ he]; exact polyIs_toNat hP (by show _ < 256; omega_using [hj, hx])
 
 /-- Four more butterflies of the block, at `j … j+3`. -/
 theorem blockN_four {Q : Poly} {len : Nat} {z : Zq} {st t : Nat} (hl : 4 ≤ len) (ht : 4 * t + 4 ≤ len)
@@ -201,8 +201,8 @@ theorem blockN_four {Q : Poly} {len : Nat} {z : Zq} {st t : Nat} (hl : 4 ≤ len
       if st + 4 * t ≤ i ∧ i < st + 4 * t + 4 then P[i]! + z * P[i + len]!
       else if st + 4 * t + len ≤ i ∧ i < st + 4 * t + len + 4 then P[i - len]! - z * P[i]!
       else P[i]! := by
-  rw [show 4 * (t + 1) = 4 * t + 4 by omega, blockN_add]
-  exact blockN_bfly_get' _ (by omega) (by omega) (by show _ ≤ 256; omega) hi
+  rw [show 4 * (t + 1) = 4 * t + 4 by omega_using [], blockN_add]
+  exact blockN_bfly_get' _ (by omega_using [hl]) (by omega_using [hl]) (by show _ ≤ 256; omega_using [ht, hs]) hi
 
 theorem step_ok {s₀ : State} (hp : Pre s₀) {Q : Poly} {len k st t : Nat} (hl : 4 ≤ len) (hd : len % 4 = 0)
     (hs : st + 2 * len ≤ 256) (ht : t < len / 4) {s : State}
@@ -212,10 +212,10 @@ theorem step_ok {s₀ : State} (hp : Pre s₀) {Q : Poly} {len k st t : Nat} (hl
   have ht4 : 4 * t + 4 ≤ len := by omega
   have ej : coeffAddr (F s₀) (st + 4 * t) + BitVec.ofNat 64 (4 * len) = coeffAddr (F s₀) (st + 4 * t + len) :=
     coeffAddr_add _ _ _
-  have ia := h.env.inR hp (j := st + 4 * t) (by omega)
-  have ib := h.env.inR hp (j := st + 4 * t + len) (by omega)
-  have oa := h.env.inW hp (j := st + 4 * t) (by omega)
-  have ob := h.env.inW hp (j := st + 4 * t + len) (by omega)
+  have ia := h.env.inR hp (j := st + 4 * t) (by omega_using [hs, ht])
+  have ib := h.env.inR hp (j := st + 4 * t + len) (by omega_using [hs, ht])
+  have oa := h.env.inW hp (j := st + 4 * t) (by omega_using [hs, ht])
+  have ob := h.env.inW hp (j := st + 4 * t + len) (by omega_using [hs, ht])
   unfold stepBody
   rw [List.append_assoc, WP.block_append_iff]
   refine WP.mono (loads_run s h.r5 h.r9 h.r8 ia (by rw [ej]; exact ib)) fun s₁ e₁ => ?_
@@ -238,7 +238,7 @@ theorem step_ok {s₀ : State} (hp : Pre s₀) {Q : Poly} {len k st t : Nat} (hl
     rw [e₁, ← ej]; rfl
   rw [A₁, B₁, hv .v2 (by decide) (by decide), hv .v3 (by decide) (by decide), hv .v4 (by decide) (by decide),
     hv .v5 (by decide) (by decide), h.env.v5] at a₂ b₂
-  have lanes := fun e (he : e < 4) => lanes_bfly_v h.poly (j := st + 4 * t) (len := len) (by omega) h.v2 h.v3
+  have lanes := fun e (he : e < 4) => lanes_bfly_v h.poly (j := st + 4 * t) (len := len) (by omega_using [hs, ht]) h.v2 h.v3
     h.env.v4 he
   have hg : ∀ r, r ≠ .r5 → r ≠ .r10 → s₃.gpr r = s.gpr r := fun r h1 h2 => by rw [gk r h1 h2, g₂]
   have e₁rd : s₁.rd = s.rd := by rw [e₁]; rfl
@@ -256,29 +256,29 @@ theorem step_ok {s₀ : State} (hp : Pre s₀) {Q : Poly} {len k st t : Nat} (hl
     (hg .r11 (by decide) (by decide)).trans h.r11, (hg .r7 (by decide) (by decide)).trans h.r7,
     by rw [hs₂ .v2 (by decide)]; exact h.v2, by rw [hs₂ .v3 (by decide)]; exact h.v3, ?_⟩, ?_⟩
   · rw [m₃, m₂, ej]
-    exact (h.env.frame.write (by simp) _ (vector_contains _ (by omega))).write (by simp) _
-      (vector_contains _ (by omega))
+    exact (h.env.frame.write (by simp) _ (vector_contains _ (by omega_using [hs, ht]))).write (by simp) _
+      (vector_contains _ (by omega_using [hs, ht]))
   · rw [m₃, m₂, ej]
-    exact tab_write hp (tab_write hp h.env.tab (by omega) _) (by omega) _
+    exact tab_write hp (tab_write hp h.env.tab (by omega_using [hs, ht]) _) (by omega_using [hs, ht]) _
   · rw [r5, show (16 : BitVec 64) = BitVec.ofNat 64 (4 * 4) from rfl, coeffAddr_add]
-    exact congrArg _ (by omega)
+    exact congrArg _ (by omega_using [])
   · rw [r10, g₂, h.r10]; exact count_sub ht
   · rw [m₃, m₂, a₂, b₂, ej]
-    refine polyIs_store2 h.poly (by omega) (by omega) (fun e he => ?_) (fun e he => ?_) (fun i hi h1 h2 => ?_)
+    refine polyIs_store2 h.poly (by omega_using [hs, ht]) (by omega_using [hs, ht]) (fun e he => ?_) (fun e he => ?_) (fun i hi h1 h2 => ?_)
     · have hx := xor1_lt he
-      rw [(lanes e he).1, blockN_four hl ht4 hs (by omega)]
+      rw [(lanes e he).1, blockN_four hl ht4 hs (by omega_using [hs, ht, hx])]
       simp only
-      rw [ite_eq_left ⟨by omega, by omega⟩, Nat.add_right_comm (st + 4 * t) len]
+      rw [ite_eq_left ⟨by omega_using [], by omega_using [hx]⟩, Nat.add_right_comm (st + 4 * t) len]
     · have hx := xor1_lt he
-      rw [(lanes e he).2, blockN_four hl ht4 hs (by omega)]
+      rw [(lanes e he).2, blockN_four hl ht4 hs (by omega_using [hs, ht, hx])]
       simp only
-      rw [ite_eq_right (by omega), ite_eq_left ⟨by omega, by omega⟩,
-        show st + 4 * t + len + (e ^^^ 1) - len = st + 4 * t + (e ^^^ 1) by omega]
+      rw [ite_eq_right (by omega_using [hl]), ite_eq_left ⟨by omega_using [], by omega_using [hx]⟩,
+        show st + 4 * t + len + (e ^^^ 1) - len = st + 4 * t + (e ^^^ 1) by omega_using []]
     · rw [blockN_four hl ht4 hs hi]
       simp only
-      rw [ite_eq_right h1, ite_eq_right (by omega)]
+      rw [ite_eq_right h1, ite_eq_right (by omega_using [h2])]
   · rw [r10, g₂, h.r10, show (1 : BitVec 64) = BitVec.ofNat 64 1 from rfl, count_sub ht]
-    exact count_nz ht (by omega)
+    exact count_nz ht (by omega_using [hs])
 
 /-! ## Blocks -/
 
@@ -296,25 +296,25 @@ theorem lsr4 {len : Nat} (hl : 4 * len < 2 ^ 64) :
     BitVec.ofNat 64 (4 * len) >>> 4 = BitVec.ofNat 64 (len / 4) := by
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hl,
-    Nat.shiftRight_eq_div_pow, Nat.mod_eq_of_lt (by omega)]
-  omega
+    Nat.shiftRight_eq_div_pow, Nat.mod_eq_of_lt (by omega_using [hl])]
+  omega_using []
 
 theorem bstep {s₀ : State} (hp : Pre s₀) {Q : Poly} {len nb c : Nat} (hl : 4 ≤ len) (hd : len % 4 = 0)
     (hnb : len * nb = 128) (hc : c < nb) {s : State} (h : BInv s₀ Q len nb c s) :
     WP isa blockCode s fun s' => BInv s₀ Q len nb (c + 1) s' ∧ (s'.gpr .r12 != 0) = decide (c + 1 ≠ nb) := by
   have hnb32 : nb ≤ 32 := by
     have : 4 * nb ≤ len * nb := Nat.mul_le_mul_right _ hl
-    omega
+    omega_using [hnb, this]
   have hlc : len * (c + 1) ≤ 128 := hnb ▸ Nat.mul_le_mul_left _ hc
-  have hk1 : 1 ≤ nb + c := by omega
-  have hk : nb + c ≤ 63 := by omega
+  have hk1 : 1 ≤ nb + c := by omega_using [hc]
+  have hk : nb + c ≤ 63 := by omega_using [hc, hnb32]
   have hlc' : len * c + len ≤ 128 := by rw [← Nat.mul_succ]; exact hlc
-  have hst : 2 * len * c + 2 * len ≤ 256 := by rw [Nat.mul_assoc]; omega
+  have hst : 2 * len * c + 2 * len ≤ 256 := by rw [Nat.mul_assoc]; omega_using [hlc']
   have hzk := zeta_lt (nb + c)
   unfold blockCode
   refine WP.seq ?_
   rw [List.append_assoc, WP.block_append_iff]
-  have ia := h.env.inRS hp (b := nb + c - 1) (by omega)
+  have ia := h.env.inRS hp (b := nb + c - 1) (by omega_using [hc, hnb32])
   refine WP.cons (exec_lxvd2x .v3 .r7 .r9 s (by decide) (by rw [h.r7, h.r9, BitVec.add_zero]; exact ia)) ?_
   refine wp_vop (eval_splat0 _ _ _) ?_
   refine WP.block_cons_iff.2 ⟨_, rfl, wp_nil ?_⟩
@@ -324,13 +324,13 @@ theorem bstep {s₀ : State} (hp : Pre s₀) {Q : Poly} {len nb c : Nat} (hl : 4
     rw [← ht₁]; simp only [State.write, gpr_writeV, hr, ite_false]
   have r7₁ : t₁.gpr .r7 = S s₀ + BitVec.ofNat 64 (4 * (nb + c)) := by
     rw [← ht₁]; simp only [State.write, ite_true, gpr_writeV, h.r7, BitVec.add_assoc, ← BitVec.ofNat_add]
-    rw [show 4 * (nb + c - 1) + 4 = 4 * (nb + c) by omega]
+    rw [show 4 * (nb + c - 1) + 4 = 4 * (nb + c) by omega_using [hc]]
   have v₁ : ∀ r, r ≠ .v3 → t₁.vpr r = s.vpr r := fun r hr => by
     rw [← ht₁]; simp only [vpr_write, vpr_writeV, hr, ite_false]
   have z₁ : ∀ i < 4, (vword (t₁.vpr .v3) i).toNat = shoup (zeta (nb + c)) := fun i hi => by
     rw [← ht₁]; simp only [vpr_write, vpr_writeV, ite_true]
     rw [vword_ofVWords _ hi]
-    exact vword_wide h.env.tab (by omega) (by omega)
+    exact vword_wide h.env.tab (by omega_using [hc]) (by omega_using [hc, hnb32])
   have env₁ : Env s₀ t₁ := by
     rw [← ht₁]
     exact ((h.env.writeV (by decide) _).writeV (by decide) _).write (by decide) (by decide) _
@@ -347,17 +347,17 @@ theorem bstep {s₀ : State} (hp : Pre s₀) {Q : Poly} {len nb c : Nat} (hl : 4
     · simp only [State.write, reduceCtorEq, ite_false]; rw [g₂ _ (by decide), h.r5]; rfl
     · simp only [State.write, reduceCtorEq, ite_false]; rw [g₂ _ (by decide), h.r8]
     · simp only [State.write, reduceCtorEq, ite_false]; rw [g₂ _ (by decide), h.r9]
-    · simp only [State.write, ite_true]; rw [g₂ _ (by decide), h.r8, lsr4 (by omega)]; rfl
+    · simp only [State.write, ite_true]; rw [g₂ _ (by decide), h.r8, lsr4 (by omega_using [hlc'])]; rfl
     · simp only [State.write, reduceCtorEq, ite_false]; rw [g₂ _ (by decide), h.r11]
     · simp only [State.write, reduceCtorEq, ite_false]; rw [vo₂.gpr, r7₁]
     · intro i hi; simp only [vpr_write]; rw [l₂ i hi, zeta_eq]
     · intro i hi; simp only [vpr_write]; rw [vo₂.v _ (by decide), z₁ i hi, shoup, zeta_eq]; rfl
     · simp only [State.write]; rw [vo₂.mem, ← ht₁]; exact h.poly
   refine WP.seq (wp_loop_nz (fun i t => SInv s₀ (layerN bfly Q len (fun c => zetas (nb + c)) c) len (nb + c)
-      (2 * len * c) i t) (N := len / 4) (by omega) (fun i hi t ht => step_ok hp hl hd hst hi ht)
+      (2 * len * c) i t) (N := len / 4) (by omega_using [hl]) (fun i hi t ht => step_ok hp hl hd hst hi ht)
       (fun t ht => ?_) h0)
   have x5 : t.gpr .r5 + t.gpr .r8 = coeffAddr (F s₀) (2 * len * (c + 1)) := by
-    rw [ht.r5, ht.r8, coeffAddr_add]; exact congrArg _ (by rw [Nat.mul_succ]; omega)
+    rw [ht.r5, ht.r8, coeffAddr_add]; exact congrArg _ (by rw [Nat.mul_succ]; omega_using [hd])
   refine WP.block_cons_iff.2 ⟨t.write .r5 (t.gpr .r5 + t.gpr .r8), rfl, ?_⟩
   refine WP.block_cons_iff.2 ⟨(t.write .r5 (t.gpr .r5 + t.gpr .r8)).write .r12
     (t.gpr .r5 + t.gpr .r8 - t.gpr .r11), rfl, WP.block_nil ?_⟩
@@ -368,18 +368,18 @@ theorem bstep {s₀ : State} (hp : Pre s₀) {Q : Poly} {len nb c : Nat} (hl : 4
     ?_, by rw [g _ (by decide) (by decide), ht.r8], by rw [g _ (by decide) (by decide), ht.r9],
     by rw [g _ (by decide) (by decide), ht.r11], ?_, ?_⟩, ?_⟩
   · simp only [State.write, reduceCtorEq, ite_false, ite_true]; exact x5
-  · rw [g _ (by decide) (by decide), ht.r7, show nb + (c + 1) - 1 = nb + c by omega]
+  · rw [g _ (by decide) (by decide), ht.r7, show nb + (c + 1) - 1 = nb + c by omega_using []]
   · rw [layerN_succ]
     have := ht.poly
-    rwa [show 4 * (len / 4) = len by omega] at this
+    rwa [show 4 * (len / 4) = len by omega_using [hd]] at this
   · simp only [State.write, ite_true]
     rw [x5, ht.r11, coeffAddr, show (1024 : BitVec 64) = BitVec.ofNat 64 1024 from rfl,
-      ptr_ne _ (by rw [Nat.mul_succ]; omega) (by decide)]
+      ptr_ne _ (by rw [Nat.mul_succ]; omega_using [hst]) (by decide)]
     have : 4 * (2 * len * (c + 1)) = 1024 ↔ c + 1 = nb := by
       constructor
       · intro e
-        have e' : len * (c + 1) = len * nb := by rw [hnb]; rw [Nat.mul_assoc] at e; omega
-        exact Nat.eq_of_mul_eq_mul_left (by omega) e'
+        have e' : len * (c + 1) = len * nb := by rw [hnb]; rw [Nat.mul_assoc] at e; omega_using [e]
+        exact Nat.eq_of_mul_eq_mul_left (by omega_using [hl]) e'
       · intro e; rw [e, Nat.mul_assoc, hnb]
     simp only [ne_eq, this]
 
@@ -397,7 +397,7 @@ structure LInv (s₀ : State) (R : Poly) (len nb : Nat) (s : State) : Prop where
 theorem lsr1 {x : Nat} (hx : x < 2 ^ 64) : BitVec.ofNat 64 x >>> 1 = BitVec.ofNat 64 (x / 2) := by
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hx,
-    Nat.shiftRight_eq_div_pow, Nat.mod_eq_of_lt (by omega)]
+    Nat.shiftRight_eq_div_pow, Nat.mod_eq_of_lt (by omega_using [hx])]
   first | done | rfl
 
 theorem layer_ok {s₀ : State} (hp : Pre s₀) {R : Poly} {len nb : Nat} (hl : 4 ≤ len) (hd : len % 4 = 0)
@@ -405,8 +405,8 @@ theorem layer_ok {s₀ : State} (hp : Pre s₀) {R : Poly} {len nb : Nat} (hl : 
     WP isa layerCode s fun s' => LInv s₀ (nttLayer R len) (len / 2) (2 * nb) s' ∧
       (s'.gpr .r12 != 0) = decide (len / 2 ≠ 2) := by
   have hnb1 : 1 ≤ nb := by rcases nb with _ | nb <;> simp_all
-  have hdiv : 128 / len = nb := by rw [← hnb, Nat.mul_div_cancel_left _ (by omega)]
-  have hl128 : len ≤ 128 := by have := Nat.le_mul_of_pos_right len hnb1; omega
+  have hdiv : 128 / len = nb := by rw [← hnb, Nat.mul_div_cancel_left _ (by omega_using [hl])]
+  have hl128 : len ≤ 128 := by have := Nat.le_mul_of_pos_right len hnb1; omega_using [hnb, this]
   unfold layerCode
   refine WP.seq (WP.block_cons_iff.2 ⟨s.write .r5 (s.gpr .r3 + BitVec.ofNat 64 0), rfl, WP.block_nil ?_⟩)
   have h0 : BInv s₀ R len nb 0 (s.write .r5 (s.gpr .r3 + BitVec.ofNat 64 0)) := by
@@ -417,25 +417,25 @@ theorem layer_ok {s₀ : State} (hp : Pre s₀) {R : Poly} {len nb : Nat} (hl : 
     · simp only [State.write, reduceCtorEq, ite_false]; exact h.r11
     · simp only [State.write, reduceCtorEq, ite_false, Nat.add_zero]; exact h.r7
     · exact h.poly
-  refine WP.seq (wp_loop_nz (fun c t => BInv s₀ R len nb c t) (N := nb) (by omega)
+  refine WP.seq (wp_loop_nz (fun c t => BInv s₀ R len nb c t) (N := nb) (by omega_using [hnb1])
       (fun c hc t ht => bstep hp hl hd hnb hc ht) (fun t ht => ?_) h0)
   refine WP.block_cons_iff.2 ⟨t.write .r8 (t.gpr .r8 >>> 1), rfl, ?_⟩
   refine WP.block_cons_iff.2 ⟨(t.write .r8 (t.gpr .r8 >>> 1)).write .r12 (t.gpr .r8 >>> 1 - BitVec.ofNat 64 8),
     rfl, WP.block_nil ?_⟩
   have x8 : t.gpr .r8 >>> 1 = BitVec.ofNat 64 (4 * (len / 2)) := by
-    rw [ht.r8, lsr1 (by omega)]; exact congrArg _ (by omega)
+    rw [ht.r8, lsr1 (by omega_using [hl128])]; exact congrArg _ (by omega_using [hd])
   refine ⟨⟨(ht.env.write (by decide) (by decide) _).write (by decide) (by decide) _,
     ?_, ?_, ?_, ?_, ?_⟩, ?_⟩
   · simp only [State.write, reduceCtorEq, ite_false, ite_true]; exact x8
   · simp only [State.write, reduceCtorEq, ite_false]; exact ht.r9
   · simp only [State.write, reduceCtorEq, ite_false]; exact ht.r11
-  · simp only [State.write, reduceCtorEq, ite_false]; rw [ht.r7, show nb + nb - 1 = 2 * nb - 1 by omega]
+  · simp only [State.write, reduceCtorEq, ite_false]; rw [ht.r7, show nb + nb - 1 = 2 * nb - 1 by omega_using []]
   · have := ht.poly; rwa [nttLayer, hdiv]
   · simp only [State.write, ite_true]
     rw [x8]
-    have hlt : 4 * (len / 2) < 2 ^ 64 := by omega
+    have hlt : 4 * (len / 2) < 2 ^ 64 := by omega_using [hl128]
     have e : BitVec.ofNat 64 (4 * (len / 2)) - BitVec.ofNat 64 8 = BitVec.ofNat 64 (4 * (len / 2) - 8) := by
-      rw [show 4 * (len / 2) = (4 * (len / 2) - 8) + 8 by omega, BitVec.ofNat_add, BitVec.add_sub_cancel,
+      rw [show 4 * (len / 2) = (4 * (len / 2) - 8) + 8 by omega_using [hl], BitVec.ofNat_add, BitVec.add_sub_cancel,
         Nat.add_sub_cancel]
     rw [e]
     by_cases h2 : len / 2 = 2
@@ -443,8 +443,8 @@ theorem layer_ok {s₀ : State} (hp : Pre s₀) {R : Poly} {len nb : Nat} (hl : 
     · have : (BitVec.ofNat 64 (4 * (len / 2) - 8)) ≠ 0#64 := by
         intro e'
         have := congrArg BitVec.toNat e'
-        rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)] at this
-        simp at this; omega
+        rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hl128])] at this
+        simp at this; omega_using [hl, h2, this]
       simp [this, h2]
 
 /-- The layers of `len ≥ 4`. -/
@@ -455,7 +455,7 @@ theorem foldl_take_succ (P : Poly) {ℓ : Nat} (hℓ : ℓ < 6) :
   rw [List.take_add_one, List.foldl_append, List.getElem?_eq_getElem (by rw [show wideLens.length = 6 from rfl]; exact hℓ),
     Option.toList_some, List.foldl_cons, List.foldl_nil]
   refine congrArg (nttLayer _) ?_
-  rcases (by omega : ℓ = 0 ∨ ℓ = 1 ∨ ℓ = 2 ∨ ℓ = 3 ∨ ℓ = 4 ∨ ℓ = 5) with rfl | rfl | rfl | rfl | rfl | rfl <;> rfl
+  rcases (by omega_arith : ℓ = 0 ∨ ℓ = 1 ∨ ℓ = 2 ∨ ℓ = 3 ∨ ℓ = 4 ∨ ℓ = 5) with rfl | rfl | rfl | rfl | rfl | rfl <;> rfl
 
 theorem wide_ok {s₀ : State} (hp : Pre s₀) {P : Poly} {s : State} (h : Env s₀ s)
     (hP : PolyIs s.mem (F s₀) P) :
@@ -468,7 +468,7 @@ theorem wide_ok {s₀ : State} (hp : Pre s₀) {P : Poly} {s : State} (h : Env s
   refine wp_loop_nz (fun ℓ t => LInv s₀ ((wideLens.take ℓ).foldl nttLayer P) (128 / 2 ^ ℓ) (2 ^ ℓ) t)
     (N := 6) (by decide) (fun ℓ hℓ t ht => ?_) (fun t ht => ht) ?_
   · rw [foldl_take_succ P hℓ]
-    rcases (by omega : ℓ = 0 ∨ ℓ = 1 ∨ ℓ = 2 ∨ ℓ = 3 ∨ ℓ = 4 ∨ ℓ = 5) with rfl | rfl | rfl | rfl | rfl | rfl <;>
+    rcases (by omega_arith : ℓ = 0 ∨ ℓ = 1 ∨ ℓ = 2 ∨ ℓ = 3 ∨ ℓ = 4 ∨ ℓ = 5) with rfl | rfl | rfl | rfl | rfl | rfl <;>
     · refine WP.mono (layer_ok hp (by decide) (by decide) (by decide) ht) fun t' ⟨a, b⟩ => ?_
       simp only [Nat.reducePow, Nat.reduceDiv, Nat.reduceMul, Nat.reduceAdd] at a b ⊢
       exact ⟨a, b⟩

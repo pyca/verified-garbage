@@ -49,7 +49,7 @@ theorem sub_beq_zero {a b : Nat} (ha : a < 2 ^ 32) (hb : b < 2 ^ 32) :
       have := congrArg BitVec.toNat e
       rw [BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt ha, Nat.mod_eq_of_lt hb] at this
       replace this : (2 ^ 32 - b + a) % 2 ^ 32 = 0 := this
-      omega
+      omega_using [ha, hb, h, this]
     rw [beq_eq_false_iff_ne.mpr this, decide_eq_false h]
 
 theorem kdkV_length {σ : State} : (kdkV P σ).length = 32 := hmac_len _ _
@@ -71,17 +71,17 @@ theorem keepI_low (hi : i ≤ R.nb) : Keep P R i P.lay.LOW ∧ Region.Disjoint �
 /-- The states of HMAC. -/
 theorem keepI_st {n : Nat} (hn : n ≤ 192) (hi : i ≤ R.nb) :
     Keep P R i (sc P 0 n) ∧ Region.Disjoint ⟨P.lay.fr oI, 4⟩ (sc P 0 n) :=
-  h.keepI_sc (by omega) (.inl (by simp only [sKDK]; omega)) (.inl (by have := R.x_lo; omega))
-    (.inl (by have := R.dst_lo; omega)) hi
+  h.keepI_sc (by omega_using [hn]) (.inl (by simp only [sKDK]; omega_using [hn])) (.inl (by have := R.x_lo; omega_using [hn, this]))
+    (.inl (by have := R.dst_lo; omega_using [hn, this])) hi
 
 omit h in
 theorem msg_st {n : Nat} (hn : n ≤ 192) : (sc P sMsg R.tl).Disjoint (sc P 0 n) :=
   have : R.tl = R.vs.length + 4 := rfl
-  sc_sep (.inr (by simp only [sMsg]; omega)) (by have := R.vs_len; simp only [sMsg]; omega) (by omega)
+  sc_sep (.inr (by simp only [sMsg]; omega_using [hn])) (by have := R.vs_len; simp only [sMsg]; omega_arith) (by omega_using [hn])
 
 theorem msg_low : (sc P sMsg R.tl).Disjoint P.lay.LOW :=
   have : R.tl = R.vs.length + 4 := rfl
-  (h.low_sc (by have := R.vs_len; simp only [sMsg]; omega)).symm
+  (h.low_sc (by have := R.vs_len; simp only [sMsg]; omega_arith)).symm
 
 end In
 
@@ -131,7 +131,7 @@ theorem upd_vp : VP (B5 P R i) (.call decFns.updN decFns.updC) (B6 P R i) := by
   have hl := R.vs_len
   have htl : R.tl = R.vs.length + 4 := rfl
   refine macUpd_vp (dp := P.scr + BitVec.ofNat 32 sMsg) (dl := R.tl) (k := fun σ _ => kdkV P σ)
-    (fun _ _ h => ⟨h.1.1.1.1.S, h.2, h.1.2, h.1.1.1.1.S.1.dataSc h.1.1.1.1.S (by simp only [sMsg]; omega)
+    (fun _ _ h => ⟨h.1.1.1.1.S, h.2, h.1.2, h.1.1.1.1.S.1.dataSc h.1.1.1.1.S (by simp only [sMsg]; omega_using [hl, htl])
       (by decide) (by decide), by rw [kdkV_length]; decide⟩) fun σ s t h st fr md => ?_
   obtain ⟨⟨hb, -⟩, -⟩ := h
   have hs := hb.1.1.S
@@ -153,7 +153,7 @@ theorem fin_vp (hi : i < R.nb) : VP (B7 P R i) (.call decFns.hfN decFns.hfC) (B8
   have hd := R.dst_hi
   have hd' := R.dst_lo
   refine macFin_vp (o := R.dst + 32 * i) (tl := R.tl) (k := fun σ _ => kdkV P σ)
-    (text := fun _ _ => msgV i R.lab R.L) (by omega) (by omega)
+    (text := fun _ _ => msgV i R.lab R.L) (by omega_using [hd']) (by omega_using [hi, hd])
     (fun _ _ h => ⟨h.1.1.1.S, h.2, h.1.2, by rw [kdkV_length]; decide, by rw [msgV_length]; simp⟩)
     fun σ s t h st fr hk => ?_
   obtain ⟨⟨hb, -⟩, -⟩ := h
@@ -164,14 +164,14 @@ theorem fin_vp (hi : i < R.nb) : VP (B7 P R i) (.call decFns.hfN decFns.hfC) (B8
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
     · exact hs.1.keepI_st (by decide) hb.1.hi
-    · exact hs.1.keepI_sc (by omega) (.inr (by simp only [sKDK]; omega))
+    · exact hs.1.keepI_sc (by omega_using [hi, hd]) (.inr (by simp only [sKDK]; omega_using [hd']))
         (by rcases hx with hx | hx
-            · exact .inr (by omega)
-            · exact .inl (by omega)) (.inr (by omega)) hb.1.hi
+            · exact .inr (by omega_using [hx])
+            · exact .inl (by omega_using [hi, hx])) (.inr (by omega_using [])) hb.1.hi
     · exact hs.1.keepI_low hb.1.hi
   have c := hb.1.keep st fr fun r hr => (kp r hr).1
-  refine ⟨⟨by omega, c.base, c.kdk, c.x, c.sNB, ?_⟩, by rw [slot_keep fr fun r hr => (kp r hr).2]; exact hb.2⟩
-  rw [show 32 * (i + 1) = 32 * i + 32 by omega, bytesAt_add, c.blk, Offset.add_add, List.range_succ,
+  refine ⟨⟨by omega_using [hi], c.base, c.kdk, c.x, c.sNB, ?_⟩, by rw [slot_keep fr fun r hr => (kp r hr).2]; exact hb.2⟩
+  rw [show 32 * (i + 1) = 32 * i + 32 by omega_using [], bytesAt_add, c.blk, Offset.add_add, List.range_succ,
     List.flatMap_append, List.flatMap_singleton]
   exact congrArg _ hk
 
@@ -196,15 +196,15 @@ theorem cmp_vp {n : Nat} (hn : i + 1 + n = R.nb) :
   refine wp_cmp (op2_reg _ _) fun t u hz => WP.block_nil ?_
   have st : P.lay.St σ t := hc.S.2.of_rest (u.rest []) u.mem
   have hc' := hc.of_mem st u.mem
-  rw [r1, r2, sub_beq_zero (by omega) (by omega)] at hz
+  rw [r1, r2, sub_beq_zero (by omega_using [hn, hnb]) (by omega_using [hnb])] at hz
   have e : (!decide (i + 1 = R.nb)) = decide (0 < n) := by
     rcases Nat.eq_zero_or_pos n with h0 | h0
-    · rw [decide_eq_true (by omega : i + 1 = R.nb), decide_eq_false (by omega : ¬ 0 < n)]; rfl
-    · rw [decide_eq_false (by omega : ¬ i + 1 = R.nb), decide_eq_true h0]; rfl
+    · rw [decide_eq_true (by omega_using [hn, h0] : i + 1 = R.nb), decide_eq_false (by omega_using [h0] : ¬ 0 < n)]; rfl
+    · rw [decide_eq_false (by omega_using [hn, h0] : ¬ i + 1 = R.nb), decide_eq_true h0]; rfl
   refine ⟨by rw [eval_ne, hz, e], fun h0 => ?_, fun h0 => ?_⟩
-  · rw [show R.nb = i + 1 by omega]; exact hc'
-  · refine ⟨by omega, ?_⟩
-    rw [show R.nb - n = i + 1 by omega]
+  · rw [show R.nb = i + 1 by omega_using [hn, h0]]; exact hc'
+  · refine ⟨by omega_using [hn], ?_⟩
+    rw [show R.nb - n = i + 1 by omega_using [hn]]
     exact ⟨hc', by rw [u.mem]; exact sI⟩
 
 theorem prfBody_vp
@@ -213,8 +213,8 @@ theorem prfBody_vp
     VP (B0 P R i) (prfBody decFns R.vs R.len R.dst) fun σ s =>
       isa.eval .ne s = some (decide (0 < n)) ∧ (n = 0 → CI P R R.nb σ s) ∧ (0 < n → LI P R n σ s) := by
   have hnb := R.nb_le
-  exact msgPtr_vp.seq ((msg_vp cert (by omega)).seq ((initArgs_vp.seq init_vp).seq ((updArgs_vp.seq upd_vp).seq
-    ((finArgs_vp.seq (fin_vp (by omega))).seq (incr_vp.seq (cmp_vp hn))))))
+  exact msgPtr_vp.seq ((msg_vp cert (by omega_using [hn, hnb])).seq ((initArgs_vp.seq init_vp).seq ((updArgs_vp.seq upd_vp).seq
+    ((finArgs_vp.seq (fin_vp (by omega_using [hn]))).seq (incr_vp.seq (cmp_vp hn))))))
 
 /-- The loop, from block 0. -/
 theorem loop_vp
@@ -224,9 +224,9 @@ theorem loop_vp
   have h1 := R.nb1
   refine (VP.loop (I := LI P R) (fun n => ?_) (R.nb - 1)).mono (fun σ s h => ?_) fun _ _ h => h
   · by_cases hn : n + 1 ≤ R.nb
-    · exact (prfBody_vp (i := R.nb - (n + 1)) cert (by omega)).mono (fun _ _ h => h.2) fun _ _ h => h
+    · exact (prfBody_vp (i := R.nb - (n + 1)) cert (by omega_using [hn])).mono (fun _ _ h => h.2) fun _ _ h => h
     · exact VP.of_false fun _ _ h => hn h.1
-  · refine ⟨by omega, ?_⟩
-    rw [show R.nb - (R.nb - 1 + 1) = 0 by omega]; exact h
+  · refine ⟨by omega_using [h1], ?_⟩
+    rw [show R.nb - (R.nb - 1 + 1) = 0 by omega_using []]; exact h
 
 end VG.Proof.RsaPkcs1Enc.Arm.Dec

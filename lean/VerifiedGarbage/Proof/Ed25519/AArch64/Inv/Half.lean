@@ -24,7 +24,7 @@ open VG.Impl.Ed25519.AArch64.Divstep (half)
 theorem half_arith {W C L H M wo co c e : Nat} (hm : L + 2 ^ 64 * H = M)
     (h1 : wo + 2 ^ 64 * c = W + L) (h2 : co + 2 ^ 64 * e = C + H + c) :
     wo + 2 ^ 64 * co + 2 ^ 128 * e = W + 2 ^ 64 * C + M := by
-  omega
+  omega_using [hm, h1, h2]
 
 theorem half_ok (s : State) {a m wi wo ci co : Reg}
     (ha9 : a ≠ .x9) (hm9 : m ≠ .x9) (hw9 : wi ≠ .x9) (hw10 : wi ≠ .x10)

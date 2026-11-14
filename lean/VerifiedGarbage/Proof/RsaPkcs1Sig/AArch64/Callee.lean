@@ -121,7 +121,7 @@ structure PdOk (K : Nat) (t : State) : Prop where
 
 theorem PdOk.pre {K : Nat} {t : State} (hK : 0 < K) (h : PdOk K t) :
     (Proof.Rsa.publicPrecomputedCheckedContract abi K).pre (t.callEntry.withRegions (pdRd t) (pubWr t)) := by
-  obtain ⟨K, rfl⟩ : ∃ K', K = K' + 1 := ⟨K - 1, by omega⟩
+  obtain ⟨K, rfl⟩ : ∃ K', K = K' + 1 := ⟨K - 1, by omega_using [hK]⟩
   have hl := h.hl
   sig_pre [Proof.Rsa.publicPrecomputedCheckedContract, Proof.Rsa.publicPrecomputedSig, abi, argRegs,
     stackArgs_two, List.append_eq, List.range, List.range.loop]
@@ -145,7 +145,7 @@ theorem pdCall (c : PdChecked) {t : State} {Q : State → Prop} (h : PdOk c.stac
     WP isa (.call c.name c.code) t Q := by
   refine WP.callFV (k := Proof.Rsa.publicPrecomputedCheckedContract abi c.stack) c.verified.1 (h.pre c.pos)
     (Covers.append_left (Covers.trans h.hrd (Covers.refl _)) (Covers.right h.hwr)) h.hwr ?_
-    (by have := c.le; have := c.depth; omega)
+    (by have := c.le; have := c.depth; omega_arith)
   intro s' hrd' hwr' hsp' hf hpres hvs hpost
   sig_post [Proof.Rsa.publicPrecomputedCheckedContract, Proof.Rsa.publicPrecomputedSig, abi, argRegs,
     stackArgs_two, List.append_eq, List.range, List.range.loop] at hpost
@@ -264,7 +264,7 @@ structure PrivOk (K : Nat) (t : State) : Prop where
 
 theorem PrivOk.pre {K : Nat} {t : State} (hK : 0 < K) (h : PrivOk K t) :
     (Proof.Rsa.privateCheckedContract abi K).pre (t.callEntry.withRegions (privRd t) (privWr t)) := by
-  obtain ⟨K, rfl⟩ : ∃ K', K = K' + 1 := ⟨K - 1, by omega⟩
+  obtain ⟨K, rfl⟩ : ∃ K', K = K' + 1 := ⟨K - 1, by omega_using [hK]⟩
   have hl := h.hl
   sig_pre [Proof.Rsa.privateCheckedContract, Proof.Rsa.privateCheckedSig, abi, argRegs, stackArgs_twelve,
     List.append_eq, List.range, List.range.loop]
@@ -293,7 +293,7 @@ theorem privCall (c : PrivChecked) {t : State} {Q : State → Prop} (h : PrivOk 
     WP isa (.call c.name c.code) t Q := by
   refine WP.callFV (k := Proof.Rsa.privateCheckedContract abi c.stack) c.verified.1 (h.pre c.pos)
     (Covers.append_left (Covers.trans h.hrd (Covers.refl _)) (Covers.right h.hwr)) h.hwr ?_
-    (by have := c.le; have := c.depth; omega)
+    (by have := c.le; have := c.depth; omega_arith)
   intro s' hrd' hwr' hsp' hf hpres hvs hpost
   sig_post [Proof.Rsa.privateCheckedContract, Proof.Rsa.privateCheckedSig, abi, argRegs, stackArgs_twelve,
     List.append_eq, List.range, List.range.loop] at hpost
@@ -363,7 +363,7 @@ structure PrivPOk (K : Nat) (t : State) : Prop where
 
 theorem PrivPOk.pre {K : Nat} {t : State} (hK : 0 < K) (h : PrivPOk K t) :
     (Proof.Rsa.privateCheckedPrecomputedContract abi K).pre (t.callEntry.withRegions (privRdP t) (privWr t)) := by
-  obtain ⟨K, rfl⟩ : ∃ K', K = K' + 1 := ⟨K - 1, by omega⟩
+  obtain ⟨K, rfl⟩ : ∃ K', K = K' + 1 := ⟨K - 1, by omega_using [hK]⟩
   have hl := h.ok.hl
   have o := h.ok
   sig_pre [Proof.Rsa.privateCheckedPrecomputedContract, Proof.Rsa.privateCheckedPrecomputedSig,
@@ -397,7 +397,7 @@ theorem privPCall (c : PrivPChecked) {t : State} {Q : State → Prop} (h : PrivP
           (Spec.Rsa.bytesAt t.mem (stackArg t 8) (stackArg t 1).toNat)) → Q s') :
     WP isa (.call c.name c.code) t Q := by
   refine WP.callFV (k := Proof.Rsa.privateCheckedPrecomputedContract abi c.stack) c.verified.1 (h.pre c.pos)
-    (Covers.append_left (Covers.trans h.covers (Covers.refl _)) (Covers.right h.ok.hwr)) h.ok.hwr ?_ (by have := c.le; have := c.depth; omega)
+    (Covers.append_left (Covers.trans h.covers (Covers.refl _)) (Covers.right h.ok.hwr)) h.ok.hwr ?_ (by have := c.le; have := c.depth; omega_arith)
   intro s' hrd' hwr' hsp' hf hpres hvs hpost
   sig_post [Proof.Rsa.privateCheckedPrecomputedContract, Proof.Rsa.privateCheckedPrecomputedSig,
     Proof.Rsa.privateCheckedSig, abi, argRegs, stackArgs_fourteen, List.append_eq, List.range,

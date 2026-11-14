@@ -27,17 +27,17 @@ theorem decrementWords_ok (s : State) {n : Nat} (positive : 0 < n) (bound : n �
   have noborrow : decide (1 ≤ (BitVec.ofNat 32 n).toNat) = decide (n < 2 ^ 32) := by
     by_cases small : n < 2 ^ 32
     · rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt small]
-      simp only [show 1 ≤ n by omega, small, decide_true]
-    · have full : n = 2 ^ 32 := by omega
+      simp only [show 1 ≤ n by omega_using [positive], small, decide_true]
+    · have full : n = 2 ^ 32 := by omega_using [bound, small]
       subst n
       rfl
   have upper : BitVec.ofNat 32 (n / 2 ^ 32) - 1 +
       (if n < 2 ^ 32 then 1 else 0) = BitVec.ofNat 32 ((n - 1) / 2 ^ 32) := by
     by_cases small : n < 2 ^ 32
     · rw [ite_eq_left small, Nat.div_eq_of_lt small,
-        Nat.div_eq_of_lt (by omega : n - 1 < 2 ^ 32)]
+        Nat.div_eq_of_lt (by omega_using [bound] : n - 1 < 2 ^ 32)]
       rfl
-    · have full : n = 2 ^ 32 := by omega
+    · have full : n = 2 ^ 32 := by omega_using [bound, small]
       subst n
       rfl
   refine withRest_all [.r9, .r10, .r12] ?_ (by rfl) (by rfl)
@@ -58,7 +58,7 @@ theorem budgetGuard_ok (s : State) {n : Nat} (bound : n ≤ 2 ^ 32)
     · rw [Nat.div_eq_of_lt small]
       change ((BitVec.ofNat 32 n ||| 0#32) == (0 : BitVec 32)) = _
       rw [BitVec.or_zero, VG.Proof.X25519.Arm.ofNat_beq_zero small]
-    · have full : n = 2 ^ 32 := by omega
+    · have full : n = 2 ^ 32 := by omega_using [bound, small]
       subst n
       rfl
   refine withRest_all [.r9] ?_ (by rfl) (by rfl)

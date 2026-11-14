@@ -63,7 +63,7 @@ structure Base (p : ExP) (xb : List Byte) (s : State) : Prop where
 
 theorem Base.plen {p : ExP} {xb : List Byte} {s : State} (h : Base p xb s) : p.pb.length = p.k := by
   simp only [ExP.pb, List.length_take, h.doml]
-  rcases h.dl with hd | hd <;> rw [hd] <;> omega
+  rcases h.dl with hd | hd <;> rw [hd] <;> omega_using []
 
 theorem Base.keep {p : ExP} {xb : List Byte} {s t : State} {rs : List Reg} (h : Base p xb s)
     (hf : InScr p.B p.Z s.mem t.mem) (k : Keep rs s t)
@@ -81,7 +81,7 @@ theorem Base.child {p : ExP} {xb : List Byte} {s t : State} {mi : BitVec 64} {rs
       (∀ i < 6, word t.mem p.B (8 * i) = word s.mem p.B (8 * i)) := by
   have hw := room_k h.k1 h.hZ
   obtain ⟨hh, hi⟩ := child_frm hc (by unfold inner at hw; omega) hf hr
-  exact ⟨h.keep hi k (fun e he => hh e.1 (headers_lt p e he)), hi, fun i hi => hh i (by omega)⟩
+  exact ⟨h.keep hi k (fun e he => hh e.1 (headers_lt p e he)), hi, fun i hi => hh i (by omega_using [hi])⟩
 
 /-- The setup writes only the layout and the inner workspace. -/
 theorem setup_frame {p : ExP} {s t : State} (hk : 64 ≤ p.k) (hZ : 128 * p.k + 256 ≤ p.Z)
@@ -91,19 +91,19 @@ theorem setup_frame {p : ExP} {s t : State} (hk : 64 ≤ p.k) (hZ : 128 * p.k + 
       (∀ i < 6, word t.mem p.B (8 * i) = word s.mem p.B (8 * i)) := by
   have hw := room_k hk hZ
   change inner p.w + slot p.w 8 + tabBytes p.w 32 ≤ p.Z at hw
-  have hi8 : 8 * 32 ≤ inner p.w := by simp only [inner, slot, hdrBytes]; omega
+  have hi8 : 8 * 32 ≤ inner p.w := by simp only [inner, slot, hdrBytes]; omega_using []
   have hh : ∀ i < 32, i ≠ sW → i ≠ sWs → (i < sArr 0 ∨ sArr 0 + 8 ≤ i) →
       word t.mem p.B (8 * i) = word s.mem p.B (8 * i) := fun i hi h1 h2 h3 =>
     hf.word_eq (fun r hr => by
       simp only [setupR, List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl | rfl <;> simp only <;> unfold sW sWs sArr sFn at * <;> omega) (by omega)
+      rcases hr with rfl | rfl | rfl | rfl <;> simp only <;> unfold sW sWs sArr sFn at * <;> omega_arith) (by omega_using [hi])
   refine ⟨InScr.of_frm hf ?_, ?_, ?_⟩
   · simp only [setupR, List.mem_cons, List.not_mem_nil, or_false]
-    rintro r (rfl | rfl | rfl | rfl) <;> simp only <;> unfold sW sWs sArr sFn at * <;> omega
+    rintro r (rfl | rfl | rfl | rfl) <;> simp only <;> unfold sW sWs sArr sFn at * <;> omega_arith
   · intro e he
     simp only [ExP.headers, List.mem_cons, List.not_mem_nil, or_false] at he
     rcases he with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> exact hh _ (by dsimp only; decide) (by dsimp only; decide) (by dsimp only; decide) (by dsimp only; decide)
   · intro i hi
-    exact hh i (by omega) (by unfold sW; omega) (by unfold sWs sFn; omega) (by unfold sArr; omega)
+    exact hh i (by omega_using [hi]) (by unfold sW; omega_using [hi]) (by unfold sWs sFn; omega_using [hi]) (by unfold sArr; omega_using [hi])
 
 end VG.Proof.Ffdh.X86_64.Exchange

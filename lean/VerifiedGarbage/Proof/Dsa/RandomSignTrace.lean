@@ -15,16 +15,16 @@ def randomSigningTrace (trace : List Nat) : List Nat := trace.dropWhile (· < 5)
 theorem random_sample_trace_small (q fuel : Nat) (rand : List VG.Byte) :
     ∀ x ∈ (VG.Spec.Dsa.Random.sample q fuel rand).trace, x < 5 := by
   induction fuel generalizing rand with
-  | zero => intro x hx; simp only [VG.Spec.Dsa.Random.sample, List.mem_singleton] at hx; omega
+  | zero => intro x hx; simp only [VG.Spec.Dsa.Random.sample, List.mem_singleton] at hx; omega_using [hx]
   | succ fuel ih =>
     rw [VG.Spec.Dsa.Random.sample]
     split
-    · intro x hx; simp only [List.mem_singleton] at hx; omega
+    · intro x hx; simp only [List.mem_singleton] at hx; omega_using [hx]
     · dsimp only
       split
-      · intro x hx; simp only [List.mem_singleton] at hx; omega
+      · intro x hx; simp only [List.mem_singleton] at hx; omega_using [hx]
       · split
-        · intro x hx; simp only [List.mem_singleton] at hx; omega
+        · intro x hx; simp only [List.mem_singleton] at hx; omega_using [hx]
         · intro x hx
           simp only [List.mem_cons] at hx
           rcases hx with rfl | hx
@@ -41,13 +41,13 @@ private theorem take_marker (xs ys : List Nat) (marker : Nat) (hm : 5 ≤ marker
     (h : ∀ x ∈ xs, x < 5) : randomSamplingTrace (xs ++ marker :: ys) = xs := by
   unfold randomSamplingTrace
   rw [List.takeWhile_append_of_pos (fun x hx => decide_eq_true (h x hx)),
-    List.takeWhile_cons_of_neg (by simp only [decide_eq_true_eq]; omega), List.append_nil]
+    List.takeWhile_cons_of_neg (by simp only [decide_eq_true_eq]; omega_using [hm]), List.append_nil]
 
 private theorem drop_marker (xs ys : List Nat) (marker : Nat) (hm : 5 ≤ marker)
     (h : ∀ x ∈ xs, x < 5) : randomSigningTrace (xs ++ marker :: ys) = marker :: ys := by
   unfold randomSigningTrace
   rw [List.dropWhile_append_of_pos (fun x hx => decide_eq_true (h x hx)),
-    List.dropWhile_cons_of_neg (by simp only [decide_eq_true_eq]; omega)]
+    List.dropWhile_cons_of_neg (by simp only [decide_eq_true_eq]; omega_using [hm])]
 
 theorem random_sign_trace_draw (p : RandomSignInput) (used fuel : Nat) :
     randomSamplingTrace (randomSignRemaining p used (fuel + 1)).trace = (randomSignDraw p used).trace := by

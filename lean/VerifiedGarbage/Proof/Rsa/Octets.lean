@@ -2,6 +2,7 @@ module
 public import VerifiedGarbage.Spec.Rsa
 
 import VerifiedGarbage.Proof.Bignum.Math
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # RSA: octet strings, and the checked private operation from its parts
@@ -35,8 +36,8 @@ theorem i2osp_succ (x k : Nat) : i2osp x (k + 1) = i2osp (x / 256) k ++ [BitVec.
     have hi := List.mem_range.mp hi
     rw [Nat.div_div_eq_div_mul, ← Nat.pow_succ']
     congr 3
-    omega
-  · rw [show k + 1 - 1 - k = 0 by omega, Nat.pow_zero, Nat.div_one]
+    omega_using [hi]
+  · rw [show k + 1 - 1 - k = 0 by omega_using [], Nat.pow_zero, Nat.div_one]
 
 /-- I2OSP then OS2IP keeps the low `k` octets. -/
 theorem os2ip_i2osp (x k : Nat) : os2ip (i2osp x k) = x % 256 ^ k := by
@@ -44,7 +45,7 @@ theorem os2ip_i2osp (x k : Nat) : os2ip (i2osp x k) = x % 256 ^ k := by
   | zero => simp [i2osp, os2ip, Nat.mod_one]
   | succ k ih =>
     rw [i2osp_succ, os2ip_snoc, ih, Nat.pow_succ', Nat.mod_mul, BitVec.toNat_ofNat]
-    omega
+    omega_using []
 
 theorem i2osp_length (x k : Nat) : (i2osp x k).length = k := by
   simp [i2osp]
@@ -59,15 +60,15 @@ theorem lt_of_os2ip (bs : List Byte) : os2ip bs < 256 ^ bs.length := by
     rw [os2ip_snoc, List.length_append, List.length_singleton, Nat.pow_succ]
     have := b.isLt
     simp only [Nat.reducePow] at this
-    omega
+    omega_using [ih]
 
 /-! ## The CRT -/
 
 /-- `h = (m₁ - m₂) qInv mod p` of `decryptCrt`, for `p > 0`, is below `p`. -/
 theorem crt_h_lt {p : Nat} (hp : 0 < p) (x : Int) : (x % (p : Int)).toNat < p := by
-  have h1 := Int.emod_nonneg x (by omega : (p : Int) ≠ 0)
-  have h2 := Int.emod_lt_of_pos x (by omega : (0 : Int) < p)
-  omega
+  have h1 := Int.emod_nonneg x (by omega_using [hp] : (p : Int) ≠ 0)
+  have h2 := Int.emod_lt_of_pos x (by omega_using [hp] : (0 : Int) < p)
+  omega_using [hp, h2]
 
 /-- The result of `decryptCrt` is below `n`. -/
 theorem decryptCrt_lt {n p q dP dQ qInv c m : Nat}
@@ -77,16 +78,16 @@ theorem decryptCrt_lt {n p q dP dQ qInv c m : Nat}
   · rename_i hc
     obtain ⟨hcn, hpq, -⟩ := hc
     cases h
-    have hp : 0 < p := Nat.pos_of_ne_zero fun h0 => by subst h0; omega
-    have hq : 0 < q := Nat.pos_of_ne_zero fun h0 => by subst h0; simp at hpq; omega
+    have hp : 0 < p := Nat.pos_of_ne_zero fun h0 => by subst h0; omega_using [hcn, hpq]
+    have hq : 0 < q := Nat.pos_of_ne_zero fun h0 => by subst h0; simp at hpq; omega_using [hcn, hpq]
     have hm₂ : powMod c dQ q < q := by rw [powMod_eq]; exact Nat.mod_lt _ hq
     have hh := crt_h_lt hp (((powMod c dP p : Nat) - (powMod c dQ q : Nat)) * (qInv : Int))
     -- `m₂ + q h ≤ (q - 1) + q (p - 1) = p q - 1`.
     have : q * (((powMod c dP p : Nat) - (powMod c dQ q : Nat)) * (qInv : Int) %
-        (p : Int)).toNat ≤ q * (p - 1) := Nat.mul_le_mul_left _ (by omega)
+        (p : Int)).toNat ≤ q * (p - 1) := Nat.mul_le_mul_left _ (by omega_using [hh])
     have : q * (p - 1) + q = p * q := by
-      rw [Nat.mul_sub_one, Nat.mul_comm q p]; have := Nat.le_mul_of_pos_left q hp; omega
-    omega
+      rw [Nat.mul_sub_one, Nat.mul_comm q p]; have := Nat.le_mul_of_pos_left q hp; omega_using [this]
+    omega_arith
   · simp at h
 
 /-- OS2IP then I2OSP at the string's length is the string. -/
@@ -98,11 +99,11 @@ theorem i2osp_os2ip (bs : List Byte) : i2osp (os2ip bs) bs.length = bs := by
     rw [List.reverse_cons]
     have hb := b.isLt
     rw [os2ip_snoc, List.length_append, List.length_singleton, i2osp_succ,
-      show (256 * os2ip l.reverse + b.toNat) / 256 = os2ip l.reverse by omega, ih]
+      show (256 * os2ip l.reverse + b.toNat) / 256 = os2ip l.reverse by omega_using [], ih]
     congr 2
     apply BitVec.eq_of_toNat_eq
     rw [BitVec.toNat_ofNat]
-    omega
+    omega_using []
 
 /-- I2OSP of an integer below `256^k` is a string of `k` octets exactly when
 the integer is its OS2IP. -/
@@ -135,7 +136,7 @@ theorem privateChecked_of_crt {nB eB xB pB qB dPB dQB qInvB : List Byte} (hx : x
     | some m =>
       have hlt := decryptCrt_lt hd
       have hk := lt_of_os2ip nB
-      have hn : 0 < os2ip nB := by omega
+      have hn : 0 < os2ip nB := by omega_using [hlt]
       by_cases he : exponentValid (os2ip eB) = true
       · have hpub : publicOpChecked nB eB (i2osp m nB.length) =
             some (i2osp (powMod m (os2ip eB) (os2ip nB)) nB.length) := by

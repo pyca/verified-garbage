@@ -23,7 +23,7 @@ private theorem trim_ctx {base tbl sp:Addr} {S K i:Nat} {s:State} (hi:i<464)
     WP isa (.block trimStep) s fun t => Pinned sp tbl (TimingCtx base tbl S K i) t ∧
       (t.gpr .x9==0)=decide (digitAt true S i=0 ∧ digitAt false K i=0 ∧ i≠0):=by
   obtain ⟨tr,t,e,t19,t9,tk,tm⟩:=trimStep_ok h.1.core.scr hi h.1.counter
-    (baseDigit_bound S i) (by have :=keyDigit_bound K i;omega) (h.1.sd i hi) (h.1.kd i hi)
+    (baseDigit_bound S i) (by have :=keyDigit_bound K i;omega_using [this]) (h.1.sd i hi) (h.1.kd i hi)
   exact ⟨tr,t,e,⟨h.1.regsOnly tk tm (by decide) t19,(Exec.sp e).trans h.2.1,
     by rw [Exec.syms e];exact h.2.2⟩,t9⟩
 
@@ -39,8 +39,8 @@ theorem trim_ct (base tbl sp:Addr) (S K n:Nat) (hn:0<n) (hn':n≤464) :
   apply (hl ?_ n).mono (fun _ _ h => ⟨hn,hn',h⟩) (fun _ _ h => h)
   intro m
   by_cases hm:0<m ∧ m≤464
-  · obtain ⟨i,rfl⟩:∃ i,m=i+1:=⟨m-1,by omega⟩
-    have hi:i<464:=by omega
+  · obtain ⟨i,rfl⟩:∃ i,m=i+1:=⟨m-1,by omega_using [hm]⟩
+    have hi:i<464:=by omega_using [hm]
     have hs:RelCT isa (I (i+1)) (.block trimStep) (fun _ _ => True):=
       RelCT.taint (A:=taintS [baseSym]) (Taint.ofRegs [.x3,.x19])
         (fun _ _ h => timingCtx_agree h.2.2) (by taint_decide)
@@ -52,7 +52,7 @@ theorem trim_ct (base tbl sp:Addr) (S K n:Nat) (hn:0<n) (hn':n≤464) :
     refine ⟨trivial,fun _ => ⟨i,hi,hs,ht⟩,?_⟩
     intro hc
     have hd:digitAt true S i=0 ∧ digitAt false K i=0 ∧ i≠0:=of_decide_eq_true (Option.some.inj hc)
-    exact ⟨i,by omega,by omega,by omega,hs,ht⟩
+    exact ⟨i,by omega_using [],by omega_using [hd],by omega_using [hm],hs,ht⟩
   · exact RelCT.of_false (fun _ _ h => hm ⟨h.1,h.2.1⟩)
 
 end VG.Proof.Ed448.AArch64.Sparse

@@ -43,7 +43,7 @@ theorem lowInit_ok {g B : Nat} (hg : VG.Proof.MlDsa.AArch64.Round.IsG g)
     intro i hi
     rw [he.other .v24 (by decide),hd.v,VG.Proof.MlKem.AArch64.vword_ofVWords _ _ _ _ hi,
       hc26.1.gpr .x4 (by decide),hb25.1.gpr .x4 (by decide),hka.gpr .x4 (by decide)]
-    rcases (show i=0∨i=1∨i=2∨i=3 by omega) with rfl|rfl|rfl|rfl <;> exact hb
+    rcases (show i=0∨i=1∨i=2∨i=3 by omega_using [hi]) with rfl|rfl|rfl|rfl <;> exact hb
   have hsub : BitVec.ofNat 32 B-(1 : BitVec 32)=BitVec.ofNat 32 (B-1) := by
     bv_omega_arith
   refine ⟨setup_mono (hka.trans hat) (by decide),?_,?_⟩
@@ -66,7 +66,7 @@ theorem lowInit_ok {g B : Nat} (hg : VG.Proof.MlDsa.AArch64.Round.IsG g)
     · intro i hi; rw [hlo i hi,hbound i hi,hsub]
     · intro i hi
       rw [hw i hi,hbound i hi,hsub,← BitVec.ofNat_add]
-      congr 1; omega
+      congr 1; omega_using []
   · rw [ht.vec .v31 (by decide),he.v]
 
 end VG.Proof.MlDsa.AArch64.Optimized.Response

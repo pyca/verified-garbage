@@ -86,7 +86,7 @@ theorem ld_ok {s : State} {base : Addr} (hs : Scr s base) (r : Reg) {d : Nat}
     WP isa (.block [ld r d]) s fun t =>
       t.gpr r = word s.mem base d ∧ t.mem = s.mem ∧ Keeps [r] s t := by
   have l := hs.read (d := d) (n := 8) hd
-  have ae : d % 8 = 0 ∧ d < 32768 := ⟨h8, by omega⟩
+  have ae : d % 8 = 0 ∧ d < 32768 := ⟨h8, by omega_using [hd]⟩
   refine WP.of_runBlock ⟨_, by
     simp only [ld, runBlock_cons, runStep_some, runBlock_nil, exec, addr, Size.bytes,
       State.load, ae, and_self, hs.x3, l, ite_true, Option.map_some, Option.bind_some]; rfl, ?_⟩
@@ -118,7 +118,7 @@ theorem PtrOk.of_keeps {s t : State} {base : Addr} {r : Reg} {d o : Nat} (h : Pt
 /-- The working space's own pointer, `x3`, addresses an aligned operand at its offset. -/
 theorem PtrOk.x3 {s : State} {base : Addr} (hs : Scr s base) {o : Nat} (h8 : o % 8 = 0)
     (ho : o + 64 ≤ 8192) : PtrOk s base .x3 o o :=
-  ⟨fun e => by rw [hs.x3], h8, by omega, ho⟩
+  ⟨fun e => by rw [hs.x3], h8, by omega_using [ho], ho⟩
 
 /-- A load from `rb` plus `D`, the address of byte `x` of the working space. -/
 theorem ldAt_ok {s : State} {base : Addr} (hs : Scr s base) (r rb : Reg) {D x : Nat}
@@ -154,8 +154,8 @@ theorem ldPtr_ok {s : State} {base : Addr} (hs : Scr s base) (r : Reg) {rb : Reg
     (hp : PtrOk s base rb d o) {k : Nat} (hk : k < 8) :
     WP isa (.block [.ldr .x r rb (d + 8 * k)]) s fun t =>
       t.gpr r = word s.mem base (o + 8 * k) ∧ t.mem = s.mem ∧ Keeps [r] s t :=
-  ldAt_ok hs r rb (hp.ptr (8 * k)) (by have := hp.al; omega) (by have := hp.lt; omega)
-    (by have := hp.fit; omega)
+  ldAt_ok hs r rb (hp.ptr (8 * k)) (by have := hp.al; omega_using [this]) (by have := hp.lt; omega_using [hk, this])
+    (by have := hp.fit; omega_using [hk, this])
 
 theorem mul2_ok (s : State) {d₁ d₂ x y : Reg} (h₁ : d₁ ≠ x) (h₂ : d₁ ≠ y) (h₃ : d₁ ≠ d₂) :
     WP isa (.block [.mul .x d₁ x y, .umulh d₂ x y]) s fun t =>
@@ -263,7 +263,7 @@ theorem add_emod' {x p : Nat} {e f : Int} (h : (x : Int) = e % M) (hp : (p : Int
 theorem sub_emod' {x p : Nat} {e f : Int} (h : (x : Int) = e % M) (hp : (p : Int) = f % M)
     (hpM : p ≤ M) : (((x + (M - p)) % M : Nat) : Int) = (e - f) % M := by
   rw [Int.natCast_emod, Int.natCast_add, Int.natCast_sub hpM, h, hp, Int.emod_add_emod]
-  rw [show e + ((M : Nat) - f % (M : Nat)) = (e - f % (M : Nat)) + (M : Nat) by omega,
+  rw [show e + ((M : Nat) - f % (M : Nat)) = (e - f % (M : Nat)) + (M : Nat) by omega_using [],
     Int.add_emod_right, Int.sub_emod, Int.emod_emod_of_dvd _ (Int.dvd_refl _), ← Int.sub_emod]
 
 theorem self_emod {x : Nat} (h : x < M) : (x : Int) = (x : Int) % M := by

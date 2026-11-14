@@ -48,9 +48,9 @@ theorem copySlot_ok {s : State} {base : Addr} (hs : Scr s base) (i j : Index) :
   have hj := Proof.X448.X86_64.slot_lt j
   have gi := Proof.X448.X86_64.slot_ge i
   simp only [Impl.X448.X86_64.ACC] at hi hj
-  refine WP.mono (copyOut_ok hs (by omega) (by omega)) fun t ⟨ft, ot, gt, rdt, wrt⟩ =>
+  refine WP.mono (copyOut_ok hs (by omega_using [hi]) (by omega_using [hj])) fun t ⟨ft, ot, gt, rdt, wrt⟩ =>
     ⟨⟨fun r hr => gt r (fun h => hr (hW r h)), rdt, wrt,
-      ot.mono (by omega) (by omega)⟩, ?_⟩
+      ot.mono (by omega_using [gi]) (by omega_using [hi])⟩, ?_⟩
   funext k
   by_cases hk : k = i
   · subst hk
@@ -72,6 +72,6 @@ theorem constE_ok {s : State} {base : Addr} (hs : Scr s base) (i : Index) (v : S
   simp only [Impl.X448.X86_64.ACC] at hi
   exact WP.mono (constSlot_ok hs i v hv) fun t ⟨et, ot, gt, rdt, wrt⟩ =>
     ⟨⟨fun r hr => gt r (fun h => hr (hW r h)), rdt, wrt,
-      ot.mono (by omega) (by omega)⟩, et⟩
+      ot.mono (by omega_using [gi]) (by omega_using [hi])⟩, et⟩
 
 end VG.Proof.Ed448.X86_64

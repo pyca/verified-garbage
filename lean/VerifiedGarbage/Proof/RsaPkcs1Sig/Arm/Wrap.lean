@@ -53,11 +53,11 @@ theorem wrap_ok {F : Nat} (hF : FrameOk F) {body : Prog isa} {s : State} (hsp : 
     {W : List Region} (hW : ∀ r ∈ W, (pushRegion s).Disjoint r) {Q : BitVec 32 → Mem → Prop}
     (hb : WP isa body (entered F s) fun u => Frame W (entered F s).mem u.mem ∧ Q (u.gpr .r0) u.mem) :
     WP isa (wrap F body) s fun t => abiPreserved s t ∧ Q (t.gpr .r0) t.mem := by
-  have fit56 : 56 ≤ s.sp.toNat := by omega
+  have fit56 : 56 ≤ s.sp.toNat := by omega_using [hsp]
   have allocation : F ≤ (pcPushed s).sp.toNat := by
     change F ≤ (s.sp - BitVec.ofNat 32 56).toNat
     rw [FrameStack.sub_toNat' fit56]
-    omega
+    omega_using [hsp]
   unfold wrap
   refine WP.frame (by decide) fit56 (by decide) ?_
   rw [WP.seq_iff]
@@ -76,7 +76,7 @@ theorem wrap_ok {F : Nat} (hF : FrameOk F) {body : Prog isa} {s : State} (hsp : 
     change (s.sp - BitVec.ofNat 32 56).toNat + 56 ≤ 2 ^ 32
     rw [FrameStack.sub_toNat' fit56]
     have := s.sp.isLt
-    omega
+    omega_using []
   have saved : Spill.Saved (freed F u).mem (State.addr (freed F u).sp) s.gpr pcCalleeSaved := by
     rw [spF]
     have initial := pc_push_callee_saved s fit56
@@ -124,8 +124,8 @@ theorem wrap_ct {F : Nat} (hF : FrameOk F) {body : Prog isa} {P : State → Stat
   obtain ⟨s0, t0, h0, ps, pt⟩ := hp
   have fs := hfit _ _ h0
   have ft : F + 56 ≤ t0.sp.toNat := by rw [← hsp _ _ h0]; exact fs
-  have ps' := push_pushed (s := s0) (rs := pushRegs) (by decide) (by change 56 ≤ s0.sp.toNat; omega)
-  have pt' := push_pushed (s := t0) (rs := pushRegs) (by decide) (by change 56 ≤ t0.sp.toNat; omega)
+  have ps' := push_pushed (s := s0) (rs := pushRegs) (by decide) (by change 56 ≤ s0.sp.toNat; omega_using [fs])
+  have pt' := push_pushed (s := t0) (rs := pushRegs) (by decide) (by change 56 ≤ t0.sp.toNat; omega_using [ft])
   have es : pcPushed s0 = s := Option.some.inj (ps'.symm.trans ps)
   have et : pcPushed t0 = t := Option.some.inj (pt'.symm.trans pt)
   subst s; subst t
@@ -137,13 +137,13 @@ theorem wrap_ct {F : Nat} (hF : FrameOk F) {body : Prog isa} {P : State → Stat
     have alloc_s : isa.push (.alloc F) (pcPushed s0) = some (entered F s0) := by
       have hn : F ≤ (pcPushed s0).sp.toNat := by
         change F ≤ (s0.sp - BitVec.ofNat 32 56).toNat
-        rw [FrameStack.sub_toNat' (by omega)]; omega
+        rw [FrameStack.sub_toNat' (by omega_using [fs])]; omega_using [fs]
       simp only [isa, push, hF.1, hF.2.1, hF.2.2.1, hF.2.2.2, hn, and_self, ite_true]
       rfl
     have alloc_t : isa.push (.alloc F) (pcPushed t0) = some (entered F t0) := by
       have hn : F ≤ (pcPushed t0).sp.toNat := by
         change F ≤ (t0.sp - BitVec.ofNat 32 56).toNat
-        rw [FrameStack.sub_toNat' (by omega)]; omega
+        rw [FrameStack.sub_toNat' (by omega_using [ft])]; omega_using [ft]
       simp only [isa, push, hF.1, hF.2.1, hF.2.2.1, hF.2.2.2, hn, and_self, ite_true]
       rfl
     have ea : entered F s0 = a := Option.some.inj (alloc_s.symm.trans pa)

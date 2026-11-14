@@ -95,7 +95,7 @@ theorem InvR.update {k N : Nat} {σ : Nat → Nat} {base : Addr} {m : Nat} [NeZe
     have hxN := hI.ids x hx
     have h1 := hL.le x hxN
     have h2 := hL.apart o hoW x hxN hxo
-    refine Outs.wordsVal hk.mem (fun r hr => ?_) (by have := hI.far.nowrap; omega)
+    refine Outs.wordsVal hk.mem (fun r hr => ?_) (by have := hI.far.nowrap; omega_using [hown, h1])
     simp only [List.map_cons, List.map_nil, List.cons_append, List.nil_append, List.mem_cons,
       List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
@@ -143,10 +143,10 @@ theorem fopR_ok {k N : Nat} {σ : Nat → Nat} {base : Addr} {S : Impl.Weierstra
     have hA := hI.lt a hR.1
     have hB := hI.lt b hR.2
     refine WP.mono (addCallR_ok (enc := σ) hM hI.scr hI.far (hL.le o hN.1) (hL.le a hN.2.1) (hL.le b hN.2.2)
-        (by omega))
+        (by omega_using [hA, hB]))
       fun s' ⟨K, heq⟩ => ?_
     refine ⟨.of_call K, hI.update hL hW hN.1 (.of_call K) ?_ ?_⟩
-    · rw [heq]; exact Nat.mod_lt _ (by omega)
+    · rw [heq]; exact Nat.mod_lt _ (by omega_using [hA])
     · rw [heq, toM_add, hI.val a hR.1, hI.val b hR.2]
   | sub o a b =>
     simp only [FOp.out, FOp.ins, List.mem_cons, List.not_mem_nil, or_false,
@@ -157,8 +157,8 @@ theorem fopR_ok {k N : Nat} {σ : Nat → Nat} {base : Addr} {S : Impl.Weierstra
         hA hB)
       fun s' ⟨K, heq⟩ => ?_
     refine ⟨.of_call K, hI.update hL hW hN.1 (.of_call K) ?_ ?_⟩
-    · rw [heq]; exact Nat.mod_lt _ (by omega)
-    · rw [heq, toM_sub (by omega), hI.val a hR.1, hI.val b hR.2]
+    · rw [heq]; exact Nat.mod_lt _ (by omega_using [hA])
+    · rw [heq, toM_sub (by omega_using [hB]), hI.val a hR.1, hI.val b hR.2]
 
 /-- A field program. -/
 theorem fprogR_ok {k N : Nat} {σ : Nat → Nat} {base : Addr} {S : Impl.Weierstrass.Mont.Modulus}

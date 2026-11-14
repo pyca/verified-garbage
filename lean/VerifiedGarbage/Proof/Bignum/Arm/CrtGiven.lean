@@ -59,7 +59,7 @@ theorem beq_sub_ofNat {a b : Nat} (ha : a < 2 ^ 32) (hb : b < 2 ^ 32) :
       rw [BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt ha,
         Nat.mod_eq_of_lt hb] at this
       change _ = 0 at this
-      omega
+      omega_using [ha, hb, this]
     simp only [h, decide_false]
     exact beq_eq_false_iff_ne.mpr ne
 
@@ -78,23 +78,23 @@ theorem r2WidthTest_ok (s : State) {g : CrtGeometry} {bs : Fin 7 → List Byte} 
     have := shared.buffers.pShort
     have := shared.buffers.qShort
     have : g.sourceLength j.succ ≤ g.length := by
-      unfold CrtGeometry.sourceLength; split <;> omega
-    omega
+      unfold CrtGeometry.sourceLength; split <;> omega_arith
+    omega_arith
   have vSmall : v < 2 ^ 28 := by
     have := ready.width ▸ ready.layout.2.2.1
     simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at this
     have := nw.nowrap
-    omega
+    omega_arith
   have nNow := nw.nowrap
   have spNow := shared.stack.nowrap
   unfold r2WidthTest
   refine wp_ldr (a := off (State.addr (crtN g.base g.words)) 48) (by decide)
-    (by rw [ready.ptr]; exact addr_add (by omega)) (nw.read (by omega)) fun u a => ?_
+    (by rw [ready.ptr]; exact addr_add (by omega_using [size, nNow])) (nw.read (by omega_using [size])) fun u a => ?_
   have slotAddr : State.addr (u.sp + BitVec.ofNat 32 (56 + 8 * j.val + 4)) = off (State.addr s.sp) (60 + 8 * j.val) := by
-    rw [a.sp, show 56 + 8 * j.val + 4 = 60 + 8 * j.val by omega]
-    exact addr_add (by omega)
-  refine wp_loadStack (a := off (State.addr s.sp) (60 + 8 * j.val)) (by omega) slotAddr
-    (by rw [a.rd, a.wr]; exact shared.stack.read (by omega)) fun z b => ?_
+    rw [a.sp, show 56 + 8 * j.val + 4 = 60 + 8 * j.val by omega_using []]
+    exact addr_add (by omega_using [spNow])
+  refine wp_loadStack (a := off (State.addr s.sp) (60 + 8 * j.val)) (by omega_using []) slotAddr
+    (by rw [a.rd, a.wr]; exact shared.stack.read (by omega_using [])) fun z b => ?_
   refine wp_dp (op2_imm (by decide)) fun y c => ?_
   refine wp_mov (op2_lsr ⟨by decide, by decide⟩) fun x d => ?_
   refine wp_cmp (op2_reg _ _) fun t e zf => WP.block_nil ?_
@@ -108,7 +108,7 @@ theorem r2WidthTest_ok (s : State) {g : CrtGeometry} {bs : Fin 7 → List Byte} 
     (a.rest (by decide)).trans ((b.rest (by decide)).trans ((c.rest (by decide)).trans
       ((d.rest (by decide)).trans (e.rest _))))⟩
   rw [zf, r1, r2]
-  exact beq_sub_ofNat (by omega) (by omega)
+  exact beq_sub_ofNat (by omega_using [vSmall]) (by omega_using [lenSmall])
 
 /-! ## The given value's address -/
 
@@ -123,7 +123,7 @@ theorem maxTwo_ofNat {c : Nat} (h1 : 1 ≤ c) (hc : c < 2 ^ 28) :
     BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow]
   by_cases h : c = 1
   · subst h; decide
-  · rw [Nat.max_eq_right (by omega)]
+  · rw [Nat.max_eq_right (by omega_using [h1, h])]
     omega_arith
 
 theorem r2Source_ok (s : State) {g : CrtGeometry} {bs : Fin 7 → List Byte} {a : BitVec 32} {j : Fin 6}
@@ -134,7 +134,7 @@ theorem r2Source_ok (s : State) {g : CrtGeometry} {bs : Fin 7 → List Byte} {a 
   have slot := r.slotFit
   rcases hj with rfl | rfl
   · show WP isa (.block [.ldrSp .r1 112]) s _
-    refine wp_loadStack (a := off (State.addr s.sp) 112) (by decide) (addr_add (by omega)) r.slotRead
+    refine wp_loadStack (a := off (State.addr s.sp) 112) (by decide) (addr_add (by omega_using [slot])) r.slotRead
       fun t b => WP.block_nil ?_
     exact ⟨by rw [b.gpr, r.slot]; rfl, b.mem, b.rest (by decide)⟩
   · show WP isa (.block [.ldrSp .r1 112, .ldrSp .r2 68, .dp .add .r2 .r2 (.imm 7), .mov .r2 (.shifted .r2 .lsr 3),
@@ -142,12 +142,12 @@ theorem r2Source_ok (s : State) {g : CrtGeometry} {bs : Fin 7 → List Byte} {a 
       .dp .add .r1 .r1 (.shifted .r2 .lsl 3)]) s _
     have spNow := shared.stack.nowrap
     have pLen : g.pLength < 2 ^ 28 := by
-      have := shared.buffers.pShort; have := shared.buffers.lengthValid.2; omega
+      have := shared.buffers.pShort; have := shared.buffers.lengthValid.2; omega_arith
     have pPos := shared.buffers.pPositive
-    refine wp_loadStack (a := off (State.addr s.sp) 112) (by decide) (addr_add (by omega)) r.slotRead
+    refine wp_loadStack (a := off (State.addr s.sp) 112) (by decide) (addr_add (by omega_using [slot])) r.slotRead
       fun u b => ?_
     refine wp_loadStack (a := off (State.addr s.sp) 68) (by decide)
-      (by rw [b.sp]; exact addr_add (by omega)) (by rw [b.rd, b.wr]; exact shared.stack.read (by decide))
+      (by rw [b.sp]; exact addr_add (by omega_using [slot])) (by rw [b.rd, b.wr]; exact shared.stack.read (by decide))
       fun v c => ?_
     refine wp_dp (op2_imm (by decide)) fun x d => ?_
     refine wp_mov (op2_lsr ⟨by decide, by decide⟩) fun y e => ?_
@@ -162,7 +162,7 @@ theorem r2Source_ok (s : State) {g : CrtGeometry} {bs : Fin 7 → List Byte} {a 
     have cQ : q.gpr .r2 = BitVec.ofNat 32 (Spec.Rsa.primeWords g.pLength) := by
       rw [k.gpr, dpVal, i.other .r2 (by decide), f.other .r2 (by decide), i.gpr, f.gpr, dpVal, cY]
       unfold Spec.Rsa.primeWords Spec.Rsa.modulusWords
-      exact maxTwo_ofNat (by omega) (by omega)
+      exact maxTwo_ofNat (by omega_using [pPos]) (by omega_using [pLen])
     have aQ : q.gpr .r1 = a := by
       rw [k.other .r1 (by decide), i.other .r1 (by decide), f.other .r1 (by decide), e.other .r1 (by decide),
         d.other .r1 (by decide), c.other .r1 (by decide), b.gpr, r.slot]
@@ -219,14 +219,14 @@ theorem r2Src_given {s : State} {g : CrtGeometry} {bs : Fin 7 → List Byte} {a 
     rw [(shared.buffers.source 2).length]; rfl
   obtain ⟨wp, wq⟩ := List.append_inj words lenP
   have hq : State.addr (a + BitVec.ofNat 32 (8 * Spec.Rsa.primeWords g.pLength)) =
-      State.addr a + BitVec.ofNat 64 (8 * Spec.Rsa.primeWords g.pLength) := addr_add (by omega)
+      State.addr a + BitVec.ofNat 64 (8 * Spec.Rsa.primeWords g.pLength) := addr_add (by omega_using [fit, q2])
   rcases hj with rfl | rfl
   · change a.toNat + 8 * Spec.Rsa.primeWords g.pLength ≤ _ ∧
       InRegions _ (State.addr a) (8 * Spec.Rsa.primeWords g.pLength) ∧
       Region.Disjoint ⟨State.addr a, 8 * Spec.Rsa.primeWords g.pLength⟩ _ ∧
       Spec.Rsa.wordsAt s.mem (State.addr a) (Spec.Rsa.primeWords g.pLength) = _
-    refine ⟨by omega, ?_, sep.sub_left (Region.sub_prefix (by omega)), wp⟩
-    simpa only [BitVec.add_zero] using CallLay.inRegions_sub (off := 0) read (by omega) (by omega)
+    refine ⟨by omega_using [fit], ?_, sep.sub_left (Region.sub_prefix (by omega_using [])), wp⟩
+    simpa only [BitVec.add_zero] using CallLay.inRegions_sub (off := 0) read (by omega_using []) (by omega_using [fit])
   · change (a + BitVec.ofNat 32 (8 * Spec.Rsa.primeWords g.pLength)).toNat + 8 * Spec.Rsa.primeWords g.qLength ≤ _ ∧
       InRegions _ (State.addr (a + BitVec.ofNat 32 (8 * Spec.Rsa.primeWords g.pLength))) (8 * Spec.Rsa.primeWords g.qLength) ∧
       Region.Disjoint ⟨State.addr (a + BitVec.ofNat 32 (8 * Spec.Rsa.primeWords g.pLength)),
@@ -234,10 +234,10 @@ theorem r2Src_given {s : State} {g : CrtGeometry} {bs : Fin 7 → List Byte} {a 
       Spec.Rsa.wordsAt s.mem (State.addr (a + BitVec.ofNat 32 (8 * Spec.Rsa.primeWords g.pLength)))
         (Spec.Rsa.primeWords g.qLength) = _
     rw [hq]
-    refine ⟨?_, CallLay.inRegions_sub read (by omega) (by omega),
-      sep.sub_left (Offset.sub_base _ (by omega)), wq⟩
-    rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega)]
-    omega
+    refine ⟨?_, CallLay.inRegions_sub read (by omega_using []) (by omega_using [fit]),
+      sep.sub_left (Offset.sub_base _ (by omega_using [])), wq⟩
+    rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [fit, q2]), Nat.mod_eq_of_lt (by omega_using [fit, q2])]
+    omega_using [fit]
 
 /-! ## The copy and the selection -/
 
@@ -293,31 +293,31 @@ theorem copied_ok {bs : Fin 7 → List Byte} (s z : State) (hj : j = 1 ∨ j = 2
   have narrowSub := crt_region_sub_workspace h.shared.buffers.workspace h.shared.buffers.storageFits
     h.shared.narrow_member
   have dstAddr : State.addr (crtN g.base g.words + BitVec.ofNat 32 (arrAt v 4)) =
-      off (State.addr (crtN g.base g.words)) (arrAt v 4) := addr_add (by omega)
+      off (State.addr (crtN g.base g.words)) (arrAt v 4) := addr_add (by omega_using [nNow, end4])
   have dstNat : (crtN g.base g.words + BitVec.ofNat 32 (arrAt v 4)).toNat =
       (crtN g.base g.words).toNat + arrAt v 4 := by
-    rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega)]
+    rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [nNow, end4]), Nat.mod_eq_of_lt (by omega_using [nNow, end4])]
   have dstSub : Region.Sub ⟨State.addr (crtN g.base g.words + BitVec.ofNat 32 (arrAt v 4)), 8 * v⟩
       ⟨State.addr (crtN g.base g.words), 8 * workspaceWords g.words⟩ := by
-    rw [dstAddr]; exact Offset.sub_base _ (by omega)
+    rw [dstAddr]; exact Offset.sub_base _ (by omega_using [end4])
   rw [WP.seq_iff]
-  refine WP.mono (copyBuffer_ok z (n := 8 * v) (by omega) srcFit (by rw [dstNat]; omega) (by omega)
+  refine WP.mono (copyBuffer_ok z (n := 8 * v) (by omega_using [hv]) srcFit (by rw [dstNat]; omega_using [nNow, end4]) (by omega_using [nNow, end4])
     (by rw [restZ.rd, restZ.wr]; exact srcRead)
     (by
       rw [dstAddr, restZ.wr]
-      exact ⟨_, nw.writable, Offset.contains_base _ (by omega) (by omega)⟩)
+      exact ⟨_, nw.writable, Offset.contains_base _ (by omega_using [end4]) (by omega_using [dstNat])⟩)
     ((srcSep.sub_right narrowSub).sub_right dstSub) p0 p1 plr) ?_
   rintro y ⟨value, frameY, _, restY⟩
   rw [dstAddr] at value frameY
   refine wp_mov (op2_reg _ _) fun x mv => WP.block_nil ?_
   have ptrX : x.gpr .r0 = crtN g.base g.words := by
     rw [mv.gpr, restY.gpr .r5 (by decide), p5]
-  have outside := frame_array_outside (by omega : arrAt v 4 + 8 * v < 2 ^ 64) frameY
+  have outside := frame_array_outside (by omega_using [srcFit, dstNat] : arrAt v 4 + 8 * v < 2 ^ 64) frameY
   have frameX : Frame [⟨State.addr (crtN g.base g.words), 8 * workspaceWords g.words⟩] s.mem x.mem := by
-    rw [mv.mem, ← memZ]; exact outside_workspace outside (by omega)
+    rw [mv.mem, ← memZ]; exact outside_workspace outside (by omega_using [end4])
   have keepsX : Keeps (State.addr (crtN g.base g.words)) (workspaceWords g.words) v 4 s.mem x.mem := by
     rw [mv.mem, ← memZ]
-    exact outside_array_prefix_keeps outside (by omega : 8 * workspaceWords g.words < 2 ^ 64) (by omega)
+    exact outside_array_prefix_keeps outside (by omega_using [nNow] : 8 * workspaceWords g.words < 2 ^ 64) (by omega_using [])
   have restX : Rest roundClobbers s x :=
     restZ.trans ((restY.mono (by decide)).trans (mv.rest (by decide)))
   obtain ⟨readyX, modX⟩ := ready.after_array (by decide : 4 ≠ 0) keepsX frameX restX ptrX
@@ -345,7 +345,7 @@ theorem selected_ok {bs : Fin 7 → List Byte} (s x : State) (h : CopyIn g bs j 
   refine WP.mono (smallConstLayout_ok x 1 readyX.workspace readyX.layout readyX.width readyX.ptr
     (by decide : 7 < 8) (by decide) (by decide) readyX.stackRead readyX.stackSep readyX.saved) ?_
   rintro w ⟨_, _, number7, outside7, frame7, rest7, ptrW⟩
-  have keeps7 := outside_array_keeps outside7 (len := workspaceWords g.words) (by omega)
+  have keeps7 := outside_array_keeps outside7 (len := workspaceWords g.words) (by omega_using [nNow])
   obtain ⟨readyW, modW⟩ := readyX.after_array (by decide : 7 ≠ 0) keeps7 frame7 rest7 ptrW
   have arr4W := (keeps_array_num keeps7 fits
     (by simp [Proof.Rsa.Mont.Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp] : Proof.Rsa.Mont.Operand 4)
@@ -357,7 +357,7 @@ theorem selected_ok {bs : Fin 7 → List Byte} (s x : State) (h : CopyIn g bs j 
     exact frameSW.readW (r := ⟨off (State.addr s.sp) 48, 4⟩) (Region.contains_self _ _)
       (fun r hr => by simp only [List.mem_singleton] at hr; subst r; exact h.slotSep) (by decide)
   rw [WP.seq_iff]
-  refine wp_loadStack (a := off (State.addr w.sp) 48) (by decide) (addr_add (by rw [restSW.sp]; omega))
+  refine wp_loadStack (a := off (State.addr w.sp) 48) (by decide) (addr_add (by rw [restSW.sp]; omega_using [spNow]))
     (by rw [restSW.rd, restSW.wr, restSW.sp]; exact h.shared.stack.read (by decide)) fun q ld => WP.block_nil ?_
   have r11 : q.gpr .r11 = s.mem.readW (off (State.addr s.sp) 48) 32 := ld.gpr.trans flagW
   have readyQ := readyW.of_mem ld.mem (ld.rest (by decide : Reg.r11 ∈ [Reg.r11]))
@@ -366,7 +366,7 @@ theorem selected_ok {bs : Fin 7 → List Byte} (s x : State) (h : CopyIn g bs j 
     (by decide : 4 < 8) (by decide : 7 < 8) (by decide : 4 < 8) (by rw [r11]; exact h.bit)
     readyQ.stackRead readyQ.stackSep readyQ.saved) ?_
   rintro t ⟨_, _, valueT, outsideT, frameT, restT, ptrT⟩
-  have keepsT := outside_array_keeps outsideT (len := workspaceWords g.words) (by omega)
+  have keepsT := outside_array_keeps outsideT (len := workspaceWords g.words) (by omega_using [nNow])
   obtain ⟨readyT, modT⟩ := readyQ.after_array (by decide : 4 ≠ 0) keepsT frameT restT ptrT
   refine ⟨readyT, by rw [modT, ld.mem, modW, modX], ?_, frameSW.trans (by rw [← ld.mem]; exact frameT),
     restSW.trans ((ld.rest (by decide)).trans restT)⟩
@@ -386,7 +386,7 @@ end
 /-! ## `R² mod X`, given or computed -/
 
 theorem two_pow_mod_three (v : Nat) : 2 ^ (128 * v) % 3 = 1 := by
-  rw [show 128 * v = 2 * (64 * v) by omega, Nat.pow_mul, Nat.pow_mod]
+  rw [show 128 * v = 2 * (64 * v) by omega_using [], Nat.pow_mul, Nat.pow_mod]
   simp
 
 theorem r2Given_ok (s : State) {g : CrtGeometry} {bs : Fin 7 → List Byte} {a : BitVec 32} {j : Fin 6}
@@ -416,7 +416,7 @@ theorem r2Given_ok (s : State) {g : CrtGeometry} {bs : Fin 7 → List Byte} {a :
   by_cases same : v = (g.sourceLength j.succ + 7) / 8
   · refine WP.ite true (by rw [VG.Proof.X25519.Arm.eval_eq, z, decide_eq_true same]) (fun _ => ?_) (by simp)
     have width : v = Spec.Rsa.primeWords (g.sourceLength j.succ) := by
-      unfold Spec.Rsa.primeWords Spec.Rsa.modulusWords; omega
+      unfold Spec.Rsa.primeWords Spec.Rsa.modulusWords; omega_using [hv, same]
     refine WP.mono (r2Copy_ok u hj ha ⟨sharedU, readyU, width, by rw [flagU]; exact bit⟩) ?_
     rintro t ⟨readyT, modT, valueT, frameT, restT⟩
     refine ⟨readyT, by rw [modT, memU]; exact modulus, ?_, by rw [← memU]; exact frameT,
@@ -435,11 +435,11 @@ theorem r2Given_ok (s : State) {g : CrtGeometry} {bs : Fin 7 → List Byte} {a :
       refine read_of_toWords given ?_
       have lt := VG.Proof.Bignum.os2ip_lt (bs j.succ)
       rw [len, VG.Proof.Bignum.pow256_eq] at lt
-      have : 2 ^ (8 * g.sourceLength j.succ) ≤ 2 ^ (64 * v) := Nat.pow_le_pow_right (by decide) (by omega)
-      have := Nat.mod_lt (2 ^ (128 * v)) (by omega : 0 < Spec.Rsa.os2ip (bs j.succ))
-      omega
+      have : 2 ^ (8 * g.sourceLength j.succ) ≤ 2 ^ (64 * v) := Nat.pow_le_pow_right (by decide) (by omega_arith)
+      have := Nat.mod_lt (2 ^ (128 * v)) (by omega_using [large] : 0 < Spec.Rsa.os2ip (bs j.succ))
+      omega_arith
   · refine WP.ite false (by rw [VG.Proof.X25519.Arm.eval_eq, z, decide_eq_false same]) (by simp) (fun _ => ?_)
-    refine WP.mono (r2_ok u readyU (by omega)) ?_
+    refine WP.mono (r2_ok u readyU (by omega_using [narrow, le, words])) ?_
     rintro t ⟨done, valueT, modT, frameT, restT⟩
     have modU : numAt u.mem (State.addr (crtN g.base g.words)) v 0 = M := by rw [memU]; exact modulus
     rw [modU] at valueT modT

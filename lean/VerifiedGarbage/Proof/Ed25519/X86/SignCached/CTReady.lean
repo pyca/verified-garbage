@@ -75,8 +75,8 @@ def finalize_ready (hc : Ctx L g m₀ s) (hL : L.Ok) {count : BitVec 64}
   have H := hashSpace hL
   have fit : (L.E + 192).toNat + 64 ≤ 2 ^ 32 := by
     rw [BitVec.toNat_add, show (192 : BitVec 32).toNat = 192 from rfl,
-      Nat.mod_eq_of_lt (by have := hL.top; omega)]
-    have := hL.top; omega
+      Nat.mod_eq_of_lt (by have := hL.top; omega_using [this])]
+    have := hL.top; omega_using [this]
   have hd : Region.Disjoint ⟨(L.E + 192).setWidth 64, 64⟩ L.SCR :=
     hL.kc.sub_left (fun p hp => Whole.frame_sub L.E p ((digestWithin hL).sub p hp))
   have hp := Whole.finalize_pre hc.esp H a0 a3 a4 hd (digest_below hL) (by
@@ -106,7 +106,7 @@ def reduce_ready (hc : Ctx L g m₀ s) (hL : L.Ok)
     Whole.CallReady scalarReduceLocal L.E L.inputs L.outputs s := by
   have H := hashSpace hL
   have wo : Whole.Within ⟨(L.E + BitVec.ofNat 32 d).setWidth 64, 32⟩ L.FR :=
-    ⟨d, Whole.frame_addr H.frameFit (by omega), hd'⟩
+    ⟨d, Whole.frame_addr H.frameFit (by omega_using [hd']), hd'⟩
   have cov : Covers (Whole.reduceRd L.E ++ Whole.reduceWr L.E L.scr d)
       (L.inputs ++ L.FR :: L.outputs) := by
     apply hash_covers

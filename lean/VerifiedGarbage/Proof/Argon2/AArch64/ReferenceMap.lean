@@ -149,7 +149,7 @@ theorem finish_ok (s a : State) (p : Spec.Argon2.Params) (pass lane slice index 
       < 2 ^ 64 := by
     have small := bounds.sum_bound (s.gpr .x0)
     have q := bounds.laneLength_bound
-    omega
+    omega_using [small, q]
   have sumNat : (b.gpr .x0).toNat =
       windowStart p pass slice + relativeValue p pass lane slice index (s.gpr .x0) := by
     rw [sumWord, word_nat _ sumBound]

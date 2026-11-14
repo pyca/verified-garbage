@@ -24,12 +24,12 @@ open VG.Proof.ChaCha20Poly1305.AArch64.Short (Agree routeVal pad_ok)
 theorem shr63_sub {x k : Nat} (hx : x < 2 ^ 64) (hk : k ≤ 1024) :
     ((BitVec.ofNat 64 x - BitVec.ofNat 64 k) >>> 63).toNat = if x < k then 1 else (x - k) / 2 ^ 63 := by
   rw [BitVec.toNat_ushiftRight, BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat,
-    Nat.shiftRight_eq_div_pow, Nat.mod_eq_of_lt hx, Nat.mod_eq_of_lt (by omega : k < 2 ^ 64)]
+    Nat.shiftRight_eq_div_pow, Nat.mod_eq_of_lt hx, Nat.mod_eq_of_lt (by omega_using [hk] : k < 2 ^ 64)]
   split
-  · rw [Nat.mod_eq_of_lt (by omega : 2 ^ 64 - k + x < 2 ^ 64)]
-    exact Nat.div_eq_of_lt_le (by omega) (by omega)
-  · rw [show 2 ^ 64 - k + x = (x - k) + 2 ^ 64 by omega, Nat.add_mod_right,
-      Nat.mod_eq_of_lt (by omega : x - k < 2 ^ 64)]
+  · rw [Nat.mod_eq_of_lt (by omega_arith : 2 ^ 64 - k + x < 2 ^ 64)]
+    exact Nat.div_eq_of_lt_le (by omega_using [hk]) (by omega_arith)
+  · rw [show 2 ^ 64 - k + x = (x - k) + 2 ^ 64 by omega_arith, Nat.add_mod_right,
+      Nat.mod_eq_of_lt (by omega_using [hx] : x - k < 2 ^ 64)]
 
 /-- The value `routeKey` leaves in `x10`. -/
 abbrev keyVal (lo : Nat) (x : BitVec 64) : BitVec 64 :=
@@ -39,8 +39,8 @@ theorem keyVal_eq {lo x : Nat} (hlo : 1 ≤ lo) (hlo' : lo ≤ 705) (hx : x < 2 
     (keyVal lo (BitVec.ofNat 64 x) == 0) = decide (lo ≤ x ∧ x ≤ 704) := by
   have b₂ := shr63_sub hx (k := lo) (by omega)
   have b₁ := shr63_sub hx (k := 705) (by decide)
-  have q₂ : (x - lo) / 2 ^ 63 ≤ 1 := Nat.le_of_lt_succ (Nat.div_lt_of_lt_mul (by omega))
-  have q₁ : (x - 705) / 2 ^ 63 ≤ 1 := Nat.le_of_lt_succ (Nat.div_lt_of_lt_mul (by omega))
+  have q₂ : (x - lo) / 2 ^ 63 ≤ 1 := Nat.le_of_lt_succ (Nat.div_lt_of_lt_mul (by omega_using [hx]))
+  have q₁ : (x - 705) / 2 ^ 63 ≤ 1 := Nat.le_of_lt_succ (Nat.div_lt_of_lt_mul (by omega_using [hx]))
   have hz : ∀ y : BitVec 64, (y == 0) = decide (y.toNat = 0) := fun y => by
     by_cases hy : y = 0
     · subst hy; simp
@@ -51,15 +51,15 @@ theorem keyVal_eq {lo x : Nat} (hlo : 1 ≤ lo) (hlo' : lo ≤ 705) (hx : x < 2 
   congr 1
   apply propext
   by_cases h513 : x < lo
-  · simp only [h513, show x < 705 by omega, ite_true]; omega
+  · simp only [h513, show x < 705 by omega_using [hlo', h513], ite_true]; omega_using [h513]
   · by_cases h705 : x < 705
-    · simp only [h513, h705, ite_true, ite_false]; omega
+    · simp only [h513, h705, ite_true, ite_false]; omega_using [h513, h705]
     · simp only [h513, h705, ite_false]
       by_cases hb : x - 705 < 2 ^ 63
-      · rw [Nat.div_eq_of_lt hb]; omega
-      · rw [Nat.div_eq_of_lt_le (k := 1) (by omega) (by omega),
-          Nat.div_eq_of_lt_le (k := 1) (m := x - lo) (by omega) (by omega)]
-        omega
+      · rw [Nat.div_eq_of_lt hb]; omega_using [hx, h705]
+      · rw [Nat.div_eq_of_lt_le (k := 1) (by omega_using [hb]) (by omega_using [hx]),
+          Nat.div_eq_of_lt_le (k := 1) (m := x - lo) (by omega_using [hlo', hb]) (by omega_using [hx])]
+        omega_using [h705]
 
 /-- `routeKey`: `x10` and then `route`'s `x9`. -/
 theorem routeKey_ok (sve enc : Bool) (s₀ : State) :

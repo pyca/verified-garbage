@@ -54,30 +54,30 @@ theorem qCandidate_ok {G1 G256 : Impl.Pbkdf2.Md.AArch64.Hash}
   have hread : ∀ i < len, InRegions (v.rd ++ v.wr) (VG.Proof.Bignum.off (VG.Proof.Bignum.off S oDig) i) 1 := by
     intro i hi
     rw [kv.rd, kv.wr, VG.Proof.Bignum.off_off]
-    exact Lu.sld (o := oDig + i) (n := 1) (by rcases hlen with rfl | rfl <;> simp only [oDig, oRsa] <;> omega)
+    exact Lu.sld (o := oDig + i) (n := 1) (by rcases hlen with rfl | rfl <;> simp only [oDig, oRsa] <;> omega_using [hi])
   have hwrite : ∀ i < len, InRegions v.wr (VG.Proof.Bignum.off qp i) 1 := by
     intro i hi; rw [kv.wr, step.wr]; exact hqw i hi
   have hsep : ∀ i < len, ∀ j < len, VG.Proof.Bignum.off (VG.Proof.Bignum.off S oDig) i ≠ VG.Proof.Bignum.off qp j := by
     intro i hi j hj he
     apply dSQ (VG.Proof.Bignum.off qp j)
     · rw [← he, VG.Proof.Bignum.off_off]
-      exact cS S (o := oDig + i) (n := 1) (by rcases hlen with rfl | rfl <;> simp only [oDig, oRsa] <;> omega)
-    · exact Offset.contains_base qp (by omega) (by rcases hlen with rfl | rfl <;> omega)
+      exact cS S (o := oDig + i) (n := 1) (by rcases hlen with rfl | rfl <;> simp only [oDig, oRsa] <;> omega_using [hi])
+    · exact Offset.contains_base qp (by omega_using [hj]) (by rcases hlen with rfl | rfl <;> omega_using [hj])
   have hbytes : ∀ i < len, v.mem (VG.Proof.Bignum.off (VG.Proof.Bignum.off S oDig) i) =
       (Spec.Dsa.seedHash (8 * len) (Spec.Rsa.bytesAt s.mem rp len)).getD i 0 := by
     intro i hi
     have hh := congrArg (fun xs : List Byte => xs.getD i 0) hdigest
     simpa [Spec.Rsa.bytesAt, List.getD_eq_getElem?_getD, hi, VG.Proof.Bignum.off, hvm] using hh
   have hshape := qShape_ok (bs := Spec.Dsa.seedHash (8 * len) (Spec.Rsa.bytesAt s.mem rp len))
-    (by rw [bslen]; rcases hlen with rfl | rfl <;> omega)
-    (by rw [bslen]; rcases hlen with rfl | rfl <;> omega)
+    (by rw [bslen]; rcases hlen with rfl | rfl <;> omega_using [])
+    (by rw [bslen]; rcases hlen with rfl | rfl <;> omega_using [])
     hv12 hv2 (by rw [bslen]; exact hv9) (by rw [bslen]; exact hread)
     (by rw [bslen]; exact hwrite) (by rw [bslen]; exact hbytes) (by rw [bslen]; exact hsep)
   rw [bslen] at hshape
   refine WP.mono hshape fun t ⟨hq, hf, kt⟩ => ?_
   have hwords : ∀ d, d + 8 ≤ frameBytes → VG.Proof.Bignum.word t.mem F d = VG.Proof.Bignum.word v.mem F d :=
     words_outside_bytes (by decide) hf (fun i hi =>
-      out_scr dFQ.symm (Offset.contains_base qp (by omega) (by rcases hlen with rfl | rfl <;> omega)))
+      out_scr dFQ.symm (Offset.contains_base qp (by omega_using [hi]) (by rcases hlen with rfl | rfl <;> omega_using [hi])))
   have Lt : Lay t F S := Lv.congr kt.sp kt.wr (hwords sScr (by decide))
   have qframe : Frame [⟨qp, len⟩] v.mem t.mem := by
     intro a ha
@@ -85,7 +85,7 @@ theorem qCandidate_ok {G1 G256 : Impl.Pbkdf2.Md.AArch64.Hash}
     intro i hi he
     apply ha ⟨qp, len⟩ (by simp)
     rw [he]
-    exact Offset.contains_base qp (by omega) (by rcases hlen with rfl | rfl <;> omega)
+    exact Offset.contains_base qp (by omega_using [hi]) (by rcases hlen with rfl | rfl <;> omega_using [hi])
   have hfinal : Frame [⟨S, oRsa⟩, ⟨qp, len⟩, retR F] s.mem t.mem := by
     have hvf : Frame [⟨S, oRsa⟩, retR F] s.mem v.mem := by rw [hvm]; exact huf
     exact (hvf.mono (by simp)).trans (qframe.mono (by simp))
@@ -99,6 +99,6 @@ theorem qCandidate_ok {G1 G256 : Impl.Pbkdf2.Md.AArch64.Hash}
       rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
       all_goals decide
     · exact step.cs r hr h30
-  · exact ⟨fun _ _ => rfl, fun k hk => (hwords (8 * k) (by unfold nW at hk; omega)).trans (Rv.fr k hk)⟩
+  · exact ⟨fun _ _ => rfl, fun k hk => (hwords (8 * k) (by unfold nW at hk; omega_using [hk])).trans (Rv.fr k hk)⟩
 
 end VG.Proof.Dsa.AArch64.Generation

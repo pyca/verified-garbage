@@ -68,7 +68,7 @@ theorem initPre_ok {s₀ : State} {St Kp S : Addr} {KL : Nat} (hp : IPre s₀ St
       s₁.mem = zeroCv s₀.mem St ∧ s₁.rd = s₀.rd ∧ s₁.wr = s₀.wr := by
   have hKL : s₀.gpr .x2 = BitVec.ofNat 64 KL := ofNat_toNat_eq hp.x2
   have w : InRegions s₀.wr (s₀.gpr .x0 + BitVec.ofNat 64 400) 8 := by
-    rw [hp.wr, hp.x0]; exact ⟨⟨St, 416⟩, by simp, Offset.contains_base _ (by decide) (by have := hp.wSt; omega)⟩
+    rw [hp.wr, hp.x0]; exact ⟨⟨St, 416⟩, by simp, Offset.contains_base _ (by decide) (by have := hp.wSt; omega_using [])⟩
   refine ⟨_, by
     simp only [reduceCtorEq, ↓reduceIte, Nat.reduceLT, Nat.reduceMul, Nat.reduceMod, and_self, initPre, mov,
       runBlock_cons, runStep_some, runBlock_nil, exec, addr, State.store, Size.bytes, Size.bits, State.read,
@@ -98,7 +98,7 @@ theorem init_wp {s₀ : State} (h0 : initAArch64.pre s₀) :
       ks := hp.k_s
       os := hp.st_s.sub_left oSt
       wrapK := hp.wK
-      wrapO := by omega
+      wrapO := by omega_using [hw]
       wrapS := hp.wS
       reads := by
         rw [rd₁, wr₁, hp.rd, hp.wr]
@@ -126,7 +126,7 @@ theorem init_wp {s₀ : State} (h0 : initAArch64.pre s₀) :
     exact f₁.bytes (R := ⟨Kp, KL⟩) (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
       exact hp.st_k.symm.sub_right (Offset.sub_base St (by decide)))
-      (by show KL ≤ 2 ^ 64; have := hp.wK; omega) (List.mem_range.mp hi)
+      (by show KL ≤ 2 ^ 64; have := hp.wK; omega_using [this]) (List.mem_range.mp hi)
   have hlen : (Spec.TripleDes.bytesAt s₀.mem Kp KL).length = KL := by simp [Spec.TripleDes.bytesAt]
   obtain ⟨hs, hk⟩ := h₂.out
   rw [hkey] at hs hk

@@ -33,13 +33,13 @@ theorem generator_basis (M : Mont) {p : Parameters} {s : State} (h : ModState p 
  WP isa (M.mm 5 1 4) s fun t =>
  Basis p 1 t ∧ Arrays p.B p.w [2,3,5] s.mem t.mem ∧ Keep mmRegs s t := by
  have r2Bound : wv s.mem p.B (slot p.w 4) p.w<p.P := by
-  rw [h.r2];exact Nat.mod_lt _ (by have := p.modulusPositive;omega)
+  rw [h.r2];exact Nat.mod_lt _ (by have := p.modulusPositive;omega_using [reduced])
  refine WP.mono (crtMmN_ok M h.good p.room p.positive p.width
   (by decide : 5<8) (by decide : 1<8) (by decide : 4<8) (by decide) (by decide)
   (by decide) (by decide) (by decide) h.modulus h.inverse r2Bound) ?_
  rintro t ⟨good,_,_,bound,product,frame,rest⟩
  have mod := h.after_arrays good frame (by decide) (by decide) (by decide)
- have r2Eq : 2^(128*p.w)=2^(64*p.w)*2^(64*p.w) := by rw [←Nat.pow_add];congr 1;omega
+ have r2Eq : 2^(128*p.w)=2^(64*p.w)*2^(64*p.w) := by rw [←Nat.pow_add];congr 1;omega_using []
  have target : wv t.mem p.B (slot p.w 5) p.w*2^(64*p.w)%p.P=
   (p.G*2^(64*p.w))*2^(64*p.w)%p.P := by
   rw [generator,h.r2,r2Eq,Nat.mul_mod_mod,←Nat.mul_assoc] at product
@@ -111,11 +111,11 @@ theorem storeLiteral_ok {s : State} {p : Parameters} {a d : Nat}
  (∀ x,ofs p.B x<p.Z→t.mem x=s.mem x) ∧ Keep mmRegs s t := by
  rw [WP.seq_iff]
  refine WP.mono (WP.keep [.x3] (Q:=fun u =>u.gpr .x3=BitVec.ofNat 64 d ∧ u.mem=s.mem) ?_ rfl rfl rfl) ?_
- · brun [movi_nat (show d<2^16 by omega)]
+ · brun [movi_nat (show d<2^16 by omega_using [inside])]
  · rintro u ⟨⟨indexU,memU⟩,restU⟩
    have goodU : Good u p.B p.Z p.w p.mi :=
     ⟨good.scr.congr restU.wr,(restU.gpr .x0 (by decide)).trans good.x0,memU ▸ good.hdr⟩
-   refine WP.mono (storeEntry_ok goodU p.room (by have := p.positive;omega) p.width array
+   refine WP.mono (storeEntry_ok goodU p.room (by have := p.positive;omega_using [this]) p.width array
     (memU ▸ context) indexU (entry_fit p inside)
     (fun i hi => (space.after restU).entry_write inside hi)
     (fun i hi => space.entry_outside inside hi)) ?_

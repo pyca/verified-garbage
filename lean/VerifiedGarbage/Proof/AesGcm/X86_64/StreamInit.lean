@@ -40,9 +40,9 @@ theorem streamInit_wp (v : GcmImpl) {N gs : Nat} [G : GhFits v N gs] {s : State}
   generalize hW : s.gpr .r8 = W at *
   generalize hSP : s.gpr .rsp = SP at *
   generalize hn : (s.gpr .rdx).toNat = n at *
-  have L : Lay Ctx St W SP N := Lay.of wc ws ww d_cs d_cw d_sw k_c k_s k_w (by omega) hN'
+  have L : Lay Ctx St W SP N := Lay.of wc ws ww d_cs d_cw d_sw k_c k_s k_w (by omega_using [hN]) hN'
   have pW : Covers [⟨W, N⟩] s.wr := by rw [hwr]; exact covers_of_mem (by simp)
-  obtain ⟨s₁, run₁, hg₁, hrd₁, hwr₁, hsv₁, f₁⟩ := save_ok s .r8 hW pW (by omega)
+  obtain ⟨s₁, run₁, hg₁, hrd₁, hwr₁, hsv₁, f₁⟩ := save_ok s .r8 hW pW (by omega_using [hN])
   obtain ⟨s₂, run₂, h15, h14, h13, h12, hbp, hg₂, hm₂, hrd₂, hwr₂⟩ : ∃ s₂, runBlock isa
       [.mov .r15 (.reg .r8), .mov .r14 (.reg .rcx), .mov .r13 (.reg .rdi), .mov .r12 (.reg .rsi),
         .mov .rbp (.reg .rdx)] s₁ = some s₂ ∧
@@ -66,12 +66,12 @@ theorem streamInit_wp (v : GcmImpl) {N gs : Nat} [G : GhFits v N gs] {s : State}
     exact covers_of_mem (List.mem_append_left _ (List.mem_cons_of_mem _ (List.mem_singleton_self _)))
   have hiv : bytesAt s₂.mem Np n = bytesAt s.mem Np n := by
     rw [hm₂]; exact bytesAt_frame f₁ (fun r hr => by
-      simp only [List.mem_singleton] at hr; subst hr; exact d_nw.sub_right (Lay.wSub L.le)) (by omega)
+      simp only [List.mem_singleton] at hr; subst hr; exact d_nw.sub_right (Lay.wSub L.le)) (by omega_using [hn])
   have hH : blockAt s₂.mem (Ctx + BitVec.ofNat 64 240) = ctxH s.mem Ctx := by
     rw [hm₂, ctxH_eq, blockAt_frame f₁ fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact L.ctx_w (by decide) L.le]
   have hji : J0In Ctx St W SP (ctxH s.mem Ctx) Np n s₂ N :=
-    ⟨he₂, hH, h12, hbp, ⟨rdN, by have := (s.gpr .rdx).isLt; omega, wn, d_ns, d_nw, k_n⟩⟩
+    ⟨he₂, hH, h12, hbp, ⟨rdN, by have := (s.gpr .rdx).isLt; omega_using [hn], wn, d_ns, d_nw, k_n⟩⟩
   refine WP.seq (WP.block_append (WP.of_runBlock ⟨s₁, run₁, WP.of_runBlock ⟨s₂, run₂, ?_⟩⟩))
   refine WP.seq (WP.mono (j0_ok v L hji hN) fun s₃ ho => ?_)
   have he₃ := ho.env
@@ -86,7 +86,7 @@ theorem streamInit_wp (v : GcmImpl) {N gs : Nat} [G : GhFits v N gs] {s : State}
       · exact Lay.gh_of_w G.fit r_w
       · exact ret_below SP
   refine WP.mono (exit_ok he₃.r15 (by rw [he₃.rsp, hSP]) (covers_left he₃.perm.w)
-    ((hm₂ ▸ hsv₁).frame ho.frame (saved_j0Frame L hN G.fit)) (by rw [hSP, hret]) (by omega)) fun s' ⟨hg, hm, _⟩ => ⟨hg, fun ciph => ?_⟩
+    ((hm₂ ▸ hsv₁).frame ho.frame (saved_j0Frame L hN G.fit)) (by rw [hSP, hret]) (by omega_using [hN])) fun s' ⟨hg, hm, _⟩ => ⟨hg, fun ciph => ?_⟩
   rw [Proof.Gcm.streamRepr_iff, ofNat_lit, ofNat_lit, ofNat_lit, ofNat_lit, hm, ← hiv]
   refine ⟨ho.j0, Proof.Gcm.absorbed_nil _ ho.y, ho.cb, fun h => absurd rfl h⟩
 

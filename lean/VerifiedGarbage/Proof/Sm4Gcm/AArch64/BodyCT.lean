@@ -78,7 +78,7 @@ theorem padArgs_rel (v : GcmImpl) {k₁ k₂ : Reg → BitVec 64} {n P : Nat} {D
   have hk₁ := h₁.kept.of_others r₁.others
   have hk₂ := h₂.kept.of_others r₂.others
   rw [← hq] at x25₂
-  refine rel_seq (flush_rel L v (.inr rfl) he₁ he₂ hk₁ hk₂ x25₁ x25₂ (by split <;> omega))
+  refine rel_seq (flush_rel L v (.inr rfl) he₁ he₂ hk₁ hk₂ x25₁ x25₂ (by split <;> omega_using []))
     (WP.with_rdwr (flushStep_ok L v (a := a₁) (c := c₁) (n := n) he₁ hk₁ (by rw [x25₁, h₁.hc]) rfl))
     (WP.with_rdwr (flushStep_ok L v (a := a₂) (c := c₂) (n := n) he₂ hk₂ (by rw [x25₂, h₂.hc, hq]) rfl))
     fun τ₁ τ₂ ⟨⟨fe₁, fk₁, _, _, _⟩, frd₁, fwr₁⟩ ⟨⟨fe₂, fk₂, _, _, _⟩, frd₂, fwr₂⟩ => ?_

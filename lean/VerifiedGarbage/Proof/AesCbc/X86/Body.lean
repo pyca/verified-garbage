@@ -49,7 +49,7 @@ theorem UPre.blk_sv {k : Nat} (hk : k < N s₀) : (⟨blk s₀ k, 16⟩ : Region
 theorem UPre.iv_sv : (ivR s₀).Disjoint ⟨Sv s₀, 16⟩ := hp.iv_scr.sub_right (UPre.scr_sub (by decide))
 
 theorem UPre.sv_scr : (⟨Sv s₀, 16⟩ : Region).Disjoint ⟨(S s₀).setWidth 64, 2048⟩ :=
-  Offset.disjoint_base _ (by decide) (by have := hp.scr_fit; omega)
+  Offset.disjoint_base _ (by decide) (by have := hp.scr_fit; omega_using [])
 
 /-- The stack arguments, in a state whose memory differs only within `Big`. -/
 theorem UPre.args_of {m : Mem} (hf : Frame (Big s₀) s₀.mem m) :
@@ -69,11 +69,11 @@ theorem UPre.blkPre {k : Nat} (hk : k < N s₀) {s : State}
   refine ⟨eax, by rw [ecx]; exact arg_ofNat s₀ 1, ebx, edi, ebp, hp.rounds, by rw [esp]; exact hp.esp24,
     ?_, hp.sch_scr.sub_right (Region.sub_prefix (by decide)), ?_, by rw [hb]; exact hp.b_sch, ?_,
     by rw [hb]; exact hp.b_scr.sub_right (Region.sub_prefix (by decide)), hp.sch_fit, ?_,
-    by have := hp.scr_fit; omega, ?_, ?_⟩
+    by have := hp.scr_fit; omega_using [this], ?_, ?_⟩
   · rw [hd]; exact hp.sch_data.sub_right (UPre.data_sub hk)
   · rw [hd]; exact (hp.data_scr.sub_left (UPre.data_sub hk)).sub_right (Region.sub_prefix (by decide))
   · rw [hb, hd]; exact hp.b_data.sub_right (UPre.data_sub hk)
-  · rw [qN]; omega
+  · rw [qN]; omega_using [hk, hdf]
   · rw [hrd, hwr, hp.rd, hp.wr]
     exact Covers.of_sub fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
@@ -82,7 +82,7 @@ theorem UPre.blkPre {k : Nat} (hk : k < N s₀) {s : State}
     refine Covers.of_sub fun r hr => ?_
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
-    · exact ⟨dataR s₀, by simp, 16 * k, rfl, by simp; omega⟩
+    · exact ⟨dataR s₀, by simp, 16 * k, rfl, by simp; omega_using [hk]⟩
     · exact ⟨scrR s₀, by simp, 0, by simp, by simp⟩
 
 omit hp in
@@ -90,7 +90,7 @@ theorem covBlk {k : Nat} (hk : k < N s₀) {rs : List Region} (h : dataR s₀ �
     Covers [⟨blk s₀ k, 16⟩] rs :=
   Covers.of_sub fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr
-    exact ⟨dataR s₀, h, 16 * k, rfl, by simp; omega⟩
+    exact ⟨dataR s₀, h, 16 * k, rfl, by simp; omega_using [hk]⟩
 
 omit hp in
 theorem covIv {rs : List Region} (h : ivR s₀ ∈ rs) : Covers [⟨(Iv s₀).setWidth 64, 16⟩] rs :=
@@ -203,7 +203,7 @@ theorem encA_wp {s₀ : State} (hp : UPre s₀) {k : Nat} (hk : k < N s₀)
     rw [u₁.rd, u₁.wr, h.rd, h.wr, hp.rd, hp.wr]; rfl
   have w₁ : s₁.wr = [ivR s₀, dataR s₀, scrR s₀] := by rw [u₁.wr, h.wr, hp.wr]
   refine xor4_ok (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
-    (by rw [i₁, qN]; omega) (by rw [b₁]; omega) (by rw [i₁, qN]; omega)
+    (by rw [i₁, qN]; omega_using [hk, hdf]) (by rw [b₁]; omega_using [hiv]) (by rw [i₁, qN]; omega_using [hk, hdf])
     (by rw [i₁, add0, hd, rw₁]; exact covBlk hk (by simp))
     (by rw [b₁, add0, rw₁]; exact covIv (by simp))
     (by rw [i₁, add0, hd, w₁]; exact covBlk hk (by simp)) fun s₂ g₂ => ?_
@@ -260,14 +260,14 @@ theorem encBody_okB (v : BlocksImpl) : BodyOkB (cbcMode true) (encBody v.enc) v.
   refine wp_arg (s₀ := s₀) esp₂ (by rw [rw₂]; exact hp.arg_in (by decide)) (hp.args_of big₂ 2 (by decide))
     fun s₃ u₃ => ?_
   have b₃ : s₃.gpr .ebx = Iv s₀ := u₃.gpr
-  refine zero4_ok (by decide) (by rw [b₃]; omega) (by rw [b₃, add0, u₃.wr, w₂]; exact covIv (by simp))
+  refine zero4_ok (by decide) (by rw [b₃]; omega_using [hiv]) (by rw [b₃, add0, u₃.wr, w₂]; exact covIv (by simp))
     fun s₄ g₄ m₄ rd₄ wr₄ => ?_
   have b₄ : s₄.gpr .ebx = Iv s₀ := by rw [g₄ _ (by decide), b₃]
   have i₄ : s₄.gpr .esi = D32 s₀ k := by rw [g₄ _ (by decide), u₃.other _ (by decide), esi₂]
   have rw₄ : s₄.rd ++ s₄.wr = [schR s₀, argsR s₀, ivR s₀, dataR s₀, scrR s₀] := by
     rw [rd₄, wr₄, u₃.rd, u₃.wr, rw₂, hp.rd, hp.wr]; rfl
   refine xor4_ok (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
-    (by rw [b₄]; omega) (by rw [i₄, qN]; omega) (by rw [b₄]; omega)
+    (by rw [b₄]; omega_using [hiv]) (by rw [i₄, qN]; omega_using [hk, hdf]) (by rw [b₄]; omega_using [hiv])
     (by rw [b₄, add0, rw₄]; exact covIv (by simp))
     (by rw [i₄, add0, hd, rw₄]; exact covBlk hk (by simp))
     (by rw [b₄, add0, wr₄, u₃.wr, w₂]; exact covIv (by simp)) fun s₅ g₅ => ?_
@@ -301,7 +301,7 @@ theorem encBody_okB (v : BlocksImpl) : BodyOkB (cbcMode true) (encBody v.enc) v.
       Proof.Cmac.bytesAt_frame (copy4Mem_frame s₂.mem ((Iv s₀).setWidth 64) (blk s₀ k)) (one (hp.blk_iv hk))
         (by decide)]
   have hl : (outK (cbcMode true) s₀ k).length = k := by
-    rw [outK, Mode.length_out]; simp [Spec.Cbc.blocksAt]; omega
+    rw [outK, Mode.length_out]; simp [Spec.Cbc.blocksAt]; omega_using [hk]
   have outSucc :
       outK (cbcMode true) s₀ (k + 1) = outK (cbcMode true) s₀ k ++ [bytesAt s₆.mem (blk s₀ k) 16] := by
     rw [newBlk]
@@ -347,14 +347,14 @@ theorem decA_wp {s₀ : State} (hp : UPre s₀) {k : Nat} (hk : k < N s₀)
   refine wp_arg (s₀ := s₀) h.esp (by rw [hrw]; exact hp.arg_in (by decide)) (hargs 5 (by decide)) fun s₁ u₁ => ?_
   have p₁ : s₁.gpr .ebp = S s₀ := u₁.gpr
   have w₁ : s₁.wr = [ivR s₀, dataR s₀, scrR s₀] := by rw [u₁.wr, h.wr, hp.wr]
-  refine zero4_ok (by decide) (by rw [p₁]; unfold cOff; omega) (by rw [p₁, w₁]; exact covSv (by simp))
+  refine zero4_ok (by decide) (by rw [p₁]; unfold cOff; omega_using [hsc]) (by rw [p₁, w₁]; exact covSv (by simp))
     fun s₂ g₂ m₂ rd₂ wr₂ => ?_
   have p₂ : s₂.gpr .ebp = S s₀ := by rw [g₂ _ (by decide), p₁]
   have i₂ : s₂.gpr .esi = D32 s₀ k := by rw [g₂ _ (by decide), u₁.other _ (by decide), h.esi]
   have rw₂ : s₂.rd ++ s₂.wr = [schR s₀, argsR s₀, ivR s₀, dataR s₀, scrR s₀] := by
     rw [rd₂, wr₂, u₁.rd, u₁.wr, h.rd, h.wr, hp.rd, hp.wr]; rfl
   refine xor4_ok (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
-    (by rw [p₂]; unfold cOff; omega) (by rw [i₂, qN]; omega) (by rw [p₂]; unfold cOff; omega)
+    (by rw [p₂]; unfold cOff; omega_using [hsc]) (by rw [i₂, qN]; omega_using [hk, hdf]) (by rw [p₂]; unfold cOff; omega_using [hsc])
     (by rw [p₂, rw₂]; exact covSv (by simp))
     (by rw [i₂, add0, hd, rw₂]; exact covBlk hk (by simp))
     (by rw [p₂, wr₂, w₁]; exact covSv (by simp)) fun s₃ g₃ => ?_
@@ -421,7 +421,7 @@ theorem decBody_okB (v : BlocksImpl) : BodyOkB (cbcMode false) (decBody v.dec) v
   have b₃ : s₃.gpr .ebx = Iv s₀ := u₃.gpr
   have i₃ : s₃.gpr .esi = D32 s₀ k := by rw [u₃.other _ (by decide), esi₂]
   refine xor4_ok (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
-    (by rw [i₃, qN]; omega) (by rw [b₃]; omega) (by rw [i₃, qN]; omega)
+    (by rw [i₃, qN]; omega_using [hk, hdf]) (by rw [b₃]; omega_using [hiv]) (by rw [i₃, qN]; omega_using [hk, hdf])
     (by rw [i₃, add0, hd, u₃.rd, u₃.wr, rwl]; exact covBlk hk (by simp))
     (by rw [b₃, add0, u₃.rd, u₃.wr, rwl]; exact covIv (by simp))
     (by rw [i₃, add0, hd, u₃.wr, w₂]; exact covBlk hk (by simp)) fun s₄ g₄ => ?_
@@ -437,14 +437,14 @@ theorem decBody_okB (v : BlocksImpl) : BodyOkB (cbcMode false) (decBody v.dec) v
   have b₅ : s₅.gpr .ebx = Iv s₀ := by rw [u₅.other _ (by decide), g₄.gpr _ (by decide) (by decide), b₃]
   have p₅ : s₅.gpr .ebp = S s₀ := u₅.gpr
   have w₅ : s₅.wr = [ivR s₀, dataR s₀, scrR s₀] := by rw [u₅.wr, g₄.wr, u₃.wr, w₂]
-  refine zero4_ok (by decide) (by rw [b₅]; omega) (by rw [b₅, add0, w₅]; exact covIv (by simp))
+  refine zero4_ok (by decide) (by rw [b₅]; omega_using [hiv]) (by rw [b₅, add0, w₅]; exact covIv (by simp))
     fun s₆ g₆ m₆ rd₆ wr₆ => ?_
   have b₆ : s₆.gpr .ebx = Iv s₀ := by rw [g₆ _ (by decide), b₅]
   have p₆ : s₆.gpr .ebp = S s₀ := by rw [g₆ _ (by decide), p₅]
   have rw₆ : s₆.rd ++ s₆.wr = [schR s₀, argsR s₀, ivR s₀, dataR s₀, scrR s₀] := by
     rw [rd₆, wr₆, u₅.rd, u₅.wr, rw₄, hp.rd, hp.wr]; rfl
   refine xor4_ok (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
-    (by rw [b₆]; omega) (by rw [p₆]; unfold cOff; omega) (by rw [b₆]; omega)
+    (by rw [b₆]; omega_using [hiv]) (by rw [p₆]; unfold cOff; omega_using [hsc]) (by rw [b₆]; omega_using [hiv])
     (by rw [b₆, add0, rw₆]; exact covIv (by simp))
     (by rw [p₆, rw₆]; exact covSv (by simp))
     (by rw [b₆, add0, wr₆, w₅]; exact covIv (by simp)) fun s₇ g₇ => ?_
@@ -492,7 +492,7 @@ theorem decBody_okB (v : BlocksImpl) : BodyOkB (cbcMode false) (decBody v.dec) v
       Proof.Cmac.bytesAt_frame (Proof.Cmac.xor4Mem_frame _ _ _ _) (one (hp.blk_sv hk).symm) (by decide),
       Proof.Cmac.bytesAt_frame f₂ callSv (by decide), a.mem, copy4Mem_bytes _ (hp.blk_sv hk).symm, hblk]
   have hl : (outK (cbcMode false) s₀ k).length = k := by
-    rw [outK, Mode.length_out]; simp [Spec.Cbc.blocksAt]; omega
+    rw [outK, Mode.length_out]; simp [Spec.Cbc.blocksAt]; omega_using [hk]
   have outSucc :
       outK (cbcMode false) s₀ (k + 1) = outK (cbcMode false) s₀ k ++ [bytesAt s₈.mem (blk s₀ k) 16] := by
     rw [newBlk]
@@ -554,10 +554,10 @@ theorem wholeZ_wp {M : Mode} {body : Prog isa} {b : Nat} (hb : BodyOkB M body b)
     (by rw [hm₂]; exact hp.arg_keep (UPre.big_of ht.frame) (by decide)) fun s₃ u₃ => ?_
   have c₃ : s₃.gpr .ecx = S s₀ := u₃.gpr
   have w₃ : s₃.wr = [ivR s₀, dataR s₀, scrR s₀] := by rw [u₃.wr, hwr₂, ht.wr, hp.wr]
-  refine zero4_ok (b := .ecx) (d := cOff) (by decide) (by rw [c₃]; unfold cOff; omega)
+  refine zero4_ok (b := .ecx) (d := cOff) (by decide) (by rw [c₃]; unfold cOff; omega_using [hsc])
     (by rw [c₃, w₃]; exact covSv (by simp)) fun s₄ g₄ m₄ rd₄ wr₄ => ?_
   have c₄ : s₄.gpr .ecx = S s₀ := by rw [g₄ _ (by decide), c₃]
-  refine zero4_ok (b := .ecx) (d := cOff + 16) (is := []) (by decide) (by rw [c₄]; unfold cOff; omega)
+  refine zero4_ok (b := .ecx) (d := cOff + 16) (is := []) (by decide) (by rw [c₄]; unfold cOff; omega_using [hsc])
     (by
       rw [c₄, wr₄, w₃]
       exact Covers.of_sub fun r hr => by
@@ -572,9 +572,9 @@ theorem wholeZ_wp {M : Mode} {body : Prog isa} {b : Nat} (hb : BodyOkB M body b)
     refine (Proof.Cmac.frame_store4 _ 0 0 0 0 |>.sub fun r hr => ?_).trans
       (Proof.Cmac.frame_store4 _ 0 0 0 0 |>.sub fun r hr => ?_)
     · simp only [List.mem_singleton] at hr; subst hr
-      exact ⟨Z, List.mem_singleton_self _, Offset.sub _ (by unfold cOff; omega) (by unfold cOff; omega)⟩
+      exact ⟨Z, List.mem_singleton_self _, Offset.sub _ (by unfold cOff; omega_using []) (by unfold cOff; omega_using [])⟩
     · simp only [List.mem_singleton] at hr; subst hr
-      exact ⟨Z, List.mem_singleton_self _, Offset.sub _ (by unfold cOff; omega) (by unfold cOff; omega)⟩
+      exact ⟨Z, List.mem_singleton_self _, Offset.sub _ (by unfold cOff; omega_using []) (by unfold cOff; omega_using [])⟩
   have zS : Region.Sub Z (scrR s₀) := UPre.scr_sub (by decide)
   have g₅' : ∀ r, r ≠ .eax → r ≠ .ecx → s₅.gpr r = s₂.gpr r := fun r h1 h2 => by
     rw [g₅ r h1, g₄ r h1, u₃.other r h2]
@@ -598,39 +598,39 @@ theorem wholeZ_wp {M : Mode} {body : Prog isa} {b : Nat} (hb : BodyOkB M body b)
       exact Proof.Cmac.bytesAt_frame fz (fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr; exact hp.iv_scr.sub_right zS) (by decide)
   · have hx1 : (scrR s₀).Contains ((S s₀).setWidth 64 + BitVec.ofNat 64 i) 1 :=
-      Offset.contains_base _ (by omega) (by omega)
+      Offset.contains_base _ (by omega_using [h2]) (by omega_using [h2])
     rw [show cOff = 2048 from rfl] at m₄ m₅
     by_cases hzi : 2048 ≤ i ∧ i < 2080
     · right
       rw [m₅]
       by_cases hhi : 2064 ≤ i
-      · rw [show i = 2048 + 16 + (i - 2064) by omega, BitVec.ofNat_add (2048 + 16), ← BitVec.add_assoc]
-        exact zero4_at _ _ (by omega)
+      · rw [show i = 2048 + 16 + (i - 2064) by omega_using [hhi], BitVec.ofNat_add (2048 + 16), ← BitVec.add_assoc]
+        exact zero4_at _ _ (by omega_using [hzi])
       · have zf : Frame [⟨(S s₀).setWidth 64 + BitVec.ofNat 64 (2048 + 16), 16⟩] s₄.mem
             (Proof.Cmac.zero4 s₄.mem ((S s₀).setWidth 64 + BitVec.ofNat 64 (2048 + 16))) :=
           Proof.Cmac.frame_store4 _ 0 0 0 0
         rw [zf _ fun r hr => ?_, m₄]
-        · rw [show i = 2048 + (i - 2048) by omega, BitVec.ofNat_add 2048, ← BitVec.add_assoc]
-          exact zero4_at _ _ (by omega)
+        · rw [show i = 2048 + (i - 2048) by omega_using [hzi], BitVec.ofNat_add 2048, ← BitVec.add_assoc]
+          exact zero4_at _ _ (by omega_using [hhi])
         · simp only [List.mem_singleton] at hr; subst hr
-          exact not_contains (Offset.disjoint _ (.inl (by omega)) (by omega) (by omega))
+          exact not_contains (Offset.disjoint _ (.inl (by omega_using [hhi])) (by omega_using [h2]) (by omega_using []))
     · left
       rw [fz _ fun r hr => by
           simp only [List.mem_singleton] at hr; subst hr
-          exact not_contains (Offset.disjoint _ (by omega) (by omega) (by omega)),
+          exact not_contains (Offset.disjoint _ (by omega_using [hzi]) (by omega_using [h2]) (by omega_using [])),
         hm₂, hft _ fun r hr => ?_, hm₁]
       · refine Spill.saveMem_frame (rs := [⟨(S s₀).setWidth 64 + BitVec.ofNat 64 2064, 16⟩])
           (List.mem_singleton_self _) _ _ _ _ (fun p hp' => ?_) _ fun r hr => ?_
         · have := saved_bound p hp'
-          exact Offset.contains _ this.1 (by omega) (by omega)
+          exact Offset.contains _ this.1 (by omega_using [this]) (by omega_using [])
         · simp only [List.mem_singleton] at hr; subst hr
-          exact not_contains (Offset.disjoint _ (by omega) (by omega) (by omega))
+          exact not_contains (Offset.disjoint _ (by omega_using [hzi]) (by omega_using [h2]) (by omega_using []))
       · simp only [FB, List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl | rfl | rfl | rfl
         · exact fun hc => hp.iv_scr _ hc hx1
         · exact fun hc => hp.data_scr _ hc hx1
-        · exact not_contains (Offset.disjoint_base _ h1 (by omega))
-        · exact not_contains (Offset.disjoint _ (by omega) (by omega) (by omega))
+        · exact not_contains (Offset.disjoint_base _ h1 (by omega_using [h2]))
+        · exact not_contains (Offset.disjoint _ (by omega_using [hzi]) (by omega_using [h2]) (by omega_using []))
         · exact fun hc => hp.b_scr _ hc hx1
 
 end VG.Proof.AesCbc.X86

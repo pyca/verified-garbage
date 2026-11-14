@@ -4,6 +4,7 @@ public import VerifiedGarbage.Spec.Dsa
 public import VerifiedGarbage.Spec.Dsa.Generate
 
 import VerifiedGarbage.Proof.Dsa.Generation.Chunks
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # How many `h` candidates the generator search reads
 
@@ -29,7 +30,7 @@ def generatorCount (p q : Nat) : List Nat → Nat
 theorem generatorCount_le (p q : Nat) (hs : List Nat) : generatorCount p q hs ≤ hs.length := by
   induction hs with
   | nil => simp [generatorCount]
-  | cons h hs ih => simp only [generatorCount, List.length_cons]; split <;> omega
+  | cons h hs ih => simp only [generatorCount, List.length_cons]; split <;> omega_arith
 
 /-- No complete chunk left: no candidate is read. -/
 theorem generatorCount_chunks_done {width p q : Nat} {bytes : List Byte}

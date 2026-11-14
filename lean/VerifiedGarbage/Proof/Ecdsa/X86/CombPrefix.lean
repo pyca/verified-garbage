@@ -29,7 +29,7 @@ theorem Pre.symAddr {s t : State} {extra : List Region} {name : String}
     (hp : Pre c s extra) (h : SymAddrPost name s t) (hsp : 4 ≤ (s.gpr .esp).toNat) :
     Pre c t extra := by
   have he := h.gpr .esp (by decide)
-  have ha : ∀ j < 5, arg t j = arg s j := fun j hj => h.arg hsp (by have := hp.sp_fit; omega)
+  have ha : ∀ j < 5, arg t j = arg s j := fun j hj => h.arg hsp (by have := hp.sp_fit; omega_using [hj, this])
   have hargs : argAddr t 0 = argAddr s 0 := by simp only [argAddr, he]
   exact {
     rd := by
@@ -113,10 +113,10 @@ theorem tbl_of_held {d : CombData} (hcd : c.comb = some d) {s₀ s : State} {bas
     fun i hi b hb => by
       have hc : (⟨(s₀.syms d.tsym).setWidth 64, 8 * (c.combWords d).length⟩ : Region).Contains
           ((s₀.syms d.tsym).setWidth 64 + BitVec.ofNat 64 (8 * i) + BitVec.ofNat 64 b) 1 := by
-        rw [Offset.add_add]; exact Offset.contains_base _ (by omega) (by omega)
+        rw [Offset.add_add]; exact Offset.contains_base _ (by omega_using [hi, hb]) (by omega_using [hf, hi, hb])
       have := hsc' _ hc
       simp only [Region.Contains] at this
-      unfold ofs; omega
+      unfold ofs; omega_using [this]
   refine ⟨⟨hf, ⟨⟨(s₀.syms d.tsym).setWidth 64, 8 * (c.combWords d).length⟩,
     List.mem_append_left _ (hrd _ (by simp [Abi.constRegions])),
     by simp [Region.Contains]⟩, fun i hi => ?_⟩, hout, fun r hr => ?_⟩
@@ -127,7 +127,7 @@ theorem tbl_of_held {d : CombData} (hcd : c.comb = some d) {s₀ s : State} {bas
   rw [← held _ (List.mem_singleton_self _) i hi]
   refine Mem.readW_congr fun b hb => (hu _ fun w hw => ?_)
   rw [List.mem_singleton.mp hw]
-  exact Or.inr (by have := hout i hi b (by omega); dsimp only; omega)
+  exact Or.inr (by have := hout i hi b (by omega_using [hb]); dsimp only; omega_using [this])
 
 
 /-- Loading the address does not change the immutable table bytes. -/
@@ -144,7 +144,7 @@ theorem TblsHeld.symAddr {s t : State} {name : String} {n : Nat} (hn : 4 ≤ n) 
     obtain ⟨hf, hd⟩ := fit _ ht
     dsimp only at hf
     exact h.frame.readW (r := ⟨(s.syms tab.1).setWidth 64, 8 * tab.2.length⟩)
-      (Offset.contains_base _ (by omega) (by omega))
+      (Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi, hf]))
       (fun r hr => by
         rw [List.mem_singleton.mp hr]
         exact (hd _ (List.mem_cons_self ..)).sub_right (below_le_sub hn hsp)) (by decide)

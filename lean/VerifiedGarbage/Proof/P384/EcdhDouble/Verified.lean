@@ -33,11 +33,11 @@ theorem wordsVal_of_words {m m' : Mem} {base : Addr} :
   | _, 0, _ => rfl
   | x, k + 1, h => by
     simp only [wordsVal]
-    have h0 := h 0 (by omega)
+    have h0 := h 0 (by omega_using [])
     simp only [Nat.mul_zero, Nat.add_zero] at h0
     have hk := wordsVal_of_words (m := m) (m' := m') (base := base) (x := x + 8) (k := k) fun i hi => by
-      have := h (i + 1) (by omega)
-      rwa [show x + 8 * (i + 1) = x + 8 + 8 * i by omega] at this
+      have := h (i + 1) (by omega_using [hi])
+      rwa [show x + 8 * (i + 1) = x + 8 + 8 * i by omega_using []] at this
     rw [h0, hk]
 
 theorem regs_clobX : ∀ r ∈ regs, r ∈ clobX := by decide
@@ -73,7 +73,7 @@ theorem alloc_ok {C : Curve} (hC : C.p = p384) {base : Addr} (hL : WinLay K 8192
         rcases List.mem_cons.mp hx with rfl | hx
         · decide
         · exact hA.al.sl x (Iu.sl x hx)
-      omega) (by omega)
+      omega_using [this]) (by omega_using [hx8, hi])
   refine ⟨F.regs.mono regs_clobX, F.unch.cover hWk, E', ⟨hs, ?_, Iu.sl, fun x hx => ?_, fun x hx => ?_⟩, hE, hv⟩
   · have hmo := Iu.mod
     exact ⟨hmo.n0, hmo.n10, hmo.mo, hmo.tmp, hmo.sep,

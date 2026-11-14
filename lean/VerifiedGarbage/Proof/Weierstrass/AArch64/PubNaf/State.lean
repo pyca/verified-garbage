@@ -98,7 +98,7 @@ theorem OddTbl.unch {K : WinCfg} {C : Curve} {base : Addr} {size m : Nat} (hL : 
     (hU : Unch base (loopW K) s.mem s'.mem)
     (hn : base.toNat + size ≤ 2 ^ 64) : OddTbl K C base P m s' := by
   intro j h1 hjm
-  have h8 : j ≤ 8 := by omega
+  have h8 : j ≤ 8 := by omega_using [hm, hjm]
   have T := hT j h1 hjm
   have e : ∀ x ∈ [(K.tblPt j).x, (K.tblPt j).y, (K.tblPt j).z],
       wordsVal s'.mem base x K.M.n = wordsVal s.mem base x K.M.n := by
@@ -170,7 +170,7 @@ theorem NSt.digits {K : WinCfg} {C : Curve} {base : Addr} {size k : Nat} (hL : N
     ∀ t < 64 * K.M.n + 1, s.mem (off base (K.bits + t)) = Naf5.byte k t := fun t ht => by
   have hb := hL.win.bits
   have hd := hL.digits
-  rw [h.unch.byte (fun w hw => by have := hL.win.bits_w w hw; omega) (by have := h.scr.nowrap; omega)]
+  rw [h.unch.byte (fun w hw => by have := hL.win.bits_w w hw; omega_using [ht, hd, this]) (by have := h.scr.nowrap; omega_using [ht, hb, hd, this])]
   exact hF.digits t ht
 
 /-- The field programs' invariant, from the state, for slots below `p`. -/
@@ -237,7 +237,7 @@ theorem jacPost_frame {K : WinCfg} {C : Curve} {base : Addr} {size : Nat} (hL : 
     hi.point_tmv (fun x hx => List.mem_append_left _ hx) hj,
     fun x hx => hi.lt x (List.mem_append_right _ hx), fun x hx hw => ?_⟩
   have hs' : x ∈ winSlots K := hi.sl x (List.mem_append_right _ hx)
-  refine hk.unch.wordsVal (fun w hw' => ?_) (by have := hL.lay.le x hs'; have := hs.nowrap; omega)
+  refine hk.unch.wordsVal (fun w hw' => ?_) (by have := hL.lay.le x hs'; have := hs.nowrap; omega_arith)
   simp only [List.mem_append, List.mem_map, List.mem_singleton] at hw'
   rcases hw' with ⟨y, hy, rfl⟩ | rfl
   · exact hL.lay.apart x y hs' (winOther_mem (rcbW_other ho y hy)) (fun e => hw (e ▸ hy))

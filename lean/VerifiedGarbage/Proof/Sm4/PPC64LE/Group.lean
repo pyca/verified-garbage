@@ -41,12 +41,12 @@ theorem lsr4_beq {v : Nat} (hv : v < 2 ^ 64) : (BitVec.ofNat 64 v >>> 4 == 0) = 
     have := congrArg BitVec.toNat h
     simp only [BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hv, Nat.shiftRight_eq_div_pow] at this
     simp at this
-    omega
+    omega_using [this]
   · intro h
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hv, Nat.shiftRight_eq_div_pow]
     simp
-    omega
+    omega_using [h]
 
 theorem movR_ok (s : State) (d n : Reg) :
     ∃ s', runBlock isa [movR d n] s = some s' ∧ s'.gpr d = s.gpr n ∧
@@ -67,21 +67,21 @@ theorem groupCount_wp {s : State} {v : Nat} (hr : s.gpr .r5 = BitVec.ofNat 64 v)
   have o₁ : ∀ r, r ≠ t0 → s₁.gpr r = s.gpr r := u₁.other
   unfold groupCount
   refine WP.seq (WP.of_runBlock ⟨s₁, e₁, ?_⟩)
-  refine WP.ite (decide (16 ≤ v)) ((eval_nonzero s₁ t0).trans (by rw [t₁, lsr4_beq hv]; by_cases h : v < 16 <;> simp [h] <;> omega))
+  refine WP.ite (decide (16 ≤ v)) ((eval_nonzero s₁ t0).trans (by rw [t₁, lsr4_beq hv]; by_cases h : v < 16 <;> simp [h] <;> omega_using [h]))
     (fun h => ?_) (fun h => ?_)
   · obtain ⟨s₂, e₂, r₂, o₂, m₂, rd₂, wr₂⟩ := li_ok s₁ .r12 (v := 16)
     refine WP.of_runBlock ⟨s₂, e₂, ?_, fun r h1 h2 => by rw [o₂ r h1, o₁ r h2], m₂, rd₂, wr₂⟩
-    rw [r₂, Nat.min_eq_right (by simp at h; omega)]
+    rw [r₂, Nat.min_eq_right (by simp at h; omega_using [h])]
   · obtain ⟨s₂, e₂, r₂, o₂, m₂, rd₂, wr₂⟩ := movR_ok s₁ .r12 .r5
     refine WP.of_runBlock ⟨s₂, e₂, ?_, fun r h1 h2 => by rw [o₂ r h1, o₁ r h2], m₂, rd₂, wr₂⟩
-    rw [r₂, o₁ _ (by decide), hr, Nat.min_eq_left (by simp at h; omega)]
+    rw [r₂, o₁ _ (by decide), hr, Nat.min_eq_left (by simp at h; omega_using [h])]
 
 theorem readW_slot_write {m : Mem} {b : Addr} {j k : Nat} (v : BitVec 64) (hj : j < slots) (hk : k < slots) :
     (m.writeW (wordAddr b k) v).readW (wordAddr b j) 64 = if j = k then v else m.readW (wordAddr b j) 64 := by
   rw [slots_eq] at hj hk
   split
   · rename_i h; subst h; exact Mem.readW_writeW_self64 _ _ _
-  · rename_i h; exact Mem.readW_writeW_sep (slot_sep b (by omega) (by omega) h) (by decide)
+  · rename_i h; exact Mem.readW_writeW_sep (slot_sep b (by omega_using [hj]) (by omega_using [hk]) h) (by decide)
 
 /-! ## The scratch buffer's contents -/
 
@@ -119,12 +119,12 @@ theorem ScrOk.frame {s₀ : State} {b : Addr} {E : Nat → Spec.Sm4.Word} {m m' 
   refine ⟨fun kv hkv => ?_, fun i hi => (h.keys i hi).congr fun j hj => ?_, fun i hi => ?_⟩
   · have hk := mask_range hkv
     rw [← h.masks kv hkv]
-    exact hR _ List.mem_cons_self (8 * kv.1) (VG.Offset.sub b (by omega) (by omega))
+    exact hR _ List.mem_cons_self (8 * kv.1) (VG.Offset.sub b (by omega_using [hk]) (by omega_using [hk]))
   · exact hR _ (List.mem_cons_of_mem _ List.mem_cons_self) (8 * tableSlot + 64 * i + 8 * j)
-      (VG.Offset.sub b (by omega) (by rw [tableSlot_eq]; omega))
+      (VG.Offset.sub b (by omega_using []) (by rw [tableSlot_eq]; omega_using [hi, hj]))
   · rw [← h.saved i hi]
     exact hR _ (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ List.mem_cons_self)) (8 * (savedSlot + i))
-      (VG.Offset.sub b (by omega) (by omega))
+      (VG.Offset.sub b (by omega_using []) (by omega_using [hi]))
 
 theorem ScrOk.frame2 {s₀ : State} {b : Addr} {E : Nat → Spec.Sm4.Word} {m m' : Mem}
     (h : ScrOk s₀ b E m) {rs : List Region} (hf : Frame rs m m') (hm : MasksAt m' b)
@@ -134,10 +134,10 @@ theorem ScrOk.frame2 {s₀ : State} {b : Addr} {E : Nat → Spec.Sm4.Word} {m m'
     hf.readW (Region.contains_self _ _) (fun r hr => (hd _ ht r hr).sub_left hs) (by decide)
   refine ⟨hm, fun i hi => (h.keys i hi).congr fun j hj => ?_, fun i hi => ?_⟩
   · exact hR _ List.mem_cons_self (8 * tableSlot + 64 * i + 8 * j)
-      (VG.Offset.sub b (by omega) (by rw [tableSlot_eq]; omega))
+      (VG.Offset.sub b (by omega_using []) (by rw [tableSlot_eq]; omega_using [hi, hj]))
   · rw [← h.saved i hi]
     exact hR _ (List.mem_cons_of_mem _ List.mem_cons_self) (8 * (savedSlot + i))
-      (VG.Offset.sub b (by omega) (by omega))
+      (VG.Offset.sub b (by omega_using []) (by omega_using [hi]))
 
 /-! ## The data loop -/
 

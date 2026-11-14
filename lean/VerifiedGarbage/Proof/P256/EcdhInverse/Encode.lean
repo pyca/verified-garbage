@@ -39,11 +39,11 @@ theorem encode_row (x : BitVec 64) {k : Nat} (hk : k=41 ∨ k=62) :
   · have ho := Nat.shiftLeft_add_eq_or_of_lt (by exact ha : x.toNat%1048576<2^20) 17592183947264
     norm_num only [Nat.shiftLeft_eq] at ho
     rw [show Int.toNat 18446741874686296064=18446741874686296064 by decide,←ho]
-    omega
+    omega_using []
   · have ho := Nat.shiftLeft_add_eq_or_of_lt (by exact ha : x.toNat%1048576<2^20) 13194139533312
     norm_num only [Nat.shiftLeft_eq] at ho
     rw [show Int.toNat 13835058055282163712=13835058055282163712 by decide,←ho]
-    omega
+    omega_using []
 
 
 def encodeCode : List Instr :=

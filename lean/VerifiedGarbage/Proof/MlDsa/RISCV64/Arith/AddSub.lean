@@ -142,8 +142,8 @@ theorem inv_step {out : Nat → BitVec 32} {s₀ : State} (hp : Pre s₀) {i : N
     · subst hij; simp
     · rw [ite_eq_right hij]
       by_cases hj' : j < i
-      · rw [ite_eq_left hj', ite_eq_left (by omega)]
-      · rw [ite_eq_right hj', ite_eq_right (by omega)]
+      · rw [ite_eq_left hj', ite_eq_left (by omega_using [hj'])]
+      · rw [ite_eq_right hj', ite_eq_right (by omega_using [hij, hj'])]
   · rw [r5, show (1 : BitVec 64) = BitVec.ofNat 64 1 from rfl, count_sub hi]; exact count_nz hi (by decide)
 
 /-- The loop's initialization. -/
@@ -192,7 +192,7 @@ theorem reads {out : Nat → BitVec 32} {s₀ : State} (hp : Pre s₀) {i : Nat}
 /-- A word whose value is `x`. -/
 theorem ofNat_val_eq {v : BitVec 32} {x : Zq} (h : v.toNat = x.val) : v = BitVec.ofNat 32 x.val := by
   apply BitVec.eq_of_toNat_eq
-  rw [h, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := val_lt x; omega)]
+  rw [h, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := val_lt x; omega_using [h])]
 
 theorem add_hb {s₀ : State} (hp : Pre s₀) : ∀ i < 256, ∀ s, Inv (addOut s₀) s₀ i s →
     ∀ {x y c : BitVec 64}, s.gpr .a0 = x → s.gpr .a1 = y → s.gpr .a2 = c →
@@ -227,7 +227,7 @@ theorem sub_hb {s₀ : State} (hp : Pre s₀) : ∀ i < 256, ∀ s, Inv (subOut 
       (by rw [toNat_setWidth64]; exact hb), toNat_setWidth64, toNat_setWidth64,
     Nat.mod_eq_of_lt (Nat.lt_trans (Nat.mod_lt _ (by decide : 0 < q)) (by decide : q < 2 ^ 32)),
     sub_get _ _ hi, val_sub', polyAt_val hp.redF hi, polyAt_val hp.redG hi,
-    Nat.add_sub_assoc (by omega)]
+    Nat.add_sub_assoc (by omega_using [hb])]
 
 /-- The loop's result: `f` is `out` of each coefficient. -/
 theorem polyIs_of_inv {out : Nat → BitVec 32} {s₀ s : State} {g : Poly}
@@ -235,7 +235,7 @@ theorem polyIs_of_inv {out : Nat → BitVec 32} {s₀ s : State} {g : Poly}
     PolyIs s.mem (F s₀) g :=
   polyIs_of_toNat fun j hj => by
     rw [h.coeff j hj, ite_eq_left hj, hg j hj, BitVec.toNat_ofNat,
-      Nat.mod_eq_of_lt (by have := val_lt g[j]!; omega)]
+      Nat.mod_eq_of_lt (by have := val_lt g[j]!; omega_using [this])]
 
 /-! ## Verified -/
 

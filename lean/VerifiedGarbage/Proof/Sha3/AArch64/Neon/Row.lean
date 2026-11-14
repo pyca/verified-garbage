@@ -19,9 +19,9 @@ open VG.Proof.MlKem.AArch64 (VChg)
 theorem chi_word (A : Spec.Sha3.State) {x y : Nat} (hx : x < 5) (hy : y < 5) :
     (Spec.Sha3.chi A)[x+5*y]! = A[x+5*y]! ^^^
       (A[(x+2)%5+5*y]! &&& ~~~(A[(x+1)%5+5*y]!)) := by
-  rw [VG.Proof.Sha3.getElem!_eq _ (by omega),VG.Proof.Sha3.chi_get A hx hy,
-    VG.Proof.Sha3.getElem!_eq A (by omega),VG.Proof.Sha3.getElem!_eq A (by omega),
-    VG.Proof.Sha3.getElem!_eq A (by omega),BitVec.and_comm]
+  rw [VG.Proof.Sha3.getElem!_eq _ (by omega_using [hx, hy]),VG.Proof.Sha3.chi_get A hx hy,
+    VG.Proof.Sha3.getElem!_eq A (by omega_using [hx, hy]),VG.Proof.Sha3.getElem!_eq A (by omega_using [hy]),
+    VG.Proof.Sha3.getElem!_eq A (by omega_using [hy]),BitVec.and_comm]
 
 /-- Preserve and transform one complete chi row for two states. -/
 theorem row_ok {s : State} {A B : Spec.Sha3.State} {y : Nat} (hy : y < 5)
@@ -44,26 +44,26 @@ theorem row_ok {s : State} {A B : Spec.Sha3.State} {y : Nat} (hy : y < 5)
       ∀ i < 25, s'.v (vreg i) = if i/5 = y ∧ i%5 < k then
         ofVDwords (Spec.Sha3.chi A)[i]! (Spec.Sha3.chi B)[i]! else s₁.v (vreg i))
     (fun k s' hk ⟨hchg,hcols,hvals⟩ => ?_) 5 (Nat.le_refl _) s₁
-    ⟨VChg.refl _ _,cols1,by intro i hi; rw [ite_eq_right (by omega)]⟩)
+    ⟨VChg.refl _ _,cols1,by intro i hi; rw [ite_eq_right (by omega_using [])]⟩)
     fun s₂ ⟨hchg,_,vals⟩ => ⟨(h1.trans hchg).mono (fun r _ => allV_mem r),?_⟩
   · refine WP.mono (chiWord_ok hk hy hcols) fun s'' ⟨hstep,hnew⟩ =>
       ⟨(hchg.trans hstep).mono (fun r _ => allV_mem r),?_,?_⟩
     · intro z hz
       rw [hstep.get _ (by
         simp only [List.mem_cons,List.not_mem_nil,or_false,not_or]
-        exact ⟨ht30 z hz,htstate z hz _ (by omega)⟩)]
+        exact ⟨ht30 z hz,htstate z hz _ (by omega_using [hy, hk])⟩)]
       exact hcols z hz
     · intro i hi
       by_cases he : i = k+5*y
       · subst i
-        rw [hnew,← chi_word A hk hy,← chi_word B hk hy,ite_eq_left (by omega)]
+        rw [hnew,← chi_word A hk hy,← chi_word B hk hy,ite_eq_left (by omega_using [hk])]
       · rw [hstep.get _ (by
           simp only [List.mem_cons,List.not_mem_nil,or_false,not_or]
-          exact ⟨hi30 i hi,by rw [vreg_inj i (by omega) (k+5*y) (by omega)]; exact he⟩),hvals i hi]
-        have hne : ¬ (i/5 = y ∧ i%5 = k) := by intro h; omega
+          exact ⟨hi30 i hi,by rw [vreg_inj i (by omega_using [hi]) (k+5*y) (by omega_using [hy, hk])]; exact he⟩),hvals i hi]
+        have hne : ¬ (i/5 = y ∧ i%5 = k) := by intro h; omega_using [he, h]
         by_cases h : i/5 = y ∧ i%5 < k <;> simp (disch := omega) only [ite_eq_left,ite_eq_right]
   · intro i hi
     rw [vals i hi,h1.get _ (hn i hi)]
-    have hmod : i%5 < 5 := by omega
+    have hmod : i%5 < 5 := by omega_using []
     simp only [hmod,and_true]
 end VG.Proof.Sha3.AArch64.Neon

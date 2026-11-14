@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Gcm.PrecomputedContract
 public import VerifiedGarbage.Proof.Gcm.PreparedPowers
 public import VerifiedGarbage.Spec.Gcm.Powers8
 public import VerifiedGarbage.Proof.Framework.PostMono
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # AES-GCM: the contracts on the key context and the number of rounds they are given
@@ -255,7 +256,7 @@ def sealGatherPreparedRoundsContract {M : ISA} (A : Abi M) (stack : Nat := 0) : 
 /-- A context of 24 prepared pairs holds the first 8. -/
 theorem preparedPowers16Repr_of {m : Mem} {p : Addr} (h : Spec.Gcm.PreparedPowersRepr m p) :
     Spec.Gcm.PreparedPowers16Repr m p :=
-  fun k hk => h k (by omega)
+  fun k hk => h k (by omega_using [hk])
 
 /-- The unchanged `sealRoundsContract` postcondition with 16 prepared powers. -/
 def sealPrepared16RoundsContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=

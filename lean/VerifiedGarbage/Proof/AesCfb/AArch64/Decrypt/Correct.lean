@@ -21,7 +21,7 @@ theorem data_size {s₀ : State} (hp : UPre s₀) : 16*N s₀ < 2^64 := by
   refine Nat.lt_of_not_le fun hc => hp.data_scr (S s₀) ?_ (by simp [Region.Contains])
   simp only [Region.Contains]
   have := (S s₀-Dp s₀).isLt
-  omega
+  omega_using [hc]
 
 theorem initial {s₀ s : State} (hK : Keys (R s₀) (wK s₀) s)
     (h2 : s.gpr .x2=Dp s₀) (h3 : s.gpr .x3=s₀.gpr .x4) (h11 : s.gpr .x11=Iv s₀)

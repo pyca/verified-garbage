@@ -15,25 +15,25 @@ open VG VG.AArch64 VG.Spec.MlDsa
 
 theorem canonical_signed {a : BitVec 32} (ha : a.toNat<8380417) : a.toInt=(a.toNat:Int) := by
   rw [BitVec.toInt_eq_toNat_cond]
-  split <;> omega
+  split <;> omega_arith
 
 theorem addReduced_int (a b : BitVec 32) (ha : a.toNat<8380417)
     (hb : -8380417<b.toInt ∧ b.toInt<2*8380417) :
     (reduceWord (a+b)).toInt=reduce32 ((a.toNat:Int)+b.toInt) := by
   have hat := canonical_signed ha
   have hs : (a+b).toInt=(a.toNat:Int)+b.toInt := by
-    rw [addWord_int _ _ (by omega) (by omega),hat]
-  rw [reduceWord_int _ (by rw [hs]; omega) (by rw [hs]; omega),hs]
+    rw [addWord_int _ _ (by omega_using [hb, hat]) (by omega_using [ha, hb, hat]),hat]
+  rw [reduceWord_int _ (by rw [hs]; omega_using [hb]) (by rw [hs]; omega_using [ha, hb]),hs]
 
 theorem addReduced_norm (a b : BitVec 32) (B : Nat) (ha : a.toNat<8380417)
     (hb : -8380417<b.toInt ∧ b.toInt<2*8380417) (hB : 1≤B) (hB' : B≤524288) :
     (reduceWord (a+b)+BitVec.ofNat 32 (B-1)).toNat<2*B-1 ↔
       normZq (ofInt ((a.toNat:Int)+b.toInt))<B := by
-  have hl : -2*8380417<(a.toNat:Int)+b.toInt := by omega
-  have hh : (a.toNat:Int)+b.toInt<3*8380417 := by omega
+  have hl : -2*8380417<(a.toNat:Int)+b.toInt := by omega_using [hb]
+  have hh : (a.toNat:Int)+b.toInt<3*8380417 := by omega_using [ha, hb]
   have hi := addReduced_int a b ha hb
   have hbnd := reduce32_bounds hl hh
-  rw [norm_interval _ B hB hB' (by rw [hi]; omega) (by rw [hi]; omega),hi]
+  rw [norm_interval _ B hB hB' (by rw [hi]; omega_using [hbnd]) (by rw [hi]; omega_using [hbnd]),hi]
   exact (reduce32_norm_iff _ _ hl hh hB').symm
 
 end VG.Proof.MlDsa.AArch64.Optimized.Response

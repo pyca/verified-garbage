@@ -46,7 +46,7 @@ theorem mono {base sp rs rs' m m'} (O : StackOuts base sp rs m m')
   intro r hr
   obtain ⟨r', hr', lo, hi⟩ := H r hr
   have := hx r' hr'
-  omega
+  omega_using [lo, hi, this]
 
 theorem workspace {base sp rs m m'} (O : StackOuts base sp rs m m') :
     Outs base (rs ++ [(usedBytes, 2 ^ 64 - usedBytes)]) m m' := by
@@ -54,7 +54,7 @@ theorem workspace {base sp rs m m'} (O : StackOuts base sp rs m m') :
   apply O x (fun r hr => hx r (List.mem_append_left _ hr))
   have H := hx (usedBytes, 2 ^ 64 - usedBytes) (List.mem_append_right _ (List.mem_singleton_self _))
   have B : ofs base x < 2 ^ 64 := (x - base).isLt
-  exact .inl (by change ofs base x < 15712 ∨ 18446744073709551616 ≤ ofs base x at H; change ofs base x < 15712; omega)
+  exact .inl (by change ofs base x < 15712 ∨ 18446744073709551616 ≤ ofs base x at H; change ofs base x < 15712; omega_using [B, H])
 
 theorem val32 {base sp rs m m'} (O : StackOuts base sp rs m m') {d k : Nat}
     (H : ∀ r ∈ rs, d + 4 * k ≤ r.1 ∨ r.1 + r.2 ≤ d) (hb : d + 4 * k ≤ usedBytes) :
@@ -65,7 +65,7 @@ theorem val32 {base sp rs m m'} (O : StackOuts base sp rs m m') {d k : Nat}
     · exact H r hr
     · rw [List.mem_singleton.mp hr]; exact .inl hb
   · change d + 4 * k ≤ 15712 at hb
-    omega
+    omega_using [hb]
 
 end StackOuts
 end VG.Proof.Dsa.X86

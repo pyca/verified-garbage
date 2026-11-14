@@ -6,6 +6,7 @@ public import VerifiedGarbage.Impl.RsaPkcs1Enc.RISCV64.Decrypt
 public import VerifiedGarbage.TCB.RISCV64.Target
 public import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # `vg_rsa_pkcs1_decrypt` on RISC-V: the precondition
@@ -174,7 +175,7 @@ theorem dPre_of {s : State} (h : (Spec.RsaPkcs1Enc.decryptContract RISCV64.abi s
     mdq, mqi, ms, ma, ns, es, ds, is, ps, qs, dps, dqs, qis, sa, ko, km, kn, ke, kd, ki, kp, kq, kdp, kdq, kqi, ks,
     ka, wo, wm, wn, we, wd, wi, wp, wq, wdp, wdq, wqi, ws, ⟨k1, k2⟩, h1, hi, e1, e2, d1, d2, p1, p2, q1, q2, h8, h12,
     h10, hs, mal, al⟩ := h
-  exact ⟨sp16, sp1, by simp only [Bool.false_eq_true, ↓reduceIte]; omega, hrd, hwr, om, on, oe, od, oi, op, oq, odp, odq, oqi, os, oa, mn, me, md, mi, mp, mq, mdp,
+  exact ⟨sp16, sp1, by simp only [Bool.false_eq_true, ↓reduceIte]; omega_using [sp2], hrd, hwr, om, on, oe, od, oi, op, oq, odp, odq, oqi, os, oa, mn, me, md, mi, mp, mq, mdp,
     mdq, mqi, ms, ma, ns, es, ds, is, ps, qs, dps, dqs, qis, sa, ko, km, kn, ke, kd, ki, kp, kq, kdp, kdq, kqi, ks,
     ka, wo, wm, wn, we, wd, wi, wp, wq, wdp, wdq, wqi, ws, k1, k2, h1, hi, e1, e2, d1, d2, p1, p2, q1, q2, h8, h12,
     h10, hs, mal, al⟩

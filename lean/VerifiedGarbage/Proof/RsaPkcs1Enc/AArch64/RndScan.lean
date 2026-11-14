@@ -148,7 +148,7 @@ theorem byte_rt8 (b : Byte) : BitVec.setWidth 8 (b.setWidth 64) = b := by
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_setWidth]
   have := b.isLt
-  omega
+  omega_using []
 
 theorem mul_ne {a b : Nat} (ha : a < 2 ^ 32) (hb : b < 2 ^ 32) :
     (BitVec.ofNat 64 a * BitVec.ofNat 64 b != 0) = decide (¬ (a = 0 ∨ b = 0)) := by
@@ -156,8 +156,8 @@ theorem mul_ne {a b : Nat} (ha : a < 2 ^ 32) (hb : b < 2 ^ 32) :
     calc a * b < 2 ^ 32 * 2 ^ 32 := Nat.mul_lt_mul'' ha hb
       _ = 2 ^ 64 := by decide
   have ht : (BitVec.ofNat 64 a * BitVec.ofNat 64 b).toNat = a * b := by
-    rw [BitVec.toNat_mul, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show a < 2 ^ 64 by omega),
-      Nat.mod_eq_of_lt (show b < 2 ^ 64 by omega), Nat.mod_eq_of_lt hab]
+    rw [BitVec.toNat_mul, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show a < 2 ^ 64 by omega_using [ha]),
+      Nat.mod_eq_of_lt (show b < 2 ^ 64 by omega_using [hb]), Nat.mod_eq_of_lt hab]
   rw [Bool.eq_iff_iff, bne_iff_ne, ne_eq, decide_eq_true_eq, BitVec.toNat_eq, ht, ← Nat.mul_eq_zero]
   rfl
 
@@ -169,7 +169,7 @@ theorem rand_byte' {P : Nat} {s u : State} (hp : RPre P s) (hf : InFrame s u) {i
     hp.dKr x (frame_sub (P := P) s (d := 0) (n := 1104) (by decide) x (by rw [off, add_zero']; exact h₂)) h₁
   have hw := hp.wR
   have hc : (randR s).Contains (stackArg s 1 + BitVec.ofNat 64 i) 1 :=
-    Offset.contains_base _ (by omega) (by omega)
+    Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi])
   exact hf.fr _ fun r hr => by rw [List.mem_singleton.mp hr]; exact hd _ hc
 
 theorem keeps_load {u v : State} (hv : LoadStep u v) : Keeps [.x11, .x12, .x17] u v := fun r hr => by
@@ -208,39 +208,39 @@ theorem branch_ok {P : Nat} {s t₀ u v : State} (hp : RPre P s) {i : Nat} (hI :
   · have hk : kept s (i + 1) = kept s i := by rw [kept_succ hi, ite_eq_left hz]
     refine WP.ite true (by rw [eval_zero, h17, zero_byte, decide_eq_true hz]) (fun _ => WP.block_nil ?_)
       (fun h => absurd h (by decide))
-    refine ⟨hfv, kuv, fun j hj => ?_, hx11, hx12, by rw [hk]; exact hx14, by rw [hk]; exact hx16, by omega,
+    refine ⟨hfv, kuv, fun j hj => ?_, hx11, hx12, by rw [hk]; exact hx14, by rw [hk]; exact hx16, by omega_using [hi],
       by rw [hk]; exact hI.hc⟩
     rw [hk] at hj ⊢; rw [hv.mem]; exact hI.buf j hj
   · have hk : kept s (i + 1) = kept s i ++ [(randB s).getD i 0] := by rw [kept_succ hi, ite_eq_right hz]
     have hl : (kept s (i + 1)).length = (kept s i).length + 1 := by rw [hk]; simp
     have hw : InRegions v.wr (v.gpr .x14 + BitVec.ofNat 64 0) 1 := by
       rw [add_zero', hx14, hfv.wr]
-      exact frame_in (by unfold oBuf frameBytes; omega)
+      exact frame_in (by unfold oBuf frameBytes; omega_using [hc, hP])
     refine WP.ite false (by rw [eval_zero, h17, zero_byte, decide_eq_false hz]) (fun h => absurd h (by decide))
       fun _ => WP.mono (keep_ok hw) fun w hw' => ?_
     have hm : w.mem = v.mem.write (off (Q s) (oBuf + (kept s i).length)) 1 ((randB s).getD i 0) := by
       rw [hw'.mem, hx14, h17, byte_rt8]
     have kw := keeps_keep hw'
     refine ⟨⟨hw'.sp.trans hfv.sp, hw'.rd.trans hfv.rd, hw'.wr.trans hfv.wr, hw'.v.trans hfv.v, ?_, ?_, ?_⟩,
-      (kuv.trans kw).mono (by simp), fun j hj => ?_, ?_, ?_, ?_, ?_, by omega, by omega⟩
+      (kuv.trans kw).mono (by simp), fun j hj => ?_, ?_, ?_, ?_, ?_, by omega_using [hi], by omega_using [hc, hl]⟩
     · rw [hm]
-      exact hfv.fr.write (List.mem_singleton_self _) _ (Offset.contains_base _ (by unfold oBuf; omega) (by omega))
-    · rw [hm, Bytes.readW_write_sep (Offset.sep _ (.inl (by unfold oPs oBuf; omega)) (by omega) (by omega))
+      exact hfv.fr.write (List.mem_singleton_self _) _ (Offset.contains_base _ (by unfold oBuf; omega_using [hc, hP]) (by omega_using [hc, hP, hoB]))
+    · rw [hm, Bytes.readW_write_sep (Offset.sep _ (.inl (by unfold oPs oBuf; omega_using [])) (by omega_using [hoP]) (by omega_using [hc, hP, hoB]))
         (by decide)]
       exact hfv.ps
-    · rw [hm, Bytes.readW_write_sep (Offset.sep _ (.inr (by unfold oBuf; omega)) (by omega) (by omega))
+    · rw [hm, Bytes.readW_write_sep (Offset.sep _ (.inr (by unfold oBuf; omega_using [hc, hP])) (by omega_using []) (by omega_using [hc, hP, hoB]))
         (by decide)]
       exact hfv.lr
     · rw [hm, hk]
       rw [hl] at hj
       rcases Nat.lt_succ_iff_lt_or_eq.mp hj with hj | rfl
-      · rw [Bytes.write1_ne _ _ (Offset.add_ofNat_ne _ (by omega) (by omega) (by omega)), getD_append_lt _ hj]
+      · rw [Bytes.write1_ne _ _ (Offset.add_ofNat_ne _ (by omega_arith) (by omega_using [hc, hP, hoB]) (by omega_using [hj])), getD_append_lt _ hj]
         rw [hv.mem]; exact hI.buf j hj
       · rw [Bytes.write1_self, getD_append_eq]
     · rw [hw'.other _ (by decide) (by decide)]; exact hx11
     · rw [hw'.other _ (by decide) (by decide)]; exact hx12
     · rw [hw'.x14, hx14, hl, off, off, add_add', Nat.add_assoc]
-    · rw [hw'.x16, hx16, hl, Bytes.counter_step hc (by omega)]
+    · rw [hw'.x16, hx16, hl, Bytes.counter_step hc (by omega_using [hP])]
 
 /-- One octet of the scan, with fewer than `psLen` octets kept and octets
 left: `At` for `i + 1`, and `x9` zero if `PS` is full or the tape has
@@ -254,7 +254,7 @@ theorem step_ok {P : Nat} {s t₀ u : State} (hp : RPre P s) {i : Nat} (hI : At 
   have hwR := hp.wR
   have hr : InRegions (u.rd ++ u.wr) (u.gpr .x11 + BitVec.ofNat 64 0) 1 :=
     ⟨randR s, by rw [hI.fr.rd, hp.hrd]; simp, by
-      rw [add_zero', hI.x11]; exact Offset.contains_base _ (by omega) (by omega)⟩
+      rw [add_zero', hI.x11]; exact Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi])⟩
   refine WP.seq (WP.mono (load_ok hr) fun v hv => WP.seq (WP.mono (branch_ok hp hI hv hi hc) fun w hw =>
     WP.mono (mul_ok w) fun x ⟨hrd, hwr, hsp, hvv, hmem, h9, ho⟩ => ?_))
   have k9 : Keeps [.x9] w x := fun r hr => ho r (by simpa using hr)
@@ -265,15 +265,15 @@ theorem step_ok {P : Nat} {s t₀ u : State} (hp : RPre P s) {i : Nat} (hI : At 
     by rw [ho _ (by decide)]; exact hw.x14, by rw [ho _ (by decide)]; exact hw.x16, hw.hi, hw.hc⟩, ?_⟩
   have := hw.hi
   have := hw.hc
-  rw [h9, hw.x12, hw.x16, mul_ne (by omega) (by omega), decide_eq_decide]
-  omega
+  rw [h9, hw.x12, hw.x16, mul_ne (by omega_using [hP, hrl]) (by omega_using [hP]), decide_eq_decide]
+  omega_using [hi, this]
 
 /-- `PS` filled at octet `i`: the padding string of `nonzeroPrefix`. -/
 theorem prefix_of_fill {s : State} {i : Nat} (hi : i < (stackArg s 2).toNat)
     (hc : (kept s i).length < psLen s) (hf : (kept s (i + 1)).length = psLen s) :
     Spec.RsaPkcs1Enc.nonzeroPrefix (psLen s) (randB s) = some (kept s (i + 1), i + 1) := by
   have hz : (randB s).getD i 0 ≠ 0 := by
-    intro hz; rw [kept_succ hi, ite_eq_left hz] at hf; omega
+    intro hz; rw [kept_succ hi, ite_eq_left hz] at hf; omega_using [hc, hf]
   have hk : kept s (i + 1) = kept s i ++ [(randB s).getD i 0] := by rw [kept_succ hi, ite_eq_right hz]
   have hl : i < (randB s).length := by rw [randB_length]; exact hi
   have e : randB s = (randB s).take i ++ (randB s).getD i 0 :: (randB s).drop (i + 1) := by
@@ -281,7 +281,7 @@ theorem prefix_of_fill {s : State} {i : Nat} (hi : i < (stackArg s 2).toNat)
     congr 1
     rw [List.drop_eq_getElem_cons hl]
     simp [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem hl]
-  have hlen : ((randB s).take i).length = i := by rw [List.length_take]; omega
+  have hlen : ((randB s).take i).length = i := by rw [List.length_take]; omega_using [hl]
   rw [e, VG.Proof.RsaPkcs1Enc.nonzeroPrefix_last _ hz (by rw [hk] at hf; simpa using hf), hk, hlen]
 
 /-- What the scan leaves: after `i` octets, `PS` full with the padding
@@ -312,14 +312,14 @@ theorem scan_ok {P : Nat} {s t₀ : State} (hp : RPre P s) (hb : Before s t₀) 
   · refine WP.ite false (by rw [Bytes.eval_nonzero, hb.x12, hl]; rfl) (fun h => absurd h (by decide))
       fun _ => WP.block_nil ?_
     have hl' : (stackArg s 2).toNat = 0 := by rw [hl]; rfl
-    exact ⟨0, h0, .inr ⟨hl'.symm, by rw [kept_zero]; simp; omega⟩⟩
+    exact ⟨0, h0, .inr ⟨hl'.symm, by rw [kept_zero]; simp; omega_using [hP]⟩⟩
   have hl' : 0 < (stackArg s 2).toNat := by
     rcases Nat.eq_zero_or_pos (stackArg s 2).toNat with h | h
     · exact absurd (BitVec.eq_of_toNat_eq (by rw [h]; rfl)) hl
     · exact h
   refine WP.ite true (by rw [Bytes.eval_nonzero, hb.x12, bne_iff_ne.mpr hl]) (fun _ => ?_)
     (fun h => absurd h (by decide))
-  have hinit : LoopInv s t₀ ((stackArg s 2).toNat - 0) t₀ := ⟨0, rfl, h0, hl', by rw [kept_zero]; simp; omega⟩
+  have hinit : LoopInv s t₀ ((stackArg s 2).toNat - 0) t₀ := ⟨0, rfl, h0, hl', by rw [kept_zero]; simp; omega_using [hP]⟩
   refine WP.loop (LoopInv s t₀) ?_ _ _ hinit
   rintro n u ⟨i, rfl, hI, hi, hc⟩
   refine WP.mono (step_ok hp hI hi hc) fun u' ⟨hI', hz'⟩ => ?_
@@ -327,8 +327,8 @@ theorem scan_ok {P : Nat} {s t₀ : State} (hp : RPre P s) (hb : Before s t₀) 
   · refine .inl ⟨by rw [Bytes.eval_nonzero, hz', decide_eq_false (not_not_intro hstop)], ⟨i + 1, hI', ?_⟩⟩
     by_cases hf : (kept s (i + 1)).length = psLen s
     · exact .inl ⟨hf, prefix_of_fill hi hc hf⟩
-    · exact .inr ⟨hstop.resolve_left hf, by have := hI'.hc; omega⟩
-  · refine .inr ⟨by rw [Bytes.eval_nonzero, hz', decide_eq_true hstop], _, by omega, i + 1, rfl, hI', by omega,
-      by have := hI'.hc; omega⟩
+    · exact .inr ⟨hstop.resolve_left hf, by have := hI'.hc; omega_using [hf, this]⟩
+  · refine .inr ⟨by rw [Bytes.eval_nonzero, hz', decide_eq_true hstop], _, by omega_using [hi], i + 1, rfl, hI', by omega_using [hi, hstop],
+      by have := hI'.hc; omega_using [hstop, this]⟩
 
 end VG.Proof.RsaPkcs1Enc.AArch64.Rnd

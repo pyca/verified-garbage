@@ -101,13 +101,13 @@ theorem slay_ok {s : State} (h : SPre s) : (slay s).Ok := by
   have eR : (slay s).RET = sRet s := by
     show (⟨(slay s).B + BitVec.ofNat 64 464, 8⟩ : Region) = _
     rw [slay_B]
-  refine ⟨by have := h.ctxLe; simp only [slay]; omega, ?_, h.wr, by simp [slay, h.rd], by simp [slay, h.rd],
+  refine ⟨by have := h.ctxLe; simp only [slay]; omega_using [this], ?_, h.wr, by simp [slay, h.rd], by simp [slay, h.rd],
     by simp [slay, h.rd], by simp [slay, h.rd], h.seedScr.symm, h.pkScr.symm, h.ctxScr.symm, h.msgScr.symm,
     h.outScr.symm, h.outSeed, h.outPk, h.outCtx, h.outMsg, h.stkScr, h.stkOut, h.stkSeed, h.stkPk, h.stkCtx,
     h.stkMsg, by rw [eR]; exact h.retScr, by rw [eR]; exact h.retOut, h.nOut, h.nSeed, h.nPk, h.nCtx, h.nMsg,
     h.nScr⟩
   have := h.sp; have := h.sp2
   simp only [slay, BitVec.toNat_sub, BitVec.toNat_ofNat]
-  omega
+  omega_arith
 
 end VG.Proof.Ed448.X86_64.SignCached

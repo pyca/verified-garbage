@@ -27,16 +27,16 @@ theorem chunkCheck_ok {s : State} {F S : Addr} {V : Nat → Byte} {W : Nat → B
         rw [BitVec.le_def]
         simpa only [BitVec.toNat_ofNat, Nat.mod_eq_of_lt hmax, Nat.mod_eq_of_lt (Nat.lt_of_le_of_lt hle hmax)] using hle)]
       simp only [BitVec.toNat_ofNat, Nat.mod_eq_of_lt hmax,
-        Nat.mod_eq_of_lt (Nat.lt_of_le_of_lt hle hmax), Nat.mod_eq_of_lt (by omega : total - used < 2 ^ 64)]
+        Nat.mod_eq_of_lt (Nat.lt_of_le_of_lt hle hmax), Nat.mod_eq_of_lt (by omega_using [hmax] : total - used < 2 ^ 64)]
   refine WP.mono (WP.keep [.rax, .rcx] (Q := fun t =>
       t.cf = some (decide (total - used < width)) ∧ t.mem = s.mem) (by
     xrun [chunkCheck, ea_sp, L.rsp,
-      L.ld (d := 8 * slots.total) (by unfold frameBytes; omega),
-      L.ld (d := 8 * slots.used) (by unfold frameBytes; omega),
+      L.ld (d := 8 * slots.total) (by unfold frameBytes; omega_using [ht]),
+      L.ld (d := 8 * slots.used) (by unfold frameBytes; omega_using [hu]),
       R.slot (d := 8 * slots.total) (k := slots.total) rfl ht htotal,
       R.slot (d := 8 * slots.used) (k := slots.used) rfl hu hused, sx_ofNat hw, hsub]
-    simp only [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega : total - used < 2 ^ 64),
-      Nat.mod_eq_of_lt (by omega : width < 2 ^ 64)]) rfl)
+    simp only [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hmax] : total - used < 2 ^ 64),
+      Nat.mod_eq_of_lt (by omega_using [hw] : width < 2 ^ 64)]) rfl)
     fun _ ⟨⟨hc, hm⟩, hk⟩ => ⟨hc, hm, hk⟩
 
 end VG.Proof.Dsa.X86_64.Generation

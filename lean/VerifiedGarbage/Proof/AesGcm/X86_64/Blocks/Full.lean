@@ -108,7 +108,7 @@ theorem fullBody_ok {small small4 dec : Bool} {piece first second : Prog isa} {p
         fun s₃ ⟨g₃, m₃, rd₃, wr₃, cf₃⟩ => ?_)
       refine WP.ite (decide (n s < smallMin small4)) (by simp only [eval, cf₃]) (fun h0 => ?_) (fun h0 => ?_)
       · exact cl hlt s₃ (g₃.trans g₂) (m₃.trans m₂) (rd₃.trans rd₂) (wr₃.trans wr₂)
-      · have hS := pc _ _ (fun s₃ h3 hn => hpieceS s₃ h3 (hn ▸ hlt)) (by simp at h0 ⊢; omega)
+      · have hS := pc _ _ (fun s₃ h3 hn => hpieceS s₃ h3 (hn ▸ hlt)) (by simp at h0 ⊢; omega_using [hmin, h0])
         cases hsk : skip4 small4 dec <;> simp only [smallPart, hsk, Bool.false_eq_true, ↓reduceIte]
         · exact hS s₃ (g₃.trans g₂) (m₃.trans m₂) (rd₃.trans rd₂) (wr₃.trans wr₂)
         · refine WP.seq (WP.mono (test3_ok (s := s) (by rw [g₃, g₂]; exact hg _ (by decide)))
@@ -118,7 +118,7 @@ theorem fullBody_ok {small small4 dec : Bool} {piece first second : Prog isa} {p
               (wr₄.trans (wr₃.trans wr₂))
           · exact hS s₄ (g₄.trans (g₃.trans g₂)) (m₄.trans (m₃.trans m₂)) (rd₄.trans (rd₃.trans rd₂))
               (wr₄.trans (wr₃.trans wr₂))
-  · exact pc _ _ (fun s₃ h3 _ => hpiece s₃ h3) (by simp at h; omega) s₂ g₂ m₂ rd₂ wr₂
+  · exact pc _ _ (fun s₃ h3 _ => hpiece s₃ h3) (by simp at h; omega_using [h]) s₂ g₂ m₂ rd₂ wr₂
 
 /-- After a loop that encrypts all the blocks: the blocks hashed are those
 written. -/

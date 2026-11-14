@@ -31,7 +31,7 @@ theorem primeArgs_ok {s : State} {base : Addr} {size : Nat} (S : Scr s base size
       t.gpr .ebx = s.mem.readW (off base 0) 32 ∧ t.gpr .ecx = s.mem.readW (off base 4) 32 ∧
       t.mem = s.mem ∧ Keeps [.ebx, .ecx] s t := by
   unfold primeArgs
-  refine wp_movS (readSrc_sc S (d := 0) (by omega)) fun a A _ =>
+  refine wp_movS (readSrc_sc S (d := 0) (by omega_using [header])) fun a A _ =>
     wp_movS (readSrc_sc (S.of_keeps A.keeps (by decide)) (d := 4) header) fun t T _ => WP.block_nil ?_
   exact ⟨(T.other .ebx (by decide)).trans A.gpr, by rw [T.gpr, A.mem], T.mem.trans A.mem, (A.keeps.mono (by decide)).widen T.keeps⟩
 
@@ -40,13 +40,13 @@ theorem export_header_ok {s : State} {base : Addr} {size w candidate : Nat} {out
     (destination : s.gpr .ebx = out) (length : s.gpr .ecx = BitVec.ofNat 32 (8 * w)) :
     WP isa (VG.Impl.Bignum.X86.storeBE (slot w 0)) s fun t =>
       Scr t base size ∧ t.mem.readW (off base 44) 32 = usedPtr ∧ Keeps [.eax, .ebx, .ecx, .esi] s t := by
-  refine WP.mono (VG.Proof.Bignum.X86.storeBE_ok S.scratch (by have := S.positive; omega) (Nat.le_refl _) S.space length
-    (by rw [wordsVal_eq_val32, show 8 * (8 * w) = 32 * (2 * w) by omega]; exact val32_lt _ _ _ _)
+  refine WP.mono (VG.Proof.Bignum.X86.storeBE_ok S.scratch (by have := S.positive; omega_using [this]) (Nat.le_refl _) S.space length
+    (by rw [wordsVal_eq_val32, show 8 * (8 * w) = 32 * (2 * w) by omega_using []]; exact val32_lt _ _ _ _)
     (by rw [destination]; exact S.outFit) (by rw [destination]; exact S.outWrite)
     (by rw [destination]; exact S.workspaceFar.sub_left (Offset.sub_base base S.space))) fun t ⟨_, F, K⟩ => ?_
   rw [destination] at F
   have header := F.readW (r := (⟨base, size⟩ : Region)) (a := off base 44) (w := 32)
-    (Offset.contains_base _ (by have := S.header; omega) (by decide))
+    (Offset.contains_base _ (by have := S.header; omega_using [this]) (by decide))
     (by intro r mem; obtain rfl := List.mem_singleton.mp mem; exact S.workspaceFar) (by decide)
   exact ⟨S.scratch.of_keeps K (by decide), header.trans S.usedEq, K.mono (by decide)⟩
 
@@ -90,7 +90,7 @@ theorem primeArgs_trace {E : Environment} (v : E.Valid) {c d : Nat} :
   intro s t tr ur u z P A B
   have raw : RelCT isa (VG.X86.Taint.Agree (τr [.esp, .edi])) (.block CandidateFinish.primeArgs)
       (VG.X86.Taint.Agree (τr [.esp, .edi])) := checkedBlockInvariant rfl rfl
-  have space : 8 ≤ E.size := by have H : 256 ≤ E.size := v.geometry.headerFit; omega
+  have space : 8 ≤ E.size := by have H : 256 ≤ E.size := v.geometry.headerFit; omega_using [H]
   obtain ⟨outU, lenU, memU, KU⟩ := wp_result (CandidateFinish.primeArgs_ok P.left.1.scratch space) A
   obtain ⟨outZ, lenZ, memZ, KZ⟩ := wp_result (CandidateFinish.primeArgs_ok P.right.1.scratch space) B
   refine ⟨(raw _ _ _ _ _ _ P.agree A B).1, ⟨P.left.keepMem memU KU (by decide) (by decide),
@@ -121,7 +121,7 @@ theorem prime_trace {E : Environment} (v : E.Valid) {c d : Nat} :
     RelCT isa (PrimePair E c d) (VG.Impl.RsaKeyGen.X86.CandidateFinish.prime E.width) (fun _ _ => True) := by
   unfold VG.Impl.RsaKeyGen.X86.CandidateFinish.prime
   exact RelCT.seq (primeArgs_trace v) (RelCT.seq export_trace
-    (CandidateFinish.used_trace (by have H : 256 ≤ E.size := v.geometry.headerFit; omega) 1))
+    (CandidateFinish.used_trace (by have H : 256 ≤ E.size := v.geometry.headerFit; omega_using [H]) 1))
 
 end VG.Proof.RsaKeyGen.X86.Candidate
 end
@@ -155,7 +155,7 @@ theorem statusArgs_ok {s : State} {base : Addr} {size : Nat} (S : Scr s base siz
 theorem statusArgs_trace {E : Environment} (v : E.Valid) {c d : Nat} :
     RelCT isa (StatusPair E c d) (.block statusArgs) (ControlPair E c d) := by
   intro s t tr ur u z P A B
-  have space : 172 ≤ E.size := by have H : 256 ≤ E.size := v.geometry.headerFit; omega
+  have space : 172 ≤ E.size := by have H : 256 ≤ E.size := v.geometry.headerFit; omega_using [H]
   have raw : RelCT isa (VG.X86.Taint.Agree (τr [.esp, .edi])) (.block statusArgs)
       (VG.X86.Taint.Agree (τr [.esp, .edi])) := checkedBlockInvariant rfl rfl
   obtain ⟨valueU, flagU, memU, KU⟩ := wp_result (statusArgs_ok P.left.1.scratch space) A
@@ -196,7 +196,7 @@ theorem result_trace {E : Environment} (v : E.Valid) {c d : Nat} :
     RelCT isa (StatusPair E c d) (VG.Impl.RsaKeyGen.X86.CandidateFinish.mrResult E.width) (fun _ _ => True) := by
   have finish {s t : State} (P : ControlPair E c d s t) : CandidateFinish.FinishPair E.base E.size s t :=
     ⟨P.1.left.1.scratch, P.1.right.1.scratch, P.1.left.1.usedEq.trans P.1.right.1.usedEq.symm⟩
-  have space : 156 ≤ E.size := by have H : 256 ≤ E.size := v.geometry.headerFit; omega
+  have space : 156 ≤ E.size := by have H : 256 ≤ E.size := v.geometry.headerFit; omega_using [H]
   unfold VG.Impl.RsaKeyGen.X86.CandidateFinish.mrResult
   refine RelCT.seq (statusArgs_trace v) (VG.RelCT.ite (fun _ _ P => P.2.2) ?_ ?_)
   · exact (prime_trace v).mono (fun _ _ P => P.1.1) (fun _ _ _ => trivial)

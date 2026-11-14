@@ -115,11 +115,11 @@ theorem In.slot_fit (h : In Ex base bytes len args s) (c : Ctx) {j : Nat} (hj : 
   have hn := h.need
   have hb := bc_half_le' len
   have hg := bc_ge h.lower' .wide
-  have hst : st len c ≤ st len .wide := by cases c <;> simp only [st] <;> omega
+  have hst : st len c ≤ st len .wide := by cases c <;> simp only [st] <;> omega_arith
   have : j * st len c ≤ 27 * st len .wide := Nat.mul_le_mul hj hst
   unfold CrtRt.need at hn
   simp only [lo] at *
-  omega
+  omega_using [hn, hst, this]
 
 /-- The product and its multiplicand within the header's bytes. -/
 theorem In.prod_fit (h : In Ex base bytes len args s) : prodOff + (2 * bc len .wide + 4) ≤ mulAOff ∧
@@ -128,7 +128,7 @@ theorem In.prod_fit (h : In Ex base bytes len args s) : prodOff + (2 * bc len .w
   have hn := h.need
   unfold CrtRt.need at hn
   simp only [prodOff, mulAOff, numBase] at *
-  omega
+  omega_using [this, hn]
 
 end
 

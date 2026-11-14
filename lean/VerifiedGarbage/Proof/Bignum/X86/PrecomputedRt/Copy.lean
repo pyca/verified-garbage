@@ -29,17 +29,17 @@ theorem readSrc_rd {s : State} {P : Addr} {L : Nat} (hr : InRegions (s.rd ++ s.w
     apply BitVec.eq_of_toNat_eq
     simp only [off, BitVec.toNat_add, BitVec.toNat_setWidth, BitVec.toNat_ofNat]
     have hP : P.toNat < 2 ^ 64 := P.isLt
-    rw [Nat.mod_eq_of_lt (a := (s.gpr r).toNat) (by have := (s.gpr r).isLt; omega), hp]
-    repeat rw [Nat.mod_eq_of_lt (by omega)]
-    omega
+    rw [Nat.mod_eq_of_lt (a := (s.gpr r).toNat) (by have := (s.gpr r).isLt; omega_using []), hp]
+    repeat rw [Nat.mod_eq_of_lt (by omega_using [hn, hd])]
+    omega_using []
   show s.load32 (s.ea (at_ r d)) = _
   rw [ea, State.load32, ite_eq_left_iff.mpr fun h => absurd (VG.CallLay.inRegions_sub hr (off := x + d) (l := 4)
-    (by omega) (by omega)) h]
+    (by omega_using [hd]) (by omega_using [hn])) h]
 
 /-- Memory apart from the working space keeps its bytes when only a range of it changes. -/
 theorem outside_apart {W a : Addr} {L x n : Nat} {m m' : Mem} (O : Outside W x n m m') (hxn : x + n ≤ L)
     (hc : ¬ (⟨W, L⟩ : Region).Contains a 1) : m' a = m a :=
-  O a (.inr (by simp only [Region.Contains] at hc; simp only [ofs]; omega))
+  O a (.inr (by simp only [Region.Contains] at hc; simp only [ofs]; omega_using [hxn, hc]))
 
 theorem copyLoop_ok {t₀ : State} {W P : Addr} {L L' : Nat} (hw : Ws t₀ W L)
     (hr : InRegions (t₀.rd ++ t₀.wr) P L') (hn : P.toNat + L' ≤ 2 ^ 32)

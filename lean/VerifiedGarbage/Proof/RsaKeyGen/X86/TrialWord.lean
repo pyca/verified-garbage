@@ -31,10 +31,10 @@ theorem carry_toNat (a b : BitVec 32) : (carry a b).toNat = (a.toNat + b.toNat) 
   by_cases full : 2 ^ 32 ≤ a.toNat + b.toNat
   · rw [decide_eq_true full]
     change 1 = _
-    omega
+    omega_using [full]
   · rw [decide_eq_false full]
     change 0 = _
-    omega
+    omega_using [full]
 
 theorem quotient_correct (h acc prime inv : BitVec 32)
     (primeLow : 3 ≤ prime.toNat) (primeHigh : prime.toNat ≤ 65537)

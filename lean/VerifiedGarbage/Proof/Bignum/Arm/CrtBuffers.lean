@@ -88,7 +88,7 @@ theorem CrtR2.after_frame {s t : State} {g : CrtGeometry} {bs : Fin 7 → List B
   · rw [sp, frame.readW (r := ⟨off (State.addr s.sp) 112, 4⟩) (Region.contains_self _ _)
       (fun r hr => (separate r hr).2) (by decide)]
     exact h.slot
-  · rw [Rsa.wordsAt_frame frame (by have := h.fit; omega) (fun r hr => (separate r hr).1)]
+  · rw [Rsa.wordsAt_frame frame (by have := h.fit; omega_using [this]) (fun r hr => (separate r hr).1)]
     exact h.words
 
 structure CrtBuffers (g : CrtGeometry) (bs : Fin 7 → List Byte) (s : State) : Prop where

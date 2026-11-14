@@ -93,10 +93,10 @@ theorem prepare_wp (d : Direction) {s : State} {B : Addr} {rs : List Region} {k 
   have hsep : Region.Disjoint ⟨p, 384⟩ ⟨B, 904⟩ := (hdis _ hR).sub_right (Region.sub_prefix (by rw [total_eq]; decide))
   refine WP.mono (copyN_wp (k := 48) (P := schedAddr B) (Q := p) ⟨by rw [hB], by rw [hp]; simp, by decide,
     by decide, fun w hw => ⟨_, hs.wr, by
-      rw [addr_add, total_eq]; exact Offset.contains_base B (by simp only [schedSlot]; omega) (by simp only [schedSlot]; omega)⟩,
-    fun w hw => ⟨_, List.mem_append_left _ hin, Offset.contains_base p (by omega) (by omega)⟩,
-    (hsep.sub_right (sched_sub B)).symm, by omega⟩) fun s' h => ?_
-  refine ⟨scheduleAt_copy fun i hi => by rw [h.mem, over_at hi (by omega)], by rw [h.regs _ (by decide), hB],
+      rw [addr_add, total_eq]; exact Offset.contains_base B (by simp only [schedSlot]; omega_using [hw]) (by simp only [schedSlot]; omega_using [hw])⟩,
+    fun w hw => ⟨_, List.mem_append_left _ hin, Offset.contains_base p (by omega_using [hw]) (by omega_using [hw])⟩,
+    (hsep.sub_right (sched_sub B)).symm, by omega_using []⟩) fun s' h => ?_
+  refine ⟨scheduleAt_copy fun i hi => by rw [h.mem, over_at hi (by omega_using [])], by rw [h.regs _ (by decide), hB],
     h.regs _ (by decide), h.regs _ (by decide), h.regs _ (by decide), ?_, h.rd, h.wr⟩
   rw [h.mem, core_eq]
   exact (over_frame _ _ _ _).sub fun r hr => by
@@ -146,15 +146,15 @@ theorem crypt_wp (d : Direction) {s : State} {B : Addr} {k : Spec.TripleDes.Sche
       runBlock_app, e₄, Option.bind_some, e₅], ?_⟩)
   -- The block.
   have inS : ∀ {t}, t + 8 ≤ 968 → InRegions s₅.wr (B + BitVec.ofNat 64 t) 8 := fun ht =>
-    ⟨_, by rw [wr₅']; exact hw, Offset.contains_base B (by omega) (by omega)⟩
-  have hp := headPre_of s₅ (fun i hi => by rw [rdx₅]; exact inS (by omega))
+    ⟨_, by rw [wr₅']; exact hw, Offset.contains_base B (by omega_using [ht]) (by omega_using [ht])⟩
+  have hp := headPre_of s₅ (fun i hi => by rw [rdx₅]; exact inS (by omega_using [hi]))
     (fun i hi => by
       rw [rdi₅, addr_add]
-      obtain ⟨r, h1, h2⟩ := inS (t := 8 * schedSlot + 8 * i) (by simp only [schedSlot]; omega)
+      obtain ⟨r, h1, h2⟩ := inS (t := 8 * schedSlot + 8 * i) (by simp only [schedSlot]; omega_using [hi])
       exact ⟨r, List.mem_append_right _ h1, h2⟩)
     (by rw [rsi₅]; exact inS (by decide))
-    (by rw [rdi₅, rdx₅]; exact Offset.disjoint_base B (by decide) (by omega))
-    (by rw [rsi₅, rdx₅]; exact Offset.disjoint_base B (by decide) (by omega))
+    (by rw [rdi₅, rdx₅]; exact Offset.disjoint_base B (by decide) (by omega_using [hss]))
+    (by rw [rsi₅, rdx₅]; exact Offset.disjoint_base B (by decide) (by omega_using []))
   rw [rdi₅, mem₅, hr] at hp
   refine WP.seq (WP.mono (block_ok k (schedAddr B) d s₅ hp (by rw [rsi₅]; exact inS (by decide)))
     fun s₆ h₆ => ?_)
@@ -178,8 +178,8 @@ theorem crypt_wp (d : Direction) {s : State} {B : Addr} {k : Spec.TripleDes.Sche
     simp only [blockRegions, rsi₅, rdx₅, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
     · exact Offset.disjoint B (.inr (by decide)) (by decide) (by decide)
-    · exact Offset.disjoint_base B (by decide) (by omega)
-  · have hj0 : j = 0 := by simp only [dirCore] at hj; omega
+    · exact Offset.disjoint_base B (by decide) (by omega_using [hss])
+  · have hj0 : j = 0 := by simp only [dirCore] at hj; omega_using [hj]
     subst hj0
     have ea : blkAddr (dirCore d) B 0 = s₅.gpr .rsi := by rw [rsi₅]; rfl
     rw [dirCore_bw, ea, dirCipher_bytes, bytesAt_eq, m₇, h₆.result, mem₅]

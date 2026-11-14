@@ -18,7 +18,7 @@ open VG.Proof.Ed448 VG.Proof.EdwardsLaw
 open VG.Impl.Ed448.Wnaf (residual digitAt)
 
 theorem signed_abs (d : Int) : (if decide (d < 0) then -(d.natAbs : Int) else (d.natAbs : Int)) = d := by
-  by_cases hd : d < 0 <;> simp only [hd, decide_true, decide_false, ite_true, Bool.false_eq_true, ite_false] <;> omega
+  by_cases hd : d < 0 <;> simp only [hd, decide_true, decide_false, ite_true, Bool.false_eq_true, ite_false] <;> omega_using [hd]
 
 theorem baseEntry_rep {d : Int} (hd : -15 ≤ d ∧ d ≤ 15) :
     Rep (Proof.X448.basePt (baseEntry d)) (d • baseAff) := by

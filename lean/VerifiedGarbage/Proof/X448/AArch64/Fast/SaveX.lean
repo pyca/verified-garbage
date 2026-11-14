@@ -23,12 +23,12 @@ def SavedX (base : Addr) (g : Reg → BitVec 64) (m : Mem) : Prop :=
 theorem SavedX.outside2 {base : Addr} {g : Reg → BitVec 64} {m m' : Mem} (h : SavedX base g m)
     {x nx y ny : Nat} (ho : Outside2 base x nx y ny m m') (hx : x + nx ≤ SAVE) (hy : SAVE + 64 ≤ y) :
     SavedX base g m' := fun k hk =>
-  (ho.word (Or.inr (by omega)) (Or.inl (by omega)) (by simp only [SAVE]; omega)).trans (h k hk)
+  (ho.word (Or.inr (by omega_using [hx])) (Or.inl (by omega_using [hy, hk])) (by simp only [SAVE]; omega_using [hk])).trans (h k hk)
 
 theorem SavedX.outside {base : Addr} {g : Reg → BitVec 64} {m m' : Mem} (h : SavedX base g m)
     {o n : Nat} (ho : Outside base o n m m') (hx : o + n ≤ SAVE ∨ SAVE + 64 ≤ o) :
     SavedX base g m' := fun k hk =>
-  (ho.word (by omega) (by simp only [SAVE]; omega)).trans (h k hk)
+  (ho.word (by omega_using [hx, hk]) (by simp only [SAVE]; omega_using [hk])).trans (h k hk)
 
 theorem save_ok {s : State} {base : Addr} (hs : Scr s base) :
     WP isa (.block save) s fun t =>
@@ -43,13 +43,13 @@ theorem save_ok {s : State} {base : Addr} (hs : Scr s base) :
   refine wp_range_flatMap (M := isa) (N := 8) inv (fun n t hn ⟨tv, tO, tg, tr, tw⟩ => ?_) 8 (by decide) s
     ⟨fun _ h => absurd h (Nat.not_lt_zero _), Outside.refl _ _ _ _, rfl, rfl, rfl⟩
   have ts : Scr t base := ⟨by rw [tg]; exact hs.x3, by rw [tg]; exact hs.mask, tw ▸ hs.wr, hs.nowrap⟩
-  refine WP.mono (stw_ok ts (saved n) (d := SAVE + 8 * n) (by simp only [SAVE]; omega)
-    (by simp only [SAVE]; omega)) fun u ⟨uw, uO, ug, ur, uwr⟩ => ⟨fun k hk => ?_,
-      tO.trans (uO.mono (by omega) (by omega)), ug.trans tg, ur.trans tr, uwr.trans tw⟩
-  rw [uw _ (by simp only [SAVE]; omega) (by omega)]
+  refine WP.mono (stw_ok ts (saved n) (d := SAVE + 8 * n) (by simp only [SAVE]; omega_using [])
+    (by simp only [SAVE]; omega_using [hn])) fun u ⟨uw, uO, ug, ur, uwr⟩ => ⟨fun k hk => ?_,
+      tO.trans (uO.mono (by omega_using []) (by omega_using [hn])), ug.trans tg, ur.trans tr, uwr.trans tw⟩
+  rw [uw _ (by simp only [SAVE]; omega_using [hn, hk]) (by omega_using [])]
   by_cases h : k = n
   · subst h; rw [ite_eq_left rfl, tg]
-  · rw [ite_eq_right (by omega)]; exact tv k (by omega)
+  · rw [ite_eq_right (by omega_using [h])]; exact tv k (by omega_using [hk, h])
 
 theorem restoreX_ok {s : State} {base : Addr} (hs : Scr s base) {g : Reg → BitVec 64}
     (hsv : SavedX base g s.mem) :
@@ -67,12 +67,12 @@ theorem restoreX_ok {s : State} {base : Addr} (hs : Scr s base) {g : Reg → Bit
   refine wp_range_flatMap (M := isa) (N := 8) inv (fun n t hn ⟨tv, tm, tk⟩ => ?_) 8 (by decide) s
     ⟨fun _ h => absurd h (Nat.not_lt_zero _), rfl, Keeps.refl _ _⟩
   have ts : Scr t base := hs.of_keeps tk (by decide)
-  refine WP.mono (ld_ok ts (saved n) (d := SAVE + 8 * n) (by simp only [SAVE]; omega)
-    (by simp only [SAVE]; omega)) fun u ⟨uv, um, uk⟩ => ⟨fun k hk => ?_, um.trans tm, tk.trans (uk.mono ?_)⟩
+  refine WP.mono (ld_ok ts (saved n) (d := SAVE + 8 * n) (by simp only [SAVE]; omega_using [])
+    (by simp only [SAVE]; omega_using [hn])) fun u ⟨uv, um, uk⟩ => ⟨fun k hk => ?_, um.trans tm, tk.trans (uk.mono ?_)⟩
   · by_cases h : k = n
     · subst h; rw [uv, tm]; exact hsv k hn
-    · rw [uk.1 _ (by simp only [List.mem_cons, List.not_mem_nil, or_false]; exact sinj n hn k (by omega) h)]
-      exact tv k (by omega)
+    · rw [uk.1 _ (by simp only [List.mem_cons, List.not_mem_nil, or_false]; exact sinj n hn k (by omega_using [hn, hk]) h)]
+      exact tv k (by omega_using [hk, h])
   · intro r hr; simp only [List.mem_cons, List.not_mem_nil, or_false] at hr; rw [hr]; exact smem n hn
 
 end VG.Proof.X448.AArch64.Fast

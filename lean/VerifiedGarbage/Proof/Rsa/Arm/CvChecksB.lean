@@ -49,18 +49,18 @@ theorem max_word {x y : BitVec 32} (hx : x.toNat < 2 ^ 31) (hy : y.toNat < 2 ^ 3
       apply BitVec.eq_of_toNat_eq
       rw [BitVec.toNat_ushiftRight, BitVec.toNat_sub, Nat.shiftRight_eq_div_pow]
       show _ = 1
-      omega
+      omega_using [hy, h]
     rw [e, show (1 : BitVec 32) - 1 = 0#32 from rfl, BitVec.and_zero, BitVec.add_zero, Nat.max_eq_right h.le]
-    apply BitVec.eq_of_toNat_eq; rw [BitVec.toNat_ofNat]; omega
+    apply BitVec.eq_of_toNat_eq; rw [BitVec.toNat_ofNat]; omega_using []
   · have e : (x - y) >>> 31 = 0 := by
       apply BitVec.eq_of_toNat_eq
       rw [BitVec.toNat_ushiftRight, BitVec.toNat_sub, Nat.shiftRight_eq_div_pow]
       show _ = 0
-      omega
-    rw [e, show (0 : BitVec 32) - 1 = BitVec.allOnes 32 from rfl, BitVec.and_allOnes, Nat.max_eq_left (by omega)]
+      omega_using [hx, h]
+    rw [e, show (0 : BitVec 32) - 1 = BitVec.allOnes 32 from rfl, BitVec.and_allOnes, Nat.max_eq_left (by omega_using [h])]
     apply BitVec.eq_of_toNat_eq
     rw [BitVec.toNat_add, BitVec.toNat_sub, BitVec.toNat_ofNat]
-    omega
+    omega_using []
 
 /-- `primeWidth`: `⌈max(p_len, q_len) / 4⌉` into `r9`. -/
 theorem primeWidth_ok {s0 s : State} (h : Base s0 s) {rest : List Instr} {Q : State → Prop}
@@ -101,26 +101,26 @@ theorem primeWidth_ok {s0 s : State} (h : Base s0 s) {rest : List Instr} {Q : St
   have e7 : s7.gpr .r9 = BitVec.ofNat 32 (max (cvPl s0) (cvQl s0)) := by
     rw [u7.gpr, dpVal, u6.other _ (by decide), u5.other _ (by decide), u4.other _ (by decide),
       u3.other _ (by decide), e1, u6.gpr, dpVal, e2, e3]
-    exact max_word (by simp only [cvPl, cvK] at p2 kb ⊢; omega) (by simp only [cvQl, cvK] at q2 kb ⊢; omega)
+    exact max_word (by simp only [cvPl, cvK] at p2 kb ⊢; omega_using [kb, p2]) (by simp only [cvQl, cvK] at q2 kb ⊢; omega_using [kb, q2])
   rw [u9.gpr, u8.gpr, dpVal, e7]
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow, BitVec.toNat_add, BitVec.toNat_ofNat,
     BitVec.toNat_ofNat, show (3 : BitVec 32).toNat = 3 from rfl]
   simp only [cvPl, cvQl, cvK] at p2 q2 kb ⊢
-  omega
+  omega_using [kb, p2, q2]
 
 /-- A value below `2^(32 k)` read at `w ≥ k` words is its low `k` words. -/
 theorem val32_of_lt {m : Mem} {b : Addr} {d k w v : Nat} (hk : k ≤ w) (h : val32 m b d w = v)
     (hv : v < 2 ^ (32 * k)) : val32 m b d k = v := by
   have e := VG.Proof.Mont.val32_append m b d k (w - k)
-  rw [show k + (w - k) = w by omega, h] at e
+  rw [show k + (w - k) = w by omega_using [hk], h] at e
   have lo := val32_lt m b d k
   generalize val32 m b (d + 4 * k) (w - k) = hi at e
   generalize val32 m b d k = lo' at e lo ⊢
   rcases Nat.eq_zero_or_pos hi with rfl | hp
-  · omega
+  · omega_using [e]
   · have : 2 ^ (32 * k) ≤ 2 ^ (32 * k) * hi := Nat.le_mul_of_pos_right _ hp
-    omega
+    omega_using [hv, e, this]
 
 theorem checksB_ok [InvLaw] {um : Bool} {s0 s : State} {X₁ X₂ : Nat} (h : StI s0 X₁ X₂ s) :
     WP isa (seqs (checksB um)) s (StD s0 X₁ X₂) := by
@@ -137,8 +137,8 @@ theorem checksB_ok [InvLaw] {um : Bool} {s0 s : State} {X₁ X₂ : Nat} (h : St
   have q1 := pre.ql1
   have q2 := pre.ql2
   generalize hkq : (max (cvPl s0) (cvQl s0) + 3) / 4 = kq at e9
-  have kq1 : 0 < kq := by omega
-  have kqw : kq ≤ cvW s0 := by simp only [cvW] at *; omega
+  have kq1 : 0 < kq := by omega_using [p1, hkq]
+  have kqw : kq ≤ cvW s0 := by simp only [cvW] at *; omega_using [p2, q2, hkq]
   have g0 : VG.Proof.Rsa.Arm.Inv.Gk t0 (cvB s0) (cvZ s0) (cvW s0) kq nArr :=
     ⟨hw.nowrap, by rw [r0.wr]; exact hw.writable, hw.fits, kq1, kqw, hw.wle,
       by rw [r0.gpr _ (by decide)]; exact hw.r7, by rw [r0.gpr _ (by decide)]; exact hw.r8, e9⟩
@@ -147,26 +147,26 @@ theorem checksB_ok [InvLaw] {um : Bool} {s0 s : State} {X₁ X₂ : Nat} (h : St
     simp only [Spec.Rsa.bytesAt, List.length_map, List.length_range] at this
     refine lt_of_lt_of_le this ?_
     rw [show (256 : Nat) = 2 ^ 8 from rfl, ← Nat.pow_mul]
-    exact Nat.pow_le_pow_right (by decide) (by omega)
+    exact Nat.pow_le_pow_right (by decide) (by omega_using [hkq])
   have lenM : cvM s0 < 2 ^ (32 * kq) := by
     have hP : cvP s0 < 2 ^ (8 * cvPl s0) := by
       have := VG.Proof.Bignum.os2ip_lt (pBytes s0)
       simp only [Spec.Rsa.bytesAt, List.length_map, List.length_range] at this
       rw [show (256 : Nat) = 2 ^ 8 from rfl, ← Nat.pow_mul] at this
       exact this
-    have le : 2 ^ (8 * cvPl s0) ≤ 2 ^ (32 * kq) := Nat.pow_le_pow_right (by decide) (by omega)
+    have le : 2 ^ (8 * cvPl s0) ≤ 2 ^ (32 * kq) := Nat.pow_le_pow_right (by decide) (by omega_using [hkq])
     have ev : 2 ^ (8 * cvPl s0) % 2 = 0 := by
-      rw [show 8 * cvPl s0 = (8 * cvPl s0 - 1) + 1 by omega, Nat.pow_succ]; simp
+      rw [show 8 * cvPl s0 = (8 * cvPl s0 - 1) + 1 by omega_using [p1], Nat.pow_succ]; simp
     show 2 * (cvP s0 / 2) + 1 < _
     generalize cvP s0 = P at hP
     generalize 2 ^ (8 * cvPl s0) = E at hP le ev
-    omega
+    omega_using [hP, le, ev]
   have vM : VG.Proof.Rsa.Arm.Inv.nk t0.mem (cvB s0) (cvW s0) aM kq = cvM s0 := by
     rw [m0]; exact val32_of_lt kqw h.m lenM
   have vQ : VG.Proof.Rsa.Arm.Inv.nk t0.mem (cvB s0) (cvW s0) 0 kq = cvQ s0 := by
     rw [m0]; exact val32_of_lt kqw h.u lenQ
   rw [wp_seqs_cons (List.cons_ne_nil _ _)]
-  refine WP.mono (InvLaw.inverseK_ok g0 (by decide) (by decide) (by omega)) fun t1a ⟨g1, k1a, r1a, inv⟩ => ?_
+  refine WP.mono (InvLaw.inverseK_ok g0 (by decide) (by decide) (by omega_using [w16])) fun t1a ⟨g1, k1a, r1a, inv⟩ => ?_
   rw [vM, vQ] at inv
   rw [m0] at k1a
   have R01 : Rest (.r6 :: .r7 :: .r8 :: .r9 :: opRegs) s t1a := (r0.mono (by simp)).trans (r1a.mono (by simp))
@@ -179,7 +179,7 @@ theorem checksB_ok [InvLaw] {um : Bool} {s0 s : State} {X₁ X₂ : Nat} (h : St
   have I : 1 < cvM s0 → num t1.mem (cvB s0) (cvW s0) 1 = Nat.gcd (cvQ s0) (cvM s0) ∧
       (cvM s0 : Int) ∣ (num t1.mem (cvB s0) (cvW s0) 3 : Int) * cvQ s0 - num t1.mem (cvB s0) (cvW s0) 1 ∧
       num t1.mem (cvB s0) (cvW s0) 3 < cvM s0 := fun hM => by
-    have hmo : cvM s0 % 2 = 1 := by simp only [cvM]; omega
+    have hmo : cvM s0 % 2 = 1 := by simp only [cvM]; omega_using []
     obtain ⟨v1, v3⟩ := inv hmo hM
     obtain ⟨d, l⟩ := InvLaw.inv30_spec hmo hM lenQ lenM
     change VG.Proof.Rsa.Arm.Inv.nk t1.mem _ _ 1 _ = _ ∧ _ ∣ (VG.Proof.Rsa.Arm.Inv.nk t1.mem _ _ 3 _ : Int) * _ -

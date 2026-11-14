@@ -56,7 +56,7 @@ theorem finish_ok {s₀ : State} {to : Bool} (hp : KPreM s₀ to) {hb : Nat → 
   have hy : InRegions s.wr (s.gpr .x20 + BitVec.ofNat 64 16) 16 := by rw [hI.wr, g20]; exact hp.y_in
   have hc : InRegions s.wr (s.gpr .x20 + BitVec.ofNat 64 60) 4 := by
     rw [hI.wr, g20, e60]
-    exact CallLay.inRegions_sub hp.c_in (by omega) (by omega)
+    exact CallLay.inRegions_sub hp.c_in (by omega_using []) (by omega_using [])
   rw [finish, WP.block_cons_iff]
   refine ⟨_, Pmull.exec_rev64b Y Y _, ?_⟩
   rw [WP.block_cons_iff]
@@ -98,39 +98,39 @@ theorem finish_ok {s₀ : State} {to : Bool} (hp : KPreM s₀ to) {hb : Nat → 
     exact ((Frame.refl [⟨stp s₀ + BitVec.ofNat 64 48 + BitVec.ofNat 64 12, 4⟩] m₁).writeW
       (List.mem_singleton_self _) _ (Region.contains_self _ _)).bytes (R := yR s₀)
       (by simp only [List.mem_singleton, forall_eq]
-          exact hp.y_c.sub_right (Offset.sub_base _ (by omega)))
+          exact hp.y_c.sub_right (Offset.sub_base _ (by omega_using [])))
       (by show (16 : Nat) ≤ 2 ^ 64; decide) hk
   · -- The counter.
     dsimp only
     rw [← hcb₁]
     refine Proof.Aes.AArch64.ctr_after fun k hk => ?_
-    rw [Proof.Aes.AArch64.writeW_apply, Proof.Aes.AArch64.off_toNat _ (by omega) (by omega), hlo]
+    rw [Proof.Aes.AArch64.writeW_apply, Proof.Aes.AArch64.off_toNat _ (by omega_using [hk]) (by omega_using []), hlo]
     by_cases h : 12 ≤ k
-    · rw [ite_eq_left h, ite_eq_left (show k - 12 < 32 / 8 by omega), ite_eq_right (show ¬ k < 12 by omega),
+    · rw [ite_eq_left h, ite_eq_left (show k - 12 < 32 / 8 by omega_using [hk]), ite_eq_right (show ¬ k < 12 by omega_using [h]),
         BitVec.setWidth_eq]
       congr 3
       apply BitVec.eq_of_toNat_eq; simp
-    · rw [ite_eq_right h, ite_eq_right (show ¬ 2 ^ 64 + k - 12 < 32 / 8 by omega),
-        ite_eq_left (show k < 12 by omega)]
+    · rw [ite_eq_right h, ite_eq_right (show ¬ 2 ^ 64 + k - 12 < 32 / 8 by omega_using []),
+        ite_eq_left (show k < 12 by omega_using [h])]
   · -- The data.
     dsimp only
-    refine dataInvM_frame (rs := [yR s₀, cR s₀]) ?_ ?_ (by omega)
+    refine dataInvM_frame (rs := [yR s₀, cR s₀]) ?_ ?_ (by omega_using [hn])
       (by have := hI.data; rw [show 8 * nb s₀ = 8 * nb s₀ from rfl] at this; exact this)
     · rw [← hm₁]
       exact (((Frame.refl _ _).write (List.mem_cons_self ..) _ (Region.contains_self _ _)).writeW
         (List.mem_cons_of_mem _ (List.mem_singleton_self _)) _
-        (Offset.contains_base _ (by omega) (by omega)))
+        (Offset.contains_base _ (by omega_using []) (by omega_using [])))
     · intro r hr
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
-      · exact (show (⟨op s₀ to, 16 * (8 * nb s₀)⟩ : Region) = oR s₀ to by simp [oR]; omega) ▸ hp.o_y
-      · exact (show (⟨op s₀ to, 16 * (8 * nb s₀)⟩ : Region) = oR s₀ to by simp [oR]; omega) ▸ hp.o_c
+      · exact (show (⟨op s₀ to, 16 * (8 * nb s₀)⟩ : Region) = oR s₀ to by simp [oR]; omega_using []) ▸ hp.o_y
+      · exact (show (⟨op s₀ to, 16 * (8 * nb s₀)⟩ : Region) = oR s₀ to by simp [oR]; omega_using []) ▸ hp.o_c
   · -- The frame.
     dsimp only
     rw [← hm₁]
     exact ((hI.frame.mono fun r hr => by simp at hr ⊢; exact .inr (.inr hr)).write (List.mem_cons_self ..) _
       (Region.contains_self _ _)).writeW (List.mem_cons_of_mem _ (List.mem_cons_self ..)) _
-      (Offset.contains_base _ (by omega) (by omega))
+      (Offset.contains_base _ (by omega_using []) (by omega_using []))
   · have hk := (kRegsT_not hr).1
     simp only [kRegs, List.mem_cons, List.not_mem_nil, or_false, not_or] at hk
     dsimp only

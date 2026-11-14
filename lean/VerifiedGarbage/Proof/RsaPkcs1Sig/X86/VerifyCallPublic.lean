@@ -28,7 +28,7 @@ theorem Context.words_equal {g : Geometry} {bs : Fin 5 → List Byte} {s t : Sta
   have bound : 8 * i + j < (bs 4).length := by
     rw [(hs.sources 4).length]
     change 8 * i + j < 8 * g.preLength
-    omega
+    omega_using [hi, hj]
   rw [(hs.sources 4).byte _ bound, (ht.sources 4).byte _ bound]
 
 theorem publicCall_pub {g : Geometry} {bs : Fin 5 → List Byte} {s t : State}
@@ -45,11 +45,11 @@ theorem publicCall_pub {g : Geometry} {bs : Fin 5 → List Byte} {s t : State}
     sa (by decide : 5 < 10), ta (by decide : 5 < 10), sa (by decide : 6 < 10), ta (by decide : 6 < 10),
     sa (by decide : 7 < 10), ta (by decide : 7 < 10), sa (by decide : 8 < 10), ta (by decide : 8 < 10),
     sa (by decide : 9 < 10), ta (by decide : 9 < 10), publicArgument, true_and, and_true]
-  have ef : g.exponentLength < 2 ^ 32 := by have := hs.valid.exponentFits; have := hs.valid.maxLength; omega
+  have ef : g.exponentLength < 2 ^ 32 := by have := hs.valid.exponentFits; have := hs.valid.maxLength; omega_arith
   have pf : g.preLength < 2 ^ 32 := by
     have fit := hs.valid.sourceFits 4
     change (g.sources 4).toNat + 8 * g.preLength ≤ 2 ^ 32 at fit
-    omega
+    omega_using [fit]
   simp only [BitVec.toNat_ofNat, Nat.mod_eq_of_lt ef, Nat.mod_eq_of_lt pf]
   have bytes := (hs.callBytes 1).trans (ht.callBytes 1).symm
   have words := hs.callWords.trans ((hs.words_equal ht).trans ht.callWords.symm)

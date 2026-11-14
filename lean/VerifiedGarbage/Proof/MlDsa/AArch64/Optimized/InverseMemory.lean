@@ -20,23 +20,23 @@ def finalMemStep (m : Mem) (p : Addr) (q : BitVec 128) (u : Nat) : Mem :=
 
 theorem firstPassMem_step (m : Mem) (p : Addr) (u : Nat) :
     firstPassMem m p (u+1)=firstMemStep (firstPassMem m p u) p u := by
-  simp only [firstPassMem,firstMemStep,coeffAddr,show 4*(32*u)=128*u by omega]
+  simp only [firstPassMem,firstMemStep,coeffAddr,show 4*(32*u)=128*u by omega_using []]
 
 theorem finalPassMem_step (m : Mem) (p : Addr) (q : BitVec 128) (u : Nat) :
     finalPassMem m p q (u+1)=finalMemStep (finalPassMem m p q u) p q u := by
-  simp only [finalPassMem,finalMemStep,coeffAddr,show 4*(4*u)=16*u by omega]
+  simp only [finalPassMem,finalMemStep,coeffAddr,show 4*(4*u)=16*u by omega_using []]
 
 theorem firstMemStep_at (m : Mem) (p : Addr) {u : Nat} (hu : u<8) (i : Fin 8)
     {e : Nat} (he : e<4) :
     coeffAt (firstMemStep m p u) p (32*u+4*i.val+e)=
       vword (fiveValues u (readBank m (coeffAddr p (32*u)) 16))[i.val] e := by
-  exact writeBank_coeff_at _ m p (start := 32*u) (step := 4) (by decide) (by omega) i he
+  exact writeBank_coeff_at _ m p (start := 32*u) (step := 4) (by decide) (by omega_using [hu]) i he
 
 theorem firstMemStep_outside (m : Mem) (p : Addr) {u k : Nat}
     (hu : u<8) (hk : k<n) (hout : k<32*u ∨ 32*(u+1)≤k) :
     coeffAt (firstMemStep m p u) p k=coeffAt m p k := by
-  apply writeBank_coeff_outside (start := 32*u) (step := 4) _ m p (by omega) hk
-  intro i; omega
+  apply writeBank_coeff_outside (start := 32*u) (step := 4) _ m p (by omega_using [hu]) hk
+  intro i; omega_using [hout]
 
 theorem firstPass_untouched (m : Mem) (p : Addr) {u k : Nat}
     (hu : u≤8) (hk : k<n) (hbefore : 32*u≤k) :
@@ -44,20 +44,20 @@ theorem firstPass_untouched (m : Mem) (p : Addr) {u k : Nat}
   induction u with
   | zero => rfl
   | succ u ih =>
-    rw [firstPassMem_step,firstMemStep_outside _ _ (by omega) hk (Or.inr hbefore)]
-    exact ih (by omega) (by omega)
+    rw [firstPassMem_step,firstMemStep_outside _ _ (by omega_using [hu]) hk (Or.inr hbefore)]
+    exact ih (by omega_using [hu]) (by omega_using [hbefore])
 
 theorem finalMemStep_at (m : Mem) (p : Addr) (q : BitVec 128) {u : Nat}
     (hu : u<8) (i : Fin 8) {e : Nat} (he : e<4) :
     coeffAt (finalMemStep m p q u) p (4*u+32*i.val+e)=
       vword (finalValues (readBank m (coeffAddr p (4*u)) 128) q)[i.val] e := by
-  exact writeBank_coeff_at _ m p (start := 4*u) (step := 32) (by decide) (by omega) i he
+  exact writeBank_coeff_at _ m p (start := 4*u) (step := 32) (by decide) (by omega_using [hu]) i he
 
 theorem finalMemStep_outside (m : Mem) (p : Addr) (q : BitVec 128) {u k : Nat}
     (hu : u<8) (hk : k<n) (hout : k%32/4≠u) :
     coeffAt (finalMemStep m p q u) p k=coeffAt m p k := by
-  apply writeBank_coeff_outside (start := 4*u) (step := 32) _ m p (by omega) hk
-  intro i; omega
+  apply writeBank_coeff_outside (start := 4*u) (step := 32) _ m p (by omega_using [hu]) hk
+  intro i; omega_using [hu, hout]
 
 theorem finalPass_untouched (m : Mem) (p : Addr) (q : BitVec 128) {u k : Nat}
     (hu : u≤8) (hk : k<n) (hbefore : u≤k%32/4) :
@@ -65,8 +65,8 @@ theorem finalPass_untouched (m : Mem) (p : Addr) (q : BitVec 128) {u k : Nat}
   induction u with
   | zero => rfl
   | succ u ih =>
-    rw [finalPassMem_step,finalMemStep_outside _ _ _ (by omega) hk (by omega)]
-    exact ih (by omega) (by omega)
+    rw [finalPassMem_step,finalMemStep_outside _ _ _ (by omega_using [hu]) hk (by omega_using [hbefore])]
+    exact ih (by omega_using [hu]) (by omega_using [hbefore])
 
 /-- A later local block still reads the original, unexpanded input range. -/
 theorem firstPass_bank_bound {m : Mem} {p : Addr} {u : Nat} {bound : Int}
@@ -75,8 +75,8 @@ theorem firstPass_bank_bound {m : Mem} {p : Addr} {u : Nat} {bound : Int}
     -bound≤(vword (readBank (firstPassMem m p u) (coeffAddr p (32*u)) 16)[i.val] e).toInt ∧
       (vword (readBank (firstPassMem m p u) (coeffAddr p (32*u)) 16)[i.val] e).toInt≤bound := by
   rw [readBank_coeff _ p (32*u) 4 i he]
-  have hk : 32*u+4*i.val+e<n := by change 32*u+4*i.val+e<256; omega
-  rw [firstPass_untouched m p (by omega) hk (by omega)]
+  have hk : 32*u+4*i.val+e<n := by change 32*u+4*i.val+e<256; omega_using [hu, he]
+  rw [firstPass_untouched m p (by omega_using [hu]) hk (by omega_using [])]
   exact h _ hk
 
 end VG.Proof.MlDsa.AArch64.Optimized.Inverse

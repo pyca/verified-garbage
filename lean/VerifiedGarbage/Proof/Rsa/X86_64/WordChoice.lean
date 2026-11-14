@@ -53,8 +53,8 @@ theorem cvWordChoice_ok {I : CvIn} {m₀ : Mem} {s : State} (h : CvS I m₀ s) (
   refine WP.seq (WP.mono (WordDivide.guardHead_ok h) fun s₁ ⟨h₁, m₁, h12, hdx⟩ => ?_)
   refine WP.seq (WP.mono (WordDivide.guardTail_ok h₁ L h12 hdx) fun s₂ ⟨h₂, m₂, hz⟩ => ?_)
   have mm := m₂.trans m₁
-  refine WP.ite (WordDivide.guardVal (wk I.k) I.k I.pl I.ql (I.nb[0]'(by rw [L.nl]; omega)) == 0) (by simp only [eval, hz]) (fun hb => ?_) (fun _ => ?_)
-  · have hg : WordDivide.guardVal (wk I.k) I.k I.pl I.ql (I.nb[0]'(by rw [L.nl]; omega)) = 0 := by
+  refine WP.ite (WordDivide.guardVal (wk I.k) I.k I.pl I.ql (I.nb[0]'(by rw [L.nl]; omega_using [hk1])) == 0) (by simp only [eval, hz]) (fun hb => ?_) (fun _ => ?_)
+  · have hg : WordDivide.guardVal (wk I.k) I.k I.pl I.ql (I.nb[0]'(by rw [L.nl]; omega_using [hk1])) = 0 := by
       simpa only [beq_iff_eq] using hb
     refine WP.mono (cvWordFast_ok h₂ L hj hW hZ (fun hc => ?_)) fun t ⟨ht, mt, vt, pt⟩ => ?_
     · rw [mm] at hc ⊢

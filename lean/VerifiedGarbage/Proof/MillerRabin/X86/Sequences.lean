@@ -29,7 +29,7 @@ theorem seqs_range_ok (n : Nat) (code : Nat → Prog isa) (P : Nat → State →
   | zero => exact WP.block_nil initial
   | succ n ih =>
     rw [List.range_succ, List.map_append, seqs_append_iff]
-    refine WP.mono (ih (fun j hj => step j (by omega)) s initial) fun t Pt => ?_
-    exact step n (by omega) t Pt
+    refine WP.mono (ih (fun j hj => step j (by omega_using [hj])) s initial) fun t Pt => ?_
+    exact step n (by omega_using []) t Pt
 
 end VG.Proof.MillerRabin.X86

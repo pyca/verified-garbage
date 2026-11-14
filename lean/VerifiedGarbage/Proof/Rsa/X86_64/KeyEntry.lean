@@ -127,7 +127,7 @@ theorem keyEntry_ok {s : State} {B : Addr} (hB : stackArg s 10 = B)
   rw [← hmem] at h0 h1 h2 h3 h4 h5 hN hK hD hDl hP hPl hQ hQl hDP hDQ hQI ho
   refine ⟨hdi, h8, h9, fun i hi => ?_, hN, hK, hD, hDl, hP, hPl, hQ, hQl, hDP, hDQ, hQI, ho,
     (k12.trans k₃).mono (by decide)⟩
-  rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 by omega) with rfl | rfl | rfl | rfl | rfl | rfl
+  rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 by omega_using [hi]) with rfl | rfl | rfl | rfl | rfl | rfl
   · exact h0
   · exact h1
   · exact h2

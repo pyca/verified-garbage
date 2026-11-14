@@ -22,7 +22,7 @@ theorem stateAt_hi (m : Mem) (p : Addr) {j : Nat} (hj : j < 4) :
   rw [dword_readW _ _ hj]
   simp only [stateAt, Vector.getElem_ofFn]
   refine congrArg (fun a => m.readW a 32) ?_
-  exact Offset.add_add_eq _ (by omega)
+  exact Offset.add_add_eq _ (by omega_using [])
 
 theorem stateAt_store (m : Mem) (p : Addr) (x y : BitVec 128) :
     stateAt ((m.writeW p x).writeW (p + BitVec.ofNat 64 16) y) p =
@@ -31,11 +31,11 @@ theorem stateAt_store (m : Mem) (p : Addr) (x y : BitVec 128) :
   intro j hj
   simp only [stateAt, Vector.getElem_ofFn]
   by_cases hlo : j < 4
-  · rw [Mem.readW_writeW_sep (Offset.sep p (by omega) (by omega) (by omega)) (by decide),
+  · rw [Mem.readW_writeW_sep (Offset.sep p (by omega_using [hlo]) (by omega_using [hj]) (by omega_using [])) (by decide),
       readW_writeW128 _ _ _ hlo]
-    rcases (by omega : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3) with rfl | rfl | rfl | rfl <;> rfl
+    rcases (by omega_using [hlo] : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3) with rfl | rfl | rfl | rfl <;> rfl
   · rw [show p + BitVec.ofNat 64 (4 * j) = p + BitVec.ofNat 64 16 + BitVec.ofNat 64 (4 * (j - 4)) from
-        (Offset.add_add_eq _ (by omega)).symm, readW_writeW128 _ _ _ (by omega)]
-    rcases (by omega : j = 4 ∨ j = 5 ∨ j = 6 ∨ j = 7) with rfl | rfl | rfl | rfl <;> rfl
+        (Offset.add_add_eq _ (by omega_using [hlo])).symm, readW_writeW128 _ _ _ (by omega_using [hj])]
+    rcases (by omega_using [hj, hlo] : j = 4 ∨ j = 5 ∨ j = 6 ∨ j = 7) with rfl | rfl | rfl | rfl <;> rfl
 
 end VG.Proof.Sha256.X86.ShaNi

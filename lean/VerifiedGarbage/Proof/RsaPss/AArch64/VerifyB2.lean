@@ -38,7 +38,7 @@ theorem orF_congr {g g' : Nat → BitVec 64} : ∀ {j : Nat}, (∀ i < j, g i = 
   | 0, _ => rfl
   | j + 1, h => by
     simp only [orF]
-    rw [orF_congr (fun i hi => h i (by omega)), h j (by omega)]
+    rw [orF_congr (fun i hi => h i (by omega_using [hi])), h j (by omega_using [])]
 
 /-- `M'`: eight zeros, `mHash` and the salt, the `db - pos - 1` bytes of
 `DB` (`W`) after `pos`. -/
@@ -75,20 +75,20 @@ theorem msg_y {V0 : Nat → Byte} {W : Nat → Byte} {mH : List Byte} {e db pos 
     exact (RsaPss.zeros_getD _ _).symm
   by_cases h2 : i < 8 + H.D
   · simp (disch := omega) only [shW, updL, ↓ite_eq_left, ↓ite_eq_right]
-    rw [show oY + i - (oY + 8) = i - 8 by omega]
+    rw [show oY + i - (oY + 8) = i - 8 by omega_using []]
   by_cases h3 : i < 8 + H.D + db
   · simp (disch := omega) only [shW, ↓ite_eq_left, ↓ite_eq_right]
     unfold zf
-    rw [show oY + i - (oY + 8 + H.D) + (pos + 1) = pos + 1 + (i - (8 + H.D)) by omega]
+    rw [show oY + i - (oY + 8 + H.D) + (pos + 1) = pos + 1 + (i - (8 + H.D)) by omega_using []]
     by_cases h4 : i - (8 + H.D) < db - pos - 1
-    · rw [ite_eq_left (by omega), List.getD_eq_getElem?_getD, List.getElem?_map, List.getElem?_range h4]
+    · rw [ite_eq_left (by omega_using [h4]), List.getD_eq_getElem?_getD, List.getElem?_map, List.getElem?_range h4]
       rfl
-    · rw [ite_eq_right (by omega), List.getD_eq_getElem?_getD, List.getElem?_map,
-        List.getElem?_eq_none (by rw [List.length_range]; omega)]
+    · rw [ite_eq_right (by omega_using [h4]), List.getD_eq_getElem?_getD, List.getElem?_map,
+        List.getElem?_eq_none (by rw [List.length_range]; omega_using [h4])]
       rfl
   · simp (disch := omega) only [shW, updL, clr, ↓ite_eq_left, ↓ite_eq_right, hm, List.length_map,
       List.length_range]
-    rw [List.getD_eq_getElem?_getD, List.getElem?_map, List.getElem?_eq_none (by rw [List.length_range]; omega)]
+    rw [List.getD_eq_getElem?_getD, List.getElem?_map, List.getElem?_eq_none (by rw [List.length_range]; omega_using [h3])]
     rfl
 
 include hH in

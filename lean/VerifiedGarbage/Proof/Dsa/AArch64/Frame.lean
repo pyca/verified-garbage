@@ -21,9 +21,9 @@ def workRanges (w : Nat) : List (Nat × Nat) := [(136, slot w 8 + tabBytes w - 1
 
 theorem workRanges_ok (w : Nat) : ∀ r ∈ workRanges w,
     8 * 17 ≤ r.1 ∧ r.1 + r.2 ≤ slot w 8 + tabBytes w := by
-  have : 256 ≤ slot w 8 := by unfold slot hdrBytes; omega
+  have : 256 ≤ slot w 8 := by unfold slot hdrBytes; omega_using []
   simp only [workRanges, List.mem_singleton, forall_eq]
-  omega
+  omega_using [this]
 
 /-- Array writes are confined to the child's mutable region. -/
 theorem arrays_work {mem mem' : Mem} {B : Addr} {w : Nat} {js : List Nat}
@@ -33,9 +33,9 @@ theorem arrays_work {mem mem' : Mem} {B : Addr} {w : Nat} {js : List Nat}
   apply hf x
   intro j hmem
   have hi := slot_le (w := w) (hj j hmem)
-  have lo : 256 ≤ slot w j := by unfold slot hdrBytes; omega
+  have lo : 256 ≤ slot w j := by unfold slot hdrBytes; omega_using []
   have h := hx (136, slot w 8 + tabBytes w - 136) (List.mem_singleton_self _)
-  omega
+  omega_using [hi, lo, h]
 
 /-- Recover the complete child context after array-only writes. -/
 theorem arrays_context {s t : State} {B : Addr} {Z o w wx : Nat} {minv : BitVec 64}
@@ -52,8 +52,8 @@ theorem exp_work {s t : State} {B : Addr} {w : Nat}
   intro r hr
   have ho := crtExpRanges_ok w r hr
   have h := hx (136, slot w 8 + tabBytes w - 136) (List.mem_singleton_self _)
-  have : 256 ≤ slot w 8 := by unfold slot hdrBytes; omega
-  omega
+  have : 256 ≤ slot w 8 := by unfold slot hdrBytes; omega_using []
+  omega_using [ho, h]
 
 /-- A child's writes leave the parent's call header unchanged. -/
 theorem work_parent {s t : State} {B : Addr} {Z o w wx : Nat} {minv : BitVec 64}
@@ -62,9 +62,9 @@ theorem work_parent {s t : State} {B : Addr} {Z o w wx : Nat} {minv : BitVec 64}
   have ho := hc.lo
   have hn := hc.scr.nowrap
   have hhi := hc.hi
-  have : 256 ≤ slot w 8 := by unfold slot hdrBytes; omega
-  have : 256 ≤ slot wx 8 := by unfold slot hdrBytes; omega
-  exact hf.word_below (fun r hr => (workRanges_ok wx r hr).2) (by omega) (by omega) (by omega)
+  have : 256 ≤ slot w 8 := by unfold slot hdrBytes; omega_using []
+  have : 256 ≤ slot wx 8 := by unfold slot hdrBytes; omega_using []
+  exact hf.word_below (fun r hr => (workRanges_ok wx r hr).2) (by omega_using [hn, hhi]) (by omega_using [hn, hhi, this]) (by omega_arith)
 
 /-- A source outside the active arithmetic prefix remains unchanged. -/
 theorem work_source {s t : State} {B : Addr} {Z o w wx : Nat} {minv : BitVec 64}
@@ -73,14 +73,14 @@ theorem work_source {s t : State} {B : Addr} {Z o w wx : Nat} {minv : BitVec 64}
     Src t B Z p bytes := by
   have hn := hc.scr.nowrap
   have hhi := hc.hi
-  have hsize : 256 ≤ slot wx 8 := by unfold slot hdrBytes; omega
+  have hsize : 256 ≤ slot wx 8 := by unfold slot hdrBytes; omega_using []
   apply hs.congrK _ hk
-  apply InScr.of_frm (hf.rebase (by omega) (fun r hr => by have := workRanges_ok wx r hr; omega))
+  apply InScr.of_frm (hf.rebase (by omega_using [hn, hhi, hsize]) (fun r hr => by have := workRanges_ok wx r hr; omega_using [hn, hhi, this]))
   intro r hr
   simp only [shiftRanges, workRanges, List.map_cons, List.map_nil, List.mem_singleton] at hr
   subst r
   simp only
-  omega
+  omega_using [hhi, hsize]
 
 /-- The modulus and its inverse survive the fixed-window exponentiation. -/
 theorem modCtx_exp {s t : State} {B : Addr} {Z w m : Nat} {minv : BitVec 64}
@@ -91,9 +91,9 @@ theorem modCtx_exp {s t : State} {B : Addr} {Z w m : Nat} {minv : BitVec 64}
   have hsep := crtExpRanges_arr w (j := aN) (by decide) (by decide) (by decide) (by decide) (by decide)
   have hslot := slot_le (w := w) (show aN < 8 by decide)
   refine ⟨ht, ?_, ?_⟩
-  · rw [hf.wv_eq (fun r hr => by have := hsep r hr; omega) (by omega)]
+  · rw [hf.wv_eq (fun r hr => by have := hsep r hr; omega_using [this]) (by omega_using [hZ, hn, hslot])]
     exact hc.modulus
-  · rw [hf.word_eq (fun r hr => by have := hsep r hr; omega) (by omega)]
+  · rw [hf.word_eq (fun r hr => by have := hsep r hr; omega_using [this]) (by omega_using [hZ, hn, hslot])]
     exact hc.inverse
 
 end VG.Proof.Dsa.AArch64

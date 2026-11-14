@@ -39,7 +39,7 @@ theorem scalarUpper_ok (s : State) {p : Inputs} {slots : List Nat}
   have op1 : Operand 1 := by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]
   have op4 : Operand 4 := by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]
   have fits : arrAt p.w 8 ≤ 8 * p.len := ready.width ▸ ready.layout.2.2.1
-  have size : 256 ≤ 8 * p.len := by simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at fits; omega
+  have size : 256 ≤ 8 * p.len := by simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at fits; omega_using [fits]
   rw [VG.Impl.Ffdh.Arm.Domain.withQ, WP.seq_iff]
   refine WP.mono (qTest_ok s h h28 h32) ?_
   rintro u ⟨⟨zero, memU⟩, restU⟩
@@ -50,7 +50,7 @@ theorem scalarUpper_ok (s : State) {p : Inputs} {slots : List Nat}
   · intro hasQ
     rw [WP.seq_iff]
     refine WP.mono (importAt_ok u 6 60 32 contextU stable h60 h32 readyU (by decide) (by decide)
-      (contextU.qBytes hasQ) (by rw [p.qLength hasQ]; have := p.minLength; omega)
+      (contextU.qBytes hasQ) (by rw [p.qLength hasQ]; have := p.minLength; omega_using [this])
       (by rw [p.qLength hasQ]; exact p.width.2.2.2.1)
       (by change BitVec.ofNat 32 p.k = _; rw [p.qLength hasQ])) ?_
     rintro v ⟨_, readyV, q, keepsV, frameV, restV⟩

@@ -23,7 +23,7 @@ def InitArgs (L : Lay) (t : State) : Prop := t.gpr .rdi = L.scr
 
 theorem initArgs_ok {t : State} (hc : Ctx L g mx m₀ t) :
     WP isa (.block initArgs) t fun t' => Ctx L g mx m₀ t' ∧ t'.mem = t.mem ∧ InitArgs L t' := by
-  have hin := hc.inFr (d := 216) (by omega) (by omega)
+  have hin := hc.inFr (d := 216) (by omega_using []) (by omega_using [])
   refine WP.of_runBlock ⟨t.setReg .rdi L.scr, ?_, ?_⟩
   · simp only [initArgs, fScratch, runBlock_cons, runStep_some, runBlock_nil, exec, readSrc,
       State.load64, hc.ea_fr, hin, ite_true, Option.map_some, hc.pScr]
@@ -39,8 +39,8 @@ theorem inputArgs_ok {t : State} (hc : Ctx L g mx m₀ t) (source count : Nat)
     (hp : t.mem.readW (L.B + BitVec.ofNat 64 (16 + source)) 64 = p) :
     WP isa (.block (inputArgs source count)) t fun t' => Ctx L g mx m₀ t' ∧ t'.mem = t.mem ∧
       UpdArgs L (BitVec.ofNat 64 count) p 32 t' := by
-  have h216 := hc.inFr (d := 216) (by omega) (by omega)
-  have hsrc := hc.inFr (d := 16 + source) (by omega) (by omega)
+  have h216 := hc.inFr (d := 216) (by omega_using []) (by omega_using [])
+  have hsrc := hc.inFr (d := 16 + source) (by omega_using []) (by omega_using [hs])
   apply WP.of_runBlock
   simp only [inputArgs, scrPtr, shaScratch, fScratch, List.cons_append, List.nil_append,
     runBlock_cons, runStep_some, runBlock_nil, exec, execAlu, readSrc, readSrc32, State.load64,
@@ -49,15 +49,15 @@ theorem inputArgs_ok {t : State} (hc : Ctx L g mx m₀ t) (source count : Nat)
     Option.map_some, Option.bind_some, reduceCtorEq, ite_false, ite_true, hc.rsp, add_add,
     Nat.reduceAdd, h216, hsrc, Option.some.injEq, exists_eq_left', hc.pScr, hp, UpdArgs]
   exact ⟨hc.regs rfl rfl rfl rfl rfl (by cs_tac), trivial, trivial, zx32 hcount,
-    trivial, rfl, by rw [sx32 (by omega)]⟩
+    trivial, rfl, by rw [sx32 (by omega_using [])]⟩
 
 theorem messageArgs_ok {t : State} (hc : Ctx L g mx m₀ t) (count : Nat)
     (hcount : count < 2 ^ 32) :
     WP isa (.block (messageArgs count)) t fun t' => Ctx L g mx m₀ t' ∧ t'.mem = t.mem ∧
       UpdArgs L (BitVec.ofNat 64 count) L.msg L.len t' := by
-  have h216 := hc.inFr (d := 216) (by omega) (by omega)
-  have h224 := hc.inFr (d := 224) (by omega) (by omega)
-  have h232 := hc.inFr (d := 232) (by omega) (by omega)
+  have h216 := hc.inFr (d := 216) (by omega_using []) (by omega_using [])
+  have h224 := hc.inFr (d := 224) (by omega_using []) (by omega_using [])
+  have h232 := hc.inFr (d := 232) (by omega_using []) (by omega_using [])
   apply WP.of_runBlock
   simp only [messageArgs, scrPtr, shaScratch, fScratch, fMessage, fLength,
     List.cons_append, List.nil_append, runBlock_cons, runStep_some, runBlock_nil,
@@ -67,13 +67,13 @@ theorem messageArgs_ok {t : State} (hc : Ctx L g mx m₀ t) (count : Nat)
     reduceCtorEq, ite_false, ite_true, hc.rsp, add_add, Nat.reduceAdd, h216, h224, h232,
     Option.some.injEq, exists_eq_left', hc.pScr, hc.pMsg, hc.pLen, UpdArgs]
   exact ⟨hc.regs rfl rfl rfl rfl rfl (by cs_tac), trivial, trivial, zx32 hcount,
-    trivial, trivial, by rw [sx32 (by omega)]⟩
+    trivial, trivial, by rw [sx32 (by omega_using [])]⟩
 
 
 theorem prefixArgs_ok {t : State} (hc : Ctx L g mx m₀ t) :
     WP isa (.block prefixArgs) t fun t' => Ctx L g mx m₀ t' ∧ t'.mem = t.mem ∧
       UpdArgs L 0 (L.B + BitVec.ofNat 64 48) 32 t' := by
-  have hin := hc.inFr (d := 216) (by omega) (by omega)
+  have hin := hc.inFr (d := 216) (by omega_using []) (by omega_using [])
   apply WP.of_runBlock
   simp only [prefixArgs, framePtr, scrPtr, shaScratch, fScratch, List.cons_append, List.nil_append,
     runBlock_cons, runStep_some, runBlock_nil, exec, execAlu, readSrc, readSrc32, State.load64,
@@ -83,7 +83,7 @@ theorem prefixArgs_ok {t : State} (hc : Ctx L g mx m₀ t) :
     Nat.reduceAdd, hin, Option.some.injEq, exists_eq_left', hc.pScr, UpdArgs]
   exact ⟨hc.regs rfl rfl rfl rfl rfl (by cs_tac), trivial, trivial, rfl,
     by rw [sx32 (by decide : 32 < 2 ^ 31), add_add],
-    rfl, by rw [sx32 (by omega)]⟩
+    rfl, by rw [sx32 (by omega_using [])]⟩
 
 def FinArgs (L : Lay) (count : BitVec 64) (t : State) : Prop :=
   t.gpr .rdi = L.scr ∧ t.gpr .rsi = count ∧ t.gpr .rdx = L.B + BitVec.ofNat 64 144 ∧
@@ -94,8 +94,8 @@ theorem finalizeArgs_ok {t : State} (hc : Ctx L g mx m₀ t) (prefixLen : Nat)
     WP isa (.block (finalizeArgs prefixLen withMessage)) t fun t' => Ctx L g mx m₀ t' ∧
       t'.mem = t.mem ∧ FinArgs L
         (if withMessage then L.len + BitVec.ofNat 64 prefixLen else BitVec.ofNat 64 prefixLen) t' := by
-  have hs := hc.inFr (d := 216) (by omega) (by omega)
-  have hl := hc.inFr (d := 224) (by omega) (by omega)
+  have hs := hc.inFr (d := 216) (by omega_using []) (by omega_using [])
+  have hl := hc.inFr (d := 224) (by omega_using []) (by omega_using [])
   cases withMessage <;> apply WP.of_runBlock <;>
     simp only [finalizeArgs, framePtr, scrPtr, shaScratch, fScratch, fLength, Bool.false_eq_true,
       ite_false, ite_true, List.cons_append, List.nil_append, runBlock_cons, runStep_some, runBlock_nil,
@@ -104,11 +104,11 @@ theorem finalizeArgs_ok {t : State} (hc : Ctx L g mx m₀ t) (prefixLen : Nat)
       RegUpd.gpr_arithFlags, RegUpd.mem_arithFlags, RegUpd.rd_arithFlags, RegUpd.wr_arithFlags,
       Option.map_some, Option.bind_some, reduceCtorEq, ite_false, ite_true, hc.rsp, add_add,
       Nat.reduceAdd, hs, hl, Option.some.injEq, exists_eq_left', hc.pScr, hc.pLen, FinArgs]
-  · exact ⟨hc.regs rfl rfl rfl rfl rfl (by cs_tac), trivial, trivial, zx32 (by omega),
+  · exact ⟨hc.regs rfl rfl rfl rfl rfl (by cs_tac), trivial, trivial, zx32 (by omega_using [hp]),
       by rw [sx32 (by decide : 128 < 2 ^ 31), add_add],
-      by rw [sx32 (by omega)]⟩
+      by rw [sx32 (by omega_using [])]⟩
   · exact ⟨hc.regs rfl rfl rfl rfl rfl (by cs_tac), trivial, trivial, by rw [sx32 hp],
       by rw [sx32 (by decide : 128 < 2 ^ 31), add_add],
-      by rw [sx32 (by omega)]⟩
+      by rw [sx32 (by omega_using [])]⟩
 
 end VG.Proof.Ed25519.X86_64.SignCached

@@ -26,11 +26,11 @@ theorem oddInput_done_ge {m x n steps : Nat} (hm : m % 2 = 1)
     (Divstep.divsteps steps (1, m, oddInput m x)).2.2 = 0 ∧
       (Divstep.divsteps steps (1, m, oddInput m x)).2.1.natAbs = Nat.gcd m x := by
   have grow : 2 * 2 ^ (32 * n) ≤ 2 ^ (32 * (n + 1)) := by
-    rw [show 32 * (n + 1) = 32 * n + 32 by omega, pow_add]; omega
-  have h := VG.Proof.Rsa.Divstep.done_words (w := n + 1) (steps := steps) (by omega)
+    rw [show 32 * (n + 1) = 32 * n + 32 by omega_using [], pow_add]; omega_using []
+  have h := VG.Proof.Rsa.Divstep.done_words (w := n + 1) (steps := steps) (by omega_using [])
     (by exact_mod_cast hm) (Int.natCast_nonneg _) (Int.natCast_nonneg _)
     (Or.inr (by exact_mod_cast VG.Proof.Rsa.Divstep.oddInput_odd (x := x) hm))
-    (by exact_mod_cast (hmR.le.trans (by omega : 2 ^ (32 * n) ≤ 2 ^ (32 * (n + 1)))))
+    (by exact_mod_cast (hmR.le.trans (by omega_using [grow] : 2 ^ (32 * n) ≤ 2 ^ (32 * (n + 1)))))
     (by exact_mod_cast ((VG.Proof.Rsa.Divstep.oddInput_lt hmR hxR).le.trans grow)) hs
   rw [Int.gcd_natCast_natCast, VG.Proof.Rsa.Divstep.oddInput_gcd] at h
   exact h
@@ -40,7 +40,7 @@ theorem rs_done' {p iv x n j : Nat} (odd : p % 2 = 1) (pc : p < 2 ^ (32 * n)) (x
     (hj : 3 * (n + 1) ≤ j) : (rs p iv x j).g = 0 ∧ (rs p iv x j).f.natAbs = Nat.gcd p x := by
   have oddI : (p : Int) % 2 = 1 := by exact_mod_cast odd
   have e := (Divstep.W32.invRun_dfg (N := 30) (m := (iv : Int)) (x := (oddInput p x : Int)) oddI j).1
-  have d := oddInput_done_ge (steps := 30 * j) odd pc xc (by omega)
+  have d := oddInput_done_ge (steps := 30 * j) odd pc xc (by omega_using [hj])
   rw [← e] at d
   exact d
 

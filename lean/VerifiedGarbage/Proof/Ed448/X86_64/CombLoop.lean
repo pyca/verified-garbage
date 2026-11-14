@@ -30,7 +30,7 @@ theorem accept_ok {s : State} {base : Addr} (hs : Scr s base) {t : Nat}
   refine WP.mono (copySlot_ok (k1.scr hs) 1 4) fun s2 ⟨k2, e2⟩ => ?_
   rw [WP.block_append_iff]
   refine WP.mono (copySlot_ok (k2.scr (k1.scr hs)) 2 5) fun s3 ⟨k3, e3⟩ => ?_
-  refine WP.mono (testRbx_ok s3 t (by omega)
+  refine WP.mono (testRbx_ok s3 t (by omega_using [ht])
     (by rw [k3.gpr _ (by decide), k2.gpr _ (by decide), k1.gpr _ (by decide), hb]))
     fun u ⟨zu, gu, mu, ru, wu⟩ => ?_
   refine ⟨⟨fun r hr => (gu r).trans (((k1.trans k2).trans k3).gpr r hr),
@@ -111,14 +111,14 @@ theorem loop_ok {s₀ : State} {base : Addr} {k : Nat} (bs : Bits base k s₀) :
   refine WP.loop (M := isa) (Q := fun u => Inv base k s₀ 0 u)
     (fun m s => 1 ≤ m ∧ m ≤ 114 ∧ Inv base k s₀ m s) ?_ n s ⟨hn1, hn2, hi⟩
   rintro m s ⟨hm1, hm2, hi⟩
-  obtain ⟨t, rfl⟩ : ∃ t, m = t + 1 := ⟨m - 1, by omega⟩
+  obtain ⟨t, rfl⟩ : ∃ t, m = t + 1 := ⟨m - 1, by omega_using [hm1]⟩
   have bss : Bits base k s := by
     intro j hj
     rw [hi.mem _ (Or.inr (by
-      rw [VG.Proof.X448.X86_64.ofs_off' base (by simp only [Impl.X448.X86_64.BITS]; omega)]
-      simp only [Impl.X448.X86_64.BITS]; omega))]
+      rw [VG.Proof.X448.X86_64.ofs_off' base (by simp only [Impl.X448.X86_64.BITS]; omega_using [hj])]
+      simp only [Impl.X448.X86_64.BITS]; omega_using []))]
     exact bs j hj
-  refine WP.mono (step_ok hP hi.scr (by omega) hi.rbx bss hi.d hi.rep)
+  refine WP.mono (step_ok hP hi.scr (by omega_using [hm2]) hi.rbx bss hi.d hi.rep)
     fun u ⟨bu, zu, gu, ru, wu, ou, du, pu⟩ => ?_
   have inv : Inv base k s₀ t u :=
     ⟨⟨(gu _ (by decide)).trans hi.scr.rdi, wu ▸ hi.scr.wr, hi.scr.nowrap⟩, bu,
@@ -127,7 +127,7 @@ theorem loop_ok {s₀ : State} {base : Addr} {k : Nat} (bs : Bits base k s₀) :
   simp only [eval, zu, Option.map_some]
   rcases Nat.eq_zero_or_pos t with h | h
   · subst h; exact .inl ⟨rfl, inv⟩
-  · exact .inr ⟨by simp only [decide_eq_false (by omega : ¬t = 0), Bool.not_false],
-      t, by omega, h, by omega, inv⟩
+  · exact .inr ⟨by simp only [decide_eq_false (by omega_using [h] : ¬t = 0), Bool.not_false],
+      t, by omega_using [], h, by omega_using [hm2], inv⟩
 
 end VG.Proof.Ed448.X86_64.Comb

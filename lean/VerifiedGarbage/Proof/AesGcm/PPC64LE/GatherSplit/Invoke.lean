@@ -27,14 +27,14 @@ theorem Prepared.covers {s e c : State} (h : Gather.Lay s) (he : Gather.Entered 
     intro r hr
     simp only [callRead,callWrite,List.cons_append,List.nil_append,List.mem_cons,List.not_mem_nil,or_false] at hr
     rcases hr with rfl|rfl|rfl|rfl|rfl|rfl|rfl
-    · exact ⟨_,List.mem_append_left _ (by rw [hp.rd,h.pre.1]; simp),0,(BitVec.add_zero _).symm,by omega⟩
-    · exact ⟨_,List.mem_append_left _ (by rw [hp.rd,h.pre.1]; simp),0,(BitVec.add_zero _).symm,by omega⟩
-    · exact ⟨_,List.mem_append_left _ (by rw [hp.rd,h.pre.1]; simp),0,(BitVec.add_zero _).symm,by omega⟩
-    · exact ⟨_,List.mem_append_left _ (by rw [hp.rd,h.pre.1]; simp [hs]),0,(BitVec.add_zero _).symm,by omega⟩
+    · exact ⟨_,List.mem_append_left _ (by rw [hp.rd,h.pre.1]; simp),0,(BitVec.add_zero _).symm,by omega_using []⟩
+    · exact ⟨_,List.mem_append_left _ (by rw [hp.rd,h.pre.1]; simp),0,(BitVec.add_zero _).symm,by omega_using []⟩
+    · exact ⟨_,List.mem_append_left _ (by rw [hp.rd,h.pre.1]; simp),0,(BitVec.add_zero _).symm,by omega_using []⟩
+    · exact ⟨_,List.mem_append_left _ (by rw [hp.rd,h.pre.1]; simp [hs]),0,(BitVec.add_zero _).symm,by omega_using []⟩
     · refine ⟨FR s,List.mem_append_right _ (by rw [hp.wr]; exact List.mem_cons_self),64,?_,by show 64+24≤128; decide⟩
       exact (Offset.add_ofNat_add_ofNat (Pf s) 32 64).symm
-    · exact ⟨_,List.mem_append_right _ (by rw [hp.wr,h.pre.2.1]; simp),0,(BitVec.add_zero _).symm,by omega⟩
-    · exact ⟨_,List.mem_append_right _ (by rw [hp.wr,h.pre.2.1]; simp),0,(BitVec.add_zero _).symm,by omega⟩
+    · exact ⟨_,List.mem_append_right _ (by rw [hp.wr,h.pre.2.1]; simp),0,(BitVec.add_zero _).symm,by omega_using []⟩
+    · exact ⟨_,List.mem_append_right _ (by rw [hp.wr,h.pre.2.1]; simp),0,(BitVec.add_zero _).symm,by omega_using []⟩
   · exact Gather.covers_mem (fun r hr => by rw [hp.wr,h.pre.2.1]; exact List.mem_cons_of_mem _ hr)
 
 

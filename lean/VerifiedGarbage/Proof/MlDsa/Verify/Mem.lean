@@ -32,7 +32,7 @@ theorem coeffAt_congr {m m' : Mem} {p : Addr}
   refine Mem.readW_congr fun k hk => ?_
   rw [BitVec.add_assoc, ← BitVec.ofNat_add]
   have : n = 256 := rfl
-  exact h (4 * i + k) (by omega)
+  exact h (4 * i + k) (by omega_using [hi, hk, this])
 
 theorem polyAt_congr {m m' : Mem} {p : Addr}
     (h : ∀ k < 1024, m' (p + BitVec.ofNat 64 k) = m (p + BitVec.ofNat 64 k)) :
@@ -89,7 +89,7 @@ theorem coeffAt_row (m : Mem) (p : Addr) (r j : Nat) :
   unfold coeffAt
   rw [BitVec.add_assoc, ← BitVec.ofNat_add]
   congr 3
-  omega
+  omega_using []
 
 /-- Row `r` of a hint stored as `k` polynomials at `p`: the hint polynomial
 at `p + 1024r`. -/
@@ -111,7 +111,7 @@ theorem hintIs_congr {m m' : Mem} {p : Addr} {k : Nat} {h : List (Vector Bool n)
   refine Mem.readW_congr fun t ht => ?_
   rw [BitVec.add_assoc, ← BitVec.ofNat_add]
   have : n = 256 := rfl
-  exact hm (4 * (256 * i + j) + t) (by omega)
+  exact hm (4 * (256 * i + j) + t) (by omega_using [hi, hj, ht, this])
 
 theorem hintIs_frame {rs : List Region} {m m' : Mem} (hf : Frame rs m m') {p : Addr} {k : Nat}
     (hk : 1024 * k ≤ 2 ^ 64) (hd : ∀ r ∈ rs, (⟨p, 1024 * k⟩ : Region).Disjoint r) {h : List (Vector Bool n)}

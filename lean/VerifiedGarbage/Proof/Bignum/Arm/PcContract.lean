@@ -329,7 +329,7 @@ theorem pc_contract_pre (s : State) (h : (Spec.Rsa.publicPrecomputeContract abi 
   obtain ⟨stackFit, argFit, rd, wr, _, outWs, _, srcWs, _, stackOut, stackSrc,
     stackWs, stackArgs, outFit, srcFit, wsFit, valid, outLen, space⟩ := h
   have outBytes : (s.gpr .r1).toNat * 8 = 16 * Spec.Rsa.modulusWords (s.gpr .r3).toNat := by
-    rw [outLen]; simp only [Spec.Rsa.precomputedWords]; omega
+    rw [outLen]; simp only [Spec.Rsa.precomputedWords]; omega_using []
   rw [outBytes] at wr outWs stackOut outFit
   have frame : FrameStack.belowA s.sp 56 = ⟨State.addr s.sp - BitVec.ofNat 64 56, 56⟩ := by
     unfold FrameStack.belowA

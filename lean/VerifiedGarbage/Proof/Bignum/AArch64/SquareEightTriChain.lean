@@ -61,17 +61,17 @@ theorem chain_ok (hi : Bool) (x : Reg) (Y R S : Nat → Reg) (n : Nat) (s : Stat
       Keep.refl _ _⟩
   | succ n ih =>
     have hRt : R n ≠ tmp := fun h => by
-      have := hw n (by omega); rw [h] at this; exact absurd this (by decide)
+      have := hw n (by omega_using []); rw [h] at this; exact absurd this (by decide)
     simp only [VG.Impl.Bignum.AArch64.SquareEight.chain, List.range_succ, List.flatMap_append,
       List.flatMap_cons, List.flatMap_nil, List.append_nil, prod_eq]
     apply WP.block_append
-    refine WP.mono (ih s (fun i h => hw i (by omega)) (fun k h => hY k (by omega))
-      (fun i h k h' => hRR i (by omega) k (by omega)) (fun i h => hS i (by omega)))
+    refine WP.mono (ih s (fun i h => hw i (by omega_using [h])) (fun k h => hY k (by omega_using [h]))
+      (fun i h k h' => hRR i (by omega_using [h]) k (by omega_using [h'])) (fun i h => hS i (by omega_using [h])))
       fun a ⟨⟨ha, hak, ham⟩, ka⟩ => ?_
     have hSn : a.gpr (S n) = s.gpr (S n) :=
-      hak _ (hS n (by omega)).1 fun i hi => (hS n (by omega)).2 i hi
+      hak _ (hS n (by omega_using [])).1 fun i hi => (hS n (by omega_using [])).2 i hi
     have hxa : a.gpr x = s.gpr x := ka.gpr x hx
-    have hYa : a.gpr (Y n) = s.gpr (Y n) := ka.gpr _ (hY n (by omega))
+    have hYa : a.gpr (Y n) = s.gpr (Y n) := ka.gpr _ (hY n (by omega_using []))
     have hStep : WP isa (.block [prod hi x (Y n), (if n = 0 then Instr.adds else Instr.adcs) .x (R n) (S n) tmp]) a
         fun t => (t.gpr (R n) = addCarry (a.gpr (S n)) (half hi (a.gpr x) (a.gpr (Y n)))
             (if n = 0 then false else a.c) ∧
@@ -79,15 +79,15 @@ theorem chain_ok (hi : Bool) (x : Reg) (Y R S : Nat → Reg) (n : Nat) (s : Stat
           t.mem = a.mem) ∧ Keep [tmp, R n] a t := by
       by_cases h0 : n = 0
       · simp only [h0, ↓reduceIte]
-        exact prod_adds_ok a hi (R 0) (S 0) x (Y 0) (h0 ▸ hRt) (h0 ▸ (hS n (by omega)).1)
+        exact prod_adds_ok a hi (R 0) (S 0) x (Y 0) (h0 ▸ hRt) (h0 ▸ (hS n (by omega_using [])).1)
       · simp only [h0, ↓reduceIte]
-        exact prod_adcs_ok a hi (R n) (S n) x (Y n) hRt (hS n (by omega)).1
+        exact prod_adcs_ok a hi (R n) (S n) x (Y n) hRt (hS n (by omega_using [])).1
     refine WP.mono hStep fun t ⟨⟨htr, htc, htm⟩, kt⟩ => ?_
     have tKeep : ∀ r, r ≠ tmp → r ≠ R n → t.gpr r = a.gpr r := fun r h1 h2 =>
       kt.gpr r (by simp only [List.mem_cons, List.not_mem_nil, or_false, not_or]; exact ⟨h1, h2⟩)
     have hlow : regVal t R n = regVal a R n := regVal_congr fun i hi =>
-      tKeep _ (fun h => by have := hw i (by omega); rw [h] at this; exact absurd this (by decide))
-        fun h => absurd (hRR i (by omega) n (by omega) h) (by omega)
+      tKeep _ (fun h => by have := hw i (by omega_using [hi]); rw [h] at this; exact absurd this (by decide))
+        fun h => absurd (hRR i (by omega_using [hi]) n (by omega_using []) h) (by omega_using [hi])
     have hv := addCarry_value (a.gpr (S n)) (half hi (a.gpr x) (a.gpr (Y n))) (if n = 0 then false else a.c)
     rw [← htr, ← htc, hSn, hxa, hYa] at hv
     have hcin : (if n = 0 then false else a.c).toNat = carryOf n a := by
@@ -104,13 +104,13 @@ theorem chain_ok (hi : Bool) (x : Reg) (Y R S : Nat → Reg) (n : Nat) (s : Stat
       rw [show 2 ^ (64 * n) = (2 ^ 64) ^ n by rw [Nat.pow_mul]] at ha
       exact chain_arith ha hv rfl
     · intro r h1 h2
-      exact (tKeep r h1 (fun h => h2 n (by omega) h.symm)).trans
-        (hak r h1 fun i hi => h2 i (by omega))
+      exact (tKeep r h1 (fun h => h2 n (by omega_using []) h.symm)).trans
+        (hak r h1 fun i hi => h2 i (by omega_using [hi]))
     · intro r hr
       simp only [List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hr ⊢
       rcases hr with h | h | h
       · exact h
       · exact Or.inl h
-      · exact Or.inr (h ▸ hw n (by omega))
+      · exact Or.inr (h ▸ hw n (by omega_using []))
 
 end VG.Proof.Bignum.AArch64.SquareEight

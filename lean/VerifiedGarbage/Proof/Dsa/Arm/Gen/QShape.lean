@@ -36,7 +36,7 @@ theorem orr_byte (b : Byte) (x : BitVec 32) :
   apply BitVec.eq_of_getLsbD_eq
   intro i hi
   simp only [BitVec.getLsbD_setWidth, BitVec.getLsbD_or]
-  simp [hi, show i < 32 by omega]
+  simp [hi, show i < 32 by omega_using [hi]]
 
 section
 variable {G : GP}
@@ -54,40 +54,40 @@ theorem shapeQ_vp {P Q : State → State → Prop} {c : State → Cfg} {L N : Na
   have gi := h.gi
   have big := gi.scrBig
   have fit := gi.scrFit
-  have sk : 4096 ≤ sK G.pLen := by simp only [sK, sA]; omega
+  have sk : 4096 ≤ sK G.pLen := by simp only [sK, sA]; omega_using []
   have nq : sQ = 128 := rfl
-  have kz0 : 0 < kz G.pLen := by simp only [kz]; omega
+  have kz0 : 0 < kz G.pLen := by simp only [kz]; omega_using []
   subst hL
-  refine scr_ok (d := .r0) h.r8 rfl h.lens (by omega) fun s₁ v₁ R₁ M₁ => ?_
-  have aq := h.addr (o := sQ) (n := N) (by omega) (by omega)
+  refine scr_ok (d := .r0) h.r8 rfl h.lens (by omega_using [sk, nq]) fun s₁ v₁ R₁ M₁ => ?_
+  have aq := h.addr (o := sQ) (n := N) (by omega_using [hN', sk, nq]) (by omega_using [hN])
   have w : ∀ j < N, InRegions s.wr (G.sa sQ + BitVec.ofNat 64 j) 1 := fun j hj =>
-    Covers.one (gi.inScr (o := sQ) (n := N) (by omega)) _ _
-      ⟨_, List.mem_singleton_self _, Offset.contains_base _ (by omega) (by omega)⟩
+    Covers.one (gi.inScr (o := sQ) (n := N) (by omega_using [hN', big, sk, nq])) _ _
+      ⟨_, List.mem_singleton_self _, Offset.contains_base _ (by omega_using [hj]) (by omega_using [hN', hj])⟩
   have r_of : ∀ j < N, InRegions (s.rd ++ s.wr) (G.sa sQ + BitVec.ofNat 64 j) 1 := fun j hj =>
     let ⟨r, hr, hc⟩ := w j hj; ⟨r, List.mem_append_right _ hr, hc⟩
   have a0 : State.addr (s₁.gpr .r0 + BitVec.ofNat 32 0) = G.sa sQ := by rw [BitVec.add_zero, v₁, aq]
   have aN : State.addr (s₁.gpr .r0 + BitVec.ofNat 32 (N - 1)) = G.sa sQ + BitVec.ofNat 64 (N - 1) := by
-    rw [v₁, BitVec.add_assoc, ← BitVec.ofNat_add, addr_add (by omega), Offset.add_add]
+    rw [v₁, BitVec.add_assoc, ← BitVec.ofNat_add, addr_add (by omega_using [hN', big, fit, sk, nq]), Offset.add_add]
   simp only [shapeOps]
-  refine wp_ldrb (by decide) a0 (by rw [R₁.rd, R₁.wr]; simpa using r_of 0 (by omega)) fun s₂ u₂ => ?_
+  refine wp_ldrb (by decide) a0 (by rw [R₁.rd, R₁.wr]; simpa using r_of 0 (by omega_using [hN])) fun s₂ u₂ => ?_
   refine wp_dp (op2_imm (by decide)) fun s₃ u₃ => ?_
   refine wp_strb (a := G.sa sQ) (by decide) (by rw [u₃.other .r0 (by decide), u₂.other .r0 (by decide)]; exact a0)
-    (by rw [u₃.wr, u₂.wr, R₁.wr]; simpa using w 0 (by omega)) fun s₄ u₄ => ?_
+    (by rw [u₃.wr, u₂.wr, R₁.wr]; simpa using w 0 (by omega_using [hN])) fun s₄ u₄ => ?_
   have a4 : State.addr (s₄.gpr .r0 + BitVec.ofNat 32 (N - 1)) = G.sa sQ + BitVec.ofNat 64 (N - 1) := by
     rw [u₄.gpr, u₃.other .r0 (by decide), u₂.other .r0 (by decide)]; exact aN
-  refine wp_ldrb (by omega) a4 (by rw [u₄.rd, u₄.wr, u₃.rd, u₃.wr, u₂.rd, u₂.wr, R₁.rd, R₁.wr]; exact r_of _ (by omega))
+  refine wp_ldrb (by omega_using [hN']) a4 (by rw [u₄.rd, u₄.wr, u₃.rd, u₃.wr, u₂.rd, u₂.wr, R₁.rd, R₁.wr]; exact r_of _ (by omega_using [hN]))
     fun s₅ u₅ => ?_
   refine wp_dp (op2_imm (by decide)) fun s₆ u₆ => ?_
-  refine wp_strb (a := G.sa sQ + BitVec.ofNat 64 (N - 1)) (by omega)
+  refine wp_strb (a := G.sa sQ + BitVec.ofNat 64 (N - 1)) (by omega_using [hN'])
     (by rw [u₆.other .r0 (by decide), u₅.other .r0 (by decide)]; exact a4)
-    (by rw [u₆.wr, u₅.wr, u₄.wr, u₃.wr, u₂.wr, R₁.wr]; exact w _ (by omega)) fun t u₇ => WP.block_nil ?_
+    (by rw [u₆.wr, u₅.wr, u₄.wr, u₃.wr, u₂.wr, R₁.wr]; exact w _ (by omega_using [hN])) fun t u₇ => WP.block_nil ?_
   have R : Rest [.r0, .r1, .r12] s t := ((R₁.mono (by simp)).trans ((u₂.rest (by simp)).trans (u₃.rest (by simp)))).trans
     ((u₄.rest _).trans ((u₅.rest (by simp)).trans ((u₆.rest (by simp)).trans (u₇.rest _))))
   have m₄ : s₄.mem = s.mem.writeW (G.sa sQ) (s.mem (G.sa sQ) ||| 128#8) := by
     rw [u₄.mem, u₃.mem, u₂.mem, M₁, u₃.gpr, dpVal, u₂.gpr, M₁, orr_byte]; rfl
   have b₄ : s₄.mem (G.sa sQ + BitVec.ofNat 64 (N - 1)) = s.mem (G.sa sQ + BitVec.ofNat 64 (N - 1)) := by
     rw [m₄, VG.WriteBytes.writeW8_apply, ite_eq_right (by
-      have := Offset.add_ofNat_ne (G.sa sQ) (a := N - 1) (b := 0) (by omega) (by omega) (by omega)
+      have := Offset.add_ofNat_ne (G.sa sQ) (a := N - 1) (b := 0) (by omega_using [hN']) (by omega_using []) (by omega_using [hN])
       simpa using this)]
   have mt : t.mem = (s.mem.writeW (G.sa sQ) (s.mem (G.sa sQ) ||| 128#8)).writeW
       (G.sa sQ + BitVec.ofNat 64 (N - 1)) (s.mem (G.sa sQ + BitVec.ofNat 64 (N - 1)) ||| 1#8) := by
@@ -98,11 +98,11 @@ theorem shapeQ_vp {P Q : State → State → Prop} {c : State → Cfg} {L N : Na
   · rw [mt]
     have c0 : (G.rs sQ N).Contains (G.sa sQ) (8 / 8) := by
       show (_ - _ : Addr).toNat + 1 ≤ N
-      rw [BitVec.sub_self, BitVec.toNat_zero]; omega
+      rw [BitVec.sub_self, BitVec.toNat_zero]; omega_using [hN]
     exact ((Frame.refl [G.rs sQ N] s.mem).writeW List.mem_cons_self (w := 8) _ c0).writeW List.mem_cons_self
-      (w := 8) _ (Offset.contains_base _ (by omega) (by omega))
+      (w := 8) _ (Offset.contains_base _ (by omega_using [hN]) (by omega_using [hN']))
   · rw [mt, ← bl]
-    refine VG.Proof.Dsa.Generation.qShape_memory (by omega) (by omega) fun i hi => ?_
+    refine VG.Proof.Dsa.Generation.qShape_memory (by omega_using [hN, bl]) (by omega_using [hN', bl]) fun i hi => ?_
     rw [← hb']
     simp [Spec.Rsa.bytesAt, List.getD_eq_getElem?_getD, bl ▸ hi]
 

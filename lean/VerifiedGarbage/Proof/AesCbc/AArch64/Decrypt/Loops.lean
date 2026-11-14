@@ -23,15 +23,15 @@ theorem advance_ok {s₀ s : State} {c d : Nat} (hd : d < 256) (hc : c+d ≤ N s
     (hI : Inv s₀ (c+d) c s) :
     WP isa (.block (advance d)) s fun t => Inv s₀ (c+d) (c+d) t ∧ t.gpr .x13 = s.gpr .x13 := by
   rw [advance,WP.block_cons_iff]
-  refine ⟨_, exec_addImm_x (imm := 16*d) (by omega), ?_⟩
+  refine ⟨_, exec_addImm_x (imm := 16*d) (by omega_using [hd]), ?_⟩
   rw [WP.block_cons_iff]
-  refine ⟨_, exec_subImm_x (imm := d) (by omega), WP.block_nil ?_⟩
+  refine ⟨_, exec_subImm_x (imm := d) (by omega_using [hd]), WP.block_nil ?_⟩
   refine ⟨⟨hI.le,hI.keys.of_v (vs := []) ⟨by simp,by simp⟩ (fun _ _ => rfl) rfl rfl,
     ?_,?_,hI.x11,hI.chain,hI.data,hI.frame,hI.rd,hI.wr⟩,rfl⟩
   · simp only [State.write,State.read,BitVec.setWidth_eq,reduceCtorEq,ite_false,ite_true,hI.x2]
-    exact Offset.add_add_eq _ (by omega)
+    exact Offset.add_add_eq _ (by omega_using [])
   · simp only [State.write,State.read,BitVec.setWidth_eq,reduceCtorEq,ite_false,ite_true,hI.x3]
-    rw [Offset.ofNat_sub_ofNat (by omega), show N s₀-c-d=N s₀-(c+d) by omega]
+    rw [Offset.ofNat_sub_ofNat (by omega_using [hc]), show N s₀-c-d=N s₀-(c+d) by omega_using []]
 
 theorem flag_bound (m : Nat) : (if m<7 then 1 else 0) < 2^64 := by
   split <;> decide
@@ -46,7 +46,7 @@ theorem check_ok {s₀ s : State} (hp : UPre s₀) {c p : Nat} (hI : Inv s₀ c 
   refine ⟨⟨hI.le,hI.keys.of_v (vs := []) ⟨by simp,by simp⟩ (fun _ _ => rfl) rfl rfl,
     hI.x2,hI.x3,hI.x11,hI.chain,hI.data,hI.frame,hI.rd,hI.wr⟩,?_⟩
   simp only [State.write,State.read,BitVec.setWidth_eq,reduceCtorEq,ite_true,ite_false,hI.x3]
-  exact Proof.AesCcm.AArch64.sign63 (by have := hp.data_wrap; omega) (by decide)
+  exact Proof.AesCcm.AArch64.sign63 (by have := hp.data_wrap; omega_using [this]) (by decide)
 
 theorem eval_short {s : State} {m : Nat}
     (h : s.gpr .x13=BitVec.ofNat 64 (if m<7 then 1 else 0)) :
@@ -90,7 +90,7 @@ theorem loops_ok (sha3 : Bool) {s₀ s₁ : State} (hp : UPre s₀) (hI₀ : Inv
   refine WP.seq (WP.mono (Q := fun s => ∃ c, N s₀-c < 7 ∧ Inv s₀ c c s) ?_
     fun s₂ ⟨c,hc,hI₂⟩ => ?_)
   · refine WP.ite (decide (N s₀<7)) (eval_short h13) (fun h => ?_) (fun h => ?_)
-    · exact WP.block_nil ⟨0,by simp at h; omega,hI₁⟩
+    · exact WP.block_nil ⟨0,by simp at h; omega_using [h],hI₁⟩
     · refine WP.seq ?_
       rw [WP.block_cons_iff]
       refine ⟨_,rfl,WP.block_nil ?_⟩
@@ -104,10 +104,10 @@ theorem loops_ok (sha3 : Bool) {s₀ s₁ : State} (hp : UPre s₀) (hI₀ : Inv
         rw [eval_zero h13' (flag_bound _)]
         by_cases hlt : N s₀-(c+7)<7
         · exact .inl ⟨by simp [hlt],c+7,hlt,hi'⟩
-        · exact .inr ⟨by simp [hlt],N s₀-(c+7),by omega,c+7,rfl,by omega,hi'⟩
-      exact WP.loop (M := isa) I7 hstep (N s₀) s₁ ⟨0,rfl,by simp at h; omega,hI₁⟩
-  refine WP.ite (decide (N s₀-c=0)) (eval_zero hI₂.x3 (by omega)) (fun h => ?_) (fun h => ?_)
-  · have he : c=N s₀ := by have := hI₂.le; simp at h; omega
+        · exact .inr ⟨by simp [hlt],N s₀-(c+7),by omega_using [hc],c+7,rfl,by omega_using [hlt],hi'⟩
+      exact WP.loop (M := isa) I7 hstep (N s₀) s₁ ⟨0,rfl,by simp at h; omega_using [h],hI₁⟩
+  refine WP.ite (decide (N s₀-c=0)) (eval_zero hI₂.x3 (by omega_using [hn])) (fun h => ?_) (fun h => ?_)
+  · have he : c=N s₀ := by have := hI₂.le; simp at h; omega_using [this, h]
     exact WP.block_nil (he ▸ hI₂)
   · refine WP.seq ?_
     rw [WP.block_cons_iff]
@@ -117,13 +117,13 @@ theorem loops_ok (sha3 : Bool) {s₀ s₁ : State} (hp : UPre s₀) (hI₀ : Inv
         (fun t => (AArch64.eval (.nonzero .x .x3) t=some false ∧ Inv s₀ (N s₀) (N s₀) t) ∨
           (AArch64.eval (.nonzero .x .x3) t=some true ∧ ∃ m'<m,I1 m' t)) := by
       rintro m s ⟨c,rfl,hc,hi⟩
-      refine WP.mono (tail_ok sha3 hp (by omega) hi) fun t hi' => ?_
-      rw [eval_nonzero hi'.x3 (by omega)]
+      refine WP.mono (tail_ok sha3 hp (by omega_using [hc]) hi) fun t hi' => ?_
+      rw [eval_nonzero hi'.x3 (by omega_using [hn])]
       by_cases hlast : N s₀-(c+1)=0
-      · have he : c+1=N s₀ := by omega
+      · have he : c+1=N s₀ := by omega_using [hc, hlast]
         exact .inl ⟨by simp [hlast],he ▸ hi'⟩
-      · exact .inr ⟨by simp [hlast],N s₀-(c+1),by omega,c+1,rfl,by omega,hi'⟩
+      · exact .inr ⟨by simp [hlast],N s₀-(c+1),by omega_using [hc],c+1,rfl,by omega_using [hlast],hi'⟩
     exact WP.loop (M := isa) I1 hstep (N s₀-c) s₂
-      ⟨c,rfl,by have := hI₂.le; simp at h; omega,hI₂⟩
+      ⟨c,rfl,by have := hI₂.le; simp at h; omega_using [h],hI₂⟩
 
 end VG.Proof.AesCbc.AArch64.Decrypt

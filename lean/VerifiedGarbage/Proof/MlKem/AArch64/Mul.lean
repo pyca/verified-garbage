@@ -65,14 +65,14 @@ theorem even_val (A B C D Γ : Zq) :
   generalize A.val * B.val = P
   generalize C.val * D.val % q * Γ.val = R
   rw [q_eq]
-  omega
+  omega_using []
 
 theorem odd_val (A B C D : Zq) : (A * D + C * B).val = (A.val * D.val + C.val * B.val) % q := by
   rw [val_add', val_mul, val_mul]
   generalize A.val * D.val = P
   generalize C.val * B.val = R
   rw [q_eq]
-  omega
+  omega_using []
 
 section
 variable (s₀ : State)
@@ -154,10 +154,10 @@ theorem vpair_ok {rest : List Instr} {s : State} {Q : State → Prop} (hc : VCon
   refine wp_vop (d := .v21) rfl fun s₁ h₁ => ?_
   have l₁ : Lanes (s₁.v .v21) fun e => FO e * GO e := by
     rw [h₁.v]; exact (lanes_mul hFO hGO).congr fun e he => Nat.mod_eq_of_lt (by
-      have := pp (b2 e he) (b4 e he); omega)
+      have := pp (b2 e he) (b4 e he); omega_using [this])
   have c₁ := hc.chg h₁.chg
   refine vbar_ok (d := .v21) (t := .v22) (hc := c₁) (hf := l₁)
-    (hlt := fun e he => by have := pp (b2 e he) (b4 e he); omega) (k := fun s₂ h₂ l₂ r₂ => ?_)
+    (hlt := fun e he => by have := pp (b2 e he) (b4 e he); omega_using [this]) (k := fun s₂ h₂ l₂ r₂ => ?_)
   have c₂ := c₁.chg h₂
   -- `h[2i] = f[2i] g[2i] + r γᵢ`
   refine wp_vop (d := .v23) rfl fun s₃ h₃ => wp_vop (d := .v23) rfl fun s₄ h₄ => ?_
@@ -177,7 +177,7 @@ theorem vpair_ok {rest : List Instr} {s : State} {Q : State → Prop} (hc : VCon
     have h1 := pp (b1 e he) (b3 e he)
     have h2 : R e * Γ e ≤ (2 * 3329) * 3329 :=
       Nat.mul_le_mul (Nat.le_of_lt (r₂ e he).1) (Nat.le_of_lt (b5 e he))
-    omega
+    omega_using [h1, h2]
   have l₄' : Lanes (s₄.v .v23) fun e => FE e * GE e + R e * Γ e := l₄.congr fun e he => by
     have h1 := pp (b1 e he) (b3 e he)
     have := y_lt e he
@@ -204,7 +204,7 @@ theorem vpair_ok {rest : List Instr} {s : State} {Q : State → Prop} (hc : VCon
   have l₈ := lanes_mla l₇ fo₇ ge₇
   rw [← h₈.v] at l₈
   have z_lt : ∀ e < 4, FE e * GO e + FO e * GE e < 2 ^ 31 := fun e he => by
-    have := pp (b1 e he) (b4 e he); have := pp (b2 e he) (b3 e he); omega
+    have := pp (b1 e he) (b4 e he); have := pp (b2 e he) (b3 e he); omega_arith
   have l₈' : Lanes (s₈.v .v24) fun e => FE e * GO e + FO e * GE e := l₈.congr fun e he => by
     have := pp (b1 e he) (b4 e he); have := pp (b2 e he) (b3 e he)
     rw [Nat.mod_eq_of_lt (show FE e * GO e < 2 ^ 32 by bdd_omega), Nat.mod_eq_of_lt
@@ -283,7 +283,7 @@ theorem step {s₀ : State} (hp : Pre s₀) {c : Nat} (hc : c < 32) {s : State} 
         32).toNat = gammaTable.getD (4 * c + j) 0 := fun j hj => by
       rw [ptr_add, show 4 * (4 * c) + 4 * j = 4 * (4 * c + j) by bdd_omega, h.tab _ (by bdd_omega),
         BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by
-          have := gammaTable_lt (4 * c + j) (by bdd_omega); have hq : q = 3329 := rfl; omega)]
+          have := gammaTable_lt (4 * c + j) (by bdd_omega); have hq : q = 3329 := rfl; omega_using [this, hq])]
     rw [vword_ofVWords _ _ _ _ he]
     rcases (show e = 0 ∨ e = 1 ∨ e = 2 ∨ e = 3 by bdd_omega) with rfl | rfl | rfl | rfl
     · exact t 0 (by decide)
@@ -366,11 +366,11 @@ theorem step {s₀ : State} (hp : Pre s₀) {c : Nat} (hc : c < 32) {s : State} 
       h₁.sp], (((((((((((((h₁.keep.trans h₂.keep).trans h₃.keep).trans h₄.keep).trans h₅.keep).trans h₆.keep).trans h₇.keep).trans h₈.keep).trans h₉.keep).trans h₁₀.keep).trans h₁₁.keep).trans h₁₂.keep).trans h₁₃.keep).trans h₁₄.keep).vcs⟩
   have c11 : (s₁₄.gpr .x11).toNat = 32 - c := by rw [g₁₄, h.x11]
   have x11' : (s'.gpr .x11).toNat = 32 - (c + 1) := by
-    rw [e11, toNat_sub_n (by rw [c11]; simp; omega), c11]; simp; omega
+    rw [e11, toNat_sub_n (by rw [c11]; simp; omega_using [hc]), c11]; simp; omega_using []
   have dj : ∀ {R : Region}, (polyRegion (hP s₀)).Disjoint R → ∀ r ∈ [polyRegion (hP s₀)], R.Disjoint r :=
     fun hd r hr => by rw [List.mem_singleton.mp hr]; exact hd.symm
   refine ⟨⟨by rw [k'.rd, k₁₄.rd, h.rd], by rw [k'.wr, k₁₄.wr, h.wr], by rw [k'.sp, k₁₄.sp, h.sp],
-    ?_, ?_, ?_, ?_, x11', ?_, ?_, fun j hj => ?_, fun j hj => ?_, fun j hj => ?_⟩, by rw [x11']; omega⟩
+    ?_, ?_, ?_, ?_, x11', ?_, ?_, fun j hj => ?_, fun j hj => ?_, fun j hj => ?_⟩, by rw [x11']; omega_using [hc]⟩
   · rw [e0, g₁₄, h.x0, coeffAddr, ptr_add, show 4 * (8 * c) + 32 = 4 * (8 * (c + 1)) by bdd_omega]
   · rw [e1, g₁₄, h.x1, coeffAddr, ptr_add, show 4 * (8 * c) + 32 = 4 * (8 * (c + 1)) by bdd_omega]
   · rw [e2, g₁₄, h.x2, coeffAddr, ptr_add, show 4 * (8 * c) + 32 = 4 * (8 * (c + 1)) by bdd_omega]
@@ -380,7 +380,7 @@ theorem step {s₀ : State} (hp : Pre s₀) {c : Nat} (hc : c < 32) {s : State} 
   · -- the eight coefficients stored
     have val : ∀ {x : BitVec 32} {v : Nat}, x.toNat = v → v < q → x = BitVec.ofNat 32 v := fun hx hv =>
       BitVec.eq_of_toNat_eq (by rw [hx, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by
-        have hq : q = 3329 := rfl; omega)])
+        have hq : q = 3329 := rfl; omega_using [hx])])
     have lt : ∀ a, a % 3329 < q := fun a => Nat.mod_lt _ (by decide)
     have ge_ : ∀ e, e < 8 → e % 2 = 0 → G s₀ (8 * c + e) = BitVec.ofNat 32 (((((F s₀)[2 * (4 * c + e / 2) + 1]!).val *
         ((Gp s₀)[2 * (4 * c + e / 2) + 1]!).val % 3329) * gammaTable.getD (4 * c + e / 2) 0 +

@@ -25,8 +25,8 @@ theorem clear_trace (g : CallGeometry) (i : Fin 3) :
     rfl
   apply (VG.RelCT.seq head loop).mono
   · intro s t h
-    exact ⟨h.agree, (h.left.arguments _ (by omega)).readSrc, (h.right.arguments _ (by omega)).readSrc,
-      (h.left.arguments _ (by omega)).readSrc, (h.right.arguments _ (by omega)).readSrc⟩
+    exact ⟨h.agree, (h.left.arguments _ (by omega_using [])).readSrc, (h.right.arguments _ (by omega_using [])).readSrc,
+      (h.left.arguments _ (by omega_using [])).readSrc, (h.right.arguments _ (by omega_using [])).readSrc⟩
   · exact fun _ _ h => h
 
 theorem clear_relCT (g : CallGeometry) (i : Fin 3) : RelCT isa (Pair g) (clear (2 * i.val)) (Pair g) := by

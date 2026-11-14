@@ -62,12 +62,12 @@ theorem finish_ok {s₀ s : State} (pre : Pre s₀)
   refine WP.mono (output_ok vs' (hv.mem ▸ vb) (by rw [hv.gpr])
     (by rw [hv.gpr]; exact pre.out_fit)
     (by intro j hj; rw [hv.wr, hvwr]; exact ⟨outR s₀, pre.out_in,
-      Offset.contains_base _ (by omega) (by omega)⟩) hfar) fun w ⟨wv, wm, wk⟩ => ?_
+      Offset.contains_base _ (by omega_using [hj]) (by omega_using [hj])⟩) hfar) fun w ⟨wv, wm, wk⟩ => ?_
   have ws := vs'.of_keeps wk (by decide)
   have svv := (sv.wsfield uk.mem (by decide)).field vm (by decide)
   have svw : Saved base s₀.gpr w.mem := svv.of_readW fun p hp => by
     have := savedSlots_bound p hp
-    rw [← hv.mem]; exact output_word wm (by decide) (by omega) hfar
+    rw [← hv.mem]; exact output_word wm (by decide) (by omega_using [this]) hfar
   refine WP.mono (restore_ok ws svw) fun t ⟨tr, tm, tk⟩ => ?_
   refine ⟨tr, (uk.keeps.mono ?_).trans ((vk.mono ?_).trans ((hv.rest (by decide)).trans ((wk.mono ?_).trans (tk.mono ?_)))), ?_, ?_⟩
   · decide

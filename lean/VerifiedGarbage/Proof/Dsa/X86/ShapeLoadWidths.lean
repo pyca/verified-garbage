@@ -109,21 +109,21 @@ theorem loadWidths_ok {s : State} {base : Addr} {size len n m a b c output : Nat
       shapeWord t base (output + 8) = mask32 (Spec.Dsa.bitLength m = c) ∧
       Keeps shapeClob s t ∧
       Outs base [(slot n 0, 8 * n), (slot n 8, 8 * n), (output, 12)] s.mem t.mem := by
-  have hn0 : 0 < n := by omega
-  have cb := VG.Proof.Dsa.X86.Layout.context_bound (show n ≤ 48 by omega)
+  have hn0 : 0 < n := by omega_using [hn, h4]
+  have cb := VG.Proof.Dsa.X86.Layout.context_bound (show n ≤ 48 by omega_using [hn, hmax])
   have hsize : 8256 ≤ size := hz
   have b0 := slot_bound (n := n) (i := 0) (by decide)
   simp only [stride] at b0
   unfold Shape.loadWidths
   dsimp only
   rw [← hn]
-  refine WP.seq (WP.mono (coreLoad_ok hs hz (by omega) h4 (by omega) hw4 hr hd)
+  refine WP.seq (WP.mono (coreLoad_ok hs hz (by omega_using [cb, hsize, b0]) h4 (by omega_using [hn]) hw4 hr hd)
     fun u ⟨Vu, Ku, Ou⟩ => ?_)
   rw [hm] at Vu
-  refine WP.mono (threeWidths_ok (hs.of_keeps Ku (by decide)) hn0 (by omega) ha hb hc ho)
+  refine WP.mono (threeWidths_ok (hs.of_keeps Ku (by decide)) hn0 (by omega_using [cb, hsize]) ha hb hc ho)
     fun t ⟨Va, Vb, Vc, Kt, Ot⟩ => ?_
   refine ⟨?_, by rw [Va, Vu], by rw [Vb, Vu], by rw [Vc, Vu], (Ku.mono (by decide)).widen Kt, ?_⟩
-  · rw [widthFrame_modulus Ot ho (by omega), Vu]
+  · rw [widthFrame_modulus Ot ho (by omega_using [cb]), Vu]
   · have O1 : Outs base [(slot n 0, 8 * n), (slot n 8, 8 * n), (output, 12)] s.mem u.mem :=
       Outs.of_outside Ou (by simp)
     exact O1.trans (Ot.mono (by intro r hr; exact List.mem_cons_of_mem _ hr))

@@ -77,11 +77,11 @@ theorem condAdd_val (r x k : BitVec 32) (hx : x.toNat ≤ r.toNat + k.toNat) :
   have := r.isLt; have := x.isLt; have := k.isLt
   by_cases h : r.toNat < x.toNat
   · simp only [h, decide_true, ite_true, BitVec.allOnes_and, BitVec.toNat_add, BitVec.toNat_sub]
-    omega
+    omega_using [hx, h]
   · have e : r - x + ((if decide (r.toNat < x.toNat) = true then BitVec.allOnes 32 else 0) &&& k) = r - x := by
       simp [h]
     rw [e, BitVec.toNat_sub, ite_eq_right h]
-    omega
+    omega_using [h]
 
 /-- `condAdd r x t k`, from `x` read as `X`: `r ← condAddN r X k`, changing only `r`, `t` and the
 flags. -/
@@ -132,20 +132,20 @@ theorem hbRaw_spec {g : Nat} (hg : g ∈ gamma2s) {is : List Instr} {s : State} 
   simp only [hbRaw, List.cons_append, List.nil_append]
   refine wp_addi fun s₁ u₁ => wp_shr (by decide) fun s₂ u₂ _ => wp_movi fun s₃ u₃ => ?_
   have e₁ : (s₁.gpr .eax).toNat = a + 127 := by
-    rw [u₁.gpr, BitVec.toNat_add, ha]; simp; omega
+    rw [u₁.gpr, BitVec.toNat_add, ha]; simp; omega_using [haq]
   have e₂ : (s₂.gpr .eax).toNat = (a + 127) / 128 := by
     rw [u₂.gpr, BitVec.toNat_ushiftRight, e₁, Nat.shiftRight_eq_div_pow]
   have e₃ : (s₃.gpr .eax).toNat = (a + 127) / 128 := by rw [u₃.other _ (by decide), e₂]
-  have m₃ : (s₃.gpr .edx).toNat = dMul g := by rw [u₃.gpr]; exact ofNat_small (by omega)
-  have hp : (a + 127) / 128 * dMul g ≤ 65473 * 11275 := Nat.mul_le_mul (by omega) hM
-  refine wp_mulSmall (by rw [e₃, m₃]; omega) fun s₄ o₄ v₄ => wp_addi fun s₅ u₅ =>
+  have m₃ : (s₃.gpr .edx).toNat = dMul g := by rw [u₃.gpr]; exact ofNat_small (by omega_using [hM])
+  have hp : (a + 127) / 128 * dMul g ≤ 65473 * 11275 := Nat.mul_le_mul (by omega_using [haq]) hM
+  refine wp_mulSmall (by rw [e₃, m₃]; omega_using [hp]) fun s₄ o₄ v₄ => wp_addi fun s₅ u₅ =>
     wp_shr (dShift_range g) fun s₆ u₆ _ => c s₆ ?_ ?_
   · refine ((((updOnly u₁ |>.trans (updOnly u₂)).trans (updOnly u₃)).trans o₄).trans
       ((updOnly u₅).trans (updOnly u₆))).mono ?_
     intro r hr; simp only [List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hr ⊢
     rcases hr with (((h | h) | h) | h | h) | h | h <;> simp [h]
-  · rw [u₆.gpr, BitVec.toNat_ushiftRight, u₅.gpr, BitVec.toNat_add, v₄, e₃, m₃, ofNat_small (by omega),
-      Nat.mod_eq_of_lt (by omega), Nat.shiftRight_eq_div_pow, hbF_eq hg (by rw [q_eq]; exact haq), dMul_eq,
+  · rw [u₆.gpr, BitVec.toNat_ushiftRight, u₅.gpr, BitVec.toNat_add, v₄, e₃, m₃, ofNat_small (by omega_using [hA]),
+      Nat.mod_eq_of_lt (by omega_using [hA, hp]), Nat.shiftRight_eq_div_pow, hbF_eq hg (by rw [q_eq]; exact haq), dMul_eq,
       dAdd_eq, dShift_eq]
 
 /-- `hb g` leaves `hbF g a % hbM g` (the `r₁` of `Decompose(a)`) in `eax` from `a < q` there,
@@ -158,15 +158,15 @@ theorem hb_spec {g : Nat} (hg : g ∈ gamma2s) {is : List Instr} {s : State} {P 
   refine hbRaw_spec hg ha haq fun s₁ o₁ v₁ => ?_
   have hf := hbF_le hg haq
   have hm : 16 ≤ hbM g ∧ hbM g ≤ 44 := by rcases mem_gamma2s hg with rfl | rfl <;> decide
-  have hk : (BitVec.ofNat 32 (dMod g)).toNat = hbM g := by rw [dMod_eq hg]; exact ofNat_small (by omega)
-  refine condAdd_spec (by decide) (X := BitVec.ofNat 32 (dMod g)) rfl (by rw [hk, v₁]; omega)
+  have hk : (BitVec.ofNat 32 (dMod g)).toNat = hbM g := by rw [dMod_eq hg]; exact ofNat_small (by omega_using [hm])
+  refine condAdd_spec (by decide) (X := BitVec.ofNat 32 (dMod g)) rfl (by rw [hk, v₁]; omega_using [])
     fun s₂ o₂ v₂ => c s₂ ((o₁.trans o₂).mono fun r hr => ?_) ?_
   · simp only [List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hr ⊢
     rcases hr with (h | h) | (h | h) <;> simp [h]
   · rw [v₂, v₁, hk]
     unfold condAddN
     split
-    · rw [Nat.mod_eq_of_lt (by omega)]; omega
-    · rw [Nat.mod_eq_sub_mod (by omega), Nat.mod_eq_of_lt (by omega)]
+    · rw [Nat.mod_eq_of_lt (by omega_arith)]; omega_using []
+    · rw [Nat.mod_eq_sub_mod (by omega_arith), Nat.mod_eq_of_lt (by omega_using [hf, hm])]
 
 end VG.Proof.MlDsa.X86.Round

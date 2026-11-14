@@ -16,7 +16,7 @@ private theorem sub_nat {a b : Nat} (h : b ≤ a) :
     BitVec.ofNat 64 a - BitVec.ofNat 64 b = BitVec.ofNat 64 (a - b) := by
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat, BitVec.toNat_ofNat]
-  omega
+  omega_using [h]
 
 theorem random_drawHead_ok {s : State} {B : Addr} {len used width : Nat}
     (hs : Scr s B Random.frameBytes) (hsp : s.sp = B)
@@ -37,13 +37,13 @@ theorem random_drawHead_ok {s : State} {B : Addr} {len used width : Nat}
     simp only [BitVec.toNat_not, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hwidth]
     apply Bool.eq_iff_iff.mpr
     simp only [decide_eq_true_eq]
-    omega
+    omega_using [hwidth]
   brun [exec_ldrSp (show Random.oRandLen % 8 = 0 ∧ Random.oRandLen < 32768 by decide),
     exec_ldrSp (show Random.oUsed % 8 = 0 ∧ Random.oUsed < 32768 by decide),
     exec_ldrSp (show Random.oWidth % 8 = 0 ∧ Random.oWidth < 32768 by decide),
     hsp, hs.ld (d := Random.oRandLen) (by decide), hs.ld (d := Random.oUsed) (by decide),
     hs.ld (d := Random.oWidth) (by decide), hl, hu, hw, sub_nat hused,
-    BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show len - used < 2 ^ 64 by omega),
+    BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show len - used < 2 ^ 64 by omega_using [hlen]),
     Nat.mod_eq_of_lt hwidth, Bool.toNat_true, hcarry, decide_eq_true_eq]
   by_cases h : len - used < width <;>
     simp (disch := omega) only [ite_eq_left, ite_eq_right] <;> rfl
@@ -167,7 +167,7 @@ theorem random_drawFinish_ok {s : State} {B : Addr} {draws : Nat} {accept : Bool
           intro he
           have hh := congrArg BitVec.toNat he
           simp only [BitVec.toNat_ofNat] at hh
-          omega])
+          omega_using [hpos, hbound, hd1, hh]])
         (fun h => Bool.noConfusion h) (fun _ => WP.block_nil ?_)
       exact ⟨by rw [hum]; simp only [randomDrawFinishMem, Bool.false_eq_true,
         ite_false, hd1], hku⟩

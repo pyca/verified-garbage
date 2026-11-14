@@ -43,7 +43,7 @@ abbrev N : Nat := 0xFFFFFFFF00000000FFFFFFFFFFFFFFFFBCE6FAADA7179E84F3B9CAC2FC63
 theorem mont_mod (w : Nat) :
     (w + (w * 0xccd1c8aaee00bc4f % 2 ^ 64) * 0xf3b9cac2fc632551) % 2 ^ 64 = 0 := by
   rw [Nat.add_mod, Nat.mod_mul_mod, ← Nat.add_mod,
-    show w + w * 0xccd1c8aaee00bc4f * 0xf3b9cac2fc632551 = 2 ^ 64 * (w * 0xc2ffc74dccaf7720) by omega,
+    show w + w * 0xccd1c8aaee00bc4f * 0xf3b9cac2fc632551 = 2 ^ 64 * (w * 0xc2ffc74dccaf7720) by omega_using [],
     Nat.mul_mod_right]
 
 /-- The carry out of `w + q n₀`, for the quotient word `q = w n' mod 2⁶⁴`, is `q ≠ 0`. -/
@@ -60,7 +60,7 @@ theorem mont_carry (w : Nat) (hw : w < 2 ^ 64) :
   generalize q * 0xf3b9cac2fc632551 / 2 ^ 64 = H at *
   generalize q * 0xf3b9cac2fc632551 % 2 ^ 64 = L at *
   generalize q * 0xf3b9cac2fc632551 = X at *
-  split <;> omega
+  split <;> omega_arith
 
 /-- The numbers of a round. -/
 theorem round_arith {w0 w1 w2 w3 w4 cy U q y0 y1 w1' c1 w2m c2 x0 x1 k0 k1 k2 w2' c3 t w3m d1 w3' d2 e
@@ -76,7 +76,7 @@ theorem round_arith {w0 w1 w2 w3 w4 cy U q y0 y1 w1' c1 w2m c2 x0 x1 k0 k1 k2 w2
     2 ^ 64 * (w1' + 2 ^ 64 * w2' + 2 ^ 128 * w3' + 2 ^ 192 * w4' + 2 ^ 256 * (cy' + U)) =
       w0 + 2 ^ 64 * w1 + 2 ^ 128 * w2 + 2 ^ 192 * w3 + 2 ^ 256 * (cy + (w4 + 2 ^ 64 * U)) + q * N := by
   simp only [N]
-  omega
+  omega_using [F1, F3, F4, F5, F6, F7, F7b, F8, F9, F9b, F10]
 
 /-! ## Steps -/
 
@@ -104,7 +104,7 @@ end
 theorem rw_ne (j : Nat) : rw j ≠ .t0 ∧ rw j ≠ .a0 ∧ rw j ≠ .a2 ∧ rw j ≠ .a3 ∧ rw j ≠ .a4 ∧
     rw j ≠ .a5 ∧ rw j ≠ .a6 ∧ rw j ≠ .a7 ∧ rw j ∈ clob64 := by
   have : j % 5 < 5 := Nat.mod_lt _ (by decide)
-  obtain h | h | h | h | h : j % 5 = 0 ∨ j % 5 = 1 ∨ j % 5 = 2 ∨ j % 5 = 3 ∨ j % 5 = 4 := by omega
+  obtain h | h | h | h | h : j % 5 = 0 ∨ j % 5 = 1 ∨ j % 5 = 2 ∨ j % 5 = 3 ∨ j % 5 = 4 := by omega_using []
   all_goals simp only [rw, RW, h]; decide
 
 theorem ofNat_lt {x : Nat} (h : x < 2 ^ 64) : (BitVec.ofNat 64 x).toNat = x := by
@@ -114,7 +114,7 @@ theorem qprod_arith {w q a4 b h a5 a6 sm c y1 : Nat}
     (hmc : w + q * 0xf3b9cac2fc632551 = 2 ^ 64 * (a4 + b)) (hh : h = a4 + b)
     (hmw : a5 + 2 ^ 64 * a6 = q * 0xbce6faada7179e84) (hc : sm + 2 ^ 64 * c = a5 + h) (hy : y1 = a6 + c) :
     w + q * 0xf3b9cac2fc632551 + 2 ^ 64 * (q * 0xbce6faada7179e84) = 2 ^ 64 * (sm + 2 ^ 64 * y1) := by
-  omega
+  omega_using [hmc, hh, hmw, hc, hy]
 
 /-- A sum of words that does not wrap around. -/
 theorem add_toNat {x y : BitVec 64} (h : x.toNat + y.toNat < 2 ^ 64) : (x + y).toNat = x.toNat + y.toNat := by
@@ -175,27 +175,27 @@ theorem qprod_ok {s : State} (i : Nat) :
   -- Their numbers.
   have bq := (s2.gpr (rw i)).isLt
   have bA4 : (s4.gpr .a4).toNat + 1 < 2 ^ 64 := by
-    rw [hA4, ofNat_lt (Nat.div_lt_of_lt_mul (by omega))]; omega
+    rw [hA4, ofNat_lt (Nat.div_lt_of_lt_mul (by omega_using []))]; omega_using []
   have bB : (s9.gpr .a0).toNat ≤ 1 := by rw [hB]; exact carry_le _
   have eH : (s10.gpr .a4).toNat = (s4.gpr .a4).toNat + (s9.gpr .a0).toNat := by
-    rw [hH]; exact add_toNat (by omega)
+    rw [hH]; exact add_toNat (by omega_using [bA4, bB])
   have mw := mul_words (s2.gpr (rw i)) N1
   rw [← hA5, ← hA6] at mw
   have bA6 : (s6.gpr .a6).toNat + 1 < 2 ^ 64 := by
     have := (s7.gpr .a5).isLt
     have : (s2.gpr (rw i)).toNat * N1.toNat < 2 ^ 64 * (2 ^ 64 - 2) := by
-      rw [show N1.toNat = 0xbce6faada7179e84 from rfl]; omega
-    omega
+      rw [show N1.toNat = 0xbce6faada7179e84 from rfl]; omega_using []
+    omega_using [mw, this]
   have cc := carry (s7.gpr .a5) (s10.gpr .a4)
   rw [← hS, ← hC] at cc
   have eY : (s13.gpr .a6).toNat = (s6.gpr .a6).toNat + (s12.gpr .a7).toNat := by
-    rw [hY]; exact add_toNat (by have := carry_le (s11.gpr .a5 < s10.gpr .a4); rw [← hC] at this; omega)
+    rw [hY]; exact add_toNat (by have := carry_le (s11.gpr .a5 < s10.gpr .a4); rw [← hC] at this; omega_using [bA6, cc])
   have mc := mont_carry (s.gpr (rw i)).toNat (BitVec.isLt _)
   rw [← hqn] at mc
   have eB : (s9.gpr .a0).toNat = if 0 < (s2.gpr (rw i)).toNat then 1 else 0 := by
     rw [hB, sltu_toNat]; rfl
   have eA4 : (s4.gpr .a4).toNat = (s2.gpr (rw i)).toNat * 0xf3b9cac2fc632551 / 2 ^ 64 := by
-    rw [hA4]; exact ofNat_lt (Nat.div_lt_of_lt_mul (by omega))
+    rw [hA4]; exact ofNat_lt (Nat.div_lt_of_lt_mul (by omega_using []))
   rw [← eB, ← eA4] at mc
   refine ⟨by rw [q13, hqn], ?_, ?_⟩
   · rw [q13, hS13]
@@ -263,8 +263,8 @@ theorem qk_ok {s : State} (i : Nat)
   generalize (s3.gpr .t0).toNat = b at *
   generalize (s4.gpr .a5).toNat = c at *
   refine ⟨?_, ?_, ?_⟩
-  · split at hb <;> split at hc <;> split at hA4 <;> split at hA6 <;> split at hA7 <;> omega
-  · split at hb <;> split at hc <;> split at hA7 <;> omega
+  · split at hb <;> split at hc <;> split at hA4 <;> split at hA6 <;> split at hA7 <;> omega_arith
+  · split at hb <;> split at hc <;> split at hA7 <;> omega_arith
   · refine ⟨fun r hr => ?_, ?_, ?_, ?_, ?_⟩
     · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
       obtain ⟨h0, h4, h5, h6, h7⟩ := hr
@@ -278,22 +278,22 @@ theorem qk_ok {s : State} (i : Nat)
 
 /-- Facts of a round's indices and bounds, apart from the round's large context. -/
 theorem idx (i : Nat) : i + 1 + 1 = i + 2 ∧ i + 1 + 2 = i + 3 ∧ i + 1 + 3 = i + 4 ∧ i + 1 + 4 = i + 5 ∧
-    (i < 4 → 4 - (i + 1) = 3 - i) ∧ (i < 4 → 4 - i = (3 - i) + 1) := by omega
+    (i < 4 → 4 - (i + 1) = 3 - i) ∧ (i < 4 → 4 - i = (3 - i) + 1) := by omega_using []
 
 theorem pow64_succ (i : Nat) : 2 ^ (64 * (i + 1)) = 2 ^ (64 * i) * 2 ^ 64 := by
   rw [Nat.mul_succ, Nat.pow_add]
 
 theorem carry1 {x c a p q r : Nat} (hx : x + 2 ^ 64 * c = a + p + q + r) (ha : a < 2 ^ 64)
     (hb : p + q + r < 2 ^ 64) : c ≤ 1 := by
-  omega
+  omega_using [hx, ha, hb]
 
 theorem round_val {Q q E W W' Pr : Nat} (hQ : Q < E) (hq : q < 2 ^ 64) (hv : W * E = Pr + Q * N)
     (key : 2 ^ 64 * W' = W + q * N) : Q + q * E < E * 2 ^ 64 ∧ W' * (E * 2 ^ 64) = Pr + (Q + q * E) * N := by
   constructor
-  · have : (q + 1) * E ≤ 2 ^ 64 * E := Nat.mul_le_mul_right _ (by omega)
+  · have : (q + 1) * E ≤ 2 ^ 64 * E := Nat.mul_le_mul_right _ (by omega_using [hq])
     rw [Nat.add_mul, Nat.one_mul] at this
     rw [Nat.mul_comm E]
-    omega
+    omega_using [hQ, this]
   · have : W' * (E * 2 ^ 64) = (2 ^ 64 * W') * E := by
       rw [Nat.mul_comm E, ← Nat.mul_assoc, Nat.mul_comm W']
     rw [this, key, Nat.add_mul, hv]
@@ -329,10 +329,10 @@ theorem round_ok {b : Addr} {s0 : State} {i : Nat} (hi : i < 4) {s : State} (h :
   have n3a := a0 3
   have n4a := a0 4
   have hc := h.ctx
-  have hd : ACC + 8 * (i + 4) + 8 ≤ 2048 := by simp only [ACC]; omega
+  have hd : ACC + 8 * (i + 4) + 8 ≤ 2048 := by simp only [ACC]; omega_using [hi]
   unfold Impl.Weierstrass.RISCV64.P256Order.round
   simp only [List.append_assoc]
-  refine ld_ok hc hd (by simp only [ACC]; omega) fun s1 u1 => ?_
+  refine ld_ok hc hd (by simp only [ACC]; omega_using []) fun s1 u1 => ?_
   have hT4 : (s1.gpr (rw (i + 4))).toNat = T s0.mem b (i + 4) := by
     rw [u1.gpr, ← h.mem]; rfl
   show WP isa (.block (qprod i ++ _)) s1 _
@@ -374,7 +374,7 @@ theorem round_ok {b : Addr} {s0 : State} {i : Nat} (hi : i < 4) {s : State} (h :
   have a6_3 : s3.gpr .a6 = s2.gpr .a6 := kp k3 (by simp [Ne.symm n16])
   have a0_3 : (s3.gpr .a0).toNat ≤ 1 := by
     have := (s3.gpr (rw (i + 1))).isLt; have := (s2.gpr (rw (i + 1))).isLt; have := (s2.gpr .a5).isLt
-    omega
+    omega_using [e3]
   have e4' := e4 a0_3
   rw [w2_3, a6_3] at e4'
   rw [w1_2] at e3
@@ -388,7 +388,7 @@ theorem round_ok {b : Addr} {s0 : State} {i : Nat} (hi : i < 4) {s : State} (h :
     refine add_toNat ?_
     have := (s7.gpr (rw (i + 2))).isLt; have := (s6.gpr (rw (i + 2))).isLt; have := (s6.gpr .a4).isLt
     have := (s4.gpr (rw (i + 2))).isLt; have := (s.gpr (rw (i + 2))).isLt; have := (s2.gpr .a6).isLt
-    rw [a0_7]; omega
+    rw [a0_7]; omega_using [e7, e4']
   have w3_8 : s8.gpr (rw (i + 3)) = s.gpr (rw (i + 3)) := by
     rw [u8.other _ n3t, kp k7 (by simp [Ne.symm d23, n3t]),
       kp k6 (by simp [n3t, n34, n35, n36, n37]), kp k5 (by simp [n3t, n34, n35, n36, n37]),
@@ -405,7 +405,7 @@ theorem round_ok {b : Addr} {s0 : State} {i : Nat} (hi : i < 4) {s : State} (h :
     have := (s9.gpr (rw (i + 3))).isLt; have := (s10.gpr (rw (i + 3))).isLt; have := (s6.gpr .a6).isLt
     have := (s8.gpr (rw (i + 3))).isLt; have := (s.gpr (rw (i + 3))).isLt
     have := (s7.gpr .t0).isLt; have := (s4.gpr .a0).isLt
-    omega
+    omega_using [e9, e10]
   have w4_11 : s11.gpr (rw (i + 4)) = s1.gpr (rw (i + 4)) := by
     rw [u11.other _ n4a, kp k10 (by simp [Ne.symm d34, n45]), kp k9 (by simp [Ne.symm d34, n4a]),
       u8.other _ n4t, kp k7 (by simp [Ne.symm d24, n4t]),
@@ -428,7 +428,7 @@ theorem round_ok {b : Addr} {s0 : State} {i : Nat} (hi : i < 4) {s : State} (h :
     rw [t0_8] at e9
     have := (s7.gpr (rw (i + 2))).isLt; have := (s6.gpr .a4).isLt; have := (s4.gpr (rw (i + 2))).isLt
     have := (s.gpr (rw (i + 2))).isLt; have := (s2.gpr .a6).isLt
-    omega
+    omega_arith
   have e12' := e12 (by rw [a7_11, a2_11]; exact hcond)
   rw [w4_11, hT4, a7_11, a2_11] at e12'
   rw [t0_8] at e9
@@ -479,7 +479,7 @@ theorem rounds_ok {b : Addr} {s0 : State} : ∀ n ≤ 4, ∀ s, RedInv b s0 0 s 
   | 0, _, s, h => WP.block_nil h
   | n + 1, hn, s, h => by
     rw [List.range_succ, List.flatMap_append, List.flatMap_singleton]
-    exact WP.block_append (WP.mono (rounds_ok n (by omega) s h) fun s1 h1 => round_ok (by omega) h1)
+    exact WP.block_append (WP.mono (rounds_ok n (by omega_using [hn]) s h) fun s1 h1 => round_ok (by omega_using [hn]) h1)
 
 /-- The initial loads, as P-256's. -/
 theorem loads_ok {b : Addr} {s : State} (hc : Ctx b s) :
@@ -516,7 +516,7 @@ theorem sum_arith {x0 x1 x2 x3 y0 y1 y2 y3 c0 c1 c2 c3 : Nat}
     y0 + 2 ^ 64 * y1 + 2 ^ 128 * y2 + 2 ^ 192 * y3 + 2 ^ 256 * c3 =
       x0 + 2 ^ 64 * x1 + 2 ^ 128 * x2 + 2 ^ 192 * x3 + (2 ^ 256 - N) := by
   simp only [N]
-  omega
+  omega_using [e0, e1, e2, e3]
 
 /-- `x + (2²⁵⁶ - n)` into `t6`, `a4`–`a6`, its carry into `a7`. -/
 theorem sumN_ok {s : State} :
@@ -575,7 +575,7 @@ theorem sumN_ok {s : State} :
   refine ⟨?_, ?_, ?_⟩
   · simp only [v4, o0, o1, o2]
     exact sum_arith c0 f5' c2 f10'
-  · have := (s10.gpr .a6).isLt; have := (s.gpr X3).isLt; omega
+  · have := (s10.gpr .a6).isLt; have := (s.gpr X3).isLt; omega_using [f10, hc2]
   · refine ⟨fun r hr => ?_, ?_, ?_, ?_, ?_⟩
     · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
       obtain ⟨h0, h6, ha0, h4, h5, ha6, h7⟩ := hr

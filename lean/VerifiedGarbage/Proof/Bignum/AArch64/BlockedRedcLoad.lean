@@ -19,15 +19,15 @@ theorem asLoad_ok {s : State} {B : Addr} {Z eT : Nat}
        t.mem = s.mem ∧ t.c = s.c) ∧
       Keep VG.Impl.Bignum.AArch64.BlockedRedc.aa s t := by
   have hld : ∀ i < 8, InRegions (s.rd ++ s.wr) (off B (eT + 8 * i)) 8 :=
-    fun i hi => hs.ld (by omega)
+    fun i hi => hs.ld (by omega_using [hT, hi])
   refine WP.keep VG.Impl.Bignum.AArch64.BlockedRedc.aa ?_ (by decide) (by decide) (by decide)
   have hcode : VG.Impl.Bignum.AArch64.BlockedRedc.asLoad =
     [ld .x19 .x8 0, ld .x20 .x8 8, ld .x21 .x8 16, ld .x22 .x8 24, ld .x23 .x8 32, ld .x24 .x8 40, ld .x25 .x8 48, ld .x26 .x8 56] := rfl
   brun [hcode,
-    h8, hs.ld (show eT + 8 ≤ Z by omega), hld 0 (by decide), hld 1 (by decide), hld 2 (by decide), hld 3 (by decide),
+    h8, hs.ld (show eT + 8 ≤ Z by omega_using [hT]), hld 0 (by decide), hld 1 (by decide), hld 2 (by decide), hld 3 (by decide),
     hld 4 (by decide), hld 5 (by decide), hld 6 (by decide), hld 7 (by decide)]
   intro i hi
-  rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7) with
+  rcases (by omega_using [hi] : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7) with
     rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
   all_goals rfl
 
@@ -39,7 +39,7 @@ theorem nsLoad_ok {s : State} {B : Addr} {Z eN : Nat}
        t.mem = s.mem ∧ t.c = s.c) ∧
       Keep VG.Impl.Bignum.AArch64.BlockedRedc.nn s t := by
   have hld : ∀ i < 8, InRegions (s.rd ++ s.wr) (off B (eN + 8 * i)) 8 :=
-    fun i hi => hs.ld (by omega)
+    fun i hi => hs.ld (by omega_using [hN, hi])
   refine WP.keep VG.Impl.Bignum.AArch64.BlockedRedc.nn ?_ (by decide) (by decide) (by decide)
   have hcode : VG.Impl.Bignum.AArch64.BlockedRedc.nsLoad =
     [ld .x2 .x17 8, ld .x3 .x17 16, ld .x4 .x17 24, ld .x5 .x17 32, ld .x6 .x17 40, ld .x9 .x17 48, ld .x11 .x17 56] := rfl
@@ -47,7 +47,7 @@ theorem nsLoad_ok {s : State} {B : Addr} {Z eN : Nat}
     h17, hld 1 (by decide), hld 2 (by decide), hld 3 (by decide),
     hld 4 (by decide), hld 5 (by decide), hld 6 (by decide), hld 7 (by decide)]
   intro i hi
-  rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7) with
+  rcases (by omega_using [hi] : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7) with
     rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
   all_goals rfl
 

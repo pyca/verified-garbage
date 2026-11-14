@@ -39,11 +39,11 @@ theorem lsr_ok (s : State) :
   rw [eval_nonzero, e1, ne_zero_iff, Proof.MlKem.AArch64.toNat_lsr]
   congr 1
   rw [decide_eq_decide]
-  constructor <;> intro h <;> omega
+  constructor <;> intro h <;> omega_using [h]
 
 theorem Ctx.slotOffV {L : Lay} {g : Reg → BitVec 64} {vv : VReg → BitVec 128} {m₀ : Mem} {t : State}
     (hc : Ctx L g vv m₀ t) (o : Nat) : (Arg.slotOff fKey o).val t = L.key + BitVec.ofNat 64 o := by
-  have := hc.slotV (f := fKey) (j := 0) rfl (by omega)
+  have := hc.slotV (f := fKey) (j := 0) rfl (by omega_using [])
   simp only [Arg.val] at this ⊢
   rw [this]; rfl
 
@@ -51,7 +51,7 @@ theorem signSaves_vals {p : Params} {s s1 : State} (o : Only [.x9] s s1) :
     ∀ j (hj : j < signSaves.length), s1.gpr (signSaves[j]'hj).1 = (slay p s).vals.getD j 0 := by
   intro j hj
   have : j < 8 := hj
-  rcases (by omega : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4 ∨ j = 5 ∨ j = 6 ∨ j = 7) with
+  rcases (by omega_using [this] : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4 ∨ j = 5 ∨ j = 6 ∨ j = 7) with
     rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
     simp only [signSaves, Lay.vals, slay, List.getElem_cons_zero, List.getElem_cons_succ, List.getD_cons_zero,
       List.getD_cons_succ] <;> exact o.get _

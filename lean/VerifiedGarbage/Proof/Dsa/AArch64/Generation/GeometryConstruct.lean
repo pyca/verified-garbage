@@ -24,7 +24,7 @@ def GenerationGeometry.constructPlan (p : GenerationGeometry) (seed : Generation
     (h5 : W 5 = p.B) (h0 : W 0 = VG.Proof.Bignum.off p.B shaped) : PConstructPlan := by
   let N := Spec.Dsa.qCandidate (8 * p.qLen) seed.bytes
   have qshape := VG.Proof.Dsa.Generation.qCandidate_shape
-    (show 2 ≤ 8 * p.qLen by rcases p.qWidth with h | h <;> omega) seed.bytes
+    (show 2 ≤ 8 * p.qLen by rcases p.qWidth with h | h <;> omega_using [h]) seed.bytes
   have qfit : N < 256 ^ p.qLen := by
     change N < (2 ^ 8) ^ p.qLen
     rw [← Nat.pow_mul]
@@ -44,11 +44,11 @@ def GenerationGeometry.constructPlan (p : GenerationGeometry) (seed : Generation
     rcases p.width with h | h | h <;> rw [h] <;> decide
   have hhash : hashes + (p.count + 1) * p.qLen ≤ usedBytes p.pLen := by
     have hn := p.hashSizes.2.1
-    rcases p.width with h | h | h <;> rw [h] <;> unfold hashes usedBytes domainCheck <;> omega
+    rcases p.width with h | h | h <;> rw [h] <;> unfold hashes usedBytes domainCheck <;> omega_using [hn]
   have hw : wrappedSeed + p.qLen ≤ usedBytes p.pLen := by
     rcases p.lengths with ⟨h1,h2⟩ | ⟨h1,h2⟩ | ⟨h1,h2⟩ <;> rw [h1,h2] <;> decide
-  have qn : p.qLen ≤ 32 := by rcases p.qWidth with h | h <;> omega
-  have pn : p.pLen ≤ 384 := by rcases p.width with h | h | h <;> omega
+  have qn : p.qLen ≤ 32 := by rcases p.qWidth with h | h <;> omega_using [h]
+  have pn : p.pLen ≤ 384 := by rcases p.width with h | h | h <;> omega_using [h]
   refine {
     hash := p.hashPlan seed seedLength W offset carry h1 h3 h4 h2
     B := VG.Proof.Bignum.off p.B arithmetic
@@ -84,23 +84,23 @@ def GenerationGeometry.constructPlan (p : GenerationGeometry) (seed : Generation
   · change ∀ i < p.pLen, arithmeticBytes ≤ ofs (VG.Proof.Bignum.off p.B arithmetic) (VG.Proof.Bignum.off (VG.Proof.Bignum.off (W 5) shaped) i)
     rw [h5]
     intro i hi
-    exact out_scr (p.parts_disjoint hs ha (Or.inl (by unfold shaped arithmetic; omega)))
-      (Offset.contains_base _ (by omega) (by omega))
+    exact out_scr (p.parts_disjoint hs ha (Or.inl (by unfold shaped arithmetic; omega_using [pn])))
+      (Offset.contains_base _ (by omega_using [hi]) (by omega_using [pn, hi]))
   · change HashBufferSeparate p.F p.hash (VG.Proof.Bignum.off (W 5) shaped) p.pLen
     rw [h5]
-    exact bufferSeparate_of_regions (by omega) (p.frame_part hs).symm
+    exact bufferSeparate_of_regions (by omega_using [pn]) (p.frame_part hs).symm
       (p.parts_disjoint hs hh (Or.inr (by decide)))
   · change ∀ i < p.pLen, ∀ j < p.pLen,
       VG.Proof.Bignum.off (VG.Proof.Bignum.off (VG.Proof.Bignum.off p.B hashes) ((p.count + 1) * p.qLen - p.pLen)) i ≠ VG.Proof.Bignum.off (VG.Proof.Bignum.off (W 5) shaped) j
     rw [h5]
     intro i hi j hj eq
     have dis := p.parts_disjoint hhash hs (Or.inl (by
-      have := p.hashSizes.2.1; unfold hashes shaped; omega))
+      have := p.hashSizes.2.1; unfold hashes shaped; omega_using [this]))
     apply dis (VG.Proof.Bignum.off (VG.Proof.Bignum.off (VG.Proof.Bignum.off p.B hashes) ((p.count + 1) * p.qLen - p.pLen)) i)
     · rw [VG.Proof.Bignum.off_off]
       exact Offset.contains_base _ (by omega_using [p.hashSizes.2.2, hi]) (by omega_using [p.hashSizes.2.1, p.hashSizes.2.2, hi])
     · rw [eq]
-      exact Offset.contains_base _ (by omega) (by omega)
+      exact Offset.contains_base _ (by omega_using [hj]) (by omega_using [pn, hj])
   · change ∀ r ∈ ⟨VG.Proof.Bignum.off (W 5) shaped, p.pLen⟩ ::
       [⟨VG.Proof.Bignum.off p.B hashes, (p.count + 1) * p.qLen⟩, ⟨VG.Proof.Bignum.off p.B wrappedSeed, p.qLen⟩, ⟨p.hash, oRsa⟩, retR p.F],
       (⟨VG.Proof.Bignum.off (W 5) q, (Spec.Dsa.encodeBE p.qLen N).length⟩ : Region).Disjoint r
@@ -108,28 +108,28 @@ def GenerationGeometry.constructPlan (p : GenerationGeometry) (seed : Generation
     intro r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl
-    · exact p.parts_disjoint hq hs (Or.inr (by unfold shaped q; omega))
-    · exact p.parts_disjoint hq hhash (Or.inr (by have := p.hashSizes.2.1; unfold hashes q; omega))
-    · exact p.parts_disjoint hq hw (Or.inr (by unfold wrappedSeed q; omega))
+    · exact p.parts_disjoint hq hs (Or.inr (by unfold shaped q; omega_using [pn]))
+    · exact p.parts_disjoint hq hhash (Or.inr (by have := p.hashSizes.2.1; unfold hashes q; omega_using [this]))
+    · exact p.parts_disjoint hq hw (Or.inr (by unfold wrappedSeed q; omega_using [qn]))
     · exact p.parts_disjoint hq hh (Or.inr (by decide))
     · exact (p.stack_part hq).symm.sub_right (below_sub (by decide) (by decide))
   · change ∀ i < p.pLen, arithmeticBytes ≤ ofs (VG.Proof.Bignum.off p.B arithmetic) (VG.Proof.Bignum.off (VG.Proof.Bignum.off (W 5) VG.Impl.Dsa.Generation.Layout.p) i)
     rw [h5]
     intro i hi
-    exact out_scr (p.parts_disjoint hp ha (Or.inl (by unfold VG.Impl.Dsa.Generation.Layout.p arithmetic; omega)))
-      (Offset.contains_base _ (by omega) (by omega))
+    exact out_scr (p.parts_disjoint hp ha (Or.inl (by unfold VG.Impl.Dsa.Generation.Layout.p arithmetic; omega_using [pn])))
+      (Offset.contains_base _ (by omega_using [hi]) (by omega_using [pn, hi]))
   · change ∀ i < p.pLen, arithmeticBytes ≤ ofs (VG.Proof.Bignum.off p.B arithmetic) (VG.Proof.Bignum.off (VG.Proof.Bignum.off (W 5) exponent) i)
     rw [h5]
     intro i hi
-    exact out_scr (p.parts_disjoint he ha (Or.inl (by unfold exponent arithmetic; omega)))
-      (Offset.contains_base _ (by omega) (by omega))
+    exact out_scr (p.parts_disjoint he ha (Or.inl (by unfold exponent arithmetic; omega_using [pn])))
+      (Offset.contains_base _ (by omega_using [hi]) (by omega_using [pn, hi]))
   · change ∀ i < p.pLen, ∀ j < p.pLen, VG.Proof.Bignum.off (VG.Proof.Bignum.off (W 5) VG.Impl.Dsa.Generation.Layout.p) i ≠ VG.Proof.Bignum.off (VG.Proof.Bignum.off (W 5) exponent) j
     rw [h5]
     intro i hi j hj eq
-    apply (p.parts_disjoint hp he (Or.inl (by unfold VG.Impl.Dsa.Generation.Layout.p exponent; omega))) (VG.Proof.Bignum.off (VG.Proof.Bignum.off p.B VG.Impl.Dsa.Generation.Layout.p) i)
-      (Offset.contains_base _ (by omega) (by omega))
+    apply (p.parts_disjoint hp he (Or.inl (by unfold VG.Impl.Dsa.Generation.Layout.p exponent; omega_using [pn]))) (VG.Proof.Bignum.off (VG.Proof.Bignum.off p.B VG.Impl.Dsa.Generation.Layout.p) i)
+      (Offset.contains_base _ (by omega_using [hi]) (by omega_using [pn, hi]))
     rw [eq]
-    exact Offset.contains_base _ (by omega) (by omega)
+    exact Offset.contains_base _ (by omega_using [hj]) (by omega_using [pn, hj])
   · change ∀ r ∈ [⟨VG.Proof.Bignum.off p.B arithmetic, arithmeticBytes⟩, ⟨VG.Proof.Bignum.off (W 5) VG.Impl.Dsa.Generation.Layout.p, p.pLen⟩, ⟨VG.Proof.Bignum.off (W 5) exponent, p.pLen⟩],
       (⟨p.F, frameBytes⟩ : Region).Disjoint r
     rw [h5]

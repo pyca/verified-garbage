@@ -44,13 +44,13 @@ theorem recv_ok {K W D : Addr} {R n : Nat} {SP : Addr} {s : State} (E : Env K W 
   obtain ⟨s₁, run₁, x11₁, x12₁, x13₁, m₁, g₁, sp₁, rd₁, wr₁⟩ := recvHead_ok E htl hT ha
   unfold recv
   refine WP.seq (WP.of_runBlock ⟨s₁, run₁, ?_⟩)
-  refine WP.mono (Proof.AesGcm.AArch64.copyLoop_ok s₁ x12₁ x11₁ x13₁ (by omega)
-    ⟨by omega, by rw [rd₁, wr₁]; exact hTr, by
+  refine WP.mono (Proof.AesGcm.AArch64.copyLoop_ok s₁ x12₁ x11₁ x13₁ (by omega_using [h1])
+    ⟨by omega_using [h16], by rw [rd₁, wr₁]; exact hTr, by
       rw [wr₁]
       exact fun a m ⟨r, hr, hc⟩ => by
         simp only [List.mem_singleton] at hr; subst hr
-        exact E.perm.w a m ⟨_, List.mem_singleton_self _, by simp only [Region.Contains] at hc ⊢; omega⟩,
-      hTW.sub_right (Region.sub_prefix (by omega))⟩)
+        exact E.perm.w a m ⟨_, List.mem_singleton_self _, by simp only [Region.Contains] at hc ⊢; omega_using [h16, hc]⟩,
+      hTW.sub_right (Region.sub_prefix (by omega_using [h16]))⟩)
     fun t ⟨m, _, _, g, sp, rd, wr⟩ => ⟨by rw [m, m₁], fun r hr => by rw [g r hr, g₁ r hr], by rw [sp, sp₁],
       by rw [rd, rd₁], by rw [wr, wr₁]⟩
 
@@ -105,7 +105,7 @@ theorem open_wp' (v : BlocksImpl) {s : State} {K W N A D : Addr} {R nl al n tl :
     rw [mr]; exact writeBytes_frame _ _ _ (by rw [length_bytesAt]; exact Region.contains_self _ _)
   have Fr' : Frame (mutR W D n) s₅.mem s₅'.mem := Fr.sub fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr
-    exact ⟨_, List.mem_cons_self .., Region.sub_prefix (by have := Ar.t16; omega)⟩
+    exact ⟨_, List.mem_cons_self .., Region.sub_prefix (by have := Ar.t16; omega_using [this])⟩
   have S₅' := Slots.of_mut L Ar.data.w Fr' S₅
   -- The comparison.
   refine WP.seq (WP.mono (cmp_ok E₅' Ar.t1 Ar.t16 S₅'.tl) fun s₆ ⟨m₆, g₆, sp₆, rd₆, wr₆⟩ => ?_)
@@ -161,29 +161,29 @@ theorem open_wp' (v : BlocksImpl) {s : State} {K W N A D : Addr} {R nl al n tl :
   rw [c₃, i₃, l₃, d₃] at hck
   have hTn := Ar.tag.lt
   have recv : bytesAt s₅'.mem W tl = bytesAt s.mem T tl := by
-    rw [mr, Proof.Ocb.bytesAt_writeBytes_base _ _ _ (by rw [length_bytesAt]) (by omega), length_bytesAt,
+    rw [mr, Proof.Ocb.bytesAt_writeBytes_base _ _ _ (by rw [length_bytesAt]) (by omega_using [hTn]), length_bytesAt,
       List.drop_of_length_le (by rw [length_bytesAt]), List.append_nil]
     exact Proof.Cmac.bytesAt_frame Ff (fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
       · exact Ar.tag.w
-      · exact Ar.td) (by omega)
+      · exact Ar.td) (by omega_using [hTn])
   have t2₅ : bytesAt s₅'.mem (W + BitVec.ofNat 64 t2O) tl = bytesAt s₅.mem (W + BitVec.ofNat 64 t2O) tl :=
     Proof.Cmac.bytesAt_frame Fr (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
-      exact (Offset.base_disjoint W (e := t2O) (n := tl) (k := tl) (by have := Ar.t16; unfold t2O; omega)
-        (by have := Ar.t16; unfold t2O; omega)).symm) (by omega)
+      exact (Offset.base_disjoint W (e := t2O) (n := tl) (k := tl) (by have := Ar.t16; unfold t2O; omega_using [this])
+        (by have := Ar.t16; unfold t2O; omega_using [this])).symm) (by omega_using [hTn])
   have tagv := T₅.val
   rw [hck, hofs, ld₄, sum₄, cK₄] at tagv
   have d₉ : bytesAt s₉.mem D n = if c then bytesAt s₄.mem D n else zeros n := by
     have d₆ : bytesAt s₆.mem D n = bytesAt s₄.mem D n := by
       rw [Proof.Cmac.bytesAt_frame F₆ (fun r hr => by
           simp only [List.mem_singleton] at hr; subst hr; exact Ar.data.w.sub_right (Lay.wSub (by decide)))
-          (by omega),
+          (by omega_using [hn]),
         Proof.Cmac.bytesAt_frame Fr (fun r hr => by
           simp only [List.mem_singleton] at hr; subst hr
-          exact Ar.data.w.sub_right (Region.sub_prefix (by have := Ar.t16; omega))) (by omega),
-        Proof.Cmac.bytesAt_frame T₅.frame (tag_data Ar.data.w (by decide)) (by omega)]
+          exact Ar.data.w.sub_right (Region.sub_prefix (by have := Ar.t16; omega_using [this]))) (by omega_using [hn]),
+        Proof.Cmac.bytesAt_frame T₅.frame (tag_data Ar.data.w (by decide)) (by omega_using [hn])]
     rw [Rs.mem, m₈, m₇, Proof.Ocb.bytesAt_writeBytes_base _ _ _ (by rw [length_mask]) hn, length_mask,
       List.drop_of_length_le (by rw [length_bytesAt]), List.append_nil, d₆]
   rw [x0₉, d₉, hout, Proof.Ocb.decryptWith_eq]
@@ -193,14 +193,14 @@ theorem open_wp' (v : BlocksImpl) {s : State} {K W N A D : Addr} {R nl al n tl :
     show decide (_ = _) = true ↔ _
     rw [recv, t2₅, hx, decide_eq_true_iff, eq_comm]
   by_cases hr : 0 < n % 16
-  · have h' : n - 16 * (n / 16) > 0 := by omega
+  · have h' : n - 16 * (n / 16) > 0 := by omega_using [hr]
     simp only [h', hr, ↓reduceIte] at tagv ⊢
     rw [bytesAt_take_block _ _ Ar.t16, tagv] at hc
     have hc := hc _ rfl
     by_cases hk : c = true
     · simp only [hc.mp hk, hk, ↓reduceIte]; exact ⟨by decide, trivial⟩
     · simp only [mt hc.mpr hk, hk, ↓reduceIte, Bool.false_eq_true]; exact ⟨by decide, trivial⟩
-  · have h' : ¬ (n - 16 * (n / 16) > 0) := by omega
+  · have h' : ¬ (n - 16 * (n / 16) > 0) := by omega_using [hr]
     simp only [h', hr, ↓reduceIte] at tagv ⊢
     rw [bytesAt_take_block _ _ Ar.t16, tagv] at hc
     have hc := hc _ rfl

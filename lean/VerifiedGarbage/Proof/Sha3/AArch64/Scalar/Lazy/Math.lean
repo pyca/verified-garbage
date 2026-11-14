@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Lazy
 import Mathlib.Tactic.IntervalCases
 import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.CoreExec
 import VerifiedGarbage.Proof.Framework.Bitslice.Anf
+import VerifiedGarbage.Proof.Framework.Omega
 
 @[expose] public section
 namespace VG.Proof.Sha3.AArch64.Scalar.Lazy
@@ -94,7 +95,7 @@ theorem plan_iota_state (r : Fin 24) (A : Spec.Sha3.State) (f : File)
   have hi25 : i < 25 := by omega
   have hval := layout_at _ _ _ h i hi
   rw [logicalState_lane A i hi25] at hval
-  have hval0 := layout_at _ _ _ h 0 (by omega)
+  have hval0 := layout_at _ _ _ h 0 (by omega_using [hi])
   rw [logicalState_lane A 0 (by decide)] at hval0
   have hc := (plans_iota r).2
   have memi : (plan r).output.getD i (.x0, 0) ∈ (plan r).output := by
@@ -102,7 +103,7 @@ theorem plan_iota_state (r : Fin 24) (A : Spec.Sha3.State) (f : File)
     simp only [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem hi, Option.getD_some]
   have mem0 : (plan r).output.getD 0 (.x0, 0) ∈ (plan r).output := by
     apply List.mem_of_getElem? (i := 0)
-    simp only [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem (show 0 < (plan r).output.length by omega), Option.getD_some]
+    simp only [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem (show 0 < (plan r).output.length by omega_using [hi]), Option.getD_some]
   rw [(plans_iota r).1]
   simp only [step, File.write, logicalState_lane _ i hi25]
   by_cases hz : i = 0

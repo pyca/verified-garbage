@@ -113,7 +113,7 @@ theorem roundInput_ok (i : Nat) (hi : i < 8) (s : State) (hok : Ok inputCfg s) :
       obtain ⟨rfl, rfl⟩ := hk
       exact ⟨by decide, rfl⟩) (fun j hj => by
         refine ⟨?_, ?_⟩
-        · simp only [inputCfg] at hj; omega
+        · simp only [inputCfg] at hj; omega_using [hj]
         · simp only [inputCfg, roundInputs, Nat.add_eq_zero_iff, Nat.one_ne_zero,
             false_and, ite_false, Nat.add_sub_cancel_left])
   refine ⟨s', run, fun j hj p hp => ?_, rd, wr, keep, frame⟩
@@ -169,9 +169,9 @@ theorem roundOutput_ok (i : Nat) (hi : i < 8) (s : State) (hok : Ok outputCfg s)
     · simp only [outputEnv] at h
       split at h
       · rename_i hb; cases h
-        have heq : 16 + (j - 16) = j := by omega
-        have hne : j - 16 ≠ 4 := by omega
-        have hr := inWord_rel (roundOutputs s) (i := j - 16) (k := 8) (by omega)
+        have heq : 16 + (j - 16) = j := by omega_using [hb]
+        have hne : j - 16 ≠ 4 := by omega_using [hb]
+        have hr := inWord_rel (roundOutputs s) (i := j - 16) (k := 8) (by omega_using [hb])
         simpa only [roundOutputs, hne, ite_false, heq, outputCfg] using hr
       · cases h
   obtain ⟨s', hs', post⟩ := run lanes_sound hok hrel he
@@ -280,8 +280,8 @@ theorem sbox_ok (i : Nat) (hi : i < 8) {s : State} (hok : Ok sboxCfg s) :
     split at h
     · rename_i hb
       cases h
-      have hk6 : k - 16 < 6 := by omega
-      have heq : 16 + (k - 16) = k := by omega
+      have hk6 : k - 16 < 6 := by omega_using [hb]
+      have heq : 16 + (k - 16) = k := by omega_using [hb]
       simp only [TableRel, inputTable, testBit_tableOf, hc, decide_true, Bool.true_and,
         inputAt_bit s p (k - 16) hk6, heq, sboxCfg]
     · cases h
@@ -289,7 +289,7 @@ theorem sbox_ok (i : Nat) (hi : i < 8) {s : State} (hok : Ok sboxCfg s) :
   refine ⟨s', hs', fun j hj p hp => ?_, p₀.rd, p₀.wr, fun r hr => ?_, p₀.frame⟩
   · obtain ⟨s'', hs'', p₁⟩ := key p hp
     obtain rfl := run_unique hs'' hs'
-    have h := p₁.rel.slot (16 + j) _ (by simp [sboxCfg]; omega) (hout j hj)
+    have h := p₁.rel.slot (16 + j) _ (by simp [sboxCfg]; omega_using [hj]) (hout j hj)
     have hb := p₁.base
     simp only [TableRel, outputTable, testBit_tableOf, (inputAt s p).isLt,
       decide_true, Bool.true_and, sboxCfg] at h hb

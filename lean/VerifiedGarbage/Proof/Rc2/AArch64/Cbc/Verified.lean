@@ -31,7 +31,7 @@ theorem cbc_body_correct (d : Spec.Rc2.Direction) (mid : Prog isa)
     fit⟩ := hs
   have writes (i : Nat) (hi : i + 8 ≤ 512) : InRegions s.wr (s.gpr .x4 + BitVec.ofNat 64 i) 8 := by
     rw [hwr]
-    exact ⟨⟨s.gpr .x4, 512⟩, by simp, Offset.contains_base _ hi (by omega)⟩
+    exact ⟨⟨s.gpr .x4, 512⟩, by simp, Offset.contains_base _ hi (by omega_using [hi])⟩
   apply WP.seq
   rw [save_eq]
   refine Spill.save_ok (by decide) (fun p hp => writes p.2 (by revert p; decide)) ?_
@@ -59,7 +59,7 @@ theorem cbc_body_correct (d : Spec.Rc2.Direction) (mid : Prog isa)
     · simpa only [ivR, bufR, iv₂, buf₂] using ivBuf
     · simpa only [dataR, bufR, data₂, buf₂] using dataBuf
   apply WP.seq
-  apply WP.mono (hmid s₂ (s.gpr .x3).toNat (by omega) hp₂ (by simpa using count₂))
+  apply WP.mono (hmid s₂ (s.gpr .x3).toNat (by omega_using [fit]) hp₂ (by simpa using count₂))
   intro s₃ h₃
   have rd₃ := h₃.rd.trans rd₂
   have wr₃ := h₃.wr.trans wr₂

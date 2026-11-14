@@ -111,9 +111,9 @@ theorem x6_mod {m : Mem} {B : Addr} {d w L N P : Nat} (hx : wv m B d w = 2 ^ (12
 /-- The words `prime` reduces, `w_p ⌈W / w_p⌉`, are in `[W, 2 W)`. -/
 theorem chunks_bounds {W w : Nat} (h2 : 2 ≤ w) (hw : w ≤ W) :
     W ≤ w * Crt.nChunks W w ∧ w * Crt.nChunks W w < 2 * W := by
-  have h1 := Crt.le_nChunks_mul (K := W) (w := w) (by omega)
-  have h3 := Crt.nChunks_mul_lt (K := W) (w := w) (by omega) (by omega)
-  rw [Nat.mul_comm]; omega
+  have h1 := Crt.le_nChunks_mul (K := W) (w := w) (by omega_using [h2])
+  have h3 := Crt.nChunks_mul_lt (K := W) (w := w) (by omega_using [h2]) (by omega_using [h2, hw])
+  rw [Nat.mul_comm]; omega_using [hw, h1, h3]
 
 /-- The facts of the factors' values. -/
 theorem masked_facts {s₀ : State} (hP : PF s₀) :

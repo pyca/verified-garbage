@@ -19,13 +19,13 @@ open VG.Proof.MlKem.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Proof.RsaPk
 theorem zero_test (b : Byte) : decide ((BitVec.setWidth 64 b).toNat < BitVec.toNat (1 : BitVec 64)) =
     decide (b = 0) := by
   rw [zext_toNat, one64_toNat]
-  exact decide_eq_decide.mpr ⟨fun h => BitVec.eq_of_toNat_eq (by simp; omega), fun h => by simp [h]⟩
+  exact decide_eq_decide.mpr ⟨fun h => BitVec.eq_of_toNat_eq (by simp; omega_using [h]), fun h => by simp [h]⟩
 
 theorem two_test (b : Byte) : decide ((BitVec.setWidth 64 b ^^^ 2).toNat < BitVec.toNat (1 : BitVec 64)) =
     decide (b = 2) := by
   rw [one64_toNat]
   refine decide_eq_decide.mpr ⟨fun h => ?_, fun h => by subst h; decide⟩
-  have h0 : BitVec.setWidth 64 b ^^^ 2 = 0 := BitVec.eq_of_toNat_eq (by rw [show (0 : BitVec 64).toNat = 0 from rfl]; omega)
+  have h0 : BitVec.setWidth 64 b ^^^ 2 = 0 := BitVec.eq_of_toNat_eq (by rw [show (0 : BitVec 64).toNat = 0 from rfl]; omega_using [h])
   have : BitVec.setWidth 64 b = 2 := by
     have := congrArg (· ^^^ (2 : BitVec 64)) h0
     simpa [BitVec.xor_assoc] using this
@@ -41,7 +41,7 @@ theorem ok_test (R : BitVec 64) :
   rw [one64_toNat]
   refine decide_eq_decide.mpr ⟨fun h => ?_, fun h => by rw [h]; decide⟩
   have h0 : BitVec.setWidth 64 (BitVec.setWidth 32 R) ^^^ 1 = 0 :=
-    BitVec.eq_of_toNat_eq (by rw [show (0 : BitVec 64).toNat = 0 from rfl]; omega)
+    BitVec.eq_of_toNat_eq (by rw [show (0 : BitVec 64).toNat = 0 from rfl]; omega_using [h])
   have : BitVec.setWidth 64 (BitVec.setWidth 32 R) = 1 := by
     have := congrArg (· ^^^ (1 : BitVec 64)) h0
     simpa [BitVec.xor_assoc] using this
@@ -85,16 +85,16 @@ theorem validBlock_run {t : State} {p F : Addr} {b0 b1 : Byte} {f : Bool} {sep a
     WP isa (.block validBlock) t fun t' => VOut b0 b1 f sep al k R t t' ∧ Keep [.rax, .rsi, .rdx, .r10, .r11] t t' := by
   refine WP.keep [.rax, .rsi, .rdx, .r10, .r11] (c := .block validBlock) (Q := VOut b0 b1 f sep al k R t) ?_ rfl
   xrun [VOut, validBlock, ea_atd (p := p), hdi, h0, h1, hi0, hi1, hdx, h10, h11, h9, ea_sp, hsp, hR, hiR, borrow_mask,
-    zero_test, two_test, ten_test (show sep < 2 ^ 64 by omega), ok_test, bmask_not, bmask_and]
+    zero_test, two_test, ten_test (show sep < 2 ^ 64 by omega_using [hsk, hk]), ok_test, bmask_not, bmask_and]
   have e : BitVec.ofNat 64 k - BitVec.ofNat 64 sep - 1 = BitVec.ofNat 64 (k - sep - 1) := by
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.toNat_sub, BitVec.toNat_ofNat, show (1 : BitVec 64).toNat = 1 from rfl]
-    omega
+    omega_using [hsk]
   have hv : (decide (b0 = 0) && decide (b1 = 2) && f && !decide (sep < 10)) = vOf b0 b1 f sep := by
     simp only [vOf]
     by_cases h₂ : sep < 10
-    · simp [h₂, show ¬ 10 ≤ sep by omega]
-    · simp [h₂, show 10 ≤ sep by omega, Bool.and_assoc]
+    · simp [h₂, show ¬ 10 ≤ sep by omega_using [h₂]]
+    · simp [h₂, show 10 ≤ sep by omega_using [h₂], Bool.and_assoc]
   rw [e, sel_xor, hv]
   exact ⟨rfl, rfl, rfl⟩
 

@@ -47,11 +47,11 @@ theorem product_ok {s : State} {base : Addr} {bytes len : Nat} {args : Nat → B
   have hM := E.pos
   have f5 := (h.fits (j := 5) (by decide)).2
   have f2 := (h.fits (j := 2) (by decide)).1
-  have e1 : numAt len 1 = 256 + wb len := by simp only [numAt, numOff] <;> omega
+  have e1 : numAt len 1 = 256 + wb len := by simp only [numAt, numOff] <;> omega_using []
   have e2 : numAt len 2 = 256 + 2 * wb len := by simp only [numAt, numOff] <;> omega
   have e3 : numAt len 3 = 256 + 3 * wb len := by simp only [numAt, numOff] <;> omega
   have e5 : numAt len 5 = 256 + 5 * wb len := by simp only [numAt, numOff] <;> omega
-  refine WP.seq (WP.mono (PublicContext.bitTest_ok h.scratch (by omega)) fun u ⟨M₁, K₁, Z₁⟩ => ?_)
+  refine WP.seq (WP.mono (PublicContext.bitTest_ok h.scratch (by omega_using [f2, e2])) fun u ⟨M₁, K₁, Z₁⟩ => ?_)
   have E₁ := E.keep K₁ (by decide) (by decide) (by rw [M₁]; exact Frame.refl _ _)
   have K₁' : Keeps [.eax, .ecx, .edx] s u := K₁.mono (by decide)
   have par : val32 s.mem base 128 2 % 2 = w32 s.mem base 128 % 2 := val32_parity _ _ _ _
@@ -59,7 +59,7 @@ theorem product_ok {s : State} {base : Addr} {bytes len : Nat} {args : Nat → B
   · refine WP.ite true (by change u.zf = _; rw [Z₁, decide_eq_true bit]) (fun _ => WP.block_nil ?_)
       (fun e => nomatch e)
     refine ⟨E₁, by rw [M₁]; exact Frame.refl _ _, ?_, by rw [M₁], by rw [M₁], K₁', by rw [M₁]⟩
-    rw [M₁, hY, ite_eq_right (by omega)]
+    rw [M₁, hY, ite_eq_right (by omega_using [par, bit])]
   · refine WP.ite false (by change u.zf = _; rw [Z₁, decide_eq_false bit]) (fun e => nomatch e)
       (fun _ => ?_)
     refine WP.mono (mulEnv_ok E₁ hbytes (o := 2) (a := 2) (b := 1) (by decide) (by decide) (by decide)
@@ -68,10 +68,10 @@ theorem product_ok {s : State} {base : Addr} {bytes len : Nat} {args : Nat → B
     have sp₁ : u.gpr .esp = s.gpr .esp := K₁.1 _ (by decide)
     refine ⟨Et, ?_, ?_, ?_, ?_, K₁'.trans cst, ?_⟩
     · rw [← M₁, ← sp₁]; exact Ct
-    · rw [Tt, ite_eq_left (by omega)]
-    · rw [mulFrame_val32 E₁.room nw' Ft (.inl (by omega)) (by omega) (by omega) f2 f5, M₁]
-    · rw [← read_eq_val32, ← read_eq_val32, mulFrame_hdr E₁.room nw' Ft (by decide) (by omega) f2 f5, M₁]
-    · rw [mulFrame_val32 E₁.room nw' Ft (.inr (by omega)) (by omega) (by omega) f2 f5, M₁]
+    · rw [Tt, ite_eq_left (by omega_using [par, bit])]
+    · rw [mulFrame_val32 E₁.room nw' Ft (.inl (by omega_using [wbe, e1, e2])) (by omega_using [wbe, e1, e5]) (by omega_using [wbe, f2, e1, e2]) f2 f5, M₁]
+    · rw [← read_eq_val32, ← read_eq_val32, mulFrame_hdr E₁.room nw' Ft (by decide) (by omega_using [f2, e2]) f2 f5, M₁]
+    · rw [mulFrame_val32 E₁.room nw' Ft (.inr (by omega_using [e2, e3])) (by omega_using [wbe, e3, e5]) (by omega_using [wbe, f5, e3, e5]) f2 f5, M₁]
 
 theorem sparseRound_ok {s : State} {base : Addr} {bytes len : Nat} {args : Nat → BitVec 32} {M : Nat}
     (E : Env base bytes len args M s) (hbytes : bytes = (args 9).toNat * 8)

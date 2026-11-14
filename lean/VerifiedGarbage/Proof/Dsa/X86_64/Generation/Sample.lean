@@ -30,7 +30,7 @@ theorem sampleWitness_ok {B p : Addr} {Z w N : Nat} {mi : BitVec 64} {bs : List 
       word t.mem B (8 * kU) = mask (Spec.RsaKeyGen.witness (N - 1) (Spec.Rsa.os2ip bs)).2 ∧
       WorkFrame B (testRanges w) [⟨p, bs.length⟩] s.mem t.mem ∧ Keep mmRegs s t := by
   unfold Impl.Dsa.X86_64.Generation.sampleWitness
-  refine WP.seq (WP.mono (testWitness_ok h hd hodd (by omega) hmax hkw)
+  refine WP.seq (WP.mono (testWitness_ok h hd hodd (by omega_using [hlen]) hmax hkw)
     fun u ⟨hu, hxu, huu, hzu, hfu, ku⟩ => ?_)
   refine WP.ite (!decide (2 ≤ Spec.Rsa.os2ip bs ∧ Spec.Rsa.os2ip bs < N - 1))
     (by simp [eval, hzu]) (fun hbad => ?_) (fun hgood => ?_)
@@ -38,9 +38,9 @@ theorem sampleWitness_ok {B p : Addr} {Z w N : Nat} {mi : BitVec 64} {bs : List 
       simpa only [Bool.not_eq_true', decide_eq_false_iff_not] using hbad
     have hspec := forcedWitnessBytes_spec hlen hbits hb
     have hfl := forcedWitnessBytes_length hlen
-    refine WP.seq (WP.mono (forceSample_ok hu hd hlen (by omega)) fun v ⟨hv, huv, hfv, kv⟩ => ?_)
+    refine WP.seq (WP.mono (forceSample_ok hu hd hlen (by omega_using [hmax])) fun v ⟨hv, huv, hfv, kv⟩ => ?_)
     refine WP.mono (loadWitness_ok hv.ready hd (by decide) (by decide) hv.ptr hv.len hv.source
-      (by rw [hfl]; omega) (by rwa [hfl]) (by rwa [hfl])) fun t ⟨ht, hxt, hft, kt⟩ => ?_
+      (by rw [hfl]; omega_using [hlen]) (by rwa [hfl]) (by rwa [hfl])) fun t ⟨ht, hxt, hft, kt⟩ => ?_
     refine ⟨ht, ?_, ?_, ?_, ((ku.trans kv).trans kt).mono (by decide)⟩
     · simpa only [hspec] using hxt
     · rw [hft.word_eq (by rng_disj) (by change 248 ≤ 2 ^ 64; decide), huv, huu, hspec]

@@ -35,9 +35,9 @@ theorem clear_ok {s : State} {B : Addr} {Z n N k : Nat} (h : Ws s B Z n N)
     have le := Nat.mul_le_mul_right (w.words n + 2) bound
     simp only [VG.Proof.Rsa.X86.Keys.arr, VG.Proof.Rsa.X86.Keys.S] at fit
     rw [Nat.mul_left_comm] at fit
-    omega
+    omega_using [fit, le]
   simp only [VG.Proof.Rsa.X86.Keys.arr, Nat.zero_mul, Nat.add_zero] at O
-  refine ⟨h.keep K (O.mono (Nat.zero_le _) (by omega)), O, ?_, K⟩
+  refine ⟨h.keep K (O.mono (Nat.zero_le _) (by omega_using [bound'])), O, ?_, K⟩
   simpa only [Loc.offset, VG.Proof.Rsa.X86.Keys.arr, VG.Proof.Rsa.X86.Keys.S,
     VG.Impl.Rsa.X86.Keys.slot, VG.Impl.Rsa.X86.Keys.stride] using V
 

@@ -25,9 +25,9 @@ private theorem subtract_exact {a b r modulus borrow : Nat} (le : b ≤ a) (smal
     (value : r + b = a + modulus * borrow) (bit : borrow ≤ 1) : r = a - b := by
   rcases Nat.le_one_iff_eq_zero_or_eq_one.mp bit with zero | one
   · rw [zero, Nat.mul_zero, Nat.add_zero] at value
-    omega
+    omega_using [value]
   · rw [one, Nat.mul_one] at value
-    omega
+    omega_using [le, small, value]
 
 theorem montKeyArrays_ok {s : State} {base : BitVec 32} {capacity w : Nat}
     (workspace : Workspace s base (8 * capacity)) (ready : KeyReady base capacity w s)
@@ -77,7 +77,7 @@ theorem montKeyArrays_ok {s : State} {base : BitVec 32} {capacity w : Nat}
     rw [keyView_number_low t.mem base w 9 fits (by rw [r4]; exact rBound), r4]
   have number10 : numAt t.mem (State.addr base) w 10 =
       numAt s.mem (State.addr base) w 0 - numAt s.mem (State.addr base) w 1 := by
-    rw [keyView_number_low t.mem base w 10 fits (by rw [exactDifference]; omega), exactDifference]
+    rw [keyView_number_low t.mem base w 10 fits (by rw [exactDifference]; omega_using [nBound]), exactDifference]
   have keep : Keep (base + 96#32) (2 * w + 2) [0, 1, 9, 10] [] s.mem t.mem :=
     ((keep1.mono (by simp)).trans (keep2.mono (by simp))).trans
       ((keep3.mono (by simp)).trans (keep4.mono (by simp)))

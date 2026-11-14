@@ -86,26 +86,26 @@ theorem crt_padModulus_ok (s : State) {base : BitVec 32} {size len w d : Nat}
   rw [padModulus, WP.seq_iff]
   refine WP.mono (crt_padClear_ready s h) ?_
   rintro u ⟨hu, zeroU, outsideU, restU⟩
-  have eq := WorkspaceEq.of_outside (by omega : 8 * len < 2 ^ 64) separate outsideU
+  have eq := WorkspaceEq.of_outside (by omega_using [nowrap, separate, fits] : 8 * len < 2 ^ 64) separate outsideU
   have arrFit : arrAt w 8 ≤ 8 * len := h.layout.width ▸ h.layout.layout.2.2.1
   have numberU := eq.number arrFit operand.isLt
   rw [WP.seq_iff]
-  refine WP.mono (crt_padModulusArgs_ok u hu.workspace (by omega) hu.ptr hu.link operand) ?_
+  refine WP.mono (crt_padModulusArgs_ok u hu.workspace (by omega_using [separate, fits, small]) hu.ptr hu.link operand) ?_
   rintro v ⟨outV, indexV, memV, restV⟩
   have write : InRegions v.wr (off (State.addr base) d) (8 * w) := by
     rw [restV.wr]
-    exact ⟨_, hu.workspace.writable, Offset.contains_base _ (by omega) (by omega)⟩
+    exact ⟨_, hu.workspace.writable, Offset.contains_base _ (by omega_using [fits]) (by omega_using [nowrap, fits])⟩
   have sep : Region.Disjoint ⟨State.addr base, 8 * len⟩ ⟨off (State.addr base) d, 8 * w⟩ :=
-    Offset.base_disjoint _ separate (by omega)
+    Offset.base_disjoint _ separate (by omega_using [nowrap, fits])
   refine WP.mono (exportPadded_ok v (hu.main.congr restV.wr)
     (by rw [memV]; exact hu.layout.layout) (w := w) (by rw [memV]; exact hu.layout.width)
-    operand.isLt (k := 2 * w + 2) (by omega) write sep (by rw [memV]; exact zeroU)
+    operand.isLt (k := 2 * w + 2) (by omega_using [nowrap, fits]) write sep (by rw [memV]; exact zeroU)
     ((restV.gpr .r0 (by decide)).trans hu.ptr) indexV outV) ?_
   rintro t ⟨value, outside, ptrT, restT⟩
   rw [memV, numberU] at value
   rw [memV] at outside
-  exact ⟨by simpa only [show 2 * w + (2 * w + 2) = 4 * w + 2 by omega] using value,
-    outsideU.trans (outside.mono (Nat.le_refl _) (by omega)), ptrT,
+  exact ⟨by simpa only [show 2 * w + (2 * w + 2) = 4 * w + 2 by omega_using []] using value,
+    outsideU.trans (outside.mono (Nat.le_refl _) (by omega_using [])), ptrT,
     restU.trans ((restV.mono (by decide)).trans restT)⟩
 
 end VG.Proof.Bignum.Arm

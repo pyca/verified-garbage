@@ -34,7 +34,7 @@ theorem pShape_ok {p : HashPlan} {H : Spec.Mgf1.Hash} {s : State}
       Keep [.x0, .x2, .x4, .x9, .x12, .x13, .x14] s t := by
   obtain ⟨V, R⟩ := hs.rep
   unfold Impl.Dsa.AArch64.Generation.pShape
-  refine WP.seq (WP.mono (pShapeArgs_ok hs.layout R hop p.output_slot (by have hc := p.count_le; rcases p.width with h | h <;> rw [h] <;> omega) hlmax)
+  refine WP.seq (WP.mono (pShapeArgs_ok hs.layout R hop p.output_slot (by have hc := p.count_le; rcases p.width with h | h <;> rw [h] <;> omega_using [hc]) hlmax)
     fun u ⟨hdi, hsi, hcx, hm, hk⟩ => ?_)
   let rp := off p.output ((p.count + 1) * p.len - plen)
   let bs := Spec.Rsa.bytesAt s.mem rp plen
@@ -42,7 +42,7 @@ theorem pShape_ok {p : HashPlan} {H : Spec.Mgf1.Hash} {s : State}
   have hrd : ∀ i < bs.length, InRegions (u.rd ++ u.wr) (off rp i) 1 := by
     intro i hi
     rw [hbl] at hi
-    obtain ⟨r, hr, hc⟩ := hs.outputWrite ((p.count + 1) * p.len - plen + i) (by omega)
+    obtain ⟨r, hr, hc⟩ := hs.outputWrite ((p.count + 1) * p.len - plen + i) (by omega_using [hroom, hi])
     refine ⟨r, ?_, ?_⟩
     · rw [hk.rd, hk.wr]; exact List.mem_append_right _ hr
     · simpa only [rp, off_off] using hc
@@ -50,8 +50,8 @@ theorem pShape_ok {p : HashPlan} {H : Spec.Mgf1.Hash} {s : State}
     intro i hi
     rw [hm]
     simp only [bs, Spec.Rsa.bytesAt, off, List.getD_eq_getElem?_getD]
-    simp [show i < plen by omega]
-  refine WP.mono (qShape_ok (by rw [hbl]; exact hl) (by rw [hbl]; omega)
+    simp [show i < plen by omega_using [hbl, hi]]
+  refine WP.mono (qShape_ok (by rw [hbl]; exact hl) (by rw [hbl]; omega_using [hlmax])
     hsi hdi (by rw [hbl]; exact hcx) hrd
     (fun i hi => by rw [hk.wr]; exact hout i (hbl ▸ hi)) hb
     (fun i hi j hj => hsep i (hbl ▸ hi) j (hbl ▸ hj)))
@@ -60,19 +60,19 @@ theorem pShape_ok {p : HashPlan} {H : Spec.Mgf1.Hash} {s : State}
       Spec.Ffdh.candidateOf (8 * plen) (Spec.Rsa.os2ip bs) := by
     rw [← hbl, houtbytes]
     exact VG.Proof.Ffdh.ParameterCandidate.shapedOctets_value
-      (by intro he; have := congrArg List.length he; simp only [List.length_nil, hbl] at this; omega)
-      (by decide : 7 < 8) (by rw [hbl]; omega)
+      (by intro he; have := congrArg List.length he; simp only [List.length_nil, hbl] at this; omega_using [hl, this])
+      (by decide : 7 < 8) (by rw [hbl]; omega_using [hl])
   dsimp only
   refine ⟨?_, ?_, ?_, (hk.trans kt).mono (by decide)⟩
   · change Spec.Rsa.os2ip (Spec.Rsa.bytesAt t.mem op plen) + 1 -
       Spec.Rsa.os2ip (Spec.Rsa.bytesAt t.mem op plen) % (2 * q) = _
     rw [hx]
-    exact hash_shaped_candidate hs (by omega) rfl hroom hcount hhash hsize q
+    exact hash_shaped_candidate hs (by omega_using [hl]) rfl hroom hcount hhash hsize q
   · change Spec.Rsa.os2ip (Spec.Rsa.bytesAt t.mem op plen) % 2 = 1 ∧
       2 ^ (8 * plen - 1) ≤ Spec.Rsa.os2ip (Spec.Rsa.bytesAt t.mem op plen) ∧
       Spec.Rsa.os2ip (Spec.Rsa.bytesAt t.mem op plen) < 2 ^ (8 * plen)
     rw [hx]
-    exact VG.Proof.Ffdh.ParameterCandidate.candidate_shape (bits := 8 * plen) (by omega) _
+    exact VG.Proof.Ffdh.ParameterCandidate.candidate_shape (bits := 8 * plen) (by omega_using [hl]) _
   · intro a ha
     rw [hf a (fun i hi => ha i (hbl ▸ hi)), hm]
 

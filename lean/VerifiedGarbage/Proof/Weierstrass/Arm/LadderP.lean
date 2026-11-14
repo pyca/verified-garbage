@@ -103,7 +103,7 @@ for any `k`. -/
 @[elab_as_elim]
 theorem lay_cases {P : Nat → Prop} (k : Nat) (hk3 : 3 ≤ k) (hk6 : k ≤ 6) (h3 : P 3) (h4 : P 4)
     (h5 : P 5) (h6 : P 6) : P k := by
-  obtain rfl | rfl | rfl | rfl : k = 3 ∨ k = 4 ∨ k = 5 ∨ k = 6 := by omega
+  obtain rfl | rfl | rfl | rfl : k = 3 ∨ k = 4 ∨ k = 5 ∨ k = 6 := by omega_using [hk3, hk6]
   exacts [h3, h4, h5, h6]
 
 /-- The copies survive changes apart from them. -/

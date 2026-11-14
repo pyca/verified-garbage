@@ -76,7 +76,7 @@ theorem scheduleJoint_ct (M : Mont) (inputs : SchedulePublic → List (Operand �
     have := hbw p
     have := (ModulusSide.p.bounds p.layout).2.1
     change ModulusSide.p.words p.layout ≤ 48 at this
-    omega
+    omega_arith
   let pub (p : SchedulePublic) : ReadyProductPublic .p d :=
     { scheduleCallPublic .p d an bn ha1 haw hb1 hb1024 hd hend p with secondFits := hbw p }
   refine two_post (two_map pub ?_ (readyJoint_ct M d a b ha hb hpa hpb hd31 hT)) ?_
@@ -88,6 +88,6 @@ theorem scheduleJoint_ct (M : Mont) (inputs : SchedulePublic → List (Operand �
     refine WP.mono (readyJoint_ok M hs.1 (p.greater .p) (p.odd .p) a b ha hb has hbs
       (hbl ▸ ha1 p) (hbl ▸ haw p) (hel ▸ hb1 p) (hel ▸ hbw p) he hf hL hF d hd (hend p))
       fun t h => ⟨h.schedule hs hd (hend p) (stable p), ?_⟩
-    exact h.reduced (Nat.mod_lt _ (by have : 1 < p.layout.modulus := p.greater .p; omega)) (p.fits .p)
+    exact h.reduced (Nat.mod_lt _ (by have : 1 < p.layout.modulus := p.greater .p; omega_using [this])) (p.fits .p)
 
 end VG.Proof.Dsa.AArch64

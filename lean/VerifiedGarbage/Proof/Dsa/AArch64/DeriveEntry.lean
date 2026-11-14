@@ -104,7 +104,7 @@ theorem deriveEntry_ok {s0 : State} {B : Addr} (hs : Scr s0 B usedBytes) (h7 : s
     cases f <;> first | exact absurd rfl h1 | exact absurd rfl h2 |
       (simp only [deriveFieldMem, keyPointerMem, word_fieldWrite, reduceCtorEq, reduceIte, deriveFieldValues]; try rfl)
   · intro x hx
-    have hx' : ofs B x < 256 ∨ pWorkspace ≤ ofs B x := by omega
+    have hx' : ofs B x < 256 ∨ pWorkspace ≤ ofs B x := by omega_using [hx]
     rw [hmem5, hmem4, hmem3]
     simp only [deriveFieldMem, keyPointerMem, field_write_frame _ B _ _ x hx']
     rw [hmem1]

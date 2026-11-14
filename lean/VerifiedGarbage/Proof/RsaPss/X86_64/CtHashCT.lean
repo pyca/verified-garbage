@@ -505,7 +505,7 @@ theorem select_ct (hc : HashChecks H.P H.D n) : RelCT isa (Two (HB H dn f n)) (s
       (fun p t h => h.2.1.1) (fun _ => rfl) (fun _ => rfl) (by decide) hp) fun p t h => ?_
   obtain ⟨V, W, R, hw, fb, hf, hfb⟩ := h.2.2.1.W
   have := Nat.le_trans (Nat.le_mul_of_pos_right _ hH.B_pos) h.2.1.2.2
-  exact X86_64.WP.mono_syms (select_ok hH h.2.2.1.L R (hl_w hw).2.2 hf (by omega) (by omega)) fun u Sw sy =>
+  exact X86_64.WP.mono_syms (select_ok hH h.2.2.1.L R (hl_w hw).2.2 hf (by omega) (by omega_using [hfb, this])) fun u Sw sy =>
     ⟨h.1, h.2.1, h.2.2.1.next Sw.L Sw.keep.2.2 Sw.R hw ⟨fb, hf, hfb⟩, h.2.2.2.tr sy⟩
 
 theorem nextB_ct (hfx : FixedChecks n) : RelCT isa (Two (HB H dn f n)) (.block nextBlock) fun _ _ => True := by

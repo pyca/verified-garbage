@@ -48,8 +48,8 @@ theorem ldc_eq (v : Nat) :
   rw [BitVec.toNat_append]
   simp only [BitVec.extractLsb'_toNat, BitVec.toNat_setWidth, BitVec.toNat_ofNat, Nat.shiftLeft_eq,
     Nat.shiftRight_zero]
-  rw [Nat.mul_comm, ← Nat.two_pow_add_eq_or_of_lt (by omega)]
-  omega
+  rw [Nat.mul_comm, ← Nat.two_pow_add_eq_or_of_lt (by omega_using [])]
+  omega_using []
 
 theorem setReg_setReg (s : State) (d : Reg) (x y : BitVec 32) : (s.setReg d x).setReg d y = s.setReg d y := by
   simp only [State.setReg]
@@ -243,8 +243,8 @@ theorem callVS {name : String} {c : Prog isa} {k : Contract isa}
   refine WP.seq (WP.mono (glue_ok hg s) fun s1 e => ?_)
   subst e
   have hsp1 := glueSt_sp s (as ++ [(.r12, st)])
-  have hs4 : 4 ≤ s.sp.toNat := by omega
-  refine WP.frame (rs := [.r12]) (r := .r12) rfl (by simp only [List.length_cons, List.length_nil, hsp1]; omega)
+  have hs4 : 4 ≤ s.sp.toNat := by omega_using [hsu]
+  refine WP.frame (rs := [.r12]) (r := .r12) rfl (by simp only [List.length_cons, List.length_nil, hsp1]; omega_using [hsu])
     (by decide) ?_
   have hsp2 : (pushed [.r12] (glueSt s (as ++ [(.r12, st)]))).sp = s.sp - BitVec.ofNat 32 4 := by
     rw [pushed_sp, hsp1]; rfl
@@ -255,7 +255,7 @@ theorem callVS {name : String} {c : Prog isa} {k : Contract isa}
     rw [pushed_wr, hsp1, glueSt_wr]; rfl
   have hrd2 : (pushed [.r12] (glueSt s (as ++ [(.r12, st)]))).rd = s.rd := by
     rw [pushed_rd, glueSt_rd]
-  refine WP.callF hv hpre ?_ ?_ (by rw [hsp2']; omega) fun s3 hrd hwr hsp hf hcs hp => hQ _ ⟨fun r hr hl => ?_,
+  refine WP.callF hv hpre ?_ ?_ (by rw [hsp2']; omega_using [hsu]) fun s3 hrd hwr hsp hf hcs hp => hQ _ ⟨fun r hr hl => ?_,
     ?_, ?_, ?_, ?_⟩ ⟨s3, rfl, fun r hr => (popped_gpr hr _ _).symm, hp⟩
   · rw [hrd2, hwr2]
     intro a n ⟨r, hr, hc'⟩
@@ -287,7 +287,7 @@ theorem callVS {name : String} {c : Prog isa} {k : Contract isa}
     rw [hsp2] at hf
     refine (f₀.sub fun r hr => ?_).trans (hf.sub fun r hr => ?_)
     · rw [List.mem_singleton] at hr; subst hr
-      exact ⟨_, List.mem_append_right _ (List.mem_singleton_self _), belowA_sub (by omega)⟩
+      exact ⟨_, List.mem_append_right _ (List.mem_singleton_self _), belowA_sub (by omega_using [])⟩
     · rw [List.mem_append, List.mem_singleton] at hr
       rcases hr with hr | rfl
       · exact ⟨r, List.mem_append_left _ hr, fun _ h => h⟩

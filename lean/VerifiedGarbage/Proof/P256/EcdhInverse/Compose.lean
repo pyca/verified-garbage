@@ -8,6 +8,7 @@ import Mathlib.Tactic.NormNum.Pow
 import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Ring
+import VerifiedGarbage.Proof.Framework.Omega
 
 @[expose] public section
 
@@ -18,7 +19,7 @@ theorem second_input_cong {d f g a b : Int} (hf : f%2=1)
     (ha : a%2^44=(-f)%2^44) (hb : b%2^44=(-g)%2^44) :
     (msteps 20 (MSt.init d a b)).cong
       (msteps 20 (MSt.init d f g)).negInput 24 := by
-  have hodd : a%2=1 := by norm_num at ha; omega
+  have hodd : a%2=1 := by norm_num at ha; omega_using [hf, ha]
   have hinit : (MSt.init d a b).cong (MSt.init d (-f) (-g)) 44 :=
     ⟨rfl,rfl,rfl,rfl,rfl,ha,hb⟩
   have h := msteps_cong hodd hinit 20 (by decide)
@@ -29,12 +30,12 @@ theorem second_output_cong {a b c : Int}
     (ha : a%2^44=(-b)%2^44) (hb : b%2^24=(-c)%2^24) :
     a%2^24=c%2^24 := by
   norm_num at *
-  omega
+  omega_using [hb, ha]
 
 theorem third_input_cong {d f g a b : Int} (hf : f%2=1)
     (ha : a%2^24=f%2^24) (hb : b%2^24=g%2^24) :
     (msteps 19 (MSt.init d a b)).cong (msteps 19 (MSt.init d f g)) 5 := by
-  have hodd : a%2=1 := by norm_num at ha; omega
+  have hodd : a%2=1 := by norm_num at ha; omega_using [hf, ha]
   exact msteps_cong (t:=MSt.init d a b) (t':=MSt.init d f g) (N:=24) hodd
     ⟨rfl,rfl,rfl,rfl,rfl,ha,hb⟩ 19 (by decide)
 

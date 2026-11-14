@@ -115,7 +115,7 @@ theorem finishFrom_ok (r : Reg) {s₀ s : State} (hp : CP s₀) (hs : SrcOK r s�
     simp only [VG.Proof.ChaCha20.AArch64.Rows6.pack_get,block,Vector.getElem_zipWith]
   have hout : ∀ k : Fin 24, InRegions c.wr
       (c.gpr .x1 + BitVec.ofNat 64 (16 * k.val)) 16 := by
-    intro k; rw [hwc,hcb1]; exact hp.data _ _ (by omega)
+    intro k; rw [hwc,hcb1]; exact hp.data _ _ (by omega_using [])
   have hcbr : c.gpr r = s₀.gpr r := by
     rcases hs.reg with rfl | rfl
     · exact hcb1
@@ -124,7 +124,7 @@ theorem finishFrom_ok (r : Reg) {s₀ s : State} (hp : CP s₀) (hs : SrcOK r s�
         (by decide) (by decide) (by decide)
   have hin : ∀ k : Fin 24, InRegions (c.rd ++ c.wr)
       (c.gpr r + BitVec.ofNat 64 (16 * k.val)) 16 := by
-    intro k; rw [hrc,hwc,hcbr]; exact hs.src _ _ (by omega)
+    intro k; rw [hrc,hwc,hcbr]; exact hs.src _ _ (by omega_using [])
   have halias : c.gpr r = c.gpr .x1 ∨ (⟨c.gpr r,384⟩ : Region).Disjoint ⟨c.gpr .x1,384⟩ := by
     rw [hcbr,hcb1]
     rcases hs.alias with he | hd
@@ -154,11 +154,11 @@ theorem finishFrom_ok (r : Reg) {s₀ s : State} (hp : CP s₀) (hs : SrcOK r s�
       exact hp.st_d.sub_right (Region.sub_prefix (by decide : 384 ≤ 512))),hbc.mem]
     rw [← hb0]; exact hcntb
   · intro r
-    rw [hfd'.read (r := scalarBuf s₀) (Offset.contains_base _ (by omega) (by omega))
+    rw [hfd'.read (r := scalarBuf s₀) (Offset.contains_base _ (by omega_using []) (by omega_using []))
       (by intro q hq; simp only [List.mem_singleton] at hq; subst q
           exact (hp.d_b.sub_left (Region.sub_prefix (by decide : 384 ≤ 512))).symm.sub_left
             (Region.sub_prefix (by decide : 128 ≤ 320))) (by decide),
-      hfc.read (r := scalarBuf s₀) (Offset.contains_base _ (by omega) (by omega))
+      hfc.read (r := scalarBuf s₀) (Offset.contains_base _ (by omega_using []) (by omega_using []))
       (by intro q hq; simp only [List.mem_singleton] at hq; subst q
           exact hp.st_b.symm.sub_left (Region.sub_prefix (by decide : 128 ≤ 320))) (by decide)]
     exact h.read16 r
@@ -170,6 +170,6 @@ theorem finishFrom_ok (r : Reg) {s₀ s : State} (hp : CP s₀) (hs : SrcOK r s�
       rcases hq with rfl | rfl
       · exact hs.st_s.symm
       · exact hs.s_b.sub_right (Region.sub_prefix (by decide : 128 ≤ 320)))
-      (by change 512 ≤ 2 ^ 64; decide) (by change k < 512; omega)]
+      (by change 512 ≤ 2 ^ 64; decide) (by change k < 512; omega_using [hk])]
 
 end VG.Proof.ChaCha20.AArch64.Mixed8

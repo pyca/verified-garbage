@@ -52,17 +52,17 @@ theorem crt_productClear_ready (s : State) {base : BitVec 32} {size o a b cp cq 
   have beforeP := h.pBeforeOut
   have beforeQ := h.qBeforeOut
   have nowrap := h.workspace.nowrap
-  refine WP.mono (crt_clearWide_ok s h.workspace (by omega) (by omega : 232 + 4 ≤ size) (by decide)
-    (by omega) h.ptr h.count h.product h.stackRead h.stackSep h.saved) ?_
+  refine WP.mono (crt_clearWide_ok s h.workspace (by omega_using [headerFit]) (by omega_using [headerFit] : 232 + 4 ≤ size) (by decide)
+    (by omega_using [outFit]) h.ptr h.count h.product h.stackRead h.stackSep h.saved) ?_
   rintro t ⟨zero, outside, frame, ptr, rest⟩
-  rw [show 4 * w + 2 = 2 * w + 2 * w + 2 by omega] at zero outside
+  rw [show 4 * w + 2 = 2 * w + 2 * w + 2 by omega_using []] at zero outside
   refine ⟨⟨h.toWideProductCtx.after_frame rest frame, h.parentFit, h.pHeader, h.qHeader, beforeP, beforeQ, ptr, ?_, ?_, ?_, ?_, ?_, ?_⟩,
     zero, outside, frame, rest⟩
-  · rw [outside_read32 outside (d := 224) (by omega) (by decide)]; exact h.pLink
-  · rw [outside_read32 outside (d := 228) (by omega) (by decide)]; exact h.qLink
-  · rw [outside_read32 outside (d := cp + productOperandSlot coefficient) (by omega) (by omega)]; exact h.pArray
-  · rw [outside_read32 outside (d := cq + 64) (by omega) (by omega)]; exact h.qArray
-  · rw [outside_read32 outside (d := 232) (by omega) (by decide)]; exact h.product
-  · rw [outside_read32 outside (d := 48) (by omega) (by decide)]; exact h.count
+  · rw [outside_read32 outside (d := 224) (by omega_using [head]) (by decide)]; exact h.pLink
+  · rw [outside_read32 outside (d := 228) (by omega_using [head]) (by decide)]; exact h.qLink
+  · rw [outside_read32 outside (d := cp + productOperandSlot coefficient) (by omega_using [beforeP]) (by omega_using [outFit, beforeP, nowrap])]; exact h.pArray
+  · rw [outside_read32 outside (d := cq + 64) (by omega_using [beforeQ]) (by omega_using [outFit, beforeQ, nowrap])]; exact h.qArray
+  · rw [outside_read32 outside (d := 232) (by omega_using [head]) (by decide)]; exact h.product
+  · rw [outside_read32 outside (d := 48) (by omega_using [head]) (by decide)]; exact h.count
 
 end VG.Proof.Bignum.Arm

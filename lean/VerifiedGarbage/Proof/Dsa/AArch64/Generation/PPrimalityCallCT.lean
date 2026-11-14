@@ -26,7 +26,7 @@ def PPrimalityPublic.width (p : PPrimalityPublic)
   ptr := VG.Proof.Bignum.off (p.plan.construct.hash.W 5) Impl.Dsa.Generation.Layout.p
   len := p.plan.construct.len
   value := p.plan.construct.value
-  positive := by rcases p.plan.construct.width with h | h | h <;> omega
+  positive := by rcases p.plan.construct.width with h | h | h <;> omega_using [h]
   fits := by simpa only [show (256 : Nat) = 2 ^ 8 from rfl, ← Nat.pow_mul] using hb
 
 theorem pPrimality_width {p : PPrimalityPublic} {s : State} (h : PPrimalityAfter p s) :
@@ -54,7 +54,7 @@ theorem pPrimality_primeCall {p : PPrimalityPublic} {s : State} (h : PPrimalityA
   obtain ⟨V, W, R, hw, hu⟩ := h.frame
   have hc : Impl.Dsa.AArch64.ProbablePrime.candidate (8 * p.plan.construct.len) = Impl.Dsa.Generation.Layout.p := by
     change (if 8 * p.plan.construct.len ≤ 256 then _ else _) = _
-    exact ite_eq_right (by rcases p.plan.construct.width with hh | hh | hh <;> omega)
+    exact ite_eq_right (by rcases p.plan.construct.width with hh | hh | hh <;> omega_using [hh])
   exact ⟨W, V, {
     layout := h.layout
     rep := R

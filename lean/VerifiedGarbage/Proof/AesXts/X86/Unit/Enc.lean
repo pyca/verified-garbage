@@ -80,15 +80,15 @@ theorem AllPost.keep {enc : Bool} {N : Nat} {s s' : State} (h : AllPost enc s₀
 
 theorem UPre.l_fit : (Lv s₀).toNat + 16 + B s₀ ≤ 2 ^ 32 := by
   have := hp.data_fit; have := len_eq s₀; have := hp.m_pos
-  rw [hp.dataN (by omega)]
-  omega
+  rw [hp.dataN (by omega_arith)]
+  omega_arith
 
 theorem UPre.lb_in {s : State} (hwr : s.wr = s₀.wr) (i : Nat) (hi : i < 16 + B s₀) :
     InRegions s.wr (L s₀ + BitVec.ofNat 64 i) 1 := by
   have : B s₀ < 16 := Nat.mod_lt _ (by decide)
   rw [hwr, hp.wr]
   exact ⟨dataR s₀, by simp,
-    hp.lb_sub _ (Offset.contains_base (L s₀) (d := i) (n := 1) (k := 16 + B s₀) (by omega) (by omega))⟩
+    hp.lb_sub _ (Offset.contains_base (L s₀) (d := i) (n := 1) (k := 16 + B s₀) (by omega_using [hi]) (by omega_using [hi, this]))⟩
 
 /-- The code of the steal before its call. -/
 abbrev stealPre : Prog isa := .seq (.seq (.block lastAddr) swap) (.block (argsL tO))
@@ -143,7 +143,7 @@ theorem encLastCall_wp {f : Impl.Aes.X86.Blocks} (hf : XFn true f) {s : State} {
       rcases hr with rfl | rfl | rfl
       · exact hp.tl_blocks
       · exact hp.data_scr.sub_left hp.tl_sub
-      · exact hp.stk_data.symm.sub_left hp.tl_sub) (by omega)
+      · exact hp.stk_data.symm.sub_left hp.tl_sub) (by omega_using [hb])
   · have o := c.out
     rw [aT, aL] at o
     rw [Proof.AesXts.Unit.crypt_one_of o,
@@ -151,12 +151,12 @@ theorem encLastCall_wp {f : Impl.Aes.X86.Blocks} (hf : XFn true f) {s : State} {
       Proof.Cmac.bytesAt_frame sw (fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr
         exact (hp.data_scr.symm.sub_left (sub_trans t_sub s_sub)).sub_right hp.lb_sub) (by decide), htw]
-  · rw [call_keeps hp (X := ⟨Da s₀, 16 * (M s₀ - 1)⟩) (blocks_sub (by omega)) (by rw [aL]; exact hp.hd_l)
-      tS h.inv.esp c (by dsimp only; have := hp.wrapD; omega), h.mem]
+  · rw [call_keeps hp (X := ⟨Da s₀, 16 * (M s₀ - 1)⟩) (blocks_sub (by omega_using [])) (by rw [aL]; exact hp.hd_l)
+      tS h.inv.esp c (by dsimp only; have := hp.wrapD; omega_using [this]), h.mem]
     exact Proof.Cmac.bytesAt_frame sw (fun r hr => by
-      simp only [List.mem_singleton] at hr; subst hr; exact hp.hd_lb) (by dsimp only; have := hp.wrapD; omega)
+      simp only [List.mem_singleton] at hr; subst hr; exact hp.hd_lb) (by dsimp only; have := hp.wrapD; omega_using [this])
   · rw [call_keeps hp (X := ⟨L s₀ + 16, B s₀⟩) hp.tl_sub (by rw [aL]; exact tl_l) tS h.inv.esp c
-      (by dsimp only; omega), h.mem]
+      (by dsimp only; omega_using [hb]), h.mem]
 
 /-- The postcondition, from the bytes of the data unit. -/
 theorem unit_post {enc : Bool} {s' : State}
@@ -174,7 +174,7 @@ theorem unit_post {enc : Bool} {s' : State}
 theorem ready_wp {s : State} (h : TwPost s₀ s) : WP isa (.block argsAll) s (BlocksReady s₀ (M s₀)) :=
   blk (argsAll_wp (Inv.args hp h.inv) fun s₂ c ax cx dx bx di bp => WP.block_nil (by
     have h₂ := TwPost.keep hp h (c.gpr _ (by decide)) c.mem c.rd c.wr
-    exact ⟨h₂, xpre_blocks hp h₂.inv.rd h₂.inv.wr h₂.inv.esp (N := M s₀) (by rw [len_eq s₀]; omega) ax
+    exact ⟨h₂, xpre_blocks hp h₂.inv.rd h₂.inv.wr h₂.inv.esp (N := M s₀) (by rw [len_eq s₀]; omega_using []) ax
       (by rw [cx, r_ofNat]) dx bx di bp⟩))
 
 theorem splitAll_wp {enc : Bool} {N : Nat} {s : State} (h : AllPost enc s₀ N s) :
@@ -199,7 +199,7 @@ theorem encrypt_wp {f : Impl.Aes.X86.Blocks} (hf : XFn true f) :
     WP isa (encrypt f) s₀ fun s' => abiPreserved s₀ s' ∧ (unitX86 true).post s₀ s' := by
   refine WP.seq (WP.mono (tweak_wp hp hf) fun s₁ h₁ => ?_)
   refine WP.seq (WP.mono (ready_wp hp h₁) fun s₂ h₂ => ?_)
-  refine WP.seq (WP.mono (blocks_call hp hf (by rw [len_eq s₀]; omega) h₂.tw h₂.pre) fun s₃ ⟨h₃, _⟩ => ?_)
+  refine WP.seq (WP.mono (blocks_call hp hf (by rw [len_eq s₀]; omega_using []) h₂.tw h₂.pre) fun s₃ ⟨h₃, _⟩ => ?_)
   refine WP.seq (WP.mono (splitAll_wp hp h₃) fun s₄ h₄ => ?_)
   refine WP.seq (WP.mono (WP.ite (decide (B s₀ = 0)) (eval_b h₄.zf)
     (fun hb => WP.block_nil (whole_fin h₄.all (by simpa using hb)))

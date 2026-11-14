@@ -1,5 +1,6 @@
 module
 public import VerifiedGarbage.Proof.Divstep.BatchBasic
+import VerifiedGarbage.Proof.Framework.Omega
 
 
 @[expose] public section
@@ -11,18 +12,18 @@ def MSt.negInput (t : MSt) : MSt := {t with f := -t.f, g := -t.g}
 
 theorem mstep_negInput {t : MSt} (hf : t.f%2=1) :
     mstep t.negInput=(mstep t).negInput := by
-  have hg : (-t.g)%2=t.g%2 := by omega
+  have hg : (-t.g)%2=t.g%2 := by omega_using []
   unfold mstep MSt.negInput
   simp only [hg]
   split
   · rename_i h
     congr 1
     dsimp only
-    omega
+    omega_using [hf, h]
   · rename_i h
     congr 1
     rcases Int.emod_two_eq_zero_or_one t.g with hg|hg <;> simp only [hg]
-    all_goals omega
+    all_goals omega_arith
 
 theorem msteps_negInput {t : MSt} (hf : t.f%2=1) (n : Nat) :
     msteps n t.negInput=(msteps n t).negInput := by

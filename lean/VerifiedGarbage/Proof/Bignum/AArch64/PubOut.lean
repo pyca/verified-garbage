@@ -27,9 +27,9 @@ open VG.Proof.MlKem.AArch64 (Keep)
 /-- A header slot of the workspace at `x0`, readable. -/
 theorem Good.ld {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} (hg : Good s B Z w minv)
     (hZ : slot w 8 ≤ Z) {i : Nat} (hi : i < 32) : InRegions (s.rd ++ s.wr) (off B (8 * i)) 8 :=
-  hg.scr.ld (by have := hdr_lt_slot w 8 hi; omega)
+  hg.scr.ld (by have := hdr_lt_slot w 8 hi; omega_using [hZ, this])
 
-theorem sArr_lt {j : Nat} (hj : j < 8) : sArr j < 32 := by unfold sArr; omega
+theorem sArr_lt {j : Nat} (hj : j < 8) : sArr j < 32 := by unfold sArr; omega_using [hj]
 
 /-- Array `j`, masked, to `out`, and the mask's low bit returned. -/
 def outStepsArr (j : Nat) : List (Prog isa) := [
@@ -63,14 +63,14 @@ theorem outArr_ok {s : State} {B : Addr} {Z k : Nat} {minv : BitVec 64} {op : Ad
       hdr_enc (show sMask < 32 by decide), hg.ld hZ (sArr_lt hj), hg.ld hZ (show sOut < 32 by decide),
       hg.ld hZ (show sK < 32 by decide), hg.ld hZ (show sMask < 32 by decide), hg.hdr.harr j hj, hO, hK, hM])
     rfl rfl rfl) fun s₁ ⟨⟨h8', h1, h9, h15, hm₁⟩, k₁⟩ => ?_)
-  refine WP.seq (WP.mono (storeBE_ok (hs.congr k₁.wr) h8' h1 h9 h15 hk1 hk' rfl (by omega)
+  refine WP.seq (WP.mono (storeBE_ok (hs.congr k₁.wr) h8' h1 h9 h15 hk1 hk' rfl (by omega_using [hZ, lj])
     (fun i hi => by rw [k₁.wr]; exact hout i hi) hsep) fun s₂ ⟨hb, hfr, hwr, hrd, k₂⟩ => ?_)
   have hM₂ : word s₂.mem B (8 * sMask) = mask c := by
     rw [← hM, ← hm₁]
     exact Mem.readW_congr fun i hi => hfr _ fun q hq heq => by
       have := hsep q hq
-      rw [← heq, ofs_off B (by unfold sMask sFn; omega)] at this
-      unfold sMask sFn at this; omega
+      rw [← heq, ofs_off B (by unfold sMask sFn; omega_using [hi])] at this
+      unfold sMask sFn at this; omega_using [hj, hZ, hk1, hk', hO, hK, hM, hn, h8, lj, h8', h1, h9, h15, hi, hq, this]
   have h0₂ : s₂.gpr .x0 = B := ((k₁.trans k₂).gpr .x0 (by decide)).trans hg.x0
   have hl₂ : InRegions (s₂.rd ++ s₂.wr) (off B (8 * sMask)) 8 := by
     rw [hrd, hwr, k₁.rd, k₁.wr]; exact hg.ld hZ (show sMask < 32 by decide)

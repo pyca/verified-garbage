@@ -20,8 +20,8 @@ theorem rotate28_ok (s : State) (r : Reg) (hr : r ≠ .rax)
       s'.gpr r = (x.rotateLeft n).setWidth 64 ∧
       s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧
       (∀ r', r' ≠ r → r' ≠ .rax → s'.gpr r' = s.gpr r') := by
-  have hleft : 1 ≤ 64 - n ∧ 64 - n ≤ 63 := by omega
-  have hright : 1 ≤ 28 - n ∧ 28 - n ≤ 63 := by omega
+  have hleft : 1 ≤ 64 - n ∧ 64 - n ≤ 63 := by omega_using [hn, hn']
+  have hright : 1 ≤ 28 - n ∧ 28 - n ≤ 63 := by omega_using [hn']
   refine ⟨_, by
     simp only [Key.rotate28, rr, runBlock_cons, runStep_some, runBlock_nil, reduceExec,
       execAlu, execShift, readSrc, hleft, hright, and_self, ite_true, hr, Ne.symm hr,

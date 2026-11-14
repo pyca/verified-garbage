@@ -31,7 +31,7 @@ open VG.Proof.MlKem.X86 (Only wp_cons toNat_ofNat32 eq_ofNat_of_toNat E0 P0 fram
 theorem qImm_toNat : qImm.toNat = q := rfl
 
 theorem sub_val (x y : Spec.MlDsa.Zq) : (x - y).val = (x.val + q - y.val) % q := by
-  rw [val_sub', show x.val + (q - y.val) = x.val + q - y.val by have := y.isLt; omega]
+  rw [val_sub', show x.val + (q - y.val) = x.val + q - y.val by have := y.isLt; omega_using []]
 
 theorem mod_q_lt32 (x : Nat) : x % q < 2 ^ 32 := Nat.lt_of_lt_of_le (Nat.mod_lt _ (by decide)) (by decide)
 
@@ -46,13 +46,13 @@ theorem csubQ_eq (x d : BitVec 32) (hx : x.toNat < 2 * q) :
   · rw [decide_eq_true h]
     have e : (d - d - (BitVec.ofBool true).setWidth 32) &&& qImm = qImm := by
       rw [BitVec.sub_self]; decide
-    rw [e, BitVec.sub_add_cancel, BitVec.toNat_ofNat, Nat.mod_eq_of_lt h, Nat.mod_eq_of_lt (by omega)]
+    rw [e, BitVec.sub_add_cancel, BitVec.toNat_ofNat, Nat.mod_eq_of_lt h, Nat.mod_eq_of_lt (by omega_using [])]
   · rw [decide_eq_false h]
     have e : (d - d - (BitVec.ofBool false).setWidth 32) &&& qImm = 0 := by
       rw [BitVec.sub_self]; decide
     rw [e, show x - qImm + 0 = x - qImm from BitVec.add_zero _, BitVec.toNat_sub, qImm_toNat, q_eq,
       BitVec.toNat_ofNat]
-    omega
+    omega_using [hx, h]
 
 /-- The value `mredRaw` leaves, from the halves `hi` and `lo` of `x`. -/
 theorem mredRaw_val (hi lo : BitVec 32) (hx : hi.toNat * 2 ^ 32 + lo.toNat < q * 2 ^ 32) :
@@ -66,7 +66,7 @@ theorem mredRaw_val (hi lo : BitVec 32) (hx : hi.toNat * 2 ^ 32 + lo.toNat < q *
   rw [hm, qImm_toNat, BitVec.toNat_ofNat, show BitVec.toNat (4294967295 : BitVec 32) = 4294967295 from rfl]
   have hlt := mont_lt hx
   rw [mont_halves] at hlt ⊢
-  have e1 : (hi.toNat * 2 ^ 32 + lo.toNat) / 2 ^ 32 = hi.toNat := by omega
+  have e1 : (hi.toNat * 2 ^ 32 + lo.toNat) / 2 ^ 32 = hi.toNat := by omega_using []
   rw [e1] at hlt ⊢
   rw [BitVec.toNat_add, BitVec.toNat_add, BitVec.toNat_ofNat, BitVec.toNat_setWidth, BitVec.toNat_ofBool]
   have hP := Nat.mod_lt (montM (hi.toNat * 2 ^ 32 + lo.toNat) * q) (show 0 < 2 ^ 32 by decide)
@@ -75,12 +75,12 @@ theorem mredRaw_val (hi lo : BitVec 32) (hx : hi.toNat * 2 ^ 32 + lo.toNat < q *
   rw [q_eq] at hlt
   have hh := hi.isLt
   by_cases hc : 1 ≤ P % 2 ^ 32
-  · rw [decide_eq_true (by omega), ite_eq_left_of_eq_true _ _ (eq_true hc)] at *
+  · rw [decide_eq_true (by omega_using [hc]), ite_eq_left_of_eq_true _ _ (eq_true hc)] at *
     simp only [Bool.toNat_true] at *
-    omega
-  · rw [decide_eq_false (by omega), ite_eq_right_of_eq_false _ _ (eq_false hc)] at *
+    omega_using [hlt]
+  · rw [decide_eq_false (by omega_using [hc]), ite_eq_right_of_eq_false _ _ (eq_false hc)] at *
     simp only [Bool.toNat_false] at *
-    omega
+    omega_using [hlt]
 
 /-- `mredRaw r` leaves `mont x` in `r` from `x` in `edx:eax`, changing only
 `eax`, `edx`, `r` and the flags. -/
@@ -121,7 +121,7 @@ theorem csubQ_spec {r t : Reg} (h : r ≠ t) (is : List Instr) (s : State) (P : 
   · simp only [ite_true]
     have := Nat.mod_lt (s.gpr r).toNat (show q > 0 by decide)
     rw [q_eq] at this
-    rw [csubQ_eq _ _ hr, toNat_ofNat32 (by rw [q_eq]; omega)]
+    rw [csubQ_eq _ _ hr, toNat_ofNat32 (by rw [q_eq]; omega_using [])]
 
 /-- `mred r` leaves `mont x mod q` in `r` from `x` in `edx:eax`, changing
 only `eax`, `edx`, `r` and the flags. -/
@@ -150,7 +150,7 @@ theorem execMul_pair (r : Reg) (s : State) :
   rw [execMul_edx, execMul_eax, BitVec.toNat_ofNat, BitVec.toNat_ofNat]
   have := Nat.mul_lt_mul_of_lt_of_lt (s.gpr .eax).isLt (s.gpr r).isLt
   generalize (s.gpr .eax).toNat * (s.gpr r).toNat = p at this ⊢
-  omega
+  omega_using [this]
 
 /-- `mov d, imm` -/
 theorem wp_movi {d : Reg} {v : BitVec 32} {is : List Instr} {s : State} {Q : State → Prop}
@@ -175,7 +175,7 @@ theorem P0_mem {s₀ : State} (h : 16 ≤ (E0 s₀).toNat) : Frame [frameR s₀]
 /-- Coefficient `k` at the pointer `x + 4k`. -/
 theorem ea_ptr {x : BitVec 32} (hx : x.toNat + 1024 ≤ 2 ^ 32) {k : Nat} (hk : k < 256) :
     (x + BitVec.ofNat 32 (4 * k) + BitVec.ofNat 32 0).setWidth 64 = coeffAddr (x.setWidth 64) k := by
-  rw [ea_add (by omega), Nat.add_zero]
+  rw [ea_add (by omega_using [hx, hk]), Nat.add_zero]
 
 /-- All-zero memory holds a reduced polynomial. -/
 theorem reduced_of_zero {m : Mem} {p : Addr} (h : ∀ k < 1024, m (p + BitVec.ofNat 64 k) = 0) :
@@ -187,6 +187,6 @@ theorem reduced_of_zero {m : Mem} {p : Addr} (h : ∀ k < 1024, m (p + BitVec.of
 theorem reduced_below {m : Mem} (hm : ∀ a : Addr, a.toNat < 0x5000 → m a = 0) (p : Nat)
     (hp : p + 1024 ≤ 0x5000) : Proof.MlDsa.Reduced m (BitVec.ofNat 64 p) :=
   reduced_of_zero fun k hk => hm _ (by
-    rw [BitVec.toNat_add, BitVec.toNat_ofNat, BitVec.toNat_ofNat]; omega)
+    rw [BitVec.toNat_add, BitVec.toNat_ofNat, BitVec.toNat_ofNat]; omega_using [hp, hk])
 
 end VG.Proof.MlDsa.X86.Arith

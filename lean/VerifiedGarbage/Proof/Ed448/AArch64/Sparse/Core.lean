@@ -63,9 +63,9 @@ theorem JointFrame.word {base:Addr} {m m':Mem} (h:JointFrame base m m') {d:Nat}
     (h3:d+8≤GSAVE ∨ GSAVE+64≤d) (hd:d+8≤8192) : word m' base d=word m base d := by
   apply Mem.readW_congr
   intro i hi
-  exact h _ (by rw [VG.Proof.X448.AArch64.ofs_off base (by omega)];omega)
-    (by rw [VG.Proof.X448.AArch64.ofs_off base (by omega)];omega)
-    (by rw [VG.Proof.X448.AArch64.ofs_off base (by omega)];omega)
+  exact h _ (by rw [VG.Proof.X448.AArch64.ofs_off base (by omega_using [hd, hi])];omega_using [h1, hi])
+    (by rw [VG.Proof.X448.AArch64.ofs_off base (by omega_using [hd, hi])];omega_using [h2, hi])
+    (by rw [VG.Proof.X448.AArch64.ofs_off base (by omega_using [hd, hi])];omega_using [h3, hi])
 
 theorem BaseTableAt.of_frame {base p:Addr} {s t:State} (ht:BaseTableAt s base p)
     (hrw:t.rd++t.wr=s.rd++s.wr) (h:JointFrame base s.mem t.mem) : BaseTableAt t base p:=by
@@ -78,23 +78,23 @@ theorem BaseTableAt.of_frame {base p:Addr} {s t:State} (ht:BaseTableAt s base p)
     have he:p+BitVec.ofNat 64 (8*i)+BitVec.ofNat 64 j=p+BitVec.ofNat 64 (8*i+j):=
       VG.Offset.add_add _ _ _
     rw [he]
-    have hf:=ht.far (8*i+j) (by omega)
-    exact h _ (Or.inr (by omega)) (Or.inr (by simp only [ACC];omega))
-      (Or.inr (by simp only [GSAVE];omega))
+    have hf:=ht.far (8*i+j) (by omega_using [hi, hj])
+    exact h _ (Or.inr (by omega_using [hf])) (Or.inr (by simp only [ACC];omega_using [hf]))
+      (Or.inr (by simp only [GSAVE];omega_using [hf]))
 
 theorem JointFrame.keyDigit {base:Addr} {m m':Mem} (h:JointFrame base m m') {i:Nat} (hi:i<464) :
     m' (VG.Proof.X448.AArch64.off base (VG.Impl.X448.AArch64.BITS+i))=
       m (VG.Proof.X448.AArch64.off base (VG.Impl.X448.AArch64.BITS+i)):=by
   apply h
-  all_goals rw [VG.Proof.X448.AArch64.ofs_off' base (by simp only [VG.Impl.X448.AArch64.BITS];omega)]
-  all_goals simp only [VG.Impl.X448.AArch64.BITS,ACC,GSAVE];omega
+  all_goals rw [VG.Proof.X448.AArch64.ofs_off' base (by simp only [VG.Impl.X448.AArch64.BITS];omega_using [hi])]
+  all_goals simp only [VG.Impl.X448.AArch64.BITS,ACC,GSAVE];omega_arith
 
 theorem JointFrame.baseDigit {base:Addr} {m m':Mem} (h:JointFrame base m m') {i:Nat} (hi:i<464) :
     m' (VG.Proof.X448.AArch64.off base (VG.Impl.Ed448.AArch64.Sparse.SDIG+i))=
       m (VG.Proof.X448.AArch64.off base (VG.Impl.Ed448.AArch64.Sparse.SDIG+i)):=by
   apply h
-  all_goals rw [VG.Proof.X448.AArch64.ofs_off' base (by simp only [VG.Impl.Ed448.AArch64.Sparse.SDIG];omega)]
-  all_goals simp only [VG.Impl.Ed448.AArch64.Sparse.SDIG,ACC,GSAVE];omega
+  all_goals rw [VG.Proof.X448.AArch64.ofs_off' base (by simp only [VG.Impl.Ed448.AArch64.Sparse.SDIG];omega_using [hi])]
+  all_goals simp only [VG.Impl.Ed448.AArch64.Sparse.SDIG,ACC,GSAVE];omega_arith
 
 theorem PointKeep.keyDigit {base:Addr} {s t:State} (h:PointKeep base s t) {i:Nat} (hi:i<464) :
     t.mem (VG.Proof.X448.AArch64.off base (VG.Impl.X448.AArch64.BITS+i))=
@@ -117,7 +117,7 @@ theorem BaseTableAt.of_far {base p:Addr} {s t:State} (ht:BaseTableAt s base p)
   intro j hj
   have he:p+BitVec.ofNat 64 (8*i)+BitVec.ofNat 64 j=p+BitVec.ofNat 64 (8*i+j):=Offset.add_add _ _ _
   rw [he]
-  exact hm _ (ht.far _ (by omega))
+  exact hm _ (ht.far _ (by omega_using [hi, hj]))
 
 end VG.Proof.Ed448.AArch64.Sparse
 end
@@ -175,8 +175,8 @@ theorem Core.regsOnly {base:Addr} {s t:State} {rs:List Reg} (h:Core base s)
 theorem JointFrame.oddTable {base:Addr} {m m':Mem} {P:Spec.Ed448.Point}
     (k:JointFrame base m m') (ht:OddTabOk m base P 8) : OddTabOk m' base P 8:=by
   have hm:∀ e<8,∀ w<24,Window.tw m' base e w=Window.tw m base e w:=fun e he w hw =>
-    k.word (Or.inr (by simp only [TAB];omega)) (Or.inr (by simp only [ACC,TAB];omega))
-      (Or.inl (by simp only [TAB,GSAVE];omega)) (by simp only [TAB];omega)
+    k.word (Or.inr (by simp only [TAB];omega_using [])) (Or.inr (by simp only [ACC,TAB];omega_using []))
+      (Or.inl (by simp only [TAB,GSAVE];omega_using [he, hw])) (by simp only [TAB];omega_using [he, hw])
   intro e he
   refine ⟨?_,fun w hw => ?_⟩
   · rw [Window.TPt_of_tw (hm e he)]
@@ -188,8 +188,8 @@ theorem JointFrame.xbounds {base:Addr} {m m':Mem} (k:JointFrame base m m')
     (hxb:∀ e<8,∀ w<8,(Window.tw m base e w).toNat<Mb) :
     ∀ e<8,∀ w<8,(Window.tw m' base e w).toNat<Mb:=by
   intro e he w hw
-  rw [Window.tw,k.word (Or.inr (by simp only [TAB];omega)) (Or.inr (by simp only [ACC,TAB];omega))
-    (Or.inl (by simp only [TAB,GSAVE];omega)) (by simp only [TAB];omega)]
+  rw [Window.tw,k.word (Or.inr (by simp only [TAB];omega_using [])) (Or.inr (by simp only [ACC,TAB];omega_using []))
+    (Or.inl (by simp only [TAB,GSAVE];omega_using [he, hw])) (by simp only [TAB];omega_using [he, hw])]
   exact hxb e he w hw
 
 theorem acc_of_same {base:Addr} {m m':Mem} {os:List Index} (h:Same base os m m')

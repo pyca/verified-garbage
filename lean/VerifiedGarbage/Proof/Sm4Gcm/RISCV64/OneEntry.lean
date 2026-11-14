@@ -50,8 +50,8 @@ theorem one1_wp {s₀ : State} {off : Nat} {W : Addr} (hoff : off = 0 ∨ off = 
     WP isa (.block (oneEntry off)) s₀ (SO1 W s₀) := by
   simp only [oneEntry, List.cons_append, List.nil_append]
   refine Steps.wp_addSp (imm := 0) (by decide) fun sA uA => ?_
-  refine Steps.wp_ld (off := off) (a := s₀.sp + BitVec.ofNat 64 off) (by omega) (by rw [uA.gpr, add_ofNat_zero])
-    (Spill.al8 (by omega) (by omega)) (by rw [uA.rd, uA.wr]; exact hWi) fun sB uB => ?_
+  refine Steps.wp_ld (off := off) (a := s₀.sp + BitVec.ofNat 64 off) (by omega_using [hoff]) (by rw [uA.gpr, add_ofNat_zero])
+    (Spill.al8 (by omega_using [hsa]) (by omega_using [hoff])) (by rw [uA.rd, uA.wr]; exact hWi) fun sB uB => ?_
   have b12 : sB.gpr .t1 = W := by rw [uB.gpr, uA.mem, hWv]
   rw [WP.block_append_iff]
   refine WP.mono (save_ok (b := .t1) (by rw [b12, uB.wr, uA.wr]; exact hW) (by rw [b12]; exact hWa))
@@ -102,7 +102,7 @@ theorem one1_wp {s₀ : State} {off : Nat} {W : Addr} (hoff : off = 0 ∨ off = 
         (List.mem_singleton_self _) _ (Offset.contains _ (by decide) (by decide) (by decide))).writeW
         (List.mem_singleton_self _) _ (Offset.contains _ (by decide) (by decide) (by decide))
   have dS : ∀ {d : Nat}, 232 ≤ d → d + 8 ≤ 248 → (savedR W).Disjoint ⟨W + BitVec.ofNat 64 d, 8⟩ :=
-    fun h₁ h₂ => Offset.disjoint _ (.inl (by omega)) (by omega) (by omega)
+    fun h₁ h₂ => Offset.disjoint _ (.inl (by omega_using [h₁])) (by omega_using []) (by omega_using [h₂])
   refine ⟨⟨by rw [rd₁₃], by rw [wr₁₃], by rw [sp₁₃]⟩, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · rw [m₁₃, ← hM]
     exact (sv₂.frame ((Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ _))

@@ -96,10 +96,10 @@ theorem margs_vp (P : EP) (hP : ∃ σ, In h.D P σ) :
   swap
   · exact VP.empty fun σ s h' => hf h'.2.1.1.2.1
   have hK := hi₀.k1024
-  have hlo : lo P ≤ 1 := by unfold lo; split <;> omega
-  have hdb : P.sl + 1 ≤ dbN h P := by unfold dbN; have := hf.2; omega
-  have hsum : lo P + dbN h P + h.D + 1 = P.K := by unfold dbN; have := hf.2; omega
-  have hD : h.D ≤ 64 := by have := h.D_le; have := h.N_le; omega
+  have hlo : lo P ≤ 1 := by unfold lo; split <;> omega_using []
+  have hdb : P.sl + 1 ≤ dbN h P := by unfold dbN; have := hf.2; omega_using [this]
+  have hsum : lo P + dbN h P + h.D + 1 = P.K := by unfold dbN; have := hf.2; omega_using [this]
+  have hD : h.D ≤ 64 := by have := h.D_le; have := h.N_le; omega_arith
   have e1 : oEm = 1024 := rfl
   have e2 : oRsa = 8192 := rfl
   have fit := hg.fit
@@ -134,21 +134,21 @@ theorem margs_vp (P : EP) (hP : ∃ σ, In h.D P σ) :
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl <;> exact away3_slot (by decide) (.inr (by decide))
   have he' : ∀ i < P.K, t10.mem (sa P.scr (oEm + i)) = emC h P σ i := fun i hi =>
-    by rw [sbytes_keep (o := oEm) (n := P.K) fr (dis _ _ (by omega)) (by omega) he i hi]
+    by rw [sbytes_keep (o := oEm) (n := P.K) fr (dis _ _ (by omega_using [hK, e1, e2])) (by omega_using [hK, e1]) he i hi]
   refine ⟨c, ⟨⟨kp, fun i hi => ?_, ?_⟩, r1, r2, r3, r4⟩, fun i hi => ?_, fun i hi => ?_⟩
-  · rw [he' i (by omega)]
+  · rw [he' i (by omega_using [hsum, hi])]
     unfold emC emB emA
-    rw [ite_eq_right (by omega), ite_eq_left (by omega), ite_eq_left hi]
-  · rw [he' _ (by omega)]
+    rw [ite_eq_right (by omega_using [hsum, hi]), ite_eq_left (by omega_using [hi]), ite_eq_left hi]
+  · rw [he' _ (by omega_using [hsum])]
     exact ite_eq_left rfl
-  · rw [Nat.add_assoc, he' _ (by omega)]
+  · rw [Nat.add_assoc, he' _ (by omega_using [hsum, hi])]
     unfold emC emB emA
-    rw [ite_eq_right (by omega), ite_eq_left (by omega), ite_eq_right (by omega), ite_eq_left (by omega),
+    rw [ite_eq_right (by omega_using [hsum, hi]), ite_eq_left (by omega_using [hi]), ite_eq_right (by omega_using []), ite_eq_left (by omega_using [hi]),
       Nat.add_sub_cancel_left]
-  · rw [Nat.add_assoc, Nat.add_assoc, he' _ (by omega)]
+  · rw [Nat.add_assoc, Nat.add_assoc, he' _ (by omega_using [hsum, hi])]
     unfold emC emB
-    rw [ite_eq_right (by omega), ite_eq_right (by omega), ite_eq_left (by omega)]
-    congr 1; omega
+    rw [ite_eq_right (by omega_using [hsum, hi]), ite_eq_right (by omega_using []), ite_eq_left (by omega_using [hi])]
+    congr 1; omega_using []
 
 /-- `maskedDB`, before its first byte's top bits are cleared: MGF1 with the
 hash function `g` of the table at the argument 23. -/
@@ -167,10 +167,10 @@ theorem mask_vp (P : EP) (hP : ∃ σ, In h.D P σ) (g : OHash) {fG : Fns}
   swap
   · exact VP.empty fun σ s h' => hf h'.1.2.1.1.2.1
   have hK := hi₀.k1024
-  have hlo : lo P ≤ 1 := by unfold lo; split <;> omega
-  have hdb : P.sl + 1 ≤ dbN h P := by unfold dbN; have := hf.2; omega
-  have hsum : lo P + dbN h P + h.D + 1 = P.K := by unfold dbN; have := hf.2; omega
-  have hD : h.D ≤ 64 := by have := h.D_le; have := h.N_le; omega
+  have hlo : lo P ≤ 1 := by unfold lo; split <;> omega_using []
+  have hdb : P.sl + 1 ≤ dbN h P := by unfold dbN; have := hf.2; omega_using [this]
+  have hsum : lo P + dbN h P + h.D + 1 = P.K := by unfold dbN; have := hf.2; omega_using [this]
+  have hD : h.D ≤ 64 := by have := h.D_le; have := h.N_le; omega_arith
   have hD0 : 0 < h.D := h.D_pos
   have hS := g.S_le
   have hW := g.Wb_le
@@ -178,7 +178,7 @@ theorem mask_vp (P : EP) (hP : ∃ σ, In h.D P σ) (g : OHash) {fG : Fns}
   have e1 : oEm = 1024 := rfl
   have e2 : oRsa = 8192 := rfl
   have fit := hg.fit
-  have hC : (P.lay h.D).C ≤ 2 ^ 32 := by have := ok.BC; have := (P.lay h.D).B.isLt; omega
+  have hC : (P.lay h.D).C ≤ 2 ^ 32 := by have := ok.BC; have := (P.lay h.D).B.isLt; omega_arith
   have e4 : Impl.RsaOaep.X86.oCtr = 768 := rfl
   have e5 : Impl.RsaOaep.X86.oBuf = 2048 := rfl
   -- What `mgfXor` writes misses the parameters and the bytes of `EM` outside `DB` and `H`.
@@ -206,7 +206,7 @@ theorem mask_vp (P : EP) (hP : ∃ σ, In h.D P σ) (g : OHash) {fG : Fns}
       rw [← h0 i hi]; exact hf' _ fun r hr => (away r hr).2 i (.inl hi),
       by rw [← hbc]; exact hf' _ fun r hr => (away r hr).2 _ (.inr rfl)⟩
   have mp := mpOf g hg (so := oEm + lo P + dbN h P) (sl := h.D) (dOff := oEm + lo P) (dl := dbN h P) hD0
-    (by omega) (by omega) (by omega) (by pomega) (by pomega) (.inr (Nat.le_refl _)) (seed := Hs h P)
+    (by omega_using [hdb]) (by omega_using []) (by omega_using []) (by pomega) (by pomega) (.inr (Nat.le_refl _)) (seed := Hs h P)
     (fun σ => Hs_length h P σ) hX (sg_arg h (j := 23) (by decide)) hi₀.tbl Proof.RsaOaep.X86.tabArg23_taint
     (fun σ m hk => hT σ hk.1.1.tabT) fne
   exact VP.seq (VP.syms (margs_vp h P ⟨σ₀, hi₀⟩)) ((Proof.RsaOaep.X86.mgf_vp g mp (dstv := dbv h P)).mono (fun _ _ h => h)
@@ -234,9 +234,9 @@ theorem top_vp (G : Spec.Mgf1.Hash) (P : EP) (hP : ∃ σ, In h.D P σ) :
   swap
   · exact VP.empty fun σ s h' => hf h'.2.1.1.2.1
   have hK := hi₀.k1024
-  have hlo : lo P ≤ 1 := by unfold lo; split <;> omega
-  have hdb : P.sl + 1 ≤ dbN h P := by unfold dbN; have := hf.2; omega
-  have hsum : lo P + dbN h P + h.D + 1 = P.K := by unfold dbN; have := hf.2; omega
+  have hlo : lo P ≤ 1 := by unfold lo; split <;> omega_using []
+  have hdb : P.sl + 1 ≤ dbN h P := by unfold dbN; have := hf.2; omega_using [this]
+  have hsum : lo P + dbN h P + h.D + 1 = P.K := by unfold dbN; have := hf.2; omega_using [this]
   have e1 : oEm = 1024 := rfl
   have e2 : oRsa = 8192 := rfl
   have e3 : oY = 2048 := rfl
@@ -261,9 +261,9 @@ theorem top_vp (G : Spec.Mgf1.Hash) (P : EP) (hP : ∃ σ, In h.D P σ) :
     · rw [h₁.1.1.st.sp, h₂.1.1.st.sp]
     · rw [h₁.2, h₂.2]
   · have ad : addr (P.scr + BitVec.ofNat 32 (oEm + lo P)) 0 = sa P.scr (oEm + lo P) := by
-      rw [hg.addrD (by omega), Nat.add_zero]
-    have rd : InRegions (s.rd ++ s.wr) (sa P.scr (oEm + lo P)) 1 := hg.rd hc.st (by omega)
-    have wd : InRegions s.wr (sa P.scr (oEm + lo P)) 1 := hg.wr hc.st (by omega)
+      rw [hg.addrD (by omega_using [hlo, e1, e2]), Nat.add_zero]
+    have rd : InRegions (s.rd ++ s.wr) (sa P.scr (oEm + lo P)) 1 := hg.rd hc.st (by omega_using [hlo, e1, e2])
+    have wd : InRegions s.wr (sa P.scr (oEm + lo P)) 1 := hg.wr hc.st (by omega_using [hlo, e1, e2])
     simp only [topAnd, Impl.RsaPkcs1Sig.X86.at_, Impl.RsaPkcs1Sig.X86.stk]
     refine wp_movzx8 (a := sa P.scr (oEm + lo P)) (by rw [ea_at, si]; exact ad) rd fun t1 u1 => ?_
     have c1 : Ctx (P.lay h.D) P.scr σ t1 := hc.upd u1 (by decide) (by decide)
@@ -276,26 +276,26 @@ theorem top_vp (G : Spec.Mgf1.Hash) (P : EP) (hP : ∃ σ, In h.D P σ) :
     have m3 : t3.mem = s.mem.writeW (sa P.scr (oEm + lo P)) (s.mem (sa P.scr (oEm + lo P)) &&& (cW (xB P)).setWidth 8) := by
       rw [u3.mem, Reg8.reg, u2.gpr, u2.mem, u1.gpr, u1.mem, hg.aFr ok sC (by decide), hk.1.2.2.1, andByte]
     have fr : Frame [sR P.scr (oEm + lo P) 1] s.mem t3.mem := by
-      rw [m3]; exact frame_byte P.scr _ _ (Nat.le_refl _) (by omega) (by omega)
+      rw [m3]; exact frame_byte P.scr _ _ (Nat.le_refl _) (by omega_using []) (by omega_using [hlo, e1])
     refine ⟨(c1.upd u2 (by decide) (by decide)).write (by rw [u2.mem, u1.mem]; exact fr) (fun r hr => by
-        simp only [List.mem_singleton] at hr; subst hr; exact hg.inW (by omega)) u3.rd u3.wr (by rw [u3.gpr])
+        simp only [List.mem_singleton] at hr; subst hr; exact hg.inW (by omega_using [hlo, e1, e2])) u3.rd u3.wr (by rw [u3.gpr])
         (by rw [u3.gpr]), hk.1.keep h fr fun r hr => ?_, fun i hi => ?_⟩
-    · simp only [List.mem_singleton] at hr; subst hr; exact away3_scr hg (by omega)
-    rw [m3, sa_write P.scr _ _ (by omega) (by omega)]
+    · simp only [List.mem_singleton] at hr; subst hr; exact away3_scr hg (by omega_using [hlo, e1, e2])
+    rw [m3, sa_write P.scr _ _ (by omega_using [hlo, e1]) (by omega_using [hK, e1, hi])]
     have hl := Hs_length h P σ
     unfold emF RsaPss.emT
     by_cases h1 : i < lo P
-    · rw [ite_eq_right (by omega), ite_eq_left h1]; exact hk.2.1 i h1
+    · rw [ite_eq_right (by omega_using [h1]), ite_eq_left h1]; exact hk.2.1 i h1
     rw [ite_eq_right h1]
     by_cases h2 : i - lo P < dbN h P
     · rw [ite_eq_left h2]
       by_cases h3 : i - lo P = 0
-      · rw [ite_eq_left (by omega), ite_eq_left h3, show oEm + lo P = oEm + lo P + 0 from rfl, hd 0 (by omega), h3]
-      · rw [ite_eq_right (by omega), ite_eq_right h3, show oEm + i = oEm + lo P + (i - lo P) by omega, hd _ h2]
-    rw [ite_eq_right h2, ite_eq_right (by omega)]
+      · rw [ite_eq_left (by omega_using [h1, h3]), ite_eq_left h3, show oEm + lo P = oEm + lo P + 0 from rfl, hd 0 (by omega_using [hdb]), h3]
+      · rw [ite_eq_right (by omega_using [h3]), ite_eq_right h3, show oEm + i = oEm + lo P + (i - lo P) by omega_using [h1], hd _ h2]
+    rw [ite_eq_right h2, ite_eq_right (by omega_using [hdb, h2])]
     by_cases h4 : i - lo P < dbN h P + (Hs h P σ).length
-    · rw [ite_eq_left h4, show oEm + i = oEm + lo P + dbN h P + (i - lo P - dbN h P) by omega, hh _ (by omega)]
-    · rw [ite_eq_right h4, show oEm + i = oEm + (P.K - 1) by omega]; exact hk.2.2
+    · rw [ite_eq_left h4, show oEm + i = oEm + lo P + dbN h P + (i - lo P - dbN h P) by omega_using [hdb, h2], hh _ (by omega_using [hl, h2, h4])]
+    · rw [ite_eq_right h4, show oEm + i = oEm + (P.K - 1) by omega_using [hdb, hsum, hi, hl, h4]]; exact hk.2.2
 
 /-- The encoding, when everything fits, with the hash function of the table
 of `MdHash` at the argument 22 and MGF1's of the table of `MdHash` at 23. -/

@@ -52,20 +52,20 @@ theorem hoistedRoot_ok (index : Nat) (hi : 1 ≤ index) (hi' : index ≤ 8)
       (∀ e < 4, vword (t.v .v19) e = BitVec.ofInt 32 (reciprocal (z index))) →
       WP isa (.block rest) t Q) :
     WP isa (.block (hoistedRoot index ++ rest)) s Q := by
-  have hg : (index-1)/2 < 4 := by omega
-  have hp : (index-1)%2 < 2 := by omega
+  have hg : (index-1)/2 < 4 := by omega_using [hi']
+  have hp : (index-1)%2 < 2 := by omega_using []
   have hs : ∀ g : Fin 4, rootRegs[g.val]! ≠ .v18 := by decide
   refine rootPair_ok rootRegs[(index-1)/2]! ((index-1)%2) hp (hs ⟨_,hg⟩) fun t hc ha hb => ?_
   refine k t hc ?_ ?_
   · intro e he
-    rw [ha e he, h.roots _ hg _ (by omega)]
-    have hm : (2*((index-1)%2))%2 = 0 := by omega
-    have heq : 2*((index-1)/2)+(2*((index-1)%2))/2+1 = index := by omega
+    rw [ha e he, h.roots _ hg _ (by omega_using [])]
+    have hm : (2*((index-1)%2))%2 = 0 := by omega_using []
+    have heq : 2*((index-1)/2)+(2*((index-1)%2))/2+1 = index := by omega_using [hi]
     rw [hm, ite_eq_left rfl, heq]
   · intro e he
-    rw [hb e he, h.roots _ hg _ (by omega)]
-    have hm : ¬ (2*((index-1)%2)+1)%2 = 0 := by omega
-    have heq : 2*((index-1)/2)+(2*((index-1)%2)+1)/2+1 = index := by omega
+    rw [hb e he, h.roots _ hg _ (by omega_using [])]
+    have hm : ¬ (2*((index-1)%2)+1)%2 = 0 := by omega_using []
+    have heq : 2*((index-1)/2)+(2*((index-1)%2)+1)/2+1 = index := by omega_using [hi]
     rw [ite_eq_right hm, heq]
 
 end VG.Proof.MlDsa.AArch64.Optimized
@@ -93,7 +93,7 @@ theorem outerGroup_ok (r : Ren) (gap group index : Nat) (hv : ValidGroup gap gro
   rw [List.append_assoc]
   refine hoistedRoot_ok index hi hi' hconst fun s₁ hc₁ hz₁ hb₁ => ?_
   have hrange : 0 ≤ z index ∧ z index < 8380417 := by
-    have h := hconst.range (index-1) (by omega)
+    have h := hconst.range (index-1) (by omega_using [hi'])
     rwa [Nat.sub_add_cancel hi] at h
   have hp : ∀ v ∈ liveRegs, v ∉ prodTemps ∧ v ≠ VReg.v18 ∧ v ≠ VReg.v16 := by decide
   have hq₁ : ∀ e < 4, vword (s₁.v .v16) e = 8380417#32 := by

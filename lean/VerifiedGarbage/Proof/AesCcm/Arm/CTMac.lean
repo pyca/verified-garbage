@@ -82,8 +82,8 @@ theorem absorbWhole_ct {y : Nat} (hy : y = 0 ∨ y = 112) {P : BitVec 32} {len :
     rcases hr with rfl | hr
     · rw [h₁.1.2.2.1, h₂.1.2.2.1]
     · exact env_eq h₁.1.1 h₂.1.1 hr
-  · obtain ⟨s₂, run₂, U, he₂, -, -⟩ := absArgs_ok L he hR hy ((hP (by omega)).take (Nat.mul_div_le len 16))
-      (by omega) h4 h12
+  · obtain ⟨s₂, run₂, U, he₂, -, -⟩ := absArgs_ok L he hR hy ((hP (by omega_using [h0])).take (Nat.mul_div_le len 16))
+      (by omega_using [hl]) h4 h12
     exact WP.of_runBlock ⟨s₂, run₂, U, he₂.sp⟩
   · exact upd_rel fun _ _ ⟨⟨U₁, e₁⟩, ⟨U₂, e₂⟩⟩ => ⟨U₁, U₂, e₁, e₂⟩
 
@@ -195,14 +195,14 @@ theorem aad_ct {y : Nat} (hy : y = 0 ∨ y = 112) : CT (MacI k w sp N A D T R nl
     exact ⟨nonce, hl, by rw [k₁.mem]; exact hc⟩
   refine CT.ite (decide (al = 0)) (fun s h => h.2.2.2) (fun _ => CT.skip) fun hb => ?_
   have h0 : al ≠ 0 := by simpa using hb
-  have hn1 : headLen al ≤ al := by unfold headLen; omega
+  have hn1 : headLen al ≤ al := by unfold headLen; omega_using []
   have bufA : ∀ {s : State}, MacI k w sp N A D T R nl al n tl s → Buf w sp s A al := fun h => by
     have := h.1.ar.aad; rwa [h.1.sp] at this
   refine CT.seq (J := AbsI k w sp R (14 - nl) (A + BitVec.ofNat 32 (headLen al)) (al - headLen al))
-    ((aadHead_ct L hR hy (by omega) hal).mono fun s ⟨h, h4, h5, _⟩ => ⟨h.2.1, bufA h, h4, h5⟩)
-    (fun s ⟨h, h4, h5, _⟩ => WP.mono (aadHead_ok L h.2.1 hR hy (bufA h) (by omega) hal h4 h5) fun _ A₂ =>
-      ⟨A₂.env, fun e => ((bufA h).sub (j := headLen al) (k := al - headLen al) (by omega) (by omega)).of_eq
-        A₂.rd A₂.wr, A₂.r4, A₂.r5⟩) (absorbPad_ct L hR hy (by omega))
+    ((aadHead_ct L hR hy (by omega_using [h0]) hal).mono fun s ⟨h, h4, h5, _⟩ => ⟨h.2.1, bufA h, h4, h5⟩)
+    (fun s ⟨h, h4, h5, _⟩ => WP.mono (aadHead_ok L h.2.1 hR hy (bufA h) (by omega_using [h0]) hal h4 h5) fun _ A₂ =>
+      ⟨A₂.env, fun e => ((bufA h).sub (j := headLen al) (k := al - headLen al) (by omega_using [hn1]) (by omega_using [e])).of_eq
+        A₂.rd A₂.wr, A₂.r4, A₂.r5⟩) (absorbPad_ct L hR hy (by omega_using [hal]))
 
 /-- `B₀`. -/
 theorem b0_ct {y : Nat} (hy : y = 0 ∨ y = 112) : CT (MacI k w sp N A D T R nl al n tl) (b0 y) := by

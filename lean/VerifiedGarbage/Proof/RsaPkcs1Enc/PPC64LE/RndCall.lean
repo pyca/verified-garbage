@@ -77,7 +77,7 @@ theorem rd_ff (s : State) (m : Mem) {d e : Nat} (h : d + 8 ≤ e ∨ e + 8 ≤ d
     (v : BitVec 64) :
     (m.writeW (fb s + BitVec.ofNat 64 e) v).readW (fb s + BitVec.ofNat 64 d) 64 =
       m.readW (fb s + BitVec.ofNat 64 d) 64 :=
-  Mem.readW_writeW_sep (Offset.sep _ h (by omega) (by omega)) (by decide)
+  Mem.readW_writeW_sep (Offset.sep _ h (by omega_using [hd]) (by omega_using [he])) (by decide)
 
 /-- The stack arguments are read from memory changed only in the stack and
 the tape. -/
@@ -102,7 +102,7 @@ theorem fr_tw {s : State} {m : Mem} (h : Frame [kR s, tapeR s] s.mem m) {a : Add
 
 theorem gr_cw {s : State} {m₀ m : Mem} (h : Frame [tapeR s, caR s] m₀ m) {e : Nat} (he₁ : 96 ≤ e) (he : e + 8 ≤ 144)
     (v : BitVec 64) : Frame [tapeR s, caR s] m₀ (m.writeW (fb s + BitVec.ofNat 64 e) v) :=
-  h.writeW (List.mem_cons_of_mem _ (List.mem_singleton_self _)) _ (Offset.contains _ he₁ (by omega) (by decide))
+  h.writeW (List.mem_cons_of_mem _ (List.mem_singleton_self _)) _ (Offset.contains _ he₁ (by omega_using [he]) (by decide))
 
 theorem gr_tw {s : State} {m₀ m : Mem} (h : Frame [tapeR s, caR s] m₀ m) {a : Addr} (ha : (tapeR s).Contains a 8)
     (v : BitVec 64) : Frame [tapeR s, caR s] m₀ (m.writeW a v) :=
@@ -115,7 +115,7 @@ theorem prep_ok {s : State} (hp : RPre s) {M : Mem} (hM : Mm s M) {i : Nat} {u :
     WP isa (.block (stackArgs ++ Impl.RsaPkcs1Enc.PPC64LE.Random.regArgs)) u (Args s i) := by
   have hP := hp.ps
   have hk2 := hp.k2
-  have hMu : Mm s u.mem := by rw [hI.mem]; exact hM.buf _ (by omega)
+  have hMu : Mm s u.mem := by rw [hI.mem]; exact hM.buf _ (by omega_using [hf, hP])
   have F0 : Frame [kR s, tapeR s] s.mem u.mem := hMu.fr.mono (by simp)
   have hw := hI.wr
   unfold stackArgs Impl.RsaPkcs1Enc.PPC64LE.Random.regArgs
@@ -212,13 +212,13 @@ theorem prep_ok {s : State} (hp : RPre s) {M : Mem} (hM : Mm s M) {i : Nat} {u :
   have psD : ∀ r ∈ [tapeR s, caR s], (⟨pb s, psLen s⟩ : Region).Disjoint r := fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
-    · exact hp.dKt.sub_left (buf_sub s (by omega))
-    · exact Offset.disjoint _ (.inr (by decide)) (by unfold oBuf; omega) (by decide)
-  have hb := bytesAt_writeBytes M (pb s) (kept s i) (by omega)
+    · exact hp.dKt.sub_left (buf_sub s (by omega_using [hP]))
+    · exact Offset.disjoint _ (.inr (by decide)) (by unfold oBuf; omega_using [hP]) (by decide)
+  have hb := bytesAt_writeBytes M (pb s) (kept s i) (by omega_using [hf, hP])
   rw [hf] at hb
   refine ⟨((hI.toFx.fy.keep k₄).keep k₁₄).keep kw, wm ▸ F14,
     wm ▸ hMu.sv.frame G14 fun p hp' r hr => (slD r hr).sub_left (slot_sub s hp'), ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_,
-    ?_, by rw [wm, bytes_frame G14 psD (by omega), hI.mem, hb], w3, w4, w5, w6, w7, w8, w9, w10,
+    ?_, by rw [wm, bytes_frame G14 psD (by omega_using [hP]), hI.mem, hb], w3, w4, w5, w6, w7, w8, w9, w10,
     (kw.get .r12).trans h12⟩
   · rw [wm, G14.readW (Region.contains_self _ _) (fun r hr => (slD r hr).sub_left (lr_sub s)) (by decide)]
     exact hMu.ls
@@ -277,13 +277,13 @@ theorem enc_sdepth : sdepth Impl.RsaPkcs1Enc.PPC64LE.Precomputed.code = Impl.Rsa
   decide +kernel
 
 theorem psLen_toNat {s : State} (hp : RPre s) : (BitVec.ofNat 64 (psLen s)).toNat = psLen s := by
-  have := hp.ps; rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt (by omega)
+  have := hp.ps; rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt (by omega_using [this])
 
 theorem pb_toNat {s : State} (hp : RPre s) : (pb s).toNat + psLen s ≤ 2 ^ 64 := by
   have hF := fb_toNat hp
   have := hp.ps
   have := hp.sp2
-  rw [pb, Offset.toNat_add_ofNat]; unfold oBuf frameBytes at *; omega
+  rw [pb, Offset.toNat_add_ofNat]; unfold oBuf frameBytes at *; omega_arith
 
 theorem callE_arg {s w : State} {i : Nat} (A : Args s i w) :
     stackArg (callE s w) 0 = callArg s 0 ∧ stackArg (callE s w) 1 = callArg s 1 ∧
@@ -319,17 +319,17 @@ theorem preE_entry {s w : State} (hp : RPre s) {i : Nat} (A : Args s i w) : Enc.
     simp only [Enc.a6R, caR]; congr 1; show (callE s w).sp + _ = _; rw [callE_sp A]
   have hKR := callee_kR A
   have cs := callee_sub s
-  have ps : Region.Sub ⟨pb s, psLen s⟩ (kR s) := buf_sub s (by omega)
+  have ps : Region.Sub ⟨pb s, psLen s⟩ (kR s) := buf_sub s (by omega_using [hP])
   have ca := caR_sub s
   have kps : Region.Disjoint ⟨kb s, Impl.RsaPkcs1Sig.PPC64LE.frameBytes⟩ ⟨pb s, psLen s⟩ := by
     rw [pb, fb_kb]
-    exact Offset.base_disjoint _ (by omega) (by unfold rndStack oBuf Impl.RsaPkcs1Sig.PPC64LE.frameBytes at *; omega)
+    exact Offset.base_disjoint _ (by omega_using []) (by unfold rndStack oBuf Impl.RsaPkcs1Sig.PPC64LE.frameBytes at *; omega_using [hP])
   have ka : Region.Disjoint ⟨kb s, Impl.RsaPkcs1Sig.PPC64LE.frameBytes⟩ (caR s) := by
     rw [caR, fb_kb]
-    exact Offset.base_disjoint _ (by omega) (by unfold rndStack Impl.RsaPkcs1Sig.PPC64LE.frameBytes at *; omega)
+    exact Offset.base_disjoint _ (by omega_using []) (by unfold rndStack Impl.RsaPkcs1Sig.PPC64LE.frameBytes at *; omega_using [])
   exact {
     sp1 := by rw [callE_sp A]; exact hF.2
-    sp2 := by rw [callE_sp A]; have := hp.sp2; unfold frameBytes at hF; omega
+    sp2 := by rw [callE_sp A]; have := hp.sp2; unfold frameBytes at hF; omega_using [hF]
     hrd := by rw [hN, hE, hM, hPS, hQ, hA]; rfl
     hwr := by rw [hO, hS]; rfl
     on := by rw [hO, hN]; exact hp.dOn
@@ -385,7 +385,7 @@ theorem call_covers {s w : State} (hp : RPre s) {i : Nat} (A : Args s i w) :
   · exact Covers.left (Covers.of_mem fun r hr => by rw [List.mem_singleton.mp hr]; simp)
   · exact Covers.left (Covers.of_mem fun r hr => by rw [List.mem_singleton.mp hr]; simp)
   · exact Covers.left (Covers.of_mem fun r hr => by rw [List.mem_singleton.mp hr]; simp)
-  · exact Covers.right (Covers.one (in_fr s _ (by decide) (by unfold oBuf frameBytes; omega)))
+  · exact Covers.right (Covers.one (in_fr s _ (by decide) (by unfold oBuf frameBytes; omega_using [hP])))
   · exact Covers.left (Covers.of_mem fun r hr => by rw [List.mem_singleton.mp hr]; simp)
   · exact Covers.right (Covers.one (in_fr s _ (by decide) (by decide)))
 
@@ -426,7 +426,7 @@ theorem call_ok {s w : State} (hp : RPre s) {i : Nat} (A : Args s i w) :
   have slK : Region.Sub (slR s) (kR s) := frame_sub s (by decide)
   have slC : (slR s).Disjoint ⟨kb s, Impl.RsaPkcs1Sig.PPC64LE.frameBytes⟩ := by
     rw [slR, fb_kb]
-    exact Offset.disjoint_base _ (by omega) (by unfold Impl.RsaPkcs1Sig.PPC64LE.frameBytes; decide)
+    exact Offset.disjoint_base _ (by omega_using []) (by unfold Impl.RsaPkcs1Sig.PPC64LE.frameBytes; decide)
   have slD := kd (hp.dKo.sub_left slK) (hp.dKs.sub_left slK) slC
   have tD := kd hp.dOt.symm hp.dTs (hp.dKt.sub_left cs).symm
   refine ⟨⟨hsp.trans A.sp, hrd.trans A.rd, hwr.trans A.wr,
@@ -452,17 +452,17 @@ theorem call_ok {s w : State} (hp : RPre s) {i : Nat} (A : Args s i w) :
       bytes_frame A.fr (fun r hr => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl
-        exacts [hp.dKn.symm, hp.dTn.symm]) (by have := hp.wN; omega)
+        exacts [hp.dKn.symm, hp.dTn.symm]) (by have := hp.wN; omega_using [])
     have he : Spec.Rsa.bytesAt w.mem (s.gpr .r8) (s.gpr .r9).toNat = eB s :=
       bytes_frame A.fr (fun r hr => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl
-        exacts [hp.dKe.symm, hp.dTe.symm]) (by have := hp.wE; omega)
+        exacts [hp.dKe.symm, hp.dTe.symm]) (by have := hp.wE; omega_using [])
     have hm : Spec.Rsa.bytesAt w.mem (s.gpr .r10) (stackArg s 0).toNat = msgB s :=
       bytes_frame A.fr (fun r hr => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl
-        exacts [hp.dKm.symm, hp.dTm.symm]) (by have := hp.wM; omega)
+        exacts [hp.dKm.symm, hp.dTm.symm]) (by have := hp.wM; omega_using [])
     have hw' : Spec.Rsa.wordsAt w.mem (stackArg s 5) (stackArg s 6).toNat = preW s :=
       words_frame A.fr fun r hr => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -486,7 +486,7 @@ theorem trunc_sub2 (a : BitVec 64) : (BitVec.ofNat 64 2 - a).setWidth 32 = 2 - a
   have h2 : (2 : BitVec 32).toNat = 2 := rfl
   simp only [BitVec.toNat_setWidth, BitVec.toNat_sub, BitVec.toNat_ofNat, h2]
   have := a.isLt
-  omega
+  omega_using []
 
 theorem accTail_ok {s y : State} (hp : RPre s) {i : Nat} (A : AfterCall s i y) :
     WP isa (.seq (.block status) (.seq fillLoop (.block [Impl.AesGcm.PPC64LE.mov .r3 .r5]))) y fun x =>
@@ -509,14 +509,14 @@ theorem accTail_ok {s y : State} (hp : RPre s) {i : Nat} (A : AfterCall s i y) :
   have z5 : z.gpr .r5 = BitVec.ofNat 64 2 - y.gpr .r3 := by
     rw [o₆.get .r5, o₅.get .r5, o₄.get .r5, o₃.get .r5, e₂, e₁, o₁.get .r3]
   have zw : z.wr = fr s :: s.wr := k.wr.trans A.wr
-  refine WP.seq (WP.mono (fill_ok (n := psLen s) (p := pb s) (b := 0) (by omega) (by omega) z4 z11
-    (by rw [e₆]; rfl) (in_ps s z zw (by omega))) fun x₁ ⟨k₁, m₁⟩ => ?_)
+  refine WP.seq (WP.mono (fill_ok (n := psLen s) (p := pb s) (b := 0) (by omega_using [hP]) (by omega_using [hP]) z4 z11
+    (by rw [e₆]; rfl) (in_ps s z zw (by omega_using [hP]))) fun x₁ ⟨k₁, m₁⟩ => ?_)
   refine wp_mov fun x o₂' e₂' => wp_nil ?_
   have kk : Keep ([.r5, .r12, .r4, .r11, .r0] ++ ([.r4, .r11] ++ [.r3])) y x := k.trans (k₁.trans o₂'.keep)
   have fy : Fy s x := A.toFy.keep kk
   have hf : Frame [⟨pb s, psLen s⟩] y.mem x.mem := by rw [o₂'.mem, m₁, zm]; exact wipe_frame s _ _
-  have slD : (slR s).Disjoint ⟨pb s, psLen s⟩ := slR_buf s (by omega)
-  have bs := buf_sub s (n := psLen s) (by omega)
+  have slD : (slR s).Disjoint ⟨pb s, psLen s⟩ := slR_buf s (by omega_using [hP])
+  have bs := buf_sub s (n := psLen s) (by omega_using [hP])
   have tD : ∀ r ∈ [(⟨pb s, psLen s⟩ : Region)], (tapeR s).Disjoint r := fun r hr => by
     rw [List.mem_singleton.mp hr]; exact (hp.dKt.sub_left bs).symm
   refine ⟨⟨fy.sp, fy.wr, fy.hi, A.sv.frame hf fun p hp' r hr => by
@@ -532,7 +532,7 @@ theorem accTail_ok {s y : State} (hp : RPre s) {i : Nat} (A : AfterCall s i y) :
     bytes_frame hf (fun r hr => by
       rw [List.mem_singleton.mp hr]
       have e : (⟨s.gpr .r3, kOf s⟩ : Region) = outR s := by simp only [outR, kOf, hp.hok]
-      rw [e]; exact hp.dKo.symm.sub_right bs) (by have := hp.k2; unfold kOf; omega)
+      rw [e]; exact hp.dKo.symm.sub_right bs) (by have := hp.k2; unfold kOf; omega_using [])
   rw [hx3]
   cases hres : Spec.RsaPkcs1Enc.encrypt (nB s) (eB s) (msgB s) (kept s i) <;> rw [hres] at hw <;>
     exact ⟨hw.1, hout.trans hw.2⟩

@@ -136,9 +136,9 @@ theorem Env.keep {s t : State} {B : Addr} {Z w : Nat} {rs : List Reg} (h : Env s
 
 theorem slot_lt {w j k : Nat} (h : j < k) : slot w j + 8 * (w + 2) ≤ slot w k := by
   unfold slot
-  have := Nat.mul_le_mul_right (8 * (w + 2)) (show j + 1 ≤ k by omega)
+  have := Nat.mul_le_mul_right (8 * (w + 2)) (show j + 1 ≤ k by omega_using [h])
   rw [Nat.add_mul, Nat.one_mul] at this
-  omega
+  omega_using [this]
 
 theorem Env.arr {s : State} {B : Addr} {Z w : Nat} (h : Env s B Z w) {j : Nat} (hj : j < 28) :
     slot w j + 8 * (w + 2) ≤ Z :=
@@ -180,7 +180,7 @@ theorem Body.trans {L : Lay} {m₁ m₂ m₃ : Mem} (h₁ : Body L m₁ m₂) (h
 /-- A header's word is kept by a change in the body. -/
 theorem Body.word {L : Lay} {m m' : Mem} (h : Body L m m') {d : Nat} (hd : d + 8 ≤ 256) :
     word m' L.S d = word m L.S d :=
-  Outside.word h (Or.inl (by omega)) (by omega)
+  Outside.word h (Or.inl (by omega_using [hd])) (by omega_using [hd])
 
 /-- A frame relative to `B + a` is one relative to `B`. -/
 theorem outside_shift {B : Addr} {a o n : Nat} {m m' : Mem} (h : Outside (off B a) o n m m')
@@ -304,14 +304,14 @@ theorem ScrL.q {s : State} {L : Lay} (h : ScrL s L) (hL : L.Ok) : Scr s L.Q 1600
   scr_sub h (by have := hL.buf_end; simp only [Lay.bOff] at this; omega_arith) (slot_al _ _) (by decide)
 
 theorem ScrL.buf {s : State} {L : Lay} (h : ScrL s L) (hL : L.Ok) : Scr s L.Buf (2 * L.pl) :=
-  scr_sub h hL.buf_end (by simp only [Lay.bOff, Lay.qOff, Lay.slot_eq]; omega)
-    (by rcases hL.pl with e | e | e <;> omega)
+  scr_sub h hL.buf_end (by simp only [Lay.bOff, Lay.qOff, Lay.slot_eq]; omega_using [])
+    (by rcases hL.pl with e | e | e <;> omega_using [e])
 
 /-- The header's word `d`, loaded. -/
 theorem ScrL.hdr {s : State} {L : Lay} (hs : ScrL s L) (hL : L.Ok) {d : Nat} (hd : d + 8 ≤ 256)
     (h8 : d % 8 = 0) :
     InRegions (s.rd ++ s.wr) (off L.S d) 8 ∧ (off L.S d).toNat % 8 = 0 :=
-  ⟨hs.ld (by have := hL.z256; omega), hs.al8 (by have := hL.z256; omega) h8⟩
+  ⟨hs.ld (by have := hL.z256; omega_using [hd, this]), hs.al8 (by have := hL.z256; omega_using [hd, this]) h8⟩
 
 /-- `li` of a numeral below 2048, as an `Int` literal. -/
 theorem exec_li_lit {s : State} {d : Reg} {m : Nat} (h : m < 2048) :
@@ -430,7 +430,7 @@ theorem enterP_ok {s : State} {L : Lay} {key sig : Addr} (hL : L.Ok) (hs : ScrL 
       omega_arith
     brun [b0, e3, exec_shift_d (show 3 < 64 by decide), e5]
   · have k := (ku.trans kv).trans kt
-    refine ⟨⟨⟨⟨Scr.congr (hs.p hL) k.2.2, ?_, c5, c0, by omega, by omega, Nat.le_refl _⟩,
+    refine ⟨⟨⟨⟨Scr.congr (hs.p hL) k.2.2, ?_, c5, c0, by omega_using [hw], by omega_using [hw], Nat.le_refl _⟩,
       (k.gpr (by decide)).trans hr.s6⟩, by rw [mt, mv, mu]⟩, k.mono (by decide)⟩
     rw [kt.gpr (by decide), kv.gpr (by decide), a7]
 
@@ -461,7 +461,7 @@ theorem enterQ_ok {s : State} {L : Lay} {key sig : Addr} (hL : L.Ok) (hs : ScrL 
       omega_arith
     brun [c0, e3, exec_shift_d (show 3 < 64 by decide), e5]
   · have k := ((ku.trans kv).trans kx).trans kt
-    refine ⟨⟨⟨⟨Scr.congr (hs.q hL) k.2.2, ?_, d5, d0, by omega, by omega, hL.qslot⟩,
+    refine ⟨⟨⟨⟨Scr.congr (hs.q hL) k.2.2, ?_, d5, d0, by omega_using [hw], by omega_using [hw], hL.qslot⟩,
       (k.gpr (by decide)).trans hr.s6⟩, by rw [mt, mx, mv, mu]⟩, k.mono (by decide)⟩
     rw [kt.gpr (by decide), kx.gpr (by decide), b7]
 
@@ -496,7 +496,7 @@ theorem Src.sub {s : State} {L : Lay} {D : Addr} {n : Nat} (h : Src s L D n) {o 
 /-- The first octets of a buffer apart from `scratch`. -/
 theorem Src.take {s : State} {L : Lay} {D : Addr} {n : Nat} (h : Src s L D n) {k : Nat} (hk : k ≤ n) :
     Src s L D k :=
-  ⟨fun i hi => h.rd i (by omega), fun i hi => h.sep i (by omega)⟩
+  ⟨fun i hi => h.rd i (by omega_using [hk, hi]), fun i hi => h.sep i (by omega_using [hk, hi])⟩
 
 /-- A buffer's bytes are apart from a working space within `scratch`. -/
 theorem Src.sepIn {s : State} {L : Lay} {D : Addr} {n : Nat} (h : Src s L D n) {a Z : Nat}

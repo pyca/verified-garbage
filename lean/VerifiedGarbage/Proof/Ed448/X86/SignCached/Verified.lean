@@ -61,7 +61,7 @@ theorem args₂ (hp : scLocal.pub σ₁ σ₂) : Shake.Args (base σ₁) 8 (arg 
   obtain ⟨_, a0, a1, a2, a3, a4, a5, a6, a7⟩ := id hp
   intro i hi
   rw [← base_eq hp, args_val σ₂ 8 i hi]
-  rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7) with
+  rcases (by omega_using [hi] : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7) with
     rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
   exacts [a0.symm, a1.symm, a2.symm, a3.symm, a4.symm, a5.symm, a6.symm, a7.symm]
 
@@ -149,7 +149,7 @@ theorem chal_ct :
   refine RelCT.seq (hk.next_ct ha hb hsc (src := .caller 0 0) (len := .const 57) (P := arg σ₁ 0) (N := 57)
     (show 0 < 8 by decide) trivial (by rw [argVal_caller, BitVec.add_zero]) rfl
     (.inr ⟨_, List.mem_append_right _ (out_in σ₁), out1_within σ₁⟩)
-    (hk.away_output (out_in σ₁) h.oc (out1_within σ₁)) (by have := h.out; omega)
+    (hk.away_output (out_in σ₁) h.oc (out1_within σ₁)) (by have := h.out; omega_using [this])
     (Nat.mod_lt _ (by decide)) (by taint_decide)) ?_
   refine RelCT.seq (hk.next_ct ha hb hsc (src := .caller 2 0) (len := .const 57) (P := arg σ₁ 2) (N := 57)
     (show 2 < 8 by decide) trivial (by rw [argVal_caller, BitVec.add_zero]) rfl
@@ -174,7 +174,7 @@ theorem r_ct :
       (fun _ _ _ hc hs => r_ready h hc hs)
       (fun a b ea eb ha hb ar aw br bw => by
         have e := eq_args h ea eb (k := 3) (by decide) (fun i hi => by
-          rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2) with rfl | rfl | rfl
+          rcases (by omega_using [hi] : i = 0 ∨ i = 1 ∨ i = 2) with rfl | rfl | rfl
           exacts [ha.a0.trans hb.a0.symm, ha.a1.trans hb.a1.symm, ha.a2.trans hb.a2.symm]) ar aw br bw
         exact ⟨entry_esp ea eb ar aw br bw, e 0 (by decide), e 1 (by decide), e 2 (by decide)⟩)
       (fun _ hc hs => WP.mono (r_call h hc hs) fun _ hv => ⟨hv.1, trivial⟩)
@@ -190,7 +190,7 @@ theorem b_ct :
     (call_ct hB.ok hB.ct (fun _ _ _ hc hs => b_ready h hc hs)
       (fun a b ea eb ha hb ar aw br bw => by
         have e := eq_args h ea eb (k := 3) (by decide) (fun i hi => by
-          rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2) with rfl | rfl | rfl
+          rcases (by omega_using [hi] : i = 0 ∨ i = 1 ∨ i = 2) with rfl | rfl | rfl
           exacts [ha.a0.trans hb.a0.symm, ha.a1.trans hb.a1.symm, ha.a2.trans hb.a2.symm]) ar aw br bw
         exact ⟨entry_esp ea eb ar aw br bw, e 0 (by decide), e 1 (by decide), e 2 (by decide)⟩)
       (fun _ hc hs => WP.mono (b_call h hB hc hs) fun _ hv => ⟨hv.1, trivial⟩)
@@ -207,7 +207,7 @@ theorem k_ct :
       (fun _ _ _ hc hs => k_ready h hc hs)
       (fun a b ea eb ha hb ar aw br bw => by
         have e := eq_args h ea eb (k := 3) (by decide) (fun i hi => by
-          rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2) with rfl | rfl | rfl
+          rcases (by omega_using [hi] : i = 0 ∨ i = 1 ∨ i = 2) with rfl | rfl | rfl
           exacts [ha.a0.trans hb.a0.symm, ha.a1.trans hb.a1.symm, ha.a2.trans hb.a2.symm]) ar aw br bw
         exact ⟨entry_esp ea eb ar aw br bw, e 0 (by decide), e 1 (by decide), e 2 (by decide)⟩)
       (fun _ hc hs => WP.mono (k_call h hc hs) fun _ hv => ⟨hv.1, trivial⟩)
@@ -224,7 +224,7 @@ theorem m_ct :
       (fun _ _ _ hc hs => m_ready h hc hs)
       (fun a b ea eb ha hb ar aw br bw => by
         have e := eq_args h ea eb (k := 5) (by decide) (fun i hi => by
-          rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4) with rfl | rfl | rfl | rfl | rfl
+          rcases (by omega_using [hi] : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4) with rfl | rfl | rfl | rfl | rfl
           exacts [ha.a0.trans hb.a0.symm, ha.a1.trans hb.a1.symm, ha.a2.trans hb.a2.symm,
             ha.a3.trans hb.a3.symm, ha.a4.trans hb.a4.symm]) ar aw br bw
         exact ⟨entry_esp ea eb ar aw br bw, e 0 (by decide), e 1 (by decide), e 2 (by decide),
@@ -238,7 +238,7 @@ theorem body_ct :
   have hk := kit h
   have ha := args_val σ₁ 8
   have hb := args₂ hp
-  have hcl : (arg σ₁ 4).toNat < 256 := by have := h.ctxlen; omega
+  have hcl : (arg σ₁ 4).toNat < 256 := by have := h.ctxlen; omega_using [this]
   have hdr := hk.hdr_ct (g₁ := g₁) (g₂ := g₂) ha hb (j := 4) (off := HASH) (by decide) hcl (by decide)
     (by taint_decide)
   unfold body
@@ -318,10 +318,10 @@ theorem sat_seed : Spec.Ed448.bytesAt satMem 0x2000 57 = satSeed := by
   have hi' := List.mem_range.mp hi
   have ha : ((0x2000 : Addr) + BitVec.ofNat 64 i).toNat = 0x2000 + i := by
     change (0x2000 + i % 2 ^ 64) % 2 ^ 64 = 0x2000 + i
-    omega
+    omega_using [hi']
   unfold satMem
   rw [ha]
-  simp only [show 0x2000 + i < 0x3000 from by omega, ite_true]
+  simp only [show 0x2000 + i < 0x3000 from by omega_using [hi'], ite_true]
 
 theorem sat_key : Spec.Ed448.bytesAt satMem 0x3000 57 = satKey := by
   apply List.ext_getElem
@@ -330,9 +330,9 @@ theorem sat_key : Spec.Ed448.bytesAt satMem 0x3000 57 = satKey := by
     have hi' : i < 57 := by simpa only [Spec.Ed448.bytesAt, List.length_map, List.length_range] using hi
     have ha : ((0x3000 : Addr) + BitVec.ofNat 64 i).toNat = 0x3000 + i := by
       change (0x3000 + i % 2 ^ 64) % 2 ^ 64 = 0x3000 + i
-      omega
+      omega_using [hi']
     simp only [Spec.Ed448.bytesAt, List.getElem_map, List.getElem_range, satMem, ha,
-      show ¬ 0x3000 + i < 0x3000 from by omega, ite_false, show 0x3000 + i < 0x3039 from by omega, ite_true,
+      show ¬ 0x3000 + i < 0x3000 from by omega_using [], ite_false, show 0x3000 + i < 0x3039 from by omega_using [hi'], ite_true,
       Nat.add_sub_cancel_left, List.getElem?_eq_getElem hj, Option.getD_some]
 
 theorem sat_pk' : Spec.Ed448.bytesAt satMem 0x3000 57 = Spec.Ed448.publicKey (Spec.Ed448.bytesAt satMem 0x2000 57) := by

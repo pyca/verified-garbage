@@ -77,7 +77,7 @@ theorem acc_vp (P : EP) :
   refine VP.seq (Vf.cmpLoop_vp hg (oa := oEm + 1 + h.H.D) (ob := oLh) (n := h.H.D) hD0 (by oomega) (by oomega)
     (X := Y h g P) (f := fun σ i => V5 h g P σ (1 + h.H.D + i)) (g := fun σ i => (lhB h P σ).getD i 0)
     (fun σ m hy i hi => by
-      rw [show oEm + 1 + h.H.D + i = oEm + (1 + h.H.D + i) by omega]; exact hy.2 _ (by omega))
+      rw [show oEm + 1 + h.H.D + i = oEm + (1 + h.H.D + i) by omega_using []]; exact hy.2 _ (by omega_using [hfit, hi]))
     fun σ m hy i hi => hy.1.2.1 i hi) ?_
   -- `acc := EM[0] ∨ edx`, to its slot.
   refine VP.taint [.esp, .ebp] accPut_taint (sp_bp fun _ _ h => h.1) fun σ s ⟨hc, hy, he⟩ => ?_
@@ -101,7 +101,7 @@ theorem acc_vp (P : EP) :
   · simp only [List.mem_singleton] at hr; subst hr; exact slotSep (by decide) (by decide) (by decide)
   · rw [← hy.1.2.2]
     exact sbytes_keep (o := oEm) (n := 1) fr (dS (by oomega)) (by oomega) (f := fun _ => s.mem (sa P.scr (oEm + 0)))
-      (fun i hi => by rw [show i = 0 by omega]) 0 (by decide)
+      (fun i hi => by rw [show i = 0 by omega_using [hi]]) 0 (by decide)
   · rw [u4.gpr, u3.other _ (by decide), u2.other _ (by decide), u1.other _ (by decide), u3.gpr, m2,
       or_eq_zero32, he, setWidth_byte_eq_zero, hy.1.2.2]
     exact ⟨fun ⟨a, b⟩ => ⟨b, a⟩, fun ⟨a, b⟩ => ⟨b, a⟩⟩

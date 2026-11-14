@@ -30,15 +30,15 @@ theorem storeBE_read_ok {s : State} {base : Addr} {bytes src len : Nat}
       Keeps [.eax, .ebx, .esi, .ecx] s t := by
   have nw := hs.nowrap
   let source := s.gpr .edi + BitVec.ofNat 32 src
-  have sourceAddr : byteAddr source = off base src := hs.ea (by omega)
+  have sourceAddr : byteAddr source = off base src := hs.ea (by omega_using [hl, ho])
   have sourceNat : source.toNat = base.toNat + src := by
     dsimp only [source]
     rw [BitVec.toNat_add, hs.edi_toNat, BitVec.toNat_ofNat,
-      Nat.mod_eq_of_lt (show src < 2 ^ 32 by omega), Nat.mod_eq_of_lt (by omega)]
+      Nat.mod_eq_of_lt (show src < 2 ^ 32 by omega_using [hl, ho, nw]), Nat.mod_eq_of_lt (by omega_using [hl, ho, nw])]
   unfold storeBE
   refine WP.seq (WP.mono (storeBEArgs_ok s src hl hc) fun u ⟨P, M, K⟩ => ?_)
   refine WP.mono (reverseBuffer_ok u (src := source) (dst := s.gpr .ebx) hl
-    (by omega) dstFit (by have := hs.size_lt; omega)
+    (by omega_using [ho, nw, sourceNat]) dstFit (by have := hs.size_lt; omega_using [ho, this])
     (by rw [K.2.1, K.2.2, sourceAddr]; exact hs.read ho)
     (by rw [K.2.2]; exact write) (by rw [sourceAddr]; exact sep)
     (K.1 .ebx (by decide)) P (by rw [K.1 .ecx (by decide), hc]))
@@ -59,10 +59,10 @@ theorem storeBE_ok {s : State} {base : Addr} {bytes src n len : Nat}
         Spec.Rsa.i2osp (wordsVal s.mem base src n) len ∧
       Frame [⟨byteAddr (s.gpr .ebx), len⟩] s.mem t.mem ∧
       Keeps [.eax, .ebx, .esi, .ecx] s t := by
-  refine WP.mono (storeBE_read_ok hs hl (by omega) hc dstFit write sep) fun t ⟨V, F, K⟩ => ?_
+  refine WP.mono (storeBE_read_ok hs hl (by omega_using [hlen, ho]) hc dstFit write sep) fun t ⟨V, F, K⟩ => ?_
   have eq : (s.mem.read (off base src) (8 * n)).toNat = wordsVal s.mem base src n := by
     rw [wordsVal_eq_val32, ← read_eq_val32]
-    congr 2 <;> omega
+    congr 2 <;> omega_using []
   rw [read_prefix_value s.mem _ hlen (by rw [eq]; exact valueFit), eq] at V
   exact ⟨V, F, K⟩
 

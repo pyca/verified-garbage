@@ -118,10 +118,10 @@ theorem SPre.argIn {s u : State} (hp : SPre tsH tsG s) (hrd : u.rd = s.rd) {j : 
   refine ⟨_, List.mem_append_left _ (by rw [hrd]; exact hm), ?_⟩
   have e : stackArgAddr s j - stackArgAddr s 0 = BitVec.ofNat 64 (8 * j) := by
     rw [show stackArgAddr s j = stackArgAddr s 0 + BitVec.ofNat 64 (8 * j) by
-      simp only [stackArgAddr, BitVec.add_assoc, BitVec.ofNat_add_ofNat]; congr 2; omega]
+      simp only [stackArgAddr, BitVec.add_assoc, BitVec.ofNat_add_ofNat]; congr 2; omega_using []]
     rw [BitVec.add_comm, BitVec.add_sub_cancel]
   show (stackArgAddr s j - stackArgAddr s 0).toNat + 8 ≤ A
-  rw [e, BitVec.toNat_ofNat]; omega
+  rw [e, BitVec.toNat_ofNat]; omega_using [hj, hA]
 
 /-- A region of the precondition's list is read. -/
 theorem SPre.rdIn {s u : State} (hp : SPre tsH tsG s) (hrd : u.rd = s.rd) {r : Region}
@@ -132,7 +132,7 @@ theorem SPre.rdIn {s u : State} (hp : SPre tsH tsG s) (hrd : u.rd = s.rd) {r : R
 theorem SPre.k1 {s : State} (hp : SPre tsH tsG s) : 64 ≤ (s.gpr .rcx).toNat := hp.lv.1
 theorem SPre.k2 {s : State} (hp : SPre tsH tsG s) : (s.gpr .rcx).toNat ≤ 1024 := hp.lv.2
 theorem SPre.hsl {s : State} (hp : SPre tsH tsG s) : 16 * (s.gpr .rcx).toNat + 32 + 1024 ≤ (stackArg s 15).toNat := by
-  have := hp.hsw; unfold Spec.RsaPss.scratchWords Spec.Rsa.scratchWords at this; omega
+  have := hp.hsw; unfold Spec.RsaPss.scratchWords Spec.Rsa.scratchWords at this; omega_using [this]
 
 /-! ## The frame -/
 

@@ -6,6 +6,7 @@ public import VerifiedGarbage.Impl.Rsa.PPC64LE.Priv
 public import VerifiedGarbage.TCB.PPC64LE.Target
 import VerifiedGarbage.Proof.Framework.PowLit
 public import VerifiedGarbage.Proof.Rsa.Contract
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # `vg_rsa_private_checked` on PPC64LE: the precondition
@@ -121,7 +122,7 @@ theorem preP_of {s : State} (h : (Proof.Rsa.privateCheckedContract abi frameByte
   obtain ⟨sp1, sp2, hrd, hwr, on, oe, oi, op, oq, odp, odq, oqi, os, oa, ns, es, is, ps, qs, dps, dqs, qis, sa,
     ko, kn, ke, ki, kp, kq, kdp, kdq, kqi, ks, ka, wo, wn, we, wi, wp, wq, wdp, wdq, wqi, ws, ⟨k1, k2⟩, h4, h10,
     e1, e2, p1, p2, q1, q2, h5, h9, h7, hs⟩ := h
-  exact ⟨sp1, by omega, hrd, hwr, on, oe, oi, op, oq, odp, odq, oqi, os, oa, ns, es, is, ps, qs, dps, dqs, qis, sa,
+  exact ⟨sp1, by omega_using [sp2], hrd, hwr, on, oe, oi, op, oq, odp, odq, oqi, os, oa, ns, es, is, ps, qs, dps, dqs, qis, sa,
     ko, kn, ke, ki, kp, kq, kdp, kdq, kqi, ks, ka, wo, wn, we, wi, wp, wq, wdp, wdq, wqi, ws, k1, k2, h4, h10, e1,
     e2, p1, p2, q1, q2, h5, h9, h7, hs⟩
 
@@ -133,7 +134,7 @@ theorem pre_of_preP {s : State} (h : PreP false s) : (Proof.Rsa.privateCheckedCo
   rw [e]
   sig_pre [Proof.Rsa.privateCheckedContract, Proof.Rsa.privateCheckedSig, abi, argRegs, stackArgs_twelve,
     List.append_eq, List.range, List.range.loop]
-  exact ⟨sp1, by omega, hrd, hwr, on, oe, oi, op, oq, odp, odq, oqi, os, oa, ns, es, is, ps, qs, dps, dqs, qis, sa,
+  exact ⟨sp1, by omega_using [sp2], hrd, hwr, on, oe, oi, op, oq, odp, odq, oqi, os, oa, ns, es, is, ps, qs, dps, dqs, qis, sa,
     ko, kn, ke, ki, kp, kq, kdp, kdq, kqi, ks, ka, wo, wn, we, wi, wp, wq, wdp, wdq, wqi, ws, ⟨k1, k2⟩, h4, h10,
     e1, e2, p1, p2, q1, q2, h5, h9, h7, hs⟩
 

@@ -101,13 +101,13 @@ theorem ppCtx_of {s : State} (h : ppContract.pre s) : PPCtx s := by
     exact ⟨out_scr dRs hc, fun j hj he => dRo _ hc (by rw [he]; exact contains_byte _ hj (by omega_arith))⟩
   · refine Nat.le_of_not_lt fun h' => dPs x ?_ ?_
     · show (x - s.gpr .rdi).toNat + 1 ≤ (s.gpr .rsi).toNat * 8
-      unfold ofs at h'; omega
+      unfold ofs at h'; omega_using [h']
     · show (x - stackArg s 2).toNat + 1 ≤ (stackArg s 3).toNat * 8
-      unfold ofs at hx; omega
+      unfold ofs at hx; omega_using [hx]
   · have hc := contains_byte (s.gpr .rsp) (i := b) (len := 8) hb (by omega_arith)
     refine Nat.le_of_not_lt fun h' => dRo _ hc ?_
     show (s.gpr .rsp + BitVec.ofNat 64 b - s.gpr .rdi).toNat + 1 ≤ (s.gpr .rsi).toNat * 8
-    unfold ofs at h'; omega
+    unfold ofs at h'; omega_using [h']
 
 /-! ## The entry -/
 
@@ -180,7 +180,7 @@ theorem entry_ok {s : State} (c : PPCtx s) :
     entryMem_facts s.mem (stackArg s 2) (s.gpr .rbx) (s.gpr .rbp) (s.gpr .r12) (s.gpr .r13) (s.gpr .r14)
       (s.gpr .r15) (s.gpr .rdi) (s.gpr .rdx) (s.gpr .rcx) (s.gpr .r8) (s.gpr .r9) (stackArg s 0) (stackArg s 1)
   refine ⟨hdi, fun i hi => ?_, hO, hN, hK, hI, hP, hPl, hQ, hQl, hDp, hDq, hQi, ho, k⟩
-  rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 by omega) with rfl | rfl | rfl | rfl | rfl | rfl
+  rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 by omega_using [hi]) with rfl | rfl | rfl | rfl | rfl | rfl
   · exact h0
   · exact h1
   · exact h2
@@ -191,7 +191,7 @@ theorem ofNat_toNat_self (x : BitVec 64) : BitVec.ofNat 64 x.toNat = x := by sim
 
 theorem eight_w (r : BitVec 64) {L : Nat} (h : r = BitVec.ofNat 64 L) :
     r + r + (r + r) + (r + r + (r + r)) = BitVec.ofNat 64 (L * 8) := by
-  subst h; simp only [BitVec.ofNat_add_ofNat]; congr 1; omega
+  subst h; simp only [BitVec.ofNat_add_ofNat]; congr 1; omega_using []
 
 /-- `zeroPre`: zeros to the `8 L` bytes at `op`, which `sOut` holds. -/
 theorem zeroPre_ok {t : State} {B : Addr} {Z L : Nat} {op : Addr} (hs : Scr t B Z) (hdi : t.gpr .rdi = B)
@@ -201,15 +201,15 @@ theorem zeroPre_ok {t : State} {B : Addr} {Z L : Nat} {op : Addr} (hs : Scr t B 
       (∀ j < L * 8, u.mem (op + BitVec.ofNat 64 j) = 0) ∧
       (∀ x, (∀ j < L * 8, x ≠ op + BitVec.ofNat 64 j) → u.mem x = t.mem x) ∧ Keep [.rcx, .rsi, .rax] t u := by
   have hn := hs.nowrap
-  have hl : ∀ i < 32, InRegions (t.rd ++ t.wr) (off B (8 * i)) 8 := fun i hi => hs.ld (by omega)
+  have hl : ∀ i < 32, InRegions (t.rd ++ t.wr) (off B (8 * i)) 8 := fun i hi => hs.ld (by omega_using [hZ, hi])
   unfold PrivPre.zeroPre
   refine WP.seq (WP.mono (WP.keep [.rsi, .rcx, .rax] (Q := fun t' => t'.gpr .rsi = op ∧
       t'.gpr .rcx = BitVec.ofNat 64 (L * 8) ∧ t'.gpr .rax = 0 ∧ t'.mem = t.mem) (by
     xrun [State.ea, hdr, hdi, hdrOff, hl sOut (by decide), hO, eight_w _ hsi]) rfl)
       fun s₁ ⟨⟨hsi₁, hcx, hax, hm₁⟩, k₁⟩ => ?_)
-  refine WP.mono (wp_upto (a := 0) (N := L * 8) (by omega) (FailInv s₁ op (L * 8)) ?_ (fun t h => h)
+  refine WP.mono (wp_upto (a := 0) (N := L * 8) (by omega_using [hL1]) (FailInv s₁ op (L * 8)) ?_ (fun t h => h)
     ⟨Keep.refl _ _, by rw [hsi₁, show BitVec.ofNat 64 0 = 0#64 from rfl, BitVec.add_zero], by rw [hcx, Nat.sub_zero],
-      fun i hi => absurd hi (by omega), fun x _ => rfl⟩) fun u hI => ⟨hI.bytes, fun x hx => by
+      fun i hi => absurd hi (by omega_using []), fun x _ => rfl⟩) fun u hI => ⟨hI.bytes, fun x hx => by
         rw [hI.frame x hx, hm₁], (k₁.trans hI.keep).mono (by decide)⟩
   intro j _ hj u hI
   have hst : InRegions u.wr (op + BitVec.ofNat 64 j) 1 := by
@@ -220,19 +220,19 @@ theorem zeroPre_ok {t : State} {B : Addr} {Z L : Nat} {op : Addr} (hs : Scr t B 
       t'.gpr .rsi = op + BitVec.ofNat 64 (j + 1) ∧ t'.gpr .rcx = BitVec.ofNat 64 (L * 8 - (j + 1)) ∧
       t'.zf = some (decide (j + 1 = L * 8))) (by
     xrun [State.ea, at0, hI.rsi, hI.rcx, show BitVec.ofInt 64 0 = 0#64 from rfl, BitVec.add_zero, hst, hax',
-      ofNat64_pred (show 1 ≤ L * 8 - j by omega) (by omega), BitVec.add_assoc, ofNat_add_one,
-      ofNat64_beq_zero (show L * 8 - j - 1 < 2 ^ 64 by omega)]
-    exact ⟨by rw [show L * 8 - j - 1 = L * 8 - (j + 1) by omega], decide_eq_decide.mpr (by omega)⟩) rfl)
+      ofNat64_pred (show 1 ≤ L * 8 - j by omega_using [hj]) (by omega_using [hL]), BitVec.add_assoc, ofNat_add_one,
+      ofNat64_beq_zero (show L * 8 - j - 1 < 2 ^ 64 by omega_using [hL])]
+    exact ⟨by rw [show L * 8 - j - 1 = L * 8 - (j + 1) by omega_using []], decide_eq_decide.mpr (by omega_using [hj])⟩) rfl)
     fun t' ⟨⟨hm, hsi', hcx', hz⟩, k'⟩ => ⟨hz, (hI.keep.trans k').mono (by decide), hsi', hcx', ?_, ?_⟩
   · intro i hi
     rw [hm, writeW8_apply]
     by_cases hij : i = j
     · subst hij; simp
-    · rw [ite_eq_right_of_eq_false _ _ (eq_false (out_ne (by omega) (by omega) hij))]
-      exact hI.bytes i (by omega)
+    · rw [ite_eq_right_of_eq_false _ _ (eq_false (out_ne (by omega_using [hL, hj, hi]) (by omega_using [hL, hj]) hij))]
+      exact hI.bytes i (by omega_using [hi, hij])
   · intro x hx
-    rw [hm, writeW8_apply, ite_eq_right_of_eq_false _ _ (eq_false (hx j (by omega)))]
-    exact hI.frame x fun i hi => hx i (by omega)
+    rw [hm, writeW8_apply, ite_eq_right_of_eq_false _ _ (eq_false (hx j (by omega_using [])))]
+    exact hI.frame x fun i hi => hx i (by omega_using [hi])
 
 /-- After `entry`, `zeroPre` and the reloads of `n` and `k`, from `s`. -/
 structure PPHead (s t : State) : Prop where
@@ -274,28 +274,28 @@ theorem head_ok {s : State} (c : PPCtx s) :
     Spec.Rsa.modulusWords] at hL
   refine WP.mono (entry_ok c) fun t₀ ⟨hdi, hsv, hO, hN, hK, hI, hP, hPl, hQ, hQl, hDp, hDq, hQi, ho₀, k₀⟩ => ?_
   have hs₀ := c.hs.congr k₀.2.2
-  refine WP.mono (zeroPre_ok hs₀ hdi (by omega) (L := (s.gpr .rsi).toNat) (by omega) (by omega)
+  refine WP.mono (zeroPre_ok hs₀ hdi (by omega_using [hZ]) (L := (s.gpr .rsi).toNat) (by omega_using [hL]) (by omega_using [hk2, hL, hpl2, hql2])
     (by rw [k₀.gpr (by decide), ofNat_toNat_self]) hO (fun j hj => by rw [k₀.2.2]; exact c.hout j hj))
     fun t₁ ⟨hz₁, hf₁, k₁⟩ => ?_
   have hs₁ := hs₀.congr k₁.2.2
   -- The header is not in `pre`.
   have hh : ∀ i < 32, word t₁.mem (stackArg s 2) (8 * i) = word t₀.mem (stackArg s 2) (8 * i) := fun i hi =>
-    Mem.readW_congr fun b hb => hf₁ _ (fun j hj => scr_ne_out c.houts (d := 8 * i) (i := b) (by omega)
-      (by omega) j hj)
+    Mem.readW_congr fun b hb => hf₁ _ (fun j hj => scr_ne_out c.houts (d := 8 * i) (i := b) (by omega_using [hZ, hi, hb])
+      (by omega_using [hn]) j hj)
   have hdi₁ : t₁.gpr .rdi = stackArg s 2 := (k₁.gpr (by decide)).trans hdi
   refine WP.mono (WP.keep [.rdx, .rcx] (Q := fun t => t.gpr .rdx = s.gpr .rdx ∧
       t.gpr .rcx = s.gpr .rcx ∧ t.mem = t₁.mem) (by
-    xrun [State.ea, hdr, hdi₁, hdrOff, hs₁.ld (d := 8 * sN) (by unfold sN sFn; omega),
-      hs₁.ld (d := 8 * sK) (by unfold sK sFn; omega), hh sN (by decide), hh sK (by decide), hN, hK]) rfl)
+    xrun [State.ea, hdr, hdi₁, hdrOff, hs₁.ld (d := 8 * sN) (by unfold sN sFn; omega_using [hZ]),
+      hs₁.ld (d := 8 * sK) (by unfold sK sFn; omega_using [hZ]), hh sN (by decide), hh sK (by decide), hN, hK]) rfl)
     fun t ⟨⟨hdx, hcx, hm⟩, k₂⟩ => ?_
   have hw : ∀ i < 32, word t.mem (stackArg s 2) (8 * i) = word t₀.mem (stackArg s 2) (8 * i) := fun i hi => by
     rw [hm]; exact hh i hi
   have kk := (k₀.trans k₁).trans k₂
   have hfr : ∀ x, (∀ j < (s.gpr .rsi).toNat * 8, x ≠ s.gpr .rdi + BitVec.ofNat 64 j) →
       (stackArg s 3).toNat * 8 ≤ ofs (stackArg s 2) x → t.mem x = s.mem x := fun x hx hxz => by
-    rw [hm, hf₁ x hx, ho₀ x (by omega)]
+    rw [hm, hf₁ x hx, ho₀ x (by omega_using [hZ, hxz])]
   exact ⟨hs₁.congr k₂.2.2, (k₂.gpr (by decide)).trans hdi₁, hdx, by rw [hcx, ofNat_toNat_self],
-    fun i hi => by rw [hw i (by omega)]; exact hsv i hi,
+    fun i hi => by rw [hw i (by omega_using [hi])]; exact hsv i hi,
     by rw [hw _ (by decide)]; exact hO, by rw [hw _ (by decide)]; exact hN,
     by rw [hw _ (by decide), hK, ofNat_toNat_self], by rw [hw _ (by decide)]; exact hI,
     by rw [hw _ (by decide)]; exact hP, by rw [hw _ (by decide), hPl, ofNat_toNat_self],
@@ -317,12 +317,12 @@ theorem Src.of_head {s t : State} {p : Addr} {bs : List Byte}
 theorem src_zeros {s t : State} {n : Nat} (c : PPCtx s) (hn : n ≤ (s.gpr .rsi).toNat * 8)
     (hz : ∀ j < (s.gpr .rsi).toNat * 8, t.mem (s.gpr .rdi + BitVec.ofNat 64 j) = 0) (hwr : t.wr = s.wr) :
     Src t (stackArg s 2) ((stackArg s 3).toNat * 8) (s.gpr .rdi) (List.replicate n 0) := by
-  refine ⟨fun i hi => ?_, fun i hi => ?_, fun i hi => c.houts i (by simp at hi; omega)⟩
+  refine ⟨fun i hi => ?_, fun i hi => ?_, fun i hi => c.houts i (by simp at hi; omega_using [hn, hi])⟩
   · simp only [List.length_replicate] at hi
-    obtain ⟨r, hr, hc⟩ := c.hout i (by omega)
+    obtain ⟨r, hr, hc⟩ := c.hout i (by omega_using [hn, hi])
     exact ⟨r, List.mem_append_right _ (by rw [hwr]; exact hr), hc⟩
   · simp only [List.length_replicate] at hi
-    rw [hz i (by omega), List.getElem_replicate]
+    rw [hz i (by omega_using [hn, hi]), List.getElem_replicate]
 
 /-- `vg_rsa_private_crt`'s precondition, after the head and the modulus'
 check, with `pre` (zeros) as the input and as `qInv`. -/
@@ -360,15 +360,15 @@ theorem ppPre_of {s t₁ t : State} (c : PPCtx s) (h : PPHead s t₁) (hm : t.me
   have hpb := Src.of_head (t := t) c.hpb (by rw [bytesAt_length]; exact c.hop) hf kk.2.1 kk.2.2
   have hqb := Src.of_head (t := t) c.hqb (by rw [bytesAt_length]; exact c.hoq) hf kk.2.1 kk.2.2
   exact
-    { scr := h.scr.congr k.2.2, rdi := hdi, z := hz8, zk := (by omega), k1 := hk1, k2 := hk2,
+    { scr := h.scr.congr k.2.2, rdi := hdi, z := hz8, zk := (by omega_using [hZ]), k1 := hk1, k2 := hk2,
       hO := (by rw [hm]; exact h.hO), hN := (by rw [hm]; exact h.hN), hK := (by rw [hm]; exact h.hK),
       hIn := (by rw [hm]; exact h.hIn), hP := (by rw [hm]; exact h.hP), hPl := (by rw [hm]; exact h.hPl),
       hQ := (by rw [hm]; exact h.hQ), hQl := (by rw [hm]; exact h.hQl), hDp := (by rw [hm]; exact h.hDp),
       hDq := (by rw [hm]; exact h.hDq), hQi := (by rw [hm]; exact h.hQi), n := hnb,
-      x := src_zeros c (by omega) hz kk.2.2, p := hpb, q := hqb, dp := hpb, dq := hqb,
-      qi := src_zeros c (by omega) hz kk.2.2, nl := bytesAt_length _ _ _, xl := List.length_replicate,
+      x := src_zeros c (by omega_using [hL]) hz kk.2.2, p := hpb, q := hqb, dp := hpb, dq := hqb,
+      qi := src_zeros c (by omega_using [hL]) hz kk.2.2, nl := bytesAt_length _ _ _, xl := List.length_replicate,
       pbl := bytesAt_length _ _ _, qbl := bytesAt_length _ _ _, dpl := bytesAt_length _ _ _,
       dql := bytesAt_length _ _ _, qil := List.length_replicate, pl1 := c.hpl1, pl2 := hpl2, ql1 := c.hql1,
-      ql2 := hql2, out := (fun j hj => by rw [kk.2.2]; exact c.hout j (by omega)),
-      outSep := (fun j hj => c.houts j (by omega)) }
+      ql2 := hql2, out := (fun j hj => by rw [kk.2.2]; exact c.hout j (by omega_using [hL, hj])),
+      outSep := (fun j hj => c.houts j (by omega_using [hL, hj])) }
 end VG.Proof.Bignum.X86_64.PrivPre

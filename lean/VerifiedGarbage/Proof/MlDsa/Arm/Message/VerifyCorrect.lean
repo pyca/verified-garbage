@@ -37,8 +37,8 @@ theorem CPre.args {p : Params} {prepared : Bool} {s : State} (h : CPre p prepare
     InRegions (s.rd ++ s.wr) (State.addr (s.sp + BitVec.ofNat 32 o)) 4 := by
   refine ⟨rArgs s 16, by simp [h.rd], ?_⟩
   simp only [rArgs, stackArgAddr0]
-  rw [addr_add (by have := h.spA; omega)]
-  exact Offset.contains_base _ ho (by omega)
+  rw [addr_add (by have := h.spA; omega_using [ho, this])]
+  exact Offset.contains_base _ ho (by omega_using [ho])
 
 /-- The entry of `verify_message_cached`, from a state with the registers,
 permissions and memory of an entry state. -/
@@ -50,10 +50,10 @@ theorem enterC_ok {p : Params} {prepared : Bool} (hp : p ∈ params) {s s1 : Sta
   exact enter_ok (clay_ok hp h h8) rfl (nA := 16) (by decide) (Nat.le_refl _) (o1.sp)
     (by rw [o1.rd]; rfl) (by rw [o1.wr]; rfl) (o1.get .r0) (o1.get .r1) (o1.get .r2) (o1.get .r3)
     (fun o ho => by rw [o1.rd, o1.wr, o1.sp]; exact h.args ho) (by rw [o1.sp]; exact h.spA)
-    (by rw [o1.sp, ← stackArgAddr0]; exact h.scrArgs) (by omega)
-    (by rw [hs1 8 (by omega)]; exact stackArg_eq s 2) (by decide) (fun j hj => by
+    (by rw [o1.sp, ← stackArgAddr0]; exact h.scrArgs) (by omega_using [])
+    (by rw [hs1 8 (by omega_using [])]; exact stackArg_eq s 2) (by decide) (fun j hj => by
       have hj4 : j < 4 := hj
-      rcases (by omega : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3) with rfl | rfl | rfl | rfl
+      rcases (by omega_using [hj4] : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3) with rfl | rfl | rfl | rfl
       · exact (hs1 0 (by decide)).trans (stackArg_eq s 0)
       · exact (hs1 12 (by decide)).trans (stackArg_eq s 3)
       · exact (hs1 4 (by decide)).trans (stackArg_eq s 1)
@@ -72,10 +72,10 @@ theorem TrSide.side {L : Lay} (hL : L.Ok) (h : TrSide L) :
       Region.Disjoint ⟨State.addr L.rnd, 64⟩ ⟨L.ST, 200⟩ ∧ Region.Disjoint ⟨State.addr L.rnd, 64⟩ ⟨L.KS, 640⟩ ∧
       L.STK.Disjoint ⟨State.addr L.rnd, 64⟩ := by
   have hst : Region.Sub ⟨L.ST, 200⟩ L.SC := by
-    have := hL.sub_sc (e := 0) (k := 200) (by omega)
+    have := hL.sub_sc (e := 0) (k := 200) (by omega_using [])
     simpa only [x0] using this
   exact ⟨h.n, ⟨_, List.mem_append_left _ h.inRd, within_self _⟩, h.x.symm.sub_right hst,
-    h.x.symm.sub_right (hL.sub_sc (by omega : 200 + 640 ≤ 1024)), h.k⟩
+    h.x.symm.sub_right (hL.sub_sc (by omega_using [] : 200 + 640 ≤ 1024)), h.k⟩
 
 /-- The cached `tr`, as `clay` places it. -/
 theorem CPre.trSide {p : Params} {prepared : Bool} {s : State} (h : CPre p prepared s) :
@@ -84,7 +84,7 @@ theorem CPre.trSide {p : Params} {prepared : Bool} {s : State} (h : CPre p prepa
 
 theorem Ctx.trV {L : Lay} {g : Reg → BitVec 32} {m₀ : Mem} {t : State} (hc : Ctx L g m₀ t) (hL : L.Ok) :
     (Arg.slot fRnd).val t = L.rnd := by
-  rw [hc.slotV hL (f := fRnd) (j := 5) rfl (by omega)]; rfl
+  rw [hc.slotV hL (f := fRnd) (j := 5) rfl (by omega_using [])]; rfl
 
 /-- `muHash` on the cached `tr`. -/
 theorem muHashC_ok {L : Lay} (hL : L.Ok) {g : Reg → BitVec 32} {m₀ : Mem} {t : State} (hc : Ctx L g m₀ t)
@@ -102,7 +102,7 @@ theorem verifyMessageCached_wp {p : Params} {prepared : Bool} {n : String} {c : 
     WP isa (verifyMessageCached n c p) s fun s' =>
       abiPreserved s s' ∧ (verifyMessageCachedContract p Arm.abi 52).post s s' := by
   unfold verifyMessageCached top
-  refine WP.seq (WP.mono (chk_ok (h.args (by omega))) fun s1 ⟨o1, hc1⟩ => ?_)
+  refine WP.seq (WP.mono (chk_ok (h.args (by omega_using []))) fun s1 ⟨o1, hc1⟩ => ?_)
   by_cases h8 : (stackArg s 0).toNat < 256
   · rw [decide_eq_false (by simpa using h8)] at hc1
     have hL := clay_ok hp h h8
@@ -112,7 +112,7 @@ theorem verifyMessageCached_wp {p : Params} {prepared : Bool} {n : String} {c : 
     have hkb : bytesAt t₂.mem (State.addr (s.gpr .r0)) (publicKeyLen p prepared) =
         bytesAt s.mem (State.addr (s.gpr .r0)) (publicKeyLen p prepared) :=
       (hc₂.bytesAt_eq (p := State.addr (clay p prepared s).key) (n := publicKeyLen p prepared) hL.xKey hL.kKey
-        (by have := h.nPk; omega)).trans (by rw [hm₀]; rfl)
+        (by have := h.nPk; omega_using [this])).trans (by rw [hm₀]; rfl)
     have hk : PublicKeyOk p prepared t₂.mem (State.addr (clay p prepared s).key) := fun e => by
       subst e
       exact PreparedKey.preparedPublicKey_of_bytes hkb (h.key rfl)
@@ -128,11 +128,11 @@ theorem verifyMessageCached_wp {p : Params} {prepared : Bool} {n : String} {c : 
       (hc₂.bytesAt_eq (p := State.addr (clay p prepared s).key) (n := p.pkLen)
         (hL.xKey.sub_right (Region.sub_prefix (pkLen_le prepared)))
         (hL.kKey.sub_right (Region.sub_prefix (pkLen_le prepared)))
-        (by have := h.nPk; have := pkLen_le (p := p) prepared; omega)).trans (by rw [hm₀]; rfl)
+        (by have := h.nPk; have := pkLen_le (p := p) prepared; omega_arith)).trans (by rw [hm₀]; rfl)
     have es : bytesAt t₂.mem (State.addr (stackArg s 1)) p.sigLen =
         bytesAt s.mem (State.addr (stackArg s 1)) p.sigLen :=
       (hc₂.bytesAt_eq (p := State.addr (clay p prepared s).sig) (n := p.sigLen) h.sigScr.symm h.stkSig
-        (by have := h.nSig; omega)).trans (by rw [hm₀]; rfl)
+        (by have := h.nSig; omega_using [this])).trans (by rw [hm₀]; rfl)
     have etr : bytesAt s1.mem (State.addr (clay p prepared s).rnd) 64 = H (bytesAt s.mem (State.addr (s.gpr .r0)) p.pkLen) 64 := by
       rw [hm₀]; exact h.tr
     have hμ' := hμ
@@ -149,6 +149,6 @@ theorem verifyMessageCached_wp {p : Params} {prepared : Bool} {n : String} {c : 
       rw [o2.gpr r h0, o1.gpr r h12]
     · sig_post [verifyMessageCachedContract, verifyMessageCachedSig, Arm.abi, Arm.argRegs, Arm.reduceClassify,
         Arm.Loc.val]
-      rw [formatMessage_none (by rw [Proof.MlKem.bytesAt_length]; omega), Proof.MlKem.Arm.setWidth_append32, e2]
+      rw [formatMessage_none (by rw [Proof.MlKem.bytesAt_length]; omega_using [h8]), Proof.MlKem.Arm.setWidth_append32, e2]
 
 end VG.Proof.MlDsa.Arm.Message

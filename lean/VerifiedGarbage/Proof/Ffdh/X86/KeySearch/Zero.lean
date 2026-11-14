@@ -60,9 +60,9 @@ theorem zeroStep_ok {s₀ t : State} {P : BitVec 32} {n k : Nat} (hR : (⟨P.set
       fun u => ZInv s₀ P n (k + 1) u ∧ u.zf = some (decide (n - (k + 1) = 0)) := by
   have hp : t.ea (at_ .edx 0) = P.setWidth 64 + BitVec.ofNat 64 k := by
     show (t.gpr .edx + BitVec.ofNat 32 0).setWidth 64 = _
-    rw [BitVec.add_zero, I.edx]; exact addr_eq (by omega)
+    rw [BitVec.add_zero, I.edx]; exact addr_eq (by omega_using [hb, hk])
   have hw : InRegions t.wr (P.setWidth 64 + BitVec.ofNat 64 k) 1 :=
-    ⟨_, by rw [I.keeps.2.2]; exact hR, Offset.contains_base _ (by omega) (by omega)⟩
+    ⟨_, by rw [I.keeps.2.2]; exact hR, Offset.contains_base _ (by omega_using [hk]) (by omega_using [hb, hk])⟩
   refine wp_store8 hp hw fun u₁ m₁ => wp_addi fun u₂ v₂ => wp_subi fun u₃ v₃ _ z₃ => WP.block_nil ?_
   have hv : (t.gpr (Reg8.al).reg).setWidth 8 = 0 := by show (t.gpr .eax).setWidth 8 = 0; rw [I.eax]; rfl
   rw [hv] at m₁
@@ -72,19 +72,19 @@ theorem zeroStep_ok {s₀ t : State} {P : BitVec 32} {n k : Nat} (hR : (⟨P.set
     rw [v₃.mem, v₂.mem, m₁.mem]
   have fr : Frame [⟨P.setWidth 64, n⟩] t.mem u₃.mem := by
     rw [mem₃]; exact Frame.writeW (Frame.refl _ _) (List.mem_singleton_self _) _
-      (Offset.contains_base _ (by omega) (by omega))
+      (Offset.contains_base _ (by omega_using [hk]) (by omega_using [hb, hk]))
   refine ⟨⟨?_, ?_, ?_, I.frame.trans fr, fun i hi => ?_, I.keeps.trans kk⟩, ?_⟩
   · rw [v₃.other _ (by decide), v₂.gpr, m₁.gpr, I.edx, BitVec.add_assoc,
       show (1 : BitVec 32) = BitVec.ofNat 32 1 from rfl, BitVec.ofNat_add_ofNat]
-  · rw [v₃.gpr, v₂.other _ (by decide), m₁.gpr, I.ecx, ofNat_pred (by omega)]; rfl
+  · rw [v₃.gpr, v₂.other _ (by decide), m₁.gpr, I.ecx, ofNat_pred (by omega_using [hk])]; rfl
   · rw [v₃.other _ (by decide), v₂.other _ (by decide), m₁.gpr, I.eax]
   · rw [mem₃, byte_write]
     by_cases hik : i = k
     · subst hik; simp
-    · rw [ite_eq_right (Offset.add_ofNat_ne _ (by omega) (by omega) hik)]
-      exact I.zero i (by omega)
+    · rw [ite_eq_right (Offset.add_ofNat_ne _ (by omega_using [hb, hk, hi]) (by omega_using [hb, hk]) hik)]
+      exact I.zero i (by omega_using [hi, hik])
   · rw [z₃, v₂.other _ (by decide), m₁.gpr, I.ecx, show (1 : BitVec 32) = BitVec.ofNat 32 1 from rfl,
-      sub_beq (by omega) (by decide)]
-    exact congrArg some (decide_eq_decide.mpr (by omega))
+      sub_beq (by omega_using [hn]) (by decide)]
+    exact congrArg some (decide_eq_decide.mpr (by omega_using [hk]))
 
 end VG.Proof.Ffdh.X86.KeySearch

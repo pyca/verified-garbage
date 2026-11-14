@@ -94,7 +94,7 @@ theorem verifiedS {so : Nat} (h : so = 0 ∨ so = 112) {f : Callee} (hf : f.Ok)
     (hm : (Impl.MdStream.X86_64.update (paramsS so) f.name f.code).allInstrs (fun i => !loadsMxcsr i) = true) :
     Verified X86_64.target (Impl.MdStream.X86_64.update (paramsS so) f.name f.code)
       (Proof.Sha256.updateX86_64S (so + 48)) :=
-  have h := MdStream.X86_64.Update.verified (dimsS so (by omega)) (taintsS so h) (calleeS hf hv) hm
+  have h := MdStream.X86_64.Update.verified (dimsS so (by omega_using [h])) (taintsS so h) (calleeS hf hv) hm
   Verified.of_implies h ⟨fun _ h => h, fun _ _ _ h iv m hr hc => h iv m hr hc, fun _ _ _ _ h => h, h.2.2⟩
 
 end Update
@@ -108,7 +108,7 @@ theorem verifiedS {so : Nat} (h : so = 0 ∨ so = 112) {f : Callee} (hf : f.Ok)
     (hm : (Impl.MdStream.X86_64.finalize (paramsS so) f.name f.code).allInstrs (fun i => !loadsMxcsr i) = true) :
     Verified X86_64.target (Impl.MdStream.X86_64.finalize (paramsS so) f.name f.code)
       (Proof.Sha256.finalizeX86_64S (so + 48)) :=
-  have h := MdStream.X86_64.Finalize.verified (dimsS so (by omega)) (shapeS so) (taintsS so h) (calleeS hf hv) hm
+  have h := MdStream.X86_64.Finalize.verified (dimsS so (by omega_using [h])) (shapeS so) (taintsS so h) (calleeS hf hv) hm
   Verified.of_implies h
     ⟨fun _ h => h, fun _ _ _ h iv m hr hc => h iv m hr trivial hc, fun _ _ _ _ h => h, h.2.2⟩
 

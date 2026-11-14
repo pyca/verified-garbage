@@ -230,7 +230,7 @@ theorem drawTail_ok {C : Nat} (R : RoundImpl) {p : PP} {mb N u i : Nat} {t₄ : 
     rw [hb'] at this; exact absurd this (by decide)
   have hK : C < 2 ^ 62 := by have := M₄.ph.k2; omega_arith
   have hsp₄ := M₄.st.sp
-  refine WP.mono (roundCount_ok R M₄.prep ha₄ (show wA mb p.r u < N by omega) (by rw [hsp₄]; exact M₄.st.stk)
+  refine WP.mono (roundCount_ok R M₄.prep ha₄ (show wA mb p.r u < N by omega_using [haN]) (by rw [hsp₄]; exact M₄.st.stk)
     (by rw [hsp₄]; exact M₄.st.stkB) hI M₄.ph.checksW hi hK)
     fun t ht => ⟨M₄.round ht, ?_⟩
   obtain ⟨v, hv, tm, -⟩ := ht

@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.MlDsa.KeyGen.Rest
 public import VerifiedGarbage.Proof.MlDsa.KeyGen.Masked
 import VerifiedGarbage.Proof.MlDsa.KeyGen.Poly
 import Batteries.Tactic.Init
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # ML-DSA key generation: the result of the samplers, for every target
@@ -59,8 +60,8 @@ theorem good_A {p : Params} {ξ : List Byte} {e : Nat} (he : e < p.k * p.ℓ) {A
   · rcases ho with ⟨ho, b', hb'⟩ | ⟨ho, hn⟩
     · refine .inl ⟨by rw [ifp ⟨h1, ho⟩], bmax b b', fun e' he' => ?_, fun _ h => absurd h (Nat.not_lt_zero _)⟩
       dsimp only
-      rcases (by omega : e' < e ∨ e' = e) with he' | rfl
-      · rw [ifn (by omega)]
+      rcases (by omega_using [he'] : e' < e ∨ e' = e) with he' | rfl
+      · rw [ifn (by omega_using [he'])]
         exact rejNTTPoly_mono (Bounds.le_max_left b b').rejNTT (hb e' he')
       · rw [ifp rfl, hy ho]
         exact rejNTTPoly_mono (Bounds.le_max_right b b').rejNTT hb'
@@ -90,8 +91,8 @@ theorem good_S {p : Params} {ξ : List Byte} {r : Nat} (hr : r < p.ℓ + p.k) {A
     · refine .inl ⟨by rw [ifp ⟨hv, h1⟩], bmax b b', fun e' he' =>
         rejNTTPoly_mono (Bounds.le_max_left b b').rejNTT (hbA e' he'), fun r' hr' => ?_⟩
       dsimp only
-      rcases (by omega : r' < r ∨ r' = r) with hr' | rfl
-      · rw [ifn (by omega)]
+      rcases (by omega_using [hr'] : r' < r ∨ r' = r) with hr' | rfl
+      · rw [ifn (by omega_using [hr'])]
         exact rejBoundedPoly_mono (Bounds.le_max_left b b').rejBounded (hbS r' hr')
       · rw [ifp rfl]
         exact rejBoundedPoly_mono (Bounds.le_max_right b b').rejBounded hz
@@ -106,9 +107,9 @@ theorem good_S {p : Params} {ξ : List Byte} {r : Nat} (hr : r < p.ℓ + p.k) {A
     exact .inr ⟨rfl, keyGenInternal_none_S hr hn⟩
 
 theorem idx_lt {p : Params} {i j : Nat} (hi : i < p.k) (hj : j < p.ℓ) : p.ℓ * i + j < p.k * p.ℓ := by
-  have : p.ℓ * i + j < p.ℓ * (i + 1) := by rw [Nat.mul_succ]; omega
+  have : p.ℓ * i + j < p.ℓ * (i + 1) := by rw [Nat.mul_succ]; omega_using [hj]
   have : p.ℓ * (i + 1) ≤ p.ℓ * p.k := Nat.mul_le_mul_left _ hi
-  rw [Nat.mul_comm p.k]; omega
+  rw [Nat.mul_comm p.k]; omega_arith
 
 /-- At the end, the AND of the results is the outcome of key generation. -/
 theorem outcome_keyGen {p : Params} {ξ : List Byte} {A : Nat → Poly} {S : Nat → IPoly} {R : BitVec 32}

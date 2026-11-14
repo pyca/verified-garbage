@@ -78,8 +78,8 @@ theorem apart_callW (h7 : c.n < 10) {o i : Nat} (hi : i < 45) (hio : i ≠ o) :
 /-- The flag is apart from what a call writes. -/
 theorem flag_callW (h0 : 0 < c.n) (h7 : c.n < 10) {base : Addr} {m m' : Mem} {o : Nat} (ho : FLAG ≠ o)
     (hu : Unch base (callW c o) m m') : word m' base (c.sl FLAG) = word m base (c.sl FLAG) :=
-  hu.word (fun w hw => (apart_callW h7 (by decide) ho w hw).imp (fun h => by omega) id)
-    (by have := sl_le c h7 (i := FLAG) (by decide); omega)
+  hu.word (fun w hw => (apart_callW h7 (by decide) ho w hw).imp (fun h => by omega_using [h0, h]) id)
+    (by have := sl_le c h7 (i := FLAG) (by decide); omega_using [this])
 
 theorem fixedOk_callW (h7 : c.n < 10) {o : Nat} (ho : o = TMP ∨ 12 ≤ o) : FixedOk c (callW c o) :=
   (fixedOk_slW (l := [o]) (by simpa using ho)).append (fixedOk_own h7)
@@ -90,7 +90,7 @@ theorem callW_le (h7 : c.n < 10) {o : Nat} (ho : o < 45) : ∀ w ∈ callW c o, 
   have hsz : size = 8192 := rfl
   intro w hw
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
-  rcases hw with rfl | rfl <;> (dsimp only; omega)
+  rcases hw with rfl | rfl <;> (dsimp only; omega_arith)
 
 theorem tbl_apart_callW (h7 : c.n < 10) {o : Nat} (ho : o < 45) (j t : Nat) :
     ∀ w ∈ callW c o, bitsAt c.n j + t + 1 ≤ w.1 ∨ w.1 + w.2 ≤ bitsAt c.n j + t := by
@@ -98,6 +98,6 @@ theorem tbl_apart_callW (h7 : c.n < 10) {o : Nat} (ho : o < 45) (j t : Nat) :
   have := own_below_bits c h7 j
   intro w hw
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
-  rcases hw with rfl | rfl <;> (dsimp only; omega)
+  rcases hw with rfl | rfl <;> (dsimp only; omega_arith)
 
 end VG.Proof.Ecdsa.PPC64LE

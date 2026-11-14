@@ -576,7 +576,7 @@ theorem direct_ok (hP : Ok P) (hf : CalleeOk P (compress P)) {s₀ : State} (hp 
   refine WP.seq (compressWith_ok hf (directArgs_ok (B_lt hP)) (callOk hP hp hC₂ hsrc)
     fun s' hrd hwr hsp hcs hfr hst => ?_)
   have hC' := hC₂.after_call hP hp hrd hwr hsp hcs hfr
-  refine wp_subi (by decide) fun s₁ u₁ => wp_li (by have := B_lt hP; omega) fun s₃ u₃ => wp_and fun s₄ u₄ =>
+  refine wp_subi (by decide) fun s₁ u₁ => wp_li (by have := B_lt hP; omega_using [this]) fun s₃ u₃ => wp_and fun s₄ u₄ =>
     wp_addi (by decide) fun s₅ u₅ => wp_sub fun s₆ u₆ => wp_add fun s₇ u₇ => wp_add fun s₈ u₈ =>
     wp_mov fun s₉ u₉ => WP.block_nil ?_
   have hm : (len s₀ - c - 1) % blockBytes w + 1 = len s₀ - (c + blockBytes w * k) := by omega_using [hdm, hBk]

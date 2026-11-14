@@ -123,8 +123,8 @@ theorem agree₀ {s₁ s₂ : State} (h₁ : pkX86.pre s₁) (h₂ : pkX86.pre s
   · rw [hp₁.wr, hp₂.wr]; simp only [ptr, a0, a2]
   · simp only [τ₀] at hk
     rw [show VG.X86.Taint.depth τ₀.stk = 0 from rfl, Nat.zero_add]
-    rw [VG.X86.Taint.argByte_eq (by have := hp₁.sp_fit; omega) h4 hk,
-      VG.X86.Taint.argByte_eq (by have := hp₂.sp_fit; omega) h4 hk,
+    rw [VG.X86.Taint.argByte_eq (by have := hp₁.sp_fit; omega_using [this]) h4 hk,
+      VG.X86.Taint.argByte_eq (by have := hp₂.sp_fit; omega_using [this]) h4 hk,
       Mem.readW_byte s₁.mem _ (Nat.mod_lt _ (by decide)), Mem.readW_byte s₂.mem _ (Nat.mod_lt _ (by decide))]
     have : (k - 4) / 4 = 0 ∨ (k - 4) / 4 = 1 ∨ (k - 4) / 4 = 2 := by omega_using [hk]
     rcases this with h | h | h <;> rw [h]

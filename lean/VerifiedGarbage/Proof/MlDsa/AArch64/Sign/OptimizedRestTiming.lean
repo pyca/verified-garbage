@@ -67,11 +67,11 @@ theorem output_tr {P : Prims} (hP : PrimsOk P D) (hc : oChk p = true) {E : State
   refine RelCT.seq (R := fun x y => RS p D E (IOr p D p.ℓ) x y ∧ HJ p x y) (RelCT.mono (seqR_tr
     (Q := fun r x y => RS p D E (IOr p D r) x y ∧ HJ p x y) p.ℓ 0 fun r _ hr => liftQ
       (F := fun s s' => ∀ f, HFam s 5 p.k f → HFam s' 5 p.k f)
-      (fun σ s _ ⟨κ, h, hpass⟩ => WP.mono (packZ_ok hP hc (by omega) h hpass) fun _ h => ⟨⟨κ, h.1, hpass⟩, h.2⟩)
-      (RelCT.mono (bpAt_tr hP hbp hzl (cz r (by omega)).1.1) (fun x y ⟨h, _⟩ =>
+      (fun σ s _ ⟨κ, h, hpass⟩ => WP.mono (packZ_ok hP hc (by omega_using [hr]) h hpass) fun _ h => ⟨⟨κ, h.1, hpass⟩, h.2⟩)
+      (RelCT.mono (bpAt_tr hP hbp hzl (cz r (by omega_using [hr])).1.1) (fun x y ⟨h, _⟩ =>
         ⟨h.lrel fun σ s ⟨_, h, _⟩ => h.k, by
           obtain ⟨_, _, _, _, _, _, i₁, i₂⟩ := h
-          exact ⟨i₁.zr (by omega), i₂.zr (by omega)⟩⟩) fun _ _ h => h)
+          exact ⟨i₁.zr (by omega_using [hr]), i₂.zr (by omega_using [hr])⟩⟩) fun _ _ h => h)
       fun σ₁ σ₂ x y x' y' p₁ p₂ hpub he _ _ ⟨f, hx, hy⟩ j₁ j₂ g₁ g₂ _ =>
         ⟨⟨σ₁, σ₂, p₁, p₂, hpub, he, j₁, j₂⟩, f, g₁ f hx, g₂ f hy⟩)
     (fun _ _ h => h) fun x y h => by rwa [Nat.zero_add] at h) ?_
@@ -103,7 +103,7 @@ theorem conversionReady {p : Params} {S : Nat} {σ s : State} {κ r : Nat} {lo h
     (h : AcceptedConversion p S σ κ lo hi r s) : Response.CanonicalizeCallReady (yP p r) s := by
   have hc := canonicalizeZChk_ok hp r hr
   simp only [canonicalizeZChk,Bool.and_eq_true] at hc
-  exact ⟨h.z.rooted.1.lay.nwp hc.1.1,centered_of_signed (h.z.pending r (by omega) hr) hl hh,
+  exact ⟨h.z.rooted.1.lay.nwp hc.1.1,centered_of_signed (h.z.pending r (by omega_using []) hr) hl hh,
     h.z.rooted.1.lay.cR hc.1.1,h.z.rooted.1.lay.cW hc.1.2⟩
 
 theorem conversionStep_tr {p : Params} {S r : Nat} {lo hi : Int} {E : State → State → Prop}
@@ -140,7 +140,7 @@ theorem optimizedOutput_tr {P : Prims} {p : Params} {S : Nat} {lo hi : Int}
   refine RelCT.seq (R := fun x y => RS p S E (ConversionI p S lo hi p.ℓ) x y ∧ HJ p x y) ?_ ?_
   · simpa only [Nat.zero_add] using seqR_tr
       (Q := fun r x y => RS p S E (ConversionI p S lo hi r) x y ∧ HJ p x y)
-      p.ℓ 0 (fun r _ hr => conversionStep_tr hp (by omega) hl hh)
+      p.ℓ 0 (fun r _ hr => conversionStep_tr hp (by omega_using [hr]) hl hh)
   · refine RelCT.mono (Output.output_tr hP (Output.oChk_ok hp) (E := E)) ?_ (fun _ _ h => h)
     intro x y ⟨h,hj⟩
     refine ⟨h.mono (fun _ _ he => he) ?_,hj⟩

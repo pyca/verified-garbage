@@ -26,20 +26,20 @@ structure KeyBody (s₀ entry : State) (nk K : Nat) (s : State) : Prop where
 
 theorem KeyBody.initial {s₀ entry : State} (hs : KeyReady s₀ entry) (nk : Nat) :
     KeyBody s₀ entry nk 0 entry :=
-  ⟨fun i hi => False.elim (by omega), rfl, rfl, rfl, by rw [hs.mem]; exact Frame.refl _ _⟩
+  ⟨fun i hi => False.elim (by omega_using [hi]), rfl, rfl, rfl, by rw [hs.mem]; exact Frame.refl _ _⟩
 
 theorem KeyBody.ea {s₀ entry s : State} {nk K d : Nat} (hp : EPre s₀)
     (hs : KeyReady s₀ entry) (h : KeyBody s₀ entry nk K s) (hd : d < 240) :
     s.ea (at_ .edx d) = (ekSchP s₀).setWidth 64 + BitVec.ofNat 64 d := by
   change addr (s.gpr .edx) d = _
-  rw [h.gpr, hs.edx, addr_eq (by have hf := hp.fS; omega)]
+  rw [h.gpr, hs.edx, addr_eq (by have hf := hp.fS; omega_using [hd, hf])]
 
 theorem KeyBody.writable {s₀ entry s : State} {nk K d : Nat} (hp : EPre s₀)
     (hs : KeyReady s₀ entry) (h : KeyBody s₀ entry nk K s) (hd : d + 16 ≤ 240) :
     InRegions s.wr (s.ea (at_ .edx d)) 16 := by
-  rw [h.ea hp hs (by omega), h.wr, hs.wr]
+  rw [h.ea hp hs (by omega_using [hd]), h.wr, hs.wr]
   exact ⟨ekSchR s₀, by simp only [hp.wr, List.mem_cons, true_or],
-    Offset.contains_base _ hd (by omega)⟩
+    Offset.contains_base _ hd (by omega_using [hd])⟩
 
 theorem KeyBody.stored {s₀ entry s : State} {nk K n : Nat} (hp : EPre s₀)
     (hs : KeyReady s₀ entry) (h : KeyBody s₀ entry nk K s) (v : BitVec 128)
@@ -48,12 +48,12 @@ theorem KeyBody.stored {s₀ entry s : State} {nk K n : Nat} (hp : EPre s₀)
     (mem : s'.mem = s.mem.writeW (s.ea (at_ .edx (4 * K))) v)
     (gpr : s'.gpr = s.gpr) (rd : s'.rd = s.rd) (wr : s'.wr = s.wr) :
     KeyBody s₀ entry nk (K + n) s' := by
-  have ea := h.ea hp hs (d := 4 * K) (by omega)
+  have ea := h.ea hp hs (d := 4 * K) (by omega_using [hK])
   refine ⟨?_, gpr.trans h.gpr, rd.trans h.rd, wr.trans h.wr, ?_⟩
   · rw [mem, ea]; exact good_store h.words v hn hv hK
   · rw [mem, ea]
     exact h.frame.writeW (v := v) (List.mem_singleton_self _)
-      (Offset.contains_base _ hK (by omega))
+      (Offset.contains_base _ hK (by omega_using [hK]))
 
 theorem key_store_ok {s₀ entry s : State} {nk K n : Nat} (hp : EPre s₀)
     (hs : KeyReady s₀ entry) (h : KeyBody s₀ entry nk K s) (x : XReg)
@@ -92,9 +92,9 @@ theorem key_load_ok {s₀ entry s : State} {nk K off : Nat} (hp : EPre s₀)
       ∀ y, y ≠ x → s'.xmm y = s.xmm y := by
   have ea : s.ea (at_ .eax off) = (keyP s₀).setWidth 64 + BitVec.ofNat 64 off := by
     change addr (s.gpr .eax) off = _
-    rw [h.gpr, hs.eax, addr_eq (by have hf := hp.fK; omega)]
+    rw [h.gpr, hs.eax, addr_eq (by have hf := hp.fK; omega_using [hoff, hf])]
   have hc : (keyR s₀).Contains (s.ea (at_ .eax off)) 16 := by
-    rw [ea]; exact Offset.contains_base _ hoff (by have hf := hp.fK; omega)
+    rw [ea]; exact Offset.contains_base _ hoff (by have hf := hp.fK; omega_using [hoff, hf])
   have hr : InRegions (s.rd ++ s.wr) (s.ea (at_ .eax off)) 16 := by
     refine ⟨keyR s₀, ?_, hc⟩
     simp only [h.rd, hs.rd, hp.rd, List.mem_append, List.mem_cons, true_or]
@@ -115,13 +115,13 @@ theorem key128_step {s₀ entry s : State} (hp : EPre s₀) (hs : KeyReady s₀ 
     WP isa (.block (kstep .xmm1 .xmm1 0xff (rc (k + 1)) (16 * (k + 1)))) s
       (KeyInv128 s₀ entry (k + 1)) := by
   have hv := key128_next k (s.xmm .xmm1) h.a
-  have he : 16 * (k + 1) = 4 * (4 * (k + 1)) := by omega
+  have he : 16 * (k + 1) = 4 * (4 * (k + 1)) := by omega_using []
   rw [he]
   refine WP.mono (key_step_ok hp hs h.toKeyBody .xmm1 .xmm1 0xff (rc (k + 1))
-    (by decide) (by decide) (n := 4) (by decide) hv (by omega))
+    (by decide) (by decide) (n := 4) (by decide) hv (by omega_using [hk]))
     fun s' ⟨body, val, _⟩ => ?_
   refine ⟨?_, ?_⟩
-  · rw [show 4 * (k + 1 + 1) = 4 * (k + 1) + 4 by omega]
+  · rw [show 4 * (k + 1 + 1) = 4 * (k + 1) + 4 by omega_using []]
     exact body
   · rw [val]; exact hv
 
@@ -133,7 +133,7 @@ theorem key128_rounds {s₀ entry s : State} (hp : EPre s₀) (hs : KeyReady s�
   | zero => exact WP.block_nil h
   | succ n ih =>
     rw [List.range_succ, List.flatMap_append, List.flatMap_singleton, WP.block_append_iff]
-    exact WP.mono (ih (by omega)) fun _ hn' => key128_step hp hs (by omega) hn'
+    exact WP.mono (ih (by omega_using [hn])) fun _ hn' => key128_step hp hs (by omega_using [hn]) hn'
 
 theorem expand128_ok (s₀ entry : State) (hp : EPre s₀) (hs : KeyReady s₀ entry)
     (hlen : keyLen s₀ = 16) : WP isa (.block expand128) entry (KeyDone s₀ entry 4) := by
@@ -141,7 +141,7 @@ theorem expand128_ok (s₀ entry : State) (hp : EPre s₀) (hs : KeyReady s₀ e
   rw [show ([.movdquLoad .xmm1 (at_ .eax 0), .movdquStore (at_ .edx 0) .xmm1] : List Instr) =
     [.movdquLoad .xmm1 (at_ .eax 0)] ++ [.movdquStore (at_ .edx 0) .xmm1] by rfl,
     List.append_assoc, WP.block_append_iff]
-  refine WP.mono (key_load_ok hp hs (KeyBody.initial hs 4) .xmm1 (by omega))
+  refine WP.mono (key_load_ok hp hs (KeyBody.initial hs 4) .xmm1 (by omega_using [hlen]))
     fun s₁ ⟨h₁, a, _⟩ => ?_
   have ha : ∀ j < 4, dword (s₁.xmm .xmm1) j = W s₀.mem ((keyP s₀).setWidth 64) 4 j := by
     have av : s₁.xmm .xmm1 = s₀.mem.readW ((keyP s₀).setWidth 64) 128 := by
@@ -166,7 +166,7 @@ theorem key_load_words {s₀ entry s : State} {nk K off : Nat} (hp : EPre s₀)
       KeyBody s₀ entry nk K s' ∧
       (∀ j < 4, dword (s'.xmm x) j = W s₀.mem ((keyP s₀).setWidth 64) nk (off + j)) ∧
       ∀ y, y ≠ x → s'.xmm y = s.xmm y := by
-  refine WP.mono (key_load_ok hp hs h x (by omega)) fun s' ⟨body, val, other⟩ => ?_
+  refine WP.mono (key_load_ok hp hs h x (by omega_using [hoff, hlen])) fun s' ⟨body, val, other⟩ => ?_
   refine ⟨body, ?_, other⟩
   intro j hj
   rw [val]
@@ -184,22 +184,22 @@ theorem key256_step {s₀ entry s : State} (hp : EPre s₀) (hs : KeyReady s₀ 
     {k : Nat} (hk : k < 6) (h : KeyInv256 s₀ entry k s) :
     WP isa (.block (key256_pair k)) s (KeyInv256 s₀ entry (k + 1)) := by
   unfold key256_pair
-  rw [WP.block_append_iff, show 32 * (k + 1) = 4 * (8 * (k + 1)) by omega]
+  rw [WP.block_append_iff, show 32 * (k + 1) = 4 * (8 * (k + 1)) by omega_using []]
   have hv := key256_first k (s.xmm .xmm1) (s.xmm .xmm2) h.a h.b
   refine WP.mono (key_step_ok hp hs h.toKeyBody .xmm1 .xmm2 0xff (rc (k + 1))
-    (by decide) (by decide) (n := 4) (by decide) hv (by omega))
+    (by decide) (by decide) (n := 4) (by decide) hv (by omega_using [hk]))
     fun s₁ ⟨h₁, a₁, oth₁⟩ => ?_
   have ha : ∀ j < 4, dword (s₁.xmm .xmm1) j = W s₀.mem ((keyP s₀).setWidth 64) 8 (8 * (k + 1) + j) := by
     rw [a₁]; exact hv
   have hb : ∀ j < 4, dword (s₁.xmm .xmm2) j = W s₀.mem ((keyP s₀).setWidth 64) 8 (8 * k + 4 + j) := by
     rw [oth₁ .xmm2 (by decide) (by decide) (by decide)]; exact h.b
   have hv₂ := key256_second k (s₁.xmm .xmm1) (s₁.xmm .xmm2) ha hb
-  rw [show 4 * (8 * (k + 1)) + 16 = 4 * (8 * (k + 1) + 4) by omega]
+  rw [show 4 * (8 * (k + 1)) + 16 = 4 * (8 * (k + 1) + 4) by omega_using []]
   refine WP.mono (key_step_ok hp hs h₁ .xmm2 .xmm1 0xaa 0
-    (by decide) (by decide) (n := 4) (by decide) hv₂ (by omega))
+    (by decide) (by decide) (n := 4) (by decide) hv₂ (by omega_using [hk]))
     fun s₂ ⟨h₂, b₂, oth₂⟩ => ?_
   refine ⟨?_, ?_, ?_⟩
-  · rw [show 8 * (k + 1 + 1) = 8 * (k + 1) + 4 + 4 by omega]; exact h₂
+  · rw [show 8 * (k + 1 + 1) = 8 * (k + 1) + 4 + 4 by omega_using []]; exact h₂
   · rw [oth₂ .xmm1 (by decide) (by decide) (by decide)]; exact ha
   · rw [b₂]; exact hv₂
 
@@ -210,7 +210,7 @@ theorem key256_rounds {s₀ entry s : State} (hp : EPre s₀) (hs : KeyReady s�
   | zero => exact WP.block_nil h
   | succ n ih =>
     rw [List.range_succ, List.flatMap_append, List.flatMap_singleton, WP.block_append_iff]
-    exact WP.mono (ih (by omega)) fun _ hn' => key256_step hp hs (by omega) hn'
+    exact WP.mono (ih (by omega_using [hn])) fun _ hn' => key256_step hp hs (by omega_using [hn]) hn'
 
 theorem key256_last {s₀ entry s : State} (hp : EPre s₀) (hs : KeyReady s₀ entry)
     (h : KeyInv256 s₀ entry 6 s) :
@@ -267,23 +267,23 @@ theorem key192_step {s₀ entry s : State} (hp : EPre s₀) (hs : KeyReady s₀ 
     {k : Nat} (hk : k < 7) (h : KeyInv192 s₀ entry k s) :
     WP isa (.block (key192_pair k)) s (KeyInv192 s₀ entry (k + 1)) := by
   unfold key192_pair
-  rw [WP.block_append_iff, show 24 * (k + 1) = 4 * (6 * (k + 1)) by omega]
+  rw [WP.block_append_iff, show 24 * (k + 1) = 4 * (6 * (k + 1)) by omega_using []]
   have hv := key192_first k (s.xmm .xmm1) (s.xmm .xmm2) h.a h.b
   refine WP.mono (key_step_ok hp hs h.toKeyBody .xmm1 .xmm2 0x55 (rc (k + 1))
-    (by decide) (by decide) (n := 4) (by decide) hv (by omega))
+    (by decide) (by decide) (n := 4) (by decide) hv (by omega_using [hk]))
     fun s₁ ⟨h₁, a₁, oth₁⟩ => ?_
   have ha : ∀ j < 4, dword (s₁.xmm .xmm1) j = W s₀.mem ((keyP s₀).setWidth 64) 6 (6 * (k + 1) + j) := by
     rw [a₁]; exact hv
   have hb : ∀ j < 2, dword (s₁.xmm .xmm2) j = W s₀.mem ((keyP s₀).setWidth 64) 6 (6 * k + 4 + j) := by
     rw [oth₁ .xmm2 (by decide) (by decide) (by decide)]; exact h.b
   have hv₂ := key192_second k (s₁.xmm .xmm1) (s₁.xmm .xmm2) ha hb
-  rw [show 4 * (6 * (k + 1)) + 16 = 4 * (6 * (k + 1) + 4) by omega]
-  have hK : 4 * (6 * (k + 1) + 4) + 16 ≤ 240 := by omega
+  rw [show 4 * (6 * (k + 1)) + 16 = 4 * (6 * (k + 1) + 4) by omega_using []]
+  have hK : 4 * (6 * (k + 1) + 4) + 16 ≤ 240 := by omega_using [hk]
   refine WP.mono (kstepB6_exec (4 * (6 * (k + 1) + 4)) s₁ (h₁.writable hp hs hK))
     fun s₂ ⟨b₂, mem, gpr, rd, wr, oth₂⟩ => ?_
   have h₂ := h₁.stored hp hs _ (n := 2) (by decide) hv₂ hK mem gpr rd wr
   refine ⟨?_, ?_, ?_⟩
-  · rw [show 6 * (k + 1 + 1) = 6 * (k + 1) + 4 + 2 by omega]; exact h₂
+  · rw [show 6 * (k + 1 + 1) = 6 * (k + 1) + 4 + 2 by omega_using []]; exact h₂
   · rw [oth₂ .xmm1 (by decide) (by decide) (by decide)]; exact ha
   · rw [b₂]; exact hv₂
 
@@ -294,7 +294,7 @@ theorem key192_rounds {s₀ entry s : State} (hp : EPre s₀) (hs : KeyReady s�
   | zero => exact WP.block_nil h
   | succ n ih =>
     rw [List.range_succ, List.flatMap_append, List.flatMap_singleton, WP.block_append_iff]
-    exact WP.mono (ih (by omega)) fun _ hn' => key192_step hp hs (by omega) hn'
+    exact WP.mono (ih (by omega_using [hn])) fun _ hn' => key192_step hp hs (by omega_using [hn]) hn'
 
 theorem key192_last {s₀ entry s : State} (hp : EPre s₀) (hs : KeyReady s₀ entry)
     (h : KeyInv192 s₀ entry 7 s) :
@@ -311,7 +311,7 @@ theorem dword_psrldq8 (v : BitVec 128) (j : Nat) :
   apply BitVec.eq_of_getLsbD_eq
   intro i hi
   simp only [getLsbD_dword, BitVec.getLsbD_ushiftRight, hi, decide_true, Bool.true_and]
-  exact congrArg _ (by omega)
+  exact congrArg _ (by omega_using [])
 
 theorem key192_shift {s₀ entry s : State} (h : KeyBody s₀ entry 6 0 s)
     (ha : ∀ j < 4, dword (s.xmm .xmm1) j = W s₀.mem ((keyP s₀).setWidth 64) 6 j)
@@ -326,8 +326,8 @@ theorem key192_shift {s₀ entry s : State} (h : KeyBody s₀ entry 6 0 s)
   refine ⟨⟨h.words, h.gpr, h.rd, h.wr, h.frame⟩, ?_, ?_⟩
   · rw [xmm_setXmm_of_ne _ _ (by decide)]; exact ha
   · intro j hj
-    rw [xmm_setXmm_self, dword_psrldq8 _ j, hb (j + 2) (by omega),
-      show 2 + (j + 2) = 4 + j by omega]
+    rw [xmm_setXmm_self, dword_psrldq8 _ j, hb (j + 2) (by omega_using [hj]),
+      show 2 + (j + 2) = 4 + j by omega_using []]
 
 theorem key192_initial (s₀ entry : State) (hp : EPre s₀) (hs : KeyReady s₀ entry)
     (hlen : keyLen s₀ = 24) :

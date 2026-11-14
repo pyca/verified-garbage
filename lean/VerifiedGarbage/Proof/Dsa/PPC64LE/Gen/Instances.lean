@@ -70,7 +70,7 @@ theorem lay_ok (pL bits : Nat) (h : Impl.Dsa.PPC64LE.ProbablePrime.keyOff +
       wB pL + (Impl.Dsa.PPC64LE.ProbablePrime.layout bits).candidate < 2 ^ 15 := by
   simp only [Impl.Dsa.PPC64LE.ProbablePrime.layout, List.mem_singleton, forall_eq,
     Impl.Dsa.PPC64LE.ProbablePrime.saveOff, Impl.Dsa.PPC64LE.ProbablePrime.keyOff] at h ⊢
-  omega
+  omega_using [h, hc, h15]
 
 /-- A geometry's proofs, from its facts that do not depend on the call. -/
 theorem genOk {g : Geo} {HO : HashOk g.G} {pL qL : Nat} {G : GP} (hex : ∃ σ, CIn 176 σ ∧ mkG σ = G)

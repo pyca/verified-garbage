@@ -26,15 +26,15 @@ theorem ready_of_work {s t : State} {B : Addr} {Z w N : Nat} {mi : BitVec 64}
     (he : ∀ r ∈ rs, slot w aE + 8 * (w + 1) ≤ r.1 ∨ r.1 + r.2 ≤ slot w aE) :
     ModulusReady t B Z w mi N := by
   have hn := h.good.scr.nowrap
-  have hz : 256 ≤ Z := by have := hd.z; simp only [slot, hdrBytes] at this; omega
+  have hz : 256 ≤ Z := by have := hd.z; simp only [slot, hdrBytes] at this; omega_using [this]
   have hword : ∀ d, d + 8 ≤ 128 → word t.mem B d = word s.mem B d := by
     intro d hd'
-    exact hf.word_eq (fun r hr => Or.inl (Nat.le_trans hd' (hh r hr))) (by omega) hn hx
+    exact hf.word_eq (fun r hr => Or.inl (Nat.le_trans hd' (hh r hr))) (by omega_using [hz, hd']) hn hx
   have hhdr : Hdr t.mem B w mi := by
     refine ⟨(hword _ (by decide)).trans h.good.hdr.hw,
       (hword _ (by decide)).trans h.good.hdr.hminv, ?_⟩
     intro j hj
-    exact (hword _ (by unfold sArr; omega)).trans (h.good.hdr.harr j hj)
+    exact (hword _ (by unfold sArr; omega_using [hj])).trans (h.good.hdr.harr j hj)
   have hread : ∀ j ∈ [aN, aOne, aR2, aR1, aRm1], slot w j + 8 * w ≤ Z := by
     intro j hj
     have hj' : j ≤ aRm1 := by
@@ -45,8 +45,8 @@ theorem ready_of_work {s t : State} {B : Addr} {Z w N : Nat} {mi : BitVec 64}
   have hval : ∀ j ∈ [aN, aOne, aR2, aR1, aRm1], wv t.mem B (slot w j) w = wv s.mem B (slot w j) w :=
     fun j hj => hf.wv_eq (ha j hj) (hread j hj) hn hx
   refine ⟨⟨h.good.scr.congr hwr, hdi, hhdr⟩, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
-  · rw [hf.word_eq (fun r hr => by have := ha aN (by simp) r hr; have := hd.w4; omega)
-      (by have := hread aN (by simp); have := hd.w4; omega) hn hx]
+  · rw [hf.word_eq (fun r hr => by have := ha aN (by simp) r hr; have := hd.w4; omega_arith)
+      (by have := hread aN (by simp); have := hd.w4; omega_arith) hn hx]
     exact h.inv
   · rw [hval aN (by simp)]; exact h.n
   · rw [hval aOne (by simp)]; exact h.one
@@ -55,9 +55,9 @@ theorem ready_of_work {s t : State} {B : Addr} {Z w N : Nat} {mi : BitVec 64}
   · rw [hval aRm1 (by simp)]; exact h.rm1
   · have hE := aE_fits hd
     refine ⟨?_, ?_⟩
-    · rw [hf.wv_eq (fun r hr => by have := he r hr; omega) (by omega) hn hx]
+    · rw [hf.wv_eq (fun r hr => by have := he r hr; omega_using [this]) (by omega_using [hE]) hn hx]
       exact h.exponent.e
-    · rw [hf.word_eq (fun r hr => by have := he r hr; omega) (by omega) hn hx]
+    · rw [hf.word_eq (fun r hr => by have := he r hr; omega_using [this]) (by omega_using [hE]) hn hx]
       exact h.exponent.l
 
 end VG.Proof.Dsa.X86_64.Generation

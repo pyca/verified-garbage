@@ -40,7 +40,7 @@ theorem smallTest_ok {lim : Nat} (hl : BitVec.signExtend 64 (BitVec.ofNat 32 lim
   have x64 : BitVec.signExtend 64 (64#32) = 64#64 := by decide
   have x0 : BitVec.signExtend 64 (0#32) = 0#64 := by decide
   have hw := win_iff (s.gpr .r9)
-  have el : (BitVec.ofNat 64 lim).toNat = lim := by rw [BitVec.toNat_ofNat]; omega
+  have el : (BitVec.ofNat 64 lim).toNat = lim := by rw [BitVec.toNat_ofNat]; omega_using [hl1]
   have e64 : (64#64).toNat = 64 := rfl
   have e0 : (0#64).toNat = 0 := rfl
   rw [show smallTest lim = [.mov32 .rax (.imm 0), .mov .rax (.reg .r9), .mov .r10 (.reg .r9),
@@ -50,7 +50,7 @@ theorem smallTest_ok {lim : Nat} (hl : BitVec.signExtend 64 (BitVec.ofNat 32 lim
   have hr9 := (s.gpr .r9).isLt
   by_cases h : (s.gpr .r9 - 961#64).toNat < 64
   · have hc : ((s.gpr .r9).toNat < lim ∨ winLo ≤ (s.gpr .r9).toNat ∧ (s.gpr .r9).toNat < winHi) := by
-      simp only [winLo, winHi]; omega
+      simp only [winLo, winHi]; omega_using [hw, h]
     simp only [runBlock_cons, runStep_some, runBlock_nil, reduceExec, execAlu, execCmov, readSrc, x961, x64, x0, hl,
       Option.bind_some, Option.map_some, gpr_arithFlags, cf_arithFlags, cf_setReg, gpr_setReg, eval, h, hc,
       readSrc32, State.setReg32,
@@ -58,7 +58,7 @@ theorem smallTest_ok {lim : Nat} (hl : BitVec.signExtend 64 (BitVec.ofNat 32 lim
     exact ⟨trivial, fun r h1 h2 => by simp only [h1, h2, ite_false], rfl, rfl, rfl, rfl⟩
   · have hc : ((s.gpr .r9).toNat < lim ∨ winLo ≤ (s.gpr .r9).toNat ∧ (s.gpr .r9).toNat < winHi) ↔
         (s.gpr .r9).toNat < lim := by
-      simp only [winLo, winHi]; omega
+      simp only [winLo, winHi]; omega_using [hw, h]
     simp only [runBlock_cons, runStep_some, runBlock_nil, reduceExec, execAlu, execCmov, readSrc, x961, x64, x0, hl,
       Option.bind_some, Option.map_some, gpr_arithFlags, cf_arithFlags, cf_setReg, gpr_setReg, eval, h, hc,
       readSrc32, State.setReg32,
@@ -94,14 +94,14 @@ theorem rest_iff (x : BitVec 64) {lo n : Nat} (hlo : lo < 512) (hn : n ≤ 512) 
       lo ≤ x.toNat % 512 ∧ x.toNat % 512 < lo + n := by
   have ha : (x &&& BitVec.ofNat 64 511).toNat = x.toNat % 512 := by
     rw [BitVec.toNat_and, show (BitVec.ofNat 64 511).toNat = 2 ^ 9 - 1 from rfl, Nat.and_two_pow_sub_one_eq_mod]
-  rw [BitVec.toNat_sub, ha, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show lo < 2 ^ 64 by omega)]
+  rw [BitVec.toNat_sub, ha, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show lo < 2 ^ 64 by omega_using [hlo])]
   have := Nat.mod_lt x.toNat (show 0 < 512 by decide)
   by_cases hl : lo ≤ x.toNat % 512
-  · rw [show 2 ^ 64 - lo + x.toNat % 512 = (x.toNat % 512 - lo) + 2 ^ 64 by omega, Nat.add_mod_right,
-      Nat.mod_eq_of_lt (by omega)]
-    omega
-  · rw [Nat.mod_eq_of_lt (by omega)]
-    omega
+  · rw [show 2 ^ 64 - lo + x.toNat % 512 = (x.toNat % 512 - lo) + 2 ^ 64 by omega_using [hl], Nat.add_mod_right,
+      Nat.mod_eq_of_lt (by omega_using [])]
+    omega_using [hl]
+  · rw [Nat.mod_eq_of_lt (by omega_using [hl])]
+    omega_using [hlo, hn, hl]
 
 /-- `decRest`'s tests of the rest (`restTest`): `CF` set if `len mod 512`
 (`r13`) is from `lo` to `lo + n - 1`, writing only `rax` and the flags. -/
@@ -115,7 +115,7 @@ theorem restTest_ok {lo n : Nat} (hlo : lo < 512) (hn : n ≤ 512)
   apply WP.of_runBlock
   have x511 : BitVec.signExtend 64 (511 : BitVec 32) = BitVec.ofNat 64 511 := by decide
   have en : (BitVec.ofNat 64 n).toNat = n := by
-    rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show n < 2 ^ 64 by omega)]
+    rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show n < 2 ^ 64 by omega_using [hn])]
   have hw := rest_iff (s.gpr .r13) hlo hn
   simp only [restTest, runBlock_cons, runStep_some, runBlock_nil, reduceExec, execAlu, readSrc, x511, xl, xn,
     Option.bind_some, Option.map_some, gpr_arithFlags, cf_arithFlags, gpr_setReg, eval, en,

@@ -87,7 +87,7 @@ theorem candidatePhaseHead_ok {s : State} {p : CandidateParams} {consumed : Nat}
     rw [List.mem_singleton] at hr
     subst r
     refine ⟨⟨State.addr (s.sp + 40#32), 28⟩, by simp [candidateRegions], ?_⟩
-    rw [VG.Arm.addr_add (by have := h.saved.space.nowrap; omega), VG.Arm.addr_add (by have := h.saved.space.nowrap; omega)]
+    rw [VG.Arm.addr_add (by have := h.saved.space.nowrap; omega_using [this]), VG.Arm.addr_add (by have := h.saved.space.nowrap; omega_using [this])]
     exact Offset.sub _ (by decide) (by decide)
   have context : CandidateContext p consumed t := by
     refine h.after_frame h.consumedBound ?_ candidateChanged rest

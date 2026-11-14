@@ -63,9 +63,9 @@ theorem publicCall_relCT {n e : Nat} (h : Supported n e) (base : Addr) (size m g
         slot n 8+4*e≤(layout n e).size := by
       rcases h with ⟨rfl,rfl⟩|⟨rfl,rfl⟩|⟨rfl,rfl⟩|⟨rfl,rfl⟩|⟨rfl,rfl⟩ <;> decide
     have vals := fun d k hd => Pow.frame_val32 R S.nowrap F (d := d) (k := k) hd
-    refine ⟨?_,?_,(vals _ _ (by omega)).trans V.2.2⟩
-    · rw [wordsVal_eq_val32,vals _ _ (by omega),←wordsVal_eq_val32]; exact V.1
-    · rw [wordsVal_eq_val32,vals _ _ (by omega),←wordsVal_eq_val32]; exact V.2.1
+    refine ⟨?_,?_,(vals _ _ (by omega_using [fits, bounds])).trans V.2.2⟩
+    · rw [wordsVal_eq_val32,vals _ _ (by omega_using [fits, bounds]),←wordsVal_eq_val32]; exact V.1
+    · rw [wordsVal_eq_val32,vals _ _ (by omega_using [fits, bounds]),←wordsVal_eq_val32]; exact V.2.1
   exact ⟨keep S RS A Fa,keep T RT B Fb⟩
 
 end VG.Proof.Dsa.X86.Comb

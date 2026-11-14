@@ -45,14 +45,14 @@ theorem scanStep_ok (s : State) {base src : BitVec 32} {len : Nat} {bs : List By
       refine WP.mono (scanStop_ok v) ?_
       rintro t ⟨⟨zeroT, memT⟩, restT⟩
       refine ⟨(restT.gpr .r3 (by simp)).trans byteV, memT.trans (memV.trans memU), ?_⟩
-      rw [ite_eq_right (by omega : ¬(bs.getD 0 0 = 0 ∧ 1 < bs.length))]
+      rw [ite_eq_right (by omega_using [last] : ¬(bs.getD 0 0 = 0 ∧ 1 < bs.length))]
       exact ⟨(restT.gpr .r4 (by simp)).trans ptrV, (restT.gpr .r6 (by simp)).trans countV, zeroT⟩
     · refine WP.ite true (by change some (!v.z) = some true; rw [zeroV, decide_eq_false last]; rfl) ?_ (by intro hf; cases hf)
       intro _
       refine WP.mono (scanAdvance_ok v positive countV) ?_
       rintro t ⟨⟨ptrT, countT, zeroT, memT⟩, restT⟩
       refine ⟨(restT.gpr .r3 (by simp)).trans byteV, memT.trans (memV.trans memU), ?_⟩
-      rw [ite_eq_left (show bs.getD 0 0 = 0 ∧ 1 < bs.length from ⟨headZero, by omega⟩)]
+      rw [ite_eq_left (show bs.getD 0 0 = 0 ∧ 1 < bs.length from ⟨headZero, by omega_using [positive, last]⟩)]
       exact ⟨by rw [ptrT, ptrV], countT, zeroT⟩
   · refine WP.ite false (by change some u.z = some false; rw [zeroU, decide_eq_false headZero]) (by intro ht; cases ht) ?_
     intro _

@@ -71,17 +71,17 @@ theorem L_eq {w : Width} (hw : WOk w) (s₀ : State) {g j : Nat} (hg : g < 256 /
     have := hw.cG
     have : w.c * (g + 1) ≤ w.c * (256 / w.c) := Nat.mul_le_mul_left _ hg
     rw [Nat.mul_succ] at this
-    omega
+    omega_arith
   have hk : w.nb * g + j < 32 * w.d := by
     have := hw.bytes
     have : w.nb * (g + 1) ≤ w.nb * (256 / w.c) := Nat.mul_le_mul_left _ hg
     rw [Nat.mul_succ] at this
-    omega
+    omega_arith
   rw [L, Spec.MlKem.compressEncode, byteEncode_group hw.d_pos hw.dc (map_toList_lt _ (compress_lt w.d)) hj hk,
     take_drop_eq _ 0 (by rw [map_toList_length]; exact hcg), acc]
   refine congrArg (fun x => BitVec.ofNat 8 (digits w.d x / 2 ^ (8 * j))) (List.map_congr_left ?_)
   intro e he
-  rw [map_toList_getD _ _ (by have := List.mem_range.mp he; omega)]
+  rw [map_toList_getD _ _ (by have := List.mem_range.mp he; omega_using [hcg, this])]
   rfl
 
 theorem Pre.coeff {w : Width} {s₀ : State} (hp : Pre w s₀) {m : Mem}
@@ -121,7 +121,7 @@ theorem VInv.src {w : Width} {G : Nat} {K : State → Prop} {s₀ : State} (hp :
     {s : State} (h : VInv w G K s₀ k s) : Src (fP s₀) (fun i => ((P s₀)[i]!).val) s :=
   ⟨fun i hi => by
     rw [h.rd, h.wr, hp.rd, hp.wr]
-    exact in_rd (in_regions (List.mem_singleton_self _) (contains_off (by omega) (by decide))),
+    exact in_rd (in_regions (List.mem_singleton_self _) (contains_off (by omega_using [hi]) (by decide))),
    fun i hi => hp.coeff h.frame hi⟩
 
 /-- `n` bytes `x` stored at byte `t` of the output. -/
@@ -132,15 +132,15 @@ theorem bytes_write {m : Mem} {p : Addr} {N t n : Nat} {L old : Nat → Byte}
   intro j hj
   have d : ((p + BitVec.ofNat 64 j) - (p + BitVec.ofNat 64 t)).toNat =
       if t ≤ j then j - t else 2 ^ 64 + j - t :=
-    Offset.sub_toNat' p (by omega) (by omega)
+    Offset.sub_toNat' p (by omega_using [hN, hn]) (by omega_using [hN, hj])
   rw [Mem.write, d]
   by_cases ht : t ≤ j
   · rw [ite_eq_left ht]
     by_cases hnj : j - t < n
-    · rw [ite_eq_left hnj, ite_eq_left (by omega), hx _ hnj]
-      congr 1; omega
-    · rw [ite_eq_right hnj, h j hj, ite_eq_right (by omega), ite_eq_right (by omega)]
-  · rw [ite_eq_right ht, ite_eq_right (by omega), h j hj, ite_eq_left (by omega), ite_eq_left (by omega)]
+    · rw [ite_eq_left hnj, ite_eq_left (by omega_using [hnj]), hx _ hnj]
+      congr 1; omega_using [ht]
+    · rw [ite_eq_right hnj, h j hj, ite_eq_right (by omega_using [ht]), ite_eq_right (by omega_using [ht, hnj])]
+  · rw [ite_eq_right ht, ite_eq_right (by omega_using [hN, hn]), h j hj, ite_eq_left (by omega_using [ht]), ite_eq_left (by omega_using [ht])]
 
 /-- The end of the loop: the whole output. -/
 theorem VInv.done {w : Width} {G : Nat} {K : State → Prop} {s₀ s : State}
@@ -162,10 +162,10 @@ theorem tail_ok {w : Width} {G : Nat} {s₀ : State} {k : Nat} (hk : k < 256 / (
       t.gpr .x0 = coeffAddr (fP s₀) (w.c * G * (k + 1)) ∧
       t.gpr .x2 = oP s₀ + BitVec.ofNat 64 (w.nb * G * (k + 1)) ∧
       (t.gpr .x11).toNat = 256 / (w.c * G) - (k + 1)) ⟨((h4.trans h5).trans h6).mono, ?_, ?_, ?_⟩))
-    fun t ⟨⟨o, a, b, c⟩, v⟩ => ⟨o, v, a, b, c, by rw [c]; omega⟩
-  · rw [h6.get .x0, h5.get .x0, e4, h0, coeffAddr, coeffAddr, ptr_add]; congr 2; rw [Nat.mul_succ]; omega
+    fun t ⟨⟨o, a, b, c⟩, v⟩ => ⟨o, v, a, b, c, by rw [c]; omega_using [hk]⟩
+  · rw [h6.get .x0, h5.get .x0, e4, h0, coeffAddr, coeffAddr, ptr_add]; congr 2; rw [Nat.mul_succ]; omega_using []
   · rw [h6.get .x2, e5, h4.get .x2, h2, ptr_add, Nat.mul_succ]
   · have c : (s5.gpr .x11).toNat = 256 / (w.c * G) - k := by rw [h5.get .x11, h4.get .x11, h11]
-    rw [e6, toNat_sub_n (by rw [c]; simp; omega), c]; simp; omega
+    rw [e6, toNat_sub_n (by rw [c]; simp; omega_using [hk]), c]; simp; omega_using []
 
 end VG.Proof.MlKem.AArch64.CE

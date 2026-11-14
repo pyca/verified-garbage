@@ -23,7 +23,7 @@ theorem pc_dimensions {k len : Nat} (hk : 64 ≤ k) (hk' : k ≤ 1024)
       arrAt (Spec.Rsa.modulusWords k) 8 ≤ 8 * len ∧
       k ≤ 8 * Spec.Rsa.modulusWords k ∧ 128 * Spec.Rsa.modulusWords k < 2 ^ 32 := by
   simp only [Spec.Rsa.modulusWords, Spec.Rsa.publicScratchWords, arrAt, Proof.Rsa.Mont.hdrBytes] at *
-  omega
+  omega_using [hk, hk', space]
 
 theorem rsa_bytes_frame {regions : List Region} {m m' : Mem} {src : Addr} {k : Nat}
     (frame : Frame regions m m') (fit : k < 2 ^ 64)

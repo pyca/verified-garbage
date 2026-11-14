@@ -28,23 +28,23 @@ def maskValue (n : Nat) : BitVec 32 :=
 theorem maskValue_eq (n : Nat) (hpos : 0 < n) (hbound : n < 256) :
     maskValue n = BitVec.ofNat 32 (2 ^ (n.log2 + 1) - 1) := by
   have key : ∀ k, 2 ^ k ≤ n → n < 2 ^ (k + 1) → n.log2 = k := fun k h₁ h₂ =>
-    (Nat.log2_eq_iff (by omega)).mpr ⟨h₁, h₂⟩
+    (Nat.log2_eq_iff (by omega_using [hpos])).mpr ⟨h₁, h₂⟩
   unfold maskValue
   split
-  · rw [key 0 (show 1 ≤ n by omega) (by omega)]; rfl
+  · rw [key 0 (show 1 ≤ n by omega_using [hpos]) (by omega_arith)]; rfl
   split
-  · rw [key 1 (by omega) (by omega)]; rfl
+  · rw [key 1 (by omega_arith) (by omega_arith)]; rfl
   split
-  · rw [key 2 (by omega) (by omega)]; rfl
+  · rw [key 2 (by omega_arith) (by omega_arith)]; rfl
   split
-  · rw [key 3 (by omega) (by omega)]; rfl
+  · rw [key 3 (by omega_arith) (by omega_arith)]; rfl
   split
-  · rw [key 4 (by omega) (by omega)]; rfl
+  · rw [key 4 (by omega_arith) (by omega_arith)]; rfl
   split
-  · rw [key 5 (by omega) (by omega)]; rfl
+  · rw [key 5 (by omega_arith) (by omega_arith)]; rfl
   split
-  · rw [key 6 (by omega) (by omega)]; rfl
-  · rw [key 7 (by omega) (by omega)]; rfl
+  · rw [key 6 (by omega_arith) (by omega_arith)]; rfl
+  · rw [key 7 (by omega_arith) (by omega_using [hbound])]; rfl
 
 /-- One threshold of the mask. -/
 theorem maskStep_ok {th bits n : Nat} (hth : th < 2 ^ 32) {s u : State} {Q : State → Prop}

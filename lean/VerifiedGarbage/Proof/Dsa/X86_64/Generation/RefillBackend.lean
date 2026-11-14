@@ -185,12 +185,12 @@ theorem backend_depth (v1 v256 : MdHash) (v : RoundImpl) (pBytes : Nat) :
       have := (ProbablePrime.primeTest v).depth
       have : ProbablePrime.stack = 184 := rfl
       change (ProbablePrime.primeTest v).code.x86_64Depth + 8 ≤ 192
-      omega) (by
+      omega_arith) (by
       have h := checkParameters_depth_bound arith.inlineMont.toS.mm arith.inlineMont.mm
         (n := 0) (by rw [VG.Proof.Bignum.X86_64.Mont.toS, arith.inlineDepth])
         (fun o a b => by rw [arith.inlineDepth])
       change (VG.Impl.Dsa.X86_64.Generate.checkParameters arith.inlineMont.toS.mm arith.inlineMont.mm).x86_64Depth + 8 ≤ 128
-      omega) _ _
+      omega_using [h]) _ _
 
 /-! ## Verified -/
 

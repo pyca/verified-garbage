@@ -82,7 +82,7 @@ theorem absA_of {L : Lay} (hL : L.Ok) {g : Reg → BitVec 64} {v : VReg → BitV
   rw [hq] at e2
   rw [hdp] at e3
   rw [hn] at e4
-  exact ⟨e0, by rw [e1]; rfl, by rw [e2, BitVec.toNat_ofNat]; omega, e3, by rw [e4, BitVec.toNat_ofNat]; omega, e5,
+  exact ⟨e0, by rw [e1]; rfl, by rw [e2, BitVec.toNat_ofNat]; omega_using [hql], e3, by rw [e4, BitVec.toNat_ofNat]; omega_using [hnl], e5,
     hql, st_ks, dS, dK, by rw [hs1]; exact hL.nSP, by simp only [Proof.MlKem.AArch64.stk, hs1]; exact k_st hL,
     by simp only [Proof.MlKem.AArch64.stk, hs1]; exact kD, by simp only [Proof.MlKem.AArch64.stk, hs1]; exact k_ks hL⟩
 
@@ -121,8 +121,8 @@ theorem kabs_tr_of (v : Proof.Sha3.AArch64.Permutation) {Φ : Lay → Mem → St
     · simp only [List.mem_singleton] at hr; subst hr; exact hin
     · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
-      · have := cov_xw hL (e := 0) (k := 200) (by omega); rwa [x0] at this
-      · exact cov_xw hL (e := 200) (by omega)
+      · have := cov_xw hL (e := 0) (k := 200) (by omega_using []); rwa [x0] at this
+      · exact cov_xw hL (e := 200) (by omega_using [])
 
 theorem kabs_tr (v : Proof.Sha3.AArch64.Permutation) {Φ : Lay → Mem → State → Prop} {src len pos : Arg}
     (hok : argsOk (absArgs src len pos) = true) (dp : Lay → Addr) (n q : Lay → Nat)
@@ -169,7 +169,7 @@ theorem kpad_tr (v : Proof.Sha3.AArch64.Permutation) {Φ : Lay → Mem → State
       simp only [Arg.val, hc.x28, oST, oKS, x0] at e0 e1 e4
       rw [hv L g vv m₀ t hL hc hφ] at e2
       have := hs L hL
-      exact ⟨e0, by rw [e1]; rfl, by rw [e2, BitVec.toNat_ofNat]; omega, e4, this, st_ks,
+      exact ⟨e0, by rw [e1]; rfl, by rw [e2, BitVec.toNat_ofNat]; omega_using [this], e4, this, st_ks,
         by rw [hs1]; exact hL.nSP, by simp only [Proof.MlKem.AArch64.stk, hs1]; exact k_st hL,
         by simp only [Proof.MlKem.AArch64.stk, hs1]; exact k_ks hL⟩
   refine call_tr hok (Proof.Sha3.AArch64.Stream.Pad.pad_correct v) (Proof.Sha3.AArch64.Stream.Pad.pad_ct v)
@@ -187,8 +187,8 @@ theorem kpad_tr (v : Proof.Sha3.AArch64.Permutation) {Φ : Lay → Mem → State
   · refine ⟨fun r hr => by simp at hr, fun r hr => ?_⟩
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
-    · have := cov_xw hL (e := 0) (k := 200) (by omega); rwa [x0] at this
-    · exact cov_xw hL (e := 200) (by omega)
+    · have := cov_xw hL (e := 0) (k := 200) (by omega_using []); rwa [x0] at this
+    · exact cov_xw hL (e := 200) (by omega_using [])
 
 /-- The arguments of a call of `vg_keccak_squeeze`, in its registers. -/
 structure SqzA (s : State) (st out sc : Addr) : Prop where
@@ -246,9 +246,9 @@ theorem ksqz_tr (v : Proof.Sha3.AArch64.Permutation) {Φ : Lay → Mem → State
   · refine ⟨fun r hr => by simp at hr, fun r hr => ?_⟩
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
-    · have := cov_xw hL (e := 0) (k := 200) (by omega); rwa [x0] at this
-    · exact cov_xw hL (e := 840) (by omega)
-    · exact cov_xw hL (e := 200) (by omega)
+    · have := cov_xw hL (e := 0) (k := 200) (by omega_using []); rwa [x0] at this
+    · exact cov_xw hL (e := 840) (by omega_using [])
+    · exact cov_xw hL (e := 200) (by omega_using [])
 
 /-! ## `μ` and `tr` -/
 
@@ -283,11 +283,11 @@ theorem muHash_tr_of (v : Proof.Sha3.AArch64.Permutation) {Φ : Lay → Mem → 
       Region.Disjoint ⟨L.X + BitVec.ofNat 64 984, 2⟩ ⟨L.ST, 200⟩ ∧
       Region.Disjoint ⟨L.X + BitVec.ofNat 64 984, 2⟩ ⟨L.KS, 640⟩ ∧
       L.STK.Disjoint ⟨L.X + BitVec.ofNat 64 984, 2⟩ := fun L hL =>
-    ⟨by decide, by decide, cov_x hL (by omega),
-      by have := Offset.disjoint L.X (d := 984) (n := 2) (e := 0) (k := 200) (by omega) (by omega) (by omega)
+    ⟨by decide, by decide, cov_x hL (by omega_using []),
+      by have := Offset.disjoint L.X (d := 984) (n := 2) (e := 0) (k := 200) (by omega_using []) (by omega_using []) (by omega_using [])
          simpa only [x0] using this,
-      Offset.disjoint L.X (d := 984) (n := 2) (e := 200) (k := 640) (by omega) (by omega) (by omega),
-      hL.stk_x (by omega)⟩
+      Offset.disjoint L.X (d := 984) (n := 2) (e := 200) (k := 640) (by omega_using []) (by omega_using []) (by omega_using []),
+      hL.stk_x (by omega_using [])⟩
   have a2 := two_wp (I := I) (Φ := Ψ fun _ => 64) (Ψ := Ψ fun _ => 66)
     (kabs_tr v (src := .off oHdr) (len := .imm 2) (pos := .imm 64) (absOk rfl rfl rfl rfl rfl)
       (fun L => L.X + BitVec.ofNat 64 984) (fun _ => 2) (fun _ => 64)
@@ -307,13 +307,13 @@ theorem muHash_tr_of (v : Proof.Sha3.AArch64.Permutation) {Φ : Lay → Mem → 
   have a3 := two_wp (I := I) (Φ := Ψ fun _ => 66) (Ψ := Ψ qCtx)
     (kabs_tr v (src := .slot fCtx) (len := .slot fCtxLen) (pos := .imm 66) (absOk rfl rfl rfl rfl rfl)
       (fun L => L.ctx) (fun L => L.ctxLen.toNat) (fun _ => 66)
-      (fun L g vv m t _ hc _ => ⟨by rw [hc.slotV (f := fCtx) (j := 3) rfl (by omega)]; rfl,
-        by rw [hc.slotV (f := fCtxLen) (j := 4) rfl (by omega), ofNat_toNat_self]; rfl, rfl⟩) ctxS)
+      (fun L g vv m t _ hc _ => ⟨by rw [hc.slotV (f := fCtx) (j := 3) rfl (by omega_using [])]; rfl,
+        by rw [hc.slotV (f := fCtxLen) (j := 4) rfl (by omega_using []), ofNat_toNat_self]; rfl, rfl⟩) ctxS)
     fun L g vv m₀ t hL hc _ => by
       obtain ⟨a, b, c, d, e, f⟩ := ctxS L hL
       exact WP.mono (kabs_ok v hL hc (src := .slot fCtx) (len := .slot fCtxLen) (pos := .imm 66) (q := 66)
-        (absOk rfl rfl rfl rfl rfl) (by rw [hc.slotV (f := fCtx) (j := 3) rfl (by omega)]; rfl)
-        (by rw [hc.slotV (f := fCtxLen) (j := 4) rfl (by omega), ofNat_toNat_self]; rfl) rfl a b c d e f)
+        (absOk rfl rfl rfl rfl rfl) (by rw [hc.slotV (f := fCtx) (j := 3) rfl (by omega_using [])]; rfl)
+        (by rw [hc.slotV (f := fCtxLen) (j := 4) rfl (by omega_using []), ofNat_toNat_self]; rfl) rfl a b c d e f)
         fun t' ⟨hc', _, _, hx⟩ => ⟨hc', hx⟩
   have msgS : ∀ L : Lay, L.Ok → qCtx L < 136 ∧ L.len.toNat < 2 ^ 64 ∧
       (∃ R ∈ L.rd ++ L.wr, Within ⟨L.msg, L.len.toNat⟩ R) ∧
@@ -325,13 +325,13 @@ theorem muHash_tr_of (v : Proof.Sha3.AArch64.Permutation) {Φ : Lay → Mem → 
   have a4 := two_wp (I := I) (Φ := Ψ qCtx) (Ψ := Ψ qMsg)
     (kabs_tr v (src := .slot fMsg) (len := .slot fLen) (pos := .ret) (absOk rfl rfl rfl rfl rfl)
       (fun L => L.msg) (fun L => L.len.toNat) qCtx
-      (fun L g vv m t _ hc hφ => ⟨by rw [hc.slotV (f := fMsg) (j := 1) rfl (by omega)]; rfl,
-        by rw [hc.slotV (f := fLen) (j := 2) rfl (by omega), ofNat_toNat_self]; rfl, ofNat_toNat_eq hφ⟩) msgS)
+      (fun L g vv m t _ hc hφ => ⟨by rw [hc.slotV (f := fMsg) (j := 1) rfl (by omega_using [])]; rfl,
+        by rw [hc.slotV (f := fLen) (j := 2) rfl (by omega_using []), ofNat_toNat_self]; rfl, ofNat_toNat_eq hφ⟩) msgS)
     fun L g vv m₀ t hL hc hφ => by
       obtain ⟨a, b, c, d, e, f⟩ := msgS L hL
       exact WP.mono (kabs_ok v hL hc (src := .slot fMsg) (len := .slot fLen) (pos := .ret)
-        (absOk rfl rfl rfl rfl rfl) (by rw [hc.slotV (f := fMsg) (j := 1) rfl (by omega)]; rfl)
-        (by rw [hc.slotV (f := fLen) (j := 2) rfl (by omega), ofNat_toNat_self]; rfl) (ofNat_toNat_eq hφ)
+        (absOk rfl rfl rfl rfl rfl) (by rw [hc.slotV (f := fMsg) (j := 1) rfl (by omega_using [])]; rfl)
+        (by rw [hc.slotV (f := fLen) (j := 2) rfl (by omega_using []), ofNat_toNat_self]; rfl) (ofNat_toNat_eq hφ)
         a b c d e f) fun t' ⟨hc', _, _, hx⟩ => ⟨hc', hx⟩
   have pd := kpad_tr v (I := I) (Φ := Ψ qMsg) (pos := .ret) (padOk rfl) qMsg
     (fun L g vv m t _ _ hφ => ofNat_toNat_eq hφ) fun L _ => Nat.mod_lt _ (by decide)

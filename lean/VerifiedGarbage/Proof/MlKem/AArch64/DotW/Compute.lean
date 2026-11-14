@@ -82,12 +82,12 @@ theorem computeW_ok {s : State} {rF rG : Reg} (terms : List (Nat × Nat))
     rw [h₄.v, h₃.mem, k₂.mem, k₁.mem, h₃.gpr, k₂.get .x3, k₁.get .x3]; exact hg'
   have blo : ∀ e < 4, (sumTerms terms F G zeroSums e).Bounded terms.length := by
     simpa only [Nat.zero_add] using sumTerms_bound terms (n := 0) (a := zeroSums) z
-      (fun fg hf e he => (hin fg hf).boundF e (by omega)) (fun fg hf e he => (hin fg hf).boundG e (by omega))
+      (fun fg hf e he => (hin fg hf).boundF e (by omega_using [he])) (fun fg hf e he => (hin fg hf).boundG e (by omega_using [he]))
   have bhi : ∀ e < 4, (sumTerms terms (fun fg => upper (F fg)) (fun fg => upper (G fg)) zeroSums e).Bounded
       terms.length := by
     simpa only [Nat.zero_add] using sumTerms_bound terms (n := 0) (a := zeroSums) z
-      (fun fg hf e he => (hin fg hf).boundF (8 + e) (by omega))
-      (fun fg hf e he => (hin fg hf).boundG (8 + e) (by omega))
+      (fun fg hf e he => (hin fg hf).boundF (8 + e) (by omega_using [he]))
+      (fun fg hf e he => (hin fg hf).boundG (8 + e) (by omega_using [he]))
   have C₄ := h₃.chg.trans h₄.chg
   obtain ⟨⟨a21, a22, a23⟩, a25, a26, a27⟩ := a₂
   have c₄ := c₂.chg C₄

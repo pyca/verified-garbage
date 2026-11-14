@@ -32,9 +32,9 @@ theorem ranges_apart {w d bytes : Nat} (safe : protectedHeader d bytes) {r : Nat
   rcases List.mem_append.mp mem with mem | mem
   · have C := gcd_ranges_class mem
     unfold protectedHeader at safe
-    omega
+    omega_using [safe, C]
   · obtain rfl := List.mem_singleton.mp mem
-    have lo : 256 ≤ slot w 0 := by change 256 ≤ 256 + 0 * stride w; omega
+    have lo : 256 ≤ slot w 0 := by change 256 ≤ 256 + 0 * stride w; omega_using []
     unfold protectedHeader at safe
     exact Or.inl (by omega)
 
@@ -42,10 +42,10 @@ theorem saved_apart {w : Nat} (width : 4 ≤ w) {r : Nat × Nat} (mem : r ∈ ra
     r.1 + r.2 ≤ slot w 5 := by
   rcases List.mem_append.mp mem with mem | mem
   · have hi := Gcd64.ranges_below mem
-    have lo : 400 ≤ slot w 5 := by unfold slot stride VG.Impl.Bignum.hdrBytes; omega
-    omega
+    have lo : 400 ≤ slot w 5 := by unfold slot stride VG.Impl.Bignum.hdrBytes; omega_using [width]
+    omega_using [hi, lo]
   · obtain rfl := List.mem_singleton.mp mem
     unfold slot stride VG.Impl.Bignum.hdrBytes
-    omega
+    omega_using []
 
 end VG.Proof.RsaKeyGen.X86.ExponentFilter

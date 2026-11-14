@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.AesXts.Alpha16
 public import VerifiedGarbage.TCB.X86_64.Sse
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # XTS on x86-64: `clmul` by `0x87`
@@ -24,10 +25,10 @@ theorem setWidth_succ (a : BitVec 64) {k : Nat} (hk : k < 64) :
       (a.setWidth k).setWidth 128 ^^^ (if a.getLsbD k then (1 : BitVec 128) <<< k else 0) := by
   ext i hi
   rcases Nat.lt_trichotomy i k with h | rfl | h
-  · cases hb : a.getLsbD k <;> simp [BitVec.getElem_setWidth, BitVec.getElem_shiftLeft, h, show i < k + 1 by omega]
+  · cases hb : a.getLsbD k <;> simp [BitVec.getElem_setWidth, BitVec.getElem_shiftLeft, h, show i < k + 1 by omega_using [h]]
   · cases hb : a.getLsbD i <;> simp [BitVec.getElem_setWidth, BitVec.getElem_shiftLeft, hb]
-  · cases hb : a.getLsbD k <;> simp [BitVec.getElem_setWidth, BitVec.getElem_shiftLeft, show ¬ i < k + 1 by omega,
-      show ¬ i < k by omega, show ¬ i - k = 0 by omega]
+  · cases hb : a.getLsbD k <;> simp [BitVec.getElem_setWidth, BitVec.getElem_shiftLeft, show ¬ i < k + 1 by omega_using [h],
+      show ¬ i < k by omega_using [h], show ¬ i - k = 0 by omega_using [h]]
 
 /-- `clmul` of `a` by `0x87` is `P` of it. -/
 theorem clmul_87 (a : BitVec 64) : clmul a 0x87 = P (a.setWidth 128) := by
@@ -41,7 +42,7 @@ theorem clmul_87 (a : BitVec 64) : clmul a 0x87 = P (a.setWidth 128) := by
       rw [show (a.setWidth 0).setWidth 128 = 0#128 by ext i; simp]
       rfl
     | succ k ih =>
-      rw [List.range_succ, List.foldl_append, ih (by omega), setWidth_succ a (by omega), P_xor]
+      rw [List.range_succ, List.foldl_append, ih (by omega_using [hk]), setWidth_succ a (by omega_using [hk]), P_xor]
       cases hb : a.getLsbD k
       · simp only [List.foldl_cons, List.foldl_nil, hb, Bool.false_eq_true, ↓reduceIte]
         rw [show P 0 = 0 from rfl]; simp

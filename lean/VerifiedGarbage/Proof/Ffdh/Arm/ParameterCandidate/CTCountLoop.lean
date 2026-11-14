@@ -82,7 +82,7 @@ private theorem CountAfter.continue {p : CountData} {s : State}
     change some s.z = some true at go
     rw [h.zero] at go
     exact of_decide_eq_true (Option.some.inj go)
-  have nextPositive : 0 < p.number / 2 := by omega
+  have nextPositive : 0 < p.number / 2 := by omega_using [positive, even]
   exact ⟨h.workspace, h.ready, h.data, h.stack, h.separate, h.number, nextPositive, nextEven, h.saved⟩
 
 theorem halfCountLoop_ct : RelCT isa (Two CountState)

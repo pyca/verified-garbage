@@ -44,7 +44,7 @@ theorem brainpoolp384r1_nBits : Spec.Ecdsa.nBits Spec.BrainpoolP384r1.curve = 38
   show Spec.BrainpoolP384r1.curve.n.log2 + 1 = 384
   have h₁ : 383 ≤ Spec.BrainpoolP384r1.curve.n.log2 := (Nat.le_log2 (by decide +kernel)).mpr (by decide +kernel)
   have h₂ : Spec.BrainpoolP384r1.curve.n.log2 < 384 := (Nat.log2_lt (by decide +kernel)).mpr (by decide +kernel)
-  omega
+  omega_using [h₁, h₂]
 
 theorem core_pre_brainpoolp384r1 {s : State} (h : (coreK Impl.Ecdsa.X86.brainpoolp384r1).pre s) :
     Proof.Ecdsa.X86.BrainpoolP384r1.signX86.pre s := by

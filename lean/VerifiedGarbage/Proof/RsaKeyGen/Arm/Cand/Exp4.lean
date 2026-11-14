@@ -49,10 +49,10 @@ def sg (x : BitVec 32) : BitVec 32 × BitVec 32 × BitVec 32 :=
 theorem and_mask {t k : Nat} (hk : k < 32) :
     BitVec.ofNat 32 t &&& BitVec.ofNat 32 (2 ^ k - 1) = BitVec.ofNat 32 (t % 2 ^ k) := by
   apply BitVec.eq_of_toNat_eq
-  have : 2 ^ k ≤ 2 ^ 32 := Nat.pow_le_pow_right (by decide) (by omega)
-  rw [BitVec.toNat_and, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := 2 ^ k - 1) (by omega),
-    Nat.and_two_pow_sub_one_eq_mod, BitVec.toNat_ofNat, Nat.mod_mod_of_dvd _ (Nat.pow_dvd_pow 2 (by omega)),
-    Nat.mod_eq_of_lt (a := t % 2 ^ k) (by have := Nat.mod_lt t (Nat.two_pow_pos k); omega)]
+  have : 2 ^ k ≤ 2 ^ 32 := Nat.pow_le_pow_right (by decide) (by omega_using [hk])
+  rw [BitVec.toNat_and, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := 2 ^ k - 1) (by omega_using [this]),
+    Nat.and_two_pow_sub_one_eq_mod, BitVec.toNat_ofNat, Nat.mod_mod_of_dvd _ (Nat.pow_dvd_pow 2 (by omega_using [hk])),
+    Nat.mod_eq_of_lt (a := t % 2 ^ k) (by have := Nat.mod_lt t (Nat.two_pow_pos k); omega_arith)]
 
 theorem pw_small : ∀ t < 64, (pw (BitVec.ofNat 32 t)).1.toNat + 2 ^ 32 * (pw (BitVec.ofNat 32 t)).2.toNat = 2 ^ t := by
   decide
@@ -90,7 +90,7 @@ theorem powStep_ok {j : Nat} (hj : j < 5) {u : State} {x y : BitVec 32} (r1 : u.
       WP isa (.block rest) u' Q) :
     WP isa (.block (powStep j ++ rest)) u Q := by
   have h2j : 1 ≤ 2 ^ j ∧ 2 ^ j ≤ 31 := by
-    rcases (by omega : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4) with rfl | rfl | rfl | rfl | rfl <;> decide
+    rcases (by omega_using [hj] : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4) with rfl | rfl | rfl | rfl | rfl <;> decide
   -- The bit of `x` into `r3`.
   have hb : ∀ {rest' : List Instr} {Q' : State → Prop}, (∀ u', Rest [.r3] u u' → u'.mem = u.mem →
       u'.gpr .r3 = (x >>> j) &&& 1 → WP isa (.block rest') u' Q') →
@@ -103,7 +103,7 @@ theorem powStep_ok {j : Nat} (hj : j < 5) {u : State} {x y : BitVec 32} (r1 : u.
       exact wp_dp (op2_imm (by decide)) fun u1 v1 => k' u1 (v1.rest (by simp)) v1.mem (by
         rw [v1.gpr, dpVal, r1, BitVec.ushiftRight_zero])
     · simp only [h0, ↓reduceIte, List.cons_append, List.nil_append]
-      exact wp_mov (op2_lsr (by omega)) fun u1 v1 => wp_dp (op2_imm (by decide)) fun u2 v2 =>
+      exact wp_mov (op2_lsr (by omega_using [hj, h0])) fun u1 v1 => wp_dp (op2_imm (by decide)) fun u2 v2 =>
         k' u2 ((v1.rest (by simp)).trans (v2.rest (by simp))) (by rw [v2.mem, v1.mem]) (by
           rw [v2.gpr, dpVal, v1.gpr, r1])
   unfold powStep VG.Impl.Bignum.Arm.TwoPower.step

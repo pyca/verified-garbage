@@ -63,7 +63,7 @@ theorem prefix_relCT (n size : Nat) : RelCT isa (Pair n size) (reducePrefix n) (
       have go : ∀ σ, BodyIn n size σ → WP isa (.block VG.Impl.Dsa.X86.Pow.save) σ fun u =>
           Scr u (ws σ) size ∧ u.gpr .esp = σ.gpr .esp := by
         intro σ B
-        have hz24 : 24 ≤ size := by have := B.size; simp only [contextBytes, slot, stride] at this; omega
+        have hz24 : 24 ≤ size := by have := B.size; simp only [contextBytes, slot, stride] at this; omega_using [this]
         exact WP.mono (Pow.save_ok B.input.entry hz24) fun u ⟨Su, _, _, Ku⟩ => ⟨Su, Ku.1 _ (by decide)⟩
       exact ⟨go s B₁, go t B₂⟩
   have toAgree : ∀ u₁ u₂ : State, (VG.X86.Taint.Agree (workspaceTaint false) u₁ u₂ ∧ ∃ σ₁ σ₂, Pair n size σ₁ σ₂ ∧

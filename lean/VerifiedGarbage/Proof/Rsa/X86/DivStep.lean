@@ -48,8 +48,8 @@ theorem step_ok {g : Geometry} {s : State} (h : Context g s) :
     apply frameV.val32
     · intro r hr
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl <;> omega
-    · omega
+      rcases hr with rfl | rfl <;> omega_arith
+    · omega_using [f0, nowrap]
   have bit : (v.gpr .ebx).toNat ≤ 1 := by rw [bitV]; split <;> decide
   refine WP.block_append (WP.mono (insertBit_ok hv.workspace h.positive f0 bit) ?_)
   rintro w ⟨frameW, restW, qW⟩
@@ -70,13 +70,13 @@ theorem step_ok {g : Geometry} {s : State} (h : Context g s) :
   intro remBound divBound
   have rValue := rU (Nat.lt_trans remBound divBound)
   have radix : 2 ^ (32 * g.n) = 2 * 2 ^ (32 * g.n - 1) := by
-    rw [← Nat.pow_succ']; congr 1; have := h.positive; omega
+    rw [← Nat.pow_succ']; congr 1; have := h.positive; omega_using [this]
   have even : g.value v.mem 0 % 2 = 0 := by
     rw [qV, qU, Nat.mod_mod_of_dvd _ ⟨2 ^ (32 * g.n - 1), radix⟩]
-    omega
+    omega_using []
   have remW : g.value w.mem 1 = g.value v.mem 1 := by
     change val32 _ _ _ (g.n + 1) = val32 _ _ _ (g.n + 1)
-    exact frameW.val32 (by omega) (by omega)
+    exact frameW.val32 (by omega_using [sep01]) (by omega_using [f1, nowrap])
   rw [memT, remW, rV, qW even, bitV, qV, qU, rValue, dU]
   dsimp only [Rsa.divStep]
   split <;> simp

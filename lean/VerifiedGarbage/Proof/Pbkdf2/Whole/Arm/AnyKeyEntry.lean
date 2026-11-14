@@ -71,20 +71,20 @@ theorem initEntry_verified {I : Spec.Hmac.Instance} {short long : Prog isa} {n�
     · sig_post [Spec.Hmac.Instance.initAnyKeyContract, Spec.Hmac.initAnyKeyContract, Spec.Hmac.initSig,
         Spec.Hmac.initPost, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val] at q ⊢
       rw [g0, g1, g2, g3, hm] at q; exact q
-    · have hk : (s.gpr .r3).toNat ≤ I.S.H.blockSize := by have := of_decide_eq_false hp; omega
+    · have hk : (s.gpr .r3).toNat ≤ I.S.H.blockSize := by have := of_decide_eq_false hp; omega_using [this]
       sig_pre [Spec.Hmac.Instance.initAnyKeyContract, Spec.Hmac.initAnyKeyContract, Spec.Hmac.initSig,
         Spec.Hmac.initPost, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val] at hs
       sig_pre [Spec.Hmac.Instance.initContract, Spec.Hmac.initContract, Spec.Hmac.initSig, Spec.Hmac.initPre,
         Spec.Hmac.initPost, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val]
       rw [g0, g1, g2, g3, hsp, hrd, hwr]
-      obtain ⟨m₁, rfl⟩ : ∃ m, n₁ = m + 1 := ⟨n₁ - 1, by omega⟩
-      obtain ⟨m₂, rfl⟩ : ∃ m, n₂ = m + 1 := ⟨n₂ - 1, by omega⟩
+      obtain ⟨m₁, rfl⟩ : ∃ m, n₁ = m + 1 := ⟨n₁ - 1, by omega_using [h₁]⟩
+      obtain ⟨m₂, rfl⟩ : ∃ m, n₂ = m + 1 := ⟨n₂ - 1, by omega_using [hn]⟩
       simp only [Sig.conj, List.map_cons, List.map_nil, List.flatten_cons, List.flatten_nil,
         List.append_nil] at hs ⊢
       obtain ⟨⟨h0, h0'⟩, h1, h2, h3, h4, h5, ⟨c1, c2, c3⟩, n1, n2, n3⟩ := hs
       have sb := Offset.sub_below (State.addr s.sp) (a := m₁ + 1) (n := m₁ + 1) (b := m₂ + 1) (m := m₂ + 1)
-        (by omega) (by omega)
-      exact ⟨⟨by omega, h0'⟩, h1, h2, h3, h4, h5, ⟨c1.sub_left sb, c2.sub_left sb, c3.sub_left sb⟩, n1, n2, n3, hk⟩
+        (by omega_using [hn]) (by omega_using [hn])
+      exact ⟨⟨by omega_using [hn, h0], h0'⟩, h1, h2, h3, h4, h5, ⟨c1.sub_left sb, c2.sub_left sb, c3.sub_left sb⟩, n1, n2, n3, hk⟩
     · sig_post [Spec.Hmac.Instance.initAnyKeyContract, Spec.Hmac.initAnyKeyContract, Spec.Hmac.initSig,
         Spec.Hmac.initPost, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val]
       sig_post [Spec.Hmac.Instance.initContract, Spec.Hmac.initContract, Spec.Hmac.initSig, Spec.Hmac.initPre,
@@ -127,6 +127,6 @@ theorem initCode_verified {I : Spec.Hmac.Instance} {c : Prog isa} {F : Impl.Pbkd
     (hk : encodable (BitVec.ofNat 32 (I.S.H.blockSize + 1)) = true)
     (hsat : ∃ s, (I.initAnyKeyContract Arm.abi (24 + Any.anyFrame I)).pre s) :
     Verified Arm.target (initCode I c F) (I.initAnyKeyContract Arm.abi (24 + Any.anyFrame I)) :=
-  initEntry_verified hS hL (by omega) hn hB hk hsat
+  initEntry_verified hS hL (by omega_using []) hn hB hk hsat
 
 end VG.Proof.Pbkdf2.Whole.Arm

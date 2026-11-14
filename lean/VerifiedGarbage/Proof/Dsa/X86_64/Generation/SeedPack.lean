@@ -33,26 +33,26 @@ theorem seedPack_ok {p : GenerationContext} {W : Nat → BitVec 64} {s : State}
       GenerationMemory p W t ∧
       Spec.Rsa.bytesAt t.mem (off p.geo.B packed) (2 * p.geo.pLen + p.geo.qLen) = pb ++ qb ++ gb ∧
       Frame p.changed s.mem t.mem ∧ t.rd = s.rd ∧ t.wr = s.wr := by
-  have pn : 2 ≤ p.geo.pLen ∧ p.geo.pLen ≤ 384 := by rcases p.geo.width with hh | hh | hh <;> omega
-  have qn : 2 ≤ p.geo.qLen ∧ p.geo.qLen ≤ 32 := by rcases p.geo.qWidth with hh | hh <;> omega
+  have pn : 2 ≤ p.geo.pLen ∧ p.geo.pLen ≤ 384 := by rcases p.geo.width with hh | hh | hh <;> omega_using [hh]
+  have qn : 2 ≤ p.geo.qLen ∧ p.geo.qLen ≤ 32 := by rcases p.geo.qWidth with hh | hh <;> omega_using [hh]
   have h5 := (h.slots 5 (by simp [generationSlots])).trans p.baseSlot
   have packedBound := p.geo.small_bound (d := packed) (n := 2 * p.geo.pLen + p.geo.qLen)
-    (by decide) (by unfold arithmeticBytes; omega)
+    (by decide) (by unfold arithmeticBytes; omega_using [pn, qn])
   have hh := p.geo.small_bound (d := VG.Impl.Dsa.Generation.Layout.hash) (n := oRsa) (by decide) (by decide)
   have src (d : Nat) (bs : List Byte) (hd : d + bs.length ≤ packed)
       (bytes : Spec.Rsa.bytesAt s.mem (off p.geo.B d) bs.length = bs) :
       Src s (off p.geo.B packed) (2 * p.geo.pLen + p.geo.qLen) (off p.geo.B d) bs := by
-    have bound : d + bs.length ≤ usedBytes p.geo.pLen := by omega
-    apply arena_source h.scratch bound (by unfold packed at hd; omega) bytes
+    have bound : d + bs.length ≤ usedBytes p.geo.pLen := by omega_using [packedBound, hd]
+    apply arena_source h.scratch bound (by unfold packed at hd; omega_using [hd]) bytes
     exact p.geo.parts_disjoint bound packedBound (Or.inl hd)
   obtain ⟨V, R⟩ := h.rep
-  have call := pack_ok h.layout R hp hq hg ⟨pn.1, qn.1, by omega⟩
+  have call := pack_ok h.layout R hp hq hg ⟨pn.1, qn.1, by omega_using [pn, qn]⟩
   rw [h5] at call
   refine WP.mono (call
-    (src VG.Impl.Dsa.Generation.Layout.p pb (by rw [hp]; unfold VG.Impl.Dsa.Generation.Layout.p packed; omega) (by simpa only [hp] using bp))
-    (src q qb (by rw [hq]; unfold q packed; omega) (by simpa only [hq] using bq))
-    (src g gb (by rw [hg]; unfold g packed; omega) (by simpa only [hg] using bg))
-    (by intro i hi; rw [off_off]; exact h.scratch.region (by omega) (by decide))
+    (src VG.Impl.Dsa.Generation.Layout.p pb (by rw [hp]; unfold VG.Impl.Dsa.Generation.Layout.p packed; omega_using [pn]) (by simpa only [hp] using bp))
+    (src q qb (by rw [hq]; unfold q packed; omega_using [qn]) (by simpa only [hq] using bq))
+    (src g gb (by rw [hg]; unfold g packed; omega_using [pn]) (by simpa only [hg] using bg))
+    (by intro i hi; rw [off_off]; exact h.scratch.region (by omega_using [packedBound, hi]) (by decide))
     (p.geo.frame_part packedBound) (p.geo.parts_disjoint hh packedBound (Or.inl (by decide))))
     fun t ⟨bytes, Lt, Rt, ft, kt⟩ => ?_
   have ff : Frame p.changed s.mem t.mem := by

@@ -41,7 +41,7 @@ theorem copyOptional_ok (s : State) {src dst : BitVec 32} {n : Nat}
     intro _
     refine WP.mono (copyBytes_ok u (copyCtx_of_regions u src dst fits sourceFits destFits
       (by rw [restU.rd, restU.wr]; exact read) (by rw [restU.wr]; exact write) separate)
-      (by omega) ((restU.gpr .r1 (by simp)).trans source) ((restU.gpr .r0 (by simp)).trans dest)
+      (by omega_using [empty]) ((restU.gpr .r1 (by simp)).trans source) ((restU.gpr .r0 (by simp)).trans dest)
       ((restU.gpr .lr (by simp)).trans count)) ?_
     intro t inv
     refine ⟨?_, ?_, (restU.mono (by simp)).trans inv.rest⟩
@@ -50,7 +50,7 @@ theorem copyOptional_ok (s : State) {src dst : BitVec 32} {n : Nat}
       intro j hj
       have bound := List.mem_range.mp hj
       have byte := inv.copied j bound
-      rw [addr_add (by omega), addr_add (by omega), memU] at byte
+      rw [addr_add (by omega_using [destFits, bound]), addr_add (by omega_using [sourceFits, bound]), memU] at byte
       exact byte
     · have frame := inv.frame destFits
       rw [memU] at frame

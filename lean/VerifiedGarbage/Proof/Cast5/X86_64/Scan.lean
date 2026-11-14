@@ -144,11 +144,11 @@ theorem tile_ok {s₀ s : State} {T : Addr} {idx : Nat → BitVec 32} {q : Nat} 
   have ha (e : Nat) : s.gpr .r10 + BitVec.ofNat 64 (16 * e) = T + BitVec.ofNat 64 (16 * (4 * q + e)) := by
     rw [hr10, BitVec.add_assoc, ← BitVec.ofNat_add]
     congr 2
-    omega
+    omega_using []
   have hr (e : Nat) (he : e < 4) :
       InRegions (s.rd ++ s.wr) (T + BitVec.ofNat 64 (16 * (4 * q + e))) 16 := by
     rw [hk.rd, hk.wr]
-    exact CallLay.inRegions_sub hT (by omega) (by decide)
+    exact CallLay.inRegions_sub hT (by omega_using [hq, he]) (by decide)
   apply WP.of_runBlock
   refine ⟨_, by
     simp only [scanTile, runBlock_cons, runStep_some, runBlock_nil, exec, XOp.exec, State.load128,
@@ -187,7 +187,7 @@ theorem body_ok {s₀ s : State} {T : Addr} {idx : Nat → BitVec 32} {q : Nat} 
   rw [WP.block_append_iff]
   refine WP.mono (tile_ok hq hT hr10 h) fun t ⟨ht, hg⟩ => ?_
   open VG.Proof.MlKem.X86_64 in xrun [imm, sx_ofNat (show 64 < 2 ^ 31 by decide)]
-  rw [hg, hr10, BitVec.add_assoc, ← BitVec.ofNat_add, show 64 * q + 64 = 64 * (q + 1) by omega]
+  rw [hg, hr10, BitVec.add_assoc, ← BitVec.ofNat_add, show 64 * q + 64 = 64 * (q + 1) by omega_using []]
   exact ⟨(((ht.setFlags _ _ _ _).setReg (.inl rfl) _).setFlags _ _ _ _).setReg (.inr rfl) _,
     rfl, rfl, rfl⟩
 
@@ -256,6 +256,6 @@ theorem scan_ok (s : State) (sym : String) {idx : Nat → BitVec 32} (h0 : s.xmm
       ⟨⟨hv, h10'⟩, h11', hz⟩)
     (fun u ⟨hu, _⟩ => ⟨?_, hu.keep⟩) ⟨ht, by rw [h10]; exact (BitVec.add_zero _).symm⟩ (by rw [h11]; rfl)
   rw [hu.x1]
-  exact L_congr fun k hk => by rw [acc, ite_eq_left (by have := hidx k hk; omega)]
+  exact L_congr fun k hk => by rw [acc, ite_eq_left (by have := hidx k hk; omega_using [this])]
 
 end VG.Proof.Cast5.X86_64

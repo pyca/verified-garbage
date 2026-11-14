@@ -26,9 +26,9 @@ theorem searchAdvance_ok {s : State} {B : Addr} {counter stride limit : Nat}
   refine WP.ite (decide (counter + 1 < limit)) (by
     by_cases he : counter + 1 < limit
     · simp only [eval, State.read, Size.bits, BitVec.setWidth_eq, hflag,
-        ite_eq_right (show ¬ limit ≤ counter + 1 by omega), decide_eq_true he]; rfl
+        ite_eq_right (show ¬ limit ≤ counter + 1 by omega_using [he]), decide_eq_true he]; rfl
     · simp only [eval, State.read, Size.bits, BitVec.setWidth_eq, hflag,
-        ite_eq_left (show limit ≤ counter + 1 by omega), decide_eq_false he]; rfl) (fun hyes => ?_) (fun hno => ?_)
+        ite_eq_left (show limit ≤ counter + 1 by omega_using [he]), decide_eq_false he]; rfl) (fun hyes => ?_) (fun hno => ?_)
   · have hlt : counter + 1 < limit := of_decide_eq_true hyes
     refine WP.mono (searchStatus_ok hu (by decide : 3 ≤ 3)) fun t ⟨ht, hstat, hot, kt⟩ => ?_
     exact ⟨ht, by simpa only [hlt, ite_true] using hstat,

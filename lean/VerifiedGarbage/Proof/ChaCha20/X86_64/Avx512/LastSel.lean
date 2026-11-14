@@ -165,22 +165,22 @@ theorem selOkD_of {s₀ : State} (hp : APre s₀) {C : Nat} (hC : COk s₀ C) {q
   have hS := sS_lt s₀
   have hL := sL_lt s₀
   have e10 : (s.gpr .r10).toNat = C - q := by
-    rw [hr10, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := hC.le; omega)]
+    rw [hr10, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := hC.le; omega_using [hS, this])]
   have con : ∀ a n, 0 < n → (srcR s).Contains a n → (srR s₀).Contains a n := fun a n hn ha => by
     have hw := hp.wrap_s
     have hc := hC.le
     simp only [srcR, hr8, e10, Region.Contains] at ha ⊢
     have e : (a - ssp s₀).toNat = (a - (ssp s₀ + BitVec.ofNat 64 q)).toNat + q := by
-      have : q < 2 ^ 64 := by omega
+      have : q < 2 ^ 64 := by omega_using [hD, hL]
       bv_omega
-    omega
+    omega_using [hn, hc, ha, e]
   have sub : Region.Sub (srcR s) (srR s₀) := fun a ha => con a 1 (by decide) ha
   refine ⟨fun a n hn ha => ?_, fun r hr => ?_⟩
   · rw [hrd, hp.rd]
     exact ⟨srR s₀, by simp, con a n hn ha⟩
   · simp only [wregs, hr9, hrsi, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
-    · exact (hp.s_b.sub_left sub).sub_right (Region.sub_prefix (by omega))
+    · exact (hp.s_b.sub_left sub).sub_right (Region.sub_prefix (by omega_using []))
     · exact (hp.s_d.sub_left sub).sub_right (winQ_sub (s₀ := V s₀) hD)
 
 /-- Block `8 + j` into the data from either buffer, if it fits, or else into

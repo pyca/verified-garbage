@@ -27,16 +27,16 @@ theorem CandidateBase.modulus_ranges {p : CandidateP} {s : State} (h : Candidate
   rcases hr with (((rfl | rfl) | hr) | (rfl | rfl | rfl | rfl | rfl)) | rfl
   · constructor
     · change 64 ≤ p.Z - 256
-      unfold slot hdrBytes at hz; omega
+      unfold slot hdrBytes at hz; omega_using [hz]
     · right; decide
   · constructor
     · have hs := slot_le (w := p.phaseWords q) (show aOne < 8 by decide)
       omega_using [hs, hz]
-    · left; unfold slot hdrBytes; omega
+    · left; unfold slot hdrBytes; omega_using []
   · refine ⟨Nat.le_trans (r2Ranges_le _ r hr) hz, Or.inl ?_⟩
     simp only [r2Ranges, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl <;>
-      simp only [slot, hdrBytes, aAcc, aTmp, aR2, sCnt, sFn] <;> omega
+      simp only [slot, hdrBytes, aAcc, aTmp, aR2, sCnt, sFn] <;> omega_using []
   all_goals refine ⟨?_, Or.inl (by simp only [slot, hdrBytes]; omega_using [])⟩
   all_goals
     simp only [slot, hdrBytes, aAcc, aTmp, aY, aR1, aRm1, aE] at hz hx ⊢
@@ -58,7 +58,7 @@ theorem prepareModulus_state_ok (M : Mont) (R : R2Impl M)
   have hrs := fun r hr => (h.base.modulus_ranges q r hr).1
   exact ⟨mi', h.keep_inner hf hrs k (by decide), ht,
     hp.of_inner h.base hf hrs (fun r hr => (h.base.modulus_ranges q r hr).2),
-    fun j hj => h.base.inner_header hf hrs j (by omega),
+    fun j hj => h.base.inner_header hf hrs j (by omega_using [hj]),
     CandidateFrame.of_scr (h.base.inner_changes hf hrs), k⟩
 
 end VG.Proof.Ffdh.X86_64.ParameterCandidate

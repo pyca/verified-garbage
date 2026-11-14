@@ -33,7 +33,7 @@ theorem seedArguments_ok {s : State} {F S : Addr} {V : Nat → Byte} {W : Nat �
   have cast : (BitVec.ofNat 16 len).setWidth 64 = BitVec.ofNat 64 len := by
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]
-    omega
+    omega_using [hl]
   have read : (s.mem.writeW (VG.Proof.Bignum.off F 0) (VG.Proof.Bignum.off (W 5) q)).readW (VG.Proof.Bignum.off F 8) 64 = W 1 := by
     change VG.Proof.Bignum.word (s.mem.writeW (VG.Proof.Bignum.off F 0) (VG.Proof.Bignum.off (W 5) q)) F 8 = W 1
     rw [(VG.Proof.Bignum.writeW_outside _ F _ (d := 0) (by decide)).word
@@ -68,6 +68,6 @@ theorem seedArguments_ok {s : State} {F S : Addr} {V : Nat → Byte} {W : Nat �
   right
   have hn := ha ⟨F, frameBytes⟩ (by simp)
   change ¬ ofs F a < frameBytes at hn
-  omega
+  omega_using [hn]
 
 end VG.Proof.Dsa.AArch64.Generation

@@ -30,8 +30,8 @@ theorem narrow_lanes {x y : BitVec 128} {A B : Nat → Nat} (hx : Lanes x A) (hy
   by_cases c : e < 4
   · rw [ite_eq_left c, ite_eq_left c, ← Ntt16.vword_lo, BitVec.extractLsb'_toNat, Nat.shiftRight_zero,
       hx e c, Nat.mod_eq_of_lt (ba e c)]
-  · rw [ite_eq_right c, ite_eq_right c, show 2 * e - 8 = 2 * (e - 4) by omega, ← Ntt16.vword_lo,
-      BitVec.extractLsb'_toNat, Nat.shiftRight_zero, hy _ (by omega), Nat.mod_eq_of_lt (bb _ (by omega))]
+  · rw [ite_eq_right c, ite_eq_right c, show 2 * e - 8 = 2 * (e - 4) by omega_using [], ← Ntt16.vword_lo,
+      BitVec.extractLsb'_toNat, Nat.shiftRight_zero, hy _ (by omega_using [he]), Nat.mod_eq_of_lt (bb _ (by omega_using [he]))]
 
 /-- The sixteen coefficients from the even (`A`, `A'`) and odd (`B`, `B'`) results of pairs
 `0 … 3` and `4 … 7`. -/
@@ -53,8 +53,8 @@ theorem storeW_ok {s : State} {p : Addr} {j : Nat} {A B A' B' : Nat → Nat}
   simp only [Impl.MlKem.AArch64.DotW.storeW]
   refine wp_vop (d := .v0) rfl fun s₁ h₁ => wp_vop (d := .v1) rfl fun s₂ h₂ =>
     wp_vop (d := .v2) rfl fun s₃ h₃ => wp_vop (d := .v3) rfl fun s₄ h₄ => ?_
-  have E := narrow_lanes ha ha' (fun e he => by have := ba e he; omega) (fun e he => by have := ba' e he; omega)
-  have Od := narrow_lanes hb hb' (fun e he => by have := bb e he; omega) (fun e he => by have := bb' e he; omega)
+  have E := narrow_lanes ha ha' (fun e he => by have := ba e he; omega_using [this]) (fun e he => by have := ba' e he; omega_using [this])
+  have Od := narrow_lanes hb hb' (fun e he => by have := bb e he; omega_using [this]) (fun e he => by have := bb' e he; omega_using [this])
   have v0 : s₄.v .v0 = VPermOp.eval .uzp1 .h8 (s.v .v21) (s.v .v25) := by
     rw [h₄.get .v0, h₃.get .v0, h₂.get .v0, h₁.v]
   have v1 : s₄.v .v1 = VPermOp.eval .uzp1 .h8 (s.v .v23) (s.v .v27) := by
@@ -68,24 +68,24 @@ theorem storeW_ok {s : State} {p : Addr} {j : Nat} {A B A' B' : Nat → Nat}
     (by rw [h₅.wr, h₄.wr, h₃.wr, h₂.wr, h₁.wr]; exact hw 1 (by decide)) fun s₆ h₆ => wp_nil ?_
   have x2 : ∀ e < 8, vhalf (s₄.v .v2) e = O (j + e) := fun e he => by
     apply BitVec.eq_of_toNat_eq
-    rw [h₄.get .v2, h₃.v, Ntt16.vhalf_perm_h8 _ _ _ he, hv e (by omega), outW, ite_eq_left he]
+    rw [h₄.get .v2, h₃.v, Ntt16.vhalf_perm_h8 _ _ _ he, hv e (by omega_using [he]), outW, ite_eq_left he]
     dsimp only
     rw [← h₃.get .v0, ← h₄.get .v0, ← h₃.get .v1, ← h₄.get .v1, v0, v1]
     split
-    · rw [E _ (by omega)]; dsimp only; rw [ite_eq_left (show e / 2 < 4 by omega)]
-    · rw [Od _ (by omega)]; dsimp only; rw [ite_eq_left (show e / 2 < 4 by omega)]
+    · rw [E _ (by omega_using [he])]; dsimp only; rw [ite_eq_left (show e / 2 < 4 by omega_using [he])]
+    · rw [Od _ (by omega_using [he])]; dsimp only; rw [ite_eq_left (show e / 2 < 4 by omega_using [he])]
   have x3 : ∀ e < 8, vhalf (s₄.v .v3) e = O (j + 8 + e) := fun e he => by
     apply BitVec.eq_of_toNat_eq
-    rw [h₄.v, Ntt16.vhalf_perm_h8 _ _ _ he, Nat.add_assoc, hv (8 + e) (by omega), outW,
-      ite_eq_right (show ¬(8 + e < 8) by omega), show 8 + e - 8 = e by omega,
-      show (8 + e) % 2 = e % 2 by omega]
+    rw [h₄.v, Ntt16.vhalf_perm_h8 _ _ _ he, Nat.add_assoc, hv (8 + e) (by omega_using [he]), outW,
+      ite_eq_right (show ¬(8 + e < 8) by omega_using []), show 8 + e - 8 = e by omega_using [],
+      show (8 + e) % 2 = e % 2 by omega_using []]
     dsimp only
     rw [← h₄.get .v0, ← h₄.get .v1, v0, v1]
     split
-    · rw [E _ (by omega)]; dsimp only
-      rw [ite_eq_right (show ¬(4 + e / 2 < 4) by omega), show 4 + e / 2 - 4 = e / 2 by omega]
-    · rw [Od _ (by omega)]; dsimp only
-      rw [ite_eq_right (show ¬(4 + e / 2 < 4) by omega), show 4 + e / 2 - 4 = e / 2 by omega]
+    · rw [E _ (by omega_using [he])]; dsimp only
+      rw [ite_eq_right (show ¬(4 + e / 2 < 4) by omega_using []), show 4 + e / 2 - 4 = e / 2 by omega_using []]
+    · rw [Od _ (by omega_using [he])]; dsimp only
+      rw [ite_eq_right (show ¬(4 + e / 2 < 4) by omega_using []), show 4 + e / 2 - 4 = e / 2 by omega_using []]
   have hm : s₆.mem = (s.mem.write (p + BitVec.ofNat 64 (2 * j)) 16 (s₄.v .v2)).write
       (p + BitVec.ofNat 64 (2 * (j + 8))) 16 (s₄.v .v3) := by
     rw [h₆.mem, h₅.mem, h₄.mem, h₃.mem, h₂.mem, h₁.mem, h₅.v]
@@ -94,10 +94,10 @@ theorem storeW_ok {s : State} {p : Addr} {j : Nat} {A B A' B' : Nat → Nat}
   · rw [h₆.v, h₅.v, h₄.get .v16, h₃.get .v16, h₂.get .v16, h₁.get .v16]; exact hc.q
   · rw [h₆.v, h₅.v, h₄.get .v17, h₃.get .v17, h₂.get .v17, h₁.get .v17]; exact hc.m
   · rw [hm]
-    exact ((Frame.refl _ _).write (List.mem_singleton_self _) _ (contains_off (by omega) (by decide))).write
-      (List.mem_singleton_self _) _ (contains_off (by omega) (by decide))
+    exact ((Frame.refl _ _).write (List.mem_singleton_self _) _ (contains_off (by omega_using [hj]) (by decide))).write
+      (List.mem_singleton_self _) _ (contains_off (by omega_using [hj]) (by decide))
   · rw [hm]
-    exact (ho.write16 (S' := (· < j + 8)) (by omega) x2 fun i _ => by omega).write16 (by omega)
-      (fun e he => by rw [x3 e he, Nat.add_assoc]) fun i _ => by omega
+    exact (ho.write16 (S' := (· < j + 8)) (by omega_using [hj]) x2 fun i _ => by omega_using []).write16 (by omega_using [hj])
+      (fun e he => by rw [x3 e he, Nat.add_assoc]) fun i _ => by omega_using []
 
 end VG.Proof.MlKem.AArch64.DotW

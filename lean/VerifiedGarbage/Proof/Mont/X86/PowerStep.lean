@@ -32,7 +32,7 @@ theorem doubleStep_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base si
       Outs base [(out, 8 * M.n), (M.tmp, 8 * M.n), (acc, accLen M)] s.mem t.mem ∧
       Keeps powerClob s t := by
   unfold VG.Impl.Mont.X86.Dynamic.doubleStep
-  refine WP.seq (WP.mono (add_ok hs hm hl (by omega)) fun u ⟨K, V, _⟩ => ?_)
+  refine WP.seq (WP.mono (add_ok hs hm hl (by omega_using [hv])) fun u ⟨K, V, _⟩ => ?_)
   have count : u.gpr .esi = BitVec.ofNat 32 k := (K.gpr .esi (by decide)).trans hc
   have modU := hm.keep hs hl ho K
   refine wp_subS rfl fun v uv _ => ?_

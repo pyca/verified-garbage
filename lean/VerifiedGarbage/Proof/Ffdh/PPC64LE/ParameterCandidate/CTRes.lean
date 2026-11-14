@@ -51,13 +51,13 @@ theorem pins_F4 : Pins F4 [.r4, .r31] := by
 
 theorem St.fs {p : PP} {s : State} (h : St p s) : FS p s := by
   have := h.dims.n
-  exact ⟨p.Z, h.scr, by simp only [PP.Z]; omega, h.r31, h.args.usedP'⟩
+  exact ⟨p.Z, h.scr, by simp only [PP.Z]; omega_using [this], h.r31, h.args.usedP'⟩
 
 theorem finish_ct {r : Nat} (hr : r = 0 ∨ r = 1 ∨ r = 2) : RelCT isa (Two FS) (.block (finish r)) fun _ _ => True := by
   have hd : RelCT isa (Two FS) (.block [ldh .r4 hUsedP]) (Two F4) :=
     two_post (two_taint _ pins_FS (by taint_decide)) fun q s ⟨Z, hs, hZ, h31, hu⟩ =>
       WP.mono (WP.keep [.r4] (Q := fun t => t.gpr .r4 = q.up) (by
-          simp only [ldh, hUsedP]; prun [h31, hs.ld (d := 32) (n := 8) (by omega), hu]) (by decide))
+          simp only [ldh, hUsedP]; prun [h31, hs.ld (d := 32) (n := 8) (by omega_using [hZ]), hu]) (by decide))
         fun t ⟨t4, k⟩ => ⟨(k.gpr _ (by decide)).trans h31, t4⟩
   unfold finish
   rw [List.append_assoc]
@@ -105,7 +105,7 @@ theorem qResult_ct : RelCT isa (Two ME) qResult fun _ _ => True := by
   unfold qResult
   refine RelCT.seq statLoad_ct (two_ite' (fun a => decide (statOf a.res = 0)) (fun a s h => ?_)
     (finSL_ct (.inl rfl) fun _ _ h => h.1.1) (finSL_ct (.inr (.inr rfl)) fun _ _ h => h.1.1))
-  exact eval_zero_ofNat s .r3 (by have := statOf_le a.res; omega) h.2
+  exact eval_zero_ofNat s .r3 (by have := statOf_le a.res; omega_using [this]) h.2
 
 /-- With a test's status less one in `r3`. -/
 def SL1 (a : MrD) (t : State) : Prop :=
@@ -154,7 +154,7 @@ theorem writeP_ct {Φ : MrD → State → Prop} (h : ∀ a s, Φ a s → MS a s)
     have hLe : (a.q.with sv toc).L = ((a.q.with sv toc).bits + 7) / 8 := rfl
     have hZe : (a.q.with sv toc).Z = 8 * (a.q.with sv toc).n := rfl
     exact WP.mono (writeHead_ok M.st.scr M.st.r31 (M.ph.r10.trans (by rw [slot_zero])) M.st.args.out'
-      M.st.args.len' (by omega) (by omega)) fun t ⟨⟨t6, t4, t5, _⟩, _⟩ => ⟨t4, t5, t6⟩
+      M.st.args.len' (by omega_using [hb1, hLe]) (by omega_using [hdn, hZe])) fun t ⟨⟨t6, t4, t5, _⟩, _⟩ => ⟨t4, t5, t6⟩
   · obtain ⟨sv, toc, M⟩ := h a s hs
     have h := M.st
     have hdn := h.dims.n
@@ -163,24 +163,24 @@ theorem writeP_ct {Φ : MrD → State → Prop} (h : ∀ a s, Φ a s → MS a s)
     have hLe : (a.q.with sv toc).L = ((a.q.with sv toc).bits + 7) / 8 := rfl
     have hZe : (a.q.with sv toc).Z = 8 * (a.q.with sv toc).n := rfl
     refine WP.mono (writeP_ok h.scr h.bufs.scrO h.r31 (M.ph.r10.trans (by rw [slot_zero])) h.args.out'
-      h.args.len' (by omega) (by omega) h.bufs.sepO) fun t₁ ⟨⟨_, tout⟩, k₁⟩ => ?_
+      h.args.len' (by omega_using [hb1, hLe]) (by omega_using [hdn, hZe]) h.bufs.sepO) fun t₁ ⟨⟨_, tout⟩, k₁⟩ => ?_
     have hws₁ : ∀ x, ofs (a.q.with sv toc).B x < (a.q.with sv toc).Z → t₁.mem x = s.mem x := fun x hx => tout x (Or.inr (by
       by_contra hc'
-      have := h.bufs.sepO x (by omega)
-      omega))
+      have := h.bufs.sepO x (by omega_using [hc'])
+      omega_using [hx, this]))
     have E₁ := h.toE.frame hws₁ k₁ (by decide)
-    exact ⟨_, E₁.scr, by omega, E₁.r31, (word_of_ws hws₁ (d := 32) (by omega) hnw).trans h.args.usedP'⟩
+    exact ⟨_, E₁.scr, by omega_using [hdn, hZe], E₁.r31, (word_of_ws hws₁ (d := 32) (by omega_using [hdn, hZe]) hnw).trans h.args.usedP'⟩
 
 /-- After p's test. -/
 theorem pResult_ct : RelCT isa (Two ME) pResult fun _ _ => True := by
   unfold pResult
   refine RelCT.seq statLoad_ct (two_ite' (fun a => decide (statOf a.res = 0))
-    (fun a s h => eval_zero_ofNat s .r3 (by have := statOf_le a.res; omega) h.2)
+    (fun a s h => eval_zero_ofNat s .r3 (by have := statOf_le a.res; omega_using [this]) h.2)
     (finSL_ct (.inl rfl) fun _ _ h => h.1.1) ?_)
   refine RelCT.seq (sub1_ct fun _ _ h => h.1) (two_ite' (fun a => decide (statOf a.res = 1)) (fun a s h => ?_)
     (RelCT.seq (writeP_ct fun _ _ h => h.1.1) (two_map MrD.q (fun _ _ h => h) (finish_ct (.inr (.inl rfl)))))
     (finSL_ct (.inr (.inr rfl)) fun _ _ h => h.1.1))
   rw [eval_zero, h.2]
-  exact congrArg some (stat_one (by have := statOf_le a.res; omega))
+  exact congrArg some (stat_one (by have := statOf_le a.res; omega_using [this]))
 
 end VG.Proof.Ffdh.PPC64LE.ParameterCandidate

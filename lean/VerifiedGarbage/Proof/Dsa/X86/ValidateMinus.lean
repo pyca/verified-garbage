@@ -32,19 +32,19 @@ theorem validateMinus_ok {s : State} {base : Addr} {size len n m amount output :
   unfold Validate.minus
   dsimp only
   rw [← hn]
-  have hn0 : 0 < n := by omega
-  have hn48 : n ≤ 48 := by omega
+  have hn0 : 0 < n := by omega_using [hn, h4]
+  have hn48 : n ≤ 48 := by omega_using [hn, hmax]
   have cb := VG.Proof.Dsa.X86.Layout.context_bound hn48
   have hsaved : 8256 ≤ size := hz
-  refine WP.seq (WP.mono (coreLoad_ok hs hz (by omega) h4 (by omega) hw4
+  refine WP.seq (WP.mono (coreLoad_ok hs hz (by omega_using [hz, hn, h4, hmax, hw4, ho, hfar, b0, b6, hn0, hn48, cb, hsaved]) h4 (by omega_using [hn]) hw4
     R.toReadableComponent (R.slot (by decide))) fun u ⟨Vu, Ku, Ou⟩ => ?_)
   have Hu := hs.of_keeps Ku (by decide)
   have Oload : Outside base 0 (contextBytes n) s.mem u.mem :=
     slotOutside_whole Ou (by decide)
-  refine WP.seq (WP.mono (modulusMinus_ok Hu hn0 (by omega) (Vu.trans hm) ham)
+  refine WP.seq (WP.mono (modulusMinus_ok Hu hn0 (by omega_using [ho, hfar]) (Vu.trans hm) ham)
     fun v ⟨Vv, Ov, Kv⟩ => ?_)
   have Hv := Hu.of_keeps Kv (by decide)
-  refine WP.mono (coreStore_ok Hv hz hn.symm (by omega) h4 (by omega) hw4 ho (by omega))
+  refine WP.mono (coreStore_ok Hv hz hn.symm (by omega_using [hz, hn, h4, hmax, hw4, ho, hfar, b0, b6, hn0, hn48, cb, hsaved]) h4 (by omega_using [hn]) hw4 ho (by omega_using [hfar, b6]))
     fun t ⟨Vt, Kt, Ot⟩ => ?_
   exact ⟨by rw [Vt, Vv], (Outs.of_outside (Oload.trans Ov) (by simp)).trans (Outs.of_outside Ot (by simp)),
     ((Ku.mono (by decide)).trans (Kv.mono (by decide))).trans (Kt.mono (by decide))⟩

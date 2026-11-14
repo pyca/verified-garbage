@@ -29,13 +29,13 @@ theorem readW_write {m : Mem} {S : BitVec 32} (hS : S.toNat + 128 ≤ 2 ^ 32) {d
   rw [Spill.addr_eq_of hS hd, Spill.addr_eq_of hS he]
   split
   · subst e; exact Mem.readW_writeW_self32 _ _ _
-  · refine Mem.readW_writeW_sep (Offset.sep _ (by omega) (by omega) (by omega)) (by decide)
+  · refine Mem.readW_writeW_sep (Offset.sep _ (by omega_arith) (by omega_using [he]) (by omega_using [hd])) (by decide)
 
 /-- The state's word at `d` lies in the state. -/
 theorem contains_addr {S : BitVec 32} (hS : S.toNat + 128 ≤ 2 ^ 32) {d : Nat} (hd : d + 4 ≤ 128) :
     (stR S).Contains (addr S d) 4 := by
   rw [Spill.addr_eq_of hS hd]
-  exact Offset.contains_base _ (by omega) (by omega)
+  exact Offset.contains_base _ (by omega_using [hd]) (by omega_using [hd])
 
 /-- A word of the state, through writes apart from it. -/
 theorem readW_frame {rs : List Region} {m m' : Mem} (h : Frame rs m m') {S : BitVec 32}
@@ -76,7 +76,7 @@ theorem Ctl.write {m : Mem} {S : BitVec 32} (hS : S.toNat + 128 ≤ 2 ^ 32) {ds 
     (v : BitVec 32) : Ctl (m.writeW (addr S d) v) S ds (upd f d v) := by
   intro e he
   obtain ⟨he1, he4⟩ := hA e he
-  rw [readW_write hS v hd he1 (by omega)]
+  rw [readW_write hS v hd he1 (by omega_using [hd4, he4])]
   unfold upd
   by_cases hde : d = e
   · subst hde; simp

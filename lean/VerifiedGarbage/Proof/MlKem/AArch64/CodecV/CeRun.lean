@@ -88,7 +88,7 @@ theorem vloop_ok {w : Width} (hw : WOk w) {G n : Nat} {K : State → Prop} {setu
       bytesAt s'.mem (oP s₀) (32 * w.d) = Spec.MlKem.compressEncode w.d (P s₀) := by
   refine WP.seq ?_
   simp only [List.append_assoc]
-  refine wp_dupW hmul fun s1 g1 v1 l16 => wp_dupW (c := w.add) (by have := hw.add_lt; omega) fun s2 g2 v2 l17 =>
+  refine wp_dupW hmul fun s1 g1 v1 l16 => wp_dupW (c := w.add) (by have := hw.add_lt; omega_using [this]) fun s2 g2 v2 l17 =>
     wp_dupW hmask fun s3 g3 v3 l18 => ?_
   rw [WP.block_append_iff]
   refine WP.mono (hset s3) fun s4 ⟨g4, v4, k4⟩ => ?_
@@ -104,7 +104,7 @@ theorem vloop_ok {w : Width} (hw : WOk w) {G n : Nat} {K : State → Prop} {setu
       by rw [h5.sp, g4.sp, g3.sp, g2.sp, g1.sp], ?_, ?_, ?_, ⟨?_, ?_, ?_⟩, hK _ _ v5 k4, ?_, ?_⟩
     · rw [g .x0 (by decide) (by decide), Nat.mul_zero]; exact (ptr_zero _).symm
     · rw [g .x2 (by decide) (by decide), Nat.mul_zero, ptr_zero]
-    · rw [e5, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := Nat.div_le_self 256 (w.c * G); omega), hn,
+    · rw [e5, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := Nat.div_le_self 256 (w.c * G); omega_using [hn, this]), hn,
         Nat.sub_zero]
     · rw [vv _ (by decide) (by decide) (by decide), v3 _ (by decide), v2 _ (by decide)]
       exact l16

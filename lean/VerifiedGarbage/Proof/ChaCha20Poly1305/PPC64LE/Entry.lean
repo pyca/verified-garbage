@@ -125,13 +125,13 @@ theorem sub_ctx (s₀ : State) {k n : Nat} (h : k + n ≤ 656) : Region.Sub (sub
 
 theorem sub_disj (s₀ : State) {a n b m : Nat} (h : a + n ≤ b ∨ b + m ≤ a) (ha : a + n ≤ 656)
     (hb : b + m ≤ 656) : (sub s₀ a n).Disjoint (sub s₀ b m) :=
-  Offset.disjoint (cx s₀) h (by omega) (by omega)
+  Offset.disjoint (cx s₀) h (by omega_using [ha]) (by omega_using [hb])
 
 theorem contains_sub (s₀ : State) {k n a w : Nat} (h₁ : k ≤ a) (h₂ : a + w ≤ k + n) (h₃ : k + n ≤ 656) :
-    (sub s₀ k n).Contains (off (cx s₀) a) w := Offset.contains (cx s₀) h₁ h₂ (by omega)
+    (sub s₀ k n).Contains (off (cx s₀) a) w := Offset.contains (cx s₀) h₁ h₂ (by omega_using [h₃])
 
 theorem contains_ctx (s₀ : State) {a w : Nat} (h : a + w ≤ 656) : (ctxR s₀).Contains (off (cx s₀) a) w :=
-  Offset.contains_base (cx s₀) h (by omega)
+  Offset.contains_base (cx s₀) h (by omega_using [h])
 
 theorem off_off (p : Addr) (a b : Nat) : off (off p a) b = off p (a + b) := by
   show p + BitVec.ofNat 64 a + BitVec.ofNat 64 b = p + BitVec.ofNat 64 (a + b)
@@ -153,11 +153,11 @@ theorem in_ctx' {a w : Nat} (h : a + w ≤ 656) : InRegions (s₀.rd ++ s₀.wr)
 
 theorem k_in {d : Nat} (h : d + 4 ≤ 32) {s : State} (hrd : s.rd = s₀.rd) :
     InRegions (s.rd ++ s.wr) (off (kp s₀) d) 4 :=
-  ⟨kR s₀, by rw [hrd]; exact List.mem_append_left _ hp.k_rd, Offset.contains_base _ h (by omega)⟩
+  ⟨kR s₀, by rw [hrd]; exact List.mem_append_left _ hp.k_rd, Offset.contains_base _ h (by omega_using [h])⟩
 
 theorem n_in {d : Nat} (h : d + 4 ≤ 12) {s : State} (hrd : s.rd = s₀.rd) :
     InRegions (s.rd ++ s.wr) (off (np s₀) d) 4 :=
-  ⟨nR s₀, by rw [hrd]; exact List.mem_append_left _ hp.n_rd, Offset.contains_base _ h (by omega)⟩
+  ⟨nR s₀, by rw [hrd]; exact List.mem_append_left _ hp.n_rd, Offset.contains_base _ h (by omega_using [h])⟩
 
 end APre
 
@@ -173,10 +173,10 @@ def Saved (s₀ : State) (m : Mem) : Prop :=
 theorem Saved.frame {s₀ : State} {rs : List Region} {m m' : Mem} (h : Saved s₀ m)
     (hf : Frame rs m m') (hd : ∀ r ∈ rs, (sub s₀ savOff 64).Disjoint r) : Saved s₀ m' := by
   refine ⟨fun i hi => ?_, ?_⟩
-  · rw [hf.readW (contains_sub s₀ (w := 64 / 8) (by simp only [savOff]; omega)
-      (by simp only [savOff]; omega) (by decide)) hd (by decide), h.1 i hi]
-  · rw [hf.readW (contains_sub s₀ (w := 64 / 8) (by simp only [savOff]; omega)
-      (by simp only [savOff]; omega) (by decide)) hd (by decide), h.2]
+  · rw [hf.readW (contains_sub s₀ (w := 64 / 8) (by simp only [savOff]; omega_using [])
+      (by simp only [savOff]; omega_using [hi]) (by decide)) hd (by decide), h.1 i hi]
+  · rw [hf.readW (contains_sub s₀ (w := 64 / 8) (by simp only [savOff]; omega_using [])
+      (by simp only [savOff]; omega_using []) (by decide)) hd (by decide), h.2]
 
 /-- The values we keep in `r24`–`r29` and `r31`. -/
 structure Regs (s₀ s : State) : Prop where
@@ -227,7 +227,7 @@ theorem Inv.step1 {s₀ s s' : State} (h : Inv s₀ s) {k n : Nat} (hk : Kept [s
       simp only [List.mem_singleton] at hr; subst hr; exact ⟨ctxR s₀, by simp, sub_ctx s₀ h₂⟩)
     (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
-      exact sub_disj s₀ (by simp only [savOff] at h₃ ⊢; omega) (by decide) h₂)
+      exact sub_disj s₀ (by simp only [savOff] at h₃ ⊢; omega_using [h₃]) (by decide) h₂)
 
 /-- A part that writes no memory keeps the invariant. -/
 theorem Inv.step0 {s₀ s s' : State} (h : Inv s₀ s) (hk : Kept [] s s') : Inv s₀ s' :=

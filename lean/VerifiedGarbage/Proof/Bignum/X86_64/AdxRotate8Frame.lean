@@ -31,21 +31,21 @@ theorem BlockOut.trans {B : Addr} {c e n : Nat} {m m' m'' : Mem}
 
 theorem BlockOut.mono {B : Addr} {c e n e' n' : Nat} {m m' : Mem}
     (h : BlockOut B c e n m m') (he : e' ≤ e) (hn : e + n ≤ e' + n') : BlockOut B c e' n' m m' :=
-  fun x hc hx => h x hc (by omega)
+  fun x hc hx => h x hc (by omega_using [he, hn, hx])
 
 theorem BlockOut.outside {B : Addr} {c e n a b : Nat} {m m' : Mem}
     (h : BlockOut B c e n m m') (hc : a ≤ c) (hc' : c + 8 ≤ a + b)
     (he : a ≤ e) (he' : e + n ≤ a + b) : Outside B a b m m' :=
-  fun x hx => h x (by omega) (by omega)
+  fun x hx => h x (by omega_using [hc, hc', hx]) (by omega_using [he, he', hx])
 
 theorem BlockOut.word {B : Addr} {c e n d : Nat} {m m' : Mem}
     (h : BlockOut B c e n m m') (hc : d + 8 ≤ c ∨ c + 8 ≤ d)
     (he : d + 8 ≤ e ∨ e + n ≤ d) (hd : d + 8 ≤ 2 ^ 64) : word m' B d = word m B d :=
-  (Mem.readW_congr fun i hi => (h _ (by rw [ofs_off B (by omega)]; omega)
-    (by rw [ofs_off B (by omega)]; omega)).symm).symm
+  (Mem.readW_congr fun i hi => (h _ (by rw [ofs_off B (by omega_using [hd, hi])]; omega_using [hc, hi])
+    (by rw [ofs_off B (by omega_using [hd, hi])]; omega_using [he, hi])).symm).symm
 
 theorem BlockOut.wv {B : Addr} {c e n d k : Nat} {m m' : Mem}
     (h : BlockOut B c e n m m') (hc : d + 8 * k ≤ c ∨ c + 8 ≤ d)
     (he : d + 8 * k ≤ e ∨ e + n ≤ d) (hd : d + 8 * k ≤ 2 ^ 64) : wv m' B d k = wv m B d k :=
-  wv_congr fun _ hi => h.word (by omega) (by omega) (by omega)
+  wv_congr fun _ hi => h.word (by omega_using [hc, hi]) (by omega_using [he, hi]) (by omega_using [hd, hi])
 end VG.Proof.Bignum.X86_64.AdxRotate8

@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.X448.Limbs
 import Batteries.Tactic.Init
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # X448: canonical reduction
@@ -30,7 +31,7 @@ theorem freezeCoeff_bound {f : Nat → Nat} (hf : ∀ i < 16, f i < radix) :
   have h := hf i hi
   have hr : radix + 1 < 2 ^ 62 := by decide
   simp only [freezeCoeff]
-  split <;> omega
+  split <;> omega_using [h, hr]
 
 theorem freeze_carry {f : Nat → Nat} (hf : ∀ i < 16, f i < radix) :
     carry (freezeCoeff f) 16 = if P ≤ valN f 16 then 1 else 0 := by
@@ -45,14 +46,14 @@ theorem freeze_carry {f : Nat → Nat} (hf : ∀ i < 16, f i < radix) :
   have he := full_eq
   have hq : carry (freezeCoeff f) 16 ≤ 1 := by
     by_contra h
-    have hmul := Nat.mul_le_mul_left full (show 2 ≤ carry (freezeCoeff f) 16 by omega)
-    omega
+    have hmul := Nat.mul_le_mul_left full (show 2 ≤ carry (freezeCoeff f) 16 by omega_using [h])
+    omega_using [hv, e, he, hmul]
   rcases Nat.eq_zero_or_pos (carry (freezeCoeff f) 16) with h | h
   · rw [h, Nat.mul_zero, Nat.add_zero] at e
-    rw [ite_eq_right (by omega), h]
-  · have h : carry (freezeCoeff f) 16 = 1 := by omega
+    rw [ite_eq_right (by omega_using [hd, e, he]), h]
+  · have h : carry (freezeCoeff f) 16 = 1 := by omega_using [hq, h]
     rw [h, Nat.mul_one] at e
-    rw [ite_eq_left (by omega), h]
+    rw [ite_eq_left (by omega_using [e, he]), h]
 
 theorem freeze_value {f : Nat → Nat} (hf : ∀ i < 16, f i < radix) :
     (if carry (freezeCoeff f) 16 = 1 then valN (digit (freezeCoeff f)) 16 else valN f 16) =
@@ -67,9 +68,9 @@ theorem freeze_value {f : Nat → Nat} (hf : ∀ i < 16, f i < radix) :
   by_cases h : P ≤ valN f 16
   · rw [ite_eq_left h, ite_eq_left rfl]
     rw [ite_eq_left h, Nat.mul_one] at e
-    rw [Nat.mod_eq_sub_mod h, Nat.mod_eq_of_lt (by omega : valN f 16 - P < P)]
+    rw [Nat.mod_eq_sub_mod h, Nat.mod_eq_of_lt (by omega_using [hv, hp, he] : valN f 16 - P < P)]
     change valN (digit (freezeCoeff f)) 16 + full = _ at e
-    omega
-  · rw [ite_eq_right h, ite_eq_right (by decide), Nat.mod_eq_of_lt (by omega)]
+    omega_using [he, e]
+  · rw [ite_eq_right h, ite_eq_right (by decide), Nat.mod_eq_of_lt (by omega_using [h])]
 
 end VG.Proof.X448

@@ -34,14 +34,14 @@ theorem save_ok {s : State} {p : Addr} (h25 : s.gpr .x25=p)
       (p+1816) (s.gpr .x11) := by rw [hu.mem,h₂.mem,h₁.mem,h₂.gpr,h₁.gpr]
   have sep (a b : Nat) (h : a+8≤b ∨ b+8≤a) (ha : a+8≤2048) (hb : b+8≤2048) :
       Mem.Sep (p+BitVec.ofNat 64 a) 8 (p+BitVec.ofNat 64 b) 8 :=
-    Offset.sep p h (by omega) (by omega)
+    Offset.sep p h (by omega_using [ha]) (by omega_using [hb])
   refine ⟨((h₁.keep.trans h₂.keep).trans hu.keep).mono (by simp),?_,?_,?_,?_⟩
   · rw [m]
     exact (((Frame.refl _ _).writeW (by simp [parserSaves]) _ (Region.contains_self _ _)).writeW
       (by simp [parserSaves]) _ (Region.contains_self _ _)).writeW (by simp [parserSaves]) _ (Region.contains_self _ _)
-  · rw [m,Mem.readW_writeW_sep (sep 1800 1816 (by omega) (by omega) (by omega)) (by decide),
-      Mem.readW_writeW_sep (sep 1800 1808 (by omega) (by omega) (by omega)) (by decide),Mem.readW_writeW_self64]
-  · rw [m,Mem.readW_writeW_sep (sep 1808 1816 (by omega) (by omega) (by omega)) (by decide),Mem.readW_writeW_self64]
+  · rw [m,Mem.readW_writeW_sep (sep 1800 1816 (by omega_using []) (by omega_using []) (by omega_using [])) (by decide),
+      Mem.readW_writeW_sep (sep 1800 1808 (by omega_using []) (by omega_using []) (by omega_using [])) (by decide),Mem.readW_writeW_self64]
+  · rw [m,Mem.readW_writeW_sep (sep 1808 1816 (by omega_using []) (by omega_using []) (by omega_using [])) (by decide),Mem.readW_writeW_self64]
   · rw [m,Mem.readW_writeW_self64]
 
 /-- The exact parser values survive any disjoint scratch/stack call. -/

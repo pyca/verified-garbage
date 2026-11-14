@@ -95,7 +95,7 @@ theorem r4_ofNat (s₀ : State) : BitVec.ofNat 64 (R s₀) = s₀.gpr .r5 := by
   rw [R, BitVec.ofNat_toNat, BitVec.setWidth_eq]
 
 theorem cS (s₀ : State) (d n : Nat) (h : d + n ≤ 2432) : (scrR s₀).Contains (S s₀ + BitVec.ofNat 64 d) n :=
-  Offset.contains_base _ h (by omega)
+  Offset.contains_base _ h (by omega_using [h])
 
 theorem in_rw {rs : List Region} {r : Region} {a : Addr} {n : Nat} (hr : r ∈ rs) (h : r.Contains a n) :
     InRegions rs a n := ⟨r, hr, h⟩
@@ -165,7 +165,7 @@ theorem pro_wp : WP isa (.block pro) s₀ (ProPost s₀) := by
   · have := saved_bound p hp'
     show InRegions s₀.wr (S s₀ + BitVec.ofNat 64 p.2) 8
     rw [hp.wr]
-    exact in_rw (r := scrR s₀) (by simp) (cS s₀ _ _ (by omega))
+    exact in_rw (r := scrR s₀) (by simp) (cS s₀ _ _ (by omega_using [this]))
   rw [WP.block_append_iff]
   generalize hs₂ : ({ (s₀.write .r0 s₀.lr) with
     mem := (Spill.saveMem (s₀.write .r0 s₀.lr).mem ((s₀.write .r0 s₀.lr).gpr .r9) (s₀.write .r0 s₀.lr).gpr
@@ -263,8 +263,8 @@ structure TwPost (s₀ s : State) : Prop where
 theorem UPre.sched_frame {s : State} {rs : List Region} (hf : Frame rs s₀.mem s.mem)
     (hd : ∀ r ∈ rs, r = dataR s₀ ∨ r = scrR s₀ ∨ Region.Sub r (dataR s₀)) :
     bytesAt s.mem (W s₀) (16 * (R s₀ + 1)) = bytesAt s₀.mem (W s₀) (16 * (R s₀ + 1)) := by
-  have hRb : 16 * (R s₀ + 1) ≤ 240 := by rcases hp.rounds with h | h | h <;> omega
-  refine Proof.Cmac.bytesAt_frame hf (fun r hr => ?_) (by omega)
+  have hRb : 16 * (R s₀ + 1) ≤ 240 := by rcases hp.rounds with h | h | h <;> omega_using [h]
+  refine Proof.Cmac.bytesAt_frame hf (fun r hr => ?_) (by omega_using [hRb])
   rcases hd r hr with rfl | rfl | h
   · exact hp.sch_data.sub_left (Region.sub_prefix hRb)
   · exact hp.sch_scr.sub_left (Region.sub_prefix hRb)
@@ -279,11 +279,11 @@ abbrev XtsOk (enc : Bool) (c : Prog isa) : Prop :=
 theorem tcall_wp {n : String} {c : Prog isa} (ok : XtsOk true c) (nf : c.noFrames = true) {s₂ : State}
     (h₂ : ProPost s₀ s₂) : WP isa (.call n c) s₂ (TwPost s₀) := by
   refine WP.mono (xts_call true ok nf h₂.pre) fun s₃ c => ?_
-  have hRb : 16 * (R s₀ + 1) ≤ 240 := by rcases hp.rounds with h | h | h <;> omega
+  have hRb : 16 * (R s₀ + 1) ≤ 240 := by rcases hp.rounds with h | h | h <;> omega_using [h]
   have eK : bytesAt s₂.mem (K s₀) (16 * (R s₀ + 1)) = bytesAt s₀.mem (K s₀) (16 * (R s₀ + 1)) :=
     Proof.Cmac.bytesAt_frame h₂.frame (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
-      exact hp.tsch_scr.sub_left (Region.sub_prefix hRb)) (by omega)
+      exact hp.tsch_scr.sub_left (Region.sub_prefix hRb)) (by omega_using [hRb])
   refine ⟨Inv.call hp h₂.inv z_sub (.inr t_sub) c, ?_, ?_⟩
   · refine (h₂.frame.sub fun r hr => ?_).trans (c.frame.sub fun r hr => ?_)
     · simp only [List.mem_singleton] at hr; subst hr; exact ⟨scrR s₀, by simp, fun _ h => h⟩
@@ -319,7 +319,7 @@ theorem blocks_call (enc : Bool) {n : String} {c : Prog isa} (ok : XtsOk enc c)
   have eD : Spec.Cbc.blocksAt s.mem (D s₀) N = Spec.Cbc.blocksAt s₀.mem (D s₀) N :=
     blocksAt_frame h.frame (fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      subst hr; exact hp.data_scr.sub_left dS) (by have := hp.data_wrap; omega)
+      subst hr; exact hp.data_scr.sub_left dS) (by have := hp.data_wrap; omega_using [hN, this])
   refine ⟨Inv.call hp h.inv t_sub (.inl dS) x, ?_, ?_, ?_⟩
   · rw [x.out, eW, h.t, eD]
   · rw [x.tw, h.t]
@@ -352,7 +352,7 @@ theorem fin_wp {s : State} (h : Inv s₀ s) :
     (fun p hp' => ?_) h.saved fun s₃ r₃ => ?_
   · have := saved_bound p hp'
     rw [rdwr, hp.rd, hp.wr]
-    exact in_rw (r := scrR s₀) (by simp) (cS s₀ _ _ (by omega))
+    exact in_rw (r := scrR s₀) (by simp) (cS s₀ _ _ (by omega_using [this]))
   refine WP.cons exec_mtlr (wp_nil ⟨⟨fun r hr => ?_, ?_⟩, r₃.mem⟩)
   · show s₃.gpr r = _
     have h0 : saveG s₀ r = s₀.gpr r := ite_eq_right_iff.mpr fun h => absurd h (preserved_ne r hr).1

@@ -67,7 +67,7 @@ theorem runBlock_cat_some {a b : List Instr} {s s₁ s₂ : State} (h₁ : runBl
 
 theorem eq_of_qw {x y : BitVec 256} (h : ∀ q < 4, qw x q = qw y q) : x = y := by
   apply BitVec.eq_of_getLsbD_eq; intro i hi
-  have e := congrArg (fun z => z.getLsbD (i % 64)) (h (i / 64) (by omega))
+  have e := congrArg (fun z => z.getLsbD (i % 64)) (h (i / 64) (by omega_using [hi]))
   simp only [getLsbD_qw _ (Nat.mod_lt i (by decide) : i % 64 < 64), Nat.div_add_mod] at e
   exact e
 
@@ -97,15 +97,15 @@ theorem varEnv_rel {s : State} (regs : List XReg) :
     obtain ⟨i, hi, rfl⟩ := h
     obtain ⟨hlt, heq, -⟩ := List.idxOf?_eq_some_iff.mp hi
     simp only [VarRel, varN]
-    rw [xorSet_two_pow _ (by omega)]
-    simp only [varVals, show ¬ 64 + i < 64 by omega, ite_false, Nat.add_sub_cancel_left]
+    rw [xorSet_two_pow _ (by omega_using [hlt])]
+    simp only [varVals, show ¬ 64 + i < 64 by omega_using [], ite_false, Nat.add_sub_cancel_left]
     simp [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem hlt, heq]
   slot k a hk h q hq := by
     have hk' : k < 64 := hk
     simp only [varEnv, hk', ite_true, Option.some.injEq] at h
     subst h
     simp only [VarRel, varN]
-    rw [xorSet_two_pow _ (by omega)]
+    rw [xorSet_two_pow _ (by omega_using [hk'])]
     simp only [varVals, hk', ite_true, laneW, words, stateCfg]
   gc _ _ h := by cases h
   xc _ _ h := by cases h
@@ -137,15 +137,15 @@ theorem varEnv_relB (b : Reg) {n : Nat} (hn : n ≤ 64) {s : State} (regs : List
     obtain ⟨i, hi, rfl⟩ := h
     obtain ⟨hlt, heq, -⟩ := List.idxOf?_eq_some_iff.mp hi
     simp only [VarRel, varN]
-    rw [xorSet_two_pow _ (by omega)]
-    simp only [varValsB, show ¬ 64 + i < 64 by omega, ite_false, Nat.add_sub_cancel_left]
+    rw [xorSet_two_pow _ (by omega_using [hlt])]
+    simp only [varValsB, show ¬ 64 + i < 64 by omega_using [], ite_false, Nat.add_sub_cancel_left]
     simp [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem hlt, heq]
   slot k a hk h q hq := by
     have hk' : k < 64 := Nat.lt_of_lt_of_le hk hn
     simp only [varEnv, hk', ite_true, Option.some.injEq] at h
     subst h
     simp only [VarRel, varN]
-    rw [xorSet_two_pow _ (by omega)]
+    rw [xorSet_two_pow _ (by omega_using [hk'])]
     simp only [varValsB, hk', ite_true, wordsB]
   gc _ _ h := by cases h
   xc _ _ h := by cases h
@@ -199,6 +199,6 @@ theorem bcast_mask (s : State) (x : XReg) (r : Reg) (b : Bool) (hr : s.gpr r = m
   · simp only [maskVal, maskY, ite_true]
     apply BitVec.eq_of_getLsbD_eq; intro i hi
     rw [getLsbD_qw _ hi]
-    simp only [BitVec.getLsbD_allOnes, hi, show 64 * q + i < 256 by omega, decide_true]
+    simp only [BitVec.getLsbD_allOnes, hi, show 64 * q + i < 256 by omega_using [hq, hi], decide_true]
 
 end VG.Proof.TripleDes.X86_64.BitslicedAvx2

@@ -121,7 +121,7 @@ theorem pp_crtFrame_ct {g : CrtGeometry} {bs1 bs2 : Fin 7 → List Byte} (modulu
     refine ⟨ready, ⟨hx.2.fit, ?_, hx.2.workspace, ?_, hx.2.sources, hx.2.input, hx.2.qi, hx.2.noR2⟩, ?_⟩
     · rw [restY.wr]; obtain ⟨r, hr, hc⟩ := hx.2.write; exact ⟨r, List.mem_cons_of_mem _ hr, hc⟩
     · rw [restY.sp]; exact pp_push_separate hx.1.stackFit hx.2.below hx.2.args
-    · rw [Proof.Rsa.wordsAt_frame frameY (by have := hx.2.fit; omega)
+    · rw [Proof.Rsa.wordsAt_frame frameY (by have := hx.2.fit; omega_using [this])
         (fun r hr => by simp only [List.mem_singleton] at hr; subst r; exact hx.2.below.symm)]
       exact hx.2.cleared
   cases e1 with

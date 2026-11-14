@@ -26,20 +26,20 @@ theorem selectArrayArgs_ok (s : State) {base : BitVec 32} {size w o a b : Nat}
       t.mem = s.mem ∧ Rest [.r0, .r10, .r12, .lr] s t := by
   have addr (d : Nat) (hd : d + 4 ≤ size) :
       State.addr (s.gpr .r0 + BitVec.ofNat 32 d) = off (State.addr base) d := by
-    rw [ptr]; exact addr_add (by have := ws.nowrap; omega)
+    rw [ptr]; exact addr_add (by have := ws.nowrap; omega_using [hd, this])
   unfold selectArrayArgs
-  refine wp_ldr (a := off (State.addr base) (64 + 8 * a)) (by omega) (addr (64 + 8 * a) (by omega))
-    (ws.read (by omega)) fun u loadA => ?_
-  refine wp_ldr (a := off (State.addr base) (64 + 8 * b)) (by omega)
-    (by rw [loadA.other .r0 (by decide)]; exact addr (64 + 8 * b) (by omega))
-    (by rw [loadA.rd, loadA.wr]; exact ws.read (by omega)) fun v loadB => ?_
-  refine wp_ldr (a := off (State.addr base) 48) (by omega)
-    (by rw [loadB.other .r0 (by decide), loadA.other .r0 (by decide)]; exact addr 48 (by omega))
-    (by rw [loadB.rd, loadB.wr, loadA.rd, loadA.wr]; exact ws.read (by omega)) fun z c => ?_
+  refine wp_ldr (a := off (State.addr base) (64 + 8 * a)) (by omega_using [ha]) (addr (64 + 8 * a) (by omega_using [ha, fit]))
+    (ws.read (by omega_using [ha, fit])) fun u loadA => ?_
+  refine wp_ldr (a := off (State.addr base) (64 + 8 * b)) (by omega_using [hb])
+    (by rw [loadA.other .r0 (by decide)]; exact addr (64 + 8 * b) (by omega_using [hb, fit]))
+    (by rw [loadA.rd, loadA.wr]; exact ws.read (by omega_using [hb, fit])) fun v loadB => ?_
+  refine wp_ldr (a := off (State.addr base) 48) (by omega_using [])
+    (by rw [loadB.other .r0 (by decide), loadA.other .r0 (by decide)]; exact addr 48 (by omega_using [fit]))
+    (by rw [loadB.rd, loadB.wr, loadA.rd, loadA.wr]; exact ws.read (by omega_using [fit])) fun z c => ?_
   refine wp_dp (op2_reg _ _) fun q d => ?_
-  refine wp_ldr (a := off (State.addr base) (64 + 8 * o)) (by omega)
-    (by rw [d.other .r0 (by decide), c.other .r0 (by decide), loadB.other .r0 (by decide), loadA.other .r0 (by decide)]; exact addr (64 + 8 * o) (by omega))
-    (by rw [d.rd, d.wr, c.rd, c.wr, loadB.rd, loadB.wr, loadA.rd, loadA.wr]; exact ws.read (by omega)) fun t e => WP.block_nil ?_
+  refine wp_ldr (a := off (State.addr base) (64 + 8 * o)) (by omega_using [ho])
+    (by rw [d.other .r0 (by decide), c.other .r0 (by decide), loadB.other .r0 (by decide), loadA.other .r0 (by decide)]; exact addr (64 + 8 * o) (by omega_using [ho, fit]))
+    (by rw [d.rd, d.wr, c.rd, c.wr, loadB.rd, loadB.wr, loadA.rd, loadA.wr]; exact ws.read (by omega_using [ho, fit])) fun t e => WP.block_nil ?_
   refine ⟨?_, ?_, ?_, ?_, e.mem.trans (d.mem.trans (c.mem.trans (loadB.mem.trans loadA.mem))),
     (loadA.rest (by simp)).trans ((loadB.rest (by simp)).trans ((c.rest (by simp)).trans
       ((d.rest (by simp)).trans (e.rest (by simp)))))⟩
@@ -51,6 +51,6 @@ theorem selectArrayArgs_ok (s : State) {base : BitVec 32} {size w o a b : Nat}
   · rw [e.other .r12 (by decide), d.other .r12 (by decide), c.other .r12 (by decide), loadB.gpr, loadA.mem]
     exact header.array b hb
   · rw [e.other .lr (by decide), d.gpr, dpVal, c.gpr, loadB.mem, loadA.mem, header.count,
-      ← BitVec.ofNat_add, show w + w = 2 * w by omega]
+      ← BitVec.ofNat_add, show w + w = 2 * w by omega_using []]
 
 end VG.Proof.Bignum.Arm

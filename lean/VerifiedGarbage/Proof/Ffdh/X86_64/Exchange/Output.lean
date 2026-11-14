@@ -43,8 +43,8 @@ theorem finBlk_ok {p : ExP} {xb : List Byte} {s : State} (h : Checked p xb s) :
   unfold VG.Impl.Ffdh.X86_64.Domain.Exchange.finBlk
   xrun [StoreRegs, State.ea, hdr, ws, hdrOff, hc.rdi, hc.hdr.harr aY (by decide),
     hc.good.scr.ld hN, hc.good.scr.ld hL, hc.link,
-    hb.scr.ld (d := 8 * VG.Impl.Ffdh.X86_64.Domain.sOut) (by change 8 * 22 + 8 ≤ p.Z; omega),
-    hb.scr.ld (d := 8 * sK) (by change 8 * 18 + 8 ≤ p.Z; omega), hOut, hK, hflag]
+    hb.scr.ld (d := 8 * VG.Impl.Ffdh.X86_64.Domain.sOut) (by change 8 * 22 + 8 ≤ p.Z; omega_using [hz]),
+    hb.scr.ld (d := 8 * sK) (by change 8 * 18 + 8 ≤ p.Z; omega_using [hz]), hOut, hK, hflag]
   by_cases hf : p.fl xb
   · simp only [bit, mask, show decide (p.fl xb) = true from decide_eq_true hf]
     exact ⟨off_off _ _ _, by rw [ite_eq_left hf]; rfl⟩
@@ -71,12 +71,12 @@ theorem output_ok {p : ExP} {xb : List Byte} {s : State} (h : Checked p xb s) :
   have hK' := hb.k2
   have hw := room_k hK hb.hZ
   change inner p.w + slot p.w 8 + tabBytes p.w 32 ≤ p.Z at hw
-  have hi8 : 8 * 32 ≤ inner p.w := by simp only [inner, slot, hdrBytes]; omega
+  have hi8 : 8 * 32 ≤ inner p.w := by simp only [inner, slot, hdrBytes]; omega_using []
   simp only [seqs]
   refine WP.seq (WP.mono (finBlk_ok ⟨⟨mi, hb, hc⟩, hy, hflag, hF⟩)
     fun u ⟨⟨hbx, hsi, hcx, h15⟩, hm, k₁⟩ => ?_)
-  refine WP.seq (WP.mono (storeBE_ok (w := p.w) (hb.scr.congr k₁.2.2) hbx hsi hcx h15 (by omega) (by omega) rfl
-    (by omega) (fun i hi => by rw [k₁.2.2]; exact hb.out i hi) hb.sep)
+  refine WP.seq (WP.mono (storeBE_ok (w := p.w) (hb.scr.congr k₁.2.2) hbx hsi hcx h15 (by omega_using [hK]) (by omega_using [hK']) rfl
+    (by omega_using [hhi, hY]) (fun i hi => by rw [k₁.2.2]; exact hb.out i hi) hb.sep)
     fun v ⟨hbytes, hf, hwr, hrd, k₂⟩ => ?_)
   have hs : Outside p.B p.Z (2 ^ 64 - p.Z) u.mem v.mem := by
     intro x hx
@@ -85,19 +85,19 @@ theorem output_ok {p : ExP} {xb : List Byte} {s : State} (h : Checked p xb s) :
     intro i hi he
     have := hb.sep i hi
     rw [← he] at this
-    omega
+    omega_using [hy, hflag, hF, hn, h0, hhi, hY, hK, hK', hw, hi8, hbx, hsi, hcx, h15, hx, hx64, hi, this]
   have hh : ∀ d, d + 8 ≤ p.Z → word v.mem p.B d = word u.mem p.B d := fun d hd =>
-    hs.word (Or.inl hd) (by omega)
+    hs.word (Or.inl hd) (by omega_using [hn, hd])
   have hFs : word v.mem (off p.B (inner p.w)) (8 * sF) = bit (p.fl xb) := by
-    rw [word_off, hh _ (by have := hdr_lt_slot p.w 8 (show sF < 32 by decide); omega), ← word_off, hm]
+    rw [word_off, hh _ (by have := hdr_lt_slot p.w 8 (show sF < 32 by decide); omega_using [hhi, this]), ← word_off, hm]
     exact hF
   have hLs : word v.mem (off p.B (inner p.w)) (8 * sLink) = p.B := by
-    rw [word_off, hh _ (by have := hdr_lt_slot p.w 8 (show sLink < 32 by decide); omega), ← word_off, hm]
+    rw [word_off, hh _ (by have := hdr_lt_slot p.w 8 (show sLink < 32 by decide); omega_using [hhi, this]), ← word_off, hm]
     exact hc.link
   have hdi : v.gpr .rdi = off p.B (inner p.w) :=
     (k₂.gpr (by decide)).trans ((k₁.gpr (by decide)).trans hc.rdi)
   have hsV : Scr v p.B p.Z := hb.scr.congr (hwr.trans k₁.2.2)
-  have hsC : Scr v (off p.B (inner p.w)) (slot p.w 8) := hsV.sub (by omega) (by unfold slot hdrBytes; omega)
+  have hsC : Scr v (off p.B (inner p.w)) (slot p.w 8) := hsV.sub (by omega_using [hhi]) (by unfold slot hdrBytes; omega_using [])
   refine WP.mono (WP.keep [.rax, .rdi] (Q := fun t => t.gpr .rax = bit (p.fl xb) ∧
       t.gpr .rdi = p.B ∧ t.mem = v.mem) (by
         unfold leave
@@ -113,6 +113,6 @@ theorem output_ok {p : ExP} {xb : List Byte} {s : State} (h : Checked p xb s) :
   · intro x hx
     rw [hmem, hf x hx, hm]
   · intro i hi
-    rw [hmem, hh _ (by omega), hm]
+    rw [hmem, hh _ (by omega_using [hhi, hi8, hi]), hm]
 
 end VG.Proof.Ffdh.X86_64.Exchange

@@ -105,11 +105,11 @@ theorem tagArgs_ok {o : Nat} (ho : o + 16 ≤ 128) (ho4 : o % 4 = 0) {s : State}
   have h28 := he.r28; have h29 := he.r29; have h30 := he.r30; have h31 := he.r31
   have r₀ := he.perm.stR (show 16 + 8 ≤ 80 by decide)
   have r₁ := he.perm.stR (show 24 + 8 ≤ 80 by decide)
-  have w₀ := he.perm.wW (show o + 8 ≤ 2560 by omega)
-  have w₁ := he.perm.wW (show o + 8 + 8 ≤ 2560 by omega)
-  have o₀ : o < 2 ^ 15 := by omega
-  have o₁ : o + 8 < 2 ^ 15 := by omega
-  have ho4' : (o + 8) % 4 = 0 := by omega
+  have w₀ := he.perm.wW (show o + 8 ≤ 2560 by omega_using [ho])
+  have w₁ := he.perm.wW (show o + 8 + 8 ≤ 2560 by omega_using [ho])
+  have o₀ : o < 2 ^ 15 := by omega_using [ho]
+  have o₁ : o + 8 < 2 ^ 15 := by omega_using [ho]
+  have ho4' : (o + 8) % 4 = 0 := by omega_using [ho4]
   apply WP.of_runBlock
   simp only [tagArgs, runBlock_cons, runStep_some, runBlock_nil, exec, addr, State.load, State.store,
     State.write, Size.bytes, h28, h29, h30, h31, r₀, r₁, w₀, w₁, o₀, o₁, ho4, ho4', scrO,
@@ -125,22 +125,22 @@ theorem ctrTag_mk {o R : Nat} (ho : o = 0 ∨ o = 112) {s : State} (he : Env V s
     (h6 : s.gpr .r6 = V .r31 + BitVec.ofNat 64 o) (h7 : s.gpr .r7 = BitVec.ofNat 64 1)
     (h8 : s.gpr .r8 = V .r31 + BitVec.ofNat 64 512) (hR : R = 10 ∨ R = 12 ∨ R = 14) :
     CtrCall s (V .r29) (V .r30) (V .r31 + BitVec.ofNat 64 o) (V .r31 + BitVec.ofNat 64 512) R 1 := by
-  have hoW : o + 16 ≤ 16 ∨ (96 ≤ o ∧ o + 16 ≤ 2560) := by omega
+  have hoW : o + 16 ≤ 16 ∨ (96 ≤ o ∧ o + 16 ≤ 2560) := by omega_using [ho]
   refine ⟨h3, h4, h5, h6, h7, h8, hR, by decide, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · exact (L.cs.sub_left (Region.sub_prefix (by decide))).sub_right (Region.sub_prefix (by decide))
-  · exact (L.cw'.sub_left (Region.sub_prefix (by decide))).sub_right (Lay.wSub (by omega))
+  · exact (L.cw'.sub_left (Region.sub_prefix (by decide))).sub_right (Lay.wSub (by omega_using [ho]))
   · exact (L.cw'.sub_left (Region.sub_prefix (by decide))).sub_right (Lay.wSub (by decide))
   · simpa using L.st_w (a := 0) (n := 16) (d := o) (k := 16) (by decide) hoW
   · simpa using L.st_w (a := 0) (n := 16) (d := 512) (k := 2048) (by decide) (.inr ⟨by decide, by decide⟩)
-  · simpa using Lay.w_w (w := V .r31) (a := o) (n := 16) (d := 512) (k := 2048) (by omega) (by omega)
+  · simpa using Lay.w_w (w := V .r31) (a := o) (n := 16) (d := 512) (k := 2048) (by omega_using [ho]) (by omega_using [ho])
       (by decide)
   · have := L.ww
-    rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := o) (by omega),
-      Nat.mod_eq_of_lt (by omega)]; omega
+    rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := o) (by omega_using [ho]),
+      Nat.mod_eq_of_lt (by omega_using [ho, this])]; omega_using [ho, this]
   · exact Covers.cons (covers_prefix he.perm.ctx (by decide)) (Covers.cons
-      (covers_left (covers_prefix he.perm.st (by decide))) (Covers.cons (covers_left (he.perm.wC (by omega)))
+      (covers_left (covers_prefix he.perm.st (by decide))) (Covers.cons (covers_left (he.perm.wC (by omega_using [ho])))
         (Covers.cons (covers_left (he.perm.wC (by decide))) Covers.nil)))
-  · exact Covers.cons (covers_prefix he.perm.st (by decide)) (Covers.cons (he.perm.wC (by omega))
+  · exact Covers.cons (covers_prefix he.perm.st (by decide)) (Covers.cons (he.perm.wC (by omega_using [ho]))
       (Covers.cons (he.perm.wC (by decide)) Covers.nil))
 
 /-- The copy and the call of `vg_aes_ctr32` on it. -/
@@ -148,8 +148,8 @@ theorem tagCall_ok {o R : Nat} (ho : o = 0 ∨ o = 112) {H Y J : Block} {aLen cL
     (h : TagMid V sp R H Y J aLen cLen m₀ s) (h28 : V .r28 = BitVec.ofNat 64 R) (hR : R = 10 ∨ R = 12 ∨ R = 14) :
     WP isa (.seq (.block (tagArgs o)) ctrCall) s (TagOut V sp o R H Y J aLen cLen m₀) := by
   have he := h.env
-  have hoW : o + 16 ≤ 16 ∨ (96 ≤ o ∧ o + 16 ≤ 2560) := by omega
-  refine WP.seq (WP.mono (tagArgs_ok (by omega) (by omega) he) fun s₂ ⟨hm₂, a3, a4, a5, a6, a7, a8, hg₂, hk₂⟩ => ?_)
+  have hoW : o + 16 ≤ 16 ∨ (96 ≤ o ∧ o + 16 ≤ 2560) := by omega_using [ho]
+  refine WP.seq (WP.mono (tagArgs_ok (by omega_using [ho]) (by omega_using [ho]) he) fun s₂ ⟨hm₂, a3, a4, a5, a6, a7, a8, hg₂, hk₂⟩ => ?_)
   rw [show V .r31 + BitVec.ofNat 64 (o + 8) = V .r31 + BitVec.ofNat 64 o + BitVec.ofNat 64 8 from
       (add_ofNat_assoc _ _ _).symm,
     show V .r30 + BitVec.ofNat 64 24 = V .r30 + BitVec.ofNat 64 16 + BitVec.ofNat 64 8 by
@@ -160,14 +160,14 @@ theorem tagCall_ok {o R : Nat} (ho : o = 0 ∨ o = 112) {H Y J : Block} {aLen cL
     rw [hm₂]; exact Proof.Cmac.frame_store2 _ _ _
   have hT : bytesAt s₂.mem (V .r31 + BitVec.ofNat 64 o) 16 = bytesAt s.mem (V .r30 + BitVec.ofNat 64 16) 16 := by
     rw [hm₂, bytesAt_copy2 _ (by
-      rw [add_ofNat_assoc]; exact (L.st_w (a := 24) (n := 8) (d := o) (k := 8) (by decide) (by omega)).symm)]
+      rw [add_ofNat_assoc]; exact (L.st_w (a := 24) (n := 8) (d := o) (k := 8) (by decide) (by omega_using [ho])).symm)]
   have dJo : (⟨V .r30, 16⟩ : Region).Disjoint ⟨V .r31 + BitVec.ofNat 64 o, 16⟩ := by
     simpa using L.st_w (a := 0) (n := 16) (d := o) (k := 16) (by decide) hoW
   have hJ₂ : blockAt s₂.mem (V .r30) = J := by
     rw [blockAt_frame f₂ fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact dJo, h.hJ]
   have hc₂ : ciphOf s₂.mem (V .r29) R = ciphOf m₀ (V .r29) R := by
     rw [ciph_frame f₂ (fun r hr => by
-      simp only [List.mem_singleton] at hr; subst hr; exact L.cw'.sub_right (Lay.wSub (by omega))) hR, h.hc]
+      simp only [List.mem_singleton] at hr; subst hr; exact L.cw'.sub_right (Lay.wSub (by omega_using [ho]))) hR, h.hc]
   have hcall := ctrTag_mk L ho he₂ a3 (by rw [a4, h28]) a5 a6 a7 a8 hR
   refine WP.mono (ctr_call hcall) fun s₃ g => ?_
   have gout := g.out; have gframe := g.frame

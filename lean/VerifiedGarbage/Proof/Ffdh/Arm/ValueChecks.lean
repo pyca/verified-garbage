@@ -60,8 +60,8 @@ theorem nonzero_ok (s : State) {base : BitVec 32} {len w a : Nat}
   · rw [flag, less, one, keeps_array_num keepsU fits ha na7]
     by_cases hz : numAt s.mem (State.addr base) w a = 0
     · simp [hz]
-    · have pos : 0 < numAt s.mem (State.addr base) w a := by omega
-      simp [show ¬ numAt s.mem (State.addr base) w a < 1 by omega, pos]
+    · have pos : 0 < numAt s.mem (State.addr base) w a := by omega_using [hz]
+      simp [show ¬ numAt s.mem (State.addr base) w a < 1 by omega_using [hz], pos]
   · intro q hq nq
     rw [memT, keeps_array_num keepsV fits hq hq.2.2, keeps_array_num keepsU fits hq nq]
   · rw [memT]; exact frameU.trans frameV

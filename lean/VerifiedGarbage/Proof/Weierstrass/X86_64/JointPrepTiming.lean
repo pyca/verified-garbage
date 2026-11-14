@@ -65,7 +65,7 @@ theorem jointPrepB_relCT {c : Joint.Cfg} {base : Addr} {size u v : Nat}
   exact jointPrepOf_relCT (fastPrepB16_relCT (base:=base) hn hu hg hcG)
     (fun a sa => WP.mono (fastPrepDigitsB16_ok hn sa hu hg) (fun _ ⟨_,hk,ho⟩ =>
       ⟨sa.of_keepRegs hk (notin_clobN (by decide) (by decide)),
-        ho.wordsVal hvs (by have := sa.nowrap; omega)⟩))
+        ho.wordsVal hvs (by have := sa.nowrap; omega_using [hv, this])⟩))
     (fastPrepB_relCT hn hv hq hcQ)
 
 theorem jointPrep_relCT {c : Joint.Cfg} {base : Addr} {size u v : Nat} (hn : c.K.M.n=4 ∨ c.K.M.n=6 ∨ c.K.M.n=9)
@@ -105,12 +105,12 @@ theorem jointPrep_relCT {c : Joint.Cfg} {base : Addr} {size u v : Nat} (hn : c.K
       simpa only [h9,ite_true] using
         WP.mono (fastPrepDigits16_ok hn sa hu hgs) (fun _ ⟨_,hk,ho⟩ =>
           ⟨sa.of_keepRegs hk (notin_clobN (by decide) (by decide)),
-            ho.wordsVal hvs (by have := sa.nowrap; omega)⟩)
+            ho.wordsVal hvs (by have := sa.nowrap; omega_using [hv, this])⟩)
     · simp only [jointGSpan,h9,ite_false] at hgs hvs
       simpa only [h9,ite_false] using
         WP.mono (fastPrepDigits_ok hn (Or.inr rfl) sa hu hgs) (fun _ ⟨_,hk,ho⟩ =>
           ⟨sa.of_keepRegs hk (notin_clobN (by decide) (by decide)),
-            ho.wordsVal hvs (by have := sa.nowrap; omega)⟩)
+            ho.wordsVal hvs (by have := sa.nowrap; omega_using [hv, this])⟩)
   exact jointPrepOf_relCT gen stage (fastPrep_relCT hn (Or.inl rfl) hv hq hcQ)
 
 end VG.Proof.Weierstrass.X86_64

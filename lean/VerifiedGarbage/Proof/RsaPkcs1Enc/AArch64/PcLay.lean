@@ -33,12 +33,12 @@ theorem pre_of {P : Nat} {s : State}
   have eK : (layP P s).STK = ⟨s.sp - BitVec.ofNat 64 (P + 1087 + 1), P + 1087 + 1⟩ := by
     show (⟨(layP P s).Q - BitVec.ofNat 64 P, P + 1088⟩ : Region) = _
     rw [lay_stk P s (preX s) 48]
-  have hQ : (layP P s).Q.toNat = s.sp.toNat - 1088 := toNat_sub_k (by omega)
+  have hQ : (layP P s).Q.toNat = s.sp.toNat - 1088 := toNat_sub_k (by omega_using [hsp])
   have hA32 : Region.Sub ⟨stackArgAddr s 0, 32⟩ ⟨stackArgAddr s 0, 48⟩ := Region.sub_prefix (by decide)
   refine ⟨⟨eO ▸ oN, eO ▸ oE, eO ▸ oM, eO ▸ oP, eO ▸ oS, by rw [eA, eO]; exact oA, nS, eS, mS, pS,
     by rw [eA]; exact sA, by rw [eK, eO]; exact kO, eK ▸ kN, eK ▸ kE, eK ▸ kM, eK ▸ kP, eK ▸ kS,
-    by simp only [lay]; omega, bN, bE, bM, bP, bS, by omega, by simp only [lay] at hQ ⊢; omega, kv, olk, el1,
-    elk, mlk, plk, slk, by simp [lay], by simp [lay], by simp only [lay] at hQ ⊢; omega, ?_, ?_, ?_, ?_⟩,
+    by simp only [lay]; omega_using [bO, olk], bN, bE, bM, bP, bS, by omega_using [hsp2, hQ], by simp only [lay] at hQ ⊢; omega_using [hsp, hQ], kv, olk, el1,
+    elk, mlk, plk, slk, by simp [lay], by simp [lay], by simp only [lay] at hQ ⊢; omega_using [hsp2, hQ], ?_, ?_, ?_, ?_⟩,
     ?_, hwr, pl, hsp⟩
   · intro R hR; simp only [lay, preX, List.mem_singleton] at hR; subst hR; rw [eO]; exact oQ.symm
   · intro R hR; simp only [lay, preX, List.mem_singleton] at hR; subst hR; exact sQ.symm

@@ -35,7 +35,7 @@ theorem control_output {p : SearchParams} {result : Spec.Ffdh.ParameterSearchRes
     searchOutput p result m' := by
   unfold searchOutput at output ⊢
   have fit : p.c.out.toNat + p.c.length ≤ 2 ^ 32 := p.c.outputFits
-  refine (VG.Proof.Bignum.Arm.rsa_bytes_frame frame (by omega) ?_).trans output
+  refine (VG.Proof.Bignum.Arm.rsa_bytes_frame frame (by omega_using [fit]) ?_).trans output
   intro r hr
   obtain rfl := List.mem_singleton.mp hr
   exact p.controlOutput.symm
@@ -45,7 +45,7 @@ theorem output_control_word {p : SearchParams} {m m' : Mem} {offset bits : Nat}
     (bounds : offset + bits / 8 ≤ 128) :
     m'.readW (off (State.addr p.control) offset) bits = m.readW (off (State.addr p.control) offset) bits := by
   exact frame.readW (r := ⟨State.addr p.control, 128⟩)
-    (Offset.contains_base _ bounds (by omega))
-    (by intro r hr; obtain rfl := List.mem_singleton.mp hr; exact p.controlOutput) (by omega)
+    (Offset.contains_base _ bounds (by omega_using [bounds]))
+    (by intro r hr; obtain rfl := List.mem_singleton.mp hr; exact p.controlOutput) (by omega_using [bounds])
 
 end VG.Proof.Ffdh.Arm.ParameterSearch

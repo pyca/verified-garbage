@@ -23,13 +23,13 @@ theorem clearOperandBufferArgs_ok (s : State) {base dst : BitVec 32} {size slot 
       t.mem = s.mem ∧ Rest [.r0, .r3, .lr] s t := by
   unfold clearOperandBufferArgs
   refine wp_ldr (a := off (State.addr base) 48) (by decide)
-    (by rw [ptr]; exact addr_add (by have := ws.nowrap; omega)) (ws.read fit) fun u a => ?_
+    (by rw [ptr]; exact addr_add (by have := ws.nowrap; omega_using [fit, this])) (ws.read fit) fun u a => ?_
   refine wp_mov (op2_lsl (by decide)) fun v b => ?_
   refine wp_dp (op2_imm (by decide)) fun z c => ?_
   refine wp_mov (op2_imm (by decide)) fun q d => ?_
   refine wp_ldr (a := off (State.addr base) slot) hs
     (by rw [d.other .r0 (by decide), c.other .r0 (by decide), b.other .r0 (by decide), a.other .r0 (by decide), ptr]
-        exact addr_add (by have := ws.nowrap; omega))
+        exact addr_add (by have := ws.nowrap; omega_using [slotFit, this]))
     (by rw [d.rd, d.wr, c.rd, c.wr, b.rd, b.wr, a.rd, a.wr]; exact ws.read slotFit) fun t e => WP.block_nil ?_
   refine ⟨?_, ?_, (e.other .r3 (by decide)).trans d.gpr,
     e.mem.trans (d.mem.trans (c.mem.trans (b.mem.trans a.mem))),

@@ -135,7 +135,7 @@ namespace PubP
 variable {L : Lay} {s₀ s₀' : State} (hL : L.Ok) (hq : PubP L s₀ s₀')
 include hL hq
 
-theorem dP : L.dP s₀ = L.dP s₀' := hq.2 0 (by have := hL.one; omega)
+theorem dP : L.dP s₀ = L.dP s₀' := hq.2 0 (by have := hL.one; omega_using [this])
 theorem aP : L.aP s₀ = L.aP s₀' := hq.2 _ hL.iA
 theorem sP : L.sP s₀ = L.sP s₀' := hq.2 _ hL.iS
 theorem ml : L.ml s₀ = L.ml s₀' := by
@@ -159,21 +159,21 @@ theorem stk_below : L.stkR s₀ = below (E0 s₀) 56 := by
   simp only [Lay.stkR, below]; rw [Taint.sub_setWidth hp.sp]
 
 theorem frame_sub : Region.Sub (frameR s₀) (L.stkR s₀) := by
-  rw [hp.stk_below]; exact below_sub (by omega) hp.sp
+  rw [hp.stk_below]; exact below_sub (by omega_using []) hp.sp
 
 theorem c_sub : Region.Sub (cR s₀) (L.stkR s₀) := by
   rw [hp.stk_below, VG.Proof.MlKem.X86.Sample.Pre.cR_eq]
-  exact below_inner (sp := E0 s₀) (a := 40) (b := 56) (k := 16) (by omega) hp.sp
+  exact below_inner (sp := E0 s₀) (a := 40) (b := 56) (k := 16) (by omega_using []) hp.sp
 
 theorem frame_c : (frameR s₀).Disjoint (cR s₀) :=
   VG.Proof.MlKem.X86.Sample.Pre.cR_eq (s₀ := s₀) ▸
-    VG.Proof.MlKem.X86.Sample.below_adj (sp := E0 s₀) (a := 16) (b := 40) (by have := hp.sp; omega)
+    VG.Proof.MlKem.X86.Sample.below_adj (sp := E0 s₀) (a := 16) (b := 40) (by have := hp.sp; omega_using [this])
 
 theorem ret_c : (retR s₀).Disjoint (cR s₀) :=
   (hp.stk_below ▸ VG.Proof.MlKem.X86.Sample.ret_below (sp := E0 s₀) hp.sp).sub_right hp.c_sub
 
 theorem fr16 : (⟨(E0 s₀).setWidth 64 - 16#64, 16⟩ : Region) = frameR s₀ := by
-  simp only [frameR, below]; rw [Taint.sub_setWidth (by have := hp.sp; omega)]
+  simp only [frameR, below]; rw [Taint.sub_setWidth (by have := hp.sp; omega_using [this])]
 
 theorem hW : ∀ r ∈ L.W s₀, (frameR s₀).Disjoint r ∧ (retR s₀).Disjoint r := by
   intro r hr
@@ -198,7 +198,7 @@ theorem sub_s {o n : Nat} (h : o + n ≤ 2048) : Region.Sub ⟨L.sA s₀ + BitVe
 
 theorem off_eq {o : Nat} (h : o < 2048) :
     (L.sP s₀ + BitVec.ofNat 32 o).setWidth 64 = L.sA s₀ + BitVec.ofNat 64 o :=
-  ea_off (by have := hp.s_fit; omega)
+  ea_off (by have := hp.s_fit; omega_using [h, this])
 
 theorem reg_s {o n : Nat} (h : o < 2048) :
     reg32 (L.sP s₀ + BitVec.ofNat 32 o) n = ⟨L.sA s₀ + BitVec.ofNat 64 o, n⟩ := by
@@ -220,19 +220,19 @@ theorem P0_keep : Frame [frameR s₀] s₀.mem (P0 s₀).mem := by
 theorem msg0 : bytesAt (P0 s₀).mem (L.dA s₀) (L.ml s₀) = L.Msg s₀ :=
   VG.Proof.MlKem.bytesAt_frame hp.P0_keep (fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr
-    exact (hp.stk_d.sub_left hp.frame_sub).symm) (by have := hp.d_fit; omega)
+    exact (hp.stk_d.sub_left hp.frame_sub).symm) (by have := hp.d_fit; omega_using [this])
 
 theorem kbufs : KBufs (E1 s₀) (L.sP s₀) (L.WW s₀) := by
   have hs := hp.s_fit
-  have e := esp_nat s₀ (by have := hp.sp; omega)
+  have e := esp_nat s₀ (by have := hp.sp; omega_using [this])
   have hsp := hp.sp
-  refine ⟨by rw [e]; omega, by omega, by rw [VG.Proof.MlKem.X86.Sample.toNat_off (by omega)]; omega, ?_, ?_, ?_⟩
-  · rw [reg_s0, hp.reg_s (by omega)]
-    exact VG.Proof.MlKem.X86.Sample.disj_at (len := 2048) (by omega) (by omega) hs (by omega)
+  refine ⟨by rw [e]; omega_using [hsp], by omega_using [hs], by rw [VG.Proof.MlKem.X86.Sample.toNat_off (by omega_using [hs])]; omega_using [hs], ?_, ?_, ?_⟩
+  · rw [reg_s0, hp.reg_s (by omega_using [])]
+    exact VG.Proof.MlKem.X86.Sample.disj_at (len := 2048) (by omega_using []) (by omega_using []) hs (by omega_using [])
   · rw [reg_s0]
-    exact (hp.stk_s.sub_left hp.c_sub).sub_right (hp.sub_s (by omega))
-  · rw [hp.reg_s (by omega)]
-    exact (hp.stk_s.sub_left hp.c_sub).sub_right (hp.sub_s (by omega))
+    exact (hp.stk_s.sub_left hp.c_sub).sub_right (hp.sub_s (by omega_using []))
+  · rw [hp.reg_s (by omega_using [])]
+    exact (hp.stk_s.sub_left hp.c_sub).sub_right (hp.sub_s (by omega_using []))
 
 theorem within_s {s : State} (hw : s.wr = (P0 s₀).wr) {o n : Nat} (ho : o < 2048) (h : o + n ≤ 2048) :
     Within (reg32 (L.sP s₀ + BitVec.ofNat 32 o) n) s.wr := by
@@ -278,7 +278,7 @@ variable {L : Lay} {s₀ s : State} (hp : Pre L s₀) (h : Base L s₀ s)
 include hp h
 
 theorem msg : bytesAt s.mem (L.dA s₀) (L.ml s₀) = L.Msg s₀ :=
-  (VG.Proof.MlKem.bytesAt_frame h.frame hp.dW (by have := hp.d_fit; omega)).trans hp.msg0
+  (VG.Proof.MlKem.bytesAt_frame h.frame hp.dW (by have := hp.d_fit; omega_using [this])).trans hp.msg0
 
 theorem argIn {i : Nat} (hi : i < L.nA) : InRegions (s.rd ++ s.wr) (argAddr s₀ i) 4 := by
   rw [h.rd, h.wr]
@@ -304,7 +304,7 @@ end Base
 
 /-- The arguments at the push. -/
 theorem args0 {L : Lay} {s₀ : State} (hp : Pre L s₀) : ∀ i < L.nA, (P0 s₀).mem.readW (argAddr s₀ i) 32 = arg s₀ i :=
-  fun _ hi => P0_arg (by have := hp.sp; omega) hi hp.sp'
+  fun _ hi => P0_arg (by have := hp.sp; omega_using [this]) hi hp.sp'
     (by rw [hp.fr16]; exact (hp.stk_g.sub_left hp.frame_sub))
 
 /-- The regions a call of the Keccak functions changes are parts of `W`,
@@ -315,9 +315,9 @@ theorem calls_sub {L : Lay} (hL : L.Ok) {s₀ : State} (hp : Pre L s₀) :
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl
-  · exact ⟨L.sR s₀, by simp, by rw [Pre.reg_s0]; exact hp.sub_s (by omega), hp.s_g⟩
-  · exact ⟨L.sR s₀, by simp, by rw [hp.reg_s (by omega)]; exact hp.sub_s (by have := hL.out; omega), hp.s_g⟩
-  · exact ⟨L.sR s₀, by simp, by rw [hp.reg_s (by omega)]; exact hp.sub_s (by omega), hp.s_g⟩
+  · exact ⟨L.sR s₀, by simp, by rw [Pre.reg_s0]; exact hp.sub_s (by omega_using []), hp.s_g⟩
+  · exact ⟨L.sR s₀, by simp, by rw [hp.reg_s (by omega_using [])]; exact hp.sub_s (by have := hL.out; omega_using [this]), hp.s_g⟩
+  · exact ⟨L.sR s₀, by simp, by rw [hp.reg_s (by omega_using [])]; exact hp.sub_s (by omega_using []), hp.s_g⟩
   · exact ⟨cR s₀, by simp, fun _ h => h, hp.stk_g.sub_left hp.c_sub⟩
 
 end VG.Proof.MlDsa.X86.Sample

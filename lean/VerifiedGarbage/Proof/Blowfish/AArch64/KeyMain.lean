@@ -147,7 +147,7 @@ theorem expandKey_correct {s : State} (P : KeyPre s) :
   have tabR : (⟨T, 4168⟩ : Region) ∈ s.rd ++ s.wr := by
     rw [P.rd]; exact List.mem_append_left _ (List.mem_cons_of_mem _ List.mem_cons_self)
   have kc : ∀ c < L, (⟨K, L⟩ : Region).Contains (K + BitVec.ofNat 64 c) 1 := fun c hc =>
-    Offset.contains_base K (by omega) (by omega)
+    Offset.contains_base K (by omega_using [hc]) (by omega_using [hc])
   -- the prologue
   obtain ⟨s₂, r₂, c₂, g₂, m₂, rd₂, wr₂, sp₂, o₂⟩ := constants_run s
   let s₃' := s₂.write .x .x9 (s₂.syms initSym)
@@ -187,14 +187,14 @@ theorem expandKey_correct {s : State} (P : KeyPre s) :
   have tu : ∀ o < 4168, u.mem (T + BitVec.ofNat 64 o) = s.mem (T + BitVec.ofNat 64 o) := fun o ho => by
     rw [C.frame _ fun r hr hc => by
       simp only [List.mem_singleton] at hr; subst hr
-      exact P.tSch _ (Offset.contains_base T (by omega) (by omega)) (Region.sub_prefix (by omega) _ hc),
+      exact P.tSch _ (Offset.contains_base T (by omega_using [ho]) (by omega_using [ho])) (Region.sub_prefix (by omega_using []) _ hc),
       m₀]
   have ku : bytesAt u.mem K L = bytesAt s.mem K L := by
     rw [bytesAt_frame C.frame fun c hc r hr hcon => by
       simp only [List.mem_singleton] at hr; subst hr
-      exact P.keySch _ (kc c hc) (Region.sub_prefix (by omega) _ hcon), m₀]
+      exact P.keySch _ (kc c hc) (Region.sub_prefix (by omega_using []) _ hcon), m₀]
   have su : ∀ o < 4096, u.mem (S + BitVec.ofNat 64 o) = Impl.Blowfish.initByte o := fun o ho => by
-    rw [C.copied o (by omega), m₀, table_byte P.held (by omega)]
+    rw [C.copied o (by omega_using [ho]), m₀, table_byte P.held (by omega_using [ho])]
   have vu : ∀ r ∈ preservedV, u.v r = s.v r := fun r hr => by
     rw [C.v r (by simp [preservedV] at hr ⊢; rcases hr with h | h | h | h | h | h | h | h <;> subst h <;> decide),
       hu₀]
@@ -202,7 +202,7 @@ theorem expandKey_correct {s : State} (P : KeyPre s) :
       (by simp [preservedV] at hr; rcases hr with h | h | h | h | h | h | h | h <;> subst h <;> decide)
   -- the P-array
   have PE : KeyPEnv T S K L u := by
-    refine ⟨by omega, by omega, fun c hc => ?_, gu _ (by decide) (by decide) (by decide) (by decide),
+    refine ⟨by omega, by omega_using [], fun c hc => ?_, gu _ (by decide) (by decide) (by decide) (by decide),
       ?_, ?_, ?_, ?_, ?_, P.tSch, fun c hc h => P.keySch _ (kc c hc) h⟩
     · rw [rdu, wru]; exact ⟨_, keyR, kc c hc⟩
     · rw [gu _ (by decide) (by decide) (by decide) (by decide)]; simp [L]
@@ -216,8 +216,8 @@ theorem expandKey_correct {s : State} (P : KeyPre s) :
     refine keyed_of_mem (fun o ho => ?_) (fun i hi => ?_)
     · rw [KP.frame _ fun r hr hc => by
         simp only [List.mem_singleton] at hr; subst hr
-        exact Offset.disjoint_base S (d := 4096) (n := 4 * 18) (k := 4096) (by omega) (by omega) _ hc
-          (Offset.contains_base S (by omega) (by omega)), su o ho]
+        exact Offset.disjoint_base S (d := 4096) (n := 4 * 18) (k := 4096) (by omega_using []) (by omega_using []) _ hc
+          (Offset.contains_base S (by omega_using [ho]) (by omega_using [ho])), su o ho]
     · rw [KP.done i hi, table_P (fun o ho => (tu o ho).trans (table_byte P.held ho)) hi]
   have ev : u'.v = u.v := by rw [KP.eq]
   have wru' : u'.wr = s.wr := by rw [KP.eq]; exact wru
@@ -227,7 +227,7 @@ theorem expandKey_correct {s : State} (P : KeyPre s) :
   refine WP.of_runBlock ⟨w, rw', ?_⟩
   -- the encryptions
   have EE : EncEnv S w := by
-    refine ⟨?_, fun off n h => by rw [we, wru']; exact ⟨_, schW, Offset.contains_base S h (by omega)⟩, ?_⟩
+    refine ⟨?_, fun off n h => by rw [we, wru']; exact ⟨_, schW, Offset.contains_base S h (by omega_using [h])⟩, ?_⟩
     · rw [wg _ (by decide), KP.gpr _ (by decide), gu _ (by decide) (by decide) (by decide) (by decide)]
     have cv : ∀ r, r = c64 ∨ r = c128 → w.v r = s₂.v r := fun r hr => by
       rw [wv r (by rcases hr with rfl | rfl <;> decide), ev,

@@ -33,12 +33,12 @@ theorem mul_noFrames : scalarMulAdd.noFrames = true := by lit_decide
 
 theorem mul_pre (hc : Ctx L g m₀ s) (hL : L.Ok) (ha : MulArgs L s) :
     scalarMulAddLocal.pre (s.callEntry.withRegions (mulRd L) (mulWr L)) := by
-  have ao : State.addr (L.out + 32) = State.addr L.out + 32 := addr_add (k := 32) (by have := hL.no; omega)
+  have ao : State.addr (L.out + 32) = State.addr L.out + 32 := addr_add (k := 32) (by have := hL.no; omega_using [this])
   have fo : (L.out + 32).toNat + 32 ≤ 2 ^ 32 := by
     have hn := hL.no
     change (L.out.toNat + 32) % 2 ^ 32 + 32 ≤ 2 ^ 32
-    rw [Nat.mod_eq_of_lt (by omega : L.out.toNat + 32 < 2 ^ 32)]
-    omega
+    rw [Nat.mod_eq_of_lt (by omega_using [hn] : L.out.toNat + 32 < 2 ^ 32)]
+    omega_using [hn]
   have st : stackArg (s.callEntry.withRegions (mulRd L) (mulWr L)) 0 = stackArg s 0 := rfl
   have a88 : State.addr (L.E + 88) = State.addr L.E + 88 := frame_addr hL (d := 88) (by decide)
   have a120 : State.addr (L.E + 120) = State.addr L.E + 120 := frame_addr hL (d := 120) (by decide)
@@ -57,7 +57,7 @@ theorem mul_pre (hc : Ctx L g m₀ s) (hL : L.Ok) (ha : MulArgs L s) :
     (hL.ko.sub_right (halfWithin L).sub).symm.sub_right (Region.sub_prefix (by decide)),
     hL.kc.symm.sub_right (Region.sub_prefix (by decide)), fo,
     frame_fit hL (by decide), frame_fit hL (by decide), frame_fit hL (by decide),
-    hL.nc, by have := hL.top; omega⟩
+    hL.nc, by have := hL.top; omega_using [this]⟩
 
 theorem mul_call (hc : Ctx L g m₀ s) (hL : L.Ok) (ha : MulArgs L s) :
     WP isa (.call "vg_ed25519_scalar_mul_add" scalarMulAdd) s fun t => Ctx L g m₀ t ∧
@@ -85,7 +85,7 @@ theorem mul_call (hc : Ctx L g m₀ s) (hL : L.Ok) (ha : MulArgs L s) :
     · exact .inr (.inr (scratchWithin L))
   refine Whole.call_ok hc scalarMulAdd_ok mul_noFrames (mul_pre hc hL ha) cov ws
     fun t ht hf hp => ⟨ht, hf, ?_⟩
-  have ao : State.addr (L.out + 32) = State.addr L.out + 32 := addr_add (k := 32) (by have := hL.no; omega)
+  have ao : State.addr (L.out + 32) = State.addr L.out + 32 := addr_add (k := 32) (by have := hL.no; omega_using [this])
   change Spec.Ed25519.bytesAt t.mem (State.addr (s.callEntry.gpr .r0)) 32 =
     Spec.Ed25519.scalarMulAdd (Spec.Ed25519.bytesAt s.mem (State.addr (s.callEntry.gpr .r1)) 32)
       (Spec.Ed25519.bytesAt s.mem (State.addr (s.callEntry.gpr .r2)) 32)

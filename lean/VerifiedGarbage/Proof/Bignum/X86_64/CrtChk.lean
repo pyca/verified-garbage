@@ -144,7 +144,7 @@ theorem checksTail_ok {s s₁ s₂ : State} {B : Addr} {Z w : Nat} {minv mp mq :
     exact hwsQ.of_words fun i hi => by
       rw [word_off, word_off, hq₅ _ (by omega_arith) (by omega_arith), hab₄ _ (by omega_arith) (by omega_arith)]
   have kk6 := (kk4.trans k₅).trans k₆
-  have hcQ₆ := SubCtx.mk' (hs.congr kk6.2.2) hH₆ hwsQ₆ hdi₆ (by omega_arith) (by have := tabBytes_le_wsTab wq; omega)
+  have hcQ₆ := SubCtx.mk' (hs.congr kk6.2.2) hH₆ hwsQ₆ hdi₆ (by omega_arith) (by have := tabBytes_le_wsTab wq; omega_using [hoq, this])
   have hM₆ : word s₆.mem B (8 * Public.sMask) = mask (keyMask m0 N P Q QI) := by
     rw [hm₆, hb₅ _ (by unfold Public.sMask sFn; omega_arith)]; exact hM₄
   refine wp_seqs_append (by simp [primeFix]) (by simp) ?_

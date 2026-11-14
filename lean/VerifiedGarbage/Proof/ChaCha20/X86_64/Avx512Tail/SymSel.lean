@@ -72,7 +72,7 @@ theorem sel_ok {D : Nat} {s₀ : State} (hc : Ctx D s₀) (hs : SelOk D s₀) {�
   rename_i hcond
   obtain ⟨hoff, hlim, hcl⟩ := hcond
   simp only [List.all_eq_true, List.mem_range, beq_iff_eq] at hcl
-  refine WP.seq (WP.mono (cmpR10_ok s (c := off + 64) (by omega)) fun s₁ ⟨g₁, m₁, rd₁, wr₁, z₁, c₁⟩ => ?_)
+  refine WP.seq (WP.mono (cmpR10_ok s (c := off + 64) (by omega_using [hD, hlim])) fun s₁ ⟨g₁, m₁, rd₁, wr₁, z₁, c₁⟩ => ?_)
   have h₁ : SRel D σ s₀ s₁ := h.congr z₁ m₁ g₁ rd₁ wr₁
   have ea : ∀ r, s₁.ea (at_ r off) = s₀.gpr r + BitVec.ofNat 64 off := fun r => by
     simp only [State.ea, at_, g₁, h.gpr]
@@ -83,21 +83,21 @@ theorem sel_ok {D : Nat} {s₀ : State} (hc : Ctx D s₀) (hs : SelOk D s₀) {�
   refine WP.ite (decide ((s₀.gpr .r10).toNat < off + 64)) (by simp [eval, c₁, h.gpr]) (fun hb => ?_) (fun hb => ?_)
   · simp only [decide_eq_true_eq] at hb
     have i2 : InRegions (s₁.rd ++ s₁.wr) ((regn D s₀ 2).base + BitVec.ofNat 64 (4 * (off / 4))) (4 * 16) :=
-      in_regn' hc (b := 2) (by decide) (wr₁.trans h.wr) (by simp only [bsize]; omega) (by decide)
+      in_regn' hc (b := 2) (by decide) (wr₁.trans h.wr) (by simp only [bsize]; omega_using [hlim]) (by decide)
     have ea2 : s₁.ea (at_ .rsi off) = (regn D s₀ 2).base + BitVec.ofNat 64 (4 * (off / 4)) := by
-      rw [ea]; simp only [regn, baseR]; congr 2; omega
+      rw [ea]; simp only [regn, baseR]; congr 2; omega_using [hoff]
     obtain ⟨s₂, hx, h₂⟩ := h₁.load t (at_ .rsi off) (f := fun p => .inp (off / 4 + p)) (by rw [ea2]; exact i2)
       (fun p hp => by
-        rw [ea2, add_ofNat', ← Nat.mul_add, h₁.mem 2 _ (by decide) (by simp only [bsize]; omega), hcl p hp]
+        rw [ea2, add_ofNat', ← Nat.mul_add, h₁.mem 2 _ (by decide) (by simp only [bsize]; omega_using [hlim, hp]), hcl p hp]
         simp only [T.eval, inpW, inp_block hoff hp, memBase_2]
-        rw [ite_eq_right (by omega)])
+        rw [ite_eq_right (by omega_using [hoff, hb])])
     exact WP.block_cons_iff.2 ⟨s₂, hx, rest s₂ h₂⟩
   · simp only [decide_eq_false_iff_not, Nat.not_lt] at hb
     have cs : (srcR s₀).Contains (s₀.gpr .r8 + BitVec.ofNat 64 off) 64 := by
       simp only [srcR, Region.Contains]
       rw [show s₀.gpr .r8 + BitVec.ofNat 64 off - s₀.gpr .r8 = BitVec.ofNat 64 off by bv_omega_arith,
-        BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
-      omega
+        BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hb])]
+      omega_using [hD, hlim, hb]
     obtain ⟨s₂, hx, h₂⟩ := h₁.load t (at_ .r8 off) (f := fun p => .inp (off / 4 + p))
       (by rw [ea, rd₁, wr₁, h.rd, h.wr]; exact hs.r _ _ (by decide) cs)
       (fun p hp => by
@@ -105,13 +105,13 @@ theorem sel_ok {D : Nat} {s₀ : State} (hc : Ctx D s₀) (hs : SelOk D s₀) {�
           simp only [srcR, Region.Contains] at cs ⊢
           rw [show s₀.gpr .r8 + BitVec.ofNat 64 off + BitVec.ofNat 64 (4 * p) - s₀.gpr .r8 =
             BitVec.ofNat 64 (off + 4 * p) by rw [add_ofNat']; bv_omega_arith,
-            BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+            BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hb, hp])]
           rw [show s₀.gpr .r8 + BitVec.ofNat 64 off - s₀.gpr .r8 = BitVec.ofNat 64 off by bv_omega_arith,
-            BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)] at cs
-          omega
+            BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hb])] at cs
+          omega_using [cs, hp]
         rw [ea, m₁, h.frame.readW cp hs.d (by decide)]
         simp only [T.eval, inpW, inp_block hoff hp]
-        rw [ite_eq_left (by omega), add_ofNat', show off + 4 * p = 4 * (off / 4 + p) by omega])
+        rw [ite_eq_left (by omega_using [hb]), add_ofNat', show off + 4 * p = 4 * (off / 4 + p) by omega_using [hoff]])
     exact WP.block_cons_iff.2 ⟨s₂, hx, rest s₂ h₂⟩
 
 /-- `pieces`. -/

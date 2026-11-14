@@ -40,7 +40,7 @@ theorem initOut : PostOut (initContract X86_64.abi) (initSig.retBits 64) :=
     simp only [initSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
       forall_eq] at hb
     have hs : ∀ i < 136, m₂ (st + BitVec.ofNat 64 i) = m₁ (st + BitVec.ofNat 64 i) := fun i hi =>
-      (hb.1 _ (Offset.contains_base _ (by simp only [Elem.size]; omega) (by omega))).symm
+      (hb.1 _ (Offset.contains_base _ (by simp only [Elem.size]; omega_using [hi]) (by omega_using [hi]))).symm
     obtain ⟨hk, hr, -⟩ := stream_congr hs
     show keyAt m₂ st = _ ∧ restAt m₂ st = _
     rw [hk, hr]; exact h
@@ -54,7 +54,7 @@ theorem setNonceOut : PostOut (setNonceContract X86_64.abi) (setNonceSig.retBits
     simp only [setNonceSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
       forall_eq] at hb
     have hs : ∀ i < 136, m₂ (st + BitVec.ofNat 64 i) = m₁ (st + BitVec.ofNat 64 i) := fun i hi =>
-      (hb.1 _ (Offset.contains_base _ (by simp only [Elem.size]; omega) (by omega))).symm
+      (hb.1 _ (Offset.contains_base _ (by simp only [Elem.size]; omega_using [hi]) (by omega_using [hi]))).symm
     obtain ⟨hk, hr, -⟩ := stream_congr hs
     show keyAt m₂ st = _ ∧ restAt m₂ st = _
     rw [hk, hr]; exact h

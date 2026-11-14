@@ -23,7 +23,7 @@ theorem reduceStep_ct (M : Mont) : RelCT isa (Two (Reduced [aY]))
   unfold Arithmetic.reduceStep
   refine RelCT.seq (mont_step_ct M (by unfold MmUse; decide) [aY] (by decide) (by decide)) ?_
   exact two_map (fun p : ProductPublic => p.layout.ws)
-    (fun p _ h => ⟨⟨_, h.1.good, p.fits⟩, by change 1 ≤ p.layout.w; have := p.lower; omega, p.upper⟩)
+    (fun p _ h => ⟨⟨_, h.1.good, p.fits⟩, by change 1 ≤ p.layout.w; have := p.lower; omega_using [this], p.upper⟩)
     (addCode_ct (by decide) (by decide) (by decide) (by decide) (by decide)
       (by taint_decide) (by taint_decide) (by taint_decide))
 

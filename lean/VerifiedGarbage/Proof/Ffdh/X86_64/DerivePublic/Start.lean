@@ -45,23 +45,23 @@ theorem dvCtx_of {s : State} (h : dvPre s) : DvCtx s := by
   obtain ⟨_, hrd, hwr, dyd, dyx, dys, _, dds, dxs, _, wY, wD, wX, wS,
     _, _, _, _, _, ⟨hk1, hk2⟩, hdl, hyl, hxl1, hxl2, hsl⟩ := h
   unfold Spec.Rsa.scratchWords at hsl
-  refine ⟨hk1, hk2, hdl, hyl, by omega, Scr.of_mem (by rw [hwr]; simp) wS,
-    src_of_region (by rw [hrd]; simp) (by omega) dds, hxl1, hxl2,
-    src_of_region (by rw [hrd]; simp) (by omega) dxs, ⟨?_, ?_⟩, ?_, ?_, ?_⟩
+  refine ⟨hk1, hk2, hdl, hyl, by omega_using [hsl], Scr.of_mem (by rw [hwr]; simp) wS,
+    src_of_region (by rw [hrd]; simp) (by omega_using []) dds, hxl1, hxl2,
+    src_of_region (by rw [hrd]; simp) (by omega_using []) dxs, ⟨?_, ?_⟩, ?_, ?_, ?_⟩
   · intro i hi
     rw [hwr]
-    exact ⟨⟨s.gpr .rdi, (s.gpr .rsi).toNat⟩, by simp, contains_byte _ (by omega) (by omega)⟩
+    exact ⟨⟨s.gpr .rdi, (s.gpr .rsi).toNat⟩, by simp, contains_byte _ (by omega_using [hyl, hi]) (by omega_using [])⟩
   · intro i hi
-    exact out_scr dys (contains_byte _ (by omega) (by omega))
-  · simpa only [hyl] using (apart_of dyd (by omega) (by omega))
-  · simpa only [hyl] using (apart_of dyx (by omega) (by omega))
+    exact out_scr dys (contains_byte _ (by omega_using [hyl, hi]) (by omega_using []))
+  · simpa only [hyl] using (apart_of dyd (by omega_using []) (by omega_using []))
+  · simpa only [hyl] using (apart_of dyx (by omega_using []) (by omega_using []))
   · intro i hi
     refine ⟨⟨stackArgAddr s 0, 24⟩, by rw [hrd]; simp, ?_⟩
     rw [show stackArgAddr s i = stackArgAddr s 0 + BitVec.ofNat 64 (8 * i) by
       simp only [stackArgAddr, Nat.zero_add, Nat.mul_one, Offset.add_add]
       congr 2
-      omega]
-    exact Offset.contains_base _ (by omega) (by omega)
+      omega_using []]
+    exact Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi])
 
 end VG.Proof.Ffdh.X86_64.DerivePublic
 end
@@ -118,9 +118,9 @@ theorem entry_pre0 {s : State} (c : DvCtx s) :
       Keep (.rdi :: mmRegs) s t := by
   have hZ := c.hZ
   have hk := c.k1
-  refine WP.mono (dvEntry_ok rfl (fun i hi => c.hs.st (by omega)) c.ha)
+  refine WP.mono (dvEntry_ok rfl (fun i hi => c.hs.st (by omega_using [hZ, hi])) c.ha)
     fun t ⟨hd, hs, hh, hf, k⟩ => ?_
-  have hi : InScr (dvOf s).B (dvOf s).Z s.mem t.mem := InScr.of_outside hf (by dsimp only [dvOf]; omega)
+  have hi : InScr (dvOf s).B (dvOf s).Z s.mem t.mem := InScr.of_outside hf (by dsimp only [dvOf]; omega_using [hZ])
   refine ⟨⟨c.k1, c.k2, c.dl, bytesAt_length _ _ _, rfl, bytesAt_length _ _ _, c.xl1, c.xl2, c.hZ,
     c.hs.congr k.2.2, c.dom.congrK hi k, c.x.congrK hi k,
     ⟨fun i hi => by rw [k.2.2]; exact c.y.wr i hi, c.y.sep⟩, c.yd, c.yx, ?_, rfl⟩,
@@ -139,9 +139,9 @@ theorem zero_base {p : KpP} {xb : List Byte} {s : State} (h : Pre0 p xb s) (hd :
   have hk := h.k1
   have hk' := h.k2
   have hZ := h.hZ
-  refine WP.mono (zeroOut_ok h.scr hd (by omega) (by decide) (by decide)
+  refine WP.mono (zeroOut_ok h.scr hd (by omega_using [hZ]) (by decide) (by decide)
     (h.hdr (sY, p.yp) (by simp [KpP.headers]))
-    (h.hdr (sK, BitVec.ofNat 64 p.k) (by simp [KpP.headers])) (by omega) (by omega) h.y)
+    (h.hdr (sK, BitVec.ofNat 64 p.k) (by simp [KpP.headers])) (by omega_using [hk]) (by omega_using [hk']) h.y)
     fun t ⟨hz, hf, k⟩ => ?_
   have hout : Outside p.B p.Z (2 ^ 64 - p.Z) s.mem t.mem := by
     intro a ha
@@ -150,9 +150,9 @@ theorem zero_base {p : KpP} {xb : List Byte} {s : State} (h : Pre0 p xb s) (hd :
     intro i hi he
     have := h.y.sep i hi
     rw [← he] at this
-    omega
+    omega_using [ha, ha64, this]
   have hh : ∀ d, d + 8 ≤ p.Z → word t.mem p.B d = word s.mem p.B d :=
-    fun d hd => hout.word (Or.inl hd) (by have := h.scr.nowrap; omega)
+    fun d hd => hout.word (Or.inl hd) (by have := h.scr.nowrap; omega_using [hd, this])
   have hdom : Src t p.B p.Z p.dp p.dom := ⟨fun i hi => by rw [k.2.1, k.2.2]; exact h.dom.rd i hi,
     fun i hi => by rw [hf _ (fun j hj => Ne.symm (h.yd j hj i (by rw [← h.doml]; exact hi)))]; exact h.dom.val i hi,
     h.dom.out⟩
@@ -173,12 +173,12 @@ theorem zero_base {p : KpP} {xb : List Byte} {s : State} (h : Pre0 p xb s) (hd :
       exact h.y.sep i (by simpa only [List.length_replicate] using hi)
   refine ⟨⟨h.k1, h.k2, h.dl, h.doml, by rw [h.yb, List.length_replicate], h.xlen, h.xl1, h.xl2, h.hZ,
     h.scr.congr k.2.2, hdom, hx, hy, ?_, h.valid⟩, h.y.of_wr k.2.2, (k.gpr (by decide)).trans hd,
-    hf, fun i hi => hh _ (by omega), k.mono (by decide)⟩
+    hf, fun i hi => hh _ (by omega_using [hZ, hi]), k.mono (by decide)⟩
   intro e he
   rw [hh _ (by
     simp only [KpP.headers, List.mem_cons, List.not_mem_nil, or_false] at he
     rcases he with rfl | rfl | rfl | rfl | rfl | rfl <;>
-      simp only [sDom, sDomLen, sK, sY, sX, sXl, sFn] <;> omega)]
+      simp only [sDom, sDomLen, sK, sY, sX, sXl, sFn] <;> omega_using [hZ])]
   exact h.hdr e he
 
 end VG.Proof.Ffdh.X86_64.DerivePublic

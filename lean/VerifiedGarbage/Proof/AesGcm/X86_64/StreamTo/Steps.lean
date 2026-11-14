@@ -30,9 +30,9 @@ theorem stackArg_entry {t : State} {F : Addr} (hsp : t.gpr .rsp = F) (hF : 8 ≤
     {i : Nat} (hi : F.toNat + 8 * i + 8 ≤ 2 ^ 64) :
     stackArg (t.callEntry.withRegions rd wr) i = t.mem.readW (F + BitVec.ofNat 64 (8 * i)) 64 := by
   have hb : F - 8 + BitVec.ofNat 64 (8 * (i + 1)) = F + BitVec.ofNat 64 (8 * i) := by
-    rw [show 8 * (i + 1) = 8 + 8 * i by omega, BitVec.ofNat_add, ← BitVec.add_assoc,
+    rw [show 8 * (i + 1) = 8 + 8 * i by omega_using [], BitVec.ofNat_add, ← BitVec.add_assoc,
       show (8 : BitVec 64) = BitVec.ofNat 64 8 from rfl, BitVec.sub_add_cancel]
-  have hsep := Offset.sep (F - 8) (d := 8 * (i + 1)) (n := 8) (e := 0) (k := 8) (by omega) (by omega) (by omega)
+  have hsep := Offset.sep (F - 8) (d := 8 * (i + 1)) (n := 8) (e := 0) (k := 8) (by omega_using []) (by omega_using [hF, hi]) (by omega_using [])
   rw [show F - 8 + BitVec.ofNat 64 0 = F - 8 from BitVec.add_zero _, hb] at hsep
   simp only [stackArg, stackArgAddr, State.withRegions_mem, State.withRegions_gpr, State.callEntry_rsp,
     State.callEntry_mem, hsp, hb]
@@ -84,7 +84,7 @@ include hp
 /-- `work`'s slot `d`, readable. -/
 theorem slot_in {st : State} (hrd : st.rd = s.rd) (hwr : st.wr = s.wr) {d : Nat} (hd : d + 8 ≤ 80) :
     InRegions (st.rd ++ st.wr) (W s + BitVec.ofNat 64 d) 8 := by
-  rw [hrd, hwr]; exact w_in' hp (by omega)
+  rw [hrd, hwr]; exact w_in' hp (by omega_using [hd])
 
 /-- `work` from the stack, through a frame of the regions written and the
 stack. -/
@@ -133,8 +133,8 @@ theorem blocksCount_ok {st : State} {o : Nat} (h11 : st.gpr .r11 = W s) (hk : Ke
   have hlen : st.mem.readW (W s + BitVec.ofNat 64 48) 64 = BitVec.ofNat 64 (L s) := by
     rw [hk.len, ofNat_toNat]
   have hsub := ofNat_sub ho hL
-  have h4 := shr4 (L s - o) (by omega)
-  have hz := and_self_beq (show (L s - o) / 16 < 2 ^ 64 by omega)
+  have h4 := shr4 (L s - o) (by omega_using [hL])
+  have hz := and_self_beq (show (L s - o) / 16 < 2 ^ 64 by omega_using [hL])
   apply WP.of_runBlock
   refine ⟨_, by simp only [blocksCount, wLen, wDone]; xrun [h11, q₁, q₂, hlen, hk.done, hsub, h4], ?_, ?_, ?_, ?_,
     ?_, ?_⟩
@@ -148,7 +148,7 @@ end
 
 /-- `16 q`, by doubling four times. -/
 theorem dbl (x : Nat) : BitVec.ofNat 64 x + BitVec.ofNat 64 x = BitVec.ofNat 64 (2 * x) := by
-  rw [← BitVec.ofNat_add]; congr 1; omega
+  rw [← BitVec.ofNat_add]; congr 1; omega_using []
 
 /-- The number of whole blocks into `r9`, their bytes into `rax`, and
 whether the text so far and they would exceed 2⁶⁴ bytes. -/
@@ -162,7 +162,7 @@ theorem len_ok {st : State} {q : Nat} {T : BitVec 64} (hax : st.gpr .rax = BitVe
   have d₂ := dbl (2 * q)
   have d₃ := dbl (2 * (2 * q))
   have d₄ := dbl (2 * (2 * (2 * q)))
-  have e16 : 2 * (2 * (2 * (2 * q))) = 16 * q := by omega
+  have e16 : 2 * (2 * (2 * (2 * q))) = 16 * q := by omega_using []
   rw [e16] at d₄
   apply WP.of_runBlock
   refine ⟨_, by simp only [blocksLen]; xrun [hax, h8, d₁, d₂, d₃, d₄], ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
@@ -195,7 +195,7 @@ theorem blocksArgs_ok {st : State} {o q : Nat} (h11 : st.gpr .r11 = W s)
   have r₈ := slot_in hp hrd hwr (d := 64) (by decide)
   have sep : ∀ d : Nat, d + 8 ≤ 64 →
       Mem.Sep (W s + BitVec.ofNat 64 d) (64 / 8) (W s + BitVec.ofNat 64 64) (64 / 8) :=
-    fun d hd => Offset.sep _ (.inl hd) (by omega) (by have := hp.w_w; omega)
+    fun d hd => Offset.sep _ (.inl hd) (by omega_using [hd]) (by have := hp.w_w; omega_using [])
   have s₀ := sep 0 (by decide)
   have s₁ := sep 8 (by decide)
   have s₂ := sep 16 (by decide)
@@ -227,7 +227,7 @@ theorem blocksArgs_ok {st : State} {o q : Nat} (h11 : st.gpr .r11 = W s)
       by rw [k 56 (by decide)]; exact hk.dst, Mem.readW_writeW_self64 _ _ _⟩
   · simp only [mem_setReg, mem_arithFlags]
     exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _
-      (Offset.contains_base _ (show 64 + 64 / 8 ≤ 72 by decide) (by have := hp.w_w; omega))
+      (Offset.contains_base _ (show 64 + 64 / 8 ≤ 72 by decide) (by have := hp.w_w; omega_using []))
 
 end
 
@@ -245,7 +245,7 @@ theorem neg_and15 (T : BitVec 64) : -T &&& 15#64 = BitVec.ofNat 64 ((16 - T.toNa
   congr 1
   rw [BitVec.toNat_neg]
   have := T.isLt
-  omega
+  omega_using []
 
 section
 variable {M : CtxMode} {s : State} (hp : SP' M s)
@@ -267,12 +267,12 @@ theorem headLen_ok {st : State} {o : Nat} (h11 : st.gpr .r11 = W s) (h8 : st.gpr
       BitVec.ofNat 64 ((16 - (TL s).toNat % 16) % 16) := by
     rw [← hn, show BitVec.setWidth 64 (BitVec.ofNat 32 0) = 0#64 from rfl, BitVec.zero_sub]
   have hpad : (BitVec.ofNat 64 ((16 - (TL s).toNat % 16) % 16)).toNat = (16 - (TL s).toNat % 16) % 16 := by
-    rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt (by omega)
+    rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt (by omega_using [])
   have hLn : (BitVec.ofNat 64 (L s)).toNat = L s := by rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt hL
   have hz := and_self_beq (show Hd s < 2 ^ 64 from Nat.lt_of_le_of_lt (Nat.min_le_right _ _) hL)
   apply WP.of_runBlock
   by_cases hc : L s < (16 - (TL s).toNat % 16) % 16
-  · have e : Hd s = L s := by simp only [Hd]; omega
+  · have e : Hd s = L s := by simp only [Hd]; omega_using [hc]
     refine ⟨_, by
       simp only [headLen, wLen]
       xrun [h11, h8, q₁, hlen, hn₀, hn, execCmov, eval, hpad, hLn, hc, decide_true, e], ?_, ?_, ?_, ?_, ?_, ?_⟩
@@ -280,7 +280,7 @@ theorem headLen_ok {st : State} {o : Nat} (h11 : st.gpr .r11 = W s) (h8 : st.gpr
     · simp only [zf_arithFlags, gpr_setReg, ite_true, e] at hz ⊢; rw [hz]
     · intro r a b; simp [gpr_setReg, gpr_arithFlags, a, b]
     all_goals simp [mem_arithFlags, mem_setReg, rd_arithFlags, rd_setReg, wr_arithFlags, wr_setReg]
-  · have e : Hd s = (16 - (TL s).toNat % 16) % 16 := by simp only [Hd]; omega
+  · have e : Hd s = (16 - (TL s).toNat % 16) % 16 := by simp only [Hd]; omega_using [hc]
     refine ⟨_, by
       simp only [headLen, wLen]
       xrun [h11, h8, q₁, hlen, hn₀, hn, execCmov, eval, hpad, hLn, hc, decide_false, e], ?_, ?_, ?_, ?_, ?_, ?_⟩
@@ -323,7 +323,7 @@ theorem headPtrs_ok {st : State} {o k : Nat} (h11 : st.gpr .r11 = W s) (hax : st
   have r₇ := slot_in hp hrd hwr (d := 56) (by decide)
   have sep : ∀ d : Nat, d + 8 ≤ 72 →
       Mem.Sep (W s + BitVec.ofNat 64 d) (64 / 8) (W s + BitVec.ofNat 64 72) (64 / 8) :=
-    fun d hd => Offset.sep _ (.inl hd) (by omega) (by have := hp.w_w; omega)
+    fun d hd => Offset.sep _ (.inl hd) (by omega_using [hd]) (by have := hp.w_w; omega_using [])
   have s₅ := sep 40 (by decide)
   have s₇ := sep 56 (by decide)
   apply WP.of_runBlock
@@ -378,7 +378,7 @@ theorem headDone_ok {o k : Nat} {st : State} (hsp : st.gpr .rsp = SP s) (hrd : s
   have w64 : InRegions st.wr (W s + BitVec.ofNat 64 64) (64 / 8) := by rw [hwr]; exact w_in hp (by decide)
   have sep : ∀ d : Nat, d + 8 ≤ 64 →
       Mem.Sep (W s + BitVec.ofNat 64 d) (64 / 8) (W s + BitVec.ofNat 64 64) (64 / 8) :=
-    fun d hd => Offset.sep _ (.inl hd) (by omega) (by have := hp.w_w; omega)
+    fun d hd => Offset.sep _ (.inl hd) (by omega_using [hd]) (by have := hp.w_w; omega_using [])
   apply WP.of_runBlock
   refine ⟨_, by simp only [headDone, wHead, wDone]; xrun [a₃, hW, r₉, h72, w64], ?_, ?_, ?_, by rfl, by rfl⟩
   · intro r hr
@@ -396,7 +396,7 @@ theorem headDone_ok {o k : Nat} {st : State} (hsp : st.gpr .rsp = SP s) (hrd : s
       by rw [e 56 (by decide)]; exact hk.dst, Mem.readW_writeW_self64 _ _ _⟩
   · simp only [mem_setReg]
     exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _
-      (Offset.contains_base _ (show 64 + 64 / 8 ≤ 72 by decide) (by have := hp.w_w; omega))
+      (Offset.contains_base _ (show 64 + 64 / 8 ≤ 72 by decide) (by have := hp.w_w; omega_using []))
 
 end
 

@@ -44,11 +44,11 @@ theorem keyAddr_step (base : BitVec 32) (direction : Direction) (j : Nat) (hj : 
   cases direction
   · change base + BitVec.ofNat 32 (8 * j) + BitVec.ofNat 32 8 = base + BitVec.ofNat 32 (8 * (j + 1))
     rw [Offset.add_ofNat_add_ofNat]
-    exact congrArg (fun n => base + BitVec.ofNat 32 n) (by omega)
+    exact congrArg (fun n => base + BitVec.ofNat 32 n) (by omega_using [])
   · change base + BitVec.ofNat 32 (8 * (15 - j)) - BitVec.ofNat 32 8 = base + BitVec.ofNat 32 (8 * (15 - (j + 1)))
     rw [BitVec.sub_eq_add_neg, BitVec.add_assoc, ← BitVec.sub_eq_add_neg,
-      Offset.ofNat_sub_ofNat (by omega)]
-    exact congrArg (fun n => base + BitVec.ofNat 32 n) (by omega)
+      Offset.ofNat_sub_ofNat (by omega_using [hj])]
+    exact congrArg (fun n => base + BitVec.ofNat 32 n) (by omega_using [])
 
 def endPointer (base : BitVec 32) (d : Direction) : BitVec 32 :=
   if d = .encrypt then base + 128 else base - 8
@@ -221,11 +221,11 @@ theorem start_frame (c : Nat) (d : Direction) (s : State)
     (fit : (s.gpr .ebp).toNat + 512 ≤ 2 ^ 32) : Frame [workRegion s] s.mem (startMem c d s) := by
   have h4 : (workRegion s).Contains (wordAddr (s.gpr .ebp) 4) 4 := by
     change (workRegion s).Contains (addr (s.gpr .ebp) 16) 4
-    rw [addr_eq (by omega)]
+    rw [addr_eq (by omega_using [fit])]
     exact Offset.contains _ (by decide) (by decide) (by decide)
   have h5 : (workRegion s).Contains (wordAddr (s.gpr .ebp) 5) 4 := by
     change (workRegion s).Contains (addr (s.gpr .ebp) 20) 4
-    rw [addr_eq (by omega)]
+    rw [addr_eq (by omega_using [fit])]
     exact Offset.contains _ (by decide) (by decide) (by decide)
   exact ((Frame.refl [workRegion s] s.mem).writeW (List.mem_singleton_self _) _ h4).writeW
     (List.mem_singleton_self _) _ h5

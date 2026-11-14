@@ -49,7 +49,7 @@ theorem toInt_neg {m : Word} (h : m.msb = true) : m.toInt = -(absN m : Int) := b
   simp only [↓reduceIte] at e
   have := m.isLt
   have := Int.natAbs_eq m.toInt
-  omega
+  omega_using [e]
 
 theorem toInt_pos {m : Word} (h : m.msb = false) : m.toInt = (absN m : Int) := by
   unfold absN
@@ -57,7 +57,7 @@ theorem toInt_pos {m : Word} (h : m.msb = false) : m.toInt = (absN m : Int) := b
   rw [h] at e
   simp only [Bool.false_eq_true, ↓reduceIte] at e
   have := Int.natAbs_eq m.toInt
-  omega
+  omega_using [e]
 
 /-- One product of a row of `f` and `g`. -/
 theorem fterm (m : Word) {X : Nat} (hX : X < 2 ^ 256) :
@@ -66,16 +66,16 @@ theorem fterm (m : Word) {X : Nat} (hX : X < 2 ^ 256) :
   cases hm : m.msb
   · rw [toInt_pos hm]
     by_cases hx : X < 2 ^ 255
-    · simp only [Bool.false_eq_true, ↓reduceIte, Nat.add_zero, hx, show ¬ 2 ^ 255 ≤ X by omega]
+    · simp only [Bool.false_eq_true, ↓reduceIte, Nat.add_zero, hx, show ¬ 2 ^ 255 ≤ X by omega_using [hx]]
       push_cast; ring
-    · simp only [Bool.false_eq_true, ↓reduceIte, Nat.add_zero, hx, show 2 ^ 255 ≤ X by omega]
+    · simp only [Bool.false_eq_true, ↓reduceIte, Nat.add_zero, hx, show 2 ^ 255 ≤ X by omega_using [hx]]
       push_cast; ring
   · rw [toInt_neg hm]
-    have e : ((2 ^ 256 - 1 - X : Nat) : Int) = 2 ^ 256 - 1 - (X : Int) := by omega
+    have e : ((2 ^ 256 - 1 - X : Nat) : Int) = 2 ^ 256 - 1 - (X : Int) := by omega_using [hX]
     by_cases hx : X < 2 ^ 255
-    · simp only [↓reduceIte, hx, show 2 ^ 255 ≤ 2 ^ 256 - 1 - X by omega]
+    · simp only [↓reduceIte, hx, show 2 ^ 255 ≤ 2 ^ 256 - 1 - X by omega_using [hx]]
       rw [Nat.cast_add, Nat.cast_mul, e]; push_cast; ring
-    · simp only [↓reduceIte, hx, show ¬ 2 ^ 255 ≤ 2 ^ 256 - 1 - X by omega]
+    · simp only [↓reduceIte, hx, show ¬ 2 ^ 255 ≤ 2 ^ 256 - 1 - X by omega_using [hx]]
       rw [Nat.cast_add, Nat.cast_mul, e]; push_cast; ring
 
 /-- One product of a row of `u` and `v`. -/
@@ -86,7 +86,7 @@ theorem uterm (m : Word) {A : Nat} (hA : A < 2 ^ 256) :
   · rw [toInt_pos hm]; simp only [Bool.false_eq_true, ↓reduceIte]; push_cast; ring
   · rw [toInt_neg hm]
     simp only [↓reduceIte]
-    have e : ((2 ^ 256 - 1 - A : Nat) : Int) = 2 ^ 256 - 1 - (A : Int) := by omega
+    have e : ((2 ^ 256 - 1 - A : Nat) : Int) = 2 ^ 256 - 1 - (A : Int) := by omega_using [hA]
     rw [Nat.cast_add, Nat.cast_mul, e]; ring
 
 /-- A row of `f` and `g` shifted: `W ≡ R` (mod `2³²⁰`) for `R = 2⁵⁹ R'` with
@@ -96,7 +96,7 @@ theorem shift_rep {W : Nat} {R' : Int}
     sv (W / 2 ^ 59 % 2 ^ 256) = R' ∧ W / 2 ^ 59 % 2 ^ 256 < 2 ^ 256 := by
   refine ⟨?_, Nat.mod_lt _ (by decide)⟩
   unfold sv
-  split <;> omega
+  split <;> omega_arith
 
 theorem P_val : (P : Int) = 2 ^ 255 - 19 := by simp [P]
 
@@ -126,8 +126,8 @@ theorem sgn_word (q : Word) :
     rw [BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow]
     have := q.isLt
     split
-    · rw [show (1 : Word).toNat = 1 from rfl]; omega
-    · rw [show (0 : Word).toNat = 0 from rfl]; omega
+    · rw [show (1 : Word).toNat = 1 from rfl]; omega_arith
+    · rw [show (0 : Word).toNat = 0 from rfl]; omega_arith
   rw [h]; split <;> decide
 
 /-- The arithmetic of the reduction, on the words' values. -/
@@ -220,10 +220,10 @@ theorem redV_cong (w0 w1 w2 w3 w4 : Word) {R : Int}
   · rw [BitVec.toNat_mul]; rfl
   · simp only [VG.Proof.Ed25519.AArch64.mulHi, BitVec.toNat_ofNat,
       show (19 : Word).toNat = 19 from rfl]
-    exact Nat.mod_eq_of_lt (by omega)
+    exact Nat.mod_eq_of_lt (by omega_using [])
   · split
     · exact .inl ⟨by assumption, rfl, rfl⟩
-    · exact .inr ⟨by omega, rfl, rfl⟩
+    · exact .inr ⟨by omega_arith, rfl, rfl⟩
   · rw [BitVec.toNat_sub]
 
 end VG.Proof.Ed25519.AArch64.Inv

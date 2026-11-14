@@ -38,19 +38,19 @@ variable {F C : Nat} {argv : List (BitVec 32)} {ro rw : List Region} {s : State}
 theorem layOf_B_toNat (hsp : 16 + F ≤ (s.gpr .esp).toNat) :
     (layOf F argv ro rw s C).B.toNat = (s.gpr .esp).toNat - 16 - F := by
   simp only [layOf]
-  rw [sub_toNat (by rw [sub_toNat (by omega)]; omega), sub_toNat (by omega)]
+  rw [sub_toNat (by rw [sub_toNat (by omega_using [hsp])]; omega_using [hsp]), sub_toNat (by omega_using [hsp])]
 
 theorem fr_toNat' (hsp : 16 + F ≤ (s.gpr .esp).toNat) {d : Nat} (hd : (s.gpr .esp).toNat + d < 2 ^ 32 + 16 + F) :
     ((layOf F argv ro rw s C).fr d).toNat = (s.gpr .esp).toNat - 16 - F + d := by
   have hB := layOf_B_toNat (argv := argv) (ro := ro) (rw := rw) (C := C) hsp
   simp only [Lay.fr, Lay.Q]
   rw [BitVec.toNat_add, BitVec.toNat_setWidth, BitVec.toNat_ofNat, hB,
-    Nat.mod_eq_of_lt (a := (s.gpr .esp).toNat - 16 - F) (by have := (s.gpr .esp).isLt; omega),
-    Nat.mod_eq_of_lt (a := d) (by omega)]
-  exact Nat.mod_eq_of_lt (by omega)
+    Nat.mod_eq_of_lt (a := (s.gpr .esp).toNat - 16 - F) (by have := (s.gpr .esp).isLt; omega_using []),
+    Nat.mod_eq_of_lt (a := d) (by omega_using [hsp, hd])]
+  exact Nat.mod_eq_of_lt (by omega_using [hsp, hd])
 
 theorem esp64_toNat (s : State) : ((s.gpr .esp).setWidth 64).toNat = (s.gpr .esp).toNat := by
-  rw [BitVec.toNat_setWidth]; exact Nat.mod_eq_of_lt (by have := (s.gpr .esp).isLt; omega)
+  rw [BitVec.toNat_setWidth]; exact Nat.mod_eq_of_lt (by have := (s.gpr .esp).isLt; omega_using [])
 
 /-- `ok_entered`, of an entry whose permissions include the layout's. -/
 theorem ok_entered_of {S : Nat} (hS : S = C + 16 + F) (hF : FrameOk F) (hsp : S ≤ (s.gpr .esp).toNat)
@@ -73,7 +73,7 @@ theorem ok_entered_of {S : Nat} (hS : S = C + 16 + F) (hF : FrameOk F) (hsp : S 
   -- Every address of the layout is `esp` on entry plus or minus an offset.
   have hQ : (layOf F argv ro rw s C).Q = (s.gpr .esp).setWidth 64 - BitVec.ofNat 64 (16 + F) := by
     simp only [Lay.Q, layOf]
-    rw [Taint.sub_setWidth (by rw [sub_toNat (by omega)]; omega), Taint.sub_setWidth (by omega),
+    rw [Taint.sub_setWidth (by rw [sub_toNat (by omega_using [hsp])]; omega_using [hsp]), Taint.sub_setWidth (by omega_using [hsp]),
       BitVec.sub_sub, BitVec.ofNat_add]
   have hfr : ∀ d, (layOf F argv ro rw s C).fr d =
       (s.gpr .esp).setWidth 64 - BitVec.ofNat 64 (16 + F) + BitVec.ofNat 64 d := by
@@ -88,15 +88,15 @@ theorem ok_entered_of {S : Nat} (hS : S = C + 16 + F) (hF : FrameOk F) (hsp : S 
     intro j hj
     apply BitVec.eq_of_toNat_eq
     rw [argAddr, BitVec.toNat_setWidth, BitVec.toNat_add, BitVec.toNat_add, BitVec.toNat_ofNat,
-      BitVec.toNat_ofNat, e64, Nat.mod_eq_of_lt (a := 4 + 4 * j) (by omega),
-      Nat.mod_eq_of_lt (a := 4 + 4 * j) (by omega),
-      Nat.mod_eq_of_lt (a := (s.gpr .esp).toNat + (4 + 4 * j)) (by omega), Nat.mod_eq_of_lt (by omega)]
+      BitVec.toNat_ofNat, e64, Nat.mod_eq_of_lt (a := 4 + 4 * j) (by omega_using [hfit, hj]),
+      Nat.mod_eq_of_lt (a := 4 + 4 * j) (by omega_using [hfit, hj]),
+      Nat.mod_eq_of_lt (a := (s.gpr .esp).toNat + (4 + 4 * j)) (by omega_using [hfit, hj]), Nat.mod_eq_of_lt (by omega_using [hfit, hj])]
   have argA : ∀ j < argv.length, (layOf F argv ro rw s C).argA j = argAddr s j := by
     intro j hj
     simp only [Lay.argA, Impl.RsaPkcs1Sig.X86.argOff]
     rw [hfr]
     simp only [layOf]
-    rw [show F + 20 + 4 * j = 16 + F + (4 + 4 * j) by omega, up _ (by omega), argAddrJ j hj]
+    rw [show F + 20 + 4 * j = 16 + F + (4 + 4 * j) by omega_using [], up _ (by omega_using [hj]), argAddrJ j hj]
   have argAddr0 : argAddr s 0 = (layOf F argv ro rw s C).fr (F + 20) := by
     have := argA 0 hn
     simp only [Lay.argA, Impl.RsaPkcs1Sig.X86.argOff, Nat.mul_zero, Nat.add_zero] at this
@@ -107,7 +107,7 @@ theorem ok_entered_of {S : Nat} (hS : S = C + 16 + F) (hF : FrameOk F) (hsp : S 
   · rw [entered_esp]; rfl
   · rw [entered_rd]; exact hrd
   · have hsave : (s.gpr .esp - BitVec.ofNat 32 16).setWidth 64 = (layOf F argv ro rw s C).fr F := by
-      rw [hfr, Taint.sub_setWidth (by omega)]
+      rw [hfr, Taint.sub_setWidth (by omega_using [hsp])]
       try simp only [layOf]
       rw [show BitVec.ofNat 64 (16 + F) = BitVec.ofNat 64 16 + BitVec.ofNat 64 F from BitVec.ofNat_add _ _,
         ← BitVec.sub_sub, BitVec.sub_add_cancel]
@@ -124,23 +124,23 @@ theorem ok_entered_of {S : Nat} (hS : S = C + 16 + F) (hF : FrameOk F) (hsp : S 
     rw [entered_wr, ← argAddr0]
     exact List.mem_cons_of_mem _ (List.mem_cons_of_mem _ hm)
   · show C ≤ (layOf F argv ro rw s C).B.toNat
-    rw [hB]; omega
+    rw [hB]; omega_using [hsp]
   · show (layOf F argv ro rw s C).B.toNat + F + 20 + 4 * argv.length ≤ 2 ^ 32
-    rw [hB]; omega
+    rw [hB]; omega_using [hfit, hsp]
   · intro r hr
     have e : (layOf F argv ro rw s C).STK =
         ⟨(s.gpr .esp).setWidth 64 - BitVec.ofNat 64 (C + 16 + F), C + 16 + F⟩ := by
       simp only [Lay.STK]
       rw [hQ, BitVec.sub_sub, ← BitVec.ofNat_add]
       simp only [layOf, Region.mk.injEq]
-      exact ⟨by rw [show 16 + F + C = C + 16 + F by omega], by omega⟩
+      exact ⟨by rw [show 16 + F + C = C + 16 + F by omega_using []], by omega_using []⟩
     rw [e]; exact hstk r hr
   · intro r hr
     have e : (layOf F argv ro rw s C).RET = ⟨(s.gpr .esp).setWidth 64, 4⟩ := by
       simp only [Lay.RET]
       rw [hfr]
       simp only [layOf]
-      rw [show F + 16 = 16 + F + 0 by omega, up 0 (by omega), BitVec.add_zero]
+      rw [show F + 16 = 16 + F + 0 by omega_using [], up 0 (by omega_using []), BitVec.add_zero]
     rw [e]; exact hret r hr
   · intro w hw r hr
     refine hwro w hw r ?_
@@ -154,14 +154,14 @@ theorem ok_entered_of {S : Nat} (hS : S = C + 16 + F) (hF : FrameOk F) (hsp : S 
     replace hj : j < argv.length := hj
     have hpush : Frame [below (s.gpr .esp) (4 * Impl.RsaPkcs1Sig.X86.savedRegs.length)] s.mem
         (pushed Impl.RsaPkcs1Sig.X86.savedRegs s).mem :=
-      pushed_frame (by decide) (by simp only [Impl.RsaPkcs1Sig.X86.savedRegs, List.length_cons, List.length_nil]; omega)
+      pushed_frame (by decide) (by simp only [Impl.RsaPkcs1Sig.X86.savedRegs, List.length_cons, List.length_nil]; omega_using [hsp])
     rw [argA j hj, entered_mem]
     refine (hpush.readW (r := ⟨argAddr s j, 4⟩) (Region.contains_self _ _) ?_ (by decide)).trans (hargs j hj)
     intro q hq
     simp only [List.mem_singleton] at hq; subst hq
     simp only [below, Impl.RsaPkcs1Sig.X86.savedRegs, List.length_cons, List.length_nil]
-    rw [Taint.sub_setWidth (by omega), argAddrJ j hj]
-    exact Offset.disjoint_below _ (by omega)
+    rw [Taint.sub_setWidth (by omega_using [hsp]), argAddrJ j hj]
+    exact Offset.disjoint_below _ (by omega_using [hfit, hj])
 
 
 theorem ok_entered {S : Nat} (hS : S = C + 16 + F) (hF : FrameOk F) (hsp : S ≤ (s.gpr .esp).toNat)
@@ -186,23 +186,23 @@ variable {F C : Nat} {argv : List (BitVec 32)} {ro rw : List Region} {s : State}
 /-- The push's bytes are the layout's saved registers. -/
 theorem save_eq (hsp : 16 + F ≤ (s.gpr .esp).toNat) : saveRegion s = (layOf F argv ro rw s C).SAVE := by
   have := (s.gpr .esp).isLt
-  have h := fr_toNat' (argv := argv) (ro := ro) (rw := rw) (C := C) hsp (d := F) (by omega)
+  have h := fr_toNat' (argv := argv) (ro := ro) (rw := rw) (C := C) hsp (d := F) (by omega_using [])
   simp only [saveRegion, Lay.SAVE]
   congr 1
   apply BitVec.eq_of_toNat_eq
-  rw [show (layOf F argv ro rw s C).F = F from rfl, h, BitVec.toNat_setWidth, sub_toNat (by omega),
-    Nat.mod_eq_of_lt (by omega)]
-  omega
+  rw [show (layOf F argv ro rw s C).F = F from rfl, h, BitVec.toNat_setWidth, sub_toNat (by omega_using [hsp]),
+    Nat.mod_eq_of_lt (by omega_using [])]
+  omega_using [hsp]
 
 /-- The return address is the layout's. -/
 theorem ret_eq (hsp : 16 + F ≤ (s.gpr .esp).toNat) : retRegion s = (layOf F argv ro rw s C).RET := by
   have := (s.gpr .esp).isLt
-  have h := fr_toNat' (argv := argv) (ro := ro) (rw := rw) (C := C) hsp (d := F + 16) (by omega)
+  have h := fr_toNat' (argv := argv) (ro := ro) (rw := rw) (C := C) hsp (d := F + 16) (by omega_using [])
   simp only [retRegion, Lay.RET]
   congr 1
   apply BitVec.eq_of_toNat_eq
   rw [show (layOf F argv ro rw s C).F = F from rfl, h, esp64_toNat]
-  omega
+  omega_using [hsp]
 
 /-- A buffer only read has the same bytes on entry to the body. -/
 theorem entered_ro (hsp : 16 + F ≤ (s.gpr .esp).toNat) (h : (layOf F argv ro rw s C).Ok (entered F s))
@@ -211,12 +211,12 @@ theorem entered_ro (hsp : 16 + F ≤ (s.gpr .esp).toNat) (h : (layOf F argv ro r
   have hf : Frame [saveRegion s] s.mem (entered F s).mem := by
     rw [entered_mem]
     have := pushed_frame (s := s) pushRegs_noSp
-      (by simp only [Impl.RsaPkcs1Sig.X86.savedRegs, List.length_cons, List.length_nil]; omega)
+      (by simp only [Impl.RsaPkcs1Sig.X86.savedRegs, List.length_cons, List.length_nil]; omega_using [hsp])
     simpa [Impl.RsaPkcs1Sig.X86.savedRegs, below] using this
-  refine Proof.RsaPkcs1Sig.bytesAt_frame hf (fun r hr => ?_) (by have := h.fits R (List.mem_append_left _ hR); omega)
+  refine Proof.RsaPkcs1Sig.bytesAt_frame hf (fun r hr => ?_) (by have := h.fits R (List.mem_append_left _ hR); omega_using [this])
   simp only [List.mem_singleton] at hr; subst hr
   rw [save_eq (argv := argv) (ro := ro) (rw := rw) (C := C) hsp]
-  exact ((h.stk R (List.mem_append_left _ hR)).sub_left (Lay.sub_stk (by simp only [layOf]; omega))).symm
+  exact ((h.stk R (List.mem_append_left _ hR)).sub_left (Lay.sub_stk (by simp only [layOf]; omega_using []))).symm
 
 end
 

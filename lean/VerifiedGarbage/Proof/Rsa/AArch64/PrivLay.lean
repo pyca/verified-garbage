@@ -170,7 +170,7 @@ theorem lay_ok {s : State} (h : chkA.pre s) : (lay s).Ok := by
     simp only [lay]
     rw [Offset.toNat_sub_ofNat s.sp stackBytes]
     unfold stackBytes at hst ⊢
-    omega
+    omega_using [hst, h96]
   exact ⟨on, oe, oi, op, oq, odp, odq, oqi, osc, ea ▸ oa, nsc, esc, isc, psc, qsc, dpsc, dqsc, qisc,
     ea ▸ sca, ko, kn, ke, ki, kp, kq, kdp, kdq, kqi, ksc, bo, bn, be, bi, bp, bq, bdp, bdq, bqi, bsc, nB,
     klo, khi, olk, ilk, el1, elk, pl1, plk, ql1, qlk, dpl, qil, dql, slk⟩

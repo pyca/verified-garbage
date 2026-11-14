@@ -41,8 +41,8 @@ theorem absArgs_piece : Piece Pre Pub Z (fun s₀ s => Z s₀ s ∧ AbsArgs s (S
   refine Piece.taint [.esp] (fun s₀ s hp h => ?_) (fun s₀ s₀' s s' _ _ hq h h' r hr => ?_)
     (by taint_decide)
   · have a₀ := h.argEa (i := 0)
-    have i₀ := h.argIn hp (i := 0) (by omega)
-    have v₀ := h.argw hp (i := 0) (by omega)
+    have i₀ := h.argIn hp (i := 0) (by omega_using [])
+    have v₀ := h.argw hp (i := 0) (by omega_using [])
     simp only [Nat.mul_zero, Nat.add_zero] at a₀
     apply WP.of_runBlock
     simp only [reduceCtorEq, ↓reduceIte, Nat.reducePow, smpAbsorbArgs, smpSt, smpWk, at_, runBlock_cons, runStep_some,
@@ -65,10 +65,10 @@ theorem absorb_call : Piece Pre Pub (fun s₀ s => Z s₀ s ∧ AbsArgs s (SS s�
     (fun s₀ s s' hp ⟨h, _⟩ e₁ e₂ e₃ fr post => ?_)
   · have hk := hp.kbufs
     have hs := hp.s_fit
-    refine ⟨h.esp, ha, hk, hp.d_fit, ?_, ?_, (hp.stk_d.sub_left hp.c_sub), ?_, hp.within_s h.wr (by omega) (by omega),
-      hp.within_s h.wr (by omega) (by omega)⟩
-    · rw [hp.reg_s (by omega)]; exact hp.d_s.sub_right (hp.sub_s (by omega))
-    · rw [hp.reg_s (by omega)]; exact hp.d_s.sub_right (hp.sub_s (by omega))
+    refine ⟨h.esp, ha, hk, hp.d_fit, ?_, ?_, (hp.stk_d.sub_left hp.c_sub), ?_, hp.within_s h.wr (by omega_using []) (by omega_using []),
+      hp.within_s h.wr (by omega_using []) (by omega_using [])⟩
+    · rw [hp.reg_s (by omega_using [])]; exact hp.d_s.sub_right (hp.sub_s (by omega_using []))
+    · rw [hp.reg_s (by omega_using [])]; exact hp.d_s.sub_right (hp.sub_s (by omega_using []))
     · refine ⟨dR s₀, ?_, 0, (BitVec.add_zero _).symm, Nat.le_refl _⟩
       rw [h.rd, h.wr, pushed_rd, hp.rd]; simp
   · refine ⟨h.toCtx.call e₁ e₂ e₃ fr (calls_sub3 hp), ?_⟩
@@ -97,7 +97,7 @@ theorem pad_call : Piece Pre Pub (fun s₀ s => A1 s₀ s ∧ PadArgs s (SS s₀
   refine pad_piece E1 SS WW 168 34 0x1f rate168 (by decide) (fun s₀ s hp ⟨h, ha⟩ => ?_)
     (fun s₀ s₀' _ _ hq => ⟨hq.E1, by rw [SS, SS, hq.2.2.2.2], by rw [WW, WW, hq.2.2.2.2]⟩)
     (fun s₀ s s' hp ⟨h, _⟩ e₁ e₂ e₃ fr post => ?_)
-  · exact ⟨h.esp, ha, hp.kbufs, hp.within_s h.wr (by omega) (by omega), hp.within_s h.wr (by omega) (by omega)⟩
+  · exact ⟨h.esp, ha, hp.kbufs, hp.within_s h.wr (by omega_using []) (by omega_using []), hp.within_s h.wr (by omega_using []) (by omega_using [])⟩
   · refine ⟨h.toCtx.call e₁ e₂ e₃ fr (calls_sub3 hp), ?_⟩
     have := post (Bs s₀) h.st (by rw [bytesAt_length])
     rwa [show (BitVec.ofNat 32 0x1f).setWidth 8 = shakeSuffix from shakeSuffix32] at this
@@ -125,14 +125,14 @@ theorem squeeze_call : Piece Pre Pub (fun s₀ s => A2 s₀ s ∧ AbsArgs s (SS 
     (fun s₀ s₀' _ _ hq => ⟨hq.E1, by rw [SS, SS, hq.2.2.2.2], hq.2.2.2.2, by rw [WW, WW, hq.2.2.2.2]⟩)
     (fun s₀ s s' hp ⟨h, _⟩ e₁ e₂ e₃ fr r₁ _ => ?_)
   · have hs := hp.s_fit
-    refine ⟨h.esp, ha, hp.kbufs, by omega, ?_, ?_, ?_, hp.within_s h.wr (by omega) (by omega),
-      hp.within_s0 h.wr (by omega), hp.within_s h.wr (by omega) (by omega)⟩
-    · rw [hp.reg_s (by omega), Pre.reg_s0]
-      exact disj_at (len := 2048) (by omega) (by omega) hs (by omega)
-    · rw [hp.reg_s (by omega), Pre.reg_s0]
-      exact disj_at (len := 2048) (by omega) (by omega) hs (by omega)
+    refine ⟨h.esp, ha, hp.kbufs, by omega_using [hs], ?_, ?_, ?_, hp.within_s h.wr (by omega_using []) (by omega_using []),
+      hp.within_s0 h.wr (by omega_using []), hp.within_s h.wr (by omega_using []) (by omega_using [])⟩
+    · rw [hp.reg_s (by omega_using []), Pre.reg_s0]
+      exact disj_at (len := 2048) (by omega_using []) (by omega_using []) hs (by omega_using [])
+    · rw [hp.reg_s (by omega_using []), Pre.reg_s0]
+      exact disj_at (len := 2048) (by omega_using []) (by omega_using []) hs (by omega_using [])
     · rw [Pre.reg_s0]
-      exact (hp.stk_s.sub_left hp.c_sub).sub_right (hp.sub_s (by omega))
+      exact (hp.stk_s.sub_left hp.c_sub).sub_right (hp.sub_s (by omega_using []))
   · refine ⟨h.toCtx.call e₁ e₂ e₃ fr (calls_sub hp), fun p hp' => ?_⟩
     rw [h.st] at r₁
     have e := bytesAt_getD s'.mem (sA s₀) (len := 840) hp'

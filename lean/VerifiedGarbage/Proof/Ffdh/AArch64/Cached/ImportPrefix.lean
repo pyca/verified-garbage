@@ -29,7 +29,7 @@ theorem importPrefix_ok {s : State} {B ctx : Addr} {Z w k P : Nat}
  unfold importPrefix
  simp only [seqs]
  rw [WP.seq_iff]
- refine WP.mono (head_ok scratch base (by rw [←words];exact room) (by omega)
+ refine WP.mono (head_ok scratch base (by rw [←words];exact room) (by omega_using [size])
   (by change word s.mem B (8*Public.sK)=_;exact length)) ?_
  rintro a ⟨_,width,arrays,frameA,restA⟩
  rw [←words] at width arrays
@@ -48,19 +48,19 @@ theorem importPrefix_ok {s : State} {B ctx : Addr} {Z w k P : Nat}
   apply Mem.readW_congr
   intro b hb
   apply inscrA
-  have sep := outside (d-24+8*i+b) (by omega)
+  have sep := outside (d-24+8*i+b) (by omega_using [bound, hi, hb])
   have eq : off ctx (d+8*i)+BitVec.ofNat 64 b=off ctx 24+BitVec.ofNat 64 (d-24+8*i+b) := by
    unfold off
    rw [BitVec.add_assoc,←BitVec.ofNat_add,BitVec.add_assoc,←BitVec.ofNat_add]
    congr 2
-   omega
+   omega_using [lower]
   rw [eq]
   exact sep
  change WP isa importData a _
- refine WP.mono (importData_ok goodA room (by rw [words];omega) (by rw [words];omega) contextA
+ refine WP.mono (importData_ok goodA room (by rw [words];omega_using [positive]) (by rw [words];omega_using [size]) contextA
   (fun i hi =>by rw [restA.rd,restA.wr];exact readable i hi) outside
-  ((prefixValue 24 (by omega) (by omega)).trans modulus)
-  ((prefixValue (24+8*w) (by omega) (by omega)).trans r2) odd) ?_
+  ((prefixValue 24 (by omega_using []) (by omega_using [])).trans modulus)
+  ((prefixValue (24+8*w) (by omega_using []) (by omega_using [])).trans r2) odd) ?_
  rintro t ⟨mi,good,modulusT,inverseT,r2T,frameT,restT⟩
  exact ⟨mi,good,modulusT,inverseT,r2T,
   (frameA.mono (fun r hr =>List.mem_append_left _ hr)).trans

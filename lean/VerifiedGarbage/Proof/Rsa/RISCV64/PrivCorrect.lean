@@ -38,8 +38,8 @@ theorem slot_apart {s : State} (h : PreP pc s) {d : Nat} (hd : d + 8 ≤ oM) {r 
     Region.Disjoint ⟨fb s + BitVec.ofNat 64 d, 8⟩ r := by
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl
-  · exact h.ko.sub_left (frame_sub s (by unfold oM frameBytes at *; omega))
-  · exact Offset.disjoint _ (.inl hd) (by unfold oM at hd; omega) (by have := h.k2; unfold oM; omega)
+  · exact h.ko.sub_left (frame_sub s (by unfold oM frameBytes at *; omega_using [hd]))
+  · exact Offset.disjoint _ (.inl hd) (by unfold oM at hd; omega_using [hd]) (by have := h.k2; unfold oM; omega_using [this])
 
 theorem Late.release {s t u : State} (h : PreP pc s) (L : Late s t) (k : Keep [.a1, .a2, .t2, .t3, .t5] t u)
     (hsp : u.sp = t.sp) (hf : Frame [oR s, mR s] t.mem u.mem) : Late s u := by
@@ -47,7 +47,7 @@ theorem Late.release {s t u : State} (h : PreP pc s) (L : Late s t) (k : Keep [.
     (k.gpr (by decide)).trans L.s2, (k.gpr (by decide)).trans L.s3, (k.gpr (by decide)).trans L.s4,
     (k.gpr (by decide)).trans L.s5, (k.gpr (by decide)).trans L.s6,
     fun r hr => (k.gpr (by revert r; decide)).trans (L.hi r hr), L.mem.trans (hf.sub fun r hr => ?_),
-    L.sv.frame hf fun p hp r hr => slot_apart h (by have := saved_offs p hp; unfold oSave oM at *; omega) hr⟩
+    L.sv.frame hf fun p hp r hr => slot_apart h (by have := saved_offs p hp; unfold oSave oM at *; omega_using [this]) hr⟩
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl
   · exact ⟨_, List.mem_cons_of_mem _ (List.mem_cons_self ..), fun _ h => h⟩
@@ -61,13 +61,13 @@ theorem restore_ok {s w : State} (h : PreP pc s) (L : Late s w) :
   rw [restore_eq]
   refine WP.block_append_iff.mpr (WP.block_cons_iff.mpr ⟨_, exec_addSp (imm := 0) (by decide),
     WP.block_nil ?_⟩)
-  refine WP.mono (Spill.restore_wp (b := .t0) (B := fb s) (by have := fb_al h; omega)
+  refine WP.mono (Spill.restore_wp (b := .t0) (B := fb s) (by have := fb_al h; omega_using [this])
     (by rw [gpr_write_self, L.sp]; exact BitVec.add_zero _) restored_offs restorable (fun p hp => by
       have := saved_offs p (restored_saved p hp)
       show InRegions (w.rd ++ w.wr) _ 8
       rw [L.wr]
       exact ⟨kR s, List.mem_append_right _ (List.mem_cons_self ..),
-        frame_contains s (by unfold oSave frameBytes at *; omega)⟩)
+        frame_contains s (by unfold oSave frameBytes at *; omega_using [this])⟩)
     (L.sv.sub restored_saved)) fun v R => ⟨fun r hr => ?_, ?_, ?_, ?_, ?_⟩
   · rcases preserved_split hr with hs | hs
     · obtain ⟨p, hp, rfl⟩ := List.mem_map.mp hs
@@ -150,7 +150,7 @@ theorem codeG_correct (s : State) (h : PreP pc s) (hcrt : CrtOk pc s) (hstep : S
         rcases hr with rfl | rfl | rfl
         · exact h.ki.symm
         · exact h.oi.symm
-        · exact h.is) (by have := h.wi; rw [h.h7] at this; omega)
+        · exact h.is) (by have := h.wi; rw [h.h7] at this; omega_using [])
     refine final_ok (Proof.Rsa.bytesAt_length' _ _ _) (Proof.Rsa.bytesAt_length' _ _ _) L.crt (fun ws hw => L.pub ws hw (hv ws hw)) ?_ hout
     rw [cmpAcc_eq_zero, ← hx, Proof.Rsa.bytesAt_eq_iff]
 

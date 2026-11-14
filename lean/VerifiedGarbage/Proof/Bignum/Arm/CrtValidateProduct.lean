@@ -133,7 +133,7 @@ theorem crt_validationProductWith_ready (s : State) {base : BitVec 32} {size len
       Frame [⟨State.addr base, size⟩] s.mem t.mem ∧ Rest roundClobbers s t := by
   refine WP.mono (crt_factorProductWith_ok s h.multiplication hc hm hm' hn hn') ?_
   rintro t ⟨value, outside, ptr, frame, rest⟩
-  rw [show 2 * w + 2 * w + 2 = 4 * w + 2 by omega] at value outside
+  rw [show 2 * w + 2 * w + 2 = 4 * w + 2 by omega_using []] at value outside
   obtain ⟨ready, modulus⟩ := h.comparison.after_product h.separate outside frame ptr rest
   exact ⟨ready, value, modulus, outside, frame, rest⟩
 

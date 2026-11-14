@@ -81,10 +81,10 @@ theorem argP_outside {s : State} (hp : PreF X s) (hf : PFacts s) {m : Mem} (h : 
   have := hp.sp1
   have := hf.sp3
   have hF : (fb s).toNat + frameBytes + 8 + 128 ≤ 2 ^ 64 := by
-    simp only [fb, BitVec.toNat_sub, BitVec.toNat_ofNat]; unfold frameBytes stackBytes at *; omega
+    simp only [fb, BitVec.toNat_sub, BitVec.toNat_ofNat]; unfold frameBytes stackBytes at *; omega_arith
   show m.readW _ 64 = s.mem.readW _ 64
   rw [stackArgAddr_fb]
-  exact h.word (.inr (by unfold frameBytes; omega)) (by unfold frameBytes at *; omega)
+  exact h.word (.inr (by unfold frameBytes; omega_using [])) (by unfold frameBytes at *; omega_using [hj])
 
 theorem stackArgAddr_15 (s : State) : stackArgAddr s 15 = stackArgAddr s 14 + BitVec.ofNat 64 8 := by
   unfold stackArgAddr; rw [BitVec.add_assoc, BitVec.ofNat_add_ofNat]
@@ -94,7 +94,7 @@ theorem arg2_in {s : State} (hp : PreF (xP s) s) {rd : List Region} (hrd : rd = 
     (hj : 14 ≤ j) (hj' : j < 16) : InRegions (rd ++ wr) (stackArgAddr s j) 8 := by
   refine ⟨⟨stackArgAddr s 14, 16⟩, List.mem_append_left _ (by
     rw [hrd, hp.hrd]; exact List.mem_append_right _ (List.mem_cons_self ..)), ?_⟩
-  rcases (show j = 14 ∨ j = 15 by omega) with rfl | rfl
+  rcases (show j = 14 ∨ j = 15 by omega_using [hj, hj']) with rfl | rfl
   · simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; decide
   · rw [stackArgAddr_15]
     simp only [Region.Contains]
@@ -116,7 +116,7 @@ theorem crtArgsP_ok {s : State} (hp : PreF (xP s) s) (hf : PFacts s) :
   have h14 := argP_outside hp hf ho (j := 14) (by decide)
   have h15 := argP_outside hp hf ho (j := 15) (by decide)
   have ho1 : Outside (fb s) 0 frameBytes s.mem (t₁.mem.writeW (off (fb s) 96) (stackArg s 14)) := fun x hx =>
-    (writeW_outside _ _ _ (by unfold frameBytes at *; omega) x (by unfold frameBytes at hx; omega)).trans (ho x hx)
+    (writeW_outside _ _ _ (by unfold frameBytes at *; omega_using []) x (by unfold frameBytes at hx; omega_using [hx])).trans (ho x hx)
   have h15' := argP_outside hp hf ho1 (j := 15) (by decide)
   refine WP.mono (WP.keep [.rax] (Q := fun t => t.mem =
       (t₁.mem.writeW (off (fb s) 96) (stackArg s 14)).writeW (off (fb s) 104) (stackArg s 15)) (by
@@ -128,18 +128,18 @@ theorem crtArgsP_ok {s : State} (hp : PreF (xP s) s) (hf : PFacts s) :
       hs.st (d := 96) (by decide), hs.st (d := 104) (by decide)]) rfl) fun t ⟨hm, k⟩ => ?_
   have hw : ∀ d, d + 8 ≤ 96 ∨ 112 ≤ d → d + 8 ≤ frameBytes → word t.mem (fb s) d = word t₁.mem (fb s) d :=
     fun d hd hd' => by
-      rw [hm, word_wo _ _ _ (by omega) (by decide) (by unfold frameBytes at hd'; omega),
-        word_wo _ _ _ (by omega) (by decide) (by unfold frameBytes at hd'; omega)]
+      rw [hm, word_wo _ _ _ (by omega_using [hd]) (by decide) (by unfold frameBytes at hd'; omega_using [hd']),
+        word_wo _ _ _ (by omega_using [hd]) (by decide) (by unfold frameBytes at hd'; omega_using [hd'])]
   have ho' : Outside (fb s) 0 frameBytes s.mem t.mem := by
     rw [hm]
     intro x hx
-    rw [writeW_outside _ _ _ (by unfold frameBytes at *; omega) x (by unfold frameBytes at hx; omega),
-      writeW_outside _ _ _ (by unfold frameBytes at *; omega) x (by unfold frameBytes at hx; omega)]
+    rw [writeW_outside _ _ _ (by unfold frameBytes at *; omega_using []) x (by unfold frameBytes at hx; omega_using [hx]),
+      writeW_outside _ _ _ (by unfold frameBytes at *; omega_using []) x (by unfold frameBytes at hx; omega_using [hx])]
     exact ho x hx
   refine ⟨⟨(k.gpr (by decide)).trans he.rsp, k.2.1.trans he.rd, k.2.2.trans he.wr, frame_of_outside ho',
       (hw _ (by decide) (by decide)).trans he.sOut, (hw _ (by decide) (by decide)).trans he.sN,
       (hw _ (by decide) (by decide)).trans he.sK, (hw _ (by decide) (by decide)).trans he.sE,
-      (hw _ (by decide) (by decide)).trans he.sEl⟩, ho', fun i hi => (hw _ (by omega) (by unfold frameBytes; omega)).trans
+      (hw _ (by decide) (by decide)).trans he.sEl⟩, ho', fun i hi => (hw _ (by omega_using [hi]) (by unfold frameBytes; omega_using [hi])).trans
       (hargs i hi), ?_, ?_, (k.gpr (by decide)).trans hdi, (k.gpr (by decide)).trans hsi,
       (k.gpr (by decide)).trans hdx, (k.gpr (by decide)).trans hcx, (k.gpr (by decide)).trans h8,
       (k.gpr (by decide)).trans h9⟩
@@ -153,7 +153,7 @@ theorem words_of_frame {s : State} {m : Mem} (hf : Frame [stkR s, outR s, scrR s
   simp only [Spec.Rsa.wordsAt]
   refine List.map_congr_left fun i hi => ?_
   have hi := List.mem_range.mp hi
-  refine hf.readW (r := ⟨p, len * 8⟩) (Offset.contains_base _ (by omega) (by omega)) (fun r hr => ?_) (by decide)
+  refine hf.readW (r := ⟨p, len * 8⟩) (Offset.contains_base _ (by omega_using [hi]) (by omega_using [hl, hi])) (fun r hr => ?_) (by decide)
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl
   · exact hk.symm
@@ -370,14 +370,14 @@ def preRp (s : State) : Region := ⟨stackArg s 14, Spec.Rsa.precomputedWords (s
 
 theorem preRp_sub {s : State} (hf : PFacts s) : Region.Sub (preRp s) (preRP s) :=
   Region.sub_prefix (by
-    rw [hf.hpl]; unfold Spec.Rsa.privatePrecomputedWords; omega)
+    rw [hf.hpl]; unfold Spec.Rsa.privatePrecomputedWords; omega_using [])
 
 /-- A stack argument up to 15 past a store to the frame. -/
 theorem arg_woP {s : State} (m : Mem) {d : Nat} (v : BitVec 64) (hd : d + 8 ≤ frameBytes) {j : Nat} (hj : j < 16) :
     (m.writeW (off (fb s) d) v).readW (stackArgAddr s j) 64 = m.readW (stackArgAddr s j) 64 := by
   rw [stackArgAddr_fb]
-  exact word_wo m (fb s) v (by unfold frameBytes at *; omega) (by unfold frameBytes at *; omega)
-    (by unfold frameBytes; omega)
+  exact word_wo m (fb s) v (by unfold frameBytes at *; omega_using [hd]) (by unfold frameBytes at *; omega_using [hd])
+    (by unfold frameBytes; omega_using [hj])
 
 /-- Stack argument 14, `pre`, from the frame. -/
 theorem Env.arg14 {s t : State} (he : Env s t) (hf : PFacts s) :
@@ -729,7 +729,7 @@ theorem codeP_correct (v : CrtImpl) (pdName : String) (s : State) (h : chkContra
       abiPreserved s s' ∧ chkContract.post s s' by
     obtain ⟨t, s', he, hq⟩ := hw
     exact ⟨t, s', he, hq⟩
-  refine wp_alloc (by have := hp.sp1; unfold stackBytes at this; unfold frameBytes; omega) ?_
+  refine wp_alloc (by have := hp.sp1; unfold stackBytes at this; unfold frameBytes; omega_using [this]) ?_
   rw [bodyP_eq]
   refine WP.seq (WP.mono_mx (by decide +kernel)
     (WP.keep [.rax, .rdi, .rsi, .r8, .r9] (crtArgsP_ok hp hf) (by decide +kernel))

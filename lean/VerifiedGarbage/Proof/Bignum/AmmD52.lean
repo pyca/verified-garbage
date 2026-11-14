@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.Amm52N
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # Almost Montgomery multiplication in radix `2⁵²` whose quotient digit is limb 0
@@ -109,13 +110,13 @@ theorem shiftC_val {N R : Nat} (hR : 2 ≤ R) (hN : 0 < N) (hd : N % R = 0) (u v
       simp only [lval_zero, lval_succ, e0, ↓reduceIte, Nat.mul_zero, Nat.pow_zero, Nat.zero_mul, Nat.zero_add,
         Nat.mul_one]
       have := Nat.div_add_mod' (u 0) (2 ^ 52)
-      omega
+      omega_using []
     | succ n ih =>
       intro hn
-      have h := ih (by omega)
+      have h := ih (by omega_using [hn])
       rw [lval_succ, lval_succ (fun j => u j + v j) (n + 1), ← h]
       have hp : 2 ^ (52 * (n + 1)) = 2 ^ 52 * 2 ^ (52 * n) := by
-        rw [show 52 * (n + 1) = 52 + 52 * n by omega, Nat.pow_add]
+        rw [show 52 * (n + 1) = 52 + 52 * n by omega_using [], Nat.pow_add]
       have hs : shiftC N R u v n =
           (if (n + 1) % R = 0 then u (n + 1) % 2 ^ 52 else u (n + 1)) + v (n + 1) +
             (if n % R = 0 then u n / 2 ^ 52 else 0) := by
@@ -136,20 +137,20 @@ theorem shiftC_val {N R : Nat} (hR : 2 ≤ R) (hN : 0 < N) (hd : N % R = 0) (u v
       · rw [ite_eq_left h0, ite_eq_left h0, ite_eq_right h1, ite_eq_right h1]; grind
       · rw [ite_eq_right h0, ite_eq_right h0, ite_eq_left h1, ite_eq_left h1]; grind
       · rw [ite_eq_right h0, ite_eq_right h0, ite_eq_right h1, ite_eq_right h1]; grind
-  obtain ⟨n, rfl⟩ : ∃ n, N = n + 1 := ⟨N - 1, by omega⟩
+  obtain ⟨n, rfl⟩ : ∃ n, N = n + 1 := ⟨N - 1, by omega_using [hN]⟩
   have hl : shiftC (n + 1) R u v n = 0 := by
     unfold shiftC
-    rw [ite_eq_right (by omega), ite_eq_right (by
-      intro h; have := Nat.mod_eq_of_lt (show 1 < R by omega)
+    rw [ite_eq_right (by omega_using []), ite_eq_right (by
+      intro h; have := Nat.mod_eq_of_lt (show 1 < R by omega_using [hR])
       have h2 : (n + 1) % R = (n % R + 1 % R) % R := Nat.add_mod _ _ _
-      rw [h, this, Nat.zero_add, this] at h2; omega)]
-  have h := key n (by omega)
+      rw [h, this, Nat.zero_add, this] at h2; omega_using [hd, h2])]
+  have h := key n (by omega_using [])
   rw [lval_succ, hl, Nat.zero_mul, Nat.add_zero]
   have hnr : ¬ n % R = 0 := by
     intro h0
     have h2 : (n + 1) % R = (n % R + 1 % R) % R := Nat.add_mod _ _ _
-    rw [h0, Nat.mod_eq_of_lt (show 1 < R by omega), Nat.zero_add, Nat.mod_eq_of_lt (show 1 < R by omega)] at h2
-    omega
+    rw [h0, Nat.mod_eq_of_lt (show 1 < R by omega_using [hR]), Nat.zero_add, Nat.mod_eq_of_lt (show 1 < R by omega_using [hR])] at h2
+    omega_using [hd, h2]
   rw [ite_eq_right hnr, Nat.add_zero] at h
   exact h
 
@@ -159,31 +160,31 @@ theorem tot_step {N R : Nat} (hR : 2 ≤ R) (hd : N % R = 0) (o : Ops) (s : St) 
     tot R o (step N R o s b) j =
       shiftC N R (lowS o s b) (fun j => pend R o s.qp j + lo (o.ms j) (stepQ o s b)) j +
         hi (o.a j) b + hi (o.ms j) (stepQ o s b) := by
-  have h1 : 1 % R = 1 := Nat.mod_eq_of_lt (by omega)
+  have h1 : 1 % R = 1 := Nat.mod_eq_of_lt (by omega_using [hR])
   have hsucc : ∀ m, (m + 1) % R = (m % R + 1) % R := fun m => by rw [Nat.add_mod, h1]
   simp only [tot, step, shiftC, pend]
   by_cases h0 : j % R = 0
-  · have hn1 : ¬ (j + 1) % R = 0 := by rw [hsucc, h0, Nat.zero_add, h1]; omega
+  · have hn1 : ¬ (j + 1) % R = 0 := by rw [hsucc, h0, Nat.zero_add, h1]; omega_using []
     have hlt : j + 1 < N := by
       rcases Nat.lt_or_ge (j + 1) N with h | h
       · exact h
-      · exfalso; have : j + 1 = N := by omega
+      · exfalso; have : j + 1 = N := by omega_using [hj, h]
         rw [this] at hn1; exact hn1 hd
     simp only [h0, hn1, hlt, ite_true, ite_false, lowS]
-    omega
+    omega_using []
   · by_cases hn1 : (j + 1) % R = 0
     · simp only [h0, hn1, ite_true, ite_false]
-      split <;> omega
+      split <;> omega_using []
     · have hlt : j + 1 < N := by
         rcases Nat.lt_or_ge (j + 1) N with h | h
         · exact h
-        · exfalso; have : j + 1 = N := by omega
+        · exfalso; have : j + 1 = N := by omega_using [hj, h]
           rw [this] at hn1; exact hn1 hd
       simp only [h0, hn1, hlt, ite_true, ite_false, lowS]
-      omega
+      omega_using []
 
 theorem val_alg {SH W q T La Lm Ha Hm PA PM : Nat} (hv : SH * W + q = T + La + Lm) (ha : La + Ha * W = PA)
-    (hm : Lm + Hm * W = PM) : SH * W + Ha * W + Hm * W + q = T + PA + PM := by omega
+    (hm : Lm + Hm * W = PM) : SH * W + Ha * W + Hm * W + q = T + PA + PM := by omega_using [hv, ha, hm]
 
 /-- The value equation of a step: with `X + 1 = lval o.ms N`, the value
 times `2⁵²` is the value before plus `a b + q X`. -/
@@ -192,7 +193,7 @@ theorem step_val {N R : Nat} (hR : 2 ≤ R) (hN : 0 < N) (hd : N % R = 0) {o : O
     lval (tot R o (step N R o s b)) N * 2 ^ 52 + stepQ o s b =
       lval (tot R o s) N + lval o.a N * b + lval o.ms N * stepQ o s b := by
   have hq : stepQ o s b < 2 ^ 52 := Nat.mod_lt _ (by decide)
-  have h1 : 1 % R = 1 := Nat.mod_eq_of_lt (by omega)
+  have h1 : 1 % R = 1 := Nat.mod_eq_of_lt (by omega_using [hR])
   have ha : lval (fun j => lo (o.a j) b) N + lval (fun j => hi (o.a j) b) N * 2 ^ 52 = lval o.a N * b := by
     rw [← lval_mul, ← lval_add, ← lval_mul]
     exact lval_congr fun j hj => by rw [Nat.mul_comm (hi _ _), lo_hi (ho.a j hj) hb]
@@ -212,7 +213,7 @@ theorem step_val {N R : Nat} (hR : 2 ≤ R) (hN : 0 < N) (hd : N % R = 0) {o : O
   have hsum : lval (fun j => lowS o s b j + (pend R o s.qp j + lo (o.ms j) (stepQ o s b))) N =
       lval (tot R o s) N + lval (fun j => lo (o.a j) b) N + lval (fun j => lo (o.ms j) (stepQ o s b)) N := by
     rw [← lval_add, ← lval_add]
-    exact lval_congr fun j _ => by simp only [lowS, tot]; omega
+    exact lval_congr fun j _ => by simp only [lowS, tot]; omega_using []
   rw [hs, lval_add, lval_add, Nat.add_mul, Nat.add_mul]
   simp only [hv0, Nat.add_zero] at hv
   rw [hsum] at hv
@@ -225,23 +226,23 @@ theorem step_lt {N R : Nat} {o : Ops} {s : St} {b S : Nat} (hS : S ≤ 2 ^ 62)
     (∀ j, (step N R o s b).bs j < S + 2 ^ 56) ∧ (∀ j, (step N R o s b).us j < S + 2 ^ 56) := by
   have hl : ∀ j, lowS o s b j < 2 * S + 2 ^ 52 := fun j => by
     have := hB j; have := hU j; have := lo_lt (o.a j) b
-    unfold lowS; omega
+    unfold lowS; omega_arith
   have hc : ∀ j, lowS o s b j / 2 ^ 52 < 2 ^ 12 := fun j =>
-    Nat.div_lt_of_lt_mul (by have := hl j; omega)
+    Nat.div_lt_of_lt_mul (by have := hl j; omega_using [hS, this])
   have hp : ∀ j, pend R o s.qp j < 2 ^ 53 := fun j => by
     have := hi_lt (o.ms j) s.qp; have := lo_lt (o.ms (j + 1)) s.qp
-    unfold pend; split <;> omega
+    unfold pend; split <;> omega_arith
   refine ⟨fun j => ?_, fun j => ?_⟩
   · have := hB (j + 1); have := lo_lt (o.a (j + 1)) b; have := hi_lt (o.a j) b; have := hc j
     show (if j % R = 0 then s.bs (j + 1) + lo (o.a (j + 1)) b + hi (o.a j) b + lowS o s b j / 2 ^ 52
       else if (j + 1) % R = 0 then hi (o.a j) b
       else s.bs (j + 1) + lo (o.a (j + 1)) b + hi (o.a j) b) < _
     by_cases h0 : j % R = 0
-    · rw [ite_eq_left h0]; omega
+    · rw [ite_eq_left h0]; omega_arith
     · rw [ite_eq_right h0]
       by_cases h1 : (j + 1) % R = 0
-      · rw [ite_eq_left h1]; omega
-      · rw [ite_eq_right h1]; omega
+      · rw [ite_eq_left h1]; omega_arith
+      · rw [ite_eq_right h1]; omega_arith
   · have := hU (j + 1); have := lo_lt (o.ms (j + 1)) (stepQ o s b); have := hi_lt (o.ms j) (stepQ o s b)
     have := hp (j + 1); have := Nat.mod_lt (lowS o s b (j + 1)) (show 0 < 2 ^ 52 by decide)
     show (if j % R = 0 then s.us (j + 1)
@@ -250,14 +251,14 @@ theorem step_lt {N R : Nat} {o : Ops} {s : St} {b S : Nat} (hS : S ≤ 2 ^ 62)
           else 0) + hi (o.ms j) (stepQ o s b)
       else s.us (j + 1) + lo (o.ms (j + 1)) (stepQ o s b) + hi (o.ms j) (stepQ o s b)) < _
     by_cases h0 : j % R = 0
-    · rw [ite_eq_left h0]; omega
+    · rw [ite_eq_left h0]; omega_arith
     · rw [ite_eq_right h0]
       by_cases h1 : (j + 1) % R = 0
       · rw [ite_eq_left h1]
         by_cases h2 : j + 1 < N
-        · rw [ite_eq_left h2]; omega
-        · rw [ite_eq_right h2]; omega
-      · rw [ite_eq_right h1]; omega
+        · rw [ite_eq_left h2]; omega_arith
+        · rw [ite_eq_right h2]; omega_arith
+      · rw [ite_eq_right h1]; omega_arith
 
 /-- The steps for the limbs `b 0, …, b (n - 1)` from `s`. -/
 def steps (N R : Nat) (o : Ops) (b : Nat → Nat) : Nat → St → St
@@ -283,10 +284,10 @@ theorem steps_val {N R : Nat} (hR : 2 ≤ R) (hN : 0 < N) (hd : N % R = 0) {o : 
     intro
     have h0 : steps N R o b 0 s = s := rfl
     rw [h0, lval_zero, lval_zero]
-    omega
+    omega_using []
   | succ n ih =>
     intro hn
-    have e := step_val hR hN hd ho (steps N R o b n s) (hb n (by omega))
+    have e := step_val hR hN hd ho (steps N R o b n s) (hb n (by omega_using [hn]))
     rw [hX, Nat.add_mul, Nat.one_mul] at e
     have e' : lval (tot R o (step N R o (steps N R o b n s) (b n))) N * 2 ^ 52 =
         lval (tot R o (steps N R o b n s)) N + lval o.a N * b n + X * stepQ o (steps N R o b n s) (b n) := by
@@ -295,12 +296,12 @@ theorem steps_val {N R : Nat} (hR : 2 ≤ R) (hN : 0 < N) (hd : N % R = 0) {o : 
       generalize lval (tot R o (steps N R o b n s)) N = w at e ⊢
       generalize lval o.a N * b n = y at e ⊢
       generalize X * q = z at e ⊢
-      omega
+      omega_using [e]
     have hs : steps N R o b (n + 1) s = step N R o (steps N R o b n s) (b n) := rfl
     have hu : stepsQ N R o b s n = stepQ o (steps N R o b n s) (b n) := rfl
-    rw [hs, show 52 * (n + 1) = 52 + 52 * n by omega, Nat.pow_add, ← Nat.mul_assoc, lval_succ b n,
+    rw [hs, show 52 * (n + 1) = 52 + 52 * n by omega_using [], Nat.pow_add, ← Nat.mul_assoc, lval_succ b n,
       lval_succ (stepsQ N R o b s) n, hu]
-    exact Amm52.steps_alg e' (ih (by omega))
+    exact Amm52.steps_alg e' (ih (by omega_using [hn]))
 
 theorem steps_lt {N R : Nat} {o : Ops} {b : Nat → Nat} {s : St}
     (hB : ∀ j, s.bs j < 2 ^ 56) (hU : ∀ j, s.us j < 2 ^ 56) :
@@ -311,8 +312,8 @@ theorem steps_lt {N R : Nat} {o : Ops} {b : Nat → Nat} {s : St}
   | zero => intro _; rw [Nat.zero_add, Nat.one_mul]; exact ⟨hB, hU⟩
   | succ n ih =>
     intro hn
-    obtain ⟨h1, h2⟩ := ih (by omega)
-    have h := step_lt (N := N) (R := R) (o := o) (b := b n) (S := (n + 1) * 2 ^ 56) (by omega) h1 h2
+    obtain ⟨h1, h2⟩ := ih (by omega_using [hn])
+    have h := step_lt (N := N) (R := R) (o := o) (b := b n) (S := (n + 1) * 2 ^ 56) (by omega_using [hn]) h1 h2
     rw [show (n + 1 + 1) * 2 ^ 56 = (n + 1) * 2 ^ 56 + 2 ^ 56 by rw [Nat.add_mul, Nat.one_mul]]
     exact h
 

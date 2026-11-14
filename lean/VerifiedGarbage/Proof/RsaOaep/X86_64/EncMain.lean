@@ -125,7 +125,7 @@ theorem encEm_ok {f : Impl.Mgf1.X86_64.Table.Fns} (hgi : Table.FnsGood f.init) (
     fun t2' ⟨⟨ka, La, Ra, sya⟩, spa, mxa, fa⟩ _ => ?_)
   have he2' : EnvE s t2' := he2.step ka.2.1 ka.2.2 spa (keep_cs3 ka (by decide)) mxa fa
   have hW' : ArgsW s (upd W 35 (stackArg s 10)) := fun k hk => by
-    simp only [upd]; rw [ifn (by omega)]; exact hW k hk
+    simp only [upd]; rw [ifn (by omega_using [hk])]; exact hW k hk
   obtain ⟨-, -, -, w23, -, -, -, w27, w28, w29, w30, -⟩ := hW'.w
   -- The label's hash.
   have hll : upd W 35 (stackArg s 10) 28 = BitVec.ofNat 64 (stackArg s 1).toNat := by
@@ -222,7 +222,7 @@ theorem encMask_ok {f : Impl.Mgf1.X86_64.Table.Fns} (hgi : Table.FnsGood f.init)
   refine WP.seq (WP.mono_syms (encEm_ok hH mH hgi hgu hgf hp he hsy hTL L R hW hk)
     fun t5 ⟨he5, L5, V5, R5, E⟩ sy5 => ?_)
   have hW5 : ArgsW s (upd W 35 (stackArg s 10)) := fun k hk => by
-    simp only [upd]; rw [ifn (by omega)]; exact hW k hk
+    simp only [upd]; rw [ifn (by omega_using [hk])]; exact hW k hk
   have w23'' : upd W 35 (stackArg s 10) 23 = BitVec.ofNat 64 (s.gpr .rcx).toNat := by
     simp only [upd]; exact w23'
   -- `DB` masked.
@@ -236,7 +236,7 @@ theorem encMask_ok {f : Impl.Mgf1.X86_64.Table.Fns} (hgi : Table.FnsGood f.init)
     (mW_args _ _ _ _ _ _))) fun t7 ⟨⟨L7, rd7, wr7, cs7, V7, W7, R7, hW7, hV7⟩, sp7, mx7, f7⟩ sy7 => ?_)
   have he7 : EnvE s t7 := he6.step rd7 wr7 sp7 (fun r hr _ => cs7 r hr) mx7 f7
   have W7e : ∀ k, (k < 15 ∨ (18 < k ∧ k < 35)) → k < nW → k ≠ 19 → k ≠ 20 → W7 k = upd W 35 (stackArg s 10) k := fun k h1 h2 h3 h4 =>
-    (hW7 k h2 h3 h4 (by omega) (by omega)).trans (mW_other (by omega))
+    (hW7 k h2 h3 h4 (by omega_using [h1]) (by omega_using [h1])).trans (mW_other (by omega_using [h1]))
   -- The seed masked.
   refine WP.seq (WP.mono_syms (wp_good (seedArgs_good _) (seedArgs_ok (H := Hl.stream) L7 R7
     ((W7e 23 (by omega_using []) (by decide) (by omega_using []) (by omega_using [])).trans w23'')

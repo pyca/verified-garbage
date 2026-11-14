@@ -28,8 +28,8 @@ theorem Context.address {base : Addr} {size : Nat} {p : BitVec 32} {inputs : Nat
     (C : Context base size p inputs s) {i : Nat} (index : i < 11) :
     s.ea (arg i) = off (argsRegion p).base (4 * i) := by
   change addr (s.gpr .esp) (20 + 4 * i) = _
-  rw [C.sp, addr_eq (by have := C.fit; omega)]
-  have start : (p + 20#32).setWidth 64 = off (p.setWidth 64) 20 := addr_eq (by have := C.fit; omega)
+  rw [C.sp, addr_eq (by have := C.fit; omega_using [index, this])]
+  have start : (p + 20#32).setWidth 64 = off (p.setWidth 64) 20 := addr_eq (by have := C.fit; omega_using [this])
   change off (p.setWidth 64) (20 + 4 * i) = off ((p + 20#32).setWidth 64) (4 * i)
   rw [start]
   simp only [off, BitVec.ofNat_add, BitVec.add_assoc]
@@ -47,7 +47,7 @@ theorem Context.keep {base : Addr} {size : Nat} {p : BitVec 32} {inputs : Nat �
     have memory : t.mem.readW (s.ea (arg i)) 32 = s.mem.readW (s.ea (arg i)) 32 := by
       rw [C.address index]
       exact F.readW (r := argsRegion p)
-        (Offset.contains_base _ (by change 4 * i + 4 ≤ 44; omega) (by omega : 4 * i < 2 ^ 64))
+        (Offset.contains_base _ (by change 4 * i + 4 ≤ 44; omega_using [index]) (by omega_using [index] : 4 * i < 2 ^ 64))
         (by intro r mem; obtain rfl := List.mem_singleton.mp mem; exact C.separate) (by decide)
     have same : readSrc t (.mem (arg i)) = readSrc s (.mem (arg i)) := by
       show t.load32 (t.ea (arg i)) = s.load32 (s.ea (arg i))

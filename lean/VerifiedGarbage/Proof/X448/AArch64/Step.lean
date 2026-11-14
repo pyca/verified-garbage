@@ -43,8 +43,8 @@ theorem carryStep_ok {s : State} {base : Addr} (hs : Scr s base) {o a i : Nat}
   intro v
   have w := hs.write ho
   have l := hs.read ha
-  have ae : (a + 8 * i) % 8 = 0 ∧ a + 8 * i < 4096 * 8 := ⟨by omega, by omega⟩
-  have oe : (o + 8 * i) % 8 = 0 ∧ o + 8 * i < 4096 * 8 := ⟨by omega, by omega⟩
+  have ae : (a + 8 * i) % 8 = 0 ∧ a + 8 * i < 4096 * 8 := ⟨by omega_using [ha8], by omega_using [ha]⟩
+  have oe : (o + 8 * i) % 8 = 0 ∧ o + 8 * i < 4096 * 8 := ⟨by omega_using [ho8], by omega_using [ho]⟩
   apply WP.of_runBlock
   simp only [carryStep, ld, st, runBlock_cons, runStep_some, runBlock_nil, exec,
     Size.bytes, Size.bits, addr, ae, oe, State.read, State.load, State.store, hs.x3, hs.mask, l, w,
@@ -61,7 +61,7 @@ theorem carryStep_ok {s : State} {base : Addr} (hs : Scr s base) {o a i : Nat}
     rw [and28, hv, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := v % radix) (by
       have := Nat.mod_lt v (show 0 < radix by decide)
       have : radix < 2 ^ 64 := by decide
-      omega)]
+      omega_arith)]
   · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
     simp only [RegUpd.gpr_write, hr.1, hr.2.1, hr.2.2, ite_false]
 

@@ -28,7 +28,7 @@ theorem finalPass_bank_original (m : Mem) (p : Addr) (q : BitVec 128) {u : Nat} 
   apply vec_ext
   intro e he
   rw [readBank_coeff _ p (4*u) 32 ⟨i,hi⟩ he,readBank_coeff _ p (4*u) 32 ⟨i,hi⟩ he]
-  exact finalPass_untouched m p q (by omega) (by change 4*u+32*i+e<256; omega) (by omega)
+  exact finalPass_untouched m p q (by omega_using [hu]) (by change 4*u+32*i+e<256; omega_using [hu, hi, he]) (by omega_using [hu, he])
 
 /-- A completed coefficient is the canonical result of its own strided bank,
 evaluated on the original pass input. -/
@@ -41,19 +41,19 @@ theorem finalPass_processed (m : Mem) (p : Addr) (q : BitVec 128) {u k : Nat}
   | succ u ih =>
     rw [finalPassMem_step]
     by_cases he : k%32/4=u
-    · have hi : k/32<8 := by change k<256 at hk; omega
-      have hidx : 4*u+32*(k/32)+k%4=k := by omega
-      have hx := finalMemStep_at (finalPassMem m p q u) p q (by omega : u<8)
-        ⟨k/32,hi⟩ (e := k%4) (by omega)
-      rw [hidx,finalPass_bank_original m p q (by omega)] at hx
+    · have hi : k/32<8 := by change k<256 at hk; omega_using [hk]
+      have hidx : 4*u+32*(k/32)+k%4=k := by omega_using [he]
+      have hx := finalMemStep_at (finalPassMem m p q u) p q (by omega_using [hu] : u<8)
+        ⟨k/32,hi⟩ (e := k%4) (by omega_using [])
+      rw [hidx,finalPass_bank_original m p q (by omega_using [hu])] at hx
       simpa only [he,getElem!_pos (finalValues (readBank m (coeffAddr p (4*u)) 128) q) (k/32) hi] using hx
-    · rw [finalMemStep_outside _ _ _ (by omega) hk he]
-      exact ih (by omega) (by omega)
+    · rw [finalMemStep_outside _ _ _ (by omega_using [hu]) hk he]
+      exact ih (by omega_using [hu]) (by omega_using [hp, he])
 
 theorem finalPass_all_values (m : Mem) (p : Addr) (q : BitVec 128) {k : Nat} (hk : k<n) :
     coeffAt (finalPassMem m p q 8) p k=
       vword (finalValues (readBank m (coeffAddr p (4*(k%32/4))) 128) q)[k/32]! (k%4) :=
-  finalPass_processed m p q (by decide) hk (by omega)
+  finalPass_processed m p q (by decide) hk (by omega_using [])
 
 end VG.Proof.MlDsa.AArch64.Optimized.Inverse
 
@@ -79,13 +79,13 @@ theorem finalPass_field_of_banks {m : Mem} {p : Addr} {qv : BitVec 128} {w : Pol
       (coeffAt (finalPassMem m p qv 8) p k).toNat<q ∧
       ofInt (coeffAt (finalPassMem m p qv 8) p k).toInt=
         (InverseTraversal.run InverseTraversal.stridedSchedule w)[k]! * 16382 := by
-    have hi : k/32<8 := by change k<256 at hk; omega
-    have hu : k%32/4<8 := by omega
-    have he : k%4<4 := by omega
+    have hi : k/32<8 := by change k<256 at hk; omega_using [hk]
+    have hu : k%32/4<8 := by omega_using []
+    have he : k%4<4 := by omega_using []
     rw [finalPass_all_values m p qv hk,getElem!_pos (finalValues (readBank m (coeffAddr p (4*(k%32/4))) 128) qv) (k/32) hi]
     refine ⟨hb _ hu ⟨k/32,hi⟩ _ he,?_⟩
     have hh := hv _ hu ⟨k/32,hi⟩ _ he
-    have hidx : 4*(k%32/4)+32*(k/32)+k%4=k := by omega
+    have hidx : 4*(k%32/4)+32*(k/32)+k%4=k := by omega_using []
     rw [hidx] at hh
     rw [InverseTraversal.strided_coordinate w hk]
     exact hh

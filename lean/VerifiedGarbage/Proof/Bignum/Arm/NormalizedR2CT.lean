@@ -59,8 +59,8 @@ open VG.Proof.X25519.Arm (wp_ldr)
     have fits := h.width ▸ h.layout.2.2.1
     have size : 52 ≤ 8 * len := by
       simp only [Proof.Rsa.Mont.arrAt, Proof.Rsa.Mont.hdrBytes] at fits
-      omega
-    refine wp_ldr (by decide) (by rw [h.ptr]; exact addr_add (by have := h.workspace.nowrap; omega)) (h.workspace.read size) fun t u => WP.block_nil ?_
+      omega_using [fits]
+    refine wp_ldr (by decide) (by rw [h.ptr]; exact addr_add (by have := h.workspace.nowrap; omega_using [size, this])) (h.workspace.read size) fun t u => WP.block_nil ?_
     exact ⟨(u.other .r0 (by decide)).trans h.ptr, u.gpr.trans header.1⟩
   unfold VG.Impl.Bignum.Arm.NormalizedR2.seed VG.Impl.Bignum.Arm.NormalizedR2.top
   apply RelCT.block_append (M := isa) (l₁ := [.ldr .r1 .r0 48])
@@ -116,7 +116,7 @@ theorem r2_ct {base : BitVec 32} {len w : Nat} {P : State → Prop} {regions : L
       doubleLoop (fun _ _ => True) := by
     intro s t tr1 tr2 u v h e1 e2
     have hw : 2 ≤ w := h.2.1.1.1.width ▸ h.2.1.1.1.layout.1
-    exact doubleLoop_ct (by omega) (by omega) s t tr1 tr2 u v ⟨h.2.1.1.1, h.2.2.1.1, h.1⟩ e1 e2
+    exact doubleLoop_ct (by omega_using []) (by omega_using [countFits]) s t tr1 tr2 u v ⟨h.2.1.1.1, h.2.2.1.1, h.1⟩ e1 e2
   have loopCT := (relCT_keep_sp loop (fun _ _ h => h.1)).wp
     (fun s t h => ⟨loopPost s h.2.1, loopPost t h.2.2⟩)
   unfold VG.Impl.Bignum.Arm.NormalizedR2.r2

@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyCallSizes
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyCallSeparation
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # The shared precondition establishes the native key environment -/
 
@@ -26,7 +27,7 @@ theorem call_valid {s : State} (h : contract.pre s) : (callEnvironment s).Valid 
     rw [Z.outputRegion hi, Z.outputRegion hj]
     by_cases order : i < j
     · exact D.outputSeparate i hi j hj order
-    · exact (D.outputSeparate j hj i hi (by omega)).symm
+    · exact (D.outputSeparate j hj i hi (by omega_using [different, order])).symm
   · intro i hi
     rw [Z.outputRegion hi]
     exact D.exponentOutput i hi

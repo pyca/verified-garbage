@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.TCB.VectorCrypto
 public import VerifiedGarbage.TCB.Mem
 import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # Byte packing in shared vector values -/
 
@@ -17,8 +18,8 @@ theorem getLsbD_append_block {w n : Nat} (x : BitVec w) (y : BitVec n) (k : Nat)
   rw [BitVec.getLsbD_append]
   by_cases hk : k = 0
   · subst hk; simp [hr]
-  · have h : n ≤ n * k := Nat.le_mul_of_pos_right n (by omega)
-    simp only [hk, show ¬ n * k + r < n by omega, ↓reduceIte]
+  · have h : n ≤ n * k := Nat.le_mul_of_pos_right n (by omega_using [hk])
+    simp only [hk, show ¬ n * k + r < n by omega_using [h], ↓reduceIte]
     exact congrArg _ (by rw [Nat.mul_sub_one, Nat.sub_add_comm h])
 
 theorem getLsbD_ofVBytes (f : Nat → BitVec 8) {k r : Nat} (hk : k < 16) (hr : r < 8) :
@@ -41,12 +42,12 @@ theorem getLsbD_ofVBytes (f : Nat → BitVec 8) {k r : Nat} (hk : k < 16) (hr : 
   | 13, _ => ?_
   | 14, _ => ?_
   | 15, _ => ?_
-  | _ + 16, h => exact absurd h (by omega)
+  | _ + 16, h => exact absurd h (by omega_using [])
   all_goals
     simp only [↓reduceIte, Nat.reduceSub, Nat.reduceEqDiff, Nat.mul_zero, Nat.zero_add]
 
 theorem read_write16 (m : Mem) (p : Addr) (v : BitVec (8 * 16)) : (m.write p 16 v).read p 16 = v :=
   Mem.read_eq_of_bytes fun i hi => by
-    simp only [Mem.write, Mem.sub_ofNat_toNat p (show i < 2 ^ 64 by omega), hi, ite_true]
+    simp only [Mem.write, Mem.sub_ofNat_toNat p (show i < 2 ^ 64 by omega_using [hi]), hi, ite_true]
 
 end VG.Proof.VectorCrypto

@@ -47,7 +47,7 @@ theorem g16_lanes {s : State} (h : Room s) :
     intro r hr
     simp only [List.mem_singleton] at hr; subst hr
     exact Offset.disjoint_base (s.gpr .x5) (d := 8 * k + 4 * b) (n := 4) (k := 8 * 56)
-      (by omega) (by omega)
+      (by omega_using [hk56]) (by omega_using [hb, hb'])
   · refine hfr.sub fun r hr => ?_
     simp only [List.mem_singleton] at hr; subst hr
     exact ⟨workR s, List.mem_singleton_self _, Region.sub_prefix (by simp [gCfg])⟩
@@ -109,7 +109,7 @@ theorem scratch_of_arrays {s s' : State} (hfr : Frame [arraysR s] s.mem s'.mem) 
     Frame [workR s] s.mem s'.mem :=
   hfr.sub fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr
-    exact ⟨workR s, List.mem_singleton_self _, Offset.sub_base _ (by omega)⟩
+    exact ⟨workR s, List.mem_singleton_self _, Offset.sub_base _ (by omega_using [])⟩
 
 /-- The step of the key pointer. -/
 def stepW : Spec.Seed.Direction → BitVec 64

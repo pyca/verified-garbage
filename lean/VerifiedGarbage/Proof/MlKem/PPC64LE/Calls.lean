@@ -183,7 +183,7 @@ theorem kCbd_ok : ∀ s, kCbd.pre s → ∃ t s', Exec isa Impl.MlKem.PPC64LE.cb
   mkK_ok fun s₀ hp => WP.mono (Cbd2.loop_ok hp) fun _ h => ⟨h.pres, h.sp, h.lr,
     polyIs_of_coeffAt (p := Cbd2.F s₀) fun j hj => by
       rw [h.coeff j (by rw [VG.Proof.MlKem.n_eq] at hj; exact hj),
-        ite_eq_left (by rw [VG.Proof.MlKem.n_eq] at hj; omega)]; rfl⟩
+        ite_eq_left (by rw [VG.Proof.MlKem.n_eq] at hj; omega_using [hj])]; rfl⟩
 
 def kDec : Contract isa := mkK Decode12.Pre (fun s₀ s => PolyIs s.mem (Decode12.F s₀) (Decode12.D s₀))
   (regsEq [.r3, .r4])
@@ -193,7 +193,7 @@ theorem kDec_ok : ∀ s, kDec.pre s → ∃ t s', Exec isa Impl.MlKem.PPC64LE.de
   mkK_ok fun s₀ hp => WP.mono (Decode12.loop_ok hp) fun _ h => ⟨h.pres, h.sp, h.lr,
     polyIs_of_coeffAt (p := Decode12.F s₀) fun j hj => by
       rw [h.coeff j (by rw [VG.Proof.MlKem.n_eq] at hj; exact hj),
-        ite_eq_left (by rw [VG.Proof.MlKem.n_eq] at hj; omega)]; rfl⟩
+        ite_eq_left (by rw [VG.Proof.MlKem.n_eq] at hj; omega_using [hj])]; rfl⟩
 
 def kEnc : Contract isa := mkK Encode12.Pre (fun s₀ s => bytesAt s.mem (Encode12.O s₀) 384 = Encode12.E s₀)
   (regsEq [.r3, .r4])
@@ -202,7 +202,7 @@ theorem kEnc_ok : ∀ s, kEnc.pre s → ∃ t s', Exec isa Impl.MlKem.PPC64LE.en
     kEnc.post s s' :=
   mkK_ok fun s₀ hp => WP.mono (Encode12.loop_ok hp) fun _ h => ⟨h.pres, h.sp, h.lr,
     bytesAt_eq! (p := Encode12.O s₀) (encode12_length _) fun k hk => by
-      rw [h.bytes k hk, ite_eq_left (by omega)]⟩
+      rw [h.bytes k hk, ite_eq_left (by omega_using [hk])]⟩
 
 /-- `SamplePolyCBD₂` of the 128 bytes at `(i, o)` into the polynomial at `(j, o')`. -/
 theorem cbd2L {L : Lay} {s : State} (hL : L.Ok) {i o j o' : Nat}
@@ -290,10 +290,10 @@ theorem width_lt {d : Nat} (hd : d ∈ compressWidths) : d < 2 ^ 32 ∧ 32 * d <
   rcases VG.Proof.MlKem.mem_compressWidths hd with rfl | rfl | rfl <;> decide
 
 theorem dN_eq {d : Nat} (h : d < 2 ^ 32) : ((BitVec.ofNat 64 d).setWidth 32).toNat = d := by
-  rw [BitVec.toNat_setWidth, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega : d < 2 ^ 64), Nat.mod_eq_of_lt h]
+  rw [BitVec.toNat_setWidth, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [h] : d < 2 ^ 64), Nat.mod_eq_of_lt h]
 
 theorem len_eq {d : Nat} (h : d < 2 ^ 32) : (BitVec.ofNat 64 d).toNat = d := by
-  rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+  rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [h])]
 
 /-- `ByteEncode_d(Compress_d(f))` of the polynomial at `(i, o)` into the `32 d` bytes at `(j, o')`. -/
 theorem compressL {L : Lay} {s : State} (hL : L.Ok) {i o j o' d : Nat}

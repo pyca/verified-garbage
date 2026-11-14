@@ -27,7 +27,7 @@ def savedValue (s : State) : Nat := val4 (s.gpr .r12) (s.gpr .r13) (s.gpr .r14) 
 
 theorem val4_bound (a b c d : BitVec 64) : val4 a b c d < 2 ^ 256 := by
   have := a.isLt; have := b.isLt; have := c.isLt; have := d.isLt
-  simp only [val4]; omega
+  simp only [val4]; omega_using []
 
 theorem order_limbs : val4 orderLo orderHi 0 orderTop = L := by decide
 
@@ -49,8 +49,8 @@ theorem subtract_chain (a b c d : BitVec 64) :
   clear_value v c3 c2 c1 c0
   refine ⟨?_, e⟩
   cases c3 <;> simp only [Bool.toNat_false, Bool.toNat_true] at e
-  · exact (decide_eq_false (by omega)).symm
-  · exact (decide_eq_true (by omega)).symm
+  · exact (decide_eq_false (by omega_using [e])).symm
+  · exact (decide_eq_true (by omega_using [hv, e])).symm
 
 theorem scalarSubtract_ok (s : State) :
     WP isa (.block scalarSubtract) s fun t =>
@@ -103,7 +103,7 @@ theorem select_remainder (x y : Nat) (hx : x < 2 * L)
   by_cases h : x < L
   · rw [ite_eq_left h, Nat.mod_eq_of_lt h]
   · simp only [h, decide_false, Bool.toNat_false, Nat.mul_zero, Nat.add_zero] at he
-    rw [ite_eq_right h, Nat.mod_eq_sub_mod (by omega), Nat.mod_eq_of_lt (by omega)]
-    omega
+    rw [ite_eq_right h, Nat.mod_eq_sub_mod (by omega_using [h]), Nat.mod_eq_of_lt (by omega_using [hx])]
+    omega_using [he]
 
 end VG.Proof.Ed25519.X86_64

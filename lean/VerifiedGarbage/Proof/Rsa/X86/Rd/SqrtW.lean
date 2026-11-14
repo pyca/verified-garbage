@@ -44,7 +44,7 @@ theorem sqrt_ok {g : Geo} {s0 u : State} {A AW V : Nat → Nat} {X a : Nat}
           then 1 else 0))
         (sOk5 :: sqSlotsW) v ∧
       A' aY = isqrt (X % 2 ^ (64 * VG.Proof.Rsa.X86.WordRt.wq a)) ∧ A' aD = A aD ∧ A' aZero = 0 := by
-  have hw1 : 1 ≤ wq a := by simp only [wq]; omega
+  have hw1 : 1 ≤ wq a := by simp only [wq]; omega_using [ha0]
   unfold sqrt
   simp only [VG.Impl.Rsa.X86.Keys.seqs]
   refine WP.seq (WP.mono (normX_ok h hX ha ha1 ha0 haw)
@@ -61,7 +61,7 @@ theorem sqrt_ok {g : Geo} {s0 u : State} {A AW V : Nat → Nat} {X a : Nat}
     have v5 : (u5.gpr .eax).toNat = wq a - 1 := by
       rw [U5.gpr, U4.gpr, e3, BitVec.toNat_sub, BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow]
       simp only [BitVec.toNat_ofNat, Nat.reducePow]
-      have := ha1; simp only [wq] at hw1 ⊢; omega
+      have := ha1; simp only [wq] at hw1 ⊢; omega_using [ha0, ha1]
     refine WP.mono (h5.storeSlot (d := sCt) (by decide) .eax) fun u6 ⟨h6, zf6, _⟩ => ?_
     refine ⟨?_, AW2, upd V2 sCt (wq a - 1), s₀, r₀, ?_, ?_, ?_, ?_⟩
     · rw [zf6, z5, ← U5.gpr]; congr 1
@@ -87,14 +87,14 @@ theorem sqrt_ok {g : Geo} {s0 u : State} {A AW V : Nat → Nat} {X a : Nat}
     fun u5 I5 => ?_)
   · have e' := of_decide_eq_false e
     refine WP.loop (fun n v => 1 ≤ n ∧ n < wq a ∧ SqI g s0 A V1 a (AW1 wR) n v) ?_ (wq a - 1) u4
-      ⟨by omega, by omega, I4⟩
+      ⟨by omega_using [e'], by omega_using [hw1], I4⟩
     rintro n v ⟨hn1, hn, I⟩
     refine WP.mono (stepX_ok I ha ha1 haw hn1 hn) fun v' ⟨zf, I'⟩ => ?_
     by_cases e : n - 1 = 0
     · refine .inl ⟨by simp only [eval, zf, e, decide_true, Option.map_some, Bool.not_true], ?_⟩
       rw [e] at I'; exact I'
-    · exact .inr ⟨by simp only [eval, zf, e, decide_false, Option.map_some, Bool.not_false], n - 1, by omega,
-        by omega, by omega, I'⟩
+    · exact .inr ⟨by simp only [eval, zf, e, decide_false, Option.map_some, Bool.not_false], n - 1, by omega_using [hn1],
+        by omega_using [e], by omega_using [hn], I'⟩
   refine WP.mono (finishX_ok I5 z ha ha1 ha0 haw ez eX1 hK hzb hzb') fun v ⟨A', AW', hv, ey, ed, ez'⟩ => ?_
   refine ⟨A', AW', hv.mono (fun j hj => ⟨hj, rfl⟩) (fun j hj => by simp at hj) (fun d hd => ⟨hd, ?_⟩), ey, ed, ez'⟩
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hd

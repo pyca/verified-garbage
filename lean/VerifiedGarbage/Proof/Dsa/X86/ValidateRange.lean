@@ -27,16 +27,16 @@ theorem validateRange_ok {s : State} {base : Addr} {size len n : Nat} {input : P
             Spec.Dsa.decodeBE (Spec.Rsa.bytesAt s.mem ((pointerValue base s (.input modulus)).setWidth 64) len)) ∧
       Keeps powerClob s t ∧
       Outs base [(0, contextBytes n), (Layout.field .mask, 4)] s.mem t.mem := by
-  have hn48 : n ≤ 48 := by omega
+  have hn48 : n ≤ 48 := by omega_using [hn, hmax]
   have cb := VG.Proof.Dsa.X86.Layout.context_bound hn48
   unfold Validate.range
   dsimp only
   rw [← hn]
   refine wp_seq_assoc (WP.seq (WP.mono (rawInputs_ok hs hz hn48 (by decide) (by decide) (by decide)
-    h4 (by omega) h4 (by omega) hw4 hw4 Rm Ri) fun u ⟨Mu, Iu, Ou, Ku⟩ => ?_))
+    h4 (by omega_using [hn]) h4 (by omega_using [hn]) hw4 hw4 Rm Ri) fun u ⟨Mu, Iu, Ou, Ku⟩ => ?_))
   have Fu : flagW base (Layout.field .mask) u = flagW base (Layout.field .mask) s :=
-    pointerValue_keep Ku (by decide) Ou (by omega) (.input .mask)
-  refine WP.mono (rangeMask_ok (hs.of_keeps Ku (by decide)) hz (by omega) hn48 aboveOne)
+    pointerValue_keep Ku (by decide) Ou (by omega_using [cb]) (.input .mask)
+  refine WP.mono (rangeMask_ok (hs.of_keeps Ku (by decide)) hz (by omega_using [hn, h4]) hn48 aboveOne)
     fun t ⟨Vt, Kt, Ot⟩ => ?_
   exact ⟨by rw [Vt, Fu, Iu, Mu], (Ku.mono (by decide)).trans (Kt.mono (by decide)),
     (Outs.of_outside Ou (by simp)).trans Ot⟩

@@ -183,7 +183,7 @@ theorem enter_ok {s : State} {B : Addr} {Z w : Nat} {minv mx : BitVec 64} {X sl 
       by rw [show s₁ = { s₁ with mem := s.mem } by rw [← hm₁]]; exact ⟨hX.n, hX.inv, hX.one⟩, hm₁, k₁⟩
 
 theorem two_pow_mod_three (k : Nat) : 2 ^ (64 * k * 2) % 3 = 1 := by
-  rw [show 64 * k * 2 = 2 * (64 * k) by omega, Nat.pow_mul, Nat.pow_mod]
+  rw [show 64 * k * 2 = 2 * (64 * k) by omega_using [], Nat.pow_mul, Nat.pow_mod]
   simp
 
 /-- `prepP q`: `prep` with `R_X² mod X` from `pre`'s words from `r2XOff q`

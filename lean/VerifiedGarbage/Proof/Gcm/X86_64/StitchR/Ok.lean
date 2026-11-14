@@ -61,8 +61,8 @@ theorem remLaw {H : Block} {P : Nat → Nat → Block}
   intro r hr1 hr15 X y
   let T : Nat → BitVec 128 := fun j => P ((16 - r + j) / 2) ((16 - r + j) % 2)
   have hT : ∀ j < r, x * φ (T j) = φ H ^ (r - j) := fun j hj => by
-    have := hP ((16 - r + j) / 2) (by omega) ((16 - r + j) % 2) (by omega)
-    rwa [show 16 - 2 * ((16 - r + j) / 2) - (16 - r + j) % 2 = r - j by omega] at this
+    have := hP ((16 - r + j) / 2) (by omega_using [hr15, hj]) ((16 - r + j) % 2) (by omega_using [])
+    rwa [show 16 - 2 * ((16 - r + j) / 2) - (16 - r + j) % 2 = r - j by omega_using [hr15]] at this
   have key : ∀ n, 1 ≤ n → n ≤ r →
       (accR X T y n).val = φ H ^ (r - n) * φ (ghashFrom H y ((List.range n).map X)) := by
     intro n
@@ -71,17 +71,17 @@ theorem remLaw {H : Block} {P : Nat → Nat → Block}
     | succ n ih =>
       intro _ hn
       rcases Nat.eq_zero_or_pos n with rfl | hpos
-      · have h0 := hT 0 (by omega)
+      · have h0 := hT 0 (by omega_using [hr1])
         simp only [accR, ↓reduceIte, Prod.val_acc, Prod.val_zero, zero_add, List.range_one, List.map_cons,
           List.map_nil, ghashFrom, List.foldl_cons, List.foldl_nil, φ_mul, Nat.sub_zero] at h0 ⊢
-        rw [show r = (r - (0 + 1)) + 1 by omega, pow_succ] at h0
+        rw [show r = (r - (0 + 1)) + 1 by omega_using [hr1], pow_succ] at h0
         linear_combination φ (y ^^^ X 0) * h0
-      · have hn' := hT n (by omega)
-        rw [show r - n = (r - (n + 1)) + 1 by omega, pow_succ] at hn'
-        simp only [accR, show n ≠ 0 by omega, ↓reduceIte, Prod.val_acc, ih hpos (by omega), List.range_succ,
+      · have hn' := hT n (by omega_using [hn])
+        rw [show r - n = (r - (n + 1)) + 1 by omega_using [hn], pow_succ] at hn'
+        simp only [accR, show n ≠ 0 by omega_using [hpos], ↓reduceIte, Prod.val_acc, ih hpos (by omega_using [hn]), List.range_succ,
           List.map_append, List.map_cons, List.map_nil, ghashFrom, List.foldl_append, List.foldl_cons,
           List.foldl_nil, φ_mul, φ_xor, φ_zero, zero_add]
-        rw [show r - n = (r - (n + 1)) + 1 by omega, pow_succ]
+        rw [show r - n = (r - (n + 1)) + 1 by omega_using [hn], pow_succ]
         linear_combination φ (X n) * hn'
   apply φ_inj
   rw [φ_reduceB, key r hr1 (Nat.le_refl _), Nat.sub_self, pow_zero, one_mul]

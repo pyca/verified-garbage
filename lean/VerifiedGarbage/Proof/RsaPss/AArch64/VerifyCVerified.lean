@@ -147,7 +147,7 @@ theorem verify_implies (hsat : ∃ s, (verifyCK vs K).pre s) : (verifyKV vs K).I
     · match i, hi, hi1 with
       | 0, _, _ => exact a0.symm | 1, _, h => exact absurd rfl h | 2, _, _ => exact a2.symm
       | 3, _, _ => exact a3.symm | 4, _, _ => exact a4.symm | 5, _, _ => exact a5.symm
-      | 6, _, _ => exact a6.symm | 7, _, _ => exact a7.symm | n + 8, h, _ => exact absurd h (by omega)
+      | 6, _, _ => exact a6.symm | 7, _, _ => exact a7.symm | n + 8, h, _ => exact absurd h (by omega_using [])
   sat := hsat
 
 end VG.Proof.RsaPss.AArch64.Vfy

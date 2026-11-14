@@ -73,9 +73,9 @@ theorem output_frame {p : KeyPublic} {original : State} (hi : KeyInput p origina
     rwa [hi.y_eq, show inCtl original = ⟨p.control, 128⟩ by rw [← hi.2]; rfl] at this
   constructor <;> simp only [Spec.Rsa.bytesAt] <;> refine List.map_congr_left fun i hi => ?_
   · exact hf.bytes (fun r hr => by obtain rfl := List.mem_singleton.mp hr; exact hx)
-      (show p.len ≤ 2 ^ 64 by omega) (List.mem_range.mp hi)
+      (show p.len ≤ 2 ^ 64 by omega_using [hk]) (List.mem_range.mp hi)
   · exact hf.bytes (fun r hr => by obtain rfl := List.mem_singleton.mp hr; exact hy)
-      (show p.len ≤ 2 ^ 64 by omega) (List.mem_range.mp hi)
+      (show p.len ≤ 2 ^ 64 by omega_using [hk]) (List.mem_range.mp hi)
 
 theorem AttemptOut.frame {p : KeyPublic} {original : State} (hi : KeyInput p original)
     {rand : List Byte} {used : Nat} {m m' : Mem} (h : AttemptOut p rand used m)
@@ -115,10 +115,10 @@ theorem key_advance_ok {p : KeyPublic} {original s : State} {used keys scalars :
     apply BitVec.eq_of_toNat_eq
     rw [BitVec.toNat_sub_of_le (by
       simp only [BitVec.le_def, BitVec.toNat_ofNat]
-      rw [Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega)]; omega)]
+      rw [Nat.mod_eq_of_lt (by omega_using [hroom, hlen]), Nat.mod_eq_of_lt (by omega_using [hlen])]; omega_using [hroom])]
     simp only [BitVec.toNat_ofNat]
-    rw [Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega)]
-    omega
+    rw [Nat.mod_eq_of_lt (by omega_using [hlen]), Nat.mod_eq_of_lt (by omega_using [hroom, hlen]), Nat.mod_eq_of_lt (by omega_using [hlen])]
+    omega_using []
   have e11 : BitVec.ofNat 64 used + BitVec.ofNat 64 p.len = BitVec.ofNat 64 (used + p.len) := by
     rw [← BitVec.ofNat_add]
   refine WP.keep [.r3, .r4, .r9, .r11, .r12] ?_ (by decide)
@@ -138,7 +138,7 @@ theorem key_classify_head {p : KeyPublic} {original s : State} {used keys scalar
       isa.eval (.zero .d .r10) t =
         some (decide (attemptStatus .cached p.a p.len ((keyRand original).drop used) = 1)) := by
   have hst : attemptStatus .cached p.a p.len ((keyRand original).drop used) < 4 := by
-    rcases attemptStatus_cases (policy := .cached) p.a p.len ((keyRand original).drop used) with he | he | he <;> omega
+    rcases attemptStatus_cases (policy := .cached) p.a p.len ((keyRand original).drop used) with he | he | he <;> omega_using [he]
   rw [WP.block_append_iff]
   refine WP.mono (key_advance_ok h hroom) fun v ⟨⟨hmv, h9⟩, kv⟩ => ?_
   have hb := advanceValues_bound p used
@@ -186,7 +186,7 @@ theorem key_terminal_done {p : KeyPublic} {original s : State} {used keys scalar
     WP isa (.block (terminal status)) s (KeyDone p original r) := by
   refine WP.mono (key_terminal_live h hst) fun t ⟨ht, hm⟩ => ?_
   have hb := terminalValues_bound status
-  have hst0 : status ≠ 0 := by omega
+  have hst0 : status ≠ 0 := by omega_using [hst]
   have hw (j : Nat) (hj : j < 16) : word t.mem p.control (8 * j) =
       controllerValue (terminalValues status) j (word s.mem p.control (8 * j)) := by
     rw [hm, writeController_word _ _ _ hb j hj]
@@ -300,13 +300,13 @@ theorem key_iteration (a : Attempt) {p : KeyPublic} {original s : State}
   swap
   · intro hshort
     have hr : (keyRand original).length - used < p.len := by
-      rw [hlen]; have := of_decide_eq_false hshort; omega
+      rw [hlen]; have := of_decide_eq_false hshort; omega_using [this]
     refine WP.mono (key_request hu3) fun t ht => done _ t ht ?_ ?_ <;>
       simp only [KeyPublic.tail, keyTail_short hk hs hr]
   intro hlong
   have hroom : used + p.len ≤ p.randLen := by
-    have := of_decide_eq_true hlong; have := h.used_le; omega
-  have hr : p.len ≤ (keyRand original).length - used := by rw [hlen]; omega
+    have := of_decide_eq_true hlong; have := h.used_le; omega_arith
+  have hr : p.len ≤ (keyRand original).length - used := by rw [hlen]; omega_using [hroom]
   refine WP.seq (WP.mono (key_attempt_run a hu3 hroom) fun t ⟨ht, hp⟩ => ?_)
   refine WP.mono (key_classify ht hroom (Nat.pos_of_ne_zero hk) (Nat.pos_of_ne_zero hs) hp)
     fun q hq => ?_

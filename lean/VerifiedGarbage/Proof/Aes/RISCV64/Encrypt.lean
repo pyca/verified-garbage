@@ -49,33 +49,33 @@ theorem Scr.contains {s : State} {X : Addr} {N : Nat} (h : Scr s X N) {d n : Nat
     (⟨X, N⟩ : Region).Contains (s.gpr sb + BitVec.ofNat 64 d) n := by
   rw [h.base, Offset.add_add]
   have := pad_lt X
-  exact Offset.contains_base X (by omega) (by omega)
+  exact Offset.contains_base X (by omega_using [hd, this]) (by omega_using [hd, hN, this])
 
 /-- Bytes `d … d + n` from the rounded base are a part of the buffer. -/
 theorem Scr.sub {s : State} {X : Addr} {N : Nat} (h : Scr s X N) {d n : Nat} (hd : d + n + 7 ≤ N) :
     Region.Sub ⟨s.gpr sb + BitVec.ofNat 64 d, n⟩ ⟨X, N⟩ := by
   rw [h.base, Offset.add_add]
   have := pad_lt X
-  exact Offset.sub_base X (by omega)
+  exact Offset.sub_base X (by omega_using [hd, this])
 
 /-- `Ok` for the slots from `a5` on, and no external words. -/
 theorem Scr.okSlots {s : State} {X : Addr} {N : Nat} (h : Scr s X N) {c : Cfg} (hb : c.base = sb)
     (he : c.ext = sb) (hx : c.exts = 0) (hn : 8 * c.slots + 7 ≤ N) (hN : N < 2 ^ 63) : Ok c s where
-  slotIn k hk := ⟨_, h.wr, by rw [hb]; exact h.contains (by omega) hN⟩
+  slotIn k hk := ⟨_, h.wr, by rw [hb]; exact h.contains (by omega_using [hn, hk]) hN⟩
   extIn k hk := by omega
   baseAl _ := by rw [hb]; exact h.al
   extAl _ := by rw [he]; exact h.al
-  slots := by omega
+  slots := by omega_using [hn, hN]
   sep k _ j hj := by omega
 
 /-- `Ok` for the external words from `a5` on, and no slots. -/
 theorem Scr.okExts {s : State} {X : Addr} {N : Nat} (h : Scr s X N) {c : Cfg} (hb : c.base = sb)
     (he : c.ext = sb) (hx : c.slots = 0) (hn : 8 * c.exts + 7 ≤ N) (hN : N < 2 ^ 63) : Ok c s where
   slotIn k hk := by omega
-  extIn k hk := ⟨_, List.mem_append_right _ h.wr, by rw [he]; exact h.contains (by omega) hN⟩
+  extIn k hk := ⟨_, List.mem_append_right _ h.wr, by rw [he]; exact h.contains (by omega_using [hn, hk]) hN⟩
   baseAl _ := by rw [hb]; exact h.al
   extAl _ := by rw [he]; exact h.al
-  slots := by omega
+  slots := by omega_using [hx]
   sep k hk := by omega
 
 /-! ## What encryption needs and keeps -/
@@ -133,13 +133,13 @@ theorem slot_kept {m m' : Mem} {b : Addr} (h : Frame [⟨b, 320⟩] m m') {k : N
   h.readW (r := ⟨wordAddr b k, 8⟩) (by simp [Region.Contains])
     (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
-      exact Offset.disjoint_base b (by omega) (by omega)) (by decide)
+      exact Offset.disjoint_base b (by omega_using [hk]) (by omega_using [hk'])) (by decide)
 
 theorem Ctx.masks {s₀ s : State} (hm : MasksAt s₀.mem (s₀.gpr sb) allKs) (hc : Ctx s₀ s) :
     MasksAt s.mem (s.gpr sb) allKs := by
   intro k v hk
   have := allKs_slots _ hk
-  rw [hc.base, slot_kept hc.frame this.1 (by omega)]
+  rw [hc.base, slot_kept hc.frame this.1 (by omega_using [this])]
   exact hm k v hk
 
 theorem Ctx.sboxOk {s₀ s : State} {X : Addr} (h : Scr s₀ X 2048) (hc : Ctx s₀ s) : Ok sboxCfg s :=
@@ -202,7 +202,7 @@ theorem ark_cfg_ok {s : State} {X : Addr} (hs : Scr s X 2048) {n : Nat}
     refine ⟨⟨X, 2048⟩, List.mem_append_right _ hs.wr, ?_⟩
     show (⟨X, 2048⟩ : Region).Contains (wordAddr (s.gpr kp) k) 8
     rw [wordAddr, hk, Offset.add_add]
-    exact hs.contains (by omega) (by decide)
+    exact hs.contains (by omega_using [hn, hk']) (by decide)
   baseAl _ := hs.al
   extAl _ := by
     show (s.gpr kp).toNat % 8 = 0
@@ -225,7 +225,7 @@ theorem layer_wp {s₀ s : State} {is : List Instr} {c : Cfg} {P : State → Pro
   refine hfr.sub fun r hr => ⟨_, List.mem_singleton_self _, fun a ha => ?_⟩
   simp only [List.mem_singleton] at hr; subst hr
   simp only [slotRegion, hcb, Region.Contains] at ha ⊢
-  omega
+  omega_using [hcs, ha]
 
 /-! ## The rounds -/
 

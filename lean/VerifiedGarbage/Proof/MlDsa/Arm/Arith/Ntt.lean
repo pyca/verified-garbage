@@ -123,7 +123,7 @@ theorem lays_ok {s₁ : State} (hp : PreB s₁) :
     have hlen := hls len (List.mem_cons_self ..)
     obtain ⟨h1, h2⟩ := lens_fwd len hlen
     refine WP.seq (WP.mono (lay_ok bfly_spec zetaTab_of hp.fitF hp.fitS hlen .add (.inl rfl)
-      (fun c => 128 / len + c) (fun c hc => by omega)
+      (fun c => 128 / len + c) (fun c hc => by omega_using [h1, h2, hc])
       (fun c _ => by
         simp only [nextZ, ite_true, BitVec.add_assoc, show (4 : BitVec 32) = BitVec.ofNat 32 4 from rfl,
           ← BitVec.ofNat_add]

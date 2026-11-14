@@ -70,29 +70,29 @@ theorem linear_ok {s : State} {base : Addr} {size u v acc a b tmp n k : Nat}
     (linearUnsigned_ok hs L.u_bound L.v_bound L.a_bound L.b_bound L.acc_bound L.au L.av L.aa L.ab)
     fun s₁ ⟨O₁, V₁, K₁⟩ => ?_))
   have hs₁ := hs.of_keeps K₁ (by decide)
-  have C₁u := O₁.w32 L.au (by omega)
-  have C₁v := O₁.w32 L.av (by omega)
-  have A₁ := O₁.val32 (k := k + 1) (d := a) (by have := L.aa; omega) (by omega)
-  have B₁ := O₁.val32 (k := k + 1) (d := b) (by have := L.ab; omega) (by omega)
+  have C₁u := O₁.w32 L.au (by omega_using [hn, hu])
+  have C₁v := O₁.w32 L.av (by omega_using [hn, hv])
+  have A₁ := O₁.val32 (k := k + 1) (d := a) (by have := L.aa; omega_using [hp, this]) (by omega_using [hn, hp, ha])
+  have B₁ := O₁.val32 (k := k + 1) (d := b) (by have := L.ab; omega_using [hp, this]) (by omega_using [hn, hp, hb])
   have H₀ : val32 s₁.mem base acc (k + 2) =
       (w32 s.mem base u * val32 s.mem base a n + w32 s.mem base v * val32 s.mem base b n) %
         2 ^ (32 * (k + 2)) := by
-    rw [prefix_mod s₁.mem base acc (k + 2) (n + 2) (by omega), V₁]
-  refine WP.mono (correction_ok hs₁ L.u_bound (by omega) (by omega) L.tmp_bound (by omega) (by omega))
+    rw [prefix_mod s₁.mem base acc (k + 2) (n + 2) (by omega_using [hp]), V₁]
+  refine WP.mono (correction_ok hs₁ L.u_bound (by omega_using [hp, hc]) (by omega_using [hp, ha]) L.tmp_bound (by omega_using [hp, hst]) (by omega_using [hp, hsa]))
     fun s₂ ⟨O₂, K₂, c, V₂⟩ => ?_
   rw [C₁u, A₁] at V₂
   have hs₂ := hs₁.of_keeps K₂ (by decide)
   have C₂v : w32 s₂.mem base v = w32 s₁.mem base v := word_unch O₂
     (by intro w hw; simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
         rcases hw with rfl | rfl
-        · have := L.av; omega
-        · exact L.tv) (by omega)
+        · have := L.av; omega_using [hp, this]
+        · exact L.tv) (by omega_using [hn, hv])
   have B₂ : val32 s₂.mem base b (k + 1) = val32 s₁.mem base b (k + 1) := Outs.val32 O₂
     (by intro w hw; simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
         rcases hw with rfl | rfl
-        · have := L.ab; omega
-        · omega) (by omega)
-  refine WP.mono (correction_ok hs₂ L.v_bound (by omega) (by omega) L.tmp_bound (by omega) (by omega))
+        · have := L.ab; omega_using [hp, this]
+        · omega_using [hp, hsb]) (by omega_using [hn, hp, hb])
+  refine WP.mono (correction_ok hs₂ L.v_bound (by omega_using [hp, hc]) (by omega_using [hp, hb]) L.tmp_bound (by omega_using [hp, hst]) (by omega_using [hp, hsb]))
     fun z ⟨O₃, K₃, d, V₃⟩ => ?_
   rw [C₂v, C₁v, B₂, B₁] at V₃
   have H := corrections_mod H₀ V₂ V₃
@@ -104,7 +104,7 @@ theorem linear_ok {s : State} {base : Addr} {size u v acc a b tmp n k : Nat}
         ofs base x < w.1 ∨ w.1 + w.2 ≤ ofs base x := by
       intro w hw
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
-      rcases hw with rfl | rfl <;> simp only <;> omega
+      rcases hw with rfl | rfl <;> simp only <;> omega_arith
     rw [O₃ x small, O₂ x small, O₁ x hacc]
   · have HX := shifted_prefix_mod s.mem base a (k + 1) n hp
     have HY := shifted_prefix_mod s.mem base b (k + 1) n hp

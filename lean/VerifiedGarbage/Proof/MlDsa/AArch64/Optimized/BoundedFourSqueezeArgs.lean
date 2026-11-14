@@ -24,16 +24,16 @@ def rateR (p : Addr) : Region := ⟨p,136⟩
 def Rate136 (m : Mem) (p : Addr) (A : Spec.Sha3.State) : Prop :=
  ∀i<17,m.readW (outAddr p i) 64=A[i]!
 theorem rate_contains (p : Addr) {i : Nat} (hi : i<17) :
- (rateR p).Contains (outAddr p i) 8 := Offset.contains_base p (by omega) (by omega)
+ (rateR p).Contains (outAddr p i) 8 := Offset.contains_base p (by omega_using [hi]) (by omega_using [hi])
 
 theorem Rate136.byte {m : Mem} {p : Addr} {A : Spec.Sha3.State} (h : Rate136 m p A)
     {j : Nat} (hj : j < 136) : m (p+BitVec.ofNat 64 j) = Proof.Sha3.byteOf A j := by
-  have hw := h (j/8) (by omega)
+  have hw := h (j/8) (by omega_using [hj])
   have he := congrArg (fun v : BitVec 64 => v.extractLsb' (8*(j%8)) 8) hw
   change (m.read (outAddr p (j/8)) 8).extractLsb' (8*(j%8)) 8 = _ at he
-  rw [Mem.extractLsb'_read m _ (by omega)] at he
+  rw [Mem.extractLsb'_read m _ (by omega_using [])] at he
   rw [outAddr,BitVec.add_assoc,← BitVec.ofNat_add,
-    show 8*(j/8)+j%8 = j by omega] at he
+    show 8*(j/8)+j%8 = j by omega_using []] at he
   exact he
 end VG.Proof.MlDsa.AArch64.Optimized.BoundedFour
 
@@ -132,13 +132,13 @@ theorem Stream136.succ {m : Mem} {p : Addr} {j : Nat} {A : Spec.Sha3.State}
   intro i hi
   by_cases he : i=j
   · subst i; exact hl
-  · exact h i (by omega)
+  · exact h i (by omega_using [hi, he])
 
 theorem stream136_byte {m : Mem} {p : Addr} {j : Nat} {A : Spec.Sha3.State}
     (h : Stream136 m p j A) {i : Nat} (hi : i<136*j) :
     m (p+BitVec.ofNat 64 i)=Proof.Sha3.byteOf (Resident.permuted A (i/136+1)) (i%136) := by
-  have he:=(h (i/136) (by omega)).byte (j := i%136) (by omega)
-  rw [BitVec.add_assoc,←BitVec.ofNat_add,show 136*(i/136)+i%136=i by omega] at he
+  have he:=(h (i/136) (by omega_using [hi])).byte (j := i%136) (by omega_using [])
+  rw [BitVec.add_assoc,←BitVec.ofNat_add,show 136*(i/136)+i%136=i by omega_using []] at he
   exact he
 
 end VG.Proof.MlDsa.AArch64.Optimized.BoundedFour
@@ -169,10 +169,10 @@ theorem squeezeArgs_ok (s : State) {off : Nat} (ho : off≤272) :
   apply WP.keepV (by rfl)
   refine VG.Proof.MlDsa.AArch64.Arith.WP.keep _ ?_ (by rfl) (hv := rfl)
   unfold squeezeArgs Impl.MlKem.AArch64.mov
-  have h0 : 840+off<4096 := by omega
-  have h1 : 1384+off<4096 := by omega
-  have h2 : 1928+off<4096 := by omega
-  have h3 : 2472+off<4096 := by omega
+  have h0 : 840+off<4096 := by omega_using [ho]
+  have h1 : 1384+off<4096 := by omega_using [ho]
+  have h2 : 1928+off<4096 := by omega_using [ho]
+  have h3 : 2472+off<4096 := by omega_using [ho]
   arun [h0,h1,h2,h3]
   rfl
 

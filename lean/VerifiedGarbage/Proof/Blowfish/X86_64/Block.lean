@@ -31,14 +31,14 @@ theorem bswap32_byte (x : BitVec 32) {b : Nat} (hb : b < 4) :
     (bswap32 x).extractLsb' (8 * b) 8 = x.extractLsb' (8 * (3 - b)) 8 := by
   apply BitVec.eq_of_getLsbD_eq; intro i hi
   simp only [BitVec.getLsbD_extractLsb', hi, decide_true, Bool.true_and, getLsbD_bswap32_block _ hb hi]
-  rcases (by omega : b = 0 ∨ b = 1 ∨ b = 2 ∨ b = 3) with rfl | rfl | rfl | rfl <;> simp
+  rcases (by omega_using [hb] : b = 0 ∨ b = 1 ∨ b = 2 ∨ b = 3) with rfl | rfl | rfl | rfl <;> simp
 
 /-- The big-endian word at offset `o` of the block at `q`. -/
 theorem bswap_readW (m : Mem) (q : Addr) {o : Nat} (ho : o ≤ 4) :
     bswap32 (m.readW (q + BitVec.ofNat 64 o) 32) = decodeWord (blockAt m q) o := by
   refine word_ext fun b hb => ?_
-  rw [bswap32_byte _ hb, decodeWord_byte _ _ hb, blockAt_getD _ _ (by omega),
-    show 8 * (3 - b) = 8 * (3 - b) from rfl, ← Mem.readW_byte m _ (by omega), Offset.add_add]
+  rw [bswap32_byte _ hb, decodeWord_byte _ _ hb, blockAt_getD _ _ (by omega_using [ho]),
+    show 8 * (3 - b) = 8 * (3 - b) from rfl, ← Mem.readW_byte m _ (by omega_using []), Offset.add_add]
 
 theorem ea_mem (t : State) (r : Reg) (o : Nat) : t.ea (mem r o) = t.gpr r + BitVec.ofNat 64 o := by
   simp only [State.ea, mem, Rc2.X86_64.offset_nat]
@@ -51,14 +51,14 @@ theorem loadBlock_run (t : State) (q : Addr) (hq : t.gpr .rsi = q)
     ∃ t', runBlock isa loadBlock t = some t' ∧
       dword (t'.xmm xL) 0 = decodeWord (blockAt t.mem q) 0 ∧ dword (t'.xmm xR) 0 = decodeWord (blockAt t.mem q) 4 ∧
       (∀ d, d ≠ xL → d ≠ xR → t'.xmm d = t.xmm d) ∧ (∀ g, g ≠ .r11 → t'.gpr g = t.gpr g) ∧ Upd t t' := by
-  have r0 : InRegions (t.rd ++ t.wr) (t.ea (mem .rsi 0)) 4 := by rw [ea_mem, hq]; exact hR 0 (by omega)
+  have r0 : InRegions (t.rd ++ t.wr) (t.ea (mem .rsi 0)) 4 := by rw [ea_mem, hq]; exact hR 0 (by omega_using [])
   let w0 := t.mem.readW (t.ea (mem .rsi 0)) 32
   let t₁ := t.setReg32 .r11 w0
   let t₂ := t₁.setReg32 .r11 (bswap32 ((t₁.gpr .r11).setWidth 32))
   let t₃ := (XOp.movq xL .r11).exec t₂
   have r4 : InRegions (t₃.rd ++ t₃.wr) (t₃.ea (mem .rsi 4)) 4 := by
     rw [ea_mem]; simp only [t₃, t₂, t₁, XOp.exec, gpr_setXmm, State.setReg32, rd_setXmm, wr_setXmm, rd_setReg, wr_setReg,
-      gpr_setReg_of_ne _ _ (show Reg.rsi ≠ Reg.r11 by decide), hq]; exact hR 4 (by omega)
+      gpr_setReg_of_ne _ _ (show Reg.rsi ≠ Reg.r11 by decide), hq]; exact hR 4 (by omega_using [])
   let w4 := t₃.mem.readW (t₃.ea (mem .rsi 4)) 32
   let t₄ := t₃.setReg32 .r11 w4
   let t₅ := t₄.setReg32 .r11 (bswap32 ((t₄.gpr .r11).setWidth 32))
@@ -70,11 +70,11 @@ theorem loadBlock_run (t : State) (q : Addr) (hq : t.gpr .rsi = q)
   · simp only [t₆, XOp.exec, xmm_setXmm_of_ne _ _ (show xL ≠ xR by decide), t₅, t₄, State.setReg32, xmm_setReg,
       t₃, xmm_setXmm_self]
     rw [dword_movq _ _ (bswap32 w0) (by simp only [t₂, t₁, State.setReg32, gpr_setReg_self, setWidth_setWidth_32]),
-      ← bswap_readW _ _ (by omega)]
+      ← bswap_readW _ _ (by omega_using [])]
     simp only [w0, ea_mem, hq]
   · simp only [t₆, XOp.exec, xmm_setXmm_self]
     rw [dword_movq _ _ (bswap32 w4) (by simp only [t₅, t₄, State.setReg32, gpr_setReg_self, setWidth_setWidth_32]),
-      ← bswap_readW _ _ (by omega)]
+      ← bswap_readW _ _ (by omega_using [])]
     simp only [w4, ea_mem, t₃, t₂, t₁, XOp.exec, gpr_setXmm, State.setReg32, mem_setXmm, mem_setReg,
       gpr_setReg_of_ne _ _ (show Reg.rsi ≠ Reg.r11 by decide), hq]
   · simp only [t₆, t₅, t₄, t₃, t₂, t₁, XOp.exec, State.setReg32, xmm_setXmm_of_ne _ _ h2, xmm_setReg,
@@ -112,14 +112,14 @@ theorem inRegions_off {rs : List Region} {a : Addr} {N o n : Nat} (h : InRegions
   rw [e, BitVec.toNat_add, BitVec.toNat_ofNat]
   have := Nat.mod_le ((a - r.base).toNat + o % 2 ^ 64) (2 ^ 64)
   have := Nat.mod_le o (2 ^ 64)
-  omega
+  omega_using [hon, hc]
 
 theorem inRegions_append_right {rs ws : List Region} {a : Addr} {n : Nat} (h : InRegions ws a n) :
     InRegions (rs ++ ws) a n := by
   obtain ⟨r, hr, hc⟩ := h; exact ⟨r, List.mem_append_right _ hr, hc⟩
 
 theorem sep_of_disjoint {a b : Addr} {n k : Nat} (h : (⟨a, n⟩ : Region).Disjoint ⟨b, k⟩) : Mem.Sep a n b k :=
-  fun x h₁ h₂ => h x (by simp only [Region.Contains]; omega) (by simp only [Region.Contains]; omega)
+  fun x h₁ h₂ => h x (by simp only [Region.Contains]; omega_using [h₁]) (by simp only [Region.Contains]; omega_using [h₂])
 
 /-- What a block store needs: the block and the working space writable, apart. -/
 structure StoreEnv (q B : Addr) (t : State) : Prop where
@@ -151,7 +151,7 @@ theorem storeBlock_run {q B : Addr} {t : State} (E : StoreEnv q B t) :
   have gr : ∀ k : Nat, k < 8 → ∀ r, r ≠ Reg.r11 →
       ([t₁, t₂, t₃, t₄, t₅, t₆, t₇, t₈].getD k t).gpr r = t.gpr r := by
     intro k hk r hr
-    rcases (by omega : k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3 ∨ k = 4 ∨ k = 5 ∨ k = 6 ∨ k = 7) with
+    rcases (by omega_using [hk] : k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3 ∨ k = 4 ∨ k = 5 ∨ k = 6 ∨ k = 7) with
       rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
     simp only [List.getD_cons_zero, List.getD_cons_succ, t₈, t₇, t₆, t₅, t₄, t₃, t₂, t₁, State.setReg32,
       gpr_setReg_of_ne _ _ hr]
@@ -163,21 +163,21 @@ theorem storeBlock_run {q B : Addr} {t : State} (E : StoreEnv q B t) :
     rw [ea_mem, gr 6 (by decide) _ (by decide), E.rsi]
   have et : t.ea (mem .rcx 0) = B + BitVec.ofNat 64 0 := by rw [ea_mem, E.rcx]
   have wr : ∀ u : State, u.wr = t.wr → InRegions u.wr (B + BitVec.ofNat 64 0) 16 := fun u h => by
-    rw [h]; exact inRegions_off E.wB (by omega)
+    rw [h]; exact inRegions_off E.wB (by omega_using [])
   have rB : ∀ u : State, u.wr = t.wr → InRegions (u.rd ++ u.wr) (B + BitVec.ofNat 64 0) 4 := fun u h => by
-    rw [h]; exact inRegions_append_right (inRegions_off E.wB (by omega))
+    rw [h]; exact inRegions_append_right (inRegions_off E.wB (by omega_using []))
   have wq : ∀ u : State, u.wr = t.wr → ∀ o, o ≤ 4 → InRegions u.wr (q + BitVec.ofNat 64 o) 4 := fun u h o ho => by
-    rw [h]; exact inRegions_off E.wq (by omega)
+    rw [h]; exact inRegions_off E.wq (by omega_using [ho])
   have run : runBlock isa storeBlock t = some t₈ := by
     rw [storeBlock, runBlock_cons, exec_movdquStore (by rw [et]; exact wr t rfl), runStep_some,
       runBlock_cons, exec_mov32_mem (by have h := rB t₁ rfl; rw [← (eB 0 (by decide) : t₁.ea _ = _)] at h; exact h), runStep_some,
       runBlock_cons, exec_bswap32, runStep_some,
-      runBlock_cons, exec_store32 (by have h := wq t₃ rfl 0 (by omega); rw [← (eq0 2 (by decide) : t₃.ea _ = _)] at h; exact h),
+      runBlock_cons, exec_store32 (by have h := wq t₃ rfl 0 (by omega_using []); rw [← (eq0 2 (by decide) : t₃.ea _ = _)] at h; exact h),
       runStep_some,
       runBlock_cons, exec_movdquStore (by have h := wr t₄ rfl; rw [← (eB 3 (by decide) : t₄.ea _ = _)] at h; exact h), runStep_some,
       runBlock_cons, exec_mov32_mem (by have h := rB t₅ rfl; rw [← (eB 4 (by decide) : t₅.ea _ = _)] at h; exact h), runStep_some,
       runBlock_cons, exec_bswap32, runStep_some,
-      runBlock_cons, exec_store32 (by have h := wq t₇ rfl 4 (by omega); rw [← (eq4 : t₇.ea _ = _)] at h; exact h), runStep_some,
+      runBlock_cons, exec_store32 (by have h := wq t₇ rfl 4 (by omega_using []); rw [← (eq4 : t₇.ea _ = _)] at h; exact h), runStep_some,
       runBlock_nil]
   have x₄ : t₄.xmm = t.xmm := rfl
   have ea1 : t₁.ea (mem .rcx 0) = B + BitVec.ofNat 64 0 := eB 0 (by decide)
@@ -208,20 +208,20 @@ theorem storeBlock_run {q B : Addr} {t : State} (E : StoreEnv q B t) :
     show (((t.mem.writeW (t.ea (mem .rcx 0)) (t.xmm xR)).writeW _ _).writeW _ _).writeW _ _ = _
     rw [et]
   refine ⟨t₈, run, fun i hi => ?_, ?_, fun g h => gr 7 (by decide) g h, ?_⟩
-  · have hi64 : i < 2 ^ 64 := by omega
+  · have hi64 : i < 2 ^ 64 := by omega_using [hi]
     rw [m8, encodeBlock_getD _ _ hi]
     by_cases h4 : i < 4
     · rw [ite_eq_left_of_eq_true _ _ (eq_true h4)]
-      rw [writeW_sep _ (Offset.sep q (d := i) (n := 1) (e := 4) (k := 4) (.inl (by omega)) (by omega) (by omega) _
+      rw [writeW_sep _ (Offset.sep q (d := i) (n := 1) (e := 4) (k := 4) (.inl (by omega_using [h4])) (by omega_using [hi]) (by omega_using []) _
         (by rw [BitVec.sub_self]; decide)), writeW_sep _ (by
-          rw [BitVec.add_zero]; exact E.sep _ (by rw [Mem.sub_ofNat_toNat q hi64]; omega)),
+          rw [BitVec.add_zero]; exact E.sep _ (by rw [Mem.sub_ofNat_toNat q hi64]; omega_using [hi])),
         show q + BitVec.ofNat 64 i = q + BitVec.ofNat 64 0 + BitVec.ofNat 64 i by rw [BitVec.add_zero],
         writeW32_byte _ _ _ h4, bswap32_byte _ h4]
     · rw [ite_eq_right_of_eq_false _ _ (eq_false h4),
         show q + BitVec.ofNat 64 i = q + BitVec.ofNat 64 4 + BitVec.ofNat 64 (i - 4) by
-          rw [Offset.add_add]; congr 2; omega,
-        writeW32_byte _ _ _ (by omega), bswap32_byte _ (by omega)]
-      congr 2; omega
+          rw [Offset.add_add]; congr 2; omega_using [h4],
+        writeW32_byte _ _ _ (by omega_using [hi]), bswap32_byte _ (by omega_using [hi])]
+      congr 2; omega_using [h4]
   · have mq : (⟨q, 8⟩ : Region) ∈ [⟨q, 8⟩, ⟨B, 16⟩] := List.mem_cons_self
     have mB : (⟨B, 16⟩ : Region) ∈ [⟨q, 8⟩, ⟨B, 16⟩] := List.mem_cons_of_mem _ List.mem_cons_self
     rw [m8]

@@ -7,6 +7,7 @@ import VerifiedGarbage.Proof.Divstep.Alg32
 import Mathlib.Tactic.Ring.RingNF
 import Mathlib.Tactic.Linarith.Frontend
 import Mathlib.Algebra.Order.Ring.Abs
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # The coefficients' update of libsecp256k1's `update_de`, for any batch of `N` divsteps
 
@@ -51,7 +52,7 @@ theorem mdOf_range {N : Nat} {np u v d e : Int} :
   have h0 : (0 : Int) < 2 ^ N := pow_pos (by decide) N
   have a := Int.emod_nonneg ((if d < 0 then u else 0) + (if e < 0 then v else 0) - np * (u * d + v * e)) h0.ne'
   have b := Int.emod_lt_of_pos ((if d < 0 then u else 0) + (if e < 0 then v else 0) - np * (u * d + v * e)) h0
-  omega
+  omega_using []
 
 /-- `|md| < 2^(N + 1)` for a row of a batch of `N`. -/
 theorem mdOf_abs {N : Nat} {np u v d e : Int} (huv : |u| + |v| ≤ 2 ^ N) :
@@ -138,10 +139,10 @@ theorem deRunL_cong {p np x : Nat} (hp : p % 2 = 1) (hp1 : 1 < p) (hnp : ((p : I
   | 0 => by
     have : (1 : Int) < p := by exact_mod_cast hp1
     simp only [deRunL, W32.deRun]
-    refine ⟨Int.ModEq.refl _, by simp [Int.ModEq], ⟨by omega, by omega⟩, ⟨by omega, by omega⟩⟩
+    refine ⟨Int.ModEq.refl _, by simp [Int.ModEq], ⟨by omega_using [hp], by omega_using [hp]⟩, ⟨by omega_using [], by omega_using [hp1]⟩⟩
   | i + 1 => by
     obtain ⟨c1, c2, r1, r2⟩ := deRunL_cong hp hp1 hnp i
-    have hp0 : (0 : Int) < p := by omega
+    have hp0 : (0 : Int) < p := by omega_using [hp]
     have bnd := msteps_bnd (W32.invRun 30 p 0 x i).d (W32.invRun 30 p 0 x i).f (W32.invRun 30 p 0 x i).g 30
     simp only [deRunL, W32.deRun, W32.deStep]
     obtain ⟨a1, a2⟩ := W32.red30_spec hp ((msteps 30 (MSt.init (W32.invRun 30 p 0 x i).d (W32.invRun 30 p 0 x i).f

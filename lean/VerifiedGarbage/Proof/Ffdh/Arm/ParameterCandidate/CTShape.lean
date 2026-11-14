@@ -140,7 +140,7 @@ theorem shapeP_ct : RelCT isa (Two ShapeStart) VG.Impl.Ffdh.Arm.ParameterCandida
       (fun _ ⟨context, bytes, _, _⟩ => ⟨context, bytes⟩))
   have mask : RelCT isa (Two ShapeCopied) VG.Impl.Ffdh.Arm.ParameterCandidate.shapeMasks (Two ShapeMasked) :=
     two_post (shapeMasks_ct.mono (fun _ _ h => two_mono (fun _ _ h => h.1) h) (fun _ _ h => h)) (fun p s h => by
-      refine WP.mono (shapeMasks_ok s (by have := h.1.minBits; omega) (by have := h.1.maxBits; omega)
+      refine WP.mono (shapeMasks_ok s (by have := h.1.minBits; omega_using [this]) (by have := h.1.maxBits; omega_using [this])
         (h.1.frame.read (by decide)) (h.1.frame.saved 24 (by decide))) ?_
       rintro t ⟨mask, memory, rest⟩
       exact ⟨⟨h.1.after_memory memory rest, by rw [memory]; exact h.2⟩, mask⟩)

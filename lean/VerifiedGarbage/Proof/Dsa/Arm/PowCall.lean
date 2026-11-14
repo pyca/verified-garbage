@@ -57,7 +57,7 @@ theorem entry_pre {s u : State} {base : Addr} {size n e : Nat} (hs : Ws s base s
   refine ⟨trivial, trivial, ?_, Nat.le_refl _, hodd, hm1⟩
   rw [State.callEntry_gpr _ (by decide), h0, hs.wb_toNat]
   have := hs.nowrap
-  omega
+  omega_using [hz, this]
 
 /-- A call: `b ^ x mod m` into slot 9, as `body_ok`, with `r12` kept and
 the registers the calling convention keeps. -/

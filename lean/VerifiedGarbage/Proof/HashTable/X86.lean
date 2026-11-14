@@ -124,9 +124,9 @@ theorem held_tableOf {m : Mem} {p : BitVec 32} (hp : p.toNat + 44 ≤ 2 ^ 32) {s
       m.readW (VG.X86.addr p 24) 32 = BitVec.ofNat 32 w.g.H.D := by
   rw [MdHashTable.X86.words_tableOf] at h
   have a : ∀ i, i < 11 → VG.X86.addr p (4 * i) = p.setWidth 64 + BitVec.ofNat 64 (32 / 8 * i) := fun i hi => by
-    rw [addr_eq (by omega)]
+    rw [addr_eq (by omega_using [hp, hi])]
   have e : ∀ i (hi : i < 11), m.readW (VG.X86.addr p (4 * i)) 32 = _ := fun i hi =>
-    (a i hi).symm ▸ h i (by simp; omega)
+    (a i hi).symm ▸ h i (by simp; omega_using [hi])
   refine ⟨⟨?_, ?_, ?_⟩, ?_, ?_⟩
   · have := e 0 (by decide); simp only [Nat.mul_zero] at this; rw [this, w.st]; simp
   · have := e 1 (by decide); simp only [Nat.mul_one] at this; rw [this, w.st]; simp
@@ -162,8 +162,8 @@ theorem tabFacts_entered (hsp : 16 + F ≤ (s.gpr .esp).toNat) (h : (layOf F arg
   have e : ∀ o, o + 4 ≤ 44 → (entered F s).mem.readW (VG.X86.addr p o) 32 = s.mem.readW (VG.X86.addr p o) 32 :=
     fun o ho => MdHashTable.X86.entered_roW hsp h hR (by
       show (⟨p.setWidth 64, 11 * (32 / 8)⟩ : Region).Contains (VG.X86.addr p o) 4
-      rw [addr_eq (by omega)]
-      exact Offset.contains_base _ (by omega) (by omega))
+      rw [addr_eq (by omega_using [hp, ho])]
+      exact Offset.contains_base _ (by omega_using [ho]) (by omega_using [ho]))
   obtain ⟨⟨m0, m1, m2⟩, -, hD⟩ := held_tableOf hp hh
   refine ⟨?_, ⟨?_, ?_, ?_⟩, ?_, ?_, ?_, ?_⟩
   · rw [sy]; exact tabOK_of hc hd64 hw
@@ -200,7 +200,7 @@ def withTable (s : State) (vs : List TVar) (w : TVar) : State :=
 
 theorem withTable_arg (s : State) (vs : List TVar) (w : TVar) {j : Nat}
     (hj : (VG.X86.argAddr s j).toNat + 4 ≤ 0x300000) : VG.X86.arg (withTable s vs w) j = VG.X86.arg s j :=
-  putWs32_out (a := VG.X86.argAddr s j) (.inl (by simpa using hj)) (twL_room vs w) (by omega)
+  putWs32_out (a := VG.X86.argAddr s j) (.inl (by simpa using hj)) (twL_room vs w) (by omega_using [hj])
 
 /-- `w`'s table at `0x300000`, in any memory `putWs32` writes it to, with
 `vs`' functions at the addresses `symsOf32` gives them: a statement about

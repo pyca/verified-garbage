@@ -74,17 +74,17 @@ theorem hashCode_depth (v : MdHash) : HashDepth v.H.stream where
     change v.H.initC.x86_64Depth ≤ 120
     rw [x86_64Depth_noSp v.ok.initSp]
     have hd := v.ok.initDepth
-    omega
+    omega_using [hd]
   update := by
     change v.H.updC.x86_64Depth ≤ 120
     rw [x86_64Depth_noSp v.ok.updSp]
     have hd := v.ok.updDepth
-    omega
+    omega_using [hd]
   finish := by
     change v.H.finC.x86_64Depth ≤ 120
     rw [x86_64Depth_noSp v.ok.finSp]
     have hd := v.ok.finDepth
-    omega
+    omega_using [hd]
 
 end VG.Proof.Dsa.X86_64.Generation
 end

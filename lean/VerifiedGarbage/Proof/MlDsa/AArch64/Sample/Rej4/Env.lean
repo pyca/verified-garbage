@@ -28,12 +28,12 @@ theorem Env.frameStep {σ s t : State} (he : Env σ s) {rs : List Region}
     fun i hi => ?_,fun i hi => ?_,he.frame.trans (hf.sub hsub)⟩
   · have hc : (saveR σ).Contains (at' σ (oSave+8*i)) 8 :=
       Offset.contains (scr σ) (d := oSave+8*i) (e := oSave) (n := 8) (k := 144)
-        (by omega) (by omega) (by decide)
+        (by omega_using []) (by omega_using [hi]) (by decide)
     rw [hf.readW hc hsave (by decide)]
     exact he.savedG i hi
   · have hc : (saveR σ).Contains (at' σ (oSave+80+8*i)) 8 :=
       Offset.contains (scr σ) (d := oSave+80+8*i) (e := oSave) (n := 8) (k := 144)
-        (by omega) (by omega) (by decide)
+        (by omega_using []) (by omega_using [hi]) (by decide)
     rw [hf.readW hc hsave (by decide)]
     exact he.savedV i hi
 

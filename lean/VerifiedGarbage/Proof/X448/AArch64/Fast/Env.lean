@@ -154,14 +154,14 @@ theorem slot_mem (i : Index) : slot i.val + 128 ≤ 8192 := by
   have := slot_bound i; have : ACC = 3584 := rfl; omega
 
 theorem slot_sep64 {i j : Index} (h : i ≠ j) : slot i.val + 64 ≤ slot j.val ∨ slot j.val + 64 ≤ slot i.val := by
-  have := slot_sep h; omega
+  have := slot_sep h; omega_using [this]
 
 /-- Byte frame of an operation writing slot `o`'s first 64 bytes and the coefficient area. -/
 theorem fieldMem_same {base : Addr} {o : Index} {m m' : Mem} (h : FieldMem base (slot o.val) m m') :
     Same base [o] m m' := by
   intro i hi j hj
   have hne : i ≠ o := fun e => hi (by simp [e])
-  exact h.limbs (slot_sep hne) (slot_bound i) (by omega : j < 16)
+  exact h.limbs (slot_sep hne) (slot_bound i) (by omega_using [hj] : j < 16)
 
 theorem fieldMem_outside2 {base : Addr} {o : Index} {m m' : Mem} (h : FieldMem base (slot o.val) m m') :
     Outside2 base 64 2816 ACC 1152 m m' := by
@@ -169,10 +169,10 @@ theorem fieldMem_outside2 {base : Addr} {o : Index} {m m' : Mem} (h : FieldMem b
   apply h p _ (hq.imp_right fun h => Nat.le_trans (Nat.add_le_add_left (by decide : 512 ≤ 1152) _) h)
   have := o.isLt
   simp only [slot]
-  omega
+  omega_using [hp]
 
 theorem slot_inj {i j : Index} (h : slot i.val = slot j.val) : i = j := by
-  apply Fin.ext; simp only [slot] at h; omega
+  apply Fin.ext; simp only [slot] at h; omega_using [h]
 
 theorem env_update {base : Addr} {s t : State} {o : Index} (hb : BEnv s.mem base)
     (hm : FieldMem base (slot o.val) s.mem t.mem) (ho : Bnd Ib t.mem base (slot o.val)) :
@@ -226,11 +226,11 @@ theorem away_same {base : Addr} {os : List Index} {m m' : Mem}
     (h : ∀ x, Away base (os.map fun i => slot i.val) 64 x → m' x = m x) : Same base os m m' := by
   intro i hi j hj
   change (word m' base (slot i.val + 8 * j)).toNat = (word m base (slot i.val + 8 * j)).toNat
-  rw [VG.Proof.Curve448.AArch64.Fast.away_word h (by have := slot_mem i; omega) (fun o ho => by
+  rw [VG.Proof.Curve448.AArch64.Fast.away_word h (by have := slot_mem i; omega_using [hj, this]) (fun o ho => by
     simp only [List.mem_map] at ho
     obtain ⟨k, hk, rfl⟩ := ho
     have := slot_sep (show i ≠ k from fun e => hi (e ▸ hk))
-    omega)]
+    omega_using [hj, this])]
 
 theorem away_outside2 {base : Addr} {os : List Index} {m m' : Mem}
     (h : ∀ x, Away base (os.map fun i => slot i.val) 64 x → m' x = m x) :
@@ -242,18 +242,18 @@ theorem away_outside2 {base : Addr} {os : List Index} {m m' : Mem}
   obtain ⟨k, -, rfl⟩ := ho
   have := k.isLt
   simp only [slot]
-  omega
+  omega_using [hp]
 
 theorem away_fieldMem {base : Addr} {o : Index} {m m' : Mem}
     (h : ∀ x, Away base [slot o.val] 64 x → m' x = m x) : FieldMem base (slot o.val) m m' :=
-  fun x hx _ => h x fun o' ho' => by simp at ho'; subst ho'; omega
+  fun x hx _ => h x fun o' ho' => by simp at ho'; subst ho'; omega_using [hx]
 
 theorem subE {s : State} {base : Addr} (hs : Scr s base) (hb : BEnv s.mem base) {o a b : Index}
     (ha : Bnd Mb s.mem base (slot a.val)) (hb' : Bnd Mb s.mem base (slot b.val)) (hoa : o ≠ a) (hob : o ≠ b) :
     WP isa (.block (Impl.Curve448.AArch64.Fast.sub (slot o.val) (slot a.val) (slot b.val))) s fun t =>
       FKeep base s t ∧ BEnv t.mem base ∧ Same base [o] s.mem t.mem ∧ EV t.mem base = opSub o a b (EV s.mem base) := by
-  refine WP.mono (VG.Proof.Curve448.AArch64.Fast.sub_ok hs (by have := slot_mem o; omega)
-    (by have := slot_mem a; omega) (by have := slot_mem b; omega) (slot_aligned o) (slot_aligned a)
+  refine WP.mono (VG.Proof.Curve448.AArch64.Fast.sub_ok hs (by have := slot_mem o; omega_using [this])
+    (by have := slot_mem a; omega_using [this]) (by have := slot_mem b; omega_using [this]) (slot_aligned o) (slot_aligned a)
     (slot_aligned b) (slot_sep64 hoa) (slot_sep64 hob)) fun t ⟨tv, tm, tk⟩ => ?_
   have tl : ∀ i < 8, limbs t.mem base (slot o.val) i =
       VG.Proof.Curve448.AArch64.Fast.diffN (limbs s.mem base (slot a.val)) (limbs s.mem base (slot b.val)) i := by
@@ -287,8 +287,8 @@ theorem addSubE {s : State} {base : Addr} (hs : Scr s base) (hb : BEnv s.mem bas
       FKeep base s t ∧ BEnv t.mem base ∧ Same base [o₁, o₂] s.mem t.mem ∧
       EV t.mem base = Function.update (Function.update (EV s.mem base) o₁ (EV s.mem base a + EV s.mem base b))
         o₂ (EV s.mem base a - EV s.mem base b) := by
-  refine WP.mono (VG.Proof.Curve448.AArch64.Fast.addSub_ok hs (by have := slot_mem o₁; omega)
-    (by have := slot_mem o₂; omega) (by have := slot_mem a; omega) (by have := slot_mem b; omega)
+  refine WP.mono (VG.Proof.Curve448.AArch64.Fast.addSub_ok hs (by have := slot_mem o₁; omega_using [this])
+    (by have := slot_mem o₂; omega_using [this]) (by have := slot_mem a; omega_using [this]) (by have := slot_mem b; omega_using [this])
     (slot_aligned o₁) (slot_aligned o₂) (slot_aligned a) (slot_aligned b) (slot_sep64 h12)
     (slot_sep64 h1a) (slot_sep64 h1b) (slot_sep64 h2a) (slot_sep64 h2b)) fun t ⟨t1, t2, tm, tk⟩ => ?_
   have l1 : ∀ i < 8, limbs t.mem base (slot o₁.val) i =
@@ -329,10 +329,10 @@ theorem smallE {s : State} {base : Addr} (hs : Scr s base) (hb : BEnv s.mem base
     WP isa (.block (Impl.Curve448.AArch64.Fast.small (slot o.val) (slot a.val) (slot e.val))) s fun t =>
       FKeep base s t ∧ BEnv t.mem base ∧ Same base [o] s.mem t.mem ∧
       EV t.mem base = Function.update (EV s.mem base) o (EV s.mem base a + Spec.X448.a24 * EV s.mem base e) := by
-  refine WP.mono (VG.Proof.Curve448.AArch64.Fast.small_ok hs (by have := slot_mem o; omega)
-    (by have := slot_mem a; omega) (by have := slot_mem e; omega) (slot_aligned o) (slot_aligned a)
+  refine WP.mono (VG.Proof.Curve448.AArch64.Fast.small_ok hs (by have := slot_mem o; omega_using [this])
+    (by have := slot_mem a; omega_using [this]) (by have := slot_mem e; omega_using [this]) (slot_aligned o) (slot_aligned a)
     (slot_aligned e) ha (hb e)) fun t ⟨tv, tm, tk⟩ => ?_
-  have fm : FieldMem base (slot o.val) s.mem t.mem := VG.Proof.X448.AArch64.FieldMem.output (tm.mono (Nat.le_refl _) (by omega))
+  have fm : FieldMem base (slot o.val) s.mem t.mem := VG.Proof.X448.AArch64.FieldMem.output (tm.mono (Nat.le_refl _) (by omega_using []))
   refine ⟨⟨tk.mono (by decide), fieldMem_outside2 fm⟩, env_update hb fm
     (bnd_of_limbs tv (VG.Proof.Curve448.AArch64.Fast.small_bound ha (hb e))), fieldMem_same fm, ?_⟩
   rw [VG.Proof.X448.AArch64.Weak.E_update fm]

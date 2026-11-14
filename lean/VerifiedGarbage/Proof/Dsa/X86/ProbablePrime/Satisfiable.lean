@@ -50,11 +50,11 @@ theorem scratch_bound {bits : Nat} (b : Bits bits) : scratchBytes (width bits) +
   have := b.high
   unfold scratchBytes VG.Impl.Bignum.X86.PublicContext.slot VG.Impl.Bignum.X86.PublicContext.stride
     VG.Impl.Bignum.hdrBytes
-  omega
+  omega_arith
 
 theorem sat_argument_word (i : Nat) (index : i < 5) :
     satArguments.readW (BitVec.ofNat 64 (0x20004 + 4 * i)) 32 = satArgument i := by
-  have cases : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 := by omega
+  have cases : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 := by omega_using [index]
   rcases cases with rfl | rfl | rfl | rfl | rfl <;> decide +kernel
 
 theorem sat_arguments (bits : Nat) (i : Nat) (index : i < 5) : arg (satState bits) i = satArgument i := by
@@ -62,7 +62,7 @@ theorem sat_arguments (bits : Nat) (i : Nat) (index : i < 5) : arg (satState bit
     change ((0x20000#32 + BitVec.ofNat 32 (4 + 4 * i)).setWidth 64) = _
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.toNat_setWidth, BitVec.toNat_add, BitVec.toNat_ofNat]
-    omega
+    omega_using [index]
   unfold arg
   rw [address, ← sat_argument_word i index]
   apply Mem.readW_congr
@@ -71,14 +71,14 @@ theorem sat_arguments (bits : Nat) (i : Nat) (index : i < 5) : arg (satState bit
   refine ite_eq_left ?_
   change ((BitVec.ofNat 64 (0x20004 + 4 * i) + BitVec.ofNat 64 j) - 0x20004#64).toNat < 20
   simp only [BitVec.toNat_sub, BitVec.toNat_add, BitVec.toNat_ofNat]
-  omega
+  omega_using [index, hj]
 
 theorem satBase_toNat {bits : Nat} (b : Bits bits) :
     (satBase bits).toNat = 0x10000 + scratchBytes (width bits) := by
   have := scratch_bound b
   unfold satBase
   simp only [BitVec.toNat_add, BitVec.toNat_ofNat]
-  omega
+  omega_using [this]
 
 theorem os2ip_ones : ∀ (n acc : Nat),
     (List.replicate n (0xFF#8)).foldl (fun x b => 256 * x + b.toNat) acc = acc * 256 ^ n + (256 ^ n - 1)
@@ -89,7 +89,7 @@ theorem os2ip_ones : ∀ (n acc : Nat),
     rw [ff]
     have pos : 0 < 256 ^ n := Nat.pow_pos (by decide)
     generalize 256 ^ n = p at *
-    obtain ⟨q, rfl⟩ : ∃ q, p = q + 1 := ⟨p - 1, by omega⟩
+    obtain ⟨q, rfl⟩ : ∃ q, p = q + 1 := ⟨p - 1, by omega_using [pos]⟩
     grind
 
 theorem sat_candidate {bits : Nat} (b : Bits bits) :
@@ -106,22 +106,22 @@ theorem sat_candidate {bits : Nat} (b : Bits bits) :
     simp only [List.getElem_map, List.getElem_range, List.getElem_replicate]
     simp only [List.length_map, List.length_range] at hi
     unfold satMemory
-    rw [ite_eq_right (by simp only [BitVec.toNat_sub, BitVec.toNat_add, BitVec.toNat_ofNat, baseNat]; omega),
-      ite_eq_left (by simp only [BitVec.toNat_sub, BitVec.toNat_add, BitVec.toNat_ofNat, baseNat]; omega)]
+    rw [ite_eq_right (by simp only [BitVec.toNat_sub, BitVec.toNat_add, BitVec.toNat_ofNat, baseNat]; omega_using [bound, hi]),
+      ite_eq_left (by simp only [BitVec.toNat_sub, BitVec.toNat_add, BitVec.toNat_ofNat, baseNat]; omega_using [bound, hi])]
   unfold Proof.Dsa.ProbablePrime.candidateAt
   rw [bytes, VG.Proof.Dsa.decodeBE_os2ip]
   unfold Spec.Rsa.os2ip
   rw [os2ip_ones, Nat.zero_mul, Nat.zero_add]
   have whole := b.whole
-  rw [show (256 : Nat) = 2 ^ 8 by rfl, ← Nat.pow_mul, show 8 * (bits / 8) = bits by omega]
+  rw [show (256 : Nat) = 2 ^ 8 by rfl, ← Nat.pow_mul, show 8 * (bits / 8) = bits by omega_using [whole]]
 
 theorem sat_odd {bits : Nat} (b : Bits bits) :
     Proof.Dsa.ProbablePrime.candidateAt (layout bits) (satMemory bits) ((satArgument 0).setWidth 64) % 2 = 1 := by
   rw [sat_candidate b]
   have : 2 ^ bits % 2 = 0 := by
-    rw [show bits = (bits - 1) + 1 by have := b.low; omega, Nat.pow_succ]; omega
+    rw [show bits = (bits - 1) + 1 by have := b.low; omega_using [this], Nat.pow_succ]; omega_using []
   have := Nat.two_pow_pos bits
-  omega
+  omega_arith
 
 theorem sat_length {bits : Nat} (b : Bits bits) :
     Spec.Dsa.bitLength
@@ -129,11 +129,11 @@ theorem sat_length {bits : Nat} (b : Bits bits) :
   rw [sat_candidate b]
   have low := b.low
   have half : 2 ^ bits = 2 ^ (bits - 1) * 2 := by
-    rw [← Nat.pow_succ]; congr 1; omega
+    rw [← Nat.pow_succ]; congr 1; omega_using [low]
   have pos := Nat.two_pow_pos (bits - 1)
-  have := VG.Proof.RsaKeyGen.bitLength_of (n := 2 ^ bits - 1) (b := bits - 1) (by omega)
-    (by rw [show bits - 1 + 1 = bits by omega]; omega)
-  rw [show bits - 1 + 1 = bits by omega] at this
+  have := VG.Proof.RsaKeyGen.bitLength_of (n := 2 ^ bits - 1) (b := bits - 1) (by omega_using [half])
+    (by rw [show bits - 1 + 1 = bits by omega_using [low]]; omega_using [half, pos])
+  rw [show bits - 1 + 1 = bits by omega_using [low]] at this
   exact this
 
 private theorem single_held {m : Mem} {f : String → Addr} {name : String} {words : List (BitVec 64)}
@@ -164,8 +164,8 @@ theorem sat_table {bits : Nat} (b : Bits bits) :
     (m' := constMem 0x30000 VG.Impl.RsaKeyGen.TrialTable32.packed) ?_) held
   intro j hj
   change (if _ then _ else _) = _
-  rw [ite_eq_right (by simp only [BitVec.toNat_sub, BitVec.toNat_add, BitVec.toNat_ofNat]; omega),
-    ite_eq_right (by simp only [BitVec.toNat_sub, BitVec.toNat_add, BitVec.toNat_ofNat, baseNat]; omega)]
+  rw [ite_eq_right (by simp only [BitVec.toNat_sub, BitVec.toNat_add, BitVec.toNat_ofNat]; omega_using [small, hj]),
+    ite_eq_right (by simp only [BitVec.toNat_sub, BitVec.toNat_add, BitVec.toNat_ofNat, baseNat]; omega_using [bound, small, hj])]
   rfl
 
 theorem sat_argAddr (bits : Nat) : argAddr (satState bits) 0 = 0x20004#64 := by
@@ -184,7 +184,7 @@ theorem satisfiable {bits : Nat} (b : Bits bits) : ∃ s, (contract bits).pre s 
     | exact sat_table b
     | exact sat_odd b
     | exact sat_length b
-    | (have := scratch_bound b; change _ ≤ 8 * 2000; omega)
+    | (have := scratch_bound b; change _ ≤ 8 * 2000; omega_using [this])
     | rfl
     | decide +kernel
     | exact Region.disjoint_of_sep (by decide +kernel)

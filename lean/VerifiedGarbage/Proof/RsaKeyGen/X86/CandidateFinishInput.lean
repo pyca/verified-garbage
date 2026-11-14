@@ -29,7 +29,7 @@ theorem finish_ready {E : Environment} (v : E.Valid) {c : Nat} {s : State}
     (value : val32 s.mem E.base (slot E.width 0) (2 * E.width) = c)
     (zeros : Spec.Rsa.bytesAt s.mem (E.out.setWidth 64) E.length = List.replicate E.length 0) : FinishReady E c s := by
   have space : 256 ≤ E.size := v.geometry.headerFit
-  refine ⟨⟨S, by have := v.width_bounds.1; omega, v.slotFit (by decide), by omega,
+  refine ⟨⟨S, by have := v.width_bounds.1; omega_using [this], v.slotFit (by decide), by omega_using [space],
     out, ?_, used, rfl, value, ?_, ?_, usedWrite, ?_, ?_⟩, zeros⟩
   · rw [v.length_eq]; exact length
   · rw [v.length_eq]; exact v.outFit

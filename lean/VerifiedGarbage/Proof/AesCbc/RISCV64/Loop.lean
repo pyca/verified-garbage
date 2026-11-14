@@ -64,7 +64,7 @@ theorem ofNat_zero_add (P : Addr) : P + BitVec.ofNat 64 0 = P := by simp
 theorem in_bytes {rs : List Region} {P : Addr} (h : ∃ r ∈ rs, Region.Sub ⟨P, 16⟩ r) :
     ∀ i < 16, InRegions rs (P + BitVec.ofNat 64 i) 1 := by
   obtain ⟨r, hr, hs⟩ := h
-  exact fun i hi => ⟨r, hr, hs _ (Offset.contains_base _ (by omega) (by omega))⟩
+  exact fun i hi => ⟨r, hr, hs _ (Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi]))⟩
 
 /-! ## Straight-line pieces -/
 
@@ -84,7 +84,7 @@ theorem xorInto_wp {dst src : Reg} {s : State} {P Q : Addr} {rest : List Instr} 
     (by decide) (by decide) (by rw [hq]; exact in_bytes rq) (by rw [hp]; exact in_bytes wp)
     (fun i hi hc => ?_)) fun s' h => ?_
   · rw [hp, hq] at hc
-    exact hpq _ hc (Offset.contains_base _ (by omega) (by omega))
+    exact hpq _ hc (Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi]))
   · have hx := h.xored
     have hf := h.frame
     rw [hp, hq] at hx
@@ -106,7 +106,7 @@ theorem copy_wp {dst src : Reg} {s : State} {P Q : Addr} {rest : List Instr} {Φ
     (fun i hi => by rw [hp, Nat.zero_add]; exact in_bytes wp i hi)
     (fun i hi hc => ?_)) fun s' h => ?_
   · rw [hp, hq, Nat.zero_add, ofNat_zero_add] at hc
-    exact hpq _ hc (Offset.contains_base _ (by omega) (by omega))
+    exact hpq _ hc (Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi]))
   · refine k s' h.gpr (bytes_copy fun j hj => ?_) (by have := h.frame; rwa [hp, ofNat_zero_add] at this)
       h.rd h.wr h.sp
     have := h.copied j hj
@@ -248,14 +248,14 @@ theorem UPre.data_sub {k : Nat} (hk : k < N s₀) : Region.Sub ⟨blk s₀ k, 16
 
 theorem cR_sub : Region.Sub (cR s₀) (scrR s₀) := by
   have := q_lt s₀
-  rw [cR, sv_eq]; exact UPre.scr_sub (by omega)
+  rw [cR, sv_eq]; exact UPre.scr_sub (by omega_using [this])
 
 theorem wsR_sub : Region.Sub (wsR s₀) (scrR s₀) := Region.sub_prefix (by decide)
 
 theorem UPre.cR_wsR (hp : UPre s₀) : (cR s₀).Disjoint (wsR s₀) := by
   have := q_lt s₀
   have := hp.scr_wrap
-  rw [cR, sv_eq]; exact Offset.disjoint_base _ (by omega) (by omega)
+  rw [cR, sv_eq]; exact Offset.disjoint_base _ (by omega_using []) (by omega_arith)
 
 end
 
@@ -269,7 +269,7 @@ theorem slot_sub (s₀ : State) {d : Nat} (h₁ : 16 ≤ d) (h₂ : d + 8 ≤ 72
 
 theorem slots_sub (s₀ : State) : Region.Sub ⟨sv s₀ + BitVec.ofNat 64 16, 56⟩ (scrR s₀) := by
   have := q_lt s₀
-  rw [sv_add]; exact UPre.scr_sub (by omega)
+  rw [sv_add]; exact UPre.scr_sub (by omega_using [this])
 
 /-- Saving the registers changes only their slots. -/
 theorem savedMem_frame (s : State) :
@@ -330,7 +330,7 @@ theorem restore_eq : restore = savePtr .s6 ++ Spill.restoreCode .t0 saveL := rfl
 theorem slot_contains (s₀ : State) {d : Nat} (h₁ : 16 ≤ d) (h₂ : d + 8 ≤ 72) :
     (scrR s₀).Contains (sv s₀ + BitVec.ofNat 64 d) 8 := by
   have := q_lt s₀
-  rw [sv_add]; exact Offset.contains_base _ (by omega) (by omega)
+  rw [sv_add]; exact Offset.contains_base _ (by omega) (by omega_using [h₂, this])
 
 theorem prologue_wp {M : Mode} {s₀ : State} (hp : UPre s₀) :
     WP isa (.block (save ++ setup)) s₀ (LInv M s₀ 0) := by
@@ -426,8 +426,8 @@ theorem slots_disj {s₀ : State} (hp : UPre s₀) :
   rcases hr with rfl | rfl | rfl | rfl
   · exact hp.iv_scr.symm.sub_left hsub
   · exact hp.data_scr.symm.sub_left hsub
-  · rw [sv_add]; exact Offset.disjoint_base _ (by omega) (by omega)
-  · rw [sv_add, cR, sv_eq]; exact Offset.disjoint _ (by omega) (by omega) (by omega)
+  · rw [sv_add]; exact Offset.disjoint_base _ (by omega_using []) (by omega_arith)
+  · rw [sv_add, cR, sv_eq]; exact Offset.disjoint _ (by omega_using [hb]) (by omega_arith) (by omega_arith)
 
 /-- The postcondition of the whole function, but for the stack pointer. -/
 def Done (M : Mode) (s₀ s' : State) : Prop :=

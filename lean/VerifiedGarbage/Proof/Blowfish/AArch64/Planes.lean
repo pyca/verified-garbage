@@ -27,7 +27,7 @@ def planesRegs : List VReg := [.v0, .v1, .v20, .v21, .v16, .v17, .v18, .v19]
 
 theorem four_regs (v : VReg → BitVec 128) (L : Nat → VReg) {k : Nat} (hk : k < 4) :
     four (v (L 0)) (v (L 1)) (v (L 2)) (v (L 3)) k = v (L k) := by
-  rcases (by omega : k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3) with rfl | rfl | rfl | rfl <;> rfl
+  rcases (by omega_using [hk] : k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3) with rfl | rfl | rfl | rfl <;> rfl
 
 theorem planes_run (s : State) (L : Nat → VReg) (hL : ∀ k < 4, L k ∉ planesRegs) :
     ∃ s', runBlock isa (planes L) s = some s' ∧
@@ -82,8 +82,8 @@ theorem planes_run (s : State) (L : Nat → VReg) (hL : ∀ k < 4, L k ∉ plane
         (VPermOp.eval (uzp o₁) .b16 (s.v (L 2)) (s.v (L 3))) →
         vbyte x n = vbyte (s.v (L (n / 4))) (4 * (n % 4) + (o₁ + 2 * o₂)) := by
       intro o₁ h₁ o₂ h₂ x e
-      rw [e, uzp_uzp _ _ _ _ h₁ h₂ hn, four_regs _ _ (by omega)]
-    rcases (by omega : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3) with rfl | rfl | rfl | rfl
+      rw [e, uzp_uzp _ _ _ _ h₁ h₂ hn, four_regs _ _ (by omega_using [hn])]
+    rcases (by omega_using [hj] : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3) with rfl | rfl | rfl | rfl
     · exact key 1 (by decide) 1 (by decide) _ i0
     · exact key 0 (by decide) 1 (by decide) _ i1
     · exact key 1 (by decide) 0 (by decide) _ i2
@@ -146,7 +146,7 @@ theorem words_run (s : State) :
     have fourP : ∀ b < 4, four (P 0) (P 1) (P 2) (P 3) b = s.v (outReg b) := fun b hb =>
       four_regs s.v outReg hb
     intro k hk l hl b hb
-    rcases (by omega : k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3) with rfl | rfl | rfl | rfl
+    rcases (by omega_using [hk] : k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3) with rfl | rfl | rfl | rfl
     · rw [w0, zip_zip _ _ _ _ (by decide) (by decide) hl hb, fourP b hb]
     · rw [w1, zip_zip _ _ _ _ (by decide) (by decide) hl hb, fourP b hb]
     · rw [w2, zip_zip _ _ _ _ (by decide) (by decide) hl hb, fourP b hb]

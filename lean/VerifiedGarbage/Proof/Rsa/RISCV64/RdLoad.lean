@@ -227,12 +227,12 @@ structure Pr (s0 t : State) : Prop where
 theorem word0_of_lt {m : Mem} {B : Addr} {d W x : Nat} (hW : 1 ≤ W) (h : wordsVal m B d W = x) (hx : x < 2 ^ 64) :
     (word m B d).toNat = x := by
   have e := wordsVal_append m B d 1 (W - 1)
-  rw [show 1 + (W - 1) = W by omega, h] at e
+  rw [show 1 + (W - 1) = W by omega_using [hW], h] at e
   simp only [wordsVal, Nat.mul_zero, Nat.add_zero, Nat.mul_one] at e
   have := Nat.two_pow_pos 64
   rcases Nat.eq_zero_or_pos (wordsVal m B (d + 8 * 1) (W - 1)) with z | z
   · rw [z, Nat.mul_zero, Nat.add_zero] at e; exact e.symm
-  · have := Nat.le_mul_of_pos_right (2 ^ (64 * 1)) z; simp only [Nat.mul_one] at this; omega
+  · have := Nat.le_mul_of_pos_right (2 ^ (64 * 1)) z; simp only [Nat.mul_one] at this; omega_using [hx, e]
 
 theorem prod_ok {s0 s : State} (h : PreC s0) (l : Ld s0 s) : WP isa prod s (Pr s0) := by
   have he2 := h.e2
@@ -272,17 +272,17 @@ theorem prod_ok {s0 s : State} (h : PreC s0) (l : Ld s0 s) : WP isa prod s (Pr s
   rw [zM, eE, dD, Nat.zero_add] at vt
   simp only [Nat.mul_zero, Nat.add_zero, Nat.sub_zero] at vt
   have pw : 2 ^ nbOf s0 ≤ 2 ^ (64 * WOf s0) :=
-    Nat.pow_le_pow_right (by decide) (by show 64 * wOf s0 ≤ 64 * WOf s0; rw [W_eq]; omega)
+    Nat.pow_le_pow_right (by decide) (by show 64 * wOf s0 ≤ 64 * WOf s0; rw [W_eq]; omega_using [])
   have deb : Ev s0 * Dv s0 < 2 ^ (64 * WOf s0) := by
     rw [Nat.mul_comm]; exact Nat.lt_of_lt_of_le hde pw
   have lt := wordsVal_lt t.mem (bOf s0) (arr (WOf s0) wM) (WOf s0)
   have c0 : c = 0 := by
     rcases Nat.eq_zero_or_pos c with z | z
     · exact z
-    · have := Nat.le_mul_of_pos_right (2 ^ (64 * WOf s0)) z; omega
+    · have := Nat.le_mul_of_pos_right (2 ^ (64 * WOf s0)) z; omega_using [vt, deb, this]
   rw [c0, Nat.mul_zero, Nat.add_zero] at vt
   have ft : Keys.Frame (bOf s0) (WOf s0) [wM] [] s.mem t.mem := by
-    rw [← um]; exact Frame.of_arr (d := 0) (by simpa using ot) (by simp only [S]; omega) (by simp)
+    rw [← um]; exact Frame.of_arr (d := 0) (by simpa using ot) (by simp only [S]; omega_using []) (by simp)
   have K : Keep (mulRegs ++ [.a2, .a3, .s8]) s t := Keep.trans' (ku'.mono (by decide)) (kt.mono (by decide))
   refine ⟨l.cb.step wt ft (by rdx) (by simp) K, wt, ?_, ?_, ?_⟩
   · rw [ft.toNarrow.num (by rdx) (by decide) (fit _ (by rdx))]; exact l.n

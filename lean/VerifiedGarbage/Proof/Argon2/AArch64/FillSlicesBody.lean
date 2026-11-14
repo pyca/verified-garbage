@@ -84,7 +84,7 @@ theorem body_ok (s : State) (p : Params) (pass slice : Nat) (h : FillSlice.Ready
   have added : a.gpr .x22 + 1 = BitVec.ofNat 64 (slice + 1) := by
     rw [words.sliceWord, BitVec.ofNat_add]; rfl
   have inputBound : (a.gpr .x22 + 1).toNat < 2 ^ 63 := by
-    rw [added, ReferenceMap.word_nat (slice + 1) (by omega)]; omega
+    rw [added, ReferenceMap.word_nat (slice + 1) (by omega_using [sliceBound])]; omega_using [sliceBound]
   refine (advance_ok a inputBound).mono ?_
   rintro t ⟨value, flag, keeps⟩
   have nextWord := value.trans added
@@ -101,7 +101,7 @@ theorem body_ok (s : State) (p : Params) (pass slice : Nat) (h : FillSlice.Ready
       simp only [FillCompress.loopRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp_all
     exact (keeps.regs r outside).trans (filled.regs r hr bx ix)
-  · rw [flag, added, ReferenceMap.word_nat (slice + 1) (by omega)]
+  · rw [flag, added, ReferenceMap.word_nat (slice + 1) (by omega_using [sliceBound])]
   · intro active
     exact ⟨{ h.parameters with sliceBound := active }, p.lanes, nextHeader⟩
 

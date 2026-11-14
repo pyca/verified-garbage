@@ -30,17 +30,17 @@ theorem light_ok {s : State} {base : Addr} {size n m : Nat} (hs : Ws s base size
       Outs base (scratch n) s.mem t.mem ∧ Rest (.lr :: dclob) s t := by
   have b0 := slot_bound (n := n) (i := 0) (by decide)
   have h0 := slot_header n 0
-  have h16 : contextBytes n < 2 ^ 16 := by simp only [contextBytes, slot, stride]; omega
+  have h16 : contextBytes n < 2 ^ 16 := by simp only [contextBytes, slot, stride]; omega_using [hn48]
   have low : w32 s.mem base (slot n 0) % 2 ^ 16 = m % 2 ^ 16 := by
-    rw [← hv, val32_mod16 _ _ _ _ (by omega)]
+    rw [← hv, val32_mod16 _ _ _ _ (by omega_using [hn])]
     rfl
   refine WP.mono (setupInverse_ok hs (mo := modS n)
-    (by simp only [modS, stride] at *; omega)
-    (by simp only [modS, stride] at *; omega) (by omega)
-    (by simp only [modS] at *; omega)) fun t ⟨wt, I, O, R, _⟩ => ?_
+    (by simp only [modS, stride] at *; omega_using [hz, b0])
+    (by simp only [modS, stride] at *; omega_using [b0, h16]) (by omega_using [hz, b0, h0])
+    (by simp only [modS] at *; omega_using [hodd, low])) fun t ⟨wt, I, O, R, _⟩ => ?_
   refine ⟨⟨wt, hz, h16, hn, ?_, hm1, ?_⟩, ?_, R.mono (by decide)⟩
-  · rw [O.val32 (by simp only [invO, modS] at *; omega)
-      (by have := hs.nowrap; simp only [modS, stride] at *; omega)]; exact hv
+  · rw [O.val32 (by simp only [invO, modS] at *; omega_using [h0])
+      (by have := hs.nowrap; simp only [modS, stride] at *; omega_using [b0, h16])]; exact hv
   · rw [Nat.add_mod, Nat.mul_mod, ← low, ← Nat.mul_mod, ← Nat.add_mod]; exact I
   · exact Outs.of_outside O (by simp [scratch, invO])
 
@@ -89,7 +89,7 @@ theorem entry_pre {s u : State} {base : Addr} {size n : Nat} (hs : Ws s base siz
   refine ⟨trivial, trivial, ?_, Nat.le_refl _, ho, hM⟩
   rw [State.callEntry_gpr _ (by decide), h0, hs.wb_toNat]
   have := hs.nowrap
-  omega
+  omega_using [hz, this]
 
 theorem call_ok {s : State} {base : Addr} {size n m : Nat} (hs : Ws s base size)
     (hz : contextBytes n ≤ size) (hn : 0 < n) (hn48 : n ≤ 48)
@@ -115,10 +115,10 @@ theorem call_ok {s : State} {base : Addr} {size n m : Nat} (hs : Ws s base size)
     rw [U.mem, O.val32 (fun r hr => by
       simp only [scratch, List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl | rfl | rfl <;>
-        simp only [modS, oneS, rrS, tmpS, accS, resS, slot, stride] <;> omega)
-      (by have := hs.nowrap; simp only [modS, contextBytes, slot, stride] at *; omega)]
+        simp only [modS, oneS, rrS, tmpS, accS, resS, slot, stride] <;> omega_using [])
+      (by have := hs.nowrap; simp only [modS, contextBytes, slot, stride] at *; omega_using [hn48])]
     exact hv
-  refine ⟨⟨W, hz, by simp only [contextBytes, slot, stride]; omega, hn, Mod, hm1,
+  refine ⟨⟨W, hz, by simp only [contextBytes, slot, stride]; omega_using [hn48], hn, Mod, hm1,
     by rw [U.mem]; exact Inv⟩, by rw [U.mem]; exact One, by rw [U.mem]; exact RR,
     by rw [U.mem]; exact O, ⟨?_, ?_, ?_, ?_⟩⟩
   · intro r hr

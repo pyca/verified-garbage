@@ -282,18 +282,18 @@ theorem FPre.argA {i : Nat} (hi : i < 7) : argAddr s₀ i = argAddr s₀ 0 + Bit
   simp only [argAddr]
   rw [show (s₀.gpr .esp + BitVec.ofNat 32 (4 + 4 * i)).setWidth 64 = addr (s₀.gpr .esp) (4 + 4 * i) from rfl,
     show (s₀.gpr .esp + BitVec.ofNat 32 (4 + 4 * 0)).setWidth 64 = addr (s₀.gpr .esp) (4 + 4 * 0) from rfl,
-    addr_eq (by omega), addr_eq (by omega), Offset.add_add]
+    addr_eq (by omega_using [hi, this]), addr_eq (by omega_using [this]), Offset.add_add]
 
 theorem FPre.arg_sub {i : Nat} (hi : i < 7) : Region.Sub ⟨argAddr s₀ i, 4⟩ (fArgs s₀) := by
-  rw [hp.argA hi]; exact Offset.sub_base _ (by omega)
+  rw [hp.argA hi]; exact Offset.sub_base _ (by omega_using [hi])
 
 theorem FPre.arg_in {i : Nat} (hi : i < 7) : InRegions (s₀.rd ++ s₀.wr) (argAddr s₀ i) 4 := by
   refine ⟨fArgs s₀, by simp [hp.rd], ?_⟩
-  rw [hp.argA hi]; exact Offset.contains_base _ (by omega) (by omega)
+  rw [hp.argA hi]; exact Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi])
 
 theorem FPre.args_stk : (fArgs s₀).Disjoint (fStk s₀) := by
   have : (s₀.gpr .esp).toNat + 32 ≤ 2 ^ 32 := hp.esp_fit
-  have e : argAddr s₀ 0 = (fE s₀).setWidth 64 + BitVec.ofNat 64 4 := addr_eq (by omega)
+  have e : argAddr s₀ 0 = (fE s₀).setWidth 64 + BitVec.ofNat 64 4 := addr_eq (by omega_using [this])
   rw [stk_eq hp.esp52]
   show Region.Disjoint ⟨argAddr s₀ 0, 28⟩ _
   rw [e]; exact (Offset.disjoint_below_above _ (by decide)).symm
@@ -329,9 +329,9 @@ theorem FPre.ret_keep {m : Mem} (hf : Frame (fBig s₀) s₀.mem m) :
     · exact hp.ret_stk) (by decide)
 
 theorem FPre.sched_sub : Region.Sub ⟨(fW s₀).setWidth 64, 16 * (fR s₀ + 1)⟩ (fSch s₀) :=
-  Region.sub_prefix (by rcases hp.rounds with h | h | h <;> omega)
+  Region.sub_prefix (by rcases hp.rounds with h | h | h <;> omega_using [h])
 
-theorem FPre.sched_len : 16 * (fR s₀ + 1) ≤ 2 ^ 64 := by rcases hp.rounds with h | h | h <;> omega
+theorem FPre.sched_len : 16 * (fR s₀ + 1) ≤ 2 ^ 64 := by rcases hp.rounds with h | h | h <;> omega_using [h]
 
 /-- The key schedule is unchanged where only `fBig` changes. -/
 theorem FPre.sched_keep {m : Mem} (hf : Frame (fBig s₀) s₀.mem m) :
@@ -346,7 +346,7 @@ theorem FPre.sched_keep {m : Mem} (hf : Frame (fBig s₀) s₀.mem m) :
     · exact hp.stk_sch.symm.sub_left hp.sched_sub) hp.sched_len
 
 theorem FPre.blk_fit : (fD s₀).toNat + 16 * fN s₀ ≤ 2 ^ 32 := by
-  have := hp.data_fit; have := Nat.mul_div_le (fL s₀) 16; have : fN s₀ = fL s₀ / 16 := rfl; omega
+  have := hp.data_fit; have := Nat.mul_div_le (fL s₀) 16; have : fN s₀ = fL s₀ / 16 := rfl; omega_arith
 
 theorem FPre.stk_sub {a k : Nat} (h : a + k ≤ 52) :
     Region.Sub (below (fE s₀ - BitVec.ofNat 32 k) a) (fStk s₀) := below_inner h hp.esp52
@@ -363,13 +363,13 @@ theorem FPre.blk_tail {s₀ : State} (hp : FPre s₀) : (fBlk s₀).Disjoint (fT
   have := Nat.div_add_mod (fL s₀) 16
   have : fN s₀ = fL s₀ / 16 := rfl
   have : fU s₀ = fL s₀ % 16 := rfl
-  exact Offset.base_disjoint _ (Nat.le_refl _) (by omega)
+  exact Offset.base_disjoint _ (Nat.le_refl _) (by omega_arith)
 
 /-- The save changes only `save`. -/
 theorem svMem_frame (s₀ : State) : Frame [fSv s₀] s₀.mem (svMem s₀) :=
   Spill.saveMem_frame List.mem_cons_self _ _ _ _ fun p hp =>
     have : p.2 + 4 ≤ 16 := (show Spill.Fits 16 finalSaved by decide).1 p hp
-    Offset.contains_base _ (by omega) (by omega)
+    Offset.contains_base _ (by omega_using [this]) (by omega_using [this])
 
 /-- Everything the function writes, from the save on. -/
 theorem big_of {s₀ : State} {m : Mem} (hf : Frame [fIvR s₀, fData s₀, fScr s₀, fStk s₀] (svMem s₀) m) :
@@ -384,7 +384,7 @@ theorem blocksAt_frame' {rs : List Region} {m m' : Mem} (hf : Frame rs m m') {D 
     (hd : ∀ r ∈ rs, (⟨D, 16 * n⟩ : Region).Disjoint r) :
     Spec.Cbc.blocksAt m' D n = Spec.Cbc.blocksAt m D n :=
   List.map_congr_left fun j hj => Proof.Cmac.bytesAt_frame hf
-    (fun r hr => (hd r hr).sub_left (Offset.sub_base _ (by have := List.mem_range.mp hj; omega))) (by decide)
+    (fun r hr => (hd r hr).sub_left (Offset.sub_base _ (by have := List.mem_range.mp hj; omega_using [this]))) (by decide)
 
 /-! ## Saving the registers, and the whole-block function's arguments -/
 
@@ -392,19 +392,19 @@ theorem and15 (x : BitVec 32) : x &&& (15 : BitVec 32) = BitVec.ofNat 32 (x.toNa
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_and, BitVec.toNat_ofNat]
   rw [show (15 : BitVec 32).toNat = 2 ^ 4 - 1 by decide, Nat.and_two_pow_sub_one_eq_mod]
-  omega
+  omega_using []
 
 theorem shr4 (x : BitVec 32) : x >>> 4 = BitVec.ofNat 32 (x.toNat / 16) := by
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow, BitVec.toNat_ofNat,
-    Nat.mod_eq_of_lt (by have := x.isLt; omega)]
+    Nat.mod_eq_of_lt (by have := x.isLt; omega_using [])]
 
 theorem sub_mod16 (x : BitVec 32) :
     x - BitVec.ofNat 32 (x.toNat % 16) = BitVec.ofNat 32 (16 * (x.toNat / 16)) := by
   apply BitVec.eq_of_toNat_eq
   have := x.isLt
   simp only [BitVec.toNat_sub, BitVec.toNat_ofNat]
-  omega
+  omega_using []
 
 theorem finalSaved_fits : Spill.Fits 16 finalSaved := by decide
 theorem finalSaved_ne_eax : ∀ p ∈ finalSaved, p.1 ≠ .eax := by decide
@@ -436,7 +436,7 @@ theorem final_setup_wp {s₀ : State} (hp : FPre s₀) :
     fun s₂ u₂ => ?_
   · have hb : p.2 + 4 ≤ 16 := finalSaved_fits.1 p hp'
     rw [h₁, u₁.wr, hp.wr]
-    exact ⟨fSv s₀, by simp, Offset.contains_base _ (by omega) (by omega)⟩
+    exact ⟨fSv s₀, by simp, Offset.contains_base _ (by omega_using [hb]) (by omega_using [hb])⟩
   have hm₂ : s₂.mem = svMem s₀ := by
     rw [u₂.mem, u₁.mem, h₁, svMem]
     exact Spill.saveMem_congr _ _ (fun _ _ => rfl) fun p hp' => u₁.other _ (finalSaved_ne_eax p hp')
@@ -500,7 +500,7 @@ abbrev wholeWr (s₀ : State) : List Region := [fIvR s₀, fBlk s₀, fScr s₀]
 
 theorem toNat_n (s₀ : State) : (BitVec.ofNat 32 (fN s₀)).toNat = fN s₀ := by
   have := (arg s₀ 4).isLt; have : fN s₀ = fL s₀ / 16 := rfl; have : fL s₀ = (arg s₀ 4).toNat := rfl
-  rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+  rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_arith)]
 
 section
 variable {s₀ : State} (hp : FPre s₀)
@@ -518,14 +518,14 @@ theorem FPre.stkC_sub :
   have := hp.esp52
   have : Region.Sub ⟨(fE s₀ - BitVec.ofNat 32 28 - BitVec.ofNat 32 24).setWidth 64, 24⟩ (fStk s₀) :=
     hp.stk_sub (by decide)
-  rwa [Taint.sub_setWidth (by rw [sub_toNat (by omega)]; omega)] at this
+  rwa [Taint.sub_setWidth (by rw [sub_toNat (by omega_arith)]; omega_arith)] at this
 
 theorem FPre.argsC_sub : Region.Sub (below (fE s₀) 24) (fStk s₀) := below_sub (by decide) hp.esp52
 
 theorem FPre.callee_esp : 24 ≤ (fE s₀ - BitVec.ofNat 32 28).toNat ∧
     (fE s₀ - BitVec.ofNat 32 28).toNat + 28 ≤ 2 ^ 32 := by
   have := hp.esp52; have := hp.esp_fit
-  rw [sub_toNat (by omega)]; omega
+  rw [sub_toNat (by omega_arith)]; omega_arith
 
 end
 
@@ -534,7 +534,7 @@ variable {s₀ s : State} (hp : FPre s₀) (h : Setup s₀ s)
 include hp h
 
 theorem Setup.fit : 4 * wholeRegs.length + 4 ≤ (s.gpr .esp).toNat := by
-  rw [h.esp]; have := hp.esp52; simp only [List.length_cons, List.length_nil]; omega
+  rw [h.esp]; have := hp.esp52; simp only [List.length_cons, List.length_nil]; omega_using [this]
 
 theorem Setup.args : arg (pushed wholeRegs s).callEntry 0 = fW s₀ ∧
     arg (pushed wholeRegs s).callEntry 1 = arg s₀ 1 ∧ arg (pushed wholeRegs s).callEntry 2 = fIv s₀ ∧
@@ -642,7 +642,7 @@ theorem whole_wp {M : Mode} {name : String} {whole : Prog isa}
       · exact hp.stk_data.symm.sub_left (blk_sub s₀))
   obtain ⟨a0, a1, a2, a3, a4, a5⟩ := h.args hp
   refine WP.callWith (rs := wholeRegs) hv hsp (by decide) wholeRegs_esp
-    (by rw [hst, h.esp]; have := hp.esp52; simp only [List.length_cons, List.length_nil]; omega)
+    (by rw [hst, h.esp]; have := hp.esp52; simp only [List.length_cons, List.length_nil]; omega_using [this])
     (h.callPre hp) fun s' rd' wr' cs' f' ⟨s₂, m₂, post₂⟩ => ?_
   rw [hst, h.esp, h.mem] at f'
   simp only [modeX86, State.withRegions_mem, arg_withRegions, a0, a1, a2, a3, a4, toNat_n, m₂, eW, eIv,
@@ -672,7 +672,7 @@ theorem final_test_wp {M : Mode} {s₀ : State} (hp : FPre s₀) {s : State} (h 
       ⟨h.of_eq (by rw [f₃.gpr, u₂.other _ (by decide), u₁.other _ (by decide)])
         (by rw [f₃.mem, u₂.mem, u₁.mem]) (by rw [f₃.rd, u₂.rd, u₁.rd]) (by rw [f₃.wr, u₂.wr, u₁.wr]), ?_⟩
   have := fU_lt s₀
-  rw [z₃, u₂.gpr, u₁.gpr, and15, ofNat_and_self_beq (by omega)]
+  rw [z₃, u₂.gpr, u₁.gpr, and15, ofNat_and_self_beq (by omega_using [])]
 
 theorem ivArgs_eq : Impl.AesOfb.X86.ivArgs = [.mov .eax (argOp 0), .mov .ecx (argOp 1), .mov .ebx (argOp 2),
     .mov .edi (.imm 1), .mov .ebp (argOp 5)] := rfl
@@ -716,7 +716,7 @@ theorem final_ivArgs_wp {M : Mode} {s₀ : State} (hp : FPre s₀) {s : State} (
     edi := by rw [u₅.other _ (by decide), u₄.gpr]
     ebp := u₅.gpr
     rounds := hp.rounds
-    esp := by rw [esp₅]; have := hp.esp52; omega
+    esp := by rw [esp₅]; have := hp.esp52; omega_using [this]
     wd := hp.sch_iv
     ws := hp.sch_scr.sub_right (Region.sub_prefix (by decide))
     ds := hp.iv_scr.sub_right (Region.sub_prefix (by decide))
@@ -725,7 +725,7 @@ theorem final_ivArgs_wp {M : Mode} {s₀ : State} (hp : FPre s₀) {s : State} (
     bs := hb.2.2.sub_right (Region.sub_prefix (by decide))
     hW := hp.sch_fit
     hD := hp.iv_fit
-    hS := by have := hp.scr_fit; omega
+    hS := by have := hp.scr_fit; omega_using [this]
     reads := by
       rw [rd₅, wr₅, hp.rd, hp.wr]
       exact Covers.of_sub fun r hr => by
@@ -783,7 +783,7 @@ theorem final_ciph_wp (v : BlocksImpl) {M : Mode} {s₀ : State} (hp : FPre s₀
     intro r hr
     simp only [List.mem_singleton] at hr; subst hr
     exact hp.data_sv.sub_left (tail_sub s₀)
-  have hlen : (fTail s₀).len ≤ 2 ^ 64 := by show fU s₀ ≤ 2 ^ 64; have := fU_lt s₀; omega
+  have hlen : (fTail s₀).len ≤ 2 ^ 64 := by show fU s₀ ≤ 2 ^ 64; have := fU_lt s₀; omega_using [this]
   refine ⟨by rw [c.saved .esp (by simp [calleeSaved]), hw.esp], by rw [c.rd, hw.rd], by rw [c.wr, hw.wr],
     hw.frame'.trans fc, ?_, fun q hq => ?_, ?_⟩
   · rw [blocksAt_frame' c.frame fun r hr => by
@@ -865,7 +865,7 @@ structure Done (M : Mode) (s₀ s : State) : Prop where
     else Spec.Cbc.aesWith (fR s₀) (fWk s₀) (M.chain (fR s₀) (fWk s₀) (fIv0 s₀) (fBlks s₀))
 
 theorem done_of_zero {M : Mode} {s₀ s : State} (h : Whole M s₀ s) (hu : fU s₀ = 0) : Done M s₀ s :=
-  ⟨h.esp, h.rd, h.wr, h.frame', h.blocks, fun q hq => absurd hq (by omega), by rw [ite_eq_left hu]; exact h.iv⟩
+  ⟨h.esp, h.rd, h.wr, h.frame', h.blocks, fun q hq => absurd hq (by omega_using [hu]), by rw [ite_eq_left hu]; exact h.iv⟩
 
 theorem final_xor_wp {M : Mode} {s₀ : State} (hp : FPre s₀) {s : State} (h : XArgs M s₀ s) (hu : fU s₀ ≠ 0) :
     WP isa (.loop (.block Impl.Modes.X86.tailByte) .ne) s (Done M s₀) := by
@@ -878,25 +878,25 @@ theorem final_xor_wp {M : Mode} {s₀ : State} (hp : FPre s₀) {s : State} (h :
   have eU : fU s₀ = fL s₀ % 16 := rfl
   have hc := h.ciph
   have xp : Modes.X86.XPre s (fIv s₀) (fT s₀) (fU s₀) := {
-    fitK := by have := hp.iv_fit; omega
-    fitR := by rw [hT]; omega
+    fitK := by have := hp.iv_fit; omega_using [hU, this]
+    fitR := by rw [hT]; omega_using [hDw, eN, eU]
     disj := by
       rw [eT]
-      exact (hp.iv_data.sub_left (Region.sub_prefix (by omega))).sub_right (tail_sub s₀)
+      exact (hp.iv_data.sub_left (Region.sub_prefix (by omega_using [hU]))).sub_right (tail_sub s₀)
     rdK := fun q hq => by
       rw [hc.rd, hc.wr, hp.rd, hp.wr]
-      exact ⟨fIvR s₀, by simp, Offset.contains_base _ (by omega) (by omega)⟩
+      exact ⟨fIvR s₀, by simp, Offset.contains_base _ (by omega_using [hU, hq]) (by omega_using [hU, hq])⟩
     wrR := fun q hq => by
       rw [hc.wr, hp.wr, eT]
       refine ⟨fData s₀, by simp, ?_⟩
       rw [show (fTail s₀).base + BitVec.ofNat 64 q = (fD s₀).setWidth 64 + BitVec.ofNat 64 (16 * fN s₀ + q) from
         Offset.add_add _ _ _]
-      exact Offset.contains_base _ (by omega) (by omega) }
+      exact Offset.contains_base _ (by omega_using [eN, eU, hq]) (by omega_using [hU, hT, hq]) }
   have x0 : Modes.X86.XInv s (fIv s₀) (fT s₀) (fU s₀) 0 s := {
     ebx := by rw [h.ebx]; exact (BitVec.add_zero _).symm
     esi := by rw [h.esi]; exact (BitVec.add_zero _).symm
     ebp := by rw [h.ebp, Nat.sub_zero]
-    lt := by omega
+    lt := by omega_using [hu]
     data := fun q _ => by rw [ite_eq_right (Nat.not_lt_zero q)]
     frame := Frame.refl _ _
     rd := rfl
@@ -914,7 +914,7 @@ theorem final_xor_wp {M : Mode} {s₀ : State} (hp : FPre s₀) {s : State} (h :
     exact hc.blocks
   · have := d.data q hq
     rw [eT] at this
-    rw [this, hc.tailb q hq, MdStream.X86.bytesAt_getD hc.iv (show q < 16 by omega)]
+    rw [this, hc.tailb q hq, MdStream.X86.bytesAt_getD hc.iv (show q < 16 by omega_using [hU, hq])]
   · rw [ite_eq_right hu, Proof.Cmac.bytesAt_frame fT' (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact hp.iv_data.sub_right (tail_sub s₀)) (by decide), hc.iv]
 
@@ -941,7 +941,7 @@ theorem final_end_wp {M : Mode} {s₀ : State} (hp : FPre s₀) {s : State} (h :
   have hrw : s.rd ++ s.wr = s₀.rd ++ s₀.wr := by rw [h.rd, h.wr]
   have hs : Spill.Saved s.mem ((fV s₀).setWidth 64 + BitVec.ofNat 64 ·) s₀.gpr finalSaved :=
     (Spill.saveMem_saved_ofNat s₀.mem _ s₀.gpr finalSaved_fits (by decide)).of_frame h.frame
-      (fun p hp' => Offset.contains_base _ (finalSaved_fits.1 p hp') (by have := finalSaved_fits.1 p hp'; omega))
+      (fun p hp' => Offset.contains_base _ (finalSaved_fits.1 p hp') (by have := finalSaved_fits.1 p hp'; omega_using [this]))
       fun r hr => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl | rfl | rfl
@@ -956,7 +956,7 @@ theorem final_end_wp {M : Mode} {s₀ : State} (hp : FPre s₀) {s : State} (h :
     (fun p hp' => ?_) (by rw [u₁.gpr, u₁.mem]; exact hs) fun s₂ r₂ => WP.block_nil ?_
   · have := finalSaved_fits.1 p hp'
     rw [u₁.gpr, u₁.rd, u₁.wr, hrw, hp.rd, hp.wr]
-    exact ⟨fSv s₀, by simp, Offset.contains_base _ (by omega) (by omega)⟩
+    exact ⟨fSv s₀, by simp, Offset.contains_base _ (by omega_using [this]) (by omega_using [this])⟩
   refine ⟨⟨r₂.abi (by decide) (by decide) (by rw [u₁.other _ (by decide), h.esp]), ?_⟩, by rw [r₂.mem, u₁.mem]⟩
   rw [r₂.mem, u₁.mem]; exact hp.ret_keep big
 
@@ -1004,14 +1004,14 @@ structure Pt (s₀ s : State) : Prop where
 
 theorem FPre.argsOut {s₀ : State} (hp : FPre s₀) {s : State} (h : Pt s₀ s) : ArgsOut 7 s := by
   have hs := hp.esp_fit
-  refine ⟨by rw [h.esp]; omega, ?_⟩
+  refine ⟨by rw [h.esp]; omega_using [hs], ?_⟩
   rw [h.wr, hp.wr, h.esp]
   simp only [List.mem_cons, List.not_mem_nil, or_false]
   rintro r (rfl | rfl | rfl | rfl)
-  · exact Taint.frame_disjoint (n := 28) (by omega) hp.ret_iv hp.iv_args.symm
-  · exact Taint.frame_disjoint (n := 28) (by omega) hp.ret_data hp.data_args.symm
-  · exact Taint.frame_disjoint (n := 28) (by omega) hp.ret_scr hp.scr_args.symm
-  · exact Taint.frame_disjoint (n := 28) (by omega) hp.ret_sv hp.sv_args.symm
+  · exact Taint.frame_disjoint (n := 28) (by omega_using [hs]) hp.ret_iv hp.iv_args.symm
+  · exact Taint.frame_disjoint (n := 28) (by omega_using [hs]) hp.ret_data hp.data_args.symm
+  · exact Taint.frame_disjoint (n := 28) (by omega_using [hs]) hp.ret_scr hp.scr_args.symm
+  · exact Taint.frame_disjoint (n := 28) (by omega_using [hs]) hp.ret_sv hp.sv_args.symm
 
 theorem arg_cur {s₀ s : State} (hesp : s.gpr .esp = s₀.gpr .esp) {i : Nat}
     (hm : s.mem.readW (argAddr s₀ i) 32 = arg s₀ i) : arg s i = arg s₀ i := by
@@ -1076,7 +1076,7 @@ theorem final_rel {enc : Bool} {M : Mode} {name : String} {whole : Prog isa}
       refine ⟨ha.callPre hp, pb, by rw [ha.esp, hb.esp, qE], ?_, fun i hi => ?_⟩
       · simp only [State.withRegions_gpr, ha.calleeEsp, hb.calleeEsp, qE]
       · simp only [arg_withRegions]
-        rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5) with rfl | rfl | rfl | rfl | rfl | rfl
+        rcases (by omega_using [hi] : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5) with rfl | rfl | rfl | rfl | rfl | rfl
         · rw [a0, b0, qW]
         · rw [a1, b1, qA 1 (by decide)]
         · rw [a2, b2, qIv]

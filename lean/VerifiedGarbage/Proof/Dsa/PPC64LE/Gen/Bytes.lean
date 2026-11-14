@@ -38,12 +38,12 @@ theorem loop_nz {body : Prog isa} {r : Reg} {Q : State → Prop} (Inv : Nat → 
     rw [eval_nonzero]; simpa using hz
   by_cases h : i + 1 = N
   · refine .inl ⟨by rw [ev]; simp [h], hQ s' (h ▸ hs')⟩
-  · exact .inr ⟨by rw [ev]; simp [h], N - (i + 1), by omega, i + 1, by omega, rfl, hs'⟩
+  · exact .inr ⟨by rw [ev]; simp [h], N - (i + 1), by omega_using [hi], i + 1, by omega_using [hi, h], rfl, hs'⟩
 
 /-- The count after `subi r, r, 1` from `N - i`. -/
 theorem count_sub {N i : Nat} (hi : i < N) :
     BitVec.ofNat 64 (N - i) - BitVec.ofNat 64 1 = BitVec.ofNat 64 (N - (i + 1)) := by
-  rw [show N - i = (N - (i + 1)) + 1 by omega, BitVec.ofNat_add, BitVec.add_sub_cancel]
+  rw [show N - i = (N - (i + 1)) + 1 by omega_using [hi], BitVec.ofNat_add, BitVec.add_sub_cancel]
 
 /-- The count is nonzero exactly when it is not the last iteration. -/
 theorem count_nz {N i : Nat} (hi : i < N) (hN : N < 2 ^ 64) :
@@ -51,9 +51,9 @@ theorem count_nz {N i : Nat} (hi : i < N) (hN : N < 2 ^ 64) :
   by_cases h : i + 1 = N
   · subst h; simp
   · have h1 : (BitVec.ofNat 64 (N - (i + 1))).toNat = N - (i + 1) := by
-      rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt (by omega)
+      rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt (by omega_using [hN])
     have : BitVec.ofNat 64 (N - (i + 1)) ≠ 0 := fun e => by
-      have := congrArg BitVec.toNat e; rw [h1] at this; simp at this; omega
+      have := congrArg BitVec.toNat e; rw [h1] at this; simp at this; omega_using [hi, h, this]
     rw [bne_iff_ne.mpr this]; simp [h]
 
 theorem ptr_succ1 (p : BitVec 64) (i : Nat) :
@@ -79,8 +79,8 @@ theorem copy_step {S D : Addr} {len : Nat} {s₀ : State} (hlen : len < 2 ^ 64)
     {k : Nat} (hk : k < len) {s : State} (h : CopyInv S D len s₀ k s) :
     WP isa (.block VG.Impl.MlKem.PPC64LE.copyBody) s fun s' =>
       CopyInv S D len s₀ (k + 1) s' ∧ (s'.gpr .r5 != 0) = decide (k + 1 ≠ len) := by
-  have cS : (⟨S, len⟩ : Region).Contains (S + BitVec.ofNat 64 k) 1 := Offset.contains_base _ (by omega) (by omega)
-  have cD : (⟨D, len⟩ : Region).Contains (D + BitVec.ofNat 64 k) 1 := Offset.contains_base _ (by omega) (by omega)
+  have cS : (⟨S, len⟩ : Region).Contains (S + BitVec.ofNat 64 k) 1 := Offset.contains_base _ (by omega_using [hk]) (by omega_using [hlen, hk])
+  have cD : (⟨D, len⟩ : Region).Contains (D + BitVec.ofNat 64 k) 1 := Offset.contains_base _ (by omega_using [hk]) (by omega_using [hlen, hk])
   refine WP.sp_eq ?_
   simp only [VG.Impl.MlKem.PPC64LE.copyBody]
   refine wp_lbz (by decide) (by decide) (by rw [h.r3, BitVec.add_zero]) (by rw [h.keep.2.1, h.keep.2.2]; exact cr k hk)
@@ -113,9 +113,9 @@ theorem copy_step {S D : Addr} {len : Nat} {s₀ : State} (hlen : len < 2 ^ 64)
         intro hlt
         have e0 : D + BitVec.ofNat 64 t - (D + BitVec.ofNat 64 k) = 0 :=
           BitVec.eq_of_toNat_eq (by have : (0 : BitVec 64).toNat = 0 := rfl; omega)
-        apply Offset.add_ofNat_ne D (a := t) (b := k) (by omega) (by omega) e
+        apply Offset.add_ofNat_ne D (a := t) (b := k) (by omega_using [hlen, hk, ht]) (by omega_using [hlen, hk]) e
         rw [← BitVec.sub_add_cancel (D + BitVec.ofNat 64 t) (D + BitVec.ofNat 64 k), e0]; simp
-      rw [ite_eq_right hne]; exact h.bytes t (by omega)
+      rw [ite_eq_right hne]; exact h.bytes t (by omega_using [ht, e])
   · rw [u₅.gpr, u₄.other _ (by decide), u₃.other _ (by decide), m₂.gpr, u₁.other _ (by decide), h.r5,
       count_sub hk]
     exact count_nz hk hlen
@@ -177,10 +177,10 @@ theorem copyS_vp {F Q : State → State → Prop} {c : State → Cfg} {dst src n
   have rd₃ : s₃.rd = s.rd := by rw [u₃.rd, u₂.rd, u₁.rd]
   have wr₃ : s₃.wr = s.wr := by rw [u₃.wr, u₂.wr, u₁.wr]
   have m₃ : s₃.mem = s.mem := by rw [u₃.mem, u₂.mem, u₁.mem]
-  refine WP.mono (copyLoop_ok (S := G.sa src) (D := G.sa dst) (by omega) hn
-    (gi.sdisj hsep.symm (by omega) (by omega))
-    (fun i hi => by rw [rd₃, wr₃, sa_add]; exact gi.inRdWr (o := src + i) (n := 1) (by omega))
-    (fun i hi => by rw [wr₃, sa_add]; exact gi.inScr (o := dst + i) (n := 1) (by omega))
+  refine WP.mono (copyLoop_ok (S := G.sa src) (D := G.sa dst) (by omega_using [hn15]) hn
+    (gi.sdisj hsep.symm (by omega_using [sS]) (by omega_using [dS]))
+    (fun i hi => by rw [rd₃, wr₃, sa_add]; exact gi.inRdWr (o := src + i) (n := 1) (by omega_using [sS, hi]))
+    (fun i hi => by rw [wr₃, sa_add]; exact gi.inScr (o := dst + i) (n := 1) (by omega_using [dS, hi]))
     (by rw [u₃.other _ (by decide), u₂.other _ (by decide), u₁.gpr, r28])
     (by rw [u₃.other _ (by decide), u₂.gpr, u₁.other _ (by decide), r28]) (by rw [u₃.gpr]))
     fun t ⟨kp, sp', f, b⟩ sp => ?_
@@ -229,7 +229,7 @@ theorem copyIn_vp {F Q : State → State → Prop} {c : State → Cfg} {o dst n 
     simp only [List.cons_append, List.nil_append]
     refine WP.cons (s' := s.write .r3 P) ?_ ?_
     · rw [show ld .r3 o = .load .d .r3 .r28 o from rfl, exec_load_d (by decide)
-        ⟨by simp only [hEnd, fSave] at ho; omega, by omega⟩ (by rw [h.gi.r28]; exact h.gi.inRdWr (by omega)),
+        ⟨by simp only [hEnd, fSave] at ho; omega_using [ho], by omega_using [h8]⟩ (by rw [h.gi.r28]; exact h.gi.inRdWr (by omega_using [ho, hE])),
         h.gi.r28, ← hP σ s hs]
     have u₁ : Upd s (s.write .r3 P) .r3 P := Upd.write _ _ _
     refine WP.wr (exec_addi (by decide) hd15) fun s₂ u₂ sp₂ _ => ?_
@@ -250,13 +250,13 @@ theorem copyIn_vp {F Q : State → State → Prop} {c : State → Cfg} {o dst n 
   simp only [List.length_replicate] at dK dS
   obtain ⟨Pr, Pf, Pd⟩ := hPr σ s hs
   have dsub : Region.Sub (G.rs dst n) G.rScr := sw G dS
-  refine WP.sp_eq (WP.mono (copyLoop_ok (S := P) (D := G.sa dst) (by omega) hn (Pd.sub_right dsub)
-    (fun i hi => ?_) (fun i hi => by rw [K₁.2.2, sa_add]; exact gi.inScr (o := dst + i) (n := 1) (by omega))
+  refine WP.sp_eq (WP.mono (copyLoop_ok (S := P) (D := G.sa dst) (by omega_using [hn15]) hn (Pd.sub_right dsub)
+    (fun i hi => ?_) (fun i hi => by rw [K₁.2.2, sa_add]; exact gi.inScr (o := dst + i) (n := 1) (by omega_using [dS, hi]))
     t3 t4 t5) fun u ⟨kp, sp', f, b⟩ sp => ?_)
   · rw [K₁.2.1, K₁.2.2]
     obtain ⟨r, hr, hc⟩ := Pr
     have hb : (P + BitVec.ofNat 64 i - P).toNat < n := by
-      rw [Offset.add_sub_cancel_left, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]; exact hi
+      rw [Offset.add_sub_cancel_left, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hn15, hi])]; exact hi
     exact ⟨r, hr, hc.byte hb⟩
   have K : Keep [.r3, .r4, .r5, .r6] s u := by
     refine ⟨fun r hr => ?_, by rw [kp.2.1, K₁.2.1], by rw [kp.2.2, K₁.2.2]⟩

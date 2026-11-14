@@ -31,13 +31,13 @@ theorem crt_loadPStage_ok (s : State) {g : CrtGeometry} {bs : Fin 7 → List Byt
       Frame (crtLiveMutable g s.sp) s.mem t.mem ∧ Rest roundClobbers s t := by
   rw [CrtFn.loadP, WP.seq_iff]
   refine WP.mono (crt_selectLinked_ready s h h.buffers.context.p h.p (by simp [crtRegions])
-    (by have := h.buffers.context.size; omega : 224 + 4 ≤ 8 * workspaceWords g.words)
+    (by have := h.buffers.context.size; omega_using [this] : 224 + 4 ≤ 8 * workspaceWords g.words)
     (by decide) ready.ptr h.main.p) ?_
   rintro u ⟨sharedU, readyU, frameU, restU⟩
   have input : CrtLoadPInput (crtP g.base g.words) g.p g.qi (workspaceWords g.words) g.words g.pLength (bs 2) (bs 6) u :=
     ⟨readyU, sharedU.savedOperand 1 (by simp [crtRegions]), sharedU.savedOperand 5 (by simp [crtRegions]),
       h.buffers.pPositive,
-      by have := (crt_width_valid h.buffers.lengthValid).2.2; have := h.buffers.pShort; change _ ≤ 8 * Spec.Rsa.modulusWords g.length; omega,
+      by have := (crt_width_valid h.buffers.lengthValid).2.2; have := h.buffers.pShort; change _ ≤ 8 * Spec.Rsa.modulusWords g.length; omega_arith,
       sharedU.stack.write (by decide)⟩
   rw [WP.seq_iff]
   refine WP.mono (crt_loadPBody_ok u input) ?_

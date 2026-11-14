@@ -31,14 +31,14 @@ theorem copyByte_ok {s : State} {rp op : Addr} {j k : Nat} {b : Byte}
   xrun [State.ea, at0, hrp, hop, hn,
     show off rp j + BitVec.ofInt 64 0 = off rp j from by simp,
     show off op j + BitVec.ofInt 64 0 = off op j from by simp, hrd, hwr, hb,
-    ofNat64_pred (show 1 ≤ k - j by omega) (by omega),
-    ofNat64_beq_zero (show k - j - 1 < 2 ^ 64 by omega)]
+    ofNat64_pred (show 1 ≤ k - j by omega_using [hj]) (by omega_using [hk]),
+    ofNat64_beq_zero (show k - j - 1 < 2 ^ 64 by omega_using [hk])]
   refine ⟨?_, ?_, ?_, ?_, ?_⟩
   · simp
   · simp only [off, BitVec.add_assoc, ofNat_add_one]
   · simp only [off, BitVec.add_assoc, ofNat_add_one]
-  · rw [show k - j - 1 = k - (j + 1) by omega]
-  · exact decide_eq_decide.mpr (by omega)
+  · rw [show k - j - 1 = k - (j + 1) by omega_using []]
+  · exact decide_eq_decide.mpr (by omega_using [hj])
 
 private theorem headTail_getD (head : Byte) (bs : List Byte) (i : Nat) :
     (head :: bs.drop 1).getD i 0 = if i = 0 then head else bs.getD i 0 := by
@@ -65,7 +65,7 @@ theorem copyTailStep_ok {s₀ t : State} {rp op : Addr} {bs : List Byte} {head :
   have hrd' : InRegions (t.rd ++ t.wr) (off rp j) 1 := by rw [h.keep.2.1, h.keep.2.2]; exact hrd j hj
   have hwr' : InRegions t.wr (off op j) 1 := by rw [h.keep.2.2]; exact hwr j hj
   have hb' : t.mem (off rp j) = bs.getD j 0 := by
-    rw [h.frame _ (fun i hi => hsep j hj i (by omega))]
+    rw [h.frame _ (fun i hi => hsep j hj i (by omega_using [hj, hi]))]
     exact hb j hj
   refine WP.mono (copyByte_ok hj hk h.ptrR h.ptrO h.count hrd' hwr' hb') fun u ⟨⟨hm, hrp, hop, hn, hz⟩, k⟩ => ?_
   refine ⟨hz, ⟨(h.keep.trans k).mono (by decide), hrp, hop, hn, ?_, ?_⟩⟩
@@ -73,12 +73,12 @@ theorem copyTailStep_ok {s₀ t : State} {rp op : Addr} {bs : List Byte} {head :
     rw [hm, WriteBytes.writeW8_apply]
     by_cases he : i = j
     · subst he
-      rw [ite_eq_left rfl, headTail_getD, ite_eq_right (show i ≠ 0 by omega)]
-    · rw [ite_eq_right (out_ne (by omega) (by omega) he)]
-      exact h.bytes i (by omega)
+      rw [ite_eq_left rfl, headTail_getD, ite_eq_right (show i ≠ 0 by omega_using [hj1])]
+    · rw [ite_eq_right (out_ne (by omega_using [hk, hj, hi]) (by omega_using [hk, hj]) he)]
+      exact h.bytes i (by omega_using [hi, he])
   · intro a ha
-    rw [hm, WriteBytes.writeW8_apply, ite_eq_right (ha j (by omega))]
-    exact h.frame a (fun i hi => ha i (by omega))
+    rw [hm, WriteBytes.writeW8_apply, ite_eq_right (ha j (by omega_using []))]
+    exact h.frame a (fun i hi => ha i (by omega_using [hi]))
 
 /-- An arbitrary first output byte is ready; copy the remaining source bytes unchanged. -/
 theorem copyTailLoop_ok {s : State} {rp op : Addr} {bs : List Byte} {head : Byte}
@@ -91,10 +91,10 @@ theorem copyTailLoop_ok {s : State} {rp op : Addr} {bs : List Byte} {head : Byte
     (hb : ∀ i < bs.length, s.mem (off rp i) = bs.getD i 0)
     (hsep : ∀ i < bs.length, ∀ l < bs.length, off rp i ≠ off op l) :
     WP isa (.loop (.block copyByte) .ne) s (CopyTailInv s rp op bs head bs.length) :=
-  wp_upto (a := 1) (by omega) (CopyTailInv s rp op bs head)
+  wp_upto (a := 1) (by omega_using [hk1]) (CopyTailInv s rp op bs head)
     (fun j hj1 hj t ht => copyTailStep_ok hk hj1 hj hrd hwr hb hsep ht) (fun _ h => h)
     ⟨Keep.refl _ _, hp, ho, hn, (fun i hi => by
-      have he : i = 0 := by omega
+      have he : i = 0 := by omega_using [hi]
       subst he
       rw [headTail_getD, ite_eq_left rfl]
       simpa [off] using hfirst),

@@ -67,7 +67,7 @@ theorem ck_ok : ckKC.Ok 8 10 VG.Impl.Rsa.RISCV64.CheckKey.moves
     have := h0.lv; have := h0.e1; have := h0.e2
     simp only [Spec.Rsa.lenValid] at *
     show 1 ≤ (s.gpr .a3).toNat ∧ (s.gpr .a3).toNat ≤ 1024
-    exact ⟨h0.e1, by omega⟩
+    exact ⟨h0.e1, by omega_arith⟩
   hE s h := by
     have h0 := ckP_of h
     exact ⟨by rw [h0.hrd]; simp [ckKC], h0.de, h0.we⟩

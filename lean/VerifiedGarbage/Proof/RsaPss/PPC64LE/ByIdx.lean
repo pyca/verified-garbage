@@ -126,7 +126,7 @@ theorem byIdx_ok {F : State → Prop} {Q : State → Prop} (h3 : ∀ t, F t → 
     refine WP.seq (WP.of_syms (wp_subi (h := hx0) fun t' o e => wp_nil fun y => ?_))
     have ht' := hF t t' ht o y
     have e4 : (t'.gpr .r12 == 0) = decide (D = x) := by
-      rw [e, h3 t ht, ofNat_sub_beq64 hD (by omega)]
+      rw [e, h3 t ht, ofNat_sub_beq64 hD (by omega_using [hx0])]
     refine WP.ite _ (eval_zero _ _) (fun hc => ?_) (fun hc => ?_)
     · rw [e4] at hc
       obtain rfl := of_decide_eq_true hc
@@ -153,7 +153,7 @@ theorem byIdx_ct {α : Type} {Φ : α → State → Prop} {R : State → State �
       fun a t ht => WP.of_syms (wp_subi (h := hx0) fun t' o e => wp_nil fun y => ⟨hF a t t' ht o y,
         by rw [e, h3 a t ht]⟩)) ?_
     have e4 : ∀ a t, Ψ a t → isa.eval (.zero .d .r12) t = some (decide (D = x)) := fun a t ht => by
-      rw [eval_zero, ht.2, ofNat_sub_beq64 hD (by omega)]
+      rw [eval_zero, ht.2, ofNat_sub_beq64 hD (by omega_using [hx0])]
     refine two_ite (fun a t₁ t₂ h₁ h₂ => by rw [e4 a t₁ h₁, e4 a t₂ h₂]) ?_ ?_
     · by_cases hDx : D = x
       · subst hDx

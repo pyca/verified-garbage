@@ -50,7 +50,7 @@ theorem productArgs_ct {base : BitVec 32} {size tmp a : Nat}
         (p : s.gpr .r0 = base + BitVec.ofNat 32 tmp)
         (m : s.mem.readW (off (State.addr base) (tmp + 16)) 32 = base + BitVec.ofNat 32 a) :
         WP isa (.block [.ldr .r1 .r0 16]) s P := by
-      refine wp_ldr (by decide) (ws.ea p (by omega)) (ws.read ht) fun t u => WP.block_nil ?_
+      refine wp_ldr (by decide) (ws.ea p (by omega_using [ht])) (ws.read ht) fun t u => WP.block_nil ?_
       exact ⟨(u.other .r0 (by decide)).trans p, u.gpr.trans m⟩
     exact (RelCT.wp (ct.mono (fun _ _ h => h.2.2.1.trans h.2.2.2.1.symm) (fun _ _ h => h))
       (fun s t h => ⟨one s h.1 h.2.2.1 h.2.2.2.2.1, one t h.2.1 h.2.2.2.1 h.2.2.2.2.2⟩)).mono
@@ -83,16 +83,16 @@ theorem reductionArgs_ct {base : BitVec 32} {size top acc : Nat}
       (m : s.mem.readW (off (State.addr base) (top + 44)) 32 = base + BitVec.ofNat 32 acc) :
       WP isa (.block pre) s P := by
     unfold pre
-    refine wp_ldr (by decide) (ws.ea p (by omega)) (ws.read (by omega)) fun s1 u1 => ?_
+    refine wp_ldr (by decide) (ws.ea p (by omega_using [ht])) (ws.read (by omega_using [ht])) fun s1 u1 => ?_
     have p1 := (u1.other .r0 (by decide)).trans p
     have w1 := ws.congr u1.wr
-    refine wp_ldr (by decide) (w1.ea p1 (by omega)) (w1.read (by omega)) fun s2 u2 => ?_
+    refine wp_ldr (by decide) (w1.ea p1 (by omega_using [ht])) (w1.read (by omega_using [ht])) fun s2 u2 => ?_
     have p2 := (u2.other .r0 (by decide)).trans p1
     have w2 := w1.congr u2.wr
-    refine wp_ldr (by decide) (w2.ea p2 (by omega)) (w2.read (by omega)) fun s3 u3 => ?_
+    refine wp_ldr (by decide) (w2.ea p2 (by omega_using [ht])) (w2.read (by omega_using [ht])) fun s3 u3 => ?_
     have p3 := (u3.other .r0 (by decide)).trans p2
     have w3 := w2.congr u3.wr
-    refine wp_ldr (by decide) (w3.ea p3 (by omega)) (w3.read ht) fun t u4 => WP.block_nil ?_
+    refine wp_ldr (by decide) (w3.ea p3 (by omega_using [ht])) (w3.read ht) fun t u4 => WP.block_nil ?_
     change t.gpr .r0 = _
     rw [u4.gpr, u3.mem, u2.mem, u1.mem, m]
   have ct := RelCT.taint (A := taint) (c := .block pre)

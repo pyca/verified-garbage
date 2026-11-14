@@ -60,7 +60,7 @@ theorem infinity_ok {base : Addr} {s : State} (hs : Scr s base 8192)
   have hn8 : cfg.n = 4 := rfl
   have hex : resultPt.x+32 ≤ 8192 := by decide
   have hey : resultPt.y+32 ≤ 8192 := by decide
-  have hm0 : 0 < C.p := by change 0 < cfg.C.p; have := hc.p_ge; omega
+  have hm0 : 0 < C.p := by change 0 < cfg.C.p; have := hc.p_ge; omega_using [this]
   have hm1 : cfg.mont 1 < C.p := Nat.mod_lt _ hm0
   have hm1r : cfg.mont 1 < 2 ^ (64*cfg.n) := Nat.lt_trans hm1 hc.p_lt
   rw [infinity,WP.block_append_iff,WP.block_append_iff]
@@ -75,11 +75,11 @@ theorem infinity_ok {base : Addr} {s : State} (hs : Scr s base 8192)
   have kt := (k₁.trans k₂).trans k₃
   have xt : num base t resultPt.x = 0 := by
     unfold num
-    rw [u₃.wordsVal (by decide) (by have := hs.nowrap; omega),
-      u₂.wordsVal (by decide) (by have := hs.nowrap; omega)]; exact x
+    rw [u₃.wordsVal (by decide) (by have := hs.nowrap; omega_using [hn8, hex]),
+      u₂.wordsVal (by decide) (by have := hs.nowrap; omega_using [hn8, hex])]; exact x
   have yt : num base t resultPt.y = cfg.mont 1 := by
     unfold num
-    rw [u₃.wordsVal (by decide) (by have := hs.nowrap; omega)]; exact y
+    rw [u₃.wordsVal (by decide) (by have := hs.nowrap; omega_using [hn8, hey])]; exact y
   have zt : num base t resultPt.z = 0 := z
   have ut : Unch base ((coordinates resultPt).map (·,32)) s.mem t.mem :=
     (u₁.unch.trans (u₂.unch.trans u₃.unch)).mono (by

@@ -46,10 +46,10 @@ theorem allocatedSave_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base
     intro x hx
     change (((s.mem.writeW (off base 7800) (s.gpr .x26)).writeW (off base 7808) (s.gpr .x27)).writeW
       (off base 7816) (s.gpr .x28)).writeW (off base 7824) (s.gpr .x30) x=s.mem x
-    rw [(writeW_outside _ base (d:=7824) _ (by decide)) x (by omega),
-      (writeW_outside _ base (d:=7816) _ (by decide)) x (by omega),
-      (writeW_outside _ base (d:=7808) _ (by decide)) x (by omega),
-      (writeW_outside _ base (d:=7800) _ (by decide)) x (by omega)]
+    rw [(writeW_outside _ base (d:=7824) _ (by decide)) x (by omega_using [hx]),
+      (writeW_outside _ base (d:=7816) _ (by decide)) x (by omega_using [hx]),
+      (writeW_outside _ base (d:=7808) _ (by decide)) x (by omega_using [hx]),
+      (writeW_outside _ base (d:=7800) _ (by decide)) x (by omega_using [hx])]
   · rw [h.mem,hs.x0]; exact Spill.saveMem_saved (by decide) _ _ _
 
 /-- A body's write frame preserves the saved extra registers. -/
@@ -60,7 +60,7 @@ theorem allocatedSaved_keep {base : Addr} {g : Reg → BitVec 64} {s t : State}
   intro p hp
   have hb : ∀ p∈extra,7800≤p.2 ∧ p.2+8≤7832 := by decide
   change word t.mem base p.2=_
-  rw [hu.word (fun w hm => by have := hw w hm; have := hb p hp; omega) (by have := hb p hp; omega)]
+  rw [hu.word (fun w hm => by have := hw w hm; have := hb p hp; omega_arith) (by have := hb p hp; omega_using [this])]
   exact h p hp
 
  theorem allocatedRestore_ok {s : State} {base : Addr} {size : Nat} {g : Reg → BitVec 64}

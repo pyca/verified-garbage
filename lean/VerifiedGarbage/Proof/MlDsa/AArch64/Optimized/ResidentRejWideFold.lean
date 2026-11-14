@@ -35,12 +35,12 @@ theorem quarter_ok {s : State} {j : Nat} (hj : j<4)
         accepted (candidates (s.mem.read (s.gpr .x2+BitVec.ofNat 64 (12*j)) 16) (s.v .v4)) (s.v .v5) := by
   let d := wideRegs[j]!
   have hn : d≠.v0 ∧ d≠.v2 ∧ d≠.v3 ∧ d≠.v4 ∧ d≠.v5 ∧ d≠.v20 := by
-    rcases (show j=0 ∨ j=1 ∨ j=2 ∨ j=3 by omega) with rfl | rfl | rfl | rfl <;> decide
+    rcases (show j=0 ∨ j=1 ∨ j=2 ∨ j=3 by omega_using [hj]) with rfl | rfl | rfl | rfl <;> decide
   have hvpres : ∀r∈preservedV,r∉[.v0,d,.v2,.v20] := by
-    rcases (show j=0 ∨ j=1 ∨ j=2 ∨ j=3 by omega) with rfl | rfl | rfl | rfl <;> decide
+    rcases (show j=0 ∨ j=1 ∨ j=2 ∨ j=3 by omega_using [hj]) with rfl | rfl | rfl | rfl <;> decide
   have hadd : WP isa (.block [.addImm .x .x6 .x2 (12*j)]) s fun a =>
       Only [.x6] s a ∧ a.gpr .x6=s.gpr .x2+BitVec.ofNat 64 (12*j) := by
-    refine wp_addImm (by omega) fun a ha ea => wp_nil ⟨ha,ea⟩
+    refine wp_addImm (by omega_using [hj]) fun a ha ea => wp_nil ⟨ha,ea⟩
   change WP isa (.block (([.addImm .x .x6 .x2 (12*j)] : List Instr)++_)) s _
   refine wp_scalar (by rfl) hadd fun a ⟨ha,ea⟩ hava => ?_
   refine wp_ldrq (a := s.gpr .x2+BitVec.ofNat 64 (12*j)) (by decide)
@@ -95,7 +95,7 @@ structure QuarterPost (s : State) (n : Nat) (t : State) : Prop where
 
 private theorem wide_ne {j : Nat} (hj : j<4) :
     wideRegs[j]! ≠ .v0 ∧ wideRegs[j]! ≠ .v2 ∧ wideRegs[j]! ≠ .v20 := by
-  rcases (show j=0 ∨ j=1 ∨ j=2 ∨ j=3 by omega) with rfl | rfl | rfl | rfl <;> decide
+  rcases (show j=0 ∨ j=1 ∨ j=2 ∨ j=3 by omega_using [hj]) with rfl | rfl | rfl | rfl <;> decide
 
 private theorem wide_inj {i j : Nat} (hi : i<4) (hj : j<4) (hne : i≠j) :
     wideRegs[i]! ≠ wideRegs[j]! := by
@@ -113,12 +113,12 @@ theorem quarters_ok (n : Nat) (hn : n≤4) {s : State}
     exact WP.block_nil_iff.mpr ⟨⟨Only.refl _ _,fun _ _ => rfl⟩,
       fun _ h => absurd h (Nat.not_lt_zero _),rfl⟩
   | succ n ih =>
-    have hn4 : n<4 := by omega
+    have hn4 : n<4 := by omega_using [hn]
     rw [List.range_succ,List.flatMap_append,List.flatMap_cons,List.flatMap_nil,List.append_nil,
       WP.block_append_iff]
-    refine WP.mono (ih (by omega) (fun j hj => hr j (by omega))) fun a ha => ?_
+    refine WP.mono (ih (by omega_using [hn]) (fun j hj => hr j (by omega_using [hj]))) fun a ha => ?_
     refine WP.mono (quarter_ok (s := a) hn4
-      (by rw [ha.frame.only.rd,ha.frame.only.wr,ha.frame.only.get .x2]; exact hr n (by omega))
+      (by rw [ha.frame.only.rd,ha.frame.only.wr,ha.frame.only.get .x2]; exact hr n (by omega_using []))
       (by rw [ha.frame.vectors .v3 (by decide)]; exact hi)) fun t ⟨ht,hval,hmask⟩ => ?_
     have hv : candidates (a.mem.read (a.gpr .x2+BitVec.ofNat 64 (12*n)) 16) (a.v .v4)=
         quarterValues s n := by
@@ -132,7 +132,7 @@ theorem quarters_ok (n : Nat) (hn : n≤4) {s : State}
         · simpa only [wideVectors,List.mem_cons,List.not_mem_nil,or_false] using h
         · decide
         · rcases h with rfl
-          rcases (show n=0 ∨ n=1 ∨ n=2 ∨ n=3 by omega) with rfl | rfl | rfl | rfl <;> decide
+          rcases (show n=0 ∨ n=1 ∨ n=2 ∨ n=3 by omega_using [hn]) with rfl | rfl | rfl | rfl <;> decide
         · decide
         · decide)
     refine ⟨hframe,?_,?_⟩
@@ -141,10 +141,10 @@ theorem quarters_ok (n : Nat) (hn : n≤4) {s : State}
       · subst j
         rw [hval,hv]
       · rw [ht.vectors _ (by
-          have hh := wide_ne (j := j) (by omega)
+          have hh := wide_ne (j := j) (by omega_using [hn, hj])
           simp only [List.mem_cons,List.not_mem_nil,or_false,not_or]
-          exact ⟨hh.1,wide_inj (by omega) hn4 he,hh.2.1,hh.2.2⟩)]
-        exact ha.values j (by omega)
+          exact ⟨hh.1,wide_inj (by omega_using [hn, hj]) hn4 he,hh.2.1,hh.2.2⟩)]
+        exact ha.values j (by omega_using [hj, he])
     · rw [hmask,hv,ha.mask,ha.frame.vectors .v5 (by decide)]
       rfl
 

@@ -22,12 +22,12 @@ theorem primeTrial_ok {P : PrimeParams} {used : Nat} {s : State}
     WP isa (seqs trial) s fun t =>
       isa.eval (.zero .x .x1) t = some (!Spec.RsaKeyGen.obviouslyComposite (Spec.Dsa.bitLength P.N) P.N) ∧
       PrimeInput P used t ∧ Frm P.B (primeTrialRanges P.w) s.mem t.mem ∧ Keep mmRegs s t := by
-  refine WP.mono (VG.Proof.RsaKeyGen.AArch64.trial_ok h.ws hz P.w4 (by omega))
+  refine WP.mono (VG.Proof.RsaKeyGen.AArch64.trial_ok h.ws hz P.w4 (by omega_using [hw]))
     fun t ⟨hflag, ht, hf, hk⟩ => ?_
   rw [h.n, VG.Proof.Dsa.Generation.trialAny_dsa hn hpolicy] at hflag
   have hn' : wv t.mem P.B (slot P.w aN) P.w = P.N := by
     rw [hf.wv_eq (by intro r hr; rw [List.mem_singleton.mp hr]; left; simp only [slot, hdrBytes, aN, aTab]; omega_arith)
-      (by have := h.ws.scr.nowrap; have := h.ws.sl (show aN < 16 by decide); omega)]
+      (by have := h.ws.scr.nowrap; have := h.ws.sl (show aN < 16 by decide); omega_arith)]
     exact h.n
   have hi := h.advance ht hn' hf hk (by intro r hr; rw [List.mem_singleton.mp hr]; exact hz)
     (by

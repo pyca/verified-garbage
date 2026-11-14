@@ -39,22 +39,22 @@ theorem temporary_pcPrefix {g : PrivGeometry} (h : g.Valid) :
   simp only [pcPrefixWrites, List.mem_cons, List.not_mem_nil, or_false] at hr
   have bound := h.maxLength
   rcases hr with rfl | rfl
-  · exact Offset.disjoint_base _ (by decide : 8 ≤ oM) (by simp only [oM]; omega)
+  · exact Offset.disjoint_base _ (by decide : 8 ≤ oM) (by simp only [oM]; omega_using [bound])
   · exact Offset.disjoint _ (Or.inr (by decide : oR1 + 4 ≤ oM))
-      (by simp only [oM]; omega) (by decide)
+      (by simp only [oM]; omega_using [bound]) (by decide)
 
 theorem temporary_pcCall {g : PrivGeometry} (h : g.Valid) :
     ∀ r ∈ pcWr g ++ [g.calleeRegion], (⟨State.addr g.temporary, g.length⟩ : Region).Disjoint r := by
   have ex := innerSlice_external h (d := oM) (n := g.length)
-    (by have := h.maxLength; simp only [oM, frameBytes]; omega)
+    (by have := h.maxLength; simp only [oM, frameBytes]; omega_using [this])
   intro r hr
   rw [temporary_region h]
   simp only [pcWr, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl
   · rw [precomputation_region h]
-    exact Offset.disjoint _ (Or.inl (by have := h.maxLength; simp only [oM, oPre]; omega))
-      (by have := h.maxLength; simp only [oM]; omega)
-      (by have := h.maxLength; simp only [oPre, Spec.Rsa.modulusWords]; omega)
+    exact Offset.disjoint _ (Or.inl (by have := h.maxLength; simp only [oM, oPre]; omega_using [this]))
+      (by have := h.maxLength; simp only [oM]; omega_using [this])
+      (by have := h.maxLength; simp only [oPre, Spec.Rsa.modulusWords]; omega_using [this])
   · exact ex.2.1
   · exact ex.2.2
 
@@ -73,7 +73,7 @@ theorem innerSlice_pdPrefix {g : PrivGeometry} {d n : Nat} (low : 96 ≤ d) (hig
   intro r hr
   simp only [pdPrefixWrites, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl
-  · exact Offset.disjoint_base _ (by omega : 24 ≤ d) (by simp only [frameBytes] at high; omega)
-  · exact Offset.disjoint _ (Or.inr (by simp only [oR3]; omega))
-      (by simp only [frameBytes] at high; omega) (by decide)
+  · exact Offset.disjoint_base _ (by omega_using [low] : 24 ≤ d) (by simp only [frameBytes] at high; omega_using [high])
+  · exact Offset.disjoint _ (Or.inr (by simp only [oR3]; omega_using [low]))
+      (by simp only [frameBytes] at high; omega_using [high]) (by decide)
 end VG.Proof.Rsa.Arm

@@ -40,20 +40,20 @@ theorem vbyte_input {w : Width} (hw : WOk w) {s₀ : State} (hp : Pre w s₀) {m
     (hf : Frame [polyRegion (fP s₀)] s₀.mem m) {o : Nat} (ho : o + 16 ≤ 32 * w.d) {j : Nat} (hj : j < 16) :
     (vbyte (m.read (bP s₀ + BitVec.ofNat 64 o) 16) j).toNat = byte w s₀ (o + j) := by
   change ((m.read _ 16).extractLsb' (8 * j) 8).toNat = _
-  rw [Mem.extractLsb'_read m _ hj, ptr_add, hp.byte_eq hf (by omega) hw.d_le]
+  rw [Mem.extractLsb'_read m _ hj, ptr_add, hp.byte_eq hf (by omega_using [ho, hj]) hw.d_le]
 
 theorem DInv.in16 {w : Width} (hw : WOk w) {Ng : Nat} {K : State → Prop} {s₀ : State} (hp : Pre w s₀) {k : Nat}
     {s : State} (h : DInv w Ng K s₀ k s) {o : Nat} (ho : o + 16 ≤ 32 * w.d) :
     InRegions (s.rd ++ s.wr) (bP s₀ + BitVec.ofNat 64 o) 16 := by
   rw [h.rd, h.wr, hp.rd, hp.wr]
   have := hw.d_le
-  exact in_rd (in_regions (List.mem_singleton_self _) (contains_off ho (by omega)))
+  exact in_rd (in_regions (List.mem_singleton_self _) (contains_off ho (by omega_using [this])))
 
 theorem DInv.out16 {w : Width} {Ng : Nat} {K : State → Prop} {s₀ : State} (hp : Pre w s₀) {k : Nat}
     {s : State} (h : DInv w Ng K s₀ k s) {i : Nat} (hi : i + 4 ≤ 256) :
     InRegions s.wr (coeffAddr (fP s₀) i) 16 := by
   rw [h.wr, hp.wr]
-  exact in_regions (List.mem_singleton_self _) (contains_off (by omega) (by decide))
+  exact in_regions (List.mem_singleton_self _) (contains_off (by omega_using [hi]) (by decide))
 
 /-- A vector of four output coefficients, from their values. -/
 theorem vword_G {x : BitVec 128} {f : Nat → Nat} (hx : Lanes x f) {g : Nat → BitVec 32}
@@ -74,11 +74,11 @@ theorem dtail_ok {w : Width} {Ng : Nat} {s₀ : State} {k : Nat} (hk : k < 256 /
       t.gpr .x0 = bP s₀ + BitVec.ofNat 64 (w.nb * Ng * (k + 1)) ∧
       t.gpr .x3 = coeffAddr (fP s₀) (w.c * Ng * (k + 1)) ∧
       (t.gpr .x11).toNat = 256 / (w.c * Ng) - (k + 1)) ⟨((h4.trans h5).trans h6).mono, ?_, ?_, ?_⟩))
-    fun t ⟨⟨o, a, b, c⟩, v⟩ => ⟨o, v, a, b, c, by rw [c]; omega⟩
+    fun t ⟨⟨o, a, b, c⟩, v⟩ => ⟨o, v, a, b, c, by rw [c]; omega_using [hk]⟩
   · rw [h6.get .x0, h5.get .x0, e4, h0, ptr_add, Nat.mul_succ]
-  · rw [h6.get .x3, e5, h4.get .x3, h3, coeffAddr, coeffAddr, ptr_add]; congr 2; rw [Nat.mul_succ]; omega
+  · rw [h6.get .x3, e5, h4.get .x3, h3, coeffAddr, coeffAddr, ptr_add]; congr 2; rw [Nat.mul_succ]; omega_using []
   · have c : (s5.gpr .x11).toNat = 256 / (w.c * Ng) - k := by rw [h5.get .x11, h4.get .x11, h11]
-    rw [e6, toNat_sub_n (by rw [c]; simp; omega), c]; simp; omega
+    rw [e6, toNat_sub_n (by rw [c]; simp; omega_using [hk]), c]; simp; omega_using []
 
 /-- The loop of one width. -/
 theorem dloop_ok {w : Width} (hw : WOk w) {Ng n : Nat} {K : State → Prop} {setup body : List Instr}
@@ -95,7 +95,7 @@ theorem dloop_ok {w : Width} (hw : WOk w) {Ng n : Nat} {K : State → Prop} {set
   have hd := hw.d_le
   have hd' := hw.d_pos
   refine wp_dupW (c := 3329) (by decide) fun s1 g1 v1 l16 =>
-    wp_dupW (c := 2 ^ (w.d - 1)) (Nat.pow_lt_pow_right (by decide) (by omega)) fun s2 g2 v2 l17 => ?_
+    wp_dupW (c := 2 ^ (w.d - 1)) (Nat.pow_lt_pow_right (by decide) (by omega_using [hd])) fun s2 g2 v2 l17 => ?_
   rw [WP.block_append_iff]
   refine WP.mono (hset s2) fun s4 ⟨g4, v4, k4⟩ => ?_
   rw [← List.append_nil (movImm .x11 _)]
@@ -109,7 +109,7 @@ theorem dloop_ok {w : Width} (hw : WOk w) {Ng n : Nat} {K : State → Prop} {set
       by rw [h5.sp, g4.sp, g2.sp, g1.sp], ?_, ?_, ?_, ⟨?_, ?_⟩, hK _ _ v5 k4, ?_, ?_⟩
     · rw [g .x0 (by decide) (by decide), Nat.mul_zero, ptr_zero]
     · rw [g .x3 (by decide) (by decide), Nat.mul_zero]; exact (ptr_zero _).symm
-    · rw [e5, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := Nat.div_le_self 256 (w.c * Ng); omega), hn,
+    · rw [e5, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := Nat.div_le_self 256 (w.c * Ng); omega_using [hn, this]), hn,
         Nat.sub_zero]
     · rw [v5, v4 _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide), v2 _ (by decide)]; exact l16
     · rw [v5, v4 _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)]; exact l17

@@ -47,7 +47,7 @@ theorem hint_high_change {g : Nat} (hg : IsG g) (r : Zq) (c : Int)
       Nat.reduceSub, Nat.reduceDiv] at * <;>
     simp (disch := decide) only [Nat.add_sub_assoc, Nat.reduceSub] at * <;>
     rcases Nat.lt_or_ge (a + x) 8380417 with hs | hs <;>
-    (first | rw [Nat.mod_eq_of_lt hs] at * | rw [Nat.mod_eq_sub_mod hs, Nat.mod_eq_of_lt (by omega)] at *) <;>
-    first | omega | (rcases Int.lt_or_le c 0 with hc0 | hc0 <;> omega)
+    (first | rw [Nat.mod_eq_of_lt hs] at * | rw [Nat.mod_eq_sub_mod hs, Nat.mod_eq_of_lt (by omega_using [hr, hv])] at *) <;>
+    first | omega | (rcases Int.lt_or_le c 0 with hc0 | hc0 <;> omega_arith)
 
 end VG.Proof.MlDsa.AArch64.Optimized.Response

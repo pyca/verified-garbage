@@ -114,7 +114,7 @@ theorem jointSeed_relCT {c : Joint.Cfg} {C : Curve} {base : Addr} {size : Nat} {
     (Sl:=(·∈jointSlots c)) (V:=jacCoords c.K.R++jointLive c)
     (E:=infinityEnv c.K.M C.p c.K.one E c.K.R) (Pre:=fun _ => True)
     (Post:=fun s => s.gpr .rbx=BitVec.ofNat 64 (Joint.top c)) (by decide : Reg.rdi∉[Reg.rbx]) ctr
-    (fun _ _ hp _ _ => fieldPair_public hp) (fun s _ _ => jointCounter_ok s (by have := hL.n; have := joint_top_le c; omega))
+    (fun _ _ hp _ _ => fieldPair_public hp) (fun s _ _ => jointCounter_ok s (by have := hL.n; have := joint_top_le c; omega_arith))
   exact step.mono (fun _ _ h => ⟨h,trivial,trivial⟩)
     (fun _ _ h => h.1.sub (fun _ hx => List.mem_append_right _ hx))
 

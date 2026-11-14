@@ -148,6 +148,6 @@ theorem copyBlocks_wp {A B : Addr} {c : Nat} {s₀ : State} (hc : 0 < c) (hc8 : 
     (hB : ∀ t < 2*c, InRegions s₀.wr (B+BitVec.ofNat 64 (8*t)) 8)
     (hsep : Region.Disjoint ⟨A,16*c⟩ ⟨B,16*c⟩) (hs : CopyInv A B c s₀ 0 s₀) :
     WP isa copyBlocks s₀ (CopyInv A B c s₀ c) :=
-  copyBlocks_bounded_wp hc (by omega) hA hB hsep hs
+  copyBlocks_bounded_wp hc (by omega_using [hc8]) hA hB hsep hs
 
 end VG.Proof.Camellia.PPC64LE

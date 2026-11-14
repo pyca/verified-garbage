@@ -88,7 +88,7 @@ theorem add_ok {o x y : Nat} (ho : o + 64 ≤ 4096) (hx : x + 64 ≤ 4096) (hy :
   have hvx := V_lt hlx
   have hvy := V_lt hly
   refine WP.mono (passTail_ok (c := fun k => limb s.mem (State.addr b) x k + limb s.mem (State.addr b) y k)
-    ho (fun k hk => by have := hlx k hk; have := hly k hk; omega)
+    ho (fun k hk => by have := hlx k hk; have := hly k hk; omega_arith)
     (by rw [val16_add]; exact Nat.lt_of_lt_of_le (Nat.add_lt_add hvx hvy) (by omega_using [])) hc ?_)
     fun s' ⟨h1, h2, h3, h4⟩ => ⟨h1, h2, h3, by rw [h4, val16_add]; rfl⟩
   intro s1 hc1 _ hm1 k hk s' hp
@@ -106,7 +106,7 @@ theorem add_ok {o x y : Nat} (ho : o + 64 ≤ 4096) (hx : x + 64 ≤ 4096) (hy :
     show (t2.gpr .r3 + t2.gpr .r2).toNat = _
     rw [v2.other .r3 (by decide), v1.gpr, v2.gpr]
     unfold wd at ex ey
-    rw [toNat_add_lt (by rw [ex, ey]; omega), ex, ey]
+    rw [toNat_add_lt (by rw [ex, ey]; omega_arith), ex, ey]
   · exact (v1.rest (by decide)).trans ((v2.rest (by decide)).trans (v3.rest (by decide)))
 
 theorem sub_ok {o x y : Nat} (ho : o + 64 ≤ 4096) (hx : x + 64 ≤ 4096) (hy : y + 64 ≤ 4096)

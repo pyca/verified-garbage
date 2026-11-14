@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Gcm.PrecomputedContract
 public import VerifiedGarbage.Proof.AesGcm.Rounds
 import VerifiedGarbage.Proof.AesGcm.Scratch
 public import VerifiedGarbage.Spec.Gcm.Precomputed
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # AES-GCM's `_precomputed` functions with their working space as an argument
@@ -100,8 +101,8 @@ theorem powersRepr_congr {m₁ m₂ : Mem} {p : Addr}
     (h : ∀ i < 128 * 8, m₂ (p + BitVec.ofNat 64 i) = m₁ (p + BitVec.ofNat 64 i)) (hr : PowersRepr m₁ p) :
     PowersRepr m₂ p := by
   intro k hk
-  rw [blockAt_congr_off (d := 256 + 16 * k) (N := 128 * 8) (by omega) h,
-    ctxH_congr fun i hi => h i (by omega)]
+  rw [blockAt_congr_off (d := 256 + 16 * k) (N := 128 * 8) (by omega_using [hk]) h,
+    ctxH_congr fun i hi => h i (by omega_using [hi])]
   exact hr k hk
 
 variable (pb : Nat)
@@ -211,13 +212,13 @@ theorem sealPrecomputedPost_local : ∀ vs m₁ m₂ m' r, vs.length = (Proof.Gc
   have := Nat.mod_le nl.toNat (2 ^ pb)
   have := Nat.mod_le al.toNat (2 ^ pb)
   have := Nat.mod_le len.toNat (2 ^ pb)
-  rw [ctxCiph_congr hr' fun i hi => hc i (by omega), ctxH_congr fun i hi => hc i (by omega),
+  rw [ctxCiph_congr hr' fun i hi => hc i (by omega_using [hi]), ctxH_congr fun i hi => hc i (by omega_using [hi]),
     bytesAt_congr (n := (nl.setWidth pb).toNat) fun i hi => hn i (by
-      rw [BitVec.toNat_setWidth] at hi; omega),
+      rw [BitVec.toNat_setWidth] at hi; omega_arith),
     bytesAt_congr (n := (al.setWidth pb).toNat) fun i hi => ha i (by
-      rw [BitVec.toNat_setWidth] at hi; omega),
+      rw [BitVec.toNat_setWidth] at hi; omega_arith),
     bytesAt_congr (p := data) (n := (len.setWidth pb).toNat) fun i hi => hd i (by
-      rw [BitVec.toNat_setWidth] at hi; omega)]
+      rw [BitVec.toNat_setWidth] at hi; omega_using [this, hi])]
   exact h hr
 
 theorem openPrecomputedPost_local : ∀ vs m₁ m₂ m' r, vs.length = (Proof.Gcm.openPrecomputedSig.words pb).length →
@@ -262,9 +263,9 @@ theorem openPrecomputedPost_local : ∀ vs m₁ m₂ m' r, vs.length = (Proof.Gc
   dsimp only [Curry.apply, openRoundsPost, ArgWord.ofRaw, IntTy.bits] at h ⊢
   intro hr
   have := Nat.mod_le len.toNat (2 ^ pb)
-  rw [openResult_local (pb := pb) (le15 hr) (fun i hi => hc i (by omega)) hN hA hD hT,
+  rw [openResult_local (pb := pb) (le15 hr) (fun i hi => hc i (by omega_using [hi])) hN hA hD hT,
     bytesAt_congr (p := data) (n := (len.setWidth pb).toNat) fun i hi => hD i (by
-      rw [BitVec.toNat_setWidth] at hi; omega)]
+      rw [BitVec.toNat_setWidth] at hi; omega_using [this, hi])]
   exact h hr
 
 theorem openPrecomputedLeak_local : ∀ vs m₁ m₂, vs.length = (Proof.Gcm.openPrecomputedSig.words pb).length →
@@ -304,7 +305,7 @@ theorem openPrecomputedLeak_local : ∀ vs m₁ m₂, vs.length = (Proof.Gcm.ope
   by_cases hr : (rd.setWidth pb).toNat = 10 ∨ (rd.setWidth pb).toNat = 12 ∨
     (rd.setWidth pb).toNat = 14
   · simp only [hr, not_true_eq_false, ↓reduceIte]
-    simp only [openResult_local (pb := pb) (le15 hr) (fun i hi => agree_of hb.1 i (by omega)) (agree_of hb.2.1)
+    simp only [openResult_local (pb := pb) (le15 hr) (fun i hi => agree_of hb.1 i (by omega_using [hi])) (agree_of hb.2.1)
       (agree_of hb.2.2.1) (agree_of hb.2.2.2.1) (agree_of hb.2.2.2.2)]
     rfl
   · simp only [hr, not_false_eq_true, ↓reduceIte]
@@ -341,11 +342,11 @@ theorem streamEncryptPrecomputedPost_local : ∀ vs m₁ m₂ m' r, vs.length = 
   intro hn iv a p hr hl ht
   have := Nat.mod_le len.toNat (2 ^ pb)
   have hn' := le15 hn
-  rw [ctxCiph_congr hn' fun i hi => hc i (by omega), ctxH_congr fun i hi => hc i (by omega),
+  rw [ctxCiph_congr hn' fun i hi => hc i (by omega_using [hi]), ctxH_congr fun i hi => hc i (by omega_using [hi]),
     bytesAt_congr (n := (len.setWidth pb).toNat) fun i hi => hd i (by
-      rw [BitVec.toNat_setWidth] at hi; omega)]
-  rw [ctxCiph_congr hn' fun i hi => hc i (by omega), ctxH_congr fun i hi => hc i (by omega)] at hr
-  exact h hn iv a p (streamRepr_congr (fun i hi => (hs i (by omega)).symm) hr) hl ht
+      rw [BitVec.toNat_setWidth] at hi; omega_using [this, hi])]
+  rw [ctxCiph_congr hn' fun i hi => hc i (by omega_using [hi]), ctxH_congr fun i hi => hc i (by omega_using [hi])] at hr
+  exact h hn iv a p (streamRepr_congr (fun i hi => (hs i (by omega_using [hi])).symm) hr) hl ht
 
 theorem streamDecryptPrecomputedPost_local : ∀ vs m₁ m₂ m' r, vs.length = (Proof.Gcm.streamCryptPrecomputedSig.words pb).length →
     (∀ b ∈ Sig.bufs Proof.Gcm.streamCryptPrecomputedSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
@@ -379,10 +380,10 @@ theorem streamDecryptPrecomputedPost_local : ∀ vs m₁ m₂ m' r, vs.length = 
   intro hn iv a c hr hl ht
   have := Nat.mod_le len.toNat (2 ^ pb)
   have hn' := le15 hn
-  rw [ctxCiph_congr hn' fun i hi => hc i (by omega), ctxH_congr fun i hi => hc i (by omega),
+  rw [ctxCiph_congr hn' fun i hi => hc i (by omega_using [hi]), ctxH_congr fun i hi => hc i (by omega_using [hi]),
     bytesAt_congr (n := (len.setWidth pb).toNat) fun i hi => hd i (by
-      rw [BitVec.toNat_setWidth] at hi; omega)]
-  rw [ctxCiph_congr hn' fun i hi => hc i (by omega), ctxH_congr fun i hi => hc i (by omega)] at hr
-  exact h hn iv a c (streamRepr_congr (fun i hi => (hs i (by omega)).symm) hr) hl ht
+      rw [BitVec.toNat_setWidth] at hi; omega_using [this, hi])]
+  rw [ctxCiph_congr hn' fun i hi => hc i (by omega_using [hi]), ctxH_congr fun i hi => hc i (by omega_using [hi])] at hr
+  exact h hn iv a c (streamRepr_congr (fun i hi => (hs i (by omega_using [hi])).symm) hr) hl ht
 
 end VG.Proof.AesGcm

@@ -32,9 +32,9 @@ theorem factor_facts {P Q N : Nat} (h : P * Q = N) (hP : P < N) (hN : N % 2 = 1)
   refine ⟨?_, hodd⟩
   rcases Nat.lt_or_ge 1 Q with h1 | h1
   · exact h1
-  · rcases (show Q = 0 ∨ Q = 1 by omega) with rfl | rfl
-    · rw [Nat.mul_zero] at h; omega
-    · rw [Nat.mul_one] at h; omega
+  · rcases (show Q = 0 ∨ Q = 1 by omega_using [h1]) with rfl | rfl
+    · rw [Nat.mul_zero] at h; omega_using [hP, h]
+    · rw [Nat.mul_one] at h; omega_using [hP, h]
 
 /-- The CRT's result for a valid key. -/
 def crtResult (P Q dp dq QI C : Nat) : Nat :=
@@ -57,10 +57,10 @@ theorem crt_bounds_of {k pl ql : Nat} {nb pb qb : List Byte}
   refine ⟨hodd, hN1, ?_, ?_⟩
   · have := os2ip_lt pb
     rw [hpbl] at this
-    exact Nat.lt_of_lt_of_le this (Nat.le_trans (Nat.pow_le_pow_right (by decide) (by omega)) h256)
+    exact Nat.lt_of_lt_of_le this (Nat.le_trans (Nat.pow_le_pow_right (by decide) (by omega_using [hpl2])) h256)
   · have := os2ip_lt qb
     rw [hqbl] at this
-    exact Nat.lt_of_lt_of_le this (Nat.le_trans (Nat.pow_le_pow_right (by decide) (by omega)) h256)
+    exact Nat.lt_of_lt_of_le this (Nat.le_trans (Nat.pow_le_pow_right (by decide) (by omega_using [hql2])) h256)
 
 /-- What the mask gives: the key's checks, and primes (or 3) odd and above 1. -/
 theorem mask_facts {N C P Q QI : Nat} {Mk : Bool} (hMk : Mk = keyMask (decide (C < N)) N P Q QI)

@@ -42,7 +42,7 @@ theorem p224_nBits : Spec.Ecdsa.nBits Spec.P224.curve = 224 := by
   show Spec.P224.curve.n.log2 + 1 = 224
   have h₁ : 223 ≤ Spec.P224.curve.n.log2 := (Nat.le_log2 (by decide +kernel)).mpr (by decide +kernel)
   have h₂ : Spec.P224.curve.n.log2 < 224 := (Nat.log2_lt (by decide +kernel)).mpr (by decide +kernel)
-  omega
+  omega_using [h₁, h₂]
 
 /-! ## The curve's blocks, and the signature with the HMAC of a table -/
 

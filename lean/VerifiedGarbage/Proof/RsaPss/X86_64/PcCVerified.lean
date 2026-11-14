@@ -69,7 +69,7 @@ theorem codeC_correct (hsel : ∀ s, (verifyK tsH tsG).pre s → ∃ i T Hs Gs, 
   have hp := pre_of h
   have hd := codeC_xd hK hdK v
   obtain ⟨i, T, Hs, Gs, E⟩ := hsel s h
-  have hW := X86_64.WP.stackFrame (codeC_sp hK hdK v) (by unfold verifyStack chkStack at hd; omega)
+  have hW := X86_64.WP.stackFrame (codeC_sp hK hdK v) (by unfold verifyStack chkStack at hd; omega_using [hd])
     (codeC_ok hK hdK v h E)
   obtain ⟨t, s', he, ⟨hcs, hpost, hmx⟩, hf⟩ := hW
   refine ⟨t, s', he, ⟨hcs, ?_, hmx⟩, hpost⟩
@@ -79,10 +79,10 @@ theorem codeC_correct (hsel : ∀ s, (verifyK tsH tsG).pre s → ∃ i T Hs Gs, 
   · rw [hp.hwr] at hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     subst hr
-    exact hp.dRs _ (Offset.contains_base _ (by omega) (by omega)) hc
+    exact hp.dRs _ (Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi])) hc
   · simp only [List.mem_singleton] at hr; subst hr
     have := hp.sp1; have := hp.sp2
     exact Offset.base_disjoint_below (s.gpr .rsp) (n := (Impl.RsaPss.X86_64.verifyC f g v.name v.code).x86_64Depth)
-      (k := 8) (by unfold verifyStack chkStack at *; omega) _ (Offset.contains_base _ (by omega) (by omega)) hc
+      (k := 8) (by unfold verifyStack chkStack at *; omega_using [hd]) _ (Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi])) hc
 
 end VG.Proof.RsaPss.X86_64.Pc

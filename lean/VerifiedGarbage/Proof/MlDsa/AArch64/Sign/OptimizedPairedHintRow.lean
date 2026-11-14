@@ -112,7 +112,7 @@ theorem hintIs_pair {m : Mem} {a : Addr} {f : Nat → Vector Bool n}
     HintIs m (pairPolyPtr a j) 1 [f j] := by
   refine ⟨rfl,?_⟩
   intro i hi k hk
-  have ei : i=0 := by omega
+  have ei : i=0 := by omega_using [hi]
   subst i
   have he := h.2 j hj k hk
   simp only [Nat.mul_zero,Nat.zero_add,List.getD_cons_zero] at *
@@ -120,7 +120,7 @@ theorem hintIs_pair {m : Mem} {a : Addr} {f : Nat → Vector Bool n}
   have addr : pairPolyPtr a j+BitVec.ofNat 64 (4*k)=a+BitVec.ofNat 64 (4*(256*j+k)) := by
     simp only [pairPolyPtr,BitVec.add_assoc,←BitVec.ofNat_add]
     congr 2
-    omega
+    omega_using []
   simpa only [coeffAt,addr] using he
 
 theorem hintOnes_pair (f : Nat → Vector Bool n) :
@@ -167,18 +167,18 @@ theorem pairedHint_inputs {p : Params} {S : Nat} {σ s : State} {t i : Nat}
   refine ⟨?_,?_,?_⟩
   · intro j hj
     rw [paired_pS_addr]
-    simpa only [Nat.add_assoc] using h.1.b.l.k.d.t0 (i+j) (by omega)
+    simpa only [Nat.add_assoc] using h.1.b.l.k.d.t0 (i+j) (by omega_using [hi, hj])
   · intro j hj
     rw [paired_pS_addr]
-    simpa only [Nat.add_assoc,R0v,W'v,VG.Proof.MlDsa.Sign.r0F] using h.1.low j (by omega)
+    simpa only [Nat.add_assoc,R0v,W'v,VG.Proof.MlDsa.Sign.r0F] using h.1.low j (by omega_using [hi, hj])
   · intro j hj
     rw [paired_pS_addr]
-    simpa only [Nat.add_assoc,WHighv] using h.1.high (i+j) (by omega)
+    simpa only [Nat.add_assoc,WHighv] using h.1.high (i+j) (by omega_using [hi, hj])
 
 theorem pairedHint_ready {p : Params} {S : Nat} {σ s : State} {t i : Nat}
     (hp : Ok3 p) (hi : i+1<p.k) (roots : PairedRoots S s) (h : PositiveIH p S σ t i s) :
     Paired.PairedHintReady cP (t0P p i) (hP i) (wP p i) t1P p.γ₂ s := by
-  have checks := pairedHintRowChk_ok hp i (by omega) hi
+  have checks := pairedHintRowChk_ok hp i (by omega_using [hi]) hi
   simp only [pairedHintRowChk,Bool.and_eq_true,decide_eq_true_eq] at checks
   obtain ⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨hc,hs⟩,hl⟩,hh⟩,hw⟩,hwl⟩,hww⟩,hcl⟩,hcw⟩,hsl⟩,hsw⟩,hlw⟩,hlh⟩,hhw⟩,hg⟩ := checks
   obtain ⟨hsk,hlo,hhi⟩ := pairedHint_inputs hi h
@@ -194,7 +194,7 @@ theorem pairedHintRow_ok {p : Params} {S : Nat} {σ s : State} {t i : Nat}
       HintIs a.mem (pa s (hP i)) 2 ((List.range 2).map fun j=>Hv p σ (p.ℓ*t) (i+j)) ∧
       a.gpr .x0=BitVec.ofNat 64 (hintOnes ((List.range 2).map fun j=>Hv p σ (p.ℓ*t) (i+j))+
         if normRq ((List.range 2).map fun j=>CT0v p σ (p.ℓ*t) (i+j))<p.γ₂ then 4294967296 else 0) := by
-  have checks := pairedHintRowChk_ok hp i (by omega) hi
+  have checks := pairedHintRowChk_ok hp i (by omega_using [hi]) hi
   simp only [pairedHintRowChk,Bool.and_eq_true,decide_eq_true_eq] at checks
   obtain ⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨hc,hs⟩,hl⟩,hh⟩,hw⟩,_⟩,_⟩,_⟩,_⟩,_⟩,_⟩,_⟩,_⟩,_⟩,_⟩ := checks
   obtain ⟨hsk,hlo,hhi⟩ := pairedHint_inputs hi h

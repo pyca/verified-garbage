@@ -47,6 +47,6 @@ structure PrimsOk (P : Prims) (S : Nat) : Prop where
   unpackT1 : CalleeOk S P.unpackT1 (unpackT1Contract AArch64.abi S)
   hintUnpack : CalleeOk S P.hintUnpack (hintBitUnpackContract AArch64.abi S)
 
-theorem PrimsOk.s64 {P : Prims} {S : Nat} (h : PrimsOk P S) : S < 2 ^ 64 := by have := h.sl; omega
+theorem PrimsOk.s64 {P : Prims} {S : Nat} (h : PrimsOk P S) : S < 2 ^ 64 := by have := h.sl; omega_using [this]
 
 end VG.Proof.MlDsa.AArch64.KeyGen

@@ -59,12 +59,12 @@ theorem prepare_input (s : State) {base src : BitVec 32} {len k : Nat}
   have rest := restUV.trans (restT.mono (by simp [VG.Proof.Bignum.Arm.roundClobbers]))
   have frame : Frame [⟨State.addr base, 8 * len⟩] s.mem t.mem := by rw [memT]; exact frameV
   have stack := h.stack.after_workspace frame rest
-  have bytes := rsa_bytes_frame (src := State.addr src) (k := k) frame (by have := h.maxLength; omega) (by simpa using h.separate)
+  have bytes := rsa_bytes_frame (src := State.addr src) (k := k) frame (by have := h.maxLength; omega_using [this]) (by simpa using h.separate)
   refine ⟨⟨⟨h.workspace.congr rest.wr, by rw [memT]; exact layout,
     by rw [memT]; exact width, (restT.gpr .r0 (by simp)).trans ptr,
     by simpa only [VG.Proof.Mont.off, BitVec.add_zero] using stack.read (d := 0) (by decide),
     stack.separate.sub_left (Region.sub_prefix (by decide)), stack.savedBase⟩,
-    by have := h.minLength; omega, bytesFit, h.sourceFits,
+    by have := h.minLength; omega_using [this], bytesFit, h.sourceFits,
     by rw [rest.rd, rest.wr]; exact h.readable, h.separate, source, count,
     by rw [bytes]; exact h.large, by rw [bytes]; exact h.odd⟩, frame, rest⟩
 
@@ -86,7 +86,7 @@ theorem prepare_ok (s : State) {base src : BitVec 32} {len k : Nat}
     ready.sourceFits ready.readable ready.separate ready.ptr ready.source ready.count ready.stackRead
     ready.stackSep ready.saved ready.large ready.odd countFit) ?_
   rintro t ⟨done, modulus, r2, frameT, restT⟩
-  have bytes := rsa_bytes_frame (src := State.addr src) (k := k) frameU (by have := h.maxLength; omega) (by simpa using h.separate)
+  have bytes := rsa_bytes_frame (src := State.addr src) (k := k) frameU (by have := h.maxLength; omega_using [this]) (by simpa using h.separate)
   rw [bytes] at modulus r2
   exact ⟨⟨done.workspace, done.layout, done.width, done.ptr, done.inverse,
       by rw [modulus]; exact h.large, done.stackRead, done.stackSep, done.saved⟩,

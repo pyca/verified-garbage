@@ -137,7 +137,7 @@ theorem shl5 (i dst : Nat) (scr : Addr) :
     (BitVec.ofNat 64 i <<< 5) + (scr + BitVec.ofNat 64 dst) = scr + BitVec.ofNat 64 (dst + 32 * i) := by
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_add, BitVec.toNat_shiftLeft, BitVec.toNat_ofNat, Nat.shiftLeft_eq]
-  omega
+  omega_using []
 
 section
 variable {s : State} (h : DPre pc s) {R : BitVec 64} {EM : List Byte}

@@ -67,7 +67,7 @@ theorem trimStep_ok {s:State} {base:Addr} (hs:Scr s base) {i:Nat} (hi:i<464)
       (keyDigit++[.logic .orr .x .x9 .x7 .x11,.subImm .x .x4 .x19 1,
         .lsr .x .x4 .x4 63,.logic .orr .x .x9 .x9 .x4]))):=by simp only [trimStep,List.append_assoc]
   rw [he,WP.block_append_iff]
-  refine WP.mono (VG.Proof.X448.AArch64.Weak.decCounter_ok (by omega) hc)
+  refine WP.mono (VG.Proof.X448.AArch64.Weak.decCounter_ok (by omega_using [hi]) hc)
     fun a ⟨a19,ag,am,ar,aw,_⟩ => ?_
   have ak:Keeps [.x19] s a:=⟨fun r hr => ag r (by simpa only [List.mem_singleton] using hr),ar,aw⟩
   have ha:=hs.of_keeps ak (by decide)

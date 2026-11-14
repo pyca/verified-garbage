@@ -74,10 +74,10 @@ theorem verifyCheck_ok (hN : 272 ≤ N) (T : TagCall v N) {R t : Nat} {s : State
     intro r hr d k hk; simp only [List.mem_singleton] at hr; subst hr
     exact L.st_w hk (.inr ⟨by decide, (Lay.leN hN)⟩)
   have rd₁ : ∀ d, d + 8 ≤ 256 → s₁.mem.readW (W + BitVec.ofNat 64 d) 64 = s.mem.readW (W + BitVec.ofNat 64 d) 64 :=
-    fun d hd => f₁.readW (r := ⟨W + BitVec.ofNat 64 d, 8⟩) (Region.contains_self _ _) (dW d 8 (.inl hd) (by omega))
+    fun d hd => f₁.readW (r := ⟨W + BitVec.ofNat 64 d, 8⟩) (Region.contains_self _ _) (dW d 8 (.inl hd) (by omega_using [hN, hd]))
       (by decide)
   have hR₁ : RoundsAt s₁.mem W R := ⟨by rw [rd₁ 176 (by decide)]; exact hR.1, hR.2⟩
-  refine WP.seq (WP.mono (finTag_ok v L (by omega) T (o := 0) (.inl rfl) he₁ hR₁ (by rw [rd₁ 184 (by decide), hA])
+  refine WP.seq (WP.mono (finTag_ok v L (by omega_using [hN]) T (o := 0) (.inl rfl) he₁ hR₁ (by rw [rd₁ 184 (by decide), hA])
     (by rw [rd₁ 192 (by decide), hT]) hx) fun s₂ ⟨he₂, _, f₂, ht⟩ => ?_)
   have dT : ∀ d k, 112 ≤ d → d + k ≤ 272 → ∀ r ∈ tagFrame St W SP 0 N, (⟨W + BitVec.ofNat 64 d, k⟩ : Region).Disjoint r := by
     intro d k h₁ h₂ r hr
@@ -91,7 +91,7 @@ theorem verifyCheck_ok (hN : 272 ≤ N) (T : TagCall v N) {R t : Nat} {s : State
   have rd₂ : ∀ d, 112 ≤ d → d + 8 ≤ 272 →
       s₂.mem.readW (W + BitVec.ofNat 64 d) 64 = s₁.mem.readW (W + BitVec.ofNat 64 d) 64 :=
     fun d h₁ h₂ => f₂.readW (r := ⟨W + BitVec.ofNat 64 d, 8⟩) (Region.contains_self _ _) (dT d 8 h₁ h₂) (by decide)
-  have r₂ := he₂.perm.wR (show 224 + 8 ≤ N by omega) L.nlt
+  have r₂ := he₂.perm.wR (show 224 + 8 ≤ N by omega_using [hN]) L.nlt
   obtain ⟨s₃, run₃, hbx₃, hg₃, hm₃, hrd₃, hwr₃⟩ : ∃ s₃, runBlock isa [.mov .rbx (.mem (at_ .r15 tlO))] s₂ = some s₃ ∧
       s₃.gpr .rbx = BitVec.ofNat 64 t ∧ (∀ r, r ≠ .rbx → s₃.gpr r = s₂.gpr r) ∧ s₃.mem = s₂.mem ∧
       s₃.rd = s₂.rd ∧ s₃.wr = s₂.wr := by
@@ -224,7 +224,7 @@ theorem ver_lay {N : Nat} {s : State} (hp : Proof.AesGcm.verifyPre N s) (hN : 27
   have pa : Covers [⟨s.gpr .rsp + BitVec.ofNat 64 8, 16⟩] (s.rd ++ s.wr) := by
     rw [hrd]; exact covers_of_mem (List.mem_append_left _ (List.mem_cons_of_mem _ (List.mem_cons_of_mem _
       (List.mem_singleton_self _))))
-  refine ⟨Lay.of wc ws ww d_cs d_cw d_sw k_c k_s k_w (by omega) hN',
+  refine ⟨Lay.of wc ws ww d_cs d_cw d_sw k_c k_s k_w (by omega_using [hN]) hN',
     ⟨by rw [hrd]; exact covers_of_mem (List.mem_append_left _ (List.mem_cons_self ..)),
       by rw [hwr]; exact covers_of_mem (List.mem_cons_self ..),
       by rw [hwr]; exact covers_of_mem (List.mem_cons_of_mem _ (List.mem_cons_self ..))⟩, ?_,
@@ -326,12 +326,12 @@ theorem streamVerify_run (v : GcmImpl) {N gs : Nat} [G : GhFits v N gs] (TC : Ta
     · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl | rfl | rfl
       · exact r_s.sub_right (Region.sub_prefix (by decide))
-      · exact r_w.sub_right (Region.sub_prefix (by omega))
+      · exact r_w.sub_right (Region.sub_prefix (by omega_using [hN]))
       · exact r_w.sub_right (Lay.wSub (Lay.leN hN))
       · exact r_w.sub_right (Lay.wSub (Lay.leN hN))
       · exact r_w.sub_right Lay.hiSub
       · exact ret_below SP
-  refine WP.mono (exit_ok he₄.r15 (by rw [he₄.rsp, hSP]) (covers_left he₄.perm.w) hsv₄ (by rw [hSP, hret]) (by omega))
+  refine WP.mono (exit_ok he₄.r15 (by rw [he₄.rsp, hSP]) (covers_left he₄.perm.w) hsv₄ (by rw [hSP, hret]) (by omega_using [hN]))
     fun s' ⟨hg, _, hax⟩ => ⟨hg, fun ha => ?_⟩
   have dS : ∀ d k, d + k ≤ 80 → ∀ r ∈ [savedR W, slotsR W, ⟨W + BitVec.ofNat 64 224, 8⟩],
       (⟨St + BitVec.ofNat 64 d, k⟩ : Region).Disjoint r := fun d k hk => dF _ _ (d_sw.sub_left (Lay.stSub hk))

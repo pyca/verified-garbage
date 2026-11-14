@@ -31,7 +31,7 @@ theorem word_ok (s : State) (i : Nat) (hi : i < 8)
         (s.mem.readW (off (s.gpr .x1) (8 * i)) 64 ^^^ s.mem.readW (off (s.gpr .x0) (8 * i)) 64) ∧
       (∀ r, r ≠ .x8 → r ≠ .x13 → t.gpr r = s.gpr r) ∧
       t.rd = s.rd ∧ t.wr = s.wr ∧ t.sp = s.sp := by
-  have hoff : (8 * i) % 8 = 0 ∧ 8 * i < 4096 * 8 := by omega
+  have hoff : (8 * i) % 8 = 0 ∧ 8 * i < 4096 * 8 := by omega_using [hi]
   apply WP.of_runBlock
   simp only [Impl.Argon2.AArch64.ReduceBlock.word, runBlock_cons, runStep_some, runBlock_nil, exec, addr, hoff,
       State.load, State.store, State.read, Size.bits, Size.bytes,
@@ -64,41 +64,41 @@ theorem words_ok (m₀ : Mem) (dest src : Addr) (j : Nat) (hj : j < 16) (s : Sta
     simp only [Impl.Argon2.AArch64.ReduceBlock.words, List.range_succ, List.flatMap_append, List.flatMap_cons,
       List.flatMap_nil, List.append_nil]
     apply WP.block_append
-    refine (ih (by omega)).mono ?_
+    refine (ih (by omega_using [hn])).mono ?_
     rintro t ⟨writtenT, frameT, regs, rd, wr, mx⟩
-    have k : 8 * j + n < 128 := by omega
+    have k : 8 * j + n < 128 := by omega_using [hj, hn]
     have at_ (p : Addr) (r : Reg) (hr : s.gpr r = off p (64 * j)) :
         off (s.gpr r) (8 * n) = off p (8 * (8 * j + n)) := by
       rw [hr]
-      exact Offset.add_add_eq p (by omega)
+      exact Offset.add_add_eq p (by omega_using [])
     have dest' : off (t.gpr .x0) (8 * n) = off dest (8 * (8 * j + n)) := by
       rw [regs .x0 (by decide) (by decide)]; exact at_ dest .x0 pd
     have src' : off (t.gpr .x1) (8 * n) = off src (8 * (8 * j + n)) := by
       rw [regs .x1 (by decide) (by decide)]; exact at_ src .x1 ps
     have write : InRegions t.wr (off (t.gpr .x0) (8 * n)) 8 := by
       rw [dest', wr]
-      exact hw _ _ ⟨⟨dest, 1024⟩, by simp, Offset.contains_base _ (by omega) (by omega)⟩
+      exact hw _ _ ⟨⟨dest, 1024⟩, by simp, Offset.contains_base _ (by omega_using [hj, hn]) (by omega_using [hj, hn])⟩
     have read : InRegions (t.rd ++ t.wr) (off (t.gpr .x1) (8 * n)) 8 := by
       rw [src', rd, wr]
-      exact hs _ _ ⟨⟨src, 1024⟩, by simp, Offset.contains_base _ (by omega) (by omega)⟩
+      exact hs _ _ ⟨⟨src, 1024⟩, by simp, Offset.contains_base _ (by omega_using [hj, hn]) (by omega_using [hj, hn])⟩
     have old : InRegions (t.rd ++ t.wr) (off (t.gpr .x0) (8 * n)) 8 := by
       obtain ⟨r, hr, hc⟩ := write
       exact ⟨r, List.mem_append_right _ hr, hc⟩
-    refine (word_ok t n (by omega) read write old).mono ?_
+    refine (word_ok t n (by omega_using [hn]) read write old).mono ?_
     rintro u ⟨mem, regs', rd', wr', mx'⟩
     have v : t.mem.readW (off (t.gpr .x1) (8 * n)) 64 ^^^ t.mem.readW (off (t.gpr .x0) (8 * n)) 64 =
         (R m₀ src dest)[(⟨8 * j + n, k⟩ : Fin 128)] := by
-      rw [R, result_get, src', dest', source_read frameT (by omega) hd ⟨8 * j + n, k⟩,
+      rw [R, result_get, src', dest', source_read frameT (by omega_using [hj, hn]) hd ⟨8 * j + n, k⟩,
         old_read frameT (Nat.le_refl _) k]
       rfl
     refine ⟨?_, ?_, fun r h8 h13 => (regs' r h8 h13).trans (regs r h8 h13),
       rd'.trans rd, wr'.trans wr, mx'.trans mx⟩
     · rw [mem, v, dest']
       exact written_step k writtenT
-    · rw [mem, dest', show 8 * (8 * j + (n + 1)) = 8 * (8 * j + n + 1) by omega]
+    · rw [mem, dest', show 8 * (8 * j + (n + 1)) = 8 * (8 * j + n + 1) by omega_using []]
       exact (frame_extend frameT (Nat.le_succ _)).writeW
         (r := ⟨dest, 8 * (8 * j + n + 1)⟩) (by simp) _
-        (Offset.contains_base _ (by omega) (by omega))
+        (Offset.contains_base _ (by omega_using []) (by omega_using [hj, hn]))
 
 theorem advance_ok (s : State) :
     WP isa (.block Impl.Argon2.AArch64.ReduceBlock.advance) s fun t =>
@@ -137,14 +137,14 @@ theorem body_ok (s₀ : State) (j : Nat) (hj : j < 16) (s : State) (h : Inv s₀
   rintro a ⟨written, frame, regsA, rdA, wrA, spA⟩
   refine (advance_ok a).mono ?_
   rintro t ⟨dst, sr, cnt, regsT, mem, rd, wr, sp⟩
-  refine ⟨by omega, ?_, ?_, ?_, ?_, ?_, ?_, rd.trans (rdA.trans h.rd), wr.trans (wrA.trans h.wr),
+  refine ⟨by omega_using [hj], ?_, ?_, ?_, ?_, ?_, ?_, rd.trans (rdA.trans h.rd), wr.trans (wrA.trans h.wr),
     sp.trans (spA.trans h.sp)⟩
   · rw [dst, regsA .x0 (by decide) (by decide), h.dest, show (64 : Addr) = BitVec.ofNat 64 64 from rfl]
-    exact Offset.add_add_eq _ (by omega)
+    exact Offset.add_add_eq _ (by omega_using [])
   · rw [sr, regsA .x1 (by decide) (by decide), h.src, show (64 : Addr) = BitVec.ofNat 64 64 from rfl]
-    exact Offset.add_add_eq _ (by omega)
+    exact Offset.add_add_eq _ (by omega_using [])
   · rw [cnt, regsA .x14 (by decide) (by decide), h.count, show (1 : Addr) = BitVec.ofNat 64 1 from rfl,
-      Offset.ofNat_sub_ofNat (by omega)]
+      Offset.ofNat_sub_ofNat (by omega_using [hj])]
     congr 1
   · rw [mem]; exact written
   · rw [mem]; exact frame
@@ -167,15 +167,15 @@ theorem loop_ok (s₀ : State) (s : State) (h : Inv s₀ 0 s)
     rw [Bool.eq_iff_iff, bne_iff_ne, decide_eq_true_iff, ne_eq, ne_eq]
     refine not_congr ⟨fun eq => ?_, fun eq => by rw [eq]; rfl⟩
     have num := congrArg BitVec.toNat eq
-    simpa only [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega : 16 - (j + 1) < 2 ^ 64),
+    simpa only [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [] : 16 - (j + 1) < 2 ^ 64),
       show (0 : Addr).toNat = 0 from rfl] using num
   by_cases done : j + 1 = 16
   · refine .inl ⟨?_, done ▸ next⟩
-    simpa only [show 16 - (j + 1) = 0 by omega, ne_eq, not_true_eq_false, decide_false] using flag
-  · refine .inr ⟨?_, 16 - (j + 1), by omega, j + 1, rfl, by omega, next⟩
+    simpa only [show 16 - (j + 1) = 0 by omega_using [done], ne_eq, not_true_eq_false, decide_false] using flag
+  · refine .inr ⟨?_, 16 - (j + 1), by omega_using [hj], j + 1, rfl, by omega_using [hj, done], next⟩
     change eval (.nonzero .x .x14) t = some true
     rw [flag]
-    exact congrArg some (decide_eq_true (by omega : 16 - (j + 1) ≠ 0))
+    exact congrArg some (decide_eq_true (by omega_using [hj, done] : 16 - (j + 1) ≠ 0))
 
 theorem setup_ok (s : State) :
     WP isa (.block Impl.Argon2.AArch64.ReduceBlock.setup) s (Inv s 0) := by
@@ -186,7 +186,7 @@ theorem setup_ok (s : State) :
   refine ⟨by decide, ?_, ?_, rfl, ?_, ?_, ?_, rfl, rfl, rfl⟩
   · rw [RegUpd.gpr_write_of_ne (h := by decide)]; exact (BitVec.add_zero _).symm
   · rw [RegUpd.gpr_write_of_ne (h := by decide)]; exact (BitVec.add_zero _).symm
-  · intro i hi; exact absurd hi (by omega)
+  · intro i hi; exact absurd hi (by omega_using [])
   · exact Frame.refl _ _
   · intro r _ _ _ _ h14
     exact RegUpd.gpr_write_of_ne _ _ _ h14

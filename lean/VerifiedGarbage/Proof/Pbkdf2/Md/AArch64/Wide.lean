@@ -182,9 +182,9 @@ theorem copyW_ok {src dst : Reg} (hs : src ≠ .x9 ∧ src ≠ .x10) (hd : dst �
       split
       · rename_i h8'
         simp only [List.cons_append, List.nil_append]
-        refine wp_ldr (a := s.gpr src + BitVec.ofNat 64 o₁ + BitVec.ofNat 64 (16 * (n / 16))) ⟨by omega, by omega⟩
+        refine wp_ldr (a := s.gpr src + BitVec.ofNat 64 o₁ + BitVec.ofNat 64 (16 * (n / 16))) ⟨by omega, by omega_using [h₁]⟩
           (by rw [g _ hs.1 hs.2, add_ofNat]) (by rw [rd, wr]; exact hin _ _ (by omega_arith) (by omega_arith)) fun t₁ u₁ => ?_
-        refine wp_str (a := s.gpr dst + BitVec.ofNat 64 o₂ + BitVec.ofNat 64 (16 * (n / 16))) ⟨by omega, by omega⟩
+        refine wp_str (a := s.gpr dst + BitVec.ofNat 64 o₂ + BitVec.ofNat 64 (16 * (n / 16))) ⟨by omega, by omega_using [h₂]⟩
           (by rw [u₁.other _ hd.1, g _ hd.1 hd.2, add_ofNat]) (by rw [u₁.wr, wr]; exact hout _ _ (by omega_arith) (by omega_arith))
           fun t₂ g₂ => k' t₂ (fun r h9 h10 => by rw [g₂.gpr, u₁.other r h9, g r h9 h10]) (by rw [g₂.rd, u₁.rd, rd])
             (by rw [g₂.wr, u₁.wr, wr]) (by rw [g₂.sp, u₁.sp, sp]) ?_

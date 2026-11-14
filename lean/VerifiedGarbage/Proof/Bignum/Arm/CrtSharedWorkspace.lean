@@ -43,7 +43,7 @@ theorem CrtShared.workspace_eq_after {s t : State} {g : CrtGeometry} {bs : Fin 7
     (separate : Region.Disjoint ⟨State.addr other, 8 * workspaceWords g.words⟩ ⟨State.addr child, 8 * workspaceWords g.words⟩)
     (frame : Frame [⟨State.addr child, 8 * workspaceWords g.words⟩, ⟨off (State.addr s.sp) 48, 4⟩] s.mem t.mem) :
     WorkspaceEq (State.addr other) (8 * workspaceWords g.words) s.mem t.mem := by
-  apply WorkspaceEq.of_frame (by have := ws.nowrap; omega) frame
+  apply WorkspaceEq.of_frame (by have := ws.nowrap; omega_using [this]) frame
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl

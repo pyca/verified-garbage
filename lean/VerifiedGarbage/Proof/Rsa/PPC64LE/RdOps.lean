@@ -141,15 +141,15 @@ theorem copyOut_ok {s : State} {B : Addr} {Z w N o a : Nat} (h : Ws s B Z w N)
 /-! ## The two views -/
 
 theorem arr_wide (w k : Nat) : arr (2 * w + 2) k = arr w (2 * k) := by
-  simp only [arr, S]; rw [Nat.mul_comm 2 k, Nat.mul_assoc]; congr 2; omega
+  simp only [arr, S]; rw [Nat.mul_comm 2 k, Nat.mul_assoc]; congr 2; omega_using []
 
-theorem S_wide (w : Nat) : S (2 * w + 2) = 2 * S w := by simp only [S]; omega
+theorem S_wide (w : Nat) : S (2 * w + 2) = 2 * S w := by simp only [S]; omega_using []
 
 /-- A wide array is its two narrow arrays. -/
 theorem num_wide (m : Mem) (B : Addr) (w k : Nat) :
     num m B (2 * w + 2) k = num m B w (2 * k) + 2 ^ (32 * w) * val32 m B (arr w (2 * k) + 4 * w) (w + 2) := by
   simp only [num]
-  rw [arr_wide, show 2 * w + 2 = w + (w + 2) by omega, val32_append]
+  rw [arr_wide, show 2 * w + 2 = w + (w + 2) by omega_using [], val32_append]
 
 /-- The low half of a wide number. -/
 theorem num_low (m : Mem) (B : Addr) (w k : Nat) :
@@ -173,7 +173,7 @@ theorem keep_W_w {B : Addr} {w : Nat} {js ds : List Nat} {m m' : Mem}
       exact .inl ⟨2 * j + 1, ⟨j, hj, by simp⟩, rfl⟩)
     have e := KeyWorkspace.arr_succ w (2 * j)
     dsimp only at h1 h2 ⊢
-    rw [arr_wide, S_wide]; omega
+    rw [arr_wide, S_wide]; omega_using [h1, h2, e]
   · exact hx (d, 4) (by simp [KeyWorkspace.ranges, hd])
 
 /-- A narrow frame is a wide one on the wide arrays holding it. -/
@@ -184,12 +184,12 @@ theorem keep_w_W {B : Addr} {w : Nat} {js ds : List Nat} {m m' : Mem}
   rcases hr with ⟨j, hj, rfl⟩ | ⟨d, hd, rfl⟩
   · refine ⟨(arr (2 * w + 2) (j / 2), S (2 * w + 2)), by
       simp only [KeyWorkspace.ranges, List.mem_append, List.mem_map]; exact .inl ⟨j / 2, ⟨j, hj, rfl⟩, rfl⟩, ?_, ?_⟩
-    · dsimp only; rw [arr_wide]; exact KeyWorkspace.arr_mono (by omega)
+    · dsimp only; rw [arr_wide]; exact KeyWorkspace.arr_mono (by omega_using [])
     · dsimp only; rw [arr_wide, S_wide]
       rcases Nat.mod_two_eq_zero_or_one j with e | e
-      · rw [show 2 * (j / 2) = j by omega]; omega
+      · rw [show 2 * (j / 2) = j by omega_using [e]]; omega_using []
       · have := KeyWorkspace.arr_succ w (2 * (j / 2))
-        rw [show 2 * (j / 2) + 1 = j by omega] at this; omega
+        rw [show 2 * (j / 2) + 1 = j by omega_using [e]] at this; omega_using [this]
   · exact ⟨(d, 4), by simp [KeyWorkspace.ranges, hd], Nat.le_refl _, Nat.le_refl _⟩
 
 /-- A frame of slots alone is one of every view. -/
@@ -261,7 +261,7 @@ theorem fit_sv (s0 : State) (b : Bool) {j : Nat} (hj : j < vN b) : arr (vw s0 b)
 
 theorem DS.fit (h : DS s0 b A live V ls s) (b' : Bool) {j : Nat} (hj : j < vN b') :
     arr (vw s0 b') j + S (vw s0 b') ≤ 2 ^ 64 := by
-  have := fit_sv s0 b' hj; have := h.base.svZ; have := h.base.nowrap; omega
+  have := fit_sv s0 b' hj; have := h.base.svZ; have := h.base.nowrap; omega_arith
 
 /-- A write of view `b`'s arrays `js` keeps every array apart from them. -/
 theorem keep_sep {B : Addr} {m m' : Mem} {js : List Nat} (s0 : State)
@@ -286,8 +286,8 @@ theorem keep_sep {B : Addr} {m m' : Mem} {js : List Nat} (s0 : State)
       refine k'.num (fun k hk => ?_) (by simp) fit
       simp only [List.mem_flatMap, List.mem_cons, List.not_mem_nil, or_false] at hk
       obtain ⟨i, hi, rfl | rfl⟩ := hk
-      · have := he i hi; omega
-      · have := he i hi; omega
+      · have := he i hi; omega_using [this]
+      · have := he i hi; omega_using [this]
 
 /-- A write of several arrays of view `b`, keeping the arrays apart from them. -/
 theorem DS.wrs (h : DS s0 b A live V ls s) (ws : Ws t (rvB s0) (rvZ s0) (vw s0 b) (vN b))
@@ -302,7 +302,7 @@ theorem DS.wrs (h : DS s0 b A live V ls s) (ws : Ws t (rvB s0) (rvZ s0) (vw s0 b
     rw [← h.arrs e he']
     exact keep_sep s0 k hsep (h.fit e.1 (h.live_lt e he'))
   · rw [← h.sl d hd]
-    exact k.slot (by have := h.ls_ok d hd; simp only [KeyWorkspace.hdr]; omega) (by simp)
+    exact k.slot (by have := h.ls_ok d hd; simp only [KeyWorkspace.hdr]; omega_using [this]) (by simp)
 
 /-- A new array of `live` (of either view). -/
 theorem DS.add (h : DS s0 b A live V ls s) {b' : Bool} {o x : Nat} (ho : o < vN b')
@@ -340,7 +340,7 @@ theorem DS.wrS (h : DS s0 b A live V ls s) (ws : Ws t (rvB s0) (rvZ s0) (vw s0 b
     (h25 : .r25 ∉ rs := by decide) (h31 : .r31 ∉ rs := by decide) :
     DS s0 b A live (updV V d x) (d :: ls') t := by
   have hd' : ∀ e ∈ [d], e + 4 ≤ KeyWorkspace.hdr := fun e he => by
-    simp only [List.mem_singleton] at he; subst he; simp only [KeyWorkspace.hdr]; omega
+    simp only [List.mem_singleton] at he; subst he; simp only [KeyWorkspace.hdr]; omega_using [hd]
   have base := h.base.of_keep k (by simp) hd' kr h31
   refine ⟨base, ws, (kr.gpr _ h21).trans h.r21, (kr.gpr _ h23).trans h.r23, (kr.gpr _ h25).trans h.r25,
     fun e he => ?_, h.live_lt, fun e he => ?_, fun e he => ?_⟩
@@ -350,11 +350,11 @@ theorem DS.wrS (h : DS s0 b A live V ls s) (ws : Ws t (rvB s0) (rvZ s0) (vw s0 b
     rcases he with rfl | he
     · simp only [updV, ↓reduceIte]; exact v
     · obtain ⟨he', hs⟩ := hl e he
-      have : e ≠ d := by omega
+      have : e ≠ d := by omega_using [hs]
       simp only [updV, this, ↓reduceIte]
       rw [← h.sl e he']
-      exact k.slot (by have := h.ls_ok e he'; simp only [KeyWorkspace.hdr]; omega)
-        (fun e' he' => by simp only [List.mem_singleton] at he'; subst he'; omega)
+      exact k.slot (by have := h.ls_ok e he'; simp only [KeyWorkspace.hdr]; omega_using [this])
+        (fun e' he' => by simp only [List.mem_singleton] at he'; subst he'; omega_using [hs])
   · simp only [List.mem_cons] at he
     rcases he with rfl | he
     · exact hd
@@ -371,7 +371,7 @@ theorem DS.wrS2 (h : DS s0 b A live V ls s) (ws : Ws t (rvB s0) (rvZ s0) (vw s0 
     DS s0 b A live (updV (updV V d₁ x₁) d₂ x₂) (d₂ :: d₁ :: ls') t := by
   have hd' : ∀ e ∈ [d₁, d₂], e + 4 ≤ KeyWorkspace.hdr := fun e he => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at he
-    rcases he with rfl | rfl <;> simp only [KeyWorkspace.hdr] <;> omega
+    rcases he with rfl | rfl <;> simp only [KeyWorkspace.hdr] <;> omega_arith
   have base := h.base.of_keep k (by simp) hd' kr h31
   refine ⟨base, ws, (kr.gpr _ h21).trans h.r21, (kr.gpr _ h23).trans h.r23, (kr.gpr _ h25).trans h.r25,
     fun e he => ?_, h.live_lt, fun e he => ?_, fun e he => ?_⟩
@@ -380,17 +380,17 @@ theorem DS.wrS2 (h : DS s0 b A live V ls s) (ws : Ws t (rvB s0) (rvZ s0) (vw s0 
   · simp only [List.mem_cons] at he
     rcases he with rfl | rfl | he
     · simp only [updV, ↓reduceIte]; exact v₂
-    · have : e ≠ d₂ := by omega
+    · have : e ≠ d₂ := by omega_using [sep]
       simp only [updV, this, ↓reduceIte]; exact v₁
     · obtain ⟨he', hs1, hs2⟩ := hl e he
-      have : e ≠ d₁ := by omega
-      have : e ≠ d₂ := by omega
+      have : e ≠ d₁ := by omega_using [hs1]
+      have : e ≠ d₂ := by omega_using [hs2]
       simp only [updV, *, ↓reduceIte]
       rw [← h.sl e he']
-      exact k.slot (by have := h.ls_ok e he'; simp only [KeyWorkspace.hdr]; omega)
+      exact k.slot (by have := h.ls_ok e he'; simp only [KeyWorkspace.hdr]; omega_using [this])
         (fun e' he' => by
           simp only [List.mem_cons, List.not_mem_nil, or_false] at he'
-          rcases he' with rfl | rfl <;> omega)
+          rcases he' with rfl | rfl <;> omega_arith)
   · simp only [List.mem_cons] at he
     rcases he with rfl | rfl | he
     · exact hd₂
@@ -425,7 +425,7 @@ theorem DS.lt (h : DS s0 b A live V ls s) {b' : Bool} {j : Nat} (he : (b', j) �
     A b' j < 2 ^ (32 * vw s0 b') := by
   rw [← h.val he]; exact val32_lt _ _ _ _
 
-theorem four_le_S (w : Nat) : 0 + 4 * w ≤ S w := by simp only [S]; omega
+theorem four_le_S (w : Nat) : 0 + 4 * w ≤ S w := by simp only [S]; omega_using []
 
 theorem DS.ix (h : DS s0 b A live V ls s) {b' : Bool} {j : Nat} (he : (b', j) ∈ live) : j < vN b' :=
   h.live_lt _ he
@@ -464,7 +464,7 @@ theorem DS.widen (h : DS s0 false A live V ls s) {k a : Nat} (hk : k < 22) (hz :
     WP isa (VG.Impl.Rsa.PPC64LE.Keys.copy (2 * k) a) s fun t =>
       DS s0 false (upd (upd A false (2 * k) (A false a)) true k (A false a)) ((true, k) :: (false, 2 * k) :: live')
         V ls t ∧ Keep opRegs s t := by
-  refine WP.mono (h.copy (o := 2 * k) (show 2 * k < 44 by omega) ha (Ne.symm hak)
+  refine WP.mono (h.copy (o := 2 * k) (show 2 * k < 44 by omega_using [hk]) ha (Ne.symm hak)
     (live' := live') (fun e he => ⟨(hl e he).1, (hl e he).2.1⟩)) fun t ⟨ht, kr, out⟩ => ⟨?_, kr⟩
   refine ht.add (o := k) hk ?_ (fun e he => ?_)
   · -- The high part was zero, and the copy left it.
@@ -478,12 +478,12 @@ theorem DS.widen (h : DS s0 false A live V ls s) {k a : Nat} (hk : k < 22) (hz :
       rcases Nat.eq_zero_or_pos (val32 s.mem (rvB s0) (arr (ww (kK s0)) (2 * k) + 4 * ww (kK s0)) (ww (kK s0) + 2)) with
         e' | e'
       · exact e'
-      · have := Nat.mul_pos this e'; omega
+      · have := Nat.mul_pos this e'; omega_using [e, this]
     have f := h.fit true (j := k) hk
     rw [vw_wide, vw_false, arr_wide, S_wide] at f
     rw [vw_false] at out
     have hi : val32 t.mem (rvB s0) (arr (ww (kK s0)) (2 * k) + 4 * ww (kK s0)) (ww (kK s0) + 2) = 0 := by
-      rw [out.val32 (by omega) (by simp only [S] at f; omega)]; exact z0
+      rw [out.val32 (by omega_using []) (by simp only [S] at f; omega_using [f])]; exact z0
     have v := ht.arrs (false, 2 * k) (by simp)
     rw [vw_false] at v
     change num t.mem (rvB s0) (2 * ww (kK s0) + 2) k = _
@@ -513,7 +513,7 @@ theorem DS.sel (h : DS s0 b A live V ls s) {o a c sl : Nat} (ho : o < vN b) (ha 
       DS s0 b (upd A b o (if V sl = 0 then A b a else A b c)) ((b, o) :: live') V ls t ∧ Keep opRegs s t := by
   have hs := h.sl sl hsl
   refine WP.mono (sel_gen_ok h.ws ho (h.ix ha) (h.ix hc) (vN_le b) (ahead_any _ _ _) (ahead_any _ _ _)
-    (by have := h.ls_ok sl hsl; simp only [KeyWorkspace.hdr]; omega) (by rw [hs]; exact bit))
+    (by have := h.ls_ok sl hsl; simp only [KeyWorkspace.hdr]; omega_using [this]) (by rw [hs]; exact bit))
     fun t ⟨ws, k, e, kr⟩ => ⟨h.wr ws ho k (by rw [e, hs, h.val ha, h.val hc]) hl kr, kr⟩
 
 /-- `half j` with `r9 = 0`: `[j] := [j] / 2`. -/
@@ -549,7 +549,7 @@ theorem DS.shl (h : DS s0 b A live V ls s) {j : Nat} (hj : (b, j) ∈ live)
   rw [VG.Impl.Rsa.PPC64LE.RecoverDet.shl, WP.seq_iff]
   refine WP.mono (WP.keep [.r9] (Q := fun u => u.gpr .r9 = 0 ∧ u.mem = s.mem) (by prun; rfl) (by decide))
     fun u ⟨⟨u9, um⟩, ku⟩ => ?_
-  refine WP.mono ((h.regs ku um).shlC hj (c := 0) (by rw [u9]; rfl) (by omega) hl) fun t ⟨ht, r9, kt⟩ =>
+  refine WP.mono ((h.regs ku um).shlC hj (c := 0) (by rw [u9]; rfl) (by omega_using []) hl) fun t ⟨ht, r9, kt⟩ =>
     ⟨by simpa using ht, by simpa using r9, (ku.trans kt).mono⟩
 
 /-- `bitOf sl j`: the slot `sl` := the low bit of `[j]`. -/
@@ -557,7 +557,7 @@ theorem DS.bitOf (h : DS s0 b A live V ls s) {j sl : Nat} (hj : (b, j) ∈ live)
     {ls' : List Nat} (hl : ∀ e ∈ ls', e ∈ ls ∧ (e + 4 ≤ sl ∨ sl + 4 ≤ e)) {rest : List Instr} {Q : State → Prop}
     (k : ∀ t, DS s0 b A live (updV V sl (A b j % 2)) (sl :: ls') t → Keep opRegs s t → WP isa (.block rest) t Q) :
     WP isa (.block (VG.Impl.Rsa.PPC64LE.Keys.bitOf sl j ++ rest)) s Q :=
-  bitOf_ok h.ws (h.ix hj) (vN_le b) (by omega) fun t ws kk v kr =>
+  bitOf_ok h.ws (h.ix hj) (vN_le b) (by omega_using [hsl]) fun t ws kk v kr =>
     k t (h.wrS ws hsl kk (by rw [v, h.val hj]) hl kr) kr
 
 /-- `setOne j`: the low digit of `[j]` := 1. -/
@@ -575,14 +575,14 @@ theorem DS.stBorrow (h : DS s0 b A live V ls s) {sl c : Nat} (hsl : sl + 4 ≤ 1
     {Q : State → Prop}
     (k : ∀ t, DS s0 b A live (updV V sl c) (sl :: ls') t → Keep opRegs s t → WP isa (.block rest) t Q) :
     WP isa (.block (VG.Impl.Rsa.PPC64LE.Keys.stBorrow sl ++ rest)) s Q :=
-  stBorrow_ok h.ws (by omega) (by omega) fun t ws kk v kr => k t (h.wrS ws hsl kk (by rw [v, c9]) hl kr) kr
+  stBorrow_ok h.ws (by omega_using [hsl]) (by omega_using [c9, hc]) fun t ws kk v kr => k t (h.wrS ws hsl kk (by rw [v, c9]) hl kr) kr
 
 /-- `eqS d a c`: the slot `d` := whether `[a] = [c]`. -/
 theorem DS.eqS (h : DS s0 b A live V ls s) {d a c : Nat} (ha : (b, a) ∈ live) (hc : (b, c) ∈ live)
     (hd : d + 4 ≤ 160) {ls' : List Nat} (hl : ∀ e ∈ ls', e ∈ ls ∧ (e + 4 ≤ d ∨ d + 4 ≤ e)) :
     WP isa (VG.Impl.Rsa.PPC64LE.Keys.eqS d a c) s fun t =>
       DS s0 b A live (updV V d (if A b a = A b c then 1 else 0)) (d :: ls') t ∧ Keep opRegs s t :=
-  WP.mono (eqS_ok h.ws (h.ix ha) (h.ix hc) (vN_le b) (by omega)) fun t ⟨ws, kk, v, kr⟩ =>
+  WP.mono (eqS_ok h.ws (h.ix ha) (h.ix hc) (vN_le b) (by omega_using [hd])) fun t ⟨ws, kk, v, kr⟩ =>
     ⟨h.wrS ws hd kk (by rw [v, h.val ha, h.val hc]) hl kr, kr⟩
 
 /-- `clrW j`: the digit after `[j]` := 0, `[j]` kept. -/
@@ -596,7 +596,7 @@ theorem DS.clrW (h : DS s0 b A live V ls s) {j : Nat} (hj : (b, j) ∈ live)
     refine k t (h.wr ws (h.ix hj) kk ?_ hl kr) z kr
     have e : num s.mem (rvB s0) (vw s0 b) j = A b j := h.val hj
     rw [← e]
-    exact out.val32 (by omega) (by simp only [S] at f; omega)
+    exact out.val32 (by omega_using []) (by simp only [S] at f; omega_using [f])
 
 /-- A number of `w + 1` digits below `2^(32 w)` is its `w` digits. -/
 theorem num_of_num1 {m : Mem} {B : Addr} {w j : Nat} (h : num1 m B w j < 2 ^ (32 * w)) :
@@ -605,7 +605,7 @@ theorem num_of_num1 {m : Mem} {B : Addr} {w j : Nat} (h : num1 m B w j < 2 ^ (32
   have := Nat.two_pow_pos (32 * w)
   rcases Nat.eq_zero_or_pos (w32 m B (arr w j + 4 * w)) with e | e
   · rw [e, Nat.mul_zero, Nat.add_zero]
-  · have := Nat.le_mul_of_pos_right (2 ^ (32 * w)) e; omega
+  · have := Nat.le_mul_of_pos_right (2 ^ (32 * w)) e; omega_using [h, this]
 
 /-- `div q r d t`, the digit after `[d]` zero: `[q] := [q] / [d]` and `[r] := [q] mod [d]`
 for `[d] > 0`. -/
@@ -653,9 +653,9 @@ theorem DS.inv [VG.Proof.Rsa.PPC64LE.InvLaw] (h : DS s0 false A live V ls s)
   have lx := h.lt hx
   have lm := h.lt hm
   rw [vw_false] at ax am lx lm
-  have hw : 10 ≤ ww (kK s0) := by omega
+  have hw : 10 ≤ ww (kK s0) := by omega_using [w1]
   have inv := VG.Proof.Rsa.PPC64LE.InvLaw.gcd_ok (n := ww (kK s0)) hws (by decide) (by decide) hw
-    h11 (by omega) (Nat.le_refl _) (by simp only [ww]; omega) ax lx am lm hodd
+    h11 (by omega_using [w1]) (Nat.le_refl _) (by simp only [ww]; omega_using []) ax lx am lm hodd
   refine WP.mono inv fun t ⟨ws, kk, kr, v⟩ => ?_
   have hjs : ∀ j ∈ VG.Proof.Rsa.PPC64LE.invBatchArrs, j < vN false := by decide
   have ht : DS s0 false A live' V ls t := h.wrs ws hjs kk hl kr
@@ -669,7 +669,7 @@ theorem DS.toN (h : DS s0 true A live V ls s) {rest : List Instr} {Q : State →
     WP isa (.block (VG.Impl.Rsa.PPC64LE.Recover.ctxw ++ rest)) s Q := by
   have z := h.base.sz
   have := z.w1
-  refine ctxw_ok (w := ww (kK s0)) (N' := nArr) h.ws (by omega) (by rw [← z.svw]; have := z.svZ; omega)
+  refine ctxw_ok (w := ww (kK s0)) (N' := nArr) h.ws (by omega_using [this]) (by rw [← z.svw]; have := z.svZ; omega_using [this])
     fun t ws m kr => k t ⟨h.base.of_regs kr m, ws, (kr.gpr _ (by decide)).trans h.r21,
       (kr.gpr _ (by decide)).trans h.r23, (kr.gpr _ (by decide)).trans h.r25,
       fun e he => by rw [m]; exact h.arrs e he, h.live_lt, fun d hd => by rw [m]; exact h.sl d hd, h.ls_ok⟩ kr
@@ -680,8 +680,8 @@ theorem DS.toW (h : DS s0 false A live V ls s) {rest : List Instr} {Q : State �
     WP isa (.block (VG.Impl.Rsa.PPC64LE.Recover.ctxW ++ rest)) s Q := by
   have z := h.base.sz
   have e : arr (vw s0 true) 22 = sv (kK s0) := by rw [vw_wide, arr_wide]; rfl
-  refine ctxW_ok (N' := 22) h.ws (by have := z.w2; show 2 * ww (kK s0) + 2 ≤ 1024; omega)
-    (by show arr (vw s0 true) 22 ≤ _; rw [e]; have := z.svZ; omega)
+  refine ctxW_ok (N' := 22) h.ws (by have := z.w2; show 2 * ww (kK s0) + 2 ≤ 1024; omega_using [this])
+    (by show arr (vw s0 true) 22 ≤ _; rw [e]; have := z.svZ; omega_using [this])
     fun t ws m kr => k t ⟨h.base.of_regs kr m, ws, (kr.gpr _ (by decide)).trans h.r21,
       (kr.gpr _ (by decide)).trans h.r23, (kr.gpr _ (by decide)).trans h.r25,
       fun e he => by rw [m]; exact h.arrs e he, h.live_lt, fun d hd => by rw [m]; exact h.sl d hd, h.ls_ok⟩ kr
@@ -769,7 +769,7 @@ theorem DS.next (h : DS s0 b A live V ls s) :
 theorem shl5_val (w : Nat) : BitVec.ofNat 64 w <<< 5 = BitVec.ofNat 64 (32 * w) := by
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_shiftLeft, BitVec.toNat_ofNat, Nat.shiftLeft_eq]
-  omega
+  omega_using []
 
 theorem DS.countN (h : DS s0 false A live V ls s) :
     WP isa (.block countN) s fun u => DS s0 false A live V ls u ∧
@@ -788,7 +788,7 @@ theorem DS.countS (h : DS s0 false A live V ls s) :
     exec_addi (show Reg.r27 ≠ .r0 by decide) (show 32 < 2 ^ 15 by decide)]
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_add, BitVec.toNat_ofNat]
-  omega
+  omega_using []
 
 theorem DS.set11 (h : DS s0 false A live V ls s) :
     WP isa (.block [.addi .r11 .r29 0]) s fun u => DS s0 false A live V ls u ∧
@@ -803,7 +803,7 @@ theorem slot_bv (m : Mem) (B : Addr) {d : Nat} {c : Bool} (h : slot m B d = b2n 
   apply BitVec.eq_of_toNat_eq
   have := VG.Proof.Rsa.b2n_le c
   simp only [slot, w32] at h
-  rw [h, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+  rw [h, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [h])]
 
 theorem b64_eq (c : Bool) : (BitVec.ofNat 32 (b2n c)).setWidth 64 = b64 c := by cases c <;> decide
 theorem b64_xor (c : Bool) : b64 c ^^^ BitVec.ofNat 64 1 = b64 (!c) := by cases c <;> decide
@@ -823,8 +823,8 @@ theorem DS.not9 (h : DS s0 b A live V ls s) {d : Nat} (hd : d ∈ ls) {c : Bool}
   have hl := h.ls_ok d hd
   refine WP.mono (h.reg [.r0, .r9] (P := fun u => u.gpr .r9 = b64 (!c)) ?_ rfl) fun u ⟨hu, p, k⟩ =>
     ⟨hu, by rw [p]; cases c <;> rfl, k⟩
-  prun [ws.r31, exec_load_w (show Reg.r31 ≠ .r0 by decide) (show d < 2 ^ 15 by omega),
-    ws.scr.ld (show d + 4 ≤ rvZ s0 by have := ws.hdr_le; simp only [KeyWorkspace.hdr] at this; omega),
+  prun [ws.r31, exec_load_w (show Reg.r31 ≠ .r0 by decide) (show d < 2 ^ 15 by omega_using [hl]),
+    ws.scr.ld (show d + 4 ≤ rvZ s0 by have := ws.hdr_le; simp only [KeyWorkspace.hdr] at this; omega_using [hl, this]),
     exec_li (show 1 < 2 ^ 15 by decide), exec_logic, h.slotRd hd hc, b64_eq, b64_xor]
 
 /-- `r9 := 1 - slot`, for a slot holding 0 or 1. -/
@@ -832,9 +832,9 @@ theorem DS.not9' (h : DS s0 b A live V ls s) {d : Nat} (hd : d ∈ ls) (hb : V d
     WP isa (.block [.load .w .r9 .r31 d, .li .r0 1, .logic .xor .r9 .r9 .r0]) s fun u =>
       DS s0 b A live V ls u ∧ (u.gpr .r9).toNat = 1 - V d ∧ Keep [.r0, .r9] s u := by
   have e : V d = b2n (decide (V d = 1)) := by
-    rcases (show V d = 0 ∨ V d = 1 by omega) with e | e <;> simp [e, b2n]
+    rcases (show V d = 0 ∨ V d = 1 by omega_using [hb]) with e | e <;> simp [e, b2n]
   refine WP.mono (h.not9 hd e) fun u ⟨hu, r, k⟩ => ⟨hu, ?_, k⟩
-  rw [r]; rcases (show V d = 0 ∨ V d = 1 by omega) with e' | e' <;> simp [e', b2n]
+  rw [r]; rcases (show V d = 0 ∨ V d = 1 by omega_using [hb]) with e' | e' <;> simp [e', b2n]
 
 /-- `maskOf`: the mask := every check's flag. -/
 theorem DS.mask (h : DS s0 b A live V ls s) {c0 c1 c2 c3 c4 c5 c6 : Bool}
@@ -859,15 +859,15 @@ theorem DS.mask (h : DS s0 b A live V ls s) {c0 c1 c2 c3 c4 c5 c6 : Bool}
       exec_load_w (show Reg.r31 ≠ .r0 by decide) (show sOk5 < 2 ^ 15 by decide),
       exec_store_w (show Reg.r31 ≠ .r0 by decide)
         (show VG.Impl.Rsa.PPC64LE.Recover.sMask < 2 ^ 15 by decide),
-      ws.scr.ld (show sB0 + 4 ≤ rvZ s0 by simp only [sB0]; omega),
-      ws.scr.ld (show sB1 + 4 ≤ rvZ s0 by simp only [sB1]; omega),
-      ws.scr.ld (show sLt + 4 ≤ rvZ s0 by simp only [sLt]; omega),
-      ws.scr.ld (show sExact + 4 ≤ rvZ s0 by simp only [sExact]; omega),
-      ws.scr.ld (show sC1 + 4 ≤ rvZ s0 by simp only [sC1]; omega),
-      ws.scr.ld (show sC2 + 4 ≤ rvZ s0 by simp only [sC2]; omega),
-      ws.scr.ld (show sOk5 + 4 ≤ rvZ s0 by simp only [sOk5]; omega),
+      ws.scr.ld (show sB0 + 4 ≤ rvZ s0 by simp only [sB0]; omega_using [hz]),
+      ws.scr.ld (show sB1 + 4 ≤ rvZ s0 by simp only [sB1]; omega_using [hz]),
+      ws.scr.ld (show sLt + 4 ≤ rvZ s0 by simp only [sLt]; omega_using [hz]),
+      ws.scr.ld (show sExact + 4 ≤ rvZ s0 by simp only [sExact]; omega_using [hz]),
+      ws.scr.ld (show sC1 + 4 ≤ rvZ s0 by simp only [sC1]; omega_using [hz]),
+      ws.scr.ld (show sC2 + 4 ≤ rvZ s0 by simp only [sC2]; omega_using [hz]),
+      ws.scr.ld (show sOk5 + 4 ≤ rvZ s0 by simp only [sOk5]; omega_using [hz]),
       ws.scr.st (show VG.Impl.Rsa.PPC64LE.Recover.sMask + 4 ≤ rvZ s0 by
-        simp only [VG.Impl.Rsa.PPC64LE.Recover.sMask, VG.Impl.Rsa.PPC64LE.CrtValues.sMask]; omega),
+        simp only [VG.Impl.Rsa.PPC64LE.Recover.sMask, VG.Impl.Rsa.PPC64LE.CrtValues.sMask]; omega_using [hz]),
       exec_li (show 1 < 2 ^ 15 by decide), exec_logic, h.slotRd h0 v0, h.slotRd h1 v1, h.slotRd h2 v2,
       h.slotRd h3 v3, h.slotRd h4 v4, h.slotRd h5 v5, h.slotRd h6 v6, b64_eq, b64_xor, b64_and]
   refine WP.mono (WP.keep opRegs hb (by decide)) fun t ⟨m, k⟩ => ⟨?_, k⟩
@@ -931,7 +931,7 @@ variable {s0 s : State} {b : Bool} {A : Bool → Nat → Nat} {live : List (Bool
 theorem DS.addLow (h : DS s0 b A live V ls s) {k : Nat} (hk : (true, k) ∈ live) (hk22 : k < 22)
     (hl : ∀ e ∈ live, e ≠ (false, 2 * k)) :
     DS s0 b (upd A false (2 * k) (A true k % 2 ^ (32 * ww (kK s0)))) ((false, 2 * k) :: live) V ls s :=
-  h.add (b' := false) (o := 2 * k) (by show 2 * k < 44; omega) (by rw [vw_false]; exact h.low hk) hl
+  h.add (b' := false) (o := 2 * k) (by show 2 * k < 44; omega_using [hk22]) (by rw [vw_false]; exact h.low hk) hl
 
 /-- The live arrays of the halvings: `u`, `x`, `2^k x`, zero, the multiplier (zero), one, `n`
 and one (narrow). -/

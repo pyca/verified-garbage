@@ -209,23 +209,23 @@ def HB (S : Nat) (vs : Nat → CState) (s : State) : Prop :=
 def wordsOf (s : State) (l : Nat) : W := fun n => dword (s.lane (zreg (n / 4)) l) (n % 4)
 
 theorem hy_wordsOf (s : State) : HY (wordsOf s) s := fun r l q _ _ hq => by
-  simp only [wordsOf, show (4 * xidx r + q) / 4 = xidx r by omega,
-    show (4 * xidx r + q) % 4 = q by omega, zreg_xidx]
+  simp only [wordsOf, show (4 * xidx r + q) / 4 = xidx r by omega_using [hq],
+    show (4 * xidx r + q) % 4 = q by omega_using [hq], zreg_xidx]
 
 theorem blk_wordsOf {S : Nat} {vs : Nat → CState} {s : State} (h : HB S vs s) {k l : Nat} (hk : k < S)
     (hl : l < 2) : blk (wordsOf s l) k = vs (2 * k + l) := by
   apply Vector.ext; intro i hi
   simp only [blk, Vector.getElem_ofFn, wordsOf]
-  rw [show (16 * k + i) / 4 = 4 * k + i / 4 by omega, show (16 * k + i) % 4 = i % 4 by omega]
+  rw [show (16 * k + i) / 4 = 4 * k + i / 4 by omega_using [], show (16 * k + i) % 4 = i % 4 by omega_using []]
   exact h k hk l hl i hi
 
 theorem hb_of {S : Nat} {ws : Nat → W} {s : State} (h : HY ws s) {vs : Nat → CState}
     (hv : ∀ k < S, ∀ l < 2, blk (ws l) k = vs (2 * k + l)) (hS : S ≤ 2) : HB S vs s := by
   intro k hk l hl i hi
-  rw [h _ l _ (by rw [xidx_zreg _ (by omega)]; omega) hl (Nat.mod_lt _ (by decide)),
-    xidx_zreg _ (by omega), ← hv k hk l hl]
+  rw [h _ l _ (by rw [xidx_zreg _ (by omega_using [hS, hk, hi])]; omega_using [hS, hk, hi]) hl (Nat.mod_lt _ (by decide)),
+    xidx_zreg _ (by omega_using [hS, hk, hi]), ← hv k hk l hl]
   simp only [blk, Vector.getElem_ofFn]
-  congr 1; omega
+  congr 1; omega_using []
 
 theorem doubleRound1_ok {vs : Nat → CState} {s : State} (h : HB 1 vs s) (hm : YM s) :
     WP isa (.block doubleRound1) s fun s' =>
@@ -233,7 +233,7 @@ theorem doubleRound1_ok {vs : Nat → CState} {s : State} (h : HB 1 vs s) (hm : 
   rw [doubleRound1_eq]
   refine WP.mono (block_ok _ (by decide) (hy_wordsOf s) hm) fun s' ⟨h', hm', f⟩ =>
     ⟨hb_of h' (fun k hk l hl => ?_) (by decide), hm', f⟩
-  obtain rfl : k = 0 := by omega
+  obtain rfl : k = 0 := by omega_using [hk]
   rw [dr1_words, blk_wordsOf h hk hl]
 
 theorem doubleRound2_ok {vs : Nat → CState} {s : State} (h : HB 2 vs s) (hm : YM s) :

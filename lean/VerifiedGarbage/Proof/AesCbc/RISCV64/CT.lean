@@ -155,7 +155,7 @@ theorem ends_rel {M : Mode} {mid : Prog isa}
         (fun a b h => ⟨?_, h.1.1, h.1.2⟩) fun _ _ h => h
       have := h.2; rw [ev h.1.1] at this
       have : N s₀ ≠ 0 := by simpa using this
-      omega
+      omega_using [this]
   have epi := taintRegs (P := fun a b => LInv M s₀ (N s₀) a ∧ LInv M s₀' (N s₀') b) [.s6]
     (fun a b h => ⟨by rw [h.1.sp, h.2.sp, pub_sp hq], fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr

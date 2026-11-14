@@ -58,14 +58,14 @@ structure YInv (B : BlockFn) (enc : Bool) (s₀ : State) (c e : Nat) (s : State)
 
 theorem banks_disj {s₀ : State} {e : Nat} (he : e = 0 ∨ e = 128) :
     Region.Disjoint ⟨bank s₀ e, 128⟩ ⟨bank s₀ (128 - e), 128⟩ :=
-  Offset.disjoint _ (by omega) (by omega) (by omega)
+  Offset.disjoint _ (by omega_using [he]) (by omega_using [he]) (by omega_using [])
 
 theorem bank_sub {s₀ : State} {e : Nat} (he : e = 0 ∨ e = 128) : Region.Sub ⟨bank s₀ e, 128⟩ (scrR s₀) :=
-  Offset.sub_base _ (by omega)
+  Offset.sub_base _ (by omega_using [he])
 
 theorem bank_slot {s₀ : State} {e j : Nat} (he : e = 0 ∨ e = 128) (hj : j < 8) :
     (scrR s₀).Contains (bank s₀ e + BitVec.ofNat 64 (16 * j)) 16 := by
-  rw [bank, Offset.add_add]; exact Offset.contains_base _ (by omega) (by omega)
+  rw [bank, Offset.add_add]; exact Offset.contains_base _ (by omega_using [he, hj]) (by omega_using [he, hj])
 
 section
 variable {s₀ : State} (hp : UPre s₀)
@@ -73,9 +73,9 @@ include hp
 
 theorem bank_toNat {e : Nat} (he : e = 0 ∨ e = 128) : (bank s₀ e).toNat + 128 ≤ 2 ^ 64 := by
   have := hp.scr_wrap
-  rw [bank, BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show e < 2 ^ 64 by omega),
-    Nat.mod_eq_of_lt (by omega)]
-  omega
+  rw [bank, BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show e < 2 ^ 64 by omega_using [he]),
+    Nat.mod_eq_of_lt (by omega_using [he, this])]
+  omega_using [he, this]
 
 theorem blk_bank {e k : Nat} (he : e = 0 ∨ e = 128) (hk : k < N s₀) :
     Region.Disjoint ⟨blk s₀ k, 16⟩ ⟨bank s₀ e, 128⟩ :=
@@ -245,8 +245,8 @@ theorem start8_ok (B : BlockFn) (enc : Bool) {s₀ : State} (hp : UPre s₀) {s 
   have x12₁ : ((s.write .x .x12 (s.read .x .x5 + BitVec.ofNat _ 0)).write .x .x8
       ((s.write .x .x12 (s.read .x .x5 + BitVec.ofNat _ 0)).read .x .x5 + BitVec.ofNat _ 128)).gpr .x12 =
       S s₀ := by simp [State.write, State.read, hI.x5]
-  refine WP.mono (gen_ok .x12 (S s₀) (by omega) (by decide) (by decide) (by decide) (by decide) _ x12₁
-    (fun d hd => ⟨scrR s₀, by simp [State.write, hW], Offset.contains_base _ (by omega) (by omega)⟩) 8
+  refine WP.mono (gen_ok .x12 (S s₀) (by omega_using [hsw]) (by decide) (by decide) (by decide) (by decide) _ x12₁
+    (fun d hd => ⟨scrR s₀, by simp [State.write, hW], Offset.contains_base _ (by omega_using [hd]) (by omega_using [hd])⟩) 8
     (Nat.le_refl _)) fun s₂ ⟨e₂, f₂, t₂, g₂, v₂, sp₂, rd₂, wr₂⟩ => ?_
   have g : ∀ r, r ≠ .x9 → r ≠ .x10 → r ≠ .x14 → r ≠ .x15 → r ≠ .x12 → r ≠ .x8 → s₂.gpr r = s.gpr r :=
     fun r h1 h2 h3 h4 h5 h6 => by rw [g₂ r h1 h2 h3 h4]; simp [State.write, h5, h6]
@@ -281,9 +281,9 @@ theorem end8_ok (B : BlockFn) (enc : Bool) {s₀ : State} (hp : UPre s₀) {c e 
   have he := hI.he
   have hR : s.rd ++ s.wr = [schR s₀, ivR s₀, dataR s₀, scrR s₀] := by rw [hI.rd, hI.wr, hp.rd, hp.wr]; rfl
   have c0 : InRegions (s.rd ++ s.wr) (s.gpr .x12 + BitVec.ofNat 64 0) 8 :=
-    ⟨scrR s₀, by rw [hR]; simp, by rw [hI.x12, bank, Offset.add_add]; exact Offset.contains_base _ (by omega) (by omega)⟩
+    ⟨scrR s₀, by rw [hR]; simp, by rw [hI.x12, bank, Offset.add_add]; exact Offset.contains_base _ (by omega_using [he]) (by omega_using [he])⟩
   have c8 : InRegions (s.rd ++ s.wr) (s.gpr .x12 + BitVec.ofNat 64 8) 8 :=
-    ⟨scrR s₀, by rw [hR]; simp, by rw [hI.x12, bank, Offset.add_add]; exact Offset.contains_base _ (by omega) (by omega)⟩
+    ⟨scrR s₀, by rw [hR]; simp, by rw [hI.x12, bank, Offset.add_add]; exact Offset.contains_base _ (by omega_using [he]) (by omega_using [he])⟩
   rw [end8, WP.block_cons_iff]; refine ⟨_, exec_ldr_x (off := 0) (by decide) c0, ?_⟩
   rw [WP.block_cons_iff]; refine ⟨_, exec_ldr_x (off := 8) (by decide) (by simpa [State.write] using c8), WP.block_nil ?_⟩
   have g : ∀ r, r ≠ .x14 → r ≠ .x15 → ((s.write .x .x14 (s.mem.readW (s.gpr .x12 + BitVec.ofNat 64 0) 64)).write .x .x15
@@ -308,8 +308,8 @@ theorem loop8_ok (B : BlockFn) (enc : Bool) (hF : B.F = stF enc) {s₀ : State} 
         (.seq (.block start8) (.seq (.loop (blk8 B.f) (.nonzero .x .x13)) (.block end8)))) s₁
       fun s => ∃ c, N s₀ - c < 8 ∧ XInv B enc s₀ c c s := by
   have hn : N s₀ < 2 ^ 64 := (s₀.gpr .x4).isLt
-  refine WP.ite (decide (N s₀ / 8 = 0)) (eval_zero h13 (by omega)) (fun h => ?_) (fun h => ?_)
-  · exact WP.block_nil ⟨0, by simp at h; omega, hI₁⟩
+  refine WP.ite (decide (N s₀ / 8 = 0)) (eval_zero h13 (by omega_using [hn])) (fun h => ?_) (fun h => ?_)
+  · exact WP.block_nil ⟨0, by simp at h; omega_using [h], hI₁⟩
   · refine WP.seq (WP.mono (start8_ok B enc hp hI₁) fun s₂ h₂ => ?_)
     let I8 : Nat → State → Prop := fun m s => ∃ c e, m = N s₀ - c ∧ c + 8 ≤ N s₀ ∧ YInv B enc s₀ c e s
     have hstep : ∀ m s, I8 m s → WP isa (blk8 B.f) s (fun s' =>
@@ -317,11 +317,11 @@ theorem loop8_ok (B : BlockFn) (enc : Bool) (hF : B.F = stF enc) {s₀ : State} 
         (AArch64.eval (.nonzero .x .x13) s' = some true ∧ ∃ m' < m, I8 m' s')) := by
       rintro m s ⟨c, e, rfl, hc, hI⟩
       refine WP.mono (blk8_ok B enc hF hp hc hI) fun s' ⟨hI', h13'⟩ => ?_
-      rw [eval_nonzero h13' (by omega)]
+      rw [eval_nonzero h13' (by omega_using [hn])]
       by_cases hlt : N s₀ - (c + 8) < 8
-      · exact .inl ⟨by simp; omega, c + 8, 128 - e, hlt, hI'⟩
-      · exact .inr ⟨by simp; omega, N s₀ - (c + 8), by omega, c + 8, 128 - e, rfl, by omega, hI'⟩
-    refine WP.seq (WP.mono (WP.loop (M := isa) I8 hstep (N s₀) s₂ ⟨0, 0, rfl, by simp at h; omega, h₂⟩)
+      · exact .inl ⟨by simp; omega_using [hlt], c + 8, 128 - e, hlt, hI'⟩
+      · exact .inr ⟨by simp; omega_using [hlt], N s₀ - (c + 8), by omega_using [hc], c + 8, 128 - e, rfl, by omega_using [hlt], hI'⟩
+    refine WP.seq (WP.mono (WP.loop (M := isa) I8 hstep (N s₀) s₂ ⟨0, 0, rfl, by simp at h; omega_using [h], h₂⟩)
       fun s₃ ⟨c, e, hc, h₃⟩ => ?_)
     exact WP.mono (end8_ok B enc hp h₃) fun s₄ h₄ => ⟨c, hc, h₄⟩
 

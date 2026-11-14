@@ -34,8 +34,8 @@ theorem subgroup_ok (s : State) {p : Inputs} {slots : List Nat} (slot : Nat) {bb
       Frame [⟨State.addr p.base, 8 * p.len⟩] s.mem t.mem ∧ Rest roundClobbers s t := by
   rw [VG.Impl.Ffdh.Arm.Domain.subgroup, WP.seq_iff]
   refine WP.mono (publicPowerAt_ok s slot 60 32 h stable hb h60 h32 h32 ready modulus odd r2 baseBytes baseLength
-    (h.qBytes hasQ) (by rw [p.qLength hasQ]; have := p.minLength; omega)
-    (by rw [p.qLength hasQ]; have := p.maxLength; omega) (by change BitVec.ofNat 32 p.k = _; rw [p.qLength hasQ])) ?_
+    (h.qBytes hasQ) (by rw [p.qLength hasQ]; have := p.minLength; omega_using [this])
+    (by rw [p.qLength hasQ]; have := p.maxLength; omega_using [this]) (by change BitVec.ofNat 32 p.k = _; rw [p.qLength hasQ])) ?_
   rintro u ⟨contextU, readyU, power, modU, r2U, _, frameU, restU⟩
   refine WP.mono (isOne_ok u readyU (by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp] : Operand 6) (by decide)) ?_
   rintro t ⟨readyT, flag, arraysT, frameT, restT⟩

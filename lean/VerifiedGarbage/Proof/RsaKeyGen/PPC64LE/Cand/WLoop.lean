@@ -115,7 +115,7 @@ theorem statOf_eq {c L ch : Nat} {r : Spec.RsaKeyGen.Rand} {k : Nat} (b : Bool) 
   generalize (mrS c L r k).1 = I
   generalize (mrS c L r k).2 + (if b then 1 else 0) = U
   unfold statOf Spec.RsaKeyGen.blindedChecks
-  split <;> split <;> omega
+  split <;> split <;> omega_arith
 
 theorem St.keep {s t t' : State} {B : Addr} {L w c : Nat} {r : Spec.RsaKeyGen.Rand} {k : Nat} {rs : List Reg}
     (h : St s B L w c r k t) (K : Keep rs t t') (hm : t'.mem = t.mem)
@@ -143,13 +143,13 @@ theorem LKeep.draw {s t t' : State} {B Ra : Addr} {L w c u I U ch : Nat} (h : LK
 theorem LKeep.write {s t t' : State} {B : Addr} {L : Nat} {rs : List Reg} (h : LKeep s B L t) {d : Nat}
     (hd : d ∈ lpWords) (hL : 256 ≤ 8 * L) {v : BitVec 64} (K : Keep rs t t')
     (hm : t'.mem = t.mem.writeW (off B (8 * d)) v) (hr : ∀ x ∈ rs, x ∈ lpRegs) : LKeep s B L t' := by
-  have hd' : d < 31 := by simp only [lpWords, List.mem_cons, List.not_mem_nil, or_false] at hd; omega
+  have hd' : d < 31 := by simp only [lpWords, List.mem_cons, List.not_mem_nil, or_false] at hd; omega_using [hd]
   refine ⟨fun e he hk => ?_, by
-    rw [hm]; exact h.frame.writeW (r := ⟨B, 8 * L⟩) (by simp) _ (Offset.contains_base _ (by omega) (by omega)),
+    rw [hm]; exact h.frame.writeW (r := ⟨B, 8 * L⟩) (by simp) _ (Offset.contains_base _ (by omega_using [hL, hd']) (by omega_using [hd'])),
     K.rd.trans h.rd, K.wr.trans h.wr, K.sp.trans h.sp,
     fun x hx h1 h2 => (K.gpr x (not_mem_of_sub hr h2)).trans (h.cs x hx h1 h2)⟩
   rw [← h.hdr e he hk, hm]
-  exact writeW_outside t.mem B (d := 8 * d) v (by omega) |>.word (hk d hd) (by omega)
+  exact writeW_outside t.mem B (d := 8 * d) v (by omega_using [hd']) |>.word (hk d hd) (by omega_using [he])
 
 /-- Whether `hK` octets are left: `rand_len − used ≥ hK`. -/
 theorem avail_ok {t : State} {B : Addr} {Z rl u w : Nat} (hs : Scr t B Z) (h31 : t.gpr .r31 = B) (hZ : 256 ≤ Z)
@@ -163,9 +163,9 @@ theorem avail_ok {t : State} {B : Addr} {Z rl u w : Nat} (hs : Scr t B Z) (h31 :
   refine WP.mono (WP.keep [.r3, .r4] (Q := fun t' => t'.gpr .r3 = BitVec.ofNat 64 rl - BitVec.ofNat 64 u ∧
       t'.gpr .r4 = BitVec.ofNat 64 (8 * w) ∧ t'.mem = t.mem) (by
     simp only [ldh, hRandLen, hUsed, hK] at hrl hu hk ⊢
-    prun [h31, hs.ld (d := 144) (n := 8) (by omega), hs.ld (d := 152) (n := 8) (by omega),
-      hs.ld (d := 216) (n := 8) (by omega), hrl, hu, hk]) (by decide)) fun t₁ ⟨⟨a3, a4, m₁⟩, k₁⟩ => ?_
-  refine WP.mono (geFlag_ok (a3.trans (Offset.ofNat_sub_ofNat hul)) a4 (by omega) hw) fun t₂ ⟨⟨b5, m₂⟩, k₂⟩ => ?_
+    prun [h31, hs.ld (d := 144) (n := 8) (by omega_using [hZ]), hs.ld (d := 152) (n := 8) (by omega_using [hZ]),
+      hs.ld (d := 216) (n := 8) (by omega_using [hZ]), hrl, hu, hk]) (by decide)) fun t₁ ⟨⟨a3, a4, m₁⟩, k₁⟩ => ?_
+  refine WP.mono (geFlag_ok (a3.trans (Offset.ofNat_sub_ofNat hul)) a4 (by omega_using [hrl']) hw) fun t₂ ⟨⟨b5, m₂⟩, k₂⟩ => ?_
   exact ⟨⟨b5, m₂.trans m₁⟩, (k₁.trans k₂).mono⟩
 
 /-- The loop's test: `hStat − 4`, zero to go on. -/
@@ -177,8 +177,8 @@ theorem tail_ok {t : State} {B : Addr} {Z v : Nat} (hs : Scr t B Z) (h31 : t.gpr
   refine WP.mono (WP.keep [.r3] (Q := fun t' => t'.gpr .r3 = BitVec.ofNat 64 v - BitVec.ofNat 64 4 ∧
       t'.mem = t.mem) (by
     simp only [ldh, hStat] at hst ⊢
-    prun [h31, hs.ld (d := 160) (n := 8) (by omega), hst]) (by decide)) fun t' ⟨⟨a3, m⟩, k⟩ => ⟨⟨?_, m⟩, k⟩
+    prun [h31, hs.ld (d := 160) (n := 8) (by omega_using [hZ]), hst]) (by decide)) fun t' ⟨⟨a3, m⟩, k⟩ => ⟨⟨?_, m⟩, k⟩
   rw [eval_zero, a3]
-  rcases (show v = 0 ∨ v = 1 ∨ v = 2 ∨ v = 3 ∨ v = 4 by omega) with rfl | rfl | rfl | rfl | rfl <;> rfl
+  rcases (show v = 0 ∨ v = 1 ∨ v = 2 ∨ v = 3 ∨ v = 4 by omega_using [hv]) with rfl | rfl | rfl | rfl | rfl <;> rfl
 
 end VG.Proof.RsaKeyGen.PPC64LE.Cand

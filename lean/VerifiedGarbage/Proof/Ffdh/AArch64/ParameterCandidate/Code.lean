@@ -43,7 +43,7 @@ theorem pcEnd_post {s t₃ t : State} (c : PCtx s)
     intro st u outv hst hk
     rw [← hL] at hk
     refine ⟨abiPreserved_of_keep ((kk.trans hk.keep).mono (by decide)), ?_, ?_, ?_⟩
-    · rw [hk.x0, BitVec.toNat_setWidth, BitVec.toNat_ofNat]; omega
+    · rw [hk.x0, BitVec.toNat_setWidth, BitVec.toNat_ofNat]; omega_using [hst]
     · show outBytes t.mem _ _ = _
       have := hk.out
       cases outv
@@ -82,8 +82,8 @@ theorem zeros_ok {s t₁ : State} (c : PCtx s) (he : EntryPost s t₁) :
   have hb1 : 512 ≤ (s.gpr .x3).toNat := c.dims.b1
   have hb2 : (s.gpr .x3).toNat ≤ 8192 := c.dims.b2
   have hL : (s.gpr .x1).toNat = ((s.gpr .x3).toNat + 7) / 8 := c.len
-  exact WP.mono (zeroOut_ok (len := (s.gpr .x1).toNat) (hs.congr he.keep.wr) he.x0 (by omega) (sPtr := kOut)
-    (sLen := kLen) (by decide) (by decide) he.args.out (by rw [he.args.len, ofNat_toNat64]) (by omega) (by omega)
+  exact WP.mono (zeroOut_ok (len := (s.gpr .x1).toNat) (hs.congr he.keep.wr) he.x0 (by omega_using [hZ]) (sPtr := kOut)
+    (sLen := kLen) (by decide) (by decide) he.args.out (by rw [he.args.len, ofNat_toNat64]) (by omega_using [hb1, hL]) (by omega_using [hb2, hL])
     ⟨fun j hj => by rw [he.keep.wr]; exact c.ou.outw j (by rw [← c.len]; exact hj),
       fun j hj => c.ou.outZ j (by rw [← c.len]; exact hj)⟩) fun _ ⟨a, b, d⟩ => ⟨a, b, d⟩
 
@@ -95,7 +95,7 @@ theorem Zeroed.word {s t₁ t : State} (c : PCtx s) (h : Zeroed s t₁ t) {i : N
   exact Mem.readW_congr fun b hb => h.frame _ fun j hj he' => by
     have : (stackArg s 0).toNat * 8 ≤ ofs (s.gpr .x7) (s.gpr .x0 + BitVec.ofNat 64 j) :=
       c.ou.outZ j (by rw [← c.len]; exact hj)
-    rw [← he', ofs_off _ (by omega)] at this; omega
+    rw [← he', ofs_off _ (by omega_using [hi, hb])] at this; omega_using [hi, hZ, hb, this]
 
 /-- After the length check, from the state `s` on entry. -/
 structure Front (s t : State) : Prop where
@@ -122,7 +122,7 @@ theorem lenCheck_ok {s t₁ t₂ : State} (c : PCtx s) (he : EntryPost s t₁) (
   simp only [ppOf, PP.L] at hZ
   have hs₂ := (hs.congr he.keep.wr).congr hz.keep.wr
   have h0₂ : t₂.gpr .x0 = s.gpr .x7 := (hz.keep.gpr .x0 (by decide)).trans he.x0
-  have hl₂ : ∀ i < 32, InRegions (t₂.rd ++ t₂.wr) (off (s.gpr .x7) (8 * i)) 8 := fun i hi => hs₂.ld (by omega)
+  have hl₂ : ∀ i < 32, InRegions (t₂.rd ++ t₂.wr) (off (s.gpr .x7) (8 * i)) 8 := fun i hi => hs₂.ld (by omega_using [hZ, hi])
   refine WP.block_append_iff.mpr (WP.mono (WP.keep [.x3, .x4] (Q := fun t => t.gpr .x3 = s.gpr .x6 ∧
       t.gpr .x4 = s.gpr .x1 ∧ t.mem = t₂.mem) (by
     brun [h0₂, hdr_enc (show kRandLen < 32 by decide), hdr_enc (show kLen < 32 by decide), hl₂ kRandLen (by decide),
@@ -134,7 +134,7 @@ theorem lenCheck_ok {s t₁ t₂ : State} (c : PCtx s) (he : EntryPost s t₁) (
   have hm4 : t₄.mem = t₂.mem := hm₄.trans hm₃
   exact ⟨((k₃.trans k₄).gpr .x0 (by decide)).trans h0₂, h5₄, fun i hi => by rw [hm4]; exact hz.zero i hi,
     he.args.congr fun i hi => by rw [hm4]; exact hz.word c hi,
-    fun x hx hx' => by rw [hm4, hz.frame x hx', he.out x (Or.inr (by omega))],
+    fun x hx hx' => by rw [hm4, hz.frame x hx', he.out x (Or.inr (by omega_using [hx]))],
     (((he.keep.trans hz.keep).trans k₃).trans k₄).mono (by decide)⟩
 
 /-- What `main` needs, after the front with enough octets. -/
@@ -177,13 +177,13 @@ theorem code_correct (M : Mont) (R : Kernel) (s : State) (h : pcContract.pre s) 
   · simp only [Bool.not_eq_true', decide_eq_false_iff_not, Nat.not_le] at hlt
     have hZ : 128 * (((s.gpr .x3).toNat + 7) / 8) + 256 ≤ (stackArg s 0).toNat * 8 := c.dims.z
     have hL : (s.gpr .x1).toNat = ((s.gpr .x3).toNat + 7) / 8 := c.len
-    refine WP.mono (finNone_ok (up := s.gpr .x2) hph.scr hph.x0 (show 8 * 32 ≤ (stackArg s 0).toNat * 8 by omega)
+    refine WP.mono (finNone_ok (up := s.gpr .x2) hph.scr hph.x0 (show 8 * 32 ≤ (stackArg s 0).toNat * 8 by omega_using [hZ])
       hf.args.usedP hph.ou.upw)
       fun t ht => pcEnd_post c hf.zero hf.keep ?_
     have hnone : Spec.Ffdh.sievedParameterCandidate (ppOf s).bits (ppOf s).g (ppOf s).r = none := by
       show Spec.Ffdh.sievedParameterCandidate (s.gpr .x3).toNat ((s.gpr .x4).setWidth 32).toNat (pcRand s) = none
       unfold Spec.Ffdh.sievedParameterCandidate
-      have hs : (pcRand s).length < ((s.gpr .x3).toNat + 7) / 8 := by rw [hrl]; omega
+      have hs : (pcRand s).length < ((s.gpr .x3).toNat + 7) / 8 := by rw [hrl]; omega_using [hlt, hL]
       rw [VG.Proof.Ffdh.ParameterCandidate.draw_of_short hs]
       rfl
     rw [hnone]
@@ -193,7 +193,7 @@ theorem code_correct (M : Mont) (R : Kernel) (s : State) (h : pcContract.pre s) 
     refine WP.mono (main_ok M R hph (by
         show word t₄.mem (s.gpr .x7) _ = BitVec.ofNat 64 (((s.gpr .x3).toNat + 7) / 8)
         rw [hf.args.used, ← hL, ofNat_toNat64])
-      (by show ((s.gpr .x3).toNat + 7) / 8 ≤ (pcRand s).length; rw [hrl]; omega))
+      (by show ((s.gpr .x3).toNat + 7) / 8 ≤ (pcRand s).length; rw [hrl]; omega_using [hlt, hL]))
       fun t ht => pcEnd_post c hf.zero hf.keep ht
 
 end VG.Proof.Ffdh.AArch64.ParameterCandidate

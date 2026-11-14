@@ -23,7 +23,7 @@ open VG.Spec.Rsa
 def fixT (k x : Nat) : Nat := if x / 2 ^ (32 * (k - 1)) = 0 then x + 2 ^ (32 * (k - 1)) else x
 
 theorem fixT_lt {k x : Nat} (hk : 1 ≤ k) (hx : x < 2 ^ (32 * k)) : fixT k x < 2 ^ (32 * k) := by
-  have e : (2 : Nat) ^ (32 * k) = 2 ^ (32 * (k - 1)) * 2 ^ 32 := by rw [← Nat.pow_add]; congr 1; omega
+  have e : (2 : Nat) ^ (32 * k) = 2 ^ (32 * (k - 1)) * 2 ^ 32 := by rw [← Nat.pow_add]; congr 1; omega_using [hk]
   have hP := Nat.two_pow_pos (32 * (k - 1))
   unfold fixT
   split
@@ -34,13 +34,13 @@ theorem fixT_lt {k x : Nat} (hk : 1 ≤ k) (hx : x < 2 ^ (32 * k)) : fixT k x < 
       · exact absurd h0 (Nat.pos_iff_ne_zero.mp (Nat.div_pos h hP))
     rw [e]
     have : 2 ^ (32 * (k - 1)) * 2 ≤ 2 ^ (32 * (k - 1)) * 2 ^ 32 := Nat.mul_le_mul_left _ (by decide)
-    omega
+    omega_arith
   · exact hx
 
 theorem fixT_ge {k x : Nat} : 2 ^ (32 * (k - 1)) ≤ fixT k x := by
   unfold fixT
   split
-  · omega
+  · omega_using []
   · rename_i h0
     exact Nat.le_of_not_lt fun h => h0 (Nat.div_eq_of_lt h)
 
@@ -51,7 +51,7 @@ theorem fixT_of_ge {k x : Nat} (h : 2 ^ (32 * (k - 1)) ≤ x) : fixT k x = x := 
 
 /-- A product below the square of a bound. -/
 theorem mul_lt_sq {a b P : Nat} (ha : a < P) (hb : b < P) : a * b < P * P :=
-  Nat.lt_of_le_of_lt (Nat.mul_le_mul_left a (Nat.le_of_lt hb)) (Nat.mul_lt_mul_of_pos_right ha (by omega))
+  Nat.lt_of_le_of_lt (Nat.mul_le_mul_left a (Nat.le_of_lt hb)) (Nat.mul_lt_mul_of_pos_right ha (by omega_using [ha]))
 
 /-- For a valid modulus `n = p q` of `w` words (`w` even), with `p` and `q` of `w / 2`
 words: both have their top words, and so do `p - 1` and `q - 1`. -/
@@ -64,19 +64,19 @@ theorem top_words {k n p q w : Nat} (hm : modulusValid n k = true) (hw : w = (k 
     rw [← Nat.pow_add]
     have h8 : (2 : Nat) ^ (8 * (k - 1)) ≤ n := by
       rw [Nat.pow_mul, show (2 : Nat) ^ 8 = 256 from rfl]; exact hnk
-    exact Nat.le_trans (Nat.pow_le_pow_right (by decide) (by omega)) h8
+    exact Nat.le_trans (Nat.pow_le_pow_right (by decide) (by omega_using [hw])) h8
   have pT : 2 ^ (32 * (w / 2 - 1)) ≤ p := Nat.le_of_not_lt fun h => by
     have := Nat.lt_of_le_of_lt (Nat.mul_le_mul_left p (Nat.le_of_lt hq))
       (Nat.mul_lt_mul_of_pos_right h (Nat.two_pow_pos (32 * (w / 2))))
-    omega
+    omega_using [hN, lo, this]
   have qT : 2 ^ (32 * (w / 2 - 1)) ≤ q := Nat.le_of_not_lt fun h => by
     have := Nat.lt_of_le_of_lt (Nat.mul_le_mul_left q (Nat.le_of_lt hp))
       (Nat.mul_lt_mul_of_pos_right h (Nat.two_pow_pos (32 * (w / 2))))
     rw [Nat.mul_comm q] at this
-    omega
+    omega_using [hN, lo, this]
   have ev : 2 ^ (32 * (w / 2 - 1)) % 2 = 0 := by
-    rw [show 32 * (w / 2 - 1) = 32 * (w / 2 - 1) - 1 + 1 by omega, Nat.pow_succ, Nat.mul_mod_left]
-  exact ⟨pT, by omega, by omega⟩
+    rw [show 32 * (w / 2 - 1) = 32 * (w / 2 - 1) - 1 + 1 by omega_using [hw4], Nat.pow_succ, Nat.mul_mod_left]
+  exact ⟨pT, by omega_using [pT, ev], by omega_using [qT, ev]⟩
 
 /-- The checks a balanced key's code computes, in its order. -/
 def keyBitsW (w n d p q dP dQ qInv R₁ R₂ : Nat) : Bool :=
@@ -94,15 +94,15 @@ theorem keyBits_words {k n d p q dP dQ qInv w R₁ R₂ : Nat} (hm : modulusVali
         (d % (2 * (q / 2))) := by
   obtain ⟨hn, hnk⟩ := modulusValid_facts hm
   have hW : (2 : Nat) ^ (32 * w) = 2 ^ (32 * (w / 2)) * 2 ^ (32 * (w / 2)) := by
-    rw [← Nat.pow_add]; congr 1; omega
+    rw [← Nat.pow_add]; congr 1; omega_using [he]
   have hpq : p * q < 2 ^ (32 * w) := by rw [hW]; exact mul_lt_sq hp hq
-  have hq' : q < 2 ^ (32 * w) := Nat.lt_of_lt_of_le hq (Nat.pow_le_pow_right (by decide) (by omega))
+  have hq' : q < 2 ^ (32 * w) := Nat.lt_of_lt_of_le hq (Nat.pow_le_pow_right (by decide) (by omega_using []))
   unfold keyBitsW keyBits' crtBits
   rw [Nat.mod_eq_of_lt hpq, Nat.mod_eq_of_lt hq']
   by_cases hP : p % 2 = 1
   · by_cases hN : p * q = n
     · -- `p q = n`: `p` and `q` have their top words.
-      have hP0 : 0 < p := by omega
+      have hP0 : 0 < p := by omega_using [hP]
       obtain ⟨pT, pT', qT'⟩ := top_words hm hw hw4 hp hq hN
       have hdiv : n / p = q := Nat.div_eq_of_eq_mul_left hP0 (by rw [← hN, Nat.mul_comm])
       have hmod : n % p = 0 := by rw [← hN]; exact Nat.mul_mod_right p q
@@ -131,10 +131,10 @@ theorem keyBits_words2 {k n e d p q dP dQ qInv w : Nat} (hm : modulusValid n k =
         (d % (2 * (q / 2))) := by
   rw [← keyBits_words hm hw hw4 he2 hp hq]
   have hW : (2 : Nat) ^ (32 * w) = 2 ^ (32 * (w / 2)) * 2 ^ (32 * (w / 2)) := by
-    rw [← Nat.pow_add]; congr 1; omega
+    rw [← Nat.pow_add]; congr 1; omega_using [he2]
   by_cases hN : p * q = n
   · obtain ⟨-, pT', qT'⟩ := top_words hm hw hw4 hp hq hN
-    have eB : e < 2 ^ (32 * (w / 2)) := Nat.lt_of_lt_of_le he (Nat.pow_le_pow_right (by decide) (by omega))
+    have eB : e < 2 ^ (32 * (w / 2)) := Nat.lt_of_lt_of_le he (Nat.pow_le_pow_right (by decide) (by omega_using [hw4]))
     rw [fixT_of_ge pT', fixT_of_ge qT', Nat.mod_eq_of_lt (show dP * e < 2 ^ (32 * w) by rw [hW]; exact mul_lt_sq hdp eB),
       Nat.mod_eq_of_lt (show dQ * e < 2 ^ (32 * w) by rw [hW]; exact mul_lt_sq hdq eB), Nat.mod_eq_of_lt he,
       Nat.mul_comm dP e, Nat.mul_comm dQ e]

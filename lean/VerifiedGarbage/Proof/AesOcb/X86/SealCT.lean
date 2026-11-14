@@ -85,13 +85,13 @@ theorem front_ct (v : BlocksImpl) (enc : Bool) (p : Prm) {d : Nat} (hd : d = tag
     fun {m m'} F {d} hd => Proof.Ocb.blockAtMem_frame F fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl
-      · exact Lay.w_w (by simp only [sumO]; omega) (by omega) (by decide)
-      · exact Lay.w_w (by simp only [lO]; omega) (by omega) (by decide)
-      · exact Lay.w_w (by simp only [ohO]; omega) (by omega) (by decide)
-      · exact Lay.w_w (by simp only [kO]; omega) (by omega) (by decide)
-      · exact Lay.w_w (by simp only [hlO]; omega) (by omega) (by decide)
-      · exact Lay.w_w (.inl (by omega)) (by omega) (by decide)
-      · exact (L.bw' (by omega)).symm
+      · exact Lay.w_w (by simp only [sumO]; omega_using [hd]) (by omega_using [hd]) (by decide)
+      · exact Lay.w_w (by simp only [lO]; omega_using [hd]) (by omega_using [hd]) (by decide)
+      · exact Lay.w_w (by simp only [ohO]; omega_using [hd]) (by omega_using [hd]) (by decide)
+      · exact Lay.w_w (by simp only [kO]; omega_using [hd]) (by omega_using [hd]) (by decide)
+      · exact Lay.w_w (by simp only [hlO]; omega_using [hd]) (by omega_using [hd]) (by decide)
+      · exact Lay.w_w (.inl (by omega_using [hd])) (by omega_using [hd]) (by decide)
+      · exact (L.bw' (by omega_using [hd])).symm
   refine CT.seq (J := BI p) ((hash_ct v L).mono fun t ⟨E, _, _, l0⟩ => ⟨_, _, _, ⟨L, rfl, rfl, rfl⟩, E, l0⟩)
     (fun t ⟨E, o0, ck, l0⟩ => WP.mono (hash_ok v ⟨L, rfl, rfl, rfl⟩ E l0) fun t' ⟨E', F, _, _, _⟩ =>
       ⟨E', by rw [kH F (by decide), kH F (by decide), o0], by rw [kH F (by decide), ck],
@@ -185,7 +185,7 @@ theorem open_ct (v : BlocksImpl) : ConstantTime isa openX86.pre openX86.pub («o
       (frame_toMut (rs := [⟨w64 p.W, p.tl⟩]) (by
         rw [m]; exact writeBytes_frame _ _ _ (by rw [length_bytesAt]; exact Region.contains_self _ _))
         fun r hr => by
-          simp only [List.mem_singleton] at hr; subst hr; exact ⟨wA p.W, by simp, Region.sub_prefix (by omega)⟩)
+          simp only [List.mem_singleton] at hr; subst hr; exact ⟨wA p.W, by simp, Region.sub_prefix (by omega_using [ht])⟩)
   -- The comparison.
   refine CT.seq (J := fun t => Env p t ∧ ∃ c : Bool,
       slotv t.mem p.W okO = if c then BitVec.ofNat 32 1 else BitVec.ofNat 32 0) (cmp_ct L)

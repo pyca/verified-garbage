@@ -36,7 +36,7 @@ section
 variable {L : Lay} {scr : BitVec 32}
 
 theorem and8 (b : Byte) (w : BitVec 32) : (b.setWidth 32 &&& w).setWidth 8 = b &&& w.setWidth 8 :=
-  BitVec.eq_of_getLsbD_eq fun i hi => by simp [hi, show i < 32 by omega]
+  BitVec.eq_of_getLsbD_eq fun i hi => by simp [hi, show i < 32 by omega_using [hi]]
 
 /-- After `j` bytes of the masked copy. -/
 structure OI (src dst : BitVec 32) (n : Nat) (f : Nat → Byte) (w : BitVec 32) (j : Nat) (s : State) : Prop where
@@ -58,10 +58,10 @@ theorem outLoop_vp {src dst : BitVec 32} {n : Nat} (hd : WBuf L dst n) (hs : RBu
   have fis := hs.fit
   let I : Nat → State → State → Prop := fun k σ s => k ≤ n ∧ Ctx L scr σ s ∧ X σ s.mem ∧
     OI src dst n (f σ) (w σ) (n - k) s
-  refine (VP.loop (I := I) (fun k => ?_) (n - 1)).mono (fun σ s ⟨hc, hx, si, di, cx, dx⟩ => ⟨by omega, hc, hx,
-    ⟨by rw [si, show n - (n - 1 + 1) = 0 by omega, BitVec.add_zero],
-      by rw [di, show n - (n - 1 + 1) = 0 by omega, BitVec.add_zero],
-      by rw [cx, show n - (n - 1 + 1) = 0 by omega]; rfl, dx, fun i hi => by omega⟩⟩) fun _ _ h => h
+  refine (VP.loop (I := I) (fun k => ?_) (n - 1)).mono (fun σ s ⟨hc, hx, si, di, cx, dx⟩ => ⟨by omega_using [hn], hc, hx,
+    ⟨by rw [si, show n - (n - 1 + 1) = 0 by omega_using [], BitVec.add_zero],
+      by rw [di, show n - (n - 1 + 1) = 0 by omega_using [], BitVec.add_zero],
+      by rw [cx, show n - (n - 1 + 1) = 0 by omega_using []]; rfl, dx, fun i hi => by omega⟩⟩) fun _ _ h => h
   refine VP.taint _ outBody_taint (fun _ _ _ _ h₁ h₂ r hr => ?_) fun σ s ⟨hk, hc, hx, hp⟩ => ?_
   · obtain ⟨-, -, -, p₁⟩ := h₁
     obtain ⟨-, -, -, p₂⟩ := h₂
@@ -71,7 +71,7 @@ theorem outLoop_vp {src dst : BitVec 32} {n : Nat} (hd : WBuf L dst n) (hs : RBu
     · rw [p₁.edi, p₂.edi]
     · rw [p₁.ecx, p₂.ecx]
   generalize hj : n - (k + 1) = j at hp
-  have hjn : j < n := by omega
+  have hjn : j < n := by omega_using [hn, hj]
   have az : ∀ x : BitVec 32, addr x 0 = x.setWidth 64 := fun x => by simp [addr]
   simp only [outBody, addi, Impl.RsaPkcs1Sig.X86.at_]
   refine wp_movzx8 (a := byteAt src j) (by rw [ea_at, hp.esi, az, byte32 fis hjn]) (hs.inR hc.st hjn)
@@ -103,19 +103,19 @@ theorem outLoop_vp {src dst : BitVec 32} {n : Nat} (hd : WBuf L dst n) (hs : RBu
         u1.other _ (by decide), hp.esi, BitVec.add_assoc, BitVec.ofNat_add_ofNat]
     · rw [u6.other _ (by decide), u5.gpr, u4.other _ (by decide), m3.gpr, u2.other _ (by decide),
         u1.other _ (by decide), hp.edi, BitVec.add_assoc, BitVec.ofNat_add_ofNat]
-    · rw [u6.gpr, c5, ofNat_pred (by omega), Nat.sub_sub]
+    · rw [u6.gpr, c5, ofNat_pred (by omega_using [hn, hj]), Nat.sub_sub]
     · rw [g6 _ (by decide) (by decide) (by decide) (by decide), hp.edx]
     · rw [mm, VG.WriteBytes.writeW8_apply]
       by_cases e : i = j
       · subst e; simp
-      · rw [ite_eq_right fun h' => e (byteAt_inj fit (by omega) hjn h')]
-        exact hp.out i (by omega)
-  rw [c5, ofNat_pred (by omega), Nat.sub_sub, ofNat_beq_zero (by omega), show n - (j + 1) = k by omega] at z6
-  refine ⟨?_, fun h0 => ⟨c6, hX σ _ _ hx fr, fun i hi => sk.out i (by omega)⟩,
-    fun hpos => ⟨by omega, c6, hX σ _ _ hx fr, by rw [show n - k = j + 1 by omega]; exact sk⟩⟩
+      · rw [ite_eq_right fun h' => e (byteAt_inj fit (by omega_using [hn, hj, hi]) hjn h')]
+        exact hp.out i (by omega_using [hi, e])
+  rw [c5, ofNat_pred (by omega_using [hn, hj]), Nat.sub_sub, ofNat_beq_zero (by omega_using [fit]), show n - (j + 1) = k by omega_using [hk, hj]] at z6
+  refine ⟨?_, fun h0 => ⟨c6, hX σ _ _ hx fr, fun i hi => sk.out i (by omega_using [hj, h0, hi])⟩,
+    fun hpos => ⟨by omega_using [hk], c6, hX σ _ _ hx fr, by rw [show n - k = j + 1 by omega_using [hk, hj]]; exact sk⟩⟩
   show eval .ne t6 = _
   simp only [eval, z6]
-  by_cases h0 : k = 0 <;> simp [h0] <;> omega
+  by_cases h0 : k = 0 <;> simp [h0] <;> omega_using [h0]
 
 end
 
@@ -138,7 +138,7 @@ theorem lt_one_iff (x : BitVec 32) : x.toNat < (1 : BitVec 32).toNat ↔ x = 0 :
     rw [e1] at h
     apply BitVec.eq_of_toNat_eq
     show x.toNat = 0
-    omega
+    omega_using [h]
   · rintro rfl; decide
 
 /-- `ok`, as `okMask` computes it: the borrow of `((r ⊕ 1) ∨ acc) - 1`. -/
@@ -233,8 +233,8 @@ theorem out_vp (P : EP) : VP (O1 h g P) (.seq (.block outSet) (countLoop outBody
     · rw [u5.gpr, u4.mem, u3.mem, u2.mem, u1.mem, hk.2.2]
   have hf := ok.fits P.OUT (by simp)
   simp only [BitVec.toNat_setWidth] at hf
-  rw [Nat.mod_eq_of_lt (by have := P.out.isLt; omega)] at hf
-  have wb : WBuf P.lay P.out P.K := ⟨hf, by omega, ⟨P.OUT, by simp, Region.contains_self _ _⟩⟩
+  rw [Nat.mod_eq_of_lt (by have := P.out.isLt; omega_using [])] at hf
+  have wb : WBuf P.lay P.out P.K := ⟨hf, by omega_using [hK], ⟨P.OUT, by simp, Region.contains_self _ _⟩⟩
   have sO : ∀ {o n : Nat}, o + n ≤ oRsa → (sR P.scr o n).Disjoint P.OUT := by
     intro o n hon
     have hs := hi₀.slK
@@ -246,7 +246,7 @@ theorem out_vp (P : EP) : VP (O1 h g P) (.seq (.block outSet) (countLoop outBody
       exact this.1.2
     have hf' := ok.fits P.SCR (by simp)
     simp only [BitVec.toNat_setWidth] at hf'
-    exact (d.sub_right (Offset.sub_base _ (by unfold oRsa at hon; omega))).symm
+    exact (d.sub_right (Offset.sub_base _ (by unfold oRsa at hon; omega_using [hon, hs]))).symm
   have ko : ∀ σ m m', X σ m → Frame [⟨P.out.setWidth 64, P.K⟩] m m' → X σ m' := fun σ m m' ⟨hk, hb⟩ hf' =>
     ⟨hk.keep h g hf' fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
@@ -256,9 +256,9 @@ theorem out_vp (P : EP) : VP (O1 h g P) (.seq (.block outSet) (countLoop outBody
       exact hf' _ fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr
         exact sO (o := oBuf + j) (n := 1) (by oomega) _ (Region.contains_self _ _)⟩
-  refine (outLoop_vp wb (hg.rbuf (o := oBuf) (n := P.K) (by oomega) (by omega)) (by omega) (X := X) ko
+  refine (outLoop_vp wb (hg.rbuf (o := oBuf) (n := P.K) (by oomega) (by omega_using [hK'])) (by omega_using [hK']) (X := X) ko
     (f := fun σ i => Bp h g P σ (i + aV h g P σ))
-    (fun σ m hx i hi => by rw [hg.byteAt_scr (by oomega)]; exact hx.2 i (by omega)) (w := okW h g P)).mono
+    (fun σ m hx i hi => by rw [hg.byteAt_scr (by oomega)]; exact hx.2 i (by omega_using [hK, hi])) (w := okW h g P)).mono
     (fun σ s hh => hh) fun σ s ⟨hc, ⟨hk, _⟩, hb⟩ => ⟨hc, hk, fun i hi => by rw [hb i hi, and_maskOf]⟩
 
 end VG.Proof.RsaOaep.X86.Dec

@@ -53,7 +53,7 @@ theorem ArrayContext.workspace {g : ArrayGeometry} {candidate exponent : Nat} {s
   change (s.gpr .edi).toNat = (g.workspace.setWidth 64).toNat at H
   rw [BitVec.toNat_setWidth] at H
   have := g.workspace.isLt
-  omega
+  omega_using [H]
 
 theorem ArrayContext.keepReadonly {g : ArrayGeometry} {candidate exponent : Nat} {s t : State}
     (C : ArrayContext g candidate exponent s) {rs : List Reg} (K : Keeps rs s t)
@@ -66,16 +66,16 @@ theorem ArrayContext.keepFrame {g : ArrayGeometry} (v : g.Valid) {candidate expo
     (sp : .esp ∉ rs) (edi : .edi ∉ rs) (F : Frame [g.stackRegion] s.mem t.mem) : ArrayContext g candidate exponent t := by
   have read (d : Nat) (fit : d + 4 ≤ g.size) : t.mem.readW (off g.base d) 32 = s.mem.readW (off g.base d) 32 :=
     F.readW (r := g.workspaceRegion) (w := 32)
-      (Offset.contains_base _ fit (by have := C.scratch.nowrap; omega))
+      (Offset.contains_base _ fit (by have := C.scratch.nowrap; omega_using [fit, this]))
       (by intro r mem; obtain rfl := List.mem_singleton.mp mem; exact v.separate) (by decide)
   refine ⟨C.scratch.of_keeps K edi sp, C.stack.keep K sp, ?_, ?_⟩
   · rw [← C.candidateValue]
     apply val32_congr
     intro i index
-    exact congrArg BitVec.toNat (read _ (by have := v.sourceFit; omega))
+    exact congrArg BitVec.toNat (read _ (by have := v.sourceFit; omega_using [index, this]))
   · rw [← C.exponentEq]
     unfold exponentValue
-    rw [read _ (by have := v.exponentFit; omega), read _ (by have := v.exponentFit; omega)]
+    rw [read _ (by have := v.exponentFit; omega_using [this]), read _ (by have := v.exponentFit; omega_using [this])]
 
 theorem arrayStackFrame {g : ArrayGeometry} {m m' : Mem}
     (O : Outside (g.sp.setWidth 64) 0 20 m m') : Frame [g.stackRegion] m m' := by
@@ -88,6 +88,6 @@ theorem ArrayGeometry.pointer_eq {g : ArrayGeometry} {i : Nat} (index : i < g.n)
   apply BitVec.sub_eq_iff_eq_add.mpr
   rw [BitVec.add_assoc, ← BitVec.ofNat_add]
   congr 2
-  omega
+  omega_using [index]
 
 end VG.Proof.RsaKeyGen.X86.Mod64

@@ -54,7 +54,7 @@ theorem sized_ok [VG.Proof.Rsa.X86.BatchLaw] {g : CallGeometry} {s : State} (h :
     have b1 : (g.args 9).toNat ≤ 8 * g.n := hu.inputBound 1
     have b2 : (g.args 11).toNat ≤ 8 * g.n := hu.inputBound 2
     have up := hu.upper
-    omega
+    omega_using [b1, b2, up]
   refine WP.mono (core_ok start (inputsGate hu s.mem) lens fun t K O => (hu.afterBelow K (by decide) (by decide)
       (VG.Proof.RsaKeyGen.X86.KeyRuntime.OutsS.toFrame
         (fun _ _ o => scratchFrame hu (keep_outside ru'.ws o (by decide) (by decide))) O)).arguments 9 (by decide))
@@ -67,13 +67,13 @@ theorem sized_ok [VG.Proof.Rsa.X86.BatchLaw] {g : CallGeometry} {s : State} (h :
       (fun _ _ o => scratchFrame hu (keep_outside ru'.ws o (by decide) (by decide))) kv
   have bv : Frame ([⟨off g.base 16, g.size - 16⟩] ++ [below (s.gpr .esp) 52]) u.mem v.mem :=
     VG.Proof.RsaKeyGen.X86.KeyRuntime.OutsS.toFrame (fun _ _ o => outside_frame
-      (hu.keepBody (by rw [← kwEq]; exact o) (by decide) (by decide)) (by omega)) kv
+      (hu.keepBody (by rw [← kwEq]; exact o) (by decide) (by decide)) (by omega_using [nw])) kv
   have hv := hu.afterBelow rv (by decide) (by decide) (by rw [spU]; exact fv)
   obtain ⟨V, mask, inverse⟩ := computed.mask
   refine WP.mono (stores_ok hv len zero _ mask) fun t ⟨ht, dp, dq, qi, status, frame, rest⟩ => ?_
   refine ⟨ht, ?_, ?_, ru.trans ((rv.mono (by decide)).trans rest)⟩
   · exact ⟨V, _, _, _, inverse, computed.remP, computed.remQ, dp, dq, qi, status⟩
-  · have prior := outside_frame ou (by omega)
+  · have prior := outside_frame ou (by omega_using [nw])
     exact ((prior.mono (rs' := bodyWrites g ++ [below (s.gpr .esp) 52]) (by simp [bodyWrites])).trans
       (bv.mono (by simp [bodyWrites]))).trans (frame.mono (by simp [bodyWrites]))
 

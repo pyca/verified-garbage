@@ -49,10 +49,10 @@ theorem loop_step_ok {s₀ s : State} {a o : Addr} {g j : Nat}
     simpa only [h.output] using ht.frame
   have full : (2*packWidth g)*j+2*packWidth g≤32*packWidth g := by
     rcases hg with rfl | rfl
-    · change 8*j+8≤128; omega
-    · change 12*j+12≤192; omega
+    · change 8*j+8≤128; omega_using [hj]
+    · change 12*j+12≤192; omega_using [hj]
   have small : 32*packWidth g<2^64 := by rcases hg with rfl | rfl <;> decide
-  refine ⟨by omega,ht.ready,?_,?_,?_,?_,?_,?_,?_,ht.rd.trans h.rd,ht.wr.trans h.wr,ht.sp.trans h.sp⟩
+  refine ⟨by omega_using [hj],ht.ready,?_,?_,?_,?_,?_,?_,?_,ht.rd.trans h.rd,ht.wr.trans h.wr,ht.sp.trans h.sp⟩
   · intro i hi
     rw [Nat.mul_succ] at hi
     by_cases old : i<(2*packWidth g)*j
@@ -61,10 +61,10 @@ theorem loop_step_ok {s₀ s : State} {a o : Addr} {g j : Nat}
         simpa only [BitVec.add_zero] using
           (Offset.disjoint o (d := 0) (n := (2*packWidth g)*j)
             (e := (2*packWidth g)*j) (k := 2*packWidth g)
-            (Or.inl (by omega)) (by omega) (by omega))) (by dsimp; omega) old]
+            (Or.inl (by omega_using [])) (by omega_using [full, small]) (by omega_using [full, small]))) (by dsimp; omega_using [full, small]) old]
       exact h.values i old
-    · have hb := ht.bytes (i-(2*packWidth g)*j) (by omega)
-      rw [h.output,Offset.add_add,show (2*packWidth g)*j+(i-(2*packWidth g)*j)=i by omega,poly] at hb
+    · have hb := ht.bytes (i-(2*packWidth g)*j) (by omega_using [full, hi])
+      rw [h.output,Offset.add_add,show (2*packWidth g)*j+(i-(2*packWidth g)*j)=i by omega_using [old],poly] at hb
       exact hb
   · exact h.frame.trans (hf.sub (by
       intro r hr; simp only [List.mem_singleton] at hr; subst r
@@ -101,7 +101,7 @@ theorem loop_ok {s₀ s : State} {a o : Addr} {g start : Nat}
     simp only [eval,State.read,Size.bits,BitVec.setWidth_eq,hu.count,hend,Nat.sub_self]
     rfl
   · right
-    refine ⟨?_,16-(j+1),by omega,j+1,by omega,rfl,hu⟩
+    refine ⟨?_,16-(j+1),by omega_using [hj, hl],j+1,by omega_using [hj, hend],rfl,hu⟩
     simp only [eval,State.read,Size.bits,BitVec.setWidth_eq,hu.count,Option.some.injEq,bne_iff_ne]
     bv_omega_arith
 
@@ -126,7 +126,7 @@ theorem LoopState.output_bytes {s₀ s : State} {a o : Addr} {g : Nat}
     apply h.values
     have hh : i<32*packWidth g := by
       simpa only [VG.Spec.Sha3.bytesAt,List.length_map,List.length_range] using hi
-    have he : 2*packWidth g*16=32*packWidth g := by omega
-    omega
+    have he : 2*packWidth g*16=32*packWidth g := by omega_using []
+    omega_using [hh]
 
 end VG.Proof.MlDsa.AArch64.Optimized.HighPack

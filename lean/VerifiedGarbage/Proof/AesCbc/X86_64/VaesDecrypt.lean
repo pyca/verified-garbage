@@ -363,10 +363,10 @@ theorem written (s : State) (tr : List Leak) (t : State)
   exact hf _ fun r hr hc => by
     simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
     rcases hr with rfl | rfl | rfl
-    · exact hp.iv_scr _ hc (Offset.contains_base _ (by omega) (by omega))
-    · exact hp.data_scr _ hc (Offset.contains_base _ (by omega) (by omega))
+    · exact hp.iv_scr _ hc (Offset.contains_base _ (by omega_using [hib]) (by omega_using [hib]))
+    · exact hp.data_scr _ hc (Offset.contains_base _ (by omega_using [hib]) (by omega_using [hib]))
     · change (S s + BitVec.ofNat 64 i - S s).toNat + 1 ≤ 224 at hc
-      rw [Offset.add_sub_cancel_left,BitVec.toNat_ofNat,Nat.mod_eq_of_lt (by omega)] at hc
-      omega
+      rw [Offset.add_sub_cancel_left,BitVec.toNat_ofNat,Nat.mod_eq_of_lt (by omega_using [hib])] at hc
+      omega_using [hi, hc]
 
 end VG.Proof.AesCbc.X86_64.VaesDecrypt

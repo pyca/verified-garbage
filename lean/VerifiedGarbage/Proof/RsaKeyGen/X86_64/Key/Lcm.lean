@@ -200,8 +200,8 @@ theorem gcdUV_k [InvLaw] {I : KIn} {m₀ : Mem} {s : State} (h : KS I m₀ s) (h
     rw [← hM]; split
     · rw [← hv1]; split <;> with_reducible assumption
     · exact Nat.lt_of_lt_of_le (by decide : 3 < 2 ^ 64) (Nat.pow_le_pow_right (by decide) (by omega_using [hw]))
-  refine WP.mono (inverseK_k h₈ (k := kHalf) (n := I.W / 2) (fun _ h12 hw20 => kHalf_ok h12 (by omega))
-    hw (by omega) (iU := aU) (iV := aV) (iX₂ := aX₂) (iM := aM) (by decide) (by decide) (by decide)
+  refine WP.mono (inverseK_k h₈ (k := kHalf) (n := I.W / 2) (fun _ h12 hw20 => kHalf_ok h12 (by omega_using [hw2]))
+    hw (by omega_using []) (iU := aU) (iV := aV) (iX₂ := aX₂) (iM := aM) (by decide) (by decide) (by decide)
     (by decide) (by decide)) fun s₁₂ ⟨h₁₂, f₁₂, _, hinv⟩ => ?_
   rw [vM₈', vU₈] at hinv
   have hg := (hinv hu1b hMb hMo.1).1

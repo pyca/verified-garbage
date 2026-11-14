@@ -93,7 +93,7 @@ theorem widened_coeffs (x z : BitVec 128) {mask : Nat} (hm : mask<256)
       (if 4+i < (Impl.MlKem.AArch64.Rej8.acceptedLanes mask).length then
         vhalf x ((Impl.MlKem.AArch64.Rej8.acceptedLanes mask).getD (4+i) 0) else 0).toNat := by
   have h := vword_zip_zero (x := compactValue x mask) hz hi
-  rw [compact_half x hm (by omega),compact_half x hm (by omega)] at h
+  rw [compact_half x hm (by omega_using [hi]),compact_half x hm (by omega_using [hi])] at h
   exact h
 
 end VG.Proof.MlKem.AArch64.Rej8

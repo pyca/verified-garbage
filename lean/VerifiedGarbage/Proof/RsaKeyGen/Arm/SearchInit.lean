@@ -59,8 +59,8 @@ theorem carry_eval {s : State} {b : Bool} {P : Prop} [Decidable P] (h : (!b) = d
 
 theorem not_decide_le (a b : Nat) : (!decide (a ≤ b)) = decide (b < a) := by
   by_cases h : a ≤ b
-  · rw [decide_eq_true h, decide_eq_false (by omega)]; rfl
-  · rw [decide_eq_false h, decide_eq_true (by omega)]; rfl
+  · rw [decide_eq_true h, decide_eq_false (by omega_using [h])]; rfl
+  · rw [decide_eq_false h, decide_eq_true (by omega_using [h])]; rfl
 
 theorem checkLow_ok (s : State) :
     WP isa (.block checkLow) s fun t =>
@@ -155,7 +155,7 @@ structure Space (B : BitVec 32) (s : State) : Prop where
 
 theorem Space.addr {B : BitVec 32} {s : State} (h : Space B s) {d : Nat} (hd : d < 32) :
     State.addr (s.gpr .r0 + BitVec.ofNat 32 d) = off (State.addr B) d := by
-  rw [h.ptr]; exact VG.Arm.addr_add (by have := h.space.nowrap; omega)
+  rw [h.ptr]; exact VG.Arm.addr_add (by have := h.space.nowrap; omega_using [hd, this])
 
 theorem Space.congr {B : BitVec 32} {s t : State} (h : Space B s) (hw : t.wr = s.wr)
     (h0 : t.gpr .r0 = s.gpr .r0) : Space B t :=
@@ -193,9 +193,9 @@ theorem words_ok {B : BitVec 32} {s : State} (h : Space B s) {L : Nat} (hL : s.g
     h.space.write (off := 8) (by decide), h.space.write (off := 12) (by decide),
     h.space.write (off := 16) (by decide), h.space.write (off := 20) (by decide),
     h.space.write (off := 24) (by decide), h.space.write (off := 28) (by decide), hL,
-    shl32 L 15 (by omega), shl32 L 5 (by omega), ← BitVec.ofNat_add]
-  simp only [List.foldl_cons, List.foldl_nil, show L * 2 ^ 15 + L = 32769 * L by omega,
-    show L * 2 ^ 5 = 32 * L by omega]
+    shl32 L 15 (by omega_using [hb]), shl32 L 5 (by omega_using [hb]), ← BitVec.ofNat_add]
+  simp only [List.foldl_cons, List.foldl_nil, show L * 2 ^ 15 + L = 32769 * L by omega_using [],
+    show L * 2 ^ 5 = 32 * L by omega_using []]
 
 /-! ## Whether the exponent is 3 -/
 
@@ -262,7 +262,7 @@ theorem lead_step {s u : State} {E : BitVec 32} {n j : Nat} (hj : j < n) (hn : n
     (hrd : InRegions (s.rd ++ s.wr) (State.addr E + BitVec.ofNat 64 j) 1) (h : LeadInv s E n j u) :
     WP isa (.block leadStep) u (LeadInv s E n (j + 1)) := by
   have addr : State.addr (E + BitVec.ofNat 32 j) = State.addr E + BitVec.ofNat 64 j :=
-    VG.Arm.addr_add (by omega)
+    VG.Arm.addr_add (by omega_using [hj, fits])
   have hr : InRegions (u.rd ++ u.wr) (State.addr E + BitVec.ofNat 64 j) 1 := by
     rw [h.rest.rd, h.rest.wr]; exact hrd
   refine WP.mono (withRest_all [.r1, .r2, .r3, .r12] (Q := fun t =>
@@ -272,25 +272,25 @@ theorem lead_step {s u : State} {E : BitVec 32} {n j : Nat} (hj : j < n) (hn : n
     (by rfl) (by rfl)) fun t ⟨⟨h2, h1, h3, hz, hm⟩, k⟩ => ⟨h2, ?_, h3, hz, hm.trans h.mem, h.rest.trans k⟩
   · unfold leadStep
     ffrun [h.ptr, h.acc, h.count, BitVec.add_zero, addr, hr, BitVec.add_assoc, ← BitVec.ofNat_add,
-      sub_one32 (k := n - j) (by omega) (by omega), show n - j - 1 = n - (j + 1) by omega,
-      ofNat_beq (k := n - (j + 1)) (by omega), add_one32]
+      sub_one32 (k := n - j) (by omega_using [hj]) (by omega_using [hn]), show n - j - 1 = n - (j + 1) by omega_using [],
+      ofNat_beq (k := n - (j + 1)) (by omega_using [hn]), add_one32]
   · rw [h1, bytesAt_succ, orOf32_snoc, h.mem]
 
 theorem lead_loop {s u : State} {E : BitVec 32} {n : Nat} (h1 : 1 ≤ n) (hn : n < 8)
     (fits : E.toNat + n < 2 ^ 32)
     (hrd : ∀ j < n, InRegions (s.rd ++ s.wr) (State.addr E + BitVec.ofNat 64 j) 1) (h : LeadInv s E n 0 u) :
     WP isa (.loop (.block leadStep) .ne) u (LeadInv s E n n) := by
-  refine WP.mono (WP.chunk_loop (I := LeadInv s E n) (n := n) (N := 1) (k := 0) (by decide) (by omega) h
-    (fun j t hj ht => lead_step (by omega) hn fits (hrd j (by omega)) ht)
+  refine WP.mono (WP.chunk_loop (I := LeadInv s E n) (n := n) (N := 1) (k := 0) (by decide) (by omega_using [h1]) h
+    (fun j t hj ht => lead_step (by omega_using [hj]) hn fits (hrd j (by omega_using [hj])) ht)
     (fun j t _ ht => ?_)) fun t ⟨j, hj, hl, ht⟩ => by
-      obtain rfl : j = n := by omega
+      obtain rfl : j = n := by omega_using [hj, hl]
       exact ht
   have e : isa.eval .ne t = some (!decide (n - j = 0)) := by
     change some (!t.z) = _; rw [ht.z]
   rw [e]
   constructor
-  · intro hl; rw [decide_eq_true (by omega)]; rfl
-  · intro hl; rw [decide_eq_false (by omega)]; rfl
+  · intro hl; rw [decide_eq_true (by omega_using [hl])]; rfl
+  · intro hl; rw [decide_eq_false (by omega_using [hl])]; rfl
 
 theorem isThree_ok {s : State} {E : BitVec 32} {len : Nat} (hp : s.gpr .r2 = E)
     (hl : s.gpr .r3 = BitVec.ofNat 32 len) (h1 : 1 ≤ len) (h8 : len ≤ 8) (fits : E.toNat + len ≤ 2 ^ 32)
@@ -301,7 +301,7 @@ theorem isThree_ok {s : State} {E : BitVec 32} {len : Nat} (hp : s.gpr .r2 = E)
   unfold isThree
   refine WP.seq (WP.mono (withRest_all [.r1, .r3] (Q := fun t =>
       t.gpr .r1 = 0 ∧ t.gpr .r3 = BitVec.ofNat 32 (len - 1) ∧ t.z = decide (len - 1 = 0) ∧ t.mem = s.mem)
-    (by ffrun [hl, sub_one32 h1 (by omega), ofNat_beq (k := len - 1) (by omega)]) (by rfl) (by rfl))
+    (by ffrun [hl, sub_one32 h1 (by omega_using [h8]), ofNat_beq (k := len - 1) (by omega_using [h8])]) (by rfl) (by rfl))
     fun t ⟨⟨h9, h10, hz, hm⟩, k⟩ => ?_)
   have h0 : LeadInv s E (len - 1) 0 t := ⟨by rw [k.gpr .r2 (by decide), hp, BitVec.add_zero], by rw [h9]; rfl,
     h10, hz, hm, k.mono (by decide)⟩
@@ -312,12 +312,12 @@ theorem isThree_ok {s : State} {E : BitVec 32} {len : Nat} (hp : s.gpr .r2 = E)
       exact WP.block_nil (by rw [hz'] at h0 ⊢; exact h0)
     · rw [hz] at hz'
       have hz' : len - 1 ≠ 0 := of_decide_eq_false hz'
-      exact lead_loop (by omega) (by omega) (by omega) (fun j hj => hrd j (by omega)) h0
+      exact lead_loop (by omega_using [hz']) (by omega_using [h8]) (by omega_using [fits]) (fun j hj => hrd j (by omega_using [hj])) h0
   refine WP.seq (WP.mono hloop fun u hu => ?_)
   have addr : State.addr (E + BitVec.ofNat 32 (len - 1)) = State.addr E + BitVec.ofNat 64 (len - 1) :=
-    VG.Arm.addr_add (by omega)
+    VG.Arm.addr_add (by omega_using [fits])
   have hr : InRegions (u.rd ++ u.wr) (State.addr E + BitVec.ofNat 64 (len - 1)) 1 := by
-    rw [hu.rest.rd, hu.rest.wr]; exact hrd (len - 1) (by omega)
+    rw [hu.rest.rd, hu.rest.wr]; exact hrd (len - 1) (by omega_using [h1])
   refine WP.mono (withRest_all [.r1, .r12] (Q := fun t => t.gpr .r1 =
       orOf32 (Spec.Rsa.bytesAt s.mem (State.addr E) (len - 1)) |||
         ((u.mem (State.addr E + BitVec.ofNat 64 (len - 1))).setWidth 32 ^^^ 3) ∧ t.mem = u.mem) ?_
@@ -338,16 +338,16 @@ theorem first_value (L : Nat) (hL : L ≤ 512) (c : Bool) :
     BitVec.ofNat 32 L <<< 6 - BitVec.ofNat 32 c.toNat *
       (BitVec.ofNat 32 L <<< 3 + BitVec.ofNat 32 L <<< 4) =
       BitVec.ofNat 32 (if c then 40 * L else 64 * L) := by
-  rw [shl32 L 6 (by omega), shl32 L 3 (by omega), shl32 L 4 (by omega), ← BitVec.ofNat_add,
+  rw [shl32 L 6 (by omega_using [hL]), shl32 L 3 (by omega_using [hL]), shl32 L 4 (by omega_using [hL]), ← BitVec.ofNat_add,
     ← BitVec.ofNat_mul]
   cases c
   · simp only [Bool.false_eq_true, ite_false]
-    rw [Bool.toNat_false, Nat.zero_mul, BitVec.ofNat_sub_ofNat_of_le _ _ (by decide) (by omega)]
-    congr 1; omega
+    rw [Bool.toNat_false, Nat.zero_mul, BitVec.ofNat_sub_ofNat_of_le _ _ (by decide) (by omega_using [])]
+    congr 1; omega_using []
   · simp only [ite_true]
-    rw [Bool.toNat_true, Nat.one_mul, BitVec.ofNat_sub_ofNat_of_le _ _ (by omega) (by omega)]
+    rw [Bool.toNat_true, Nat.one_mul, BitVec.ofNat_sub_ofNat_of_le _ _ (by omega_using [hL]) (by omega_using [])]
     congr 1
-    omega
+    omega_using []
 
 theorem first_ok {B : BitVec 32} {s : State} (h : Space B s) {L : Nat} (hL : L ≤ 512)
     (hm : s.mem.readW (off (State.addr B) 8) 32 = BitVec.ofNat 32 L) :
@@ -356,7 +356,7 @@ theorem first_ok {B : BitVec 32} {s : State} (h : Space B s) {L : Nat} (hL : L �
   have c : decide ((1 : BitVec 32).toNat ≤ (s.gpr .r1).toNat) = !(s.gpr .r1 == 0) := by
     by_cases hz : (s.gpr .r1).toNat = 0
     · rw [show s.gpr .r1 = 0 from BitVec.eq_of_toNat_eq hz]; rfl
-    · rw [decide_eq_true (by change 1 ≤ _; omega)]
+    · rw [decide_eq_true (by change 1 ≤ _; omega_using [hz])]
       have : (s.gpr .r1 == 0) = false := beq_eq_false_iff_ne.mpr fun e => hz (by rw [e]; rfl)
       rw [this]; rfl
   unfold first
@@ -414,17 +414,17 @@ theorem init_ok {s : State} {B E : BitVec 32} (h : Space B s) (hp : s.gpr .r2 = 
     rw [ite_eq_right_of_eq_false _ _ (eq_false hv)]
     exact ⟨h0, by rw [hmu, hm]⟩
   unfold init
-  refine guard_ok (checkLow_ok s) (fun t hb hm k => clear_post t hm k (by unfold initValid; omega)) fun t₁ hb₁ hm₁ k₁ => ?_
+  refine guard_ok (checkLow_ok s) (fun t hb hm k => clear_post t hm k (by unfold initValid; omega_using [hb])) fun t₁ hb₁ hm₁ k₁ => ?_
   refine guard_ok (checkHigh_ok t₁) (fun t hb hm k => clear_post t (hm.trans hm₁) (k₁.trans k)
-    (by rw [k₁.gpr .r1 (by decide)] at hb; unfold initValid; omega)) fun t₂ hb₂ hm₂ k₂ => ?_
+    (by rw [k₁.gpr .r1 (by decide)] at hb; unfold initValid; omega_using [hb])) fun t₂ hb₂ hm₂ k₂ => ?_
   refine guard_ok (checkMod_ok t₂) (fun t hb hm k => clear_post t (hm.trans (hm₂.trans hm₁)) (k₁.trans (k₂.trans k))
-    (by rw [k₂.gpr .r1 (by decide), k₁.gpr .r1 (by decide)] at hb; unfold initValid; omega)) fun t₃ hb₃ hm₃ k₃ => ?_
+    (by rw [k₂.gpr .r1 (by decide), k₁.gpr .r1 (by decide)] at hb; unfold initValid; omega_using [hb])) fun t₃ hb₃ hm₃ k₃ => ?_
   have k₁₃ := k₁.trans (k₂.trans k₃)
   have hm₁₃ := hm₃.trans (hm₂.trans hm₁)
   refine guard_ok (checkEmpty_ok t₃) (fun t hb hm k => clear_post t (hm.trans hm₁₃) (k₁₃.trans k)
-    (by rw [k₁₃.gpr .r3 (by decide)] at hb; unfold initValid; omega)) fun t₄ hb₄ hm₄ k₄ => ?_
+    (by rw [k₁₃.gpr .r3 (by decide)] at hb; unfold initValid; omega_using [hb])) fun t₄ hb₄ hm₄ k₄ => ?_
   refine guard_ok (checkLong_ok t₄) (fun t hb hm k => clear_post t (hm.trans (hm₄.trans hm₁₃)) (k₁₃.trans (k₄.trans k))
-    (by rw [k₄.gpr .r3 (by decide), k₁₃.gpr .r3 (by decide)] at hb; unfold initValid; omega)) fun t₅ hb₅ hm₅ k₅ => ?_
+    (by rw [k₄.gpr .r3 (by decide), k₁₃.gpr .r3 (by decide)] at hb; unfold initValid; omega_using [hb])) fun t₅ hb₅ hm₅ k₅ => ?_
   have k₁₅ := k₁₃.trans (k₄.trans k₅)
   have hm₁₅ := hm₅.trans (hm₄.trans hm₁₃)
   have r1 : t₅.gpr .r1 = s.gpr .r1 := k₁₅.gpr .r1 (by decide)
@@ -433,7 +433,7 @@ theorem init_ok {s : State} {B E : BitVec 32} (h : Space B s) (hp : s.gpr .r2 = 
   rw [k₁.gpr .r1 (by decide)] at hb₂
   rw [k₁₃.gpr .r3 (by decide)] at hb₄
   rw [k₄.gpr .r3 (by decide), k₁₃.gpr .r3 (by decide)] at hb₅
-  have hv : initValid (s.gpr .r1).toNat (s.gpr .r3).toNat := by unfold initValid; omega
+  have hv : initValid (s.gpr .r1).toNat (s.gpr .r3).toNat := by unfold initValid; omega_using [hb₁, hb₂, hb₃, hb₄, hb₅]
   obtain ⟨_, hL, _, h1, h8⟩ := hv
   have h5 := h.congr k₁₅.wr (k₁₅.gpr .r0 (by decide))
   unfold valid
@@ -450,10 +450,10 @@ theorem init_ok {s : State} {B E : BitVec 32} (h : Space B s) (hp : s.gpr .r2 = 
     rw [hmz, hmu]; exact slot8_rest _ _ _
   refine WP.mono (first_ok hz hL h8z) fun t ⟨ht, hmt⟩ => ?_
   unfold InitPost
-  rw [ite_eq_left_of_eq_true _ _ (eq_true ⟨by omega, hL, by omega, h1, h8⟩)]
+  rw [ite_eq_left_of_eq_true _ _ (eq_true ⟨by omega_using [hb₁], hL, by omega_using [hb₃], h1, h8⟩)]
   have three : (z.gpr .r1 == 0) = decide (Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (State.addr E) (s.gpr .r3).toNat) = 3) := by
     rw [← hm₁₅, ← rest_bytes t₅.mem (State.addr B) (State.addr E) (s.gpr .r1).toNat _ disj
-      (by omega), ← hmu]
+      (by omega_using []), ← hmu]
     apply Bool.eq_iff_iff.mpr
     simp only [beq_iff_eq, decide_eq_true_eq]
     exact hzi
@@ -504,8 +504,8 @@ theorem valid_words (m : Mem) (B : Addr) (L : Nat) (hL : L ≤ 512) (three : Boo
   have hi := slot_writeSlots m B (N := 8) (by decide) (rest L) (by
     simp only [rest, List.mem_cons, List.not_mem_nil, or_false]
     rintro e (rfl | rfl | rfl | rfl | rfl | rfl | rfl) <;> dsimp only <;> decide)
-  have hlim : limit L three ≤ 64 * 512 := by unfold limit; split <;> omega
-  refine wordsAt_slots _ _ (by omega) (by omega) (by omega) (by omega) ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_
+  have hlim : limit L three ≤ 64 * 512 := by unfold limit; split <;> omega_using [hL]
+  refine wordsAt_slots _ _ (by omega_using [hlim]) (by omega_using [hL]) (by omega_using [hL]) (by omega_using [hL]) ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_
   · rw [ho 0 (by decide)]; rfl
   · rw [ho 1 (by decide), hi 1 (by decide)]; rfl
   · rw [ho 2 (by decide), hi 2 (by decide)]; rfl
@@ -539,7 +539,7 @@ theorem init_correct (s : State) (h : initPre s) :
   have sp : Space (s.gpr .r0) s := ⟨⟨hroom, by rw [hwr]; exact List.mem_singleton_self _⟩, rfl⟩
   have hreads : ∀ i < (s.gpr .r3).toNat, InRegions (s.rd ++ s.wr) (State.addr (s.gpr .r2) + BitVec.ofNat 64 i) 1 :=
     fun i hi => ⟨_, by rw [hrd]; exact List.mem_append_left _ (List.mem_singleton_self _),
-      Offset.contains_base _ (by omega) (by omega)⟩
+      Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi])⟩
   obtain ⟨tr, t, he, hp, k⟩ := withRest_all [.r0, .r1, .r2, .r3, .r12]
     (init_ok sp rfl hroome disj hreads) (by rfl) (by rfl)
   exact ⟨tr, t, he, ⟨fun r hr => k.gpr r (by revert r; decide), k.sp⟩, result_post hp⟩

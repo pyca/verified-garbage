@@ -100,12 +100,12 @@ theorem value_bridge {p : CheckPrivate.KpP} {xb : List Byte} {s : State}
       128 ≤ r.1 ∧ r.1 + r.2 ≤ 256 := by
     simp only [List.mem_cons, List.not_mem_nil, or_false]
     rintro r (rfl | rfl) <;> decide
-  have hi : InScr p.B p.Z s.mem t.mem := InScr.of_frm hf (fun r he => by have := hr r he; omega)
+  have hi : InScr p.B p.Z s.mem t.mem := InScr.of_frm hf (fun r he => by have := hr r he; omega_using [hZ, this])
   have hh : ∀ i < 32, i ≠ sY → i ≠ VG.Impl.Ffdh.X86_64.Domain.sOut →
       word t.mem p.B (8 * i) = word s.mem p.B (8 * i) := fun i hi hy ho =>
     hf.word_eq (by
       simp only [List.mem_cons, List.not_mem_nil, or_false]
-      rintro r (rfl | rfl) <;> simp only <;> omega) (by omega)
+      rintro r (rfl | rfl) <;> simp only <;> omega_arith) (by omega_using [hi])
   have hv : ∀ j < 8, wv t.mem (off p.B (inner p.w)) (slot p.w j) p.w =
       wv s.mem (off p.B (inner p.w)) (slot p.w j) p.w := by
     intro j hj
@@ -113,10 +113,10 @@ theorem value_bridge {p : CheckPrivate.KpP} {xb : List Byte} {s : State}
     have hlo := hc.sub.lo
     have hhi := hc.sub.hi
     have hn := hb.scr.nowrap
-    have h256 : 256 ≤ inner p.w := by simp only [inner, slot, hdrBytes]; omega
+    have h256 : 256 ≤ inner p.w := by simp only [inner, slot, hdrBytes]; omega_using []
     refine wv_congr fun i hi => ?_
     rw [word_off, word_off]
-    exact hf.word_eq (fun r he => Or.inr (by have := hr r he; omega)) (by omega)
+    exact hf.word_eq (fun r he => Or.inr (by have := hr r he; omega_using [h256, this])) (by omega_using [hs, hhi, hn, hi])
   have hc' : ModCtx t p.B p.Z (inner p.w) p.w mi p.P :=
     ⟨hc.sub.of_parent hf hr k.2.2 (k.gpr (by decide)),
       hc.xv.of_parent hc.sub.toMem hf (fun r he => (hr r he).2),
@@ -125,7 +125,7 @@ theorem value_bridge {p : CheckPrivate.KpP} {xb : List Byte} {s : State}
       hc.odd, hc.x1, hc.wide, hc.w2, hc.w28⟩
   have hgl : p.gb.length = p.k := by
     simp only [CheckPrivate.KpP.gb, List.length_take, List.length_drop, hb.doml]
-    rcases hb.dl with hd | hd <;> rw [hd] <;> omega
+    rcases hb.dl with hd | hd <;> rw [hd] <;> omega_using []
   have hySrc := ((hb.dom.drop p.k).take p.k).congrK hi k
   have hb' : Exchange.Base (outputP p) xb t := by
     refine ⟨hb.k1, hb.k2, hb.dl, hb.doml, hgl, hb.xlen, hb.xl1, hb.xl2,
@@ -147,7 +147,7 @@ theorem value_bridge {p : CheckPrivate.KpP} {xb : List Byte} {s : State}
         (hb.hdr (sXl, BitVec.ofNat 64 p.xl) (by simp [CheckPrivate.KpP.headers]))
     · exact hOut
   exact ⟨⟨⟨mi, hb', hc'⟩, (hv aY (by decide)).trans hy⟩, hi,
-    fun i hi => hh i (by omega) (by unfold sY sFn; omega)
-      (by unfold VG.Impl.Ffdh.X86_64.Domain.sOut sFn; omega), k⟩
+    fun i hi => hh i (by omega_using [hi]) (by unfold sY sFn; omega_using [hi])
+      (by unfold VG.Impl.Ffdh.X86_64.Domain.sOut sFn; omega_using [hi]), k⟩
 
 end VG.Proof.Ffdh.X86_64.GenerateKey

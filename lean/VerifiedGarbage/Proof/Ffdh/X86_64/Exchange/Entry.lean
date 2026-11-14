@@ -74,7 +74,7 @@ theorem exEntry_ok {s : State} {B : Addr} (hB : stackArg s 3 = B)
   rw [← hm] at h0 h1 h2 h3 h4 h5 hO hD hL hK hX hXl hY ho
   refine ⟨hdi, ?_, ?_, ho, k⟩
   · intro i hi
-    rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 by omega) with rfl | rfl | rfl | rfl | rfl | rfl
+    rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 by omega_using [hi]) with rfl | rfl | rfl | rfl | rfl | rfl
     exacts [h0, h1, h2, h3, h4, h5]
   · intro p hp
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hp

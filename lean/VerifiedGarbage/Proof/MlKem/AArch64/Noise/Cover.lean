@@ -19,7 +19,7 @@ def nttOff (kg : Bool) : Nat := if kg then KG.NS else KEM.NS
 theorem inScratch {s : State} {B : Addr} {size off len : Nat}
     (hc : Covers [⟨B,size⟩] s.wr) (hfit : off+len≤size) (hsize : size<2^64) :
     InRegions s.wr (B+BitVec.ofNat 64 off) len :=
-  hc _ _ ⟨⟨B,size⟩,by simp,Offset.contains_base B hfit (by omega)⟩
+  hc _ _ ⟨⟨B,size⟩,by simp,Offset.contains_base B hfit (by omega_using [hfit, hsize])⟩
 
 theorem coversScratch {s : State} {B : Addr} {size off len : Nat}
     (hc : Covers [⟨B,size⟩] s.wr) (hfit : off+len≤size) :

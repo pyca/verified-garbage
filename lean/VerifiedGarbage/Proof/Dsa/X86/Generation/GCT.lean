@@ -50,7 +50,7 @@ theorem gHead_ct {g : Geo} (G : GeoOk g) {E : Env} (v : E.Valid) :
     (both_agree [.esp, .edi] (fun _ => baseVal E) (fun _ _ h => base_pins h.base)
       (tcheckE _ _ (.block [.mov .esi (.mem (sc 0)), .mov .ecx (.imm 0)]) rfl (by decide +kernel)
         (by decide +kernel))) fun a s h => ?_) ?_
-  · refine ld_ok h.base.scr (d := fH) (by simp only [fH, hdr]; omega) fun t₁ u₁ => wp_movi fun t₂ u₂ =>
+  · refine ld_ok h.base.scr (d := fH) (by simp only [fH, hdr]; omega_using [sz]) fun t₁ u₁ => wp_movi fun t₂ u₂ =>
       WP.block_nil ?_
     have pins := base_pins h.base
     intro r hr
@@ -85,11 +85,11 @@ private theorem gPowCall_in {g : Geo} (G : GeoOk g) {E : Env} (v : E.Valid) {s :
   have bd := G.bounds
   have n64 : g.n64 = g.pLen / 8 := rfl
   have cb : contextBytes g.n64 ≤ 7048 := by
-    simp only [contextBytes, slot, stride]; omega
+    simp only [contextBytes, slot, stride]; omega_using [bd, n64]
   have low := v.low
   have ss := v.stackScratch
-  refine ⟨E.base, E.size, S.scr, ?_, by omega, S.modv ▸ hp1, S.modv ▸ hodd⟩
-  rw [S.sp]; exact ⟨by omega, ss.elim (fun h => .inl h) (fun h => .inr (by omega))⟩
+  refine ⟨E.base, E.size, S.scr, ?_, by omega_using [sz, cb], S.modv ▸ hp1, S.modv ▸ hodd⟩
+  rw [S.sp]; exact ⟨by omega_using [low], ss.elim (fun h => .inl h) (fun h => .inr (by omega_using [h]))⟩
 
 theorem gPow_dims {g : Geo} (G : GeoOk g) :
     2 ≤ g.n64 ∧ g.n64 ≤ 48 ∧ 1 < g.e ∧ g.e ≤ 2 * g.n64 := by
@@ -200,7 +200,7 @@ theorem gPart_ct {g : Geo} (G : GeoOk g) {E : Env} (v : E.Valid) (hp : E.pLen = 
     RelCT isa (Both (GPIn E g)) g.gPart fun _ _ => True := by
   have sz := v.size_ge
   have lens := v.witLen32
-  have hsl : E.hsLen < 2 ^ 32 := by have := v.hsIn; omega
+  have hsl : E.hsLen < 2 ^ 32 := by have := v.hsIn; omega_using [lens, this]
   have pl := v.pLen_ge
   refine both_exists fun a => ?_
   obtain ⟨p, Q, x⟩ := a
@@ -241,9 +241,9 @@ theorem gPart_ct {g : Geo} (G : GeoOk g) {E : Env} (v : E.Valid) (hp : E.pLen = 
     refine (show RelCT isa (Both fun (_ : Unit) t => J t) _ _ from ?_).mono (fun s t h => ⟨(), h.1, h.2⟩)
       fun _ _ h => h
     simp only [seqs]
-    refine RelCT.assoc (RelCT.seq (cmpFb_ct (o := fHLeft) (v := g.pLen) (by simp only [fHLeft, hdr]; omega)
-      (by have := G.bounds; omega) (fun _ => E.hsLen - j * E.pLen) hbJ (fun _ t h => by obtain ⟨⟨σ, _, L⟩, _⟩ := h; exact L.left)
-      (fun _ => by omega) (Q := VG.X86.Taint.Agree (τr [.esp, .edi])) ?_ ?_)
+    refine RelCT.assoc (RelCT.seq (cmpFb_ct (o := fHLeft) (v := g.pLen) (by simp only [fHLeft, hdr]; omega_using [sz])
+      (by have := G.bounds; omega_using [this]) (fun _ => E.hsLen - j * E.pLen) hbJ (fun _ t h => by obtain ⟨⟨σ, _, L⟩, _⟩ := h; exact L.left)
+      (fun _ => by omega_using [hsl]) (Q := VG.X86.Taint.Agree (τr [.esp, .edi])) ?_ ?_)
       (tcheckE _ _ (.block (cmpF 0 0)) (cmpF_erase _ _) (by decide +kernel) (by decide +kernel)))
     · -- None left.
       exact (tkeep [.esp, .edi] _ (by decide +kernel)).mono (fun s t ⟨_, h₁, h₂⟩ => agree_regs fun r hr =>
@@ -259,15 +259,15 @@ theorem gPart_ct {g : Geo} (G : GeoOk g) {E : Env} (v : E.Valid) (hp : E.pLen = 
           fun h₀ h₁ h₂ => by rw [m]; exact gkeep_arrs G v L.keep h₀ h₁ h₂
         have bd := G.bounds
         have n32 : g.n32 = g.pLen / 4 := rfl
-        exact ⟨B, by show (j + 1) * E.pLen ≤ E.hsLen; rw [Nat.succ_mul]; omega, by rw [m]; exact L.fh,
-          by rw [kept (by simp only [aOne, arr]; omega) (by simp only [aOne, arr]; omega)
-            (by simp only [aOne, arr]; omega), hone],
-          by rw [kept (by simp only [aPm1, arr]; omega) (by simp only [aPm1, arr]; omega)
-            (by simp only [aPm1, arr]; omega), hpm1],
-          by rw [kept (by simp only [aP, arr]; omega) (by simp only [aP, arr]; omega)
-            (by simp only [aP, arr]; omega), hP],
-          by rw [kept (by simp only [aE, arr]; omega) (by simp only [aE, arr]; omega)
-            (by simp only [aE, arr]; omega), hE], hxl, hp1, hodd, by rw [m]; exact L.fg⟩
+        exact ⟨B, by show (j + 1) * E.pLen ≤ E.hsLen; rw [Nat.succ_mul]; omega_using [hp, pl, hne], by rw [m]; exact L.fh,
+          by rw [kept (by simp only [aOne, arr]; omega_using []) (by simp only [aOne, arr]; omega_using [bd, n32])
+            (by simp only [aOne, arr]; omega_using [sz, bd, n32]), hone],
+          by rw [kept (by simp only [aPm1, arr]; omega_using []) (by simp only [aPm1, arr]; omega_using [bd, n32])
+            (by simp only [aPm1, arr]; omega_using [sz, bd, n32]), hpm1],
+          by rw [kept (by simp only [aP, arr]; omega_using []) (by simp only [aP, arr]; omega_using [])
+            (by simp only [aP, arr]; omega_using [sz, bd, n32]), hP],
+          by rw [kept (by simp only [aE, arr]; omega_using []) (by simp only [aE, arr]; omega_using [bd, n32])
+            (by simp only [aE, arr]; omega_using [sz, bd, n32]), hE], hxl, hp1, hodd, by rw [m]; exact L.fg⟩
       refine RelCT.seq (both_post (Ψ := fun _ t => Base E t)
         (both_map (fun _ => (j, p, x, 4)) gs (gStep_ct G v hp)) fun u t h => ?_) ?_
       · have I := gs u t h
@@ -302,7 +302,7 @@ theorem gPart_ct {g : Geo} (G : GeoOk g) {E : Env} (v : E.Valid) (hp : E.pLen = 
   have hc : gCont E p x j = true := by rw [z₁] at ht; exact Option.some.inj ht
   obtain ⟨hj1, L₁⟩ := c₁ hc
   obtain ⟨_, L₂⟩ := c₂ hc
-  have : j + 1 ≤ E.hsLen / E.pLen := (Nat.le_div_iff_mul_le (by omega)).mpr hj1
-  exact ⟨n - 1, by omega, j + 1, ⟨⟨σ₁, hσ₁, L₁⟩, by omega⟩, ⟨σ₂, hσ₂, L₂⟩, by omega⟩
+  have : j + 1 ≤ E.hsLen / E.pLen := (Nat.le_div_iff_mul_le (by omega_using [pl])).mpr hj1
+  exact ⟨n - 1, by omega_using [hjN, this], j + 1, ⟨⟨σ₁, hσ₁, L₁⟩, by omega_using [hjN, this]⟩, ⟨σ₂, hσ₂, L₂⟩, by omega_using [hjN, this]⟩
 
 end VG.Proof.Dsa.X86.Generation

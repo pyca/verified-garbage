@@ -118,7 +118,7 @@ theorem KeyInput.pushed_read {p : KeyPublic sampling} {s : State} {r : Region}
   have rootSp : p.sp = s.sp := by rw [← h.2.1]; rfl
   have fit : stackUse sampling ≤ s.sp.toNat := by rw [← rootSp]; exact h.bounds.stackFits
   have frame : Frame [FrameStack.belowA s.sp 24] s.mem (searchPushed s).mem :=
-    FrameStack.pushed_frameA (rs := [.r4, .r9, .r10, .r11, .r12, .lr]) (by change 24 ≤ s.sp.toNat; have := stackUse_min sampling; omega)
+    FrameStack.pushed_frameA (rs := [.r4, .r9, .r10, .r11, .r12, .lr]) (by change 24 ≤ s.sp.toNat; have := stackUse_min sampling; omega_using [fit, this])
   have sep : r.Disjoint (FrameStack.belowA s.sp 24) := by
     apply Region.Disjoint.symm
     apply (h.stack_separate (List.mem_append_right _ read)).sub_left
@@ -126,13 +126,13 @@ theorem KeyInput.pushed_read {p : KeyPublic sampling} {s : State} {r : Region}
     exact FrameStack.belowA_sub (by cases sampling <;> decide : 24 ≤ (stackUse sampling)) fit
   apply bytesAt_frame frame (by simpa using sep)
   have nowrap := h.layout.nowrap r (by rw [← h.layout.wr, ← h.layout.rd]; exact List.mem_append_right _ read)
-  omega
+  omega_using [nowrap]
 
 theorem start_ok {p : KeyPublic sampling} {s : State} (h : KeyInput p s) :
     WP isa (.block (VG.Impl.Ffdh.Arm.KeySearch.entryFor sampling.cachedContext)) (searchPushed s) fun t =>
       KeyLive p s 0 p.keys p.scalars t := by
   have rootSp : p.sp = s.sp := by rw [← h.2.1]; rfl
-  have fit : 24 ≤ s.sp.toNat := by rw [← rootSp]; have := h.bounds.stackFits; have := stackUse_min sampling; omega
+  have fit : 24 ≤ s.sp.toNat := by rw [← rootSp]; have := h.bounds.stackFits; have := stackUse_min sampling; omega_arith
   have space : Workspace (searchPushed s) p.control 128 :=
     h.control_space (fun _ hr => List.mem_cons_of_mem _ hr)
   have x : (searchPushed s).gpr .r0 = p.xp := by rw [← h.2.1]; rfl
@@ -156,11 +156,11 @@ theorem start_ok {p : KeyPublic sampling} {s : State} (h : KeyInput p s) :
   · apply saved.frame (lo := 0) (hi := 24) (by decide) frame
     simpa using h.saved_control
   · exact (bytesAt_frame (r := rRandom p) frame (by simpa using h.random_control)
-      (by change p.randLen ≤ 2 ^ 64; have := h.bounds.randomFits; omega)).trans
+      (by change p.randLen ≤ 2 ^ 64; have := h.bounds.randomFits; omega_using [this])).trans
         (h.pushed_read (r := rRandom p) (by rw [h.read_regions]; simp))
   · have original : Spec.Rsa.bytesAt s.mem (State.addr p.dp) p.dlen = p.dom := by rw [← h.2.1]; rfl
     exact (bytesAt_frame (r := rDomain p) frame (by simpa using h.domain_control)
-      (by change p.dlen ≤ 2 ^ 64; have := h.bounds.domainFit; omega)).trans
+      (by change p.dlen ≤ 2 ^ 64; have := h.bounds.domainFit; omega_using [this])).trans
         ((h.pushed_read (r := rDomain p) (by rw [h.read_regions]; simp)).trans original)
   · rw [mem]
     exact entryMem_fields p _ h.pushed_policy.1 h.pushed_policy.2.1 h.pushed_policy.2.2.1
@@ -191,14 +191,14 @@ theorem start_ok {p : KeyPublic sampling} {s : State} (h : KeyInput p s) :
       rw [rootSp]
       exact FrameStack.pushed_frameA (rs := [.r4,.r9,.r10,.r11,.r12,.lr]) fit
     have heldP := h.cached_held.after_frame pushedFrame
-      (fun cached => by have := h.context_fit cached; omega) (by
+      (fun cached => by have := h.context_fit cached; omega_using [this]) (by
         intro cached r hr
         have eq := List.mem_singleton.mp hr
         subst r
         have member : rContext p ∈ s.rd := by rw [h.read_regions]; simp [contextRegions,cached]
         exact (h.stack_separate (List.mem_append_right s.wr member)).symm.sub_right
-          (FrameStack.belowA_sub (by have := stackUse_min sampling; omega) h.bounds.stackFits))
-    exact heldP.after_frame frame (fun cached => by have := h.context_fit cached; omega) (by
+          (FrameStack.belowA_sub (by have := stackUse_min sampling; omega_using [this]) h.bounds.stackFits))
+    exact heldP.after_frame frame (fun cached => by have := h.context_fit cached; omega_using [this]) (by
       intro cached r hr
       have eq := List.mem_singleton.mp hr
       subst r

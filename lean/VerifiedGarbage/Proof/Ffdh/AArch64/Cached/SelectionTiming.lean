@@ -24,7 +24,7 @@ def SelectionReady (p : Parameters) (s : State) : Prop :=
  ∃ bs E i v, Running p bs E i s ∧ v<32 ∧ word s.mem p.B (8*sD)=BitVec.ofNat 64 v
 
 def scanPublic (p : Parameters) : ScanPublic :=
- ⟨p.B,p.table,off p.B (slot p.w 5),p.w,by have := p.positive;omega,by have := p.width;omega⟩
+ ⟨p.B,p.table,off p.B (slot p.w 5),p.w,by have := p.positive;omega_using [this],by have := p.width;omega_using [this]⟩
 
 theorem selection_ct : RelCT isa (Two SelectionReady) Comb.select (fun _ _ => True) := by
  unfold Comb.select
@@ -33,11 +33,11 @@ theorem selection_ct : RelCT isa (Two SelectionReady) Comb.select (fun _ _ => Tr
    (fun p s h => by obtain ⟨bs,E,i,v,h,_,_⟩:=h;exact ⟨p.mi,h.power.good,p.room⟩)
    (const_ct 5 0 (by decide) (by taint_decide) (by taint_decide))) ?_) ?_
  · rintro p s ⟨bs,E,i,v,h,hv,digit⟩
-   refine WP.mono (const_ok h.power.good p.room (by have := p.positive;omega) p.width
+   refine WP.mono (const_ok h.power.good p.room (by have := p.positive;omega_using [this]) p.width
     (by decide : 5<8) (by decide : 0<2^16)) ?_
    rintro t ⟨good,_,outside,rest⟩
    have frame : Arrays p.B p.w [5] s.mem t.mem := Arrays.of_outside (j:=5) (by simp) outside
-    (by have := p.positive;omega) (by have := h.power.good.scr.nowrap;have := p.room;have := slot_le (w:=p.w) (by decide : 5<8);omega)
+    (by have := p.positive;omega_using []) (by have := h.power.good.scr.nowrap;have := p.room;have := slot_le (w:=p.w) (by decide : 5<8);omega_using [])
    have power := h.power.after_arrays good frame (by decide) (by decide) (by decide) (by decide)
    have keep := rest.mono (show ∀ r∈[.x7,.x8,.x9,.x12,.x13,.x14,.x16],r∈mmRegs by decide)
    exact ⟨bs,E,i,v,h.after_arrays power frame keep (by simp),hv,(arrays_header frame (by decide)).trans digit⟩
@@ -56,7 +56,7 @@ theorem selection_ct : RelCT isa (Two SelectionReady) Comb.select (fun _ _ => Tr
         header_read h.power.good p.room (show sD<32 by decide),table,digit]
      · rintro t ⟨⟨pointer,digit,candidate,mem⟩,rest⟩
        have hT := h.after_mem mem (rest.mono (by decide))
-       refine ⟨selectEnv_good hT.power.good p.room (by have := p.positive;omega)
+       refine ⟨selectEnv_good hT.power.good p.room (by have := p.positive;omega_using [this])
         hT.reads.tableRead hT.reads.tableOutside,?_,candidate,v,hv,digit⟩
        simpa [scanPublic,off] using pointer
 

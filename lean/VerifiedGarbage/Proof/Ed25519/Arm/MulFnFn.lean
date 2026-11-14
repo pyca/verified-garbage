@@ -47,14 +47,14 @@ theorem mulFn_ok {e : Nat} {b : BitVec 32} {o x y : Nat} (ho : o + 64 ≤ ACC) (
       Frame [⟨State.addr b + BitVec.ofNat 64 o, 64⟩, ⟨State.addr b + BitVec.ofNat 64 ACC, 160⟩] s.mem t.mem ∧
       Lim t.mem (State.addr b) o ∧
       V t.mem (State.addr b) o % P = (V s.mem (State.addr b) x * V s.mem (State.addr b) y) % P := by
-  have hfit : b.toNat + 4096 ≤ 2 ^ 32 := by have := hc.fit; omega
+  have hfit : b.toNat + 4096 ≤ 2 ^ 32 := by have := hc.fit; omega_using [this]
   have hS := SAVE_eq
   have hA := ACC_eq
   have hB : State.addr (s.gpr .r0) = State.addr b := by rw [hc.r0]
   rw [mulFn, WP.seq_iff]
   rw [← List.append_nil (List.map _ mulSaved)]
-  refine Spill.save_slots_ok mulSaved_ok (by rw [hc.r0, hS]; omega)
-    (fun d hd hd' => by rw [hB]; exact hc.inW (by rw [hS] at hd'; omega)) (WP.block_nil ?_)
+  refine Spill.save_slots_ok mulSaved_ok (by rw [hc.r0, hS]; omega_using [hfit])
+    (fun d hd hd' => by rw [hB]; exact hc.inW (by rw [hS] at hd'; omega_using [hd'])) (WP.block_nil ?_)
   rw [hB]
   have hf1 : Frame [⟨State.addr b + BitVec.ofNat 64 SAVE, SAVE + 32 - SAVE⟩] s.mem
       (Spill.saveMem s.mem (State.addr b) s.gpr mulSaved) :=
@@ -66,7 +66,7 @@ theorem mulFn_ok {e : Nat} {b : BitVec 32} {o x y : Nat} (ho : o + 64 ≤ ACC) (
   have hlimb : ∀ z : Nat, z + 64 ≤ ACC → ∀ k < 16, limb M1 (State.addr b) z k = limb s.mem (State.addr b) z k :=
     fun z hz => limb_frame hf1 fun r hr k hk => by
       rw [List.mem_singleton.mp hr]
-      exact Offset.disjoint _ (.inl (by rw [hS]; omega)) (by omega) (by omega)
+      exact Offset.disjoint _ (.inl (by rw [hS]; omega_using [hA, hz, hk])) (by omega_using [hA, hz, hk]) (by omega_using [hS])
   obtain ⟨s₁, hs₁⟩ : ∃ s₁ : State, s₁ = { s with mem := M1 } := ⟨_, rfl⟩
   rw [← hs₁]
   have hm₁ : s₁.mem = M1 := by rw [hs₁]
@@ -85,10 +85,10 @@ theorem mulFn_ok {e : Nat} {b : BitVec 32} {o x y : Nat} (ho : o + 64 ≤ ACC) (
     refine hsv1.frame mulSaved_ok hf fun r hr => ?_
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
-    · exact Offset.disjoint _ (.inr (by rw [hS]; omega)) (by omega) (by omega)
-    · exact Offset.disjoint _ (.inr (by rw [hS]; omega)) (by omega) (by omega)
+    · exact Offset.disjoint _ (.inr (by rw [hS]; omega_using [ho, hA])) (by omega_using [hS]) (by omega_using [ho, hA])
+    · exact Offset.disjoint _ (.inr (by rw [hS]; omega_using [hA])) (by omega_using [hS]) (by omega_using [hA])
   refine WP.mono (Spill.restore_block_ok mulSaved_ok mulSaved_restorable
-    (by rw [hct.r0, hS]; omega) (fun d _ hd' => by rw [hct.r0]; exact hct.inR (by rw [hS] at hd'; omega)) hsv)
+    (by rw [hct.r0, hS]; omega_using [hfit]) (fun d _ hd' => by rw [hct.r0]; exact hct.inR (by rw [hS] at hd'; omega_using [hd'])) hsv)
     fun u ⟨hres, hoth, hmu, hrd, hwr, hsp⟩ => ?_
   refine ⟨⟨fun r hr => ?_, by rw [hrd, hrt.rd, hs₁], by rw [hwr, hrt.wr, hs₁], by rw [hsp, hrt.sp, hs₁]⟩,
     ?_, by rw [hmu]; exact hlt, ?_⟩
@@ -98,7 +98,7 @@ theorem mulFn_ok {e : Nat} {b : BitVec 32} {o x y : Nat} (ho : o + 64 ≤ ACC) (
   · rw [hmu]
     refine (hf1.sub fun r hr => ⟨_, List.mem_cons_of_mem _ List.mem_cons_self, ?_⟩).trans
       (hf.sub fun r hr => ?_)
-    · rw [List.mem_singleton.mp hr]; exact Offset.sub _ (by rw [hS]; omega) (by rw [hS]; omega)
+    · rw [List.mem_singleton.mp hr]; exact Offset.sub _ (by rw [hS]; omega_using [hA]) (by rw [hS]; omega_using [hA])
     · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
       · exact ⟨_, List.mem_cons_self, fun _ h => h⟩

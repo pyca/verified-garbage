@@ -56,7 +56,7 @@ theorem PrivContext.after {g : PrivGeometry} {bs : Fin 8 → List Byte} {s t : S
   intro j hj
   have eq : WorkspaceEq g.argumentsRegion.base 64 s.mem t.mem :=
     WorkspaceEq.of_frame (by decide) frame h.argumentsSeparate
-  have word := eq.word (d := 4 * j) (bits := 32) (by omega)
+  have word := eq.word (d := 4 * j) (bits := 32) (by omega_using [hj])
   have address : off g.argumentsRegion.base (4 * j) = off (State.addr g.stack) (arg j) :=
     Offset.add_add _ (frameBytes + 56) (4 * j)
   rw [address] at word

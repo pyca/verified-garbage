@@ -96,7 +96,7 @@ theorem args_in (s : State) : ARGS s 7 ∈ vfRd s :=
 theorem scr_in (s : State) : SCR (arg s 6) ∈ vfWr s := List.mem_cons_self
 
 theorem kit {s : State} (h : Facts s) : Kit (base s) (arg s 6) 7 (vfRd s) (vfWr s) := by
-  refine Shake.kit h.below (by have := h.above; omega) h.scratch (scr_in s) ?_ ?_ ?_ (args_in s)
+  refine Shake.kit h.below (by have := h.above; omega_using [this]) h.scratch (scr_in s) ?_ ?_ ?_ (args_in s)
   · intro R hR
     rw [List.mem_singleton.mp hR]; exact h.kc
   · intro r hr R hR
@@ -108,7 +108,7 @@ theorem kit {s : State} (h : Facts s) : Kit (base s) (arg s 6) 7 (vfRd s) (vfWr 
     simp only [vfRd, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl
     exacts [h.kp.symm, h.kx.symm, h.km.symm, h.ks.symm,
-      Shake.args_stack (n := 7) h.below (by have := h.above; omega) (by decide)]
+      Shake.args_stack (n := 7) h.below (by have := h.above; omega_using [this]) (by decide)]
 
 theorem ret_out {s : State} (h : Facts s) : ∀ R ∈ vfWr s, (RET s).Disjoint R := by
   intro R hR

@@ -237,11 +237,11 @@ theorem keyAddr_step (base : BitVec 32) (direction : Direction) (j : Nat) (hj : 
   cases direction
   · change base + BitVec.ofNat 32 (8 * j) + BitVec.ofNat 32 8 = base + BitVec.ofNat 32 (8 * (j + 1))
     rw [Offset.add_ofNat_add_ofNat]
-    exact congrArg (fun n => base + BitVec.ofNat 32 n) (by omega)
+    exact congrArg (fun n => base + BitVec.ofNat 32 n) (by omega_using [])
   · change base + BitVec.ofNat 32 (8 * (15 - j)) - BitVec.ofNat 32 8 = base + BitVec.ofNat 32 (8 * (15 - (j + 1)))
     rw [BitVec.sub_eq_add_neg, BitVec.add_assoc, ← BitVec.sub_eq_add_neg,
-      Offset.ofNat_sub_ofNat (by omega)]
-    exact congrArg (fun n => base + BitVec.ofNat 32 n) (by omega)
+      Offset.ofNat_sub_ofNat (by omega_using [hj])]
+    exact congrArg (fun n => base + BitVec.ofNat 32 n) (by omega_using [])
 
 def endPointer (base : BitVec 32) (d : Direction) : BitVec 32 :=
   if d = .encrypt then base + 128 else base - 8

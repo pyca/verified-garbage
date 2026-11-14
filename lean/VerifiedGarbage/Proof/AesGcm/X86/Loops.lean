@@ -45,7 +45,7 @@ theorem length_bytesAt (m : Mem) (p : Addr) (n : Nat) : (bytesAt m p n).length =
 /-- Byte `i` of a region `⟨p, n⟩`, `i < n`, is in it. -/
 theorem in_of_covers {rs : List Region} {p : Addr} {n i : Nat} (h : Covers [⟨p, n⟩] rs) (hi : i < n)
     (hn : n < 2 ^ 64) : InRegions rs (p + BitVec.ofNat 64 i) 1 :=
-  h _ _ ⟨_, List.mem_singleton_self _, Offset.contains_base p (by omega) (by omega)⟩
+  h _ _ ⟨_, List.mem_singleton_self _, Offset.contains_base p (by omega_using [hi]) (by omega_using [hi, hn])⟩
 
 /-- What the loops need of the state: the source `S` (`edi`), the
 destination `D` (`edx`) and the count `n` (`ecx`). -/
@@ -69,13 +69,13 @@ theorem add_zero32 (x : BitVec 32) : x + BitVec.ofNat 32 0 = x := BitVec.add_zer
 
 theorem pred_count {n i : Nat} (h : i < n) (hn : n < 2 ^ 32) :
     BitVec.ofNat 32 (n - i) - BitVec.ofNat 32 1 = BitVec.ofNat 32 (n - (i + 1)) := by
-  rw [ofNat_sub32 (by omega) (by omega)]; congr 1
+  rw [ofNat_sub32 (by omega_using [h]) (by omega_using [hn])]; congr 1
 
 theorem pred_beq {n i : Nat} (h : i < n) (hn : n < 2 ^ 32) :
     (BitVec.ofNat 32 (n - i) - BitVec.ofNat 32 1 == 0) = decide (i + 1 = n) := by
-  rw [pred_count h hn, VG.X86.Wp.ofNat_beq_zero (by omega)]
+  rw [pred_count h hn, VG.X86.Wp.ofNat_beq_zero (by omega_using [hn])]
   simp only [decide_eq_decide]
-  omega
+  omega_using [h]
 
 theorem setWidth8_32 (b : Byte) : (b.setWidth 32).setWidth 8 = b := by
   ext j hj; simp [hj]
@@ -113,7 +113,7 @@ theorem src_kept {m : Mem} {S D : Addr} {n i : Nat} (hd : (⟨S, n⟩ : Region).
   (writeBytes_frame m D xs (R := ⟨D, i⟩) (by rw [hxs]; exact Region.contains_self _ _)) _
     fun r hr hcon => by
       simp only [List.mem_singleton] at hr; subst hr
-      exact hd _ (Offset.contains_base S (by omega) (by omega)) (Region.sub_prefix (by omega) _ hcon)
+      exact hd _ (Offset.contains_base S (by omega_using [hi]) (by omega_using [hi, hn])) (Region.sub_prefix (by omega_using [hi]) _ hcon)
 
 /-- What `copyLoop` leaves. -/
 structure CopyPost (s : State) (S D : BitVec 32) (n : Nat) (s' : State) : Prop where
@@ -137,14 +137,14 @@ theorem copyLoop_ok (s : State) {S D : BitVec 32} {n : Nat} (h : LoopPre s S D n
       by simp [bytesAt, writeBytes_nil], fun _ _ _ _ _ => rfl, rfl, rfl⟩
   rintro k t ⟨i, rfl, hi, edi, edx, ecx, mem, g, rd, wr⟩
   obtain ⟨t', run', mem', edi', edx', ecx', zf', g', rd', wr'⟩ := copyStep_ok t edi edx ecx
-    (w64_add (by have := h.fS; omega)) (w64_add (by have := h.fD; omega))
-    (by rw [rd, wr]; exact in_of_covers h.rd hi (by omega))
-    (by rw [wr]; exact in_of_covers h.wr hi (by omega))
+    (w64_add (by have := h.fS; omega_using [hi, this])) (w64_add (by have := h.fD; omega_using [hi, this]))
+    (by rw [rd, wr]; exact in_of_covers h.rd hi (by omega_using [hn]))
+    (by rw [wr]; exact in_of_covers h.wr hi (by omega_using [hn]))
   refine WP.of_runBlock ⟨t', run', ?_⟩
   have hlen : (bytesAt s.mem (w64 S) i).length = i := length_bytesAt _ _ _
   have hmem : t'.mem = writeBytes s.mem (w64 D) (bytesAt s.mem (w64 S) (i + 1)) := by
     rw [mem', mem, src_kept h.disj hi hn _ hlen, bytesAt_succ,
-      writeBytes_snoc s.mem (w64 D) (bytesAt s.mem (w64 S) i) _ (by rw [hlen]; omega), hlen]
+      writeBytes_snoc s.mem (w64 D) (bytesAt s.mem (w64 S) i) _ (by rw [hlen]; omega_using [hn, hi]), hlen]
   have hz : t'.zf = some (decide (i + 1 = n)) := by rw [zf', pred_beq hi hn]
   have gg : ∀ r, r ≠ .eax → r ≠ .edi → r ≠ .edx → r ≠ .ecx → t'.gpr r = s.gpr r :=
     fun r h₁ h₂ h₃ h₄ => by rw [g' r h₁ h₂ h₃ h₄, g r h₁ h₂ h₃ h₄]
@@ -153,7 +153,7 @@ theorem copyLoop_ok (s : State) {S D : BitVec 32} {n : Nat} (h : LoopPre s S D n
     refine ⟨by simp [eval, hz, he], by rw [hmem, he], by rw [edi', he], by rw [edx', he], gg,
       by rw [rd', rd], by rw [wr', wr]⟩
   · right
-    refine ⟨by simp [eval, hz, he], n - (i + 1), by omega, i + 1, rfl, by omega, edi', edx',
+    refine ⟨by simp [eval, hz, he], n - (i + 1), by omega_using [hi], i + 1, rfl, by omega_using [hi, he], edi', edx',
       by rw [ecx', pred_count hi hn], hmem, gg, by rw [rd', rd], by rw [wr', wr]⟩
 
 /-! ## `xorLoop` -/
@@ -229,7 +229,7 @@ theorem length_xorBytes (m : Mem) (D S : Addr) (n : Nat) : (xorBytes m D S n).le
 theorem dst_kept {m : Mem} {D : Addr} {n i : Nat} (hi : i < n) (hn : n < 2 ^ 32) (xs : List Byte)
     (hxs : xs.length = i) : writeBytes m D xs (D + BitVec.ofNat 64 i) = m (D + BitVec.ofNat 64 i) := by
   simp only [writeBytes, hxs, Offset.add_sub_cancel_left, BitVec.toNat_ofNat,
-    Nat.mod_eq_of_lt (show i < 2 ^ 64 by omega), Nat.lt_irrefl, ite_false]
+    Nat.mod_eq_of_lt (show i < 2 ^ 64 by omega_using [hi, hn]), Nat.lt_irrefl, ite_false]
 
 /-- What `xorLoopG` needs: the keystream `K` in `edx`, the destination `D` in
 `edi`, and the source `Sr`, `D` itself in place or apart from it, in `esi`
@@ -275,10 +275,10 @@ theorem xorLoopG_ok (to : Bool) (s : State) {K Sr D : BitVec 32} {n : Nat} (h : 
     ⟨0, rfl, h.pos, by rw [h.edx, add_zero32], by rw [h.edi, add_zero32], by rw [h.src, add_zero32],
       by rw [h.ecx, Nat.sub_zero], by simp [xorBytes, bytesAt, writeBytes_nil], fun _ _ _ _ _ _ _ => rfl, rfl, rfl⟩
   rintro k t ⟨i, rfl, hi, edx, edi, esr, ecx, mem, g, rd, wr⟩
-  have wD : InRegions t.wr (w64 D + BitVec.ofNat 64 i) 1 := by rw [wr]; exact in_of_covers h.wr hi (by omega)
+  have wD : InRegions t.wr (w64 D + BitVec.ofNat 64 i) 1 := by rw [wr]; exact in_of_covers h.wr hi (by omega_using [hn])
   obtain ⟨t', run', mem', edx', edi', esi', ecx', zf', g', rd', wr'⟩ := xorStep_ok to t edx edi esr h.same ecx
-    (w64_add (by have := h.fK; omega)) (w64_add (by have := h.fS; omega)) (w64_add (by have := h.fD; omega))
-    (by rw [rd, wr]; exact in_of_covers h.rd hi (by omega)) (by rw [rd, wr]; exact in_of_covers h.rdS hi (by omega))
+    (w64_add (by have := h.fK; omega_using [hi, this])) (w64_add (by have := h.fS; omega_using [hi, this])) (w64_add (by have := h.fD; omega_using [hi, this]))
+    (by rw [rd, wr]; exact in_of_covers h.rd hi (by omega_using [hn])) (by rw [rd, wr]; exact in_of_covers h.rdS hi (by omega_using [hn]))
     wD
   refine WP.of_runBlock ⟨t', run', ?_⟩
   have hlen := length_xorBytes s.mem (w64 Sr) (w64 K) i
@@ -289,7 +289,7 @@ theorem xorLoopG_ok (to : Bool) (s : State) {K Sr D : BitVec 32} {n : Nat} (h : 
     · exact src_kept d hi hn _ hlen
   have hmem : t'.mem = writeBytes s.mem (w64 D) (xorBytes s.mem (w64 Sr) (w64 K) (i + 1)) := by
     rw [mem', mem, src_kept h.disj hi hn _ hlen, kS, xorBytes_succ, BitVec.xor_comm,
-      writeBytes_snoc s.mem (w64 D) _ _ (by rw [hlen]; omega), hlen]
+      writeBytes_snoc s.mem (w64 D) _ _ (by rw [hlen]; omega_using [hn, hi]), hlen]
   have hz : t'.zf = some (decide (i + 1 = n)) := by rw [zf', pred_beq hi hn]
   have esr' : t'.gpr (xorSrc to) = Sr + BitVec.ofNat 32 (i + 1) := by
     cases to
@@ -304,7 +304,7 @@ theorem xorLoopG_ok (to : Bool) (s : State) {K Sr D : BitVec 32} {n : Nat} (h : 
       by rw [rd', rd], by rw [wr', wr]⟩
     subst ht; rw [← he]; exact esr'
   · right
-    refine ⟨by simp [eval, hz, he], n - (i + 1), by omega, i + 1, rfl, by omega, edx', edi', esr',
+    refine ⟨by simp [eval, hz, he], n - (i + 1), by omega_using [hi], i + 1, rfl, by omega_using [hi, he], edx', edi', esr',
       by rw [ecx', pred_count hi hn], hmem, gg, by rw [rd', rd], by rw [wr', wr]⟩
 
 /-- What `xorLoop` (source `S` in `edx`, destination `D` in `edi`) leaves. -/

@@ -34,8 +34,8 @@ theorem selectField_ok {M : Mod} {base : Addr} {size m : Nat} [NeZero m]
         (Function.update E o (if c then E b else E a)) t := by
   have hap (x : Nat) (hx : Sl x) : o ≤ x ∨ x+8*M.n ≤ o := by
     by_cases h : o=x
-    · omega
-    · have := hL.apart o x ho hx h; omega
+    · omega_using [h]
+    · have := hL.apart o x ho hx h; omega_using [this]
   refine WP.mono (sel_ok c M.n hI.scr hc (hL.le o ho)
     (hL.le a (hI.sl a ha)) (hL.le b (hI.sl b hb)) (hAl.sl o ho)
     (hAl.sl a (hI.sl a ha)) (hAl.sl b (hI.sl b hb))
@@ -86,10 +86,10 @@ theorem negFieldWindow_ok {M : Mod} {base : Addr} {size m : Nat} [NeZero m]
   refine WP.mono (subRaw_ok hL hAl hI hsl hr) fun a ⟨ka,ia⟩ => ?_
   have hb : ∀ t<N, a.mem (off base (bits+t))=if k.testBit t then 1 else 0 := by
     intro t ht
-    rw [ka.unch.byte (fun q hq => ?_) (by omega)]
+    rw [ka.unch.byte (fun q hq => ?_) (by omega_using [hN, hn, ht])]
     · exact hbits t ht
     · simp only [List.mem_cons,List.not_mem_nil,or_false] at hq
-      rcases hq with rfl | rfl <;> dsimp only [FOp.out] <;> omega
+      rcases hq with rfl | rfl <;> dsimp only [FOp.out] <;> omega_arith
   have h19 : a.gpr .x19=BitVec.ofNat 64 j := by rw [ka.gpr _ (x19_not_clob _),hx]
   rw [WP.block_append_iff]
   refine WP.mono (signMaskW_ok ia.scr w bits hw1 hw hj hN hbw h19 hb) fun b ⟨b3,kb⟩ => ?_

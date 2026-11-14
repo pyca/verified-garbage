@@ -97,9 +97,9 @@ theorem N_lt (s₀ : State) : N s₀ < 2 ^ 64 := (s₀.mem.readW (st s₀ + 128)
 theorem H_le (s₀ : State) : H s₀ ≤ L s₀ := Nat.min_le_right _ _
 theorem H_le_O (s₀ : State) : H s₀ ≤ O s₀ := Nat.min_le_left _ _
 theorem O_lt (s₀ : State) : O s₀ < 64 := Nat.mod_lt _ (by decide)
-theorem T_eq (s₀ : State) : T s₀ = L s₀ - H s₀ - 64 * NB s₀ := by simp only [T, NB, tailLen, blocksOf, H]; omega
+theorem T_eq (s₀ : State) : T s₀ = L s₀ - H s₀ - 64 * NB s₀ := by simp only [T, NB, tailLen, blocksOf, H]; omega_using []
 theorem HNB_le (s₀ : State) : H s₀ + 64 * NB s₀ ≤ L s₀ := by
-  have := H_le s₀; simp only [NB, blocksOf, H] at *; omega
+  have := H_le s₀; simp only [NB, blocksOf, H] at *; omega_using [this]
 
 structure APre (s₀ : State) : Prop where
   rd : s₀.rd = []
@@ -117,24 +117,24 @@ variable {s₀ : State} (hp : APre s₀)
 include hp
 
 theorem eaS {d : Nat} (hd : d < 768) : State.addr (ST s₀ + BitVec.ofNat 32 d) = st s₀ + BitVec.ofNat 64 d :=
-  addr_off (by have := hp.st_fit; omega)
+  addr_off (by have := hp.st_fit; omega_using [hd, this])
 
 theorem sNat {d : Nat} (hd : d < 768) : (ST s₀ + BitVec.ofNat 32 d).toNat = (ST s₀).toNat + d := by
   have := hp.st_fit
-  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show d < 2 ^ 32 by omega),
-    Nat.mod_eq_of_lt (by omega)]
+  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show d < 2 ^ 32 by omega_using [hd]),
+    Nat.mod_eq_of_lt (by omega_using [hd, this])]
 
 theorem eaD {d : Nat} (hd : d < L s₀) : State.addr (DP s₀ + BitVec.ofNat 32 d) = dp s₀ + BitVec.ofNat 64 d :=
-  addr_off (by have := hp.d_fit; omega)
+  addr_off (by have := hp.d_fit; omega_using [hd, this])
 
 theorem dNat {d : Nat} (hd : d < L s₀) : (DP s₀ + BitVec.ofNat 32 d).toNat = (DP s₀).toNat + d := by
   have := hp.d_fit
   have := L_lt s₀
-  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show d < 2 ^ 32 by omega),
-    Nat.mod_eq_of_lt (by omega)]
+  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show d < 2 ^ 32 by omega_arith),
+    Nat.mod_eq_of_lt (by omega_arith)]
 
 theorem w_st {d n : Nat} (h : d + n ≤ 768) : InRegions s₀.wr (st s₀ + BitVec.ofNat 64 d) n :=
-  ⟨stR s₀, by rw [hp.wr]; exact List.mem_cons_self .., Offset.contains_base _ h (by omega)⟩
+  ⟨stR s₀, by rw [hp.wr]; exact List.mem_cons_self .., Offset.contains_base _ h (by omega_using [h])⟩
 
 theorem r_st {d n : Nat} (h : d + n ≤ 768) : InRegions (s₀.rd ++ s₀.wr) (st s₀ + BitVec.ofNat 64 d) n := by
   rw [hp.rd, List.nil_append]; exact hp.w_st h
@@ -145,20 +145,20 @@ theorem d_ne_st {s₀ : State} (hp : APre s₀) {j k : Nat} (hj : j < L s₀) (h
     dp s₀ + BitVec.ofNat 64 j ≠ st s₀ + BitVec.ofNat 64 k := by
   intro he
   have c₁ : (dR s₀).Contains (dp s₀ + BitVec.ofNat 64 j) 1 :=
-    Offset.contains_base _ (by omega) (by have := L_lt s₀; omega)
-  have c₂ : (stR s₀).Contains (st s₀ + BitVec.ofNat 64 k) 1 := Offset.contains_base _ (by omega) (by omega)
+    Offset.contains_base _ (by omega_using [hj]) (by have := L_lt s₀; omega_using [hj, this])
+  have c₂ : (stR s₀).Contains (st s₀ + BitVec.ofNat 64 k) 1 := Offset.contains_base _ (by omega_using [hk]) (by omega_using [hk])
   rw [he] at c₁
   exact hp.st_d _ c₂ c₁
 
 theorem dR_byte {s₀ : State} (hp : APre s₀) {k : Nat} (hk : k < L s₀) :
     InRegions s₀.wr (dp s₀ + BitVec.ofNat 64 k) 1 :=
-  ⟨dR s₀, by rw [hp.wr]; simp, Offset.contains_base _ (by omega) (by have := L_lt s₀; omega)⟩
+  ⟨dR s₀, by rw [hp.wr]; simp, Offset.contains_base _ (by omega_using [hk]) (by have := L_lt s₀; omega_using [hk, this])⟩
 
 theorem not_in_prefix (p : Addr) {k c : Nat} (hk : c ≤ k) (hk' : k < 2 ^ 64) :
     ¬ (⟨p, c⟩ : Region).Contains (p + BitVec.ofNat 64 k) 1 := by
   simp only [Region.Contains]
   rw [Mem.sub_ofNat_toNat p hk']
-  omega
+  omega_using [hk]
 
 theorem prefix_sub (p : Addr) {c n : Nat} (h : c ≤ n) : Region.Sub ⟨p, c⟩ ⟨p, n⟩ := Region.sub_prefix h
 
@@ -220,8 +220,8 @@ abbrev cpR (s₀ : State) : Region := ⟨st s₀ + BitVec.ofNat 64 192, 64⟩
 abbrev blR (s₀ : State) : Region := ⟨dp s₀ + BitVec.ofNat 64 (H s₀), 64 * NB s₀⟩
 abbrev wkR (s₀ : State) : Region := ⟨st s₀ + BitVec.ofNat 64 256, 320⟩
 
-theorem cpR_sub (s₀ : State) : Region.Sub (cpR s₀) (stR s₀) := Offset.sub_base _ (by omega)
-theorem wkR_sub (s₀ : State) : Region.Sub (wkR s₀) (stR s₀) := Offset.sub_base _ (by omega)
+theorem cpR_sub (s₀ : State) : Region.Sub (cpR s₀) (stR s₀) := Offset.sub_base _ (by omega_using [])
+theorem wkR_sub (s₀ : State) : Region.Sub (wkR s₀) (stR s₀) := Offset.sub_base _ (by omega_using [])
 theorem blR_sub (s₀ : State) : Region.Sub (blR s₀) (dR s₀) := Offset.sub_base _ (HNB_le s₀)
 
 end VG.Proof.ChaCha20.Arm.Stream

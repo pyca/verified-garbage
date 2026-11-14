@@ -105,7 +105,7 @@ theorem installedG_ok {s : State} (A : CrtRes s) :
       Outside (argumentPointer s 16) 0 ((arg s 17).toNat * 8) s.mem t.mem := by
   refine WP.mono (entry_ok (ptr := arg s 16)
     (A.args 16 (by decide)).readSrc rfl A.scratchBound
-    (by have := A.used; omega) A.scratchW A.stack) ?_
+    (by have := A.used; omega_using [this]) A.scratchW A.stack) ?_
   intro t ⟨Sc, Saved, K, O⟩
   refine ⟨?_, Saved, K, O⟩
   refine ⟨Sc, A.lengths.1, A.lengths.2, A.space, ?_, ?_, ?_, ?_, A.pLength, A.qLength,
@@ -132,7 +132,7 @@ theorem installedG_ok {s : State} (A : CrtRes s) :
     have := A.dqLength
     have := A.qiLength
     simp only [componentArguments, List.mem_cons, List.not_mem_nil, or_false] at hi
-    rcases hi with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp only [Nat.reduceAdd] <;> omega
+    rcases hi with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp only [Nat.reduceAdd] <;> omega_arith
   · intro i hi
     have := A.inLength
     have := A.pLength
@@ -141,7 +141,7 @@ theorem installedG_ok {s : State} (A : CrtRes s) :
     have := A.dqLength
     have := A.qiLength
     simp only [componentArguments, List.mem_cons, List.not_mem_nil, or_false] at hi
-    rcases hi with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp only [Nat.reduceAdd] <;> omega
+    rcases hi with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp only [Nat.reduceAdd] <;> omega_arith
   · intro i hi
     simp only [componentArguments, List.mem_cons, List.not_mem_nil, or_false] at hi
     rcases hi with rfl | rfl | rfl | rfl | rfl | rfl | rfl
@@ -179,13 +179,13 @@ theorem _root_.VG.Proof.Bignum.X86.CrtABIP.res {s : State} (A : CrtABIP s) : Crt
   have space : VG.Impl.Bignum.X86.Crt.size (Spec.Rsa.modulusWords (arg s 3).toNat) ≤ (arg s 17).toNat * 8 := by
     have H := Crt.shared_scratch A.lengths.1
     have := A.scratchLength
-    omega
+    omega_using [H, this]
   have used : 224 ≤ (arg s 17).toNat * 8 := by
     have H := space
     rw [Crt.size_eq] at H
-    omega
+    omega_using [H]
   exact {
-  args := fun i hi => stackArgument_of (count := 20) (by have := A.stackBound; omega) (by omega)
+  args := fun i hi => stackArgument_of (count := 20) (by have := A.stackBound; omega_using [this]) (by omega_using [hi])
     (by rw [A.rd, A.wr]; simp) A.scratchArgs.symm
   scratchBound := A.scratchBound
   used := used
@@ -195,7 +195,7 @@ theorem _root_.VG.Proof.Bignum.X86.CrtABIP.res {s : State} (A : CrtABIP s) : Crt
     · have H := A.scratchBound
       simpa only [argumentPointer, BitVec.toNat_setWidth,
         Nat.mod_eq_of_lt (Nat.lt_trans (arg s 16).isLt (by decide : 2 ^ 32 < 2 ^ 64))] using H
-    · omega
+    · omega_using [used]
     · exact A.belowScratch
   lengths := A.lengths
   space := space
@@ -206,7 +206,7 @@ theorem _root_.VG.Proof.Bignum.X86.CrtABIP.res {s : State} (A : CrtABIP s) : Crt
     simp only [below]
     rw [VG.X86.Taint.sub_setWidth A.stackLow]
     exact A.belowScratch
-  stackBound := by have := A.stackBound; omega
+  stackBound := by have := A.stackBound; omega_using [this]
   outLength := A.outLength
   inLength := A.inLength
   pPositive := A.pPositive

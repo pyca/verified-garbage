@@ -82,13 +82,13 @@ theorem aQuad_tr {P : Prims} (C : PrimsOk P) {p : Params} (hp : p ∈ params) {e
   have hTG : ∀ σ s, (∃ h, HN p σ h ∧ GS p h e d 4 σ s) → T p σ s := fun _ _ ⟨_, _, g⟩ => g.s3.t
   refine relInv (fun σ s hv ⟨h, hh, hs⟩ => WP.mono (aQuad_ok C hp hv hed hde hck hs) fun _ h' => ⟨h, hh, h'⟩) ?_
   unfold aQuad
-  refine RelCT.seq (RelCT.mono (slot_tr hp (by decide) (by omega) (by omega) (hsl 0 (by decide)))
+  refine RelCT.seq (RelCT.mono (slot_tr hp (by decide) (by omega_using [hl]) (by omega_using [hde, hl]) (hsl 0 (by decide)))
     (fun x y ⟨σ₁, σ₂, v₁, v₂, pub, ⟨h₁, hh₁, s₁⟩, ⟨h₂, hh₂, s₂⟩⟩ => ⟨σ₁, σ₂, v₁, v₂, pub,
-      ⟨h₁, hh₁, s₁, fun _ h => absurd h (by omega)⟩, ⟨h₂, hh₂, s₂, fun _ h => absurd h (by omega)⟩⟩)
+      ⟨h₁, hh₁, s₁, fun _ h => absurd h (by omega_using [])⟩, ⟨h₂, hh₂, s₂, fun _ h => absurd h (by omega_using [])⟩⟩)
     fun _ _ h => h) ?_
-  refine RelCT.seq (slot_tr hp (by decide) (by omega) (by omega) (hsl 1 (by decide))) ?_
-  refine RelCT.seq (slot_tr hp (by decide) (by omega) (by omega) (hsl 2 (by decide))) ?_
-  refine RelCT.seq (slot_tr hp (by decide) (by omega) (by omega) (hsl 3 (by decide))) ?_
+  refine RelCT.seq (slot_tr hp (by decide) (by omega_using [hl]) (by omega_using [hde, hl]) (hsl 1 (by decide))) ?_
+  refine RelCT.seq (slot_tr hp (by decide) (by omega_using [hl]) (by omega_using [hde, hl]) (hsl 2 (by decide))) ?_
+  refine RelCT.seq (slot_tr hp (by decide) (by omega_using [hl]) (by omega_using [hde, hl]) (hsl 3 (by decide))) ?_
   unfold sampled4
   refine RelCT.seq (RelCT.sameB (rej4At_tr C.rej4 (layOk p hp) hrej fun x y h => ?_) (fun x y h => ?_)
     (fun x y h => (RV.lrel hp hTG h).2.2))
@@ -102,7 +102,7 @@ theorem aQuad_tr {P : Prims} (C : PrimsOk P) {p : Params} (hp : p ∈ params) {e
 
 theorem aGrp_tr {P : Prims} (C : PrimsOk P) {p : Params} (hp : p ∈ params) {g : Nat}
     (hck : gChk p (4 * g) = true) : RelCT isa (RV p (IA p (4 * g))) (aGrp P p g) (RV p (IA p (4 * (g + 1)))) :=
-  aQuad_tr C hp (Nat.le_refl _) (by omega) hck
+  aQuad_tr C hp (Nat.le_refl _) (by omega_using []) hck
 
 theorem ballStage_tr {P : Prims} (C : PrimsOk P) {p : Params} (hp : p ∈ params) :
     RelCT isa (RV p (IA p (p.k * p.ℓ))) (sampled (ballAt P (.r13, 0) p.ctildeLen p.τ pC) pC) (RV p (I4 p)) := by
@@ -116,8 +116,8 @@ theorem ballStage_tr {P : Prims} (C : PrimsOk P) {p : Params} (hp : p ∈ params
     (fun x y h => (RV.lrel hp hT h).2.2)) (sampledTail_tr (ptr_ok (layOk p hp) c9) (show Reg.rbx ∈ bases by decide))
   · have L := RV.lrel hp hT h
     obtain ⟨σ₁, σ₂, _, _, pub, ⟨_, _, hx⟩, ⟨_, _, hy⟩⟩ := h
-    exact ⟨L.1, L.2.1, L.2.2, by rw [hx.t.sigSlice (by omega : 0 + p.ctildeLen ≤ p.sigLen),
-      hy.t.sigSlice (by omega : 0 + p.ctildeLen ≤ p.sigLen), pub.2.2.2.2.2.2.2.1]⟩
+    exact ⟨L.1, L.2.1, L.2.2, by rw [hx.t.sigSlice (by omega_using [c7] : 0 + p.ctildeLen ≤ p.sigLen),
+      hy.t.sigSlice (by omega_using [c7] : 0 + p.ctildeLen ≤ p.sigLen), pub.2.2.2.2.2.2.2.1]⟩
   · have L := RV.lrel hp hT h
     exact ⟨WP.mono (ballAt_ok C.ball L.1 c6 c5) fun _ h' => ⟨_, h'.1⟩,
       WP.mono (ballAt_ok C.ball L.2.1 c6 c5) fun _ h' => ⟨_, h'.1⟩⟩
@@ -160,18 +160,18 @@ theorem samples_tr {P : Prims} (C : PrimsOk P) {p : Params} (hp : p ∈ params) 
   · obtain ⟨σ₁, σ₂, v₁, v₂, pub, ⟨h₁, hh₁, r₁⟩, ⟨h₂, hh₂, r₂⟩⟩ := h
     exact ⟨σ₁, σ₂, v₁, v₂, pub, ⟨h₁, hh₁, r₁.s3⟩, ⟨h₂, hh₂, r₂.s3⟩⟩
   · have := seqR_tr (R := fun g => RV p (IA p (4 * g))) (p.k * p.ℓ / 4) 0 fun g _ hg =>
-      aGrp_tr C hp (gChk_all p hp g (by omega))
+      aGrp_tr C hp (gChk_all p hp g (by omega_using [hg]))
     rwa [Nat.zero_add] at this
   · have h4 := kl_ge p hp
     have hm := Nat.div_add_mod (p.k * p.ℓ) 4
     have hlt := Nat.mod_lt (p.k * p.ℓ) (show 4 > 0 by decide)
     unfold aTail
-    rcases (by omega : p.k * p.ℓ % 4 = 0 ∨ (p.k * p.ℓ % 4 + 3) / 4 = 1) with h0 | h1
-    · rw [show (p.k * p.ℓ % 4 + 3) / 4 = 0 by omega, seqR, show 4 * (p.k * p.ℓ / 4) = p.k * p.ℓ by omega]
+    rcases (by omega_using [] : p.k * p.ℓ % 4 = 0 ∨ (p.k * p.ℓ % 4 + 3) / 4 = 1) with h0 | h1
+    · rw [show (p.k * p.ℓ % 4 + 3) / 4 = 0 by omega_using [h0], seqR, show 4 * (p.k * p.ℓ / 4) = p.k * p.ℓ by omega_using [h0]]
       exact nil_tr
     · rw [h1, seqR, seqR]
-      have := aQuad_tr C hp (e := p.k * p.ℓ - 4) (d := 4 * (p.k * p.ℓ / 4)) (by omega) (by omega) (gTail_all p hp)
-      rw [show p.k * p.ℓ - 4 + 4 = p.k * p.ℓ by omega] at this
+      have := aQuad_tr C hp (e := p.k * p.ℓ - 4) (d := 4 * (p.k * p.ℓ / 4)) (by omega_using []) (by omega_using []) (gTail_all p hp)
+      rw [show p.k * p.ℓ - 4 + 4 = p.k * p.ℓ by omega_using [h4]] at this
       exact RelCT.seq this nil_tr
 
 end VG.Proof.MlDsa.X86_64.Verify

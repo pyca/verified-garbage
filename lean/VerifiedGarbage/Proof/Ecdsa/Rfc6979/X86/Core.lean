@@ -169,8 +169,8 @@ theorem core_belowK (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) {rd wr : List 
     below (((pushed core5 t).callEntry.withRegions rd wr).gpr .esp) k =
       ⟨L.B + BitVec.ofNat 64 (52 - k), k⟩ := by
   show (⟨(((pushed core5 t).callEntry.gpr .esp) - BitVec.ofNat 32 k).setWidth 64, k⟩ : Region) = _
-  rw [core_esp hc, BitVec.sub_sub, BitVec.ofNat_add_ofNat, F_sub hL (by omega),
-    show 76 - (24 + k) = 52 - k by omega]
+  rw [core_esp hc, BitVec.sub_sub, BitVec.ofNat_add_ofNat, F_sub hL (by omega_using [hk]),
+    show 76 - (24 + k) = 52 - k by omega_using []]
 
 theorem core_held (hL : L.Ok) (hk : CoreOk P L) {t : State} (hc : Ctx L g m₀ t) {rd wr : List Region} :
     Abi.constsHeld ((pushed core5 t).callEntry.withRegions rd wr).mem
@@ -241,7 +241,7 @@ theorem core_pre (hL : L.Ok) (hk : CoreOk P L) {t : State} (hc : Ctx L g m₀ t)
     intro r hr
     change r ∈ below (((pushed core5 t).callEntry.withRegions (coreRd P L) (coreWr P L)).gpr .esp) P.R.E.stk ::
       coreWr P L at hr
-    rw [core_belowK hL hc (by omega)] at hr
+    rw [core_belowK hL hc (by omega_using [hst])] at hr
     simp only [coreWr, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
     · exact ht.2.2.2.sub_right (Offset.sub_base _ (by omega_arith))

@@ -78,13 +78,13 @@ variable {s₀ : State} {W St P S : Addr} {L : Nat} (hp : FPre s₀ W St P S L)
 include hp
 
 theorem FPre.inScr {d n : Nat} (h : d + n ≤ 120) : InRegions s₀.wr (S + BitVec.ofNat 64 d) n := by
-  rw [hp.wr]; exact in_rw (r := ⟨S, 120⟩) (by simp) (Offset.contains_base _ h (by have := hp.scr_wrap; omega))
+  rw [hp.wr]; exact in_rw (r := ⟨S, 120⟩) (by simp) (Offset.contains_base _ h (by have := hp.scr_wrap; omega_using [h]))
 
 theorem FPre.inKey {d n : Nat} (h : d + n ≤ 400) : InRegions (s₀.rd ++ s₀.wr) (W + BitVec.ofNat 64 d) n := by
-  rw [hp.rd]; exact in_rw (r := ⟨W, 400⟩) (by simp) (Offset.contains_base _ h (by have := hp.key_wrap; omega))
+  rw [hp.rd]; exact in_rw (r := ⟨W, 400⟩) (by simp) (Offset.contains_base _ h (by have := hp.key_wrap; omega_using [h]))
 
 theorem FPre.inLast {d n : Nat} (h : d + n ≤ L) : InRegions (s₀.rd ++ s₀.wr) (P + BitVec.ofNat 64 d) n := by
-  rw [hp.rd]; exact in_rw (r := ⟨P, L⟩) (by simp) (Offset.contains_base _ h (by have := hp.len; omega))
+  rw [hp.rd]; exact in_rw (r := ⟨P, L⟩) (by simp) (Offset.contains_base _ h (by have := hp.len; omega_using [h, this]))
 
 end
 
@@ -164,25 +164,25 @@ theorem copy_ok (s : State) {P C : Addr} {L : Nat} (hL₀ : 0 < L) (hL : L < 8) 
   have t15 : t.gpr .r15 + BitVec.ofNat 64 96 = C := by rw [g _ (by decide) (by decide), h15]
   have tc : t.gpr .rcx = BitVec.ofNat 64 L := by rw [g _ (by decide) (by decide), hc]
   obtain ⟨t', run', mem', r10', zf', g', rd', wr'⟩ := copyStep_ok t td t15 r10 tc
-    (by rw [rd, wr]; exact hr i hi) (by rw [wr]; exact hw i (by omega))
+    (by rw [rd, wr]; exact hr i hi) (by rw [wr]; exact hw i (by omega_using [hL, hi]))
   refine WP.of_runBlock ⟨t', run', ?_⟩
   have hlen : (Spec.Aes.bytesAt s.mem P i).length = i := by simp [Spec.Aes.bytesAt]
   have hx : writeBytes s.mem C (Spec.Aes.bytesAt s.mem P i) (P + BitVec.ofNat 64 i) = s.mem (P + BitVec.ofNat 64 i) :=
     (writeBytes_frame s.mem C _ (R := ⟨C, i⟩) (by rw [hlen]; exact Region.contains_self _ _)) _
       fun r hr hcon => by
         simp only [List.mem_singleton] at hr; subst hr
-        exact hdis _ (Offset.contains_base P (by omega) (by omega)) (Region.sub_prefix (by omega) _ hcon)
+        exact hdis _ (Offset.contains_base P (by omega_using [hi]) (by omega_using [hL, hi])) (Region.sub_prefix (by omega_using [hL, hi]) _ hcon)
   have hmem : t'.mem = writeBytes s.mem C (Spec.Aes.bytesAt s.mem P (i + 1)) := by
     rw [mem', mem, hx, bytesAt_succ, writeBytes_snoc s.mem C (Spec.Aes.bytesAt s.mem P i) (s.mem (P + BitVec.ofNat 64 i))
-      (by rw [hlen]; omega), hlen]
+      (by rw [hlen]; omega_using [hL, hi]), hlen]
   have hz : t'.zf = some (decide (i + 1 = L)) := by
-    rw [zf', succ_ofNat, Offset.ofNat_sub_ofNat_beq (by omega) (by omega)]
+    rw [zf', succ_ofNat, Offset.ofNat_sub_ofNat_beq (by omega_using [hL, hi]) (by omega_using [hL])]
   have gg : ∀ r, r ≠ .rax → r ≠ .r10 → t'.gpr r = s.gpr r := fun r h₁ h₂ => by rw [g' r h₁ h₂, g r h₁ h₂]
   by_cases he : i + 1 = L
   · left
     refine ⟨by simp [X86_64.eval, hz, he], by rw [hmem, he], gg, by rw [rd', rd], by rw [wr', wr]⟩
   · right
-    refine ⟨by simp [X86_64.eval, hz, he], L - (i + 1), by omega, i + 1, rfl, by omega, by rw [r10', succ_ofNat],
+    refine ⟨by simp [X86_64.eval, hz, he], L - (i + 1), by omega_using [hi], i + 1, rfl, by omega_using [hi, he], by rw [r10', succ_ofNat],
       hmem, gg, by rw [rd', rd], by rw [wr', wr]⟩
 
 /-! ## The straight-line pieces -/
@@ -209,7 +209,7 @@ theorem pre1_ok (s : State) (hw : ∀ d, 48 ≤ d → d + 8 ≤ 96 → InRegions
   · rw [zf_arithFlags]
     simp only [gpr_setReg, reduceCtorEq, ite_false, g₁]
     rw [hc, show BitVec.signExtend 64 (8 : BitVec 32) = BitVec.ofNat 64 8 from rfl,
-      Offset.ofNat_sub_ofNat_beq (by omega) (by decide)]
+      Offset.ofNat_sub_ofNat_beq (by omega_using [hL]) (by decide)]
   · simp [mem_setReg, mem_arithFlags, m₁, g₁]
   · simp [rd_setReg, rd_arithFlags, rd₁]
   · simp [wr_setReg, wr_arithFlags, wr₁]

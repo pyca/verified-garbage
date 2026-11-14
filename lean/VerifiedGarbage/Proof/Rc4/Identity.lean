@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Rc4.Memory
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # RC4: the identity permutation, stored a byte at a time -/
 
@@ -24,18 +25,18 @@ theorem identityMem_store (m : Mem) (p : Addr) (r : Nat) (hr : r < 256) :
   rw [write_byte]
   have heq : x = p + BitVec.ofNat 64 r ↔ (x - p).toNat = r := by
     constructor
-    · intro h; rw [h, Mem.sub_ofNat_toNat p (by omega)]
+    · intro h; rw [h, Mem.sub_ofNat_toNat p (by omega_using [hr])]
     · intro h
       have he : x - p = BitVec.ofNat 64 r := by
         apply BitVec.eq_of_toNat_eq
-        rw [h, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+        rw [h, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hr])]
       rw [← he, BitVec.add_comm, BitVec.sub_add_cancel]
   simp only [identityMem, heq]
   by_cases h : (x - p).toNat = r
   · simp only [h, ite_true, Nat.lt_add_one]
   · by_cases hl : (x - p).toNat < r
-    · simp only [h, hl, show (x - p).toNat < r + 1 by omega, ite_true, ite_false]
-    · simp only [h, hl, show ¬ (x - p).toNat < r + 1 by omega, ite_false]
+    · simp only [h, hl, show (x - p).toNat < r + 1 by omega_using [hl], ite_true, ite_false]
+    · simp only [h, hl, show ¬ (x - p).toNat < r + 1 by omega_using [h, hl], ite_false]
 
 theorem identityMem_table (m : Mem) (p : Addr) :
     (contextAt (identityMem m p 256) p).table =
@@ -43,12 +44,12 @@ theorem identityMem_table (m : Mem) (p : Addr) :
   apply Vector.ext
   intro k hk
   simp only [contextAt, Vector.getElem_ofFn, identityMem]
-  rw [Mem.sub_ofNat_toNat p (by omega), ite_eq_left hk]
+  rw [Mem.sub_ofNat_toNat p (by omega_using [hk]), ite_eq_left hk]
 
 theorem identityMem_frame (m : Mem) (p : Addr) (r : Nat) (hr : r ≤ 256) :
     TableFrame p m (identityMem m p r) := by
   intro x hx
-  simp only [identityMem, show ¬ (x - p).toNat < r by omega, ite_false]
+  simp only [identityMem, show ¬ (x - p).toNat < r by omega_using [hr, hx], ite_false]
 
 /-- The key offset after `r`, advanced: back to 0 at the key length. -/
 theorem key_next (r len : Nat) (hl : 0 < len) (hlen : len ≤ 256) :
@@ -56,9 +57,9 @@ theorem key_next (r len : Nat) (hl : 0 < len) (hlen : len ≤ 256) :
       else 0#64) = BitVec.ofNat 64 ((r + 1) % len) := by
   have hb := Nat.mod_lt r hl
   have ht : (BitVec.ofNat 64 (r % len) + 1#64).toNat = r % len + 1 := by
-    rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show r % len < 2 ^ 64 by omega)]
+    rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show r % len < 2 ^ 64 by omega_using [hlen, hb])]
     change (r % len + 1) % 2 ^ 64 = _
-    omega
+    omega_using [hlen, hb]
   rw [ht]
   have ha : (r + 1) % len = (r % len + 1) % len := by
     simp only [Nat.add_mod, Nat.mod_mod]
@@ -66,7 +67,7 @@ theorem key_next (r len : Nat) (hl : 0 < len) (hlen : len ≤ 256) :
   · rw [ite_eq_left h]
     apply BitVec.eq_of_toNat_eq
     rw [ht, BitVec.toNat_ofNat, ha, Nat.mod_eq_of_lt h,
-      Nat.mod_eq_of_lt (show r % len + 1 < 2 ^ 64 by omega)]
-  · rw [ite_eq_right h, ha, show r % len + 1 = len by omega, Nat.mod_self]
+      Nat.mod_eq_of_lt (show r % len + 1 < 2 ^ 64 by omega_using [hlen, hb])]
+  · rw [ite_eq_right h, ha, show r % len + 1 = len by omega_using [hb, h], Nat.mod_self]
 
 end VG.Proof.Rc4

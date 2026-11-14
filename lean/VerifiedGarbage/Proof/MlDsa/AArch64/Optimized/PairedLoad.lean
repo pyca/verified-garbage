@@ -100,7 +100,7 @@ theorem productCentered_ok {d : VReg} (hd : d ≠ .v31)
   · intro e he
     rw [hu.v, VG.AArch64.vword_map2 _ _ _ he,
       ht.get .v31 (by simp [Ne.symm hd]), hv, hq]
-    rcases (show e=0 ∨ e=1 ∨ e=2 ∨ e=3 by omega) with rfl | rfl | rfl | rfl <;>
+    rcases (show e=0 ∨ e=1 ∨ e=2 ∨ e=3 by omega_using [he]) with rfl | rfl | rfl | rfl <;>
       simp only [vword_ofVWords_0, vword_ofVWords_1, vword_ofVWords_2, vword_ofVWords_3, centeredProduct]
 
 end VG.Proof.MlDsa.AArch64.Optimized.Paired
@@ -164,11 +164,11 @@ theorem product_ok (j : Fin 8) {s : State} (hc : ProductConstants s)
     grind only
   simp only [product,List.flatMap_cons,List.flatMap_nil,List.append_nil,List.cons_append,List.nil_append,
     Nat.mul_zero,Nat.zero_add,Nat.mul_one,List.append_assoc]
-  refine wp_ldrq (by omega) rfl hr fun a ha => ?_
-  refine loaded_ok d0.1 d0.2 (hc.chg ha.chg (by decide) (by decide)) (by omega) ?_ fun b hb cb vb => ?_
+  refine wp_ldrq (by omega_using []) rfl hr fun a ha => ?_
+  refine loaded_ok d0.1 d0.2 (hc.chg ha.chg (by decide) (by decide)) (by omega_using []) ?_ fun b hb cb vb => ?_
   · rw [ha.chg.rd,ha.chg.wr,ha.chg.gpr]
     simpa using hs 0 (by decide)
-  · refine loaded_ok d1.1 d1.2 cb (by omega) ?_ fun t ht ct vt => ?_
+  · refine loaded_ok d1.1 d1.2 cb (by omega_using []) ?_ fun t ht ct vt => ?_
     · rw [hb.rd,hb.wr,hb.gpr,ha.chg.rd,ha.chg.wr,ha.chg.gpr]
       simpa using hs 1 (by decide)
     · refine k t (((ha.chg.trans hb).trans ht).mono ?_) ct ?_
@@ -182,7 +182,7 @@ theorem product_ok (j : Fin 8) {s : State} (hc : ProductConstants s)
         have h24 : VReg.v24∉[.v25,.v26,.v27,.v28,vr j.val] := by
           simp only [List.mem_cons,List.not_mem_nil,or_false] at *
           grind only
-        rcases (show p=0 ∨ p=1 by omega) with rfl | rfl
+        rcases (show p=0 ∨ p=1 by omega_using [hp]) with rfl | rfl
         · simp only [Nat.mul_zero,Nat.zero_add]
           rw [ht.get _ h0,vb e he,ha.v,ha.chg.mem,ha.chg.gpr]
         · simp only [Nat.mul_one]

@@ -62,7 +62,7 @@ theorem random_callArgs_observe (S : Signer) {s t : State} {h : RandomSignABI S.
   have hqbound : (s.gpr .x6).toNat ≤ 32 := by
     have hl := h.lengths
     unfold Spec.Dsa.lengthsValid at hl
-    omega
+    omega_using [hl]
   have hkeyA' : Spec.Rsa.bytesAt a.mem (s.gpr .x3) (s.gpr .x4).toNat = (randomInput s).key := by
     simpa only [randomInput, bytesAt_length] using sourceBytes_eq hkeyA
   have hres : randomCallResult s a = randomSingleResult s k := by
@@ -71,7 +71,7 @@ theorem random_callArgs_observe (S : Signer) {s t : State} {h : RandomSignABI S.
     have hdigest : Spec.Rsa.bytesAt a.mem (s.gpr .x7) (stackArg s 0).toNat = (randomInput s).digest := by
       simpa only [randomInput, bytesAt_length] using sourceBytes_eq hdigestA
     have hnonceA := (random_outside_bytes hargs
-      (show Random.oNonce + (s.gpr .x6).toNat ≤ 2 ^ 64 by unfold Random.oNonce; omega)
+      (show Random.oNonce + (s.gpr .x6).toNat ≤ 2 ^ 64 by unfold Random.oNonce; omega_using [hqbound])
       (Or.inr (show 0 + 40 ≤ Random.oNonce by decide))).trans hnonce
     rw [hkey, hdigest, hnonceA]
     rfl

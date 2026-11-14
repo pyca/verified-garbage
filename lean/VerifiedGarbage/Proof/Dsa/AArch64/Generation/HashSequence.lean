@@ -37,8 +37,8 @@ theorem hashPrefix_ok {G : Impl.Pbkdf2.Md.AArch64.Hash} (hG : Calls.StreamOK G.s
       exact ⟨hs, Step.refl _ _ _ _, Frame.refl _ _⟩
   | succ k ih =>
     unfold Impl.Dsa.AArch64.Generation.pHashPrefix
-    refine WP.seq (WP.mono (ih (by omega) hs) fun u ⟨hu, su, hfu⟩ => ?_)
-    refine WP.mono (hashStep_ok hG hHh hsize hd (by omega) hu) fun t ⟨ht, st, hft⟩ => ?_
+    refine WP.seq (WP.mono (ih (by omega_using [hk]) hs) fun u ⟨hu, su, hfu⟩ => ?_)
+    refine WP.mono (hashStep_ok hG hHh hsize hd (by omega_using [hk]) hu) fun t ⟨ht, st, hft⟩ => ?_
     exact ⟨ht, su.trans st, hfu.trans hft⟩
 
 theorem pHashes_ok {G : Impl.Pbkdf2.Md.AArch64.Hash} (hG : Calls.StreamOK G.stream)

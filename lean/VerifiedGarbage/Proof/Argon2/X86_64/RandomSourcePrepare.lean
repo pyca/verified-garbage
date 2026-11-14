@@ -40,7 +40,7 @@ theorem Done.frame_word {s t : State} {p : Params} {pass lane slice index : Nat}
     · exact ((h.layout.matrixFrame.sub_left currentSub).symm).sub_left sub
     · exact h.layout.frameWork.sub_left sub
     · exact h.layout.frameStack.sub_left sub
-    · exact Offset.disjoint _ separate (by omega) (by decide)) (by decide)
+    · exact Offset.disjoint _ separate (by omega_using [bound]) (by decide)) (by decide)
 
 theorem Done.retains {s t : State} {p : Params} {pass lane slice index : Nat}
     (h : Ready p pass lane slice index s) (done : Done s t p pass lane slice index) :
@@ -291,7 +291,7 @@ theorem Selected.frame_word {s t : State} {p : Params} {pass lane slice : Nat}
     rcases hr with rfl | rfl | rfl
     · exact layout.frameWork.sub_left sub
     · exact layout.frameStack.sub_left sub
-    · exact Offset.disjoint _ separate (by omega) (by decide)) (by decide)
+    · exact Offset.disjoint _ separate (by omega_using [bound]) (by decide)) (by decide)
 
 theorem Selected.words {s t : State} {p : Params} {pass lane slice old : Nat}
     (ready : Ready p pass lane slice old s) (h : Selected s t p pass lane slice) :
@@ -388,7 +388,7 @@ structure Invariant (p : Params) (pass lane slice old : Nat) (s : State) : Prop 
 theorem wanted_bound (s : State) : wanted s < 2 ^ 64 := by
   unfold wanted
   have := (s.gpr .r15).isLt
-  omega
+  omega_using []
 
 theorem Invariant.ready {p : Params} {pass lane slice old : Nat} {s : State}
     (h : Invariant p pass lane slice old s) : Ready p pass lane slice old s := by

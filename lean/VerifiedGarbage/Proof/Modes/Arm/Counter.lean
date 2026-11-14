@@ -68,14 +68,14 @@ theorem incr_ok (s : State) {base : Reg} {off : Nat} (h9 : base ≠ .r9) (h10 : 
   have sep (m : Mem) (i j : Nat) (hi : i < 4) (hj : j < 4) (hne : i ≠ j) (v : BitVec 32) :
       (m.writeW (Q + BitVec.ofNat 64 (4 * j)) v).readW (Q + BitVec.ofNat 64 (4 * i)) 32 =
         m.readW (Q + BitVec.ofNat 64 (4 * i)) 32 :=
-    Mem.readW_writeW_sep (Offset.sep Q (by omega) (by omega) (by omega)) (by decide)
+    Mem.readW_writeW_sep (Offset.sep Q (by omega_using [hne]) (by omega_using [hi]) (by omega_using [hj])) (by decide)
   have sep0 (m : Mem) (j : Nat) (hj : j < 4) (hne : 0 ≠ j) (v : BitVec 32) :
       (m.writeW (Q + BitVec.ofNat 64 (4 * j)) v).readW Q 32 = m.readW Q 32 := by
     simpa using sep m 0 j (by decide) hj hne v
-  have h0 : off < 4096 := by omega
-  have h4 : off + 4 < 4096 := by omega
-  have h8 : off + 8 < 4096 := by omega
-  have h12 : off + 12 < 4096 := by omega
+  have h0 : off < 4096 := by omega_using [hoff]
+  have h4 : off + 4 < 4096 := by omega_using [hoff]
+  have h8 : off + 8 < 4096 := by omega_using [hoff]
+  have h12 : off + 12 < 4096 := by omega_using [hoff]
   refine ⟨_, by
     simp only [reduceCtorEq, ↓reduceIte, incAt, runBlock_cons, runStep_some, runBlock_nil, exec,
       i0, i1, Proof.MdStream.Arm.op2_reg, State.load32, State.store32, Option.map_some,
@@ -96,8 +96,8 @@ theorem carry_toNat (x y : BitVec 32) : (carry x y).toNat = (x.toNat + y.toNat) 
   have := x.isLt
   have := y.isLt
   by_cases h : 2 ^ 32 ≤ x.toNat + y.toNat
-  · rw [carry, decide_eq_true h]; simp only [Bool.toNat_true]; omega
-  · rw [carry, decide_eq_false h]; simp only [Bool.toNat_false]; omega
+  · rw [carry, decide_eq_true h]; simp only [Bool.toNat_true]; omega_using [h]
+  · rw [carry, decide_eq_false h]; simp only [Bool.toNat_false]; omega_using [h]
 
 theorem add_cw_toNat (a : BitVec 32) (c : Bool) : (a + cw c).toNat = (a.toNat + c.toNat) % 2 ^ 32 := by
   rw [BitVec.toNat_add, cw_toNat]
@@ -107,9 +107,9 @@ theorem add_ite_toNat (a : BitVec 32) (c : Bool) :
   have e₀ : (0 : BitVec 32).toNat = 0 := rfl
   cases c
   · have e : ((if false = true then 1 else 0 : BitVec 32)).toNat = 0 := rfl
-    rw [BitVec.toNat_add, BitVec.toNat_add, e₀, e]; simp only [Bool.toNat_false]; omega
+    rw [BitVec.toNat_add, BitVec.toNat_add, e₀, e]; simp only [Bool.toNat_false]; omega_using []
   · have e : ((if true = true then 1 else 0 : BitVec 32)).toNat = 1 := rfl
-    rw [BitVec.toNat_add, BitVec.toNat_add, e₀, e]; simp only [Bool.toNat_true]; omega
+    rw [BitVec.toNat_add, BitVec.toNat_add, e₀, e]; simp only [Bool.toNat_true]; omega_using []
 
 theorem incMem_bytes (m : Mem) (Q : Addr) : bytesAt (incMem m Q) Q 16 = Spec.Ctr.inc (bytesAt m Q 16) := by
   have e₁ : (1 : BitVec 32).toNat = 1 := rfl

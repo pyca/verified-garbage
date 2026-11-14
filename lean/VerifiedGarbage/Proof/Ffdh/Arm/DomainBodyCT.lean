@@ -435,8 +435,8 @@ theorem domainBody_ct {p : Inputs} {slots : List Nat}
       DomainMainInput p (60 :: 56 :: slots) ((p.dom.drop p.k).take p.k) s := by
     refine ⟨h, h.gBytes, ?_⟩
     rw [p.gLength]
-    exact h.toArgumentMemory.domainSliceStack (by have := p.minLength; omega)
-      (by rw [p.domainLength]; split <;> omega)
+    exact h.toArgumentMemory.domainSliceStack (by have := p.minLength; omega_using [this])
+      (by rw [p.domainLength]; split <;> omega_using [])
   have branches : RelCT isa (fun s t => Q s ∧ Q t ∧ s.sp = t.sp)
       (.ite .eq VG.Impl.Ffdh.Arm.Domain.CheckDomain.main (VG.Impl.Ffdh.Arm.Domain.ret 0)) (fun _ _ => True) := by
     apply iteKnown_ct (Spec.Rsa.modulusValid p.P p.k) (fun s h => by change some s.z = _; rw [h.2])

@@ -88,7 +88,7 @@ theorem q_ne_ta : ∀ i < 8, q i ≠ ta := by decide
 theorem q_ne_m' : ∀ i < 8, ∀ k < 6, q i ≠ m (k + 1) := by decide
 
 theorem q_ne_m (i : Nat) (hi : i < 8) (k : Nat) (h1 : 1 ≤ k) (h2 : k < 7) : q i ≠ m k := by
-  have := q_ne_m' i hi (k - 1) (by omega)
+  have := q_ne_m' i hi (k - 1) (by omega_using [h2])
   rwa [Nat.sub_add_cancel h1] at this
 
 theorem qword_lo_readW (m : Mem) (a : Addr) : qword (m.readW a 128) 0 = m.readW a 64 := by
@@ -133,18 +133,18 @@ theorem ark_upto : ∀ n ≤ 8, ∀ {s : State},
   | 0, _, s, _, _, h => WP.block_nil (h s (fun _ _ _ _ => by simp) ⟨rfl, rfl, fun _ _ => rfl, rfl⟩)
   | n + 1, hn, s, hin, Q, h => by
     rw [List.range_succ, List.flatMap_append, List.flatMap_singleton, WP.block_append_iff (M := isa)]
-    refine ark_upto n (by omega) hin fun s₁ h₁ k₁ => ?_
+    refine ark_upto n (by omega_using [hn]) hin fun s₁ h₁ k₁ => ?_
     have hin₁ : ∀ j < 8, InRegions (s₁.rd ++ s₁.wr) (s₁.gpr kp + BitVec.ofNat 64 (8 * j)) 16 := by
       rw [k₁.rd, k₁.wr, k₁.gpr kp (by decide)]; exact hin
-    refine arkW_wp (by omega) (hin₁ n (by omega)) fun s₂ h₂ o₂ k₂ =>
+    refine arkW_wp (by omega_using [hn]) (hin₁ n (by omega_using [hn])) fun s₂ h₂ o₂ k₂ =>
       h s₂ (fun l hl j hj => ?_) (k₁.trans k₂)
     have hk : keyWord s₁ n = keyWord s n := by simp only [keyWord, k₁.mem, k₁.gpr kp (by decide)]
     by_cases hjn : j = n
     · subst hjn; rw [h₂ l hl, h₁ l hl j hj, hk]; simp
     · rw [o₂ j hj hjn l, h₁ l hl j hj]
       by_cases hjl : j < n
-      · simp [hjl, show j < n + 1 by omega]
-      · simp [hjl, show ¬ j < n + 1 by omega]
+      · simp [hjl, show j < n + 1 by omega_using [hjl]]
+      · simp [hjl, show ¬ j < n + 1 by omega_using [hjn, hjl]]
 
 theorem addRoundKey_wp {s : State}
     (hin : ∀ j < 8, InRegions (s.rd ++ s.wr) (s.gpr kp + BitVec.ofNat 64 (8 * j)) 16) {Q : State → Prop}
@@ -181,7 +181,7 @@ theorem sbox_wp {s : State} (hp : EncPre s₀ R w) (hq : SsePre s₀) (hc : Ctx 
   simp only [List.mem_singleton] at hr; subst hr
   refine ⟨_, List.mem_singleton_self _, ?_⟩
   simp only [slotRegion, sboxCfg, spills, hrcx, BitVec.add_zero]
-  exact Region.sub_prefix (by omega)
+  exact Region.sub_prefix (by omega_using [])
 
 /-- The masks are where `SsePre` put them. -/
 theorem masks_at {s : State} (hq : SsePre s₀) (hc : Ctx s₀ s) {k : Nat} (hk : k < 2) :
@@ -190,7 +190,7 @@ theorem masks_at {s : State} (hq : SsePre s₀) (hc : Ctx s₀ s) {k : Nat} (hk 
   rw [hc.keep _ (by decide) (by decide), hq.r11, Offset.add_add]
   refine hc.frame.readW (Region.contains_self _ _) (fun r hr => ?_) (by decide)
   simp only [List.mem_singleton] at hr; subst hr
-  exact (Offset.base_disjoint _ (by simp [srOff]; omega) (by simp [srOff]; omega)).symm
+  exact (Offset.base_disjoint _ (by simp [srOff]; omega_using []) (by simp [srOff]; omega_using [hk])).symm
 
 theorem shiftRows_wp {s : State} (hp : EncPre s₀ R w) (hq : SsePre s₀) (hc : Ctx s₀ s)
     {Q : State → Prop}
@@ -201,7 +201,7 @@ theorem shiftRows_wp {s : State} (hp : EncPre s₀ R w) (hq : SsePre s₀) (hc :
     intro k hk
     refine ⟨scr s₀, List.mem_append_right _ (hc.scr hp), ?_⟩
     rw [hc.keep _ (by decide) (by decide), hq.r11, Offset.add_add]
-    exact Offset.contains_base _ (by simp [srOff]; omega) (by simp [srOff]; omega)
+    exact Offset.contains_base _ (by simp [srOff]; omega_using [hk]) (by simp [srOff]; omega_using [hk])
   have hin₁ : InRegions ((s.setXmm (m 1) (s.mem.readW (s.gpr .r11 + BitVec.ofNat 64 (16 * 0)) 128)).rd ++
       (s.setXmm (m 1) (s.mem.readW (s.gpr .r11 + BitVec.ofNat 64 (16 * 0)) 128)).wr)
       ((s.setXmm (m 1) (s.mem.readW (s.gpr .r11 + BitVec.ofNat 64 (16 * 0)) 128)).gpr .r11 +
@@ -214,7 +214,7 @@ theorem shiftRows_wp {s : State} (hp : EncPre s₀ R w) (hq : SsePre s₀) (hc :
       (m 2) (s.mem.readW (s.gpr .r11 + BitVec.ofNat 64 16) 128)).xmm (m (1 + k))) l =
       (srMasks.getD k (0, 0)).2 := by
     intro k hk l hl
-    rcases (by omega : k = 0 ∨ k = 1) with rfl | rfl
+    rcases (by omega_using [hk] : k = 0 ∨ k = 1) with rfl | rfl
     · rw [xmm_setXmm_of_ne _ _ (by decide), xmm_setXmm_self, masks_at hq hc (by decide), hq.masks 0 (by decide) l hl]
     · rw [xmm_setXmm_self, show (16 : Nat) = 16 * 1 from rfl, masks_at hq hc (by decide),
         hq.masks 1 (by decide) l hl]
@@ -468,7 +468,7 @@ theorem ctrLo_ok {s : State} {b : Addr} (hb : s.gpr sb = b) (hw : (⟨b, 2048⟩
   intro c hc l hl
   have hv : (s.setReg .rax (s.mem.readW (b + BitVec.ofNat 64 (8 * 54)) 64)).gpr .rax =
       s.mem.readW (b + BitVec.ofNat 64 (8 * 54)) 64 := by simp [State.setReg]
-  rcases (by omega : c = 0 ∨ c = 1 ∨ c = 2 ∨ c = 3) with rfl | rfl | rfl | rfl <;>
+  rcases (by omega_using [hc] : c = 0 ∨ c = 1 ∨ c = 2 ∨ c = 3) with rfl | rfl | rfl | rfl <;>
   · simp only [QX, xmm_setXmm_self, XBinOp.eval]
     repeat rw [xmm_setXmm_of_ne _ _ (by decide)]
     repeat rw [xmm_setXmm_self]
@@ -492,7 +492,7 @@ theorem ctrPair_wp {s : State} {b : Addr} {i : Nat} (hi : i < 4) (hb : s.gpr sb 
   obtain ⟨s₂, h₂, a₂, o₂, m₂, rd₂, wr₂, x₂⟩ := ctrWord_ok (r := .r10) (i + 4) (by decide)
     ((o₁ sb (by decide)).trans hb) (wr₁ ▸ hw)
   refine WP.of_runBlock ⟨s₂, h₂, ?_⟩
-  have hne := q_ne_ta' (i + 4) (by omega)
+  have hne := q_ne_ta' (i + 4) (by omega_using [hi])
   refine WP.of_runBlock ⟨_, by
     simp only [runBlock_cons, reduceExec, XOp.exec, runStep_some, runBlock_nil, bin]; rfl,
     h _ ?_ ?_ ?_ ?_ ?_ ?_⟩
@@ -501,12 +501,12 @@ theorem ctrPair_wp {s : State} {b : Addr} {i : Nat} (hi : i < 4) (hb : s.gpr sb 
     rw [qword_app _ _ hl]
     have e1 : s₂.gpr .rax = hiWord (chiW s.mem b) (numW s.mem b) i := by rw [o₂ _ (by decide), a₁]
     have e2 : s₂.gpr .r10 = hiWord (chiW s.mem b) (numW s.mem b) (i + 4) := by rw [a₂, m₁]
-    rcases (by omega : l = 0 ∨ l = 1) with rfl | rfl
+    rcases (by omega_using [hl] : l = 0 ∨ l = 1) with rfl | rfl
     · simp only [ite_true, qword_app _ _ (show 0 < 2 by decide), e1, Nat.mul_zero, Nat.add_zero]
     · simp only [show ¬ (1 = 0) by decide, ite_false, qword_app _ _ (show 0 < 2 by decide), ite_true,
         VG.X86_64.RegUpd.gpr_setXmm, e2]
   · intro j hj hji l
-    have h1 : q j ≠ q (i + 4) := fun h => hji (q_inj' j hj (i + 4) (by omega) h)
+    have h1 : q j ≠ q (i + 4) := fun h => hji (q_inj' j hj (i + 4) (by omega_using [hi]) h)
     simp only [QX]
     rw [xmm_setXmm_of_ne _ _ h1, xmm_setXmm_of_ne _ _ (q_ne_ta' j hj), xmm_setXmm_of_ne _ _ h1, x₂, x₁]
   · intro r h1 h2
@@ -558,7 +558,7 @@ theorem ctrBlocks_wp {s : State} {b : Addr} (hb : s.gpr sb = b) (hw : (⟨b, 204
   refine WP.of_runBlock ⟨s₅, h₅, fun c hc l hl => ?_, fun r h1 h2 => ?_, by rw [m₅, mm], ?_, ?_⟩
   · have e : QX s₅ l = QX s₄ l := funext fun i => by simp only [QX]; rw [x₅]
     rw [e]
-    rcases (by omega : c = 0 ∨ c = 1 ∨ c = 2 ∨ c = 3) with rfl | rfl | rfl | rfl
+    rcases (by omega_using [hc] : c = 0 ∨ c = 1 ∨ c = 2 ∨ c = 3) with rfl | rfl | rfl | rfl
     · refine ⟨?_, ?_⟩
       · rw [k₄ 0 (by decide) (by decide) l, k₃ 0 (by decide) (by decide) l, k₂ 0 (by decide) (by decide) l,
           k₁ 0 (by decide) (by decide) l, lo₀ 0 (by decide) l hl]
@@ -650,8 +650,8 @@ theorem extract_append (hi lo : BitVec 64) {t : Nat} (ht : t < 16) :
   · rename_i h
     rw [ite_eq_left (show t < 8 by omega), BitVec.getLsbD_extractLsb', decide_eq_true hj, Bool.true_and]
   · rename_i h
-    rw [ite_eq_right (show ¬ t < 8 by omega), BitVec.getLsbD_extractLsb', decide_eq_true hj, Bool.true_and]
-    exact congrArg _ (by omega)
+    rw [ite_eq_right (show ¬ t < 8 by omega_using [hj, h]), BitVec.getLsbD_extractLsb', decide_eq_true hj, Bool.true_and]
+    exact congrArg _ (by omega_using [hj, h])
 
 open VG.Impl.Aes.X86_64 (dstR) in
 theorem xorBlock_ok (to : Bool) {s : State} {a d : Addr} {k : Nat} (hk : k < 8) (ha : s.gpr .rdx = a)
@@ -691,11 +691,11 @@ theorem xorBlock_ok (to : Bool) {s : State} {a d : Addr} {k : Nat} (hk : k < 8) 
   · obtain ⟨s', h', rest⟩ := hst (qword (s.xmm (q (k + 4))) 0 ++ qword (s.xmm (q k)) 0)
     refine ⟨s', ?_, ?_⟩
     · simp only [ksBlock, h4, ite_true, mova, bin, runBlock_cons, runStep_some, runBlock_nil, reduceExec,
-        XOp.exec, XBinOp.eval, xmm_setXmm_self, xmm_setXmm_of_ne _ _ (hne (k + 4) (by omega)).1, Option.bind_some]
+        XOp.exec, XBinOp.eval, xmm_setXmm_self, xmm_setXmm_of_ne _ _ (hne (k + 4) (by omega_using [h4])).1, Option.bind_some]
       rw [VG.X86_64.setXmm_setXmm]
       exact h'
     · have e : ksv s k = qword (s.xmm (q (k + 4))) 0 ++ qword (s.xmm (q k)) 0 := by
-        have hk4 : k / 4 = 0 := by omega
+        have hk4 : k / 4 = 0 := by omega_using [h4]
         have hkm : k % 4 = k := Nat.mod_eq_of_lt h4
         simp only [ksv, QX]; rw [hk4, hkm]
       rw [e]; exact rest
@@ -706,9 +706,9 @@ theorem xorBlock_ok (to : Bool) {s : State} {a d : Addr} {k : Nat} (hk : k < 8) 
       rw [VG.X86_64.setXmm_setXmm]
       exact h'
     · have e : ksv s k = qword (s.xmm (q k)) 1 ++ qword (s.xmm (q (k - 4))) 1 := by
-        have hk4 : k / 4 = 1 := by omega
-        have hkm : k % 4 + 4 = k := by omega
-        have hkm' : k % 4 = k - 4 := by omega
+        have hk4 : k / 4 = 1 := by omega_using [hk, h4]
+        have hkm : k % 4 + 4 = k := by omega_using [hk, h4]
+        have hkm' : k % 4 = k - 4 := by omega_using [hk, h4]
         simp only [ksv, QX]; rw [hk4, hkm, hkm']
       rw [e]; exact rest
 
@@ -775,7 +775,7 @@ variable {to : Bool} {m₀ : Mem} {S D : Addr} {n g : Nat} {ks : Nat → Byte} {
 
 theorem ksv_congr {s s' : State} (h : ∀ i < 8, ∀ l, QX s' l i = QX s l i) {k : Nat} :
     ksv s' k = ksv s k := by
-  simp only [ksv]; rw [h _ (by omega), h _ (by omega)]
+  simp only [ksv]; rw [h _ (by omega_using []), h _ (by omega_using [])]
 
 theorem xs8_step (hp : XReady8 to m₀ S D n g ks s₄) {k : Nat} (hk : k < 8) (hkn : 4 * g + k < n) {s : State}
     (hs : XS8 m₀ S D n g ks s₄ k s) {P : State → Prop} (h : ∀ s', XS8 m₀ S D n g ks s₄ (k + 1) s' → P s') :
@@ -1003,12 +1003,12 @@ theorem ks_lanes {s : State} {R g : Nat} {w : List Byte} {icb : Spec.Gcm.Block}
     (h : ∀ l < 2, InRel (QX s l) (fun c => Spec.Aes.cipher R w (ctrState icb (4 * (g + l) + c)))) :
     ∀ k < 8, ∀ t < 16, (ksv s k).extractLsb' (8 * t) 8 = keyStream R w icb (16 * (4 * g + k) + t) := by
   intro k hk t ht
-  have hc := ks_of_inRel (h (k / 4) (by omega)) (c := k % 4) (by omega) ht
-  rw [show 4 * (g + k / 4) + k % 4 = 4 * g + k by omega] at hc
+  have hc := ks_of_inRel (h (k / 4) (by omega_using [hk])) (c := k % 4) (by omega_using []) ht
+  rw [show 4 * (g + k / 4) + k % 4 = 4 * g + k by omega_using []] at hc
   rw [ksv, extract_append _ _ ht, ← hc]
   by_cases h8 : t < 8
-  · rw [ite_eq_left h8, show t / 8 = 0 by omega, show t % 8 = t by omega, Nat.mul_zero, Nat.add_zero]
-  · rw [ite_eq_right h8, show t / 8 = 1 by omega, show t % 8 = t - 8 by omega, Nat.mul_one]
+  · rw [ite_eq_left h8, show t / 8 = 0 by omega_using [h8], show t % 8 = t by omega_using [h8], Nat.mul_zero, Nat.add_zero]
+  · rw [ite_eq_right h8, show t / 8 = 1 by omega_using [ht, h8], show t % 8 = t - 8 by omega_using [ht, h8], Nat.mul_one]
 
 theorem groupSetup_ok (s : State) :
     ∃ s', runBlock isa groupSetup s = some s' ∧ s'.gpr .rcx = s.gpr .r9 ∧
@@ -1182,7 +1182,7 @@ theorem srSetup_ok {s : State} {b : Addr} (hb : s.gpr .r9 = b) (hw : (⟨b, 2048
     Offset.sep b (by simp [srOff]) (by simp [srOff]) (by simp [srOff])
   refine ⟨s₂, by rw [srSetup_eq, VG.X86_64.runBlock_append, h₁, Option.bind_some, h₂], fun k hk l hl => ?_,
     ?_, fun r hr => (g₂ r hr).trans (g₁ r hr), rd₂.trans rd₁, wr₂.trans wr₁⟩
-  · rcases (by omega : k = 0 ∨ k = 1) with rfl | rfl
+  · rcases (by omega_using [hk] : k = 0 ∨ k = 1) with rfl | rfl
     · rw [m₂, Mem.readW_writeW_sep hsep (by decide), m₁,
         Mem.readW_writeW_self _ _ 16 _ (by decide)]
       exact qword_dup _ hl

@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Sm4.SboxTable
 public import VerifiedGarbage.Proof.Aes.Bitsliced
 public import VerifiedGarbage.Impl.Sm4.Lin
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # Bitsliced SM4: the layout and the layers
@@ -63,8 +64,8 @@ theorem getLsbD_tau (x : Word) {i j : Nat} (hi : i < 4) (hj : j < 8) :
     (tau x).getLsbD (8 * (3 - i) + j) = (sboxB (byteAt x i)).getLsbD j := by
   rw [tau_eq]
   simp only [BitVec.getLsbD_append]
-  rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 by omega) with rfl | rfl | rfl | rfl <;>
-  rcases (show j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4 ∨ j = 5 ∨ j = 6 ∨ j = 7 by omega) with
+  rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 by omega_using [hi]) with rfl | rfl | rfl | rfl <;>
+  rcases (show j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4 ∨ j = 5 ∨ j = 6 ∨ j = 7 by omega_using [hj]) with
     rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
   simp only [subAt, sboxB, byteAt, Nat.reduceMul, Nat.reduceSub, Nat.reduceAdd,
     Nat.reduceLT, ↓reduceIte, Nat.lt_irrefl]
@@ -75,7 +76,7 @@ theorem tau_rel {X S : Nat → BitVec 64} {v : Nat → Word} (hX : WordRel X v)
     (hS : ∀ j < 8, ∀ p < 64, (S j).getLsbD p = (sboxB (bsByte X p)).getLsbD j) :
     WordRel S (fun b => tau (v b)) := by
   intro b hb i hi j hj
-  rw [hS j hj _ (by omega), getLsbD_tau _ hi hj]
+  rw [hS j hj _ (by omega_using [hb, hi]), getLsbD_tau _ hi hj]
   congr 2
   refine byte_ext fun k hk => ?_
   rw [getLsbD_bsByte _ _ hk, hX b hb i hi k hk, getLsbD_byteAt _ hi hk]
@@ -116,8 +117,8 @@ theorem getLsbD_rotateLeft32 (x : Word) (r : Nat) (hr : r < 32) {k : Nat} (hk : 
   rw [BitVec.getLsbD_rotateLeft]
   simp only [Nat.mod_eq_of_lt hr]
   split
-  · congr 1; omega
-  · simp only [hk, decide_true, Bool.true_and]; congr 1; omega
+  · congr 1; omega_arith
+  · simp only [hk, decide_true, Bool.true_and]; congr 1; omega_arith
 
 /-- The bits of `x` whose XOR is bit `k` of `L x` and of `L' x`. -/
 def linIdx (k : Nat) : List Nat := [k, (k + 30) % 32, (k + 22) % 32, (k + 14) % 32, (k + 8) % 32]
@@ -149,7 +150,7 @@ theorem terms_lt (l : Lin) : ∀ j < 8, ∀ sm ∈ l.terms j, sm.1 < 8 := by
   cases l <;> decide
 
 theorem rotP_pos {i b m : Nat} (hb : b < 16) (_hi : i < 4) : rotP (16 * i + b) m = 16 * ((i + m) % 4) + b := by
-  simp only [rotP]; omega
+  simp only [rotP]; omega_using [hb]
 
 theorem termsXor_rel {S : Nat → BitVec 64} {u : Nat → Word} (hS : WordRel S u) {b i : Nat} (hb : b < 16)
     (hi : i < 4) (l : List (Nat × Nat)) (hl : ∀ sm ∈ l, sm.1 < 8) :
@@ -166,7 +167,7 @@ theorem lin_rel (l : Lin) {S Y : Nat → BitVec 64} {u : Nat → Word} (hS : Wor
     (hY : ∀ j < 8, ∀ p < 64, (Y j).getLsbD p = termsXor S ((l.terms j).map fun sm => (sm.1, rotP p sm.2))) :
     WordRel Y (fun b => l.fn (u b)) := by
   intro b hb i hi j hj
-  rw [hY j hj _ (by omega), termsXor_rel hS hb hi _ (terms_lt l j hj), getLsbD_fn l _ (by omega),
+  rw [hY j hj _ (by omega_using [hb, hi]), termsXor_rel hS hb hi _ (terms_lt l j hj), getLsbD_fn l _ (by omega_using [hj]),
     idxXor_perm _ (terms_perm l i hi j hj)]
 
 /-! ## A round -/
@@ -192,7 +193,7 @@ theorem round_rel (l : Lin) {A B C D K X S A' : Nat → BitVec 64} {xa xb xc xd 
     WordRel A' (fun b => xa b ^^^ l.t (xb b ^^^ xc b ^^^ xd b ^^^ k)) := by
   have hx : WordRel X (fun b => xb b ^^^ xc b ^^^ xd b ^^^ k) := by
     intro b hb i hi j hj
-    rw [hX j hj _ (by omega), hB b hb i hi j hj, hC b hb i hi j hj, hD b hb i hi j hj,
+    rw [hX j hj _ (by omega_using [hb, hi]), hB b hb i hi j hj, hC b hb i hi j hj, hD b hb i hi j hj,
       hK b hb i hi j hj]
     simp only [BitVec.getLsbD_xor]
   have hy := lin_rel l (tau_rel hx hS) (Y := fun j => A j ^^^ A' j) fun j hj p hp => by

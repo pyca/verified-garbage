@@ -20,12 +20,12 @@ theorem bankRegs_inj (p : Fin 2) : Function.Injective (fun j : Fin 8 => (bankReg
   intro i j h
   simp only [bankRegs,Vector.getElem_ofFn] at h
   apply Fin.ext
-  have he := bank_injective (by omega) (by omega) h
-  omega
+  have he := bank_injective (by omega_using []) (by omega_using []) h
+  omega_using [he]
 
 theorem bankRegs_safe (p : Fin 2) (j : Fin 8) :
     (bankRegs p)[j.val]∉[.v24,.v25,.v26,.v27] := by
-  have h := bank_safe (j := 8*p.val+j.val) (by omega)
+  have h := bank_safe (j := 8*p.val+j.val) (by omega_using [])
   simp only [bankRegs,Vector.getElem_ofFn,List.mem_cons,List.not_mem_nil,or_false] at *
   grind only
 
@@ -33,10 +33,10 @@ theorem bankRegs_cross (p q : Fin 2) (hpq : p≠q) (i j : Fin 8) :
     (bankRegs p)[i.val]≠(bankRegs q)[j.val] := by
   intro h
   simp only [bankRegs,Vector.getElem_ofFn] at h
-  have he := bank_injective (by omega) (by omega) h
+  have he := bank_injective (by omega_using []) (by omega_using []) h
   apply hpq
   apply Fin.ext
-  omega
+  omega_using [he]
 
 /-- Updating one bank preserves the entire other polynomial bank. -/
 theorem Banks.packed {s t : State} {v : Values} (hs : Banks s v)

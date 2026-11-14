@@ -70,7 +70,7 @@ theorem loadInputs_ok {g : CallGeometry} {s : State} (h : Inputs g s) (len : Len
         · exact .inl e
         · exact .inr ⟨List.mem_range.mp hk, by simpa using e⟩) (by simp)
     have tu : w32 u.mem g.base (arr (kw (g.args 1).toNat) aVD + 4 * kw (g.args 1).toNat) = 0 := by
-      rw [ku.word (by unfold S; omega) (by simpa using hjd) (by simp) (r.ws.fit64 (by decide)), top]
+      rw [ku.word (by unfold S; omega_using []) (by simpa using hjd) (by simp) (r.ws.fit64 (by decide)), top]
     refine WP.mono (ih hu _ au tu (fun p hp => ?_) nd.2) fun t ⟨ht, kt, valuesT, tt, rt⟩ => ?_
     · obtain ⟨a, b, c, d⟩ := hi p (by simp [hp])
       have ne : p.2 ≠ j := fun e => nd.1 (by rw [← e]; exact List.mem_map_of_mem hp)
@@ -123,7 +123,7 @@ theorem argLen_ok {g : CallGeometry} {t : State} (h : Inputs g t) (m : Mem) {i a
   have bound := h.inputBound _ hi
   have up := h.upper
   simp only [CallGeometry.buffer, ha] at pos bound
-  refine ⟨(g.args a).toNat, pos, by omega, ?_, ?_⟩
+  refine ⟨(g.args a).toNat, pos, by omega_using [up, bound], ?_, ?_⟩
   · have lt := VG.Proof.Bignum.os2ip_lt (inputBytes g m i)
     have ln : (inputBytes g m i).length = (g.args a).toNat := by
       rw [inputBytes, VG.Proof.Bignum.bytesAt_length]; simp only [CallGeometry.buffer, ha]
@@ -164,17 +164,17 @@ theorem loads_ok {g : CallGeometry} {s : State} (h : Inputs g s) (len : Lengths 
   have fitsN : hdr + 4 * (nArr * (kw (g.args 1).toNat + 2)) ≤ g.size := by
     simp only [arr, S] at fits; rw [Nat.mul_left_comm] at fits; exact fits
   rw [a0] at oz
-  have Oz : Outside g.base 0 g.size s.mem z.mem := oz.mono (Nat.zero_le _) (by omega)
-  have Bz : Outside g.base 16 (g.size - 16) s.mem z.mem := oz.mono (by unfold hdr; omega) (by unfold hdr at *; omega)
+  have Oz : Outside g.base 0 g.size s.mem z.mem := oz.mono (Nat.zero_le _) (by omega_using [fitsN])
+  have Bz : Outside g.base 16 (g.size - 16) s.mem z.mem := oz.mono (by unfold hdr; omega_using []) (by unfold hdr at *; omega_using [fitsN])
   have hz := h.after (kz.mono (rs' := [.eax, .ecx, .edx, .ebp]) (by decide)) (by decide) (by decide) (h.scratchFrame Oz)
   have az : Arrs z.mem g.base (kw (g.args 1).toNat) (fun _ => 0) (List.range nArr) := by
     intro j hj
     have part := VG.Proof.Rsa.KeyWorkspace.val32_zero_part (zeros j (List.mem_range.mp hj))
-      (a := 0) (c := kw (g.args 1).toNat) (by omega)
+      (a := 0) (c := kw (g.args 1).toNat) (by omega_using [])
     simpa only [Nat.mul_zero, Nat.add_zero] using part
   have tz : w32 z.mem g.base (arr (kw (g.args 1).toNat) aVD + 4 * kw (g.args 1).toNat) = 0 := by
     have part := VG.Proof.Rsa.KeyWorkspace.val32_zero_part (zeros aVD (by decide))
-      (a := kw (g.args 1).toNat) (c := 1) (by omega)
+      (a := kw (g.args 1).toNat) (c := 1) (by omega_using [])
     simpa only [val32, Nat.mul_zero, Nat.add_zero] using part
   refine WP.mono (loadInputs_ok hz len _ az tz (inputs g.full) (inputs_fit _) (inputs_nodup _))
     fun t ⟨ht, kt, vt, tt, rt⟩ => ?_

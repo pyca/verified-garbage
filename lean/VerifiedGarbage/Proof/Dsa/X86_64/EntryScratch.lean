@@ -24,7 +24,7 @@ open VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Proof.MlKem.X86_64
 
 theorem stackAddress (sp : Addr) (j : Nat) :
     sp + BitVec.ofInt 64 (8 * (j : Int)) = off sp (8 * j) := by
-  rw [show 8 * (j : Int) = ((8 * j : Nat) : Int) by omega, BitVec.ofInt_natCast]
+  rw [show 8 * (j : Int) = ((8 * j : Nat) : Int) by omega_using [], BitVec.ofInt_natCast]
 
 theorem entryScratch_ok {s : State} {sp B : Addr} (j : Nat) (hsp : s.gpr .rsp = sp)
     (hr : InRegions (s.rd ++ s.wr) (off sp (8 * j)) 8) (hb : word s.mem sp (8 * j) = B) :
@@ -35,7 +35,7 @@ theorem entryScratch_ok {s : State} {sp B : Addr} (j : Nat) (hsp : s.gpr .rsp = 
   xrun [State.ea, Crt.stk, hsp, stackAddress, hr, hb]
 
 theorem saved_ne_r11 {i : Nat} (hi : i < 6) : saved.getD i .rax ≠ .r11 := by
-  rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 by omega) with rfl | rfl | rfl | rfl | rfl | rfl <;> decide
+  rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 by omega_using [hi]) with rfl | rfl | rfl | rfl | rfl | rfl <;> decide
 
 theorem entry_stack_frame {mem mem' : Mem} {B sp : Addr} {Z o n d : Nat}
     (hf : Outside B o n mem mem') (hhi : o + n ≤ Z)
@@ -47,6 +47,6 @@ theorem entry_stack_frame {mem mem' : Mem} {B sp : Addr} {Z o n d : Nat}
 theorem entry_saved_frame {mem mem' : Mem} {B : Addr} {i : Nat}
     (hf : Outside B 256 (pWorkspace - 256) mem mem') (hi : i < 6) :
     word mem' B (8 * i) = word mem B (8 * i) :=
-  hf.word (Or.inl (by omega)) (by omega)
+  hf.word (Or.inl (by omega_using [hi])) (by omega_using [hi])
 
 end VG.Proof.Dsa.X86_64

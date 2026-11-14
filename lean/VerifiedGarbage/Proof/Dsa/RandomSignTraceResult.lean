@@ -39,7 +39,7 @@ theorem random_sign_attempt_continue {p : RandomSignInput} {used fuel : Nat}
     | none =>
       simp only [hs, Option.isSome_none, Bool.false_eq_true, ite_false] at h
       have hn : fuel ≠ 1 := by intro he; rw [ite_eq_left he] at h; contradiction
-      exact ⟨by omega, k, hc, hs⟩
+      exact ⟨by omega_using [hf, hn], k, hc, hs⟩
 
 theorem random_sign_attempt_status_agree {p r : RandomSignInput} {used fuel : Nat}
     (htrace : (randomSignRemaining p used (fuel + 1)).trace = (randomSignRemaining r used (fuel + 1)).trace)
@@ -64,8 +64,8 @@ theorem random_sign_attempt_next_trace {p r : RandomSignInput} {used fuel : Nat}
     (hr : randomSignAttemptStatus r used (fuel + 1) = 4) :
     (randomSignRemaining p (used + (randomSignDraw p used).used) fuel).trace =
       (randomSignRemaining r (used + (randomSignDraw r used).used) fuel).trace := by
-  obtain ⟨_, k, hk, hsk⟩ := random_sign_attempt_continue (by omega) hp
-  obtain ⟨_, l, hl, hsl⟩ := random_sign_attempt_continue (by omega) hr
+  obtain ⟨_, k, hk, hsk⟩ := random_sign_attempt_continue (by omega_using []) hp
+  obtain ⟨_, l, hl, hsl⟩ := random_sign_attempt_continue (by omega_using []) hr
   exact random_sign_trace_next htrace hk hl hsk hsl
 
 end VG.Proof.Dsa

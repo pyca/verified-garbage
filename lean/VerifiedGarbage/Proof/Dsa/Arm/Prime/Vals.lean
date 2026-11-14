@@ -34,12 +34,12 @@ theorem In.sizes (pre : In P σ) : 160 ≤ P.bits ∧ P.bits ≤ 8 * P.L ∧ P.b
   have hL := pre.L
   simp only [CP.len, CP.D, Impl.Dsa.Arm.ProbablePrime.len, Impl.Dsa.Arm.ProbablePrime.draw,
     Impl.Dsa.Arm.ProbablePrime.words] at *
-  rcases pre.bits with h | h | h | h | h <;> rw [h] at hL ⊢ <;> simp at hL <;> omega
+  rcases pre.bits with h | h | h | h | h <;> rw [h] at hL ⊢ <;> simp at hL <;> omega_using [hL]
 
 /-- The candidate is odd, has `bits` bits, and fits `8 L` bits. -/
 theorem cv_shape (pre : In P σ) : cv P σ % 2 = 1 ∧ 2 ^ (P.bits - 1) ≤ cv P σ ∧ cv P σ < 2 ^ (8 * P.L) := by
   have sz := pre.sizes
-  obtain ⟨lo, hi⟩ := (VG.Proof.Dsa.bitLength_iff_bounds (by omega)).mp pre.bl
+  obtain ⟨lo, hi⟩ := (VG.Proof.Dsa.bitLength_iff_bounds (by omega_using [sz])).mp pre.bl
   exact ⟨pre.odd, lo, Nat.lt_of_lt_of_le hi (Nat.pow_le_pow_right (by decide) sz.2.1)⟩
 
 end

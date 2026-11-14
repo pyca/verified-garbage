@@ -195,10 +195,10 @@ theorem squeezeArgs_ok {s : State} {sc f : Reg} (hsc : sc ∈ preserved) (hf : f
 abbrev kW (N : Nat) (sc sp : Addr) : List Region := [⟨sc, N⟩, below sp 48]
 
 theorem st_sub {N : Nat} (sc : Addr) (hN : 840 ≤ N) : Region.Sub ⟨sc, 200⟩ ⟨sc, N⟩ := by
-  simpa using Offset.sub_base sc (d := 0) (n := 200) (k := N) (by omega)
+  simpa using Offset.sub_base sc (d := 0) (n := 200) (k := N) (by omega_using [hN])
 
 theorem kw_sub {N : Nat} (sc : Addr) (hN : 840 ≤ N) : Region.Sub ⟨sc + BitVec.ofNat 64 200, 640⟩ ⟨sc, N⟩ :=
-  Offset.sub_base sc (by omega)
+  Offset.sub_base sc (by omega_using [hN])
 
 theorem st_kw (sc : Addr) : Region.Disjoint ⟨sc, 200⟩ ⟨sc + BitVec.ofNat 64 200, 640⟩ :=
   Offset.base_disjoint sc (by decide) (by decide)
@@ -208,8 +208,8 @@ theorem cov_st {N : Nat} {ws : List Region} {sc : Addr} (hN : 840 ≤ N) (hw : P
   refine fun a n h => hw a n (Covers.of_sub (fun r hr => ?_) a n h)
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl
-  · exact ⟨_, List.mem_cons_self, 0, by simp, by simp; omega⟩
-  · exact ⟨_, List.mem_cons_self, 200, rfl, by simp; omega⟩
+  · exact ⟨_, List.mem_cons_self, 0, by simp, by simp; omega_using [hN]⟩
+  · exact ⟨_, List.mem_cons_self, 200, rfl, by simp; omega_using [hN]⟩
 
 theorem cov_app {xs ys ws : List Region} (h₁ : PPC64LE.Covers xs ws) (h₂ : PPC64LE.Covers ys ws) :
     PPC64LE.Covers (xs ++ ys) ws := by
@@ -238,7 +238,7 @@ theorem bytes_keep {W : List Region} {m m' : Mem} (hf : Frame W m m') {p : Addr}
   simp only [Spec.Sha3.bytesAt]
   refine List.map_congr_left fun i hi => hf _ fun r hr hc => ?_
   have hi' := List.mem_range.mp hi
-  exact hd r hr _ (Offset.contains_base p (by omega) (by omega)) hc
+  exact hd r hr _ (Offset.contains_base p (by omega_using [hi']) (by omega_using [hn, hi'])) hc
 
 /-- A piece's bytes while a hash runs. -/
 theorem PieceOk.bytes {N : Nat} {sc : Addr} {s₀ s : State} {p : Piece} (hp : PieceOk N sc s₀ p)
@@ -337,7 +337,7 @@ theorem zeroState_ok {N : Nat} {sc : Reg} {scA : Addr} (hsc : sc ∈ preserved) 
     (s₁ := s.write .r0 (BitVec.ofNat 64 0)) (by rw [RegUpd.gpr_write_self]; rfl) fun k hk => by
       rw [esc, RegUpd.wr_write]
       have := he.big
-      exact he.w _ _ (in_base List.mem_cons_self (by omega) (by omega)))
+      exact he.w _ _ (in_base List.mem_cons_self (by omega_using [hk, this]) (by omega_using [hk])))
     fun s₂ h₂ => ?_
   have hf := h₂.frame
   have hz := h₂.zero
@@ -392,7 +392,7 @@ theorem hash_ok {N n : Nat} {sc f : Reg} {scA out : Addr} (hsc : sc ∈ preserve
   rw [hk₄.cs _ hf, hout] at h6
   have dsp₅ : (below s₅.sp 48).Disjoint ⟨out, n⟩ := by rw [hk₅.sp]; exact dsp
   have hS : SqueezeArgs s₅ scA out (scA + BitVec.ofNat 64 200) 136 0 n :=
-    ⟨h3, h4, h5, h6, h7, h8, rate136, by decide, by omega, e₅.sp, dsc.symm.sub_left (st_sub scA he.big),
+    ⟨h3, h4, h5, h6, h7, h8, rate136, by decide, by omega_using [hn], e₅.sp, dsc.symm.sub_left (st_sub scA he.big),
       st_kw scA, dsc.sub_right (kw_sub scA he.big), e₅.d.sub_right (st_sub scA he.big), dsp₅, e₅.d.sub_right (kw_sub scA he.big)⟩
   have cw₅ : PPC64LE.Covers [⟨scA, 200⟩, ⟨out, n⟩, ⟨scA + BitVec.ofNat 64 200, 640⟩] s₅.wr := by
     rw [hk₅.wr]

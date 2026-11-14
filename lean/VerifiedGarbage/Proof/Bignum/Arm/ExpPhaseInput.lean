@@ -40,7 +40,7 @@ theorem expPhase_init_ready (s : State) {base ep : BitVec 32} {len w M x : Nat} 
   · intro i hi
     rw [frame.bytes (R := ⟨State.addr ep, eb.length⟩)
       (by intro r hr; simp only [List.mem_singleton] at hr; subst r; exact h.separate)
-      (by change eb.length ≤ 2 ^ 64; have := h.countFit; omega) hi]
+      (by change eb.length ≤ 2 ^ 64; have := h.countFit; omega_using [this]) hi]
     exact h.bytes i hi
 
 end VG.Proof.Bignum.Arm

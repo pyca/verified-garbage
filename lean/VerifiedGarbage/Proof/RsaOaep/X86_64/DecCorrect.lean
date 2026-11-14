@@ -52,14 +52,14 @@ theorem resK_ok {Hm : Stream} {u : State} {F S : Addr} (L : Lay u F S) {V : Nat 
     ⟨(kx.trans k2).mono (by decide), L'.congr (k2.gpr (by decide)) k2.2.2 (by rw [hm2]), hm2 ▸ R', hcf⟩
 
 theorem decKs_iff {k : Nat} (h : k ∈ decKs) : k = 14 ∨ (21 ≤ k ∧ k ≤ 29) := by
-  simp only [decKs, List.mem_cons, List.not_mem_nil, or_false] at h; omega
+  simp only [decKs, List.mem_cons, List.not_mem_nil, or_false] at h; omega_using [h]
 
 theorem ArgsD_privW (s : State) : ArgsD s (privW s) := fun j hj => by
   have := decKs_iff hj
-  simp only [privW, upd, show j ≠ 0 by omega, show j ≠ 1 by omega, show j ≠ 2 by omega, show j ≠ 3 by omega,
-    show j ≠ 4 by omega, show j ≠ 5 by omega, show j ≠ 6 by omega, show j ≠ 7 by omega, show j ≠ 8 by omega,
-    show j ≠ 9 by omega, show j ≠ 10 by omega, show j ≠ 11 by omega, show j ≠ 12 by omega,
-    show j ≠ 13 by omega, ↓reduceIte]
+  simp only [privW, upd, show j ≠ 0 by omega_using [this], show j ≠ 1 by omega_using [this], show j ≠ 2 by omega_using [this], show j ≠ 3 by omega_using [this],
+    show j ≠ 4 by omega_using [this], show j ≠ 5 by omega_using [this], show j ≠ 6 by omega_using [this], show j ≠ 7 by omega_using [this], show j ≠ 8 by omega_using [this],
+    show j ≠ 9 by omega_using [this], show j ≠ 10 by omega_using [this], show j ≠ 11 by omega_using [this], show j ≠ 12 by omega_using [this],
+    show j ≠ 13 by omega_using [this], ↓reduceIte]
 
 /-! ## The end -/
 
@@ -85,7 +85,7 @@ theorem decEnd_ok {s s₂ : State} (hp : DPre s) (he : EnvD s s₂) {o : Spec.Rs
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl
     · have := Offset.disjoint_below (s.gpr .rsp) (n := decStack) (d := 0) (k := 8)
-        (by unfold decStack privStack Impl.RsaOaep.X86_64.frameBytes; omega)
+        (by unfold decStack privStack Impl.RsaOaep.X86_64.frameBytes; omega_using [])
       simpa only [stkD, BitVec.ofNat_eq_ofNat, BitVec.add_zero] using this
     · exact hp.dRO
     · exact hp.dRM
@@ -144,7 +144,7 @@ theorem decAfterTab_ok {s ta : State} (hp : DPre s) (htab : DTabs (tables vs) s)
     fun tb ⟨⟨kb, h11b, hmb, syb⟩, spb, mxb, fb'⟩ _ => ?_)
   have heb : EnvD s tb := hea.step kb.2.1 kb.2.2 spb (keep_cs3 kb (by decide)) mxb fb'
   have hDl : w₁.H.stream.D ∈ lens := by rw [hsD, ← hlen]; exact mem_lens w₁.mgf.mem
-  refine byLen_ok hDl (by decide) (by have := mem_lens_lt hDl; omega) h11b fun t1' kc hmc syc mxc => ?_
+  refine byLen_ok hDl (by decide) (by have := mem_lens_lt hDl; omega_using [this]) h11b fun t1' kc hmc syc mxc => ?_
   rw [decTail_D (G := ofLen w₁.H.stream.D) (G' := w₁.H.stream) rfl]
   have he1' : EnvD s t1' := heb.step kc.2.1 kc.2.2 (kc.gpr (by simp)) (keep_cs3 kc rfl) mxc
     (by rw [hmc]; exact Frame.refl _ _)
@@ -155,19 +155,19 @@ theorem decAfterTab_ok {s ta : State} (hp : DPre s) (htab : DTabs (tables vs) s)
   have hax' : t1'.gpr .rax = r := (kc.gpr (by simp)).trans ((kb.gpr (by decide)).trans hax)
   unfold decTail seqs
   have hW1 : ArgsD s (upd W 35 (stackArg s 17)) := hA.of fun j hj => by
-    have := decKs_iff hj; simp only [upd]; rw [ifn (by omega)]
+    have := decKs_iff hj; simp only [upd]; rw [ifn (by omega_using [this])]
   obtain ⟨-, w21, -, w23, -, -, -, -, -, w29⟩ := hW1.w
   have w23' : upd W 35 (stackArg s 17) 23 = BitVec.ofNat 64 (s.gpr .r8).toNat := by
     rw [w23, BitVec.ofNat_toNat, BitVec.setWidth_eq]
-  refine WP.seq (WP.mono_syms (wp_good (block_good _ rfl) (resK_ok (Hm := w₁.H.stream) L1' R1' w23' (by omega)
-      (by omega)))
+  refine WP.seq (WP.mono_syms (wp_good (block_good _ rfl) (resK_ok (Hm := w₁.H.stream) L1' R1' w23' (by omega_using [hk2])
+      (by omega_using [hDN, hN, hsD])))
     fun t2 ⟨⟨k2, L2, R2, hcf2⟩, sp2, mx2, f2⟩ sy2 => ?_)
   have he2 : EnvD s t2 := he1'.step k2.2.1 k2.2.2 sp2 (keep_cs3 k2 (by decide)) mx2 f2
   rw [hax'] at R2
   generalize hW2 : upd (upd W 35 (stackArg s 17)) 30 ((r.setWidth 32).setWidth 64) = W2 at R2
   have hA2 : ArgsD s W2 := hW1.of fun j hj => by
     rw [← hW2]; simp only [upd]
-    rw [ifn (by simp only [decKs, List.mem_cons, List.not_mem_nil, or_false] at hj; omega)]
+    rw [ifn (by simp only [decKs, List.mem_cons, List.not_mem_nil, or_false] at hj; omega_using [hj])]
   have h30 : W2 30 = (r.setWidth 32).setWidth 64 := by rw [← hW2]; simp [upd]
   have h35 : W2 35 = stackArg s 17 := by rw [← hW2]; simp [upd]
   -- The private operation's outcome, in our working space and slot 30.
@@ -188,7 +188,7 @@ theorem decAfterTab_ok {s ta : State} (hp : DPre s) (htab : DTabs (tables vs) s)
   · rw [decide_eq_true_eq] at hb
     obtain ⟨-, x21, -, x23, -, -, -, -, -, x29⟩ := hA2.w
     have hout : (⟨s.gpr .rdi, (s.gpr .r8).toNat⟩ : Region) = outR s := by simp [outR, hp.hsi]
-    have sS : Region.Sub ⟨stackArg s 15, oRsa⟩ (scrD s) := Region.sub_prefix (by have := hp.hsl; unfold oRsa; omega)
+    have sS : Region.Sub ⟨stackArg s 15, oRsa⟩ (scrD s) := Region.sub_prefix (by have := hp.hsl; unfold oRsa; omega_using [this])
     have aO : Apart (fb s) (stackArg s 15) ⟨s.gpr .rdi, (s.gpr .r8).toNat⟩ := by
       rw [hout]; exact ⟨hp.dKO.sub_left (frame_subD s), hp.dOs.symm.sub_left sS, hp.dKO.sub_left (ret_subD s)⟩
     have aM : Apart (fb s) (stackArg s 15) (mlR s) :=
@@ -197,7 +197,7 @@ theorem decAfterTab_ok {s ta : State} (hp : DPre s) (htab : DTabs (tables vs) s)
       have := hp.dOM; rw [hp.hsi] at this; exact this
     refine WP.mono (wp_good decFail_good (decFail_ok L2 R2 (o := s.gpr .rdi) (pm := s.gpr .rdx)
       (k := (s.gpr .r8).toNat) x21 x29 (by rw [x23, BitVec.ofNat_toNat, BitVec.setWidth_eq])
-      (by omega) hk2 (by rw [he2.wr, hout]; simp) (by have := hp.wO; rw [hp.hsi] at this; exact this) aO
+      (by omega_using [hk1]) hk2 (by rw [he2.wr, hout]; simp) (by have := hp.wO; rw [hp.hsi] at this; exact this) aO
       (by rw [he2.wr]; simp [mlR]) hp.wM aM dom))
       fun t3 ⟨⟨L3, k3, R3, hz3, hm3, _, hax3⟩, sp3, mx3, f3⟩ => fin t3 _ _ hHa hGa (he2.step k3.2.1 k3.2.2 sp3
         (keep_cs3 k3 (by decide)) mx3 f3) ?_
@@ -215,7 +215,7 @@ theorem decAfterTab_ok {s ta : State} (hp : DPre s) (htab : DTabs (tables vs) s)
       refine ⟨by rw [hax3, faultW, show W2 30 = 2 from hr]; rfl, hz3, hm3⟩
   · rw [decide_eq_false_iff_not] at hb
     exact WP.mono (decMain_ok w₁.ok w.ok w₁.mgf w.mgf hgi hgu hgf hp he2 (sy2.trans (syc.trans (syb.trans hsy)))
-      okL hmL hDmL ok hm hDm L2 R2 hA2 h35 (by omega) hres)
+      okL hmL hDmL ok hm hDm L2 R2 hA2 h35 (by omega_using [hsD, hb]) hres)
       fun t3 ⟨he3, hw3⟩ => fin t3 _ _ hHa hGa he3 hw3
 
 /-- What `decEnd_ok` gives at the end, for the tables' hash functions. -/

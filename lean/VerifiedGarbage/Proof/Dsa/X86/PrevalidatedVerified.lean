@@ -26,7 +26,7 @@ theorem validatingPublicArgs {s t : State} (H : (Spec.Dsa.validatePublicKeyContr
   constructor
   · assumption
   · intro i hi
-    have cases : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 := by omega
+    have cases : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 := by omega_using [hi]
     rcases cases with rfl | rfl | rfl | rfl | rfl | rfl <;> with_reducible assumption
 
 theorem validatingPublicDomain {s t : State} (H : (Spec.Dsa.validatePublicKeyContract abi 108).pub s t) :
@@ -149,10 +149,10 @@ theorem bytesAt_window {m : Mem} {base n : Nat} {l : List Byte} (hl : l.length =
   · intro i h₁ h₂
     have hi : i < n := by simp only [Spec.Rsa.bytesAt, List.length_map, List.length_range] at h₁; exact h₁
     have e : (BitVec.ofNat 64 base + BitVec.ofNat 64 i).toNat = base + i := by
-      rw [BitVec.toNat_add, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega),
-        Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega)]
+      rw [BitVec.toNat_add, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hb, hi]),
+        Nat.mod_eq_of_lt (by omega_using [hb]), Nat.mod_eq_of_lt (by omega_using [hl, hb, h₂])]
     simp only [Spec.Rsa.bytesAt, List.getElem_map, List.getElem_range]
-    rw [hm _ (by omega) (by omega), e, Nat.add_sub_cancel_left, List.getElem?_eq_getElem h₂, Option.getD_some]
+    rw [hm _ (by omega_using [e]) (by omega_using [hi, e]), e, Nat.add_sub_cancel_left, List.getElem?_eq_getElem h₂, Option.getD_some]
 
 theorem prevalidatedSatisfiable : ∃ s, (Spec.Dsa.verifyPrevalidatedContract abi 108).pre s := by
   have a0 : arg prevalidatedSatState 0 = 8192 := by decide

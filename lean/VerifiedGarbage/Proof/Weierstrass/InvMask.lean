@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Mont.Words
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # Inversion by divsteps: masks and signs of numbers of words
@@ -23,9 +24,9 @@ theorem wordsVal_split (m : Mem) (base : Addr) (d a : Nat) :
   | 0 => by simp [wordsVal]
   | b + 1 => by
     rw [← Nat.add_assoc, wordsVal_succ_top, wordsVal_split m base d a b, wordsVal_succ_top m base (d + 8 * a) b,
-      show d + 8 * a + 8 * b = d + 8 * (a + b) by omega, show 64 * (a + b) = 64 * a + 64 * b by omega, Nat.pow_add,
+      show d + 8 * a + 8 * b = d + 8 * (a + b) by omega_using [], show 64 * (a + b) = 64 * a + 64 * b by omega_using [], Nat.pow_add,
       Nat.mul_add (2 ^ (64 * a)), ← Nat.mul_assoc (2 ^ (64 * a))]
-    omega
+    omega_using []
 
 /-- A mask: all ones or zero. -/
 def IsMask (x : BitVec 64) : Prop := x = 0 ∨ x = BitVec.allOnes 64
@@ -43,7 +44,7 @@ theorem masked_add (m : BitVec 64) (a A b : Nat) : masked m (a + A * b) = masked
   unfold masked; split <;> simp
 
 theorem masked_le (m : BitVec 64) (v : Nat) : masked m v ≤ v := by
-  unfold masked; split <;> omega
+  unfold masked; split <;> omega_using []
 
 /-- A word's sign, as a word: all ones if its top bit is set. -/
 def sgnW (x : BitVec 64) : Nat := if 2 ^ 63 ≤ x.toNat then 2 ^ 64 - 1 else 0
@@ -53,7 +54,7 @@ theorem shr_arith (j V s t : Nat) (hV : V < 2 ^ (64 * j)) :
     ((V + 2 ^ (64 * j) * s + 2 ^ (64 * j) * 2 ^ 64 * t) / 2 ^ 59) % (2 ^ (64 * j) * 2 ^ 64) =
       ((V + 2 ^ (64 * j) * s) / 2 ^ 59) % 2 ^ (64 * j) + 2 ^ (64 * j) * ((s / 2 ^ 59 + 2 ^ 5 * t) % 2 ^ 64) := by
   generalize 2 ^ (64 * j) = A at *
-  have hA0 : 0 < A := by omega
+  have hA0 : 0 < A := by omega_using [hV]
   have e1 : A * 2 ^ 64 * t = 2 ^ 59 * (A * (2 ^ 5 * t)) := by
     rw [show (2 : Nat) ^ 64 = 2 ^ 59 * 2 ^ 5 from rfl, Nat.mul_comm A, Nat.mul_assoc, Nat.mul_assoc,
       Nat.mul_left_comm A]
@@ -104,14 +105,14 @@ theorem shifted_cong (m : Mem) (base : Addr) (x : Nat) {k K : Nat} (hk : K - 1 �
       ((2 ^ 64 * wordsVal m base x k : Nat) : Int) % ((2 ^ (64 * K) : Nat) : Int) := by
   rw [← Int.natCast_emod, ← Int.natCast_emod]
   refine congrArg (Nat.cast : Nat → Int) ?_
-  obtain ⟨j, rfl⟩ : ∃ j, k = K - 1 + j := ⟨k - (K - 1), by omega⟩
-  rw [wordsVal_split, Nat.mul_add, ← Nat.mul_assoc, ← Nat.pow_add, show 64 + 64 * (K - 1) = 64 * K by omega,
+  obtain ⟨j, rfl⟩ : ∃ j, k = K - 1 + j := ⟨k - (K - 1), by omega_using [hk]⟩
+  rw [wordsVal_split, Nat.mul_add, ← Nat.mul_assoc, ← Nat.pow_add, show 64 + 64 * (K - 1) = 64 * K by omega_using [hK],
     Nat.add_mul_mod_self_left]
 
 /-- A number's low word, modulo `2^64`. -/
 theorem low_word (m : Mem) (base : Addr) (d L : Nat) (hL : 1 ≤ L) :
     ((word m base d).toNat : Int) % 2 ^ 64 = (wordsVal m base d L : Int) % 2 ^ 64 := by
-  obtain ⟨k, rfl⟩ : ∃ k, L = k + 1 := ⟨L - 1, by omega⟩
+  obtain ⟨k, rfl⟩ : ∃ k, L = k + 1 := ⟨L - 1, by omega_using [hL]⟩
   rw [wordsVal, Int.natCast_add, Int.natCast_mul, Int.natCast_pow]
   exact (Int.add_mul_emod_self_left _ _ _).symm
 

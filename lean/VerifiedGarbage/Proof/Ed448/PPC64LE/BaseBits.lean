@@ -41,8 +41,8 @@ theorem getD_bytesAt (m : Mem) (p : Addr) {n i : Nat} (hi : i < n) :
 theorem bit_shift (x : BitVec 64) {j : Nat} (hj : j < 64) :
     ((x <<< (63 - j)) >>> 63).toNat = (x.toNat >>> j) &&& 1 := by
   rw [toNat_shr, toNat_shl, Nat.shiftRight_eq_div_pow, Nat.and_one_is_mod,
-    show (2 : Nat) ^ 64 = 2 ^ (j + 1) * 2 ^ (63 - j) by rw [← Nat.pow_add]; congr 1; omega,
-    Nat.mul_mod_mul_right, show (2 : Nat) ^ 63 = 2 ^ j * 2 ^ (63 - j) by rw [← Nat.pow_add]; congr 1; omega,
+    show (2 : Nat) ^ 64 = 2 ^ (j + 1) * 2 ^ (63 - j) by rw [← Nat.pow_add]; congr 1; omega_using [hj],
+    Nat.mul_mod_mul_right, show (2 : Nat) ^ 63 = 2 ^ j * 2 ^ (63 - j) by rw [← Nat.pow_add]; congr 1; omega_using [hj],
     Nat.mul_div_mul_right _ _ (Nat.two_pow_pos _), Nat.pow_succ, Nat.mod_mul_right_div_self]
 
 theorem stb_byte {v : BitVec 64} {x : Nat} (h : v.toNat = x) :
@@ -68,9 +68,9 @@ theorem bitStep_ok {i j : Nat} (hi : i < 57) (hj : j < 8) {x : Nat} {s1 s : Stat
   have hB : BITS = 1064 := rfl
   have e7 : (s.gpr .r7).toNat = x := by rw [h.rest.gpr _ (by decide), h7]
   have e9 : s.gpr .r9 = b + BitVec.ofNat 64 (8 * i) := by rw [h.rest.gpr _ (by decide), h9]
-  refine wp_lsl (by omega) fun s2 u2 => wp_lsr (by decide) fun s3 u3 => ?_
+  refine wp_lsl (by omega_using []) fun s2 u2 => wp_lsr (by decide) fun s3 u3 => ?_
   have e8 : (s3.gpr .r8).toNat = (x >>> j) &&& 1 := by
-    rw [u3.gpr, u2.gpr, bit_shift _ (by omega), e7]
+    rw [u3.gpr, u2.gpr, bit_shift _ (by omega_using [hj]), e7]
   refine wp_stb (a := b + BitVec.ofNat 64 (BITS + 8 * i + j)) (by decide) (by omega_using [hj, hB])
     (by rw [u3.other _ (by decide), u2.other _ (by decide), e9, Offset.add_add]; congr 2; omega_using [])
     (by rw [u3.wr, u2.wr, h.rest.wr]; exact hc.inW (by omega_using [hi, hj, hB])) fun s4 u4 =>
@@ -82,7 +82,7 @@ theorem bitStep_ok {i j : Nat} (hi : i < 57) (hj : j < 8) {x : Nat} {s1 s : Stat
       (List.mem_singleton_self _) _ (Offset.contains _ (by omega_using []) (by omega_using []) (by omega_using [hi, hj, hB]))
   · rw [u4.mem, VG.WriteBytes.writeW8_apply, u3.mem, u2.mem]
     rcases Nat.lt_succ_iff_lt_or_eq.mp hj' with hj' | rfl
-    · rw [iteF (Offset.add_ofNat_ne _ (by omega) (by omega_using [hi, hj, hB]) (by omega))]; exact h.bits j' hj'
+    · rw [iteF (Offset.add_ofNat_ne _ (by omega_arith) (by omega_using [hi, hj, hB]) (by omega_using [hj']))]; exact h.bits j' hj'
     · rw [iteT rfl]; exact stb_byte e8
 
 /-- The loop invariant of `bits` from `s0`, before byte `i`. -/

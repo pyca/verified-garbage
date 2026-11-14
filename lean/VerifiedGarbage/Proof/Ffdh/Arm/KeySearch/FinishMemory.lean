@@ -50,9 +50,9 @@ theorem KeyDone.output_after_used {p : KeyPublic sampling} {original s : State} 
     {m : Mem} (h : KeyDone p original result s) (frame : Frame [rUsed p] s.mem m) :
     KeyOutput p result m := by
   have xeq := bytesAt_frame (r := rX p) frame (by simpa using h.input.used_separate.1)
-    (by change p.len ≤ 2 ^ 64; have := h.input.bounds.maxLength; omega)
+    (by change p.len ≤ 2 ^ 64; have := h.input.bounds.maxLength; omega_using [this])
   have yeq := bytesAt_frame (r := rY p) frame (by simpa using h.input.used_separate.2.1)
-    (by change p.len ≤ 2 ^ 64; have := h.input.bounds.maxLength; omega)
+    (by change p.len ≤ 2 ^ 64; have := h.input.bounds.maxLength; omega_using [this])
   have before := h.output
   cases outcome : result.outcome <;> simp only [KeyOutput, outcome] at before ⊢ <;>
     exact ⟨xeq.trans before.1, yeq.trans before.2⟩
@@ -64,7 +64,7 @@ theorem KeyDone.policy_after_used {p : KeyPublic sampling} {original s : State} 
   apply List.map_congr_left
   intro j hj
   have bound : j < 4 := List.mem_range.mp hj
-  exact frame.readW (r := rControl p) (Offset.contains_base _ (by omega) (by omega))
+  exact frame.readW (r := rControl p) (Offset.contains_base _ (by omega_using [bound]) (by omega_using [bound]))
     (by simpa using h.input.used_separate.2.2) (by decide)
 
 end VG.Proof.Ffdh.Arm.KeySearch

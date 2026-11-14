@@ -206,19 +206,19 @@ theorem subRound_ok (d t : VReg) (s : State) (hd : d ≠ .v0 ∧ d ≠ .v3 ∧ d
 theorem w_rot {m : Mem} {P : Addr} {nk j : Nat} (h3 : nk = 4 ∨ nk = 8) (hj : j % nk = 0) :
     W m P nk (j + nk) = W m P nk j ^^^
       ((sub32 (W m P nk (j + nk - 1))).rotateRight 8 ^^^ (rc (j / nk + 1)).setWidth 32) := by
-  rw [W_ge (by omega) (by omega), Nat.add_sub_cancel, temp32, ite_eq_left (by rcases h3 with rfl | rfl <;> omega),
-    show (j + nk) / nk = j / nk + 1 by rcases h3 with rfl | rfl <;> omega]
+  rw [W_ge (by omega_using [h3]) (by omega_using []), Nat.add_sub_cancel, temp32, ite_eq_left (by rcases h3 with rfl | rfl <;> omega_using [hj]),
+    show (j + nk) / nk = j / nk + 1 by rcases h3 with rfl | rfl <;> omega_using []]
 
 theorem w_sub {m : Mem} {P : Addr} {j : Nat} (hj : j % 8 = 4) :
     W m P 8 (j + 8) = W m P 8 j ^^^ sub32 (W m P 8 (j + 8 - 1)) := by
-  rw [W_ge (by omega) (by omega), Nat.add_sub_cancel, temp32, ite_eq_right (by omega),
-    ite_eq_left ⟨by decide, by omega⟩]
+  rw [W_ge (by omega_using []) (by omega_using []), Nat.add_sub_cancel, temp32, ite_eq_right (by omega_using [hj]),
+    ite_eq_left ⟨by decide, by omega_using [hj]⟩]
 
 theorem w_lin {m : Mem} {P : Addr} {nk j : Nat} (h3 : nk = 4 ∨ nk = 8) (hj : j % 4 = 0) :
     ∀ k, 0 < k → k < 4 → W m P nk (j + nk + k) = W m P nk (j + k) ^^^ W m P nk (j + nk + k - 1) := by
   intro k hk0 hk
-  rw [W_ge (by omega) (by omega), show j + nk + k - nk = j + k by omega, temp32,
-    ite_eq_right (by rcases h3 with rfl | rfl <;> omega), ite_eq_right (by rcases h3 with rfl | rfl <;> omega)]
+  rw [W_ge (by omega_using [h3]) (by omega_using []), show j + nk + k - nk = j + k by omega_using [], temp32,
+    ite_eq_right (by rcases h3 with rfl | rfl <;> omega_using [hj, hk0, hk]), ite_eq_right (by rcases h3 with rfl | rfl <;> omega_arith)]
 
 /-! ## 16-byte keys -/
 
@@ -230,7 +230,7 @@ theorem subi4_ok (s : State) : WP isa (.block [.subi .r4 .r4 1]) s (· = s.write
 theorem schedule_wr {base s : State} {P S : Addr} {K : Nat} (hc : KeyConfig base P S K) (hk : Keep keyGprs base s)
     {d : Nat} (hd : d + 16 ≤ 240) : InRegions s.wr (S + BitVec.ofNat 64 d) 16 := by
   rw [hk.2.2]
-  exact ⟨⟨S, 240⟩, hc.schedule, Offset.contains_base _ (by omega) (by omega)⟩
+  exact ⟨⟨S, 240⟩, hc.schedule, Offset.contains_base _ (by omega_using [hd]) (by omega_using [hd])⟩
 
 structure VInv4 (base : State) (P S : Addr) (r : Nat) (s : State) : Prop where
   bound : r ≤ 10
@@ -247,21 +247,21 @@ theorem rot_next {m : Mem} {P : Addr} {nk j : Nat} (h3 : nk = 4 ∨ nk = 8) (hj 
     ∀ k < 4, W m P nk (j + nk + k) =
       ((sub32 (W m P nk (j + nk - 1))).rotateRight 8 ^^^ (rc (j / nk + 1)).setWidth 32) ^^^
         Proof.Aes.PPC64LE.Crypto.pre (W m P nk) j k :=
-  next_pre (w_rot h3 hj) (w_lin h3 (by rcases h3 with rfl | rfl <;> omega))
+  next_pre (w_rot h3 hj) (w_lin h3 (by rcases h3 with rfl | rfl <;> omega_using [hj]))
 
 theorem vstep4 {base s : State} {P S : Addr} {r : Nat} (hc : KeyConfig base P S 16) (h : VInv4 base P S r s)
     (hr : r < 10) : WP isa (.block Impl.Aes.PPC64LE.Crypto.body128) s (VInv4 base P S (r + 1)) := by
   rw [Impl.Aes.PPC64LE.Crypto.body128, WP.block_append_iff]
   refine WP.mono (rotRound_ok .v1 .v1 s (by decide) (by decide) h.cst h.rcon
-    (by rw [h.out]; exact schedule_wr hc h.keep (by omega))) fun u ⟨h6, R, hR, o⟩ => ?_
+    (by rw [h.out]; exact schedule_wr hc h.keep (by omega_using [hr]))) fun u ⟨h6, R, hR, o⟩ => ?_
   refine WP.mono (subi4_ok u) fun v hv => ?_
   subst hv
   have lw := Local.write u .r4 (u.gpr .r4 - BitVec.ofNat 64 1)
   have hkey : Rk (W base.mem P 4) (4 * (r + 1)) (u.vpr .v1) := by
-    rw [o.key, show 4 * (r + 1) = 4 * r + 4 by omega]
+    rw [o.key, show 4 * (r + 1) = 4 * r + 4 by omega_using []]
     refine step_rk h.key (rot_temp h.key hR) ?_
-    have e := rot_next (m := base.mem) (P := P) (nk := 4) (j := 4 * r) (by decide) (by omega)
-    rwa [show 4 * r + 4 - 1 = 4 * r + 3 by omega, show 4 * r / 4 + 1 = r + 1 by omega] at e
+    have e := rot_next (m := base.mem) (P := P) (nk := 4) (j := 4 * r) (by decide) (by omega_using [])
+    rwa [show 4 * r + 4 - 1 = 4 * r + 3 by omega_using [], show 4 * r / 4 + 1 = r + 1 by omega_using []] at e
   have lk : Keep ([.r0, .r5, .r6, .r8] ++ [.r4]) s (u.write .r4 (u.gpr .r4 - BitVec.ofNat 64 1)) :=
     o.keep.trans lw.keep
   have lv : ∀ x, x ≠ .v0 → x ≠ .v3 → x ≠ .v8 → x ≠ .v9 → x ≠ .v1 →
@@ -270,40 +270,40 @@ theorem vstep4 {base s : State} {P S : Addr} {r : Nat} (hc : KeyConfig base P S 
   have hcst : VConst (u.write .r4 (u.gpr .r4 - BitVec.ofNat 64 1)) :=
     h.cst.of_keep lk (by simp) fun x hx => by
       rcases hx with rfl | rfl | rfl | rfl <;> exact lv _ (by decide) (by decide) (by decide) (by decide) (by decide)
-  refine ⟨by omega, (h.keep.trans lk).mono (by simp [keyGprs]), hcst, ?_, ?_, ?_, ?_, ?_, ?_⟩
+  refine ⟨by omega_using [hr], (h.keep.trans lk).mono (by simp [keyGprs]), hcst, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · rw [lw.keep.gpr (by decide), o.out, h.out, Offset.add_add]
-    exact congrArg (fun k => S + BitVec.ofNat 64 k) (by omega)
-  · rw [RegUpd.gpr_write_self, o.keep.gpr (by decide), h.left, Offset.ofNat_sub_ofNat (by omega)]
-    exact congrArg (BitVec.ofNat 64) (by omega)
+    exact congrArg (fun k => S + BitVec.ofNat 64 k) (by omega_using [])
+  · rw [RegUpd.gpr_write_self, o.keep.gpr (by decide), h.left, Offset.ofNat_sub_ofNat (by omega_using [hr])]
+    exact congrArg (BitVec.ofNat 64) (by omega_using [])
   · rw [lw.keep.gpr (by decide), h6, h.rcon]
-    exact rcNext_rc ⟨r + 1, by omega⟩ (by simp)
+    exact rcNext_rc ⟨r + 1, by omega_using [hr]⟩ (by simp)
   · rw [lw.v .v1 (by simp)]; exact hkey
-  · rw [lw.mem, o.mem, h.out, show 16 * r + 16 = 4 * (4 * r + 4) by omega, show 4 * (r + 1) + 4 = 4 * r + 4 + 4 by omega]
-    exact store_good h.good (by rw [show 4 * r + 4 = 4 * (r + 1) by omega]; exact hkey) (by omega)
+  · rw [lw.mem, o.mem, h.out, show 16 * r + 16 = 4 * (4 * r + 4) by omega_using [], show 4 * (r + 1) + 4 = 4 * r + 4 + 4 by omega_using []]
+    exact store_good h.good (by rw [show 4 * r + 4 = 4 * (r + 1) by omega_using []]; exact hkey) (by omega_using [hr])
   · rw [lw.mem, o.mem, h.out]
-    exact h.frame.write (List.mem_singleton_self _) _ (Offset.contains_base _ (by omega) (by omega))
+    exact h.frame.write (List.mem_singleton_self _) _ (Offset.contains_base _ (by omega_using [hr]) (by omega_using [hr]))
 
 theorem loop128_ok {base s : State} {P S : Addr} (hc : KeyConfig base P S 16) (h : VInv4 base P S 0 s) :
     WP isa (.loop (.block Impl.Aes.PPC64LE.Crypto.body128) (.nonzero .d .r4)) s (VInv4 base P S 10) := by
   have step : ∀ j t, j+1 ≤ 10 → VInv4 base P S j t →
       WP isa (.block Impl.Aes.PPC64LE.Crypto.body128) t (VInv4 base P S (j+1)) :=
-    fun _ _ hj ht => vstep4 hc ht (by omega)
+    fun _ _ hj ht => vstep4 hc ht (by omega_using [hj])
   have test : ∀ j t, j ≤ 10 → VInv4 base P S j t →
       (10-j < 1 → eval (.nonzero .d .r4) t = some false) ∧
       (1 ≤ 10-j → eval (.nonzero .d .r4) t = some true) := by
     intro j t hj ht
-    have he := eval_nonzero_ofNat' t .r4 (by omega) ht.left
+    have he := eval_nonzero_ofNat' t .r4 (by omega_using []) ht.left
     change eval (.nonzero .d .r4) t = some (decide (10-j ≠ 0)) at he
     constructor
     · intro hl
-      rw [he, show 10-j = 0 by omega]
+      rw [he, show 10-j = 0 by omega_using [hl]]
       rfl
     · intro hl
       rw [he]
-      simp only [ne_eq, show ¬10-j = 0 by omega, not_false_eq_true, decide_true]
-  refine WP.mono (WP.chunk_loop (by decide) (by omega) h step test) ?_
+      simp only [ne_eq, show ¬10-j = 0 by omega_using [hl], not_false_eq_true, decide_true]
+  refine WP.mono (WP.chunk_loop (by decide) (by omega_using []) h step test) ?_
   rintro t ⟨j, hj, he, ht⟩
-  have hje : j = 10 := by omega
+  have hje : j = 10 := by omega_using [hj, he]
   exact hje ▸ ht
 
 /-! ## 32-byte keys -/
@@ -322,7 +322,7 @@ structure VInv8 (base : State) (P S : Addr) (i : Nat) (s : State) : Prop where
 
 theorem sub_next {m : Mem} {P : Addr} {j : Nat} (hj : j % 8 = 4) :
     ∀ k < 4, W m P 8 (j + 8 + k) = sub32 (W m P 8 (j + 8 - 1)) ^^^ Proof.Aes.PPC64LE.Crypto.pre (W m P 8) j k :=
-  next_pre (w_sub hj) (w_lin (by decide) (by omega))
+  next_pre (w_sub hj) (w_lin (by decide) (by omega_using [hj]))
 
 /-- The four words after `8 i + 8`, from `v1` and `v2`. -/
 theorem keyA_next {base s u : State} {P : Addr} {i : Nat} {R : BitVec 128}
@@ -331,15 +331,15 @@ theorem keyA_next {base s u : State} {P : Addr} {i : Nat} {R : BitVec 128}
     (o : RoundOut .v1 (sboxV (permSelf (s.vpr .v2) (rotCtl ++ rotCtl)) ^^^ R) s u) :
     Rk (W base.mem P 8) (8 * i + 8) (u.vpr .v1) := by
   rw [o.key]
-  refine step_rk hA (by simpa only [show 8 * i + 4 + 3 = 8 * i + 8 - 1 by omega] using rot_temp hB hR) ?_
-  have e := rot_next (m := base.mem) (P := P) (nk := 8) (j := 8 * i) (by decide) (by omega)
-  rwa [show 8 * i / 8 + 1 = i + 1 by omega] at e
+  refine step_rk hA (by simpa only [show 8 * i + 4 + 3 = 8 * i + 8 - 1 by omega_using []] using rot_temp hB hR) ?_
+  have e := rot_next (m := base.mem) (P := P) (nk := 8) (j := 8 * i) (by decide) (by omega_using [])
+  rwa [show 8 * i / 8 + 1 = i + 1 by omega_using []] at e
 
 theorem vstep8 {base s : State} {P S : Addr} {i : Nat} (hc : KeyConfig base P S 32) (h : VInv8 base P S i s)
     (hi : i < 6) : WP isa (.block Impl.Aes.PPC64LE.Crypto.body256) s (VInv8 base P S (i + 1)) := by
   rw [Impl.Aes.PPC64LE.Crypto.body256, WP.block_append_iff, List.append_assoc, WP.block_append_iff]
   refine WP.mono (rotRound_ok .v1 .v2 s (by decide) (by decide) h.cst h.rcon
-    (by rw [h.out]; exact schedule_wr hc h.keep (by omega))) fun u ⟨h6, R, hR, o⟩ => ?_
+    (by rw [h.out]; exact schedule_wr hc h.keep (by omega_using [hi]))) fun u ⟨h6, R, hR, o⟩ => ?_
   have hA := keyA_next h.keyA h.keyB hR o
   have hku : Keep keyGprs base u := (h.keep.trans o.keep).mono (by simp [keyGprs])
   have hcu : VConst u := h.cst.of_keep o.keep (by simp) fun x hx => by
@@ -347,42 +347,42 @@ theorem vstep8 {base s : State} {P S : Addr} {i : Nat} (hc : KeyConfig base P S 
   have h5u : u.gpr .r5 = S + BitVec.ofNat 64 (32 * i + 48) := by
     rw [o.out, h.out, Offset.add_add]
   have hgu : Good u.mem S (W base.mem P 8) (8 * i + 12) := by
-    rw [o.mem, h.out, show 32 * i + 32 = 4 * (8 * i + 8) by omega]
-    exact store_good h.good hA (by omega)
+    rw [o.mem, h.out, show 32 * i + 32 = 4 * (8 * i + 8) by omega_using []]
+    exact store_good h.good hA (by omega_using [hi])
   have hfu : Frame [⟨S, 240⟩] base.mem u.mem := by
     rw [o.mem, h.out]
-    exact h.frame.write (List.mem_singleton_self _) _ (Offset.contains_base _ (by omega) (by omega))
-  refine WP.mono (subRound_ok .v2 .v1 u (by decide) hcu (by rw [h5u]; exact schedule_wr hc hku (by omega)))
+    exact h.frame.write (List.mem_singleton_self _) _ (Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi]))
+  refine WP.mono (subRound_ok .v2 .v1 u (by decide) hcu (by rw [h5u]; exact schedule_wr hc hku (by omega_using [hi])))
     fun w ⟨o', h6'⟩ => ?_
   have hB : Rk (W base.mem P 8) (8 * (i + 1) + 4) (w.vpr .v2) := by
-    rw [o'.key, show 8 * (i + 1) + 4 = 8 * i + 4 + 8 by omega,
+    rw [o'.key, show 8 * (i + 1) + 4 = 8 * i + 4 + 8 by omega_using [],
       o.v .v2 (by decide) (by decide) (by decide) (by decide) (by decide)]
-    refine step_rk h.keyB (by simpa only [show 8 * i + 8 + 3 = 8 * i + 4 + 8 - 1 by omega] using sub_temp hA) ?_
-    exact sub_next (by omega)
+    refine step_rk h.keyB (by simpa only [show 8 * i + 8 + 3 = 8 * i + 4 + 8 - 1 by omega_using []] using sub_temp hA) ?_
+    exact sub_next (by omega_using [])
   refine WP.mono (subi4_ok w) fun v hv => ?_
   subst hv
   have lw := Local.write w .r4 (w.gpr .r4 - BitVec.ofNat 64 1)
   have hkw := o'.keep.trans lw.keep
-  refine ⟨by omega, (hku.trans hkw).mono (by simp [keyGprs]), hcu.of_keep hkw (by simp) fun x hx => by
+  refine ⟨by omega_using [hi], (hku.trans hkw).mono (by simp [keyGprs]), hcu.of_keep hkw (by simp) fun x hx => by
       rw [lw.v x (by simp)]
       rcases hx with rfl | rfl | rfl | rfl <;> exact o'.v _ (by decide) (by decide) (by decide) (by decide) (by decide),
     ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · rw [lw.keep.gpr (by decide), o'.out, h5u, Offset.add_add]
-    exact congrArg (fun k => S + BitVec.ofNat 64 k) (by omega)
+    exact congrArg (fun k => S + BitVec.ofNat 64 k) (by omega_using [])
   · rw [RegUpd.gpr_write_self, o'.keep.gpr (by decide), o.keep.gpr (by decide), h.left,
-      Offset.ofNat_sub_ofNat (by omega)]
-    exact congrArg (BitVec.ofNat 64) (by omega)
+      Offset.ofNat_sub_ofNat (by omega_using [hi])]
+    exact congrArg (BitVec.ofNat 64) (by omega_using [])
   · rw [lw.keep.gpr (by decide), h6', h6, h.rcon]
-    exact rcNext_rc ⟨i + 1, by omega⟩ (by simp)
+    exact rcNext_rc ⟨i + 1, by omega_using [hi]⟩ (by simp)
   · rw [lw.v .v1 (by simp), o'.v .v1 (by decide) (by decide) (by decide) (by decide) (by decide),
-      show 8 * (i + 1) = 8 * i + 8 by omega]
+      show 8 * (i + 1) = 8 * i + 8 by omega_using []]
     exact hA
   · rw [lw.v .v2 (by simp)]; exact hB
-  · rw [lw.mem, o'.mem, h5u, show 32 * i + 48 = 4 * (8 * i + 12) by omega,
-      show 8 * (i + 1) + 8 = 8 * i + 12 + 4 by omega]
-    exact store_good hgu (by rw [show 8 * i + 12 = 8 * (i + 1) + 4 by omega]; exact hB) (by omega)
+  · rw [lw.mem, o'.mem, h5u, show 32 * i + 48 = 4 * (8 * i + 12) by omega_using [],
+      show 8 * (i + 1) + 8 = 8 * i + 12 + 4 by omega_using []]
+    exact store_good hgu (by rw [show 8 * i + 12 = 8 * (i + 1) + 4 by omega_using []]; exact hB) (by omega_using [hi])
   · rw [lw.mem, o'.mem, h5u]
-    exact hfu.write (List.mem_singleton_self _) _ (Offset.contains_base _ (by omega) (by omega))
+    exact hfu.write (List.mem_singleton_self _) _ (Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi]))
 
 theorem loop256_ok {base s : State} {P S : Addr} (hc : KeyConfig base P S 32) (h : VInv8 base P S 0 s) :
     WP isa (.seq (.loop (.block Impl.Aes.PPC64LE.Crypto.body256) (.nonzero .d .r4))
@@ -390,24 +390,24 @@ theorem loop256_ok {base s : State} {P S : Addr} (hc : KeyConfig base P S 32) (h
       (fun t => Keep keyGprs base t ∧ Good t.mem S (W base.mem P 8) 60) := by
   have step : ∀ j t, j+1 ≤ 6 → VInv8 base P S j t →
       WP isa (.block Impl.Aes.PPC64LE.Crypto.body256) t (VInv8 base P S (j+1)) :=
-    fun _ _ hj ht => vstep8 hc ht (by omega)
+    fun _ _ hj ht => vstep8 hc ht (by omega_using [hj])
   have test : ∀ j t, j ≤ 6 → VInv8 base P S j t →
       (6-j < 1 → eval (.nonzero .d .r4) t = some false) ∧
       (1 ≤ 6-j → eval (.nonzero .d .r4) t = some true) := by
     intro j t hj ht
-    have he := eval_nonzero_ofNat' t .r4 (by omega) ht.left
+    have he := eval_nonzero_ofNat' t .r4 (by omega_using []) ht.left
     change eval (.nonzero .d .r4) t = some (decide (6-j ≠ 0)) at he
     constructor
     · intro hl
-      rw [he, show 6-j = 0 by omega]
+      rw [he, show 6-j = 0 by omega_using [hl]]
       rfl
     · intro hl
       rw [he]
-      simp only [ne_eq, show ¬6-j = 0 by omega, not_false_eq_true, decide_true]
-  refine WP.seq (WP.mono (WP.chunk_loop (by decide) (by omega) h step test) fun t ⟨j, hj, he, ht'⟩ => ?_)
-  have ht : VInv8 base P S 6 t := (show j = 6 by omega) ▸ ht'
+      simp only [ne_eq, show ¬6-j = 0 by omega_using [hl], not_false_eq_true, decide_true]
+  refine WP.seq (WP.mono (WP.chunk_loop (by decide) (by omega_using []) h step test) fun t ⟨j, hj, he, ht'⟩ => ?_)
+  have ht : VInv8 base P S 6 t := (show j = 6 by omega_using [hj, he]) ▸ ht'
   refine WP.mono (rotRound_ok .v1 .v2 t (by decide) (by decide) ht.cst ht.rcon
-    (by rw [ht.out]; exact schedule_wr hc ht.keep (by omega))) fun u ⟨_, R, hR, o⟩ => ?_
+    (by rw [ht.out]; exact schedule_wr hc ht.keep (by omega_using []))) fun u ⟨_, R, hR, o⟩ => ?_
   refine ⟨(ht.keep.trans o.keep).mono (by simp [keyGprs]), ?_⟩
   rw [o.mem, ht.out, show 32 * 6 + 32 = 4 * (8 * 6 + 8) by rfl]
   exact store_good ht.good (keyA_next ht.keyA ht.keyB hR o) (by decide)
@@ -521,12 +521,12 @@ theorem vecSetup_ok {base s : State} {P S : Addr} {nk : Nat} (hc : KeyConfig bas
   · rw [L.keep.gpr (by simp)]; exact h7
   · rw [RegUpd.gpr_write_self]; rfl
   · rw [hv1']
-    have e := load_rk (j := 0) hg (by omega) (by omega)
+    have e := load_rk (j := 0) hg (by omega_using [h3]) (by omega_using [h3])
     rwa [Nat.mul_zero, BitVec.add_zero] at e
   · intro h8
     subst h8
     rw [hv2']
-    exact load_rk (j := 4) hg (by omega) (by omega)
+    exact load_rk (j := 4) hg (by omega_using []) (by omega_using [])
   · rw [hm]; exact hg
   · rw [hm]; exact hf
 

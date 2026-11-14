@@ -96,14 +96,14 @@ theorem stk_sub {k n : Nat} (hn : n ≤ k) (hk : k ≤ 48) :
     Region.Sub ⟨(E - BitVec.ofNat 32 k).setWidth 64, n⟩ (below E 48) := by
   unfold below
   rw [Taint.sub_setWidth (by omega_nat), Taint.sub_setWidth (by omega_nat)]
-  exact Offset.sub_below _ hk (by omega)
+  exact Offset.sub_below _ hk (by omega_using [hn, hk])
 
 /-- The `n` bytes below `E - k`, as a contract writes them, are in `below E 48`. -/
 theorem stk_sub' {k n : Nat} (h : k + n ≤ 48) :
     Region.Sub ⟨(E - BitVec.ofNat 32 k).setWidth 64 - BitVec.ofNat 64 n, n⟩ (below E 48) := by
   unfold below
   rw [Taint.sub_setWidth (by omega_nat), Taint.sub_setWidth (by omega_nat), Offset.sub_sub_ofNat]
-  exact Offset.sub_below _ (by omega) (by omega)
+  exact Offset.sub_below _ (by omega_using [h]) (by omega_using [h])
 
 end Stack
 

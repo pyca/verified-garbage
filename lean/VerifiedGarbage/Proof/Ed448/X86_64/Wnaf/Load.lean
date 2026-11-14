@@ -49,7 +49,7 @@ theorem loadBits_ok {s : State} {base : Addr} (hs : Scr s base) {o t : Nat}
       u.gpr .rax = BitVec.ofNat 64 (a + 2 * b + 4 * c + 8 * d + 16 * e) ∧
       u.gpr .rdx = BitVec.ofNat 64 a ∧ Keeps [.rax, .rdx] s u := by
   have hr : ∀ i ≤ 4, InRegions (s.rd ++ s.wr) (off base (o + i + t)) 1 :=
-    fun i hi => hs.read (by omega)
+    fun i hi => hs.read (by omega_using [ho, ht, hi])
   have hr0 : InRegions (s.rd ++ s.wr) (off base (o + t)) 1 := by
     simpa only [Nat.add_zero] using hr 0 (by decide)
   apply WP.of_runBlock
@@ -75,12 +75,12 @@ theorem loadBits_bits_ok {s : State} {base : Addr} (hs : Scr s base) {o k t : Na
       u.gpr .rdx = BitVec.ofNat 64 (k / 2 ^ t % 2) ∧ Keeps [.rax, .rdx] s u := by
   have bit (i : Nat) (hi : i ≤ 4) :
       s.mem (off base (o + i + t)) = BitVec.ofNat 8 (k / 2 ^ (t + i) % 2) := by
-    rw [show o + i + t = o + (t + i) by omega]
-    exact bs.bit hlo (by omega)
+    rw [show o + i + t = o + (t + i) by omega_using []]
+    exact bs.bit hlo (by omega_using [ht, hi])
   have he : k / 2 ^ t % 32 = k / 2 ^ t % 2 + 2 * (k / 2 ^ (t + 1) % 2) +
       4 * (k / 2 ^ (t + 2) % 2) + 8 * (k / 2 ^ (t + 3) % 2) + 16 * (k / 2 ^ (t + 4) % 2) := by
     simp only [Nat.pow_add, ← Nat.div_div_eq_div_mul]
-    omega
+    omega_using []
   have b0 := bit 0 (by decide)
   simp only [Nat.add_zero] at b0
   refine WP.mono (loadBits_ok hs ho ht hb

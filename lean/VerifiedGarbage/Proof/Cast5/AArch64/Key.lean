@@ -50,10 +50,10 @@ theorem zero_ok (s : State) (key : Addr) (hw : InRegions s.wr (s.gpr .x3) 64) :
   unfold xOff
   crun [h16, h24, Nat.reduceAdd]
   refine ⟨⟨fun i hi => ?_, fun i hi => ?_, ?_⟩, fun r h4 h9 => ?_⟩
-  · rw [zero_byte _ _ (by decide) (by omega), zero_byte _ _ (by decide) (by omega)]
+  · rw [zero_byte _ _ (by decide) (by omega_using [hi]), zero_byte _ _ (by decide) (by omega_using [hi])]
     split <;> split <;> first | rfl | omega
-  · rw [zero_byte _ _ (by decide) (by omega), zero_byte _ _ (by decide) (by omega), ite_eq_right (by omega),
-      ite_eq_right (by omega)]
+  · rw [zero_byte _ _ (by decide) (by omega_using [hi]), zero_byte _ _ (by decide) (by omega_using [hi]), ite_eq_right (by omega_using []),
+      ite_eq_right (by omega_using [])]
   · exact ((Frame.refl _ _).writeW List.mem_cons_self _ (Offset.contains_base _ (by decide) (by decide))).writeW
       List.mem_cons_self _ (Offset.contains_base _ (by decide) (by decide))
   · simp only [h4, h9, ite_false]
@@ -80,20 +80,20 @@ theorem copyStep_ok (u : State) {m0 : Mem} {key c : Addr} {j : Nat} (hj : j < 16
   simp only [BitVec.add_zero, hdi, hax, add_one']
   refine ⟨⟨fun i hi => ?_, fun i hi => ?_, ?_⟩, trivial, by rw [Nat.add_assoc], fun r h1 h2 h3 h4 => ?_⟩
   · simp only [Mem.writeW]
-    rw [byte_write _ _ _ (by omega) (by omega)]
+    rw [byte_write _ _ _ (by omega_using [hj]) (by omega_using [hi])]
     by_cases hij : i = j
     · subst hij
-      rw [ite_eq_left ⟨Nat.le_refl _, by omega⟩, ite_eq_left (by omega), Nat.sub_self]
+      rw [ite_eq_left ⟨Nat.le_refl _, by omega_using []⟩, ite_eq_left (by omega_using []), Nat.sub_self]
       apply BitVec.eq_of_getLsbD_eq; intro k hk
       simp [hk]
-    · rw [ite_eq_right (by omega), hI.x i hi]
+    · rw [ite_eq_right (by omega_using [hij]), hI.x i hi]
       by_cases hl : i < j
-      · rw [ite_eq_left hl, ite_eq_left (by omega)]
-      · rw [ite_eq_right hl, ite_eq_right (by omega)]
+      · rw [ite_eq_left hl, ite_eq_left (by omega_using [hl])]
+      · rw [ite_eq_right hl, ite_eq_right (by omega_using [hij, hl])]
   · simp only [Mem.writeW]
-    rw [byte_write _ _ _ (by omega) (by omega), ite_eq_right (by omega)]
+    rw [byte_write _ _ _ (by omega_using [hj]) (by omega_using [hi]), ite_eq_right (by omega_using [hj])]
     exact hI.z i hi
-  · exact hI.fr.writeW List.mem_cons_self _ (Offset.contains_base _ (by omega) (by omega))
+  · exact hI.fr.writeW List.mem_cons_self _ (Offset.contains_base _ (by omega_using [hj]) (by omega_using [hj]))
   · simp only [h1, h2, h3, h4, ite_false]
 
 /-- The facts of key expansion's precondition on this target (the shared
@@ -139,18 +139,18 @@ theorem expandKey_ok (s : State) (h : KPre s) :
   rw [hc] at c0 ax0
   have hkb (j : Nat) (hj : j < n) (m : Mem) (hf : Frame [⟨c, 64⟩] s.mem m) :
       m (key + BitVec.ofNat 64 j) = s.mem (key + BitVec.ofNat 64 j) := by
-    refine hf.bytes (R := ⟨key, n⟩) (fun r hr => ?_) (by show n ≤ 2 ^ 64; omega) hj
+    refine hf.bytes (R := ⟨key, n⟩) (fun r hr => ?_) (by show n ≤ 2 ^ 64; omega_using [hn]) hj
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rw [hr]; exact dkc
   have hsi0 : u0.gpr .x1 = BitVec.ofNat 64 n := by
     rw [g0 _ (by decide) (by decide), ← hn, BitVec.ofNat_toNat, BitVec.setWidth_eq]
-  refine WP.seq (WP.mono (wp_countdown (cnt := .x1) (N := n) (by omega) (by omega)
+  refine WP.seq (WP.mono (wp_countdown (cnt := .x1) (N := n) (by omega_using [hn]) (by omega_using [hl])
     (fun j u => CInv s.mem key c j u.mem ∧ u.gpr .x0 = key + BitVec.ofNat 64 j ∧
       u.gpr .x4 = c + BitVec.ofNat 64 (16 + j) ∧ (∀ r, r ∉ [Reg.x4, .x0, .x1, .x9] → u.gpr r = s.gpr r) ∧
       u.rd = s.rd ∧ u.wr = s.wr ∧ u.syms = s.syms)
-    (fun j hj u ⟨cu, du, au, gu, rdu, wru, syu⟩ _ => WP.mono (copyStep_ok u (by omega) cu du au
-      (by rw [rdu, wru]; exact CallLay.inRegions_sub hrK (by omega) (by omega))
-      (by rw [wru]; exact CallLay.inRegions_sub hw64 (by omega) (by decide))
+    (fun j hj u ⟨cu, du, au, gu, rdu, wru, syu⟩ _ => WP.mono (copyStep_ok u (by omega_using [hl, hj]) cu du au
+      (by rw [rdu, wru]; exact CallLay.inRegions_sub hrK (by omega_using [hj]) (by omega_using [hn]))
+      (by rw [wru]; exact CallLay.inRegions_sub hw64 (by omega_using [hl, hj]) (by decide))
       (hkb j hj u.mem cu.fr))
       fun v ⟨cv, dv, av, sv, gv, rdv, wrv, syv⟩ => ⟨⟨cv, dv, av, fun r hr => ?keepStep, rdv.trans rdu,
         wrv.trans wru, syv.trans syu⟩, sv⟩)

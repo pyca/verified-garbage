@@ -46,11 +46,11 @@ theorem squeeze_split (S : Spec.Sha3.State) :
     by_cases h : i<136
     · rw [List.getElem_append_left (by rw [length_squeezeFrom (rate := 136) (by decide) (by decide)]; exact h),
         squeezeFrom_getElem (by decide) (by decide) S h]
-    · rw [List.getElem_append_right (by rw [length_squeezeFrom (rate := 136) (by decide) (by decide)]; omega)]
+    · rw [List.getElem_append_right (by rw [length_squeezeFrom (rate := 136) (by decide) (by decide)]; omega_using [h])]
       simp only [length_squeezeFrom (rate := 136) (by decide) (by decide)]
       rw [squeezeFrom_getElem (by decide) (by decide) S (by
-          rw [length_squeezeFrom (rate := 136) (by decide) (by decide)] at hi; omega)]
-      rw [show 136+(i-136)=0+i from by omega]
+          rw [length_squeezeFrom (rate := 136) (by decide) (by decide)] at hi; omega_using [hi])]
+      rw [show 136+(i-136)=0+i from by omega_using [h]]
 end VG.Proof.MlDsa.AArch64.Optimized.Ball
 
 end
@@ -82,7 +82,7 @@ theorem second_ok (v : Proof.Sha3.AArch64.Permutation) {P : Sp} {σ s : State}
   unfold Impl.MlDsa.AArch64.Optimized.Ball.second
   refine WP.seq (WP.block_append (M := isa) (l₁ := ([.str .x .x9 .x25 1800,.str .x .x10 .x25 1808,.str .x .x11 .x25 1816] : List VG.AArch64.Instr))
     (l₂ := args) (WP.mono (save_ok (s := s) (p := P.scr) he.x25 (fun d hd => inScr hp he.wr (by
-      rcases mem3 hd with rfl | rfl | rfl <;> omega))) fun t ⟨kt,ft,sv⟩ => ?_))
+      rcases mem3 hd with rfl | rfl | rfl <;> omega_using []))) fun t ⟨kt,ft,sv⟩ => ?_))
   have et := env_saved hp he kt ft
   have ct : VG.Proof.MlDsa.AArch64.Sample.Ball.CStored t.mem P.a c := stored_frame hparser.stored ft (by
     intro r hr; rcases mem3 hr with rfl|rfl|rfl <;> exact a_scr' hp (by decide))
@@ -99,7 +99,7 @@ theorem second_ok (v : Proof.Sha3.AArch64.Permutation) {P : Sp} {σ s : State}
     (by rw [ku.mem,st,kt.get .x0]; exact hn)
     (by exact ⟨by rw [ku.mem]; exact sv.r9,by rw [ku.mem]; exact sv.r10,by rw [ku.mem]; exact sv.r11⟩) (by simpa only [ku.mem] using ct)) fun t₂ ⟨et₂,sv₂,ct₂,ot₂⟩ => ?_)
   refine WP.seq (WP.mono (restore_ok et₂.x25 sv₂ (fun d hd => inScrRd hp et₂.rd et₂.wr (by
-    rcases mem3 hd with rfl | rfl | rfl <;> omega))) fun t₃ ⟨kr,rr⟩ => ?_)
+    rcases mem3 hd with rfl | rfl | rfl <;> omega_using []))) fun t₃ ⟨kr,rr⟩ => ?_)
   have er := et₂.keep kr.keep kr.mem
   have pr : Parser P.a c i w t₃ := ⟨er.x26,rr.x9.trans hparser.x9,
     by rw [rr.x10,hparser.x10],by rw [rr.x11,hparser.x11],rr.x12,rr.x15,by rw [kr.mem]; exact ct₂⟩
@@ -108,7 +108,7 @@ theorem second_ok (v : Proof.Sha3.AArch64.Permutation) {P : Sp} {σ s : State}
     (fun j hj => ?_) (fun j hj => ?_) (fun j hj => inA hp er.wr hj)
     (by rw [hY]; exact (a_scr' hp (by decide)).symm) hsign) fun z hz => ?_
   · rw [kr.mem,← ot₂,MlKem.bytesAt_getD _ _ (by rw [hY] at hj; exact hj)]
-  · rw [at_add]; exact inScrRd hp er.rd er.wr (by rw [hY] at hj; omega)
+  · rw [at_add]; exact inScrRd hp er.rd er.wr (by rw [hY] at hj; omega_using [hj])
   · refine ⟨er.keepA hp hz.keep hz.frame,?_⟩
     simpa only [Fold,List.take_length] using hz.parser
 end VG.Proof.MlDsa.AArch64.Optimized.Ball
@@ -135,9 +135,9 @@ open VG.Proof.MlDsa.AArch64.Sample.Ball (spOf W)
     (hp : sbK.pre σ) (h : Initial σ s) :
     WP isa (.ite (.zero .x .x11) (.block []) (Impl.MlDsa.AArch64.Optimized.Ball.second v.callee))
       s (Sample.Ball.LP σ) := by
-  have ht : tauOf σ≤64 := by have := (Sample.Ball.params hp).2.2; omega
+  have ht : tauOf σ≤64 := by have := (Sample.Ball.params hp).2.2; omega_using [this]
   have hl : (firstBytes σ).length=136 := H_length _ _
-  have hi : (ballFold (tauOf σ) (firstBytes σ)).2≤256 := bFold_le (by simp only [Spec.MlDsa.n]; omega) _
+  have hi : (ballFold (tauOf σ) (firstBytes σ)).2≤256 := bFold_le (by simp only [Spec.MlDsa.n]; omega_using []) _
   have hg : 256-tauOf σ≤(ballFold (tauOf σ) (firstBytes σ)).2 := by
     simpa only [ballFold,Spec.MlDsa.n] using (bFold_ge (τ := tauOf σ) (h := signs (firstBytes σ)) (Vector.replicate 256 0,256-tauOf σ) ((firstBytes σ).drop 8))
   by_cases hd : (ballFold (tauOf σ) (firstBytes σ)).2=256
@@ -147,14 +147,14 @@ open VG.Proof.MlDsa.AArch64.Sample.Ball (spOf W)
     refine ⟨h.env,?_,?_⟩
     · rw [heq]; exact h.parser.x10
     · rw [heq]; exact h.parser.stored
-  · refine WP.ite (M := isa) false (by rw [eval_zero,eq_zero_iff,h.parser.x11]; simp only [decide_eq_false_iff_not, Option.some.injEq]; omega) (fun hh => nomatch hh) (fun _ => ?_)
+  · refine WP.ite (M := isa) false (by rw [eval_zero,eq_zero_iff,h.parser.x11]; simp only [decide_eq_false_iff_not, Option.some.injEq]; omega_using [hi, hd]) (fun hh => nomatch hh) (fun _ => ?_)
     refine WP.mono (second_ok v (τ := tauOf σ) (h := signs (firstBytes σ)) (Sample.Ball.spOk hp) h.env h.parser hi
       (Proof.Sha3.length_squeezeFrom (by decide) (by decide) _ _ _)
       h.pos h.next (fun j hj hjn => ?_)) fun u hu => ?_
     · rw [← BitVec.shiftRight_add]
       rw [show (ballFold (tauOf σ) (firstBytes σ)).2-(256-tauOf σ)+
-        (j-(ballFold (tauOf σ) (firstBytes σ)).2)=j-(256-tauOf σ) from by omega]
-      exact Sample.Ball.sign_bit (by omega) (by omega) hjn ht
+        (j-(ballFold (tauOf σ) (firstBytes σ)).2)=j-(256-tauOf σ) from by omega_using [hg, hj]]
+      exact Sample.Ball.sign_bit (by omega_using [ht]) (by omega_using [hg, hj]) hjn ht
     · have heq : ballFold (tauOf σ) (Sample.Ball.X σ)=
           bFold (tauOf σ) (signs (firstBytes σ)) (ballFold (tauOf σ) (firstBytes σ)) (tailBytes σ) := by
         rw [whole_bytes,fold_append_bytes _ (by rw [hl]; decide)]

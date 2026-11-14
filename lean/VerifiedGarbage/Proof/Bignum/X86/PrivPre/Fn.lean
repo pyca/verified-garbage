@@ -50,8 +50,8 @@ def primesContract : Contract isa :=
 
 theorem primes_ok {s : State} (A : CrtABI s) :
     WP isa primes s fun t => primesPost s t ∧ abiPreserved s t := by
-  have low : 48 ≤ (arg s 17).toNat * 8 := by have := A.used; omega
-  have high : (arg s 17).toNat * 8 ≤ 2 ^ 64 := by have := A.scratchBound; omega
+  have low : 48 ≤ (arg s 17).toNat * 8 := by have := A.used; omega_using [this]
+  have high : (arg s 17).toNat * 8 ≤ 2 ^ 64 := by have := A.scratchBound; omega_using []
   unfold primes
   rw [entry_eq]
   refine WP.seq (WP.mono (Crt.installed_ok A) fun u ⟨I, S, K, O⟩ => ?_)
@@ -69,20 +69,20 @@ theorem primes_ok {s : State} (A : CrtABI s) :
       simp only [Crt.savedRegisters, List.mem_cons, List.not_mem_nil, or_false] at hp
       rcases hp with rfl | rfl | rfl | rfl <;> decide
     refine (F.readW (r := ⟨off (argumentPointer s 16) 32, 16⟩)
-      (Offset.contains _ B.1 (by omega) (by decide)) ?_ (by decide)).trans (S p hp)
+      (Offset.contains _ B.1 (by omega_using [B]) (by decide)) ?_ (by decide)).trans (S p hp)
     intro r hr
     rcases List.mem_cons.mp hr with rfl | hr
     · rw [espu]
       have Z := I.room.apart
       rw [espu] at Z
-      exact (Z.sub_right (Offset.sub_base _ (by omega))).symm
+      exact (Z.sub_right (Offset.sub_base _ (by omega_using [low]))).symm
     · obtain ⟨q, hq, rfl⟩ := List.mem_map.mp hr
       rcases (props q hq).2 with h48 | h32
-      · exact Offset.disjoint _ (.inl (by omega)) (by omega) (by have := (props q hq).1; omega)
-      · exact Offset.disjoint _ (.inr (by omega)) (by omega) (by have := (props q hq).1; omega)
+      · exact Offset.disjoint _ (.inl (by omega_using [h48])) (by omega_using []) (by have := (props q hq).1; omega_using [this])
+      · exact Offset.disjoint _ (.inr (by omega_using [h32])) (by omega_using []) (by have := (props q hq).1; omega_using [h32])
   rw [espu] at F
   have Whole : Frame [⟨argumentPointer s 16, (arg s 17).toNat * 8⟩, below (s.gpr .esp) 96] s.mem v.mem := by
-    have Start := VG.Proof.Bignum.outside_frame O (by omega)
+    have Start := VG.Proof.Bignum.outside_frame O (by omega_using [])
     simp only [BitVec.add_zero] at Start
     refine (Start.mono (by intro r hr; simp only [List.mem_singleton] at hr; subst r; simp)).trans
       (F.sub fun r hr => ?_)
@@ -103,7 +103,7 @@ theorem primes_ok {s : State} (A : CrtABI s) :
   have B (i : Nat) (hi : i ∈ componentArguments) :
       Spec.Rsa.bytesAt u.mem (byteAddr (arg s i)) (arg s (i + 1)).toNat =
         Spec.Rsa.bytesAt s.mem (byteAddr (arg s i)) (arg s (i + 1)).toNat := by
-    apply VG.Proof.Bignum.scratch_bytes O (by have := (arg s (i + 1)).isLt; omega)
+    apply VG.Proof.Bignum.scratch_bytes O (by have := (arg s (i + 1)).isLt; omega_using [])
     simp only [componentArguments, List.mem_cons, List.not_mem_nil, or_false] at hi
     rcases hi with rfl | rfl | rfl | rfl | rfl | rfl | rfl
     · exact A.nScratch
@@ -116,7 +116,7 @@ theorem primes_ok {s : State} (A : CrtABI s) :
   have cv : ∀ i ∈ componentArguments, componentValue u.mem (arg s) i = componentValue s.mem (arg s) i :=
     fun i hi => by simp only [componentValue]; rw [B i hi]
   have xi : xIn u.mem (arg s) (arg s 3).toNat = xIn s.mem (arg s) (arg s 3).toNat := by
-    have e5 : (arg s 5).toNat = (arg s 3).toNat := by rw [hI.extra.inLen, BitVec.toNat_ofNat]; omega
+    have e5 : (arg s 5).toNat = (arg s 3).toNat := by rw [hI.extra.inLen, BitVec.toNat_ofNat]; omega_using []
     have := B 4 (by decide)
     rw [e5] at this
     simp only [xIn]

@@ -38,15 +38,15 @@ theorem minusHead_ok {s : State} {B : Addr} {Z w amount : Nat} {minv : BitVec 64
   · unfold minusHead cfToRbp
     xrun [State.ea, hdr, at0, hg.rdi, hdrOff, hl sW (by decide), hl (sArr aN) (by decide),
       hl (sArr aY) (by decide), hg.hdr.hw, hg.hdr.harr aN (by decide), hg.hdr.harr aY (by decide),
-      hg.scr.ld (show slot w aN + 8 ≤ Z by omega), hg.scr.st (show slot w aY + 8 ≤ Z by omega),
+      hg.scr.ld (show slot w aN + 8 ≤ Z by omega_using [hn]), hg.scr.st (show slot w aY + 8 ≤ Z by omega_using [hy]),
       show BitVec.ofInt 64 0 = 0#64 from rfl, BitVec.add_zero, sx_ofNat ha]
     refine ⟨_, rfl, _, rfl, ?_⟩
     have h := sbb_toNat (word s.mem B (slot w aN)) (BitVec.ofNat 64 amount) false
     simpa only [Bool.toNat_false, Nat.add_zero,
       show (BitVec.ofBool false).setWidth 64 = 0#64 from rfl, BitVec.sub_zero,
-      BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show amount < 2 ^ 64 by omega)] using h
+      BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show amount < 2 ^ 64 by omega_using [ha])] using h
   · refine ⟨ht12, htsi, htbx, ?_, ⟨c, htc, ?_⟩, hk⟩
-    · rw [htm]; exact writeW_outside _ _ _ (by omega)
+    · rw [htm]; exact writeW_outside _ _ _ (by omega_using [hy, hbound])
     · rw [htm]
       simpa only [wv, Nat.mul_zero, Nat.add_zero, Nat.zero_add, Nat.pow_zero, Nat.one_mul,
         word_writeW_self] using hval

@@ -42,14 +42,14 @@ theorem frameRt_saved {base out : Addr} {bytes len : Nat} {sp : BitVec 32} {m m'
     simp only [CrtRt.savedRegisters, List.mem_cons, List.not_mem_nil, or_false] at hp
     rcases hp with rfl | rfl | rfl | rfl <;> decide
   refine (F.readW (r := ⟨off base 32, 16⟩)
-    (Offset.contains base B.1 (by omega) (by decide)) ?_ (by decide)).trans (S p hp)
+    (Offset.contains base B.1 (by omega_using [B]) (by decide)) ?_ (by decide)).trans (S p hp)
   intro r hr
   simp only [rtBody, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl
   · exact Offset.disjoint_base base (by decide) (by decide)
-  · exact Offset.disjoint base (.inl (by decide)) (by decide) (by omega)
-  · exact A.sub_left (Offset.sub_base base (by omega))
-  · exact (Z.sub_right (Offset.sub_base base (by omega))).symm
+  · exact Offset.disjoint base (.inl (by decide)) (by decide) (by omega_using [high])
+  · exact A.sub_left (Offset.sub_base base (by omega_using [low]))
+  · exact (Z.sub_right (Offset.sub_base base (by omega_using [low]))).symm
 
 theorem frameRt_full {base out : Addr} {bytes len : Nat} {sp : BitVec 32} {m m' : Mem}
     (F : Frame (rtBody base out bytes len sp) m m') (low : 48 ≤ bytes) :
@@ -58,8 +58,8 @@ theorem frameRt_full {base out : Addr} {bytes len : Nat} {sp : BitVec 32} {m m' 
   intro r hr
   simp only [rtBody, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl
-  · exact ⟨⟨base, bytes⟩, by simp, Region.sub_prefix (by omega)⟩
-  · exact ⟨⟨base, bytes⟩, by simp, Offset.sub_base base (by omega)⟩
+  · exact ⟨⟨base, bytes⟩, by simp, Region.sub_prefix (by omega_using [low])⟩
+  · exact ⟨⟨base, bytes⟩, by simp, Offset.sub_base base (by omega_using [low])⟩
   · exact ⟨⟨out, len⟩, by simp, fun _ h => h⟩
   · exact ⟨_, by simp, fun _ h => h⟩
 
@@ -109,13 +109,13 @@ theorem failure_post (h : RIn base bytes len args s) (failed : specResult s.mem 
       Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s t := by
   have lo := h.lower'
   have hi := h.upper'
-  refine WP.mono (publicFailure_ok (by omega) (by omega) h.crt.outFit
+  refine WP.mono (publicFailure_ok (by omega_using [lo]) (by omega_using [hi]) h.crt.outFit
     ((h.stack 0 (by decide)).readSrc)
     (by rw [← h.outLen]; exact (h.stack 1 (by decide)).readSrc) h.crt.outWrite)
     fun t ⟨Y, B, O, K⟩ => ?_
   refine ⟨⟨?_, ?_⟩, K.mono (by decide)⟩
   · simp only [failed, Spec.Rsa.written]; exact ⟨B, Y⟩
-  · have F := VG.Proof.Bignum.outside_frame O (by omega : 0 + len ≤ 2 ^ 64)
+  · have F := VG.Proof.Bignum.outside_frame O (by omega_using [hi] : 0 + len ≤ 2 ^ 64)
     simp only [BitVec.add_zero] at F
     exact F.mono (by simp [rtBody, byteAddr])
 
@@ -160,7 +160,7 @@ end
 theorem need_le {len words : Nat} (hl : 64 ≤ len) (hw : Spec.Rsa.scratchWords len ≤ words) :
     need len ≤ words * 8 := by
   simp only [need, st, bc, mw, Spec.Rsa.modulusWords, CrtRt.numBase, Spec.Rsa.scratchWords] at *
-  omega
+  omega_using [hl, hw]
 
 theorem entry_eq : CrtRt.entry = Crt.entry := rfl
 theorem restore_eq : CrtRt.restore = Crt.restore := rfl
@@ -170,8 +170,8 @@ theorem operation_ok {s : State} (A : CrtABI s) :
     WP isa CrtRt.code s fun t =>
       Spec.Rsa.written t.mem (argumentPointer s 0) (arg s 3).toNat (t.gpr .eax)
         (specResult s.mem (arg s)) ∧ abiPreserved s t := by
-  have low : 48 ≤ (arg s 17).toNat * 8 := by have := A.used; omega
-  have high : (arg s 17).toNat * 8 ≤ 2 ^ 64 := by have := A.scratchBound; omega
+  have low : 48 ≤ (arg s 17).toNat * 8 := by have := A.used; omega_using [this]
+  have high : (arg s 17).toNat * 8 ≤ 2 ^ 64 := by have := A.scratchBound; omega_using []
   unfold CrtRt.code
   rw [entry_eq]
   refine WP.seq (WP.mono (Crt.installed_ok A) fun u ⟨I, S, K, O⟩ => ?_)
@@ -185,7 +185,7 @@ theorem operation_ok {s : State} (A : CrtABI s) :
   rw [espu] at F
   have Whole : Frame [⟨argumentPointer s 16, (arg s 17).toNat * 8⟩,
       ⟨argumentPointer s 0, (arg s 3).toNat⟩, below (s.gpr .esp) 96] s.mem v.mem := by
-    have Start := VG.Proof.Bignum.outside_frame O (by omega)
+    have Start := VG.Proof.Bignum.outside_frame O (by omega_using [])
     simp only [BitVec.add_zero] at Start
     exact (Start.mono (by intro r hr; simp only [List.mem_singleton] at hr; subst r; simp)).trans
       (frameRt_full F low)
@@ -206,7 +206,7 @@ theorem operation_ok {s : State} (A : CrtABI s) :
   have B (i : Nat) (hi : i ∈ componentArguments) :
       Spec.Rsa.bytesAt u.mem (byteAddr (arg s i)) (arg s (i + 1)).toNat =
         Spec.Rsa.bytesAt s.mem (byteAddr (arg s i)) (arg s (i + 1)).toNat := by
-    apply VG.Proof.Bignum.scratch_bytes O (by have := (arg s (i + 1)).isLt; omega)
+    apply VG.Proof.Bignum.scratch_bytes O (by have := (arg s (i + 1)).isLt; omega_using [])
     simp only [componentArguments, List.mem_cons, List.not_mem_nil, or_false] at hi
     rcases hi with rfl | rfl | rfl | rfl | rfl | rfl | rfl
     · exact A.nScratch

@@ -26,7 +26,7 @@ theorem validate_correct (s : State) (h : vkContract.pre s) :
   show WP isa Prevalidated.validate s fun t => abiPreserved s t ∧ vkContract.post s t
   have hL := vkContract_lay h
   obtain ⟨hrd, hwr, dKS, -, nw, hv, hkl, -⟩ := h
-  have hplq : 3 * (playOf s).pl + (playOf s).ql = (s.gpr .r4).toNat := by simp only [playOf]; omega
+  have hplq : 3 * (playOf s).pl + (playOf s).ql = (s.gpr .r4).toNat := by simp only [playOf]; omega_using [hkl]
   have hspec : Spec.Dsa.validatePublicKeyBytes (s.gpr .r5).toNat (s.gpr .r6).toNat
       (Spec.Rsa.bytesAt s.mem (s.gpr .r3) (s.gpr .r4).toNat) = decide (KeyOk s.mem (playOf s) (s.gpr .r3)) := by
     rw [← hplq]; exact validate_spec hv

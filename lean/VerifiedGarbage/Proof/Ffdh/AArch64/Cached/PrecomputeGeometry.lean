@@ -44,18 +44,18 @@ theorem precompute_geometry {s : State} (h : precomputePre s) : PrecomputeGeomet
  have countEq : (s.gpr .x1).toNat=3+34*(((s.gpr .x4).toNat+7)/8) :=by
   simp only [Spec.Ffdh.generationPrecomputedWords,Spec.Rsa.FixedBaseComb.precomputedWords,Spec.Rsa.precomputedWords,
    Spec.Rsa.FixedBaseComb.entries,Spec.Rsa.FixedBaseComb.teeth,Spec.Rsa.modulusWords] at count
-  omega
+  omega_using [count]
  have room : slot (((s.gpr .x4).toNat+7)/8) 8≤(s.gpr .x6).toNat*8 :=by
   unfold Spec.Rsa.scratchWords at sLen
-  dsimp only [slot,hdrBytes];omega
+  dsimp only [slot,hdrBytes];omega_using [small, sLen]
  have domLength : (precomputeDomain s).length=(s.gpr .x3).toNat :=by simp only [precomputeDomain,Spec.Rsa.bytesAt,List.length_map,List.length_range]
- refine ⟨small,large,shape,countEq,room,scratch,context,src_of_region (List.mem_append_left _ member) (by omega) dDS,?_,?_,?_,checked,constants⟩
+ refine ⟨small,large,shape,countEq,room,scratch,context,src_of_region (List.mem_append_left _ member) (by omega_using []) dDS,?_,?_,?_,checked,constants⟩
  · intro i hi
-   exact out_scr dCD.symm (contains_byte _ (by rw [domLength] at hi;exact hi) (by omega))
+   exact out_scr dCD.symm (contains_byte _ (by rw [domLength] at hi;exact hi) (by omega_using []))
  · intro i hi
-   exact out_scr dCS (contains_byte _ hi (by omega))
+   exact out_scr dCS (contains_byte _ hi (by omega_using [wC]))
  · refine ⟨⟨s.gpr .x2,(s.gpr .x3).toNat⟩,List.mem_append_left _ member,?_⟩
-   have span :=Offset.contains_base (s.gpr .x2) (d:=0) (n:=(s.gpr .x4).toNat) (k:=(s.gpr .x3).toNat) (by omega) (by decide)
+   have span :=Offset.contains_base (s.gpr .x2) (d:=0) (n:=(s.gpr .x4).toNat) (k:=(s.gpr .x3).toNat) (by omega_using [shape]) (by decide)
    simpa only [BitVec.ofNat_eq_ofNat,BitVec.add_zero] using span
 
 end VG.Proof.Ffdh.AArch64.Cached

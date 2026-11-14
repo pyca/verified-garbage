@@ -42,7 +42,7 @@ theorem CopySrc.word {D : BitVec 32} (hs : CopySrc E R W D) {t : State} (hc : Ct
     {k : Nat} (hk : k < 16) :
     t.mem.readW (State.addr D + BitVec.ofNat 64 (4 * k)) 32 =
       m₀.readW (State.addr D + BitVec.ofNat 64 (4 * k)) 32 :=
-  hc.frame.readW (r := ⟨State.addr D, 64⟩) (Offset.contains_base _ (by omega) (by omega))
+  hc.frame.readW (r := ⟨State.addr D, 64⟩) (Offset.contains_base _ (by omega_using [hk]) (by omega_using [hk]))
     hs.out (by decide)
 
 theorem copyWord_ok {D : BitVec 32} (hs : CopySrc E R W D) {k : Nat} (hk : k < 16) {t : State}
@@ -53,19 +53,19 @@ theorem copyWord_ok {D : BitVec 32} (hs : CopySrc E R W D) {k : Nat} (hk : k < 1
   have fd := hs.fit
   have fe := hs.top
   have as : State.addr (D + BitVec.ofNat 32 (4 * k)) = State.addr D + BitVec.ofNat 64 (4 * k) :=
-    addr_add (by omega)
+    addr_add (by omega_using [hk, fd])
   have ad : State.addr (E + BitVec.ofNat 32 184 + BitVec.ofNat 32 (4 * k)) =
       State.addr E + BitVec.ofNat 64 (184 + 4 * k) := by
     rw [BitVec.add_assoc, BitVec.ofNat_add_ofNat]
-    exact addr_add (by omega)
+    exact addr_add (by omega_using [hk, fe])
   have src : InRegions (t.rd ++ t.wr) (State.addr (t.gpr .r1 + BitVec.ofNat 32 (4 * k))) 4 := by
     rw [hi.r1, as, hc.rd]
-    exact ⟨_, List.mem_append_left _ hs.mem, Offset.contains_base _ (by omega) (by omega)⟩
+    exact ⟨_, List.mem_append_left _ hs.mem, Offset.contains_base _ (by omega_using [hk]) (by omega_using [hk])⟩
   have dst : InRegions t.wr (State.addr E + BitVec.ofNat 64 (184 + 4 * k)) 4 :=
-    hc.writable_frame (Offset.contains_base _ (by omega) (by omega))
+    hc.writable_frame (Offset.contains_base _ (by omega_using [hk]) (by omega_using [hk]))
   apply WP.of_runBlock
-  rw [runBlock_cons, exec_ldr (by omega) src, runStep_some, runBlock_cons,
-    exec_str (by omega) (by
+  rw [runBlock_cons, exec_ldr (by omega_using [hk]) src, runStep_some, runBlock_cons,
+    exec_str (by omega_using [hk]) (by
       simpa only [RegUpd.wr_setReg, RegUpd.gpr_setReg_of_ne _ _ (by decide : ¬ Reg.r2 = .r0), hi.r2,
         ad] using dst),
     runStep_some, runBlock_nil]
@@ -80,7 +80,7 @@ theorem copyWord_ok {D : BitVec 32} (hs : CopySrc E R W D) {k : Nat} (hk : k < 1
     rintro rfl; simp [preserved] at hr
   · intro r hr
     rw [List.mem_singleton.mp hr]
-    exact .inl (Offset.sub_base _ (by omega))
+    exact .inl (Offset.sub_base _ (by omega_using [hk]))
   · exact (RegUpd.gpr_setReg_of_ne t (r := .r0) (r' := .r1) (t.mem.readW (State.addr D + BitVec.ofNat 64 (4 * k)) 32) (by decide)).trans hi.r1
   · exact (RegUpd.gpr_setReg_of_ne t (r := .r0) (r' := .r2) (t.mem.readW (State.addr D + BitVec.ofNat 64 (4 * k)) 32) (by decide)).trans hi.r2
   · intro j hj
@@ -88,8 +88,8 @@ theorem copyWord_ok {D : BitVec 32} (hs : CopySrc E R W D) {k : Nat} (hk : k < 1
     · subst j
       rw [Mem.readW_writeW_self32]
       exact hs.word hc hk
-    · rw [Mem.readW_writeW_sep (Offset.sep _ (by omega) (by omega) (by omega)) (by decide)]
-      exact hi.words j (by omega)
+    · rw [Mem.readW_writeW_sep (Offset.sep _ (by omega_using [hjk]) (by omega_using [hk, hj]) (by omega_using [hk])) (by decide)]
+      exact hi.words j (by omega_using [hj, hjk])
 
 theorem copyWords_ok {D : BitVec 32} (hs : CopySrc E R W D) :
     ∀ n ≤ 16, ∀ {t : State}, CopyInv E g m₀ R W D 0 t →
@@ -98,7 +98,7 @@ theorem copyWords_ok {D : BitVec 32} (hs : CopySrc E R W D) :
   | 0, _, _, h => WP.block_nil h
   | n + 1, hn, _, h => by
     rw [List.range_succ, List.flatMap_append, List.flatMap_singleton, WP.block_append_iff]
-    exact WP.mono (copyWords_ok hs n (by omega) h) fun _ hu => copyWord_ok hs (by omega) hu
+    exact WP.mono (copyWords_ok hs n (by omega_using [hn]) h) fun _ hu => copyWord_ok hs (by omega_using [hn]) hu
 
 /-- 64 bytes from their sixteen little-endian 32-bit words. -/
 theorem bytesAt_of_words32 {m m' : Mem} {p p' : Addr}
@@ -112,9 +112,9 @@ theorem bytesAt_of_words32 {m m' : Mem} {p p' : Addr}
       q + BitVec.ofNat 64 (4 * (i / 4)) + BitVec.ofNat 64 (i % 4) := by
     intro q
     rw [Offset.add_add]
-    exact congrArg (fun n => q + BitVec.ofNat 64 n) (by omega)
+    exact congrArg (fun n => q + BitVec.ofNat 64 n) (by omega_using [])
   rw [ha p', ha p, Mem.readW_byte m' _ (Nat.mod_lt _ (by decide)),
-    Mem.readW_byte m _ (Nat.mod_lt _ (by decide)), h _ (by omega)]
+    Mem.readW_byte m _ (Nat.mod_lt _ (by decide)), h _ (by omega_using [hi'])]
 
 /-- After the copy, the 64 bytes at `frame 184` are the digest's. -/
 theorem copy_digest {D : BitVec 32} (hs : CopySrc E R W D) {t : State}

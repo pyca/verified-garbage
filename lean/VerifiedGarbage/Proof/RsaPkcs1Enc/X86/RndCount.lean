@@ -3,6 +3,7 @@ module
 -- separate module: names no ISA, so any target's scan of the tape can import it without x86's framework
 
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.Random
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # Drawing the padding string: the scan by its counts
@@ -32,11 +33,11 @@ theorem nz_lt : ∀ {n j : Nat} {R : List Byte}, j < scanLen n R → (nz (R.take
     · subst hb
       rw [scanLen, ite_eq_left rfl] at h
       rw [List.take_succ_cons, nz_cons_zero]
-      exact nz_lt (by omega)
+      exact nz_lt (by omega_using [h])
     · rw [scanLen, ite_eq_right hb] at h
       rw [List.take_succ_cons, nz_cons_ne hb, List.length_cons]
-      have := nz_lt (n := n) (j := j) (R := R) (by omega)
-      omega
+      have := nz_lt (n := n) (j := j) (R := R) (by omega_using [h])
+      omega_using [this]
 
 theorem scanLen_end : ∀ (n : Nat) (R : List Byte),
     (nz (R.take (scanLen n R))).length = n ∨ scanLen n R = R.length
@@ -48,17 +49,17 @@ theorem scanLen_end : ∀ (n : Nat) (R : List Byte),
       rw [scanLen, ite_eq_left rfl, List.take_succ_cons, nz_cons_zero, List.length_cons]
       rcases scanLen_end (n + 1) R with h | h
       · exact .inl h
-      · exact .inr (by omega)
+      · exact .inr (by omega_using [h])
     · rw [scanLen, ite_eq_right hb, List.take_succ_cons, nz_cons_ne hb, List.length_cons, List.length_cons]
       rcases scanLen_end n R with h | h
-      · exact .inl (by omega)
-      · exact .inr (by omega)
+      · exact .inl (by omega_using [h])
+      · exact .inr (by omega_using [h])
 
 theorem nz_take_mono {xs : List Byte} {i j : Nat} (h : i ≤ j) :
     (nz (xs.take i)).length ≤ (nz (xs.take j)).length := by
   have e := List.take_append_drop i (xs.take j)
   rw [List.take_take, Nat.min_eq_left h] at e
-  rw [← e, nz_append, List.length_append]; omega
+  rw [← e, nz_append, List.length_append]; omega_using []
 
 theorem scan_stop_iff {n j : Nat} {R : List Byte} (hj : j < scanLen n R) :
     j + 1 = scanLen n R ↔ ((nz (R.take (j + 1))).length = n ∨ j + 1 = R.length) := by
@@ -70,9 +71,9 @@ theorem scan_stop_iff {n j : Nat} {R : List Byte} (hj : j < scanLen n R) :
     · exact .inr (h.trans e)
   · rintro (e | e)
     · exact Classical.byContradiction fun hne => by
-        have := nz_lt (n := n) (j := j + 1) (R := R) (by omega)
-        omega
-    · omega
+        have := nz_lt (n := n) (j := j + 1) (R := R) (by omega_using [hj, hne])
+        omega_using [e, this]
+    · omega_using [hj, hle, e]
 
 /-- The octets a padding string's scan kept. -/
 theorem prefix_ps : ∀ {n : Nat} {R : List Byte} {r : List Byte × Nat},
@@ -95,12 +96,12 @@ theorem prefix_ps : ∀ {n : Nat} {R : List Byte} {r : List Byte × Nat},
       rw [prefix_ps hr]
 
 theorem nz_take_le (xs : List Byte) (j : Nat) : (nz (xs.take j)).length ≤ (nz xs).length := by
-  have := nz_take_mono (xs := xs) (i := j) (j := xs.length + j) (by omega)
-  rwa [List.take_of_length_le (show xs.length ≤ xs.length + j by omega)] at this
+  have := nz_take_mono (xs := xs) (i := j) (j := xs.length + j) (by omega_using [])
+  rwa [List.take_of_length_le (show xs.length ≤ xs.length + j by omega_using [])] at this
 
 theorem prefix_full {n : Nat} {R : List Byte} (h : (nz (R.take (scanLen n R))).length = n) :
     nonzeroPrefix n R = some (nz (R.take (scanLen n R)), scanLen n R) := by
-  obtain ⟨r, hr⟩ := nonzeroPrefix_isSome (n := n) (rand := R) (by have := nz_take_le R (scanLen n R); omega)
+  obtain ⟨r, hr⟩ := nonzeroPrefix_isSome (n := n) (rand := R) (by have := nz_take_le R (scanLen n R); omega_using [h, this])
   have hu := used_eq hr
   have hp := prefix_ps hr
   rw [hr, ← hu, ← hp]
@@ -108,7 +109,7 @@ theorem prefix_full {n : Nat} {R : List Byte} (h : (nz (R.take (scanLen n R))).l
 theorem nz_short {n : Nat} {R : List Byte} (h : (nz (R.take (scanLen n R))).length < n) :
     (nz R).length < n := by
   rcases scanLen_end n R with e | e
-  · omega
+  · omega_using [h, e]
   · rwa [e, List.take_length] at h
 
 /-! ## By the trace -/
@@ -139,7 +140,7 @@ theorem zero_mask {n j : Nat} {R : List Byte} (hj : j < scanLen n R) :
     (R.getD j 0 = 0 ↔ (padSearch n R).trace.getD j 0 = 1) := by
   have hl := scanLen_le n R
   rw [trace_eq, zeroMask]
-  by_cases h : R[j]'(by omega) = 0 <;>
-    simp [List.getD_eq_getElem?_getD, hj, List.getElem?_eq_getElem (show j < R.length by omega), h]
+  by_cases h : R[j]'(by omega_using [hj, hl]) = 0 <;>
+    simp [List.getD_eq_getElem?_getD, hj, List.getElem?_eq_getElem (show j < R.length by omega_using [hj, hl]), h]
 
 end VG.Proof.RsaPkcs1Enc

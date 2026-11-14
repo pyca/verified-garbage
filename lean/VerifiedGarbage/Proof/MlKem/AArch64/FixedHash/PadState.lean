@@ -19,7 +19,7 @@ theorem pad_kept {s : State} {sc : Reg} {st wk rate pos sfx : Nat}
           pos (BitVec.ofNat 8 sfx)) (rate-1) 128 := by
   have hr := Proof.Sha3.rate_bounds hs.hrate
   have ne : ∀r∈preserved,r≠Reg.x9 ∧ r≠Reg.x10 := by decide
-  refine WP.mono (pad_ok (ne _ hs.hsc.1).1 (ne _ hs.hsc.1).2 (by omega) (by omega) hp hoff
+  refine WP.mono (pad_ok (ne _ hs.hsc.1).1 (ne _ hs.hsc.1).2 (by omega_using [hp]) (by omega_using [hr]) hp hoff
     (fun a n h=>hs.cov a n (by
       obtain ⟨r,hr,hc⟩:=h
       exact ⟨r,List.mem_cons.mpr (Or.inl (List.mem_singleton.mp hr)),hc⟩))) fun t ⟨hk,hf,he⟩=>?_
@@ -35,9 +35,9 @@ theorem pad_repr {s : State} {sc : Reg} {st wk rate pos sfx : Nat} {msg : List B
       Spec.Sha3.keccakF (Spec.Sha3.stateAt t.mem (s.gpr sc+BitVec.ofNat 64 st))=
         Spec.Sha3.absorb rate (Spec.Sha3.pad rate (BitVec.ofNat 8 sfx) msg) := by
   have hr := Proof.Sha3.rate_bounds hs.hrate
-  refine WP.mono (pad_kept hs (by rw [hp]; exact Nat.mod_lt _ (by omega)) hoff) fun t ⟨hk,h30,he⟩=>?_
+  refine WP.mono (pad_kept hs (by rw [hp]; exact Nat.mod_lt _ (by omega_using [hr])) hoff) fun t ⟨hk,h30,he⟩=>?_
   refine ⟨hk,h30,?_⟩
-  rw [he,hp,repr,Proof.Sha3.absorb_pad (by omega) (by omega)]
+  rw [he,hp,repr,Proof.Sha3.absorb_pad (by omega_using [hr]) (by omega_using [hr])]
   rfl
 
 end VG.Proof.MlKem.AArch64.FixedHash

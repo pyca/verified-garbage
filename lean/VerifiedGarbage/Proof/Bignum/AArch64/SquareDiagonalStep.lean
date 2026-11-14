@@ -26,7 +26,7 @@ theorem diagonalHead_ok {s : State} {B : Addr} {Z e ea : Nat}
       Keep [.x1, .x2, .x3, .x4] s t := by
   refine WP.keep [.x1, .x2, .x3, .x4] ?_ rfl rfl rfl
   unfold VG.Impl.Bignum.AArch64.Square.diagonalHead
-  brun [h16, h11, hs.ld ha, hs.ld (show e+8 ≤ Z by omega), hs.ld he]
+  brun [h16, h11, hs.ld ha, hs.ld (show e+8 ≤ Z by omega_using [he]), hs.ld he]
 
 theorem diagonalTail_ok {s : State} {B : Addr} {Z e ea : Nat}
     (hs : Scr s B Z) (h16 : s.gpr .x16 = off B e)
@@ -36,7 +36,7 @@ theorem diagonalTail_ok {s : State} {B : Addr} {Z e ea : Nat}
        t.gpr .x16 = off B (e+16) ∧ t.gpr .x11 = off B (ea+8)) ∧ Keep [.x16, .x11] s t := by
   refine WP.keep [.x16, .x11] ?_ rfl rfl rfl
   unfold VG.Impl.Bignum.AArch64.Square.diagonalTail
-  brun [h16, h11, hs.st (show e+8 ≤ Z by omega), hs.st he]
+  brun [h16, h11, hs.st (show e+8 ≤ Z by omega_using [he]), hs.st he]
 
 theorem diagonalStep_ok {s : State} {B : Addr} {Z e ea : Nat}
     (hs : Scr s B Z) (h16 : s.gpr .x16 = off B e)

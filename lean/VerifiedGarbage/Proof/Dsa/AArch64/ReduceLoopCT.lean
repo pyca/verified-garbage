@@ -28,8 +28,8 @@ theorem reduceLoop_step (M : Mont) {p : ReducePublic} {j : Nat} {s : State}
   cases bs with
   | nil => simp only [List.length_nil] at hlen; omega
   | cons b bs =>
-    refine WP.mono (reduceByte_ok M h p.lower (by have := p.fits; have := p.upper; omega)
-      p.greater255 p.odd (by have := p.lengthBound; omega))
+    refine WP.mono (reduceByte_ok M h p.lower (by have := p.fits; have := p.upper; omega_arith)
+      p.greater255 p.odd (by have := p.lengthBound; omega_using [hlen, this]))
       fun t ⟨ht, hz, _, _⟩ => ?_
     have hpos : p.bytes.ptr + BitVec.ofNat 64 j + 1 = p.bytes.ptr + BitVec.ofNat 64 (j + 1) := by
       rw [BitVec.add_assoc]
@@ -38,7 +38,7 @@ theorem reduceLoop_step (M : Mont) {p : ReducePublic} {j : Nat} {s : State}
     refine ⟨?_, bs, _, ?_, hpos ▸ ht⟩
     · change some (t.gpr .x3 != (0#64)) = some (decide (j + 1 < p.bytes.len))
       rw [hz]
-      have hb : bs.length < 2 ^ 64 := by have := p.lengthBound; simp only [List.length_cons] at hlen; omega
+      have hb : bs.length < 2 ^ 64 := by have := p.lengthBound; simp only [List.length_cons] at hlen; omega_using [hlen, this]
       have he : (BitVec.ofNat 64 bs.length = (0#64)) ↔ bs.length = 0 := by
         constructor
         · intro h
@@ -48,14 +48,14 @@ theorem reduceLoop_step (M : Mont) {p : ReducePublic} {j : Nat} {s : State}
         · intro h; rw [h]
       have hj' : (bs.length ≠ 0) ↔ j + 1 < p.bytes.len := by
         simp only [List.length_cons] at hlen
-        omega
+        omega_using [hlen]
       simp only [bne]
       congr 1
       apply Bool.eq_iff_iff.mpr
       simp only [Bool.not_eq_true', beq_eq_false_iff_ne, decide_eq_true_eq]
       exact (not_congr he).trans hj'
     · simp only [List.length_cons] at hlen
-      omega
+      omega_using [hlen]
 
 theorem reduceLoop_ct (M : Mont) :
     RelCT isa (Two fun p s => 0 < p.bytes.len ∧ ReduceLoopPre p 0 s)
@@ -63,7 +63,7 @@ theorem reduceLoop_ct (M : Mont) :
   have hct := two_map (Φ := fun (p : ReducePublic × Nat) s => p.2 < p.1.bytes.len ∧ ReduceLoopPre p.1 p.2 s)
     (fun p : ReducePublic × Nat => p.1.remaining p.2)
     (fun p s ⟨hj, bs, acc, hlen, h⟩ =>
-      ⟨bs, acc, hlen, by omega, h⟩) (reduceByte_ct M)
+      ⟨bs, acc, hlen, by omega_using [hj, hlen], h⟩) (reduceByte_ct M)
   refine (two_loop (Φ := ReduceLoopPre) (Ψ := fun _ _ => True) (fun p => p.bytes.len) hct ?_).mono
     (fun _ _ h => h) (fun _ _ _ => trivial)
   intro p j s hj hs

@@ -65,17 +65,17 @@ theorem outPass_ok {s : State} {base : Addr} (hs : Scr s base) {o : Nat} (ho : o
   have tp : t.gpr .ebp = t.gpr .edi + BitVec.ofNat 32 o := by
     rw [tk.1 _ (by decide), tk.1 _ (by decide)]; exact hp
   refine WP.mono (carryPass_ok (s0 := t) (base := base) (o := o) (d := 0) (c := g) (by decide)
-    (by omega) (fun k hk => ?_) (fun k hk => ts.write (by omega)) (by rw [tc]; rfl) hb ?_)
+    (by omega_using [ho']) (fun k hk => ?_) (fun k hk => ts.write (by omega_using [ho', hk])) (by rw [tc]; rfl) hb ?_)
     fun u hu => ⟨hu.outs, by rw [← tm]; exact hu.mem, tk.trans hu.regs⟩
   · change (t.gpr .ebp + BitVec.ofNat 32 (0 + 4 * k)).setWidth 64 = _
     rw [tp, Offset.add_add, Nat.zero_add]
-    exact ts.ea (by omega)
+    exact ts.ea (by omega_using [ho', hk])
   · intro k hk v hv
-    refine load_ok (ts.of_keeps hv.regs (by decide)) (by simp only [TMP]; omega) fun w hw =>
+    refine load_ok (ts.of_keeps hv.regs (by decide)) (by simp only [TMP]; omega_using [hk]) fun w hw =>
       WP.block_nil ⟨?_, hw.rest (by decide), hw.mem⟩
     rw [hw.gpr]
     change limbs v.mem base TMP k = g k
-    rw [hv.mem.limbs (Or.inr (by simp only [TMP]; omega)) (by decide) hk, tm, hg k hk]
+    rw [hv.mem.limbs (Or.inr (by simp only [TMP]; omega_using [ho', hk])) (by decide) hk, tm, hg k hk]
 
 /-- The coefficients at `TMP` normalized into the element at `o`, the second
 argument of a field function. -/

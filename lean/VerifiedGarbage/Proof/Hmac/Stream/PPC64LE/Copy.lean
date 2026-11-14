@@ -53,20 +53,20 @@ theorem copy32_ok {src dst : Reg} (hs : src ≠ .r8) (hd : dst ≠ .r8) (hs0 : s
   | succ n ih =>
     intro rest s Q hin hout hsep k
     rw [List.range_succ, List.flatMap_append, List.flatMap_singleton, List.append_assoc]
-    refine ih ⟨by omega, by omega⟩ _ s Q (fun j hj => hin j (by omega))
-      (fun j hj => hout j (by omega)) (fun x hx hy => hsep x (by omega) (by omega))
+    refine ih ⟨by omega_using [hb], by omega_using [hb]⟩ _ s Q (fun j hj => hin j (by omega_using [hj]))
+      (fun j hj => hout j (by omega_using [hj])) (fun x hx hy => hsep x (by omega_using [hx]) (by omega_using [hy]))
       fun s₁ g₁ rd₁ wr₁ sp₁ m₁ => ?_
     simp only [cp32, List.cons_append, List.nil_append]
     refine wp_lwz (a := s.gpr src + BitVec.ofNat 64 o₁ + BitVec.ofNat 64 (4 * n))
-      (by omega) (by rw [g₁ _ hs, add_off]) (by rw [rd₁, wr₁]; exact hin n (by omega))
+      (by omega_using [hb]) (by rw [g₁ _ hs, add_off]) (by rw [rd₁, wr₁]; exact hin n (by omega_using []))
       (fun s₂ u₂ => ?_) hs0
     refine wp_stw (a := s.gpr dst + BitVec.ofNat 64 o₂ + BitVec.ofNat 64 (4 * n))
-      (by omega) (by rw [u₂.other _ hd, g₁ _ hd, add_off])
-      (by rw [u₂.wr, wr₁]; exact hout n (by omega))
+      (by omega_using [hb]) (by rw [u₂.other _ hd, g₁ _ hd, add_off])
+      (by rw [u₂.wr, wr₁]; exact hout n (by omega_using []))
       (fun s₃ u₃ => k s₃ (fun r hr => by rw [u₃.gpr, u₂.other r hr, g₁ r hr])
         (by rw [u₃.rd, u₂.rd, rd₁]) (by rw [u₃.wr, u₂.wr, wr₁]) (by rw [u₃.sp, u₂.sp, sp₁]) ?_) hd0
     rw [u₃.mem, u₂.gpr, u₂.mem, m₁, BitVec.setWidth_setWidth_of_le _ (by decide), BitVec.setWidth_eq,
       Nat.mul_succ]
-    exact copy_mem s.mem _ _ n 4 (by rwa [← Nat.mul_succ]) (by omega)
+    exact copy_mem s.mem _ _ n 4 (by rwa [← Nat.mul_succ]) (by omega_using [hb])
 
 end VG.Proof.Hmac.Stream.PPC64LE

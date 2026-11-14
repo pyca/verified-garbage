@@ -67,9 +67,9 @@ theorem vector_eq_of_bytes {x y : BitVec 128}
     (h : ∀i<16,vbyte x i=vbyte y i) : x=y := by
   apply BitVec.eq_of_getLsbD_eq
   intro k hk
-  have hh:=congrArg (fun b : BitVec 8=>b.getLsbD (k%8)) (h (k/8) (by omega))
+  have hh:=congrArg (fun b : BitVec 8=>b.getLsbD (k%8)) (h (k/8) (by omega_using [hk]))
   have h8 : k%8<8:=Nat.mod_lt _ (by decide)
-  have hd : 8*(k/8)+k%8=k:=by omega
+  have hd : 8*(k/8)+k%8=k:=by omega_using []
   simpa only [vbyte,BitVec.getLsbD_extractLsb',h8,decide_true,Bool.true_and,hd] using hh
 
 theorem and_byteMask (x : BitVec 128) (m : BitVec 8) :
@@ -142,7 +142,7 @@ theorem sourceValues_lane (η : Nat) (s : State) {i : Nat}
   have he : [sourceNibble s 0,sourceNibble s 1,sourceNibble s 2,sourceNibble s 3][ids[i]!]!
       =sourceNibble s (ids[i]!) := by
     generalize ids[i]! = j at *
-    rcases (by omega : j=0∨j=1∨j=2∨j=3) with rfl|rfl|rfl|rfl <;> rfl
+    rcases (by omega_using [hn] : j=0∨j=1∨j=2∨j=3) with rfl|rfl|rfl|rfl <;> rfl
   change Spec.MlDsa.ofInt (VG.Proof.MlDsa.Sample.rbC η
     ([sourceNibble s 0,sourceNibble s 1,sourceNibble s 2,sourceNibble s 3][ids[i]!]!))=_ at hv
   rw [he] at hv
@@ -185,7 +185,7 @@ theorem nibbleMask_ok {η : Nat} (hη : η=2∨η=4) (s : State)
     apply vector_eq_of_words
     intro e he
     rw [hbv e he,hv e he,source_accept hη,acceptanceVector_words _ _ _ _ e he]
-    rcases (by omega : e=0∨e=1∨e=2∨e=3) with rfl|rfl|rfl|rfl <;> rfl
+    rcases (by omega_using [he] : e=0∨e=1∨e=2∨e=3) with rfl|rfl|rfl|rfl <;> rfl
   exact WP.mono (maskCode_ok b (by rw [hc.gpr]; exact h15)) fun t ⟨⟨⟨hmask,hmem⟩,hk⟩,hvec⟩=>
     ⟨(hc.keep.trans hk).mono (by decide),hmem.trans hc.mem,
       by rw [hmask,heq,maskReduce_eq]; rfl,
@@ -212,12 +212,12 @@ theorem loadedVector_byte (m : Mem) (p : Addr) {i : Nat} (hi : i<4) :
     vbyte (loadedVector m p) i=m (p+BitVec.ofNat 64 i) := by
   apply BitVec.eq_of_getLsbD_eq
   intro k hk
-  have h32 : 8*i+k<32:=by omega
+  have h32 : 8*i+k<32:=by omega_using [hi, hk]
   simp only [loadedVector,ofVWords,vbyte,BitVec.getLsbD_extractLsb',hk,decide_true,
     Bool.true_and,BitVec.getLsbD_append,h32,ite_true,Mem.readW,BitVec.getLsbD_setWidth]
-  rw [getLsbD_read m 4 _ _ (by omega)]
-  have hd : (8*i+k)/8=i:=by omega
-  have hm : (8*i+k)%8=k:=by omega
+  rw [getLsbD_read m 4 _ _ (by omega_using [hi, hk])]
+  have hd : (8*i+k)/8=i:=by omega_using [hk]
+  have hm : (8*i+k)%8=k:=by omega_using [hk]
   rw [hd,hm]
 
 theorem loadedVector_nibbles (m : Mem) (p : Addr) :
@@ -227,9 +227,9 @@ theorem loadedVector_nibbles (m : Mem) (p : Addr) :
       (nibbleWord (loadedVector m p) e).toNat=
         if e%2=0 then (m (p+BitVec.ofNat 64 (e/2))).toNat%16
         else (m (p+BitVec.ofNat 64 (e/2))).toNat/16 := by
-    rw [nibbleWord_value,loadedVector_byte _ _ (by omega),BitVec.toNat_ofNat]
+    rw [nibbleWord_value,loadedVector_byte _ _ (by omega_using [he]),BitVec.toNat_ofNat]
     have hb:=(m (p+BitVec.ofNat 64 (e/2))).isLt
-    split <;> rw [Nat.mod_eq_of_lt (by omega)]
+    split <;> rw [Nat.mod_eq_of_lt (by omega_using [])]
   simp only [List.range,List.range.loop,List.map_cons,List.map_nil]
   rw [hw 0 (by decide),hw 1 (by decide),hw 2 (by decide),hw 3 (by decide)]
   simp only [nibbles,Nat.reduceMod,Nat.reduceDiv,Nat.reduceEqDiff,ite_true,ite_false,

@@ -40,11 +40,11 @@ theorem initW_ok (iv : HashValue) {s₀ : State} {st : BitVec 32} (hfit : st.toN
     fun o ho => ⟨_, by rw [h.wr]; exact hR, c o ho⟩
   simp only [initW]
   refine wp_movi fun s₁ u₁ => wp_store (a := addr st (8 * n))
-    (by rw [ea_of (u₁.other _ (by decide) |>.trans h.eax)]) (by rw [u₁.wr]; exact o _ (by omega))
+    (by rw [ea_of (u₁.other _ (by decide) |>.trans h.eax)]) (by rw [u₁.wr]; exact o _ (by omega_using [hn]))
     fun s₂ u₂ => wp_movi fun s₃ u₃ => ?_
   refine wp_store (a := addr st (8 * n + 4))
     (by rw [ea_of ((u₃.other _ (by decide)).trans (by rw [u₂.gpr, u₁.other _ (by decide), h.eax]))])
-    (by rw [u₃.wr, u₂.wr, u₁.wr]; exact o _ (by omega)) fun s₄ u₄ => WP.block_nil ?_
+    (by rw [u₃.wr, u₂.wr, u₁.wr]; exact o _ (by omega_using [hn])) fun s₄ u₄ => WP.block_nil ?_
   have hm : s₄.mem = write64 s.mem st (8 * n) iv[n]! := by
     rw [u₄.mem, u₃.gpr, u₃.mem, u₂.mem, u₁.gpr, u₁.mem]
     rfl
@@ -53,13 +53,13 @@ theorem initW_ok (iv : HashValue) {s₀ : State} {st : BitVec 32} (hfit : st.toN
   · rw [u₄.gpr, u₃.other _ (by decide), u₂.gpr, u₁.other _ (by decide), h.eax]
   · rw [u₄.gpr, u₃.other _ h₂, u₂.gpr, u₁.other _ h₂, h.gpr r h₁ h₂]
   · rw [hm]
-    exact (h.frame.writeW (List.mem_singleton_self _) _ (c _ (by omega))).writeW
-      (List.mem_singleton_self _) _ (c _ (by omega))
+    exact (h.frame.writeW (List.mem_singleton_self _) _ (c _ (by omega_using [hn]))).writeW
+      (List.mem_singleton_self _) _ (c _ (by omega_using [hn]))
   · rw [hm]
     by_cases hkn : k = n
-    · subst hkn; exact rd64_write64_self _ _ (by omega)
-    · rw [rd64_write64_ne _ _ (by omega) (by omega) (by omega)]
-      exact h.words k (by omega)
+    · subst hkn; exact rd64_write64_self _ _ (by omega_using [hfit, hn])
+    · rw [rd64_write64_ne _ _ (by omega_using [hfit, hn]) (by omega_using [hfit, hn, hk]) (by omega_using [hkn])]
+      exact h.words k (by omega_using [hk, hkn])
 
 theorem init_all (iv : HashValue) {s₀ : State} {st : BitVec 32} (hfit : st.toNat + 192 ≤ 2 ^ 32)
     (hR : ⟨st.setWidth 64, 192⟩ ∈ s₀.wr) {s : State} (h : IInv iv s₀ st 0 s) :
@@ -69,9 +69,9 @@ theorem init_all (iv : HashValue) {s₀ : State} {st : BitVec 32} (hfit : st.toN
   | zero => exact WP.block_nil h
   | succ n ih =>
     rw [List.range_succ, List.flatMap_append, WP.block_append_iff]
-    refine WP.mono (ih (by omega)) fun s h => ?_
+    refine WP.mono (ih (by omega_using [hn])) fun s h => ?_
     simp only [List.flatMap_cons, List.flatMap_nil, List.append_nil]
-    exact initW_ok iv hfit hR (by omega) h
+    exact initW_ok iv hfit hR (by omega_using [hn]) h
 
 theorem init_correct (iv : HashValue) {s₀ : State} (hp : (Proof.Sha512.initX86 iv).pre s₀) :
     WP isa (init iv) s₀ fun s' => abiPreserved s₀ s' ∧ (Proof.Sha512.initX86 iv).post s₀ s' := by
@@ -83,13 +83,13 @@ theorem init_correct (iv : HashValue) {s₀ : State} (hp : (Proof.Sha512.initX86
   refine wp_movm (a := addr (s₀.gpr .esp) 4) rfl
     ⟨⟨argAddr s₀ 0, 4⟩, by simp [hrd], Region.contains_self _ _⟩ fun s₁ u₁ => ?_
   refine WP.mono (init_all iv hfit hR ⟨u₁.gpr, fun r h _ => u₁.other r h, u₁.rd, u₁.wr,
-    by rw [u₁.mem]; exact Frame.refl _ _, fun _ h => absurd h (by omega)⟩ 8 (Nat.le_refl _))
+    by rw [u₁.mem]; exact Frame.refl _ _, fun _ h => absurd h (by omega_using [])⟩ 8 (Nat.le_refl _))
     fun s h => ⟨⟨fun r hr => ?_, ?_⟩, ?_⟩
   · refine h.gpr r ?_ ?_ <;>
     · simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl | rfl <;> decide
   · exact h.frame.readW (Region.contains_self _ _) (by simpa using hret) (by decide)
-  · refine Proof.Sha512.Stream.repr_nil (stateAt_ext (by rw [← hst]; omega) fun k hk => ?_)
+  · refine Proof.Sha512.Stream.repr_nil (stateAt_ext (by rw [← hst]; omega_using [hfit]) fun k hk => ?_)
     rw [h.words k hk, getElem!_pos iv k hk]
 
 /-- Memory holding the argument `0x1000` at `0x4004`. -/
@@ -130,10 +130,10 @@ theorem init_agree₀ (iv : HashValue) {s₁ s₂ : State} (h₁ : (Proof.Sha512
       fun _ h => (List.not_mem_nil h).elim, fun _ h => (List.not_mem_nil h).elim,
       fun _ => ⟨hsp, ?_⟩, ?_⟩
     · simp only [hw, List.mem_singleton]
-      rintro r rfl; simp only [BitVec.toNat_setWidth]; omega
+      rintro r rfl; simp only [BitVec.toNat_setWidth]; omega_using [hfit]
     · simp only [hw, List.mem_singleton]
       rintro r rfl
-      exact VG.X86.Taint.frame_disjoint (n := 4) (by omega) hr hd
+      exact VG.X86.Taint.frame_disjoint (n := 4) (by omega_using [hsp]) hr hd
     · intro p hp'
       simp only [initτ₀, List.mem_cons, List.not_mem_nil, or_false] at hp'
       subst hp'; refine ⟨by decide, ?_⟩
@@ -147,8 +147,8 @@ theorem init_agree₀ (iv : HashValue) {s₁ s₂ : State} (h₁ : (Proof.Sha512
   · simp only [initτ₀] at hk
     rw [show VG.X86.Taint.depth initτ₀.stk = 0 from rfl, Nat.zero_add]
     rw [VG.X86.Taint.argByte_eq h₁.2.2.2.2.2 h4 hk, VG.X86.Taint.argByte_eq h₂.2.2.2.2.2 h4 hk,
-      Mem.readW_byte s₁.mem _ (Nat.mod_lt _ (by omega)), Mem.readW_byte s₂.mem _ (Nat.mod_lt _ (by omega)),
-      show (k - 4) / 4 = 0 by omega]
+      Mem.readW_byte s₁.mem _ (Nat.mod_lt _ (by omega_using [])), Mem.readW_byte s₂.mem _ (Nat.mod_lt _ (by omega_using [])),
+      show (k - 4) / 4 = 0 by omega_using [hk]]
     exact congrArg _ a0
 
 /-- The hint for `init 0`, which is also one for `init iv`. -/

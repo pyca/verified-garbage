@@ -96,11 +96,11 @@ theorem len_of_disjoint {D W : Addr} {n : Nat} (hd : (⟨D, n⟩ : Region).Disjo
   refine Classical.byContradiction fun h => ?_
   by_cases hDW : D.toNat ≤ W.toNat
   · refine hd W ?_ ?_
-    · simp only [Region.Contains, BitVec.toNat_sub]; omega
-    · simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; omega
+    · simp only [Region.Contains, BitVec.toNat_sub]; omega_using [hW, h, hDW]
+    · simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; omega_using []
   · refine hd D ?_ ?_
-    · simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; omega
-    · simp only [Region.Contains, BitVec.toNat_sub]; omega
+    · simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; omega_using [h]
+    · simp only [Region.Contains, BitVec.toNat_sub]; omega_using [hD, h, hDW]
 
 open VG.Proof.Gcm.AArch64.Stitch (TblOk) in
 /-- The table, outside a frame apart from it. -/
@@ -108,13 +108,13 @@ theorem tblOk_frame {m m' : Mem} {W : Addr} {H : Block} {rs : List Region} (h : 
     (hd : ∀ r ∈ rs, (Stitch.tblR W).Disjoint r) : TblOk m' W H where
   sw k h₁ h₂ := by
     rw [hf.readW (r := ⟨W + BitVec.ofNat 64 (Impl.Gcm.AArch64.Stitch.sOff k), 16⟩) (Region.contains_self _ _)
-      (fun r hr => (hd r hr).sub_left (Offset.sub W (by unfold Impl.Gcm.AArch64.Stitch.sOff Impl.Gcm.AArch64.Stitch.tbl; omega)
-        (by unfold Impl.Gcm.AArch64.Stitch.sOff Impl.Gcm.AArch64.Stitch.tbl; omega))) (by decide)]
+      (fun r hr => (hd r hr).sub_left (Offset.sub W (by unfold Impl.Gcm.AArch64.Stitch.sOff Impl.Gcm.AArch64.Stitch.tbl; omega_using [])
+        (by unfold Impl.Gcm.AArch64.Stitch.sOff Impl.Gcm.AArch64.Stitch.tbl; omega_using [h₂]))) (by decide)]
     exact h.sw k h₁ h₂
   key p hp := by
     rw [hf.readW (r := ⟨W + BitVec.ofNat 64 (Impl.Gcm.AArch64.Stitch.kOff p), 16⟩) (Region.contains_self _ _)
-      (fun r hr => (hd r hr).sub_left (Offset.sub W (by unfold Impl.Gcm.AArch64.Stitch.kOff Impl.Gcm.AArch64.Stitch.tbl; omega)
-        (by unfold Impl.Gcm.AArch64.Stitch.kOff Impl.Gcm.AArch64.Stitch.tbl; omega))) (by decide)]
+      (fun r hr => (hd r hr).sub_left (Offset.sub W (by unfold Impl.Gcm.AArch64.Stitch.kOff Impl.Gcm.AArch64.Stitch.tbl; omega_using [])
+        (by unfold Impl.Gcm.AArch64.Stitch.kOff Impl.Gcm.AArch64.Stitch.tbl; omega_using [hp]))) (by decide)]
     exact h.key p hp
 
 /-- `sealShort`, from the entry of `seal`, for a record of 17 to 96 bytes. -/

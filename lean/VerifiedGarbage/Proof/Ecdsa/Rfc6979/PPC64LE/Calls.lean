@@ -275,7 +275,7 @@ theorem corePre (R : Core) {s : State} {out d dg k scr : Addr}
           ([⟨d, R.E.curve.len⟩, ⟨dg, R.E.curve.len⟩, ⟨k, R.E.curve.len⟩] : List Region) := by
         rw [show ((([⟨d, R.E.curve.len⟩, ⟨dg, R.E.curve.len⟩, ⟨k, R.E.curve.len⟩] : List Region) ++
           Abi.constRegions s.syms (c₀ :: cs)).length - (c₀ :: cs).length) = 3 by
-            simp only [List.length_append, constRegions_length, List.length_cons, List.length_nil]; omega]
+            simp only [List.length_append, constRegions_length, List.length_cons, List.length_nil]; omega_using []]
         rfl
       show (Proof.Ecdsa.Instance.signContract R.E PPC64LE.abi).pre (s.callEntry.withRegions
         (List.take ((([⟨d, R.E.curve.len⟩, ⟨dg, R.E.curve.len⟩, ⟨k, R.E.curve.len⟩] : List Region) ++
@@ -291,7 +291,7 @@ theorem corePre (R : Core) {s : State} {out d dg k scr : Addr}
           Abi.constRegions s.syms (c₀ :: cs)
         rw [show ((([⟨d, R.E.curve.len⟩, ⟨dg, R.E.curve.len⟩, ⟨k, R.E.curve.len⟩] : List Region) ++
           Abi.constRegions s.syms (c₀ :: cs)).length - (c₀ :: cs).length) = 3 by
-            simp only [List.length_append, constRegions_length, List.length_cons, List.length_nil]; omega]
+            simp only [List.length_append, constRegions_length, List.length_cons, List.length_nil]; omega_using []]
         rfl
       · exact held
       · intro T hT

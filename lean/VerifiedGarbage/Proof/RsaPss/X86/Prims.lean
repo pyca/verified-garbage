@@ -45,11 +45,11 @@ structure RBuf (L : Lay) (p : BitVec 32) (n : Nat) : Prop where
 variable {L : Lay} {scr : BitVec 32}
 
 theorem byte32 {p : BitVec 32} {n i : Nat} (h : p.toNat + n ≤ 2 ^ 32) (hi : i < n) :
-    (p + BitVec.ofNat 32 i).setWidth 64 = byteAt p i := addr_eq (by omega)
+    (p + BitVec.ofNat 32 i).setWidth 64 = byteAt p i := addr_eq (by omega_using [h, hi])
 
 theorem contains_byte {R : Region} {p : BitVec 32} {n i : Nat} (hc : R.Contains (p.setWidth 64) n)
     (fit : p.toNat + n ≤ 2 ^ 32) (hi : i < n) : R.Contains (byteAt p i) 1 :=
-  hc.byte (by rw [Offset.add_sub_cancel_left, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]; exact hi)
+  hc.byte (by rw [Offset.add_sub_cancel_left, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [fit, hi])]; exact hi)
 
 theorem WBuf.inW {p : BitVec 32} {n : Nat} (hb : WBuf L p n) {σ s : State} (hs : L.St σ s) {i : Nat}
     (hi : i < n) : InRegions s.wr (byteAt p i) 1 := by
@@ -81,12 +81,12 @@ theorem WBuf.sub {p : BitVec 32} {n : Nat} (hb : WBuf L p n) : ∃ R ∈ L.W, Re
   · rcases List.mem_cons.mp hR with rfl | hR
     · exact List.mem_cons_self
     · exact List.mem_cons_of_mem _ (List.mem_append_left _ hR)
-  · simp only [Region.Contains] at ha; omega
+  · simp only [Region.Contains] at ha; omega_using [ha]
 
 /-- The bytes of the buffer are distinct addresses. -/
 theorem byteAt_inj {p : BitVec 32} {n i j : Nat} (h : p.toNat + n ≤ 2 ^ 32) (hi : i < n) (hj : j < n)
     (e : byteAt p i = byteAt p j) : i = j :=
-  Classical.byContradiction fun hne => Offset.add_ofNat_ne (p.setWidth 64) (a := i) (b := j) (by omega) (by omega) hne e
+  Classical.byContradiction fun hne => Offset.add_ofNat_ne (p.setWidth 64) (a := i) (b := j) (by omega_using [h, hi]) (by omega_using [h, hj]) hne e
 
 theorem frame_of_outside {p : BitVec 32} {n : Nat} {m m' : Mem} (h : p.toNat + n ≤ 2 ^ 32)
     (hm : ∀ a, (∀ j < n, a ≠ (p + BitVec.ofNat 32 j).setWidth 64) → m' a = m a) :
@@ -95,7 +95,7 @@ theorem frame_of_outside {p : BitVec 32} {n : Nat} {m m' : Mem} (h : p.toNat + n
   refine hm a fun j hj e => ha _ (List.mem_singleton_self _) ?_
   rw [e, byte32 h hj]
   simp only [Region.Contains]
-  rw [Offset.add_sub_cancel_left, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]; omega
+  rw [Offset.add_sub_cancel_left, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [h, hj])]; omega_using [hj]
 
 /-- `zeroLoop`: zeros at `p`. -/
 theorem zero_vp {p : BitVec 32} {n : Nat} (hb : WBuf L p n) (hn : 0 < n)
@@ -126,7 +126,7 @@ theorem zero_vp {p : BitVec 32} {n : Nat} (hb : WBuf L p n) (hn : 0 < n)
   · simp only [List.mem_singleton] at hr; subst hr; exact hb.sub
   · rw [ht.mem]
     have := congrArg (fun l => l.getD i 0) (Proof.RsaPkcs1Sig.bytesAt_writeBytes s.mem (p.setWidth 64)
-      (List.replicate n 0) (by simp; omega))
+      (List.replicate n 0) (by simp; omega_using [fit]))
     simp only [List.length_replicate] at this
     rw [Proof.RsaPkcs1Sig.bytesAt_getD hi'] at this
     rw [this]; simp [hi']

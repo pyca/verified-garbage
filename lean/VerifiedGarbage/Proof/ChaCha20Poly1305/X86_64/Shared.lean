@@ -404,9 +404,9 @@ theorem openArgs_ok {s : State} (hs : openPre s) : WP isa (.block openArgs) s (O
     refine ⟨⟨stackArgAddr s 0, 16⟩, by rw [hrd]; simp, ?_⟩
     rw [off_eq, show s.gpr .rsp + BitVec.ofNat 64 (8 + k) = stackArgAddr s 0 + BitVec.ofNat 64 k by
       simp only [stackArgAddr, BitVec.ofNat_add, BitVec.add_assoc]]
-    exact Offset.contains_base _ hk (by omega)
-  have h16 := hg 8 (by omega)
-  have h8 := hg 0 (by omega)
+    exact Offset.contains_base _ hk (by omega_using [hk])
+  have h16 := hg 8 (by omega_using [])
+  have h8 := hg 0 (by omega_using [])
   simp only [show 8 + 8 = 16 from rfl, show 8 + 0 = 8 from rfl] at h16 h8
   have e16 : s.mem.readW (off (s.gpr .rsp) 16) 64 = stackArg s 1 := by
     simp only [stackArg, stackArgAddr, off_eq]

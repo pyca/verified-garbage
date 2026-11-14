@@ -25,7 +25,7 @@ theorem pdInputImport_ok (s : State) {base dst np ep xp : BitVec 32} {len k eLen
   have hu := h.of_mem memU restU ((restU.gpr .r0 (by decide)).trans h.ready.ptr)
   have dims := pc_dimensions hu.buffers.minLength hu.buffers.maxLength hu.buffers.space
   refine WP.mono (importOperand_ok u hu.ready (by decide : 1 < 8) (by decide)
-    (by have := hu.buffers.minLength; omega) dims.2.2.2.1 hu.buffers.input.fits
+    (by have := hu.buffers.minLength; omega_using [this]) dims.2.2.2.1 hu.buffers.input.fits
     hu.buffers.input.read hu.buffers.inputSeparate source count) ?_
   rintro t ⟨ready, value, keeps, frameT, restT⟩
   rw [hu.buffers.input.bytes] at value

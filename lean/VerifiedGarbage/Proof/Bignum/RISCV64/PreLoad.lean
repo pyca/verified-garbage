@@ -177,7 +177,7 @@ theorem loadN_ok {s : State} {B N : Addr} {Z dA k w : Nat} (hs : Scr s B Z)
       refine tout _ (Or.inr ?_)
       have := (off N j - B).isLt
       by_contra hc
-      exact hsep j (by omega) (off N j) (by simp only [ofs] at hc ⊢; omega) rfl
+      exact hsep j (by omega_using [hj]) (off N j) (by simp only [ofs] at hc ⊢; omega) rfl
     refine ⟨⟨?_, by gsimp, ?_, ?_, ?_, ?_⟩, by gsimp⟩
     · gsimp; rw [off_sub _ (by omega_arith), show dA + k - 1 - j - 1 = dA + k - 1 - (j + 1) by omega_arith]
     · gsimp; exact tout.trans (hw1.mono (by omega_arith) (by omega_arith))

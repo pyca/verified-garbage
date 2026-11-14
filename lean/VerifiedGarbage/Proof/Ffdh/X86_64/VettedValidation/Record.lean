@@ -28,7 +28,7 @@ theorem header_ok {s : State} {base src : Addr} {k : Nat} {dom : List Byte}
   refine WP.mono (WP.keep [.rax, .rdx] (Q := fun t =>
     t.zf = some (decide (g.len = k)) ∧ t.gpr .rdx = 1 ∧ t.mem = s.mem) ?_ rfl) ?_
   · xrun [header, ea_at, h.baseReg, h.readWidth, h.width, sx_ofNat fit,
-      VG.Proof.Bignum.X86_64.ofNat_sub_beq (j := k) (N := g.len) (by have := h.upper; omega) (by omega)]
+      VG.Proof.Bignum.X86_64.ofNat_sub_beq (j := k) (N := g.len) (by have := h.upper; omega_using [this]) (by omega_using [fit])]
     simp only [eq_comm]
   · rintro t ⟨⟨zero, value, mem⟩, rest⟩
     exact ⟨zero, value, mem, rest.mono (by decide)⟩
@@ -100,13 +100,13 @@ theorem compare_ok {s : State} {base src table : Addr} {k offset : Nat} {dom : L
     WP isa (.seq (.block (compareArgs offset)) VG.Impl.RsaPkcs1Sig.X86_64.compare) s fun t =>
       (t.gpr .rdx = 0 ↔ dom = g.domain.take dom.length) ∧
       t.mem = s.mem ∧ Keep clobbers s t := by
-  have size : dom.length ≤ 3 * g.len := by rw [width]; rcases h.shape with hh | hh <;> omega
-  have positive : 0 < dom.length := by rcases h.shape with hh | hh <;> have := h.lower <;> omega
-  have small : dom.length < 2 ^ 64 := by rcases h.shape with hh | hh <;> have := h.upper <;> omega
+  have size : dom.length ≤ 3 * g.len := by rw [width]; rcases h.shape with hh | hh <;> omega_using [hh]
+  have positive : 0 < dom.length := by rcases h.shape with hh | hh <;> have := h.lower <;> omega_using [hh, this]
+  have small : dom.length < 2 ^ 64 := by rcases h.shape with hh | hh <;> have := h.upper <;> omega_using [width, size, this]
   have ptr : (table + BitVec.ofNat 64 offset) + BitVec.ofNat 64 8 =
       table + BitVec.ofNat 64 (offset + 8) := by rw [BitVec.add_assoc, BitVec.ofNat_add_ofNat]
   have read := CallLay.inRegions_sub record.read (off := 0) (l := dom.length)
-    (by omega) (by have := record.lenFit; omega)
+    (by omega_using [size]) (by have := record.lenFit; omega_using [this])
   simp only [BitVec.add_zero, ptr] at read
   rw [WP.seq_iff]
   refine WP.mono (args_ok h sym fit) ?_

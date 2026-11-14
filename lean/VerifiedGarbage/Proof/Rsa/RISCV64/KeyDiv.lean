@@ -136,7 +136,7 @@ theorem adc64_arith (x c y : BitVec 64) (hc : c.toNat ≤ 1) :
   have o11 : ((1 : BitVec 64) ||| 1).toNat = 1 := by decide
   by_cases h1 : x + c < c <;> by_cases h2 : x + c + y < y <;>
     simp only [h1, h2, ite_true, ite_false, o00, o01, o10, o11] <;>
-    rw [BitVec.lt_def] at h1 h2 <;> omega
+    rw [BitVec.lt_def] at h1 h2 <;> omega_arith
 
 /-- A mask of `b`. -/
 abbrev dmask (b : Bool) : BitVec 64 := if b then BitVec.allOnes 64 else 0
@@ -147,7 +147,7 @@ theorem xor_mask_toNat (y : BitVec 64) (b : Bool) :
   cases b
   · show (y ^^^ 0#64).toNat + 0 = y.toNat; rw [BitVec.xor_zero]; rfl
   · show (y ^^^ BitVec.allOnes 64).toNat + y.toNat = 2 ^ 64 - 1
-    rw [BitVec.xor_allOnes, BitVec.toNat_not]; omega
+    rw [BitVec.xor_allOnes, BitVec.toNat_not]; omega_using []
 
 theorem and_mask_eq (y : BitVec 64) (b : Bool) : y &&& dmask b = if b then y else 0 := by
   cases b
@@ -173,7 +173,7 @@ theorem pass64_arith (x y c3 c4 : BitVec 64) (b : Bool) (h3 : c3.toNat ≤ 1) (h
   rw [Nat.mul_add]
   change (sh + c4 + (y ^^^ dmask b)).toNat + 2 ^ 64 * c'.toNat = _ at e2
   change sh.toNat + _ = _ at e1
-  omega
+  omega_using [e3, e2, e1]
 
 /-- `[o] := 2 [o] + c₃ + c₄ + ([d] ⊕ mask)` over `n` words (`countLoop .t2 passBody`): the
 shift's carry in and out in `t3`, the addition's in `t4`, the last word in `t6`. -/
@@ -595,12 +595,12 @@ theorem split3_unique {P lo x hi lo' x' hi' : Nat}
   have e : ∀ a y z : Nat, a + P * y + P * 2 ^ 64 * z = a + P * (y + 2 ^ 64 * z) := by
     intro a y z; rw [Nat.mul_add, Nat.mul_assoc, Nat.add_assoc]
   rw [e, e] at h
-  have hP : 0 < P := by omega
+  have hP : 0 < P := by omega_using [hlo]
   have m := congrArg (· % P) h
   have d := congrArg (· / P) h
   simp only [Nat.add_mul_mod_self_left, Nat.mod_eq_of_lt hlo, Nat.mod_eq_of_lt hlo'] at m
   simp only [Nat.add_mul_div_left _ _ hP, Nat.div_eq_of_lt hlo, Nat.div_eq_of_lt hlo', Nat.zero_add] at d
-  omega
+  omega_using [hx, hx', m, d]
 
 /-- The word of `qv` is a word. -/
 theorem qv_word_lt (N₀ q L : Nat) {e : Nat} (he : e ≤ 64) :
@@ -609,17 +609,17 @@ theorem qv_word_lt (N₀ q L : Nat) {e : Nat} (he : e ≤ 64) :
   have h2 := Nat.mod_lt q (Nat.two_pow_pos e)
   have h3 : 2 ^ e * (N₀ / 2 ^ L % 2 ^ (64 - e) + 1) ≤ 2 ^ e * 2 ^ (64 - e) := Nat.mul_le_mul_left _ h1
   rw [← Nat.pow_add, Nat.add_sub_cancel' he, Nat.mul_add, Nat.mul_one] at h3
-  omega
+  omega_using [h3]
 
 /-- The next bit of the dividend is the top bit of the word. -/
 theorem qv_bit (N₀ q L : Nat) {e : Nat} (he : e < 64) :
     (2 ^ e * (N₀ / 2 ^ L % 2 ^ (64 - e)) + q % 2 ^ e) / 2 ^ 63 = N₀ / 2 ^ (L + 63 - e) % 2 := by
-  have p63 : 2 ^ 63 = 2 ^ e * 2 ^ (63 - e) := by rw [← Nat.pow_add]; congr 1; omega
+  have p63 : 2 ^ 63 = 2 ^ e * 2 ^ (63 - e) := by rw [← Nat.pow_add]; congr 1; omega_using [he]
   have p64 : 2 ^ (64 - e) = 2 ^ (63 - e) * 2 := by
-    rw [← Nat.pow_succ]; congr 1; omega
+    rw [← Nat.pow_succ]; congr 1; omega_using [he]
   rw [p63, ← Nat.div_div_eq_div_mul, Nat.mul_add_div (Nat.two_pow_pos e),
     Nat.div_eq_of_lt (Nat.mod_lt _ (Nat.two_pow_pos e)), Nat.add_zero, p64, Nat.mod_mul_right_div_self,
-    Nat.div_div_eq_div_mul, ← Nat.pow_add, show L + (63 - e) = L + 63 - e by omega]
+    Nat.div_div_eq_div_mul, ← Nat.pow_add, show L + (63 - e) = L + 63 - e by omega_using [he]]
 
 /-- The word shifted left with the quotient's next bit `c`. -/
 theorem qv_shift (N₀ q L : Nat) {e c : Nat} (he : e < 64) (hc : c ≤ 1) :
@@ -628,15 +628,15 @@ theorem qv_shift (N₀ q L : Nat) {e c : Nat} (he : e < 64) (hc : c ≤ 1) :
       (2 * q + c) / 2 ^ (e + 1) = q / 2 ^ e := by
   have pe : 2 ^ (e + 1) = 2 * 2 ^ e := by rw [Nat.pow_succ, Nat.mul_comm]
   have p64 : 2 ^ (64 - e) = 2 ^ (64 - (e + 1)) * 2 := by
-    rw [← Nat.pow_succ]; congr 1; omega
-  have p : 2 ^ 64 = 2 ^ (e + 1) * 2 ^ (64 - (e + 1)) := by rw [← Nat.pow_add]; congr 1; omega
+    rw [← Nat.pow_succ]; congr 1; omega_using [he]
+  have p : 2 ^ 64 = 2 ^ (e + 1) * 2 ^ (64 - (e + 1)) := by rw [← Nat.pow_add]; congr 1; omega_using [he]
   -- `2 q + c` against `2^(e + 1)`.
   have hq := Nat.div_add_mod q (2 ^ e)
   have hr := Nat.mod_lt q (Nat.two_pow_pos e)
   have hqc : 2 * q + c = 2 ^ (e + 1) * (q / 2 ^ e) + (2 * (q % 2 ^ e) + c) := by
     rw [pe]; conv => lhs; rw [← hq]
-    rw [Nat.mul_add, Nat.mul_assoc]; omega
-  have hlt : 2 * (q % 2 ^ e) + c < 2 ^ (e + 1) := by rw [pe]; omega
+    rw [Nat.mul_add, Nat.mul_assoc]; omega_using []
+  have hlt : 2 * (q % 2 ^ e) + c < 2 ^ (e + 1) := by rw [pe]; omega_using [hc]
   have hm : (2 * q + c) % 2 ^ (e + 1) = 2 * (q % 2 ^ e) + c := by
     rw [hqc, Nat.mul_add_mod, Nat.mod_eq_of_lt hlt]
   have hd : (2 * q + c) / 2 ^ (e + 1) = q / 2 ^ e := by
@@ -656,15 +656,15 @@ theorem qv_shift (N₀ q L : Nat) {e c : Nat} (he : e < 64) (hc : c ≤ 1) :
     rw [p, pe]
     conv => lhs; rw [← hn]
     simp only [Nat.mul_add, Nat.mul_assoc]
-    omega
+    omega_using []
   have hl : 2 ^ (e + 1) * (n % 2 ^ (64 - (e + 1))) + 2 * (q % 2 ^ e) < 2 ^ 64 := by
     have h3 : 2 ^ (e + 1) * (n % 2 ^ (64 - (e + 1)) + 1) ≤ 2 ^ (e + 1) * 2 ^ (64 - (e + 1)) :=
       Nat.mul_le_mul_left _ hm1
     rw [← p, Nat.mul_add, Nat.mul_one] at h3
     rw [pe] at h3 ⊢
-    omega
+    omega_using [h3]
   rw [hb, Nat.mul_add_mod, Nat.mod_eq_of_lt hl]
-  omega
+  omega_using []
 
 /-- A step of `qv`. -/
 theorem qv_step (N₀ q L : Nat) {e c : Nat} (he : e < 64) (hc : c ≤ 1) :
@@ -698,7 +698,7 @@ theorem wordsVal_mid (m : Mem) (B : Addr) {d k a : Nat} (ha : a < k) :
     wordsVal m B d k = wordsVal m B d a + 2 ^ (64 * a) * (word m B (d + 8 * a)).toNat +
       2 ^ (64 * a) * 2 ^ 64 * wordsVal m B (d + 8 * a + 8) (k - a - 1) := by
   have e := wordsVal_append m B d a (k - a)
-  rw [Nat.add_sub_cancel' (Nat.le_of_lt ha), show k - a = (k - a - 1) + 1 by omega, wordsVal] at e
+  rw [Nat.add_sub_cancel' (Nat.le_of_lt ha), show k - a = (k - a - 1) + 1 by omega_using [ha], wordsVal] at e
   rw [e, Nat.mul_add, Nat.mul_assoc]; exact (Nat.add_assoc _ _ _).symm
 
 /-- Word `a` of `k` written. -/
@@ -716,7 +716,7 @@ theorem qidx_ofNat {j : Nat} (h1 : 1 ≤ j) (h2 : j < 2 ^ 32) :
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_shiftLeft, BitVec.toNat_ushiftRight, BitVec.toNat_sub, BitVec.toNat_ofNat,
     Nat.shiftLeft_eq, Nat.shiftRight_eq_div_pow]
-  omega
+  omega_using [h1, h2]
 
 /-- `qword q`: `t2` := the address of the word of `[q]` that holds bit `j - 1`. -/
 theorem qword_ok {s : State} {B : Addr} {Z w N : Nat} (h : Ws s B Z w N) {q j : Nat} (hq : q < 2048)
@@ -745,7 +745,7 @@ theorem sign_mask (v : BitVec 64) :
   have e : (v >>> 63).toNat = v.toNat / 2 ^ 63 := by
     rw [BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow]
   have := v.isLt
-  rcases (show v.toNat / 2 ^ 63 = 0 ∨ v.toNat / 2 ^ 63 = 1 by omega) with z | z
+  rcases (show v.toNat / 2 ^ 63 = 0 ∨ v.toNat / 2 ^ 63 = 1 by omega_using []) with z | z
   · rw [show v >>> 63 = 0#64 from BitVec.eq_of_toNat_eq (by rw [e, z]; rfl), z]; decide
   · rw [show v >>> 63 = 1#64 from BitVec.eq_of_toNat_eq (by rw [e, z]; rfl), z]; decide
 
@@ -758,7 +758,7 @@ theorem shl_or_toNat (x c : BitVec 64) (hc : c.toNat ≤ 1) : (x <<< 1 ||| c).to
   obtain ⟨e, -⟩ := shl64_arith x c hc
   have e2 : (x >>> 63).toNat = x.toNat / 2 ^ 63 := by rw [BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow]
   have := x.isLt
-  omega
+  omega_using [hc, e]
 
 /-- A step of the division, run: the pass over the remainder's `k + 1` words, the new mask
 from its sign, and the quotient's word `a = (j - 1) / 64` shifted with the new bit. -/
@@ -929,13 +929,13 @@ theorem pass_rem {P D R T X W C : Nat} {bm : Bool} (hD : D < P) (hR : R < D)
     W = if D ≤ T then T - D else T + 2 ^ 64 * P - D := by
   obtain ⟨P2, e2⟩ : ∃ P2, 2 ^ 64 * P = P2 := ⟨_, rfl⟩
   rw [e2] at hX hW h ⊢
-  have hP2 : 2 * P ≤ P2 := by omega
+  have hP2 : 2 * P ≤ P2 := by omega_using [e2]
   rcases C with _ | _ | _ | n
-  · cases bm <;> simp only [Bool.false_eq_true, ite_true, ite_false] at hX h <;> split <;> omega
-  · cases bm <;> simp only [Bool.false_eq_true, ite_true, ite_false] at hX h <;> split <;> omega
-  · cases bm <;> simp only [Bool.false_eq_true, ite_true, ite_false, Nat.mul_succ] at hX h <;> split <;> omega
+  · cases bm <;> simp only [Bool.false_eq_true, ite_true, ite_false] at hX h <;> split <;> omega_arith
+  · cases bm <;> simp only [Bool.false_eq_true, ite_true, ite_false] at hX h <;> split <;> omega_arith
+  · cases bm <;> simp only [Bool.false_eq_true, ite_true, ite_false, Nat.mul_succ] at hX h <;> split <;> omega_arith
   · have : P2 * (n + 1 + 1 + 1) = P2 * n + P2 + P2 + P2 := by simp only [Nat.mul_succ]
-    cases bm <;> simp only [Bool.false_eq_true, ite_true, ite_false] at hX h <;> omega
+    cases bm <;> simp only [Bool.false_eq_true, ite_true, ite_false] at hX h <;> omega_using [hD, hR, hT, e2, this, hX, h]
 
 /-- The remainder's sign: its top word's top bit is clear exactly when `D ≤ T`. -/
 theorem sign_of_rem {P D T W lo tw : Nat} (hD : D < P)
@@ -951,15 +951,15 @@ theorem sign_of_rem {P D T W lo tw : Nat} (hD : D < P)
   · simp only [hDT, ite_false] at hW
     have : tw = 2 ^ 64 - 1 := by
       by_contra hne
-      have : P * tw ≤ P * (2 ^ 64 - 2) := Nat.mul_le_mul_left _ (by omega)
-      omega
+      have : P * tw ≤ P * (2 ^ 64 - 2) := Nat.mul_le_mul_left _ (by omega_using [htw, hne])
+      omega_using [hD, hs, hlo, hW, this]
     simp only [this, hDT, iff_false]; decide
 
 /-- The dividend's bits above `j - 1`. -/
 theorem div_pow_pred {N₀ j : Nat} (hj : 1 ≤ j) : N₀ / 2 ^ (j - 1) = 2 * (N₀ / 2 ^ j) + N₀ / 2 ^ (j - 1) % 2 := by
   have e : N₀ / 2 ^ j = N₀ / 2 ^ (j - 1) / 2 := by
     rw [Nat.div_div_eq_div_mul, ← Nat.pow_succ, Nat.succ_eq_add_one, Nat.sub_add_cancel hj]
-  rw [e]; omega
+  rw [e]; omega_using []
 
 /-- A step of the division keeps its invariant (`DivInv`), one bit further. -/
 theorem step_ok {s : State} {B : Addr} {Z w N q r d : Nat} (h : Ws s B Z w N)
@@ -987,10 +987,10 @@ theorem step_ok {s : State} {B : Addr} {Z w N q r d : Nat} (h : Ws s B Z w N)
       num s.mem B w q = qv N₀ Q L₀ e₀ := by
     rcases Nat.lt_or_ge e 64 with he' | he'
     · exact ⟨L, e, hLe, he', hL, hV⟩
-    · refine ⟨L - 64, 0, by omega, by decide, by omega, ?_⟩
-      rw [hV, show e = 64 by omega, show L = L - 64 + 64 by omega, qv_next, Nat.add_sub_cancel]
-  have hA : 64 * ((j - 1) / 64) = L₀ := by omega
-  have haw : (j - 1) / 64 < w := by omega
+    · refine ⟨L - 64, 0, by omega_using [hj1, hLe, he, hL, he'], by decide, by omega_using [hL], ?_⟩
+      rw [hV, show e = 64 by omega_using [he, he'], show L = L - 64 + 64 by omega_using [hj1, hLe, hL, he'], qv_next, Nat.add_sub_cancel]
+  have hA : 64 * ((j - 1) / 64) = L₀ := by omega_using [hL₀, he₀, hL0]
+  have haw : (j - 1) / 64 < w := by omega_using [hj1, hj]
   generalize (j - 1) / 64 = a at hA haw hC hqv
   subst hA
   -- The quotient's words around word `a`.
@@ -1001,20 +1001,20 @@ theorem step_ok {s : State} {B : Addr} {Z w N q r d : Nat} (h : Ws s B Z w N)
     (qv_word_lt N₀ Q (64 * a) (Nat.le_of_lt he₀))
   -- The dividend's next bit.
   have hbit : (word s.mem B (arr w q + 8 * a)).toNat / 2 ^ 63 = N₀ / 2 ^ (j - 1) % 2 := by
-    rw [ex, qv_bit N₀ Q (64 * a) he₀, show 64 * a + 63 - e₀ = j - 1 by omega]
-  have hb2 : N₀ / 2 ^ (j - 1) % 2 ≤ 1 := by omega
+    rw [ex, qv_bit N₀ Q (64 * a) he₀, show 64 * a + 63 - e₀ = j - 1 by omega_using [hL₀]]
+  have hb2 : N₀ / 2 ^ (j - 1) % 2 ≤ 1 := by omega_using []
   have hNj := div_pow_pred (N₀ := N₀) hj1
   -- The remainder after the pass, and its sign.
   have hP := Nat.two_pow_pos (64 * k)
   have eP2 : 2 ^ (64 * (k + 1)) = 2 ^ 64 * 2 ^ (64 * k) := by
-    rw [show 64 * (k + 1) = 64 + 64 * k by omega, Nat.pow_add]
+    rw [show 64 * (k + 1) = 64 + 64 * k by omega_using [], Nat.pow_add]
   have hW1 := wordsVal_lt u.mem B (arr w r) (k + 1)
   change numk u.mem B w r k < _ at hW1
   rw [eP2] at hW1 hX hC
   rw [hD, hX, hbit] at hC
-  have hrem := pass_rem (T := 2 * R + N₀ / 2 ^ (j - 1) % 2) hDw hR (by omega) rfl hW1
-    (by rw [show 2 * R + N₀ / 2 ^ (j - 1) % 2 - 2 * R = N₀ / 2 ^ (j - 1) % 2 by omega]; exact hC) (by omega)
-  have hsg := sign_of_rem hDw hrem (by omega) (wordsVal_succ_top u.mem B (arr w r) k) (wordsVal_lt _ _ _ _)
+  have hrem := pass_rem (T := 2 * R + N₀ / 2 ^ (j - 1) % 2) hDw hR (by omega_using []) rfl hW1
+    (by rw [show 2 * R + N₀ / 2 ^ (j - 1) % 2 - 2 * R = N₀ / 2 ^ (j - 1) % 2 by omega_using []]; exact hC) (by omega_using [])
+  have hsg := sign_of_rem hDw hrem (by omega_using [hR]) (wordsVal_succ_top u.mem B (arr w r) k) (wordsVal_lt _ _ _ _)
     (word u.mem B (arr w r + 8 * k)).isLt
   -- The new invariant.
   have hc : (if decide ((word u.mem B (arr w r + 8 * k)).toNat / 2 ^ 63 = 0) then 1 else 0) ≤ 1 := by
@@ -1022,15 +1022,15 @@ theorem step_ok {s : State} {B : Addr} {Z w N q r d : Nat} (h : Ws s B Z w N)
   refine ⟨if D ≤ 2 * R + N₀ / 2 ^ (j - 1) % 2 then 2 * R + N₀ / 2 ^ (j - 1) % 2 - D
       else 2 * R + N₀ / 2 ^ (j - 1) % 2,
     2 * Q + (if decide ((word u.mem B (arr w r + 8 * k)).toNat / 2 ^ 63 = 0) then 1 else 0), 64 * a, e₀ + 1,
-    ?_, ?_, ?_, by omega, by omega, by omega, ?_⟩
-  · split <;> omega
+    ?_, ?_, ?_, by omega_using [hj1, hL₀], by omega_using [he₀], by omega_using [], ?_⟩
+  · split <;> omega_arith
   · have e1 : ∀ c, D * (2 * Q + c) = 2 * (D * Q) + D * c := fun c => by rw [Nat.mul_add, Nat.mul_left_comm]
     rw [e1]
     by_cases hDT : D ≤ 2 * R + N₀ / 2 ^ (j - 1) % 2
     · simp only [hDT, decide_eq_true (hsg.mpr hDT), ite_true, Nat.mul_one]
-      omega
+      omega_using [hRQ, hNj, hDT]
     · simp only [hDT, decide_eq_false (fun z => hDT (hsg.mp z)), Bool.false_eq_true, ite_false, Nat.mul_zero]
-      omega
+      omega_using [hRQ, hNj]
   · rw [eP2, hrem]
     by_cases hDT : D ≤ 2 * R + N₀ / 2 ^ (j - 1) % 2
     · simp only [hDT, decide_eq_true (hsg.mpr hDT), ite_true]
@@ -1140,12 +1140,12 @@ theorem count_sub {N i : Nat} (hi : i < N) :
     BitVec.ofNat 64 (N - i) - BitVec.ofNat 64 1 = BitVec.ofNat 64 (N - (i + 1)) := by
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat, BitVec.toNat_ofNat]
-  omega
+  omega_using [hi]
 
 /-- The remainder and the quotient of `N = R + D Q`, `R < D`. -/
 theorem divmod_of {N D R Q : Nat} (hR : R < D) (h : R + D * Q = N) : N / D = Q ∧ N % D = R := by
   subst h
-  have hD : 0 < D := by omega
+  have hD : 0 < D := by omega_using [hR]
   rw [Nat.add_mul_div_left _ _ hD, Nat.div_eq_of_lt hR, Nat.zero_add, Nat.add_mul_mod_self_left,
     Nat.mod_eq_of_lt hR]
   exact ⟨rfl, rfl⟩
@@ -1187,10 +1187,10 @@ theorem divK_ok {s : State} {B : Addr} {Z w N q r d : Nat} (h : Ws s B Z w N)
   have ukr : u.gpr kr = BitVec.ofNat 64 k := by rw [ku.gpr (kr_nmem hkd), hkr]
   -- The remainder's words: all zero.
   have zl : numk u.mem B w r k = 0 := by
-    have := wordsVal_zero_part (a := 0) (c := k + 1) z (by omega)
+    have := wordsVal_zero_part (a := 0) (c := k + 1) z (by omega_using [hkw])
     simpa using this
   have zh : wordsVal u.mem B (arr w r + 8 * (k + 1)) (w - k) = 0 :=
-    wordsVal_zero_part (a := k + 1) (c := w - k) z (by omega)
+    wordsVal_zero_part (a := k + 1) (c := w - k) z (by omega_using [hkw])
   let D := num s.mem B w d
   let N₀ := num s.mem B w q
   let Inv : Nat → State → Prop := fun i x =>
@@ -1200,21 +1200,21 @@ theorem divK_ok {s : State} {B : Addr} {Z w N q r d : Nat} (h : Ws s B Z w N)
       ∃ bm, x.gpr .a4 = dmask bm ∧ (0 < D → DivInv x.mem B w k q r D N₀ (64 * w - i) bm)
   have i0 : Inv 0 u := by
     refine ⟨hu, km.mono, ku.mono (by decide), by rw [u7, Nat.sub_zero], zh, true, u4, fun _ => ?_⟩
-    refine ⟨0, 0, 64 * (w - 1), 0, by omega, ?_, by rw [zl]; rfl, by omega, by decide, by omega, ?_⟩
+    refine ⟨0, 0, 64 * (w - 1), 0, by omega_arith, ?_, by rw [zl]; rfl, by omega_arith, by decide, by omega_using [], ?_⟩
     · rw [Nat.sub_zero, Nat.div_eq_of_lt hN₀]; rfl
     · rw [Frame.num km (by simp; omega_arith) (by simp) (by have := h.fit64 hq; omega_arith),
-        qv_start (by rw [show 64 * (w - 1) + 64 = 64 * w by omega]; exact hN₀)]
+        qv_start (by rw [show 64 * (w - 1) + 64 = 64 * w by omega_arith]; exact hN₀)]
   refine WP.mono (wp_countdown (body := stepK q r d kr) (cnt := .s7) (N := 64 * w)
     hK (by omega_arith) Inv (fun i hi x ⟨hx, kx, rx, cx, zx, bm, xa, vx⟩ _ => ?_) i0 u7)
     fun x ⟨hx, kx, rx, cx, zx, bm, xa, vx⟩ => ?_
   · have dx : numk x.mem B w d k = D := by
       rw [Frame.numk kx hkw (by simp; omega_arith) (by simp) (by omega_arith), hdk]
     have xkr : x.gpr kr = BitVec.ofNat 64 k := by rw [rx.gpr hkd, hkr]
-    refine WP.mono (step_ok hx hq hr hd hN hqr hqd hrd cx (j := 64 * w - i) (by omega) (by omega) xa
+    refine WP.mono (step_ok hx hq hr hd hN hqr hqd hrd cx (j := 64 * w - i) (by omega_using [hi]) (by omega_using []) xa
       xkr hk1 hkw hkd (N₀ := N₀) dx hDk) fun y ⟨hy, ky, y7, ry, yh, bm', ya, vy⟩ =>
         ⟨⟨hy, kx.trans ky, Keep.trans' rx ry, by rw [y7, cx, count_sub hi], by rw [yh, zx], bm', ya,
           fun hD0 => ?_⟩, y7⟩
-    rw [show 64 * w - (i + 1) = 64 * w - i - 1 by omega]
+    rw [show 64 * w - (i + 1) = 64 * w - i - 1 by omega_using []]
     exact vy hD0 (vx hD0)
   · have dx : numk x.mem B w d k = D := by
       rw [Frame.numk kx hkw (by simp; omega_arith) (by simp) (by omega_arith), hdk]
@@ -1223,11 +1223,11 @@ theorem divK_ok {s : State} {B : Addr} {Z w N q r d : Nat} (h : Ws s B Z w N)
       ⟨hv, kx.trans kv.mono, Keep.trans' rx rv, by rw [v7, cx, Nat.sub_self]; rfl, fun hD0 => ?_⟩
     obtain ⟨R, Q, L, e, hR, hRQ, hX, hLe, he, -, hV⟩ := vx hD0
     rw [Nat.sub_self, Nat.pow_zero, Nat.div_one] at hRQ
-    rw [show L = 0 by omega, show e = 64 by omega, qv_done] at hV
+    rw [show L = 0 by omega_using [hLe, he], show e = 64 by omega_using [hLe, he], qv_done] at hV
     obtain ⟨eq, er⟩ := divmod_of hR hRQ
     have hP := Nat.two_pow_pos (64 * k)
     have eP2 : 2 ^ (64 * (k + 1)) = 2 ^ 64 * 2 ^ (64 * k) := by
-      rw [show 64 * (k + 1) = 64 + 64 * k by omega, Nat.pow_add]
+      rw [show 64 * (k + 1) = 64 + 64 * k by omega_using [], Nat.pow_add]
     have hW := wordsVal_lt v.mem B (arr w r) (k + 1)
     change numk v.mem B w r k < _ at hW
     rw [hX, dx, eP2] at hc
@@ -1236,23 +1236,23 @@ theorem divK_ok {s : State} {B : Addr} {Z w N q r d : Nat} (h : Ws s B Z w N)
     have hRv : numk v.mem B w r k = R := by
       obtain ⟨P2, e2⟩ : ∃ P2, 2 ^ 64 * 2 ^ (64 * k) = P2 := ⟨_, rfl⟩
       rw [e2] at hc hW
-      have : D < P2 := by omega
+      have : D < P2 := by omega_using [hDk, e2]
       rcases c with _ | _ | c
-      · cases bm <;> simp only [Bool.false_eq_true, ite_true, ite_false] at hc <;> omega
-      · cases bm <;> simp only [Bool.false_eq_true, ite_true, ite_false] at hc <;> omega
+      · cases bm <;> simp only [Bool.false_eq_true, ite_true, ite_false] at hc <;> omega_arith
+      · cases bm <;> simp only [Bool.false_eq_true, ite_true, ite_false] at hc <;> omega_arith
       · have : P2 * (c + 1 + 1) = P2 * c + P2 + P2 := by simp only [Nat.mul_succ]
-        cases bm <;> simp only [Bool.false_eq_true, ite_true, ite_false] at hc <;> omega
+        cases bm <;> simp only [Bool.false_eq_true, ite_true, ite_false] at hc <;> omega_arith
     -- All its `w + 1` words.
     have hR1 : num1 v.mem B w r = R := by
       have e := wordsVal_append v.mem B (arr w r) (k + 1) (w - k)
-      rw [show k + 1 + (w - k) = w + 1 by omega, vh, zx, Nat.mul_zero, Nat.add_zero] at e
+      rw [show k + 1 + (w - k) = w + 1 by omega_using [hkw], vh, zx, Nat.mul_zero, Nat.add_zero] at e
       change num1 v.mem B w r = _ at e
       rw [e]; exact hRv
     have qv' : num v.mem B w q = num x.mem B w q :=
       Frame.num kv (by simp; omega_arith) (by simp) (by have := h.fit64 hq; omega_arith)
     have hlt : R < 2 ^ (64 * w) := by
-      have : 2 ^ (64 * k) ≤ 2 ^ (64 * w) := Nat.pow_le_pow_right (by decide) (by omega)
-      omega
+      have : 2 ^ (64 * k) ≤ 2 ^ (64 * w) := Nat.pow_le_pow_right (by decide) (by omega_using [hkw])
+      omega_using [hN₀, hRQ]
     have e3 := num1_eq v.mem B w r
     have hw0 : (word v.mem B (arr w r + 8 * w)).toNat = 0 := by
       rcases Nat.eq_zero_or_pos (word v.mem B (arr w r + 8 * w)).toNat with e | e
@@ -1289,17 +1289,17 @@ theorem numk_of_lt {m : Mem} {B : Addr} {w d k : Nat} (hz : word m B (arr w d + 
     (hkw : k ≤ w) (hlt : num m B w d < 2 ^ (64 * k)) : numk m B w d k = num m B w d := by
   rcases Nat.lt_or_ge k w with hk | hk
   · have e := wordsVal_append m B (arr w d) (k + 1) (w - (k + 1))
-    rw [Nat.add_sub_cancel' (by omega)] at e
-    have hp : 2 ^ (64 * k) ≤ 2 ^ (64 * (k + 1)) := Nat.pow_le_pow_right (by decide) (by omega)
+    rw [Nat.add_sub_cancel' (by omega_using [hk])] at e
+    have hp : 2 ^ (64 * k) ≤ 2 ^ (64 * (k + 1)) := Nat.pow_le_pow_right (by decide) (by omega_using [])
     have h0 : wordsVal m B (arr w d + 8 * (k + 1)) (w - (k + 1)) = 0 := by
       refine Nat.eq_zero_of_not_pos fun hpos => ?_
       have := Nat.le_mul_of_pos_right (2 ^ (64 * (k + 1))) hpos
       have : num m B w d = wordsVal m B (arr w d) w := rfl
-      omega
+      omega_arith
     change wordsVal m B (arr w d) (k + 1) = wordsVal m B (arr w d) w
     rw [e, h0, Nat.mul_zero]
     exact (Nat.add_zero _).symm
-  · obtain rfl : k = w := by omega
+  · obtain rfl : k = w := by omega_using [hkw, hk]
     change num1 m B k d = _
     rw [num1_eq, hz]; rfl
 
@@ -1332,13 +1332,13 @@ theorem divL_ok {s : State} {B : Addr} {Z w N q r d : Nat} (h : Ws s B Z w N)
         word u.mem B (arr w r + 8 * w) = 0) := by
   have := h.wle
   rw [divL, WP.seq_iff]
-  refine WP.mono (wordsOf_ok hl (by omega)) fun t ⟨⟨t8, tm⟩, kt⟩ => ?_
+  refine WP.mono (wordsOf_ok hl (by omega_using [hLw, this])) fun t ⟨⟨t8, tm⟩, kt⟩ => ?_
   have ht := h.of_keep kt
   have hDk : num t.mem B w d < 2 ^ (64 * ((L + 7) / 8)) := by
-    rw [tm]; exact Nat.lt_of_lt_of_le hD (Nat.pow_le_pow_right (by decide) (by omega))
+    rw [tm]; exact Nat.lt_of_lt_of_le hD (Nat.pow_le_pow_right (by decide) (by omega_using []))
   have hdk : numk t.mem B w d ((L + 7) / 8) = num t.mem B w d :=
-    numk_of_lt (by rw [tm]; exact hdz) (by omega) hDk
-  refine WP.mono (divK_ok ht hq hr hd hN hqr hqd hrd t8 (by omega) (by omega) (by decide) hdk hDk)
+    numk_of_lt (by rw [tm]; exact hdz) (by omega_using [hLw]) hDk
+  refine WP.mono (divK_ok ht hq hr hd hN hqr hqd hrd t8 (by omega_using [hL1]) (by omega_using [hLw]) (by decide) hdk hDk)
     fun u ⟨hu, f, k, u7, v⟩ => ?_
   rw [tm] at f v
   exact ⟨hu, f, (kt.trans k).mono (by decide), u7, v⟩

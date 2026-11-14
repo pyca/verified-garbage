@@ -79,7 +79,7 @@ theorem save_ok (s : State) (hw : InRegions s.wr (s.gpr .r8) 256) :
   xrun [VG.Proof.Cast5.X86_64.ea_at, h16, h24, h32, h40, h48, h56, List.map_cons, List.map_nil,
     List.cons_append, List.nil_append, BitVec.and_self]
   have hc (d : Nat) (hd : d + 8 ≤ 256) : Region.Contains ⟨s.gpr .r8, 256⟩ (s.gpr .r8 + BitVec.ofNat 64 d) (64 / 8) :=
-    Offset.contains_base _ (by omega) (by omega)
+    Offset.contains_base _ (by omega_using [hd]) (by omega_using [hd])
   refine ⟨rfl, ?_, fun r d h => ?_⟩
   · refine (((((((Frame.refl _ _).writeW List.mem_cons_self _ (hc 16 (by decide))).writeW List.mem_cons_self _
       (hc 24 (by decide))).writeW List.mem_cons_self _ (hc 32 (by decide))).writeW List.mem_cons_self _
@@ -154,14 +154,14 @@ theorem LInv.bpre {s u : State} (h : EPre s) {f : Spec.Cast5.Block → Spec.Cast
   · rw [hu.rd, hu.wr, hu.rdi, h.rd]
     exact ⟨_, List.mem_append_left _ List.mem_cons_self, Region.contains_self _ _⟩
   · rw [hu.rdi, scheduleAt_getD _ _ hj, hu.frame.readW (r := ⟨s.gpr .rdi, 128⟩)
-      (Offset.contains_base _ (by omega) (by omega)) hdK (by decide)]
+      (Offset.contains_base _ (by omega_using [hj]) (by omega_using [hj])) hdK (by decide)]
   · rw [hu.wr, hu.r8, h.wr]
     exact ⟨_, List.mem_cons_of_mem _ List.mem_cons_self, by unfold Region.Contains; simp⟩
   · unfold Readable; rw [hu.rd, hu.wr, hu.syms, h.rd]
     exact ⟨_, List.mem_append_left _ (List.mem_cons_of_mem _ List.mem_cons_self), Region.contains_self _ _⟩
   · rw [s1234_length] at hi
     rw [hu.syms, hu.frame.readW (r := ⟨s.syms s1234Sym, 4096⟩)
-      (Offset.contains_base _ (by omega) (by omega)) hdT (by decide)]
+      (Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi])) hdT (by decide)]
     exact h.held i hi
   · rw [hu.rdi, hu.r8]; exact h.dKS.sub_right sub16
   · rw [hu.syms, hu.r8]; exact h.dTS.sub_right sub16
@@ -169,7 +169,7 @@ theorem LInv.bpre {s u : State} (h : EPre s) {f : Spec.Cast5.Block → Spec.Cast
   · rw [hu.syms]; exact h.fitT
   · rw [hu.rsi, BitVec.ofNat_toNat, BitVec.setWidth_eq]
   · rw [hu.wr, hu.rdx, h.wr]
-    exact ⟨_, List.mem_cons_self, Offset.contains_base _ (by omega) (by have := h.fD; omega)⟩
+    exact ⟨_, List.mem_cons_self, Offset.contains_base _ (by omega_using [hb]) (by have := h.fD; omega_using [hb, this])⟩
 
 /-- The loop's step: a block function run on block `b`. -/
 theorem LInv.step {s u v : State} (h : EPre s) {f : Spec.Cast5.Block → Spec.Cast5.Block} {b : Nat}
@@ -181,7 +181,7 @@ theorem LInv.step {s u v : State} (h : EPre s) {f : Spec.Cast5.Block → Spec.Ca
   have hN := h.fD
   -- The regions the block function writes, within those of the function.
   have sD : Region.Sub ⟨u.gpr .rdx, 8⟩ ⟨s.gpr .rdx, (s.gpr .rcx).toNat * 8⟩ := by
-    rw [hu.rdx]; exact Offset.sub_base _ (by omega)
+    rw [hu.rdx]; exact Offset.sub_base _ (by omega_using [hb])
   have sS : Region.Sub ⟨u.gpr .r8, 16⟩ ⟨s.gpr .r8, 256⟩ := by rw [hu.r8]; exact Region.sub_prefix (by decide)
   -- What lies outside both.
   have outside {R : Region} (hD : R.Disjoint ⟨u.gpr .rdx, 8⟩) (hS : R.Disjoint ⟨u.gpr .r8, 16⟩) :
@@ -205,10 +205,10 @@ theorem LInv.step {s u v : State} (h : EPre s) {f : Spec.Cast5.Block → Spec.Ca
   · have hd : 16 ≤ d ∧ d ≤ 56 := by
       simp only [saved_eq, List.mem_cons, Prod.mk.injEq, List.not_mem_nil, or_false] at hrd
       omega
-    have sSlot : Region.Sub ⟨s.gpr .r8 + BitVec.ofNat 64 d, 8⟩ ⟨s.gpr .r8, 256⟩ := Offset.sub_base _ (by omega)
+    have sSlot : Region.Sub ⟨s.gpr .r8 + BitVec.ofNat 64 d, 8⟩ ⟨s.gpr .r8, 256⟩ := Offset.sub_base _ (by omega_using [hd])
     rw [vf.readW (r := ⟨s.gpr .r8 + BitVec.ofNat 64 d, 8⟩) (Region.contains_self _ _) (outside
       ((h.dDS.symm.sub_left sSlot).sub_right sD)
-      (by rw [hu.r8]; exact Offset.disjoint_base _ (by omega) (by omega))) (by decide)]
+      (by rw [hu.r8]; exact Offset.disjoint_base _ (by omega_using [hd]) (by omega_using [hd]))) (by decide)]
     exact hu.slots r d hrd
   · by_cases hjb : j = b
     · subst hjb
@@ -216,12 +216,12 @@ theorem LInv.step {s u v : State} (h : EPre s) {f : Spec.Cast5.Block → Spec.Ca
       rw [ite_eq_right (Nat.lt_irrefl _)] at hd
       rw [ite_eq_left (Nat.lt_succ_self _), ← hd, ← hu.rdx, vout]
     · have hsub : Region.Sub ⟨s.gpr .rdx + BitVec.ofNat 64 (8 * j), 8⟩ ⟨s.gpr .rdx, (s.gpr .rcx).toNat * 8⟩ :=
-        Offset.sub_base _ (by omega)
-      rw [blockAt_frame vf _ (outside (by rw [hu.rdx]; exact Offset.disjoint _ (by omega) (by omega) (by omega))
+        Offset.sub_base _ (by omega_using [hj])
+      rw [blockAt_frame vf _ (outside (by rw [hu.rdx]; exact Offset.disjoint _ (by omega_using [hjb]) (by omega_using [hN, hj]) (by omega_using [hb, hN]))
         ((h.dDS.sub_left hsub).sub_right sS)), hu.data j hj]
       by_cases hjl : j < b
-      · rw [ite_eq_left hjl, ite_eq_left (by omega)]
-      · rw [ite_eq_right hjl, ite_eq_right (by omega)]
+      · rw [ite_eq_left hjl, ite_eq_left (by omega_using [hjl])]
+      · rw [ite_eq_right hjl, ite_eq_right (by omega_using [hjb, hjl])]
 
 theorem toNat_eq_zero_of_beq {x : BitVec 64} (h : (x == 0) = true) : x.toNat = 0 := by
   rw [beq_iff_eq] at h; rw [h]; rfl
@@ -241,7 +241,7 @@ theorem ecb_ok {blk : Prog isa} {f : Spec.Cast5.Schedule → Nat → Spec.Cast5.
     rw [h.wr]; exact ⟨_, List.mem_cons_of_mem _ List.mem_cons_self, Region.contains_self _ _⟩
   have sS : ∀ j < (s.gpr .rcx).toNat,
       Region.Sub ⟨s.gpr .rdx + BitVec.ofNat 64 (8 * j), 8⟩ ⟨s.gpr .rdx, (s.gpr .rcx).toNat * 8⟩ :=
-    fun j hj => Offset.sub_base _ (by omega)
+    fun j hj => Offset.sub_base _ (by omega_using [hj])
   unfold ecb
   refine WP.seq (WP.mono (save_ok s hw) fun u ⟨ug, urd, uwr, usy, uf, uslot, uz⟩ => ?_)
   have h0 : LInv s F 0 u := by

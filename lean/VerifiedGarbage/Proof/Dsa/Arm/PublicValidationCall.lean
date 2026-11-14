@@ -22,7 +22,7 @@ theorem head_ok {s : State} {base : Addr} {size : Nat} (W : Ws s base size) (big
   refine wp_mov (op2_reg s .r12) fun s₁ U₁ => wp_mov (op2_reg s₁ .r12) fun s₂ U₂ =>
     wp_movw fun s₃ U₃ => ?_
   have W₃ := ((W.of_upd U₁ (by decide)).of_upd U₂ (by decide)).of_upd U₃ (by decide)
-  refine wp_ldr (by decide) (W₃.ea12 (by change 64 < size; omega)) (W₃.read (by exact big)) fun s₄ U₄ => wp_movw fun u U₅ => WP.block_nil ?_
+  refine wp_ldr (by decide) (W₃.ea12 (by change 64 < size; omega_using [big])) (W₃.read (by exact big)) fun s₄ U₄ => wp_movw fun u U₅ => WP.block_nil ?_
   exact ⟨by rw [U₅.other _ (by decide), U₄.other _ (by decide), U₃.other _ (by decide), U₂.other _ (by decide), U₁.gpr],
     by rw [U₅.other _ (by decide), U₄.other _ (by decide), U₃.other _ (by decide), U₂.gpr, U₁.other _ (by decide)],
     ((((U₁.rest (by decide)).trans (U₂.rest (by decide))).trans (U₃.rest (by decide))).trans
@@ -37,7 +37,7 @@ theorem call_ok {s : State} {base : Addr} {size pLen qLen nP nQ P Q G Y : Nat}
       maskW base t = maskW base s &&& VG.Proof.Ecdsa.Arm.mask32 (publicChecks P Q G Y) ∧
       localVal base t Impl.Dsa.Layout.qMinusTwo qLen = Q - 2 ∧ Run base s t := by
   unfold Impl.Dsa.Arm.PublicValidation.call
-  refine WP.seq (WP.mono (head_ok S.ws (by have := S.big; omega) pLen qLen) fun u ⟨h11, h0, R, M⟩ => ?_)
+  refine WP.seq (WP.mono (head_ok S.ws (by have := S.big; omega_using [this]) pLen qLen) fun u ⟨h11, h0, R, M⟩ => ?_)
   have E : Pow.Entry u.callEntry base size :=
     ⟨by rw [State.callEntry_gpr _ (by decide), h0, S.ws.wb], by rw [State.callEntry_wr, R.wr]; exact S.ws.wr,
       S.ws.nowrap⟩
@@ -82,8 +82,8 @@ theorem call_trace {base : Addr} {size₁ size₂ pLen qLen nP nQ : Nat}
       (Taint.agree_ofRegs fun r hr => by
         simp only [wsRegs, Bool.false_eq_true, ↓reduceIte, List.nil_append, List.mem_singleton] at hr
         subst r; exact Ws.r12_eq w₁ w₂))
-    (head_ok w₁ (by have := X.C₁.S.big; omega) pLen qLen)
-    (head_ok w₂ (by have := X.C₂.S.big; omega) pLen qLen)
+    (head_ok w₁ (by have := X.C₁.S.big; omega_using [this]) pLen qLen)
+    (head_ok w₂ (by have := X.C₂.S.big; omega_using [this]) pLen qLen)
     fun u₁ u₂ ⟨_, h0₁, R₁, M₁⟩ ⟨_, h0₂, R₂, M₂⟩ => ?_
   have E₁ : Pow.Entry u₁.callEntry base size₁ :=
     ⟨by rw [State.callEntry_gpr _ (by decide), h0₁, w₁.wb], by rw [State.callEntry_wr, R₁.wr]; exact w₁.wr, w₁.nowrap⟩

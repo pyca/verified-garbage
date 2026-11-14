@@ -36,7 +36,7 @@ theorem countLoop_ok {body : Prog isa} {Inv : Nat → State → Prop} {Q : State
   · refine Or.inl ⟨?_, hQ s' (by rw [hj] at hi'; exact hi')⟩
     show s'.zf.map (!·) = some false
     rw [hz, hj]; rfl
-  · refine Or.inr ⟨?_, j - 1, by omega, by omega, by omega, hi'⟩
+  · refine Or.inr ⟨?_, j - 1, by omega_using [h1], by omega_using [hj], by omega_using [h2], hi'⟩
     show s'.zf.map (!·) = some true
     rw [hz]; simp [hj]
 
@@ -52,8 +52,8 @@ theorem decRbx_ok (s : State) {j : Nat} (hj : 1 ≤ j) (hj' : j < 2 ^ 64)
     rw [e1]
     apply BitVec.eq_of_toNat_eq
     rw [BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat, BitVec.toNat_ofNat]
-    rw [Nat.mod_eq_of_lt hj', Nat.mod_eq_of_lt (by omega : j - 1 < 2 ^ 64)]
-    omega
+    rw [Nat.mod_eq_of_lt hj', Nat.mod_eq_of_lt (by omega_using [hj'] : j - 1 < 2 ^ 64)]
+    omega_using [hj, hj']
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     simp only [RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, hr, ite_false]
 
@@ -87,7 +87,7 @@ theorem cmpRbxImm_ok (s : State) {j k : Nat} (hj' : j < 2 ^ 64) (hk : k < 2 ^ 31
     apply BitVec.eq_of_toNat_eq
     rw [BitVec.toNat_signExtend]
     simp [BitVec.toNat_ofNat, BitVec.msb_eq_decide]
-    split <;> omega
+    split <;> omega_arith
   rw [e]
   congr 1
   by_cases h : j = k
@@ -99,7 +99,7 @@ theorem cmpRbxImm_ok (s : State) {j k : Nat} (hj' : j < 2 ^ 64) (hk : k < 2 ^ 31
     simp only [BitVec.sub_add_cancel] at h2
     have h3 : BitVec.ofNat 64 j = BitVec.ofNat 64 k := h2.trans (by simp)
     have := congrArg BitVec.toNat h3
-    rw [BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hj', Nat.mod_eq_of_lt (by omega)] at this
+    rw [BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hj', Nat.mod_eq_of_lt (by omega_using [hk])] at this
     exact h this
 
 end VG.Proof.Weierstrass.X86_64

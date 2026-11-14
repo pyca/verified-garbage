@@ -79,12 +79,12 @@ theorem keeps_of_unch {ws : Addr} {m m' : Mem} (hu : Unch ws (saves ++ Window.bo
   intro i hi hown hp
   have h8 : Impl.Weierstrass.Mont.wsBytes = 8192 := rfl
   refine hu _ fun w hw => ?_
-  rw [show ws + BitVec.ofNat 64 i = off ws i from rfl, ofs_off0 ws (by omega)]
+  rw [show ws + BitVec.ofNat 64 i = off ws i from rfl, ofs_off0 ws (by omega_using [hi, h8])]
   have hw' := (by decide : ∀ w ∈ saves ++ Window.bodyW, (512 ≤ w.1 ∧ w.1 + w.2 ≤ 1056) ∨ 1504 ≤ w.1) w hw
   simp only [Impl.Weierstrass.Mul.Curve.Own, Impl.Weierstrass.Mul.Curve.slot, Impl.Weierstrass.Mul.Curve.tmpAt,
     Impl.Weierstrass.Mul.Curve.bitsAt, Impl.Weierstrass.Mul.Curve.pAt, Impl.Weierstrass.Mul.Curve.ptBytes,
     true_and] at hown hp
-  omega
+  omega_using [hp, hw', hown]
 
 /-- `vg_secp256k1_mul` meets `mulRVc`, given the group law. -/
 theorem mul_rv (hL : VG.Proof.Weierstrass.Law W) (s : State) (hs : mulRVc.pre s) :
@@ -95,7 +95,7 @@ theorem mul_rv (hL : VG.Proof.Weierstrass.Law W) (s : State) (hs : mulRVc.pre s)
   have hpR := unit
   have hp0 : 0 < W.p := by decide
   have ca : ∀ (m : Mem) {o : Nat}, o < 4096 → MC.toPoint.coordAt m base o = wordsVal m base o 4 :=
-    fun m _ ho => coordAt_eq m base (by omega)
+    fun m _ ho => coordAt_eq m base (by omega_using [ho])
   have dq : ∀ x, MC.toPoint.dec x = toM W.p (2 ^ 256) x :=
     VG.Proof.Weierstrass.Point.dec_eq MC.toPoint hL.one_ne_zero (VG.Proof.Weierstrass.Point.fermat_of_law hL) hpR
   -- The saves and `s0 = a0`.
@@ -116,15 +116,15 @@ theorem mul_rv (hL : VG.Proof.Weierstrass.Law W) (s : State) (hs : mulRVc.pre s)
     simp only [u₄.mem, u₃.mem, u₂.mem, u₁.mem, u₂.gpr, u₁.gpr]
   have O₄ : Unch base saves s.mem s₄.mem := by
     rw [m₄]
-    exact (((writeW_outside _ _ _ (by omega)).unch.trans (writeW_outside _ _ _ (by omega)).unch).trans
-      (writeW_outside _ _ _ (by omega)).unch)
+    exact (((writeW_outside _ _ _ (by omega_using [])).unch.trans (writeW_outside _ _ _ (by omega_using [])).unch).trans
+      (writeW_outside _ _ _ (by omega_using [])).unch)
   have sv₄ : ∀ i, i < 45 → sv base s₄ i = sv base s i := fun i hi =>
     O₄.wordsVal (fun w hw => by
       simp only [saves, List.mem_cons, List.not_mem_nil, or_false] at hw
-      have : secp256k1.sl i + 32 ≤ 1504 := by simp only [Cfg.sl, slot, secp256k1]; omega
-      rcases hw with rfl | rfl | rfl <;> (simp only; omega)) (by simp only [Cfg.sl, slot, secp256k1]; omega)
+      have : secp256k1.sl i + 32 ≤ 1504 := by simp only [Cfg.sl, slot, secp256k1]; omega_using [hi]
+      rcases hw with rfl | rfl | rfl <;> (simp only; omega_using [this])) (by simp only [Cfg.sl, slot, secp256k1]; omega_using [hi])
   have cs : ∀ i, i < 45 → MC.toPoint.coordAt s.mem base (secp256k1.sl i) = sv base s i := fun i hi =>
-    ca s.mem (by simp only [Cfg.sl, slot, secp256k1]; omega)
+    ca s.mem (by simp only [Cfg.sl, slot, secp256k1]; omega_using [hi])
   -- The slots' values, from the contract's.
   have hz' : sv base s₄ ZERO = 0 := by rw [sv₄ _ (by decide)]; exact (cs ZERO (by decide)).symm.trans hz
   have hone' : sv base s₄ ONEP = 2 ^ 256 % W.p := by
@@ -163,14 +163,14 @@ theorem mul_rv (hL : VG.Proof.Weierstrass.Law W) (s : State) (hs : mulRVc.pre s)
     U₅.word (fun w hw => by
       have := (by decide : ∀ w ∈ Window.bodyW, w.1 + w.2 ≤ 1504 ∨ 1528 ≤ w.1) w hw
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hd
-      omega) (by simp only [List.mem_cons, List.not_mem_nil, or_false] at hd; omega)
+      omega_using [this, hd]) (by simp only [List.mem_cons, List.not_mem_nil, or_false] at hd; omega_using [hd])
   have w20 : word s₅.mem base 1520 = s.gpr .ra := by
     rw [far 1520 (by simp), m₄, word_writeW_self]
   have w12 : word s₅.mem base 1512 = s.gpr .s1 := by
-    rw [far 1512 (by simp), m₄, (writeW_outside (d := 1520) _ base _ (by omega)).word (by omega) (by omega), word_writeW_self]
+    rw [far 1512 (by simp), m₄, (writeW_outside (d := 1520) _ base _ (by omega_using [])).word (by omega_using []) (by omega_using []), word_writeW_self]
   have w04 : word s₅.mem base 1504 = s.gpr .s0 := by
-    rw [far 1504 (by simp), m₄, (writeW_outside (d := 1520) _ base _ (by omega)).word (by omega) (by omega),
-      (writeW_outside (d := 1512) _ base _ (by omega)).word (by omega) (by omega), word_writeW_self]
+    rw [far 1504 (by simp), m₄, (writeW_outside (d := 1520) _ base _ (by omega_using [])).word (by omega_using []) (by omega_using []),
+      (writeW_outside (d := 1512) _ base _ (by omega_using [])).word (by omega_using []) (by omega_using []), word_writeW_self]
   refine ld_ws hw₅ (d := 1520) (by decide) (by decide) fun s₆ u₆ => ?_
   refine ld_ws (hw₅.of_kp (Kp.of_upd u₆)) (d := 1512) (by decide) (by decide) fun s₇ u₇ => ?_
   have hw₇ : WsReg s₇ base := ⟨by rw [u₇.other .s0 (by decide), u₆.other .s0 (by decide)]; exact hw₅.s0,
@@ -191,7 +191,7 @@ theorem mul_rv (hL : VG.Proof.Weierstrass.Law W) (s : State) (hs : mulRVc.pre s)
     refine ⟨fun _ _ => ?_, keeps_of_unch (O₄.trans U₅)⟩
     have e : MC.scalar base s.mem = sv base s₄ K := by rw [sv₄ _ (by decide)]; exact cs K (by decide)
     have c5 : ∀ i, i < 45 → MC.toPoint.coordAt s₅.mem base (secp256k1.sl i) = sv base s₅ i := fun i hi =>
-      ca s₅.mem (by simp only [Cfg.sl, slot, secp256k1]; omega)
+      ca s₅.mem (by simp only [Cfg.sl, slot, secp256k1]; omega_using [hi])
     have x0 : MC.toPoint.coordAt s₅.mem base MC.pAt = sv base s₅ RX := c5 RX (by decide)
     have x1 : MC.toPoint.coordAt s₅.mem base (MC.pAt + Impl.Weierstrass.Point.elemBytes MC.toPoint.k) =
         sv base s₅ RY := c5 RY (by decide)

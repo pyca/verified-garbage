@@ -34,7 +34,7 @@ theorem edi_of_scr {s : State} {base : Addr} {size : Nat} (hs : Scr s base size)
   apply BitVec.eq_of_toNat_eq
   have := hs.edi_toNat
   have := (s.gpr .edi).isLt
-  rw [hs.edi_toNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+  rw [hs.edi_toNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_arith)]
 
 theorem body_relCT (n e : Nat) (hn : 2 ≤ n) (hn48 : n ≤ 48) (he : 1 < e) (hen : e ≤ 2 * n) :
     RelCT isa (fun s t => s.gpr .esp = t.gpr .esp ∧ arg s 0 = arg t 0 ∧
@@ -60,12 +60,12 @@ theorem body_relCT (n e : Nat) (hn : 2 ≤ n) (hn48 : n ≤ 48) (he : 1 < e) (he
       have go : ∀ σ, BodyIn n σ → WP isa (.block save) σ fun u =>
           CoreIn n ((arg σ 0).setWidth 64) (σ.gpr .esp) u ∧ (∀ r ∈ calleeSaved, r ≠ .edi → u.gpr r = σ.gpr r) := by
         intro σ ⟨size, E, R, hz, hm1, hodd⟩
-        have hz24 : 24 ≤ size := by simp only [contextBytes, slot, stride] at hz; omega
+        have hz24 : 24 ≤ size := by simp only [contextBytes, slot, stride] at hz; omega_using [hz]
         refine WP.mono (save_ok E hz24) fun u ⟨Su, _, Ou, Ku⟩ => ?_
         have hv : wordsVal u.mem ((arg σ 0).setWidth 64) (slot n 0) n =
             wordsVal σ.mem ((arg σ 0).setWidth 64) (slot n 0) n := by
           rw [wordsVal_eq_val32, wordsVal_eq_val32]
-          exact Ou.val32 (by simp only [slot]; omega) (by have := E.nowrap; simp only [slot, stride] at hz ⊢; omega)
+          exact Ou.val32 (by simp only [slot]; omega_using []) (by have := E.nowrap; simp only [slot, stride] at hz ⊢; omega_using [hn48])
         exact ⟨⟨size, _, Su, R, Ku.1 _ (by decide), hz, hv, hm1, hodd⟩,
           fun r hr hne => Ku.1 r (by revert hr hne; cases r <;> simp [calleeSaved])⟩
       exact ⟨go s B₁, go t B₂⟩

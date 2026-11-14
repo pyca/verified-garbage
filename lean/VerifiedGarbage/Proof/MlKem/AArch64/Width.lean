@@ -62,6 +62,6 @@ theorem digits_range_succ (w : Nat) (f : Nat → Nat) (e : Nat) :
     have h : 2 ^ w * (2 ^ (w * L.length) * a) = 2 ^ (w * L.length) * 2 ^ w * a := by
       rw [Nat.mul_left_comm, Nat.mul_assoc]
     rw [Nat.mul_add, h]
-    omega
+    omega_using []
 
 end VG.Proof.MlKem.AArch64

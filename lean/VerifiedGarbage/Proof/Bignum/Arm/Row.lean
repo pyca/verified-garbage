@@ -26,7 +26,7 @@ theorem join16 (x : BitVec 32) : (x &&& mask16) ||| ((x >>> 16) <<< 16) = x := b
   by_cases h : i < 16
   · simp only [ones i h, h, hi, decide_true, Bool.and_true, Bool.not_true,
       Bool.and_false, Bool.false_and, Bool.or_false]
-  · have h16 : 16 + (i - 16) = i := by omega
+  · have h16 : 16 + (i - 16) = i := by omega_using [h]
     simp only [h, hi, h16, decide_true, decide_false, Bool.true_and, Bool.not_false]
     cases x.getLsbD i <;> simp only [Bool.false_and, Bool.or_false, Bool.or_true]
 
@@ -56,10 +56,10 @@ theorem rowLoop2_ok {s1 s : State} {x base : BitVec 32} {size o b n i : Nat}
     WP isa rowLoop2 s (RowLoopInv s1 x base o b n n) := by
   unfold rowLoop2
   let P := fun k t => ∃ j, j + 2 * k = n ∧ 0 < k ∧ RowLoopInv s1 x base o b n j t
-  refine WP.loop (M := isa) P ?_ ((n - i) / 2) s ⟨i, by omega, by omega, inv⟩
+  refine WP.loop (M := isa) P ?_ ((n - i) / 2) s ⟨i, by omega_using [hi, he], by omega_using [hi, he], inv⟩
   intro k t h
   obtain ⟨j, hjk, hk, hj⟩ := h
-  refine WP.mono (rowBody2_ok ctx hj (by omega) h1 h10 h9) ?_
+  refine WP.mono (rowBody2_ok ctx hj (by omega_using [hjk, hk]) h1 h10 h9) ?_
   rintro u ⟨hu, hz⟩
   by_cases hd : j + 2 = n
   · left
@@ -67,7 +67,7 @@ theorem rowLoop2_ok {s1 s : State} {x base : BitVec 32} {size o b n i : Nat}
     change some (!u.z) = some false
     simp only [hz, hd, decide_true, Bool.not_true]
   · right
-    refine ⟨?_, k - 1, by omega, j + 2, by omega, by omega, hu⟩
+    refine ⟨?_, k - 1, by omega_using [hk], j + 2, by omega_using [hjk, hk], by omega_using [hjk, hk, hd], hu⟩
     change some (!u.z) = some true
     simp only [hz, hd, decide_false, Bool.not_false]
 
@@ -77,7 +77,7 @@ theorem ofNat_and_one {n : Nat} (h : n < 2 ^ 32) :
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_and, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt h,
     show (1 : BitVec 32).toNat = 1 from rfl, Nat.and_one_is_mod]
-  omega
+  omega_using []
 
 theorem sub_zero32 (x : BitVec 32) : x - (0 : BitVec 32) = x := BitVec.sub_zero x
 
@@ -100,7 +100,7 @@ theorem row_ok (s : State) {base : BitVec 32} {size o b n : Nat}
     (hp12 : s.gpr .r12 = base + BitVec.ofNat 32 b)
     (hcount : s.gpr .lr = BitVec.ofNat 32 n) :
     WP isa row s (RowInv s base o b n n) := by
-  have hn32 : n < 2 ^ 32 := by have := ctx.nowrap; have := ctx.outFits; omega
+  have hn32 : n < 2 ^ 32 := by have := ctx.nowrap; have := ctx.outFits; omega_arith
   rw [row, WP.seq_iff]
   apply WP.block_append_iff.mpr
   refine WP.mono (rowSplit_ok s) ?_
@@ -109,7 +109,7 @@ theorem row_ok (s : State) {base : BitVec 32} {size o b n : Nat}
     ⟨ctx.nowrap, ctx.outFits, ctx.inFits, ctx.separate, by rw [rest1.wr]; exact ctx.writable⟩
   let x := s.gpr .r1
   have init : RowLoopInv s1 x base o b n 0 s1 := by
-    refine ⟨by omega, ?_, ?_, ?_, Outside.refl _ _ _ _, ?_, Rest.refl _ _⟩
+    refine ⟨by omega_using [], ?_, ?_, ?_, Outside.refl _ _ _ _, ?_, Rest.refl _ _⟩
     · rw [rest1.gpr .r0 (by decide)]
       simpa only [Nat.mul_zero, Nat.add_zero] using hp0
     · rw [rest1.gpr .r12 (by decide)]
@@ -123,7 +123,7 @@ theorem row_ok (s : State) {base : BitVec 32} {size o b n : Nat}
     WP.block_nil ?_
   have z3 : s3.z = decide (n % 2 = 0) := by
     rw [hz3, u2.gpr, dpVal, lr1, ofNat_and_one hn32, sub_zero32,
-      ofNat_beq_zero (by omega)]
+      ofNat_beq_zero (by omega_using [])]
   have inv3 : RowLoopInv s1 x base o b n 0 s3 :=
     init.of_rest ((u2.rest (by decide)).trans (f3.rest _)) (by rw [f3.mem, u2.mem])
       (by rw [f3.gpr, u2.other .r11 (by decide)])
@@ -132,8 +132,8 @@ theorem row_ok (s : State) {base : BitVec 32} {size o b n : Nat}
   refine WP.mono (Q := RowLoopInv s1 x base o b n (n % 2)) ?_ fun t ht => ?_
   · refine WP.ite (!s3.z) rfl (fun hb => ?_) (fun hb => WP.block_nil ?_)
     · have hodd : n % 2 = 0 + 1 := by
-        rw [z3] at hb; simp only [Bool.not_eq_true', decide_eq_false_iff_not] at hb; omega
-      refine WP.mono (rowBody_ok ctx1 inv3 (by omega) h1 h10 h9) fun u hu => ?_
+        rw [z3] at hb; simp only [Bool.not_eq_true', decide_eq_false_iff_not] at hb; omega_using [hb]
+      refine WP.mono (rowBody_ok ctx1 inv3 (by omega_using [hn]) h1 h10 h9) fun u hu => ?_
       rw [hodd]
       exact hu.1
     · have heven : n % 2 = 0 := by
@@ -145,15 +145,15 @@ theorem row_ok (s : State) {base : BitVec 32} {size o b n : Nat}
   have inv1 : RowLoopInv s1 x base o b n (n % 2) t1 :=
     ht.of_rest (f1.rest _) f1.mem (by rw [f1.gpr])
   have z1 : t1.z = decide (n - n % 2 = 0) := by
-    rw [hz1, ht.count, sub_zero32, ofNat_beq_zero (by omega)]
+    rw [hz1, ht.count, sub_zero32, ofNat_beq_zero (by omega_using [hn32])]
   -- The rest, two words at a time.
   rw [WP.seq_iff]
   refine WP.mono (Q := RowLoopInv s1 x base o b n n) ?_ fun t ht => ?_
   · refine WP.ite (!t1.z) rfl (fun hb => ?_) (fun hb => WP.block_nil ?_)
     · rw [z1] at hb; simp only [Bool.not_eq_true', decide_eq_false_iff_not] at hb
-      exact rowLoop2_ok ctx1 inv1 (by omega) (by omega) h1 h10 h9
+      exact rowLoop2_ok ctx1 inv1 (by omega_using [hb]) (by omega_using []) h1 h10 h9
     · rw [z1] at hb; simp only [Bool.not_eq_false', decide_eq_true_eq] at hb
-      have e : n % 2 = n := by omega
+      have e : n % 2 = n := by omega_using [hb]
       exact cast (congrArg (fun i => RowLoopInv s1 x base o b n i t1) e) inv1
   refine wp_dp (op2_lsl (by decide)) fun u hu => WP.block_nil ?_
   have r1 : u.gpr .r1 = s.gpr .r1 := by

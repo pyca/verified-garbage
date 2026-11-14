@@ -46,7 +46,7 @@ theorem chunk_t {R p T C q i : Nat} (hR : Nat.Coprime R p) (hT : T * R % p = C *
     rw [Nat.pow_succ]; grind
   have h1 : (T * R + C * (q + R ^ (i + 1))) % p = (C * q) % p := by
     rw [Nat.add_mod, hT, Nat.mul_mod C (q + R ^ (i + 1)), hq, Nat.mul_zero, Nat.zero_mod, Nat.add_zero, Nat.mod_mod]
-  have h2 : C * q ≤ T * R + C * (q + R ^ (i + 1)) := by rw [Nat.mul_add]; omega
+  have h2 : C * q ≤ T * R + C * (q + R ^ (i + 1)) := by rw [Nat.mul_add]; omega_using []
   rw [e]
   exact Nat.sub_mod_eq_zero_of_mod_eq h1
 
@@ -59,7 +59,7 @@ theorem chunk_q {R p q q' r2 i : Nat} (hR : Nat.Coprime R p) (hq' : q' * R % p =
   have h1 : (q' * R + R * R * (q + R ^ (i + 1))) % p = (R * R * q) % p := by
     rw [Nat.add_mod, hq', Nat.mul_mod (R * R) (q + R ^ (i + 1)), hq, Nat.mul_zero, Nat.zero_mod, Nat.add_zero, Nat.mod_mod,
       Nat.mul_mod q r2, hr2, ← Nat.mul_mod, Nat.mul_comm]
-  have h2 : R * R * q ≤ q' * R + R * R * (q + R ^ (i + 1)) := by rw [Nat.mul_add]; omega
+  have h2 : R * R * q ≤ q' * R + R * R * (q + R ^ (i + 1)) := by rw [Nat.mul_add]; omega_using []
   rw [e]
   exact Nat.sub_mod_eq_zero_of_mod_eq h1
 
@@ -69,7 +69,7 @@ theorem chunk_q0 {R p q r2 : Nat} (hR : Nat.Coprime R p) (hp : 1 ≤ p) (hq : q 
   refine mod_cancel hR ?_
   have e : R * (q + R ^ (0 + 1)) + R * R * (p - 1) = q * R + R * R * p := by
     rw [Nat.zero_add, Nat.pow_one]
-    obtain ⟨p', rfl⟩ : ∃ p', p = p' + 1 := ⟨p - 1, by omega⟩
+    obtain ⟨p', rfl⟩ : ∃ p', p = p' + 1 := ⟨p - 1, by omega_using [hp]⟩
     rw [Nat.add_sub_cancel]; grind
   have h1 : (q * R + R * R * p) % p = (R * R * (p - 1)) % p := by
     rw [Nat.add_mod, hq, Nat.mul_mod (R * R) p, Nat.mod_self, Nat.mul_zero, Nat.zero_mod, Nat.add_zero, Nat.mod_mod,
@@ -83,7 +83,7 @@ theorem chunk_s {p S T A C Ri S' : Nat} (hT : T < p) (hS : S % p = A % p) (hTC :
     (hS' : S' = (S + p - T) % p) : S' % p = (A + Ri * C) % p := by
   rw [hS', Nat.mod_mod]
   have e : (S + p - T + (T + C * Ri)) % p = (A + Ri * C) % p := by
-    rw [show S + p - T + (T + C * Ri) = S + C * Ri + p by omega, Nat.add_mod_right, Nat.add_mod, hS,
+    rw [show S + p - T + (T + C * Ri) = S + C * Ri + p by omega_using [hT], Nat.add_mod_right, Nat.add_mod, hS,
       ← Nat.add_mod, Nat.mul_comm]
   rw [Nat.add_mod, hTC, Nat.add_zero, Nat.mod_mod] at e
   exact e
@@ -93,22 +93,22 @@ abbrev nChunks (K w : Nat) : Nat := (K + w - 1) / w
 
 theorem lt_nChunks {K w m : Nat} (hw : 1 ≤ w) : m < nChunks K w ↔ m * w < K := by
   unfold nChunks
-  rw [← Nat.add_one_le_iff, Nat.le_div_iff_mul_le (by omega), Nat.succ_mul]
-  omega
+  rw [← Nat.add_one_le_iff, Nat.le_div_iff_mul_le (by omega_using [hw]), Nat.succ_mul]
+  omega_using [hw]
 
 theorem nChunks_pos {K w : Nat} (hw : 1 ≤ w) (hK : 1 ≤ K) : 0 < nChunks K w :=
-  (lt_nChunks hw).mpr (by rw [Nat.zero_mul]; omega)
+  (lt_nChunks hw).mpr (by rw [Nat.zero_mul]; omega_using [hK])
 
 theorem le_nChunks_mul {K w : Nat} (hw : 1 ≤ w) : K ≤ nChunks K w * w := by
   have := mt (lt_nChunks (K := K) (m := nChunks K w) hw).mpr (Nat.lt_irrefl _)
-  omega
+  omega_using [this]
 
 theorem nChunks_mul_lt {K w : Nat} (hw : 1 ≤ w) (hK : 1 ≤ K) : nChunks K w * w < K + w := by
-  have h := (lt_nChunks (K := K) (m := nChunks K w - 1) hw).mp (by have := nChunks_pos hw hK; omega)
+  have h := (lt_nChunks (K := K) (m := nChunks K w - 1) hw).mp (by have := nChunks_pos hw hK; omega_using [this])
   have e : nChunks K w * w = (nChunks K w - 1) * w + w := by
     have := nChunks_pos hw hK
-    rw [← Nat.succ_mul]; congr 1; omega
-  omega
+    rw [← Nat.succ_mul]; congr 1; omega_using [this]
+  omega_using [h, e]
 
 /-- The first `a` words of a number of `a + b` words below `2^(64 a)`. -/
 theorem wv_prefix {m : Mem} {B : Addr} {d a b V : Nat} (h : wv m B d (a + b) = V) (hV : V < 2 ^ (64 * a)) :
@@ -118,13 +118,13 @@ theorem wv_prefix {m : Mem} {B : Addr} {d a b V : Nat} (h : wv m B d (a + b) = V
   rcases Nat.eq_zero_or_pos (wv m B (d + 8 * a) b) with h0 | h0
   · rw [h0, Nat.mul_zero, Nat.add_zero] at h; exact h
   · have : 2 ^ (64 * a) ≤ 2 ^ (64 * a) * wv m B (d + 8 * a) b := Nat.le_mul_of_pos_right _ h0
-    omega
+    omega_using [h, hV, this]
 
 /-- The chunks of `k` bytes, of `w ≤ ⌈k / 8⌉` words, fit in `2 ⌈k / 8⌉` words. -/
 theorem chunks_le {k w : Nat} (hw : 1 ≤ w) (hwk : w ≤ (k + 7) / 8) :
     w * nChunks ((k + 7) / 8) w ≤ 2 * ((k + 7) / 8) := by
-  have := nChunks_mul_lt (K := (k + 7) / 8) hw (by omega)
-  rw [Nat.mul_comm]; omega
+  have := nChunks_mul_lt (K := (k + 7) / 8) hw (by omega_using [hw, hwk])
+  rw [Nat.mul_comm]; omega_using [hwk, this]
 
 /-- The input of `k` bytes, in `2 ⌈k / 8⌉` words: its chunks' words hold it. -/
 theorem chunks_val {m : Mem} {B : Addr} {d k w V : Nat} (hw : 1 ≤ w) (hwk : w ≤ (k + 7) / 8)
@@ -134,7 +134,7 @@ theorem chunks_val {m : Mem} {B : Addr} {d k w V : Nat} (hw : 1 ≤ w) (hwk : w 
   refine wv_prefix (b := 2 * ((k + 7) / 8) - w * nChunks ((k + 7) / 8) w) (by rw [Nat.add_sub_cancel' hle]; exact h) ?_
   refine Nat.lt_of_lt_of_le hV ?_
   rw [show (256 : Nat) = 2 ^ 8 from rfl, ← Nat.pow_mul]
-  exact Nat.pow_le_pow_right (by decide) (by rw [Nat.mul_comm w]; omega)
+  exact Nat.pow_le_pow_right (by decide) (by rw [Nat.mul_comm w]; omega_using [hK])
 
 /-- `r3 := ((r31 - 1) >> 63) ^ 1`: 1 if `r31` is in `[1, 2^63]`, positive as a signed number but for `2^63`. -/
 theorem flag_ne_zero (x : BitVec 64) :
@@ -143,7 +143,7 @@ theorem flag_ne_zero (x : BitVec 64) :
     rw [BitVec.toNat_ushiftRight, BitVec.toNat_sub, Nat.shiftRight_eq_div_pow]
     have := x.isLt
     simp only [BitVec.toNat_ofNat]
-    split <;> omega
+    split <;> omega_arith
   have hy : ∀ y : BitVec 64, y.toNat = 0 ∨ y.toNat = 1 → ((y ^^^ BitVec.ofNat 64 1).toNat ≠ 0 ↔ y.toNat = 0) := by
     intro y hy
     rcases hy with h0 | h1
@@ -173,10 +173,10 @@ theorem flag_iff {K w j : Nat} (hw : 1 ≤ w) (hK : 1 ≤ K) (hK' : K < 2 ^ 40) 
     rw [hn] at hc
     have := le_nChunks_mul (K := K) hw
     rw [← hn] at this
-    omega
+    omega_using [hw, hK, hK', hw', hj, hm, hjw, hc, e, hx, h1, h2, hn, this]
   · intro hn
-    have hlt : (j + 1) * w < K := hc.mp (by omega)
-    omega
+    have hlt : (j + 1) * w < K := hc.mp (by omega_using [hj, hn])
+    omega_using [hK', hj, hc, hn]
 
 /-! ## The pieces -/
 
@@ -191,12 +191,12 @@ theorem copyAdv_ok {s : State} {B : Addr} {Z a b w : Nat} (hs : Scr s B Z)
   have hn := hs.nowrap
   have z : ∀ c, off (off B c) 0 = off B c := fun c => by rw [off_off, Nat.add_zero]
   refine WP.mono (Pub.copyIn_ok (B := off B b) (Z := 8 * w) (P := off B a) (Zp := 8 * w) (dS := 0) (dD := 0)
-    (hs.sub hb) (by have := toNat_off_le B a; omega)
-    (fun i hi => by rw [off_off]; exact hs.ld (by omega) (by decide))
-    (by rw [z]; exact h15) (by rw [z]; exact h14) h11 hw hw' (by omega) (by omega)
-    (sep_sub B (by omega) (by omega) hd (by omega))) fun t ⟨⟨_, e15, hw, ho⟩, k⟩ =>
+    (hs.sub hb) (by have := toNat_off_le B a; omega_using [ha, hn, this])
+    (fun i hi => by rw [off_off]; exact hs.ld (by omega_using [ha, hi]) (by decide))
+    (by rw [z]; exact h15) (by rw [z]; exact h14) h11 hw hw' (by omega_using []) (by omega_using [])
+    (sep_sub B (by omega_using [ha, hn]) (by omega_using [hb, hn]) hd (by omega_using [hw]))) fun t ⟨⟨_, e15, hw, ho⟩, k⟩ =>
       ⟨⟨fun i hi => by have := hw i hi; rwa [word_off, word_off, Nat.zero_add] at this,
-        out_sub ho (by omega) (by omega) (by omega), by rw [e15, off_off, Nat.zero_add]⟩, k⟩
+        out_sub ho (by omega_using []) (by omega_using [hb, hn]) (by omega_arith), by rw [e15, off_off, Nat.zero_add]⟩, k⟩
 
 /-- A frame of a part, from one of the whole. -/
 theorem out_rebase {B : Addr} {o d n : Nat} {m m' : Mem} (h : Outside B (o + d) n m m') (ho : o < 2 ^ 64) :
@@ -205,7 +205,7 @@ theorem out_rebase {B : Addr} {o d n : Nat} {m m' : Mem} (h : Outside B (o + d) 
   refine h x ?_
   change ofs (off B o) x < d ∨ d + n ≤ ofs (off B o) x at hx
   change ofs B x < o + d ∨ o + d + n ≤ ofs B x
-  rcases ofs_rebase B x (o := o) (by omega) with ⟨h1, h2⟩ | ⟨h1, h2⟩ <;> omega
+  rcases ofs_rebase B x (o := o) (by omega_using [ho]) with ⟨h1, h2⟩ | ⟨h1, h2⟩ <;> omega_arith
 
 /-- `r30 := r15`. -/
 theorem mv30_ok (t : State) :
@@ -215,7 +215,7 @@ theorem mv30_ok (t : State) :
 theorem shr1_ofNat {w : Nat} (hw : w < 2 ^ 62) : BitVec.ofNat 64 (2 * w) >>> 1 = BitVec.ofNat 64 w := by
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow]
-  omega
+  omega_using [hw]
 
 /-- The count of the words left, and whether any are. -/
 theorem tick_ok {t : State} {w : Nat} (h11 : t.gpr .r11 = BitVec.ofNat 64 (2 * w)) (hw : w < 2 ^ 62) :
@@ -232,17 +232,17 @@ theorem outs_work {B : Addr} {w : Nat} {rs : List (Nat × Nat)} {m m' : Mem} (h 
     (hr : ∀ r ∈ rs, slot w 2 ≤ r.1 ∧ r.1 + r.2 ≤ slot w 8) : Mont.Outside B (slot w 2) (6 * (8 * (w + 2))) m m' :=
   fun x hx => h x fun r hr' => by
     have := hr r hr'
-    have e : slot w 8 = slot w 2 + 6 * (8 * (w + 2)) := by unfold slot; omega
+    have e : slot w 8 = slot w 2 + 6 * (8 * (w + 2)) := by unfold slot; omega_using []
     change Mont.ofs B x < slot w 2 ∨ slot w 2 + 6 * (8 * (w + 2)) ≤ Mont.ofs B x at hx
     change Mont.ofs B x < r.1 ∨ r.1 + r.2 ≤ Mont.ofs B x
-    omega
+    omega_using [this, e, hx]
 
 /-- A number outside every region of a frame. -/
 theorem outs_val32 {B : Addr} {rs : List (Nat × Nat)} {m m' : Mem} (h : Mont.Outs B rs m m') {d k : Nat}
     (hr : ∀ r ∈ rs, d + 4 * k ≤ r.1 ∨ r.1 + r.2 ≤ d) (hd : d + 4 * k ≤ 2 ^ 64) :
     val32 m' B d k = val32 m B d k :=
   val32_congr fun j hj => congrArg BitVec.toNat (Mem.readW_congr fun i hi => h _ fun r hr' => by
-    have := hr r hr'; rw [Mont.ofs_off B (by omega)]; omega)
+    have := hr r hr'; rw [Mont.ofs_off B (by omega_using [hd, hj, hi])]; omega_using [hj, hi, this])
 
 /-- The registers `chunkStep` writes. -/
 def chunkRegs : List Reg :=
@@ -464,24 +464,24 @@ theorem pm1_ok {t : State} {B : Addr} {Z w Pv : Nat} (hs : Scr t B Z) (hZ : slot
   have e9 : slot w 9 = 256 + 9 * (8 * (w + 2)) := rfl
   refine WP.keep _ ?_ (by decide)
   have hld : t.mem.readW (off B (slot w 8)) 64 = word t.mem B (slot w 8) := rfl
-  prun [h14, BitVec.add_zero, hs.ld (show slot w 8 + 8 ≤ Z by omega), hs.st (show slot w 8 + 8 ≤ Z by omega), hld]
+  prun [h14, BitVec.add_zero, hs.ld (show slot w 8 + 8 ≤ Z by omega_using [hZ, e8, e9]), hs.st (show slot w 8 + 8 ≤ Z by omega_using [hZ, e8, e9]), hld]
   have ow := writeW_outside t.mem B (d := slot w 8) (word t.mem B (slot w 8) - BitVec.ofNat 64 1) (by omega)
   refine ⟨?_, fun x hx => ow x hx⟩
-  obtain ⟨w', rfl⟩ : ∃ w', w = 1 + w' := ⟨w - 1, by omega⟩
+  obtain ⟨w', rfl⟩ : ∃ w', w = 1 + w' := ⟨w - 1, by omega_using [hw]⟩
   have L : ∀ m : Mem, wv m B (slot (1 + w') 8) (1 + w') =
       (word m B (slot (1 + w') 8)).toNat + 2 ^ 64 * wv m B (slot (1 + w') 8 + 8) w' := fun m => by
     rw [wv_add]; simp only [wv, Nat.zero_add, Nat.mul_zero, Nat.add_zero, Nat.pow_zero, Nat.one_mul, Nat.mul_one]
   subst h8
   rw [Pre.val32_eq_wv, Pre.val32_eq_wv, L, L] at *
-  rw [word_writeW_self, ow.wv (Or.inr (by omega)) (by omega)]
+  rw [word_writeW_self, ow.wv (Or.inr (by omega_using [])) (by omega)]
   have hlow : (word t.mem B (slot (1 + w') 8)).toNat % 2 = 1 := by
     rw [show (2 : Nat) ^ 64 = 2 * 2 ^ 63 from rfl, Nat.mul_assoc, Nat.add_mul_mod_self_left] at hodd
     exact hodd
   generalize word t.mem B (slot (1 + w') 8) = x at hlow ⊢
   have hx : (x - BitVec.ofNat 64 1).toNat = x.toNat - 1 := by
-    rw [BitVec.toNat_sub, BitVec.toNat_ofNat]; have := x.isLt; omega
+    rw [BitVec.toNat_sub, BitVec.toNat_ofNat]; have := x.isLt; omega_using [hlow]
   rw [hx]
-  omega
+  omega_using [hlow]
 
 /-- The registers `reduceFrom`'s setup writes, before its pointers. -/
 def setupRegs : List Reg :=

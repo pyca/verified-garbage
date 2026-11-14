@@ -108,11 +108,11 @@ theorem accLh_ok {H : Hash} {D : Nat} (hD : H.D = D) (hD0 : 0 < D) (hD64 : D ≤
   have rdw : ∀ {u : State}, u.rd = t.rd → u.wr = t.wr → ∀ {o : Nat}, o + 1 ≤ oRsa →
       InRegions (u.rd ++ u.wr) (off (Sd s) o) 1 := fun hr hw _ ho => by
     rw [hr, hw, h.wr]; exact sc_inR PF ho _
-  refine WP.seq (wp_addi (h := by unfold oEm; omega) fun t₁ o₁ e₁ => wp_addi fun t₂ o₂ e₂ =>
+  refine WP.seq (wp_addi (h := by unfold oEm; omega_using [hD64]) fun t₁ o₁ e₁ => wp_addi fun t₂ o₂ e₂ =>
     wp_lbz (a := off (Sd s) 0) (by rw [o₂.get .r14, o₁.get .r14, h.r14, hE]) (rdw (o₁.rd ▸ o₂.rd) (o₁.wr ▸ o₂.wr)
-      (by decide)) fun t₃ o₃ e₃ => wp_li (by omega) fun t₄ o₄ e₄ => wp_nil ?_)
+      (by decide)) fun t₃ o₃ e₃ => wp_li (by omega_using [hD64]) fun t₄ o₄ e₄ => wp_nil ?_)
   have k₄ : Only [.r4, .r5, .r24, .r6] t t₄ := (o₁.trans (o₂.trans (o₃.trans o₄))).mono
-  refine WP.mono (wp_countdown (cnt := .r6) (N := H.D) (by omega) hD0
+  refine WP.mono (wp_countdown (cnt := .r6) (N := H.D) (by omega_using [hD64]) hD0
     (fun i u => Only [.r4, .r5, .r6, .r7, .r8, .r24] t u ∧ u.gpr .r4 = off (Sd s) (1 + H.D + i) ∧
       u.gpr .r5 = off (Sd s) (oDig + i) ∧ u.gpr .r24 = accG (view t.mem (Sd s) 0)
         (fun i => view t.mem (Sd s) (1 + H.D + i)) (fun i => view t.mem (Sd s) (oDig + i)) i) ?_
@@ -122,9 +122,9 @@ theorem accLh_ok {H : Hash} {D : Nat} (hD : H.D = D) (hD0 : 0 < D) (hD64 : D ≤
     fun u ⟨o, _, _, a⟩ => ⟨h.only PF o, o.mem, fun r hr => o.gpr r (by revert r; decide), a⟩
   intro i hi u ⟨o, r4, r5, a⟩ _
   refine wp_lbz (a := off (Sd s) (1 + H.D + i)) (by rw [r4, BitVec.add_zero])
-    (rdw o.rd o.wr (by omega)) fun u₁ p₁ f₁ => ?_
+    (rdw o.rd o.wr (by omega_using [hRs, hD64, hi])) fun u₁ p₁ f₁ => ?_
   refine wp_lbz (a := off (Sd s) (oDig + i)) (by rw [p₁.get .r5, r5, BitVec.add_zero])
-    (rdw (p₁.rd.trans o.rd) (p₁.wr.trans o.wr) (by omega)) fun u₂ p₂ f₂ => ?_
+    (rdw (p₁.rd.trans o.rd) (p₁.wr.trans o.wr) (by omega_using [hDg, hRs, hD64, hi])) fun u₂ p₂ f₂ => ?_
   refine wp_xor fun u₃ p₃ f₃ => wp_or fun u₄ p₄ f₄ => wp_addi fun u₅ p₅ f₅ => wp_addi fun u₆ p₆ f₆ =>
     wp_subi fun u₇ p₇ f₇ => wp_nil ⟨⟨?_, ?_, ?_, ?_⟩, ?_⟩
   · exact (o.trans (p₁.trans (p₂.trans (p₃.trans (p₄.trans (p₅.trans (p₆.trans p₇))))))).mono
@@ -149,7 +149,7 @@ theorem scan_ok {H : Hash} {D : Nat} (hD : H.D = D) (hD64 : D ≤ 64) (hk : 2 * 
   have ek : kk s = (s.gpr .r7).toNat := rfl
   have PF := fitsM (m := m) P
   subst hD
-  refine WP.seq (wp_addi (h := by unfold oEm; omega) fun t₁ o₁ e₁ => wp_subi (h := by omega) fun t₂ o₂ e₂ =>
+  refine WP.seq (wp_addi (h := by unfold oEm; omega_using [hD64]) fun t₁ o₁ e₁ => wp_subi (h := by omega_using [hD64]) fun t₂ o₂ e₂ =>
     wp_li (by decide) fun t₃ o₃ e₃ => wp_li (by decide) fun t₄ o₄ e₄ => wp_subi fun t₅ o₅ e₅ =>
     wp_li (by decide) fun t₆ o₆ e₆ => wp_nil ?_)
   have k₆ : Only [.r4, .r5, .r6, .r7, .r25] t t₆ := (o₁.trans (o₂.trans (o₃.trans (o₄.trans (o₅.trans o₆))))).mono
@@ -163,14 +163,14 @@ theorem scan_ok {H : Hash} {D : Nat} (hD : H.D = D) (hD64 : D ≤ 64) (hk : 2 * 
     · rw [o₆.get .r7, e₅, e₄]; rfl
     · rw [e₆]; rfl
     · rw [k₆.get .r24]; rfl
-  refine WP.seq (WP.mono (wp_countdown (cnt := .r5) (N := kk s - (2 * H.D + 1)) (by omega) (by omega)
+  refine WP.seq (WP.mono (wp_countdown (cnt := .r5) (N := kk s - (2 * H.D + 1)) (by omega_using [ek]) (by omega_using [hk])
     (fun i u => ScanI f (t.gpr .r24) (off (Sd s) (1 + 2 * H.D)) i u ∧
       Only [.r3, .r4, .r5, .r6, .r7, .r8, .r9, .r10, .r24, .r25] t₆ u) ?_
     ⟨I0, Only.refl _ _⟩ (by rw [o₆.get .r5, o₅.get .r5, o₄.get .r5, o₃.get .r5, e₂, o₁.get .r15, Base.r15 h,
-      sub_ofNat (by omega)])) fun u ⟨I, o⟩ => ?_)
+      sub_ofNat (by omega_using [ek, hk])])) fun u ⟨I, o⟩ => ?_)
   · intro i hi u ⟨I, o⟩ _
     refine wp_lbz (a := off (Sd s) (1 + 2 * H.D + i)) (by rw [I.r4, BitVec.add_zero, off_off])
-      (by rw [o.rd, o.wr, k₆.rd, k₆.wr, h.wr]; exact sc_inR PF (by omega) _) fun u₁ p₁ f₁ => ?_
+      (by rw [o.rd, o.wr, k₆.rd, k₆.wr, h.wr]; exact sc_inR PF (by omega_using [hRs, hk2, ek, hi]) _) fun u₁ p₁ f₁ => ?_
     refine wp_subi fun u₂ p₂ f₂ => wp_lsr fun u₃ p₃ f₃ => wp_li (by decide) fun u₄ p₄ f₄ =>
       wp_xor fun u₅ p₅ f₅ => wp_subi fun u₆ p₆ f₆ => wp_lsr fun u₇ p₇ f₇ => wp_or fun u₈ p₈ f₈ =>
       wp_subi fun u₉ p₉ f₉ => wp_and fun u₁₀ p₁₀ f₁₀ => wp_or fun u₁₁ p₁₁ f₁₁ => wp_li (by decide) fun u₁₂ p₁₂ f₁₂ =>

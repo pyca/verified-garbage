@@ -29,9 +29,9 @@ theorem frame_outside {base : Addr} {o n : Nat} {m m' : Mem}
   rw [List.mem_singleton.mp hr] at hc
   change (x - off base o).toNat + 1 ≤ n at hc
   simp only [off] at hc
-  have hi := (Offset.lt_iff x base (d := o) (n := n) (by omega)).mp (by omega)
+  have hi := (Offset.lt_iff x base (d := o) (n := n) (by omega_using [hn])).mp (by omega_using [hc])
   simp only [ofs] at hx
-  omega
+  omega_using [hx, hi]
 
 /-- `[r9] = [lr] [r12]`, for `r9`, `lr` and `r12` at `o`, `a` and `b`. -/
 theorem mul_ok {s : State} {base : Addr} (hs : Scr s base) {o a b : Nat}
@@ -42,7 +42,7 @@ theorem mul_ok {s : State} {base : Addr} (hs : Scr s base) {o a b : Nat}
         fe t.mem base o % Spec.X448.P = fe s.mem base a * fe s.mem base b % Spec.X448.P := by
   let ptr := s.gpr .r0
   have pe : State.addr ptr = base := hs.r0
-  have ctx : RowCtx ptr s := ⟨rfl, by change (s.gpr .r0).toNat + 4096 ≤ 2 ^ 32; have := hs.nowrap; omega,
+  have ctx : RowCtx ptr s := ⟨rfl, by change (s.gpr .r0).toNat + 4096 ≤ 2 ^ 32; have := hs.nowrap; omega_using [this],
     by rw [pe]; exact hs.wr⟩
   rw [Impl.X448.Arm.mul, WP.seq_iff]
   refine WP.mono (mulPreF_ok (x := a) (y := b) ctx hs.mask hpa hpb) fun t ht => ?_

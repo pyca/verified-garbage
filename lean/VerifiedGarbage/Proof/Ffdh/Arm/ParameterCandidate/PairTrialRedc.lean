@@ -31,32 +31,32 @@ theorem trialPairRedc_ok {u : State} {h acc s sv : Nat} (digitValue : (u.gpr .r7
     ((v3.rest (by simp)).trans ((v4.rest (by simp)).trans ((v5.rest (by simp)).trans ((v6.rest (by simp)).trans
       (v7.rest (by simp)))))))
   have m7 : u7.mem = u.mem := by rw [v7.mem, v6.mem, v5.mem, v4.mem, v3.mem, v2.mem, v1.mem]
-  have ha : acc < 2 ^ 32 := by omega
+  have ha : acc < 2 ^ 32 := by omega_using [hacc, hs]
   -- `X = h + acc`, `q = X sv mod 2^16`.
   have x1 : (u1.gpr .r7).toNat = h + acc := by
-    rw [v1.gpr, dpVal, BitVec.toNat_add, digitValue, accValue, toNat_imm ha]; omega
+    rw [v1.gpr, dpVal, BitVec.toNat_add, digitValue, accValue, toNat_imm ha]; omega_using [hh, hacc, hs]
   have q4 : (u4.gpr .r6).toNat = (h + acc) * sv % 2 ^ 16 := by
     rw [v4.gpr, v3.gpr, lo16, v2.gpr, BitVec.toNat_mul, x1, v1.other _ (by decide), r4,
       Nat.mod_mod_of_dvd _ (by decide)]
   have hq := Nat.mod_lt ((h + acc) * sv) (Nat.two_pow_pos 16)
   have s5 : (u5.gpr .r6).toNat = (h + acc) * sv % 2 ^ 16 * s := by
     rw [v5.gpr, BitVec.toNat_mul, q4, v4.other _ (by decide), v3.other _ (by decide), v2.other _ (by decide),
-      v1.other _ (by decide), r3, toNat_imm (by omega)]
+      v1.other _ (by decide), r3, toNat_imm (by omega_using [hs])]
     apply Nat.mod_eq_of_lt
     have : (h + acc) * sv % 2 ^ 16 * s < 2 ^ 16 * 8162 := Nat.mul_lt_mul'' hq hs.2
-    omega
+    omega_using [this]
   have x5 : (u5.gpr .r7).toNat = h + acc := by
     rw [v5.other _ (by decide), v4.other _ (by decide), v3.other _ (by decide), v2.other _ (by decide), x1]
   have s6 : (u6.gpr .r6).toNat = h + acc + (h + acc) * sv % 2 ^ 16 * s := by
     rw [v6.gpr, dpVal, BitVec.toNat_add, s5, x5]
     have : (h + acc) * sv % 2 ^ 16 * s < 2 ^ 16 * 8162 := Nat.mul_lt_mul'' hq hs.2
-    omega
+    omega_using [digitValue, hh, hacc, r4, hs, hinv, ha, x1, q4, hq, s5, x5, this]
   obtain ⟨_, hlt, hcong⟩ := redc16_math (X := h + acc) (s := s) (sv := sv) hinv (by
     have : 3 * 2 ^ 16 ≤ s * 2 ^ 16 := Nat.mul_le_mul_right _ hs.1
-    omega)
+    omega_using [digitValue, hh, hacc, hs, hinv, ha, x1, q4, hq, s5, x5, s6, this])
   refine k u7 k7 m7 _ hlt hcong ?_
   apply BitVec.eq_of_toNat_eq
-  rw [v7.gpr, hi16, s6, toNat_imm (by omega)]
+  rw [v7.gpr, hi16, s6, toNat_imm (by omega_arith)]
 
 
 open VG.Proof.Ffdh.Arm.ParameterCandidate

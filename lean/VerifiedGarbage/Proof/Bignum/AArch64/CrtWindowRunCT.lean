@@ -19,8 +19,8 @@ theorem expRun_ct (W : Window) (M : Mont) (S : Selector) :
     (expGroups_ct W) (fun _ _ h => h.groups W)) ?_
   refine RelCT.seq (two_post (Ψ := fun p => RunInv p p.len ((8*(p.len-5*(p.len/5)))%5))
     (two_map (fun p : RunPub => (p,5*(p.len/5)))
-      (fun _ _ h => ⟨by dsimp; omega,h⟩) (expTail_ct W))
-    (fun _ _ h => h.tails W (by omega))) ?_
+      (fun _ _ h => ⟨by dsimp; omega_using [],h⟩) (expTail_ct W))
+    (fun _ _ h => h.tails W (by omega_using []))) ?_
   exact two_map (fun p : RunPub => (p.ws,(8*(p.len-5*(p.len/5)))%5))
     (fun _ _ h => h.finish) (finish_ct M S)
 

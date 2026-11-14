@@ -35,13 +35,13 @@ theorem exportBE_truncated_ok (s : State) {base dst : BitVec 32} {len w o k : Na
   have hw : 2 ≤ w := width ▸ layout.1
   have fits : arrAt w 8 ≤ 8 * len := width ▸ layout.2.2.1
   have bound := Nat.le_trans (array_end_le ho) fits
-  have size : 128 ≤ 8 * len := by simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at fits; omega
+  have size : 128 ≤ 8 * len := by simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at fits; omega_using [fits]
   let src := base + BitVec.ofNat 32 (arrAt w o)
-  have srcAddr : State.addr src = off (State.addr base) (arrAt w o) := addr_add (by omega)
+  have srcAddr : State.addr src = off (State.addr base) (arrAt w o) := addr_add (by omega_using [nowrap, bound])
   have srcNat : src.toNat = base.toNat + arrAt w o := by
     simp only [src, BitVec.toNat_add, BitVec.toNat_ofNat,
-      Nat.mod_eq_of_lt (by omega : arrAt w o < 2 ^ 32),
-      Nat.mod_eq_of_lt (by omega : base.toNat + arrAt w o < 2 ^ 32)]
+      Nat.mod_eq_of_lt (by omega_using [nowrap, bound] : arrAt w o < 2 ^ 32),
+      Nat.mod_eq_of_lt (by omega_using [nowrap, bound] : base.toNat + arrAt w o < 2 ^ 32)]
   have header := nativeHeader_of_layout s.mem base nowrap (Nat.le_refl _) layout
   rw [width] at header
   rw [exportBE, WP.seq_iff]
@@ -49,18 +49,18 @@ theorem exportBE_truncated_ok (s : State) {base dst : BitVec 32} {len w o k : Na
   rintro u ⟨p0, p1, count, saved, mem, rest⟩
   have read : InRegions (u.rd ++ u.wr) (State.addr src) k := by
     rw [rest.rd, rest.wr, srcAddr]
-    exact ⟨_, List.mem_append_right _ ws.writable, Offset.contains_base _ (by omega) (by omega)⟩
+    exact ⟨_, List.mem_append_right _ ws.writable, Offset.contains_base _ (by omega_using [hk', bound]) (by omega_using [srcNat])⟩
   have sepSrc : Region.Disjoint ⟨State.addr src, k⟩ ⟨State.addr dst, k⟩ := by
     apply sep.sub_left
     intro a ha
     rw [srcAddr] at ha
     change (a - off (State.addr base) (arrAt w o)).toNat + 1 ≤ k at ha
-    have hi : (a - off (State.addr base) (arrAt w o)).toNat < k := by omega
-    rw [Offset.lt_iff a (State.addr base) (by omega)] at hi
+    have hi : (a - off (State.addr base) (arrAt w o)).toNat < k := by omega_using [ha]
+    rw [Offset.lt_iff a (State.addr base) (by omega_using [dstFit, srcNat])] at hi
     change (a - State.addr base).toNat + 1 ≤ 8 * len
-    omega
+    omega_using [hk', bound, hi]
   rw [WP.seq_iff]
-  refine WP.mono (reverseBuffer_ok u hk (by rw [srcNat]; omega) dstFit (by omega)
+  refine WP.mono (reverseBuffer_ok u hk (by rw [srcNat]; omega_using [hk', nowrap, bound]) dstFit (by omega_using [hk', nowrap, bound])
     read (by rw [rest.wr]; exact write) sepSrc (p0.trans output) p1 count) ?_
   rintro v ⟨value, frame, _, keep⟩
   refine wp_mov (op2_reg _ _) fun t moved => WP.block_nil ?_

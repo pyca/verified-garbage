@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.PowLit
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # Almost Montgomery multiplication in radix `2⁵²`
@@ -59,13 +60,13 @@ theorem lval_succ_of {L : Nat → Nat} {n : Nat} (h : L n = 0) : lval L (n + 1) 
 theorem lval_congr {L L' : Nat → Nat} {n : Nat} (h : ∀ j < n, L j = L' j) : lval L n = lval L' n := by
   induction n with
   | zero => rw [lval_zero, lval_zero]
-  | succ n ih => rw [lval_succ, lval_succ, ih fun j hj => h j (by omega), h n (by omega)]
+  | succ n ih => rw [lval_succ, lval_succ, ih fun j hj => h j (by omega_using [hj]), h n (by omega_using [])]
 
 theorem lval_add (L L' : Nat → Nat) (n : Nat) :
     lval (fun j => L j + L' j) n = lval L n + lval L' n := by
   induction n with
   | zero => simp only [lval_zero]
-  | succ n ih => rw [lval_succ, lval_succ, lval_succ, ih, Nat.add_mul]; omega
+  | succ n ih => rw [lval_succ, lval_succ, lval_succ, ih, Nat.add_mul]; omega_using []
 
 theorem lval_mul (L : Nat → Nat) (c n : Nat) : lval (fun j => L j * c) n = lval L n * c := by
   induction n with
@@ -78,22 +79,22 @@ theorem lval_succ_shift (L : Nat → Nat) (n : Nat) :
   induction n with
   | zero => simp only [lval_succ, lval_zero, Nat.mul_zero, Nat.pow_zero, Nat.mul_one, Nat.add_zero, Nat.zero_add]
   | succ n ih =>
-    rw [lval_succ, ih, lval_succ, show 52 * (n + 1) = 52 * n + 52 by omega, Nat.pow_add]
+    rw [lval_succ, ih, lval_succ, show 52 * (n + 1) = 52 * n + 52 by omega_using [], Nat.pow_add]
     grind
 
 theorem lval_lt {L : Nat → Nat} {n : Nat} (h : ∀ j < n, L j < 2 ^ 52) : lval L n < 2 ^ (52 * n) := by
   induction n with
   | zero => rw [lval_zero]; exact Nat.two_pow_pos _
   | succ n ih =>
-    have := ih fun j hj => h j (by omega)
-    have hn := h n (by omega)
-    rw [lval_succ, show 52 * (n + 1) = 52 * n + 52 by omega, Nat.pow_add]
-    have : L n * 2 ^ (52 * n) ≤ (2 ^ 52 - 1) * 2 ^ (52 * n) := Nat.mul_le_mul_right _ (by omega)
+    have := ih fun j hj => h j (by omega_using [hj])
+    have hn := h n (by omega_using [])
+    rw [lval_succ, show 52 * (n + 1) = 52 * n + 52 by omega_using [], Nat.pow_add]
+    have : L n * 2 ^ (52 * n) ≤ (2 ^ 52 - 1) * 2 ^ (52 * n) := Nat.mul_le_mul_right _ (by omega_using [hn])
     have : (2 ^ 52 - 1) * 2 ^ (52 * n) + 2 ^ (52 * n) = 2 ^ (52 * n) * 2 ^ 52 := by
       rw [Nat.sub_mul, Nat.one_mul, Nat.mul_comm]
       have : 2 ^ (52 * n) ≤ 2 ^ (52 * n) * 2 ^ 52 := Nat.le_mul_of_pos_right _ (by decide)
-      omega
-    omega
+      omega_using []
+    omega_arith
 
 /-- The operands of a multiplication: the limbs of `a` and of the modulus,
 and `k₀ = -m⁻¹ mod 2⁵²`. -/
@@ -113,7 +114,7 @@ theorem steps_alg {X V P L0 A M lb lu bn un : Nat} (hX : X = V + A * bn + M * un
     (h : V * P = L0 + A * lb + M * lu) : X * P = L0 + A * (lb + bn * P) + M * (lu + un * P) := by
   subst hX
   rw [Nat.add_mul, Nat.add_mul, h, Nat.mul_add, Nat.mul_add, Nat.mul_assoc, Nat.mul_assoc]
-  omega
+  omega_using []
 
 /-! ## Twenty steps -/
 
@@ -133,8 +134,8 @@ theorem amm_lt {V A B M Q R : Nat} (h : V * R = A * B + M * Q) (hQ : Q < R)
     have e : 2 * M * R = R * M + M * R := by grind
     rw [e]
     rcases Nat.eq_zero_or_pos M with rfl | hM0
-    · omega
-    · omega
+    · omega_using [hA]
+    · omega_using [hA, h1, h2, h3]
   exact Nat.lt_of_mul_lt_mul_right this
 
 /-! ## Carrying -/
@@ -158,7 +159,7 @@ theorem carried_val (L : Nat → Nat) (n : Nat) :
     have e := Nat.div_add_mod (L n + carryIn L n) (2 ^ 52)
     have hc : carryIn L (n + 1) = (L n + carryIn L n) / 2 ^ 52 := rfl
     have hr : carried L n = (L n + carryIn L n) % 2 ^ 52 := rfl
-    rw [hc, hr, show 52 * (n + 1) = 52 * n + 52 by omega, Nat.pow_add]
+    rw [hc, hr, show 52 * (n + 1) = 52 * n + 52 by omega_using [], Nat.pow_add]
     generalize (L n + carryIn L n) / 2 ^ 52 = q at e ⊢
     generalize (L n + carryIn L n) % 2 ^ 52 = r at e ⊢
     generalize 2 ^ (52 * n) = P

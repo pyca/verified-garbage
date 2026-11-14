@@ -50,32 +50,32 @@ theorem prepare_ok {s : State} {Q : Addr} {ql : Nat} (h12 : s.gpr .r12 = Q) (h6 
   generalize hqb : Spec.Rsa.bytesAt s.mem Q ql = qb
   have hlen : qb.length = ql := by rw [← hqb, VG.Proof.Bignum.bytesAt_length]
   have hfit := Dsa.significant_fits qb
-  refine WP.seq (WP.mono (sigLen_ok h12 h6 hql (by omega) fun i hi => hrd i (by omega))
+  refine WP.seq (WP.mono (sigLen_ok h12 h6 hql (by omega_using [hql']) fun i hi => hrd i (by omega_using [hi]))
     fun s₁ ⟨⟨a16, m1⟩, k1⟩ => ?_)
   rw [hqb] at a16
   generalize hW : (significant qb).1 = W at a16 hfit
-  have hrd' : InRegions (s₁.rd ++ s₁.wr) (off Q (ql - W)) 1 := by rw [k1.rd, k1.wr]; exact hrd _ (by omega)
+  have hrd' : InRegions (s₁.rd ++ s₁.wr) (off Q (ql - W)) 1 := by rw [k1.rd, k1.wr]; exact hrd _ (by omega_using [])
   generalize ht : s₁.mem (off Q (ql - W)) = tb
   have htl := tb.isLt
-  have e27 : off Q ql - BitVec.ofNat 64 W = off Q (ql - W) := VG.Offset.add_ofNat_sub Q (by omega)
+  have e27 : off Q ql - BitVec.ofNat 64 W = off Q (ql - W) := VG.Offset.add_ofNat_sub Q (by omega_using [hlen, hfit])
   have hor : BitVec.ofNat 64 W >>> 1 ||| BitVec.ofNat 64 tb.toNat >>> 1 = BitVec.ofNat 64 (W >>> 1 ||| tb.toNat >>> 1) := by
-    rw [ofNat_shr (by omega), ofNat_shr (by omega), ofNat_or (by have := shr_lt (k := 1) (show W < 256 by omega); omega)
-      (by have := shr_lt (k := 1) htl; omega)]
-  have hor' : (W >>> 1 ||| tb.toNat >>> 1) < 256 := or_lt (shr_lt (by omega)) (shr_lt htl)
+    rw [ofNat_shr (by omega_using [hql', hlen, hfit]), ofNat_shr (by omega_using []), ofNat_or (by have := shr_lt (k := 1) (show W < 256 by omega_using [hql', hlen, hfit]); omega_using [this])
+      (by have := shr_lt (k := 1) htl; omega_using [])]
+  have hor' : (W >>> 1 ||| tb.toNat >>> 1) < 256 := or_lt (shr_lt (by omega_using [hql', hlen, hfit])) (shr_lt htl)
   prun [(k1.gpr .r12 (by decide)).trans h12, (k1.gpr .r6 (by decide)).trans h6, a16, off_add, e27,
     exec_lbz' (show Reg.r27 ≠ .r0 by decide) (show 0 < 2 ^ 15 by decide), hrd', BitVec.add_zero, read_byte64, ht,
-    hor, nz_eq (x := W >>> 1 ||| tb.toNat >>> 1) (by omega), nz_eq (x := W) (by omega),
-    valid_eq (w := W) (t := tb.toNat) (by omega) htl]
+    hor, nz_eq (x := W >>> 1 ||| tb.toNat >>> 1) (by omega_using [hor']), nz_eq (x := W) (by omega_using [hql', hlen, hfit]),
+    valid_eq (w := W) (t := tb.toNat) (by omega_using [hql', hlen, hfit]) htl]
   have hq1 : 1 < Spec.Dsa.decodeBE qb → W ≠ 0 := fun h => by
     have := (Dsa.random_valid_scan qb).mp h; rw [hW] at this; exact this.1
   have htb : W ≠ 0 → tb = (significant qb).2 := fun hw => by
     have e1 := significant_get qb (by rw [hW]; exact hw)
-    rw [hlen, hW, ← hqb, bytesAt_get s.mem Q (show ql - W < ql by omega), hqb] at e1
+    rw [hlen, hW, ← hqb, bytesAt_get s.mem Q (show ql - W < ql by omega_using [hql, hw]), hqb] at e1
     rw [← ht, m1]
     exact Option.some.inj e1
   refine ⟨?_, fun hq => ?_, m1⟩
   · by_cases hw : W = 0
-    · rw [ite_eq_right (by omega)]
+    · rw [ite_eq_right (by omega_using [hw])]
       exact ⟨fun _ hq => hq1 hq hw, fun _ => rfl⟩
     · rw [htb hw, ← hW] at *
       have hv := Dsa.random_valid_scan_ge qb

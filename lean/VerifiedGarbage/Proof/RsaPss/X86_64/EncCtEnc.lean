@@ -247,7 +247,7 @@ theorem shash_ct (hc : HashChecks T.H.P T.H.D 2) :
   have h1 := Nat.lt_div_mul_add (a := 8 + T.H.D + ssl s + T.H.P.L) (b := T.H.P.B) hB0
   have h2 := Nat.div_mul_le_self (8 + T.H.D + ssl s + T.H.P.L) T.H.P.B
   have hks : ∀ k ∈ KSM, k ∈ KSL := by decide
-  exact X86_64.WP.mono_syms (WP.keepIn (ctHash_safe hH hf) (by have := ctHash_xd (H := T.H) hf; omega)
+  exact X86_64.WP.mono_syms (WP.keepIn (ctHash_safe hH hf) (by have := ctHash_xd (H := T.H) hf; omega_using [this])
     (ctHash_gen hH K v.L R (hw 27 (by decide)) (hw 28 (by decide)) (by unfold snb; rw [Nat.succ_mul]; omega_arith)
       (by unfold snb; rw [Nat.succ_mul]; omega_arith) (ss_ht hp v hw) hdk))
     fun u ⟨⟨L', rd', wr', _, V', W', R', _, hW', _⟩, f⟩ sy =>

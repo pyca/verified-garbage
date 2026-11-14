@@ -18,6 +18,6 @@ theorem Keep.of_table {base : Addr} {s t : State}
 
 theorem tableLoad_high {base : Addr} {s t : State} (hk : TableKeep base 64 128 s t)
     (i : Slot) (hi : 4 ≤ i.val) : env t.mem base i = env s.mem base i :=
-  Outside_F hk.mem (by simp only [offset]; omega) (Or.inr (by simp only [offset]; omega))
+  Outside_F hk.mem (by simp only [offset]; omega_using []) (Or.inr (by simp only [offset]; omega_using [hi]))
 
 end VG.Proof.Ed25519.AArch64

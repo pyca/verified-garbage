@@ -33,8 +33,8 @@ theorem verifyScalars_ok {base : Addr} {size pLen qLen p q digestLen digest rv s
       Execution base s0 sf ∧
       flagW base (Layout.field .mask) sf = flagW base (Layout.field .mask) s0 := by
   have L := M.lengths
-  have nq : (qLen + 7) / 8 ≤ 48 := by omega
-  have qp : 0 < q := by have := M.qLarge; omega
+  have nq : (qLen + 7) / 8 ≤ 48 := by omega_using [L]
+  have qp : 0 < q := by have := M.qLarge; omega_using [this]
   unfold Core.verifyScalars Core.sequence
   dsimp only [List.foldr]
   refine WP.seq (WP.mono (stagePowerQ_ok M (S.ready (M.context nq)) (M.scalarReady (by decide) nq)
@@ -45,7 +45,7 @@ theorem verifyScalars_ok {base : Addr} {size pLen qLen p q digestLen digest rv s
     rw [hs, hq2] at V
     exact V
   have D1 := E1.buffer D (by decide)
-  refine WP.seq (WP.mono (stageReduce_ok (LenOperand.prefix M1.saved nq (E1.prefixLen.trans hP)) M1 (D1.stream (M1.context nq)) D1.stack (by omega)
+  refine WP.seq (WP.mono (stageReduce_ok (LenOperand.prefix M1.saved nq (E1.prefixLen.trans hP)) M1 (D1.stream (M1.context nq)) D1.stack (by omega_using [hd])
     (by decide) (M1.scalarFit (by decide))) fun s2 ⟨M2, R2⟩ => ?_)
   have E2 := R2.toStageFrame.execution (.inl ⟨by decide, M1.scalarFit (by decide)⟩)
   have E12 := E1.trans E2

@@ -42,10 +42,10 @@ abbrev gcdHead : List (Prog isa) := [zeroA gM, copyA gM nU] ++ oneA gX₁ ++ [ze
 theorem gcdHead_ok {I : RpIn} {m₀ : Mem} {c : Bool} {s : State} (h : G I m₀ (vk I.k) c s) (L : RpLens I)
     (hz : word s.mem I.B (slot (vk I.k) nXn + 8 * vk I.k) = 0) (i : Nat) :
     WP isa (seqs gcdHead) s fun t => G I m₀ (vk I.k) c t ∧ XInv (dpub I, i) t := by
-  have hv1 : 1 ≤ vk I.k := by have := L.k1; simp only [vk]; omega
+  have hv1 : 1 ≤ vk I.k := by have := L.k1; simp only [vk]; omega_using []
   have hb32 : slot (vk I.k) 32 ≤ 2 ^ 64 := by
     have := h.bndv L (j := 31) (k := vk I.k + 2) (by decide) (Nat.le_refl _)
-    have : slot (vk I.k) 32 = _ := slot_succ (vk I.k) 31; omega
+    have : slot (vk I.k) 32 = _ := slot_succ (vk I.k) 31; omega_arith
   have s2 := slot_lt (w := vk I.k) (show nU < 32 by decide)
   have s3 := slot_lt (w := vk I.k) (show nXn < 32 by decide)
   have s4 := slot_lt (w := vk I.k) (show gM < 32 by decide)
@@ -58,27 +58,27 @@ theorem gcdHead_ok {I : RpIn} {m₀ : Mem} {c : Bool} {s : State} (h : G I m₀ 
   have g₁ := h.out (by decide) (Nat.le_refl _) o₁ k₁ (by decide)
   refine WP.mono (copyA_ok g₁.ws (o := gM) (a := nU) (by decide) (by decide) (by decide))
     fun s₂ ⟨v₂, o₂, _, _, k₂⟩ => ?_
-  have g₂ := g₁.out (by decide) (by omega) o₂ k₂ (by decide)
+  have g₂ := g₁.out (by decide) (by omega_using []) o₂ k₂ (by decide)
   refine WP.mono (oneA_ok g₂ (j := gX₁) (by decide)) fun s₃ ⟨g₃, v₃, o₃, k₃⟩ => ?_
   refine WP.mono (zeroA_ok g₃.ws (j := gX₂) (by decide)) fun s₄ ⟨z₄, o₄, _, _, _, k₄⟩ => ?_
   refine ⟨g₃.out (by decide) (Nat.le_refl _) o₄ k₄ (by decide), ?_, ?_, ?_, ?_⟩
   · show word s₄.mem I.B (slot (vk I.k) nXn + 8 * vk I.k) = 0
-    rw [o₄.word (wd_sep (by decide) (by omega) (by omega)) (by omega),
-      o₃.word (wd_sep (by decide) (by omega) (by omega)) (by omega),
-      o₂.word (wd_sep (by decide) (by omega) (by omega)) (by omega),
-      o₁.word (wd_sep (by decide) (by omega) (by omega)) (by omega), hz]
+    rw [o₄.word (wd_sep (by decide) (by omega_using []) (by omega_using [])) (by omega_using [hb32, s3]),
+      o₃.word (wd_sep (by decide) (by omega_using []) (by omega_using [])) (by omega_using [hb32, s3]),
+      o₂.word (wd_sep (by decide) (by omega_using []) (by omega_using [])) (by omega_using [hb32, s3]),
+      o₁.word (wd_sep (by decide) (by omega_using []) (by omega_using [])) (by omega_using [hb32, s3]), hz]
   · show wv s₄.mem I.B (slot (vk I.k) nU) (vk I.k) = wv s₄.mem I.B (slot (vk I.k) gM) (vk I.k)
-    rw [o₄.wv (rd_sep (by decide) (by omega) (by omega)) (by omega),
-      o₃.wv (rd_sep (by decide) (by omega) (by omega)) (by omega),
-      o₂.wv (rd_sep (by decide) (by omega) (by omega)) (by omega),
-      o₄.wv (rd_sep (by decide) (by omega) (by omega)) (by omega),
-      o₃.wv (rd_sep (by decide) (by omega) (by omega)) (by omega), v₂,
-      o₁.wv (rd_sep (by decide) (by omega) (by omega)) (by omega)]
+    rw [o₄.wv (rd_sep (by decide) (by omega_using []) (by omega_using [])) (by omega_using [hb32, s2]),
+      o₃.wv (rd_sep (by decide) (by omega_using []) (by omega_using [])) (by omega_using [hb32, s2]),
+      o₂.wv (rd_sep (by decide) (by omega_using []) (by omega_using [])) (by omega_using [hb32, s2]),
+      o₄.wv (rd_sep (by decide) (by omega_using []) (by omega_using [])) (by omega_using [hb32, s4]),
+      o₃.wv (rd_sep (by decide) (by omega_using []) (by omega_using [])) (by omega_using [hb32, s4]), v₂,
+      o₁.wv (rd_sep (by decide) (by omega_using []) (by omega_using [])) (by omega_using [hb32, s2])]
   · show wv s₄.mem I.B (slot (vk I.k) gX₁) (vk I.k) = 1
-    rw [o₄.wv (rd_sep (by decide) (by omega) (by omega)) (by omega),
-      wv_low_of_lt (w := vk I.k + 2) (by omega) (by rw [v₃]; exact Nat.one_lt_two_pow (by omega)), v₃]
+    rw [o₄.wv (rd_sep (by decide) (by omega_using []) (by omega_using [])) (by omega_using [hb32, s5]),
+      wv_low_of_lt (w := vk I.k + 2) (by omega_using []) (by rw [v₃]; exact Nat.one_lt_two_pow (by omega_using [hv1])), v₃]
   · show wv s₄.mem I.B (slot (vk I.k) gX₂) (vk I.k) = 0
-    rw [wv_low_of_lt (w := vk I.k + 2) (by omega) (by rw [z₄]; exact Nat.two_pow_pos _), z₄]
+    rw [wv_low_of_lt (w := vk I.k + 2) (by omega_using []) (by rw [z₄]; exact Nat.two_pow_pos _), z₄]
 
 theorem gcdHead_ct : CTW (GC vk fun a s => zX a.1 s) (GC vk XInv) (seqs gcdHead) := by
   refine CTW.wp (Φ := GC vk fun a s => zX a.1 s) (Ψ := GC vk XT) ?_ (fun _ _ h => h)

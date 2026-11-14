@@ -58,9 +58,9 @@ theorem orWords_ok {s : State} {B : Addr} {Z w e : Nat} {A : Prop}
     WP isa (wordLoop 1 [.mov .rax (.mem (ix .rbx .r14)), .alu .or .r15 (.reg .rax)]) s fun t =>
       (t.gpr .r15 = 0 ↔ A ∧ ∀ i, 1 ≤ i → i < w → word s.mem B (e + 8 * i) = 0) ∧
       t.mem = s.mem ∧ Keep [.rax, .r15, .r14] s t := by
-  refine WP.mono (wordLoop_ok (start := 1) (N := w) (by omega) hw' (OrWordsInv s B Z e A)
+  refine WP.mono (wordLoop_ok (start := 1) (N := w) (by omega_using [hw]) hw' (OrWordsInv s B Z e A)
     (fun t h14 hm hk _ => ⟨hs.congr hk.2.2, hk.mono (by decide), hm, h14, ?_⟩)
-    (fun j hj1 hj t hi => orWordsStep_ok hbx h12 (by omega) he hj1 hj hi))
+    (fun j hj1 hj t hi => orWordsStep_ok hbx h12 (by omega_using [hw']) he hj1 hj hi))
     fun t hi => ⟨hi.val, hi.mem, hi.keep⟩
   rw [(hk.gpr (by decide) : t.gpr .r15 = s.gpr .r15), h15]
   exact ⟨fun h => ⟨h, fun i hi1 hi => by omega⟩, fun h => h.1⟩

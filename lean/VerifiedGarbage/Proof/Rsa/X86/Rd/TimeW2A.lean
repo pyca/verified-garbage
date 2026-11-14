@@ -51,16 +51,16 @@ theorem zN_lt (n0 : n ≠ 0) (hn' : n < 2 ^ (32 * wq a)) (k : Nat) :
   constructor
   · intro h
     refine Nat.lt_of_not_le fun c => ?_
-    have c' : 32 * wq a - 1 ≤ Nat.log2 n + k := by omega
+    have c' : 32 * wq a - 1 ≤ Nat.log2 n + k := by omega_using [c]
     have h1 := Nat.mul_le_mul_right (2 ^ k) (Nat.log2_self_le n0)
     rw [← Nat.pow_add] at h1
     have h2 := Nat.pow_le_pow_right (n := 2) (by decide) c'
-    omega
+    omega_using [h, h1, h2]
   · intro h
     have h1 := Nat.mul_lt_mul_of_pos_right (Nat.lt_log2_self (n := n)) (Nat.two_pow_pos k)
     rw [← Nat.pow_add] at h1
-    have h2 := Nat.pow_le_pow_right (n := 2) (by decide) (show Nat.log2 n + 1 + k ≤ 32 * wq a - 1 by omega)
-    omega
+    have h2 := Nat.pow_le_pow_right (n := 2) (by decide) (show Nat.log2 n + 1 + k ≤ 32 * wq a - 1 by omega_using [h])
+    omega_using [h1, h2]
 
 theorem zN_le (hw1 : 1 ≤ wq a) (hn0 : 2 ^ (32 * (wq a - 1)) ≤ n) : zN n a ≤ 31 := by
   have n0 : n ≠ 0 := by have := Nat.two_pow_pos (32 * (wq a - 1)); omega
@@ -73,7 +73,7 @@ theorem zN_top (n0 : n ≠ 0) (hn' : n < 2 ^ (32 * wq a)) : 2 ^ (32 * wq a - 1) 
 theorem zN_lt' (n0 : n ≠ 0) (hn' : n < 2 ^ (32 * wq a)) : n * 2 ^ zN n a < 2 ^ (32 * wq a) := by
   have hl : Nat.log2 n < 32 * wq a := (Nat.log2_lt n0).2 hn'
   have h1 := Nat.mul_lt_mul_of_pos_right (Nat.lt_log2_self (n := n)) (Nat.two_pow_pos (zN n a))
-  rw [← Nat.pow_add, show Nat.log2 n + 1 + zN n a = 32 * wq a by unfold zN; omega] at h1
+  rw [← Nat.pow_add, show Nat.log2 n + 1 + zN n a = 32 * wq a by unfold zN; omega_using [hl]] at h1
   exact h1
 
 end
@@ -156,7 +156,7 @@ theorem nBlk0_ok (h : NA1 g n a t) (ha1 : a ≤ 1024) (hw1 : 1 ≤ wq a) (hn' : 
     rw [m₃, val32_succ]
     have k₂W := K₂.toW
     rw [U₁.mem] at k₂W
-    have e := k₂W.word (j := wA) (i := g.W) (by show 4 * g.W + 4 ≤ 4 * (g.W + 2); omega) (by simp) (by decide) fA
+    have e := k₂W.word (j := wA) (i := g.W) (by show 4 * g.W + 4 ≤ 4 * (g.W + 2); omega_using []) (by simp) (by decide) fA
     change w32 u₂.mem g.B (arr g.W wA + 4 * g.W) = w32 t.mem g.B (arr g.W wA + 4 * g.W) at e
     rw [e, hxt]
     change val32 u₂.mem g.B (arr g.W wA) g.W + 0 = AW wA
@@ -175,7 +175,7 @@ theorem nBody_ok {k : Nat} (h : NK g n a k t) (ha1 : a ≤ 1024) (hw1 : 1 ≤ wq
   have z31 := zN_le hw1 hn0
   have hn2 : n * 2 ^ (k + 1) < 2 ^ (32 * wq a) :=
     Nat.lt_of_le_of_lt (Nat.mul_le_mul_left _ (Nat.pow_le_pow_right (by decide) hk)) (zN_lt' n0 hn')
-  refine WP.mono (normStep_ok P ha ha1 hw1 hw hx (by omega) hn2) fun u ⟨P', zf⟩ => ?_
+  refine WP.mono (normStep_ok P ha ha1 hw1 hw hx (by omega_using [hk, z31]) hn2) fun u ⟨P', zf⟩ => ?_
   refine ⟨⟨⟨ha, hw⟩, s0, A, ok, x, P', hz, hnA, hx⟩, fun _ => ?_⟩
   show u.zf = _
   rw [zf, decide_eq_decide.mpr (zN_lt n0 hn' (k + 1))]
@@ -217,7 +217,7 @@ theorem normA_rel {g : Geo} (pg : PubG g) {n a : Nat} (ha1 : a ≤ 1024) (hw1 : 
       rw [e', hs.2] at e
       simp only [Option.map_some, Option.some.injEq, Bool.not_eq_true', decide_eq_false_iff_not] at e
       have := (zN_lt n0 hn' 0).not.mp (by simpa using e)
-      omega
+      omega_using [this]
     rw [this]
     exact ⟨hs.1, ht.1⟩
   · by_cases pos : 0 < zN n a
@@ -349,18 +349,18 @@ theorem uBody_ok {i : Nat} (h : KA g n a [wA, wA, wR] [sZ, sOkDE] (fun _ V => V 
   refine WP.mono (P₄.storeSlot (d := sZ) (by decide) .eax) fun t ⟨P₅, zf₅, _⟩ => ?_
   have ev : (u₄.gpr .eax).toNat = zN n a - (i + 1) := by
     rw [U₄.gpr, U₃.gpr, hS, BitVec.toNat_sub, BitVec.toNat_ofNat,
-      Nat.mod_eq_of_lt (show zN n a - i < 2 ^ 32 by omega), show (1 : BitVec 32).toNat = 1 from rfl]
-    omega
+      Nat.mod_eq_of_lt (show zN n a - i < 2 ^ 32 by omega_using [z32]), show (1 : BitVec 32).toNat = 1 from rfl]
+    omega_using [hi, z32]
   have zz : (u₃.gpr .eax - 1 == 0) = decide (i + 1 = zN n a) := by
     rw [U₃.gpr, hS]
     by_cases e : i + 1 = zN n a
     · simp only [e, decide_true, beq_iff_eq]
       apply BitVec.eq_of_toNat_eq
-      rw [BitVec.toNat_sub, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show zN n a - i < 2 ^ 32 by omega)]; simp; omega
+      rw [BitVec.toNat_sub, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show zN n a - i < 2 ^ 32 by omega_using [z32])]; simp; omega_using [e]
     · simp only [e, decide_false, beq_eq_false_iff_ne, ne_eq]
       intro c; have := congrArg BitVec.toNat c
-      rw [BitVec.toNat_sub, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show zN n a - i < 2 ^ 32 by omega)] at this
-      simp at this; omega
+      rw [BitVec.toNat_sub, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show zN n a - i < 2 ^ 32 by omega_using [z32])] at this
+      simp at this; omega_using [z32, e, this]
   rw [zz] at z₄
   refine ⟨⟨ga, s0, A, _, _, P₅.mono (fun j hj => ⟨hj, rfl⟩) (fun j hj => ⟨List.mem_cons_of_mem _ hj, rfl⟩)
     (fun d hd => ⟨List.mem_cons_of_mem _ hd, rfl⟩),
@@ -370,7 +370,7 @@ theorem uBody_ok {i : Nat} (h : KA g n a [wA, wA, wR] [sZ, sOkDE] (fun _ V => V 
   by_cases e : i + 1 = zN n a
   · simp [e]
   · simp only [e, decide_false, Option.map_some, Bool.not_false]
-    exact congrArg some (decide_eq_true (by omega)).symm
+    exact congrArg some (decide_eq_true (by omega_using [hi, e])).symm
 
 end
 
@@ -407,7 +407,7 @@ theorem unnormA_rel {g : Geo} (pg : PubG g) {n a : Nat} (z32 : zN n a < 2 ^ 32) 
     rw [e', hs.2] at e
     simp only [Option.some.injEq, decide_eq_true_eq] at e
     have mk : ∀ u, DA4 g n a u → DA5 g n a u := fun u ⟨ga, s0, A, AW, V, h, _, hzA, hnA⟩ =>
-      ⟨ga, s0, A, AW, V, h.mono (fun j hj => ⟨hj, rfl⟩) (fun j hj => ⟨by simp at hj ⊢; omega, rfl⟩)
+      ⟨ga, s0, A, AW, V, h.mono (fun j hj => ⟨hj, rfl⟩) (fun j hj => ⟨by simp at hj ⊢; omega_using [hj], rfl⟩)
         (fun d hd => ⟨hd, rfl⟩), trivial, hzA, hnA⟩
     exact ⟨mk s hs.1, mk t ht.1⟩
   · by_cases pos : 0 < zN n a
@@ -425,7 +425,7 @@ theorem unnormA_rel {g : Geo} (pg : PubG g) {n a : Nat} (z32 : zN n a < 2 ^ 32) 
         exact relSeqs (contApp (by decide) (fun s h => uHalf_frame h.1 (h.2.1 sZ (by simp))) c_uHalf)
           (contLast (c := seqs [uDown]) (by decide) c_uDown)
       · have mk : ∀ u, UL g n a (zN n a) u → DA5 g n a u := fun u ⟨⟨ga, s0, A, AW, V, h, _, hzA, hnA⟩, _⟩ =>
-          ⟨ga, s0, A, AW, V, h.mono (fun j hj => ⟨hj, rfl⟩) (fun j hj => ⟨by simp at hj ⊢; omega, rfl⟩)
+          ⟨ga, s0, A, AW, V, h.mono (fun j hj => ⟨hj, rfl⟩) (fun j hj => ⟨by simp at hj ⊢; omega_using [hj], rfl⟩)
             (fun d hd => ⟨hd, rfl⟩), trivial, hzA, hnA⟩
         exact ⟨mk s hs, mk t ht⟩
     · intro s _ _ _ _ _ ⟨⟨hs, _⟩, e⟩ _ _
@@ -447,7 +447,7 @@ theorem tailA_ok {g : Geo} {s : State} {n a : Nat} (h : DA5 g n a s) : WP isa (s
     (by decide) (by decide) (by decide)) fun t₇ ⟨h₇, _⟩ => ?_)
   refine WP.mono (h₇.storeSlot (d := sLt) (by decide) .ebx) fun t ⟨h₈, _, _⟩ => ?_
   refine ⟨s0, A, _, _, h₈.mono (fun j hj => ⟨by simpa [VG.Impl.Rsa.X86.RecoverDetRt.aN] using hj, rfl⟩)
-    (fun j hj => ⟨by simp at hj ⊢; omega, rfl⟩) (fun d hd => ⟨by simp at hd ⊢; omega, rfl⟩), hzA, hnA, ?_⟩
+    (fun j hj => ⟨by simp at hj ⊢; omega_using [hj], rfl⟩) (fun d hd => ⟨by simp at hd ⊢; omega_using [hd], rfl⟩), hzA, hnA, ?_⟩
   rw [upd_ne _ _ (show wN ≠ wT by decide), upd_self]
   exact hnA
 
@@ -460,24 +460,24 @@ theorem divA_eq : divA = .seq wideN (.seq normA (.seq (wordDivQ nl wA wR wN wDt 
 theorem divA_both {g : Geo} (pg : PubG g) {n a : Nat} (ha0 : 64 ≤ a) (ha1 : a ≤ 1024) (haw : wq a ≤ g.w)
     (hn0 : 2 ^ (32 * (wq a - 1)) ≤ n) (hn' : n < 2 ^ (32 * wq a)) :
     RelCT isa (Both fun s => GA g a ∧ PA1 g n s) divA (Both (DA1 g n)) := by
-  have h16 : 16 ≤ wq a := by simp only [wq]; omega
-  have hwW : wq a ≤ g.W := by simp only [Geo.W, VG.Impl.Rsa.X86.Recover.wide]; simp only [Geo.w] at haw; omega
-  have z32 : zN n a < 2 ^ 32 := by have := zN_le (by omega) hn0; omega
+  have h16 : 16 ≤ wq a := by simp only [wq]; omega_using [ha0]
+  have hwW : wq a ≤ g.W := by simp only [Geo.W, VG.Impl.Rsa.X86.Recover.wide]; simp only [Geo.w] at haw; omega_using [haw]
+  have z32 : zN n a < 2 ^ 32 := by have := zN_le (by omega_using [h16]) hn0; omega_using [this]
   rw [divA_eq]
   refine VG.RelCT.seq (leafP (P := fun g' s => GA g' a ∧ PA1 g' n s) (Q := fun g' => NA1 g' n a) (fun _ => 0)
     (by simp) (fun s h => let ⟨_, _, _, _, k, _⟩ := h.2; k.pre0 pg)
     (fun s h => let ⟨ga, _, _, _, _, k, r⟩ := h; ⟨ga, _, _, _, _, k.onView, r⟩) (by simp)
     (fun _ _ h => wideNA_ok h) c_wideN)
-    (VG.RelCT.seq (normA_rel pg ha1 (by omega) hn0 hn') (VG.RelCT.seq ?_ (VG.RelCT.seq
+    (VG.RelCT.seq (normA_rel pg ha1 (by omega_using [h16]) hn0 hn') (VG.RelCT.seq ?_ (VG.RelCT.seq
       (leafP (P := fun g' => DA3 g' n a) (Q := fun g' => DA4 g' n a) (fun _ => 0) (by simp)
-        (fun _ h => h.p0 pg) (fun _ h => h.onView) (by simp) (fun _ _ h => cqtA_ok h ha1 (by omega)) c_cqt)
+        (fun _ h => h.p0 pg) (fun _ h => h.onView) (by simp) (fun _ _ h => cqtA_ok h ha1 (by omega_using [h16])) c_cqt)
       (VG.RelCT.seq (unnormA_rel pg z32)
         (leafP (P := fun g' => DA5 g' n a) (Q := fun g' => DA1 g' n) (fun _ => 0) (by simp)
           (fun _ h => h.p0 pg) (fun _ h => h.onView) (by simp) (fun _ _ h => tailA_ok h) c_tailA)))))
   exact relWordDivQ (a := a) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
-    (by decide) (by decide) (by decide) (by omega) (by rw [kw_wid]; exact hwW) (fun _ h => h.p0 pg)
+    (by decide) (by decide) (by decide) (by omega_using [h16]) (by rw [kw_wid]; exact hwW) (fun _ h => h.p0 pg)
     (fun s h => let ⟨⟨ha, _⟩, _, _, _, _, ⟨_, _, k, _⟩, _⟩ := h; k.mlen ha ha1)
-    (fun s h => wdqA_ok h ha1 (by omega) hwW) (fun s h => run_of (wdqA_ok h.onView ha1 (by omega) hwW))
+    (fun s h => wdqA_ok h ha1 (by omega_using [h16]) hwW) (fun s h => run_of (wdqA_ok h.onView ha1 (by omega_using [h16]) hwW))
     c_wdqPreA c_dqAA c_dq3A c_dq4A
 
 /-- `divA`'s timing (`PLAN.md`, P7c). -/

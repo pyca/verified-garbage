@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Aes.Bitsliced
 public import VerifiedGarbage.Proof.Aes.InvRounds
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # Bitsliced AES: the inverse round transformations
@@ -43,7 +44,7 @@ theorem bs_invShiftRows {Q Q' : Nat → BitVec 64} {S : Nat → State}
     byte_ext fun j hj => by
       rw [getLsbD_bsByte _ _ hj, getLsbD_bsByte _ _ hj, h j hj _ (pos_lt hb hi),
         invSrSrc_pos b hb i hi]
-  rw [this, hr b hb _ (by omega), getD_eq _ hi]
+  rw [this, hr b hb _ (by omega_using []), getD_eq _ hi]
   simp only [invShiftRows, Vector.getElem_ofFn]
 
 /-! ## InvMixColumns -/
@@ -81,7 +82,7 @@ theorem bs_invMixColumns {Q Q' : Nat → BitVec 64} {S : Nat → State}
   refine byte_ext fun j hj => ?_
   have hbit : ∀ k < 4, ∀ w < 8, (Q w).getLsbD (down (pos b i) k) =
       ((S b).getD ((i % 4 + k) % 4 + 4 * (i / 4)) 0).getLsbD w := fun k hk w hw => by
-    rw [down_pos b hb i hi k hk, ← hr b hb _ (by omega), getLsbD_bsByte _ _ hw]
+    rw [down_pos b hb i hi k hk, ← hr b hb _ (by omega_using [hi]), getLsbD_bsByte _ _ hw]
   have hlt := fun c hc => mulBits_lt c hc j hj
   rw [getLsbD_bsByte _ _ hj, h j hj _ (pos_lt hb hi), getD_eq _ hi, invMcTerms_eq,
     termsXor_append, termsXor_append, termsXor_append,

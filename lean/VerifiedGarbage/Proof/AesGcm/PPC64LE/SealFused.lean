@@ -102,9 +102,9 @@ theorem args_count {V : Reg → BitVec 64} {sp : Addr} {s : State} (he : Env V s
 
 theorem fit_offset (p : Addr) {bound off n : Nat} (hf : p.toNat+bound≤2^64)
     (hb : bound<2^64) (ho : off+n≤bound) : (p+BitVec.ofNat 64 off).toNat+n≤2^64 := by
-  rw [BitVec.toNat_add,BitVec.toNat_ofNat,Nat.mod_eq_of_lt (a := off) (b := 2^64) (by omega)]
+  rw [BitVec.toNat_add,BitVec.toNat_ofNat,Nat.mod_eq_of_lt (a := off) (b := 2^64) (by omega_using [hb, ho])]
   have := Nat.mod_le (p.toNat+off) (2^64)
-  omega
+  omega_using [hf, ho]
 
 
 theorem args_call_pre {V : Reg → BitVec 64} {sp : Addr} {s : State} {R : Nat}
@@ -113,13 +113,13 @@ theorem args_call_pre {V : Reg → BitVec 64} {sp : Addr} {s : State} {R : Nat}
     (hR : V .r28=BitVec.ofNat 64 R) (hv : R=10 ∨ R=12 ∨ R=14) :
     (Proof.Gcm.encryptBlocksContract PPC64LE.abi).pre
       ((argsState s).callEntry.withRegions (blockReads (argsState s)) (blockWrites (argsState s))) := by
-  have hnlt : (V .r23).toNat/16<2^64 := by have := (V .r23).isLt; omega
+  have hnlt : (V .r23).toNat/16<2^64 := by have := (V .r23).isLt; omega_using []
   have h8 : (s.gpr .r23 >>> 4).toNat=(V .r23).toNat/16 := by
     change ((argsState s).gpr .r8).toNat=(V .r23).toNat/16
     rw [args_count he,toNat64 hnlt]
   have hr : (s.gpr .r28).toNat=R := by
-    rw [he.fr .r28 (by decide),hR,toNat64 (by rcases hv with h | h | h <;> omega)]
-  have hc := hd.take (k := ((V .r23).toNat/16)*16) (by omega)
+    rw [he.fr .r28 (by decide),hR,toNat64 (by rcases hv with h | h | h <;> omega_using [h])]
+  have hc := hd.take (k := ((V .r23).toNat/16)*16) (by omega_using [])
   sig_eval [Proof.Gcm.encryptBlocksContract,Proof.Gcm.cryptBlocksSig,PPC64LE.abi,PPC64LE.argRegs,
     blockReads,blockWrites]
   simp only [he.r29,he.r30,he.r31,he.fr .r27 (by decide),h8,hr]
@@ -127,7 +127,7 @@ theorem args_call_pre {V : Reg → BitVec 64} {sp : Addr} {s : State} {R : Nat}
   · simpa only [BitVec.add_zero,BitVec.ofNat_eq_ofNat] using L.ctx_st (a := 0) (n := 256) (d := 48) (k := 16) (by decide) (by decide)
   · simpa only [BitVec.add_zero,BitVec.ofNat_eq_ofNat] using L.ctx_st (a := 0) (n := 256) (d := 16) (k := 16) (by decide) (by decide)
   · simpa only [BitVec.add_zero,BitVec.ofNat_eq_ofNat] using L.ctx_w (a := 0) (n := 256) (d := 448) (k := 2112) (by decide) (by decide)
-  · exact Lay.st_st (a := 48) (n := 16) (d := 16) (k := 16) (by omega) (by decide) (by decide)
+  · exact Lay.st_st (a := 48) (n := 16) (d := 16) (k := 16) (by omega_using []) (by decide) (by decide)
   · exact hc.ok.st.symm.sub_left (Lay.stSub (d := 48) (n := 16) (by decide))
   · exact L.st_w (a := 48) (n := 16) (d := 448) (k := 2112) (by decide) (.inr ⟨by decide,by decide⟩)
   · exact hc.ok.st.symm.sub_left (Lay.stSub (d := 16) (n := 16) (by decide))
@@ -145,7 +145,7 @@ theorem args_regions {V : Reg → BitVec 64} {sp : Addr} {s : State} (he : Env V
       ⟨V .r27,((V .r23).toNat/16)*16⟩,⟨V .r31+448,2112⟩] := by
   constructor
   · simp only [blockReads,argsState,RegUpd.gpr_write,reduceCtorEq,ite_false,ite_true,he.r29]
-  · have hnlt : (V .r23).toNat/16<2^64 := by have := (V .r23).isLt; omega
+  · have hnlt : (V .r23).toNat/16<2^64 := by have := (V .r23).isLt; omega_using []
     have hc : (s.gpr .r23 >>> 4).toNat=(V .r23).toNat/16 := by
       change ((argsState s).gpr .r8).toNat=(V .r23).toNat/16
       rw [args_count he,toNat64 hnlt]
@@ -160,7 +160,7 @@ theorem args_call {V : Reg → BitVec 64} {sp : Addr} {s : State} {R : Nat}
   have hr := args_regions he
   have hw : Covers (blockWrites (argsState s)) (argsState s).wr := by
     rw [hr.2]
-    have hc := hd.take (k := ((V .r23).toNat/16)*16) (by omega)
+    have hc := hd.take (k := ((V .r23).toNat/16)*16) (by omega_using [])
     exact Covers.cons (he.perm.stC (d := 48) (n := 16) (by decide))
       (Covers.cons (he.perm.stC (d := 16) (n := 16) (by decide))
         (Covers.cons hc.wr (he.perm.wC (d := 448) (n := 2112) (by decide))))
@@ -205,9 +205,9 @@ theorem whole_ok [VG.Proof.Gcm.PPC64LE.GhashLaw] [VG.Proof.Gcm.PPC64LE.Vpmsum.Fo
   have hm : (argsState s).mem=s.mem := by simp only [argsState,RegUpd.mem_write]
   have h8 : (s.gpr .r23 >>> 4).toNat=(V .r23).toNat/16 := by
     change ((argsState s).gpr .r8).toNat=(V .r23).toNat/16
-    rw [args_count he,toNat64 (by have := (V .r23).isLt; omega)]
+    rw [args_count he,toNat64 (by have := (V .r23).isLt; omega_using [])]
   have hr : (s.gpr .r28).toNat=R := by
-    rw [he.fr .r28 (by decide),hR,toNat64 (by rcases hv with h | h | h <;> omega)]
+    rw [he.fr .r28 (by decide),hR,toNat64 (by rcases hv with h | h | h <;> omega_using [h])]
   have hp := ht.out
   sig_eval [Proof.Gcm.encryptBlocksContract,Proof.Gcm.cryptBlocksSig,PPC64LE.abi,PPC64LE.argRegs] at hp
   simp only [he.r29,he.r30,he.fr .r27 (by decide),hr,h8] at hp
@@ -238,7 +238,7 @@ theorem WholeOutWith.absorbed {V : Reg → BitVec 64} {sp : Addr} {R : Nat} {m :
     Proof.Gcm.Absorbed t.mem (V .r30+16) (V .r30+32) (Spec.Gcm.ctxH m (V .r29))
       (x++Spec.Aes.bytesAt t.mem (V .r27) (16*((V .r23).toNat/16))) := by
   apply Proof.Gcm.absorb_whole hx hx0
-  · rw [length_bytesAt]; omega
+  · rw [length_bytesAt]; omega_using []
   · rw [h.hash,Proof.Gcm.blocksAt_eq]
 
 theorem tailSetup_ok {V : Reg → BitVec 64} {sp : Addr} {s : State} (he : Env V sp s) :
@@ -256,7 +256,7 @@ theorem tailSetup_ok {V : Reg → BitVec 64} {sp : Addr} {s : State} (he : Env V
     calc
       _ = BitVec.ofNat 64 (V .r23).toNat-BitVec.ofNat 64 ((V .r23).toNat%16) := by
         rw [BitVec.ofNat_toNat,BitVec.setWidth_eq]
-      _ = _ := by rw [ofNat_sub64 (Nat.mod_le _ _) (V .r23).isLt]; congr 1; omega
+      _ = _ := by rw [ofNat_sub64 (Nat.mod_le _ _) (V .r23).isLt]; congr 1; omega_using []
   simp only [Impl.AesGcm.PPC64LE.SealFused.tailSetup]
   crun [h23,h27,hand,hsub]
   exact ⟨fun r a b c d e => by simp [a,b,c,d,e],⟨rfl,rfl,rfl,rfl,rfl⟩⟩
@@ -273,11 +273,11 @@ theorem WholeOutWith.rest {V : Reg → BitVec 64} {sp : Addr} {R : Nat} {s t : S
       ((V .r23).toNat%16) =
     Spec.Aes.bytesAt s.mem (V .r27+BitVec.ofNat 64 (16*((V .r23).toNat/16)))
       ((V .r23).toNat%16) := by
-  have hj : 16*((V .r23).toNat/16)≤(V .r23).toNat := by omega
+  have hj : 16*((V .r23).toNat/16)≤(V .r23).toNat := by omega_using []
   have hs := data_suffix hd hj
-  have hn : (V .r23).toNat-16*((V .r23).toNat/16)=(V .r23).toNat%16 := by omega
+  have hn : (V .r23).toNat-16*((V .r23).toNat/16)=(V .r23).toNat%16 := by omega_using []
   rw [hn] at hs
-  apply bytesAt_frame h.frame _ (by omega)
+  apply bytesAt_frame h.frame _ (by omega_using [])
   intro r hr
   simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl
@@ -302,12 +302,12 @@ theorem tail_ok {V : Reg → BitVec 64} {sp : Addr} {R : Nat} {s : State} {icb :
   have het : Env V sp t := he.keep (fun r hr => hg r (by revert r; decide)
     (by revert r; decide) (by revert r; decide) (by revert r; decide) (by revert r; decide))
     hk.sp hk.rd hk.wr
-  have hd' := data_suffix hd (j := 16*((V .r23).toNat/16)) (by omega)
-  have hn : (V .r23).toNat-16*((V .r23).toNat/16)=(V .r23).toNat%16 := by omega
+  have hd' := data_suffix hd (j := 16*((V .r23).toNat/16)) (by omega_using [])
+  have hn : (V .r23).toNat-16*((V .r23).toNat/16)=(V .r23).toNat%16 := by omega_using []
   rw [hn] at hd'
   have mid : CrMid V sp R icb (16*((V .r23).toNat/16))
       (V .r27+BitVec.ofNat 64 (16*((V .r23).toNat/16))) ((V .r23).toNat%16) s.mem 0 t := by
-    refine ⟨het,by omega,?_,?_,hR,hv,hd'.of_eq hk.rd hk.wr,?_,?_,?_,.inr (by omega),?_⟩
+    refine ⟨het,by omega_using [],?_,?_,hR,hv,hd'.of_eq hk.rd hk.wr,?_,?_,?_,.inr (by omega_using []),?_⟩
     · simpa only [BitVec.ofNat_eq_ofNat,BitVec.add_zero] using h24
     · simpa only [Nat.sub_zero] using h25
     · intro hc; rw [hk.mem,Nat.add_zero]; exact hc
@@ -315,7 +315,7 @@ theorem tail_ok {V : Reg → BitVec 64} {sp : Addr} {R : Nat} {s : State} {icb :
     · rw [hk.mem]
     · rw [hk.mem]; exact Frame.refl _ _
   refine WP.ite (decide ((V .r23).toNat%16=0))
-    (by simpa only [Nat.sub_zero] using eval_zero mid.r25 (by omega)) (fun hz => ?_) (fun hz => ?_)
+    (by simpa only [Nat.sub_zero] using eval_zero mid.r25 (by omega_using [])) (fun hz => ?_) (fun hz => ?_)
   · have hz' : (V .r23).toNat%16=0 := by simpa using hz
     have ho : CrOut V sp R icb (16*((V .r23).toNat/16))
         (V .r27+BitVec.ofNat 64 (16*((V .r23).toNat/16))) ((V .r23).toNat%16) s.mem t := by
@@ -326,7 +326,7 @@ theorem tail_ok {V : Reg → BitVec 64} {sp : Addr} {R : Nat} {s : State} {icb :
   · have hz' : (V .r23).toNat%16-0≠0 := by simpa using hz
     have ti := mid.tailIn (by rw [hk.mem])
     refine WP.seq (WP.mono (tailKs_ok L ti) fun v hv => ?_)
-    have hx := tailXor_ok ti hv (by omega) hz'
+    have hx := tailXor_ok ti hv (by omega_using []) hz'
     have hx24 := WP.gpr hx (r := .r24) (by decide +kernel)
     have hx25 := WP.gpr hx24 (r := .r25) (by decide +kernel)
     have hx26 := WP.gpr hx25 (r := .r26) (by decide +kernel)
@@ -343,9 +343,9 @@ theorem tail_prefix {V : Reg → BitVec 64} {sp : Addr} {R : Nat} {s t u : State
     (hd : DataW (V .r29) (V .r30) (V .r31) s (V .r27) (V .r23).toNat) :
     Spec.Aes.bytesAt u.mem (V .r27) (16*((V .r23).toNat/16)) =
       Spec.Aes.bytesAt t.mem (V .r27) (16*((V .r23).toNat/16)) := by
-  have hj : 16*((V .r23).toNat/16)≤(V .r23).toNat := by omega
-  have hn : (V .r23).toNat-16*((V .r23).toNat/16)=(V .r23).toNat%16 := by omega
-  apply bytesAt_frame ht.frame _ (by have := hd.ok.lt; omega)
+  have hj : 16*((V .r23).toNat/16)≤(V .r23).toNat := by omega_using []
+  have hn : (V .r23).toNat-16*((V .r23).toNat/16)=(V .r23).toNat%16 := by omega_using []
+  apply bytesAt_frame ht.frame _ (by have := hd.ok.lt; omega_using [])
   intro r hr
   simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
   rcases hr with rfl | rfl | rfl
@@ -366,7 +366,7 @@ theorem whole_ctx_disjoint {V : Reg → BitVec 64} {s : State}
   rcases hr with rfl | rfl | rfl | rfl
   · exact L.cs.sub_right (Lay.stSub (d := 48) (n := 16) (by decide))
   · exact L.cs.sub_right (Lay.stSub (d := 16) (n := 16) (by decide))
-  · exact hd.ctx.sub_right (Region.sub_prefix (by omega))
+  · exact hd.ctx.sub_right (Region.sub_prefix (by omega_using []))
   · exact L.cw'.sub_right (Lay.wSub (d := 448) (n := 2112) (by decide))
 
 theorem WholeOutWith.cipher {V : Reg → BitVec 64} {sp : Addr} {R : Nat} {s t : State} {plaintext : List Spec.Gcm.Block}
@@ -394,7 +394,7 @@ theorem WholeOutWith.j0 {V : Reg → BitVec 64} {sp : Addr} {R : Nat} {s t : Sta
       (d := 48) (k := 16) (.inl (by decide)) (by decide) (by decide)
   · simpa only [BitVec.add_zero,BitVec.ofNat_eq_ofNat] using Lay.st_st (st := V .r30) (a := 0) (n := 16)
       (d := 16) (k := 16) (.inl (by decide)) (by decide) (by decide)
-  · exact (hd.ok.st.sub_right (Region.sub_prefix (by decide))).symm.sub_right (Region.sub_prefix (by omega))
+  · exact (hd.ok.st.sub_right (Region.sub_prefix (by decide))).symm.sub_right (Region.sub_prefix (by omega_using []))
   · simpa only [BitVec.add_zero,BitVec.ofNat_eq_ofNat] using L.st_w (a := 0) (n := 16) (d := 448) (k := 2112)
       (by decide) (.inr ⟨by decide,by decide⟩)
 
@@ -411,7 +411,7 @@ theorem whole_body_sub (V : Reg → BitVec 64) :
   rcases hr with rfl | rfl | rfl | rfl
   · exact ⟨_,by simp [bodyFrame],Lay.stSub (by decide)⟩
   · exact ⟨_,by simp [bodyFrame],Lay.stSub (by decide)⟩
-  · exact ⟨⟨V .r27,(V .r23).toNat⟩,by simp [bodyFrame],Region.sub_prefix (by omega)⟩
+  · exact ⟨⟨V .r27,(V .r23).toNat⟩,by simp [bodyFrame],Region.sub_prefix (by omega_using [])⟩
   · exact ⟨_,by simp [bodyFrame],fun _ h => h⟩
 
 theorem cr_body_sub (V : Reg → BitVec 64) {j k : Nat} (hk : j+k≤(V .r23).toNat) :
@@ -515,8 +515,8 @@ theorem finishWhole_ok [VG.Proof.Gcm.PPC64LE.GhashLaw]
     WP isa (.seq (.seq (.block Impl.AesGcm.PPC64LE.SealFused.tailSetup)
       Impl.AesGcm.PPC64LE.cryptTail) (.seq (Impl.AesGcm.PPC64LE.absorb 16) (Impl.AesGcm.PPC64LE.finTag 0))) t
       (fun z => BodyOutWith V sp R (Spec.Gcm.ctxH m (V .r29)) a m (pWhole++pTail) z extra) := by
-  have hj : 16*((V .r23).toNat/16)≤(V .r23).toNat := by omega
-  have hnrem : (V .r23).toNat-16*((V .r23).toNat/16)=(V .r23).toNat%16 := by omega
+  have hj : 16*((V .r23).toNat/16)≤(V .r23).toNat := by omega_using []
+  have hnrem : (V .r23).toNat-16*((V .r23).toNat/16)=(V .r23).toNat%16 := by omega_using []
   have hxpad : (a++Spec.Gcm.zeros (Spec.Gcm.padLen a.length)).length%16=0 := by
     rw [List.length_append,Proof.Gcm.length_zeros]; exact Proof.Gcm.length_pad_mod _
   have hdt := hd
@@ -532,7 +532,7 @@ theorem finishWhole_ok [VG.Proof.Gcm.PPC64LE.GhashLaw]
   let x := (a++Spec.Gcm.zeros (Spec.Gcm.padLen a.length))++
     Spec.Aes.bytesAt t.mem (V .r27) (16*((V .r23).toNat/16))
   have hx0 : x.length%16=0 := by
-    simp only [x,List.length_append,length_bytesAt] at hxpad ⊢; omega
+    simp only [x,List.length_append,length_bytesAt] at hxpad ⊢; omega_using [hxpad]
   have habu : Proof.Gcm.Absorbed u.mem (V .r30+16) (V .r30+32) (Spec.Gcm.ctxH m (V .r29)) x := by
     apply mid.abs.congr
     · exact blockAt_frame ht.frame (stp_crFrame L hds (by decide))
@@ -547,7 +547,7 @@ theorem finishWhole_ok [VG.Proof.Gcm.PPC64LE.GhashLaw]
   have hprefix := (tail_prefix ht hd).trans mid.wholeCiphertext
   have hciph : Spec.Aes.bytesAt u.mem (V .r27) (V .r23).toNat=
       Spec.Gcm.gctr (Spec.Gcm.ctxCiph m (V .r29) R) (Spec.Gcm.blockAt m (V .r30+48)) (pWhole++pTail) := by
-    rw [show (V .r23).toNat=16*((V .r23).toNat/16)+(V .r23).toNat%16 by omega,bytesAt_add,hprefix,htail,
+    rw [show (V .r23).toNat=16*((V .r23).toNat/16)+(V .r23).toNat%16 by omega_using [],bytesAt_add,hprefix,htail,
       Proof.Gcm.gctr_eq,Proof.Gcm.xorKs_append,mid.wholeLen,Nat.zero_add]
   have ai : AbsIn V sp 16 (Spec.Gcm.ctxH m (V .r29)) x
       (V .r27+BitVec.ofNat 64 (16*((V .r23).toNat/16))) ((V .r23).toNat%16) u :=
@@ -555,16 +555,16 @@ theorem finishWhole_ok [VG.Proof.Gcm.PPC64LE.GhashLaw]
   refine WP.seq (WP.mono (WP.with_rdwr (absorb_ok L (.inr rfl) ai)) fun v ⟨ab,rdv,wrv,_⟩ => ?_)
   have hcv : Spec.Aes.bytesAt v.mem (V .r27) (V .r23).toNat =
       Spec.Aes.bytesAt u.mem (V .r27) (V .r23).toNat :=
-    bytesAt_frame ab.frame (data_absFrame (.inr rfl) hd.ok) (by have := hd.ok.lt; omega)
+    bytesAt_frame ab.frame (data_absFrame (.inr rfl) hd.ok) (by have := hd.ok.lt; omega_using [])
   have habv := ab.abs habu
   have hxfull : x++Spec.Aes.bytesAt u.mem (V .r27+BitVec.ofNat 64 (16*((V .r23).toNat/16)))
       ((V .r23).toNat%16)=Spec.Gcm.ghashInput a (Spec.Aes.bytesAt v.mem (V .r27) (V .r23).toNat) := by
     have hne : Spec.Aes.bytesAt v.mem (V .r27) (V .r23).toNat≠[] := by
-      intro hz; have hh := congrArg List.length hz; rw [length_bytesAt,List.length_nil] at hh; omega
+      intro hz; have hh := congrArg List.length hz; rw [length_bytesAt,List.length_nil] at hh; omega_arith
     rw [Proof.Gcm.ghashInput_of_ne hne,hcv]
     simp only [x,List.append_assoc]
     rw [← tail_prefix ht hd,← bytesAt_add]
-    rw [show 16*((V .r23).toNat/16)+(V .r23).toNat%16=(V .r23).toNat by omega]
+    rw [show 16*((V .r23).toNat/16)+(V .r23).toNat%16=(V .r23).toNat by omega_using []]
   rw [hxfull] at habv
   have hHv : Spec.Gcm.blockAt v.mem (V .r29+BitVec.ofNat 64 240)=Spec.Gcm.ctxH m (V .r29) := by
     rw [blockAt_frame ab.frame (ctx_absFrame L (.inr rfl))]; exact hHu
@@ -573,7 +573,7 @@ theorem finishWhole_ok [VG.Proof.Gcm.PPC64LE.GhashLaw]
     (by rw [ha]) (length_bytesAt _ _ _).symm) fun z fg => ?_
   have hcz : Spec.Aes.bytesAt z.mem (V .r27) (V .r23).toNat =
       Spec.Aes.bytesAt v.mem (V .r27) (V .r23).toNat :=
-    bytesAt_frame fg.frame (data_tag_disjoint hd.ok) (by have := hd.ok.lt; omega)
+    bytesAt_frame fg.frame (data_tag_disjoint hd.ok) (by have := hd.ok.lt; omega_using [])
   refine ⟨fg.env,by rw [hcz,hcv]; exact hciph,?_,?_⟩
   · have hf := fg.out habv
     rw [BitVec.add_zero,length_bytesAt,ha] at hf
@@ -585,7 +585,7 @@ theorem finishWhole_ok [VG.Proof.Gcm.PPC64LE.GhashLaw]
         simpa only [BitVec.add_zero] using stp_taFrame L (d := 0) (k := 16) (.inl (by decide))),
       blockAt_frame ht.frame (by simpa only [BitVec.add_zero] using
         (stp_crFrame L hds (d := 0) (k := 16) (by decide))),mid.j0]
-  · exact mid.frame.trans (((ht.frame.sub (cr_body_sub V (by omega))).trans
+  · exact mid.frame.trans (((ht.frame.sub (cr_body_sub V (by omega_using []))).trans
       ((ab.frame.sub (abs_body_sub V)).trans (fg.frame.sub (tag_body_sub V)))).mono (fun _ hr => List.mem_append_left _ hr))
 
 theorem fastBody_ok [VG.Proof.Gcm.PPC64LE.GhashLaw] [VG.Proof.Gcm.PPC64LE.Vpmsum.FoldLaw]
@@ -611,7 +611,7 @@ theorem fastBody_ok [VG.Proof.Gcm.PPC64LE.GhashLaw] [VG.Proof.Gcm.PPC64LE.Vpmsum
     · exact hw.rest hd
   refine WP.mono (finishWhole_ok L mid (hd.of_eq rdt wrt) hR hv ha hn) fun z hz => ?_
   have hp := bytesAt_add s.mem (V .r27) (16*((V .r23).toNat/16)) ((V .r23).toNat%16)
-  rw [show 16*((V .r23).toNat/16)+(V .r23).toNat%16=(V .r23).toNat by omega] at hp
+  rw [show 16*((V .r23).toNat/16)+(V .r23).toNat%16=(V .r23).toNat by omega_using []] at hp
   simpa only [← hp] using hz
 
 
@@ -643,12 +643,12 @@ theorem smallBody_ok [VG.Proof.Gcm.PPC64LE.GhashLaw]
     rfl
   have hxlt := Nat.mod_lt (a++Spec.Gcm.zeros (Spec.Gcm.padLen a.length)).length (by decide : 0<16)
   have habt := hab.congr (blockAt_frame oc.frame (stp_crFrame L hd (d := 16) (k := 16) (by decide)))
-    (bytesAt_frame oc.frame (stp_crFrame L hd (d := 32) (by omega)) (by omega))
+    (bytesAt_frame oc.frame (stp_crFrame L hd (d := 32) (by omega_using [])) (by omega_using []))
   refine WP.mono (oneTag_ok L (o := 0) (.inl rfl) oc.env hR hv hH ha habt
     (hd.ok.of_eq rdt wrt)) fun u ot => ?_
   have hct : Spec.Aes.bytesAt u.mem (V .r27) (V .r23).toNat =
       Spec.Aes.bytesAt t.mem (V .r27) (V .r23).toNat := by
-    apply bytesAt_frame ot.frame _ (by have := hd.ok.lt; omega)
+    apply bytesAt_frame ot.frame _ (by have := hd.ok.lt; omega_using [])
     intro r hr
     simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl
@@ -665,13 +665,13 @@ theorem smallBody_ok [VG.Proof.Gcm.PPC64LE.GhashLaw]
     rw [hct]; exact ho
   · have hcr : Frame (bodyFrame V) s.mem t.mem := by
       apply oc.frame.sub
-      simpa only [BitVec.add_zero] using cr_body_sub V (j := 0) (k := (V .r23).toNat) (by omega)
+      simpa only [BitVec.add_zero] using cr_body_sub V (j := 0) (k := (V .r23).toNat) (by omega_using [])
     exact hcr.trans (ot.frame.sub (ot_body_sub V))
 
 theorem shr9 {n : Nat} (hn : n<2^64) : BitVec.ofNat 64 n >>> 9=BitVec.ofNat 64 (n/512) := by
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_ushiftRight,BitVec.toNat_ofNat,BitVec.toNat_ofNat,Nat.mod_eq_of_lt hn,
-    Nat.shiftRight_eq_div_pow,Nat.mod_eq_of_lt (by omega)]
+    Nat.shiftRight_eq_div_pow,Nat.mod_eq_of_lt (by omega_using [hn])]
 
 theorem body_ok [VG.Proof.Gcm.PPC64LE.GhashLaw] [VG.Proof.Gcm.PPC64LE.Vpmsum.FoldLaw]
     {V : Reg → BitVec 64} {sp : Addr} {s : State} {R : Nat} {a : List Byte}
@@ -698,10 +698,10 @@ theorem body_ok [VG.Proof.Gcm.PPC64LE.GhashLaw] [VG.Proof.Gcm.PPC64LE.Vpmsum.Fol
   have habt : Proof.Gcm.Absorbed t.mem (V .r30+16) (V .r30+32) (Spec.Gcm.ctxH t.mem (V .r29))
       (a++Spec.Gcm.zeros (Spec.Gcm.padLen a.length)) := by rw [hk.mem]; exact hab
   refine WP.ite (decide ((V .r23).toNat/512=0))
-    (eval_zero h12 (by have := (V .r23).isLt; omega)) (fun _ => ?_) (fun hbig => ?_)
+    (eval_zero h12 (by have := (V .r23).isLt; omega_using [])) (fun _ => ?_) (fun hbig => ?_)
   · simpa only [hk.mem] using smallBody_ok L het hdt hR hv ha habt
   · have hbig' : (V .r23).toNat/512≠0 := by simpa using hbig
-    simpa only [hk.mem] using fastBody_ok L het hdt hR hv ha (by omega) habt
+    simpa only [hk.mem] using fastBody_ok L het hdt hR hv ha (by omega_using [hbig']) habt
 
 /-- The interface between the shared one-shot entry/return proof and the
 implementation that encrypts and authenticates the text. -/

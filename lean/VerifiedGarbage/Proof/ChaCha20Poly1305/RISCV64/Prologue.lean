@@ -45,15 +45,15 @@ theorem stateAt_init {m : Mem} {p : Addr} {key nonce : List Byte} {c : Spec.ChaC
   by_cases h4 : j < 4
   · simp only [h4, ↓reduceIte]
     rw [Proof.ChaCha20.stateAt_getElem m p hj (bs := Proof.ChaCha20.sigma)
-      fun i hi => hσ _ (by omega), Proof.ChaCha20.sigma_words j h4]
+      fun i hi => hσ _ (by omega_using [h4, hi]), Proof.ChaCha20.sigma_words j h4]
   simp only [h4, ↓reduceIte]
   by_cases h12 : j < 12
   · simp only [h12, ↓reduceIte]
     rw [Proof.ChaCha20.stateAt_getElem m p hj (bs := List.replicate 16 0 ++ key) fun i hi => ?_,
-      Proof.ChaCha20.wordLE_append_right (a := 4) (by simp) (by omega)]
-    rw [Proof.ChaCha20.getD_append_right (by simp; omega), List.length_replicate]
-    have := hK (4 * j + i - 16) (by omega)
-    rwa [show 16 + (4 * j + i - 16) = 4 * j + i by omega] at this
+      Proof.ChaCha20.wordLE_append_right (a := 4) (by simp) (by omega_using [h4])]
+    rw [Proof.ChaCha20.getD_append_right (by simp; omega_using [h4]), List.length_replicate]
+    have := hK (4 * j + i - 16) (by omega_using [h12, hi])
+    rwa [show 16 + (4 * j + i - 16) = 4 * j + i by omega_using [h4]] at this
   simp only [h12, ↓reduceIte]
   by_cases h' : j = 12
   · subst h'
@@ -63,10 +63,10 @@ theorem stateAt_init {m : Mem} {p : Addr} {key nonce : List Byte} {c : Spec.ChaC
     exact hc i hi
   · simp only [h', ↓reduceIte]
     rw [Proof.ChaCha20.stateAt_getElem m p hj (bs := List.replicate 52 0 ++ nonce) fun i hi => ?_,
-      Proof.ChaCha20.wordLE_append_right (a := 13) (by simp) (by omega)]
-    rw [Proof.ChaCha20.getD_append_right (by simp; omega), List.length_replicate]
-    have := hN (4 * j + i - 52) (by omega)
-    rwa [show 52 + (4 * j + i - 52) = 4 * j + i by omega] at this
+      Proof.ChaCha20.wordLE_append_right (a := 13) (by simp) (by omega_using [h12, h'])]
+    rw [Proof.ChaCha20.getD_append_right (by simp; omega_using [h12, h']), List.length_replicate]
+    have := hN (4 * j + i - 52) (by omega_using [hj, hi])
+    rwa [show 52 + (4 * j + i - 52) = 4 * j + i by omega_using [h12, h']] at this
 
 /-! ## Memory of the context -/
 
@@ -74,7 +74,7 @@ theorem stateAt_init {m : Mem} {p : Addr} {key nonce : List Byte} {c : Spec.ChaC
 theorem slot_other (s₀ : State) (m : Mem) (v : BitVec 64) {a b : Nat} (h : a + 8 ≤ b ∨ b + 8 ≤ a)
     (ha : a + 8 ≤ 616) (hb : b + 8 ≤ 616) :
     (m.writeW (off (cx s₀) b) v).readW (off (cx s₀) a) 64 = m.readW (off (cx s₀) a) 64 :=
-  Mem.readW_writeW_sep (Offset.sep _ h (by omega) (by omega)) (by decide)
+  Mem.readW_writeW_sep (Offset.sep _ h (by omega_using [ha]) (by omega_using [hb])) (by decide)
 
 /-- A byte of the context outside a part written. -/
 theorem byte_sub (s₀ : State) {m m' : Mem} {k n i : Nat} (hf : Frame [sub s₀ k n] m m')
@@ -82,7 +82,7 @@ theorem byte_sub (s₀ : State) {m m' : Mem} {k n i : Nat} (hf : Frame [sub s₀
     m' (off (cx s₀) i) = m (off (cx s₀) i) :=
   hf _ fun r hr hc => by
     simp only [List.mem_singleton] at hr; subst hr
-    exact Offset.disjoint (cx s₀) h (by omega) (by omega) _ (Region.contains_self _ _) hc
+    exact Offset.disjoint (cx s₀) h (by omega_using [hi]) (by omega_using [hk]) _ (Region.contains_self _ _) hc
 
 theorem fw_sub (s₀ : State) {m m' : Mem} {k n : Nat} (hf : Frame [sub s₀ k n] m m') (h : k + n ≤ 616) :
     Frame [wR s₀] m m' :=
@@ -93,7 +93,7 @@ theorem sv_sub (s₀ : State) {m m' : Mem} {k n : Nat} (h : Saved s₀ m) (hf : 
     (hk : k + n ≤ savOff) : Saved s₀ m' :=
   h.frame hf fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr
-    exact sub_disj s₀ (by simp only [savOff] at hk ⊢; omega) (by decide) (by simp only [savOff] at hk ⊢; omega)
+    exact sub_disj s₀ (by simp only [savOff] at hk ⊢; omega_using [hk]) (by decide) (by simp only [savOff] at hk ⊢; omega_using [hk])
 
 /-- A byte of a region apart from the working space, through a frame of it. -/
 theorem byte_out (s₀ : State) {m m' : Mem} (hf : Frame [wR s₀] m m') {R : Region} (hd : R.Disjoint (wR s₀))
@@ -121,9 +121,9 @@ theorem save_ok {s₀ : State} (hp : APre e s₀) {rest : List Instr} {Q : State
   have g₂ : ∀ r, r ≠ .t0 → s₂.gpr r = s₀.gpr r := fun r h => by rw [u₂.other r h, u₁.other r h]
   have w₂ : s₂.wr = s₀.wr := by rw [u₂.wr, u₁.wr]
   have hin : ∀ d, d + 8 ≤ 56 → InRegions s₂.wr (off (cx s₀) (savOff + d)) 8 := fun d hd => by
-    rw [w₂]; exact hp.in_w (by simp only [savOff]; omega)
+    rw [w₂]; exact hp.in_w (by simp only [savOff]; omega_using [hd])
   have hal : ∀ d, d % 8 = 0 → (off (cx s₀) (savOff + d)).toNat % 8 = 0 := fun d hd =>
-    cx_al s₀ (by simp only [savOff]; omega)
+    cx_al s₀ (by simp only [savOff]; omega_using [hd])
   refine wp_sd (a := off (cx s₀) (savOff + 0)) (by decide) (by rw [t0]; rfl) (hal 0 (by decide))
     (hin 0 (by decide)) fun s₃ g₃ => ?_
   refine wp_sd (a := off (cx s₀) (savOff + 8)) (by decide) (by rw [g₃.gpr, t0]) (hal 8 (by decide))
@@ -161,7 +161,7 @@ theorem save_ok {s₀ : State} (hp : APre e s₀) {rest : List Instr} {Q : State
     simp (disch := decide) only [slot_other, Mem.readW_writeW_self64, Nat.add_zero]
   · rw [em, hm₂]
     have c : ∀ d, d + 8 ≤ 56 → (sub s₀ savOff 56).Contains (off (cx s₀) (savOff + d)) (64 / 8) :=
-      fun d hd => contains_sub s₀ (by omega) (by simp only [savOff]; omega) (by decide)
+      fun d hd => contains_sub s₀ (by omega_using []) (by simp only [savOff]; omega_using [hd]) (by decide)
     exact (((((((Frame.refl _ _).writeW (List.mem_singleton_self _) _ (c 0 (by decide))).writeW
       (List.mem_singleton_self _) _ (c 8 (by decide))).writeW (List.mem_singleton_self _) _
       (c 16 (by decide))).writeW (List.mem_singleton_self _) _ (c 24 (by decide))).writeW
@@ -223,7 +223,7 @@ theorem prologue_ok {s₀ : State} (hp : APre e s₀) :
   rw [WP.block_append_iff]
   refine WP.mono (storeBytes_ok (tmp := .t1) (dst := .t0) (doff := 0) (bs := sigmaBytes) (by decide)
     sigmaBytes_lt (by decide) (fun i hi => by
-      rw [t0b, wrb]; exact hp.in_w (by rw [sigmaBytes_length] at hi; omega))) fun sc hc => ?_
+      rw [t0b, wrb]; exact hp.in_w (by rw [sigmaBytes_length] at hi; omega_using [hi]))) fun sc hc => ?_
   have t0c : sc.gpr .t0 = cx s₀ := by rw [hc.gpr _ (by decide), t0b]
   have fc : Frame [sub s₀ 0 16] sb.mem sc.mem := by have := hc.frame; rwa [t0b, sigmaBytes_length] at this
   have σc : ∀ j < 16, sc.mem (off (cx s₀) j) = Proof.ChaCha20.sigma.getD j 0 := fun j hj => by
@@ -236,11 +236,11 @@ theorem prologue_ok {s₀ : State} (hp : APre e s₀) :
     (by decide) (by decide) (by decide) (by decide)
     (fun i hi => by
       rw [hc.gpr _ (by decide), a0b, hc.rd, rdb]
-      exact ⟨kR s₀, List.mem_append_left _ hp.k_rd, Offset.contains_base _ (by omega) (by omega)⟩)
-    (fun i hi => by rw [t0c, hc.wr, wrb]; exact hp.in_w (by omega))
+      exact ⟨kR s₀, List.mem_append_left _ hp.k_rd, Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi])⟩)
+    (fun i hi => by rw [t0c, hc.wr, wrb]; exact hp.in_w (by omega_using [hi]))
     (fun i hi hcon => by
       rw [t0c, hc.gpr _ (by decide), a0b] at hcon
-      exact hp.k_w _ (Offset.contains_base _ (by omega) (by omega)) (sub_work s₀ (k := 16) (n := 32)
+      exact hp.k_w _ (Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi])) (sub_work s₀ (k := 16) (n := 32)
         (by decide) _ hcon))) fun sd hd => ?_
   have t0d : sd.gpr .t0 = cx s₀ := by rw [hd.gpr _ (by decide), t0c]
   have fd : Frame [sub s₀ 16 32] sc.mem sd.mem := by have := hd.frame; rwa [t0c] at this
@@ -254,7 +254,7 @@ theorem prologue_ok {s₀ : State} (hp : APre e s₀) :
   rw [WP.block_append_iff]
   refine WP.mono (storeBytes_ok (tmp := .t1) (dst := .t0) (doff := 48) (bs := [0, 0, 0, 0]) (by decide)
     (by decide) (by decide) (fun i hi => by
-      rw [t0d, hd.wr, hc.wr, wrb]; exact hp.in_w (by simp at hi; omega))) fun se he => ?_
+      rw [t0d, hd.wr, hc.wr, wrb]; exact hp.in_w (by simp at hi; omega_using [hi]))) fun se he => ?_
   have t0e : se.gpr .t0 = cx s₀ := by rw [he.gpr _ (by decide), t0d]
   have fe : Frame [sub s₀ 48 4] sd.mem se.mem := by have := he.frame; rwa [t0d] at this
   have ce : ∀ j < 4, se.mem (off (cx s₀) (48 + j)) = (0 : Spec.ChaCha20.Word).extractLsb' (8 * j) 8 :=
@@ -262,18 +262,18 @@ theorem prologue_ok {s₀ : State} (hp : APre e s₀) :
       have := he.stored j (by simpa using hj)
       rw [t0d] at this
       rw [this]
-      rcases (by omega : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3) with rfl | rfl | rfl | rfl <;> rfl
+      rcases (by omega_using [hj] : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3) with rfl | rfl | rfl | rfl <;> rfl
   -- The nonce.
   rw [WP.block_append_iff]
   refine WP.mono (copyBytes_ok (tmp := .t1) (src := .a1) (dst := .t0) (soff := 0) (doff := 52) (n := 12)
     (by decide) (by decide) (by decide) (by decide)
     (fun i hi => by
       rw [he.gpr _ (by decide), hd.gpr _ (by decide), hc.gpr _ (by decide), a1b, he.rd, hd.rd, hc.rd, rdb]
-      exact ⟨nR s₀, List.mem_append_left _ hp.n_rd, Offset.contains_base _ (by omega) (by omega)⟩)
-    (fun i hi => by rw [t0e, he.wr, hd.wr, hc.wr, wrb]; exact hp.in_w (by omega))
+      exact ⟨nR s₀, List.mem_append_left _ hp.n_rd, Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi])⟩)
+    (fun i hi => by rw [t0e, he.wr, hd.wr, hc.wr, wrb]; exact hp.in_w (by omega_using [hi]))
     (fun i hi hcon => by
       rw [t0e, he.gpr _ (by decide), hd.gpr _ (by decide), hc.gpr _ (by decide), a1b] at hcon
-      exact hp.n_w _ (Offset.contains_base _ (by omega) (by omega)) (sub_work s₀ (k := 52) (n := 12)
+      exact hp.n_w _ (Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi])) (sub_work s₀ (k := 52) (n := 12)
         (by decide) _ hcon))) fun sf hf => ?_
   have t0f : sf.gpr .t0 = cx s₀ := by rw [hf.gpr _ (by decide), t0e]
   have ff : Frame [sub s₀ 52 12] se.mem sf.mem := by have := hf.frame; rwa [t0e] at this
@@ -287,7 +287,7 @@ theorem prologue_ok {s₀ : State} (hp : APre e s₀) :
   -- The padding, the lengths block and the context into `a0`.
   have wrf : sf.wr = s₀.wr := by rw [hf.wr, he.wr, hd.wr, hc.wr, wrb]
   have hin : ∀ d, d + 8 ≤ 32 → InRegions sf.wr (off (cx s₀) (zeroOff + d)) 8 := fun d hd => by
-    rw [wrf]; exact hp.in_w (by simp only [zeroOff]; omega)
+    rw [wrf]; exact hp.in_w (by simp only [zeroOff]; omega_using [hd])
   refine wp_li (imm := 0) (by decide) fun sg ug => ?_
   have t0g : sg.gpr .t0 = cx s₀ := by rw [ug.other _ (by decide), t0f]
   refine wp_sd (a := off (cx s₀) zeroOff) (by decide) (by rw [t0g]) (cx_al s₀ (by decide))
@@ -315,7 +315,7 @@ theorem prologue_ok {s₀ : State} (hp : APre e s₀) :
   have fk : Frame [sub s₀ zeroOff 32] sf.mem sl.mem := by
     rw [ml]
     have c : ∀ d, d + 8 ≤ 32 → (sub s₀ zeroOff 32).Contains (off (cx s₀) (zeroOff + d)) (64 / 8) :=
-      fun d hd => contains_sub s₀ (by omega) (by simp only [zeroOff]; omega) (by decide)
+      fun d hd => contains_sub s₀ (by omega_using []) (by simp only [zeroOff]; omega_using [hd]) (by decide)
     exact ((((Frame.refl _ _).writeW (List.mem_singleton_self _) _ (by simpa using c 0 (by decide))).writeW
       (List.mem_singleton_self _) _ (c 8 (by decide))).writeW (List.mem_singleton_self _) _
       (c 16 (by decide))).writeW (List.mem_singleton_self _) _ (c 24 (by decide))
@@ -331,16 +331,16 @@ theorem prologue_ok {s₀ : State} (hp : APre e s₀) :
     rw [ml, Mem.readW_writeW_self64]
   -- The bytes of the ChaCha20 state, from the part that wrote each.
   have early : ∀ i < 64, sl.mem (off (cx s₀) i) = sf.mem (off (cx s₀) i) := fun i hi =>
-    byte_sub s₀ fk (by simp only [zeroOff]; omega) (by decide) (by omega)
+    byte_sub s₀ fk (by simp only [zeroOff]; omega_using [hi]) (by decide) (by omega_using [hi])
   have hst : stateAt sl.mem (cx s₀) = initState (K s₀) 0 (N s₀) := by
     refine stateAt_init (fun i hi => ?_) (fun i hi => ?_) (fun i hi => ?_) (fun i hi => ?_)
-    · rw [early i (by omega), byte_sub s₀ ff (by omega) (by decide) (by omega),
-        byte_sub s₀ fe (by omega) (by decide) (by omega), byte_sub s₀ fd (by omega) (by decide) (by omega),
+    · rw [early i (by omega_using [hi]), byte_sub s₀ ff (by omega_using [hi]) (by decide) (by omega_using [hi]),
+        byte_sub s₀ fe (by omega_using [hi]) (by decide) (by omega_using [hi]), byte_sub s₀ fd (by omega_using [hi]) (by decide) (by omega_using [hi]),
         σc i hi]
-    · rw [early _ (by omega), byte_sub s₀ ff (by omega) (by decide) (by omega),
-        byte_sub s₀ fe (by omega) (by decide) (by omega), kd i hi]
-    · rw [early _ (by omega), byte_sub s₀ ff (by omega) (by decide) (by omega), ce i hi]
-    · rw [early _ (by omega), nf i hi]
+    · rw [early _ (by omega_using [hi]), byte_sub s₀ ff (by omega_using [hi]) (by decide) (by omega_using [hi]),
+        byte_sub s₀ fe (by omega_using [hi]) (by decide) (by omega_using [hi]), kd i hi]
+    · rw [early _ (by omega_using [hi]), byte_sub s₀ ff (by omega_using [hi]) (by decide) (by omega_using [hi]), ce i hi]
+    · rw [early _ (by omega_using [hi]), nf i hi]
   refine ⟨⟨⟨?_, ?_, ?_, ?_, ?_, ?_⟩, fun r hr => ?_, ?_, ?_, ?_, ?_, fwl.mono (by simp)⟩, ?_, fwl, hst, ?_, ?_⟩
   · rw [gl _ (by decide) (by decide), rb.s7]
   · rw [gl _ (by decide) (by decide), rb.s8]
@@ -360,10 +360,10 @@ theorem prologue_ok {s₀ : State} (hp : APre e s₀) :
       fd (by decide)) fe (by decide)) ff (by decide)) fk (by decide)
   · rw [ul.gpr, gk _ (by decide), t0b]
   · intro i hi
-    rcases (by omega : i < 8 ∨ 8 ≤ i) with h | h
+    rcases (by omega_using [] : i < 8 ∨ 8 ≤ i) with h | h
     · rw [← off_off (cx s₀) zeroOff i, ← Proof.ChaCha20.readW64_byte sl.mem (off (cx s₀) zeroOff) h, r0]; simp
-    · rw [show zeroOff + i = zeroOff + 8 + (i - 8) by omega, ← off_off (cx s₀) (zeroOff + 8) (i - 8),
-        ← Proof.ChaCha20.readW64_byte sl.mem (off (cx s₀) (zeroOff + 8)) (show i - 8 < 8 by omega), r1]; simp
+    · rw [show zeroOff + i = zeroOff + 8 + (i - 8) by omega_using [h], ← off_off (cx s₀) (zeroOff + 8) (i - 8),
+        ← Proof.ChaCha20.readW64_byte sl.mem (off (cx s₀) (zeroOff + 8)) (show i - 8 < 8 by omega_using [hi]), r1]; simp
   · rw [show (16 : Nat) = 8 + 8 from rfl, Proof.Poly1305.bytesAt_add, Proof.Poly1305.bytesAt_leBytes_64,
       Proof.Poly1305.bytesAt_leBytes_64, r2]
     have r3' : sl.mem.readW (off (cx s₀) lenOff + BitVec.ofNat 64 8) 64 = s₀.gpr .a5 := by

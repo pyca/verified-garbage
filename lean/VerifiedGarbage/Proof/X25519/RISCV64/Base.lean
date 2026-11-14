@@ -70,10 +70,10 @@ theorem clampCopy_ok {s : State} {b : Addr} (hc : Ctx8 b s) :
   have hS : SCAL = 1152 := rfl
   let a : Nat → Addr := fun k => b + BitVec.ofNat 64 (SCAL + k)
   have hin : ∀ k, k < 32 → InRegions s.wr (a k) 1 := fun k hk =>
-    in_base hc.wr (d := SCAL + k) (n := 1) (by omega) (by omega)
+    in_base hc.wr (d := SCAL + k) (n := 1) (by omega_using [hS, hk]) (by omega_using [hS, hk])
   have ne : ∀ i k, i < 32 → k < 32 → i ≠ k → a i ≠ a k := fun i k hi hk hik he =>
     Offset.disjoint b (d := SCAL + i) (n := 1) (e := SCAL + k) (k := 1)
-      (by omega) (by omega) (by omega) _ (Region.contains_self _ _)
+      (by omega_using [hik]) (by omega_using [hS, hi]) (by omega_using [hS, hk]) _ (Region.contains_self _ _)
       (by change Region.Contains ⟨a k, 1⟩ (a i) 1; rw [he]; exact Region.contains_self _ _)
   have a0 : b + BitVec.ofNat 64 SCAL = a 0 := rfl
   unfold clampCopy
@@ -106,8 +106,8 @@ theorem clampCopy_ok {s : State} {b : Addr} (hc : Ctx8 b s) :
     ?_, ?_⟩
   · rw [mt]
     exact ((Frame.refl _ _).writeW (List.mem_singleton_self _) _
-      (Offset.contains _ (by omega) (by omega) (by omega))).writeW
-      (List.mem_singleton_self _) _ (Offset.contains _ (by omega) (by omega) (by omega))
+      (Offset.contains _ (by omega_using []) (by omega_using []) (by omega_using [hS]))).writeW
+      (List.mem_singleton_self _) _ (Offset.contains _ (by omega_using []) (by omega_using []) (by omega_using [hS]))
   · apply List.ext_getElem
     · simp [Spec.Ed25519.bytesAt, clampL]
     · intro i hi _
@@ -143,7 +143,7 @@ theorem engine_ok : EngineOk engine (fun kb => Spec.X25519.x25519 kb Spec.X25519
   have hb1 : Spec.Ed25519.bytesAt s1.mem p 32 = Spec.Ed25519.bytesAt s.mem p 32 := by
     simp only [Spec.Ed25519.bytesAt, List.map_inj_left]
     intro i hi
-    exact bytes_ws f1 (fun r hr => by rw [List.mem_singleton.mp hr]; exact Offset.sub_base _ (by omega)) hpd (by decide)
+    exact bytes_ws f1 (fun r hr => by rw [List.mem_singleton.mp hr]; exact Offset.sub_base _ (by omega_using [])) hpd (by decide)
       (List.mem_range.mp hi)
   have hT1 : TblAt s1 T := hT.of_frame (by rw [r1.rd, r1.wr]) f1 fun r hr => by
     rw [List.mem_singleton.mp hr]; exact apart.sub_right (Offset.sub_base _ (by decide))
@@ -178,7 +178,7 @@ theorem engine_ok : EngineOk engine (fun kb => Spec.X25519.x25519 kb Spec.X25519
         (rt.mono (by decide)))))))
   · have fr : ∀ r ∈ ([⟨b + BitVec.ofNat 64 FR, 64⟩] : List Region), ∃ r' ∈ [FA b], r.Sub r' := fun r hr =>
       ⟨_, List.mem_singleton_self _, by
-        rw [List.mem_singleton.mp hr]; exact Offset.sub _ (by omega) (by omega)⟩
+        rw [List.mem_singleton.mp hr]; exact Offset.sub _ (by omega_using [hF]) (by omega_using [hF])⟩
     exact (f1.mono (by simp)).trans ((fu.mono (by simp)).trans ((fv.mono (by simp)).trans
       ((fx.mono (by simp)).trans ((ky.frame.mono (by simp)).trans ((kz.frame.mono (by simp)).trans
         ((ft.sub fr).mono (by simp)))))))

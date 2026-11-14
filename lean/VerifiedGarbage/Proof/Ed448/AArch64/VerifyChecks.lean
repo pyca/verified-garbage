@@ -51,21 +51,21 @@ theorem CFrame.word {base : Addr} {m m' : Mem} (h : CFrame base m m') {d : Nat}
     (h1 : d + 8 ≤ X2 ∨ X2 + 128 ≤ d) (h2 : d + 8 ≤ CAN ∨ CAN + 128 ≤ d) (h3 : d + 8 ≤ ACC ∨ ACC + 512 ≤ d)
     (hd : d + 8 ≤ 8192) : word m' base d = word m base d :=
   Mem.readW_congr fun i hi => h _ (by
-      simp only [ofs]; rw [Offset.add_add, Mem.sub_ofNat_toNat base (by omega)]; omega)
-    (by simp only [ofs]; rw [Offset.add_add, Mem.sub_ofNat_toNat base (by omega)]; omega)
-    (by simp only [ofs]; rw [Offset.add_add, Mem.sub_ofNat_toNat base (by omega)]; omega)
+      simp only [ofs]; rw [Offset.add_add, Mem.sub_ofNat_toNat base (by omega_using [hd, hi])]; omega_using [h1, hi])
+    (by simp only [ofs]; rw [Offset.add_add, Mem.sub_ofNat_toNat base (by omega_using [hd, hi])]; omega_using [h2, hi])
+    (by simp only [ofs]; rw [Offset.add_add, Mem.sub_ofNat_toNat base (by omega_using [hd, hi])]; omega_using [h3, hi])
 
 /-- A slot other than `X2` is unchanged. -/
 theorem CFrame.limbs {base : Addr} {m m' : Mem} (h : CFrame base m m') {i : Fin 22} (hi : i ≠ 1) {j : Nat}
     (hj : j < 16) : limbs m' base (slot i.val) j = limbs m base (slot i.val) j := by
   have := i.isLt
   have hne : i.val ≠ 1 := fun e => hi (Fin.ext e)
-  exact congrArg BitVec.toNat (h.word (by simp only [X2, slot]; omega) (by simp only [CAN, slot]; omega)
-    (by simp only [ACC, slot]; omega) (by simp only [slot]; omega))
+  exact congrArg BitVec.toNat (h.word (by simp only [X2, slot]; omega_using [hj, hne]) (by simp only [CAN, slot]; omega_using [hj])
+    (by simp only [ACC, slot]; omega_using [hj]) (by simp only [slot]; omega_using [hj]))
 
 theorem CFrame.E {base : Addr} {m m' : Mem} (h : CFrame base m m') {i : Fin 22} (hi : i ≠ 1) :
     E m' base i = E m base i :=
-  congrArg VG.Proof.X448.toFe (VG.Proof.X448.Wide.valN_congr fun j hj => h.limbs hi (by omega))
+  congrArg VG.Proof.X448.toFe (VG.Proof.X448.Wide.valN_congr fun j hj => h.limbs hi (by omega_using [hj]))
 
 /-- What a check keeps: the registers but `x20` and `workRegs`, and the memory but `CFrame`'s. -/
 structure CKeep (base : Addr) (s t : State) : Prop where
@@ -102,7 +102,7 @@ theorem isZero_val (x : BitVec 64) :
       · exact absurd (BitVec.eq_of_toNat_eq e) h
       · exact e
     have hl := x.isLt
-    rw [BitVec.toNat_not, decide_eq_false (by rw [show (0 : BitVec 64).toNat = 0 from rfl]; omega)]
+    rw [BitVec.toNat_not, decide_eq_false (by rw [show (0 : BitVec 64).toNat = 0 from rfl]; omega_using [hn])]
     rfl
 
 theorem isZero_ok (s : State) :
@@ -126,7 +126,7 @@ theorem div_eq_of_add {A B M x y : Nat} (hA : A < M) (hB : B < M) (h : A + M * x
   have hy : (B + M * y) / M = y := by rw [Nat.add_mul_div_left _ _ hM, Nat.div_eq_of_lt hB, Nat.zero_add]
   have exy : x = y := by rw [← hx, ← hy, h]
   subst exy
-  exact ⟨rfl, by omega⟩
+  exact ⟨rfl, by omega_using [h]⟩
 
 /-- Limbs below the radix are equal exactly when their values are. -/
 theorem valN_inj {f g : Nat → Nat} : ∀ n, (∀ i < n, f i < VG.Proof.X448.radix) →
@@ -135,10 +135,10 @@ theorem valN_inj {f g : Nat → Nat} : ∀ n, (∀ i < n, f i < VG.Proof.X448.ra
   | 0, _, _, _, i, hi => absurd hi (Nat.not_lt_zero _)
   | n + 1, hf, hg, h, i, hi => by
     rw [VG.Proof.X448.valN, VG.Proof.X448.valN] at h
-    obtain ⟨e1, e2⟩ := div_eq_of_add (VG.Proof.X448.valN_lt fun j hj => hf j (by omega))
-      (VG.Proof.X448.valN_lt fun j hj => hg j (by omega)) h
+    obtain ⟨e1, e2⟩ := div_eq_of_add (VG.Proof.X448.valN_lt fun j hj => hf j (by omega_using [hj]))
+      (VG.Proof.X448.valN_lt fun j hj => hg j (by omega_using [hj])) h
     rcases Nat.lt_succ_iff_lt_or_eq.mp hi with hi | rfl
-    · exact valN_inj n (fun j hj => hf j (by omega)) (fun j hj => hg j (by omega)) e2 i hi
+    · exact valN_inj n (fun j hj => hf j (by omega_using [hj])) (fun j hj => hg j (by omega_using [hj])) e2 i hi
     · exact e1
 
 theorem or_eq_zero64 (x y : BitVec 64) : x ||| y = 0 ↔ x = 0 ∧ y = 0 := BitVec.or_eq_zero_iff
@@ -150,10 +150,10 @@ theorem diffStep_ok {s : State} {base : Addr} (hs : Scr s base) {n : Nat} (hn : 
         .logic .orr .x .x5 .x5 .x4] : List Instr)) s fun t =>
       t.gpr .x5 = s.gpr .x5 ||| (word s.mem base (X2 + 8 * n) ^^^ word s.mem base (CAN + 8 * n)) ∧
       t.mem = s.mem ∧ Keeps [.x4, .x5, .x6] s t := by
-  have r1 := hs.read (d := X2 + 8 * n) (n := 8) (by simp only [X2, slot]; omega)
-  have r2 := hs.read (d := CAN + 8 * n) (n := 8) (by simp only [CAN]; omega)
-  have e1 : (X2 + 8 * n) % 8 = 0 ∧ X2 + 8 * n < 4096 * 8 := by simp only [X2, slot]; omega
-  have e2 : (CAN + 8 * n) % 8 = 0 ∧ CAN + 8 * n < 4096 * 8 := by simp only [CAN]; omega
+  have r1 := hs.read (d := X2 + 8 * n) (n := 8) (by simp only [X2, slot]; omega_using [hn])
+  have r2 := hs.read (d := CAN + 8 * n) (n := 8) (by simp only [CAN]; omega_using [hn])
+  have e1 : (X2 + 8 * n) % 8 = 0 ∧ X2 + 8 * n < 4096 * 8 := by simp only [X2, slot]; omega_using [hn]
+  have e2 : (CAN + 8 * n) % 8 = 0 ∧ CAN + 8 * n < 4096 * 8 := by simp only [CAN]; omega_using [hn]
   apply WP.of_runBlock
   simp only [ld, runBlock_cons, runStep_some, runBlock_nil, exec, addr, Size.bytes, Size.bits,
     State.load, State.read, e1, e2, and_self, BitVec.setWidth_eq, hs.x3, r1, r2,
@@ -194,7 +194,7 @@ theorem diffCan_ok {s : State} {base : Addr} (hs : Scr s base) :
       rcases Nat.lt_succ_iff_lt_or_eq.mp hj with hj | rfl
       · exact h1 j hj
       · exact h2
-    · intro h; exact ⟨fun j hj => h j (by omega), h n (by omega)⟩
+    · intro h; exact ⟨fun j hj => h j (by omega_using [hj]), h n (by omega_using [])⟩
   refine WP.mono (wp_range_flatMap (M := isa) (N := 16) inv step 16 (by decide) t0
     ⟨⟨fun _ _ h => absurd h (Nat.not_lt_zero _), fun _ => z0⟩, m0, VG.Proof.X448.AArch64.Keeps.refl _ _⟩)
     fun u ⟨uv, um, uk⟩ => ⟨uv, um, (k0.mono (by intro r hr; simp only [List.mem_singleton] at hr; subst r; decide)).trans uk⟩

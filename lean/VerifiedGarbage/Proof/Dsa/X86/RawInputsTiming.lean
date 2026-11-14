@@ -26,7 +26,7 @@ theorem rawInputs_relCT (n al bl i j : Nat) (a b : Pointer) (base : Addr) (size 
   have B := slot_bound (n := n) hi
   have C := VG.Proof.Dsa.X86.Layout.context_bound hn
   have H : 8256 ≤ size := hz
-  have fit : slot n i + 8 * n ≤ size := by simp only [stride] at B; omega
+  have fit : slot n i + 8 * n ≤ size := by simp only [stride] at B; omega_using [B, C, H]
   cases E with
   | seq E₁ E₂ =>
     cases F with
@@ -34,7 +34,7 @@ theorem rawInputs_relCT (n al bl i j : Nat) (a b : Pointer) (base : Addr) (size 
       obtain ⟨Trace₁, _⟩ := coreLoad_relCT n al (slot n i) a base size hz _ _ _ _ _ _ ⟨S, T, Pa⟩ E₁ F₁
       obtain ⟨_, K₁, O₁⟩ := wp_result (coreLoad_ok S hz fit ha4 ha hwa A₁.toReadableComponent (A₁.slot hi)) E₁
       obtain ⟨_, K₂, O₂⟩ := wp_result (coreLoad_ok T hz fit ha4 ha hwa A₂.toReadableComponent (A₂.slot hi)) F₁
-      have Hn : contextBytes n ≤ 8192 := by omega
+      have Hn : contextBytes n ≤ 8192 := by omega_using [C]
       have P₁ := pointerValue_keep K₁ (by decide) (slotOutside_whole O₁ hi) Hn b
       have P₂ := pointerValue_keep K₂ (by decide) (slotOutside_whole O₂ hi) Hn b
       obtain ⟨Trace₂, Agree⟩ := coreLoad_relCT n bl (slot n j) b base size hz _ _ _ _ _ _

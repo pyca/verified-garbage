@@ -58,7 +58,7 @@ theorem c_sub {K : Nat} (hK : K < 4) : ∀ r ∈ cWr σ K ++ [stkR σ],
   simp only [List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with (rfl | rfl) | rfl
   · exact ⟨aR σ, by simp, sub_poly hK⟩
-  · exact ⟨scrR σ, by simp, sub_scr (by simp only [oScalar]; omega)⟩
+  · exact ⟨scrR σ, by simp, sub_scr (by simp only [oScalar]; omega_using [])⟩
   · exact ⟨stkR σ, by simp, fun _ h => h⟩
 
 /-- A region the call writes is apart from `⟨at' σ a, n⟩` in the scratch space below 6144. -/
@@ -67,22 +67,22 @@ theorem c_disj {K : Nat} (hK : K < 4) {a n : Nat} (h : a + n ≤ oScalar) :
   intro r hr
   simp only [List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with (rfl | rfl) | rfl
-  · exact (hp.a_scr.symm.sub_left (sub_scr (by simp only [oScalar] at h; omega))).sub_right (sub_poly hK)
-  · exact Offset.disjoint _ (.inl h) (by simp only [oScalar] at h; omega) (by simp only [oScalar]; omega)
-  · exact (hp.stk_scr.sub_right (sub_scr (by simp only [oScalar] at h; omega))).symm
+  · exact (hp.a_scr.symm.sub_left (sub_scr (by simp only [oScalar] at h; omega_using [h]))).sub_right (sub_poly hK)
+  · exact Offset.disjoint _ (.inl h) (by simp only [oScalar] at h; omega_using [h]) (by simp only [oScalar]; omega_using [])
+  · exact (hp.stk_scr.sub_right (sub_scr (by simp only [oScalar] at h; omega_using [h]))).symm
 
 theorem seed_bytes {K : Nat} (hK : K < 4) {m : Mem} (hf : Frame [aR σ, scrR σ, stkR σ] σ.mem m) :
     bytesAt m (sd σ + BitVec.ofNat 64 (66 * K)) 66 = B σ K := by
-  rw [MlKem.bytesAt_frame hf (by simpa using ⟨hp.sd_a.sub_left (Offset.sub_base _ (by omega)),
-    hp.sd_scr.sub_left (Offset.sub_base _ (by omega)), (hp.stk_sd.sub_right (Offset.sub_base _ (by omega))).symm⟩)
+  rw [MlKem.bytesAt_frame hf (by simpa using ⟨hp.sd_a.sub_left (Offset.sub_base _ (by omega_using [hK])),
+    hp.sd_scr.sub_left (Offset.sub_base _ (by omega_using [hK])), (hp.stk_sd.sub_right (Offset.sub_base _ (by omega_using [hK]))).symm⟩)
     (by decide)]
   rfl
 
 theorem scr6144_lt : (at' σ oScalar).toNat + 2048 ≤ 2 ^ 64 := by
   have := hp.scr_lt
   rw [at', Offset.toNat_add_ofNat, Nat.mod_eq_of_lt (show oScalar < 2 ^ 64 by decide),
-    Nat.mod_eq_of_lt (by simp only [oScalar]; omega)]
-  simp only [oScalar]; omega
+    Nat.mod_eq_of_lt (by simp only [oScalar]; omega_using [this])]
+  simp only [oScalar]; omega_using [this]
 
 theorem regs {s : State} (he : Env σ s) : s.rd ++ s.wr = [sdR σ, aR σ, scrR σ] := by
   rw [he.rd, he.wr, hp.rd, hp.wr]; rfl
@@ -93,14 +93,14 @@ theorem cov {s : State} (he : Env σ s) {K : Nat} (hK : K < 4) :
   · rw [regs hp he]
     simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
-    · exact ⟨sdR σ, by simp, 66 * K, rfl, by simp only; omega⟩
-    · exact ⟨aR σ, by simp, 1024 * K, rfl, by simp only; omega⟩
-    · exact ⟨scrR σ, by simp, oScalar, rfl, by simp only [oScalar]; omega⟩
+    · exact ⟨sdR σ, by simp, 66 * K, rfl, by simp only; omega_using [hK]⟩
+    · exact ⟨aR σ, by simp, 1024 * K, rfl, by simp only; omega_using [hK]⟩
+    · exact ⟨scrR σ, by simp, oScalar, rfl, by simp only [oScalar]; omega_using []⟩
   · rw [he.wr, hp.wr]
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
-    · exact ⟨aR σ, by simp, 1024 * K, rfl, by simp only; omega⟩
-    · exact ⟨scrR σ, by simp, oScalar, rfl, by simp only [oScalar]; omega⟩
+    · exact ⟨aR σ, by simp, 1024 * K, rfl, by simp only; omega_using [hK]⟩
+    · exact ⟨scrR σ, by simp, oScalar, rfl, by simp only [oScalar]; omega_using []⟩
 
 /-- `PC` after the call. -/
 theorem PC.call {K : Nat} (hK : K < 4) {s s' : State} (h : PC σ K s) (hrd : s'.rd = s.rd)
@@ -110,16 +110,16 @@ theorem PC.call {K : Nat} (hK : K < 4) {s s' : State} (h : PC σ K s) (hrd : s'.
       by rw [hg .r12 (by simp), h.env.r12], by rw [hg .r13 (by simp), h.env.r13], by rw [hg .r14 (by simp), h.env.r14],
       by rw [hg .rsp (by simp), h.env.rsp], by rw [hg .r15 (by simp), h.env.r15], fun i hi => ?_,
       h.env.frame.trans (hf.sub (c_sub (σ := σ) hK))⟩, fun k hk => ?_⟩
-  · rw [hf.readW (Region.contains_self _ _) (c_disj hp hK (by simp only [oSave, oScalar]; omega)) (by decide)]
+  · rw [hf.readW (Region.contains_self _ _) (c_disj hp hK (by simp only [oSave, oScalar]; omega_using [hi])) (by decide)]
     exact h.env.saved i hi
   · refine polyIs_frame hf (fun r hr => ?_) (h.polys k hk)
     simp only [List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with (rfl | rfl) | rfl
-    · have hd := Offset.disjoint (aP σ) (d := 1024 * k) (n := 1024) (e := 1024 * K) (k := 1024) (by omega) (by omega)
-        (by omega)
+    · have hd := Offset.disjoint (aP σ) (d := 1024 * k) (n := 1024) (e := 1024 * K) (k := 1024) (by omega_using [hk]) (by omega_using [hK, hk])
+        (by omega_using [hK])
       simpa [poly4] using hd
-    · exact (hp.a_scr.sub_left (sub_poly (by omega))).sub_right (sub_scr (by simp only [oScalar]; omega))
-    · exact (hp.stk_a.sub_right (sub_poly (by omega))).symm
+    · exact (hp.a_scr.sub_left (sub_poly (by omega_using [hK, hk]))).sub_right (sub_scr (by simp only [oScalar]; omega_using []))
+    · exact (hp.stk_a.sub_right (sub_poly (by omega_using [hK, hk]))).symm
 
 /-- The arguments of the call on seed `K`. -/
 structure ArgI (σ : State) (K : Nat) (s : State) : Prop where
@@ -140,14 +140,14 @@ theorem argsK_ok {K : Nat} (hK : K < 4) {s : State} (h : PC σ K s) :
   WP.mono (WP.keep [.rdi, .rsi, .rdx, .rcx] (Q := fun s' => s'.mem = s.mem ∧
       s'.gpr .rdi = sd σ + BitVec.ofNat 64 (66 * K) ∧ s'.gpr .rsi = σ.gpr .rsi ∧ s'.gpr .rdx = poly4 (aP σ) K ∧
       s'.gpr .rcx = at' σ oScalar)
-    (by xrun [h.env.r12, h.env.r13, h.env.r14, h.env.rbx, sx_ofNat (show 66 * K < 2 ^ 31 by omega),
-      sx_ofNat (show 1024 * K < 2 ^ 31 by omega), sx6144]; rfl) (by rfl))
+    (by xrun [h.env.r12, h.env.r13, h.env.r14, h.env.rbx, sx_ofNat (show 66 * K < 2 ^ 31 by omega_using [hK]),
+      sx_ofNat (show 1024 * K < 2 ^ 31 by omega_using [hK]), sx6144]; rfl) (by rfl))
     fun _ ⟨⟨hm₂, hdi, hsi, hdx, hcx⟩, k₂⟩ => ⟨⟨h.env.keep hm₂ k₂ (by decide), by rw [hm₂]; exact h.polys⟩,
       hdi, hsi, hdx, hcx⟩
 
 theorem argK_kS {K : Nat} (hK : K < 4) {s : State} (h : ArgI σ K s) :
     (below (s.gpr .rsp) 24).Disjoint ⟨sd σ + BitVec.ofNat 64 (66 * K), 66⟩ := by
-  rw [h.pinv.env.rsp]; exact hp.stk_sd.sub_right (Offset.sub_base (sd σ) (d := 66 * K) (n := 66) (by omega))
+  rw [h.pinv.env.rsp]; exact hp.stk_sd.sub_right (Offset.sub_base (sd σ) (d := 66 * K) (n := 66) (by omega_using [hK]))
 
 theorem argK_pre {K : Nat} (hK : K < 4) {s : State} (h : ArgI σ K s) :
     emK.pre (s.callEntry.withRegions (cRd σ K) (cWr σ K)) := by
@@ -156,14 +156,14 @@ theorem argK_pre {K : Nat} (hK : K < 4) {s : State} (h : ArgI σ K s) :
   have kA : (below (s.gpr .rsp) 24).Disjoint (pR (poly4 (aP σ) K)) := by
     rw [hsp]; exact hp.stk_a.sub_right (sub_poly (σ := σ) hK)
   have kZ : (below (s.gpr .rsp) 24).Disjoint ⟨at' σ oScalar, 2048⟩ := by
-    rw [hsp]; exact hp.stk_scr.sub_right (sub_scr (σ := σ) (a := oScalar) (n := 2048) (by simp only [oScalar]; omega))
+    rw [hsp]; exact hp.stk_scr.sub_right (sub_scr (σ := σ) (a := oScalar) (n := 2048) (by simp only [oScalar]; omega_using []))
   simp only [emK, gOf, State.withRegions_gpr, State.withRegions_rd, State.withRegions_wr,
     ce_gpr' s (by decide : Reg.rdi ≠ .rsp), ce_gpr' s (by decide : Reg.rsi ≠ .rsp),
     ce_gpr' s (by decide : Reg.rdx ≠ .rsp), ce_gpr' s (by decide : Reg.rcx ≠ .rsp), h.rdi, h.rsi, h.rdx, h.rcx]
   exact ⟨trivial, trivial,
-    (hp.sd_a.sub_left (Offset.sub_base _ (by omega))).sub_right (sub_poly hK),
-    (hp.sd_scr.sub_left (Offset.sub_base _ (by omega))).sub_right (sub_scr (by simp only [oScalar]; omega)),
-    (hp.a_scr.sub_left (sub_poly hK)).sub_right (sub_scr (by simp only [oScalar]; omega)),
+    (hp.sd_a.sub_left (Offset.sub_base _ (by omega_using [hK]))).sub_right (sub_poly hK),
+    (hp.sd_scr.sub_left (Offset.sub_base _ (by omega_using [hK]))).sub_right (sub_scr (by simp only [oScalar]; omega_using [])),
+    (hp.a_scr.sub_left (sub_poly hK)).sub_right (sub_scr (by simp only [oScalar]; omega_using [])),
     ret_disj24 s kS, ret_disj24 s kA, ret_disj24 s kZ, stk_disj24' s kS, stk_disj24' s kA, stk_disj24' s kZ,
     scr6144_lt hp, hp.gamma⟩
 
@@ -182,7 +182,7 @@ theorem callK_ok {K : Nat} (hK : K < 4) {s : State} (h : ArgI σ K s) :
   refine ⟨h₃.env, fun k hk => ?_⟩
   by_cases e : k = K
   · subst e; exact hpost
-  · exact h₃.polys k (by omega)
+  · exact h₃.polys k (by omega_using [hk, e])
 
 theorem callK_ok' {K : Nat} (hK : K < 4) {s : State} (h : PC σ K s) : WP isa (callK K) s (PC σ (K + 1)) :=
   WP.seq (WP.mono (argsK_ok hK h) fun _ h₂ => callK_ok hp hK h₂)
@@ -195,7 +195,7 @@ theorem epi_eq' : epi = [.mov .r14 (.mem (at_ .rbx 5120)), .mov .r13 (.mem (at_ 
 theorem endS_ok {s : State} (h : PC σ 4 s) :
     WP isa (.block epi) s fun s' => em4K.post σ s' ∧ gprPreserved σ s' := by
   have hin : ∀ i < 5, InRegions (s.rd ++ s.wr) (scr σ + BitVec.ofNat 64 (oSave + 8 * i)) 8 := fun i hi =>
-    in_scr' hp h.env.rd h.env.wr (by simp only [oSave]; omega)
+    in_scr' hp h.env.rd h.env.wr (by simp only [oSave]; omega_using [hi])
   rw [epi_eq']
   refine WP.mono (WP.keep [.r14, .r13, .r12, .rbp, .rbx] (Q := fun s' => s'.mem = s.mem ∧
       s'.gpr .r14 = s.mem.readW (at' σ (oSave + 8 * 4)) 64 ∧ s'.gpr .r13 = s.mem.readW (at' σ (oSave + 8 * 3)) 64 ∧
@@ -220,7 +220,7 @@ theorem endS_ok {s : State} (h : PC σ 4 s) :
     · rw [k.gpr (by decide)]; exact h.env.r15
   · rw [hm]
     exact h.env.frame.readW (Region.contains_self _ _) (by
-      simpa using ⟨hp.ret_a, hp.ret_scr, Offset.base_disjoint_below (σ.gpr .rsp) (n := 24) (k := 8) (by omega)⟩)
+      simpa using ⟨hp.ret_a, hp.ret_scr, Offset.base_disjoint_below (σ.gpr .rsp) (n := 24) (k := 8) (by omega_using [])⟩)
       (by decide)
 
 end
@@ -229,7 +229,7 @@ theorem correct_scalar (σ : State) (hs : em4K.pre σ) :
     ∃ t s', Exec isa expandMask4 σ t s' ∧ abiPreserved σ s' ∧ em4K.post σ s' := by
   have hp := pre_of hs
   obtain ⟨t, s', he, hF⟩ := WP.seq (WP.mono (pro_ok hp) fun _ h =>
-    WP.seq (WP.mono (callK_ok' hp (by decide) (⟨h, fun _ h' => absurd h' (by omega)⟩ : PC σ 0 _)) fun _ p₁ =>
+    WP.seq (WP.mono (callK_ok' hp (by decide) (⟨h, fun _ h' => absurd h' (by omega_using [])⟩ : PC σ 0 _)) fun _ p₁ =>
       WP.seq (WP.mono (callK_ok' hp (by decide) p₁) fun _ p₂ => WP.seq (WP.mono (callK_ok' hp (by decide) p₂)
         fun _ p₃ => WP.seq (WP.mono (callK_ok' hp (by decide) p₃) fun _ p₄ => endS_ok hp p₄)))))
   exact ⟨t, s', he, abiPreserved_of_exec (by decide +kernel) he hF.2, hF.1⟩

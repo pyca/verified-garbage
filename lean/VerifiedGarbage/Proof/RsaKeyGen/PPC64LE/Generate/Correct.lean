@@ -62,7 +62,7 @@ theorem finish_ok {p : GenPublic} {original d y : State} {final : KeySearchResul
         y.mem.readW (p.F + BitVec.ofNat 64 d) 64 :=
     (Frame.writeW (Frame.refl _ _) (List.mem_singleton_self (rU p)) v
       (by rw [BitVec.add_zero]; exact Region.contains_self _ _)).readW
-      (r := p.frame) (Offset.contains_base _ hd (by omega)) (fun q hq => by
+      (r := p.frame) (Offset.contains_base _ hd (by omega_using [hd])) (fun q hq => by
         obtain rfl := List.mem_singleton.mp hq
         exact g.input.frame_disjoint_writes (r := inUsed original) (by simp [inWrites]) |>.sub_right
           (by rw [g.used_region]; exact fun _ h => h)) (by decide)
@@ -100,7 +100,7 @@ theorem done_post {p : GenPublic} {s d t : State} (hp : GenInput p s)
     exact Frame.writeW (Frame.refl _ _) (List.mem_singleton_self _) _
       (by rw [BitVec.add_zero]; exact Region.contains_self _ _)
   have hword (j : Nat) (hj : j < 7) : word t.mem p.stp (8 * j) = word d.mem p.stp (8 * j) :=
-    hfr.readW (r := cS p) (Offset.contains_base _ (by omega) (by have := hf.nT; omega))
+    hfr.readW (r := cS p) (Offset.contains_base _ (by omega_using [hj]) (by have := hf.nT; omega_using [hj]))
       (fun q hq => by obtain rfl := List.mem_singleton.mp hq; exact hf.uT.symm) (by decide)
   have hbytes {R : Region} (hR : Region.Sub R (cK p) ∨ Region.Sub R (cS p)) (hn : R.len ≤ 2 ^ 64) :
       Spec.Rsa.bytesAt t.mem R.base R.len = Spec.Rsa.bytesAt d.mem R.base R.len := by
@@ -112,9 +112,9 @@ theorem done_post {p : GenPublic} {s d t : State} (hp : GenInput p s)
     exacts [(hf.kU.sub_left hR), (hf.uT.symm.sub_left hR)]
   refine ⟨?_, ?_, ?_, req, ?_, ?_, ?_⟩
   · have := keyStatus_lt (genResult s)
-    rw [hax, BitVec.toNat_setWidth, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega)]
+    rw [hax, BitVec.toNat_setWidth, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [this]), Nat.mod_eq_of_lt (by omega_using [this])]
   · rw [hkp, hL, ← hkey]
-    exact hbytes (R := ⟨p.kp, 9 * p.L⟩) (.inl fun _ h => h) (by show 9 * p.L ≤ 2 ^ 64; have := hf.nK; omega)
+    exact hbytes (R := ⟨p.kp, 9 * p.L⟩) (.inl fun _ h => h) (by show 9 * p.L ≤ 2 ^ 64; have := hf.nK; omega_using [this])
   · rw [hup]
     show [t.mem.readW (p.up + BitVec.ofNat 64 (8 * 0)) 64] = _
     rw [Nat.mul_zero, hm, Mem.readW_writeW_self64]
@@ -137,7 +137,7 @@ theorem iteration_sdepth (v : RoundImpl) : sdepth (iteration (searchCall v) keyC
   have hk := keyCode_sdepth
   simp only [iteration, seqs, searchRun, searchCall, classify, accepted, keyRun, keyCall, exhaustedGen, fail,
     afterKey, clearAll, clear, Impl.Bignum.PPC64LE.countLoop, sdepth, Instr.frameBytes, Search.searchCode, hk]
-  omega
+  omega_using [this]
 
 theorem clearAround_sdepth : sdepth clearAround = 0 := by
   simp only [clearAround, seqs, clear, Impl.Bignum.PPC64LE.countLoop, sdepth]
@@ -157,10 +157,10 @@ theorem gen_body_ok [InvLaw] (v : RoundImpl) {s t' : State} (hp : GenInput (genO
     · cases hpB
     · cases hpB
       obtain ⟨hL1, -, -⟩ := hf.len
-      refine bytes_kept hfb ?_ (by show (genOfState s).L ≤ 2 ^ 64; have := hf.nK; omega)
+      refine bytes_kept hfb ?_ (by show (genOfState s).L ≤ 2 ^ 64; have := hf.nK; omega_using [this])
       have hd := hp.stack_disjoint (r := inKey s) (by simp [inWrites])
       rw [hl.key_region] at hd
-      exact hd.sub_right (slot_sub _ (by omega))
+      exact hd.sub_right (slot_sub _ (by omega_using []))
   have hinv : GenInv (genOfState s) s (genResult s) (genMeasure (genOfState s) 0 (genProgress s)) w :=
     ⟨0, genProgress s, rfl, hw, [], by rw [consume_zero]; rfl⟩
   exact gen_loop v hinv
@@ -179,12 +179,12 @@ theorem gen_frame_ok [InvLaw] (v : RoundImpl) {s t' : State} (hp : GenInput (gen
   have hroom' : stackUse ≤ s.sp.toNat := by rw [← hsp0]; exact hroom
   have htsp : t'.sp = s.sp - BitVec.ofNat 64 144 := kk.sp
   have hsp48 : 48 ≤ t'.sp.toNat := by
-    rw [htsp, BitVec.toNat_sub_of_le (by simp only [BitVec.le_def, BitVec.toNat_ofNat]; omega)]
-    simp only [BitVec.toNat_ofNat]; omega
+    rw [htsp, BitVec.toNat_sub_of_le (by simp only [BitVec.le_def, BitVec.toNat_ofNat]; omega_using [hsu, hroom'])]
+    simp only [BitVec.toNat_ofNat]; omega_using [hsu, hroom']
   refine WP.frameRegAny hsp48 ?_ ?_ (by
     have := iteration_sdepth v
     simp only [sdepth, clearAround_sdepth]
-    omega)
+    omega_using [this])
   · intro R hR
     rw [kk.wr, alloc_wr hp] at hR
     rw [htsp, sp_160]

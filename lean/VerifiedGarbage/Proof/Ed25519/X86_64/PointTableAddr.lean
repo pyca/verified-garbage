@@ -29,11 +29,11 @@ theorem tableWords_ok {s : State} {base : Addr} (hs : Scratch s base) {o : Nat}
       t.mem = st4 s.mem base (o + dst) (s.gpr .r8) (s.gpr .r9) (s.gpr .r10) (s.gpr .r11) ∧
       t.gpr = s.gpr ∧ t.rd = s.rd ∧ t.wr = s.wr := by
   have w : ∀ d, d + 8 ≤ 8192 → InRegions s.wr (off base d) 8 :=
-    fun d hd => ⟨_, hs.wr, Offset.contains_base _ hd (by omega)⟩
+    fun d hd => ⟨_, hs.wr, Offset.contains_base _ hd (by omega_using [hd])⟩
   apply WP.of_runBlock
   simp only [tableWords, runBlock_cons, runStep_some, runBlock_nil, exec, ea_at, hp,
-    Offset.add_add, State.store64, w (o + dst) (by omega), w (o + (dst + 8)) (by omega),
-    w (o + (dst + 16)) (by omega), w (o + (dst + 24)) (by omega), ite_true,
+    Offset.add_add, State.store64, w (o + dst) (by omega_using [ho]), w (o + (dst + 8)) (by omega_using [ho]),
+    w (o + (dst + 16)) (by omega_using [ho]), w (o + (dst + 24)) (by omega_using [ho]), ite_true,
     Option.some.injEq, exists_eq_left']
   refine ⟨?_, trivial, trivial, trivial⟩
   simp only [st4, Nat.add_assoc]
@@ -44,12 +44,12 @@ theorem fromTableWords_ok {s : State} {base : Addr} (hs : Scratch s base) {o : N
       val4 (t.gpr .r8) (t.gpr .r9) (t.gpr .r10) (t.gpr .r11) = fe s.mem base (o + src) ∧
       Keeps [.r8, .r9, .r10, .r11] s t := by
   have r : ∀ d, d + 8 ≤ 8192 → InRegions (s.rd ++ s.wr) (off base d) 8 :=
-    fun d hd => ⟨_, List.mem_append_right _ hs.wr, Offset.contains_base _ hd (by omega)⟩
+    fun d hd => ⟨_, List.mem_append_right _ hs.wr, Offset.contains_base _ hd (by omega_using [hd])⟩
   apply WP.of_runBlock
   simp only [fromTableWords, runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, State.load64,
     ea_at, RegUpd.gpr_setReg, RegUpd.mem_setReg, RegUpd.rd_setReg, RegUpd.wr_setReg,
-    hp, Offset.add_add, r (o + src) (by omega), r (o + (src + 8)) (by omega),
-    r (o + (src + 16)) (by omega), r (o + (src + 24)) (by omega),
+    hp, Offset.add_add, r (o + src) (by omega_using [ho]), r (o + (src + 8)) (by omega_using [ho]),
+    r (o + (src + 16)) (by omega_using [ho]), r (o + (src + 24)) (by omega_using [ho]),
     ite_true, ite_false, reduceCtorEq, Option.map_some, Option.some.injEq, exists_eq_left']
   refine ⟨?_, fun r hr => ?_, rfl, rfl, rfl⟩
   · simp only [fe, Proof.X25519.X86_64.word, Nat.add_assoc]
@@ -61,14 +61,14 @@ theorem loadsFieldWide_ok {s : State} {base : Addr} (hs : Scratch s base) (a : S
       val4 (t.gpr .r8) (t.gpr .r9) (t.gpr .r10) (t.gpr .r11) = fe s.mem base (offset a) ∧
       Keeps [.r8, .r9, .r10, .r11] s t := by
   have hr (d : Nat) (hd : d + 8 ≤ 8192) : InRegions (s.rd ++ s.wr) (off base d) 8 :=
-    ⟨_, List.mem_append_right _ hs.wr, Offset.contains_base _ hd (by omega)⟩
+    ⟨_, List.mem_append_right _ hs.wr, Offset.contains_base _ hd (by omega_using [hd])⟩
   apply WP.of_runBlock
   simp only [loads, runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, State.load64,
     ea_sc, RegUpd.gpr_setReg, RegUpd.mem_setReg, RegUpd.rd_setReg, RegUpd.wr_setReg,
-    hs.rdi, hr (offset a) (by simp only [offset]; omega),
-    hr (offset a + 8) (by simp only [offset]; omega),
-    hr (offset a + 16) (by simp only [offset]; omega),
-    hr (offset a + 24) (by simp only [offset]; omega),
+    hs.rdi, hr (offset a) (by simp only [offset]; omega_using []),
+    hr (offset a + 8) (by simp only [offset]; omega_using []),
+    hr (offset a + 16) (by simp only [offset]; omega_using []),
+    hr (offset a + 24) (by simp only [offset]; omega_using []),
     ite_true, ite_false, reduceCtorEq, Option.map_some, Option.some.injEq, exists_eq_left']
   refine ⟨trivial, fun r h => ?_, rfl, rfl, rfl⟩
   simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at h
@@ -96,28 +96,28 @@ theorem table_env {base : Addr} {o n : Nat} {m m' : Mem}
     (h : Outside base o n m m') (ho : 768 ≤ o) : env m' base = env m base := by
   funext i
   simp only [env, F]
-  rw [h.fe (by simp only [offset]; omega) (by simp only [offset]; omega)]
+  rw [h.fe (by simp only [offset]; omega_using [ho]) (by simp only [offset]; omega_using [])]
 
 theorem toTableQuarter_ok {s : State} {base : Addr} (hs : Scratch s base) {o : Nat}
     (hp : s.gpr .rax = off base o) (j : Nat) (hj : j < 4) (ho : o + 128 ≤ 8192) :
     WP isa (.block (loads (64 + 32 * j) .r8 .r9 .r10 .r11 ++ tableWords (32 * j))) s fun t =>
-      F t.mem base (o + 32 * j) = env s.mem base ⟨j, by omega⟩ ∧ TableKeep base (o + 32 * j) 32 s t := by
+      F t.mem base (o + 32 * j) = env s.mem base ⟨j, by omega_using [hj]⟩ ∧ TableKeep base (o + 32 * j) 32 s t := by
   rw [WP.block_append_iff]
-  refine WP.mono (loadsFieldWide_ok hs ⟨j, by omega⟩) fun t ⟨hv, hk⟩ => ?_
+  refine WP.mono (loadsFieldWide_ok hs ⟨j, by omega_using [hj]⟩) fun t ⟨hv, hk⟩ => ?_
   refine WP.mono (tableWords_ok (hs.of_keeps hk (by decide))
-    ((hk.1 _ (by decide)).trans hp) (32 * j) (by omega)) fun u ⟨hm, hg, hrd, hwr⟩ => ?_
+    ((hk.1 _ (by decide)).trans hp) (32 * j) (by omega_using [hj, ho])) fun u ⟨hm, hg, hrd, hwr⟩ => ?_
   refine ⟨?_, ⟨fun r hr => (congrFun hg r).trans (hk.1 r hr), hrd.trans hk.2.2.1,
     hwr.trans hk.2.2.2, ?_⟩⟩
-  · rw [F, hm, fe_st4 _ _ (by omega), hv]
+  · rw [F, hm, fe_st4 _ _ (by omega_using [hj, ho]), hv]
     rfl
-  · rw [hm, hk.2.1]; exact st4_outside _ _ (by omega) _ _ _ _
+  · rw [hm, hk.2.1]; exact st4_outside _ _ (by omega_using [hj, ho]) _ _ _ _
 
 theorem toTablePrefix_ok {s : State} {base : Addr} (hs : Scratch s base) {o : Nat}
     (hp : s.gpr .rax = off base o) (hlo : 768 ≤ o) (ho : o + 128 ≤ 8192)
     (n : Nat) (hn : n ≤ 4) :
     WP isa (.block ((List.range n).flatMap fun j =>
       loads (64 + 32 * j) .r8 .r9 .r10 .r11 ++ tableWords (32 * j))) s fun t =>
-      (∀ j (hj : j < n), F t.mem base (o + 32 * j) = env s.mem base ⟨j, by omega⟩) ∧
+      (∀ j (hj : j < n), F t.mem base (o + 32 * j) = env s.mem base ⟨j, by omega_using [hn, hj]⟩) ∧
       TableKeep base o (32 * n) s t := by
   induction n generalizing s with
   | zero =>
@@ -126,14 +126,14 @@ theorem toTablePrefix_ok {s : State} {base : Addr} (hs : Scratch s base) {o : Na
   | succ n ih =>
     rw [List.range_succ, List.flatMap_append, List.flatMap_cons, List.flatMap_nil,
       List.append_nil, WP.block_append_iff]
-    refine WP.mono (ih hs hp (by omega)) fun t ⟨hv, hk⟩ => ?_
+    refine WP.mono (ih hs hp (by omega_using [hn])) fun t ⟨hv, hk⟩ => ?_
     refine WP.mono (toTableQuarter_ok (hk.scratch hs)
-      ((hk.gpr _ (by decide)).trans hp) n (by omega) ho) fun u ⟨hu, ku⟩ => ?_
-    refine ⟨fun j hj => ?_, (hk.mono (by omega) (by omega)).trans
-      (ku.mono (by omega) (by omega))⟩
+      ((hk.gpr _ (by decide)).trans hp) n (by omega_using [hn]) ho) fun u ⟨hu, ku⟩ => ?_
+    refine ⟨fun j hj => ?_, (hk.mono (by omega_using []) (by omega_using [])).trans
+      (ku.mono (by omega_using []) (by omega_using []))⟩
     by_cases h : j < n
-    · rw [Outside_F ku.mem (by omega) (Or.inl (by omega)), hv j h]
-    · have he : j = n := by omega
+    · rw [Outside_F ku.mem (by omega_using [ho, hn, hj]) (Or.inl (by omega_using [h])), hv j h]
+    · have he : j = n := by omega_using [hj, h]
       subst j
       rw [hu, table_env hk.mem hlo]
 
@@ -170,25 +170,25 @@ open VG.Impl.X25519.X86_64 (stores)
 theorem fromTableQuarter_ok {s : State} {base : Addr} (hs : Scratch s base) {o : Nat}
     (hp : s.gpr .rax = off base o) (j : Nat) (hj : j < 4) (ho : o + 128 ≤ 8192) :
     WP isa (.block (fromTableWords (32 * j) ++ stores (64 + 32 * j) .r8 .r9 .r10 .r11)) s fun t =>
-      env t.mem base ⟨j, by omega⟩ = F s.mem base (o + 32 * j) ∧
+      env t.mem base ⟨j, by omega_using [hj]⟩ = F s.mem base (o + 32 * j) ∧
       TableKeep base (64 + 32 * j) 32 s t := by
   rw [WP.block_append_iff]
-  refine WP.mono (fromTableWords_ok hs hp (32 * j) (by omega)) fun t ⟨hv, hk⟩ => ?_
+  refine WP.mono (fromTableWords_ok hs hp (32 * j) (by omega_using [hj, ho])) fun t ⟨hv, hk⟩ => ?_
   have ht := hs.of_keeps hk (by decide)
-  refine WP.mono (stores8192_ok ht.rdi ht.wr (by omega : 64 + 32 * j + 32 ≤ 8192)
+  refine WP.mono (stores8192_ok ht.rdi ht.wr (by omega_using [hj] : 64 + 32 * j + 32 ≤ 8192)
     .r8 .r9 .r10 .r11) fun u ⟨hm, hg, hrd, hwr⟩ => ?_
   refine ⟨?_, ⟨fun r hr => (congrFun hg r).trans (hk.1 r hr), hrd.trans hk.2.2.1,
     hwr.trans hk.2.2.2, ?_⟩⟩
   · change F u.mem base (64 + 32 * j) = _
-    rw [F, hm, fe_st4 _ _ (by omega), hv]
-  · rw [hm, hk.2.1]; exact st4_outside _ _ (by omega) _ _ _ _
+    rw [F, hm, fe_st4 _ _ (by omega_using [hj]), hv]
+  · rw [hm, hk.2.1]; exact st4_outside _ _ (by omega_using [hj]) _ _ _ _
 
 theorem fromTablePrefix_ok {s : State} {base : Addr} (hs : Scratch s base) {o : Nat}
     (hp : s.gpr .rax = off base o) (hlo : 768 ≤ o) (ho : o + 128 ≤ 8192)
     (n : Nat) (hn : n ≤ 4) :
     WP isa (.block ((List.range n).flatMap fun j =>
       fromTableWords (32 * j) ++ stores (64 + 32 * j) .r8 .r9 .r10 .r11)) s fun t =>
-      (∀ j (hj : j < n), env t.mem base ⟨j, by omega⟩ = F s.mem base (o + 32 * j)) ∧
+      (∀ j (hj : j < n), env t.mem base ⟨j, by omega_using [hn, hj]⟩ = F s.mem base (o + 32 * j)) ∧
       TableKeep base 64 (32 * n) s t := by
   induction n generalizing s with
   | zero =>
@@ -197,18 +197,18 @@ theorem fromTablePrefix_ok {s : State} {base : Addr} (hs : Scratch s base) {o : 
   | succ n ih =>
     rw [List.range_succ, List.flatMap_append, List.flatMap_cons, List.flatMap_nil,
       List.append_nil, WP.block_append_iff]
-    refine WP.mono (ih hs hp (by omega)) fun t ⟨hv, hk⟩ => ?_
+    refine WP.mono (ih hs hp (by omega_using [hn])) fun t ⟨hv, hk⟩ => ?_
     refine WP.mono (fromTableQuarter_ok (hk.scratch hs)
-      ((hk.gpr _ (by decide)).trans hp) n (by omega) ho) fun u ⟨hu, ku⟩ => ?_
-    refine ⟨fun j hj => ?_, (hk.mono (by omega) (by omega)).trans
-      (ku.mono (by omega) (by omega))⟩
+      ((hk.gpr _ (by decide)).trans hp) n (by omega_using [hn]) ho) fun u ⟨hu, ku⟩ => ?_
+    refine ⟨fun j hj => ?_, (hk.mono (by omega_using []) (by omega_using [])).trans
+      (ku.mono (by omega_using []) (by omega_using []))⟩
     by_cases h : j < n
-    · have he : env u.mem base ⟨j, by omega⟩ = env t.mem base ⟨j, by omega⟩ :=
-        Outside_F ku.mem (by simp only [offset]; omega) (Or.inl (by simp only [offset]; omega))
+    · have he : env u.mem base ⟨j, by omega_using [hn, hj]⟩ = env t.mem base ⟨j, by omega_using [hn, hj]⟩ :=
+        Outside_F ku.mem (by simp only [offset]; omega_using [hn, hj]) (Or.inl (by simp only [offset]; omega_using [h]))
       rw [he, hv j h]
-    · have he : j = n := by omega
+    · have he : j = n := by omega_using [hj, h]
       subst j
-      rw [hu, Outside_F hk.mem (by omega) (Or.inr (by omega))]
+      rw [hu, Outside_F hk.mem (by omega_using [ho, hn]) (Or.inr (by omega_using [hlo]))]
 
 theorem pointFromTable_ok {s : State} {base : Addr} (hs : Scratch s base) {o : Nat}
     (hp : s.gpr .rax = off base o) (hlo : 768 ≤ o) (ho : o + 128 ≤ 8192) :
@@ -242,7 +242,7 @@ theorem tableAddr_ok {s : State} {base : Addr} (hp : s.gpr .rdi = base)
     WP isa (.block (tableAddr o)) s fun t =>
       t.gpr .rax = off base (o + 128 * j) ∧ Keeps [.rax, .rcx, .rdx] s t := by
   have hval : (BitVec.ofNat 64 j).toNat = j := by
-    rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+    rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hj])]
   apply WP.of_runBlock
   simp only [tableAddr, runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, execMul,
     execAlu, RegUpd.gpr_setReg, RegUpd.gpr_setFlags, RegUpd.gpr_arithFlags, hc, hp, hval,
@@ -251,7 +251,7 @@ theorem tableAddr_ok {s : State} {base : Addr} (hp : s.gpr .rdi = base)
   refine ⟨?_, fun r hr => ?_, rfl, rfl, rfl⟩
   · change BitVec.ofNat 64 (j * 128) + base + BitVec.ofNat 64 o = _
     rw [BitVec.add_comm (BitVec.ofNat 64 (j * 128)), BitVec.add_assoc, ← BitVec.ofNat_add]
-    exact congrArg (fun n => off base n) (by omega)
+    exact congrArg (fun n => off base n) (by omega_using [])
   · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
     simp only [RegUpd.gpr_setReg, RegUpd.gpr_setFlags, RegUpd.gpr_arithFlags,
       hr.1, hr.2.1, hr.2.2, ite_false]

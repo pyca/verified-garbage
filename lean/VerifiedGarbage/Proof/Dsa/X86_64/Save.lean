@@ -28,7 +28,7 @@ theorem savedMem_word (s : State) (B : Addr) (i : Nat) (hi : i < 6) :
       (hd : d + 8 ≤ 2 ^ 64) (he : e + 8 ≤ 2 ^ 64) :
       word (mem.writeW (off B d) v) B e = word mem B e :=
     (writeW_outside mem B v hd).word h he
-  rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 by omega) with rfl | rfl | rfl | rfl | rfl | rfl
+  rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 by omega_using [hi]) with rfl | rfl | rfl | rfl | rfl | rfl
   all_goals
     simp only [savedMem, show 8 * 0 = 0 from rfl, show 8 * 1 = 8 from rfl,
       show 8 * 2 = 16 from rfl, show 8 * 3 = 24 from rfl, show 8 * 4 = 32 from rfl, show 8 * 5 = 40 from rfl]
@@ -37,14 +37,14 @@ theorem savedMem_word (s : State) (B : Addr) (i : Nat) (hi : i < 6) :
 
 theorem savedMem_frame (s : State) (B : Addr) : Outside B 0 48 s.mem (savedMem s B) := by
   intro x hx
-  have h48 : 48 ≤ ofs B x := by omega
+  have h48 : 48 ≤ ofs B x := by omega_using [hx]
   unfold savedMem
   rw [writeW_outside _ B _ (d := 40) (by decide) x (Or.inr h48),
-    writeW_outside _ B _ (d := 32) (by decide) x (Or.inr (by omega)),
-    writeW_outside _ B _ (d := 24) (by decide) x (Or.inr (by omega)),
-    writeW_outside _ B _ (d := 16) (by decide) x (Or.inr (by omega)),
-    writeW_outside _ B _ (d := 8) (by decide) x (Or.inr (by omega)),
-    writeW_outside _ B _ (d := 0) (by decide) x (Or.inr (by omega))]
+    writeW_outside _ B _ (d := 32) (by decide) x (Or.inr (by omega_using [hx])),
+    writeW_outside _ B _ (d := 24) (by decide) x (Or.inr (by omega_using [hx])),
+    writeW_outside _ B _ (d := 16) (by decide) x (Or.inr (by omega_using [hx])),
+    writeW_outside _ B _ (d := 8) (by decide) x (Or.inr (by omega_using [hx])),
+    writeW_outside _ B _ (d := 0) (by decide) x (Or.inr (by omega_using [hx]))]
 
 theorem save_ok {s : State} {B : Addr} {Z : Nat}
     (hs : Scr s B Z) (h11 : s.gpr .r11 = B) (hZ : 48 ≤ Z) :
@@ -59,13 +59,13 @@ theorem save_ok {s : State} {B : Addr} {Z : Nat}
   refine WP.mono (WP.keep [] (Q := fun t => t.mem = savedMem s B) ?_ rfl)
     fun t ⟨hm, hk⟩ => ⟨fun i hi => by rw [hm]; exact savedMem_word s B i hi,
       by rw [hm]; exact savedMem_frame s B, hk⟩
-  have h0 : InRegions s.wr B 8 := by simpa only [off, BitVec.add_zero] using hs.st (d := 0) (by omega)
+  have h0 : InRegions s.wr B 8 := by simpa only [off, BitVec.add_zero] using hs.st (d := 0) (by omega_using [hZ])
   xrun [State.ea, h11, h0, show B + BitVec.ofInt 64 0 = off B 0 from rfl,
     show B + BitVec.ofInt 64 8 = off B 8 from rfl, show B + BitVec.ofInt 64 16 = off B 16 from rfl,
     show B + BitVec.ofInt 64 24 = off B 24 from rfl, show B + BitVec.ofInt 64 32 = off B 32 from rfl,
     show B + BitVec.ofInt 64 40 = off B 40 from rfl,
-    hs.st (d := 0) (by omega), hs.st (d := 8) (by omega), hs.st (d := 16) (by omega),
-    hs.st (d := 24) (by omega), hs.st (d := 32) (by omega), hs.st (d := 40) hZ]
+    hs.st (d := 0) (by omega_using [hZ]), hs.st (d := 8) (by omega_using [hZ]), hs.st (d := 16) (by omega_using [hZ]),
+    hs.st (d := 24) (by omega_using [hZ]), hs.st (d := 32) (by omega_using [hZ]), hs.st (d := 40) hZ]
   simp only [savedMem, show off B 0 = B by simp [off]]
 
 end VG.Proof.Dsa.X86_64

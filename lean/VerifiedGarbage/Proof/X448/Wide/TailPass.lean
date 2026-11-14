@@ -37,32 +37,32 @@ theorem tailPass_ok {s : State} {base : Addr} (hs : Scr s base) {o : Nat}
   have step : ∀ k t, k < 8 → inv k t → WP isa (.block (Impl.X448.AArch64.Tail.step o k unpack)) t (inv (k + 1)) := by
     intro k t hk ⟨tl, th, tc, tz, t9, tm, tk⟩
     have ts := hs.of_keeps tk (by decide)
-    have te := th k (by omega) hk
+    have te := th k (by omega_using []) hk
     have cap : coeff t.mem base TMP k + (t.gpr .x6).toNat < 2 ^ 64 := by
       rw [te, tc]
-      have c := carry_small (n := k) (fun i hi => hb i (by omega))
+      have c := carry_small (n := k) (fun i hi => hb i (by omega_using [hk, hi]))
       have h := hb k hk
       simp only [radix] at h
-      omega
+      omega_using [c, h]
     refine WP.mono (tailStep_ok ts ho ho8 hk unpack hfalse t9 cap) fun u ⟨uc, uv, um, uk⟩ => ?_
     rw [te, tc] at uc uv
     refine ⟨?_, ?_, uc, (uk.1 _ (by decide)).trans tz, (uk.1 _ (by decide)).trans t9,
-      tm.trans (um.mono (by omega) (by omega)), tk.trans (uk.mono (by decide))⟩
+      tm.trans (um.mono (by omega_using []) (by omega_using [hk])), tk.trans (uk.mono (by decide))⟩
     · intro i hi
       by_cases h : i = k
       · subst i
         exact uv
       · have eq : coeff u.mem base o i = coeff t.mem base o i :=
-          outside_coeff um (by omega) (by omega)
+          outside_coeff um (by omega_using [h]) (by omega_using [ho, hk, hi])
         rw [eq]
-        exact tl i (by omega)
+        exact tl i (by omega_using [hi, h])
     · intro i hi hi'
       have sep : TMP + 16 * i + 16 ≤ o + 16 * k ∨ o + 16 * k + 16 ≤ TMP + 16 * i := by
-        rcases hsep with h | h | h <;> omega
+        rcases hsep with h | h | h <;> omega_arith
       have eq : coeff u.mem base TMP i = coeff t.mem base TMP i :=
-        outside_coeff um sep (by simp only [TMP]; omega)
+        outside_coeff um sep (by simp only [TMP]; omega_using [hi'])
       rw [eq]
-      exact th i (by omega) hi'
+      exact th i (by omega_using [hi]) hi'
   rw [Impl.X448.AArch64.Tail.pass, WP.block_append_iff]
   refine WP.mono (passInit_ok s) fun u ⟨u6, uz, u9, um, uk⟩ => ?_
   refine WP.mono (wp_range_flatMap (M := isa) (N := 8) inv step 8 (by decide) u ?_)

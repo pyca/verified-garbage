@@ -46,10 +46,10 @@ theorem countFlag_zero {L : Nat→List Zq} (h : ∀i<4,(L i).length≤256) :
   constructor
   · intro hz i hi
     have hh:=congrArg BitVec.toNat (hz i hi)
-    rw [BitVec.toNat_ofNat,Nat.mod_eq_of_lt (by omega)] at hh
+    rw [BitVec.toNat_ofNat,Nat.mod_eq_of_lt (by omega_using [])] at hh
     change 256-(L i).length=0 at hh
     have:=h i hi
-    omega
+    omega_using [hh, this]
   · intro hz i hi
     rw [hz i hi]
 
@@ -58,7 +58,7 @@ theorem flagsStage_ok {σ s : State} (hp : SamplerPre σ) {A : Nat→Spec.Sha3.S
     WP isa (.block Impl.MlDsa.AArch64.Optimized.BoundedFour.flags) s fun t=>
       SamplerRun σ t A L ∧t.gpr .x27=countFlag L := by
   refine WP.mono (flags_ok hs.env.x19 hs.fields.count
-    (fun i hi=>sampler_work_read hp hs.env.wr (by omega))) fun t ⟨⟨ht,hflag⟩,_⟩=>?_
+    (fun i hi=>sampler_work_read hp hs.env.wr (by omega_using [hi]))) fun t ⟨⟨ht,hflag⟩,_⟩=>?_
   exact ⟨hs.only ht (by decide),hflag⟩
 
 end VG.Proof.MlDsa.AArch64.Optimized.BoundedFour
@@ -152,14 +152,14 @@ theorem maskStage_ok {σ s : State} (hp : SamplerPre σ) {A : Nat→Spec.Sha3.St
     refine ⟨samplerOutput σ,by simp,?_⟩
     unfold outputAt
     rw [Offset.add_add]
-    exact Offset.contains_base _ (by omega) (by omega)
+    exact Offset.contains_base _ (by omega_using [hi, hj]) (by omega_using [hi, hj])
   refine WP.mono (maskFour_ok hs.env.x19 hs.env.x21
-    (fun i hi=>by rw [hs.fields.count i hi,BitVec.toNat_ofNat,Nat.mod_eq_of_lt (by omega)]; omega)
-    (fun i hi=>sampler_work_read hp hs.env.wr (by omega))
+    (fun i hi=>by rw [hs.fields.count i hi,BitVec.toNat_ofNat,Nat.mod_eq_of_lt (by omega_using [])]; omega_using [])
+    (fun i hi=>sampler_work_read hp hs.env.wr (by omega_using [hi]))
     (fun i hi j hj=>by obtain ⟨r,hr,hc⟩:=hout i j hi hj; exact ⟨r,List.mem_append_right _ hr,hc⟩)
     (fun i hi j hj=>hout i j hi hj)
     (fun i hi j hj=>(hp.output_work.symm.sub_left
-      (Offset.sub_base _ (d := 7904+8*i) (n := 8) (k := 8192) (by omega))).sub_right (outputAt_sub _ hj)))
+      (Offset.sub_base _ (d := 7904+8*i) (n := 8) (k := 8192) (by omega_using [hi]))).sub_right (outputAt_sub _ hj)))
     fun t ht=>?_
   refine ⟨?_,hs.fields.bound,?_,(ht.keep.get .x27).trans hf⟩
   · exact hs.env.frameStep ht.frame (fun r hr=>by
@@ -176,14 +176,14 @@ theorem maskStage_ok {σ s : State} (hp : SamplerPre σ) {A : Nat→Spec.Sha3.St
     rw [hs.fields.count i hi]
     by_cases hfull : (L i).length=256
     · rw [hfull,ite_eq_left rfl,ite_eq_left rfl]
-      exact hs.fields.stored i hi j (by omega)
+      exact hs.fields.stored i hi j (by omega_using [hj, hfull])
     · have hn : BitVec.ofNat 64 (256-(L i).length)≠0#64 := by
         intro he
         have hh:=congrArg BitVec.toNat he
-        rw [BitVec.toNat_ofNat,Nat.mod_eq_of_lt (by omega)] at hh
+        rw [BitVec.toNat_ofNat,Nat.mod_eq_of_lt (by omega_using [])] at hh
         change 256-(L i).length=0 at hh
         have:=hs.fields.bound i hi
-        omega
+        omega_using [hfull, hh, this]
       rw [ite_eq_right hn,ite_eq_right hfull]
 
 end VG.Proof.MlDsa.AArch64.Optimized.BoundedFour
@@ -222,8 +222,8 @@ theorem finish_ok {σ s : State} (hp : SamplerPre σ) {L : Nat→List Zq} (h : S
         rcases hr with rfl|rfl|rfl|rfl <;> decide
       rw [hb.get r hn,ha.get r hn])
   have hbound : (countFlag L).toNat<512 := ResidentRej.foldedFlags_bound _ _ (fun i hi=>by
-    rw [BitVec.toNat_ofNat,Nat.mod_eq_of_lt (by omega)]
-    omega)
+    rw [BitVec.toNat_ofNat,Nat.mod_eq_of_lt (by omega_using [])]
+    omega_using [])
   have eflag : b.gpr .x27=if (∀i<4,(L i).length=256) then 1#64 else 0#64 := by
     rw [eb,ea,h.flag,ResidentRej.smallFlag_status _ hbound]
     by_cases hz : countFlag L=0#64
@@ -304,12 +304,12 @@ theorem chunks_squeeze (A : Spec.Sha3.State) :
     by_cases h : j<272
     · rw [List.getElem_append_left (by simpa only [chunkBytes_length] using h)]
       simpa only [getElem!_pos (chunkBytes A) j (by rw [chunkBytes_length]; exact h)] using chunkBytes_get A h
-    · rw [List.getElem_append_right (by simpa only [chunkBytes_length] using (by omega : 272≤j))]
+    · rw [List.getElem_append_right (by simpa only [chunkBytes_length] using (by omega_using [h] : 272≤j))]
       simp only [chunkBytes_length]
-      rw [←getElem!_pos (chunkBytes (Resident.permuted A 2)) (j-272) (by rw [chunkBytes_length]; omega),
-        chunkBytes_get _ (by omega),permuted_add]
-      have hd : 2+((j-272)/136+1)=j/136+1:=by omega
-      have hm : (j-272)%136=j%136:=by omega
+      rw [←getElem!_pos (chunkBytes (Resident.permuted A 2)) (j-272) (by rw [chunkBytes_length]; omega_using [hj544]),
+        chunkBytes_get _ (by omega_using [hj544]),permuted_add]
+      have hd : 2+((j-272)/136+1)=j/136+1:=by omega_using [h]
+      have hm : (j-272)%136=j%136:=by omega_using [h]
       rw [hd,hm]
 
 theorem chunks_H (m : Mem) (p : Addr) :

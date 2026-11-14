@@ -60,7 +60,7 @@ theorem mem_step_ok {off : Nat} (op : ScalarOp) (hg : Good op) (f : File) (s : V
   cases op with
   | spill k a =>
     have hk := hg.1
-    have hoff : (off + 8 * k) % 8 = 0 ∧ off + 8 * k < 32768 := ⟨by omega, by omega⟩
+    have hoff : (off + 8 * k) % 8 = 0 ∧ off + 8 * k < 32768 := ⟨by omega_using [ha], by omega_using [hsm, hk]⟩
     refine ⟨{ s with mem := s.mem.writeW (s.sp + BitVec.ofNat 64 (off + 8 * k)) (s.gpr a) }, ?_,
       ⟨hr.regs, fun j hj => ?_⟩, ?_, rfl, rfl, rfl, rfl⟩
     · simp only [lowerMem, runBlock_cons, exec_strSp hoff (ho.wr k hk), runStep_some, runBlock_nil]
@@ -70,13 +70,13 @@ theorem mem_step_ok {off : Nat} (op : ScalarOp) (hg : Good op) (f : File) (s : V
       · subst j
         rw [Mem.readW_writeW_self64, ite_eq_left rfl, hr.regs]
       · rw [ite_eq_right he, Mem.readW_writeW_sep (w' := 64)
-          (Offset.sep _ (by omega) (by omega) (by omega)) (by decide)]
+          (Offset.sep _ (by omega_using [he]) (by omega_using [hsm, hj]) (by omega_using [hsm, hk])) (by decide)]
         exact hr.slots j hj
     · exact (Frame.refl _ _).writeW (r := ⟨s.sp, off + 16⟩) (by simp) _
-        (Offset.contains_base _ (by omega) (by omega))
+        (Offset.contains_base _ (by omega_using [hk]) (by omega_using [hsm, hk]))
   | reload d k =>
     have hk := hg.1
-    have hoff : (off + 8 * k) % 8 = 0 ∧ off + 8 * k < 32768 := ⟨by omega, by omega⟩
+    have hoff : (off + 8 * k) % 8 = 0 ∧ off + 8 * k < 32768 := ⟨by omega_using [ha], by omega_using [hsm, hk]⟩
     have hin : InRegions (s.rd ++ s.wr) (s.sp + BitVec.ofNat 64 (off + 8 * k)) 8 := by
       obtain ⟨r, hr', hc⟩ := ho.wr k hk
       exact ⟨r, List.mem_append_right _ hr', hc⟩

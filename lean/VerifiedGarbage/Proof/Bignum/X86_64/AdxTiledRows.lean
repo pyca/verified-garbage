@@ -29,8 +29,8 @@ private theorem product_step {L Q C A P X Y : Nat}
 private theorem drop_carry {L Q C V : Nat} (h : L+Q*C=V) (hb : V<Q) : L=V := by
   have hc : C=0 := by
     by_contra ne
-    have : Q ≤ Q*C := Nat.le_mul_of_pos_right _ (by omega)
-    omega
+    have : Q ≤ Q*C := Nat.le_mul_of_pos_right _ (by omega_using [ne])
+    omega_using [h, hb, this]
   simpa only [hc,Nat.mul_zero,Nat.add_zero] using h
 
 theorem row_inv {s₀ s : State} {B : Addr} {Z w a b k n : Nat} {mi : BitVec 64}
@@ -41,27 +41,27 @@ theorem row_inv {s₀ s : State} {B : Addr} {Z w a b k n : Nat} {mi : BitVec 64}
     WP isa (AdxTiledProduct.row ca cb) s fun t =>
       t.zf = some (decide (k+1=n)) ∧ Inv s₀ B Z w a b (k+1) mi t := by
   have nowrap := h.scr.nowrap
-  have Z64 : slot w 8 ≤ (2 : Nat)^64 := by omega
-  refine WP.mono (row_ok h.scr h.rdi h.hdr (frame_ops hv h.frame) pa pb hZ hw hwN (by omega)
-    (by omega : w=8*k+8+8*(n-k-1)) ha hb ha1 ha2 hb1 hb2 h.indexI)
+  have Z64 : slot w 8 ≤ (2 : Nat)^64 := by omega_using [hZ, nowrap]
+  refine WP.mono (row_ok h.scr h.rdi h.hdr (frame_ops hv h.frame) pa pb hZ hw hwN (by omega_using [hk])
+    (by omega_using [hwN, hk] : w=8*k+8+8*(n-k-1)) ha hb ha1 ha2 hb1 hb2 h.indexI)
     fun t ⟨zt,it,⟨c,eq⟩,ht,ft,kt⟩ => ?_
-  have va := input_preserved ha ha1 ha2 (by omega : 8*k+8 ≤ w) Z64 h.frame
-  have vb := input_preserved hb hb1 hb2 (by omega : 0+w ≤ w) Z64 h.frame
+  have va := input_preserved ha ha1 ha2 (by omega_using [hwN, hk] : 8*k+8 ≤ w) Z64 h.frame
+  have vb := input_preserved hb hb1 hb2 (by omega_using [] : 0+w ≤ w) Z64 h.frame
   simp only [Nat.mul_zero,Nat.add_zero] at vb
   rw [h.val,va,vb] at eq
   have val := product_step eq
   have append : wv s₀.mem B (slot w a) (8*(k+1)) =
       wv s₀.mem B (slot w a) (8*k)+2^(64*(8*k))*wv s₀.mem B (slot w a+8*(8*k)) 8 := by
-    rw [show 8*(k+1)=8*k+8 by omega,wv_add]
+    rw [show 8*(k+1)=8*k+8 by omega_using [],wv_add]
   rw [← append] at val
   have boundA : wv s₀.mem B (slot w a) (8*(k+1)) < (2 : Nat)^(64*w) :=
-    Nat.lt_of_lt_of_le (wv_lt _ _ _ _) (Nat.pow_le_pow_right (by decide) (by omega))
+    Nat.lt_of_lt_of_le (wv_lt _ _ _ _) (Nat.pow_le_pow_right (by decide) (by omega_using [hwN, hk]))
   have bound := Nat.mul_lt_mul'' boundA (wv_lt s₀.mem B (slot w b) w)
-  rw [← Nat.pow_add,show 64*w+64*w=128*w by omega] at bound
+  rw [← Nat.pow_add,show 64*w+64*w=128*w by omega_using []] at bound
   refine ⟨?_,⟨h.scr.congr kt.2.2,ht,(kt.gpr (by decide)).trans h.rdi,?_,
     (h.keep.trans kt).mono (by decide),h.frame.trans ft,drop_carry val bound⟩⟩
-  · rw [zt]; exact congrArg some (decide_eq_decide.mpr (by omega))
-  · simpa only [show 8*(k+1)=8*k+8 by omega] using it
+  · rw [zt]; exact congrArg some (decide_eq_decide.mpr (by omega_using [hwN]))
+  · simpa only [show 8*(k+1)=8*k+8 by omega_using []] using it
 
 theorem rows_ok {s : State} {B : Addr} {Z w a b n : Nat} {mi : BitVec 64}
     (hs : Scr s B Z) (hd : s.gpr .rdi = B) (hh : Hdr s.mem B w mi)
@@ -75,7 +75,7 @@ theorem rows_ok {s : State} {B : Addr} {Z w a b n : Nat} {mi : BitVec 64}
       Hdr t.mem B w mi ∧ Frm B (ranges w) s.mem t.mem ∧ Keep mmRegs s t := by
   have nowrap := hs.nowrap
   have iZ : 8*sFn 12+8 ≤ Z := by
-    have := hdr_lt_slot w 8 (show sFn 12 < 32 by decide); omega
+    have := hdr_lt_slot w 8 (show sFn 12 < 32 by decide); omega_using [hZ, this]
   have init : WP isa (.block [.mov32 .rax (.imm 0),.store (hdr (sFn 12)) .rax]) s fun t =>
       t.mem=s.mem.writeW (off B (8*sFn 12)) (0 : BitVec 64) ∧ Keep [.rax] s t := by
     apply WP.keep [.rax] (Q := fun t => t.mem=s.mem.writeW (off B (8*sFn 12)) (0 : BitVec 64)) _ rfl
@@ -87,11 +87,11 @@ theorem rows_ok {s : State} {B : Addr} {Z w a b n : Nat} {mi : BitVec 64}
   have fu : Frm B (ranges w) s.mem u.mem := by
     intro x hx
     apply ou x
-    have := hx (8*sFn 12,32) (by simp [ranges]); omega
+    have := hx (8*sFn 12,32) (by simp [ranges]); omega_using [this]
   have h0 : Inv s B Z w a b 0 mi u :=
     ⟨hs.congr ku.2.2,frame_hdr hh fu,(ku.gpr (by decide)).trans hd,by rw [mu,word_writeW_self]; rfl,
       ku.mono (by decide),fu,by
-        rw [ou.wv (by unfold rawBase slot hdrBytes sFn; omega) (by unfold rawBase slot aAcc at *; omega)]
+        rw [ou.wv (by unfold rawBase slot hdrBytes sFn; omega_using []) (by unfold rawBase slot aAcc at *; omega_using [hZ, nowrap])]
         simpa only [Nat.mul_zero,wv,Nat.zero_mul] using hz⟩
   exact wp_upto (a := 0) (N := n) hn (Inv s B Z w a b · mi)
     (fun _ _ hk _ h => row_inv hv pa pb hZ hw hwN hk ha hb ha1 ha2 hb1 hb2 h)

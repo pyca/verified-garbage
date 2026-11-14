@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Spec.Dsa
 import VerifiedGarbage.Proof.Bignum.Math
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # DSA's arithmetic and the shared RSA arithmetic
@@ -24,7 +25,7 @@ theorem powMod_rsa (a e m : Nat) :
     split
     · rfl
     · rename_i he
-      rw [ih (e / 2) (by omega)]
+      rw [ih (e / 2) (by omega_using [he])]
 
 /-- The shared Montgomery exponentiation proofs apply to DSA. -/
 theorem powMod_eq (a e m : Nat) : Spec.Dsa.powMod a e m = a ^ e % m := by

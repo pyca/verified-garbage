@@ -91,7 +91,7 @@ theorem ZOk.NB (hz : ZOk l) : l.NB = 192 := by rw [hz]; rfl
 /-- The limb after step `i` of a block, from the block's `r9`. -/
 theorem off_next (hR : l.R = 6) {blk i : Nat} (_ : i < 6) :
     l.off (l.R * blk + i + 1) = l.off (i + 1) + 8 * blk := by
-  unfold Lay.off; rw [hR]; omega
+  unfold Lay.off; rw [hR]; omega_using []
 
 /-- The loads' bounds in a block. -/
 theorem InZ.ctx (hz : ZOk l) {s₀ s : State} {a ms bl : Nat → Nat → Nat} {blk i : Nat} {b : Nat → Nat}
@@ -103,7 +103,7 @@ theorem InZ.ctx (hz : ZOk l) {s₀ s : State} {a ms bl : Nat → Nat → Nat} {b
   · subst b8; rw [h.r8]; exact e.rd8 d n hn hdn
   by_cases b9 : r = .r9
   · subst b9; rw [h.r9, ofNat_add64]
-    exact e.rd9 _ n hn (by simp only [limZ] at hdn; omega)
+    exact e.rd9 _ n hn (by simp only [limZ] at hdn; omega_using [hb, hR, hN, hdn])
   by_cases b10 : r = .r10
   · subst b10; rw [h.r10]; exact e.rd10 d n hn hdn
   · have : limZ l r = 0 := by cases r <;> first | rfl | contradiction
@@ -147,20 +147,20 @@ theorem zSteps_ok (hz : ZOk l) {s₀ : State} {a ms bl : Nat → Nat → Nat} {b
   | succ n ih =>
     intro hn hlt s h hq
     rw [List.range_succ, List.flatMap_append, List.flatMap_singleton, WP.block_append_iff]
-    refine WP.mono (ih (by omega) (by omega) s h hq) fun s₁ ⟨h₁, q₁, g₁, x₁⟩ => ?_
+    refine WP.mono (ih (by omega_using [hn]) (by omega_using [hlt]) s h hq) fun s₁ ⟨h₁, q₁, g₁, x₁⟩ => ?_
     obtain ⟨w, acc⟩ := h₁.acc
     have hin : ZIn l s₁ n (zo a ms) (fun p => zst l a ms bl p (l.R * blk + n)) (fun p => bl p (l.R * blk + n)) w
-        ((l.R * blk + n + 1) * 2 ^ 56) := ⟨acc, h₁.con, q₁, e.ok, by omega⟩
+        ((l.R * blk + n + 1) * 2 ^ 56) := ⟨acc, h₁.con, q₁, e.ok, by omega_using [hL, hlt]⟩
     have hrd : ∀ p < 2, s₁.mem.readW (s₁.gpr .r9 + BitVec.ofNat 64 (l.D * p + l.off (n + 1))) 64 =
         BitVec.ofNat 64 (bl p (l.R * blk + (n + 1))) := fun p hp => by
       rw [h₁.mem, h₁.r9, ofNat_add64, ← e.inb p hp (l.R * blk + (n + 1)) hlt,
-        show l.R * blk + (n + 1) = l.R * blk + n + 1 from rfl, off_next hR (by omega)]
-      exact congrArg (fun d => s₀.mem.readW (s₀.gpr .r9 + BitVec.ofNat 64 d) 64) (by omega)
-    refine WP.mono (zStep_ok hz (by omega) hin false (bn := fun p => bl p (l.R * blk + (n + 1)))
+        show l.R * blk + (n + 1) = l.R * blk + n + 1 from rfl, off_next hR (by omega_using [hR, hn])]
+      exact congrArg (fun d => s₀.mem.readW (s₀.gpr .r9 + BitVec.ofNat 64 d) 64) (by omega_using [])
+    refine WP.mono (zStep_ok hz (by omega_using [hn]) hin false (bn := fun p => bl p (l.R * blk + (n + 1)))
       (fun _ => by have := hrd 0 (by decide); rwa [Nat.mul_zero, Nat.zero_add] at this)
       (fun _ => by have := hrd 1 (by decide); rwa [Nat.mul_one] at this)
       (fun h0 => absurd h0 (by decide)) (h₁.ctx hz e hb)) fun s₂ ⟨acc₂, con₂, q₂, k₂⟩ => ?_
-    have eB : (l.R * blk + n + 1) * 2 ^ 56 + 2 ^ 56 = (l.R * blk + (n + 1) + 1) * 2 ^ 56 := by omega
+    have eB : (l.R * blk + n + 1) * 2 ^ 56 + 2 ^ 56 = (l.R * blk + (n + 1) + 1) * 2 ^ 56 := by omega_using []
     exact ⟨⟨⟨_, eB ▸ acc₂⟩, con₂, by rw [k₂.gpr]; exact h₁.r8, by rw [k₂.gpr]; exact h₁.r9,
       by rw [k₂.gpr]; exact h₁.r10, k₂.mem.trans h₁.mem, k₂.rd.trans h₁.rd, k₂.wr.trans h₁.wr⟩, q₂ rfl,
       k₂.gpr.trans g₁, k₂.mxcsr.trans x₁⟩
@@ -180,9 +180,9 @@ theorem zBlock_ok (hz : ZOk l) {s₀ s : State} {a ms bl : Nat → Nat → Nat} 
   rw [show zBlock l = ((List.range l.R).flatMap fun i => zStep l i false) ++
     ([.alu .add .r9 (.imm 8), .alu .sub .rcx (.imm 1)] : List Instr) from rfl, WP.block_append_iff]
   have hlt : l.R * blk + l.R < l.L := by
-    have : l.R * blk ≤ l.R * 2 := Nat.mul_le_mul_left _ (by omega)
-    omega
-  refine WP.mono (zSteps_ok hz e (by omega) l.R (Nat.le_refl _) hlt s h hq) fun s₁ ⟨h₁, q₁, g₁, x₁⟩ => ?_
+    have : l.R * blk ≤ l.R * 2 := Nat.mul_le_mul_left _ (by omega_using [hb, h3])
+    omega_using [hR, hL, this]
+  refine WP.mono (zSteps_ok hz e (by omega_using [hb, h3]) l.R (Nat.le_refl _) hlt s h hq) fun s₁ ⟨h₁, q₁, g₁, x₁⟩ => ?_
   apply WP.of_runBlock
   simp only [runBlock_cons, runStep_some, runBlock_nil, exec, execAlu, readSrc, Option.bind_some,
     Option.some.injEq, exists_eq_left']
@@ -191,7 +191,7 @@ theorem zBlock_ok (hz : ZOk l) {s₀ s : State} {a ms bl : Nat → Nat → Nat} 
   have e8 : BitVec.signExtend 64 (8 : BitVec 32) = BitVec.ofNat 64 8 := rfl
   have e1 : BitVec.signExtend 64 (1 : BitVec 32) = 1 := rfl
   have hc : BitVec.ofNat 64 (l.S / l.R - blk) - 1 = BitVec.ofNat 64 (l.S / l.R - (blk + 1)) := by
-    rw [show l.S / l.R - blk = (l.S / l.R - (blk + 1)) + 1 by omega, BitVec.ofNat_add]
+    rw [show l.S / l.R - blk = (l.S / l.R - (blk + 1)) + 1 by omega_using [hb], BitVec.ofNat_add]
     exact BitVec.add_sub_cancel _ _
   simp only [e8, e1]
   generalize hS₂ : (arithFlags s₁ (s₁.gpr .r9 + BitVec.ofNat 64 8) _ _).setReg .r9 (s₁.gpr .r9 + BitVec.ofNat 64 8) = S₂
@@ -216,7 +216,7 @@ theorem zBlock_ok (hz : ZOk l) {s₀ s : State} {a ms bl : Nat → Nat → Nat} 
   refine ⟨⟨⟨w, ?_⟩, h₁.con.congr q₃₁, ?_, ?_, ?_, ?_, ?_, ?_⟩, fun k hk => ?_, ?_, ?_, fun r h1 h2 => ?_, ?_⟩
   · rw [eI]; exact (acc₁.congr q₃₁).wrap hR
   · rw [g₃ _ (by decide), g₂ _ (by decide)]; exact h₁.r8
-  · rw [g₃ _ (by decide), r9₂, r9₁, BitVec.add_assoc, show 8 * (blk + 1) = 8 * blk + 8 by omega, BitVec.ofNat_add]
+  · rw [g₃ _ (by decide), r9₂, r9₁, BitVec.add_assoc, show 8 * (blk + 1) = 8 * blk + 8 by omega_using [], BitVec.ofNat_add]
   · rw [g₃ _ (by decide), g₂ _ (by decide)]; exact h₁.r10
   · rw [v₃.1, v₂.1]; exact h₁.mem
   · rw [v₃.2.1, v₂.2.1]; exact h₁.rd
@@ -224,7 +224,7 @@ theorem zBlock_ok (hz : ZOk l) {s₀ s : State} {a ms bl : Nat → Nat → Nat} 
   · rw [eI, q₃₁, show zBq l (0 % 2) = zBq l (l.R % 2) by rw [hR]]; exact q₁ k hk
   · rw [cx₃, cx₂, hc]
   · rw [z₃, cx₂, hc, h3]
-    rcases (by omega : blk = 0 ∨ blk = 1 ∨ blk = 2) with rfl | rfl | rfl <;> rfl
+    rcases (by omega_using [hb, h3] : blk = 0 ∨ blk = 1 ∨ blk = 2) with rfl | rfl | rfl <;> rfl
   · rw [g₃ _ h1, g₂ _ h2, g₁]
   · rw [v₃.2.2.2, v₂.2.2.2]; exact x₁
 
@@ -245,21 +245,21 @@ theorem zLoop_ok (hz : ZOk l) {s₀ : State} {a ms bl : Nat → Nat → Nat} (e 
       (∀ r, r ≠ .rcx → r ≠ .r9 → t.gpr r = s.gpr r) ∧ t.mxcsr = s.mxcsr) ?_ n s
     ⟨h1, h4, hi, hq, hc, fun _ _ _ => rfl, rfl⟩
   intro n t ⟨h1, h4, hi, hq, hc, hg, hx⟩
-  refine WP.mono (zBlock_ok hz (blk := l.S / l.R - n) (by omega) e hi hq (by rw [hc]; congr 1; omega))
+  refine WP.mono (zBlock_ok hz (blk := l.S / l.R - n) (by omega_using [h1, h4]) e hi hq (by rw [hc]; congr 1; omega_using [h4]))
     fun t' ⟨hi', hq', hc', hzf, hg', hx'⟩ => ?_
   simp only [eval, hzf, Option.map_some]
   rcases Nat.eq_or_lt_of_le h1 with rfl | hn
-  · refine .inl ⟨by simp only [show l.S / l.R - 1 + 1 = l.S / l.R by omega, decide_true, Bool.not_true], ?_, ?_,
+  · refine .inl ⟨by simp only [show l.S / l.R - 1 + 1 = l.S / l.R by omega_using [h4], decide_true, Bool.not_true], ?_, ?_,
       fun r r1 r2 => (hg' r r1 r2).trans (hg r r1 r2), hx'.trans hx⟩
-    · rw [show l.S / l.R - 1 + 1 = l.S / l.R by omega] at hi'
+    · rw [show l.S / l.R - 1 + 1 = l.S / l.R by omega_using [h4]] at hi'
       exact hi'
-    · rw [show l.S / l.R - 1 + 1 = l.S / l.R by omega] at hq'
+    · rw [show l.S / l.R - 1 + 1 = l.S / l.R by omega_using [h4]] at hq'
       exact hq'
-  · refine .inr ⟨by simp only [decide_eq_false (show ¬ (l.S / l.R - n + 1 = l.S / l.R) by omega),
+  · refine .inr ⟨by simp only [decide_eq_false (show ¬ (l.S / l.R - n + 1 = l.S / l.R) by omega_using [h4, hn]),
         Bool.not_false], n - 1,
-      by omega, by omega, by omega, by rw [show l.S / l.R - (n - 1) = l.S / l.R - n + 1 by omega]; exact hi',
-      by rw [show l.S / l.R - (n - 1) = l.S / l.R - n + 1 by omega]; exact hq',
-      by rw [hc']; congr 1; omega, fun r r1 r2 => (hg' r r1 r2).trans (hg r r1 r2), hx'.trans hx⟩
+      by omega_using [h1], by omega_using [hn], by omega_using [h4], by rw [show l.S / l.R - (n - 1) = l.S / l.R - n + 1 by omega_using [h1, h4]]; exact hi',
+      by rw [show l.S / l.R - (n - 1) = l.S / l.R - n + 1 by omega_using [h1, h4]]; exact hq',
+      by rw [hc']; congr 1; omega_using [h4], fun r r1 r2 => (hg' r r1 r2).trans (hg r r1 r2), hx'.trans hx⟩
 
 /-! ## The start -/
 
@@ -335,10 +335,10 @@ theorem zLd_eval {s : State} {b : Reg} {d : Nat} {f : Nat → Nat → Nat}
   by_cases h4 : k < 4
   · have := hf 0 (by decide) k h4
     rw [Nat.mul_zero, Nat.zero_add] at this
-    rw [ite_eq_left h4, ite_eq_left h4, this, show k / 4 = 0 by omega, show k % 4 = k by omega]
-  · have := hf 1 (by decide) (k - 4) (by omega)
+    rw [ite_eq_left h4, ite_eq_left h4, this, show k / 4 = 0 by omega_using [h4], show k % 4 = k by omega_using [h4]]
+  · have := hf 1 (by decide) (k - 4) (by omega_using [hk])
     rw [Nat.mul_one] at this
-    rw [ite_eq_right h4, ite_eq_left (by omega), this, show k / 4 = 1 by omega, show k % 4 = k - 4 by omega]
+    rw [ite_eq_right h4, ite_eq_left (by omega_using [hk]), this, show k / 4 = 1 by omega_using [hk, h4], show k % 4 = k - 4 by omega_using [hk, h4]]
 
 /-- The first limb's register. -/
 theorem zB0_eval {s : State} {g : Nat → Nat}
@@ -348,16 +348,16 @@ theorem zB0_eval {s : State} {g : Nat → Nat}
   by_cases h4 : k < 4
   · have := hg 0 (by decide)
     rw [Nat.mul_zero, Nat.zero_add] at this
-    rw [ite_eq_left h4, ite_eq_left h4, this, show k / 4 = 0 by omega]
+    rw [ite_eq_left h4, ite_eq_left h4, this, show k / 4 = 0 by omega_using [h4]]
   · have := hg 1 (by decide)
     rw [Nat.mul_one] at this
-    rw [ite_eq_right h4, ite_eq_left (by omega), this, show k / 4 = 1 by omega]
+    rw [ite_eq_right h4, ite_eq_left (by omega_using [hk]), this, show k / 4 = 1 by omega_using [hk, h4]]
 
 theorem sel4_93 {t : Nat} (ht : t < 4) : sel4 0x93 t = (t + 3) % 4 := by
-  rcases (by omega : t = 0 ∨ t = 1 ∨ t = 2 ∨ t = 3) with rfl | rfl | rfl | rfl <;> rfl
+  rcases (by omega_using [ht] : t = 0 ∨ t = 1 ∨ t = 2 ∨ t = 3) with rfl | rfl | rfl | rfl <;> rfl
 
 theorem sel4_40 {t : Nat} (ht : t < 4) : sel4 0x40 t = if t < 3 then 0 else 1 := by
-  rcases (by omega : t = 0 ∨ t = 1 ∨ t = 2 ∨ t = 3) with rfl | rfl | rfl | rfl <;> rfl
+  rcases (by omega_using [ht] : t = 0 ∨ t = 1 ∨ t = 2 ∨ t = 3) with rfl | rfl | rfl | rfl <;> rfl
 
 /-- A row moved up a quadword within each lane, the last quadword first. -/
 theorem zLd_perm {s : State} {b : Reg} {d : Nat} {f : Nat → Nat → Nat}
@@ -367,9 +367,9 @@ theorem zLd_perm {s : State} {b : Reg} {d : Nat} {f : Nat → Nat → Nat}
     (ZT.perm (zLd l b d) 0x93).eval s k = BitVec.ofNat 64 (f (k / 4) ((k % 4 + 3) % 4)) := by
   simp only [ZT.eval]
   have h4 : (k % 4 + 3) % 4 < 4 := Nat.mod_lt _ (by decide)
-  rw [sel4_93 (Nat.mod_lt _ (by decide)), zLd_eval hf (by omega),
-    show (4 * (k / 4) + (k % 4 + 3) % 4) / 4 = k / 4 by omega,
-    show (4 * (k / 4) + (k % 4 + 3) % 4) % 4 = (k % 4 + 3) % 4 by omega]
+  rw [sel4_93 (Nat.mod_lt _ (by decide)), zLd_eval hf (by omega_using [hk]),
+    show (4 * (k / 4) + (k % 4 + 3) % 4) / 4 = k / 4 by omega_using [],
+    show (4 * (k / 4) + (k % 4 + 3) % 4) % 4 = (k % 4 + 3) % 4 by omega_using []]
 
 /-- The mask's register. -/
 theorem zK_eval {s : State} {k : Nat} (hk : k < 8) :
@@ -377,14 +377,14 @@ theorem zK_eval {s : State} {k : Nat} (hk : k < 8) :
       if k % 4 < 3 then s.gpr .rax else 0 := by
   have key : ∀ j < 4, (ZT.perm (.lane0 .rax) 0x40).eval s j = if j < 3 then s.gpr .rax else 0 := fun j hj => by
     simp only [ZT.eval]
-    rw [show j / 4 = 0 by omega, Nat.mul_zero, Nat.zero_add, show j % 4 = j by omega, sel4_40 hj]
+    rw [show j / 4 = 0 by omega_using [hj], Nat.mul_zero, Nat.zero_add, show j % 4 = j by omega_using [hj], sel4_40 hj]
     by_cases h3 : j < 3
     · rw [ite_eq_left h3, ite_eq_left h3, ite_eq_left rfl]
     · rw [ite_eq_right h3, ite_eq_right h3, ite_eq_right (by decide)]
   rw [ZT.eval]
   by_cases h4 : k < 4
-  · rw [ite_eq_left h4, key k h4, show k % 4 = k by omega]
-  · rw [ite_eq_right h4, key (k - 4) (by omega), show k % 4 = k - 4 by omega]
+  · rw [ite_eq_left h4, key k h4, show k % 4 = k by omega_using [h4]]
+  · rw [ite_eq_right h4, key (k - 4) (by omega_using [hk]), show k % 4 = k - 4 by omega_using [hk, h4]]
 
 section StartRegs
 
@@ -413,12 +413,12 @@ theorem expStart_M1 : expStart l (znM l 1) = .perm (zLd l .r10 (l.oMs + 32 * (l.
 
 theorem expStart_A {kk : Nat} (hkk : kk < 6) : expStart l (znA l kk) = zLd l .r8 (32 * kk) := by
   simp (disch := omega) only [expStart, znBq, znUq, znK, znT, znM, znA, hR, ↓ite_eq_right, ↓ite_eq_left]
-  congr 2; omega
+  congr 2; omega_using []
 
 theorem expStart_M {kk : Nat} (h1 : 2 ≤ kk) (hkk : kk < 8) :
     expStart l (znM l kk) = zLd l .r10 (l.oMs + 32 * (kk - 2)) := by
   simp (disch := omega) only [expStart, znBq, znUq, znK, znT, znM, znA, hR, ↓ite_eq_right, ↓ite_eq_left]
-  congr 3; omega
+  congr 3; omega_using []
 
 end StartRegs
 
@@ -464,7 +464,7 @@ theorem zStart_ok (hz : ZOk l) {s : State} {a ms bl : Nat → Nat → Nat}
     by_cases b8 : r = .r8
     · subst b8; rw [r8₁]; exact e.rd8 d n hn hdn
     by_cases b9 : r = .r9
-    · subst b9; rw [r9₁]; exact e.rd9 d n hn (by simp only [limZ] at hdn; omega)
+    · subst b9; rw [r9₁]; exact e.rd9 d n hn (by simp only [limZ] at hdn; omega_using [hR, hN, hdn])
     by_cases b10 : r = .r10
     · subst b10; rw [r10₁]; exact e.rd10 d n hn hdn
     · have : limZ l r = 0 := by cases r <;> first | rfl | contradiction
@@ -473,15 +473,15 @@ theorem zStart_ok (hz : ZOk l) {s : State} {a ms bl : Nat → Nat → Nat}
   have rdA : ∀ kk < 6, ∀ p < 2, ∀ t < 4,
       s₁.mem.readW (s₁.gpr .r8 + BitVec.ofNat 64 (l.D * p + 32 * kk + 8 * t)) 64 =
         BitVec.ofNat 64 (a p (l.R * t + kk)) := fun kk hkk p hp t ht => by
-    rw [m₁, r8₁]; exact e.ina p hp kk (by omega) t ht
+    rw [m₁, r8₁]; exact e.ina p hp kk (by omega_using [hR, hkk]) t ht
   have rdM : ∀ kk < 6, ∀ p < 2, ∀ t < 4,
       s₁.mem.readW (s₁.gpr .r10 + BitVec.ofNat 64 (l.D * p + (l.oMs + 32 * kk) + 8 * t)) 64 =
         BitVec.ofNat 64 (ms p (l.R * t + kk + 2)) := fun kk hkk p hp t ht => by
-    rw [m₁, r10₁, ← e.inm p hp kk (by omega) t ht]
-    exact congrArg (fun d => s₀.mem.readW (s₀.gpr .r10 + BitVec.ofNat 64 d) 64) (by omega)
+    rw [m₁, r10₁, ← e.inm p hp kk (by omega_using [hR, hkk]) t ht]
+    exact congrArg (fun d => s₀.mem.readW (s₀.gpr .r10 + BitVec.ofNat 64 d) 64) (by omega_using [])
   have rdB : ∀ p < 2, s₁.mem.readW (s₁.gpr .r9 + BitVec.ofNat 64 (l.D * p + 0)) 64 =
       BitVec.ofNat 64 (bl p 0) := fun p hp => by
-    have := e.inb p hp 0 (by omega)
+    have := e.inb p hp 0 (by omega_using [hL])
     rw [off_zero] at this
     rw [m₁, r9₁]; exact this
   obtain ⟨σ, er, hσ⟩ := run_zStart hz
@@ -489,12 +489,12 @@ theorem zStart_ok (hz : ZOk l) {s : State} {a ms bl : Nat → Nat → Nat}
     fun s' hs n hn k hk => by rw [hs.reg _ k hk, vi_vreg _ hn, hσ _ hn]
   have hB0 : ∀ k < 8, (zB0 l).eval s₁ k = BitVec.ofNat 64 (bl (k / 4) 0) := fun k hk => zB0_eval rdB hk
   refine WP.mono (zrun_ok hc (ZRel.init s₁) er) fun s' hs => ⟨⟨⟨fun _ => 0, fun kk hkk k hk => ?_,
-    fun kk hkk k hk => ?_, fun k hk => ?_, fun p _ => rfl, fun p _ j => ⟨by show (0 : Nat) < _; omega, by show (0 : Nat) < _; omega⟩⟩,
+    fun kk hkk k hk => ?_, fun k hk => ?_, fun p _ => rfl, fun p _ j => ⟨by show (0 : Nat) < _; omega_using [], by show (0 : Nat) < _; omega_using []⟩⟩,
     ⟨fun kk hkk k hk => ?_, fun kk h1 hkk k hk => ?_, fun k hk => ?_, fun k hk => ?_, fun k hk => ?_⟩,
     by rw [hs.gpr]; exact r8₁, by rw [hs.gpr, r9₁, Nat.mul_zero]; exact (BitVec.add_zero _).symm,
     by rw [hs.gpr]; exact r10₁, hs.mem.trans m₁, hs.rd.trans rd₁, hs.wr.trans wr₁⟩, fun k hk => ?_,
     by rw [hs.gpr]; exact cx₁, fun r h1 h2 h3 => ?_, hs.mxcsr.trans x₁⟩
-  · rw [show zB l kk 0 = vreg (kk % l.R) from rfl, Nat.mod_eq_of_lt hkk, ev s' hs _ (by omega) k hk]
+  · rw [show zB l kk 0 = vreg (kk % l.R) from rfl, Nat.mod_eq_of_lt hkk, ev s' hs _ (by omega_using [hR, hkk]) k hk]
     show _ = BitVec.ofNat 64 (0 + _)
     by_cases h0 : kk = 0
     · subst h0
@@ -503,51 +503,51 @@ theorem zStart_ok (hz : ZOk l) {s : State} {a ms bl : Nat → Nat → Nat}
       rw [hB0 k hk, zLd_eval (rdA 0 (by decide)) hk, show (0 : BitVec 64) = BitVec.ofNat 64 0 from rfl, mad_lo',
         Nat.add_zero, Nat.add_zero]
       rfl
-    · rw [expStart_zero hR (by omega) (by omega), ite_eq_right h0]; rfl
-  · rw [show zU l kk 0 = vreg (l.R + kk % l.R) from rfl, Nat.mod_eq_of_lt hkk, ev s' hs _ (by omega) k hk,
-      expStart_zero hR (by omega) (by omega)]; rfl
-  · rw [show zUq l ((0 + 1) % 2) = vreg (znUq l 1) from rfl, ev s' hs _ (by simp only [znUq]; omega) k hk,
+    · rw [expStart_zero hR (by omega_using [h0]) (by omega_using [hkk]), ite_eq_right h0]; rfl
+  · rw [show zU l kk 0 = vreg (l.R + kk % l.R) from rfl, Nat.mod_eq_of_lt hkk, ev s' hs _ (by omega_using [hR, hkk]) k hk,
+      expStart_zero hR (by omega_using [hR]) (by omega_using [hkk])]; rfl
+  · rw [show zUq l ((0 + 1) % 2) = vreg (znUq l 1) from rfl, ev s' hs _ (by simp only [znUq]; omega_using [hR]) k hk,
       expStart_Uq hR]; rfl
-  · rw [show zA l kk = vreg (znA l kk) from rfl, ev s' hs _ (by simp only [znA]; omega) k hk,
-      expStart_A hR (by omega)]
-    exact zLd_eval (rdA kk (by omega)) hk
-  · rw [show zM l kk = vreg (znM l kk) from rfl, ev s' hs _ (by simp only [znM]; omega) k hk]
-    have hp : k / 4 < 2 := by omega
+  · rw [show zA l kk = vreg (znA l kk) from rfl, ev s' hs _ (by simp only [znA]; omega_using [hR, hkk]) k hk,
+      expStart_A hR (by omega_using [hR, hkk])]
+    exact zLd_eval (rdA kk (by omega_using [hR, hkk])) hk
+  · rw [show zM l kk = vreg (znM l kk) from rfl, ev s' hs _ (by simp only [znM]; omega_using [hR, hkk]) k hk]
+    have hp : k / 4 < 2 := by omega_using [hk]
     rcases Nat.eq_or_lt_of_le h1 with rfl | h2
     · -- row 1: the last row a quadword up, its last quadword, zero, first
-      rw [expStart_M1 hR, show l.R - 1 = 5 by omega, zLd_perm (rdM 5 (by decide)) hk]
+      rw [expStart_M1 hR, show l.R - 1 = 5 by omega_using [hR], zLd_perm (rdM 5 (by decide)) hk]
       congr 1
       show ms (k / 4) (l.R * ((k % 4 + 3) % 4) + 5 + 2) = ms (k / 4) (l.R * (k % 4) + 1)
       rcases Nat.eq_zero_or_pos (k % 4) with h0 | h0
       · rw [show l.R * ((k % 4 + 3) % 4) + 5 + 2 = l.L + 1 by rw [h0, hR, hL],
           show l.R * (k % 4) + 1 = 1 by rw [h0]; rfl, (e.mtop _ hp).2]
         exact ((e.ok _ hp).ms1).symm
-      · exact congrArg _ (by rw [hR]; omega)
-    · rw [expStart_M hR (by omega) (by omega), zLd_eval (rdM (kk - 2) (by omega)) hk]
-      exact congrArg (fun j => BitVec.ofNat 64 (ms (k / 4) j)) (by omega)
-  · rw [show zM l l.R = vreg (znM l l.R) from rfl, ev s' hs _ (by simp only [znM]; omega) k hk,
-      expStart_M hR (by omega) (by omega), show l.R - 2 = 4 by omega, zLd_eval (rdM 4 (by decide)) hk]
-    have hp : k / 4 < 2 := by omega
+      · exact congrArg _ (by rw [hR]; omega_using [h0])
+    · rw [expStart_M hR (by omega_using [h2]) (by omega_using [hR, hkk]), zLd_eval (rdM (kk - 2) (by omega_using [hR, hkk])) hk]
+      exact congrArg (fun j => BitVec.ofNat 64 (ms (k / 4) j)) (by omega_using [h2])
+  · rw [show zM l l.R = vreg (znM l l.R) from rfl, ev s' hs _ (by simp only [znM]; omega_using [hR]) k hk,
+      expStart_M hR (by omega_using [hR]) (by omega_using [hR]), show l.R - 2 = 4 by omega_using [hR], zLd_eval (rdM 4 (by decide)) hk]
+    have hp : k / 4 < 2 := by omega_using [hk]
     congr 1
     show ms (k / 4) (l.R * (k % 4) + 4 + 2) = ms (k / 4) (l.R * ((k % 4 + 1) % 4))
-    rcases (by omega : k % 4 = 3 ∨ k % 4 < 3) with h3 | h3
+    rcases (by omega_using [] : k % 4 = 3 ∨ k % 4 < 3) with h3 | h3
     · rw [show l.R * (k % 4) + 4 + 2 = l.L by rw [h3, hR, hL],
         show l.R * ((k % 4 + 1) % 4) = 0 by rw [h3]; rfl, (e.mtop _ hp).1]
       exact ((e.ok _ hp).ms0).symm
-    · exact congrArg _ (by rw [hR]; omega)
-  · rw [show zM l (l.R + 1) = vreg (znM l (l.R + 1)) from rfl, ev s' hs _ (by simp only [znM]; omega) k hk,
-      expStart_M hR (by omega) (by omega), show l.R + 1 - 2 = 5 by omega, zLd_eval (rdM 5 (by decide)) hk]
-    have hp : k / 4 < 2 := by omega
+    · exact congrArg _ (by rw [hR]; omega_using [h3])
+  · rw [show zM l (l.R + 1) = vreg (znM l (l.R + 1)) from rfl, ev s' hs _ (by simp only [znM]; omega_using [hR]) k hk,
+      expStart_M hR (by omega_using [hR]) (by omega_using [hR]), show l.R + 1 - 2 = 5 by omega_using [hR], zLd_eval (rdM 5 (by decide)) hk]
+    have hp : k / 4 < 2 := by omega_using [hk]
     congr 1
     show ms (k / 4) (l.R * (k % 4) + 5 + 2) = ms (k / 4) (l.R * ((k % 4 + 1) % 4) + 1)
-    rcases (by omega : k % 4 = 3 ∨ k % 4 < 3) with h3 | h3
+    rcases (by omega_using [] : k % 4 = 3 ∨ k % 4 < 3) with h3 | h3
     · rw [show l.R * (k % 4) + 5 + 2 = l.L + 1 by rw [h3, hR, hL],
         show l.R * ((k % 4 + 1) % 4) + 1 = 1 by rw [h3]; rfl, (e.mtop _ hp).2]
       exact ((e.ok _ hp).ms1).symm
-    · exact congrArg _ (by rw [hR]; omega)
-  · rw [show zK l = vreg (znK l) from rfl, ev s' hs _ (by simp only [znK]; omega) k hk, expStart_K hR,
+    · exact congrArg _ (by rw [hR]; omega_using [h3])
+  · rw [show zK l = vreg (znK l) from rfl, ev s' hs _ (by simp only [znK]; omega_using [hR]) k hk, expStart_K hR,
       zK_eval hk, ax₁]
-  · rw [show zBq l (0 % 2) = vreg (znBq l 0) from rfl, ev s' hs _ (by simp only [znBq]; omega) k hk,
+  · rw [show zBq l (0 % 2) = vreg (znBq l 0) from rfl, ev s' hs _ (by simp only [znBq]; omega_using [hR]) k hk,
       expStart_Bq hR]
     exact hB0 k hk
   · rw [hs.gpr, g₁ r h1 h2, ← hs₀, RegUpd.gpr_setReg_of_ne _ _ h3]
@@ -568,14 +568,14 @@ theorem zTail_ok (hz : ZOk l) {s₀ s : State} {a ms bl : Nat → Nat → Nat} (
       InZ l s₀ s' a ms bl 3 4 (fun _ => 0) ∧ s'.gpr = s.gpr ∧ s'.mxcsr = s.mxcsr := by
   have hR := hz.R; have hL := hz.L
   rw [zTail_eq hz, WP.block_append_iff]
-  refine WP.mono (zSteps_ok hz e (Nat.le_refl 3) 3 (by omega) (by omega) s h hq) fun s₁ ⟨h₁, q₁, g₁, x₁⟩ => ?_
+  refine WP.mono (zSteps_ok hz e (Nat.le_refl 3) 3 (by omega_using [hR]) (by omega_using [hR, hL]) s h hq) fun s₁ ⟨h₁, q₁, g₁, x₁⟩ => ?_
   obtain ⟨w, acc⟩ := h₁.acc
   have hin : ZIn l s₁ 3 (zo a ms) (fun p => zst l a ms bl p (l.R * 3 + 3)) (fun p => bl p (l.R * 3 + 3)) w
-      ((l.R * 3 + 3 + 1) * 2 ^ 56) := ⟨acc, h₁.con, q₁, e.ok, by omega⟩
-  refine WP.mono (zStep_ok hz (by omega) hin true (bn := fun _ => 0) (fun h0 => absurd h0 (by decide))
+      ((l.R * 3 + 3 + 1) * 2 ^ 56) := ⟨acc, h₁.con, q₁, e.ok, by omega_using [hR]⟩
+  refine WP.mono (zStep_ok hz (by omega_using [hR]) hin true (bn := fun _ => 0) (fun h0 => absurd h0 (by decide))
     (fun h0 => absurd h0 (by decide)) (fun _ _ => rfl) (h₁.ctx hz e (Nat.le_refl 3)))
     fun s₂ ⟨acc₂, con₂, _, k₂⟩ => ?_
-  have eB : (l.R * 3 + 3 + 1) * 2 ^ 56 + 2 ^ 56 = (l.R * 3 + 4 + 1) * 2 ^ 56 := by omega
+  have eB : (l.R * 3 + 3 + 1) * 2 ^ 56 + 2 ^ 56 = (l.R * 3 + 4 + 1) * 2 ^ 56 := by omega_using []
   exact ⟨⟨⟨_, eB ▸ acc₂⟩, con₂, by rw [k₂.gpr]; exact h₁.r8, by rw [k₂.gpr]; exact h₁.r9,
     by rw [k₂.gpr]; exact h₁.r10, k₂.mem.trans h₁.mem, k₂.rd.trans h₁.rd, k₂.wr.trans h₁.wr⟩,
     k₂.gpr.trans g₁, k₂.mxcsr.trans x₁⟩
@@ -602,33 +602,33 @@ theorem zFin_ok (hz : ZOk l) {s₀ s : State} {a ms bl : Nat → Nat → Nat} (e
       BitVec.ofNat 64 ((zo a ms (k / 4)).ms (l.R * (k % 4))) := fun k hk => by
     have h4 : (k % 4 + 3) % 4 < 4 := Nat.mod_lt _ (by decide)
     rw [sel4_93 (Nat.mod_lt _ (by decide)),
-      show qz s (vreg (znM l l.R)) _ = _ from h.con.m0 (4 * (k / 4) + (k % 4 + 3) % 4) (by omega),
-      show (4 * (k / 4) + (k % 4 + 3) % 4) / 4 = k / 4 by omega,
-      show ((4 * (k / 4) + (k % 4 + 3) % 4) % 4 + 1) % 4 = k % 4 by omega]
+      show qz s (vreg (znM l l.R)) _ = _ from h.con.m0 (4 * (k / 4) + (k % 4 + 3) % 4) (by omega_using [hk]),
+      show (4 * (k / 4) + (k % 4 + 3) % 4) / 4 = k / 4 by omega_using [],
+      show ((4 * (k / 4) + (k % 4 + 3) % 4) % 4 + 1) % 4 = k % 4 by omega_using []]
   refine WP.mono (zrun_ok (h.ctx hz e (Nat.le_refl 3)) (ZRel.init s) er) fun s' hs => ⟨fun kk hkk k hk => ?_, hs.keep⟩
-  have hp : k / 4 < 2 := by omega
+  have hp : k / 4 < 2 := by omega_using [hk]
   have hm6 : (kk + 4) % l.R < 6 := by rw [hR]; exact Nat.mod_lt _ (by decide)
   have hb : qz s (vreg ((kk + 4) % l.R)) k = _ := acc.bs kk hkk k hk
   have hu : qz s (vreg (l.R + (kk + 4) % l.R)) k = _ := acc.us kk hkk k hk
-  rw [hS4, show zB l kk 4 = vreg ((kk + 4) % l.R) from rfl, hs.reg _ k hk, vi_vreg _ (by omega),
-    hσ _ (by omega), expFin, ite_eq_left (by omega)]
+  rw [hS4, show zB l kk 4 = vreg ((kk + 4) % l.R) from rfl, hs.reg _ k hk, vi_vreg _ (by omega_using [hm6]),
+    hσ _ (by omega_using [hm6]), expFin, ite_eq_left (by omega_using [hR, hm6])]
   simp only [zlm, AmmD52.tot, pend]
   by_cases h0 : kk = 0
   · subst h0
     have hUp : qz s (vreg (znUq l 1)) k = _ := acc.up k hk
-    have hM1 : qz s (vreg (znM l 1)) k = _ := h.con.m 1 (by decide) (by omega) k hk
+    have hM1 : qz s (vreg (znM l 1)) k = _ := h.con.m 1 (by decide) (by omega_using [hR]) k hk
     rw [ite_eq_left (by simp only [znU, hS4]), uFin, hS4, hS2]
     simp only [ZT.eval]
     have hwq : w (k / 4) % 2 ^ 52 = (zst l a ms bl (k / 4) l.S).qp := by rw [hS]; exact acc.wq _ hp
     rw [hb, show znU l 0 4 = l.R + (0 + 4) % l.R from rfl, hu, hUp, hT k hk, hM1,
-      ite_eq_left rfl, lo_zr, mad_hi', mad_lo', ← BitVec.ofNat_add, ite_eq_left (by rw [hR]; omega), ← hS,
+      ite_eq_left rfl, lo_zr, mad_hi', mad_lo', ← BitVec.ofNat_add, ite_eq_left (by rw [hR]; omega_using []), ← hS,
       ← hwq, hi_modr, lo_modr]
     congr 1
     simp only [zo, Nat.add_zero]
-    omega
-  · rw [ite_eq_right (by simp only [znU, hR]; omega)]
+    omega_using []
+  · rw [ite_eq_right (by simp only [znU, hR]; omega_using [hR, hS, hkk, h0])]
     simp only [ZT.eval]
-    rw [hb, hu, ite_eq_right h0, ← BitVec.ofNat_add, ite_eq_right (by rw [hR]; omega), ← hS]
+    rw [hb, hu, ite_eq_right h0, ← BitVec.ofNat_add, ite_eq_right (by rw [hR]; omega_using [hR, hkk, h0]), ← hS]
     congr 1
 
 /-! ## The stores -/
@@ -668,10 +668,10 @@ theorem zStores_gen {B : Addr} :
 theorem qz_hi (s : State) (r : VReg) {t : Nat} (ht : t < 4) :
     (s.vz r 3 ++ s.vz r 2).extractLsb' (64 * t) 64 = qz s r (4 + t) := by
   show qword256 _ t = _
-  rw [qword256_cat2 _ _ ht, qz, show (4 + t) % 2 = t % 2 by omega]
+  rw [qword256_cat2 _ _ ht, qz, show (4 + t) % 2 = t % 2 by omega_using []]
   by_cases h2 : t < 2
-  · rw [ite_eq_left h2, show (4 + t) / 2 = 2 by omega]
-  · rw [ite_eq_right h2, show (4 + t) / 2 = 3 by omega]
+  · rw [ite_eq_left h2, show (4 + t) / 2 = 2 by omega_using [h2]]
+  · rw [ite_eq_right h2, show (4 + t) / 2 = 3 by omega_using [ht, h2]]
 
 /-! ## The whole multiplication -/
 
@@ -699,13 +699,13 @@ theorem zlm_lt (hz : ZOk l) (a ms bl : Nat → Nat → Nat) (p q : Nat) : zlm l 
   have hS := hz.S
   obtain ⟨h1, h2⟩ := AmmD52.steps_lt (N := l.L) (R := l.R) (o := zo a ms p) (b := bl p)
     (s := ⟨fun _ => 0, fun _ => 0, 0⟩) (fun _ => by show (0 : Nat) < _; decide)
-    (fun _ => by show (0 : Nat) < _; decide) l.S (by omega)
+    (fun _ => by show (0 : Nat) < _; decide) l.S (by omega_using [hS])
   unfold zlm AmmD52.tot pend zst
   generalize AmmD52.steps l.L l.R (zo a ms p) (bl p) l.S ⟨fun _ => 0, fun _ => 0, 0⟩ = st at h1 h2 ⊢
   have := h1 q; have := h2 q
   have := hi_lt ((zo a ms p).ms q) st.qp
   have := lo_lt ((zo a ms p).ms (q + 1)) st.qp
-  split <;> omega
+  split <;> omega_arith
 
 /-- `ammCoreZ` from the operands `a` (at `r8`), `bl` (at `r9`) and the
 modulus plus one `ms` (at `rbx + oMs`), into limbs at `r11 = B`: each lane's
@@ -724,7 +724,7 @@ theorem ammCoreZ_ok (hz : ZOk l) {s : State} {B : Addr} {a ms bl : Nat → Nat �
   have hD := hl.D_bounds
   obtain ⟨hS4, _, _⟩ := hz.tail
   refine WP.seq (WP.mono (zStart_ok hz e) fun s₁ ⟨i₁, q₁, cx₁, g₁, x₁⟩ => ?_)
-  refine WP.seq (WP.mono (zLoop_ok hz e (l.S / l.R) s₁ (by omega) (Nat.le_refl _)
+  refine WP.seq (WP.mono (zLoop_ok hz e (l.S / l.R) s₁ (by omega_using [h3]) (Nat.le_refl _)
     (by rw [Nat.sub_self]; exact i₁) (by rw [Nat.sub_self]; exact q₁) cx₁) fun s₂ ⟨i₂, q₂, g₂, x₂⟩ => ?_)
   rw [h3] at i₂ q₂
   rw [zStores_code, List.append_assoc, List.append_assoc, List.append_assoc, WP.block_append_iff]
@@ -739,7 +739,7 @@ theorem ammCoreZ_ok (hz : ZOk l) {s : State} {B : Addr} {a ms bl : Nat → Nat �
   have hB₄ : s₄.gpr .r11 = B := (g₄ _ (by decide) (by decide) (by decide) (by decide)).trans hB
   have hreg : ∀ d, d + 32 ≤ l.D + l.NB → InRegions s₄.wr (off B d) 32 := fun d hd => by
     rw [wr₄]
-    obtain ⟨_, h, c⟩ := hs.region (d := d) (n := 32) (by rw [hnl]; omega) (by decide)
+    obtain ⟨_, h, c⟩ := hs.region (d := d) (n := 32) (by rw [hnl]; omega_using [hd]) (by decide)
     exact ⟨_, h, c⟩
   rw [WP.block_append_iff]
   refine WP.mono (zStores_gen (zSt l) s₄ hB₄ fun x hx => by
@@ -753,35 +753,35 @@ theorem ammCoreZ_ok (hz : ZOk l) {s : State} {B : Addr} {a ms bl : Nat → Nat �
   have hwords : ∀ p < l.nl, ∀ q < l.L, word (AmmSym.wrList s₄.mem B (zStoreList l s₄ (zSt l))) B (l.D * p + l.off q) =
       BitVec.ofNat 64 (zlm l a ms bl p q) := fun p hp q hq => by
     obtain ⟨kk, t, hk, ht, rfl⟩ : ∃ kk t, kk < l.R ∧ t < 4 ∧ q = l.R * t + kk :=
-      ⟨q % l.R, q / l.R, Nat.mod_lt _ (by omega), Nat.div_lt_of_lt_mul (by omega), (Nat.div_add_mod q l.R).symm⟩
+      ⟨q % l.R, q / l.R, Nat.mod_lt _ (by omega_using [hR]), Nat.div_lt_of_lt_mul (by omega_using [hR, hL, hq]), (Nat.div_add_mod q l.R).symm⟩
     have hsep : ∀ x ∈ zStoreList l s₄ (zSt l), ∀ e', (e' = 32 * kk ∨ e' = l.D + 32 * kk) →
         x.1 + 32 ≤ 2 ^ 63 ∧ (x.1 = e' ∨ e' + 32 ≤ x.1 ∨ x.1 + 32 ≤ e') := fun x hx e' he' => by
       obtain ⟨k', hk', rfl | rfl⟩ := mem_zStoreList hx <;> rcases he' with rfl | rfl <;> omega
-    rw [off_blk (by omega) hk]
-    rcases (by omega : p = 0 ∨ p = 1) with rfl | rfl
-    · rw [show l.D * 0 + (32 * kk + 8 * t) = 32 * kk + 8 * t by omega]
-      rw [AmmSym.word_wrList_unique B ht (by omega) _ s₄.mem
+    rw [off_blk (by omega_using [hR]) hk]
+    rcases (by omega_using [hnl, hp] : p = 0 ∨ p = 1) with rfl | rfl
+    · rw [show l.D * 0 + (32 * kk + 8 * t) = 32 * kk + 8 * t by omega_using []]
+      rw [AmmSym.word_wrList_unique B ht (by omega_using [hR, hk]) _ s₄.mem
         (v := s₄.vy (zB l kk (l.S % l.R))) ?_ (fun x hx => hsep x hx _ (.inl rfl)) (fun x hx he => ?_)]
       · show qv s₄ _ _ = _
-        rw [← qz_lo s₄ _ ht, v₄ _ hk _ (by omega), show t / 4 = 0 by omega, show t % 4 = t by omega]
+        rw [← qz_lo s₄ _ ht, v₄ _ hk _ (by omega_using [ht]), show t / 4 = 0 by omega_using [ht], show t % 4 = t by omega_using [ht]]
       · simp only [zStoreList, zSt, List.flatMap_map, List.mem_flatMap, List.mem_range, List.mem_cons,
           List.not_mem_nil, or_false]
         exact ⟨kk, hk, .inl rfl⟩
       · obtain ⟨k', hk', rfl | rfl⟩ := mem_zStoreList hx
-        · have : k' = kk := by simp only at he; omega
+        · have : k' = kk := by simp only at he; omega_using [he]
           rw [this]
         · simp only at he; omega
-    · rw [show l.D * 1 + (32 * kk + 8 * t) = l.D + 32 * kk + 8 * t by omega]
-      rw [AmmSym.word_wrList_unique B ht (by omega) _ s₄.mem
+    · rw [show l.D * 1 + (32 * kk + 8 * t) = l.D + 32 * kk + 8 * t by omega_using []]
+      rw [AmmSym.word_wrList_unique B ht (by omega_using [hR, hD, hk]) _ s₄.mem
         (v := s₄.vz (zB l kk (l.S % l.R)) 3 ++ s₄.vz (zB l kk (l.S % l.R)) 2) ?_
         (fun x hx => hsep x hx _ (.inr rfl)) (fun x hx he => ?_)]
-      · rw [qz_hi s₄ _ ht, v₄ _ hk _ (by omega), show (4 + t) / 4 = 1 by omega, show (4 + t) % 4 = t by omega]
+      · rw [qz_hi s₄ _ ht, v₄ _ hk _ (by omega_using [ht]), show (4 + t) / 4 = 1 by omega_using [ht], show (4 + t) % 4 = t by omega_using [ht]]
       · simp only [zStoreList, zSt, List.flatMap_map, List.mem_flatMap, List.mem_range, List.mem_cons,
           List.not_mem_nil, or_false]
         exact ⟨kk, hk, .inr rfl⟩
       · obtain ⟨k', hk', rfl | rfl⟩ := mem_zStoreList hx
         · simp only at he; omega
-        · have : k' = kk := by simp only at he; omega
+        · have : k' = kk := by simp only at he; omega_using [he]
           rw [this]
   refine WP.mono (carryOut_ok hl (B := B) (L := fun p => zlm l a ms bl p) (fun p _ q _ => zlm_lt hz a ms bl p q)
     (fun d hd => by rw [RegUpd.wr_setReg]; show InRegions s₄.wr _ _; rw [wr₄]; exact hs.st hd)
@@ -793,11 +793,11 @@ theorem ammCoreZ_ok (hz : ZOk l) {s : State} {B : Addr} {a ms bl : Nat → Nat �
     by rw [g _ (by decide) (by decide) (by decide) (by decide)]; exact RegUpd.gpr_setReg_self _ _ _,
     by rw [rd, RegUpd.rd_setReg]; exact rd₄, by rw [wr, RegUpd.wr_setReg]; exact wr₄,
     by rw [x, RegUpd.mxcsr_setReg]; show s₄.mxcsr = _; rw [k₄.mxcsr, x₃, x₂, x₁]⟩
-  · have o := wrList_outN (l := l) B (o := 0) (n := l.NB) (by rw [hnl]; omega)
+  · have o := wrList_outN (l := l) B (o := 0) (n := l.NB) (by rw [hnl]; omega_using [hD])
       (zStoreList l s₄ (zSt l)) s₄.mem fun x hx => by
         obtain ⟨k', hk', rfl | rfl⟩ := mem_zStoreList hx
-        · exact ⟨0, by omega, by omega, by omega⟩
-        · exact ⟨1, by omega, by omega, by omega⟩
+        · exact ⟨0, by omega_using [hnl], by omega_using [], by omega⟩
+        · exact ⟨1, by omega_using [hnl], by omega_using [], by omega⟩
     have hf : OutN l B 0 l.NB (AmmSym.wrList s₄.mem B (zStoreList l s₄ (zSt l))) s'.mem := h.frame
     have o' : OutN l B 0 l.NB s.mem (AmmSym.wrList s₄.mem B (zStoreList l s₄ (zSt l))) :=
       fun x hx => (o x hx).trans (congrFun m₄ x)
@@ -824,7 +824,7 @@ theorem lval_up2 {f g : Nat → Nat} (g0 : g 0 = 0) (g1 : g 1 = 0) (hg : ∀ j, 
     simp only [Nat.zero_add, VG.Proof.Bignum.Amm52.lval_zero, g0, g1, Nat.zero_mul, Nat.mul_zero]
   | n + 1 => by
     rw [show n + 1 + 2 = (n + 2) + 1 from rfl, VG.Proof.Bignum.Amm52.lval_succ, lval_up2 g0 g1 hg n,
-      VG.Proof.Bignum.Amm52.lval_succ, hg, show 52 * (n + 2) = 52 * n + 52 * 2 by omega, Nat.pow_add,
+      VG.Proof.Bignum.Amm52.lval_succ, hg, show 52 * (n + 2) = 52 * n + 52 * 2 by omega_using [], Nat.pow_add,
       Nat.mul_add (2 ^ 104)]
     congr 1
     rw [← Nat.mul_assoc, Nat.mul_comm]
@@ -863,54 +863,54 @@ theorem ammCoreZSpec_ok (hz : ZOk l) {s : State} {B : Addr} {o a b : Nat}
   let Mh : Nat → Nat → Nat := fun p => limb l s.mem B (l.D * p + l.oMs)
   let M : Nat → Nat → Nat := fun p j => if j < 2 then 0 else Mh p (j - 2)
   have hDp : ∀ p < 2, l.D * p ≤ l.D := fun p hp => by
-    rcases (by omega : p = 0 ∨ p = 1) with rfl | rfl <;> omega
+    rcases (by omega_using [hp] : p = 0 ∨ p = 1) with rfl | rfl <;> omega_using []
   have rdS : ∀ d n, 0 < n → d + n ≤ l.nl * l.D → InRegions (s.rd ++ s.wr) (off B d) n := fun d n hn hd =>
     let ⟨_, h, c⟩ := hs.region hd hn; ⟨_, List.mem_append_right _ h, c⟩
   have e : EnvZ l (s.setReg .r10 (s.gpr .rbx)) A M Bl := by
     refine ⟨fun p hp kk hk t ht => ?_, fun p hp kk hk t ht => ?_,
       fun p hp => ⟨by show (if l.L < 2 then 0 else Mh p (l.L - 2)) = 0
-                      rw [ite_eq_right (by omega)]; exact (hmt p (by omega)).1,
+                      rw [ite_eq_right (by omega_using [hL])]; exact (hmt p (by omega_using [hnl, hp])).1,
         by show (if l.L + 1 < 2 then 0 else Mh p (l.L + 1 - 2)) = 0
-           rw [ite_eq_right (by omega), show l.L + 1 - 2 = l.L - 1 by omega]; exact (hmt p (by omega)).2⟩,
+           rw [ite_eq_right (by omega_using [hL]), show l.L + 1 - 2 = l.L - 1 by omega_using []]; exact (hmt p (by omega_using [hnl, hp])).2⟩,
       fun p hp q hq => ?_,
-      fun p hp => ⟨fun j hj => (hlt p (by omega) j hj).1, fun j hj => ?_, rfl, rfl⟩,
-      fun p hp q hq => (hlt p (by omega) q hq).2.1,
+      fun p hp => ⟨fun j hj => (hlt p (by omega_using [hnl, hp]) j hj).1, fun j hj => ?_, rfl, rfl⟩,
+      fun p hp q hq => (hlt p (by omega_using [hnl, hp]) q hq).2.1,
       fun d n hn hd => ?_, fun d n hn hd => ?_, fun d n hn hd => ?_⟩
     · have := hDp p hp
       rw [RegUpd.mem_setReg, RegUpd.gpr_setReg_of_ne _ _ (by decide), r8₃, off_add]
       show _ = BitVec.ofNat 64 (limb l s.mem B (l.D * p + a) (l.R * t + kk))
-      rw [ofNat_toNat64, off_blk (by omega) hk]
-      exact congrArg (fun d => s.mem.readW (off B d) 64) (by omega)
+      rw [ofNat_toNat64, off_blk (by omega_using [hR]) hk]
+      exact congrArg (fun d => s.mem.readW (off B d) 64) (by omega_using [])
     · have := hDp p hp
       rw [RegUpd.mem_setReg, RegUpd.gpr_setReg_self, hB]
       show s.mem.readW (off B _) 64 =
         BitVec.ofNat 64 (if l.R * t + kk + 2 < 2 then 0 else limb l s.mem B (l.D * p + l.oMs) (l.R * t + kk + 2 - 2))
-      rw [ite_eq_right (by omega), Nat.add_sub_cancel, ofNat_toNat64, off_blk (by omega) hk]
-      exact congrArg (fun d => s.mem.readW (off B d) 64) (by omega)
+      rw [ite_eq_right (by omega_using []), Nat.add_sub_cancel, ofNat_toNat64, off_blk (by omega_using [hR]) hk]
+      exact congrArg (fun d => s.mem.readW (off B d) 64) (by omega_using [])
     · rw [RegUpd.mem_setReg, RegUpd.gpr_setReg_of_ne _ _ (by decide), r9₃, off_add]
       show _ = BitVec.ofNat 64 (limb l s.mem B (l.D * p + b) q)
       rw [ofNat_toNat64]
-      exact congrArg (fun d => s.mem.readW (off B d) 64) (by omega)
+      exact congrArg (fun d => s.mem.readW (off B d) 64) (by omega_using [])
     · show (if j < 2 then 0 else Mh p (j - 2)) < 2 ^ 52
       split
       · decide
-      · exact (hlt p (by omega) (j - 2) (by omega)).2.2
+      · exact (hlt p (by omega_using [hnl, hp]) (j - 2) (by omega_using [hj])).2.2
     · rw [RegUpd.rd_setReg, RegUpd.wr_setReg, RegUpd.gpr_setReg_of_ne _ _ (by decide), r8₃, off_add]
-      exact rdS _ n hn (by rw [hnl]; omega)
+      exact rdS _ n hn (by rw [hnl]; omega_using [ha, hd])
     · rw [RegUpd.rd_setReg, RegUpd.wr_setReg, RegUpd.gpr_setReg_of_ne _ _ (by decide), r9₃, off_add]
-      exact rdS _ n hn (by rw [hnl]; omega)
+      exact rdS _ n hn (by rw [hnl]; omega_using [hb, hd])
     · rw [RegUpd.rd_setReg, RegUpd.wr_setReg, RegUpd.gpr_setReg_self, hB]
-      exact rdS _ n hn (by rw [hnl]; omega)
-  have hs₃ : Scr s (off B o) (l.D * (l.nl - 1) + l.NB) := hs.sub (by rw [hnl]; omega) (by omega)
+      exact rdS _ n hn (by rw [hnl]; omega_using [hD1, hd])
+  have hs₃ : Scr s (off B o) (l.D * (l.nl - 1) + l.NB) := hs.sub (by rw [hnl]; omega_using [ho]) (by omega_using [hN])
   refine WP.mono (ammCoreZ_ok hz e r11₃ hs₃) fun s' ⟨hw, hf, hg, _, hrd, hwr, hx⟩ => ?_
-  refine ⟨fun p hp => ?_, (hf.rebaseN (by rw [hnl]; omega)).out2, hg, hrd, hwr, hx⟩
-  have hp2 : p < 2 := by omega
+  refine ⟨fun p hp => ?_, (hf.rebaseN (by rw [hnl]; omega_using [ho, hD2])).out2, hg, hrd, hwr, hx⟩
+  have hp2 : p < 2 := by omega_using [hnl, hp]
   have hq : ∀ j < l.L, limb l s'.mem B (l.D * p + o) j = carried (zlm l A M Bl p) j := fun j hj => by
     have := hw p hp j hj
     simp only [word, VG.Proof.Bignum.off_off] at this
     show (s'.mem.readW (off B _) 64).toNat = _
-    rw [show l.D * p + o + l.off j = o + (l.D * p + l.off j) by omega, this, BitVec.toNat_ofNat,
-      Nat.mod_eq_of_lt (by have := carried_lt (zlm l A M Bl p) j; omega)]
+    rw [show l.D * p + o + l.off j = o + (l.D * p + l.off j) by omega_using [], this, BitVec.toNat_ofNat,
+      Nat.mod_eq_of_lt (by have := carried_lt (zlm l A M Bl p) j; omega_using [this])]
   have hv : val52 l s'.mem B (l.D * p + o) = lval (carried (zlm l A M Bl p)) l.L := by
     unfold val52; exact lval_congr hq
   refine ⟨fun j hj => (hq j hj) ▸ carried_lt _ j, fun X hX hBv hfit => ?_⟩
@@ -918,20 +918,20 @@ theorem ammCoreZSpec_ok (hz : ZOk l) {s : State} {B : Addr} {o a b : Nat}
   have hMv : lval (M p) l.L = X + 1 := by
     have h1 := lval_up2 (f := Mh p) (g := M p) rfl rfl (fun j => by
       show (if j + 2 < 2 then 0 else Mh p (j + 2 - 2)) = Mh p j
-      rw [ite_eq_right (by omega), Nat.add_sub_cancel]) (l.L - 2)
+      rw [ite_eq_right (by omega_using []), Nat.add_sub_cancel]) (l.L - 2)
     have h2 := lval_top2 (f := Mh p) (n := l.L - 2) (hmt p hp).1
-      (by rw [show l.L - 2 + 1 = l.L - 1 by omega]; exact (hmt p hp).2)
-    rw [show l.L - 2 + 2 = l.L by omega] at h1 h2
+      (by rw [show l.L - 2 + 1 = l.L - 1 by omega_using [hL]]; exact (hmt p hp).2)
+    rw [show l.L - 2 + 2 = l.L by omega_using [hL]] at h1 h2
     exact h1.trans (by rw [← h2]; exact hX)
-  have he := AmmD52.steps_val (R := l.R) (N := l.L) (by omega) (by omega) (by rw [hL, hR]) (e.ok p hp2)
-    (b := Bl p) (fun i hi => (hlt p hp i hi).2.1) ⟨fun _ => 0, fun _ => 0, 0⟩ hMv l.S (by omega)
+  have he := AmmD52.steps_val (R := l.R) (N := l.L) (by omega_using [hR]) (by omega_using [hL]) (by rw [hL, hR]) (e.ok p hp2)
+    (b := Bl p) (fun i hi => (hlt p hp i hi).2.1) ⟨fun _ => 0, fun _ => 0, 0⟩ hMv l.S (by omega_using [hL, hS])
   have z : lval (AmmD52.tot l.R ⟨A p, M p⟩ ⟨fun _ => 0, fun _ => 0, 0⟩) l.L = 0 := by
     rw [lval_congr (L' := fun j => (fun _ : Nat => 0) j * 0) fun j _ => tot_init l.R _ j,
       VG.Proof.Bignum.Amm52.lval_mul, Nat.mul_zero]
   have hQ : lval (AmmD52.stepsQ l.L l.R ⟨A p, M p⟩ (Bl p) ⟨fun _ => 0, fun _ => 0, 0⟩) l.S < 2 ^ (52 * l.S) :=
     lval_lt fun j _ => AmmD52.stepsQ_lt _ _ _ _ _ _
   rw [z, Nat.zero_add] at he
-  have hbS : lval (Bl p) l.L = lval (Bl p) l.S := lval_trunc _ (by omega) hBv
+  have hbS : lval (Bl p) l.L = lval (Bl p) l.S := lval_trunc _ (by omega_using [hL, hS]) hBv
   change lval (zlm l A M Bl p) l.L * _ = lval (A p) l.L * lval (Bl p) l.S + X * _ at he
   change lval (A p) l.L * lval (Bl p) l.L + X * _ < _ at hfit
   rw [hbS] at hfit
@@ -941,7 +941,7 @@ theorem ammCoreZSpec_ok (hz : ZOk l) {s : State} {B : Addr} {o a b : Nat}
     refine Nat.lt_of_mul_lt_mul_left (a := 2 ^ (52 * l.S)) ?_
     rw [Nat.mul_comm]
     generalize 2 ^ (52 * l.S) * 2 ^ (52 * l.L) = T at hfit ⊢
-    omega
+    omega_using [he, h1, hfit]
   have hcv := carried_val (zlm l A M Bl p) l.L
   rw [Amm52N.carryIn_zero hz', Nat.zero_mul, Nat.add_zero] at hcv
   refine ⟨Q, hQ, ?_⟩

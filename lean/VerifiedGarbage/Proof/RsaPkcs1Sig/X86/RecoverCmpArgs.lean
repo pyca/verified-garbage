@@ -48,7 +48,7 @@ theorem compare_ok {g : Geometry} {bs : Fin 4 → List Byte} {s : State} (h : Co
       (t.gpr .ebp = 0 ↔ Spec.Rsa.bytesAt s.mem (byteAddr g.em1) g.length =
         Spec.Rsa.bytesAt s.mem (byteAddr g.em2) g.length) := by
   have em1Fit := h.valid.encodingFit (d := em1Offset)
-    (by have := h.valid.maxLength; simp only [em1Offset, VG.Impl.RsaPkcs1Sig.X86.Verify.frameBytes]; omega)
+    (by have := h.valid.maxLength; simp only [em1Offset, VG.Impl.RsaPkcs1Sig.X86.Verify.frameBytes]; omega_using [this])
   have read1 : InRegions (s.rd ++ s.wr) (byteAddr g.em1) g.length := by
     obtain ⟨r, hr, hc⟩ := h.em1Write
     exact ⟨r, List.mem_append_right _ hr, hc⟩
@@ -56,7 +56,7 @@ theorem compare_ok {g : Geometry} {bs : Fin 4 → List Byte} {s : State} (h : Co
     obtain ⟨r, hr, hc⟩ := h.em2Write
     exact ⟨r, List.mem_append_right _ hr, hc⟩
   refine WP.mono (VG.Proof.RsaPkcs1Sig.X86.compare_ok s
-    (by have := h.valid.minLength; omega) (by have := h.valid.maxLength; omega)
+    (by have := h.valid.minLength; omega_using [this]) (by have := h.valid.maxLength; omega_using [this])
     em1Fit h.em2Fit read1 read2 src dst cnt) ?_
   rintro t ⟨eq, M, K⟩
   exact ⟨h.after (by rw [M]; exact Frame.refl _ _) K (K.1 .esp (by decide)), M, K, eq⟩

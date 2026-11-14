@@ -28,24 +28,24 @@ theorem shape_z {K P Q : BitVec 32} (hK : K.toNat ≤ 1024) :
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.toNat_ushiftRight, BitVec.toNat_add, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow,
       show (3 : BitVec 32).toNat = 3 from rfl]
-    rw [Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega)]
+    rw [Nat.mod_eq_of_lt (by omega_using [hK]), Nat.mod_eq_of_lt (by omega_using [])]
   have h2 : BitVec.ofNat 32 ((K.toNat + 3) / 4) <<< 1 = BitVec.ofNat 32 (2 * ((K.toNat + 3) / 4)) := by
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.toNat_shiftLeft, BitVec.toNat_ofNat, Nat.shiftLeft_eq, Nat.pow_one]
-    rw [Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega)]
-    omega
+    rw [Nat.mod_eq_of_lt (by omega_using []), Nat.mod_eq_of_lt (by omega_using []), Nat.mod_eq_of_lt (by omega_using [])]
+    omega_using []
   have h1 : BitVec.ofNat 32 ((K.toNat + 3) / 4) &&& 1 = BitVec.ofNat 32 ((K.toNat + 3) / 4 % 2) := by
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.toNat_and, BitVec.toNat_ofNat, show (1 : BitVec 32).toNat = 1 from rfl]
-    rw [Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega)]
+    rw [Nat.mod_eq_of_lt (by omega_using []), Nat.mod_eq_of_lt (by omega_using [])]
     exact Nat.and_one_is_mod _
   have eP : ∀ X : BitVec 32, X = BitVec.ofNat 32 (2 * ((K.toNat + 3) / 4)) ↔ X.toNat = 2 * ((K.toNat + 3) / 4) :=
-    fun X => ⟨fun e => by rw [e, BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt (by omega),
-      fun e => BitVec.eq_of_toNat_eq (by rw [e, BitVec.toNat_ofNat]; exact (Nat.mod_eq_of_lt (by omega)).symm)⟩
+    fun X => ⟨fun e => by rw [e, BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt (by omega_using []),
+      fun e => BitVec.eq_of_toNat_eq (by rw [e, BitVec.toNat_ofNat]; exact (Nat.mod_eq_of_lt (by omega_using [])).symm)⟩
   have e0 : BitVec.ofNat 32 ((K.toNat + 3) / 4 % 2) = 0#32 ↔ (K.toNat + 3) / 4 % 2 = 0 :=
     ⟨fun e => by
       have := congrArg BitVec.toNat e
-      rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)] at this
+      rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [])] at this
       exact this, fun e => by rw [e]⟩
   have hz : ∀ x : BitVec 32, (x - 0 == 0) = decide (x = 0#32) := fun x => by
     rw [show x - 0 = x from BitVec.sub_zero x]; cases h : decide (x = 0#32) <;> simp_all
@@ -64,24 +64,24 @@ theorem shape4_z {K P Q D E : BitVec 32} (hK : K.toNat ≤ 1024) :
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.toNat_ushiftRight, BitVec.toNat_add, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow,
       show (3 : BitVec 32).toNat = 3 from rfl]
-    rw [Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega)]
+    rw [Nat.mod_eq_of_lt (by omega_using [hK]), Nat.mod_eq_of_lt (by omega_using [])]
   have h2 : BitVec.ofNat 32 ((K.toNat + 3) / 4) <<< 1 = BitVec.ofNat 32 (2 * ((K.toNat + 3) / 4)) := by
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.toNat_shiftLeft, BitVec.toNat_ofNat, Nat.shiftLeft_eq, Nat.pow_one]
-    rw [Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega)]
-    omega
+    rw [Nat.mod_eq_of_lt (by omega_using []), Nat.mod_eq_of_lt (by omega_using []), Nat.mod_eq_of_lt (by omega_using [])]
+    omega_using []
   have h1 : BitVec.ofNat 32 ((K.toNat + 3) / 4) &&& 1 = BitVec.ofNat 32 ((K.toNat + 3) / 4 % 2) := by
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.toNat_and, BitVec.toNat_ofNat, show (1 : BitVec 32).toNat = 1 from rfl]
-    rw [Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega)]
+    rw [Nat.mod_eq_of_lt (by omega_using []), Nat.mod_eq_of_lt (by omega_using [])]
     exact Nat.and_one_is_mod _
   have eP : ∀ X : BitVec 32, X = BitVec.ofNat 32 (2 * ((K.toNat + 3) / 4)) ↔ X.toNat = 2 * ((K.toNat + 3) / 4) :=
-    fun X => ⟨fun e => by rw [e, BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt (by omega),
-      fun e => BitVec.eq_of_toNat_eq (by rw [e, BitVec.toNat_ofNat]; exact (Nat.mod_eq_of_lt (by omega)).symm)⟩
+    fun X => ⟨fun e => by rw [e, BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt (by omega_using []),
+      fun e => BitVec.eq_of_toNat_eq (by rw [e, BitVec.toNat_ofNat]; exact (Nat.mod_eq_of_lt (by omega_using [])).symm)⟩
   have e0 : BitVec.ofNat 32 ((K.toNat + 3) / 4 % 2) = 0#32 ↔ (K.toNat + 3) / 4 % 2 = 0 :=
     ⟨fun e => by
       have := congrArg BitVec.toNat e
-      rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)] at this
+      rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [])] at this
       exact this, fun e => by rw [e]⟩
   have hz : ∀ x : BitVec 32, (x - 0 == 0) = decide (x = 0#32) := fun x => by
     rw [show x - 0 = x from BitVec.sub_zero x]; cases h : decide (x = 0#32) <;> simp_all
@@ -104,15 +104,15 @@ theorem shape_ok {σ s : State} (h : FnBase nA iS ins σ s) (h11 : s.gpr .r11 = 
   refine wp_mov (op2_lsr (by decide)) fun s2 u2 => ?_
   have b2 := h.of_rest ((u1.rest (ws := [.r0, .r1, .r2, .r3]) (by simp)).trans (u2.rest (by simp)))
     (u2.mem.trans u1.mem)
-  refine b2.ldrSp (i := 3) (by omega) (by decide) fun s3 b3 u3 => ?_
-  refine b3.ldrSp (i := 5) (by omega) (by decide) fun s4 b4 u4 => ?_
+  refine b2.ldrSp (i := 3) (by omega_using [h9]) (by decide) fun s3 b3 u3 => ?_
+  refine b3.ldrSp (i := 5) (by omega_using [h9]) (by decide) fun s4 b4 u4 => ?_
   refine wp_mov (op2_lsl (by decide)) fun s5 u5 => ?_
   refine wp_dp (op2_reg _ _) fun s6 u6 => ?_
   refine wp_dp (op2_reg _ _) fun s7 u7 => ?_
   refine wp_dp (op2_reg _ _) fun s8 u8 => ?_
   have b8 := b4.of_rest ((((u5.rest (ws := [.r0, .r1, .r2, .r3]) (by simp)).trans (u6.rest (by simp))).trans
     (u7.rest (by simp))).trans (u8.rest (by simp))) (by rw [u8.mem, u7.mem, u6.mem, u5.mem])
-  refine b8.ldrSp (i := 7) (by omega) (by decide) fun s9 b9 u9 => ?_
+  refine b8.ldrSp (i := 7) (by omega_using [h9]) (by decide) fun s9 b9 u9 => ?_
   refine wp_dp (op2_reg _ _) fun s10 u10 => ?_
   refine wp_dp (op2_reg _ _) fun s11 u11 => ?_
   have b11 := b9.of_rest (((u10.rest (ws := [.r0, .r1, .r2, .r3]) (by simp)).trans (u11.rest (by simp))))

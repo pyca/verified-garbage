@@ -87,7 +87,7 @@ theorem run_xdepth : (SealSplit.run (v.withBlk B) T.fn v.splitFin).x86_64Depth �
     tagOut, copyTag, copyLoop, xorLoop, xorLoopG, minLen, j012, initState, Code.x86_64Depth, X86_64.Instr.frameBytes,
     List.length_cons, List.length_nil, GcmImpl.withBlk, GcmImpl.callees, v.ctr.noStack, v.key.noStack,
     v.gh.noStack, Nat.max_le, ↓reduceIte, Bool.false_eq_true]
-  omega
+  omega_using [e, t, f]
 
 theorem splitMid_mx : (v.splitMid (v.withBlk B) T.fn).allInstrs (fun i => !loadsMxcsr i) = true := by
   unfold GcmImpl.splitMid; split
@@ -105,7 +105,7 @@ theorem splitMid_xdepth : (v.splitMid (v.withBlk B) T.fn).x86_64Depth ≤ 56 := 
   unfold GcmImpl.splitMid; split
   · have := run_xdepth v B T
     simp only [SealSplit.runShort, Code.x86_64Depth, cond_xdepth, copySrc_xdepth, sealShort_xdepth, Nat.max_le]
-    omega
+    omega_using [this]
   · exact run_xdepth v B T
 
 theorem splitMid_ok (hF : ShortFacts) : MidOk M (v.splitMid (v.withBlk B) T.fn) := by
@@ -131,7 +131,7 @@ theorem sealSplit_spSafe :
 theorem sealSplit_xdepth : (SealSplit.«seal» (v.splitMid (v.withBlk B) T.fn)).x86_64Depth ≤ 56 := by
   have := splitMid_xdepth v B T
   simp only [SealSplit.«seal», Code.x86_64Depth, tagOut, Nat.max_le]
-  omega
+  omega_using [this]
 
 theorem sealSplit_correct (hF : ShortFacts) (s : State) (hs : (Proof.AesGcm.sealSplitX86_64M M).pre s) :
     ∃ t s', Exec isa (SealSplit.«seal» (v.splitMid (v.withBlk B) T.fn)) s t s' ∧ abiPreserved s s' ∧

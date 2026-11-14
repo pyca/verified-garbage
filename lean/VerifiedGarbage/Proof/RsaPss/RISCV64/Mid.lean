@@ -51,8 +51,8 @@ theorem off_sub (p : Addr) {a b : Nat} (h : b ≤ a) (ha : a < 2 ^ 64) :
   apply BitVec.eq_of_toNat_eq
   have := p.isLt
   simp only [off, BitVec.toNat_add, BitVec.toNat_sub, BitVec.toNat_ofNat]
-  rw [Nat.mod_eq_of_lt (a := a) ha, Nat.mod_eq_of_lt (a := b) (by omega), Nat.mod_eq_of_lt (a := a - b) (by omega)]
-  omega
+  rw [Nat.mod_eq_of_lt (a := a) ha, Nat.mod_eq_of_lt (a := b) (by omega_using [h, ha]), Nat.mod_eq_of_lt (a := a - b) (by omega_using [ha])]
+  omega_using [h, ha]
 
 theorem ofNat_toNat (x : BitVec 64) : BitVec.ofNat 64 x.toNat = x :=
   (BitVec.ofNat_toNat _ x).trans (BitVec.setWidth_eq _)
@@ -86,26 +86,26 @@ theorem acc0_ok {t : State} (h : Base Sp (vP D) s t) (x : Xs s t) :
   generalize hK : (s.gpr .a1).toNat = k at hk hk2
   have rd1 : ∀ {u : State} {o : Nat}, u.rd = t.rd → u.wr = t.wr → o < oRsa →
       InRegions (u.rd ++ u.wr) (off (Sp s) o) 1 := fun hr hw ho => by
-    rw [hr, hw, h.wr]; exact sc_inR F (by omega) _
+    rw [hr, hw, h.wr]; exact sc_inR F (by omega_using [ho]) _
   have aK : off (Sp s) (k - 1) = t.gpr .s0 + t.gpr .s1 - BitVec.ofNat 64 1 := by
-    rw [h.s0, h.pk, ← ofNat_toNat (s.gpr .a1), hK, off_sub _ (by omega) (by omega)]
+    rw [h.s0, h.pk, ← ofNat_toNat (s.gpr .a1), hK, off_sub _ (by omega_using [hk]) (by omega_using [hK])]
   simp only [acc0]
   refine wp_add fun t₁ o₁ e₁ => wp_subi (imm := 1) fun t₂ o₂ e₂ => ?_
   have a₂ : t₂.gpr .a1 = off (Sp s) (k - 1) := by rw [e₂, e₁, aK]
   refine wp_lbu (a := off (Sp s) (k - 1)) (by rw [a₂, BitVec.add_zero])
-    (rd1 ((o₂.rd.trans o₁.rd)) (o₂.wr.trans o₁.wr) (by unfold oRsa; omega)) fun t₃ o₃ e₃ => ?_
+    (rd1 ((o₂.rd.trans o₁.rd)) (o₂.wr.trans o₁.wr) (by unfold oRsa; omega_using [hk2])) fun t₃ o₃ e₃ => ?_
   refine wp_li (imm := 0xbc) (by decide) fun t₄ o₄ e₄ => wp_xor fun t₅ o₅ e₅ => wp_add fun t₆ o₆ e₆ => ?_
   have k₆ : Only [.a1, .a2, .a3, .a4] t t₆ := (o₁.trans (o₂.trans (o₃.trans (o₄.trans (o₅.trans o₆))))).mono
   have a₆ : t₆.gpr .a4 = off (Sp s) lN := by
     rw [e₆, o₅.get .s0, o₄.get .s0, o₃.get .s0, o₂.get .s0, o₁.get .s0, h.s0, o₅.get .s3, o₄.get .s3,
       o₃.get .s3, o₂.get .s3, o₁.get .s3, h.plo, L.hlo]
-  refine wp_lbu (a := off (Sp s) lN) (by rw [a₆, BitVec.add_zero]) (rd1 k₆.rd k₆.wr (by unfold oRsa; omega))
+  refine wp_lbu (a := off (Sp s) lN) (by rw [a₆, BitVec.add_zero]) (rd1 k₆.rd k₆.wr (by unfold oRsa; omega_using [hl]))
     fun t₇ o₇ e₇ => ?_
   refine wp_li (imm := 0xFF) (by decide) fun t₈ o₈ e₈ => wp_xor fun t₉ o₉ e₉ => wp_and fun t₁₀ o₁₀ e₁₀ =>
     wp_or fun t₁₁ o₁₁ e₁₁ => ?_
   have k₁₁ : Only [.a1, .a2, .a3, .a4, .a5] t t₁₁ :=
     (k₆.trans (o₇.trans (o₈.trans (o₉.trans (o₁₀.trans o₁₁))))).mono
-  refine wp_lbu (a := off (Sp s) 0) (by rw [k₁₁.get .s0, h.s0]) (rd1 k₁₁.rd k₁₁.wr (by unfold oRsa; omega))
+  refine wp_lbu (a := off (Sp s) 0) (by rw [k₁₁.get .s0, h.s0]) (rd1 k₁₁.rd k₁₁.wr (by unfold oRsa; omega_using []))
     fun t₁₂ o₁₂ e₁₂ => ?_
   refine wp_li (imm := 0) (by decide) fun t₁₃ o₁₃ e₁₃ => wp_sub fun t₁₄ o₁₄ e₁₄ => wp_and fun t₁₅ o₁₅ e₁₅ =>
     wp_or fun t₁₆ o₁₆ e₁₆ => ?_
@@ -115,7 +115,7 @@ theorem acc0_ok {t : State} (h : Base Sp (vP D) s t) (x : Xs s t) :
     rw [o₁₆.get .a1, o₁₅.get .a1, o₁₄.get .a1, o₁₃.get .a1, o₁₂.get .a1, o₁₁.get .a1, o₁₀.get .a1, o₉.get .a1,
       o₈.get .a1, o₇.get .a1, o₆.get .a1, o₅.get .a1, o₄.get .a1, o₃.get .a1, a₂]
   refine wp_sb (a := off (Sp s) (k - 1)) (by rw [a₁₆, BitVec.add_zero])
-    (by rw [k₁₆.wr, h.wr]; exact sc_inW F (by unfold oRsa; omega)) fun w mw => wp_nil ?_
+    (by rw [k₁₆.wr, h.wr]; exact sc_inW F (by unfold oRsa; omega_using [hk2])) fun w mw => wp_nil ?_
   -- The byte.
   have m₁₆ : t₁₆.mem = t.mem := k₁₆.mem
   have hb : (t₁₆.gpr .a2).setWidth 8 = accB (view t.mem (Sp s)) lN c k := by
@@ -131,13 +131,13 @@ theorem acc0_ok {t : State} (h : Base Sp (vP D) s t) (x : Xs s t) :
       o₁₄.get .a3, o₁₃.get .a3, e₁₂, v12, e₁₄, e₁₃, l14]
     simp only [BitVec.setWidth_or, BitVec.setWidth_and, BitVec.setWidth_xor,
       BitVec.setWidth_setWidth_of_le _ (show 8 ≤ 64 by decide), BitVec.setWidth_eq, accB]
-    rcases (show lN = 0 ∨ lN = 1 by omega) with rfl | rfl <;> rfl
+    rcases (show lN = 0 ∨ lN = 1 by omega_using [hl]) with rfl | rfl <;> rfl
   have hK : Kept [.a1, .a2, .a3, .a4, .a5] t w := (k₁₆.keep.trans mw.keep).mono
   refine ⟨h.keep F hK (R := [⟨off (Sp s) (k - 1), 1⟩]) (by
       rw [mw.mem, m₁₆]; exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ _))
-      (fun r hr => by rw [List.mem_singleton.mp hr]; exact .inl (sc_in (by unfold oRsa; omega))),
+      (fun r hr => by rw [List.mem_singleton.mp hr]; exact .inl (sc_in (by unfold oRsa; omega_using [hk2]))),
     hK, fun o ho => ?_⟩
-  rw [mw.mem, m₁₆, view_w8 _ _ (by unfold oRsa; omega) ho, hb]
+  rw [mw.mem, m₁₆, view_w8 _ _ (by unfold oRsa; omega_using [hk2]) ho, hb]
 
 end
 

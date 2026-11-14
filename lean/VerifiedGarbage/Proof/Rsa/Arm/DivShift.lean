@@ -28,9 +28,9 @@ theorem shift_ok {g : Geometry} {s : State} (h : Context g s) :
   rintro v ⟨qVal, qCarry, bit, ctxV, frameV, restV⟩
   simp only [Geometry.words, ↓reduceIte, carry, show (0 : BitVec 32).toNat = 0 from rfl,
     Nat.add_zero, memU] at qVal qCarry frameV
-  have width : 1 ≤ 32 * g.n := by have := h.positive; omega
+  have width : 1 ≤ 32 * g.n := by have := h.positive; omega_using [this]
   have radix : 2 ^ (32 * g.n) = 2 * 2 ^ (32 * g.n - 1) := by
-    rw [← Nat.pow_succ']; congr 1; omega
+    rw [← Nat.pow_succ']; congr 1; omega_using [width]
   have bitEq : (v.gpr .r11).toNat = g.value s.mem 0 / 2 ^ (32 * g.n - 1) := by
     rw [qCarry, radix, Nat.mul_div_mul_left _ _ (by decide)]
   have f0 : g.offsets 0 + 4 * g.n ≤ g.size := h.fits 0
@@ -41,7 +41,7 @@ theorem shift_ok {g : Geometry} {s : State} (h : Context g s) :
     g.offsets 1 + 4 * (g.n + 1) ≤ g.offsets 0 at sep01
   have rOld : g.value v.mem 1 = g.value s.mem 1 := by
     change val32 _ _ _ (g.n + 1) = val32 _ _ _ (g.n + 1)
-    exact frameV.val32 (by omega) (by omega)
+    exact frameV.val32 (by omega_using [sep01]) (by omega_using [f1, nowrap])
   rw [WP.seq_iff]
   refine WP.mono (remainderArgs_ok ctxV) ?_
   rintro z ⟨pz, cz, memZ, ctxZ, restZ⟩
@@ -55,14 +55,14 @@ theorem shift_ok {g : Geometry} {s : State} (h : Context g s) :
     rw [← memZ]
     change val32 _ _ _ g.n = val32 _ _ _ g.n
     rw [memZ]
-    exact frameT.val32 (by omega) (by omega)
+    exact frameT.val32 (by omega_using [sep01]) (by omega_using [f0, nowrap])
   refine ⟨qOld.trans qVal, ?_, ctxT, ?_, ?_⟩
   · intro bound
     rw [rVal, restZ.gpr .r11 (by simp), bitEq, rOld]
     apply Nat.mod_eq_of_lt
     have topBound : g.value s.mem 0 / 2 ^ (32 * g.n - 1) ≤ 1 := by rw [← bitEq]; exact bit
-    rw [show 32 * (g.n + 1) = 32 * g.n + 32 by omega, Nat.pow_add]
-    omega
+    rw [show 32 * (g.n + 1) = 32 * g.n + 32 by omega_using [], Nat.pow_add]
+    omega_using [bitEq, bound]
   · have fV : Outs (State.addr g.base) g.ranges s.mem v.mem :=
       Outs.of_outside frameV (by simp [Geometry.ranges])
     have fT : Outs (State.addr g.base) g.ranges v.mem t.mem :=

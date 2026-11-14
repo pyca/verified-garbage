@@ -23,10 +23,10 @@ theorem pdOutputArgs_ready (s : State) {base dst np ep xp : BitVec 32} {len k eL
   have ready := h.ready.of_mem mem rest ((rest.gpr .r0 (by simp)).trans h.ready.ptr)
   have dims := pc_dimensions h.buffers.minLength h.buffers.maxLength h.buffers.space
   refine ⟨⟨ready.workspace, ready.layout, ready.width, ready.ptr, index⟩,
-    by have := h.buffers.minLength; omega, dims.2.2.2.1, h.buffers.outputFit, ?_, h.buffers.outputSeparate,
+    by have := h.buffers.minLength; omega_using [this], dims.2.2.2.1, h.buffers.outputFit, ?_, h.buffers.outputSeparate,
     output, count, ?_, ?_⟩
   · rw [rest.wr]; exact h.buffers.write
-  · rw [rest.sp]; have := h.stack.nowrap; omega
+  · rw [rest.sp]; have := h.stack.nowrap; omega_using [this]
   · rw [rest.rd, rest.wr, rest.sp]; exact h.stack.read (by decide) (by decide)
 
 theorem pdFinish_ct {base dst np ep xp : BitVec 32} {len k eLen N R : Nat} {eb xb1 xb2 : List Byte} (hk : 0 < k) :

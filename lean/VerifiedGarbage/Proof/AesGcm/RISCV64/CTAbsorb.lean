@@ -152,7 +152,7 @@ theorem wholeArgs_ok {V : Reg → BitVec 64} {s : State} (he : Env V sp s) :
         s₂.gpr .a1 = V .s1 + BitVec.ofNat 64 yo ∧ s₂.gpr .a4 = V .s0 + BitVec.ofNat 64 512 ∧
         (∀ r, r ≠ .a0 → r ≠ .a1 → r ≠ .a4 → s₂.gpr r = s.gpr r) ∧ Keeps s s₂) := by
   have h29 := he.s2; have h30 := he.s1; have h31 := he.s0
-  refine Steps.wp_addi (by decide) fun s₁ u₁ => Steps.wp_addi (by omega) fun s₂ u₂ =>
+  refine Steps.wp_addi (by decide) fun s₁ u₁ => Steps.wp_addi (by omega_using [hyo]) fun s₂ u₂ =>
     Steps.wp_addi (imm := scrO) (by decide) fun s₃ u₃ => WP.block_nil ?_
   refine ⟨by rw [u₃.other _ (by decide), u₂.other _ (by decide), u₁.gpr, h29],
     by rw [u₃.other _ (by decide), u₂.gpr, u₁.other _ (by decide), h30],

@@ -29,27 +29,27 @@ theorem minusCore_ok {s : State} {B : Addr} {Z w amount : Nat} {minv : BitVec 64
   have hsep := slot_sep (w := w) (show aY ≠ aN by decide)
   refine WP.seq (WP.mono (minusHead_ok hg hZ ha) fun u ⟨hu12, husi, hubx, hfu, hval, hku⟩ => ?_)
   have huN : ∀ k ≤ w, wv u.mem B (slot w aN) k = wv s.mem B (slot w aN) k :=
-    fun k hk => hfu.wv (by omega) (by omega)
+    fun k hk => hfu.wv (by omega_using [hsep, hk]) (by omega_using [hnowrap, hn, hk])
   have h0 : ∀ t, t.gpr .r14 = BitVec.ofNat 64 1 → t.mem = u.mem → Keep [.r14] u t → t.cf = u.cf →
       MinusInv u B Z (slot w aN) (slot w aY) amount 1 t := by
     intro t ht14 htm hkt _
     obtain ⟨c, huc, huv⟩ := hval
     refine ⟨hg.scr.congr (hkt.2.2.trans hku.2.2), hkt.mono (by decide), ht14,
       by rw [htm]; exact Outside.refl _ _ _ _, ⟨c, (hkt.gpr (by decide)).trans huc, ?_⟩⟩
-    rw [htm, huN 1 (by omega)]
+    rw [htm, huN 1 (by omega_using [hw])]
     exact huv
-  refine WP.mono (wordLoop_ok (start := 1) (N := w) (by omega) hw'
+  refine WP.mono (wordLoop_ok (start := 1) (N := w) (by omega_using [hw]) hw'
     (MinusInv u B Z (slot w aN) (slot w aY) amount) h0
-    (fun j _ hj t hi => minusStep_ok hubx husi hu12 (by omega) (by omega) (by omega) (by omega) hj hi))
+    (fun j _ hj t hi => minusStep_ok hubx husi hu12 (by omega_using [hw']) (by omega_using [hy]) (by omega_using [hn]) (by omega_using [hsep]) hj hi))
     fun t ht => ?_
   obtain ⟨c, _, hv⟩ := ht.val
   rw [huN w (Nat.le_refl _)] at hv
   have hvlt := wv_lt t.mem B (slot w aY) w
-  refine ⟨?_, (hfu.mono (Nat.le_refl _) (by omega)).trans ht.out, (hku.trans ht.keep).mono (by decide)⟩
+  refine ⟨?_, (hfu.mono (Nat.le_refl _) (by omega_using [hw])).trans ht.out, (hku.trans ht.keep).mono (by decide)⟩
   cases c
   · simp only [Bool.toNat_false, Nat.mul_zero, Nat.add_zero] at hv
-    omega
+    omega_using [hv]
   · simp only [Bool.toNat_true, Nat.mul_one] at hv
-    omega
+    omega_using [hm, hvlt, hv]
 
 end VG.Proof.Dsa.X86_64

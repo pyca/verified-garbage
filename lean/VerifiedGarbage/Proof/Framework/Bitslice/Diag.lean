@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.Bitslice.Lanes
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # Input words of atoms, as one shifted diagonal
@@ -35,7 +36,7 @@ theorem diagW_shift (w i : Nat) : ∀ n, diagW w n <<< (w * w * i) = mk w (fun t
     rw [diagW, mk, Nat.shiftLeft_xor_distrib, diagW_shift w i n, atomsAt, atomsAt, Nat.xor_zero,
       Nat.shiftLeft_eq, ← Nat.pow_add]
     have e : (w + 1) * n + w * w * i = w * (w * i + n) + n := by
-      rw [Nat.mul_add w, ← Nat.mul_assoc, Nat.succ_mul]; omega
+      rw [Nat.mul_add w, ← Nat.mul_assoc, Nat.succ_mul]; omega_using []
     rw [e]
 
 theorem inWordW_eq_mk (w i : Nat) : inWordW w i = (0, mk w (fun t => [w * i + t]) w) := by

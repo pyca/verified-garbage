@@ -38,7 +38,7 @@ theorem codeWith_ct (rest : Prog isa) (hrest : RelCT isa (Two DRel) rest fun _ _
     have c := pdCtx_of hs.1
     have hZ := c.hZ
     have hk1 := c.hk1
-    have hw : ∀ i < 22, InRegions s.wr (off (stackArg s 2) (8 * i)) 8 := fun i hi => c.hs.st (by omega)
+    have hw : ∀ i < 22, InRegions s.wr (off (stackArg s 2) (8 * i)) 8 := fun i hi => c.hs.st (by omega_using [hZ, hi])
     have hh : WP isa (.block (([.mov .r11 (.mem { base := .rsp, disp := 24 })] : List Instr) ++
         Precomputed.entry.drop 1)) s (PdEnt s) := by
       rw [← pdEntry_split]; exact pdEntry_ok rfl hw c.ha0 c.ha2 c.hsep
@@ -66,7 +66,7 @@ theorem codeWith_ct (rest : Prog isa) (hrest : RelCT isa (Two DRel) rest fun _ _
     rintro p t ⟨h, -⟩
     obtain ⟨hs, hdi, hZ, hk1, hk2, hO, hK⟩ := cl_fail h
     have hn := hs.nowrap
-    have hl : ∀ i < 32, InRegions (t.rd ++ t.wr) (off p.d.B (8 * i)) 8 := fun i hi => hs.ld (by omega)
+    have hl : ∀ i < 32, InRegions (t.rd ++ t.wr) (off p.d.B (8 * i)) 8 := fun i hi => hs.ld (by omega_using [hZ, hi])
     refine WP.mono (WP.keep [.rsi, .rcx, .rax] (Q := fun t' => t'.gpr .rsi = p.d.op ∧
         t'.gpr .rcx = BitVec.ofNat 64 p.d.k) (by
       xrun [State.ea, hdr, hdi, hdrOff, hl sOut (by decide), hl sK (by decide), hO, hK]) rfl)
@@ -91,9 +91,9 @@ theorem codeWith_constantTime (rest : Prog isa) (hrest : RelCT isa (Two DRel) re
     refine ⟨h₂, r .rsp (by decide), a2.symm, by rw [← a3]; rfl, by rw [r .rsi (by decide)]; rfl, r .rdi (by decide),
       r .rdx (by decide), r .r8 (by decide), a0.symm, by rw [r .r9 (by decide)]; rfl, he.symm, ?_, ?_, v₁⟩
     · rw [r .rdx (by decide), r .rsi (by decide), show (0 : Nat) = 8 * 0 from rfl]
-      exact (wv_of_wordsAt hw (by omega)).symm
+      exact (wv_of_wordsAt hw (by omega_using [hpl])).symm
     · rw [r .rdx (by decide), r .rsi (by decide)]
-      exact (wv_of_wordsAt hw (by omega)).symm
+      exact (wv_of_wordsAt hw (by omega_using [hpl])).symm
 
 /-- The code after the check of `e` is constant time, for valid `e`s. -/
 theorem code_constantTime (M : Mont)

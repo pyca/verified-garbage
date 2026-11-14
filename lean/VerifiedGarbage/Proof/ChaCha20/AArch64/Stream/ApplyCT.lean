@@ -123,11 +123,11 @@ theorem Args.xorArgs {s₀ s : State} (hp : APre s₀) (h : Args s₀ s) :
   have hHNB := HNB_le s₀
   have hwrap : (dp s₀ + BitVec.ofNat 64 (H s₀)).toNat + 64 * NB s₀ ≤ 2 ^ 64 := by
     have := hp.wrap_d
-    rw [BitVec.toNat_add, Proof.ChaCha20.AArch64.toNat_ofNat_lt (by omega)]
-    omega
-  exact Proof.ChaCha20.AArch64.XorArgs.inPlace h.x0 h.x1 h.x2 h.x3 (by omega)
+    rw [BitVec.toNat_add, Proof.ChaCha20.AArch64.toNat_ofNat_lt (by omega_using [hL, hH])]
+    omega_using [hHNB, this]
+  exact Proof.ChaCha20.AArch64.XorArgs.inPlace h.x0 h.x1 h.x2 h.x3 (by omega_using [hL, hHNB])
     ((hp.st_d.sub_left (cpR_sub s₀)).sub_right (blR_sub s₀))
-    (Offset.disjoint _ (by omega) (by omega) (by omega))
+    (Offset.disjoint _ (by omega_using []) (by omega_using []) (by omega_using []))
     ((hp.st_d.sub_left (wkR_sub s₀)).symm.sub_left (blR_sub s₀)) hwrap h.covers.2
 
 /-! ## The call of the block function -/
@@ -179,11 +179,11 @@ theorem TArgs.pre {s₀ s : State} (h : TArgs s₀ s) :
   simp only [Proof.ChaCha20.blockAArch64, State.withRegions_gpr, State.withRegions_rd, State.withRegions_wr,
     callEntry_gpr' s (by decide : Reg.x0 ∉ linkRegs), callEntry_gpr' s (by decide : Reg.x1 ∉ linkRegs),
     h.x0, h.x1]
-  exact ⟨trivial, trivial, Offset.disjoint_base _ (by omega) (by omega)⟩
+  exact ⟨trivial, trivial, Offset.disjoint_base _ (by omega_using []) (by omega_using [])⟩
 
 theorem TArgs.call {s₀ s : State} (h : TArgs s₀ s) :
     WP isa (.call "vg_chacha20_block" Impl.ChaCha20.AArch64.block) s (TAfter s₀) :=
-  block_call h.x0 h.x1 (Offset.disjoint_base _ (by omega) (by omega)) h.covers.1 h.covers.2
+  block_call h.x0 h.x1 (Offset.disjoint_base _ (by omega_using []) (by omega_using [])) h.covers.1 h.covers.2
     fun _ k _ => ⟨by rw [k.cs .x21 (by decide) (by decide), h.x21], by rw [k.cs .x22 (by decide) (by decide), h.x22],
       by rw [k.cs .x23 (by decide) (by decide), h.x23]⟩
 
@@ -285,7 +285,7 @@ theorem apply_rel (v : Proof.ChaCha20.AArch64.XorImpl) :
   have e11 : ∀ {s₀ x : State}, Q0 s₀ x →
       isa.eval (.zero .x .x11) x = some (decide (N s₀ < L s₀)) := fun {s₀ x} hx => by
     have e : isa.eval (.zero .x .x11) x = some (x.gpr .x11 == 0) := eval_zero x .x11
-    rw [e, hx.x11]; by_cases hh : L s₀ ≤ N s₀ <;> simp [hh] <;> omega
+    rw [e, hx.x11]; by_cases hh : L s₀ ≤ N s₀ <;> simp [hh] <;> omega_using [hh]
   refine RelCT.seq (check_rel h) (RelCT.ite (fun x y ⟨⟨hx, _⟩, ⟨hy, _⟩⟩ => by
       rw [e11 hx, e11 hy, h.hleft, h.eqL])
     (taintRegs [] (fun x y ⟨⟨⟨_, sx⟩, ⟨_, sy⟩⟩, _⟩ => ⟨by rw [sx, sy, h.hsp], fun r hr => by simp at hr⟩)
@@ -295,7 +295,7 @@ theorem apply_rel (v : Proof.ChaCha20.AArch64.XorImpl) :
     have he := hp.2
     rw [e11 hp.1.1.1] at he
     simp [hlt] at he
-  have hle : L a ≤ N a := by omega
+  have hle : L a ≤ N a := by omega_using [hlt]
   refine RelCT.seq (RelCT.mono (part1_rel h hle) (fun _ _ hp => hp.1) fun _ _ hq => hq)
     (RelCT.seq (part2_rel h v) (RelCT.seq (part3_rel h) ?_))
   exact taintRegs [.x21] (fun x y ⟨⟨hx, sx⟩, ⟨hy, sy⟩⟩ => by

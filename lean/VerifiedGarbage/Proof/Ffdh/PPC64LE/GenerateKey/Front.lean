@@ -49,23 +49,23 @@ theorem gkHdr_ok {s : State} {S : Addr} (h23 : s.gpr .r23 = S)
   have i2 : InRegions s.wr (S + BitVec.ofNat 64 80) 8 := hin 2 (by decide)
   have i3 : InRegions s.wr (S + BitVec.ofNat 64 88) 8 := hin 3 (by decide)
   prun [h23, i0, i1, i2, i3, BitVec.add_zero]
-  have o0 := writeW_outside s.mem S (d := 64) (s.gpr .r3) (by omega)
-  have o1 := writeW_outside (s.mem.writeW (off S 64) (s.gpr .r3)) S (d := 72) (s.gpr .r4) (by omega)
+  have o0 := writeW_outside s.mem S (d := 64) (s.gpr .r3) (by omega_using [])
+  have o1 := writeW_outside (s.mem.writeW (off S 64) (s.gpr .r3)) S (d := 72) (s.gpr .r4) (by omega_using [])
   have o2 := writeW_outside ((s.mem.writeW (off S 64) (s.gpr .r3)).writeW (off S 72) (s.gpr .r4)) S (d := 80)
-    (s.gpr .r5) (by omega)
+    (s.gpr .r5) (by omega_using [])
   have o3 := writeW_outside (((s.mem.writeW (off S 64) (s.gpr .r3)).writeW (off S 72) (s.gpr .r4)).writeW
-    (off S 80) (s.gpr .r5)) S (d := 88) (s.gpr .r10) (by omega)
+    (off S 80) (s.gpr .r5)) S (d := 88) (s.gpr .r10) (by omega_using [])
   refine ⟨?_, ?_, ?_, word_writeW_self _ _ _ _, ?_⟩
   · show word _ S 64 = _
-    rw [o3.word (by omega) (by omega), o2.word (by omega) (by omega), o1.word (by omega) (by omega)]
+    rw [o3.word (by omega_using []) (by omega_using []), o2.word (by omega_using []) (by omega_using []), o1.word (by omega_using []) (by omega_using [])]
     exact word_writeW_self _ _ _ _
   · show word _ S 72 = _
-    rw [o3.word (by omega) (by omega), o2.word (by omega) (by omega)]
+    rw [o3.word (by omega_using []) (by omega_using []), o2.word (by omega_using []) (by omega_using [])]
     exact word_writeW_self _ _ _ _
   · show word _ S 80 = _
-    rw [o3.word (by omega) (by omega)]
+    rw [o3.word (by omega_using []) (by omega_using [])]
     exact word_writeW_self _ _ _ _
-  · exact (((o0.mono (by omega) (by omega)).trans (o1.mono (by omega) (by omega))).trans
-      (o2.mono (by omega) (by omega))).trans (o3.mono (by omega) (by omega))
+  · exact (((o0.mono (by omega_using []) (by omega_using [])).trans (o1.mono (by omega_using []) (by omega_using []))).trans
+      (o2.mono (by omega_using []) (by omega_using []))).trans (o3.mono (by omega_using []) (by omega_using []))
 
 end VG.Proof.Ffdh.PPC64LE.GenerateKey

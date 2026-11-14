@@ -83,7 +83,7 @@ theorem Op.of_store {base : Addr} {o : Nat} {s t : State} (ho : FieldRange o lar
   have _hmin := workSize_ge large
   refine ⟨h.gpr, h.rd, h.wr, h.sp, ?_⟩
   rw [h.mem]
-  exact st4_outside _ _ (by have := ho.2; omega) _ _ _ _
+  exact st4_outside _ _ (by have := ho.2; omega_using [_hcap, this]) _ _ _ _
 
 theorem fieldInit_ok (s : State) (v : BitVec 16 := 38) :
     WP isa (.block [.movz .w .x10 0 0, .movz .w .x11 v 0]) s fun t =>

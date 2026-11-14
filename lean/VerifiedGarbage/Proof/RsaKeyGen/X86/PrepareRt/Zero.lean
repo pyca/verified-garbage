@@ -23,7 +23,7 @@ theorem _root_.VG.Proof.RsaKeyGen.X86.PreparedR2.Ready.keepRange {g : Geometry} 
   have header := v.arrayHeader 0
   have W := Outs.of_outside O (List.mem_singleton_self _)
   have F := WorkspaceFrame.of_outs S.scratch.nowrap W
-  exact ⟨S.context.keepOutside K edi O (by omega),
+  exact ⟨S.context.keepOutside K edi O (by omega_using [low, header]),
     S.modulus.keep v F (fun r mem => by obtain rfl := List.mem_singleton.mp mem; exact Or.inl (by omega))
       (fun r mem => by obtain rfl := List.mem_singleton.mp mem; exact Or.inl low),
     S.caller.keepOuts K esp W (fun r mem => by obtain rfl := List.mem_singleton.mp mem; exact fit),
@@ -51,7 +51,7 @@ theorem zeroArgs_ok {g : Geometry} (v : g.Valid) {s : State} (C : Context g s) :
   refine wp_movS rfl fun d Dd _ => wp_movS rfl fun e E _ => WP.block_nil ⟨?_, ?_, E.gpr,
     by rw [E.mem, Dd.mem, Mb, Ma], (((Ka.mono (by decide)).widen Kb).widen Dd.keeps).widen E.keeps⟩
   · rw [PtrAt, E.other .ebp (by decide), Dd.other .ebp (by decide), Kb.1 .ebp (by decide)]; exact P
-  · rw [E.other .ecx (by decide), Dd.gpr, D, BitVec.toNat_ofNat]; omega
+  · rw [E.other .ecx (by decide), Dd.gpr, D, BitVec.toNat_ofNat]; omega_using [words, bound]
 
 /-- The zeroing loop, from `zeroArgs`. -/
 theorem zeroLoop_run {g : Geometry} (v : g.Valid) {s : State} {c capacity : Nat} {p : BitVec 32}
@@ -61,7 +61,7 @@ theorem zeroLoop_run {g : Geometry} (v : g.Valid) {s : State} {c capacity : Nat}
       Ready g c capacity p t ∧ val32 t.mem g.W (g.array 6) g.words = 0 ∧
       Outside g.W (g.array 6) (4 * g.words) s.mem t.mem ∧ Keeps [.ebp, .ecx] s t := by
   obtain ⟨fit, below, many, -⟩ := WitnessRt.fits v
-  exact WP.mono (VG.Proof.Bignum.X86.PublicRt.zeroLoop_ok S.context.ws (N := g.words) (by omega) fit P count zero)
+  exact WP.mono (VG.Proof.Bignum.X86.PublicRt.zeroLoop_ok S.context.ws (N := g.words) (by omega_using [many]) fit P count zero)
     fun t ⟨O, V, Kt⟩ => ⟨S.keepRange v below fit Kt (by decide) (by decide) O, V, O, Kt⟩
 
 theorem zero_ok {g : Geometry} (v : g.Valid) {s : State} {c capacity : Nat} {p : BitVec 32}
@@ -102,18 +102,18 @@ theorem topStore_ok {g : Geometry} (v : g.Valid) {s : State} {c capacity : Nat} 
   have sum : PtrAt d g.W .ebp (g.array 6 + 4 * g.words) := by
     rw [PtrAt, Dd.gpr, ptr_add P, D, BitVec.toNat_ofNat]
     congr 2
-    omega
+    omega_using [words, bound]
   have ebp : PtrAt f g.W .ebp (g.array 6 + 4 * g.words - 4) := by
-    rw [PtrAt, F.other .ebp (by decide), E.gpr, ptr_sub sum 4 (by change 4 ≤ _; omega)]
+    rw [PtrAt, F.other .ebp (by decide), E.gpr, ptr_sub sum 4 (by change 4 ≤ _; omega_using [many])]
     rfl
-  refine wp_storeS (ea_ptr hw ebp (d := 0) (by omega))
-    (ws_write hw (y := g.array 6 + 4 * g.words - 4 + 0) (n := 4) (by omega)) fun t T => WP.block_nil ?_
+  refine wp_storeS (ea_ptr hw ebp (d := 0) (by omega_using [fit, many]))
+    (ws_write hw (y := g.array 6 + 4 * g.words - 4 + 0) (n := 4) (by omega_using [fit, many])) fun t T => WP.block_nil ?_
   have Mt : t.mem = s.mem.writeW (off g.W (g.array 6 + 4 * g.words - 4)) (f.gpr .eax) := by
     rw [T.mem, F.mem, E.mem, Dd.mem, Nat.add_zero]
   have O : Outside g.W (g.array 6 + 4 * g.words - 4) 4 s.mem t.mem := by
-    rw [Mt]; exact writeW32_outside _ _ _ (by omega)
+    rw [Mt]; exact writeW32_outside _ _ _ (by omega_using [fit, nowrap])
   have Kt := Kf.widen (T.keeps [])
-  refine ⟨S.keepRange v (by omega) (by omega) Kt (by decide) (by decide) O, ?_, O, Kt⟩
+  refine ⟨S.keepRange v (by omega_using [below, many]) (by omega_using [fit, many]) Kt (by decide) (by decide) O, ?_, O, Kt⟩
   rw [Mt, w32_write_self, F.gpr]
   rfl
 
@@ -139,18 +139,18 @@ theorem seed_ok {g : Geometry} (v : g.Valid) {s : State} {c capacity : Nat} {p :
   have nowrap := S.scratch.nowrap
   unfold seed
   refine WP.seq (WP.mono (zero_ok v S) fun a ⟨A, Va, Oa, Ka⟩ => ?_)
-  refine WP.mono (top_ok v A) fun t ⟨T, topT, Ot, Kt⟩ => ⟨T, ?_, Oa.trans (Ot.mono (by omega) (by omega)),
+  refine WP.mono (top_ok v A) fun t ⟨T, topT, Ot, Kt⟩ => ⟨T, ?_, Oa.trans (Ot.mono (by omega_using [many]) (by omega_using [many])),
     Ka.trans (Kt.mono (by decide))⟩
   have split := val32_succ t.mem g.W (g.array 6) (g.words - 1)
   have lowA := val32_succ a.mem g.W (g.array 6) (g.words - 1)
-  rw [Nat.sub_add_cancel (by omega)] at split lowA
+  rw [Nat.sub_add_cancel (by omega_using [many])] at split lowA
   have zeroLow : val32 a.mem g.W (g.array 6) (g.words - 1) = 0 := by omega
   have sameLow : val32 t.mem g.W (g.array 6) (g.words - 1) = val32 a.mem g.W (g.array 6) (g.words - 1) :=
-    Ot.val32 (Or.inl (by omega)) (by omega)
-  rw [split, sameLow, zeroLow, show g.array 6 + 4 * (g.words - 1) = g.array 6 + 4 * g.words - 4 by omega, topT,
+    Ot.val32 (Or.inl (by omega_using [many])) (by omega_using [fit, nowrap])
+  rw [split, sameLow, zeroLow, show g.array 6 + 4 * (g.words - 1) = g.array 6 + 4 * g.words - 4 by omega_using [many], topT,
     Nat.zero_add, ← Nat.pow_add]
   congr 1
-  omega
+  omega_using [many, words]
 
 /-- One in array 6's lowest word, from `ebp` at array 6. -/
 theorem oneStore_ok {g : Geometry} (v : g.Valid) {s : State} {c capacity : Nat} {p : BitVec 32}
@@ -164,13 +164,13 @@ theorem oneStore_ok {g : Geometry} (v : g.Valid) {s : State} {c capacity : Nat} 
   refine wp_movS rfl fun d Dd _ => ?_
   have hw := S.context.ws.of_keeps Dd.keeps
   have ebp : PtrAt d g.W .ebp (g.array 6) := by rw [PtrAt, Dd.other .ebp (by decide)]; exact P
-  refine wp_storeS (ea_ptr hw ebp (d := 0) (by omega)) (ws_write hw (y := g.array 6 + 0) (n := 4) (by omega))
+  refine wp_storeS (ea_ptr hw ebp (d := 0) (by omega_using [fit, many])) (ws_write hw (y := g.array 6 + 0) (n := 4) (by omega_using [fit, many]))
     fun t T => WP.block_nil ?_
   have Mt : t.mem = s.mem.writeW (off g.W (g.array 6)) (1#32) := by
     rw [T.mem, Dd.mem, Nat.add_zero, Dd.gpr]; rfl
-  have Ot : Outside g.W (g.array 6) 4 s.mem t.mem := by rw [Mt]; exact writeW32_outside _ _ _ (by omega)
+  have Ot : Outside g.W (g.array 6) 4 s.mem t.mem := by rw [Mt]; exact writeW32_outside _ _ _ (by omega_using [fit, nowrap])
   have Kt : Keeps [.eax] s t := Dd.keeps.widen (T.keeps [])
-  exact ⟨S.keepRange v below (by omega) Kt (by decide) (by decide) Ot, Mt, Ot, Kt⟩
+  exact ⟨S.keepRange v below (by omega_using [fit, many]) Kt (by decide) (by decide) Ot, Mt, Ot, Kt⟩
 
 theorem one_ok {g : Geometry} (v : g.Valid) {s : State} {c capacity : Nat} {p : BitVec 32}
     (S : Ready g c capacity p s) :
@@ -185,14 +185,14 @@ theorem one_ok {g : Geometry} (v : g.Valid) {s : State} {c capacity : Nat} {p : 
   have B : Ready g c capacity p b := A.keepSame Kb (by decide) (by decide) Mb
   refine WP.mono (oneStore_ok v B P) fun t ⟨T, Mt, Ot, Kt⟩ => ?_
   rw [Mb] at Mt Ot
-  refine ⟨T, ?_, Oa.trans (Ot.mono (by omega) (by omega)), Ka.trans ((Kb.mono (by decide)).widen Kt)⟩
+  refine ⟨T, ?_, Oa.trans (Ot.mono (by omega_using []) (by omega_using [many])), Ka.trans ((Kb.mono (by decide)).widen Kt)⟩
   have rest : val32 t.mem g.W (g.array 6 + 4) (g.words - 1) = val32 a.mem g.W (g.array 6 + 4) (g.words - 1) :=
-    Ot.val32 (Or.inr (by omega)) (by omega)
+    Ot.val32 (Or.inr (by omega_using [])) (by omega_using [fit, nowrap])
   have restZero : val32 a.mem g.W (g.array 6 + 4) (g.words - 1) = 0 := by
     have := Va
-    rw [show g.words = g.words - 1 + 1 by omega, val32] at this
-    omega
-  rw [show g.words = g.words - 1 + 1 by omega, val32, rest, restZero, Mt, w32_write_self]
+    rw [show g.words = g.words - 1 + 1 by omega_using [many], val32] at this
+    omega_using [this]
+  rw [show g.words = g.words - 1 + 1 by omega_using [many], val32, rest, restZero, Mt, w32_write_self]
   rfl
 
 end VG.Proof.RsaKeyGen.X86.PrepareRt

@@ -114,12 +114,12 @@ theorem verifyCall_tr {n : String} {c : Prog isa} (hV : VerifyFn p prepared c) {
       bytesAt a1.mem (State.addr L.key) p.pkLen = bytesAt m₀ (State.addr L.key) p.pkLen := fun c f => by
     rw [f.2.mem]
     exact c.bytesAt_eq (xKey.sub_right (Region.sub_prefix (pkLen_le prepared)))
-      (kKey.sub_right (Region.sub_prefix (pkLen_le prepared))) (by have := pkLen_le (p := p) prepared; omega)
+      (kKey.sub_right (Region.sub_prefix (pkLen_le prepared))) (by have := pkLen_le (p := p) prepared; omega_using [nKey, this])
   have es : ∀ {g m₀} {a a1 : State}, Ctx L g m₀ a → Moved verifyArgs a a1 →
       bytesAt a1.mem (State.addr L.sig) p.sigLen = bytesAt m₀ (State.addr L.sig) p.sigLen :=
     fun c f => by
       rw [f.2.mem]
-      exact c.bytesAt_eq F.xSig F.kSig (by have := F.nSig; omega)
+      exact c.bytesAt_eq F.xSig F.kSig (by have := F.nSig; omega_using [this])
   have eμ : ∀ {a a1 : State}, Moved verifyArgs a a1 →
       bytesAt a1.mem (State.addr (L.X32 + BitVec.ofNat 32 840)) 64 = bytesAt a.mem L.MU 64 :=
     fun f => by rw [f.2.mem, mu_eq hL]
@@ -246,7 +246,7 @@ theorem cAgree {x y a b : State} (hx : CPre p prepared x) (hy : CPre p prepared 
     {n : Nat} (hn : n ≤ 16) : VG.Arm.Taint.Agree (argTaint [] n) a b := by
   have w : ∀ {z c : State}, CPre p prepared z → c.sp = z.sp ∧ c.wr = z.wr ∧ c.mem = z.mem →
       c.sp.toNat + n ≤ 2 ^ 32 ∧ ∀ r ∈ c.wr, Region.Disjoint ⟨State.addr c.sp, n⟩ r := fun {z c} hz hc => by
-    refine ⟨by rw [hc.1]; have := hz.spA; omega, fun r hr => ?_⟩
+    refine ⟨by rw [hc.1]; have := hz.spA; omega_using [hn, this], fun r hr => ?_⟩
     rw [hc.2.1, hz.wr] at hr
     have hs : Region.Sub ⟨State.addr c.sp, n⟩ (rArgs z 16) := by
       simp only [rArgs, stackArgAddr0, hc.1]; exact Region.sub_prefix hn
@@ -255,13 +255,13 @@ theorem cAgree {x y a b : State} (hx : CPre p prepared x) (hy : CPre p prepared 
     exact (hz.scrArgs.sub_right hs).symm
   have hsp : a.sp = b.sp := by rw [ha.1, hb.1, hpub.sp]
   refine agree_argTaint (fun r hr => by simp at hr) hsp (w hx ha) (w hy hb) fun k hk => ?_
-  exact argMem_of (s₁ := a) (s₂ := b) (j := 4) hsp (by rw [ha.1]; have := hx.spA; omega) (fun i hi => by
+  exact argMem_of (s₁ := a) (s₂ := b) (j := 4) hsp (by rw [ha.1]; have := hx.spA; omega_using [this]) (fun i hi => by
     simp only [stackArg, stackArgAddr, ha.1, hb.1, ha.2.2, hb.2.2]
-    rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3) with rfl | rfl | rfl | rfl
+    rcases (by omega_using [hi] : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3) with rfl | rfl | rfl | rfl
     · exact hpub.a0
     · exact hpub.a1
     · exact hpub.a2
-    · exact hpub.a3) k (by omega)
+    · exact hpub.a3) k (by omega_using [hn, hk])
 
 /-- The entry states of two runs: the precondition and the public data. -/
 abbrev CP2 (p : Params) (prepared : Bool) (x y : State) : Prop :=
@@ -284,10 +284,10 @@ theorem verifyMessageCached_ct {n : String} {c : Prog isa} (hV : VerifyFn p prep
     (c := .block [.ldrSp .r12 0, .mov .r12 (.shifted .r12 .lsr 8), .cmp .r12 (.imm 0)])
     (argRel [] 4 (fun a b ⟨x, y, hxy, e₁, e₂⟩ => by
       subst e₁ e₂
-      exact cAgree hxy.1 hxy.2.1 hxy.2.2 ⟨rfl, rfl, rfl⟩ ⟨rfl, rfl, rfl⟩ (by omega))
+      exact cAgree hxy.1 hxy.2.1 hxy.2.2 ⟨rfl, rfl, rfl⟩ ⟨rfl, rfl, rfl⟩ (by omega_using []))
       chk_taint)
     fun x y a b hxy e₁ e₂ => by
-      subst e₁ e₂; exact ⟨chk_ok (hxy.1.args (by omega)), chk_ok (hxy.2.1.args (by omega))⟩
+      subst e₁ e₂; exact ⟨chk_ok (hxy.1.args (by omega_using [])), chk_ok (hxy.2.1.args (by omega_using []))⟩
   refine RelCT.seq hchk (RelCT.ite (fun a b ⟨x, y, hxy, f₁, f₂⟩ => by
     rw [f₁.2, f₂.2, hxy.2.2.a0]) ?_ ?_)
   · exact taintRel [] (fun _ _ _ r hr => by simp at hr) mov2_taint

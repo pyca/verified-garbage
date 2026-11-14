@@ -19,22 +19,22 @@ theorem codeAt_ok {s : State} {base : Addr} {size k src : Nat} (scratch : Scr s 
         (if uniform then val32 s.mem base src k else (val32 s.mem base src k ||| 2) % 2 ^ (32 * k - 1)) ∧
       Outside base src (4 * k) s.mem t.mem ∧ Keeps [.ecx] s t := by
   unfold codeAt
-  refine WP.block_append (WP.mono (low_ok (uniform := uniform) scratch (by omega) mask) fun a ⟨low, Oa, Ka⟩ => ?_)
-  refine WP.mono (high_ok (uniform := uniform) (scratch.of_keeps Ka (by decide)) (by omega)
+  refine WP.block_append (WP.mono (low_ok (uniform := uniform) scratch (by omega_using [positive, fit]) mask) fun a ⟨low, Oa, Ka⟩ => ?_)
+  refine WP.mono (high_ok (uniform := uniform) (scratch.of_keeps Ka (by decide)) (by omega_using [positive, fit])
     (by rw [Ka.1 .eax (by decide)]; exact mask)) fun t ⟨top, Ot, Kt⟩ => ?_
-  have lowSame : w32 t.mem base src = w32 a.mem base src := Ot.w32 (by omega) (by have := scratch.nowrap; omega)
+  have lowSame : w32 t.mem base src = w32 a.mem base src := Ot.w32 (by omega_using [positive]) (by have := scratch.nowrap; omega_using [fit, this])
   have topSame : w32 a.mem base (src + 4 * k - 4) = w32 s.mem base (src + 4 * k - 4) :=
-    Oa.w32 (by omega) (by have := scratch.nowrap; omega)
-  refine ⟨?_, (Oa.mono (by omega) (by omega)).trans (Ot.mono (by omega) (by omega)), Ka.trans Kt⟩
+    Oa.w32 (by omega_using [positive]) (by have := scratch.nowrap; omega_using [fit, this])
+  refine ⟨?_, (Oa.mono (by omega_using []) (by omega_using [positive])).trans (Ot.mono (by omega_using [positive]) (by omega_using [positive])), Ka.trans Kt⟩
   cases uniform
   · simp at low top
     change val32 t.mem base src k = (val32 s.mem base src k ||| 2) % 2 ^ (32 * k - 1)
-    apply VG.Proof.RsaKeyGen.val32_witness_fallback (by omega)
+    apply VG.Proof.RsaKeyGen.val32_witness_fallback (by omega_using [positive])
     · rw [lowSame, low]
-    · rw [show src + 4 * (k - 1) = src + 4 * k - 4 by omega, top, topSame]
+    · rw [show src + 4 * (k - 1) = src + 4 * k - 4 by omega_using [positive], top, topSame]
     · intro j first last
-      exact (Ot.w32 (by omega) (by have := scratch.nowrap; omega)).trans
-        (Oa.w32 (by omega) (by have := scratch.nowrap; omega))
+      exact (Ot.w32 (by omega_using [last]) (by have := scratch.nowrap; omega_using [fit, last, this])).trans
+        (Oa.w32 (by omega_using [first]) (by have := scratch.nowrap; omega_using [fit, last, this]))
   · simp at low top
     change val32 t.mem base src k = val32 s.mem base src k
     apply val32_congr
@@ -44,9 +44,9 @@ theorem codeAt_ok {s : State} {base : Addr} {size k src : Nat} (scratch : Scr s 
       simpa only [Nat.mul_zero, Nat.add_zero] using lowSame.trans low
     · by_cases last : j = k - 1
       · subst j
-        rw [show src + 4 * (k - 1) = src + 4 * k - 4 by omega]
+        rw [show src + 4 * (k - 1) = src + 4 * k - 4 by omega_using [positive]]
         exact top.trans topSame
-      · exact (Ot.w32 (by omega) (by have := scratch.nowrap; omega)).trans
-          (Oa.w32 (by omega) (by have := scratch.nowrap; omega))
+      · exact (Ot.w32 (by omega_using [last]) (by have := scratch.nowrap; omega_using [fit, hj, this])).trans
+          (Oa.w32 (by omega_using [first]) (by have := scratch.nowrap; omega_using [fit, hj, this]))
 
 end VG.Proof.RsaKeyGen.X86.WitnessFallback

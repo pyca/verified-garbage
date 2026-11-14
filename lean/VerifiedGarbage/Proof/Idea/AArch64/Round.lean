@@ -48,7 +48,7 @@ theorem KeyOk.pair {z : Spec.Idea.Schedule} {s : State} (h : KeyOk z s) {k : Nat
         z.getD (2 * k) 0 ∧
       (((s.mem.readW (s.gpr .x0 + BitVec.ofNat 64 (4 * k)) 32).setWidth 64) >>> 16).setWidth 16 =
         z.getD (2 * k + 1) 0 := by
-  refine ⟨CallLay.inRegions_sub h.read (by omega) (by decide), ?_, ?_⟩
+  refine ⟨CallLay.inRegions_sub h.read (by omega_using [hk]) (by decide), ?_, ?_⟩
   · have e := subkey_read32 s.mem (s.gpr .x0) hk (h := 0) (by decide)
     rw [Nat.mul_zero, BitVec.ushiftRight_zero, Nat.add_zero, h.sched] at e
     exact e
@@ -79,19 +79,19 @@ theorem loads_run (s : State) (j : Nat) (hj : j < 8) (z : Spec.Idea.Schedule) (h
       (s'.gpr .x13).setWidth 16 = z.getD (6 * j + 4) 0 ∧
       ((s'.gpr .x13) >>> 16).setWidth 16 = z.getD (6 * j + 5) 0 ∧
       Keep [.x8, .x9, .x13] s s' := by
-  have p₀ := hk.pair (k := 3 * j) (by omega)
-  have p₁ := hk.pair (k := 3 * j + 1) (by omega)
-  have p₂ := hk.pair (k := 3 * j + 2) (by omega)
-  rw [show 4 * (3 * j) = 12 * j by omega, show 2 * (3 * j) + 1 = 6 * j + 1 by omega,
-    show 2 * (3 * j) = 6 * j by omega] at p₀
-  rw [show 4 * (3 * j + 1) = 12 * j + 4 by omega, show 2 * (3 * j + 1) + 1 = 6 * j + 3 by omega,
-    show 2 * (3 * j + 1) = 6 * j + 2 by omega] at p₁
-  rw [show 4 * (3 * j + 2) = 12 * j + 8 by omega, show 2 * (3 * j + 2) + 1 = 6 * j + 5 by omega,
-    show 2 * (3 * j + 2) = 6 * j + 4 by omega] at p₂
+  have p₀ := hk.pair (k := 3 * j) (by omega_using [hj])
+  have p₁ := hk.pair (k := 3 * j + 1) (by omega_using [hj])
+  have p₂ := hk.pair (k := 3 * j + 2) (by omega_using [hj])
+  rw [show 4 * (3 * j) = 12 * j by omega_using [], show 2 * (3 * j) + 1 = 6 * j + 1 by omega_using [],
+    show 2 * (3 * j) = 6 * j by omega_using []] at p₀
+  rw [show 4 * (3 * j + 1) = 12 * j + 4 by omega_using [], show 2 * (3 * j + 1) + 1 = 6 * j + 3 by omega_using [],
+    show 2 * (3 * j + 1) = 6 * j + 2 by omega_using []] at p₁
+  rw [show 4 * (3 * j + 2) = 12 * j + 8 by omega_using [], show 2 * (3 * j + 2) + 1 = 6 * j + 5 by omega_using [],
+    show 2 * (3 * j + 2) = 6 * j + 4 by omega_using []] at p₂
   simp only [runBlock_cons, runStep_some, runBlock_nil, exec, addr, State.load, isa, Size.bytes,
-    show (12 * j) % 4 = 0 by omega, show 12 * j < 4096 * 4 by omega,
-    show (12 * j + 4) % 4 = 0 by omega, show 12 * j + 4 < 4096 * 4 by omega,
-    show (12 * j + 8) % 4 = 0 by omega, show 12 * j + 8 < 4096 * 4 by omega, and_self, ↓reduceIte,
+    show (12 * j) % 4 = 0 by omega_using [], show 12 * j < 4096 * 4 by omega_using [hj],
+    show (12 * j + 4) % 4 = 0 by omega_using [], show 12 * j + 4 < 4096 * 4 by omega_using [hj],
+    show (12 * j + 8) % 4 = 0 by omega_using [], show 12 * j + 8 < 4096 * 4 by omega_using [hj], and_self, ↓reduceIte,
     Option.bind_some, RegUpd.gpr_write, RegUpd.mem_write, RegUpd.rd_write, RegUpd.wr_write,
     reduceCtorEq, p₀.1, p₁.1, p₂.1, Option.map_some, Option.some.injEq, exists_eq_left']
   refine ⟨p₀.2.1, p₀.2.2, p₁.2.1, p₁.2.2, p₂.2.1, p₂.2.2, ?_⟩

@@ -110,13 +110,13 @@ theorem qCandidate_ok {G1 G256 : Impl.Pbkdf2.Md.X86_64.Stream}
   let seed := Spec.Rsa.bytesAt s.mem rp len
   have hhash : (Spec.Dsa.seedHash (8 * len) seed).length = len := by
     rw [← hb, bytesAt_length]
-  have hn : 8 * len = 160 ∨ 8 * len = 256 := by omega
+  have hn : 8 * len = 160 ∨ 8 * len = 256 := by omega_using [hlen]
   have hread : ∀ i < (Spec.Dsa.seedHash (8 * len) seed).length,
       InRegions (v.rd ++ v.wr) (off (off S oDig) i) 1 := by
     intro i hi
     rw [hhash] at hi
     rw [hk.2.1, hk.2.2, off_off]
-    exact Lu.sld8 (by unfold oDig oRsa; omega)
+    exact Lu.sld8 (by unfold oDig oRsa; omega_using [hlen, hi])
   have hbytes : ∀ i < (Spec.Dsa.seedHash (8 * len) seed).length,
       v.mem (off (off S oDig) i) = (Spec.Dsa.seedHash (8 * len) seed).getD i 0 := by
     intro i hi
@@ -140,7 +140,7 @@ theorem qCandidate_ok {G1 G256 : Impl.Pbkdf2.Md.X86_64.Stream}
     exact (kt.gpr hr1).trans ((hk.gpr hr2).trans (csu r hr))
   · intro a ha
     rw [hft a (fun i hi he => ha ⟨op, len⟩ (by simp) (he ▸
-      Offset.contains_base op (by rw [hhash] at hi; omega) (by omega))), hm]
+      Offset.contains_base op (by rw [hhash] at hi; omega_using [hi]) (by omega_using [hlen, hhash, hi]))), hm]
     exact hfu a (fun r hr => ha r (by simp_all))
   · exact lay_of_rep Lu Ru Rt rfl
       ((kt.gpr (by decide)).trans (hk.gpr (by decide))) (kt.2.2.trans hk.2.2)

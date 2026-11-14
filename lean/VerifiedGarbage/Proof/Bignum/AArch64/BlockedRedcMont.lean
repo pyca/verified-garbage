@@ -35,7 +35,7 @@ theorem guarded_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64}
       wv t.mem B (slot w o) w * 2 ^ (64 * w) % wv s.mem B (slot w aN) w =
         wv s.mem B (slot w a) w * wv s.mem B (slot w a) w % wv s.mem B (slot w aN) w ∧
       Arrays B w [aAcc, aTmp, o] s.mem t.mem ∧ Keep mmRegs s t := by
-  refine WP.seq (WP.mono (guard_ok hg.scr hg.x0 hg.hdr hZ (by omega))
+  refine WP.seq (WP.mono (guard_ok hg.scr hg.x0 hg.hdr hZ (by omega_using [hw]))
     fun u ⟨⟨hm, h3, h4⟩, ku⟩ => ?_)
   have hgu : Good u B Z w minv :=
     ⟨hg.scr.congr ku.wr, (ku.gpr .x0 (by decide)).trans hg.x0, hm ▸ hg.hdr⟩
@@ -50,11 +50,11 @@ theorem guarded_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64}
         Arrays B w [aAcc, aTmp, o] s.mem t.mem ∧ Keep mmRegs s t from by
         rw [hm] at ht hv hf
         exact ⟨hgt, ht, hv, hf, (ku.trans kt).mono (by decide)⟩)
-  have hdiv : w / 16 < 2 ^ 64 := by omega
-  have hrem : w % 8 < 2 ^ 64 := by omega
+  have hdiv : w / 16 < 2 ^ 64 := by omega_using [hw]
+  have hrem : w % 8 < 2 ^ 64 := by omega_using []
   by_cases hfast : 16 ≤ w
   · refine WP.ite true (by rw [eval_nonzero, h3, ne_zero_iff, BitVec.toNat_ofNat,
-      Nat.mod_eq_of_lt hdiv, decide_eq_true (show w / 16 ≠ 0 by omega)]) (fun _ => ?_) (by simp)
+      Nat.mod_eq_of_lt hdiv, decide_eq_true (show w / 16 ≠ 0 by omega_using [hfast])]) (fun _ => ?_) (by simp)
     by_cases hmod : w % 8 = 0
     · refine WP.ite true (by rw [eval_zero, h4, hmod]; rfl) (fun _ => ?_) (by simp)
       refine WP.mono (square_ok hgu.scr hgu.x0 hgu.hdr hZ hfast hw hmod
@@ -64,7 +64,7 @@ theorem guarded_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64}
         hf.hdr hg.hdr⟩, ht, hv, hf, (ku.trans kt).mono (by decide)⟩
     · exact WP.ite false (by rw [eval_zero, h4, eq_zero_iff, BitVec.toNat_ofNat,
         Nat.mod_eq_of_lt hrem, decide_eq_false hmod]) (by simp) (fun _ => hSlow)
-  · exact WP.ite false (by rw [eval_nonzero, h3, show w / 16 = 0 by omega]; rfl)
+  · exact WP.ite false (by rw [eval_nonzero, h3, show w / 16 = 0 by omega_using [hfast]]; rfl)
       (by simp) (fun _ => hSlow)
 
 end VG.Proof.Bignum.AArch64.BlockedRedc

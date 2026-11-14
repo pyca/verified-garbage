@@ -123,7 +123,7 @@ theorem roundPair_ok {s : State} (h : Room s) (h₁ : Apart s (sl s keySlot))
     wr₃.trans (wr₂.trans wr₁), c₃.trans (c₂.trans c₁), sp₃.trans (sp₂.trans sp₁), ?_⟩
   · rw [roundPair_eq]; exact runBlock_cat_some (runBlock_cat_some run₁ run₂) run₃
   · simp only [words]
-    rw [sl₃ _ (by unfold stSlot; omega) (by unfold stSlot roundSlot; omega)]
+    rw [sl₃ _ (by unfold stSlot; omega_using [hx]) (by unfold stSlot roundSlot; omega_using [hx])]
     rw [show sl s₂ (stSlot x) = words s₂ x from rfl, w₂ x hx, hk₁, kread]
     exact roundW_congr .ab _ w₁ x hx
   · rw [sl₃ keySlot (by decide) (by decide), key₂, hk₁, step₁]
@@ -191,9 +191,9 @@ theorem pairLoop_ok {s₀ : State} (hk : ∀ r < 16,
   let a₀ := sl s₀ keySlot
   let δ := sl s₀ stepSlot
   have hδ : sl s stepSlot = δ := hs.misc _ (by decide) (by decide) (by decide) (by decide)
-  have n16 : 2 * (8 - m) + 1 < 16 := by have := hs.pos; omega
+  have n16 : 2 * (8 - m) + 1 < 16 := by have := hs.pos; omega_using [this]
   have a₁ : Apart s (sl s keySlot) := by
-    rw [hs.key]; exact (hk _ (by omega)).congr hs.rcx hs.rd hs.wr
+    rw [hs.key]; exact (hk _ (by omega_using [n16])).congr hs.rcx hs.rd hs.wr
   have a₂ : Apart s (sl s keySlot + sl s stepSlot) := by
     rw [hs.key, hδ, kptr_succ]; exact (hk _ n16).congr hs.rcx hs.rd hs.wr
   obtain ⟨s', run', w', key', cnt', zf', misc', rd', wr', c', sp', f'⟩ := roundPair_ok hs.room a₁ a₂
@@ -205,7 +205,7 @@ theorem pairLoop_ok {s₀ : State} (hk : ∀ r < 16,
   have k1 : (s.mem.readW (sl s keySlot) 64).setWidth 48 =
       keyAt s₀.mem a₀ δ (2 * (8 - m)) := by
     rw [hs.key]; simp only [keyAt]
-    rw [((hk _ (by omega)).readW hs.frame)]
+    rw [((hk _ (by omega_using [n16])).readW hs.frame)]
   have k2 : (s.mem.readW (sl s keySlot + sl s stepSlot) 64).setWidth 48 =
       keyAt s₀.mem a₀ δ (2 * (8 - m) + 1) := by
     rw [hs.key, hδ, kptr_succ]; simp only [keyAt]
@@ -229,8 +229,8 @@ theorem pairLoop_ok {s₀ : State} (hk : ∀ r < 16,
     show s'.zf.map (!·) = some false
     rw [zf', cntv]; rfl
   · right
-    refine ⟨?_, m - 1, by omega, ⟨room', c'.trans hs.rcx, sp'.trans hs.rsp, rd'.trans hs.rd,
-      wr'.trans hs.wr, by omega, by have := hs.le; omega, ?_, ?_, ?_, misc'', frame'⟩⟩
+    refine ⟨?_, m - 1, by omega_using [n16], ⟨room', c'.trans hs.rcx, sp'.trans hs.rsp, rd'.trans hs.rd,
+      wr'.trans hs.wr, by omega_using [n16, h1], by have := hs.le; omega_using [this], ?_, ?_, ?_, misc'', frame'⟩⟩
     · show s'.zf.map (!·) = some true
       rw [zf', cntv]
       have : (BitVec.ofNat 64 (m - 1) == 0) = false := by
@@ -240,15 +240,15 @@ theorem pairLoop_ok {s₀ : State} (hk : ∀ r < 16,
         have := congrArg BitVec.toNat h0
         have z : (0 : BitVec 64).toNat = 0 := rfl
         simp only [BitVec.toNat_ofNat] at this
-        rw [z, Nat.mod_eq_of_lt (by omega)] at this
+        rw [z, Nat.mod_eq_of_lt (by omega_using [hm])] at this
         have := hs.pos
-        omega
+        omega_arith
       rw [this]; rfl
-    · have e : 8 - (m - 1) = 8 - m + 1 := by have := hs.le; omega
+    · have e : 8 - (m - 1) = 8 - m + 1 := by have := hs.le; omega_using [n16, this]
       rw [e]; exact words'
     · rw [key', hs.key, hδ, kptr_succ, kptr_succ]
       congr 3
-      have := hs.le; omega
+      have := hs.le; omega_using [n16, this]
     · rw [cnt', cntv]
 
 /-! ## The start of a pass -/
@@ -436,7 +436,7 @@ theorem passStart_ok (d : Spec.TripleDes.Direction) {p : Nat} (hp : 1 ≤ p ∧ 
       exact branch t₂ ht₂ sl₂ c₂ sp₂ rd₂ wr₂ f₂
     · intro h2
       have : p = 1 := by have : p ≠ 2 := by simpa using h2
-                         omega
+                         omega_using [hp, hp3, this]
       subst this
       exact branch t₂ ht₂ sl₂ c₂ sp₂ rd₂ wr₂ f₂
 
@@ -450,7 +450,7 @@ theorem pairs_keys_congr {w : Nat} {key key' : Nat → BitVec 48} (n : Nat)
   | zero => rfl
   | succ n ih =>
     simp only [pairs]
-    rw [ih (fun r hr => hk r (by omega)), hk (2 * n) (by omega), hk (2 * n + 1) (by omega)]
+    rw [ih (fun r hr => hk r (by omega_using [hr])), hk (2 * n) (by omega_using []), hk (2 * n + 1) (by omega_using [])]
 
 theorem partner_lt : ∀ k < 128, ∀ y, partner k = some y → y < 64 := by
   intro k hk y h
@@ -465,7 +465,7 @@ theorem swapW_congr {w : Nat} {W W' : Nat → BitVec w} (hW : ∀ y < 64, W y = 
   simp only [swapW]
   rcases hp : partner x with _ | y
   · exact hW x hx
-  · exact hW y (partner_lt x (by omega) y hp)
+  · exact hW y (partner_lt x (by omega_using [hx]) y hp)
 
 /-- The first key of pass `p` (counted down from 3) and its step. -/
 def passA (d : Spec.TripleDes.Direction) (p : Nat) (sched : Addr) : Addr :=
@@ -518,8 +518,8 @@ theorem pass_ok (d : Spec.TripleDes.Direction) {p : Nat} (hp : 1 ≤ p ∧ p ≤
     simp only [passA, passD] at e
     rw [e]; rfl
   have state₁ : ∀ x < 64, words s₁ x = words s x := fun x hx =>
-    p₁.misc _ (by unfold stSlot; omega) (by unfold stSlot keySlot; omega)
-      (by unfold stSlot stepSlot; omega) (by unfold stSlot roundSlot; omega)
+    p₁.misc _ (by unfold stSlot; omega_using [hx]) (by unfold stSlot keySlot; omega_using [hx])
+      (by unfold stSlot stepSlot; omega_using [hx]) (by unfold stSlot roundSlot; omega_using [hx])
   have high : ∀ x < 128, 72 ≤ x → x ≠ keySlot → x ≠ roundSlot → x ≠ passSlot →
       sl s₄ x = sl s₁ x := by
     intro x hx hlo hkx hrx hpx
@@ -532,11 +532,11 @@ theorem pass_ok (d : Spec.TripleDes.Direction) {p : Nat} (hp : 1 ≤ p ∧ p ≤
     wr₄.trans (wr₃.trans (p₂.wr.trans p₁.wr)), fun x hx => ?_, ?_, ?_,
     fun x hx hlo a b c e => ?_, ?_⟩
   · simp only [words]
-    rw [misc₄ _ (by unfold stSlot; omega) (by unfold stSlot passSlot; omega)]
+    rw [misc₄ _ (by unfold stSlot; omega_using [hx]) (by unfold stSlot passSlot; omega_using [hx])]
     rw [show sl s₃ (stSlot x) = words s₃ x from rfl, sw₃ x hx]
     apply swapW_congr _ x hx
     intro y hy
-    rw [p₂.words y hy, pairs_keys_congr 8 (fun r hr => keys r (by omega))]
+    rw [p₂.words y hy, pairs_keys_congr 8 (fun r hr => keys r (by omega_using [hr]))]
     exact pairs_congr _ 8 state₁ y hy
   · rw [cnt₄, pass₃]
   · rw [zf₄, pass₃]

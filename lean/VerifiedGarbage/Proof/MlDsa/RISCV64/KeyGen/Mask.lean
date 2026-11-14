@@ -41,7 +41,7 @@ theorem coeffAt_writeW32 (m : Mem) (q : Addr) {i j : Nat} (hi : i < 256) (hj : j
   unfold coeffAt
   split
   · subst j; exact Mem.readW_writeW_self32 m _ v
-  · exact Mem.readW_writeW_sep (Offset.sep q (by omega) (by omega) (by omega)) (by decide)
+  · exact Mem.readW_writeW_sep (Offset.sep q (by omega_arith) (by omega_using [hi]) (by omega_using [hj])) (by decide)
 
 /-- A coefficient masked with `-r`, for `r` 0 or 1. -/
 theorem and_mask {r : BitVec 64} (hr : r = 0 ∨ r = 1) (x : BitVec 32) :
@@ -51,7 +51,7 @@ theorem and_mask {r : BitVec 64} (hr : r = 0 ∨ r = 1) (x : BitVec 32) :
   · rw [ifp rfl, show (0 : BitVec 64) - 1 = BitVec.allOnes 64 by decide, BitVec.and_allOnes]
     apply BitVec.eq_of_toNat_eq
     have := x.isLt
-    simp only [BitVec.toNat_setWidth]; omega
+    simp only [BitVec.toNat_setWidth]; omega_using []
 
 /-! ## One coefficient -/
 
@@ -85,13 +85,13 @@ structure MaskInv (P M : Addr) (s₀ : State) (k : Nat) (s : State) : Prop where
 theorem mask_step {P M : Addr} {s₀ : State} (cw : Covers [reg P 1024] s₀.wr) (alP : P.toNat % 4 = 0)
     {k : Nat} (hk : k < 256) {s : State} (h : MaskInv P M s₀ k s) :
     WP isa (.block maskBody) s fun s' => MaskInv P M s₀ (k + 1) s' ∧ (s'.gpr .a2 != 0) = decide (k + 1 ≠ 256) := by
-  have cP : (reg P 1024).Contains (P + BitVec.ofNat 64 (4 * k)) 4 := Offset.contains_base _ (by omega) (by omega)
+  have cP : (reg P 1024).Contains (P + BitVec.ofNat 64 (4 * k)) 4 := Offset.contains_base _ (by omega_using [hk]) (by omega_using [hk])
   have ow : InRegions s.wr (P + BitVec.ofNat 64 (4 * k)) 4 := by
     rw [h.wr]; exact cw _ _ ⟨_, List.mem_singleton_self _, cP⟩
   have ir : InRegions (s.rd ++ s.wr) (P + BitVec.ofNat 64 (4 * k)) 4 :=
     let ⟨r, hr, hc⟩ := ow; ⟨r, List.mem_append_right _ hr, hc⟩
   have al : (P + BitVec.ofNat 64 (4 * k)).toNat % 4 = 0 := by
-    rw [BitVec.toNat_add, BitVec.toNat_ofNat]; omega
+    rw [BitVec.toNat_add, BitVec.toNat_ofNat]; omega_using [alP]
   refine WP.mono (maskBody_ok h.a1 h.a2 h.t2 ir ow al)
     fun s' ⟨r4, r5, r12, m, rd, wr, sp, cs⟩ => ⟨⟨?_, ?_, r12, fun r hr => (cs r hr).trans (h.cs r hr),
       rd.trans h.rd, wr.trans h.wr, sp.trans h.sp, ?_, fun t ht => ?_⟩, ?_⟩
@@ -106,8 +106,8 @@ theorem mask_step {P M : Addr} {s₀ : State} (cw : Covers [reg P 1024] s₀.wr)
       rw [ifp rfl, ifp (Nat.lt_succ_self _), ← this]; rfl
     · rw [ifn e, h.co t ht]
       by_cases htk : t < k
-      · rw [ifp htk, ifp (by omega)]
-      · rw [ifn htk, ifn (by omega)]
+      · rw [ifp htk, ifp (by omega_using [htk])]
+      · rw [ifn htk, ifn (by omega_using [e, htk])]
   · rw [r5, show (1 : BitVec 64) = BitVec.ofNat 64 1 from rfl, count_sub hk]; exact count_nz hk (by decide)
 
 theorem mask_loop {P M : Addr} {s₀ : State} (cw : Covers [reg P 1024] s₀.wr) (alP : P.toNat % 4 = 0)

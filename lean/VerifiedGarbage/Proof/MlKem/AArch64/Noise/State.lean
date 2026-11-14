@@ -29,7 +29,7 @@ theorem padded_A0 {Bs : List Byte} (h : Bs.length = 33) :
 theorem byteOf_A0 {Bs : List Byte} (h : Bs.length = 33) {q : Nat} (hq : q < 200) :
     byteOf (A0 Bs) q = if q < 33 then Bs.getD q 0 else if q = 33 then 0x1f else if q = 135 then 0x80 else 0 := by
   have hz : byteOf Spec.Sha3.zero q = 0 := by
-    simp only [byteOf, Spec.Sha3.zero, getElem!_pos (Vector.replicate 25 (0 : BitVec 64)) (q / 8) (by omega),
+    simp only [byteOf, Spec.Sha3.zero, getElem!_pos (Vector.replicate 25 (0 : BitVec 64)) (q / 8) (by omega_using [hq]),
       Vector.getElem_replicate]
     apply BitVec.eq_of_getLsbD_eq; intro j _; simp
   have ha : Spec.Sha3.absorb 136 Bs = Spec.Sha3.zero := by simp [Spec.Sha3.absorb, h]
@@ -37,13 +37,13 @@ theorem byteOf_A0 {Bs : List Byte} (h : Bs.length = 33) {q : Nat} (hq : q < 200)
     rw [Rep, ha, byteOf_xorBytes _ _ hq, hz, h, show 136 * (33 / 136) = 0 from rfl, List.drop_zero]
     exact BitVec.zero_xor
   have hd : ∀ q, 33 ≤ q → Bs.getD q 0 = 0 := fun q hq' => by
-    rw [List.getD, List.getElem?_eq_none (by omega)]; rfl
+    rw [List.getD, List.getElem?_eq_none (by omega_using [h, hq'])]; rfl
   rw [A0, byteOf_xorByte _ _ _ hq, byteOf_xorByte _ _ _ hq, hr]
   by_cases e1 : q < 33
-  · rw [ite_eq_right (show ¬ q = 135 by omega), ite_eq_right (show ¬ q = 33 by omega), ite_eq_left e1]
-  · rw [ite_eq_right e1, hd q (by omega)]
+  · rw [ite_eq_right (show ¬ q = 135 by omega_using [e1]), ite_eq_right (show ¬ q = 33 by omega_using [e1]), ite_eq_left e1]
+  · rw [ite_eq_right e1, hd q (by omega_using [e1])]
     by_cases e2 : q = 33
-    · rw [ite_eq_right (show ¬ q = 135 by omega), ite_eq_left e2, ite_eq_left e2]; exact BitVec.zero_xor
+    · rw [ite_eq_right (show ¬ q = 135 by omega_using [e2]), ite_eq_left e2, ite_eq_left e2]; exact BitVec.zero_xor
     · rw [ite_eq_right e2, ite_eq_right e2]
       by_cases e3 : q = 135
       · rw [ite_eq_left e3, ite_eq_left e3]; exact BitVec.zero_xor
@@ -59,7 +59,7 @@ theorem prf_get {seed : List Byte} (hs : seed.length = 32) (nonce : Byte)
   change (squeeze 136 (padded 136 shakeSuffix (seed ++ [nonce])) 128).getD i 0 = _
   rw [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem (by rw [Proof.Sha3.length_squeeze (by decide) (by decide)]; exact hi), Option.getD_some]
   rw [Proof.Sha3.squeeze_getElem (by decide) (by decide) _ hi, padded_A0 hlen,
-    show i / 136 = 0 by omega, show i % 136 = i by omega]
+    show i / 136 = 0 by omega_using [hi], show i % 136 = i by omega_using [hi]]
   rfl
 
 end VG.Proof.MlKem.AArch64.Noise.Seed
@@ -101,7 +101,7 @@ theorem seedBytes_get (m : Mem) (p : Addr) (n j : Nat) :
       Proof.Sha3.bytesAt_length, ite_eq_right hj]
     by_cases he : j = 32
     · subst j; simp
-    · have hne : j - 32 ≠ 0 := by omega
+    · have hne : j - 32 ≠ 0 := by omega_using [hj, he]
       simp [he, hne]
 
 theorem seedState_eq (m : Mem) (p : Addr) {n : Nat} (hn : n < 256) :
@@ -110,26 +110,26 @@ theorem seedState_eq (m : Mem) (p : Addr) {n : Nat} (hn : n < 256) :
   intro j hj
   rw [Seed.byteOf_A0 (by simp [Proof.Sha3.bytesAt_length]) hj]
   unfold Proof.Sha3.byteOf
-  rw [seedState_get m p n (by omega)]
+  rw [seedState_get m p n (by omega_using [hj])]
   by_cases h32 : j < 32
-  · rw [ite_eq_left (by omega : j/8 < 4), ite_eq_left (by omega : j < 33), seedBytes_get,
+  · rw [ite_eq_left (by omega_using [h32] : j/8 < 4), ite_eq_left (by omega_using [h32] : j < 33), seedBytes_get,
       ite_eq_left h32]
     change (m.read (p+BitVec.ofNat 64 (8*(j/8))) 8).extractLsb' (8*(j%8)) 8 = _
-    rw [Mem.extractLsb'_read m _ (by omega),BitVec.add_assoc,← BitVec.ofNat_add,
-      show 8*(j/8)+j%8 = j by omega]
-  · rw [ite_eq_right (by omega : ¬ j/8 < 4)]
+    rw [Mem.extractLsb'_read m _ (by omega_using []),BitVec.add_assoc,← BitVec.ofNat_add,
+      show 8*(j/8)+j%8 = j by omega_using []]
+  · rw [ite_eq_right (by omega_using [h32] : ¬ j/8 < 4)]
     by_cases h40 : j < 40
-    · rw [ite_eq_left (by omega : j/8 = 4),tail_byte n hn (j%8) (by omega)]
-      rcases (show j = 32 ∨ j = 33 ∨ 34 ≤ j by omega) with h | h | h
+    · rw [ite_eq_left (by omega_using [h32, h40] : j/8 = 4),tail_byte n hn (j%8) (by omega_using [])]
+      rcases (show j = 32 ∨ j = 33 ∨ 34 ≤ j by omega_using [h32]) with h | h | h
       · subst j; rw [ite_eq_left (by decide : 32 < 33), seedBytes_get]; simp
       · subst j; simp
-      · simp (disch := omega) only [ite_eq_right]
-    · rw [ite_eq_right (by omega : ¬ j/8 = 4)]
+      · simp (disch := omega_arith) only [ite_eq_right]
+    · rw [ite_eq_right (by omega_using [h40] : ¬ j/8 = 4)]
       by_cases h16 : j/8 = 16
-      · rw [ite_eq_left h16,pad_byte (j%8) (by omega)]
+      · rw [ite_eq_left h16,pad_byte (j%8) (by omega_using [])]
         by_cases he : j = 135 <;> simp (disch := omega) only [ite_eq_left,ite_eq_right]
       · rw [ite_eq_right h16]
-        simp (disch := omega) only [ite_eq_right]
+        simp (disch := omega_arith) only [ite_eq_right]
         apply BitVec.eq_of_getLsbD_eq
         intro i hi
         simp

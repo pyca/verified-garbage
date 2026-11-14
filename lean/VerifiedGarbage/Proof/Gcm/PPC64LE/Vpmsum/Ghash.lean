@@ -101,7 +101,7 @@ theorem body_ok {s₀ s : State} (hp : Pre s₀) {i : Nat} (hi : i < nb s₀) (h
     WP isa (.block Impl.Gcm.PPC64LE.Vpmsum.body) s (Inv s₀ (i+1)) := by
   have hin : InRegions (s.rd ++ s.wr) (s.gpr .r5) 16 := by
     rw [h.stable.rd, h.stable.wr, h.r5]
-    refine ⟨dR s₀, by simp [hp.rd], contains_offset (by omega) (by have := hp.nb_lt; omega)⟩
+    refine ⟨dR s₀, by simp [hp.rd], contains_offset (by omega_using [hi]) (by have := hp.nb_lt; omega_using [hi, this])⟩
   rw [Impl.Gcm.PPC64LE.Vpmsum.body]
   repeat rw [WP.block_append_iff]
   refine WP.mono (loadRev_ok A .r5 s (by decide) h.cfg.zero h.cfg.mask (by decide) hin)
@@ -145,7 +145,7 @@ theorem body_ok {s₀ s : State} (hp : Pre s₀) {i : Nat} (hi : i < nb s₀) (h
     rw [Offset.add_add]
   · simp only [RegUpd.gpr_write_self, hg, h.r6]
     change BitVec.ofNat 64 (nb s₀-i) - BitVec.ofNat 64 1 = _
-    rw [Offset.ofNat_sub_ofNat (by omega), Nat.sub_sub]
+    rw [Offset.ofNat_sub_ofNat (by omega_using [hi]), Nat.sub_sub]
   · simpa only [vpr_write, hh] using h.key
   · simpa only [vpr_write] using hy
 
@@ -194,7 +194,7 @@ theorem bulk_body_ok {s₀ s : State} (hp : Pre s₀) {h : BitVec 128} {i : Nat}
   have hr : ∀ k < 8, InRegions (s.rd ++ s.wr) (s.gpr .r5+BitVec.ofNat 64 (16*k)) 16 := by
     intro k hk
     rw [hs.stable.rd, hs.stable.wr, hs.r5, blkAddr, Offset.add_add]
-    refine ⟨dR s₀, by simp [hp.rd], contains_offset (by omega) (by have := hp.nb_lt; omega)⟩
+    refine ⟨dR s₀, by simp [hp.rd], contains_offset (by omega_using [hi, hk]) (by have := hp.nb_lt; omega_using [hi, hk, this])⟩
   refine WP.mono (packedBody_ok h s hs.cfg hs.keys hr) fun t ⟨hy,hf⟩ => ?_
   have hy' : ρ (t.vpr Y) = φ (ghashFrom (H₀ s₀) (Y₀ s₀) (blocksAt s₀.mem (dp s₀) (i+8))) := by
     rw [hkey, hs.y] at hy
@@ -223,11 +223,11 @@ theorem bulk_body_ok {s₀ s : State} (hp : Pre s₀) {h : BitVec 128} {i : Nat}
   · rw [hf.gpr]
     simp only [RegUpd.gpr_write, reduceCtorEq, ite_false, ite_true, hs.r5, blkAddr]
     change dp s₀+BitVec.ofNat 64 (16*i)+BitVec.ofNat 64 128 = _
-    rw [Offset.add_add, show 16*i+128=16*(i+8) by omega]
+    rw [Offset.add_add, show 16*i+128=16*(i+8) by omega_using []]
   · rw [hf.gpr]
     simp only [RegUpd.gpr_write_self, hs.r6]
     change BitVec.ofNat 64 (nb s₀-i)-BitVec.ofNat 64 8 = _
-    rw [Offset.ofNat_sub_ofNat (by omega), Nat.sub_sub]
+    rw [Offset.ofNat_sub_ofNat (by omega_using [hi]), Nat.sub_sub]
   · intro j hj
     have f : keyLow j ∉ bulkWritten ∧ keyHigh j ∉ bulkWritten := by
       have f : ∀ j : Fin 4, keyLow j ∉ bulkWritten ∧ keyHigh j ∉ bulkWritten := by decide
@@ -254,12 +254,12 @@ theorem loop_ok {s₀ s : State} (hp : Pre s₀) {start : Nat} (hpos : start < n
       have hne : BitVec.ofNat 64 (nb s₀-(i+1)) ≠ 0 := by
         intro hz
         have hn := congrArg BitVec.toNat hz
-        rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := hp.nb_lt; omega)] at hn
+        rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := hp.nb_lt; omega_using [this])] at hn
         have hn0 : (0 : BitVec 64).toNat = 0 := rfl
         rw [hn0] at hn
-        omega
+        omega_using [hi, hl, hn]
       exact ⟨he.trans (by simpa using hne),
-        nb s₀-(i+1), by omega, i+1, rfl, by omega, hu⟩
+        nb s₀-(i+1), by omega_using [hi], i+1, rfl, by omega_using [hi, hl], hu⟩
   exact WP.loop (M := isa) I step (nb s₀-start) s ⟨start, rfl, hpos, h⟩
 
 theorem Config.write10 {s : State} (h : Config s) (v : BitVec 64) : Config (s.write .r10 v) := by
@@ -333,7 +333,7 @@ theorem bulk_loop_ok {s₀ s : State} (hp : Pre s₀) {h : BitVec 128} {start : 
   refine WP.mono (step j t hj ht) fun u hu => ?_
   have hz : u.gpr .r10 = 0 ↔ nb s₀-(j+8) < 8 := by
     rw [hu.2]
-    exact quotient_zero (by have := hp.nb_lt; omega) 3
+    exact quotient_zero (by have := hp.nb_lt; omega_using [this]) 3
   have hev : eval (.nonzero .d .r10) u = some (u.gpr .r10 != 0) := by
     simp only [eval, State.read, Size.bits, BitVec.setWidth_eq]
   by_cases hlast : nb s₀-(j+8) < 8
@@ -342,8 +342,8 @@ theorem bulk_loop_ok {s₀ s : State} (hp : Pre s₀) {h : BitVec 128} {start : 
     exact ⟨hev.trans (by decide), j+8, hj, hlast, hu.1⟩
   · right
     have hne : u.gpr .r10 ≠ 0 := fun he => hlast (hz.mp he)
-    exact ⟨hev.trans (by simpa using hne), nb s₀-(j+8), by omega,
-      j+8,rfl,by omega,hu.1⟩
+    exact ⟨hev.trans (by simpa using hne), nb s₀-(j+8), by omega_using [hj],
+      j+8,rfl,by omega_using [hlast],hu.1⟩
 
 theorem bulk_ok {s₀ s : State} (hp : Pre s₀) {start : Nat}
     (hpos : start+8 ≤ nb s₀) (hs : Inv s₀ start s) :
@@ -373,7 +373,7 @@ theorem pair_step_ok {s₀ s : State} (hp : Pre s₀) {i : Nat} (hi : i+2 ≤ nb
   have hr : ∀ k < 2, InRegions (s.rd ++ s.wr) (s.gpr .r5+BitVec.ofNat 64 (16*k)) 16 := by
     intro k hk
     rw [hs.stable.rd, hs.stable.wr, hs.r5, blkAddr, Offset.add_add]
-    refine ⟨dR s₀, by simp [hp.rd], contains_offset (by omega) (by have := hp.nb_lt; omega)⟩
+    refine ⟨dR s₀, by simp [hp.rd], contains_offset (by omega_using [hi, hk]) (by have := hp.nb_lt; omega_using [hi, hk, this])⟩
   have hr0 := hr 0 (by decide)
   have hr1 := hr 1 (by decide)
   simp only [Nat.mul_zero, BitVec.add_zero, Nat.mul_one] at hr0 hr1
@@ -407,11 +407,11 @@ theorem pair_step_ok {s₀ s : State} (hp : Pre s₀) {i : Nat} (hi : i+2 ≤ nb
   · rw [hf.gpr]
     simp only [RegUpd.gpr_write, reduceCtorEq, ite_false, ite_true, hs.r5, blkAddr]
     change dp s₀+BitVec.ofNat 64 (16*i)+BitVec.ofNat 64 32 = _
-    rw [Offset.add_add, show 16*i+32=16*(i+2) by omega]
+    rw [Offset.add_add, show 16*i+32=16*(i+2) by omega_using []]
   · rw [hf.gpr]
     simp only [RegUpd.gpr_write_self, hs.r6]
     change BitVec.ofNat 64 (nb s₀-i)-BitVec.ofNat 64 2 = _
-    rw [Offset.ofNat_sub_ofNat (by omega), Nat.sub_sub]
+    rw [Offset.ofNat_sub_ofNat (by omega_using [hi]), Nat.sub_sub]
   · rw [hH]
     exact hs.key
   · rw [hH]
@@ -443,7 +443,7 @@ theorem pairLoop_ok {s₀ s : State} (hp : Pre s₀) {start : Nat} (hpos : start
   refine WP.mono (step j t hj ht) fun u hu => ?_
   have hz : u.gpr .r10 = 0 ↔ nb s₀-(j+2) < 2 := by
     rw [hu.2]
-    exact quotient_zero (by have := hp.nb_lt; omega) 1
+    exact quotient_zero (by have := hp.nb_lt; omega_using [this]) 1
   have hev : eval (.nonzero .d .r10) u = some (u.gpr .r10 != 0) := by
     simp only [eval, State.read, Size.bits, BitVec.setWidth_eq]
   by_cases hlast : nb s₀-(j+2) < 2
@@ -452,7 +452,7 @@ theorem pairLoop_ok {s₀ s : State} (hp : Pre s₀) {start : Nat} (hpos : start
     exact ⟨hev.trans (by decide), j+2, hj, hu.1.1⟩
   · right
     have hne : u.gpr .r10 ≠ 0 := fun he => hlast (hz.mp he)
-    exact ⟨hev.trans (by simpa using hne), nb s₀-(j+2), by omega, j+2, rfl, by omega, hu.1⟩
+    exact ⟨hev.trans (by simpa using hne), nb s₀-(j+2), by omega_using [hj], j+2, rfl, by omega_using [hlast], hu.1⟩
 
 theorem paired_ok {s₀ s : State} (hp : Pre s₀) {start : Nat} (hpos : start+2 ≤ nb s₀)
     (hs : Inv s₀ start s) :
@@ -489,11 +489,11 @@ theorem pairsIf_ok {s₀ s : State} (hp : Pre s₀) {pairs : Prog isa} {sh : Nat
     have h2 : ¬ nb s₀-i < 2^sh := by
       intro hlt
       rw [hs.r6] at hne
-      exact hne ((quotient_zero (by have := hp.nb_lt; omega) sh).mpr hlt)
+      exact hne ((quotient_zero (by have := hp.nb_lt; omega_using [this]) sh).mpr hlt)
     have h22 : 2 ≤ 2^sh := by
       calc 2 = 2^1 := rfl
         _ ≤ 2^sh := Nat.pow_le_pow_right (by decide) hsh
-    exact hpairs (by omega)
+    exact hpairs (by omega_using [h2, h22])
 
 theorem finish_ok {s₀ s : State} (hp : Pre s₀) {i : Nat} (hi : i ≤ nb s₀) (hs : Inv s₀ i s) :
     WP isa Impl.Gcm.PPC64LE.Vpmsum.finish s (Proof.Gcm.ghashPPC64LE.post s₀) := by
@@ -503,9 +503,9 @@ theorem finish_ok {s₀ s : State} (hp : Pre s₀) {i : Nat} (hi : i ≤ nb s₀
   refine WP.seq (WP.ite (s.gpr .r6 == 0) hev (fun he => ?_) (fun he => ?_))
   · have hz : BitVec.ofNat 64 (nb s₀-i) = 0 := hs.r6.symm.trans (by simpa only [beq_iff_eq] using he)
     have hz' := congrArg BitVec.toNat hz
-    rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := hp.nb_lt; omega)] at hz'
+    rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := hp.nb_lt; omega_using [this])] at hz'
     change nb s₀-i = 0 at hz'
-    have heq : i = nb s₀ := by omega
+    have heq : i = nb s₀ := by omega_using [hi, hz']
     subst i
     apply WP.of_runBlock
     simp only [runBlock_nil, Option.some.injEq, exists_eq_left']
@@ -549,8 +549,8 @@ theorem correct {s₀ : State} (hp : Pre s₀) :
       rw [hu.r6] at hne
       have h16 : ¬ nb s₀ < 16 := by
         intro hlt
-        exact hne ((quotient_zero (by have := hp.nb_lt; omega) 4).mpr hlt)
-      refine WP.seq (WP.mono (bulk_ok hp (by omega) hinv) fun t ⟨j,hj,ht,htk⟩ => ?_)
+        exact hne ((quotient_zero (by have := hp.nb_lt; omega_using [hlt]) 4).mpr hlt)
+      refine WP.seq (WP.mono (bulk_ok hp (by omega_using [h16]) hinv) fun t ⟨j,hj,ht,htk⟩ => ?_)
       refine WP.seq (WP.mono (pairsIf_ok hp (sh := 1) (by decide) (by decide) hj ht fun h2 => pairLoop_ok hp h2 (ht.write10 _) ?_)
         fun t ⟨j,hj,ht⟩ => finish_ok hp hj ht)
       simpa only [PairKeys, vpr_write] using htk

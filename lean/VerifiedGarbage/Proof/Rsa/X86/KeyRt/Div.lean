@@ -35,9 +35,9 @@ theorem num_of_wide {m : Mem} {w j : Nat} (hlt : wide m B w j < 2 ^ (32 * w)) : 
   rw [wide_eq] at hlt ⊢
   have topZero : w32 m B (arr w j + 4 * w) = 0 := by
     by_contra ne
-    have ge := Nat.mul_le_mul_left (2 ^ (32 * w)) (show 1 ≤ w32 m B (arr w j + 4 * w) by omega)
+    have ge := Nat.mul_le_mul_left (2 ^ (32 * w)) (show 1 ≤ w32 m B (arr w j + 4 * w) by omega_using [ne])
     simp only [Nat.mul_one] at ge
-    omega
+    omega_using [hlt, ge]
   rw [topZero, Nat.mul_zero, Nat.add_zero]
 
 /-- What the division's loop keeps after `i` steps. -/
@@ -61,7 +61,7 @@ theorem divLoop_ok {s₀ s : State} {q r d t D Q : Nat} (hq : q < N) (hr : r < N
   have wle := h.ws.ws.wle
   have fd := h.ws.ws.fit64 hd
   let I := fun k u => ∃ i, i + k = 32 * kw len ∧ 0 < k ∧ DivInv L B Z len N q r d t s₀ D Q i u
-  refine WP.loop (M := isa) I ?_ (32 * kw len) s ⟨0, by omega, by omega, h⟩
+  refine WP.loop (M := isa) I ?_ (32 * kw len) s ⟨0, by omega_using [], by omega_using [positive], h⟩
   intro k u pre
   obtain ⟨i, sum, hk, inv⟩ := pre
   refine WP.mono (divStep_ok inv.ws hq hr hd ht hqr hqd hqt hrd hrt inv.top) ?_
@@ -69,21 +69,21 @@ theorem divLoop_ok {s₀ s : State} {q r d t D Q : Nat} (hq : q < N) (hr : r < N
   have countV : v.gpr .esi = BitVec.ofNat 32 (32 * kw len - (i + 1)) := by
     rw [count, inv.count]
     change BitVec.ofNat 32 (32 * kw len - i) - BitVec.ofNat 32 1 = _
-    rw [BitVec.ofNat_sub_ofNat_of_le _ _ (by decide) (by omega)]
+    rw [BitVec.ofNat_sub_ofNat_of_le _ _ (by decide) (by omega_using [sum, hk])]
     congr 1
   have zeroV : v.zf = some (decide (i + 1 = 32 * kw len)) := by
     rw [zero, inv.count]
     change some (BitVec.ofNat 32 (32 * kw len - i) - BitVec.ofNat 32 1 == 0) = _
-    rw [BitVec.ofNat_sub_ofNat_of_le _ _ (by decide) (by omega), ofNat_beq_zero (by omega)]
-    simp only [show 32 * kw len - i - 1 = 0 ↔ i + 1 = 32 * kw len by omega]
+    rw [BitVec.ofNat_sub_ofNat_of_le _ _ (by decide) (by omega_using [sum, hk]), ofNat_beq_zero (by omega_using [wle])]
+    simp only [show 32 * kw len - i - 1 = 0 ↔ i + 1 = 32 * kw len by omega_using [sum, hk]]
   have hdr0 : ∀ e ∈ [sCy, sQb], e + 4 ≤ VG.Impl.Rsa.X86.Keys.hdr := by simp; decide
   have next : DivInv L B Z len N q r d t s₀ D Q (i + 1) v := by
-    refine ⟨hv, by omega, countV, inv.frame.trans frameV, inv.rest.trans restV, ?_, ?_, ?_⟩
-    · rw [frameV.num (by simp; omega) hdr0 fd, inv.divisor]
-    · rw [frameV.word (i := kw len) (by simp only [S]; omega) (by simp; omega) hdr0 fd, inv.top]
+    refine ⟨hv, by omega_using [sum, hk], countV, inv.frame.trans frameV, inv.rest.trans restV, ?_, ?_, ?_⟩
+    · rw [frameV.num (by simp; omega_using [hqd, hrd, hdt]) hdr0 fd, inv.divisor]
+    · rw [frameV.word (i := kw len) (by simp only [S]; omega_using []) (by simp; omega_using [hqd, hrd, hdt]) hdr0 fd, inv.top]
     · intro dPos
       have previous := inv.value dPos
-      obtain ⟨_, less, _, _, _⟩ := VG.Proof.Rsa.divIter_inv dPos boundQ i (by omega)
+      obtain ⟨_, less, _, _, _⟩ := VG.Proof.Rsa.divIter_inv dPos boundQ i (by omega_using [sum])
       rw [← previous] at less
       rw [inv.divisor] at valueV
       exact (valueV less).trans (by rw [previous]; rfl)
@@ -93,7 +93,7 @@ theorem divLoop_ok {s₀ s : State} {q r d t D Q : Nat} (hq : q < N) (hr : r < N
     change v.zf.map not = some false
     simp only [zeroV, done, decide_true, Option.map_some, Bool.not_true]
   · right
-    refine ⟨?_, k - 1, by omega, i + 1, by omega, by omega, next⟩
+    refine ⟨?_, k - 1, by omega_using [hk], i + 1, by omega_using [sum, hk], by omega_using [sum, hk, done], next⟩
     change v.zf.map not = some true
     simp only [zeroV, done, decide_false, Option.map_some, Bool.not_false]
 
@@ -113,10 +113,10 @@ theorem div_ok {s : State} (h : RtWs L s B Z len N) {q r d t : Nat} (hq : q < N)
   rw [show bits L = bits L ++ [] from (List.append_nil _).symm]
   refine bits_ok hu fun v K m e => WP.block_nil ?_
   have inv : DivInv L B Z len N q r d t s (num s.mem B (kw len) d) (num s.mem B (kw len) q) 0 v :=
-    ⟨hu.keep K (by decide) (by decide) (by rw [m]; exact Outside.refl _ _ _ _), by omega,
+    ⟨hu.keep K (by decide) (by decide) (by rw [m]; exact Outside.refl _ _ _ _), by omega_using [],
       by rw [e]; rfl, by rw [m]; exact ku.mono, (ru.mono (by decide)).trans (K.mono (by decide)),
       by rw [m, ku.num (by simpa using hrd) (by simp) fd],
-      by rw [m, ku.word (i := kw len) (by simp only [S]; omega) (by simpa using hrd) (by simp) fd, top],
+      by rw [m, ku.word (i := kw len) (by simp only [S]; omega_using []) (by simpa using hrd) (by simp) fd, top],
       fun _ => by
         rw [m, ku.num (by simpa using hqr.symm) (by simp) fq]
         exact Prod.ext zu rfl⟩
@@ -128,6 +128,6 @@ theorem div_ok {s : State} (h : RtWs L s B Z len N) {q r d t : Nat} (hq : q < N)
   refine ⟨quot, ?_⟩
   have small := Nat.mod_lt (num s.mem B (kw len) q) dPos
   have bound : num s.mem B (kw len) d < 2 ^ (32 * kw len) := val32_lt _ _ _ _
-  rw [num_of_wide (by omega), rem]
+  rw [num_of_wide (by omega_using [rem, small, bound]), rem]
 
 end VG.Proof.Rsa.X86.KeyRt

@@ -202,7 +202,7 @@ theorem in_w' {s : State} (he : BEnv b wl o m s₀ s) {a n : Nat} (h : a + n ≤
 
 theorem in_o {s : State} (he : BEnv b wl o m s₀ s) {a n : Nat} (h : a + n ≤ 128 * m) :
     InRegions s.wr (b + BitVec.ofNat 64 o + BitVec.ofNat 64 a) n := by
-  rw [he.wr]; exact inRegions_sub hp.out h (by have := hp.hm; omega)
+  rw [he.wr]; exact inRegions_sub hp.out h (by have := hp.hm; omega_using [this])
 
 theorem in_s {s : State} (he : BEnv b wl o m s₀ s) {a n : Nat} (h : a + n ≤ 32) :
     InRegions (s.rd ++ s.wr) (sS b + BitVec.ofNat 64 a) n := by

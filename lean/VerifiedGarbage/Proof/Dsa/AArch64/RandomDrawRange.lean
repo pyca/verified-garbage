@@ -40,7 +40,7 @@ theorem random_check_candidate_ok {s : State} {B Q : Addr} {qBytes copied : List
       off B (Random.oNonce + qBytes.length) := by
     rw [hclen]
     change B + BitVec.ofNat 64 (200 + qBytes.length - n) + BitVec.ofNat 64 n = _
-    rw [BitVec.add_assoc, ← BitVec.ofNat_add, Nat.sub_add_cancel (by omega)]
+    rw [BitVec.add_assoc, ← BitVec.ofNat_add, Nat.sub_add_cancel (by omega_using [hnfit])]
     rfl
   have hra : ∀ i < copied.length, InRegions (s.rd ++ s.wr)
       (off B (200 + qBytes.length - n) + BitVec.ofNat 64 i) 1 := by
@@ -49,10 +49,10 @@ theorem random_check_candidate_ok {s : State} {B Q : Addr} {qBytes copied : List
         off B (200 + qBytes.length - n + i) := by simp only [off, BitVec.ofNat_add, BitVec.add_assoc]
     rw [headdr]
     obtain ⟨r, hr, hc⟩ := hs.st1 (d := 200 + qBytes.length - n + i) (by
-      unfold Random.frameBytes; omega)
+      unfold Random.frameBytes; omega_using [hqlen, hclen, hnfit, hi])
     exact ⟨r, List.mem_append_right _ hr, hc⟩
   refine WP.mono (random_inRange_ok hs hsp hl (by rw [hclen]; exact hn) hq hp hlen
-    (by omega) (by omega) hra (fun i hi => hslice.rd i (by omega)) hcv hslice.val)
+    (by omega_using [hpos, hclen]) (by omega) hra (fun i hi => hslice.rd i (by omega_using [hlen, hi])) hcv hslice.val)
     fun t ⟨htz, htm, htk⟩ => ⟨?_, htm, htk⟩
   rw [htz, hcdec, VG.Proof.Dsa.random_significant_drop]
 

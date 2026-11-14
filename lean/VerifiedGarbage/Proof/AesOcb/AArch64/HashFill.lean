@@ -60,7 +60,7 @@ theorem hashFill_ok {K W : Addr} (L : Lay K W) {t : State} (h19 : t.gpr .x19 = W
     (hAW : (⟨A + BitVec.ofNat 64 (16 * (j + i)), 16⟩ : Region).Disjoint ⟨W, 2560⟩) :
     WP isa hashFill t (FillPost W A l j i c t) := by
   unfold hashFill
-  refine WP.seq (WP.mono (lNtz_ok (i := j + i + 1) h19 hw (by omega) (by omega) h25 hl0) fun t₁ P₁ => ?_)
+  refine WP.seq (WP.mono (lNtz_ok (i := j + i + 1) h19 hw (by omega_using []) (by omega_using [hj]) h25 hl0) fun t₁ P₁ => ?_)
   have h19₁ : t₁.gpr .x19 = W := by rw [P₁.gpr _ (by decide), h19]
   have ww : ∀ {d : Nat}, d + 8 ≤ 2560 → InRegions t₁.wr (W + BitVec.ofNat 64 d) 8 :=
     fun h => by rw [P₁.wr]; exact in_off hw h (by decide)
@@ -96,9 +96,9 @@ theorem hashFill_ok {K W : Addr} (L : Lay K W) {t : State} (h19 : t.gpr .x19 = W
     rw [rd₂, wr₂]; exact in_left (in_off hw (by decide) (by decide))
   have rO₈ : InRegions (t₂.rd ++ t₂.wr) (W + BitVec.ofNat 64 152) 8 := by
     rw [rd₂, wr₂]; exact in_left (in_off hw (by decide) (by decide))
-  have wS₀ : InRegions t₂.wr (W + BitVec.ofNat 64 (384 + 16 * i)) 8 := by rw [wr₂]; exact in_off hw (by omega) (by decide)
+  have wS₀ : InRegions t₂.wr (W + BitVec.ofNat 64 (384 + 16 * i)) 8 := by rw [wr₂]; exact in_off hw (by omega_using [hi, hc]) (by decide)
   have wS₈ : InRegions t₂.wr (W + BitVec.ofNat 64 (384 + 16 * i) + BitVec.ofNat 64 8) 8 := by
-    rw [wr₂, Offset.add_add]; exact in_off hw (by omega) (by decide)
+    rw [wr₂, Offset.add_add]; exact in_off hw (by omega_using [hi, hc]) (by decide)
   refine WP.of_runBlock ⟨_, by rw [runBlock_append, run₂, Option.bind_some]; orun [h23₂, h27₂, h19₂, h25₂, h15₂,
     rA₀, rA₈, rO₀, rO₈, wS₀, wS₈], ?_⟩
   have fs : ∀ (M : Mem) (v₀ v₁ : BitVec 64), Frame [⟨W + BitVec.ofNat 64 (384 + 16 * i), 16⟩] M
@@ -110,17 +110,17 @@ theorem hashFill_ok {K W : Addr} (L : Lay K W) {t : State} (h19 : t.gpr .x19 = W
   · simp only [mem_write]
     rw [blockAtMem_frame (fs _ _ _) (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
-      exact L.w_w (a := 144) (n := 16) (d := 384 + 16 * i) (k := 16) (.inl (by omega)) (by decide) (by omega)), oh₂]
+      exact L.w_w (a := 144) (n := 16) (d := 384 + 16 * i) (k := 16) (.inl (by omega_using [])) (by decide) (by omega_using [hi, hc])), oh₂]
   · simp only [mem_write]
     rw [blockAtMem_store2, show W + 152#64 = W + BitVec.ofNat 64 144 + BitVec.ofNat 64 8 from (addr8 W 144).symm,
       blockAtMem_xor_words, eA, show W + BitVec.ofNat 64 144 = W + BitVec.ofNat 64 ohO from rfl, oh₂]
   · simp only [gpr_write, ite_true, ite_false, reduceCtorEq, BitVec.setWidth_eq, h23₂, Offset.add_add]
-    rw [show 16 * (j + i) + 16 = 16 * (j + i + 1) by omega]
+    rw [show 16 * (j + i) + 16 = 16 * (j + i + 1) by omega_using []]
   · simp only [gpr_write, ite_true, ite_false, reduceCtorEq, BitVec.setWidth_eq, h25₂, ← BitVec.ofNat_add]
   · simp only [gpr_write, ite_true, ite_false, reduceCtorEq, BitVec.setWidth_eq, h27₂, Offset.add_add]
-    rw [show 384 + 16 * i + 16 = 384 + 16 * (i + 1) by omega]
+    rw [show 384 + 16 * i + 16 = 384 + 16 * (i + 1) by omega_using []]
   · simp only [gpr_write, ite_true, ite_false, reduceCtorEq, BitVec.setWidth_eq, h15₂]
-    rw [Offset.ofNat_sub_ofNat (by omega), Nat.sub_sub]
+    rw [Offset.ofNat_sub_ofNat (by omega_using [hi]), Nat.sub_sub]
   · simp only [fillRegs, List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
     simp only [gpr_write, hr.1, hr.2.1, hr.2.2.1, hr.2.2.2.1, hr.2.2.2.2.1, hr.2.2.2.2.2.1, hr.2.2.2.2.2.2.1,
       hr.2.2.2.2.2.2.2.1, hr.2.2.2.2.2.2.2.2.1, hr.2.2.2.2.2.2.2.2.2, ite_false]

@@ -44,7 +44,7 @@ open VG VG.PPC64LE VG.Impl.Idea.PPC64LE
 /-- `KeyOk` of the schedule in a readable region at `r3`, with the mask in `r0`. -/
 theorem keyOk_of (s : State) (hr : ⟨s.gpr .r3, 104⟩ ∈ s.rd ++ s.wr) (h0 : s.gpr .r0 = 65535) :
     KeyOk (Spec.Idea.scheduleAt s.mem (s.gpr .r3)) s :=
-  ⟨fun k hk => ⟨⟨_, hr, Offset.contains_base _ (by omega) (by omega)⟩, subkey_lo32 _ _ (by omega)⟩,
+  ⟨fun k hk => ⟨⟨_, hr, Offset.contains_base _ (by omega_using [hk]) (by omega_using [hk])⟩, subkey_lo32 _ _ (by omega_using [hk])⟩,
     subkey_hi32 _ _, h0⟩
 
 /-! ## The loop -/
@@ -103,11 +103,11 @@ theorem step_ok {z : Spec.Idea.Schedule} {a : Addr} {n : Nat} {m₀ : Mem} {o : 
   have hwr : t.wr = o.wr := hi.keep.2.2
   have hr3 : t.gpr .r3 = o.gpr .r3 := hi.keep.gpr (by decide)
   have hr0 : t.gpr .r0 = o.gpr .r0 := hi.keep.gpr (by decide)
-  have hj : n - r < n := by have := hi.pos; have := hi.le; omega
+  have hj : n - r < n := by have := hi.pos; have := hi.le; omega_arith
   have hread : BlockRead t (a + BitVec.ofNat 64 (8 * (n - r))) := fun i hi' =>
-    ⟨_, by rw [hrd, hwr]; exact List.mem_append_right _ hc.data, block_contains hj (by omega) (by decide) hc.bound⟩
+    ⟨_, by rw [hrd, hwr]; exact List.mem_append_right _ hc.data, block_contains hj (by omega_using [hi']) (by decide) hc.bound⟩
   have hwrite : BlockWrite t (a + BitVec.ofNat 64 (8 * (n - r))) := fun i hi' =>
-    ⟨_, by rw [hwr]; exact hc.data, block_contains hj (by omega) (by decide) hc.bound⟩
+    ⟨_, by rw [hwr]; exact hc.data, block_contains hj (by omega_using [hi']) (by decide) hc.bound⟩
   have hz : Spec.Idea.scheduleAt t.mem (t.gpr .r3) = z := by
     rw [hr3, ← hc.z]
     exact scheduleAt_congr (frame_bytes hi.frame (by simpa using hc.sep) (by decide))
@@ -122,7 +122,7 @@ theorem step_ok {z : Spec.Idea.Schedule} {a : Addr} {n : Nat} {m₀ : Mem} {o : 
     rw [m₂]
     refine hi.frame.trans (f₁.sub fun r hr => ⟨_, List.mem_singleton_self _, ?_⟩)
     simp only [List.mem_singleton] at hr; subst hr
-    exact Offset.sub_base a (by omega)
+    exact Offset.sub_base a (by omega_using [hj])
   have other (j : Nat) (hjn : j < n) (hne : j ≠ n - r) :
       Spec.Idea.blockAt t₂.mem (a + BitVec.ofNat 64 (8 * j)) =
         Spec.Idea.blockAt t.mem (a + BitVec.ofNat 64 (8 * j)) := by
@@ -136,22 +136,22 @@ theorem step_ok {z : Spec.Idea.Schedule} {a : Addr} {n : Nat} {m₀ : Mem} {o : 
     by_cases he : j = n - r
     · subst he
       rw [m₂, b₁, hi.todo _ (Nat.le_refl _) hj]
-    · rw [other j (by omega) he]
-      exact hi.done j (by have := hi.pos; omega)
+    · rw [other j (by omega_using [hjr]) he]
+      exact hi.done j (by have := hi.pos; omega_using [hjr, he])
   have hr5 : t₂.gpr .r5 = BitVec.ofNat 64 (r - 1) := by
     rw [r5₂, e₁.gpr (by decide), hi.r5]
     apply BitVec.eq_of_toNat_eq
     have := hi.pos; have := hi.le; have := hc.bound
     simp only [BitVec.toNat_sub, BitVec.toNat_ofNat]
-    omega
+    omega_using [hj]
   by_cases hlast : r = 1
   · subst hlast
     left
-    refine ⟨?_, keep₂, frame₂, fun j hjn => done₂ j (by omega)⟩
+    refine ⟨?_, keep₂, frame₂, fun j hjn => done₂ j (by omega_using [hjn])⟩
     simp only [eval, State.read, BitVec.setWidth_eq, hr5]
     rfl
   · right
-    refine ⟨?_, r - 1, by have := hi.pos; omega, ?_⟩
+    refine ⟨?_, r - 1, by have := hi.pos; omega_using [hj], ?_⟩
     · simp only [eval, State.read, BitVec.setWidth_eq, hr5, Option.some.injEq]
       have := hi.pos; have := hi.le; have := hc.bound
       have h : (BitVec.ofNat 64 (r - 1) == 0) = false := by
@@ -159,20 +159,20 @@ theorem step_ok {z : Spec.Idea.Schedule} {a : Addr} {n : Nat} {m₀ : Mem} {o : 
         intro h
         have := congrArg BitVec.toNat h
         simp only [BitVec.toNat_ofNat, toNat_zero] at this
-        omega
+        omega_arith
       rw [bne, h]; rfl
-    · refine ⟨by have := hi.pos; omega, by have := hi.le; omega, ?_, hr5, keep₂, frame₂, done₂, ?_⟩
+    · refine ⟨by have := hi.pos; omega_using [hj, hlast], by have := hi.le; omega_using [this], ?_, hr5, keep₂, frame₂, done₂, ?_⟩
       · rw [r4₂, e₁.gpr (by decide), hi.r4, show (8#64 : BitVec 64) = BitVec.ofNat 64 8 from rfl,
           Offset.add_ofNat_add_ofNat]
         congr 2
         have := hi.pos; have := hi.le
-        omega
+        omega_using [hj, this]
       · intro j hj₁ hj₂
         have := hi.pos
         have := hi.le
-        have hne : j ≠ n - r := by omega
+        have hne : j ≠ n - r := by omega_using [hj, hj₁, this]
         rw [other j hj₂ hne]
-        exact hi.todo j (by omega) hj₂
+        exact hi.todo j (by omega_using [hj₁]) hj₂
 
 theorem loop_ok {z : Spec.Idea.Schedule} {a : Addr} {n : Nat} {m₀ : Mem} {o : State}
     (hc : LoopCtx z a n o) (hn : 1 ≤ n) (ho : o.gpr .r4 = a) (hr5 : o.gpr .r5 = BitVec.ofNat 64 n)
@@ -225,7 +225,7 @@ theorem ecb_wp (s : State) (hs : contract.pre s) :
   · have hn : (s.gpr .r5).toNat ≠ 0 := fun h =>
       (beq_eq_false_iff_ne.mp h0) (BitVec.eq_of_toNat_eq h)
     have ctx : LoopCtx (Spec.Idea.scheduleAt s.mem (s.gpr .r3)) (s.gpr .r4) (s.gpr .r5).toNat s₁ := by
-      refine ⟨?_, ?_, ?_, ?_, by omega, h0₁⟩
+      refine ⟨?_, ?_, ?_, ?_, by omega_using [hbound], h0₁⟩
       · rw [e₁.gpr (by decide), e₁.2.1, e₁.2.2, hrd]; simp
       · rw [e₁.2.2, hwr]; simp
       · rw [e₁.gpr (by decide), m₁]

@@ -31,7 +31,7 @@ theorem generationSave_range (m : Mem) (B xp yp dp dl k rp ctx : Addr) :
  Outside B 128 80 m (generationSaveMemory m B xp yp dp dl k rp ctx) := by
  intro q hq
  have store (m : Mem) (i : Nat) (low : 16≤i) (high : i<26) (v : Addr) :
-  (m.writeW (off B (8*i)) v) q=m q := writeW_outside m B v (by omega) q (by omega)
+  (m.writeW (off B (8*i)) v) q=m q := writeW_outside m B v (by omega_using [high]) q (by omega_using [hq, low, high])
  unfold generationSaveMemory
  rw [store _ sCtx (by decide) (by decide),store _ sRand (by decide) (by decide),store _ sLen (by decide) (by decide),
   store _ sDL (by decide) (by decide),store _ sDom (by decide) (by decide),
@@ -53,9 +53,9 @@ theorem generateEntrySave_ok {s : State} {B ctx : Addr} {Z : Nat}
    (by simpa only [RegUpd.rd_write,RegUpd.wr_write,RegUpd.sp_write] using stackCtx),readB,readCtx,st,
   hdr_enc (show sX<32 by decide),hdr_enc (show sY<32 by decide),hdr_enc (show sDom<32 by decide),
   hdr_enc (show sDL<32 by decide),hdr_enc (show sLen<32 by decide),hdr_enc (show sRand<32 by decide),hdr_enc (show sCtx<32 by decide),
-  scratch.st (d:=8*sX) (by unfold sX;omega),scratch.st (d:=8*sY) (by unfold sY;omega),
-  scratch.st (d:=8*sDom) (by unfold sDom;omega),scratch.st (d:=8*sDL) (by unfold sDL;omega),
-  scratch.st (d:=8*sLen) (by unfold sLen;omega),scratch.st (d:=8*sRand) (by unfold sRand;omega),scratch.st (d:=8*sCtx) (by unfold sCtx;omega)]
+  scratch.st (d:=8*sX) (by unfold sX;omega_using [room]),scratch.st (d:=8*sY) (by unfold sY;omega_using [room]),
+  scratch.st (d:=8*sDom) (by unfold sDom;omega_using [room]),scratch.st (d:=8*sDL) (by unfold sDL;omega_using [room]),
+  scratch.st (d:=8*sLen) (by unfold sLen;omega_using [room]),scratch.st (d:=8*sRand) (by unfold sRand;omega_using [room]),scratch.st (d:=8*sCtx) (by unfold sCtx;omega_using [room])]
 
 end VG.Proof.Ffdh.AArch64.Cached
 end
@@ -80,7 +80,7 @@ theorem generationMetadata_range (m : Mem) (B N bytes rows : Addr) :
  Outside B 128 80 m (generationMetadataMemory m B N bytes rows) := by
  intro q hq
  have store (m : Mem) (i : Nat) (low : 16≤i) (high : i<26) (v : Addr) :
-  (m.writeW (off B (8*i)) v) q=m q := writeW_outside m B v (by omega) q (by omega)
+  (m.writeW (off B (8*i)) v) q=m q := writeW_outside m B v (by omega_using [high]) q (by omega_using [hq, low, high])
  unfold generationMetadataMemory
  rw [store _ sRows (by decide) (by decide),store _ sBytes (by decide) (by decide),store _ sBits (by decide) (by decide)]
 
@@ -97,8 +97,8 @@ theorem generateEntryMetadata_ok {s : State} {B ctx N bytes rows : Addr} {Z : Na
  have v0 : s.mem.readW ctx 64=N := by simpa only [word,off,BitVec.add_zero] using value0
  brun [base,context,read0,read8,read16,v0,value8,value16,
   hdr_enc (show sBits<32 by decide),hdr_enc (show sBytes<32 by decide),hdr_enc (show sRows<32 by decide),
-  scratch.st (d:=8*sBits) (by unfold sBits;omega),scratch.st (d:=8*sBytes) (by unfold sBytes;omega),
-  scratch.st (d:=8*sRows) (by unfold sRows;omega)]
+  scratch.st (d:=8*sBits) (by unfold sBits;omega_using [room]),scratch.st (d:=8*sBytes) (by unfold sBytes;omega_using [room]),
+  scratch.st (d:=8*sRows) (by unfold sRows;omega_using [room])]
 
 end VG.Proof.Ffdh.AArch64.Cached
 end
@@ -136,11 +136,11 @@ theorem generateEntry_ok {s : State} {B ctx N bytes rows : Addr} {Z : Nat}
  refine WP.mono (generateEntrySave_ok scratch room readB readCtx stackB stackCtx) ?_
  rintro a ⟨⟨baseA,ctxA,memA⟩,restA⟩
  have frameA : Outside B 128 80 s.mem a.mem := by rw [memA];exact generationSave_range _ _ _ _ _ _ _ _ _
- have inscrA : InScr B Z s.mem a.mem := InScr.of_outside frameA (by omega)
+ have inscrA : InScr B Z s.mem a.mem := InScr.of_outside frameA (by omega_using [room])
  have same (i : Nat) (hi : i<3) : word a.mem ctx (8*i)=word s.mem ctx (8*i) := by
   apply Mem.readW_congr
   intro j hj
-  have sep := outside (8*i+j) (by omega)
+  have sep := outside (8*i+j) (by omega_using [hi, hj])
   exact inscrA _ (by simpa only [off,BitVec.ofNat_add,BitVec.add_assoc] using sep)
  refine WP.mono (generateEntryMetadata_ok (scratch.congr restA.wr) room baseA ctxA
   (by rw [restA.rd,restA.wr];simpa only [Nat.mul_zero,show BitVec.ofNat 64 0=0#64 from rfl,BitVec.add_zero] using readable 0 (by decide))

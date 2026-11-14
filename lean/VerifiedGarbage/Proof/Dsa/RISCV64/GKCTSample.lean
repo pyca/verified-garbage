@@ -149,9 +149,9 @@ sampling trace from there starts with an acceptance. -/
 theorem acc_iff {E : SE} {qb R : List Byte} {u d : Nat} (hQ : E.Q qb) (hR : R.length = E.rl)
     (hs : u + E.W ≤ E.rl) (hd : 1 ≤ d) :
     acc qb R u E.W ↔ (sample (Spec.Dsa.decodeBE qb) d (R.drop u)).trace.head? = some 1 := by
-  obtain ⟨d', rfl⟩ : ∃ d', d = d' + 1 := ⟨d - 1, by omega⟩
+  obtain ⟨d', rfl⟩ : ∃ d', d = d' + 1 := ⟨d - 1, by omega_using [hd]⟩
   have hs' : drawBytes (Spec.Dsa.decodeBE qb) ≤ (R.drop u).length := by
-    rw [List.length_drop, hR, hQ.draw]; omega
+    rw [List.length_drop, hR, hQ.draw]; omega_using [hs]
   by_cases ha : acc qb R u E.W
   · have hS := Dsa.Random.sample_accept _ d' _ hQ.gt hs' (by rw [hQ.draw]; exact ha)
     rw [hS]
@@ -186,11 +186,11 @@ theorem draw_st {E : SE} {qb R₁ R₂ : List Byte} {s₁ s₂ : State} {u d : N
   have u5 : t₂.gpr .s5 = BitVec.ofNat 64 u := (k2.gpr (by decide)).trans b5
   refine SameTrace.seq (st_taint [.s2, .s3, .s5, .s7, .s8, .s9] tsp ⟨g1.s2.trans g2.s2.symm,
       g1.s3.trans g2.s3.symm, t5.trans u5.symm, g1.s7.trans g2.s7.symm, g1.s8.trans g2.s8.symm,
-      g1.s9.trans g2.s9.symm⟩ (by taint_decide)) (copyRange_ok hE hQ g1 t5 (by omega))
-    (copyRange_ok hE hQ g2 u5 (by omega))
+      g1.s9.trans g2.s9.symm⟩ (by taint_decide)) (copyRange_ok hE hQ g1 t5 (by omega_using [hu, hs']))
+    (copyRange_ok hE hQ g2 u5 (by omega_using [hu, hs']))
     fun x₁ x₂ ⟨⟨e1, _, _, x6, _⟩, kx1⟩ ⟨⟨e2, _, _, y6, _⟩, kx2⟩ => ?_
   have hacc : acc qb R₁ u E.W ↔ acc qb R₂ u E.W := by
-    rw [acc_iff hQ h₁.R_length (by omega) hd, acc_iff hQ h₂.R_length (by omega) hd, ht]
+    rw [acc_iff hQ h₁.R_length (by omega_using [hu, hs']) hd, acc_iff hQ h₂.R_length (by omega_using [hu, hs']) hd, ht]
   have xsp : x₁.sp = x₂.sp := e1.sp.trans e2.sp.symm
   have e11 : EqRegs x₁ x₂ [.s11] := ((kx1.gpr (by decide)).trans ((k1.gpr (by decide)).trans a11)).trans
     ((kx2.gpr (by decide)).trans ((k2.gpr (by decide)).trans b11)).symm
@@ -225,7 +225,7 @@ theorem step_ok {E : SE} {qb R : List Byte} {s : State} {u d : Nat} (hE : E.Ok) 
     rw [Steps.eval_zero, a3, b10]; rfl
   · refine .inr ⟨?_, hh⟩
     rw [Steps.eval_zero, a3, b10,
-      status_sub4 _ (by have := sampleStatus_le (sample (Spec.Dsa.decodeBE qb) d (R.drop u)); omega)]
+      status_sub4 _ (by have := sampleStatus_le (sample (Spec.Dsa.decodeBE qb) d (R.drop u)); omega_using [this])]
 
 /-- The sampling loop's two runs, with `d` draws left. -/
 def DI (E : SE) (qb R₁ R₂ : List Byte) (d : Nat) (s₁ s₂ : State) : Prop :=
@@ -245,7 +245,7 @@ theorem sampleLoop_st {E : SE} {qb R₁ R₂ : List Byte} (hE : E.Ok) (hQ : E.Q 
     fun t₁ t₂ ⟨e₁, c₁⟩ ⟨e₂, c₂⟩ => ?_⟩
   rcases c₁ with ⟨v₁, x11, x5, x10, hn, hu', hr₁⟩ | ⟨v₁, hh₁⟩ <;>
     rcases c₂ with ⟨v₂, y11, y5, y10, hn₂, -, hr₂⟩ | ⟨v₂, hh₂⟩
-  · refine ⟨v₁.trans v₂.symm, fun _ => ⟨n - 1, by omega, u + E.W, by omega, by omega, e₁, e₂, x5, y5, hu',
+  · refine ⟨v₁.trans v₂.symm, fun _ => ⟨n - 1, by omega_using [hd], u + E.W, by omega_using [hn], by omega_using [hd'], e₁, e₂, x5, y5, hu',
       x11, y11, x10, y10, ?_⟩⟩
     rw [hr₁, hr₂] at ht
     exact (List.cons.inj ht).2

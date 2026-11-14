@@ -54,17 +54,17 @@ theorem copyLoads_run (u : State) {S : BitVec 32} (h9 : u.gpr .r9 = S) :
   | zero => exact WP.block_nil ⟨fun i hi => absurd hi (Nat.not_lt_zero _), rfl, Keep.refl _ _⟩
   | succ k ih =>
     rw [map_range_succ, WP.block_append_iff]
-    refine WP.mono (ih (by omega) fun i hi => hr i (by omega)) fun t ⟨tg, tm, tk⟩ => ?_
+    refine WP.mono (ih (by omega_using [hk]) fun i hi => hr i (by omega_using [hi])) fun t ⟨tg, tm, tk⟩ => ?_
     have t9 : t.gpr .r9 = S := by rw [tk.gpr (by decide), h9]
     have hrt : InRegions (t.rd ++ t.wr) (State.addr (t.gpr .r9 + BitVec.ofNat 32 (4 * k))) 4 := by
-      rw [keep_reads tk, t9]; exact hr k (by omega)
-    refine WP.of_runBlock ⟨_, by rw [runBlock_cons, ldr_exec t _ _ (by omega) hrt, runStep_some, runBlock_nil], ?_⟩
+      rw [keep_reads tk, t9]; exact hr k (by omega_using [])
+    refine WP.of_runBlock ⟨_, by rw [runBlock_cons, ldr_exec t _ _ (by omega_using [hk]) hrt, runStep_some, runBlock_nil], ?_⟩
     refine ⟨fun i hi => ?_, by rw [mem_setReg, tm], ?_⟩
     · by_cases e : i = k
       · subst e; rw [gpr_setReg_self, t9, tm]
-      · rw [gpr_setReg_of_ne _ _ (fun h => e (copyReg_nodup i (by omega) k (by omega) h)), tg i (by omega)]
+      · rw [gpr_setReg_of_ne _ _ (fun h => e (copyReg_nodup i (by omega_using [hk, hi]) k (by omega_using [hk]) h)), tg i (by omega_using [hi, e])]
     · refine ⟨fun r hr' => ?_, tk.2.1, tk.2.2.1, tk.2.2.2⟩
-      rw [gpr_setReg_of_ne _ _ (fun (h : r = copyReg k) => hr' (h ▸ copyReg_mem k (by omega))), tk.gpr hr']
+      rw [gpr_setReg_of_ne _ _ (fun (h : r = copyReg k) => hr' (h ▸ copyReg_mem k (by omega_using [hk]))), tk.gpr hr']
 
 /-- The stores of `copyWords k`: `copyReg i`, holding `w i`, at `D + 4 i`,
 within `N` bytes from `D`. -/
@@ -76,25 +76,25 @@ theorem copyStores_run (v : State) {D : BitVec 32} {N : Nat} (h11 : v.gpr .r11 =
       Frame [⟨State.addr D, N⟩] v.mem t.mem ∧ Keep [] v t := by
   intro k hk hN hv
   induction k with
-  | zero => exact WP.block_nil ⟨fun o ho => absurd ho (by omega), Frame.refl _ _, Keep.refl _ _⟩
+  | zero => exact WP.block_nil ⟨fun o ho => absurd ho (by omega_using []), Frame.refl _ _, Keep.refl _ _⟩
   | succ k ih =>
     rw [map_range_succ, WP.block_append_iff]
-    refine WP.mono (ih (by omega) (by omega) fun i hi => hv i (by omega)) fun t ⟨tb, tf, tk⟩ => ?_
+    refine WP.mono (ih (by omega_using [hk]) (by omega_using [hN]) fun i hi => hv i (by omega_using [hi])) fun t ⟨tb, tf, tk⟩ => ?_
     have ea : State.addr (t.gpr .r11 + BitVec.ofNat 32 (4 * k)) = State.addr D + BitVec.ofNat 64 (4 * k) := by
-      rw [tk.gpr (by decide), h11]; exact addr_add (by omega)
+      rw [tk.gpr (by decide), h11]; exact addr_add (by omega_using [fit, hN])
     have hwt : InRegions t.wr (State.addr (t.gpr .r11 + BitVec.ofNat 32 (4 * k))) 4 := by
-      rw [ea, tk.2.2.1]; exact inRegions_off hw (by omega)
-    refine WP.of_runBlock ⟨_, by rw [runBlock_cons, str_exec t _ _ (by omega) hwt, runStep_some, runBlock_nil], ?_⟩
-    have tv : t.gpr (copyReg k) = w k := by rw [tk.gpr (List.not_mem_nil), hv k (by omega)]
+      rw [ea, tk.2.2.1]; exact inRegions_off hw (by omega_using [hN])
+    refine WP.of_runBlock ⟨_, by rw [runBlock_cons, str_exec t _ _ (by omega_using [hk]) hwt, runStep_some, runBlock_nil], ?_⟩
+    have tv : t.gpr (copyReg k) = w k := by rw [tk.gpr (List.not_mem_nil), hv k (by omega_using [])]
     rw [ea, tv]
     refine ⟨fun o ho => ?_, ?_, ⟨fun r hr => tk.gpr hr, tk.2.1, tk.2.2.1, tk.2.2.2⟩⟩
     · rw [mem_store]
       by_cases hl : o < 4 * k
-      · rw [writeW32_other _ (Offset.disjoint _ (by omega) (by omega) (by omega)), tb o hl]
-      · rw [show o = 4 * k + (o - 4 * k) by omega, ← Offset.add_add, st_byte _ _ _ (by omega),
-          show (4 * k + (o - 4 * k)) / 4 = k by omega, show (4 * k + (o - 4 * k)) % 4 = o - 4 * k by omega]
+      · rw [writeW32_other _ (Offset.disjoint _ (by omega_using [hl]) (by omega_using [hk, ho]) (by omega_using [hk])), tb o hl]
+      · rw [show o = 4 * k + (o - 4 * k) by omega_using [hl], ← Offset.add_add, st_byte _ _ _ (by omega_using [ho]),
+          show (4 * k + (o - 4 * k)) / 4 = k by omega_using [ho], show (4 * k + (o - 4 * k)) % 4 = o - 4 * k by omega_using [ho]]
     · rw [mem_store]
-      exact tf.writeW List.mem_cons_self _ (Offset.contains_base _ (by omega) (by omega))
+      exact tf.writeW List.mem_cons_self _ (Offset.contains_base _ (by omega_using [hN]) (by omega_using [hk]))
 
 /-- `copyWords k`: `4 k` bytes from `S` (readable) to `D` (writable). -/
 theorem copyWords_run (u : State) {S D : BitVec 32} {k : Nat} (hk : k ≤ 7) (h9 : u.gpr .r9 = S)
@@ -106,14 +106,14 @@ theorem copyWords_run (u : State) {S D : BitVec 32} {k : Nat} (hk : k ≤ 7) (h9
   unfold copyWords
   rw [WP.block_append_iff]
   have ea : ∀ i < k, State.addr (S + BitVec.ofNat 32 (4 * i)) = State.addr S + BitVec.ofNat 64 (4 * i) :=
-    fun i hi => addr_add (by omega)
+    fun i hi => addr_add (by omega_using [fitS, hi])
   refine WP.mono (copyLoads_run u h9 k hk fun i hi => by
-    rw [ea i hi]; exact inRegions_off hr (by omega)) fun v ⟨vg, vm, vk⟩ => ?_
+    rw [ea i hi]; exact inRegions_off hr (by omega_using [hi])) fun v ⟨vg, vm, vk⟩ => ?_
   refine WP.mono (copyStores_run v (by rw [vk.gpr (by decide), h11]) fitD (by rw [vk.2.2.1]; exact hw)
-    (fun i => u.mem.readW (State.addr (S + BitVec.ofNat 32 (4 * i))) 32) k hk (by omega) vg)
+    (fun i => u.mem.readW (State.addr (S + BitVec.ofNat 32 (4 * i))) 32) k hk (by omega_using []) vg)
     fun t ⟨tb, tf, tk⟩ => ⟨fun o ho => ?_, by rw [← vm]; exact tf, (vk.trans tk).mono (by simp)⟩
-  rw [tb o ho, ea _ (by omega), ← Mem.readW_byte _ _ (Nat.mod_lt _ (by decide)), Offset.add_add,
-    show 4 * (o / 4) + o % 4 = o by omega]
+  rw [tb o ho, ea _ (by omega_using [ho]), ← Mem.readW_byte _ _ (Nat.mod_lt _ (by decide)), Offset.add_add,
+    show 4 * (o / 4) + o % 4 = o by omega_using []]
 
 /-- What the copy assumes: the table at `T`, holding the initial schedule's
 image, readable and apart from the schedule at `K`, which is writable. -/
@@ -154,33 +154,33 @@ theorem copyAt_run {T K : BitVec 32} {u₀ : State} (E : CopyEnv T K u₀) {n k 
   have fT := E.fitT
   have fK := E.fitK
   have eT : State.addr (T + BitVec.ofNat 32 (28 * n)) = State.addr T + BitVec.ofNat 64 (28 * n) :=
-    addr_add (by omega)
+    addr_add (by omega_using [hnk, fT])
   have eK : State.addr (K + BitVec.ofNat 32 (28 * n)) = State.addr K + BitVec.ofNat 64 (28 * n) :=
-    addr_add (by omega)
+    addr_add (by omega_using [hnk, fK])
   have fS : (T + BitVec.ofNat 32 (28 * n)).toNat + 4 * k ≤ 2 ^ 32 := by
-    rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := 28 * n) (by omega),
-      Nat.mod_eq_of_lt (by omega)]; omega
+    rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := 28 * n) (by omega_using [hnk]),
+      Nat.mod_eq_of_lt (by omega_using [hnk, fT])]; omega_using [hnk, fT]
   have fD : (K + BitVec.ofNat 32 (28 * n)).toNat + 4 * k ≤ 2 ^ 32 := by
-    rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := 28 * n) (by omega),
-      Nat.mod_eq_of_lt (by omega)]; omega
+    rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := 28 * n) (by omega_using [hnk]),
+      Nat.mod_eq_of_lt (by omega_using [hnk, fK])]; omega_using [hnk, fK]
   refine WP.mono (copyWords_run t hk I.r9 I.r11 fS fD
-    (by rw [eT, keep_reads I.keep]; exact inRegions_off E.rdT (by omega))
-    (by rw [eK, I.keep.2.2.1]; exact inRegions_off E.wrK (by omega)))
+    (by rw [eT, keep_reads I.keep]; exact inRegions_off E.rdT (by omega_using [hnk]))
+    (by rw [eK, I.keep.2.2.1]; exact inRegions_off E.wrK (by omega_using [hnk])))
     fun t' ⟨tb, tf, tk⟩ => ⟨fun o ho => ?_, I.frame.trans (tf.sub fun r hr => ?_), tk⟩
   · by_cases hl : o < 28 * n
     · rw [← I.bytes o hl]
       refine tf _ fun r hr => ?_
       simp only [List.mem_singleton] at hr; subst hr
       rw [eK]
-      exact fun h => (Offset.disjoint _ (d := o) (n := 1) (e := 28 * n) (k := 4 * k) (by omega) (by omega)
-        (by omega)) _ (Region.contains_self _ _) h
-    · rw [show o = 28 * n + (o - 28 * n) by omega, ← Offset.add_add, ← eK, tb _ (by omega), eT,
-        Offset.add_add, ← E.table _ (by omega)]
+      exact fun h => (Offset.disjoint _ (d := o) (n := 1) (e := 28 * n) (k := 4 * k) (by omega_using [hl]) (by omega_using [hnk, ho])
+        (by omega_using [hnk])) _ (Region.contains_self _ _) h
+    · rw [show o = 28 * n + (o - 28 * n) by omega_using [hl], ← Offset.add_add, ← eK, tb _ (by omega_using [ho, hl]), eT,
+        Offset.add_add, ← E.table _ (by omega_using [hnk, ho])]
       refine I.frame _ fun r hr => ?_
       simp only [List.mem_singleton] at hr; subst hr
-      exact E.sep _ (Offset.contains_base _ (by omega) (by omega))
+      exact E.sep _ (Offset.contains_base _ (by omega_using [hnk, ho]) (by omega_using [hnk, ho]))
   · simp only [List.mem_singleton] at hr; subst hr
-    exact ⟨_, List.mem_cons_self, by rw [eK]; exact Offset.sub_base _ (by omega)⟩
+    exact ⟨_, List.mem_cons_self, by rw [eK]; exact Offset.sub_base _ (by omega_using [hnk])⟩
 
 /-- One step of seven words. -/
 theorem copyStep_run {T K : BitVec 32} {u₀ : State} (E : CopyEnv T K u₀) {n : Nat} (hn : n < 148) {t : State}
@@ -189,18 +189,18 @@ theorem copyStep_run {T K : BitVec 32} {u₀ : State} (E : CopyEnv T K u₀) {n 
       CopyInv T K u₀ (n + 1) t' ∧ t'.z = (BitVec.ofNat 32 (148 - (n + 1)) == 0#32) := by
   unfold copyStep
   rw [WP.block_append_iff]
-  refine WP.mono (copyAt_run E (k := 7) (by decide) (by omega) I) fun v ⟨vb, vf, vk⟩ => ?_
+  refine WP.mono (copyAt_run E (k := 7) (by decide) (by omega_using [hn]) I) fun v ⟨vb, vf, vk⟩ => ?_
   have v9 : v.gpr .r9 = T + BitVec.ofNat 32 (28 * n) := by rw [vk.gpr (by decide), I.r9]
   have v11 : v.gpr .r11 = K + BitVec.ofNat 32 (28 * n) := by rw [vk.gpr (by decide), I.r11]
   have v12 : v.gpr .r12 = BitVec.ofNat 32 (148 - n) := by rw [vk.gpr (by decide), I.r12]
   have h12 : BitVec.ofNat 32 (148 - n) - 1#32 = BitVec.ofNat 32 (148 - (n + 1)) := by
-    apply BitVec.eq_of_toNat_eq; simp only [BitVec.toNat_sub, BitVec.toNat_ofNat]; omega
+    apply BitVec.eq_of_toNat_eq; simp only [BitVec.toNat_sub, BitVec.toNat_ofNat]; omega_using [hn]
   refine WP.mono (WP.keep [.r9, .r11, .r12] (Q := fun t' => t'.gpr .r9 = T + BitVec.ofNat 32 (28 * (n + 1)) ∧
       t'.gpr .r11 = K + BitVec.ofNat 32 (28 * (n + 1)) ∧ t'.gpr .r12 = BitVec.ofNat 32 (148 - (n + 1)) ∧
       t'.z = (BitVec.ofNat 32 (148 - (n + 1)) == 0#32) ∧ t'.mem = v.mem)
     (by brun [v9, v11, v12, ofs_add, h12]; refine ⟨?_, ?_⟩ <;> congr 2) (by decide))
-    fun t' ⟨⟨a9, a11, a12, az, am⟩, ak⟩ => ⟨⟨by omega, a9, a11, a12, (I.keep.trans (vk.trans ak)).mono
-      (by decide), fun o ho => by rw [am]; exact vb o (by omega), by rw [am]; exact vf⟩, az⟩
+    fun t' ⟨⟨a9, a11, a12, az, am⟩, ak⟩ => ⟨⟨by omega_using [hn], a9, a11, a12, (I.keep.trans (vk.trans ak)).mono
+      (by decide), fun o ho => by rw [am]; exact vb o (by omega_using [ho]), by rw [am]; exact vf⟩, az⟩
 
 theorem initSchedule_run (u₀ : State) {K : BitVec 32} (h2 : u₀.gpr .r2 = K)
     (E : CopyEnv (u₀.syms initSym) K u₀) : WP isa initSchedule u₀ (InitInv u₀ K) := by
@@ -211,7 +211,7 @@ theorem initSchedule_run (u₀ : State) {K : BitVec 32} (h2 : u₀.gpr .r2 = K)
     (by brun [h2, syms_setReg]) (by decide)) fun u₁ ⟨⟨a9, a11, a12, am⟩, ak⟩ => ?_
   have I0 : CopyInv (u₀.syms initSym) K u₀ 0 u₁ :=
     ⟨by decide, by rw [a9, Nat.mul_zero, BitVec.add_zero], by rw [a11], by rw [a12], ak.mono (by decide),
-      fun o ho => absurd ho (by omega), by rw [am]; exact Frame.refl _ _⟩
+      fun o ho => absurd ho (by omega_using []), by rw [am]; exact Frame.refl _ _⟩
   apply WP.seq
   refine WP.mono (WP.loop (M := isa) (Q := CopyInv (u₀.syms initSym) K u₀ 148)
     (fun (m : Nat) (v : State) => ∃ n, n < 148 ∧ m = 148 - n ∧ CopyInv (u₀.syms initSym) K u₀ n v) ?_ 148 u₁
@@ -224,9 +224,9 @@ theorem initSchedule_run (u₀ : State) {K : BitVec 32} (h2 : u₀.gpr .r2 = K)
       exact ⟨by rw [e]; rfl, e ▸ J'⟩
     · right
       have nz : BitVec.ofNat 32 (148 - (n + 1)) ≠ 0#32 := by
-        intro h'; have := congrArg BitVec.toNat h'; simp at this; omega
-      exact ⟨by rw [beq_eq_false_iff_ne.mpr nz]; rfl, _, by omega, n + 1, by omega, rfl, J'⟩
+        intro h'; have := congrArg BitVec.toNat h'; simp at this; omega_using [hn, e, this]
+      exact ⟨by rw [beq_eq_false_iff_ne.mpr nz]; rfl, _, by omega_using [hn, hm], n + 1, by omega_using [hn, e], rfl, J'⟩
   · refine WP.mono (copyAt_run E (k := 6) (by decide) (by decide) J) fun t ⟨tb, tf, tk⟩ =>
-      ⟨fun o ho => tb o (by omega), tf, (J.keep.trans tk).mono (by decide)⟩
+      ⟨fun o ho => tb o (by omega_using [ho]), tf, (J.keep.trans tk).mono (by decide)⟩
 
 end VG.Proof.Blowfish.Arm

@@ -57,10 +57,10 @@ theorem foldL_lt {r : Nat → Nat} (hr : ∀ k < 28, r k < radix) {w : Nat} (hw 
   split
   · exact hw
   · split
-    · exact hr _ (by omega)
+    · exact hr _ (by omega_using [hk])
     · have : (16384 : Nat) < radix := by decide
       have := Nat.mod_lt (r 26) (by decide : 0 < 16384)
-      omega
+      omega_arith
 
 /-- `w + 2^16 r = l + 2^446 h`. -/
 theorem foldL_val (r : Nat → Nat) (w : Nat) :
@@ -71,13 +71,13 @@ theorem foldL_val (r : Nat → Nat) (w : Nat) :
         valN (fun k => if k < 26 then r k else r 26 % 16384) 27 :=
       valN_congr fun k hk => by
         unfold foldL
-        rw [ite_eq_right (by omega)]
+        rw [ite_eq_right (by omega_using [])]
         by_cases h : k < 26
-        · rw [ite_eq_left (by omega), ite_eq_left h, show 1 + k - 1 = k by omega]
-        · rw [ite_eq_right (by omega), ite_eq_right h]
+        · rw [ite_eq_left (by omega_using [h]), ite_eq_left h, show 1 + k - 1 = k by omega_using []]
+        · rw [ite_eq_right (by omega_using [h]), ite_eq_right h]
     have hs2 : valN (fun k => if k < 26 then r k else r 26 % 16384) 27 =
         valN r 26 + radix ^ 26 * (r 26 % 16384) := by
-      rw [valN_succ, ite_eq_right (by omega), valN_congr (g := r) (n := 26) fun k hk => ite_eq_left hk]
+      rw [valN_succ, ite_eq_right (by omega_using []), valN_congr (g := r) (n := 26) fun k hk => ite_eq_left hk]
     have h1 : valN (foldL r w) 1 = w := by
       simp only [valN, foldL, ite_true, Nat.pow_zero, Nat.one_mul, Nat.zero_add]
     rw [hs, hs2, h1, Nat.pow_one]
@@ -115,41 +115,41 @@ theorem fold_facts {c : Nat → Nat} (hc : ∀ k < 28, c k < radix) (hcv : valN 
     rcases Nat.lt_or_ge (r 27) 16384 with h | h
     · exact h
     · have := Nat.mul_le_mul_left (radix ^ 27) h
-      omega
+      omega_using [hv, hL, h446, e, this]
   have hH : foldH r < radix := by
     unfold foldH
-    have := hr 26 (by omega)
+    have := hr 26 (by omega_using [])
     rw [hR] at this ⊢
-    omega
+    omega_using [h27, this]
   have hl := foldL_lt hr hw
   refine ⟨h27, hH, fun k hk => ?_, ?_⟩
   · have hm : foldH r * c k ≤ 65535 * 65535 :=
-      Nat.mul_le_mul (by rw [hR] at hH; omega) (by have := hc k hk; rw [hR] at this; omega)
+      Nat.mul_le_mul (by rw [hR] at hH; omega_using [hH]) (by have := hc k hk; rw [hR] at this; omega_using [this])
     have := hl k hk
     unfold foldC
     rw [hR] at this ⊢
-    omega
+    omega_using [hm, this]
   have eC : valN (foldC c r w) 28 = valN (foldL r w) 28 + foldH r * cL := by
     unfold foldC
     rw [valN_add, valN_scale, hcv]
   have hL28 : valN (foldL r w) 28 < 2 ^ 446 := by
     have e : valN (foldL r w) 28 = valN (foldL r w) 27 + radix ^ 27 * (r 26 % 16384) := by
       rw [valN_succ]; rfl
-    have h1 : valN (foldL r w) 27 < radix ^ 27 := valN_lt fun k hk => hl k (by omega)
-    have h2 := Nat.mul_le_mul_left (radix ^ 27) (by omega : r 26 % 16384 ≤ 16383)
+    have h1 : valN (foldL r w) 27 < radix ^ 27 := valN_lt fun k hk => hl k (by omega_using [hk])
+    have h2 := Nat.mul_le_mul_left (radix ^ 27) (by omega_using [] : r 26 % 16384 ≤ 16383)
     rw [h446]
-    omega
+    omega_using [e, h1, h2]
   have hval := foldL_val r w
   have hP' : (2 : Nat) ^ 446 = L + cL := L_add.symm
   have hcL : cL = 13818066809895115352007386748515426880336692474882178609894547503885 := rfl
   rw [hP'] at hval hL28
   have hHc : foldH r * cL < radix * cL := Nat.mul_lt_mul_of_pos_right hH (by rw [hcL]; decide)
   refine ⟨?_, ?_⟩
-  · rw [eC]; rw [hL, hcL, hR] at *; omega
+  · rw [eC]; rw [hL, hcL, hR] at *; omega_using [hH, hL28, hP']
   · rw [eC, ← hval]
     have e : valN (foldL r w) 28 + (L + cL) * foldH r =
         valN (foldL r w) 28 + foldH r * cL + foldH r * L := by
-      rw [Nat.add_mul, Nat.mul_comm L, Nat.mul_comm cL]; omega
+      rw [Nat.add_mul, Nat.mul_comm L, Nat.mul_comm cL]; omega_using []
     rw [e, Nat.add_mul_mod_self_right]
 
 /-! ## The conditional subtraction -/
@@ -161,21 +161,21 @@ theorem csub_facts {M x y c : Nat} (hLM : 2 * L ≤ M) (hx : x < 2 * L) (hy : y 
     c ≤ 1 ∧ (if c = 1 then y else x) = x % L := by
   have hc : c ≤ 1 := by
     rcases Nat.lt_or_ge c 2 with h | h
-    · omega
+    · omega_using [h]
     · have : M * 2 ≤ M * c := Nat.mul_le_mul_left _ h
-      omega
+      omega_using [hLM, hx, he, this]
   refine ⟨hc, ?_⟩
   have := Proof.Ed448.csub_nat (M := M) (x := x) (y := y) (c := decide (c = 1)) hLM hx hy
-    (by rcases (by omega : c = 0 ∨ c = 1) with rfl | rfl <;> simpa using he)
+    (by rcases (by omega_using [hc] : c = 0 ∨ c = 1) with rfl | rfl <;> simpa using he)
   rw [← this]
-  rcases (by omega : c = 0 ∨ c = 1) with rfl | rfl <;> rfl
+  rcases (by omega_using [hc] : c = 0 ∨ c = 1) with rfl | rfl <;> rfl
 
 /-- `2L` fits in 448 bits. -/
 theorem two_L_le : 2 * L ≤ radix ^ 28 := by
   have h := pow2_split 446 2 (16 * 28) rfl
   have := L_lt
   rw [radix_pow]
-  omega
+  omega_using [this]
 
 /-- A carry pass of a number below `2^448` carries nothing out. -/
 theorem carry_zero {f : Nat → Nat} (h : valN f 28 < radix ^ 28) : carry f 28 = 0 := by
@@ -183,7 +183,7 @@ theorem carry_zero {f : Nat → Nat} (h : valN f 28 < radix ^ 28) : carry f 28 =
   rcases Nat.eq_zero_or_pos (carry f 28) with hz | hz
   · exact hz
   · have := Nat.mul_le_mul_left (radix ^ 28) hz
-    omega
+    omega_using [h, e, this]
 
 /-- The digits of a carry pass of a number below `2^448` are that number. -/
 theorem digits_val {f : Nat → Nat} (h : valN f 28 < radix ^ 28) : valN (digit f) 28 = valN f 28 := by
@@ -200,17 +200,17 @@ theorem mod_fold (w D : Nat) : (w + radix * (D % L)) % L = (w + radix * D) % L :
 theorem decode_drop2 (m : Mem) (p : Addr) {N n : Nat} (h : n + 2 ≤ N) :
     decodeLE ((bytesAt m p N).drop n) = (m (p + BitVec.ofNat 64 n)).toNat +
       256 * (m (p + BitVec.ofNat 64 (n + 1))).toNat + radix * decodeLE ((bytesAt m p N).drop (n + 2)) := by
-  rw [List.drop_eq_getElem_cons (by rw [bytesAt_length]; omega),
-    List.drop_eq_getElem_cons (by rw [bytesAt_length]; omega)]
+  rw [List.drop_eq_getElem_cons (by rw [bytesAt_length]; omega_using [h]),
+    List.drop_eq_getElem_cons (by rw [bytesAt_length]; omega_using [h])]
   simp only [decodeLE, bytesAt, List.getElem_map, List.getElem_range]
   rw [show n + 1 + 1 = n + 2 from rfl, show radix = 65536 from rfl]
-  omega
+  omega_using []
 
 /-- A suffix of one byte. -/
 theorem decode_drop1 (m : Mem) (p : Addr) {N n : Nat} (h : n + 1 = N) :
     decodeLE ((bytesAt m p N).drop n) = (m (p + BitVec.ofNat 64 n)).toNat := by
-  rw [List.drop_eq_getElem_cons (by rw [bytesAt_length]; omega),
-    List.drop_eq_nil_of_le (by rw [bytesAt_length]; omega)]
+  rw [List.drop_eq_getElem_cons (by rw [bytesAt_length]; omega_using [h]),
+    List.drop_eq_nil_of_le (by rw [bytesAt_length]; omega_using [h])]
   simp only [decodeLE, bytesAt, List.getElem_map, List.getElem_range, Nat.mul_zero, Nat.add_zero]
 
 /-- The number of the limbs `a j, …, a 55`. -/
@@ -219,10 +219,10 @@ def accFrom (a : Nat → Nat) (j : Nat) : Nat := valN (fun i => a (j + i)) (56 -
 theorem accFrom_step (a : Nat → Nat) {j : Nat} (hj : j < 56) :
     accFrom a j = a j + radix * accFrom a (j + 1) := by
   unfold accFrom
-  rw [show 56 - j = 1 + (56 - (j + 1)) by omega, valN_split]
+  rw [show 56 - j = 1 + (56 - (j + 1)) by omega_using [hj], valN_split]
   simp only [valN, Nat.pow_zero, Nat.one_mul, Nat.zero_add, Nat.add_zero, Nat.pow_one]
   refine congrArg (a j + radix * ·) (valN_congr fun i _ => ?_)
-  rw [show j + (1 + i) = j + 1 + i by omega]
+  rw [show j + (1 + i) = j + 1 + i by omega_using []]
 
 theorem accFrom_zero (a : Nat → Nat) : accFrom a 0 = valN a 56 :=
   valN_congr fun i _ => by rw [Nat.zero_add]

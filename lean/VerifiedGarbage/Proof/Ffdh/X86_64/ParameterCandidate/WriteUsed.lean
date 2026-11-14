@@ -25,7 +25,7 @@ private theorem writeWord_frame (m : Mem) (p : Addr) (v : BitVec 64) :
       simp only [off, ofs, BitVec.ofNat_toNat, BitVec.setWidth_eq]
       rw [BitVec.add_comm]
       exact BitVec.sub_add_cancel _ _
-    exact ha _ (by omega) he.symm
+    exact ha _ (by omega_using [hn]) he.symm
   have hf := writeW_outside m p (d := 0) v (by decide)
   simpa only [off, BitVec.add_zero] using hf a (Or.inr hfar)
 

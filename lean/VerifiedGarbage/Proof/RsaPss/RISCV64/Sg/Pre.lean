@@ -255,22 +255,22 @@ variable {pc : Bool} {D : Nat} {s : State} (P : PreS pc D s)
 include P
 
 theorem scLen : oRsa ≤ (stackArg s 13).toNat * 8 := by
-  have := P.hs; unfold Spec.RsaPss.scratchWords Spec.Rsa.scratchWords at this; unfold oRsa; omega
+  have := P.hs; unfold Spec.RsaPss.scratchWords Spec.Rsa.scratchWords at this; unfold oRsa; omega_using [this]
 
 theorem sc_sub : Region.Sub (SC Ss s) (scR s) := Region.sub_prefix (scLen P)
 
 omit P in
 theorem kR_sub : Region.Sub (kR s) (kS pc s) :=
-  below_sub (by have := stackBytes_ge pc; unfold Proof.RsaOaep.RISCV64.stackBytes; omega)
-    (by have := stackBytes_ge pc; omega)
+  below_sub (by have := stackBytes_ge pc; unfold Proof.RsaOaep.RISCV64.stackBytes; omega_using [this])
+    (by have := stackBytes_ge pc; omega_using [this])
 
 /-- `Fits` for the entry state. -/
 theorem fits : Fits Ss s where
-  sp1 := by have := P.sp1; have := stackBytes_ge pc; unfold Proof.RsaOaep.RISCV64.stackBytes; omega
+  sp1 := by have := P.sp1; have := stackBytes_ge pc; unfold Proof.RsaOaep.RISCV64.stackBytes; omega_arith
   sp16 := P.spal
   sc := ⟨scR s, by rw [P.hwr]; exact List.mem_cons_of_mem _ (List.mem_singleton_self _), rfl, scLen P⟩
   ksc := (P.ks.sub_left kR_sub).sub_right (sc_sub P)
-  wS := by show (stackArg s 12).toNat + oRsa ≤ 2 ^ 64; have := P.wsc; have := scLen P; omega
+  wS := by show (stackArg s 12).toNat + oRsa ≤ 2 ^ 64; have := P.wsc; have := scLen P; omega_arith
 
 end
 
@@ -289,11 +289,11 @@ end
 
 /-- The stack arguments are in `aR`. -/
 theorem in_aR {pc : Bool} {s : State} {j : Nat} (hj : j < 16) : (aR pc s).Contains (stackArgAddr s j) 8 := by
-  rw [stackArgAddr_eq s j]; exact Offset.contains_base _ (by split <;> omega) (by omega)
+  rw [stackArgAddr_eq s j]; exact Offset.contains_base _ (by split <;> omega_using [hj]) (by omega_using [hj])
 
 /-- With `pc`, the stack arguments 16 and 17 too. -/
 theorem in_aR18 {s : State} {j : Nat} (hj : j < 18) : (aR true s).Contains (stackArgAddr s j) 8 := by
-  rw [stackArgAddr_eq s j]; exact Offset.contains_base _ (by simp only [↓reduceIte]; omega) (by omega)
+  rw [stackArgAddr_eq s j]; exact Offset.contains_base _ (by simp only [↓reduceIte]; omega_using [hj]) (by omega_using [hj])
 
 /-- `n`, `e`, `e_len`, `p`, `p_len` and the mask `c` in the six words at `scratch + oP`. -/
 structure Spilled (s : State) (m : Mem) : Prop where
@@ -315,29 +315,29 @@ variable {pc : Bool} {D : Nat} {s : State} (P : PreS pc D s)
 include P
 
 theorem arg_al {j : Nat} (hj : j < 16) : (stackArgAddr s j).toNat % 8 = 0 := by
-  have := P.spal; have : s.sp.toNat + 128 ≤ 2 ^ 64 := by have := P.sp2; split at this <;> omega
+  have := P.spal; have : s.sp.toNat + 128 ≤ 2 ^ 64 := by have := P.sp2; split at this <;> omega_using [this]
   have e : (stackArgAddr s j).toNat = s.sp.toNat + 8 * j := by
-    simp only [stackArgAddr, BitVec.toNat_add, BitVec.toNat_ofNat]; omega
-  rw [e]; omega
+    simp only [stackArgAddr, BitVec.toNat_add, BitVec.toNat_ofNat]; omega_using [hj, this]
+  rw [e]; omega_arith
 
 omit P in
 /-- With `pc`, the stack arguments 16 and 17 too. -/
 theorem arg_al18 (P : PreS true D s) {j : Nat} (hj : j < 18) : (stackArgAddr s j).toNat % 8 = 0 := by
   have := P.spal; have : s.sp.toNat + 144 ≤ 2 ^ 64 := P.sp2
   have e : (stackArgAddr s j).toNat = s.sp.toNat + 8 * j := by
-    simp only [stackArgAddr, BitVec.toNat_add, BitVec.toNat_ofNat]; omega
-  rw [e]; omega
+    simp only [stackArgAddr, BitVec.toNat_add, BitVec.toNat_ofNat]; omega_using [hj, this]
+  rw [e]; omega_arith
 
 theorem fb_al8 : (fb s).toNat % 8 = 0 := by
-  have := fb_al (fits P); omega
+  have := fb_al (fits P); omega_using [this]
 
 theorem oP_al (j : Nat) : (off (Ss s) (oP + 8 * j)).toNat % 8 = 0 := by
   have := P.als
   have e : (off (stackArg s 12) (oP + 8 * j)).toNat = (stackArg s 12).toNat + (oP + 8 * j) % 2 ^ 64 ∨
       (off (stackArg s 12) (oP + 8 * j)).toNat = ((stackArg s 12).toNat + (oP + 8 * j) % 2 ^ 64) - 2 ^ 64 := by
-    simp only [off, BitVec.toNat_add, BitVec.toNat_ofNat]; omega
+    simp only [off, BitVec.toNat_add, BitVec.toNat_ofNat]; omega_using []
   show (off (stackArg s 12) (oP + 8 * j)).toNat % 8 = 0
-  unfold oP at *; omega
+  unfold oP at *; omega_using [this, e]
 
 /-- A load of our stack argument `j` through `t6`, the entry stack pointer,
 with memory changed only in the stack and our part of the working space. -/
@@ -362,7 +362,7 @@ include P
 
 omit P in
 theorem sc_c8 (j : Nat) (hj : j < 6) : (SC Ss s).Contains (off (Ss s) (oP + 8 * j)) (64 / 8) :=
-  Offset.contains_base (Ss s) (by unfold oP oRsa; omega) (by unfold oP; omega)
+  Offset.contains_base (Ss s) (by unfold oP oRsa; omega_using [hj]) (by unfold oP; omega_using [hj])
 
 /-- After the saves and the prologue. -/
 structure Pro (s t : State) : Prop where
@@ -409,7 +409,7 @@ theorem spill_ok {v₅ : State} (E : Pro s v₅) : WP isa (.block spill) v₅ (E
     List.nil_append]
   have w8 : ∀ {u : State} (j : Nat), u.wr = v₅.wr → j < 6 → InRegions u.wr (off (Ss s) (oP + 8 * j)) 8 :=
     fun j hu hj => by
-      rw [hu, E.sv.wr]; exact sc_inW F (by unfold oP oRsa; omega)
+      rw [hu, E.sv.wr]; exact sc_inW F (by unfold oP oRsa; omega_using [hj])
   refine wp_sd (a := off (Ss s) oP) (by rw [g0]) (by simpa using oP_al P 0) (by simpa using w8 0 rfl (by decide))
     fun v₆ m₆ => ?_
   refine wp_sd (a := off (Ss s) (oP + 8)) (by rw [m₆.gpr, g0]) (oP_al P 1) (w8 1 m₆.wr (by decide))
@@ -423,7 +423,7 @@ theorem spill_ok {v₅ : State} (E : Pro s v₅) : WP isa (.block spill) v₅ (E
   have kg : v₁₀.gpr = v₅.gpr := by rw [m₁₀.gpr, m₉.gpr, m₈.gpr, m₇.gpr, m₆.gpr]
   have hn : nR s ∈ s.rd := by rw [P.hrd]; simp
   have hc : (nR s).Contains (s.gpr .a2) 1 := by
-    have := Offset.contains_base (s.gpr .a2) (d := 0) (n := 1) (k := (s.gpr .a3).toNat) (by have := P.k1; omega)
+    have := Offset.contains_base (s.gpr .a2) (d := 0) (n := 1) (k := (s.gpr .a3).toNat) (by have := P.k1; omega_using [this])
       (by decide)
     simpa only [BitVec.add_zero] using this
   have hf1 : Frame [SC Ss s] v₅.mem v₁₀.mem := by
@@ -473,25 +473,25 @@ theorem spill_ok {v₅ : State} (E : Pro s v₅) : WP isa (.block spill) v₅ (E
   have sp : Spilled s y.mem := by
     rw [hm, m₁₀.mem, m₉.mem, m₈.mem, m₇.mem, m₆.mem]
     refine ⟨?_, ?_, ?_, ?_, ?_, ?_⟩
-    · rw [Mem.readW_writeW_sep (Offset.sep _ (.inl (by unfold oP; omega)) (by unfold oP; omega) (by unfold oP; omega)) (by decide),
-        Mem.readW_writeW_sep (Offset.sep _ (.inl (by unfold oP; omega)) (by unfold oP; omega) (by unfold oP; omega)) (by decide),
-        Mem.readW_writeW_sep (Offset.sep _ (.inl (by unfold oP; omega)) (by unfold oP; omega) (by unfold oP; omega)) (by decide),
-        Mem.readW_writeW_sep (Offset.sep _ (.inl (by unfold oP; omega)) (by unfold oP; omega) (by unfold oP; omega)) (by decide),
-        Mem.readW_writeW_sep (Offset.sep _ (.inl (by unfold oP; omega)) (by unfold oP; omega) (by unfold oP; omega)) (by decide),
+    · rw [Mem.readW_writeW_sep (Offset.sep _ (.inl (by unfold oP; omega_using [])) (by unfold oP; omega_using []) (by unfold oP; omega_using [])) (by decide),
+        Mem.readW_writeW_sep (Offset.sep _ (.inl (by unfold oP; omega_using [])) (by unfold oP; omega_using []) (by unfold oP; omega_using [])) (by decide),
+        Mem.readW_writeW_sep (Offset.sep _ (.inl (by unfold oP; omega_using [])) (by unfold oP; omega_using []) (by unfold oP; omega_using [])) (by decide),
+        Mem.readW_writeW_sep (Offset.sep _ (.inl (by unfold oP; omega_using [])) (by unfold oP; omega_using []) (by unfold oP; omega_using [])) (by decide),
+        Mem.readW_writeW_sep (Offset.sep _ (.inl (by unfold oP; omega_using [])) (by unfold oP; omega_using []) (by unfold oP; omega_using [])) (by decide),
         Mem.readW_writeW_self64, a5 .a2 (by decide)]
-    · rw [Mem.readW_writeW_sep (Offset.sep _ (.inl (by unfold oP; omega)) (by unfold oP; omega) (by unfold oP; omega)) (by decide),
-        Mem.readW_writeW_sep (Offset.sep _ (.inl (by unfold oP; omega)) (by unfold oP; omega) (by unfold oP; omega)) (by decide),
-        Mem.readW_writeW_sep (Offset.sep _ (.inl (by unfold oP; omega)) (by unfold oP; omega) (by unfold oP; omega)) (by decide),
-        Mem.readW_writeW_sep (Offset.sep _ (.inl (by unfold oP; omega)) (by unfold oP; omega) (by unfold oP; omega)) (by decide),
+    · rw [Mem.readW_writeW_sep (Offset.sep _ (.inl (by unfold oP; omega_using [])) (by unfold oP; omega_using []) (by unfold oP; omega_using [])) (by decide),
+        Mem.readW_writeW_sep (Offset.sep _ (.inl (by unfold oP; omega_using [])) (by unfold oP; omega_using []) (by unfold oP; omega_using [])) (by decide),
+        Mem.readW_writeW_sep (Offset.sep _ (.inl (by unfold oP; omega_using [])) (by unfold oP; omega_using []) (by unfold oP; omega_using [])) (by decide),
+        Mem.readW_writeW_sep (Offset.sep _ (.inl (by unfold oP; omega_using [])) (by unfold oP; omega_using []) (by unfold oP; omega_using [])) (by decide),
         Mem.readW_writeW_self64, m₆.gpr, a5 .a4 (by decide)]
-    · rw [Mem.readW_writeW_sep (Offset.sep _ (.inl (by unfold oP; omega)) (by unfold oP; omega) (by unfold oP; omega)) (by decide),
-        Mem.readW_writeW_sep (Offset.sep _ (.inl (by unfold oP; omega)) (by unfold oP; omega) (by unfold oP; omega)) (by decide),
-        Mem.readW_writeW_sep (Offset.sep _ (.inl (by unfold oP; omega)) (by unfold oP; omega) (by unfold oP; omega)) (by decide),
+    · rw [Mem.readW_writeW_sep (Offset.sep _ (.inl (by unfold oP; omega_using [])) (by unfold oP; omega_using []) (by unfold oP; omega_using [])) (by decide),
+        Mem.readW_writeW_sep (Offset.sep _ (.inl (by unfold oP; omega_using [])) (by unfold oP; omega_using []) (by unfold oP; omega_using [])) (by decide),
+        Mem.readW_writeW_sep (Offset.sep _ (.inl (by unfold oP; omega_using [])) (by unfold oP; omega_using []) (by unfold oP; omega_using [])) (by decide),
         Mem.readW_writeW_self64, m₇.gpr, m₆.gpr, a5 .a5 (by decide)]
-    · rw [Mem.readW_writeW_sep (Offset.sep _ (.inl (by unfold oP; omega)) (by unfold oP; omega) (by unfold oP; omega)) (by decide),
-        Mem.readW_writeW_sep (Offset.sep _ (.inl (by unfold oP; omega)) (by unfold oP; omega) (by unfold oP; omega)) (by decide),
+    · rw [Mem.readW_writeW_sep (Offset.sep _ (.inl (by unfold oP; omega_using [])) (by unfold oP; omega_using []) (by unfold oP; omega_using [])) (by decide),
+        Mem.readW_writeW_sep (Offset.sep _ (.inl (by unfold oP; omega_using [])) (by unfold oP; omega_using []) (by unfold oP; omega_using [])) (by decide),
         Mem.readW_writeW_self64, m₈.gpr, m₇.gpr, m₆.gpr, a5 .a6 (by decide)]
-    · rw [Mem.readW_writeW_sep (Offset.sep _ (.inl (by unfold oP; omega)) (by unfold oP; omega) (by unfold oP; omega)) (by decide),
+    · rw [Mem.readW_writeW_sep (Offset.sep _ (.inl (by unfold oP; omega_using [])) (by unfold oP; omega_using []) (by unfold oP; omega_using [])) (by decide),
         Mem.readW_writeW_self64, m₉.gpr, m₈.gpr, m₇.gpr, m₆.gpr, a5 .a7 (by decide)]
     · rw [Mem.readW_writeW_self64]
   refine ⟨⟨sv, by rw [m.rd, kw.rd, m₁₀.rd, m₉.rd, m₈.rd, m₇.rd, m₆.rd, hrd],

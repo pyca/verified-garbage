@@ -77,7 +77,7 @@ theorem gkRes_eq {s₀ : State} (h : gkContract.pre s₀) : gkRes s₀ = resOf s
   have hq' : (Spec.Dsa.paramsBytes (glOf s₀).pl (glOf s₀).ql (parOf s₀)).q = qOf s₀ := by
     rw [VG.Proof.Dsa.paramsBytes_eq]
     show Spec.Dsa.decodeBE _ = Spec.Dsa.decodeBE _
-    rw [VG.Proof.Dsa.bytesAt_slice s₀.mem _ (by simp only [GL.kl]; omega)]
+    rw [VG.Proof.Dsa.bytesAt_slice s₀.mem _ (by simp only [GL.kl]; omega_using [])]
   unfold gkRes
   rw [e7]
   show Spec.Dsa.generateKeyBytes (glOf s₀).pl (glOf s₀).ql (parOf s₀) (randOf (glOf s₀) s₀.mem) = _
@@ -89,9 +89,9 @@ theorem resOf_status (s₀ : State) : (resOf s₀).status ≤ 2 := by
   unfold resOf
   split
   · split
-    · dsimp only; split <;> omega
-    · dsimp only; unfold Spec.Dsa.signStatus; split <;> omega
-  · dsimp only; omega
+    · dsimp only; split <;> omega_using []
+    · dsimp only; unfold Spec.Dsa.signStatus; split <;> omega_using []
+  · dsimp only; omega_using []
 
 theorem resOf_none {s₀ : State} (hs : (resOf s₀).status ≠ 1) : (resOf s₀).key = none := by
   revert hs
@@ -113,7 +113,7 @@ theorem frame_byte {L : GL} (hL : L.Ok) {rs : List Region} (hd : ∀ r ∈ rs, L
   have hF := hL.fnw
   refine hf _ fun r hr hc => ?_
   have hin : L.frR.Contains (off L.F d) 1 :=
-    VG.Offset.contains_base _ (by omega) (by simp only [frameBytes] at hdl; omega)
+    VG.Offset.contains_base _ (by omega_using [hdl]) (by simp only [frameBytes] at hdl; omega_using [hdl])
   exact hd r hr _ hin hc
 
 /-- After the check of the domain. -/
@@ -130,7 +130,7 @@ theorem checked_ok {s₀ t : State} (h : gkContract.pre s₀) (he : Entered (glO
   refine WP.seq (WP.mono (checkArgs_ok hL he.ctx) fun t₂ ⟨ca, m2, k2⟩ => WP.mono (check_ok h ca) fun t₃ ck => ?_)
   refine ⟨ck.ctx, (ck.pres _ (by decide)).trans ((k2.gpr _ (by decide)).trans he.r25), fun j hj => ?_, ck.r3⟩
   rw [frame_byte hL (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact hL.dFS) ck.frame
-    (by simp only [oNonce, frameBytes]; omega), m2]
+    (by simp only [oNonce, frameBytes]; omega_using [hj]), m2]
   exact he.nonce j hj
 
 /-- The nonce's first `q_len − W` octets are zero. -/
@@ -158,7 +158,7 @@ theorem derive_wp {s₀ t : State} (h : gkContract.pre s₀) (hq : 1 < qOf s₀)
     hc.step hL k2.sp k2.rd k2.wr (fun r hr => k2.gpr r (ctx_r3 r hr)) (by rw [m2]; exact Frame.refl _ _)
   have b25 : t₂.gpr .r25 = BitVec.ofNat 64 (drawOf s₀).used := (k2.gpr _ (by decide)).trans h25
   refine WP.ite (decide (sampleStatus (drawOf s₀) = 1))
-    (by rw [eval_zero, a3, h31, RS.sub1_beq _ (by omega)]) (fun hs => ?_) (fun hs => ?_)
+    (by rw [eval_zero, a3, h31, RS.sub1_beq _ (by omega_using [hst])]) (fun hs => ?_) (fun hs => ?_)
   · simp only [decide_eq_true_eq] at hs
     obtain ⟨x, hx⟩ := Option.isSome_iff_exists.mp (RS.sampleStatus_some.mp hs)
     have hR : resOf s₀ = ⟨dkOf s₀ x, Spec.Dsa.signStatus (dkOf s₀ x), (drawOf s₀).used,
@@ -234,7 +234,7 @@ theorem valid_ok {s₀ t₂ : State} (h : gkContract.pre s₀) (ck : Chk s₀ t�
     simp only [decide_eq_true_eq] at hq
     have hd : drawOf s₀ = ⟨none, 0, [4]⟩ := by
       show Spec.Dsa.Random.sample (qOf s₀) (127 + 1) _ = _
-      rw [Spec.Dsa.Random.sample, ite_eq_left (show qOf s₀ ≤ 1 by omega)]
+      rw [Spec.Dsa.Random.sample, ite_eq_left (show qOf s₀ ≤ 1 by omega_using [hq])]
     have hR : resOf s₀ = ⟨none, 0, 0, [4]⟩ := by simp only [resOf, hchk, hd]; rfl
     refine WP.mono (WP.keep (c := .block [.li .r31 0]) [.r31] (Q := fun t₄ => t₄.mem = t₃.mem ∧
       t₄.gpr .r31 = BitVec.ofNat 64 0) (by prun) (by decide)) fun t₄ ⟨⟨m4, a31⟩, k4⟩ => ?_
@@ -254,15 +254,15 @@ theorem valid_ok {s₀ t₂ : State} (h : gkContract.pre s₀) (ck : Chk s₀ t�
     rw [List.drop_zero] at so
     have c₄ : Ctx (glOf s₀) s₀ t₄ := sc.ctx.step hL so.keep.sp so.keep.rd so.keep.wr
       (fun r hr => so.keep.gpr r (ctx_draw r hr))
-      (outside_frame hL (o := (eOf s₀).ql - (eOf s₀).W) (n := (eOf s₀).W) (by omega) so.out)
+      (outside_frame hL (o := (eOf s₀).ql - (eOf s₀).W) (n := (eOf s₀).W) (by omega_using [hW, hql']) so.out)
     have nz : NZero s₀ t₄.mem := fun j hj => by
       have e : ofs (eOf s₀).F (off (glOf s₀).F (oNonce + j)) = oNonce + j :=
-        Mont.ofs_off0 _ (by simp only [oNonce, frameBytes] at hF ⊢; omega)
+        Mont.ofs_off0 _ (by simp only [oNonce, frameBytes] at hF ⊢; omega_using [hql, hj])
       have hj' : oNonce + j < (eOf s₀).o := by
         have e2 : (eOf s₀).ql = (glOf s₀).ql := rfl
-        simp only [SE.o]; omega
+        simp only [SE.o]; omega_using [hj, e2]
       rw [so.out _ (.inl (by rw [e]; exact hj')), m3]
-      exact ck.nonce j (by omega)
+      exact ck.nonce j (by omega_using [hql, hj])
     have r25 : t₄.gpr .r25 = BitVec.ofNat 64 (drawOf s₀).used := by rw [so.r25, Nat.zero_add]
     exact WP.mono (derive_wp h hq c₄ nz r25 so.r31 so.cand hchk) fun t₅ ⟨c, a, b, d⟩ => ⟨c, a, b, d⟩
 

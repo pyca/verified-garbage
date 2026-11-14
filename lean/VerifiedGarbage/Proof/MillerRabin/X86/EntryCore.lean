@@ -101,9 +101,9 @@ theorem exponentWindow_digit (E N j i : Nat) (word : j < N) (window : i < 8) :
     ((exponentWord E (N - 1 - j) <<< (4 * i)) >>> 28).toNat =
       E / 16 ^ (8 * N - 1 - (8 * j + i)) % 16 := by
   rw [Word32.shl_shr28 _ window, exponentWord, BitVec.toNat_ofNat,
-    show 28 - 4 * i = 4 * (7 - i) by omega,
-    Word32.digit_word E (N - 1 - j) (7 - i) (by omega)]
-  rw [show 8 * (N - 1 - j) + (7 - i) = 8 * N - 1 - (8 * j + i) by omega]
+    show 28 - 4 * i = 4 * (7 - i) by omega_using [],
+    Word32.digit_word E (N - 1 - j) (7 - i) (by omega_using [])]
+  rw [show 8 * (N - 1 - j) + (7 - i) = 8 * N - 1 - (8 * j + i) by omega_using [word, window]]
 
 end VG.Proof.MillerRabin
 end
@@ -126,14 +126,14 @@ theorem wordState_mrun (A : Nat → Nat) (c w E N j : Nat) (F : Bool)
       Word32.mrun c w (A aMinusOne) (fun d => A (aTable + d)) E (8 * N) (8 * j + i)
   | 0, _ => by simpa only [wordState, Nat.add_zero] using initial
   | i + 1, bound => by
-    rw [wordState, wordState_mrun A c w E N j F word initial i (by omega),
-      show 8 * j + (i + 1) = (8 * j + i) + 1 by omega, Word32.mrun,
-      exponentWindow_digit E N j i word (by omega)]
+    rw [wordState, wordState_mrun A c w E N j F word initial i (by omega_using [bound]),
+      show 8 * j + (i + 1) = (8 * j + i) + 1 by omega_using [], Word32.mrun,
+      exponentWindow_digit E N j i word (by omega_using [bound])]
 
 theorem powerView_setY (A : Nat → Nat) (y : Nat) :
     (fun d => setAt A aY y (aTable + d)) = (fun d => A (aTable + d)) := by
   funext d
-  exact setAt_other _ _ (by unfold aTable aY; omega)
+  exact setAt_other _ _ (by unfold aTable aY; omega_using [])
 
 theorem exponentState_mrun (A : Nat → Nat) (c w N : Nat) (one : A aY = A aTable) :
     ∀ j, j ≤ N → exponentState A c w N false j =
@@ -142,7 +142,7 @@ theorem exponentState_mrun (A : Nat → Nat) (c w N : Nat) (one : A aY = A aTabl
     change (A aY, false) = (A (aTable + 0), false)
     rw [Nat.add_zero, one]
   | j + 1, bound => by
-    have ih := exponentState_mrun A c w N one j (by omega)
+    have ih := exponentState_mrun A c w N one j (by omega_using [bound])
     let st := exponentState A c w N false j
     let nextA := setAt A aY st.1
     have start : (nextA aY, st.2) =
@@ -153,13 +153,13 @@ theorem exponentState_mrun (A : Nat → Nat) (c w N : Nat) (one : A aY = A aTabl
         (fun d => setAt A aY st.1 (aTable + d)) (A aExponent) (8 * N) (8 * j)
       rw [setAt_other _ _ (by decide : aMinusOne ≠ aY), powerView_setY]
       exact ih
-    have result := wordState_mrun nextA c w (A aExponent) N j st.2 (by omega) start 8 (by decide)
+    have result := wordState_mrun nextA c w (A aExponent) N j st.2 (by omega_using [bound]) start 8 (by decide)
     change wordState nextA c w (exponentWord (A aExponent) (N - 1 - j)) st.2 8 = _
     rw [result]
     change Word32.mrun c w (setAt A aY st.1 aMinusOne) (fun d => setAt A aY st.1 (aTable + d))
       (A aExponent) (8 * N) (8 * j + 8) = _
     rw [setAt_other _ _ (by decide : aMinusOne ≠ aY), powerView_setY,
-      show 8 * j + 8 = 8 * (j + 1) by omega]
+      show 8 * j + 8 = 8 * (j + 1) by omega_using []]
 
 end VG.Proof.MillerRabin.X86
 end
@@ -214,7 +214,7 @@ theorem finishedState_eq {A : Nat → Nat} {c w b : Nat}
   have table : ∀ j < 16, runValues A c w (aTable + j) = Word32.tp c w (A aX) (A aOne) j :=
     fun j digit => runValues_power A c w digit
   rw [Word32.mrun_table_congr table c w (A aMinusOne) (A aExponent) (8 * (2 * w)) (8 * (2 * w)),
-    show 8 * (2 * w) = 16 * w by omega, exponent]
+    show 8 * (2 * w) = 16 * w by omega_using [], exponent]
   exact Word32.final_eq odd minimum fits witness one minus
 
 end VG.Proof.MillerRabin.X86
@@ -248,16 +248,16 @@ theorem Entry.narrowed_body {s : State} (E : Entry s) :
   rw [← mem] at marker
   have Olt : initialValues s aOne < initialValues s 0 := by
     rw [one]
-    exact Nat.mod_lt _ (by omega)
+    exact Nat.mod_lt _ (by omega_using [minimum])
   refine WP.mono (core_ok VG.Proof.Mont.X86.Sse2.prepared_verified compact_noSp compact_stack E.valid S
-    (by change (arg s 1).toNat * 8 = 8 * (arg s 1).toNat; omega) odd Xlt Olt (Nat.mod_lt _ (by decide)) marker.1 marker.2)
+    (by change (arg s 1).toNat * 8 = 8 * (arg s 1).toNat; omega_using []) odd Xlt Olt (Nat.mod_lt _ (by decide)) marker.1 marker.2)
     fun u ⟨value, frame, keep⟩ => ?_
   refine ⟨⟨?_, ?_⟩, (K.mono (by decide)).widen keep⟩
   · intro b witness
     have fits : initialValues s 0 < 2 ^ (64 * (geometry s).w) := by
       rw [initialValues, Compact.numAt_val32]
       have := val32_lt s.mem (wsOf s) (Proof.Rsa.Mont.arrAt (geometry s).w 0) (2 * (geometry s).w)
-      simpa only [show 32 * (2 * (geometry s).w) = 64 * (geometry s).w by omega] using this
+      simpa only [show 32 * (2 * (geometry s).w) = 64 * (geometry s).w by omega_using []] using this
     have final := finishedState_eq odd minimum fits witness one minus exponent
     change u.gpr .eax = BitVec.ofNat 32
       (finishedState (initialValues s) (initialValues s 0) (geometry s).w (2 * (geometry s).w)

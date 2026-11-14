@@ -378,8 +378,8 @@ theorem fin_ok {s₀ : State} (hp : UPre s₀) {s : State} (h : Fin s₀ s) :
     WP isa (.block restoreS) s fun s' => gprPreserved s₀ s' ∧ Proof.Poly1305.updateX86_64.post s₀ s' := by
   refine WP.mono (Spill.restore_ok .r15 savedS s₀.gpr s (by decide) (fun q hq => ⟨scR s₀,
     by rw [h.rd, h.wr, hp.wr]; simp, by
-      rw [h.r15]; exact Offset.contains_base _ (by have := savedS_bound q hq; omega)
-        (by have := savedS_bound q hq; omega)⟩)
+      rw [h.r15]; exact Offset.contains_base _ (by have := savedS_bound q hq; omega_using [this])
+        (by have := savedS_bound q hq; omega_using [this])⟩)
     (by rw [h.r15]; exact h.saved)) fun s' ⟨g₁, g₂, m', _⟩ => ?_
   refine ⟨⟨Spill.calleeSaved_ok g₁ g₂ (by decide) h.rsp, ?_⟩, fun key msg hbuf hcnt => ?_⟩
   · rw [m']

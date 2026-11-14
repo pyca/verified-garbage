@@ -63,7 +63,7 @@ theorem pdArgs_ready (s : State) {g : PrivGeometry} {bs : Fin 8 → List Byte} (
   rintro t ⟨ht, args, _, _, frame, _⟩
   refine ⟨⟨⟨ht⟩, ?_⟩, args⟩
   unfold PcPublic
-  rw [wordsAt_frame frame (by have := h.context.valid.maxLength; simp only [Spec.Rsa.modulusWords]; omega)
+  rw [wordsAt_frame frame (by have := h.context.valid.maxLength; simp only [Spec.Rsa.modulusWords]; omega_using [this])
     (precomputation_setup h.context.valid)]
   exact h.pre
 

@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Spec.Ed25519.Contract
 import VerifiedGarbage.Proof.Ed25519.Bytes
 import VerifiedGarbage.Proof.X25519.Bytes
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # RFC 8032's pruning on four 64-bit words
 
@@ -47,10 +48,10 @@ theorem prune_words (d₀ d₁ d₂ d₃ : BitVec 64) :
   have c₂ : (2 ^ 62 - 1) % 2 ^ 64 = 2 ^ 62 - 1 := by decide
   have c₃ : (2 ^ 62) % 2 ^ 64 = 2 ^ 62 := by decide
   rw [BitVec.toNat_or, BitVec.toNat_and, BitVec.toNat_and, BitVec.toNat_ofNat, BitVec.toNat_ofNat,
-    BitVec.toNat_ofNat, c₁, c₂, c₃, and_sub8 _ 64 (by omega), and_sub8 _ 254 (by omega),
-    Nat.and_two_pow_sub_one_eq_mod, or_two_pow (Nat.mod_lt _ (by omega)), or_two_pow (by omega)]
+    BitVec.toNat_ofNat, c₁, c₂, c₃, and_sub8 _ 64 (by omega_using []), and_sub8 _ 254 (by omega_using []),
+    Nat.and_two_pow_sub_one_eq_mod, or_two_pow (Nat.mod_lt _ (by omega_using [])), or_two_pow (by omega_using [])]
   simp only [show (2 : Nat) ^ (254 - 3) = 2 ^ 251 from rfl, show (2 : Nat) ^ (64 - 3) = 2 ^ 61 from rfl]
-  omega
+  omega_using []
 
 /-- The number of four words in memory. -/
 theorem decode_words (m : Mem) (p : Addr) :

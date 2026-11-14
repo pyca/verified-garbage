@@ -52,7 +52,7 @@ theorem RandomSignResultRel.retry {p : RandomSignInput} {start used fuel k : Nat
     RandomSignResultRel p start result (used + (randomSignDraw p used).used) fuel := by
   obtain ⟨hsig, hstatus, hused⟩ := h
   rw [randomSignRemaining_retry p used fuel k hd hs] at hsig hstatus hused
-  exact ⟨hsig, hstatus, by dsimp only at hused; omega⟩
+  exact ⟨hsig, hstatus, by dsimp only at hused; omega_using [hused]⟩
 
 theorem RandomSignResultRel.exhausted {p : RandomSignInput} {start used : Nat} {result : RandomSignResult}
     (h : RandomSignResultRel p start result used 0) :

@@ -80,7 +80,7 @@ theorem seqPre_of {post : State → State → Prop} {M : Mode} (up : Bool) (hste
   have eV : ivR s (dirCore up) = ⟨s.gpr .r4, 8⟩ := rfl
   refine ⟨⟨by rw [hwr]; simp [dirCore], fS⟩, by rw [eV, hwr]; simp, fun _ => by rw [eV, hwr]; simp,
     by rw [e8]; exact fV, by rw [hwr, hstep]; simp, by rw [hstep]; exact fD, by rw [hstep, eS]; exact dDS,
-    by rw [eV, eS]; exact dVS, fun _ => by rw [eV, hstep]; exact dVD, ⟨by omega, by rw [e8]; omega⟩, layout up⟩
+    by rw [eV, eS]; exact dVS, fun _ => by rw [eV, hstep]; exact dVD, ⟨by omega_using [hstep], by rw [e8]; omega_using [hstep]⟩, layout up⟩
 
 theorem keyArgs_of {post : State → State → Prop} {M : Mode} (up : Bool) (hstep : M.step = 8) {s : State}
     (h : (modeContract post).pre s) :

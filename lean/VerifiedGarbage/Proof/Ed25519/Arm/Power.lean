@@ -84,21 +84,21 @@ theorem sqLoop_ok {s₀ : State} {base : BitVec 32} (hc : Ctx base s₀)
     env s.mem base = Function.update (env s₀.mem base) o (sqn x (n - m))) ?_
     m s ⟨h1, h2, hk, hl, hb, he⟩
   intro m s ⟨h1, h2, hk, hl, hb, he⟩
-  obtain ⟨m, rfl⟩ : ∃ m', m = m' + 1 := ⟨m - 1, by omega⟩
+  obtain ⟨m, rfl⟩ : ∃ m', m = m' + 1 := ⟨m - 1, by omega_using [h1]⟩
   refine WP.seq (WP.mono (mulI_ok (hk.ctx hc) hl o o o) fun s1 ⟨k1, l1, b1, e1⟩ => ?_)
-  refine WP.mono (decR10_ok (by omega) (b1.trans hb)) fun s2 ⟨b2, z2, r2, mem2⟩ => ?_
+  refine WP.mono (decR10_ok (by omega_using [hn, h2]) (b1.trans hb)) fun s2 ⟨b2, z2, r2, mem2⟩ => ?_
   have k2 : IKeep base s₀ s2 := hk.trans (k1.trans (IKeep.of_counter r2 mem2))
   have l2 : AllLim s2.mem base := by rw [mem2]; exact l1
   have e2 : env s2.mem base = Function.update (env s₀.mem base) o (sqn x (n - m)) := by
     rw [mem2, e1, he, opMul_update]
     apply congrArg (Function.update (env s₀.mem base) o)
-    rw [show n - m = (n - (m + 1)) + 1 by omega]
+    rw [show n - m = (n - (m + 1)) + 1 by omega_using [h2]]
     rfl
   simp only [VG.Arm.eval, z2]
   rcases Nat.eq_zero_or_pos m with rfl | hm
   · exact .inl ⟨rfl, k2, l2, by rw [e2, Nat.sub_zero]⟩
-  · exact .inr ⟨by simp only [decide_eq_false (by omega : m ≠ 0), Bool.not_false],
-      m, by omega, by omega, by omega, k2, l2, b2, e2⟩
+  · exact .inr ⟨by simp only [decide_eq_false (by omega_using [hm] : m ≠ 0), Bool.not_false],
+      m, by omega_using [], by omega_using [hm], by omega_using [h2], k2, l2, b2, e2⟩
 
 theorem mulcI (base : BitVec 32) (o a b : Slot) : ISpec base (mulPc o a b) (opMul o a b) :=
   fun _ hc hl => WP.mono (fieldOp_ok hc hl (.mulc o a b)) fun _ ⟨hk, hlt, he⟩ =>
@@ -113,7 +113,7 @@ theorem sqnLoopI (base : BitVec 32) (o : Slot) (n : Nat) (hn : 1 ≤ n) (hn' : n
     rw [h1.gpr]
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]
-    rw [Nat.mod_eq_of_lt (by omega : n < 2 ^ 16)]
+    rw [Nat.mod_eq_of_lt (by omega_using [hn'] : n < 2 ^ 16)]
   have k1 : IKeep base s s1 := IKeep.of_counter (h1.rest (by decide)) h1.mem
   refine WP.mono (sqLoop_ok hc o (env s.mem base o) n hn' n s1 hn (Nat.le_refl _) k1
     (by rw [h1.mem]; exact hl) b1 ?_) fun t ⟨kt, lt, et⟩ => ⟨kt, lt, et⟩
@@ -189,11 +189,11 @@ theorem sqLoopO_ok {s₀ : State} {base : BitVec 32} (hc : Ctx base s₀) (o : S
     env s.mem base = Function.update (env s₀.mem base) o (VG.Proof.X25519.sqn x (n - m))) ?_
     m s ⟨h1, h2, hr, hf, hl, hb, he⟩
   intro m s ⟨h1, h2, hr, hf, hl, hb, he⟩
-  obtain ⟨m, rfl⟩ : ∃ m', m = m' + 1 := ⟨m - 1, by omega⟩
+  obtain ⟨m, rfl⟩ : ∃ m', m = m' + 1 := ⟨m - 1, by omega_using [h1]⟩
   have hcs : Ctx base s := hc.of_rest hr (by decide)
   refine WP.seq (WP.mono (mulO_ok hcs hl o o o List.mem_cons_self List.mem_cons_self hw)
     fun s1 ⟨r1, f1, l1, e1⟩ => ?_)
-  refine WP.mono (decR10_ok (by omega) ((r1.gpr _ (by decide)).trans hb)) fun s2 ⟨b2, z2, r2, mem2⟩ => ?_
+  refine WP.mono (decR10_ok (by omega_using [hn, h2]) ((r1.gpr _ (by decide)).trans hb)) fun s2 ⟨b2, z2, r2, mem2⟩ => ?_
   have k2 : Rest (.r10 :: clob) s₀ s2 := hr.trans ((r1.mono (by decide)).trans (r2.mono (by decide)))
   have f2 : Frame (wRegions base W) s₀.mem s2.mem := by rw [mem2]; exact hf.trans f1
   have l2 : LimOn s2.mem base (o :: S) := by
@@ -201,13 +201,13 @@ theorem sqLoopO_ok {s₀ : State} {base : BitVec 32} (hc : Ctx base s₀) (o : S
   have e2 : env s2.mem base = Function.update (env s₀.mem base) o (VG.Proof.X25519.sqn x (n - m)) := by
     rw [mem2, e1, he, opMul_update]
     apply congrArg (Function.update (env s₀.mem base) o)
-    rw [show n - m = (n - (m + 1)) + 1 by omega]
+    rw [show n - m = (n - (m + 1)) + 1 by omega_using [h2]]
     rfl
   simp only [VG.Arm.eval, z2]
   rcases Nat.eq_zero_or_pos m with rfl | hm
   · exact .inl ⟨rfl, k2, f2, l2, by rw [e2, Nat.sub_zero]⟩
-  · exact .inr ⟨by simp only [decide_eq_false (by omega : m ≠ 0), Bool.not_false],
-      m, by omega, by omega, by omega, k2, f2, l2, b2, e2⟩
+  · exact .inr ⟨by simp only [decide_eq_false (by omega_using [hm] : m ≠ 0), Bool.not_false],
+      m, by omega_using [], by omega_using [hm], by omega_using [h2], k2, f2, l2, b2, e2⟩
 
 theorem sqnO (base : BitVec 32) {W : List Slot} (o a : Slot) (n : Nat) (hn : 2 ≤ n) (hn' : n < 65536)
     {S : List Slot} (ha : a ∈ S) (hw : o ∈ W) :
@@ -219,11 +219,11 @@ theorem sqnO (base : BitVec 32) {W : List Slot} (o a : Slot) (n : Nat) (hn : 2 �
     rw [h2.gpr]
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]
-    rw [Nat.mod_eq_of_lt (by omega : n - 1 < 2 ^ 16)]
+    rw [Nat.mod_eq_of_lt (by omega_using [hn'] : n - 1 < 2 ^ 16)]
   have k2 : Rest (.r10 :: clob) s s2 := (r1.mono (by decide)).trans (h2.rest (by decide))
-  refine sqLoopO_ok hc o S hw (env s.mem base a) n hn' (n - 1) s2 (by omega) (by omega) k2
+  refine sqLoopO_ok hc o S hw (env s.mem base a) n hn' (n - 1) s2 (by omega_using [hn]) (by omega_using [hn]) k2
     (by rw [h2.mem]; exact f1) (by rw [h2.mem]; exact l1) b2 ?_
-  rw [h2.mem, e1, show n - (n - 1) = 1 by omega]
+  rw [h2.mem, e1, show n - (n - 1) = 1 by omega_using [hn]]
   rfl
 
 /-- The chain, from slot 2's limbs below `2^16`, with the other slots `T`'s

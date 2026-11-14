@@ -29,15 +29,15 @@ theorem borrowMask_ok {s : State} {B : Addr} {Z n : Nat} (h : Ws s B Z n 32)
   refine wp_movS rfl fun u U _ => wp_subS rfl fun v V _ => ?_
   have hv := (h.rest U.keeps).rest V.keeps
   refine wp_logicS (.inl rfl) (readSrc_sc hv.workspace
-    (by unfold kFlag VG.Impl.Rsa.X86.Keys.hdr at *; omega)) fun w W => ?_
+    (by unfold kFlag VG.Impl.Rsa.X86.Keys.hdr at *; omega_using [head])) fun w W => ?_
   have K : Keeps [.eax] s w := (U.keeps.trans V.keeps).trans W.keeps
   have hw := h.rest K
   have memory : w.mem = s.mem := W.mem.trans (V.mem.trans U.mem)
   have value : w.gpr .eax = ((1 : BitVec 32) - s.gpr .ebx) &&& s.mem.readW (off B kFlag) 32 := by
     rw [W.gpr, V.gpr, U.gpr, U.other _ (by decide), V.mem, U.mem]
     rfl
-  refine wp_storeS (hw.workspace.ea (by unfold kOk VG.Impl.Rsa.X86.Keys.hdr at *; omega))
-    (hw.workspace.write (by unfold kOk VG.Impl.Rsa.X86.Keys.hdr at *; omega))
+  refine wp_storeS (hw.workspace.ea (by unfold kOk VG.Impl.Rsa.X86.Keys.hdr at *; omega_using [head]))
+    (hw.workspace.write (by unfold kOk VG.Impl.Rsa.X86.Keys.hdr at *; omega_using [head]))
     fun t T => WP.block_nil ?_
   refine ⟨hw.rest (T.keeps []), ?_, ?_, K.trans (T.keeps _)⟩
   · rw [T.mem, memory]

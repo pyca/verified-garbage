@@ -35,12 +35,12 @@ theorem add_ok {s : State} {B : Addr} {Z o w wx m : Nat} {minv : BitVec 64}
       Frm (off B o) (workRanges wx) s.mem t.mem ∧ Keep mmRegs s t := by
   unfold seqs
   refine WP.seq (WP.mono (load_mod_ok hc hm hw2 hwx hw30 (by decide) (by decide) hap hal
-    ha halen has ha1 (by omega) haw) fun u ⟨hcu, hmu, hua, _, hfu, hku⟩ => ?_)
+    ha halen has ha1 (by omega_using [hw48, haw]) haw) fun u ⟨hcu, hmu, hua, _, hfu, hku⟩ => ?_)
   refine WP.seq (WP.mono (load_mod_ok hcu hmu hw2 hwx hw30 (by decide) (by decide) hbp hbl
     ((work_parent hc hfu hbp).trans hb) ((work_parent hc hfu hbl).trans hblen)
-    (work_source hc hfu hku hbs) hb1 (by omega) hbw) fun v ⟨hcv, hmv, hvb, hvkeep, hfv, hkv⟩ => ?_)
+    (work_source hc hfu hku hbs) hb1 (by omega_using [hw48, hbw]) hbw) fun v ⟨hcv, hmv, hvb, hvkeep, hfv, hkv⟩ => ?_)
   have hva := (hvkeep aX (by decide) (by decide)).trans hua
-  refine WP.mono (addMod_ok hcv.good.scr hcv.good.x0 hcv.good.hdr (Nat.le_refl _) hw2 (by omega)
+  refine WP.mono (addMod_ok hcv.good.scr hcv.good.x0 hcv.good.hdr (Nat.le_refl _) hw2 (by omega_using [hw48])
     (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
     (by rw [hva, hmv.modulus]; exact haReduced) (by rw [hvb, hmv.modulus]; exact hbReduced))
     fun t ⟨htv, hft, hkt⟩ => ?_
@@ -48,7 +48,7 @@ theorem add_ok {s : State} {B : Addr} {Z o w wx m : Nat} {minv : BitVec 64}
   have hn := hcv.good.scr.nowrap
   have hnt := (hft.wv_of_not_mem (show aN < 8 by decide) (by decide) hn).trans hmv.modulus
   have hit : ((word t.mem (off B o) (slot wx aN)).toNat * minv.toNat + 1) % 2 ^ 64 = 0 := by
-    rw [hft.word0_of_not_mem (by decide) (by decide) hn (by omega)]
+    rw [hft.word0_of_not_mem (by decide) (by decide) hn (by omega_using [hw2])]
     exact hmv.inverse
   rw [hva, hvb, hmv.modulus] at htv
   exact ⟨hct, ⟨hct.good, hnt, hit⟩, htv, (hfu.trans hfv).trans (arrays_work hft (by decide)),

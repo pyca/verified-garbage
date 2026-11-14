@@ -64,7 +64,7 @@ theorem round_ok (v : RoundImpl) {s : State} {p : WitnessParams} {used passed wi
       simpa only [witnessValues] using ctxA.saved.saved 52 (by simp [witnessSlots])
     refine WP.mono (onPass_ok ctxA.saved.space more h.checksBound passedWord checksWord) ?_
     rintro t ⟨⟨memT, statusT, zeroT⟩, restT⟩
-    have stateT := ctxA.store_passed (by omega : passed + 1 ≤ p.checks) memT restT
+    have stateT := ctxA.store_passed (by omega_using [more] : passed + 1 ≤ p.checks) memT restT
     have frameT : Frame [⟨State.addr (s.sp + 56#32), 4⟩] a.mem t.mem := by
       rw [memT, through.sp]
       exact (Frame.refl _ _).writeW (by simp) _ (Region.contains_self _ _)

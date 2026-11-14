@@ -30,12 +30,12 @@ theorem doubleArray_ok {s : State} {B : Addr} {Z w dst : Nat}
     ((k₂.gpr .x11 (by decide)).trans h11)) fun s₃ ⟨⟨h16, hm₃, hc₃⟩, k₃⟩ => ?_
   have k := (k₁.trans k₂).trans k₃
   refine WP.mono (shl_ok (h.scr.congr k.wr) h16
-    ((k₃.gpr .x14 (by decide)).trans h14) (by have := h.w1; omega)
-    (by have := h.w2; omega) (by omega)) fun t ⟨hv, _, ho, kt⟩ => ?_
+    ((k₃.gpr .x14 (by decide)).trans h14) (by have := h.w1; omega_using [this])
+    (by have := h.w2; omega_using [this]) (by omega_using [sd])) fun t ⟨hv, _, ho, kt⟩ => ?_
   rw [hc₃, hc, hm₃, hm₂, hm₁] at hv
   rw [hm₃, hm₂, hm₁] at ho
   refine ⟨?_, ho, (k.trans kt).mono (by decide)⟩
   cases he : t.c <;> rw [he] at hv <;>
-    simp only [Bool.toNat_false, Bool.toNat_true, Nat.mul_zero, Nat.mul_one, Nat.add_zero] at hv <;> omega
+    simp only [Bool.toNat_false, Bool.toNat_true, Nat.mul_zero, Nat.mul_one, Nat.add_zero] at hv <;> omega_arith
 
 end VG.Proof.Dsa.AArch64.Generation

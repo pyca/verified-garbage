@@ -55,7 +55,7 @@ theorem tv_eq {σ : State} (pre : In P σ) : (hv P σ (8 * P.L)).2 = tv P σ := 
   rw [hv_done σ pre]; rfl
 
 theorem tv_lt {σ : State} (pre : In P σ) : tv P σ < 2 ^ 32 := by
-  rw [← tv_eq pre]; have := hv_le (P := P) σ (8 * P.L); have := pre.k2; omega
+  rw [← tv_eq pre]; have := hv_le (P := P) σ (8 * P.L); have := pre.k2; omega_arith
 
 theorem exp_eq {σ : State} (pre : In P σ) :
     hIf (hIf (hIf (cv P σ / 2) (b2n (decide (tv P σ % 4 ≠ 1)))) (b2n (decide (tv P σ % 4 = 3 ∨ tv P σ % 4 = 0))))
@@ -63,7 +63,7 @@ theorem exp_eq {σ : State} (pre : In P σ) :
   rw [shift_div]
   unfold Proof.MillerRabin.Round.exponent Proof.MillerRabin.Round.shift
   have hodd := (cv_shape (σ := σ) pre).1
-  rw [odd_div hodd (by dsimp only; split <;> omega)]
+  rw [odd_div hodd (by dsimp only; split <;> omega_arith)]
   rfl
 
 theorem exponent_le (c : Nat) : Proof.MillerRabin.Round.exponent c ≤ c := by
@@ -110,8 +110,8 @@ theorem expSetup_vp {E : State → Prop} (hE : ∀ σ, E σ → In P σ) :
     rw [(sg_val _).1, (sg_val _).2.1, (sg_val _).2.2, tv_eq pre, exp_eq pre]
     have := exponent_le (cv P σ)
     have := (cv_shape (σ := σ) pre).2.2
-    have p : 2 ^ (8 * P.L) = 2 ^ (32 * (P.W - 2)) := by have := pre.W_eq; have := pre.L_eq; congr 1; omega
-    omega
+    have p : 2 ^ (8 * P.L) = 2 ^ (32 * (P.W - 2)) := by have := pre.W_eq; have := pre.L_eq; congr 1; omega_arith
+    omega_arith
   · simp (config := {decide := true}) only [upd, ↓reduceIte, VSg]; exact BitVec.isLt _
   · simp (config := {decide := true}) only [upd, ↓reduceIte, VSg]; exact BitVec.isLt _
 

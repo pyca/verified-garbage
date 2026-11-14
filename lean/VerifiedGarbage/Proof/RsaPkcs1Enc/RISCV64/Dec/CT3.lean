@@ -55,9 +55,9 @@ theorem clLoop_ct : RelCT isa (Rel e PostAt) clLoop (Rel e fun s u => PostAt s u
     exact ⟨⟨_, _, P.keep h O.keep (ws := []) (by rw [O.mem]; exact Frame.refl _ _) (fun r hr => nomatch hr)⟩,
       by rw [p₃.get .s8, p₂.get .s8, f₁], by rw [f₃, f₂, p₁.get .s1, P.s1, nb_eq hk]⟩
   exact prfLoop_ct clTaint (C := fun _ => BitVec.ofNat 64 8) rfl
-    (fun i hi => Offset.ofNat_sub_ofNat (by omega)) (N := 8) (by decide) (by decide) (by decide) (by decide)
+    (fun i hi => Offset.ofNat_sub_ofNat (by omega_using [hi])) (N := 8) (by decide) (by decide) (by decide) (by decide)
     (by decide) (by decide)
-    (fun i hi s R EM u h P x8 => WP.mono (msgCL_ok (by rw [P.s0]) x8 (by omega) (P.msgW h)) fun w ⟨⟨F, _⟩, K⟩ => ⟨F, K⟩)
+    (fun i hi s R EM u h P x8 => WP.mono (msgCL_ok (by rw [P.s0]) x8 (by omega_using [hi]) (P.msgW h)) fun w ⟨⟨F, _⟩, K⟩ => ⟨F, K⟩)
     (fun s u _ => count8_ok u)
 
 theorem amLoop_ct :
@@ -69,10 +69,10 @@ theorem amLoop_ct :
       ⟨⟨_, _, P.keep h p₁.keep (ws := []) (by rw [p₁.mem]; exact Frame.refl _ _) (fun r hr => nomatch hr)⟩,
         f₁, by rw [p₁.get .s9, h9]⟩) ?_
   refine (prfLoop_ct amTaint (C := nbOf) (by rw [nbOf, nbOf, e.r])
-    (fun i hi => Offset.ofNat_sub_ofNat (by omega)) (N := ((e.s₁.gpr .a4).toNat + 31) / 32)
-    (by have := e.h₁.k1; omega) (by have := e.h₁.k2; omega) (by decide) (by have := e.h₁.k2; unfold sAM scrBytes; omega)
+    (fun i hi => Offset.ofNat_sub_ofNat (by omega_using [hi])) (N := ((e.s₁.gpr .a4).toNat + 31) / 32)
+    (by have := e.h₁.k1; omega_using [this]) (by have := e.h₁.k2; omega_using [this]) (by decide) (by have := e.h₁.k2; unfold sAM scrBytes; omega_using [this])
     (by decide) (by decide)
-    (fun i hi s R EM u h P x8 => WP.mono (msgAM_ok (by rw [P.s0]) x8 P.s1 (by have := e.h₁.k2; omega) h.k2 (P.msgW h))
+    (fun i hi s R EM u h P x8 => WP.mono (msgAM_ok (by rw [P.s0]) x8 P.s1 (by have := e.h₁.k2; omega_using [hi, this]) h.k2 (P.msgW h))
       fun w ⟨⟨F, _⟩, K⟩ => ⟨F, K⟩)
     (fun s u hu => count_ok u _ hu)).mono (fun _ _ h => h) fun _ _ ⟨a, b⟩ => ⟨a.1, b.1⟩
 

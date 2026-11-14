@@ -72,7 +72,7 @@ theorem step_frame {T I D W : Addr} {n j : Nat} (R : Regions T I D W n) (hj : j 
       Spec.Rc2.blockAt m (D + BitVec.ofNat 64 (8 * i))) ∧
     Spec.Rc2.blocksAt m' D j = Spec.Rc2.blocksAt m D j := by
   have hf := R.fit
-  have bj : Region.Sub ⟨D + BitVec.ofNat 64 (8 * j), 8⟩ ⟨D, 8 * n⟩ := Offset.sub_base D (by omega)
+  have bj : Region.Sub ⟨D + BitVec.ofNat 64 (8 * j), 8⟩ ⟨D, 8 * n⟩ := Offset.sub_base D (by omega_using [hj])
   have W256 : Region.Sub ⟨W, 256⟩ ⟨W, 512⟩ := Region.sub_prefix (by decide)
   refine ⟨Proof.Rc2.scheduleAt_frame F T ?_, fun g sv => sv.frame F ?_, fun i hi hne => Proof.Rc2.blockAt_frame F _ ?_,
     Proof.Rc2.blocksAt_frame F D j ?_⟩
@@ -83,22 +83,22 @@ theorem step_frame {T I D W : Addr} {n j : Nat} (R : Regions T I D W n) (hj : j 
     · exact R.TW.sub_right W256
   · intro p hp r hr
     have hb := saved_in p hp
-    have slot : Region.Sub ⟨W + BitVec.ofNat 64 p.2, 8⟩ ⟨W, 512⟩ := Offset.sub_base W (by omega)
+    have slot : Region.Sub ⟨W + BitVec.ofNat 64 p.2, 8⟩ ⟨W, 512⟩ := Offset.sub_base W (by omega_using [hb])
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
     · exact (R.DW.sub_left bj).symm.sub_left slot
     · exact (R.IW.symm.sub_left slot)
-    · exact Offset.disjoint_base W (by omega) (by omega)
-  · have bi : Region.Sub ⟨D + BitVec.ofNat 64 (8 * i), 8⟩ ⟨D, 8 * n⟩ := Offset.sub_base D (by omega)
+    · exact Offset.disjoint_base W (by omega_using [hb]) (by omega_using [hb])
+  · have bi : Region.Sub ⟨D + BitVec.ofNat 64 (8 * i), 8⟩ ⟨D, 8 * n⟩ := Offset.sub_base D (by omega_using [hi])
     simp only [List.mem_cons, List.not_mem_nil, or_false]
     rintro r (rfl | rfl | rfl)
-    · exact Offset.disjoint D (by omega) (by omega) (by omega)
+    · exact Offset.disjoint D (by omega_using [hne]) (by omega_using [hf, hi]) (by omega_using [hj, hf])
     · exact (R.ID.sub_right bi).symm
     · exact (R.DW.sub_left bi).sub_right W256
-  · have bp : Region.Sub ⟨D, 8 * j⟩ ⟨D, 8 * n⟩ := Region.sub_prefix (by omega)
+  · have bp : Region.Sub ⟨D, 8 * j⟩ ⟨D, 8 * n⟩ := Region.sub_prefix (by omega_using [hj])
     simp only [List.mem_cons, List.not_mem_nil, or_false]
     rintro r (rfl | rfl | rfl)
-    · exact Offset.base_disjoint D (by omega) (by omega)
+    · exact Offset.base_disjoint D (by omega_using []) (by omega_using [hj, hf])
     · exact (R.ID.sub_right bp).symm
     · exact (R.DW.sub_left bp).sub_right W256
 
@@ -117,7 +117,7 @@ theorem covers {T I D W : Addr} {n j : Nat} (hj : j < n) :
   simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl
   · exact ⟨_, by simp, 0, (BitVec.add_zero _).symm, by simp⟩
-  · exact ⟨⟨D, 8 * n⟩, by simp, 8 * j, rfl, by simp; omega⟩
+  · exact ⟨⟨D, 8 * n⟩, by simp, 8 * j, rfl, by simp; omega_using [hj]⟩
   · exact ⟨⟨W, 512⟩, by simp, 0, (BitVec.add_zero _).symm, by simp⟩
 
 theorem covers_wr {I D W : Addr} {n j : Nat} (hj : j < n) :
@@ -125,7 +125,7 @@ theorem covers_wr {I D W : Addr} {n j : Nat} (hj : j < n) :
   refine Covers.of_sub fun r hr => ?_
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl
-  · exact ⟨⟨D, 8 * n⟩, by simp, 8 * j, rfl, by simp; omega⟩
+  · exact ⟨⟨D, 8 * n⟩, by simp, 8 * j, rfl, by simp; omega_using [hj]⟩
   · exact ⟨⟨W, 512⟩, by simp, 0, (BitVec.add_zero _).symm, by simp⟩
 
 end VG.Proof.Rc2.PPC64LE.Cbc

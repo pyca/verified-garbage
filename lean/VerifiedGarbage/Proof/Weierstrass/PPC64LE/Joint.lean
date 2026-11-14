@@ -62,7 +62,7 @@ theorem acc_step (hC : Law C) {G Q : Point C} (hG : onCurve C G = true) (hQ : on
   obtain ⟨M, _, f, hf⟩ := hC.group
   have hk : ∀ k : Nat, k >>> j = 2 * (k >>> (j + 1)) + (k.testBit j).toNat := fun k => by
     rw [Nat.testBit, Nat.shiftRight_succ, Nat.one_and_eq_mod_two]
-    cases h : (k >>> j) % 2 == 1 <;> simp_all <;> omega
+    cases h : (k >>> j) % 2 == 1 <;> simp_all <;> omega_using [h]
   have hA := acc_curve hC hG hQ u v (j + 1)
   have hD := hC.onCurve_add hA hA
   have fA : f (acc G Q u v (j + 1)) =
@@ -185,7 +185,7 @@ theorem jW_cover {W : List (Nat × Nat)}
     ∀ w ∈ W, ∃ w' ∈ jW J, w'.1 ≤ w.1 ∧ w.1 + w.2 ≤ w'.1 + w'.2 := by
   intro w hw
   rcases hW w hw with h | h
-  · exact ⟨(oAt J.L.M.n, 4096 - oAt J.L.M.n), by simp [jW], h.1, by simp only; omega⟩
+  · exact ⟨(oAt J.L.M.n, 4096 - oAt J.L.M.n), by simp [jW], h.1, by simp only; omega_using [h]⟩
   · exact ⟨w, h, le_refl _, le_refl _⟩
 
 /-- A slot the loop only reads keeps its value from the start. -/
@@ -469,7 +469,7 @@ theorem selU_ok {G Q : Point C} {u v : Nat}
   have c₄ : s₄.gpr .r31 = BitVec.ofNat 64 (j - 1) := by rw [k₄.gpr _ (by decide), h.r31]
   rw [WP.block_append_iff]
   refine WP.mono (bitMask_bool_ok w₄.ws w₄.at3 (d := J.L.bits) c₄ (by omega_arith)
-    (c := u.testBit (j - 1)) (by rw [jW_byte hJ U₄ (by omega_arith) (by omega_arith), hF.bu _ (by omega)]))
+    (c := u.testBit (j - 1)) (by rw [jW_byte hJ U₄ (by omega_arith) (by omega_arith), hF.bu _ (by omega_using [hj, hjn])]))
     fun s₅ ⟨g₅, k₅, m₅⟩ => ?_
   have w₅ := w₄.of_rk (k₅.rk (rs' := powClob))
   rw [WP.block_append_iff]
@@ -560,7 +560,7 @@ theorem selV_ok {G Q : Point C} {u v : Nat}
   have hbv := hJ.bitsV
   rw [WP.block_append_iff]
   refine WP.mono (bitMask_bool_ok h.ws.ws h.ws.at3 (d := J.bitsV) h.r31 (by omega_arith)
-    (c := v.testBit (j - 1)) (by rw [jW_byte hJ h.unch (by omega_arith) (by omega_arith), hF.bv _ (by omega)]))
+    (c := v.testBit (j - 1)) (by rw [jW_byte hJ h.unch (by omega_arith) (by omega_arith), hF.bv _ (by omega_using [hj, hjn])]))
     fun s₈ ⟨g₈, k₈, m₈⟩ => ?_
   have sQ := selQ_conds hk3 hk6 (a := J.L.T) (b := J.L.D) (low_of hJ (by
       intro x hx; simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
@@ -846,7 +846,7 @@ theorem setup_ok {G Q : Point C} {S : Impl.Weierstrass.Mont.Modulus}
       U₂.wordsVal (by ppc_apart) (by omega_arith)]
   have p₄ : ∀ i < 3, wordsVal s₄.mem base (pAt J.L.M.n + i * elemBytes J.L.M.n) J.L.M.n =
       wordsVal s₃.mem base (pAt J.L.M.n + i * elemBytes J.L.M.n) J.L.M.n := fun i hi => by
-    obtain rfl | rfl | rfl : i = 0 ∨ i = 1 ∨ i = 2 := by omega
+    obtain rfl | rfl | rfl : i = 0 ∨ i = 1 ∨ i = 2 := by omega_using [hi]
     all_goals exact U₅.wordsVal (by ppc_apart) (by omega_arith)
   have gx₄ : wordsVal s₄.mem base (pAt J.L.M.n) J.L.M.n = wordsVal s.mem base J.L.G.x J.L.M.n := by
     have := p₄ 0 (by decide); simp only [Nat.zero_mul, Nat.add_zero] at this
@@ -1097,8 +1097,8 @@ theorem start_ok {G Q : Point C} {u v : Nat} (hC : Law C) (hJ : JLay J) {t : Sta
   have hbE := hL.bitsE
   refine ⟨⟨⟨by rw [tc ka]; exact hab.1, by rw [tc kb]; exact hab.2⟩, ?_, by rw [tc kgx, tc kgy, tc kgz]; exact hg,
     by rw [tc kqx, tc kqy, tc kqz]; exact hq, by rw [tc R.gx, tc R.gy, tc R.gz]; exact hgq,
-    by rw [tc kox, tc koy, tc koz]; exact ho, fun i hi => by rw [by4 (by omega) (by omega)]; exact hbu i hi,
-    fun i hi => by rw [by4 (by omega) (by omega)]; exact hbv i hi⟩,
+    by rw [tc kox, tc koy, tc koz]; exact ho, fun i hi => by rw [by4 (by omega_using [hbL]) (by omega_using [hbE, hi])]; exact hbu i hi,
+    fun i hi => by rw [by4 (by omega_using [hbV]) (by omega_using [hbV, hi])]; exact hbv i hi⟩,
     hw.of_rk (R.keep.rk (rs' := powClob)), R.r31, ?_, ?_, R.keep.rk, R.unch⟩
   · intro x hx
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
@@ -1191,8 +1191,8 @@ theorem setPost_start {G Q : Point C} {u v : Nat} (hJ : JLay J) {s t : State} (h
   have hbE := hL.bitsE
   refine ⟨⟨by rw [tc ht.ab.1]; exact hab.1, by rw [tc ht.ab.2]; exact hab.2⟩, ?_,
     by rw [tc kgx, tc kgy, tc kgz]; exact hg, by rw [tc kqx, tc kqy, tc kqz]; exact hq,
-    by rw [tc kox, tc koy, tc koz]; exact ho, fun i hi => by rw [by4 (by omega) (by omega)]; exact hbu i hi,
-    fun i hi => by rw [by4 (by omega) (by omega)]; exact hbv i hi⟩
+    by rw [tc kox, tc koy, tc koz]; exact ho, fun i hi => by rw [by4 (by omega_using [hbL]) (by omega_using [hbE, hi])]; exact hbu i hi,
+    fun i hi => by rw [by4 (by omega_using [hbV]) (by omega_using [hbV, hi])]; exact hbv i hi⟩
   intro x hx
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
   rcases hx with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl

@@ -267,7 +267,7 @@ theorem fastPrepStepB16_ok {s : State} {base : Addr} {size n bits k j : Nat} (hn
       nafValN_keep kc.gpr (by simp),vb]
     by_cases ho : FastNaf.residual 9 k j%2=0
     · simp only [fastDelta16,ho,ite_true]
-      omega
+      omega_using []
     · simp only [fastDelta16,ho,ite_false]
       rw [FastNaf.residual_succ,FastNaf.next_odd9 _ ho,FastNaf.residual_skip9 k j ho]
       omega_arith

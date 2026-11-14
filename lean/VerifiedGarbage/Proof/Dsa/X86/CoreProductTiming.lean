@@ -25,7 +25,7 @@ theorem productTail_relCT (base : Addr) (size n len output : Nat)
   refine RelCT.seq ?_ (coreStore_workspace_relCT len output)
   intro s t tr ur sf tf ⟨S, T, SP⟩ E F
   have DI : s.gpr .edi = t.gpr .edi := BitVec.eq_of_toNat_eq (S.scr.edi_toNat.trans T.scr.edi_toNat.symm)
-  have CT := (Mul.call_relCT n) _ _ _ _ _ _ ⟨SP, DI, by have := S.room.1; omega⟩ E F
+  have CT := (Mul.call_relCT n) _ _ _ _ _ _ ⟨SP, DI, by have := S.room.1; omega_using [this]⟩ E F
   obtain ⟨_, _, K⟩ := wp_result (Mul.call_ok S.scr S.room hz hu hn hn48 rfl S.large S.odd) E
   obtain ⟨_, _, L⟩ := wp_result (Mul.call_ok T.scr T.room hz hu hn hn48 rfl T.large T.odd) F
   refine ⟨CT.1, agree_regs (rs := [.edi]) ?_⟩
@@ -38,12 +38,12 @@ theorem coreProductMod_relCT (base : Addr) (size len output : Nat) (modulus : Fi
     (hw4 : len % 4 = 0) :
     RelCT isa (PowerAgree base size len len modulus a b)
       (Core.productMod len modulus a b output) (VG.X86.Taint.Agree (workspaceTaint true)) := by
-  have hn : (len + 7) / 8 ≤ 48 := by omega
+  have hn : (len + 7) / 8 ≤ 48 := by omega_using [hmax]
   have cb := VG.Proof.Dsa.X86.Layout.context_bound hn
   have sz : 8256 ≤ size := hz
   unfold Core.productMod
   dsimp only
-  refine RelCT.seq ?_ (productTail_relCT base size _ len output (by omega) hu (by omega) hn)
+  refine RelCT.seq ?_ (productTail_relCT base size _ len output (by omega_using [cb, sz]) hu (by omega_using [h4]) hn)
   have H := (powerHead_relCT base size len len modulus a b hz h4 hmax hw4).mono
     (fun _ _ (P : PowerAgree base size len len modulus a b _ _) => P.1) (fun _ _ A => A)
   refine (H.wpDep (F := fun s t => PowerReady base size ((len + 7) / 8) t ∧ Keeps loadClob s t)

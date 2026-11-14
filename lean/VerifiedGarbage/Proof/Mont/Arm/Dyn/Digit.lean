@@ -36,7 +36,7 @@ theorem and_mask_ofNat {x : BitVec 32} {v : Nat} (h : x.toNat = v) :
     x &&& VG.Proof.X25519.Arm.mask16 = BitVec.ofNat 32 (v % 2 ^ 16) := by
   apply BitVec.eq_of_toNat_eq
   rw [VG.Proof.X25519.Arm.toNat_and_mask16, BitVec.toNat_ofNat, h]
-  omega
+  omega_using []
 
 /-- Digit `h` of `[a] + [b]`: `x + y + c` to `[r8 + 4h]` and its carry. -/
 theorem addDigitD_ok {s : State} {base : Addr} {size : Nat} (hs : Ws s base size) {P h : Nat} (hh : h < 2)
@@ -56,11 +56,11 @@ theorem addDigitD_ok {s : State} {base : Addr} {size : Nat} (hs : Ws s base size
     ((((hs.of_upd u₁ (by decide)).of_upd u₂ (by decide)).of_upd u₃ (by decide)).of_upd u₄ (by decide)).of_upd u₅ (by decide)
   have e8 : s₅.gpr .r8 = s₅.gpr .r12 + BitVec.ofNat 32 P := by
     simp only [u₅.get, u₄.get, u₃.get, u₂.get, u₁.get, reduceCtorEq, ↓reduceIte]; exact h8
-  refine wp_str (by omega) (w₅.ea e8 (by omega)) (w₅.write (by omega)) fun s₆ m₆ =>
+  refine wp_str (by omega_using [hh]) (w₅.ea e8 (by omega_using [hP])) (w₅.write (by omega_using [hP])) fun s₆ m₆ =>
     wp_mov (op2_lsr (by decide)) fun s₇ u₇ => WP.block_nil ?_
   have v4 : (s₄.gpr .r4).toNat = hdig (s.gpr .r7).toNat h + hdig (s.gpr .r2).toNat h + (s.gpr .r3).toNat := by
     simp only [u₄.get, u₃.get, u₂.get, u₁.get, reduceCtorEq, ↓reduceIte, dpVal]
-    refine toNat_add_eq (toNat_add_eq (toNat_ofNat_dig _ _) (toNat_ofNat_dig _ _) ?_) rfl ?_ <;> omega
+    refine toNat_add_eq (toNat_add_eq (toNat_ofNat_dig _ _) (toNat_ofNat_dig _ _) ?_) rfl ?_ <;> omega_arith
   refine ⟨?_, ?_, ?_⟩
   · rw [u₇.mem, m₆.mem, u₅.mem, u₄.mem, u₃.mem, u₂.mem, u₁.mem]
     congr 1

@@ -44,7 +44,7 @@ theorem candidate_stack (v : RoundImpl) :
     Impl.MillerRabin.RISCV64.Search.roundCall, sdepth, Instr.frameBytes, frameBytes]
   simp (disch := decide) only [sdepth_of_noFrames, Nat.max_zero, Nat.zero_max, Nat.max_self]
   have := v.stack
-  omega
+  omega_using [this]
 
 /-- `vg_rsa_keygen_candidate` calling the shared round `v`, as the search
 calls it. -/

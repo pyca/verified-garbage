@@ -47,7 +47,7 @@ theorem before_ok (d : Spec.Rc2.Direction) (s : State) (hp : StepPre s) :
     intro s' h
     exact ⟨hp.keep h, fun r hr => h.reg r (sep r hr)⟩
   · apply WP.mono (copy64_ok s .esi .ebp 0 256 (by decide) (by decide)
-      (by simpa using hp.dataFit) (by have := hp.bufFit; omega)
+      (by simpa using hp.dataFit) (by have := hp.bufFit; omega_using [this])
       (by simpa using hp.readData) (hp.writeBuf 256 (by decide)))
     intro s' h
     exact ⟨hp.keep h, fun r hr => h.reg r (sep r hr)⟩
@@ -97,7 +97,7 @@ theorem callPre_ok (d : Spec.Rc2.Direction) (s : State) (hp : CallPre s) :
     · rw [callEntry_argAddr0]; rfl
     rw [sub_toNat hp.stackLo]
     have := (s.gpr .esp).isLt
-    omega
+    omega_using []
   · intro a n ⟨r, hr, hc⟩
     simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl
@@ -139,7 +139,7 @@ theorem call_ct (d : Spec.Rc2.Direction) : RelCT isa StepRel (Impl.Rc2.X86.Cbc.b
           simp only [arg_withRegions]
           rw [callEntry_arg (by exact hp.1.stackLo) (by decide) (by simpa using hi),
             callEntry_arg (by exact hp.2.1.stackLo) (by decide) (by simpa using hi)]
-          have cases : i = 0 ∨ i = 1 ∨ i = 2 := by omega
+          have cases : i = 0 ∨ i = 1 ∨ i = 2 := by omega_using [hi]
           rcases cases with rfl | rfl | rfl
           · exact key
           · exact data
@@ -193,8 +193,8 @@ theorem bodyRel (d : Spec.Rc2.Direction) (n : Nat) :
     (body_ct d).mono (fun _ _ h => ⟨h.1.head h.2.2.2.2.2, h.2.1.head h.2.2.2.2.2, h.2.2.1⟩)
       (fun _ _ _ => trivial)
   have correct (s₁ s₂ : State) (h : LoopRel n s₁ s₂) :=
-    And.intro (body_ok d s₁ n h.2.2.2.2.2 (by have := h.1.dataFit; omega) h.2.2.2.1 (h.1.head h.2.2.2.2.2))
-      (body_ok d s₂ n h.2.2.2.2.2 (by have := h.2.1.dataFit; omega) h.2.2.2.2.1 (h.2.1.head h.2.2.2.2.2))
+    And.intro (body_ok d s₁ n h.2.2.2.2.2 (by have := h.1.dataFit; omega_using [this]) h.2.2.2.1 (h.1.head h.2.2.2.2.2))
+      (body_ok d s₂ n h.2.2.2.2.2 (by have := h.2.1.dataFit; omega_using [this]) h.2.2.2.2.1 (h.2.1.head h.2.2.2.2.2))
   apply (ct.wpDep correct).mono (fun _ _ h => h)
   rintro s₁' s₂' ⟨_, s₁, s₂, hp, h₁, h₂⟩
   have eq : EqKept s₁' s₂' := by
@@ -211,13 +211,13 @@ theorem bodyRel (d : Spec.Rc2.Direction) (n : Nat) :
   have hm : 1 ≤ n - 1 := by
     rw [eval_nonzeroCount, h₁.flag] at hcontinue
     by_contra h
-    have e : n = 1 := by omega
+    have e : n = 1 := by omega_using [hn, h]
     simp only [e, decide_true, Option.map_some, Bool.not_true, Option.some.injEq, Bool.false_eq_true] at hcontinue
-  refine ⟨n - 1, by omega, ?_, ?_, eq, h₁.count, h₂.count, hm⟩
-  · have e : n = (n - 1) + 1 := by omega
+  refine ⟨n - 1, by omega_using [hn], ?_, ?_, eq, h₁.count, h₂.count, hm⟩
+  · have e : n = (n - 1) + 1 := by omega_using [hn]
     rw [e] at h₁ hp
     exact h₁.tail hp.1 hm
-  · have e : n = (n - 1) + 1 := by omega
+  · have e : n = (n - 1) + 1 := by omega_using [hn]
     rw [e] at h₂ hp
     exact h₂.tail hp.2.1 hm
 
@@ -247,7 +247,7 @@ theorem maybeLoop_ct (d : Spec.Rc2.Direction) :
       change zeroCount s₁ = some false at branch
       rw [z₁] at branch
       have hn : n ≠ 0 := by intro hz; simp [hz] at branch
-      omega
+      omega_using [hn]
     · exact fun _ _ h => h
 
 end VG.Proof.Rc2.X86.Cbc
@@ -276,11 +276,11 @@ theorem start_ok (d : Spec.Rc2.Direction) (s : State) (hs : (contract d).pre s) 
     ivArgs, dataArgs, bufArgs, retIv, retData, retBuf, stackKey, stackIv, stackData, stackBuf, keyFit, ivFit, bufFit, spFit, stackLo, fit⟩ := hs
   have writes (i : Nat) (hi : i + 4 ≤ 512) : InRegions s.wr (addr32 (arg s 4) + BitVec.ofNat 64 i) 4 := by
     rw [hwr]
-    exact ⟨⟨addr32 (arg s 4), 512⟩, by simp, Offset.contains_base _ hi (by omega)⟩
+    exact ⟨⟨addr32 (arg s 4), 512⟩, by simp, Offset.contains_base _ hi (by omega_using [hi])⟩
   rw [startCode]
   apply WP.seq
   obtain ⟨s₀, run₀, buf₀, keep₀⟩ := loadArg_ok s .eax 4 (by
-    rw [hrd, hwr, argAddr_eq s 4 (by omega)]
+    rw [hrd, hwr, argAddr_eq s 4 (by omega_using [spFit])]
     exact ⟨⟨argAddr s 0, 20⟩, by simp, argContains s spFit 4 (by decide)⟩)
   refine WP.of_runBlock ⟨s₀, run₀, ?_⟩
   have g₀ (r : Reg) (hr : r ≠ .eax) := keep₀.reg r (by simpa using hr)
@@ -299,8 +299,8 @@ theorem start_ok (d : Spec.Rc2.Direction) (s : State) (hs : (contract d).pre s) 
   have args₁ := args_frame saveFrame sp₁ spFit (by simpa using bufArgs)
   have readArgs₁ (i : Nat) (hi : i < 4) : InRegions (s₁.rd ++ s₁.wr) (argAddr s₁ i) 4 := by
     have ptr : argAddr s₁ i = argAddr s i := by unfold argAddr; rw [sp₁]
-    rw [keep₁.rd, keep₁.wr, keep₀.rd, keep₀.wr, hrd, hwr, ptr, argAddr_eq s i (by omega)]
-    exact ⟨⟨argAddr s 0, 20⟩, by simp, argContains s spFit i (by omega)⟩
+    rw [keep₁.rd, keep₁.wr, keep₀.rd, keep₀.wr, hrd, hwr, ptr, argAddr_eq s i (by omega_using [spFit, hi])]
+    exact ⟨⟨argAddr s 0, 20⟩, by simp, argContains s spFit i (by omega_using [hi])⟩
   obtain ⟨s₂, run₂, key₂, iv₂, data₂, count₂, buf₂, flag₂, keep₂⟩ := setup_ok s₁ readArgs₁
   refine WP.of_runBlock ⟨s₂, run₂, ?_⟩
   rw [args₁ 0 (by decide)] at key₂
@@ -348,9 +348,9 @@ theorem startTaint_wf {d : Spec.Rc2.Direction} {s : State} (h : (contract d).pre
     fun _ h => (List.not_mem_nil h).elim⟩
   simp only [startTaint, wr, List.mem_cons, List.not_mem_nil, or_false]
   rintro r (rfl | rfl | rfl)
-  · exact Taint.frame_disjoint (n := 20) (by omega) ri ai
-  · exact Taint.frame_disjoint (n := 20) (by omega) rd ad
-  · exact Taint.frame_disjoint (n := 20) (by omega) rb ab
+  · exact Taint.frame_disjoint (n := 20) (by omega_using [spfit]) ri ai
+  · exact Taint.frame_disjoint (n := 20) (by omega_using [spfit]) rd ad
+  · exact Taint.frame_disjoint (n := 20) (by omega_using [spfit]) rb ab
 
 theorem startTaint_agree {d : Spec.Rc2.Direction} {s₁ s₂ : State} (h : InitialRel d s₁ s₂) :
     VG.X86.Taint.Agree startTaint s₁ s₂ := by
@@ -369,7 +369,7 @@ theorem startTaint_agree {d : Spec.Rc2.Direction} {s₁ s₂ : State} (h : Initi
     rw [Taint.argByte_eq (fit _ h₁) h4 hk, Taint.argByte_eq (fit _ h₂) h4 hk,
       Mem.readW_byte s₁.mem _ (Nat.mod_lt _ (by decide)),
       Mem.readW_byte s₂.mem _ (Nat.mod_lt _ (by decide))]
-    exact congrArg _ (args ((k - 4) / 4) (by omega))
+    exact congrArg _ (args ((k - 4) / 4) (by omega_using [hk]))
 
 theorem start_ct (d : Spec.Rc2.Direction) : RelCT isa (InitialRel d) startCode MaybeRel := by
   have ct : RelCT isa (InitialRel d) startCode (fun _ _ => True) := by

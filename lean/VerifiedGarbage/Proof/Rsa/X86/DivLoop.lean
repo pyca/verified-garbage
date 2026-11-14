@@ -117,7 +117,7 @@ theorem code_ok {g : Geometry} {s : State} (h : Context g s) :
   rintro u ⟨rU, qU, count, ctxU, frameU, restU⟩
   have boundN : g.value s.mem 0 < 2 ^ (32 * g.n) := val32_lt _ _ _ _
   have inv : Invariant g s (g.value s.mem 2) (g.value s.mem 0) 0 u :=
-    ⟨ctxU, by omega, by simpa only [Nat.sub_zero] using count, frameU, restU,
+    ⟨ctxU, by omega_using [], by simpa only [Nat.sub_zero] using count, frameU, restU,
       h.divisor_frame frameU, fun _ _ => by rw [rU, qU]; rfl⟩
   refine WP.mono (loop_ok inv boundN) ?_
   intro t done

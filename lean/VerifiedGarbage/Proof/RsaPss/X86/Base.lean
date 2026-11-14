@@ -59,19 +59,19 @@ include hg
 
 theorem scr_lt {o : Nat} (h : o ≤ oRsa) : (scr + BitVec.ofNat 32 o).toNat = scr.toNat + o := by
   have := hg.fit; unfold oRsa at *
-  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := o) (by omega), Nat.mod_eq_of_lt (by omega)]
+  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := o) (by omega_using [h]), Nat.mod_eq_of_lt (by omega_using [h, this])]
 
 theorem scrA {o : Nat} (h : o < oRsa) : (scr + BitVec.ofNat 32 o).setWidth 64 = sa scr o :=
-  addr_eq (by have := hg.fit; unfold oRsa at *; omega)
+  addr_eq (by have := hg.fit; unfold oRsa at *; omega_using [h, this])
 
 theorem addrD {o d : Nat} (h : o + d < oRsa) : VG.X86.addr (scr + BitVec.ofNat 32 o) d = sa scr (o + d) := by
-  rw [addr_eq (by rw [hg.scr_lt (by omega)]; have := hg.fit; omega), hg.scrA (by omega), sa,
+  rw [addr_eq (by rw [hg.scr_lt (by omega_using [h])]; have := hg.fit; omega_using [h, this]), hg.scrA (by omega_using [h]), sa,
     BitVec.add_assoc, BitVec.ofNat_add_ofNat]
 
 /-- A range of our part of `scratch` within a writable buffer. -/
 theorem inR {o n : Nat} (h : o + n ≤ oRsa) : ∃ R ∈ L.rw, Region.Sub (sR scr o n) R := by
   obtain ⟨k, hk, hR⟩ := hg.sub
-  exact ⟨_, hR, Offset.sub_base _ (by omega)⟩
+  exact ⟨_, hR, Offset.sub_base _ (by omega_using [h, hk])⟩
 
 theorem inW {o n : Nat} (h : o + n ≤ oRsa) : ∃ R ∈ L.W, Region.Sub (sR scr o n) R := by
   obtain ⟨R, hR, hs⟩ := hg.inR h
@@ -97,7 +97,7 @@ theorem ro {σ : State} (ok : L.Ok σ) {o n : Nat} (h : o + n ≤ oRsa) {R : Reg
 
 theorem wr {σ s : State} (hs : L.St σ s) {o n : Nat} (h : o + n ≤ oRsa) : InRegions s.wr (sa scr o) n := by
   obtain ⟨k, hk, hR⟩ := hg.sub
-  exact ⟨_, by rw [hs.wr]; exact hs.ok.wr _ (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ hR)), Offset.contains_base _ (by omega) (by have := hg.fit; unfold oRsa at *; omega)⟩
+  exact ⟨_, by rw [hs.wr]; exact hs.ok.wr _ (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ hR)), Offset.contains_base _ (by omega_using [h, hk]) (by have := hg.fit; unfold oRsa at *; omega_using [h])⟩
 
 theorem rd {σ s : State} (hs : L.St σ s) {o n : Nat} (h : o + n ≤ oRsa) :
     InRegions (s.rd ++ s.wr) (sa scr o) n :=
@@ -108,7 +108,7 @@ omit hg in
 /-- Two ranges of our part of `scratch`. -/
 theorem sep {o n e k : Nat} (h : o + n ≤ e ∨ e + k ≤ o) (ho : o + n ≤ oRsa) (he : e + k ≤ oRsa) :
     (sR scr o n).Disjoint (sR scr e k) :=
-  Offset.disjoint _ h (by unfold oRsa at ho; omega) (by unfold oRsa at he; omega)
+  Offset.disjoint _ h (by unfold oRsa at ho; omega_using [ho]) (by unfold oRsa at he; omega_using [he])
 
 end Geo
 
@@ -150,14 +150,14 @@ theorem sa_write (scr : BitVec 32) (m : Mem) {o i : Nat} (b : Byte) (ho : o < 2 
 /-- A byte written within a range of our part of `scratch`. -/
 theorem frame_byte (scr : BitVec 32) (m : Mem) {o n x : Nat} (b : Byte) (h₁ : o ≤ x) (h₂ : x < o + n)
     (hn : o + n < 2 ^ 64) : Frame [sR scr o n] m (m.writeW (sa scr x) b) :=
-  (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Offset.contains _ h₁ (by omega) (by omega))
+  (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Offset.contains _ h₁ (by omega_using [h₂]) (by omega_using [hn]))
 
 /-- Bytes of our part of `scratch` kept by writes elsewhere. -/
 theorem sbytes_keep {scr : BitVec 32} {rs : List Region} {m m' : Mem} (hf : Frame rs m m') {o n : Nat}
     (hd : ∀ r ∈ rs, Region.Disjoint (sR scr o n) r) (hn : o + n < 2 ^ 64) {f : Nat → Byte}
     (h : ∀ i < n, m (sa scr (o + i)) = f i) : ∀ i < n, m' (sa scr (o + i)) = f i := fun i hi => by
   rw [← h i hi]
-  refine hf _ fun r hr hc => hd r hr _ (Offset.contains _ (Nat.le_add_right _ _) (by omega) (by omega)) hc
+  refine hf _ fun r hr hc => hd r hr _ (Offset.contains _ (Nat.le_add_right _ _) (by omega_using [hi]) (by omega_using [hn])) hc
 
 /-- A piece from no state. -/
 theorem VP.empty {F G : State → State → Prop} {c : Prog isa} (h : ∀ σ s, ¬ F σ s) : VP F c G :=

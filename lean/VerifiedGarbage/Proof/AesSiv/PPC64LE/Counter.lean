@@ -8,6 +8,7 @@ import VerifiedGarbage.Proof.Cmac.Spec
 import VerifiedGarbage.Proof.Framework.Bswap
 import VerifiedGarbage.Proof.Gcm.Bits
 import VerifiedGarbage.Proof.Framework.PowLit
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # AES-SIV on PPC64LE: the counter's words
@@ -44,14 +45,14 @@ theorem le8_rev (h l : BitVec 64) :
   rcases Nat.lt_or_ge k 8 with h8 | h8
   · rw [getD_le8_append _ _ hk]
     simp only [h8, ↓reduceIte]
-    rw [BitVec.getLsbD_extractLsb', getLsbD_rev64 _ (by omega)]
-    simp only [hj, decide_true, Bool.true_and, show ¬ 8 * (15 - k) + j < 64 by omega, ite_false]
-    congr 1; omega
+    rw [BitVec.getLsbD_extractLsb', getLsbD_rev64 _ (by omega_using [hj, h8])]
+    simp only [hj, decide_true, Bool.true_and, show ¬ 8 * (15 - k) + j < 64 by omega_using [h8], ite_false]
+    congr 1; omega_using [hj, h8]
   · rw [getD_le8_append _ _ hk]
-    simp only [show ¬ k < 8 by omega, ↓reduceIte]
-    rw [BitVec.getLsbD_extractLsb', getLsbD_rev64 _ (by omega)]
-    simp only [hj, decide_true, Bool.true_and, show 8 * (15 - k) + j < 64 by omega, ite_true]
-    congr 1; omega
+    simp only [show ¬ k < 8 by omega_using [h8], ↓reduceIte]
+    rw [BitVec.getLsbD_extractLsb', getLsbD_rev64 _ (by omega_using [hk, hj])]
+    simp only [hj, decide_true, Bool.true_and, show 8 * (15 - k) + j < 64 by omega_using [hj, h8], ite_true]
+    congr 1; omega_using [hj, h8]
 
 theorem rev64_rev64 (a : BitVec 64) : rev64 (rev64 a) = a := Proof.Gcm.byteRev64_byteRev64 a
 
@@ -62,14 +63,14 @@ theorem add_lo (hi lo : BitVec 64) {k : Nat} (h : lo.toNat + k < 2 ^ 64) :
   have hl := lo.isLt
   have hh := hi.isLt
   simp only [BitVec.toNat_append, BitVec.toNat_add, BitVec.toNat_ofNat]
-  rw [Nat.mod_eq_of_lt (show k < 2 ^ 64 by omega), Nat.mod_eq_of_lt (show k < 2 ^ 128 by omega),
+  rw [Nat.mod_eq_of_lt (show k < 2 ^ 64 by omega_using [h]), Nat.mod_eq_of_lt (show k < 2 ^ 128 by omega_using [h]),
     Nat.mod_eq_of_lt h, ← Nat.shiftLeft_add_eq_or_of_lt h, ← Nat.shiftLeft_add_eq_or_of_lt hl,
     Nat.shiftLeft_eq]
   have : hi.toNat * 2 ^ 64 + lo.toNat + k < 2 ^ 128 := by
-    have : hi.toNat * 2 ^ 64 ≤ (2 ^ 64 - 1) * 2 ^ 64 := Nat.mul_le_mul_right _ (by omega)
-    omega
+    have : hi.toNat * 2 ^ 64 ≤ (2 ^ 64 - 1) * 2 ^ 64 := Nat.mul_le_mul_right _ (by omega_using [])
+    omega_using [h]
   rw [Nat.mod_eq_of_lt this]
-  omega
+  omega_using []
 
 /-- The bits `counter` sets and flips: bit 7 of the doubleword's bytes 0 and 4. -/
 def qbits : BitVec 64 := 0x8000000080
@@ -101,6 +102,6 @@ theorem counter_low64 (v : List Byte) : Spec.Siv.beNat (Spec.Siv.counter v) % 2 
     v.getD 15 0] = r at hr ⊢
   generalize (v.getD 8 0 &&& 0x7f).toNat = b at h0 ⊢
   simp only [Nat.reducePow, Nat.reduceAdd] at hr ⊢
-  omega
+  omega_using [hr, h0]
 
 end VG.Proof.AesSiv.PPC64LE

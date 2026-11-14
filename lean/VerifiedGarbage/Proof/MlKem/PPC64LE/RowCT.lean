@@ -136,7 +136,7 @@ theorem rowSum_ct {transpose : Bool} (hp₁ : RowPre K L ρ v₁ i fl₁ s₀₁
   refine RelCT.seq (R := fun a b => RowInv K L transpose ρ v₁ i fl₁ s₀₁ 0 a ∧
       RowInv K L transpose ρ v₂ i fl₂ s₀₂ 0 b)
     (relct_wp (relct_noMem (by rfl)) fun a b hab => ⟨init hp₁ a hab.1, init hp₂ b hab.2⟩) ?_
-  exact RelCT.mono (relct_loop_nz (N := K.k) (by have := hK.k1; omega) fun j hj =>
+  exact RelCT.mono (relct_loop_nz (N := K.k) (by have := hK.k1; omega_using [this]) fun j hj =>
     relct_wp (rowBody_ct hT hp₁ hp₂ hj) fun a b hab => ⟨rowBody_ok hp₁ hj hab.1, rowBody_ok hp₂ hj hab.2⟩)
     (fun _ _ h => h) fun _ _ _ => trivial
 
@@ -201,7 +201,7 @@ theorem dot_ct (hT : K.CallsOk) : RelCT isa (fun a b => a = x ∧ b = y) K.dot f
         by rw [m₂]; exact z₁⟩
   refine RelCT.seq (R := fun a b => DotInv K L a₁ v₁ x 0 a ∧ DotInv K L a₂ v₂ y 0 b)
     (relct_wp (relct_noMem (by rfl)) fun a b hab => ⟨init hc₁ a hab.1, init hc₂ b hab.2⟩) ?_
-  exact RelCT.mono (relct_loop_nz (N := K.k) (by have := hK.k1; omega) fun j hj =>
+  exact RelCT.mono (relct_loop_nz (N := K.k) (by have := hK.k1; omega_using [this]) fun j hj =>
       dotBody_ct hK hc₁ hc₂ ha₁ hv₁ ha₂ hv₂ hj)
     (fun _ _ h => h) fun _ _ _ => trivial
 

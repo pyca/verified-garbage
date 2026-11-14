@@ -50,21 +50,21 @@ theorem Context.after {g : Geometry} {s t : State} (h : Context g s)
     exact outs_word32 frame (by
       intro r hr
       simp only [Geometry.ranges, List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl <;> exact Or.inl (by omega)) (by omega)
+      rcases hr with rfl | rfl | rfl <;> exact Or.inl (by omega)) (by omega_using [hd])
   exact { h with
     workspace := h.workspace.congr wr
     ptr := ptr.trans h.ptr
-    pointers := fun i => (read _ (by have := i.isLt; omega)).trans (h.pointers i)
+    pointers := fun i => (read _ (by have := i.isLt; omega_using [])).trans (h.pointers i)
     count := (read 16 (by decide)).trans h.count }
 
 theorem Context.readPtr {g : Geometry} {s : State} (h : Context g s) (i : Fin 4) :
     InRegions (s.rd ++ s.wr) (off (State.addr g.base) (4 * i.val)) 4 :=
-  h.workspace.read (by have := h.headerFits; have := i.isLt; omega)
+  h.workspace.read (by have := h.headerFits; have := i.isLt; omega_arith)
 
 theorem Context.addr {g : Geometry} {s : State} (h : Context g s) {d : Nat} (hd : d < 20) :
     State.addr (s.gpr .r8 + BitVec.ofNat 32 d) = off (State.addr g.base) d := by
   rw [h.ptr]
-  exact VG.Arm.addr_add (by have := h.workspace.nowrap; have := h.headerFits; omega)
+  exact VG.Arm.addr_add (by have := h.workspace.nowrap; have := h.headerFits; omega_arith)
 
 theorem Context.of_update {g : Geometry} {s t : State} {r : Reg} {v : BitVec 32}
     (h : Context g s) (u : VG.Proof.X25519.Arm.Upd s t r v) (hr : r ≠ .r8) : Context g t :=
@@ -76,8 +76,8 @@ theorem Context.loadPtr {g : Geometry} {s : State} (h : Context g s) (i : Fin 4)
     (k : ∀ t, VG.Proof.X25519.Arm.Upd s t r (g.base + BitVec.ofNat 32 (g.offsets i)) →
       Context g t → WP isa (.block is) t Q) :
     WP isa (.block (.ldr r .r8 (4 * i.val) :: is)) s Q := by
-  refine VG.Proof.X25519.Arm.wp_ldr (by have := i.isLt; omega)
-    (h.addr (by have := i.isLt; omega)) (h.readPtr i) fun t u => ?_
+  refine VG.Proof.X25519.Arm.wp_ldr (by have := i.isLt; omega_using [])
+    (h.addr (by have := i.isLt; omega_using [])) (h.readPtr i) fun t u => ?_
   rw [h.pointers i] at u
   exact k t u (h.of_update u hr)
 
@@ -87,7 +87,7 @@ theorem Context.loadCount {g : Geometry} {s : State} (h : Context g s)
       Context g t → WP isa (.block is) t Q) :
     WP isa (.block (.ldr r .r8 16 :: is)) s Q := by
   refine VG.Proof.X25519.Arm.wp_ldr (by decide) (h.addr (by decide))
-    (h.workspace.read (by have := h.headerFits; omega)) fun t u => ?_
+    (h.workspace.read (by have := h.headerFits; omega_using [this])) fun t u => ?_
   rw [h.count] at u
   exact k t u (h.of_update u hr)
 

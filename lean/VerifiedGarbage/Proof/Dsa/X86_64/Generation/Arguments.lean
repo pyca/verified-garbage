@@ -45,17 +45,17 @@ theorem headerArgument_ok {s : State} {B F : Addr} {W : Nat → BitVec 64}
   cases he : a.value with
   | ones =>
     xrun [headerArgument, he, List.cons_append, List.nil_append, State.ea, hdr, hdrOff,
-      hdi, hB.st (d := 8 * a.destination) (by omega)]
+      hdi, hB.st (d := 8 * a.destination) (by omega_using [hd'])]
     rfl
   | literal n =>
     rw [he] at hv
     xrun [headerArgument, he, List.cons_append, List.nil_append, State.ea, hdr, hdrOff,
-      hdi, hB.st (d := 8 * a.destination) (by omega), sx_ofNat hv]
+      hdi, hB.st (d := 8 * a.destination) (by omega_using [hd']), sx_ofNat hv]
     rfl
   | frame k offset =>
     rw [he] at hv
     xrun [headerArgument, he, List.cons_append, List.nil_append, ea_sp, hsp, State.ea, Impl.Mgf1.X86_64.sp, BitVec.ofInt_natCast,
-      hdr, hdrOff, hdi, hB.st (d := 8 * a.destination) (by omega), hr k hv.1, hwords k hv.1,
+      hdr, hdrOff, hdi, hB.st (d := 8 * a.destination) (by omega_using [hd']), hr k hv.1, hwords k hv.1,
       sx_ofNat hv.2]
     rfl
 
@@ -96,7 +96,7 @@ theorem argumentWrites_outside (B : Addr) (W : Nat → BitVec 64) (m : Mem)
     have hd := h.1
     have hd' := h.2.1
     have hf : Outside B 128 128 m (m.writeW (off B (8 * a.destination)) (argumentValue W a.value)) :=
-      (writeW_outside _ _ _ (by omega)).mono (by omega) (by omega)
+      (writeW_outside _ _ _ (by omega_using [hd'])).mono (by omega_using [hd]) (by omega_using [hd'])
     exact hf.trans (ih _ (fun b hb => ha b (List.mem_cons_of_mem _ hb)))
 
 def argumentWords (W H : Nat → BitVec 64) : List HeaderArgument → Nat → BitVec 64

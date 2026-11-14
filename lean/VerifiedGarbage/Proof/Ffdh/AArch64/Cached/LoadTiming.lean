@@ -36,8 +36,8 @@ theorem load_ct {a : Nat} (array : a<8) {hc : VG.Taint.Hint VG.AArch64.Taint.T}
   [.x0] (fun _ s t hs ht =>pins_goodW _ s t hs.1 ht.1) check ?_)
   (two_taint [.x8,.x12,.x1,.x2] ?_ (by taint_decide))
  · rintro p s ⟨⟨mi,good,room⟩,ptr,len⟩
-   brun [good.x0,hdr_enc (show sArr a<32 by unfold sArr;omega),hdr_enc (show sW<32 by decide),
-    header_read good room (show sArr a<32 by unfold sArr;omega),header_read good room (show sW<32 by decide),
+   brun [good.x0,hdr_enc (show sArr a<32 by unfold sArr;omega_using [array]),hdr_enc (show sW<32 by decide),
+    header_read good room (show sArr a<32 by unfold sArr;omega_using [array]),header_read good room (show sW<32 by decide),
     good.hdr.harr a array,good.hdr.hw,ptr,len]
  · intro p s t hs ht r hr
    simp only [List.mem_cons,List.not_mem_nil,or_false] at hr

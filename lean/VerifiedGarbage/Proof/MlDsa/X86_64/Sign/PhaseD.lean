@@ -172,7 +172,7 @@ theorem decT0_ok {i : Nat} (hi : i < p.k) {s : State} (hs : ID p D σ p.ℓ p.k 
   refine WP.mono (dec_ok hP (by decide) (by decide) c hs) fun s' ⟨I', hq⟩ => ⟨I'.im, I'.s1, I'.s2,
     Fam.snoc I'.t0 ?_⟩
   have e : skT0 p i = 128 + lenS p * p.ℓ + lenS p * p.k + 32 * 13 * i := by
-    unfold skT0 lenS sLen; rw [Nat.mul_add]; omega
+    unfold skT0 lenS sLen; rw [Nat.mul_add]; omega_using []
   rw [sk_slice hs.im.st ck, e] at hq
   exact hq
 
@@ -183,22 +183,22 @@ theorem rpp_ok {s : State} (hs : ID p D σ p.ℓ p.k p.k s) : WP isa rpp s (IK p
     ⟨hs.step hP4 h5, ?_⟩
   rw [hP4.pa (by decide), hb]
   simp only [pieces, List.flatMap_cons, List.flatMap_nil, List.append_nil]
-  rw [sk_slice hs.im.st (o := 32) (len := 32) (by omega), hs.im.st.rnd, hs.im.st.mu, ← List.append_assoc]
+  rw [sk_slice hs.im.st (o := 32) (len := 32) (by omega_using [hsk]), hs.im.st.rnd, hs.im.st.mu, ← List.append_assoc]
 
 theorem decode_ok {s : State} (h : IM p D σ s) : WP isa (decode P p) s (IK p D σ) := by
   unfold decode
   refine WP.seq (WP.mono (seqR_ok (I := fun r => ID p D σ r 0 0) p.ℓ 0
-    (fun r _ hr s hs => decS1_ok hP hc (by omega) hs) s
+    (fun r _ hr s hs => decS1_ok hP hc (by omega_using [hr]) hs) s
     ⟨h, fun _ h => absurd h (Nat.not_lt_zero _), fun _ h => absurd h (Nat.not_lt_zero _),
       fun _ h => absurd h (Nat.not_lt_zero _)⟩) fun s1 hs1 => ?_)
   rw [Nat.zero_add] at hs1
   refine WP.seq (WP.mono (seqR_ok (I := fun i => ID p D σ p.ℓ i 0) p.k 0
-    (fun i _ hi s hs => decS2_ok hP hc (by omega) hs) s1
+    (fun i _ hi s hs => decS2_ok hP hc (by omega_using [hi]) hs) s1
     ⟨hs1.im, hs1.s1, fun _ h => absurd h (Nat.not_lt_zero _), fun _ h => absurd h (Nat.not_lt_zero _)⟩)
     fun s2 hs2 => ?_)
   rw [Nat.zero_add] at hs2
   refine WP.seq (WP.mono (seqR_ok (I := fun i => ID p D σ p.ℓ p.k i) p.k 0
-    (fun i _ hi s hs => decT0_ok hP hc (by omega) hs) s2
+    (fun i _ hi s hs => decT0_ok hP hc (by omega_using [hi]) hs) s2
     ⟨hs2.im, hs2.s1, hs2.s2, fun _ h => absurd h (Nat.not_lt_zero _)⟩) fun s3 hs3 => ?_)
   rw [Nat.zero_add] at hs3
   exact rpp_ok hP hc hs3
@@ -241,7 +241,7 @@ theorem prep_fam {p : Params} {D : Nat} {σ s s' : State} (hpre : (signK p D).pr
   have hA : σ.gpr .rdi + BitVec.ofNat 64 p.skLen + BitVec.ofNat 64 (1024 * i) =
       σ.gpr .rdi + BitVec.ofNat 64 (p.skLen + 1024 * i) := VG.Proof.MlKem.X86_64.off_add _ _ _
   have hsub : Region.Sub ⟨σ.gpr .rdi + BitVec.ofNat 64 (p.skLen + 1024 * i), 1024⟩
-      ⟨σ.gpr .rdi, preparedSecretKeyBytes p⟩ := Offset.sub_base _ (by omega)
+      ⟨σ.gpr .rdi, preparedSecretKeyBytes p⟩ := Offset.sub_base _ (by omega_using [hi, hl])
   have hσ : bytesAt s.mem (σ.gpr .rdi + BitVec.ofNat 64 (p.skLen + 1024 * i)) 1024 =
       bytesAt σ.mem (σ.gpr .rdi + BitVec.ofNat 64 (p.skLen + 1024 * i)) 1024 := by
     refine VG.Proof.MlKem.bytesAt_frame h.st.fr (fun r hr => ?_) (by decide)
@@ -256,8 +256,8 @@ theorem prep_fam {p : Params} {D : Nat} {σ s s' : State} (hpre : (signK p D).pr
   refine PreparedKey.polyIs_of_copy ?_ hpoly
   have hd : pa s (pS (s1Base p + i)) = pa s (s1P p 0) + BitVec.ofNat 64 (1024 * i) := by
     rw [pa_add]
-    exact congrArg (fun o => pa s (.rbx, o)) (by simp only [oP, s1Base]; omega)
-  have hi' : 1024 * i + 1024 ≤ polysLen p := by simp only [polysLen]; omega
+    exact congrArg (fun o => pa s (.rbx, o)) (by simp only [oP, s1Base]; omega_using [])
+  have hi' : 1024 * i + 1024 ≤ polysLen p := by simp only [polysLen]; omega_using [hi]
   rw [hd, ← VG.Proof.MlKem.bytesAt_slice _ _ hi', hb, VG.Proof.MlKem.bytesAt_slice _ _ hi', ← hσ, ← hA]
   simp only [pa, e2]
 
@@ -282,11 +282,11 @@ theorem copyKey_ok {p : Params} {D : Nat} {σ s : State} (hpre : (signK p D).pre
   refine WP.mono (copy_okB L' hcp) fun s' ⟨hP, _, hb⟩ => ?_
   have I := h.step hP him
   refine ⟨I, fun r hr => ?_, fun i hi => ?_, fun i hi => ?_⟩
-  · rw [← prepV_s1 p σ hr]; exact prep_fam hpre hf hc h hP hb (by omega)
-  · rw [← prepV_s2 p σ hi, show s2Base p + i = s1Base p + (p.ℓ + i) by simp only [s1Base, s2Base]; omega]
-    exact prep_fam hpre hf hc h hP hb (by omega)
-  · rw [← prepV_t0 p σ hi, show t0Base p + i = s1Base p + (p.ℓ + p.k + i) by simp only [s1Base, t0Base]; omega]
-    exact prep_fam hpre hf hc h hP hb (by omega)
+  · rw [← prepV_s1 p σ hr]; exact prep_fam hpre hf hc h hP hb (by omega_using [hr])
+  · rw [← prepV_s2 p σ hi, show s2Base p + i = s1Base p + (p.ℓ + i) by simp only [s1Base, s2Base]; omega_using []]
+    exact prep_fam hpre hf hc h hP hb (by omega_using [hi])
+  · rw [← prepV_t0 p σ hi, show t0Base p + i = s1Base p + (p.ℓ + p.k + i) by simp only [s1Base, t0Base]; omega_using []]
+    exact prep_fam hpre hf hc h hP hb (by omega_using [hi])
 
 /-- The flag at `FL` is the entry's `r9`. -/
 theorem testFlag_ok {D : Nat} {σ s : State} (ht : Top σ s) (hin : InRegions (s.rd ++ s.wr) (pa s (sc oFL)) 8) :

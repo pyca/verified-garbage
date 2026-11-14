@@ -86,7 +86,7 @@ theorem iteration_pair (c : Cand) (p : SearchPublic) (T : List Nat) (n : Nat) :
       have hle := L.used_le
       have h0 := co.2.2.2
       simp only [nextPt] at hle ⊢
-      omega
+      omega_using [hn, hle, h0]
     · exact absurd co nc
   · rcases h₂ with ⟨co, _, _⟩ | ⟨_, e₂⟩
     · exact absurd co nc

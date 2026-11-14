@@ -58,7 +58,7 @@ theorem encEnd_abi {H : Spec.Mgf1.Hash} {s s₂ : State} (hp : EPre H s) (he : E
     refine Frame.readW he.fr (r := ⟨s.gpr .rsp, 8⟩) (Region.contains_self _ _) (fun r hr => ?_) (by decide)
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
-    · have := Offset.disjoint_below (s.gpr .rsp) (n := encStack) (d := 0) (k := 8) (by unfold encStack; omega)
+    · have := Offset.disjoint_below (s.gpr .rsp) (n := encStack) (d := 0) (k := 8) (by unfold encStack; omega_using [])
       simpa only [stkR, BitVec.ofNat_eq_ofNat, BitVec.add_zero] using this
     · exact hp.d_ret_out
     · exact hp.d_ret_scr
@@ -145,13 +145,13 @@ theorem code_correct (v : PublicImpl) (s : State) (h : (encC (tables vs)).pre s)
     obtain rfl := Option.some.inj hH'
     obtain rfl := Option.some.inj hG'
     exact hpo
-  refine wp_alloc (by have := hp.sp1; unfold encStack at this; unfold frameBytes; omega) ?_
+  refine wp_alloc (by have := hp.sp1; unfold encStack at this; unfold frameBytes; omega_using [this]) ?_
   refine encBodyWith_ok w₁.ok w₁.mgf hp.toEPre (fun t he sy => etabL hp he sy okL hmL hDmL)
     (fun t' he' hw' hb => ?_) fun t he hsy L R hk => ?_
   · obtain ⟨h1, h2, h3, h4⟩ := encEnd_ok hp.toEPre he' hw'
     refine ⟨h1, h2, h3, fun _ => ?_⟩
     show Spec.Rsa.written _ _ _ _ _
-    rw [encrypt_none (by rw [hnl, hlen, hml]; omega)]; exact h4
+    rw [encrypt_none (by rw [hnl, hlen, hml]; omega_using [hb])]; exact h4
   · dsimp only
     rw [encMain_D (G := ofLen w₁.H.D) (G' := w₁.H.stream) rfl]
     refine WP.mono (encMain_ok w₁.ok w.ok w₁.mgf w.mgf v hgi hgu hgf hp he hsy okL hmL hDmL ok hm hDm L R
@@ -161,7 +161,7 @@ theorem code_correct (v : PublicImpl) (s : State) (h : (encC (tables vs)).pre s)
     refine ⟨h1, h2, h3, fun hq => ?_⟩
     show Spec.Rsa.written _ _ _ _ _
     have hw'' := hw' hq
-    rw [encrypt_some (by rw [hsl]) (by rw [hnl, hlen, hml]; omega), hnl, hml, hlen]
+    rw [encrypt_some (by rw [hsl]) (by rw [hnl, hlen, hml]; omega_using [hk]), hnl, hml, hlen]
     rw [hlen] at hw''
     exact hw''
 

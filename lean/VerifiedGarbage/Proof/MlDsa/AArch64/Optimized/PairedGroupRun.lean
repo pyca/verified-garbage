@@ -27,13 +27,13 @@ def groupClobs (i j : Fin 8) : List VReg :=
 
 theorem groupKeep (p : Fin 2) (i j k : Fin 8) (hki : k≠i) (hkj : k≠j) :
     (bankRegs p)[k.val]∉groupClobs i j := by
-  have ht := bank_safe (j := 8*p.val+k.val) (by omega)
+  have ht := bank_safe (j := 8*p.val+k.val) (by omega_using [])
   have hn (q : Fin 2) (r : Fin 8) (hkr : k≠r) : vr (8*p.val+k.val)≠vr (8*q.val+r.val) := by
     intro h
-    have he := bank_injective (by omega) (by omega) h
+    have he := bank_injective (by omega_using []) (by omega_using []) h
     apply hkr
     apply Fin.ext
-    omega
+    omega_using [he]
   have h0i := hn 0 i hki
   have h0j := hn 0 j hkj
   have h1i := hn 1 i hki
@@ -58,7 +58,7 @@ theorem groupBank_ok (i j : Fin 8) (hij : i≠j)
   have hp : ∃r∈groupPairs i.val j.val,r.left=(bankRegs p)[i.val] ∧ r.right=(bankRegs p)[j.val] := by
     have hp' : p=0 ∨ p=1 := by
       apply Or.imp (fun h => Fin.ext h) (fun h => Fin.ext h)
-      omega
+      omega_using []
     rcases hp' with rfl | rfl
     · exact ⟨⟨vr i.val,vr j.val,.v24⟩,by simp [groupPairs],by simp [bankRegs],by simp [bankRegs]⟩
     · exact ⟨⟨vr (8+i.val),vr (8+j.val),.v25⟩,by simp [groupPairs,Nat.add_comm],by simp [bankRegs],by simp [bankRegs]⟩

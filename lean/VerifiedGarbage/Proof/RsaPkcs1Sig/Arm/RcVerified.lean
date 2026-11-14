@@ -39,8 +39,8 @@ theorem code_ok (c : PdImpl) {s : State} (h : spec.pre s) :
   have hs := spec_sp h
   have hin := in_of_pre h
   have st := entered_state h
-  have hsp : 56 + frameBytes ≤ s.sp.toNat := by simp only [stackBytes] at hs; omega
-  refine WP.mono (wrap_ok (by decide) (by omega) (W := (ep s).lay.W)
+  have hsp : 56 + frameBytes ≤ s.sp.toNat := by simp only [stackBytes] at hs; omega_using [hs]
+  refine WP.mono (wrap_ok (by decide) (by omega_using [hsp]) (W := (ep s).lay.W)
     (Q := fun r m => Res (ep s) (entered frameBytes s) m r) (fun r hr => ?_)
     (WP.mono ((body_vp c).wp _ _ st) fun u hu => ⟨hu.1.2.frame, hu.2⟩)) fun t ⟨abi, res⟩ => ⟨abi, ?_⟩
   · rw [pushRegion_eq (F := frameBytes) (A := 36) (argv := (ep s).argv)
@@ -89,7 +89,7 @@ theorem code_ct (c : PdImpl) : ConstantTime isa spec.pre spec.pub (code c.name c
     exact hp.1
   refine (wrap_ct (F := frameBytes) (by decide) (P := fun a b => a = s₁ ∧ b = s₂)
     (fun a b h => by rw [h.1, h.2]; exact hsp)
-    (fun a b h => by rw [h.1]; have := spec_sp h₁; simp only [stackBytes] at this; omega) ?_
+    (fun a b h => by rw [h.1]; have := spec_sp h₁; simp only [stackBytes] at this; omega_using [this]) ?_
     s₁ s₂ t₁ t₂ s₁' s₂' ⟨rfl, rfl⟩ e₁ e₂).1
   refine (body_vp (P := ep s₁) c).ct.mono ?_ fun _ _ _ => trivial
   rintro a b ⟨_, _, ⟨rfl, rfl⟩, rfl, rfl⟩

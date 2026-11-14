@@ -164,7 +164,7 @@ theorem drawBuffer_ok {P : PrimeParams} {used : Nat} {s : State}
   have hw : ∀ i < (P.drawSlice used).length, InRegions s.wr (off P.p i) 1 := by
     rw [hlen]; exact h.writable
   have hd := drawPrepared_ok h.ready P.exponentRoom
-    (by rw [hlen]; exact P.lenDraw) (by have := P.drawMax; omega)
+    (by rw [hlen]; exact P.lenDraw) (by have := P.drawMax; omega_using [this])
     h.rand h.used h.ptr hs hw (by rw [hlen]; exact P.bufferOutside)
     (by simpa only [hlen, PrimeParams.drawStart] using P.slice_separate hroom)
   rw [hlen] at hd
@@ -175,7 +175,7 @@ theorem drawBuffer_ok {P : PrimeParams} {used : Nat} {s : State}
       simp only [List.mem_singleton] at hmem; subst r; simp [primeExtras])) hr
   have hzt : 256 ≤ P.Z := P.z256
   have hpt : PrimeState P (used + P.drawBytes) t := h.advance ht hused hft hk
-    (by simp only [List.mem_singleton, forall_eq]; change 224 ≤ P.Z; omega)
+    (by simp only [List.mem_singleton, forall_eq]; change 224 ≤ P.Z; omega_using [hzt])
     (by
       intro k hmem
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hmem

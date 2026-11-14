@@ -55,7 +55,7 @@ abbrev oRes (p : BitVec 32 × (Nat → BitVec 32)) (s₀ : State) : Option (List
 /-- The arguments of `open`, in its public data (`W` at 8, `tag` at 10). -/
 theorem open_arg {s₀ : State} {p : BitVec 32 × (Nat → BitVec 32)} (hp : pubSw 10 7 s₀ = p) {i : Nat}
     (hi : i < 7 ∨ i = 8) : arg s₀ i = p.2 i :=
-  pubSw_arg hp (by omega) (by omega) (by omega)
+  pubSw_arg hp (by omega_using [hi]) (by omega_using [hi]) (by omega_using [hi])
 
 theorem open_tag {s₀ : State} {p : BitVec 32 × (Nat → BitVec 32)} (hp : pubSw 10 7 s₀ = p) : arg s₀ 7 = p.2 9 :=
   pubSw_last hp (by decide) rfl
@@ -126,7 +126,7 @@ theorem kept_woF {o n o' : Nat} (h₁ : 128 ≤ o)
   intro r hr
   rcases List.mem_cons.mp hr with rfl | hr
   · simp only [auxO, rO] at h₂
-    exact Lay.w_w (.inr (by omega)) (by omega) (by omega)
+    exact Lay.w_w (.inr (by omega_using [h₁, ho'])) (by omega_using [h₂]) (by omega_using [ho'])
   · exact slot_oF G h₁ h₂ r (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ hr))
 
 omit G in
@@ -146,7 +146,7 @@ theorem t_woF {o : Nat} (ho : o + 16 ≤ 2560) {T : Region} (tw : T.Disjoint ⟨
 /-- The counter block, apart from a part of `W` from `W + 80` on. -/
 theorem st48_w {o k : Nat} (h : 80 ≤ o) (hk : o + k ≤ 2560) :
     (⟨w64 (stOf (p.2 7)) + BitVec.ofNat 64 48, 16⟩ : Region).Disjoint ⟨w64 (p.2 7) + BitVec.ofNat 64 o, k⟩ := by
-  rw [st_eq G]; exact Lay.w_w (.inl (by omega)) (by decide) hk
+  rw [st_eq G]; exact Lay.w_w (.inl (by omega_using [h])) (by decide) hk
 
 end
 
@@ -225,7 +225,7 @@ theorem open_pc (q : (BitVec 32 × (Nat → BitVec 32)) × Bool) :
   have ht' : 1 ≤ (q.1.2 8).toNat ∧ (q.1.2 8).toNat ≤ 16 := by
     have := hT'
     simp only [Spec.Gcm.tagLenOk, Bool.and_eq_true, decide_eq_true_eq] at this
-    omega
+    omega_using [this]
   obtain ⟨t1, t16⟩ := ht'
   -- `J₀` and the additional data; the tag of the ciphertext.
   refine Pc.seq (Pc.lift (oneAad_pc G) (fun s₀ s => (s₀, s)) fun s₀ s h => ⟨h.1, rfl⟩) ?_
@@ -284,7 +284,7 @@ theorem open_pc (q : (BitVec 32 × (Nat → BitVec 32)) × Bool) :
     have o₅ := (o₃.frame G (Frame.oD fo₄) bp₄ si₄ sp₄ rd₄ wr₄).frame G (Frame.oD fo₅) bp₅ si₅ sp₅ rd₅ wr₅
     -- The tags.
     have hc₂ : bytesAt s₂.mem (w64 (q.1.2 5)) (q.1.2 6).toNat = bytesAt s₀.mem (w64 (q.1.2 5)) (q.1.2 6).toNat := by
-      rw [bytesAt_frame fA (d_oF G) (by have := G.fd; omega)]; exact hE.data
+      rw [bytesAt_frame fA (d_oF G) (by have := G.fd; omega_using [])]; exact hE.data
     have hT₃ : bytesAt s₃.mem (w64 (q.1.2 7) + BitVec.ofNat 64 uO) 16 = tagOf q.1 s₀ := by
       dsimp only at ht
       rw [ht, hc₂, tagOf, Proof.Gcm.fullTag_eq, padded_eq, length_bytesAt, length_bytesAt]
@@ -294,7 +294,7 @@ theorem open_pc (q : (BitVec 32 × (Nat → BitVec 32)) × Bool) :
         simp only [List.mem_singleton] at hr; subst hr
         exact Lay.w_w (.inl (by decide)) (by decide) (by decide)) (by decide), hT₃]
     have hw₃ : bytesAt s₃.mem (w64 (q.1.2 9)) (q.1.2 8).toNat = rcvOf q.1 s₀ := by
-      have ht₁ : (q.1.2 8).toNat ≤ 2 ^ 64 := by omega
+      have ht₁ : (q.1.2 8).toNat ≤ 2 ^ 64 := by omega_using []
       rw [bytesAt_frame (oT_oF fT) (t_woF (by decide) tw kt) ht₁,
         bytesAt_frame fA (fun r hr => t_woF (o := 0) (by decide) tw kt r (List.mem_cons_of_mem _ hr)) ht₁,
         bytesAt_frame hE.frame (fun r hr => by
@@ -332,9 +332,9 @@ theorem open_pc (q : (BitVec 32 × (Nat → BitVec 32)) × Bool) :
     · mems []
       rw [bytesAt_frame fx₁ (fun r hr => by
           simp only [List.mem_singleton] at hr; subst hr; exact G.d_w.sub_right (Lay.wSub (by decide)))
-          (by have := G.fd; omega),
-        bytesAt_frame fo₅ (d_oF G) (by have := G.fd; omega), bytesAt_frame fo₄ (d_oF G) (by have := G.fd; omega),
-        bytesAt_frame (oT_oF fT) (d_woF G (by decide)) (by have := G.fd; omega)]
+          (by have := G.fd; omega_using []),
+        bytesAt_frame fo₅ (d_oF G) (by have := G.fd; omega_using []), bytesAt_frame fo₄ (d_oF G) (by have := G.fd; omega_using []),
+        bytesAt_frame (oT_oF fT) (d_woF G (by decide)) (by have := G.fd; omega_using [])]
       exact hc₂
   -- The data decrypted if the tags are equal.
   refine Pc.seq (Q := OD q) (Pc.ite (!q.2) (fun _ _ h => h.zf) (fun hb => ?_) (fun hb => ?_)) ?_

@@ -28,7 +28,7 @@ structure CpCtx (s : State) : Prop where
 theorem cpCtx_of {s : State} (h : cpPre s) : CpCtx s := by
   obtain ⟨_, hrd, hwr, dds, dys, _, _, _, _, _, wD, wY, wS, ⟨hk1, hk2⟩, hdl, hyl, hsl⟩ := h
   unfold Spec.Rsa.scratchWords at hsl
-  exact ⟨hk1, hk2, hdl, hyl, by omega, Scr.of_mem (by rw [hwr]; simp) wS,
-    src_of_region (by rw [hrd]; simp) (by omega) dds, src_of_region (by rw [hrd]; simp) (by omega) dys⟩
+  exact ⟨hk1, hk2, hdl, hyl, by omega_using [hsl], Scr.of_mem (by rw [hwr]; simp) wS,
+    src_of_region (by rw [hrd]; simp) (by omega_using []) dds, src_of_region (by rw [hrd]; simp) (by omega_using []) dys⟩
 
 end VG.Proof.Ffdh.X86_64.CheckPublic

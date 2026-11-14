@@ -74,7 +74,7 @@ theorem callK_ok' {K : Nat} (hK : K < 4) {s : State} (h : PCW w16 NoX σ K s) : 
 theorem scalar_body_ok {s : State} (h : I0W w16 σ s) :
     WP isa (.seq (callK 0 w16) (.seq (callK 1 w16) (.seq (callK 2 w16) (.seq (callK 3 w16) (.block epi))))) s fun s' =>
       (sample4KW w16).post σ s' ∧ gprPreserved σ s' := by
-  have p₀ : PCW w16 NoX σ 0 s := ⟨h.env, trivial, by rw [h.r14]; rfl, fun _ h _ _ => absurd h (by omega)⟩
+  have p₀ : PCW w16 NoX σ 0 s := ⟨h.env, trivial, by rw [h.r14]; rfl, fun _ h _ _ => absurd h (by omega_using [])⟩
   exact WP.seq (WP.mono (callK_ok' hp (by decide) p₀) fun _ p₁ => WP.seq (WP.mono (callK_ok' hp (by decide) p₁)
     fun _ p₂ => WP.seq (WP.mono (callK_ok' hp (by decide) p₂) fun _ p₃ =>
       WP.seq (WP.mono (callK_ok' hp (by decide) p₃) fun _ p₄ => end_ok hp p₄))))
@@ -94,7 +94,7 @@ theorem args_taint {K : Nat} (hK : K < 4) (w16 : Bool) : ∃ hc : VG.Taint.Hint 
       (.block [.mov .rdi (.reg .r12), .alu .add .rdi (.imm (BitVec.ofNat 32 (34 * K))),
         .mov .rsi (.reg .r13), .alu .add .rsi (.imm (BitVec.ofNat 32 (pBytes w16 * K))), .mov .rdx (.reg .rbx),
         .alu .add .rdx (.imm (BitVec.ofNat 32 oScalar))]) hc).isSome = true := by
-  rcases (by omega : K = 0 ∨ K = 1 ∨ K = 2 ∨ K = 3) with rfl | rfl | rfl | rfl <;> cases w16 <;>
+  rcases (by omega_using [hK] : K = 0 ∨ K = 1 ∨ K = 2 ∨ K = 3) with rfl | rfl | rfl | rfl <;> cases w16 <;>
     exact ⟨_, by taint_decide⟩
 
 /-- The call on seed `K`. -/
@@ -107,7 +107,7 @@ theorem ct_scalar : ConstantTime isa (sample4KW w16).pre (sample4KW w16).pub (Im
   refine relStart (Q := fun _ _ => True) (RelCT.seq (RelCT.mono (relInv (I' := fun σ s => PCW w16 NoX σ 0 s)
     (fun σ s hp h => by
       subst h
-      exact WP.mono (pro_ok (preW_of hp)) fun _ h => ⟨h.env, trivial, by rw [h.r14]; rfl, fun _ h _ _ => absurd h (by omega)⟩)
+      exact WP.mono (pro_ok (preW_of hp)) fun _ h => ⟨h.env, trivial, by rw [h.r14]; rfl, fun _ h _ _ => absurd h (by omega_using [])⟩)
     (taintRel [.rdi, .rsi, .rdx] (fun x y ⟨σ₁, σ₂, _, _, hq, h₁, h₂⟩ r hr => by
       subst h₁ h₂
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr

@@ -43,7 +43,7 @@ theorem wordsAt_read {m : Mem} {p : Addr} {w x : Nat} (h : (m.read p (8 * w)).to
 theorem wordsAt_val32 {m : Mem} {p : Addr} {d w : Nat} :
     Spec.Rsa.wordsAt m (p + BitVec.ofNat 64 d) w = Spec.Rsa.toWords (val32 m p d (2 * w)) w := by
   refine wordsAt_read ?_
-  rw [show 8 * w = 4 * (2 * w) by omega]
+  rw [show 8 * w = 4 * (2 * w) by omega_using []]
   exact VG.Proof.Bignum.read_eq_val32 m p (2 * w) d
 
 /-- A factor of a valid modulus whose other factor is shorter than it is safe. -/
@@ -60,7 +60,7 @@ theorem safe_factor {N P Q k : Nat} (hv : Spec.Rsa.modulusValid N k = true) (hpq
     · exact h
     · rcases Nat.le_one_iff_eq_zero_or_eq_one.mp h with rfl | rfl
       · rw [Nat.zero_mul] at hpq; subst hpq; exact absurd big (Nat.not_le.mpr (Nat.two_pow_pos 511))
-      · rw [Nat.one_mul] at hpq; subst hpq; clear big; omega
+      · rw [Nat.one_mul] at hpq; subst hpq; clear big; omega_using [hq, top]
   · rcases Nat.mod_two_eq_zero_or_one P with h | h
     · rw [h, Nat.zero_mul, Nat.zero_mod, hpq, odd] at hm; exact absurd hm (by decide)
     · exact h
@@ -115,15 +115,15 @@ theorem final_post (A : PPABI s) {X : Nat} {m m' : Mem} (P : PreVals s X m)
       have qlt : Spec.Rsa.os2ip (qBytes s) < 256 ^ ((arg s 3).toNat - 1) := by
         have := VG.Proof.Bignum.os2ip_lt (qBytes s)
         rw [VG.Proof.Bignum.bytesAt_length] at this
-        exact Nat.lt_of_lt_of_le this (Nat.pow_le_pow_right (by decide) (by have := A.qLength; omega))
+        exact Nat.lt_of_lt_of_le this (Nat.pow_le_pow_right (by decide) (by have := A.qLength; omega_using [this]))
       have plt : Spec.Rsa.os2ip (pBytes s) < 256 ^ ((arg s 3).toNat - 1) := by
         have := VG.Proof.Bignum.os2ip_lt (pBytes s)
         rw [VG.Proof.Bignum.bytesAt_length] at this
-        exact Nat.lt_of_lt_of_le this (Nat.pow_le_pow_right (by decide) (by have := A.pLength; omega))
+        exact Nat.lt_of_lt_of_le this (Nat.pow_le_pow_right (by decide) (by have := A.pLength; omega_using [this]))
       have sp : CrtRt.safeM (valueAt s 4) = valueAt s 4 := safe_factor hv hpq qlt
       have sq : CrtRt.safeM (valueAt s 6) = valueAt s 6 := safe_factor hv (by rw [Nat.mul_comm]; exact hpq) plt
       have fb : fixB (arg s 3).toNat = 128 * Spec.Rsa.modulusWords (arg s 3).toNat := by
-        simp only [fixB, CrtRt.bc, CrtRt.mw]; omega
+        simp only [fixB, CrtRt.bc, CrtRt.mw]; omega_using []
       have xv := P.x ws hp
       have Pp := P.p (by
         rw [sp, xv, fb, Nat.mod_mod_of_dvd _ ⟨valueAt s 6, by simpa [valueAt, nBytes, pBytes, qBytes] using hpq.symm⟩])
@@ -132,9 +132,9 @@ theorem final_post (A : PPABI s) {X : Nat} {m m' : Mem} (P : PreVals s X m)
           rw [Nat.mul_comm]; simpa [valueAt, nBytes, pBytes, qBytes] using hpq.symm⟩])
       rw [sp] at Pp
       rw [sq] at Pq
-      have d1 : 8 * (2 * Spec.Rsa.modulusWords (arg s 3).toNat) = dstOff s none := by simp only [dstOff]; omega
+      have d1 : 8 * (2 * Spec.Rsa.modulusWords (arg s 3).toNat) = dstOff s none := by simp only [dstOff]; omega_using []
       have d2 : 8 * (2 * Spec.Rsa.modulusWords (arg s 3).toNat + Spec.Rsa.primeWords (arg s 5).toNat) =
-          dstOff s (some 5) := by simp only [dstOff]; omega
+          dstOff s (some 5) := by simp only [dstOff]; omega_using []
       rw [hl, wordsAt_append, wordsAt_append, pub, hp, d1, d2, wordsAt_val32, wordsAt_val32, Pp, Pq]
       simp only [Spec.Rsa.primeR2, VG.Proof.Bignum.bytesAt_length, r2Exp, valueAt]
   · have h0 : stBit s = 0 := by

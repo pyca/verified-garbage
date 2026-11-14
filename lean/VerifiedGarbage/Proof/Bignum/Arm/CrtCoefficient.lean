@@ -109,11 +109,11 @@ theorem crt_coefficient_ok (s : State) {g : CrtGeometry} {bs : Fin 7 → List By
   have fitsC : arrAt g.words 8 ≤ 8 * workspaceWords g.words := ctx.shared.buffers.context.arraysFit
   have end5 := Nat.le_trans (array_end_le (w := g.words) (by decide : 5 < 8)) fitsC
   have words : g.words ≤ 128 := (crt_width_valid ctx.shared.buffers.lengthValid).2.1
-  have wsSmall : workspaceWords g.words ≤ 16 * 128 + 64 := by simp only [workspaceWords]; omega
+  have wsSmall : workspaceWords g.words ≤ 16 * 128 + 64 := by simp only [workspaceWords]; omega_using [words]
   have op : ∀ q, q = 0 ∨ q = 1 ∨ q = 4 ∨ q = 5 ∨ q = 6 → Operand q := by
     intro q hq
     rcases hq with rfl | rfl | rfl | rfl | rfl <;> simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]
-  have positive : 0 < P := by have := ctx.ready.modulus; rw [h.modulus] at this; omega
+  have positive : 0 < P := by have := ctx.ready.modulus; rw [h.modulus] at this; omega_using [this]
   have pSmall : P < 2 ^ (64 * v) := by rw [← h.modulus]; exact numAt_lt_pow _ _ _ _
   -- `qInv mod p`, kept in the full array 4.
   rw [coefficient, inverseHalf, WP.seq_iff, WP.seq_iff]
@@ -182,12 +182,12 @@ theorem crt_coefficient_ok (s : State) {g : CrtGeometry} {bs : Fin 7 → List By
   rintro t ⟨_, copied, outside, restT⟩
   obtain ⟨ctxT, _, frameT, _⟩ := ctx8.after_copyOut kind (by decide) (by assumption) outside restT
   have cleared8 : val32 s8.mem (State.addr (crtP g.base g.words)) (arrAt g.words 5) (2 * g.words + 2) = 0 := by
-    rw [← read_eq_val32, eq58.read _ _ (by omega), eq35.read _ _ (by omega), eq3.read _ _ (by omega), read_eq_val32,
-      outside2.val32 (Or.inr (by simp only [arrAt, Proof.Rsa.Mont.hdrBytes]; omega)) (by omega)]
-    rw [← read_eq_val32, eq1.read _ _ (by omega), read_eq_val32]
+    rw [← read_eq_val32, eq58.read _ _ (by omega_using [end5]), eq35.read _ _ (by omega_using [end5]), eq3.read _ _ (by omega_using [end5]), read_eq_val32,
+      outside2.val32 (Or.inr (by simp only [arrAt, Proof.Rsa.Mont.hdrBytes]; omega_using [le])) (by omega_using [end5, wsSmall])]
+    rw [← read_eq_val32, eq1.read _ _ (by omega_using [end5]), read_eq_val32]
     exact h.cleared
   refine ⟨ctxT.shared, ?_, ?_, ?_⟩
-  · rw [numAt_of_copied le cleared8 outside (by omega), copied]
+  · rw [numAt_of_copied le cleared8 outside (by omega_using [end5, wsSmall]), copied]
     change numAt s8.mem _ v 5 = _
     rw [value8, Nat.mul_mod_mod, crt_coefficient_value positive]
   · exact (frame1.mono (by simp)).trans ((frame2.mono (by simp)).trans ((frame3.mono (by simp)).trans
@@ -246,7 +246,7 @@ theorem crt_coefficient_ct {g : CrtGeometry} {bs1 bs2 : Fin 7 → List Byte} {v 
       by rw [keeps_array_num keeps (fitsC s h) (op 6 (by simp)) (by decide)]; exact lt⟩
   have w3 (s : State) {bs : Fin 7 → List Byte} (h : CoeffHalf g bs v s) : WP isa (reduceHalf 224 1) s (CoeffOther g bs v) := by
     obtain ⟨M, h, lt⟩ := h
-    have positive : 0 < M := by have := h.1.ready.modulus; rw [h.2.1] at this; omega
+    have positive : 0 < M := by have := h.1.ready.modulus; rw [h.2.1] at this; omega_using [lt]
     refine (crt_reduceHalf_ok s h.1 (j := 1) (by decide) h.2.2.2.2 h.2.1 h.2.2.1 h.2.2.2.1).mono ?_
     rintro t ⟨ready, mod, r2, _, value, frame, rest⟩
     exact ⟨⟨M, ⟨h.1.after_narrow ready frame rest, mod, h.2.2.1, r2, h.2.2.2.2⟩,
@@ -299,13 +299,13 @@ theorem crt_coefficient_ct {g : CrtGeometry} {bs1 bs2 : Fin 7 → List Byte} {v 
     obtain ⟨M, h⟩ := h
     have := fitsN s h
     simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at this
-    omega
+    omega_using [this]
   have fit3 : ∀ s, CoeffReady g bs1 v s → arrAt v 3 + 32 ≤ 8 * workspaceWords g.words := by
     intro s h
     obtain ⟨M, h⟩ := h
     have := Nat.le_trans (array_end_le (w := v) (by decide : 3 < 8)) (fitsN s h)
     have := h.1.ready.width ▸ h.1.ready.layout.1
-    omega
+    omega_arith
   intro s₁ s₂ tr1 tr2 u₁ u₂ hh e1 e2
   have r0 : CoeffReady g bs1 v s₁ := by obtain ⟨M, h, _⟩ := hh.1; exact ⟨M, h⟩
   have sz := size s₁ r0
@@ -398,11 +398,11 @@ theorem crt_coefficientStage_ok (s : State) {g : CrtGeometry} {bs : Fin 7 → Li
   let v := narrowWords (g.sourceLength (1 : Fin 6).succ) g.words
   have pqFit : g.sourceLength (5 : Fin 6).succ ≤ 8 * g.words := by
     have := h.buffers.pShort; have := (crt_width_valid h.buffers.lengthValid).2.2
-    change g.pLength ≤ 8 * Spec.Rsa.modulusWords g.length; omega
+    change g.pLength ≤ 8 * Spec.Rsa.modulusWords g.length; omega_arith
   -- p's full workspace selected.
   rw [CrtFn.coefficientPhaseOf, WP.seq_iff]
   refine WP.mono (crt_selectLinked_ready s h h.buffers.context.p h.p memberP
-    (by have := h.buffers.context.size; omega : 224 + 4 ≤ 8 * workspaceWords g.words)
+    (by have := h.buffers.context.size; omega_using [this] : 224 + 4 ≤ 8 * workspaceWords g.words)
     (by decide) ready.ptr h.main.p) ?_
   rintro u ⟨sharedU, readyU, frameU, restU⟩
   have pU := p.congr (h.workspace_eq_after_base h.buffers.context.p memberP frameU)
@@ -451,7 +451,7 @@ theorem crt_coefficientStage_ok (s : State) {g : CrtGeometry} {bs : Fin 7 → Li
   have primeIn : NarrowPrimeInput (crtN g.base g.words) (g.source (1 : Fin 6).succ) (workspaceWords g.words) v
       (g.sourceLength (1 : Fin 6).succ) (56 + 8 * (1 : Fin 6).val) (bs (1 : Fin 6).succ) y1 := by
     refine ⟨selected, sharedY1.savedOperand 1 sharedY1.narrow_member, kpos, kfit,
-      by have := sharedY1.stack.nowrap; omega, sharedY1.stack.read (by decide), ?_, ?_⟩
+      by have := sharedY1.stack.nowrap; omega_using [this], sharedY1.stack.read (by decide), ?_, ?_⟩
     · rw [flagS]; split <;> decide
     · rw [flagS]
       by_cases accepted : crtAccepted bs
@@ -475,7 +475,7 @@ theorem crt_coefficientStage_ok (s : State) {g : CrtGeometry} {bs : Fin 7 → Li
     · rw [eqY.number fitsC (by decide), eqY1.number fitsC (by decide)]; exact p1'
     · rw [eqY.number fitsC (by decide), eqY1.number fitsC (by decide)]; exact p4
     · have f5 := Nat.le_trans (array_end_le (w := g.words) (by decide : 5 < 8)) fitsC
-      rw [← read_eq_val32, eqY.read _ _ (by omega), eqY1.read _ _ (by omega), read_eq_val32]
+      rw [← read_eq_val32, eqY.read _ _ (by omega_using [f5]), eqY1.read _ _ (by omega_using [f5]), read_eq_val32]
       exact cleared5
   rw [WP.seq_iff]
   refine WP.mono (crt_coefficient_ok y input) ?_

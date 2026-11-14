@@ -100,8 +100,8 @@ theorem qShape_ok {s : State} {src op : Addr} {bs : List Byte}
     rcases hwv i hi with ⟨r, hm, hc⟩
     exact ⟨r, List.mem_append_right _ hm, hc⟩
   refine WP.mono (qShapeEnds_ok hn hb ((kv.gpr _ (by decide)).trans huop)
-    ((kv.gpr _ (by decide)).trans hulen) (by simpa [off] using hrw 0 (by omega))
-    (hrw _ (by omega)) (by simpa [off] using hwv 0 (by omega)) (hwv _ (by omega)))
+    ((kv.gpr _ (by decide)).trans hulen) (by simpa [off] using hrw 0 (by omega_using [hn]))
+    (hrw _ (by omega_using [hn])) (by simpa [off] using hwv 0 (by omega_using [hn])) (hwv _ (by omega_using [hn])))
     fun t ⟨htm, kt⟩ => ?_
   refine ⟨?_, ?_, ((ku.trans kv).trans kt).mono (by decide)⟩
   · rw [htm]
@@ -110,8 +110,8 @@ theorem qShape_ok {s : State} {src op : Addr} {bs : List Byte}
     rw [hcopy i hi, hum]
     exact hbytes i hi
   · intro a ha
-    rw [htm, WriteBytes.writeW8_apply, ite_eq_right (ha _ (by omega)),
-      WriteBytes.writeW8_apply, ite_eq_right (by simpa [off] using ha 0 (by omega)),
+    rw [htm, WriteBytes.writeW8_apply, ite_eq_right (ha _ (by omega_using [hn])),
+      WriteBytes.writeW8_apply, ite_eq_right (by simpa [off] using ha 0 (by omega_using [hn])),
       hf a (fun i hi => ha i hi), hum]
 
 end VG.Proof.Dsa.AArch64.Generation

@@ -80,7 +80,7 @@ theorem cmpP_vp {x : Nat} (hx : x ≤ 2 ^ 15) :
       refine congrArg some (beq_false_of_ne fun e' => hp ?_)
       have := congrArg BitVec.toNat e'
       simp only [BitVec.toNat_ofNat] at this
-      omega
+      omega_using [hx, p384, this]
 
 /-- A geometry's search and exit. -/
 theorem gen_vp {g : Geo} {pL qL : Nat} (K : GeoOk g pL qL) (hex : ∃ σ, CIn 176 σ ∧ mkG σ = G)

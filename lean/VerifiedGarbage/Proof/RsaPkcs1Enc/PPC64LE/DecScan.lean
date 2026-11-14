@@ -33,14 +33,14 @@ theorem zero_mask (b : Byte) :
     have hl := b.isLt
     have e : b.setWidth 64 - BitVec.ofNat 64 1 = BitVec.ofNat 64 (b.toNat - 1) := by
       apply BitVec.eq_of_toNat_eq
-      rw [BitVec.toNat_sub_of_le (by rw [BitVec.le_def, BitVec.toNat_setWidth, BitVec.toNat_ofNat]; omega),
+      rw [BitVec.toNat_sub_of_le (by rw [BitVec.le_def, BitVec.toNat_setWidth, BitVec.toNat_ofNat]; omega_using [hb]),
         BitVec.toNat_setWidth, BitVec.toNat_ofNat, BitVec.toNat_ofNat]
-      omega
+      omega_using []
     have e2 : BitVec.ofNat 64 (b.toNat - 1) >>> 63 = 0 := by
       apply BitVec.eq_of_toNat_eq
       rw [BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow]
       show _ = 0
-      omega
+      omega_using []
     rw [e, e2]
     simp only [bm, h, decide_false, Bool.false_eq_true, ite_false]; rfl
 
@@ -89,19 +89,19 @@ theorem scanLoop_ok {t₀ : State} {O : Addr} {EM : List Byte} {k : Nat} (hk : 3
     (h0 : t₀.gpr .r0 = 0) (h8 : t₀.gpr .r8 = BitVec.allOnes 64) :
     WP isa scanLoop t₀ fun u => u.mem = t₀.mem ∧ Keep [.r10, .r9, .r3, .r5, .r4, .r11, .r7] t₀ u ∧
       u.gpr .r5 = bm (firstZero EM k).isSome ∧ u.gpr .r3 = BitVec.ofNat 64 ((firstZero EM k).getD 0) := by
-  refine (VG.Proof.Bignum.PPC64LE.wp_countdown (cnt := .r7) (N := k - 2) (by omega) (by omega)
+  refine (VG.Proof.Bignum.PPC64LE.wp_countdown (cnt := .r7) (N := k - 2) (by omega_using [hk2]) (by omega_using [hk])
     (fun j u => u.mem = t₀.mem ∧ Keep [.r10, .r9, .r3, .r5, .r4, .r11, .r7] t₀ u ∧
       u.gpr .r11 = O + BitVec.ofNat 64 (2 + j) ∧ u.gpr .r4 = BitVec.ofNat 64 (2 + j) ∧
       u.gpr .r5 = bm (firstZero EM (2 + j)).isSome ∧ u.gpr .r3 = BitVec.ofNat 64 ((firstZero EM (2 + j)).getD 0))
     (fun j hj u ⟨um, ku, u11, u4, u5, u3⟩ _ => ?_)
     ⟨rfl, Keep.refl _ _, h11, h4, by rw [h5]; rfl, by rw [h3]; rfl⟩ h7).mono
     fun u ⟨um, ku, _, _, u5, u3⟩ => by
-      rw [show 2 + (k - 2) = k by omega] at u5 u3
+      rw [show 2 + (k - 2) = k by omega_using [hk]] at u5 u3
       exact ⟨um, ku, u5, u3⟩
-  have hr0 := hr (2 + j) (by omega)
+  have hr0 := hr (2 + j) (by omega_using [hj])
   rw [← ku.rd, ← ku.wr] at hr0
   have hb : u.mem (u.gpr .r11 + BitVec.ofNat 64 0) = EM.getD (2 + j) 1 := by
-    rw [u11, BitVec.add_zero, um, hEM _ (by omega)]
+    rw [u11, BitVec.add_zero, um, hEM _ (by omega_using [hj])]
   refine WP.mono (scanBody_ok (by rw [u11, BitVec.add_zero]; exact hr0) ((ku.gpr _ (by decide)).trans h0)
     ((ku.gpr _ (by decide)).trans h8))
     fun w ⟨⟨wm, w11, w7, w4, w5, w3⟩, kw⟩ => ⟨⟨wm.trans um, ku.trans' kw, by rw [w11, u11, Offset.add_add]; rfl,
@@ -153,7 +153,7 @@ theorem outIn {t : State} (hc : Post s R EM t) {i : Nat} (hi : i < (s.gpr .r7).t
   have := h.wo; rw [h.h4] at this
   exact ⟨oR s, by rw [hc.wr, h.hwr]; simp, by
     rw [show oR s = ⟨s.gpr .r3, (s.gpr .r7).toNat⟩ by simp only [oR, h.h4]]
-    exact Offset.contains_base _ (by omega) (by omega)⟩
+    exact Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi])⟩
 
 theorem scanPart_ok {t : State} (hl : AL s R EM kd t) : WP isa scanPart t (SCN s R EM kd) := by
   have hk := h.k2
@@ -165,8 +165,8 @@ theorem scanPart_ok {t : State} (hl : AL s R EM kd t) : WP isa scanPart t (SCN s
   have i2 := slot_rd hc (d := oK) (by decide) (by decide)
   have e7 : s.gpr .r7 - BitVec.ofNat 64 2 = BitVec.ofNat 64 ((s.gpr .r7).toNat - 2) := by
     apply BitVec.eq_of_toNat_eq
-    rw [BitVec.toNat_sub_of_le (by rw [BitVec.le_def, BitVec.toNat_ofNat]; omega), BitVec.toNat_ofNat,
-      BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega)]
+    rw [BitVec.toNat_sub_of_le (by rw [BitVec.le_def, BitVec.toNat_ofNat]; omega_using [hk64]), BitVec.toNat_ofNat,
+      BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using []), Nat.mod_eq_of_lt (by omega_using [])]
   refine WP.seq (WP.mono (VG.Proof.Bignum.PPC64LE.WP.keep [.r12, .r11, .r7, .r4, .r5, .r3, .r0, .r8]
     (Q := fun u => u.mem = t.mem ∧ u.gpr .r11 = s.gpr .r3 + BitVec.ofNat 64 2 ∧
       u.gpr .r7 = BitVec.ofNat 64 ((s.gpr .r7).toNat - 2) ∧ u.gpr .r4 = BitVec.ofNat 64 2 ∧ u.gpr .r5 = 0 ∧
@@ -179,7 +179,7 @@ theorem scanPart_ok {t : State} (hl : AL s R EM kd t) : WP isa scanPart t (SCN s
       exec_subi (show Reg.r8 ≠ .r0 by decide) (show 1 ≤ 2 ^ 15 by decide)]
     exact ⟨rfl, rfl, rfl, by decide⟩
   have hc₁ : Post s R EM t₁ := hc.regs k₁.rd k₁.wr k₁.sp m₁ fun r hr => k₁.gpr r (by revert r; decide)
-  refine WP.mono (scanLoop_ok (O := s.gpr .r3) (EM := EM) (k := (s.gpr .r7).toNat) (by omega) (by omega)
+  refine WP.mono (scanLoop_ok (O := s.gpr .r3) (EM := EM) (k := (s.gpr .r7).toNat) (by omega_using [hk64]) (by omega_using [hk])
     (fun i hi => by rw [← hc₁.em, bytes_getD' _ _ hi]) (fun i hi => outIn h hc₁ hi) x11 x7 x4 x5 x3 x0 x8)
     fun u ⟨um, ku, u5, u3⟩ => ⟨hl.amr.regs ((k₁.mono (by decide)).trans' (ku.mono (by decide))) (um.trans m₁),
       by rw [ku.gpr _ (by decide), k₁.gpr _ (by decide), hl.al], u5, u3, by rw [ku.gpr _ (by decide), x0],

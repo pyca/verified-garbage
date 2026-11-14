@@ -27,8 +27,8 @@ theorem cmp_mask (x : BitVec 32) {n : Nat} (hn : n < 2 ^ 32) {P : Prop} [Decidab
       if P then y else 0 := by
   rw [adc_mask, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hn]
   by_cases hp : P
-  · rw [ite_eq_right (by simp only [decide_eq_true_eq]; have := h.mpr hp; omega), ite_eq_left hp]
-  · rw [ite_eq_left (by simp only [decide_eq_true_eq]; have := mt h.mp hp; omega),
+  · rw [ite_eq_right (by simp only [decide_eq_true_eq]; have := h.mpr hp; omega_using [this]), ite_eq_left hp]
+  · rw [ite_eq_left (by simp only [decide_eq_true_eq]; have := mt h.mp hp; omega_using [this]),
       ite_eq_right hp]
 
 /-- The mask `rowMask` leaves. -/
@@ -54,8 +54,8 @@ theorem gather_step (s : State) (idx : Byte) {k : Nat} (hk : k < 64)
       t.gpr .r8 = s.gpr .r8 |||
         (if idx.toNat / 4 = k then s.mem.readW (State.addr (s.gpr .r12) + BitVec.ofNat 64 (4 * k)) 32
           else 0) ∧ t.mem = s.mem := by
-  have he : encodable (BitVec.ofNat 32 (4 * k)) = true := encodable_lt (by omega)
-  have ho : 4 * k < 4096 := by omega
+  have he : encodable (BitVec.ofNat 32 (4 * k)) = true := encodable_lt (by omega_using [hk])
+  have ho : 4 * k < 4096 := by omega_using [hk]
   rw [← row_addr hfit hk] at hr
   unfold gatherStep rowMask
   arun [h6, h10, he, ho, hr]
@@ -77,13 +77,13 @@ theorem gather_steps (s₀ : State) (idx : Byte) (h6 : s₀.gpr .r6 = idx.setWid
   | succ n ih =>
     intro s h
     rw [flatMap_succ, WP.block_append_iff]
-    refine WP.mono (ih (by omega) s h) fun t ht => ?_
+    refine WP.mono (ih (by omega_using [hn]) s h) fun t ht => ?_
     obtain ⟨h8, h6', h10', h12, hm, hrd, hwr⟩ := ht
     have hq : InRegions (t.rd ++ t.wr) (State.addr (t.gpr .r12) + BitVec.ofNat 64 (4 * n)) 4 := by
       rw [hrd, hwr, h12]
-      exact region_offset _ _ _ _ _ (by omega) (by omega) hr
+      exact region_offset _ _ _ _ _ (by omega_using [hn]) (by omega_using [hn]) hr
     refine WP.mono (WP.keep [.r8, .r9, .r11]
-      (gather_step t idx (by omega) (h6'.trans h6) (h10'.trans h10) (by rw [h12]; exact hfit) hq)
+      (gather_step t idx (by omega_using [hn]) (h6'.trans h6) (h10'.trans h10) (by rw [h12]; exact hfit) hq)
       rfl) fun u ⟨⟨u8, um⟩, uk⟩ => ?_
     refine ⟨?_, (uk.gpr (by decide)).trans h6', (uk.gpr (by decide)).trans h10',
       (uk.gpr (by decide)).trans h12, um.trans hm, uk.2.1.trans hrd, uk.2.2.1.trans hwr⟩
@@ -96,7 +96,7 @@ theorem pick_step (s : State) (idx : Byte) {j : Nat} (hj : j < 4)
     WP isa (.block (pickStep j)) s fun t =>
       t.gpr .r7 = s.gpr .r7 ||| (if idx.toNat % 4 = j then s.gpr .r8 else 0) ∧
       t.gpr .r8 = s.gpr .r8 >>> 8 ∧ t.mem = s.mem := by
-  have he : encodable (BitVec.ofNat 32 j) = true := encodable_lt (by omega)
+  have he : encodable (BitVec.ofNat 32 j) = true := encodable_lt (by omega_using [hj])
   unfold pickStep laneMask
   arun [h6, h10, he]
   rw [lane_mask idx hj]
@@ -115,10 +115,10 @@ theorem pick_steps (s₀ : State) (idx : Byte) (q : BitVec 32) (h6 : s₀.gpr .r
   | succ n ih =>
     intro s h
     rw [flatMap_succ, WP.block_append_iff]
-    refine WP.mono (ih (by omega) s h) fun t ht => ?_
+    refine WP.mono (ih (by omega_using [hn]) s h) fun t ht => ?_
     obtain ⟨h7, h8, h6', h10', hm⟩ := ht
     refine WP.mono (WP.keep [.r7, .r8, .r9]
-      (pick_step t idx (by omega) (h6'.trans h6) (h10'.trans h10)) rfl)
+      (pick_step t idx (by omega_using [hn]) (h6'.trans h6) (h10'.trans h10)) rfl)
       fun u ⟨⟨u7, u8, um⟩, uk⟩ => ?_
     refine ⟨?_, ?_, (uk.gpr (by decide)).trans h6', (uk.gpr (by decide)).trans h10', um.trans hm⟩
     · rw [u7, h7, h8, pick_succ]
@@ -152,7 +152,7 @@ theorem lookup_core (s : State) (idx : Byte) (h : TableEnv s idx) :
   obtain ⟨u8, u6, u10, _, um, _, _⟩ := hu
   let q := s.mem.readW (State.addr (s.gpr .r12) + BitVec.ofNat 64 (4 * (idx.toNat / 4))) 32
   have hq : u.gpr .r8 = q := by
-    rw [u8]; unfold gather; rw [ite_eq_left (by omega)]
+    rw [u8]; unfold gather; rw [ite_eq_left (by omega_using [])]
   rw [WP.block_append_iff]
   have h1 : WP isa (.block [.mov .r7 (imm 0)]) u (PInv s q (idx.toNat % 4) 0) := by
     arun [PInv, pick, hq, u6, u10, um, Nat.mul_zero, BitVec.ushiftRight_zero, Nat.not_lt_zero,

@@ -277,7 +277,7 @@ theorem entered_mem (P : Nat) (s : State) (x : DX := {}) :
 theorem ourArg_lay (P : Nat) (s : State) (x : DX := {}) : ∀ j, j < 17 → ourArg (lay P s x) j = stackArg s j
   | 0, _ => rfl | 1, _ => rfl | 2, _ => rfl | 3, _ => rfl | 4, _ => rfl | 5, _ => rfl | 6, _ => rfl
   | 7, _ => rfl | 8, _ => rfl | 9, _ => rfl | 10, _ => rfl | 11, _ => rfl | 12, _ => rfl | 13, _ => rfl
-  | 14, _ => rfl | 15, _ => rfl | 16, _ => rfl | _ + 17, h => absurd h (by omega)
+  | 14, _ => rfl | 15, _ => rfl | 16, _ => rfl | _ + 17, h => absurd h (by omega_using [])
 
 /-- The register arguments' slots. -/
 abbrev saveList : List (Reg × Nat) := [(.x0, sOut), (.x2, sMl), (.x3, sN), (.x4, sK), (.x5, sE), (.x6, sEl), (.x7, 0)]
@@ -412,7 +412,7 @@ theorem prologueX_ok {P : Nat} {s : State} {x : DX} (hL : (lay P s x).Ok)
     intro p hp
     have := (argMoves_ok p hp).2.2
     rw [U, moveMem_moved argMoves_ok argMoves_nodup _ _ p hp, show arg p.1 = 288 + 8 * p.1 from rfl,
-      hi₂ _ (by omega_arith) (by omega_arith), eArg _ (by omega)]
+      hi₂ _ (by omega_arith) (by omega_arith), eArg _ (by omega_using [this])]
   have uSv : ∀ r d, (r, d) ∈ saveList → u.mem.readW ((lay P s x).Q + BitVec.ofNat 64 d) 64 = s.gpr r := by
     intro r d hrd
     rw [U, moveMem_read argMoves_ok _ _ (argMoves_apart (List.mem_map_of_mem (f := Prod.snd) hrd))

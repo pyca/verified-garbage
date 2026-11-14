@@ -50,7 +50,7 @@ theorem copiedList_eq {b : Byte} {bs : List Byte} (mask : BitVec 32) :
     | succ i =>
       simp only [Nat.add_one_ne_zero, ite_false, List.getElem_cons_succ]
       simp only [List.length_cons] at h₂
-      simp [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem (show i < bs.length by omega)]
+      simp [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem (show i < bs.length by omega_using [h₂])]
 
 /-- The leading byte's mask, as `random_candidate_mask` states it. -/
 theorem masked_head (s₀ : State) (b : Byte) (hpos : 0 < rWidth s₀) :
@@ -61,11 +61,11 @@ theorem masked_head (s₀ : State) (b : Byte) (hpos : 0 < rWidth s₀) :
     have hz : (rLead s₀).toNat ≠ 0 := by
       intro he
       have h0 : rWidth s₀ = 0 := hn.mpr (BitVec.eq_of_toNat_eq he)
-      omega
-    omega
+      omega_using [hpos, h0]
+    omega_using [hz]
   have hlog : (rLead s₀).toNat.log2 + 1 ≤ 8 := by
-    have h := (Nat.log2_lt (by omega)).mpr (rLead s₀).isLt
-    omega
+    have h := (Nat.log2_lt (by omega_using [hb])).mpr (rLead s₀).isLt
+    omega_using [h]
   rw [maskValue_eq _ hb (rLead s₀).isLt, BitVec.setWidth_and, BitVec.setWidth_setWidth_of_le _ (by decide),
     BitVec.setWidth_eq, BitVec.setWidth_ofNat_of_le (by decide)]
 
@@ -106,7 +106,7 @@ theorem nonce_encodes {s₀ : State} (A : RandomSignABI s₀) {m : Mem} {bs : Li
   let pad := (rQBytes s₀).length - rWidth s₀
   let padded := List.replicate pad (0 : Byte) ++ cs
   have hpLen : padded.length = (rQBytes s₀).length := by
-    simp only [padded, cs, List.length_append, List.length_replicate, copiedList_length]; omega
+    simp only [padded, cs, List.length_append, List.length_replicate, copiedList_length]; omega_using [hfit]
   have hpBytes : Spec.Rsa.bytesAt m (off (rBase s₀) oNonce) (rQBytes s₀).length = padded := by
     apply List.ext_getElem
     · simp only [Spec.Rsa.bytesAt, List.length_map, List.length_range, hpLen]
@@ -119,8 +119,8 @@ theorem nonce_encodes {s₀ : State} (A : RandomSignABI s₀) {m : Mem} {bs : Li
       · rw [hpad i hip]
         simp only [padded, List.getElem_append_left (as := List.replicate pad (0 : Byte)) (bs := cs)
           (i := i) (by simpa only [List.length_replicate] using hip), List.getElem_replicate]
-      · have hk : i - pad < rWidth s₀ := by simp only [hpLen] at hj; omega
-        rw [show oNonce + i = drawPlace s₀ + (i - pad) by unfold drawPlace; omega, hc _ hk]
+      · have hk : i - pad < rWidth s₀ := by simp only [hpLen] at hj; omega_using [hpos, hj]
+        rw [show oNonce + i = drawPlace s₀ + (i - pad) by unfold drawPlace; omega_using [hip], hc _ hk]
         simp only [padded, List.getElem_append_right (as := List.replicate pad (0 : Byte)) (bs := cs) (i := i)
           (by simpa only [List.length_replicate] using Nat.le_of_not_lt hip), List.length_replicate]
         simp only [cs, copiedList, List.getElem_map, List.getElem_range]

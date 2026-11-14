@@ -32,10 +32,10 @@ theorem schedule_getElem! (M : Block) {t i : Nat} (hi : i < t) :
             clear ih hi; induction t with
             | zero => rfl
             | succ t ih => rw [schedule_succ, List.length_cons, ih]
-          omega),
+          omega_using [hi, this]),
         List.getElem_cons_succ]
-      rw [← getElem!_pos, ih (by omega)]
-      congr 1; omega
+      rw [← getElem!_pos, ih (by omega_using [hi])]
+      congr 1; omega_using []
 
 theorem W_lt (M : Block) {t : Nat} (h : t < 16) : W M t = M ⟨t, h⟩ := by
   simp [W, schedule, h]
@@ -43,11 +43,11 @@ theorem W_lt (M : Block) {t : Nat} (h : t < 16) : W M t = M ⟨t, h⟩ := by
 theorem W_ge (M : Block) {t : Nat} (h : 16 ≤ t) :
     W M t = ssig1 (W M (t - 2)) + W M (t - 7) + ssig0 (W M (t - 15)) + W M (t - 16) := by
   show (schedule M (t + 1)).headD 0 = _
-  simp only [schedule, show ¬ t < 16 by omega, dite_false, List.headD_cons]
-  rw [schedule_getElem! M (by omega), schedule_getElem! M (by omega),
-    schedule_getElem! M (by omega), schedule_getElem! M (by omega),
-    show t - 1 - 1 = t - 2 by omega, show t - 1 - 6 = t - 7 by omega,
-    show t - 1 - 14 = t - 15 by omega, show t - 1 - 15 = t - 16 by omega]
+  simp only [schedule, show ¬ t < 16 by omega_using [h], dite_false, List.headD_cons]
+  rw [schedule_getElem! M (by omega_using [h]), schedule_getElem! M (by omega_using [h]),
+    schedule_getElem! M (by omega_using [h]), schedule_getElem! M (by omega_using [h]),
+    show t - 1 - 1 = t - 2 by omega_using [], show t - 1 - 6 = t - 7 by omega_using [],
+    show t - 1 - 14 = t - 15 by omega_using [], show t - 1 - 15 = t - 16 by omega_using []]
 
 /-! ## Rounds -/
 
@@ -96,8 +96,8 @@ theorem getLsbD_rotateRight (x : Word) (r : Nat) {i : Nat} (hi : i < 64) :
   rw [BitVec.getLsbD_rotateRight]
   have := Nat.mod_lt r (show 64 > 0 by decide)
   split
-  · exact congrArg x.getLsbD (by omega)
-  · rw [decide_eq_true hi, Bool.true_and]; exact congrArg x.getLsbD (by omega)
+  · exact congrArg x.getLsbD (by omega_arith)
+  · rw [decide_eq_true hi, Bool.true_and]; exact congrArg x.getLsbD (by omega_arith)
 
 theorem rotateRight_rotateRight (x : Word) {a b : Nat} (_hab : a + b < 64) :
     (x.rotateRight a).rotateRight b = x.rotateRight (a + b) := by
@@ -105,7 +105,7 @@ theorem rotateRight_rotateRight (x : Word) {a b : Nat} (_hab : a + b < 64) :
   intro i hi
   rw [getLsbD_rotateRight _ _ hi, getLsbD_rotateRight _ _ (Nat.mod_lt _ (by decide)),
     getLsbD_rotateRight _ _ hi]
-  exact congrArg x.getLsbD (by omega)
+  exact congrArg x.getLsbD (by omega_using [])
 
 theorem ch_eq (x y z : Word) : ch x y z = (y ^^^ z) &&& x ^^^ z := by
   ext i; simp only [ch, BitVec.getElem_xor, BitVec.getElem_and, BitVec.getElem_not]
@@ -117,11 +117,11 @@ theorem maj_eq (x y z : Word) : maj x y z = (x ||| y) &&& z ||| x &&& y := by
 
 theorem bsig0_eq (x : Word) :
     bsig0 x = x.rotateRight 28 ^^^ x.rotateRight 34 ^^^ (x.rotateRight 34).rotateRight 5 := by
-  rw [rotateRight_rotateRight x (by omega)]; rfl
+  rw [rotateRight_rotateRight x (by omega_using [])]; rfl
 
 theorem bsig1_eq (x : Word) :
     bsig1 x = x.rotateRight 14 ^^^ x.rotateRight 18 ^^^ (x.rotateRight 18).rotateRight 23 := by
-  rw [rotateRight_rotateRight x (by omega)]; rfl
+  rw [rotateRight_rotateRight x (by omega_using [])]; rfl
 
 theorem rotateRight_xor (x y : Word) (n : Nat) :
     (x ^^^ y).rotateRight n = x.rotateRight n ^^^ y.rotateRight n := by
@@ -131,12 +131,12 @@ theorem rotateRight_xor (x y : Word) (n : Nat) :
 
 theorem ssig0_eq (x : Word) :
     ssig0 x = (x.rotateRight 7 ^^^ x).rotateRight 1 ^^^ x >>> 7 := by
-  rw [rotateRight_xor, rotateRight_rotateRight x (by omega), BitVec.xor_comm (x.rotateRight (7 + 1))]
+  rw [rotateRight_xor, rotateRight_rotateRight x (by omega_using []), BitVec.xor_comm (x.rotateRight (7 + 1))]
   rfl
 
 theorem ssig1_eq (x : Word) :
     ssig1 x = (x.rotateRight 42 ^^^ x).rotateRight 19 ^^^ x >>> 6 := by
-  rw [rotateRight_xor, rotateRight_rotateRight x (by omega), BitVec.xor_comm (x.rotateRight (42 + 19))]
+  rw [rotateRight_xor, rotateRight_rotateRight x (by omega_using []), BitVec.xor_comm (x.rotateRight (42 + 19))]
   rfl
 
 end VG.Proof.Sha512

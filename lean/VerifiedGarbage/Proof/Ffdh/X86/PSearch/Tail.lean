@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.EntropyRequest
 public import VerifiedGarbage.Spec.Ffdh.SievedGeneration
 import VerifiedGarbage.Proof.Ffdh.SievedBounds
 import VerifiedGarbage.Proof.Ffdh.ParameterCandidate.Stream
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # The sieved parameter search from an offset into the tape
 
@@ -39,7 +40,7 @@ theorem ptail_zero (bits gen : Nat) (rand : Rand) (used : Nat) : ptail bits gen 
 
 theorem candUsed_le (bits gen : Nat) (rand : Rand) (used : Nat) : candUsed bits gen rand used ≤ rand.length - used := by
   unfold candUsed
-  split <;> omega
+  split <;> omega_using []
 
 theorem cand_short {bits gen : Nat} {rand : Rand} {used : Nat} (h : rand.length - used < (bits + 7) / 8) :
     candAt bits gen rand used = none := by
@@ -50,7 +51,7 @@ theorem cand_short {bits gen : Nat} {rand : Rand} {used : Nat} (h : rand.length 
 theorem ptail_short {bits gen : Nat} {rand : Rand} {used n : Nat} (hn : n ≠ 0) (h : candAt bits gen rand used = none) :
     ptail bits gen rand used n = if parameterEntropy bits ≤ rand.length - used then .exhausted used
       else .entropy n (rand.length - used) used := by
-  obtain ⟨m, rfl⟩ : ∃ m, n = m + 1 := ⟨n - 1, by omega⟩
+  obtain ⟨m, rfl⟩ : ∃ m, n = m + 1 := ⟨n - 1, by omega_using [hn]⟩
   unfold ptail
   rw [sievedParameterSearch, show sievedParameterCandidate bits gen (rand.drop used) = none from h]
   simp only [List.length_drop]
@@ -59,7 +60,7 @@ theorem ptail_short {bits gen : Nat} {rand : Rand} {used n : Nat} (hn : n ≠ 0)
 theorem ptail_accept {bits gen : Nat} {rand : Rand} {used n p : Nat} {rest : Rand} (hn : n ≠ 0)
     (h : candAt bits gen rand used = some (some p, rest)) :
     ptail bits gen rand used n = .accepted p (used + candUsed bits gen rand used) := by
-  obtain ⟨m, rfl⟩ : ∃ m, n = m + 1 := ⟨n - 1, by omega⟩
+  obtain ⟨m, rfl⟩ : ∃ m, n = m + 1 := ⟨n - 1, by omega_using [hn]⟩
   unfold ptail candUsed
   rw [sievedParameterSearch, show sievedParameterCandidate bits gen (rand.drop used) = some (some p, rest) from h]
   simp only [List.length_drop, ParameterSearchResult.consume, h]
@@ -67,7 +68,7 @@ theorem ptail_accept {bits gen : Nat} {rand : Rand} {used n p : Nat} {rest : Ran
 theorem ptail_reject {bits gen : Nat} {rand : Rand} {used n : Nat} {rest : Rand} (hn : n ≠ 0)
     (h : candAt bits gen rand used = some (none, rest)) :
     ptail bits gen rand used n = ptail bits gen rand (used + candUsed bits gen rand used) (n - 1) := by
-  have step := SievedGeneration.search_reject (by omega : 0 < n) h
+  have step := SievedGeneration.search_reject (by omega_using [hn] : 0 < n) h
   simpa only [ptail, candUsed, h, List.length_drop] using step
 
 end VG.Proof.Ffdh.X86.PSearch

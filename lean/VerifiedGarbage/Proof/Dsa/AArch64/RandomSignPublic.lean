@@ -30,7 +30,7 @@ theorem RandomSignPublicAgree.qbytes {s t : State} (h : RandomSignPublicAgree s 
   have hq : (randomInput s).qLen = (randomInput t).qLen := congrArg BitVec.toNat (h.regs .x6 (by decide))
   have hk := h.key
   rw [← hp, ← hq] at hk
-  have he := prefix_component_eq (offset := (randomInput s).pLen) (len := (randomInput s).qLen) hk (by omega)
+  have he := prefix_component_eq (offset := (randomInput s).pLen) (len := (randomInput s).qLen) hk (by omega_using [])
   unfold randomQBytes
   rw [← hp, ← hq]
   exact he
@@ -58,7 +58,7 @@ theorem random_sign_public_related {extra : Nat} {s t : State}
     exacts [h0, h1, h2, h3, h4, h5, h6, h7]
   have hargs : ∀ i < 5, stackArg s i = stackArg t i := by
     intro i hi
-    have hc : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 := by omega
+    have hc : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 := by omega_using [hi]
     rcases hc with rfl | rfl | rfl | rfl | rfl
     exacts [a0, a1, a2, a3, a4]
   change (Spec.Dsa.publicBytesLeak (randomInput s).pLen (randomInput s).qLen (randomInput s).key ++

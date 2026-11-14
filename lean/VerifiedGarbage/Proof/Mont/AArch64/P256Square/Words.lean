@@ -21,7 +21,7 @@ theorem shifts (u : BitVec 64) :
   have hu := u.isLt
   have h := Nat.mod_add_div u.toNat (2 ^ 32)
   have hm := Nat.mod_lt u.toNat (by decide : 0 < 2 ^ 32)
-  omega
+  omega_using []
 
 /-- The second subtraction cannot borrow: `u >> 32` is strictly below positive `u`. -/
 theorem high_no_borrow (u : BitVec 64) :
@@ -35,7 +35,7 @@ theorem high_no_borrow (u : BitVec 64) :
   · subst hz; decide
   · have hpos : 0 < u.toNat := by
       have hn : u.toNat ≠ 0 := fun h => hz (BitVec.eq_of_toNat_eq h)
-      omega
+      omega_using [hn]
     have hlt : u.toNat / 2 ^ 32 < u.toNat := Nat.div_lt_self hpos (by decide)
     cases h : carryOut u (~~~(u >>> 32)) (carryOut u (~~~(u <<< 32)) true) with
     | false =>
@@ -76,7 +76,7 @@ theorem add4_value (a0 a1 a2 a3 b0 b1 b2 b3 : BitVec 64) :
   have h2 := addCarry_value a2 b2 (carryOut a1 b1 (carryOut a0 b0 false))
   have h3 := addCarry_value a3 b3 (carryOut a2 b2 (carryOut a1 b1 (carryOut a0 b0 false)))
   simp only [add4,value4,val4,R,Bool.toNat_false] at *
-  omega
+  omega_using [h0, h1, h2, h3]
 
 def reduceWords (u v w x : BitVec 64) : BitVec 64 × BitVec 64 × BitVec 64 × BitVec 64 :=
   let lo := u <<< 32
@@ -98,7 +98,7 @@ theorem reduceWords_value (u v w x : BitVec 64) :
   change u.toNat * ((p+1)/B) = lo.toNat + B*hi.toNat + 2^128*d0.toNat + 2^192*d1.toNat at hs
   have hq : val4 u v w x = u.toNat + B*q := by
     simp only [val4,q,B,Nat.mul_add,←Nat.mul_assoc]
-    omega
+    omega_using []
   have hr := reduction_round (val4_lt u v w x) u.isLt hq (rfl : q+u.toNat*((p+1)/B)=_)
   have he' : value4 (reduceWords u v w x) + R*(add4 v w x d1 lo hi d0 0).2.toNat =
       q + u.toNat*((p+1)/B) := by
@@ -107,11 +107,11 @@ theorem reduceWords_value (u v w x : BitVec 64) :
     simp only [val4, B, q]
     rw [show (0 : BitVec 64).toNat = 0 from rfl]
     simp only [B] at hs
-    omega
+    omega_using [hs]
   have hv : value4 (reduceWords u v w x) = q + u.toNat*((p+1)/B) := by
     have hb := Bool.toNat_le (add4 v w x d1 lo hi d0 0).2
     simp only [R] at hr he'
-    omega
+    omega_using [hr, he']
   rw [hv]
   exact hr.1
 

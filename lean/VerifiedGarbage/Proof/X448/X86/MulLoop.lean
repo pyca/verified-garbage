@@ -28,7 +28,7 @@ theorem mulLoopWith_ok {base : Addr} {x y : Nat} (hx : Slot x) (hy : Slot y)
     rw [h28] at ht
     exact ht
   · exact .inr ⟨by simp only [eval, hz, decide_eq_false h28, Option.map_some, Bool.not_false],
-      28 - (i + 1), by omega, i + 1, rfl, by omega, ht⟩
+      28 - (i + 1), by omega_using [hi], i + 1, rfl, by omega_using [hi, h28], ht⟩
 
 theorem mulLoop_ok {base : Addr} {x y : Nat} (hx : Slot x) (hy : Slot y)
     {s0 s : State} (hlx : Bounded s0.mem base x) (hly : Bounded s0.mem base y)

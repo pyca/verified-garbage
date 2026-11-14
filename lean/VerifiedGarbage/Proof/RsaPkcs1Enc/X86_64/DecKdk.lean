@@ -48,7 +48,7 @@ theorem kdkFinArgs_run {s : State} (hp : DPre s) {R : BitVec 64} {EM : List Byte
   rw [show BitVec.signExtend 64 (64 : BitVec 32) = (64 : BitVec 64) from by decide]
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_add, BitVec.toNat_ofNat, kOf, show (64 : BitVec 64).toNat = 64 from rfl]
-  omega
+  omega_using []
 
 
 /-- After `kdkMac`: `KDK` at `scratch + sKDK`. -/
@@ -63,7 +63,7 @@ theorem Ctx.c {s : State} (hp : DPre s) {R : BitVec 64} {EM : List Byte} {t : St
   have hw := hp.wI
   show _ = Spec.Rsa.bytesAt s.mem (stackArg s 3) (kOf s)
   rw [show kOf s = (stackArg s 4).toNat from hl.symm]
-  exact bytes_of_frame hc.mem hp.dKi hp.dOi hp.dMi hp.dis.symm (by omega)
+  exact bytes_of_frame hc.mem hp.dKi hp.dOi hp.dMi hp.dis.symm (by omega_using [])
 
 theorem kdkMac_step {s : State} (hp : DPre s) {R : BitVec 64} {EM : List Byte} {t : State} (h : HD s R EM t) :
     WP isa (kdkMac (HH v)) t (KD s R EM) := by
@@ -77,14 +77,14 @@ theorem kdkMac_step {s : State} (hp : DPre s) {R : BitVec 64} {EM : List Byte} {
     (Covers.left (Covers.of_mem fun r hr => by rw [List.mem_singleton.mp hr, hC]; exact hp.hrd _ (by simp)))
     (fun a n han => by
       rw [hC]
-      exact hp.dis.sub_right (sub_trans (scSub (by unfold sMsg at han; unfold scrBytes; omega))
+      exact hp.dis.sub_right (sub_trans (scSub (by unfold sMsg at han; unfold scrBytes; omega_using [han]))
         (Region.sub_prefix h1)))
-    (by rw [hC]; exact hp.dKi.sub_left (below_sub s (by decide))) (by omega) fun t₁ h₁ => ?_
+    (by rw [hC]; exact hp.dKi.sub_left (below_sub s (by decide))) (by omega_using [hkk]) fun t₁ h₁ => ?_
   refine WP.seq (WP.mono (kdkFinArgs_run hp h₁.ctx) fun t₂ ⟨hc₂, hm₂, hdi₂, hsi₂, hdx₂, hcx₂, h8₂⟩ => ?_)
   have h₂ : MacMid v s R EM (Spec.Rsa.bytesAt t.mem (scA s sDH) 32) (Spec.Rsa.bytesAt t.mem (stackArg s 3) (kOf s))
       t t₂ := ⟨hc₂, (by rw [hm₂]; exact h₁.inner), (by rw [hm₂]; exact h₁.outer), (by rw [KeepHi, hm₂]; exact h₁.keep), (by rw [FrmKeep, hm₂]; exact h₁.frm)⟩
   refine WP.mono (mac_fin hp h₂ (dOff := sKDK) (by decide) (by decide) (blen _ _ _) hdi₂ hsi₂
-    (by rw [hdx₂, blen]) hcx₂ h8₂ (by rw [blen]; omega)) fun t₃ ⟨hc₃, hb₃, _⟩ => ⟨hc₃, ?_⟩
+    (by rw [hdx₂, blen]) hcx₂ h8₂ (by rw [blen]; omega_using [hkk])) fun t₃ ⟨hc₃, hb₃, _⟩ => ⟨hc₃, ?_⟩
   rw [hb₃, h.dh, h.ctx.c hp]
   rfl
 

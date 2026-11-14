@@ -34,9 +34,9 @@ theorem loads4_ok {s : State} {base : Addr} (hs : Scr s base) {o : Nat} (ho : o 
     WP isa (.block (loads o .r8 .r9 .r10 .r11)) s fun t =>
       val4 (t.gpr .r8) (t.gpr .r9) (t.gpr .r10) (t.gpr .r11) = fe s.mem base o ∧
       Keeps [.r8, .r9, .r10, .r11] s t := by
-  drun [loads, State.load64, ea_sc, hs.rdi, inR hs (show o + 8 ≤ 4096 by omega),
-    inR hs (show o + 8 + 8 ≤ 4096 by omega), inR hs (show o + 16 + 8 ≤ 4096 by omega),
-    inR hs (show o + 24 + 8 ≤ 4096 by omega), RegUpd.gpr_setReg_self]
+  drun [loads, State.load64, ea_sc, hs.rdi, inR hs (show o + 8 ≤ 4096 by omega_using [ho]),
+    inR hs (show o + 8 + 8 ≤ 4096 by omega_using [ho]), inR hs (show o + 16 + 8 ≤ 4096 by omega_using [ho]),
+    inR hs (show o + 24 + 8 ≤ 4096 by omega_using [ho]), RegUpd.gpr_setReg_self]
   refine ⟨fun r hr => ?_, rfl, rfl, rfl⟩
   simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
   obtain ⟨h1, h2, h3, h4⟩ := hr
@@ -51,10 +51,10 @@ theorem copy4_ok {s : State} {base : Addr} (hs : Scr s base) {dst src : Nat} (hd
   have hn := hs.nowrap
   rw [copy4, WP.block_append_iff]
   refine WP.mono (loads4_ok hs hsrc) fun s₁ ⟨e1, k1⟩ => ?_
-  refine WP.mono (store4_ok (hs.of_keeps k1 (by decide)) (by unfold Slot; omega)) fun t ⟨mt, gt, rt, wt⟩ =>
+  refine WP.mono (store4_ok (hs.of_keeps k1 (by decide)) (by unfold Slot; omega_using [hd])) fun t ⟨mt, gt, rt, wt⟩ =>
     ⟨?_, ?_, fun r hr => (gt r).trans (k1.1 r hr), rt.trans k1.2.2.1, wt.trans k1.2.2.2⟩
-  · rw [mt, fe_st4 _ _ (by omega), e1]
-  · rw [mt, k1.2.1]; exact st4_outside _ _ (by omega) _ _ _ _
+  · rw [mt, fe_st4 _ _ (by omega_using [hd]), e1]
+  · rw [mt, k1.2.1]; exact st4_outside _ _ (by omega_using [hd]) _ _ _ _
 
 /-- The count of batches less one. -/
 theorem batchEnd_ok (s : State) {j : Nat} (hj : 1 ≤ j) (hj' : j ≤ 10) (hc : s.gpr .rbp = BitVec.ofNat 64 (256 * j)) :
@@ -64,15 +64,15 @@ theorem batchEnd_ok (s : State) {j : Nat} (hj : 1 ≤ j) (hj' : j ≤ 10) (hc : 
     apply BitVec.eq_of_toNat_eq
     rw [BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat,
       show (BitVec.signExtend 64 (256 : BitVec 32)).toNat = 256 by decide]
-    omega
+    omega_using [hj]
   apply WP.of_runBlock
   simp only [batchEnd, runBlock_cons, runStep_some, runBlock_nil, exec, execAlu, readSrc, Option.bind_some,
     RegUpd.gpr_setReg, RegUpd.zf_setReg, RegUpd.zf_arithFlags, RegUpd.gpr_arithFlags, ite_true,
     Option.some.injEq, exists_eq_left', hc, e]
   refine ⟨trivial, ?_, fun r hr => ?_, rfl, rfl, rfl⟩
-  · rw [ofNat_eq_zero (show 256 * (j - 1) < 2 ^ 64 by omega)]
+  · rw [ofNat_eq_zero (show 256 * (j - 1) < 2 ^ 64 by omega_using [hj'])]
     simp only [decide_eq_decide]
-    omega
+    omega_using []
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   simp only [RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, hr, ite_false]
 
@@ -86,7 +86,7 @@ theorem pkW_eq {m : Mem} {base : Addr} {t : DSt} (h : DMem m base t) :
 
 /-- Writes within the working area. -/
 theorem Outside.wide {base : Addr} {o n : Nat} {m m' : Mem} (h : Outside base o n m m') (h1 : 512 ≤ o)
-    (h2 : o + n ≤ 768) : Outside base 512 256 m m' := fun x hx => h x (by omega)
+    (h2 : o + n ≤ 768) : Outside base 512 256 m m' := fun x hx => h x (by omega_using [h1, h2, hx])
 
 /-- A batch. -/
 theorem dbatch_ok {s : State} {base : Addr} (hs : Scr s base) {t₀ : DSt} (hm : DMem s.mem base t₀) {j : Nat}

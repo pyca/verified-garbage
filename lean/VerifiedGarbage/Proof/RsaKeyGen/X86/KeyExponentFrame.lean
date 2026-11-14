@@ -32,9 +32,9 @@ theorem exponent_temps_keep {m m' : Mem} {B : Addr} {k n : Nat} {js ds : List Na
   rcases hr with ⟨j, hj, rfl⟩ | ⟨d, hd, rfl⟩
   · refine ⟨(hdr, 15 * S n), by simp [exponentTemps], ?_, ?_⟩
     · unfold arr
-      omega
+      omega_using []
     · have endK := arr_end (w := k) (arrays j hj)
-      have growth : arr k 15 ≤ arr n 15 := by unfold arr S; omega
+      have growth : arr k 15 ≤ arr n 15 := by unfold arr S; omega_using [width]
       have E : arr n 15 = hdr + 15 * S n := rfl
       rw [E] at growth
       omega
@@ -56,7 +56,7 @@ theorem exponent_temps_preserves_num {m m' : Mem} {B : Addr} {n j : Nat}
     (persistent : 15 ≤ j) (fit : arr n j + S n ≤ 2 ^ 64)
     (O : Outs B (exponentTemps n) m m') : num m' B n j = num m B n j := by
   change val32 m' B (arr n j) n = val32 m B (arr n j) n
-  apply O.val32 _ (by unfold S at fit; omega)
+  apply O.val32 _ (by unfold S at fit; omega_using [fit])
   intro r hr
   simp only [exponentTemps, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl
@@ -69,7 +69,7 @@ theorem exponent_preserves_num {m m' : Mem} {B : Addr} {n j : Nat}
     (fit : arr n j + S n ≤ 2 ^ 64) (O : Outs B (exponentRanges n) m m') :
     num m' B n j = num m B n j := by
   change val32 m' B (arr n j) n = val32 m B (arr n j) n
-  apply O.val32 _ (by unfold S at fit; omega)
+  apply O.val32 _ (by unfold S at fit; omega_using [fit])
   intro r hr
   rcases List.mem_append.mp hr with temp | output
   · simp only [exponentTemps, List.mem_cons, List.not_mem_nil, or_false] at temp
@@ -82,7 +82,7 @@ theorem exponent_preserves_num {m m' : Mem} {B : Addr} {n j : Nat}
     have D := arr_disj (w := n) (unchanged a ha)
     simp only at D ⊢
     unfold S at D ⊢
-    omega
+    omega_using [D]
 
 theorem exponent_preserves_e {m m' : Mem} {B : Addr} {n : Nat}
     (O : Outs B (exponentRanges n) m m') : val32 m' B kEv 2 = val32 m B kEv 2 := by

@@ -99,7 +99,7 @@ theorem csub_five : csub 5 = [.subi .r9 .r9 5, .lsr .d .r11 .r9 63, .lsl .r10 .r
 
 theorem rbB_four : rbB 4 = 9 := rfl
 
-theorem rbB_le {η : Nat} : rbB η ≤ 15 := by unfold rbB; split <;> omega
+theorem rbB_le {η : Nat} : rbB η ≤ 15 := by unfold rbB; split <;> omega_using []
 
 /-- The block of a half-byte: `r10` its coefficient, `r12` the test. -/
 theorem half_run {η : Nat} (hη : η = 2 ∨ η = 4) (s : State) (h7 : s.gpr .r7 = BitVec.ofNat 64 8380417) :
@@ -238,7 +238,7 @@ theorem try_ok {η : Nat} (hη : η = 2 ∨ η = 4) {X : List Byte} {t : Nat} {L
         (rr _ (by decide) (by decide)).trans h.r8⟩
     rw [MlKem.bytesAt_frame hf (fun r hr => by
       rw [List.mem_singleton] at hr; subst hr
-      exact (hp.a_scr.sub_right (sub_scr (a := 840) (n := X.length) (by have := l.xlen; omega))).symm) (by have := l.xlen; omega)]
+      exact (hp.a_scr.sub_right (sub_scr (a := 840) (n := X.length) (by have := l.xlen; omega_using [this]))).symm) (by have := l.xlen; omega_using [this])]
     exact l.out
 
 /-! ## An iteration -/
@@ -248,9 +248,9 @@ theorem byte_ok {X : List Byte} {t : Nat} (ht : t < X.length) {L : List Zq} {s :
     InRegions (s.rd ++ s.wr) (s.gpr .r3) 1 ∧ s.mem (s.gpr .r3) = zAt X t := by
   rw [h.r3]
   have := h.xlen
-  refine ⟨by rw [← BitVec.add_zero (σ.gpr .r6 + _), ptr_add]; exact inScrRd hp h.env.wr (by omega), ?_⟩
+  refine ⟨by rw [← BitVec.add_zero (σ.gpr .r6 + _), ptr_add]; exact inScrRd hp h.env.wr (by omega_using [ht, this]), ?_⟩
   have := congrArg (fun L => L.getD t 0) h.out
-  rw [MlKem.bytesAt_getD _ _ (by omega), ptr_add] at this
+  rw [MlKem.bytesAt_getD _ _ (by omega_using [ht]), ptr_add] at this
   exact this
 
 omit hp in
@@ -260,7 +260,7 @@ theorem lo_eq (z : Byte) : z.setWidth 64 <<< 60 >>> 60 = BitVec.ofNat 64 (z.toNa
   have := z.isLt
   rw [BitVec.toNat_ushiftRight, BitVec.toNat_shiftLeft, toNat_setWidth8, BitVec.toNat_ofNat,
     Nat.shiftLeft_eq, Nat.shiftRight_eq_div_pow]
-  omega
+  omega_using []
 
 omit hp in
 /-- The high half-byte of a byte, as the code computes it. -/
@@ -268,7 +268,7 @@ theorem hi_eq (z : Byte) : z.setWidth 64 >>> 4 = BitVec.ofNat 64 (z.toNat / 16) 
   apply BitVec.eq_of_toNat_eq
   have := z.isLt
   rw [BitVec.toNat_ushiftRight, toNat_setWidth8, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow]
-  omega
+  omega_using []
 
 /-- The load of the byte and its low half-byte. -/
 theorem lo_ok {X : List Byte} {t : Nat} (ht : t < X.length) {L : List Zq} {s : State} (h : Base σ X t L s) :
@@ -322,7 +322,7 @@ theorem tries_ok {η : Nat} (hη : η = 2 ∨ η = 4) {X : List Byte} {t : Nat} 
   refine WP.seq (WP.mono (loHalf_ok hp hη ht h) fun s2 h2 => ?_)
   refine WP.seq (WP.mono (try_ok hp hη (Nat.mod_lt _ (by decide)) h2) fun s3 ⟨b3, f8⟩ => ?_)
   refine WP.seq (WP.mono (hiHalf_ok hp hη b3 f8) fun s5 h5 => ?_)
-  exact WP.seq (WP.mono (try_ok hp hη (by have := (zAt X t).isLt; omega) h5) fun s6 h6 => hr s6 h6.1)
+  exact WP.seq (WP.mono (try_ok hp hη (by have := (zAt X t).isLt; omega_using []) h5) fun s6 h6 => hr s6 h6.1)
 
 omit hp in
 /-- The test of the step: `r12` nonzero iff bytes are left and `j < 256`. -/
@@ -331,7 +331,7 @@ theorem exit_val {N t j : Nat} (ht : t < N) (hN : N < 2 ^ 63) (hj : j ≤ 256) :
       decide (t + 1 ≠ N ∧ j < 256) := by
   by_cases hj' : j < 256
   · have e : (BitVec.ofNat 64 j - BitVec.ofNat 64 256) >>> 63 = 1 := by bv_omega
-    rw [e, show ∀ x : BitVec 64, x * 1 = x from fun x => by bv_omega, count_nz ht (by omega)]
+    rw [e, show ∀ x : BitVec 64, x * 1 = x from fun x => by bv_omega, count_nz ht (by omega_using [hN])]
     simp [hj']
   · have e : (BitVec.ofNat 64 j - BitVec.ofNat 64 256) >>> 63 = 0 := by bv_omega
     rw [e, show ∀ x : BitVec 64, x * 0 = 0 from fun x => by bv_omega]
@@ -363,7 +363,7 @@ theorem step_ok {X : List Byte} {t : Nat} (ht : t < X.length) {L : List Zq} {s :
       (by rintro rfl; exact absurd hr (by decide))) rd wr sp
   · rw [r3, h.r3, ptr_add, Nat.add_assoc]
   · rw [r6, h.r6]; exact count_sub ht
-  · rw [r12, h.r6, h.at'.r5, count_sub ht]; exact exit_val ht (by omega) h.at'.len
+  · rw [r12, h.r6, h.at'.r5, count_sub ht]; exact exit_val ht (by omega_using [hx]) h.at'.len
 
 end
 
@@ -377,7 +377,7 @@ theorem take_succ' (L : List Byte) {i : Nat} (h : i < L.length) : L.take (i + 1)
 theorem Lf_succ (η : Nat) {X : List Byte} {t : Nat} (ht : t < X.length) :
     Lf η X (t + 1) = rbStep η (Lf η X t) (zAt X t) := by
   simp only [Lf]
-  rw [take_succ' _ (by omega), rbFold_snoc]
+  rw [take_succ' _ (by omega_using [ht]), rbFold_snoc]
 
 /-- After the last byte, or once there are 256 coefficients, the bytes left
 change nothing. -/

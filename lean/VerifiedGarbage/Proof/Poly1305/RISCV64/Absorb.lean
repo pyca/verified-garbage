@@ -140,10 +140,10 @@ theorem addBlock_ok (s : State) (b : Reg) (off : Nat) (pad : Bool) (wide : Bool)
   cases wide
   · rw [addBlock_eq]
     refine WP.block_append (WP.mono (Words64.loadLE64_ok (Ne.symm b3) (Ne.symm b7) (by decide)
-      (Ne.symm b8) (by decide) (by decide) (by omega) h0) fun s₁ u₁ => ?_)
+      (Ne.symm b8) (by decide) (by decide) (by omega_using [ho]) h0) fun s₁ u₁ => ?_)
     have hb₁ : s₁.gpr b = s.gpr b := u₁.other b b3 b7 b8
     refine WP.block_append (WP.mono (Words64.loadLE64_ok (Ne.symm b4) (Ne.symm b7) (by decide)
-      (Ne.symm b8) (by decide) (by decide) (by omega)
+      (Ne.symm b8) (by decide) (by decide) (by omega_using [ho])
       (by rw [hb₁, u₁.rd, u₁.wr]; exact h8)) fun s₂ u₂ => ?_)
     exact addTail_ok s b off pad (by rw [u₂.other _ (by decide) (by decide) (by decide), u₁.gpr])
       (by rw [u₂.gpr, u₁.mem, hb₁]) ((upd3_keeps u₁).trans (upd3_keeps u₂)).mono
@@ -151,11 +151,11 @@ theorem addBlock_ok (s : State) (b : Reg) (off : Nat) (pad : Bool) (wide : Bool)
     have a8 : (s.gpr b + BitVec.ofNat 64 (off + 8)).toNat % 8 = 0 := by
       rw [← BitVec.ofNat_add_ofNat, ← BitVec.add_assoc, BitVec.toNat_add, BitVec.toNat_ofNat]
       have := (s.gpr b + BitVec.ofNat 64 off).isLt
-      omega
+      omega_using [a0]
     rw [addBlock_eq_wide]
-    refine VG.RISCV64.Steps.wp_ld (a := s.gpr b + BitVec.ofNat 64 off) (by omega) rfl a0 h0 fun s₁ u₁ => ?_
+    refine VG.RISCV64.Steps.wp_ld (a := s.gpr b + BitVec.ofNat 64 off) (by omega_using [ho]) rfl a0 h0 fun s₁ u₁ => ?_
     have hb₁ : s₁.gpr b = s.gpr b := u₁.other b b3
-    refine VG.RISCV64.Steps.wp_ld (a := s.gpr b + BitVec.ofNat 64 (off + 8)) (by omega) (by rw [hb₁]) a8
+    refine VG.RISCV64.Steps.wp_ld (a := s.gpr b + BitVec.ofNat 64 (off + 8)) (by omega_using [ho]) (by rw [hb₁]) a8
       (by rw [u₁.rd, u₁.wr]; exact h8) fun s₂ u₂ => ?_
     exact addTail_ok s b off pad (by rw [u₂.other _ (by decide), u₁.gpr])
       (by rw [u₂.gpr, u₁.mem]) ((upd_keeps (d := X0) u₁).trans (upd_keeps (d := X1) u₂)).mono
@@ -176,13 +176,13 @@ theorem andm4_toNat (x : BitVec 64) :
     by_cases h : i < 2
     · simp [h]
     · simp [h]
-      rw [show 2 + (i - 2) = i by omega, BitVec.getLsbD_eq_getElem hi]
-      simp; omega
+      rw [show 2 + (i - 2) = i by omega_using [h], BitVec.getLsbD_eq_getElem hi]
+      simp; omega_using [h]
   rw [e, BitVec.toNat_shiftLeft, BitVec.toNat_ushiftRight, Nat.shiftLeft_eq,
     Nat.shiftRight_eq_div_pow]
   have := x.isLt
-  rw [Nat.mod_eq_of_lt (by omega)]
-  omega
+  rw [Nat.mod_eq_of_lt (by omega_using [])]
+  omega_using []
 
 theorem and3_toNat' (x : BitVec 64) : (x &&& BitVec.ofInt 64 3).toNat = x.toNat % 4 := by
   rw [BitVec.toNat_and, show (BitVec.ofInt 64 3).toNat = 2 ^ 2 - 1 from rfl,

@@ -15,9 +15,9 @@ theorem wv_window_le (m : Mem) (B : Addr) (e n i len : Nat) (hi : i + len ≤ n)
     2 ^ (64 * i) * wv m B (e + 8 * i) len ≤ wv m B e n := by
   have h := wv_add m B e i (len + (n - (i + len)))
   have h' := wv_add m B (e + 8 * i) len (n - (i + len))
-  rw [show i + (len + (n - (i + len))) = n by omega, h'] at h
+  rw [show i + (len + (n - (i + len))) = n by omega_using [hi], h'] at h
   rw [h, Nat.mul_add]
-  omega
+  omega_using []
 
 theorem row_window_bound {weight window pref operand : Nat}
     (hw : 0 < weight) (hp : pref < weight)

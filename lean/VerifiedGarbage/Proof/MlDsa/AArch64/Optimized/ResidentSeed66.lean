@@ -21,7 +21,7 @@ theorem padded_A0 {Bs : List Byte} (h : Bs.length = 66) :
 theorem byteOf_A0 {Bs : List Byte} (h : Bs.length = 66) {q : Nat} (hq : q < 200) :
     byteOf (A0 Bs) q = if q < 66 then Bs.getD q 0 else if q = 66 then 0x1f else if q = 135 then 0x80 else 0 := by
   have hz : byteOf Spec.Sha3.zero q = 0 := by
-    simp only [byteOf, Spec.Sha3.zero, getElem!_pos (Vector.replicate 25 (0 : BitVec 64)) (q / 8) (by omega),
+    simp only [byteOf, Spec.Sha3.zero, getElem!_pos (Vector.replicate 25 (0 : BitVec 64)) (q / 8) (by omega_using [hq]),
       Vector.getElem_replicate]
     apply BitVec.eq_of_getLsbD_eq; intro j _; simp
   have ha : Spec.Sha3.absorb 136 Bs = Spec.Sha3.zero := by simp [Spec.Sha3.absorb, h]
@@ -29,13 +29,13 @@ theorem byteOf_A0 {Bs : List Byte} (h : Bs.length = 66) {q : Nat} (hq : q < 200)
     rw [Rep, ha, byteOf_xorBytes _ _ hq, hz, h, show 136 * (66 / 136) = 0 from rfl, List.drop_zero]
     exact BitVec.zero_xor
   have hd : ∀ q, 66 ≤ q → Bs.getD q 0 = 0 := fun q hq' => by
-    rw [List.getD, List.getElem?_eq_none (by omega)]; rfl
+    rw [List.getD, List.getElem?_eq_none (by omega_using [h, hq'])]; rfl
   rw [A0, byteOf_xorByte _ _ _ hq, byteOf_xorByte _ _ _ hq, hr]
   by_cases e1 : q < 66
-  · rw [ite_eq_right (show ¬ q = 135 by omega), ite_eq_right (show ¬ q = 66 by omega), ite_eq_left e1]
-  · rw [ite_eq_right e1, hd q (by omega)]
+  · rw [ite_eq_right (show ¬ q = 135 by omega_using [e1]), ite_eq_right (show ¬ q = 66 by omega_using [e1]), ite_eq_left e1]
+  · rw [ite_eq_right e1, hd q (by omega_using [e1])]
     by_cases e2 : q = 66
-    · rw [ite_eq_right (show ¬ q = 135 by omega), ite_eq_left e2, ite_eq_left e2]; exact BitVec.zero_xor
+    · rw [ite_eq_right (show ¬ q = 135 by omega_using [e2]), ite_eq_left e2, ite_eq_left e2]; exact BitVec.zero_xor
     · rw [ite_eq_right e2, ite_eq_right e2]
       by_cases e3 : q = 135
       · rw [ite_eq_left e3, ite_eq_left e3]; exact BitVec.zero_xor

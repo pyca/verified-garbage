@@ -26,7 +26,7 @@ theorem sli_rotate (x : BitVec 64) {k : Nat} (hk : k < 64) :
   by_cases h : i < k
   · simp only [hi,h,decide_true,decide_false,Bool.true_and,Bool.false_and,
       Bool.and_true,Bool.not_true,Bool.not_false,Bool.and_false]
-  · rw [BitVec.getLsbD_of_ge x (64-k+i) (by omega : 64 ≤ 64-k+i)]
+  · rw [BitVec.getLsbD_of_ge x (64-k+i) (by omega_using [h] : 64 ≤ 64-k+i)]
     simp only [Bool.false_and]
 
 theorem rol_ok {s : State} {d n : VReg} (hdn : d ≠ n) {k : Nat} (hk0 : 0 < k) (hk : k < 64) :
@@ -35,7 +35,7 @@ theorem rol_ok {s : State} {d n : VReg} (hdn : d ≠ n) {k : Nat} (hk0 : 0 < k) 
   unfold rol
   refine wp_vop (op := .shift .ushr .d2 d n (64-k)) (d := d)
     (x := VArr.d2.map2 (fun w a b => VShiftOp.ushr.eval (64-k) w a b) (s.v d) (s.v n))
-    (by simp [reduceVOpEval,VShiftOp.ok,show 1 ≤ 64-k by omega,show 64-k ≤ 64 by omega]) fun s₁ h1 => ?_
+    (by simp [reduceVOpEval,VShiftOp.ok,show 1 ≤ 64-k by omega,show 64-k ≤ 64 by omega_using []]) fun s₁ h1 => ?_
   refine wp_vop (op := .shift .sli .d2 d n k) (d := d)
     (x := VArr.d2.map2 (fun w a b => VShiftOp.sli.eval k w a b) (s₁.v d) (s₁.v n))
     (by simp [reduceVOpEval,VShiftOp.ok,hk]) fun s₂ h2 => WP.block_nil_iff.mpr ⟨(h1.chg.trans h2.chg).mono (by intro r hr; simpa using hr),?_⟩

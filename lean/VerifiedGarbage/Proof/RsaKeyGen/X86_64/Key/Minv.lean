@@ -22,7 +22,7 @@ open VG.Proof.Bignum (emod_pow_weaken odd_sq)
 
 theorem inv_of_emod {a x : Nat} (h : ((a : Int) * x - 1) % (2 ^ 64 : Int) = 0) : a * x % 2 ^ 64 = 1 := by
   obtain ⟨k, hk⟩ := Int.dvd_of_emod_eq_zero h
-  have e : ((a * x : Nat) : Int) = 1 + 2 ^ 64 * k := by push_cast; omega
+  have e : ((a * x : Nat) : Int) = 1 + 2 ^ 64 * k := by push_cast; omega_using [hk]
   have : ((a * x : Nat) : Int) % 2 ^ 64 = 1 := by rw [e, Int.add_mul_emod_self_left]; decide
   exact_mod_cast this
 
@@ -42,7 +42,7 @@ theorem minvC_ok (s : State) (hodd : (s.gpr .rbx).toNat % 2 = 1) :
     have h1 := odd_sq _ hodd
     have h2 : (((s.gpr .rbx).toNat : Int) * (s.gpr .rbx).toNat) % 8 = 1 := by exact_mod_cast h1
     show (((s.gpr .rbx).toNat : Int) * (s.gpr .rbx).toNat - 1) % 8 = 0
-    omega
+    omega_using [h1]
   rw [WP.block_append_iff]
   refine WP.mono (newton_step_ok t₀ (j := 3) (by decide) e₀) fun t₁ ⟨e₁, hb₁, hm₁, k₁⟩ => ?_
   rw [WP.block_append_iff]

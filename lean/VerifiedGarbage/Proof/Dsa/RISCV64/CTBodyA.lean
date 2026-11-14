@@ -45,7 +45,7 @@ theorem SB.vals {v : VD} {s : State} (h : SB v s) :
   obtain ⟨⟨c, ⟨hsz, hp, hq, _⟩, _⟩, _⟩ := h
   have bd := VG.Proof.Dsa.supported_bounds hsz
   have hl := c.base.q_lt
-  exact ⟨by omega, hq, hl, q_bits (by omega) hl, by omega, hp⟩
+  exact ⟨by omega_using [bd], hq, hl, q_bits (by omega_using [hq]) hl, by omega_using [bd], hp⟩
 
 /-! ## The Q space's phases -/
 
@@ -110,13 +110,13 @@ theorem keepMask_QB {v : VD} {s : State} {b : Bool} (h : QB v s) (h4 : s.gpr .a4
   have hZ := hL.z256
   have hnw := hL.nowrap
   refine WP.mono (keepMask_ok hL h.qs) fun t ⟨⟨Q, w, o⟩, k⟩ => ?_
-  have o' : Outside v.L.S 0 v.L.Z s.mem t.mem := o.mono (Nat.le_refl _) (by simp only [hMask]; omega)
+  have o' : Outside v.L.S 0 v.L.Z s.mem t.mem := o.mono (Nat.le_refl _) (by simp only [hMask]; omega_using [hZ])
   have w8 : word t.mem v.L.S hDigest = word s.mem v.L.S hDigest :=
-    o.word (Or.inr (by decide)) (by simp only [hDigest]; omega)
+    o.word (Or.inr (by decide)) (by simp only [hDigest]; omega_using [])
   have w16 : word t.mem v.L.S hLens = word s.mem v.L.S hLens :=
-    o.word (Or.inr (by decide)) (by simp only [hLens]; omega)
+    o.word (Or.inr (by decide)) (by simp only [hLens]; omega_using [])
   have w24 : word t.mem v.L.S Sign.hOut = word s.mem v.L.S Sign.hOut :=
-    o.word (Or.inr (by simp only [hMask, Sign.hOut]; omega)) (by simp only [Sign.hOut]; omega)
+    o.word (Or.inr (by simp only [hMask, Sign.hOut]; omega_using [])) (by simp only [Sign.hOut]; omega_using [])
   exact ⟨⟨h.base.step Q.regs k.2.1 k.2.2 o' w8 w24, by rw [Lens, w16]; exact h.lens, Q,
     (keepQ_arr0 hL (mask_keepQ hL o)).trans h.q0, (mask_arrP hL o 0 (by decide)).trans h.p0,
     (mask_arrP hL o 24 (by decide)).trans h.p24, h.vb, h.ky⟩, ⟨b, w.trans h4⟩⟩
@@ -144,7 +144,7 @@ theorem inverse_QI {v : VD} {s : State} (h : QI v s) (hq : 2 ≤ v.q) (hqo : v.q
   refine WP.mono (inverse_ok hL B.qs I (B.base.sg B.vb) (by rw [B.q0]; exact hq) (by rw [B.q0]; exact hqo)
     (by rw [B.q0]; exact h24)) fun t ⟨⟨Q', I', a4, kj, qa⟩, k⟩ =>
       ⟨⟨⟨B.stepQ Q' k.2.1 k.2.2 (qa.qbuf hL), I', by rw [kj 24 (by decide) (by decide)]; exact h24⟩,
-        by rw [a4, B.q0]; exact Nat.mod_lt _ (by omega), qa.qbuf hL⟩, k⟩
+        by rw [a4, B.q0]; exact Nat.mod_lt _ (by omega_using [hq]), qa.qbuf hL⟩, k⟩
 
 /-! ## The cuts in `ranges` and `qMinus2` -/
 
@@ -172,9 +172,9 @@ theorem pinsB9 {Φ : VD → State → Prop} (hsem : ∀ v u, Φ v u → SB v u) 
       (WP.seq (WP.mono (enterQ_SB (hsem _ _ h)) fun _ ⟨⟨B, iq, a7, a8⟩, _⟩ => ?_))
     have Q : QS _ _ _ _ := ⟨iq, B.scr, B.regs⟩
     have hL := B.ok
-    refine WP.seq (WP.mono (loadQ_ok (j := 5) Q hL (by decide) ((B.sg (hsem _ _ h).2.2).sub (o := 0) (k := v.L.ql) (by omega))
-      (by rw [a7, off_zero]) a8 (by omega) (by have := hL.wq_ge; omega)) fun _ ⟨⟨Q', _, _, o⟩, k⟩ => ?_)
-    have qa : QArr v.L _ _ := QArr.of o (by simp only [Lay.slot_eq]; omega) (by simp only [Lay.slot_eq]; omega)
+    refine WP.seq (WP.mono (loadQ_ok (j := 5) Q hL (by decide) ((B.sg (hsem _ _ h).2.2).sub (o := 0) (k := v.L.ql) (by omega_using []))
+      (by rw [a7, off_zero]) a8 (by omega_using [hql]) (by have := hL.wq_ge; omega_using [this])) fun _ ⟨⟨Q', _, _, o⟩, k⟩ => ?_)
+    have qa : QArr v.L _ _ := QArr.of o (by simp only [Lay.slot_eq]; omega_using []) (by simp only [Lay.slot_eq]; omega_using [])
     have B' := B.body k (qa.body hL)
     exact WP.mono (ptrS_ok Q'.scr hL Q'.regs) fun _ ⟨⟨b7, b8, m⟩, k'⟩ =>
       ((B'.keepM k' m).fixB.app (fix_envQ (Q'.inq.keep k'))).app ⟨b7, b8, trivial⟩
@@ -198,7 +198,7 @@ theorem pinsB50 {Φ : VD → State → Prop} (hsem : ∀ v u, Φ v u → SB v u)
     have hL := B.base.ok
     refine WP.seq (WP.mono (minus2_ok B.qs.inq.env (show 2 ≤ arrQ _ v.L 0 by rw [B.q0]; exact hq))
       fun _ ⟨⟨_, o⟩, k⟩ => ?_)
-    have qa : QArr v.L _ _ := QArr.of o (by simp only [Lay.slot_eq]; omega) (by simp only [Lay.slot_eq]; omega)
+    have qa : QArr v.L _ _ := QArr.of o (by simp only [Lay.slot_eq]; omega_using []) (by simp only [Lay.slot_eq]; omega_using [])
     have B' := B.step k (qa.qbuf hL)
     exact WP.mono (ptrBuf_ok B'.base.scr hL B'.base.regs) fun _ ⟨⟨b7, b8, m⟩, k'⟩ =>
       (fix_QB (B'.stepM k' m)).app ⟨b7, b8, trivial⟩
@@ -232,12 +232,12 @@ theorem pinsB63 {Φ : VD → State → Prop} (hsem : ∀ v u, Φ v u → SB v u)
     refine WP.seq (WP.mono (ptrS_ok B.base.scr hL B.base.regs) fun _ ⟨⟨a7, a8, m⟩, k⟩ => ?_)
     have B1 := B.stepM k m
     refine WP.seq (WP.mono (loadQ_ok (j := 4) B1.qs hL (by decide) ((B1.base.sg B1.vb).sub (o := v.L.ql) (k := v.L.ql)
-      (by omega)) a7 a8 (by omega) (by omega)) fun _ ⟨⟨Q2, _, _, o2⟩, k2⟩ => ?_)
+      (by omega_using [])) a7 a8 (by omega_using [hql]) (by omega_using [hwq])) fun _ ⟨⟨Q2, _, _, o2⟩, k2⟩ => ?_)
     have B2 := B1.stepQ Q2 k2.2.1 k2.2.2
-      (QArr.of o2 (by simp only [Lay.slot_eq]; omega) (by simp only [Lay.slot_eq]; omega) |>.qbuf hL)
+      (QArr.of o2 (by simp only [Lay.slot_eq]; omega_using []) (by simp only [Lay.slot_eq]; omega_using []) |>.qbuf hL)
     refine WP.seq (WP.mono (copy_ok B2.qs.inq.env (o := 1) (a := 24) (by decide) (by decide) (by decide))
       fun _ ⟨⟨_, o3⟩, k3⟩ => ?_)
-    have B3 := B2.step k3 (QArr.of o3 (by simp only [Lay.slot_eq]; omega) (by simp only [Lay.slot_eq]; omega)
+    have B3 := B2.step k3 (QArr.of o3 (by simp only [Lay.slot_eq]; omega_using []) (by simp only [Lay.slot_eq]; omega_using [])
       |>.qbuf hL)
     refine WP.block_append (WP.mono (ptrBuf_ok B3.base.scr hL B3.base.regs) fun t ⟨⟨b7, b8, m4⟩, k4⟩ =>
       WP.mono (WP.keep [.s9, .s10] (Q := fun u => u.gpr .s9 = off v.L.Buf 0 ∧
@@ -266,10 +266,10 @@ theorem pinsB104 {Φ : VD → State → Prop} (hsem : ∀ v u, Φ v u → SB v u
     refine WP.of_flat (c := .seq ranges (.seq (.block keepMask) (.seq rrQ (.seq qMinus2 (.seq inverse
       (.block SLB)))))) rfl (stQ5 (hsem _ _ h) fun _ ⟨B, _, _⟩ _ _ => ?_)
     have hL := B.base.ok
-    have hp : v.L.pl < 2 ^ 16 := by have := B.base.pl; simp only [Nat.reducePow]; omega
-    have hq : v.L.ql < 2 ^ 16 := by have := B.base.ql; simp only [Nat.reducePow]; omega
-    have h3 : v.qb < 2 ^ 16 := by have := B.base.ql; simp only [Nat.reducePow]; omega
-    have h4 : v.d < 2 ^ 16 := by show min v.dl 64 < 2 ^ 16; simp only [Nat.reducePow]; omega
+    have hp : v.L.pl < 2 ^ 16 := by have := B.base.pl; simp only [Nat.reducePow]; omega_using [this]
+    have hq : v.L.ql < 2 ^ 16 := by have := B.base.ql; simp only [Nat.reducePow]; omega_using [this]
+    have h3 : v.qb < 2 ^ 16 := by have := B.base.ql; simp only [Nat.reducePow]; omega_using [hqb, hq]
+    have h4 : v.d < 2 ^ 16 := by show min v.dl 64 < 2 ^ 16; simp only [Nat.reducePow]; omega_using []
     refine WP.block_append (WP.block_append (WP.mono (getQb_ok B.base.scr hL B.base.regs.s6 .s8)
       fun u ⟨⟨a8, mu⟩, ku⟩ => WP.mono (getD_ok (B.base.scr.congr ku.2.2) hL
         (by rw [ku.gpr (by decide)]; exact B.base.regs.s6) .t3) fun w ⟨⟨b3, mw⟩, kw⟩ => ?_))
@@ -278,8 +278,8 @@ theorem pinsB104 {Φ : VD → State → Prop} (hsem : ∀ v u, Φ v u → SB v u
     rw [l, pack_qb hp hq h3 h4] at a8
     rw [mu, l, pack_d hp hq h3 h4] at b3
     have a8' : w.gpr .s8 = BitVec.ofNat 64 v.qb := (kw.gpr (by decide)).trans a8
-    have hsub := sub_shr63 (a := v.qb) (b := v.d) (by simp only [Nat.reducePow] at *; omega)
-      (by simp only [Nat.reducePow] at *; omega)
+    have hsub := sub_shr63 (a := v.qb) (b := v.d) (by simp only [Nat.reducePow] at *; omega_using [h3])
+      (by simp only [Nat.reducePow] at *; omega_using [h4])
     refine WP.mono (WP.keep [.a0] (Q := fun t => t.gpr .a0 = BitVec.ofNat 64 (if v.qb < v.d then 1 else 0) ∧
       t.mem = w.mem) (by brun [a8', b3, exec_shift_d (show 63 < 64 by decide), hsub]) (by decide) (by rfl))
       fun t ⟨⟨c0, mt⟩, kt⟩ => ?_
@@ -294,8 +294,8 @@ theorem pinsB106 {Φ : VD → State → Prop} (hsem : ∀ v u, Φ v u → SB v u
     refine WP.of_flat (c := .seq ranges (.seq (.block keepMask) (.seq rrQ (.seq qMinus2 (.seq inverse
       (.seq scalarLen (.block [.load .d .s7 .s6 hDigest]))))))) rfl (stQ5 (hsem _ _ h) fun _ ⟨B, _, _⟩ _ _ => ?_)
     have hL := B.base.ok
-    have h3 : v.qb < 2 ^ 16 := by have := B.base.ql; have := (hsem _ _ h).vals.2.2.2.1; simp only [Nat.reducePow]; omega
-    have h4 : v.d < 2 ^ 16 := by show min v.dl 64 < 2 ^ 16; simp only [Nat.reducePow]; omega
+    have h3 : v.qb < 2 ^ 16 := by have := B.base.ql; have := (hsem _ _ h).vals.2.2.2.1; simp only [Nat.reducePow]; omega_arith
+    have h4 : v.d < 2 ^ 16 := by show min v.dl 64 < 2 ^ 16; simp only [Nat.reducePow]; omega_using []
     refine WP.seq (WP.mono (scalarLen_ok B.base.scr hL B.base.regs.s6 B.lens h3 h4) fun s₀ ⟨⟨a8, m0⟩, k0⟩ => ?_)
     have B0 := B.stepM k0 m0
     obtain ⟨hin, hal⟩ := ScrL.hdr B0.base.scr hL (d := 8) (by decide) (by decide)
@@ -308,20 +308,20 @@ theorem scalar_QI {v : VD} {s : State} (h : QI v s) (h4 : arrQ s.mem v.L 4 < v.q
     WP isa scalar s fun t => QI v t ∧ arrQ t.mem v.L 4 < v.q := by
   obtain ⟨B, I, h24⟩ := h
   have hL := B.base.ok
-  have h4' : v.d < 2 ^ 16 := by show min v.dl 64 < 2 ^ 16; simp only [Nat.reducePow]; omega
+  have h4' : v.d < 2 ^ 16 := by show min v.dl 64 < 2 ^ 16; simp only [Nat.reducePow]; omega_using []
   refine WP.mono (scalar_ok hL B.qs (B.base.dig8 B.vb.1) B.lens hqb h4' (B.base.hdg.take (Nat.min_le_left _ _)))
     fun t ⟨⟨Q, _, o⟩, k⟩ => ?_
   have e1 := Lay.slot_eq v.L.wq 1; have e4 := Lay.slot_eq v.L.wq 4; have e6 := Lay.slot_eq v.L.wq 6
   have e7 := Lay.slot_eq v.L.wq 7; have e24 := Lay.slot_eq v.L.wq 24; have e0 := Lay.slot_eq v.L.wq 0
   have e28 := Lay.slot_eq v.L.wq 28
   have hwq := hL.wq_ge
-  have hnw : v.L.Q.toNat + slot v.L.wq 28 ≤ 2 ^ 64 := by have := B.qs.inq.env.hs.nowrap; have := B.qs.inq.env.hZ; omega
-  have qa : QArr v.L s.mem t.mem := QArr.of o (by omega) (by omega)
+  have hnw : v.L.Q.toNat + slot v.L.wq 28 ≤ 2 ^ 64 := by have := B.qs.inq.env.hs.nowrap; have := B.qs.inq.env.hZ; omega_arith
+  have qa : QArr v.L s.mem t.mem := QArr.of o (by omega_using [e1, e6]) (by omega_using [e6, e28])
   refine ⟨⟨B.stepQ Q k.2.1 k.2.2 (qa.qbuf hL), ?_, ?_⟩, ?_⟩
   · show ((word t.mem v.L.Q (slot v.L.wq 0)).toNat * (t.gpr .t1).toNat + 1) % 2 ^ 64 = 0
-    rw [o.word (by omega) (by omega_arith), k.gpr (by decide)]; exact I
-  · rw [arrQ, o.wordsVal (by omega) (by omega_arith)]; exact h24
-  · rw [arrQ, o.wordsVal (by omega) (by omega_arith)]; exact h4
+    rw [o.word (by omega_using [e6, e0]) (by omega_arith), k.gpr (by decide)]; exact I
+  · rw [arrQ, o.wordsVal (by omega_using [e6, e24]) (by omega_arith)]; exact h24
+  · rw [arrQ, o.wordsVal (by omega_using [e4, e6]) (by omega_arith)]; exact h4
 
 theorem pinsB108 {Φ : VD → State → Prop} (hsem : ∀ v u, Φ v u → SB v u) :
     Pins (At Φ FB 108) [.s6, .s11, .ra, .a7, .s5, .t0, .s7, .s8] :=

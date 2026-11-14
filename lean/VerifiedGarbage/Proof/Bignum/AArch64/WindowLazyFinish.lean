@@ -38,16 +38,16 @@ theorem finish_ok {s : State} {B : Addr} {Z n eA eN eT : Nat} {bit : Bool}
     u.gpr .x16 = off B eA ∧ u.gpr .x17 = off B eN ∧
     u.gpr .x14 = BitVec.ofNat 64 n ∧ u.gpr .x15 = (if bit then -1 else 0) ∧
     u.c = true ∧ u.mem = s.mem) ?_ rfl rfl rfl) fun u ⟨⟨h16,h17,h14,h15,hc,hm⟩,ku⟩ => ?_)
-  · brun [h8, h10, h12, h7, BlockedRedc.shl3_ofNat (show 4*n < 2^64 by omega),
-      Square.shr2_ofNat (show 4*n < 2^64 by omega),
-      hs.ld (show eA+8*(4*n)+8 ≤ Z by omega)]
+  · brun [h8, h10, h12, h7, BlockedRedc.shl3_ofNat (show 4*n < 2^64 by omega_using [hn']),
+      Square.shr2_ofNat (show 4*n < 2^64 by omega_using [hn']),
+      hs.ld (show eA+8*(4*n)+8 ≤ Z by omega_using [hA])]
     constructor
-    · congr 1; omega
+    · congr 1; omega_using []
     · change 0 - word s.mem B (eA+8*(4*n)) = _
       rw [hbit]
       cases bit <;> rfl
   · have hl := loop_ok (hs.congr ku.wr) h16 h17 ((ku.gpr .x5 (by decide)).trans h5)
-      h14 h15 hc hn (by omega) (by omega) hN hT (by omega) sN
+      h14 h15 hc hn (by omega_using [hn']) (by omega_using [hA]) hN hT (by omega_using [sA]) sN
     refine WP.mono hl fun t ⟨hv,ho,kt⟩ => ?_
     rw [hm] at hv ho
     refine ⟨lazy_sub (wv_lt _ _ _ _) (Bool.toNat_le _) (Bool.toNat_le _) hlt hv,

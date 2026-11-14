@@ -64,7 +64,7 @@ theorem body_rel
       fun _ _ => True := by
   have pe := T.pb.prm_eq
   have L8 := laneLen_ge T.hp₁
-  have hind := Proof.Argon2.references_injective (prm s₀₁) (by omega) (pwB s₀₁) (saltB s₀₁) (secB s₀₁)
+  have hind := Proof.Argon2.references_injective (prm s₀₁) (by omega_using [L8]) (pwB s₀₁) (saltB s₀₁) (secB s₀₁)
     (adB s₀₁) (pwB s₀₂) (saltB s₀₂) (secB s₀₂) (adB s₀₂) (by rw [href, pe])
   rw [← Proof.Argon2.iterations_fill, ← Proof.Argon2.iterations_fill] at hind
   have par : ∀ {s₀ : State}, DPre s₀ → ∀ s, s = entry s₀ →

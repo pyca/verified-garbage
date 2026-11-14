@@ -188,10 +188,10 @@ open VG.Proof.Dsa.X86 (StreamInput LenSrc streamRanges setupRanges_whole streamR
 theorem readW_apart {base : Addr} {o n size : Nat} {m m' : Mem} {a : Addr} (h : Outside base o n m m')
     (ho : o + n ≤ size) (hd : Region.Disjoint ⟨a, 4⟩ ⟨base, size⟩) : m'.readW a 32 = m.readW a 32 :=
   (Mem.readW_congr fun i hi => (h _ (.inr (by
-    have := hd _ (Offset.contains_base a (d := i) (n := 1) (k := 4) (by omega) (by omega))
+    have := hd _ (Offset.contains_base a (d := i) (n := 1) (k := 4) (by omega_using [hi]) (by omega_using [hi]))
     simp only [Region.Contains] at this
     simp only [ofs]
-    omega))).symm).symm
+    omega_using [ho, this]))).symm).symm
 
 /-- What a reduction needs of the state it starts in, besides the modulus:
 its stack arguments readable and apart from the working space, the bytes'
@@ -231,17 +231,17 @@ theorem prefix_ok {s : State} {base : Addr} {size n m len : Nat} {p : BitVec 32}
   have nw := E.nowrap
   have hz' := hz
   simp only [contextBytes, slot, stride] at hz'
-  have hz24 : 24 ≤ size := by omega
+  have hz24 : 24 ≤ size := by omega_using [hz']
   unfold reducePrefix
   refine WP.seq (WP.mono (save_ok E hz24) fun u ⟨Su, Sv, Ou, Ku⟩ => ?_)
   have usp : u.gpr .esp = s.gpr .esp := Ku.1 _ (by decide)
   -- the arguments, as the saves left them
   have a3 : u.mem.readW (addr (u.gpr .esp) 16) 32 = BitVec.ofNat 32 len := by
     rw [usp]
-    exact (readW_apart Ou (by omega) I.apart3).trans I.length
+    exact (readW_apart Ou (by omega_using [hz']) I.apart3).trans I.length
   have a2 : u.mem.readW (addr (u.gpr .esp) 12) 32 = p := by
     rw [usp]
-    exact (readW_apart Ou (by omega) I.apart2).trans I.data
+    exact (readW_apart Ou (by omega_using [hz']) I.apart2).trans I.data
   have r3 : InRegions (u.rd ++ u.wr) (addr (u.gpr .esp) 16) 4 := by
     rw [usp, Ku.2.1, Ku.2.2]; exact I.arg3
   have r2 : InRegions (u.rd ++ u.wr) (addr (u.gpr .esp) 12) 4 := by
@@ -251,9 +251,9 @@ theorem prefix_ok {s : State} {base : Addr} {size n m len : Nat} {p : BitVec 32}
   refine wp_ldm (by rw [U₁.other _ (by decide)]) (by rw [U₁.rd, U₁.wr]; exact r2) fun u₂ U₂ => ?_
   have K₂ : Keeps [.eax, .ecx] u u₂ := (U₁.keeps.mono (by decide)).trans (U₂.keeps.mono (by decide))
   have S₂ : Scr u₂ base size := Su.of_keeps K₂ (by decide)
-  refine wp_storeS (S₂.ea (show 24 < size by omega)) (S₂.write (show 24 + 4 ≤ size by omega)) fun u₃ M₃ => ?_
+  refine wp_storeS (S₂.ea (show 24 < size by omega_using [hz'])) (S₂.write (show 24 + 4 ≤ size by omega_using [hz'])) fun u₃ M₃ => ?_
   have S₃ : Scr u₃ base size := S₂.of_keeps (M₃.keeps [.eax]) (by decide)
-  refine wp_storeS (S₃.ea (show 28 < size by omega)) (S₃.write (show 28 + 4 ≤ size by omega)) fun w M₄ =>
+  refine wp_storeS (S₃.ea (show 28 < size by omega_using [hz'])) (S₃.write (show 28 + 4 ≤ size by omega_using [hz'])) fun w M₄ =>
     WP.block_nil ?_
   have Sw : Scr w base size := S₃.of_keeps (M₄.keeps [.eax]) (by decide)
   have Mw : w.mem = ((u.mem.writeW (off base 24) (BitVec.ofNat 32 len)).writeW (off base 28) p) := by
@@ -267,7 +267,7 @@ theorem prefix_ok {s : State} {base : Addr} {size n m len : Nat} {p : BitVec 32}
       (Outs.of_outside (writeW32_outside _ base _ (by decide)) (by simp))
   have W24 : w.mem.readW (off base 24) 32 = BitVec.ofNat 32 len := by
     rw [Mw, Mul.Outs.readW32 (Outs.of_outside (rs := [(28, 4)]) (writeW32_outside _ base _ (by decide)) (by simp))
-      (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; omega) (by omega)]
+      (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; omega_using []) (by omega_using [nw, hz'])]
     exact Mem.readW_writeW_self32 _ _ _
   have W28 : w.mem.readW (off base 28) 32 = p := by
     rw [Mw]; exact Mem.readW_writeW_self32 _ _ _
@@ -278,17 +278,17 @@ theorem prefix_ok {s : State} {base : Addr} {size n m len : Nat} {p : BitVec 32}
   have hvw : wordsVal w.mem base (slot n 0) n = m := by
     rw [wordsVal_eq_val32, Osw.val32 (fun r hr => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-        rcases hr with rfl | rfl | rfl <;> simp only [slot] <;> omega) (by simp only [slot]; omega),
+        rcases hr with rfl | rfl | rfl <;> simp only [slot] <;> omega_using []) (by simp only [slot]; omega_using [nw, hz']),
       ← wordsVal_eq_val32, hv]
-  refine WP.seq (WP.mono (contextStart_ok Sw hn hz hvw (by omega) hodd) fun v ⟨Cv, _, Ov, Kv⟩ => ?_)
+  refine WP.seq (WP.mono (contextStart_ok Sw hn hz hvw (by omega_using [hm]) hodd) fun v ⟨Cv, _, Ov, Kv⟩ => ?_)
   have avoid (d : Nat) (hd : 24 ≤ d ∧ d + 4 ≤ 64) : ∀ r ∈ setupRanges n, d + 4 ≤ r.1 ∨ r.1 + r.2 ≤ d := by
     intro r hr
     simp only [setupRanges, List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl | rfl | rfl <;> simp only [slot, stride] <;> omega
+    rcases hr with rfl | rfl | rfl | rfl | rfl <;> simp only [slot, stride] <;> omega_using [hd]
   have V28 : v.mem.readW (off base 28) 32 = p := by
-    rw [Mul.Outs.readW32 Ov (avoid 28 (by omega)) (by omega), W28]
+    rw [Mul.Outs.readW32 Ov (avoid 28 (by omega_using [])) (by omega_using [nw, hz']), W28]
   have Sv' : Scr v base size := Cv.scr
-  refine wp_movS (readSrc_sc Sv' (show 28 + 4 ≤ size by omega)) fun x X _ => WP.block_nil ?_
+  refine wp_movS (readSrc_sc Sv' (show 28 + 4 ≤ size by omega_using [hz'])) fun x X _ => WP.block_nil ?_
   have Cx : Context n m base size x :=
     Cv.outs_keep (ranges := []) X.keeps (by decide) (by decide) (fun _ _ => by rw [X.mem])
       (fun _ h => absurd h List.not_mem_nil) (fun _ h => absurd h List.not_mem_nil)
@@ -297,12 +297,12 @@ theorem prefix_ok {s : State} {base : Addr} {size n m len : Nat} {p : BitVec 32}
   have hsrc : LenSrc base size n x (.mem (sc lenAt)) len := by
     intro y hy _ _ O
     change readSrc y (.mem (sc 24)) = _
-    rw [readSrc_sc hy (show 24 + 4 ≤ size by omega)]
+    rw [readSrc_sc hy (show 24 + 4 ≤ size by omega_using [hz'])]
     congr 1
     rw [Mul.Outs.readW32 O (fun r hr => by
         simp only [streamRanges, List.mem_cons, List.not_mem_nil, or_false] at hr
-        rcases hr with rfl | rfl | rfl | rfl <;> simp only [slot, stride] <;> omega) (by omega),
-      X.mem, Mul.Outs.readW32 Ov (avoid 24 (by omega)) (by omega), W24]
+        rcases hr with rfl | rfl | rfl | rfl <;> simp only [slot, stride] <;> omega_using []) (by omega_using [nw, hz']),
+      X.mem, Mul.Outs.readW32 Ov (avoid 24 (by omega_using [])) (by omega_using [nw, hz']), W24]
   have inp : StreamInput x base (contextBytes n) p len :=
     ⟨I.input.fit, by rw [xrd, xwr]; exact I.input.read, I.input.far, by rw [xrd, xwr]; exact I.input.whole⟩
   -- every change so far is in the header and the context's slots
@@ -314,13 +314,13 @@ theorem prefix_ok {s : State} {base : Addr} {size n m len : Nat} {p : BitVec 32}
     simp only [contextBytes, slot, stride] at h1
     rw [X.mem, Ov z (fun r hr => by
         simp only [setupRanges, List.mem_cons, List.not_mem_nil, or_false] at hr
-        rcases hr with rfl | rfl | rfl | rfl | rfl <;> simp only [slot, stride] <;> omega),
+        rcases hr with rfl | rfl | rfl | rfl | rfl <;> simp only [slot, stride] <;> omega_arith),
       Osw z (fun r hr => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-        rcases hr with rfl | rfl | rfl <;> omega)]
+        rcases hr with rfl | rfl | rfl <;> omega_using [h0])]
   have Ox : Outside base 0 (contextBytes n) s.mem x.mem := fun z hz => Osx z fun r hr => by
     simp only [scratch, List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl <;> dsimp only <;> simp only [contextBytes, slot, stride] at hz ⊢ <;> omega
+    rcases hr with rfl | rfl <;> dsimp only <;> simp only [contextBytes, slot, stride] at hz ⊢ <;> omega_using [hz]
   have savedX : Saved x.mem (off base) s.gpr slots := by
     intro q hq
     have hq' : 8 ≤ q.2 ∧ q.2 + 4 ≤ 24 := by
@@ -328,10 +328,10 @@ theorem prefix_ok {s : State} {base : Addr} {size n m len : Nat} {p : BitVec 32}
       rcases hq with rfl | rfl | rfl | rfl <;> decide
     rw [X.mem, Mul.Outs.readW32 Ov (fun r hr => by
         simp only [setupRanges, List.mem_cons, List.not_mem_nil, or_false] at hr
-        rcases hr with rfl | rfl | rfl | rfl | rfl <;> simp only [slot, stride] <;> omega) (by omega),
+        rcases hr with rfl | rfl | rfl | rfl | rfl <;> simp only [slot, stride] <;> omega_using [hq']) (by omega_using [nw, hz', hq']),
       Mul.Outs.readW32 OW (fun r hr => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-        rcases hr with rfl | rfl <;> omega) (by omega)]
+        rcases hr with rfl | rfl <;> omega_using [hq']) (by omega_using [nw, hz', hq'])]
     exact Sv q hq
   have Kwx : Keeps powerClob w x := Kv.trans (X.keeps.mono (by decide))
   exact ⟨Cx, by rw [X.gpr]; exact V28, hsrc, inp, Osx, Ox, savedX,
@@ -364,10 +364,10 @@ theorem body_ok {s : State} {base : Addr} {size n m len : Nat} {p : BitVec 32}
       rcases hq with rfl | rfl | rfl | rfl <;> decide
     rw [Mul.Outs.readW32 Oy (fun r hr => by
         simp only [streamRanges, List.mem_cons, List.not_mem_nil, or_false] at hr
-        rcases hr with rfl | rfl | rfl | rfl <;> simp only [slot, stride] <;> omega)
-        (by have := I.entry.nowrap; omega)]
+        rcases hr with rfl | rfl | rfl | rfl <;> simp only [slot, stride] <;> omega_using [hq'])
+        (by have := I.entry.nowrap; omega_using [hz', hq', this])]
     exact R.saved q hq
-  refine WP.mono (restore_ok Cy.scr (by omega) savedY)
+  refine WP.mono (restore_ok Cy.scr (by omega_using [hz']) savedY)
     fun t R' => ⟨?_, ?_, R'.abi (by decide) (by decide) ?_, ?_, ?_⟩
   · rw [R'.mem, Vy, I.input.bytes R.outside]
   · rw [R'.mem]; exact R.outs.trans Oxy

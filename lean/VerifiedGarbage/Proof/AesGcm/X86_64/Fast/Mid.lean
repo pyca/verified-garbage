@@ -65,7 +65,7 @@ theorem aad_mid (hF : ShortFacts) {k : Nat} {s s₁ : State} {Ctx W SP Np A D : 
   have hH₁ : blockAt s₁.mem (Ctx + BitVec.ofNat 64 240) = ctxH s.mem Ctx := by
     rw [ctxH_eq, blockAt_frame E.frame (dW _ _ (L.cw'.sub_left (Lay.ctxSub (by decide))))]
   have hiv : bytesAt s₁.mem Np 12 = bytesAt s.mem Np 12 := bytesAt_frame E.frame (dW _ _ C.nonce.w) (by decide)
-  have haa : bytesAt s₁.mem A al = bytesAt s.mem A al := bytesAt_frame E.frame (dW _ _ C.aad.w) (by have := C.aad.lt; omega)
+  have haa : bytesAt s₁.mem A al = bytesAt s.mem A al := bytesAt_frame E.frame (dW _ _ C.aad.w) (by have := C.aad.lt; omega_using [hal])
   have hal' : s₁.mem.readW (W + BitVec.ofNat 64 184) 64 = BitVec.ofNat 64 al := by
     rw [E.alen, ← hal, BitVec.ofNat_toNat, BitVec.setWidth_eq]
   -- `H'`, kept from the prepared context.
@@ -77,7 +77,7 @@ theorem aad_mid (hF : ShortFacts) {k : Nat} {s s₁ : State} {Ctx W SP Np A D : 
   have inH : InRegions (s₁.rd ++ s₁.wr) (Ctx + BitVec.ofNat 64 272) 16 := by
     rw [E.rd, E.wr]; exact in_off X.cov (show 272 + 16 ≤ 1024 by decide) (by exact (by decide : (1024 : Nat) < 2 ^ 64))
   have hP : IsH1 (ctxH s.mem Ctx) (s₁.mem.readW (Ctx + BitVec.ofNat 64 272) 128) := by
-    have e := (X.ok 0 (by have := hpn.1; omega)).2
+    have e := (X.ok 0 (by have := hpn.1; omega_using [hpn])).2
     simp only [Nat.mul_zero, Nat.add_zero] at e
     rw [E.frame.readW (r := ⟨Ctx + BitVec.ofNat 64 272, 16⟩) (Region.contains_self _ _) (dW _ _ cw) (by decide), e]
     exact hF.pp1 _
@@ -106,7 +106,7 @@ theorem condE_ok {k : Nat} {s₀ s₁ : State} {Ctx W SP Np A D : Addr} {nl al n
       OneEntry s₀ Ctx W SP A D n s₂ ∧ CondKeep s₁ s₂ := by
   have hlt := C.data.ok.lt
   refine WP.mono (cond_ok (condS_of E hnl hal) (by rw [← hnl]; exact BitVec.isLt _) (by rw [← hal]; exact BitVec.isLt _)
-    (by omega)) fun s₂ ⟨hz, K⟩ => ⟨hz, ?_, K⟩
+    (by omega_using [hlt])) fun s₂ ⟨hz, K⟩ => ⟨hz, ?_, K⟩
   exact E.keep C.lay (fun r hr => K.gpr r (by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl <;> decide) (by
@@ -129,6 +129,6 @@ theorem sel_ok (hF : ShortFacts) (v : GcmImpl) (B : BlkFn (CtxMode.preparedN np 
   obtain ⟨h12, h17, -⟩ : IsFast nl al n any := Decidable.not_not.mp (of_decide_eq_false h)
   subst h12
   exact splitRun_of_pre hpre (fbody_ok hF hks B hfin) C X kM S₂ hal
-    (aad_mid hF C.toOneCtx X S₂.toOneEntry hNp hnl hal (by omega))
+    (aad_mid hF C.toOneCtx X S₂.toOneEntry hNp hnl hal (by omega_using [h17]))
 
 end VG.Proof.AesGcm.X86_64.Fast

@@ -53,11 +53,11 @@ theorem halfRel_eq {Q : Nat → BitVec 32} {x : BitVec 64} (h : W32.HalfRel Q fu
     (hk : k < 16) : Q k = keyPlane32 x (k / 8) (k % 8) := by
   apply BitVec.eq_of_getLsbD_eq
   intro p hp
-  have e1 := h (p % 8) (by omega) (4 * (k / 8) + p / 8) (by omega) (k % 8) (by omega)
-  have e2 := sigma_rel x (p % 8) (by omega) (4 * (k / 8) + p / 8) (by omega) (k % 8) (by omega)
+  have e1 := h (p % 8) (by omega_using []) (4 * (k / 8) + p / 8) (by omega_using [hk, hp]) (k % 8) (by omega_using [])
+  have e2 := sigma_rel x (p % 8) (by omega_using []) (4 * (k / 8) + p / 8) (by omega_using [hk, hp]) (k % 8) (by omega_using [])
   simp only at e2
-  rw [show 8 * ((4 * (k / 8) + p / 8) / 4) + k % 8 = k by omega,
-    show 8 * ((4 * (k / 8) + p / 8) % 4) + p % 8 = p by omega] at e1 e2
+  rw [show 8 * ((4 * (k / 8) + p / 8) / 4) + k % 8 = k by omega_using [hp],
+    show 8 * ((4 * (k / 8) + p / 8) % 4) + p % 8 = p by omega_using [hp]] at e1 e2
   rw [e1, e2]
 
 theorem keyEntry_eq (w : List (BitVec 64)) (g : Nat) (d : Dir) (e : Nat) :
@@ -77,10 +77,10 @@ theorem layout_table (R : Nat) : layout.table R = [(416, 64 * (8 * (R / 6) + 2))
 theorem byte_word {m : Mem} {B : BitVec 32} (hfit : B.toNat + 4 * slots ≤ 2 ^ 32) {o : Nat}
     (ho : o < 4 * slots) :
     m (B.setWidth 64 + BitVec.ofNat 64 o) = (m.readW (wordAddr B (o / 4)) 32).extractLsb' (8 * (o % 4)) 8 := by
-  rw [slot_addr (by omega), show B.setWidth 64 + BitVec.ofNat 64 o =
+  rw [slot_addr (by omega_using [hfit, ho]), show B.setWidth 64 + BitVec.ofNat 64 o =
     B.setWidth 64 + BitVec.ofNat 64 (4 * (o / 4)) + BitVec.ofNat 64 (o % 4) by
-      rw [VG.Offset.add_add]; congr 2; omega]
-  exact Mem.readW_byte m _ (by omega)
+      rw [VG.Offset.add_add]; congr 2; omega_using []]
+  exact Mem.readW_byte m _ (by omega_using [])
 
 theorem holds_of_words {R : Nat} {m : Mem} {B : BitVec 32} {w : List (BitVec 64)} {d : Spec.Camellia.Direction}
     (hfit : B.toNat + 4 * slots ≤ 2 ^ 32) (hR : R = 18 ∨ R = 24) (h : TableWordsAt R m B w (ofSpecDir d)) :
@@ -88,46 +88,46 @@ theorem holds_of_words {R : Nat} {m : Mem} {B : BitVec 32} {w : List (BitVec 64)
   intro r hr i hi
   rw [layout_table] at hr
   simp only [List.mem_singleton] at hr; subst hr
-  have hg : R / 6 ≤ 4 := by omega
+  have hg : R / 6 ≤ 4 := by omega_using [hR]
   dsimp only at hi ⊢
-  rw [byte_word (m := m) hfit (by rw [slots_eq]; omega), h _ (by rw [keySlot_eq]; omega) (by rw [keySlot_eq]; omega)]
+  rw [byte_word (m := m) hfit (by rw [slots_eq]; omega_using [hR, hi]), h _ (by rw [keySlot_eq]; omega_using []) (by rw [keySlot_eq]; omega_using [hi])]
   rfl
 
 theorem words_of_holds {R : Nat} {m : Mem} {B : BitVec 32} {w : List (BitVec 64)} {d : Spec.Camellia.Direction}
     (hfit : B.toNat + 4 * slots ≤ 2 ^ 32) (hR : R = 18 ∨ R = 24)
     (h : Proof.Camellia.Prepared.Holds layout m (B.setWidth 64) R w d) : TableWordsAt R m B w (ofSpecDir d) := by
   intro k hk1 hk2
-  have hg : R / 6 ≤ 4 := by omega
+  have hg : R / 6 ≤ 4 := by omega_using [hR]
   rw [keySlot_eq] at hk1 hk2
   simp only [Mem.readW, BitVec.setWidth_eq]
   refine Mem.read_eq_of_bytes (n := 4) (v := preparedWord R w (ofSpecDir d) k) fun j hj => ?_
-  have := h _ (List.mem_singleton_self _) (4 * k + j - 416) (by omega)
+  have := h _ (List.mem_singleton_self _) (4 * k + j - 416) (by omega_using [hk2, hj])
   simp only [keySlot_eq] at this
-  rw [show 4 * 104 + (4 * k + j - 416) = 4 * k + j by omega] at this
-  rw [show wordAddr B k = B.setWidth 64 + BitVec.ofNat 64 (4 * k) from slot_addr (by rw [slots_eq] at hfit; omega),
+  rw [show 4 * 104 + (4 * k + j - 416) = 4 * k + j by omega_using [hk1]] at this
+  rw [show wordAddr B k = B.setWidth 64 + BitVec.ofNat 64 (4 * k) from slot_addr (by rw [slots_eq] at hfit; omega_using [hfit, hR, hk2]),
     VG.Offset.add_add, this]
   show (preparedWord R w (ofSpecDir d) ((4 * k + j) / 4)).extractLsb' (8 * ((4 * k + j) % 4)) 8 = _
-  rw [show (4 * k + j) / 4 = k by omega, show (4 * k + j) % 4 = j by omega]
+  rw [show (4 * k + j) / 4 = k by omega_using [hj], show (4 * k + j) % 4 = j by omega_using [hj]]
 
 theorem preparedWord_entry (R : Nat) (w : List (BitVec 64)) (d : Dir) {e j : Nat} (hj : j < 16) :
     preparedWord R w d (keySlot + 16 * e + j) = keyPlane32 (keyEntry w (R / 6) d e) (j / 8) (j % 8) := by
   simp only [preparedWord]
-  rw [show (keySlot + 16 * e + j - keySlot) / 16 = e by omega,
-    show (keySlot + 16 * e + j - keySlot) % 16 = j by omega, show (keySlot + 16 * e + j - keySlot) % 8 = j % 8 by omega]
+  rw [show (keySlot + 16 * e + j - keySlot) / 16 = e by omega_using [hj],
+    show (keySlot + 16 * e + j - keySlot) % 16 = j by omega_using [hj], show (keySlot + 16 * e + j - keySlot) % 8 = j % 8 by omega_using []]
 
 /-- The table holds the entries `EntryOk` reads. -/
 theorem entries_of_words {R : Nat} {m : Mem} {B : BitVec 32} {w : List (BitVec 64)} {d : Dir}
     (h : TableWordsAt R m B w d) {e : Nat} (he : e < 8 * (R / 6) + 2) :
     EntryOk m B e (keyEntry w (R / 6) d e) :=
   (sigma_rel (keyEntry w (R / 6) d e)).congr fun j hj => by
-    rw [entryW, h _ (by omega) (by omega), preparedWord_entry R w d hj]
+    rw [entryW, h _ (by omega_using []) (by omega_using [he, hj]), preparedWord_entry R w d hj]
 
 theorem words_of_entries {R : Nat} {m : Mem} {B : BitVec 32} {w : List (BitVec 64)} {d : Dir}
     (h : ∀ e < 8 * (R / 6) + 2, EntryOk m B e (keyEntry w (R / 6) d e)) : TableWordsAt R m B w d := by
   intro k hk1 hk2
-  have e := halfRel_eq (h ((k - keySlot) / 16) (by omega)) (k := (k - keySlot) % 16) (by omega)
-  rw [entryW, show keySlot + 16 * ((k - keySlot) / 16) + (k - keySlot) % 16 = k by omega] at e
+  have e := halfRel_eq (h ((k - keySlot) / 16) (by omega_using [hk2])) (k := (k - keySlot) % 16) (by omega_using [])
+  rw [entryW, show keySlot + 16 * ((k - keySlot) / 16) + (k - keySlot) % 16 = k by omega_using [hk1]] at e
   rw [e, preparedWord]
-  rw [show (k - keySlot) % 16 % 8 = (k - keySlot) % 8 by omega]
+  rw [show (k - keySlot) % 16 % 8 = (k - keySlot) % 8 by omega_using []]
 
 end VG.Proof.Camellia.X86

@@ -138,7 +138,7 @@ theorem ctxCiph_congr {m₁ m₂ : Mem} {p : Addr} {nr : Nat} (hn : nr ≤ 15)
     (h : ∀ i < 256, m₂ (p + BitVec.ofNat 64 i) = m₁ (p + BitVec.ofNat 64 i)) :
     ctxCiph m₂ p nr = ctxCiph m₁ p nr := by
   simp only [ctxCiph]
-  rw [bytesAt_congr fun i hi => h i (by omega)]
+  rw [bytesAt_congr fun i hi => h i (by omega_using [hn, hi])]
 
 /-- The inverse cipher of a key context, for at most 15 rounds, is in its 256
 bytes. -/
@@ -146,18 +146,18 @@ theorem ctxInv_congr {m₁ m₂ : Mem} {p : Addr} {nr : Nat} (hn : nr ≤ 15)
     (h : ∀ i < 256, m₂ (p + BitVec.ofNat 64 i) = m₁ (p + BitVec.ofNat 64 i)) :
     ctxInv m₂ p nr = ctxInv m₁ p nr := by
   simp only [ctxInv]
-  rw [bytesAt_congr fun i hi => h i (by omega)]
+  rw [bytesAt_congr fun i hi => h i (by omega_using [hn, hi])]
 
 /-- `L_*` of a key context is in its 256 bytes. -/
 theorem ctxLstar_congr {m₁ m₂ : Mem} {p : Addr}
     (h : ∀ i < 256, m₂ (p + BitVec.ofNat 64 i) = m₁ (p + BitVec.ofNat 64 i)) :
     ctxLstar m₂ p = ctxLstar m₁ p := by
   have e : Spec.Aes.bytesAt m₂ (p + BitVec.ofNat 64 240) 16 = Spec.Aes.bytesAt m₁ (p + BitVec.ofNat 64 240) 16 :=
-    bytesAt_congr fun i hi => by rw [Offset.add_add]; exact h _ (by omega)
+    bytesAt_congr fun i hi => by rw [Offset.add_add]; exact h _ (by omega_using [hi])
   unfold ctxLstar blockAtMem
   exact congrArg ofBytes e
 
-theorem le15 {n : Nat} (h : n = 10 ∨ n = 12 ∨ n = 14) : n ≤ 15 := by omega
+theorem le15 {n : Nat} (h : n = 10 ∨ n = 12 ∨ n = 14) : n ≤ 15 := by omega_using [h]
 
 /-- The inputs of `encryptWith` and `decryptWith` on the memory `m₂` are those
 on `m₁` where they agree on the buffers. -/
@@ -183,8 +183,8 @@ private theorem inputs_local {pb : Nat} {m₁ m₂ : Mem}
   simp only [BitVec.toNat_setWidth] at hn ⊢
   have hc' : ∀ i < 256, m₂ (ctx + BitVec.ofNat 64 i) = m₁ (ctx + BitVec.ofNat 64 i) := fun i hi => hc i hi
   exact ⟨ctxCiph_congr hn hc', ctxInv_congr hn hc', ctxLstar_congr hc',
-    bytesAt_congr fun i hi => hN i (by omega), bytesAt_congr fun i hi => hA i (by omega),
-    bytesAt_congr fun i hi => hD i (by omega), bytesAt_congr fun i hi => hT i (by omega)⟩
+    bytesAt_congr fun i hi => hN i (by omega_arith), bytesAt_congr fun i hi => hA i (by omega_arith),
+    bytesAt_congr fun i hi => hD i (by omega_arith), bytesAt_congr fun i hi => hT i (by omega_using [this, hi])⟩
 
 variable (pb : Nat)
 
@@ -375,7 +375,7 @@ theorem initPost_local : ∀ vs m₁ m₂ m' r, vs.length = (initSig.words pb).l
   dsimp only [Curry.apply, initPost, ArgWord.ofRaw] at h ⊢
   have := Nat.mod_le kl.toNat (2 ^ pb)
   rw [bytesAt_congr (n := (kl.setWidth pb).toNat) fun i hi => hk i (by
-    rw [BitVec.toNat_setWidth] at hi; omega)]
+    rw [BitVec.toNat_setWidth] at hi; omega_using [this, hi])]
   exact h
 
 end VG.Proof.AesOcb

@@ -54,7 +54,7 @@ theorem prep_apart {c : Cfg} (h9 : c.n=9)
   intro w hw
   rw [sl_eq c i hT]
   simp only [prepW,List.mem_cons,List.not_mem_nil,or_false] at hw
-  rcases hw with rfl | rfl <;> left <;> dsimp only <;> rw [h9] <;> omega
+  rcases hw with rfl | rfl <;> left <;> dsimp only <;> rw [h9] <;> omega_using [hi]
 
 theorem prep_fixed {c : Cfg} (h9 : c.n=9) : FixedOk c (prepW c) := by
   intro w hw
@@ -65,7 +65,7 @@ theorem prep_fixed {c : Cfg} (h9 : c.n=9) : FixedOk c (prepW c) := by
 theorem recode_small {k : Nat} (hk : k < 2^521) : k+8*geom 131 < 16^131 := by
   have hg := geom_mul 131
   have h4 : (2:Nat)^521*4 ≤ 16^131 := by decide +kernel
-  omega
+  omega_using [hk, hg]
 
 theorem core_ok (c : Cfg) (hc : CfgOk c) (h9 : c.n=9)
     (hbd : 16*((2^521+135)/256)+8 < c.C.n) (hpadd : c.padd=none)
@@ -191,9 +191,9 @@ theorem core_ok (c : Cfg) (hc : CfgOk c) (h9 : c.n=9)
           (apart_append (apart_slW (c := c) (i := FLAG) (l := otherI++tblI++[TMP]) (by decide))
             (apart_chainWc hc.toBaseCfgOk (i := FLAG) (by decide) (by decide))) w hw
         rcases ha with ha | ha
-        · left; have := hc.n0; omega
+        · left; have := hc.n0; omega_using [h9, ha]
         · exact .inr ha
-      · have := sl_le c h7 (i := FLAG) (by decide); omega),
+      · have := sl_le c h7 (i := FLAG) (by decide); omega_using [h9, hn, this]),
     sv_unch U h7 hn (i := D) (by decide) (apart_append (prep_apart h9 (by decide) (by decide))
       (apart_append (apart_slW (by decide)) (apart_chainWc hc.toBaseCfgOk (by decide) (by decide)))),
     fun _ _ => ?_, lt₄, ?_, ?_⟩

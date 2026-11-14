@@ -43,10 +43,10 @@ theorem lowHigh_mod {L B T m : Nat} (hL : L < B) :
   have hlt : L+B*(T%2^m) < B*2^m := by
     have := Nat.mod_lt T hp
     have : B*(T%2^m)+B ≤ B*2^m := by rw [← Nat.mul_succ]; exact Nat.mul_le_mul_left _ this
-    omega
+    omega_using [hL, this]
   rw [show L+B*T = L+B*(T%2^m)+B*2^m*(T/2^m) by
     conv_lhs => rw [← hT]
-    rw [Nat.mul_add,Nat.mul_assoc]; omega]
+    rw [Nat.mul_add,Nat.mul_assoc]; omega_using []]
   rw [Nat.add_mul_mod_self_left,Nat.mod_eq_of_lt hlt]
 
 theorem lowHigh_pow {L T a b : Nat} (hL : L < 2^a) :
@@ -70,12 +70,12 @@ theorem mask_ok {base : Addr} {s : State} (hs : Scr s base size) :
   refine WP.mono (st_out hs₂ hd ha .x3) fun t ⟨hm,hg,_⟩ => ?_
   have hs' := hs₂.of_keepRegs hg (by decide)
   have ho : Outside base (c.sl K+64) 8 s.mem t.mem := by
-    rw [hm,k.mem]; exact writeW_outside _ _ _ (by have := hs.nowrap; omega)
+    rw [hm,k.mem]; exact writeW_outside _ _ _ (by have := hs.nowrap; omega_using [hd, this])
   refine ⟨hs', (Keeps.regs k).trans (hg.mono (by simp)), ?_, fun x hx => ?_⟩
   · unfold sv
     change wordsVal t.mem base (c.sl K) (8+1) = wordsVal s.mem base (c.sl K) (8+1) % 2^521
     rw [wordsVal_succ_top _ _ _ 8,wordsVal_succ_top _ _ _ 8,
-      ho.wordsVal (by omega) (by have := hs.nowrap; omega),hm,word_writeW_self]
+      ho.wordsVal (by omega_using []) (by have := hs.nowrap; omega_using [hd, this]),hm,word_writeW_self]
     change _ + _ * (s₂.gpr .x3).toNat = _
     rw [e₂,e₁]
     have he := @lowHigh_pow (wordsVal s.mem base (c.sl K) 8)
@@ -88,6 +88,6 @@ theorem mask_ok {base : Addr} {s : State} (hs : Scr s base size) :
     change ofs base x < c.sl K ∨ c.sl K+8*c.n ≤ ofs base x at h
     change ofs base x < c.sl K+64 ∨ c.sl K+64+8 ≤ ofs base x
     have hn : c.n = 9 := rfl
-    omega
+    omega_using [h, hn]
 
 end VG.Proof.Ecdh.AArch64.P521.Window

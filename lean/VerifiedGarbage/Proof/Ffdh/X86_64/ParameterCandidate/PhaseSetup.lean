@@ -48,13 +48,13 @@ theorem phaseSetup_state_ok {p : CandidateP} {used : Nat} {s : State}
     · intro r hr
       simp only [phaseRanges, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl
-      · left; change 8 * j + 8 ≤ 120; omega
-      · left; change 8 * j + 8 ≤ 160; omega
-      · left; omega
-    · omega
+      · left; change 8 * j + 8 ≤ 120; omega_using [hj]
+      · left; change 8 * j + 8 ≤ 160; omega_using [hj]
+      · left; omega_using [hj]
+    · omega_using [hj]
   have hframe : CandidateFrame p s.mem t.mem := CandidateFrame.of_scr (InScr.of_frm hf hfit)
   exact ⟨mi, h.keep hframe hh k ((k.gpr (by decide)).trans h.base.sp), hg,
-    ⟨hb, hn, hc, hl⟩, fun j hj => hh j (by omega), hframe, k,
+    ⟨hb, hn, hc, hl⟩, fun j hj => hh j (by omega_using [hj]), hframe, k,
     h.base.output_eq (InScr.of_frm hf hfit)⟩
 
 end VG.Proof.Ffdh.X86_64.ParameterCandidate

@@ -44,8 +44,8 @@ theorem prime_ok {s : State} {base : Addr} {size w candidate : Nat} {out usedPtr
       Frame [⟨out.setWidth 64, 8 * w⟩, ⟨usedPtr.setWidth 64, 8⟩] s.mem t.mem ∧
       Keeps [.eax, .ebx, .ecx, .edx, .esi] s t := by
   unfold VG.Impl.RsaKeyGen.X86.CandidateFinish.prime
-  refine WP.seq (wp_movS (readSrc_sc S.scratch (d := 0) (by have := S.header; omega)) fun a A _ =>
-    wp_movS (readSrc_sc (S.scratch.of_keeps A.keeps (by decide)) (d := 4) (by have := S.header; omega)) fun b B _ => WP.block_nil ?_)
+  refine WP.seq (wp_movS (readSrc_sc S.scratch (d := 0) (by have := S.header; omega_using [this])) fun a A _ =>
+    wp_movS (readSrc_sc (S.scratch.of_keeps A.keeps (by decide)) (d := 4) (by have := S.header; omega_using [this])) fun b B _ => WP.block_nil ?_)
   have Kb : Keeps [.ebx, .ecx] s b := (A.keeps.mono (by decide)).widen B.keeps
   have Mb : b.mem = s.mem := B.mem.trans A.mem
   have outB : b.gpr .ebx = out := by rw [B.other .ebx (by decide), A.gpr, S.outEq]
@@ -53,8 +53,8 @@ theorem prime_ok {s : State} {base : Addr} {size w candidate : Nat} {out usedPtr
   have valueB : wordsVal b.mem base (slot w 0) w = candidate := by
     rw [wordsVal_eq_val32, Mb]; exact S.candidateEq
   refine WP.seq (WP.mono (VG.Proof.Bignum.X86.storeBE_ok (S.scratch.of_keeps Kb (by decide))
-    (by have := S.positive; omega) (by rfl) S.space lenB
-    (by rw [wordsVal_eq_val32, show 8 * (8 * w) = 32 * (2 * w) by omega]; exact val32_lt _ _ _ _)
+    (by have := S.positive; omega_using [this]) (by rfl) S.space lenB
+    (by rw [wordsVal_eq_val32, show 8 * (8 * w) = 32 * (2 * w) by omega_using []]; exact val32_lt _ _ _ _)
     (by rw [outB]; exact S.outFit) (by rw [Kb.2.2, outB]; exact S.outWrite)
     (by
       rw [outB]
@@ -64,17 +64,17 @@ theorem prime_ok {s : State} {base : Addr} {size w candidate : Nat} {out usedPtr
   rw [outB, Mb] at Fc
   have Ksc : Keeps [.eax, .ebx, .ecx, .esi] s c := (Kb.mono (by decide)).widen Kc
   have readHeader (d : Nat) (fit : d + 4 ≤ size) : c.mem.readW (off base d) 32 = s.mem.readW (off base d) 32 :=
-    Fc.readW (r := ⟨base, size⟩) (Offset.contains_base _ fit (by have := S.scratch.nowrap; omega))
+    Fc.readW (r := ⟨base, size⟩) (Offset.contains_base _ fit (by have := S.scratch.nowrap; omega_using [fit, this]))
       (by intro r mem; obtain rfl := List.mem_singleton.mp mem; exact S.workspaceFar) (by decide)
   refine WP.mono (used_ok (status := 1) (S.scratch.of_keeps Ksc (by decide)) S.header
-    (S.usedWrite.of_keeps Ksc) ((readHeader 44 (by have := S.header; omega)).trans S.usedEq)
-    ((readHeader 152 (by have := S.header; omega)).trans S.countEq)) fun t ⟨result, memory, O, Kt⟩ => ?_
+    (S.usedWrite.of_keeps Ksc) ((readHeader 44 (by have := S.header; omega_using [this])).trans S.usedEq)
+    ((readHeader 152 (by have := S.header; omega_using [this])).trans S.countEq)) fun t ⟨result, memory, O, Kt⟩ => ?_
   have Ft : Frame [⟨usedPtr.setWidth 64, 8⟩] c.mem t.mem := by
     simpa only [off, show BitVec.ofNat 64 0 = 0#64 from rfl, BitVec.add_zero] using
       VG.Proof.Bignum.outside_frame O (by decide)
   refine ⟨result, ?_, ?_, ?_, (Ksc.mono (by decide)).trans (Kt.mono (by decide))⟩
   · rw [VG.Proof.RsaKeyGen.frame_bytesAt Ft (by intro r mem; obtain rfl := List.mem_singleton.mp mem; exact S.usedFar)
-      (by have := S.outFit; omega)]
+      (by have := S.outFit; omega_using [this])]
     exact bytesC
   · rw [memory, Mem.readW_writeW_self64]
   · exact (Fc.mono (fun _ mem => by obtain rfl := List.mem_singleton.mp mem; exact List.mem_cons_self)).trans

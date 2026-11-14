@@ -180,14 +180,14 @@ theorem round_eq (M : Block 32) (v : Work 32) (r : Nat) :
 /-! Bounds of the indices of the work vector, which `get_elem_tactic` would
 prove by `omega` over every hypothesis of a long proof. -/
 
-theorem ix0 {i : Nat} (hi : i < 4) : i < 16 := by omega
-theorem ix4 {i : Nat} (hi : i < 4) : 4 + i < 16 := by omega
-theorem ix8 {i : Nat} (hi : i < 4) : 8 + i < 16 := by omega
-theorem ix12 {i : Nat} (hi : i < 4) : 12 + i < 16 := by omega
-theorem dx0 (i : Nat) : (i + 3) % 4 < 16 := by omega
-theorem dx4 (i : Nat) : 4 + (i + 1) % 4 < 16 := by omega
-theorem dx8 (i : Nat) : 8 + (i + 2) % 4 < 16 := by omega
-theorem dx12 (i : Nat) : 12 + (i + 3) % 4 < 16 := by omega
+theorem ix0 {i : Nat} (hi : i < 4) : i < 16 := by omega_using [hi]
+theorem ix4 {i : Nat} (hi : i < 4) : 4 + i < 16 := by omega_using [hi]
+theorem ix8 {i : Nat} (hi : i < 4) : 8 + i < 16 := by omega_using [hi]
+theorem ix12 {i : Nat} (hi : i < 4) : 12 + i < 16 := by omega_using [hi]
+theorem dx0 (i : Nat) : (i + 3) % 4 < 16 := by omega_using []
+theorem dx4 (i : Nat) : 4 + (i + 1) % 4 < 16 := by omega_using []
+theorem dx8 (i : Nat) : 8 + (i + 2) % 4 < 16 := by omega_using []
+theorem dx12 (i : Nat) : 12 + (i + 3) % 4 < 16 := by omega_using []
 
 /-- Column `i` after the column step is `G` on column `i`. -/
 theorem col_get (v : Work 32) (X Y : Nat → BitVec 32) {i : Nat} (hi : i < 4) :
@@ -368,11 +368,11 @@ theorem round_ok {v : Work 32} {s : State} (h : RS s₀ v s) (r : Nat) :
       dw s₄ .xmm2 i = w[8 + ((i + 3) % 4 + 2) % 4]'(dx8 _) ∧
       dw s₄ .xmm3 i = w[12 + ((i + 3) % 4 + 3) % 4]'(dx12 _) :=
     fun i hi => ⟨by rw [dw, e₄ _ (by simp)]; exact (d0 i hi).trans (h₂.r0 _ (Nat.mod_lt _ (by decide))),
-      by rw [dw, e₄ _ (by simp)]; exact (d1 i hi).trans ((h₂.r1 i hi).trans (getElem_congr_idx (by omega))),
+      by rw [dw, e₄ _ (by simp)]; exact (d1 i hi).trans ((h₂.r1 i hi).trans (getElem_congr_idx (by omega_using [hi]))),
       by rw [dw, e₄ _ (by simp)]
-         exact (d2 i hi).trans ((h₂.r2 _ (Nat.mod_lt _ (by decide))).trans (getElem_congr_idx (by omega))),
+         exact (d2 i hi).trans ((h₂.r2 _ (Nat.mod_lt _ (by decide))).trans (getElem_congr_idx (by omega_using []))),
       by rw [dw, e₄ _ (by simp)]
-         exact (d3 i hi).trans ((h₂.r3 _ (Nat.mod_lt _ (by decide))).trans (getElem_congr_idx (by omega)))⟩
+         exact (d3 i hi).trans ((h₂.r3 _ (Nat.mod_lt _ (by decide))).trans (getElem_congr_idx (by omega_using [])))⟩
   refine WP.seq (WP.mono (vg_ok s₄) fun s₅ ⟨q, _, g₅, m₅, r₅, w₅⟩ => ?_)
   rw [undiag_eq]
   refine WP.mono (shufs_ok 0x39 0x93 0x4e (a := 1) (b := 3) (c := 2) (fun x i hi => shuf39 x hi)
@@ -394,13 +394,13 @@ theorem round_ok {v : Work 32} {s : State} (h : RS s₀ v s) (r : Nat) :
     fun g h1 h2 => by rw [g₆, g₅, g₄ g h1 h2], by rw [m₆, m₅, m₄], by rw [r₆, r₅, r₄],
     by rw [w₆, w₅, w₄]⟩
   · rw [u0 i hi, (hq _ (Nat.mod_lt _ (by decide))).1]
-    exact getElem_congr_idx (by omega)
+    exact getElem_congr_idx (by omega_using [hi])
   · rw [u1 i hi, (hq i hi).2.1]
-    exact getElem_congr_idx (by omega)
+    exact getElem_congr_idx (by omega_using [hi])
   · rw [u2 i hi, (hq _ (Nat.mod_lt _ (by decide))).2.2.1]
-    exact getElem_congr_idx (by omega)
+    exact getElem_congr_idx (by omega_using [hi])
   · rw [u3 i hi, (hq _ (Nat.mod_lt _ (by decide))).2.2.2]
-    exact getElem_congr_idx (by omega)
+    exact getElem_congr_idx (by omega_using [hi])
 
 theorem rounds_ok {v : Work 32} {s : State} (h : RS s₀ v s) (n : Nat) :
     WP isa (rounds n) s (RS s₀ ((List.range n).foldl (Spec.Blake2.round Spec.Blake2.s M) v)) := by

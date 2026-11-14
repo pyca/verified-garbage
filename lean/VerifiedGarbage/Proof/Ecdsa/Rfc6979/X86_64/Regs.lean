@@ -43,16 +43,16 @@ theorem ea_at (t : State) (r : Reg) (d : Nat) : t.ea (at_ r d) = t.gpr r + BitVe
 
 theorem sx32 {n : Nat} (h : n < 2 ^ 31) : (BitVec.ofNat 32 n).signExtend 64 = BitVec.ofNat 64 n := by
   have hm : (BitVec.ofNat 32 n).msb = false := by
-    rw [BitVec.msb_eq_decide]; simp only [BitVec.toNat_ofNat, decide_eq_false_iff_not]; omega
+    rw [BitVec.msb_eq_decide]; simp only [BitVec.toNat_ofNat, decide_eq_false_iff_not]; omega_using [h]
   rw [BitVec.signExtend_eq_setWidth_of_msb_false hm]
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_setWidth, BitVec.toNat_ofNat, BitVec.toNat_ofNat]
-  omega
+  omega_using [h]
 
 theorem zx32 {n : Nat} (h : n < 2 ^ 32) : (BitVec.ofNat 32 n).setWidth 64 = BitVec.ofNat 64 n := by
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_setWidth, BitVec.toNat_ofNat, BitVec.toNat_ofNat]
-  omega
+  omega_using [h]
 
 theorem add_ofNat_zero (p : Addr) : p + BitVec.ofNat 64 0 = p := BitVec.add_zero p
 
@@ -90,16 +90,16 @@ theorem _root_.VG.Region.Sub.trans {a b c : Region} (h₁ : Region.Sub a b) (h�
 /-- `p + d` does not wrap. -/
 theorem toNat_add_of {p : Addr} {d : Nat} (h : p.toNat + d < 2 ^ 64) :
     (p + BitVec.ofNat 64 d).toNat = p.toNat + d := by
-  rw [Offset.toNat_add_ofNat, Nat.mod_eq_of_lt (a := d) (by omega), Nat.mod_eq_of_lt h]
+  rw [Offset.toNat_add_ofNat, Nat.mod_eq_of_lt (a := d) (by omega_using [h]), Nat.mod_eq_of_lt h]
 
 /-- The stack below `rsp` a call nested `n / 8 - 1` deep uses, within the 24 bytes below the frame. -/
 theorem Ctx.below_sub {dn : Nat} {L : Lay dn} {g : Reg → BitVec 64} {m₀ : Mem} {u : State} (hc : Ctx L g m₀ u) {n : Nat}
     (hn : n ≤ 24) : Region.Sub (below (u.gpr .rsp) n) ⟨L.B, 24⟩ := by
-  rw [hc.rsp, ← below24]; exact VG.X86_64.below_sub hn (by omega)
+  rw [hc.rsp, ← below24]; exact VG.X86_64.below_sub hn (by omega_using [])
 
 theorem Lay.Ok.low_scr {dn : Nat} {L : Lay dn} (h : L.Ok) {e k : Nat} (h₂ : e + k ≤ 8192) :
     Region.Disjoint ⟨L.B, 24⟩ ⟨L.scr + BitVec.ofNat 64 e, k⟩ :=
-  (h.kc.sub_left (Region.sub_prefix (by omega))).sub_right (Offset.sub_base _ h₂)
+  (h.kc.sub_left (Region.sub_prefix (by omega_using []))).sub_right (Offset.sub_base _ h₂)
 
 /-- Code that writes no callee-saved register keeps them (`hc` is checked
 by evaluating the code). -/
@@ -144,7 +144,7 @@ theorem Ctx.set (hL : L.Ok) {u u' : State} (hc : Ctx L g m₀ u) {d : Reg} (hd :
 theorem scr_ok (hL : L.Ok) {u : State} (hc : Ctx L g m₀ u) {d : Reg} (hd : d ∉ calleeSaved) {a : Nat}
     (ha : a < 2 ^ 31) :
     WP isa (.block (Cfg.scr d a)) u (Upd L g m₀ u d (L.scr + BitVec.ofNat 64 a)) := by
-  have h192 := hc.inFr (d := 208) (by omega) (by omega)
+  have h192 := hc.inFr (d := 208) (by omega_using []) (by omega_using [])
   have hrsp : d ≠ .rsp := fun h => hd (h ▸ by decide)
   apply WP.of_runBlock
   simp only [Cfg.scr, fScratch, runBlock_cons, runStep_some, runBlock_nil, exec, execAlu, readSrc,

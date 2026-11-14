@@ -19,7 +19,7 @@ namespace VG.Arm
 
 /-- Where AAPCS passes the `i`-th of 32-bit arguments. -/
 def locAt (i : Nat) : Loc :=
-  if h : i < 4 then .reg (argRegs[i]'(by simp [argRegs]; omega)) else .stack (4 * (i - 4)) 32
+  if h : i < 4 then .reg (argRegs[i]'(by simp [argRegs]; omega_using [h])) else .stack (4 * (i - 4)) 32
 
 /-- The arguments of a signature of `n` 32-bit words. -/
 def wordVals (n : Nat) (s : State) : List (BitVec 64) := (List.range n).map fun i => Loc.val s (locAt i)
@@ -35,30 +35,30 @@ theorem classify_all32 : ∀ (ws : List Nat) (i : Nat), (∀ w ∈ ws, w = 32) �
     rw [classify]
     simp only [show (32 : Nat) ≠ 64 by decide, ↓reduceIte]
     by_cases hi : i < 4
-    · have hm : min i 4 = i := by omega
-      have hm' : min (i + 1) 4 = i + 1 := by omega
+    · have hm : min i 4 = i := by omega_using [hi]
+      have hm' : min (i + 1) 4 = i + 1 := by omega_using [hi]
       rw [hm] at ⊢
       rw [hm'] at ih
-      have hs : i - 4 = 0 := by omega
-      have hs' : i + 1 - 4 = 0 := by omega
+      have hs : i - 4 = 0 := by omega_using [hi]
+      have hs' : i + 1 - 4 = 0 := by omega_using [hi]
       rw [hs'] at ih
       rw [hs]
       rcases i with _ | _ | _ | _ | i
-      · simp only [argRegs, List.getElem?_cons_zero]; rw [ih]; simp [locAt, argRegs]; omega
-      · simp only [argRegs, List.getElem?_cons_succ, List.getElem?_cons_zero]; rw [ih]; simp [locAt, argRegs]; omega
-      · simp only [argRegs, List.getElem?_cons_succ, List.getElem?_cons_zero]; rw [ih]; simp [locAt, argRegs]; omega
-      · simp only [argRegs, List.getElem?_cons_succ, List.getElem?_cons_zero]; rw [ih]; simp [locAt, argRegs]; omega
+      · simp only [argRegs, List.getElem?_cons_zero]; rw [ih]; simp [locAt, argRegs]; omega_using []
+      · simp only [argRegs, List.getElem?_cons_succ, List.getElem?_cons_zero]; rw [ih]; simp [locAt, argRegs]; omega_using []
+      · simp only [argRegs, List.getElem?_cons_succ, List.getElem?_cons_zero]; rw [ih]; simp [locAt, argRegs]; omega_using []
+      · simp only [argRegs, List.getElem?_cons_succ, List.getElem?_cons_zero]; rw [ih]; simp [locAt, argRegs]; omega_using []
       · omega
-    · have hm : min i 4 = 4 := by omega
-      have hm' : min (i + 1) 4 = 4 := by omega
+    · have hm : min i 4 = 4 := by omega_using [hi]
+      have hm' : min (i + 1) 4 = 4 := by omega_using [hi]
       rw [hm]
       rw [hm'] at ih
       have hn : argRegs[4]? = none := rfl
       rw [hn]
-      simp only [show argRegs.length = 4 from rfl, show 4 * (i - 4) + 4 = 4 * (i + 1 - 4) by omega]
+      simp only [show argRegs.length = 4 from rfl, show 4 * (i - 4) + 4 = 4 * (i + 1 - 4) by omega_using [hi]]
       rw [ih]
       simp only [locAt, hi, dite_false, Prod.mk.injEq, true_and]
-      omega
+      omega_using []
 
 theorem abi_args_all32 (ws : List Nat) (h : ∀ w ∈ ws, w = 32) :
     abi.args ws = some (wordVals ws.length) := by
@@ -109,10 +109,10 @@ theorem abi_area_append {ws : List Nat} (hw : ∀ w ∈ ws, w = 32) (hne : 4 < w
   have e₁ := classify_all32_snd ws hw
   have e₂ := classify_all32_snd _ (all32_append hw)
   simp only [List.length_append, List.length_cons, List.length_nil] at e₂
-  have h₁ : 4 * (ws.length - 4) ≠ 0 := by omega
-  have h₂ : 4 * (ws.length + (1 + 1) - 4) ≠ 0 := by omega
+  have h₁ : 4 * (ws.length - 4) ≠ 0 := by omega_using [hne]
+  have h₂ : 4 * (ws.length + (1 + 1) - 4) ≠ 0 := by omega_using [hne]
   simp only [abi, e₁, e₂, h₁, h₂, ↓reduceIte]
-  exact .cons ⟨⟨rfl, by simp only; omega⟩, rfl⟩ .nil
+  exact .cons ⟨⟨rfl, by simp only; omega_using []⟩, rfl⟩ .nil
 
 /-- The words of `sig`'s arguments followed by a slice's two. -/
 abbrev sliceVals (n : Nat) (s : State) : List (BitVec 64) :=

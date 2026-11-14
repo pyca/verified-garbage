@@ -32,15 +32,15 @@ theorem tailStep_ok {p : Addr} {n k : Nat} {s₀ s : State} (hn : n≤256) (hk :
     fun a ha => wp_addImm (by decide) fun b hb eb => wp_subImm (by decide) fun t ht et => wp_nil ?_
   have hc : (b.gpr .x4).toNat=n-k := by rw [hb.get .x4,ha.gpr,h.count]
   have hct : (t.gpr .x4).toNat=n-(k+1) := by
-    rw [et,toNat_sub_n (by rw [hc]; simp; omega),hc]
+    rw [et,toNat_sub_n (by rw [hc]; simp; omega_using [hk]),hc]
     simp
-    omega
-  refine ⟨⟨(h.keep.trans ((ha.keep.trans hb.keep).trans ht.keep)).mono,?_,hct,?_⟩,by rw [hct]; omega⟩
+    omega_using []
+  refine ⟨⟨(h.keep.trans ((ha.keep.trans hb.keep).trans ht.keep)).mono,?_,hct,?_⟩,by rw [hct]; omega_using [hk]⟩
   · rw [ht.get .x3,eb,ha.gpr,h.ptr,Offset.add_add]
     congr 2
   · rw [ht.mem,hb.mem,ha.mem]
     exact h.frame.writeW (List.mem_singleton_self _) _
-      (Offset.contains_base p (by omega) (by omega))
+      (Offset.contains_base p (by omega_using [hk]) (by omega_using [hn, hk]))
 
 theorem tailLoop_ok {p : Addr} {n : Nat} {s : State} (hn : 0<n) (hn256 : n≤256)
     (hp : s.gpr .x3=p) (hc : (s.gpr .x4).toNat=n)

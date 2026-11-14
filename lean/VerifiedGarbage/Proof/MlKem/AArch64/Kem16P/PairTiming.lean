@@ -69,8 +69,8 @@ theorem pstep_relCT (sd bt : Nat) {init₁ init₂ s₁ s₂ : State} {p st R B�
     RelCT isa (Eq2 s₁ s₂) (Impl.MlKem.AArch64.Kem16P.stepP sd bt N₀ m k) TT := by
   unfold Impl.MlKem.AArch64.Kem16P.stepP
   split
-  · exact slotPrf_relCT sd bt (N := N₀ + k) (by omega)
-      (by simp only [Impl.MlKem.AArch64.Kem16P.bufOff] at h4 ⊢; omega)
+  · exact slotPrf_relCT sd bt (N := N₀ + k) (by omega_using [hk, hN])
+      (by simp only [Impl.MlKem.AArch64.Kem16P.bufOff] at h4 ⊢; omega_using [h4])
       h₁.ptr h₁.pa h₁.pb (by rw [h₁.keep.get .x28]; exact e28₁)
       h₂.ptr h₂.pa h₂.pb (by rw [h₂.keep.get .x28]; exact e28₂)
       (by rw [h₁.keep.sp, h₂.keep.sp, sp]) hR hsd hsd' h₁.pair h₂.pair
@@ -186,12 +186,12 @@ theorem prepareP_relCT (L : KemLay) (sd bt : Nat) {σ₁ σ₂ : State} {p seed 
   have iw₂ {o l : Nat} (h : o + l ≤ 2048) := Noise.inScratch hh₂.lay.scratch h (by decide)
   refine rel_seq (rel_seq initCT
     (Paired.init_ok (a := a) (b := b) (k := L.k) hss hsb h8b h₁.ptr h₁.seedPtr h₁.readable
-      (fun j hj => iw₁ (by omega)) (fun j hj => iw₁ (by omega))
+      (fun j hj => iw₁ (by omega_using [hj])) (fun j hj => iw₁ (by omega_using [hj]))
       (h₁.separate.sub_right (Offset.sub_base p (by decide)))
       (h₁.separate.sub_right (Region.sub_prefix (by decide : 400 ≤ 2048)))
       (Offset.disjoint_base p (by decide) (by decide)))
     (Paired.init_ok (a := a) (b := b) (k := L.k) hss hsb h8b h₂.ptr h₂.seedPtr h₂.readable
-      (fun j hj => iw₂ (by omega)) (fun j hj => iw₂ (by omega))
+      (fun j hj => iw₂ (by omega_using [hj])) (fun j hj => iw₂ (by omega_using [hj]))
       (h₂.separate.sub_right (Offset.sub_base p (by decide)))
       (h₂.separate.sub_right (Region.sub_prefix (by decide : 400 ≤ 2048)))
       (Offset.disjoint_base p (by decide) (by decide)))

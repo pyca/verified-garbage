@@ -67,7 +67,7 @@ theorem pubS_of {tsH tsG : List FnTable} {K : Nat} {s₁ s₂ : State}
     | 4, _ => exact a4.symm | 5, _ => exact a5.symm | 6, _ => exact a6.symm | 7, _ => exact a7.symm
     | 8, _ => exact a8.symm | 9, _ => exact a9.symm | 10, _ => exact a10.symm | 11, _ => exact a11.symm
     | 12, _ => exact a12.symm | 13, _ => exact a13.symm | 14, _ => exact a14.symm | 15, _ => exact a15.symm
-    | n + 16, h => exact absurd h (by omega)
+    | n + 16, h => exact absurd h (by omega_using [])
 
 variable {vs : List MdHash} (hok : OK vs) (c : PrivChecked) {K : Nat} (h624 : 624 ≤ K) (hcK : c.stack ≤ K)
 

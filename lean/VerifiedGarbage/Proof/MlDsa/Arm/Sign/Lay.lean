@@ -95,9 +95,9 @@ theorem sepB_spec {bs : List (Reg × Nat)} {p q : Ptr} {l k : Nat} (h : sepB bs 
 theorem contains_sub {r : Region} {a : Addr} {n off l : Nat} (h : r.Contains a n) (hl : off + l ≤ n)
     (hn : n < 2 ^ 64) : r.Contains (a + BitVec.ofNat 64 off) l := by
   simp only [Region.Contains] at h ⊢
-  rw [Offset.add_sub_comm, BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := off) (by omega)]
+  rw [Offset.add_sub_comm, BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := off) (by omega_using [hl, hn])]
   have := Nat.mod_le ((a - r.base).toNat + off) (2 ^ 64)
-  omega
+  omega_using [h, hl]
 
 theorem inRegions_sub {X : List Region} {a : Addr} {n off l : Nat} (h : InRegions X a n) (hl : off + l ≤ n)
     (hn : n < 2 ^ 64) : InRegions X (a + BitVec.ofNat 64 off) l := by
@@ -159,12 +159,12 @@ theorem Lay.nwp {p : Ptr} {l : Nat} (h : inB (rbs ++ wbs) p l = true) :
   obtain ⟨n, hn, hl⟩ := inB_spec h
   have h1 := L.nw _ hn
   simp only at h1
-  omega
+  omega_using [hl, h1]
 
 /-- The 32-bit sum of a register and an offset, as a 64-bit address. -/
 theorem Lay.pa32 {p : Ptr} {l : Nat} (h : inB (rbs ++ wbs) p l = true) (hl : 0 < l) :
     State.addr (s.gpr p.1 + BitVec.ofNat 32 p.2) = pa s p :=
-  addr_add (by have := L.nwp h; omega)
+  addr_add (by have := L.nwp h; omega_using [hl, this])
 
 /-- `Lay.pa32`, as the contracts state addresses. -/
 theorem Lay.w {p : Ptr} {l : Nat} (h : inB (rbs ++ wbs) p l = true) (hl : 0 < l) :
@@ -174,28 +174,28 @@ theorem Lay.w {p : Ptr} {l : Nat} (h : inB (rbs ++ wbs) p l = true) (hl : 0 < l)
 theorem Lay.fit {p : Ptr} {l : Nat} (h : inB (rbs ++ wbs) p l = true) (hl : 0 < l) :
     (s.gpr p.1 + BitVec.ofNat 32 p.2).toNat + l ≤ 2 ^ 32 := by
   have := L.nwp h
-  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := p.2) (by omega), Nat.mod_eq_of_lt (by omega)]
-  omega
+  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := p.2) (by omega_using [hl, this]), Nat.mod_eq_of_lt (by omega_using [hl, this])]
+  omega_using [this]
 
 theorem Lay.lenlt {p : Ptr} {l : Nat} (h : inB (rbs ++ wbs) p l = true) : l < 2 ^ 32 := by
   obtain ⟨n, hn, hl⟩ := inB_spec h
   have := L.small _ hn
-  simp only at this; omega
+  simp only at this; omega_using [hl, this]
 
 /-- `Lay.pa32`, for a buffer written. -/
 theorem Lay.pa32W {p : Ptr} {l : Nat} (h : inB wbs p l = true) (hl : 0 < l) :
     State.addr (s.gpr p.1 + BitVec.ofNat 32 p.2) = pa s p := by
   obtain ⟨n, hn, hl'⟩ := inB_spec h
   have := L.nw _ (List.mem_append_right _ hn)
-  exact addr_add (by simp only at this; omega)
+  exact addr_add (by simp only at this; omega_using [hl, hl', this])
 
 theorem Lay.iR {p : Ptr} {l : Nat} (h : inB (rbs ++ wbs) p l = true) : InRegions (s.rd ++ s.wr) (pa s p) l := by
   obtain ⟨n, hn, hl⟩ := inB_spec h
-  exact inRegions_sub (L.rd (p.1, n) hn) hl (by have := L.small _ hn; omega)
+  exact inRegions_sub (L.rd (p.1, n) hn) hl (by have := L.small _ hn; omega_using [this])
 
 theorem Lay.iW {p : Ptr} {l : Nat} (h : inB wbs p l = true) : InRegions s.wr (pa s p) l := by
   obtain ⟨n, hn, hl⟩ := inB_spec h
-  exact inRegions_sub (L.wr (p.1, n) hn) hl (by have := L.small _ (List.mem_append_right _ hn); omega)
+  exact inRegions_sub (L.wr (p.1, n) hn) hl (by have := L.small _ (List.mem_append_right _ hn); omega_using [this])
 
 theorem Lay.cR {p : Ptr} {l : Nat} (h : inB (rbs ++ wbs) p l = true) : Covers [⟨pa s p, l⟩] (s.rd ++ s.wr) :=
   Covers.one (L.iR h)
@@ -238,7 +238,7 @@ theorem inB_sub {bs : List (Reg × Nat)} {r : Reg} {o L o' l : Nat} (h : inB bs 
   split at h
   · rename_i n hn
     simp only [hn, decide_eq_true_eq] at h ⊢
-    omega
+    omega_using [h2, h]
   · cases h
 
 theorem sepB_sub {bs : List (Reg × Nat)} {r : Reg} {o L o' l : Nat} {q : Ptr} {k : Nat}
@@ -249,7 +249,7 @@ theorem sepB_sub {bs : List (Reg × Nat)} {r : Reg} {o L o' l : Nat} {q : Ptr} {
   refine ⟨⟨inB_sub hp h2, hq⟩, ?_⟩
   rcases hs with hs | ⟨he, hs⟩
   · exact .inl hs
-  · exact .inr ⟨he, by omega⟩
+  · exact .inr ⟨he, by omega_using [h1, h2, hs]⟩
 
 theorem keepB_sub {bs : List (Reg × Nat)} {ws : List (Ptr × Nat)} {r : Reg} {o L o' l : Nat}
     (h : keepB bs ws (r, o) L = true) (h1 : o ≤ o') (h2 : o' + l ≤ o + L) : keepB bs ws (r, o') l = true := by

@@ -37,7 +37,7 @@ theorem rootPowLay (hc : CfgOk c) {j : Nat} (hj : j < 3) : PowLayP (rootPow c j)
   one := sl_below_own c hc.n10 (by decide)
   own := own_below_bits c hc.n10 j
   bits := bitsAt_le c hc.n10 hj
-  nbits := by show 1 ≤ 64 * c.n ∧ 64 * c.n < 2 ^ 15; have := hc.n0; have := hc.n10; omega
+  nbits := by show 1 ≤ 64 * c.n ∧ 64 * c.n < 2 ^ 15; have := hc.n0; have := hc.n10; omega_arith
   acc_tmp := sl_apart c (by decide)
   acc_one := sl_apart c (by decide)
   base_acc := sl_apart c (by decide)
@@ -65,7 +65,7 @@ theorem rootPower_ok (hc : CfgOk c) {e j : Nat} (hj : j < 3) (he : e < 2 ^ (64 *
   have hsz : size = 8192 := rfl
   change WP isa (.seq (.block (VG.Impl.Mont.PPC64LE.setConst c.n (c.sl EXPP) e))
     (.seq (bits (c.sl EXPP) (bitsAt c.n j) (8 * c.n)) (pow (rootPow c j) c.SP))) s _
-  refine WP.seq (WP.mono (setConst_ok hw.ws hw.at3 (o := c.sl EXPP) (by omega) he) fun s₁ ⟨O₁, v₁, k₁⟩ => ?_)
+  refine WP.seq (WP.mono (setConst_ok hw.ws hw.at3 (o := c.sl EXPP) (by omega_using [hE]) he) fun s₁ ⟨O₁, v₁, k₁⟩ => ?_)
   rw [← wordsVal_eq_val32] at v₁
   have hw₁ := hw.of_kp k₁
   refine WP.seq (WP.mono (tbl_bits_ok hc hw₁ (i := EXPP) (j := j) (by decide) hj) fun s₂ ⟨b₂, k₂, O₂⟩ => ?_)
@@ -74,7 +74,7 @@ theorem rootPower_ok (hc : CfgOk c) {e j : Nat} (hj : j < 3) (he : e < 2 ^ (64 *
   have keep₂ : ∀ {i}, i < 45 → i ≠ EXPP → sv c base s₂ i = sv c base s i := fun hi hiE =>
     (sv_unch O₂.unch h7 hn hi (apart_tbl h7 hi j)).trans
       (sv_unch O₁.unch h7 hn hi (fun w hw' => by
-        rw [List.mem_singleton.mp hw']; have := sl_apart c hiE; dsimp only; omega))
+        rw [List.mem_singleton.mp hw']; have := sl_apart c hiE; dsimp only; omega_using [this]))
   refine WP.mono (pow_ok hc.fpk hc.fpm (modP hc) rfl (rootPowLay hc hj) (unitMod_pow_two hc.p_odd _) hw₂
     (by show sv c base s₂ W2 < _; rw [keep₂ (by decide) (by decide)]; exact hB)
     (by show sv c base s₂ ONEP = _; rw [keep₂ (by decide) (by decide)]; exact hO) b₂ he)
@@ -93,6 +93,6 @@ theorem rootThree_ok (hc : CfgOk c) (hp : c.C.p % 4 = 3) {base : Addr} {s : Stat
       toM c.C.p (2 ^ (64 * c.n)) (sv c base s' ACC) =
         toM c.C.p (2 ^ (64 * c.n)) (sv c base s W2) ^ ((c.C.p + 1) / 4) := by
   simp only [Impl.EcKey.Compressed.PPC64LE.rootCandidate, hp, ↓reduceIte]
-  exact rootPower_ok hc (by decide) (by have := hc.p_lt; have := hc.p_ge; omega) hw hB hO
+  exact rootPower_ok hc (by decide) (by have := hc.p_lt; have := hc.p_ge; omega_arith) hw hB hO
 
 end VG.Proof.EcKey.Compressed.PPC64LE

@@ -60,12 +60,12 @@ theorem signEntry_ok {s0 : State} {B sp qlen digest digestLen : Addr} {Z : Nat}
   have hr2 : ∀ j, 1 ≤ j → j ≤ 3 → InRegions (s2.rd ++ s2.wr) (off sp (8 * j)) 8 := by
     intro j hj1 hj3
     rw [hk12.2.1, hk12.2.2]
-    exact hr j hj1 (by omega)
+    exact hr j hj1 (by omega_using [hj3])
   have hstack (j : Nat) (hj1 : 1 ≤ j) (hj3 : j ≤ 3) : word s2.mem sp (8 * j) = word s0.mem sp (8 * j) := by
-    rw [entry_stack_frame hf2 (Nat.le_trans (by decide) hZ) (hsep j hj1 (by omega)), hmem1]
+    rw [entry_stack_frame hf2 (Nat.le_trans (by decide) hZ) (hsep j hj1 (by omega_using [hj3])), hmem1]
   rw [WP.block_append_iff]
   refine WP.mono (signFields_ok (hs.congr hk12.2.2) ((hk2.gpr (by decide)).trans h11)
-    ((hreg .rsp (by decide)).trans hsp) hZ hr2 (fun j h1 h3 => hsep j h1 (by omega))
+    ((hreg .rsp (by decide)).trans hsp) hZ hr2 (fun j h1 h3 => hsep j h1 (by omega_using [h3]))
     ((hstack 1 (by decide) (by decide)).trans hq) ((hstack 2 (by decide) (by decide)).trans hd)
     ((hstack 3 (by decide) (by decide)).trans hdl)) fun s3 ⟨hmem3, hk3⟩ => ?_
   rw [hreg .rdi (by decide), hreg .rdx (by decide), hreg .r8 (by decide), hreg .r9 (by decide)] at hmem3
@@ -91,7 +91,7 @@ theorem signEntry_ok {s0 : State} {B sp qlen digest digestLen : Addr} {Z : Nat}
     ?_, ?_, ?_, (hk123.trans hk4).mono (by decide)⟩
   · exact (hsame .signature (by decide)).trans hunused
   · intro i hi
-    exact ((hf4.word (Or.inl (by omega)) (by omega)).trans (entry_saved_frame hf3 hi)).trans
+    exact ((hf4.word (Or.inl (by omega_using [hi])) (by omega_using [hi])).trans (entry_saved_frame hf3 hi)).trans
       ((hsaved i hi).trans (hk1.gpr (by simpa using saved_ne_r11 hi)))
   · have hwide2 : Outside B 0 pWorkspace s0.mem s2.mem := by
       rw [← hmem1]

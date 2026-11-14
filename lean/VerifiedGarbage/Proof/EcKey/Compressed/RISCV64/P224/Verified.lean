@@ -148,10 +148,10 @@ theorem dpre_of {s : State} (h : decRVC.pre s) : DPre s := by
   refine ⟨fun i hi => hc'.held1 i (by rw [hl]; exact hi), hc'.aligned List.mem_cons_self,
     by rw [hrd']; simp, hf, fun d hd' => ?_⟩
   have hcn : (⟨s.syms sqrtSym, 12288⟩ : Region).Contains (s.syms sqrtSym + BitVec.ofNat 64 d) 1 :=
-    Offset.contains_base _ (by omega) (by omega)
+    Offset.contains_base _ (by omega_using [hd']) (by omega_using [hd'])
   have := hd _ hcn
   simp only [Region.Contains, Nat.not_le] at this
-  simp only [VG.Proof.Mont.ofs]; omega
+  simp only [VG.Proof.Mont.ofs]; omega_using [this]
 
 /-! ## Decompression's constant time, relating two runs -/
 
@@ -259,7 +259,7 @@ theorem digit_ct (j : Nat) (hj : j < 24) :
   | 21, _ => exact ⟨_, by taint_decide⟩
   | 22, _ => exact ⟨_, by taint_decide⟩
   | 23, _ => exact ⟨_, by taint_decide⟩
-  | _ + 24, h => exact absurd h (by omega)
+  | _ + 24, h => exact absurd h (by omega_using [])
 
 theorem digits_rel : ∀ j, j ≤ 24 → RelCT isa (Two (Φd 0)) (digits j) (Two (Φd j))
   | 0, _ => by
@@ -267,9 +267,9 @@ theorem digits_rel : ∀ j, j ≤ 24 → RelCT isa (Two (Φd 0)) (digits j) (Two
     exact two_post (two_taint [.s0, .s4, .s5] (pins_Φd 0) (hc := .block [] 1024) rfl) fun _ _ h => WP.block_nil h
   | j + 1, hj => by
     rw [digits]
-    obtain ⟨hc, h⟩ := digit_ct j (by omega)
-    exact RelCT.seq (digits_rel j (by omega)) (two_post (two_taint _ (pins_Φd j) h)
-      fun a s ⟨s₀, h2, F, D⟩ => WP.mono (digit_ok (by omega) F D) fun s' D' => ⟨s₀, h2, F, D'⟩)
+    obtain ⟨hc, h⟩ := digit_ct j (by omega_using [hj])
+    exact RelCT.seq (digits_rel j (by omega_using [hj])) (two_post (two_taint _ (pins_Φd j) h)
+      fun a s ⟨s₀, h2, F, D⟩ => WP.mono (digit_ok (by omega_using [hj]) F D) fun s' D' => ⟨s₀, h2, F, D'⟩)
 
 theorem tail_ct : RelCT isa (Two (Φd 24)) tail224 fun _ _ => True :=
   two_taint _ pins_tail (by taint_decide)

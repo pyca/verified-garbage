@@ -24,7 +24,7 @@ theorem witnessRound_ok (M : Mont) (K : Kernel) {s : State} {B : Addr} {Z w N b 
       ModulusReady t B Z w N ∧ word t.mem B (8 * kFlag) = mask (Proof.MillerRabin.Round.round N b) ∧
       Frm B (witnessRoundRanges w) s.mem t.mem ∧ Keep mmRegs s t := by
   unfold Impl.Dsa.AArch64.Generation.witnessRound
-  refine WP.seq (WP.mono (witnessMont_ok M h hEZ hodd (by omega) hx)
+  refine WP.seq (WP.mono (witnessMont_ok M h hEZ hodd (by omega_using [h3]) hx)
     fun u ⟨hu, hxu, fu, ku⟩ => ?_)
   have hcu : MrCtx u B Z w N (wv u.mem B (slot w aB) w) :=
     ⟨hu.ws, hu.inverse, hu.modulus, rfl, hu.r1, hu.rm1⟩

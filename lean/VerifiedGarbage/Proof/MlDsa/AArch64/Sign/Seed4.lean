@@ -95,9 +95,9 @@ theorem slot4_ok {p : Params} {D : Nat} {σ : State} {e j : Nat} (hj : j < 4)
   refine WP.seq (WP.mono (copySeed4_ok L csrc cdst csep) fun s1 ⟨hP1,k1,b1⟩ => ?_)
   rw [WP.block_append_iff]
   refine WP.mono (setB_ok (L.post hP1) (p := sc (oRS4+34*j+32)) (v := (e+j)%p.ℓ)
-    (by dsimp only [oRS4]; omega) cw1 (by change Reg.x28 ∈ keptRegs; decide)) fun s2 ⟨hP2,k2,m2⟩ => ?_
+    (by dsimp only [oRS4]; omega_using [hj]) cw1 (by change Reg.x28 ∈ keptRegs; decide)) fun s2 ⟨hP2,k2,m2⟩ => ?_
   refine WP.mono (setB_ok ((L.post hP1).post hP2) (p := sc (oRS4+34*j+33)) (v := (e+j)/p.ℓ)
-    (by dsimp only [oRS4]; omega) cw2 (by change Reg.x28 ∈ keptRegs; decide)) fun t ⟨hP3,k3,m3⟩ => ?_
+    (by dsimp only [oRS4]; omega_using [hj]) cw2 (by change Reg.x28 ∈ keptRegs; decide)) fun t ⟨hP3,k3,m3⟩ => ?_
   have hp12 := PPostB.trans hP1 hP2 (ws := [(sc (oRS4+34*j),32),(sc (oRS4+34*j+32),1)])
     (by simp [sc,keptRegs]) (by simp) (by simp)
   have hp := PPostB.trans hp12 hP3 (ws := [(sc (oRS4+34*j),32),(sc (oRS4+34*j+32),1),(sc (oRS4+34*j+33),1)])
@@ -115,7 +115,7 @@ theorem slot4_ok {p : Params} {D : Nat} {σ : State} {e j : Nat} (hj : j < 4)
       exact bytes1_write _ _ _
     · rw [pa_sc_add,m3,hP3.pa (by change Reg.x28 ∈ keptRegs; decide)]
       exact bytes1_write _ _ _
-  · rw [L.keepBytes hp (ckprev k (by omega))]
-    exact h.done k (by omega)
+  · rw [L.keepBytes hp (ckprev k (by omega_using [hk, heq]))]
+    exact h.done k (by omega_using [hk, heq])
 
 end VG.Proof.MlDsa.AArch64.Sign

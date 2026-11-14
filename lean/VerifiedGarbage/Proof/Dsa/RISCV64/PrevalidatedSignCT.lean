@@ -111,14 +111,14 @@ theorem km_of {v : VD} {s : State} (h : C0sp v s) : KM v := by
   obtain ⟨hp, rfl⟩ := h
   obtain ⟨hsh, hpub, -⟩ := spre_valid hp
   have hv := hp.1.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.1
-  have b0 := vdS_bytes s (o := 0) (k := (s.gpr .a4).toNat) (by omega)
+  have b0 := vdS_bytes s (o := 0) (k := (s.gpr .a4).toNat) (by omega_using [])
   rw [off, BitVec.add_zero] at b0
   have ep : pOf s.mem (slayOf s) (s.gpr .a2) = (vdS s).p := by rw [pOf]; exact congrArg _ b0
   have eq : qOf s.mem (slayOf s) (s.gpr .a2) = (vdS s).q := by
-    rw [qOf]; exact congrArg _ (vdS_bytes s (by simp only [slayOf]; omega))
+    rw [qOf]; exact congrArg _ (vdS_bytes s (by simp only [slayOf]; omega_using []))
   rw [ep, eq] at hsh hpub
   have bd := VG.Proof.Dsa.supported_bounds hsh.1
-  exact ⟨hsh.1, hsh.2.2, hsh.2.1, (pmod_iff (by omega) (by omega)).mp hpub.2.1⟩
+  exact ⟨hsh.1, hsh.2.2, hsh.2.1, (pmod_iff (by omega_using [bd]) (by omega_using [bd])).mp hpub.2.1⟩
 
 theorem kmX1 {v : VD} {u : State} (h : ΦX1sp v u) : KM v := at_pure (G := KM) (fun _ _ h => km_of h) h.1
 theorem kmX2 {v : VD} {u : State} (h : ΦX2sp v u) : KM v := at_pure (G := KM) (fun _ _ h => kmX1 h) h.1
@@ -136,14 +136,14 @@ theorem tv_of {v : VD} {s : State} (B : Base v s) (hk : KM v) : TV v := by
   obtain ⟨hsz, hp, hq, -⟩ := hk
   have bd := VG.Proof.Dsa.supported_bounds hsz
   have hl := B.q_lt
-  refine ⟨hsz, ⟨by omega, hq, hl, q_bits (by omega) hl, by omega, hp⟩, fun m => ?_⟩
+  refine ⟨hsz, ⟨by omega_using [bd], hq, hl, q_bits (by omega_using [hq]) hl, by omega_using [bd], hp⟩, fun m => ?_⟩
   have hq8 : Spec.Dsa.bitLength v.q = 8 * (Spec.Dsa.bitLength v.q / 8) := by
     have : Spec.Dsa.supportedSizes (Spec.Dsa.bitLength v.p) (Spec.Dsa.bitLength v.q) := hsz
-    unfold Spec.Dsa.supportedSizes at this; omega
+    unfold Spec.Dsa.supportedSizes at this; omega_using [this]
   refine Nat.lt_of_lt_of_le (VG.Proof.Dsa.decodeBE_lt _) ?_
   rw [VG.Proof.Bignum.bytesAt_length]
   refine Nat.le_trans (Nat.pow_le_pow_right (by decide) (Nat.min_le_right _ _)) ?_
-  have := pow_bitLength_le (q := v.q) (by omega)
+  have := pow_bitLength_le (q := v.q) (by omega_using [hq])
   rw [hq8, Nat.pow_mul] at this
   exact this
 
@@ -191,12 +191,12 @@ theorem setMask_TS {v : VD} {s : State} (h : ΦRsp v s) :
   have hZ := hL.z256
   have P : PK v t := ⟨⟨c.base, c.inp, c.inv, c.p0, c.p24⟩, c.lens, c.q0, os₀.keep (r₂.trans r₁) (w₂.trans w₁)⟩
   obtain ⟨_, hal0⟩ := ScrL.hdr c.base.scr hL (d := 0) (by decide) (by decide)
-  have hst : InRegions t.wr (off v.L.S 0) 8 := c.base.scr.st (by omega)
+  have hst : InRegions t.wr (off v.L.S 0) 8 := c.base.scr.st (by omega_using [hZ])
   refine WP.mono (WP.keep [.a0] (Q := fun u => u.mem = t.mem.writeW (off v.L.S 0) (mask true))
     (by brun [PrevalidatedSign.setMask, exec_li (show imm12 (-1) by decide), hMask, c.base.regs.s6, hst, hal0]; rfl)
     (by decide) (by rfl)) fun u ⟨mu, ku⟩ => ?_
   have wo : Outside v.L.S hMask 8 t.mem u.mem := by
-    rw [mu]; exact writeW_outside t.mem v.L.S _ (by simp only [hMask]; omega)
+    rw [mu]; exact writeW_outside t.mem v.L.S _ (by simp only [hMask]; omega_using [])
   refine ⟨⟨P.frame ku ⟨c.inp.env.keep ku, (ku.gpr (by decide)).trans c.inp.s6⟩ ?_ (BKept.ofMask hL wo)
       (mask_arrP hL wo 0 (by decide)) (mask_arrP hL wo 24 (by decide)) (keepQ_arr0 hL (mask_keepQ hL wo)),
     ⟨true, by rw [mu]; exact word_writeW_self t.mem v.L.S hMask _⟩⟩, gsR h, tv_of c.base (kmR h)⟩

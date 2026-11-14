@@ -31,7 +31,7 @@ theorem scratchAddr_ok {b : BitVec 32} {s : State} (hc : Ctx b s) (o : Nat) (ho 
   change u.gpr .r0 + u.gpr .r12 = _
   rw [hu.other _ (by decide), hc.r0, hu.gpr]
   refine congrArg (b + ·) (BitVec.eq_of_toNat_eq ?_)
-  rw [movw_nat (by omega), toNat_imm (by omega)]
+  rw [movw_nat (by omega_using [ho]), toNat_imm (by omega_using [ho])]
 
 /-- `lr` stored at `LRS`. -/
 theorem saveLr_ok {b : BitVec 32} {s : State} (hc : Ctx b s) :

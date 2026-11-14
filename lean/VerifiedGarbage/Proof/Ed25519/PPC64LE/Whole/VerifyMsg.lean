@@ -51,7 +51,7 @@ theorem verCall_pre {s t : State} (hp : VerPre s) (ha : VerArgs s t) (sy : t.sym
     by rw [ce _ (by decide), ce _ (by decide), ha.r5, ha.r6]; exact hp.cF.symm.sub_left (Region.sub_prefix (by decide)),
     by rw [cy]; exact hp.tfit, fun q hq => ?_, by rw [cy, ce _ (by decide), ha.r6]; exact hp.tC⟩
   rw [cy, cm, ← hp.twords q hq]
-  refine ha.inv.frame.readW (r := vtbR s) (Offset.contains_base _ (by omega) (by omega)) (fun r hr => ?_) (by decide)
+  refine ha.inv.frame.readW (r := vtbR s) (Offset.contains_base _ (by omega_using [hq]) (by omega_using [hq])) (fun r hr => ?_) (by decide)
   simp only [verW, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl
   · exact hp.tC
@@ -96,7 +96,7 @@ theorem verifyMessage_wp (C : ShaOK) (hR : RhsOk) {s : State} (hp : VerPre s) :
   have hFw : (⟨s.gpr .r8, 192⟩ : Region) ∈ t'.rd ++ t'.wr := List.mem_append_right _ (ver_Fw hp h')
   have hrl : ∀ p ∈ restoreList 128 verifyRegs, p.2 + 8 ≤ 192 := by decide
   refine restore_ok h' (by decide) (h'.regs _ (by decide)) (by decide) (by decide) (by decide) (by decide)
-    (fun p hp' => in_base hFw (hrl p hp') (by have := hrl p hp'; omega))
+    (fun p hp' => in_base hFw (hrl p hp') (by have := hrl p hp'; omega_using [this]))
     fun t₅ g₅ sp₅ lr₅ _ o₅ => ⟨g₅, sp₅, lr₅, ?_⟩
   rw [o₅ _ (by decide) (by decide), hr]
 

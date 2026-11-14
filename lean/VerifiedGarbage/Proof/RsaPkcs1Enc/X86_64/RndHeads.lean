@@ -25,7 +25,7 @@ theorem statusHead_ok {s u : State} (hp : RPre s) {i : Nat} {ps : List Byte} (h 
       v.gpr .rcx = BitVec.ofNat 64 (psLen s) ∧ v.gpr .r10 = BitVec.ofNat 64 0 := by
   have hF := fb_toNat hp
   have hs : Scr u (fb s) frameBytes := Scr.of_mem (by rw [h.wr]; exact List.mem_cons_self ..)
-    (by have := hF.1; omega)
+    (by have := hF.1; omega_using [hF])
   xrun [status, h.rsp, off_buf, ea_sp, fb_off, hs.ld (d := oPs) (by decide),
     show u.mem.readW (off (fb s) oPs) 64 = word u.mem (fb s) oPs from rfl, h.slots.sPs]
 
@@ -35,7 +35,7 @@ theorem zeroHead_ok {s t : State} (hp : RPre s) (hsp : t.gpr .rsp = fb s)
       fun u => u.gpr .rdi = s.gpr .rdi ∧ u.gpr .r10 = s.gpr .r8 := by
   have hF := fb_toNat hp
   have hs : Scr t (fb s) frameBytes := Scr.of_mem (by rw [hwr]; exact List.mem_cons_self ..)
-    (by have := hF.1; omega)
+    (by have := hF.1; omega_using [hF])
   xrun [ea_sp, hsp, fb_off, hs.ld (d := oOut) (by decide), hs.ld (d := oK) (by decide),
     show t.mem.readW (off (fb s) oOut) 64 = word t.mem (fb s) oOut from rfl,
     show t.mem.readW (off (fb s) oK) 64 = word t.mem (fb s) oK from rfl, hsl.sOut, hsl.sK]
@@ -47,11 +47,11 @@ theorem budgetHead_ok {s t : State} (hp : RPre s) (hsp : t.gpr .rsp = fb s)
   have hF := fb_toNat hp
   have hP := hp.ps
   have hs : Scr t (fb s) frameBytes := Scr.of_mem (by rw [hwr]; exact List.mem_cons_self ..)
-    (by have := hF.1; omega)
+    (by have := hF.1; omega_using [hF])
   have hcap : BitVec.ofNat 64 (psLen s) + BitVec.signExtend 64 (128 : BitVec 32) = BitVec.ofNat 64 (cap s) := by
     rw [show BitVec.signExtend 64 (128 : BitVec 32) = BitVec.ofNat 64 128 by decide, ← BitVec.ofNat_add]; rfl
   have hcapN : (BitVec.ofNat 64 (cap s)).toNat = cap s := by
-    rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt (by unfold cap Spec.RsaPkcs1Enc.padEntropy; omega)
+    rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt (by unfold cap Spec.RsaPkcs1Enc.padEntropy; omega_using [hP])
   have hcf : decide ((stackArg s 4).toNat < (BitVec.ofNat 64 (cap s)).toNat) =
       decide ((stackArg s 4).toNat < cap s) := by rw [hcapN]
   xrun [budget, ea_sp, hsp, fb_off, hs.ld (d := oPs) (by decide), hs.ld (d := oTape) (by decide),

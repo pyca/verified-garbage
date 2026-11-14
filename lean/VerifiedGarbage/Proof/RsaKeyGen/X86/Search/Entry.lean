@@ -55,7 +55,7 @@ theorem remaining_le (h : SearchInput p o) : p.remaining ≤ 32768 := by
   have hr := h.facts.remaining
   have hv := h.len_valid
   unfold primeLimit at hr
-  split at hr <;> omega
+  split at hr <;> omega_using [hv, hr]
 
 end SearchInput
 
@@ -63,7 +63,7 @@ end SearchInput
 theorem push_frame {p : SearchPublic} {o : State} (h : SearchInput p o) :
     Frame (changes o) o.mem (pushed pushRegs o).mem := by
   have hroom : 216 ≤ (o.gpr .esp).toNat := h.abi.stackLow
-  refine (pushed_frame (rs := pushRegs) (by decide) (by simp only [List.length_cons, List.length_nil]; omega)).sub
+  refine (pushed_frame (rs := pushRegs) (by decide) (by simp only [List.length_cons, List.length_nil]; omega_using [hroom])).sub
     fun r hr => ?_
   obtain rfl := List.mem_singleton.mp hr
   exact ⟨below (o.gpr .esp) 216, by simp [changes], below_sub (by decide) hroom⟩
@@ -71,7 +71,7 @@ theorem push_frame {p : SearchPublic} {o : State} (h : SearchInput p o) :
 theorem push_saved {p : SearchPublic} {o : State} (h : SearchInput p o) :
     Saved (pushed pushRegs o).mem p.S1 o := by
   have hroom : 216 ≤ (o.gpr .esp).toNat := h.abi.stackLow
-  have hn : 4 * pushRegs.length ≤ (o.gpr .esp).toNat := by simp only [List.length_cons, List.length_nil]; omega
+  have hn : 4 * pushRegs.length ≤ (o.gpr .esp).toNat := by simp only [List.length_cons, List.length_nil]; omega_using [hroom]
   have hS : p.S1 = (pushed pushRegs o).gpr .esp := by rw [SearchPublic.S1, h.sp_eq, pushed_esp]; rfl
   have w (i : Nat) (hi : i < 4) := pushed_word (rs := pushRegs) (s := o) (by decide) hn hi
   rw [hS]
@@ -109,18 +109,18 @@ theorem arg_ea (hb : SearchBase p o s) {i d : Nat} (hd : 20 + 4 * i = d) :
   rw [hb.sp, SearchPublic.S1, hb.input.sp_eq, ← hd]
   unfold argAddr
   congr 1
-  rw [show 20 + 4 * i = 16 + (4 + 4 * i) by omega, BitVec.ofNat_add, ← BitVec.add_assoc, BitVec.sub_add_cancel]
+  rw [show 20 + 4 * i = 16 + (4 + 4 * i) by omega_using [], BitVec.ofNat_add, ← BitVec.add_assoc, BitVec.sub_add_cancel]
 
 theorem arg_in (hb : SearchBase p o s) {i : Nat} (hi : i < 12) : InRegions (s.rd ++ s.wr) (argAddr o i) 4 := by
   have A := hb.input.abi
   have a0 : argAddr o 0 = (o.gpr .esp).setWidth 64 + BitVec.ofNat 64 4 :=
-    VG.Proof.MlKem.X86.ea_off (by have := A.stackBound; omega)
+    VG.Proof.MlKem.X86.ea_off (by have := A.stackBound; omega_using [this])
   have ai : argAddr o i = (o.gpr .esp).setWidth 64 + BitVec.ofNat 64 (4 + 4 * i) :=
-    VG.Proof.MlKem.X86.ea_off (by have := A.stackBound; omega)
+    VG.Proof.MlKem.X86.ea_off (by have := A.stackBound; omega_using [hi, this])
   refine ⟨aR o, ?_, ?_⟩
   · rw [hb.rd, hb.wr, A.wr]; simp
   · rw [ai, show aR o = ⟨argAddr o 0, 48⟩ from rfl, a0]
-    exact Offset.contains _ (by omega) (by omega) (by omega)
+    exact Offset.contains _ (by omega_using []) (by omega_using [hi]) (by omega_using [])
 
 theorem arg_val (hb : SearchBase p o s) {i : Nat} (hi : i < 12) : s.mem.readW (argAddr o i) 32 = arg o i :=
   hb.input.arg_frame hb.frame hi
@@ -132,7 +132,7 @@ theorem low_half {m : Mem} {a : Addr} {n : Nat} (h : m.readW a 64 = BitVec.ofNat
   rw [← VG.Proof.Rc2.Word32.readW64_lo, h]
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.extractLsb'_toNat, BitVec.toNat_ofNat, Nat.shiftRight_zero]
-  omega
+  omega_using []
 
 theorem param_eq (extra i : Nat) : param extra i = at_ .esp (4 + 4 * i + 4 * (pushWords + extra)) := rfl
 
@@ -153,7 +153,7 @@ theorem entry_ok {p : SearchPublic} {o : State} (h : SearchInput p o) :
     have hd : (sR o).Disjoint (below (o.gpr .esp) 16) :=
       A.lowS.symm.sub_right (by rw [h.low_eq]; exact below_sub (by decide) A.stackLow)
     have e := (pushed_frame (rs := pushRegs) (s := o) (by decide)
-      (by simp only [List.length_cons, List.length_nil]; have := A.stackLow; simp only [stack] at this; omega)).readW (r := sR o)
+      (by simp only [List.length_cons, List.length_nil]; have := A.stackLow; simp only [stack] at this; omega_using [this])).readW (r := sR o)
       (a := (arg o 11).setWidth 64) (w := 32) cs (fun r hr => by
         obtain rfl := List.mem_singleton.mp hr; exact hd) (by decide)
     rw [e]

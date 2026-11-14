@@ -114,7 +114,7 @@ theorem data_entry (hs : (finalContract post).pre s) :
     Spec.Aes.bytesAt (entry s).mem (s.gpr .r6) (s.gpr .r7).toNat = Spec.Aes.bytesAt s.mem (s.gpr .r6) (s.gpr .r7).toNat := by
   have h := hs
   obtain ⟨-, -, -, -, -, -, -, dDS, -, -, fD, -⟩ := h
-  exact Proof.Modes.bytesAt_frame (entry_frame s) (extra_apart dDS) (by omega)
+  exact Proof.Modes.bytesAt_frame (entry_frame s) (extra_apart dDS) (by omega_using [])
 
 theorem key_entry (hs : (finalContract post).pre s) (R : Nat) (hR : R = 18 ∨ R = 24) :
     schedWords (entry s).mem (s.gpr .r3) R = schedWords s.mem (s.gpr .r3) R := by
@@ -123,7 +123,7 @@ theorem key_entry (hs : (finalContract post).pre s) (R : Nat) (hR : R = 18 ∨ R
   simp only [schedWords]
   refine List.map_congr_left fun i hi => ?_
   have hi := List.mem_range.mp hi
-  have hl : 8 * i + 8 ≤ 272 := by simp only [Spec.Camellia.scheduleLength] at hi; omega
+  have hl : 8 * i + 8 ≤ 272 := by simp only [Spec.Camellia.scheduleLength] at hi; omega_using [hR, hi]
   exact Proof.Camellia.wordAt_frame (entry_frame s) fun r hr =>
     (extra_apart dKS r hr).sub_left (VG.Offset.sub_base _ hl)
 
@@ -186,9 +186,9 @@ theorem run_wrapped (hs : (finalContract post).pre s) {M : Mode} {X : State → 
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl
     · rw [eS]; exact VG.Offset.disjoint_base _ (by simp [extraSlot_eq, Serial.core, slots_eq])
-        (by rw [modeSlots_eq] at hfit; rw [extraSlot_eq]; omega)
+        (by rw [modeSlots_eq] at hfit; rw [extraSlot_eq]; omega_using [])
     · rw [eS]; exact VG.Offset.disjoint _ (.inr (by simp [extraSlot_eq, Serial.core, slots_eq]))
-        (by rw [modeSlots_eq] at hfit; rw [extraSlot_eq]; omega) (by rw [modeSlots_eq] at hfit; simp [Serial.core, slots_eq])
+        (by rw [modeSlots_eq] at hfit; rw [extraSlot_eq]; omega_using []) (by rw [modeSlots_eq] at hfit; simp [Serial.core, slots_eq])
     · rw [dataR_entry]
       exact (extra_apart dDS _ (List.mem_singleton_self _)).symm
     · have e : ivR (entry s) Serial.core = ⟨s.gpr .r5, 16⟩ := by simp [ivR, P, entry_gpr, Serial.core]

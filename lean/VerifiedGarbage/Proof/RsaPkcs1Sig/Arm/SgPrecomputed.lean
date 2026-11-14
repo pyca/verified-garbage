@@ -130,7 +130,7 @@ theorem in_of_preP {s : State} (h : specP.pre s) : In (ep s true) (entered frame
   have hq := bytesE (R := ⟨State.addr (stackArg s 7), (stackArg s 8).toNat⟩) kQ (by show (stackArg s 8).toNat ≤ 2 ^ 64; omega_arith)
   have hw := wordsE kPre' (by omega_arith)
   have le : Spec.Rsa.precomputedWords (s.gpr .r3).toNat ≤ (stackArg s 18).toNat := by
-    rw [prl, Spec.Rsa.privatePrecomputedWords]; omega
+    rw [prl, Spec.Rsa.privatePrecomputedWords]; omega_using []
   constructor
   rotate_left
   · exact kv

@@ -68,7 +68,7 @@ theorem prefix_ct (backend : MontBackend) {p : Inputs} {sp : BitVec 32}
       have value := CachedSample.layout_width p positive
       unfold Proof.Ffdh.ScalarWidth.width
       change (ScalarLayout.vetted p).width=max 1 ((bits p+7)/8)
-      rw [Nat.max_eq_right (by omega)]
+      rw [Nat.max_eq_right (by omega_using [positive])]
       exact value
     rw [widthEq] at width
     exact ⟨context.locals,context.saved 4 (by simp [slots]),width,mask⟩

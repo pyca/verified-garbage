@@ -37,9 +37,9 @@ theorem kb_sub (G : GP) {o : Nat} (ho : o ≤ sK G.pLen) (h16 : sK G.pLen - o < 
   have e : (BitVec.ofNat 16 (sK G.pLen - o)).setWidth 32 = BitVec.ofNat 32 (sK G.pLen - o) := by
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]
-    omega
+    omega_using [h16]
   rw [e, GP.KB]
-  obtain ⟨d, hd⟩ : ∃ d, sK G.pLen = d + o := ⟨sK G.pLen - o, by omega⟩
+  obtain ⟨d, hd⟩ : ∃ d, sK G.pLen = d + o := ⟨sK G.pLen - o, by omega_using [ho]⟩
   rw [hd, Nat.add_sub_cancel, BitVec.ofNat_add,
     show G.scr + (BitVec.ofNat 32 d + BitVec.ofNat 32 o) = G.scr + BitVec.ofNat 32 o + BitVec.ofNat 32 d by
       ac_rfl, BitVec.add_sub_cancel]
@@ -63,7 +63,7 @@ theorem scr_ok {s : State} {L o : Nat} {d : Reg} (r8 : s.gpr .r8 = G.KB) (hL : L
   refine wp_movw fun s₁ u₁ => wp_dp (op2_reg _ _) fun t u₂ => k t ?_
     ((u₁.rest (by simp)).trans (u₂.rest (by simp))) (by rw [u₂.mem, u₁.mem])
   rw [u₂.gpr, dpVal, u₁.gpr, u₁.other .r8 (by decide), r8]
-  exact kb_sub G ho (by omega)
+  exact kb_sub G ho (by omega_using [this])
 
 /-- The taint certificate of a piece whose addresses come from `r8`, from
 its hint on one instance: the analysis looks at no immediate. -/
@@ -76,14 +76,14 @@ theorem copyS_cert (L dst src n : Nat) : Cert8 (copyS L dst src n) :=
 /-- The range `[o, o + n)` of `scratch`, below the key working space. -/
 theorem SS.addr {σ s : State} {c : Cfg} (h : SS G σ c s) {o n : Nat} (ho : o + n ≤ sK G.pLen) (hn : 0 < n) :
     State.addr (G.scr + BitVec.ofNat 32 o) = G.sa o := by
-  have := h.gi.scrBig; exact h.gi.saddr (by omega)
+  have := h.gi.scrBig; exact h.gi.saddr (by omega_using [ho, hn, this])
 
 theorem SS.toNat {σ s : State} {c : Cfg} (h : SS G σ c s) {o : Nat} (ho : o ≤ sK G.pLen) :
     (G.scr + BitVec.ofNat 32 o).toNat = G.scr.toNat + o := by
   have := h.gi.scrBig; have := h.gi.scrFit
-  have : 0 < kz G.pLen := by simp only [kz]; omega
-  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega : o < 2 ^ 32)]
-  exact Nat.mod_eq_of_lt (by omega)
+  have : 0 < kz G.pLen := by simp only [kz]; omega_using []
+  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_arith : o < 2 ^ 32)]
+  exact Nat.mod_eq_of_lt (by omega_arith)
 
 /-- A copy between two ranges of `scratch` below the key working space. -/
 theorem copyS_vp {F Q : State → State → Prop} {c : State → Cfg} {L dst src n : Nat}
@@ -101,8 +101,8 @@ theorem copyS_vp {F Q : State → State → Prop} {c : State → Cfg} {L dst src
   have hLv := h.lens
   subst hL
   simp only [copyS, copyN, List.append_assoc]
-  refine WP.seq (scr_ok (d := .r1) h.r8 rfl hLv (by omega) fun s₁ v₁ R₁ M₁ => ?_)
-  refine scr_ok (d := .r0) (by rw [R₁.gpr _ (by decide)]; exact h.r8) rfl hLv (by omega) fun s₂ v₂ R₂ M₂ => ?_
+  refine WP.seq (scr_ok (d := .r1) h.r8 rfl hLv (by omega_using [hsr]) fun s₁ v₁ R₁ M₁ => ?_)
+  refine scr_ok (d := .r0) (by rw [R₁.gpr _ (by decide)]; exact h.r8) rfl hLv (by omega_using [hd]) fun s₂ v₂ R₂ M₂ => ?_
   refine wp_movw fun s₃ u₃ => WP.block_nil ?_
   have R : Rest [.r0, .r1, .r2, .r12, .lr] s s₃ :=
     ((R₁.mono (by simp)).trans (R₂.mono (by simp))).trans (u₃.rest (by simp))
@@ -110,16 +110,16 @@ theorem copyS_vp {F Q : State → State → Prop} {c : State → Cfg} {L dst src
   have ad := h.addr hd hn
   have as := h.addr hsr hn
   refine WP.mono (VG.Proof.Bignum.Arm.copyBuffer_ok s₃ (src := G.scr + BitVec.ofNat 32 src)
-    (dst := G.scr + BitVec.ofNat 32 dst) hn (by rw [h.toNat (by omega)]; omega)
-    (by rw [h.toNat (by omega)]; omega) (by omega)
+    (dst := G.scr + BitVec.ofNat 32 dst) hn (by rw [h.toNat (by omega_using [hsr])]; omega_using [big, fit, hsr])
+    (by rw [h.toNat (by omega_using [hd])]; omega_using [big, fit, hd]) (by omega_using [hn16])
     (by rw [as, R.rd, R.wr]
-        obtain ⟨r, hr, hc⟩ := gi.inScr (o := src) (n := n) (by omega)
+        obtain ⟨r, hr, hc⟩ := gi.inScr (o := src) (n := n) (by omega_using [big, hsr])
         exact ⟨r, List.mem_append_right _ hr, hc⟩)
-    (by rw [ad, R.wr]; exact gi.inScr (by omega))
-    (by rw [as, ad]; exact gi.sdisj (by omega) (by omega) (by omega))
+    (by rw [ad, R.wr]; exact gi.inScr (by omega_using [big, hd]))
+    (by rw [as, ad]; exact gi.sdisj (by omega_using [hsep]) (by omega_using [big, hsr]) (by omega_using [big, hd]))
     (by rw [u₃.other .r0 (by decide)]; exact v₂)
     (by rw [u₃.other .r1 (by decide), R₂.gpr .r1 (by decide)]; exact v₁)
-    (by rw [u₃.gpr]; apply BitVec.eq_of_toNat_eq; simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]; omega))
+    (by rw [u₃.gpr]; apply BitVec.eq_of_toNat_eq; simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]; omega_using [hn16]))
     fun t ⟨rd, fr, _, rest⟩ => k σ s t hs (R.trans (rest.mono (by simp)))
       (by rw [← M]; show Frame [⟨G.sa dst, n⟩] _ _; rw [← ad]; exact fr) ?_
   rw [← as, ← ad, ← M]; exact bytesAt_of_read rd

@@ -79,7 +79,7 @@ theorem setup_runs {E : Environment} {sp : BitVec 32} {s : State} {j pointer len
   have Hb := Hu.keep ((Aa.keeps.mono (rs' := [.ebx, .ecx]) (by decide)).trans (Bb.keeps.mono (by decide)))
     (by rw [Bb.mem, Aa.mem]; exact Outside.refl _ _ _ _)
   refine Hb.ptr_ok (arr j) (r := .esi) (t := .edx) (by decide) (by decide)
-    (by change arr E.n j < _; omega) fun c _ _ _ => ?_
+    (by change arr E.n j < _; omega_using [fits, nowrap]) fun c _ _ _ => ?_
   exact wp_addS rfl fun d _ _ => wp_subS rfl fun e _ _ => WP.block_nil trivial
 
 /-- One run's state between outputs. -/
@@ -98,15 +98,15 @@ theorem zeroExport_ok {E : Environment} {sp : BitVec 32} {s : State} (h : Input 
   change Outside E.base (arr E.n aZero) (S E.n) s.mem t.mem at O
   change val32 t.mem E.base (arr E.n aZero) (E.n + 2) = 0 at zero
   have clear : Keep E.base E.n [aZero] [] s.mem t.mem :=
-    Keep.of_arr (d := 0) (by simpa only [Nat.add_zero] using O) (by unfold S; omega) (by simp)
+    Keep.of_arr (d := 0) (by simpa only [Nat.add_zero] using O) (by unfold S; omega_using []) (by simp)
   have header : ∀ d, d + 4 ≤ hdr → slot t.mem E.base d = slot s.mem E.base d :=
     fun d hd => clear.slot hd (by simp)
   have input : Input E t := h.keep Ht.old K (by
     intro d hd
     apply BitVec.eq_of_toNat_eq
-    exact header d (by unfold hdr; omega))
+    exact header d (by unfold hdr; omega_using [hd]))
   have lowZero : num t.mem E.base E.n aZero = 0 := by
-    have Z := VG.Proof.Rsa.KeyWorkspace.val32_zero_part zero (a := 0) (c := E.n) (by omega)
+    have Z := VG.Proof.Rsa.KeyWorkspace.val32_zero_part zero (a := 0) (c := E.n) (by omega_using [])
     simpa only [Nat.mul_zero, Nat.add_zero] using Z
   have ownFrame := VG.Proof.Bignum.outside_frame O fit64
   refine ⟨⟨⟨input, lowZero, by rw [header kOk (by decide)]; exact bit⟩,
@@ -121,10 +121,10 @@ theorem RtExport.port_ok {E : Environment} {sp : BitVec 32} {s : State} (h : RtE
   let accept := decide (slot s.mem E.base kOk = 1)
   have mask : slot s.mem E.base kOk = if accept then 1 else 0 := by
     unfold accept
-    split <;> have := h.state.bit <;> simp_all <;> omega
+    split <;> have := h.state.bit <;> simp_all <;> omega_arith
   have g := h.state.input.outputs
   refine WP.mono (writeArray_ok (p := E.outputs.pointer i) (len := E.outputs.length i) h.args.valid
-    h.state.input.ws h.args.context (outputIndex_bound hi) (Ne.symm (outputIndex_zero hi)) (by omega) (by omega)
+    h.state.input.ws h.args.context (outputIndex_bound hi) (Ne.symm (outputIndex_zero hi)) (by omega_using [hi]) (by omega_using [hi])
     rfl
     (by simp only [VG.Proof.RsaKeyGen.X86.Key.OutputGeometry.length, BitVec.ofNat_toNat, BitVec.setWidth_eq]; rfl)
     (g.valid.lengthPositive i hi) (g.valid.lengthBound i hi) (g.valid.fit i hi)
@@ -133,7 +133,7 @@ theorem RtExport.port_ok {E : Environment} {sp : BitVec 32} {s : State} (h : RtE
   have input : Input E t := h.state.input.keep ht K (by
     intro d hd
     apply BitVec.eq_of_toNat_eq
-    exact header d (by unfold hdr; omega))
+    exact header d (by unfold hdr; omega_using [hd]))
   refine ⟨⟨⟨input, (other aZero (by decide) (outputIndex_zero hi)).trans h.state.zero, ?_⟩,
     ⟨h.args.valid, Ct, h.args.apart⟩⟩, K⟩
   rw [header kOk (by decide)]
@@ -194,9 +194,9 @@ theorem port_trace (E : Environment) (sp : BitVec 32) {i : Nat} (hi : i < 7) :
     (context_workspace P.right.args.valid P.right.args.context P.right.state.input.ws)
     P.left.args.context P.right.args.context
     (setup_runs (pointer := 2 * i) (length := 2 * i + 1) P.left.args P.left.state.input.ws (outputIndex_bound hi) (Ne.symm (outputIndex_zero hi))
-      (by omega) (by omega) P.left.state.bit)
+      (by omega_using [hi]) (by omega_using [hi]) P.left.state.bit)
     (setup_runs (pointer := 2 * i) (length := 2 * i + 1) P.right.args P.right.state.input.ws (outputIndex_bound hi) (Ne.symm (outputIndex_zero hi))
-      (by omega) (by omega) P.right.state.bit) A1 C1
+      (by omega_using [hi]) (by omega_using [hi]) P.right.state.bit) A1 C1
   have start : VG.X86.Taint.Agree (τr [.edi, .esp, .ebx, .ecx, .esi]) _ _ := agree_regs (by
     intro r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -211,7 +211,7 @@ theorem ports_trace (E : Environment) (sp : BitVec 32) (i count : Nat) (bound : 
   induction count generalizing i with
   | zero => exact RelCT.block_nil (fun _ _ P => P)
   | succ count ih =>
-    exact RelCT.seq (port_trace E sp (by omega)) (ih (i + 1) (by omega))
+    exact RelCT.seq (port_trace E sp (by omega_using [bound])) (ih (i + 1) (by omega_using [bound]))
 
 theorem status_trace (E : Environment) (sp : BitVec 32) :
     RelCT isa (RtExportPair E sp) (.block [.mov .eax (.mem (VG.Impl.Mont.X86.sc kStatus))])

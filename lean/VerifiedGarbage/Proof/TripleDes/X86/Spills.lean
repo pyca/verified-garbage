@@ -63,8 +63,8 @@ theorem spillStep_frame (i : Instr) (s s' : State)
       refine ⟨rfl, (Frame.refl _ _).writeW (List.mem_singleton_self _) _ ?_⟩
       simp only [State.ea, hb]
       change (spillRegion s).Contains (addr (s.gpr .ebp) m.disp) 4
-      rw [VG.X86.addr_eq (by omega)]
-      exact Offset.contains (addr32 (s.gpr .ebp)) (by omega) (by omega) (by decide)
+      rw [VG.X86.addr_eq (by omega_using [fit, hhi])]
+      exact Offset.contains (addr32 (s.gpr .ebp)) (by omega_using [hlo]) (by omega_using [hhi]) (by decide)
     · cases he
 
 theorem spillBlock_frame (is : List Instr) (s s' : State)

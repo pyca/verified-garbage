@@ -58,10 +58,10 @@ theorem mulW_saves {B : Addr} (lo n : Nat) (h1 : 1024 ≤ lo) (h2 : lo + n ≤ 1
   have hB : BITSB = 32 := rfl
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl
-  · exact Offset.disjoint _ (.inl (by omega)) (by omega) (by omega)
-  · exact Offset.disjoint _ (.inr (by omega)) (by omega) (by omega)
-  · exact Offset.disjoint _ (.inl (by omega)) (by omega) (by omega)
-  · exact Offset.disjoint _ (.inr (by omega)) (by omega) (by omega)
+  · exact Offset.disjoint _ (.inl (by omega_using [h2])) (by omega_using [h2]) (by omega_using [])
+  · exact Offset.disjoint _ (.inr (by omega_using [h1])) (by omega_using [h2]) (by omega_using [])
+  · exact Offset.disjoint _ (.inl (by omega_using [h2])) (by omega_using [h2]) (by omega_using [])
+  · exact Offset.disjoint _ (.inr (by omega_using [h1, hB])) (by omega_using [h2]) (by omega_using [hB])
 
 /-- The regions the verification writes are clear of the saved registers'. -/
 theorem verW_saves {B : Addr} (lo n : Nat) (h1 : 1024 ≤ lo) (h2 : lo + n ≤ 1632) :
@@ -69,11 +69,11 @@ theorem verW_saves {B : Addr} (lo n : Nat) (h1 : 1024 ≤ lo) (h2 : lo + n ≤ 1
   intro r hr
   have hS : SIGN = 24 := rfl
   rcases List.mem_cons.mp hr with rfl | hr
-  · exact Offset.disjoint _ (.inr (by omega)) (by omega) (by omega)
+  · exact Offset.disjoint _ (.inr (by omega_using [h1, hS])) (by omega_using [h2]) (by omega_using [hS])
   rcases List.mem_cons.mp hr with rfl | hr
-  · exact Offset.disjoint _ (.inl (by omega)) (by omega) (by omega)
+  · exact Offset.disjoint _ (.inl (by omega_using [h2])) (by omega_using [h2]) (by omega_using [])
   rcases List.mem_cons.mp hr with rfl | hr
-  · exact Offset.disjoint _ (.inl (by omega)) (by omega) (by omega)
+  · exact Offset.disjoint _ (.inl (by omega_using [h2])) (by omega_using [h2]) (by omega_using [])
   exact mulW_saves lo n h1 h2 r hr
 
 /-- **The setup**: the registers saved, the pointers in `s9`–`s11`. -/
@@ -88,14 +88,14 @@ theorem verifySetup_ok {s : State} (hp : VerifyPre s) :
   rw [regsSave_eq]
   have hsin : ∀ p ∈ saveList, InRegions s.wr (s.gpr .a3 + BitVec.ofNat 64 p.2) 8 := fun p hpl => by
     have := saveList_in p hpl
-    rw [← hb]; exact in_base hws (by omega) (by omega)
+    rw [← hb]; exact in_base hws (by omega_using [this]) (by omega_using [this])
   refine Spill.save_ok (b := .a3) hp.al saveList_fits hsin ?_
   generalize hs1 : ({ s with mem := Spill.saveMem s.mem (s.gpr .a3) s.gpr saveList } : State) = s1
   have hsv : Spill.Saved b s.gpr saveList s1.mem := by
     rw [← hs1, hb]; exact Spill.saveMem_saved (by decide) _ _ _
   have hf1 : Frame [⟨b, 8192⟩] s.mem s1.mem := by
     rw [← hs1, hb]
-    exact Spill.saveMem_frame_base (fun p hpl => by have := saveList_in p hpl; omega) (by decide) _ _ _
+    exact Spill.saveMem_frame_base (fun p hpl => by have := saveList_in p hpl; omega_using [this]) (by decide) _ _ _
   have hg1 : s1.gpr = s.gpr := by rw [← hs1]
   have hrd1 : s1.rd = s.rd := by rw [← hs1]
   have hwr1 : s1.wr = s.wr := by rw [← hs1]
@@ -149,14 +149,14 @@ theorem verify_ok (hR : RhsOk) {s : State} (hp : VerifyPre s) :
   refine wp_mv fun v uv => ?_
   have hsv7 : Spill.Saved b s.gpr saveList v.mem := by
     rw [uv.mem]
-    exact hsv.frame_in (lo := 1024) (n := 104) saveList_in f7 (verW_saves 1024 104 (by omega) (by omega))
+    exact hsv.frame_in (lo := 1024) (n := 104) saveList_in f7 (verW_saves 1024 104 (by omega_using []) (by omega_using []))
   have e6v : v.gpr .a3 = b := by rw [uv.other _ (by decide), hc7.a3]
   rw [← List.append_nil (Spill.restoreCode .a3 saveList)]
   refine Spill.restore_ok (b := .a3) (B := b) hc7.al e6v saveList_fits saveList_restorable
     (fun p hpl => by
       have := saveList_in p hpl
       rw [uv.rd, uv.wr, r7.rd, r7.wr, hR5.rd, hR5.wr]
-      exact in_base (List.mem_append_right _ hws) (by omega) (by omega)) hsv7 fun t ht => WP.block_nil
+      exact in_base (List.mem_append_right _ hws) (by omega_using [this]) (by omega_using [this])) hsv7 fun t ht => WP.block_nil
       ⟨fun r hr => ?_, by rw [ht.sp, uv.sp, r7.sp, hR5.sp], ?_, ?_⟩
   · exact ht.gpr_of (.inl (by rw [saveList_regs]; revert hr; cases r <;> decide))
   · exact ht.gpr_of (.inl (by rw [saveList_regs]; decide))

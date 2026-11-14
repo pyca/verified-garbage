@@ -42,7 +42,7 @@ theorem parsed_step {σ s : State} (hp : Pre σ) {n : Nat} (hn : n < 4) (h : Par
     · exact stored_frame hf (fun r hr => by
         rw [List.mem_singleton.mp hr]
         exact Offset.disjoint (aP σ) (d := 1024*k) (e := 1024*n) (n := 1024) (k := 1024)
-          (by omega) (by omega) (by omega)) (h.stored k (by omega)) (rnFold_length_le (by simp) _)
+          (by omega_using [he]) (by omega_using [hn, hk]) (by omega_using [hn])) (h.stored k (by omega_using [hk, he])) (rnFold_length_le (by simp) _)
 
 def r4K : Contract isa where
   pre := Pre

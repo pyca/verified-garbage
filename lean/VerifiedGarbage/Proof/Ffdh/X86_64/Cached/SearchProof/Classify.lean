@@ -56,9 +56,9 @@ theorem output_frame {p : KeyPublic} {original : State} (hi : KeyInput p origina
     rw [← hi.2]; simpa only [inY, inCtl, keyOfState, hrcx] using hpw.2.1.2.2
   constructor <;> simp only [Spec.Rsa.bytesAt] <;> refine List.map_congr_left fun i hi => ?_
   · exact hf.bytes (fun r hr => by obtain rfl := List.mem_singleton.mp hr; exact hx)
-      (show p.len ≤ 2 ^ 64 by omega) (List.mem_range.mp hi)
+      (show p.len ≤ 2 ^ 64 by omega_using [hk]) (List.mem_range.mp hi)
   · exact hf.bytes (fun r hr => by obtain rfl := List.mem_singleton.mp hr; exact hy)
-      (show p.len ≤ 2 ^ 64 by omega) (List.mem_range.mp hi)
+      (show p.len ≤ 2 ^ 64 by omega_using [hk]) (List.mem_range.mp hi)
 
 /-- The status, normalized, and the attempt's octets consumed. -/
 theorem key_classify_head {p : KeyPublic} {original s : State} {used keys scalars : Nat}
@@ -70,7 +70,7 @@ theorem key_classify_head {p : KeyPublic} {original s : State} {used keys scalar
       t.gpr .rax = BitVec.ofNat 64 (attemptStatus .cached p.a p.len ((keyRand original).drop used)) ∧
       eval .e t = some (decide (attemptStatus .cached p.a p.len ((keyRand original).drop used) = 1)) := by
   have hst : attemptStatus .cached p.a p.len ((keyRand original).drop used) < 4 := by
-    rcases attemptStatus_cases (policy := .cached) p.a p.len ((keyRand original).drop used) with he | he | he <;> omega
+    rcases attemptStatus_cases (policy := .cached) p.a p.len ((keyRand original).drop used) with he | he | he <;> omega_using [he]
   rw [WP.block_append_iff, WP.block_append_iff]
   refine WP.mono (WP.keep [.rax] (Q := fun u =>
     u.gpr .rax = ((s.gpr .rax).setWidth 32).setWidth 64 ∧ u.mem = s.mem) (by xrun []) rfl)
@@ -103,7 +103,7 @@ theorem key_classify_head {p : KeyPublic} {original s : State} {used keys scalar
     exact hpu
   have hraxv : v.gpr .rax = BitVec.ofNat 64 (attemptStatus .cached p.a p.len ((keyRand original).drop used)) :=
     (kv.gpr (by decide)).trans hax'
-  refine WP.mono (rax_guard hraxv (by omega) 1 1 (by decide) (by decide)) fun t ⟨⟨he, hmt, hrt⟩, kt⟩ => ?_
+  refine WP.mono (rax_guard hraxv (by omega_using [hst]) 1 1 (by decide) (by decide)) fun t ⟨⟨he, hmt, hrt⟩, kt⟩ => ?_
   exact ⟨hv.keep kt hmt (by decide), hpv.keep hmt (by rw [hrt]), hrt.trans hraxv, he⟩
 
 /-- A terminal status written over a loop state, whose outputs are already
@@ -140,7 +140,7 @@ theorem key_terminal_done {p : KeyPublic} {original s : State} {used keys scalar
       ite_true, ite_false, hs]
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hst,
-      Nat.mod_eq_of_lt (show status < 2 ^ 64 by omega)]
+      Nat.mod_eq_of_lt (show status < 2 ^ 64 by omega_using [hst])]
   · change [word t.mem p.control (8 * 0), word t.mem p.control (8 * 1), word t.mem p.control (8 * 2),
       word t.mem p.control (8 * 3)] = _
     rw [hw 0 (by decide), hw 1 (by decide), hw 2 (by decide), hw 3 (by decide)]

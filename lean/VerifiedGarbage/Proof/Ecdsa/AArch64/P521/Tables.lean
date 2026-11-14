@@ -4,6 +4,7 @@ public import VerifiedGarbage.Impl.Ecdsa.P521.AArch64
 public import VerifiedGarbage.Proof.Framework.ConstMem
 import VerifiedGarbage.Proof.Weierstrass.TCombWords
 import VerifiedGarbage.Proof.P521.Comb7Shape
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # ECDSA over P-521 on AArch64: the comb's tables in a static
@@ -51,6 +52,6 @@ tables). -/
 theorem satMem_held : ∀ i < p521.combWords.length,
     satMem.readW (0x100000 + BitVec.ofNat 64 (8 * i)) 64 = p521.combWords.getD i 0 := by
   unfold satMem
-  exact constMem_held _ _ (by rw [p521_combWords_length]; omega)
+  exact constMem_held _ _ (by rw [p521_combWords_length]; omega_using [])
 
 end VG.Proof.Ecdsa.AArch64.P521

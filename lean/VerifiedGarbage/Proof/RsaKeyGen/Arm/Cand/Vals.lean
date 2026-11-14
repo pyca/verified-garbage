@@ -33,7 +33,7 @@ section
 variable {P : CP} {σ : State}
 
 theorem xB_seg (h : P.L ≤ P.rl) : xB P σ = VG.Proof.RsaKeyGen.seg (rB P σ) 0 P.L := by
-  rw [seg_bytesAt _ _ (by omega), BitVec.add_zero]
+  rw [seg_bytesAt _ _ (by omega_using [h]), BitVec.add_zero]
 
 theorem xv_lt (P : CP) (σ : State) : xv P σ < 2 ^ (8 * P.L) := by
   have := VG.Proof.Rsa.lt_of_os2ip (xB P σ)
@@ -41,7 +41,7 @@ theorem xv_lt (P : CP) (σ : State) : xv P σ < 2 ^ (8 * P.L) := by
   exact this
 
 theorem cv_shape (pre : In P σ) : PrimeShape (8 * P.L) (cv P σ) :=
-  VG.Proof.RsaKeyGen.candidate_shape (by have := pre.k1; omega) _
+  VG.Proof.RsaKeyGen.candidate_shape (by have := pre.k1; omega_using [this]) _
 
 end
 

@@ -121,7 +121,7 @@ theorem Inv.addr (hL : Layout s₀ ins outs) (hI : Inv s₀ ptrs fixed outs cnt 
     (hp : p ∈ ptrs) (hio : p ∈ ins ++ outs) :
     State.addr (s.gpr p + BitVec.ofNat 32 0) = coeffAddr (P s₀ p) i := by
   have := hL.fit p hio
-  rw [hI.ptr p hp, addr_ptr _ _ _ (by omega), Nat.add_zero]
+  rw [hI.ptr p hp, addr_ptr _ _ _ (by omega_using [hi, this]), Nat.add_zero]
 
 theorem Inv.inR (hL : Layout s₀ ins outs) (hI : Inv s₀ ptrs fixed outs cnt V J i s) (hi : i < 256) {p : Reg}
     (hp : p ∈ ptrs) (hin : p ∈ ins) : InRegions (s.rd ++ s.wr) (State.addr (s.gpr p + BitVec.ofNat 32 0)) 4 := by
@@ -173,10 +173,10 @@ theorem loop_ok {s₀ : State} {ins outs ptrs fixed : List Reg} {cnt : Reg} {bod
     · rw [hc, hI.cnt]; exact count_sub (k := 1) hi
     · rw [hm]
       exact frame_writes _ hI.frame outs _ hi _ fun o ho => List.mem_map_of_mem ho
-    · rw [hm, coeffAt_writes _ _ outs _ hi _ hL.pw ho (by omega)]
+    · rw [hm, coeffAt_writes _ _ outs _ hi _ hL.pw ho (by omega_using [hi, hk])]
       split
       · subst k; rfl
-      · exact hI.done o ho k (by omega)
+      · exact hI.done o ho k (by omega_arith)
     · rw [hz, hI.cnt]; exact count_z (k := 1) hi (by decide) (by decide)
   · refine ⟨fun p hp => ?_, by simp [State.setReg], fun r hr => ?_, rfl, rfl, rfl, Frame.refl _ _,
       fun _ _ k hk => absurd hk (Nat.not_lt_zero k), hJ _ ?_ rfl⟩

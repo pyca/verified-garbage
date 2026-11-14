@@ -214,8 +214,8 @@ theorem fbTaint_wf {len : State → Nat} (s : State) (hs : fbPre len s) : Taint.
   refine ⟨fun _ => ?_, ?_⟩
   · rw [hwr]
     refine ⟨?_, ?_, ?_⟩
-    · exact List.Forall₂.cons (by change 8 ≤ 8; omega) (List.Forall₂.cons (by change 0 ≤ len s; omega)
-        (List.Forall₂.cons (by change 8 * 121 ≤ 8 * 121; omega) List.Forall₂.nil))
+    · exact List.Forall₂.cons (by change 8 ≤ 8; omega_using []) (List.Forall₂.cons (by change 0 ≤ len s; omega_using [])
+        (List.Forall₂.cons (by change 8 * 121 ≤ 8 * 121; omega_using []) List.Forall₂.nil))
     · refine List.Pairwise.cons (fun r hr => ?_) (List.Pairwise.cons (fun r hr => ?_)
         (List.Pairwise.cons (by simp) List.Pairwise.nil))
       · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -226,9 +226,9 @@ theorem fbTaint_wf {len : State → Nat} (s : State) (hs : fbPre len s) : Taint.
     · intro r hr
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl
-      · change 8 ≤ 2 ^ 64; omega
-      · change len s ≤ 2 ^ 64; omega
-      · change 8 * 121 ≤ 2 ^ 64; omega
+      · change 8 ≤ 2 ^ 64; omega_using []
+      · change len s ≤ 2 ^ 64; omega_using [fitD]
+      · change 8 * 121 ≤ 2 ^ 64; omega_using []
   · intro p hp
     simp only [fbTaint, List.mem_singleton] at hp
     subst p
@@ -305,8 +305,8 @@ theorem ofb_patch (s b : State) (hv : Mem) (u : Nat → BitVec 64)
     ofbX86_64.post s (b.patch (hole (s.gpr .rsp)) hv u) := by
   obtain ⟨-, hwr, -, -, -, -, -, -, -, -, -, -, fitI, fitD, -⟩ := ofb_implies8.pre s hs
   have hbD := Clear.wr_bytes (Sig.clear_of_pre hs) (p := s.gpr .rdx) (n := 8 * (s.gpr .rcx).toNat)
-    (by rw [hwr]; simp) (by simp only [blkLen] at fitD; omega)
-  have hbI := Clear.wr_bytes (Sig.clear_of_pre hs) (p := s.gpr .rsi) (n := 8) (by rw [hwr]; simp) (by omega)
+    (by rw [hwr]; simp) (by simp only [blkLen] at fitD; omega_using [fitD])
+  have hbI := Clear.wr_bytes (Sig.clear_of_pre hs) (p := s.gpr .rsi) (n := 8) (by rw [hwr]; simp) (by omega_using [])
   obtain ⟨h₁, h₂⟩ := hp
   refine ⟨?_, ?_⟩
   · show Spec.TripleDes.cbcBlocksAt _ _ _ = _
@@ -345,8 +345,8 @@ theorem cfbEncrypt_patch (s b : State) (hv : Mem) (u : Nat → BitVec 64)
     cfbEncX86_64.post s (b.patch (hole (s.gpr .rsp)) hv u) := by
   obtain ⟨-, hwr, -, -, -, -, -, -, -, -, -, -, fitI, fitD, -⟩ := cfbEncrypt_implies8.pre s hs
   have hbD := Clear.wr_bytes (Sig.clear_of_pre hs) (p := s.gpr .rdx) (n := 8 * (s.gpr .rcx).toNat)
-    (by rw [hwr]; simp) (by simp only [blkLen] at fitD; omega)
-  have hbI := Clear.wr_bytes (Sig.clear_of_pre hs) (p := s.gpr .rsi) (n := 8) (by rw [hwr]; simp) (by omega)
+    (by rw [hwr]; simp) (by simp only [blkLen] at fitD; omega_using [fitD])
+  have hbI := Clear.wr_bytes (Sig.clear_of_pre hs) (p := s.gpr .rsi) (n := 8) (by rw [hwr]; simp) (by omega_using [])
   obtain ⟨h₁, h₂⟩ := hp
   refine ⟨?_, ?_⟩
   · show Spec.TripleDes.cbcBlocksAt _ _ _ = _
@@ -385,8 +385,8 @@ theorem cfb8Encrypt_patch (s b : State) (hv : Mem) (u : Nat → BitVec 64)
     cfb8EncX86_64.post s (b.patch (hole (s.gpr .rsp)) hv u) := by
   obtain ⟨-, hwr, -, -, -, -, -, -, -, -, -, -, fitI, fitD, -⟩ := cfb8Encrypt_implies8.pre s hs
   have hbD := Clear.wr_bytes (Sig.clear_of_pre hs) (p := s.gpr .rdx) (n := (s.gpr .rcx).toNat)
-    (by rw [hwr]; simp) (by omega)
-  have hbI := Clear.wr_bytes (Sig.clear_of_pre hs) (p := s.gpr .rsi) (n := 8) (by rw [hwr]; simp) (by omega)
+    (by rw [hwr]; simp) (by omega_using [])
+  have hbI := Clear.wr_bytes (Sig.clear_of_pre hs) (p := s.gpr .rsi) (n := 8) (by rw [hwr]; simp) (by omega_using [])
   obtain ⟨h₁, h₂⟩ := hp
   refine ⟨?_, ?_⟩
   · rw [bytesAt_congr (patch_mem hbD)]; exact h₁
@@ -424,8 +424,8 @@ theorem cfb8Decrypt_patch (s b : State) (hv : Mem) (u : Nat → BitVec 64)
     cfb8DecX86_64.post s (b.patch (hole (s.gpr .rsp)) hv u) := by
   obtain ⟨-, hwr, -, -, -, -, -, -, -, -, -, -, fitI, fitD, -⟩ := cfb8Decrypt_implies8.pre s hs
   have hbD := Clear.wr_bytes (Sig.clear_of_pre hs) (p := s.gpr .rdx) (n := (s.gpr .rcx).toNat)
-    (by rw [hwr]; simp) (by omega)
-  have hbI := Clear.wr_bytes (Sig.clear_of_pre hs) (p := s.gpr .rsi) (n := 8) (by rw [hwr]; simp) (by omega)
+    (by rw [hwr]; simp) (by omega_using [])
+  have hbI := Clear.wr_bytes (Sig.clear_of_pre hs) (p := s.gpr .rsi) (n := 8) (by rw [hwr]; simp) (by omega_using [])
   obtain ⟨h₁, h₂⟩ := hp
   refine ⟨?_, ?_⟩
   · rw [bytesAt_congr (patch_mem hbD)]; exact h₁

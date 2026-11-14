@@ -159,7 +159,7 @@ structure JPre (base : Addr) (s : State) (Q : Point W) : Prop where
 theorem keepU {base : Addr} {Wl : List (Nat × Nat)} {m m' : Mem} (U : Unch base Wl m m') {D : List Nat}
     (hD : ∀ d ∈ D, (∀ w ∈ Wl, d + 8 * 4 ≤ w.1 ∨ w.1 + w.2 ≤ d) ∧ d + 32 ≤ 2048) :
     ∀ d ∈ D, wordsVal m' base d 4 = wordsVal m base d 4 := fun d hd =>
-  U.wordsVal (hD d hd).1 (by have := (hD d hd).2; omega)
+  U.wordsVal (hD d hd).1 (by have := (hD d hd).2; omega_using [this])
 
 /-- The registers `select` writes. -/
 abbrev selRegs : List Reg := [.t0, .t1, .t2, .t3, .t4, .t5, .t6, .a0, .a1, .a2, .a3, .a4]

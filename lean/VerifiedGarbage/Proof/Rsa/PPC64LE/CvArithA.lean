@@ -120,7 +120,7 @@ theorem partA_ok {s : State} {B : Addr} {Z w Nv P Q Dd pL qL : Nat} (h : Ws s B 
   have l1' : t1.gpr .r22 = BitVec.ofNat 64 qL := (r1.gpr _ (by decide)).trans h22
   -- The guard.
   rw [wp_seqs_cons (List.cons_ne_nil _ _)]
-  refine WP.mono (shape_ok h1.r29 l1 l1' (by omega) (by omega) (by omega)) fun s1 ⟨z1, m1, ks1⟩ => ?_
+  refine WP.mono (shape_ok h1.r29 l1 l1' (by omega_using [hwl]) (by omega_using [hpw, hwl]) (by omega_using [hqw, hwl])) fun s1 ⟨z1, m1, ks1⟩ => ?_
   have h1s := h1.of_keep ks1
   have p1s : num s1.mem B w aP = P := by rw [m1, p1]
   have q1s : num s1.mem B w aQ = Q := by rw [m1, q1]
@@ -134,25 +134,25 @@ theorem partA_ok {s : State} {B : Addr} {Z w Nv P Q Dd pL qL : Nat} (h : Ws s B 
     refine WP.ite (s1.gpr .r0 == 0) (eval_zero s1 .r0) (fun hz => ?_) (fun _ => ?_)
     · obtain ⟨p8, hpw2, hpq, p32⟩ := z1.mp (by simpa using hz)
       refine WP.mono (VG.Proof.Rsa.PPC64LE.MontKey.mulHalf_ok h1s (by decide) (o := aDR) (x := aP) (y := aQ)
-        (by decide) (by decide) (by decide) (by decide) (by decide) l1s hpL (by omega) (by decide) (by decide))
+        (by decide) (by decide) (by decide) (by decide) (by decide) l1s hpL (by omega_using [p8, hpw2]) (by decide) (by decide))
         fun t2 ⟨h2, k2, v2, r2⟩ => ⟨h2, k2, ?_, r2⟩
       have lt : ∀ {X : Nat}, X < 2 ^ (8 * pL) → X < 2 ^ (32 * ((pL + 3) / 4)) := fun hX =>
-        Nat.lt_of_lt_of_le hX (Nat.pow_le_pow_right (by decide) (by omega))
+        Nat.lt_of_lt_of_le hX (Nat.pow_le_pow_right (by decide) (by omega_using []))
       have vP : val32 s1.mem B (arr w aP) ((pL + 3) / 4) = P :=
-        VG.Proof.Rsa.PPC64LE.MontKey.val32_low (n := w) p1s (by omega) (lt hP)
+        VG.Proof.Rsa.PPC64LE.MontKey.val32_low (n := w) p1s (by omega_using [hpw]) (lt hP)
       have vQ : val32 s1.mem B (arr w aQ) ((pL + 3) / 4) = Q :=
-        VG.Proof.Rsa.PPC64LE.MontKey.val32_low (n := w) q1s (by omega) (lt (by rw [show 8 * pL = 8 * qL by omega]; exact hQ))
+        VG.Proof.Rsa.PPC64LE.MontKey.val32_low (n := w) q1s (by omega_using [hpw]) (lt (by rw [show 8 * pL = 8 * qL by omega_using [hpq]]; exact hQ))
       have hlt : P * Q < 2 ^ (32 * w) :=
         calc P * Q < 2 ^ (32 * ((pL + 3) / 4)) * 2 ^ (32 * ((pL + 3) / 4)) :=
-              Nat.mul_lt_mul'' (lt hP) (lt (by rw [show 8 * pL = 8 * qL by omega]; exact hQ))
-          _ ≤ 2 ^ (32 * w) := by rw [← Nat.pow_add]; exact Nat.pow_le_pow_right (by decide) (by omega)
+              Nat.mul_lt_mul'' (lt hP) (lt (by rw [show 8 * pL = 8 * qL by omega_using [hpq]]; exact hQ))
+          _ ≤ 2 ^ (32 * w) := by rw [← Nat.pow_add]; exact Nat.pow_le_pow_right (by decide) (by omega_using [p8, hpw2])
       rw [v2, vP, vQ, Nat.mod_eq_of_lt hlt]
     · refine WP.mono (VG.Proof.Rsa.PPC64LE.MontKey.mulLo_ok h1s (by decide) (o := aDR) (x := aP) (y := aQ)
         (by decide) (by decide) (by decide) (by decide) (by decide) l1s hpL hpw (by decide) (by decide))
         fun t2 ⟨h2, k2, v2, r2⟩ => ⟨h2, k2, ?_, r2⟩
       have vP : val32 s1.mem B (arr w aP) ((pL + 3) / 4) = P :=
-        VG.Proof.Rsa.PPC64LE.MontKey.val32_low (n := w) p1s (by omega)
-          (Nat.lt_of_lt_of_le hP (Nat.pow_le_pow_right (by decide) (by omega)))
+        VG.Proof.Rsa.PPC64LE.MontKey.val32_low (n := w) p1s (by omega_using [hpw])
+          (Nat.lt_of_lt_of_le hP (Nat.pow_le_pow_right (by decide) (by omega_using [])))
       rw [v2, vP, q1s]
   refine WP.mono hprod fun t2 ⟨h2, k2, v2, r2⟩ => ?_
   rw [m1] at k2
@@ -167,21 +167,21 @@ theorem partA_ok {s : State} {B : Addr} {Z w Nv P Q Dd pL qL : Nat} (h : Ws s B 
   have z3 : ∀ j < 25, j ≠ aDQ → j ≠ aP → j ≠ aQ → j ≠ aD → j ∉ partAArrs → num t3.mem B w j = 0 := by
     intro j hj a b c d e
     simp only [partAArrs, List.mem_cons, List.not_mem_nil, or_false, not_or] at e
-    rw [hk k3 (show j < nArr by unfold nArr; omega) (by simp) (by simp; decide),
-      hk k2 (show j < nArr by unfold nArr; omega) (by simp; exact e.1) (by simp),
-      hk k1 (show j < nArr by unfold nArr; omega) (by simp) (by simp; decide), hi.zero j hj a b c d]
+    rw [hk k3 (show j < nArr by unfold nArr; omega_using [hj]) (by simp) (by simp; decide),
+      hk k2 (show j < nArr by unfold nArr; omega_using [hj]) (by simp; exact e.1) (by simp),
+      hk k1 (show j < nArr by unfold nArr; omega_using [hj]) (by simp) (by simp; decide), hi.zero j hj a b c d]
   have n3 : num t3.mem B w aDQ = Nv := by rw [hk k3 (by decide) (by simp) (by simp; decide), n2]
   have l3 : t3.gpr .r20 = BitVec.ofNat 64 pL := (r3.gpr _ (by decide)).trans ((r2.gpr _ (by decide)).trans l1s)
   have l3' : t3.gpr .r22 = BitVec.ofNat 64 qL :=
     (r3.gpr _ (by decide)).trans ((r2.gpr _ (by decide)).trans ((ks1.gpr _ (by decide)).trans l1'))
   have top3 : w32 t3.mem B (arr w aDD + 4 * w) = 0 := by
-    rw [KeyWorkspace.Keep.word k3 (i := w) (by omega) (by simp) (by simp; decide) (fit _ (by decide)),
-      KeyWorkspace.Keep.word k2 (i := w) (by omega) (by decide) (by simp) (fit _ (by decide)),
-      KeyWorkspace.Keep.word k1 (i := w) (by omega) (by simp) (by simp; decide) (fit _ (by decide)),
+    rw [KeyWorkspace.Keep.word k3 (i := w) (by omega_using [hS]) (by simp) (by simp; decide) (fit _ (by decide)),
+      KeyWorkspace.Keep.word k2 (i := w) (by omega_using [hS]) (by decide) (by simp) (fit _ (by decide)),
+      KeyWorkspace.Keep.word k1 (i := w) (by omega_using [hS]) (by simp) (by simp; decide) (fit _ (by decide)),
       hi.top _ (by decide)]
   -- The guard again.
   rw [wp_seqs_cons (List.cons_ne_nil _ _)]
-  refine WP.mono (shape_ok h3.r29 l3 l3' (by omega) (by omega) (by omega)) fun s7 ⟨z7, m7, ks7⟩ => ?_
+  refine WP.mono (shape_ok h3.r29 l3 l3' (by omega_using [hwl]) (by omega_using [hpw, hwl]) (by omega_using [hqw, hwl])) fun s7 ⟨z7, m7, ks7⟩ => ?_
   have h7s := h3.of_keep ks7
   -- `0` for a balanced key, else Montgomery's `n` modulo `p | 1`.
   rw [wp_seqs_cons (List.cons_ne_nil _ _)]
@@ -196,10 +196,10 @@ theorem partA_ok {s : State} {B : Addr} {Z w Nv P Q Dd pL qL : Nat} (h : Ws s B 
     · obtain ⟨p8, hpw2, hpq, p32⟩ := z7.mp (by simpa using hz)
       refine WP.mono (copy_ok h7s (o := aDT) (a := aZero) (by decide) (by decide) (by decide) (by decide))
         fun t7 ⟨h7, k7, v7, r7, _⟩ => ⟨h7, k7.mono, ?_, fun podd p2 hL => ?_, r7.mono⟩
-      · rw [KeyWorkspace.Keep.word k7 (i := w) (by omega) (by decide) (by simp) (fit _ (by decide)), m7, top3]
+      · rw [KeyWorkspace.Keep.word k7 (i := w) (by omega_using [hS]) (by decide) (by simp) (fit _ (by decide)), m7, top3]
       · have hlt : P * Q < 2 ^ (32 * w) :=
           calc P * Q < 2 ^ (8 * pL) * 2 ^ (8 * qL) := Nat.mul_lt_mul'' hP hQ
-            _ = 2 ^ (32 * w) := by rw [← Nat.pow_add]; congr 1; omega
+            _ = 2 ^ (32 * w) := by rw [← Nat.pow_add]; congr 1; omega_using [hpw2, hpq]
         rw [Nat.mod_eq_of_lt hlt] at hL
         rw [v7, m7, z3 _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide), ← hL,
           Nat.mul_mod_right]
@@ -222,19 +222,19 @@ theorem partA_ok {s : State} {B : Addr} {Z w Nv P Q Dd pL qL : Nat} (h : Ws s B 
           hk k4 (by decide) (by decide) (by simp), m7, n3]
       have l6 : t6.gpr .r20 = BitVec.ofNat 64 pL := by
         rw [r6.gpr _ (by decide), r5.gpr _ (by decide), r4.gpr _ (by decide), ks7.gpr _ (by decide)]; exact l3
-      have pw' : 2 ^ (8 * pL) ≤ 2 ^ (32 * ((pL + 3) / 4)) := Nat.pow_le_pow_right (by decide) (by omega)
+      have pw' : 2 ^ (8 * pL) ≤ 2 ^ (32 * ((pL + 3) / 4)) := Nat.pow_le_pow_right (by decide) (by omega_using [])
       have hm : 2 * (P / 2) + 1 < 2 ^ (8 * pL) := by
-        have : 2 ^ (8 * pL) = 2 * 2 ^ (8 * pL - 1) := by rw [← Nat.pow_succ']; congr 1; omega
-        omega
+        have : 2 ^ (8 * pL) = 2 * 2 ^ (8 * pL - 1) := by rw [← Nat.pow_succ']; congr 1; omega_using [hpL]
+        omega_using [hP, this]
       refine WP.mono (VG.Proof.Rsa.PPC64LE.MontKey.montMul_ok h6 (by decide) (a := aDT) (x := aDQ) (y := aDR3)
         (m := aDD) (tt := aDR2) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
-        (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) l6 hpL (by omega) (by decide)
-        (by decide) m6 (Nat.lt_of_lt_of_le hm pw') (by omega) o6 (Nat.one_lt_two_pow (by omega)))
+        (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) l6 hpL (by omega_using [hpw]) (by decide)
+        (by decide) m6 (Nat.lt_of_lt_of_le hm pw') (by omega_using []) o6 (Nat.one_lt_two_pow (by omega_using [hpL])))
         fun t7 ⟨h7, k7, _, _, top7, cg7, r7⟩ => ⟨h7, (k4.mono.trans (k5.mono.trans (k6.mono.trans k7.mono))), top7,
           fun podd p2 _ => ?_, (((r4.trans r5).trans r6).trans r7).mono⟩
-      have e1 : 2 * (P / 2) + 1 = P := by omega
+      have e1 : 2 * (P / 2) + 1 = P := by omega_using [podd]
       rw [e1] at cg7
-      obtain ⟨lt, cg⟩ := cg7 (by omega)
+      obtain ⟨lt, cg⟩ := cg7 (by omega_using [p2])
       rw [Nat.mul_one, n6] at cg
       exact VG.Proof.Rsa.mont_zero_iff podd lt cg
   refine WP.mono hmn fun t7 ⟨h7, k7, top7, mc7, r7⟩ => ?_
@@ -250,10 +250,10 @@ theorem partA_ok {s : State} {B : Addr} {Z w Nv P Q Dd pL qL : Nat} (h : Ws s B 
   · rw [k8.slot (by decide) (by decide), k7.slot (by decide) (by simp), k3.slot (by decide) (by decide),
       k2.slot (by decide) (by simp), o1, hi.p]
   · rw [k8.slot (by decide) (by decide), k7.slot (by decide) (by simp), e3]
-  · rw [e8]; split <;> omega
+  · rw [e8]; split <;> omega_using []
   · rw [e8, ← mc7 podd p2 hL]
     split <;> simp_all
-  · rw [KeyWorkspace.Keep.word k8 (i := w) (by omega) (by simp) (by simp; decide) (fit _ (by decide)), top7]
+  · rw [KeyWorkspace.Keep.word k8 (i := w) (by omega_using [hS]) (by simp) (by simp; decide) (fit _ (by decide)), top7]
   · exact ((((r1.trans ks1).trans r2).trans r3).trans ((ks7.trans r7).trans r8)).mono
 
 end VG.Proof.Rsa.PPC64LE.CrtValues

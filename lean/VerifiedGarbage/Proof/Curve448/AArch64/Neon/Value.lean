@@ -103,7 +103,7 @@ theorem limbs28_lt {r : Nat → Nat} (hr : ∀ k < 16, r k < 2 ^ 64 - 2 ^ 40) {k
   · have := Nat.mod_lt (cval r 0 k) (show 2 ^ 28 > 0 by decide)
     split <;> split <;> omega
   · have := Nat.mod_lt (cval r 8 (k - 8)) (show 2 ^ 28 > 0 by decide)
-    split <;> split <;> omega
+    split <;> split <;> omega_arith
 
 theorem out56_bound {r : Nat → Nat} (hr : ∀ k < 16, r k < 2 ^ 64 - 2 ^ 40) : ∀ i < 8, out56 (limbs28 r) i < Mb := by
   have l : ∀ k < 16, limbs28 r k < 2 ^ 28 + (if k = 0 then 2 ^ 36 else 0) + (if k = 8 then 2 ^ 37 else 0) :=

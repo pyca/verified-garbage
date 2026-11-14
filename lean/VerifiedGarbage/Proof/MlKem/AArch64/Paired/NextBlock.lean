@@ -29,7 +29,7 @@ theorem rate_frame {m m' : Mem} {p : Addr} {A : Spec.Sha3.State} {rs : List Regi
     Rate21 m' p A := by
   intro i hi
   have hc : (rateR21 p).Contains (outAddr p i) 8 :=
-    Offset.contains_base p (by omega) (by omega)
+    Offset.contains_base p (by omega_using [hi]) (by omega_using [hi])
   rw [hf.readW hc hd (by decide)]
   exact h i hi
 
@@ -59,17 +59,17 @@ theorem nextBlock_ok {s : State} {p : Addr} {A B : Spec.Sha3.State}
     (ha6 := by decide) (ha7 := by decide) (hb6 := by decide) (hb7 := by decide)
     (hpc := by decide) (hac := by decide) (hbc := by decide)
     (by rw [ha.mem]; exact pair)
-    (fun i hi => by rw [ha.rd,ha.wr]; exact in_rd_wr (iw (by omega)))
+    (fun i hi => by rw [ha.rd,ha.wr]; exact in_rd_wr (iw (by omega_using [hi])))
     (fun i hi => by
       rw [ha.wr]
       change InRegions s.wr (p+BitVec.ofNat 64 400+BitVec.ofNat 64 (8*i)) 8
       rw [BitVec.add_assoc,←BitVec.ofNat_add]
-      exact iw (by omega))
+      exact iw (by omega_using [hi]))
     (fun i hi => by
       rw [ha.wr]
       change InRegions s.wr (p+BitVec.ofNat 64 904+BitVec.ofNat 64 (8*i)) 8
       rw [BitVec.add_assoc,←BitVec.ofNat_add]
-      exact iw (by omega))
+      exact iw (by omega_using [hi]))
     (Offset.disjoint p (by decide) (by decide) (by decide))
     (Offset.base_disjoint p (by decide) (by decide))
     (Offset.base_disjoint p (by decide) (by decide))

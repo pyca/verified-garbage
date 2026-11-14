@@ -41,19 +41,19 @@ theorem next_ptr (p : Addr) (u k : Nat) :
 
 theorem ofNat_pred {k : Nat} (h : 1 ≤ k) : BitVec.ofNat 64 k - BitVec.ofNat 64 1 =
     BitVec.ofNat 64 (k - 1) := by
-  rw [show k = (k - 1) + 1 by omega, BitVec.ofNat_add, Nat.add_sub_cancel, BitVec.add_sub_cancel]
+  rw [show k = (k - 1) + 1 by omega_using [h], BitVec.ofNat_add, Nat.add_sub_cancel, BitVec.add_sub_cancel]
 
 /-- The count after one more iteration of `n`. -/
 theorem dec_count {n k : Nat} (hk : k < n) :
     BitVec.ofNat 64 (n - k) - BitVec.ofNat 64 1 = BitVec.ofNat 64 (n - (k + 1)) := by
-  rw [ofNat_pred (by omega), Nat.sub_sub]
+  rw [ofNat_pred (by omega_using [hk]), Nat.sub_sub]
 
 theorem dec_ne {n k : Nat} (hk : k < n) (hn : n < 2 ^ 64) :
     (BitVec.ofNat 64 (n - (k + 1)) != 0) = decide (k + 1 ≠ n) := by
-  rw [bne, ofNat_beq_zero (by omega)]
+  rw [bne, ofNat_beq_zero (by omega_using [hn])]
   by_cases h : k + 1 = n
   · simp only [h, Nat.sub_self, decide_true, Bool.not_true, ne_eq, not_true_eq_false, decide_false]
-  · simp only [show n - (k + 1) ≠ 0 by omega, decide_false, Bool.not_false, ne_eq, h,
+  · simp only [show n - (k + 1) ≠ 0 by omega_using [hk, h], decide_false, Bool.not_false, ne_eq, h,
       not_false_eq_true, decide_true]
 
 theorem ofNat_zero_add (p : Addr) (u : Nat) : p + BitVec.ofNat 64 (u * 0) = p := by
@@ -69,13 +69,13 @@ theorem sub_beq {a b : Nat} (ha : a < 2 ^ 64) (hb : b < 2 ^ 64) :
     rw [BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt ha,
       Nat.mod_eq_of_lt hb] at this
     have h0 : (0 : BitVec 64).toNat = 0 := rfl
-    omega
+    omega_using [ha, hb, h, this, h0]
 
 /-- A unit of a pointer that is a multiple of 8 is one, for `wide`. -/
 theorem unit_al {wide : Bool} {p : Addr} (hp : wide = true → p.toNat % 8 = 0) (hw : wide = true)
     (k : Nat) : (p + BitVec.ofNat 64 (unitB wide * k)).toNat % 8 = 0 := by
   subst hw
-  exact Spill.al8 (hp rfl) (by show 8 * k % 8 = 0; omega)
+  exact Spill.al8 (hp rfl) (by show 8 * k % 8 = 0; omega_using [])
 
 /-- A byte, as the 8-bit word at its address. -/
 theorem byte_readW (m : Mem) (a : Addr) : (((m a).setWidth 64).setWidth 8 : BitVec 8) = m.readW a 8 := by
@@ -91,7 +91,7 @@ theorem count_loop {body : Prog isa} {cr : Reg} {n : Nat} (hn : 0 < n) (I : Nat 
     (hstep : ∀ k < n, ∀ s, I k s →
       WP isa body s fun s' => I (k + 1) s' ∧ (s'.gpr cr != 0) = decide (k + 1 ≠ n))
     {s : State} (h0 : I 0 s) : WP isa (.loop body (.nonzero cr)) s (I n) := by
-  refine WP.loop (M := isa) (fun m s => ∃ k, m = n - k ∧ k < n ∧ I k s) ?_ n s ⟨0, by omega, hn, h0⟩
+  refine WP.loop (M := isa) (fun m s => ∃ k, m = n - k ∧ k < n ∧ I k s) ?_ n s ⟨0, by omega_using [], hn, h0⟩
   rintro m s ⟨k, rfl, hk, hi⟩
   refine WP.mono (hstep k hk s hi) fun s' ⟨hi', hc⟩ => ?_
   have hz : isa.eval (.nonzero cr) s' = some (decide (k + 1 ≠ n)) := by
@@ -99,7 +99,7 @@ theorem count_loop {body : Prog isa} {cr : Reg} {n : Nat} (hn : 0 < n) (I : Nat 
   by_cases hl : k + 1 = n
   · refine .inl ⟨by rw [hz]; simp [hl], ?_⟩
     rwa [hl] at hi'
-  · exact .inr ⟨by rw [hz]; simp [hl], n - (k + 1), by omega, k + 1, rfl, by omega, hi'⟩
+  · exact .inr ⟨by rw [hz]; simp [hl], n - (k + 1), by omega_using [hk], k + 1, rfl, by omega_using [hk, hl], hi'⟩
 
 /-! ## `copyLoop` -/
 
@@ -136,9 +136,9 @@ theorem copy_step {wide : Bool} {s : State} {src dst : Addr} {n : Nat}
     rw [← Nat.mul_succ]; exact Nat.mul_le_mul_left _ hk
   have hn64 : n < 2 ^ 64 := Nat.lt_of_le_of_lt (Nat.le_mul_of_pos_left n hu) hlt
   have hsep' : Mem.Sep src (unitB wide * k + unitB wide) dst (unitB wide * k + unitB wide) :=
-    hsep.sep (by simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; omega)
-      (by simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; omega)
-  have hlt' : unitB wide * k + unitB wide < 2 ^ 64 := by omega
+    hsep.sep (by simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; omega_using [hle])
+      (by simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; omega_using [hle])
+  have hlt' : unitB wide * k + unitB wide < 2 ^ 64 := by omega_using [hlt, hle]
   -- The two accesses, then the same additions.
   suffices key : WP isa (.block (copyBody wide)) t fun t' =>
       t'.rd = t.rd ∧ t'.wr = t.wr ∧ t'.sp = t.sp ∧
@@ -261,12 +261,12 @@ theorem xor_step {wide : Bool} {s : State} {x y d : Addr} {n : Nat} (hlt : unitB
     rw [Proof.Scrypt.Memory.xorBytes_length _ _ (by simp [bytesAt]), Proof.Scrypt.Memory.bytesAt_length]
   have sx : Region.Disjoint ⟨x + BitVec.ofNat 64 (unitB wide * k), unitB wide⟩
       ⟨d, (xorBytes (bytesAt s.mem x (unitB wide * k)) (bytesAt s.mem y (unitB wide * k))).length⟩ := by
-    rw [hl]; exact (hdx.symm.sub_left (Proof.Scrypt.Memory.sub_off (by omega) (by omega))).sub_right
-      (Region.sub_prefix (by omega))
+    rw [hl]; exact (hdx.symm.sub_left (Proof.Scrypt.Memory.sub_off (by omega_using [hle]) (by omega_using [hlt, hle]))).sub_right
+      (Region.sub_prefix (by omega_using [hle]))
   have sy : Region.Disjoint ⟨y + BitVec.ofNat 64 (unitB wide * k), unitB wide⟩
       ⟨d, (xorBytes (bytesAt s.mem x (unitB wide * k)) (bytesAt s.mem y (unitB wide * k))).length⟩ := by
-    rw [hl]; exact (hdy.symm.sub_left (Proof.Scrypt.Memory.sub_off (by omega) (by omega))).sub_right
-      (Region.sub_prefix (by omega))
+    rw [hl]; exact (hdy.symm.sub_left (Proof.Scrypt.Memory.sub_off (by omega_using [hle]) (by omega_using [hlt, hle]))).sub_right
+      (Region.sub_prefix (by omega_using [hle]))
   -- The memory after one more unit, from the unit written.
   have mem_next : ∀ m', m' = writeBytes (writeBytes s.mem d
         (xorBytes (bytesAt s.mem x (unitB wide * k)) (bytesAt s.mem y (unitB wide * k))))
@@ -280,12 +280,12 @@ theorem xor_step {wide : Bool} {s : State} {x y d : Addr} {n : Nat} (hlt : unitB
       m' = writeBytes s.mem d
         (xorBytes (bytesAt s.mem x (unitB wide * (k + 1))) (bytesAt s.mem y (unitB wide * (k + 1)))) := by
     intro m' hm'
-    rw [hm', Proof.Scrypt.Memory.bytesAt_writeBytes_sep _ _ sx (by omega),
-      Proof.Scrypt.Memory.bytesAt_writeBytes_sep _ _ sy (by omega)]
+    rw [hm', Proof.Scrypt.Memory.bytesAt_writeBytes_sep _ _ sx (by omega_using [hlt, hle]),
+      Proof.Scrypt.Memory.bytesAt_writeBytes_sep _ _ sy (by omega_using [hlt, hle])]
     have e := writeBytes_append s.mem d _ (xorBytes (bytesAt s.mem (x + BitVec.ofNat 64 (unitB wide * k))
       (unitB wide)) (bytesAt s.mem (y + BitVec.ofNat 64 (unitB wide * k)) (unitB wide)))
       (by rw [hl, Proof.Scrypt.Memory.xorBytes_length _ _ (by simp [bytesAt]),
-        Proof.Scrypt.Memory.bytesAt_length]; omega)
+        Proof.Scrypt.Memory.bytesAt_length]; omega_using [hlt, hle])
     rw [hl] at e
     rw [e, Nat.mul_succ, Proof.Scrypt.Memory.bytesAt_add, Proof.Scrypt.Memory.bytesAt_add, xorBytes,
       xorBytes, xorBytes, List.zipWith_append (by simp [bytesAt])]
@@ -423,7 +423,7 @@ theorem n_step {s : State} {r e : Nat} (hr : 0 < r) (hlt : r * 2 ^ (e + 1) < 2 ^
   have ax : t₂.gpr .t0 = BitVec.ofNat 64 (r * 2 ^ (k + 1)) := by
     rw [u₂.other _ (by decide), u₁.gpr, h.t0, Proof.Scrypt.Memory.dbl_pow]
   have le : r * 2 ^ (k + 1) ≤ r * 2 ^ (e + 1) :=
-    Nat.mul_le_mul_left _ (Nat.pow_le_pow_right (by decide) (by omega))
+    Nat.mul_le_mul_left _ (Nat.pow_le_pow_right (by decide) (by omega_using [hk]))
   refine ⟨⟨by rw [u₃.rd, u₂.rd, u₁.rd, h.rd], by rw [u₃.wr, u₂.wr, u₁.wr, h.wr],
     by rw [u₃.sp, u₂.sp, u₁.sp, h.sp], by rw [u₃.mem, u₂.mem, u₁.mem, h.mem],
     fun r' h0 h1 h3 => ?_, by rw [u₃.other _ (by decide), ax], ?_⟩, ?_⟩
@@ -431,7 +431,7 @@ theorem n_step {s : State} {r e : Nat} (hr : 0 < r) (hlt : r * 2 ^ (e + 1) < 2 ^
   · rw [u₃.other _ (by decide), u₂.gpr, u₁.other _ (by decide), h.t1, ← Nat.one_mul (2 ^ k),
       Proof.Scrypt.Memory.dbl_pow, Nat.one_mul]
   · rw [u₃.gpr, ax, u₂.other _ (by decide), u₁.other _ (by decide),
-      h.other _ (by decide) (by decide) (by decide), h2, bne, sub_beq (by omega) hlt]
+      h.other _ (by decide) (by decide) (by decide), h2, bne, sub_beq (by omega_using [hlt, le]) hlt]
     by_cases hh : k + 1 = e + 1
     · simp [hh]
     · have : r * 2 ^ (k + 1) ≠ r * 2 ^ (e + 1) := fun h' =>

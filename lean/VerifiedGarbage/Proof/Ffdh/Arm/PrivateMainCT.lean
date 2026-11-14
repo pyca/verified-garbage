@@ -273,7 +273,7 @@ theorem privatePrepare_ready (s : State) {p : Inputs} {slots : List Nat} {yb xb 
     (h0 : 0 ∈ slots) (h24 : 24 ∈ slots) (h32 : 32 ∈ slots) (large : 1 < p.P) (odd : p.P % 2 = 1) :
     WP isa (VG.Impl.Ffdh.Arm.Domain.prepareAt 24) s (PrivateReady p slots yb xb) := by
   have pStack : Region.Disjoint ⟨State.addr p.domain, p.k⟩ ⟨State.addr s.sp, 72⟩ :=
-    h.context.domainStack.sub_left (Region.sub_prefix (by rw [p.domainLength]; split <;> omega))
+    h.context.domainStack.sub_left (Region.sub_prefix (by rw [p.domainLength]; split <;> omega_using []))
   refine WP.mono (prepareAt_ok s 24 h.context stable h24 h32 h0 h.context.pBytes p.pLength pStack large odd) ?_
   rintro u ⟨context, ready, modulus, r2, frame, rest⟩
   have sourceSep {src : BitVec 32} {bs : List Byte} (source : Octets p.base src p.len bs s)
@@ -323,7 +323,7 @@ theorem privateMain_ct {p : Inputs} {slots : List Nat} {yb xb1 xb2 : List Byte}
       VG.Impl.Ffdh.Arm.Domain.CheckPrivate.main (fun _ _ => True) := by
   have pStack (s : State) {xb : List Byte} (h : PrivateMainInput p slots yb xb s) :
       Region.Disjoint ⟨State.addr p.domain, p.k⟩ ⟨State.addr s.sp, 72⟩ :=
-    h.context.domainStack.sub_left (Region.sub_prefix (by rw [p.domainLength]; split <;> omega))
+    h.context.domainStack.sub_left (Region.sub_prefix (by rw [p.domainLength]; split <;> omega_using []))
   have prepare := (prepareAt_ct (p := p) (slot := 24) stable h24 h32 h0 p.pLength large odd).mono
     (P' := fun (s t : State) => PrivateMainInput p slots yb xb1 s ∧ PrivateMainInput p slots yb xb2 t ∧ s.sp = t.sp)
     (fun s t h => ⟨⟨h.1.context, h.1.context.pBytes, pStack s h.1⟩,
@@ -344,7 +344,7 @@ theorem privateMain_ct {p : Inputs} {slots : List Nat} {yb xb1 xb2 : List Byte}
       (fun _ _ h mem rest => h.after_mem mem rest) (fun _ _ h mem rest => h.after_mem mem rest)
     · intro _
       exact (privatePublic_ct stable h28 h32 h36 h40 h44 h56 h60 peerLength positive
-        (by have := p.maxLength; omega) count length odd).mono
+        (by have := p.maxLength; omega_using [scalarLength, this]) count length odd).mono
         (fun _ _ h => ⟨h.1.toPrivateReady, h.2.1.toPrivateReady, h.2.2⟩) (fun _ _ h => h)
     · intro _
       exact (ret_ct 2).mono (fun _ _ _ => trivial) (fun _ _ h => h)

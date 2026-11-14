@@ -115,13 +115,13 @@ theorem fragJ_tr (F : DjHWf K) (T : DjTWf K) {b : Prog isa} (hB : BatchHOk16 b) 
       (F := fun x x' => PPostB x x' [(sc (oHB K), 408)] ∧ SeedsIs ρ K.L.k (3 * i) 0 x')
       (Q := RQ (dcR K.L) (dcW K.L) ρ K.L.k (3 * i) 0) (fun x y h => ⟨hok x h.2.1, hok y h.2.2⟩)
       fun _ _ _ _ h hx hy => ⟨h.1.post (dcB_bases K.L) hx.1 hy.1, hx.2, hy.2⟩) ?_
-    refine RelCT.seq (seed_tr (dcB_bases K.L) (K := 0) (by omega) (by decide) (T.ij i hi 0 (by decide)).1
+    refine RelCT.seq (seed_tr (dcB_bases K.L) (K := 0) (by omega_using [hi, h16, hnb]) (by decide) (T.ij i hi 0 (by decide)).1
       (T.ij i hi 0 (by decide)).2 (hsd 0 (by decide)).1.1) ?_
-    refine RelCT.seq (seed_tr (dcB_bases K.L) (K := 1) (by omega) (by decide) (T.ij i hi 1 (by decide)).1
+    refine RelCT.seq (seed_tr (dcB_bases K.L) (K := 1) (by omega_using [hi, h16, hnb]) (by decide) (T.ij i hi 1 (by decide)).1
       (T.ij i hi 1 (by decide)).2 (hsd 1 (by decide)).1.1) ?_
-    refine RelCT.seq (seed_tr (dcB_bases K.L) (K := 2) (by omega) (by decide) (T.ij i hi 2 (by decide)).1
+    refine RelCT.seq (seed_tr (dcB_bases K.L) (K := 2) (by omega_using [hi, h16, hnb]) (by decide) (T.ij i hi 2 (by decide)).1
       (T.ij i hi 2 (by decide)).2 (hsd 2 (by decide)).1.1) ?_
-    refine RelCT.seq (seed_tr (dcB_bases K.L) (K := 3) (by omega) (by decide) (T.ij i hi 3 (by decide)).1
+    refine RelCT.seq (seed_tr (dcB_bases K.L) (K := 3) (by omega_using [hi, h16, hnb]) (by decide) (T.ij i hi 3 (by decide)).1
       (T.ij i hi 3 (by decide)).2 (hsd 3 (by decide)).1.1) ?_
     refine RelCT.mono (sampleHAt16_tr hB) (fun x y h => ⟨SHH16.of h.1.1 c4, SHH16.of h.1.2.1 c4, h.1.eq F.inBs.1,
       h.1.2.2.2, ?_⟩) fun _ _ h => h
@@ -136,7 +136,7 @@ theorem fragsJ_tr (F : DjHWf K) (T : DjTWf K) {b : Prog isa} (hB : BatchHOk16 b)
     RelCT isa (R K.L fun σ s => FJ F.toDcWfB σ 0 s) (seqR (frag K b) 0 (nb K.L))
       (R K.L fun σ s => FJ F.toDcWfB σ (nb K.L) s) := by
   have := seqR_tr (R := fun i => R K.L fun σ s => FJ F.toDcWfB σ i s) (nb K.L) 0 fun k _ hk =>
-    relInv (fun σ s hp h => fragJ_ok F.toDjFWf hB (by omega) h) (fragJ_tr F T hB (by omega))
+    relInv (fun σ s hp h => fragJ_ok F.toDjFWf hB (by omega_using [hk]) h) (fragJ_tr F T hB (by omega_using [hk]))
   rwa [Nat.zero_add] at this
 
 theorem quadJ_tr {n : String} {c : Prog isa} (v : S16Ok c) (F : DjHWf K) {q : Nat} (hq : q < K.L.k * K.L.k / 4) :
@@ -147,9 +147,9 @@ theorem quadJ_tr {n : String} {c : Prog isa} (v : S16Ok c) (F : DjHWf K) {q : Na
   have h16 : K.L.k * K.L.k ≤ 16 := Nat.mul_le_mul F.k.2 F.k.2
   have hk4 := F.k.2
   refine RelCT.mono (RelCT.exists_ (P := fun ρ x y => RQ (dcR K.L) (dcW K.L) ρ K.L.k (4 * q) 0 x y)
-    (Q := fun _ _ => True) fun ρ => quad16_tr (ρ := ρ) v (dcB_bases K.L) (by omega)
-      (fun t ht => ⟨by have := div_lt_k (show 4 * q + t < K.L.k * K.L.k by omega); omega,
-        by have := mod_lt_k (show 4 * q + t < K.L.k * K.L.k by omega); omega⟩) hc.1.1.1) ?_ fun _ _ _ => trivial
+    (Q := fun _ _ => True) fun ρ => quad16_tr (ρ := ρ) v (dcB_bases K.L) (by omega_using [hq, h16])
+      (fun t ht => ⟨by have := div_lt_k (show 4 * q + t < K.L.k * K.L.k by omega_using [hq, ht]); omega_using [hk4, this],
+        by have := mod_lt_k (show 4 * q + t < K.L.k * K.L.k by omega_using [hq, ht]); omega_using [hk4, this]⟩) hc.1.1.1) ?_ fun _ _ _ => trivial
   rintro x y ⟨σ₁, σ₂, p₁, p₂, pub, h₁, h₂⟩
   exact ⟨Enc.rhoE K.L (dcEk K.L σ₁), dc_lrel F.toDcWfB p₁ p₂ pub h₁.i.out.2.dc h₂.i.out.2.dc,
     ⟨h₁.sb, fun _ h => absurd h (Nat.not_lt_zero _)⟩,
@@ -162,12 +162,12 @@ theorem entsJ_tr {n : String} {c : Prog isa} (v : S16Ok c) (F : DjHWf K) :
   have h16 : K.L.k * K.L.k ≤ 16 := Nat.mul_le_mul F.k.2 F.k.2
   have := ents16_tr (n, c) K.L.k K.oA (sc K.oW)
     (R := fun e => R K.L fun σ s => 3 * nb K.L ≤ e ∧ EBX F.toDcWfB σ e s)
-    (fun e he he' => relFalse fun _ _ ⟨_, _, _, _, _, ⟨h3, _⟩, _⟩ => absurd F.noS (by omega))
-    (fun q hq => relInv (fun σ s hp hs => WP.mono (Enc16.quadE_step v (C := Decaps.dcX F.toDcWfB σ) (by omega) (F.enc.q q hq) hs.2)
+    (fun e he he' => relFalse fun _ _ ⟨_, _, _, _, _, ⟨h3, _⟩, _⟩ => absurd F.noS (by omega_using [he, he', h3]))
+    (fun q hq => relInv (fun σ s hp hs => WP.mono (Enc16.quadE_step v (C := Decaps.dcX F.toDcWfB σ) (by omega_using [h16, hq]) (F.enc.q q hq) hs.2)
         fun _ h => ⟨by omega, h.2⟩)
       (RelCT.mono (quadJ_tr v F hq)
         (fun _ _ ⟨σ₁, σ₂, p₁, p₂, pub, h₁, h₂⟩ => ⟨σ₁, σ₂, p₁, p₂, pub, h₁.2, h₂.2⟩) fun _ _ h => h))
-    (K.L.k * K.L.k - 3 * nb K.L) (3 * nb K.L) (by have := F.nbK; omega) F.eS
+    (K.L.k * K.L.k - 3 * nb K.L) (3 * nb K.L) (by have := F.nbK; omega_using [this]) F.eS
   rw [Nat.add_sub_cancel' F.nbK.2] at this
   exact RelCT.mono this (fun _ _ ⟨σ₁, σ₂, p₁, p₂, pub, h₁, h₂⟩ => ⟨σ₁, σ₂, p₁, p₂, pub, ⟨Nat.le_refl _, h₁⟩,
     ⟨Nat.le_refl _, h₂⟩⟩) fun _ _ ⟨σ₁, σ₂, p₁, p₂, pub, h₁, h₂⟩ => ⟨σ₁, σ₂, p₁, p₂, pub, h₁.2, h₂.2⟩

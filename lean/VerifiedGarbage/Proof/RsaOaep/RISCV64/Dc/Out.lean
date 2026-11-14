@@ -49,13 +49,13 @@ theorem nzbit (x : BitVec 64) : ((BitVec.ofNat 64 0 - x) ||| x) >>> 63 = if x = 
     have h0 : x.toNat ≠ 0 := fun h => hx (BitVec.eq_of_toNat_eq (by rw [h]; rfl))
     have hl := x.isLt
     have hs : (BitVec.ofNat 64 0 - x).toNat = 2 ^ 64 - x.toNat := by
-      rw [BitVec.toNat_sub, BitVec.toNat_ofNat]; omega
+      rw [BitVec.toNat_sub, BitVec.toNat_ofNat]; omega_using [h0]
     have h1 : 2 ^ 63 ≤ ((BitVec.ofNat 64 0 - x).toNat ||| x.toNat) := by
       rcases Nat.lt_or_ge x.toNat (2 ^ 63) with h | h
-      · exact Nat.le_trans (by rw [hs]; omega) Nat.left_le_or
+      · exact Nat.le_trans (by rw [hs]; omega_using [h]) Nat.left_le_or
       · exact Nat.le_trans h Nat.right_le_or
     have h2 : ((BitVec.ofNat 64 0 - x).toNat ||| x.toNat) < 2 ^ 64 := Nat.or_lt_two_pow (BitVec.isLt _) hl
-    rw [Nat.div_eq_of_lt_le (k := 1) (by omega) (by omega)]; rfl
+    rw [Nat.div_eq_of_lt_le (k := 1) (by omega_using [h1]) (by omega_using [h2])]; rfl
 
 /-- `ok` from the result `rc` and the accumulator `x`. -/
 theorem okbits {rc : Nat} (hrc : rc ≤ 2) (x : BitVec 64) :
@@ -64,15 +64,15 @@ theorem okbits {rc : Nat} (hrc : rc ≤ 2) (x : BitVec 64) :
   rw [nzbit]
   by_cases hx : x = 0
   · rw [ifp hx, mk]
-    rcases (by omega : rc = 0 ∨ rc = 1 ∨ rc = 2) with rfl | rfl | rfl <;> simp only [hx] <;> decide
+    rcases (by omega_using [hrc] : rc = 0 ∨ rc = 1 ∨ rc = 2) with rfl | rfl | rfl <;> simp only [hx] <;> decide
   · rw [ifn hx, mk, ifn (fun h => hx h.2)]
-    rcases (by omega : rc = 0 ∨ rc = 1 ∨ rc = 2) with rfl | rfl | rfl <;> decide
+    rcases (by omega_using [hrc] : rc = 0 ∨ rc = 1 ∨ rc = 2) with rfl | rfl | rfl <;> decide
 
 /-- The result's fault bit: 2 if `rc = 2`, 0 if not. -/
 theorem faultbits {rc : Nat} (hrc : rc ≤ 2) :
     let f := ((BitVec.ofNat 64 rc ^^^ BitVec.ofNat 64 2) - BitVec.ofNat 64 1) >>> 63
     f + f = if rc = 2 then 2#64 else 0#64 := by
-  rcases (by omega : rc = 0 ∨ rc = 1 ∨ rc = 2) with rfl | rfl | rfl <;> decide
+  rcases (by omega_using [hrc] : rc = 0 ∨ rc = 1 ∨ rc = 2) with rfl | rfl | rfl <;> decide
 
 /-- `Saves` of the entry state with other memory is `Saves` of the entry state. -/
 theorem Saves.ofMem {s t : State} {m : Mem} (h : Saves (withMem s m) t) : Saves s t := ⟨h.sp, h.wr, h.sv⟩
@@ -96,7 +96,7 @@ theorem andCopy_ok {u : State} {p q : Addr} {n : Nat} {msk : BitVec 64} (hn : 0 
       rw [hK.rd, hK.wr]; exact hr _ hi
     have hv : t.mem (q + BitVec.ofNat 64 i) = u.mem (q + BitVec.ofNat 64 i) := by
       rw [hm, writeBytes_out _ _ _ _ n (fun i' hi' => hd i hi i' hi')
-        (by simp only [List.length_take, List.length_map, bytesAt_length]; omega)]
+        (by simp only [List.length_take, List.length_map, bytesAt_length]; omega_using [])]
     refine wp_lbu (a := q + BitVec.ofNat 64 i) (by rw [h4', BitVec.add_zero]) hR fun s₁ o₁ e₁ =>
       wp_and fun s₂ o₂ e₂ => ?_
     have hA : InRegions s₂.wr (p + BitVec.ofNat 64 i) 1 := by
@@ -108,13 +108,13 @@ theorem andCopy_ok {u : State} {p q : Addr} {n : Nat} {msk : BitVec 64} (hn : 0 
     have hK' : Kept [.t1, .a4, .a5, .a6] t s₆ :=
       (o₁.keep.trans (o₂.keep.trans (m₃.keep.trans (o₄.keep.trans (o₅.keep.trans o₆.keep))))).mono
     have hlt : (((Spec.Rsa.bytesAt u.mem q n).map fun b => andB b msk).take i).length = i := by
-      simp [bytesAt_length]; omega
-    have hget : ((Spec.Rsa.bytesAt u.mem q n).map fun b => andB b msk)[i]'(by simp [bytesAt_length]; omega) =
+      simp [bytesAt_length]; omega_using [hi]
+    have hget : ((Spec.Rsa.bytesAt u.mem q n).map fun b => andB b msk)[i]'(by simp [bytesAt_length]; omega_using [hi]) =
         andB (u.mem (q + BitVec.ofNat 64 i)) msk := by
       simp [Spec.Rsa.bytesAt]
     refine ⟨⟨(hK.trans hK').mono, ?_, ?_, ?_⟩, ?_⟩
     · rw [o₆.mem, o₅.mem, o₄.mem, m₃.mem, o₂.mem, o₁.mem, hm, List.take_succ_eq_append_getElem
-        (by simp [bytesAt_length]; omega), writeBytes_snoc _ _ _ _ (by omega), hlt, hget]
+        (by simp [bytesAt_length]; omega_using [hi]), writeBytes_snoc _ _ _ _ (by omega_using [hn', hi, hlt]), hlt, hget]
       congr 1
       rw [e₂, e₁, o₁.get .s7, hK.get .s7, h7, hv]; rfl
     · rw [o₆.get .a5, e₅, o₄.get .a5, m₃.gpr, o₂.get .a5, o₁.get .a5, h5', ofNat_succ']
@@ -151,8 +151,8 @@ theorem okMask_ok {t : State} (h : Base (SD s) (VD s rc) (withMem s m) t) (hrc :
 theorem out_w : ∀ i < kk s, InRegions (fr s :: s.wr) (s.gpr .a0 + BitVec.ofNat 64 i) 1 :=
   fun i hi => by
     rw [P.hwr]
-    exact ⟨oR s, by simp, Offset.contains_base _ (by have := P.ok; unfold kk at hi; omega)
-      (by have := P.k2; unfold kk at hi; omega)⟩
+    exact ⟨oR s, by simp, Offset.contains_base _ (by have := P.ok; unfold kk at hi; omega_using [hi, this])
+      (by have := P.k2; unfold kk at hi; omega_using [hi])⟩
 
 /-- `*msg_len` is writable. -/
 theorem ml_w : InRegions (fr s :: s.wr) (s.gpr .a2 + BitVec.ofNat 64 0) 8 := by
@@ -184,10 +184,10 @@ theorem outLoop_ok {t : State} (h : Base (SD s) (VD s rc) (withMem s m) t) :
   have hsep : ∀ j < kk s, ∀ i < kk s, off (Sd s) oBuf + BitVec.ofNat 64 j ≠ s.gpr .a0 + BitVec.ofNat 64 i :=
     fun j hj i hi => ne_of_dis (A := scR s) (B := oR s) P.os.symm (by
       show (scR s).Contains (off (off (Sd s) oBuf) j) 1
-      rw [off_off]; exact (sc_sub P) _ (sc_in (n := 1) (by omega) _ (Region.contains_self _ _)))
-      (Offset.contains_base _ (by have := P.ok; omega) (by omega))
-  refine WP.mono (andCopy_ok (q := off (Sd s) oBuf) (p := s.gpr .a0) (n := kk s) (msk := t.gpr .s7) (by omega)
-    (by omega) (by rw [o₃.get .a4, o₂.get .a4, e₁, e₀, h.s0]; exact bufBase_eq _)
+      rw [off_off]; exact (sc_sub P) _ (sc_in (n := 1) (by omega_using [hk2, ek, hB, hR, hj]) _ (Region.contains_self _ _)))
+      (Offset.contains_base _ (by have := P.ok; omega_using [ek, hi, this]) (by omega_using [ek, hi]))
+  refine WP.mono (andCopy_ok (q := off (Sd s) oBuf) (p := s.gpr .a0) (n := kk s) (msk := t.gpr .s7) (by omega_using [hk1, ek])
+    (by omega_using [ek]) (by rw [o₃.get .a4, o₂.get .a4, e₁, e₀, h.s0]; exact bufBase_eq _)
     (by rw [o₃.get .a5, e₂, o₁.get .s2, o₀.get .s2, Base.dout h])
     (by rw [e₃, o₂.get .s1, o₁.get .s1, o₀.get .s1, Base.dk h]
         exact (BitVec.ofNat_toNat _ _).trans (BitVec.setWidth_eq _) |>.symm)
@@ -195,7 +195,7 @@ theorem outLoop_ok {t : State} (h : Base (SD s) (VD s rc) (withMem s m) t) :
     (fun j hj => by
       rw [k₃.rd, k₃.wr, hw]
       show InRegions _ (off (off (Sd s) oBuf) j) 1
-      rw [off_off]; exact sc_inR PF (by omega) _)
+      rw [off_off]; exact sc_inR PF (by omega_using [hk2, ek, hB, hR, hj]) _)
     (by rw [k₃.wr, hw]; exact out_w P) hsep) fun t' ⟨hK, hm⟩ => ?_
   have K : Kept [.a4, .a5, .a6, .t1] t t' := (k₃.keep.trans hK).mono
   have hm' : t'.mem = writeBytes t.mem (s.gpr .a0)
@@ -205,7 +205,7 @@ theorem outLoop_ok {t : State} (h : Base (SD s) (VD s rc) (withMem s m) t) :
     rw [hm']
     refine writeBytes_frame _ _ _ ?_
     simp only [Region.Contains, BitVec.sub_self, List.length_map, bytesAt_length]
-    have := P.ok; unfold kk; simp; omega
+    have := P.ok; unfold kk; simp; omega_using [this]
   exact ⟨Saves.ofMem (h.sv.keep K fr fun r hr => by rw [List.mem_singleton.mp hr]; exact slR_dis P.ko),
     K.rd.trans h.rd, K, hm'⟩
 
@@ -220,7 +220,7 @@ theorem decRet_ok {H : Hash} {D : Nat} (hD : H.D = D) (hD64 : D ≤ 64) {u : Sta
   subst hD
   unfold decRet faultBit
   simp only [List.cons_append, List.nil_append]
-  refine wp_subi (imm := 2 * H.D + 2) (h := by omega) fun u₁ o₁ e₁ => wp_sub fun u₂ o₂ e₂ =>
+  refine wp_subi (imm := 2 * H.D + 2) (h := by omega_using [hD64]) fun u₁ o₁ e₁ => wp_sub fun u₂ o₂ e₂ =>
     wp_and fun u₃ o₃ e₃ => ?_
   have k₃ : Only [.a1] u u₃ := (o₁.trans (o₂.trans o₃)).mono
   refine wp_sd (a := s.gpr .a2 + BitVec.ofNat 64 0) (by rw [k₃.get .s3, h3])
@@ -255,7 +255,7 @@ theorem decFail_ok {t : State} (h : Base (SD s) (VD s rc) (withMem s m) t) (hrc 
   refine WP.seq (WP.seq (wp_mov fun t₁ o₁ e₁ => wp_mov fun t₂ o₂ e₂ => wp_li (imm := 0) (by decide)
     fun t₃ o₃ e₃ => wp_nil ?_))
   have k₃ : Only [.a1, .t5, .t0] t t₃ := (o₁.trans (o₂.trans o₃)).mono
-  refine WP.mono (fill_ok (p := s.gpr .a0) (n := kk s) (b := 0) (by omega) (by omega)
+  refine WP.mono (fill_ok (p := s.gpr .a0) (n := kk s) (b := 0) (by omega_using [hk1, ek]) (by omega_using [ek])
     (by rw [o₃.get .a1, o₂.get .a1, e₁, Base.dout h])
     (by rw [o₃.get .t5, e₂, o₁.get .s1, Base.dk h]
         exact (BitVec.ofNat_toNat _ _).trans (BitVec.setWidth_eq _) |>.symm)
@@ -277,7 +277,7 @@ theorem decFail_ok {t : State} (h : Base (SD s) (VD s rc) (withMem s m) t) (hrc 
     refine ((writeBytes_frame _ _ _ ?_).mono fun r hr => by simp at hr ⊢; exact .inl hr).writeW
       (List.mem_cons_of_mem _ (List.mem_singleton_self _)) _ (Region.contains_self _ _)
     simp only [Region.Contains, BitVec.sub_self, List.length_replicate]
-    have := P.ok; unfold kk; simp; omega
+    have := P.ok; unfold kk; simp; omega_using [this]
   refine ⟨Saves.ofMem (h.sv.keep K fm fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl

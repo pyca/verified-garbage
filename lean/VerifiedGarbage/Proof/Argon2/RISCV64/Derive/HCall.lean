@@ -122,7 +122,7 @@ theorem hcall_pre {s : State} (h : Inv s₀ s) (a4 : s.gpr .a4 = scrP s₀)
     rcases hR with rfl | rfl
     · exact ⟨memR s₀, by rw [h.wr, entry_wr, hp.wr]; simp, off, hb, hl⟩
     · exact ⟨⟨at' s₀ 0, 320⟩, by rw [h.wr]; exact frame_mem, off, hb, by
-        show off + (s.gpr .a1).toNat ≤ 320; simp only at hl; omega⟩
+        show off + (s.gpr .a1).toNat ≤ 320; simp only at hl; omega_using [hl]⟩
   exact ⟨pre, cov, wrs, hout'⟩
 
 /-- `hprime(a0, a1, a2, a3, a4)` from the body. -/

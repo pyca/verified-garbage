@@ -49,7 +49,7 @@ theorem arg_value (s : State) (j : Nat) :
   simp only [stackArg, stackArgAddr]
   rw [VG.Offset.add_add]
   congr 3
-  omega
+  omega_using []
 
 /-- The registers the entry writes. -/
 abbrev entryRegs : List Reg := [.r0, .r4, .r6, .r10, .r11, .r12, .r31]

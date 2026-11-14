@@ -38,7 +38,7 @@ variable {s t : State}
 
 theorem CIn.spP (h : CIn s) : State.addr (mkP s).sp = fB s + BitVec.ofNat 64 56 := by
   show State.addr (s.sp - BitVec.ofNat 32 56) = _
-  rw [FrameStack.addr_sub' (by have := h.spLo; omega), Offset.sub_ofNat_eq _ (show 56 ≤ 112 by decide)]
+  rw [FrameStack.addr_sub' (by have := h.spLo; omega_using [this]), Offset.sub_ofNat_eq _ (show 56 ≤ 112 by decide)]
 
 theorem spA_eq (s : State) : stackArgAddr s 0 = fB s + BitVec.ofNat 64 112 := by
   rw [show fB s = State.addr s.sp - BitVec.ofNat 64 112 from rfl, BitVec.sub_add_cancel]
@@ -49,7 +49,7 @@ theorem CIn.argAddr (h : CIn s) {i : Nat} (hi : i < 7) :
   have := h.spLo; have := h.spHi
   show off (State.addr (s.sp - BitVec.ofNat 32 56)) (56 + 4 * i) = _
   simp only [stackArgAddr, off]
-  rw [FrameStack.addr_sub' (by omega), addr_add (by omega), ← Offset.add_add, BitVec.sub_add_cancel]
+  rw [FrameStack.addr_sub' (by omega_arith), addr_add (by omega_using [hi, this]), ← Offset.add_add, BitVec.sub_add_cancel]
 
 theorem CIn.frSub (h : CIn s) : Region.Sub (mkP s).rFr (cF s) := by
   show Region.Sub ⟨State.addr (mkP s).sp, 56⟩ ⟨fB s, 112⟩
@@ -58,7 +58,7 @@ theorem CIn.frSub (h : CIn s) : Region.Sub (mkP s).rFr (cF s) := by
 theorem CIn.rcSub (h : CIn s) : Region.Sub (mkP s).rC (cF s) := by
   have := h.spLo
   show Region.Sub ⟨State.addr (s.sp - BitVec.ofNat 32 56 - BitVec.ofNat 32 56), 56⟩ ⟨fB s, 112⟩
-  rw [BitVec.sub_sub, ← BitVec.ofNat_add, FrameStack.addr_sub' (by omega)]
+  rw [BitVec.sub_sub, ← BitVec.ofNat_add, FrameStack.addr_sub' (by omega_using [this])]
   simpa using Offset.sub_base (fB s) (d := 0) (n := 56) (k := 112) (by decide)
 
 theorem CIn.disjF (h : CIn s) {r : Region} (h1 : r.Disjoint (cF s)) (h2 : r.Disjoint (cA s)) :
@@ -66,20 +66,20 @@ theorem CIn.disjF (h : CIn s) {r : Region} (h1 : r.Disjoint (cF s)) (h2 : r.Disj
   show r.Disjoint ⟨State.addr (mkP s).sp, 84⟩
   rw [h.spP]
   intro x hx hc
-  have e1 := (Offset.lt_iff x (fB s) (d := 56) (n := 84) (by decide)).mp (by simp only [Region.Contains] at hc; omega)
+  have e1 := (Offset.lt_iff x (fB s) (d := 56) (n := 84) (by decide)).mp (by simp only [Region.Contains] at hc; omega_using [hc])
   by_cases hlt : (x - fB s).toNat < 112
-  · exact h1 x hx (by show (x - fB s).toNat + 1 ≤ 112; omega)
+  · exact h1 x hx (by show (x - fB s).toNat + 1 ≤ 112; omega_using [hlt])
   · refine h2 x hx ?_
     simp only [Region.Contains]
     rw [spA_eq s]
-    have := (Offset.lt_iff x (fB s) (d := 112) (n := 28) (by decide)).mpr ⟨by omega, by omega⟩
-    omega
+    have := (Offset.lt_iff x (fB s) (d := 112) (n := 28) (by decide)).mpr ⟨by omega_using [hlt], by omega_using [e1]⟩
+    omega_using [this]
 
 /-- Memory after the push and the entry: changed only in the frames. -/
 theorem CIn.tFrame (h : CIn s) (mem : t.mem = (pcPushed s).mem.writeW (off (State.addr (mkP s).sp) 48) (s.gpr .r0)) :
     Frame [cF s] s.mem t.mem := by
   have f := FrameStack.pushed_frameA (rs := [.r0, .r1, .r2, .r3, .r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12, .lr])
-    (s := s) (by have := h.spLo; simp only [List.length_cons, List.length_nil]; omega)
+    (s := s) (by have := h.spLo; simp only [List.length_cons, List.length_nil]; omega_using [this])
   have e : FrameStack.belowA s.sp (4 * 14) = (mkP s).rFr := rfl
   rw [show [Reg.r0, .r1, .r2, .r3, .r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12, .lr].length = 14 from rfl, e] at f
   have w : Frame [(mkP s).rFr] (pcPushed s).mem t.mem := by

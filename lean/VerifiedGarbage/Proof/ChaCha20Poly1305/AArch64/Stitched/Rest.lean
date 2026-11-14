@@ -59,14 +59,14 @@ abbrev restR (s₀ : State) (P : Nat) : Region :=
 
 theorem data_in {s₀ : State} {k : Nat} (hk : k < L s₀) :
     (dR s₀).Contains (dp s₀ + BitVec.ofNat 64 k) 1 :=
-  Offset.contains_base _ (by omega) (by have h : L s₀ < 2 ^ 64 := (s₀.gpr .x5).isLt; omega)
+  Offset.contains_base _ (by omega_using [hk]) (by have h : L s₀ < 2 ^ 64 := (s₀.gpr .x5).isLt; omega_using [hk, h])
 
 theorem not_rest {s₀ : State} {P k : Nat} (hk : k < P) (hP : P ≤ L s₀) :
     ¬ (restR s₀ P).Contains (dp s₀ + BitVec.ofNat 64 k) 1 := by
   have hL : L s₀ < 2 ^ 64 := (s₀.gpr .x5).isLt
   simp only [Region.Contains]
-  rw [Offset.sub_toNat' _ (by omega) (by omega)]
-  split <;> omega
+  rw [Offset.sub_toNat' _ (by omega_using [hP, hL]) (by omega_using [hk, hP, hL])]
+  split <;> omega_arith
 
 /-- The keystream from block `q`. -/
 theorem ks_shift (S : VG.Proof.ChaCha20.CState) {len q k : Nat} (hk : k < len) (hq : 64 * q ≤ k) :
@@ -74,7 +74,7 @@ theorem ks_shift (S : VG.Proof.ChaCha20.CState) {len q k : Nat} (hk : k < len) (
       (Spec.ChaCha20.serialize (Spec.ChaCha20.block (ctr (ctr S q) ((k - 64 * q) / 64)))).getD
         ((k - 64 * q) % 64) 0 := by
   rw [VG.Proof.ChaCha20.keystream_getD _ hk, VG.Proof.ChaCha20.AArch64.Neon4.ctr_add,
-    show q + (k - 64 * q) / 64 = k / 64 by omega, show (k - 64 * q) % 64 = k % 64 by omega]
+    show q + (k - 64 * q) / 64 = k / 64 by omega_using [hq], show (k - 64 * q) % 64 = k % 64 by omega_using [hq]]
 
 /-- The output after its first `P` bytes. -/
 abbrev restQ (s₀ : State) (Q : Addr) (P : Nat) : Region :=
@@ -84,8 +84,8 @@ theorem not_restQ {s₀ : State} {Q : Addr} {P k : Nat} (hk : k < P) (hP : P ≤
     ¬ (restQ s₀ Q P).Contains (Q + BitVec.ofNat 64 k) 1 := by
   have hL : L s₀ < 2 ^ 64 := (s₀.gpr .x5).isLt
   simp only [Region.Contains]
-  rw [Offset.sub_toNat' _ (by omega) (by omega)]
-  split <;> omega
+  rw [Offset.sub_toNat' _ (by omega_using [hP, hL]) (by omega_using [hk, hP, hL])]
+  split <;> omega_arith
 
 /-- `bytesAt` of a destination XORed from a source. -/
 theorem bytesAt_xor2 {m m' : Mem} {p q : Addr} {n : Nat} {ks : List Byte} (hks : ks.length = n)
@@ -118,8 +118,8 @@ theorem rest_callOut (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ : State} (hp : A
         Spec.ChaCha20.encrypt (K s₀) 1 (N s₀) (bytesAt s.mem (dp s₀) (L s₀)) := by
   have hL : L s₀ < 2 ^ 64 := (s₀.gpr .x5).isLt
   have wo := hp.o.wrap
-  have ts : Region.Sub (restQ s₀ (op e s₀) P) (oR e s₀) := Offset.sub_base _ (by omega)
-  refine xor_callOut v hp hrd hwr h28 hx0 hx1 hx2 hx3 (by omega) fun s' v' k' d' => ?_
+  have ts : Region.Sub (restQ s₀ (op e s₀) P) (oR e s₀) := Offset.sub_base _ (by omega_using [hle])
+  refine xor_callOut v hp hrd hwr h28 hx0 hx1 hx2 hx3 (by omega_using [hle]) fun s' v' k' d' => ?_
   refine ⟨v', ?_, ?_, ?_⟩
   · refine k'.sub fun r hr => ?_
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -139,7 +139,7 @@ theorem rest_callOut (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ : State} (hp : A
     refine bytesAt_xor2 (VG.Proof.ChaCha20.length_keystream _ _) fun k hk => ?_
     by_cases hk' : k < P
     · have hin : (oR e s₀).Contains (op e s₀ + BitVec.ofNat 64 k) 1 :=
-        Offset.contains_base _ (by omega) (by omega)
+        Offset.contains_base _ (by omega_using [hk]) (by omega_using [hL, hk])
       have hs : ¬ (⟨off (cx s₀) 64, 64⟩ : Region).Contains (op e s₀ + BitVec.ofNat 64 k) 1 :=
         fun hh => hp.o.ctx.sub_left (sub_ctx s₀ (k := 64) (n := 64) (by lit_omega)) _ hh hin
       have hb : ¬ (⟨off (cx s₀) 128, 320⟩ : Region).Contains (op e s₀ + BitVec.ofNat 64 k) 1 :=
@@ -150,14 +150,14 @@ theorem rest_callOut (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ : State} (hp : A
         · exact hs
         · exact not_restQ hk' hle
         · exact hb), hout k hk']
-    · have hPL : P < L s₀ := by omega
+    · have hPL : P < L s₀ := by omega_using [hk, hk']
       have h64 := hP hPL
       have ea : ∀ X : Addr, X + BitVec.ofNat 64 P + BitVec.ofNat 64 (k - P) = X + BitVec.ofNat 64 k := fun X => by
-        rw [BitVec.add_assoc, ← BitVec.ofNat_add, Nat.add_sub_cancel' (by omega)]
+        rw [BitVec.add_assoc, ← BitVec.ofNat_add, Nat.add_sub_cancel' (by omega_using [hk'])]
       have x := VG.Proof.ChaCha20.AArch64.Xor.bytes_of_to
-        (VG.Proof.ChaCha20.length_keystream _ _) d' (k := k - P) (by omega)
-      rw [ea, ea, hdata k hk (by omega), hcnt hPL, VG.Proof.ChaCha20.keystream_getD _ (by omega)] at x
-      rw [x, ks_shift _ hk (q := P / 64) (by omega), show 64 * (P / 64) = P by omega]
+        (VG.Proof.ChaCha20.length_keystream _ _) d' (k := k - P) (by omega_using [hk, hk'])
+      rw [ea, ea, hdata k hk (by omega_using [hk']), hcnt hPL, VG.Proof.ChaCha20.keystream_getD _ (by omega_using [hk, hk'])] at x
+      rw [x, ks_shift _ hk (q := P / 64) (by omega_using [hk']), show 64 * (P / 64) = P by omega_using [hP, hPL]]
 
 /-- `rest_callOut` in place (`seal`), from the data's first `P` bytes
 encrypted in place. -/
@@ -177,8 +177,8 @@ theorem rest_call (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ : State} (hp : APre
       bytesAt s'.mem (dp s₀) (L s₀) =
         Spec.ChaCha20.encrypt (K s₀) 1 (N s₀) (bytesAt s.mem (dp s₀) (L s₀)) :=
   rest_callOut v hp hle hP hx0 hx1 hx2 hx3 hrd hwr h28 hcnt
-    (fun k hk hkp => by rw [hdata k hk, ite_eq_right (by omega)])
-    (fun k hk => by rw [op_true, hdata k (by omega), ite_eq_left hk])
+    (fun k hk hkp => by rw [hdata k hk, ite_eq_right (by omega_using [hkp])])
+    (fun k hk => by rw [op_true, hdata k (by omega_using [hle, hk]), ite_eq_left hk])
 
 /-- The data before the rest is kept. -/
 theorem prefix_rest {s₀ : State} (hp : APre e s₀) {m m' : Mem} {P n : Nat}
@@ -192,8 +192,8 @@ theorem prefix_rest {s₀ : State} (hp : APre e s₀) {m m' : Mem} {P n : Nat}
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl
   · exact fun hh => hp.c_d.sub_left (sub_ctx s₀ (k := 64) (n := 384) (by lit_omega)) _ hh
-      (data_in (by omega))
-  · exact not_rest (by omega) hP
+      (data_in (by omega_using [hn, hP, hi]))
+  · exact not_rest (by omega_using [hn, hi]) hP
 
 /-- `cryptRest`'s arguments: the stream's, from the context and `x22`, `x23`. -/
 theorem restArgs_ok {s₀ : State} {w : State} (hx21 : w.gpr .x21 = cx s₀) :

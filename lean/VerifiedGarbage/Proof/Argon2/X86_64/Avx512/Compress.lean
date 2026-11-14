@@ -193,7 +193,7 @@ theorem body_ok {s : State} {p x y out : Addr} (hs : Scratch s p) (hin : Inputs 
   have hq : cv s2.mem p = (List.finRange 8).foldl (fun b r => permuteAt (rowIndex r) b)
       (xorBlock (blockAt s.mem x) (blockAt s.mem y)) := by
     apply Vector.ext; intro i hi
-    rw [hrow i hi, ifp (List.mem_range.mpr (by omega)), Proof.Argon2.rows_get _ i hi, horig]
+    rw [hrow i hi, ifp (List.mem_range.mpr (by omega_using [hi])), Proof.Argon2.rows_get _ i hi, horig]
     rfl
   have hz : cv s3.mem p = (List.finRange 8).foldl (fun b c => permuteAt (colIndex c) b) (cv s2.mem p) := by
     rw [hcol, Proof.Argon2.foldl_pairs]
@@ -202,7 +202,7 @@ theorem body_ok {s : State} {p x y out : Addr} (hs : Scratch s p) (hin : Inputs 
     rw [original_preserved hf3, original_preserved hf2, horig]
   refine ⟨?_, ?_, fun r _ => ?_, ?_, ?_, ?_⟩
   · apply Vector.ext; intro i hi
-    have e := hfin i hi (by simp only [fchunk]; omega)
+    have e := hfin i hi (by simp only [fchunk]; omega_using [hi])
     show (blockAt t.mem out)[(⟨i, hi⟩ : Fin 128)] =
       (compress (blockAt s.mem x) (blockAt s.mem y))[(⟨i, hi⟩ : Fin 128)]
     have er := blockAt_get s3.mem p ⟨i, hi⟩

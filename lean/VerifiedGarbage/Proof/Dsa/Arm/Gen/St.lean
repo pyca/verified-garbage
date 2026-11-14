@@ -94,7 +94,7 @@ theorem GI.scrBig (h : GI G σ V LS s) : sK G.pLen + kz G.pLen ≤ G.scrLen * 8 
   simp only [sK, sA, wa, kz]
   generalize G.pLen = L at *; generalize G.scrLen = n at *
   clear e1 e2
-  rcases l with ⟨rfl, _⟩ | ⟨rfl, _⟩ | ⟨rfl, _⟩ <;> omega
+  rcases l with ⟨rfl, _⟩ | ⟨rfl, _⟩ | ⟨rfl, _⟩ <;> omega_using [this]
 
 theorem GI.scrFit (h : GI G σ V LS s) : G.scr.toNat + G.scrLen * 8 ≤ 2 ^ 32 := by
   have := h.pre.nC; rw [← h.hG]; exact this
@@ -102,11 +102,11 @@ theorem GI.scrFit (h : GI G σ V LS s) : G.scr.toNat + G.scrLen * 8 ≤ 2 ^ 32 :
 /-- Byte `o` of `scratch`, from a pointer. -/
 theorem GI.saddr (h : GI G σ V LS s) {o : Nat} (ho : o < G.scrLen * 8) :
     State.addr (G.scr + BitVec.ofNat 32 o) = G.sa o := by
-  have := h.scrFit; exact addr_add (by omega)
+  have := h.scrFit; exact addr_add (by omega_using [ho, this])
 
 theorem GI.kaddr (h : GI G σ V LS s) : State.addr G.KB = G.sa (sK G.pLen) := by
-  have := h.scrBig; have : 0 < kz G.pLen := by simp only [kz]; omega
-  exact h.saddr (by omega)
+  have := h.scrBig; have : 0 < kz G.pLen := by simp only [kz]; omega_using []
+  exact h.saddr (by omega_arith)
 
 /-- A range of `scratch` is writable. -/
 theorem sw (G : GP) {o n : Nat} (ho : o + n ≤ G.scrLen * 8) :
@@ -116,7 +116,7 @@ theorem sw (G : GP) {o n : Nat} (ho : o + n ≤ G.scrLen * 8) :
 theorem GI.inScr (h : GI G σ V LS s) {o n : Nat} (ho : o + n ≤ G.scrLen * 8) :
     InRegions s.wr (G.sa o) n := by
   have := h.scrFit
-  refine ⟨G.rScr, ?_, Offset.contains_base _ ho (by omega)⟩
+  refine ⟨G.rScr, ?_, Offset.contains_base _ ho (by omega_using [ho, this])⟩
   rw [h.wr, h.pre.wr, h.hG]; simp
 
 theorem GI.kSub (h : GI G σ V LS s) : Region.Sub G.rK G.rScr := by
@@ -128,7 +128,7 @@ theorem GI.sdisj (h : GI G σ V LS s) {o n o' n' : Nat} (hs : o + n ≤ o' ∨ o
     (h1 : o + n ≤ G.scrLen * 8) (h2 : o' + n' ≤ G.scrLen * 8) :
     (G.rs o n).Disjoint (G.rs o' n') := by
   have := h.scrFit
-  exact Offset.disjoint _ hs (by omega) (by omega)
+  exact Offset.disjoint _ hs (by omega_using [h1, this]) (by omega_using [h2, this])
 
 /-- `scratch` is apart from the frame and the stack below it. -/
 theorem GI.scr_frame (h : GI G σ V LS s) {o n : Nat} (ho : o + n ≤ G.scrLen * 8) :
@@ -162,26 +162,26 @@ theorem arrs_fit {L j : Nat} (hL : L = 128 ∨ L = 256 ∨ L = 384) (hj : j < nA
     arr (L / 4) j + 4 * (L / 4 + 2) ≤ kz L := by
   have := arr_end (w := L / 4) hj
   simp only [arr, S, hdr, nArrs, kz] at *
-  rcases hL with rfl | rfl | rfl <;> omega
+  rcases hL with rfl | rfl | rfl <;> omega_using [hj]
 
 theorem w32_frame {B : Addr} {Z : Nat} {m m' : Mem} {rs : List Region} (f : Frame rs m m')
     (hd : ∀ r ∈ rs, (⟨B, Z⟩ : Region).Disjoint r) (hZ : Z ≤ 2 ^ 64) {d : Nat} (h : d + 4 ≤ Z) :
     w32 m' B d = w32 m B d := by
   simp only [w32]
-  rw [f.readW (r := ⟨B, Z⟩) (Offset.contains_base _ h (by omega)) hd (by decide)]
+  rw [f.readW (r := ⟨B, Z⟩) (Offset.contains_base _ h (by omega_using [hZ, h])) hd (by decide)]
 
 theorem num_frame {B : BitVec 32} {L : Nat} (hL : L = 128 ∨ L = 256 ∨ L = 384) {m m' : Mem}
     {rs : List Region} (f : Frame rs m m') (hd : ∀ r ∈ rs, (⟨State.addr B, kz L⟩ : Region).Disjoint r)
     {j : Nat} (hj : j < nArrs) : num m' B (L / 4) j = num m B (L / 4) j := by
   have := arrs_fit hL hj
   exact val32_congr fun i hi => w32_frame f hd (by simp only [kz]; rcases hL with rfl | rfl | rfl <;> decide)
-    (by omega)
+    (by omega_using [this, hi])
 
 theorem slot_frame {B : BitVec 32} {L : Nat} (hL : L = 128 ∨ L = 256 ∨ L = 384) {m m' : Mem}
     {rs : List Region} (f : Frame rs m m') (hd : ∀ r ∈ rs, (⟨State.addr B, kz L⟩ : Region).Disjoint r)
     {d : Nat} (hdk : KlsOk d) : slot m' B d = slot m B d :=
   w32_frame f hd (by simp only [kz]; rcases hL with rfl | rfl | rfl <;> decide)
-    (by obtain ⟨h1, _⟩ := hdk; simp only [kz, hdr] at h1 ⊢; omega)
+    (by obtain ⟨h1, _⟩ := hdk; simp only [kz, hdr] at h1 ⊢; omega_using [h1])
 
 /-! ## Steps that keep a state of the search -/
 
@@ -225,7 +225,7 @@ theorem SS.of_scrs {ws : List Reg} (h : SS G σ c s) (r : Rest ws s t) {os : Lis
   have gi := h.gi
   have big := gi.scrBig
   have fit := gi.scrFit
-  have kz0 : 0 < kz G.pLen := by simp only [kz]; omega
+  have kz0 : 0 < kz G.pLen := by simp only [kz]; omega_using []
   have mem : ∀ r' ∈ G.rss os ++ [G.rBelow], (∃ p ∈ os, r' = G.rs p.1 p.2) ∨ r' = G.rBelow := fun r' hr' => by
     simp only [GP.rss, List.mem_append, List.mem_map, List.mem_singleton] at hr'
     rcases hr' with ⟨p, hp, rfl⟩ | rfl
@@ -233,14 +233,14 @@ theorem SS.of_scrs {ws : List Reg} (h : SS G σ c s) (r : Rest ws s t) {os : Lis
     · exact .inr rfl
   have fs : Frame [G.rScr, G.rBelow] s.mem t.mem := f.sub fun x hx => by
     rcases mem x hx with ⟨p, hp, rfl⟩ | rfl
-    · exact ⟨G.rScr, List.mem_cons_self, sw G (by have := hon p hp; omega)⟩
+    · exact ⟨G.rScr, List.mem_cons_self, sw G (by have := hon p hp; omega_using [big, this])⟩
     · exact ⟨G.rBelow, by simp, fun _ h => h⟩
   -- The key working space is apart from what the step writes.
   have kd : ∀ r' ∈ G.rss os ++ [G.rBelow], G.rK.Disjoint r' := fun r' hr' => by
     show Region.Disjoint ⟨State.addr G.KB, _⟩ _
     rw [gi.kaddr]
     rcases mem r' hr' with ⟨p, hp, rfl⟩ | rfl
-    · exact gi.sdisj (.inr (hon p hp)) big (by have := hon p hp; omega)
+    · exact gi.sdisj (.inr (hon p hp)) big (by have := hon p hp; omega_using [big, this])
     · exact gi.scr_below big
   refine ⟨gi.of_scr r fs, (r.gpr _ h7).trans h.r7, (r.gpr _ h8).trans h.r8, (r.gpr _ h9).trans h.r9,
     fun x hx => ?_, fun x hx => ?_, fun j hj => ?_, h.liveOk, fun d hd => ?_, h.kslOk⟩
@@ -248,8 +248,8 @@ theorem SS.of_scrs {ws : List Reg} (h : SS G σ c s) (r : Rest ws s t) {os : Lis
     · have := h.clOk x hm
       rw [VG.Proof.Dsa.Generation.frame_bytesAt f (fun r' hr' => by
         rcases mem r' hr' with ⟨p, hp, rfl⟩ | rfl
-        · exact gi.sdisj (ha p hp) (by omega) (by have := hon p hp; omega)
-        · exact gi.scr_below (by omega)) (by omega)]
+        · exact gi.sdisj (ha p hp) (by omega_using [big, this]) (by have := hon p hp; omega_using [big, this])
+        · exact gi.scr_below (by omega_using [big, this])) (by omega_using [big, fit, this])]
       exact h.sb x hm
     · exact e
   · rcases hcl x hx with ⟨hm, _⟩ | ⟨_, b⟩

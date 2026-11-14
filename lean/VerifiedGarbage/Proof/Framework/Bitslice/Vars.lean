@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.Bitslice.Dom
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # The variable domain: words as XORs of whole words
@@ -59,12 +60,12 @@ theorem xorSet_two_pow {w : Nat} (V : Nat → BitVec w) {v n : Nat} (hv : v < n)
           induction m with
           | zero => rfl
           | succ m ihm =>
-            simp only [xorSet, Nat.testBit_two_pow, ihm (by omega)]
-            have : v ≠ m := by omega
+            simp only [xorSet, Nat.testBit_two_pow, ihm (by omega_using [hm])]
+            have : v ≠ m := by omega_using [hm]
             simp [this]
         exact key v (Nat.le_refl _)
       simp [this]
-    · rw [ih (by omega)]
+    · rw [ih (by omega_using [hv, h])]
       simp [h]
 
 /-- Words as sets of variables: only XOR and the constant 0. -/

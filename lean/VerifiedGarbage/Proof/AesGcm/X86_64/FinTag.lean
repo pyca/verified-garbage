@@ -34,7 +34,7 @@ open VG.Proof.Gcm (Absorbed lensBlock)
 theorem lensBlock_mod_left (a c : Nat) : lensBlock (a % 2 ^ 64) c = lensBlock a c := by
   simp only [lensBlock]
   rw [← Proof.Gcm.be64_mod (8 * (a % 2 ^ 64)), ← Proof.Gcm.be64_mod (8 * a)]
-  congr 2; omega
+  congr 2; omega_using []
 
 section
 variable (v : GcmImpl) {Ctx St W SP : Addr} {N gs : Nat} [G : GhFits v N gs] (L : Lay Ctx St W SP N)
@@ -54,8 +54,8 @@ theorem finTag_ok (hN : 208 ≤ N) (T : TagCall v N) {o R : Nat} (ho : o = 0 ∨
             (ghash (blockAt s.mem (Ctx + BitVec.ofNat 64 240)) (blocks (x ++ zeros (padLen x.length))))
             [ofBytes (lensBlock aL.toNat tL.toNat)] ^^^ ciphOf s.mem Ctx R (blockAt s.mem St))) := by
   have h15 := he.r15
-  have r₁ := he.perm.wR (show 192 + 8 ≤ N by omega) L.nlt
-  have r₂ := he.perm.wR (show 184 + 8 ≤ N by omega) L.nlt
+  have r₁ := he.perm.wR (show 192 + 8 ≤ N by omega_using [hN]) L.nlt
+  have r₂ := he.perm.wR (show 184 + 8 ≤ N by omega_using [hN]) L.nlt
   generalize hH : blockAt s.mem (Ctx + BitVec.ofNat 64 240) = H
   obtain ⟨s₁, run₁, hbx₁, hax₁, hzf₁, hg₁, hm₁, hrd₁, hwr₁⟩ : ∃ s₁, runBlock isa
       [.mov .rbx (.mem (at_ .r15 tlenO)), .mov .rax (.mem (at_ .r15 alenO)), .alu .test .rbx (.reg .rbx)] s =
@@ -112,18 +112,18 @@ theorem finTag_ok (hN : 208 ≤ N) (T : TagCall v N) {o R : Nat} (ho : o = 0 ∨
     intro d h₁ h₂ r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl
-    · exact (L.st_w (by decide) (.inr ⟨by omega, by omega⟩)).symm
-    · exact L.w_w (.inr (by omega)) (by omega) (Lay.leN hN)
-    · exact L.w_gh G.fit (by omega) (by omega)
-    · exact (L.stk_w (by omega)).symm
+    · exact (L.st_w (by decide) (.inr ⟨by omega_using [h₁], by omega_using [hN, h₂]⟩)).symm
+    · exact L.w_w (.inr (by omega_using [h₁])) (by omega_using [hN, h₂]) (Lay.leN hN)
+    · exact L.w_gh G.fit (by omega_using [h₂]) (by omega_using [hN, h₂])
+    · exact (L.stk_w (by omega_using [hN, h₂])).symm
   have hA₄ : s₄.mem.readW (W + BitVec.ofNat 64 184) 64 = aL := by
     rw [hf.frame.readW (r := ⟨W + BitVec.ofNat 64 184, 8⟩) (Region.contains_self _ _) (dT 184 (by decide) (by decide))
       (by decide), hA]
   have hT₄ : s₄.mem.readW (W + BitVec.ofNat 64 192) 64 = tL := by
     rw [hf.frame.readW (r := ⟨W + BitVec.ofNat 64 192, 8⟩) (Region.contains_self _ _) (dT 192 (by decide) (by decide))
       (by decide), hT]
-  have r₃ := he₄.perm.wR (show 184 + 8 ≤ N by omega) L.nlt
-  have r₄ := he₄.perm.wR (show 192 + 8 ≤ N by omega) L.nlt
+  have r₃ := he₄.perm.wR (show 184 + 8 ≤ N by omega_using [hN]) L.nlt
+  have r₄ := he₄.perm.wR (show 192 + 8 ≤ N by omega_using [hN]) L.nlt
   obtain ⟨s₅, run₅, hbx₅, hbp₅, hg₅, hm₅, hrd₅, hwr₅⟩ : ∃ s₅, runBlock isa [.mov .rbx (.mem (at_ .r15 alenO)),
       .mov .rbp (.mem (at_ .r15 tlenO))] s₄ = some s₅ ∧
       s₅.gpr .rbx = aL ∧ s₅.gpr .rbp = tL ∧ (∀ r, r ≠ .rbx → r ≠ .rbp → s₅.gpr r = s₄.gpr r) ∧
@@ -153,7 +153,7 @@ theorem finTag_ok (hN : 208 ≤ N) (T : TagCall v N) {o R : Nat} (ho : o = 0 ∨
     · exact L.cw'.sub_right (Lay.wSub (Lay.leN hN))
     · exact L.cw'.sub_right (Lay.ghSub G.fit)
     · exact L.kc.symm) hR.2
-  refine WP.mono (tag_ok v L (by omega) T ho he₅ (by rw [hm₅, hf.hH]) hR₅ hJ₅) fun s₆ ht => ?_
+  refine WP.mono (tag_ok v L (by omega_using [hN]) T ho he₅ (by rw [hm₅, hf.hH]) hR₅ hJ₅) fun s₆ ht => ?_
   refine ⟨ht.env, ht.rounds, ?_, fun ha => ?_⟩
   · refine (f₅.sub fun r hr => ?_).trans ht.frame
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr

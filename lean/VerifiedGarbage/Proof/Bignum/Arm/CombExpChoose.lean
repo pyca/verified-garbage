@@ -66,7 +66,7 @@ theorem choose_ok (backend : MontBackend) (base source table sp : BitVec 32)
   have positive : 0<M := by
     have larger := powerV.ready.modulus
     rw [powerV.modulus] at larger
-    omega
+    omega_using [larger]
   have frameU : Frame (writeRegions base sp len) s.mem u.mem := by rw [memU]; exact Frame.refl _ _
   refine ⟨powerT,A.stable frameT restT pv,controlsT,
     (header 192 (by decide) (by decide) (by decide)).trans counterV,?_,?_,
@@ -85,6 +85,6 @@ def kernel (backend : MontBackend) (base source table sp : BitVec 32)
   choose_ok := by
     intro s i E hi h hp controls counter
     exact choose_ok backend base source table sp len w M g N bs s i E widthBound size
-      (by omega) widthFit scalarFit (by omega) h hp controls counter
+      (by omega_using [scheduleFit, hi]) widthFit scalarFit (by omega_using [scheduleFit, hi]) h hp controls counter
 
 end VG.Proof.Bignum.Arm.CombExp

@@ -67,20 +67,20 @@ theorem Lay.Ok.message_bound {L : Lay} (h : L.Ok) : 64 + L.len.toNat < 2 ^ 64 :=
   have nm := h.nm
   have nc := h.nc
   by_cases hz : L.len.toNat = 0
-  · omega
+  · omega_using [hz]
   by_cases hp : L.msg ≤ L.scr
   · have hn : ¬ L.MSG.Contains L.scr 1 := fun hx => hd _ hx (by simp [Region.Contains])
     simp only [Region.Contains, BitVec.toNat_sub_of_le hp] at hn
     have hp' : L.msg.toNat ≤ L.scr.toNat := hp
-    omega
+    omega_using [nc, hn]
   · have hp' : L.scr ≤ L.msg := by
       change L.scr.toNat ≤ L.msg.toNat
       change ¬ L.msg.toNat ≤ L.scr.toNat at hp
-      omega
-    have hn : ¬ L.SCR.Contains L.msg 1 := fun hx => hd _ (by simp [Region.Contains]; omega) hx
+      omega_using [hp]
+    have hn : ¬ L.SCR.Contains L.msg 1 := fun hx => hd _ (by simp [Region.Contains]; omega_using [hz]) hx
     simp only [Region.Contains, BitVec.toNat_sub_of_le hp'] at hn
     have hp'' : L.scr.toNat ≤ L.msg.toNat := hp'
-    omega
+    omega_using [nm, hn]
 
 
 abbrev Ctx (L : Lay) (g : Reg → BitVec 64) (v : VReg → BitVec 128) (m₀ : Mem) (t : State) :=
@@ -107,7 +107,7 @@ theorem arg_word (hc : Ctx L g v m₀ t) (hL : L.Ok) {j : Nat} (hj : j < 6) :
     t.mem.readW (L.E + BitVec.ofNat 64 (256 + 8 * j)) 64 =
       m₀.readW (L.E + BitVec.ofNat 64 (256 + 8 * j)) 64 := by
   refine hc.frame.readW (r := L.ARGS) ?_ ?_ (by decide)
-  · exact Offset.contains _ (e := 256) (k := 48) (by omega) (by omega) (by decide)
+  · exact Offset.contains _ (e := 256) (k := 48) (by omega_using []) (by omega_using [hj]) (by decide)
   · intro R hR
     simp only [Lay.outputs, List.cons_append, List.nil_append, List.mem_cons,
       List.not_mem_nil, or_false] at hR
@@ -123,7 +123,7 @@ theorem tbl (hc : Ctx L g v m₀ t) (hL : L.Ok) (hm : BWords L.T m₀) : BWords 
     have := hL.tbfit
     have ht : L.TB ∈ L.inputs := by simp [Lay.inputs]
     rw [← hm i hi]
-    refine hc.frame.readW (r := L.TB) (Offset.contains_base _ (by omega) (by omega)) ?_ (by decide)
+    refine hc.frame.readW (r := L.TB) (Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi])) ?_ (by decide)
     intro R hR
     simp only [Lay.outputs, List.cons_append, List.nil_append, List.mem_cons,
       List.not_mem_nil, or_false] at hR
@@ -170,7 +170,7 @@ theorem Ctx.value (hc : Ctx L g v m₀ s) (hL : L.Ok) (ha : Arguments L m₀)
   | caller j d =>
     change j < 5 at hv
     change s.mem.readW (L.E + BitVec.ofNat 64 (256 + 8*j)) 64 + BitVec.ofNat 64 d = _
-    rw [hc.arg_word hL (by omega), ha.1 j hv]
+    rw [hc.arg_word hL (by omega_using [hv]), ha.1 j hv]
     rfl
 
 theorem args_ok (hc : Ctx L g v m₀ s) (hL : L.Ok) (ha : Arguments L m₀)

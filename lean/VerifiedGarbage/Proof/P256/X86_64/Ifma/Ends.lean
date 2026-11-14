@@ -61,10 +61,10 @@ theorem set_s0 {s₀ : State} (hc : Ctx par s₀) (hB : EnvOK s₀ setB) {p : AP
   obtain ⟨i3, hi3⟩ := iv 3 (by decide)
   have zzl := hzz.lo; have zzh := hzz.hi; have xl := hx.lo; have xh := hx.hi
   have zl := hz.lo; have zh := hz.hi; have yl := hy.lo; have yh := hy.hi
-  have c0 : Car (envOf s₀) 0 setN (p.ez * p.ez) := Car.norm hB _ (by decide) hi0 zzl (by omega) hzz.d
-  have c1 : Car (envOf s₀) 1 setN p.ex := Car.norm hB _ (by decide) hi1 xl (by omega) hx.d
-  have c2 : Car (envOf s₀) 2 setN p.ez := Car.norm hB _ (by decide) hi2 zl (by omega) hz.d
-  have c3 : Car (envOf s₀) 3 setN p.ey := Car.norm hB _ (by decide) hi3 yl (by omega) hy.d
+  have c0 : Car (envOf s₀) 0 setN (p.ez * p.ez) := Car.norm hB _ (by decide) hi0 zzl (by omega_using [zzh]) hzz.d
+  have c1 : Car (envOf s₀) 1 setN p.ex := Car.norm hB _ (by decide) hi1 xl (by omega_using [xh]) hx.d
+  have c2 : Car (envOf s₀) 2 setN p.ez := Car.norm hB _ (by decide) hi2 zl (by omega_using [zh]) hz.d
+  have c3 : Car (envOf s₀) 3 setN p.ey := Car.norm hB _ (by decide) hi3 yl (by omega_using [yh]) hy.d
   have vu := setU_v0 (envOf s₀) hs
   have c3l := c3.lo; have c3h := c3.hi
   refine WP.mono (cut_step' set_chk0 hc hB set_iv0 set_ov0
@@ -128,15 +128,15 @@ theorem fconst_car (c0 c1 c2 c3 : Nat) (E : Env) {k : Nat} (hk : k < 4) (hc : pi
     Car E k (Id.run (fconst tops c0 c1 c2 c3)) (D (pick4 c0 c1 c2 c3 k : Nat)) := by
   have e (i : Nat) : (tops.const ⟨limbOf c0 i, limbOf c1 i, limbOf c2 i, limbOf c3 i⟩).int E k =
       (limbOf (pick4 c0 c1 c2 c3 k) i : Nat) := by
-    rcases (by omega : k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3) with rfl | rfl | rfl | rfl <;> rfl
+    rcases (by omega_using [hk] : k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3) with rfl | rfl | rfl | rfl <;> rfl
   have hv := limbOf_val (pick4 c0 c1 c2 c3 k)
   have ev : vI E k (Id.run (fconst tops c0 c1 c2 c3)) = (pick4 c0 c1 c2 c3 k : Nat) := by
     rw [← hv]
     simp only [vI, fconst, Id.run, bind, pure, e]
-  refine ⟨?_, by rw [ev]; simp only [Nb]; omega, by rw [ev]⟩
+  refine ⟨?_, by rw [ev]; simp only [Nb]; omega_using [hc], by rw [ev]⟩
   simp only [Carried, fconst, Id.run, bind, pure, e]
   simp only [limbOf, Nat.reduceEqDiff, ↓reduceIte, Nat.reduceMul]
-  omega
+  omega_using [hc]
 
 /-- `[u, zn, _, Xn]` of the accumulator, with `u` made positive. -/
 abbrev outX : F5 T :=
@@ -144,15 +144,15 @@ abbrev outX : F5 T :=
 
 theorem outX_v0 (E : Env) : vI E 0 outX = vI E 0 (t5 0) + 20 * pI := by
   glue_simp [outX]
-  omega
+  omega_using []
 
 theorem outX_v1 (E : Env) : vI E 1 outX = vI E 1 (t5 5) := by
   glue_simp [outX]
-  omega
+  omega_using []
 
 theorem outX_v3 (E : Env) : vI E 3 outX = vI E 3 (t5 10) := by
   glue_simp [outX]
-  omega
+  omega_using []
 
 /-- The places of stage `j`'s results, as terms. -/
 abbrev oL (j : Nat) : List (F5 T) := leaves (outLocs.getD j [])
@@ -181,7 +181,7 @@ theorem out_s0 {s₀ : State} (hc : Ctx par s₀) (hB : EnvOK s₀ stB) {xn un z
   obtain ⟨ul, uh, du, zn, -, x, -, -⟩ := h
   have iv (k : Nat) (hk : k = 0 ∨ k = 1 ∨ k = 3) : ∃ iv, (Id.run (norm tops outX)).l4.iv stB k = some iv := by
     have : ∀ k < 4, k ≠ 2 → ((Id.run (norm tops outX)).l4.iv stB k).isSome = true := by decide +kernel
-    exact Option.isSome_iff_exists.1 (this k (by omega) (by omega))
+    exact Option.isSome_iff_exists.1 (this k (by omega_using [hk]) (by omega_using [hk]))
   obtain ⟨i0, hi0⟩ := iv 0 (by decide)
   obtain ⟨i1, hi1⟩ := iv 1 (by decide)
   obtain ⟨i3, hi3⟩ := iv 3 (by decide)

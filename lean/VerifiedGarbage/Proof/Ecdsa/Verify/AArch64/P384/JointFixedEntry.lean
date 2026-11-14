@@ -141,10 +141,10 @@ theorem GBytes.keep {base : Addr} {u j : Nat} {s t : State} (h : GBytes base u j
       · simp only [List.mem_map] at hw
         obtain ⟨x,hx,rfl⟩ := hw
         have := ha x hx
-        right; dsimp only; omega
-      · rw [List.mem_singleton.mp hw]; left; dsimp only; omega)
-      (by omega)
-  exact ⟨by rw [e _ (by omega) (by omega)]; exact h.lo,by rw [e _ (by omega) (by omega)]; exact h.hi⟩
+        right; dsimp only; omega_using [h0, this]
+      · rw [List.mem_singleton.mp hw]; left; dsimp only; omega_using [ht, hb, h1])
+      (by omega_using [hb, h1])
+  exact ⟨by rw [e _ (by omega_using []) (by omega_using [hj])]; exact h.lo,by rw [e _ (by omega_using []) (by omega_using [hj])]; exact h.hi⟩
 
 theorem fixedLookup_ok {s : State} {base T : Addr} {u j : Nat} {C : Curve} {G : Point C}
  {V : List Nat} {E : Nat → Fe C}
@@ -169,9 +169,9 @@ theorem fixedLookup_ok {s : State} {base T : Addr} {u j : Nat} {C : Curve} {G : 
  let a := (FastNaf.magnitude 9 u j+1)/2
  have hmag := fastMagnitude_bound 9 u j
  have hodd := (FastNaf.magnitude_odd_or_zero 9 u j).resolve_left hm0
- have ha : 1≤a := by dsimp [a]; omega
- have ha32 : a≤128 := by dsimp [a]; omega
- have he : 2*a-1=FastNaf.magnitude 9 u j := by dsimp [a]; omega
+ have ha : 1≤a := by dsimp [a]; omega_using [hm0]
+ have ha32 : a≤128 := by dsimp [a]; omega_using [hmag]
+ have he : 2*a-1=FastNaf.magnitude 9 u j := by dsimp [a]; omega_using [hodd]
  have es : ∀x∈fixedCoords,x∈winSlots P384Joint.K := by decide
  rw [fixedLoad_eq,WP.block_append_iff]
  refine WP.mono_syms (jointFixedIndex_ok (c:=P384Joint.cfg) (Or.inr rfl)
@@ -222,7 +222,7 @@ theorem fixedEntry_ok {s : State} {base T : Addr} {u j : Nat} {C : Curve} {G : P
    · exact List.mem_append_right _ (hV _ (by simp))
  refine WP.mono (jointSignEntryG_ok P384Joint.cfg (FastNaf.negative 9 u j) hL.win.lay hL.al.al (by simpa only [P384Joint.cfg] using hm) id vv
    (by decide) (by decide) vz
-   (signRead9_ok cfg_gw id.scr (by decide) (by change 3152+2*j+2≤8192; omega) dj db.hi) jd zd)
+   (signRead9_ok cfg_gw id.scr (by decide) (by change 3152+2*j+2≤8192; omega_using [hj]) dj db.hi) jd zd)
    fun t ⟨Et,kt,it,jt,zt⟩ => ?_
  refine ⟨Et,kd.trans (kt.mono (by simp [fixedCoords,P384Joint.cfg])),it,?_,zt⟩
  simpa only [FastNaf.point,P384Joint.cfg] using jt

@@ -61,20 +61,20 @@ theorem DomGeo.addr {rd wr : List Region} (G : DomGeo args base bytes len dlen r
       (args (2 + 2 * k)).toNat = (args 2).toNat + k * len := by
   have f := G.fit
   have l := G.upper
-  have e3 : (args 3).toNat = len := by rw [G.e3, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
-  rcases (show k = 0 ∨ k = 1 ∨ k = 2 by omega) with rfl | rfl | rfl
+  have e3 : (args 3).toNat = len := by rw [G.e3, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [l])]
+  rcases (show k = 0 ∨ k = 1 ∨ k = 2 by omega_using [hk]) with rfl | rfl | rfl
   · simp
-  · rw [show 2 + 2 * 1 = 4 from rfl, G.e4, G.e3, byteAddr_add (by omega)]
+  · rw [show 2 + 2 * 1 = 4 from rfl, G.e4, G.e3, byteAddr_add (by omega_using [f, hkl])]
     refine ⟨by simp, ?_⟩
-    rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := len) (by omega), Nat.mod_eq_of_lt (by omega)]
-    omega
+    rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := len) (by omega_using [l]), Nat.mod_eq_of_lt (by omega_using [f, hkl])]
+    omega_using []
   · rw [show 2 + 2 * 2 = 6 from rfl, G.e6, G.e3, byteAddr_add (by rw [BitVec.toNat_add, BitVec.toNat_ofNat,
-      Nat.mod_eq_of_lt (a := len) (by omega), Nat.mod_eq_of_lt (by omega)]; omega), byteAddr_add (by omega),
+      Nat.mod_eq_of_lt (a := len) (by omega_using [l]), Nat.mod_eq_of_lt (by omega_using [f, hkl])]; omega_using [f, hkl]), byteAddr_add (by omega_using [f, hkl]),
       VG.Offset.add_add]
-    refine ⟨by congr 2; omega, ?_⟩
-    rw [BitVec.toNat_add, BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := len) (by omega),
-      Nat.mod_eq_of_lt (a := (args 2).toNat + len) (by omega), Nat.mod_eq_of_lt (by omega)]
-    omega
+    refine ⟨by congr 2; omega_using [], ?_⟩
+    rw [BitVec.toNat_add, BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := len) (by omega_using [l]),
+      Nat.mod_eq_of_lt (a := (args 2).toNat + len) (by omega_using [f, hkl]), Nat.mod_eq_of_lt (by omega_using [f, hkl])]
+    omega_using []
 
 /-- The value of the `k`-th component. -/
 abbrev comp (m : Mem) (args : Nat → BitVec 32) (len k : Nat) : Nat :=
@@ -93,17 +93,17 @@ theorem loadComp_ok (h : In Ex base bytes len args s) (G : DomGeo args base byte
   have lb := len_le_bc len
   have lw := G.lower
   have hl : args (3 + 2 * k) = BitVec.ofNat 32 len := by
-    rcases (show k = 0 ∨ k = 1 ∨ k = 2 by omega) with rfl | rfl | rfl
+    rcases (show k = 0 ∨ k = 1 ∨ k = 2 by omega_using [hk]) with rfl | rfl | rfl
     · exact G.e3
     · exact G.e5
     · exact G.e7
   have hkl' : k * len + len ≤ dlen := by rw [Nat.succ_mul] at hkl; exact hkl
   have rd : InRegions (s.rd ++ s.wr) (byteAddr (args (2 + 2 * k))) len := by
-    rw [ea]; exact VG.CallLay.inRegions_sub G.rd (by omega) (by omega)
+    rw [ea]; exact VG.CallLay.inRegions_sub G.rd (by omega_using [hkl']) (by omega_using [f])
   have apart : Region.Disjoint ⟨byteAddr (args (2 + 2 * k)), len⟩ ⟨base, bytes⟩ := by
-    rw [ea]; exact G.apart.sub_left (Offset.sub_base _ (by omega))
-  refine WP.mono (load_ok h (one_ok .wide) (slot_fit1 h (j := j) (by omega)) (p := 2 + 2 * k) (l := 3 + 2 * k)
-    (L := len) (by omega) (by omega) hl (by omega) (by rw [cb1]; exact lb) (by omega) rd apart)
+    rw [ea]; exact G.apart.sub_left (Offset.sub_base _ (by omega_using [hkl']))
+  refine WP.mono (load_ok h (one_ok .wide) (slot_fit1 h (j := j) (by omega_using [hj])) (p := 2 + 2 * k) (l := 3 + 2 * k)
+    (L := len) (by omega_using [hk]) (by omega_using [hk]) hl (by omega_using [lw]) (by rw [cb1]; exact lb) (by omega_using [en, f, hkl']) rd apart)
     fun u ⟨V, O, K⟩ => ⟨by rw [cw1, ea] at V; exact V, by rw [cb1] at O; exact O, K⟩
 
 /-- The components are `domainOf`'s p, g and q. -/

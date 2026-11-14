@@ -73,7 +73,7 @@ theorem clearArrayWide_ct {base : BitVec 32} {len w o : Nat} (ho : o < 8) (fit :
     rw [h.width] at header
     exact ⟨h.workspace, h.ptr, header.count, header.array o ho⟩
   exact (clearOperandBuffer_ct (base := base) (dst := base + BitVec.ofNat 32 (arrAt w o))
-    (size := 8 * len) (slot := 64 + 8 * o) (w := w) (by omega) (by omega) (by omega)).mono
+    (size := 8 * len) (slot := 64 + 8 * o) (w := w) (by omega_using [fit]) (by omega_using [ho, fit]) (by omega_using [ho])).mono
     (fun s t h => ⟨input s h.1, input t h.2.1, h.2.2⟩) (fun _ _ _ => trivial)
 
 end VG.Proof.Bignum.Arm

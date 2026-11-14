@@ -46,7 +46,7 @@ theorem tb_input (L : Lay) : L.TB ∈ L.inputs := by simp [Lay.inputs]
 /-- The tables in a memory the body leaves them in. -/
 theorem Ctx.tbl (hc : Ctx L g m₀ s) (hL : L.Ok) (hw : Tbl L m₀) : Tbl L s.mem := fun j hj => by
   rw [← hw j hj]
-  refine hc.frame.readW (r := L.TB) (Offset.contains_base _ (by omega) (by omega)) ?_ (by decide)
+  refine hc.frame.readW (r := L.TB) (Offset.contains_base _ (by omega_using [hj]) (by omega_using [hj])) ?_ (by decide)
   intro R hR
   simp only [Lay.outputs, List.cons_append, List.nil_append, List.mem_cons,
     List.not_mem_nil, or_false] at hR
@@ -66,7 +66,7 @@ theorem base_pre (hL : L.Ok) (ha : BaseArgs L s) (hsy : s.syms VG.Impl.Ed25519.A
     State.callEntry_gpr _ (by decide : Reg.r2 ∉ linkRegs), ha.1, ha.2.1, ha.2.2, ae]
   exact ⟨rfl, rfl, (hL.ko.sub_right (baseWithin L).sub).symm.sub_right (fieldWithin L (by decide)).sub,
     hL.oc.sub_left (baseWithin L).sub, field_scr hL (by decide),
-    by have := hL.no; omega, frame_fit hL (by decide), hL.nc, hL.tfit, hw,
+    by have := hL.no; omega_using [this], frame_fit hL (by decide), hL.nc, hL.tfit, hw,
     ((hL.os _ (tb_input L)).sub_left (baseWithin L).sub).symm, hL.sc _ (tb_input L)⟩
 
 theorem base_call (hc : Ctx L g m₀ s) (hL : L.Ok) (ha : BaseArgs L s)

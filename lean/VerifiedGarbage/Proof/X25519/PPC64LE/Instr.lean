@@ -223,7 +223,7 @@ theorem ofNat_sub_one {n : Nat} (hn : 1 ≤ n) (h : n < 2 ^ 64) :
     BitVec.ofNat 64 n - BitVec.ofNat 64 1 = BitVec.ofNat 64 (n - 1) := by
   apply BitVec.eq_of_toNat_eq
   rw [toNat_sub_le (by rw [toNat_imm h, toNat_imm (by decide)]; exact hn), toNat_imm h,
-    toNat_imm (by decide), toNat_imm (by omega)]
+    toNat_imm (by decide), toNat_imm (by omega_using [h])]
 
 /-- A word loaded and zero-extended. -/
 theorem toNat_ext32 (x : BitVec 32) : (x.setWidth 64).toNat = x.toNat := by

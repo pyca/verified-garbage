@@ -101,11 +101,11 @@ end
 theorem push_slot (B : Addr) (j : Nat) (hj : j < 32) :
     B + BitVec.ofNat 64 272 - BitVec.ofNat 64 (8 * (j + 1)) =
       B + BitVec.ofNat 64 16 + BitVec.ofNat 64 (248 - 8 * j) := by
-  rw [add_add, Offset.sub_ofNat_eq _ (a := 8 * (j + 1)) (b := 272) (by omega), BitVec.add_sub_cancel]
-  congr 2; omega
+  rw [add_add, Offset.sub_ofNat_eq _ (a := 8 * (j + 1)) (b := 272) (by omega_using [hj]), BitVec.add_sub_cancel]
+  congr 2; omega_using [hj]
 
 theorem push_base (B : Addr) : B + BitVec.ofNat 64 272 - BitVec.ofNat 64 (8 * 32) = B + BitVec.ofNat 64 16 := by
-  have := push_slot B 31 (by omega); simpa using this
+  have := push_slot B 31 (by omega_using []); simpa using this
 
 theorem regs_length : regs.length = 32 := rfl
 
@@ -119,23 +119,23 @@ theorem entry_ctx {L : Lay} (hL : L.Ok) {s : State} (hsp : s.gpr .rsp = L.B + Bi
   have hn : 8 * regs.length ≤ (s.gpr .rsp).toNat := by
     rw [hsp, regs_length, BitVec.toNat_add, BitVec.toNat_ofNat]
     have := hL.nB
-    rw [Nat.mod_eq_of_lt (a := 272) (by omega), Nat.mod_eq_of_lt (by omega)]; omega
+    rw [Nat.mod_eq_of_lt (a := 272) (by omega_using []), Nat.mod_eq_of_lt (by omega_using [this])]; omega_using []
   obtain ⟨hf, hw⟩ := pushRegs_mem s regs (by decide) hn
   have slot : ∀ j (hj : j < 32), (pushed regs s).mem.readW (L.SP + BitVec.ofNat 64 (248 - 8 * j)) 64 =
-      s.gpr (regs[j]'(by rw [regs_length]; omega)) := fun j hj => by
-    rw [← hw j (by rw [regs_length]; omega), hsp, push_slot _ j hj]; rfl
+      s.gpr (regs[j]'(by rw [regs_length]; omega_using [hj])) := fun j hj => by
+    rw [← hw j (by rw [regs_length]; omega_using [hj]), hsp, push_slot _ j hj]; rfl
   have base : s.gpr .rsp - BitVec.ofNat 64 (8 * regs.length) = L.SP := by
     rw [hsp, regs_length]; exact push_base L.B
   refine ⟨by simp [hrd], by rw [pushed_wr, base, hwr]; rfl, by rw [pushed_rsp, base], fun r _ hr' => pushed_gpr _ _ hr',
-    by simp, (slot 6 (by omega)).trans hdi, (slot 5 (by omega)).trans hsi, (slot 4 (by omega)).trans hdx,
-    (slot 3 (by omega)).trans hcx, (slot 2 (by omega)).trans h8, (slot 1 (by omega)).trans h9,
-    (slot 0 (by omega)).trans h11, ?_⟩
+    by simp, (slot 6 (by omega_using [])).trans hdi, (slot 5 (by omega_using [])).trans hsi, (slot 4 (by omega_using [])).trans hdx,
+    (slot 3 (by omega_using [])).trans hcx, (slot 2 (by omega_using [])).trans h8, (slot 1 (by omega_using [])).trans h9,
+    (slot 0 (by omega_using [])).trans h11, ?_⟩
   show Frame [L.SCR, L.STK] s.mem (pushRegs s regs).mem
   refine Frame.sub hf fun r hr => ?_
   simp only [List.mem_singleton] at hr; subst hr
   refine ⟨L.STK, by simp, ?_⟩
   rw [base, regs_length]
-  exact Offset.sub_base _ (by omega)
+  exact Offset.sub_base _ (by omega_using [])
 
 /-! ## Before the frame -/
 
@@ -194,7 +194,7 @@ theorem verify_wp (hv : EqOk v) {s : State} (hpre : (Spec.Ed448.verifyContract X
     have hsp2 : s2.gpr .rsp = (vlay s).B + BitVec.ofNat 64 272 := by
       rw [hg2 _ (by decide), vlay_B]
     have hn : 8 * regs.length ≤ (s2.gpr .rsp).toNat := by
-      rw [hg2 _ (by decide), regs_length]; have := h.sp; omega
+      rw [hg2 _ (by decide), regs_length]; have := h.sp; omega_using [this]
     refine WP.frame (by decide) (by decide) (by decide) hn ?_
     have hc := entry_ctx hL hsp2 (k2.2.1.trans hrd1) (k2.2.2.trans hwr1) h11 (hg2 _ (by decide))
       (hg2 _ (by decide)) (hg2 _ (by decide)) (hg2 _ (by decide)) (hg2 _ (by decide)) (hg2 _ (by decide))
@@ -210,13 +210,13 @@ theorem verify_wp (hv : EqOk v) {s : State} (hpre : (Spec.Ed448.verifyContract X
             simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
             rcases hr with rfl | rfl
             · exact h.retScr
-            · rw [eR]; exact Offset.disjoint_base _ (by omega) (by have := hL.nB; omega)) (by decide), hm2]
+            · rw [eR]; exact Offset.disjoint_base _ (by omega_using []) (by have := hL.nB; omega_using [])) (by decide), hm2]
       · rw [popped_mxcsr, hc'.mx, hx2, hx1]
     · sig_post [Spec.Ed448.verifyContract, Spec.Ed448.verifySig, Spec.Ed448.scratchWords, X86_64.abi,
         X86_64.argRegs, List.range, List.range.loop]
       rw [hr]
       simp only [ed_bytesAt, Spec.Ed448.verify, bytesAt_length, take_bytesAt, vlay, chal, ← hm2,
-        decide_eq_true (show (s.gpr .rdx).toNat ≤ 255 by omega), Bool.true_and]
+        decide_eq_true (show (s.gpr .rdx).toNat ≤ 255 by omega_using [h8]), Bool.true_and]
       exact sw_ite _
   · rw [decide_eq_false h8] at hc1
     refine wp_ite_f hc1 ?_
@@ -226,7 +226,7 @@ theorem verify_wp (hv : EqOk v) {s : State} (hpre : (Spec.Ed448.verifyContract X
     · sig_post [Spec.Ed448.verifyContract, Spec.Ed448.verifySig, Spec.Ed448.scratchWords, X86_64.abi,
         X86_64.argRegs, List.range, List.range.loop]
       simp only [ed_bytesAt, Spec.Ed448.verify, bytesAt_length,
-        decide_eq_false (show ¬ (s.gpr .rdx).toNat ≤ 255 by omega), Bool.false_and]
+        decide_eq_false (show ¬ (s.gpr .rdx).toNat ≤ 255 by omega_using [h8]), Bool.false_and]
       rfl
 
 end VG.Proof.Ed448.X86_64.Verify

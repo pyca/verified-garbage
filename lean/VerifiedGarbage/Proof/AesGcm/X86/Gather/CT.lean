@@ -54,7 +54,7 @@ theorem sealGather_ct (F : SealFn) : ConstantTime isa gatherPre gatherPub (sealG
       e₁.mem (w64 (Src σ₁) + BitVec.ofNat 64 j) = e₂.mem (w64 (Src σ₁) + BitVec.ofNat 64 j) := by
     intro j hj
     have hx : (dsR σ₁).Contains (w64 (Src σ₁) + BitVec.ofNat 64 j) 1 :=
-      Offset.contains_base _ hj (by have := h₁.ods; omega)
+      Offset.contains_base _ hj (by have := h₁.ods; omega_using [hj, this])
     have hx₂ : (dsR σ₂).Contains (w64 (Src σ₁) + BitVec.ofNat 64 j) 1 := by
       simp only [dsR, Src, Cnt, ← a 6 (by decide), ← a 7 (by decide)]; exact hx
     rw [he₁.mem, he₂.mem, h₁.keepE h₁.bds.symm hx, h₂.keepE h₂.bds.symm hx₂]
@@ -77,7 +77,7 @@ theorem sealGather_ct (F : SealFn) : ConstantTime isa gatherPre gatherPub (sealG
       refine ⟨sealSpec_pre cp₁, sealSpec_pre cp₂, sealSpec_pub ⟨?_, fun i hi => ?_⟩, cv₁, cw₁, cv₂, cw₂,
         by rw [hg₁.esp, hg₂.esp, hP]⟩
       · simp only [State.withRegions_gpr, State.callEntry_esp, hg₁.esp, hg₂.esp, hP]
-      · rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 ∨ i = 8 by omega) with
+      · rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 ∨ i = 8 by omega_using [hi]) with
           rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
         · rw [s0₁, s0₂]; exact a 0 (by decide)
         · rw [s1₁, s1₂]; exact a 1 (by decide)

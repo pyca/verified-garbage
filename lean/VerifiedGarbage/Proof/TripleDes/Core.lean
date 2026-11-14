@@ -2,6 +2,7 @@ module
 public import VerifiedGarbage.Spec.TripleDes
 
 import VerifiedGarbage.Proof.TripleDes.Permutation
+import VerifiedGarbage.Proof.Framework.Omega
 
 @[expose] public section
 
@@ -18,9 +19,9 @@ theorem ip_fp_positions : ∀ j < 64,
 theorem ip_fp (x : BitVec 64) : permute ip (permute fp x) = x := by
   apply BitVec.eq_of_getLsbD_eq
   intro j hj
-  have hj' : 64 - 1 - j < 64 := by omega
+  have hj' : 64 - 1 - j < 64 := by omega_using []
   obtain ⟨lo, hi⟩ := ip_bounds _ hj'
-  have hk : 64 - ip.getD (64 - 1 - j) 1 < 64 := by omega
+  have hk : 64 - ip.getD (64 - 1 - j) 1 < 64 := by omega_using [lo]
   rw [permute_bit ip _ (by decide) j hj,
     permute_bit fp _ (by decide) _ hk, ip_fp_positions j hj]
 

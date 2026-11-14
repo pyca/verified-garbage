@@ -49,7 +49,7 @@ theorem decT_ctG {K : KemLay} (hK : K.WF) {L : Lay} {i o : Nat} {x y : State} (h
     RelCT isa (fun a₁ a₂ => DecInv K L i o x j a₁ ∧ DecInv K L i o y j a₂) K.decTBody fun a₁ a₂ =>
       (DecInv K L i o x (j + 1) a₁ ∧ (a₁.gpr .r0 != 0) = decide (j + 1 ≠ K.k)) ∧
       (DecInv K L i o y (j + 1) a₂ ∧ (a₂.gpr .r0 != 0) = decide (j + 1 ≠ K.k)) := by
-  have hj4 : j < 4 := by have := hK.k4; omega
+  have hj4 : j < 4 := by have := hK.k4; omega_using [hj, this]
   refine relct_wp (RelCT.pointwise fun u w ⟨hu, hw⟩ => ?_) fun a₁ a₂ hab =>
     ⟨decT_step hK hcx g30x hs hrx hj hab.1, decT_step hK hcy g30y hs hry hj hab.2⟩
   refine RelCT.seq (R := fun (a₁ a₂ : State) =>
@@ -163,12 +163,12 @@ theorem v_ct {x y : State} (hx : VEnv K L b s₀₁ x) (hy : VEnv K L b s₀₂ 
   have hcy := hy.kx.ctx (by decide) hp₂.ctx
   have va : ∀ {s₀ s : State}, VEnv K L b s₀ s → ∀ j < K.k,
       PolyIs s.mem (L.A 0 (oPoly j)) (VG.Proof.MlKem.ekT (ekB K L b s₀) j) := fun h j hj => by
-    have := h.d.v j (by omega); simp only [hj, ↓reduceIte] at this; exact this
+    have := h.d.v j (by omega_using [hj]); simp only [hj, ↓reduceIte] at this; exact this
   have vv : ∀ {s₀ s : State}, VEnv K L b s₀ s → ∀ j < K.k,
       PolyIs s.mem (L.A 0 (oPoly (K.k + j))) (VG.Proof.MlKem.encY (rB L s₀) j) := fun h j hj => by
-    have := h.d.v (K.k + j) (by omega)
-    have e : ¬ (K.k + j < K.k) := by omega
-    simp only [e, ↓reduceIte, show K.k + j - K.k = j by omega] at this
+    have := h.d.v (K.k + j) (by omega_using [hj])
+    have e : ¬ (K.k + j < K.k) := by omega_using []
+    simp only [e, ↓reduceIte, show K.k + j - K.k = j by omega_using []] at this
     exact this
   -- `dot`
   refine RelCT.seq (R := fun (a b' : State) =>
@@ -210,8 +210,8 @@ theorem v_ct {x y : State} (hx : VEnv K L b s₀₁ x) (hy : VEnv K L b s₀₂ 
       ⟨evArgs_ok hp₁ hab.1.1 hab.1.2 (by offs), evArgs_ok hp₂ hab.2.1 hab.2.2 (by offs)⟩) ?_
   have e₂ : ∀ {s₀ s : State}, VEnv K L b s₀ s →
       PolyIs s.mem (L.A 0 (oPoly (3 * K.k))) (VG.Proof.MlKem.cbd (rB L s₀) (2 * K.k)) := fun h => by
-    have := h.d.e (2 * K.k) (by omega) (by omega)
-    rwa [show K.k + 2 * K.k = 3 * K.k by omega] at this
+    have := h.d.e (2 * K.k) (by omega_using []) (by omega_using [])
+    rwa [show K.k + 2 * K.k = 3 * K.k by omega_using []] at this
   refine RelCT.seq (R := fun (a b' : State) =>
       (VEnv K L b s₀₁ a ∧ PolyIs a.mem (L.A 0 K.oAcc)
         (add (nttInv (VG.Proof.MlKem.KPke.dotK (VG.Proof.MlKem.ekT (ekB K L b s₀₁))
@@ -285,7 +285,7 @@ theorem encrypt_ct (hρ : ρE K L b s₀₁ = ρE K L b s₀₂) :
     (relct_wp (relct_noMem (by rfl)) fun a c hac =>
       ⟨by rw [hac.1]; exact decT_init, by rw [hac.2]; exact decT_init⟩) ?_
   refine RelCT.seq (R := fun (a c : State) => DecInv K L b.iE b.oE x K.k a ∧ DecInv K L b.iE b.oE y K.k c)
-    (relct_loop_nz (N := K.k) (by have := hK.k1; omega) fun j hj => decT_ct hp₁ hp₂ ex ey hj) ?_
+    (relct_loop_nz (N := K.k) (by have := hK.k1; omega_using [this]) fun j hj => decT_ct hp₁ hp₂ ex ey hj) ?_
   -- `ŷ`
   refine RelCT.seq (R := fun (a c : State) =>
       (EA K L s₀₁ a ∧ bytesAt a.mem (L.A 0 oSeed) 32 = ρE K L b s₀₁ ∧
@@ -295,7 +295,7 @@ theorem encrypt_ct (hρ : ρE K L b s₀₁ = ρE K L b s₀₂) :
         (∀ k < K.k, PolyIs c.mem (L.A 0 (oPoly k)) (VG.Proof.MlKem.ekT (ekB K L b s₀₂) k)) ∧
         ∀ j < K.k, PolyIs c.mem (L.A 0 (oPoly (K.k + j))) (VG.Proof.MlKem.encY (rB L s₀₂) j)))
     (relct_wp (RelCT.pointwise fun a c hac =>
-      prfLoop_ct hK (L := L) true (N₀ := 0) (N₁ := K.k) (by have := hK.k1; omega) (by omega)
+      prfLoop_ct hK (L := L) true (N₀ := 0) (N₁ := K.k) (by have := hK.k1; omega_using [this]) (by omega_using [])
         (EA.ctx hp₁ (enc2_ok hp₁ ex ρx hac.1).1) (EA.ctx hp₂ (enc2_ok hp₂ ey ρy hac.2).1) rfl rfl)
       fun a c hac =>
         ⟨let ⟨e, ρ', t⟩ := enc2_ok hp₁ ex ρx hac.1; enc3_ok hp₁ e ρ' t,
@@ -313,7 +313,7 @@ theorem encrypt_ct (hρ : ρE K L b s₀₁ = ρE K L b s₀₂) :
         ∀ N, K.k ≤ N → N < 2 * K.k + 1 →
           PolyIs c.mem (L.A 0 (oPoly (K.k + N))) (VG.Proof.MlKem.cbd (rB L s₀₂) N)))
     (relct_wp (RelCT.pointwise fun a c hac =>
-      prfLoop_ct hK (L := L) false (N₀ := K.k) (N₁ := 2 * K.k + 1) (by omega) (by omega)
+      prfLoop_ct hK (L := L) false (N₀ := K.k) (N₁ := 2 * K.k + 1) (by omega_using []) (by omega_using [])
         (EA.ctx hp₁ hac.1.1) (EA.ctx hp₂ hac.2.1) rfl rfl)
       fun a c hac => ⟨enc4_ok hp₁ hac.1.1 hac.1.2.1 (v_of hac.1.2.2.1 hac.1.2.2.2),
         enc4_ok hp₂ hac.2.1 hac.2.2.1 (v_of hac.2.2.2.1 hac.2.2.2.2)⟩) ?_
@@ -345,7 +345,7 @@ theorem encrypt_ct (hρ : ρE K L b s₀₁ = ρE K L b s₀₂) :
       ⟨rows_init hp₁ hac.1.1 (data5 hp₁ ρ₄ v₄ E₄ hac.1.2.1 hac.1.2.2),
         rows_init hp₂ hac.2.1 (data5 hp₂ ρ₄' v₄' E₄' hac.2.2.1 hac.2.2.2)⟩) ?_
   refine RelCT.seq (R := fun (a c : State) => ERow K L b s₀₁ K.k a ∧ ERow K L b s₀₂ K.k c)
-    (relct_loop_nz (N := K.k) (by have := hK.k1; omega) fun i hi => encRow_ct hp₁ hp₂ hρ hi) ?_
+    (relct_loop_nz (N := K.k) (by have := hK.k1; omega_using [this]) fun i hi => encRow_ct hp₁ hp₂ hρ hi) ?_
   -- `v`
   exact RelCT.pointwise fun x₇ y₇ ⟨h₇, h₇'⟩ => v_ct hp₁ hp₂ h₇.venv h₇'.venv
 

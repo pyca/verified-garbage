@@ -39,10 +39,10 @@ theorem random_copy_of_init {s : State} {src dst : Addr} {n : Nat} {head : Byte}
       Keep [.x0, .x4, .x12, .x2, .x9] s t := by
   unfold Random.copy
   refine WP.seq (WP.mono hinit fun u ⟨hup, hud, hun, hum, hku⟩ => ?_)
-  refine WP.mono (random_copyRest_ok hup hud hun (by omega)
-    (fun i hi => by rw [hku.rd, hku.wr, shift_addr]; exact hr (i + 1) (by omega))
-    (fun i hi => by rw [hku.wr, shift_addr]; exact hw (i + 1) (by omega))
-    (fun i hi j hj => by rw [shift_addr, shift_addr]; exact hsep (i + 1) (by omega) (j + 1) (by omega)))
+  refine WP.mono (random_copyRest_ok hup hud hun (by omega_using [hbound])
+    (fun i hi => by rw [hku.rd, hku.wr, shift_addr]; exact hr (i + 1) (by omega_using [hi]))
+    (fun i hi => by rw [hku.wr, shift_addr]; exact hw (i + 1) (by omega_using [hi]))
+    (fun i hi j hj => by rw [shift_addr, shift_addr]; exact hsep (i + 1) (by omega_using [hi]) (j + 1) (by omega_using [hj])))
     fun t ⟨htb, htf, hkt⟩ => ?_
   refine ⟨?_, ?_, (hku.trans hkt).mono (by decide)⟩
   · intro i hi
@@ -51,19 +51,19 @@ theorem random_copy_of_init {s : State} {src dst : Addr} {n : Nat} {head : Byte}
       simp only [zero_addr, ite_true]
       have hstay : t.mem dst = u.mem dst := htf dst fun j hj => by
         rw [shift_addr]
-        have hn := out_ne (out := dst) (i := 0) (j := j + 1) (by decide) (by omega) (by omega)
+        have hn := out_ne (out := dst) (i := 0) (j := j + 1) (by decide) (by omega_using [hbound, hj]) (by omega_using [])
         simpa only [zero_addr] using hn
       rw [hstay, hum, writeW8_apply, ite_eq_left rfl]
-    · have hj : i - 1 < n - 1 := by omega
+    · have hj : i - 1 < n - 1 := by omega_using [hi, hi0]
       have hb := htb (i - 1) hj
-      rw [shift_addr, shift_addr, Nat.sub_add_cancel (by omega)] at hb
+      rw [shift_addr, shift_addr, Nat.sub_add_cancel (by omega_using [hi0])] at hb
       rw [hb, ite_eq_right hi0, hum, writeW8_apply]
       have hne : src + BitVec.ofNat 64 i ≠ dst := by
         have h := hsep i hi 0 hpos
         simpa only [zero_addr] using h
       exact ite_eq_right hne
   · intro x hx
-    have hstay := htf x fun j hj => by rw [shift_addr]; exact hx (j + 1) (by omega)
+    have hstay := htf x fun j hj => by rw [shift_addr]; exact hx (j + 1) (by omega_using [hj])
     rw [hstay, hum, writeW8_apply]
     have hne : x ≠ dst := by simpa only [zero_addr] using hx 0 hpos
     exact ite_eq_right hne

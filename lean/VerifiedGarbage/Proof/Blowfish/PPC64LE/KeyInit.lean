@@ -39,7 +39,7 @@ theorem initStep_run (u : State) {S : Addr} {i : Nat} (hi : i < 521) (h5 : u.gpr
     (by rfl) rfl)
     fun t ⟨a, b⟩ => ⟨a, b⟩
   unfold initStep movImm64
-  brun [h5, hw, show 8 * i < 32768 by omega, show 8 * i % 4 = 0 by omega]
+  brun [h5, hw, show 8 * i < 32768 by omega_using [hi], show 8 * i % 4 = 0 by omega_using []]
   exact congrArg _ (movImm64_eq _)
 
 /-- The first `k` doublewords. -/
@@ -47,19 +47,19 @@ theorem initSteps_run {S : Addr} {t : State} (h5 : t.gpr .r5 = S) (hW : (⟨S, 4
     ∀ k ≤ 521, WP isa (.block ((List.range k).flatMap initStep)) t fun t' =>
       (∀ i < k, t'.mem.readW (S + BitVec.ofNat 64 (8 * i)) 64 = Impl.Blowfish.initWord i) ∧
       Frame [⟨S, 4168⟩] t.mem t'.mem ∧ Keep [.r12] t t'
-  | 0, _ => WP.block_nil ⟨fun i hi => absurd hi (by omega), Frame.refl _ _, Keep.refl _ _⟩
+  | 0, _ => WP.block_nil ⟨fun i hi => absurd hi (by omega_using []), Frame.refl _ _, Keep.refl _ _⟩
   | k + 1, hk => by
     rw [flatMap_range_succ, WP.block_append_iff]
-    refine WP.mono (initSteps_run h5 hW k (by omega)) fun u ⟨d, f, kp⟩ => ?_
-    refine WP.mono (initStep_run u (i := k) (by omega) (by rw [kp.gpr (by decide)]; exact h5)
-      ⟨_, by rw [kp.2.2]; exact hW, Offset.contains_base S (by omega) (by omega)⟩)
+    refine WP.mono (initSteps_run h5 hW k (by omega_using [hk])) fun u ⟨d, f, kp⟩ => ?_
+    refine WP.mono (initStep_run u (i := k) (by omega_using [hk]) (by rw [kp.gpr (by decide)]; exact h5)
+      ⟨_, by rw [kp.2.2]; exact hW, Offset.contains_base S (by omega_using [hk]) (by omega_using [hk])⟩)
       fun v ⟨m, kv⟩ => ⟨fun i hi => ?_, ?_, (kp.trans kv).mono (by decide)⟩
     · rw [m]
       rcases Nat.lt_succ_iff_lt_or_eq.mp hi with hi | rfl
-      · rw [Mem.readW_writeW_sep (Offset.sep S (by omega) (by omega) (by omega)) (by decide)]
+      · rw [Mem.readW_writeW_sep (Offset.sep S (by omega_using [hi]) (by omega_arith) (by omega_using [hk])) (by decide)]
         exact d i hi
       · exact Mem.readW_writeW_self64 _ _ _
     · rw [m]
-      exact f.writeW (List.mem_singleton_self _) _ (Offset.contains_base S (by omega) (by omega))
+      exact f.writeW (List.mem_singleton_self _) _ (Offset.contains_base S (by omega_using [hk]) (by omega_using [hk]))
 
 end VG.Proof.Blowfish.PPC64LE

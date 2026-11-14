@@ -130,7 +130,7 @@ theorem frame_word {s t : State} (h : OperationReady s) (called : Called s t)
     (d : Nat) (hd : d + 8 ≤ 272) :
     t.mem.readW (off (s.gpr .x19) d) 64 = s.mem.readW (off (s.gpr .x19) d) 64 :=
   called.frame.readW (r := ⟨s.gpr .x19, 272⟩)
-    (Offset.contains_base _ hd (by omega)) h.frameSafe (by decide)
+    (Offset.contains_base _ hd (by omega_using [hd])) h.frameSafe (by decide)
 
 theorem destination_unchanged {s t : State} (h : OperationReady s) (called : Called s t) :
     blockAt t.mem (destination s) = blockAt s.mem (destination s) := by
@@ -139,7 +139,7 @@ theorem destination_unchanged {s t : State} (h : OperationReady s) (called : Cal
   have read : t.mem.readW (off (destination s) (8 * i)) 64 =
       s.mem.readW (off (destination s) (8 * i)) 64 :=
     called.frame.readW (r := ⟨destination s, 1024⟩)
-      (Offset.contains_base _ (by omega) (by omega)) h.destinationSafe (by decide)
+      (Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi])) h.destinationSafe (by decide)
   rw [← blockAt_get t.mem (destination s) ⟨i, hi⟩,
     ← blockAt_get s.mem (destination s) ⟨i, hi⟩] at read
   exact read

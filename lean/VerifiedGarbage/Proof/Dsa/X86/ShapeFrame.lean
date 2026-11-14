@@ -27,7 +27,7 @@ theorem widthFrame_modulus {s t : State} {base : Addr} {n output count : Nat}
   · intro r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl <;> omega
-  · omega
+  · omega_using [hb, b]
 
 theorem widthFrame_header {s t : State} {base : Addr} {n output d : Nat}
     (O : Outs base [(slot n 8, 8 * n), (output, 4)] s.mem t.mem)
@@ -40,7 +40,7 @@ theorem widthFrame_header {s t : State} {base : Addr} {n output d : Nat}
     · intro r hr
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl <;> omega
-    · omega
+    · omega_using [hd]
   simpa only [val32, Nat.mul_zero, Nat.add_zero] using H
 
 theorem widthFrame_widen {s t : State} {base : Addr} {n output lo len : Nat}

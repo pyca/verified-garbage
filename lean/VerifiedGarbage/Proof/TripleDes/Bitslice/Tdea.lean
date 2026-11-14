@@ -46,7 +46,7 @@ theorem pairs_keys_congr {key key' : Nat → BitVec 48} (n : Nat)
   | zero => rfl
   | succ n ih =>
     simp only [pairs]
-    rw [ih (fun r hr => hk r (by omega)), hk (2 * n) (by omega), hk (2 * n + 1) (by omega)]
+    rw [ih (fun r hr => hk r (by omega_using [hr])), hk (2 * n) (by omega_using []), hk (2 * n + 1) (by omega_using [])]
 
 theorem partner_lt : ∀ k < 128, ∀ y, partner k = some y → y < 64 := by
   intro k hk y h
@@ -61,7 +61,7 @@ theorem swapW_congr {W W' : Nat → BitVec w} (hW : ∀ y < 64, W y = W' y) :
   simp only [swapW]
   rcases hp : partner x with _ | y
   · exact hW x hx
-  · exact hW y (partner_lt x (by omega) y hp)
+  · exact hW y (partner_lt x (by omega_using [hx]) y hp)
 
 theorem passW_congr (keys : DesSchedule) (d : Direction) {W W' : Nat → BitVec w}
     (hW : ∀ y < 64, W y = W' y) : ∀ x < 64, passW keys d W x = passW keys d W' x :=
@@ -111,7 +111,7 @@ abbrev wAt (p : Addr) (i : Nat) : Addr := p + BitVec.ofNat 64 (8 * i)
 
 theorem wAt_wAt (D : Addr) (a i : Nat) : wAt (wAt D a) i = wAt D (a + i) := by
   simp only [wAt, BitVec.add_assoc, BitVec.ofNat_add_ofNat]
-  congr 2; omega
+  congr 2; omega_using []
 
 theorem blockAt_frame {rs : List Region} {m m' : Mem} (hf : Frame rs m m') {p : Addr}
     (hd : ∀ r ∈ rs, (⟨p, 8⟩ : Region).Disjoint r) : blockAt m' p = blockAt m p := by
@@ -122,7 +122,7 @@ theorem blockAt_frame {rs : List Region} {m m' : Mem} (hf : Frame rs m m') {p : 
 
 theorem toNat_ofNat_of_le {m n : Nat} (hm : m ≤ n) (hn : 8 * n ≤ 2 ^ 64) :
     (BitVec.ofNat 64 m).toNat = m := by
-  rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+  rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hm, hn])]
 
 theorem ecb_blocks (K : Schedule) (d : Direction) (m m' : Mem) (D : Addr) (n : Nat)
     (h : ∀ b < n, blockAt m' (wAt D b) = blockOut K d (blockAt m (wAt D b))) :

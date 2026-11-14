@@ -90,7 +90,7 @@ theorem tag_rel {y : Nat} (hy : y = 0 ∨ y = 96) : RelCT isa (Eq2 σ₁ σ₂) 
           (c.W + BitVec.ofNat 64 384) c.R 1 ∧ Kept c σ s' := fun E => by
     rw [List.append_assoc]
     exact Runs.block_append (Runs.kept E [.t1, .t2, .t3] (by decide +kernel)) fun s' K =>
-      (Runs.of_wp (ctrArgsW_wp L K.1 (d := y) (by omega) (by omega))).mono fun _ ⟨C, K'⟩ => ⟨C, K.trans K'⟩
+      (Runs.of_wp (ctrArgsW_wp L K.1 (d := y) (by omega_using [hy]) (by omega_using [hy]))).mono fun _ ⟨C, K'⟩ => ⟨C, K.trans K'⟩
   unfold tag
   exact rel_seqR (rel_env [] E₁ E₂ hsp (by simp) t) (run E₁) (run E₂)
     fun τ₁ τ₂ ⟨C₁, K₁⟩ ⟨C₂, K₂⟩ => rel_ctr C₁ C₂ (by rw [K₁.2.1, K₂.2.1, hsp])
@@ -132,13 +132,13 @@ theorem chunk_rel {b : Nat} (hb : b < c.n / 16)
       rcases hr with rfl | rfl
       · rw [h19₁, h19₂]
       · rw [h20₁, h20₂]) ⟨_, by taint_decide⟩)
-    (Runs.of_wp (kSel_wp (b := b) h19₁ h20₁ (by omega) (by omega)))
-    (Runs.of_wp (kSel_wp (b := b) h19₂ h20₂ (by omega) (by omega)))
+    (Runs.of_wp (kSel_wp (b := b) h19₁ h20₁ (by omega_using [hn64]) (by omega_using [hb, hn64])))
+    (Runs.of_wp (kSel_wp (b := b) h19₂ h20₂ (by omega_using [hn64]) (by omega_using [hb, hn64])))
     fun τ₁ τ₂ ⟨s8₁, pk₁, _, k₁⟩ ⟨s8₂, pk₂, _, k₂⟩ => ?_)
   obtain ⟨k, hk⟩ : ∃ k, k = min (c.n / 16 - b) (2 ^ 32 - (1 + b) % 2 ^ 32) := ⟨_, rfl⟩
   rw [← hk] at s8₁ s8₂
-  have hk1 : 1 ≤ k := by rw [hk]; have := Nat.mod_lt (1 + b) (show 0 < 2 ^ 32 by decide); omega
-  have hkb : b + k ≤ c.n / 16 := by rw [hk]; omega
+  have hk1 : 1 ≤ k := by rw [hk]; have := Nat.mod_lt (1 + b) (show 0 < 2 ^ 32 by decide); omega_using [hb]
+  have hkb : b + k ≤ c.n / 16 := by rw [hk]; omega_using [hb]
   have F₁ := E₁.of_pk pk₁
   have F₂ := E₂.of_pk pk₂
   have hsp₁ : τ₁.sp = τ₂.sp := by rw [pk₁.sp, pk₂.sp, hsp]
@@ -172,15 +172,15 @@ theorem ctr_rel {c : Cx} (L : Lay c) {σ₁ σ₂ : State} (E₁ : Env c σ₁) 
   · refine rel_seqR (rel_env [] E₁ E₂ hsp (by simp) ⟨_, by taint_decide⟩)
       (Runs.of_wp (ctrHeadBlk_wp L (nonce := n₁) E₁)) (Runs.of_wp (ctrHeadBlk_wp L (nonce := n₂) E₂))
       fun τ₁ τ₂ I₁ I₂ => ?_
-    have e₁ := eval_z (a := c.n / 16) (by rw [I₁.s6, Nat.sub_zero]) (by omega)
-    have e₂ := eval_z (a := c.n / 16) (by rw [I₂.s6, Nat.sub_zero]) (by omega)
+    have e₁ := eval_z (a := c.n / 16) (by rw [I₁.s6, Nat.sub_zero]) (by omega_using [hn64])
+    have e₂ := eval_z (a := c.n / 16) (by rw [I₂.s6, Nat.sub_zero]) (by omega_using [hn64])
     refine rel_ite e₁ e₂ (fun _ => ?_) (fun hf => ?_)
     · exact rel_env [] (E₁.of_pk I₁.pk) (E₂.of_pk I₂.pk) (by rw [I₁.pk.sp, I₂.pk.sp, hsp]) (by simp)
         ⟨_, by taint_decide⟩
     have h0 : c.n / 16 ≠ 0 := by simpa using hf
     refine (RelCT.loop (Q := TT) (fun m a b => ∃ j, m = c.n / 16 - j ∧ j < c.n / 16 ∧
         CtrInv c n₁ σ₁ j a ∧ CtrInv c n₂ σ₂ j b) (fun m => ?_) (c.n / 16 - 0)).mono
-      (fun a b hab => by obtain ⟨rfl, rfl⟩ := hab; exact ⟨0, rfl, by omega, I₁, I₂⟩) fun _ _ h => h
+      (fun a b hab => by obtain ⟨rfl, rfl⟩ := hab; exact ⟨0, rfl, by omega_using [h0], I₁, I₂⟩) fun _ _ h => h
     refine rel_of_eq2 fun a b ⟨j, hm, hj, J₁, J₂⟩ => ?_
     refine (rel_post (chunk_rel L (E₁.of_pk J₁.pk) (E₂.of_pk J₂.pk) (by rw [J₁.pk.sp, J₂.pk.sp, hsp]) hj
         J₁.s5 J₂.s5 J₁.s6 J₂.s6 J₁.s7 J₂.s7)
@@ -188,11 +188,11 @@ theorem ctr_rel {c : Cx} (L : Lay c) {σ₁ σ₂ : State} (E₁ : Env c σ₁) 
       (fun _ _ h => h) fun a' b' ⟨⟨k, hk, hk1, hkb, K₁⟩, ⟨k', hk', _, _, K₂⟩⟩ => ?_
     have e : k = k' := by rw [hk, hk']
     subst e
-    have ev₁ := eval_nz (r := .s6) (a := c.n / 16 - (j + k)) K₁.s6 (by omega)
-    have ev₂ := eval_nz (r := .s6) (a := c.n / 16 - (j + k)) K₂.s6 (by omega)
+    have ev₁ := eval_nz (r := .s6) (a := c.n / 16 - (j + k)) K₁.s6 (by omega_using [hn64])
+    have ev₂ := eval_nz (r := .s6) (a := c.n / 16 - (j + k)) K₂.s6 (by omega_using [hn64])
     refine ⟨by rw [ev₁, ev₂], fun _ => trivial, fun ht => ⟨c.n / 16 - (j + k), ?_, j + k, rfl, ?_, K₁, K₂⟩⟩
-    · rw [ev₁] at ht; simp at ht; omega
-    · rw [ev₁] at ht; simp at ht; omega
+    · rw [ev₁] at ht; simp at ht; omega_using [hm, hj, hk]
+    · rw [ev₁] at ht; simp at ht; omega_using [ht]
   · have F₁ := E₁.of_pk I₁.pk
     have F₂ := E₂.of_pk I₂.pk
     have hsp₁ : τ₁.sp = τ₂.sp := by rw [I₁.pk.sp, I₂.pk.sp, hsp]

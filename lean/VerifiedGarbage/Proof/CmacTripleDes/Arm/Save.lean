@@ -59,7 +59,7 @@ theorem restore_ok {s : State} {S : BitVec 32} (hb : s.gpr .r10 = S) (hS : S.toN
   subst hb
   refine Spill.restoreBase_ok (by decide) (fun p hp => ?_) fun s' hl _ hm hrd hwr hsp => WP.block_nil ⟨hl, hsp, hm, hrd, hwr⟩
   have := saved_slots.bound hp
-  exact ⟨by omega, by omega, hr _ this.1 this.2.1⟩
+  exact ⟨by omega_using [this], by omega_using [hS, this], hr _ this.1 this.2.1⟩
 
 /-- The registers restored from slots that have not changed since they were
 saved. -/

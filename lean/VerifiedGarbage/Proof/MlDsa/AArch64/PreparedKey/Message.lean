@@ -176,7 +176,7 @@ theorem message_sign_layout_ok {p : Params} (hp : Ok3 p) {prepared : Bool} {s : 
     simp only [List.mem_cons,List.not_mem_nil,or_false] at hR
     have ns := h.nSig
     have nw := h.nScr
-    rcases hR with rfl | rfl <;> simp only <;> omega
+    rcases hR with rfl | rfl <;> simp only <;> omega_arith
 
 theorem message_sign_cache {p : Params} {prepared : Bool} {s : State}
     (pre : (messageSignK p prepared (abi.withConsts pairedSignRootConsts)).pre s)
@@ -253,7 +253,7 @@ theorem message_sign_call_base_pre {p : Params} (hp : Ok3 p) {prepared : Bool} {
   have nscr : (s.gpr .x7).toNat + Message.sScr p ≤ 2 ^ 64 := by
     have nS := h.nScr
     simp only [Message.mScrLen,Message.sScr,messageScratchWords] at nS ⊢
-    omega
+    omega_using [nS]
   have sp : 64 ≤ u.sp.toNat := by rw [hm.2.sp,hc.sp]; exact h.stack
   have cache : prepared = true → PreparedSecretKey p u.mem (s.gpr .x0) := by
     intro flag
@@ -288,7 +288,7 @@ theorem message_sign_write_cover {p : Params} {prepared : Bool} {s t u : State}
   · refine ⟨⟨s.gpr .x7,Message.mScrLen p⟩,by rw [h.wr]; simp,within_base _ ?_⟩
     rw [Message.mScr_eq]
     simp only [Message.sScr,oE]
-    omega
+    omega_using []
 
 theorem message_sign_call_pre {p : Params} (hp : Ok3 p) {prepared : Bool} {s t u : State}
     {g : Reg → BitVec 64} {v : VReg → BitVec 128}
@@ -375,7 +375,7 @@ theorem message_sign_call_ok {p : Params} (hp : Ok3 p) {prepared : Bool} {s t : 
   have hpre := message_sign_call_pre hp pre h8 hc ⟨hA,o⟩ hsy hr rp
   have cw := message_sign_write_cover h hc o
   have hd := hS.dle.le
-  refine WP.callFV hS.ver.1 hpre ?_ cw (fun u rdu wru spu fu csu vsu post => ?_) (by omega)
+  refine WP.callFV hS.ver.1 hpre ?_ cw (fun u rdu wru spu fu csu vsu post => ?_) (by omega_using [hd])
   · apply Covers.append_left
       (Covers.append_left (message_sign_read_cover h hc o) ?_) cw.right
     rw [signRootRd,hsy,o.rd,o.wr]
@@ -391,13 +391,13 @@ theorem message_sign_call_ok {p : Params} (hp : Ok3 p) {prepared : Bool} {s t : 
       rcases hR with rfl | rfl | rfl
       · rw [VG.Offset.add_add]
         exact h.sigScr.symm.sub_left ((within_off (messageSignLay p prepared s).X
-          (d := 904 + d) (n := 8) (k := 1024) (by omega)).trans (messageSignLay_X p prepared s)).sub
+          (d := 904 + d) (n := 8) (k := 1024) (by omega_using [hD])).trans (messageSignLay_X p prepared s)).sub
       · exact Message.sv_sScr (ok3_params hp) s hD
       · rw [c1.sp]
         rw [VG.Offset.add_add]
         exact (h.stkScr.symm.sub_left ((within_off (messageSignLay p prepared s).X
-          (d := 904 + d) (n := 8) (k := 1024) (by omega)).trans (messageSignLay_X p prepared s)).sub).sub_right
-          (below_sub (by omega) (by decide))
+          (d := 904 + d) (n := 8) (k := 1024) (by omega_using [hD])).trans (messageSignLay_X p prepared s)).sub).sub_right
+          (below_sub (by omega_using [hd]) (by decide))
     refine ⟨⟨rdu.trans c1.rd,wru.trans c1.wr,spu.trans c1.sp,
       (csu .x28 (by decide) (by decide)).trans c1.x28,
       (fun r hr' h28 h30 => (csu r hr' h30).trans (c1.cs r hr' h28 h30)),
@@ -453,7 +453,7 @@ theorem message_sign_correct (v : Proof.Sha3.AArch64.Permutation) {p : Params} (
         (Message.signSaves_vals (p := p) o1) (by decide)) fun t hc hyt => ?_))
     have hsk : 128 ≤ p.skLen := by rcases hp with rfl | rfl | rfl <;> decide
     have wtr : Within ⟨(messageSignLay p prepared s).key + BitVec.ofNat 64 64,64⟩
-        (messageSignLay p prepared s).KEY := within_off _ (by have := hL.hKey; omega)
+        (messageSignLay p prepared s).KEY := within_off _ (by have := hL.hKey; omega_using [this])
     have hst : Region.Sub ⟨(messageSignLay p prepared s).ST,200⟩ (messageSignLay p prepared s).XS := by
       have := Offset.sub_base (messageSignLay p prepared s).X (d := 0) (n := 200) (k := 1024) (by decide)
       simpa only [Message.x0] using this
@@ -481,7 +481,7 @@ theorem message_sign_correct (v : Proof.Sha3.AArch64.Permutation) {p : Params} (
     have etr : Spec.Sha3.bytesAt t.mem ((messageSignLay p prepared s).key + BitVec.ofNat 64 64) 64 =
         ((Spec.Sha3.bytesAt s.mem (s.gpr .x0) p.skLen).drop 64).take 64 := by
       rw [hc.bytesAt_eq (hL.xKey.sub_right wtr.sub) (hL.kKey.sub_right wtr.sub) (by decide),o1.mem,
-        VG.Proof.MlKem.bytesAt_slice _ _ (by omega)]
+        VG.Proof.MlKem.bytesAt_slice _ _ (by omega_using [hsk])]
       rfl
     rw [ek,er,hmu,etr,o1.mem] at hq
     cases prepared
@@ -509,7 +509,7 @@ theorem message_sign_correct (v : Proof.Sha3.AArch64.Permutation) {p : Params} (
         simp only [messageSignK,Bool.false_eq_true,↓reduceIte]
         sig_post [signMessageContract,signMessageSig,preparedSignMessageContract,preparedSignMessageSig,
           abi,VG.AArch64.argRegs,Abi.withConsts]
-        rw [formatMessage_none (by rw [VG.Proof.MlKem.bytesAt_length]; omega),e2]
+        rw [formatMessage_none (by rw [VG.Proof.MlKem.bytesAt_length]; omega_using [h8]),e2]
         rfl
 
 def MessageSignOK (p : Params) (prepared : Bool) (L : Message.Lay) (m : Mem) (t : State) : Prop :=
@@ -527,7 +527,7 @@ theorem message_sign_leak_eq {p : Params} (hp : Ok3 p) {L : Message.Lay} (hL : L
   have sk : 128 ≤ p.skLen := by rcases hp with rfl | rfl | rfl <;> decide
   rw [signMessageLeak,formatMessage_some (by rw [VG.Proof.MlKem.bytesAt_length]; exact hL.ctxLt)]
   simp only [messageRep,skTr,Message.hdrBytes,VG.Proof.MlKem.bytesAt_length,List.append_assoc]
-  rw [VG.Proof.MlKem.bytesAt_slice _ _ (by omega)]
+  rw [VG.Proof.MlKem.bytesAt_slice _ _ (by omega_using [sk])]
 
 theorem message_sign_call_tr {p : Params} (hp : Ok3 p) {prepared : Bool}
     {n : String} {code : Prog isa} (hS : MessageSignFn p prepared code) (tab : Addr × Addr × Addr) :
@@ -622,7 +622,7 @@ theorem message_sign_body_tr {p : Params} (hp : Ok3 p) {prepared : Bool}
       (⟨L.key + BitVec.ofNat 64 64,64⟩ : Region).Disjoint ⟨L.KS,640⟩ ∧
       L.STK.Disjoint ⟨L.key + BitVec.ofNat 64 64,64⟩ := by
     intro L hL
-    have w : Within ⟨L.key + BitVec.ofNat 64 64,64⟩ L.KEY := within_off _ (by have := hL.hKey; omega)
+    have w : Within ⟨L.key + BitVec.ofNat 64 64,64⟩ L.KEY := within_off _ (by have := hL.hKey; omega_using [this])
     have st : Region.Sub ⟨L.ST,200⟩ L.XS := by
       simpa only [Message.x0] using Offset.sub_base L.X (d := 0) (n := 200) (k := 1024) (by decide)
     exact ⟨⟨_,List.mem_append_left _ hL.inKey,w⟩,(hL.xKey.symm.sub_left w.sub).sub_right st,
@@ -640,7 +640,7 @@ theorem message_sign_body_tr {p : Params} (hp : Ok3 p) {prepared : Bool}
       obtain ⟨⟨s,pre,h8,eL,em,hs⟩,htab⟩ := phi
       refine ⟨ct,⟨s,pre,h8,eL,em,hy.trans hs⟩,?_,(Message.Paired.rootsAt_syms hy).trans htab⟩
       unfold Message.MuOk
-      have w : Within ⟨L.key + BitVec.ofNat 64 64,64⟩ L.KEY := within_off _ (by have := hL.hKey; omega)
+      have w : Within ⟨L.key + BitVec.ofNat 64 64,64⟩ L.KEY := within_off _ (by have := hL.hKey; omega_using [this])
       rw [mu,c.bytesAt_eq (hL.xKey.sub_right w.sub) (hL.kKey.sub_right w.sub) (by decide)])
   have run : ∀ {L : Message.Lay} {g vv m t}, L.Ok → Message.Ctx L g vv m t → Phi L m t →
       WP isa (.seq (muHash v.callee (.slotOff fKey 64)) (callA n code Message.signArgs)) t
@@ -870,8 +870,8 @@ theorem message_sign_sat {p : Params} (hp : Ok3 p) (prepared : Bool) :
   have inverse := secret_preparation_preserves_roots hp he (base := 1052480) (.inr (.inl rfl))
   have pair := secret_preparation_preserves_roots hp he (base := 1056384) (.inr (.inr rfl))
   exact ⟨messageSignSat p prepared t.mem,messageSignSat_pre hp prepared t.mem
-    (fun i hi' => (forward i (by omega)).trans (roots.2.1.forward.held i hi'))
-    (fun i hi' => (inverse i (by omega)).trans (roots.2.1.inverse.held i hi'))
+    (fun i hi' => (forward i (by omega_using [hi'])).trans (roots.2.1.forward.held i hi'))
+    (fun i hi' => (inverse i (by omega_using [hi'])).trans (roots.2.1.inverse.held i hi'))
     (fun i hi' => (pair i hi').trans (roots.2.2.held i hi')) post.2⟩
 
 theorem message_sign_verified (v : Proof.Sha3.AArch64.Permutation) {p : Params} (hp : Ok3 p)
@@ -984,7 +984,7 @@ theorem message_verify_layout_ok {p : Params} (hp : Ok3 p) {prepared : Bool} {s 
     obtain rfl := List.mem_singleton.mp hR
     have ns := h.nScr
     simp only
-    omega
+    omega_using [ns]
 
 end VG.Proof.MlDsa.AArch64.PreparedKey
 
@@ -1049,7 +1049,7 @@ theorem message_verify_call_base_pre {p : Params} (hp : Ok3 p) {prepared : Bool}
   have nscr : (s.gpr .x6).toNat + sScr p ≤ 2 ^ 64 := by
     have nS := h.nScr
     simp only [mScrLen,sScr,messageScratchWords] at nS ⊢
-    omega
+    omega_using [nS]
   have sp : 64 ≤ u.sp.toNat := by rw [hm.2.sp,hc.sp]; exact h.stack
   have cache' : prepared = true → PreparedPublicKey p u.mem (s.gpr .x0) := by
     intro flag
@@ -1163,7 +1163,7 @@ theorem message_verify_write_cover {p : Params} {prepared : Bool} {s t u : State
   simp only [messageVerifyCallWr,List.mem_cons,List.not_mem_nil,or_false] at hR
   subst hR
   refine ⟨⟨s.gpr .x6,mScrLen p⟩,by rw [h.wr];simp,within_base _ ?_⟩
-  rw [mScr_eq];simp only [sScr,oE];omega
+  rw [mScr_eq];simp only [sScr,oE];omega_using []
 
 theorem message_verify_call_pre (v : Proof.Sha3.AArch64.Permutation) {p : Params} (hp : Ok3 p)
     {prepared : Bool} {s t u : State} {g : Reg → BitVec 64} {vv : VReg → BitVec 128}
@@ -1261,7 +1261,7 @@ theorem message_verify_call_ok (v : Proof.Sha3.AArch64.Permutation) {p : Params}
   have hpre := message_verify_call_pre v hp pre h8 hc ⟨hA,o⟩ hsy hr
   have cw := message_verify_write_cover h hc o
   have hd := hV.dle.le
-  refine WP.callFV hV.ver.1 hpre ?_ cw (fun u rdu wru spu fu csu vsu post => ?_) (by omega)
+  refine WP.callFV hV.ver.1 hpre ?_ cw (fun u rdu wru spu fu csu vsu post => ?_) (by omega_using [hd])
   · apply Covers.append_left (Covers.append_left (message_verify_read_cover h hc o) ?_) cw.right
     by_cases hv : v.callee.pairedSha3 = true
     · simp only [messageVerifyRootRd,hv,↓reduceIte,verifyRootRd,hsy,o.rd,o.wr]
@@ -1278,8 +1278,8 @@ theorem message_verify_call_ok (v : Proof.Sha3.AArch64.Permutation) {p : Params}
       · exact Optimized.CachedVerify.sv_sScrV (ok3_params hp) s hD
       · rw [c1.sp,Offset.add_add]
         exact (h.stkScr.symm.sub_left ((within_off (messageVerifyLay p prepared s).X
-          (d := 904+d) (n := 8) (k := 1024) (by omega)).trans (messageVerifyLay_X p prepared s)).sub).sub_right
-          (below_sub (by omega) (by decide))
+          (d := 904+d) (n := 8) (k := 1024) (by omega_using [hD])).trans (messageVerifyLay_X p prepared s)).sub).sub_right
+          (below_sub (by omega_using [hd]) (by decide))
     refine ⟨⟨rdu.trans c1.rd,wru.trans c1.wr,spu.trans c1.sp,
       (csu .x28 (by decide) (by decide)).trans c1.x28,
       (fun r hr' h28 h30 => (csu r hr' h30).trans (c1.cs r hr' h28 h30)),
@@ -1368,7 +1368,7 @@ theorem message_verify_correct (v : Proof.Sha3.AArch64.Permutation) {p : Params}
       ctx.bytesAt_eq (hL.xKey.sub_right kp) (hL.kKey.sub_right kp) (by rcases hp with rfl | rfl | rfl <;> decide)
     have es : bytesAt t2.mem (s.gpr .x5) p.sigLen = bytesAt s.mem (s.gpr .x5) p.sigLen :=
       ctx.bytesAt_eq (h.sigScr.symm.sub_left (messageVerifyLay_X p prepared s).sub)
-        (h.stkSig.sub_left (below_sub (by decide) (by decide))) (by have := h.nSig;omega)
+        (h.stkSig.sub_left (below_sub (by decide) (by decide))) (by have := h.nSig;omega_using [this])
     rw [ek,es,hmu,htr,o1.mem] at hq
     cases hmode : v.callee.pairedSha3 <;> cases prepared
     all_goals
@@ -1391,7 +1391,7 @@ theorem message_verify_correct (v : Proof.Sha3.AArch64.Permutation) {p : Params}
           Verify.OptimizedSelected.selectedConsts,hmode]
         sig_post [verifyMessageCachedContract,verifyMessageCachedSig,preparedVerifyMessageContract,preparedVerifyMessageSig,
           abi,VG.AArch64.argRegs,Verify.OptimizedSelected.selectedAbi,Verify.OptimizedSelected.selectedConsts,hmode,Abi.withConsts]
-        rw [formatMessage_none (by rw [Proof.MlKem.bytesAt_length];omega),e2]
+        rw [formatMessage_none (by rw [Proof.MlKem.bytesAt_length];omega_using [h8]),e2]
         rfl
 
 end VG.Proof.MlDsa.AArch64.PreparedKey
@@ -1462,7 +1462,7 @@ theorem message_verify_call_tr (v : Proof.Sha3.AArch64.Permutation) {p : Params}
       intro g vv m a u c f
       rw [f.2.mem]
       exact c.bytesAt_eq (facts.sigScr.symm.sub_left (messageVerifyLay_X p prepared s).sub)
-        (facts.stkSig.sub_left (below_sub (by decide) (by decide))) (by have := facts.nSig;omega)
+        (facts.stkSig.sub_left (below_sub (by decide) (by decide))) (by have := facts.nSig;omega_using [this])
     have emu : ∀ {a u},Moved verifyArgs a u → bytesAt u.mem (messageVerifyLay p prepared s).MU 64 =
         bytesAt a.mem (messageVerifyLay p prepared s).MU 64 := by intro a u f;rw [f.2.mem]
     have keys : ∀ q,(messageVerifyLay p q s).key = s.gpr .x0 := fun _ => rfl
@@ -1809,7 +1809,7 @@ theorem public_preparation_preserves_digest {p : Params} (hp : Ok3 p) {m : Mem} 
     (he : Exec isa (Impl.MlDsa.AArch64.PreparedKey.preparePublic p) (prepWithTables p m) tr t) :
     bytesAt t.mem 0x8000 64 = bytesAt m 0x8000 64 := by
   have hd := prepare_public_depth hp
-  have frame := Exec.frameSp he (by omega : 16 * (Impl.MlDsa.AArch64.PreparedKey.preparePublic p).aarch64Depth < 2^64)
+  have frame := Exec.frameSp he (by omega_using [hd] : 16 * (Impl.MlDsa.AArch64.PreparedKey.preparePublic p).aarch64Depth < 2^64)
   apply Proof.MlKem.bytesAt_frame frame ?_ (by decide)
   intro R hR
   simp only [prepWithTables,List.cons_append,List.nil_append,List.mem_cons,List.not_mem_nil,or_false] at hR

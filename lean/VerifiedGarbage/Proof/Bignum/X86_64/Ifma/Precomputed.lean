@@ -302,9 +302,9 @@ theorem prePreP_of (hl : LayOk l) {s t₀ : State} {B : Addr} {Z k : Nat} {op np
   have hpP₀ := hpP.congr hr.iscr (hr.keep.gpr (by decide)) hr.keep.2.1 hr.keep.2.2
   have hpQ₀ := hpQ.congr hr.iscr (hr.keep.gpr (by decide)) hr.keep.2.1 hr.keep.2.2
   rw [primeWords_eq, hpl, hw32, show 2 * (2 * l.W) = r2XOff false l.W by
-    simp only [r2XOff, Bool.false_eq_true, ↓reduceIte]; omega] at hpP₀
+    simp only [r2XOff, Bool.false_eq_true, ↓reduceIte]; omega_using []] at hpP₀
   rw [primeWords_eq, primeWords_eq, hpl, hql, hw32, show 2 * (2 * l.W) + l.W = r2XOff true l.W by
-    simp only [r2XOff, ↓reduceIte]; omega] at hpQ₀
+    simp only [r2XOff, ↓reduceIte]; omega_using []] at hpQ₀
   dsimp only [PrePreP]
   generalize Spec.Rsa.os2ip nb = N at *
   generalize Spec.Rsa.os2ip xb = C at *
@@ -359,7 +359,7 @@ theorem postPreP_of (hl : LayOk l) {s t₁ : State} {B : Addr} {Z k : Nat} {op n
   have ha₁ : stackArg t₁ 12 = A := (hpP.arg_eq hd.iscr (hd.keep.gpr (by decide))).trans ha
   have hpP₁ := hpP.congr hd.iscr (hd.keep.gpr (by decide)) hd.keep.2.1 hd.keep.2.2
   rw [primeWords_eq, hw32, show 2 * (2 * l.W) = r2XOff false (wsWords pl) by
-    simp only [r2XOff, Bool.false_eq_true, ↓reduceIte]; omega] at hpP₁
+    simp only [r2XOff, Bool.false_eq_true, ↓reduceIte]; omega_using [hpl]] at hpP₁
   dsimp only [PostPreP]
   generalize Spec.Rsa.os2ip nb = N at *
   generalize Spec.Rsa.os2ip xb = C at *

@@ -22,7 +22,7 @@ theorem wordLoop_trace_bounded {g : Geometry} (positive : 0 < g.w) (widthBound :
   refine (RelCT.loop (M := isa) (body := .block (wordStep 4)) (c := .ne)
     (I := fun q s t => ∃ j, q = 2 * g.w - j ∧ j < 2 * g.w ∧ ReadControl g j s ∧ ReadControl g j t)
     (Q := VG.X86.Taint.Agree (τr [.esp, .edi])) ?_ (2 * g.w)).mono
-    (fun _ _ H => ⟨0, rfl, by omega, H⟩) (fun _ _ H => H)
+    (fun _ _ H => ⟨0, rfl, by omega_using [positive], H⟩) (fun _ _ H => H)
   rintro q s t tr ur u z ⟨j, rfl, index, S, T⟩ E G
   obtain ⟨trace, _⟩ := wordStep_trace _ _ _ _ _ _ (S.agree T) E G
   obtain ⟨U, Zu⟩ := wp_result (S.step_bounded widthBound candidateFit index) E
@@ -41,7 +41,7 @@ theorem wordLoop_trace_bounded {g : Geometry} (positive : 0 < g.w) (widthBound :
     intro done
     rw [eu, decide_eq_true done] at next
     cases next
-  exact ⟨2 * g.w - (j + 1), by omega, j + 1, rfl, by omega, U, Z⟩
+  exact ⟨2 * g.w - (j + 1), by omega_using [index], j + 1, rfl, by omega_using [index, more], U, Z⟩
 
 theorem wordLoop_trace {g : Geometry} (v : g.Valid) :
     RelCT isa (fun s t => ReadControl g 0 s ∧ ReadControl g 0 t)

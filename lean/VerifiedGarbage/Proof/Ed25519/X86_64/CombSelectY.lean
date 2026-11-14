@@ -34,12 +34,12 @@ open VG.Proof.Poly1305.X86_64.Avx2 (xr qw)
 theorem ymm_qword' (s : State) (r : XReg) {k : Nat} (hk : k < 4) :
     (s.ymm r).extractLsb' (8 * (8 * k)) (8 * 8) = qw s r k := by
   rw [← VG.Proof.Poly1305.X86_64.Avx2.qword256_ymm s r hk, qword256]
-  congr 1; omega
+  congr 1; omega_using []
 
 /-- A `ymm` register to the 32 bytes at `d`. -/
 theorem stY_ok {s : State} {base : Addr} (hs : Scratch s base) {d : Nat} (hd : d + 32 ≤ 8192) (r : Nat) :
     WP isa (.block [st d r]) s fun t => t = s.setMem (s.mem.writeW (off base d) (s.ymm (y r))) := by
-  have hw : InRegions s.wr (off base d) 32 := ⟨_, hs.wr, Offset.contains_base base hd (by omega)⟩
+  have hw : InRegions s.wr (off base d) 32 := ⟨_, hs.wr, Offset.contains_base base hd (by omega_using [hd])⟩
   apply WP.of_runBlock
   simp only [runBlock_cons, runStep_some, runBlock_nil, exec, st, Proof.X25519.X86_64.ea_sc, hs.rdi,
     State.store256_eq, hw, ite_true, Option.some.injEq, exists_eq_left']
@@ -47,7 +47,7 @@ theorem stY_ok {s : State} {base : Addr} (hs : Scratch s base) {d : Nat} (hd : d
 /-- The words of a stored `ymm` register. -/
 theorem word_stY (m : Mem) (base : Addr) (s : State) (r : XReg) {d k : Nat} (hk : k < 4) :
     Proof.X25519.X86_64.word (m.writeW (off base d) (s.ymm r)) base (d + 8 * k) = qw s r k := by
-  have e := readW_writeW_inside m (off base d) (s.ymm r) (k := 8 * k) (n := 8) (by omega) (by decide)
+  have e := readW_writeW_inside m (off base d) (s.ymm r) (k := 8 * k) (n := 8) (by omega_using [hk]) (by decide)
   rw [ymm_qword' s r hk, off, Offset.add_ofNat_add_ofNat] at e
   exact e
 
@@ -55,7 +55,7 @@ theorem word_stY (m : Mem) (base : Addr) (s : State) (r : XReg) {d k : Nat} (hk 
 theorem word_stY_off (m : Mem) (base : Addr) (v : BitVec 256) {d e : Nat} (hd : e + 8 < 2 ^ 62)
     (hd' : d + 32 < 2 ^ 62) (h : e + 8 ≤ d ∨ d + 32 ≤ e) :
     Proof.X25519.X86_64.word (m.writeW (off base d) v) base e = Proof.X25519.X86_64.word m base e :=
-  readW_writeW_off m base v (d := e) (e := d) (n := 8) (by omega) (by omega) (by omega)
+  readW_writeW_off m base v (d := e) (e := d) (n := 8) (by omega_using [hd]) (by omega_using [hd']) (by omega_using [h])
 
 /-- A store to slots 4–6 keeps the bytes outside them. -/
 theorem writeW_byte_off' {m : Mem} {base x : Addr} {v : BitVec 256}
@@ -66,7 +66,7 @@ theorem writeW_byte_off' {m : Mem} {base x : Addr} {v : BitVec 256}
   rw [off, Offset.sub_add_eq, Offset.toNat_sub_ofNat]
   have := (x - base).isLt
   simp only [offset] at hx hd
-  omega
+  omega_using [hx, hd]
 
 theorem vzeroupper_ok (s : State) :
     WP isa (.block [.vop .vzeroupper]) s fun t => t.gpr = s.gpr ∧ t.mem = s.mem ∧ t.rd = s.rd ∧
@@ -111,25 +111,25 @@ theorem combSelectY_ok {s : State} {base T : Addr} (hs : Scratch s base) (ht : C
       qw s₁ (xr (11 + c)) k := by
     intro c hc k hk
     rw [m₅, e₄]
-    obtain rfl | rfl | rfl : c = 0 ∨ c = 1 ∨ c = 2 := by omega
-    · rw [State.setMem_mem, word_stY_off _ _ _ (by simp only [offset]; omega) (by decide)
-        (Or.inl (by simp only [offset]; omega)), e₃, State.setMem_mem,
-        word_stY_off _ _ _ (by simp only [offset]; omega) (by decide) (Or.inl (by simp only [offset]; omega)),
-        e₂, State.setMem_mem, show offset 4 + 32 * 0 + 8 * k = offset 4 + 8 * k by omega, word_stY _ _ _ _ hk]
+    obtain rfl | rfl | rfl : c = 0 ∨ c = 1 ∨ c = 2 := by omega_using [hc]
+    · rw [State.setMem_mem, word_stY_off _ _ _ (by simp only [offset]; omega_using [hk]) (by decide)
+        (Or.inl (by simp only [offset]; omega_using [hk])), e₃, State.setMem_mem,
+        word_stY_off _ _ _ (by simp only [offset]; omega_using [hk]) (by decide) (Or.inl (by simp only [offset]; omega_using [hk])),
+        e₂, State.setMem_mem, show offset 4 + 32 * 0 + 8 * k = offset 4 + 8 * k by omega_using [], word_stY _ _ _ _ hk]
       rfl
-    · rw [State.setMem_mem, word_stY_off _ _ _ (by simp only [offset]; omega) (by decide)
-        (Or.inl (by simp only [offset]; omega)), e₃, State.setMem_mem,
-        show offset 4 + 32 * 1 + 8 * k = offset 5 + 8 * k by simp only [offset]; omega, word_stY _ _ _ _ hk, q₂]
+    · rw [State.setMem_mem, word_stY_off _ _ _ (by simp only [offset]; omega_using [hk]) (by decide)
+        (Or.inl (by simp only [offset]; omega_using [hk])), e₃, State.setMem_mem,
+        show offset 4 + 32 * 1 + 8 * k = offset 5 + 8 * k by simp only [offset]; omega_using [], word_stY _ _ _ _ hk, q₂]
       rfl
-    · rw [State.setMem_mem, show offset 4 + 32 * 2 + 8 * k = offset 6 + 8 * k by simp only [offset]; omega,
+    · rw [State.setMem_mem, show offset 4 + 32 * 2 + 8 * k = offset 6 + 8 * k by simp only [offset]; omega_using [],
         word_stY _ _ _ _ hk, q₃]
       rfl
   have hw₂ : ∀ i < 12, Proof.X25519.X86_64.word s₅.mem base (offset 4 + 8 * i) =
       if 1 ≤ a then (entryWords ((combTable.getD j []).getD (a - 1) (1, 1, 0))).getD i 0 else 0 := by
     intro i hi
     obtain ⟨c, k, hc, hk, rfl⟩ : ∃ c k, c < 3 ∧ k < 4 ∧ i = 4 * c + k :=
-      ⟨i / 4, i % 4, by omega, by omega, by omega⟩
-    rw [show offset 4 + 8 * (4 * c + k) = offset 4 + 32 * c + 8 * k by omega, hw c hc k hk, q₁ c hc k hk]
+      ⟨i / 4, i % 4, by omega_using [hi], by omega_using [], by omega_using []⟩
+    rw [show offset 4 + 8 * (4 * c + k) = offset 4 + 32 * c + 8 * k by omega_using [], hw c hc k hk, q₁ c hc k hk]
     by_cases h1 : 1 ≤ a
     · rw [ite_eq_left_of_eq_true _ _ (eq_true h1), ite_eq_left_of_eq_true _ _ (eq_true h1),
         entryWords_getD _ c k hc hk, combField, combCached_succ j a h1]

@@ -58,7 +58,7 @@ theorem preCall_wp {s : State} {B : Addr} {L w c : Nat} (h : Prep s B L w c) (hw
   have es : ∀ j, slot w j = 256 + j * (8 * (w + 2)) := fun _ => rfl
   have hZ' : 256 + 28 * (8 * (w + 2)) ≤ 8 * L := by rw [← es]; exact hZ
   have hR : Nat.Coprime (2 ^ (64 * w)) c := VG.Proof.Bignum.coprime_pow2 h.odd _
-  have l56 : InRegions (s.rd ++ s.wr) (B + BitVec.ofNat 64 56) 8 := e.hs.ld (d := 56) (by omega)
+  have l56 : InRegions (s.rd ++ s.wr) (B + BitVec.ofNat 64 56) 8 := e.hs.ld (d := 56) (by omega_using [hZ'])
   refine WP.seq (WP.seq (WP.mono (WP.keep [.r12] (Q := fun u => u.gpr .r12 = (word s.mem B 56 <<< 32) >>> 32 ∧
       u.mem = s.mem) (by simp only [minv32, ldh, hMinv]; prun [e.h31, l56]) (by decide))
     fun u ⟨⟨u12, um⟩, ku⟩ => ?_))
@@ -67,9 +67,9 @@ theorem preCall_wp {s : State} {B : Addr} {L w c : Nat} (h : Prep s B L w c) (hw
   have eu := hu.env
   obtain ⟨i12, iinv⟩ := r12_inv h.inv
   refine WP.mono (Pub.montOp_ok eu.hs (o := 5) (a := 4) (b := 1) (by decide) (by decide) (by decide)
-    (by decide) (by decide) (by decide) (by decide) (by omega) (by omega) (by simp only [es]; omega) eu.h10 eu.h29
+    (by decide) (by decide) (by decide) (by decide) (by omega_using [hw4]) (by omega_using [hw128]) (by simp only [es]; omega_using [hZ']) eu.h10 eu.h29
     eu.h11 (by rw [u12]; exact i12) (by rw [u12, um, w32_eq_mod]; exact iinv)
-    (by show arr u.mem B w 1 < arr u.mem B w 0; rw [hu.r1, hu.n]; exact Nat.mod_lt _ (by have := h.c3; omega)))
+    (by show arr u.mem B w 1 < arr u.mem B w 0; rw [hu.r1, hu.n]; exact Nat.mod_lt _ (by have := h.c3; omega_using [this])))
     fun s₁ ⟨⟨lt₁, eq₁, o₁⟩, k₁⟩ => ?_
   have hn0 : val32 u.mem B (slot w 0) (2 * w) = c := hu.n
   rw [hn0] at lt₁
@@ -85,18 +85,18 @@ theorem preCall_wp {s : State} {B : Addr} {L w c : Nat} (h : Prep s B L w c) (hw
     by_contra hc
     simp only [not_or, Nat.not_le] at hc
     by_cases hd : d ≤ slot w j
-    · have := (hk (slot w j) hd (by omega)).2.1 j hjm; omega
-    · have := (hk d (Nat.le_refl _) (by omega)).2.1 j hjm; omega
+    · have := (hk (slot w j) hd (by omega_using [hc])).2.1 j hjm; omega_using [hsp, hnw, hZ, hw4, hw128, hZ', u12, i12, iinv, lt₁, eq₁, hn0, hk0, hc, hd, this]
+    · have := (hk d (Nat.le_refl _) (by omega_using [hk0])).2.1 j hjm; omega_using [hsp, hnw, hZ, hw4, hw128, hZ', u12, i12, iinv, lt₁, eq₁, hn0, hk0, hc, hd, this]
   have w₁ : ∀ d, d + 8 ≤ 8 * L → (∀ i, d ≤ i → i < d + 8 → Kept w i) → word s₁.mem B d = word u.mem B d :=
-    fun d hd hk => Outs.word o₁ (sep₁ d 8 (by decide) hk) (by omega)
+    fun d hd hk => Outs.word o₁ (sep₁ d 8 (by decide) hk) (by omega_using [hnw, hd])
   have v₁ : ∀ j, slot w j + 8 * w ≤ 8 * L → (∀ i, slot w j ≤ i → i < slot w j + 8 * w → Kept w i) →
       val32 s₁.mem B (slot w j) (2 * w) = val32 u.mem B (slot w j) (2 * w) :=
-    fun j hd hk => Outs.val32 o₁ (by have := sep₁ _ _ (by omega) hk; simpa only [show 4 * (2 * w) = 8 * w by omega])
-      (by omega)
+    fun j hd hk => Outs.val32 o₁ (by have := sep₁ _ _ (by omega_using [hw4]) hk; simpa only [show 4 * (2 * w) = 8 * w by omega_using []])
+      (by omega_using [hnw, hd])
   have p₁ : Prep s₁ B L w c := hu.transfer (eu.keep k₁ (by decide)) w₁ v₁
   have h31₁ : s₁.gpr .r31 = B := (k₁.gpr .r31 (by decide)).trans eu.h31
   have l0 : InRegions (s₁.rd ++ s₁.wr) B 8 := by
-    have := (eu.hs.congr k₁.wr).ld (d := 0) (n := 8) (by omega)
+    have := (eu.hs.congr k₁.wr).ld (d := 0) (n := 8) (by omega_using [hZ'])
     simpa only [off, BitVec.add_zero] using this
   have r0 : s₁.mem.readW B 64 = BitVec.ofNat 64 L := by
     have := p₁.len
@@ -119,12 +119,12 @@ theorem CallIn.pre {s : State} {B : Addr} {L w c : Nat} (h : CallIn s B L w c) :
   have hw4 := e.hw
   have es : ∀ j, slot w j = 256 + j * (8 * (w + 2)) := fun _ => rfl
   have hZ' : 256 + 28 * (8 * (w + 2)) ≤ 8 * L := by rw [← es]; exact hZ
-  have hL64 : L < 2 ^ 64 := by omega
+  have hL64 : L < 2 ^ 64 := by omega_using [hnw]
   have hsp := h.sp
   have hstk := h.stk
   sig_pre [Proof.MillerRabin.Round.roundContract, Proof.MillerRabin.Round.roundSig, PPC64LE.abi, PPC64LE.argRegs]
   simp only [h.r3, h.r4, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hL64, Nat.mul_comm L 8]
-  exact ⟨hsp, trivial, hstk, by omega, h.prep.layout, h.prep.prepared h.a5⟩
+  exact ⟨hsp, trivial, hstk, by omega_using [hnw], h.prep.layout, h.prep.prepared h.a5⟩
 
 /-- Two runs' calls agree on the round's public data. -/
 theorem CallIn.pub {s₁ s₂ : State} {B : Addr} {L w c₁ c₂ : Nat} (h₁ : CallIn s₁ B L w c₁)
@@ -140,7 +140,7 @@ theorem call_wp (R : RoundImpl) {s : State} {B : Addr} {L w c : Nat} (h : CallIn
     WP isa (.call R.name R.code) s fun t => t.gpr .r31 = s.gpr .r31 := by
   refine WP.callAny (k := Proof.MillerRabin.Round.roundContract abi Proof.MillerRabin.Round.compact 176) R.verified.1
     (rd := []) (wr := [⟨B, 8 * L⟩]) h.pre ?_ ?_ (fun s₃ _ _ _ _ hcs _ => hcs .r31 (by decide))
-    (by have := R.stack; omega)
+    (by have := R.stack; omega_using [this])
   · exact fun x n ⟨r, hr, hc⟩ => ⟨r, List.mem_append_right _ (by
       simp only [List.nil_append, List.mem_singleton] at hr; rw [hr]; exact h.wr), hc⟩
   · exact fun x n ⟨r, hr, hc⟩ => ⟨r, by rw [List.mem_singleton] at hr; rw [hr]; exact h.wr, hc⟩
@@ -162,8 +162,8 @@ theorem load1_wp {s : State} {B R : Addr} {Z w u : Nat} (h : Env s B Z w) (hR : 
   refine WP.mono (WP.keep [.r3, .r6, .r12] (Q := fun t => t.gpr .r12 = off R u ∧
       t.gpr .r6 = BitVec.ofNat 64 (8 * w)) ?_ (by decide)) fun t₁ ⟨⟨a12, a6⟩, k₁⟩ => ?_
   · simp only [ldh, sth, hRand, hUsed, hK] at hR hu hk ⊢
-    prun [h.h31, hs.ld (d := 136) (n := 8) (by omega), hs.ld (d := 152) (n := 8) (by omega),
-      hs.ld (d := 216) (n := 8) (by omega), hs.st (d := 152) (n := 8) (by omega), hR, hu, hk]
+    prun [h.h31, hs.ld (d := 136) (n := 8) (by omega_using [hZ]), hs.ld (d := 152) (n := 8) (by omega_using [hZ]),
+      hs.ld (d := 216) (n := 8) (by omega_using [hZ]), hs.st (d := 152) (n := 8) (by omega_using [hZ]), hR, hu, hk]
   refine WP.mono (Pub.base_ok (rd := .r10) (by decide) (by decide) ((k₁.gpr _ (by decide)).trans h.h10)
     ((k₁.gpr _ (by decide)).trans h.h29) 4) fun t₂ ⟨⟨a10, _⟩, k₂⟩ => ?_
   exact ⟨(k₂.gpr _ (by decide)).trans a12, (k₂.gpr _ (by decide)).trans a6, a10,

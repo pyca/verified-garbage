@@ -33,15 +33,15 @@ theorem nafTable_ok {K : WinCfg} {C : Curve} {base : Addr} {size : Nat}
   refine WP.loop (M:=isa)
     (fun j t => 1≤j ∧ j≤7 ∧ NafTableInv K C base size P s t (8-j))
     (fun j u ⟨hj,hj7,hu⟩ => ?_) 7 a ⟨by decide,by decide,ia⟩
-  refine WP.mono (nafTable_step_ok hL hJ hm hC hd ht hOne hP (by omega) (by omega) hu)
+  refine WP.mono (nafTable_step_ok hL hJ hm hC hd ht hOne hP (by omega_using [hj7]) (by omega_using [hj]) hu)
     fun t ⟨it,cf⟩ => ?_
   by_cases hj1 : j=1
   · subst j
     exact Or.inl ⟨cf,it⟩
-  · refine Or.inr ⟨?_,j-1,by omega,by omega,by omega,?_⟩
+  · refine Or.inr ⟨?_,j-1,by omega_using [hj],by omega_using [hj, hj1],by omega_using [hj7],?_⟩
     · change t.cf=some true
-      rw [cf]; congr 1; exact decide_eq_true (by omega)
-    · rw [show 8-(j-1)=8-j+1 from by omega]
+      rw [cf]; congr 1; exact decide_eq_true (by omega_using [hj, hj1])
+    · rw [show 8-(j-1)=8-j+1 from by omega_using [hj, hj7]]
       exact it
 
 end VG.Proof.Weierstrass.X86_64

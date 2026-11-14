@@ -233,7 +233,7 @@ theorem core_ok (hL : L.Ok) (hk : CoreOk P L) {t : State} (hc : Ctx L g m₀ t)
     · exact safe_low L (by omega_using [])
   · obtain ⟨-, -, -, gR⟩ := coreArg_ok (P := P) hL (.inl rfl)
     obtain ⟨-, -, -, kR⟩ := coreArg_ok (P := P) hL (.inr rfl)
-    have hQl : P.R.E.C.len ≤ 72 := by have := P.R.len_words; have := P.R.n9; omega
+    have hQl : P.R.E.C.len ≤ 72 := by have := P.R.len_words; have := P.R.n9; omega_arith
     have hQl' : P.Q ≤ 72 := hQl
     have hk' : coreSigOf P.R.E t.callEntry.mem L.d (dgArg P L) (kArg P L) = coreSig P L t.mem := by
       simp only [coreSigOf, coreSig, ecdsa_bytesAt]

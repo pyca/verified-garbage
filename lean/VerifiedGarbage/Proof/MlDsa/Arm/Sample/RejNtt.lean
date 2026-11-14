@@ -58,7 +58,7 @@ theorem rnw_toNat (b₀ b₁ b₂ : Byte) : (rnw b₀ b₁ b₂).toNat = rnZ b�
   rw [BitVec.toNat_add, BitVec.toNat_add, BitVec.toNat_ushiftRight, BitVec.toNat_shiftLeft, BitVec.toNat_shiftLeft,
     setWidth32_toNat, setWidth32_toNat, setWidth32_toNat, Nat.shiftRight_eq_div_pow, Nat.shiftLeft_eq,
     Nat.shiftLeft_eq]
-  omega
+  omega_using []
 
 /-- The value of the 3 bytes of iteration `t`. -/
 abbrev V (σ : State) (t : Nat) : BitVec 32 := rnw (Xb σ (3 * t)) (Xb σ (3 * t + 1)) (Xb σ (3 * t + 2))
@@ -66,23 +66,23 @@ abbrev V (σ : State) (t : Nat) : BitVec 32 := rnw (Xb σ (3 * t)) (Xb σ (3 * t
 theorem V_lt (σ : State) (t : Nat) : (V σ t).toNat < 2 ^ 23 := by
   rw [rnw_toNat]; unfold rnZ
   have := (Xb σ (3 * t)).isLt; have := (Xb σ (3 * t + 1)).isLt; have := (Xb σ (3 * t + 2)).isLt
-  omega
+  omega_using []
 
 theorem X_length (σ : State) : (X σ).length = 1008 := G_length _ _
 
 theorem take_add_three (L : List Byte) {i : Nat} (h : i + 3 ≤ L.length) :
     L.take (i + 3) = L.take i ++ [L.getD i 0, L.getD (i + 1) 0, L.getD (i + 2) 0] := by
-  rw [List.take_add, List.drop_eq_getElem_cons (by omega), List.drop_eq_getElem_cons (by omega),
-    List.drop_eq_getElem_cons (by omega)]
+  rw [List.take_add, List.drop_eq_getElem_cons (by omega_using [h]), List.drop_eq_getElem_cons (by omega_using [h]),
+    List.drop_eq_getElem_cons (by omega_using [h])]
   simp only [List.take_succ_cons, List.take_zero, List.getD_eq_getElem?_getD,
-    List.getElem?_eq_getElem (show i < L.length by omega), List.getElem?_eq_getElem (show i + 1 < L.length by omega),
-    List.getElem?_eq_getElem (show i + 2 < L.length by omega), Option.getD_some]
+    List.getElem?_eq_getElem (show i < L.length by omega_using [h]), List.getElem?_eq_getElem (show i + 1 < L.length by omega_using [h]),
+    List.getElem?_eq_getElem (show i + 2 < L.length by omega_using [h]), Option.getD_some]
 
 theorem Lt_succ (σ : State) {t : Nat} (ht : t < 336) :
     Lt σ (t + 1) = rnStep (Lt σ t) (Xb σ (3 * t)) (Xb σ (3 * t + 1)) (Xb σ (3 * t + 2)) := by
   simp only [Lt]
-  rw [show 3 * (t + 1) = 3 * t + 3 by omega, take_add_three _ (by rw [X_length]; omega),
-    rnFold_snoc _ (by rw [List.length_take, X_length]; omega)]
+  rw [show 3 * (t + 1) = 3 * t + 3 by omega_using [], take_add_three _ (by rw [X_length]; omega_using [ht]),
+    rnFold_snoc _ (by rw [List.length_take, X_length]; omega_using [])]
 
 theorem Lt_length_le (σ : State) (t : Nat) : (Lt σ t).length ≤ 256 := rnFold_length_le (by simp) _
 
@@ -137,10 +137,10 @@ theorem byte_ok {t : Nat} (ht : t < 336) {s : State} (h : LAt σ t s) {k : Nat} 
     State.addr (s.gpr .r0 + BitVec.ofNat 32 k) = (spOf σ).at' (840 + (3 * t + k)) ∧
       InRegions (s.rd ++ s.wr) ((spOf σ).at' (840 + (3 * t + k))) 1 ∧
       s.mem ((spOf σ).at' (840 + (3 * t + k))) = Xb σ (3 * t + k) := by
-  refine ⟨?_, inScrRd hp h.env (by omega), ?_⟩
-  · rw [h.r0, ptr_add_add32, show 840 + 3 * t + k = 840 + (3 * t + k) by omega]; exact at_eq hp (by omega)
+  refine ⟨?_, inScrRd hp h.env (by omega_using [ht, hk]), ?_⟩
+  · rw [h.r0, ptr_add_add32, show 840 + 3 * t + k = 840 + (3 * t + k) by omega_using []]; exact at_eq hp (by omega_using [ht, hk])
   · have := congrArg (fun L => L.getD (3 * t + k) 0) h.out
-    rw [MlKem.bytesAt_getD _ _ (by omega), add_ofNat_add] at this
+    rw [MlKem.bytesAt_getD _ _ (by omega_using [ht, hk]), add_ofNat_add] at this
     exact this
 
 omit hp in
@@ -166,7 +166,7 @@ theorem pieceA {t : Nat} (ht : t < 336) {s : State} (h : LAt σ t s) :
   have l1 : LAt σ t s1 := h.same m1 (fun r hr => g1 r (by simp at hr; rcases hr with rfl | rfl | rfl | rfl | rfl | rfl <;>
     decide) (by simp at hr; rcases hr with rfl | rfl | rfl | rfl | rfl | rfl <;> decide)
     (by simp at hr; rcases hr with rfl | rfl | rfl | rfl | rfl | rfl <;> decide)) rd1 wr1 sp1
-  refine WP.mono (jFull_ok s1 l1.r2 (by have := Lt_length_le σ t; omega)) fun s2 ⟨z2, g2, m2, rd2, wr2, sp2⟩ =>
+  refine WP.mono (jFull_ok s1 l1.r2 (by have := Lt_length_le σ t; omega_using [this])) fun s2 ⟨z2, g2, m2, rd2, wr2, sp2⟩ =>
     ⟨l1.same m2 (fun r hr => g2 r (by simp at hr; rcases hr with rfl | rfl | rfl | rfl | rfl | rfl <;> decide))
       rd2 wr2 sp2, by rw [g2 _ (by decide), g10], z2⟩
 
@@ -175,10 +175,10 @@ theorem tryA {t : Nat} {s : State} (h : M1 σ t s) (hz : s.z = false) :
     WP isa (.block [.dp .sub .r11 .r10 (.reg .r7), .mov .r11 (.shifted .r11 .lsr 31), .cmp .r11 (.imm 0)]) s
       (T1 σ t) := by
   have hl : (Lt σ t).length < 256 := by
-    have := h.z; rw [hz] at this; simp at this; omega
+    have := h.z; rw [hz] at this; simp at this; omega_using [this]
   have hv := V_lt σ t
   refine WP.mono (sgn_ok s .r10 (.reg .r7) (y := BitVec.ofNat 32 8380417) (by simp [Op2.eval, h.lat.r7])
-    (by rw [h.r10]; omega) (by decide)) fun s' ⟨z, g, m, rd, wr, sp⟩ => ⟨h.lat.same m (fun r hr => g r (by
+    (by rw [h.r10]; omega_using [hv]) (by decide)) fun s' ⟨z, g, m, rd, wr, sp⟩ => ⟨h.lat.same m (fun r hr => g r (by
       simp at hr; rcases hr with rfl | rfl | rfl | rfl | rfl | rfl <;> decide)) rd wr sp,
     by rw [g _ (by decide), h.r10], hl, by rw [z, h.r10]; rfl⟩
 
@@ -194,12 +194,12 @@ theorem tryB {t : Nat} (ht : t < 336) {s : State} (h : T1 σ t s) :
   refine WP.ite s.z rfl (fun e => ?_) (fun e => ?_)
   · -- rejected
     have hq : ¬ (V σ t).toNat < q := by
-      have := h.z; rw [e] at this; simp at this; show ¬ _ < 8380417; omega
+      have := h.z; rw [e] at this; simp at this; show ¬ _ < 8380417; omega_using [this]
     rw [ifF hq] at hstep
     have l := h.lat
     exact WP.block_nil ⟨l.env, l.out, l.r0, by rw [hstep]; exact l.r2, l.r3, l.r7, by rw [hstep]; exact l.st⟩
   · have hq : (V σ t).toNat < q := by
-      have := h.z; rw [e] at this; simp at this; show _ < 8380417; omega
+      have := h.z; rw [e] at this; simp at this; show _ < 8380417; omega_using [this]
     rw [ifT hq] at hstep
     have l := h.lat
     refine WP.mono (storeJ_stored hp l.env (by decide) l.r2 h.len l.st (x := Fin.ofNat q (V σ t).toNat)
@@ -208,7 +208,7 @@ theorem tryB {t : Nat} (ht : t < 336) {s : State} (h : T1 σ t s) :
         by rw [hstep]; exact st⟩
     rw [MlKem.bytesAt_frame hf (fun r hr => by
       rw [List.mem_singleton] at hr; subst hr
-      exact (hp.a_scr.sub_right (sub_scr (a := 840) (n := 1008) (by omega))).symm) (by omega)]
+      exact (hp.a_scr.sub_right (sub_scr (a := 840) (n := 1008) (by omega_using []))).symm) (by omega_using [])]
     exact l.out
 
 theorem pieceB {t : Nat} (ht : t < 336) {s : State} (h : M1 σ t s) :
@@ -216,7 +216,7 @@ theorem pieceB {t : Nat} (ht : t < 336) {s : State} (h : M1 σ t s) :
   refine WP.ite s.z rfl (fun e => ?_) (fun e => ?_)
   · -- `j = 256`: nothing changes
     have hl : (Lt σ t).length = 256 := by
-      have := h.z; rw [e] at this; simp at this; have := Lt_length_le σ t; omega
+      have := h.z; rw [e] at this; simp at this; have := Lt_length_le σ t; omega_arith
     have hstep : Lt σ (t + 1) = Lt σ t := by rw [Lt_succ σ ht, rnStep_full hl]
     have l := h.lat
     exact WP.block_nil ⟨l.env, l.out, l.r0, by rw [hstep]; exact l.r2, l.r3, l.r7, by rw [hstep]; exact l.st⟩
@@ -229,7 +229,7 @@ theorem pieceC {t : Nat} (ht : t < 336) {s : State} (h : M2 σ t s) :
     ⟨⟨h.env.same m (g _ (by decide) (by decide)) (g _ (by decide) (by decide)) rd wr sp, by rw [m]; exact h.out,
       ?_, by rw [g _ (by decide) (by decide)]; exact h.r2, by rw [r3, h.r3]; exact count_sub (k := 1) ht,
       by rw [g _ (by decide) (by decide)]; exact h.r7, by rw [m]; exact h.st⟩, ?_⟩
-  · rw [r0, h.r0, ptr_add_add32, show 840 + 3 * t + 3 = 840 + 3 * (t + 1) by omega]
+  · rw [r0, h.r0, ptr_add_add32, show 840 + 3 * t + 3 = 840 + 3 * (t + 1) by omega_using []]
   · rw [z, h.r3]; exact count_z (k := 1) ht (by decide) (by decide)
 
 /-- An iteration. -/

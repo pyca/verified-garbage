@@ -72,7 +72,7 @@ abbrev zcE (L : Kem) (σ : State) : List Byte := KPke.dkZ L.p (dcDk L σ) ++ dcC
 theorem zcE_length (L : Kem) (σ : State) : (zcE L σ).length = 32 + L.ctLen := by
   simp only [zcE, List.length_append, KPke.dkZ, List.length_take, List.length_drop, dcDk, dcC, bytesAt_length]
   have : L.dkLen = 768 * L.p.k + 96 := rfl
-  omega
+  omega_using [this]
 
 /-! ## The checks of the layout -/
 
@@ -150,10 +150,10 @@ theorem FJ.keep {W : DcWfB K.L oCT16} {σ : State} {i : Nat} {s s' : State} (h :
 theorem dkZ_length (L : Kem) (σ : State) : (KPke.dkZ L.p (dcDk L σ)).length = 32 := by
   simp only [KPke.dkZ, List.length_take, List.length_drop, dcDk, bytesAt_length]
   have : L.dkLen = 768 * L.p.k + 96 := rfl
-  omega
+  omega_using [this]
 
 theorem zc_drop (L : Kem) (σ : State) {n : Nat} (hn : 32 ≤ n) : (zcE L σ).drop n = (dcC L σ).drop (n - 32) := by
-  rw [zcE, List.drop_append, List.drop_eq_nil_of_le (by rw [dkZ_length]; omega), List.nil_append, dkZ_length]
+  rw [zcE, List.drop_append, List.drop_eq_nil_of_le (by rw [dkZ_length]; omega_using [hn]), List.nil_append, dkZ_length]
 
 theorem jblk_ok (F : DjFWf K) {σ : State} {i : Nat} (hi : i < nb K.L) {s : State} (h : FJ F.toDcWfB σ i s) :
     WP isa (jblk K i) s fun s' => PPostB s s' [(sc (oHB K), 408)] ∧ s'.gpr .r15 = s.gpr .r15 ∧
@@ -188,14 +188,14 @@ theorem jblk_ok (F : DjFWf K) {σ : State} {i : Nat} (hi : i < nb K.L) {s : Stat
         (fun w hw => List.mem_cons.2 (.inr hw))).weaken fun w hw => ⟨_, List.mem_singleton_self _, ?_⟩
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
       rcases hw with rfl | rfl
-      · exact Region.sub_prefix (by omega)
+      · exact Region.sub_prefix (by omega_using [])
       · show Region.Sub ⟨pa s (sc (oHB K + 32)), _⟩ ⟨pa s (sc (oHB K)), 408⟩
-        rw [e]; exact Offset.sub_base _ (by omega)
+        rw [e]; exact Offset.sub_base _ (by omega_using [])
     refine ⟨hP.b, hP.cs .r15 (by decide), ?_⟩
     have A : bytesAt s₂.mem (pa s (sc (oHB K))) 32 = KPke.dkZ K.L.p (dcDk K.L σ) := by
       have k₁ := L₁.keepBytes hP₂.b hkz
       rw [p₂, p₁] at k₁
-      rw [k₁, hb₁, slice_of dc.dk (show 768 * K.L.k + 64 + 32 ≤ K.L.dkLen by omega)]
+      rw [k₁, hb₁, slice_of dc.dk (show 768 * K.L.k + 64 + 32 ≤ K.L.dkLen by omega_using [hdk])]
       rfl
     have B : bytesAt s₂.mem (pa s (sc (oHB K + 32))) 376 = (dcC K.L σ).take 376 := by
       have kc := L₀.keepBytes hP₁.b hkc
@@ -203,22 +203,22 @@ theorem jblk_ok (F : DjFWf K) {σ : State} {i : Nat} (hi : i < nb K.L) {s : Stat
       rw [← p₁, hb₂, r₁, ← bytesAt_take _ _ (show 376 ≤ K.L.ctLen by omega), kc]
     have sp := bytesAt_add s₂.mem (pa s (sc (oHB K))) 32 376
     rw [← e, A, B] at sp
-    rw [sp, hbE, ite_eq_left (show 408 * 0 + 408 ≤ (zcE K.L σ).length by omega), Nat.mul_zero, List.drop_zero, zcE,
-      List.take_append, List.take_of_length_le (l := KPke.dkZ K.L.p (dcDk K.L σ)) (by rw [dkZ_length]; omega),
+    rw [sp, hbE, ite_eq_left (show 408 * 0 + 408 ≤ (zcE K.L σ).length by omega_using [hzl, hl, hk]), Nat.mul_zero, List.drop_zero, zcE,
+      List.take_append, List.take_of_length_le (l := KPke.dkZ K.L.p (dcDk K.L σ)) (by rw [dkZ_length]; omega_using []),
       dkZ_length]
   · simp only [h0, ↓reduceIte] at hc ⊢
-    have h32 : 32 ≤ 408 * i := by omega
+    have h32 : 32 ≤ 408 * i := by omega_using [h0]
     by_cases hf : 408 * i + 408 ≤ jLen K
     · simp only [hf, ↓reduceIte, Bool.and_eq_true] at hc ⊢
       refine WP.mono (copy_okL L₀ (show Reg.r14 ≠ .rdi by decide) hc.1) fun s' ⟨hP, hb⟩ =>
         ⟨hP.b, hP.cs .r15 (by decide), ?_⟩
-      rw [hb, slice_of dc.c (show 408 * i - 32 + 408 ≤ K.L.ctLen by omega), hbE,
-        ite_eq_left (show 408 * i + 408 ≤ (zcE K.L σ).length by omega), zc_drop K.L σ h32]
+      rw [hb, slice_of dc.c (show 408 * i - 32 + 408 ≤ K.L.ctLen by omega_using [hl, hcl, hf]), hbE,
+        ite_eq_left (show 408 * i + 408 ≤ (zcE K.L σ).length by omega_using [hzl, hf]), zc_drop K.L σ h32]
     · simp only [hf, ↓reduceIte, Bool.and_eq_true] at hc ⊢
       obtain ⟨⟨⟨hcp, hin⟩, hkp⟩, -⟩ := hc
-      have hii : i = nb K.L - 1 := by omega
+      have hii : i = nb K.L - 1 := by omega_using [hi, hl, hf]
       have hlen : 272 < jLen K - 408 * i ∧ jLen K - 408 * i < 406 := by rw [hii]; exact ⟨hl.1, hl.2.1⟩
-      have hm8 : (jLen K - 408 * i) % 8 = 0 := by omega
+      have hm8 : (jLen K - 408 * i) % 8 = 0 := by omega_using [h8]
       refine WP.seq (WP.mono (copy_okL L₀ (show Reg.r14 ≠ .rdi by decide) hcp) fun s₁ ⟨hP₁, hb₁⟩ => ?_)
       have L₁ := L₀.post hP₁.b (dcB_bases K.L)
       refine WP.mono (padTail16_ok K L₁ hlen.2 hm8 hin (d := 0x1f) (by decide)) fun s₂ ⟨hP₂, hb₂⟩ => ?_
@@ -233,16 +233,16 @@ theorem jblk_ok (F : DjFWf K) {σ : State} {i : Nat} (hi : i < nb K.L) {s : Stat
         rcases hw with rfl | rfl
         · exact Region.sub_prefix (by omega)
         · show Region.Sub ⟨pa s (sc (oHB K + (jLen K - 408 * i))), _⟩ ⟨pa s (sc (oHB K)), 408⟩
-          rw [e]; exact Offset.sub_base _ (by omega)
+          rw [e]; exact Offset.sub_base _ (by omega_using [hf])
       refine ⟨hP.b, hP.cs .r15 (by decide), ?_⟩
       have k₁ := L₁.keepBytes hP₂.b hkp
       rw [hP₂.pa rbx_cs, hP₁.pa rbx_cs, hb₁] at k₁
       rw [hP₁.pa rbx_cs] at hb₂
       have sp := bytesAt_add s₂.mem (pa s (sc (oHB K))) (jLen K - 408 * i) (408 - (jLen K - 408 * i))
-      rw [Nat.add_sub_cancel' (by omega), ← e, hb₂, k₁] at sp
-      rw [sp, slice_of dc.c (show 408 * i - 32 + (jLen K - 408 * i) ≤ K.L.ctLen by omega), hbE,
-        ite_eq_right (show ¬408 * i + 408 ≤ (zcE K.L σ).length by omega), zc_drop K.L σ h32, hzl,
-        List.take_of_length_le (by rw [List.length_drop, dcC, bytesAt_length]; omega)]
+      rw [Nat.add_sub_cancel' (by omega_using [hf]), ← e, hb₂, k₁] at sp
+      rw [sp, slice_of dc.c (show 408 * i - 32 + (jLen K - 408 * i) ≤ K.L.ctLen by omega_using [hi, hl, hcl, h0]), hbE,
+        ite_eq_right (show ¬408 * i + 408 ≤ (zcE K.L σ).length by omega_using [hzl, hf]), zc_drop K.L σ h32, hzl,
+        List.take_of_length_le (by rw [List.length_drop, dcC, bytesAt_length]; omega_using [hcl])]
 
 /-- While the seeds of fragment `i` are written. -/
 structure SJ (W : DcWfB K.L oCT16) (σ : State) (i J : Nat) (s : State) : Prop where
@@ -259,7 +259,7 @@ theorem seedJ_ok (F : DjFWf K) {σ : State} {i : Nat} (hi : i < nb K.L) {J : Nat
   have L₀ := (dcXG F.toDcWfB σ).lay h.fi.eb.i.out
   have h16 : K.L.k * K.L.k ≤ 16 := Nat.mul_le_mul F.k.2 F.k.2
   have := F.nbK
-  refine WP.mono (seed_step L₀ (dcB_bases K.L) (by omega) hs h.sd) fun s' ⟨hP, hS⟩ =>
+  refine WP.mono (seed_step L₀ (dcB_bases K.L) (by omega_using [hi, hJ, h16, this]) hs h.sd) fun s' ⟨hP, hS⟩ =>
     ⟨h.fi.keep hP.b (hP.cs .r15 (by decide)) hk, hS, ?_⟩
   rw [L₀.keepBytes hP.b hB]; exact h.hb
 
@@ -270,7 +270,7 @@ theorem blocksJ_eq (F : DjFWf K) {σ : State} {i : Nat} (hi : i < nb K.L) {s : S
   have hE : (zcE K.L σ).length = jLen K := zcE_length K.L σ
   have hl := F.last
   have hn := F.nbJ
-  rw [← hbE_blk hj (by rw [hE]; omega), ← hb, bytesAt_slice _ _ (by omega)]
+  rw [← hbE_blk hj (by rw [hE]; omega_using [hi, hl]), ← hb, bytesAt_slice _ _ (by omega_using [hj])]
   show bytesAt _ (s.gpr .rbx + BitVec.ofNat 64 (K.oW) + BitVec.ofNat 64 (Sample4.oHB + 136 * j)) 136 =
     bytesAt _ (s.gpr .rbx + BitVec.ofNat 64 (K.oW + Sample4.oHB) + BitVec.ofNat 64 (136 * j)) 136
   rw [off_add, off_add, Nat.add_assoc]
@@ -300,20 +300,20 @@ theorem fragJ_ok (F : DjFWf K) {b : Prog isa} (hb : BatchHOk16 b) {σ : State} {
   have hpart : Partial (zcE K.L σ) := by rw [Partial, zcE_length]; exact F.part
   have hlen : (zcE K.L σ).length = jLen K := zcE_length K.L σ
   refine ⟨⟨i₅.fi.eb.i.keep h₆.b hE, by rw [L₅.keepBytes h₆.b hS]; exact i₅.fi.eb.sb, ?_⟩, ?_⟩
-  · rw [show 3 * (i + 1) = 3 * i + 3 by omega]
+  · rw [show 3 * (i + 1) = 3 * i + 3 by omega_using []]
     refine EkF16.MatB16.three i₅.fi.eb.m L₅ h₆.b hA ?_ fun t ht f hf => ?_
     · rw [h₆.r15, all3_16, range_all_congr fun k hk => congrArg (fun B => (sampleNTT minIterations B).isSome)
-        (seed4_eq i₅.sd (k := k) (by omega))]
-    · have := h₆.res t ht f (by rw [seed4_eq i₅.sd (by omega)]; exact hf)
+        (seed4_eq i₅.sd (k := k) (by omega_using [hk]))]
+    · have := h₆.res t ht f (by rw [seed4_eq i₅.sd (by omega_using [ht])]; exact hf)
       rwa [poly4W, pBytes_true, pa, off_add] at this
   · have e1 : pa s₅ (sc (oHS K)) = pa s₅ (sc (K.oW)) + BitVec.ofNat 64 Sample4.oHS := (off_add _ _ _).symm
     rw [h₆.b.pa rbx_bases, e1, h₆.hs, ← e1, i₅.fi.hs,
-      habs_congr _ 3 fun j hj => blocksJ_eq F hi i₅.hb hj, show 3 * (i + 1) = 3 * i + 3 by omega]
-    exact habs_blk hpart (by rw [hlen]; omega)
+      habs_congr _ 3 fun j hj => blocksJ_eq F hi i₅.hb hj, show 3 * (i + 1) = 3 * i + 3 by omega_using []]
+    exact habs_blk hpart (by rw [hlen]; omega_using [hi, hl])
 
 theorem fragsJ_ok (F : DjFWf K) {b : Prog isa} (hb : BatchHOk16 b) {σ : State} {s : State}
     (h : FJ F.toDcWfB σ 0 s) : WP isa (seqR (frag K b) 0 (nb K.L)) s (FJ F.toDcWfB σ (nb K.L)) := by
-  have := seqR_ok (I := FJ F.toDcWfB σ) (nb K.L) 0 (fun k _ hk s hs => fragJ_ok F hb (by omega) hs) s h
+  have := seqR_ok (I := FJ F.toDcWfB σ) (nb K.L) 0 (fun k _ hk s hs => fragJ_ok F hb (by omega_using [hk]) hs) s h
   rwa [Nat.zero_add] at this
 
 end VG.Proof.MlKem.X86_64.DjF16

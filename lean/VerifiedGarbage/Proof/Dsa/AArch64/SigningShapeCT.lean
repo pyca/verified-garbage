@@ -61,7 +61,7 @@ theorem SigningShaped.initialization {reference : SigningCall} {s : State}
   have hqs : Src s c.layout.base usedBytes (c.layout.fields .q) c.input.components.q := by
     change Src s c.input.base usedBytes (c.original.gpr .x2 + c.original.gpr .x4) c.input.components.q
     rw [c.pre.pLength]
-    exact source_slice hkey (by rw [c.input.keyLength]; omega)
+    exact source_slice hkey (by rw [c.input.keyLength]; omega_using [])
   rw [hag.layout] at hf hr hscr hps hqs
   rw [hag.pBytes] at hps
   rw [hag.qBytes] at hqs

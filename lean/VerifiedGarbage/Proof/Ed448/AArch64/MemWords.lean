@@ -79,7 +79,7 @@ theorem wrs_outside (m : Mem) (base : Addr) (g : Reg → BitVec 64) {o n : Nat} 
   | [], _ => Outside.refl _ _ _ _
   | p :: ps, h => by
     obtain ⟨h1, h2⟩ := h p List.mem_cons_self
-    exact ((writeW_outside m base (g p.1) (by omega)).mono h1 (by omega)).trans
+    exact ((writeW_outside m base (g p.1) (by omega_using [hn, h2])).mono h1 (by omega_using [h2])).trans
       (wrs_outside _ base g hn ps fun q hq => h q (List.mem_cons_of_mem _ hq))
 
 theorem wrs_frame {R : Region} {m : Mem} (base : Addr) (g : Reg → BitVec 64) :

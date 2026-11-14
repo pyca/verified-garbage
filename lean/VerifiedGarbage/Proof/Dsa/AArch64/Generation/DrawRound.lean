@@ -90,7 +90,7 @@ theorem drawRound_ok (M : Mont) (K : Kernel) {P : PrimeParams} {used i uni : Nat
   have hlen := P.slice_length hroom
   have hsamp := sampleRound_ok M K hsample P.w4 P.w128 P.exponentRoom
     (by rw [hlen]; exact P.bufferSeparate) P.odd P.n3 (by rw [hlen]; exact P.len2)
-    (by rw [hlen]; have := P.lenDraw; have := P.drawMax; omega) (by rw [hlen]; exact P.lenWords)
+    (by rw [hlen]; have := P.lenDraw; have := P.drawMax; omega_arith) (by rw [hlen]; exact P.lenWords)
     (by rw [hlen]; exact P.predBits) hIu hUniu hu.checks hi huni P.checksMax
   rw [hlen] at hsamp
   refine WP.mono hsamp fun t ⟨ht, hstat, hcount, hft, kt⟩ => ?_

@@ -35,11 +35,11 @@ def Words (E : Env) (v : T) : Prop := ∀ j, j < 4 → 0 ≤ v.int E j ∧ v.int
 
 theorem Words.lo {E : Env} {v : T} (h : Words E v) : 0 ≤ wv E v := by
   have h0 := h 0 (by decide); have h1 := h 1 (by decide); have h2 := h 2 (by decide); have h3 := h 3 (by decide)
-  simp only [wv]; omega
+  simp only [wv]; omega_using [h0, h1, h2, h3]
 
 theorem Words.hi {E : Env} {v : T} (h : Words E v) : wv E v < 2 ^ 256 := by
   have h0 := h 0 (by decide); have h1 := h 1 (by decide); have h2 := h 2 (by decide); have h3 := h 3 (by decide)
-  simp only [wv]; omega
+  simp only [wv]; omega_using [h0, h1, h2, h3]
 
 /-- The limbs of four times a number, from its words in lane `k` of `w0`, …, `w3`. -/
 theorem limbs2 {w0 w1 w2 w3 : T} (e0 : ∀ n, shrOf w0 n = .shr w0 n) (e1 : ∀ n, shrOf w1 n = .shr w1 n)
@@ -53,7 +53,7 @@ theorem limbs2 {w0 w1 w2 w3 : T} (e0 : ∀ n, shrOf w0 n = .shr w0 n) (e1 : ∀ 
   have v : ∀ a b, tops.add a b = .add a b := fun _ _ => rfl
   simp only [limbs, Id.run, bind, pure, andc_mask, t, u, v, e0, e1, e2, e3, Carried, vI, val5, mask52_int, T.int,
     Nat.reduceSub, Nat.reduceAdd]
-  omega
+  omega_using [b0, b1, b2, b3]
 
 /-- The limbs of twice a number. -/
 theorem limbs1 {w0 w1 w2 w3 : T} (e0 : ∀ n, shrOf w0 n = .shr w0 n) (e1 : ∀ n, shrOf w1 n = .shr w1 n)
@@ -67,7 +67,7 @@ theorem limbs1 {w0 w1 w2 w3 : T} (e0 : ∀ n, shrOf w0 n = .shr w0 n) (e1 : ∀ 
   have v : ∀ a b, tops.add a b = .add a b := fun _ _ => rfl
   simp only [limbs, Id.run, bind, pure, andc_mask, t, u, v, e0, e1, e2, e3, Carried, vI, val5, mask52_int, T.int,
     Nat.reduceSub, Nat.reduceAdd]
-  omega
+  omega_using [b0, b1, b2, b3]
 
 /-- Word `j` of four numbers, one to a lane, as a term. -/
 theorem col_eq (v0 v1 v2 v3 : T) (j : Nat) : Id.run (col tops v0 v1 v2 v3 j) =
@@ -85,7 +85,7 @@ theorem col_int (v0 v1 v2 v3 : T) (E : Env) {j : Nat} (hj : j < 4) :
     (Id.run (col tops v0 v1 v2 v3 j)).int E 0 = v0.int E j ∧ (Id.run (col tops v0 v1 v2 v3 j)).int E 1 = v1.int E j ∧
       (Id.run (col tops v0 v1 v2 v3 j)).int E 2 = v2.int E j ∧ (Id.run (col tops v0 v1 v2 v3 j)).int E 3 = v3.int E j := by
   rw [col_eq]
-  rcases (by omega : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3) with rfl | rfl | rfl | rfl <;>
+  rcases (by omega_using [hj] : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3) with rfl | rfl | rfl | rfl <;>
     exact ⟨rfl, rfl, rfl, rfl⟩
 
 /-- The vector of `convQ` before its carry, lane by lane: four times `Z²`, `X` and `Y`, eight times `Z`. -/
@@ -119,13 +119,13 @@ theorem convQg_val (vx vy vz vzz : T) (E : Env) (hx : Words E vx) (hy : Words E 
   simp only [Id.run] at l0 l1 l2 l3
   refine ⟨?_, ?_, ?_, ?_⟩
   · glue_simp [convQg]
-    rw [l0]; simp only [wv]; omega
+    rw [l0]; simp only [wv]; omega_using []
   · glue_simp [convQg]
-    rw [l1]; simp only [wv]; omega
+    rw [l1]; simp only [wv]; omega_using []
   · glue_simp [convQg]
-    rw [l2]; simp only [wv]; omega
+    rw [l2]; simp only [wv]; omega_using []
   · glue_simp [convQg]
-    rw [l3]; simp only [wv]; omega
+    rw [l3]; simp only [wv]; omega_using []
 
 /-- `convQ`'s second vector: twice `Z³` in its first lane, carried. -/
 theorem convQb_val (vzzz : T) (hs : ∀ n, shrOf vzzz n = .shr vzzz n) (E : Env) (h : Words E vzzz) :
@@ -143,7 +143,7 @@ theorem words_ld {s₀ : State} {L : List Loc} {bt : BT} (hB : EnvOK s₀ (bndsO
   have := hB.m b d j hj
   simp only [bndsOf, hb, ite_true] at this
   simp only [T.int]
-  omega
+  omega_using [this]
 
 theorem convQPieces_flat : convQPieces.flatten = convQPieces.getD 0 [] := by decide +kernel
 
@@ -182,15 +182,15 @@ theorem convQ_ok {s₀ : State} (hc : Ctx par s₀) (hB : EnvOK s₀ stB) :
   obtain ⟨i2, hi2⟩ := iv 2 (by decide)
   obtain ⟨i3, hi3⟩ := iv 3 (by decide)
   have c0 : Car (envOf s₀) 0 _ (D (4 * wv (envOf s₀) (.ld .rdx 0))) :=
-    Car.norm hB convQG (by decide) hi0 (by rw [g0]; omega) (by rw [g0]; omega) (by rw [g0])
+    Car.norm hB convQG (by decide) hi0 (by rw [g0]; omega_using [zzl]) (by rw [g0]; omega_using [zzh]) (by rw [g0])
   have c1 : Car (envOf s₀) 1 _ (D (4 * wv (envOf s₀) (.ld .rcx 0))) :=
-    Car.norm hB convQG (by decide) hi1 (by rw [g1]; omega) (by rw [g1]; omega) (by rw [g1])
+    Car.norm hB convQG (by decide) hi1 (by rw [g1]; omega_using [xl]) (by rw [g1]; omega_using [xh]) (by rw [g1])
   have c2 : Car (envOf s₀) 2 _ (D (8 * wv (envOf s₀) (.ld .rcx 64))) :=
-    Car.norm hB convQG (by decide) hi2 (by rw [g2]; omega) (by rw [g2]; omega) (by rw [g2])
+    Car.norm hB convQG (by decide) hi2 (by rw [g2]; omega_using [zl]) (by rw [g2]; omega_using [zh]) (by rw [g2])
   have c3 : Car (envOf s₀) 3 _ (D (4 * wv (envOf s₀) (.ld .rcx 32))) :=
-    Car.norm hB convQG (by decide) hi3 (by rw [g3]; omega) (by rw [g3]; omega) (by rw [g3])
+    Car.norm hB convQG (by decide) hi3 (by rw [g3]; omega_using [yl]) (by rw [g3]; omega_using [yh]) (by rw [g3])
   have cb : Ent (envOf s₀) 0 (Id.run (convQb tops (.ld .rdx 32))) (D (2 * wv (envOf s₀) (.ld .rdx 32))) :=
-    ⟨bc, by rw [bv]; omega, by rw [bv]⟩
+    ⟨bc, by rw [bv]; omega_using [zzzh], by rw [bv]⟩
   rw [convQPieces_flat]
   refine WP.mono (cut_step' convQ_chk0 hc hB convQ_iv0 convQ_ov0
     (rs := [t5 0, t5 5, t5 10, t5 15, Id.run (norm tops convQG), Id.run (convQb tops (.ld .rdx 32))]) rfl rfl
@@ -256,13 +256,13 @@ theorem convG_ok {s₀ : State} (hc : Ctx par s₀) (hB : EnvOK s₀ stB) :
   have k8 := fconst_car cEighth 0 0 0 (envOf s₀) (k := 0) (by decide) (by rw [p0]; decide +kernel)
   rw [p0] at k0 k8
   rw [p2] at k2
-  have nb : Nb ≤ 2 ^ 259 := by simp only [Nb]; omega
+  have nb : Nb ≤ 2 ^ 259 := by simp only [Nb]; omega_using []
   have a0 : Ent (envOf s₀) 0 convGA (D (cQuarter : Nat)) := Lim.blendR (by decide) (by decide) (k0.mono nb)
   have a1 : Ent (envOf s₀) 1 convGA (D (4 * wv (envOf s₀) (.ld .rdx 0))) :=
-    Lim.blendL (by decide) (by decide) ⟨xc, by rw [xv]; omega, by rw [xv]⟩
+    Lim.blendL (by decide) (by decide) ⟨xc, by rw [xv]; omega_using [xh], by rw [xv]⟩
   have a2 : Ent (envOf s₀) 2 convGA (D (cHalf : Nat)) := Lim.blendR (by decide) (by decide) (k2.mono nb)
   have a3 : Ent (envOf s₀) 3 convGA (D (4 * wv (envOf s₀) (.ld .rdx 32))) :=
-    Lim.blendL (by decide) (by decide) ⟨yc, by rw [yv]; omega, by rw [yv]⟩
+    Lim.blendL (by decide) (by decide) ⟨yc, by rw [yv]; omega_using [yh], by rw [yv]⟩
   have b0 : Ent (envOf s₀) 0 (Id.run (fconst tops cEighth 0 0 0)) (D (cEighth : Nat)) := k8.mono nb
   rw [convGPieces_flat]
   refine WP.mono (cut_step' convG_chk0 hc hB convG_iv0 convG_ov0
@@ -316,10 +316,10 @@ theorem LEnt.congr {m m' : Mem} {p : Addr} {P : AP (Fin pN)} (h : LEnt m p P)
   have q (d k : Nat) (hd : d + 8 * k + 8 ≤ 200) : (T.ld .rcx d).int (memEnv m' p) k = (T.ld .rcx d).int (memEnv m p) k := by
     simp only [T.int, memEnv, e d k hd]
   have ta (k : Nat) (hk : k < 4) (i : Nat) (hi : i < 5) : (taL.get i).int (memEnv m' p) k = (taL.get i).int (memEnv m p) k := by
-    rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4) with rfl | rfl | rfl | rfl | rfl <;>
-      exact q _ k (by omega)
+    rcases (by omega_using [hi] : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4) with rfl | rfl | rfl | rfl | rfl <;>
+      exact q _ k (by omega_using [hk])
   have tb (i : Nat) (hi : i < 5) : (tbL.get i).int (memEnv m' p) 0 = (tbL.get i).int (memEnv m p) 0 := by
-    rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4) with rfl | rfl | rfl | rfl | rfl
+    rcases (by omega_using [hi] : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4) with rfl | rfl | rfl | rfl | rfl
     · exact q 160 0 (by decide)
     · exact q 160 1 (by decide)
     · exact q 160 2 (by decide)
@@ -343,7 +343,7 @@ theorem EnvOK.lim {s : State} {B : Bnds} (h : EnvOK s B) {f : Reg → Nat → Na
   split
   · rename_i hfb
     have := hf b d k hk hfb
-    omega
+    omega_using [this]
   · exact h.m b d k hk
 
 /-- The accumulator's registers and the entry's first five. -/
@@ -415,14 +415,14 @@ theorem loadA_ok {e : State} (hc : Ctx par e) (hB : EnvOK e stB) {p : Addr} {P :
         Ent (envOf u) 0 (t5 20) P.ezz ∧ Ent (envOf u) 1 (t5 20) P.ex ∧ Ent (envOf u) 2 (t5 20) P.ez ∧
         Ent (envOf u) 3 (t5 20) P.ey := by
   have lm (i : Nat) (hi : i < 5) (k : Nat) : (rawQT.get i).int (envOf e) k = (taL.get i).int (memEnv e.mem p) k := by
-    rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4) with rfl | rfl | rfl | rfl | rfl
+    rcases (by omega_using [hi] : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4) with rfl | rfl | rfl | rfl | rfl
     · exact ld_mem e rfl hcx 0 k
     · exact ld_mem e rfl hcx 32 k
     · exact ld_mem e rfl hcx 64 k
     · exact ld_mem e rfl hdx 0 k
     · exact ld_mem e rfl hdx 32 k
   have car (k : Nat) (hk : k < 4) : Carried (memEnv e.mem p) k taL := by
-    rcases (by omega : k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3) with rfl | rfl | rfl | rfl
+    rcases (by omega_using [hk] : k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3) with rfl | rfl | rfl | rfl
     exacts [hE.zz.c, hE.x.c, hE.z.c, hE.y.c]
   have hB' : EnvOK e (limB stB limA) := by
     refine hB.lim fun b d k hk hf => ?_
@@ -452,7 +452,7 @@ theorem loadB_ok {w : State} (hc : Ctx par w) (hB : EnvOK w (bndsOf regs25 (stBT
           AccOk (envOf t) (t5 0) (t5 5) (t5 10) (t5 15) xn un z) ∧
         (∀ k, k < 4 → ∀ x, Ent (envOf w) k (t5 20) x → Ent (envOf t) k (t5 20) x) ∧ Ent (envOf t) 0 (t5 25) P.ezzz := by
   have lm (i : Nat) (hi : i < 5) : (tbR.get i).int (envOf w) 0 = (tbL.get i).int (memEnv w.mem p) 0 := by
-    rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4) with rfl | rfl | rfl | rfl | rfl
+    rcases (by omega_using [hi] : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4) with rfl | rfl | rfl | rfl | rfl
     · exact ld_mem w rfl hdx 0 0
     · exact ld_mem w rfl hdx 0 1
     · exact ld_mem w rfl hdx 0 2
@@ -464,7 +464,7 @@ theorem loadB_ok {w : State} (hc : Ctx par w) (hB : EnvOK w (bndsOf regs25 (stBT
     have g (i : Nat) (hi : i < 5) : 0 ≤ (tbR.get i).int (envOf w) 0 ∧ (tbR.get i).int (envOf w) 0 < 2 ^ 52 := by
       rw [lm i hi]; exact hE.zzz.c.get hi
     rcases hf with ⟨rfl, rfl | ⟨rfl, rfl⟩⟩
-    · rcases (by omega : k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3) with rfl | rfl | rfl | rfl
+    · rcases (by omega_using [hk] : k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3) with rfl | rfl | rfl | rfl
       exacts [g 0 (by decide), g 1 (by decide), g 2 (by decide), g 3 (by decide)]
     · exact g 4 (by decide)
   rw [loadBPieces_flat]
@@ -472,7 +472,7 @@ theorem loadB_ok {w : State} (hc : Ctx par w) (hB : EnvOK w (bndsOf regs25 (stBT
     (fun _ _ hm => nomatch hm)) fun t ⟨hc', hk, hE', hS⟩ => ⟨hc', hk, hE', fun xn un z h => ?_, ?_, ?_⟩
   · exact AccOk.of_same hS (stBT_app _) h
   · intro k hk x hx
-    rcases (by omega : k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3) with rfl | rfl | rfl | rfl
+    rcases (by omega_using [hk] : k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3) with rfl | rfl | rfl | rfl
     · exact hS.car 4 0 (by decide) rfl rfl hx
     · exact hS.car 4 1 (by decide) rfl rfl hx
     · exact hS.car 4 2 (by decide) rfl rfl hx
@@ -496,7 +496,7 @@ theorem envOK_zero {t : State} (hz : ∀ r, r < 20 → ∀ k, k < 4 → qv t (vr
   rw [e]
   have key : ∀ j, j < 4 → ∀ k, k < 4 →
       (match stBT.get j k with | some b => decide (b.1 ≤ 0 ∧ 0 ≤ b.2) | none => true) = true := by decide +kernel
-  have := key (n / 5) (by omega) k hk
+  have := key (n / 5) (by omega_using [hn]) k hk
   rw [hb] at this
   exact of_decide_eq_true this
 
@@ -517,7 +517,7 @@ theorem pack_chk : chkPack = true := by decide +kernel
 
 theorem packV_eval (s : State) {k : Nat} (hk : k < 4) : packV.eval s k = qv s (vreg (5 + k)) 0 := by
   rw [packV, col_eq]
-  rcases (by omega : k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3) with rfl | rfl | rfl | rfl <;> rfl
+  rcases (by omega_using [hk] : k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3) with rfl | rfl | rfl | rfl <;> rfl
 
 /-- The first four limbs of `tb`'s first lane into the lanes of `ymm5`. -/
 theorem pack_ok {s : State} (hc : Ctx par s) :
@@ -535,7 +535,7 @@ theorem pack_ok {s : State} (hc : Ctx par s) :
   refine WP.mono (srun_ok hc _ (SRel.init _ s) hσ) fun t h => ⟨h.eq, ?_, fun r hr hn k hk => ?_, fun k hk => ?_⟩
   · rw [h.mem, c0]; rfl
   · have := h.reg (vreg r) k hk
-    rw [vi_vreg r (by omega), (c4 r hr).resolve_left hn] at this
+    rw [vi_vreg r (by omega_using [hr]), (c4 r hr).resolve_left hn] at this
     exact this
   · have := h.reg (vreg 5) k hk
     rw [vi_vreg 5 (by decide), c5] at this
@@ -555,8 +555,8 @@ theorem wr32_off (p : Addr) {o k al : Nat} (hk : k < 4) (ho : o % 32 = al) (ho' 
     have he0 := he (e, v) List.mem_cons_self
     simp only [wr32]
     rw [wr32_off p hk ho ho' l _ (fun x hx => he x (List.mem_cons_of_mem _ hx))]
-    exact readW_writeW_off m p v (d := o + 8 * k) (e := e) (n := 8) (by omega) (by simp only [Nat.reduceDiv]; omega)
-      (by simp only [Nat.reduceDiv]; omega)
+    exact readW_writeW_off m p v (d := o + 8 * k) (e := e) (n := 8) (by omega_using [hk, ho']) (by simp only [Nat.reduceDiv]; omega)
+      (by simp only [Nat.reduceDiv]; omega_using [hk, ho, he0])
 
 /-- A quadword of one of the stores, which are at different offsets. -/
 theorem wr32_read (p : Addr) {k al : Nat} (hk : k < 4) :
@@ -572,9 +572,9 @@ theorem wr32_read (p : Addr) {k al : Nat} (hk : k < 4) :
     · cases heq
       rw [wr32_off p hk he0.1 he0.2 l _ (fun x hx => ⟨(he x (List.mem_cons_of_mem _ hx)).1,
         (he x (List.mem_cons_of_mem _ hx)).2, fun h' => hne x hx h'.symm⟩)]
-      have r1 := readW_writeW_inside m (p + BitVec.ofNat 64 e) t (k := 8 * k) (n := 8) (by omega) (by decide)
+      have r1 := readW_writeW_inside m (p + BitVec.ofNat 64 e) t (k := 8 * k) (n := 8) (by omega_using [hk]) (by decide)
       rw [BitVec.add_assoc, ← BitVec.ofNat_add] at r1
-      rw [r1, qword256, show 64 * k = 8 * (8 * k) by omega]
+      rw [r1, qword256, show 64 * k = 8 * (8 * k) by omega_using []]
     · exact wr32_read p hk l _ (fun x hx => he x (List.mem_cons_of_mem _ hx)) hp' o v hin
 
 /-- The stores change nothing outside the bytes they are to. -/
@@ -591,7 +591,7 @@ theorem wr32_unch (p : Addr) {lo n : Nat} (hn : lo + n < 2 ^ 62) :
     simp only [Offset.sub_add_eq, Offset.toNat_sub_ofNat, Nat.reduceDiv]
     have := (x - p).isLt
     simp only [VG.Proof.Mont.ofs] at h1
-    omega
+    omega_using [hn, he0, h1]
 
 theorem ea_at (s : State) (b : Reg) (d : Nat) : s.ea (at_ b d) = s.gpr b + BitVec.ofNat 64 d :=
   VG.Proof.Bignum.X86_64.AmmSym.baseOff_ok (m := at_ b d) rfl s
@@ -620,21 +620,21 @@ theorem lent_of {s : State} {m : Mem} {p : Addr} {P : AP (Fin pN)} (hE : EntOk (
     rw [BitVec.toInt_eq_toNat_cond] at h ⊢
     split at h <;> rename_i hx
     · simp only [hx, ite_true]
-    · omega
+    · omega_using [h]
   have ta (k : Nat) (hk : k < 4) (hc : Carried (envOf s) k (t5 0)) (i : Nat) (hi : i < 5) :
       (taL.get i).int (memEnv m p) k = ((t5 0).get i).int (envOf s) k := by
     have e : (taL.get i).int (memEnv m p) k = ((qv s (vreg i) k).toNat : Int) := by
       rw [← ha i hi k hk]
-      rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4) with rfl | rfl | rfl | rfl | rfl <;> rfl
+      rcases (by omega_using [hi] : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4) with rfl | rfl | rfl | rfl | rfl <;> rfl
     have e' : ((t5 0).get i).int (envOf s) k = (qv s (vreg i) k).toInt := by
-      rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4) with rfl | rfl | rfl | rfl | rfl <;> rfl
+      rcases (by omega_using [hi] : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4) with rfl | rfl | rfl | rfl | rfl <;> rfl
     rw [e, e']
     exact nat _ (e' ▸ (hc.get hi).1)
   have tb (i : Nat) (hi : i < 5) : (tbL.get i).int (memEnv m p) 0 = ((t5 5).get i).int (envOf s) 0 := by
     have e' : ((t5 5).get i).int (envOf s) 0 = (qv s (vreg (5 + i)) 0).toInt := by
-      rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4) with rfl | rfl | rfl | rfl | rfl <;> rfl
+      rcases (by omega_using [hi] : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4) with rfl | rfl | rfl | rfl | rfl <;> rfl
     have e : (tbL.get i).int (memEnv m p) 0 = ((qv s (vreg (5 + i)) 0).toNat : Int) := by
-      rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4) with rfl | rfl | rfl | rfl | rfl
+      rcases (by omega_using [hi] : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4) with rfl | rfl | rfl | rfl | rfl
       · rw [← hb 0 (by decide)]; rfl
       · rw [← hb 1 (by decide)]; rfl
       · rw [← hb 2 (by decide)]; rfl

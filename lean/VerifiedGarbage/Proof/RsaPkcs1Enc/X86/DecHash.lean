@@ -105,9 +105,9 @@ theorem shaInit_vp (v : Backend) : VP (H1 P) (callInit v.F) (H2 P) :=
       simp only [List.mem_singleton] at hr; exact ⟨sSt, 96, by decide, by decide, hr⟩
     refine ⟨⟨h.1.1.call (k := 48) (by decide) hws a.rd a.wr a.esp a.frame, ?_⟩, hr⟩
     rw [← h.1.bytes_sr, ← hs.1.sr_eq (by decide)]
-    refine keep_sr hs (by decide) a.frame (by decide) (by simp only [sD]; omega) fun r hr => ?_
+    refine keep_sr hs (by decide) a.frame (by decide) (by simp only [sD]; omega_using [hK]) fun r hr => ?_
     simp only [List.mem_singleton] at hr; subst hr
-    exact hs.1.sr_sep (by simp only [sD, sSt]; omega) (by decide) (by decide) (by simp only [sD]; omega)
+    exact hs.1.sr_sep (by simp only [sD, sSt]; omega_using []) (by decide) (by decide) (by simp only [sD]; omega_using [hK])
       (by decide)
 
 theorem shaUpdArgs_vp : VP (H2 P) (.block shaUpdArgs) (H3 P) :=
@@ -135,14 +135,14 @@ theorem shaUpd_vp (v : Backend) : VP (H3 P) (callUpd v.F) (H4 P) :=
       have hs := h.1.1.1.1
       have hK := hs.1.k1024
       obtain ⟨_, edi, esi, eax, edx, ecx, ebp⟩ := h
-      exact ⟨updA hs v edi esi eax ecx edx ebp (by omega)
-        (Covers.right (St.cov_sr hs (o := sD) (n := P.K) (by decide) (by simp only [sD]; omega)))
-        (hs.1.sr_sep (by simp only [sD, sSt]; omega) (by decide) (by decide) (by simp only [sD]; omega)
+      exact ⟨updA hs v edi esi eax ecx edx ebp (by omega_using [hK])
+        (Covers.right (St.cov_sr hs (o := sD) (n := P.K) (by decide) (by simp only [sD]; omega_using [hK])))
+        (hs.1.sr_sep (by simp only [sD, sSt]; omega_using []) (by decide) (by decide) (by simp only [sD]; omega_using [hK])
           (by decide))
-        (hs.1.sr_sep (by simp only [sD, sW]; omega) (by decide) (by decide) (by simp only [sD]; omega)
+        (hs.1.sr_sep (by simp only [sD, sW]; omega_using [hK]) (by decide) (by decide) (by simp only [sD]; omega_using [hK])
           (by decide))
-        (hs.1.below_sr (by decide) (by decide) (by simp only [sD]; omega))
-        (hs.1.sr_fit (by decide) (by simp only [sD]; omega)), hs.2.sp⟩)
+        (hs.1.below_sr (by decide) (by decide) (by simp only [sD]; omega_using [hK]))
+        (hs.1.sr_fit (by decide) (by simp only [sD]; omega_using [hK])), hs.2.sp⟩)
     fun σ s h s' a hp => by
       have hs := h.1.1.1.1
       have hws : ∀ r ∈ [sr P sSt 96, sr P sW 160], ∃ o n, o < 8448 ∧ o + n ≤ 8448 ∧ r = sr P o n :=
@@ -192,9 +192,9 @@ theorem shaFin_vp (v : Backend) : VP (H5 P) (callFin v.F) (H6 P) :=
         · exact ⟨sW, 160, by decide, by decide, rfl⟩
       refine ⟨h.1.1.call (k := 48) (by decide) hws a.rd a.wr a.esp a.frame, ?_⟩
       have hl : (Dfull P σ).length = P.K := by
-        simp [Proof.RsaPkcs1Sig.bytesAt_len]; have := hs.1.dlK; omega
-      exact hp _ h.1.2 (by omega)
-        (by rw [hl]; exact Proof.Pbkdf2.Stream.X86.zero_append_ofNat (by omega))
+        simp [Proof.RsaPkcs1Sig.bytesAt_len]; have := hs.1.dlK; omega_using [this]
+      exact hp _ h.1.2 (by omega_using [hK, hl])
+        (by rw [hl]; exact Proof.Pbkdf2.Stream.X86.zero_append_ofNat (by omega_using [hK]))
 
 theorem hashD_vp (v : Backend) : VP (D4 P) (hashD v.F) (H6 P) :=
   shaInitArgs_vp.seq ((shaInit_vp v).seq (shaUpdArgs_vp.seq ((shaUpd_vp v).seq

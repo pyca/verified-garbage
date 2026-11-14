@@ -38,10 +38,10 @@ theorem comb_loop (M : Mont) {p : Parameters} {bs : List Byte} {s : State}
  refine WP.loop (M:=isa) I ?_ d s ?_
  · intro n t h
    obtain ⟨nPositive,nBound,run,stable,keep⟩ := h
-   have eq : n=(n-1)+1 := by omega
-   have rowBound : n-1<rows p.N := by change n-1<d;omega
+   have eq : n=(n-1)+1 := by omega_using [nPositive]
+   have rowBound : n-1<rows p.N := by change n-1<d;omega_using [dPositive, nBound]
    have input : Running p bs (high p.N x ((n-1)+1)) ((n-1)+1) t := by rw [←eq];exact run
-   refine WP.mono (running_step M input size widthBound (by change n-1+5*d<2^63;omega) bound) ?_
+   refine WP.mono (running_step M input size widthBound (by change n-1+5*d<2^63;omega_using [dBound, nBound]) bound) ?_
    rintro u ⟨runU,stableU,indexU,keepU⟩
    have powerEq := high_step p.N x (n-1) rowBound
    rw [←powerEq] at runU
@@ -55,10 +55,10 @@ theorem comb_loop (M : Mont) {p : Parameters} {bs : List Byte} {s : State}
        subst n;decide
      · simpa only [last,Nat.sub_self,high_zero p.N x bound] using runU
    · right
-     refine ⟨?_,n-1,by omega,by omega,by omega,runU,totalStable,totalKeep⟩
+     refine ⟨?_,n-1,by omega_using [nPositive],by omega_using [nPositive, last],by omega_using [nBound],runU,totalStable,totalKeep⟩
      rw [eval_nonzero,indexU]
      change some (BitVec.ofNat 64 (n-1) != 0#64)=some true
-     rw [ofNat_nonzero (by omega : n-1<2^64),decide_eq_true (by omega : 0<n-1)]
+     rw [ofNat_nonzero (by omega_using [dBound, nBound] : n-1<2^64),decide_eq_true (by omega_using [nPositive, last] : 0<n-1)]
  · refine ⟨dPositive,Nat.le_refl _,?_,StableHeader.refl _ _,Keep.refl _ _⟩
    simpa only [d,high_top] using start
 

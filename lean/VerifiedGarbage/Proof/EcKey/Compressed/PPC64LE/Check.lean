@@ -77,8 +77,8 @@ theorem checkRoot_ok (hc : CfgOk c) {base : Addr} {s : State} (hw : WsReg s base
       ∀ w ∈ checkW c, c.sl i + 8 * c.n ≤ w.1 ∨ w.1 + w.2 ≤ c.sl i := fun hi hl =>
     apart_append (apart_slW hl) (apart_own h7 hi)
   have flag₁ : flagW c base s₁ = mask64 P := by
-    rw [flagW, U₁.word (fun w hw' => (ap₁ (i := FLAG) (by decide) (by decide) w hw').imp (fun h => by omega) id)
-      (by omega), ← flagW, hf]
+    rw [flagW, U₁.word (fun w hw' => (ap₁ (i := FLAG) (by decide) (by decide) w hw').imp (fun h => by omega_using [h0, h]) id)
+      (by omega_using [hF]), ← flagW, hf]
   have hz : sv c base s₁ W3 = 0 ↔
       Fin.ofNat c.C.p (sv c base s QY) * Fin.ofNat c.C.p (sv c base s QY) =
         toM c.C.p (2 ^ (64 * c.n)) (sv c base s W2) := by
@@ -86,27 +86,27 @@ theorem checkRoot_ok (hc : CfgOk c) {base : Addr} {s : State} (hw : WsReg s base
     constructor <;> intro h <;> grind
   have y₁ : sv c base s₁ QY = sv c base s QY := sv_unch U₁ h7 hn (by decide) (ap₁ (by decide) (by decide))
   have d₁ : word s₁.mem base (c.sl D) = word s.mem base (c.sl D) :=
-    U₁.word (fun w hw' => (ap₁ (i := D) (by decide) (by decide) w hw').imp (fun h => by omega) id) (by omega)
+    U₁.word (fun w hw' => (ap₁ (i := D) (by decide) (by decide) w hw').imp (fun h => by omega_using [h0, h]) id) (by omega_using [hD])
   rw [WP.block_append_iff]
-  refine WP.mono (checkZero_ok c hw₁.ws hw₁.at3 (sl_al c W3) h0 (by omega) (by omega)) fun s₂ ⟨f₂, k₂, O₂⟩ => ?_
+  refine WP.mono (checkZero_ok c hw₁.ws hw₁.at3 (sl_al c W3) h0 (by omega_using [hW]) (by omega_using [hF])) fun s₂ ⟨f₂, k₂, O₂⟩ => ?_
   have y₂ : sv c base s₂ QY = sv c base s QY :=
     (sv_unch O₂.unch h7 hn (by decide) (apart_flag h0 (by decide))).trans y₁
   have d₂ : word s₂.mem base (c.sl D) = word s.mem base (c.sl D) :=
     (O₂.unch.word (fun w hw' => by
-      rw [List.mem_singleton.mp hw']; have := sl_lt c (i := D) (j := FLAG) (by decide); dsimp only; omega)
-      (by omega)).trans d₁
+      rw [List.mem_singleton.mp hw']; have := sl_lt c (i := D) (j := FLAG) (by decide); dsimp only; omega_using [h0, this])
+      (by omega_using [hD])).trans d₁
   have hw₂ := hw₁.of_kp k₂
   rw [WP.block_append_iff]
-  refine WP.mono (parityMask_ok c hw₂.ws hw₂.at3 h0 (by omega) (by omega)) fun s₃ ⟨mask₃, k₃, m₃⟩ => ?_
+  refine WP.mono (parityMask_ok c hw₂.ws hw₂.at3 h0 (by omega_using [hY]) (by omega_using [hD])) fun s₃ ⟨mask₃, k₃, m₃⟩ => ?_
   rw [y₂, d₂] at mask₃
   rw [WP.block_append_iff]
   refine WP.mono (invertMask_ok mask₃) fun s₄ ⟨mask₄, k₄, m₄⟩ => ?_
   have hw₄ := (hw₂.of_kp k₃).of_kp k₄
-  refine WP.mono (andFlag_ok c hw₄.ws hw₄.at3 (by omega)) fun s₅ ⟨flag₅, k₅, m₅⟩ => ?_
+  refine WP.mono (andFlag_ok c hw₄.ws hw₄.at3 (by omega_using [hF])) fun s₅ ⟨flag₅, k₅, m₅⟩ => ?_
   have fl₄ : flagW c base s₄ = flagW c base s₂ := by simp only [flagW, m₄, m₃]
   refine ⟨hw₄.of_kp k₅, k₁.trans ((((k₂.rk (rs' := fnClob)).trans (k₃.rk (rs' := fnClob))).trans
     (k₄.rk (rs' := fnClob))).trans (k₅.rk (rs' := fnClob))), ?_, ?_⟩
-  · have O₅ : Outside base (c.sl FLAG) 8 s₄.mem s₅.mem := by rw [m₅]; exact writeW_outside _ _ _ (by omega)
+  · have O₅ : Outside base (c.sl FLAG) 8 s₄.mem s₅.mem := by rw [m₅]; exact writeW_outside _ _ _ (by omega_using [hF])
     have U₂₅ : Unch base [(c.sl FLAG, 8)] s₂.mem s₅.mem := by
       have := O₅.unch; rw [m₄, m₃] at this; exact this
     exact (U₁.trans (O₂.unch.trans U₂₅ |>.mono fun w hw' => by
@@ -118,8 +118,8 @@ theorem checkRoot_ok (hc : CfgOk c) {base : Addr} {s : State} (hw : WsReg s base
           sv c base s QY % 2 = (word s.mem base (c.sl D)).toNat % 2) := by
       rw [show wordsVal s₁.mem base (c.sl W3) c.n = sv c base s₁ W3 from rfl, hz]
       constructor
-      · rintro ⟨⟨a, b⟩, h⟩; exact ⟨⟨a, b⟩, by omega⟩
-      · rintro ⟨⟨a, b⟩, h⟩; exact ⟨⟨a, b⟩, by omega⟩
+      · rintro ⟨⟨a, b⟩, h⟩; exact ⟨⟨a, b⟩, by omega_using [h]⟩
+      · rintro ⟨⟨a, b⟩, h⟩; exact ⟨⟨a, b⟩, by omega_using [h]⟩
     rw [flag₅, fl₄, f₂, flag₁, mask₄, mask64_and, mask64_and]
     simp only [mask64, key]
 

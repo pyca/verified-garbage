@@ -40,19 +40,19 @@ theorem copyPair_ok {s : State} {B : Addr} {Z e d a o : Nat} {src dst : Reg}
       Outside B (d+o) 16 s.mem t.mem ∧ Keep [.rax] s t := by
   have nowrap := hs.nowrap
   unfold AdxHeader.copyPair
-  refine WP.seq (WP.mono (copyWord_ok hs (ea_at he a) hd hdne (by omega) (by omega))
+  refine WP.seq (WP.mono (copyWord_ok hs (ea_at he a) hd hdne (by omega_using [hE]) (by omega_using [hD]))
     fun u ⟨vu,ou,ku⟩ => ?_)
   refine WP.mono (copyWord_ok (hs.congr ku.2.2)
     (ea_at ((ku.gpr (by simpa)).trans he) (a+8)) ((ku.gpr (by simpa)).trans hd)
-    hdne (by omega) (by omega)) fun t ⟨vt,ot,kt⟩ => ?_
-  have hi : word u.mem B (e+(a+8)) = word s.mem B (e+(a+8)) := ou.word (by omega) (by omega)
+    hdne (by omega_using [hE]) (by omega_using [hD])) fun t ⟨vt,ot,kt⟩ => ?_
+  have hi : word u.mem B (e+(a+8)) = word s.mem B (e+(a+8)) := ou.word (by omega_using [hsep]) (by omega_using [hE, nowrap])
   rw [hi] at vt
-  refine ⟨?_,(ou.mono (o' := d+o) (n' := 16) (by omega) (by omega)).trans
-    (ot.mono (o' := d+o) (n' := 16) (by omega) (by omega)),(ku.trans kt).mono (by simp)⟩
+  refine ⟨?_,(ou.mono (o' := d+o) (n' := 16) (by omega_using []) (by omega_using [])).trans
+    (ot.mono (o' := d+o) (n' := 16) (by omega_using []) (by omega_using [])),(ku.trans kt).mono (by simp)⟩
   intro q hq
-  rcases (show q=0 ∨ q=1 by omega) with rfl | rfl
+  rcases (show q=0 ∨ q=1 by omega_using [hq]) with rfl | rfl
   · simp only [Nat.mul_zero,Nat.add_zero]
-    rw [ot.word (by omega) (by omega)]; exact vu
+    rw [ot.word (by omega_using []) (by omega_using [hD, nowrap])]; exact vu
   · simpa only [Nat.mul_one,Nat.add_assoc] using vt
 
 end VG.Proof.Bignum.X86_64.AdxHeader

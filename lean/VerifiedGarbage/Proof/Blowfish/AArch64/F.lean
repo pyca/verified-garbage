@@ -78,7 +78,7 @@ theorem combine_run (s : State) (j : Nat) :
     have fk : ∀ k < 4, ∀ (u : State) (k' : Nat), k' < 4 → k ≠ k' → (t k' u).v (fReg k) = u.v (fReg k) :=
       fun k hk u k' hk' hne => v_setV_of_ne _ _ (fReg_ne k hk k' hk' hne)
     intro k hk
-    rcases (by omega : k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3) with rfl | rfl | rfl | rfl
+    rcases (by omega_using [hk] : k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3) with rfl | rfl | rfl | rfl
     · rw [fk 0 (by decide) _ 3 (by decide) (by decide), fk 0 (by decide) _ 2 (by decide) (by decide),
         fk 0 (by decide) _ 1 (by decide) (by decide)]
       exact v_setV_self _ _ _
@@ -117,12 +117,12 @@ theorem sbox_run {s : State} {sch : Reg} (hR : Readable s sch) (hc : Consts s) {
   obtain ⟨s₃, r₃, v₃, o₃⟩ := combine_run s₂ j
   refine ⟨s₃, VG.AArch64.Tbl.runBlock_cat_some (VG.AArch64.Tbl.runBlock_cat_some r₁ r₂) r₃, ?_, ?_⟩
   · intro n hn
-    have hk : n / 4 < 4 := by omega
-    have hl : n % 4 < 4 := by omega
+    have hk : n / 4 < 4 := by omega_using [hn]
+    have hl : n % 4 < 4 := by omega_using []
     -- the words of S-box `j`
     have w : vword (s₂.v (wordReg (n / 4))) (n % 4) = sq K (x n) j := by
       refine word_ext fun b hb => ?_
-      rw [← vbyte_word _ hb, v₂ _ hk _ hl _ hb, show 4 * (n / 4) + n % 4 = n by omega, v₁ _ hb _ hn, hx n hn,
+      rw [← vbyte_word _ hb, v₂ _ hk _ hl _ hb, show 4 * (n / 4) + n % 4 = n by omega_using [], v₁ _ hb _ hn, hx n hn,
         sq, sEntry_byte _ _ hj hb]
       rfl
     have f₂ : s₂.v (fReg (n / 4)) = s.v (fReg (n / 4)) := by

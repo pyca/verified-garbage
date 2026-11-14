@@ -95,13 +95,13 @@ theorem sieve_trace {j : Nat} (hj : j ≤ 27) (hc : ACheck (.block (bounds (.slo
       rw [cb1] at f
       have nw := hh.scratch.nowrap
       have lw := hh.lower'
-      have : 8 ≤ mw len := by simp only [mw, Spec.Rsa.modulusWords]; omega
+      have : 8 ≤ mw len := by simp only [mw, Spec.Rsa.modulusWords]; omega_using [lw]
       have bc8 : bc len .wide = 8 * mw len := rfl
       have au : (slotPtr base len j).toNat = base.toNat + lo len (.slot .wide j) := by
-        rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+        rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [f, nw, this, bc8])]
       have v := (sieveGeo_valid hh hj (by rw [R.2.2]; exact TT) au bits).1
       rw [R.2.2] at v
-      exact ⟨v, by have := hh.room.low; rw [R.2.2] at this; omega, au⟩
+      exact ⟨v, by have := hh.room.low; rw [R.2.2] at this; omega_using [this], au⟩
   unfold sieve
   refine RelCT.seq (aRel (F := SieveIn Ex base bytes len args sp P j bits) (fun x h => (hP x h).1) hc
     fun x h => ?_) ?_
@@ -130,7 +130,7 @@ theorem sieve_trace {j : Nat} (hj : j ≤ 27) (hc : ACheck (.block (bounds (.slo
     have W := sieveSetup_ok R₀.1 hj (by rw [R₀.2.2]; exact TT) au ea ec ed K m Sy
     rw [R₀.2.2, hc] at W
     exact WP.mono W fun _ h => h.1
-  refine RelCT.seq ((((sieveSetup_trace (p := sp - BitVec.ofNat 32 20) (by rw [VG.X86.sub_toNat (by omega)]; omega)).mono
+  refine RelCT.seq ((((sieveSetup_trace (p := sp - BitVec.ofNat 32 20) (by rw [VG.X86.sub_toNat (by omega_using [low])]; omega_using [low])).mono
       (fun a b ⟨s₁, s₂, ⟨⟨_, _, R₁, _⟩, ⟨_, _, R₂, _⟩⟩, ea, eb⟩ => ⟨by rw [ea, allocFrame_esp, R₁.2.2],
         by rw [eb, allocFrame_esp, R₂.2.2]⟩) fun _ _ h => h).wp
     (F₁ := StateAt (sieveGeo sp (slotPtr base len j) T len bits) c 0 (sieveCount bits))

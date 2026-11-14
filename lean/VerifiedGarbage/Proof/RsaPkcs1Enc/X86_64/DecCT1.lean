@@ -64,12 +64,12 @@ theorem priv_view {a s t : State} {rds : List Region} (S : Sib X a s) (h : CallA
       S.arg (by decide), State.withRegions_gpr, State.callEntry_rsp, h.rsp, S.fb, S.gpr (r := .r9) (by decide)]
   · refine List.map_congr_left fun i hi => ?_
     rw [List.mem_range] at hi
-    rw [priv_args h _ _ hi, S.arg (by omega)]
+    rw [priv_args h _ _ hi, S.arg (by omega_using [hi])]
   · rw [g (by decide), g (by decide), h.rdx, h.rcx, entryBytes hp h _ _ hp.dKn
-      (by have := hp.dOn; rw [outR]; exact this) hp.dMn hp.dns (by have := hp.wN; omega)]
+      (by have := hp.dOn; rw [outR]; exact this) hp.dMn hp.dns (by have := hp.wN; omega_using [])]
     exact S.n
   · rw [g (by decide), g (by decide), h.r8, h.r9, entryBytes hp h _ _ hp.dKe
-      (by have := hp.dOe; rw [outR]; exact this) hp.dMe hp.des (by have := hp.wE; omega)]
+      (by have := hp.dOe; rw [outR]; exact this) hp.dMe hp.des (by have := hp.wE; omega_using [])]
     exact S.e
 
 /-! ## `D` -/

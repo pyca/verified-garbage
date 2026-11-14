@@ -81,8 +81,8 @@ theorem knPre {k : Nat} {dk s e se z : Ptr} {st s1 : State} (H : KgNttH k dk s e
     ret_disj s1 (by rw [hsp]; exact H.kD), ret_disj s1 (by rw [hsp]; exact H.kS),
     ret_disj s1 (by rw [hsp]; exact H.kE), ret_disj s1 (by rw [hsp]; exact H.kR),
     ret_disj s1 (by rw [hsp]; exact H.kZ), H.nD, H.nS, H.nE, H.nR, H.nZ, ?_⟩
-  rw [vecReducedW16_congr (fun i hi => (ce_mem s1 (n := 1024 * k) (by have := H.nR; omega)
-    (by rw [hsp]; exact H.kR) i (by omega)).trans (by rw [hm]))]
+  rw [vecReducedW16_congr (fun i hi => (ce_mem s1 (n := 1024 * k) (by have := H.nR; omega_using [this])
+    (by rw [hsp]; exact H.kR) i (by omega_using [hi])).trans (by rw [hm]))]
   exact H.red
 
 section
@@ -103,12 +103,12 @@ theorem kgNttAt_ok {dk s e se z : Ptr} (hs : NA s) (he : NA e) (hse : NA se) (hz
   have hR := H.nR
   have eS : vecAtW 16 s1.callEntry.mem (pa st se) L.k = vecAtW 16 st.mem (pa st se) L.k :=
     vecAtW16_congr fun i hi =>
-      (ce_mem s1 (n := 1024 * L.k) (by omega) (by rw [hsp]; exact H.kR) i (by omega)).trans (by rw [hm])
+      (ce_mem s1 (n := 1024 * L.k) (by omega_using [hR]) (by rw [hsp]; exact H.kR) i (by omega_using [hi])).trans (by rw [hm])
   have eE : vecAtW 16 s1.callEntry.mem (pa st se + BitVec.ofNat 64 (512 * L.k)) L.k =
       vecAtW 16 st.mem (pa st se + BitVec.ofNat 64 (512 * L.k)) L.k :=
     vecAtW16_congr fun i hi => by
       rw [BitVec.add_assoc, ← BitVec.ofNat_add]
-      exact (ce_mem s1 (n := 1024 * L.k) (by omega) (by rw [hsp]; exact H.kR) _ (by omega)).trans (by rw [hm])
+      exact (ce_mem s1 (n := 1024 * L.k) (by omega_using [hR]) (by rw [hsp]; exact H.kR) _ (by omega_using [hi])).trans (by rw [hm])
   simp only [kgNttK, State.withRegions_gpr, State.withRegions_mem, ce_gpr' s1 (by decide : Reg.rdi ≠ .rsp),
     ce_gpr' s1 (by decide : Reg.rsi ≠ .rsp), ce_gpr' s1 (by decide : Reg.rdx ≠ .rsp),
     ce_gpr' s1 (by decide : Reg.rcx ≠ .rsp), hV.1, hV.2.1, hV.2.2.1, hV.2.2.2.1, hm₂, eS, eE] at hq
@@ -184,7 +184,7 @@ theorem krPre {k : Nat} {ek a s e z : Ptr} {st s1 : State} (H : KgRowH k ek a s 
     ret_disj s1 (by rw [hsp]; exact H.xK), ret_disj s1 (by rw [hsp]; exact H.xA),
     ret_disj s1 (by rw [hsp]; exact H.xS), ret_disj s1 (by rw [hsp]; exact H.xE),
     ret_disj s1 (by rw [hsp]; exact H.xZ), H.nK, H.nA, H.nS, H.nE, H.nZ, ?_, fun i hi => ?_, ?_⟩
-  · rw [vecReducedW16_congr (fun i hi => (ce_mem s1 (n := 512 * k) (by have := H.nA; omega)
+  · rw [vecReducedW16_congr (fun i hi => (ce_mem s1 (n := 512 * k) (by have := H.nA; omega_using [this])
       (by rw [hsp]; exact H.xA) i hi).trans (by rw [hm]))]
     exact H.redA
   · rw [ce_reduced s1 (by rw [hsp]; exact H.xS.sub_right (DecMul.sub_v _ hi)), hm]; exact H.redS i hi
@@ -207,7 +207,7 @@ theorem kgRowAt_ok {ek a s e z : Ptr} (ha : NA a) (hs : NA s) (he : NA e) (hz : 
   have hA := H.nA
   have eA : vecAtW 16 s1.callEntry.mem (pa st a) L.k = vecAtW 16 st.mem (pa st a) L.k :=
     vecAtW16_congr fun i hi =>
-      (ce_mem s1 (n := 512 * L.k) (by omega) (by rw [hsp]; exact H.xA) i hi).trans (by rw [hm])
+      (ce_mem s1 (n := 512 * L.k) (by omega_using [hA]) (by rw [hsp]; exact H.xA) i hi).trans (by rw [hm])
   simp only [kgRowK, State.withRegions_gpr, State.withRegions_mem, ce_gpr' s1 (by decide : Reg.rdi ≠ .rsp),
     ce_gpr' s1 (by decide : Reg.rsi ≠ .rsp), ce_gpr' s1 (by decide : Reg.rdx ≠ .rsp),
     ce_gpr' s1 (by decide : Reg.rcx ≠ .rsp), hV.1, hV.2.1, hV.2.2.1, hV.2.2.2.1, hm₂, eA,

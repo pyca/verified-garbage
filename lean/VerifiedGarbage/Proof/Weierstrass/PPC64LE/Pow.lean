@@ -90,7 +90,7 @@ theorem powBody_ok {P : PowCfg} {S : Impl.Weierstrass.Mont.Modulus} [NeZero S.m]
       rcases hw with rfl | rfl | rfl
       · exact hba
       · exact hbt
-      · exact .inl hL.base) (by omega)
+      · exact .inl hL.base) (by omega_arith)
   -- `r31 -= 1` and `acc = acc²`.
   rw [powBody]
   refine WP.seq (wp_decCounter hj hI.r31 (WP.block_nil ?_))
@@ -110,7 +110,7 @@ theorem powBody_ok {P : PowCfg} {S : Impl.Weierstrass.Mont.Modulus} [NeZero S.m]
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
       rcases hw with rfl | rfl
       · exact hba
-      · exact .inl hL.base) (by omega), hBs]
+      · exact .inl hL.base) (by omega_arith), hBs]
   -- `tmp = acc · base`.
   have w₂ := w₁.of_rk (K₂.rk (rs := powClob))
   refine WP.seq (WP.mono (mulCall_ok hM w₂ hL.tmp hL.acc hL.base (by rw [hB₂]; exact hB))
@@ -121,7 +121,7 @@ theorem powBody_ok {P : PowCfg} {S : Impl.Weierstrass.Mont.Modulus} [NeZero S.m]
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
       rcases hw with rfl | rfl
       · exact hat
-      · exact .inl hL.acc) (by omega)
+      · exact .inl hL.acc) (by omega_arith)
   have v₃ : toM S.m (2 ^ (64 * S.k)) (wordsVal s₃.mem base P.tmp S.k) =
       toM S.m (2 ^ (64 * S.k)) (wordsVal s₂.mem base P.acc S.k) *
         toM S.m (2 ^ (64 * S.k)) (wordsVal s₀.mem base P.base S.k) := by
@@ -134,14 +134,14 @@ theorem powBody_ok {P : PowCfg} {S : Impl.Weierstrass.Mont.Modulus} [NeZero S.m]
   have hbyte : s₃.mem (off base (P.bits + (j - 1))) = if e.testBit (j - 1) then 1 else 0 := by
     rw [hU₃.byte (fun w hw => by
       simp only [powWx, List.mem_cons, List.not_mem_nil, or_false] at hw
-      rcases hw with rfl | rfl | rfl <;> (simp only; omega)) (by omega), hbits _ (by omega)]
+      rcases hw with rfl | rfl | rfl <;> (simp only; omega_arith)) (by omega_using [hjn, this]), hbits _ (by omega_using [hj, hjn])]
   have w₃ := w₂.of_rk (K₃.rk (rs := powClob))
   have c₃ : s₃.gpr .r31 = BitVec.ofNat 64 (j - 1) := by rw [K₃.gpr _ (by decide), K₂.gpr _ (by decide), c₁]
-  refine wp_append (WP.mono (bitMask_bool_ok w₃.ws w₃.at3 c₃ (by omega) hbyte) fun s₄ ⟨g₄, k₄, m₄⟩ => ?_)
+  refine wp_append (WP.mono (bitMask_bool_ok w₃.ws w₃.at3 c₃ (by omega_using [hj, hjn, this]) hbyte) fun s₄ ⟨g₄, k₄, m₄⟩ => ?_)
   rw [hk]
   refine WP.mono (sel_ok (e.testBit (j - 1)) S.k (k₄.ws w₃.ws) (k₄.at w₃.at3) g₄ (o := P.acc) (a := P.acc)
-    (b := P.tmp) hL.acc4 hL.acc4 hL.tmp4 (by omega) (by omega) (by omega) (Or.inl (Nat.le_refl _))
-    (by omega)) fun s₅ ⟨e₅, k₅, O₅⟩ => ?_
+    (b := P.tmp) hL.acc4 hL.acc4 hL.tmp4 (by omega_arith) (by omega_arith) (by omega_arith) (Or.inl (Nat.le_refl _))
+    (by omega_using [hat])) fun s₅ ⟨e₅, k₅, O₅⟩ => ?_
   have k₅' : Rk powClob s₃ s₅ := (k₄.rk (rs' := powClob)).trans (k₅.rk (rs' := powClob))
   refine ⟨w₃.of_rk k₅', by rw [k₅.g, k₄.g, c₃],
     (((hI.keep.trans (K₁.rk (rs' := powClob))).trans (K₂.rk (rs := powClob))).trans (K₃.rk (rs := powClob))).trans
@@ -175,11 +175,11 @@ theorem pow_ok' {P : PowCfg} {S : Impl.Weierstrass.Mont.Modulus} [NeZero S.m] (h
   have hao := hL.acc_one
   rw [pow, hk]
   refine WP.seq (wp_append (WP.mono (copy_ok S.k hs.ws hs.at3 (o := P.acc) (a := P.one) hL.acc4 hL.one4
-    (by omega) (by omega) (by omega)) fun s₁ ⟨e₁, k₁, O₁⟩ =>
+    (by omega_arith) (by omega_arith) (by omega_using [hao])) fun s₁ ⟨e₁, k₁, O₁⟩ =>
       wp_step (exec_li hnb.2) (WP.block_nil ?_)))
   refine countLoop_ok (Inv := fun j s' => PowInv P S.k base S.m e s s' j) (n := P.nbits)
     (fun j s' hi => hi.r31) (fun j s' h1 h2 hi => powBody_ok hM hk hL hm hB hbits h1 h2 hi)
-    (fun s' hi => ⟨hi.keep, hi.unch, hi.lt, by rw [hi.val, Nat.shiftRight_zero]⟩) hnb.1 (by omega) ?_
+    (fun s' hi => ⟨hi.keep, hi.unch, hi.lt, by rw [hi.val, Nat.shiftRight_zero]⟩) hnb.1 (by omega_using [hnb]) ?_
   have hv : wordsVal (s₁.write .r31 (BitVec.ofNat 64 P.nbits)).mem base P.acc S.k =
       wordsVal s.mem base P.one S.k := by
     rw [write_mem, e₁]

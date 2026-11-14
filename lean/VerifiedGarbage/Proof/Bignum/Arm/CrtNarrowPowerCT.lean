@@ -166,8 +166,8 @@ theorem NarrowEntered.primeInput {s : State} {g : CrtGeometry} {bs : Fin 7 → L
   obtain ⟨_, _, kfit, kpos, _, _, _⟩ := shared.narrow_fits j prime
   have hj := j.isLt
   exact ⟨selected,
-    by simpa only [show 56 + 8 * j.val + 4 = 60 + 8 * j.val by omega] using shared.savedOperand j shared.narrow_member,
-    kpos, kfit, by have := shared.stack.nowrap; omega, shared.stack.read (by decide), bit, valid⟩
+    by simpa only [show 56 + 8 * j.val + 4 = 60 + 8 * j.val by omega_using []] using shared.savedOperand j shared.narrow_member,
+    kpos, kfit, by have := shared.stack.nowrap; omega_using [this], shared.stack.read (by decide), bit, valid⟩
 
 theorem crt_narrowAccepted_ready (s : State) {g : CrtGeometry} {bs : Fin 7 → List Byte} {child : BitVec 32}
     {slot : Nat} {j i : Fin 6} (h : CrtShared g bs s) (kind : CrtChild g child slot)
@@ -211,11 +211,11 @@ theorem crt_narrowCopiedBack_ready (s : State) {g : CrtGeometry} {bs : Fin 7 →
   have fitsC : arrAt g.words 8 ≤ 8 * workspaceWords g.words := shared.buffers.context.arraysFit
   have wsSmall : workspaceWords g.words ≤ 16 * 128 + 64 := by
     have : g.words ≤ 128 := (crt_width_valid shared.buffers.lengthValid).2.1
-    simp only [workspaceWords]; omega
+    simp only [workspaceWords]; omega_using [this]
   have end0 := Nat.le_trans (array_end_le (w := g.words) (by decide : 0 < 8)) fitsC
-  have frameC := outside_workspace outside (size := 8 * workspaceWords g.words) (by omega)
-  have keeps := outside_array_prefix_keeps outside (by omega : 8 * workspaceWords g.words < 2 ^ 64)
-    (by omega : 8 * narrowWords (g.sourceLength j.succ) g.words ≤ 8 * (g.words + 2))
+  have frameC := outside_workspace outside (size := 8 * workspaceWords g.words) (by omega_using [le, end0])
+  have keeps := outside_array_prefix_keeps outside (by omega_using [wsSmall] : 8 * workspaceWords g.words < 2 ^ 64)
+    (by omega_using [le] : 8 * narrowWords (g.sourceLength j.succ) g.words ≤ 8 * (g.words + 2))
   have layoutS := (shared.child kind).2.2.1
   have layoutT : CrtLayoutState child (workspaceWords g.words) g.words t.mem := by
     have kl := keeps_layout layoutS.layout (by rw [layoutS.width]; exact keeps)
@@ -246,18 +246,18 @@ theorem crt_narrowReducedHalf_ready (s : State) {g : CrtGeometry} {bs : Fin 7 �
   rintro t ⟨readyT, modT, r2T, _, inputT, frameT, restT⟩
   have sharedT := ctx.shared.after_narrow (frameT.mono (by simp)) restT
   have length := ctx.shared.buffers.lengthValid.2
-  refine ⟨sharedT, _, _, readyT, modT, odd, inputT, r2T, by have := sharedT.stack.nowrap; omega, by omega,
-    sharedT.stack.read (by omega), sharedT.stack.read (by omega), sharedT.stack.pointer i, ?_,
+  refine ⟨sharedT, _, _, readyT, modT, odd, inputT, r2T, by have := sharedT.stack.nowrap; omega_using [this], by omega_using [],
+    sharedT.stack.read (by omega_using []), sharedT.stack.read (by omega_using []), sharedT.stack.pointer i, ?_,
     sharedT.buffers.source i.succ, (sharedT.buffers.sourceSeparate i.succ).sub_right
       (crt_region_sub_workspace sharedT.buffers.workspace sharedT.buffers.storageFits sharedT.narrow_member), ?_, ?_,
       table_fits ctx.le⟩
-  · simpa only [show 56 + 8 * i.val + 4 = 60 + 8 * i.val by omega] using sharedT.stack.length i
+  · simpa only [show 56 + 8 * i.val + 4 = 60 + 8 * i.val by omega_using []] using sharedT.stack.length i
   · rcases expI with rfl | rfl
     · exact ctx.shared.buffers.pPositive
     · exact ctx.shared.buffers.qPositive
   · rcases expI with rfl | rfl
-    · change g.pLength < _; have := ctx.shared.buffers.pShort; omega
-    · change g.qLength < _; have := ctx.shared.buffers.qShort; omega
+    · change g.pLength < _; have := ctx.shared.buffers.pShort; omega_using [length, this]
+    · change g.qLength < _; have := ctx.shared.buffers.qShort; omega_using [length, this]
 
 theorem crt_narrowPowered_ready (s : State) {g : CrtGeometry} {bs : Fin 7 → List Byte} {child : BitVec 32}
     {slot : Nat} {j i : Fin 6} (h : NarrowCopied g bs j i s) (kind : CrtChild g child slot) (prime : j = 1 ∨ j = 2)
@@ -303,7 +303,7 @@ theorem crt_factorInput_ct {g : CrtGeometry} {bs1 bs2 : Fin 7 → List Byte} {ch
   have size (s : State) (h : L s) : 256 ≤ 8 * workspaceWords g.words := by
     have := h.width ▸ h.layout.2.2.1
     simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at this
-    omega
+    omega_using [this]
   have clear (o : Nat) (ho : o < 8) :
       RelCT isa (fun s t => L s ∧ L t ∧ s.sp = t.sp) (clearOperandBuffer (64 + 8 * o)) (fun _ _ => True) := by
     intro s t tr1 tr2 u w h e1 e2
@@ -313,7 +313,7 @@ theorem crt_factorInput_ct {g : CrtGeometry} {bs1 bs2 : Fin 7 → List Byte} {ch
       have header := nativeHeader_of_layout s'.mem child h'.workspace.nowrap (Nat.le_refl _) h'.layout
       rw [h'.width] at header
       exact ⟨h'.workspace, h'.ptr, header.count, header.array o ho⟩
-    exact clearOperandBuffer_ct (by omega) (by omega) (by omega) s t tr1 tr2 u w
+    exact clearOperandBuffer_ct (by omega_using [sz]) (by omega_using [ho, sz]) (by omega_using [ho]) s t tr1 tr2 u w
       ⟨input s h.1, input t h.2.1, h.2.2⟩ e1 e2
   have clearWP (s : State) (h : L s) : WP isa (clearOperandBuffer (64 + 8 * 0)) s L :=
     (clearLayout_ok s h (o := 0) (by decide)).mono fun _ k => k.1
@@ -339,7 +339,7 @@ theorem crt_narrowPower_ct {g : CrtGeometry} {bs1 bs2 : Fin 7 → List Byte} {ch
   have words : g.words ≤ 128 := (crt_width_valid h.1.1.buffers.lengthValid).2.1
   have fitV : arrAt (narrowWords (g.sourceLength j.succ) g.words) 3 + 32 ≤ 8 * workspaceWords g.words := by
     have := Nat.le_trans (array_end_le (w := narrowWords (g.sourceLength j.succ) g.words) (by decide : 3 < 8)) arrays
-    omega
+    omega_using [two, this]
   have inputCT := (crt_factorInput_ct (g := g) (bs1 := bs1) (bs2 := bs2) (child := child) (i := i)).mono
     (P' := fun (s t : State) =>
       (CrtShared g bs1 s ∧ CrtPrimePowerInput child g.input (g.source i.succ) (workspaceWords g.words) g.words

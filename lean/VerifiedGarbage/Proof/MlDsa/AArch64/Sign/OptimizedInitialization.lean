@@ -35,7 +35,7 @@ theorem positiveSeed_ok {P : Prims} {S : Nat} (hP : PrimsOk P S) {p : Params}
   simp only [List.map_cons,List.map_nil,List.flatten_cons,List.flatten_nil,List.append_nil]
   show H (bytesAt s.mem (pa s (.x25,32)) 32 ++ (bytesAt s.mem (pa s (.x27,0)) 32 ++
     bytesAt s.mem (pa s (.x26,0)) 64)) 64 = _
-  rw [sk_slice hs.im.st (o := 32) (len := 32) (by omega),hs.im.st.rnd,hs.im.st.mu,← List.append_assoc]
+  rw [sk_slice hs.im.st (o := 32) (len := 32) (by omega_using [hsk]),hs.im.st.rnd,hs.im.st.mu,← List.append_assoc]
 
 theorem positiveInitialization_ok {P : Prims} {S : Nat} (hP : PrimsOk P S) {p : Params}
     (hp : Ok3 p) {σ s : State} (hs : IM p S σ s) (ht : StaticRoots S s) :

@@ -42,7 +42,7 @@ theorem setB_ok {q : Ptr} (pq : PtrIn L q 1) (hw : ix q.1 ∈ Wb) (ho : q.2 < 2 
     have := baseReg_of pq.1; simp only [baseReg, Bool.or_eq_true, beq_iff_eq] at this
     rcases this with ((h | h) | h) | h <;> rw [h] <;> decide
   have hi : InRegions s.wr (lpa L q) 1 := hs.cwE pq hw _ _ ⟨_, List.mem_singleton_self _, Region.contains_self _ _⟩
-  have sk := VG.Proof.MlKem.PPC64LE.setWidth8_ofNat (N := v) (by omega)
+  have sk := VG.Proof.MlKem.PPC64LE.setWidth8_ofNat (N := v) (by omega_using [hv])
   have hmv : WP isa (.block (setB q v)) s fun s' =>
       (∀ r ∈ preserved, s'.gpr r = s.gpr r) ∧ s'.mem = s.mem.writeW (lpa L q) (BitVec.ofNat 8 v) ∧
       s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp := by
@@ -72,7 +72,7 @@ theorem copyS {sb db : Reg} {so dO len : Nat} (ps : PtrIn L (sb, so) len) (pd : 
   have hdb := baseReg_of pd.1
   refine WP.seq (WP.mono (copy_setup (base_pres hsb) (base_pres hdb) hse hde hle) fun s₁ ⟨o₁, g3, g4, g5⟩ => ?_)
   rw [hs.base hsb] at g3; rw [hs.base hdb] at g4
-  refine WP.mono (copy_loop (by omega) hl0 (hs.dE hd (.inr wd))
+  refine WP.mono (copy_loop (by omega_using [hle]) hl0 (hs.dE hd (.inr wd))
     (by rw [o₁.rd, o₁.wr]; exact hs.crE ps)
     (by rw [o₁.wr]; exact hs.cwE pd wd) g3 g4 g5)
     fun s' ⟨cs, rd, wr, sp, fr, hb⟩ => ⟨(o₁.kept _).trans ⟨cs, sp, rd, wr, fr⟩, ?_⟩

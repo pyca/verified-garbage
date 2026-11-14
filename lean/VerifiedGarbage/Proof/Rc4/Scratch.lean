@@ -68,7 +68,7 @@ theorem contextAt_congr {m₁ m₂ : Mem} {p : Addr}
   simp only [contextAt, Context.mk.injEq]
   refine ⟨?_, ?_, ?_⟩
   · congr 1; funext i
-    rw [h _ (by omega)]
+    rw [h _ (by omega_using [])]
   · rw [show p + 256 = p + BitVec.ofNat 64 256 from rfl]
     exact h _ (by decide)
   · rw [show p + 257 = p + BitVec.ofNat 64 257 from rfl]
@@ -82,10 +82,10 @@ private theorem agree_of {m₁ m₂ : Mem} {p : Addr} {n : Nat}
   intro i hi
   refine (h _ ?_).symm
   by_cases hw : i < 2 ^ 64
-  · exact Offset.contains_base _ (by omega) hw
+  · exact Offset.contains_base _ (by omega_using [hi]) hw
   · simp only [Region.Contains]
     have := (p + BitVec.ofNat 64 i - p).isLt
-    omega
+    omega_using [hi, hw]
 
 variable (pb : Nat)
 
@@ -102,7 +102,7 @@ theorem initPost_local : ∀ vs m₁ m₂ m' r, vs.length = (initSig.words pb).l
     dsimp only [Curry.apply, initPost, ArgWord.ofRaw] at h ⊢
     have := Nat.mod_le kl.toNat (2 ^ pb)
     rw [bytesAt_congr (n := (kl.setWidth pb).toNat) fun i hi' => hk i (by
-      rw [BitVec.toNat_setWidth] at hi'; omega)]
+      rw [BitVec.toNat_setWidth] at hi'; omega_using [this, hi'])]
     exact h
 
 theorem initPostOut_local : ∀ vs m m₁ m₂ r, vs.length = (initSig.words pb).length →
@@ -135,7 +135,7 @@ theorem applyPost_local : ∀ vs m₁ m₂ m' r, vs.length = (applySig.words pb)
     dsimp only [Curry.apply, applyPost, ArgWord.ofRaw] at h ⊢
     have := Nat.mod_le len.toNat (2 ^ pb)
     rw [contextAt_congr hc, bytesAt_congr (n := (len.setWidth pb).toNat) fun i hi =>
-      hd i (by rw [BitVec.toNat_setWidth] at hi; omega)]
+      hd i (by rw [BitVec.toNat_setWidth] at hi; omega_using [this, hi])]
     exact h
 
 theorem applyPostOut_local : ∀ vs m m₁ m₂ r, vs.length = (applySig.words pb).length →
@@ -154,7 +154,7 @@ theorem applyPostOut_local : ∀ vs m m₁ m₂ r, vs.length = (applySig.words p
     have := Nat.mod_le len.toNat (2 ^ pb)
     refine ⟨by rw [contextAt_congr hc]; exact h1, ?_⟩
     rw [bytesAt_congr (n := (len.setWidth pb).toNat) fun i hi =>
-      hd i (by rw [BitVec.toNat_setWidth] at hi; omega)]
+      hd i (by rw [BitVec.toNat_setWidth] at hi; omega_using [this, hi])]
     exact h2
 
 theorem applyLeak_local : ∀ vs m₁ m₂, vs.length = (applySig.words pb).length →

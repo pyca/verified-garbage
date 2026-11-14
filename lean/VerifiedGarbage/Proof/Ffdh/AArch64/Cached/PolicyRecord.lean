@@ -18,7 +18,7 @@ theorem widen32 {n : Nat} (fit : n<2^32) :
  (BitVec.ofNat 32 n).setWidth 64=BitVec.ofNat 64 n := by
  apply BitVec.eq_of_toNat_eq
  simp only [BitVec.toNat_setWidth,BitVec.toNat_ofNat]
- omega
+ omega_using [fit]
 
 theorem policyRecordHead {s : State} {B rec : Addr} {Z k len bits : Nat}
  (scratch : Scr s B Z) (room : 256≤Z) (base : s.gpr .x0=B)
@@ -31,7 +31,7 @@ theorem policyRecordHead {s : State} {B rec : Addr} {Z k len bits : Nat}
  t.gpr .x3=BitVec.ofNat 64 k-BitVec.ofNat 64 len ∧ t.mem=s.mem) ∧ Keep [.x3,.x4,.x5,.x6] s t := by
  refine WP.keep [.x3,.x4,.x5,.x6] ?_ rfl rfl rfl
  unfold Policy.recordHead
- brun [exec_ldr_w (off:=0) (by decide),exec_ldr_w (off:=4) (by decide),base,ptr,hdr_enc (show sLen<32 by decide),scratch.ld (d:=8*sLen) (by unfold sLen;omega),
+ brun [exec_ldr_w (off:=0) (by decide),exec_ldr_w (off:=4) (by decide),base,ptr,hdr_enc (show sLen<32 by decide),scratch.ld (d:=8*sLen) (by unfold sLen;omega_using [room]),
   width,readLen,readBits,length,policy,widen32 lenFit,widen32 bitsFit]
 
 theorem policyRecordTail {s : State} {rec : Addr} {len n : Nat}
@@ -44,7 +44,7 @@ theorem policyRecordTail {s : State} {rec : Addr} {len n : Nat}
  have triple : (BitVec.ofNat 64 len <<< 1)+BitVec.ofNat 64 len=BitVec.ofNat 64 (3*len) := by
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_add,BitVec.toNat_shiftLeft,BitVec.toNat_ofNat,Nat.shiftLeft_eq]
-  omega
+  omega_using []
  refine WP.keep [.x2,.x3,.x4,.x5,.x7] ?_ rfl rfl rfl
  unfold Policy.recordTail
  brun [exec_ldr_w (off:=0) (by decide),ptr,count,back,readLen,length,widen32 lenFit,triple,

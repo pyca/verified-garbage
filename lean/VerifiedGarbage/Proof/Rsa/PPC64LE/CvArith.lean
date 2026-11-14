@@ -148,10 +148,10 @@ theorem arith_ok [InvLaw] {s : State} {B : Addr} {Z w Nv P Q Dd pL qL : Nat} (h 
     refine ⟨g, ?_⟩
     by_cases hs : KeyCheck.Shape w pL qL
     · obtain ⟨dv, lt⟩ := vs hs
-      refine ⟨num t2.mem B w 3 * 2 ^ (5 * (3 * (w / 4) + 2)) % modOf P, dv, Nat.mod_lt _ (by omega), fun hb => ?_⟩
+      refine ⟨num t2.mem B w 3 * 2 ^ (5 * (3 * (w / 4) + 2)) % modOf P, dv, Nat.mod_lt _ (by omega_using [hm]), fun hb => ?_⟩
       have hmw : modOf P < 2 ^ (64 * (w / 4)) := by
         obtain ⟨p8, hpw2, -, -⟩ := hs
-        exact modOf_lt (by omega) (by rw [show 64 * (w / 4) = 8 * pL by omega]; exact hP)
+        exact modOf_lt (by omega_using [hw]) (by rw [show 64 * (w / 4) = 8 * pL by omega_using [p8, hpw2]]; exact hP)
       rw [← e8] at lt hmw ⊢
       exact y4 hs lt hmw (by rw [e8]; exact hb hs)
     · obtain ⟨dv, lt⟩ := vn hs

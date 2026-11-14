@@ -65,7 +65,7 @@ theorem head_rel {H₁ H₂ : Block} {x₁ x₂ : List Byte} {D : Addr} {n : Nat
     · rw [h.1.env.rsp, h.2.env.rsp]
   refine rel_ite_e (fun _ _ h => (h.1.2 rfl).2.1) ?_ (RelCT.block_nil fun _ _ _ => trivial)
   refine (ghash1_rel v L hyo .r14 32 (.inl rfl) (by decide) (P := St + BitVec.ofNat 64 32)
-    (L.st_st (.inl (by omega)) (by omega) (by decide)) (L.st_gh G.fit (by decide))
+    (L.st_st (.inl (by omega_using [hyo])) (by omega_using [hyo]) (by decide)) (L.st_gh G.fit (by decide))
     (L.stk_st (by decide)) (gh1Check_r14_32 hyo) (F₁ := (Env Ctx St W SP · N)) (F₂ := (Env Ctx St W SP · N))
     fun s hs => ?_).mono (fun _ _ h => ⟨h.1.2.1, h.1.2.2⟩) fun _ _ h => h
   have he : Env Ctx St W SP s N := hs.elim id id
@@ -109,7 +109,7 @@ theorem whole_rel {H₁ H₂ : Block} {x₁ x₂ : List Byte} {D : Addr} {n : Na
   have hA : ∀ s, Sp s → WP isa (.block (ptr .rdi .r13 240 ++ ptr .rsi .r14 yo ++ ptr .r8 .r15 scrO)) s Ar :=
     fun s ⟨he, hd, hj, hdx, hcx⟩ => by
       have h13 := he.r13; have h14 := he.r14; have h15 := he.r15
-      have hdj := (hd.drop hj).take (k := 16 * ((n - j) / 16)) (by omega)
+      have hdj := (hd.drop hj).take (k := 16 * ((n - j) / 16)) (by omega_using [])
       obtain ⟨s₂, run₂, hdi, hsi, h8, hg₂, -, hrd₂, hwr₂⟩ : ∃ s₂, runBlock isa
           (ptr .rdi .r13 240 ++ ptr .rsi .r14 yo ++ ptr .r8 .r15 scrO) s = some s₂ ∧
           s₂.gpr .rdi = Ctx + BitVec.ofNat 64 240 ∧ s₂.gpr .rsi = St + BitVec.ofNat 64 yo ∧
@@ -129,8 +129,8 @@ theorem whole_rel {H₁ H₂ : Block} {x₁ x₂ : List Byte} {D : Addr} {n : Na
         rcases hr with rfl | rfl | rfl | rfl <;> exact hg₂ _ (by decide) (by decide) (by decide)) hrd₂ hwr₂
       refine WP.of_runBlock ⟨s₂, run₂, he₂, hdi, hsi,
         (by rw [hg₂ _ (by decide) (by decide) (by decide), hdx]),
-        (by rw [hg₂ _ (by decide) (by decide) (by decide), hcx]), h8, (by have := hdj.lt; omega),
-        (hdj.st.sub_right (Lay.stSub (by omega))).symm, Lay.gh_of_w G.fit hdj.w, hdj.stk,
+        (by rw [hg₂ _ (by decide) (by decide) (by decide), hcx]), h8, (by have := hdj.lt; omega_using [this]),
+        (hdj.st.sub_right (Lay.stSub (by omega_using [hyo]))).symm, Lay.gh_of_w G.fit hdj.w, hdj.stk,
         (by rw [hrd₂, hwr₂]; exact hdj.rd)⟩
   have hc : ∃ hc, (taint.check (Taint.ofRegs [.r13, .r14, .r15, .rsp])
       (.block (ptr .rdi .r13 240 ++ ptr .rsi .r14 yo ++ ptr .r8 .r15 scrO)) hc).isSome = true := by
@@ -193,8 +193,8 @@ theorem absorb_rel {H₁ H₂ : Block} {x₁ x₂ : List Byte} {D : Addr} {n : N
       (AbsIn Ctx St W SP yo H₁ x₁ D n s₁ N ∧ s₁.zf = some (decide (n = 0))) ∧
       AbsIn Ctx St W SP yo H₂ x₂ D n s₂ N ∧ s₂.zf = some (decide (n = 0))) ∧ s₁.zf = some false)
       absRegs [] true (fun _ _ h => hag _ _ ⟨h.1.2.1.1, h.1.2.2.1⟩) ⟨_, by taint_decide⟩)
-    (fun _ _ h => ⟨h.1.2.1.1, h.1.2.2.1⟩) (fun s h => hT (r := .rbx) s h h.rbx (by omega))
-    (fun s h => hT (r := .rbx) s h h.rbx (by omega))
+    (fun _ _ h => ⟨h.1.2.1.1, h.1.2.2.1⟩) (fun s h => hT (r := .rbx) s h h.rbx (by omega_using []))
+    (fun s h => hT (r := .rbx) s h h.rbx (by omega_using []))
   -- What each run reaches after filling the buffer: the same `j`.
   have i₂ : RelCT isa (fun s₁ s₂ => ((∀ r ∈ ([] : List Reg), s₁.gpr r = s₂.gpr r) ∧
         (true = true → s₁.cf = s₂.cf ∧ s₁.zf = s₂.zf ∧ s₁.sf = s₂.sf ∧ s₁.of = s₂.of)) ∧
@@ -208,18 +208,18 @@ theorem absorb_rel {H₁ H₂ : Block} {x₁ x₂ : List Byte} {D : Addr} {n : N
       · exact RelCT.of_false fun _ _ h => by have := h.1.2.1.2.symm.trans h.2; simp [ho] at this
       refine RelCT.block_nil fun s₁ s₂ h => ⟨0, s₁.mem, s₂.mem, ?_, ?_⟩
       · have h₂ := h.1.2.1.1
-        exact ⟨h₂.env, by omega, by rw [h₂.r12]; simp, by rw [h₂.rbp, Nat.sub_zero], h₂.data, h₂.hH,
-          fun ha => by simpa [bytesAt] using ha, .inr (by omega), Frame.refl _ _⟩
+        exact ⟨h₂.env, by omega_using [], by rw [h₂.r12]; simp, by rw [h₂.rbp, Nat.sub_zero], h₂.data, h₂.hH,
+          fun ha => by simpa [bytesAt] using ha, .inr (by omega_using [ho]), Frame.refl _ _⟩
       · have h₂ := h.1.2.2.1
-        exact ⟨h₂.env, by omega, by rw [h₂.r12]; simp, by rw [h₂.rbp, Nat.sub_zero], h₂.data, h₂.hH,
-          fun ha => by simpa [bytesAt] using ha, .inr (by omega), Frame.refl _ _⟩
+        exact ⟨h₂.env, by omega_using [], by rw [h₂.r12]; simp, by rw [h₂.rbp, Nat.sub_zero], h₂.data, h₂.hH,
+          fun ha => by simpa [bytesAt] using ha, .inr (by omega_using [hx, ho]), Frame.refl _ _⟩
     · by_cases ho : x₁.length % 16 = 0
       · exact RelCT.of_false fun _ _ h => by have := h.1.2.1.2.symm.trans h.2; simp [ho] at this
       refine (rel_wp ((head_rel v L hyo (H₁ := H₁) (H₂ := H₂) (D := D) (n := n) hx).mono ?_ fun _ _ h => h) ?_
         (G₁ := fun s => ∃ m, AbsMid Ctx St W SP yo H₁ x₁ D n m (min (16 - x₁.length % 16) n) s N gs)
         (G₂ := fun s => ∃ m, AbsMid Ctx St W SP yo H₂ x₂ D n m (min (16 - x₂.length % 16) n) s N gs)
         (fun s h => WP.mono (head_ok v L hyo h hn0 ho) fun _ h => ⟨_, h⟩)
-        (fun s h => WP.mono (head_ok v L hyo h hn0 (by omega)) fun _ h => ⟨_, h⟩)).mono (fun _ _ h => h)
+        (fun s h => WP.mono (head_ok v L hyo h hn0 (by omega_using [hx, ho])) fun _ h => ⟨_, h⟩)).mono (fun _ _ h => h)
         fun _ _ ⟨_, ⟨m₁, h₁⟩, ⟨m₂, h₂⟩⟩ => ⟨_, m₁, m₂, h₁, by rw [hx]; exact h₂⟩
       · exact fun _ _ h => ⟨h.1.2.1.1, h.1.2.2.1⟩
       · exact fun _ _ h => ⟨h.1.2.1.1, h.1.2.2.1⟩

@@ -71,7 +71,7 @@ theorem CvS.arr {I : CvIn} {m₀ : Mem} {s t : State} (h : CvS I m₀ s) {j n : 
     (k : Keep regs s t) (hr : .rdi ∉ regs ∧ .rsp ∉ regs) : CvS I m₀ t :=
   h.step (Frm.of_outside ho (List.mem_singleton_self _)) (fun r hr => by
     rw [List.mem_singleton.mp hr]; exact Mut.ofSlot _ _ _) (fun r hr => by
-    rw [List.mem_singleton.mp hr]; have := h.ws.sl hj; dsimp only; omega) k hr
+    rw [List.mem_singleton.mp hr]; have := h.ws.sl hj; dsimp only; omega_using [hn, this]) k hr
 
 /-! ## Masks -/
 
@@ -102,9 +102,9 @@ theorem eqA_ok {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w) {a b : Nat} (
     ⟨hs₂.congr k.2.2, k.mono (by decide), hm, h14, by
       rw [(k.gpr (by decide) : t.gpr .rbp = s₂.gpr .rbp), hbp]
       exact ⟨fun _ i hi => absurd hi (Nat.not_lt_zero _), fun _ => rfl⟩⟩
-  refine WP.mono (wordLoop_ok (start := 0) (N := w) (by have := h.w1; omega) (by have := h.w2; omega) _ h0
+  refine WP.mono (wordLoop_ok (start := 0) (N := w) (by have := h.w1; omega_using [this]) (by have := h.w2; omega_using [this]) _ h0
     (fun j _ hj t hI => xorStep_ok ((k₂.gpr (by decide)).trans hbx) ((k₂.gpr (by decide)).trans h10)
-      ((k₂.gpr (by decide)).trans h12) (by have := h.w2; omega) (by omega) (by omega) hj hI)) fun t hI => ?_
+      ((k₂.gpr (by decide)).trans h12) (by have := h.w2; omega_using [this]) (by omega_using [sa]) (by omega_using [sb]) hj hI)) fun t hI => ?_
   rw [m₂, m₁] at hI
   refine ⟨?_, by rw [hI.mem, m₂, m₁], (k12.trans hI.keep).mono (by decide)⟩
   rw [hI.val]
@@ -113,7 +113,7 @@ theorem eqA_ok {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w) {a b : Nat} (
 theorem decide_lt_one' (x : BitVec 64) : decide (x.toNat < (1 : BitVec 64).toNat) = decide (x = 0) := by
   rw [Bool.eq_iff_iff, decide_eq_true_iff, decide_eq_true_iff, ← BitVec.toNat_inj,
     show (1 : BitVec 64).toNat = 1 from rfl, show (0 : BitVec 64).toNat = 0 from rfl]
-  constructor <;> intro h <;> omega
+  constructor <;> intro h <;> omega_using [h]
 
 /-- `andZero`: the mask of `rbp = 0` and'ed into `sMask`. -/
 theorem andZero_ok {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w) {c : Bool}
@@ -121,8 +121,8 @@ theorem andZero_ok {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w) {c : Bool
     (hz : s.gpr .rbp = 0 ↔ z) :
     WP isa (.block andZero) s fun t =>
       t.mem = s.mem.writeW (off B (8 * Impl.Bignum.X86_64.Public.sMask)) (mask (c && decide z)) ∧ Keep [.rbp] s t := by
-  have hl := h.scr.ld (d := 8 * Impl.Bignum.X86_64.Public.sMask) (by have := h.h256; unfold Impl.Bignum.X86_64.Public.sMask sFn; omega)
-  have hst := h.scr.st (d := 8 * Impl.Bignum.X86_64.Public.sMask) (by have := h.h256; unfold Impl.Bignum.X86_64.Public.sMask sFn; omega)
+  have hl := h.scr.ld (d := 8 * Impl.Bignum.X86_64.Public.sMask) (by have := h.h256; unfold Impl.Bignum.X86_64.Public.sMask sFn; omega_using [this])
+  have hst := h.scr.st (d := 8 * Impl.Bignum.X86_64.Public.sMask) (by have := h.h256; unfold Impl.Bignum.X86_64.Public.sMask sFn; omega_using [this])
   have e : decide (s.gpr .rbp = 0) = decide z := by
     by_cases hz' : z
     · rw [decide_eq_true hz', decide_eq_true (hz.mpr hz')]
@@ -148,7 +148,7 @@ theorem setOneA_ok {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w) {j : Nat}
   have hs₂ := h.scr.congr (k₁.trans k₂).2.2
   refine WP.mono (WP.keep [.rax] (Q := fun t => t.mem = s.mem.writeW (off B (slot w j)) (1 : BitVec 64)) (by
     xrun [State.ea, at0, hbx, show BitVec.ofInt 64 0 = 0#64 from rfl, BitVec.add_zero,
-      hs₂.st (d := slot w j) (by omega), m₂, m₁]
+      hs₂.st (d := slot w j) (by omega_using [sj]), m₂, m₁]
     rfl) rfl) fun t ⟨mt, k₃⟩ => ⟨mt, ((k₁.trans k₂).trans k₃).mono (by decide)⟩
 
 end VG.Proof.Rsa.X86_64

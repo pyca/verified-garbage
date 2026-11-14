@@ -46,26 +46,26 @@ theorem zstores_ok {s : State} {scr : Addr} (h15 : s.gpr .x15 = scr) (h14 : s.gp
   | 0, _ => WP.block_nil ⟨rfl, rfl, rfl, rfl, rfl, Frame.refl _ _, fun _ h => by omega⟩
   | n + 1, hn => by
     rw [List.range_succ, List.map_append, List.map_singleton, WP.block_append_iff]
-    refine WP.mono (zstores_ok h15 h14 hw n (by omega)) fun u hu => ?_
+    refine WP.mono (zstores_ok h15 h14 hw n (by omega_using [hn])) fun u hu => ?_
     have dest : InRegions u.wr (u.gpr .x15 + BitVec.ofNat 64 (8 * n)) 8 := by
       rw [hu.gpr, hu.wr, h15]
-      exact ⟨_, hw, Offset.contains_base _ (by omega) (by omega)⟩
+      exact ⟨_, hw, Offset.contains_base _ (by omega_using [hn]) (by omega_using [hn])⟩
     apply WP.of_runBlock
     have e15 : u.gpr .x15 = scr := by rw [hu.gpr, h15]
     have e14 : u.gpr .x14 = 0 := by rw [hu.gpr, h14]
     simp only [runBlock_cons]
-    rw [exec_str_x ⟨by omega, by omega⟩ dest]
+    rw [exec_str_x ⟨by omega_using [], by omega_using [hn]⟩ dest]
     simp only [runStep_some, runBlock_nil, Option.some.injEq, exists_eq_left']
     rw [e15, e14]
     refine ⟨hu.rd, hu.wr, hu.sp, hu.v, hu.gpr, ?_, fun j hj => ?_⟩
     · exact hu.frame.writeW (List.mem_singleton_self _) _
-        (Offset.contains_base _ (by omega) (by omega))
+        (Offset.contains_base _ (by omega_using [hn]) (by omega_using [hn]))
     · show (u.mem.writeW (scr + BitVec.ofNat 64 (8 * n)) (0 : BitVec 64)).readW
         (scr + BitVec.ofNat 64 (8 * j)) 64 = 0
       by_cases hjn : j = n
       · subst j; exact Mem.readW_writeW_self64 _ _ _
-      · rw [Mem.readW_writeW_sep (Offset.sep _ (by omega) (by omega) (by omega)) (by decide)]
-        exact hu.words j (by omega)
+      · rw [Mem.readW_writeW_sep (Offset.sep _ (by omega_using [hjn]) (by omega_using [hn, hj]) (by omega_using [hn])) (by decide)]
+        exact hu.words j (by omega_using [hj, hjn])
 
 theorem zero_state {m : Mem} {p : Addr} (h : ∀ j < 25, m.readW (p + BitVec.ofNat 64 (8 * j)) 64 = 0) :
     stateAt m p = Spec.Sha3.zero := by
@@ -89,7 +89,7 @@ theorem zeroStores_run {s : State} {scr : Addr} (h15 : s.gpr .x15 = scr)
       stateAt t.mem scr = Spec.Sha3.zero := by
   rw [zeroStores, show ∀ (i : Instr) is, i :: is = [i] ++ is from fun _ _ => rfl, WP.block_append_iff]
   refine WP.mono (movz14_ok s) fun w ⟨w14, wm, wrd, wwr, wsp, wv, wg⟩ => ?_
-  refine WP.mono (zstores_ok ((wg _ (by decide)).trans h15) w14 (by rw [wwr]; exact hw) 25 (by omega))
+  refine WP.mono (zstores_ok ((wg _ (by decide)).trans h15) w14 (by rw [wwr]; exact hw) 25 (by omega_using []))
     fun x hx => ⟨hx.rd.trans wrd, hx.wr.trans wwr, hx.sp.trans wsp, hx.v.trans wv,
       fun r hr => by rw [hx.gpr]; exact wg r hr, by rw [← wm]; exact hx.frame, zero_state hx.words⟩
 

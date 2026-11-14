@@ -138,7 +138,7 @@ theorem prefixFRel (hF : Short.ShortFacts) (v : Proof.Aes.X86_64.Ctr32Impl)
   intro Ctx W SP D S R n sl σ σ' h h'
   unfold SealSplit.prefixF SealSplit.preTail
   have hsl : ∀ {σ : State}, PP (CtxMode.preparedN np hpn) Ctx W SP D S R n sl σ → sl < 2 ^ 64 := fun h => by
-    have := h.sl_le; have := h.data.ok.lt; omega
+    have := h.sl_le; have := h.data.ok.lt; omega_arith
   have he : ∀ {σ t : State}, PP (CtxMode.preparedN np hpn) Ctx W SP D S R n sl σ → STs σ t →
       Env Ctx (W + BitVec.ofNat 64 16) W SP t := fun h g => h.env.keep (fun r hr => g.1 r (by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr; rcases hr with rfl | rfl | rfl | rfl <;> decide))
@@ -155,7 +155,7 @@ theorem prefixFRel (hF : Short.ShortFacts) (v : Proof.Aes.X86_64.Ctr32Impl)
   · refine StreamTo.RelCT.of_imp (sl / 16 < 3) (fun _ _ g => by
       have e := g.2; simp only [eval, g.1.1.2.1] at e; simpa using e) fun h4 => ?_
     have tz : ∀ {σ t : State}, ST3 sl σ t → WP isa (.block [.alu .test .rax (.reg .rax)]) t (STz sl σ) :=
-      fun ⟨ax, _, g, m, rd, wr⟩ => WP.mono (tst_ok (q := sl / 16) (by omega) ax) fun _ ⟨zf, g', m', rd', wr'⟩ =>
+      fun ⟨ax, _, g, m, rd, wr⟩ => WP.mono (tst_ok (q := sl / 16) (by omega_using [h4]) ax) fun _ ⟨zf, g', m', rd', wr'⟩ =>
         ⟨by rw [g' .rax]; exact ax, zf, fun r hr => (g' r).trans (g r hr), m'.trans m, rd'.trans rd, wr'.trans wr⟩
     refine RelCT.seq (step [.rax] tst_check (F₁ := ST3 sl σ) (F₂ := ST3 sl σ')
       (G₁ := STz sl σ) (G₂ := STz sl σ')
@@ -170,7 +170,7 @@ theorem prefixFRel (hF : Short.ShortFacts) (v : Proof.Aes.X86_64.Ctr32Impl)
           mid2_zero ⟨he h' g.1.2.2.2, g.1.2.1, g.1.2.2.1, g.1.2.2.2.2⟩ h0⟩) fun _ _ g => g
     · refine StreamTo.RelCT.of_imp (sl / 16 ≠ 0) (fun _ _ g => by
         have e := g.2; simp only [eval, g.1.1.2.1] at e; simpa using e) fun h0 => ?_
-      exact sPath_rel h h' hF v ⟨by omega, by omega⟩ fun _ _ g => ⟨g.1.1.2.2, g.1.2.2.2⟩
+      exact sPath_rel h h' hF v ⟨by omega_using [h0], by omega_using [h4]⟩ fun _ _ g => ⟨g.1.1.2.2, g.1.2.2.2⟩
   · exact RelCT.seq ((callPart_rel h h' T).mono (fun _ _ g =>
       ⟨⟨he h g.1.1.2.2, g.1.1.1, g.1.1.2.2.2⟩, ⟨he h' g.1.2.2.2, g.1.2.1, g.1.2.2.2.2⟩⟩) fun _ _ g => g)
       (tail_rel h h')

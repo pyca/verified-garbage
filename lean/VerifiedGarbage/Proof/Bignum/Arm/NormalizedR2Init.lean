@@ -99,9 +99,9 @@ theorem normalizedR2Constants_ok (s : State) {base : BitVec 32} {len w : Nat}
 theorem normalizedSeed_lt {m w : Nat} (hw : 2 ≤ w) (odd : m % 2 = 1)
     (normalized : 2 ^ (64 * (w - 1)) ≤ m) : 2 ^ (64 * (w - 1)) < m := by
   have even : 2 ^ (64 * (w - 1)) % 2 = 0 := by
-    rw [show 64 * (w - 1) = (64 * (w - 1) - 1) + 1 by omega, Nat.pow_succ, Nat.mul_mod]
+    rw [show 64 * (w - 1) = (64 * (w - 1) - 1) + 1 by omega_using [hw], Nat.pow_succ, Nat.mul_mod]
     simp
-  omega
+  omega_using [odd, normalized, even]
 
 theorem normalizedR2Init_ok (s : State) {base : BitVec 32} {len w : Nat}
     (h : ArithmeticReady base len w s)
@@ -113,9 +113,9 @@ theorem normalizedR2Init_ok (s : State) {base : BitVec 32} {len w : Nat}
   have hw : 2 ≤ w := h.width ▸ h.layout.1
   have fits : arrAt w 8 ≤ 8 * len := h.width ▸ h.layout.2.2.1
   have fit4 := Nat.le_trans (array_end_le (w := w) (j := 4) (k := 8) (by decide)) fits
-  have fit4 : arrAt w 4 + 8 * w ≤ 8 * len := by omega
-  have size : 256 ≤ 8 * len := by simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at fits; omega
-  have odd := numAt_odd_of_inverse s.mem (State.addr base) (by omega : 0 < w) h.inverse
+  have fit4 : arrAt w 4 + 8 * w ≤ 8 * len := by omega_using [fit4]
+  have size : 256 ≤ 8 * len := by simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at fits; omega_using [fits]
+  have odd := numAt_odd_of_inverse s.mem (State.addr base) (by omega_using [hw] : 0 < w) h.inverse
   have strict := normalizedSeed_lt hw odd normalized
   rw [NormalizedR2.init, WP.seq_iff]
   refine WP.mono (normalizedR2Constants_ok s h) ?_
@@ -126,18 +126,18 @@ theorem normalizedR2Init_ok (s : State) {base : BitVec 32} {len w : Nat}
   refine WP.mono (normalizedR2Top_ok u ready.workspace hw fit4 ready.ptr header.count) ?_
   rintro v ⟨memV, restV⟩
   have outside := writeW32_outside u.mem (State.addr base) (d := arrAt w 4 + 8 * (w - 1)) (1#32)
-    (by have := ready.workspace.nowrap; omega)
+    (by have := ready.workspace.nowrap; omega_arith)
   rw [← memV] at outside
-  have outside4 := outside.mono (o' := arrAt w 4) (n' := 8 * w) (by omega) (by omega)
+  have outside4 := outside.mono (o' := arrAt w 4) (n' := 8 * w) (by omega_using []) (by omega_using [hw])
   have frameV := outside_workspace outside4 fit4
-  have keeps := outside_array_keeps outside4 (len := len) (by have := ready.workspace.nowrap; omega)
+  have keeps := outside_array_keeps outside4 (len := len) (by have := ready.workspace.nowrap; omega_using [this])
   have keepV : Rest roundClobbers u v := restV.mono (by decide)
   obtain ⟨readyV, modV⟩ := ready.after_array (by decide : 4 ≠ 0) keeps frameV keepV
     ((restV.gpr .r0 (by decide)).trans ready.ptr)
   have value : numAt v.mem (State.addr base) w 4 = 2 ^ (64 * (w - 1)) := by
-    rw [memV]; exact normalizedSeed_value u.mem (State.addr base) hw (by have hn := ready.workspace.nowrap; simp only [State.addr, BitVec.toNat_setWidth] ; omega) zero
+    rw [memV]; exact normalizedSeed_value u.mem (State.addr base) hw (by have hn := ready.workspace.nowrap; simp only [State.addr, BitVec.toNat_setWidth] ; omega_arith) zero
   have twoV := keeps_array_word (d := 0) (bits := 32) keeps fits
-    (show Operand 7 by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]) (by decide) (by omega)
+    (show Operand 7 by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]) (by decide) (by omega_using [])
   have twoV := congrArg BitVec.toNat twoV
   simp only [Nat.add_zero] at twoV
   let c := (v.mem.readW (off (State.addr base) 208) 32).toNat
@@ -148,7 +148,7 @@ theorem normalizedR2Init_ok (s : State) {base : BitVec 32} {len w : Nat}
     · simp only [c, BitVec.ofNat_toNat, BitVec.setWidth_eq]
   have headerV := nativeHeader_of_layout v.mem base readyV.workspace.nowrap (Nat.le_refl _) readyV.layout
   rw [readyV.width] at headerV
-  refine WP.mono (normalizedR2Count_ok v readyV.workspace (by omega) readyV.ptr headerV.count) ?_
+  refine WP.mono (normalizedR2Count_ok v readyV.workspace (by omega_using [size]) readyV.ptr headerV.count) ?_
   rintro t ⟨memT, restT⟩
   obtain ⟨loopT, frameT, numberT, modT⟩ := loop.after_count memT restT
   exact ⟨loopT, numberT.trans value, modT.trans (modV.trans modulus),

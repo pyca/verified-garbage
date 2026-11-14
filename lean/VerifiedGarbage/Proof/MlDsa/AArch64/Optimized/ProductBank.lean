@@ -17,7 +17,7 @@ def inverseProductOps : List (VReg × Nat) :=
 
 theorem inverseProduct_safe {j : Nat} (hj : j<8) :
     Inverse.vr j∉productTemps ∧ Inverse.vr j≠.v30 ∧ Inverse.vr j≠.v31 := by
-  have h : j=0 ∨ j=1 ∨ j=2 ∨ j=3 ∨ j=4 ∨ j=5 ∨ j=6 ∨ j=7 := by omega
+  have h : j=0 ∨ j=1 ∨ j=2 ∨ j=3 ∨ j=4 ∨ j=5 ∨ j=6 ∨ j=7 := by omega_using [hj]
   rcases h with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide
 
 /-- All eight inputs are loaded before any inverse layer starts. Memory and
@@ -42,7 +42,7 @@ theorem inverseProductLoads_ok {s : State} (hc : ProductConstants s)
     obtain ⟨j,hj,h⟩ := List.mem_map.mp hm
     cases h
     have hj' := List.mem_range.mp hj
-    exact ⟨by omega,by omega,hr j hj'⟩
+    exact ⟨by omega_using [],by omega_using [hj'],hr j hj'⟩
   have eqcode : inverseProductOps.flatMap (fun p => productLoad p.1 p.2)=inverseProductLoads := by
     simp only [inverseProductOps,inverseProductLoads,List.flatMap_map]
   rw [← eqcode]

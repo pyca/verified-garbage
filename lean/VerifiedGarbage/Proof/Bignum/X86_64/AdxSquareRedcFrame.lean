@@ -32,22 +32,22 @@ theorem redcRow_frame {s : State} {B : Addr} {Z e w : Nat} {minv : BitVec 64}
   have hn := hs.nowrap
   have hN := slot_le (w := w) (show aN < 8 by decide)
   unfold AdxSquare.redcRow
-  refine WP.seq (WP.mono (redcHead_ok hs hdi hH h8 (by omega) hZ) fun s₁ ⟨_, hm₁, k₁⟩ => ?_)
+  refine WP.seq (WP.mono (redcHead_ok hs hdi hH h8 (by omega_using [heZ]) hZ) fun s₁ ⟨_, hm₁, k₁⟩ => ?_)
   refine WP.seq (WP.mono (AdxSquareWide.row_ok (hs.congr k₁.2.2) ((k₁.gpr (by decide)).trans h8)
-    ((k₁.gpr (by decide)).trans h9) ((k₁.gpr (by decide)).trans hbp) (by omega) (by omega)
-    (by omega) (by omega) (by omega)) fun s₂ ⟨_, ho, h14, k₂⟩ => ?_)
+    ((k₁.gpr (by decide)).trans h9) ((k₁.gpr (by decide)).trans hbp) (by omega_using [hw1]) (by omega_using [hw])
+    (by omega_using [heZ]) (by omega_using [heZ, hsep]) (by omega_using [hsep])) fun s₂ ⟨_, ho, h14, k₂⟩ => ?_)
   rw [hm₁] at ho
   have k12 := k₁.trans k₂
   refine WP.seq (WP.mono (redcTail_ok (hs.congr k12.2.2) ((k12.gpr (by decide)).trans h8)
-    h14 (by omega)) fun s₃ ⟨lo, hm₃, _, _, h8₃, k₃⟩ => ?_)
+    h14 (by omega_using [heZ])) fun s₃ ⟨lo, hm₃, _, _, h8₃, k₃⟩ => ?_)
   have out₃ : Outside B (e + 8 * w) 8 s₂.mem s₃.mem := by
-    rw [hm₃]; exact writeW_outside _ _ _ (by omega)
+    rw [hm₃]; exact writeW_outside _ _ _ (by omega_using [heZ, hn])
   have allout : Outside B e (8 * (w + 1)) s.mem s₃.mem :=
-    (ho.mono (o' := e) (n' := 8 * (w + 1)) (Nat.le_refl _) (by omega)).trans
-      (out₃.mono (o' := e) (n' := 8 * (w + 1)) (by omega) (by omega))
+    (ho.mono (o' := e) (n' := 8 * (w + 1)) (Nat.le_refl _) (by omega_using [])).trans
+      (out₃.mono (o' := e) (n' := 8 * (w + 1)) (by omega_using []) (by omega_using []))
   have k123 := k12.trans k₃
   refine WP.mono (VG.Proof.Bignum.X86_64.rowEnd_ok (hs.congr k123.2.2)
-    ((k123.gpr (by decide)).trans hdi) (hH.of_outside allout he) hZ h8₃ (by omega))
+    ((k123.gpr (by decide)).trans hdi) (hH.of_outside allout he) hZ h8₃ (by omega_using [hw1, heZ]))
     fun t ⟨hz, hm, h8', kt⟩ => ⟨?_, h8', hz, (k123.trans kt).mono (by decide)⟩
   rw [hm]; exact allout
 

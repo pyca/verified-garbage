@@ -113,10 +113,10 @@ theorem two_loop {α : Type} {Φ : α → Nat → State → Prop} {Ψ : α → S
       rintro s₁ s₂ ⟨⟨a, j⟩, ⟨hj, hn, e₁, f₁, g₁⟩, ⟨-, -, e₂, f₂, g₂⟩⟩
       refine ⟨by rw [e₁, e₂], fun h => ?_, fun h => ?_⟩
       · have : ¬ j + 1 < N a := by rw [e₁] at h; simpa using h
-        have hjN : j + 1 = N a := by simp only at hj this; omega
+        have hjN : j + 1 = N a := by simp only at hj this; omega_using [hj, this]
         exact ⟨a, g₁ hjN, g₂ hjN⟩
       · have hlt : j + 1 < N a := by rw [e₁] at h; simpa using h
-        exact ⟨N a - (j + 1), by simp only at hn; omega, a, j + 1, rfl, hlt, f₁ hlt, f₂ hlt⟩)
+        exact ⟨N a - (j + 1), by simp only at hn; omega_using [hn, hlt], a, j + 1, rfl, hlt, f₁ hlt, f₂ hlt⟩)
   intro s₁ s₂ t₁ t₂ s₁' s₂' hp e₁ e₂
   obtain ⟨a, ⟨h0, h₁⟩, ⟨-, h₂⟩⟩ := hp
   exact key (N a - 0) _ _ _ _ _ _ ⟨a, 0, rfl, h0, h₁, h₂⟩ e₁ e₂
@@ -200,16 +200,16 @@ theorem loop_two : RelCT isa (Two fun a s => 0 < N a ∧ LoopPt (a, 0) s) (.loop
   refine ⟨?_, fun hlt => ⟨s, M, S, hM, I', ?_, ?_, hlt⟩, fun he => ⟨s, M, S, hM, he ▸ I'⟩⟩
   · rw [eval_nonzero, hz]
     by_cases h : (kept s (j + 1)).length = psLen s ∨ j + 1 = rl s
-    · rw [decide_eq_true h, decide_eq_false (by have := hst.mp h; omega)]; rfl
+    · rw [decide_eq_true h, decide_eq_false (by have := hst.mp h; omega_using [hst, h])]; rfl
     · rw [decide_eq_false h, decide_eq_true (by
         have : N a ≠ j + 1 := fun e => h (hst.mpr e)
-        omega)]; rfl
+        omega_using [hj, hst, h])]; rfl
   · show j + 1 < rl s
-    have := S.nLe; omega
+    have := S.nLe; omega_using [hi, hst, hlt]
   · show (kept s (j + 1)).length < psLen s
     by_cases hn : (kept s (j + 1)).length = psLen s
-    · have := hst.mp (.inl hn); omega
-    · omega
+    · have := hst.mp (.inl hn); omega_using [hst, hk, hlt]
+    · omega_using [hk, hn]
 
 /-- Before the scan. -/
 def ScanPt (a t : State) : Prop := ∃ s, PR a s ∧ Mm s t.mem ∧ At s t.mem 0 t
@@ -229,11 +229,11 @@ theorem scan_two : RelCT isa (Two ScanPt) scan (Two ScanDone) := by
     have hN : 0 < N a := by
       rw [← S₁.scanEq]
       exact VG.Proof.RsaPkcs1Enc.lt_scanLen (i := 0)
-        (show (kept s₁ 0).length < psLen s₁ by rw [kept_zero, List.length_nil]; omega)
+        (show (kept s₁ 0).length < psLen s₁ by rw [kept_zero, List.length_nil]; omega_using [hP₁])
         (by rw [randB_length]; exact hl')
-    refine ⟨a, ⟨hN, s₁, t₁.mem, S₁, M₁, I₁, hl', by rw [kept_zero, List.length_nil]; omega, hN⟩,
+    refine ⟨a, ⟨hN, s₁, t₁.mem, S₁, M₁, I₁, hl', by rw [kept_zero, List.length_nil]; omega_using [hP₁], hN⟩,
       ⟨hN, s₂, t₂.mem, S₂, M₂, I₂, by rw [S₂.rlEq, ← S₁.rlEq]; exact hl',
-        by rw [kept_zero, List.length_nil]; omega, hN⟩⟩
+        by rw [kept_zero, List.length_nil]; omega_using [hP₂], hN⟩⟩
   · refine two_post (nil_taint fun a t₁ t₂ ⟨⟨s₁, S₁, _, I₁⟩, _⟩ ⟨⟨s₂, S₂, _, I₂⟩, _⟩ =>
       ⟨by rw [I₁.sp, I₂.sp, S₁.fbEq, S₂.fbEq], fun _ h => absurd h List.not_mem_nil⟩)
       fun a t ⟨⟨s, S, hM, I⟩, e⟩ => WP.block_nil ⟨s, t.mem, S, hM, ?_⟩
@@ -259,8 +259,8 @@ theorem callE_bytes {s w : State} (hp : RPre s) {i : Nat} (A : Args s i w) :
   rw [callE_gpr s w (r := .r5), callE_gpr s w (r := .r6), callE_gpr s w (r := .r7), callE_gpr s w (r := .r8),
     A.g5, A.g6, A.g7, A.g8, a4, a5]
   simp only [callArg]
-  refine ⟨bytes_frame A.fr (fun r hr => ?_) (by have := hp.wN; omega),
-    bytes_frame A.fr (fun r hr => ?_) (by have := hp.wE; omega), words_frame A.fr fun r hr => ?_⟩ <;>
+  refine ⟨bytes_frame A.fr (fun r hr => ?_) (by have := hp.wN; omega_using []),
+    bytes_frame A.fr (fun r hr => ?_) (by have := hp.wE; omega_using []), words_frame A.fr fun r hr => ?_⟩ <;>
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl <;> first
       | exact hp.dKn.symm | exact hp.dTn.symm | exact hp.dKe.symm | exact hp.dTe.symm
@@ -298,7 +298,7 @@ theorem call_two : RelCT isa (Two ArgsPt) encCall fun _ _ => True := by
     · rw [A₁.g8, A₂.g8, S₁.gprEq, S₂.gprEq]
     · rw [A₁.g9, A₂.g9, S₁.gprEq, S₂.gprEq]
     · rw [A₁.g10, A₂.g10, S₁.argEq, S₂.argEq]
-  · rcases (by omega : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4 ∨ j = 5) with rfl | rfl | rfl | rfl | rfl | rfl
+  · rcases (by omega_using [hj] : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4 ∨ j = 5) with rfl | rfl | rfl | rfl | rfl | rfl
     · rw [a0₁, a0₂]; simp only [callArg, pb, S₁.fbEq, S₂.fbEq]
     · rw [a1₁, a1₂]; simp only [callArg, S₁.psEq, S₂.psEq]
     · rw [a2₁, a2₂]; simp only [callArg, S₁.argEq (j := 3), S₂.argEq (j := 3)]
@@ -352,13 +352,13 @@ theorem reject_two : RelCT isa (Two fun a v => FullPt a v ∧ isa.eval (.zero .d
     fun {a v} ⟨⟨s, M, S, hM, I, ev⟩, e⟩ => by
       have hne : psLen s ≠ (kept s (N a)).length := by
         rw [ev] at e; exact of_decide_eq_false (Option.some.inj e)
-      have hc : (kept s (N a)).length < psLen s := by have := I.hc; omega
+      have hc : (kept s (N a)).length < psLen s := by have := I.hc; omega_using [hne, this]
       refine ⟨s, M, S, hM, I, ?_, hc⟩
       have hle := S.nLe
       by_contra hlt
       have := VG.Proof.RsaPkcs1Enc.lt_scanLen (n := psLen s) (rand := randB s) (i := N a) hc
         (by rw [randB_length]; omega)
-      rw [S.scanEq] at this; omega
+      rw [S.scanEq] at this; omega_using [this]
   refine two_post (reject_taint fun a v₁ v₂ h₁ h₂ => ?_) fun a v h => ?_
   · obtain ⟨s₁, _, S₁, _, I₁, -, -⟩ := rej h₁
     obtain ⟨s₂, _, S₂, _, I₂, -, -⟩ := rej h₂

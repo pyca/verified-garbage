@@ -57,8 +57,8 @@ theorem copyWorkspaceWord_ok {x : BitVec 32} {s₀ s : State} (hc : Ctx x s)
   refine ⟨⟨fun r hr => by rw [hu.gpr, ht.other r hr, hk.gpr r hr],
     by rw [hu.rd, ht.rd, hk.rd], by rw [hu.wr, ht.wr, hk.wr], ?_⟩, fun j hj => ?_⟩
   · rw [hm]
-    exact frame_write1 (frameWiden hk.frame hc.fit (Nat.le_refl _) (by omega) (by omega_using [ho, hn]))
-      hc.fit (by omega_using [ho, hn]) (by omega) (by omega) _
+    exact frame_write1 (frameWiden hk.frame hc.fit (Nat.le_refl _) (by omega_using []) (by omega_using [ho, hn]))
+      hc.fit (by omega_using [ho, hn]) (by omega_using []) (by omega_using []) _
   · rw [hm]
     by_cases he : j = n
     · subst j; exact wd_write_self _ _ _ _
@@ -77,8 +77,8 @@ theorem copyWorkspaceWords_ok {x : BitVec 32} {s : State} (hc : Ctx x s)
   | 0, _ => WP.block_nil ⟨CopyKeep.refl _ _ _ _, fun j hj => by omega⟩
   | n + 1, hn => by
     rw [workspaceCopyWords, List.range_succ, List.flatMap_append, List.flatMap_singleton, WP.block_append_iff]
-    refine WP.mono (copyWorkspaceWords_ok hc src dst hs hd sa da a o total hsa hda ha ho hsep n (by omega))
+    refine WP.mono (copyWorkspaceWords_ok hc src dst hs hd sa da a o total hsa hda ha ho hsep n (by omega_using [hn]))
       fun t ⟨hk, hv⟩ => ?_
-    exact copyWorkspaceWord_ok (hk.ctx hc) src dst hs hd sa da a o n total hsa hda ha ho (by omega) hsep hk hv
+    exact copyWorkspaceWord_ok (hk.ctx hc) src dst hs hd sa da a o n total hsa hda ha ho (by omega_using [hn]) hsep hk hv
 
 end VG.Proof.Ed25519.X86

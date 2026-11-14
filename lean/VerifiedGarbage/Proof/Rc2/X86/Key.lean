@@ -38,8 +38,8 @@ theorem keyTaint_wf {s : State} (h : keyContract.pre s) : VG.X86.Taint.Wf keyTai
     fun _ h => (List.not_mem_nil h).elim⟩
   simp only [keyTaint, wr, List.mem_cons, List.not_mem_nil, or_false]
   rintro r (rfl | rfl)
-  · exact Taint.frame_disjoint (n := 20) (by omega) ro ao
-  · exact Taint.frame_disjoint (n := 20) (by omega) rsc asc
+  · exact Taint.frame_disjoint (n := 20) (by omega_using [spfit]) ro ao
+  · exact Taint.frame_disjoint (n := 20) (by omega_using [spfit]) rsc asc
 
 theorem keyTaint_agree {s₁ s₂ : State} (h₁ : keyContract.pre s₁) (h₂ : keyContract.pre s₂)
     (hp : keyContract.pub s₁ s₂) : VG.X86.Taint.Agree keyTaint s₁ s₂ := by
@@ -56,7 +56,7 @@ theorem keyTaint_agree {s₁ s₂ : State} (h₁ : keyContract.pre s₁) (h₂ :
     rw [Taint.argByte_eq (fit _ h₁) h4 hk, Taint.argByte_eq (fit _ h₂) h4 hk,
       Mem.readW_byte s₁.mem _ (Nat.mod_lt _ (by decide)),
       Mem.readW_byte s₂.mem _ (Nat.mod_lt _ (by decide))]
-    exact congrArg _ (args ((k - 4) / 4) (by omega))
+    exact congrArg _ (args ((k - 4) / 4) (by omega_using [hk]))
 
 theorem expandKey_constantTime : ConstantTime isa keyContract.pre keyContract.pub expandKey := by
   exact VG.Taint.constantTime (A := VG.X86.sseTaint) keyTaint (fun _ _ h₁ h₂ hp => keyTaint_agree h₁ h₂ hp)

@@ -139,14 +139,14 @@ theorem patch (d : Spec.TripleDes.Direction) (s b : State) (hv : Mem) (u : Nat �
     (contract d).post s (b.patch (hole (s.gpr .rsp)) hv u) := by
   obtain ⟨-, hwr, -, -, -, -, -, fit⟩ := (implies8 d).pre s hs
   have hb := Clear.wr_bytes (Sig.clear_of_pre hs) (p := s.gpr .rsi) (n := 8 * (s.gpr .rdx).toNat)
-    (by rw [hwr]; simp) (by omega)
+    (by rw [hwr]; simp) (by omega_using [fit])
   refine Eq.trans ?_ hp
   simp only [Spec.TripleDes.blocksAt, Spec.TripleDes.blockAt]
   refine List.map_congr_left fun i hi => ?_
   have hi := List.mem_range.mp hi
   refine congrArg Vector.ofFn (funext fun j => ?_)
   rw [Offset.add_add]
-  simp only [State.patch, overlay, hb (8 * i + j.val) (by have := j.isLt; omega), ite_false]
+  simp only [State.patch, overlay, hb (8 * i + j.val) (by have := j.isLt; omega_using [hi]), ite_false]
 
 theorem verified {c : Prog isa} {d : Spec.TripleDes.Direction} (hc : c.InlineOk = true)
     (hcor : ∀ s, (contract d).pre s →

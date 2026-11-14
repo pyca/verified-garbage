@@ -36,7 +36,7 @@ theorem entered_desc {σ₁ σ₂ e₁ e₂ : State} (h₁ : Lay σ₁) (h₂ : 
   obtain ⟨q3,q4,q5,q6,q7,q8,q9,q10,qsp,a0,a1,a2,hdesc⟩ := hq
   intro j hj
   have hx : (dsR σ₁).Contains (Src σ₁ + BitVec.ofNat 64 j) 1 :=
-    Offset.contains_base _ hj (by have := h₁.ods; omega)
+    Offset.contains_base _ hj (by have := h₁.ods; omega_using [hj, this])
   have hx₂ : (dsR σ₂).Contains (Src σ₁ + BitVec.ofNat 64 j) 1 := by
     simp only [dsR, Src, Cnt, ← q9, ← q10]; exact hx
   rw [he₁.mem, he₂.mem, Lay.keepE h₁.bds.symm hx, Lay.keepE h₂.bds.symm hx₂]

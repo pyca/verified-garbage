@@ -78,7 +78,7 @@ theorem leNum_bytesAt_24 (m : Mem) (p : Addr) :
     BitVec.add_assoc]
   show (m.readW p 64).toNat + 256 ^ 8 * ((m.readW (p + 8) 64).toNat +
     256 ^ 8 * (m.readW (p + 16) 64).toNat) = _
-  omega
+  omega_using []
 
 theorem leNum_bytesAt_16 (m : Mem) (p : Addr) :
     leNum (bytesAt m p 16) = (m.readW p 64).toNat + 2 ^ 64 * (m.readW (p + 8) 64).toNat := by
@@ -92,17 +92,17 @@ theorem block_append_left {a b : List Byte} (ha : a.length % 16 = 0) {i : Nat}
     (hi : i < a.length / 16) : block (a ++ b) i = block a i := by
   simp only [block]
   rw [List.drop_append_of_le_length (by omega), List.take_append_of_le_length]
-  simp only [List.length_drop]; omega
+  simp only [List.length_drop]; omega_using [hi]
 
 theorem block_append_right {a b : List Byte} (ha : a.length % 16 = 0) (j : Nat) :
     block (a ++ b) (a.length / 16 + j) = block b j := by
   simp only [block]
-  rw [show 16 * (a.length / 16 + j) = a.length + 16 * j by omega, List.drop_append,
-    List.drop_of_length_le (by omega), List.nil_append, Nat.add_sub_cancel_left]
+  rw [show 16 * (a.length / 16 + j) = a.length + 16 * j by omega_using [ha], List.drop_append,
+    List.drop_of_length_le (by omega_using []), List.nil_append, Nat.add_sub_cancel_left]
 
 theorem numBlocks_append {a b : List Byte} (ha : a.length % 16 = 0) :
     numBlocks (a ++ b) = a.length / 16 + numBlocks b := by
-  simp only [numBlocks, List.length_append]; omega
+  simp only [numBlocks, List.length_append]; omega_using [ha]
 
 /-- The loop of `accumulate` from the accumulator `a`. -/
 def absorbAll (r a : Nat) (msg : List Byte) : Nat :=
@@ -121,7 +121,7 @@ theorem foldl_congr_mem {α β : Type} {f g : α → β → α} {l : List β} (a
 
 theorem absorbAll_append {r a : Nat} {x y : List Byte} (hx : x.length % 16 = 0) :
     absorbAll r a (x ++ y) = absorbAll r (absorbAll r a x) y := by
-  have hn : numBlocks x = x.length / 16 := by simp only [numBlocks]; omega
+  have hn : numBlocks x = x.length / 16 := by simp only [numBlocks]; omega_using [hx]
   have e : (List.range (x.length / 16)).foldl
       (fun b i => (r * (b + leNum (block (x ++ y) i ++ [0x01]))) % P) a = absorbAll r a x := by
     rw [absorbAll, hn]
@@ -136,7 +136,7 @@ theorem accumulate_append {r : Nat} {a b : List Byte} (ha : a.length % 16 = 0) :
 /-- Absorbing one block, of 1 to 16 bytes. -/
 theorem absorbAll_block {r a : Nat} {b : List Byte} (h₁ : 0 < b.length) (h₂ : b.length ≤ 16) :
     absorbAll r a b = (r * (a + leNum (b ++ [0x01]))) % P := by
-  have hn : numBlocks b = 1 := by simp only [numBlocks]; omega
+  have hn : numBlocks b = 1 := by simp only [numBlocks]; omega_using [h₁, h₂]
   simp only [absorbAll, hn, List.range_one, List.foldl_cons, List.foldl_nil, block, Nat.mul_zero,
     List.drop_zero]
   rw [List.take_of_length_le h₂]
@@ -194,10 +194,10 @@ theorem leBytes_mod (n x : Nat) : leBytes n (x % 256 ^ n) = leBytes n x := by
   have hi := List.mem_range.mp hi
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_ofNat]
-  rw [show 256 ^ n = 256 ^ i * 256 ^ (n - i) by rw [← Nat.pow_add]; congr 1; omega,
+  rw [show 256 ^ n = 256 ^ i * 256 ^ (n - i) by rw [← Nat.pow_add]; congr 1; omega_using [hi],
     Nat.mod_mul_right_div_self, Nat.mod_mod_of_dvd]
   rw [show (2 : Nat) ^ 8 = 256 from rfl]
-  exact ⟨256 ^ (n - i - 1), by rw [← Nat.pow_succ']; congr 1; omega⟩
+  exact ⟨256 ^ (n - i - 1), by rw [← Nat.pow_succ']; congr 1; omega_using [hi]⟩
 
 theorem leBytes_succ (n x : Nat) : leBytes (n + 1) x = BitVec.ofNat 8 x :: leBytes n (x / 256) := by
   rw [Nat.add_comm, leBytes_add, Nat.pow_one]; simp [leBytes]
@@ -215,10 +215,10 @@ theorem bytesAt_leBytes (m : Mem) (p : Addr) (n : Nat) :
     · apply BitVec.eq_of_toNat_eq
       simp only [BitVec.toNat_ofNat]
       have := (m p).isLt
-      omega
+      omega_using []
     · congr 1
       have := (m p).isLt
-      omega
+      omega_using []
 
 theorem bytesAt_leBytes_64 (m : Mem) (p : Addr) :
     bytesAt m p 8 = leBytes 8 (m.readW p 64).toNat := by

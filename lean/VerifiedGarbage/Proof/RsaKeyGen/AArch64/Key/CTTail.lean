@@ -268,7 +268,7 @@ theorem finalMask_eq3 : finalMask = (ws ++ (base aQt .x16 ++ finTop)) ++ ((ws ++
 theorem finTopT_k {I : KIn} {s₀ s : State} (h : KS I s₀ s) :
     WP isa (.block (ws ++ (base aQt .x16 ++ finTop))) s (KS I s₀) := by
   have hnw := h.ws.scr.nowrap
-  have hw1 : 1 ≤ I.W := by have := h.ws.w1; omega
+  have hw1 : 1 ≤ I.W := by have := h.ws.w1; omega_using [this]
   have hw2 := h.ws.w2
   have sN := h.ws.sl (j := aQt) (by decide)
   have h256 := h.ws.h256
@@ -277,9 +277,9 @@ theorem finTopT_k {I : KIn} {s₀ s : State} (h : KS I s₀ s) :
   have hs₁ := h.ws.scr.congr k₁.wr
   have h0₁ : s₁.gpr .x0 = I.B := (k₁.gpr .x0 (by decide)).trans h.ws.x0
   refine WP.mono (WP.keep [.x3, .x7, .x10, .x16] (Q := fun t => t.mem = s.mem) (by
-    brun [finTop, h16, h12, h0₁, m₁, top_addr I.B (d := slot I.W aQt) (w := I.W) hw1 (by omega),
-      hs₁.ld (d := slot I.W aQt + 8 * (I.W - 1)) (by omega), hdr_enc (show kOk < 32 by decide),
-      hs₁.ld (d := 8 * kOk) (by unfold kOk sFn; omega)])
+    brun [finTop, h16, h12, h0₁, m₁, top_addr I.B (d := slot I.W aQt) (w := I.W) hw1 (by omega_using [hw2]),
+      hs₁.ld (d := slot I.W aQt + 8 * (I.W - 1)) (by omega_using [sN]), hdr_enc (show kOk < 32 by decide),
+      hs₁.ld (d := 8 * kOk) (by unfold kOk sFn; omega_using [h256])])
     (by decide) (by decide) (by decide +kernel)) fun _ ⟨hm, k⟩ => h.regs hm (k₁.trans k)
 
 /-- `finalMask`'s second part: memory kept, registers of `mmRegs` changed. -/

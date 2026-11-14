@@ -45,7 +45,7 @@ structure HeadPost (s : State) (n : Nat) (s' : State) : Prop where
 
 theorem head_wp {s : State} {B D : BitVec 32} {n : Nat} (hn : 1 ≤ n) (hn32 : n < 2 ^ 32)
     (h : HeadPre B D n s) : WP isa groupHead s (HeadPost s n) := by
-  have hg : 1 ≤ min n 8 := by omega
+  have hg : 1 ≤ min n 8 := by omega_using [hn]
   have hg8 : min n 8 ≤ 8 := Nat.min_le_right _ _
   obtain ⟨K, hH⟩ := h.table
   refine WP.seq (WP.mono (count_wp h.left hn32) fun s₁ ⟨g₁, o₁, m₁, _, wr₁, _⟩ => ?_)
@@ -60,9 +60,9 @@ theorem head_wp {s : State} {B D : BitVec 32} {n : Nat} (hn : 1 ≤ n) (hn32 : n
     intro r hr
     simp only [List.mem_singleton] at hr; subst hr
     exact ⟨⟨State.addr D, 16 * n⟩, List.mem_singleton_self _, 0, by rw [BitVec.add_zero],
-      by change 0 + 16 * min n 8 ≤ 16 * n; have := Nat.min_le_left n 8; omega⟩
-  have fp : CfbFill.Pre B D (min n 8) s₁ := ⟨b₁, d₁, g₁, h.fit, by have := h.fitD; have := Nat.min_le_left n 8; omega,
-    by rw [wr₁]; exact h.writable, wd₁, h.sep.sub_left (Region.sub_prefix (by have := Nat.min_le_left n 8; omega))⟩
+      by change 0 + 16 * min n 8 ≤ 16 * n; have := Nat.min_le_left n 8; omega_using []⟩
+  have fp : CfbFill.Pre B D (min n 8) s₁ := ⟨b₁, d₁, g₁, h.fit, by have := h.fitD; have := Nat.min_le_left n 8; omega_arith,
+    by rw [wr₁]; exact h.writable, wd₁, h.sep.sub_left (Region.sub_prefix (by have := Nat.min_le_left n 8; omega_using []))⟩
   refine WP.seq (WP.mono (CfbFill.fill_wp fp hg hg8) fun s₂ f => ?_)
   have b₂ : s₂.gpr sb = B := (f.regs _ (by decide) (by decide)).trans b₁
   have table₂ : Holds layout s₂.mem (State.addr B) K .encrypt := table_frame table₁ f.frame fun r hr => by
@@ -71,13 +71,13 @@ theorem head_wp {s : State} {B D : BitVec 32} {n : Nat} (hn : 1 ≤ n) (hn32 : n
     · apply Offset.disjoint (State.addr B)
       · right; change 4 * tailSlot + 16 * 0 + 128 ≤ 384; decide
       · decide
-      · change 4 * tailSlot + 16 * 0 + 128 ≤ 2 ^ 64; rw [tailSlot]; omega
+      · change 4 * tailSlot + 16 * 0 + 128 ≤ 2 ^ 64; rw [tailSlot]; omega_using []
     · exact Offset.disjoint _ (.inl (by decide)) (by decide) (by decide)
   have wc : Covers [⟨State.addr B, 4 * slots⟩] s₂.wr := by
     rw [f.wr, wr₁]
     simpa only [BitVec.add_zero] using workspace_part h.writable 0 (4 * slots)
       (by change 4 * slots ≤ 4 * BatchCtr.totalSlots; decide)
-  refine WP.mono (BatchCalls.crypt_wp b₂ (by have := h.fit; change B.toNat + 1456 ≤ 2 ^ 32; change B.toNat + 1512 ≤ 2 ^ 32 at this; omega) wc table₂)
+  refine WP.mono (BatchCalls.crypt_wp b₂ (by have := h.fit; change B.toNat + 1456 ≤ 2 ^ 32; change B.toNat + 1512 ≤ 2 ^ 32 at this; omega_using [this]) wc table₂)
     fun s₃ ⟨c, _, _⟩ => ?_
   refine ⟨fun r hr => ?_, ?_⟩
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -94,18 +94,18 @@ theorem loop_pre {s₀ s : State} {B D : BitVec 32} {K : Spec.Sm4.Schedule} {t :
     (sep : Region.Disjoint ⟨State.addr D, 16 * n⟩ ⟨State.addr B, 4 * BatchCtr.totalSlots⟩)
     (h : CfbLoop.LoopInv s₀ B D K t n i s) : HeadPre B (D + BitVec.ofNat 32 (16 * i)) (n - i) s := by
   let Di := D + BitVec.ofNat 32 (16 * i)
-  have diNat : Di.toNat = D.toNat + 16 * i := offset_nat _ _ (by omega)
-  have diAddr : State.addr Di = State.addr D + BitVec.ofNat 64 (16 * i) := addr_add (by omega)
+  have diNat : Di.toNat = D.toNat + 16 * i := offset_nat _ _ (by omega_using [hi, fitD])
+  have diAddr : State.addr Di = State.addr D + BitVec.ofNat 64 (16 * i) := addr_add (by omega_using [hi, fitD])
   have subD : Region.Sub ⟨State.addr Di, 16 * (n - i)⟩ ⟨State.addr D, 16 * n⟩ := by
-    rw [diAddr]; exact Offset.sub_base _ (by omega)
+    rw [diAddr]; exact Offset.sub_base _ (by omega_using [hi])
   have wdi : Covers [⟨State.addr Di, 16 * (n - i)⟩] s.wr := by
     rw [h.wr]
     apply Covers.trans (rs' := [⟨State.addr D, 16 * n⟩]) _ wd
     apply Covers.of_sub
     intro r hr
     simp only [List.mem_singleton] at hr; subst hr
-    exact ⟨⟨State.addr D, 16 * n⟩, List.mem_singleton_self _, 16 * i, diAddr, by change 16 * i + 16 * (n - i) ≤ 16 * n; omega⟩
+    exact ⟨⟨State.addr D, 16 * n⟩, List.mem_singleton_self _, 16 * i, diAddr, by change 16 * i + 16 * (n - i) ≤ 16 * n; omega_using [hi]⟩
   exact ⟨(h.regs _ (by simp [sb])).trans hB, h.left, fitB, by rw [h.wr]; exact hw,
-    ⟨K, h.table⟩, h.data, by change Di.toNat + 16 * (n - i) ≤ 2 ^ 32; rw [diNat]; omega, wdi, sep.sub_left subD⟩
+    ⟨K, h.table⟩, h.data, by change Di.toNat + 16 * (n - i) ≤ 2 ^ 32; rw [diNat]; omega_using [hi, fitD], wdi, sep.sub_left subD⟩
 
 end VG.Proof.Sm4.Arm.CfbHead

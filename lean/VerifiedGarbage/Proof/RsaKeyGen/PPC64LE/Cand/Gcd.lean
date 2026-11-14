@@ -36,7 +36,7 @@ theorem slot_lt' {w j k : Nat} (h : j < k) : slot w j + 8 * (w + 2) ≤ slot w k
 /-- A number of `w ≥ 1` words: its low word and the others. -/
 theorem wv_low (m : Mem) (B : Addr) (d w : Nat) (hw : 1 ≤ w) :
     wv m B d w = (word m B d).toNat + 2 ^ 64 * wv m B (d + 8) (w - 1) := by
-  rw [show w = 1 + (w - 1) by omega, wv_add, Nat.add_sub_cancel_left]
+  rw [show w = 1 + (w - 1) by omega_using [hw], wv_add, Nat.add_sub_cancel_left]
   simp [wv]
 
 /-- Numbers of equal words at different offsets are equal. -/
@@ -44,7 +44,7 @@ theorem wv_shift' {m m' : Mem} {B : Addr} {d d' w : Nat}
     (h : ∀ i < w, word m' B (d' + 8 * i) = word m B (d + 8 * i)) : wv m' B d' w = wv m B d w := by
   induction w with
   | zero => rfl
-  | succ k ih => rw [wv, wv, ih fun i hi => h i (by omega), h k (by omega)]
+  | succ k ih => rw [wv, wv, ih fun i hi => h i (by omega_using [hi]), h k (by omega_using [])]
 
 theorem modE_ok {s : State} {B : Addr} {Z w c : Nat} (h : Env s B Z w) (h35 : slot w nArr ≤ Z)
     (hc : wv s.mem B (slot w 0) w = c) (hodd : c % 2 = 1) (he : 1 < (s.gpr .r21).toNat) :
@@ -70,15 +70,15 @@ theorem modE_ok {s : State} {B : Addr} {Z w c : Nat} (h : Env s B Z w) (h35 : sl
   have e2 := (h.keep k₁ (by decide)).keep k₂ (by decide)
   -- The copy.
   refine WP.seq (WP.mono (VG.Proof.MillerRabin.PPC64LE.Search.copyWithin_ok (dS := slot w 0) (dD := slot w aCm1) e2.hs a15
-    (by rw [k₂.gpr .r14 (by decide), a14]) e2.h11 (by omega) (by omega) (by omega) (by omega) (.inl (by omega)))
+    (by rw [k₂.gpr .r14 (by decide), a14]) e2.h11 (by omega_using [hw4]) (by omega_using [hw128]) (by omega_using [s34, s0]) (by omega_using [s34]) (.inl (by omega_using [s0])))
     fun t₃ ⟨⟨_, hcp, out₃⟩, k₃⟩ => ?_)
   have e3 := e2.keep k₃ (by decide)
   -- Its low word less 1, and the loop's registers.
   have hm23 : t₂.mem = s.mem := by rw [m₂, m₁]
   have hw0 : word t₃.mem B (slot w aCm1) = word s.mem B (slot w 0) := by
-    have := hcp 0 (by omega); simp only [Nat.mul_zero, Nat.add_zero] at this; rw [this, hm23]
+    have := hcp 0 (by omega_using [hw4]); simp only [Nat.mul_zero, Nat.add_zero] at this; rw [this, hm23]
   have hodd0 : (word s.mem B (slot w 0)).toNat % 2 = 1 := by
-    have := wv_low s.mem B (slot w 0) w (by omega); rw [hc] at this; omega
+    have := wv_low s.mem B (slot w 0) w (by omega_using [hw4]); rw [hc] at this; omega
   refine WP.seq ?_
   rw [WP.block_append_iff]
   refine WP.mono (e3.base (rd := .r14) (by decide) (by decide) aCm1) fun t₄ ⟨⟨b14, m₄⟩, k₄⟩ => ?_
@@ -89,47 +89,47 @@ theorem modE_ok {s : State} {B : Addr} {Z w c : Nat} (h : Env s B Z w) (h35 : sl
         Keep [.r3, .r5, .r14, .r17] t₄ t := by
     refine WP.keep _ ?_ (by decide)
     have h11 : t₄.gpr .r11 = BitVec.ofNat 64 (2 * w) := (k₄.gpr .r11 (by decide)).trans e3.h11
-    prun [b14, h11, (hs.congr (k₁.trans (k₂.trans (k₃.trans k₄))).wr).ld (d := slot w aCm1) (n := 8) (by omega),
-      (hs.congr (k₁.trans (k₂.trans (k₃.trans k₄))).wr).st (d := slot w aCm1) (n := 8) (by omega)]
+    prun [b14, h11, (hs.congr (k₁.trans (k₂.trans (k₃.trans k₄))).wr).ld (d := slot w aCm1) (n := 8) (by omega_using [s34]),
+      (hs.congr (k₁.trans (k₂.trans (k₃.trans k₄))).wr).st (d := slot w aCm1) (n := 8) (by omega_using [s34])]
     refine ⟨?_, ?_, rfl⟩
     · have e8 : BitVec.ofNat 64 (2 * w) <<< 2 = BitVec.ofNat 64 (8 * w) := by
         apply BitVec.eq_of_toNat_eq
         rw [BitVec.toNat_shiftLeft, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.shiftLeft_eq]
-        omega
+        omega_using []
       rw [e8]; exact off_add _ _ _
     · apply BitVec.eq_of_toNat_eq
       rw [BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow]
-      omega
+      omega_using [hw128]
   refine WP.mono hblk fun t₅ ⟨⟨m₅, b14', b17, b3⟩, k₅⟩ => ?_
   have k15 := (((k₁.trans k₂).trans k₃).trans k₄).trans k₅
   have e5 : (t₅.gpr .r21).toNat = (s.gpr .r21).toNat := by rw [k15.gpr .r21 (by decide)]
-  refine WP.mono (modWords_ok (hs.congr k15.wr) b14' b17 (by omega) (by omega) (by omega) b3 (by rw [e5]; exact he))
+  refine WP.mono (modWords_ok (hs.congr k15.wr) b14' b17 (by omega_using [hw4]) (by omega_using [hw128]) (by omega_using [s34]) b3 (by rw [e5]; exact he))
     fun t ⟨tv, tm, kt⟩ => ⟨⟨?_, ?_⟩, (k15.trans kt).mono (by decide)⟩
   · rw [tv, e5, m₅, m₄]
     -- The number in `aCm1` is `c − 1`.
     have hv : wv (t₃.mem.writeW (off B (slot w aCm1)) (word t₃.mem B (slot w aCm1) - BitVec.ofNat 64 1)) B
         (slot w aCm1) w = c - 1 := by
       have hout := writeW_outside t₃.mem B (d := slot w aCm1) (word t₃.mem B (slot w aCm1) - BitVec.ofNat 64 1)
-        (by omega)
-      rw [wv_low _ _ _ _ (by omega), word_writeW_self,
-        hout.wv (d := slot w aCm1 + 8) (k := w - 1) (Or.inr (Nat.le_refl _)) (by omega)]
+        (by omega_using [hn, s34])
+      rw [wv_low _ _ _ _ (by omega_using [hw4]), word_writeW_self,
+        hout.wv (d := slot w aCm1 + 8) (k := w - 1) (Or.inr (Nat.le_refl _)) (by omega_using [hn, s34])]
       have hrest : wv t₃.mem B (slot w aCm1 + 8) (w - 1) = wv s.mem B (slot w 0 + 8) (w - 1) := by
         rw [← hm23]
         apply wv_shift'; intro i hi
-        have := hcp (i + 1) (by omega)
-        rw [show slot w aCm1 + 8 + 8 * i = slot w aCm1 + 8 * (i + 1) by omega,
-          show slot w 0 + 8 + 8 * i = slot w 0 + 8 * (i + 1) by omega]
+        have := hcp (i + 1) (by omega_using [hi])
+        rw [show slot w aCm1 + 8 + 8 * i = slot w aCm1 + 8 * (i + 1) by omega_using [],
+          show slot w 0 + 8 + 8 * i = slot w 0 + 8 * (i + 1) by omega_using []]
         exact this
       rw [hrest, BitVec.toNat_sub, hw0, BitVec.toNat_ofNat]
-      have hcw := wv_low s.mem B (slot w 0) w (by omega)
+      have hcw := wv_low s.mem B (slot w 0) w (by omega_using [hw4])
       rw [hc] at hcw
       have := (word s.mem B (slot w 0)).isLt
-      omega
+      omega_using [hodd, hcw]
     rw [hv]
   · have o4 : Outside B (slot w aCm1) (8 * w) s.mem t₄.mem := by
       rw [m₄, ← hm23]; exact out₃
     rw [tm, m₅]
-    exact o4.trans ((writeW_outside t₄.mem B (d := slot w aCm1) _ (by omega)).mono (by omega) (by omega))
+    exact o4.trans ((writeW_outside t₄.mem B (d := slot w aCm1) _ (by omega_using [hn, s34])).mono (by omega_using []) (by omega_using [hw4]))
 
 
 theorem gcdStep_lt {u v : Nat} (hu : u < 2 ^ 64) (hv : v < 2 ^ 64) :
@@ -196,7 +196,7 @@ theorem gcdE_ok {s : State} {B : Addr} {Z w c : Nat} (h : Env s B Z w) (h35 : sl
   refine WP.seq (WP.mono (gcdLoop_ok (u := (c - 1) % (s.gpr .r21).toNat) (v := (s.gpr .r21).toNat)
     (by rw [k₂.gpr .r3 (by decide), ← v₁]; exact self_ofNat _)
     (by rw [k₂.gpr .r21 (by decide), e₁]; exact self_ofNat _) a9
-    (Nat.lt_trans (Nat.mod_lt _ (by omega)) hE) hE heo) fun t₃ ⟨g₃, m₃, k₃⟩ => ?_)
+    (Nat.lt_trans (Nat.mod_lt _ (by omega_using [he])) hE) hE heo) fun t₃ ⟨g₃, m₃, k₃⟩ => ?_)
   have hsub : WP isa (.block [.subi .r22 .r21 1]) t₃ fun t =>
       (t.gpr .r22 = t₃.gpr .r21 - BitVec.ofNat 64 1 ∧ t.mem = t₃.mem) ∧ Keep [.r22] t₃ t := by
     refine WP.keep _ ?_ (by decide)
@@ -213,7 +213,7 @@ theorem os2ip_bytes_lt (m : Mem) (E : Addr) : ∀ i, Spec.Rsa.os2ip (Spec.Rsa.by
     rw [VG.Proof.Bignum.PPC64LE.Pub.bytesAt_succ, VG.Proof.Rsa.os2ip_snoc, Nat.pow_succ]
     have := os2ip_bytes_lt m E i
     have := (m (off E i)).isLt
-    omega
+    omega_arith
 
 /-- `loadE`: `e`'s `L` octets (`1 ≤ L ≤ 8`) at `E` (`r21`, `r30`) into `r21`. -/
 theorem loadE_ok {s : State} {E : Addr} {L : Nat} (h21 : s.gpr .r21 = off E 0)
@@ -234,7 +234,7 @@ theorem loadE_ok {s : State} {E : Addr} {L : Nat} (h21 : s.gpr .r21 = off E 0)
   let Inv : Nat → State → Prop := fun i t =>
     t.gpr .r3 = BitVec.ofNat 64 (Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem E i)) ∧
       t.gpr .r14 = off E i ∧ t.mem = s.mem ∧ Keep [.r0, .r3, .r14, .r17] s t
-  refine WP.seq (WP.mono (wp_countdown (cnt := .r17) (N := L) (by omega) (by omega) Inv
+  refine WP.seq (WP.mono (wp_countdown (cnt := .r17) (N := L) (by omega_using [hL']) (by omega_using [hL]) Inv
     (fun i hi t ⟨t3, t14, tm, tk⟩ hc => ?_)
     ⟨by rw [i3]; rfl, i14, im, k₁.mono⟩ i17) fun t ⟨t3, _, tm, tk⟩ => ?_)
   · have hb : InRegions (t.rd ++ t.wr) (off E i) 1 := by rw [tk.rd, tk.wr]; exact hrd i hi
@@ -248,10 +248,10 @@ theorem loadE_ok {s : State} {E : Addr} {L : Nat} (h21 : s.gpr .r21 = off E 0)
       BitVec.toNat_shiftLeft, BitVec.toNat_ofNat, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.shiftLeft_eq]
     have hbt := (s.mem (VG.Proof.Mont.off E i)).isLt
     have hlt := os2ip_bytes_lt s.mem E i
-    have h256 : 256 ^ i ≤ 256 ^ 7 := Nat.pow_le_pow_right (by decide) (by omega)
+    have h256 : 256 ^ i ≤ 256 ^ 7 := Nat.pow_le_pow_right (by decide) (by omega_using [hL', hi])
     have : (256 : Nat) ^ 7 = 2 ^ 56 := by decide
-    rw [Nat.mod_eq_of_lt (show Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem E i) < 2 ^ 64 by omega)]
-    omega
+    rw [Nat.mod_eq_of_lt (show Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem E i) < 2 ^ 64 by omega_using [hlt, h256])]
+    omega_using []
   · have hfin : WP isa (.block [.addi .r21 .r3 0]) t fun t' =>
         (t'.gpr .r21 = t.gpr .r3 ∧ t'.mem = t.mem) ∧ Keep [.r21] t t' := by
       refine WP.keep _ ?_ (by decide)
@@ -276,7 +276,7 @@ theorem gcdCheck_ok {s : State} {B E : Addr} {Z w c L : Nat} (h : Env s B Z w) (
     have := os2ip_bytes_lt s.mem E L
     have : 256 ^ L ≤ 256 ^ 8 := Nat.pow_le_pow_right (by decide) hL'
     have : (256 : Nat) ^ 8 = 2 ^ 64 := by decide
-    omega
+    omega_arith
   generalize hEv : Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem E L) = e at hEl ⊢
   unfold gcdCheck
   refine WP.seq (WP.mono (loadE_ok h21 h30 hL hL' hrd) fun t₁ ⟨⟨e₁, m₁⟩, k₁⟩ => ?_)
@@ -286,7 +286,7 @@ theorem gcdCheck_ok {s : State} {B E : Addr} {Z w c L : Nat} (h : Env s B Z w) (
     refine WP.keep _ ?_ (by decide)
     prun [e₁, and1_val]
     rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt hEl]
-    split <;> (congr 1; omega)
+    split <;> (congr 1; omega_arith)
   refine WP.seq (WP.mono hb fun t₂ ⟨⟨a5, a21, m₂⟩, k₂⟩ => ?_)
   have k12 := k₁.trans k₂
   have hm2 : t₂.mem = s.mem := by rw [m₂, m₁]
@@ -301,20 +301,20 @@ theorem gcdCheck_ok {s : State} {B E : Addr} {Z w c L : Nat} (h : Env s B Z w) (
     refine WP.mono hblk fun t ⟨⟨a22, m⟩, k⟩ => ⟨⟨?_, by rw [m, hm2]; exact Outside.refl _ _ _ _⟩, (k12.trans k).mono (by decide)⟩
     rw [a22]
     refine ⟨fun h => absurd h (by decide), fun hg => ?_⟩
-    have : 2 ∣ Nat.gcd (c - 1) e := Nat.dvd_gcd (by omega) (by omega)
+    have : 2 ∣ Nat.gcd (c - 1) e := Nat.dvd_gcd (by omega_using [hodd]) (by omega_using [he2])
     rw [hg] at this; exact absurd this (by decide)
-  · have he1 : e % 2 = 1 := by simp at hz; omega
+  · have he1 : e % 2 = 1 := by simp at hz; omega_using [hz]
     have hsub : WP isa (.block [.subi .r5 .r21 1]) t₂ fun t =>
         (t.gpr .r5 = BitVec.ofNat 64 (e - 1) ∧ t.mem = t₂.mem) ∧ Keep [.r5] t₂ t := by
       refine WP.keep _ ?_ (by decide)
       prun [a21, e₁]
       apply BitVec.eq_of_toNat_eq
       rw [BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat, BitVec.toNat_ofNat]
-      omega
+      omega_using [he1]
     refine WP.seq (WP.mono hsub fun t₃ ⟨⟨a5', m₃⟩, k₃⟩ => ?_)
     have k13 := k12.trans k₃
-    refine WP.ite _ (eval_zero_ofNat _ _ (by omega) a5') (fun hz' => ?_) (fun hz' => ?_)
-    · have he' : e = 1 := by simp at hz'; omega
+    refine WP.ite _ (eval_zero_ofNat _ _ (by omega_using [hEl]) a5') (fun hz' => ?_) (fun hz' => ?_)
+    · have he' : e = 1 := by simp at hz'; omega_using [he1, hz']
       have hblk : WP isa (.block [.li .r22 0]) t₃ fun t =>
           (t.gpr .r22 = 0 ∧ t.mem = t₃.mem) ∧ Keep [.r22] t₃ t := by
         refine WP.keep _ ?_ (by decide)
@@ -323,7 +323,7 @@ theorem gcdCheck_ok {s : State} {B E : Addr} {Z w c L : Nat} (h : Env s B Z w) (
       refine WP.mono hblk fun t ⟨⟨a22, m⟩, k⟩ =>
         ⟨⟨?_, by rw [m, m₃, hm2]; exact Outside.refl _ _ _ _⟩, (k13.trans k).mono (by decide)⟩
       rw [a22, he', Nat.gcd_one_right]; exact ⟨fun _ => rfl, fun _ => rfl⟩
-    · have he' : 1 < e := by simp at hz'; omega
+    · have he' : 1 < e := by simp at hz'; omega_using [hz']
       have env3 : Env t₃ B Z w := h.keep k13 (by decide)
       have hc3 : wv t₃.mem B (slot w 0) w = c := by rw [m₃, hm2]; exact hc
       have r21 : t₃.gpr .r21 = BitVec.ofNat 64 e := (k₃.gpr .r21 (by decide)).trans (a21.trans e₁)
@@ -331,12 +331,12 @@ theorem gcdCheck_ok {s : State} {B E : Addr} {Z w c L : Nat} (h : Env s B Z w) (
       refine WP.mono (gcdE_ok env3 h35 hc3 hodd (by rw [hev]; exact he') (by rw [hev]; exact he1))
         fun t ⟨⟨a22, o⟩, k⟩ => ⟨⟨?_, by rw [m₃, hm2] at o; exact o⟩, (k13.trans k).mono (by decide)⟩
       rw [a22, hev]
-      have hg1 : 1 ≤ Nat.gcd (c - 1) e := Nat.gcd_pos_of_pos_right _ (by omega)
-      have hg2 : Nat.gcd (c - 1) e ≤ e := Nat.gcd_le_right _ (by omega)
+      have hg1 : 1 ≤ Nat.gcd (c - 1) e := Nat.gcd_pos_of_pos_right _ (by omega_using [he1])
+      have hg2 : Nat.gcd (c - 1) e ≤ e := Nat.gcd_le_right _ (by omega_using [he1])
       constructor
       · intro hz0
         have hn : (BitVec.ofNat 64 (Nat.gcd (c - 1) e) - BitVec.ofNat 64 1).toNat = Nat.gcd (c - 1) e - 1 := by
-          rw [BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat]; omega
+          rw [BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat]; omega_using [hEl, hg1, hg2]
         rw [hz0] at hn
         have : (0 : BitVec 64).toNat = 0 := rfl
         omega

@@ -20,7 +20,7 @@ private theorem nativeKeyWords (w : Nat) :
   change BitVec.ofNat 32 w * BitVec.ofNat 32 2 + BitVec.ofNat 32 2 = _
   rw [BitVec.ofNat_mul_ofNat, BitVec.ofNat_add_ofNat]
   congr 1
-  omega
+  omega_using []
 
 private theorem nativeKeyStride (w : Nat) :
     (BitVec.ofNat 32 (2 * w + 2) + 2) <<< 2 = BitVec.ofNat 32 (8 * (w + 2)) := by
@@ -28,7 +28,7 @@ private theorem nativeKeyStride (w : Nat) :
   change (BitVec.ofNat 32 (2 * w + 2) + BitVec.ofNat 32 2) * BitVec.ofNat 32 4 = _
   rw [BitVec.ofNat_add_ofNat, BitVec.ofNat_mul_ofNat]
   congr 1
-  omega
+  omega_using []
 
 theorem keyContext_ok (s : State) (base : BitVec 32) (w : Nat)
     (readBase : InRegions (s.rd ++ s.wr) (State.addr s.sp) 4)

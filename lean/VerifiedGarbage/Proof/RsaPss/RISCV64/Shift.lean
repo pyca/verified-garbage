@@ -36,7 +36,7 @@ theorem mask_odd (x : Nat) : BitVec.ofNat 64 0 - (BitVec.ofNat 64 x &&& BitVec.o
     simp only [BitVec.toNat_and, BitVec.toNat_ofNat]
     rw [Nat.and_one_is_mod, Nat.mod_mod_of_dvd _ (by decide : 2 ∣ 2 ^ 64)]
     have := Nat.mod_lt x (show 0 < 2 by decide)
-    rw [Nat.mod_eq_of_lt (by omega : x % 2 < 2 ^ 64)]
+    rw [Nat.mod_eq_of_lt (by omega_using [] : x % 2 < 2 ^ 64)]
   rw [e]
   rcases Nat.mod_two_eq_zero_or_one x with h | h <;> rw [h] <;> decide
 
@@ -65,7 +65,7 @@ theorem shiftPass_ok {H : Impl.Hmac.Stream.RISCV64.Hash} (hD : H.D = D) {t : Sta
   let b := oY + 8 + D
   let V := view t.mem (Sp s)
   let bit : Bool := x % 2 = 1
-  refine WP.seq (wp_yBase h.s0 fun t₀ o₀ e₀ => wp_addi (imm := 8 + H.D) (h := by rw [hD]; omega) fun t₁ o₁ e₁ =>
+  refine WP.seq (wp_yBase h.s0 fun t₀ o₀ e₀ => wp_addi (imm := 8 + H.D) (h := by rw [hD]; omega_using [hD64]) fun t₁ o₁ e₁ =>
     wp_add fun t₂ o₂ e₂ => wp_li (imm := 1) (by decide) fun t₃ o₃ e₃ => wp_and fun t₄ o₄ e₄ =>
     wp_li (imm := 0) (by decide) fun t₅ o₅ e₅ => wp_sub fun t₆ o₆ e₆ => wp_mov fun t₇ o₇ e₇ => wp_nil ?_)
   have k₇ : Only [.a1, .a2, .a3, .a4, .a5] t t₇ :=
@@ -77,14 +77,14 @@ theorem shiftPass_ok {H : Impl.Hmac.Stream.RISCV64.Hash} (hD : H.D = D) {t : Sta
     simp only [bit, decide_eq_true_eq]
   have g7 : t₇.gpr .a5 = BitVec.ofNat 64 dN := by
     rw [e₇, o₆.get .s4, o₅.get .s4, o₄.get .s4, o₃.get .s4, o₂.get .s4, o₁.get .s4, o₀.get .s4, h.pdb, L.hdb]
-  refine WP.mono (wp_countdown (cnt := .a5) (N := dN) (by omega) (by omega)
+  refine WP.mono (wp_countdown (cnt := .a5) (N := dN) (by omega_using [hk]) (by omega_using [hd1])
     (fun i u => Base Sp (vP D) s u ∧ Kept [.a1, .a2, .a5, .t1, .t2] t₇ u ∧ u.gpr .a1 = off (Sp s) (b + i) ∧
       u.gpr .a2 = off (Sp s) (b + i + d) ∧ ∀ o < oRsa, view u.mem (Sp s) o =
         if b ≤ o ∧ o < b + i then (if bit then V (o + d) else V o) else V o) ?_
     ⟨h.only F k₇, Kept.refl _ _, by rw [o₇.get .a1, o₆.get .a1, o₅.get .a1, o₄.get .a1, o₃.get .a1, o₂.get .a1, a4]; rfl,
       by rw [o₇.get .a2, o₆.get .a2, o₅.get .a2, o₄.get .a2, o₃.get .a2, e₂, a4, o₁.get .s9, o₀.get .s9, h9]
          exact off_off _ _ _,
-      fun o _ => by rw [ifn (by omega), k₇.mem]⟩ g7) fun u ⟨bu, ou, _, _, vu⟩ =>
+      fun o _ => by rw [ifn (by omega_using []), k₇.mem]⟩ g7) fun u ⟨bu, ou, _, _, vu⟩ =>
     ⟨bu, (k₇.keep.trans ou).mono, fun o ho => by rw [vu o ho]; rfl⟩
   intro i hi u ⟨bu, ou, u4, u5, vu⟩ _
   simp only [List.cons_append, List.nil_append]
@@ -101,9 +101,9 @@ theorem shiftPass_ok {H : Impl.Hmac.Stream.RISCV64.Hash} (hD : H.D = D) {t : Sta
   have hm0 : u₅.mem = u.mem := k₅.mem
   have hb : (u₅.gpr .t1).setWidth 8 = if bit then V (b + i + d) else V (b + i) := by
     have va : u.mem (off (Sp s) (b + i)) = V (b + i) := by
-      have := vu (b + i) (by omega); rw [ifn (by omega)] at this; exact this
+      have := vu (b + i) (by omega); rw [ifn (by omega_using [])] at this; exact this
     have vb : u₁.mem (off (Sp s) (b + i + d)) = V (b + i + d) := by
-      have := vu (b + i + d) (by omega); rw [ifn (by omega)] at this; rw [p₁.mem]; exact this
+      have := vu (b + i + d) (by omega); rw [ifn (by omega_using [])] at this; rw [p₁.mem]; exact this
     rw [f₅, p₄.get .t1, p₃.get .t1, p₂.get .t1, f₁, f₄, f₃, f₂, p₂.get .t1, f₁, va, vb, p₃.get .a3,
       p₂.get .a3, p₁.get .a3, ou.get .a3, g6]
     exact sel_byte _ _ bit
@@ -119,15 +119,15 @@ theorem shiftPass_ok {H : Impl.Hmac.Stream.RISCV64.Hash} (hD : H.D = D) {t : Sta
   · rw [p₉.get .a1, p₈.get .a1, f₇, m₆.gpr, k₅.get .a1, u4]; exact off_off _ _ _
   · rw [p₉.get .a2, f₈, p₇.get .a2, m₆.gpr, k₅.get .a2, u5]
     show off (off (Sp s) (b + i + d)) 1 = off (Sp s) (b + (i + 1) + d)
-    rw [off_off, show b + i + d + 1 = b + (i + 1) + d by omega]
+    rw [off_off, show b + i + d + 1 = b + (i + 1) + d by omega_using []]
   · rw [hm, view_w8 _ _ (by omega) ho, vu o ho]
     by_cases e : o = b + i
     · subst e
-      rw [ifp (show b + i = b + i from rfl), ifp (show b ≤ b + i ∧ b + i < b + (i + 1) from ⟨by omega, by omega⟩)]
+      rw [ifp (show b + i = b + i from rfl), ifp (show b ≤ b + i ∧ b + i < b + (i + 1) from ⟨by omega_using [], by omega_using []⟩)]
     · rw [ifn e]
       by_cases e' : b ≤ o ∧ o < b + i
-      · rw [ifp e', ifp (show b ≤ o ∧ o < b + (i + 1) from ⟨e'.1, by omega⟩)]
-      · rw [ifn e', ifn (show ¬(b ≤ o ∧ o < b + (i + 1)) by omega)]
+      · rw [ifp e', ifp (show b ≤ o ∧ o < b + (i + 1) from ⟨e'.1, by omega_using [e']⟩)]
+      · rw [ifn e', ifn (show ¬(b ≤ o ∧ o < b + (i + 1)) by omega_using [e, e'])]
   · rw [f₉, p₈.get .a5, p₇.get .a5, m₆.gpr, k₅.get .a5]
 
 /-- The shift: `DB`'s place in `M'` by `pos + 1`, from `pos` in `s8`. -/
@@ -150,7 +150,7 @@ theorem shift_ok {H : Impl.Hmac.Stream.RISCV64.Hash} (hD : H.D = D) {t : State} 
     fun u ⟨bu, ku, _, _, vu⟩ => ⟨bu, ku, vu⟩
   intro j hj u ⟨bu, ku, u8, u9, vu⟩ _
   have hp9 : 2 ^ j ≤ 512 := by
-    have : 2 ^ j ≤ 2 ^ 9 := Nat.pow_le_pow_right (by decide) (by omega)
+    have : 2 ^ j ≤ 2 ^ 9 := Nat.pow_le_pow_right (by decide) (by omega_using [hj])
     exact this
   refine WP.seq (WP.mono (shiftPass_ok L hD bu u8 u9 hp9) fun u₁ ⟨b₁, k₁, v₁⟩ => ?_)
   refine wp_srl fun u₂ p₂ f₂ => wp_add fun u₃ p₃ f₃ => wp_subi (imm := 1) fun u₄ p₄ f₄ => wp_nil ?_
@@ -160,8 +160,8 @@ theorem shift_ok {H : Impl.Hmac.Stream.RISCV64.Hash} (hD : H.D = D) {t : State} 
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow, Nat.pow_one]
     have : (pos + 1) / 2 ^ j < 2 ^ 64 := by
-      have := Nat.div_le_self (pos + 1) (2 ^ j); omega
-    rw [Nat.mod_eq_of_lt this, Nat.mod_eq_of_lt (by have := Nat.div_le_self ((pos + 1) / 2 ^ j) 2; omega)]
+      have := Nat.div_le_self (pos + 1) (2 ^ j); omega_using [hp, hk, this]
+    rw [Nat.mod_eq_of_lt this, Nat.mod_eq_of_lt (by have := Nat.div_le_self ((pos + 1) / 2 ^ j) 2; omega_arith)]
   · rw [p₄.get .s9, f₃, p₂.get .s9, k₁.get .s9, u9, ← BitVec.ofNat_add, Nat.pow_succ, Nat.mul_two]
   · rw [k₄.mem, v₁ o ho]
     show passV (view u.mem (Sp s)) _ _ _ _ o = passV (shV V (oY + 8 + D) dN (pos + 1) j) _ _ _ _ o
@@ -171,7 +171,7 @@ theorem shift_ok {H : Impl.Hmac.Stream.RISCV64.Hash} (hD : H.D = D) {t : State} 
     · have hR : oRsa = 8192 := rfl
       have hY : oY = 2048 := rfl
       have := L.D64
-      rw [ifp c, ifp c, e o ho, e (o + 2 ^ j) (by omega)]
+      rw [ifp c, ifp c, e o ho, e (o + 2 ^ j) (by omega_using [hk, hk2, hp9, c, hR, hY])]
     · rw [ifn c, ifn c, e o ho]
   · rw [f₄, p₃.get .s5, p₂.get .s5, k₁.get .s5]
 

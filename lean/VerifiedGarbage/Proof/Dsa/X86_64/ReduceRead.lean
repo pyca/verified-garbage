@@ -18,9 +18,9 @@ theorem write_low_value {mem : Mem} {B : Addr} {d w : Nat} (hw : 1 ≤ w)
     (hbound : d + 8 * w ≤ 2 ^ 64) (value : BitVec 64)
     (hzero : ∀ i < w, i ≠ 0 → word mem B (d + 8 * i) = 0) :
     wv (mem.writeW (off B d) value) B d w = value.toNat := by
-  have hout := writeW_outside mem B value (show d + 8 ≤ 2 ^ 64 by omega)
-  have h := wv_single (mem.writeW (off B d) value) B d (i := 0) w (by omega)
-    (fun i hi hne => by rw [hout.word (by omega) (by omega)]; exact hzero i hi hne)
+  have hout := writeW_outside mem B value (show d + 8 ≤ 2 ^ 64 by omega_using [hw, hbound])
+  have h := wv_single (mem.writeW (off B d) value) B d (i := 0) w (by omega_using [hw])
+    (fun i hi hne => by rw [hout.word (by omega_using [hne]) (by omega_using [hbound, hi])]; exact hzero i hi hne)
   simpa only [Nat.mul_zero, Nat.add_zero, Nat.pow_zero, Nat.mul_one, word_writeW_self] using h
 
 /-- The byte reader accesses exactly the current source byte and the
@@ -68,9 +68,9 @@ theorem reduceRead_context {s : State} {B : Addr} {Z o w wx m : Nat} {minv : Bit
   refine WP.mono (reduceRead_ok hc.good (Nat.le_refl _) hw hp hr) fun t ⟨hmem, hk⟩ => ?_
   let first := s.mem.writeW (off (off B o) (slot wx aX)) ((s.mem p).zeroExtend 64)
   have ho : Outside (off B o) (slot wx aX) 8 s.mem first :=
-    writeW_outside _ _ _ (by omega)
+    writeW_outside _ _ _ (by omega_using [hz, hslot])
   have ha : Arrays (off B o) wx [aX] s.mem first :=
-    Arrays.of_outside (List.mem_singleton_self aX) ho (Nat.le_refl _) (by omega)
+    Arrays.of_outside (List.mem_singleton_self aX) ho (Nat.le_refl _) (by omega_using [])
   have hs : Outside (off B o) (8 * Crt.sSrc) 8 first t.mem := by
     rw [hmem]
     exact writeW_outside _ _ _ (by decide)
@@ -78,7 +78,7 @@ theorem reduceRead_context {s : State} {B : Addr} {Z o w wx m : Nat} {minv : Bit
     intro x hx
     apply hs x
     have h := hx (136, slot wx 8 + tabBytes wx - 136) (List.mem_singleton_self _)
-    have : 256 ≤ slot wx 8 := by unfold slot hdrBytes; omega
+    have : 256 ≤ slot wx 8 := by unfold slot hdrBytes; omega_using []
     unfold Crt.sSrc sFn at *
     omega
   have hf := (arrays_work (js := [aX]) ha (by decide)).trans hfw
@@ -95,15 +95,15 @@ theorem reduceRead_context {s : State} {B : Addr} {Z o w wx m : Nat} {minv : Bit
   refine ⟨ht, ⟨ht.good, (heq aN (by decide) (by decide)).trans hm.modulus, hi⟩,
     ?_, heq, ?_, ?_, ?_, hf, hk⟩
   · rw [hmem, hdrStore_wv _ _ _ (by decide) (by decide) hz,
-      write_low_value hw (by omega) _ hzero]
+      write_low_value hw (by omega_using [hz, hslot]) _ hzero]
     change ((s.mem p).setWidth 64).toNat = (s.mem p).toNat
     rw [BitVec.toNat_setWidth, Nat.mod_eq_of_lt (Nat.lt_trans (s.mem p).isLt (show 2 ^ 8 < 2 ^ 64 by decide))]
   · intro i hi hne
-    rw [hs.word (Or.inr (by have := hdr_lt_slot wx aX (show Crt.sSrc < 32 by decide); omega))
-      (by omega), ho.word (by omega) (by omega)]
+    rw [hs.word (Or.inr (by have := hdr_lt_slot wx aX (show Crt.sSrc < 32 by decide); omega_using [this]))
+      (by omega_using [hz, hslot, hi]), ho.word (by omega_using [hne]) (by omega_using [hz, hslot, hi])]
     exact hzero i hi hne
   · rw [hmem, word_writeW_self]
-  · rw [hs.word (by unfold Crt.sSrc Crt.sRem sFn; omega) (by decide)]
-    exact ho.word (Or.inl (by have := hdr_lt_slot wx aX (show Crt.sRem < 32 by decide); omega)) (by decide)
+  · rw [hs.word (by unfold Crt.sSrc Crt.sRem sFn; omega_using []) (by decide)]
+    exact ho.word (Or.inl (by have := hdr_lt_slot wx aX (show Crt.sRem < 32 by decide); omega_using [this])) (by decide)
 
 end VG.Proof.Dsa.X86_64

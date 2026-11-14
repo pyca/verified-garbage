@@ -533,13 +533,13 @@ theorem arrLoop_ct (hl : AmmOk l) {p sp sl : Nat} (hsel : TOk [.rdi, .r8] (arrSe
   refine WP.mono (subR8_ok v) fun x ⟨x8, xz, kx, xm, _⟩ => ?_
   have hx := hv.of_frm (rs := []) (by rw [xm]; exact Frm.refl _ _ _) (by simp) kx
   have hv8 : v.gpr .r8 - 1 = BitVec.ofNat 64 (5 - (i + 1)) := by
-    rw [k.gpr (by decide), h8, h.2, ofNat64_pred (by omega) (by omega), Nat.sub_sub]
+    rw [k.gpr (by decide), h8, h.2, ofNat64_pred (by omega_using [hi]) (by omega_using []), Nat.sub_sub]
   refine ⟨?_, fun _ => ⟨hx, by rw [x8, hv8]⟩, fun _ => ⟨hx, by rw [kx.gpr (by decide)]; exact h12⟩⟩
-  simp only [eval, xz, hv8, ofNat64_beq_zero (show 5 - (i + 1) < 2 ^ 64 by omega), Option.map_some,
+  simp only [eval, xz, hv8, ofNat64_beq_zero (show 5 - (i + 1) < 2 ^ 64 by omega_using []), Option.map_some,
     Option.some.injEq]
   apply Bool.eq_iff_iff.mpr
   simp only [Bool.not_eq_eq_eq_not, Bool.not_true, decide_eq_false_iff_not, decide_eq_true_eq]
-  omega
+  omega_using []
 
 
 /-- `p`'s region is constant time. -/

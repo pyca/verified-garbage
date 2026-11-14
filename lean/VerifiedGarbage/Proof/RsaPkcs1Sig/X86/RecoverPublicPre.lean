@@ -33,15 +33,15 @@ theorem Arguments.append {g : Geometry} {values : Nat → BitVec 32} {n : Nat} {
   intro j hj
   by_cases same : j = n
   · subst j; rw [M, Mem.readW_writeW_self32]
-  · rw [outgoing_word_preserved (by omega) hn same F]
-    exact h j (by omega)
+  · rw [outgoing_word_preserved (by omega_using [hn, hj]) hn same F]
+    exact h j (by omega_using [hj, same])
 
 theorem slotFrame_outgoing {g : Geometry} {s t : State} {j : Nat} (hj : j < 10)
     (F : Frame [⟨byteAddr g.stack + BitVec.ofNat 64 (4 * j), 4⟩] s.mem t.mem) :
     Frame [⟨byteAddr g.stack, 40⟩] s.mem t.mem := F.sub (by
   intro r hr
   obtain rfl := List.mem_singleton.mp hr
-  exact ⟨_, List.mem_singleton_self _, Offset.sub_base _ (by omega)⟩)
+  exact ⟨_, List.mem_singleton_self _, Offset.sub_base _ (by omega_using [hj])⟩)
 
 theorem prepareArgument_ok {g : Geometry} {bs : Fin 4 → List Byte} {s : State}
     {values : Nat → BitVec 32} {n : Nat} {code : List Instr}
@@ -98,10 +98,10 @@ theorem pubArgs_ok {g : Geometry} {bs : Fin 4 → List Byte} {s : State}
         Context g bs t ∧ Arguments g (publicArgument g) (j + 1) t ∧
         Frame [⟨byteAddr g.stack, 40⟩] u.mem t.mem ∧ Keeps [.eax] u t := by
     have inputBound : inputSlot j < 13 := by
-      rcases (show j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4 ∨ j = 5 ∨ j = 6 ∨ j = 7 ∨ j = 8 ∨ j = 9 by omega) with
+      rcases (show j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4 ∨ j = 5 ∨ j = 6 ∨ j = 7 ∨ j = 8 ∨ j = 9 by omega_using [hj, hj']) with
         rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide
     have value : g.argument (inputSlot j) = publicArgument g j := by
-      rcases (show j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4 ∨ j = 5 ∨ j = 6 ∨ j = 7 ∨ j = 8 ∨ j = 9 by omega) with
+      rcases (show j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4 ∨ j = 5 ∨ j = 6 ∨ j = 7 ∨ j = 8 ∨ j = 9 by omega_using [hj, hj']) with
         rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> rfl
     apply prepareArgument_ok (bs := bs) a hj'
     refine WP.mono (copyArgument_ok u hu inputBound hj') ?_
@@ -116,9 +116,9 @@ theorem pubArgs_ok {g : Geometry} {bs : Fin 4 → List Byte} {s : State}
     | zero => exact WP.block_nil ⟨hu, a, Frame.refl _ _, Keeps.refl _ _⟩
     | succ n ih =>
       rw [List.range_succ, List.flatMap_append, List.flatMap_singleton, WP.block_append_iff]
-      refine WP.mono (ih (by omega) hu a) ?_
+      refine WP.mono (ih (by omega_using [hn]) hu a) ?_
       rintro v ⟨hv, av, F, K⟩
-      refine WP.mono (next hv (by omega) (by omega) av) ?_
+      refine WP.mono (next hv (by omega_using []) (by omega_using [hn]) av) ?_
       rintro t ⟨ht, args, Ft, Kt⟩
       exact ⟨ht, args, F.trans Ft, K.trans Kt⟩
   have code : pubArgs = localArgument em1Offset 0 ++
@@ -146,20 +146,20 @@ def publicWr (g : Geometry) : List Region :=
 theorem publicArgs_values {g : Geometry} {bs : Fin 4 → List Byte} {s : State}
     (h : Context g bs s) (a : Arguments g (publicArgument g) 10 s) {j : Nat} (hj : j < 10) :
     arg (s.callEntry.withRegions (publicRd g) (publicWr g)) j = publicArgument g j := by
-  rw [arg_withRegions, arg_callEntry (by rw [h.sp]; have := h.valid.stackLow; omega)
-    (by rw [h.sp]; have := h.valid.stackHigh; omega)]
+  rw [arg_withRegions, arg_callEntry (by rw [h.sp]; have := h.valid.stackLow; omega_using [this])
+    (by rw [h.sp]; have := h.valid.stackHigh; omega_using [hj, this])]
   change s.mem.readW (addr (s.gpr .esp) (4 * j)) 32 = _
-  rw [h.address (by omega)]
+  rw [h.address (by omega_using [hj])]
   exact a j hj
 
 theorem publicCall_pre {g : Geometry} {bs : Fin 4 → List Byte} {s : State}
     (h : Context g bs s) (a : Arguments g (publicArgument g) 10 s) (siglen : g.signatureLength = g.length) :
     (Proof.Rsa.publicPrecomputedCheckedContract abi 96).pre (s.callEntry.withRegions (publicRd g) (publicWr g)) := by
   have sa := fun {j} (hj : j < 10) => publicArgs_values h a hj
-  have kfit : g.length < 2 ^ 32 := by have := h.valid.maxLength; omega
-  have efit : g.exponentLength < 2 ^ 32 := by have := h.valid.exponentFits; omega
-  have wfit : g.scratchLength < 2 ^ 32 := by have := h.valid.workspaceFit; omega
-  have pfit : g.preLength < 2 ^ 32 := by have := h.valid.sourceFits 3; change (g.sources 3).toNat + 8 * g.preLength ≤ 2 ^ 32 at this; omega
+  have kfit : g.length < 2 ^ 32 := by have := h.valid.maxLength; omega_using [this]
+  have efit : g.exponentLength < 2 ^ 32 := by have := h.valid.exponentFits; omega_using [kfit, this]
+  have wfit : g.scratchLength < 2 ^ 32 := by have := h.valid.workspaceFit; omega_using [this]
+  have pfit : g.preLength < 2 ^ 32 := by have := h.valid.sourceFits 3; change (g.sources 3).toNat + 8 * g.preLength ≤ 2 ^ 32 at this; omega_using [this]
   sig_pre [Proof.Rsa.publicPrecomputedCheckedContract, Proof.Rsa.publicPrecomputedSig, abi, argSlots, argVal, argBytes, stackBelow]
   simp only [sa (by decide : 0 < 10), sa (by decide : 1 < 10), sa (by decide : 2 < 10),
     sa (by decide : 3 < 10), sa (by decide : 4 < 10), sa (by decide : 5 < 10),
@@ -178,11 +178,11 @@ theorem publicCall_pre {g : Geometry} {bs : Fin 4 → List Byte} {s : State}
   have cTemp := h.valid.calleeInner.sub_right h.em1Sub
   have cWork := h.valid.stackWorkspace.sub_left h.valid.calleeSub
   have cArgs := h.valid.calleeInner.sub_right argsSub
-  have low : (g.stack - 4).toNat = g.stack.toNat - 4 := sub_toNat (k := 4) (by have := h.valid.stackLow; omega)
+  have low : (g.stack - 4).toNat = g.stack.toNat - 4 := sub_toNat (k := 4) (by have := h.valid.stackLow; omega_using [this])
   have retSub : (⟨(g.stack - 4).setWidth 64, 4⟩ : Region).Sub g.calleeRegion :=
     VG.X86.below_sub (by decide : 4 ≤ 100) h.valid.stackLow
   have belowSub : (⟨(g.stack - 4).setWidth 64 - 96#64, 96⟩ : Region).Sub g.calleeRegion := by
-    rw [← VG.X86.Taint.sub_setWidth (by rw [low]; have := h.valid.stackLow; omega : 96 ≤ (g.stack - 4).toNat)]
+    rw [← VG.X86.Taint.sub_setWidth (by rw [low]; have := h.valid.stackLow; omega_using [this] : 96 ≤ (g.stack - 4).toNat)]
     exact VG.X86.below_inner (by decide : 96 + 4 ≤ 100) h.valid.stackLow
   rw [low]
   have sourceSig : g.sourceRegion 2 = ⟨(g.sources 2).setWidth 64, g.length⟩ := by
@@ -196,8 +196,8 @@ theorem publicCall_pre {g : Geometry} {bs : Fin 4 → List Byte} {s : State}
     rw [siglen] at fit
     exact fit
   have emFit := h.valid.encodingFit (d := VG.Impl.RsaPkcs1Sig.X86.Verify.em1Offset)
-    (by have := h.valid.maxLength; simp only [VG.Impl.RsaPkcs1Sig.X86.Verify.em1Offset, VG.Impl.RsaPkcs1Sig.X86.Verify.frameBytes]; omega)
-  exact ⟨by have := h.valid.stackLow; omega, by have := h.valid.stackHigh; omega,
+    (by have := h.valid.maxLength; simp only [VG.Impl.RsaPkcs1Sig.X86.Verify.em1Offset, VG.Impl.RsaPkcs1Sig.X86.Verify.frameBytes]; omega_using [this])
+  exact ⟨by have := h.valid.stackLow; omega_using [this], by have := h.valid.stackHigh; omega_using [this],
     by unfold publicRd; rw [sourcePre, sourceSig]; rfl, rfl,
     tempSource 3, tempSource 1, by rw [← sourceSig]; exact tempSource 2,
     h.valid.stackWorkspace.sub_left tempStack, h.em1Args,

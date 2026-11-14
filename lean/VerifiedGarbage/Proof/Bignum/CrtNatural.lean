@@ -6,6 +6,7 @@ import Mathlib.Tactic.Finiteness.Attr
 import Mathlib.Tactic.Attr.Core
 import Mathlib.Tactic.ToDual
 import Mathlib.Tactic.ToAdditive
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # Natural-number CRT recombination agrees with the signed RFC coefficient -/
 
@@ -26,6 +27,6 @@ theorem crt_recombine_bound {p q mp mq qi : Nat} (hp : 0 < p) (mqBound : mq < q)
   have h := Nat.mod_lt ((mp + p - mq % p) % p * qi) hp
   have H := Nat.mul_le_mul_left q h
   rw [Nat.mul_succ, Nat.mul_comm q p] at H
-  omega
+  omega_using [mqBound, H]
 
 end VG.Proof.Bignum

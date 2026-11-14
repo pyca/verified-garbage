@@ -32,31 +32,31 @@ theorem wide_value (x y : BitVec 32) :
   let u := a0 * b1 + (t &&& mask16)
   change ((p &&& mask16) + (u <<< 16)).toNat +
     (a1 * b1 + (t >>> 16) + (u >>> 16)).toNat * 2 ^ 32 = _
-  have ha0 : a0.toNat < 65536 := by rw [toNat_and_mask16]; omega
-  have ha1 : a1.toNat < 65536 := by rw [toNat_shr]; have := x.isLt; omega
-  have hb0 : b0.toNat < 65536 := by rw [toNat_and_mask16]; omega
-  have hb1 : b1.toNat < 65536 := by rw [toNat_shr]; have := y.isLt; omega
+  have ha0 : a0.toNat < 65536 := by rw [toNat_and_mask16]; omega_using []
+  have ha1 : a1.toNat < 65536 := by rw [toNat_shr]; have := x.isLt; omega_using []
+  have hb0 : b0.toNat < 65536 := by rw [toNat_and_mask16]; omega_using []
+  have hb1 : b1.toNat < 65536 := by rw [toNat_shr]; have := y.isLt; omega_using []
   have hx : a0.toNat + a1.toNat * 65536 = x.toNat := by
-    rw [toNat_and_mask16, toNat_shr]; omega
+    rw [toNat_and_mask16, toNat_shr]; omega_using []
   have hy : b0.toNat + b1.toNat * 65536 = y.toNat := by
-    rw [toNat_and_mask16, toNat_shr]; omega
+    rw [toNat_and_mask16, toNat_shr]; omega_using []
   obtain ⟨hp, ht, hu, hh⟩ := wide_bounds ha0 ha1 hb0 hb1
   have pval : p.toNat = a0.toNat * b0.toNat := toNat_mul_lt hp
-  have ab : a1.toNat * b0.toNat < 2 ^ 32 := by omega
+  have ab : a1.toNat * b0.toNat < 2 ^ 32 := by omega_using [ht]
   have tval : t.toNat = a1.toNat * b0.toNat + a0.toNat * b0.toNat / 65536 := by
     change (a1 * b0 + (p >>> 16)).toNat = _
     rw [toNat_add_lt (by rw [toNat_mul_lt ab, toNat_shr p 16, pval]; exact ht),
       toNat_mul_lt ab, toNat_shr p 16, pval]
-  have ac : a0.toNat * b1.toNat < 2 ^ 32 := by omega
+  have ac : a0.toNat * b1.toNat < 2 ^ 32 := by omega_using [hu]
   have uval : u.toNat = a0.toNat * b1.toNat +
       (a1.toNat * b0.toNat + a0.toNat * b0.toNat / 65536) % 65536 := by
     change (a0 * b1 + (t &&& mask16)).toNat = _
     rw [toNat_add_lt (by rw [toNat_mul_lt ac, toNat_and_mask16 t, tval]; exact hu),
       toNat_mul_lt ac, toNat_and_mask16 t, tval]
-  have ad : a1.toNat * b1.toNat < 2 ^ 32 := by omega
+  have ad : a1.toNat * b1.toNat < 2 ^ 32 := by omega_using [hh]
   have hval : (a1 * b1 + (t >>> 16)).toNat = a1.toNat * b1.toNat +
       (a1.toNat * b0.toNat + a0.toNat * b0.toNat / 65536) / 65536 := by
-    rw [toNat_add_lt (by rw [toNat_mul_lt ad, toNat_shr t 16, tval]; omega),
+    rw [toNat_add_lt (by rw [toNat_mul_lt ad, toNat_shr t 16, tval]; omega_using [ha0, ha1, hb0, hb1, hx, hy, hp, ht, hu, hh, pval, ab, tval, ac, uval, ad]),
       toNat_mul_lt ad, toNat_shr t 16, tval]
   rw [toNat_add_lt (x := a1 * b1 + _) (by rw [hval, toNat_shr u 16, uval]; exact hh),
     hval, toNat_shr u 16, uval]
@@ -66,7 +66,7 @@ theorem wide_value (x y : BitVec 32) :
   have hlo : (a0.toNat * b0.toNat % 65536 +
       (a0.toNat * b1.toNat + (a1.toNat * b0.toNat + a0.toNat * b0.toNat / 65536) % 65536) * 2 ^ 16 % 2 ^ 32) % 2 ^ 32 =
       a0.toNat * b0.toNat % 65536 +
-        (a0.toNat * b1.toNat + (a1.toNat * b0.toNat + a0.toNat * b0.toNat / 65536) % 65536) % 65536 * 65536 := by omega
+        (a0.toNat * b1.toNat + (a1.toNat * b0.toNat + a0.toNat * b0.toNat / 65536) % 65536) % 65536 * 65536 := by omega_using []
   rw [hlo]
   exact he
 

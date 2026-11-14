@@ -24,7 +24,7 @@ theorem widthMask_ok {s : State} {n value : Nat}
     (hn : n < 2 ^ 31) (hv : value < 2 ^ 64) (h8 : s.gpr .r8 = BitVec.ofNat 64 value) :
     WP isa (.block (Checks.widthMask n)) s fun t =>
       t.gpr .rax = mask (decide (value = n)) ∧ t.mem = s.mem ∧ Keep [.rax] s t := by
-  have hn64 : n < 2 ^ 64 := by omega
+  have hn64 : n < 2 ^ 64 := by omega_using [hn]
   have he : (BitVec.ofNat 64 value ^^^ BitVec.ofNat 64 n) = 0 ↔ value = n := by
     change (BitVec.ofNat 64 value ^^^ BitVec.ofNat 64 n) = 0#64 ↔ value = n
     rw [BitVec.xor_eq_zero_iff]

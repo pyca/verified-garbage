@@ -76,7 +76,7 @@ theorem finOk_finishP (hF : ShortFacts) {ks : Prog isa} (hks : KsOk ks) :
       · exact X.cw.sub_right (Lay.wSub (by decide))
       · exact X.cd
       · exact X.ct.symm) X.w X.ok
-  have p0 := hX 0 (by have := hpn.1; omega)
+  have p0 := hX 0 (by have := hpn.1; omega_using [hpn])
   simp only [Nat.mul_zero, Nat.add_zero, Nat.zero_add] at p0
   rw [ctxH_eq, hH₃] at p0
   have cov₃ := X.cov
@@ -133,7 +133,7 @@ theorem sealRunFin_ok {M : CtxMode} (B : BlkFn M) {fin : Prog isa} (hfin : FinOk
   have hc₂ : ciphOf s₂.mem Ctx R = ctxCiph s₀.mem Ctx R :=
     ciph_frame Mi.frame (fun r hr => dM _ _ L.cw' L.kc r hr) hR'
   have hp₂ : bytesAt s₂.mem D n = bytesAt s₀.mem D n :=
-    bytesAt_frame Mi.frame (dM _ _ C.dE C.data.ok.stk) (by have := C.data.ok.lt; omega)
+    bytesAt_frame Mi.frame (dM _ _ C.dE C.data.ok.stk) (by have := C.data.ok.lt; omega_using [this])
   rw [Mi.j0, hc₂] at hT₄
   refine ⟨he₄, hrd₄.trans (P.rd.trans Mi.rd), hwr₄.trans (P.wr.trans Mi.wr),
     Mi.saved.frame f₄ (saved_oneFrameB L C.dE C.t_w), ?_, by rw [hC, hc₂, hp₂, Proof.Gcm.gctr_eq], hT₄⟩
@@ -191,7 +191,7 @@ theorem sealRunP_rel {ks : Prog isa} (hks : KsOk ks) (hkr : KsRel ks)
         Covers [⟨Ctx, 1024⟩] (s.rd ++ s.wr) :=
     fun h => ⟨⟨h.env, h.rounds.1, h.dat, h.len⟩, h.ext.cov⟩
   exact (RelCT.seq (a.mono (fun _ _ h => h) fun _ _ h => ⟨h.2.1, h.2.2⟩)
-    (RelCT.seq bl ((finishP_rel hks hkr hRr (by omega)).mono (fun _ _ h => ⟨fi h.1, fi h.2⟩)
+    (RelCT.seq bl ((finishP_rel hks hkr hRr (by omega_using [])).mono (fun _ _ h => ⟨fi h.1, fi h.2⟩)
     fun _ _ h => h))).mono (fun _ _ h => h) fun _ _ _ => trivial
 
 end VG.Proof.AesGcm.X86_64.Fast

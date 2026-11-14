@@ -31,7 +31,7 @@ theorem round_fit {T a b u m n : Nat} (hT : T < 2 * m) (ha : a < 2 ^ 32)
   have sum := round_sum_lt hT ha hb hu
   rw [Nat.mul_add, Nat.pow_add]
   change T + a * b + u * m < 2 ^ (32 * n) * 2 ^ 64
-  omega
+  omega_using [hm, sum]
 
 theorem round_cancel {T T' u m inv : Nat} (hi : (m * inv + 1) % 2 ^ 32 = 0)
     (hu : u = T * inv % 2 ^ 32) (hs : T' = T + u * m) : T' % 2 ^ 32 = 0 := by

@@ -22,16 +22,16 @@ theorem input_byte (m : Mem) (a : Addr) {j : Nat} (hj : j<12) :
   simp only [vbyte,ofVDwords,BitVec.getLsbD_extractLsb',hi,decide_true,Bool.true_and,
     BitVec.getLsbD_append]
   by_cases h : j<8
-  · rw [ite_eq_left (by omega)]
-    simp only [Mem.readW,BitVec.getLsbD_setWidth,show 8*j+i<64 by omega,decide_true,Bool.true_and]
-    rw [getLsbD_read _ 8 _ _ (by omega)]
-    simp only [show (8*j+i)/8=j by omega,show (8*j+i)%8=i by omega]
-  · rw [ite_eq_right (by omega)]
-    simp only [Mem.readW,BitVec.getLsbD_setWidth,show 8*j+i-64<64 by omega,
-      show 8*j+i-64<32 by omega,decide_true,Bool.true_and]
-    rw [getLsbD_read _ 4 _ _ (by omega)]
-    simp only [show (8*j+i-64)/8=j-8 by omega,show (8*j+i-64)%8=i by omega]
-    rw [show (8:BitVec 64)=BitVec.ofNat 64 8 from rfl,ptr_add,show 8+(j-8)=j by omega]
+  · rw [ite_eq_left (by omega_using [hi, h])]
+    simp only [Mem.readW,BitVec.getLsbD_setWidth,show 8*j+i<64 by omega_using [hi, h],decide_true,Bool.true_and]
+    rw [getLsbD_read _ 8 _ _ (by omega_using [hi, h])]
+    simp only [show (8*j+i)/8=j by omega_using [hi],show (8*j+i)%8=i by omega_using [hi]]
+  · rw [ite_eq_right (by omega_using [h])]
+    simp only [Mem.readW,BitVec.getLsbD_setWidth,show 8*j+i-64<64 by omega_using [hj, hi],
+      show 8*j+i-64<32 by omega_using [hj, hi],decide_true,Bool.true_and]
+    rw [getLsbD_read _ 4 _ _ (by omega_using [hj, hi])]
+    simp only [show (8*j+i-64)/8=j-8 by omega_using [hi],show (8*j+i-64)%8=i by omega_using [hi, h]]
+    rw [show (8:BitVec 64)=BitVec.ofNat 64 8 from rfl,ptr_add,show 8+(j-8)=j by omega_using [h]]
 
 
 theorem decoded_spec (s : State) {k : Nat} (hk : k<32) {x : BitVec 128}
@@ -44,19 +44,19 @@ theorem decoded_spec (s : State) {k : Nat} (hk : k<32) {x : BitVec 128}
   by_cases h : e%2=0
   · rw [ite_eq_left h,ite_eq_left h]
     constructor <;> apply BitVec.eq_of_toNat_eq
-    · rw [hl _ (by omega)]
+    · rw [hl _ (by omega_using [he])]
       dsimp only
-      rw [show 8*k+2*(e/2)=8*k+e by omega]
-    · rw [hl _ (by omega)]
+      rw [show 8*k+2*(e/2)=8*k+e by omega_using [h]]
+    · rw [hl _ (by omega_using [he])]
       dsimp only
-      rw [show 8*k+2*(2+e/2)=8*k+4+e by omega]
+      rw [show 8*k+2*(2+e/2)=8*k+4+e by omega_using [h]]
   · rw [ite_eq_right h,ite_eq_right h]
     constructor <;> apply BitVec.eq_of_toNat_eq
-    · rw [hh _ (by omega)]
+    · rw [hh _ (by omega_using [he])]
       dsimp only
-      rw [show 8*k+(2*(e/2)+1)=8*k+e by omega]
-    · rw [hh _ (by omega)]
+      rw [show 8*k+(2*(e/2)+1)=8*k+e by omega_using [h]]
+    · rw [hh _ (by omega_using [he])]
       dsimp only
-      rw [show 8*k+(2*(2+e/2)+1)=8*k+4+e by omega]
+      rw [show 8*k+(2*(2+e/2)+1)=8*k+4+e by omega_using [h]]
 
 end VG.Proof.MlKem.AArch64.Codec16

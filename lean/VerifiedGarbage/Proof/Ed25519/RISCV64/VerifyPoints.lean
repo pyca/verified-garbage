@@ -179,9 +179,9 @@ theorem challengeOr_ok {ch : Addr} :
   | 0, _, s, _, _ => WP.block_nil ⟨Rest.refl _ _, rfl, by simp⟩
   | n + 1, hn, s, h11, hin => by
     rw [List.range_succ, List.flatMap_append, List.flatMap_singleton]
-    refine WP.append (challengeOr_ok n (by omega) s h11 hin) fun s1 ⟨r1, m1, e1⟩ => ?_
-    refine wp_lbu (a := ch + BitVec.ofNat 64 (32 + n)) (by omega)
-      (by rw [r1.gpr _ (by decide), h11]) (by rw [r1.rd, r1.wr]; exact hin n (by omega)) fun s2 u2 => ?_
+    refine WP.append (challengeOr_ok n (by omega_using [hn]) s h11 hin) fun s1 ⟨r1, m1, e1⟩ => ?_
+    refine wp_lbu (a := ch + BitVec.ofNat 64 (32 + n)) (by omega_using [hn])
+      (by rw [r1.gpr _ (by decide), h11]) (by rw [r1.rd, r1.wr]; exact hin n (by omega_using [hn])) fun s2 u2 => ?_
     refine wp_or fun s3 u3 => WP.block_nil ⟨r1.trans ((u2.rest (by decide)).trans (u3.rest (by decide))),
       by rw [u3.mem, u2.mem, m1], ?_⟩
     rw [u3.gpr, u2.gpr, u2.other _ (by decide), or_eq_zero, e1, m1]
@@ -197,9 +197,9 @@ theorem challengeOr_ok {ch : Addr} :
     rw [hz]
     constructor
     · rintro ⟨⟨h0, hl⟩, hb⟩
-      exact ⟨h0, fun i hi => if e : i = n then e ▸ hb else hl i (by omega)⟩
+      exact ⟨h0, fun i hi => if e : i = n then e ▸ hb else hl i (by omega_using [hi, e])⟩
     · rintro ⟨h0, hl⟩
-      exact ⟨⟨h0, fun i hi => hl i (by omega)⟩, hl n (by omega)⟩
+      exact ⟨⟨h0, fun i hi => hl i (by omega_using [hi])⟩, hl n (by omega_using [])⟩
 
 /-- **`challengeHigh`**: `a4` zero exactly when the challenge's top 32 bytes are. -/
 theorem challengeHigh_ok {ch : Addr} {s : State} (h11 : s.gpr .s11 = ch)
@@ -231,7 +231,7 @@ theorem BStat.of_frame {T : Addr} {s t : State} (h : BStat b T s) (hrd : t.rd = 
   fit := h.fit
   words q hq := by
     rw [← h.words q hq]
-    exact hf.readW (r := ⟨T, 1920⟩) (Offset.contains_base T (by omega) (by omega))
+    exact hf.readW (r := ⟨T, 1920⟩) (Offset.contains_base T (by omega_using [hq]) (by omega_using [hq]))
       (fun r hr x h₁ h₂ => h.ws x h₁ (hs r hr x h₂)) (by decide)
   ws := h.ws
   al := h.al

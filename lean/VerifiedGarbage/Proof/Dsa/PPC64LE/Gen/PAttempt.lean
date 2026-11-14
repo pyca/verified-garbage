@@ -45,12 +45,12 @@ theorem topBit_vp {pv : Nat} (hc : (sPBE, Spec.Rsa.i2osp pv G.pLen) ∈ c.cl) (h
   have big := gi.wBig
   have kb := gi.kBig
   have l := h.lens
-  have hkw : kB G.pLen ≤ wB G.pLen := by simp only [wB]; omega
+  have hkw : kB G.pLen ≤ wB G.pLen := by simp only [wB]; omega_using []
   have hp0 : 0 < G.pLen := by rcases l with e | e | e <;> rw [e] <;> decide
   have nP : sPBE = 1056 := rfl
   have hkB : sPBE + G.pLen ≤ kB G.pLen := by rcases l with e | e | e <;> rw [e] <;> decide
   refine WP.sp_eq ?_
-  refine wp_lbz (by decide) (by decide) (by rw [gi.r28]) (gi.inRdWr (by omega)) fun s₁ u₁ => ?_
+  refine wp_lbz (by decide) (by decide) (by rw [gi.r28]) (gi.inRdWr (by omega_using [big, kb, l, hkB])) fun s₁ u₁ => ?_
   refine WP.wr (exec_lsr_d (by decide)) fun t u sp _ => WP.block_nil fun sp' => ⟨⟨h.of_keep
     (ws := [.r0]) ⟨fun r hr => by rw [u.other _ (by simpa using hr), u₁.other _ (by simpa using hr)],
       by rw [u.rd, u₁.rd], by rw [u.wr, u₁.wr]⟩ (by rw [u.mem, u₁.mem]) sp', x⟩, ?_⟩
@@ -176,8 +176,8 @@ theorem pAttempt_vp {g : Geo} (HO : HashOk g.G) {Lp : Impl.Dsa.ProbablePrime.Lay
   have nP : sPBE = 1056 := rfl
   have nE : sE = 1440 := rfl
   have hkB : sE + G.pLen ≤ kB G.pLen := by rcases hlq with ⟨e, _⟩ | ⟨e, _⟩ | ⟨e, _⟩ <;> rw [e] <;> decide
-  have hkw : kB G.pLen ≤ wB G.pLen := by simp only [wB]; omega
-  have eB : eBytes G.pLen G.qLen ≤ G.pLen := by simp only [eBytes]; omega
+  have hkw : kB G.pLen ≤ wB G.pLen := by simp only [wB]; omega_using []
+  have eB : eBytes G.pLen G.qLen ≤ G.pLen := by simp only [eBytes]; omega_using [hlq]
   unfold Geo.pAttempt
   simp only [VG.Impl.Rsa.PPC64LE.Keys.seqs]
   rw [hp, hq]
