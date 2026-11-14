@@ -218,7 +218,10 @@ own changes are rebuilt either way, on top of the restored build.
   `lean/VerifiedGarbage/TCB/X86_64/Isa.lean`. `ci/check_mcdt.py` checks the
   generated code instead: every instruction on Intel's MCDT list must be
   inside that exact sequence in its function, entered only through the
-  prologue.
+  prologue, or in an internal function with no MXCSR instruction that is
+  called only from inside such sequences (or from other such functions).
+  So one sequence can cover a computation's calls of its arithmetic,
+  instead of each call setting MXCSR again.
 * `TCB/` holds definitions only and imports only Lean core; lemmas go in
   `Proof/`. `Spec/` and `Impl/` never import `Proof/`.
   `ci/check_lean_imports.py` checks both.

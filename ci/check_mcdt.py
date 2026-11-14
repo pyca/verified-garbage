@@ -28,11 +28,30 @@ Intel's sequence, exactly:
   contracts.)
 
 A region is only entered through its prologue: no jump from outside it may
-land inside it, and it may not contain a `call` or `ret`. So a cold branch
+land inside it, and it may not contain a `ret`. So a cold branch
 (`Code.iteCold`) may not start inside a region either: its code lies after
-the function's `ret`, and its jump back would enter the region from outside. The check is
-conservative: it rejects every affected instruction outside a region,
-whether or not its operands are secret.
+the function's `ret`, and its jump back would enter the region from outside.
+
+A region may `call` an internal function that runs only inside regions
+(`region_only`), so that one region can cover a computation's many calls of
+its multiplications instead of each call setting MXCSR again. Such a
+function:
+
+* is internal (`assembly/internal/<name>.s`, `VG.Rust.Internal`): only the
+  verified functions of its crate call it, as their code does (`Code.call`),
+  never Rust code, so the `call`s of the assembly files are all its calls;
+* has no instruction that reads or writes MXCSR, so MXCSR holds `0x1FBF`
+  for all of it, as for the instructions of the region that called it;
+* is called at least once, and each of its calls, in any function of its
+  crate, is inside a region or in another such function. (Recursion is not
+  needed and not accepted: the set is the least one closed under this.)
+
+Its affected instructions then run inside the region of each call that
+reaches them: after the prologue's `lfence` and before the epilogue's. A
+`call` inside a region of any other function, or of no named function, is
+rejected. The check is conservative: it rejects every affected instruction
+outside a region and every such function, whether or not its operands are
+secret.
 """
 
 import pathlib
@@ -58,6 +77,8 @@ AFFECTED = {
 FN = re.compile(r"^(vg_\w+):$")
 LABEL = re.compile(r"^(\d+):$")
 MXCSR_VALUE = {"8127", "0x1FBF", "0x1fbf"}
+MXCSR_OPS = ("ldmxcsr", "stmxcsr")
+CALL = re.compile(r"call \{(vg_\w+)\}")
 
 
 def functions(text):
@@ -142,7 +163,16 @@ def prologue(instrs, i, labels):
     return None, "not preceded by stmxcsr in the same straight-line code"
 
 
-def check_function(name, instrs, lines, labels):
+def callee(instr):
+    """The function a `call` names (`call {vg_f}`), or `None`."""
+    m = CALL.fullmatch(instr)
+    return m.group(1) if m else None
+
+
+def find_regions(name, instrs, lines, labels):
+    """The errors of the prologues and epilogues of a function, its regions
+    (`(first, end)`: `instrs[first:end]` is protected), the region each
+    instruction is in (or `None`), and each instruction's mnemonic."""
     errors = []
 
     def at(k):
@@ -191,13 +221,37 @@ def check_function(name, instrs, lines, labels):
     region_at = [None] * len(instrs)
     for r in regions:
         region_at[r[0] : r[1]] = [r] * (r[1] - r[0])
+    return errors, regions, region_at, mnemonics
+
+
+def check_function(name, instrs, lines, labels, inside=False, region_only=frozenset(), why=None,
+                   found=None):
+    """The errors of a function and its number of regions. `inside`: it runs
+    only inside regions (`region_only`), the set of such functions of its
+    crate; `why`: if it is not one but internal, why not; `found`: its
+    `find_regions`, if already computed."""
+    errors, regions, region_at, mnemonics = found or find_regions(name, instrs, lines, labels)
+    errors = list(errors)
+
+    def at(k):
+        return f"{name}:{lines[k]}"
+
     for k, (instr, op) in enumerate(zip(instrs, mnemonics)):
         r = region_at[k]
-        if op in AFFECTED and r is None:
+        if op in AFFECTED and r is None and not inside:
             errors.append(
                 f"{at(k)}: `{instr}` is outside Intel's MXCSR prologue and "
                 "epilogue (MCDT, see lean/VerifiedGarbage/TCB/X86_64/Isa.lean)"
+                + (f": its function is not called only inside MCDT regions ({why})" if why else "")
             )
+        if op == "call" and r is not None:
+            f = callee(instr)
+            if f not in region_only:
+                errors.append(
+                    f"{at(k)}: `{instr}` is inside an MCDT region, and calls no internal "
+                    "function that runs only inside MCDT regions"
+                )
+            continue
         if op in ("call", "ret"):
             if r is not None:
                 errors.append(f"{at(k)}: `{instr}` is inside an MCDT region")
@@ -220,11 +274,47 @@ def check_function(name, instrs, lines, labels):
     return errors, len(regions)
 
 
+def region_only(fns):
+    """Of the functions of a crate (`(where, name, instrs, lines, labels,
+    internal, found)`, `found` their `find_regions`), the names of those that
+    run only inside regions, and for each other internal function why it does
+    not: the least set of internal functions with no MXCSR instruction,
+    called at least once, each of whose calls is inside a region or in a
+    function of the set."""
+    calls = {}  # callee: [(caller, line, inside a region)]
+    for where, name, instrs, lines, _, _, (_, _, region_at, mnemonics) in fns:
+        for k, op in enumerate(mnemonics):
+            if op == "call" and (f := callee(instrs[k])):
+                calls.setdefault(f, []).append((name, f"{where}:{lines[k]}", region_at[k] is not None))
+    candidates, why = set(), {}
+    for _, name, instrs, _, _, internal, _ in fns:
+        if not internal:
+            continue
+        if any(mnemonic(x) in MXCSR_OPS for x in instrs):
+            why[name] = "it reads or writes MXCSR"
+        elif name not in calls:
+            why[name] = "it is never called"
+        else:
+            candidates.add(name)
+    inside = set()
+    while True:
+        new = {f for f in candidates - inside
+               if all(r or c in inside for c, _, r in calls[f])}
+        if not new:
+            break
+        inside |= new
+    for f in candidates - inside:
+        c, line, _ = next(x for x in calls[f] if not (x[2] or x[0] in inside))
+        why[f] = f"{c} calls it outside an MCDT region, at {line}"
+    return frozenset(inside), why
+
+
 def main():
     errors = []
     regions = 0
     for target_name in TARGETS:
         src = asm_layout.target_dir(ROOT, target_name)
+        fns = []
         for path in sorted(src.glob("*.rs")) + sorted(src.glob("internal/vg_*.rs")):
             # Every naked function is checked: each is in its module's assembly file
             # (an internal function's, `internal/<name>.rs`, in `internal/<name>.s`),
@@ -236,16 +326,26 @@ def main():
                 if naked:
                     errors.append(f"{path.relative_to(ROOT)}: has no assembly file {assembly.relative_to(ROOT)}")
                 continue
-            fns, unread = functions(assembly.read_text())
+            read, unread = functions(assembly.read_text())
             where = assembly.relative_to(ROOT)
             errors += [f"{where}:{n}: neither a function, an instruction nor a label" for n in unread]
-            for name, instrs, lines, labels in fns:
-                errs, n = check_function(f"{where} ({name})", instrs, lines, labels)
-                errors += errs
-                regions += n
-            if len(fns) != naked:
-                errors.append(f"{where}: lists {len(fns)} of the {naked} naked functions of "
+            internal = path.parent.name == "internal"
+            fns += [(where, *fn, internal, find_regions(f"{where} ({fn[0]})", *fn[1:])) for fn in read]
+            if len(read) != naked:
+                errors.append(f"{where}: lists {len(read)} of the {naked} naked functions of "
                               f"{path.relative_to(ROOT)}")
+        # The call graph is by name: each function's must be its own.
+        seen = {}
+        for where, name, *_ in fns:
+            if name in seen:
+                errors.append(f"{where}: defines {name}, as {seen[name]} does")
+            seen.setdefault(name, where)
+        inside, why = region_only(fns)
+        for where, name, instrs, lines, labels, _, found in fns:
+            errs, n = check_function(f"{where} ({name})", instrs, lines, labels,
+                                     name in inside, inside, why.get(name), found)
+            errors += errs
+            regions += n
     for e in errors:
         print(e, file=sys.stderr)
     if errors:
