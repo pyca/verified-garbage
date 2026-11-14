@@ -7,5 +7,6 @@
 vg_selftest_add:
 	mov rax, rdi
 	add rax, rsi
+	xor r11d, r11d
 	ret
 	.p2align 6
