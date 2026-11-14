@@ -145,7 +145,6 @@ x86_64 vg_rsa_pss_verify_precomputed_rsa_ifma
 x86_64 vg_rsa_public_precompute
 x86_64 vg_rsa_public_precompute_adx
 x86_64 vg_rsa_recover_primes_det
-x86_64 vg_selftest_add
 x86_64 vg_sha384_digest_avx2
 x86_64 vg_sha384_finalize_avx2
 x86_64 vg_sha3_224_finalize
