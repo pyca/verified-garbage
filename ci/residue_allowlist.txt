@@ -151,7 +151,6 @@ x86_64 vg_sha512_256_finalize_avx2
 x86_64 vg_sha512_digest_avx2
 x86_64 vg_sha512_finalize_avx2
 x86_64 vg_sha512_update_avx2
-x86_64 vg_sm4_ctr_final
 x86_64 vg_sm4_gcm_init
 x86_64 vg_sm4_gcm_open
 x86_64 vg_sm4_gcm_open_pclmul
