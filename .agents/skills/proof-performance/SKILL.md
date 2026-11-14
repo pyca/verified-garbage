@@ -217,8 +217,11 @@ Avoid these patterns (each has cost tens of seconds in one proof):
 * **Tables of constants:** the kernel evaluates a table's whole length
   (seconds for a comb's tables) when it compares `8 * words.length` with
   another form of it, such as a `Region`'s `len` projection. Never unfold
-  `Abi.constRegions` with `List.map_cons` or substitute a table's region
-  into a goal: rewrite with `Abi.constRegions_cons`, `Abi.constRegions_nil`
+  `Abi.constRegions` with `List.map_cons`, name it among the definitions
+  `sig_pre` unfolds (give it the two lemmas' names instead: each Arm comb's
+  satisfiability proof spent 5 to 13 s in the kernel on that one name), or
+  substitute a table's region into a goal: rewrite with
+  `Abi.constRegions_cons`, `Abi.constRegions_nil`
   and `Sig.forall_mem_const_single` (`Proof/Framework/Sig.lean`, which
   `sig_pre` already uses), before `List.forall_mem_cons` or `forall_eq` can
   take the region apart. State a table's own facts with the
@@ -229,6 +232,22 @@ Avoid these patterns (each has cost tens of seconds in one proof):
   memory) states a table's size as a literal, not as `8 * words.length`. A
   table's shape (`<curve>Comb7_length`, `_rows`) is proven once, in
   `Proof/<Curve>/Comb7Shape.lean`, not by `decide` on each target.
+* **Signatures with stack arguments:** give `sig_pre`, `sig_post` and
+  `sig_pub` the definitions `List.range` and `List.range.loop` for a function
+  some of whose arguments are on the stack, not a lemma for the stack
+  arguments' list (`stackArgs_sixteen`). The calling conventions state those
+  arguments as `(List.range n).map (stackArg s)`; unless `sig_reduce` may
+  unfold `List.range` it stops there, with `Sig.bufs`, `Sig.alignedBufs` and
+  `Curry.apply` unfolded over the arguments in registers only. The kernel
+  checks that half-evaluated goal against the contract by unfolding both,
+  out of step, and where their heads agree it compares the arguments at the
+  same position: a register with a stack argument, or two different stack
+  arguments, which are not equal, as it finds only after evaluating their
+  memory reads as far as it can (10 to 40 s for an RSA contract with twenty
+  arguments). With `List.range` unfolded the evaluation finishes in that one
+  step, and what the kernel checks is the contract's own evaluation. The
+  lemmas that tidied the half-evaluated goal afterwards then have nothing to
+  do (a `simp only` after it, a trailing `-` in a pattern).
 * **Code without its literal:** `lit_decide` and `taint_decide` read the
   literal of code only if the module imports the module that materializes
   it, or a module that `public import`s it; otherwise the kernel builds the

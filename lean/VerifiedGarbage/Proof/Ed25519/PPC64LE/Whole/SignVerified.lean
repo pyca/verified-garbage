@@ -248,7 +248,8 @@ theorem signCE_sat : (Sig.scratchContract (PPC64LE.abi.withConsts combConsts) Sp
   generalize e : signSatCE = s
   sig_pre [Sig.scratchContract, Sig.withScratch, Curry.withScratch, Curry.app,
     Spec.Ed25519.signExpandedSig, Spec.Ed25519.scratchWords, signEPre,
-    PPC64LE.abi, PPC64LE.argRegs, Abi.withConsts, Abi.constRegions, Abi.constsHeld, stackBelow]
+    PPC64LE.abi, PPC64LE.argRegs, Abi.withConsts, Abi.constRegions_cons, Abi.constRegions_nil, Abi.constsHeld,
+    stackBelow]
   subst e
   rw [hl]
   repeat' apply And.intro
@@ -288,7 +289,8 @@ theorem signFrameSatE_pre : ∃ s, (Spec.Ed25519.signExpandedContract (PPC64LE.a
   generalize combWords = W' at hl held ⊢
   generalize e : signFrameSatE = s
   sig_pre [Spec.Ed25519.signExpandedContract, Spec.Ed25519.signExpandedSig, Spec.Ed25519.scratchWords,
-    PPC64LE.abi, PPC64LE.argRegs, Abi.withConsts, Abi.constRegions, Abi.constsHeld, stackBelow]
+    PPC64LE.abi, PPC64LE.argRegs, Abi.withConsts, Abi.constRegions_cons, Abi.constRegions_nil, Abi.constsHeld,
+    stackBelow]
   subst e
   rw [hl]
   repeat' apply And.intro

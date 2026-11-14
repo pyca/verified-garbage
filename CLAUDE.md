@@ -430,7 +430,9 @@ lemmas and tactics to use; read it before writing a proof:
   large concrete value, which `generalize` does not hide from the kernel
   (abstract it with `obtain`); rewrite tables' regions with
   `Abi.constRegions_cons`, and state a table's facts with the `ConstsOk`
-  lemmas; evaluate a recursive definition that reuses a
+  lemmas; give `sig_pre` `List.range` and `List.range.loop` for a function
+  with stack arguments, so that it evaluates the contract in one step;
+  evaluate a recursive definition that reuses a
   recursive result with a `dsimproc`; unfold a model's function on an
   instruction with its `dsimproc` (`reduceExec`, `Proof/Framework/<ISA>/Reduce.lean`),
   not by naming it in `simp`, which copies its `match`'s equation lemmas into

@@ -38,7 +38,8 @@ theorem combVerify_sat : combVerifySpec.pre combVerifySat := by
   generalize eqs : combVerifySat=s
   sig_pre [combVerifySpec,Spec.Ecdsa.Secp256k1.inst,Proof.Ecdsa.verifyContract,
     Proof.Ecdsa.verifySig,Spec.Secp256k1.curve,Spec.Ecdsa.scratchWords,abi,argRegs,reduceClassify,
-    Loc.val,State.addr,secp256k1CombConsts,Abi.withConsts,Abi.constRegions,Abi.constsHeld,stackBelow]
+    Loc.val,State.addr,secp256k1CombConsts,Abi.withConsts,Abi.constRegions_cons,Abi.constRegions_nil,Abi.constsHeld,
+    stackBelow]
   subst s
   rw [comb_words_length]
   rw [comb_words_length] at held

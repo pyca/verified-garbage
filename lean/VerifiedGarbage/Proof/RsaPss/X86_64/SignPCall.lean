@@ -69,10 +69,10 @@ theorem preSP_of {tsH tsG : List FnTable} {s : State} (h : (pspec tsH tsG).pre s
     SPre tsH tsG s ∧ PreP s := by
   sig_pre [Spec.RsaPss.signPrecomputedMdTableContract, Spec.RsaPss.signPrecomputedMdTableSig, Spec.MdHashTable.param,
     Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Spec.MdHashTable.dataWords, Abi.withTables, Sig.wordIndex, abi,
-    argRegs, signStack, stackArgs_twenty, List.append_eq, tabFns] at h
+    argRegs, signStack, List.append_eq, tabFns, List.range, List.range.loop] at h
   sig_pre [Spec.RsaPss.signPrecomputedMdTableContract, Spec.RsaPss.signPrecomputedMdTableSig, Spec.MdHashTable.param,
     Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Spec.MdHashTable.dataWords, Abi.withTables, Sig.wordIndex, abi,
-    argRegs, signStack, stackArgs_twenty, List.append_eq, tabFns, Sig.tableRegion] at h
+    argRegs, signStack, List.append_eq, tabFns, Sig.tableRegion, List.range, List.range.loop] at h
   simp only [Option.map_some, Nat.reduceAdd, List.getD_cons_succ,
     List.getD_cons_zero, Option.some.injEq, exists_eq_left'] at h
   sig_split h

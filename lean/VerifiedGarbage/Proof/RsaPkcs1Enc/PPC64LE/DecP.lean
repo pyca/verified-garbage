@@ -138,9 +138,7 @@ theorem pre_of_facts {s : State} (hg : s.gpr = satP.gpr) (hsp : s.sp = 0x10000)
   have e : stackBytes = 3647 + 1 := rfl
   rw [e]
   sig_pre [Spec.RsaPkcs1Enc.decryptPrecomputedContract, Spec.RsaPkcs1Enc.decryptPrecomputedSig,
-    Spec.RsaPkcs1Enc.decryptSig, abi, argRegs, stackArgs_seventeen, List.append_eq]
-  simp only [Sig.pairFacts, List.filterMap_cons, List.filterMap_nil, Bool.cond_true, Bool.cond_false,
-    Bool.true_or, Bool.false_or, List.cons_append, List.nil_append, Sig.conj, List.append_nil]
+    Spec.RsaPkcs1Enc.decryptSig, abi, argRegs, List.append_eq, List.range, List.range.loop]
   have hA : ∀ j, stackArgAddr s j = 0x10000 + BitVec.ofNat 64 (32 + 8 * (8 + j)) := fun j => by
     simp only [stackArgAddr, hsp]
   simp only [ha 0 (by decide), ha 1 (by decide), ha 2 (by decide), ha 3 (by decide), ha 4 (by decide),

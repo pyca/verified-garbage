@@ -307,7 +307,8 @@ theorem pkCE_sat : (Sig.scratchContract (PPC64LE.abi.withConsts combConsts) Proo
   generalize combWords = W' at hl held ⊢
   generalize e : pkSatCE = s
   sig_pre [Sig.scratchContract, Sig.withScratch, Curry.withScratch, Curry.app, Proof.Ed25519.publicKeyExpandedSig,
-    Spec.Ed25519.scratchWords, pkEPre, PPC64LE.abi, PPC64LE.argRegs, Abi.withConsts, Abi.constRegions,
+    Spec.Ed25519.scratchWords, pkEPre, PPC64LE.abi, PPC64LE.argRegs, Abi.withConsts, Abi.constRegions_cons,
+    Abi.constRegions_nil,
     Abi.constsHeld, stackBelow]
   subst e
   rw [hl]
@@ -347,7 +348,8 @@ theorem pkFrameSatE_pre : ∃ s, (Proof.Ed25519.publicKeyExpandedContract (PPC64
   generalize combWords = W' at hl held ⊢
   generalize e : pkFrameSatE = s
   sig_pre [Proof.Ed25519.publicKeyExpandedContract, Proof.Ed25519.publicKeyExpandedSig, Spec.Ed25519.scratchWords,
-    PPC64LE.abi, PPC64LE.argRegs, Abi.withConsts, Abi.constRegions, Abi.constsHeld, stackBelow]
+    PPC64LE.abi, PPC64LE.argRegs, Abi.withConsts, Abi.constRegions_cons, Abi.constRegions_nil, Abi.constsHeld,
+    stackBelow]
   subst e
   rw [hl]
   repeat' apply And.intro

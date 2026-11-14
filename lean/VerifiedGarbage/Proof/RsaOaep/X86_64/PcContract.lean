@@ -446,8 +446,8 @@ theorem implies (hsat : ∃ s, (encC ts).pre s) : (contract ts).Implies (encC ts
     rintro s₁ s₂ - - h
     sig_pub [Spec.RsaOaep.encryptMdTablesContract, Spec.RsaOaep.encryptMdTablesSig,
       Spec.RsaOaep.seedLenMdOk, Spec.MdHashTable.param, Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Spec.MdHashTable.dataWords,
-      Abi.withTables, Sig.wordIndex, abi, argRegs, contract, postT, post, Consistent, encK, encStack, stackArgs_twelve,
-      List.append_eq, tabFnsE] at h
+      Abi.withTables, Sig.wordIndex, abi, argRegs, contract, postT, post, Consistent, encK, encStack,
+      List.append_eq, tabFnsE, List.range, List.range.loop] at h
     simp only [String.reduceEq, ↓reduceIte, Option.map_some, Nat.reduceAdd, List.getD_cons_succ,
       List.getD_cons_zero, Option.some.injEq] at h
     obtain ⟨hsp, hsy, htab, htab', hl, hdi, hsi, hdx, hcx, h8, h9, a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10,
@@ -455,7 +455,7 @@ theorem implies (hsat : ∃ s, (encC ts).pre s) : (contract ts).Implies (encC ts
     obtain ⟨hb, hq⟩ := List.append_inj hl (by simp [Spec.Rsa.bytesAt, hcx, h9])
     have hq' := (List.map_inj_right (fun _ _ h => BitVec.toNat_inj.1 h)).1 hq
     obtain ⟨hn, he⟩ := leak_eq (by simp [Spec.Rsa.bytesAt, hcx]) hb
-    refine ⟨⟨?_, by simp only [stackArgs_eight, a0, a1, a2, a3, a4, a5, a6, a7], hn, he⟩, a8, a9, hq', a10, a11.1,
+    refine ⟨⟨?_, by simp only [stackArgs_eight, a0, a1, a2, a3, a4, a5, a6, a7], hn, he⟩, a8, a9, hq', a10, a11,
       fun f hf => hsy f (List.mem_append_left _ hf), fun T hT => htab _ _ rfl rfl T hT,
       fun T hT => htab' _ _ rfl rfl T hT⟩
     simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq]

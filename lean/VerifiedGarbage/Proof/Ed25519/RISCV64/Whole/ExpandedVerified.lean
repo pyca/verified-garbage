@@ -982,7 +982,8 @@ theorem pkCE_sat : (Sig.scratchContract (RISCV64.abi.withConsts combConsts) publ
   generalize e : pkSatCE = s
   sig_pre [Sig.scratchContract, Sig.withScratch, Curry.withScratch, Curry.app,
     publicKeyExpandedSig, Spec.Ed25519.scratchWords, pkEPre,
-    RISCV64.abi, RISCV64.argRegs, Abi.withConsts, Abi.constRegions, Abi.constsHeld, stackBelow]
+    RISCV64.abi, RISCV64.argRegs, Abi.withConsts, Abi.constRegions_cons, Abi.constRegions_nil, Abi.constsHeld,
+    stackBelow]
   subst e
   rw [hl]
   repeat' apply And.intro
@@ -1022,7 +1023,8 @@ theorem pkFrameSatE_pre : ∃ s, (Proof.Ed25519.publicKeyExpandedContract (RISCV
   generalize combWords = W' at hl held ⊢
   generalize e : pkFrameSatE = s
   sig_pre [Proof.Ed25519.publicKeyExpandedContract, publicKeyExpandedSig, Spec.Ed25519.scratchWords,
-    RISCV64.abi, RISCV64.argRegs, Abi.withConsts, Abi.constRegions, Abi.constsHeld, stackBelow]
+    RISCV64.abi, RISCV64.argRegs, Abi.withConsts, Abi.constRegions_cons, Abi.constRegions_nil, Abi.constsHeld,
+    stackBelow]
   subst e
   rw [hl]
   repeat' apply And.intro
@@ -1098,7 +1100,8 @@ theorem signCE_sat : (Sig.scratchContract (RISCV64.abi.withConsts combConsts) si
   generalize e : signSatCE = s
   sig_pre [Sig.scratchContract, Sig.withScratch, Curry.withScratch, Curry.app,
     signExpandedSig, Spec.Ed25519.scratchWords, signEPre,
-    RISCV64.abi, RISCV64.argRegs, Abi.withConsts, Abi.constRegions, Abi.constsHeld, stackBelow]
+    RISCV64.abi, RISCV64.argRegs, Abi.withConsts, Abi.constRegions_cons, Abi.constRegions_nil, Abi.constsHeld,
+    stackBelow]
   subst e
   rw [hl]
   repeat' apply And.intro
@@ -1138,7 +1141,7 @@ theorem signFrameSatE_pre : ∃ s, (Spec.Ed25519.signExpandedContract (RISCV64.a
   generalize combWords = W' at hl held ⊢
   generalize e : signFrameSatE = s
   sig_pre [Spec.Ed25519.signExpandedContract, signExpandedSig, Spec.Ed25519.scratchWords, RISCV64.abi,
-    RISCV64.argRegs, Abi.withConsts, Abi.constRegions, Abi.constsHeld, stackBelow]
+    RISCV64.argRegs, Abi.withConsts, Abi.constRegions_cons, Abi.constRegions_nil, Abi.constsHeld, stackBelow]
   subst e
   rw [hl]
   repeat' apply And.intro
