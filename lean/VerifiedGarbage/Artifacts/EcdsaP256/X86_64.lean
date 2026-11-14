@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.X86_64.ScrubUp
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Scrub
 public import VerifiedGarbage.Proof.EcKey.X86_64.Scrub.Out
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.InvInterface
 public import VerifiedGarbage.Proof.P256.Comb7
@@ -108,21 +110,21 @@ open VG.Proof.Variants.MdHash.X86_64 (variants)
 
 def artifacts : List Artifact :=
   if hv : OK variants ∧ "VG_P256_COMB" ∉ names variants then [
-    Spec.Ecdsa.Rfc6979.Curves.p256SignApi.artifact X86_64.target {
+    Spec.Ecdsa.Rfc6979.Curves.p256SignApi.artifact X86_64.target (X86_64.Scrub.withScrubAllUp {
       tables := [("hmac", tables variants)]
       code := signCodeT (p256Of false hasLaw.law (Proof.P256.combOk7 hasLaw.law) hasLaw.inv)
         Spec.Ecdsa.Rfc6979.Curves.p256.tries variants
       stack := stackT
       verified := p256T_verified false hasLaw.law (Proof.P256.combOk7 hasLaw.law) hasLaw.inv variants hv
-      spSafe := signCode_sp _ _ _ },
-    Spec.Ecdsa.Rfc6979.Curves.p256SignApi.artifact X86_64.target {
+      spSafe := signCode_sp _ _ _ } (Proof.Ecdsa.Rfc6979.X86_64.signOut _ Impl.Ecdsa.X86_64.p256.combConsts _ _)),
+    Spec.Ecdsa.Rfc6979.Curves.p256SignApi.artifact X86_64.target (X86_64.Scrub.withScrubAllUp {
       suffix := "_adx"
       tables := [("hmac", tables variants)]
       code := signCodeT (p256Of true hasLaw.law (Proof.P256.combOk7 hasLaw.law) hasLaw.inv)
         Spec.Ecdsa.Rfc6979.Curves.p256.tries variants
       stack := stackT
       verified := p256T_verified true hasLaw.law (Proof.P256.combOk7 hasLaw.law) hasLaw.inv variants hv
-      spSafe := signCode_sp _ _ _ }]
+      spSafe := signCode_sp _ _ _ } (Proof.Ecdsa.Rfc6979.X86_64.signOut _ Impl.Ecdsa.X86_64.p256.combConsts _ _))]
   else []
 
 end VG.Artifacts.EcdsaP256.X86_64.Rfc6979

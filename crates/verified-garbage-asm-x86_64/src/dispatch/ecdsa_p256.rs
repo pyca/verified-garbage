@@ -66,6 +66,8 @@ pub unsafe fn vg_ecdsa_p256_verify_auto(_dit: verified_garbage_cpu::Dit<'_>, pub
 ///
 /// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_ecdsa_p256_sign_adx` if the CPU supports its features (`VG_ECDSA_P256_SIGN_ADX_FEATURES`); or else `vg_ecdsa_p256_sign`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `out` must be valid for reads and writes of 64 bytes.

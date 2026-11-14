@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.X86_64.ScrubUp
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Scrub
 import VerifiedGarbage.TCB.X86_64.Target
 import VerifiedGarbage.Proof.Ecdsa.X86_64.BrainpoolP256r1.Lit
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.BrainpoolP256r1.Lit
@@ -85,13 +87,13 @@ open VG.Proof.HmacTable.X86_64 (tables names)
 
 def artifactsFor (vs : List Proof.Pbkdf2.Md.X86_64.MdHash) : List Artifact :=
   if hv : OK vs ∧ "VG_BRAINPOOLP256R1_COMB" ∉ names vs then [
-    Spec.Ecdsa.Rfc6979.Curves.brainpoolp256r1SignApi.artifact X86_64.target {
+    Spec.Ecdsa.Rfc6979.Curves.brainpoolp256r1SignApi.artifact X86_64.target (X86_64.Scrub.withScrubAllUp {
       suffix := ""
       tables := [("hmac", tables vs)]
       code := signCodeT (brainpoolp256r1 hasLaw.law hasLaw.inv) Spec.Ecdsa.Rfc6979.Curves.brainpoolp256r1.tries vs
       stack := stackT
       verified := brainpoolp256r1T_verified hasLaw.law hasLaw.inv vs hv
-      spSafe := signCode_sp _ _ _ }]
+      spSafe := signCode_sp _ _ _ } (Proof.Ecdsa.Rfc6979.X86_64.signOut _ Impl.Ecdsa.X86_64.brainpoolp256r1S.combConsts _ _))]
   else []
 
 def artifacts : List Artifact :=

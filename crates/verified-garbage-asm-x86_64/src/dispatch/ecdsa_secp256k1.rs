@@ -32,6 +32,8 @@ pub unsafe fn vg_ecdsa_secp256k1_verify_auto(_dit: verified_garbage_cpu::Dit<'_>
 ///
 /// It runs `vg_ecdsa_secp256k1_sign`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `out` must be valid for reads and writes of 64 bytes.
