@@ -1,0 +1,452 @@
+diff --git a/Cargo.toml b/Cargo.toml
+index efbf1ef6..6710c589 100644
+--- a/Cargo.toml
++++ b/Cargo.toml
+@@ -144,3 +144,7 @@ unused_qualifications = "warn"
+ # against the latest _published_ copy.
+ [patch.crates-io]
+ rustls = { path = "rustls" }
++
++# The verified-garbage provider depends on rustls from git: use this checkout.
++[patch."https://github.com/rustls/rustls"]
++rustls = { path = "rustls" }
+diff --git a/rustls-bench/Cargo.toml b/rustls-bench/Cargo.toml
+index f21627e3..2f9876d6 100644
+--- a/rustls-bench/Cargo.toml
++++ b/rustls-bench/Cargo.toml
+@@ -9,6 +9,7 @@ clap = { workspace = true }
+ rustls = { path = "../rustls" }
+ rustls-aws-lc-rs = { path = "../rustls-aws-lc-rs", optional = true }
+ rustls-ring = { path = "../rustls-ring", optional = true }
++rustls-verified-garbage = { path = "@VG_PROVIDER@", optional = true, features = ["cpu-features-env"] }
+ rustls-graviola = { workspace = true, optional = true }
+ rustls-test = { workspace = true, default-features = false }
+ 
+@@ -18,9 +19,15 @@ aws-lc-rs = ["rustls-aws-lc-rs"]
+ fips = ["rustls-aws-lc-rs/fips", "aws-lc-rs"]
+ graviola = ["dep:rustls-graviola"]
+ ring = ["dep:rustls-ring"]
++verified-garbage = ["dep:rustls-verified-garbage"]
+ 
+ [target.'cfg(not(target_env = "msvc"))'.dependencies]
+ tikv-jemallocator = { workspace = true }
+ 
+ [lints]
+ workspace = true
++
++[[bin]]
++name = "provider-primitives"
++path = "src/bin/provider_primitives.rs"
++required-features = ["aws-lc-rs", "verified-garbage"]
+diff --git a/rustls-bench/src/bin/provider_primitives.rs b/rustls-bench/src/bin/provider_primitives.rs
+new file mode 100644
+index 00000000..1e42f72c
+--- /dev/null
++++ b/rustls-bench/src/bin/provider_primitives.rs
+@@ -0,0 +1,288 @@
++//! Times each provider's primitives as a handshake uses them, through the
++//! rustls traits: key exchange, signing, signature verification, the record
++//! layer, the key schedule and tickets.
++
++use std::hint::black_box;
++use std::time::{Duration, Instant};
++
++use rustls::crypto::cipher::{AeadKey, EncodableVersion, InboundOpaque, Iv, OutboundPlain, Record};
++use rustls::crypto::kx::SupportedKxGroup;
++use rustls::crypto::tls13::OkmBlock;
++use rustls::crypto::SignatureScheme;
++use rustls::enums::{ContentType, ProtocolVersion};
++use rustls::pki_types::{SignatureVerificationAlgorithm, SubjectPublicKeyInfoDer};
++use rustls_test::KeyType;
++
++/// Nanoseconds per call of `f`: the median of 7 batches of at least 50 ms.
++fn time(mut f: impl FnMut()) -> f64 {
++    let start = Instant::now();
++    let mut n = 0u64;
++    while start.elapsed() < Duration::from_millis(20) || n < 3 {
++        f();
++        n += 1;
++    }
++    let per = start.elapsed().as_secs_f64() / n as f64;
++    let iters = ((0.05 / per).ceil() as u64).max(1);
++    let mut samples = vec![];
++    for _ in 0..7 {
++        let t = Instant::now();
++        for _ in 0..iters {
++            f();
++        }
++        samples.push(t.elapsed().as_secs_f64() * 1e9 / iters as f64);
++    }
++    samples.sort_by(|a, b| a.partial_cmp(b).unwrap());
++    samples[3]
++}
++
++/// A row: both times, and verified-garbage's speed relative to aws-lc-rs's
++/// (below 1 is slower).
++fn report(name: &str, results: &[f64]) {
++    let [aws, vg] = results else { unreachable!() };
++    println!("{name:<44} {:>12.0} {:>12.0} {:>7.2}", aws, vg, aws / vg);
++}
++
++/// The `subjectPublicKey` of an SPKI.
++fn spki_key(spki: &SubjectPublicKeyInfoDer<'_>) -> Vec<u8> {
++    // SEQUENCE { AlgorithmIdentifier, BIT STRING }: skip to the bit string.
++    let d = spki.as_ref();
++    fn tlv(d: &[u8]) -> (usize, usize) {
++        // (header length, content length)
++        let l = d[1] as usize;
++        if l < 0x80 {
++            (2, l)
++        } else {
++            let n = l & 0x7f;
++            let mut len = 0;
++            for &b in &d[2..2 + n] {
++                len = len << 8 | b as usize;
++            }
++            (2 + n, len)
++        }
++    }
++    let (h, _) = tlv(d);
++    let inner = &d[h..];
++    let (ah, al) = tlv(inner);
++    let bits = &inner[ah + al..];
++    let (bh, bl) = tlv(bits);
++    bits[bh + 1..bh + bl].to_vec()
++}
++
++macro_rules! verification_alg {
++    ($p:ident, $kt:expr) => {
++        match $kt {
++            KeyType::Rsa2048 | KeyType::Rsa3072 | KeyType::Rsa4096 => {
++                $p::RSA_PSS_2048_8192_SHA256_LEGACY_KEY
++            }
++            KeyType::EcdsaP256 => $p::ECDSA_P256_SHA256,
++            KeyType::EcdsaP384 => $p::ECDSA_P384_SHA384,
++            KeyType::EcdsaP521 => $p::ECDSA_P521_SHA512,
++            KeyType::Ed25519 => $p::ED25519,
++        }
++    };
++}
++
++fn verification_alg(i: usize, kt: KeyType) -> &'static dyn SignatureVerificationAlgorithm {
++    match i {
++        0 => verification_alg!(rustls_aws_lc_rs, kt),
++        _ => verification_alg!(rustls_verified_garbage, kt),
++    }
++}
++
++fn main() {
++    let providers = [
++        ("aws-lc-rs", rustls_aws_lc_rs::DEFAULT_PROVIDER),
++        ("verified-garbage", rustls_verified_garbage::DEFAULT_PROVIDER),
++    ];
++    println!("{:<44} {:>12} {:>12} {:>8}", "ns per operation", "aws-lc-rs", "verified-g", "speed");
++
++    // Key exchange: the client's share, the server's side, the client's
++    // completion.
++    let kx_names = ["X25519MLKEM768", "X25519", "secp256r1", "secp384r1", "MLKEM768"];
++    let all_kx = [rustls_aws_lc_rs::ALL_KX_GROUPS, rustls_verified_garbage::ALL_KX_GROUPS];
++    for name in kx_names {
++        let groups: Vec<&dyn SupportedKxGroup> = all_kx
++            .iter()
++            .map(|all| *all.iter().find(|g| format!("{:?}", g.name()) == name).unwrap())
++            .collect();
++        let mut start = vec![];
++        let mut server = vec![];
++        let mut finish = vec![];
++        for g in &groups {
++            start.push(time(|| {
++                black_box(g.start().unwrap());
++            }));
++            let client = g.start().unwrap().into_single();
++            let client_pub = client.pub_key().to_vec();
++            server.push(time(|| {
++                black_box(g.start_and_complete(&client_pub).unwrap());
++            }));
++            let server_share = g.start_and_complete(&client_pub).unwrap();
++            finish.push(time(|| {
++                let client = g.start().unwrap().into_single();
++                black_box(client.complete(&server_share.pub_key).ok());
++            }) - start.last().unwrap());
++        }
++        report(&format!("kx {name}: client start"), &start);
++        report(&format!("kx {name}: server start_and_complete"), &server);
++        report(&format!("kx {name}: client complete"), &finish);
++    }
++
++    // Signing and verifying a CertificateVerify-sized message.
++    let message = [0x20u8; 130];
++    for kt in [
++        KeyType::Rsa2048,
++        KeyType::Rsa3072,
++        KeyType::Rsa4096,
++        KeyType::EcdsaP256,
++        KeyType::EcdsaP384,
++        KeyType::EcdsaP521,
++        KeyType::Ed25519,
++    ] {
++        let mut load = vec![];
++        let mut sign = vec![];
++        let mut verify = vec![];
++        let mut scheme_name = String::new();
++        for (i, (_, p)) in providers.iter().enumerate() {
++            load.push(time(|| {
++                black_box(p.key_provider.load_private_key(kt.key()).unwrap());
++            }));
++            let key = p.key_provider.load_private_key(kt.key()).unwrap();
++            let offered = [
++                SignatureScheme::RSA_PSS_SHA256,
++                SignatureScheme::ECDSA_NISTP256_SHA256,
++                SignatureScheme::ECDSA_NISTP384_SHA384,
++                SignatureScheme::ECDSA_NISTP521_SHA512,
++                SignatureScheme::ED25519,
++            ];
++            let scheme = key.choose_scheme(&offered).unwrap().scheme();
++            scheme_name = format!("{scheme:?}");
++            sign.push(time(|| {
++                black_box(key.choose_scheme(&offered).unwrap().sign(&message).unwrap());
++            }));
++            let sig = key.choose_scheme(&offered).unwrap().sign(&message).unwrap();
++            let spki = kt.spki();
++            let alg = verification_alg(i, kt);
++            let pk = spki_key(&spki);
++            alg.verify_signature(&pk, &message, &sig).unwrap();
++            verify.push(time(|| {
++                alg.verify_signature(&pk, &message, &sig).unwrap();
++            }));
++        }
++        report(&format!("{kt:?}: load key"), &load);
++        report(&format!("{kt:?}: sign ({scheme_name})"), &sign);
++        report(&format!("{kt:?}: verify ({scheme_name})"), &verify);
++    }
++
++    // The record layer: one full 16 KiB TLS 1.3 record, and a small one.
++    for suite in ["TLS13_AES_128_GCM_SHA256", "TLS13_AES_256_GCM_SHA384", "TLS13_CHACHA20_POLY1305_SHA256"] {
++        for len in [16384usize, 1024] {
++            let mut seal = vec![];
++            let mut open = vec![];
++            for (_, p) in &providers {
++                let s = p
++                    .tls13_cipher_suites
++                    .iter()
++                    .find(|s| format!("{:?}", s.common.suite) == suite)
++                    .unwrap();
++                let key = || AeadKey::from([7u8; 32]);
++                let key = || {
++                    let k = key();
++                    if s.aead_alg.key_len() == 16 { AeadKey::from([7u8; 16]) } else { k }
++                };
++                let iv = Iv::new(&[3u8; 12]).unwrap();
++                let mut enc = s.aead_alg.encrypter(key(), iv.clone());
++                let mut dec = s.aead_alg.decrypter(key(), iv);
++                let plain = vec![0x41u8; len];
++                let mut out = vec![0u8; enc.encrypted_payload_len(len)];
++                // aws-lc-rs' TLS sealing keys want the sequence numbers in
++                // order, from 0.
++                let mut seq = 0u64;
++                seal.push(time(|| {
++                    let r = Record::new(
++                        ContentType::ApplicationData,
++                        EncodableVersion::Legacy(ProtocolVersion::TLSv1_2),
++                        OutboundPlain::from(&plain[..]),
++                    );
++                    black_box(enc.encrypt(r, seq, &mut out).unwrap());
++                    seq += 1;
++                }));
++                let mut enc2 = s.aead_alg.encrypter(key(), Iv::new(&[3u8; 12]).unwrap());
++                let ct = {
++                    let r = Record::new(
++                        ContentType::ApplicationData,
++                        EncodableVersion::Legacy(ProtocolVersion::TLSv1_2),
++                        OutboundPlain::from(&plain[..]),
++                    );
++                    enc2.encrypt(r, 0, &mut out).unwrap().payload.to_vec()
++                };
++                let mut buf = ct.clone();
++                open.push(time(|| {
++                    buf.copy_from_slice(&ct);
++                    let r = Record::new(
++                        ContentType::ApplicationData,
++                        EncodableVersion::Legacy(ProtocolVersion::TLSv1_2),
++                        InboundOpaque(&mut buf),
++                    );
++                    black_box(dec.decrypt(r, 0).unwrap());
++                }));
++            }
++            report(&format!("{suite} seal {len}"), &seal);
++            report(&format!("{suite} open {len} (+copy)"), &open);
++        }
++    }
++
++    // The key schedule: HKDF extract and expand, and the transcript hash.
++    for suite in ["TLS13_AES_128_GCM_SHA256", "TLS13_AES_256_GCM_SHA384"] {
++        let mut extract = vec![];
++        let mut expand = vec![];
++        let mut hash = vec![];
++        for (_, p) in &providers {
++            let s = p
++                .tls13_cipher_suites
++                .iter()
++                .find(|s| format!("{:?}", s.common.suite) == suite)
++                .unwrap();
++            let hkdf = s.hkdf_provider;
++            // aws-lc-rs defers the extract to the first expand, so time
++            // an extract together with one expand of its result.
++            extract.push(time(|| {
++                let e = hkdf.extract_from_secret(Some(&[1u8; 32]), &[2u8; 32]);
++                black_box(e.expand_block(&[b"\x00\x20", b"\x0dtls13 derived", &[0x20], &[9u8; 32]]));
++            }));
++            let okm = OkmBlock::new(&[5u8; 32]);
++            let expander = hkdf.expander_for_okm(&okm);
++            expand.push(time(|| {
++                black_box(expander.expand_block(&[b"\x00\x20", b"\x0dtls13 c hs traffic", &[0x20], &[9u8; 32]]));
++            }));
++            let h = s.common.hash_provider;
++            hash.push(time(|| {
++                let mut c = h.start();
++                c.update(&[0u8; 300]);
++                black_box(c.fork_finish());
++                c.update(&[0u8; 2000]);
++                black_box(c.finish());
++            }));
++        }
++        report(&format!("{suite} HKDF extract + expand"), &extract);
++        report(&format!("{suite} HKDF expand (one block)"), &expand);
++        report(&format!("{suite} transcript hash 2.3 KB + fork"), &hash);
++    }
++
++    // Tickets.
++    let mut enc = vec![];
++    let mut dec = vec![];
++    for (_, p) in &providers {
++        let t = p.ticketer_factory.ticketer().unwrap();
++        let plain = [0x11u8; 200];
++        enc.push(time(|| {
++            black_box(t.encrypt(&plain).unwrap());
++        }));
++        let ct = t.encrypt(&plain).unwrap();
++        dec.push(time(|| {
++            black_box(t.decrypt(&ct).unwrap());
++        }));
++    }
++    report("ticket encrypt 200 B", &enc);
++    report("ticket decrypt 200 B", &dec);
++}
+diff --git a/rustls-bench/src/main.rs b/rustls-bench/src/main.rs
+index 0a3df37b..41298d9e 100644
+--- a/rustls-bench/src/main.rs
++++ b/rustls-bench/src/main.rs
+@@ -881,6 +881,8 @@ enum Provider {
+     Graviola,
+     #[cfg(feature = "ring")]
+     Ring,
++    #[cfg(feature = "verified-garbage")]
++    VerifiedGarbage,
+     #[value(skip)]
+     _None, // prevents this enum being uninhabited when built with no features
+ }
+@@ -896,6 +898,8 @@ impl Provider {
+             Self::Graviola => rustls_graviola::default_provider(),
+             #[cfg(feature = "ring")]
+             Self::Ring => rustls_ring::DEFAULT_PROVIDER,
++            #[cfg(feature = "verified-garbage")]
++            Self::VerifiedGarbage => rustls_verified_garbage::DEFAULT_PROVIDER,
+             Self::_None => unreachable!(),
+         }
+     }
+@@ -944,6 +948,9 @@ impl Provider {
+         #[cfg(feature = "ring")]
+         available.push(Self::Ring);
+ 
++        #[cfg(feature = "verified-garbage")]
++        available.push(Self::VerifiedGarbage);
++
+         match available[..] {
+             [] => panic!("no providers available in this build"),
+             [one] => one,
+diff --git a/rustls-test/Cargo.toml b/rustls-test/Cargo.toml
+index b8ac36ca..f4e675b8 100644
+--- a/rustls-test/Cargo.toml
++++ b/rustls-test/Cargo.toml
+@@ -21,6 +21,7 @@ num-bigint = { workspace = true }
+ pki-types = { workspace = true }
+ rustls-aws-lc-rs = { path = "../rustls-aws-lc-rs", features = ["std"] }
+ rustls-ring = { path = "../rustls-ring" }
++rustls-verified-garbage = { path = "@VG_PROVIDER@" }
+ rustls-util = { path = "../rustls-util", default-features = false }
+ x509-parser = { workspace = true }
+ webpki = { workspace = true }
+diff --git a/rustls-test/src/lib.rs b/rustls-test/src/lib.rs
+index e10df504..7db12ad2 100644
+--- a/rustls-test/src/lib.rs
++++ b/rustls-test/src/lib.rs
+@@ -2250,6 +2250,27 @@ pub mod macros {
+         };
+     }
+ 
++    #[macro_export]
++    macro_rules! provider_verified_garbage {
++        () => {
++            #[allow(unused_imports)]
++            use rustls_verified_garbage as provider;
++            // Like aws-lc-rs, it prefers X25519MLKEM768.
++            #[allow(dead_code)]
++            const fn provider_is_aws_lc_rs() -> bool {
++                true
++            }
++            #[allow(dead_code)]
++            const fn provider_is_ring() -> bool {
++                false
++            }
++            #[allow(dead_code)]
++            const fn provider_is_fips() -> bool {
++                false
++            }
++        };
++    }
++
+     #[macro_export]
+     macro_rules! provider_aws_lc_rs {
+         () => {
+diff --git a/rustls-test/tests/api.rs b/rustls-test/tests/api.rs
+index 60c83273..f8106a5c 100644
+--- a/rustls-test/tests/api.rs
++++ b/rustls-test/tests/api.rs
+@@ -67,3 +67,37 @@ mod tests_with_aws_lc_rs {
+     #[path = "api/api.rs"]
+     mod tests;
+ }
++
++#[path = "."]
++mod tests_with_verified_garbage {
++    rustls_test::provider_verified_garbage!();
++
++    #[path = "api/client_cert_verifier.rs"]
++    mod client_cert_verifier;
++    #[path = "api/compress.rs"]
++    mod compress;
++    #[path = "api/crypto.rs"]
++    mod crypto;
++    #[path = "api/ffdhe.rs"]
++    mod ffdhe;
++    #[path = "api/io.rs"]
++    mod io;
++    #[path = "api/kernel.rs"]
++    mod kernel;
++    #[path = "api/kx.rs"]
++    mod kx;
++    #[path = "api/quic.rs"]
++    mod quic;
++    #[path = "api/raw_keys.rs"]
++    mod raw_keys;
++    #[path = "api/resolve.rs"]
++    mod resolve;
++    #[path = "api/resume.rs"]
++    mod resume;
++    #[path = "api/server_cert_verifier.rs"]
++    mod server_cert_verifier;
++    #[path = "api/split.rs"]
++    mod split;
++    #[path = "api/api.rs"]
++    mod tests;
++}
