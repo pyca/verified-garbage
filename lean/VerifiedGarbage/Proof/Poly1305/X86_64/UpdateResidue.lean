@@ -6,12 +6,18 @@ public import VerifiedGarbage.Impl.Poly1305.X86_64.Callee
 public import VerifiedGarbage.Impl.Poly1305.X86_64
 public import VerifiedGarbage.Impl.StackScratch.X86_64
 public import VerifiedGarbage.Proof.Poly1305.X86_64.Lit
+public import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Lit
+public import VerifiedGarbage.Proof.Poly1305.X86_64.Avx512.Lit
+public import VerifiedGarbage.Proof.Poly1305.X86_64.Ifma.Lit
 public meta import VerifiedGarbage.Proof.Framework.X86_64.ResidueScrub
 public meta import VerifiedGarbage.Spec.Poly1305.Contract
 public meta import VerifiedGarbage.Impl.Poly1305.X86_64.Callee
 public meta import VerifiedGarbage.Impl.Poly1305.X86_64
 public meta import VerifiedGarbage.Impl.StackScratch.X86_64
 public meta import VerifiedGarbage.Proof.Poly1305.X86_64.Lit
+public meta import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Lit
+public meta import VerifiedGarbage.Proof.Poly1305.X86_64.Avx512.Lit
+public meta import VerifiedGarbage.Proof.Poly1305.X86_64.Ifma.Lit
 
 -- separate module: the residue analysis of `vg_poly1305_update`, which `Variant.lean` gives the
 -- scalar implementation, without importing the analysis's tactics into every Poly1305 proof
@@ -21,10 +27,9 @@ public meta import VerifiedGarbage.Proof.Poly1305.X86_64.Lit
 
 `vg_poly1305_update` over the implementation of `vg_poly1305_blocks` with
 code `code` and symbol `name` (its code, `updateCode`), analysed for what it
-may leave of secrets (`X86_64.RScrub.Analysed`), for an implementation the
-analysis handles: the scalar one (`scalarUpdate`). The vector ones load
-MXCSR (`ldmxcsr`), which the analysis does not follow.
--/
+may leave of secrets (`X86_64.RScrub.Analysed`): over each implementation
+(`blocksUpdate`), whose stores the analysis places in the state, the frame
+of saved registers, or the stack below. -/
 
 @[expose] public section
 
@@ -46,9 +51,54 @@ theorem scalarUpdate_ok : ∃ h : VG.Taint.Hint RTaint.FT,
       h).any (RScrub.resOkB · 160 scalarUpdateKs (Impl.Scrub.X86_64.chunks 160)) = true :=
   RScrub.Analysed.ok_of scalarUpdateKs (by taint_decide)
 
-/-- The analysis of `vg_poly1305_update` over the scalar `vg_poly1305_blocks`. -/
+/-- The analysis of `vg_poly1305_update` over `vg_poly1305_blocks`. -/
 def scalarUpdate : RScrub.Analysed Spec.Poly1305.updateApi.sig 160 []
     (updateCode (Impl.Poly1305.X86_64.Blocks.name .scalar) (Impl.Poly1305.X86_64.Blocks.code .scalar)) :=
   ⟨scalarUpdateKs, scalarUpdate_ok⟩
+
+/-- The granules `avx2Update` wipes. -/
+def avx2UpdateKs : List Nat := keep_for% Spec.Poly1305.updateApi.sig 160
+  (updateCode (Impl.Poly1305.X86_64.Blocks.name .avx2) (Impl.Poly1305.X86_64.Blocks.code .avx2)) []
+
+theorem avx2Update_ok : ∃ h : VG.Taint.Hint RTaint.FT,
+    (VG.Taint.check RTaint.rtaint (RScrub.init Spec.Poly1305.updateApi.sig 160 [])
+      (updateCode (Impl.Poly1305.X86_64.Blocks.name .avx2) (Impl.Poly1305.X86_64.Blocks.code .avx2))
+      h).any (RScrub.resOkB · 160 avx2UpdateKs (Impl.Scrub.X86_64.chunks 160)) = true :=
+  RScrub.Analysed.ok_of avx2UpdateKs (by taint_decide)
+
+/-- The analysis of `vg_poly1305_update` over `vg_poly1305_blocks_avx2`. -/
+def avx2Update : RScrub.Analysed Spec.Poly1305.updateApi.sig 160 []
+    (updateCode (Impl.Poly1305.X86_64.Blocks.name .avx2) (Impl.Poly1305.X86_64.Blocks.code .avx2)) :=
+  ⟨avx2UpdateKs, avx2Update_ok⟩
+
+/-- The granules `avx512Update` wipes. -/
+def avx512UpdateKs : List Nat := keep_for% Spec.Poly1305.updateApi.sig 160
+  (updateCode (Impl.Poly1305.X86_64.Blocks.name .avx512) (Impl.Poly1305.X86_64.Blocks.code .avx512)) []
+
+theorem avx512Update_ok : ∃ h : VG.Taint.Hint RTaint.FT,
+    (VG.Taint.check RTaint.rtaint (RScrub.init Spec.Poly1305.updateApi.sig 160 [])
+      (updateCode (Impl.Poly1305.X86_64.Blocks.name .avx512) (Impl.Poly1305.X86_64.Blocks.code .avx512))
+      h).any (RScrub.resOkB · 160 avx512UpdateKs (Impl.Scrub.X86_64.chunks 160)) = true :=
+  RScrub.Analysed.ok_of avx512UpdateKs (by taint_decide)
+
+/-- The analysis of `vg_poly1305_update` over `vg_poly1305_blocks_avx512`. -/
+def avx512Update : RScrub.Analysed Spec.Poly1305.updateApi.sig 160 []
+    (updateCode (Impl.Poly1305.X86_64.Blocks.name .avx512) (Impl.Poly1305.X86_64.Blocks.code .avx512)) :=
+  ⟨avx512UpdateKs, avx512Update_ok⟩
+
+/-- The granules `ifmaUpdate` wipes. -/
+def ifmaUpdateKs : List Nat := keep_for% Spec.Poly1305.updateApi.sig 160
+  (updateCode (Impl.Poly1305.X86_64.Blocks.name .ifma) (Impl.Poly1305.X86_64.Blocks.code .ifma)) []
+
+theorem ifmaUpdate_ok : ∃ h : VG.Taint.Hint RTaint.FT,
+    (VG.Taint.check RTaint.rtaint (RScrub.init Spec.Poly1305.updateApi.sig 160 [])
+      (updateCode (Impl.Poly1305.X86_64.Blocks.name .ifma) (Impl.Poly1305.X86_64.Blocks.code .ifma))
+      h).any (RScrub.resOkB · 160 ifmaUpdateKs (Impl.Scrub.X86_64.chunks 160)) = true :=
+  RScrub.Analysed.ok_of ifmaUpdateKs (by taint_decide)
+
+/-- The analysis of `vg_poly1305_update` over `vg_poly1305_blocks_ifma`. -/
+def ifmaUpdate : RScrub.Analysed Spec.Poly1305.updateApi.sig 160 []
+    (updateCode (Impl.Poly1305.X86_64.Blocks.name .ifma) (Impl.Poly1305.X86_64.Blocks.code .ifma)) :=
+  ⟨ifmaUpdateKs, ifmaUpdate_ok⟩
 
 end VG.Proof.Poly1305.X86_64

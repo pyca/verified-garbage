@@ -41,6 +41,7 @@ def avx2 : BlocksImpl where
   spSafe := Code.all_of_allInstrs (by lit_decide)
   suffix := "_avx2"
   features := Impl.Poly1305.X86_64.Blocks.features .avx2
+  update := some avx2Update
 
 end BlocksImpl
 

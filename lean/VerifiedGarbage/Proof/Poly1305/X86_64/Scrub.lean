@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Spec.Poly1305.Contract
 public import VerifiedGarbage.Proof.Framework.X86_64.Scrub
 public import VerifiedGarbage.Proof.Framework.X86_64.ResidueScrub
+public import VerifiedGarbage.Proof.Framework.X86_64.ScrubOr
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.Poly1305.X86_64.Init
 public import VerifiedGarbage.Proof.Poly1305.X86_64.Frame
@@ -16,6 +17,7 @@ import VerifiedGarbage.Proof.Poly1305.X86_64.Lit
 meta import VerifiedGarbage.Spec.Poly1305.Contract
 meta import VerifiedGarbage.Proof.Framework.X86_64.Scrub
 meta import VerifiedGarbage.Proof.Framework.X86_64.ResidueScrub
+meta import VerifiedGarbage.Proof.Framework.X86_64.ScrubOr
 meta import VerifiedGarbage.Proof.Framework.Registration
 meta import VerifiedGarbage.Proof.Poly1305.X86_64.Init
 meta import VerifiedGarbage.Proof.Poly1305.X86_64.Frame
@@ -127,9 +129,12 @@ def finalizeReg : Registration Spec.Poly1305.finalizeApi X86_64.target :=
 
 open VG.X86_64.RScrub in
 /-- `vg_poly1305_update` over the implementation `v` of `vg_poly1305_blocks`:
-without secret residue where `v` gives its analysis (`BlocksImpl.update`). -/
+without secret residue where `v` gives its analysis (`BlocksImpl.update`),
+at the level of the registers its code writes, and without writing MXCSR,
+which the vector implementations save and restore in the state
+(`RScrub.withScrubM`). -/
 def updateReg (v : BlocksImpl) : Registration Spec.Poly1305.updateApi X86_64.target :=
-  withScrub {
+  withScrubM {
     suffix := v.suffix
     code := updateCode v.name v.code
     stack := 160
