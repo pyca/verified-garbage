@@ -8,6 +8,8 @@
 ///
 /// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_cmac_aes_absorb_aesni` if the CPU supports its features (`VG_CMAC_AES_ABSORB_AESNI_FEATURES`); or else `vg_cmac_aes_absorb`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `state` must be valid for reads and writes of 304 bytes.
