@@ -33,9 +33,10 @@ checks. Two ways to run them on less:
 
 Both first try to close the goal without `omega` (`Abs.close`). The goal and the facts
 are restated over variables, `∀ x₁ … xₙ, F₁ → … → Fₖ → G`, with a variable for each term
-that is not arithmetic, and that statement is proven as an auxiliary theorem, which
-serves every goal of its shape in the declaration: by evaluation if it has no variable,
-else by `VG.Arith.prove?`, and by `omega` only where neither can.
+that is not arithmetic (with what `omega` knows of such a term by its shape: `x.toNat < 2 ^ w`,
+`↑i < n`), and that statement is proven by `VG.Arith.prove?` as an auxiliary theorem, which
+serves every goal of its shape in the declaration. Where that does not prove it, they go
+on as they did before, with `omega` on the goal itself.
 
 ## `VG.Arith`: linear arithmetic that the kernel checks quickly
 
@@ -323,7 +324,7 @@ structure St where
   queue : Array Expr := #[]
   gfacts : Array Fact := #[]
   gsplits : Array Split := #[]
-  fuel : Nat := 48
+  fuel : Nat := 24
 
 abbrev AM := StateRefT St MetaM
 
@@ -604,7 +605,7 @@ def fm (n : Nat) (cs : Array Cn) : Option Prov := Id.run do
         let k := (b : Int) * p.k + (a : Int) * q.k
         if co.all (· == 0) && k ≥ 0 then continue
         new := new.push (tighten ⟨co, k, .comb b p.pv a q.pv⟩)
-        if new.size > 300 then return none
+        if new.size > 120 then return none
     cs := new
   for cn in cs do
     if cn.co.all (· == 0) && cn.k < 0 then return some cn.pv
@@ -745,6 +746,8 @@ structure St where
   atoms : Array Expr := #[]
   vars : Array Expr := #[]
   types : Array Expr := #[]
+  /-- proofs of what `omega` knows of an atom by its shape: `x.toNat < 2 ^ w`, `↑i < n` -/
+  known : Array Expr := #[]
 
 abbrev M := StateRefT St MetaM
 
@@ -760,7 +763,11 @@ def atom (α e : Expr) : OptionT M Expr := do
   | some i => return s.vars[i]!
   | none =>
     let x := mkFVar (← mkFreshFVarId)
-    set { s with atoms := s.atoms.push e, vars := s.vars.push x, types := s.types.push α }
+    let known := match_expr e with
+      | BitVec.toNat w v => s.known.push (mkApp2 (mkConst ``BitVec.isLt) w v)
+      | Fin.val n i => s.known.push (mkApp2 (mkConst ``Fin.isLt) n i)
+      | _ => s.known
+    set { s with atoms := s.atoms.push e, vars := s.vars.push x, types := s.types.push α, known }
     return x
 
 /-- `e : α` (`Nat` or `Int`) with every subterm that is not arithmetic replaced by a variable. -/
@@ -812,36 +819,15 @@ partial def prop (e : Expr) : OptionT M Expr := do
   | ``True, 0 | ``False, 0 => return e
   | _, _ => failure
 
-/-- A proof by evaluation of a closed statement (`2 + 8 ≤ 2 ^ 64`), if it evaluates to true:
-the kernel computes on numerals at once, where a certificate of `omega`'s costs it
-milliseconds. -/
-def decideClosed (stmt : Expr) : MetaM (Option Expr) := do
-  let saved := (← getThe Core.State).messages
-  -- Evaluating here can fail in ways `try … catch` lets through (a power above
-  -- `exponentiation.threshold` is unfolded until the recursion limit), having logged an error.
-  tryCatchRuntimeEx
-    (do
-      let inst ← synthInstance (mkApp (mkConst ``Decidable) stmt)
-      let r ← withAtLeastTransparency .default <| whnf (mkApp2 (mkConst ``Decidable.decide) stmt inst)
-      modifyThe Core.State ({ · with messages := saved })
-      if r.isConstOf ``true then
-        return some (mkApp3 (mkConst ``of_decide_eq_true) stmt inst
-          (mkApp2 (mkConst ``Eq.refl [1]) (mkConst ``Bool) (mkConst ``true)))
-      return none)
-    fun _ => do
-      modifyThe Core.State ({ · with messages := saved })
-      return none
-
 /-- Proves the goal from the facts through a theorem about variables alone:
 `∀ x₁ … xₙ, F₁ → … → Fₖ → G`, with a variable for every term of the goal and the facts
 that is not arithmetic. One such theorem serves every goal of its shape in a declaration
 (Lean's cache of auxiliary lemmas finds it by its statement), and
-it is proven by `VG.Arith.prove?` where that can, by `omega` otherwise. `false`, with nothing
-changed, if the goal is not one `prop` reads; fails if `omega` does not prove the statement
-(with the atoms hidden it knows less: that `x.toNat` is some number, not which). -/
+it is proven by `VG.Arith.prove?`. `false`, with the goal as it was, if the goal is not one
+`prop` reads or that does not prove the statement. -/
 def close (g : MVarId) (facts : Array Expr) (minimal := false) : MetaM Bool := g.withContext do
   let goal ← instantiateMVars (← g.getType)
-  let read : M (Option (Expr × Array (Expr × Expr))) := do
+  let read : M (Option (Expr × Array (Expr × Expr) × Nat)) := do
     let some goal' ← (prop goal).run | return none
     let mut fs := #[]
     for h in facts do
@@ -850,8 +836,18 @@ def close (g : MVarId) (facts : Array Expr) (minimal := false) : MetaM Bool := g
       match ← (prop ty).run with
       | some ty' => fs := fs.push (h, ty')
       | none => set saved
-    return some (goal', fs)
-  let (some (goal', fs), st) ← read.run {} | return false
+    let given := fs.size
+    -- what holds of the atoms by their shape, which `omega` adds itself
+    let mut i := 0
+    while i < (← get).known.size do
+      let h := (← get).known[i]!
+      let saved ← get
+      match ← (prop (← instantiateMVars (← inferType h))).run with
+      | some ty' => fs := fs.push (h, ty')
+      | none => set { saved with known := (← get).known }
+      i := i + 1
+    return some (goal', fs, given)
+  let (some (goal', fs, given), st) ← read.run {} | return false
   let mut body := goal'
   for (_, ty') in fs.reverse do
     body := .forallE `h ty' body .default
@@ -868,22 +864,18 @@ def close (g : MVarId) (facts : Array Expr) (minimal := false) : MetaM Bool := g
     match ← VG.Arith.prove? (← instantiateMVars (← g₁.getType)) (hs.map mkFVar) with
     | some pf => g₁.assign pf; pure true
     | none => pure false
-  unless lin do
-    -- a statement with no variable is evaluated
-    let dec ← if st.vars.isEmpty && fs.isEmpty then decideClosed stmt else pure none
-    if let some pf := dec then
-      m.mvarId!.assign pf
-    else if let some g₂ ← g₁.falseOrByContra then
-      g₂.withContext do
-        Lean.Elab.Tactic.Omega.omega (← getLocalHyps).toList g₂
+  -- Nothing else is tried on the statement about variables: `omega` knows less there than
+  -- on the goal itself, and can take seconds to fail where it proves the goal at once.
+  unless lin do return false
   -- With `minimal`, the theorem states and is applied to only the facts its proof uses, as
   -- `omega`'s proof would mention only those: for a proof that ends up inside a statement (an
   -- index bound), which should depend on no hypothesis it does not need. Otherwise every
-  -- fact given is used, as far as the unused-variables linter can tell.
+  -- fact given is used, as far as the unused-variables linter can tell (and of the facts
+  -- added here, those the proof uses).
   let (name, args) ← g₁.withContext do
     let pf ← instantiateMVars (mkMVar g₁)
     let goalTy ← instantiateMVars (← g₁.getType)
-    let usedH := (Array.range hs.size).filter fun i => !minimal || pf.containsFVar hs[i]!
+    let usedH := (Array.range hs.size).filter fun i => (!minimal && i < given) || pf.containsFVar hs[i]!
     let hTypes ← usedH.mapM fun i => do instantiateMVars (← hs[i]!.getType)
     let usedX := (Array.range xs.size).filter fun i =>
       goalTy.containsFVar xs[i]! || pf.containsFVar xs[i]! || hTypes.any (·.containsFVar xs[i]!)
