@@ -61,6 +61,8 @@ pub const VG_POLY1305_UPDATE_IFMA_FEATURES: verified_garbage_cpu::Features = ver
 ///
 /// Contract: `VG.Spec.Poly1305.updateContract`. The streaming state is the accumulator, the key and the message's last bytes that do not fill a block (`VG.Spec.Poly1305.Buffered`). Constant time: only the pointers, `count` and `len` may affect timing, not the state or the data.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `state` must be valid for reads and writes of 128 bytes.
@@ -82,7 +84,7 @@ jmp 23f
 .base64 "SCnBSIXA"
 je 24f
 26:
-.base64 "RA+2LkaIbCc4SIPGAUmDxAFIg+gB"
+.base64 "SYPkD0QPti5GiGwnOEiDxgFJg8QBSIPoAQ=="
 jne 26b
 jmp 25f
 24:
@@ -106,12 +108,12 @@ jmp 210f
 je 211f
 .base64 "QbwAAAAASInI"
 213:
-.base64 "RA+2LkaIbCc4SIPGAUmDxAFIg+gB"
+.base64 "SYPkD0QPti5GiGwnOEiDxgFJg8QBSIPoAQ=="
 jne 213b
 jmp 212f
 211:
 212:
-.base64 "SYsfSYtvCE2LZxBNi28YTYt3IE2LfyhIjaQkiAAAAMM="
+.base64 "SYsfSYtvCE2LZxBNi28YTYt3IE2LfyhIjaQkiAAAAMX578DF8e/Jxenv0sXh79vF2e/kxdHv7cXJ7/bFwe//xEE578DEQTHvycRBKe/SxEEh79vEQRnv5MRBEe/txEEJ7/bEQQHv/0iNpCRg////SI2kJKAAAAAxwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
 .p2align 6"#,
         vg_poly1305_blocks_ifma = sym super::poly1305::vg_poly1305_blocks_ifma::vg_poly1305_blocks_ifma,
     )
@@ -123,6 +125,8 @@ pub const VG_POLY1305_UPDATE_AVX512_FEATURES: verified_garbage_cpu::Features = v
 /// Absorbs data into a Poly1305 computation: if the streaming state `*state` represents a message of `count` bytes (modulo 2⁶⁴) under a key, it then represents that message followed by the `len` bytes at `data`, under the same key.
 ///
 /// Contract: `VG.Spec.Poly1305.updateContract`. The streaming state is the accumulator, the key and the message's last bytes that do not fill a block (`VG.Spec.Poly1305.Buffered`). Constant time: only the pointers, `count` and `len` may affect timing, not the state or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -145,7 +149,7 @@ jmp 23f
 .base64 "SCnBSIXA"
 je 24f
 26:
-.base64 "RA+2LkaIbCc4SIPGAUmDxAFIg+gB"
+.base64 "SYPkD0QPti5GiGwnOEiDxgFJg8QBSIPoAQ=="
 jne 26b
 jmp 25f
 24:
@@ -169,12 +173,12 @@ jmp 210f
 je 211f
 .base64 "QbwAAAAASInI"
 213:
-.base64 "RA+2LkaIbCc4SIPGAUmDxAFIg+gB"
+.base64 "SYPkD0QPti5GiGwnOEiDxgFJg8QBSIPoAQ=="
 jne 213b
 jmp 212f
 211:
 212:
-.base64 "SYsfSYtvCE2LZxBNi28YTYt3IE2LfyhIjaQkiAAAAMM="
+.base64 "SYsfSYtvCE2LZxBNi28YTYt3IE2LfyhIjaQkiAAAAMX578DF8e/Jxenv0sXh79vF2e/kxdHv7cXJ7/bFwe//xEE578DEQTHvycRBKe/SxEEh79vEQRnv5MRBEe/txEEJ7/bEQQHv/0iNpCRg////SI2kJKAAAAAxwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
 .p2align 6"#,
         vg_poly1305_blocks_avx512 = sym super::poly1305::vg_poly1305_blocks_avx512::vg_poly1305_blocks_avx512,
     )
@@ -186,6 +190,8 @@ pub const VG_POLY1305_UPDATE_AVX2_FEATURES: verified_garbage_cpu::Features = ver
 /// Absorbs data into a Poly1305 computation: if the streaming state `*state` represents a message of `count` bytes (modulo 2⁶⁴) under a key, it then represents that message followed by the `len` bytes at `data`, under the same key.
 ///
 /// Contract: `VG.Spec.Poly1305.updateContract`. The streaming state is the accumulator, the key and the message's last bytes that do not fill a block (`VG.Spec.Poly1305.Buffered`). Constant time: only the pointers, `count` and `len` may affect timing, not the state or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -208,7 +214,7 @@ jmp 23f
 .base64 "SCnBSIXA"
 je 24f
 26:
-.base64 "RA+2LkaIbCc4SIPGAUmDxAFIg+gB"
+.base64 "SYPkD0QPti5GiGwnOEiDxgFJg8QBSIPoAQ=="
 jne 26b
 jmp 25f
 24:
@@ -232,12 +238,12 @@ jmp 210f
 je 211f
 .base64 "QbwAAAAASInI"
 213:
-.base64 "RA+2LkaIbCc4SIPGAUmDxAFIg+gB"
+.base64 "SYPkD0QPti5GiGwnOEiDxgFJg8QBSIPoAQ=="
 jne 213b
 jmp 212f
 211:
 212:
-.base64 "SYsfSYtvCE2LZxBNi28YTYt3IE2LfyhIjaQkiAAAAMM="
+.base64 "SYsfSYtvCE2LZxBNi28YTYt3IE2LfyhIjaQkiAAAAMX578DF8e/Jxenv0sXh79vF2e/kxdHv7cXJ7/bFwe//xEE578DEQTHvycRBKe/SxEEh79vEQRnv5MRBEe/txEEJ7/bEQQHv/0iNpCRg////SI2kJKAAAAAxwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
 .p2align 6"#,
         vg_poly1305_blocks_avx2 = sym super::poly1305::vg_poly1305_blocks_avx2::vg_poly1305_blocks_avx2,
     )
@@ -269,7 +275,7 @@ jmp 23f
 .base64 "SCnBSIXA"
 je 24f
 26:
-.base64 "RA+2LkaIbCc4SIPGAUmDxAFIg+gB"
+.base64 "SYPkD0QPti5GiGwnOEiDxgFJg8QBSIPoAQ=="
 jne 26b
 jmp 25f
 24:
@@ -293,12 +299,12 @@ jmp 210f
 je 211f
 .base64 "QbwAAAAASInI"
 213:
-.base64 "RA+2LkaIbCc4SIPGAUmDxAFIg+gB"
+.base64 "SYPkD0QPti5GiGwnOEiDxgFJg8QBSIPoAQ=="
 jne 213b
 jmp 212f
 211:
 212:
-.base64 "SYsfSYtvCE2LZxBNi28YTYt3IE2LfyhIjaQkiAAAAGYP78BFMdtIjaQkYP////MPf4QkkAAAAPMPf4QkgAAAAPMPf0QkcPMPf0QkYPMPf0QkUPMPf0QkQPMPf0QkMPMPf0QkIPMPf0QkEEiNpCSgAAAAMcAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
+.base64 "SYsfSYtvCE2LZxBNi28YTYt3IE2LfyhIjaQkiAAAAEiNpCRg////SI2kJKAAAAAxwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
 .p2align 6"#,
         vg_poly1305_blocks = sym super::poly1305::vg_poly1305_blocks::vg_poly1305_blocks,
     )

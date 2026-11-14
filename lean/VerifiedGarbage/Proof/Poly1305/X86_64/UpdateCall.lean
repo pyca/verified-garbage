@@ -193,11 +193,6 @@ end
 
 /-! ## After the call -/
 
-theorem wp_andi {is : List Instr} {s : State} {Q : State → Prop} {d : Reg} {v : BitVec 32}
-    (k : ∀ s', Upd s s' d (s.gpr d &&& v.signExtend 64) → WP isa (.block is) s' Q) :
-    WP isa (.block (.alu .and d (.imm v) :: is)) s Q :=
-  WP.cons rfl (k _ (Upd.flags _ _ _ _ _ _))
-
 theorem wp_add {is : List Instr} {s : State} {Q : State → Prop} {d r : Reg}
     (k : ∀ s', Upd s s' d (s.gpr d + s.gpr r) → WP isa (.block is) s' Q) :
     WP isa (.block (.alu .add d (.reg r) :: is)) s Q :=

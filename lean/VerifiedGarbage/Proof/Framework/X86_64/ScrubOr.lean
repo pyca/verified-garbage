@@ -605,4 +605,37 @@ def withScrubOrAllM {api : Api} (r : Registration api target)
   | some a => withScrub r hpost pubs hpub (some a)
   | none => withScrubAllM r hpost
 
+/-- `withScrub` where its side conditions hold; otherwise, for code whose
+every `ldmxcsr` loads what `Mx.mx` follows, the same clearing without
+`mxFix` (`scrubRegF`, as `withScrubAllF` does) at the level `levelForE` of
+its code, wiping the granules the residue analysis `a` finds may hold
+secrets, if the clearing needs no CPU feature the code does not; otherwise
+`r` itself. -/
+def withScrubM {api : Api} (r : Registration api target)
+    (hpost : PostOut r.contract (api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits))
+    (pubs : List (Nat × Nat × Nat)) (hpub : PubOk r.contract pubs)
+    (a : Option (Analysed api.sig r.stack pubs r.code)) : Registration api target :=
+  let r₁ := withScrub r hpost pubs hpub a
+  if r₁.residue.isSome then r₁ else
+  match a with
+  | none => r
+  | some a =>
+    let v := levelForE r.code
+    if hfit : pubsFit api.sig pubs = true then
+    if hmx : (Mx.mx r.code []).isSome = true then
+    if hd : r.code.x86_64Depth ≤ r.stack then
+    if hst : r.stack + 8 < 2 ^ 64 then
+    if h8 : r.stack % 8 = 0 then
+    if hlv : r.code.all (fun i => decide (i.vecLevelR ≤ v.level)) = true then
+    if hrb : api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits ≤ 32 ∨
+        api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits = 64 then
+    if hw : r.written = [] then
+    if hx : v = .evex → r.code.all (fun i => !writesVec i) = false then
+      let r₂ := scrubRegF r v a.ks hd hst h8 hlv (Mx.mxSame_of hmx) hrb hpost
+        (by obtain ⟨_, hc⟩ := a.ok; exact resOk_reg r a.ks hfit hpub hc) hw
+        (fun e x => by unfold xsOf; rw [hx e]; exact mem_xregs x)
+      if (Code.requiresDedup isa.requires r₂.code).all
+          (fun f => (Code.requiresDedup isa.requires r.code).contains f) then r₂ else r
+    else r else r else r else r else r else r else r else r else r
+
 end VG.X86_64.RScrub
