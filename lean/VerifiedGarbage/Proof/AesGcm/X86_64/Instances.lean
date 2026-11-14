@@ -56,6 +56,8 @@ public import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksTo.Piece
 public import VerifiedGarbage.Proof.AesGcm.X86_64.OneBlocks.Call
 public import VerifiedGarbage.Proof.Gcm.Prepared16Contract
 import VerifiedGarbage.Proof.Framework.X86_64.WidenArray
+public import VerifiedGarbage.Proof.Framework.X86_64.ScrubSel
+import VerifiedGarbage.Proof.AesGcm.X86_64.Scrub
 
 /-!
 # AES-GCM on x86-64: the functions a variant's artifacts are built from
@@ -1364,8 +1366,15 @@ def toFnF16 (v : GcmVariant) : Gather.ToFn (Proof.Gcm.X86_64.Stitch.CtxMode.flag
     (StreamTo.framed_xdepth (StreamTo.encrypt_xdepth (blkToF16 v) (encFnF16 v)))
     (StreamTo.framed_mx (StreamTo.encrypt_mx (blkToF16 v) (encFnF16 v)))
 
+/-- Whether `vg_aes_gcm_seal_prepared` of a variant whose loops read 16
+prepared powers is scrubbed by the length it seals (`sealR16Reg`): so far
+over VAES alone. `vg_aes_gcm_seal_gather_prepared` then calls its code as it
+was, as the internal `vg_aes_gcm_seal_prepared<suffix>_core`. -/
+def sealSel (v : GcmVariant) : Bool := v.impl.suffix == "_vaes_vpclmul"
+
 def sealFnF16 (v : GcmVariant) (r : R16 v) : Gather.SealFn (Proof.Gcm.X86_64.Stitch.CtxMode.flaggedT 16) :=
-  .ofFlagged ⟨Spec.Gcm.sealPreparedApi.name ++ v.impl.suffix, sealCodeF16 v⟩ (sealCodeF16_verified v r)
+  .ofFlagged ⟨Spec.Gcm.sealPreparedApi.name ++ v.impl.suffix ++ (if sealSel v then "_core" else ""), sealCodeF16 v⟩
+    (sealCodeF16_verified v r)
     (sealCodeF16_spAll v) (sealCodeF16_xdepth v) (sealCodeF16_mx v)
 
 /-- `vg_aes_gcm_seal_split_prepared16` of a variant, on a context whose count is
@@ -1414,5 +1423,52 @@ theorem sealGatherR16_onFlag (v : GcmVariant) (r : R16 v) :
     (Gather.sealGatherFlagged_framed (by decide) (shortFnF16 v r) (initFn v.impl) (aadFn v.impl) (toFnF16 v)
       (finFn v.impl) (splitFnF16 v r) (tlsLong v) true)
     (Gather.sealGather_framed (shortFn v) (initFn v.impl) (aadFn v.impl) (toFn v) (finFn v.impl))
+
+/-! ## `vg_aes_gcm_seal_prepared`, scrubbed by the length it seals
+
+Of a variant whose loops read 16 prepared powers, followed by the clearing
+of its stack (`X86_64.Scrub.withScrubSel`): below 256 bytes, which run no
+stitched loop, only the granules its short path may leave secrets in
+(`sealShortKs`); otherwise its whole stack. Its postcondition reads the
+memory on return only within its buffers. -/
+
+section ScrubSeal
+open VG.X86_64.Scrub
+
+theorem sealPreparedOut (stack : Nat) :
+    PostOut (Spec.Gcm.sealPreparedContract X86_64.abi stack) (Spec.Gcm.sealPreparedSig.retBits 64) :=
+  postOut_of_local (leak := some _) ScrubAbi.plain fun vs m m₁ m₂ r hlen hb h => by
+    match vs, hlen with
+    | [ctx, rounds, nonce, nl, aad, al, data, len, tag], _ =>
+      simp only [Spec.Gcm.sealPreparedSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
+        forall_eq, Elem.size, Nat.mul_one] at hb
+      intro key hk
+      show _ = (Spec.Aes.bytesAt m₂ data len.toNat, Spec.Aes.bytesAt m₂ tag 16)
+      rw [VG.Proof.AesGcm.X86_64.Scrub.bytesAt_of0 hb.2.2.2.1 (Nat.le_refl _),
+        VG.Proof.AesGcm.X86_64.Scrub.bytesAt_of0 hb.2.2.2.2 (by decide)]
+      exact h key hk
+
+/-- The granules of the 2624 bytes of stack of `vg_aes_gcm_seal_prepared`
+over VAES, from their bottom, that a run on fewer than 256 bytes may write
+secrets in: its working space's first 128 bytes (from 64; tag, `J0`, `Y`,
+`T`, the counter, a keystream and a partial block), and what of the
+working space of `vg_aes_gcm_encrypt_blocks_prepared16_vaes_vpclmul` (from
+512) its path for fewer than 16 blocks spills the powers and keystream in,
+512 bytes from its 64-byte-aligned base, which lies 64 to 127 bytes in. -/
+def sealShortKs : List Nat :=
+  (List.range 8).map (64 + 16 * ·) ++ (List.range 36).map (576 + 16 * ·)
+
+/-- `vg_aes_gcm_seal_prepared` of a variant whose loops read 16 prepared
+powers, scrubbed by the length it seals over VAES (`sealSel`). -/
+def sealR16Reg (v : GcmVariant) (r : R16 v) : Registration Spec.Gcm.sealPreparedApi X86_64.target :=
+  let base : Registration Spec.Gcm.sealPreparedApi X86_64.target := {
+    suffix := v.impl.suffix
+    code := sealCodeF16 v
+    stack := 2624
+    verified := VG.Proof.AesGcm.Flag.seal_keyed (Flag.seal_ofB (Or.inl rfl) (sealCodeF16_verified v r))
+    spSafe := sealCodeF16_spAll v }
+  if sealSel v then withScrubSel base (sealPreparedOut _) sealShortKs 1 256 none else base
+
+end ScrubSeal
 
 end VG.Proof.AesGcm.X86_64
