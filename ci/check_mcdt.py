@@ -47,9 +47,16 @@ function:
   needed and not accepted: the set is the least one closed under this.)
 
 Its affected instructions then run inside the region of each call that
-reaches them: after the prologue's `lfence` and before the epilogue's. A
-`call` inside a region of any other function, or of no named function, is
-rejected. The check is conservative: it rejects every affected instruction
+reaches them: after the prologue's `lfence` and before the epilogue's.
+
+A region may also `call` an internal function that never reads or writes
+MXCSR, nor does any function it calls (`mxcsr_free`: the least set of
+internal functions with no MXCSR instruction whose every `call` names a
+function of the set), such as a hash function that the region's
+computation needs between its multiplications: MXCSR then holds `0x1FBF`
+until it returns, and its own affected instructions, if it is also called
+outside regions, are checked as any function's are. A `call` inside a
+region of any other function, or of no named function, is rejected. The check is conservative: it rejects every affected instruction
 outside a region and every such function, whether or not its operands are
 secret.
 """
@@ -225,11 +232,12 @@ def find_regions(name, instrs, lines, labels):
 
 
 def check_function(name, instrs, lines, labels, inside=False, region_only=frozenset(), why=None,
-                   found=None):
+                   found=None, mxcsr_free=frozenset()):
     """The errors of a function and its number of regions. `inside`: it runs
     only inside regions (`region_only`), the set of such functions of its
     crate; `why`: if it is not one but internal, why not; `found`: its
-    `find_regions`, if already computed."""
+    `find_regions`, if already computed; `mxcsr_free`: the internal functions
+    of its crate that never read or write MXCSR (`mxcsr_free`)."""
     errors, regions, region_at, mnemonics = found or find_regions(name, instrs, lines, labels)
     errors = list(errors)
 
@@ -246,10 +254,10 @@ def check_function(name, instrs, lines, labels, inside=False, region_only=frozen
             )
         if op == "call" and r is not None:
             f = callee(instr)
-            if f not in region_only:
+            if f not in region_only and f not in mxcsr_free:
                 errors.append(
                     f"{at(k)}: `{instr}` is inside an MCDT region, and calls no internal "
-                    "function that runs only inside MCDT regions"
+                    "function that runs only inside MCDT regions or never reads or writes MXCSR"
                 )
             continue
         if op in ("call", "ret"):
@@ -309,6 +317,23 @@ def region_only(fns):
     return frozenset(inside), why
 
 
+def mxcsr_free(fns):
+    """Of the functions of a crate (as `region_only`'s), the names of the
+    internal functions that never read or write MXCSR, nor does any function
+    they call: the least set of internal functions with no MXCSR instruction
+    each of whose `call`s names a function of the set."""
+    callees = {}
+    for _, name, instrs, _, _, internal, (_, _, _, mnemonics) in fns:
+        if internal and not any(op in MXCSR_OPS for op in mnemonics):
+            callees[name] = [callee(instrs[k]) for k, op in enumerate(mnemonics) if op == "call"]
+    free = set()
+    while True:
+        new = {f for f, cs in callees.items() if f not in free and all(c in free for c in cs)}
+        if not new:
+            return frozenset(free)
+        free |= new
+
+
 def main():
     errors = []
     regions = 0
@@ -341,9 +366,10 @@ def main():
                 errors.append(f"{where}: defines {name}, as {seen[name]} does")
             seen.setdefault(name, where)
         inside, why = region_only(fns)
+        free = mxcsr_free(fns)
         for where, name, instrs, lines, labels, _, found in fns:
             errs, n = check_function(f"{where} ({name})", instrs, lines, labels,
-                                     name in inside, inside, why.get(name), found)
+                                     name in inside, inside, why.get(name), found, free)
             errors += errs
             regions += n
     for e in errors:

@@ -166,9 +166,8 @@ class RegionCalls(unittest.TestCase):
             {"vg_g": self.region(["call {vg_f}"]), "vg_k": ["call {vg_f}", "ret"]},
             {"vg_f": self.MUL})
         self.assertEqual(status, 1)
+        # The call inside the region is of a function with no MXCSR instruction.
         self.assertEqual(errors, [
-            "assembly/m.s (vg_g):7: `call {vg_f}` is inside an MCDT region, and calls no internal "
-            "function that runs only inside MCDT regions",
             "assembly/internal/vg_f.s (vg_f):2: `pmuludq xmm0, xmm1` is outside Intel's MXCSR "
             "prologue and epilogue (MCDT, see lean/VerifiedGarbage/TCB/X86_64/Isa.lean): its function "
             "is not called only inside MCDT regions (vg_k calls it outside an MCDT region, at "
@@ -192,19 +191,31 @@ class RegionCalls(unittest.TestCase):
             "prologue and epilogue (MCDT, see lean/VerifiedGarbage/TCB/X86_64/Isa.lean): its function "
             "is not called only inside MCDT regions (it is never called)"])
 
+    def test_mxcsr_free_inside_a_region(self):
+        # `vg_k` and `vg_l` never read or write MXCSR, and are also called
+        # outside the region: the calls inside it are accepted, as is `vg_m`'s
+        # multiplication, which only the region reaches through `vg_f`.
+        self.assertEqual(self.run_files(
+            {"vg_g": self.region(["call {vg_k}", "call {vg_f}"]), "vg_o": ["call {vg_k}", "ret"]},
+            {"vg_k": ["call {vg_l}", "ret"], "vg_l": ["ret"], "vg_f": ["call {vg_l}", "call {vg_m}", "ret"],
+             "vg_m": self.MUL}), (0, []))
+
     def test_calls_rejected_inside_a_region(self):
         # An artifact (Rust calls it), an internal function with its own
-        # region (it writes MXCSR), a function of no name, and recursion.
+        # region (it writes MXCSR), one calling such a function, one making a
+        # call of no name, a function of no name, and recursion.
         status, errors = self.run_files(
-            {"vg_g": self.region(["call {vg_a}", "call {vg_r}", "call rax", "call {vg_p}"]),
-             "vg_a": self.MUL[1:]},
-            {"vg_r": self.region(["pmuludq xmm0, xmm1"]),
-             "vg_p": ["call {vg_q}", "ret"], "vg_q": ["call {vg_p}", "ret"]})
+            {"vg_g": self.region(["call {vg_a}", "call {vg_r}", "call {vg_s}", "call {vg_t}", "call rax",
+                                  "call {vg_p}"]),
+             "vg_a": self.MUL[1:], "vg_o": ["call {vg_s}", "call {vg_t}", "call {vg_p}", "ret"]},
+            {"vg_r": self.region(["pmuludq xmm0, xmm1"]), "vg_s": ["call {vg_r}", "ret"],
+             "vg_t": ["call rax", "ret"], "vg_p": ["call {vg_q}", "ret"], "vg_q": ["call {vg_p}", "ret"]})
         self.assertEqual(status, 1)
         self.assertEqual([e for e in errors if "m.s (vg_g)" in e], [
             f"assembly/m.s (vg_g):{n}: `{c}` is inside an MCDT region, and calls no internal "
-            "function that runs only inside MCDT regions"
-            for n, c in [(7, "call {vg_a}"), (8, "call {vg_r}"), (9, "call rax"), (10, "call {vg_p}")]])
+            "function that runs only inside MCDT regions or never reads or writes MXCSR"
+            for n, c in [(7, "call {vg_a}"), (8, "call {vg_r}"), (9, "call {vg_s}"), (10, "call {vg_t}"),
+                         (11, "call rax"), (12, "call {vg_p}")]])
         self.assertEqual([e for e in errors if "m.s (vg_g)" not in e], [])
 
     def test_names_are_unique(self):

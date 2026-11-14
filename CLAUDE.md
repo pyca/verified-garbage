@@ -221,7 +221,9 @@ own changes are rebuilt either way, on top of the restored build.
   prologue, or in an internal function with no MXCSR instruction that is
   called only from inside such sequences (or from other such functions).
   So one sequence can cover a computation's calls of its arithmetic,
-  instead of each call setting MXCSR again.
+  instead of each call setting MXCSR again. Inside the sequence, a `call`
+  must name such a function, or an internal function that, with every
+  function it calls, has no MXCSR instruction (a hash function, say).
 * `TCB/` holds definitions only and imports only Lean core; lemmas go in
   `Proof/`. `Spec/` and `Impl/` never import `Proof/`.
   `ci/check_lean_imports.py` checks both.
