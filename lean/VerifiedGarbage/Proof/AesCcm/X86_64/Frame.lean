@@ -3,7 +3,10 @@ module
 public import VerifiedGarbage.Proof.AesCcm.Rounds
 public import VerifiedGarbage.Proof.AesCcm.X86_64.Verified
 public import VerifiedGarbage.Impl.StackScratch.X86_64
-import VerifiedGarbage.Proof.Framework.X86_64.StackArgScratch
+public import VerifiedGarbage.Proof.Framework.X86_64.StackArgScratch
+public import VerifiedGarbage.Proof.Framework.X86_64.Scrub
+public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Proof.Framework.X86_64.Registration
 
 /-!
 # AES-CCM on x86-64, with its working space on the stack
@@ -20,6 +23,12 @@ calls use 16 bytes below it: the return addresses of the call of
 `vg_aes_ctr32`, if it makes one (`UpdateImpl.xdepth`), which uses no stack
 (`Ctr32Impl.noStack`). `open`'s leak,
 whether it succeeds, reads only its buffers (`openLeak_local`).
+
+Over an implementation of AES that needs working space (`Ctr32Impl.free` is
+`none`), that frame is the working space of the functions called, wiped
+whole on return (`X86_64.Scrub.withScrubAll`, `sealReg`, `openReg`): their
+postconditions read the memory on return only within the data and the tag
+(`sealOut`, `openOut`).
 -/
 
 @[expose] public section
@@ -85,5 +94,82 @@ theorem open_framed :
     (leak := some (Spec.Ccm.openLeak X86_64.abi.ptrBits)) (bytes := 2608) (open_verified v)
     (by decide) (by decide) (by decide) (open_spSafe v) (open_xdepth v) (openPre_local _)
     (openPost_local _) openFrameSat_pre (hleak := openLeak_local _)
+
+/-! ## Without secret residue -/
+
+section
+open VG.X86_64.Scrub
+
+omit v
+
+/-- The bytes of a buffer on which two memories agree. -/
+theorem bytesAt_of {m₁ m₂ : Mem} {p : Addr} {L : Nat} (h : ∀ a, Region.Contains ⟨p, L⟩ a 1 → m₁ a = m₂ a)
+    {n : Nat} (hn : n ≤ L) : Spec.Aes.bytesAt m₂ p n = Spec.Aes.bytesAt m₁ p n := by
+  simp only [Spec.Aes.bytesAt]
+  exact List.map_congr_left fun i hi => (h _ (Region.contains_ofNat p (by have := List.mem_range.mp hi; omega))).symm
+
+theorem sealOut (stack : Nat) :
+    PostOut (Spec.Ccm.sealContract X86_64.abi stack) (Spec.Ccm.sealSig.retBits 64) :=
+  postOut_of_local (leak := none) ScrubAbi.plain fun vs m m₁ m₂ r hlen hb h => by
+    match vs, hlen with
+    | [sch, rd, np, nl, ap, al, dp, dl, tp, tl], _ =>
+      simp only [Spec.Ccm.sealSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
+        forall_eq_or_imp, forall_eq, Elem.size, Nat.mul_one] at hb
+      change Curry.apply [ArgWord.addr, ArgWord.int 64, ArgWord.addr, ArgWord.int 64, ArgWord.addr,
+        ArgWord.int 64, ArgWord.addr, ArgWord.int 64, ArgWord.addr, ArgWord.int 64]
+        (Spec.Ccm.sealPost 64) _ m m₁ r at h
+      change Curry.apply [ArgWord.addr, ArgWord.int 64, ArgWord.addr, ArgWord.int 64, ArgWord.addr,
+        ArgWord.int 64, ArgWord.addr, ArgWord.int 64, ArgWord.addr, ArgWord.int 64]
+        (Spec.Ccm.sealPost 64) _ m m₂ r
+      dsimp only [Curry.apply, Spec.Ccm.sealPost, ArgWord.ofRaw, IntTy.bits] at h ⊢
+      intro key hk
+      rw [h key hk, bytesAt_of hb.2.2.2.1 (by simp), bytesAt_of hb.2.2.2.2 (by simp)]
+
+theorem openOut (stack : Nat) :
+    PostOut (Spec.Ccm.openContract X86_64.abi stack) (Spec.Ccm.openSig.retBits 64) :=
+  postOut_of_local ScrubAbi.plain fun vs m m₁ m₂ r hlen hb h => by
+    match vs, hlen with
+    | [sch, rd, np, nl, ap, al, dp, dl, tp, tl], _ =>
+      simp only [Spec.Ccm.openSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
+        forall_eq_or_imp, forall_eq, Elem.size, Nat.mul_one] at hb
+      change Curry.apply [ArgWord.addr, ArgWord.int 64, ArgWord.addr, ArgWord.int 64, ArgWord.addr,
+        ArgWord.int 64, ArgWord.addr, ArgWord.int 64, ArgWord.addr, ArgWord.int 64]
+        (Spec.Ccm.openPost 64) _ m m₁ r at h
+      change Curry.apply [ArgWord.addr, ArgWord.int 64, ArgWord.addr, ArgWord.int 64, ArgWord.addr,
+        ArgWord.int 64, ArgWord.addr, ArgWord.int 64, ArgWord.addr, ArgWord.int 64]
+        (Spec.Ccm.openPost 64) _ m m₂ r
+      dsimp only [Curry.apply, Spec.Ccm.openPost, ArgWord.ofRaw, IntTy.bits] at h ⊢
+      intro key hk
+      rw [bytesAt_of hb.2.2.2.1 (by simp)]
+      exact h key hk
+
+/-- `vg_aes_ccm_seal` over `v`. Over an implementation of AES that needs
+working space (`v.ctr.free` is `none`), its frame of 2.6 KB is mostly that
+working space, wiped whole on return (`withScrubAll`); over the others, as
+before. -/
+def sealReg (v : UpdateImpl) : Registration Spec.Ccm.sealApi X86_64.target :=
+  let r : Registration Spec.Ccm.sealApi X86_64.target := {
+    suffix := v.suffix
+    code := Impl.StackScratch.X86_64.withStackArgScratch 2608 4 («seal» v.callee v.ctr.callee)
+    stack := 2624
+    verified := Proof.AesCcm.seal_keyed (seal_framed v)
+    spSafe := X86_64.withStackArgScratch_spSafe (seal_spSafe v) }
+  match v.ctr.free with
+  | some _ => r
+  | none => withScrubAll r (sealOut _)
+
+/-- `vg_aes_ccm_open` over `v`, as `sealReg`. -/
+def openReg (v : UpdateImpl) : Registration Spec.Ccm.openApi X86_64.target :=
+  let r : Registration Spec.Ccm.openApi X86_64.target := {
+    suffix := v.suffix
+    code := Impl.StackScratch.X86_64.withStackArgScratch 2608 4 («open» v.callee v.ctr.callee)
+    stack := 2624
+    verified := Proof.AesCcm.open_keyed (open_framed v)
+    spSafe := X86_64.withStackArgScratch_spSafe (open_spSafe v) }
+  match v.ctr.free with
+  | some _ => r
+  | none => withScrubAll r (openOut _)
+
+end
 
 end VG.Proof.AesCcm.X86_64

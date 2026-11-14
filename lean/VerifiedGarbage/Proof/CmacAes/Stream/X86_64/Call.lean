@@ -139,7 +139,7 @@ namespace VG.Proof.CmacAes.Stream.X86_64
 
 open VG VG.X86_64
 open VG.Proof.Aes.X86_64 (Ctr32Impl)
-open VG.Proof.CmacAes.X86_64 (UpdateImpl updateX86_64 subkeysX86_64 subkeysX86_64F subkeysF_correct subkeysF_ct
+open VG.Proof.CmacAes.X86_64 (UpdateImpl UpdateFree updateX86_64 updateX86_64F subkeysX86_64 subkeysX86_64F subkeysF_correct subkeysF_ct
   finalizeX86_64 finalizeX86_64F finalizeF_correct finalizeF_ct subkeys_correct
   finalize_correct subkeys_ct finalize_ct callEntry_frame bytesAt_frame toNat_rounds)
 
@@ -266,6 +266,136 @@ theorem upd_rel (v : UpdateImpl) {P : State → State → Prop}
     State.callEntry_gpr _ (by decide : Reg.r8 ≠ .rsp), State.callEntry_gpr _ (by decide : Reg.r9 ≠ .rsp),
     h₁.rdi, h₁.rsi, h₁.rdx, h₁.rcx, h₁.r8, h₁.r9, h₂.rdi, h₂.rsi, h₂.rdx, h₂.rcx, h₂.r8, h₂.r9, hsp]
   exact ⟨trivial, trivial, trivial, trivial, trivial, trivial, trivial⟩
+
+/-! ## `vg_cmac_aes_update`, for any working space
+
+A caller generic over what its calls of `vg_cmac_aes_update` need of its
+working space: its writable part `Z` (in the writable regions), and the part
+`X` of it a call may write. Over an implementation that needs working space,
+`Z` is the whole of it and `X` the call's (`ACall.base`); over one that needs
+none (`UpdateFree`), `Z` is only what the caller writes itself and `X` is
+empty (`ACall.free`). -/
+
+/-- What a call of `vg_cmac_aes_update` needs, with `S` its scratch pointer
+and `Z` the caller's writable working space. -/
+structure UArgsZ (s : State) (W C D S : Addr) (Z : Region) (R n : Nat) : Prop where
+  rdi : s.gpr .rdi = W
+  rsi : s.gpr .rsi = BitVec.ofNat 64 R
+  rdx : s.gpr .rdx = C
+  rcx : s.gpr .rcx = D
+  r8 : s.gpr .r8 = BitVec.ofNat 64 n
+  r9 : s.gpr .r9 = S
+  rounds : R = 10 ∨ R = 12 ∨ R = 14
+  hn : 16 * n < 2 ^ 64
+  wc : (⟨W, 240⟩ : Region).Disjoint ⟨C, 16⟩
+  wz : (⟨W, 240⟩ : Region).Disjoint Z
+  dc : (⟨D, 16 * n⟩ : Region).Disjoint ⟨C, 16⟩
+  dz : (⟨D, 16 * n⟩ : Region).Disjoint Z
+  cz : (⟨C, 16⟩ : Region).Disjoint Z
+  stkW : (below (s.gpr .rsp) 16).Disjoint ⟨W, 240⟩
+  stkD : (below (s.gpr .rsp) 16).Disjoint ⟨D, 16 * n⟩
+  stkC : (below (s.gpr .rsp) 16).Disjoint ⟨C, 16⟩
+  stkZ : (below (s.gpr .rsp) 16).Disjoint Z
+  wrapC : C.toNat + 16 ≤ 2 ^ 64
+  wrapD : D.toNat + 16 * n ≤ 2 ^ 64
+  wrapZ : Z.base.toNat + Z.len ≤ 2 ^ 64
+  reads : Covers ([⟨W, 240⟩, ⟨D, 16 * n⟩] ++ [⟨C, 16⟩]) (s.rd ++ s.wr)
+  writes : Covers [⟨C, 16⟩] s.wr
+  zw : Covers [Z] s.wr
+
+/-- What a call of `vg_cmac_aes_update` leaves, having written at most `X`
+of the working space. -/
+structure UPostZ (s : State) (W C D : Addr) (X : Region) (R n : Nat) (s' : State) : Prop where
+  rd : s'.rd = s.rd
+  wr : s'.wr = s.wr
+  saved : ∀ r ∈ calleeSaved, s'.gpr r = s.gpr r
+  frame : Frame [⟨C, 16⟩, X, below (s.gpr .rsp) 16] s.mem s'.mem
+  out : Spec.Aes.bytesAt s'.mem C 16 =
+    Spec.Cmac.chain (Spec.Cmac.aesWith R (Spec.Aes.bytesAt s.mem W (16 * (R + 1))))
+      (Spec.Aes.bytesAt s.mem C 16) (Spec.Cmac.blocksAt s.mem D 16 n)
+
+/-- The calls of `u` from a caller whose writable working space is `Z S`
+and whose registers are saved at `S + 2176`, for a scratch pointer `S`: each
+writes at most `X S` of it. -/
+structure ACall (u : Impl.CmacAes.X86_64.Update) (Z X : Addr → Region) : Prop where
+  sub : ∀ S, Region.Sub (X S) (Z S)
+  slotX : ∀ S, (⟨S + BitVec.ofNat 64 2176, 48⟩ : Region).Disjoint (X S)
+  call : ∀ {s : State} {W C D S : Addr} {R n : Nat}, UArgsZ s W C D S (Z S) R n →
+    WP isa (.call u.name u.code) s (UPostZ s W C D (X S) R n)
+  rel : ∀ {P : State → State → Prop}, (∀ s₁ s₂, P s₁ s₂ → ∃ W C D S : Addr, ∃ R n : Nat,
+      UArgsZ s₁ W C D S (Z S) R n ∧ UArgsZ s₂ W C D S (Z S) R n ∧ s₁.gpr .rsp = s₂.gpr .rsp) →
+    RelCT isa P (.call u.name u.code) fun _ _ => True
+
+theorem UArgsZ.base {s : State} {W C D S : Addr} {R n : Nat} (h : UArgsZ s W C D S ⟨S, 2304⟩ R n) :
+    UArgs s W C D S R n :=
+  have sb : Region.Sub ⟨S, 2176⟩ ⟨S, 2304⟩ := Region.sub_prefix (by decide)
+  have zc : Covers [⟨S, 2176⟩] s.wr := Covers.trans (Covers.of_sub fun r hr => by
+    simp only [List.mem_singleton] at hr; subst hr
+    exact ⟨⟨S, 2304⟩, List.mem_singleton_self _, 0, by simp, by simp⟩) h.zw
+  { rdi := h.rdi, rsi := h.rsi, rdx := h.rdx, rcx := h.rcx, r8 := h.r8, r9 := h.r9, rounds := h.rounds,
+    hn := h.hn, wc := h.wc, ws := h.wz.sub_right sb, dc := h.dc, ds := h.dz.sub_right sb,
+    cs := h.cz.sub_right sb, stkW := h.stkW, stkD := h.stkD, stkC := h.stkC, stkS := h.stkZ.sub_right sb,
+    wrapC := h.wrapC, wrapD := h.wrapD, wrapS := by have := h.wrapZ; simp only at this; omega_arith
+    reads := by
+      have := Covers.append h.reads (Covers.right (rd := s.rd) zc)
+      exact this.trans (Covers.append_left (Covers.refl _) (Covers.refl _))
+    writes := Covers.cons h.writes zc }
+
+/-- Over any implementation, with the whole working space. -/
+theorem ACall.base (v : UpdateImpl) : ACall v.callee (fun S => ⟨S, 2304⟩) (fun S => ⟨S, 2176⟩) where
+  sub _ := Region.sub_prefix (by decide)
+  slotX S := Offset.disjoint_base S (by decide) (by decide)
+  call h := WP.mono (upd_call v h.base) fun _ h' => ⟨h'.rd, h'.wr, h'.saved, h'.frame, h'.out⟩
+  rel h := upd_rel v fun a b hab =>
+    let ⟨W, C, D, S, R, n, h₁, h₂, hsp⟩ := h a b hab
+    ⟨W, C, D, S, R, n, h₁.base, h₂.base, hsp⟩
+
+theorem UArgsZ.preF {s : State} {W C D S : Addr} {Z : Region} {R n : Nat} (h : UArgsZ s W C D S Z R n) :
+    updateX86_64F.pre (s.callEntry.withRegions [⟨W, 240⟩, ⟨D, 16 * n⟩] [⟨C, 16⟩]) := by
+  have hR := toNat_rounds h.rounds
+  have hN := toNat_ofNat (n := n) (by have := h.hn; omega_arith)
+  simp only [updateX86_64F, State.withRegions_gpr, State.withRegions_rd,
+    State.withRegions_wr, State.callEntry_rsp, State.callEntry_gpr s (by decide : Reg.rdi ≠ .rsp),
+    State.callEntry_gpr s (by decide : Reg.rsi ≠ .rsp), State.callEntry_gpr s (by decide : Reg.rdx ≠ .rsp),
+    State.callEntry_gpr s (by decide : Reg.rcx ≠ .rsp), State.callEntry_gpr s (by decide : Reg.r8 ≠ .rsp),
+    h.rdi, h.rsi, h.rdx, h.rcx, h.r8, hR, hN]
+  exact ⟨trivial, trivial, h.wc, h.dc, h.stkC.sub_left (ret_sub _),
+    h.stkW.sub_left (stk_sub _), h.stkD.sub_left (stk_sub _),
+    h.stkC.sub_left (stk_sub _), h.wrapC, h.wrapD, h.rounds⟩
+
+/-- Over an implementation that never touches its scratch buffer, with only
+the caller's saved registers as its working space. -/
+theorem ACall.free (v : UpdateImpl) (f : UpdateFree v.callee) :
+    ACall v.callee (fun S => ⟨S + BitVec.ofNat 64 2176, 48⟩) (fun S => ⟨S + BitVec.ofNat 64 2176, 0⟩) where
+  sub _ := Region.sub_prefix (by decide)
+  slotX _ := fun _ _ h => by simp [Region.Contains] at h
+  call {s W C D S R n} h := by
+    have hR := toNat_rounds h.rounds
+    have hN := toNat_ofNat (n := n) (by have := h.hn; omega_arith)
+    have hd := v.depth
+    refine WP.call (k := updateX86_64F) f.ok v.nosp (by omega_arith) h.preF h.reads h.writes ?_
+    intro s' hrd hwr hcs hf _ ⟨s₂, hm₂, _, hpost⟩
+    refine ⟨hrd, hwr, hcs, ?_, ?_⟩
+    · have := Frame.below_mono hf (b := 16) (by omega_arith) (by decide)
+      exact Frame.mono (by simpa using this) (by simp)
+    · simp only [updateX86_64F, updateX86_64, State.withRegions_gpr, State.withRegions_mem,
+        State.callEntry_gpr s (by decide : Reg.rdi ≠ .rsp), State.callEntry_gpr s (by decide : Reg.rsi ≠ .rsp),
+        State.callEntry_gpr s (by decide : Reg.rdx ≠ .rsp), State.callEntry_gpr s (by decide : Reg.rcx ≠ .rsp),
+        State.callEntry_gpr s (by decide : Reg.r8 ≠ .rsp), h.rdi, h.rsi, h.rdx, h.rcx, h.r8, hR, hN] at hpost
+      have hRb : 16 * (R + 1) ≤ 240 := by rcases h.rounds with h | h | h <;> omega_arith
+      rw [← hm₂, hpost, X86_64.ciphAt, Proof.Cmac.Stream.blocksAt_eq, Proof.Cmac.Stream.blocksAt_eq,
+        callEntry_bytes s (h.stkW.sub_right (Region.sub_prefix hRb)) (by omega_arith),
+        callEntry_bytes s h.stkC (by decide), callEntry_bytes s h.stkD (by have := h.hn; omega_arith)]
+  rel {P} h := by
+    refine RelCT.callEx f.ok f.ct fun s₁ s₂ hp => ?_
+    obtain ⟨W, C, D, S, R, n, h₁, h₂, hsp⟩ := h s₁ s₂ hp
+    refine ⟨_, _, _, _, h₁.preF, h₂.preF, ?_, h₁.reads, h₁.writes, h₂.reads, h₂.writes, hsp⟩
+    simp only [updateX86_64F, updateX86_64, State.withRegions_gpr, State.callEntry_rsp,
+      State.callEntry_gpr _ (by decide : Reg.rdi ≠ .rsp), State.callEntry_gpr _ (by decide : Reg.rsi ≠ .rsp),
+      State.callEntry_gpr _ (by decide : Reg.rdx ≠ .rsp), State.callEntry_gpr _ (by decide : Reg.rcx ≠ .rsp),
+      State.callEntry_gpr _ (by decide : Reg.r8 ≠ .rsp), State.callEntry_gpr _ (by decide : Reg.r9 ≠ .rsp),
+      h₁.rdi, h₁.rsi, h₁.rdx, h₁.rcx, h₁.r8, h₁.r9, h₂.rdi, h₂.rsi, h₂.rdx, h₂.rcx, h₂.r8, h₂.r9, hsp]
+    exact ⟨trivial, trivial, trivial, trivial, trivial, trivial, trivial⟩
 
 /-! ## `vg_cmac_aes_subkeys` -/
 

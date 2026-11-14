@@ -3,9 +3,7 @@
 # here, or if a listed one is gone or has a proof: remove its line when you convert it.
 # The list only shrinks: ci/check_residue_allowlist.py refuses a new line.
 x86_64 vg_aes_cbc_encrypt_aesni
-x86_64 vg_aes_ccm_open
 x86_64 vg_aes_ccm_open_aesni
-x86_64 vg_aes_ccm_seal
 x86_64 vg_aes_ccm_seal_aesni
 x86_64 vg_aes_gcm_init
 x86_64 vg_aes_gcm_open_prepared
@@ -81,12 +79,8 @@ x86_64 vg_aes_ocb_open_vaes
 x86_64 vg_aes_ocb_seal
 x86_64 vg_aes_ocb_seal_aesni
 x86_64 vg_aes_ocb_seal_vaes
-x86_64 vg_aes_siv_decrypt
 x86_64 vg_aes_siv_decrypt_aesni
-x86_64 vg_aes_siv_encrypt
 x86_64 vg_aes_siv_encrypt_aesni
-x86_64 vg_aes_siv_init
-x86_64 vg_camellia_ctr_final
 x86_64 vg_chacha20_poly1305_open
 x86_64 vg_chacha20_poly1305_open_avx2
 x86_64 vg_chacha20_poly1305_open_avx512
@@ -112,7 +106,6 @@ x86_64 vg_chacha20_poly1305_seal_gather_ssse3
 x86_64 vg_chacha20_poly1305_seal_ifma
 x86_64 vg_chacha20_poly1305_seal_ssse3
 x86_64 vg_cmac_aes_absorb
-x86_64 vg_cmac_aes_absorb_aesni
 x86_64 vg_cmac_aes_finish
 x86_64 vg_cmac_aes_init
 x86_64 vg_hmac_sha384_finalize_avx2
@@ -158,7 +151,6 @@ x86_64 vg_sha512_256_finalize_avx2
 x86_64 vg_sha512_digest_avx2
 x86_64 vg_sha512_finalize_avx2
 x86_64 vg_sha512_update_avx2
-x86_64 vg_sm4_ctr_final
 x86_64 vg_sm4_gcm_init
 x86_64 vg_sm4_gcm_open
 x86_64 vg_sm4_gcm_open_pclmul

@@ -15,9 +15,6 @@ namespace VG.Artifacts.Sm4Ctr.X86_64
 
 def artifacts : List Artifact := [
   Spec.Sm4.ctrApi.artifact X86_64.target Proof.Sm4.X86_64.Scrub.ctrReg,
-  Spec.Sm4.ctrFinalApi.artifact X86_64.target {
-    code := Impl.StackScratch.X86_64.withStackScratchWiped 72 .r8 8 Impl.Sm4.X86_64.ctrFinal
-    stack := 3296
-    verified := Proof.Sm4.X86_64.ctrFinal_framed }]
+  Spec.Sm4.ctrFinalApi.artifact X86_64.target Proof.Sm4.X86_64.Scrub.ctrFinalReg]
 
 end VG.Artifacts.Sm4Ctr.X86_64

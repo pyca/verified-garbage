@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.AesSiv.Rounds
 public import VerifiedGarbage.Proof.AesSiv.X86_64.Verified
 public import VerifiedGarbage.Impl.StackScratch.X86_64
-import VerifiedGarbage.Proof.Framework.X86_64.StackArgScratch
+public import VerifiedGarbage.Proof.Framework.X86_64.StackArgScratch
 public import VerifiedGarbage.Proof.Framework.X86_64.Scrub
 public import VerifiedGarbage.Proof.Framework.X86_64.Registration
 import VerifiedGarbage.Proof.Framework.Offset
@@ -31,6 +31,13 @@ address of the working space. The code's own calls use 16 bytes below it.
 The frame copies `siv`, so the postconditions and `decrypt`'s leak must read
 the memory on entry only within the buffers and the list of slices
 (`encryptPost_local`, `decryptPost_local`, `decryptLeak_local`).
+
+Over the bitsliced AES (`Ctr32Impl.free` is `none`), the frames of `init`,
+`encrypt` and `decrypt` are mostly the working space of the functions they
+call, which AES writes, and are wiped whole on return
+(`X86_64.Scrub.withScrubAll`: `initReg`, `encryptReg`, `decryptReg`); their
+postconditions read the memory on return only within the key context, or
+the data and the synthetic IV (`initOut`, `encryptOut`, `decryptOut`).
 -/
 
 @[expose] public section
@@ -181,7 +188,8 @@ theorem initOut (stack : Nat) :
 
 /-- `vg_aes_siv_init` over `v`: with no working space for an implementation
 that needs none, then without secret residue, its frame of 104 bytes wiped
-whole (`withScrubAll`); over the others, as before. -/
+whole (`withScrubAll`); over the others, its frame of 2.5 KB, the working
+space AES writes, wiped whole. -/
 def initReg (v : Ctr32Impl) : Registration Spec.Siv.initApi X86_64.target :=
   match v.free with
   | some f =>
@@ -192,12 +200,75 @@ def initReg (v : Ctr32Impl) : Registration Spec.Siv.initApi X86_64.target :=
       verified := initF_framed v f
       spSafe := VG.X86_64.withStackScratch_spSafe_of (initF_spSafe v) }
       (initOut _)
-  | none => {
+  | none =>
+    withScrubAll {
       suffix := v.suffix
       code := Impl.StackScratch.X86_64.withStackScratch 2568 .rcx (init v.expand v.callee v.suffix)
       stack := 2584
       verified := init_framed v
       spSafe := VG.X86_64.withStackScratch_spSafe_of (init_spSafe v) }
+      (initOut _)
+
+theorem encryptOut (stack : Nat) :
+    PostOut (Spec.Siv.encryptContract X86_64.abi stack) (Spec.Siv.encryptSig.retBits 64) :=
+  postOut_of_local (leak := none) ScrubAbi.plain fun vs m m₁ m₂ r hlen hb h => by
+    match vs, hlen with
+    | [ctx, rd, ads, cnt, data, len, siv], _ =>
+      simp only [Spec.Siv.encryptSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
+        forall_eq_or_imp, forall_eq, Elem.size, Nat.mul_one] at hb
+      change Curry.apply [ArgWord.addr, ArgWord.int 64, ArgWord.addr, ArgWord.int 64, ArgWord.addr,
+        ArgWord.int 64, ArgWord.addr] (Spec.Siv.encryptPost 64) _ m m₁ r at h
+      change Curry.apply [ArgWord.addr, ArgWord.int 64, ArgWord.addr, ArgWord.int 64, ArgWord.addr,
+        ArgWord.int 64, ArgWord.addr] (Spec.Siv.encryptPost 64) _ m m₂ r
+      dsimp only [Curry.apply, Spec.Siv.encryptPost, ArgWord.ofRaw, IntTy.bits] at h ⊢
+      intro key hk
+      rw [h key hk, Proof.AesSiv.bytesAt_congr fun i hi => Proof.AesSiv.agree_of hb.2.2 i (by omega),
+        Proof.AesSiv.bytesAt_congr fun i hi => Proof.AesSiv.agree_of hb.2.1 i (by simpa using hi)]
+
+theorem decryptOut (stack : Nat) :
+    PostOut (Spec.Siv.decryptContract X86_64.abi stack) (Spec.Siv.decryptSig.retBits 64) :=
+  postOut_of_local ScrubAbi.plain fun vs m m₁ m₂ r hlen hb h => by
+    match vs, hlen with
+    | [ctx, rd, ads, cnt, data, len, siv], _ =>
+      simp only [Spec.Siv.decryptSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
+        forall_eq_or_imp, forall_eq, Elem.size, Nat.mul_one] at hb
+      change Curry.apply [ArgWord.addr, ArgWord.int 64, ArgWord.addr, ArgWord.int 64, ArgWord.addr,
+        ArgWord.int 64, ArgWord.addr] (Spec.Siv.decryptPost 64) _ m m₁ r at h
+      change Curry.apply [ArgWord.addr, ArgWord.int 64, ArgWord.addr, ArgWord.int 64, ArgWord.addr,
+        ArgWord.int 64, ArgWord.addr] (Spec.Siv.decryptPost 64) _ m m₂ r
+      dsimp only [Curry.apply, Spec.Siv.decryptPost, ArgWord.ofRaw, IntTy.bits] at h ⊢
+      intro key hk
+      have e := Proof.AesSiv.bytesAt_congr (n := (BitVec.setWidth 64 len).toNat) fun i hi =>
+        Proof.AesSiv.agree_of hb.2.1 i (by simpa using hi)
+      rw [e]
+      exact h key hk
+
+/-- `vg_aes_siv_encrypt` over `v`. Over an implementation of AES that needs
+working space (`v.ctr.free` is `none`), its frame of 2.6 KB is mostly that
+working space, wiped whole on return (`withScrubAll`); over the others, as
+before. -/
+def encryptReg (v : UpdateImpl) : Registration Spec.Siv.encryptApi X86_64.target :=
+  let r : Registration Spec.Siv.encryptApi X86_64.target := {
+    suffix := v.suffix
+    code := Impl.StackScratch.X86_64.withStackArgScratch 2600 1 (encrypt v.callee v.ctr.callee v.ctr.suffix)
+    stack := 2616
+    verified := Proof.AesSiv.encrypt_keyed (encrypt_framed v)
+    spSafe := X86_64.withStackArgScratch_spSafe (encrypt_spSafe v) }
+  match v.ctr.free with
+  | some _ => r
+  | none => withScrubAll r (encryptOut _)
+
+/-- `vg_aes_siv_decrypt` over `v`, as `encryptReg`. -/
+def decryptReg (v : UpdateImpl) : Registration Spec.Siv.decryptApi X86_64.target :=
+  let r : Registration Spec.Siv.decryptApi X86_64.target := {
+    suffix := v.suffix
+    code := Impl.StackScratch.X86_64.withStackArgScratch 2600 1 (decrypt v.callee v.ctr.callee v.ctr.suffix)
+    stack := 2616
+    verified := Proof.AesSiv.decrypt_keyed (decrypt_framed v)
+    spSafe := X86_64.withStackArgScratch_spSafe (decrypt_spSafe v) }
+  match v.ctr.free with
+  | some _ => r
+  | none => withScrubAll r (decryptOut _)
 
 end
 

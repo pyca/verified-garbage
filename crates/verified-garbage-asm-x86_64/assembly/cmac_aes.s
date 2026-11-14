@@ -5,9 +5,10 @@
 // gives.
 
 vg_cmac_aes_absorb_aesni:
-	lea rsp, [rsp-2312]
+	lea rsp, [rsp-56]
 	mov r9, rsp
 	add r9, 8
+	sub r9, 2176
 	mov QWORD PTR [r9+2176], rbx
 	mov QWORD PTR [r9+2184], rbp
 	mov QWORD PTR [r9+2192], r12
@@ -111,7 +112,39 @@ vg_cmac_aes_absorb_aesni:
 	mov r13, QWORD PTR [r15+2200]
 	mov r14, QWORD PTR [r15+2208]
 	mov r15, QWORD PTR [r15+2216]
-	lea rsp, [rsp+2312]
+	lea rsp, [rsp+56]
+	pxor xmm0, xmm0
+	pxor xmm1, xmm1
+	pxor xmm2, xmm2
+	pxor xmm3, xmm3
+	pxor xmm4, xmm4
+	pxor xmm5, xmm5
+	pxor xmm6, xmm6
+	pxor xmm7, xmm7
+	pxor xmm8, xmm8
+	pxor xmm9, xmm9
+	pxor xmm10, xmm10
+	pxor xmm11, xmm11
+	pxor xmm12, xmm12
+	pxor xmm13, xmm13
+	pxor xmm14, xmm14
+	pxor xmm15, xmm15
+	xor r11d, r11d
+	lea rsp, [rsp-72]
+	movdqu XMMWORD PTR [rsp+56], xmm0
+	movdqu XMMWORD PTR [rsp+40], xmm0
+	movdqu XMMWORD PTR [rsp+24], xmm0
+	movdqu XMMWORD PTR [rsp+8], xmm0
+	mov QWORD PTR [rsp], r11
+	lea rsp, [rsp+72]
+	xor eax, eax
+	xor ecx, ecx
+	xor edx, edx
+	xor esi, esi
+	xor edi, edi
+	xor r8d, r8d
+	xor r9d, r9d
+	xor r10d, r10d
 	ret
 	.p2align 6
 

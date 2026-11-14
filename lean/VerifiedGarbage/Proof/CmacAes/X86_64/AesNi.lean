@@ -57,16 +57,16 @@ open VG.Spec.Aes (roundKey cipher)
 /-! ## The contract -/
 
 /-- `vg_cmac_aes_update_aesni(schedule = rdi, rounds = rsi, state = rdx, data = rcx, n = r8,
-scratch = r9)`: `updateX86_64` without the stack and the disjointness of the
-buffers, which the code does not need. -/
+scratch = r9)`: `updateX86_64` without the stack, the scratch buffer, which
+the code never touches, and the disjointness of the buffers, which it does
+not need. -/
 def cbcX86_64 : Contract isa where
   pre s :=
     let sched : Region := ⟨s.gpr .rdi, 240⟩
     let state : Region := ⟨s.gpr .rdx, 16⟩
     let data : Region := ⟨s.gpr .rcx, 16 * (s.gpr .r8).toNat⟩
-    let scr : Region := ⟨s.gpr .r9, 2176⟩
     let ret : Region := ⟨s.gpr .rsp, 8⟩
-    s.rd = [sched, data] ∧ s.wr = [state, scr] ∧ ret.Disjoint state ∧
+    s.rd = [sched, data] ∧ state ∈ s.wr ∧ ret.Disjoint state ∧
       (s.gpr .rcx).toNat + 16 * (s.gpr .r8).toNat ≤ 2 ^ 64 ∧
       ((s.gpr .rsi).toNat = 10 ∨ (s.gpr .rsi).toNat = 12 ∨ (s.gpr .rsi).toNat = 14)
   post s s' :=
@@ -80,12 +80,12 @@ def cbcX86_64 : Contract isa where
 
 theorem pre_of_update {s : State} (h : updateX86_64.pre s) : cbcX86_64.pre s :=
   let ⟨a, b, _, _, _, _, _, c, _, _, _, _, _, _, d, _, e⟩ := h
-  ⟨a, b, c, d, e⟩
+  ⟨a, by rw [b]; exact List.mem_cons_self .., c, d, e⟩
 
 /-- The precondition, by name. -/
 structure CPre (s₀ : State) : Prop where
   rd : s₀.rd = [schR s₀, dataR s₀]
-  wr : s₀.wr = [stR s₀, scrR s₀]
+  wr : stR s₀ ∈ s₀.wr
   ret_st : (⟨s₀.gpr .rsp, 8⟩ : Region).Disjoint (stR s₀)
   data_wrap : (Dp s₀).toNat + 16 * N s₀ ≤ 2 ^ 64
   rounds : R s₀ = 10 ∨ R s₀ = 12 ∨ R s₀ = 14
@@ -246,8 +246,8 @@ theorem setup_ok {s₀ : State} (hp : CPre s₀) {s : State} (hg : s.gpr = s₀.
   have in0 : InRegions (s.rd ++ s.wr) (s.gpr .rdi + BitVec.ofNat 64 0) 16 := by
     rw [hrd, hwr, hg]; exact key_in hp (j := 0) (by decide)
   have inSt : InRegions (s.rd ++ s.wr) (s.gpr .rdx + BitVec.ofNat 64 0) 16 := by
-    rw [hrd, hwr, hg, hp.rd, hp.wr, BitVec.add_zero]
-    exact ⟨stR s₀, by simp, Region.contains_self _ _⟩
+    rw [hrd, hwr, hg, BitVec.add_zero]
+    exact ⟨stR s₀, List.mem_append_right _ hp.wr, Region.contains_self _ _⟩
   refine WP.mono (start_ok s in0 inSt) fun s₁ ⟨x1, x0, f₁⟩ => ?_
   refine WP.mono (loadKeys_ok hp (by rw [f₁.gpr, hg]) (by rw [f₁.mem, hm])
     (by rw [f₁.rd, hrd]) (by rw [f₁.wr, hwr]) 13 (Nat.le_refl _)) fun s₂ ⟨e₂, f₂⟩ => ?_
@@ -504,8 +504,8 @@ theorem finish_ok {s₀ : State} (hp : CPre s₀) {s : State} (h : Inv s₀ (N s
         Spec.Cmac.chain (ciph s₀) (Spec.Aes.bytesAt s₀.mem (St s₀) 16) (blks s₀) ∧
       Frame [stR s₀] s₀.mem s'.mem := by
   refine WP.mono (finish_wp s (by rw [h.rd, h.wr, h.rdi]; exact key_in hp (j := 0) (by decide)) (by
-    rw [h.wr, h.rdx, hp.wr, BitVec.add_zero]
-    exact ⟨stR s₀, by simp, Region.contains_self _ _⟩)) fun s' hm => ?_
+    rw [h.wr, h.rdx, BitVec.add_zero]
+    exact ⟨stR s₀, hp.wr, Region.contains_self _ _⟩)) fun s' hm => ?_
   rw [hm, h.mem, h.rdx, h.rdi, BitVec.add_zero, ← key_zero]
   refine ⟨?_, (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ _)⟩
   rw [bytes_write, h.state, List.take_of_length_le (by simp [Spec.Cmac.blocksAt])]
