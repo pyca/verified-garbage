@@ -3,9 +3,7 @@
 # here, or if a listed one is gone or has a proof: remove its line when you convert it.
 # The list only shrinks: ci/check_residue_allowlist.py refuses a new line.
 x86_64 vg_aes_cbc_encrypt_aesni
-x86_64 vg_aes_ccm_open
 x86_64 vg_aes_ccm_open_aesni
-x86_64 vg_aes_ccm_seal
 x86_64 vg_aes_ccm_seal_aesni
 x86_64 vg_aes_gcm_init
 x86_64 vg_aes_gcm_open_prepared
