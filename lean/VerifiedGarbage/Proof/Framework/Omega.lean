@@ -835,7 +835,7 @@ def decideClosed (stmt : Expr) : MetaM (Option Expr) := do
 /-- Proves the goal from the facts through a theorem about variables alone:
 `∀ x₁ … xₙ, F₁ → … → Fₖ → G`, with a variable for every term of the goal and the facts
 that is not arithmetic. One such theorem serves every goal of its shape in a declaration
-(Lean's cache of auxiliary lemmas finds it by its statement, before anything is proven), and
+(Lean's cache of auxiliary lemmas finds it by its statement), and
 it is proven by `VG.Arith.prove?` where that can, by `omega` otherwise. `false`, with nothing
 changed, if the goal is not one `prop` reads; fails if `omega` does not prove the statement
 (with the atoms hidden it knows less: that `x.toNat` is some number, not which). -/
@@ -860,29 +860,38 @@ def close (g : MVarId) (facts : Array Expr) : MetaM Bool := g.withContext do
     let j := st.vars.size - 1 - i
     body := .forallE ((`x).appendIndexAfter j) st.types[j]! body .default
   let stmt := body
-  let env ← getEnv
-  let key : AuxLemmaKey := { type := stmt, isPrivate := !env.isExporting, defeq := false }
-  let name ← match (auxLemmasExt.getState env).lemmas.find? key with
-    | some (name, []) => pure name
-    | _ =>
-      -- in an empty context: the proof may use nothing of this goal's
-      let m ← withLCtx {} {} <| mkFreshExprSyntheticOpaqueMVar stmt
-      let (_, g₁) ← m.mvarId!.introNP st.vars.size
-      let (hs, g₁) ← g₁.introNP fs.size
-      let lin ← g₁.withContext do
-        match ← VG.Arith.prove? (← instantiateMVars (← g₁.getType)) (hs.map mkFVar) with
-        | some pf => g₁.assign pf; pure true
-        | none => pure false
-      unless lin do
-        -- a statement with no variable is evaluated
-        let dec ← if st.vars.isEmpty && fs.isEmpty then decideClosed stmt else pure none
-        if let some pf := dec then
-          m.mvarId!.assign pf
-        else if let some g₂ ← g₁.falseOrByContra then
-          g₂.withContext do
-            Lean.Elab.Tactic.Omega.omega (← getLocalHyps).toList g₂
-      mkAuxLemma [] stmt (← instantiateMVars m)
-  g.assign (mkAppN (mkConst name) (st.atoms ++ fs.map (·.1)))
+  -- in an empty context: the proof may use nothing of this goal's
+  let m ← withLCtx {} {} <| mkFreshExprSyntheticOpaqueMVar stmt
+  let (xs, g₁) ← m.mvarId!.introNP st.vars.size
+  let (hs, g₁) ← g₁.introNP fs.size
+  let lin ← g₁.withContext do
+    match ← VG.Arith.prove? (← instantiateMVars (← g₁.getType)) (hs.map mkFVar) with
+    | some pf => g₁.assign pf; pure true
+    | none => pure false
+  unless lin do
+    -- a statement with no variable is evaluated
+    let dec ← if st.vars.isEmpty && fs.isEmpty then decideClosed stmt else pure none
+    if let some pf := dec then
+      m.mvarId!.assign pf
+    else if let some g₂ ← g₁.falseOrByContra then
+      g₂.withContext do
+        Lean.Elab.Tactic.Omega.omega (← getLocalHyps).toList g₂
+  -- The theorem states, and is applied to, only the facts and atoms its proof uses: a proof
+  -- inside a statement (an index bound) must not depend on a hypothesis it does not need,
+  -- or rewriting that hypothesis' terms later fails.
+  let (name, args) ← g₁.withContext do
+    let pf ← instantiateMVars (mkMVar g₁)
+    let goalTy ← instantiateMVars (← g₁.getType)
+    let usedH := (Array.range hs.size).filter fun i => pf.containsFVar hs[i]!
+    let hTypes ← usedH.mapM fun i => do instantiateMVars (← hs[i]!.getType)
+    let usedX := (Array.range xs.size).filter fun i =>
+      goalTy.containsFVar xs[i]! || pf.containsFVar xs[i]! || hTypes.any (·.containsFVar xs[i]!)
+    let fvars := usedX.map (mkFVar xs[·]!) ++ usedH.map (mkFVar hs[·]!)
+    let name ← mkAuxLemma [] (← mkForallFVars fvars goalTy) (← mkLambdaFVars fvars pf)
+    pure (name, usedX.map (st.atoms[·]!) ++ usedH.map (fs[·]!.1))
+  -- Behind an auxiliary theorem of the goal's context, as `omega`'s proofs are: the atoms are
+  -- not there for a later `rw` to find.
+  g.assign (← mkAuxTheorem goal (mkAppN (mkConst name) args) (zetaDelta := true))
   return true
 
 end Abs
