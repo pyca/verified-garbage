@@ -1,11 +1,58 @@
 module
 
-public import VerifiedGarbage.Proof.Camellia.X86_64.KeyChecks2
+public import VerifiedGarbage.Proof.Camellia.X86_64.KeyChecks
+public import VerifiedGarbage.Impl.Camellia.X86_64.ExpandKey
 public import VerifiedGarbage.Proof.Camellia.Common
 public import VerifiedGarbage.Proof.Camellia.X86_64.Core
 import VerifiedGarbage.Proof.Camellia.X86_64.Group
 import VerifiedGarbage.Proof.Camellia.X86_64.Crypt8
 import VerifiedGarbage.Proof.Framework.Offset
+
+/-! ### `Camellia.X86_64.KeyChecks2`, which only this module used -/
+
+section
+
+/-!
+# The key schedule's evaluated facts on x86-64
+
+The planes of a constant that `sigmaOne` stores (`sigma_planes`),
+and `spread d`, which bitslices the word at `[rdi + d]` into all eight
+lanes as `toBs` bitslices eight words, keeping the masks and both halves'
+slots (`spread0_check`, `spread8_check`).
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Camellia.X86_64
+
+open VG.Impl.Camellia (bytePos keyPlane sigmas)
+open VG VG.X86_64 VG.X86_64.Straight VG.Bitslice VG.Impl.Camellia.X86_64
+open VG.Impl.Aes.X86_64 (q sb t0 t1 movR at_ slotAt)
+open VG.Proof.Camellia (HalfRel pos)
+
+/-- The halves' slots are input words 2–17, after the running value's two at `rdi`. -/
+def kaIns : List (Nat × Nat) := (List.range 16).map fun j => (d1Slot + j, 2 + j)
+
+def kaEnv : Env (Nat × Nat) := linEnvG [] kaIns layerMasks
+
+/-- `spread d`: the running value's word at `[rdi + d]` in all lanes,
+keeping the masks and both halves' slots. -/
+theorem spread0_check :
+    check (lanes 64 11) (keyCfg 2) (linExt 0) (spread 0) kaEnv
+      (linPostG 11 (qOuts (keyBsG 0)) [] (maskSlots ++ kaIns.map (·.1)) kaEnv) = true := by
+  decide +kernel
+
+theorem spread8_check :
+    check (lanes 64 11) (keyCfg 2) (linExt 0) (spread 8) kaEnv
+      (linPostG 11 (qOuts (keyBsG 8)) [] (maskSlots ++ kaIns.map (·.1)) kaEnv) = true := by
+  decide +kernel
+
+end VG.Proof.Camellia.X86_64
+
+end
+
+end
+
 
 /-!
 # A pair of rounds of the key schedule on x86-64

@@ -3,11 +3,94 @@ module
 public import VerifiedGarbage.Proof.Aes.X86.AesNi.KeyContext
 public import VerifiedGarbage.Proof.Aes.X86.AesNi.KeyPrologue
 import VerifiedGarbage.Proof.Aes.X86.AesNi.KeyRecurrence
-import VerifiedGarbage.Proof.Aes.X86.AesNi.KeyMemory
-import VerifiedGarbage.Proof.Aes.X86.AesNi.KeySteps
+public import VerifiedGarbage.Proof.Aes.X86.AesNi.KeyArith
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Framework.X86.Sse
+import VerifiedGarbage.Proof.Framework.Taint
+import VerifiedGarbage.Proof.Aes.X86.ExpandKeyCT
+import VerifiedGarbage.Proof.Framework.X86.Exec
 import VerifiedGarbage.Proof.Framework.X86.SseRegUpd
+import VerifiedGarbage.Proof.Framework.X86.Reduce
+import VerifiedGarbage.Proof.Framework.X86.Sse
+
+/-! ### `Aes.X86.AesNi.KeyMemory`, which only this module used -/
+
+section
+
+@[expose] public section
+
+namespace VG.Proof.Aes.X86.AesNi
+open VG VG.X86 VG.X86.RegUpd
+open VG.Impl.Aes.X86.AesNi (at_ argOp)
+open VG.Proof.Aes.X86 (EPre keyP keyLen keyR ekSchP ekSchR ekArgR)
+
+/-- A vector load changes no GPR, memory, or access region. -/
+theorem key_load_exec (s : State) (x : XReg) (a : MemOp)
+    (h : InRegions (s.rd ++ s.wr) (s.ea a) 16) :
+    exec (.movdquLoad x a) s = some (s.setXmm x (s.mem.readW (s.ea a) 128)) := by
+  simp only [exec, State.load128, h, ite_true, Option.map_some]
+
+/-- Loading an initial key lane yields its four expansion words. -/
+theorem key_initial_words (m : Mem) (p : Addr) (nk off : Nat)
+    (h : off + 4 ≤ nk) :
+    ∀ j < 4, dword (m.readW (p + BitVec.ofNat 64 (4 * off)) 128) j = W m p nk (off + j) := by
+  intro j hj
+  rw [dword_readW _ _ hj, W_lt (by omega_using [h, hj]),
+    show 4 * (off + j) = 4 * off + 4 * j by omega_using [], BitVec.ofNat_add, BitVec.add_assoc]
+
+end VG.Proof.Aes.X86.AesNi
+
+end
+
+end
+
+/-! ### `Aes.X86.AesNi.KeySteps`, which only this module used -/
+
+section
+
+@[expose] public section
+
+namespace VG.Proof.Aes.X86.AesNi
+open VG.X86 VG.X86.RegUpd
+open VG.Impl.Aes.X86.AesNi (at_ kstep kstepB6)
+
+theorem ea_setXmm (st : State) (d : XReg) (v : BitVec 128) (a : MemOp) :
+    (st.setXmm d v).ea a = st.ea a := rfl
+
+theorem kstep_exec (d s : XReg) (sel r : BitVec 8) (off : Nat) (st : State) (hd3 : d ≠ .xmm3)
+    (hd4 : d ≠ .xmm4) (hw : InRegions st.wr (st.ea (at_ .edx off)) 16) :
+    WP isa (.block (kstep d s sel r off)) st fun st' =>
+      st'.xmm d = kv (st.xmm d) (shufDwords (aesKeygenAssist (st.xmm s) r) sel) ∧
+      st'.mem = st.mem.writeW (st.ea (at_ .edx off))
+        (kv (st.xmm d) (shufDwords (aesKeygenAssist (st.xmm s) r) sel)) ∧
+      st'.gpr = st.gpr ∧ st'.rd = st.rd ∧ st'.wr = st.wr ∧
+      ∀ x, x ≠ d → x ≠ .xmm3 → x ≠ .xmm4 → st'.xmm x = st.xmm x := by
+  apply WP.of_runBlock
+  simp only [reduceCtorEq, ↓reduceIte, kstep, runBlock_cons, runStep_some, runBlock_nil, reduceExec,
+    XOp.exec, isa, xmm_setXmm, gpr_setXmm, mem_setXmm, rd_setXmm, wr_setXmm, State.store128, ea_setXmm, hw, hd3, hd4, Ne.symm hd3, Ne.symm hd4,
+    Option.some.injEq, exists_eq_left', eval_movdqa, pslldq4, eval_pxor']
+  exact ⟨rfl, rfl, trivial, trivial, trivial, fun x h1 h2 h3 => by simp only [h1, h2, h3, ite_false]⟩
+
+theorem kstepB6_exec (off : Nat) (st : State)
+    (hw : InRegions st.wr (st.ea (at_ .edx off)) 16) :
+    WP isa (.block (kstepB6 off)) st fun st' =>
+      st'.xmm .xmm2 = kb (st.xmm .xmm2) (shufDwords (st.xmm .xmm1) 0xff) ∧
+      st'.mem = st.mem.writeW (st.ea (at_ .edx off))
+        (kb (st.xmm .xmm2) (shufDwords (st.xmm .xmm1) 0xff)) ∧
+      st'.gpr = st.gpr ∧ st'.rd = st.rd ∧ st'.wr = st.wr ∧
+      ∀ x, x ≠ .xmm2 → x ≠ .xmm3 → x ≠ .xmm4 → st'.xmm x = st.xmm x := by
+  apply WP.of_runBlock
+  simp only [reduceCtorEq, ↓reduceIte, kstepB6, runBlock_cons, runStep_some, runBlock_nil, reduceExec,
+    XOp.exec, isa, xmm_setXmm, gpr_setXmm, mem_setXmm, rd_setXmm, wr_setXmm, State.store128, ea_setXmm, hw, 
+    Option.some.injEq, exists_eq_left', eval_movdqa, pslldq4, eval_pxor']
+  exact ⟨rfl, rfl, trivial, trivial, trivial, fun x h1 h2 h3 => by simp only [h1, h2, h3, ite_false]⟩
+
+
+end VG.Proof.Aes.X86.AesNi
+
+end
+
+end
+
 
 @[expose] public section
 

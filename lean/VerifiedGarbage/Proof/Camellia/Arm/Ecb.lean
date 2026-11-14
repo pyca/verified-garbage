@@ -1,12 +1,1005 @@
 module
 
-public import VerifiedGarbage.Proof.Camellia.Arm.Group
-import VerifiedGarbage.Proof.Camellia.Arm.Copy
+public import VerifiedGarbage.Proof.Camellia.Arm.Prologue
+public import VerifiedGarbage.Proof.Camellia.Common
+public import VerifiedGarbage.Proof.Camellia.Arm.Core
 import VerifiedGarbage.Proof.Camellia.Arm.Crypt8
+import VerifiedGarbage.Proof.Camellia.Arm.Fl
 import VerifiedGarbage.Proof.Framework.Arm.RegUpd
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Camellia.Arm.Copy
+
+/-! ### `Camellia.Arm.Group`, which only this module used -/
+
+section
+
+/-! ### `Camellia.Arm.Keys`, which only this module used -/
+
+section
+
+/-!
+# The table of bitsliced subkeys on ARMv7
+
+`encKeys g` and `decKeys g` bitslice the subkeys of the schedule at `r12`
+into the table at slot 72, entry `i` holding the subkey word `perm i`:
+`keyOne_step` is one subkey, each of its two 32-bit words loaded and turned
+into its eight planes (`keyPlanes`, checked by evaluation), and
+`keyLoop_wp` the loop of them, counted down in `lr`.
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Camellia.Arm
+
+open VG VG.Arm VG.Arm.Straight VG.Impl.Camellia.Arm
+open VG.Bitslice (lanes)
+open VG.Impl.Aes.Arm (q sb t0 t1 u7 kp ldS stS)
+open VG.Proof.Sm4.Arm (linPostG linG_ok)
+open VG.Proof.Camellia (byteOf_wordAt)
+
+/-- The table's entry `e` holds `k` for every block. -/
+abbrev EntryOk (m : Mem) (b : BitVec 32) (e : Nat) (k : BitVec 64) : Prop :=
+  W32.HalfRel (entryW m b e) fun _ => k
+
+/-- The scratch buffer at `b` and the schedule's 34 words at `sched`, apart. -/
+structure KeyPre (s : State) (b sched : BitVec 32) : Prop where
+  base : s.gpr sb = b
+  scr : Scr s b
+  sch : (⟨State.addr sched, 272⟩ : Region) ∈ s.rd ++ s.wr
+  schFit : sched.toNat + 272 ≤ 2 ^ 32
+  sep : Region.Disjoint ⟨State.addr sched, 272⟩ ⟨State.addr b, 4 * slots⟩
+
+theorem KeyPre.congr {s s' : State} {b sched : BitVec 32} (h : KeyPre s b sched) (hb : s'.gpr sb = s.gpr sb)
+    (hrd : s'.rd = s.rd) (hwr : s'.wr = s.wr) : KeyPre s' b sched :=
+  ⟨hb.trans h.base, ⟨hwr ▸ h.scr.wr, h.scr.fit⟩, hrd ▸ hwr ▸ h.sch, h.schFit, h.sep⟩
+
+/-- Word `v` of subkey `w` of the schedule. -/
+theorem KeyPre.addr {sched : BitVec 32} (hfit : sched.toNat + 272 ≤ 2 ^ 32) {w v : Nat} (hw : 8 * w + v < 272) :
+    State.addr (sched + BitVec.ofNat 32 (8 * w) + BitVec.ofNat 32 v) =
+      State.addr sched + BitVec.ofNat 64 (8 * w + v) := by
+  rw [add_ofNat_ofNat, VG.Arm.addr_add (by omega_arith)]
+
+theorem KeyPre.word_in {s : State} {b sched : BitVec 32} (h : KeyPre s b sched) {w v : Nat}
+    (hw : 8 * w + v + 4 ≤ 272) :
+    InRegions (s.rd ++ s.wr) (State.addr (sched + BitVec.ofNat 32 (8 * w) + BitVec.ofNat 32 v)) 4 := by
+  refine ⟨_, h.sch, ?_⟩
+  rw [KeyPre.addr h.schFit (by omega_arith)]
+  exact VG.Offset.contains_base _ (by omega_arith) (by omega_arith)
+
+/-- The schedule is outside the scratch buffer. -/
+theorem KeyPre.wordAt_eq {s : State} {b sched : BitVec 32} (h : KeyPre s b sched) {m m' : Mem}
+    (hf : Frame [⟨State.addr b, 4 * slots⟩] m m') {w : Nat} (hw : w < 34) :
+    Spec.Camellia.wordAt m' (State.addr sched + BitVec.ofNat 64 (8 * w)) =
+      Spec.Camellia.wordAt m (State.addr sched + BitVec.ofNat 64 (8 * w)) := by
+  refine VG.Proof.Camellia.wordAt_frame hf fun r hr => ?_
+  simp only [List.mem_singleton] at hr; subst hr
+  exact h.sep.sub_left (VG.Offset.sub_base _ (by omega_arith))
+
+/-- The entry at `kp`, for the planes' stores. -/
+theorem ok_entry {s : State} {b : BitVec 32} {e : Nat} (hs : Scr s b) (hk : AtEntry s b e) (he : e < 34) :
+    Ok entryCfg s where
+  slotIn k hk' := by
+    simp only [entryCfg] at hk' ⊢
+    rw [wordAddr_entry hk]; exact hs.slot_in (by rw [slots_eq, keySlot_eq]; omega_arith)
+  extIn k hk' := by simp [entryCfg] at hk'
+  slots := by
+    have := hs.fit
+    simp only [entryCfg]
+    rw [hk, BitVec.toNat_add, BitVec.toNat_ofNat, keySlot_eq]
+    rw [slots_eq] at this
+    rw [Nat.mod_eq_of_lt (a := 4 * 72 + 64 * e) (by omega_arith), Nat.mod_eq_of_lt (by omega_arith)]; omega_arith
+  sep k _ j hj := by simp [entryCfg] at hj
+
+theorem keyPlanes_all (w : Nat) (hw : w = 0 ∨ w = 1) :
+    (layerKeep.all fun r => (keyPlanes w).all fun i => !clobbers i r) = true ∧
+    ((keyPlanes w).all fun i => !clobbers i u7) = true ∧
+    ((keyPlanes w).all fun i => !clobbers i .lr) = true ∧
+    ((keyPlanes w).all fun i => !clobbers i (q 4)) = true := by
+  rcases hw with rfl | rfl <;> decide +kernel
+
+/-- The registers the table's construction writes. -/
+def keyWrites : List Reg := [q 4, q 5, t1, u7, .lr]
+
+theorem keyPlanes_dst (w : Nat) (hw : w = 0 ∨ w = 1) :
+    ((keyPlanes w).all fun i => (dsts i).all fun r => r == q 5 || r == t1) = true := by
+  rcases hw with rfl | rfl <;> decide +kernel
+
+theorem keyPlanes_keep (w : Nat) (hw : w = 0 ∨ w = 1) (r : Reg) (hr : r ∉ keyWrites) :
+    ((keyPlanes w).all fun i => !clobbers i r) = true := by
+  have h5 : r ≠ q 5 := fun h => hr (by rw [h]; decide)
+  have h11 : r ≠ t1 := fun h => hr (by rw [h]; decide)
+  refine List.all_eq_true.mpr fun i hi => ?_
+  rw [clobbers_eq_false_of_all (List.all_eq_true.mp (keyPlanes_dst w hw) i hi)
+    (by simp [h5, h11])]
+  rfl
+
+/-- The planes of the word in `q 4` to words `8 w …` of the entry `e` at `kp`. -/
+theorem keyPlanes_step {s : State} {b : BitVec 32} {e w : Nat} (hs : Scr s b)
+    (hk : AtEntry s b e) (he : e < 34) (hw : w = 0 ∨ w = 1) :
+    ∃ s', runBlock isa (keyPlanes w) s = some s' ∧
+      (∀ j < 8, ∀ p < 32, (entryW s'.mem b e (8 * w + j)).getLsbD p = (s.gpr (q 4)).getLsbD (8 * (p / 8) + j)) ∧
+      (∀ j < 16, j < 8 * w ∨ 8 * w + 8 ≤ j → entryW s'.mem b e j = entryW s.mem b e j) ∧
+      (∀ r, r ∉ keyWrites → s'.gpr r = s.gpr r) ∧ s'.gpr u7 = s.gpr u7 ∧ s'.gpr .lr = s.gpr .lr ∧
+      s'.gpr (q 4) = s.gpr (q 4) ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧
+      Frame [⟨State.addr (b + BitVec.ofNat 32 (4 * (keySlot + 16 * e))), 64⟩] s.mem s'.mem := by
+  have hchk : check (lanes 32 10) entryCfg (linExt 0) (keyPlanes w) keyEnv
+      (linPostG 10 [] (keyOuts w) (keyKeep w) keyEnv) = true := by
+    rcases hw with rfl | rfl
+    · exact keyPlanes0_check
+    · exact keyPlanes1_check
+  let W : Nat → BitVec 32 := fun i => if i = 0 then s.gpr (q 4) else s.mem.readW (wordAddr (s.gpr kp) (i - 1)) 32
+  obtain ⟨s', h', -, so', ko', rd', wr', -, o', f', -, -⟩ := linG_ok hchk (ok_entry hs hk he) W
+    (fun r i hri => by simp at hri; obtain ⟨rfl, rfl⟩ := hri; exact ⟨by decide, rfl⟩)
+    (fun j i hji => by
+      simp only [List.mem_map, List.mem_range, Prod.mk.injEq] at hji
+      obtain ⟨k, hk', rfl, rfl⟩ := hji
+      exact ⟨by simp only [entryCfg]; omega_arith, by omega_arith, by simp [W]; rfl⟩)
+    (fun kv hkv => by simp at hkv) (fun j hj => by simp [entryCfg] at hj)
+  obtain ⟨-, a2, a3, a4⟩ := keyPlanes_all w hw
+  have hkeep : ∀ r, r ∉ keyWrites → s'.gpr r = s.gpr r := fun r hr => o' r (keyPlanes_keep w hw r hr)
+  have hkp : s'.gpr kp = s.gpr kp := hkeep _ (by decide)
+  refine ⟨s', h', fun j hj p hp => ?_, fun j hj hjw => ?_, hkeep, o' _ a2, o' _ a3, o' _ a4, rd', wr', ?_⟩
+  · have := so' (8 * w + j) (keyBsG j)
+      (by simp only [keyOuts, List.mem_map, List.mem_range]; exact ⟨j, hj, rfl⟩)
+      (by simp only [entryCfg]; rcases hw with rfl | rfl <;> omega_arith) p hp
+    simp only [entryCfg] at this
+    rw [entryW, ← wordAddr_entry hk, this, keyBsG, xorBits_cons, xorBits_nil, Bool.xor_false]
+    simp only [bitOf]
+    rw [Nat.div_eq_of_lt (by omega_arith), Nat.mod_eq_of_lt (by omega_arith)]
+    rfl
+  · have := ko' j (by
+      simp only [keyKeep, List.mem_map, List.mem_range]
+      rcases hw with rfl | rfl
+      · exact ⟨j - 8, by omega_arith, by omega_arith⟩
+      · exact ⟨j, by omega_arith, by omega_arith⟩) (by simp only [entryCfg]; omega_arith)
+    simp only [entryCfg] at this
+    rw [entryW, entryW, ← wordAddr_entry hk, this]
+  · refine f'.mono fun r hr => ?_
+    simp only [List.mem_singleton] at hr; subst hr
+    simp only [slotRegion, entryCfg, List.mem_singleton]
+    rw [hk, keySlot_eq, show 4 * 72 + 64 * e = 4 * (72 + 16 * e) by omega_arith]
+
+/-- The entry `e` of the table. -/
+def entryRegion (b : BitVec 32) (e : Nat) : Region := ⟨State.addr (b + BitVec.ofNat 32 (4 * (keySlot + 16 * e))), 64⟩
+
+theorem encodable_64 : encodable (BitVec.ofNat 32 64) = true := by decide
+
+theorem keyOne_eq (d : Nat) : keyOne d = (.ldr (q 4) .r12 d :: keyPlanes 0) ++
+    ((.ldr (q 4) .r12 (d + 4) :: keyPlanes 1) ++ ([.dp .add kp kp (.imm (BitVec.ofNat 32 64))] : List Instr)) := by
+  rfl
+
+/-- The entry's region is disjoint from the schedule's. -/
+theorem KeyPre.entry_sep {s : State} {b sched : BitVec 32} (h : KeyPre s b sched) {e : Nat} (he : e < 34) :
+    Region.Disjoint ⟨State.addr sched, 272⟩ (entryRegion b e) := by
+  have hf := h.scr.fit
+  rw [slots_eq] at hf
+  refine h.sep.sub_right ?_
+  simp only [entryRegion]
+  rw [VG.Arm.addr_add (by rw [keySlot_eq]; omega_arith)]
+  exact VG.Offset.sub_base _ (by rw [slots_eq, keySlot_eq]; omega_arith)
+
+/-- One subkey: the two words of schedule word `w + d / 8`, at `[r12 + d]`,
+to entry `e`. -/
+theorem keyOne_step {s : State} {b sched : BitVec 32} {d e w : Nat} (hd : d = 0 ∨ d = 8)
+    (hk : KeyPre s b sched) (hr : s.gpr u7 = sched + BitVec.ofNat 32 (8 * w)) (hw : w + d / 8 < 34)
+    (hkp : AtEntry s b e) (he : e < 34) :
+    ∃ s', runBlock isa (keyOne d) s = some s' ∧ AtEntry s' b (e + 1) ∧
+      (∀ r, r ∉ keyWrites → r ≠ kp → s'.gpr r = s.gpr r) ∧ s'.gpr u7 = s.gpr u7 ∧
+      s'.gpr .lr = s.gpr .lr ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧ Frame [entryRegion b e] s.mem s'.mem ∧
+      EntryOk s'.mem b e (Spec.Camellia.wordAt s.mem (State.addr sched + BitVec.ofNat 64 (8 * (w + d / 8)))) := by
+  have hs := hk.scr
+  have hr' : s.gpr .r12 = sched + BitVec.ofNat 32 (8 * w) := hr
+  -- The first word.
+  have hin₀ : InRegions (s.rd ++ s.wr) (State.addr (s.gpr .r12 + BitVec.ofNat 32 d)) 4 := by
+    rw [hr']; exact hk.word_in (by omega_arith)
+  let s₁ := s.setReg (q 4) (s.mem.readW (State.addr (s.gpr .r12 + BitVec.ofNat 32 d)) 32)
+  have e₁ : exec (.ldr (q 4) .r12 d) s = some s₁ := exec_ldr (by omega_arith) hin₀
+  have k₁ := keeps_setReg s (s.mem.readW (State.addr (s.gpr .r12 + BitVec.ofNat 32 d)) 32)
+    (d := q 4) (by decide) (by decide)
+  have hs₁ : Scr s₁ b := ⟨by rw [k₁.wr]; exact hs.wr, hs.fit⟩
+  obtain ⟨s₂, e₂, p₂, o₂, g₂, u₂, l₂, q₂, rd₂, wr₂, f₂⟩ := keyPlanes_step (w := 0) (e := e) hs₁
+    (by rw [AtEntry, k₁.gpr _ (by decide)]; exact hkp) he (.inl rfl)
+  -- The second word.
+  have hr₂ : s₂.gpr .r12 = s.gpr .r12 := by rw [show (Reg.r12) = u7 from rfl, u₂, k₁.gpr _ (by decide)]
+  have hin₄ : InRegions (s₂.rd ++ s₂.wr) (State.addr (s₂.gpr .r12 + BitVec.ofNat 32 (d + 4))) 4 := by
+    rw [hr₂, hr', rd₂, wr₂, k₁.rd, k₁.wr]; exact hk.word_in (by omega_arith)
+  have hm₂ : s₂.mem.readW (State.addr (s₂.gpr .r12 + BitVec.ofNat 32 (d + 4))) 32 =
+      s.mem.readW (State.addr (s.gpr .r12 + BitVec.ofNat 32 (d + 4))) 32 := by
+    rw [hr₂, ← k₁.mem]
+    refine f₂.readW (r := ⟨State.addr sched, 272⟩) ?_ (fun r hr' => ?_) (by decide)
+    · rw [hr', KeyPre.addr hk.schFit (by omega_arith)]
+      exact VG.Offset.contains_base _ (by omega_arith) (by omega_arith)
+    · simp only [List.mem_singleton] at hr'; subst hr'
+      exact hk.entry_sep he
+  let s₃ := s₂.setReg (q 4) (s₂.mem.readW (State.addr (s₂.gpr .r12 + BitVec.ofNat 32 (d + 4))) 32)
+  have e₃ : exec (.ldr (q 4) .r12 (d + 4)) s₂ = some s₃ := exec_ldr (by omega_arith) hin₄
+  have k₃ := keeps_setReg s₂ (s₂.mem.readW (State.addr (s₂.gpr .r12 + BitVec.ofNat 32 (d + 4))) 32)
+    (d := q 4) (by decide) (by decide)
+  have hs₃ : Scr s₃ b := ⟨by rw [k₃.wr, wr₂, k₁.wr]; exact hs.wr, hs.fit⟩
+  have hkp₃ : AtEntry s₃ b e := by
+    rw [AtEntry, k₃.gpr _ (by decide), g₂ _ (by decide), k₁.gpr _ (by decide)]; exact hkp
+  obtain ⟨s₄, e₄, p₄, o₄, g₄, u₄, l₄, q₄, rd₄, wr₄, f₄⟩ := keyPlanes_step (w := 1) (e := e) hs₃ hkp₃ he (.inr rfl)
+  -- `kp += 64`.
+  have hkp₄ : s₄.gpr kp = s.gpr kp := by
+    rw [g₄ _ (by decide), k₃.gpr _ (by decide), g₂ _ (by decide), k₁.gpr _ (by decide)]
+  have hrd : s₄.rd = s.rd := by rw [rd₄, k₃.rd, rd₂, k₁.rd]
+  have hwr : s₄.wr = s.wr := by rw [wr₄, k₃.wr, wr₂, k₁.wr]
+  have hw4 : 8 * w + d + 8 ≤ 272 := by omega_arith
+  have hent : ∀ v < 2, ∀ j < 8, ∀ p < 32, (entryW s₄.mem b e (8 * v + j)).getLsbD p =
+      (s.mem (State.addr sched + BitVec.ofNat 64 (8 * (w + d / 8) + (4 * v + p / 8)))).getLsbD j := by
+    intro v hv j hj p hp
+    rcases (show v = 0 ∨ v = 1 by omega_arith) with rfl | rfl
+    · rw [Nat.mul_zero, Nat.zero_add, o₄ j (by omega_arith) (.inl (by omega_arith)),
+        show entryW s₃.mem b e j = entryW s₂.mem b e j by rw [k₃.mem]]
+      have := p₂ j hj p hp
+      rw [Nat.mul_zero, Nat.zero_add] at this
+      rw [this]
+      show (s.mem.readW (State.addr (s.gpr .r12 + BitVec.ofNat 32 d)) 32).getLsbD _ = _
+      rw [W32.readW32_bit _ _ (by omega_arith) hj, hr', KeyPre.addr hk.schFit (by omega_arith), VG.Offset.add_add,
+        show 8 * w + d + p / 8 = 8 * (w + d / 8) + (4 * 0 + p / 8) by omega_arith]
+    · rw [p₄ j hj p hp]
+      show (s₂.mem.readW (State.addr (s₂.gpr .r12 + BitVec.ofNat 32 (d + 4))) 32).getLsbD _ = _
+      rw [hm₂, W32.readW32_bit _ _ (by omega_arith) hj, hr', KeyPre.addr hk.schFit (by omega_arith), VG.Offset.add_add,
+        show 8 * w + (d + 4) + p / 8 = 8 * (w + d / 8) + (4 * 1 + p / 8) by omega_arith]
+  let s₅ := s₄.setReg kp (s₄.gpr kp + BitVec.ofNat 32 64)
+  refine ⟨s₅, ?_, hkp.add (n := 1) (by rw [RegUpd.gpr_setReg_self, hkp₄]), fun r h1 h2 => ?_, ?_, ?_,
+    by rw [RegUpd.rd_setReg, hrd], by rw [RegUpd.wr_setReg, hwr], ?_, ?_⟩
+  · rw [keyOne_eq, runBlock_app, runBlock_cons, e₁, runStep_some, e₂, Option.bind_some, runBlock_app,
+      runBlock_cons, e₃, runStep_some, e₄, Option.bind_some, addKp_ok _ _ encodable_64]
+  · rw [RegUpd.gpr_setReg_of_ne _ _ h2, g₄ r h1, k₃.gpr _ (fun h => h1 (by rw [h]; decide)), g₂ r h1,
+      k₁.gpr _ (fun h => h1 (by rw [h]; decide))]
+  · rw [RegUpd.gpr_setReg_of_ne _ _ (by decide), u₄, k₃.gpr _ (by decide), u₂, k₁.gpr _ (by decide)]
+  · rw [RegUpd.gpr_setReg_of_ne _ _ (by decide), l₄, k₃.gpr _ (by decide), l₂, k₁.gpr _ (by decide)]
+  · rw [RegUpd.mem_setReg]
+    refine (by rw [← k₁.mem]; exact f₂ : Frame [entryRegion b e] s.mem s₂.mem).trans ?_
+    rw [← k₃.mem]; exact f₄
+  · intro b' hb c hc j hj
+    show (entryW s₄.mem b e _).getLsbD _ = _
+    rw [show 8 * (c / 4) + j = 8 * (c / 4) + j from rfl, hent (c / 4) (by omega_arith) j hj _ (by omega_arith),
+      byteOf_wordAt _ _ hc, VG.Offset.add_add,
+      show 8 * (w + d / 8) + (4 * (c / 4) + (8 * (c % 4) + b') / 8) = 8 * (w + d / 8) + c by omega_arith]
+
+/-! ## The loops -/
+
+/-- The table's entries. -/
+def tableRegion (b : BitVec 32) : Region := ⟨State.addr (b + BitVec.ofNat 32 (4 * keySlot)), 4 * (16 * 34)⟩
+
+theorem entry_sub_table {b : BitVec 32} (hfit : b.toNat + 4 * slots ≤ 2 ^ 32) {e : Nat} (he : e < 34) :
+    Region.Sub (entryRegion b e) (tableRegion b) := by
+  rw [slots_eq] at hfit
+  simp only [entryRegion, tableRegion]
+  rw [VG.Arm.addr_add (by rw [keySlot_eq]; omega_arith), VG.Arm.addr_add (by rw [keySlot_eq]; omega_arith)]
+  exact VG.Offset.sub _ (by rw [keySlot_eq]; omega_arith) (by rw [keySlot_eq]; omega_arith)
+
+theorem table_sub_scr {b : BitVec 32} (hfit : b.toNat + 4 * slots ≤ 2 ^ 32) :
+    Region.Sub (tableRegion b) ⟨State.addr b, 4 * slots⟩ := by
+  rw [slots_eq] at hfit
+  simp only [tableRegion]
+  rw [VG.Arm.addr_add (by rw [keySlot_eq]; omega_arith)]
+  exact VG.Offset.sub_base _ (by rw [keySlot_eq, slots_eq]; omega_arith)
+
+/-- An entry outside a frame keeps its planes. -/
+theorem entryW_frame {m m' : Mem} {b : BitVec 32} (hfit : b.toNat + 4 * slots ≤ 2 ^ 32) {e i : Nat}
+    (hf : Frame [entryRegion b e] m m') (hi : i < 34) (he : e < 34) (hie : i ≠ e) {j : Nat} (hj : j < 16) :
+    entryW m' b i j = entryW m b i j := by
+  rw [slots_eq] at hfit
+  refine hf.readW (Region.contains_self _ _) (fun r hr => ?_) (by decide)
+  simp only [List.mem_singleton] at hr; subst hr
+  simp only [entryRegion]
+  rw [wordAddr, VG.Arm.addr_add (by rw [keySlot_eq]; omega_arith), VG.Arm.addr_add (by rw [keySlot_eq]; omega_arith)]
+  exact VG.Offset.disjoint _ (by rw [keySlot_eq]; omega_arith) (by rw [keySlot_eq]; omega_arith) (by rw [keySlot_eq]; omega_arith)
+
+/-- What the loops keep, after `k` of their `N` iterations: the subkeys `F`
+in the entries before `e₀ + k`, `r12` at word `wk k` of the schedule. -/
+structure KeyInv (s₀ : State) (b sched : BitVec 32) (e₀ N : Nat) (wk : Nat → Nat) (F : Nat → BitVec 64)
+    (k : Nat) (s : State) : Prop where
+  pre : KeyPre s b sched
+  kpos : AtEntry s b (e₀ + k)
+  r12 : s.gpr u7 = sched + BitVec.ofNat 32 (8 * wk k)
+  cnt : s.gpr .lr = BitVec.ofNat 32 (N - k)
+  ent : ∀ i < e₀ + k, EntryOk s.mem b i (F i)
+  frame : Frame [tableRegion b] s₀.mem s.mem
+  regs : ∀ r, r ∉ keyWrites → r ≠ kp → s.gpr r = s₀.gpr r
+  rd : s.rd = s₀.rd
+  wr : s.wr = s₀.wr
+
+theorem subs_lr (s : State) :
+    runBlock isa [.subs .lr .lr (.imm 1)] s =
+      some ((subFlags s (s.gpr .lr) 1).setReg .lr (s.gpr .lr - 1)) := by
+  simp only [runBlock_cons, exec, Op2.eval, show encodable 1 = true by decide, ↓reduceIte, Option.map_some,
+    runStep_some, runBlock_nil]
+
+/-- The loop of `keyOne 0` and `op r12, r12, #8` (`f` on `r12`), counted down in `lr`. -/
+theorem keyLoop_wp {s₀ s : State} {b sched : BitVec 32} {e₀ N : Nat} {wk : Nat → Nat} {F : Nat → BitVec 64}
+    {i₁ : Instr} {f : BitVec 32 → BitVec 32}
+    (hop : ∀ s : State, ∃ s', runBlock isa [i₁] s = some s' ∧
+      s'.gpr .r12 = f (s.gpr .r12) ∧ (∀ r, r ≠ .r12 → s'.gpr r = s.gpr r) ∧
+      s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr)
+    (hN : e₀ + N ≤ 34) (hN0 : N < 2 ^ 32)
+    (hwk : ∀ k < N, wk k < 34)
+    (hstep : ∀ k < N, f (sched + BitVec.ofNat 32 (8 * wk k)) = sched + BitVec.ofNat 32 (8 * wk (k + 1)))
+    (hF : ∀ k < N, F (e₀ + k) = Spec.Camellia.wordAt s₀.mem (State.addr sched + BitVec.ofNat 64 (8 * wk k)))
+    {k : Nat} (hk : k < N) (hs : KeyInv s₀ b sched e₀ N wk F k s) :
+    WP isa (.loop (.block (keyOne 0 ++ ([i₁, .subs .lr .lr (.imm 1)] : List Instr))) .ne) s
+      (KeyInv s₀ b sched e₀ N wk F N) := by
+  refine WP.loop (M := isa) (fun n s => ∃ k, n = N - k ∧ k < N ∧ KeyInv s₀ b sched e₀ N wk F k s)
+    (fun n s hs => ?_) (N - k) s ⟨k, rfl, hk, hs⟩
+  obtain ⟨k, rfl, hk, hi⟩ := hs
+  have hfit := hi.pre.scr.fit
+  have hw := hwk k hk
+  obtain ⟨s₁, e₁, kp₁, o₁, u₁, l₁, rd₁, wr₁, f₁, E₁⟩ := keyOne_step (d := 0) (e := e₀ + k) (Or.inl rfl)
+    hi.pre hi.r12 (by omega_arith) hi.kpos (by omega_arith)
+  obtain ⟨s₂, e₂, r₂, o₂, m₂, rd₂, wr₂⟩ := hop s₁
+  have e₃ := subs_lr s₂
+  let s₃ := (subFlags s₂ (s₂.gpr .lr) 1).setReg .lr (s₂.gpr .lr - 1)
+  have o₃ : ∀ r, r ≠ .lr → s₃.gpr r = s₂.gpr r := fun r h => by
+    rw [RegUpd.gpr_setReg_of_ne _ _ h, subFlags_gpr]
+  refine WP.of_runBlock ⟨s₃, by
+    rw [runBlock_app, e₁, Option.bind_some,
+      show ([i₁, .subs .lr .lr (.imm 1)] : List Instr) = [i₁] ++ [.subs .lr .lr (.imm 1)] from rfl,
+      runBlock_app, e₂, Option.bind_some, e₃], ?_⟩
+  have ht₂ : s₂.gpr .lr = BitVec.ofNat 32 (N - k) := by rw [o₂ _ (by decide), l₁, hi.cnt]
+  have hc₃ : s₃.gpr .lr = BitVec.ofNat 32 (N - (k + 1)) := by
+    rw [RegUpd.gpr_setReg_self, ht₂, show (1 : BitVec 32) = BitVec.ofNat 32 1 from rfl,
+      VG.Offset.ofNat_sub_ofNat (by omega_arith), show N - k - 1 = N - (k + 1) by omega_arith]
+  have hm₃ : s₃.mem = s₁.mem := by rw [RegUpd.mem_setReg, subFlags_mem, m₂]
+  have hinv : KeyInv s₀ b sched e₀ N wk F (k + 1) s₃ := by
+    refine ⟨hi.pre.congr ?_ ?_ ?_, ?_, ?_, hc₃, fun i hi' => ?_, ?_, fun r h1 h2 => ?_,
+      by rw [RegUpd.rd_setReg, subFlags_rd, rd₂, rd₁, hi.rd], by rw [RegUpd.wr_setReg, subFlags_wr, wr₂, wr₁, hi.wr]⟩
+    · rw [o₃ _ (by decide), o₂ _ (by decide), o₁ _ (by decide) (by decide)]
+    · rw [RegUpd.rd_setReg, subFlags_rd, rd₂, rd₁]
+    · rw [RegUpd.wr_setReg, subFlags_wr, wr₂, wr₁]
+    · have : AtEntry s₃ b (e₀ + k + 1) := by rw [AtEntry, o₃ _ (by decide), o₂ _ (by decide)]; exact kp₁
+      simpa only [Nat.add_assoc] using this
+    · rw [o₃ _ (by decide), show u7 = Reg.r12 from rfl, r₂, show Reg.r12 = u7 from rfl, u₁, hi.r12, hstep k hk]
+    · by_cases he : i = e₀ + k
+      · subst he
+        have hw' : Spec.Camellia.wordAt s.mem (State.addr sched + BitVec.ofNat 64 (8 * (wk k + 0 / 8))) =
+            F (e₀ + k) := by
+          rw [hF k hk, Nat.zero_div, Nat.add_zero]
+          exact (hi.pre.wordAt_eq (hi.frame.sub fun r hr => ⟨_, List.mem_singleton_self _, by
+            simp only [List.mem_singleton] at hr; subst hr; exact table_sub_scr hfit⟩) hw)
+        rw [← hw', show s₃.mem = s₁.mem from hm₃]
+        exact E₁
+      · refine (hi.ent i (by omega_arith)).congr fun j hj => ?_
+        rw [hm₃]
+        exact entryW_frame hfit f₁ (by omega_arith) (by omega_arith) he hj
+    · rw [hm₃]
+      exact hi.frame.trans (f₁.sub fun r hr => ⟨_, List.mem_singleton_self _, by
+        simp only [List.mem_singleton] at hr; subst hr; exact entry_sub_table hfit (by omega_arith)⟩)
+    · rw [o₃ r (fun h => h1 (by rw [h]; decide)), o₂ r (fun h => h1 (by rw [h]; decide)), o₁ r h1 h2,
+        hi.regs r h1 h2]
+  have hz : s₃.z = decide (N - (k + 1) = 0) := by
+    rw [show s₃.z = (subFlags s₂ (s₂.gpr .lr) 1).z from rfl, subFlags_z, ht₂,
+      show (1 : BitVec 32) = BitVec.ofNat 32 1 from rfl, VG.Offset.ofNat_sub_ofNat (by omega_arith),
+      Bool.eq_iff_iff, beq_iff_eq, decide_eq_true_iff]
+    constructor
+    · intro h; have := congrArg BitVec.toNat h
+      rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_arith)] at this; simp at this; omega_arith
+    · intro h; rw [show N - k - 1 = 0 by omega_arith]; rfl
+  by_cases hl : k + 1 = N
+  · refine .inl ⟨(eval_ne s₃).trans (by rw [hz]; simp; omega_arith),
+      by rw [show k + 1 = N from hl] at hinv; exact hinv⟩
+  · exact .inr ⟨(eval_ne s₃).trans (by rw [hz]; simp; omega_arith), N - (k + 1), by omega_arith, k + 1, rfl,
+      by omega_arith, hinv⟩
+
+/-! ## The tables -/
+
+/-- What the table's construction leaves: entry `i` holds word `perm i` of the schedule. -/
+structure KeysPost (s₀ : State) (b sched : BitVec 32) (g : Nat) (perm : Nat → Nat) (s : State) : Prop where
+  pre : KeyPre s b sched
+  ent : ∀ i < 8 * g + 2,
+    EntryOk s.mem b i (Spec.Camellia.wordAt s₀.mem (State.addr sched + BitVec.ofNat 64 (8 * perm i)))
+  frame : Frame [tableRegion b] s₀.mem s.mem
+  regs : ∀ r, r ∉ keyWrites → r ≠ kp → s.gpr r = s₀.gpr r
+  rd : s.rd = s₀.rd
+  wr : s.wr = s₀.wr
+  kpos : AtEntry s b (8 * g + 2)
+
+theorem add8 (x : BitVec 32) {w : Nat} :
+    x + BitVec.ofNat 32 (8 * w) + 8 = x + BitVec.ofNat 32 (8 * (w + 1)) := by
+  rw [show (8 : BitVec 32) = BitVec.ofNat 32 8 from rfl, add_ofNat_ofNat, show 8 * w + 8 = 8 * (w + 1) by omega_arith]
+
+theorem sub8 (x : BitVec 32) {w : Nat} :
+    x + BitVec.ofNat 32 (8 * (w + 1)) - 8 = x + BitVec.ofNat 32 (8 * w) := by
+  rw [show (8 : BitVec 32) = BitVec.ofNat 32 8 from rfl, BitVec.sub_eq_add_neg, BitVec.add_assoc,
+    ← BitVec.sub_eq_add_neg, VG.Offset.ofNat_sub_ofNat (by omega_arith), show 8 * (w + 1) - 8 = 8 * w by omega_arith]
+
+/-- `add r12, r12, #8` or `sub r12, r12, #8`. -/
+theorem stepR12_ok (s : State) (op : DpOp) (hop : op = .add ∨ op = .sub) :
+    ∃ s', runBlock isa [.dp op .r12 .r12 (.imm 8)] s = some s' ∧
+      s'.gpr .r12 = (if op = .add then s.gpr .r12 + 8 else s.gpr .r12 - 8) ∧
+      (∀ r, r ≠ .r12 → s'.gpr r = s.gpr r) ∧ s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
+  rcases hop with rfl | rfl
+  · exact ⟨s.setReg .r12 (s.gpr .r12 + 8), by
+      simp only [runBlock_cons, exec, Op2.eval, show encodable 8 = true by decide, ↓reduceIte, Option.map_some,
+        runStep_some, runBlock_nil], by simp [RegUpd.gpr_setReg_self], fun r h => RegUpd.gpr_setReg_of_ne _ _ h,
+      rfl, rfl, rfl⟩
+  · exact ⟨s.setReg .r12 (s.gpr .r12 - 8), by
+      simp only [runBlock_cons, exec, Op2.eval, show encodable 8 = true by decide, ↓reduceIte, Option.map_some,
+        runStep_some, runBlock_nil], by simp [RegUpd.gpr_setReg_self], fun r h => RegUpd.gpr_setReg_of_ne _ _ h,
+      rfl, rfl, rfl⟩
+
+theorem exec_movImm {s : State} {d : Reg} {v : BitVec 32} (he : encodable v = true) :
+    exec (.mov d (.imm v)) s = some (s.setReg d v) := by
+  simp only [exec, Op2.eval, he, ↓reduceIte, Option.map_some]
+
+theorem encKeys_wp {s₀ : State} {b sched : BitVec 32} {g : Nat} (hg : g = 3 ∨ g = 4) (hk : KeyPre s₀ b sched)
+    (hr : s₀.gpr u7 = sched) (hl : s₀.gpr .lr = BitVec.ofNat 32 (8 * g + 2)) :
+    WP isa encKeys s₀ (KeysPost s₀ b sched g id) := by
+  have hg4 : g ≤ 4 := by omega_arith
+  let s₂ := s₀.setReg kp (s₀.gpr sb + BitVec.ofNat 32 (4 * keySlot))
+  have e₂ : runBlock isa tableSetup s₀ = some s₂ := by
+    rw [tableSetup, runBlock_cons, slotAddr,
+      exec_addImm (v := BitVec.ofNat 32 (4 * keySlot)) (by decide), runStep_some, runBlock_nil]
+  unfold encKeys
+  refine WP.seq (WP.of_runBlock ⟨s₂, e₂, ?_⟩)
+  have hinv : KeyInv s₀ b sched 0 (8 * g + 2) id (fun i => Spec.Camellia.wordAt s₀.mem
+      (State.addr sched + BitVec.ofNat 64 (8 * i))) 0 s₂ := by
+    refine ⟨hk.congr ?_ rfl rfl, ?_, ?_, ?_, fun i hi => by omega_arith, Frame.refl _ _, fun r h1 h2 => ?_, rfl, rfl⟩
+    · rw [RegUpd.gpr_setReg_of_ne _ _ (by decide)]
+    · rw [AtEntry, RegUpd.gpr_setReg_self, hk.base]; rfl
+    · rw [RegUpd.gpr_setReg_of_ne _ _ (by decide), hr]
+      simp
+    · rw [RegUpd.gpr_setReg_of_ne _ _ (by decide), hl, Nat.sub_zero]
+    · rw [RegUpd.gpr_setReg_of_ne _ _ h2]
+  refine WP.mono (keyLoop_wp (e₀ := 0) (N := 8 * g + 2) (wk := id) (f := fun x => x + 8)
+    (fun s => by
+      obtain ⟨s', e', r', o', m', rd', wr'⟩ := stepR12_ok s .add (.inl rfl)
+      exact ⟨s', e', by simpa using r', o', m', rd', wr'⟩) (by omega_arith) (by omega_arith) (fun k hk => by simp; omega_arith)
+    (fun k _ => add8 sched) (fun k _ => by simp) (by omega_arith) hinv) fun s h => ?_
+  exact ⟨h.pre, fun i hi => h.ent i (by omega_arith), h.frame, h.regs, h.rd, h.wr, by
+    have := h.kpos; rwa [Nat.zero_add] at this⟩
+
+/-- `keyOne_step` within the construction of a table from `s₀`. -/
+theorem keyOne_inv {s₀ s : State} {b sched : BitVec 32} {d e w : Nat} (hd : d = 0 ∨ d = 8)
+    (hk : KeyPre s b sched) (hkp : AtEntry s b e) (he : e < 34)
+    (hr : s.gpr u7 = sched + BitVec.ofNat 32 (8 * w)) (hw : w + d / 8 < 34)
+    (hf : Frame [tableRegion b] s₀.mem s.mem) :
+    ∃ s', runBlock isa (keyOne d) s = some s' ∧ KeyPre s' b sched ∧ AtEntry s' b (e + 1) ∧
+      (∀ r, r ∉ keyWrites → r ≠ kp → s'.gpr r = s.gpr r) ∧ s'.gpr u7 = s.gpr u7 ∧
+      s'.gpr .lr = s.gpr .lr ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧ Frame [tableRegion b] s₀.mem s'.mem ∧
+      EntryOk s'.mem b e (Spec.Camellia.wordAt s₀.mem (State.addr sched + BitVec.ofNat 64 (8 * (w + d / 8)))) ∧
+      (∀ i < 34, i ≠ e → ∀ j < 16, entryW s'.mem b i j = entryW s.mem b i j) := by
+  have hfit := hk.scr.fit
+  obtain ⟨s', e', k', o', u', l', rd', wr', f', E'⟩ := keyOne_step hd hk hr hw hkp he
+  refine ⟨s', e', hk.congr (o' _ (by decide) (by decide)) rd' wr', k', o', u', l', rd', wr', ?_, ?_,
+    fun i hi hie j hj => entryW_frame hfit f' hi he hie hj⟩
+  · exact hf.trans (f'.sub fun r hr => ⟨_, List.mem_singleton_self _, by
+      simp only [List.mem_singleton] at hr; subst hr; exact entry_sub_table hfit he⟩)
+  · rw [← hk.wordAt_eq (hf.sub fun r hr => ⟨_, List.mem_singleton_self _, by
+      simp only [List.mem_singleton] at hr; subst hr; exact table_sub_scr hfit⟩) hw]
+    exact E'
+
+theorem decKeys_wp {s₀ : State} {b sched : BitVec 32} {g : Nat} (hg : g = 3 ∨ g = 4) (hk : KeyPre s₀ b sched)
+    (hr : s₀.gpr u7 = sched + BitVec.ofNat 32 (8 * (8 * g))) (hl : s₀.gpr .lr = BitVec.ofNat 32 (8 * g - 2)) :
+    WP isa decKeys s₀ (KeysPost s₀ b sched g (Camellia.decPerm g)) := by
+  have hg4 : g ≤ 4 := by omega_arith
+  have hg3 : 3 ≤ g := by omega_arith
+  unfold decKeys
+  -- `kw3`, `kw4` to entries 0 and 1.
+  let s₂ := s₀.setReg kp (s₀.gpr sb + BitVec.ofNat 32 (4 * keySlot))
+  have e₂ : runBlock isa tableSetup s₀ = some s₂ := by
+    rw [tableSetup, runBlock_cons, slotAddr,
+      exec_addImm (v := BitVec.ofNat 32 (4 * keySlot)) (by decide), runStep_some, runBlock_nil]
+  have hk₂ : KeyPre s₂ b sched := hk.congr (by rw [RegUpd.gpr_setReg_of_ne _ _ (by decide)]) rfl rfl
+  have hkp₂ : AtEntry s₂ b 0 := by
+    rw [AtEntry, RegUpd.gpr_setReg_self, hk.base]; rfl
+  have hr₂ : s₂.gpr u7 = sched + BitVec.ofNat 32 (8 * (8 * g)) := by
+    rw [RegUpd.gpr_setReg_of_ne _ _ (by decide), hr]
+  obtain ⟨s₃, e₃, hk₃, kp₃, o₃, u₃, l₃, rd₃, wr₃, hf₃, E₃, -⟩ :=
+    keyOne_inv (s₀ := s₀) (d := 0) (Or.inl rfl) hk₂ hkp₂ (by omega_arith) hr₂ (by omega_arith) (Frame.refl _ _)
+  obtain ⟨s₄, e₄, hk₄, kp₄, o₄, u₄, l₄, rd₄, wr₄, hf₄, E₄, P₄⟩ :=
+    keyOne_inv (s₀ := s₀) (d := 8) (Or.inr rfl) hk₃ kp₃ (by omega_arith) (by rw [u₃, hr₂]) (by omega_arith) hf₃
+  obtain ⟨s₆, e₆, r₆, o₆, m₆, rd₆, wr₆⟩ := stepR12_ok s₄ .sub (.inr rfl)
+  have hr₆ : s₆.gpr u7 = sched + BitVec.ofNat 32 (8 * (8 * g - 1)) := by
+    rw [show u7 = Reg.r12 from rfl, r₆]
+    simp only [show (Reg.r12) = u7 from rfl, u₄, u₃, hr₂]
+    have := sub8 sched (w := 8 * g - 1)
+    rwa [show 8 * g - 1 + 1 = 8 * g by omega_arith] at this
+  have hl₆ : s₆.gpr .lr = BitVec.ofNat 32 (8 * g - 2) := by
+    rw [o₆ _ (by decide), l₄, l₃, RegUpd.gpr_setReg_of_ne _ _ (by decide), hl]
+  refine WP.seq (WP.of_runBlock ⟨s₆, by
+    rw [runBlock_app, runBlock_app, runBlock_app, e₂, Option.bind_some,
+      e₃, Option.bind_some, e₄, Option.bind_some, e₆], ?_⟩)
+  -- The loop: entries 2 to `8 g - 1`.
+  let F : Nat → BitVec 64 := fun i =>
+    Spec.Camellia.wordAt s₀.mem (State.addr sched + BitVec.ofNat 64 (8 * Camellia.decPerm g i))
+  have hF0 : F 0 = Spec.Camellia.wordAt s₀.mem (State.addr sched + BitVec.ofNat 64 (8 * (8 * g + 0 / 8))) := by
+    simp [F, Camellia.decPerm]
+  have hF1 : F 1 = Spec.Camellia.wordAt s₀.mem (State.addr sched + BitVec.ofNat 64 (8 * (8 * g + 8 / 8))) := by
+    simp [F, Camellia.decPerm]
+  have hm₆ : s₆.mem = s₄.mem := m₆
+  have hinv : KeyInv s₀ b sched 2 (8 * g - 2) (fun k => 8 * g - 1 - k) F 0 s₆ := by
+    refine ⟨hk₄.congr ?_ ?_ ?_, ?_, by rw [hr₆, Nat.sub_zero], by rw [hl₆, Nat.sub_zero],
+      fun i hi => ?_, by rw [hm₆]; exact hf₄, fun r h1 h2 => ?_, by rw [rd₆, rd₄, rd₃]; rfl,
+      by rw [wr₆, wr₄, wr₃]; rfl⟩
+    · rw [o₆ _ (by decide)]
+    · rw [rd₆]
+    · rw [wr₆]
+    · rw [AtEntry, o₆ _ (by decide)]; exact kp₄
+    · rw [hm₆]
+      rcases (show i = 0 ∨ i = 1 by omega_arith) with rfl | rfl
+      · rw [hF0]; exact E₃.congr fun j hj => P₄ 0 (by omega_arith) (by omega_arith) j hj
+      · rw [hF1]; exact E₄
+    · rw [o₆ r (fun h => h1 (by rw [h]; decide)), o₄ r h1 h2, o₃ r h1 h2, RegUpd.gpr_setReg_of_ne _ _ h2]
+  refine WP.seq (WP.mono (keyLoop_wp (e₀ := 2) (N := 8 * g - 2) (wk := fun k => 8 * g - 1 - k)
+    (f := fun x => x - 8) (fun s => by
+      obtain ⟨s', e', r', o', m', rd', wr'⟩ := stepR12_ok s .sub (.inr rfl)
+      exact ⟨s', e', by simpa using r', o', m', rd', wr'⟩) (by omega_arith) (by omega_arith)
+    (fun k hk => by omega_arith) (fun k hk => ?_) (fun k hk => ?_) (by omega_arith) hinv) fun s h => ?_)
+  · have := sub8 sched (w := 8 * g - 1 - (k + 1))
+    rwa [show 8 * g - 1 - (k + 1) + 1 = 8 * g - 1 - k by omega_arith] at this
+  · simp only [F, Camellia.decPerm, show ¬ 2 + k < 2 by omega_arith, show 2 + k < 8 * g by omega_arith, ↓reduceIte,
+      show 8 * g + 1 - (2 + k) = 8 * g - 1 - k by omega_arith]
+  -- `kw1`, `kw2` to entries `8 g` and `8 g + 1`.
+  obtain ⟨s₇, e₇, r₇, o₇, m₇, rd₇, wr₇⟩ := stepR12_ok s .sub (.inr rfl)
+  have hr₇ : s₇.gpr u7 = sched + BitVec.ofNat 32 (8 * 0) := by
+    rw [show u7 = Reg.r12 from rfl, r₇]
+    simp only [show (Reg.r12) = u7 from rfl, h.r12, show 8 * g - 1 - (8 * g - 2) = 0 + 1 by omega_arith]
+    exact sub8 sched
+  have hk₇ : KeyPre s₇ b sched := h.pre.congr (o₇ _ (by decide)) rd₇ wr₇
+  have hkp₇ : AtEntry s₇ b (8 * g) := by
+    rw [AtEntry, o₇ _ (by decide)]
+    have := h.kpos
+    rwa [show 2 + (8 * g - 2) = 8 * g by omega_arith] at this
+  obtain ⟨s₈, e₈, hk₈, kp₈, o₈, u₈, -, rd₈, wr₈, hf₈, E₈, P₈⟩ :=
+    keyOne_inv (s₀ := s₀) (d := 0) (Or.inl rfl) hk₇ hkp₇ (by omega_arith) hr₇ (by omega_arith) (by rw [m₇]; exact h.frame)
+  obtain ⟨s₉, e₉, hk₉, kp₉, o₉, -, -, rd₉, wr₉, hf₉, E₉, P₉⟩ :=
+    keyOne_inv (s₀ := s₀) (d := 8) (Or.inr rfl) hk₈ kp₈ (by omega_arith) (by rw [u₈, hr₇]) (by omega_arith) hf₈
+  refine WP.of_runBlock ⟨s₉, by
+    rw [runBlock_app, runBlock_app, e₇, Option.bind_some, e₈, Option.bind_some, e₉],
+    hk₉, fun i hi => ?_, hf₉, fun r h1 h2 => ?_, by rw [rd₉, rd₈, rd₇, h.rd], by rw [wr₉, wr₈, wr₇, h.wr],
+    by have := kp₉; rwa [show 8 * g + 1 + 1 = 8 * g + 2 by omega_arith] at this⟩
+  · rcases (show i < 8 * g ∨ i = 8 * g ∨ i = 8 * g + 1 by omega_arith) with hi' | rfl | rfl
+    · refine (h.ent i (by omega_arith)).congr fun j hj => ?_
+      rw [P₉ i (by omega_arith) (by omega_arith) j hj, P₈ i (by omega_arith) (by omega_arith) j hj, m₇]
+    · have hp : Camellia.decPerm g (8 * g) = 0 + 0 / 8 := by
+        unfold Camellia.decPerm
+        simp only [show ¬ 8 * g < 2 by omega_arith, show ¬ 8 * g < 8 * g by omega_arith, ↓reduceIte]; omega_arith
+      rw [hp]; exact E₈.congr fun j hj => P₉ _ (by omega_arith) (by omega_arith) j hj
+    · have hp : Camellia.decPerm g (8 * g + 1) = 0 + 8 / 8 := by
+        unfold Camellia.decPerm
+        simp only [show ¬ 8 * g + 1 < 2 by omega_arith, show ¬ 8 * g + 1 < 8 * g by omega_arith, ↓reduceIte]; omega_arith
+      rw [hp]; exact E₉
+  · rw [o₉ r h1 h2, o₈ r h1 h2, o₇ r (fun h => h1 (by rw [h]; decide)), h.regs r h1 h2]
+
+end VG.Proof.Camellia.Arm
+
+end
+
+end
+
+
+/-!
+# A group of blocks of Camellia ECB on ARMv7
+
+As SM4's (`Proof/Sm4/Arm/Group.lean`): `dataGroup_wp`, one iteration of the
+data loop, copies the group's blocks (eight, or the last one to seven) to
+the tail buffer, transforms it (`crypt8_ok`), copies the blocks back and
+steps to the next group. The data pointer and the blocks left live in their
+slots (`dSlot`, `nSlot`) between the steps, which use every other register.
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Camellia.Arm
+
+open VG VG.Arm VG.Arm.Straight VG.Impl.Camellia.Arm
+open VG.Proof.Camellia (DInv outF not_contains_off blockAt_getD cryptWords)
+open VG.Impl.Aes.Arm (q sb t0 t1 kp movR lsrOp ldS stS)
+
+/-! ## The scratch buffer's contents -/
+
+/-- The slots `lo … hi - 1` of the scratch buffer at `b`. -/
+abbrev slotsRegion (b : BitVec 32) (lo hi : Nat) : Region :=
+  ⟨State.addr b + BitVec.ofNat 64 (4 * lo), 4 * (hi - lo)⟩
+
+/-- A slot outside a frame. -/
+theorem slot_keep {rs : List Region} {m m' : Mem} {b : BitVec 32} (hfit : b.toNat + 4 * slots ≤ 2 ^ 32)
+    {lo hi : Nat} (hhi : hi ≤ slots) (hf : Frame rs m m') (hd : ∀ r ∈ rs, (slotsRegion b lo hi).Disjoint r)
+    {k : Nat} (hk1 : lo ≤ k) (hk2 : k < hi) :
+    m'.readW (wordAddr b k) 32 = m.readW (wordAddr b k) 32 := by
+  rw [slots_eq] at hfit hhi
+  rw [slot_addr (by omega_arith)]
+  exact hf.readW (VG.Offset.contains _ (by omega_arith) (by omega_arith) (by omega_arith)) hd (by decide)
+
+/-- What the data loop keeps in the scratch buffer: the table and the saved
+registers. -/
+structure ScrOk (s₀ : State) (b : BitVec 32) (g : Nat) (E : Nat → BitVec 64) (m : Mem) : Prop where
+  keys : ∀ e < 8 * g + 2, EntryOk m b e (E e)
+  saved : Saved s₀ b m
+
+/-- The slots `ScrOk` reads are outside the regions. -/
+def KeepOut (b : BitVec 32) (rs : List Region) : Prop :=
+  ∀ r ∈ rs, (slotsRegion b keySlot grpSlot).Disjoint r ∧ (slotsRegion b savedSlot dSlot).Disjoint r
+
+theorem ScrOk.frame {s₀ : State} {b : BitVec 32} {g : Nat} {E : Nat → BitVec 64} {m m' : Mem}
+    (h : ScrOk s₀ b g E m) (hg : g = 3 ∨ g = 4) (hfit : b.toNat + 4 * slots ≤ 2 ^ 32) {rs : List Region}
+    (hf : Frame rs m m') (hd : KeepOut b rs) : ScrOk s₀ b g E m' := by
+  refine ⟨fun e he => (h.keys e he).congr fun j hj => ?_, fun i hi => ?_⟩
+  · exact slot_keep hfit (by decide) hf (fun r hr => (hd r hr).1) (by omega_arith)
+      (by rw [grpSlot_eq, keySlot_eq]; rcases hg with rfl | rfl <;> omega_arith)
+  · rw [← h.saved i hi]
+    exact slot_keep hfit (by decide) hf (fun r hr => (hd r hr).2) (by omega_arith)
+      (by rw [savedSlot_eq, dSlot_eq]; omega_arith)
+
+/-! ## The data loop -/
+
+/-- The scratch buffer at `b` and the `n` blocks at `D`. -/
+structure GPre (s₀ : State) (b D : BitVec 32) (n : Nat) : Prop where
+  scr : ScrIn s₀.wr b
+  dat : (⟨State.addr D, 16 * n⟩ : Region) ∈ s₀.wr
+  sep : Region.Disjoint ⟨State.addr D, 16 * n⟩ ⟨State.addr b, 4 * slots⟩
+  fitD : D.toNat + 16 * n ≤ 2 ^ 32
+
+/-- The data loop, before group `k`. -/
+structure GInv (s₀ : State) (b D : BitVec 32) (n : Nat) (g : Nat) (E : Nat → BitVec 64) (k : Nat) (s : State) :
+    Prop where
+  base : s.gpr sb = b
+  dp : s.gpr .r1 = D + BitVec.ofNat 32 (128 * k)
+  np : s.gpr .r2 = BitVec.ofNat 32 (n - 8 * k)
+  lt : 8 * k < n
+  lr : s.gpr .lr = b + BitVec.ofNat 32 (4 * keySlot + 512 * g)
+  scr : ScrOk s₀ b g E s.mem
+  data : DInv s₀.mem s.mem (State.addr D) n (8 * k) (outF s₀.mem (State.addr D) g E)
+  frame : Frame [⟨State.addr b, 4 * slots⟩, ⟨State.addr D, 16 * n⟩] s₀.mem s.mem
+  rd : s.rd = s₀.rd
+  wr : s.wr = s₀.wr
+  sp : s.sp = s₀.sp
+
+/-- The data loop, done. -/
+structure GDone (s₀ : State) (b D : BitVec 32) (n : Nat) (g : Nat) (E : Nat → BitVec 64) (s : State) : Prop where
+  base : s.gpr sb = b
+  scr : ScrOk s₀ b g E s.mem
+  data : DInv s₀.mem s.mem (State.addr D) n n (outF s₀.mem (State.addr D) g E)
+  frame : Frame [⟨State.addr b, 4 * slots⟩, ⟨State.addr D, 16 * n⟩] s₀.mem s.mem
+  rd : s.rd = s₀.rd
+  wr : s.wr = s₀.wr
+  sp : s.sp = s₀.sp
+
+theorem KeepOut.cons {b : BitVec 32} {r : Region} {rs : List Region} (h₁ : KeepOut b [r]) (h₂ : KeepOut b rs) :
+    KeepOut b (r :: rs) := fun x hx => by
+  rcases List.mem_cons.mp hx with rfl | hx
+  · exact h₁ _ List.mem_cons_self
+  · exact h₂ x hx
+
+theorem KeepOut.nil (b : BitVec 32) : KeepOut b [] := fun _ h => absurd h List.not_mem_nil
+
+/-- A region at an offset of the scratch buffer, outside what `ScrOk` reads. -/
+theorem keepOut_off (b : BitVec 32) {e n : Nat} (hn : e + n ≤ 4 * slots)
+    (h1 : e + n ≤ 4 * keySlot ∨ 4 * grpSlot ≤ e) (h2 : e + n ≤ 4 * savedSlot ∨ 4 * dSlot ≤ e) :
+    KeepOut b [⟨State.addr b + BitVec.ofNat 64 e, n⟩] := fun r hr => by
+  simp only [List.mem_singleton] at hr; subst hr
+  rw [slots_eq] at hn
+  rw [keySlot_eq, grpSlot_eq] at h1
+  rw [savedSlot_eq, dSlot_eq] at h2
+  exact ⟨VG.Offset.disjoint _ (by rw [keySlot_eq, grpSlot_eq]; omega_arith) (by rw [keySlot_eq, grpSlot_eq]; omega_arith)
+      (by omega_arith),
+    VG.Offset.disjoint _ (by rw [savedSlot_eq, dSlot_eq]; omega_arith) (by rw [savedSlot_eq, dSlot_eq]; omega_arith) (by omega_arith)⟩
+
+/-- A region outside the scratch buffer. -/
+theorem keepOut_out (b : BitVec 32) {R : Region}
+    (h : Region.Disjoint R ⟨State.addr b, 4 * slots⟩) : KeepOut b [R] := fun r hr => by
+  simp only [List.mem_singleton] at hr; subst hr
+  exact ⟨(h.sub_right (VG.Offset.sub_base _ (by rw [slots_eq, keySlot_eq, grpSlot_eq]; omega_arith))).symm,
+    (h.sub_right (VG.Offset.sub_base _ (by rw [slots_eq, savedSlot_eq, dSlot_eq]; omega_arith))).symm⟩
+
+theorem keepOut_ctx {b : BitVec 32} (hfit : b.toNat + 4 * slots ≤ 2 ^ 32) : KeepOut b (ctxRegions b) := by
+  have hb := addr_toNat b
+  have h2 := hfit
+  rw [slots_eq] at h2
+  refine KeepOut.cons ?_ (KeepOut.cons ?_ (KeepOut.cons ?_ (KeepOut.nil b)))
+  · have := keepOut_off b (e := 0) (n := 4 * keySlot) (by rw [slots_eq, keySlot_eq] <;> omega_arith)
+      (.inl (by omega_arith)) (.inl (by rw [keySlot_eq, savedSlot_eq] <;> omega_arith))
+    simpa using this
+  · rw [VG.Arm.addr_add (by rw [grpSlot_eq] <;> omega_arith)]
+    exact keepOut_off b (by rw [grpSlot_eq, slots_eq] <;> omega_arith) (.inr (Nat.le_refl _))
+      (.inl (by rw [grpSlot_eq, savedSlot_eq] <;> omega_arith))
+  · rw [VG.Arm.addr_add (by rw [tailSlot_eq] <;> omega_arith)]
+    exact keepOut_off b (by rw [tailSlot_eq, slots_eq] <;> omega_arith) (.inr (by rw [tailSlot_eq, grpSlot_eq] <;> omega_arith))
+      (.inr (by rw [tailSlot_eq, dSlot_eq] <;> omega_arith))
+
+theorem dataGroup_wp {s₀ : State} {b D : BitVec 32} {n : Nat} {g : Nat} {E : Nat → BitVec 64} (hp : GPre s₀ b D n)
+    (hg : g = 3 ∨ g = 4) {k : Nat} {s : State} (hi : GInv s₀ b D n g E k s) :
+    WP isa Impl.Camellia.Arm.group s fun s' => (s'.z = true ∧ GDone s₀ b D n g E s') ∨
+      (s'.z = false ∧ GInv s₀ b D n g E (k + 1) s') := by
+  have hfit := hp.scr.fit
+  have hfitD := hp.fitD
+  have hk := hi.lt
+  have hb := addr_toNat b
+  rw [slots_eq] at hfit
+  have hfit' : b.toNat + 4 * slots ≤ 2 ^ 32 := by rw [slots_eq]; omega_arith
+  let v := n - 8 * k
+  let c := min v 8
+  have hv : v < 2 ^ 32 := by omega_arith
+  have hc0 : 0 < c := by omega_arith
+  have hc8 : c ≤ 8 := by omega_arith
+  have hkc : 128 * k + 16 * c ≤ 16 * n := by omega_arith
+  let A := D + BitVec.ofNat 32 (128 * k)
+  let T := b + BitVec.ofNat 32 (4 * tailSlot)
+  have hA : State.addr A = State.addr D + BitVec.ofNat 64 (128 * k) := VG.Arm.addr_add (by omega_arith)
+  have hT : State.addr T = State.addr b + BitVec.ofNat 64 (4 * tailSlot) := VG.Arm.addr_add (by rw [tailSlot_eq]; omega_arith)
+  have hAn : A.toNat + 16 * c ≤ 2 ^ 32 := by rw [toNat_add32 _ (by omega_arith)]; omega_arith
+  have hTn : T.toNat + 16 * c ≤ 2 ^ 32 := by rw [toNat_add32 _ (by rw [tailSlot_eq]; omega_arith), tailSlot_eq]; omega_arith
+  have hwS : ScrIn s.wr b := by rw [hi.wr]; exact hp.scr
+  have hwD : (⟨State.addr D, 16 * n⟩ : Region) ∈ s.wr := by rw [hi.wr]; exact hp.dat
+  have inT : ∀ t < 16 * c, t % 4 = 0 → InRegions s.wr (State.addr T + BitVec.ofNat 64 t) 4 := by
+    intro t ht h4
+    refine ⟨_, hwS.mem, ?_⟩
+    rw [hT, VG.Offset.add_add]
+    exact VG.Offset.contains_base _ (by rw [slots_eq, tailSlot_eq]; omega_arith) (by rw [tailSlot_eq]; omega_arith)
+  have inA : ∀ t < 16 * c, t % 4 = 0 → InRegions s.wr (State.addr A + BitVec.ofNat 64 t) 4 := by
+    intro t ht h4
+    refine ⟨_, hwD, ?_⟩
+    rw [hA, VG.Offset.add_add]
+    exact VG.Offset.contains_base _ (by omega_arith) (by omega_arith)
+  have subA : Region.Sub ⟨State.addr A, 16 * c⟩ ⟨State.addr D, 16 * n⟩ := by
+    rw [hA]; exact VG.Offset.sub_base _ (by omega_arith)
+  have subT : Region.Sub ⟨State.addr T, 16 * c⟩ ⟨State.addr b, 4 * slots⟩ := by
+    rw [hT]; exact VG.Offset.sub_base _ (by rw [slots_eq, tailSlot_eq]; omega_arith)
+  have sepAT : Region.Disjoint ⟨State.addr A, 16 * c⟩ ⟨State.addr T, 16 * c⟩ :=
+    (hp.sep.sub_left subA).sub_right subT
+  have dD : ∀ {rs : List Region}, (∀ r ∈ rs, Region.Sub r ⟨State.addr b, 4 * slots⟩) →
+      ∀ r ∈ rs, Region.Disjoint ⟨State.addr D, 16 * n⟩ r := fun h r hr => hp.sep.sub_right (h r hr)
+  have koT : KeepOut b [⟨State.addr T, 16 * c⟩] := by
+    rw [hT]; exact keepOut_off b (by rw [slots_eq, tailSlot_eq]; omega_arith)
+      (.inr (by rw [tailSlot_eq, grpSlot_eq]; omega_arith)) (.inr (by rw [tailSlot_eq, dSlot_eq]; omega_arith))
+  have koA : KeepOut b [⟨State.addr A, 16 * c⟩] := keepOut_out b (hp.sep.sub_left subA)
+  have r1₀ : s.gpr .r1 = A := hi.dp
+  unfold Impl.Camellia.Arm.group copyIn
+  -- The group's blocks to the tail buffer.
+  refine WP.seq (WP.seq (WP.mono (groupCount_wp hi.np hv) fun s₁ ⟨r3₁, o₁, m₁, rd₁, wr₁, sp₁⟩ => ?_))
+  obtain ⟨s₂a, e₂a, r₂a, o₂a, m₂a, rd₂a, wr₂a, sp₂a⟩ := movR_ok s₁ .r0 .r1
+  obtain ⟨s₂, e₂, r₂, o₂, m₂, rd₂, wr₂, sp₂⟩ := addImm_ok s₂a .r12 sb (BitVec.ofNat 32 (4 * tailSlot)) (by decide)
+  have rd₂' : s₂.rd = s.rd := by rw [rd₂, rd₂a, rd₁]
+  have wr₂' : s₂.wr = s.wr := by rw [wr₂, wr₂a, wr₁]
+  have mem₂ : s₂.mem = s.mem := by rw [m₂, m₂a, m₁]
+  have g₂ : ∀ r, r ≠ .r0 → r ≠ .r12 → r ≠ .r3 → r ≠ t0 → s₂.gpr r = s.gpr r :=
+    fun r h0 h12 h3 h4 => by rw [o₂ r h12, o₂a r h0, o₁ r h3 h4]
+  refine WP.seq (WP.of_runBlock ⟨s₂, by
+    rw [show ([movR .r0 .r1, slotAddr .r12 tailSlot] : List Instr) = [movR .r0 .r1] ++ [slotAddr .r12 tailSlot] from rfl,
+      runBlock_app, e₂a, Option.bind_some]; exact e₂, ?_⟩)
+  refine WP.mono (copyBlocks_wp (A := A) (B := T) hc0 hc8 hAn hTn
+    (fun t ht h4 => by rw [rd₂', wr₂']; exact inRd (inA t ht h4))
+    (fun t ht h4 => by rw [wr₂']; exact inT t ht h4) sepAT
+    ⟨by rw [o₂ _ (by decide), r₂a, o₁ _ (by decide) (by decide), r1₀]; simp [A],
+      by rw [r₂, o₂a _ (by decide), o₁ _ (by decide) (by decide), hi.base]; simp [T],
+      by rw [o₂ _ (by decide), o₂a _ (by decide), r3₁, Nat.sub_zero], ⟨fun t ht => by omega_arith, Frame.refl _ _⟩,
+      fun _ _ _ _ _ => rfl, rfl, rfl, rfl⟩) fun s₃ h₃ => ?_
+  have f₃ : Frame [⟨State.addr T, 16 * c⟩] s.mem s₃.mem := by rw [← mem₂]; exact h₃.cp.frame
+  have g₃ : ∀ r, r ≠ .r0 → r ≠ .r12 → r ≠ .r3 → r ≠ t0 → s₃.gpr r = s.gpr r :=
+    fun r h0 h12 h3 h4 => by rw [h₃.regs r h0 h12 h3 h4, g₂ r h0 h12 h3 h4]
+  have base₃ : s₃.gpr sb = b := by rw [g₃ _ (by decide) (by decide) (by decide) (by decide), hi.base]
+  have sc₃ : ScrOk s₀ b g E s₃.mem := hi.scr.frame hg hfit' f₃ koT
+  have wr₃ : s₃.wr = s.wr := by rw [h₃.wr, wr₂']
+  have rd₃ : s₃.rd = s.rd := by rw [h₃.rd, rd₂']
+  have sp₃ : s₃.sp = s.sp := by rw [h₃.sp, sp₂, sp₂a, sp₁]
+  have hwS₃ : ScrIn s₃.wr b := by rw [wr₃]; exact hwS
+  -- The data pointer, the blocks left and the postwhitening's address to their slots.
+  unfold cryptSaved
+  obtain ⟨s₄a, e₄a, m₄a, g₄a, rd₄a, wr₄a, sp₄a, -, f₄a⟩ := stSlot_ok s₃ .r1 sb (k := dSlot) base₃ (by decide) hwS₃
+  obtain ⟨s₄b, e₄b, m₄b, g₄b, rd₄b, wr₄b, sp₄b, -, f₄b⟩ := stSlot_ok s₄a .r2 sb (k := nSlot)
+    (by rw [g₄a, base₃]) (by decide) (by rw [wr₄a]; exact hwS₃)
+  obtain ⟨s₄, e₄, m₄, g₄, rd₄, wr₄, sp₄, -, f₄⟩ := stSlot_ok s₄b .lr sb (k := endSlot)
+    (by rw [g₄b, g₄a, base₃]) (by decide) (by rw [wr₄b, wr₄a]; exact hwS₃)
+  have r1₃ : s₃.gpr .r1 = A := by rw [g₃ _ (by decide) (by decide) (by decide) (by decide), r1₀]
+  have r2₃ : s₃.gpr .r2 = BitVec.ofNat 32 v := by rw [g₃ _ (by decide) (by decide) (by decide) (by decide), hi.np]
+  have lr₃ : s₃.gpr .lr = b + BitVec.ofNat 32 (4 * keySlot + 512 * g) := by
+    rw [g₃ _ (by decide) (by decide) (by decide) (by decide), hi.lr]
+  have fs : Frame [⟨wordAddr b dSlot, 4⟩, ⟨wordAddr b nSlot, 4⟩, ⟨wordAddr b endSlot, 4⟩] s₃.mem s₄.mem :=
+    (f₄a.sub fun r hr => ⟨r, by simp at hr; simp [hr], fun _ h => h⟩).trans
+      ((f₄b.sub fun r hr => ⟨r, by simp at hr; simp [hr], fun _ h => h⟩).trans
+        (f₄.sub fun r hr => ⟨r, by simp at hr; simp [hr], fun _ h => h⟩))
+  have hsub : ∀ r ∈ [(⟨wordAddr b dSlot, 4⟩ : Region), ⟨wordAddr b nSlot, 4⟩, ⟨wordAddr b endSlot, 4⟩],
+      Region.Sub r ⟨State.addr b, 4 * slots⟩ := fun r hr => by
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl
+    · exact slot_sub hfit' (by decide)
+    · exact slot_sub hfit' (by decide)
+    · exact slot_sub hfit' (by decide)
+  have dsTab : KeepOut b [(⟨wordAddr b dSlot, 4⟩ : Region), ⟨wordAddr b nSlot, 4⟩, ⟨wordAddr b endSlot, 4⟩] := by
+    refine KeepOut.cons ?_ (KeepOut.cons ?_ (KeepOut.cons ?_ (KeepOut.nil b)))
+    · rw [slot_addr (by rw [dSlot_eq]; omega_arith)]
+      exact keepOut_off b (by rw [dSlot_eq, slots_eq]; omega_arith) (.inr (by rw [dSlot_eq, grpSlot_eq]; omega_arith))
+        (.inr (Nat.le_refl _))
+    · rw [slot_addr (by rw [nSlot_eq]; omega_arith)]
+      exact keepOut_off b (by rw [nSlot_eq, slots_eq]; omega_arith) (.inr (by rw [nSlot_eq, grpSlot_eq]; omega_arith))
+        (.inr (by rw [nSlot_eq, dSlot_eq]; omega_arith))
+    · rw [slot_addr (by rw [endSlot_eq]; omega_arith)]
+      exact keepOut_off b (by rw [endSlot_eq, slots_eq]; omega_arith) (.inr (by rw [endSlot_eq, grpSlot_eq]; omega_arith))
+        (.inl (by rw [endSlot_eq, savedSlot_eq]))
+  have sc₄ : ScrOk s₀ b g E s₄.mem := sc₃.frame hg hfit' fs dsTab
+  have base₄ : s₄.gpr sb = b := by rw [g₄, g₄b, g₄a, base₃]
+  have wr₄' : s₄.wr = s.wr := by rw [wr₄, wr₄b, wr₄a, wr₃]
+  have dp₄ : s₄.mem.readW (wordAddr b dSlot) 32 = A := by
+    rw [m₄, readW_slot_write hfit' _ (by decide) (by decide), ite_eq_right (by decide), m₄b,
+      readW_slot_write hfit' _ (by decide) (by decide), ite_eq_right (by decide), m₄a,
+      readW_slot_write hfit' _ (by decide) (by decide), ite_eq_left rfl, r1₃]
+  have np₄ : s₄.mem.readW (wordAddr b nSlot) 32 = BitVec.ofNat 32 v := by
+    rw [m₄, readW_slot_write hfit' _ (by decide) (by decide), ite_eq_right (by decide), m₄b,
+      readW_slot_write hfit' _ (by decide) (by decide), ite_eq_left rfl, g₄a, r2₃]
+  have ep₄ : s₄.mem.readW (wordAddr b endSlot) 32 = b + BitVec.ofNat 32 (4 * keySlot + 512 * g) := by
+    rw [m₄, readW_slot_write hfit' _ (by decide) (by decide), ite_eq_left rfl, g₄b, g₄a, lr₃]
+  refine WP.seq (WP.seq (WP.of_runBlock ⟨s₄, by
+    rw [show ([stS dSlot .r1, stS nSlot .r2, stS endSlot .lr] : List Instr) =
+      [.str .r1 sb (4 * dSlot)] ++ ([.str .r2 sb (4 * nSlot)] ++ [.str .lr sb (4 * endSlot)]) from rfl,
+      runBlock_app, e₄a, Option.bind_some, runBlock_app, e₄b, Option.bind_some, e₄],
+    ?_⟩))
+  -- The eight blocks.
+  have hcore : CorePre s₄ g E :=
+    { scr := ⟨by rw [base₄, wr₄']; exact hwS.mem, by rw [base₄]; exact hfit'⟩
+      nk34 := by rcases hg with rfl | rfl <;> decide
+      keys := fun e he => by rw [base₄]; exact sc₄.keys e he
+      hg := hg
+      bound := by rw [slotW, base₄]; exact ep₄ }
+  refine WP.seq (WP.mono (WP.sp (crypt8_ok hcore)) fun s₅ ⟨⟨c₅, b₅⟩, sp₅'⟩ => ?_)
+  have base₅ : s₅.gpr sb = b := by rw [c₅.base, base₄]
+  have f₅ : Frame (ctxRegions b) s₄.mem s₅.mem := by have := c₅.frame; rw [base₄] at this; exact this
+  have keep₅ : ∀ j, j = dSlot ∨ j = nSlot ∨ j = endSlot →
+      s₅.mem.readW (wordAddr b j) 32 = s₄.mem.readW (wordAddr b j) 32 :=
+    fun j hj => by
+      have := c₅.slot (k := j) (by rw [base₄]; exact hfit') (by rcases hj with rfl | rfl | rfl <;> decide)
+        (by rcases hj with rfl | rfl | rfl <;> decide) (by rcases hj with rfl | rfl | rfl <;> decide)
+        (.inl (by rcases hj with rfl | rfl | rfl <;> decide))
+      simp only [slotW, base₅, base₄] at this; exact this
+  have sc₅ : ScrOk s₀ b g E s₅.mem := sc₄.frame hg hfit' f₅ (keepOut_ctx hfit')
+  have wr₅ : s₅.wr = s.wr := by rw [c₅.wr, wr₄']
+  have rd₅ : s₅.rd = s.rd := by rw [c₅.rd, rd₄, rd₄b, rd₄a, rd₃]
+  have sp₅ : s₅.sp = s.sp := by rw [sp₅', sp₄, sp₄b, sp₄a, sp₃]
+  have hwS₅ : ScrIn s₅.wr b := by rw [wr₅]; exact hwS
+  -- The data pointer, the blocks left and the postwhitening's address back.
+  obtain ⟨s₆a, e₆a, r₆a, o₆a, m₆a, rd₆a, wr₆a, sp₆a⟩ := ldSlot_ok s₅ .r1 sb (k := dSlot) base₅ (by decide) hwS₅
+  obtain ⟨s₆b, e₆b, r₆b, o₆b, m₆b, rd₆b, wr₆b, sp₆b⟩ := ldSlot_ok s₆a .r2 sb (k := nSlot)
+    (by rw [o₆a _ (by decide), base₅]) (by decide) (by rw [wr₆a]; exact hwS₅)
+  obtain ⟨s₆, e₆, r₆, o₆, m₆, rd₆, wr₆, sp₆⟩ := ldSlot_ok s₆b .lr sb (k := endSlot)
+    (by rw [o₆b _ (by decide), o₆a _ (by decide), base₅]) (by decide) (by rw [wr₆b, wr₆a]; exact hwS₅)
+  refine WP.of_runBlock ⟨s₆, by
+    rw [show ([ldS .r1 dSlot, ldS .r2 nSlot, ldS .lr endSlot] : List Instr) =
+      [.ldr .r1 sb (4 * dSlot)] ++ ([.ldr .r2 sb (4 * nSlot)] ++ [.ldr .lr sb (4 * endSlot)]) from rfl,
+      runBlock_app, e₆a, Option.bind_some, runBlock_app, e₆b, Option.bind_some, e₆],
+    ?_⟩
+  have r1₆ : s₆.gpr .r1 = A := by rw [o₆ _ (by decide), o₆b _ (by decide), r₆a, keep₅ _ (by decide), dp₄]
+  have r2₆ : s₆.gpr .r2 = BitVec.ofNat 32 v := by
+    rw [o₆ _ (by decide), r₆b, m₆a, keep₅ _ (by decide), np₄]
+  have lr₆ : s₆.gpr .lr = b + BitVec.ofNat 32 (4 * keySlot + 512 * g) := by
+    rw [r₆, m₆b, m₆a, keep₅ _ (by decide), ep₄]
+  have base₆ : s₆.gpr sb = b := by rw [o₆ _ (by decide), o₆b _ (by decide), o₆a _ (by decide), base₅]
+  have mem₆ : s₆.mem = s₅.mem := by rw [m₆, m₆b, m₆a]
+  have wr₆' : s₆.wr = s.wr := by rw [wr₆, wr₆b, wr₆a, wr₅]
+  have rd₆' : s₆.rd = s.rd := by rw [rd₆, rd₆b, rd₆a, rd₅]
+  have sp₆' : s₆.sp = s.sp := by rw [sp₆, sp₆b, sp₆a, sp₅]
+  -- The tail buffer back to the group's blocks.
+  unfold copyOut
+  refine WP.seq (WP.seq (WP.mono (groupCount_wp r2₆ hv) fun s₇ ⟨r3₇, o₇, m₇, rd₇, wr₇, sp₇⟩ => ?_))
+  obtain ⟨s₈a, e₈a, r₈a, o₈a, m₈a, rd₈a, wr₈a, sp₈a⟩ := addImm_ok s₇ .r0 sb (BitVec.ofNat 32 (4 * tailSlot)) (by decide)
+  obtain ⟨s₈, e₈, r₈, o₈, m₈, rd₈, wr₈, sp₈⟩ := movR_ok s₈a .r12 .r1
+  have mem₈ : s₈.mem = s₅.mem := by rw [m₈, m₈a, m₇, mem₆]
+  have g₈ : ∀ r, r ≠ .r0 → r ≠ .r12 → r ≠ .r3 → r ≠ t0 → s₈.gpr r = s₆.gpr r :=
+    fun r h0 h12 h3 h4 => by rw [o₈ r h12, o₈a r h0, o₇ r h3 h4]
+  refine WP.seq (WP.of_runBlock ⟨s₈, by
+    rw [show ([slotAddr .r0 tailSlot, movR .r12 .r1] : List Instr) =
+      [.dp .add .r0 sb (.imm (BitVec.ofNat 32 (4 * tailSlot)))] ++ [movR .r12 .r1] from rfl,
+      runBlock_app, e₈a, Option.bind_some]; exact e₈, ?_⟩)
+  have rd₈' : s₈.rd = s.rd := by rw [rd₈, rd₈a, rd₇, rd₆']
+  have wr₈' : s₈.wr = s.wr := by rw [wr₈, wr₈a, wr₇, wr₆']
+  refine WP.mono (copyBlocks_wp (A := T) (B := A) hc0 hc8 hTn hAn
+    (fun t ht h4 => by rw [rd₈', wr₈']; exact inRd (inT t ht h4))
+    (fun t ht h4 => by rw [wr₈']; exact inA t ht h4) sepAT.symm
+    ⟨by rw [o₈ _ (by decide), r₈a, o₇ _ (by decide) (by decide), base₆]; simp [T],
+      by rw [r₈, o₈a _ (by decide), o₇ _ (by decide) (by decide), r1₆]; simp [A],
+      by rw [o₈ _ (by decide), o₈a _ (by decide), r3₇, Nat.sub_zero], ⟨fun t ht => by omega_arith, Frame.refl _ _⟩,
+      fun _ _ _ _ _ => rfl, rfl, rfl, rfl⟩) fun s₉ h₉ => ?_
+  have f₉ : Frame [⟨State.addr A, 16 * c⟩] s₅.mem s₉.mem := by rw [← mem₈]; exact h₉.cp.frame
+  have g₉ : ∀ r, r ≠ .r0 → r ≠ .r12 → r ≠ .r3 → r ≠ t0 → s₉.gpr r = s₆.gpr r :=
+    fun r h0 h12 h3 h4 => by rw [h₉.regs r h0 h12 h3 h4, g₈ r h0 h12 h3 h4]
+  have sc₉ : ScrOk s₀ b g E s₉.mem := sc₅.frame hg hfit' f₉ koA
+  have wr₉ : s₉.wr = s.wr := by rw [h₉.wr, wr₈']
+  have rd₉ : s₉.rd = s.rd := by rw [h₉.rd, rd₈']
+  have sp₉ : s₉.sp = s.sp := by rw [h₉.sp, sp₈, sp₈a, sp₇, sp₆']
+  -- The blocks the eight-block code read are the group's, as on entry.
+  have hblk : ∀ j < c, blk s₄ j =
+      Spec.Camellia.blockAt s₀.mem (State.addr D + BitVec.ofNat 64 (16 * (8 * k + j))) := by
+    intro j hj
+    apply Vector.ext; intro u hu
+    simp only [blk, Spec.Camellia.blockAt, Vector.getElem_ofFn]
+    have := h₃.cp.copied (16 * j + u) (by omega_arith)
+    rw [hT, VG.Offset.add_add, hA, VG.Offset.add_add] at this
+    have hout : ∀ r ∈ [(⟨wordAddr b dSlot, 4⟩ : Region), ⟨wordAddr b nSlot, 4⟩, ⟨wordAddr b endSlot, 4⟩],
+        ¬ r.Contains (State.addr b + BitVec.ofNat 64 (4 * tailSlot + (16 * j + u))) 1 := fun r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl <;>
+        rw [slot_addr (by (try simp only [dSlot_eq, nSlot_eq, endSlot_eq]); omega_arith)] <;>
+        exact not_contains_off _ (by (try simp only [tailSlot_eq, dSlot_eq, nSlot_eq, endSlot_eq]); omega_arith)
+          (by rw [tailSlot_eq]; omega_arith) (by omega_arith) (by (try simp only [dSlot_eq, nSlot_eq, endSlot_eq]); omega_arith)
+    rw [base₄, VG.Offset.add_add, show 4 * tailSlot + 16 * j + u = 4 * tailSlot + (16 * j + u) by omega_arith,
+      fs _ hout, this, mem₂, hi.data _ (by omega_arith), ite_eq_right (by omega_arith), VG.Offset.add_add,
+      show 128 * k + (16 * j + u) = 16 * (8 * k + j) + u by omega_arith]
+  have hdata : DInv s₀.mem s₉.mem (State.addr D) n (8 * k + c) (outF s₀.mem (State.addr D) g E) := by
+    intro i hin
+    by_cases hin1 : 128 * k ≤ i ∧ i < 128 * k + 16 * c
+    · have e1 : State.addr D + BitVec.ofNat 64 i = State.addr A + BitVec.ofNat 64 (i - 128 * k) := by
+        rw [hA, VG.Offset.add_add, show 128 * k + (i - 128 * k) = i by omega_arith]
+      rw [e1, h₉.cp.copied _ (by omega_arith), mem₈, ite_eq_left (show i < 16 * (8 * k + c) by omega_arith),
+        show i / 16 = 8 * k + (i - 128 * k) / 16 by omega_arith, show i % 16 = (i - 128 * k) % 16 by omega_arith]
+      have hj : (i - 128 * k) / 16 < c := by omega_arith
+      have eT : State.addr T + BitVec.ofNat 64 (i - 128 * k) =
+          State.addr (s₅.gpr sb) + BitVec.ofNat 64 (4 * tailSlot + 16 * ((i - 128 * k) / 16)) +
+            BitVec.ofNat 64 ((i - 128 * k) % 16) := by
+        rw [base₅, hT, VG.Offset.add_add, VG.Offset.add_add,
+          show 4 * tailSlot + 16 * ((i - 128 * k) / 16) + (i - 128 * k) % 16 = 4 * tailSlot + (i - 128 * k) by omega_arith]
+      rw [eT, ← blockAt_getD s₅.mem _ (Nat.mod_lt _ (by decide))]
+      show (blk s₅ _).getD _ 0 = _
+      rw [b₅ _ (by omega_arith), hblk _ hj]
+      rfl
+    · have hout : ∀ r ∈ [(⟨State.addr A, 16 * c⟩ : Region)], ¬ r.Contains (State.addr D + BitVec.ofNat 64 i) 1 :=
+        fun r hr => by
+          simp only [List.mem_singleton] at hr; subst hr; rw [hA]
+          exact not_contains_off _ (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith)
+      rw [f₉ _ hout,
+        f₅.bytes (R := ⟨State.addr D, 16 * n⟩) (dD (ctx_sub_scr hfit')) (by simp only; omega_arith) hin,
+        fs.bytes (R := ⟨State.addr D, 16 * n⟩) (dD hsub) (by simp only; omega_arith) hin,
+        f₃.bytes (R := ⟨State.addr D, 16 * n⟩) (dD fun r hr => by
+          simp only [List.mem_singleton] at hr; subst hr; exact subT) (by simp only; omega_arith) hin,
+        hi.data i hin]
+      by_cases h2 : i < 128 * k
+      · rw [ite_eq_left (show i < 16 * (8 * k) by omega_arith), ite_eq_left (show i < 16 * (8 * k + c) by omega_arith)]
+      · rw [ite_eq_right (show ¬ i < 16 * (8 * k) by omega_arith), ite_eq_right (show ¬ i < 16 * (8 * k + c) by omega_arith)]
+  have fr₉ : Frame [⟨State.addr b, 4 * slots⟩, ⟨State.addr D, 16 * n⟩] s.mem s₉.mem := by
+    refine ((f₃.sub fun r hr => ⟨⟨State.addr b, 4 * slots⟩, List.mem_cons_self, ?_⟩).trans
+      ((fs.sub fun r hr => ⟨⟨State.addr b, 4 * slots⟩, List.mem_cons_self, hsub r hr⟩).trans
+      ((f₅.sub fun r hr => ⟨⟨State.addr b, 4 * slots⟩, List.mem_cons_self, ctx_sub_scr hfit' r hr⟩).trans
+      (f₉.sub fun r hr => ⟨⟨State.addr D, 16 * n⟩, List.mem_cons_of_mem _ List.mem_cons_self, ?_⟩))))
+    · simp only [List.mem_singleton] at hr; subst hr; exact subT
+    · simp only [List.mem_singleton] at hr; subst hr; exact subA
+  -- On to the next group.
+  have r2₉ : s₉.gpr .r2 = BitVec.ofNat 32 v := by
+    rw [g₉ _ (by decide) (by decide) (by decide) (by decide), r2₆]
+  unfold advance
+  refine WP.seq (WP.mono (groupCount_wp r2₉ hv) fun s₁₀ ⟨r3₁₀, o₁₀, m₁₀, rd₁₀, wr₁₀, sp₁₀⟩ => ?_)
+  obtain ⟨s₁₁, e₁₁, r₁₁, o₁₁, m₁₁, rd₁₁, wr₁₁, sp₁₁⟩ := addImm_ok s₁₀ .r1 .r1 128 (by decide)
+  obtain ⟨s₁₂, e₁₂, r₁₂, z₁₂, o₁₂, m₁₂, rd₁₂, wr₁₂, sp₁₂⟩ := subsR_ok s₁₁ .r2 .r2 .r3
+  refine WP.of_runBlock ⟨s₁₂, by
+    rw [show ([.dp .add .r1 .r1 (.imm 128), .subs .r2 .r2 (.reg .r3)] : List Instr) =
+      [.dp .add .r1 .r1 (.imm 128)] ++ [.subs .r2 .r2 (.reg .r3)] from rfl,
+      runBlock_app, e₁₁, Option.bind_some, e₁₂], ?_⟩
+  have zz : s₁₂.z = decide (v = c) := by
+    rw [z₁₂, o₁₁ _ (by decide), o₁₁ _ (by decide), r3₁₀, o₁₀ _ (by decide) (by decide), r2₉,
+      ofNat32_sub_beq (by omega_arith) (by omega_arith)]
+  have hmem : s₁₂.mem = s₉.mem := by rw [m₁₂, m₁₁, m₁₀]
+  have base₁₂ : s₁₂.gpr sb = b := by
+    rw [o₁₂ _ (by decide), o₁₁ _ (by decide), o₁₀ _ (by decide) (by decide),
+      g₉ _ (by decide) (by decide) (by decide) (by decide), base₆]
+  have rd₁₂' : s₁₂.rd = s₀.rd := by rw [rd₁₂, rd₁₁, rd₁₀, rd₉, hi.rd]
+  have wr₁₂' : s₁₂.wr = s₀.wr := by rw [wr₁₂, wr₁₁, wr₁₀, wr₉, hi.wr]
+  have sp₁₂' : s₁₂.sp = s₀.sp := by rw [sp₁₂, sp₁₁, sp₁₀, sp₉, hi.sp]
+  have fr : Frame [⟨State.addr b, 4 * slots⟩, ⟨State.addr D, 16 * n⟩] s₀.mem s₁₂.mem := by
+    rw [hmem]; exact hi.frame.trans fr₉
+  by_cases hlt : v ≤ 8
+  · have hn : 8 * k + c = n := by omega_arith
+    refine .inl ⟨by rw [zz]; simp; omega_arith, base₁₂, hmem ▸ sc₉, by have := hmem ▸ hdata; rwa [hn] at this, fr,
+      rd₁₂', wr₁₂', sp₁₂'⟩
+  · have hc : c = 8 := by omega_arith
+    refine .inr ⟨by rw [zz]; simp; omega_arith, base₁₂, ?_, ?_, by omega_arith, ?_, hmem ▸ sc₉,
+      by rw [hmem, show 8 * (k + 1) = 8 * k + c by omega_arith]; exact hdata, fr, rd₁₂', wr₁₂', sp₁₂'⟩
+    · rw [o₁₂ _ (by decide), r₁₁, o₁₀ _ (by decide) (by decide), g₉ _ (by decide) (by decide) (by decide) (by decide),
+        r1₆]
+      simp only [A]
+      rw [show (128 : BitVec 32) = BitVec.ofNat 32 128 from rfl, VG.Offset.add_add,
+        show 128 * k + 128 = 128 * (k + 1) by omega_arith]
+    · rw [r₁₂, o₁₁ _ (by decide), o₁₁ _ (by decide), r3₁₀, o₁₀ _ (by decide) (by decide), r2₉,
+        VG.Offset.ofNat_sub_ofNat (by omega_arith), show v - c = n - 8 * (k + 1) by omega_arith]
+    · rw [o₁₂ _ (by decide), o₁₁ _ (by decide), o₁₀ _ (by decide) (by decide),
+        g₉ _ (by decide) (by decide) (by decide) (by decide), lr₆]
+
+end VG.Proof.Camellia.Arm
+
+end
+
+end
+
 
 /-!
 # Camellia ECB on ARMv7: the whole function

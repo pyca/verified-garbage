@@ -6,15 +6,20 @@ public import VerifiedGarbage.Proof.Zeroize.PPC64LE
 public import VerifiedGarbage.Proof.MlKem.PPC64LE.KeyGenCT
 public import VerifiedGarbage.Proof.MlKem.PPC64LE.EncapsCT
 public import VerifiedGarbage.Proof.MlKem.PPC64LE.DecapsCT
-public import VerifiedGarbage.Proof.MlKem1024.PPC64LE.KeyGenCT
-public import VerifiedGarbage.Proof.MlKem1024.PPC64LE.EncapsCT
-public import VerifiedGarbage.Proof.MlKem1024.PPC64LE.DecapsCT
 public import VerifiedGarbage.Proof.MlKem.Scrubbed
+public import VerifiedGarbage.Impl.MlKem1024.PPC64LE.Top
+public import VerifiedGarbage.Spec.MlKem.Contract1024
+public import VerifiedGarbage.Proof.MlKem.PPC64LE.KeyGen
+import VerifiedGarbage.Proof.MlKem1024.PPC64LE.Calls
+import VerifiedGarbage.Proof.Framework.Sig
+import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.MlKem.PPC64LE.Encaps
+import VerifiedGarbage.Proof.MlKem.EncapsHSat
+public import VerifiedGarbage.Spec.MlKem.EncapsH
+public import VerifiedGarbage.Proof.MlKem.PPC64LE.Decaps
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Framework.SigEval
-import VerifiedGarbage.Proof.MlKem.EncapsHSat
 import VerifiedGarbage.Proof.Sha3.PPC64LE.Stream.Lit
 import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.PPC64LE.Lit
@@ -23,6 +28,309 @@ meta import VerifiedGarbage.Proof.Framework.Sig
 meta import VerifiedGarbage.Proof.Sha3.PPC64LE.Stream.Lit
 meta import VerifiedGarbage.Proof.Framework.Lit
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Lit
+
+/-! ### `MlKem1024.PPC64LE.KeyGenCT`, which only this module used -/
+
+section
+
+/-!
+# ML-KEM-1024 on PPC64LE: `vg_mlkem1024_keygen`, `Verified`
+
+The function of `Proof/MlKem/PPC64LE/KeyGenCT.lean` for `kl1024`: its
+precondition from the contract's, and the contract's postcondition from what it
+shows.
+-/
+
+@[expose] public section
+
+namespace VG.Proof.MlKem1024.PPC64LE.KeyGen
+
+open VG VG.PPC64LE VG.Impl.MlKem.PPC64LE VG.Impl.MlKem1024.PPC64LE
+open VG.Spec.MlKem
+open VG.Spec.Sha3 (bytesAt)
+open VG.Proof.MlKem VG.Proof.MlKem.PPC64LE VG.Proof.MlKem1024.PPC64LE
+open VG.Proof.MlKem.PPC64LE.Enc
+open VG.Proof.MlKem.PPC64LE.KeyGen hiding pre_of post_of satState verified
+
+theorem pre_of {s : State} (h : (Proof.MlKem.Scrubbed.keyGen1024BodyContract PPC64LE.abi 48).pre s) : Pre kl1024 s := by
+  sig_pre [Proof.MlKem.Scrubbed.keyGen1024BodyContract, Spec.MlKem1024.keyGenSig, PPC64LE.abi, PPC64LE.argRegs] at h
+  obtain ⟨h0, h1, h2, d1, d2, d3, d4, d5, d6, b1, b2, b3, b4, f1, f2, f3, f4⟩ := h
+  exact ⟨kl1024_wf, kl1024_calls, h0, h1, h2, d1, d2, d3, d4, d5, d6, b1, b2, b3, b4, f1, f2, f3, f4⟩
+
+theorem post_of {s₀ s : State} (h3 : s.gpr .r3 = if okK kl1024 s₀ kl1024.k then 1 else 0)
+    (hek : bytesAt s.mem (pEk s₀) 1568 = EK kl1024 s₀)
+    (hdk : bytesAt s.mem (pDk s₀) 3168 = DK kl1024 s₀) :
+    (Proof.MlKem.Scrubbed.keyGen1024BodyContract PPC64LE.abi 48).post s₀ s := by
+  sig_post [Proof.MlKem.Scrubbed.keyGen1024BodyContract, Spec.MlKem1024.keyGenSig, PPC64LE.abi, PPC64LE.argRegs]
+  have e : BitVec.setWidth 32 (if okK kl1024 s₀ kl1024.k then (1 : BitVec 64) else 0) =
+      if okK kl1024 s₀ kl1024.k then 1 else 0 := by
+    cases okK kl1024 s₀ kl1024.k <;> rfl
+  rw [h3, hek, hdk, e]
+  exact outcome kl1024_wf s₀
+
+/-- A state satisfying the precondition. -/
+def satState : State where
+  gpr r := match r with
+    | .r3 => 0x1000 | .r4 => 0x2000 | .r5 => 0x3000 | .r6 => 0x10000 | _ => 0
+  lr := 0
+  sp := 0x8000
+  mem _ := 0
+  rd := [⟨0x1000, 64⟩]
+  wr := [⟨0x2000, 1568⟩, ⟨0x3000, 3168⟩, ⟨0x10000, 49152⟩]
+
+theorem verified :
+    Verified PPC64LE.target Impl.MlKem1024.PPC64LE.keygen1024 (Proof.MlKem.Scrubbed.keyGen1024BodyContract PPC64LE.abi 48) := by
+  refine ⟨fun s hs => ?_, fun s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hpub e₁ e₂ => ?_, ?_⟩
+  · obtain ⟨t, s', he, hpres, hsp, hlr, h3, hek, hdk⟩ := correct (pre_of hs)
+    exact ⟨t, s', he, ⟨hpres, hsp, hlr⟩, post_of h3 hek hdk⟩
+  · have hp₁ := pre_of h₁
+    have hp₂ := pre_of h₂
+    sig_pub [Proof.MlKem.Scrubbed.keyGen1024BodyContract, Spec.MlKem1024.keyGenSig, PPC64LE.abi, PPC64LE.argRegs] at hpub
+    obtain ⟨hsp, hl, g3, g4, g5, g6⟩ := hpub
+    have hr : ρ₀ kl1024 s₁ = ρ₀ kl1024 s₂ :=
+      (List.map_inj_right (fun x y (e : x.toNat = y.toNat) => BitVec.eq_of_toNat_eq e)).mp hl
+    exact (all_ct ⟨hp₁, hp₂, hsp, g3, g4, g5, g6, hr⟩ s₁ s₂ t₁ t₂ s₁' s₂' ⟨rfl, rfl⟩ e₁ e₂).1
+  · refine ⟨satState, ?_⟩
+    sig_apply_check
+    · decide +kernel
+    · sig_reduce [Proof.MlKem.Scrubbed.keyGen1024BodyContract, Spec.MlKem1024.keyGenSig, PPC64LE.abi, PPC64LE.argRegs]
+      sig_and_intros
+      all_goals first
+        | trivial
+        | decide +kernel
+
+end VG.Proof.MlKem1024.PPC64LE.KeyGen
+
+end
+
+end
+
+/-! ### `MlKem1024.PPC64LE.EncapsCT`, which only this module used -/
+
+section
+
+/-!
+# ML-KEM-1024 on PPC64LE: `vg_mlkem1024_encaps`, `Verified`
+
+The function of `Proof/MlKem/PPC64LE/EncapsCT.lean` for `kl1024`: its
+precondition from the contract's, and the contract's postcondition from what it
+shows.
+-/
+
+@[expose] public section
+
+namespace VG.Proof.MlKem1024.PPC64LE.Encaps
+
+open VG VG.PPC64LE VG.Impl.MlKem.PPC64LE VG.Impl.MlKem1024.PPC64LE
+open VG.Spec.MlKem
+open VG.Spec.Sha3 (bytesAt)
+open VG.Proof.MlKem VG.Proof.MlKem.PPC64LE VG.Proof.MlKem1024.PPC64LE
+open VG.Proof.MlKem.PPC64LE.Enc
+open VG.Proof.MlKem.PPC64LE.Encaps hiding pre_of post_of satState verified pre_ofH post_ofH verifiedH
+
+theorem pre_of {s : State} (h : (Proof.MlKem.Scrubbed.encaps1024BodyContract PPC64LE.abi 48).pre s) : Pre kl1024 s := by
+  sig_pre [Proof.MlKem.Scrubbed.encaps1024BodyContract, Spec.MlKem1024.encapsSig, PPC64LE.abi, PPC64LE.argRegs] at h
+  obtain ⟨h0, h1, h2, d1, d2, d3, d4, d5, d6, d7, d8, d9, b1, b2, b3, b4, b5,
+    f1, f2, f3, f4, f5⟩ := h
+  exact ⟨kl1024_wf, kl1024_calls, h0, by rw [h1]; exact .head _, by rw [h1]; exact .tail _ (.head _), h2, d1, d2, d3, d4, d5, d6, d7, d8, d9, b1, b2, b3, b4,
+    b5, f1, f2, f3, f4, f5⟩
+
+theorem post_of {s₀ s : State}
+    (h3 : s.gpr .r3 = if okEnc kl1024.k (ekRho kl1024.p (EK kl1024 s₀)) kl1024.k then 1 else 0)
+    (hkey : bytesAt s.mem (pKey s₀) 32 = KK kl1024 s₀)
+    (hct : bytesAt s.mem (pCt s₀) 1568 = VG.Proof.MlKem.KPke.ct kl1024.p
+      (aEnc (ekRho kl1024.p (EK kl1024 s₀)) (RR kl1024 s₀)) (EK kl1024 s₀) (M kl1024 s₀) (RR kl1024 s₀)) :
+    (Proof.MlKem.Scrubbed.encaps1024BodyContract PPC64LE.abi 48).post s₀ s := by
+  sig_post [Proof.MlKem.Scrubbed.encaps1024BodyContract, Spec.MlKem1024.encapsSig, PPC64LE.abi, PPC64LE.argRegs]
+  have e : BitVec.setWidth 32
+      (if okEnc kl1024.k (ekRho kl1024.p (EK kl1024 s₀)) kl1024.k then (1 : BitVec 64) else 0) =
+      if okEnc kl1024.k (ekRho kl1024.p (EK kl1024 s₀)) kl1024.k then 1 else 0 := by
+    cases okEnc kl1024.k (ekRho kl1024.p (EK kl1024 s₀)) kl1024.k <;> rfl
+  have e0 : bytesAt s₀.mem (s₀.gpr .r3) 1568 = EK kl1024 s₀ := (EK_eq kl1024 s₀).symm
+  have e1 : bytesAt s₀.mem (s₀.gpr .r4) 32 = M kl1024 s₀ := (M_eq kl1024 s₀).symm
+  rw [h3, e, hkey, hct, e0, e1]
+  exact outcome kl1024_wf s₀
+
+/-- A state satisfying the precondition. -/
+def satState : State where
+  gpr r := match r with
+    | .r3 => 0x1000 | .r4 => 0x2000 | .r5 => 0x3000 | .r6 => 0x4000 | .r7 => 0x10000 | _ => 0
+  lr := 0
+  sp := 0x8000
+  mem _ := 0
+  rd := [⟨0x1000, 1568⟩, ⟨0x2000, 32⟩]
+  wr := [⟨0x3000, 32⟩, ⟨0x4000, 1568⟩, ⟨0x10000, 49152⟩]
+
+theorem verified :
+    Verified PPC64LE.target Impl.MlKem1024.PPC64LE.encaps1024 (Proof.MlKem.Scrubbed.encaps1024BodyContract PPC64LE.abi 48) := by
+  refine ⟨fun s hs => ?_, fun s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hpub e₁ e₂ => ?_, ?_⟩
+  · obtain ⟨t, s', he, hpres, hsp, hlr, h3, hkey, hct⟩ := correct (pre_of hs)
+    exact ⟨t, s', he, ⟨hpres, hsp, hlr⟩, post_of h3 hkey hct⟩
+  · have hp₁ := pre_of h₁
+    have hp₂ := pre_of h₂
+    sig_pub [Proof.MlKem.Scrubbed.encaps1024BodyContract, Spec.MlKem1024.encapsSig, PPC64LE.abi, PPC64LE.argRegs] at hpub
+    obtain ⟨hsp, hl, g3, g4, g5, g6, g7⟩ := hpub
+    have hr : ekRho kl1024.p (EK kl1024 s₁) = ekRho kl1024.p (EK kl1024 s₂) := by
+      rw [EK_eq, EK_eq]
+      unfold leakRho at hl
+      exact (List.map_inj_right (fun x y (e : x.toNat = y.toNat) => BitVec.eq_of_toNat_eq e)).mp hl
+    exact (all_ct ⟨hp₁, hp₂, hsp, g3, g4, g5, g6, g7, hr⟩ s₁ s₂ t₁ t₂ s₁' s₂' ⟨rfl, rfl⟩ e₁ e₂).1
+  · refine ⟨satState, ?_⟩
+    sig_apply_check
+    · decide +kernel
+    · sig_reduce [Proof.MlKem.Scrubbed.encaps1024BodyContract, Spec.MlKem1024.encapsSig, PPC64LE.abi, PPC64LE.argRegs]
+      sig_and_intros
+      all_goals first
+        | trivial
+        | decide +kernel
+
+/-! ## `encapsH` -/
+
+theorem pre_ofH {s : State} (h : (Proof.MlKem.Scrubbed.encapsH1024BodyContract PPC64LE.abi 48).pre s) : PreH kl1024 s := by
+  sig_pre [Proof.MlKem.Scrubbed.encapsH1024BodyContract, Spec.MlKem1024.encapsHSig, Spec.MlKem.encapsHSigOf, PPC64LE.abi,
+    PPC64LE.argRegs] at h
+  obtain ⟨h0, h1, h2, d1, d2, d3, dh1, dh2, dh3, d4, d5, d6, d7, d8, d9, b1, bh, b2, b3, b4, b5,
+    f1, fh, f2, f3, f4, f5, hh⟩ := h
+  have r : (args s).rd = _ := h1
+  exact ⟨⟨kl1024_wf, kl1024_calls, h0, by rw [r]; exact .head _, by rw [r]; exact .tail _ (.tail _ (.head _)),
+    h2, d1, d2, d3, d4, d5, d6, d7, d8, d9, b1, b2, b3, b4, b5, f1, f2, f3, f4, f5⟩,
+    by rw [h1]; exact .tail _ (.head _), dh3, bh, fh, by rw [EK_eq]; exact hh⟩
+
+/-- `post_of` for `encapsH`, whose arguments after `ek` are one register later. -/
+theorem post_ofH {s₀ s : State}
+    (h3 : s.gpr .r3 = if okEnc kl1024.k (ekRho kl1024.p (EK kl1024 (args s₀))) kl1024.k then 1 else 0)
+    (hkey : bytesAt s.mem (pKey (args s₀)) 32 = KK kl1024 (args s₀))
+    (hct : bytesAt s.mem (pCt (args s₀)) 1568 = VG.Proof.MlKem.KPke.ct kl1024.p
+      (aEnc (ekRho kl1024.p (EK kl1024 (args s₀))) (RR kl1024 (args s₀))) (EK kl1024 (args s₀)) (M kl1024 (args s₀))
+      (RR kl1024 (args s₀))) :
+    (Proof.MlKem.Scrubbed.encapsH1024BodyContract PPC64LE.abi 48).post s₀ s := by
+  sig_post [Proof.MlKem.Scrubbed.encapsH1024BodyContract, Spec.MlKem1024.encapsHSig, Spec.MlKem.encapsHSigOf, PPC64LE.abi,
+    PPC64LE.argRegs]
+  have e : BitVec.setWidth 32
+      (if okEnc kl1024.k (ekRho kl1024.p (EK kl1024 (args s₀))) kl1024.k then (1 : BitVec 64) else 0) =
+      if okEnc kl1024.k (ekRho kl1024.p (EK kl1024 (args s₀))) kl1024.k then 1 else 0 := by
+    cases okEnc kl1024.k (ekRho kl1024.p (EK kl1024 (args s₀))) kl1024.k <;> rfl
+  have e0 : bytesAt s₀.mem (s₀.gpr .r3) 1568 = EK kl1024 (args s₀) := (EK_eq kl1024 (args s₀)).symm
+  have e1 : bytesAt s₀.mem (s₀.gpr .r5) 32 = M kl1024 (args s₀) := (M_eq kl1024 (args s₀)).symm
+  have hkey' : bytesAt s.mem (s₀.gpr .r6) 32 = KK kl1024 (args s₀) := hkey
+  have hct' : bytesAt s.mem (s₀.gpr .r7) 1568 = _ := hct
+  rw [h3, e, hkey', hct', e0, e1]
+  exact outcome kl1024_wf (args s₀)
+
+theorem verifiedH :
+    Verified PPC64LE.target Impl.MlKem1024.PPC64LE.encapsH1024 (Proof.MlKem.Scrubbed.encapsH1024BodyContract PPC64LE.abi 48) := by
+  refine ⟨fun s hs => ?_, fun s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hpub e₁ e₂ => ?_, ?_⟩
+  · obtain ⟨t, s', he, hpres, hsp, hlr, h3, hkey, hct⟩ := correctH (pre_ofH hs)
+    exact ⟨t, s', he, ⟨fun r hr => (hpres r hr).trans (args_preserved s r hr), hsp, hlr⟩, post_ofH h3 hkey hct⟩
+  · have hq₁ := pre_ofH h₁
+    have hq₂ := pre_ofH h₂
+    sig_pub [Proof.MlKem.Scrubbed.encapsH1024BodyContract, Spec.MlKem1024.encapsHSig, Spec.MlKem.encapsHSigOf, PPC64LE.abi,
+      PPC64LE.argRegs] at hpub
+    obtain ⟨hsp, hl, g3, g4, g5, g6, g7, g8⟩ := hpub
+    have hr : ekRho kl1024.p (EK kl1024 (args s₁)) = ekRho kl1024.p (EK kl1024 (args s₂)) := by
+      rw [EK_eq, EK_eq]
+      unfold leakRho at hl
+      exact (List.map_inj_right (fun x y (e : x.toNat = y.toNat) => BitVec.eq_of_toNat_eq e)).mp hl
+    exact (all_ctH ⟨hq₁, hq₂, hsp, g3, g4, g5, g6, g7, g8, hr⟩ s₁ s₂ t₁ t₂ s₁' s₂' ⟨rfl, rfl⟩ e₁ e₂).1
+  · refine ⟨VG.Proof.MlKem.PPC64LE.Encaps.satStateH 1568 1568 49152, ?_⟩
+    sig_apply_check
+    · decide +kernel
+    · sig_reduce [Proof.MlKem.Scrubbed.encapsH1024BodyContract, Spec.MlKem1024.encapsHSig, Spec.MlKem.encapsHSigOf, PPC64LE.abi,
+        PPC64LE.argRegs]
+      sig_and_intros
+      all_goals first
+        | exact VG.Proof.MlKem.hMem_h (by decide)
+        | trivial
+        | decide +kernel
+
+end VG.Proof.MlKem1024.PPC64LE.Encaps
+
+end
+
+end
+
+/-! ### `MlKem1024.PPC64LE.DecapsCT`, which only this module used -/
+
+section
+
+/-!
+# ML-KEM-1024 on PPC64LE: `vg_mlkem1024_decaps`, `Verified`
+
+The function of `Proof/MlKem/PPC64LE/DecapsCT.lean` for `kl1024`: its
+precondition from the contract's, and the contract's postcondition from what it
+shows.
+-/
+
+@[expose] public section
+
+namespace VG.Proof.MlKem1024.PPC64LE.Decaps
+
+open VG VG.PPC64LE VG.Impl.MlKem.PPC64LE VG.Impl.MlKem1024.PPC64LE
+open VG.Spec.MlKem
+open VG.Spec.Sha3 (bytesAt)
+open VG.Proof.MlKem VG.Proof.MlKem.PPC64LE VG.Proof.MlKem1024.PPC64LE
+open VG.Proof.MlKem.PPC64LE.Enc
+open VG.Proof.MlKem.PPC64LE.Decaps hiding pre_of post_of satState verified
+
+theorem pre_of {s : State} (h : (Proof.MlKem.Scrubbed.decaps1024BodyContract PPC64LE.abi 48).pre s) : Pre kl1024 s := by
+  sig_pre [Proof.MlKem.Scrubbed.decaps1024BodyContract, Spec.MlKem1024.decapsSig, PPC64LE.abi, PPC64LE.argRegs] at h
+  obtain ⟨h0, h1, h2, d1, d2, d3, d4, d5, b1, b2, b3, b4, f1, f2, f3, f4⟩ := h
+  exact ⟨kl1024_wf, kl1024_calls, h0, h1, h2, d1, d2, d3, d4, d5, b1, b2, b3, b4, f1, f2, f3, f4⟩
+
+theorem post_of {s₀ s : State}
+    (h3 : s.gpr .r3 = if okEnc kl1024.k (ρD kl1024 s₀) kl1024.k then 1 else 0)
+    (hkey : bytesAt s.mem (pKey s₀) 32 =
+      if CT kl1024 s₀ = C2 kl1024 s₀ then K1 kl1024 s₀ else KB kl1024 s₀) :
+    (Proof.MlKem.Scrubbed.decaps1024BodyContract PPC64LE.abi 48).post s₀ s := by
+  sig_post [Proof.MlKem.Scrubbed.decaps1024BodyContract, Spec.MlKem1024.decapsSig, PPC64LE.abi, PPC64LE.argRegs]
+  have e : BitVec.setWidth 32
+      (if okEnc kl1024.k (ρD kl1024 s₀) kl1024.k then (1 : BitVec 64) else 0) =
+      if okEnc kl1024.k (ρD kl1024 s₀) kl1024.k then 1 else 0 := by
+    cases okEnc kl1024.k (ρD kl1024 s₀) kl1024.k <;> rfl
+  have e0 : bytesAt s₀.mem (s₀.gpr .r3) 3168 = DK kl1024 s₀ := (DK_eq kl1024 s₀).symm
+  have e1 : bytesAt s₀.mem (s₀.gpr .r4) 1568 = CT kl1024 s₀ := (CT_eq kl1024 s₀).symm
+  rw [h3, e, hkey, e0, e1]
+  exact outcome kl1024_wf s₀
+
+/-- A state satisfying the precondition. -/
+def satState : State where
+  gpr r := match r with
+    | .r3 => 0x1000 | .r4 => 0x2000 | .r5 => 0x3000 | .r6 => 0x10000 | _ => 0
+  lr := 0
+  sp := 0x8000
+  mem _ := 0
+  rd := [⟨0x1000, 3168⟩, ⟨0x2000, 1568⟩]
+  wr := [⟨0x3000, 32⟩, ⟨0x10000, 49152⟩]
+
+theorem verified :
+    Verified PPC64LE.target Impl.MlKem1024.PPC64LE.decaps1024 (Proof.MlKem.Scrubbed.decaps1024BodyContract PPC64LE.abi 48) := by
+  refine ⟨fun s hs => ?_, fun s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hpub e₁ e₂ => ?_, ?_⟩
+  · obtain ⟨t, s', he, hpres, hsp, hlr, h3, hkey⟩ := correct (pre_of hs)
+    exact ⟨t, s', he, ⟨hpres, hsp, hlr⟩, post_of h3 hkey⟩
+  · have hp₁ := pre_of h₁
+    have hp₂ := pre_of h₂
+    sig_pub [Proof.MlKem.Scrubbed.decaps1024BodyContract, Spec.MlKem1024.decapsSig, PPC64LE.abi, PPC64LE.argRegs] at hpub
+    obtain ⟨hsp, hl, g3, g4, g5, g6⟩ := hpub
+    have hr : ρD kl1024 s₁ = ρD kl1024 s₂ := by
+      rw [rhoD_eq, rhoD_eq, DK_eq, DK_eq]
+      unfold leakRho at hl
+      exact (List.map_inj_right (fun x y (e : x.toNat = y.toNat) => BitVec.eq_of_toNat_eq e)).mp hl
+    exact (all_ct ⟨hp₁, hp₂, hsp, g3, g4, g5, g6, hr⟩ s₁ s₂ t₁ t₂ s₁' s₂' ⟨rfl, rfl⟩ e₁ e₂).1
+  · refine ⟨satState, ?_⟩
+    sig_apply_check
+    · decide +kernel
+    · sig_reduce [Proof.MlKem.Scrubbed.decaps1024BodyContract, Spec.MlKem1024.decapsSig, PPC64LE.abi, PPC64LE.argRegs]
+      sig_and_intros
+      all_goals first
+        | trivial
+        | decide +kernel
+
+end VG.Proof.MlKem1024.PPC64LE.Decaps
+
+end
+
+end
+
 
 /-!
 # ML-KEM on PPC64LE: the functions that wipe their working space

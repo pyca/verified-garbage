@@ -2,8 +2,79 @@ module
 
 public import VerifiedGarbage.Proof.RsaKeyGen.Contract
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.Search.Verified
-public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Verified
+public import VerifiedGarbage.Impl.RsaKeyGen.X86.KeyRuntime
+public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyABI
+public import VerifiedGarbage.Proof.Framework.Contract
+import Mathlib.Tactic.IntervalCases
+public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyCallSizes
+public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyCallGeometry
+public import VerifiedGarbage.Proof.Mont.X86.Compact.Frame
+public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeySized
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.TCB.X86.Target
+import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyCallArgs
+import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyCallValid
+import VerifiedGarbage.Proof.RsaKeyGen.X86.KeySaved
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Safety
+import VerifiedGarbage.Proof.Mont.X86.Compact.Restore
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.X86.CallWith
+import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyNoSpBase
+import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyFramed
+import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Workspace
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.RsaKeyGen.FrameOutside
+import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.LoadInputs
+import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyExport
+import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyGeometry
+public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.WriteOutputs
+import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyArgContext
+import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyEnvironment
+import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyOutcome
+import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Derive
+import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyScratchFrame
+import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyInput
+import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.StackRange
+import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.InputStage
+import VerifiedGarbage.Proof.Framework.X86.Call
+import VerifiedGarbage.Proof.Rsa.X86.KeyWs
+import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyBody
+import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.ContextWorkspace
+import VerifiedGarbage.Impl.RsaKeyGen.X86.Key
+import VerifiedGarbage.Proof.Mont.X86.Words
+import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyFrameResult
+public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyEncodedResult
+import Mathlib.Algebra.Group.Nat.Defs
+import Init.Data.BitVec.Basic
+import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.InputTiming
+public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyExportState
+public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyWritePortTiming
+public import VerifiedGarbage.Proof.Framework.RelCT
+public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.OutputPublic
+public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.ReadonlyTrace
+public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Readonly
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.WriteArray
+import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.ContextFar
+import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.ContextArgument
+import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Address
+import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Ops
+import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Zero
+import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyDSelectTiming
+import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyOutputMap
+import VerifiedGarbage.Proof.Rsa.KeyWorkspace
+import VerifiedGarbage.Proof.Bignum.MemoryFrame
+import VerifiedGarbage.Proof.Mont.X86.Instr
+import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
+import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.StartPair
+import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.CoreReadonlyTiming
+import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateParameters
+public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyBodyTiming
+import Init.Core
+import VerifiedGarbage.TCB.X86.Isa
+import VerifiedGarbage.Proof.RsaKeyGen.CandLeak
+import VerifiedGarbage.Proof.Bignum.Octets
+public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyLoadInputs
 public import VerifiedGarbage.Proof.Framework.ConstMem
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.Generate.Correct
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.Generate.KeyRun
@@ -11,7 +82,6 @@ public import VerifiedGarbage.Proof.Dsa.X86.RandomTwo
 public import VerifiedGarbage.Proof.Framework.RelSplit
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.Generate.Loop
 import VerifiedGarbage.Proof.Framework.Sig
-import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.X86.Taint
 meta import VerifiedGarbage.Proof.Framework.Sig
 meta import VerifiedGarbage.Proof.RsaKeyGen.X86.Generate.Correct
@@ -21,6 +91,1004 @@ meta import VerifiedGarbage.Proof.RsaKeyGen.X86.Generate.KeyRun
 meta import VerifiedGarbage.Proof.Dsa.X86.RandomTwo
 meta import VerifiedGarbage.Proof.Framework.RelSplit
 meta import VerifiedGarbage.Proof.RsaKeyGen.X86.Generate.Loop
+
+/-! ### `RsaKeyGen.X86.KeyRuntime.Verified`, which only this module used -/
+
+section
+
+/-! ### `RsaKeyGen.X86.KeySatisfiable`, which only this module used -/
+
+section
+
+/-! # A disjoint native caller satisfies the complete key-generation precondition -/
+
+@[expose] public section
+namespace VG.Proof.RsaKeyGen.X86.Key
+open VG VG.X86
+
+def satArgument : Nat → BitVec 32
+  | 0 => 0x1000
+  | 1 => 64
+  | 2 => 0x2000
+  | 3 => 64
+  | 4 => 0x3000
+  | 5 => 32
+  | 6 => 0x4000
+  | 7 => 32
+  | 8 => 0x5000
+  | 9 => 32
+  | 10 => 0x6000
+  | 11 => 32
+  | 12 => 0x7000
+  | 13 => 32
+  | 14 => 0x8000
+  | 15 => 1
+  | 16 => 0x10000
+  | _ => 1056
+
+def satMemory : Mem := fun a =>
+  if (a - 0x20004).toNat < 72 then
+    (satArgument ((a - 0x20004).toNat / 4)).extractLsb' (8 * ((a - 0x20004).toNat % 4)) 8
+  else 0
+
+def satState : State where
+  gpr r := if r = .esp then 0x20000 else 0
+  cf := none
+  zf := none
+  sf := none
+  of := none
+  mem := satMemory
+  rd := [⟨0x8000, 1⟩]
+  wr := [⟨0x1000, 64⟩, ⟨0x2000, 64⟩, ⟨0x3000, 32⟩, ⟨0x4000, 32⟩,
+    ⟨0x5000, 32⟩, ⟨0x6000, 32⟩, ⟨0x7000, 32⟩, ⟨0x10000, 8448⟩, ⟨0x20004, 72⟩]
+
+theorem sat_arguments (i : Nat) (hi : i < 18) : arg satState i = satArgument i := by
+  interval_cases i <;> decide +kernel
+
+theorem satisfiable : ∃ s, contract.pre s := by
+  refine ⟨satState, ?_⟩
+  sig_pre [contract, keyStack, Proof.RsaKeyGen.keyContract, Proof.RsaKeyGen.keySig,
+    abi, argSlots, argVal, argBytes, stackBelow]
+  simp only [sat_arguments 0 (by decide), sat_arguments 1 (by decide), sat_arguments 2 (by decide),
+    sat_arguments 3 (by decide), sat_arguments 4 (by decide), sat_arguments 5 (by decide),
+    sat_arguments 6 (by decide), sat_arguments 7 (by decide), sat_arguments 8 (by decide),
+    sat_arguments 9 (by decide), sat_arguments 10 (by decide), sat_arguments 11 (by decide),
+    sat_arguments 12 (by decide), sat_arguments 13 (by decide), sat_arguments 14 (by decide),
+    sat_arguments 15 (by decide), sat_arguments 16 (by decide), sat_arguments 17 (by decide)]
+  sig_and_intros
+  all_goals first
+    | rfl
+    | decide +kernel
+    | exact Region.disjoint_of_sep (by decide +kernel)
+    | (unfold Spec.RsaKeyGen.primeLenValid; decide +kernel)
+    | (unfold Spec.Rsa.scratchWords; decide +kernel)
+
+end VG.Proof.RsaKeyGen.X86.Key
+
+end
+
+end
+
+/-! ### `RsaKeyGen.X86.KeyRuntime.Framed`, which only this module used -/
+
+section
+
+/-! # Callable native key assembly restores all cdecl registers and the return address -/
+
+-- Formerly `VerifiedGarbage/Proof/RsaKeyGen/X86/KeyRuntime/IOFront.lean`, which only this module imported.
+section
+
+/-! # Small verified I/O adapters surround the shared arithmetic core -/
+
+section
+namespace VG.Proof.RsaKeyGen.X86.KeyRuntime
+open VG VG.X86 VG.Proof.Mont VG.Proof.Mont.X86
+open VG.Impl.RsaKeyGen.X86.KeyRuntime
+open VG.Proof.RsaKeyGen.X86.Key (Environment Input CoreOutcome WrittenCore)
+
+theorem loadInputs_front {E : Environment} {p : BitVec 32} {s : State} (h : Input E s)
+    (H : Ws s E.base E.size E.n 32) (C : VG.Proof.RsaKeyGen.X86.KeyArgs.Context E.base E.size p E.argument s) :
+    WP isa loadInputs s fun t => Loaded E s.mem t ∧ Ws t E.base E.size E.n 32 ∧
+      Frame [E.workspaceRegion] s.mem t.mem ∧ Keeps [.eax, .ecx, .edx, .ebp, .ebx, .esi] s t :=
+  loadInputs_ok h H C
+
+theorem writeCore_front {E : Environment} {sp : BitVec 32} {s : State} {e p q : Nat} (h : Input E s)
+    (C : VG.Proof.RsaKeyGen.X86.KeyArgs.Context E.base E.size sp E.argument s)
+    (apart : ∀ i < 7, (VG.Proof.RsaKeyGen.X86.KeyArgs.argsRegion sp).Disjoint (E.outputRegion i))
+    (result : CoreOutcome E.base E.n e p q s.mem) :
+    WP isa writeOutputs s fun t =>
+      VG.Proof.Rsa.X86.Keys.Ws t E.base E.size E.n 32 ∧ WrittenCore E.outputs e p q t ∧
+      Frame E.outputs.writes s.mem t.mem ∧ Keeps [.eax, .ecx, .edx, .ebp, .ebx, .esi] s t :=
+  writeCore_ok h.outputs ⟨h.valid, C, fun i hi => by rw [h.valid.outputRegion hi]; exact apart i hi⟩ result
+
+end VG.Proof.RsaKeyGen.X86.KeyRuntime
+end
+
+end
+
+-- Formerly `VerifiedGarbage/Proof/RsaKeyGen/X86/KeyRuntime/Front.lean`, which only this module imported.
+section
+
+/-! # Shared arithmetic composes with the established input and output contracts -/
+
+section
+namespace VG.Proof.RsaKeyGen.X86.KeyRuntime
+open VG VG.X86 VG.Proof.Mont VG.Proof.Mont.X86
+open VG.Impl.RsaKeyGen.X86.KeyRuntime
+open VG.Proof.RsaKeyGen.X86.Key (Environment Input BodyOutcome stage_scratch_frame
+  deriveArrays prepareArrays keyPartArrays)
+
+theorem front_ok {E : Environment} {p : BitVec 32} {s : State} (h : Input E s) (H : Ws s E.base E.size E.n 32)
+    (C : VG.Proof.RsaKeyGen.X86.KeyArgs.Context E.base E.size p E.argument s)
+    (apart : ∀ i < 7, (VG.Proof.RsaKeyGen.X86.KeyArgs.argsRegion p).Disjoint (E.outputRegion i)) :
+    WP isa front s fun t => VG.Proof.Rsa.X86.Keys.Ws t E.base E.size E.n 32 ∧ BodyOutcome E s.mem t ∧
+      Frame (E.outputs.writes ++ [below p 52]) s.mem t.mem ∧ Keeps [.eax, .ecx, .edx, .ebp, .ebx, .esi] s t := by
+  have widths := h.valid.widths
+  unfold front
+  refine WP.seq (WP.mono (loadInputs_front h H C) fun u ⟨L, Hu, Fu, Ku⟩ => ?_)
+  refine WP.seq (WP.mono (deriveLoaded_ok Hu widths.2.2.1 widths.2.2.2.1 widths.2.2.2.2.1
+    widths.1 widths.2.1 L.pBound L.qBound L.zero L.one L.loaded)
+    fun v ⟨Hv, Ov, result, Kv⟩ => ?_)
+  rw [L.eValue, L.pValue, L.qValue] at result
+  have Iv := input_afterStage L.input Hu Hv.old Kv Ov
+  have Cu := C.keep Ku Fu
+  have spU : u.gpr .esp = p := Cu.sp
+  have Fv : Frame ([⟨E.base, E.size⟩] ++ [below p 52]) u.mem v.mem := by
+    rw [← spU]
+    exact Ov.toFrame fun _ _ O =>
+      stage_scratch_frame L.input.ws (by simp [deriveArrays, prepareArrays, keyPartArrays]; decide) O
+  have Cv := Cu.keepBelow Kv Fv
+  refine WP.mono (writeCore_front Iv Cv apart result) fun t ⟨ht, written, Ft, Kt⟩ => ?_
+  refine ⟨ht, written, ?_, Ku.trans (Kv.trans Kt)⟩
+  have wsIn : E.workspaceRegion ∈ E.outputs.writes ++ [below p 52] :=
+    List.mem_append_left _ List.mem_cons_self
+  have prefixFrame : Frame (E.outputs.writes ++ [below p 52]) s.mem v.mem :=
+    (Fu.mono (by
+      intro r hr
+      obtain rfl := List.mem_singleton.mp hr
+      exact wsIn)).trans (Fv.mono (by
+      intro r hr
+      simp only [List.singleton_append, List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl
+      · exact wsIn
+      · exact List.mem_append_right _ (List.mem_singleton_self _)))
+  exact prefixFrame.trans (Ft.mono fun r hr => List.mem_append_left _ hr)
+
+end VG.Proof.RsaKeyGen.X86.KeyRuntime
+end
+
+end
+
+-- Formerly `VerifiedGarbage/Proof/RsaKeyGen/X86/KeyRuntime/Body.lean`, which only this module imported.
+section
+
+/-! # Native cdecl argument entry composes with the complete key body -/
+
+section
+namespace VG.Proof.RsaKeyGen.X86.KeyRuntime
+open VG VG.X86 VG.Proof.Mont VG.Proof.Mont.X86
+open VG.Proof.RsaKeyGen.X86.Key (Environment EntryInput Input BodyOutcome bodyClob outs_scratch_frame)
+
+
+theorem enter_input_ok {E : Environment} {p : BitVec 32} {s : State} (v : E.Valid) (I : EntryInput E p s) :
+    WP isa VG.Impl.RsaKeyGen.X86.Key.enter s fun t =>
+      Input E t ∧ Ws t E.base E.size E.n 32 ∧ Frame [E.workspaceRegion] s.mem t.mem ∧ Keeps [.eax, .edi] s t ∧
+      VG.Proof.RsaKeyGen.X86.KeyArgs.Context E.base E.size p E.argument t := by
+  refine WP.mono (KeyArgs.enter_ok I.arguments) fun t ⟨C, header, O, K⟩ => ?_
+  have dimensions := v.widths
+  have ws : VG.Proof.Rsa.X86.Keys.Ws t E.base E.size E.n 32 :=
+    ⟨C.scratch, v.bankFit, by omega, by omega⟩
+  have input : Input E t := by
+    refine ⟨v, ws, header, ?_, ?_⟩
+    · intro i hi
+      rw [K.2.2]
+      exact I.outWrite i hi
+    · rw [K.2.1, K.2.2]
+      exact I.exponentRead
+  have frame : Frame [E.workspaceRegion] s.mem t.mem :=
+    outs_scratch_frame (by have := C.scratch.nowrap; omega)
+      (Outs.of_outside (rs := [(0, 72)]) O (List.mem_singleton_self _))
+      (by intro r hr; obtain rfl := List.mem_singleton.mp hr; change 0 + 72 ≤ E.size; exact I.arguments.header)
+  exact ⟨input, context_workspace v C ws, frame, K, C⟩
+
+theorem body_ok {E : Environment} {p : BitVec 32} {s : State} (v : E.Valid) (I : EntryInput E p s) :
+    WP isa VG.Impl.RsaKeyGen.X86.KeyRuntime.body s fun t =>
+      VG.Proof.Rsa.X86.Keys.Ws t E.base E.size E.n 32 ∧ BodyOutcome E s.mem t ∧
+      Frame (E.outputs.writes ++ [below p 52]) s.mem t.mem ∧ Keeps bodyClob s t := by
+  unfold VG.Impl.RsaKeyGen.X86.KeyRuntime.body
+  refine WP.seq (WP.mono (enter_input_ok v I) fun a ⟨Ia, Ha, F, K, Ca⟩ => ?_)
+  refine WP.mono (front_ok Ia Ha Ca I.argsOutput) fun t ⟨ht, result, Ft, Kt⟩ => ?_
+  unfold BodyOutcome at result
+  rw [Ia.exponent_preserved F, Ia.output_preserved (by decide : 2 < 7) F,
+    Ia.output_preserved (by decide : 3 < 7) F] at result
+  refine ⟨ht, result, ?_, (K.mono (by unfold bodyClob; decide)).trans (Kt.mono (by unfold bodyClob; decide))⟩
+  exact (F.mono (by
+    intro r hr
+    obtain rfl := List.mem_singleton.mp hr
+    exact List.mem_append_left _ List.mem_cons_self)).trans Ft
+
+end VG.Proof.RsaKeyGen.X86.KeyRuntime
+end
+
+end
+
+@[expose] public section
+namespace VG.Proof.RsaKeyGen.X86.KeyRuntime
+open VG VG.X86 VG.Proof.Mont VG.Proof.Mont.X86
+open VG.Impl.Mont.X86
+open VG.Proof.RsaKeyGen.X86.Key (contract call_layout entry_input call_valid callSp bodyClob
+  BodyOutcome callEnvironment writes_reserved writes_return)
+
+/-- The registers the frame saves lie above the stack a call of the inverse uses. -/
+theorem saved_below {s : State} (h : contract.pre s) :
+    (⟨(callSp s).setWidth 64, 20⟩ : Region).Disjoint (below (callSp s) 52) := by
+  have A := call_layout h
+  have low : 52 ≤ (callSp s).toNat := by rw [A.privateNat]; have := A.low; omega
+  unfold below
+  rw [Taint.sub_setWidth low]
+  exact Offset.base_disjoint_below _ (by decide)
+
+/-- The saved registers' words, when the body also writes the stack a call uses. -/
+theorem saved_read {s t : State} (h : contract.pre s)
+    (F : Frame ((callEnvironment s).outputs.writes ++ [below (callSp s) 52]) (Compact.entered s).mem t.mem)
+    {i : Nat} (hi : i < 4) :
+    t.mem.readW (addr (callSp s) (4 * i)) 32 =
+      s.gpr (Compact.savedRegisters[3 - i]'(by change 3 - i < 4; omega)) := by
+  have A := call_layout h
+  have fit : 16 ≤ (s.gpr .esp).toNat := by have := A.low; omega
+  have pFit : (callSp s).toNat + 16 ≤ 2 ^ 32 := by
+    rw [A.privateNat]
+    have := (s.gpr .esp).isLt
+    omega
+  have same := F.readW (r := (⟨(callSp s).setWidth 64, 16⟩ : Region))
+    (a := addr (callSp s) (4 * i)) (w := 32)
+    (by rw [addr_eq (by omega)]; exact Offset.contains_base _ (by omega) (by omega))
+    (fun r hr => by
+      rcases List.mem_append.mp hr with hr | hr
+      · exact ((writes_reserved h r hr).sub_right A.savedSub).symm
+      · obtain rfl := List.mem_singleton.mp hr
+        exact (saved_below h).sub_left (Region.sub_prefix (by decide))) (by decide)
+  have word := pushed_word (rs := Compact.savedRegisters) (s := s) (by decide) fit hi
+  change (Compact.entered s).mem.readW (addr ((Compact.entered s).gpr .esp) (4 * i)) 32 = _ at word
+  rw [Compact.entered, pushed_esp] at word
+  exact same.trans word
+
+/-- The return address's word, when the body also writes the stack a call uses. -/
+theorem return_read {s t : State} (h : contract.pre s)
+    (F : Frame ((callEnvironment s).outputs.writes ++ [below (callSp s) 52]) (Compact.entered s).mem t.mem) :
+    t.mem.readW ((s.gpr .esp).setWidth 64) 32 = s.mem.readW ((s.gpr .esp).setWidth 64) 32 := by
+  have A := call_layout h
+  have fit : 16 ≤ (s.gpr .esp).toNat := by have := A.low; omega
+  have ret : (⟨(s.gpr .esp).setWidth 64, 4⟩ : Region).Sub ⟨(callSp s).setWidth 64, 20⟩ := by
+    have e : (s.gpr .esp).setWidth 64 = (callSp s).setWidth 64 + BitVec.ofNat 64 16 := by
+      unfold callSp
+      rw [Taint.sub_setWidth fit, BitVec.sub_add_cancel]
+    rw [e]
+    exact Offset.sub_base _ (by decide)
+  have same := F.readW (w := 32) (Region.contains_self ((s.gpr .esp).setWidth 64) 4)
+    (fun r hr => by
+      rcases List.mem_append.mp hr with hr | hr
+      · exact writes_return h r hr
+      · obtain rfl := List.mem_singleton.mp hr
+        exact (saved_below h).sub_left ret) (by decide)
+  have pushed := pushed_frame (rs := Compact.savedRegisters) (s := s) (by decide) fit
+  have separate : (⟨(s.gpr .esp).setWidth 64, 4⟩ : Region).Disjoint (below (s.gpr .esp) 16) := by
+    unfold below
+    rw [Taint.sub_setWidth fit]
+    exact Offset.base_disjoint_below _ (by decide)
+  exact same.trans (pushed.readW (w := 32) (Region.contains_self _ _)
+    (by intro r hr; obtain rfl := List.mem_singleton.mp hr; exact separate) (by decide))
+
+theorem framed_ok {s : State} (h : contract.pre s) :
+    WP isa VG.Impl.RsaKeyGen.X86.KeyRuntime.code s fun t =>
+      abiPreserved s t ∧ BodyOutcome (callEnvironment s) (Compact.entered s).mem t := by
+  have A := call_layout h
+  have I := entry_input h
+  have savedFit : 16 ≤ (s.gpr .esp).toNat := by have := A.low; omega
+  have inner : NoSp (.seq VG.Impl.RsaKeyGen.X86.KeyRuntime.body (.block Compact.restoreRegs)) :=
+    VG.Proof.RsaKeyGen.X86.KeyNoSp.sequence body_noSp (NoSp.of_all (by rfl))
+  unfold VG.Impl.RsaKeyGen.X86.KeyRuntime.code
+  refine WP.frame (rs := VG.Proof.Mont.X86.Compact.savedRegisters) (by decide) (by decide) (by decide) savedFit inner ?_
+  refine WP.seq (WP.mono (body_ok (call_valid h) I) fun t ⟨_, R, F, K⟩ => ?_)
+  have sp : t.gpr .esp = callSp s := (K.1 .esp (by unfold bodyClob; decide)).trans I.arguments.sp
+  have pFit : (callSp s).toNat + 16 ≤ 2 ^ 32 := by
+    rw [A.privateNat]
+    have := (s.gpr .esp).isLt
+    omega
+  have read (i : Nat) (hi : i < 4) : readSrc t (.mem (at_ .esp (4 * i))) = some
+      (s.gpr (VG.Proof.Mont.X86.Compact.savedRegisters[3 - i]'(by change 3 - i < 4; omega))) := by
+    have access : InRegions (t.rd ++ t.wr) (addr (t.gpr .esp) (4 * i)) 4 := by
+      rw [K.2.1, K.2.2, sp]
+      change InRegions (s.rd ++ (below (s.gpr .esp) 16 :: s.wr)) (addr (callSp s) (4 * i)) 4
+      refine ⟨below (s.gpr .esp) 16, List.mem_append_right _ List.mem_cons_self, ?_⟩
+      change (⟨(callSp s).setWidth 64, 16⟩ : Region).Contains (addr (callSp s) (4 * i)) 4
+      rw [addr_eq (by omega)]
+      exact Offset.contains_base _ (by omega) (by omega)
+    change t.load32 (addr (t.gpr .esp) (4 * i)) = _
+    rw [State.load32, ite_eq_left access, sp, saved_read h F hi]
+  refine WP.mono (VG.Proof.Mont.X86.Compact.restore_ok (read 0 (by decide)) (read 1 (by decide)) (read 2 (by decide))) ?_
+  rintro u ⟨edi, esi, ebp, memory, keep⟩
+  have sp' : u.gpr .esp = callSp s := (keep.1 .esp (by decide)).trans sp
+  refine ⟨⟨?_, ?_⟩, ?_⟩
+  · intro r hr
+    simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl | rfl | rfl
+    · rw [show VG.Proof.Mont.X86.Compact.savedRegisters.length = 4 from rfl,
+        VG.Proof.Mont.X86.Compact.popped_four_value, sp', memory]
+      exact saved_read h F (by decide : 3 < 4)
+    · rw [popped_gpr _ _ _ (by decide) (by decide)]
+      exact esi
+    · rw [popped_gpr _ _ _ (by decide) (by decide)]
+      exact edi
+    · rw [popped_gpr _ _ _ (by decide) (by decide)]
+      exact ebp
+    · rw [popped_esp, sp']
+      exact BitVec.sub_add_cancel _ _
+  · rw [popped_mem, memory]
+    exact return_read h F
+  · apply R.keep
+    · rw [popped_gpr _ _ _ (by decide) (by decide)]
+      exact keep.1 .eax (by decide)
+    · rw [popped_mem, memory]
+
+end VG.Proof.RsaKeyGen.X86.KeyRuntime
+
+end
+
+end
+
+/-! ### `RsaKeyGen.X86.KeyRuntime.OutputTiming`, which only this module used -/
+
+section
+
+/-! # The outputs' trace depends only on the arguments and the declared retry bit -/
+
+@[expose] public section
+namespace VG.Proof.RsaKeyGen.X86.KeyRuntime
+open VG VG.X86 VG.X86.Wp VG.Proof.Mont VG.Proof.Mont.X86 VG.Proof.Rsa.X86.Keys
+open VG.Proof.Dsa.X86
+open VG.Impl.Rsa.X86.Keys hiding slot
+open VG.Impl.RsaKeyGen.X86.KeyRuntime
+open VG.Impl.RsaKeyGen.X86.Key (kOk kStatus outputIndex)
+open VG.Proof.Mont.X86.Dynamic (workspaceTaint)
+open VG.Proof.RsaKeyGen.X86.Key (Environment Input ExportState OutputPair outputIndex_bound outputIndex_zero)
+open VG.Proof.RsaKeyGen.X86.KeyArgs (Context argsRegion)
+
+theorem zero_runs {E : Environment} {sp : BitVec 32} {s : State} (A : OutputArgs E sp s)
+    (h : VG.Proof.Rsa.X86.Keys.Ws s E.base E.size E.n 32) :
+    WP isa (zero .modulus (arr aZero)) (readonly s E.base E.size) fun _ => True := by
+  have fits := h.arr_fit (j := aZero) (by decide)
+  exact WP.mono (zero_ok (context_workspace A.valid A.context h).readonly .modulus (arr aZero)
+    (by change arr E.n aZero + _ ≤ E.size; exact fits)) fun _ _ => trivial
+
+theorem setup_runs {E : Environment} {sp : BitVec 32} {s : State} {j pointer length : Nat}
+    (A : OutputArgs E sp s) (h : VG.Proof.Rsa.X86.Keys.Ws s E.base E.size E.n 32)
+    (hj : j < 32) (nonzero : j ≠ aZero) (hp : pointer < 18) (hl : length < 18)
+    (bit : slot s.mem E.base kOk ≤ 1) :
+    WP isa (arraySetup j pointer length) (readonly s E.base E.size) fun _ => True := by
+  have H := (context_workspace A.valid A.context h).readonly
+  have C := context_readonly A.context
+  have fits := h.arr_fit hj
+  have fit64 := h.fit64 hj
+  have head := h.hdr_le
+  have nowrap := h.workspace.nowrap
+  unfold S at fits fit64
+  unfold arraySetup
+  refine WP.seq (WP.mono (sel_ok H hj (by decide) hj (by decide) bit (Or.inl nonzero))
+    fun u ⟨Hu, Ou, _, Ku⟩ => ?_)
+  have raw : Outside E.base (arr E.n j) (S E.n) (readonly s E.base E.size).mem u.mem := by
+    intro a ha
+    apply Ou a
+    intro r hr
+    change r ∈ [(arr E.n j, S E.n)] at hr
+    obtain rfl := List.mem_singleton.mp hr
+    exact ha
+  have ownFrame := VG.Proof.Bignum.outside_frame raw (by unfold S; exact fit64)
+  have Cu := C.keepFar Ku ownFrame (by
+    intro r hr
+    obtain rfl := List.mem_singleton.mp hr
+    exact A.context.separate.sub_right (Offset.sub_base E.base (by unfold S; exact fits)))
+  simp only [List.cons_append, List.nil_append]
+  refine wp_movS (context_argument Cu (i := pointer) hp).readSrc fun a Aa _ => ?_
+  refine wp_movS ((context_argument Cu (i := length) hl).keep Aa.keeps (by decide)
+    (by rw [Aa.mem]; exact Outside.refl _ _ _ _)).readSrc fun b Bb _ => ?_
+  have Hb := Hu.keep ((Aa.keeps.mono (rs' := [.ebx, .ecx]) (by decide)).trans (Bb.keeps.mono (by decide)))
+    (by rw [Bb.mem, Aa.mem]; exact Outside.refl _ _ _ _)
+  refine Hb.ptr_ok (arr j) (r := .esi) (t := .edx) (by decide) (by decide)
+    (by change arr E.n j < _; omega_using [fits, nowrap]) fun c _ _ _ => ?_
+  exact wp_addS rfl fun d _ _ => wp_subS rfl fun e _ _ => WP.block_nil trivial
+
+/-- One run's state between outputs. -/
+structure RtExport (E : Environment) (sp : BitVec 32) (s : State) : Prop where
+  state : ExportState E s
+  args : OutputArgs E sp s
+
+theorem zeroExport_ok {E : Environment} {sp : BitVec 32} {s : State} (h : Input E s)
+    (bit : slot s.mem E.base kOk ≤ 1) (A : OutputArgs E sp s) :
+    WP isa (zero .modulus (arr aZero)) s fun t => RtExport E sp t ∧ Keeps [.eax, .ecx, .edx, .ebp] s t := by
+  have H := context_workspace A.valid A.context h.ws
+  have fits := h.ws.arr_fit (j := aZero) (by decide)
+  have fit64 := h.ws.fit64 (j := aZero) (by decide)
+  refine WP.mono (zero_ok H .modulus (arr aZero) (by change arr E.n aZero + _ ≤ E.size; exact fits))
+    fun t ⟨Ht, O, zero, K⟩ => ?_
+  change Outside E.base (arr E.n aZero) (S E.n) s.mem t.mem at O
+  change val32 t.mem E.base (arr E.n aZero) (E.n + 2) = 0 at zero
+  have clear : Keep E.base E.n [aZero] [] s.mem t.mem :=
+    Keep.of_arr (d := 0) (by simpa only [Nat.add_zero] using O) (by unfold S; omega_using []) (by simp)
+  have header : ∀ d, d + 4 ≤ hdr → slot t.mem E.base d = slot s.mem E.base d :=
+    fun d hd => clear.slot hd (by simp)
+  have input : Input E t := h.keep Ht.old K (by
+    intro d hd
+    apply BitVec.eq_of_toNat_eq
+    exact header d (by unfold hdr; omega_using [hd]))
+  have lowZero : num t.mem E.base E.n aZero = 0 := by
+    have Z := VG.Proof.Rsa.KeyWorkspace.val32_zero_part zero (a := 0) (c := E.n) (by omega_using [])
+    simpa only [Nat.mul_zero, Nat.add_zero] using Z
+  have ownFrame := VG.Proof.Bignum.outside_frame O fit64
+  refine ⟨⟨⟨input, lowZero, by rw [header kOk (by decide)]; exact bit⟩,
+    ⟨A.valid, A.context.keepFar K ownFrame ?_, A.apart⟩⟩, K⟩
+  intro r hr
+  obtain rfl := List.mem_singleton.mp hr
+  exact A.context.separate.sub_right (Offset.sub_base E.base fits)
+
+theorem RtExport.port_ok {E : Environment} {sp : BitVec 32} {s : State} (h : RtExport E sp s)
+    {i : Nat} (hi : i < 7) :
+    WP isa (writePort i) s fun t => RtExport E sp t ∧ Keeps [.eax, .ecx, .edx, .ebp, .ebx, .esi] s t := by
+  let accept := decide (slot s.mem E.base kOk = 1)
+  have mask : slot s.mem E.base kOk = if accept then 1 else 0 := by
+    unfold accept
+    split <;> have := h.state.bit <;> simp_all <;> omega_arith
+  have g := h.state.input.outputs
+  refine WP.mono (writeArray_ok (p := E.outputs.pointer i) (len := E.outputs.length i) h.args.valid
+    h.state.input.ws h.args.context (outputIndex_bound hi) (Ne.symm (outputIndex_zero hi)) (by omega_using [hi]) (by omega_using [hi])
+    rfl
+    (by simp only [VG.Proof.RsaKeyGen.X86.Key.OutputGeometry.length, BitVec.ofNat_toNat, BitVec.setWidth_eq]; rfl)
+    (g.valid.lengthPositive i hi) (g.valid.lengthBound i hi) (g.valid.fit i hi)
+    (g.writable i hi) (g.valid.scratchApart i hi) (h.args.apart i hi) h.state.zero accept mask)
+    fun t ⟨ht, Ct, _, _, header, other, K⟩ => ?_
+  have input : Input E t := h.state.input.keep ht K (by
+    intro d hd
+    apply BitVec.eq_of_toNat_eq
+    exact header d (by unfold hdr; omega_using [hd]))
+  refine ⟨⟨⟨input, (other aZero (by decide) (outputIndex_zero hi)).trans h.state.zero, ?_⟩,
+    ⟨h.args.valid, Ct, h.args.apart⟩⟩, K⟩
+  rw [header kOk (by decide)]
+  exact h.state.bit
+
+structure RtExportPair (E : Environment) (sp : BitVec 32) (s t : State) : Prop where
+  left : RtExport E sp s
+  right : RtExport E sp t
+  stack : s.gpr .esp = t.gpr .esp
+  source : s.gpr .esi = t.gpr .esi
+
+def OutputStart (E : Environment) (sp : BitVec 32) (s t : State) : Prop :=
+  OutputPair E s t ∧ OutputArgs E sp s ∧ OutputArgs E sp t
+
+theorem zeroOutputs_trace (E : Environment) (sp : BitVec 32) :
+    RelCT isa (OutputStart E sp) (zero .modulus (arr aZero)) (RtExportPair E sp) := by
+  intro s t tr ur u v P A C
+  obtain ⟨⟨inputs, agree, leftBit, rightBit⟩, leftArgs, rightArgs⟩ := P
+  have trace := (readonly_trace zeroOutputs_public
+    (context_workspace leftArgs.valid leftArgs.context inputs.left.ws)
+    (context_workspace rightArgs.valid rightArgs.context inputs.right.ws) leftArgs.context rightArgs.context
+    (zero_runs leftArgs inputs.left.ws) (zero_runs rightArgs inputs.right.ws) A C).1
+  obtain ⟨left, KS⟩ := wp_result (zeroExport_ok inputs.left leftBit leftArgs) A
+  obtain ⟨right, KT⟩ := wp_result (zeroExport_ok inputs.right rightBit rightArgs) C
+  refine ⟨trace, left, right, ?_, ?_⟩
+  · rw [KS.1 .esp (by decide), KT.1 .esp (by decide)]
+    exact inputs.stack
+  · rw [KS.1 .esi (by decide), KT.1 .esi (by decide)]
+    exact agree.reg (by rfl : VG.X86.Taint.pub (workspaceTaint true) .esi = true)
+
+theorem setup_checked {i : Nat} (hi : i < 7) :
+    FromInputs (arraySetup (outputIndex i) (2 * i) (2 * i + 1)) portTaint := by
+  obtain _ | _ | _ | _ | _ | _ | _ | i := i
+  · exact setup0_public
+  · exact setup1_public
+  · exact setup2_public
+  · exact setup3_public
+  · exact setup4_public
+  · exact setup5_public
+  · exact setup6_public
+  · omega
+
+theorem port_trace (E : Environment) (sp : BitVec 32) {i : Nat} (hi : i < 7) :
+    RelCT isa (RtExportPair E sp) (writePort i) (RtExportPair E sp) := by
+  intro s t tr ur u v P A C
+  obtain ⟨left, KS⟩ := wp_result (P.left.port_ok hi) A
+  obtain ⟨right, KT⟩ := wp_result (P.right.port_ok hi) C
+  have stack : u.gpr .esp = v.gpr .esp := by
+    rw [KS.1 .esp (by decide), KT.1 .esp (by decide)]
+    exact P.stack
+  unfold writePort writeArray at A C
+  cases A with
+  | seq A1 A2 =>
+  cases C with
+  | seq C1 C2 =>
+  obtain ⟨setupTrace, regs⟩ := readonly_trace (setup_checked hi)
+    (context_workspace P.left.args.valid P.left.args.context P.left.state.input.ws)
+    (context_workspace P.right.args.valid P.right.args.context P.right.state.input.ws)
+    P.left.args.context P.right.args.context
+    (setup_runs (pointer := 2 * i) (length := 2 * i + 1) P.left.args P.left.state.input.ws (outputIndex_bound hi) (Ne.symm (outputIndex_zero hi))
+      (by omega_using [hi]) (by omega_using [hi]) P.left.state.bit)
+    (setup_runs (pointer := 2 * i) (length := 2 * i + 1) P.right.args P.right.state.input.ws (outputIndex_bound hi) (Ne.symm (outputIndex_zero hi))
+      (by omega_using [hi]) (by omega_using [hi]) P.right.state.bit) A1 C1
+  have start : VG.X86.Taint.Agree (τr [.edi, .esp, .ebx, .ecx, .esi]) _ _ := agree_regs (by
+    intro r hr
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl | rfl | rfl <;> exact regs _ rfl)
+  obtain ⟨hint, out, checked, lower⟩ := reverse_public
+  obtain ⟨copyTrace, copied⟩ := VG.Taint.check_sound checked start A2 C2
+  have final := sseTaint.le_sound lower copied
+  refine ⟨by rw [setupTrace, copyTrace], left, right, stack, final.reg (by rfl)⟩
+
+theorem ports_trace (E : Environment) (sp : BitVec 32) (i count : Nat) (bound : i + count ≤ 7) :
+    RelCT isa (RtExportPair E sp) (writePorts i count) (RtExportPair E sp) := by
+  induction count generalizing i with
+  | zero => exact RelCT.block_nil (fun _ _ P => P)
+  | succ count ih =>
+    exact RelCT.seq (port_trace E sp (by omega_using [bound])) (ih (i + 1) (by omega_using [bound]))
+
+theorem status_trace (E : Environment) (sp : BitVec 32) :
+    RelCT isa (RtExportPair E sp) (.block [.mov .eax (.mem (VG.Impl.Mont.X86.sc kStatus))])
+      (VG.X86.Taint.Agree (workspaceTaint true)) := by
+  have checked : VG.Proof.Rsa.X86.Keys.KeyPublic (.block [.mov .eax (.mem (VG.Impl.Mont.X86.sc kStatus))]) :=
+    ⟨.block [], workspaceTaint true, rfl, rfl⟩
+  refine (VG.Proof.RsaKeyGen.X86.Key.key_public_trace checked).mono (fun s t P => ?_) (fun _ _ P => P)
+  change VG.X86.Taint.Agree (τr [.edi, .esi]) s t
+  apply agree_regs
+  intro r hr
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl
+  · exact BitVec.eq_of_toNat_eq (P.left.state.input.ws.workspace.edi_toNat.trans
+      P.right.state.input.ws.workspace.edi_toNat.symm)
+  · exact P.source
+
+theorem writeOutputs_trace (E : Environment) (sp : BitVec 32) :
+    RelCT isa (OutputStart E sp) writeOutputs (VG.X86.Taint.Agree (workspaceTaint true)) := by
+  unfold writeOutputs seqs
+  exact RelCT.seq (zeroOutputs_trace E sp) (RelCT.seq (ports_trace E sp 0 7 (by decide)) (status_trace E sp))
+
+end VG.Proof.RsaKeyGen.X86.KeyRuntime
+
+end
+
+end
+
+/-! ### `RsaKeyGen.X86.KeyFrameTiming`, which only this module used -/
+
+section
+
+/-! # The outer native key frame preserves trace equivalence -/
+
+@[expose] public section
+namespace VG.Proof.RsaKeyGen.X86.Key
+open VG VG.X86 VG.Proof.Mont.X86 VG.Proof.Dsa.X86
+
+def FramedPair (E : Environment) (sp : BitVec 32) (e p q p' q' : Nat) (s t : State) : Prop :=
+  BodyPair E sp e p q p' q' (Compact.entered s) (Compact.entered t) ∧ s.gpr .esp = t.gpr .esp
+
+end VG.Proof.RsaKeyGen.X86.Key
+
+end
+
+end
+
+/-! ### `RsaKeyGen.X86.KeyPublicLeak`, which only this module used -/
+
+section
+
+/-! ### `RsaKeyGen.X86.KeyPublic`, which only this module used -/
+
+section
+
+/-! # The shared key contract publishes its arguments, exponent bytes and result status -/
+
+@[expose] public section
+namespace VG.Proof.RsaKeyGen.X86.Key
+open VG VG.X86
+
+def callEBytes (s : State) : List Byte := Spec.Rsa.bytesAt s.mem (callEnvironment s).exponentRegion.base (callEnvironment s).exponentRegion.len
+def callKeyStatus (s : State) : Nat := Proof.RsaKeyGen.keyStatus (encodedOperation (callEnvironment s) s.mem)
+
+structure PublicInputs (s t : State) : Prop where
+  stack : s.gpr .esp = t.gpr .esp
+  arguments : ∀ i < 18, arg s i = arg t i
+  observations : (callEBytes s).map (·.toNat) ++ [callKeyStatus s] =
+    (callEBytes t).map (·.toNat) ++ [callKeyStatus t]
+
+theorem public_inputs {s t : State} (H : contract.pub s t) : PublicInputs s t := by
+  sig_pub [contract, keyStack, Proof.RsaKeyGen.keyContract, Proof.RsaKeyGen.keySig,
+    abi, argSlots, argVal, argBytes] at H
+  sig_split H
+  refine ⟨by with_reducible assumption, ?_, ?_⟩
+  · intro i hi
+    interval_cases i <;> with_reducible assumption
+  · dsimp only [callEBytes, callKeyStatus, encodedOperation, callEnvironment,
+      Environment.exponentRegion, Environment.outputRegion, Environment.outputLength]
+    simp only [Nat.reduceMul, Nat.reduceLT, ite_true, ite_false]
+    with_reducible assumption
+
+theorem PublicInputs.environment {s t : State} (P : PublicInputs s t) : callEnvironment s = callEnvironment t := by
+  simp only [callEnvironment, P.arguments 16 (by decide), P.arguments 17 (by decide),
+    P.arguments 5 (by decide), P.arguments 14 (by decide), P.arguments 15 (by decide)]
+  congr 1
+  funext i
+  by_cases hi : i < 7
+  · simp only [hi, ite_true]
+    exact P.arguments (2 * i) (by omega_using [hi])
+  · simp only [hi, ite_false]
+
+theorem PublicInputs.exponent {s t : State} (P : PublicInputs s t) : callEBytes s = callEBytes t := by
+  have lengths : ((callEBytes s).map (·.toNat)).length = ((callEBytes t).map (·.toNat)).length := by
+    simp only [List.length_map, callEBytes, VG.Proof.Bignum.bytesAt_length, P.environment]
+  exact VG.Proof.RsaKeyGen.map_toNat_inj (List.append_inj P.observations lengths).1
+
+theorem PublicInputs.status {s t : State} (P : PublicInputs s t) : callKeyStatus s = callKeyStatus t := by
+  have lengths : ((callEBytes s).map (·.toNat)).length = ((callEBytes t).map (·.toNat)).length := by
+    rw [P.exponent]
+  exact List.singleton_inj.mp (List.append_inj P.observations lengths).2
+
+end VG.Proof.RsaKeyGen.X86.Key
+
+end
+
+end
+
+/-! # Equal shared observations give the exponent and retry equality used by native timing -/
+
+-- Formerly `VerifiedGarbage/Proof/RsaKeyGen/X86/KeyStatusRetry.lean`, which only this module imported.
+section
+
+/-! # The shared encoded status releases exactly the numeric retry branch -/
+
+section
+namespace VG.Proof.RsaKeyGen.X86.Key
+open VG
+
+theorem status_retry_iff {E : Environment} (v : E.Valid) (m : Mem) :
+    Proof.RsaKeyGen.keyStatus (encodedOperation E m) = 2 ↔
+      Spec.RsaKeyGen.keyFromPrimes (32 * E.n) (inputExponent E m) (inputPrime E m 2) (inputPrime E m 3) = .inr () := by
+  have widths := v.widths
+  have bits : 16 * E.primeLength = 32 * E.n := by omega
+  unfold encodedOperation Proof.RsaKeyGen.keyOp inputExponent inputPrime
+  rw [bits]
+  generalize result : Spec.RsaKeyGen.keyFromPrimes (32 * E.n)
+    (Spec.Rsa.os2ip (Spec.Rsa.bytesAt m E.exponentRegion.base E.exponentRegion.len))
+    (Spec.Rsa.os2ip (Spec.Rsa.bytesAt m (E.outputRegion 2).base (E.outputRegion 2).len))
+    (Spec.Rsa.os2ip (Spec.Rsa.bytesAt m (E.outputRegion 3).base (E.outputRegion 3).len)) = value
+  cases value with
+  | inl answer => cases answer <;> simp [Proof.RsaKeyGen.keyStatus]
+  | inr u => cases u; simp [Proof.RsaKeyGen.keyStatus]
+
+end VG.Proof.RsaKeyGen.X86.Key
+end
+
+end
+
+@[expose] public section
+namespace VG.Proof.RsaKeyGen.X86.Key
+open VG VG.X86
+
+theorem PublicInputs.exponentValue {s t : State} (P : PublicInputs s t) :
+    inputExponent (callEnvironment s) s.mem = inputExponent (callEnvironment s) t.mem := by
+  have H := P.exponent
+  unfold callEBytes at H
+  rw [← P.environment] at H
+  exact congrArg Spec.Rsa.os2ip H
+
+theorem PublicInputs.release {s t : State} (P : PublicInputs s t) (h : contract.pre s) :
+    (Spec.RsaKeyGen.keyFromPrimes (32 * (callEnvironment s).n)
+      (inputExponent (callEnvironment s) s.mem) (inputPrime (callEnvironment s) s.mem 2)
+      (inputPrime (callEnvironment s) s.mem 3) = .inr ()) ↔
+    (Spec.RsaKeyGen.keyFromPrimes (32 * (callEnvironment s).n)
+      (inputExponent (callEnvironment s) s.mem) (inputPrime (callEnvironment s) t.mem 2)
+      (inputPrime (callEnvironment s) t.mem 3) = .inr ()) := by
+  have v := call_valid h
+  have status := P.status
+  unfold callKeyStatus at status
+  rw [← P.environment] at status
+  have right := status_retry_iff v t.mem
+  rw [← P.exponentValue] at right
+  have same : (Proof.RsaKeyGen.keyStatus (encodedOperation (callEnvironment s) s.mem) = 2) ↔
+      (Proof.RsaKeyGen.keyStatus (encodedOperation (callEnvironment s) t.mem) = 2) := by rw [status]
+  exact (status_retry_iff v s.mem).symm.trans (same.trans right)
+
+end VG.Proof.RsaKeyGen.X86.Key
+
+end
+
+end
+
+/-! ### `RsaKeyGen.X86.KeyCallSamples`, which only this module used -/
+
+section
+
+/-! # The native saved-register push preserves the original prime and exponent snapshots -/
+
+@[expose] public section
+namespace VG.Proof.RsaKeyGen.X86.Key
+open VG VG.X86 VG.Proof.Mont.X86
+
+theorem entered_exponent {s : State} (h : contract.pre s) :
+    inputExponent (callEnvironment s) (Compact.entered s).mem = inputExponent (callEnvironment s) s.mem := by
+  have D := call_separation h
+  unfold inputExponent
+  congr 1
+  exact pushed_bytes h D.stackExponent (by change (arg s 15).toNat < 2 ^ 64; have := (arg s 15).isLt; omega_using [])
+
+theorem entered_prime {s : State} (h : contract.pre s) {i : Nat} (hi : i < 7) :
+    inputPrime (callEnvironment s) (Compact.entered s).mem i = inputPrime (callEnvironment s) s.mem i := by
+  have Z := call_sizes h
+  have D := call_separation h
+  unfold inputPrime
+  rw [Z.outputRegion hi]
+  congr 1
+  exact pushed_bytes h (D.stackOutput i hi)
+    (by change (arg s (2 * i + 1)).toNat < 2 ^ 64; have := (arg s (2 * i + 1)).isLt; omega_using [])
+
+end VG.Proof.RsaKeyGen.X86.Key
+
+end
+
+end
+
+/-! # Shared native key generation satisfies the existing API and timing contracts -/
+
+-- Formerly `VerifiedGarbage/Proof/RsaKeyGen/X86/KeyRuntime/FrameResult.lean`, which only this module imported.
+section
+
+/-! # The callable key operation uses the caller's original encoded inputs -/
+
+section
+namespace VG.Proof.RsaKeyGen.X86.KeyRuntime
+open VG VG.X86 VG.Proof.Mont VG.Proof.Mont.X86
+open VG.Proof.RsaKeyGen.X86.Key (contract call_layout call_valid call_separation call_sizes
+  callEnvironment EncodedResult BodyOutcome reservedRegion pushed_bytes)
+
+theorem framed_result_ok {s : State} (h : contract.pre s) :
+    WP isa VG.Impl.RsaKeyGen.X86.KeyRuntime.code s fun t =>
+      abiPreserved s t ∧ EncodedResult (callEnvironment s) s.mem t := by
+  have v := call_valid h
+  have A := call_layout h
+  have D := call_separation h
+  have Z := call_sizes h
+  have eBytes : Spec.Rsa.bytesAt (Compact.entered s).mem (callEnvironment s).exponentRegion.base
+      (callEnvironment s).exponentRegion.len =
+      Spec.Rsa.bytesAt s.mem (callEnvironment s).exponentRegion.base (callEnvironment s).exponentRegion.len :=
+    pushed_bytes h D.stackExponent (by change (arg s 15).toNat < 2 ^ 64; have := (arg s 15).isLt; omega)
+  have primeBytes (i : Nat) (hi : i < 7) :
+      Spec.Rsa.bytesAt (Compact.entered s).mem ((callEnvironment s).outputRegion i).base ((callEnvironment s).outputRegion i).len =
+        Spec.Rsa.bytesAt s.mem ((callEnvironment s).outputRegion i).base ((callEnvironment s).outputRegion i).len := by
+    rw [Z.outputRegion hi]
+    apply pushed_bytes h (D.stackOutput i hi)
+    change (arg s (2 * i + 1)).toNat < 2 ^ 64
+    have := (arg s (2 * i + 1)).isLt
+    omega
+  refine WP.mono (framed_ok h) fun t ⟨preserved, R⟩ => ?_
+  unfold BodyOutcome at R
+  rw [eBytes, primeBytes 2 (by decide), primeBytes 3 (by decide)] at R
+  exact ⟨preserved, BodyOutcome.encoded v R⟩
+
+end VG.Proof.RsaKeyGen.X86.KeyRuntime
+end
+
+end
+
+-- Formerly `VerifiedGarbage/Proof/RsaKeyGen/X86/KeyRuntime/Correct.lean`, which only this module imported.
+section
+
+/-! # Complete native key generation satisfies the shared encoded cdecl contract -/
+
+section
+namespace VG.Proof.RsaKeyGen.X86.KeyRuntime
+open VG VG.X86
+open VG.Proof.RsaKeyGen.X86.Key (contract call_sizes keyStack EncodedResult encodedOperation
+  callEnvironment Environment)
+
+theorem correct (s : State) (h : contract.pre s) :
+    ∃ trace t, Exec isa VG.Impl.RsaKeyGen.X86.KeyRuntime.code s trace t ∧
+      abiPreserved s t ∧ contract.post s t := by
+  have Z := call_sizes h
+  obtain ⟨trace, t, run, preserved, R⟩ := framed_result_ok h
+  refine ⟨trace, t, run, preserved, ?_⟩
+  sig_post [contract, keyStack, Proof.RsaKeyGen.keyContract, Proof.RsaKeyGen.keySig,
+    abi, argSlots, argVal, argBytes]
+  rw [BitVec.setWidth_append_eq_right]
+  unfold EncodedResult encodedOperation at R
+  simp only [callEnvironment, Environment.exponentRegion, Environment.outputRegion, Environment.outputLength,
+    List.range_succ, List.range_zero, List.map_nil, List.map_cons, List.nil_append, List.cons_append,
+    Nat.reduceMul, Nat.reduceLT, ite_true, ite_false] at R
+  rw [← Z.modulus] at R
+  simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq] at R
+  generalize result : Proof.RsaKeyGen.keyOp (arg s 5).toNat
+    (Spec.Rsa.bytesAt s.mem ((arg s 14).setWidth 64) (arg s 15).toNat)
+    (Spec.Rsa.bytesAt s.mem ((arg s 4).setWidth 64) (arg s 5).toNat)
+    (Spec.Rsa.bytesAt s.mem ((arg s 6).setWidth 64) (arg s 5).toNat) = value at R ⊢
+  cases value with
+  | inl answer => cases answer <;> exact R
+  | inr u => cases u; exact R
+
+end VG.Proof.RsaKeyGen.X86.KeyRuntime
+end
+
+end
+
+-- Formerly `VerifiedGarbage/Proof/RsaKeyGen/X86/KeyRuntime/FrontTiming.lean`, which only this module imported.
+section
+
+/-! # Shared derivation and the outputs publish only the specified retry bit -/
+
+section
+namespace VG.Proof.RsaKeyGen.X86.KeyRuntime
+open VG VG.X86 VG.Proof.Mont VG.Proof.Mont.X86 VG.Proof.Dsa.X86
+open VG.Impl.RsaKeyGen.X86.KeyRuntime
+open VG.Proof.RsaKeyGen.X86.Key (Environment stage_scratch_frame deriveArrays prepareArrays keyPartArrays)
+open VG.Proof.RsaKeyGen.X86.KeyArgs (argsRegion)
+
+theorem deriveArgs_trace (E : Environment) (sp : BitVec 32) (e p q p' q' : Nat)
+    (apart : ∀ i < 7, (argsRegion sp).Disjoint (E.outputRegion i))
+    (release : (Spec.RsaKeyGen.keyFromPrimes (32 * E.n) e p q = .inr ()) ↔
+      (Spec.RsaKeyGen.keyFromPrimes (32 * E.n) e p' q' = .inr ())) :
+    RelCT isa (RuntimeImported E sp e p q p' q') deriveLoaded (OutputStart E sp) := by
+  intro s t tr ur u v P A C
+  obtain ⟨trace, out⟩ := deriveOutput_trace E sp e p q p' q' release _ _ _ _ _ _ P A C
+  have valid := P.imported.inputs.left.valid
+  have widths := valid.widths
+  have apart' : ∀ i < 7, (argsRegion sp).Disjoint (E.outputs.region i) := fun i hi => by
+    rw [valid.outputRegion hi]
+    exact apart i hi
+  have frame {a b : State} {tr' : List Leak} (H : Ws a E.base E.size E.n 32)
+      (L : VG.Proof.RsaKeyGen.X86.Key.CoreStart E.base E.size E.n E.k e p q a ∨
+        VG.Proof.RsaKeyGen.X86.Key.CoreStart E.base E.size E.n E.k e p' q' a)
+      (X : Exec isa deriveLoaded a tr' b) :
+      ∃ rs : List Reg, Keeps rs a b ∧ .edi ∉ rs ∧ .esp ∉ rs ∧
+        Frame [E.workspaceRegion, below (a.gpr .esp) 52] a.mem b.mem := by
+    have go {e₁ p₁ q₁ : Nat} (L : VG.Proof.RsaKeyGen.X86.Key.CoreStart E.base E.size E.n E.k e₁ p₁ q₁ a) :
+        ∃ rs : List Reg, Keeps rs a b ∧ .edi ∉ rs ∧ .esp ∉ rs ∧
+          Frame [E.workspaceRegion, below (a.gpr .esp) 52] a.mem b.mem := by
+      obtain ⟨_, O, _, K⟩ := wp_result (deriveLoaded_ok H widths.2.2.1 widths.2.2.2.1 widths.2.2.2.2.1
+        widths.1 widths.2.1 L.pBound L.qBound L.zero L.one (L.loaded.trans L.exponent.symm)) X
+      exact ⟨_, K, by decide, by decide, O.toFrame fun _ _ O =>
+        stage_scratch_frame H.old (by simp [deriveArrays, prepareArrays, keyPartArrays]; decide) O⟩
+    rcases L with L | L <;> exact go L
+  obtain ⟨rs, KS, ediS, espS, FS⟩ := frame P.left (Or.inl P.imported.left) A
+  obtain ⟨rt, KT, ediT, espT, FT⟩ := frame P.right (Or.inr P.imported.right) C
+  rw [P.leftArgs.sp] at FS
+  rw [P.rightArgs.sp] at FT
+  exact ⟨trace, out, ⟨valid, P.leftArgs.keepBelow KS FS ediS espS, apart'⟩,
+    ⟨valid, P.rightArgs.keepBelow KT FT ediT espT, apart'⟩⟩
+
+theorem front_trace (E : Environment) (sp : BitVec 32) (e p q p' q' : Nat)
+    (apart : ∀ i < 7, (argsRegion sp).Disjoint (E.outputRegion i))
+    (release : (Spec.RsaKeyGen.keyFromPrimes (32 * E.n) e p q = .inr ()) ↔
+      (Spec.RsaKeyGen.keyFromPrimes (32 * E.n) e p' q' = .inr ())) :
+    RelCT isa (RuntimeStart E sp e p q p' q') front
+      (VG.X86.Taint.Agree (VG.Proof.Mont.X86.Dynamic.workspaceTaint true)) := by
+  unfold front
+  exact RelCT.seq (runtime_input_trace E sp e p q p' q')
+    (RelCT.seq (deriveArgs_trace E sp e p q p' q' apart release) (writeOutputs_trace E sp))
+
+end VG.Proof.RsaKeyGen.X86.KeyRuntime
+end
+
+end
+
+-- Formerly `VerifiedGarbage/Proof/RsaKeyGen/X86/KeyRuntime/BodyTiming.lean`, which only this module imported.
+section
+
+/-! # The shared body retains exactly the declared exponent and retry observations -/
+
+section
+namespace VG.Proof.RsaKeyGen.X86.KeyRuntime
+open VG VG.X86 VG.Proof.Mont.X86 VG.Proof.Dsa.X86
+open VG.Proof.RsaKeyGen.X86.Key (Environment BodyPair)
+
+theorem enterInput_trace (E : Environment) (valid : E.Valid) (sp : BitVec 32) (e p q p' q' : Nat) :
+    RelCT isa (BodyPair E sp e p q p' q') VG.Impl.RsaKeyGen.X86.Key.enter
+      (RuntimeStart E sp e p q p' q') := by
+  intro s t tr ur u v P A C
+  obtain ⟨trace, start⟩ := VG.Proof.RsaKeyGen.X86.Key.enterInput_trace E valid sp e p q p' q'
+    _ _ _ _ _ _ P A C
+  obtain ⟨CS, _, _, _⟩ := wp_result (VG.Proof.RsaKeyGen.X86.KeyArgs.enter_ok P.left.arguments) A
+  obtain ⟨CT, _, _, _⟩ := wp_result (VG.Proof.RsaKeyGen.X86.KeyArgs.enter_ok P.right.arguments) C
+  exact ⟨trace, start, context_workspace valid CS start.inputs.left.ws,
+    context_workspace valid CT start.inputs.right.ws, CS, CT⟩
+
+theorem body_trace (E : Environment) (valid : E.Valid) (sp : BitVec 32) (e p q p' q' : Nat)
+    (release : (Spec.RsaKeyGen.keyFromPrimes (32 * E.n) e p q = .inr ()) ↔
+      (Spec.RsaKeyGen.keyFromPrimes (32 * E.n) e p' q' = .inr ())) :
+    RelCT isa (BodyPair E sp e p q p' q') VG.Impl.RsaKeyGen.X86.KeyRuntime.body
+      (VG.X86.Taint.Agree (τr [.esp])) := by
+  intro s t tr ur u v P A C
+  have raw := RelCT.seq (enterInput_trace E valid sp e p q p' q')
+    (front_trace E sp e p q p' q' P.left.argsOutput release)
+  refine ⟨(raw _ _ _ _ _ _ P A C).1, agree_regs ?_⟩
+  intro r hr
+  obtain rfl := List.mem_singleton.mp hr
+  rw [Exec.gpr body_noSp A, Exec.gpr body_noSp C]
+  exact P.left.arguments.sp.trans P.right.arguments.sp.symm
+
+end VG.Proof.RsaKeyGen.X86.KeyRuntime
+end
+
+end
+
+-- Formerly `VerifiedGarbage/Proof/RsaKeyGen/X86/KeyRuntime/FrameTiming.lean`, which only this module imported.
+section
+
+/-! # The outer native key frame preserves trace equivalence -/
+
+section
+namespace VG.Proof.RsaKeyGen.X86.KeyRuntime
+open VG VG.X86 VG.Proof.Mont.X86 VG.Proof.Dsa.X86
+open VG.Proof.RsaKeyGen.X86.Key (Environment FramedPair)
+
+theorem framed_trace (E : Environment) (v : E.Valid) (sp : BitVec 32) (e p q p' q' : Nat)
+    (release : (Spec.RsaKeyGen.keyFromPrimes (32 * E.n) e p q = .inr ()) ↔
+      (Spec.RsaKeyGen.keyFromPrimes (32 * E.n) e p' q' = .inr ())) :
+    RelCT isa (FramedPair E sp e p q p' q') VG.Impl.RsaKeyGen.X86.KeyRuntime.code (fun _ _ => True) := by
+  have restore : RelCT isa (VG.X86.Taint.Agree (τr [.esp])) (.block VG.Impl.Mont.X86.Compact.restoreRegs)
+      (VG.X86.Taint.Agree (τr [.esp])) := checkedBlockInvariant rfl rfl
+  unfold VG.Impl.RsaKeyGen.X86.KeyRuntime.code
+  apply VG.X86.RelCT.frame (rs := Compact.savedRegisters) (R := VG.X86.Taint.Agree (τr [.esp])) (fun _ _ P => P.2)
+  exact (RelCT.seq (body_trace E v sp e p q p' q' release) restore).mono
+    (by rintro _ _ ⟨s, t, P, rfl, rfl⟩; exact P.1) (fun _ _ P => P)
+
+end VG.Proof.RsaKeyGen.X86.KeyRuntime
+end
+
+end
+
+-- Formerly `VerifiedGarbage/Proof/RsaKeyGen/X86/KeyRuntime/ConstantTime.lean`, which only this module imported.
+section
+
+/-! # Native key assembly is constant time under exactly the shared API's declared observations -/
+
+section
+namespace VG.Proof.RsaKeyGen.X86.KeyRuntime
+open VG VG.X86
+open VG.Proof.RsaKeyGen.X86.Key (contract public_inputs entry_input callSp entered_exponent entered_prime
+  callEnvironment inputExponent inputPrime call_valid)
+
+theorem constantTime : ConstantTime isa contract.pre contract.pub VG.Impl.RsaKeyGen.X86.KeyRuntime.code := by
+  apply RelCT.constantTime
+  intro s t tr ur u z ⟨HS, HT, HP⟩ A B
+  have P := public_inputs HP
+  have I := entry_input HS
+  have J := entry_input HT
+  have stack : callSp s = callSp t := by unfold callSp; rw [P.stack]
+  rw [← P.environment, ← stack] at J
+  have rightExponent := entered_exponent HT
+  have rightP := entered_prime HT (by decide : 2 < 7)
+  have rightQ := entered_prime HT (by decide : 3 < 7)
+  rw [← P.environment] at rightExponent rightP rightQ
+  exact framed_trace (callEnvironment s) (call_valid HS) (callSp s)
+    (inputExponent (callEnvironment s) s.mem)
+    (inputPrime (callEnvironment s) s.mem 2) (inputPrime (callEnvironment s) s.mem 3)
+    (inputPrime (callEnvironment s) t.mem 2) (inputPrime (callEnvironment s) t.mem 3)
+    (P.release HS) _ _ _ _ _ _
+    ⟨⟨I, J, entered_exponent HS, rightExponent.trans P.exponentValue.symm,
+      entered_prime HS (by decide : 2 < 7), entered_prime HS (by decide : 3 < 7), rightP, rightQ⟩, P.stack⟩ A B
+
+end VG.Proof.RsaKeyGen.X86.KeyRuntime
+end
+
+end
+
+@[expose] public section
+namespace VG.Proof.RsaKeyGen.X86.KeyRuntime
+open VG VG.X86
+
+theorem verified : Verified target VG.Impl.RsaKeyGen.X86.KeyRuntime.code VG.Proof.RsaKeyGen.X86.Key.contract :=
+  ⟨correct, constantTime, VG.Proof.RsaKeyGen.X86.Key.satisfiable⟩
+
+end VG.Proof.RsaKeyGen.X86.KeyRuntime
+
+end
+
+end
+
 
 /-! # The controller's timing, and the verified key search (i686)
 

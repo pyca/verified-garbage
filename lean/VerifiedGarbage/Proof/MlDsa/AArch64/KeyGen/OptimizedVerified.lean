@@ -8,37 +8,499 @@ public import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.Lit
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.Samp
 public import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Lit
 public import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.ResidentLit
-
 import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedDepth
 import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedSat
 import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedPrims
-import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedCorrect
+public import VerifiedGarbage.Impl.MlDsa.AArch64.KeyGen.Optimized
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.StaticRoots
+public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.Samp
+public import VerifiedGarbage.Proof.MlDsa.RejNTT2Contract
+public import VerifiedGarbage.Impl.MlDsa.AArch64.KeyGen.OptimizedMatrix
+public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedCallTwo
+public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedMatrixSeeds
+import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.Call4
+import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.Samp4
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.MatrixMask
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.MatrixMask
+import VerifiedGarbage.Proof.MlDsa.DecideAt
+import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Blocks
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.MlKem.Mem
+import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedSecrets
+import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedRest
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.StaticRootsExecution
 import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedEntry
 import VerifiedGarbage.Impl.MlDsa.AArch64.KeyGen.OptimizedRow
 import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.CallRound
 import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Entry
-import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Sha3.AArch64.Sums
 import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedRow
 import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedFinish
 import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.RestRow
 import VerifiedGarbage.Proof.Sha3.AArch64.Neon.X2Lit
-import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedTimingBase
+public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedTimingBase
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.DotCallTiming
 import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedDotValue
 import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedDot
-import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedPieceTiming
 import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedNtt
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.NttCallTiming
 import VerifiedGarbage.Impl.MlDsa.AArch64.KeyGen.OptimizedNtt
-import VerifiedGarbage.Proof.MlDsa.DecideAt
 import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.RestPack
 import VerifiedGarbage.Impl.MlDsa.AArch64.KeyGen.OptimizedRest
 import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedPackSecret
-import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedRest
-import VerifiedGarbage.Impl.MlDsa.AArch64.KeyGen.Optimized
 import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.PrimsOk
-import VerifiedGarbage.Proof.MlDsa.RejNTT2Contract
+
+/-! ### `MlDsa.AArch64.KeyGen.OptimizedCorrect`, which only this module used -/
+
+section
+
+/-! ### `MlDsa.AArch64.KeyGen.OptimizedMatrixTiming`, which only this module used -/
+
+section
+
+/-! ### `MlDsa.AArch64.KeyGen.OptimizedMatrixFour`, which only this module used -/
+
+section
+
+@[expose] public section
+
+namespace VG.Proof.MlDsa.AArch64.KeyGen.Optimized
+open VG.Impl.MlDsa.AArch64.Call
+open VG VG.AArch64 VG.Impl.MlDsa.AArch64.KeyGen
+open VG.Spec.MlDsa (Params Poly rejNTTPoly minBounds)
+open VG.Proof.MlDsa (coeffAt polyAt Reduced PolyIs poly4 seed4)
+open VG.Proof.MlDsa.KeyGen (seedA ifp ifn masked_one masked_zero)
+open VG.Spec.Sha3 (bytesAt)
+
+theorem matrixFour_ok {P : Prims} {S : Nat} (hP : PrimsOk P S) {p : Params} (hF : PFacts p)
+    {σ : State} (hp : kgPre p S σ) {g : Nat} (hg : 4*g+4 ≤ p.k*p.ℓ) {s : State}
+    (h : GS p σ (4*g) 4 s) (hr : MatrixPrefixes p σ 4 s) :
+    WP isa (.seq (rej4At P (sc (oR4 p)) (sc oSA4) (aP (4*g)))
+      (.seq (.block and24) (VG.Impl.MlDsa.AArch64.Optimized.MatrixMask.code (aP (4*g)) 1024))) s (fun t => KSamp p σ (4*g+4) 0 t ∧ MatrixPrefixes p σ 4 t) := by
+  have hkl := hF.kl; have hl := hF.l; have hk := hF.k; have hsc := scr_eq p
+  have L := h.ks.k1.kc.lay hF hp
+  refine WP.seq (WP.mono (rej4At_ok hP.s64 hP.rej4 L
+    (seed := sc oSA4) (a := aP (4*g)) (ss := sc (oR4 p)) (by unfold rej4Chk; layd))
+    fun s2 ⟨hP2,h24,hred,hout⟩ => ?_)
+  have L2 := L.post hP2
+  have hr01 : (s2.gpr .x0).setWidth 32 = 0 ∨ (s2.gpr .x0).setWidth 32 = 1 := by
+    rcases hout with ⟨h1,_⟩ | ⟨h0,_⟩
+    exacts [.inr h1,.inl h0]
+  refine WP.seq (WP.mono (and24_ok s2) fun s20 ⟨h20,e24⟩ => ?_)
+  have hP20 : PPostB S s2 s20 [] := postB_of_keep h20.keep (by decide)
+    (by rw [h20.mem]; exact Frame.refl _ _)
+  have L20 := L2.post hP20
+  have hr20 : (s20.gpr .x0).setWidth 32 = 0 ∨ (s20.gpr .x0).setWidth 32 = 1 := by
+    rw [h20.get .x0]; exact hr01
+  refine WP.mono (VG.Proof.MlDsa.AArch64.Optimized.MatrixMask.mask_ok L20 (a := aP (4*g)) (N := 64) (by decide) (by decide) (by layd) (by layd) hr20)
+    fun s3 ⟨hP3,k3,hco⟩ => ?_
+  have hP23 := PPostB.app hP20 hP3 (sc_bases _ (by simp))
+  have hP13 := PPostB.app hP2 hP23 (sc_bases _ (by simp))
+  refine ⟨?_,hr.keep L hP13 (fun k hk => by layd)⟩
+  have e2 : pa s2 (aP (4*g)) = pa s (aP (4*g)) := sc_pa hP2 _
+  have e20 : pa s20 (aP (4*g)) = pa s2 (aP (4*g)) := sc_pa hP20 _
+  rw [h20.get .x0,e20,e2,h20.mem] at hco
+  have hco4 : ∀ k < 4, ∀ i < 256,coeffAt s3.mem (poly4 (pa s (aP (4*g))) k) i =
+      if (s2.gpr .x0).setWidth 32 = 1 then coeffAt s2.mem (poly4 (pa s (aP (4*g))) k) i else 0 :=
+    fun k hk i hi => by rw [coeffAt_poly4,coeffAt_poly4]; exact hco _ (by omega_using [hk, hi])
+  have e3 : ∀ k,pa s3 (aP (4*g+k)) = poly4 (pa s (aP (4*g))) k := fun k => by
+    rw [pa_poly4,sc_pa hP13]
+  obtain ⟨A,S',hA,_,hG⟩ := h.ks.ex
+  have h24' : s3.gpr .x24 = if s.gpr .x24 = 1 ∧ (s2.gpr .x0).setWidth 32 = 1 then 1 else 0 := by
+    rw [k3.get .x24,e24,h24,Proof.MlDsa.KeyGen.and01 (good_01 hG) hr01]
+  refine ⟨h.ks.k1.step hF hp hP13 (by unfold k1Chk kcChk; layd),
+    fun e' => if e' < 4*g then A e' else polyAt s3.mem (pa s3 (aP e')),S',
+    fun e' he' => ?_,fun _ h => False.elim (Nat.not_lt_zero _ h),?_⟩
+  · dsimp only
+    by_cases hlt : e' < 4*g
+    · rw [ifp hlt]
+      exact L.keepPoly hP13 (by lay) (hA e' hlt)
+    · rw [ifn hlt]
+      refine ⟨?_,rfl⟩
+      obtain ⟨k,rfl⟩ : ∃ k,e' = 4*g+k := ⟨e'-4*g,by omega_using [hlt]⟩
+      rw [e3]
+      by_cases h1 : (s2.gpr .x0).setWidth 32 = 1
+      · exact (masked_one h1 (hco4 k (by omega_using [he']))).2 (hred h1 k (by omega_using [he']))
+      · exact (masked_zero h1 (hco4 k (by omega_using [he']))).1
+  · rw [h24']
+    rcases hG with ⟨h1,b,hb,_⟩ | ⟨h0,hn⟩
+    · rcases hout with ⟨ho,hb4⟩ | ⟨ho,k,hk,hn⟩
+      · obtain ⟨n,hn⟩ := bound4 hb4
+        refine .inl ⟨by rw [ifp ⟨h1,ho⟩],{ b with rejNTT := max b.rejNTT n },fun e' he' => ?_,
+          fun _ h => False.elim (Nat.not_lt_zero _ h)⟩
+        dsimp only
+        by_cases hlt : e' < 4*g
+        · rw [ifp hlt]
+          exact Proof.MlDsa.KeyGen.rejNTTPoly_mono (Nat.le_max_left _ _) (hb e' hlt)
+        · rw [ifn hlt]
+          obtain ⟨k,rfl⟩ : ∃ k,e' = 4*g+k := ⟨e'-4*g,by omega_using [hlt]⟩
+          have hk : k < 4 := by omega_using [he']
+          rw [e3,(masked_one ho (hco4 k hk)).1,← seed4_eq h hk]
+          exact Proof.MlDsa.KeyGen.rejNTTPoly_mono (Nat.le_max_right _ _) (hn k hk)
+      · rw [ifn (fun h => by rw [h.2] at ho; exact absurd ho (by decide))]
+        rw [seed4_eq h hk] at hn
+        have hq : (4*g+k)/p.ℓ < p.k := Nat.div_lt_of_lt_mul (by rw [Nat.mul_comm p.ℓ p.k]; omega_using [hg, hk])
+        exact .inr ⟨rfl,Proof.MlDsa.KeyGen.keyGenInternal_none_A hq (Nat.mod_lt _ (by omega_using [hl])) hn⟩
+    · rw [ifn (fun h => by rw [h.1] at h0; exact absurd h0 (by decide))]
+      exact .inr ⟨rfl,hn⟩
+
+end VG.Proof.MlDsa.AArch64.KeyGen.Optimized
+
+end
+
+end
+
+/-! ### `MlDsa.AArch64.KeyGen.OptimizedMatrixTwo`, which only this module used -/
+
+section
+
+@[expose] public section
+
+namespace VG.Proof.MlDsa.AArch64.KeyGen.Optimized
+open VG.Impl.MlDsa.AArch64.Call
+open VG VG.AArch64 VG.Impl.MlDsa.AArch64.KeyGen
+open VG.Spec.MlDsa (Params Poly rejNTTPoly minBounds)
+open VG.Proof.MlDsa (coeffAt polyAt Reduced PolyIs poly4 seed4)
+open VG.Proof.MlDsa.KeyGen (seedA ifp ifn masked_one masked_zero)
+open VG.Spec.Sha3 (bytesAt)
+
+theorem seed2_eq {p : Params} {σ : State} {e : Nat} {s : State} (h : GS p σ e 2 s) {k : Nat} (hk : k<2) :
+    seed4 s.mem (pa s (sc oSA4)) k=seedA (rhoOf p σ) ((e+k)/p.ℓ) ((e+k)%p.ℓ) := by
+  unfold seed4
+  rw [show pa s (sc oSA4)+BitVec.ofNat 64 (34*k)=pa s (sc (oSA4+34*k)) from sc_add _ _ _]
+  exact h.done k hk
+
+theorem bound2 {ρ : Nat→List Byte} {x : Nat→Poly}
+    (h : ∀k<2,∃b : Spec.MlDsa.Bounds,rejNTTPoly b.rejNTT (ρ k)=some (x k)) :
+    ∃n,∀k<2,rejNTTPoly n (ρ k)=some (x k) := by
+  obtain ⟨b0,h0⟩ := h 0 (by decide)
+  obtain ⟨b1,h1⟩ := h 1 (by decide)
+  refine ⟨max b0.rejNTT b1.rejNTT,fun k hk => ?_⟩
+  rcases (by omega_using [hk] : k=0 ∨ k=1) with rfl | rfl
+  · exact Proof.MlDsa.KeyGen.rejNTTPoly_mono (by omega_using []) h0
+  · exact Proof.MlDsa.KeyGen.rejNTTPoly_mono (by omega_using []) h1
+
+theorem matrixTwo_ok {S : Nat} (hS : S<2^64) {cd : Prog isa} {nm : String}
+    (C : CalleeOk S cd (VG.Proof.MlDsa.rejNTT2Contract AArch64.abi S)) {p : Params} (hF : PFacts p)
+    {σ : State} (hp : kgPre p S σ) {e : Nat} (he : e+2 ≤ p.k*p.ℓ) {s : State}
+    (h : GS p σ e 2 s) (hr : MatrixPrefixes p σ 4 s) :
+    WP isa (.seq (callAt nm cd (rej2Args (sc oSA4) (aP e) (sc (oR4 p))))
+      (.seq (.block and24) (VG.Impl.MlDsa.AArch64.Optimized.MatrixMask.code (aP (e)) 512))) s (fun t => KSamp p σ (e+2) 0 t ∧ MatrixPrefixes p σ 4 t) := by
+  have hkl := hF.kl; have hl := hF.l; have hk := hF.k; have hsc := scr_eq p
+  have L := h.ks.k1.kc.lay hF hp
+  refine WP.seq (WP.mono (rej2At_ok hS C L
+    (seed := sc oSA4) (a := aP (e)) (ss := sc (oR4 p)) (by unfold rej2Chk; layd))
+    fun s2 ⟨hP2,h24,hred,hout⟩ => ?_)
+  have L2 := L.post hP2
+  have hr01 : (s2.gpr .x0).setWidth 32 = 0 ∨ (s2.gpr .x0).setWidth 32 = 1 := by
+    rcases hout with ⟨h1,_⟩ | ⟨h0,_⟩
+    exacts [.inr h1,.inl h0]
+  refine WP.seq (WP.mono (and24_ok s2) fun s20 ⟨h20,e24⟩ => ?_)
+  have hP20 : PPostB S s2 s20 [] := postB_of_keep h20.keep (by decide)
+    (by rw [h20.mem]; exact Frame.refl _ _)
+  have L20 := L2.post hP20
+  have hr20 : (s20.gpr .x0).setWidth 32 = 0 ∨ (s20.gpr .x0).setWidth 32 = 1 := by
+    rw [h20.get .x0]; exact hr01
+  refine WP.mono (VG.Proof.MlDsa.AArch64.Optimized.MatrixMask.mask_ok L20 (a := aP (e)) (N := 32) (by decide) (by decide) (by layd) (by layd) hr20)
+    fun s3 ⟨hP3,k3,hco⟩ => ?_
+  have hP23 := PPostB.app hP20 hP3 (sc_bases _ (by simp))
+  have hP13 := PPostB.app hP2 hP23 (sc_bases _ (by simp))
+  refine ⟨?_,hr.keep L hP13 (fun k hk => by layd)⟩
+  have e2 : pa s2 (aP (e)) = pa s (aP (e)) := sc_pa hP2 _
+  have e20 : pa s20 (aP (e)) = pa s2 (aP (e)) := sc_pa hP20 _
+  rw [h20.get .x0,e20,e2,h20.mem] at hco
+  have hco4 : ∀ k < 2, ∀ i < 256,coeffAt s3.mem (poly4 (pa s (aP (e))) k) i =
+      if (s2.gpr .x0).setWidth 32 = 1 then coeffAt s2.mem (poly4 (pa s (aP (e))) k) i else 0 :=
+    fun k hk i hi => by rw [coeffAt_poly4,coeffAt_poly4]; exact hco _ (by omega_using [hk, hi])
+  have e3 : ∀ k,pa s3 (aP (e+k)) = poly4 (pa s (aP (e))) k := fun k => by
+    rw [pa_poly4,sc_pa hP13]
+  obtain ⟨A,S',hA,_,hG⟩ := h.ks.ex
+  have h24' : s3.gpr .x24 = if s.gpr .x24 = 1 ∧ (s2.gpr .x0).setWidth 32 = 1 then 1 else 0 := by
+    rw [k3.get .x24,e24,h24,Proof.MlDsa.KeyGen.and01 (good_01 hG) hr01]
+  refine ⟨h.ks.k1.step hF hp hP13 (by unfold k1Chk kcChk; layd),
+    fun e' => if e' < e then A e' else polyAt s3.mem (pa s3 (aP e')),S',
+    fun e' he' => ?_,fun _ h => False.elim (Nat.not_lt_zero _ h),?_⟩
+  · dsimp only
+    by_cases hlt : e' < e
+    · rw [ifp hlt]
+      exact L.keepPoly hP13 (by lay) (hA e' hlt)
+    · rw [ifn hlt]
+      refine ⟨?_,rfl⟩
+      obtain ⟨k,rfl⟩ : ∃ k,e' = e+k := ⟨e'-e,by omega_using [hlt]⟩
+      rw [e3]
+      by_cases h1 : (s2.gpr .x0).setWidth 32 = 1
+      · exact (masked_one h1 (hco4 k (by omega_using [he']))).2 (hred h1 k (by omega_using [he']))
+      · exact (masked_zero h1 (hco4 k (by omega_using [he']))).1
+  · rw [h24']
+    rcases hG with ⟨h1,b,hb,_⟩ | ⟨h0,hn⟩
+    · rcases hout with ⟨ho,hb4⟩ | ⟨ho,k,hk,hn⟩
+      · obtain ⟨n,hn⟩ := bound2 hb4
+        refine .inl ⟨by rw [ifp ⟨h1,ho⟩],{ b with rejNTT := max b.rejNTT n },fun e' he' => ?_,
+          fun _ h => False.elim (Nat.not_lt_zero _ h)⟩
+        dsimp only
+        by_cases hlt : e' < e
+        · rw [ifp hlt]
+          exact Proof.MlDsa.KeyGen.rejNTTPoly_mono (Nat.le_max_left _ _) (hb e' hlt)
+        · rw [ifn hlt]
+          obtain ⟨k,rfl⟩ : ∃ k,e' = e+k := ⟨e'-e,by omega_using [hlt]⟩
+          have hk : k < 2 := by omega_using [he']
+          rw [e3,(masked_one ho (hco4 k hk)).1,← seed2_eq h hk]
+          exact Proof.MlDsa.KeyGen.rejNTTPoly_mono (Nat.le_max_right _ _) (hn k hk)
+      · rw [ifn (fun h => by rw [h.2] at ho; exact absurd ho (by decide))]
+        rw [seed2_eq h hk] at hn
+        have hq : (e+k)/p.ℓ < p.k := Nat.div_lt_of_lt_mul (by rw [Nat.mul_comm p.ℓ p.k]; omega_using [he, hk])
+        exact .inr ⟨rfl,Proof.MlDsa.KeyGen.keyGenInternal_none_A hq (Nat.mod_lt _ (by omega_using [hl])) hn⟩
+    · rw [ifn (fun h => by rw [h.1] at h0; exact absurd h0 (by decide))]
+      exact .inr ⟨rfl,hn⟩
+
+end VG.Proof.MlDsa.AArch64.KeyGen.Optimized
+
+end
+
+end
+
+
+@[expose] public section
+
+namespace VG.Proof.MlDsa.AArch64.KeyGen.Optimized
+open VG.Impl.MlDsa.AArch64.Call
+open VG VG.AArch64 VG.Impl.MlDsa.AArch64.KeyGen
+open VG.Impl.MlDsa.AArch64.Optimized.MatrixMask
+open VG.Spec.MlDsa (Params)
+open VG.Spec.Sha3 (bytesAt)
+
+theorem matrixMask_taint : ∀j<80,∀n∈[512,1024],
+    (taint.check (Taint.ofRegs [.x28]) (code (sc (oP j)) n)
+      (VG.Taint.hintOf taint (Taint.ofRegs [.x28]) (code (sc 0) n))).isSome=true := by
+  decide +kernel
+
+theorem matrixTail_tr {p : Params} {S j n : Nat} (hj : j<80) (hn : n∈[512,1024]) :
+    RelCT isa (Two p S) (.seq (.block and24) (code (aP j) n)) fun _ _ => True :=
+  RelCT.seq (Two.step (block_nomem_tr fun i hi _ => by
+    simp only [and24,List.mem_singleton] at hi; subst hi; rfl)
+    fun x _ => WP.mono (and24_ok x) fun _ ⟨o,_⟩ =>
+      ⟨[],postB_of_keep o.keep (by decide) (by rw [o.mem]; exact Frame.refl _ _)⟩)
+    (taintRel [.x28] (fun _ _ h => Two.x28 h) (matrixMask_taint j hj n hn))
+
+theorem matrixFour_piece {P : Prims} {S : Nat} (hP : PrimsOk P S) {p : Params} (hF : PFacts p)
+    {g : Nat} (hg : 4*g+4 ≤ p.k*p.ℓ) : Piece p S (fun σ s => GS p σ (4*g) 4 s ∧ MatrixPrefixes p σ 4 s)
+      (fun σ s => KSamp p σ (4*g+4) 0 s ∧ MatrixPrefixes p σ 4 s)
+      (.seq (rej4At P (sc (oR4 p)) (sc oSA4) (aP (4*g)))
+        (.seq (.block and24) (code (aP (4*g)) 1024))) := by
+  have hkl := hF.kl; have hl := hF.l; have hk := hF.k; have hsc := scr_eq p
+  refine ⟨fun _ _ hp h => matrixFour_ok hP hF hp hg h.1 h.2,
+    rel_of (Q := fun x y => Two p S x y ∧
+      bytesAt x.mem (pa x (sc oSA4)) 136 = bytesAt y.mem (pa y (sc oSA4)) 136) ?_
+      (fun _ _ _ _ hp hp' hq h h' => ⟨kc_two hF hp hp' hq h.1.ks.k1.kc h'.1.ks.k1.kc,by
+        rw [h.1.seeds,h'.1.seeds,rho_pub hq]⟩)⟩
+  have hc : rej4Chk kgR (kgW p) (sc oSA4) (aP (4*g)) (sc (oR4 p)) = true := by
+    unfold rej4Chk; lay
+  have ok := fun x (L : Lay S kgR (kgW p) x) => WP.mono (rej4At_ok hP.s64 hP.rej4 L hc)
+    fun _ h => (⟨_,h.1⟩ : ∃ W,PostB S x _ W)
+  exact RelCT.seq (RelCT.two (fun _ _ h => h.1)
+    (rej4At_tr hP.rej4 (kgOk p) hc (fun _ _ h => ⟨h.1.lx,h.1.ly,h.2,h.1.same⟩))
+    (fun x y h => ⟨ok x h.1.lx,ok y h.1.ly⟩)) (matrixTail_tr (by omega_using [hg, hkl]) (by simp))
+
+theorem matrixTwo_seeds {p : Params} {σ : State} {e : Nat} {s : State} (h : GS p σ e 2 s) :
+    bytesAt s.mem (pa s (sc oSA4)) 68=
+      VG.Proof.MlDsa.KeyGen.seedA (rhoOf p σ) (e/p.ℓ) (e%p.ℓ) ++
+      VG.Proof.MlDsa.KeyGen.seedA (rhoOf p σ) ((e+1)/p.ℓ) ((e+1)%p.ℓ) := by
+  rw [show 68=34+34 from rfl,Proof.MlKem.bytesAt_add]
+  have h0 := seed2_eq h (k := 0) (by decide)
+  have h1 := seed2_eq h (k := 1) (by decide)
+  simp only [Proof.MlDsa.seed4,Nat.mul_zero,Nat.add_zero,Nat.mul_one,
+    VG.Proof.MlKem.AArch64.ptr_zero] at h0 h1
+  rw [h0,h1]
+
+
+theorem matrixTwo_piece {S : Nat} (hS : S<2^64) {cd : Prog isa} {nm : String}
+    (C : CalleeOk S cd (VG.Proof.MlDsa.rejNTT2Contract AArch64.abi S)) {p : Params} (hF : PFacts p)
+    {e : Nat} (he : e+2≤p.k*p.ℓ) : Piece p S (fun σ s => GS p σ e 2 s ∧ MatrixPrefixes p σ 4 s)
+      (fun σ s => KSamp p σ (e+2) 0 s ∧ MatrixPrefixes p σ 4 s)
+      (.seq (callAt nm cd (rej2Args (sc oSA4) (aP e) (sc (oR4 p))))
+        (.seq (.block and24) (code (aP (e)) 512))) := by
+  have hkl := hF.kl; have hl := hF.l; have hk := hF.k; have hsc := scr_eq p
+  refine ⟨fun _ _ hp h => matrixTwo_ok hS C hF hp he h.1 h.2,
+    rel_of (Q := fun x y => Two p S x y ∧
+      bytesAt x.mem (pa x (sc oSA4)) 68 = bytesAt y.mem (pa y (sc oSA4)) 68) ?_
+      (fun _ _ _ _ hp hp' hq h h' => ⟨kc_two hF hp hp' hq h.1.ks.k1.kc h'.1.ks.k1.kc,by
+        rw [matrixTwo_seeds h.1,matrixTwo_seeds h'.1,rho_pub hq]⟩)⟩
+  have hc : rej2Chk kgR (kgW p) (sc oSA4) (aP (e)) (sc (oR4 p)) = true := by
+    unfold rej2Chk; lay
+  have ok := fun x (L : Lay S kgR (kgW p) x) => WP.mono (rej2At_ok hS C L (nm := nm) hc)
+    fun _ h => (⟨_,h.1⟩ : ∃ W,PostB S x _ W)
+  exact RelCT.seq (RelCT.two (fun _ _ h => h.1)
+    (rej2At_tr C (kgOk p) hc (fun _ _ h => ⟨h.1.lx,h.1.ly,h.2,h.1.same⟩))
+    (fun x y h => ⟨ok x h.1.lx,ok y h.1.ly⟩)) (matrixTail_tr (by omega_using [he, hkl]) (by simp))
+
+theorem matrixPrefixes_piece {p : Params} (hF : PFacts p) {S : Nat} :
+    Piece p S (KSamp p · 0 0) (fun σ s => KSamp p σ 0 0 s ∧ MatrixPrefixes p σ 4 s)
+      (.block ((List.range 4).flatMap copySeed4)) := by
+  refine ⟨fun _ _ hp h => matrixPrefixes_ok hF hp h,rel_of (Q := Two p S) ?_ ?_⟩
+  · exact matrixPrefixes_tr fun x y h => ⟨h.same.2,h.same.1 .x28 (by decide)⟩
+  · intro σ τ x y hp hq pub hx hy
+    exact kc_two hF hp hq pub hx.k1.kc hy.k1.kc
+
+theorem matrixNonce_piece {p : Params} (hF : PFacts p) {S e j : Nat}
+    (he : e+j<p.k*p.ℓ) (hj : j<4) :
+    Piece p S (fun σ s => GS p σ e j s ∧ MatrixPrefixes p σ 4 s)
+      (fun σ s => GS p σ e (j+1) s ∧ MatrixPrefixes p σ 4 s) (.block (setSR p e j)) := by
+  refine ⟨fun _ _ hp h => matrixNonce_ok hF hp he hj h.1 h.2,rel_of (Q := Two p S) ?_ ?_⟩
+  · exact matrixNonce_tr p e j fun x y h => ⟨h.same.2,h.same.1 .x28 (by decide)⟩
+  · intro σ τ x y hp hq pub hx hy
+    exact kc_two hF hp hq pub hx.1.ks.k1.kc hy.1.ks.k1.kc
+
+theorem matrixNonces_piece {p : Params} (hF : PFacts p) {S e n : Nat}
+    (he : e+n≤p.k*p.ℓ) (hn : n≤4) :
+    Piece p S (fun σ s => KSamp p σ e 0 s ∧ MatrixPrefixes p σ 4 s)
+      (fun σ s => GS p σ e n s ∧ MatrixPrefixes p σ 4 s)
+      (seqR (fun j => .block (setSR p e j)) 0 n) := by
+  exact Piece.mono (Piece.seqR (I := fun j σ s => GS p σ e j s ∧ MatrixPrefixes p σ 4 s)
+    n 0 (fun j _ hj => matrixNonce_piece hF (by omega_using [he, hj]) (by omega_using [hn, hj])))
+    (fun _ _ _ h => ⟨⟨h.1,fun _ hj => False.elim (Nat.not_lt_zero _ hj)⟩,h.2⟩)
+    (fun _ _ _ h => by simpa only [Nat.zero_add] using h)
+
+theorem matrixGroup_piece {P : Prims} {S : Nat} (hP : PrimsOk P S) {p : Params} (hF : PFacts p)
+    {g : Nat} (hg : 4*g+4≤p.k*p.ℓ) :
+    Piece p S (fun σ s => KSamp p σ (4*g) 0 s ∧ MatrixPrefixes p σ 4 s)
+      (fun σ s => KSamp p σ (4*g+4) 0 s ∧ MatrixPrefixes p σ 4 s)
+      (VG.Impl.MlDsa.AArch64.KeyGen.Optimized.matrixGroup P p g) :=
+  Piece.seq (matrixNonces_piece hF hg (by decide)) (matrixFour_piece hP hF hg)
+
+theorem matrixTwoPhase_piece {S : Nat} (hS : S<2^64) {cd : Prog isa}
+    (C : CalleeOk S cd (Proof.MlDsa.rejNTT2Contract AArch64.abi S))
+    {p : Params} (hF : PFacts p) {e : Nat} (he : e+2≤p.k*p.ℓ) :
+    Piece p S (fun σ s => KSamp p σ e 0 s ∧ MatrixPrefixes p σ 4 s)
+      (fun σ s => KSamp p σ (e+2) 0 s ∧ MatrixPrefixes p σ 4 s)
+      (VG.Impl.MlDsa.AArch64.KeyGen.Optimized.matrixTwo cd p e) :=
+  Piece.seq (matrixNonces_piece hF he (by decide)) (matrixTwo_piece hS C hF he)
+
+theorem matrixWith_piece {P : Prims} {S : Nat} (hP : PrimsOk P S) {cd : Prog isa}
+    (C : CalleeOk S cd (Proof.MlDsa.rejNTT2Contract AArch64.abi S))
+    {p : Params} (hF : PFacts p) (hm : p.k*p.ℓ%4=0 ∨ p.k*p.ℓ%4=2) :
+    Piece p S (fun σ s => K1 p σ s ∧ s.gpr .x24=1) (KSamp p · (p.k*p.ℓ) 0)
+      (VG.Impl.MlDsa.AArch64.KeyGen.Optimized.matrixWith cd P p) := by
+  have groups : Piece p S (fun σ s => KSamp p σ 0 0 s ∧ MatrixPrefixes p σ 4 s)
+      (fun σ s => KSamp p σ (4*(p.k*p.ℓ/4)) 0 s ∧ MatrixPrefixes p σ 4 s)
+      (seqR (VG.Impl.MlDsa.AArch64.KeyGen.Optimized.matrixGroup P p) 0 (p.k*p.ℓ/4)) := by
+    simpa only [Nat.zero_add,Nat.mul_zero,Nat.mul_add,Nat.mul_one] using
+      Piece.seqR (I := fun g σ s => KSamp p σ (4*g) 0 s ∧ MatrixPrefixes p σ 4 s)
+        (p.k*p.ℓ/4) 0 (fun g _ hg => matrixGroup_piece hP hF (by omega_using [hg]))
+  have tail : Piece p S
+      (fun σ s => KSamp p σ (4*(p.k*p.ℓ/4)) 0 s ∧ MatrixPrefixes p σ 4 s)
+      (KSamp p · (p.k*p.ℓ) 0)
+      (if p.k*p.ℓ%4=2 then VG.Impl.MlDsa.AArch64.KeyGen.Optimized.matrixTwo cd p (4*(p.k*p.ℓ/4))
+        else seqR (expA P p) (4*(p.k*p.ℓ/4)) (p.k*p.ℓ%4)) := by
+    rcases hm with hm | hm
+    · rw [VG.Proof.MlDsa.KeyGen.ifn (by omega_using [hm]),hm]
+      refine ⟨fun _ _ _ h => WP.block_nil ?_,RelCT.block_nil (fun _ _ _ => True.intro)⟩
+      simpa only [show 4*(p.k*p.ℓ/4)=p.k*p.ℓ by omega_using [hm]] using h.1
+    · rw [VG.Proof.MlDsa.KeyGen.ifp hm]
+      exact Piece.mono (matrixTwoPhase_piece hP.s64 C hF (by omega_using [hm]))
+        (fun _ _ _ h => h) (fun _ _ _ h => by
+          simpa only [show 4*(p.k*p.ℓ/4)+2=p.k*p.ℓ by omega_using [hm]] using h.1)
+  exact Piece.mono (Piece.seq (matrixPrefixes_piece hF) (Piece.seq groups tail))
+    (fun _ _ _ h => KSamp.zero h.1 h.2) (fun _ _ _ h => h)
+
+end VG.Proof.MlDsa.AArch64.KeyGen.Optimized
+
+end
+
+end
+
+
+@[expose] public section
+
+namespace VG.Proof.MlDsa.AArch64.KeyGen.Optimized
+open VG VG.AArch64 VG.Impl.MlDsa.AArch64.KeyGen
+open VG.Impl.MlDsa.AArch64.KeyGen.Optimized
+open VG.Spec.MlDsa (Params)
+variable {keccak : VG.Proof.Sha3.AArch64.Permutation}
+
+theorem prefix_piece {P : Prims} {S : Nat} (hP : PrimsOk P S) {cd : Prog isa}
+    (C : CalleeOk S cd (Proof.MlDsa.rejNTT2Contract AArch64.abi S))
+    {p : Params} (hF : PFacts p) (hm : p.k*p.ℓ%4=0 ∨ p.k*p.ℓ%4=2)
+    (hs : (p.ℓ+p.k)%4=0 ∨ (p.ℓ+p.k)%4=3) :
+    Piece p S (fun σ s => s=σ) (KSamp p · (p.k*p.ℓ) (p.ℓ+p.k))
+      (prefixWith keccak.callee P cd p) :=
+  Piece.seq (pro_piece hF) (Piece.seq (seeds_piece hF hP.s16 hP.s64)
+    (Piece.seq (matrixWith_piece hP C hF hm) (secrets_piece keccak.callee hF hs S)))
+
+/-- The selected key-generation computation retains the original outcome and
+ABI. Immutable tables are the only additional entry resources. -/
+theorem codeWith_ok {P : Prims} {S : Nat} (hP : PrimsOk P S) {cd : Prog isa}
+    (C : CalleeOk S cd (Proof.MlDsa.rejNTT2Contract AArch64.abi S))
+    {p : Params} (hF : PFacts p) (hm : p.k*p.ℓ%4=0 ∨ p.k*p.ℓ%4=2)
+    (hs : (p.ℓ+p.k)%4=0 ∨ (p.ℓ+p.k)%4=3)
+    {s : State} (hp : kgPre p S s) (roots : Sign.StaticRoots S s)
+    (hdprefix : 16*(prefixWith keccak.callee P cd p).aarch64Depth≤S)
+    (hdpack : ∀j<p.ℓ+p.k,16*(packSecret P p j).aarch64Depth≤S)
+    (hdrow : ∀i<p.k,16*(Impl.MlDsa.AArch64.KeyGen.Optimized.row P p i).aarch64Depth≤S) :
+    WP isa (codeWith keccak.callee P cd p) s fun t =>
+      abiPreserved s t ∧ (Spec.MlDsa.keyGenContract p AArch64.abi S).post s t := by
+  unfold codeWith
+  apply WP.seq
+  refine WP.mono (roots.phase hdprefix hP.s64 ((prefix_piece hP C hF hm hs).ok s s hp rfl))
+    fun u ⟨hu,ru⟩ => ?_
+  apply WP.seq
+  refine WP.mono (rest_ok hP hF hp hu ru hdpack hdrow) fun v hv => ?_
+  exact (epi_piece hF).ok s v hp hv
+
+end VG.Proof.MlDsa.AArch64.KeyGen.Optimized
+
+end
+
+end
+
+/-! ### `MlDsa.AArch64.KeyGen.OptimizedPieceTiming`, which only this module used -/
+
+section
+
+@[expose] public section
+
+namespace VG.Proof.MlDsa.AArch64.KeyGen.Optimized
+open VG VG.AArch64
+open VG.Spec.MlDsa (Params)
+
+/-- Ordinary key-generation pieces preserve the immutable root tables through
+ their already-proved write footprint and the bounded call stack. -/
+theorem piece_rooted {p : Params} {S : Nat} {I J : State→State→Prop} {c : Prog isa}
+    (h : Piece p S I J c) (hd : 16*c.aarch64Depth≤S) (hS : S<2^64) :
+    RelCT isa (RootPair p S I) c (RootPair p S J) := by
+  apply rootPair_progress
+  · intro σ s hp hi roots
+    exact roots.phase hd hS (h.ok σ s hp hi)
+  · apply RelCT.mono h.tr
+    · rintro x y ⟨⟨σ,τ,hσ,hτ,pub,hx,hy⟩,_⟩
+      exact ⟨σ,τ,hσ,hτ,pub,hx.1,hy.1⟩
+    · intro _ _ _
+      trivial
+
+theorem rootPair_mono {p : Params} {S : Nat} {I J : State→State→Prop}
+    (h : ∀σ s,I σ s→J σ s) {x y : State} (hr : RootPair p S I x y) : RootPair p S J x y := by
+  obtain ⟨⟨σ,τ,hσ,hτ,pub,hx,hy⟩,et⟩ := hr
+  exact ⟨⟨σ,τ,hσ,hτ,pub,⟨h _ _ hx.1,hx.2⟩,⟨h _ _ hy.1,hy.2⟩⟩,et⟩
+
+theorem rootPair_finish {p : Params} {S : Nat} {I J : State→State→Prop} {c : Prog isa}
+    (hw : ∀σ s,kgPre p S σ→I σ s→Sign.StaticRoots S s→WP isa c s (J σ))
+    (ht : RelCT isa (RootPair p S I) c fun _ _ => True) :
+    RelCT isa (RootPair p S I) c (R p S J) := by
+  intro x y tx ty u v hr ex ey
+  obtain ⟨he,_⟩ := ht _ _ _ _ _ _ hr ex ey
+  obtain ⟨⟨σ,τ,hσ,hτ,pub,ix,iy⟩,_⟩ := hr
+  obtain ⟨_,u',eu,ju⟩ := hw σ x hσ ix.1 ix.2
+  obtain ⟨_,v',ev,jv⟩ := hw τ y hτ iy.1 iy.2
+  obtain ⟨_,rfl⟩ := Exec.det ex eu
+  obtain ⟨_,rfl⟩ := Exec.det ey ev
+  exact ⟨he,σ,τ,hσ,hτ,pub,ju,jv⟩
+
+end VG.Proof.MlDsa.AArch64.KeyGen.Optimized
+
+end
+
+end
+
 
 -- Formerly `VerifiedGarbage/Proof/MlDsa/AArch64/KeyGen/OptimizedRoundTiming.lean`, which only this module imported.
 section

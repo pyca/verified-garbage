@@ -2,16 +2,110 @@ module
 
 public import VerifiedGarbage.Proof.RsaOaep.X86.Mgf
 public import VerifiedGarbage.Proof.RsaOaep.X86.Hashes.Md5
-public import VerifiedGarbage.Proof.RsaOaep.X86.Hashes.Sha1
-public import VerifiedGarbage.Proof.RsaOaep.X86.Hashes.Sha224
-public import VerifiedGarbage.Proof.RsaOaep.X86.Hashes.Sha256
-public import VerifiedGarbage.Proof.RsaOaep.X86.Hashes.Sha512
+public import VerifiedGarbage.Proof.RsaOaep.X86.Certs
+public import VerifiedGarbage.Proof.RsaPss.X86.Hashes.Sha1
+public import VerifiedGarbage.Proof.RsaPss.X86.Hashes.Sha224
+public import VerifiedGarbage.Proof.RsaPss.X86.Hashes.Sha256
+public import VerifiedGarbage.Proof.RsaPss.X86.Hashes.Sha512
 public import VerifiedGarbage.Proof.MdHashTable.X86.Tables
 public import VerifiedGarbage.Proof.HashTable.Basic
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.Entry
 import VerifiedGarbage.Proof.Framework.X86.Exec
 import VerifiedGarbage.Proof.Framework.X86.Syms
 import VerifiedGarbage.Proof.Framework.Offset
+
+/-! ### `RsaOaep.X86.Hashes.Sha1`, which only this module used -/
+
+section
+
+/-! # RSAES-OAEP on x86: SHA-1, with any backend, as RSASSA-PSS has them (`Proof/RsaPss/X86/Hashes/Sha1.lean`) -/
+
+@[expose] public section
+
+namespace VG.Proof.RsaOaep.X86
+
+open VG.Proof.Sha1.X86.Variants (Backend)
+
+
+/-- SHA-1 with the backend `v`. -/
+def sha1 (v : Backend) : OHash := .ofPss (Proof.RsaPss.X86.sha1 v) (.inl (Proof.RsaPss.X86.sha1 v).glen.symm)
+
+end VG.Proof.RsaOaep.X86
+
+end
+
+end
+
+/-! ### `RsaOaep.X86.Hashes.Sha224`, which only this module used -/
+
+section
+
+/-! # RSAES-OAEP on x86: SHA-224, with any SHA-256 backend, as RSASSA-PSS has them (`Proof/RsaPss/X86/Hashes/Sha224.lean`) -/
+
+@[expose] public section
+
+namespace VG.Proof.RsaOaep.X86
+
+open VG.Proof.Sha256.X86.Variants (Backend)
+
+
+/-- SHA-224 with the SHA-256 backend `v`. -/
+def sha224 (v : Backend) : OHash :=
+  .ofPss (Proof.RsaPss.X86.sha224 v) (.inr (.inl (Proof.RsaPss.X86.sha224 v).glen.symm))
+
+end VG.Proof.RsaOaep.X86
+
+end
+
+end
+
+/-! ### `RsaOaep.X86.Hashes.Sha256`, which only this module used -/
+
+section
+
+/-! # RSAES-OAEP on x86: SHA-256, with any backend, as RSASSA-PSS has them (`Proof/RsaPss/X86/Hashes/Sha256.lean`) -/
+
+@[expose] public section
+
+namespace VG.Proof.RsaOaep.X86
+
+open VG.Proof.Sha256.X86.Variants (Backend)
+
+
+/-- SHA-256 with the backend `v`. -/
+def sha256 (v : Backend) : OHash :=
+  .ofPss (Proof.RsaPss.X86.sha256 v) (.inr (.inr (.inl (Proof.RsaPss.X86.sha256 v).glen.symm)))
+
+end VG.Proof.RsaOaep.X86
+
+end
+
+end
+
+/-! ### `RsaOaep.X86.Hashes.Sha512`, which only this module used -/
+
+section
+
+/-! # RSAES-OAEP on x86: the SHA-512 family, as RSASSA-PSS has them (`Proof/RsaPss/X86/Hashes/Sha512.lean`) -/
+
+@[expose] public section
+
+namespace VG.Proof.RsaOaep.X86
+
+
+def sha384 : OHash := .ofPss Proof.RsaPss.X86.sha384 (.inr (.inr (.inr (.inl Proof.RsaPss.X86.sha384.glen.symm))))
+def sha512 : OHash := .ofPss Proof.RsaPss.X86.sha512 (.inr (.inr (.inr (.inr (.inl Proof.RsaPss.X86.sha512.glen.symm)))))
+def sha512_224 : OHash :=
+  .ofPss Proof.RsaPss.X86.sha512_224 (.inr (.inl Proof.RsaPss.X86.sha512_224.glen.symm))
+def sha512_256 : OHash :=
+  .ofPss Proof.RsaPss.X86.sha512_256 (.inr (.inr (.inl Proof.RsaPss.X86.sha512_256.glen.symm)))
+
+end VG.Proof.RsaOaep.X86
+
+end
+
+end
+
 
 /-!
 # The tables of hash functions RSAES-OAEP and MGF1 take on x86

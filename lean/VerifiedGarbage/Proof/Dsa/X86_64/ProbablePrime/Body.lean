@@ -9,19 +9,198 @@ public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Proof.Framework.X86_64.Spill
 public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
-
-import VerifiedGarbage.Proof.Dsa.X86_64.ProbablePrime.Exit
-import VerifiedGarbage.Proof.Dsa.X86_64.ProbablePrime.Args
-import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PrimeFootprint
+import VerifiedGarbage.Proof.Bignum.X86_64.Words
+import VerifiedGarbage.Proof.Bignum.X86_64.MontMul
+public import VerifiedGarbage.Impl.Bignum.X86_64
+public import VerifiedGarbage.Proof.Dsa.X86_64.ProbablePrime.ABI
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Arguments
+import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Impl.Dsa.Generation.Layout
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ProbablePrime
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Bignum.WorkFrame
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Dsa.BitLengthBounds
-import VerifiedGarbage.Proof.Bignum.X86_64.Words
 import VerifiedGarbage.Proof.Rsa.X86_64.Pieces
 import VerifiedGarbage.Proof.Bignum.X86_64.Setup
 public import VerifiedGarbage.Proof.Dsa.ProbablePrimeContract
+
+/-! ### `Dsa.X86_64.ProbablePrime.Exit`, which only this module used -/
+
+section
+
+/-! # The probable-prime test's exit: `used`, and the status in `rax` -/
+
+@[expose] public section
+namespace VG.Proof.Dsa.X86_64.ProbablePrime
+open VG VG.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Proof.MlKem.X86_64
+open VG.Impl.Dsa.X86_64.ProbablePrime VG.Impl.RsaKeyGen.X86_64.Candidate
+
+/-- The test's status as the function returns it. -/
+def returned (stat : BitVec 64) : BitVec 64 := stat - (stat >>> 1)
+
+theorem exit_ok {s : State} {B U : Addr} (hdi : s.gpr .rdi = B)
+    (hu1 : InRegions (s.rd ++ s.wr) (off B 200) 8) (hs1 : InRegions (s.rd ++ s.wr) (off B 232) 8)
+    (hf : InRegions (s.rd ++ s.wr) (off (s.gpr .rsp) 48) 8)
+    (hU : word s.mem (s.gpr .rsp) 48 = U) (hu : InRegions s.wr U 8)
+    (hsep : Mem.Sep (off B 232) 8 U 8) :
+    WP isa (.block exit) s fun t =>
+      t.gpr .rax = returned (word s.mem B 232) ∧
+      t.mem = s.mem.writeW U (word s.mem B 200) ∧
+      Keep [.rax, .rcx, .r8] s t := by
+  have hread : (s.mem.writeW U (word s.mem B 200)).readW (off B 232) 64 = word s.mem B 232 := by
+    rw [Mem.readW_writeW_sep hsep (by decide)]
+  have h0 : ∀ a : Addr, a + BitVec.ofInt 64 0 = a := fun a => by
+    rw [show BitVec.ofInt 64 0 = 0 by decide]; exact BitVec.add_zero a
+  refine WP.mono (WP.keep [.rax, .rcx, .r8] (Q := fun t =>
+      t.gpr .rax = returned (word s.mem B 232) ∧
+      t.mem = s.mem.writeW U (word s.mem B 200)) (by
+    xrun [Impl.Dsa.X86_64.ProbablePrime.exit, sp, State.ea, BitVec.ofInt_natCast,
+      Impl.Bignum.X86_64.hdr, hdi, kUsed, kStat, VG.Impl.Bignum.sFn, hdrOff, Nat.reduceAdd, Nat.reduceMul,
+      h0, hu1, hs1, hf, hU, hu, hread]
+    rfl) rfl) fun t ⟨h, hk⟩ => ⟨h.1, h.2, hk⟩
+
+end VG.Proof.Dsa.X86_64.ProbablePrime
+
+end
+
+end
+
+/-! ### `Dsa.X86_64.ProbablePrime.Args`, which only this module used -/
+
+section
+
+/-! # The probable-prime test's arguments in the arithmetic workspace's header
+
+The block writes the test's header arguments from registers, and those of
+the size from the size in `r8`: as `argumentWrites` of `argList`, whose
+frame words are the registers `rsi`, `r9` and `rcx`. -/
+
+@[expose] public section
+namespace VG.Proof.Dsa.X86_64.ProbablePrime
+open VG VG.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Proof.MlKem.X86_64
+open VG.Impl.Dsa.X86_64.Generation VG.Impl.Dsa.X86_64.ProbablePrime
+open VG.Impl.RsaKeyGen.X86_64.Candidate
+open VG.Proof.Dsa.X86_64.Generation (argumentWrites argumentValue argumentFits)
+
+/-- The arguments, with the working space, `rand` and `rand_len` as the
+words 0, 1 and 2. -/
+def argList (bits : Nat) : List HeaderArgument :=
+  [⟨kOut, .frame 0 Impl.Dsa.Generation.Layout.witness⟩, ⟨kLen, .literal (draw bits)⟩,
+   ⟨kUsedP, .literal (len bits)⟩, ⟨kChecks, .literal (checks bits)⟩,
+   ⟨20, .frame 0 (candidate bits)⟩, ⟨kRand, .frame 1 0⟩, ⟨kRandLen, .frame 2 0⟩,
+   ⟨kUsed, .literal 0⟩]
+
+/-- The registers the arguments come from. -/
+def argWords (s : State) (k : Nat) : BitVec 64 :=
+  if k = 0 then s.gpr .rsi else if k = 1 then s.gpr .r9 else s.gpr .rcx
+
+theorem argList_fits {bits : Nat} (hb : bits ≤ 3072) : ∀ a ∈ argList bits, argumentFits a := by
+  intro a ha
+  simp only [argList, List.mem_cons, List.not_mem_nil, or_false] at ha
+  rcases ha with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
+  all_goals dsimp only [argumentFits]
+  · decide
+  · refine ⟨by decide, by decide, ?_⟩; unfold draw; split <;> omega_arith
+  · refine ⟨by decide, by decide, ?_⟩; unfold len; omega_using [hb]
+  · refine ⟨by decide, by decide, ?_⟩; unfold checks; split <;> omega_using []
+  · refine ⟨by decide, by decide, by decide, ?_⟩; unfold candidate; split <;> decide
+  · decide
+  · decide
+  · decide
+
+/-- The arithmetic's words, from the size in `r8`, which `cmp` keeps. -/
+theorem sizeWords_ok {bits : Nat} (hb : Supported bits) {s : State} (h8 : s.gpr .r8 = BitVec.ofNat 64 bits) :
+    WP isa (.block sizeWords) s fun t => t.gpr .r12 = BitVec.ofNat 64 (words bits) ∧
+      t.gpr .r8 = s.gpr .r8 ∧ t.mem = s.mem ∧ Keep [.rax, .r12, .r8] s t := by
+  refine WP.mono (WP.keep [.rax, .r12, .r8] (Q := fun t => t.gpr .r12 = BitVec.ofNat 64 (words bits) ∧
+    t.gpr .r8 = s.gpr .r8 ∧ t.mem = s.mem) ?_ (by decide)) fun t ⟨h, hk⟩ => ⟨h.1, h.2.1, h.2.2, hk⟩
+  rcases hb with rfl | rfl | rfl | rfl | rfl <;>
+    xrun [Impl.Dsa.X86_64.ProbablePrime.sizeWords, h8, execCmov, eval]
+
+theorem args_ok {bits : Nat} (hb : Supported bits) {s : State} {B : Addr} (hB : Scr s B 256)
+    (hdi : s.gpr .rdi = B) (h8 : s.gpr .r8 = BitVec.ofNat 64 bits) :
+    WP isa (.block args) s fun t =>
+      t.mem = argumentWrites B (argWords s) s.mem (argList bits) ∧ Keep [.rax, .rdx, .r10, .r8] s t := by
+  have hw : BitVec.signExtend 64 (BitVec.ofNat 32 Impl.Dsa.Generation.Layout.witness) =
+      BitVec.ofNat 64 Impl.Dsa.Generation.Layout.witness := by decide
+  refine WP.mono (WP.keep [.rax, .rdx, .r10, .r8] (Q := fun t =>
+      t.mem = argumentWrites B (argWords s) s.mem (argList bits)) ?_ (by decide)) fun t ⟨hm, hk⟩ => ⟨hm, hk⟩
+  rcases hb with rfl | rfl | rfl | rfl | rfl <;>
+  · xrun [Impl.Dsa.X86_64.ProbablePrime.args, State.ea, Impl.Bignum.X86_64.hdr, hdi, h8, kOut, kLen,
+      kUsedP, kChecks, kE, kRand, kRandLen, kUsed, VG.Impl.Bignum.sFn, hdrOff, Nat.reduceMul,
+      Nat.reduceAdd, hw, execCmov, eval,
+      hB.st (d := 128) (by decide), hB.st (d := 136) (by decide), hB.st (d := 144) (by decide),
+      hB.st (d := 152) (by decide), hB.st (d := 160) (by decide), hB.st (d := 184) (by decide),
+      hB.st (d := 192) (by decide), hB.st (d := 200) (by decide)]
+    simp only [argumentWrites, argList, argumentValue, argWords, kOut, kLen, kUsedP, kChecks, kE,
+      kRand, kRandLen, kUsed, VG.Impl.Bignum.sFn, Nat.reduceMul, Nat.reduceAdd,
+      BitVec.add_zero, ite_true, ite_false, Nat.one_ne_zero, Nat.reduceEqDiff]
+    rfl
+
+end VG.Proof.Dsa.X86_64.ProbablePrime
+
+end
+
+end
+
+/-! ### `Dsa.X86_64.Generation.PrimeFootprint`, which only this module used -/
+
+section
+
+/-! # Bound every write of the complete native primality operation -/
+
+@[expose] public section
+namespace VG.Proof.Dsa.X86_64.Generation
+open VG VG.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64
+open VG.Impl.Bignum.X86_64 VG.Impl.Bignum.X86_64.Public VG.Impl.RsaKeyGen.X86_64.Candidate
+open VG.Proof.Ffdh.X86_64.ParameterCandidate VG.Proof.MillerRabin VG.Proof.MillerRabin.X86_64
+
+theorem primeRanges_bound {w : Nat} (hw : w ≤ 48) :
+    ∀ r ∈ primeRanges w, r.1 + r.2 ≤ VG.Impl.Dsa.Generation.Layout.arithmeticBytes := by
+  simp only [primeRanges, primeTrialRanges, modulusRanges, prepareRanges, r2Ranges, constantRanges,
+    drawRoundRanges, sampleRoundRanges, testRanges, witnessRoundRanges, Caller.callRanges,
+    mutRanges, Proof.MillerRabin.Round.extended, List.map_cons, List.map_nil,
+    List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false,
+    forall_eq_or_imp, forall_eq, Caller.pad, slot, hdrBytes, Proof.Rsa.Mont.arrAt, Proof.Rsa.Mont.hdrBytes,
+    aTab, aAcc, aTmp, aY, aXm, aOne, aR2, aR1, aRm1, aE,
+    kElen, kP, kT0, kT1, kT2, kUsed, kI, kUni, kStat, kU, sMinv, sCnt, sFn,
+    VG.Impl.Dsa.Generation.Layout.arithmeticBytes]
+  and_intros <;> omega_arith
+
+/-- Complete setup and loading fit in the same allocation as the round. -/
+theorem checkPrimeRanges_bound {w : Nat} (hw : w ≤ 48) :
+    ∀ r ∈ (48, 80) :: (224, 8) :: (128, 128) :: (slot w 0, 8 * (w + 2)) :: primeRanges w,
+      r.1 + r.2 ≤ VG.Impl.Dsa.Generation.Layout.arithmeticBytes := by
+  intro r hr
+  simp only [List.mem_cons] at hr
+  rcases hr with rfl | rfl | rfl | rfl | hr
+  · decide
+  · decide
+  · decide
+  · simp only [slot, hdrBytes, VG.Impl.Dsa.Generation.Layout.arithmeticBytes]; omega_using [hw]
+  · exact primeRanges_bound hw r hr
+
+/-- Convert an offset-based workspace frame to the global memory frame used
+by hashing and the outer parameter-generation controllers. -/
+theorem prime_global_frame {B : Addr} {rs : List (Nat × Nat)} {extra : List Region} {m m' : Mem}
+    (hf : WorkFrame B rs extra m m')
+    (hb : ∀ r ∈ rs, r.1 + r.2 ≤ VG.Impl.Dsa.Generation.Layout.arithmeticBytes) :
+    Frame (⟨B, VG.Impl.Dsa.Generation.Layout.arithmeticBytes⟩ :: extra) m m' := by
+  intro a ha
+  apply hf a (fun r hr => ha r (List.mem_cons_of_mem _ hr))
+  intro r hr
+  right
+  have h := ha ⟨B, VG.Impl.Dsa.Generation.Layout.arithmeticBytes⟩ (by simp)
+  change ¬ ofs B a < VG.Impl.Dsa.Generation.Layout.arithmeticBytes at h
+  exact Nat.le_trans (hb r hr) (Nat.le_of_not_gt h)
+
+end VG.Proof.Dsa.X86_64.Generation
+
+end
+
+end
+
 /-! # The probable-prime test's body, between its frame's push and pop -/
 
 -- Formerly `VerifiedGarbage/Proof/Dsa/X86_64/ProbablePrime/Save.lean`, which only this module imported.

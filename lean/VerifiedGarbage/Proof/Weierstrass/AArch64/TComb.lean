@@ -6,7 +6,8 @@ public import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombTbl
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombPublic
 public import VerifiedGarbage.Proof.Weierstrass.CombW
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Comb
-public import VerifiedGarbage.Proof.Weierstrass.TCombLay
+public import VerifiedGarbage.Proof.Weierstrass.CombLay
+public import VerifiedGarbage.Impl.Weierstrass.AArch64.TComb
 import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
 public import VerifiedGarbage.Proof.Framework.AArch64.SimdMem
 public import VerifiedGarbage.Proof.Framework.AArch64.Syms
@@ -18,19 +19,17 @@ public import VerifiedGarbage.Proof.Weierstrass.AArch64.Loop
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Unch
 public import VerifiedGarbage.Proof.Weierstrass.Pow
 public import VerifiedGarbage.Proof.Weierstrass.TCombWords
-import VerifiedGarbage.Proof.Framework.AArch64.Call
+public import VerifiedGarbage.Proof.Framework.AArch64.Call
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Block
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Copy
-import VerifiedGarbage.Proof.Weierstrass.AArch64.SetConst
-import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombDigit
-import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombSelect
-import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombSelectV
-import VerifiedGarbage.Proof.Weierstrass.Law3
-public import VerifiedGarbage.Proof.Weierstrass.CombDigitW
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Copy
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.SetConst
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombDigit
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombSelect
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombSelectV
 public import VerifiedGarbage.Proof.Weierstrass.Law3
+public import VerifiedGarbage.Proof.Weierstrass.CombDigitW
 public import VerifiedGarbage.Proof.Ed25519.AArch64.SqrRows
-public import VerifiedGarbage.Proof.Framework.AArch64.Call
 public import VerifiedGarbage.Proof.Framework.AArch64.Simd
 public import VerifiedGarbage.Proof.Framework.AArch64.Simd64
 public import VerifiedGarbage.Proof.Framework.AArch64.SimdMem64
@@ -57,46 +56,80 @@ public import VerifiedGarbage.Proof.Mont.AArch64.P521Square.Rotate
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Bits
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Blocks
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.CombSelect
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.Copy
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.MontCall
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.MontCall521
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.MontFn384
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.SetConst
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombDigit
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombSelect
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombSelectV
 public import VerifiedGarbage.Proof.Weierstrass.Words
-import VerifiedGarbage.Proof.Ed25519.AArch64.SqrRows
-import VerifiedGarbage.Proof.Framework.AArch64.Simd
-import VerifiedGarbage.Proof.Framework.AArch64.Simd64
-import VerifiedGarbage.Proof.Framework.AArch64.SimdMem64
-import VerifiedGarbage.Proof.Framework.BitByte
-import VerifiedGarbage.Proof.Mont.AArch64.P256Square.Product
-import VerifiedGarbage.Proof.Mont.AArch64.P384Mul.Product
-import VerifiedGarbage.Proof.Mont.AArch64.P384Mul.Reduce
-import VerifiedGarbage.Proof.Mont.AArch64.P384Sqr.Square
-import VerifiedGarbage.Proof.Mont.AArch64.P521Square.Function
-import VerifiedGarbage.Proof.Mont.AArch64.P521Square.Product
-import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ProductCross0
-import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ProductCross1
-import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ProductCross2
-import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ProductCross3
-import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ProductDiag
-import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ProductDouble
-import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ProductLow
-import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ProductTop
-import VerifiedGarbage.Proof.Mont.AArch64.P521Square.Reduction
-import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ReductionArithmetic
-import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ReductionBits
-import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ReductionCorrect
-import VerifiedGarbage.Proof.Mont.AArch64.P521Square.Rotate
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Bits
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Blocks
-import VerifiedGarbage.Proof.Weierstrass.AArch64.CombSelect
-import VerifiedGarbage.Proof.Weierstrass.AArch64.MontCall
-import VerifiedGarbage.Proof.Weierstrass.AArch64.MontCall521
-import VerifiedGarbage.Proof.Weierstrass.AArch64.MontFn384
-import VerifiedGarbage.Proof.Weierstrass.Words
+
+/-! ### `Weierstrass.TCombLay`, which only this module used -/
+
+section
+
+/-!
+# The fixed-base comb from tables in memory: where it keeps its numbers
+
+As the comb's (`CombLay`), with the table of bits `w J` bytes, past the
+scalar's `kbytes` cleared in words by the comb (`TCombLay`). `TCombCfg.toComb` is the comb of
+the same slots with no tables, whose layout this one gives
+(`TCombLay.comb`): so the addition's facts are the comb's.
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Weierstrass
+
+open VG VG.Impl.Mont VG.Impl.Weierstrass VG.Impl.Weierstrass.AArch64 VG.Proof.Mont
+
+/-- The comb of the same slots, with `J` empty tables. -/
+def _root_.VG.Impl.Weierstrass.AArch64.TCombCfg.toComb (K : TCombCfg) : CombCfg where
+  M := K.M
+  S := K.S
+  A := K.A
+  E := K.E
+  D := K.D
+  neg := K.neg
+  zero := K.zero
+  bits := K.bits
+  tbl := List.replicate K.J []
+  start := K.start
+  one := K.one
+
+theorem _root_.VG.Impl.Weierstrass.AArch64.TCombCfg.toComb_J (K : TCombCfg) : K.toComb.J = K.J := by
+  simp [CombCfg.J, TCombCfg.toComb]
+
+/-- The words of the table of bits that the comb clears, past the scalar's
+`kbytes`, up to `w J`. -/
+def _root_.VG.Impl.Weierstrass.AArch64.TCombCfg.zw (K : TCombCfg) : Nat := (K.w * K.J - K.kbytes + 7) / 8
+
+/-- What the comb writes: the comb's, and the cleared words of the table of
+bits. -/
+def tcombW (K : TCombCfg) : List (Nat × Nat) := combW K.toComb ++ [(K.bits + K.kbytes, 8 * K.zw)]
+
+/-- The comb's layout (`CombLay` of `toComb`), the table of bits of `w J` bytes (and its cleared words) in the working space,
+apart from what the loop writes and its cleared words apart from the
+slots and the modulus, with offsets `ldrb` encodes, and the digits'
+width and number in range. -/
+structure TCombLay (K : TCombCfg) (size : Nat) : Prop where
+  comb : CombLay K.toComb size
+  w : 4 ≤ K.w ∧ K.w < 9
+  kbytes : K.kbytes ≤ K.w * K.J
+  bits : K.bits + K.kbytes + 8 * K.zw ≤ size
+  bits8 : (K.bits + K.kbytes) % 8 = 0
+  bitsw : K.bits + K.w * K.J ≤ 4096
+  bits_w : ∀ w ∈ combW K.toComb, K.bits + K.kbytes + 8 * K.zw ≤ w.1 ∨ w.1 + w.2 ≤ K.bits
+  bits_sl : ∀ x ∈ K.M.mo :: combSlots K.toComb,
+    K.bits + K.kbytes + 8 * K.zw ≤ x ∨ x + 8 * K.M.n ≤ K.bits + K.kbytes
+  n8 : K.M.n ≤ 9
+  n2 : K.M.n % 2 = 1 → K.M.n = 9 ∧ K.E.y = K.E.x + 8 * K.M.n
+  e16 : K.E.x % 16 = 0 ∧ (K.M.n % 2 = 0 → K.E.y % 16 = 0)
+  tbl : 16 * K.M.n * K.H ≤ 32768 ∧ K.tblBytes < 65536
+
+end VG.Proof.Weierstrass
+
+end
+
+end
+
 
 /-!
 # The fixed-base comb from tables in memory on AArch64

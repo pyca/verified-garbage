@@ -2,27 +2,40 @@ module
 
 public import VerifiedGarbage.Proof.Ffdh.Arm.SharedCheckPublicPrograms
 public import VerifiedGarbage.Spec.Ffdh.Contract
-
 import VerifiedGarbage.Proof.Ffdh.Arm.SubgroupCT
-import VerifiedGarbage.Proof.Ffdh.Arm.DomainCallMemory
+public import VerifiedGarbage.Proof.Ffdh.Arm.DomainCallMemory
 import VerifiedGarbage.Proof.Bignum.Arm.MontBackend
-import VerifiedGarbage.Impl.Ffdh.Arm.SharedCheckPublic
-import VerifiedGarbage.Proof.Ffdh.Arm.SharedCheckPublicPublicPowerCT
+public import VerifiedGarbage.Impl.Ffdh.Arm.SharedCheckPublic
+public import VerifiedGarbage.Proof.Ffdh.Arm.PowerAtCT
+public import VerifiedGarbage.Proof.Bignum.Arm.TwoExpMontgomeryCT
+public import VerifiedGarbage.Proof.Bignum.Arm.TwoExpMontgomery
+import VerifiedGarbage.Proof.Ffdh.Arm.PublicPowerInput
+import VerifiedGarbage.Proof.Ffdh.Arm.PublicScanCT
+import VerifiedGarbage.Proof.Ffdh.Arm.KeyPowerCT
+import VerifiedGarbage.Proof.Ffdh.Arm.PowerArgs
+import VerifiedGarbage.Proof.Bignum.Arm.SharedWindowPhaseCT
+import VerifiedGarbage.Proof.Ffdh.Arm.StackCT
+import VerifiedGarbage.Proof.Bignum.Arm.WindowBlocksCT
 import VerifiedGarbage.Proof.Ffdh.Arm.SharedCheckPublicPublicPower
 import VerifiedGarbage.Proof.Ffdh.Arm.ValueChecksCT
 import VerifiedGarbage.Proof.Bignum.Arm.TwoExpSharedCT
-import VerifiedGarbage.Proof.Bignum.Arm.WindowBlocksCT
 import VerifiedGarbage.Impl.Ffdh.Arm.Domain
-import VerifiedGarbage.Proof.Ffdh.Arm.SharedCheckPublicStateCT
+public import VerifiedGarbage.Proof.Ffdh.Arm.CheckPublicMainCT
 import VerifiedGarbage.Proof.Ffdh.Arm.BranchCT
 import VerifiedGarbage.Proof.Ffdh.Arm.PrepareStack
 import VerifiedGarbage.Proof.Framework.RelCT
 import VerifiedGarbage.Proof.Ffdh.Arm.QTest
 import VerifiedGarbage.Proof.Ffdh.Arm.Context
-import VerifiedGarbage.Impl.Ffdh.Arm.SharedPrepare
+public import VerifiedGarbage.Impl.Ffdh.Arm.SharedPrepare
 import VerifiedGarbage.Proof.Ffdh.Arm.DomainSharedPrepareAt
-import VerifiedGarbage.Proof.Ffdh.Arm.SharedPrepareCT
-import VerifiedGarbage.Proof.Ffdh.Arm.StackCT
+public import VerifiedGarbage.Proof.Ffdh.Arm.Prepare
+import VerifiedGarbage.Proof.Ffdh.Arm.PrepareCT
+import VerifiedGarbage.Impl.Bignum.Arm.SharedPrecompute
+import VerifiedGarbage.Proof.Bignum.Arm.PrecomputeState
+import VerifiedGarbage.Proof.Bignum.Arm.PrecomputeCT
+import VerifiedGarbage.Proof.Bignum.Arm.SharedR2CT
+import VerifiedGarbage.Proof.Bignum.Arm.ImportModulus
+import VerifiedGarbage.Proof.Bignum.Arm.PrecomputeInverse
 import VerifiedGarbage.Impl.Bignum.Arm.MontCall
 import VerifiedGarbage.Proof.Ffdh.Arm.ImportAtCT
 import VerifiedGarbage.Proof.Ffdh.Arm.Range
@@ -36,21 +49,287 @@ import VerifiedGarbage.Proof.Ffdh.Arm.Head
 import VerifiedGarbage.Proof.Ffdh.Arm.HeadCT
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
-import VerifiedGarbage.Proof.Ffdh.Arm.SharedCheckPublicFn
+public import VerifiedGarbage.Proof.Ffdh.Arm.SharedCheckPublicFn
 import VerifiedGarbage.Proof.Ffdh.Arm.Block
 import VerifiedGarbage.Proof.Ffdh.Arm.CheckPublicEntryCT
 import VerifiedGarbage.Proof.Ffdh.Arm.FrameCT
 import VerifiedGarbage.Proof.Ffdh.Arm.Entered
 import VerifiedGarbage.Proof.Ffdh.Arm.CheckPublicEntry
-import VerifiedGarbage.Proof.Ffdh.Arm.SharedCheckPublicCorrect
+import VerifiedGarbage.Proof.Ffdh.Arm.SharedCheckPublicPre
+import VerifiedGarbage.Proof.Ffdh.Arm.CheckPublicSpec
 import VerifiedGarbage.Proof.Framework.Arm.Contract
+import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Sig
 import Init.Data.BitVec.Basic
 import VerifiedGarbage.TCB.Arm.Target
-import VerifiedGarbage.Proof.Ffdh.Arm.SharedCheckPublicPre
-import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Lit
 import Batteries.Logic
+
+/-! ### `Ffdh.Arm.SharedCheckPublicPublicPowerCT`, which only this module used -/
+
+section
+
+/-! Shared subgroup exponentiation trims only the public exponent prefix. -/
+
+@[expose] public section
+namespace VG.Proof.Ffdh.Arm
+open VG VG.Arm VG.Proof.Bignum.Arm
+
+private theorem sharedPublicPower_ct {base src ep : BitVec 32} {len w M : Nat}
+    {P : State → Prop} {regions : List Region} {bb eb1 eb2 : List Byte}
+    (K : TwoExp.Montgomery base len w P regions) (ct : TwoExp.MontgomeryTiming K)
+    (fits : Proof.Rsa.Mont.arrAt w 16 ≤ 8 * len) (positive : 0 < eb1.length)
+    (length : eb1.length = eb2.length)
+    (separate : ∀ r ∈ regions, Region.Disjoint ⟨State.addr ep, eb1.length⟩ r) :
+    RelCT isa (fun s t => KeyPower.Input base src ep len w M P regions bb eb1 s ∧
+      KeyPower.Input base src ep len w M P regions bb eb2 t ∧ s.sp = t.sp)
+      (.seq VG.Impl.Ffdh.Arm.powerImport (VG.Impl.Bignum.Arm.SharedWindow.phase K.op))
+      (fun _ _ => True) := by
+  exact relCT_chain
+    ((KeyPower.import_ct length).mono
+      (fun _ _ h => ⟨h.1.power, h.2.1.power, h.2.2⟩) (fun _ _ h => h))
+    (fun s h => WP.mono (KeyPower.import_ok K s h) fun _ k => ⟨k.1.phase, k.1.persistent⟩)
+    (fun s h => WP.mono (KeyPower.import_ok K s h) fun _ k => ⟨k.1.phase, k.1.persistent⟩)
+    (SharedWindow.phase_ct K ct fits positive length separate)
+
+theorem sharedCheckPublicPublicPower_ct {p : Inputs} {slots : List Nat} {bs es ec M : Nat}
+    {bb eb : List Byte} {P : State → Prop} {regions : List Region}
+    (K : TwoExp.Montgomery p.base p.len p.w P regions) (ct : TwoExp.MontgomeryTiming K)
+    (stable : stableSlots slots = true) (hb : bs ∈ slots) (he : es ∈ slots)
+    (hc : ec ∈ slots) (hk : 32 ∈ slots)
+    (baseLength : bb.length = p.k) (positive : 0 < eb.length) (fit : eb.length < 2^32)
+    (count : p.slotValue ec = BitVec.ofNat 32 eb.length) (odd : M % 2 = 1)
+    (separate : ∀ r ∈ regions, Region.Disjoint ⟨State.addr (p.slotValue es),eb.length⟩ r) :
+    RelCT isa (fun s t => (PowerAtInput p slots bs es M bb eb s ∧ P s) ∧
+      (PowerAtInput p slots bs es M bb eb t ∧ P t) ∧ s.sp = t.sp)
+      (VG.Impl.Ffdh.Arm.SharedCheckPublic.publicPowerAt K.op bs es ec) (fun _ _ => True) := by
+  intro s0 t0 tr1 tr2 u v initial run1 run2
+  have leadLt := VG.Proof.Ffdh.lead_lt (bs := eb) (by intro empty; rw [empty] at positive; simp at positive)
+  have trimmedPositive : 0 < (eb.drop (VG.Proof.Ffdh.lead eb)).length := by
+    simp only [List.length_drop]; omega_using [leadLt]
+  have args (s : State) (h : PowerAtInput p slots bs es M bb eb s ∧ P s) :
+      WP isa (.block (VG.Impl.Ffdh.Arm.Domain.powerArgs bs es ec)) s
+        (KeyPower.Input p.base (p.slotValue bs) (p.slotValue es) p.len p.w M P regions bb eb) := by
+    obtain ⟨tr,u,run,input⟩ := powerArgs_input s stable hb he hc hk baseLength positive fit count odd h.1
+    obtain ⟨_,v,run',values,rest⟩ := powerArgs_ok s bs es ec h.1.context stable hb he hc hk
+    obtain ⟨_,rfl⟩ := Exec.det run run'
+    have frame : Frame [⟨State.addr p.base,8*p.len⟩] s.mem u.mem := by
+      rw [values.2.2.2.2]; exact Frame.refl _ _
+    exact ⟨tr,u,run,input,K.stable frame (rest.mono (by simp [roundClobbers])) h.2,separate⟩
+  have trim (s : State)
+      (h : KeyPower.Input p.base (p.slotValue bs) (p.slotValue es) p.len p.w M P regions bb eb s) :
+      WP isa VG.Impl.Ffdh.Arm.PublicScan.code s
+        (KeyPower.Input p.base (p.slotValue bs)
+          (p.slotValue es+BitVec.ofNat 32 (VG.Proof.Ffdh.lead eb)) p.len p.w M P regions bb
+            (eb.drop (VG.Proof.Ffdh.lead eb))) := by
+    refine WP.mono (PublicScan.input_ok s h.power) ?_
+    rintro t ⟨input,mem,rest⟩
+    have frame : Frame [⟨State.addr p.base,8*p.len⟩] s.mem t.mem := by
+      rw [mem]; exact Frame.refl _ _
+    exact ⟨input,K.stable frame (rest.mono (by simp [roundClobbers])) h.persistent,
+      fun r hr => PublicScan.suffix_separate h.power.exponentBytes positive (h.separate r hr)⟩
+  have scan := (PublicScan.code_ct positive fit).mono
+    (P' := fun (s t : State) => KeyPower.Input p.base (p.slotValue bs) (p.slotValue es) p.len p.w M P regions bb eb s ∧
+      KeyPower.Input p.base (p.slotValue bs) (p.slotValue es) p.len p.w M P regions bb eb t ∧ s.sp = t.sp)
+    (fun _ _ h => ⟨⟨h.1.power.exponentBytes,h.1.power.exponent,h.1.power.exponentCount⟩,
+      ⟨h.2.1.power.exponentBytes,h.2.1.power.exponent,h.2.1.power.exponentCount⟩,h.2.2⟩)
+    (fun _ _ h => h)
+  have trimmedSeparate : ∀ r ∈ regions, Region.Disjoint
+      ⟨State.addr (p.slotValue es+BitVec.ofNat 32 (VG.Proof.Ffdh.lead eb)),
+        (eb.drop (VG.Proof.Ffdh.lead eb)).length⟩ r := by
+    intro r hr
+    exact PublicScan.suffix_separate initial.1.1.exponent positive (separate r hr)
+  have tail := relCT_chain scan trim trim
+    (sharedPublicPower_ct K ct p.width.2.2.1 trimmedPositive rfl trimmedSeparate)
+  unfold VG.Impl.Ffdh.Arm.SharedCheckPublic.publicPowerAt at run1 run2
+  exact (relCT_chain ((powerArgs_ct bs es ec).mono (fun _ _ h => h.2.2) (fun _ _ _ => trivial))
+    (fun s h => args s h) (fun s h => args s h) tail) s0 t0 tr1 tr2 u v initial run1 run2
+
+end VG.Proof.Ffdh.Arm
+
+end
+
+end
+
+/-! ### `Ffdh.Arm.SharedCheckPublicStateCT`, which only this module used -/
+
+section
+
+/-! Persistent call memory accompanies the existing public-value timing states. -/
+
+@[expose] public section
+namespace VG.Proof.Ffdh.Arm
+open VG VG.Arm VG.Proof.Bignum.Arm
+
+structure SharedSubgroupInput (p : Inputs) (slots : List Nat) (slot : Nat) (bb : List Byte)
+    (s : State) : Prop extends SubgroupInput p slots slot bb s where
+  calls : DomainCallMemory p s
+
+structure SharedPublicMainInput (p : Inputs) (slots : List Nat) (yb : List Byte)
+    (s : State) : Prop extends PublicMainInput p slots yb s where
+  calls : DomainCallMemory p s
+
+structure SharedPublicImported (p : Inputs) (slots : List Nat) (yb : List Byte)
+    (s : State) : Prop extends PublicImported p slots yb s where
+  calls : DomainCallMemory p s
+
+structure SharedPublicRanged (p : Inputs) (slots : List Nat) (yb : List Byte)
+    (s : State) : Prop extends PublicRanged p slots yb s where
+  calls : DomainCallMemory p s
+
+end VG.Proof.Ffdh.Arm
+
+end
+
+end
+
+/-! ### `Ffdh.Arm.SharedPrepareCT`, which only this module used -/
+
+section
+
+/-! # FFDH setup uses shared constant-time Montgomery precomputation -/
+
+-- Formerly `VerifiedGarbage/Proof/Bignum/Arm/SharedPrecomputeCT.lean`, which only this module imported.
+section
+
+/-! # Shared modulus precomputation has a public trace -/
+
+section
+namespace VG.Proof.Bignum.Arm
+open VG VG.Arm VG.Impl.Bignum.Arm
+
+theorem sharedPrecompute_ct {base src : BitVec 32} {len w k : Nat}
+    {P : State → Prop} {regions : List Region}
+    (K : TwoExp.Montgomery base len w P regions) (ct : TwoExp.MontgomeryTiming K)
+    (countFits : 128 * w < 2 ^ 32) :
+    RelCT isa (fun s t => (PrecomputeInput base src len w k s ∧ P s) ∧
+      (PrecomputeInput base src len w k t ∧ P t) ∧ s.sp = t.sp)
+      (SharedPrecompute.precompute K.op) (fun _ _ => True) := by
+  have imported (s : State) (h : PrecomputeInput base src len w k s ∧ P s) :
+      WP isa importModulus s fun t => PrecomputeModulus base len w t ∧ P t := by
+    refine (importModulus_ready s h.1).and ?_
+    refine WP.mono (importModulus_ok s h.1.workspace h.1.layout h.1.width h.1.positive h.1.fits h.1.sourceFits
+      h.1.readable h.1.separate h.1.ptr h.1.source h.1.count h.1.stackRead h.1.stackSep h.1.saved) ?_
+    rintro t ⟨_, _, _, _, frame, rest⟩
+    exact K.stable frame rest h.2
+  have inverse (s : State) (h : PrecomputeModulus base len w s ∧ P s) :
+      WP isa precomputeInverse s fun t => ArithmeticReady base len w t ∧ P t := by
+    refine (precomputeInverse_ready s h.1).and ?_
+    refine WP.mono (precomputeInverse_ok s h.1.workspace h.1.layout h.1.width h.1.ptr h.1.odd h.1.large
+      h.1.stackRead h.1.stackSep h.1.saved) ?_
+    rintro t ⟨_, _, frame, rest⟩
+    exact K.stable frame rest h.2
+  unfold SharedPrecompute.precompute
+  refine relCT_chain ((importModulus_ct (base := base) (src := src) (len := len) (w := w) (k := k)).mono
+    (fun _ _ h => ⟨h.1.1, h.2.1.1, h.2.2⟩) (fun _ _ h => h)) imported imported ?_
+  exact relCT_chain ((precomputeInverse_ct (base := base) (len := len) (w := w)).mono
+    (fun _ _ h => ⟨h.1.1, h.2.1.1⟩) (fun _ _ h => h)) inverse inverse (SharedR2.r2_ct K ct countFits)
+
+end VG.Proof.Bignum.Arm
+end
+
+end
+
+@[expose] public section
+namespace VG.Proof.Ffdh.Arm
+open VG VG.Arm VG.Proof.Bignum.Arm
+
+theorem sharedPrepare_ct {base src : BitVec 32} {len k : Nat}
+    {P : State → Prop} {regions : List Region}
+    (K : TwoExp.Montgomery base len (Spec.Rsa.modulusWords k) P regions)
+    (ct : TwoExp.MontgomeryTiming K) (countFits : 128 * Spec.Rsa.modulusWords k < 2 ^ 32) :
+    RelCT isa (fun s t => (PrepareInput base src len k s ∧ P s) ∧
+      (PrepareInput base src len k t ∧ P t) ∧ s.sp = t.sp)
+      (VG.Impl.Ffdh.Arm.SharedPrepare.code K.op) (fun _ _ => True) := by
+  have ready (s : State) (h : PrepareInput base src len k s ∧ P s) :
+      WP isa VG.Impl.Bignum.Arm.PublicFn.prepare s fun t =>
+        PrecomputeInput base src len (Spec.Rsa.modulusWords k) k t ∧ P t :=
+    WP.mono (prepare_input s h.1) fun _ r => ⟨r.1, K.stable r.2.1 r.2.2 h.2⟩
+  unfold VG.Impl.Ffdh.Arm.SharedPrepare.code
+  exact relCT_chain (prepareInput_ct.mono (fun _ _ h => ⟨h.1.1, h.2.1.1, h.2.2⟩) (fun _ _ h => h))
+    ready ready (sharedPrecompute_ct K ct countFits)
+
+end VG.Proof.Ffdh.Arm
+
+end
+
+end
+
+/-! ### `Ffdh.Arm.SharedCheckPublicCorrect`, which only this module used -/
+
+section
+
+/-! The native callable public check satisfies the shared FFDH result contract. -/
+
+@[expose] public section
+namespace VG.Proof.Ffdh.Arm
+open VG VG.Arm VG.Proof.Bignum.Arm
+
+theorem sharedCheckPublic_data (s : State) (pre : (Spec.Ffdh.checkPublicContract abi 176).pre s) :
+    ∃ (p : Inputs) (yb : List Byte), stackArg s 1 = p.base ∧ s.gpr .r0 = p.domain ∧
+      s.gpr .r3 = p.publicValue ∧ (s.gpr .r2).toNat = p.k ∧ (stackArg s 2).toNat = p.len ∧
+      Spec.Rsa.bytesAt s.mem (State.addr p.domain) (s.gpr .r1).toNat = p.dom ∧
+      Spec.Rsa.bytesAt s.mem (State.addr p.publicValue) p.k = yb ∧ SharedCheckPublicFnInput p yb s := by
+  have original := pre
+  sig_pre [Spec.Ffdh.checkPublicContract, Spec.Ffdh.checkPublicSig, abi, argRegs, reduceClassify, Loc.val, State.addr] at pre
+  obtain ⟨_, _, _, _, _, _, _, _, _, _, _, _, _, _, bounds, domainLen, yLen, space⟩ := pre
+  let dom := Spec.Rsa.bytesAt s.mem (State.addr (s.gpr .r0)) (s.gpr .r1).toNat
+  have domLength : dom.length = (s.gpr .r1).toNat := VG.Proof.Bignum.bytesAt_length _ _ _
+  let p : Inputs := {
+    base := stackArg s 1
+    domain := s.gpr .r0
+    publicValue := s.gpr .r3
+    privateValue := 0
+    output := 0
+    entropy := 0
+    len := (stackArg s 2).toNat
+    k := (s.gpr .r2).toNat
+    privateLength := 0
+    hasQ := decide ((s.gpr .r1).toNat = 3 * (s.gpr .r2).toNat)
+    dom := dom
+    minLength := bounds.1
+    maxLength := bounds.2
+    space := space
+    domainLength := by
+      rw [domLength]
+      simp only [decide_eq_true_eq]
+      split
+      · assumption
+      · rcases domainLen with h | h
+        · exact h
+        · contradiction }
+  let yb := Spec.Rsa.bytesAt s.mem (State.addr (s.gpr .r3)) (s.gpr .r2).toNat
+  exact ⟨p, yb, rfl, rfl, rfl, rfl, rfl, rfl, rfl,
+    sharedCheckPublic_input s original (p := p) (yb := yb) rfl rfl rfl rfl rfl rfl rfl⟩
+
+theorem sharedCheckPublic_correct (b : MontBackend) (s : State) (pre : (Spec.Ffdh.checkPublicContract abi 176).pre s) :
+    ∃ tr t, Exec isa (SharedCheckPublic.code b) s tr t ∧
+      abiPreserved s t ∧ (Spec.Ffdh.checkPublicContract abi 176).post s t := by
+  obtain ⟨p, yb, _, domain, value, count, _, domainBytes, valueBytes, input⟩ := sharedCheckPublic_data s pre
+  obtain ⟨tr, t, run, preserved, result⟩ := sharedCheckPublicFn_ok b s input
+  refine ⟨tr, t, run, preserved, ?_⟩
+  have yLen : (stackArg s 0).toNat = (s.gpr .r2).toNat := by
+    sig_pre [Spec.Ffdh.checkPublicContract, Spec.Ffdh.checkPublicSig, abi, argRegs, reduceClassify, Loc.val, State.addr] at pre
+    exact pre.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.1
+  sig_post [Spec.Ffdh.checkPublicContract, Spec.Ffdh.checkPublicSig, abi, argRegs, reduceClassify, Loc.val, State.addr]
+  rw [BitVec.setWidth_append_eq_right]
+  change Spec.Ffdh.domainValid (s.gpr .r2).toNat
+    (Spec.Rsa.bytesAt s.mem (State.addr (s.gpr .r0)) (s.gpr .r1).toNat) = true → _
+  rw [domain, domainBytes, count]
+  intro valid
+  rw [yLen, count, value]
+  change (t.gpr .r0).toNat = if Spec.Ffdh.publicValid
+    ⟨Spec.Ffdh.domainOf p.k (Spec.Rsa.bytesAt s.mem (State.addr p.domain) (s.gpr .r1).toNat),
+      Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (State.addr p.publicValue) p.k)⟩ then 1 else 0
+  rw [domainBytes, valueBytes, result, checkedPublicFlag_spec p (Spec.Rsa.os2ip yb) valid]
+  split <;> rfl
+
+end VG.Proof.Ffdh.Arm
+
+end
+
+end
+
 /-! The backend's caller transformation preserves shared Montgomery calls. -/
 
 -- Formerly `VerifiedGarbage/Proof/Ffdh/Arm/SharedCheckPublicSubgroupCT.lean`, which only this module imported.

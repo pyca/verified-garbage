@@ -1,12 +1,892 @@
 module
 
 public import VerifiedGarbage.Impl.Argon2.X86_64.FillFinish
-public import VerifiedGarbage.Proof.Argon2.X86_64.FillIterations
+public import VerifiedGarbage.Impl.Argon2.X86_64.FillIterations
+public import VerifiedGarbage.Impl.Argon2.X86_64.FillIteration
+public import VerifiedGarbage.Impl.Argon2.X86_64.FillSlices
+public import VerifiedGarbage.Impl.Argon2.X86_64.FillSlice
+public import VerifiedGarbage.Impl.Argon2.X86_64.FillLanes
+public import VerifiedGarbage.Proof.Argon2.X86_64.SegmentSetupPrepare
+import VerifiedGarbage.Proof.Argon2.X86_64.FillLaneAdvance
+import VerifiedGarbage.Proof.Argon2.X86_64.SegmentSetup
+public import VerifiedGarbage.Proof.Argon2.Lanes
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+public import VerifiedGarbage.Proof.Argon2.Slices
+import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Argon2.Iterations
 public import VerifiedGarbage.Proof.Argon2.X86_64.FinishReady
 import VerifiedGarbage.Proof.Argon2.Serialization
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Argon2.X86_64.ReductionLoopState
 public import VerifiedGarbage.Proof.Argon2.Contract
+
+/-! ### `Argon2.X86_64.FillIterations`, which only this module used -/
+
+section
+
+/-! ### `Argon2.X86_64.FillIterationsBody`, which only this module used -/
+
+section
+
+/-! ### `Argon2.X86_64.FillIteration`, which only this module used -/
+
+section
+
+/-! ### `Argon2.X86_64.FillSlices`, which only this module used -/
+
+section
+
+/-! ### `Argon2.X86_64.FillSlicesBody`, which only this module used -/
+
+section
+
+/-! ### `Argon2.X86_64.FillSlice`, which only this module used -/
+
+section
+
+/-! ### `Argon2.X86_64.FillLanes`, which only this module used -/
+
+section
+
+/-! ### `Argon2.X86_64.FillLanesBody`, which only this module used -/
+
+section
+
+/-! One lane iteration fills its segment and advances the public lane. -/
+
+@[expose] public section
+
+namespace VG.Proof.Argon2.X86_64.FillLanes
+
+open VG VG.X86_64 VG.Spec.Argon2
+
+structure Done (s t : State) (p : Params) (pass lane slice : Nat) (state : FillState) : Prop where
+  represented : Proof.Argon2.Represents t.mem (FillKernel.matrix t) p.blocks
+    (Proof.Argon2.segment p pass lane slice 0 p.segmentLen state).memory
+  matrix : FillKernel.matrix t = FillKernel.matrix s
+  work : AddressCalls.work t = AddressCalls.work s
+  laneWord : t.gpr .rbx = BitVec.ofNat 64 (lane + 1)
+  rd : t.rd = s.rd
+  wr : t.wr = s.wr
+  frame : Frame (FillBlock.writes s p) s.mem t.mem
+  mxcsr : ctl t.mxcsr = ctl s.mxcsr
+  regs : ∀ r ∈ calleeSaved, r ≠ .rbx → r ≠ .r15 → t.gpr r = s.gpr r
+  header : ∃ a, SegmentSetup.Ready p pass lane slice a ∧ Divide.Keeps [.rbx] a t
+  cf : t.cf = decide (lane + 1 < p.lanes)
+  next : lane + 1 < p.lanes → SegmentSetup.Ready p pass (lane + 1) slice t
+
+theorem body_ok [CompressImpl] (s : State) (p : Params) (pass lane slice : Nat)
+    (h : SegmentSetup.Ready p pass lane slice s) (state : FillState)
+    (represented : Proof.Argon2.Represents s.mem (FillKernel.matrix s) p.blocks state.memory) :
+    WP isa Impl.Argon2.X86_64.FillLanes.body s (Done s · p pass lane slice state) := by
+  unfold Impl.Argon2.X86_64.FillLanes.body
+  refine WP.seq ((SegmentSetup.code_ok s p pass lane slice h state represented).mono ?_)
+  intro a filled
+  have ready := finished_ready h.parameters filled
+  refine (advance_ok a (ready.layout.frameRead 184 (by simp))).mono ?_
+  rintro t ⟨value, flag, keeps⟩
+  obtain ⟨old, words⟩ := ready.words
+  have bp := keeps.regs .rbp (by decide)
+  have base : FillKernel.matrix t = FillKernel.matrix a := by unfold FillKernel.matrix; rw [keeps.mem, bp]
+  have work : AddressCalls.work t = AddressCalls.work a := by unfold AddressCalls.work; rw [keeps.mem, bp]
+  have added : a.gpr .rbx + 1 = BitVec.ofNat 64 (lane + 1) := by
+    rw [words.laneWord, BitVec.ofNat_add]; rfl
+  have nextWord := value.trans added
+  have lanesBound : p.lanes < 2 ^ 64 := Nat.lt_trans h.parameters.lanesBound (by decide)
+  have laneBound := h.parameters.laneBound
+  refine ⟨?_, base.trans filled.matrix, work.trans filled.work, nextWord, keeps.rd.trans filled.rd,
+    keeps.wr.trans filled.wr, ?_, (ctl_eq_of keeps.mxcsr).trans filled.mxcsr, ?_, ⟨a, ready, keeps⟩, ?_, ?_⟩
+  · rw [keeps.mem, base]; exact filled.represented
+  · rw [keeps.mem]; exact filled.frame
+  · intro r hr bx ix
+    have outside : r ∉ [Reg.rbx] := by simp only [List.mem_cons, List.not_mem_nil, or_false]; exact bx
+    exact (keeps.regs r outside).trans (filled.regs r hr ix)
+  · rw [flag, added, ready.lanesWord, ReferenceMap.word_nat (lane + 1) (by omega_using [lanesBound, laneBound]),
+      ReferenceMap.word_nat p.lanes lanesBound]
+  · intro active; exact change_lane_ready ready keeps nextWord active
+
+end VG.Proof.Argon2.X86_64.FillLanes
+
+end
+
+end
+
+
+/-! Termination and correctness of all remaining lanes in one slice. -/
+
+@[expose] public section
+
+namespace VG.Proof.Argon2.X86_64.FillLanes
+
+open VG VG.X86_64 VG.Spec.Argon2
+
+structure Finished (s t : State) (p : Params) (pass slice : Nat) (state : FillState) : Prop where
+  represented : Proof.Argon2.Represents t.mem (FillKernel.matrix t) p.blocks state.memory
+  matrix : FillKernel.matrix t = FillKernel.matrix s
+  work : AddressCalls.work t = AddressCalls.work s
+  laneWord : t.gpr .rbx = BitVec.ofNat 64 p.lanes
+  rd : t.rd = s.rd
+  wr : t.wr = s.wr
+  frame : Frame (FillBlock.writes s p) s.mem t.mem
+  mxcsr : ctl t.mxcsr = ctl s.mxcsr
+  regs : ∀ r ∈ calleeSaved, r ≠ .rbx → r ≠ .r15 → t.gpr r = s.gpr r
+  header : ∃ lane a, lane + 1 = p.lanes ∧ SegmentSetup.Ready p pass lane slice a ∧ Divide.Keeps [.rbx] a t
+
+theorem Done.finished {s t : State} {p : Params} {pass lane slice : Nat} {state : FillState}
+    (h : Done s t p pass lane slice state) (last : lane + 1 = p.lanes) :
+    Finished s t p pass slice (Proof.Argon2.segment p pass lane slice 0 p.segmentLen state) := by
+  obtain ⟨a, ready, keeps⟩ := h.header
+  exact ⟨h.represented, h.matrix, h.work, last ▸ h.laneWord, h.rd, h.wr, h.frame, h.mxcsr,
+    h.regs, lane, a, last, ready, keeps⟩
+
+theorem Finished.prepend {s a t : State} {p : Params} {pass lane slice : Nat} {state finalState : FillState}
+    (first : Done s a p pass lane slice state) (rest : Finished a t p pass slice finalState) :
+    Finished s t p pass slice finalState := by
+  refine ⟨rest.represented, rest.matrix.trans first.matrix, rest.work.trans first.work, rest.laneWord,
+    rest.rd.trans first.rd, rest.wr.trans first.wr, ?_, rest.mxcsr.trans first.mxcsr, ?_, rest.header⟩
+  · have frame := rest.frame
+    rw [FillBlock.writes, first.matrix, first.work,
+      first.regs .rsp (by simp [calleeSaved]) (by decide) (by decide),
+      first.regs .rbp (by simp [calleeSaved]) (by decide) (by decide)] at frame
+    exact first.frame.trans frame
+  · intro r hr bx ix; exact (rest.regs r hr bx ix).trans (first.regs r hr bx ix)
+
+theorem loop_ok [CompressImpl] (count : Nat) (s : State) (p : Params) (pass lane slice : Nat)
+    (h : SegmentSetup.Ready p pass lane slice s) (state : FillState)
+    (represented : Proof.Argon2.Represents s.mem (FillKernel.matrix s) p.blocks state.memory)
+    (positive : 0 < count) (endLane : lane + count = p.lanes) :
+    WP isa Impl.Argon2.X86_64.FillLanes.loop s
+      (Finished s · p pass slice (Proof.Argon2.lanes p pass slice lane count state)) := by
+  induction count generalizing s lane state with
+  | zero => omega
+  | succ n ih =>
+    obtain ⟨trace, a, run, done⟩ := body_ok s p pass lane slice h state represented
+    rw [Proof.Argon2.lanes_succ]
+    cases n with
+    | zero =>
+      have last : lane + 1 = p.lanes := endLane
+      refine ⟨_, a, .loopExit run ?_, done.finished last⟩
+      simp only [eval, done.cf, last, Nat.lt_irrefl, decide_false]
+    | succ n =>
+      have active : lane + 1 < p.lanes := by omega_using [endLane]
+      obtain ⟨restTrace, t, restRun, finished⟩ := ih a (lane + 1) (done.next active)
+        (Proof.Argon2.segment p pass lane slice 0 p.segmentLen state) done.represented (by omega_using []) (by omega_using [endLane])
+      refine ⟨_, t, .loopNext run ?_ restRun, finished.prepend done⟩
+      simp only [eval, done.cf, active, decide_true]
+
+end VG.Proof.Argon2.X86_64.FillLanes
+
+end
+
+end
+
+
+/-! Merged from `Proof.Argon2.X86_64.FillSlicePrepare`. -/
+
+@[expose] public section
+
+section
+/-! Merged from `Proof.Argon2.X86_64.FillHeader`. -/
+section
+/-! Allocation and normalized header across lane, slice and pass boundaries. -/
+
+namespace VG.Proof.Argon2.X86_64.FillHeader
+
+open VG VG.X86_64 VG.Spec.Argon2
+
+structure Ready (p : Params) (pass lane slice : Nat) (s : State) : Prop where
+  layout : FillKernel.Layout p s
+  addressLayout : AddressCalls.Ready s
+  reads : ∀ d ∈ [0, 8, 72, 112, 240], InRegions (s.rd ++ s.wr) (off (s.gpr .rbp) d) 8
+  write : InRegions s.wr (off (s.gpr .rbp) 8) 8
+  words : ∃ old, AddressHeader.Words p pass lane slice old s
+  matrixWork : (⟨FillKernel.matrix s, p.blocks * 1024⟩ : Region).Disjoint ⟨AddressCalls.work s, 8192⟩
+  laneLength : s.gpr .r12 = BitVec.ofNat 64 p.laneLen
+  segmentLength : s.gpr .r13 = BitVec.ofNat 64 p.segmentLen
+  lanesWord : s.mem.readW (off (s.gpr .rbp) 184) 64 = BitVec.ofNat 64 p.lanes
+
+theorem of_segment_ready {p : Params} {pass lane slice : Nat} {s : State}
+    (h : SegmentSetup.Ready p pass lane slice s) : Ready p pass lane slice s :=
+  ⟨h.layout, h.addressLayout, h.reads, h.write, h.words, h.matrixWork, h.laneLength, h.segmentLength, h.lanesWord⟩
+
+theorem Ready.segment {p : Params} {pass lane slice : Nat} {s : State}
+    (h : Ready p pass lane slice s) (parameters : FillContext.Parameters p pass lane slice) :
+    SegmentSetup.Ready p pass lane slice s :=
+  ⟨parameters, h.layout, h.addressLayout, h.reads, h.write, h.words,
+    h.matrixWork, h.laneLength, h.segmentLength, h.lanesWord⟩
+
+theorem Ready.of_state {p : Params} {pass lane slice newLane newSlice : Nat} {s t : State}
+    (h : Ready p pass lane slice s)
+    (regs : ∀ r ∈ [Reg.rbp, .rsp, .r12, .r13], t.gpr r = s.gpr r)
+    (mem : t.mem = s.mem) (rd : t.rd = s.rd) (wr : t.wr = s.wr)
+    (laneWord : t.gpr .rbx = BitVec.ofNat 64 newLane) (sliceWord : t.gpr .r14 = BitVec.ofNat 64 newSlice) :
+    Ready p pass newLane newSlice t := by
+  have bp := regs .rbp (by simp)
+  have sp := regs .rsp (by simp)
+  have base : FillKernel.matrix t = FillKernel.matrix s := by unfold FillKernel.matrix; rw [mem, bp]
+  have work : AddressCalls.work t = AddressCalls.work s := by unfold AddressCalls.work; rw [mem, bp]
+  refine ⟨h.layout.of_preserved bp sp base work rd wr, ?_, ?_, ?_, ?_, ?_,
+    (regs .r12 (by simp)).trans h.laneLength, (regs .r13 (by simp)).trans h.segmentLength, ?_⟩
+  · constructor
+    · rw [rd, wr, bp]; exact h.addressLayout.frameRead
+    · rw [wr, work]; exact h.addressLayout.workWrite
+    · rw [bp, work]; exact h.addressLayout.frameWork
+    · rw [bp, sp]; exact h.addressLayout.frameStack
+    · rw [sp, work]; exact h.addressLayout.stackWork
+  · rw [rd, wr, bp]; exact h.reads
+  · rw [wr, bp]; exact h.write
+  · obtain ⟨old, words⟩ := h.words
+    refine ⟨old, ?_, laneWord, sliceWord, ?_, ?_, ?_, ?_⟩
+    all_goals rw [mem, bp]
+    · exact words.passWord
+    · exact words.blocksWord
+    · exact words.passesWord
+    · exact words.variantWord
+    · exact words.counterWord
+  · rw [base, work]; exact h.matrixWork
+  · rw [mem, bp]; exact h.lanesWord
+
+theorem of_lanes_finished {p : Params} {pass slice : Nat} {s t : State} {state : FillState}
+    (h : FillLanes.Finished s t p pass slice state) : Ready p pass p.lanes slice t := by
+  obtain ⟨lane, a, _, ready, keeps⟩ := h.header
+  obtain ⟨old, words⟩ := ready.words
+  apply (of_segment_ready ready).of_state _ keeps.mem keeps.rd keeps.wr h.laneWord
+    ((keeps.regs .r14 (by decide)).trans words.sliceWord)
+  intro r hr
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl | rfl | rfl <;> exact keeps.regs _ (by decide)
+
+end VG.Proof.Argon2.X86_64.FillHeader
+end
+
+/-! Initialize lane zero without requiring a valid incoming lane coordinate. -/
+
+namespace VG.Proof.Argon2.X86_64.FillSlice
+
+open VG VG.X86_64 VG.Spec.Argon2
+
+structure Ready (p : Params) (pass slice : Nat) (s : State) : Prop where
+  parameters : FillContext.Parameters p pass 0 slice
+  header : ∃ lane, FillHeader.Ready p pass lane slice s
+
+structure Prepared (s t : State) (p : Params) (pass slice : Nat) : Prop where
+  ready : SegmentSetup.Ready p pass 0 slice t
+  keeps : Divide.Keeps [.rbx] s t
+
+theorem setup_ok (s : State) (p : Params) (pass slice : Nat) (h : Ready p pass slice s) :
+    WP isa (.block Impl.Argon2.X86_64.FillSlice.setup) s (Prepared s · p pass slice) := by
+  refine (SegmentSetup.register_ok s .rbx 0).mono ?_
+  rintro t ⟨laneWord, keeps⟩
+  obtain ⟨lane, header⟩ := h.header
+  obtain ⟨old, words⟩ := header.words
+  have next : FillHeader.Ready p pass 0 slice t := header.of_state (by
+    intro r hr
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl | rfl <;> exact keeps.regs _ (by decide))
+    keeps.mem keeps.rd keeps.wr laneWord ((keeps.regs .r14 (by decide)).trans words.sliceWord)
+  exact ⟨next.segment h.parameters, keeps⟩
+
+end VG.Proof.Argon2.X86_64.FillSlice
+end
+
+/-! Correctness of one complete slice, starting at lane zero. -/
+
+namespace VG.Proof.Argon2.X86_64.FillSlice
+
+open VG VG.X86_64 VG.Spec.Argon2
+
+theorem code_ok [CompressImpl] (s : State) (p : Params) (pass slice : Nat) (h : Ready p pass slice s) (state : FillState)
+    (represented : Proof.Argon2.Represents s.mem (FillKernel.matrix s) p.blocks state.memory) :
+    WP isa Impl.Argon2.X86_64.FillSlice.code s
+      (FillLanes.Finished s · p pass slice (Proof.Argon2.lanes p pass slice 0 p.lanes state)) := by
+  unfold Impl.Argon2.X86_64.FillSlice.code
+  refine WP.seq ((setup_ok s p pass slice h).mono ?_)
+  intro a prepared
+  have bp := prepared.keeps.regs .rbp (by decide)
+  have base : FillKernel.matrix a = FillKernel.matrix s := by unfold FillKernel.matrix; rw [prepared.keeps.mem, bp]
+  have work : AddressCalls.work a = AddressCalls.work s := by unfold AddressCalls.work; rw [prepared.keeps.mem, bp]
+  have representedA : Proof.Argon2.Represents a.mem (FillKernel.matrix a) p.blocks state.memory := by
+    rw [prepared.keeps.mem, base]; exact represented
+  refine (FillLanes.loop_ok p.lanes a p pass 0 slice prepared.ready state representedA
+    h.parameters.lanesPositive (by omega_using [])).mono ?_
+  intro t finished
+  refine ⟨finished.represented, finished.matrix.trans base, finished.work.trans work, finished.laneWord,
+    finished.rd.trans prepared.keeps.rd, finished.wr.trans prepared.keeps.wr, ?_,
+    finished.mxcsr.trans (ctl_eq_of prepared.keeps.mxcsr), ?_, finished.header⟩
+  · have frame := finished.frame
+    rw [FillBlock.writes, base, work, prepared.keeps.regs .rsp (by decide), bp, prepared.keeps.mem] at frame
+    exact frame
+  · intro r hr bx ix
+    have ne : r ∉ [Reg.rbx] := by simp only [List.mem_cons, List.not_mem_nil, or_false]; exact bx
+    exact (finished.regs r hr bx ix).trans (prepared.keeps.regs r ne)
+
+end VG.Proof.Argon2.X86_64.FillSlice
+
+end
+
+end
+
+
+/-! Merged from `Proof.Argon2.X86_64.FillSliceAdvance`. -/
+
+@[expose] public section
+
+section
+/-! Slice advancement retains the public header and matrix allocation. -/
+
+namespace VG.Proof.Argon2.X86_64.FillSlices
+
+open VG VG.X86_64 VG.Spec.Argon2 VG.Impl.Argon2.X86_64.FillSlices
+
+theorem advance_ok (s : State) : WP isa (.block advance) s fun t =>
+    t.gpr .r14 = s.gpr .r14 + 1 ∧ t.cf = decide ((s.gpr .r14 + 1).toNat < 4) ∧ Divide.Keeps [.r14] s t := by
+  apply WP.of_runBlock
+  simp only [advance, runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, execAlu,
+    RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, RegUpd.cf_arithFlags,
+    show BitVec.signExtend 64 (1 : BitVec 32) = (1 : Addr) from rfl,
+    show BitVec.signExtend 64 (4 : BitVec 32) = (4 : Addr) from rfl,
+    show (4 : Addr).toNat = 4 from rfl,
+    ite_true, Option.bind_some, Option.some.injEq, exists_eq_left']
+  refine ⟨trivial, trivial, ?_⟩
+  constructor
+  · intro r hr
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    simp only [RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, hr, ite_false]
+  all_goals rfl
+
+theorem advanced_header {s t : State} {p : Params} {pass lane slice : Nat}
+    (h : FillHeader.Ready p pass lane slice s) (k : Divide.Keeps [.r14] s t)
+    (value : t.gpr .r14 = BitVec.ofNat 64 (slice + 1)) : FillHeader.Ready p pass lane (slice + 1) t := by
+  obtain ⟨old, words⟩ := h.words
+  exact h.of_state (by
+    intro r hr
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl | rfl <;> exact k.regs _ (by decide))
+    k.mem k.rd k.wr ((k.regs .rbx (by decide)).trans words.laneWord) value
+
+end VG.Proof.Argon2.X86_64.FillSlices
+end
+
+/-! Fill one slice and advance its public coordinate. -/
+
+namespace VG.Proof.Argon2.X86_64.FillSlices
+
+open VG VG.X86_64 VG.Spec.Argon2
+
+structure Done (s t : State) (p : Params) (pass slice : Nat) (state : FillState) : Prop where
+  represented : Proof.Argon2.Represents t.mem (FillKernel.matrix t) p.blocks
+    (Proof.Argon2.lanes p pass slice 0 p.lanes state).memory
+  matrix : FillKernel.matrix t = FillKernel.matrix s
+  work : AddressCalls.work t = AddressCalls.work s
+  header : FillHeader.Ready p pass p.lanes (slice + 1) t
+  rd : t.rd = s.rd
+  wr : t.wr = s.wr
+  frame : Frame (FillBlock.writes s p) s.mem t.mem
+  mxcsr : ctl t.mxcsr = ctl s.mxcsr
+  regs : ∀ r ∈ calleeSaved, r ≠ .rbx → r ≠ .r14 → r ≠ .r15 → t.gpr r = s.gpr r
+  cf : t.cf = decide (slice + 1 < 4)
+  next : slice + 1 < 4 → FillSlice.Ready p pass (slice + 1) t
+
+theorem body_ok [CompressImpl] (s : State) (p : Params) (pass slice : Nat) (h : FillSlice.Ready p pass slice s) (state : FillState)
+    (represented : Proof.Argon2.Represents s.mem (FillKernel.matrix s) p.blocks state.memory) :
+    WP isa Impl.Argon2.X86_64.FillSlices.body s (Done s · p pass slice state) := by
+  unfold Impl.Argon2.X86_64.FillSlices.body
+  refine WP.seq ((FillSlice.code_ok s p pass slice h state represented).mono ?_)
+  intro a filled
+  have header := FillHeader.of_lanes_finished filled
+  obtain ⟨old, words⟩ := header.words
+  refine (advance_ok a).mono ?_
+  rintro t ⟨value, flag, keeps⟩
+  have added : a.gpr .r14 + 1 = BitVec.ofNat 64 (slice + 1) := by
+    rw [words.sliceWord, BitVec.ofNat_add]; rfl
+  have nextWord := value.trans added
+  have nextHeader := advanced_header header keeps nextWord
+  have bp := keeps.regs .rbp (by decide)
+  have base : FillKernel.matrix t = FillKernel.matrix a := by unfold FillKernel.matrix; rw [keeps.mem, bp]
+  have work : AddressCalls.work t = AddressCalls.work a := by unfold AddressCalls.work; rw [keeps.mem, bp]
+  have sliceBound := h.parameters.sliceBound
+  refine ⟨?_, base.trans filled.matrix, work.trans filled.work, nextHeader, keeps.rd.trans filled.rd,
+    keeps.wr.trans filled.wr, ?_, (ctl_eq_of keeps.mxcsr).trans filled.mxcsr, ?_, ?_, ?_⟩
+  · rw [keeps.mem, base]; exact filled.represented
+  · rw [keeps.mem]; exact filled.frame
+  · intro r hr bx sl ix
+    have outside : r ∉ [Reg.r14] := by simp only [List.mem_cons, List.not_mem_nil, or_false]; exact sl
+    exact (keeps.regs r outside).trans (filled.regs r hr bx ix)
+  · rw [flag, added, ReferenceMap.word_nat (slice + 1) (by omega_using [sliceBound])]
+  · intro active
+    exact ⟨{ h.parameters with sliceBound := active }, p.lanes, nextHeader⟩
+
+end VG.Proof.Argon2.X86_64.FillSlices
+
+end
+
+end
+
+
+/-! Termination and correctness of the four-slice filling pass. -/
+
+@[expose] public section
+
+namespace VG.Proof.Argon2.X86_64.FillSlices
+
+open VG VG.X86_64 VG.Spec.Argon2
+
+structure Finished (s t : State) (p : Params) (pass : Nat) (state : FillState) : Prop where
+  represented : Proof.Argon2.Represents t.mem (FillKernel.matrix t) p.blocks state.memory
+  matrix : FillKernel.matrix t = FillKernel.matrix s
+  work : AddressCalls.work t = AddressCalls.work s
+  header : FillHeader.Ready p pass p.lanes 4 t
+  rd : t.rd = s.rd
+  wr : t.wr = s.wr
+  frame : Frame (FillBlock.writes s p) s.mem t.mem
+  mxcsr : ctl t.mxcsr = ctl s.mxcsr
+  regs : ∀ r ∈ calleeSaved, r ≠ .rbx → r ≠ .r14 → r ≠ .r15 → t.gpr r = s.gpr r
+
+theorem Done.finished {s t : State} {p : Params} {pass slice : Nat} {state : FillState}
+    (h : Done s t p pass slice state) (last : slice + 1 = 4) :
+    Finished s t p pass (Proof.Argon2.lanes p pass slice 0 p.lanes state) :=
+  ⟨h.represented, h.matrix, h.work, last ▸ h.header, h.rd, h.wr, h.frame, h.mxcsr, h.regs⟩
+
+theorem Finished.prepend {s a t : State} {p : Params} {pass slice : Nat} {state finalState : FillState}
+    (first : Done s a p pass slice state) (rest : Finished a t p pass finalState) : Finished s t p pass finalState := by
+  refine ⟨rest.represented, rest.matrix.trans first.matrix, rest.work.trans first.work, rest.header,
+    rest.rd.trans first.rd, rest.wr.trans first.wr, ?_, rest.mxcsr.trans first.mxcsr, ?_⟩
+  · have frame := rest.frame
+    rw [FillBlock.writes, first.matrix, first.work,
+      first.regs .rsp (by simp [calleeSaved]) (by decide) (by decide) (by decide),
+      first.regs .rbp (by simp [calleeSaved]) (by decide) (by decide) (by decide)] at frame
+    exact first.frame.trans frame
+  · intro r hr bx sl ix; exact (rest.regs r hr bx sl ix).trans (first.regs r hr bx sl ix)
+
+theorem loop_ok [CompressImpl] (count : Nat) (s : State) (p : Params) (pass slice : Nat)
+    (h : FillSlice.Ready p pass slice s) (state : FillState)
+    (represented : Proof.Argon2.Represents s.mem (FillKernel.matrix s) p.blocks state.memory)
+    (positive : 0 < count) (endSlice : slice + count = 4) :
+    WP isa Impl.Argon2.X86_64.FillSlices.loop s (Finished s · p pass (Proof.Argon2.slices p pass slice count state)) := by
+  induction count generalizing s slice state with
+  | zero => omega
+  | succ n ih =>
+    obtain ⟨trace, a, run, done⟩ := body_ok s p pass slice h state represented
+    rw [Proof.Argon2.slices_succ]
+    cases n with
+    | zero =>
+      have last : slice + 1 = 4 := endSlice
+      refine ⟨_, a, .loopExit run ?_, done.finished last⟩
+      simp only [eval, done.cf, last, Nat.lt_irrefl, decide_false]
+    | succ n =>
+      have active : slice + 1 < 4 := by omega_using [endSlice]
+      obtain ⟨restTrace, t, restRun, finished⟩ := ih a (slice + 1) (done.next active)
+        (Proof.Argon2.lanes p pass slice 0 p.lanes state) done.represented (by omega_using []) (by omega_using [endSlice])
+      refine ⟨_, t, .loopNext run ?_ restRun, finished.prepend done⟩
+      simp only [eval, done.cf, active, decide_true]
+
+theorem pass_ok [CompressImpl] (s : State) (p : Params) (pass : Nat) (h : FillSlice.Ready p pass 0 s) (state : FillState)
+    (represented : Proof.Argon2.Represents s.mem (FillKernel.matrix s) p.blocks state.memory) :
+    WP isa Impl.Argon2.X86_64.FillSlices.loop s (Finished s · p pass (fillPass p state pass)) := by
+  rw [← Proof.Argon2.slices_pass p pass state]
+  exact loop_ok 4 s p pass 0 h state represented (by decide) (by decide)
+
+end VG.Proof.Argon2.X86_64.FillSlices
+
+end
+
+end
+
+
+/-! Merged from `Proof.Argon2.X86_64.FillIterationPrepare`. -/
+
+@[expose] public section
+
+section
+/-! Start a pass at slice zero regardless of its incoming lane and slice coordinates. -/
+
+namespace VG.Proof.Argon2.X86_64.FillIteration
+
+open VG VG.X86_64 VG.Spec.Argon2
+
+structure Ready (p : Params) (pass : Nat) (s : State) : Prop where
+  parameters : FillContext.Parameters p pass 0 0
+  header : ∃ lane slice, FillHeader.Ready p pass lane slice s
+
+structure Prepared (s t : State) (p : Params) (pass : Nat) : Prop where
+  ready : FillSlice.Ready p pass 0 t
+  keeps : Divide.Keeps [.r14] s t
+
+theorem setup_ok (s : State) (p : Params) (pass : Nat) (h : Ready p pass s) :
+    WP isa (.block Impl.Argon2.X86_64.FillIteration.setup) s (Prepared s · p pass) := by
+  refine (SegmentSetup.register_ok s .r14 0).mono ?_
+  rintro t ⟨sliceWord, keeps⟩
+  obtain ⟨lane, slice, header⟩ := h.header
+  obtain ⟨old, words⟩ := header.words
+  have next : FillHeader.Ready p pass lane 0 t := header.of_state (by
+    intro r hr
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl | rfl <;> exact keeps.regs _ (by decide))
+    keeps.mem keeps.rd keeps.wr ((keeps.regs .rbx (by decide)).trans words.laneWord) sliceWord
+  exact ⟨⟨h.parameters, lane, next⟩, keeps⟩
+
+end VG.Proof.Argon2.X86_64.FillIteration
+end
+
+/-! One complete filling pass against the reviewed specification. -/
+
+namespace VG.Proof.Argon2.X86_64.FillIteration
+
+open VG VG.X86_64 VG.Spec.Argon2
+
+theorem code_ok [CompressImpl] (s : State) (p : Params) (pass : Nat) (h : Ready p pass s) (state : FillState)
+    (represented : Proof.Argon2.Represents s.mem (FillKernel.matrix s) p.blocks state.memory) :
+    WP isa Impl.Argon2.X86_64.FillIteration.code s (FillSlices.Finished s · p pass (fillPass p state pass)) := by
+  unfold Impl.Argon2.X86_64.FillIteration.code
+  refine WP.seq ((setup_ok s p pass h).mono ?_)
+  intro a prepared
+  have bp := prepared.keeps.regs .rbp (by decide)
+  have base : FillKernel.matrix a = FillKernel.matrix s := by unfold FillKernel.matrix; rw [prepared.keeps.mem, bp]
+  have work : AddressCalls.work a = AddressCalls.work s := by unfold AddressCalls.work; rw [prepared.keeps.mem, bp]
+  have representedA : Proof.Argon2.Represents a.mem (FillKernel.matrix a) p.blocks state.memory := by
+    rw [prepared.keeps.mem, base]; exact represented
+  refine (FillSlices.pass_ok a p pass prepared.ready state representedA).mono ?_
+  intro t finished
+  refine ⟨finished.represented, finished.matrix.trans base, finished.work.trans work, finished.header,
+    finished.rd.trans prepared.keeps.rd, finished.wr.trans prepared.keeps.wr, ?_,
+    finished.mxcsr.trans (ctl_eq_of prepared.keeps.mxcsr), ?_⟩
+  · have frame := finished.frame
+    rw [FillBlock.writes, base, work, prepared.keeps.regs .rsp (by decide), bp, prepared.keeps.mem] at frame
+    exact frame
+  · intro r hr bx sl ix
+    have ne : r ∉ [Reg.r14] := by simp only [List.mem_cons, List.not_mem_nil, or_false]; exact sl
+    exact (finished.regs r hr bx sl ix).trans (prepared.keeps.regs r ne)
+
+end VG.Proof.Argon2.X86_64.FillIteration
+
+end
+
+end
+
+
+/-! Merged from `Proof.Argon2.X86_64.FillPassSave`. -/
+
+@[expose] public section
+
+section
+/-! Merged from `Proof.Argon2.X86_64.FillPassCounter`. -/
+section
+/-! Increment, save and compare the public pass counter. -/
+
+namespace VG.Proof.Argon2.X86_64.FillIterations
+
+open VG VG.X86_64 VG.Spec.Argon2 VG.Impl.Argon2.X86_64.FillIterations
+
+theorem increment_ok (s : State) (hr : InRegions (s.rd ++ s.wr) (off (s.gpr .rbp) 0) 8) :
+    WP isa (.block increment) s fun t =>
+      t.gpr .rax = s.mem.readW (off (s.gpr .rbp) 0) 64 + 1 ∧ Divide.Keeps [.rax] s t := by
+  apply WP.of_runBlock
+  simp only [increment, runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, State.load64,
+    ea_at, hr, execAlu, RegUpd.gpr_setReg, RegUpd.gpr_arithFlags,
+    show BitVec.signExtend 64 (1 : BitVec 32) = (1 : Addr) from rfl,
+    ite_true, Option.map_some, Option.bind_some, Option.some.injEq, exists_eq_left']
+  refine ⟨trivial, ?_⟩
+  constructor
+  · intro r hr
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    simp only [RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, hr, ite_false]
+  all_goals rfl
+
+theorem saveCheck_ok (s : State) (hw : InRegions s.wr (off (s.gpr .rbp) 0) 8)
+    (hr : InRegions (s.rd ++ s.wr) (off (s.gpr .rbp) 72) 8) :
+    WP isa (.block saveCheck) s fun t =>
+      t.mem = s.mem.writeW (off (s.gpr .rbp) 0) (s.gpr .rax) ∧
+      t.gpr = s.gpr ∧ t.rd = s.rd ∧ t.wr = s.wr ∧ t.mxcsr = s.mxcsr ∧
+      t.cf = decide ((s.gpr .rax).toNat < (s.mem.readW (off (s.gpr .rbp) 72) 64).toNat) := by
+  apply WP.of_runBlock
+  have sep : Mem.Sep (off (s.gpr .rbp) 72) 8 (off (s.gpr .rbp) 0) 8 :=
+    Offset.sep _ (by decide) (by decide) (by decide)
+  simp only [saveCheck, runBlock_cons, runStep_some, runBlock_nil, exec, State.store64,
+    State.load64, ea_at, hw, hr, readSrc, execAlu, ite_true,
+    Mem.readW_writeW_sep (w := 64) (w' := 64) sep (by decide), RegUpd.cf_arithFlags,
+    RegUpd.mem_arithFlags, RegUpd.gpr_arithFlags, RegUpd.rd_arithFlags, RegUpd.wr_arithFlags,
+    Option.bind_some, Option.some.injEq, exists_eq_left']
+  refine ⟨trivial, trivial, trivial, trivial, ?_, trivial⟩
+  rfl
+
+end VG.Proof.Argon2.X86_64.FillIterations
+end
+
+/-! A saved pass counter changes only its eight-byte header word. -/
+
+namespace VG.Proof.Argon2.X86_64.FillIterations
+
+open VG VG.X86_64 VG.Spec.Argon2 VG.Impl.Argon2.X86_64.FillIterations
+
+structure Saved (s t : State) : Prop where
+  mem : t.mem = s.mem.writeW (off (s.gpr .rbp) 0) (s.mem.readW (off (s.gpr .rbp) 0) 64 + 1)
+  regs : ∀ r, r ≠ .rax → t.gpr r = s.gpr r
+  rd : t.rd = s.rd
+  wr : t.wr = s.wr
+  mxcsr : ctl t.mxcsr = ctl s.mxcsr
+  cf : t.cf = decide ((s.mem.readW (off (s.gpr .rbp) 0) 64 + 1).toNat <
+    (s.mem.readW (off (s.gpr .rbp) 72) 64).toNat)
+  frame : Frame [⟨off (s.gpr .rbp) 0, 8⟩] s.mem t.mem
+
+theorem advance_ok (s : State) (read : InRegions (s.rd ++ s.wr) (off (s.gpr .rbp) 0) 8)
+    (write : InRegions s.wr (off (s.gpr .rbp) 0) 8)
+    (passesRead : InRegions (s.rd ++ s.wr) (off (s.gpr .rbp) 72) 8) : WP isa advance s (Saved s) := by
+  unfold advance
+  refine WP.seq ((increment_ok s read).mono ?_)
+  rintro a ⟨value, keeps⟩
+  have bp := keeps.regs .rbp (by decide)
+  have readA : InRegions (a.rd ++ a.wr) (off (a.gpr .rbp) 72) 8 := by
+    rw [keeps.rd, keeps.wr, bp]; exact passesRead
+  have writeA : InRegions a.wr (off (a.gpr .rbp) 0) 8 := by rw [keeps.wr, bp]; exact write
+  refine (saveCheck_ok a writeA readA).mono ?_
+  rintro t ⟨mem, regs, rd, wr, mx, cf⟩
+  have finalMem : t.mem = s.mem.writeW (off (s.gpr .rbp) 0) (s.mem.readW (off (s.gpr .rbp) 0) 64 + 1) := by
+    rw [mem, keeps.mem, bp, value]
+  refine ⟨finalMem, ?_, rd.trans keeps.rd, wr.trans keeps.wr, ctl_eq_of (mx.trans keeps.mxcsr), ?_, ?_⟩
+  · intro r ne
+    have outside : r ∉ [Reg.rax] := by simp only [List.mem_cons, List.not_mem_nil, or_false]; exact ne
+    exact (congrFun regs r).trans (keeps.regs r outside)
+  · rw [cf, value, keeps.mem, bp]
+  · rw [finalMem]
+    exact (Frame.refl _ _).writeW (r := ⟨off (s.gpr .rbp) 0, 8⟩) (by simp) _ (Region.contains_self _ _)
+
+theorem Saved.read {s t : State} (h : Saved s t) (d : Nat) (separate : 8 ≤ d) (bound : d + 8 ≤ 272) :
+    t.mem.readW (off (t.gpr .rbp) d) 64 = s.mem.readW (off (s.gpr .rbp) d) 64 := by
+  rw [h.regs .rbp (by decide), h.mem]
+  exact Mem.readW_writeW_sep (Offset.sep _ (d := d) (n := 8) (e := 0) (k := 8)
+    (by omega_using [separate]) (by omega_using [bound]) (by decide)) (by decide)
+
+theorem Saved.words {s t : State} {p : Params} {pass lane slice old : Nat}
+    (h : Saved s t) (words : AddressHeader.Words p pass lane slice old s) :
+    AddressHeader.Words p (pass + 1) lane slice old t := by
+  refine ⟨?_, (h.regs .rbx (by decide)).trans words.laneWord,
+    (h.regs .r14 (by decide)).trans words.sliceWord,
+    (h.read 240 (by decide) (by decide)).trans words.blocksWord,
+    (h.read 72 (by decide) (by decide)).trans words.passesWord,
+    (h.read 112 (by decide) (by decide)).trans words.variantWord,
+    (h.read 8 (by decide) (by decide)).trans words.counterWord⟩
+  rw [h.regs .rbp (by decide), h.mem, Mem.readW_writeW_self64, words.passWord, BitVec.ofNat_add]
+  rfl
+
+theorem Saved.header {s t : State} {p : Params} {pass lane slice : Nat}
+    (h : Saved s t) (header : FillHeader.Ready p pass lane slice s) : FillHeader.Ready p (pass + 1) lane slice t := by
+  have bp := h.regs .rbp (by decide)
+  have sp := h.regs .rsp (by decide)
+  have base : FillKernel.matrix t = FillKernel.matrix s := h.read 232 (by decide) (by decide)
+  have work : AddressCalls.work t = AddressCalls.work s := h.read 248 (by decide) (by decide)
+  refine ⟨header.layout.of_preserved bp sp base work h.rd h.wr, ?_, ?_, ?_, ?_, ?_,
+    (h.regs .r12 (by decide)).trans header.laneLength, (h.regs .r13 (by decide)).trans header.segmentLength, ?_⟩
+  · constructor
+    · rw [h.rd, h.wr, bp]; exact header.addressLayout.frameRead
+    · rw [h.wr, work]; exact header.addressLayout.workWrite
+    · rw [bp, work]; exact header.addressLayout.frameWork
+    · rw [bp, sp]; exact header.addressLayout.frameStack
+    · rw [sp, work]; exact header.addressLayout.stackWork
+  · rw [h.rd, h.wr, bp]; exact header.reads
+  · rw [h.wr, bp]; exact header.write
+  · obtain ⟨old, words⟩ := header.words; exact ⟨old, h.words words⟩
+  · rw [base, work]; exact header.matrixWork
+  · exact (h.read 184 (by decide) (by decide)).trans header.lanesWord
+
+end VG.Proof.Argon2.X86_64.FillIterations
+end
+
+/-! Merged from `Proof.Argon2.X86_64.FillIterationsFrame`. -/
+section
+/-! The outer pass loop also writes the public pass word at frame offset zero. -/
+
+namespace VG.Proof.Argon2.X86_64.FillIterations
+
+open VG VG.X86_64 VG.Spec.Argon2
+
+def writes (s : State) (p : Params) : List Region :=
+  [⟨FillKernel.matrix s, p.blocks * 1024⟩, ⟨AddressCalls.work s, 8192⟩,
+    below (s.gpr .rsp) 8, ⟨s.gpr .rbp, 24⟩]
+
+theorem filling_frame {s t : State} {p : Params} (h : Frame (FillBlock.writes s p) s.mem t.mem) :
+    Frame (writes s p) s.mem t.mem := by
+  apply h.sub
+  intro r hr
+  simp only [FillBlock.writes, List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl | rfl | rfl
+  · exact ⟨_, by simp [writes], fun _ h => h⟩
+  · exact ⟨_, by simp [writes], fun _ h => h⟩
+  · exact ⟨_, by simp [writes], fun _ h => h⟩
+  · exact ⟨⟨s.gpr .rbp, 24⟩, by simp [writes], Offset.sub_base _ (by decide)⟩
+
+theorem Saved.outer_frame {s t : State} {p : Params} (h : Saved s t) : Frame (writes s p) s.mem t.mem := by
+  apply h.frame.sub
+  intro r hr
+  simp only [List.mem_singleton] at hr
+  subst r
+  exact ⟨⟨s.gpr .rbp, 24⟩, by simp [writes], Offset.sub_base _ (by decide)⟩
+
+theorem Saved.represents {s t : State} {p : Params} {pass lane slice : Nat}
+    (h : Saved s t) (header : FillHeader.Ready p pass lane slice s) (blocks : Array Block)
+    (represented : Proof.Argon2.Represents s.mem (FillKernel.matrix s) p.blocks blocks) :
+    Proof.Argon2.Represents t.mem (FillKernel.matrix t) p.blocks blocks := by
+  have base : FillKernel.matrix t = FillKernel.matrix s := h.read 232 (by decide) (by decide)
+  rw [base]
+  refine ⟨represented.size, ?_⟩
+  intro k hk
+  apply Eq.trans _ (represented.block k hk)
+  apply FillCompress.block_frame h.frame
+  intro r hr
+  simp only [List.mem_singleton] at hr
+  subst r
+  exact (header.layout.matrixFrame.sub_left (Proof.Argon2.matrixCell_sub _ _ _ hk)).sub_right
+    (Offset.sub_base _ (by decide))
+
+end VG.Proof.Argon2.X86_64.FillIterations
+end
+
+/-! A complete pass retains the matrix and advances its public iteration counter. -/
+
+namespace VG.Proof.Argon2.X86_64.FillIterations
+
+open VG VG.X86_64 VG.Spec.Argon2
+
+structure Ready (p : Params) (pass : Nat) (s : State) : Prop where
+  filling : FillIteration.Ready p pass s
+  passesBound : p.passes < 2 ^ 32
+  passWrite : InRegions s.wr (off (s.gpr .rbp) 0) 8
+
+structure Done (s t : State) (p : Params) (pass : Nat) (state : FillState) : Prop where
+  represented : Proof.Argon2.Represents t.mem (FillKernel.matrix t) p.blocks (fillPass p state pass).memory
+  matrix : FillKernel.matrix t = FillKernel.matrix s
+  work : AddressCalls.work t = AddressCalls.work s
+  header : FillHeader.Ready p (pass + 1) p.lanes 4 t
+  rd : t.rd = s.rd
+  wr : t.wr = s.wr
+  frame : Frame (writes s p) s.mem t.mem
+  mxcsr : ctl t.mxcsr = ctl s.mxcsr
+  regs : ∀ r ∈ calleeSaved, r ≠ .rbx → r ≠ .r14 → r ≠ .r15 → t.gpr r = s.gpr r
+  cf : t.cf = decide (pass + 1 < p.passes)
+  next : pass + 1 < p.passes → Ready p (pass + 1) t
+
+theorem body_ok [CompressImpl] (s : State) (p : Params) (pass : Nat) (h : Ready p pass s) (state : FillState)
+    (represented : Proof.Argon2.Represents s.mem (FillKernel.matrix s) p.blocks state.memory) :
+    WP isa Impl.Argon2.X86_64.FillIterations.body s (Done s · p pass state) := by
+  unfold Impl.Argon2.X86_64.FillIterations.body
+  refine WP.seq ((FillIteration.code_ok s p pass h.filling state represented).mono ?_)
+  intro a filled
+  have write : InRegions a.wr (off (a.gpr .rbp) 0) 8 := by
+    rw [filled.wr, filled.regs .rbp (by simp [calleeSaved]) (by decide) (by decide) (by decide)]
+    exact h.passWrite
+  refine (advance_ok a (filled.header.reads 0 (by simp)) write (filled.header.reads 72 (by simp))).mono ?_
+  intro t saved
+  have header := saved.header filled.header
+  obtain ⟨old, words⟩ := filled.header.words
+  have base : FillKernel.matrix t = FillKernel.matrix a := saved.read 232 (by decide) (by decide)
+  have work : AddressCalls.work t = AddressCalls.work a := saved.read 248 (by decide) (by decide)
+  have passBound := h.filling.parameters.passBound
+  refine ⟨saved.represents filled.header _ filled.represented, base.trans filled.matrix,
+    work.trans filled.work, header, saved.rd.trans filled.rd, saved.wr.trans filled.wr,
+    ?_, saved.mxcsr.trans filled.mxcsr, ?_, ?_, ?_⟩
+  · have lastFrame := saved.outer_frame (p := p)
+    rw [writes, filled.matrix, filled.work,
+      filled.regs .rsp (by simp [calleeSaved]) (by decide) (by decide) (by decide),
+      filled.regs .rbp (by simp [calleeSaved]) (by decide) (by decide) (by decide)] at lastFrame
+    exact (filling_frame filled.frame).trans lastFrame
+  · intro r hr bx sl ix
+    have ne : r ≠ .rax := by
+      simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide
+    exact (saved.regs r ne).trans (filled.regs r hr bx sl ix)
+  · have added : (BitVec.ofNat 64 pass + 1 : Addr) = BitVec.ofNat 64 (pass + 1) := by
+      rw [BitVec.ofNat_add]; rfl
+    rw [saved.cf, words.passWord, words.passesWord, added, ReferenceMap.word_nat (pass + 1) (by omega_using [passBound]),
+      ReferenceMap.word_nat p.passes (Nat.lt_trans h.passesBound (by decide))]
+  · intro active
+    refine ⟨⟨{ h.filling.parameters with passBound := Nat.lt_trans active h.passesBound }, p.lanes, 4, header⟩,
+      h.passesBound, ?_⟩
+    rw [saved.wr, saved.regs .rbp (by decide)]; exact write
+
+end VG.Proof.Argon2.X86_64.FillIterations
+
+end
+
+end
+
+
+/-! Termination and correctness of every requested filling pass. -/
+
+@[expose] public section
+
+namespace VG.Proof.Argon2.X86_64.FillIterations
+
+open VG VG.X86_64 VG.Spec.Argon2
+
+structure Finished (s t : State) (p : Params) (state : FillState) : Prop where
+  represented : Proof.Argon2.Represents t.mem (FillKernel.matrix t) p.blocks state.memory
+  matrix : FillKernel.matrix t = FillKernel.matrix s
+  work : AddressCalls.work t = AddressCalls.work s
+  header : FillHeader.Ready p p.passes p.lanes 4 t
+  rd : t.rd = s.rd
+  wr : t.wr = s.wr
+  frame : Frame (writes s p) s.mem t.mem
+  mxcsr : ctl t.mxcsr = ctl s.mxcsr
+  regs : ∀ r ∈ calleeSaved, r ≠ .rbx → r ≠ .r14 → r ≠ .r15 → t.gpr r = s.gpr r
+
+theorem Done.finished {s t : State} {p : Params} {pass : Nat} {state : FillState}
+    (h : Done s t p pass state) (last : pass + 1 = p.passes) : Finished s t p (fillPass p state pass) :=
+  ⟨h.represented, h.matrix, h.work, last ▸ h.header, h.rd, h.wr, h.frame, h.mxcsr, h.regs⟩
+
+theorem Finished.prepend {s a t : State} {p : Params} {pass : Nat} {state finalState : FillState}
+    (first : Done s a p pass state) (rest : Finished a t p finalState) : Finished s t p finalState := by
+  refine ⟨rest.represented, rest.matrix.trans first.matrix, rest.work.trans first.work, rest.header,
+    rest.rd.trans first.rd, rest.wr.trans first.wr, ?_, rest.mxcsr.trans first.mxcsr, ?_⟩
+  · have frame := rest.frame
+    rw [writes, first.matrix, first.work,
+      first.regs .rsp (by simp [calleeSaved]) (by decide) (by decide) (by decide),
+      first.regs .rbp (by simp [calleeSaved]) (by decide) (by decide) (by decide)] at frame
+    exact first.frame.trans frame
+  · intro r hr bx sl ix; exact (rest.regs r hr bx sl ix).trans (first.regs r hr bx sl ix)
+
+theorem loop_ok [CompressImpl] (count : Nat) (s : State) (p : Params) (pass : Nat) (h : Ready p pass s) (state : FillState)
+    (represented : Proof.Argon2.Represents s.mem (FillKernel.matrix s) p.blocks state.memory)
+    (positive : 0 < count) (endPass : pass + count = p.passes) :
+    WP isa Impl.Argon2.X86_64.FillIterations.loop s (Finished s · p (Proof.Argon2.iterations p pass count state)) := by
+  induction count generalizing s pass state with
+  | zero => omega
+  | succ n ih =>
+    obtain ⟨trace, a, run, done⟩ := body_ok s p pass h state represented
+    rw [Proof.Argon2.iterations_succ]
+    cases n with
+    | zero =>
+      have last : pass + 1 = p.passes := endPass
+      refine ⟨_, a, .loopExit run ?_, done.finished last⟩
+      simp only [eval, done.cf, last, Nat.lt_irrefl, decide_false]
+    | succ n =>
+      have active : pass + 1 < p.passes := by omega_using [endPass]
+      obtain ⟨restTrace, t, restRun, finished⟩ := ih a (pass + 1) (done.next active)
+        (fillPass p state pass) done.represented (by omega_using []) (by omega_using [endPass])
+      refine ⟨_, t, .loopNext run ?_ restRun, finished.prepend done⟩
+      simp only [eval, done.cf, active, decide_true]
+
+theorem Finished.frame_word {s t : State} {p : Params} {pass : Nat} {state : FillState}
+    (ready : Ready p pass s) (done : Finished s t p state)
+    (d : Nat) (bound : d + 8 ≤ 272) (separate : 24 ≤ d) :
+    t.mem.readW (off (t.gpr .rbp) d) 64 = s.mem.readW (off (s.gpr .rbp) d) 64 := by
+  rw [done.regs .rbp (by simp [calleeSaved]) (by decide) (by decide) (by decide)]
+  obtain ⟨lane, slice, header⟩ := ready.filling.header
+  have sub : Region.Sub ⟨off (s.gpr .rbp) d, 8⟩ ⟨s.gpr .rbp, 272⟩ := Offset.sub_base _ bound
+  exact done.frame.readW (r := ⟨off (s.gpr .rbp) d, 8⟩) (Region.contains_self _ _) (by
+    intro r hr
+    simp only [writes, List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl | rfl
+    · exact header.layout.matrixFrame.symm.sub_left sub
+    · exact header.addressLayout.frameWork.sub_left sub
+    · exact header.addressLayout.frameStack.sub_left sub
+    · simpa only [off, BitVec.add_zero] using Offset.disjoint (d := d) (n := 8) (e := 0) (k := 24) (s.gpr .rbp) (Or.inr (by omega_using [separate])) (by omega_using [bound]) (by decide)) (by decide)
+
+end VG.Proof.Argon2.X86_64.FillIterations
+
+end
+
+end
+
 
 /-! Merged from `Proof.Argon2.X86_64.FinishStage`. -/
 

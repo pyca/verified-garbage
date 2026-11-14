@@ -1,10 +1,240 @@
 module
-public import VerifiedGarbage.Proof.Bignum.AArch64.ProductEightTile
-
-import VerifiedGarbage.Proof.Bignum.AArch64.ProductEightMath
-import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcColumns
+public import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcWord
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
+public import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcBlock
+import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcTile
+import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcLoad
+public import VerifiedGarbage.Impl.Bignum.AArch64.ProductEight
+import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcFinish
+import VerifiedGarbage.Proof.Bignum.AArch64.ProductEightMath
+import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcColumns
+
+/-! ### `Bignum.AArch64.ProductEightTile`, which only this module used -/
+
+section
+
+/-! ### `Bignum.AArch64.ProductEightBlock`, which only this module used -/
+
+section
+
+/-! ### `Bignum.AArch64.ProductEightLoad`, which only this module used -/
+
+section
+
+@[expose] public section
+namespace VG.Proof.Bignum.AArch64.ProductEight
+open VG VG.AArch64 VG.Impl.Bignum.AArch64 VG.Proof.Bignum
+open VG.Proof.Bignum.AArch64 VG.Proof.Ed25519.Word64
+open VG.Proof.MlKem.AArch64 (Keep)
+open VG.Proof.Bignum.AArch64.BlockedRedc
+
+def loadAccumulator : List Instr :=
+  VG.Impl.Bignum.AArch64.BlockedRedc.aa.zipIdx.map fun (r,i) => ld r .x16 (8*i)
+
+theorem loadAccumulator_ok {s : State} {B : Addr} {Z eT : Nat}
+    (hs : Scr s B Z) (h16 : s.gpr .x16 = off B eT) (hT : eT + 64 ≤ Z) :
+    WP isa (.block loadAccumulator) s fun t =>
+      ((∀ i < 8, accumulator t i = word s.mem B (eT + 8 * i)) ∧
+       t.mem = s.mem ∧ t.c = s.c) ∧
+      Keep VG.Impl.Bignum.AArch64.BlockedRedc.aa s t := by
+  have hld : ∀ i < 8, InRegions (s.rd ++ s.wr) (off B (eT + 8 * i)) 8 :=
+    fun i hi => hs.ld (by omega_using [hT, hi])
+  refine WP.keep VG.Impl.Bignum.AArch64.BlockedRedc.aa ?_ (by decide) (by decide) (by decide)
+  have hcode : loadAccumulator =
+    [ld .x19 .x16 0, ld .x20 .x16 8, ld .x21 .x16 16, ld .x22 .x16 24,
+     ld .x23 .x16 32, ld .x24 .x16 40, ld .x25 .x16 48, ld .x26 .x16 56] := rfl
+  brun [hcode, h16, hs.ld (show eT + 8 ≤ Z by omega_using [hT]), hld 0 (by decide),
+    hld 1 (by decide), hld 2 (by decide), hld 3 (by decide), hld 4 (by decide),
+    hld 5 (by decide), hld 6 (by decide), hld 7 (by decide)]
+  intro i hi
+  rcases (by omega_using [hi] : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7) with
+    rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
+  all_goals rfl
+
+theorem clearCarry_ok {s : State} (h7 : s.gpr .x7 = 0) :
+    WP isa (.block [.adds .x .x1 .x7 .x7]) s fun t =>
+      (t.c = false ∧ t.mem = s.mem) ∧ Keep [.x1] s t := by
+  refine WP.keep [.x1] ?_ rfl rfl rfl
+  brun [h7]
+
+end VG.Proof.Bignum.AArch64.ProductEight
+
+end
+
+end
+
+
+@[expose] public section
+namespace VG.Proof.Bignum.AArch64.ProductEight
+open VG VG.AArch64 VG.Impl.Bignum.AArch64 VG.Proof.Bignum
+open VG.Proof.Bignum.AArch64 VG.Proof.Ed25519.Word64
+open VG.Proof.MlKem.AArch64 (Keep)
+open VG.Proof.Bignum.AArch64.BlockedRedc
+
+def lowBlock : List Instr := loadAccumulator ++
+  VG.Impl.Bignum.AArch64.BlockedRedc.nsLoad ++
+  ([.adds .x .x1 .x7 .x7] : List Instr) ++
+  (List.range 8).flatMap VG.Impl.Bignum.AArch64.BlockedRedc.tail
+
+/-- The low half of an eight-by-eight product is emitted, retaining the
+high half in registers. No inverse property is used. -/
+theorem lowBlock_ok {s : State} {B : Addr} {Z eQ eT eN : Nat}
+    (hs : Scr s B Z) (h8 : s.gpr .x8 = off B eQ)
+    (h16 : s.gpr .x16 = off B eT) (h17 : s.gpr .x17 = off B eN)
+    (h7 : s.gpr .x7 = 0) (hQ : eQ + 64 ≤ Z) (hT : eT + 64 ≤ Z)
+    (hN : eN + 64 ≤ Z) (hQT : eQ + 64 ≤ eT ∨ eT + 64 ≤ eQ)
+    (hNT : eN + 64 ≤ eT ∨ eT + 64 ≤ eN) :
+    WP isa (.block lowBlock) s fun t =>
+      wv t.mem B eT 8 + (2 ^ 64) ^ 8 * blockValue (accumulator t) =
+        wv s.mem B eT 8 + wv s.mem B eQ 8 * wv s.mem B eN 8 ∧
+      t.c = false ∧ t.gpr .x16 = off B (eT + 64) ∧
+      Outside B eT 64 s.mem t.mem ∧ Keep blockRegs s t := by
+  rewrite [lowBlock, List.append_assoc, List.append_assoc]
+  apply WP.block_append
+  refine WP.mono (loadAccumulator_ok hs h16 hT) fun a ⟨⟨hav, ham, _⟩, ka⟩ => ?_
+  apply WP.block_append
+  refine WP.mono (nsLoad_ok (hs.congr ka.wr) ((ka.gpr .x17 (by decide)).trans h17) hN)
+    fun b ⟨⟨hbn, hbm, _⟩, kb⟩ => ?_
+  have kab := ka.trans kb
+  apply WP.block_append
+  refine WP.mono (clearCarry_ok ((kab.gpr .x7 (by decide)).trans h7))
+    fun c ⟨⟨hcc, hcm⟩, kc⟩ => ?_
+  have kabc := kab.trans kc
+  have cm := hcm.trans (hbm.trans ham)
+  have hacc : blockValue (accumulator c) = wv s.mem B eT 8 := by
+    rw [keep_accumulator kc (by decide), keep_accumulator kb (by decide)]
+    exact (blockValue_congr hav).trans (blockValue_words s.mem B eT)
+  have hin : blockValue (accumulator c) + (2 ^ 64) ^ 8 * c.c.toNat = 0 + wv s.mem B eT 8 := by
+    rw [hacc, hcc]
+    simp only [Bool.toNat_false, Nat.mul_zero, Nat.add_zero, Nat.zero_add]
+  have hr : 2 ^ (64 * 8) = (2 ^ 64) ^ 8 := Nat.pow_mul 2 64 8
+  refine WP.mono (tailTile_ok (hs.congr kabc.wr)
+    ((kabc.gpr .x8 (by decide)).trans h8) ((kabc.gpr .x16 (by decide)).trans h16)
+    ((kabc.gpr .x17 (by decide)).trans h17) ((kabc.gpr .x7 (by decide)).trans h7)
+    hQ hT (by omega_using [hN]) hQT (by omega_using [hNT]) hin (by decide)
+    (Nat.lt_of_lt_of_le (wv_lt s.mem B eT 8) (Nat.le_of_eq hr))) fun t ⟨hI, hc⟩ => ?_
+  have hn : blockValue (operand c (word c.mem B eN)) = wv s.mem B eN 8 := by
+    rw [keep_operand kc (by decide), hcm]
+    have n0 := congrArg (fun m : Mem => word m B eN) hbm
+    rw [n0]
+    exact (blockValue_congr hbn).trans ((blockValue_words a.mem B eN).trans
+      (congrArg (fun m : Mem => wv m B eN 8) ham))
+  have hq := congrArg (fun m : Mem => wv m B eQ 8) cm
+  have hv : wv t.mem B eT 8 + (2 ^ 64) ^ 8 *
+      (blockValue (accumulator t) + (2 ^ 64) ^ 8 * t.c.toNat) =
+      (0 + wv s.mem B eT 8) + wv c.mem B eQ 8 *
+        blockValue (operand c (word c.mem B eN)) :=
+    (congrArg (fun r => wv t.mem B eT 8 + r *
+      (blockValue (accumulator t) + (2 ^ 64) ^ 8 * t.c.toNat)) hr.symm).trans
+      (hI.value.trans (congrArg (· + wv c.mem B eQ 8 *
+        blockValue (operand c (word c.mem B eN))) hin))
+  have hplain := zero_carry_value (congrArg Bool.toNat hc) hv
+  have hp := (congrArg (· * blockValue (operand c (word c.mem B eN))) hq).trans
+    (congrArg (wv s.mem B eQ 8 * ·) hn)
+  refine ⟨hplain.trans ((congrArg (· + wv c.mem B eQ 8 *
+    blockValue (operand c (word c.mem B eN))) (Nat.zero_add _)).trans
+      (congrArg (wv s.mem B eT 8 + ·) hp)), hc, hI.ptr, ?_,
+    (kabc.trans hI.keep).mono (by decide)⟩
+  intro x hx
+  exact (hI.frame x hx).trans (congrArg (fun m : Mem => m x) cm)
+
+end VG.Proof.Bignum.AArch64.ProductEight
+
+end
+
+end
+
+
+@[expose] public section
+namespace VG.Proof.Bignum.AArch64.ProductEight
+open VG VG.AArch64 VG.Impl.Bignum.AArch64 VG.Proof.Bignum
+open VG.Proof.Bignum.AArch64 VG.Proof.Ed25519.Word64
+open VG.Proof.MlKem.AArch64 (Keep)
+open VG.Proof.Bignum.AArch64.BlockedRedc
+
+abbrev tileRegs := blockRegs ++ [.x10, .x17]
+
+theorem combine {r lo hi carry middle oldLo oldHi prod pending : Nat}
+    (hl : lo + r * middle = oldLo + prod)
+    (hh : hi + r * carry = middle + oldHi + pending) :
+    (lo + r * hi) + r * r * carry = (oldLo + r * oldHi) + prod + r * pending := by
+  have h := congrArg (r * ·) hh
+  grind
+
+theorem nextOperand_ok {s : State} {B : Addr} {eN : Nat}
+    (h17 : s.gpr .x17 = off B eN) :
+    WP isa (.block [.addImm .x .x17 .x17 64]) s fun t =>
+      (t.gpr .x17 = off B (eN + 64) ∧ t.mem = s.mem) ∧ Keep [.x17] s t := by
+  refine WP.keep [.x17] ?_ rfl rfl rfl
+  brun [h17]
+
+theorem offBlock_eq : VG.Impl.Bignum.AArch64.ProductEight.offBlock =
+    lowBlock ++ (VG.Impl.Bignum.AArch64.BlockedRedc.addMemory true ++
+      ([.adc .x .x10 .x7 .x7] : List Instr) ++ VG.Impl.Bignum.AArch64.BlockedRedc.asStore) ++
+      ([.addImm .x .x17 .x17 64] : List Instr) := by
+  simp only [VG.Impl.Bignum.AArch64.ProductEight.offBlock, lowBlock, loadAccumulator,
+    List.append_assoc]
+
+/-- Complete eight-by-eight multiply-accumulate, including a pending carry
+from the previous column and the carry for the next column. -/
+theorem offBlock_ok {s : State} {B : Addr} {Z eQ eT eN : Nat} {p : Bool}
+    (hs : Scr s B Z) (h8 : s.gpr .x8 = off B eQ)
+    (h16 : s.gpr .x16 = off B eT) (h17 : s.gpr .x17 = off B eN)
+    (h7 : s.gpr .x7 = 0) (h10 : s.gpr .x10 = BitVec.ofNat 64 p.toNat)
+    (hQ : eQ + 64 ≤ Z) (hT : eT + 128 ≤ Z) (hN : eN + 64 ≤ Z)
+    (hQT : eQ + 64 ≤ eT ∨ eT + 128 ≤ eQ)
+    (hNT : eN + 64 ≤ eT ∨ eT + 128 ≤ eN) :
+    WP isa (.block VG.Impl.Bignum.AArch64.ProductEight.offBlock) s fun t =>
+      wv t.mem B eT 16 + ((2 ^ 64) ^ 8 * (2 ^ 64) ^ 8) * (t.gpr .x10).toNat =
+        wv s.mem B eT 16 + wv s.mem B eQ 8 * wv s.mem B eN 8 + (2 ^ 64) ^ 8 * p.toNat ∧
+      (t.gpr .x10).toNat ≤ 1 ∧ t.gpr .x16 = off B (eT + 64) ∧
+      t.gpr .x17 = off B (eN + 64) ∧ Outside B eT 128 s.mem t.mem ∧ Keep tileRegs s t := by
+  have hnw := hs.nowrap
+  rewrite [offBlock_eq, List.append_assoc]
+  apply WP.block_append
+  refine WP.mono (lowBlock_ok hs h8 h16 h17 h7 hQ (by omega_using [hT]) hN (by omega_using [hQT]) (by omega_using [hNT]))
+    fun a ⟨hal, _, ha16, hao, ka⟩ => ?_
+  apply WP.block_append
+  refine WP.mono (finishBlock_ok (hs.congr ka.wr) ha16 (by omega_using [hT])
+    ((ka.gpr .x10 (by decide)).trans h10) ((ka.gpr .x7 (by decide)).trans h7))
+    fun b ⟨hbh, hbc, hbo, kb⟩ => ?_
+  have kab := ka.trans kb
+  refine WP.mono (nextOperand_ok ((kab.gpr .x17 (by decide)).trans h17))
+    fun t ⟨⟨ht17, htm⟩, kt⟩ => ?_
+  have haHi := hao.wv (d := eT + 64) (k := 8) (by omega_using []) (by omega_using [hT, hnw])
+  have hbLo := hbo.wv (d := eT) (k := 8) (by omega_using []) (by omega_using [hT, hnw])
+  have hbFull := wv_radix_add b.mem B eT 8 8
+  have hsFull := wv_radix_add s.mem B eT 8 8
+  have hplain := combine hal (hbh.trans (congrArg
+    (fun z => blockValue (accumulator a) + z + p.toNat) haHi))
+  have hplain' : wv b.mem B eT 16 + ((2 ^ 64) ^ 8 * (2 ^ 64) ^ 8) * (b.gpr .x10).toNat =
+      wv s.mem B eT 16 + wv s.mem B eQ 8 * wv s.mem B eN 8 + (2 ^ 64) ^ 8 * p.toNat := by
+    calc
+      _ = (wv a.mem B eT 8 + (2 ^ 64) ^ 8 * wv b.mem B (eT + 64) 8) +
+          ((2 ^ 64) ^ 8 * (2 ^ 64) ^ 8) * (b.gpr .x10).toNat :=
+        congrArg (· + ((2 ^ 64) ^ 8 * (2 ^ 64) ^ 8) * (b.gpr .x10).toNat)
+          (hbFull.trans (congrArg (· + (2 ^ 64) ^ 8 * wv b.mem B (eT + 64) 8) hbLo))
+      _ = _ := hplain.trans (congrArg (fun z => z + wv s.mem B eQ 8 * wv s.mem B eN 8 +
+        (2 ^ 64) ^ 8 * p.toNat) hsFull.symm)
+  have ht10 := kt.gpr .x10 (by decide)
+  refine ⟨?_, ?_, (kt.gpr .x16 (by decide)).trans ((kb.gpr .x16 (by decide)).trans ha16),
+    ht17, ?_, (kab.trans kt).mono (by decide)⟩
+  · exact ((congrArg (fun m : Mem => wv m B eT 16 +
+      ((2 ^ 64) ^ 8 * (2 ^ 64) ^ 8) * (t.gpr .x10).toNat) htm).trans
+        (congrArg (fun z => wv b.mem B eT 16 + ((2 ^ 64) ^ 8 * (2 ^ 64) ^ 8) * z)
+          (congrArg BitVec.toNat ht10))).trans hplain'
+  · exact Nat.le_trans (Nat.le_of_eq (congrArg BitVec.toNat ht10)) hbc
+  · have ho := (hao.mono (by omega_using []) (by omega_using [])).trans (hbo.mono (o' := eT) (n' := 128) (by omega_using []) (by omega_using []))
+    intro x hx
+    exact (congrArg (fun m : Mem => m x) htm).trans (ho x hx)
+
+end VG.Proof.Bignum.AArch64.ProductEight
+
+end
+
+end
+
 
 @[expose] public section
 namespace VG.Proof.Bignum.AArch64.ProductEight

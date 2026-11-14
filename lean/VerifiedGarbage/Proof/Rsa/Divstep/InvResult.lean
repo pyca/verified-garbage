@@ -1,7 +1,7 @@
 module
 -- separate module: its lemmas name no ISA, so any target's batched inverse can import them; they build in parallel with PPC64LE's `IbOps` and `IbBatch`
 
-public import VerifiedGarbage.Proof.Rsa.Divstep.InvCorrectDef
+public import VerifiedGarbage.Proof.Divstep.Alg32Def
 public import VerifiedGarbage.Proof.Rsa.Divstep.OddInputDef
 import VerifiedGarbage.Proof.Rsa.Divstep.InvBounds
 public import VerifiedGarbage.Proof.Divstep.Alg32
@@ -10,6 +10,24 @@ import Mathlib.Algebra.Order.Ring.Abs
 import Mathlib.Algebra.Group.Int.Defs
 import Mathlib.Algebra.Order.Group.Unbundled.Abs
 import VerifiedGarbage.Proof.Framework.Omega
+
+/-! ### `Rsa.Divstep.InvCorrectDef`, which only this module used -/
+
+section
+
+/-! # The final sign and scale correction of a batched inverse -/
+@[expose] public section
+namespace VG.Proof.Rsa.Divstep
+open VG.Proof.Divstep
+def corrected (p : Int) (st : W32.IState) (B : Nat) : Int :=
+ ((if st.f<0 then -st.a else st.a)*2^(2*B))%p
+
+end VG.Proof.Rsa.Divstep
+
+end
+
+end
+
 
 /-! # The result of a batched inverse
 

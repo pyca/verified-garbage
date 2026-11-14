@@ -2,10 +2,70 @@ module
 public import VerifiedGarbage.Impl.Argon2.Arm.Derive
 public import VerifiedGarbage.Proof.Argon2.Arm.CompressLit
 public import VerifiedGarbage.Proof.Argon2.Arm.Derive.Contract
-
 import VerifiedGarbage.Proof.Argon2.Arm.Derive.BodyCT
-import VerifiedGarbage.Proof.Argon2.Arm.Derive.Correct
+public import VerifiedGarbage.Proof.Argon2.Arm.Derive.Frame
+import VerifiedGarbage.Proof.Argon2.Arm.Derive.Reduce
+import VerifiedGarbage.Proof.Argon2.Arm.Derive.FillLoops
+import VerifiedGarbage.Proof.Argon2.Arm.Derive.MemoryInit
+import VerifiedGarbage.Proof.Argon2.Arm.Derive.Initial
+public import VerifiedGarbage.Proof.Argon2.Contract
 public import VerifiedGarbage.Proof.Framework.Contract
+
+/-! ### `Argon2.Arm.Derive.Correct`, which only this module used -/
+
+section
+
+/-!
+# Argon2 on ARMv7: the derivation is correct
+
+`body_ok`: the body computes the parameters and H₀, initializes and fills
+the memory, and writes the tag (`Spec.Argon2.derive`) to `out`; `correct`:
+the whole function, in its frames, keeps the ABI's registers too.
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Argon2.Arm.Derive
+
+open VG VG.Arm
+open VG.Spec.Argon2 (Block zeroBlock FillState)
+open VG.Spec.Blake2 (bytesAt)
+
+section
+variable {s₀ : State} (hp : DPre s₀)
+include hp
+
+theorem body_ok : WP isa Impl.Argon2.Arm.Derive.body (entry s₀) fun t => BodyDone s₀ t ∧
+    t.wr = (entry s₀).wr ∧ bytesAt t.mem (State.addr (outP s₀)) (outL s₀) =
+      Spec.Argon2.derive (prm s₀) (pwB s₀) (saltB s₀) (secB s₀) (adB s₀) := by
+  unfold Impl.Argon2.Arm.Derive.body
+  refine WP.seq ?_
+  rw [← List.append_nil (Instr.addSp .r11 0 :: Impl.Argon2.Arm.Derive.parameters)]
+  refine parameters_ok hp fun s₁ i₁ p₁ => WP.block_nil ?_
+  refine WP.seq ((code_ok hp i₁ p₁).mono fun s₂ ⟨i₂, p₂, b₂⟩ => ?_)
+  refine WP.seq ((memoryInit_ok hp i₂ p₂ b₂).mono fun s₃ ⟨i₃, p₃, m₃⟩ => ?_)
+  refine WP.seq ((passes_ok hp (st := Spec.Argon2.initMemory (prm s₀)
+    (Spec.Argon2.initialHash (prm s₀) (pwB s₀) (saltB s₀) (secB s₀) (adB s₀))) ⟨i₃, p₃, m₃⟩).mono
+    fun s₄ f₄ => ?_)
+  rw [show itersN s₀ = (prm s₀).passes from rfl, Proof.Argon2.iterations_fill] at f₄
+  refine WP.seq ((reduce_ok hp f₄.inv f₄.pr f₄.mem).mono fun s₅ ⟨i₅, _, b₅⟩ => ?_)
+  refine (finalOutput_ok hp i₅).mono fun t ⟨it, ot⟩ => ⟨it.done hp, it.wr, ?_⟩
+  rw [ot, b₅, Spec.Argon2.derive, Proof.Argon2.finish_reduction]
+  rfl
+
+theorem correct : WP isa Impl.Argon2.Arm.Derive.derive s₀ fun t => abiPreserved s₀ t ∧ deriveArm.post s₀ t :=
+  frames_ok (by have := hp.sp_lo; omega_using [this]) (body_ok hp) fun t u q m => by
+    show bytesAt u.mem _ _ = _
+    rw [m]; exact q
+
+end
+
+end VG.Proof.Argon2.Arm.Derive
+
+end
+
+end
+
 
 /-!
 # Argon2 on ARMv7: the derivation is verified

@@ -4,17 +4,40 @@ meta import VerifiedGarbage.Proof.Rsa.X86.InvTimeBase
 meta import VerifiedGarbage.Impl.Rsa.X86.InvBatchRt
 meta import VerifiedGarbage.Impl.Rsa.X86.CrtValuesRt
 meta import VerifiedGarbage.Proof.Framework.X86.SseTaint
-import VerifiedGarbage.Proof.Rsa.X86.InvDispatch
+public import VerifiedGarbage.Proof.Rsa.X86.InvDispatch
 import VerifiedGarbage.Proof.Rsa.X86.CvInverseCall
-public import VerifiedGarbage.Proof.Rsa.X86.InvTimeCompare
-public import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Base
+public import VerifiedGarbage.Proof.Rsa.X86.InvTimeBase
+import VerifiedGarbage.Proof.Weierstrass.X86.Fprog
+public import VerifiedGarbage.Impl.Rsa.X86.KeyRt
+public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Proof.Framework.RelCT
+import VerifiedGarbage.Proof.Rsa.X86.InvChoice
+public import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Base
 public import VerifiedGarbage.Proof.Framework.X86.Taint
 public import VerifiedGarbage.Impl.Rsa.X86.CrtValuesRt
 public import VerifiedGarbage.Proof.Rsa.X86.InvGuard
 public import VerifiedGarbage.Proof.Rsa.X86.InvBatchRt.Time.Comp
 import VerifiedGarbage.Proof.Rsa.X86.InvBatchRt.Time.FBodyRel
-import VerifiedGarbage.Proof.Weierstrass.X86.Fprog
+
+/-! ### `Rsa.X86.InvTimeCompare`, which only this module used -/
+
+section
+
+/-! # Relating public length comparisons in the inverse dispatcher -/
+
+@[expose] public section
+namespace VG.Proof.Rsa.X86.InvTiming
+open VG VG.X86 VG.Proof.Mont VG.Proof.Mont.X86 VG.Proof.Rsa.X86.CrtValuesRt VG.Proof.Rsa.X86.KeyRt
+
+ def Pair (args : Nat → BitVec 32) (base : Addr) (size len P Q P' Q' : Nat) (sp : BitVec 32) (s t : State) : Prop :=
+  (InvInput args base size len P Q s ∧ Public args base size sp s) ∧
+  (InvInput args base size len P' Q' t ∧ Public args base size sp t)
+end VG.Proof.Rsa.X86.InvTiming
+
+end
+
+end
+
 
 /-! # The inverse's trace: a public guard, then the batches or the general inverse
 

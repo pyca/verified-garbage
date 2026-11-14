@@ -3,21 +3,221 @@ module
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.RefillLoop
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.OutputPlan
 import VerifiedGarbage.Proof.Dsa.AArch64.Generation.Memory
-import VerifiedGarbage.Proof.Dsa.AArch64.Generation.FinishOutput
+import VerifiedGarbage.Proof.Dsa.Generation.ParamsEncoding
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.OutputArgs
+public import VerifiedGarbage.Proof.RsaOaep.AArch64.Basic
+import VerifiedGarbage.Proof.RsaOaep.AArch64.Loops
+import VerifiedGarbage.Proof.Framework.WriteBytes
+import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+public import Mathlib.Algebra.Group.Nat.Defs
+import Mathlib.Tactic.Push
+import Mathlib.Tactic.Attr.Core
+public import Aesop.BuiltinRules
+import Mathlib.Tactic.ToDual
+import VerifiedGarbage.Proof.Bignum.AArch64.Run
+public import VerifiedGarbage.Proof.MlKem.AArch64.Wp
+import VerifiedGarbage.Proof.Dsa.AArch64.Run
+public import VerifiedGarbage.Proof.RsaOaep.AArch64.DecOut
+public import VerifiedGarbage.Proof.Bignum.AArch64.MontMul
+public import VerifiedGarbage.Impl.Dsa.AArch64.Generation.Output
+import VerifiedGarbage.Proof.Bignum.Octets
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.ContextSuccess
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.OnSuccess
+import VerifiedGarbage.Proof.RsaKeyGen.Table
 import VerifiedGarbage.Proof.Dsa.AArch64.Generation.ContextFrame
 import VerifiedGarbage.Proof.Dsa.AArch64.Generation.GeometryWork
 import VerifiedGarbage.Proof.Dsa.Generation.Memory
-import VerifiedGarbage.Proof.Dsa.Generation.ParamsEncoding
 import VerifiedGarbage.Proof.Framework.AArch64.StackStore
-import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
-import VerifiedGarbage.Proof.Framework.AArch64.RegUpd -- shake: keep (brun's simp set reads its lemmas)
-import VerifiedGarbage.Proof.Framework.AArch64.Exec
-import VerifiedGarbage.Proof.Bignum.AArch64.Run
-import VerifiedGarbage.Proof.Bignum.Octets
-import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.EntropyRequest
+
+/-! ### `Dsa.AArch64.Generation.FinishOutput`, which only this module used -/
+
+section
+
+/-! ### `Dsa.AArch64.Generation.OutputZero`, which only this module used -/
+
+section
+
+/-! ### `Dsa.AArch64.Generation.ZeroBytes`, which only this module used -/
+
+section
+
+/-! Precise byte and memory framing for the shared native output-clearing loop. -/
+@[expose] public section
+namespace VG.Proof.Dsa.AArch64.Generation
+open VG VG.AArch64 VG.Proof.Bignum VG.Proof.Bignum.AArch64 VG.Proof.MlKem.AArch64
+open VG.Proof.RsaOaep.AArch64 VG.Impl.RsaOaep.AArch64
+open VG.WriteBytes (writeW8_apply)
+
+structure OutputZeroInv (s : State) (out : Addr) (n j : Nat) (t : State) : Prop where
+  keep : Keep [.x11, .x12] s t
+  r10 : t.gpr .x11 = out + BitVec.ofNat 64 j
+  r11 : t.gpr .x12 = BitVec.ofNat 64 (n - j)
+  bytes : ∀ i < j, t.mem (out + BitVec.ofNat 64 i) = 0
+  frame : ∀ x, (∀ i < j, x ≠ out + BitVec.ofNat 64 i) → t.mem x = s.mem x
+
+theorem zeroOut_bytes_ok {s : State} {F S op : Addr} {k : Nat}
+    (L : Lay s F S) {V : Nat → Byte} {W : Nat → BitVec 64} (R : Rep s.mem F S V W)
+    (hO : W 19 = op) (hK : W 21 = BitVec.ofNat 64 k)
+    (hk1 : 0 < k) (hk' : k < 2 ^ 64)
+    (hout : ∀ j < k, InRegions s.wr (op + BitVec.ofNat 64 j) 1) :
+    WP isa zeroOut s fun t => (∀ i < k, t.mem (op + BitVec.ofNat 64 i) = 0) ∧
+      (∀ x, (∀ i < k, x ≠ op + BitVec.ofNat 64 i) → t.mem x = s.mem x) ∧ Keep [.x11, .x12, .x13] s t := by
+  have ho : s.mem.readW (F + BitVec.ofNat 64 sOut) 64 = op := (R.fr 19 (by decide)).trans hO
+  have hk : s.mem.readW (F + BitVec.ofNat 64 sK) 64 = BitVec.ofNat 64 k := (R.fr 21 (by decide)).trans hK
+  unfold zeroOut
+  refine WP.seq (WP.mono (WP.keep [.x11, .x12, .x13] (Q := fun t => t.gpr .x11 = op ∧
+      t.gpr .x12 = BitVec.ofNat 64 k ∧ t.gpr .x13 = 0 ∧ t.mem = s.mem) (by
+    brun [exec_ldrSp (off := sOut) (by decide), exec_ldrSp (off := sK) (by decide), L.sp,
+      L.ld (d := sOut) (n := 8) (by decide), L.ld (d := sK) (n := 8) (by decide), ho, hk]) rfl rfl rfl)
+    fun s₁ ⟨⟨hsi, hcx, hax, hm₁⟩, k₁⟩ => ?_)
+  refine WP.mono (VG.Proof.RsaOaep.AArch64.count_loop (cr := .x12) hk1 (OutputZeroInv s₁ op k) ?_
+    ⟨Keep.refl _ _, by rw [hsi, show BitVec.ofNat 64 0 = 0#64 from rfl, BitVec.add_zero], by rw [hcx, Nat.sub_zero],
+      fun i hi => absurd hi (by omega_using []), fun x _ => rfl⟩) fun t hI => ⟨hI.bytes, fun x hx => by
+        rw [hI.frame x hx, hm₁], ((k₁.trans hI.keep).mono (by decide))⟩
+  intro j hj t hI
+  have hst : InRegions t.wr (op + BitVec.ofNat 64 j) 1 := by
+    rw [hI.keep.wr, k₁.wr]; exact hout j hj
+  have hax' : (t.gpr .x13).setWidth 8 = 0 := by rw [hI.keep.gpr .x13 (by decide), hax]; rfl
+  have hp : BitVec.ofNat 64 (k - j) - 1#64 = BitVec.ofNat 64 (k - (j + 1)) := by
+    apply BitVec.eq_of_toNat_eq
+    simp only [BitVec.toNat_sub, BitVec.toNat_ofNat]
+    omega_using [hj]
+  refine WP.mono (WP.keep [.x11, .x12] (Q := fun t' =>
+      t'.mem = t.mem.writeW (op + BitVec.ofNat 64 j) (0 : BitVec 8) ∧
+      t'.gpr .x11 = op + BitVec.ofNat 64 (j + 1) ∧ t'.gpr .x12 = BitVec.ofNat 64 (k - (j + 1)))
+      (by brun [hI.r10, hI.r11, hst, hax', hp, BitVec.add_assoc, BitVec.ofNat_add_ofNat]; rfl)
+      rfl rfl rfl) fun t' ⟨⟨hm, hsi', hcx'⟩, k'⟩ => ?_
+  refine ⟨⟨(hI.keep.trans k').mono (by decide), hsi', hcx', ?_, ?_⟩, ?_⟩
+  · intro i hi
+    rw [hm, writeW8_apply]
+    by_cases hij : i = j
+    · subst hij; simp
+    · rw [ite_eq_right_of_eq_false _ _ (eq_false (out_ne (by omega_using [hk', hj, hi]) (by omega_using [hk', hj]) hij))]
+      exact hI.bytes i (by omega_using [hi, hij])
+  · intro x hx
+    rw [hm, writeW8_apply, ite_eq_right_of_eq_false _ _ (eq_false (hx j (by omega_using [])))]
+    exact hI.frame x fun i hi => hx i (by omega_using [hi])
+  · rw [hcx']
+    exact VG.Proof.RsaOaep.AArch64.counter_ne (by omega_using [hj]) hk'
+
+end VG.Proof.Dsa.AArch64.Generation
+
+end
+
+end
+
+
+/-! Every failed search clears the complete output and returns zero. -/
+@[expose] public section
+namespace VG.Proof.Dsa.AArch64.Generation
+open VG VG.AArch64 VG.Proof.Bignum.AArch64 VG.Proof.MlKem.AArch64
+open VG.Proof.RsaOaep.AArch64 VG.Impl.RsaOaep.AArch64
+
+theorem outputZero_ok {s : State} {F S : Addr} {V : Nat → Byte} {W : Nat → BitVec 64} {len : Nat}
+    (L : Lay s F S) (R : Rep s.mem F S V W) (hlen : W 7 = BitVec.ofNat 64 len)
+    (hl : 0 < len ∧ len ≤ 1024) (hw : (⟨W 6, len⟩ : Region) ∈ s.wr)
+    (_hb : (W 6).toNat + len ≤ 2 ^ 64) (_ha : Apart F S ⟨W 6, len⟩) :
+    WP isa Impl.Dsa.AArch64.Generation.outputZero s fun t =>
+      t.gpr .x0 = 0 ∧ Spec.Rsa.bytesAt t.mem (W 6) len = List.replicate len 0 ∧
+      Frame [⟨F, frameBytes⟩, ⟨W 6, len⟩] s.mem t.mem ∧ Keep (.x0 :: mmRegs) s t := by
+  unfold Impl.Dsa.AArch64.Generation.outputZero
+  refine WP.seq (WP.mono (zeroArgs_ok L R) fun u ⟨Lu, Ru, fu, ku⟩ => ?_)
+  refine WP.seq (WP.mono (zeroOut_bytes_ok (op := W 6) (k := len) Lu Ru (by simp [upd]) (by simpa [upd] using hlen)
+    hl.1 (by omega_using [hl]) (fun i hi => by
+      rw [ku.wr]
+      exact ⟨⟨W 6, len⟩, hw, Offset.contains_base _ (by omega_using [hi]) (by omega_using [hl, hi])⟩))
+    fun v ⟨zeros, fv, kv⟩ => ?_)
+  refine WP.mono (WP.keep [.x0] (Q := fun t => t.gpr .x0 = 0 ∧ t.mem = v.mem)
+    (by brun) rfl rfl rfl) fun t ⟨⟨hr, hm⟩, kt⟩ => ?_
+  refine ⟨hr, ?_, ?_, ((ku.trans kv).trans kt).mono (by decide)⟩
+  · apply List.ext_getElem
+    · simp only [VG.Proof.Bignum.bytesAt_length, List.length_replicate]
+    · intro i hi hi'
+      have hil : i < len := by simpa only [VG.Proof.Bignum.bytesAt_length] using hi
+      simp only [Spec.Rsa.bytesAt, List.getElem_map, List.getElem_range, List.getElem_replicate, hm]
+      exact zeros i hil
+  · have ff : Frame [⟨W 6, len⟩] u.mem t.mem := by
+      intro a ha
+      rw [hm]
+      apply fv a
+      intro i hi he
+      apply ha ⟨W 6, len⟩ (by simp)
+      rw [he]
+      exact Offset.contains_base _ (by omega_using [hi]) (by omega_using [hl, hi])
+    exact (fu.mono (by simp)).trans (ff.mono (by simp))
+
+end VG.Proof.Dsa.AArch64.Generation
+
+end
+
+end
+
+
+/-! # Normalize every search outcome to the public output and status convention -/
+
+@[expose] public section
+namespace VG.Proof.Dsa.AArch64.Generation
+open VG VG.AArch64 VG.Proof.Bignum VG.Proof.Bignum.AArch64 VG.Proof.MlKem.AArch64
+open VG.Proof.RsaOaep.AArch64 VG.Impl.RsaOaep.AArch64 VG.Impl.Dsa.Generation.Layout
+
+theorem finishOutput_ok {p : GenerationContext} {W : Nat → BitVec 64} {s : State}
+    (h : GenerationMemory p W s) (o : OutputPlan p)
+    (hw : (⟨p.saved 6, 2 * p.geo.pLen + p.geo.qLen⟩ : Region) ∈ s.wr)
+    (expected : Option Spec.Dsa.Params)
+    (result : ((W 19 ≠ 1 ∧ expected = none) ∨
+      (W 19 = 1 ∧ ∃ a, expected = some a ∧
+        Spec.Rsa.bytesAt s.mem (VG.Proof.Bignum.off p.geo.B packed) (2 * p.geo.pLen + p.geo.qLen) = Spec.Dsa.encodeParams p.geo.pLen p.geo.qLen a))) :
+    WP isa Impl.Dsa.AArch64.Generation.finishOutput s fun t =>
+      t.gpr .x0 = (if expected.isSome then 1 else 0) ∧
+      Spec.Rsa.bytesAt t.mem (p.saved 6) (2 * p.geo.pLen + p.geo.qLen) =
+        (expected.map (Spec.Dsa.encodeParams p.geo.pLen p.geo.qLen)).getD
+          (List.replicate (2 * p.geo.pLen + p.geo.qLen) 0) ∧
+      Frame [⟨p.geo.F, frameBytes⟩, ⟨p.saved 6, 2 * p.geo.pLen + p.geo.qLen⟩] s.mem t.mem ∧
+      Keep (.x0 :: mmRegs) s t := by
+  have pn : 0 < p.geo.pLen ∧ p.geo.pLen ≤ 384 := by rcases p.geo.width with hh | hh | hh <;> omega_using [hh]
+  have qn : p.geo.qLen ≤ 32 := by rcases p.geo.qWidth with hh | hh <;> omega_using [hh]
+  obtain ⟨V, R⟩ := h.rep
+  unfold Impl.Dsa.AArch64.Generation.finishOutput
+  refine WP.seq (WP.mono (successStatus_ok h.layout R) fun u ⟨hz, hm, ku⟩ => ?_)
+  have mu := h.congr hm ku
+  have hwu : (⟨p.saved 6, 2 * p.geo.pLen + p.geo.qLen⟩ : Region) ∈ u.wr := by rw [ku.wr]; exact hw
+  rcases result with ⟨h19, he⟩ | ⟨h19, a, he, bytes⟩
+  · have hn : W 19 ≠ 1 := h19
+    refine WP.ite false (by exact hz.trans (congrArg some (beq_eq_false_iff_ne.mpr hn)))
+      (fun impossible => Bool.noConfusion impossible) (fun _ => ?_)
+    obtain ⟨Vu, Ru⟩ := mu.rep
+    have h6 := mu.slots 6 (by simp [generationSlots])
+    have h7 := (mu.slots 7 (by simp [generationSlots])).trans o.lengthSlot
+    have call := outputZero_ok mu.layout Ru h7 ⟨by omega_using [pn], by omega_using [pn, qn]⟩
+    rw [h6] at call
+    refine WP.mono (call hwu o.bound o.apart) fun t ⟨hr, bt, ft, kt⟩ => ?_
+    rw [he]
+    exact ⟨hr, bt, by simpa only [hm] using ft, (ku.trans kt).mono (by decide)⟩
+  · refine WP.ite true (by apply hz.trans; rw [h19]; rfl)
+      (fun _ => ?_) (fun impossible => Bool.noConfusion impossible)
+    have bytesu : Spec.Rsa.bytesAt u.mem (VG.Proof.Bignum.off p.geo.B packed) (2 * p.geo.pLen + p.geo.qLen) =
+        Spec.Dsa.encodeParams p.geo.pLen p.geo.qLen a := hm ▸ bytes
+    refine WP.mono (output_copy_context mu o hwu _ (VG.Proof.Dsa.Generation.encodeParams_length _ _ _) bytesu)
+      fun t ⟨hr, bt, ft, kt⟩ => ?_
+    rw [he]
+    refine ⟨hr, bt, ?_, (ku.trans kt).mono (by decide)⟩
+    rw [hm] at ft
+    exact ft.mono (by intro r hr; rcases List.mem_singleton.mp hr with rfl; simp)
+
+end VG.Proof.Dsa.AArch64.Generation
+
+end
+
+end
+
 
 -- separate module: the end's symbolic execution, built in parallel with the constant-time proofs importing `RefillLoop`
 

@@ -7,21 +7,375 @@ public import VerifiedGarbage.Proof.Dsa.AArch64.Parameters
 public import VerifiedGarbage.Proof.Dsa.Generation.ParamsEncoding
 public import VerifiedGarbage.Impl.Dsa.AArch64.Generation.GeneratorSearch
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.GeneratorSearchPlan
-
-import VerifiedGarbage.Proof.Dsa.AArch64.Generation.NativeGenerator
-import VerifiedGarbage.Proof.Dsa.AArch64.Generation.OnSuccess
-import VerifiedGarbage.Proof.Dsa.AArch64.Generation.Pack
-import VerifiedGarbage.Proof.Dsa.AArch64.Generation.ArenaSource
-import VerifiedGarbage.Proof.Dsa.Generation.Memory
-import VerifiedGarbage.Proof.Dsa.Generation.GeneratorDomain
-import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.GeneratorInvariant
 import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.TapeIteration
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.TapeState
+import VerifiedGarbage.Proof.Bignum.AArch64.Run
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.OnSuccess
+public import VerifiedGarbage.Impl.Dsa.AArch64.Generation.Pack
+public import VerifiedGarbage.Proof.Bignum.AArch64.PubSetup
+public import VerifiedGarbage.Proof.RsaOaep.AArch64.Basic
+public import Aesop.BuiltinRules
+import VerifiedGarbage.Proof.Dsa.Generation.Memory
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Dsa.AArch64.Run
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PackPart
+import VerifiedGarbage.Proof.Framework.AddrArith
+import Mathlib.Algebra.Group.Nat.Defs
+import Mathlib.Tactic.ToDual
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.ArenaSource
+import VerifiedGarbage.Proof.Dsa.Generation.GeneratorDomain
 import VerifiedGarbage.Proof.Dsa.Encoding
 import VerifiedGarbage.Impl.Dsa.AArch64.Generation.Validate
-import VerifiedGarbage.Proof.RsaOaep.AArch64.Basic
 import VerifiedGarbage.Proof.Dsa.AArch64.Generation.ValidateCore
 import VerifiedGarbage.Proof.Dsa.AArch64.Generation.AttemptStatus
-import Mathlib.Algebra.Group.Nat.Defs
+
+/-! ### `Dsa.AArch64.Generation.NativeGenerator`, which only this module used -/
+
+section
+
+/-! ### `Dsa.AArch64.Generation.GeneratorBody`, which only this module used -/
+
+section
+
+/-! # A consumed h chunk either finishes or advances the exact generator search -/
+
+@[expose] public section
+namespace VG.Proof.Dsa.AArch64.Generation
+open VG VG.AArch64 VG.Proof.Bignum VG.Proof.Bignum.AArch64 VG.Proof.MlKem.AArch64
+open VG.Proof.RsaOaep.AArch64 VG.Impl.RsaOaep.AArch64 VG.Impl.Dsa.Generation.Layout
+
+theorem generator_body_ok (M : Mont)
+    {p : GeneratorSearchPlan} {expected : Option Nat} {final : Nat} {initial : State}
+    {used : Nat} {s t : State} {V : Nat → Byte} {W : Nat → BitVec 64}
+    (hi : GeneratorInvariant p expected final initial used s) (room : used + p.core.len ≤ p.tape.length)
+    (R : Rep s.mem p.core.F p.core.S V W)
+    (Lt : Lay t p.core.F p.core.S)
+    (Rt : Rep t.mem p.core.F p.core.S V
+      (upd (upd W 21 (VG.Proof.Bignum.off (W 11) used)) 20 (BitVec.ofNat 64 (used + p.core.len))))
+    (ft : Frame [⟨p.core.F, frameBytes⟩] s.mem t.mem) (kt : Keep [.x3, .x4, .x5, .x15] s t) :
+    WP isa (Impl.Dsa.AArch64.Generation.generatorStep M.mm p.core.len) t fun u =>
+      ∃ V' W', Lay u p.core.F p.core.S ∧ Rep u.mem p.core.F p.core.S V' W' ∧
+        (if W' 19 = 3 then GeneratorInvariant p expected final initial (used + p.core.len) u
+          else GeneratorFinished p expected final initial u) := by
+  obtain ⟨Wi, h, _, he, hcount, fi, ri, wi⟩ := hi
+  obtain ⟨Vi, Ri⟩ := h.rep
+  have words : ∀ k < 34, W k = Wi k := fun k hk => (R.fr k hk).symm.trans (Ri.fr k hk)
+  let Wt := upd (upd W 21 (VG.Proof.Bignum.off (W 11) used)) 20 (BitVec.ofNat 64 (used + p.core.len))
+  have ff : Frame p.core.changed s.mem t.mem := ft.mono (by
+    intro r hr; rcases List.mem_singleton.mp hr with rfl; simp [GeneratorPlan.changed])
+  have ht : GeneratorSearchMemory p Wt t := h.frame Lt ⟨V, Rt⟩ (by
+    intro k hk
+    simp only [generatorSlots, List.mem_cons, List.not_mem_nil, or_false] at hk
+    rcases hk with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp only [Wt, upd] <;> exact words _ (by decide)) ff kt.rd kt.wr
+  have hc := ht.chunk room (by
+    change Wt 21 = VG.Proof.Bignum.off p.tapePtr used
+    simp [Wt, upd, words 11 (by decide), h.tapeBase])
+  refine WP.mono (generatorStep_ok M (p := p.chunk used room) hc) fun u ⟨hu, hg, fu, ku⟩ => ?_
+  let Wu := upd Wt 19 (if (p.chunk used room).accepts then 1 else 3)
+  have mem : GeneratorSearchMemory p Wu u := ht.frame hu.layout hu.rep (by
+    intro k hk
+    simp only [generatorSlots, List.mem_cons, List.not_mem_nil, or_false] at hk
+    rcases hk with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> rfl) fu ku.rd ku.wr
+  have frame := (fi.trans ff).trans fu
+  have rd := ku.rd.trans (kt.rd.trans ri)
+  have wr := ku.wr.trans (kt.wr.trans wi)
+  have rem := he.trans (p.remaining_step room)
+  have cnt := hcount.trans (congrArg (used + p.core.len * ·) (p.count_step room))
+  have h20 : Wu 20 = BitVec.ofNat 64 (used + p.core.len) := by simp [Wu, Wt, upd]
+  obtain ⟨Vu, Ru⟩ := mem.rep
+  refine ⟨Vu, Wu, mem.layout, Ru, ?_⟩
+  by_cases accepted : (p.chunk used room).accepts
+  · have h19 : Wu 19 = 1 := by simp [Wu, upd, accepted]
+    rw [ite_eq_right (by rw [h19]; decide)]
+    rw [ite_eq_left accepted, Nat.mul_one] at cnt
+    exact ⟨Wu, mem, cnt ▸ h20, Or.inr ⟨(p.chunk used room).value, h19,
+      by simpa only [accepted, ite_true] using rem, hg accepted⟩, frame, rd, wr⟩
+  · have h19 : Wu 19 = 3 := by simp [Wu, upd, accepted]
+    rw [ite_eq_left h19]
+    rw [ite_eq_right accepted, Nat.mul_succ] at cnt
+    exact ⟨Wu, mem, h20,
+      by simpa only [accepted, ite_false] using rem, by omega_using [cnt], frame, rd, wr⟩
+
+end VG.Proof.Dsa.AArch64.Generation
+
+end
+
+end
+
+/-! ### `Dsa.AArch64.Generation.TapeLoop`, which only this module used -/
+
+section
+
+/-! # Termination of native seed and generator tape searches -/
+
+@[expose] public section
+namespace VG.Proof.Dsa.AArch64.Generation
+open VG VG.AArch64 VG.Proof.Bignum VG.Proof.Bignum.AArch64 VG.Proof.MlKem.AArch64
+open VG.Proof.RsaOaep.AArch64 VG.Impl.RsaOaep.AArch64
+open VG.Impl.Dsa.AArch64.Generation
+
+/-- The body provides algorithm-specific progress; the tape controller
+owns complete-chunk selection, cursor advancement, and loop termination. -/
+structure TapeDriver (slots : TapeSlots) (F S : Addr) (width total : Nat)
+    (body : Prog isa) (I : Nat → State → Prop) (Q : State → Prop) : Prop where
+  baseBound : slots.base < 34
+  totalBound : slots.total < 34
+  usedBound : slots.used < 34
+  pointerBound : slots.pointer < 34
+  usedNotScratch : slots.used ≠ 12
+  pointerNotScratch : slots.pointer ≠ 12
+  widthBound : width < 65536
+  widthPositive : 0 < width
+  totalFits : total < 2 ^ 64
+  stable : ∀ n, TapeStable (I n)
+  finish : TapeStable Q
+  view : ∀ n s, I n s → TapeView slots F S n total s
+  done : ∀ used s t V W, I used s → total - used < width →
+    Lay s F S → Rep s.mem F S V W →
+    Lay t F S → Rep t.mem F S V (upd W 19 3) →
+    Outside F 152 8 s.mem t.mem → Keep [.x0, .x15] s t → Q t
+  step : ∀ used s t V W, I used s → width ≤ total - used →
+    Lay s F S → Rep s.mem F S V W → W slots.used = BitVec.ofNat 64 used →
+    Lay t F S → Rep t.mem F S V
+      (upd (upd W slots.pointer (VG.Proof.Bignum.off (W slots.base) used)) slots.used (BitVec.ofNat 64 (used + width))) →
+    Frame [⟨F, frameBytes⟩] s.mem t.mem → Keep [.x3, .x4, .x5, .x15] s t →
+    WP isa body t fun u => ∃ V' W', Lay u F S ∧ Rep u.mem F S V' W' ∧
+      (if W' 19 = 3 then I (used + width) u else Q u)
+
+theorem TapeDriver.loop_ok {slots : TapeSlots} {F S : Addr} {width total : Nat}
+    {body : Prog isa} {I : Nat → State → Prop} {Q : State → Prop}
+    (d : TapeDriver slots F S width total body I Q)
+    {s : State} {used : Nat} (hle : used ≤ total) (hi : I used s) :
+    WP isa (.loop (tapeIteration slots width body) (.zero .x .x0)) s Q := by
+  exact WP.loop
+    (fun n t => ∃ used, n = total - used + 1 ∧ used ≤ total ∧ I used t)
+    (fun n t ⟨u, hn, hu, hit⟩ =>
+      WP.mono (tapeIteration_ok d.baseBound d.totalBound d.usedBound d.pointerBound
+        d.usedNotScratch d.pointerNotScratch d.widthBound d.totalFits
+        d.stable d.finish d.view (d.done u) (d.step u) hu hit)
+        fun t' ht => ht.imp (fun h => h) fun ⟨hz, hi', hbound⟩ =>
+          ⟨hz, total - (u + width) + 1, by omega_using [d.widthPositive, hn, hu, hbound],
+            u + width, rfl, hbound, hi'⟩)
+    (total - used + 1) s ⟨used, rfl, hle, hi⟩
+
+/-- Resetting the cursor makes each generator search reuse the original h
+tape, and each top-level call begin at the first seed. -/
+theorem TapeDriver.run_ok {slots : TapeSlots} {F S : Addr} {width total : Nat}
+    {body : Prog isa} {I : Nat → State → Prop} {Q : State → Prop}
+    (d : TapeDriver slots F S width total body I Q)
+    {s : State} {V : Nat → Byte} {W : Nat → BitVec 64}
+    (L : Lay s F S) (R : Rep s.mem F S V W)
+    (start : ∀ t, Lay t F S → Rep t.mem F S V (upd W slots.used 0) →
+      Outside F (8 * slots.used) 8 s.mem t.mem → Keep [.x0, .x15] s t → I 0 t) :
+    WP isa (tapeLoop slots width body) s Q := by
+  unfold tapeLoop
+  refine WP.seq (WP.mono (tapeReset_frame_ok L R slots d.usedBound d.usedNotScratch)
+    fun t ⟨Lt, Rt, ft, kt⟩ => ?_)
+  exact d.loop_ok (Nat.zero_le _) (start t Lt Rt ft kt)
+
+end VG.Proof.Dsa.AArch64.Generation
+
+end
+
+end
+
+
+/-! # Complete native generator search against the byte-tape specification -/
+
+@[expose] public section
+namespace VG.Proof.Dsa.AArch64.Generation
+open VG VG.AArch64 VG.Proof.Bignum VG.Proof.Bignum.AArch64 VG.Proof.MlKem.AArch64
+open VG.Proof.RsaOaep.AArch64 VG.Impl.RsaOaep.AArch64 VG.Impl.Dsa.Generation.Layout
+open VG.Impl.Dsa.AArch64.Generation (generatorTape)
+
+theorem nativeGenerator_ok (M : Mont)
+    {p : GeneratorSearchPlan} {W : Nat → BitVec 64} {s : State}
+    (h : GeneratorSearchMemory p W s) :
+    WP isa (Impl.Dsa.AArch64.Generation.generatorSearch M.mm p.core.len) s
+      (GeneratorFinished p (p.remaining 0) (p.core.len * p.count 0) s) := by
+  let I := GeneratorInvariant p (p.remaining 0) (p.core.len * p.count 0) s
+  let Q := GeneratorFinished p (p.remaining 0) (p.core.len * p.count 0) s
+  have hw : 0 < p.core.len ∧ p.core.len < 65536 := by
+    rcases p.core.width with hh | hh | hh <;> omega_using [hh]
+  have driver : TapeDriver generatorTape p.core.F p.core.S p.core.len p.tape.length
+      (Impl.Dsa.AArch64.Generation.generatorStep M.mm p.core.len) I Q :=
+    { baseBound := by decide
+      totalBound := by decide
+      usedBound := by decide
+      pointerBound := by decide
+      usedNotScratch := by decide
+      pointerNotScratch := by decide
+      widthBound := hw.2
+      widthPositive := hw.1
+      totalFits := p.tapeFits
+      stable := generatorInvariant_stable p (p.remaining 0) _ s
+      finish := generatorFinished_stable p (p.remaining 0) _ s
+      view := by
+        rintro used t ⟨Wt, ht, h20, _, _, _, _, _⟩
+        obtain ⟨Vt, Rt⟩ := ht.rep
+        exact ⟨Vt, Wt, ht.layout, Rt, h20, ht.tapeLength⟩
+      done := by
+        intro used u v Vt Wt hi hex _ R Lu Ru fu ku
+        exact generator_done hi hex R Lu Ru fu ku
+      step := by
+        intro used u v Vt Wt hi hav _ R _ Lv Rv fv kv
+        exact generator_body_ok M hi (by omega_using [hw, hav]) R Lv Rv fv kv }
+  obtain ⟨V, R⟩ := h.rep
+  apply driver.run_ok h.layout R
+  intro t Lt Rt ft kt
+  have ff : Frame p.core.changed s.mem t.mem := by
+    intro a ha
+    apply ft a
+    right
+    have hn := ha ⟨p.core.F, frameBytes⟩ (by simp [GeneratorPlan.changed])
+    change ¬ ofs p.core.F a < frameBytes at hn
+    change 168 ≤ ofs p.core.F a
+    unfold frameBytes at hn
+    omega_using [hn]
+  refine ⟨upd W 20 0, h.frame Lt ⟨V, Rt⟩ ?_ ff kt.rd kt.wr,
+    by simp [upd], rfl, (Nat.zero_add _).symm, ff, kt.rd, kt.wr⟩
+  intro k hk
+  simp only [generatorSlots, List.mem_cons, List.not_mem_nil, or_false] at hk
+  rcases hk with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> rfl
+
+end VG.Proof.Dsa.AArch64.Generation
+
+end
+
+end
+
+/-! ### `Dsa.AArch64.Generation.Pack`, which only this module used -/
+
+section
+
+/-! # Pack all three generated parameters into p || q || g -/
+
+-- Formerly `VerifiedGarbage/Proof/Dsa/AArch64/Generation/PackInto.lean`, which only this module imported.
+section
+
+/-! # Pack a component into a bounded domain buffer, preserving all sources -/
+
+section
+namespace VG.Proof.Dsa.AArch64.Generation
+open VG VG.AArch64 VG.Proof.Bignum VG.Proof.Bignum.AArch64 VG.Proof.MlKem.AArch64
+open VG.Proof.RsaOaep.AArch64 VG.Impl.RsaOaep.AArch64 VG.Impl.Dsa.Generation.Layout
+
+theorem packInto_ok {s : State} {F S : Addr} {V : Nat → Byte} {W : Nat → BitVec 64}
+    (L : Lay s F S) (R : Rep s.mem F S V W) {src d total : Nat} {bs : List Byte}
+    (hs : src < 2 ^ 16) (hl : 2 ≤ bs.length ∧ bs.length ≤ 1024)
+    (ht : total ≤ 1024) (hroom : d + bs.length ≤ total)
+    (source : Src s (VG.Proof.Bignum.off (W 5) packed) total (VG.Proof.Bignum.off (W 5) src) bs)
+    (hwr : ∀ i < total, InRegions s.wr (VG.Proof.Bignum.off (VG.Proof.Bignum.off (W 5) packed) i) 1)
+    (hF : (⟨F, frameBytes⟩ : Region).Disjoint ⟨VG.Proof.Bignum.off (W 5) packed, total⟩)
+    (hS : (⟨S, oRsa⟩ : Region).Disjoint ⟨VG.Proof.Bignum.off (W 5) packed, total⟩) :
+    WP isa (Impl.Dsa.AArch64.Generation.packPart src (packed + d) bs.length) s fun t =>
+      Spec.Rsa.bytesAt t.mem (VG.Proof.Bignum.off (VG.Proof.Bignum.off (W 5) packed) d) bs.length = bs ∧
+      Lay t F S ∧ Rep t.mem F S V W ∧
+      Frame [⟨VG.Proof.Bignum.off (VG.Proof.Bignum.off (W 5) packed) d, bs.length⟩] s.mem t.mem ∧
+      InScr (VG.Proof.Bignum.off (W 5) packed) total s.mem t.mem ∧ Keep (.x0 :: mmRegs) s t := by
+  have hd : packed + d < 2 ^ 16 := by unfold packed; omega
+  have sub : Region.Sub ⟨VG.Proof.Bignum.off (VG.Proof.Bignum.off (W 5) packed) d, bs.length⟩ ⟨VG.Proof.Bignum.off (W 5) packed, total⟩ :=
+    Offset.sub_base _ hroom
+  refine WP.mono (packPart_ok L R hs hd hl source.rd
+    (fun i hi => by rw [← VG.Proof.Bignum.off_off, VG.Proof.Bignum.off_off]; exact hwr (d + i) (by omega))
+    (fun i hi => by simpa only [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem hi, Option.getD_some] using source.val i hi)
+    (by
+      intro i hi j hj he
+      have hout := source.out i hi
+      change total ≤ ofs (VG.Proof.Bignum.off (W 5) packed) (VG.Proof.Bignum.off (VG.Proof.Bignum.off (W 5) src) i) at hout
+      rw [he, ← VG.Proof.Bignum.off_off, VG.Proof.Bignum.off_off] at hout
+      simp only [ofs, VG.Proof.Bignum.off, Offset.add_sub_cancel_left, BitVec.toNat_ofNat,
+        Nat.mod_eq_of_lt (by omega : d + j < 2 ^ 64)] at hout
+      omega)
+    (by rw [← VG.Proof.Bignum.off_off]; exact hF.sub_right sub)
+    (by rw [← VG.Proof.Bignum.off_off]; exact hS.sub_right sub)) fun t ⟨result, Lt, Rt, ft, kt⟩ => ?_
+  have frame : Frame [⟨VG.Proof.Bignum.off (VG.Proof.Bignum.off (W 5) packed) d, bs.length⟩] s.mem t.mem := by
+    simpa only [VG.Proof.Bignum.off_off] using ft
+  refine ⟨by simpa only [VG.Proof.Bignum.off_off] using result, Lt, Rt, frame, ?_, kt⟩
+  intro a ha
+  apply frame a
+  intro r hr hc
+  rcases List.mem_singleton.mp hr with rfl
+  have inside := sub a hc
+  change ofs (VG.Proof.Bignum.off (W 5) packed) a + 1 ≤ total at inside
+  omega
+
+end VG.Proof.Dsa.AArch64.Generation
+end
+
+end
+
+@[expose] public section
+namespace VG.Proof.Dsa.AArch64.Generation
+open VG VG.AArch64 VG.Proof.Bignum VG.Proof.Bignum.AArch64 VG.Proof.MlKem.AArch64
+open VG.Proof.RsaOaep.AArch64 VG.Impl.RsaOaep.AArch64 VG.Impl.Dsa.Generation.Layout
+
+theorem pack_ok {s : State} {F S : Addr} {V : Nat → Byte} {W : Nat → BitVec 64}
+    {pb qb gb : List Byte} {pLen qLen : Nat}
+    (L : Lay s F S) (R : Rep s.mem F S V W)
+    (hp : pb.length = pLen) (hq : qb.length = qLen) (hg : gb.length = pLen)
+    (hl : 2 ≤ pLen ∧ 2 ≤ qLen ∧ 2 * pLen + qLen ≤ 1024)
+    (sp : Src s (VG.Proof.Bignum.off (W 5) packed) (2 * pLen + qLen) (VG.Proof.Bignum.off (W 5) Impl.Dsa.Generation.Layout.p) pb)
+    (sq : Src s (VG.Proof.Bignum.off (W 5) packed) (2 * pLen + qLen) (VG.Proof.Bignum.off (W 5) q) qb)
+    (sg : Src s (VG.Proof.Bignum.off (W 5) packed) (2 * pLen + qLen) (VG.Proof.Bignum.off (W 5) g) gb)
+    (hwr : ∀ i < 2 * pLen + qLen, InRegions s.wr (VG.Proof.Bignum.off (VG.Proof.Bignum.off (W 5) packed) i) 1)
+    (hF : (⟨F, frameBytes⟩ : Region).Disjoint ⟨VG.Proof.Bignum.off (W 5) packed, 2 * pLen + qLen⟩)
+    (hS : (⟨S, oRsa⟩ : Region).Disjoint ⟨VG.Proof.Bignum.off (W 5) packed, 2 * pLen + qLen⟩) :
+    WP isa (Impl.Dsa.AArch64.Generation.pack pLen qLen) s fun t =>
+      Spec.Rsa.bytesAt t.mem (VG.Proof.Bignum.off (W 5) packed) (2 * pLen + qLen) = pb ++ qb ++ gb ∧
+      Lay t F S ∧ Rep t.mem F S V W ∧
+      Frame [⟨VG.Proof.Bignum.off (W 5) packed, 2 * pLen + qLen⟩] s.mem t.mem ∧ Keep (.x0 :: mmRegs) s t := by
+  unfold Impl.Dsa.AArch64.Generation.pack
+  change WP isa (.seq _ (.seq _ _)) s _
+  have first := packInto_ok (d := 0) L R (by decide : Impl.Dsa.Generation.Layout.p < 2 ^ 16)
+    (by omega_using [hp, hl]) hl.2.2 (by omega_using [hp]) sp hwr hF hS
+  simp only [Nat.add_zero, hp] at first
+  refine WP.seq (WP.mono first fun u ⟨bu, Lu, Ru, _, fu, ku⟩ => ?_)
+  have second := packInto_ok (d := pLen) Lu Ru (by decide : q < 2 ^ 16)
+    (by omega_using [hq, hl]) hl.2.2 (by omega_using [hq]) (sq.congrK fu ku)
+    (fun i hi => by rw [ku.wr]; exact hwr i hi) hF hS
+  simp only [hq] at second
+  refine WP.seq (WP.mono second fun v ⟨bv, Lv, Rv, fv, iv, kv⟩ => ?_)
+  have third := packInto_ok (d := pLen + qLen) Lv Rv (by decide : g < 2 ^ 16)
+    (by omega_using [hg, hl]) hl.2.2 (by omega_using [hg]) (sg.congrK (fu.trans iv) (ku.trans kv))
+    (fun i hi => by rw [kv.wr, ku.wr]; exact hwr i hi) hF hS
+  simp only [hg] at third
+  simp only [Impl.Bignum.AArch64.seqs, Nat.add_assoc]
+  refine WP.mono third fun t ⟨bt, Lt, Rt, ft, it, kt⟩ => ?_
+  have keep := (ku.trans kv).trans kt
+  have inside := (fu.trans iv).trans it
+  refine ⟨?_, Lt, Rt, ?_, keep.mono (by decide)⟩
+  · have preserveP : Spec.Rsa.bytesAt t.mem (VG.Proof.Bignum.off (W 5) packed) pLen = pb := by
+      rw [VG.Proof.Dsa.Generation.frame_bytesAt ft (by
+        intro r hr; rcases List.mem_singleton.mp hr with rfl
+        exact Offset.base_disjoint _ (by omega_using []) (by omega_using [hl])) (by omega_using [hl]),
+        VG.Proof.Dsa.Generation.frame_bytesAt fv (by
+          intro r hr; rcases List.mem_singleton.mp hr with rfl
+          exact Offset.base_disjoint _ (by omega_using []) (by omega_using [hl])) (by omega_using [hl])]
+      simpa [VG.Proof.Bignum.off] using bu
+    have preserveQ : Spec.Rsa.bytesAt t.mem (VG.Proof.Bignum.off (VG.Proof.Bignum.off (W 5) packed) pLen) qLen = qb := by
+      rw [VG.Proof.Dsa.Generation.frame_bytesAt ft (by
+        intro r hr; rcases List.mem_singleton.mp hr with rfl
+        exact Offset.disjoint _ (Or.inl (by omega_using [])) (by omega_using [hl]) (by omega_using [hl])) (by omega_using [hl])]
+      exact bv
+    rw [show 2 * pLen + qLen = (pLen + qLen) + pLen by omega_using [],
+      VG.Proof.Dsa.Generation.bytesAt_append, VG.Proof.Dsa.Generation.bytesAt_append,
+      preserveP, preserveQ, bt]
+  · intro a ha
+    apply inside a
+    have hn := ha ⟨VG.Proof.Bignum.off (W 5) packed, 2 * pLen + qLen⟩ (by simp)
+    change ¬ ofs (VG.Proof.Bignum.off (W 5) packed) a < 2 * pLen + qLen at hn
+    omega_using [hn]
+
+end VG.Proof.Dsa.AArch64.Generation
+
+end
+
+end
+
 /-! # The stage, from the generator search to the domain check
 
 The generation's own search, then, once it finds a g, the packing of

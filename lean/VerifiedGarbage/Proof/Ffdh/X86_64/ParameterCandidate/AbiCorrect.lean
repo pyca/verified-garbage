@@ -4,18 +4,237 @@ public import VerifiedGarbage.Impl.Ffdh.X86_64.ParameterCandidate.Core
 public import VerifiedGarbage.Proof.Bignum.X86_64.R2Impl
 public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.Contract
 public import VerifiedGarbage.Proof.MillerRabin.X86_64.Kernel
-
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.Context
-import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.Data
+public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.Data
 import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.Body
-import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.Finish
-import VerifiedGarbage.Proof.Rsa.Octets
+import VerifiedGarbage.Proof.Rsa.X86_64.CvFail
+import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.Prepared
 import VerifiedGarbage.Proof.Bignum.Octets
+import VerifiedGarbage.Proof.MillerRabin.X86_64.CallerStages
+import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.Masks
+import VerifiedGarbage.Proof.Ffdh.X86_64.Exit
+import VerifiedGarbage.Proof.Bignum.X86_64.Loop
+import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.WitnessState
+import VerifiedGarbage.Proof.Rsa.Octets
 import Mathlib.Algebra.GroupWithZero.Nat
 import Mathlib.Algebra.NeZero
 public import VerifiedGarbage.Proof.Ffdh.Contract
+
+/-! ### `Ffdh.X86_64.ParameterCandidate.Finish`, which only this module used -/
+
+section
+
+/-! ### `Ffdh.X86_64.ParameterCandidate.ClearOutput`, which only this module used -/
+
+section
+
+/-! # FFDH parameter generation on x86-64: clear an unsuccessful candidate -/
+
+@[expose] public section
+
+namespace VG.Proof.Ffdh.X86_64.ParameterCandidate
+
+open VG VG.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Proof.Rsa.X86_64
+open VG.Impl.Bignum.X86_64.Public VG.Impl.Ffdh.X86_64.ParameterCandidate
+open VG.Proof.MlKem.X86_64
+
+theorem clearOutput_ok {p : CandidateP} {used : Nat} {s : State}
+    (h : CandidateTape p used s) (hdi : s.gpr .rdi = p.B) :
+    WP isa (VG.Impl.Rsa.X86_64.Keys.zeroOut oOut oLen) s fun t =>
+      CandidateTape p used t ∧ t.gpr .rdi = p.B ∧
+      Spec.Rsa.bytesAt t.mem p.op p.k = List.replicate p.k 0 ∧
+      (∀ j < 32, word t.mem p.B (8 * j) = word s.mem p.B (8 * j)) ∧
+      CandidateSaved p s.mem t.mem ∧ CandidateFrame p s.mem t.mem ∧ Keep mmRegs s t := by
+  refine WP.mono (VG.Proof.Rsa.X86_64.zeroOut_ok h.base.scr hdi h.base.header_room
+    (by decide : oOut < 32) (by decide : oLen < 32)
+    (h.base.hdr (oOut, p.op) (by simp [CandidateP.headers]))
+    (h.base.hdr (oLen, BitVec.ofNat 64 p.k) (by simp [CandidateP.headers]))
+    (by omega_using [h.base.widths.1]) (by omega_using [h.base.widths.2]) h.base.out)
+    fun t ⟨hv, hf, k⟩ => ?_
+  obtain ⟨ht, hs, hfr⟩ := h.after_bytes hf k (by decide)
+  refine ⟨ht, (k.gpr (by decide)).trans hdi, ?_, ?_, hs, hfr, k.mono (by decide)⟩
+  · refine List.eq_replicate_iff.mpr ⟨bytesAt_length _ _ _, fun b hb => ?_⟩
+    obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hb
+    exact hv i (List.mem_range.mp hi)
+  · intro j hj
+    exact words_outside_bytes h.base.size64 hf h.base.out.sep _ (by omega_using [hj, h.base.header_room])
+
+end VG.Proof.Ffdh.X86_64.ParameterCandidate
+
+end
+
+end
+
+/-! ### `Ffdh.X86_64.ParameterCandidate.FinishTail`, which only this module used -/
+
+section
+
+/-! ### `Ffdh.X86_64.ParameterCandidate.WriteUsed`, which only this module used -/
+
+section
+
+/-! # FFDH parameter generation on x86-64: write the public consumed count -/
+
+@[expose] public section
+
+namespace VG.Proof.Ffdh.X86_64.ParameterCandidate
+
+open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Bignum.X86_64.Public
+open VG.Impl.Ffdh.X86_64.ParameterCandidate
+open VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Proof.MlKem.X86_64
+
+private theorem writeWord_frame (m : Mem) (p : Addr) (v : BitVec 64) :
+    ∀ a, (∀ i < 8, a ≠ off p i) → (m.writeW p v) a = m a := by
+  intro a ha
+  have hfar : 8 ≤ ofs p a := by
+    by_contra hn
+    have he : off p (ofs p a) = a := by
+      simp only [off, ofs, BitVec.ofNat_toNat, BitVec.setWidth_eq]
+      rw [BitVec.add_comm]
+      exact BitVec.sub_add_cancel _ _
+    exact ha _ (by omega_using [hn]) he.symm
+  have hf := writeW_outside m p (d := 0) v (by decide)
+  simpa only [off, BitVec.add_zero] using hf a (Or.inr hfar)
+
+theorem writeUsed_ok {p : CandidateP} {used status : Nat} {s : State}
+    (h : CandidateTape p used s) (hdi : s.gpr .rdi = p.B)
+    (hs : word s.mem p.B (8 * oStatus) = BitVec.ofNat 64 status) (hstatus : status < 2 ^ 64) :
+    WP isa (.block [.mov .rax (.mem (hdr oStatus)), .mov .rdx (.mem (hdr oUsedP)),
+      .mov .rcx (.mem (hdr oUsed)), .alu .test .rax (.reg .rax), .cmov .e .rcx (.reg .rax), .store (at0 .rdx) .rcx]) s
+      fun t => t.gpr .rax = BitVec.ofNat 64 status ∧ t.gpr .rdi = p.B ∧
+        word t.mem p.up 0 = BitVec.ofNat 64 (if status = 0 then 0 else used) ∧
+        Spec.Rsa.bytesAt t.mem p.op p.k = Spec.Rsa.bytesAt s.mem p.op p.k ∧
+        (∀ j < 32, word t.mem p.B (8 * j) = word s.mem p.B (8 * j)) ∧
+        Keep [.rax, .rdx, .rcx] s t := by
+  have hrd : ∀ j < 32, InRegions (s.rd ++ s.wr) (off p.B (8 * j)) 8 :=
+    fun j hj => h.base.scr.ld (by omega_using [hj, h.base.header_room])
+  have hup := h.base.hdr (oUsedP, p.up) (by simp [CandidateP.headers])
+  have hst : InRegions s.wr p.up 8 := by simpa [off] using h.base.used.st (d := 0) (by decide)
+  have hzero : (BitVec.ofNat 64 status == 0) = decide (status = 0) := ofNat64_beq_zero hstatus
+  have hv : (if decide (status = 0) then BitVec.ofNat 64 status else BitVec.ofNat 64 used) =
+      BitVec.ofNat 64 (if status = 0 then 0 else used) := by
+    by_cases hz : status = 0 <;> simp [hz]
+  refine WP.mono (WP.keep [.rax, .rdx, .rcx] (Q := fun t => t.gpr .rax = BitVec.ofNat 64 status ∧
+    t.mem = s.mem.writeW p.up (BitVec.ofNat 64 (if status = 0 then 0 else used)))
+    (by xrun [State.ea, hdr, at0, hdrOff, hdi, hs, hup, h.usedWord,
+      hrd oStatus (by decide), hrd oUsedP (by decide), hrd oUsed (by decide), hst,
+      BitVec.ofInt_ofNat, BitVec.add_zero, BitVec.and_self, hzero, cmov_reg_value, eval, hv]) rfl)
+    fun t ⟨⟨hax, hm⟩, k⟩ => ?_
+  have hf : ∀ a, (∀ i < 8, a ≠ off p.up i) → t.mem a = s.mem a := by
+    rw [hm]; exact writeWord_frame _ _ _
+  refine ⟨hax, (k.gpr (by decide)).trans hdi, ?_, ?_, ?_, k⟩
+  · rw [hm]; simpa [off] using word_writeW_self s.mem p.up 0 (BitVec.ofNat 64 (if status = 0 then 0 else used))
+  · simp only [Spec.Rsa.bytesAt]
+    exact List.map_congr_left fun i hi => hf _ (fun j hj he => h.base.outUsed i (List.mem_range.mp hi) j hj he)
+  · intro j hj
+    exact words_outside_bytes h.base.size64 hf h.base.usedOut.sep _ (by omega_using [hj, h.base.header_room])
+
+end VG.Proof.Ffdh.X86_64.ParameterCandidate
+
+end
+
+end
+
+
+/-! # FFDH parameter generation on x86-64: the callable's final store and ABI return -/
+
+@[expose] public section
+
+namespace VG.Proof.Ffdh.X86_64.ParameterCandidate
+
+open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Bignum.X86_64.Public
+open VG.Impl.Ffdh.X86_64.ParameterCandidate
+open VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Proof.MlKem.X86_64
+
+theorem finishTail_ok {p : CandidateP} {used status : Nat} {s₀ s : State}
+    (h : CandidateTape p used s) (hdi : s.gpr .rdi = p.B)
+    (hs : word s.mem p.B (8 * oStatus) = BitVec.ofNat 64 status) (hstatus : status < 2 ^ 64)
+    (hsaved : ∀ i < 6, word s.mem p.B (8 * i) = s₀.gpr (saved.getD i .rax)) :
+    WP isa (.block (([.mov .rax (.mem (hdr oStatus)), .mov .rdx (.mem (hdr oUsedP)), .mov .rcx (.mem (hdr oUsed)),
+      .alu .test .rax (.reg .rax), .cmov .e .rcx (.reg .rax), .store (at0 .rdx) .rcx] : List Instr) ++ exit)) s
+      fun t => t.gpr .rax = BitVec.ofNat 64 status ∧
+        word t.mem p.up 0 = BitVec.ofNat 64 (if status = 0 then 0 else used) ∧
+        Spec.Rsa.bytesAt t.mem p.op p.k = Spec.Rsa.bytesAt s.mem p.op p.k ∧
+        (∀ r ∈ saved, t.gpr r = s₀.gpr r) ∧
+        Keep (saved ++ ([.rax, .rdx, .rcx] : List Reg)) s t := by
+  rw [WP.block_append_iff]
+  refine WP.mono (writeUsed_ok h hdi hs hstatus)
+    fun u ⟨hax, hdu, hused, hout, hwords, ku⟩ => ?_
+  refine WP.mono (VG.Proof.Ffdh.X86_64.exit_ok (h.base.scr.congr ku.2.2) hdu
+    (by omega_using [h.base.header_room])
+    (fun i hi => (hwords i (by omega_using [hi])).trans (hsaved i hi)))
+    fun t ⟨hregs, hm, kt⟩ => ?_
+  exact ⟨(kt.gpr (by decide)).trans hax, by rw [hm]; exact hused,
+    by rw [hm]; exact hout, hregs, (ku.trans kt).mono (by decide)⟩
+
+end VG.Proof.Ffdh.X86_64.ParameterCandidate
+
+end
+
+end
+
+
+/-! # FFDH parameter generation on x86-64: complete output handling -/
+
+@[expose] public section
+
+namespace VG.Proof.Ffdh.X86_64.ParameterCandidate
+
+open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Bignum.X86_64.Public
+open VG.Impl.Ffdh.X86_64.ParameterCandidate
+open VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Proof.MlKem.X86_64
+
+theorem finish_ok {p : CandidateP} {used status : Nat} {s₀ s : State}
+    (h : CandidateTape p used s) (hdi : s.gpr .rdi = p.B)
+    (hs : word s.mem p.B (8 * oStatus) = BitVec.ofNat 64 status) (hstatus : status < 2 ^ 64)
+    (hsaved : ∀ i < 6, word s.mem p.B (8 * i) = s₀.gpr (saved.getD i .rax)) :
+    WP isa finish s fun t => t.gpr .rax = BitVec.ofNat 64 status ∧
+      word t.mem p.up 0 = BitVec.ofNat 64 (if status = 0 then 0 else used) ∧
+      Spec.Rsa.bytesAt t.mem p.op p.k =
+        (if status = 1 then Spec.Rsa.bytesAt s.mem p.op p.k else List.replicate p.k 0) ∧
+      (∀ r ∈ saved, t.gpr r = s₀.gpr r) ∧ Keep (.rdi :: mmRegs) s t := by
+  have hrd := h.base.scr.ld (show 8 * oStatus + 8 ≤ p.Z by
+    change 160 ≤ p.Z; omega_using [h.base.header_room])
+  have heq : (BitVec.ofNat 64 status == 1) = decide (status = 1) := by
+    apply Bool.eq_iff_iff.mpr
+    simp only [beq_iff_eq, decide_eq_true_eq]
+    rw [← BitVec.toNat_inj, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hstatus]
+    rfl
+  unfold finish
+  simp only [seqs]
+  refine WP.seq (WP.mono (WP.keep [.rax] (Q := fun u =>
+    u.zf = some (decide (status = 1)) ∧ u.mem = s.mem)
+    (by xrun [State.ea, hdr, hdrOff, hdi, hs, hrd, sub_beq_zero, heq]) rfl)
+    fun u ⟨⟨hz, hm⟩, ku⟩ => ?_)
+  obtain ⟨hu, hsu, hfu⟩ := h.same_mem hm ku (by decide)
+  have hdu : u.gpr .rdi = p.B := (ku.gpr (by decide)).trans hdi
+  have hsu' : word u.mem p.B (8 * oStatus) = BitVec.ofNat 64 status := by rw [hm]; exact hs
+  have hsavedu := fun i hi => (show word u.mem p.B (8 * i) = word s.mem p.B (8 * i) by rw [hm]).trans (hsaved i hi)
+  refine WP.seq (WP.ite (decide (status = 1)) (by simp [eval, hz]) ?_ ?_)
+  · intro hy
+    have hy' := of_decide_eq_true hy
+    refine WP.block_nil ?_
+    refine WP.mono (finishTail_ok hu hdu hsu' hstatus hsavedu)
+      fun t ⟨hax, hused, hout, hregs, kt⟩ => ?_
+    exact ⟨hax, hused, by simpa only [hy', ite_true, hm] using hout,
+      hregs, (ku.trans kt).mono (by decide)⟩
+  · intro hn
+    have hn' := of_decide_eq_false hn
+    refine WP.mono (clearOutput_ok hu hdu) fun v ⟨hv, hdv, hzv, hw, _, _, kv⟩ => ?_
+    refine WP.mono (finishTail_ok hv hdv ((hw _ (by decide)).trans hsu') hstatus
+      (fun i hi => (hw i (by omega_using [hi])).trans (hsavedu i hi)))
+      fun t ⟨hax, hused, hout, hregs, kt⟩ => ?_
+    exact ⟨hax, hused, by simpa only [hn', ite_false] using hout.trans hzv,
+      hregs, ((ku.trans kv).trans kt).mono (by decide)⟩
+
+end VG.Proof.Ffdh.X86_64.ParameterCandidate
+
+end
+
+end
+
 /-! # FFDH parameter generation on x86-64: preserve the complete System V ABI -/
 
 -- Formerly `VerifiedGarbage/Proof/Ffdh/X86_64/ParameterCandidate/Correct.lean`, which only this module imported.

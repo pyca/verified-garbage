@@ -5,13 +5,156 @@ public import VerifiedGarbage.Impl.Dsa.AArch64.Generation.GeneratorStep
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Rsa.AArch64.KeyWs
 public import VerifiedGarbage.Proof.RsaOaep.AArch64.Basic
-
-import VerifiedGarbage.Proof.Dsa.AArch64.Generation.GeneratorCheck
+public import VerifiedGarbage.Proof.Rsa.Ranges
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.GeneratorArguments
+public import VerifiedGarbage.Impl.Dsa.AArch64.Generation.GeneratorRange
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.GeneratorLoads
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.DecrementOdd
+import VerifiedGarbage.Proof.Dsa.AArch64.RangeMask
+import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Dsa.AArch64.Generation.WorkspaceBase
 import VerifiedGarbage.Proof.Dsa.AArch64.Generation.Memory
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Dsa.AArch64.Generation.FrameWord
 import VerifiedGarbage.Proof.Dsa.AArch64.Generation.Workspace
+
+/-! ### `Dsa.AArch64.Generation.GeneratorCheck`, which only this module used -/
+
+section
+
+/-! ### `Dsa.AArch64.Generation.GeneratorRange`, which only this module used -/
+
+section
+
+/-! # Exact range filtering of each public generator input -/
+
+@[expose] public section
+namespace VG.Proof.Dsa.AArch64.Generation
+open VG VG.AArch64 VG.Proof.Bignum VG.Proof.Bignum.AArch64 VG.Proof.MlKem.AArch64
+open VG.Proof.Rsa.AArch64 VG.Proof.Rsa VG.Impl.Bignum VG.Impl.Bignum.AArch64
+
+theorem generatorRange_ok {s : State} {B pp hp : Addr} {Z w : Nat} {pb hb : List Byte}
+    (h : Ws s B Z w)
+    (hptr : word s.mem B 128 = pp) (hlen : word s.mem B 136 = BitVec.ofNat 64 pb.length)
+    (xptr : word s.mem B 144 = hp) (xlen : word s.mem B 152 = BitVec.ofNat 64 hb.length)
+    (sp : Src s B Z pp pb) (sx : Src s B Z hp hb)
+    (hp1 : 1 ≤ pb.length) (hpw : pb.length ≤ 8 * w)
+    (hx1 : 1 ≤ hb.length) (hxw : hb.length ≤ 8 * w) (hodd : Spec.Rsa.os2ip pb % 2 = 1) :
+    WP isa Impl.Dsa.AArch64.Generation.generatorRange s fun t =>
+      t.gpr .x3 = mask (decide (1 < Spec.Rsa.os2ip hb ∧ Spec.Rsa.os2ip hb < Spec.Rsa.os2ip pb - 1)) ∧
+      Ws t B Z w ∧ Frm B [ar w 0, ar w 1] s.mem t.mem ∧ Keep mmRegs s t := by
+  unfold Impl.Dsa.AArch64.Generation.generatorRange
+  refine WP.seq (WP.mono (generatorLoadPair_ok h hptr hlen xptr xlen sp sx hp1 hpw hx1 hxw)
+    fun v ⟨hv, vp, vx, fv, kv⟩ => ?_)
+  refine WP.seq (WP.mono (decrementOdd_ok hv (by decide : 0 < 16) (by rw [vp]; exact hodd))
+    fun z ⟨hz, zp, fz, kz⟩ => ?_)
+  have zx : wv z.mem B (slot w 1) w = Spec.Rsa.os2ip hb := by
+    rw [fz.wv (Or.inr (by simp only [slot, hdrBytes]; omega_using []))
+      (by have := h.sl (by decide : 1 < 16); have := h.scr.nowrap; omega_arith), vx]
+  refine WP.mono (VG.Proof.Dsa.AArch64.rangeMask_ok hz.good.1 hz.good.2 h.w1 (by have := h.w2; omega_using [this]) true)
+    fun t ⟨htmask, hm, kt⟩ => ?_
+  have ht : Ws t B Z w := hz.congr (by rw [hm]; exact Frm.refl B [] _)
+    (by simp) kt (by decide)
+  refine ⟨?_, ht, ?_, ((kv.trans kz).trans kt).mono (by decide)⟩
+  · simpa only [VG.Impl.Bignum.Public.aX, VG.Impl.Bignum.Public.aN, ite_true, zx, zp, vp] using htmask
+  · have fz' : Frm B [ar w 0, ar w 1] v.mem z.mem :=
+      Frm.of_outside (fz.mono (n' := 8 * (w + 2)) (Nat.le_refl _) (by omega_using [])) (by simp [ar])
+    rw [hm]
+    exact fv.trans fz'
+
+end VG.Proof.Dsa.AArch64.Generation
+
+end
+
+end
+
+/-! ### `Dsa.AArch64.Generation.GeneratorResult`, which only this module used -/
+
+section
+
+/-! # Accept the computed generator exactly when it is greater than one -/
+
+@[expose] public section
+namespace VG.Proof.Dsa.AArch64.Generation
+open VG VG.AArch64 VG.Proof.Bignum VG.Proof.Bignum.AArch64 VG.Proof.MlKem.AArch64
+open VG.Proof.Rsa.AArch64 VG.Proof.Rsa VG.Impl.Bignum VG.Impl.Bignum.AArch64
+
+theorem generatorResult_ok {s : State} {B pp gp : Addr} {Z w : Nat} {pb gb : List Byte}
+    (h : Ws s B Z w)
+    (hptr : word s.mem B 128 = pp) (hlen : word s.mem B 136 = BitVec.ofNat 64 pb.length)
+    (xptr : word s.mem B 144 = gp) (xlen : word s.mem B 152 = BitVec.ofNat 64 gb.length)
+    (sp : Src s B Z pp pb) (sx : Src s B Z gp gb)
+    (hp1 : 1 ≤ pb.length) (hpw : pb.length ≤ 8 * w)
+    (hx1 : 1 ≤ gb.length) (hxw : gb.length ≤ 8 * w) (hlt : Spec.Rsa.os2ip gb < Spec.Rsa.os2ip pb) :
+    WP isa Impl.Dsa.AArch64.Generation.generatorResult s fun t =>
+      t.gpr .x3 = mask (decide (1 < Spec.Rsa.os2ip gb)) ∧
+      Ws t B Z w ∧ Frm B [ar w 0, ar w 1] s.mem t.mem ∧ Keep mmRegs s t := by
+  unfold Impl.Dsa.AArch64.Generation.generatorResult
+  refine WP.seq (WP.mono (generatorLoadPair_ok h hptr hlen xptr xlen sp sx hp1 hpw hx1 hxw)
+    fun u ⟨hu, up, ug, fu, ku⟩ => ?_)
+  refine WP.mono (VG.Proof.Dsa.AArch64.rangeMask_ok hu.good.1 hu.good.2 h.w1 (by have := h.w2; omega_using [this]) true)
+    fun t ⟨htmask, hm, kt⟩ => ?_
+  refine ⟨?_, hu.congr (by rw [hm]; exact Frm.refl B [] _) (by simp) kt (by decide),
+    hm ▸ fu, (ku.trans kt).mono (by decide)⟩
+  simpa only [VG.Impl.Bignum.Public.aX, VG.Impl.Bignum.Public.aN, ite_true, ug, up, hlt, and_true] using htmask
+
+end VG.Proof.Dsa.AArch64.Generation
+
+end
+
+end
+
+
+/-! # Common frame binding for generator-input and generator-result checks -/
+
+@[expose] public section
+namespace VG.Proof.Dsa.AArch64.Generation
+open VG VG.AArch64 VG.Proof.Bignum VG.Proof.Bignum.AArch64 VG.Proof.MlKem.AArch64
+open VG.Proof.Rsa.AArch64 VG.Proof.Rsa VG.Impl.Bignum VG.Impl.Bignum.AArch64 VG.Impl.Dsa.AArch64.Generation
+
+theorem generatorCheck_ok {s : State} {B F : Addr} {Z w len : Nat} {W : Nat → BitVec 64}
+    {pb xb : List Byte} (result : Bool) (h : Ws s B Z w) (hl : len < 2 ^ 16)
+    (hsp : s.sp = F)
+    (hr : ∀ k < 34, InRegions (s.rd ++ s.wr) (off F (8 * k)) 8)
+    (hwords : ∀ k < 34, word s.mem F (8 * k) = W k)
+    (hsep : ∀ k < 34, ∀ j < 32, Mem.Sep (off F (8 * k)) 8 (off B (8 * j)) 8)
+    (sp : Src s B Z (off (W 5) Impl.Dsa.Generation.Layout.p) pb)
+    (sx : Src s B Z (if result then off (W 5) Impl.Dsa.Generation.Layout.g else W 21) xb)
+    (hp : pb.length = len) (hx : xb.length = len) (hpos : 1 ≤ len) (hfit : len ≤ 8 * w)
+    (hodd : result = false → Spec.Rsa.os2ip pb % 2 = 1)
+    (hresult : result = true → Spec.Rsa.os2ip xb < Spec.Rsa.os2ip pb) :
+    WP isa (.seq (.block (headerArguments (generatorRangeArguments len result)))
+      (if result then generatorResult else generatorRange)) s fun t =>
+      t.gpr .x3 = mask (decide (if result then 1 < Spec.Rsa.os2ip xb
+        else 1 < Spec.Rsa.os2ip xb ∧ Spec.Rsa.os2ip xb < Spec.Rsa.os2ip pb - 1)) ∧
+      Ws t B Z w ∧ Frm B [(128, 128), ar w 0, ar w 1] s.mem t.mem ∧ Keep mmRegs s t := by
+  refine WP.seq (WP.mono (generatorArguments_ok h hl result hsp hr hwords hsep)
+    fun u ⟨hu, up, upl, ux, uxl, fu, ku⟩ => ?_)
+  have ff : Frm B [(128, 128)] s.mem u.mem := Frm.of_outside fu (by simp)
+  have hb : ∀ r ∈ [(128, 128)], r.1 + r.2 ≤ Z := by
+    intro r hr; rcases List.mem_singleton.mp hr with rfl; exact h.h256
+  have spu := sp.congrK (InScr.of_frm ff hb) ku
+  have sxu := sx.congrK (InScr.of_frm ff hb) ku
+  have check : WP isa (if result then generatorResult else generatorRange) u fun t =>
+      t.gpr .x3 = mask (decide (if result then 1 < Spec.Rsa.os2ip xb
+        else 1 < Spec.Rsa.os2ip xb ∧ Spec.Rsa.os2ip xb < Spec.Rsa.os2ip pb - 1)) ∧
+      Ws t B Z w ∧ Frm B [ar w 0, ar w 1] u.mem t.mem ∧ Keep mmRegs u t := by
+    cases result with
+    | false =>
+      exact generatorRange_ok hu up (by rw [hp]; exact upl) ux (by rw [hx]; exact uxl)
+        spu sxu (by omega_using [hp, hpos]) (by omega_using [hp, hfit]) (by omega_using [hx, hpos]) (by omega_using [hx, hfit]) (hodd rfl)
+    | true =>
+      exact generatorResult_ok hu up (by rw [hp]; exact upl) ux (by rw [hx]; exact uxl)
+        spu sxu (by omega_using [hp, hpos]) (by omega_using [hp, hfit]) (by omega_using [hx, hpos]) (by omega_using [hx, hfit]) (hresult rfl)
+  exact WP.mono check fun t ⟨hm, ht, ft, kt⟩ =>
+    ⟨hm, ht, (ff.mono (by simp)).trans (ft.mono (fun r hr => List.mem_cons_of_mem _ hr)),
+      (ku.trans kt).mono (by decide)⟩
+
+end VG.Proof.Dsa.AArch64.Generation
+
+end
+
+end
+
 
 /-! # Complete generator range checks from the persistent frame -/
 

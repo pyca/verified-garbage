@@ -1,21 +1,65 @@
 module
 
-import VerifiedGarbage.Proof.Ed25519.X86.VerifyTables
+public import VerifiedGarbage.Proof.Ed25519.X86.PointTable
+public import VerifiedGarbage.Proof.Ed25519.X86.CommonContract
+public import VerifiedGarbage.Impl.Ed25519.X86.VerifyWindow
+import VerifiedGarbage.Proof.Ed25519.X86.PrepareAdd
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Ed25519.X86.PointPowers
 import VerifiedGarbage.Proof.Ed25519.WindowConstants
 import VerifiedGarbage.Proof.Ed25519.X86.Point32.Call
 public import VerifiedGarbage.Proof.Ed25519.X86.VerifyTbl
 public import VerifiedGarbage.Proof.Ed25519.Group.Extended
 public import VerifiedGarbage.Proof.Ed25519.X86.ScalarBody
-public import VerifiedGarbage.Proof.Ed25519.X86.PointTable
 public import VerifiedGarbage.Proof.Ed25519.X86.PowerEnv
 import VerifiedGarbage.Proof.Framework.X86.SymFrame
 import VerifiedGarbage.Proof.Ed25519.X86.Point32.Lit
-import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.RegionsSub
 import Mathlib.Tactic.FieldSimp
 import Mathlib.Tactic.Ring
+
+/-! ### `Ed25519.X86.VerifyTables`, which only this module used -/
+
+section
+
+@[expose] public section
+
+namespace VG.Proof.Ed25519.X86
+open VG VG.X86 VG.Impl.Ed25519.X86
+
+theorem tablePointer_ok {x : BitVec 32} {s : State} (hc : Ctx x s) (o : Nat) :
+    WP isa (.block [.mov .edx (.reg .edi), .alu .add .edx (.imm (BitVec.ofNat 32 o))]) s fun t =>
+      Keep s t ∧ t.mem = s.mem ∧ t.gpr .edx = x + BitVec.ofNat 32 o := by
+  refine Wp.wp_mov fun a ha => Wp.wp_addi fun t ht => WP.block_nil ?_
+  exact ⟨(updKeep ha).trans (updKeep ht), ht.mem.trans ha.mem, by rw [ht.gpr, ha.gpr, hc.edi]⟩
+
+theorem pointTableWrite_ok {x : BitVec 32} {s : State} (hc : Ctx x s) (o : Nat)
+    (ho : 192 ≤ o) (hn : o + 128 ≤ 8192) :
+    WP isa (.block (pointTableWrite o)) s fun t => ScalarKeep s t ∧ Frame [sub x o 128] s.mem t.mem ∧
+      tablePoint t.mem x o = point (env s.mem x) 0 1 2 3 := by
+  refine WP.block_append (WP.mono (tablePointer_ok hc o) fun a ⟨ka, ma, pa⟩ => ?_)
+  refine WP.mono (pointToTable_ok (ka.ctx hc) pa ho hn) fun t ⟨kt, vt⟩ => ?_
+  exact ⟨(Keep.scalar ka).trans ⟨kt.gpr _ (by decide), kt.gpr _ (by decide), kt.rd, kt.wr⟩,
+    by rw [← ma]; exact kt.frame, by rw [ma] at vt; exact vt⟩
+
+theorem pointTableRead_ok {x : BitVec 32} {s : State} (hc : Ctx x s) (o : Nat)
+    (ho : 192 ≤ o) (hn : o + 128 ≤ 8192) :
+    WP isa (.block (pointTableRead o)) s fun t => FieldKeep x s t ∧
+      point (env t.mem x) 0 1 2 3 = tablePoint s.mem x o ∧
+      (∀ i : Slot, 4 ≤ i.val → env t.mem x i = env s.mem x i) := by
+  refine WP.block_append (WP.mono (tablePointer_ok hc o) fun a ⟨ka, ma, pa⟩ => ?_)
+  refine WP.mono (pointFromTable_ok (ka.ctx hc) pa ho hn) fun t ⟨kt, vt⟩ => ?_
+  exact ⟨(FieldKeep.of_mem ka ma).trans (FieldKeep.of_copy kt (ka.ctx hc)),
+    by rw [ma] at vt; exact vt, fun i hi => by rw [kt.high (ka.ctx hc) i hi, ma]⟩
+
+end VG.Proof.Ed25519.X86
+
+end
+
+end
+
 
 /-!
 # Verification's tables: `[1]A … [15]A` and `-[1]B … -[15]B`

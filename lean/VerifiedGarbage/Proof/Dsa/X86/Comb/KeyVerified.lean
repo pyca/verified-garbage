@@ -4,10 +4,9 @@ public import Init.Prelude
 public import VerifiedGarbage.Impl.Dsa.X86.CombKey
 public import VerifiedGarbage.Spec.Dsa.Generate
 public import VerifiedGarbage.TCB.X86.Target
-
 import VerifiedGarbage.Proof.Dsa.X86.Comb.GenerationStack
 import VerifiedGarbage.Proof.Dsa.X86.KeyRandom.Verified
-import VerifiedGarbage.Impl.Dsa.X86.CombGenerate
+public import VerifiedGarbage.Impl.Dsa.X86.CombGenerate
 import VerifiedGarbage.Proof.Dsa.X86.Comb.StageTiming
 import VerifiedGarbage.Proof.Dsa.X86.GenerateTiming
 import VerifiedGarbage.Proof.Dsa.X86.GenerateDomain
@@ -15,7 +14,7 @@ import VerifiedGarbage.Proof.Dsa.X86.CallValidationTiming
 import VerifiedGarbage.Proof.Dsa.X86.KeyTiming
 import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
 import VerifiedGarbage.Impl.Dsa.X86.Comb
-import VerifiedGarbage.Proof.Dsa.X86.CallTiming
+public import VerifiedGarbage.Proof.Dsa.X86.CallTiming
 import Mathlib.Logic.Function.Basic
 import Mathlib.Tactic.Set
 import Mathlib.Tactic.SplitIfs
@@ -33,24 +32,278 @@ import VerifiedGarbage.Proof.Dsa.X86.InstalledInputs
 import VerifiedGarbage.Proof.Dsa.X86.ABIResources
 import VerifiedGarbage.Proof.Dsa.X86.CheckingABI
 import VerifiedGarbage.Proof.Dsa.X86.Installed
-import VerifiedGarbage.Proof.Dsa.X86.Comb.CheckInvoke
+public import VerifiedGarbage.Proof.Dsa.X86.Comb.KeyInvariant
+public import VerifiedGarbage.Proof.Dsa.X86.KeyRandom.CheckInvoke
+import VerifiedGarbage.Proof.Dsa.X86.KeyRandom.AllocatedArgs
+import VerifiedGarbage.Proof.Dsa.X86.KeyRandom.InlineInvoke
+import VerifiedGarbage.Proof.Dsa.X86.KeyRandom.InvokeFrame
+import VerifiedGarbage.Proof.Dsa.X86.KeyRandom.CallResult
 import VerifiedGarbage.Proof.Dsa.X86.KeyRandom.InvokeTiming
 import VerifiedGarbage.Proof.Dsa.X86.Comb.InvokeInputs
-import VerifiedGarbage.Proof.Dsa.X86.KeyRandom.InlineInvokeTiming
+public import VerifiedGarbage.Proof.Dsa.X86.KeyRandom.Context
+import VerifiedGarbage.Proof.Framework.X86.AllocFrame
 import Mathlib.Tactic.IntervalCases
 import Mathlib.Data.List.Basic
-import VerifiedGarbage.Proof.Dsa.X86.KeyRandom.AllocatedArgs
 import VerifiedGarbage.Proof.Dsa.X86.DeriveFailureTiming
-import VerifiedGarbage.Proof.Dsa.X86.KeyOutputReady
-import VerifiedGarbage.Proof.Dsa.X86.Comb.DeriveBodyTiming
+public import VerifiedGarbage.Proof.Dsa.X86.KeyOutputReady
+public import VerifiedGarbage.Proof.Dsa.X86.Comb.Core
+import VerifiedGarbage.Proof.Dsa.X86.Comb.DeriveCompute
 import VerifiedGarbage.Proof.Dsa.X86.Comb.CanonicalFrame
 import VerifiedGarbage.Proof.Dsa.X86.Comb.StagePower
+import VerifiedGarbage.Proof.Dsa.X86.ValidateRange
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Dsa.X86.ShapeSavedFrame
 import VerifiedGarbage.Proof.Dsa.X86.Comb.Deriving
 import VerifiedGarbage.Proof.Dsa.X86.DerivingLayout
 import VerifiedGarbage.Proof.Dsa.X86.DerivingOperationCT
 import VerifiedGarbage.Proof.Dsa.X86.GenerateParameters
-import VerifiedGarbage.Proof.Dsa.X86.Comb.DeriveInvoke
+public import VerifiedGarbage.Proof.Dsa.X86.KeyRandom.Invoke
+
+/-! ### `Dsa.X86.Comb.CheckInvoke`, which only this module used -/
+
+section
+
+/-! Invoke the checking body internally and retain its canonical table. -/
+
+@[expose] public section
+namespace VG.Proof.Dsa.X86.Comb
+open VG VG.X86 VG.Proof.Dsa.X86.KeyRandom VG.Impl.Dsa.X86.Comb
+
+def checkInvoke : CheckInvoke keyInvariant where
+  code := invoke checkParameters
+  correct := by
+    intro s₀ t A R C
+    obtain ⟨reads,writes⟩ := CheckCall.call_covers A R
+    have low : 112≤(t.gpr .esp).toNat := by have := CheckCall.esp_toNat A R; have := rLow_toNat A; have := A.stackLow; omega_arith
+    let v := (allocated 4 t).withRegions (CheckCall.callRd s₀) (CheckCall.callWr s₀)
+    have args (i : Nat) (hi : i<6) : arg v i=CheckCall.callVal s₀ (t.gpr .esp) i := by
+      rw [allocated_arg R (by omega_using [hi])]
+      exact C i hi
+    have body : WP isa checkParameters v fun u => abiPreserved v u ∧
+        (u.gpr .eax).toNat=(if CheckCall.callResult s₀ t then 1 else 0) ∧
+        (CheckCall.callResult s₀ t=true → keyInvariant s₀ u.mem) := by
+      refine WP.mono (checkingOperation_spec (allocated_checkingABI A R C)) fun u ⟨V,ABI,_,_,_,I⟩ => ?_
+      have V' := V
+      simp only [args 0 (by decide),args 1 (by decide),args 2 (by decide),args 3 (by decide),
+        argumentPointer,CheckCall.callVal] at V'
+      refine ⟨ABI,V',?_⟩
+      intro ok
+      have Inv : checkContext v u.mem := I (by
+        simp only [argumentPointer,args 0 (by decide),args 1 (by decide),args 2 (by decide),
+          args 3 (by decide),CheckCall.callVal]
+        exact ok)
+      refine ⟨A,?_⟩
+      unfold checkContext parameterContext at Inv
+      simp only [argumentPointer,args 0 (by decide),args 1 (by decide),args 2 (by decide),
+        args 3 (by decide),args 4 (by decide),CheckCall.callVal] at Inv
+      change parameterContext (argumentPointer s₀ 9) (arg s₀ 5).toNat (arg s₀ 6).toNat
+        (Spec.Rsa.bytesAt t.mem (argumentPointer s₀ 3) (arg s₀ 4).toNat) u.mem at Inv
+      rw [callKey A R] at Inv
+      exact Inv
+    refine WP.mono (inlineInvoke_ok (Q := fun mem ax => ax.toNat=(if CheckCall.callResult s₀ t then 1 else 0) ∧
+      (CheckCall.callResult s₀ t=true → keyInvariant s₀ mem)) check_noSp check_depth low reads writes body) fun u ⟨rd,wr,K,F,V,I⟩ => ?_
+    rw [invocation_below A R] at F
+    have Frame : VG.Frame (CheckCall.callWrites s₀) t.mem u.mem := F
+    refine ⟨R.returned rd wr (K .esp (by simp [calleeSaved])) (checkFrame_outer Frame),Frame,K,?_,I⟩
+    apply BitVec.eq_of_toNat_eq
+    rw [V]
+    cases CheckCall.callResult s₀ t <;> rfl
+
+end VG.Proof.Dsa.X86.Comb
+
+end
+
+end
+
+/-! ### `Dsa.X86.KeyRandom.InlineInvokeTiming`, which only this module used -/
+
+section
+
+/-! Inlining a cdecl body adds no observable trace beyond the body's execution. -/
+
+@[expose] public section
+namespace VG.Proof.Dsa.X86.KeyRandom
+open VG VG.X86
+
+theorem inlineInvoke_trace {body : Prog isa} {s t : State} {rd wr : List Region} {tr : List Leak}
+    (reads : Covers (rd++wr) (s.rd++s.wr)) (writes : Covers wr s.wr)
+    (terminates : WP isa body ((allocated 4 s).withRegions rd wr) (fun _ => True))
+    (E : Exec isa (VG.Impl.Dsa.X86.Comb.invoke body) s tr t) :
+    ∃ u, Exec isa body ((allocated 4 s).withRegions rd wr) tr u := by
+  cases E with
+  | frame push run pop =>
+    have eq := alloc_some push
+    subst eq
+    have readWide : Covers (rd++wr) ((allocated 4 s).rd++(allocated 4 s).wr) :=
+      reads.trans (Covers.append (Covers.refl _) (Covers.of_mem fun _ hr => List.mem_cons_of_mem _ hr))
+    have writeWide : Covers wr (allocated 4 s).wr :=
+      writes.trans (Covers.of_mem fun _ hr => List.mem_cons_of_mem _ hr)
+    obtain ⟨trace,u,Run,_⟩ := terminates
+    obtain ⟨rfl,_⟩ := Exec.det run (regionModel.inline Run readWide writeWide).1
+    exact ⟨u,by simpa only [isa,addrs,List.map_nil,List.nil_append,List.append_nil] using Run⟩
+
+end VG.Proof.Dsa.X86.KeyRandom
+
+end
+
+end
+
+/-! ### `Dsa.X86.Comb.DeriveBodyTiming`, which only this module used -/
+
+section
+
+/-! Private comb computation followed by the shared output copies. -/
+
+-- Formerly `VerifiedGarbage/Proof/Dsa/X86/Comb/DeriveComputeTiming.lean`, which only this module imported.
+section
+
+/-! The private schedule uses the retained context and never branches on x. -/
+
+@[expose] public section
+namespace VG.Proof.Dsa.X86.Comb
+open VG VG.X86 VG.Proof.Mont VG.Proof.Mont.X86 VG.Proof.Mont.X86.Dynamic
+open VG.Impl.Mont.X86.Dynamic VG.Impl.Dsa.Layout VG.Impl.Dsa.X86 VG.Impl.Dsa.X86.Comb
+
+def ContextReady (L : CallLayout) (s : State) : Prop :=
+  canonical ((L.pLen+7)/8) ((L.qLen+3)/4) L.p (operandValue s L.base (.input .g) L.pLen) L.base s.mem
+
+theorem deriveCompute_relCT (L : CallLayout)
+    (P : CallOperand L (.input .p) L.pLen) (Q : CallOperand L (.input .q) L.qLen)
+    (G : (.input .g,L.pLen)∈L.inputs) (X : (.input .nonce,L.qLen)∈L.inputs)
+    (fits : (layout ((L.pLen+7)/8) ((L.qLen+3)/4)).size≤L.size) :
+    RelCT isa (fun s t => CallPair L s t ∧ ContextReady L s ∧ ContextReady L t)
+      (deriveCompute L.pLen L.qLen) (CallPair L) := by
+  have W := L.lengths
+  have nq : (L.qLen+7)/8≤48 := by omega_using [W]
+  have Xop : CallOperand L (.input .nonce) L.qLen := .inl ⟨_,X,Nat.le_refl _⟩
+  have Gop : CallOperand L (.input .g) L.pLen := .inl ⟨_,G,Nat.le_refl _⟩
+  have bound : t2+L.pLen≤usedBytes := by change 15328+L.pLen≤15712; omega_using [W]
+  have Y := CallOperand.localBuffer L t2 L.pLen (by decide) bound
+  unfold deriveCompute Core.sequence
+  dsimp only [List.foldr]
+  refine RelCT.seq (R := fun s t => CallPair L s t ∧ ContextReady L s ∧ ContextReady L t) ?_
+    (RelCT.seq ?_ (RelCT.seq
+      (callRange_relCT L L.pLen .p (.local t2) true P Y (by omega_using [W]) (by omega_using [W]) L.aligned.1)
+      (RelCT.block_nil (fun _ _ h => h))))
+  · intro s t tr ur sf tf ⟨Pair,Cs,Ct⟩ E F
+    have H := callRange_relCT L L.qLen .q (.input .nonce) false Q Xop
+      (by omega_using [W]) (by omega_using [W]) L.aligned.2 _ _ _ _ _ _ Pair E F
+    have keep {u v : State} (R : CallReady L u) (C : ContextReady L u)
+        {trace : List Leak} (Ev : Exec isa (Validate.range L.qLen .q (.input .nonce) false) u trace v) :
+        ContextReady L v := by
+      obtain ⟨_,K,O⟩ := wp_result (validateRange_ok R.moduli.scr L.saved rfl
+        (by omega_using [W]) (by omega_using [W]) L.aligned.2 R.moduli.qReady
+        ((R.buffers _ X).ready (R.moduli.context nq)) false) Ev
+      have Ex := (StageFrame.of_frame K (by decide) O nq).execution (.inr ⟨rfl,rfl⟩)
+      unfold ContextReady
+      rw [Ex.value (R.buffers _ G) (by change StablePointer (.input .g); decide) L.extent]
+      exact canonical_check (supported_widths L.widths) nq C O
+    exact ⟨H.1,H.2,keep Pair.1 Cs E,keep Pair.2 Ct F⟩
+  · apply (stagePower_relCT false L (.input .g) (.input .nonce) t2 P Gop Xop (by decide) fits).mono
+      ?_ (fun _ _ H => H)
+    intro s t ⟨Pair,Cs,Ct⟩
+    exact ⟨Pair,fun h => Bool.noConfusion h,fun _ => ⟨Cs,Ct⟩⟩
+
+end VG.Proof.Dsa.X86.Comb
+end
+
+end
+
+@[expose] public section
+namespace VG.Proof.Dsa.X86.Comb
+open VG VG.X86 VG.Impl.Dsa.Layout VG.Impl.Dsa.X86 VG.Impl.Dsa.X86.Comb
+open VG.Proof.Mont VG.Proof.Mont.X86 VG.Proof.Mont.X86.Dynamic
+
+def DomainReady (L : CallLayout) (s : State) : Prop :=
+  let g := operandValue s L.base (.input .g) L.pLen
+  (1<g ∧ g<L.p) ∧ (L.p-1)%L.q=0 ∧ g^L.q%L.p=1
+
+theorem deriveBody_relCT (L : CallLayout) (out : BitVec 32)
+    (P : (.input .p,L.pLen)∈L.inputs) (Q : (.input .q,L.qLen)∈L.inputs)
+    (G : (.input .g,L.pLen)∈L.inputs) (X : (.input .nonce,L.qLen)∈L.inputs)
+    (Params : (.input .p,2*L.pLen+L.qLen)∈L.inputs)
+    (ho : out.toNat+(3*L.pLen+2*L.qLen)≤2^32)
+    (A : Region.Disjoint ⟨L.base,L.size⟩ ⟨out.setWidth 64,3*L.pLen+2*L.qLen⟩)
+    (fits : (layout ((L.pLen+7)/8) ((L.qLen+3)/4)).size≤L.size) :
+    RelCT isa (fun s t => CallPair L s t ∧ KeyOutputReady L out s ∧ KeyOutputReady L out t ∧
+      ContextReady L s ∧ ContextReady L t ∧ DomainReady L s ∧ DomainReady L t)
+      (.seq (deriveCompute L.pLen L.qLen) (Generate.writeKey L.pLen L.qLen))
+      (VG.X86.Taint.Agree (workspaceTaint false)) := by
+  have W := L.lengths
+  refine RelCT.seq (R := fun s t => CallPair L s t ∧ KeyOutputReady L out s ∧ KeyOutputReady L out t) ?_ ?_
+  · intro s t tr ur sf tf ⟨Pair,S,T,Cs,Ct,Ds,Dt⟩ E F
+    have H := deriveCompute_relCT L (.inl ⟨_,P,Nat.le_refl _⟩) (.inl ⟨_,Q,Nat.le_refl _⟩)
+      G X fits _ _ _ _ _ _ ⟨Pair,Cs,Ct⟩ E F
+    have Es := (wp_result (deriveCompute_ok Pair.1.moduli (Pair.1.buffers _ G)
+      (Pair.1.buffers _ X) rfl rfl Ds fits Cs) E).2.2.2
+    have Et := (wp_result (deriveCompute_ok Pair.2.moduli (Pair.2.buffers _ G)
+      (Pair.2.buffers _ X) rfl rfl Dt fits Ct) F).2.2.2
+    exact ⟨H.1,H.2,S.keep Es,T.keep Et⟩
+  · apply (writeKey_relCT L.base L.size L.pLen L.qLen out L.saved ho (by omega_using [W]) A).mono ?_ (fun _ _ h => h)
+    intro s t ⟨Pair,S,T⟩
+    exact ⟨S.writeReady Pair.1 Params X A,T.writeReady Pair.2 Params X A,
+      Pair.pointer (.inl ⟨_,P,Nat.le_refl _⟩),Pair.pointer (.inl ⟨_,X,Nat.le_refl _⟩)⟩
+
+end VG.Proof.Dsa.X86.Comb
+
+end
+
+end
+
+/-! ### `Dsa.X86.Comb.DeriveInvoke`, which only this module used -/
+
+section
+
+/-! The internal prevalidated body is called only with the checked retained context. -/
+
+@[expose] public section
+namespace VG.Proof.Dsa.X86.Comb
+open VG VG.X86 VG.Proof.Dsa.X86.KeyRandom VG.Impl.Dsa.X86.Comb
+
+def deriveInvoke : DeriveInvoke keyInvariant where
+  code := invoke deriveKey
+  correct := by
+    intro s₀ t A R C checked context
+    obtain ⟨reads,writes⟩ := call_covers A R
+    have low : 112≤(t.gpr .esp).toNat := by have := esp_toNat A R; have := rLow_toNat A; have := A.stackLow; omega_arith
+    let v := (allocated 4 t).withRegions (callRd s₀) (callWr s₀)
+    have args (i : Nat) (hi : i<9) : arg v i=callVal s₀ (t.gpr .esp) i := by
+      rw [allocated_arg R (by omega_using [hi])]
+      exact C i hi
+    have valid := derive_allocated_valid A R C checked
+    have contextV := derive_allocated_context A R C context
+    have result : Spec.Dsa.deriveKeyBytes (arg v 4).toNat (arg v 6).toNat
+        (Spec.Rsa.bytesAt v.mem (argumentPointer v 2) (arg v 3).toNat)
+        (Spec.Rsa.bytesAt v.mem (argumentPointer v 5) (arg v 6).toNat)=callResult s₀ t := by
+      simp only [argumentPointer,args 2 (by decide),args 3 (by decide),args 4 (by decide),
+        args 5 (by decide),args 6 (by decide),callVal]
+      rw [esp_ptr R (d := VG.Impl.Dsa.X86.KeyRandom.oNonce) (by decide)]
+      rfl
+    let Q := fun mem (ax : BitVec 32) => ax.toNat=Spec.Dsa.signStatus (callResult s₀ t) ∧
+      Spec.Rsa.bytesAt mem (argumentPointer s₀ 0) (arg s₀ 1).toNat=
+        (callResult s₀ t).getD (List.replicate (arg s₀ 1).toNat 0)
+    have body : WP isa deriveKey v fun u => abiPreserved v u ∧ Q u.mem (u.gpr .eax) := by
+      refine WP.mono (derivingOperation_spec (allocated_derivingABI A R C) valid contextV)
+        fun u ⟨V,B,ABI,_⟩ => ?_
+      rw [result] at V B
+      simp only [argumentPointer,args 0 (by decide),args 1 (by decide),callVal] at B
+      exact ⟨ABI,V,B⟩
+    refine WP.mono (inlineInvoke_ok (Q := Q) derive_noSp derive_depth low reads writes body)
+      fun u ⟨rd,wr,K,F,V,B⟩ => ?_
+    rw [invocation_below A R] at F
+    have Frame : VG.Frame (callWrites s₀) t.mem u.mem := F
+    refine ⟨R.returned rd wr (K .esp (by simp [calleeSaved])) (deriveFrame_outer Frame),Frame,K,?_,B⟩
+    apply BitVec.eq_of_toNat_eq
+    rw [V,BitVec.toNat_ofNat]
+    unfold Spec.Dsa.signStatus
+    split <;> rfl
+
+end VG.Proof.Dsa.X86.Comb
+
+end
+
+end
+
 /-! Full correctness, constant time, and satisfiability for retained-table key generation. -/
 
 -- Formerly `VerifiedGarbage/Proof/Dsa/X86/Comb/ParametersTiming.lean`, which only this module imported.

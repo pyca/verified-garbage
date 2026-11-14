@@ -6,16 +6,283 @@ public import VerifiedGarbage.Proof.Rsa.Arm.KdDivCT
 public import VerifiedGarbage.Proof.Rsa.Arm.KcTaintW
 import VerifiedGarbage.Proof.Rsa.Arm.InvParts
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
-public import VerifiedGarbage.Proof.Rsa.Arm.CkCorrect
+public import VerifiedGarbage.Proof.Rsa.Arm.KcBody
+public import VerifiedGarbage.Proof.Rsa.Arm.KcLoads
+import VerifiedGarbage.Proof.Rsa.Arm.CvFail
+import VerifiedGarbage.Proof.Rsa.Octets
+public import VerifiedGarbage.Proof.Rsa.Arm.KcShape
+import VerifiedGarbage.Proof.Rsa.KeyCheckWords
+public import VerifiedGarbage.Impl.Rsa.Arm.CheckKey
+public import VerifiedGarbage.Proof.Rsa.Arm.KcFn
+import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Bignum.Arm.UmaalArithmetic
 import VerifiedGarbage.Proof.Rsa.Arm.CkTaint
 import VerifiedGarbage.Proof.Rsa.Arm.CckVerified
 public import VerifiedGarbage.Proof.Rsa.Arm.KcFnCT
-public import VerifiedGarbage.Proof.Rsa.Arm.KcShape
 public import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Spec.Rsa.Contract
 meta import VerifiedGarbage.TCB.Arm.Target
+
+/-! ### `Rsa.Arm.CkCorrect`, which only this module used -/
+
+section
+
+/-! ### `Rsa.Arm.KcPost`, which only this module used -/
+
+section
+
+/-! # The checks of an RSA key on ARMv7: the result is `checkKey`
+
+`keyP`: what the checks say of their mask (from `KeyOut`), and
+`key_result`: with a valid modulus and exponent, that mask is `keyValid`.
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Rsa.Arm.KeyCheck
+open VG VG.Arm VG.Proof.Mont VG.Impl.Rsa.Arm VG.Impl.Rsa.Arm.Keys VG.Impl.Rsa.Arm.KeyCheck
+open VG.Proof.Rsa.Arm.Keys
+open VG.Proof.X25519.Arm
+
+/-- What `keyBody` says of its mask. -/
+def keyP (g : Geo) (v : Vals) (c : Bool) : Prop := ∃ X₁ X₂ R₁ R₂ R₃ Y₁ Y₂,
+  (0 < v.p → X₂ = v.n % v.p ∧ X₁ = v.n / v.p) ∧ ProdsOk g v R₁ R₂ R₃ ∧
+  (0 < 2 * (v.p / 2) → Y₁ = v.d % (2 * (v.p / 2))) ∧ (0 < 2 * (v.q / 2) → Y₂ = v.d % (2 * (v.q / 2))) ∧
+  c = VG.Proof.Rsa.keyBits' v.n v.d v.p v.q v.dP v.dQ v.qI X₁ X₂ R₁ R₂ R₃ Y₁ Y₂
+
+theorem keyBody_post {g : Geo} {v : Vals} {s : State} (h : BodyIn g v s) :
+    WP isa keyBody s fun t => ∃ A live c, Stg g s A live c t ∧ keyP g v c :=
+  WP.mono (keyBody_ok h) fun _ ⟨X₁, X₂, R₁, R₂, R₃, Y₁, Y₂, hX, hR, hY₁, hY₂, A, live, ht⟩ =>
+    ⟨A, live, _, ht, X₁, X₂, R₁, R₂, R₃, Y₁, Y₂, hX, hR, hY₁, hY₂, rfl⟩
+
+/-- The products, for `e` below `2^33` and `p`, `q` shorter than `n`. -/
+theorem prods {g : Geo} {v : Vals} {R₁ R₂ R₃ : Nat} (h : ProdsOk g v R₁ R₂ R₃) (he : v.e < 2 ^ 33)
+    (hp : 2 * v.p ≤ 2 ^ (32 * g.w)) (hq : v.q < 2 ^ (32 * g.w)) (hq2 : 2 * v.q ≤ 2 ^ (32 * g.w)) :
+    (v.dP < 2 * (v.p / 2) → R₁ = v.e * v.dP % (2 * (v.p / 2))) ∧
+    (v.dQ < 2 * (v.q / 2) → R₂ = v.e * v.dQ % (2 * (v.q / 2))) ∧
+    (v.qI < v.p → R₃ = v.q * v.qI % v.p) := by
+  obtain ⟨h1, h2, h3⟩ := h
+  refine ⟨fun l => ?_, fun l => ?_, fun l => ?_⟩
+  · rw [h1 l (by omega_arith), Nat.mod_eq_of_lt he]
+  · rw [h2 l (by omega_arith), Nat.mod_eq_of_lt he]
+  · rw [h3 l hp, Nat.mod_eq_of_lt hq]
+
+theorem pow_len {k K w : Nat} (hk : k < K) (hw : K ≤ 4 * w) : 2 * 256 ^ k ≤ 2 ^ (32 * w) := by
+  rw [show (256 : Nat) = 2 ^ 8 from rfl, ← Nat.pow_mul, ← Nat.pow_succ']
+  exact Nat.pow_le_pow_right (by decide) (by omega_arith)
+
+theorem pow_len' {k K : Nat} (hk : k ≤ K - 1) : 256 ^ k ≤ 256 ^ (K - 1) :=
+  Nat.pow_le_pow_right (by decide) hk
+
+/-- `checkKey` from the mask of `keyBody`. -/
+theorem key_result {g : Geo} {nb eb db pb qb dPb dQb qIb : List Byte} {c : Bool}
+    (hK : nb.length = g.K) (hK0 : 0 < g.K) (hp : pb.length < g.K) (hq : qb.length < g.K)
+    (hc : Spec.Rsa.modulusValid (Spec.Rsa.os2ip nb) g.K = true → Spec.Rsa.exponentValid (Spec.Rsa.os2ip eb) = true →
+      keyP g ⟨Spec.Rsa.os2ip nb, Spec.Rsa.os2ip eb, Spec.Rsa.os2ip pb, Spec.Rsa.os2ip qb, Spec.Rsa.os2ip dPb,
+        Spec.Rsa.os2ip dQb, Spec.Rsa.os2ip qIb, Spec.Rsa.os2ip db⟩ c) :
+    (if Spec.Rsa.modulusValid (Spec.Rsa.os2ip nb) g.K && Spec.Rsa.exponentValid (Spec.Rsa.os2ip eb) && c
+      then 1 else 0) = if Spec.Rsa.checkKey nb eb db pb qb dPb dQb qIb then 1 else 0 := by
+  unfold Spec.Rsa.checkKey
+  rw [hK]
+  by_cases hme : Spec.Rsa.modulusValid (Spec.Rsa.os2ip nb) g.K = true ∧
+      Spec.Rsa.exponentValid (Spec.Rsa.os2ip eb) = true
+  · obtain ⟨hm, he⟩ := hme
+    obtain ⟨X₁, X₂, R₁, R₂, R₃, Y₁, Y₂, hX, hR, hY₁, hY₂, rfl⟩ := hc hm he
+    have he' := he
+    simp only [Spec.Rsa.exponentValid, Bool.and_eq_true, beq_iff_eq, decide_eq_true_eq] at he'
+    have lp := VG.Proof.Rsa.lt_of_os2ip pb
+    have lq := VG.Proof.Rsa.lt_of_os2ip qb
+    have hw : g.K ≤ 4 * g.w := by simp only [Geo.w]; omega_arith
+    have pp := pow_len hp hw
+    have pq := pow_len hq hw
+    have p1 : 256 ^ pb.length ≤ 256 ^ (g.K - 1) := pow_len' (by omega_arith)
+    have q1 : 256 ^ qb.length ≤ 256 ^ (g.K - 1) := pow_len' (by omega_arith)
+    obtain ⟨h1, h2, h3⟩ := prods hR he'.2 (by show 2 * Spec.Rsa.os2ip pb ≤ _; omega_arith)
+      (by show Spec.Rsa.os2ip qb < _; omega_arith) (by show 2 * Spec.Rsa.os2ip qb ≤ _; omega_arith)
+    rw [VG.Proof.Rsa.keyValid_bits hm he (Nat.lt_of_lt_of_le lp p1) (Nat.lt_of_lt_of_le lq q1) (fun pos => ⟨(hX pos).2, (hX pos).1⟩) h1 h2 h3 hY₁ hY₂, hm, he]
+    rfl
+  · have : (Spec.Rsa.modulusValid (Spec.Rsa.os2ip nb) g.K && Spec.Rsa.exponentValid (Spec.Rsa.os2ip eb)) = false := by
+      simpa [Bool.and_eq_true] using hme
+    have hv : Spec.Rsa.keyValid g.K (Spec.Rsa.os2ip nb) (Spec.Rsa.os2ip eb) (Spec.Rsa.os2ip db)
+        (Spec.Rsa.os2ip pb) (Spec.Rsa.os2ip qb) (Spec.Rsa.os2ip dPb) (Spec.Rsa.os2ip dQb)
+        (Spec.Rsa.os2ip qIb) = false := by
+      unfold Spec.Rsa.keyValid
+      simp only [this, Bool.false_and]
+    rw [this, hv]
+    rfl
+
+theorem vals_lt {v : Vals} {P : Nat} (h0 : 0 < P) (hn : v.n < P) (he : v.e < P) (hp : v.p < P)
+    (hq : v.q < P) (hdP : v.dP < P) (hdQ : v.dQ < P) (hqI : v.qI < P) (hd : v.d < P) : ∀ j, vals v j < P := by
+  intro j
+  simp only [vals, upd]
+  repeat' split
+  all_goals assumption
+
+/-- A number of at most `K` bytes, in `w` words. -/
+theorem os2ip_lt_words {bs : List Byte} {w : Nat} (h : bs.length ≤ 4 * w) :
+    Spec.Rsa.os2ip bs < 2 ^ (32 * w) :=
+  Nat.lt_of_lt_of_le (VG.Proof.Rsa.lt_of_os2ip bs)
+    (by rw [show (256 : Nat) = 2 ^ 8 from rfl, ← Nat.pow_mul]; exact Nat.pow_le_pow_right (by decide) (by omega_arith))
+
+theorem bytesV_lt {σ : State} {src : BitVec 32} {k w : Nat} (h : k ≤ 4 * w) : bytesV σ src k < 2 ^ (32 * w) :=
+  os2ip_lt_words (by rw [VG.Proof.Rsa.Arm.CrtValues.bytesAt_length]; exact h)
+
+end VG.Proof.Rsa.Arm.KeyCheck
+
+end
+
+end
+
+
+/-! # `vg_rsa_check_key` on ARMv7: correctness
+
+`ck_pre`: the contract's precondition as `FnPre`; `ck_ok`: the code returns
+with the callee-saved registers and `sp` restored and `checkKey` of the key
+in `r0`.
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Rsa.Arm.CheckKey
+open VG VG.Arm VG.Proof.Mont VG.Impl.Rsa.Arm VG.Impl.Rsa.Arm.Keys VG.Impl.Rsa.Arm.KeyCheck
+open VG.Proof.Rsa.Arm.Keys VG.Proof.Rsa.Arm.KeyCheck
+open VG.Proof.X25519.Arm
+open VG.Proof.Rsa.Arm.CrtValues (reg)
+
+/-- The numbers on the stack: their pointers' words and arrays. -/
+abbrev insK : List (Nat × Nat) := [(0, aD), (2, aP), (4, aQ), (6, aDP), (8, aDQ), (10, aQI)]
+
+theorem code_eq : VG.Impl.Rsa.Arm.CheckKey.code = fn (4 * 12) (insK.map fun p => (4 * p.1, p.2)) (keyBodyS 12 20 28 36) := rfl
+
+theorem ck_pre (s : State) (h : (Spec.Rsa.checkKeyContract abi 0).pre s) : FnPre 14 12 insK s := by
+  sig_pre [Spec.Rsa.checkKeyContract, Spec.Rsa.checkKeySig, abi, argRegs, reduceClassify, Loc.val,
+    State.addr] at h
+  obtain ⟨sp, rd, wr, dN, dE, dD, dP, dQ, dDP, dDQ, dQI, dA, fN, fE, fD, fP, fQ, fDP, fDQ, fQI, fS, v, e1, e2,
+    d1, d2, p1, p2, q1, q2, l1, l2, l3, scr⟩ := h
+  refine ⟨by omega_using [sp], by rw [rd]; simp [State.addr], by rw [rd]; simp [State.addr],
+    by rw [rd]; simp [stackArgAddr], fun p hp => ?_, by rw [wr]; rfl, dN, dE, fun p hp => ?_, dA, fN, fE,
+    fun p hp => ?_, fS, v, e1, e2, fun p hp => ?_, scr, by decide, by decide, by decide⟩
+  · simp only [List.mem_cons, List.not_mem_nil, or_false] at hp
+    rcases hp with rfl | rfl | rfl | rfl | rfl | rfl <;> rw [rd] <;> simp [State.addr]
+  · simp only [List.mem_cons, List.not_mem_nil, or_false] at hp
+    rcases hp with rfl | rfl | rfl | rfl | rfl | rfl
+    exacts [dD, dP, dQ, dDP, dDQ, dQI]
+  · simp only [List.mem_cons, List.not_mem_nil, or_false] at hp
+    rcases hp with rfl | rfl | rfl | rfl | rfl | rfl
+    exacts [fD, fP, fQ, fDP, fDQ, fQI]
+  · simp only [List.mem_cons, List.not_mem_nil, or_false] at hp
+    rcases hp with rfl | rfl | rfl | rfl | rfl | rfl <;> simp only [fK, Nat.reduceAdd] <;> omega_arith
+
+/-- The numbers. -/
+abbrev vK (σ : State) : Vals := ⟨nV σ, eV σ, inV σ 2, inV σ 4, inV σ 6, inV σ 8, inV σ 10, inV σ 0⟩
+
+theorem ck_hv (σ : State) : aEnt insK σ = vals (vK σ) := rfl
+
+theorem ck_hA {σ : State} (pre : FnPre 14 12 insK σ) : ∀ j < nArr, aEnt insK σ j < 2 ^ (32 * (geo 12 σ).w) := by
+  have kb := pre.kb
+  have hw : fK σ ≤ 4 * (geo 12 σ).w := by simp only [Geo.w]; omega_using []
+  have ins := fun p (hp : p ∈ insK) => (pre.ins1 p hp).2
+  have i0 : (stackArg σ 1).toNat ≤ fK σ := ins (0, aD) (by simp)
+  have i2 : (stackArg σ 3).toNat ≤ fK σ := ins (2, aP) (by simp)
+  have i4 : (stackArg σ 5).toNat ≤ fK σ := ins (4, aQ) (by simp)
+  have i6 : (stackArg σ 7).toNat ≤ fK σ := ins (6, aDP) (by simp)
+  have i8 : (stackArg σ 9).toNat ≤ fK σ := ins (8, aDQ) (by simp)
+  have i10 : (stackArg σ 11).toNat ≤ fK σ := ins (10, aQI) (by simp)
+  intro j hj
+  rw [ck_hv σ]
+  exact vals_lt (Nat.two_pow_pos _) (bytesV_lt (by omega_using [hw])) (bytesV_lt (by have := pre.e2; omega_using [hw, this]))
+    (bytesV_lt (k := (stackArg σ 3).toNat) (by omega_using [hw, i2])) (bytesV_lt (k := (stackArg σ 5).toNat) (by omega_using [hw, i4]))
+    (bytesV_lt (k := (stackArg σ 7).toNat) (by omega_using [hw, i6])) (bytesV_lt (k := (stackArg σ 9).toNat) (by omega_using [hw, i8]))
+    (bytesV_lt (k := (stackArg σ 11).toNat) (by omega_using [hw, i10])) (bytesV_lt (k := (stackArg σ 1).toNat) (by omega_using [hw, i0])) j
+
+/-- `BodyIn` after code that changes only `r0`–`r3` and the flags. -/
+theorem _root_.VG.Proof.Rsa.Arm.KeyCheck.BodyIn.of_rest {g : Geo} {v : Vals} {s t : State} (h : BodyIn g v s) (r : Rest [.r0, .r1, .r2, .r3] s t)
+    (m : t.mem = s.mem) : BodyIn g v t :=
+  ⟨h.nowrap, r.wr ▸ h.writable, h.fits, h.kb, (r.gpr _ (by decide)).trans h.r8, (r.gpr _ (by decide)).trans h.r11,
+    m ▸ h.cnt, m ▸ h.arrs, m ▸ h.vdTop⟩
+
+/-- `Stg` from before code that changes only `r0`–`r3` and the flags. -/
+theorem _root_.VG.Proof.Rsa.Arm.KeyCheck.Stg.of_pre {g : Geo} {s t u : State} {A : Nat → Nat} {live : List Nat} {c : Bool}
+    (h : Stg g t A live c u) (r : Rest [.r0, .r1, .r2, .r3] s t) (m : t.mem = s.mem) : Stg g s A live c u :=
+  ⟨h.ws, m ▸ h.keep, (r.mono fun x hx => by
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
+    rcases hx with rfl | rfl | rfl | rfl <;> decide).trans h.rest,
+    h.cnt, h.arrs, h.live_lt, h.vdTop, h.mask⟩
+
+/-- `keyBodyS`: the balanced key's checks or the others; either way the mask is `keyP`'s. -/
+theorem keyBodyS_post {σ s : State} (m : Mid 14 12 insK σ s (aEnt insK σ)) (bi : BodyIn (geo 12 σ) (vK σ) s)
+    (hm : Spec.Rsa.modulusValid (nV σ) (fK σ) = true) (hev : Spec.Rsa.exponentValid (eV σ) = true)
+    (l2 : (stackArg σ 11).toNat = (stackArg σ 3).toNat) :
+    WP isa (keyBodyS 12 20 28 36) s fun t => ∃ A live c, Stg (geo 12 σ) s A live c t ∧ keyP (geo 12 σ) (vK σ) c := by
+  have pre := m.base.pre
+  have kb := pre.kb
+  have e33 : eV σ < 2 ^ 33 := by
+    simp only [Spec.Rsa.exponentValid, Bool.and_eq_true, beq_iff_eq, decide_eq_true_eq] at hev; exact hev.2
+  unfold keyBodyS
+  rw [WP.seq_iff]
+  refine shape_ok m.base m.r11 (by decide) fun t bt rt mt zt => ?_
+  have bi' := bi.of_rest rt mt
+  refine WP.ite t.z rfl (fun hz => ?_) (fun _ => ?_)
+  · rw [zt] at hz
+    obtain ⟨lp, lq, ld, le, he⟩ := of_decide_eq_true hz
+    have hpw : (stackArg σ 3).toNat ≤ 4 * ((geo 12 σ).w / 2) := by omega_using [lp, he]
+    have hqw : (stackArg σ 5).toNat ≤ 4 * ((geo 12 σ).w / 2) := by omega_using [lq, he]
+    have hdw : (stackArg σ 7).toNat ≤ 4 * ((geo 12 σ).w / 2) := by omega_using [ld, he]
+    have hew : (stackArg σ 9).toNat ≤ 4 * ((geo 12 σ).w / 2) := by omega_using [le, he]
+    refine WP.mono (keyBodyW_ok bi' he (bytesV_lt hpw) (bytesV_lt hqw) (bytesV_lt hdw) (bytesV_lt hew)
+        (bytesV_lt (k := (stackArg σ 11).toNat) (by rw [l2]; exact hpw)) (Nat.lt_of_lt_of_le e33 (by decide)))
+      fun u ⟨A, live, hu⟩ => ⟨A, live, _, hu.of_pre rt mt, _, _, _, _, _, _, _, fun _ => ⟨rfl, rfl⟩,
+        ⟨fun _ _ => rfl, fun _ _ => rfl, fun _ _ => rfl⟩, fun _ => rfl, fun _ => rfl,
+        VG.Proof.Rsa.keyBits_words2 hm rfl (by simp only [Geo.w]; omega_using [kb]) he (bytesV_lt hpw) (bytesV_lt hqw)
+          (bytesV_lt hdw) (bytesV_lt hew) e33⟩
+  · exact WP.mono (keyBody_post bi') fun u ⟨A, live, c, hu, hk⟩ => ⟨A, live, c, hu.of_pre rt mt, hk⟩
+
+theorem ck_ok {σ : State} (pre : FnPre 14 12 insK σ) (l1 : (stackArg σ 7).toNat = (stackArg σ 3).toNat)
+    (l2 : (stackArg σ 11).toNat = (stackArg σ 3).toNat) (l3 : (stackArg σ 9).toNat = (stackArg σ 5).toNat)
+    (hp : (stackArg σ 3).toNat < fK σ) (hq : (stackArg σ 5).toNat < fK σ) :
+    WP isa VG.Impl.Rsa.Arm.CheckKey.code σ fun u => abiPreserved σ u ∧
+      u.gpr .r0 = if Spec.Rsa.checkKey
+          (Spec.Rsa.bytesAt σ.mem (State.addr (σ.gpr .r0)) (σ.gpr .r1).toNat)
+          (Spec.Rsa.bytesAt σ.mem (State.addr (σ.gpr .r2)) (σ.gpr .r3).toNat)
+          (Spec.Rsa.bytesAt σ.mem (State.addr (stackArg σ 0)) (stackArg σ 1).toNat)
+          (Spec.Rsa.bytesAt σ.mem (State.addr (stackArg σ 2)) (stackArg σ 3).toNat)
+          (Spec.Rsa.bytesAt σ.mem (State.addr (stackArg σ 4)) (stackArg σ 5).toNat)
+          (Spec.Rsa.bytesAt σ.mem (State.addr (stackArg σ 6)) (stackArg σ 3).toNat)
+          (Spec.Rsa.bytesAt σ.mem (State.addr (stackArg σ 8)) (stackArg σ 5).toNat)
+          (Spec.Rsa.bytesAt σ.mem (State.addr (stackArg σ 10)) (stackArg σ 3).toNat) then 1 else 0 := by
+  have kb := pre.kb
+  rw [code_eq]
+  refine WP.mono (fn_ok pre (by decide) (ck_hv σ) (ck_hA pre) fun s m hs hm he => keyBodyS_post m hs hm he l2)
+    fun u ⟨pres, c, hc, hr⟩ => ⟨pres, ?_⟩
+  rw [hr, key_result (g := geo 12 σ) (VG.Proof.Rsa.Arm.CrtValues.bytesAt_length _ _ _)
+    (by show 0 < fK σ; omega_using [hp]) (by rw [VG.Proof.Rsa.Arm.CrtValues.bytesAt_length]; exact hp)
+    (by rw [VG.Proof.Rsa.Arm.CrtValues.bytesAt_length]; exact hq) hc]
+  rw [show (0 + 1 : Nat) = 1 from rfl, show (2 + 1 : Nat) = 3 from rfl, show (4 + 1 : Nat) = 5 from rfl,
+    show (6 + 1 : Nat) = 7 from rfl, show (8 + 1 : Nat) = 9 from rfl, show (10 + 1 : Nat) = 11 from rfl,
+    l1, l2, l3, show (geo 12 σ).K = (σ.gpr .r1).toNat from rfl]
+  split <;> rfl
+
+theorem ck_contract_correct (s : State) (h : (Spec.Rsa.checkKeyContract abi 0).pre s) :
+    ∃ tr t, Exec isa VG.Impl.Rsa.Arm.CheckKey.code s tr t ∧ abiPreserved s t ∧
+      (Spec.Rsa.checkKeyContract abi 0).post s t := by
+  have pre := ck_pre s h
+  sig_pre [Spec.Rsa.checkKeyContract, Spec.Rsa.checkKeySig, abi, argRegs, reduceClassify, Loc.val,
+    State.addr] at h
+  obtain ⟨-, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, p2, -, q2, l1, l2,
+    l3, -⟩ := h
+  obtain ⟨tr, t, run, pres, r0⟩ := ck_ok pre l1 l2 l3 p2 q2
+  refine ⟨tr, t, run, pres, ?_⟩
+  sig_post [Spec.Rsa.checkKeyContract, Spec.Rsa.checkKeySig, abi, argRegs, reduceClassify, Loc.val, State.addr]
+  rw [BitVec.setWidth_append_eq_right]
+  exact r0
+
+end VG.Proof.Rsa.Arm.CheckKey
+
+end
+
+end
+
 
 /-! # `vg_rsa_check_key` on ARMv7 is verified against the shared RSA contract -/
 

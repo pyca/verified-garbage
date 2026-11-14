@@ -1,12 +1,48 @@
 module
 
 public import VerifiedGarbage.Proof.Idea.X86_64.Ecb
-public import VerifiedGarbage.Proof.Idea.Scratch
+public import VerifiedGarbage.Spec.Idea.Contract
 import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
 public import VerifiedGarbage.Impl.StackScratch.X86_64
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Idea.X86_64.Lit
+
+/-! ### `Idea.Scratch`, which only this module used -/
+
+section
+
+/-!
+# IDEA ECB with its working space as an argument
+
+`vg_idea_ecb` keeps its working space in a frame of its own
+(`Verified.stackScratch`), around code proved with the working space as an
+argument: `ecbScratchContract` is the shared contract with the `scratch`
+buffer appended, whatever it holds.
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Idea
+
+open VG.Spec.Idea
+
+/-- `vg_idea_ecb` with `scratch: *mut [u64; 2]`. -/
+def ecbScratchSig : Sig where
+  params := [("schedule", .array false .u8 104), ("data", .slice true (.array .u8 8) "n"),
+    ("scratch", .array true .u64 2)]
+
+/-- `ecbContract`, whatever `scratch` is. -/
+def ecbScratchContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
+  ecbScratchSig.contract A
+    (post := fun schedule data n _scratch => ecbPost A.ptrBits schedule data n) (stack := stack)
+
+end VG.Proof.Idea
+
+end
+
+end
+
 
 /-!
 # Verified IDEA ECB on x86-64

@@ -3,7 +3,25 @@ module
 public import VerifiedGarbage.Proof.Ed448.X86_64.FieldVariant
 import VerifiedGarbage.Proof.Ed448.X86_64.VerifyDecode
 import VerifiedGarbage.Proof.Ed448.X86_64.Wnaf.Joint
-import VerifiedGarbage.Proof.Ed448.X86_64.VerifyPadding
+public import VerifiedGarbage.Impl.Ed448.X86_64.VerifyEquation
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.X448.X86_64.Basic
+import VerifiedGarbage.Proof.Ed448.X86_64.BaseBits
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.PlainSimp
+public import VerifiedGarbage.Proof.Ed448.SignedWindow
+public import VerifiedGarbage.Spec.Ed448.Contract
+import VerifiedGarbage.Proof.X448.X86_64.Bits
+import VerifiedGarbage.Proof.Ed448.Scalar
+import Mathlib.Data.Nat.Totient
+import Mathlib.Tactic.NormNum.GCD
+import Mathlib.Data.Sym.Sym2.Init
+import Mathlib.Tactic.ContinuousFunctionalCalculus
+import Mathlib.Tactic.NormNum.Prime
+import Mathlib.Tactic.Positivity.Finset
+import Mathlib.Algebra.Order.Field.Basic
 import VerifiedGarbage.Proof.Ed448.X86_64.BaseConst
 import VerifiedGarbage.Proof.Framework.X86_64.Abi
 public import VerifiedGarbage.Proof.Ed448.X86_64.VerifyLocal
@@ -19,11 +37,354 @@ import VerifiedGarbage.Proof.Ed448.X86_64.VerifyLoop
 import VerifiedGarbage.Proof.Ed448.X86_64.Point64.AddSmall
 import VerifiedGarbage.Proof.Ed448.X86_64.BaseField
 import VerifiedGarbage.Proof.Ed448.Group.Decode
-import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Framework.X86_64.Exec
 import VerifiedGarbage.Proof.X448.X86_64.Main
+
+/-! ### `Ed448.X86_64.VerifyPadding`, which only this module used -/
+
+section
+
+/-! ### `Ed448.X86_64.VerifyBits`, which only this module used -/
+
+section
+
+/-!
+# Ed448 verification's equation on x86-64: the bits of the scalars
+
+`bitsAt o` stores bit `j` of byte `i` of the 57 bytes at `rsi` at byte
+`o + 8i + j` of the working space: base-point multiplication's `bits`
+(`BaseBits.lean`) at any offset `o`, for `S` and `k`.
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Ed448.X86_64
+
+open VG VG.X86_64 VG.Impl.Ed448.X86_64
+open VG.Proof.X448.X86_64 (Scr word off Outside ofs ofs_off' contains_sc
+  ea_scalar bit_byte writeW8_apply writeW8_outside off_eq_iff inc_eq)
+
+/-- Bit `j` of `rax` (a byte) into `[rdi + 8 rbx + o + j]`. -/
+def bitJO (o j : Nat) : List Instr :=
+  [.mov .rdx (.reg .rax)] ++ (if j = 0 then [] else [.shift .shr .rdx j]) ++
+    [.alu .and .rdx (.imm 1),
+      .store8 { base := .rdi, index := some .rbx, scale := 8, disp := ((o + j : Nat) : Int) } .rdx]
+
+theorem ea_bitAtO (s : State) (o j : Nat) :
+    s.ea { base := .rdi, index := some .rbx, scale := 8, disp := ((o + j : Nat) : Int) } =
+      s.gpr .rdi + s.gpr .rbx * BitVec.ofNat 64 8 + BitVec.ofNat 64 (o + j) := by
+  simp only [State.ea, BitVec.ofInt_natCast]
+
+theorem addr_bitO (base : Addr) (o i j : Nat) :
+    base + BitVec.ofNat 64 i * BitVec.ofNat 64 8 + BitVec.ofNat 64 (o + j) =
+      off base (o + (8 * i + j)) := by
+  rw [← BitVec.ofNat_mul, BitVec.add_assoc, ← BitVec.ofNat_add]
+  congr 2
+  omega_arith
+
+variable {o : Nat} (ho : o + 456 ≤ 8192)
+
+include ho in
+theorem bitJO_ok {s : State} {base : Addr} (hs : Scr s base) {i : Nat} (hi : i < 57)
+    (hb : s.gpr .rbx = BitVec.ofNat 64 i) {b : BitVec 8} (ha : s.gpr .rax = b.setWidth 64)
+    {j : Nat} (hj : j < 8) :
+    WP isa (.block (bitJO o j)) s fun s' =>
+      (∀ r, r ≠ .rdx → s'.gpr r = s.gpr r) ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧
+      s'.mem = s.mem.writeW (off base (o + (8 * i + j))) (BitVec.ofNat 8 ((b.toNat >>> j) &&& 1)) := by
+  have w : InRegions s.wr (off base (o + (8 * i + j))) 1 :=
+    ⟨_, hs.wr, contains_sc (by omega_arith)⟩
+  have e := bit_byte b j hj
+  apply WP.of_runBlock
+  rcases Nat.eq_zero_or_pos j with rfl | hj0
+  · simp only [bitJO, ite_true, List.nil_append, List.cons_append, runBlock_cons, runStep_some,
+      runBlock_nil, exec, readSrc, execAlu, State.store8, ea_bitAtO, RegUpd.gpr_setReg,
+      RegUpd.gpr_arithFlags, RegUpd.wr_setReg, RegUpd.wr_arithFlags, RegUpd.mem_setReg,
+      RegUpd.mem_arithFlags, hs.rdi, hb, ha, addr_bitO, w, ite_false, reduceCtorEq, Option.map_some,
+      Option.bind_some, Option.some.injEq, exists_eq_left']
+    refine ⟨fun r hr => ?_, rfl, by trivial, ?_⟩
+    · simp only [hr, ite_false]
+    · rw [← e]; rfl
+  · simp only [bitJO, show ¬j = 0 by omega_arith, ite_false, List.nil_append, List.cons_append,
+    runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, execAlu, execShift, State.store8,
+    ea_bitAtO, RegUpd.gpr_setReg, RegUpd.gpr_setFlags, RegUpd.gpr_arithFlags, RegUpd.wr_setReg,
+    RegUpd.wr_setFlags, RegUpd.wr_arithFlags, RegUpd.mem_setReg, RegUpd.mem_setFlags,
+    RegUpd.mem_arithFlags, hs.rdi, hb, ha, addr_bitO, w, show 1 ≤ j ∧ j ≤ 63 from ⟨hj0, by omega_arith⟩,
+    ite_true, reduceCtorEq, Option.map_some, Option.bind_some, Option.some.injEq, exists_eq_left',
+    and_self]
+    refine ⟨fun r hr => ?_, rfl, by trivial, ?_⟩
+    · simp only [hr, ite_false]
+    · rw [← e]
+
+theorem bitsBodyAt_eq : bitsBodyAt o = ([.movzx8 .rax { base := .rsi, index := some .rbx }] : List Instr) ++
+    (bitJO o 0 ++ (bitJO o 1 ++ (bitJO o 2 ++ (bitJO o 3 ++ (bitJO o 4 ++ (bitJO o 5 ++ (bitJO o 6 ++ (bitJO o 7 ++
+      ([.alu .add .rbx (.imm 1), .alu .cmp .rbx (.imm 57)] : List Instr))))))))) := rfl
+
+include ho in
+theorem bitsBodyAt_ok {s : State} {base k : Addr} (hs : Scr s base) (hk : s.gpr .rsi = k)
+    {i : Nat} (hi : i < 57) (hb : s.gpr .rbx = BitVec.ofNat 64 i)
+    (hkr : InRegions (s.rd ++ s.wr) (k + BitVec.ofNat 64 i) 1) :
+    WP isa (.block (bitsBodyAt o)) s fun s' =>
+      s'.gpr .rbx = BitVec.ofNat 64 (i + 1) ∧ s'.zf = some (decide (i + 1 = 57)) ∧
+      (∀ r, r ∉ [Reg.rax, .rdx, .rbx] → s'.gpr r = s.gpr r) ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧
+      (∀ j < 8, s'.mem (off base (o + (8 * i + j))) =
+        BitVec.ofNat 8 (((s.mem (k + BitVec.ofNat 64 i)).toNat >>> j) &&& 1)) ∧
+      Outside base (o + 8 * i) 8 s.mem s'.mem := by
+  rw [bitsBodyAt_eq, WP.block_append_iff]
+  refine WP.mono (show WP isa (.block [.movzx8 .rax { base := .rsi, index := some .rbx }]) s
+      (fun s' => s'.gpr .rax = (s.mem (k + BitVec.ofNat 64 i)).setWidth 64 ∧
+        (∀ r, r ≠ .rax → s'.gpr r = s.gpr r) ∧ s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr) by
+    apply WP.of_runBlock
+    simp only [runBlock_cons, runStep_some, runBlock_nil, exec, ea_scalar s hk hb, State.load8, hkr,
+      ite_true, Option.map_some, Option.some.injEq, exists_eq_left', RegUpd.gpr_setReg_self]
+    exact ⟨trivial, fun r hr => by simp only [RegUpd.gpr_setReg, hr, ite_false], rfl, rfl, rfl⟩)
+    fun s₀ ⟨a0, g0, m0, rd0, wr0⟩ => ?_
+  have hs₀ : Scr s₀ base := ⟨(g0 _ (by decide)).trans hs.rdi, wr0 ▸ hs.wr, hs.nowrap⟩
+  have hb₀ : s₀.gpr .rbx = BitVec.ofNat 64 i := (g0 _ (by decide)).trans hb
+  have keep : ∀ {x y : State}, (∀ r, r ≠ .rdx → y.gpr r = x.gpr r) → y.rd = x.rd → y.wr = x.wr →
+      Scr x base → x.gpr .rbx = BitVec.ofNat 64 i → x.gpr .rax = (s.mem (k + BitVec.ofNat 64 i)).setWidth 64 →
+      Scr y base ∧ y.gpr .rbx = BitVec.ofNat 64 i ∧ y.gpr .rax = (s.mem (k + BitVec.ofNat 64 i)).setWidth 64 :=
+    fun g _ wr hx hbx hax => ⟨⟨(g _ (by decide)).trans hx.rdi, wr ▸ hx.wr, hx.nowrap⟩,
+      (g _ (by decide)).trans hbx, (g _ (by decide)).trans hax⟩
+  rw [WP.block_append_iff]
+  refine WP.mono (bitJO_ok ho hs₀ hi hb₀ a0 (j := 0) (by omega_arith)) fun s₁ ⟨g1, rd1, wr1, m1⟩ => ?_
+  obtain ⟨hs₁, hb₁, ha₁⟩ := keep g1 rd1 wr1 hs₀ hb₀ a0
+  rw [WP.block_append_iff]
+  refine WP.mono (bitJO_ok ho hs₁ hi hb₁ ha₁ (j := 1) (by omega_arith)) fun s₂ ⟨g2, rd2, wr2, m2⟩ => ?_
+  obtain ⟨hs₂, hb₂, ha₂⟩ := keep g2 rd2 wr2 hs₁ hb₁ ha₁
+  rw [WP.block_append_iff]
+  refine WP.mono (bitJO_ok ho hs₂ hi hb₂ ha₂ (j := 2) (by omega_arith)) fun s₃ ⟨g3, rd3, wr3, m3⟩ => ?_
+  obtain ⟨hs₃, hb₃, ha₃⟩ := keep g3 rd3 wr3 hs₂ hb₂ ha₂
+  rw [WP.block_append_iff]
+  refine WP.mono (bitJO_ok ho hs₃ hi hb₃ ha₃ (j := 3) (by omega_arith)) fun s₄ ⟨g4, rd4, wr4, m4⟩ => ?_
+  obtain ⟨hs₄, hb₄, ha₄⟩ := keep g4 rd4 wr4 hs₃ hb₃ ha₃
+  rw [WP.block_append_iff]
+  refine WP.mono (bitJO_ok ho hs₄ hi hb₄ ha₄ (j := 4) (by omega_arith)) fun s₅ ⟨g5, rd5, wr5, m5⟩ => ?_
+  obtain ⟨hs₅, hb₅, ha₅⟩ := keep g5 rd5 wr5 hs₄ hb₄ ha₄
+  rw [WP.block_append_iff]
+  refine WP.mono (bitJO_ok ho hs₅ hi hb₅ ha₅ (j := 5) (by omega_arith)) fun s₆ ⟨g6, rd6, wr6, m6⟩ => ?_
+  obtain ⟨hs₆, hb₆, ha₆⟩ := keep g6 rd6 wr6 hs₅ hb₅ ha₅
+  rw [WP.block_append_iff]
+  refine WP.mono (bitJO_ok ho hs₆ hi hb₆ ha₆ (j := 6) (by omega_arith)) fun s₇ ⟨g7, rd7, wr7, m7⟩ => ?_
+  obtain ⟨hs₇, hb₇, ha₇⟩ := keep g7 rd7 wr7 hs₆ hb₆ ha₆
+  rw [WP.block_append_iff]
+  refine WP.mono (bitJO_ok ho hs₇ hi hb₇ ha₇ (j := 7) (by omega_arith)) fun s₈ ⟨g8, rd8, wr8, m8⟩ => ?_
+  obtain ⟨hs₈, hb₈, ha₈⟩ := keep g8 rd8 wr8 hs₇ hb₇ ha₇
+  apply WP.of_runBlock
+  simp only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, execAlu, Option.bind_some,
+    Option.some.injEq, exists_eq_left', RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, hb₈, inc_eq,
+    ite_true, RegUpd.zf_arithFlags, RegUpd.rd_arithFlags, RegUpd.rd_setReg, RegUpd.wr_arithFlags,
+    RegUpd.wr_setReg, RegUpd.mem_arithFlags, RegUpd.mem_setReg, cmp57 i hi]
+  have hm : s₀.mem = s.mem := m0
+  refine ⟨trivial, trivial, fun r hr => ?_, ?_, ?_, fun j hj => ?_, ?_⟩
+  · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
+    rw [ite_eq_right hr.2.2, g8 r hr.2.1, g7 r hr.2.1, g6 r hr.2.1, g5 r hr.2.1, g4 r hr.2.1, g3 r hr.2.1,
+      g2 r hr.2.1, g1 r hr.2.1, g0 r hr.1]
+  · rw [rd8, rd7, rd6, rd5, rd4, rd3, rd2, rd1, rd0]
+  · rw [wr8, wr7, wr6, wr5, wr4, wr3, wr2, wr1, wr0]
+  · rw [m8, m7, m6, m5, m4, m3, m2, m1]
+    have ne : ∀ a b, a < 8 → b < 8 → a ≠ b →
+        off base (o + (8 * i + a)) ≠ off base (o + (8 * i + b)) := by
+      intro a b ha hb hab h
+      rw [off_eq_iff base (by omega_arith) (by omega_arith)] at h
+      omega_arith
+    have ne' : ∀ a b, a < 8 → b < 8 → a ≠ b →
+        (off base (o + (8 * i + a)) = off base (o + (8 * i + b))) = False :=
+      fun a b ha hb hab => eq_false (ne a b ha hb hab)
+    rcases (by omega_arith : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4 ∨ j = 5 ∨ j = 6 ∨ j = 7) with
+      rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
+    simp (disch := decide) only [writeW8_apply, ite_true, ne', ite_false]
+  · intro x hx
+    have hd : ∀ j < 8, ofs base x ≠ o + (8 * i + j) := fun j hj h => by omega_arith
+    have hb : ∀ j < 8, o + (8 * i + j) < 2 ^ 64 := fun j hj => by omega_arith
+    rw [m8, m7, m6, m5, m4, m3, m2, m1, writeW8_outside _ _ _ (hb 7 (by omega_arith)) (hd 7 (by omega_arith)),
+      writeW8_outside _ _ _ (hb 6 (by omega_arith)) (hd 6 (by omega_arith)),
+      writeW8_outside _ _ _ (hb 5 (by omega_arith)) (hd 5 (by omega_arith)),
+      writeW8_outside _ _ _ (hb 4 (by omega_arith)) (hd 4 (by omega_arith)),
+      writeW8_outside _ _ _ (hb 3 (by omega_arith)) (hd 3 (by omega_arith)),
+      writeW8_outside _ _ _ (hb 2 (by omega_arith)) (hd 2 (by omega_arith)),
+      writeW8_outside _ _ _ (hb 1 (by omega_arith)) (hd 1 (by omega_arith)),
+      writeW8_outside _ _ _ (hb 0 (by omega_arith)) (hd 0 (by omega_arith)), hm]
+
+/-- `bitsAt`' loop invariant, after `i` bytes. -/
+structure BInvO (o : Nat) (base k : Addr) (s₀ s : State) (i : Nat) : Prop where
+  scr : Scr s base
+  rsi : s.gpr .rsi = k
+  rbx : s.gpr .rbx = BitVec.ofNat 64 i
+  gpr : ∀ r, r ∉ [Reg.rax, .rdx, .rbx] → s.gpr r = s₀.gpr r
+  rd : s.rd = s₀.rd
+  wr : s.wr = s₀.wr
+  mem : Outside base o 456 s₀.mem s.mem
+  bits : ∀ t < 8 * i, s.mem (off base (o + t)) =
+    BitVec.ofNat 8 (((s₀.mem (k + BitVec.ofNat 64 (t / 8))).toNat >>> (t % 8)) &&& 1)
+
+include ho in
+theorem bitsLoopAt_ok {s₀ : State} {base k : Addr}
+    (hkr : ∀ q < 57, InRegions (s₀.rd ++ s₀.wr) (k + BitVec.ofNat 64 q) 1)
+    (hkd : ∀ q < 57, 8192 ≤ ofs base (k + BitVec.ofNat 64 q)) :
+    ∀ i, ∀ s, i < 57 → BInvO o base k s₀ s i →
+      WP isa (.loop (.block (bitsBodyAt o)) .ne) s fun s' => BInvO o base k s₀ s' 57 := by
+  intro i s hi hb
+  refine WP.loop (M := isa) (body := .block (bitsBodyAt o)) (c := .ne)
+    (Q := fun s' => BInvO o base k s₀ s' 57)
+    (fun m (s : State) => ∃ i, m = 57 - i ∧ i < 57 ∧ BInvO o base k s₀ s i) ?_ (57 - i) s ⟨i, rfl, hi, hb⟩
+  rintro m s ⟨i, rfl, hi, hb⟩
+  refine WP.mono (bitsBodyAt_ok ho hb.scr hb.rsi hi hb.rbx (by rw [hb.rd, hb.wr]; exact hkr i hi))
+    fun s' ⟨b', z', g', rd', wr', bits', o'⟩ => ?_
+  have hbyte : s.mem (k + BitVec.ofNat 64 i) = s₀.mem (k + BitVec.ofNat 64 i) :=
+    hb.mem _ (by have := hkd i hi; omega_arith)
+  have inv : BInvO o base k s₀ s' (i + 1) := by
+    refine ⟨⟨(g' _ (by decide)).trans hb.scr.rdi, wr' ▸ hb.scr.wr, hb.scr.nowrap⟩,
+      (g' _ (by decide)).trans hb.rsi, b', fun r hr => (g' r hr).trans (hb.gpr r hr),
+      rd'.trans hb.rd, wr'.trans hb.wr, hb.mem.trans (o'.mono (by omega_arith) (by omega_arith)),
+      fun t ht => ?_⟩
+    rcases Nat.lt_or_ge t (8 * i) with h | h
+    · rw [o' _ (by rw [ofs_off' base (by omega_arith)]; omega_arith), hb.bits t h]
+    · have e := bits' (t - 8 * i) (by omega_arith)
+      rw [show 8 * i + (t - 8 * i) = t by omega_arith, hbyte] at e
+      rw [e, show t / 8 = i by omega_arith, show t % 8 = t - 8 * i by omega_arith]
+  simp only [eval, z', Option.map_some]
+  rcases Nat.lt_or_ge (i + 1) 57 with h | h
+  · exact .inr ⟨by simp only [decide_eq_false (by omega_arith : ¬i + 1 = 57), Bool.not_false],
+      57 - (i + 1), by omega_arith, i + 1, rfl, h, inv⟩
+  · obtain rfl : i = 56 := by omega_arith
+    exact .inl ⟨rfl, inv⟩
+
+include ho in
+/-- `bits`: byte `t` of `o` is bit `t` of byte `t / 8` of the scalar, for
+`t < 456`. -/
+theorem bitsAt_ok {s : State} {base k : Addr} (hs : Scr s base) (hk : s.gpr .rsi = k)
+    (hkr : ∀ q < 57, InRegions (s.rd ++ s.wr) (k + BitVec.ofNat 64 q) 1)
+    (hkd : ∀ q < 57, 8192 ≤ ofs base (k + BitVec.ofNat 64 q)) :
+    WP isa (bitsAt o) s fun s' =>
+      (∀ r, r ∉ [Reg.rax, .rdx, .rbx] → s'.gpr r = s.gpr r) ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧
+      Outside base o 456 s.mem s'.mem ∧
+      ∀ t < 456, s'.mem (off base (o + t)) =
+        BitVec.ofNat 8 (((s.mem (k + BitVec.ofNat 64 (t / 8))).toNat >>> (t % 8)) &&& 1) := by
+  refine WP.seq (WP.mono (show WP isa (.block [.mov32 .rbx (.imm 0)]) s (fun s' =>
+      BInvO o base k s s' 0) by
+    apply WP.of_runBlock
+    simp only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc32, Option.map_some,
+      State.setReg32, Option.some.injEq, exists_eq_left']
+    refine ⟨⟨hs.rdi, hs.wr, hs.nowrap⟩, hk, rfl, fun r hr => ?_, rfl, rfl, Outside.refl _ _ _ _,
+      fun t ht => absurd ht (by omega_arith)⟩
+    simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
+    simp only [RegUpd.gpr_setReg, hr.2.2, ite_false]) fun s₁ h₁ => ?_)
+  refine WP.mono (bitsLoopAt_ok ho hkr hkd 0 s₁ (by omega_arith) h₁) fun s₂ h₂ => ?_
+  exact ⟨h₂.gpr, h₂.rd, h₂.wr, h₂.mem, fun t ht => h₂.bits t (by omega_arith)⟩
+
+end VG.Proof.Ed448.X86_64
+
+end
+
+end
+
+
+/-! Zero padding for signed windows, within the existing scratch allocation. -/
+
+@[expose] public section
+
+set_option exponentiation.threshold 1024
+
+namespace VG.Proof.Ed448.X86_64
+
+open VG VG.X86_64 VG.Impl.Ed448.X86_64
+open VG.Proof.X448.X86_64 (Scr off ofs Outside writeW8_apply writeW8_outside off_eq_iff ea_sc)
+
+private def zeroMem (m : Mem) (ds : List Addr) : Mem :=
+  ds.foldl (fun m d => m.writeW d (0 : BitVec 8)) m
+
+private theorem zeroMem_read (m : Mem) (ds : List Addr) (x : Addr) :
+    zeroMem m ds x = if x ∈ ds then 0 else m x := by
+  induction ds generalizing m with
+  | nil => simp [zeroMem]
+  | cons d ds ih =>
+    change zeroMem (m.writeW d (0 : BitVec 8)) ds x = _
+    rw [ih, writeW8_apply]
+    by_cases hx : x = d <;> by_cases hd : x ∈ ds <;> simp [hx, hd]
+
+private def padAddresses (base : Addr) (o : Nat) : List Addr :=
+  [off base (o - 1), off base (o + 456), off base (o + 457), off base (o + 458), off base (o + 459)]
+
+private theorem padding_ok {s : State} {base : Addr} (hs : Scr s base) {o : Nat}
+    (ho : 1 ≤ o) (hb : o + 460 ≤ 8192) :
+    WP isa (.block (bitPadding o)) s fun u =>
+      (∀ r, r ≠ .rdx → u.gpr r = s.gpr r) ∧ u.rd = s.rd ∧ u.wr = s.wr ∧
+      u.mem = zeroMem s.mem (padAddresses base o) := by
+  have hw : ∀ d, d + 1 ≤ 8192 → InRegions s.wr (off base d) 1 := fun _ h => hs.write h
+  apply WP.of_runBlock
+  simp only [bitPadding, List.map_cons, List.map_nil, List.cons_append, List.nil_append,
+    runBlock_cons, runStep_some, runBlock_nil, exec, readSrc32, State.setReg32, State.store8,
+    ea_sc, RegUpd.gpr_setReg, RegUpd.mem_setReg,
+    RegUpd.wr_setReg,  hs.rdi,
+    hw (o - 1) (by omega), hw (o + 456) (by omega_using [hb]), hw (o + 457) (by omega_using [hb]),
+    hw (o + 458) (by omega_using [hb]), hw (o + 459) (by omega_using [hb]),
+    Option.map_some, Option.some.injEq, exists_eq_left',
+    reduceCtorEq, ite_true, ite_false]
+  exact ⟨fun r hr => by simp only [hr, ite_false], rfl, trivial, rfl⟩
+
+private theorem pad_read {base : Addr} {o j : Nat} (ho : 1 ≤ o) (hb : o + 460 ≤ 8192)
+    (hj : j < 461) (m : Mem) :
+    zeroMem m (padAddresses base o) (off base (o - 1 + j)) =
+      if j = 0 ∨ 457 ≤ j then 0 else m (off base (o - 1 + j)) := by
+  rw [zeroMem_read]
+  have he : (off base (o - 1 + j) ∈ padAddresses base o) ↔ j = 0 ∨ 457 ≤ j := by
+    simp only [padAddresses, List.mem_cons, List.not_mem_nil, or_false,
+      off_eq_iff base (by omega_using [hb, hj] : o - 1 + j < 2 ^ 64) (by omega_using [hb] : o - 1 < 2 ^ 64),
+      off_eq_iff base (by omega_using [hb, hj] : o - 1 + j < 2 ^ 64) (by omega_using [hb] : o + 456 < 2 ^ 64),
+      off_eq_iff base (by omega_using [hb, hj] : o - 1 + j < 2 ^ 64) (by omega_using [hb] : o + 457 < 2 ^ 64),
+      off_eq_iff base (by omega_using [hb, hj] : o - 1 + j < 2 ^ 64) (by omega_using [hb] : o + 458 < 2 ^ 64),
+      off_eq_iff base (by omega_using [hb, hj] : o - 1 + j < 2 ^ 64) (by omega_using [hb] : o + 459 < 2 ^ 64)]
+    omega_using [ho, hj]
+  simp only [he]
+
+private theorem pad_outside {base : Addr} {o : Nat} (ho : 1 ≤ o) (hb : o + 460 ≤ 8192)
+    (m : Mem) : Outside base (o - 1) 461 m (zeroMem m (padAddresses base o)) := by
+  intro x hx
+  rw [zeroMem_read, ite_eq_right]
+  intro hm
+  simp only [padAddresses, List.mem_cons, List.not_mem_nil, or_false] at hm
+  rcases hm with rfl | rfl | rfl | rfl | rfl <;>
+    rw [VG.Proof.X448.X86_64.ofs_off' base (by omega)] at hx <;> omega_using [hx]
+
+/-- The original 456 bits, with zero at index -1 and at indices 456 through 459. -/
+theorem bitsAtPadded_ok {s : State} {base k : Addr} (hs : Scr s base) {o : Nat}
+    (ho : 1 ≤ o) (hb : o + 460 ≤ 8192) (hk : s.gpr .rsi = k)
+    (hkr : ∀ q < 57, InRegions (s.rd ++ s.wr) (k + BitVec.ofNat 64 q) 1)
+    (hkd : ∀ q < 57, 8192 ≤ ofs base (k + BitVec.ofNat 64 q)) :
+    WP isa (bitsAtPadded o) s fun u =>
+      (∀ r, r ∉ [Reg.rax, .rdx, .rbx] → u.gpr r = s.gpr r) ∧ u.rd = s.rd ∧ u.wr = s.wr ∧
+      Outside base (o - 1) 461 s.mem u.mem ∧
+      ∀ j < 461, u.mem (off base (o - 1 + j)) = BitVec.ofNat 8
+        (SignedWindow.carry (Spec.Ed448.decodeLE (Spec.Ed448.bytesAt s.mem k 57)) j) := by
+  rw [bitsAtPadded]
+  refine WP.seq (WP.mono (bitsAt_ok (by omega_using [hb]) hs hk hkr hkd) fun v ⟨gv, rv, wv, ov, bv⟩ => ?_)
+  have hv : Scr v base := ⟨(gv _ (by decide)).trans hs.rdi, wv ▸ hs.wr, hs.nowrap⟩
+  refine WP.mono (padding_ok hv ho hb) fun u ⟨gu, ru, wu, mu⟩ => ?_
+  refine ⟨fun r hr => (gu r (fun h => hr (by simp [h]))).trans (gv r hr),
+    ru.trans rv, wu.trans wv, ?_, ?_⟩
+  · rw [mu]
+    exact (ov.mono (by omega_using []) (by omega_using [])).trans (pad_outside ho hb v.mem)
+  · intro j hj
+    rw [mu, pad_read ho hb hj]
+    by_cases hj0 : j = 0
+    · subst j; simp [SignedWindow.carry]
+    · by_cases hjh : 457 ≤ j
+      · have hlt : Spec.Ed448.decodeLE (Spec.Ed448.bytesAt s.mem k 57) < 2 ^ 456 :=
+          decodeLE_below (by simp [Spec.Ed448.bytesAt])
+        simp only [hj0, hjh, or_true, ite_true, SignedWindow.carry, ite_false,
+          SignedWindow.bit_zero hlt (by omega_using [hjh] : 456 ≤ j - 1), Nat.zero_mod]
+        rfl
+      · simp only [hj0, hjh, or_self, ite_false, SignedWindow.carry]
+        rw [show o - 1 + j = o + (j - 1) by omega_using [ho, hj0], bv (j - 1) (by omega_using [hjh]), scalar_bit s.mem k (by omega_using [hjh])]
+        simp only [Nat.shiftRight_eq_div_pow, Nat.and_one_is_mod]
+
+end VG.Proof.Ed448.X86_64
+
+end
+
+end
+
 
 /-!
 # Ed448 verification's equation on x86-64: the whole function

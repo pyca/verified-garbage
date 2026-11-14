@@ -1,19 +1,142 @@
 module
 
-import VerifiedGarbage.Proof.Scrypt.X86_64.SimdMem
-import VerifiedGarbage.Proof.Scrypt.X86_64.Memory128
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
-import VerifiedGarbage.Proof.Scrypt.X86_64.Common
-public import VerifiedGarbage.Impl.Scrypt.X86_64.RoMix
+public import VerifiedGarbage.Impl.Scrypt.X86_64.Salsa
 public import VerifiedGarbage.Proof.Framework.Semantics
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.X86_64.Reduce
 public import VerifiedGarbage.Proof.Framework.WriteBytes
 public import VerifiedGarbage.Spec.Scrypt.Contract
 import VerifiedGarbage.Proof.Scrypt.Memory
-import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.InstancePriority
+import VerifiedGarbage.Proof.Framework.GetElem
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Scrypt.X86_64.Lit
 import VerifiedGarbage.Proof.Sha256.Stream
+import VerifiedGarbage.Proof.Scrypt.X86_64.Common
+public import VerifiedGarbage.Impl.Scrypt.X86_64.RoMix
+import VerifiedGarbage.Proof.Scrypt.X86_64.Lit
+
+/-! ### `Scrypt.X86_64.SimdMem`, which only this module used -/
+
+section
+
+/-! Unaligned SSE2 copy and XOR, preserving every general-purpose register. -/
+
+@[expose] public section
+
+namespace VG.Proof.Scrypt.X86_64.SimdMem
+open VG VG.X86_64 VG.Impl.Scrypt.X86_64
+
+private theorem ea_setXmm (s : State) (r : XReg) (v : BitVec 128) (m : MemOp) :
+    (s.setXmm r v).ea m = s.ea m := rfl
+
+theorem copy {s : State} {x d : Addr}
+    (hx : s.ea (at_ .rdi 0) = x) (hd : s.ea (at_ .rsi 0) = d)
+    (hin : InRegions (s.rd ++ s.wr) x 16) (hout : InRegions s.wr d 16) :
+    WP isa (.block [.movdquLoad .xmm0 (at_ .rdi 0), .movdquStore (at_ .rsi 0) .xmm0]) s
+      fun t => t.gpr = s.gpr ∧ t.rd = s.rd ∧ t.wr = s.wr ∧
+        t.mem = s.mem.writeW d (s.mem.readW x 128) := by
+  refine WP.block_cons_iff.mpr ⟨s.setXmm .xmm0 (s.mem.readW x 128), ?_, ?_⟩
+  · simp only [reduceExec, State.load128, hx, hin, ite_true, Option.map_some]
+  refine WP.block_cons_iff.mpr
+    ⟨{ s.setXmm .xmm0 (s.mem.readW x 128) with mem := s.mem.writeW d (s.mem.readW x 128) },
+      ?_, WP.block_nil ⟨rfl, rfl, rfl, rfl⟩⟩
+  simp only [reduceExec, State.store128, ea_setXmm, hd, RegUpd.wr_setXmm,
+    RegUpd.mem_setXmm, RegUpd.xmm_setXmm_self, hout, ite_true]
+
+theorem xor {s : State} {x y d : Addr}
+    (hx : s.ea (at_ .rdi 0) = x) (hy : s.ea (at_ .rsi 0) = y)
+    (hd : s.ea (at_ .r8 0) = d)
+    (hinx : InRegions (s.rd ++ s.wr) x 16) (hiny : InRegions (s.rd ++ s.wr) y 16)
+    (hout : InRegions s.wr d 16) :
+    WP isa (.block [.movdquLoad .xmm0 (at_ .rdi 0), .movdquLoad .xmm1 (at_ .rsi 0),
+      .xop (.bin .pxor .xmm0 .xmm1), .movdquStore (at_ .r8 0) .xmm0]) s
+      fun t => t.gpr = s.gpr ∧ t.rd = s.rd ∧ t.wr = s.wr ∧
+        t.mem = s.mem.writeW d (s.mem.readW x 128 ^^^ s.mem.readW y 128) := by
+  refine WP.block_cons_iff.mpr ⟨s.setXmm .xmm0 (s.mem.readW x 128), ?_, ?_⟩
+  · simp only [reduceExec, State.load128, hx, hinx, ite_true, Option.map_some]
+  let t := (s.setXmm .xmm0 (s.mem.readW x 128)).setXmm .xmm1 (s.mem.readW y 128)
+  refine WP.block_cons_iff.mpr ⟨t, ?_, ?_⟩
+  · simp only [t, reduceExec, State.load128, ea_setXmm, hy, RegUpd.rd_setXmm,
+      RegUpd.wr_setXmm, RegUpd.mem_setXmm, hiny, ite_true, Option.map_some]
+  let u := t.setXmm .xmm0 (s.mem.readW x 128 ^^^ s.mem.readW y 128)
+  refine WP.block_cons_iff.mpr ⟨u, ?_, ?_⟩
+  · simp only [u, t, reduceExec, XOp.exec, reduceXBinOpEval,
+      RegUpd.xmm_setXmm_of_ne _ _ (by decide : XReg.xmm0 ≠ XReg.xmm1),
+      RegUpd.xmm_setXmm_self]
+  refine WP.block_cons_iff.mpr
+    ⟨{ u with mem := s.mem.writeW d (s.mem.readW x 128 ^^^ s.mem.readW y 128) },
+      ?_, WP.block_nil ⟨rfl, rfl, rfl, rfl⟩⟩
+  simp only [u, t, reduceExec, State.store128, ea_setXmm, hd, RegUpd.wr_setXmm,
+    RegUpd.mem_setXmm, RegUpd.xmm_setXmm_self, hout, ite_true]
+
+end VG.Proof.Scrypt.X86_64.SimdMem
+
+end
+
+end
+
+/-! ### `Scrypt.X86_64.Memory128`, which only this module used -/
+
+section
+
+/-! Byte-level correctness of 128-bit XOR stores used by the SSE2 loops. -/
+
+@[expose] public section
+
+namespace VG.Proof.Scrypt.Memory
+open VG VG.Spec.Scrypt VG.Spec.Pbkdf2
+open VG.Proof.Sha256.Stream
+theorem writeW_xor128 (m m' : Mem) (d a b : Addr) :
+    m.writeW d (m'.readW a 128 ^^^ m'.readW b 128) =
+      writeBytes m d (xorBytes (bytesAt m' a 16) (bytesAt m' b 16)) := by
+  simp only [Mem.writeW, Mem.readW]
+  rw [show (128 : Nat) / 8 = 16 from rfl, BitVec.setWidth_eq, BitVec.setWidth_eq, BitVec.setWidth_eq,
+    write_eq_writeBytes]
+  congr 1
+  apply List.ext_getElem (by simp [xorBytes, bytesAt])
+  intro j h₁ h₂
+  simp only [List.length_map, List.length_range] at h₁
+  simp only [xorBytes, bytesAt, List.getElem_map, List.getElem_range, List.getElem_zipWith]
+  rw [BitVec.extractLsb'_xor, Mem.extractLsb'_read _ _ h₁, Mem.extractLsb'_read _ _ h₁]
+
+/-- One more word of `[d] ← [x] xor [y]`. -/
+theorem xor_mem128 (m : Mem) {d x y : Addr} {n k : Nat} (hk : k < n) (hlt : 16 * n < 2 ^ 64)
+    (hdx : Region.Disjoint ⟨d, 16 * n⟩ ⟨x, 16 * n⟩) (hdy : Region.Disjoint ⟨d, 16 * n⟩ ⟨y, 16 * n⟩) :
+    (writeBytes m d (xorBytes (bytesAt m x (16 * k)) (bytesAt m y (16 * k)))).writeW
+      (d + BitVec.ofNat 64 (16 * k))
+      ((writeBytes m d (xorBytes (bytesAt m x (16 * k)) (bytesAt m y (16 * k)))).readW
+          (x + BitVec.ofNat 64 (16 * k)) 128 ^^^
+        (writeBytes m d (xorBytes (bytesAt m x (16 * k)) (bytesAt m y (16 * k)))).readW
+          (y + BitVec.ofNat 64 (16 * k)) 128) =
+      writeBytes m d (xorBytes (bytesAt m x (16 * (k + 1))) (bytesAt m y (16 * (k + 1)))) := by
+  have hl : (xorBytes (bytesAt m x (16 * k)) (bytesAt m y (16 * k))).length = 16 * k := by
+    rw [xorBytes_length _ _ (by simp [bytesAt]), bytesAt_length]
+  -- The words of `x` and `y` are not in the part of `d` written so far.
+  have sx : Region.Disjoint ⟨x + BitVec.ofNat 64 (16 * k), 16⟩
+      ⟨d, (xorBytes (bytesAt m x (16 * k)) (bytesAt m y (16 * k))).length⟩ := by
+    rw [hl]; exact (hdx.symm.sub_left (sub_off (by omega_using [hk]) (by omega_using [hk, hlt]))).sub_right
+      (Region.sub_prefix (by omega_using [hk]))
+  have sy : Region.Disjoint ⟨y + BitVec.ofNat 64 (16 * k), 16⟩
+      ⟨d, (xorBytes (bytesAt m x (16 * k)) (bytesAt m y (16 * k))).length⟩ := by
+    rw [hl]; exact (hdy.symm.sub_left (sub_off (by omega_using [hk]) (by omega_using [hk, hlt]))).sub_right
+      (Region.sub_prefix (by omega_using [hk]))
+  rw [writeW_xor128, bytesAt_writeBytes_sep _ _ sx (by omega_using []), bytesAt_writeBytes_sep _ _ sy (by omega_using [])]
+  have e := writeBytes_append m d _ (xorBytes (bytesAt m (x + BitVec.ofNat 64 (16 * k)) 16)
+    (bytesAt m (y + BitVec.ofNat 64 (16 * k)) 16))
+    (by rw [hl, xorBytes_length _ _ (by simp [bytesAt]), bytesAt_length]; omega_using [hk, hlt])
+  rw [hl] at e
+  rw [e, Nat.mul_succ, bytesAt_add, bytesAt_add, xorBytes, xorBytes, xorBytes,
+    List.zipWith_append (by simp [bytesAt])]
+
+
+end VG.Proof.Scrypt.Memory
+
+end
+
+end
+
 
 /-!
 # scryptROMix on x86-64: the small loops

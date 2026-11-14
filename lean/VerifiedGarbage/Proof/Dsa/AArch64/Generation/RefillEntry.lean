@@ -5,19 +5,183 @@ public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.Context
 public import VerifiedGarbage.Impl.Dsa.AArch64.Generation.Entry
 public import VerifiedGarbage.Proof.MlKem.AArch64.Wp
 import VerifiedGarbage.Proof.Dsa.AArch64.Generation.FrameStore
-import VerifiedGarbage.Proof.Dsa.AArch64.Generation.EntryState
+public import Mathlib.Algebra.Group.Nat.Defs
+public import VerifiedGarbage.Proof.RsaOaep.AArch64.Basic
+public import VerifiedGarbage.Proof.Bignum.Words
+public import VerifiedGarbage.Impl.Bignum.AArch64.Core
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.GeometryWork
+import Mathlib.Tactic.Finiteness.Attr
+import Mathlib.Tactic.Push
+import VerifiedGarbage.Proof.Dsa.AArch64.Run
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.OmegaLit
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.RsaKeyGen.Table
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.RsaOaep.AArch64.Hash
+import VerifiedGarbage.TCB.AArch64.Isa
+import VerifiedGarbage.Proof.Framework.AArch64.StackStore
+import VerifiedGarbage.Proof.Bignum.AArch64.Run
+import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Dsa.AArch64.Generation.Memory
 import VerifiedGarbage.Proof.Dsa.AArch64.Generation.ContextSlice
 import VerifiedGarbage.Proof.Dsa.AArch64.Generation.ContextFrame
-import VerifiedGarbage.Proof.Dsa.AArch64.Generation.GeometryWork
 import VerifiedGarbage.Proof.Dsa.Generation.Memory
-import VerifiedGarbage.Proof.Framework.AArch64.StackStore
-import VerifiedGarbage.Proof.Framework.AArch64.RegUpd -- shake: keep (brun's simp set reads its lemmas)
-import VerifiedGarbage.Proof.Framework.AArch64.Exec
-import VerifiedGarbage.Proof.Bignum.AArch64.Run
 import VerifiedGarbage.Proof.Bignum.Octets
-import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Omega
+
+/-! ### `Dsa.AArch64.Generation.EntryState`, which only this module used -/
+
+section
+
+/-! ### `Dsa.AArch64.Generation.FrameCopy`, which only this module used -/
+
+section
+
+/-! # Copy incoming stack arguments into the persistent frame -/
+
+@[expose] public section
+namespace VG.Proof.Dsa.AArch64.Generation
+open VG VG.AArch64 VG.Proof.Bignum VG.Proof.Bignum.AArch64 VG.Proof.MlKem.AArch64
+open VG.Proof.RsaOaep.AArch64 VG.Impl.RsaOaep.AArch64
+
+end VG.Proof.Dsa.AArch64.Generation
+
+end
+
+end
+
+/-! ### `Dsa.AArch64.Generation.FrameDerived`, which only this module used -/
+
+section
+
+/-! # Initialize workspace pointers and cursors in the native generation frame -/
+
+@[expose] public section
+namespace VG.Proof.Dsa.AArch64.Generation
+open VG VG.AArch64 VG.Proof.Bignum VG.Proof.Bignum.AArch64 VG.Proof.MlKem.AArch64
+open VG.Proof.RsaOaep.AArch64 VG.Impl.RsaOaep.AArch64
+
+
+theorem frameDerived_ok {s : State} {F S B : Addr} {V : Nat → Byte} {W : Nat → BitVec 64}
+    (G : Geo F S) (R : Rep s.mem F S V W) (hsp : s.sp = F)
+    (hfr : Covers [⟨F, frameBytes⟩] s.wr) (hbase : W 5 = B)
+    {k offset : Nat} (hk : k < nW) (hd : offset < 65536) :
+    WP isa (.block [.ldrSp .x3 40, VG.Impl.Bignum.AArch64.movi .x4 offset, .add .x .x3 .x3 .x4,
+      .strSp .x3 (8 * k)]) s fun t =>
+      Rep t.mem F S V (upd W k (VG.Proof.Bignum.off B offset)) ∧ Frame [⟨F, frameBytes⟩] s.mem t.mem ∧ Keep [.x3, .x4] s t := by
+  have hw : InRegions s.wr (VG.Proof.Bignum.off F (8 * k)) 8 :=
+    hfr _ _ ⟨⟨F, frameBytes⟩, by simp, Offset.contains_base _ (by unfold nW frameBytes at *; omega_using [hk]) (by unfold nW frameBytes at *; omega_using [hk])⟩
+  have hr : InRegions (s.rd ++ s.wr) (VG.Proof.Bignum.off F 40) 8 :=
+    Covers.right hfr _ _ ⟨⟨F, frameBytes⟩, by simp, Offset.contains_base _ (by decide) (by decide)⟩
+  have hread : s.mem.readW (F + BitVec.ofNat 64 40) 64 = B := (R.fr 5 (by decide)).trans hbase
+  have hv : (BitVec.ofNat 16 offset).setWidth 64 = BitVec.ofNat 64 offset := by
+    apply BitVec.eq_of_toNat_eq
+    simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]
+    omega_using [hd]
+  refine WP.mono (WP.keep [.x3, .x4] (Q := fun t => t.mem = s.mem.writeW (VG.Proof.Bignum.off F (8 * k)) (VG.Proof.Bignum.off B offset))
+    (by brun [exec_ldrSp (off := 40) (by decide), exec_storeSp (by unfold nW frameBytes at hk; omega_using [hk] : 8 * k % 8 = 0 ∧ 8 * k < 32768), hsp, hr, hw, VG.Proof.Bignum.off, hread, hv]) rfl rfl rfl)
+    fun t ⟨hm, kt⟩ => ?_
+  exact ⟨hm ▸ R.wf G hk _, hm ▸ frameWord_write hk s.mem _, kt⟩
+
+theorem frameZero_ok {s : State} {F S : Addr} {V : Nat → Byte} {W : Nat → BitVec 64}
+    (G : Geo F S) (R : Rep s.mem F S V W) (hsp : s.sp = F)
+    (hfr : Covers [⟨F, frameBytes⟩] s.wr) {k : Nat} (hk : k < nW) :
+    WP isa (.block [VG.Impl.Bignum.AArch64.movi .x3 0, .strSp .x3 (8 * k)]) s fun t =>
+      Rep t.mem F S V (upd W k 0) ∧ Frame [⟨F, frameBytes⟩] s.mem t.mem ∧ Keep [.x3, .x4] s t := by
+  have hw : InRegions s.wr (VG.Proof.Bignum.off F (8 * k)) 8 :=
+    hfr _ _ ⟨⟨F, frameBytes⟩, by simp, Offset.contains_base _ (by unfold nW frameBytes at *; omega_using [hk]) (by unfold nW frameBytes at *; omega_using [hk])⟩
+  refine WP.mono (WP.keep [.x3, .x4] (Q := fun t => t.mem = s.mem.writeW (VG.Proof.Bignum.off F (8 * k)) (0 : BitVec 64))
+    (by brun [exec_storeSp (by unfold nW frameBytes at hk; omega_using [hk] : 8 * k % 8 = 0 ∧ 8 * k < 32768), hsp, hw, VG.Proof.Bignum.off]; rfl) rfl rfl rfl) fun t ⟨hm, kt⟩ => ?_
+  exact ⟨hm ▸ R.wf G hk _, hm ▸ frameWord_write hk s.mem _, kt⟩
+
+end VG.Proof.Dsa.AArch64.Generation
+
+end
+
+end
+
+/-! # The entry's words derived from the working space's base -/
+
+-- Formerly `VerifiedGarbage/Proof/Dsa/AArch64/Generation/FrameDerivations.lean`, which only this module imported.
+section
+
+/-! # Derive several arena pointers from the preserved scratch base -/
+
+@[expose] public section
+namespace VG.Proof.Dsa.AArch64.Generation
+open VG VG.AArch64 VG.Proof.Bignum VG.Proof.Bignum.AArch64 VG.Proof.MlKem.AArch64
+open VG.Proof.RsaOaep.AArch64 VG.Impl.RsaOaep.AArch64
+
+
+def derivedWords (slots : List (Nat × Nat)) (B : Addr) (W : Nat → BitVec 64) : Nat → BitVec 64 :=
+  slots.foldl (fun words slot => upd words slot.1 (VG.Proof.Bignum.off B slot.2)) W
+
+theorem frameDerivations_ok (slots : List (Nat × Nat))
+    (bounds : ∀ slot ∈ slots, slot.1 < nW ∧ slot.1 ≠ 5 ∧ slot.2 < 65536)
+    {s : State} {F S B : Addr} {V : Nat → Byte} {W : Nat → BitVec 64}
+    (G : Geo F S) (R : Rep s.mem F S V W) (hsp : s.sp = F)
+    (hfr : Covers [⟨F, frameBytes⟩] s.wr) (hbase : W 5 = B) :
+    WP isa (.block (slots.flatMap fun slot => [.ldrSp .x3 40, VG.Impl.Bignum.AArch64.movi .x4 slot.2,
+      .add .x .x3 .x3 .x4, .strSp .x3 (8 * slot.1)])) s fun t =>
+      Rep t.mem F S V (derivedWords slots B W) ∧ Frame [⟨F, frameBytes⟩] s.mem t.mem ∧ Keep [.x3, .x4] s t := by
+  induction slots generalizing s W with
+  | nil => exact WP.block_nil ⟨R, Frame.refl _ _, Keep.refl _ _⟩
+  | cons slot slots ih =>
+    change WP isa (.block (_ ++ _)) s _
+    apply WP.block_append
+    have bound := bounds slot (by simp)
+    refine WP.mono (frameDerived_ok G R hsp hfr hbase bound.1 bound.2.2) fun u ⟨Ru, fu, ku⟩ => ?_
+    refine WP.mono (ih (fun x hx => bounds x (by simp [hx])) Ru
+      (ku.sp.trans hsp) (by rw [ku.wr]; exact hfr)
+      (by simpa [upd, Ne.symm bound.2.1] using hbase)) fun t ⟨Rt, ft, kt⟩ => ?_
+    exact ⟨Rt, fu.trans ft, (ku.trans kt).mono (by decide)⟩
+
+end VG.Proof.Dsa.AArch64.Generation
+end
+
+end
+
+-- Formerly `VerifiedGarbage/Proof/Dsa/AArch64/Generation/EntryDerived.lean`, which only this module imported.
+section
+
+/-! # Initialize the three workspace pointers and the witness cursor -/
+
+@[expose] public section
+namespace VG.Proof.Dsa.AArch64.Generation
+open VG VG.AArch64 VG.Proof.Bignum VG.Proof.Bignum.AArch64 VG.Proof.MlKem.AArch64
+open VG.Proof.RsaOaep.AArch64 VG.Impl.RsaOaep.AArch64 VG.Impl.Dsa.Generation.Layout
+
+def workspaceSlots : List (Nat × Nat) := [(3, wrappedSeed), (4, hashes), (12, VG.Impl.Dsa.Generation.Layout.hash)]
+
+def workspaceWords (B : Addr) (W : Nat → BitVec 64) : Nat → BitVec 64 :=
+  upd (derivedWords workspaceSlots B W) 16 0
+
+theorem entryDerived_ok {s : State} {F S B : Addr} {V : Nat → Byte} {W : Nat → BitVec 64}
+    (G : Geo F S) (R : Rep s.mem F S V W) (hsp : s.sp = F)
+    (hfr : Covers [⟨F, frameBytes⟩] s.wr) (hbase : W 5 = B) :
+    WP isa (.block Impl.Dsa.AArch64.Generation.entryDerived) s fun t =>
+      Rep t.mem F S V (workspaceWords B W) ∧ Frame [⟨F, frameBytes⟩] s.mem t.mem ∧ Keep [.x3, .x4] s t := by
+  unfold Impl.Dsa.AArch64.Generation.entryDerived
+  apply WP.block_append
+  refine WP.mono (frameDerivations_ok workspaceSlots (by
+    intro slot hs
+    simp only [workspaceSlots, List.mem_cons, List.not_mem_nil, or_false] at hs
+    rcases hs with rfl | rfl | rfl <;> decide) G R hsp hfr hbase) fun u ⟨Ru, fu, ku⟩ => ?_
+  refine WP.mono (frameZero_ok G Ru (ku.sp.trans hsp)
+    (by rw [ku.wr]; exact hfr) (by decide : 16 < nW)) fun t ⟨Rt, ft, kt⟩ => ?_
+  exact ⟨Rt, fu.trans ft, (ku.trans kt).mono (by decide)⟩
+
+end VG.Proof.Dsa.AArch64.Generation
+end
+
+end
+
+
+end
+
 
 -- separate module: the entry's symbolic execution, which a change to the loop's proofs does not re-elaborate
 

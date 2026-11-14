@@ -1,10 +1,775 @@
 module
 
-public import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.PbkCalls
-public import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.PbkCommon
-import VerifiedGarbage.Proof.Pbkdf2.AArch64.Copy
+public import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Hash
+import VerifiedGarbage.Proof.Framework.AArch64.RelCT
+import VerifiedGarbage.Proof.Framework.AArch64.Syms
+import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Contract
+public import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Common
 import VerifiedGarbage.Proof.Hmac.Generic.Common
+import VerifiedGarbage.Proof.Pbkdf2.AArch64.Copy
 import VerifiedGarbage.Proof.Sha256.Stream
+
+/-! ### `Pbkdf2.Md.AArch64.PbkCalls`, which only this module used -/
+
+section
+
+/-!
+# PBKDF2-HMAC over any Merkle–Damgård hash function on AArch64: `pbkdf2`'s calls
+
+The calls of HMAC's `init` and `finalize` and of `iterate`, whose contracts
+(`initG`, `finG`, `iterK`) their proofs are given as hypotheses: each is run
+with `WP.callFV` (the callee may use the 16 bytes below the stack pointer, a
+frame deep), and shown constant time in two runs with `RelCT.call`.
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Pbkdf2.Md.AArch64.Pbk
+
+open VG.AArch64
+open VG.Impl.Pbkdf2.Md.AArch64 (Hash)
+open VG.Proof.Pbkdf2.Md.AArch64 (HashOK)
+open VG.Proof.Pbkdf2.AArch64 (iterK)
+open VG.Proof.Pbkdf2.Md.AArch64.Calls (initG finG After frame_depth fdepth_lt ce0 ce1 ce2 ce3 ce4)
+open Spec.Sha256 (bytesAt)
+open Spec.Hmac (xorPad ipad opad blockKey hmacBlockKey)
+
+variable {H : Hash} (hH : HashOK H)
+
+theorem covers_app {rd wr : List Region} {s : State} (hr : Covers rd (s.rd ++ s.wr)) (hw : Covers wr s.wr) :
+    Covers (rd ++ wr) (s.rd ++ s.wr) := fun a n hi => by
+  obtain ⟨r, hr', hc⟩ := hi
+  rcases List.mem_append.mp hr' with h | h
+  · exact hr a n ⟨r, h, hc⟩
+  · obtain ⟨r'', h'', hc''⟩ := hw a n ⟨r, h, hc⟩
+    exact ⟨r'', List.mem_append_right _ h'', hc''⟩
+
+/-! ## HMAC's `init` -/
+
+/-- The regions of a call of HMAC's `init`. -/
+structure InitArgs (s : State) (inn out k sc : Addr) (kl : Nat) : Prop where
+  x0 : s.gpr .x0 = inn
+  x1 : s.gpr .x1 = out
+  x2 : s.gpr .x2 = k
+  x3 : (s.gpr .x3).toNat = kl
+  x4 : s.gpr .x4 = sc
+  klB : kl ≤ H.P.B
+  cr : Covers [⟨k, kl⟩] (s.rd ++ s.wr)
+  cw : Covers [⟨inn, H.S⟩, ⟨out, H.S⟩, ⟨sc, 8 * H.W⟩] s.wr
+  i_o : Region.Disjoint ⟨inn, H.S⟩ ⟨out, H.S⟩
+  i_s : Region.Disjoint ⟨inn, H.S⟩ ⟨sc, 8 * H.W⟩
+  o_s : Region.Disjoint ⟨out, H.S⟩ ⟨sc, 8 * H.W⟩
+  k_i : Region.Disjoint ⟨k, kl⟩ ⟨inn, H.S⟩
+  k_o : Region.Disjoint ⟨k, kl⟩ ⟨out, H.S⟩
+  k_s : Region.Disjoint ⟨k, kl⟩ ⟨sc, 8 * H.W⟩
+  sp16 : 16 ≤ s.sp.toNat
+  stk_i : (below s.sp 16).Disjoint ⟨inn, H.S⟩
+  stk_o : (below s.sp 16).Disjoint ⟨out, H.S⟩
+  stk_k : (below s.sp 16).Disjoint ⟨k, kl⟩
+  stk_s : (below s.sp 16).Disjoint ⟨sc, 8 * H.W⟩
+  scnw : sc.toNat + 8 * H.W ≤ 2 ^ 64
+
+theorem InitArgs.pre {s : State} {inn out k sc : Addr} {kl : Nat} (a : InitArgs (H := H) s inn out k sc kl) :
+    (initG hH.SH H.W).pre (s.callEntry.withRegions [⟨k, kl⟩] [⟨inn, H.S⟩, ⟨out, H.S⟩, ⟨sc, 8 * H.W⟩]) := by
+  have hS := hH.hS; have hB := hH.hB
+  simp only [initG, State.withRegions_gpr, State.withRegions_rd, State.withRegions_wr, State.withRegions_sp,
+    State.callEntry_sp, ce0, ce1, ce2, ce3, ce4, a.x0, a.x1, a.x2, a.x3, a.x4, hS, hB]
+  exact ⟨a.klB, trivial, trivial, a.i_o, a.i_s, a.o_s, a.k_i, a.k_o, a.k_s, a.sp16, a.stk_i, a.stk_o, a.stk_k,
+    a.stk_s, a.scnw⟩
+
+theorem hinit_call (hv : Verified AArch64.target H.hmacInit (initG hH.SH H.W)) (hd : H.hmacInit.aarch64Depth ≤ 1)
+    {s : State} {inn out k sc : Addr} {kl : Nat} (a : InitArgs (H := H) s inn out k sc kl) {Q : State → Prop}
+    (hQ : ∀ s', After s [⟨inn, H.S⟩, ⟨out, H.S⟩, ⟨sc, 8 * H.W⟩] s' →
+      hH.SH.Repr s'.mem inn (xorPad (blockKey hH.SH.H (bytesAt s.mem k kl)) ipad) →
+      hH.SH.Repr s'.mem out (xorPad (blockKey hH.SH.H (bytesAt s.mem k kl)) opad) → Q s') :
+    WP isa (.call H.hmacInitN H.hmacInit) s Q := by
+  refine WP.of_syms (WP.callFV hv.1 (a.pre hH) (covers_app a.cr a.cw) a.cw ?_ (fdepth_lt hd))
+  intro s' h₁ h₂ h₃ h₄ h₅ hvec hpost hsy
+  simp only [initG, State.withRegions_gpr, State.withRegions_mem, State.callEntry_mem, ce0, ce1, ce2, ce3,
+    a.x0, a.x1, a.x2, a.x3] at hpost
+  exact hQ s' ⟨h₁, h₂, h₃, h₅, frame_depth hd h₄, hvec, hsy⟩ hpost.1 hpost.2
+
+theorem hinit_rel (hv : Verified AArch64.target H.hmacInit (initG hH.SH H.W)) {P : State → State → Prop}
+    {inn out k sc : Addr} {kl : Nat}
+    (h : ∀ s s', P s s' → InitArgs (H := H) s inn out k sc kl ∧ InitArgs (H := H) s' inn out k sc kl ∧
+      s.sp = s'.sp) :
+    RelCT isa P (.call H.hmacInitN H.hmacInit) fun _ _ => True := by
+  refine RelCT.call hv.1 hv.2.1 [⟨k, kl⟩] [⟨inn, H.S⟩, ⟨out, H.S⟩, ⟨sc, 8 * H.W⟩] fun s s' hp => ?_
+  obtain ⟨a, a', sp⟩ := h s s' hp
+  have x3 : s.gpr .x3 = s'.gpr .x3 := BitVec.eq_of_toNat_eq (by rw [a.x3, a'.x3])
+  refine ⟨a.pre hH, a'.pre hH, ?_, covers_app a.cr a.cw, a.cw, covers_app a'.cr a'.cw, a'.cw⟩
+  simp only [initG, State.withRegions_gpr, State.withRegions_sp, State.callEntry_sp, ce0, ce1, ce2, ce3, ce4,
+    a.x0, a'.x0, a.x1, a'.x1, a.x2, a'.x2, a.x4, a'.x4, x3, sp]
+  exact ⟨trivial, trivial, trivial, trivial, trivial, trivial⟩
+
+/-! ## HMAC's `finalize` -/
+
+/-- The regions of a call of HMAC's `finalize`. -/
+structure FinArgs (s : State) (inn outer cnt o sc : Addr) : Prop where
+  x0 : s.gpr .x0 = inn
+  x1 : s.gpr .x1 = outer
+  x2 : s.gpr .x2 = cnt
+  x3 : s.gpr .x3 = o
+  x4 : s.gpr .x4 = sc
+  cr : Covers [⟨outer, H.S⟩] (s.rd ++ s.wr)
+  cw : Covers [⟨inn, H.S⟩, ⟨o, H.D⟩, ⟨sc, 8 * H.W⟩] s.wr
+  i_u : Region.Disjoint ⟨inn, H.S⟩ ⟨outer, H.S⟩
+  i_o : Region.Disjoint ⟨inn, H.S⟩ ⟨o, H.D⟩
+  i_s : Region.Disjoint ⟨inn, H.S⟩ ⟨sc, 8 * H.W⟩
+  u_o : Region.Disjoint ⟨outer, H.S⟩ ⟨o, H.D⟩
+  u_s : Region.Disjoint ⟨outer, H.S⟩ ⟨sc, 8 * H.W⟩
+  o_s : Region.Disjoint ⟨o, H.D⟩ ⟨sc, 8 * H.W⟩
+  sp16 : 16 ≤ s.sp.toNat
+  stk_i : (below s.sp 16).Disjoint ⟨inn, H.S⟩
+  stk_u : (below s.sp 16).Disjoint ⟨outer, H.S⟩
+  stk_o : (below s.sp 16).Disjoint ⟨o, H.D⟩
+  stk_s : (below s.sp 16).Disjoint ⟨sc, 8 * H.W⟩
+  scnw : sc.toNat + 8 * H.W ≤ 2 ^ 64
+
+theorem FinArgs.pre {s : State} {inn outer cnt o sc : Addr} (a : FinArgs (H := H) s inn outer cnt o sc) :
+    (finG hH.SH H.W).pre (s.callEntry.withRegions [⟨outer, H.S⟩] [⟨inn, H.S⟩, ⟨o, H.D⟩, ⟨sc, 8 * H.W⟩]) := by
+  have hS := hH.hS; have hD := hH.hD
+  simp only [finG, State.withRegions_gpr, State.withRegions_rd, State.withRegions_wr, State.withRegions_sp,
+    State.callEntry_sp, ce0, ce1, ce3, ce4, a.x0, a.x1, a.x3, a.x4, hS, hD]
+  exact ⟨trivial, trivial, a.i_u, a.i_o, a.i_s, a.u_o, a.u_s, a.o_s, a.sp16, a.stk_i, a.stk_u, a.stk_o,
+    a.stk_s, a.scnw⟩
+
+theorem hfin_call (hv : Verified AArch64.target H.hmacFin (finG hH.SH H.W)) (hd : H.hmacFin.aarch64Depth ≤ 1)
+    {s : State} {inn outer cnt o sc : Addr}
+    (a : FinArgs (H := H) s inn outer cnt o sc) {Q : State → Prop}
+    (hQ : ∀ s', After s [⟨inn, H.S⟩, ⟨o, H.D⟩, ⟨sc, 8 * H.W⟩] s' →
+      (∀ k0 text, k0.length = H.P.B → k0.length + text.length < 2 ^ 64 →
+        hH.SH.Repr s.mem inn (xorPad k0 ipad ++ text) → cnt = BitVec.ofNat 64 (H.P.B + text.length) →
+        hH.SH.Repr s.mem outer (xorPad k0 opad) → bytesAt s'.mem o H.D = hmacBlockKey hH.SH.H k0 text) →
+      Q s') :
+    WP isa (.call H.hmacFinN H.hmacFin) s Q := by
+  refine WP.of_syms (WP.callFV hv.1 (a.pre hH) (covers_app a.cr a.cw) a.cw ?_ (fdepth_lt hd))
+  intro s' h₁ h₂ h₃ h₄ h₅ hvec hpost hsy
+  refine hQ s' ⟨h₁, h₂, h₃, h₅, frame_depth hd h₄, hvec, hsy⟩ fun k0 text hk hl hi hc ho => ?_
+  have hD := hH.hD; have hB := hH.hB
+  simp only [finG, State.withRegions_gpr, State.withRegions_mem, State.callEntry_mem, ce0, ce1, ce2, ce3,
+    a.x0, a.x1, a.x2, a.x3, hD, hB] at hpost
+  exact hpost k0 text hk hl hi hc ho
+
+theorem hfin_rel (hv : Verified AArch64.target H.hmacFin (finG hH.SH H.W)) {P : State → State → Prop}
+    {inn outer cnt o sc : Addr}
+    (h : ∀ s s', P s s' → FinArgs (H := H) s inn outer cnt o sc ∧ FinArgs (H := H) s' inn outer cnt o sc ∧
+      s.sp = s'.sp) :
+    RelCT isa P (.call H.hmacFinN H.hmacFin) fun _ _ => True := by
+  refine RelCT.call hv.1 hv.2.1 [⟨outer, H.S⟩] [⟨inn, H.S⟩, ⟨o, H.D⟩, ⟨sc, 8 * H.W⟩] fun s s' hp => ?_
+  obtain ⟨a, a', sp⟩ := h s s' hp
+  refine ⟨a.pre hH, a'.pre hH, ?_, covers_app a.cr a.cw, a.cw, covers_app a'.cr a'.cw, a'.cw⟩
+  simp only [finG, State.withRegions_gpr, State.withRegions_sp, State.callEntry_sp, ce0, ce1, ce2, ce3, ce4,
+    a.x0, a'.x0, a.x1, a'.x1, a.x2, a'.x2, a.x3, a'.x3, a.x4, a'.x4, sp]
+  exact ⟨trivial, trivial, trivial, trivial, trivial, trivial⟩
+
+/-! ## `iterate` -/
+
+/-- The regions of a call of `iterate`. -/
+structure IterArgs (s : State) (key u : Addr) (n : BitVec 64) (t sc : Addr) : Prop where
+  x0 : s.gpr .x0 = key
+  x1 : s.gpr .x1 = u
+  x2 : s.gpr .x2 = n
+  x3 : s.gpr .x3 = t
+  x4 : s.gpr .x4 = sc
+  cr : Covers [⟨key, 2 * H.S⟩, ⟨u, H.D⟩] (s.rd ++ s.wr)
+  cw : Covers [⟨t, H.D⟩, ⟨sc, 8 * H.W⟩] s.wr
+  k_t : Region.Disjoint ⟨key, 2 * H.S⟩ ⟨t, H.D⟩
+  k_s : Region.Disjoint ⟨key, 2 * H.S⟩ ⟨sc, 8 * H.W⟩
+  u_t : Region.Disjoint ⟨u, H.D⟩ ⟨t, H.D⟩
+  u_s : Region.Disjoint ⟨u, H.D⟩ ⟨sc, 8 * H.W⟩
+  t_s : Region.Disjoint ⟨t, H.D⟩ ⟨sc, 8 * H.W⟩
+  knw : key.toNat + 2 * H.S ≤ 2 ^ 64
+  scnw : sc.toNat + 8 * H.W ≤ 2 ^ 64
+
+theorem IterArgs.pre {s : State} {key u t sc : Addr} {n : BitVec 64} (a : IterArgs (H := H) s key u n t sc) :
+    (iterK hH.SH H.W).pre (s.callEntry.withRegions [⟨key, 2 * H.S⟩, ⟨u, H.D⟩] [⟨t, H.D⟩, ⟨sc, 8 * H.W⟩]) := by
+  have hS := hH.hS; have hD := hH.hD
+  simp only [iterK, State.withRegions_gpr, State.withRegions_rd, State.withRegions_wr, ce0, ce1, ce3, ce4,
+    a.x0, a.x1, a.x3, a.x4, hS, hD]
+  exact ⟨trivial, trivial, a.k_t, a.k_s, a.u_t, a.u_s, a.t_s, a.knw, a.scnw⟩
+
+theorem iter_call (hv : Verified AArch64.target H.iterate (iterK hH.SH H.W)) (hd : H.iterate.aarch64Depth ≤ 1)
+    {s : State} {key u t sc : Addr} {n : BitVec 64}
+    (a : IterArgs (H := H) s key u n t sc) {Q : State → Prop}
+    (hQ : ∀ s', After s [⟨t, H.D⟩, ⟨sc, 8 * H.W⟩] s' →
+      (∀ k0, k0.length = H.P.B → hH.SH.Repr s.mem key (xorPad k0 ipad) →
+        hH.SH.Repr s.mem (key + BitVec.ofNat 64 H.S) (xorPad k0 opad) →
+        bytesAt s'.mem t H.D = Spec.Pbkdf2.iterate (hmacBlockKey hH.SH.H k0) (n.setWidth 32).toNat
+          (bytesAt s.mem u H.D) (bytesAt s.mem t H.D)) →
+      Q s') :
+    WP isa (.call H.iterN H.iterate) s Q := by
+  refine WP.of_syms (WP.callFV hv.1 (a.pre hH) (covers_app a.cr a.cw) a.cw ?_ (fdepth_lt hd))
+  intro s' h₁ h₂ h₃ h₄ h₅ hvec hpost hsy
+  refine hQ s' ⟨h₁, h₂, h₃, h₅, frame_depth hd h₄, hvec, hsy⟩ fun k0 hk hi ho => ?_
+  have hS := hH.hS; have hD := hH.hD; have hB := hH.hB
+  simp only [iterK, State.withRegions_gpr, State.withRegions_mem, State.callEntry_mem, ce0, ce1, ce2, ce3,
+    a.x0, a.x1, a.x2, a.x3, hD, hB, hS] at hpost
+  exact hpost k0 hk hi ho
+
+theorem iter_rel (hv : Verified AArch64.target H.iterate (iterK hH.SH H.W)) {P : State → State → Prop}
+    {key u t sc : Addr} {n : BitVec 64}
+    (h : ∀ s s', P s s' → IterArgs (H := H) s key u n t sc ∧ IterArgs (H := H) s' key u n t sc ∧
+      s.sp = s'.sp) :
+    RelCT isa P (.call H.iterN H.iterate) fun _ _ => True := by
+  refine RelCT.call hv.1 hv.2.1 [⟨key, 2 * H.S⟩, ⟨u, H.D⟩] [⟨t, H.D⟩, ⟨sc, 8 * H.W⟩] fun s s' hp => ?_
+  obtain ⟨a, a', sp⟩ := h s s' hp
+  refine ⟨a.pre hH, a'.pre hH, ?_, covers_app a.cr a.cw, a.cw, covers_app a'.cr a'.cw, a'.cw⟩
+  simp only [iterK, State.withRegions_gpr, State.withRegions_sp, State.callEntry_sp, ce0, ce1, ce2, ce3, ce4,
+    a.x0, a'.x0, a.x1, a'.x1, a.x2, a'.x2, a.x3, a'.x3, a.x4, a'.x4, sp]
+  exact ⟨trivial, trivial, trivial, trivial, trivial, trivial⟩
+
+end VG.Proof.Pbkdf2.Md.AArch64.Pbk
+
+end
+
+end
+
+/-! ### `Pbkdf2.Md.AArch64.PbkCommon`, which only this module used -/
+
+section
+
+/-!
+# PBKDF2-HMAC over any Merkle–Damgård hash function on AArch64: `pbkdf2`'s parts
+
+As on x86-64 (`Proof/Pbkdf2/Md/X86_64/PbkCommon.lean`): the precondition of
+`pbkdf2` (`Pre`), the parts of its `scratch`, and what every piece of it keeps
+(`KR`): our caller's registers (those we save in `scratch`, and `x25`–`x28`,
+which nothing we run writes), `out`, `c - 1` and `out_len` in `scratch`, and
+that everything written is in `out`, `scratch` or the 16 bytes below the stack
+pointer.
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Pbkdf2.Md.AArch64.Pbk
+
+open VG.AArch64
+open VG.Impl.Pbkdf2.Md.AArch64 (Hash)
+open VG.Proof.Pbkdf2.Md.AArch64 (HashOK pbkG)
+open VG.Proof.Pbkdf2.AArch64 (Sizes)
+open VG.Proof.Pbkdf2.Md.AArch64.Calls (stk SavedRegs SavedRegs.frame saveR)
+open VG.Proof.Pbkdf2.Md.AArch64.Calls (untouched)
+open VG.Proof.Hmac.Generic.Common (bytes_keep sub_of_off sub_of_self)
+open Spec.Sha256 (bytesAt)
+
+variable {H : Hash}
+
+/-! ## The arguments and the regions -/
+
+section
+variable (s₀ : State)
+
+abbrev pw : Addr := s₀.gpr .x0
+abbrev pwl : Nat := (s₀.gpr .x1).toNat
+abbrev salt : Addr := s₀.gpr .x2
+abbrev sl : Nat := (s₀.gpr .x3).toNat
+/-- The iteration count. -/
+abbrev cc : Nat := ((s₀.gpr .x4).setWidth 32).toNat
+abbrev out : Addr := s₀.gpr .x5
+abbrev ol : Nat := (s₀.gpr .x6).toNat
+abbrev scr : Addr := s₀.gpr .x7
+abbrev pwR : Region := ⟨pw s₀, pwl s₀⟩
+abbrev saltR : Region := ⟨salt s₀, sl s₀⟩
+abbrev outR : Region := ⟨out s₀, ol s₀⟩
+abbrev scR : Region := ⟨scr s₀, (H.W + H.S) * 8⟩
+abbrev stkR : Region := stk s₀
+/-- An address in `scratch`, and a part of it. -/
+abbrev A (o : Nat) : Addr := scr s₀ + BitVec.ofNat 64 o
+abbrev sR (o n : Nat) : Region := ⟨A s₀ o, n⟩
+/-- Our caller's registers, `out`, `c - 1` and `out_len`. -/
+abbrev hdrR : Region := sR s₀ H.sv 80
+/-- The working space of the functions we call. -/
+abbrev lowR : Region := ⟨scr s₀, 8 * H.W⟩
+
+end
+
+/-- The precondition. -/
+structure Pre (s₀ : State) : Prop where
+  sp16 : 16 ≤ s₀.sp.toNat
+  rd : s₀.rd = [pwR s₀, saltR s₀]
+  wr : s₀.wr = [outR s₀, scR (H := H) s₀]
+  pw_o : (pwR s₀).Disjoint (outR s₀)
+  pw_s : (pwR s₀).Disjoint (scR (H := H) s₀)
+  sa_o : (saltR s₀).Disjoint (outR s₀)
+  sa_s : (saltR s₀).Disjoint (scR (H := H) s₀)
+  o_s : (outR s₀).Disjoint (scR (H := H) s₀)
+  stk_pw : (stkR s₀).Disjoint (pwR s₀)
+  stk_sa : (stkR s₀).Disjoint (saltR s₀)
+  stk_o : (stkR s₀).Disjoint (outR s₀)
+  stk_s : (stkR s₀).Disjoint (scR (H := H) s₀)
+  pwnw : (pw s₀).toNat + pwl s₀ ≤ 2 ^ 64
+  sanw : (salt s₀).toNat + sl s₀ ≤ 2 ^ 64
+  onw : (out s₀).toNat + ol s₀ ≤ 2 ^ 64
+  snw : (scr s₀).toNat + (H.W + H.S) * 8 ≤ 2 ^ 64
+  c0 : 0 < cc s₀
+  olD : ol s₀ ≤ (2 ^ 32 - 1) * H.D
+
+theorem pre_of (hH : HashOK H) {s₀ : State} (h : (pbkG hH.SH (H.W + H.S)).pre s₀) : Pre (H := H) s₀ := by
+  obtain ⟨h0, h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, h14, h15, h16, h17⟩ := h
+  have hD := hH.hD
+  simp only [hD] at h17
+  exact ⟨h0, h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, h14, h15, h16, h17⟩
+
+/-- The sizes, as facts about natural numbers. -/
+structure PSizes (H : Hash) : Prop where
+  z : Sizes H.P H.D H.W
+  W : H.W ≤ 256
+
+theorem _root_.VG.Proof.Pbkdf2.Md.AArch64.HashOK.psizes (hH : HashOK H) : PSizes H := ⟨hH.sizes, hH.W⟩
+
+theorem PSizes.N (hz : PSizes H) : 0 < H.P.N ∧ H.P.N ≤ 64 := hz.z.dims.N
+theorem PSizes.B_le (hz : PSizes H) : H.P.B ≤ 128 := by rcases hz.z.B with h | h <;> omega_using [h]
+theorem PSizes.B_ge (hz : PSizes H) : 64 ≤ H.P.B := by rcases hz.z.B with h | h <;> omega_using [h]
+
+/-! ## The parts of `scratch` -/
+
+/-- Where the parts of `scratch` are. -/
+theorem layout : H.sv = 8 * H.W ∧ H.outO = 8 * H.W + 56 ∧ H.cO = 8 * H.W + 64 ∧ H.olO = 8 * H.W + 72 ∧
+    H.st0O = 8 * H.W + 80 ∧ H.st1O = 8 * H.W + 80 + H.S ∧ H.stSO = 8 * H.W + 80 + 2 * H.S ∧
+    H.stWO = 8 * H.W + 80 + 3 * H.S ∧ H.uO = 8 * H.W + 80 + 4 * H.S ∧
+    H.tO = 8 * H.W + 80 + 4 * H.S + H.D ∧ H.hkO = 8 * H.W + 80 + 4 * H.S + 2 * H.D ∧
+    H.intO = 8 * H.W + 80 + 4 * H.S + 2 * H.D + H.P.N ∧ H.S = H.P.N + H.P.B := by
+  refine ⟨rfl, rfl, rfl, rfl, rfl, ?_, ?_, ?_, ?_, ?_, ?_, ?_, rfl⟩ <;>
+    simp only [Hash.sv, Hash.st0O, Hash.st1O, Hash.stSO, Hash.stWO, Hash.uO, Hash.tO,
+      Hash.hkO, Hash.intO] <;> omega_using []
+
+section
+variable {s₀ : State} (hp : Pre (H := H) s₀) (hz : PSizes H)
+
+include hz in
+/-- The parts of `scratch`, as offsets: they end before its end, and below
+4096 (every offset is an immediate). -/
+theorem end_le : H.intO + 4 ≤ (H.W + H.S) * 8 ∧ H.intO + 4 ≤ 4096 := by
+  have := hz.N; have := hz.z.DN; have := hz.B_le; have := hz.B_ge; have := hz.W; have := layout (H := H)
+  omega_arith
+
+include hz in
+theorem L_lt : (H.W + H.S) * 8 < 2 ^ 64 := by
+  have := hz.W; have := hz.N; have := hz.B_le; show (H.W + (H.P.N + H.P.B)) * 8 < 2 ^ 64; omega_arith
+
+theorem part_sub {o n : Nat} (h : o + n ≤ (H.W + H.S) * 8) : Region.Sub (sR s₀ o n) (scR (H := H) s₀) :=
+  Offset.sub_base _ h
+
+include hz in
+theorem part_disj {a m b n : Nat} (h : a + m ≤ b ∨ b + n ≤ a) (ha : a + m ≤ (H.W + H.S) * 8)
+    (hb : b + n ≤ (H.W + H.S) * 8) : Region.Disjoint (sR s₀ a m) (sR s₀ b n) := by
+  have := L_lt hz; exact Offset.disjoint _ h (by omega_using [ha, this]) (by omega_using [hb, this])
+
+include hz in
+theorem low_disj {b n : Nat} (hb : 8 * H.W ≤ b) (hbn : b + n ≤ (H.W + H.S) * 8) :
+    Region.Disjoint (sR s₀ b n) (lowR (H := H) s₀) := by
+  have := L_lt hz; exact Offset.disjoint_base _ hb (by omega_using [hbn, this])
+
+theorem low_sub : Region.Sub (lowR (H := H) s₀) (scR (H := H) s₀) :=
+  Region.sub_prefix (by show 8 * H.W ≤ (H.W + H.S) * 8; omega_using [])
+
+include hp hz in
+theorem in_sc {s : State} (hwr : s.wr = s₀.wr) {o n : Nat} (h : o + n ≤ (H.W + H.S) * 8) :
+    InRegions s.wr (A s₀ o) n := by
+  have := L_lt hz
+  exact ⟨scR (H := H) s₀, by rw [hwr, hp.wr]; simp, Offset.contains_base _ h (by omega_using [h, this])⟩
+
+include hp in
+theorem sc_mem : scR (H := H) s₀ ∈ s₀.wr := by rw [hp.wr]; simp
+
+end
+
+/-! ## What every piece keeps -/
+
+/-- The registers and memory kept from the entry on: our caller's registers,
+`out`, `c - 1` and `out_len` in `scratch`, and everything written is in
+`out`, `scratch` or the 16 bytes below the stack pointer. -/
+structure KR (s₀ s : State) : Prop where
+  rd : s.rd = s₀.rd
+  wr : s.wr = s₀.wr
+  sp : s.sp = s₀.sp
+  x23 : s.gpr .x23 = scr s₀
+  cs : ∀ r ∈ untouched, s.gpr r = s₀.gpr r
+  saved : SavedRegs H.hh (scr s₀) s₀ s.mem
+  outW : s.mem.readW (A s₀ H.outO) 64 = out s₀
+  cW : s.mem.readW (A s₀ H.cO) 64 = BitVec.ofNat 64 (cc s₀ - 1)
+  olW : s.mem.readW (A s₀ H.olO) 64 = s₀.gpr .x6
+  frame : Frame [outR s₀, scR (H := H) s₀, stkR s₀] s₀.mem s.mem
+
+/-- The registers `KR` fixes. -/
+abbrev kregs : List Reg := [.x23, .x25, .x26, .x27, .x28]
+
+theorem kregs_pres : ∀ r ∈ kregs, r ∈ preserved ∧ r ≠ .x30 := by decide
+
+theorem hdr_sub {s₀ : State} {o : Nat} (h₁ : H.sv ≤ o) (h₂ : o + 8 ≤ H.sv + 80) :
+    Region.Sub ⟨A s₀ o, 8⟩ (hdrR (H := H) s₀) := Offset.sub _ h₁ h₂
+
+theorem save_hdr {s₀ : State} : Region.Sub (saveR H.hh (scr s₀)) (hdrR (H := H) s₀) :=
+  Offset.sub _ (Nat.le_refl _) (by show 8 * H.W + 56 ≤ 8 * H.W + 80; omega_using [])
+
+section
+variable {s₀ : State} (hp : Pre (H := H) s₀) (hz : PSizes H)
+include hp hz
+
+omit hp hz in
+theorem KR.keep {s s' : State} (h : KR (H := H) s₀ s) (hrd : s'.rd = s.rd) (hwr : s'.wr = s.wr)
+    (hsp : s'.sp = s.sp) (hg : ∀ r ∈ kregs, s'.gpr r = s.gpr r) {rs : List Region}
+    (hf : Frame rs s.mem s'.mem) (hd : ∀ r ∈ rs, (hdrR (H := H) s₀).Disjoint r)
+    (hsub : ∀ r ∈ rs, ∃ r' ∈ [outR s₀, scR (H := H) s₀, stkR s₀], Region.Sub r r') :
+    KR (H := H) s₀ s' := by
+  refine ⟨hrd.trans h.rd, hwr.trans h.wr, hsp.trans h.sp, (hg _ (by simp)).trans h.x23,
+    fun r hr => (hg r (by revert hr; decide +revert)).trans (h.cs r hr),
+    SavedRegs.frame H.hh h.saved hf fun r hr => (hd r hr).sub_left save_hdr, ?_, ?_, ?_,
+    h.frame.trans (hf.sub hsub)⟩
+  · rw [← h.outW]
+    exact hf.readW (r := ⟨A s₀ H.outO, 8⟩) (Region.contains_self _ _)
+      (fun r hr => (hd r hr).sub_left (hdr_sub (by simp [Hash.outO]) (by simp [Hash.outO])))
+      (by decide)
+  · rw [← h.cW]
+    exact hf.readW (r := ⟨A s₀ H.cO, 8⟩) (Region.contains_self _ _)
+      (fun r hr => (hd r hr).sub_left (hdr_sub (by simp [Hash.cO]) (by simp [Hash.cO])))
+      (by decide)
+  · rw [← h.olW]
+    exact hf.readW (r := ⟨A s₀ H.olO, 8⟩) (Region.contains_self _ _)
+      (fun r hr => (hd r hr).sub_left (hdr_sub (by simp [Hash.olO]) (by simp [Hash.olO])))
+      (by decide)
+
+omit hp hz in
+theorem KR.same {s s' : State} (h : KR (H := H) s₀ s) (hrd : s'.rd = s.rd) (hwr : s'.wr = s.wr)
+    (hsp : s'.sp = s.sp) (hg : ∀ r ∈ kregs, s'.gpr r = s.gpr r) (hm : s'.mem = s.mem) :
+    KR (H := H) s₀ s' :=
+  h.keep hrd hwr hsp hg (rs := []) (hm ▸ Frame.refl [] s.mem) (fun _ h => by simp at h)
+    (fun _ h => by simp at h)
+
+omit hp hz in
+theorem KR.upd {s s' : State} (h : KR (H := H) s₀ s) {d : Reg} {v : BitVec 64}
+    (u : VG.Proof.MdStream.AArch64.Upd s s' d v) (hd : d ∉ kregs) : KR (H := H) s₀ s' :=
+  h.same u.rd u.wr u.sp (fun r hr => u.other r fun e => hd (e ▸ hr)) u.mem
+
+omit hp in
+/-- A write into a part of `scratch` after its header keeps `KR`. -/
+theorem KR.write {s s' : State} (h : KR (H := H) s₀ s) (hrd : s'.rd = s.rd) (hwr : s'.wr = s.wr)
+    (hsp : s'.sp = s.sp) (hg : ∀ r ∈ kregs, s'.gpr r = s.gpr r) {o n : Nat}
+    (ho : H.st0O ≤ o) (hon : o + n ≤ (H.W + H.S) * 8) (hf : Frame [sR s₀ o n] s.mem s'.mem) :
+    KR (H := H) s₀ s' :=
+  h.keep hrd hwr hsp hg hf
+    (fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr
+      exact part_disj hz (Or.inl (by simpa [Hash.st0O] using ho)) (by
+        have := (end_le hz).1; simp only [Hash.st0O] at ho; omega_using [ho, hon]) hon)
+    (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact ⟨_, by simp, part_sub hon⟩)
+
+omit hz in
+theorem stk_sc {s : State} (h : KR (H := H) s₀ s) {R : Region} (hR : Region.Sub R (scR (H := H) s₀)) :
+    (below s.sp 16).Disjoint R := by
+  rw [h.sp]; exact hp.stk_s.sub_right hR
+
+/-- What a call leaves, writing parts of `scratch` after its header, or its
+working space, and the 16 bytes below the stack pointer. -/
+theorem KR.call {s s' : State} (h : KR (H := H) s₀ s) (hrd : s'.rd = s.rd) (hwr : s'.wr = s.wr)
+    (hsp : s'.sp = s.sp) (hcs : ∀ r ∈ preserved, r ≠ .x30 → s'.gpr r = s.gpr r) {ws : List Region}
+    (hf : Frame (ws ++ [below s.sp 16]) s.mem s'.mem)
+    (hw : ∀ r ∈ ws, (∃ k, r = ⟨scr s₀, k⟩ ∧ k ≤ 8 * H.W) ∨
+      ∃ o k, r = sR s₀ o k ∧ H.st0O ≤ o ∧ o + k ≤ (H.W + H.S) * 8) :
+    KR (H := H) s₀ s' := by
+  have := (end_le hz).1; have := layout (H := H)
+  have hst : H.sv + 80 = H.st0O := by simp [Hash.st0O]
+  refine h.keep hrd hwr hsp (fun r hr => hcs r (kregs_pres r hr).1 (kregs_pres r hr).2) hf
+    (fun r hr => ?_) (fun r hr => ?_)
+  · rcases List.mem_append.mp hr with hr | hr
+    · rcases hw r hr with ⟨k, rfl, hk⟩ | ⟨o, k, rfl, h₁, h₂⟩
+      · exact (low_disj hz (Nat.le_refl _) (by omega_arith)).sub_right (Region.sub_prefix hk)
+      · exact part_disj hz (Or.inl (by rw [hst]; exact h₁)) (by rw [hst]; omega_using [h₁, h₂]) h₂
+    · simp only [List.mem_singleton] at hr; subst hr
+      exact (stk_sc hp h (part_sub (by rw [hst]; omega_arith))).symm
+  · rcases List.mem_append.mp hr with hr | hr
+    · rcases hw r hr with ⟨k, rfl, hk⟩ | ⟨o, k, rfl, h₁, h₂⟩
+      · exact ⟨scR (H := H) s₀, by simp, Region.sub_prefix (by show k ≤ (H.W + H.S) * 8; omega_using [hk])⟩
+      · exact ⟨_, by simp, part_sub h₂⟩
+    · simp only [List.mem_singleton] at hr; subst hr
+      rw [h.sp]
+      exact ⟨_, by simp, fun _ h => h⟩
+
+omit hp hz in
+/-- The regions only read are the same as on entry. -/
+theorem KR.bytes {s : State} (h : KR (H := H) s₀ s) {p : Addr} {n : Nat}
+    (hd : ∀ r ∈ [outR s₀, scR (H := H) s₀, stkR s₀], Region.Disjoint ⟨p, n⟩ r) (hn : n ≤ 2 ^ 64) :
+    bytesAt s.mem p n = bytesAt s₀.mem p n :=
+  bytes_keep h.frame hd hn
+
+omit hz in
+theorem KR.pwBytes {s : State} (h : KR (H := H) s₀ s) :
+    bytesAt s.mem (pw s₀) (pwl s₀) = bytesAt s₀.mem (pw s₀) (pwl s₀) :=
+  h.bytes (fun r hr => by
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl
+    · exact hp.pw_o
+    · exact hp.pw_s
+    · exact hp.stk_pw.symm) (by have := hp.pwnw; omega_using [this])
+
+omit hz in
+theorem KR.saltBytes {s : State} (h : KR (H := H) s₀ s) :
+    bytesAt s.mem (salt s₀) (sl s₀) = bytesAt s₀.mem (salt s₀) (sl s₀) :=
+  h.bytes (fun r hr => by
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl
+    · exact hp.sa_o
+    · exact hp.sa_s
+    · exact hp.stk_sa.symm) (by have := hp.sanw; omega_using [this])
+
+omit hz in
+theorem in_wr {s : State} (h : KR (H := H) s₀ s) : scR (H := H) s₀ ∈ s.wr := by rw [h.wr]; exact sc_mem hp
+
+omit hz in
+/-- The parts of `scratch` the functions we call get, as covered regions. -/
+theorem cov_part {s : State} (h : KR (H := H) s₀ s) {o n : Nat} (hon : o + n ≤ (H.W + H.S) * 8) :
+    ∃ r' ∈ s.wr, ∃ off, (sR s₀ o n).base = r'.base + BitVec.ofNat 64 off ∧ off + (sR s₀ o n).len ≤ r'.len :=
+  sub_of_off (in_wr hp h) hon
+
+omit hz in
+theorem cov_low {s : State} (h : KR (H := H) s₀ s) {n : Nat} (hn : n ≤ (H.W + H.S) * 8) :
+    ∃ r' ∈ s.wr, ∃ off, (⟨scr s₀, n⟩ : Region).base = r'.base + BitVec.ofNat 64 off ∧
+      off + (⟨scr s₀, n⟩ : Region).len ≤ r'.len :=
+  sub_of_self (in_wr hp h) hn
+
+/-- A part of `scratch`, readable. -/
+theorem in_rw {s : State} (h : KR (H := H) s₀ s) {o n : Nat} (hon : o + n ≤ (H.W + H.S) * 8) :
+    InRegions (s.rd ++ s.wr) (A s₀ o) n :=
+  VG.Proof.Hmac.Generic.Common.InRegions.right' ⟨_, in_wr hp h, Offset.contains_base _ hon
+    (by have := L_lt hz; omega_using [hon, this])⟩
+
+end
+
+/-! ## Facts about the offsets
+
+Each proved once, by `omega` on `layout`, for the step proofs: an `omega`
+over a step's context, which holds many facts about states and sizes, costs
+far more. -/
+
+theorem PSizes.B4 (hz : PSizes H) : H.P.B % 4 = 0 := by rcases hz.z.B with h | h <;> omega_using [h]
+theorem PSizes.o_B_4_lt_4096 (hz : PSizes H) : H.P.B + 4 < 4096 := by
+  have := hz.z.DN; have := hz.N.2; have := hz.B_le; have := hz.W; omega_arith
+theorem PSizes.o_B_lt_4096 (hz : PSizes H) : H.P.B < 4096 := by
+  have := hz.z.DN; have := hz.N.2; have := hz.B_le; have := hz.W; omega_arith
+theorem PSizes.o_B_lt_p64 (hz : PSizes H) : H.P.B < 2 ^ 64 := by
+  have := hz.z.DN; have := hz.N.2; have := hz.B_le; have := hz.W; omega_arith
+theorem PSizes.o_D_le_p64 (hz : PSizes H) : H.D ≤ 2 ^ 64 := by
+  have := hz.z.DN; have := hz.N.2; have := hz.B_le; have := hz.W; omega_arith
+theorem PSizes.o_D_lt_4096 (hz : PSizes H) : H.D < 4096 := by
+  have := hz.z.DN; have := hz.N.2; have := hz.B_le; have := hz.W; omega_arith
+theorem PSizes.o_D_lt_p16 (hz : PSizes H) : H.D < 2 ^ 16 := by
+  have := hz.z.DN; have := hz.N.2; have := hz.B_le; have := hz.W; omega_arith
+theorem PSizes.o_D_lt_p64 (hz : PSizes H) : H.D < 2 ^ 64 := by
+  have := hz.z.DN; have := hz.N.2; have := hz.B_le; have := hz.W; omega_arith
+theorem PSizes.o_W8_56_le_L (hz : PSizes H) : 8 * H.W + 56 ≤ (H.W + H.S) * 8 := by
+  have : H.S = H.P.N + H.P.B := rfl; have := hz.z.DN; have := hz.N.1; have := hz.B_ge; have := hz.z.D0; omega_arith
+theorem PSizes.o_W8_56_le_outO (hz : PSizes H) : 8 * H.W + 56 ≤ H.outO := by
+  simp only [Hash.outO, Hash.sv]; have := hz.z.DN; omega_using []
+theorem PSizes.o_W8_le_L (hz : PSizes H) : 8 * H.W ≤ (H.W + H.S) * 8 := by
+  have : H.S = H.P.N + H.P.B := rfl; have := hz.z.DN; have := hz.N.1; have := hz.B_ge; have := hz.z.D0; omega_using []
+theorem PSizes.o_W8_le_hkO (hz : PSizes H) : 8 * H.W ≤ H.hkO := by
+  simp only [Hash.hkO, Hash.tO, Hash.uO, Hash.stWO, Hash.stSO, Hash.st1O, Hash.st0O, Hash.sv]; have : H.S = H.P.N + H.P.B := rfl; have := hz.z.DN; omega_using []
+theorem PSizes.o_W8_le_intO (hz : PSizes H) : 8 * H.W ≤ H.intO := by
+  simp only [Hash.intO, Hash.hkO, Hash.tO, Hash.uO, Hash.stWO, Hash.stSO, Hash.st1O, Hash.st0O, Hash.sv]; have : H.S = H.P.N + H.P.B := rfl; have := hz.z.DN; omega_using []
+theorem PSizes.o_W8_le_st0O (hz : PSizes H) : 8 * H.W ≤ H.st0O := by
+  simp only [Hash.st0O, Hash.sv]; have := hz.z.DN; omega_using []
+theorem PSizes.o_W8_le_st1O (hz : PSizes H) : 8 * H.W ≤ H.st1O := by
+  simp only [Hash.st1O, Hash.st0O, Hash.sv]; have : H.S = H.P.N + H.P.B := rfl; have := hz.z.DN; omega_using []
+theorem PSizes.o_W8_le_stSO (hz : PSizes H) : 8 * H.W ≤ H.stSO := by
+  simp only [Hash.stSO, Hash.st1O, Hash.st0O, Hash.sv]; have : H.S = H.P.N + H.P.B := rfl; have := hz.z.DN; omega_using []
+theorem PSizes.o_W8_le_stWO (hz : PSizes H) : 8 * H.W ≤ H.stWO := by
+  simp only [Hash.stWO, Hash.stSO, Hash.st1O, Hash.st0O, Hash.sv]; have : H.S = H.P.N + H.P.B := rfl; have := hz.z.DN; omega_using []
+theorem PSizes.o_W8_le_sv (hz : PSizes H) : 8 * H.W ≤ H.sv := by
+  simp only [Hash.sv]; have := hz.z.DN; omega_using []
+theorem PSizes.o_W8_le_tO (hz : PSizes H) : 8 * H.W ≤ H.tO := by
+  simp only [Hash.tO, Hash.uO, Hash.stWO, Hash.stSO, Hash.st1O, Hash.st0O, Hash.sv]; have : H.S = H.P.N + H.P.B := rfl; have := hz.z.DN; omega_using []
+theorem PSizes.o_W8_le_uO (hz : PSizes H) : 8 * H.W ≤ H.uO := by
+  simp only [Hash.uO, Hash.stWO, Hash.stSO, Hash.st1O, Hash.st0O, Hash.sv]; have : H.S = H.P.N + H.P.B := rfl; have := hz.z.DN; omega_using []
+theorem PSizes.o_cO_64d8_le_outO_24 (hz : PSizes H) : H.cO + 64 / 8 ≤ H.outO + 24 := by
+  simp only [Hash.cO, Hash.outO, Hash.sv]; have := hz.z.DN; omega_using []
+theorem PSizes.o_cO_8_le_L (hz : PSizes H) : H.cO + 8 ≤ (H.W + H.S) * 8 := by
+  simp only [Hash.cO, Hash.sv]; have : H.S = H.P.N + H.P.B := rfl; have := hz.z.DN; have := hz.N.1; have := hz.B_ge; have := hz.z.D0; omega_arith
+theorem PSizes.o_cO_8_le_olO (hz : PSizes H) : H.cO + 8 ≤ H.olO := by
+  simp only [Hash.cO, Hash.olO, Hash.sv]; have := hz.z.DN; omega_using []
+theorem PSizes.o_hkO_D_le_L (hz : PSizes H) : H.hkO + H.D ≤ (H.W + H.S) * 8 := by
+  simp only [Hash.hkO, Hash.tO, Hash.uO, Hash.stWO, Hash.stSO, Hash.st1O, Hash.st0O, Hash.sv]; have : H.S = H.P.N + H.P.B := rfl; have := hz.z.DN; have := hz.N.1; have := hz.B_ge; have := hz.z.D0; omega_arith
+theorem PSizes.o_hkO_hsF_le_L (hz : PSizes H) : H.hkO + H.stream.F ≤ (H.W + H.S) * 8 := by
+  simp only [Hash.hkO, Hash.tO, Hash.uO, Hash.stWO, Hash.stSO, Hash.st1O, Hash.st0O, Hash.sv]; have : H.S = H.P.N + H.P.B := rfl; have := hz.z.DN; have := hz.N.1; have := hz.B_ge; have := hz.z.D0; have : H.stream.F = H.P.N := rfl; omega_arith
+theorem PSizes.o_hkO_lt_4096 (hz : PSizes H) : H.hkO < 4096 := by
+  simp only [Hash.hkO, Hash.tO, Hash.uO, Hash.stWO, Hash.stSO, Hash.st1O, Hash.st0O, Hash.sv]; have : H.S = H.P.N + H.P.B := rfl; have := hz.z.DN; have := hz.N.2; have := hz.B_le; have := hz.W; omega_arith
+theorem PSizes.o_intO_4_le_L (hz : PSizes H) : H.intO + 4 ≤ (H.W + H.S) * 8 := by
+  simp only [Hash.intO, Hash.hkO, Hash.tO, Hash.uO, Hash.stWO, Hash.stSO, Hash.st1O, Hash.st0O, Hash.sv]; have : H.S = H.P.N + H.P.B := rfl; have := hz.z.DN; have := hz.N.1; have := hz.B_ge; have := hz.z.D0; omega_arith
+theorem PSizes.o_intO_lt_4096 (hz : PSizes H) : H.intO < 4096 := by
+  simp only [Hash.intO, Hash.hkO, Hash.tO, Hash.uO, Hash.stWO, Hash.stSO, Hash.st1O, Hash.st0O, Hash.sv]; have : H.S = H.P.N + H.P.B := rfl; have := hz.z.DN; have := hz.N.2; have := hz.B_le; have := hz.W; omega_arith
+theorem PSizes.o_olO_64d8_le_outO_24 (hz : PSizes H) : H.olO + 64 / 8 ≤ H.outO + 24 := by
+  simp only [Hash.outO, Hash.olO, Hash.sv]; have := hz.z.DN; omega_using []
+theorem PSizes.o_olO_8_le_L (hz : PSizes H) : H.olO + 8 ≤ (H.W + H.S) * 8 := by
+  simp only [Hash.olO, Hash.sv]; have : H.S = H.P.N + H.P.B := rfl; have := hz.z.DN; have := hz.N.1; have := hz.B_ge; have := hz.z.D0; omega_arith
+theorem PSizes.o_outO_24_le_L (hz : PSizes H) : H.outO + 24 ≤ (H.W + H.S) * 8 := by
+  simp only [Hash.outO, Hash.sv]; have : H.S = H.P.N + H.P.B := rfl; have := hz.z.DN; have := hz.N.1; have := hz.B_ge; have := hz.z.D0; omega_arith
+theorem PSizes.o_outO_24_lt_p64 (hz : PSizes H) : H.outO + 24 < 2 ^ 64 := by
+  simp only [Hash.outO, Hash.sv]; have := hz.z.DN; have := hz.N.2; have := hz.B_le; have := hz.W; omega_arith
+theorem PSizes.o_outO_64d8_le_outO_24 (hz : PSizes H) : H.outO + 64 / 8 ≤ H.outO + 24 := by
+  simp only [Hash.outO, Hash.sv]; have := hz.z.DN; omega_using []
+theorem PSizes.o_outO_8_le_L (hz : PSizes H) : H.outO + 8 ≤ (H.W + H.S) * 8 := by
+  simp only [Hash.outO, Hash.sv]; have : H.S = H.P.N + H.P.B := rfl; have := hz.z.DN; have := hz.N.1; have := hz.B_ge; have := hz.z.D0; omega_arith
+theorem PSizes.o_outO_8_le_cO (hz : PSizes H) : H.outO + 8 ≤ H.cO := by
+  simp only [Hash.cO, Hash.outO, Hash.sv]; have := hz.z.DN; omega_using []
+theorem PSizes.o_outO_8_le_olO (hz : PSizes H) : H.outO + 8 ≤ H.olO := by
+  simp only [Hash.outO, Hash.olO, Hash.sv]; have := hz.z.DN; omega_using []
+theorem PSizes.o_outO_le_cO (hz : PSizes H) : H.outO ≤ H.cO := by
+  simp only [Hash.cO, Hash.outO, Hash.sv]; have := hz.z.DN; omega_using []
+theorem PSizes.o_outO_le_olO (hz : PSizes H) : H.outO ≤ H.olO := by
+  simp only [Hash.outO, Hash.olO, Hash.sv]; have := hz.z.DN; omega_using []
+theorem PSizes.o_st0O_2mS_le_L (hz : PSizes H) : H.st0O + 2 * H.S ≤ (H.W + H.S) * 8 := by
+  simp only [Hash.st0O, Hash.sv]; have : H.S = H.P.N + H.P.B := rfl; have := hz.z.DN; have := hz.N.1; have := hz.B_ge; have := hz.z.D0; omega_arith
+theorem PSizes.o_st0O_2mS_le_tO (hz : PSizes H) : H.st0O + 2 * H.S ≤ H.tO := by
+  simp only [Hash.tO, Hash.uO, Hash.stWO, Hash.stSO, Hash.st1O, Hash.st0O, Hash.sv]; have : H.S = H.P.N + H.P.B := rfl; have := hz.z.DN; omega_using []
+theorem PSizes.o_st0O_3mS_le_L (hz : PSizes H) : H.st0O + 3 * H.S ≤ (H.W + H.S) * 8 := by
+  simp only [Hash.st0O, Hash.sv]; have : H.S = H.P.N + H.P.B := rfl; have := hz.z.DN; have := hz.N.1; have := hz.B_ge; have := hz.z.D0; omega_arith
+theorem PSizes.o_st0O_S_le_L (hz : PSizes H) : H.st0O + H.S ≤ (H.W + H.S) * 8 := by
+  simp only [Hash.st0O, Hash.sv]; have : H.S = H.P.N + H.P.B := rfl; have := hz.z.DN; have := hz.N.1; have := hz.B_ge; have := hz.z.D0; omega_arith
+theorem PSizes.o_st0O_S_le_hkO (hz : PSizes H) : H.st0O + H.S ≤ H.hkO := by
+  simp only [Hash.hkO, Hash.tO, Hash.uO, Hash.stWO, Hash.stSO, Hash.st1O, Hash.st0O, Hash.sv]; have : H.S = H.P.N + H.P.B := rfl; have := hz.z.DN; omega_using []
+theorem PSizes.o_st0O_S_le_st0O_3mS (hz : PSizes H) : H.st0O + H.S ≤ H.st0O + 3 * H.S := by
+  simp only [Hash.st0O, Hash.sv]; have : H.S = H.P.N + H.P.B := rfl; have := hz.z.DN; omega_using []
+theorem PSizes.o_st0O_S_le_st1O (hz : PSizes H) : H.st0O + H.S ≤ H.st1O := by
+  simp only [Hash.st1O, Hash.st0O, Hash.sv]; have : H.S = H.P.N + H.P.B := rfl; have := hz.z.DN; omega_using []
+theorem PSizes.o_st0O_S_le_stSO (hz : PSizes H) : H.st0O + H.S ≤ H.stSO := by
+  simp only [Hash.stSO, Hash.st1O, Hash.st0O, Hash.sv]; have : H.S = H.P.N + H.P.B := rfl; have := hz.z.DN; omega_using []
+theorem PSizes.o_st0O_le_st0O (hz : PSizes H) : H.st0O ≤ H.st0O := by
+  simp only [Hash.st0O, Hash.sv]; have := hz.z.DN; omega_using []
+theorem PSizes.o_st0O_le_st1O (hz : PSizes H) : H.st0O ≤ H.st1O := by
+  simp only [Hash.st1O, Hash.st0O, Hash.sv]; have : H.S = H.P.N + H.P.B := rfl; have := hz.z.DN; omega_using []
+theorem PSizes.o_st0O_le_stSO (hz : PSizes H) : H.st0O ≤ H.stSO := by
+  simp only [Hash.stSO, Hash.st1O, Hash.st0O, Hash.sv]; have : H.S = H.P.N + H.P.B := rfl; have := hz.z.DN; omega_using []
+theorem PSizes.o_st0O_lt_4096 (hz : PSizes H) : H.st0O < 4096 := by
+  simp only [Hash.st0O, Hash.sv]; have := hz.z.DN; have := hz.N.2; have := hz.B_le; have := hz.W; omega_arith
+theorem PSizes.o_st0O_lt_p64 (hz : PSizes H) : H.st0O < 2 ^ 64 := by
+  simp only [Hash.st0O, Hash.sv]; have := hz.z.DN; have := hz.N.2; have := hz.B_le; have := hz.W; omega_arith
+theorem PSizes.o_st1O_S_le_L (hz : PSizes H) : H.st1O + H.S ≤ (H.W + H.S) * 8 := by
+  simp only [Hash.st1O, Hash.st0O, Hash.sv]; have : H.S = H.P.N + H.P.B := rfl; have := hz.z.DN; have := hz.N.1; have := hz.B_ge; have := hz.z.D0; omega_arith
+theorem PSizes.o_st1O_S_le_hkO (hz : PSizes H) : H.st1O + H.S ≤ H.hkO := by
+  simp only [Hash.hkO, Hash.tO, Hash.uO, Hash.stWO, Hash.stSO, Hash.st1O, Hash.st0O, Hash.sv]; have : H.S = H.P.N + H.P.B := rfl; have := hz.z.DN; omega_using []
+theorem PSizes.o_st1O_S_le_st0O_3mS (hz : PSizes H) : H.st1O + H.S ≤ H.st0O + 3 * H.S := by
+  simp only [Hash.st1O, Hash.st0O, Hash.sv]; have : H.S = H.P.N + H.P.B := rfl; have := hz.z.DN; omega_using []
+theorem PSizes.o_st1O_S_le_stSO (hz : PSizes H) : H.st1O + H.S ≤ H.stSO := by
+  simp only [Hash.stSO, Hash.st1O, Hash.st0O, Hash.sv]; have : H.S = H.P.N + H.P.B := rfl; have := hz.z.DN; omega_using []
+theorem PSizes.o_st1O_S_le_stWO (hz : PSizes H) : H.st1O + H.S ≤ H.stWO := by
+  simp only [Hash.stWO, Hash.stSO, Hash.st1O, Hash.st0O, Hash.sv]; have : H.S = H.P.N + H.P.B := rfl; have := hz.z.DN; omega_using []
+theorem PSizes.o_st1O_S_le_uO (hz : PSizes H) : H.st1O + H.S ≤ H.uO := by
+  simp only [Hash.uO, Hash.stWO, Hash.stSO, Hash.st1O, Hash.st0O, Hash.sv]; have : H.S = H.P.N + H.P.B := rfl; have := hz.z.DN; omega_using []
+theorem PSizes.o_st1O_lt_4096 (hz : PSizes H) : H.st1O < 4096 := by
+  simp only [Hash.st1O, Hash.st0O, Hash.sv]; have : H.S = H.P.N + H.P.B := rfl; have := hz.z.DN; have := hz.N.2; have := hz.B_le; have := hz.W; omega_arith
+theorem PSizes.o_stSO_S_le_L (hz : PSizes H) : H.stSO + H.S ≤ (H.W + H.S) * 8 := by
+  simp only [Hash.stSO, Hash.st1O, Hash.st0O, Hash.sv]; have : H.S = H.P.N + H.P.B := rfl; have := hz.z.DN; have := hz.N.1; have := hz.B_ge; have := hz.z.D0; omega_arith
+theorem PSizes.o_stSO_S_le_st0O_3mS (hz : PSizes H) : H.stSO + H.S ≤ H.st0O + 3 * H.S := by
+  simp only [Hash.stSO, Hash.st1O, Hash.st0O, Hash.sv]; have : H.S = H.P.N + H.P.B := rfl; have := hz.z.DN; omega_using []
+theorem PSizes.o_stSO_S_le_stWO (hz : PSizes H) : H.stSO + H.S ≤ H.stWO := by
+  simp only [Hash.stWO, Hash.stSO, Hash.st1O, Hash.st0O, Hash.sv]; have : H.S = H.P.N + H.P.B := rfl; have := hz.z.DN; omega_using []
+theorem PSizes.o_stSO_hsS_le_L (hz : PSizes H) : H.stSO + H.stream.S ≤ (H.W + H.S) * 8 := by
+  simp only [Hash.stSO, Hash.st1O, Hash.st0O, Hash.sv]; have : H.S = H.P.N + H.P.B := rfl; have := hz.z.DN; have := hz.N.1; have := hz.B_ge; have := hz.z.D0; have : H.stream.S = H.P.N + H.P.B := rfl; omega_arith
+theorem PSizes.o_stSO_lt_4096 (hz : PSizes H) : H.stSO < 4096 := by
+  simp only [Hash.stSO, Hash.st1O, Hash.st0O, Hash.sv]; have : H.S = H.P.N + H.P.B := rfl; have := hz.z.DN; have := hz.N.2; have := hz.B_le; have := hz.W; omega_arith
+theorem PSizes.o_stWO_S_le_L (hz : PSizes H) : H.stWO + H.S ≤ (H.W + H.S) * 8 := by
+  simp only [Hash.stWO, Hash.stSO, Hash.st1O, Hash.st0O, Hash.sv]; have : H.S = H.P.N + H.P.B := rfl; have := hz.z.DN; have := hz.N.1; have := hz.B_ge; have := hz.z.D0; omega_arith
+theorem PSizes.o_stWO_S_le_intO (hz : PSizes H) : H.stWO + H.S ≤ H.intO := by
+  simp only [Hash.intO, Hash.hkO, Hash.tO, Hash.uO, Hash.stWO, Hash.stSO, Hash.st1O, Hash.st0O, Hash.sv]; have : H.S = H.P.N + H.P.B := rfl; have := hz.z.DN; omega_using []
+theorem PSizes.o_stWO_S_le_uO (hz : PSizes H) : H.stWO + H.S ≤ H.uO := by
+  simp only [Hash.uO, Hash.stWO, Hash.stSO, Hash.st1O, Hash.st0O, Hash.sv]; have : H.S = H.P.N + H.P.B := rfl; have := hz.z.DN; omega_using []
+theorem PSizes.o_stWO_hsS_le_L (hz : PSizes H) : H.stWO + H.stream.S ≤ (H.W + H.S) * 8 := by
+  simp only [Hash.stWO, Hash.stSO, Hash.st1O, Hash.st0O, Hash.sv]; have : H.S = H.P.N + H.P.B := rfl; have := hz.z.DN; have := hz.N.1; have := hz.B_ge; have := hz.z.D0; have : H.stream.S = H.P.N + H.P.B := rfl; omega_arith
+theorem PSizes.o_stWO_hsS_le_hkO (hz : PSizes H) : H.stWO + H.stream.S ≤ H.hkO := by
+  simp only [Hash.hkO, Hash.tO, Hash.uO, Hash.stWO, Hash.stSO, Hash.st1O, Hash.st0O, Hash.sv]; have : H.S = H.P.N + H.P.B := rfl; have := hz.z.DN; have : H.stream.S = H.P.N + H.P.B := rfl; omega_arith
+theorem PSizes.o_stWO_hsS_le_intO (hz : PSizes H) : H.stWO + H.stream.S ≤ H.intO := by
+  simp only [Hash.intO, Hash.hkO, Hash.tO, Hash.uO, Hash.stWO, Hash.stSO, Hash.st1O, Hash.st0O, Hash.sv]; have : H.S = H.P.N + H.P.B := rfl; have := hz.z.DN; have : H.stream.S = H.P.N + H.P.B := rfl; omega_arith
+theorem PSizes.o_stWO_le_intO (hz : PSizes H) : H.stWO ≤ H.intO := by
+  simp only [Hash.intO, Hash.hkO, Hash.tO, Hash.uO, Hash.stWO, Hash.stSO, Hash.st1O, Hash.st0O, Hash.sv]; have : H.S = H.P.N + H.P.B := rfl; have := hz.z.DN; omega_using []
+theorem PSizes.o_stWO_le_tO (hz : PSizes H) : H.stWO ≤ H.tO := by
+  simp only [Hash.tO, Hash.uO, Hash.stWO, Hash.stSO, Hash.st1O, Hash.st0O, Hash.sv]; have : H.S = H.P.N + H.P.B := rfl; have := hz.z.DN; omega_using []
+theorem PSizes.o_stWO_lt_4096 (hz : PSizes H) : H.stWO < 4096 := by
+  simp only [Hash.stWO, Hash.stSO, Hash.st1O, Hash.st0O, Hash.sv]; have : H.S = H.P.N + H.P.B := rfl; have := hz.z.DN; have := hz.N.2; have := hz.B_le; have := hz.W; omega_arith
+theorem PSizes.o_sv_80_le_L (hz : PSizes H) : H.sv + 80 ≤ (H.W + H.S) * 8 := by
+  simp only [Hash.sv]; have : H.S = H.P.N + H.P.B := rfl; have := hz.z.DN; have := hz.N.1; have := hz.B_ge; have := hz.z.D0; omega_arith
+theorem PSizes.o_tO_D_le_L (hz : PSizes H) : H.tO + H.D ≤ (H.W + H.S) * 8 := by
+  simp only [Hash.tO, Hash.uO, Hash.stWO, Hash.stSO, Hash.st1O, Hash.st0O, Hash.sv]; have : H.S = H.P.N + H.P.B := rfl; have := hz.z.DN; have := hz.N.1; have := hz.B_ge; have := hz.z.D0; omega_arith
+theorem PSizes.o_tO_lt_4096 (hz : PSizes H) : H.tO < 4096 := by
+  simp only [Hash.tO, Hash.uO, Hash.stWO, Hash.stSO, Hash.st1O, Hash.st0O, Hash.sv]; have : H.S = H.P.N + H.P.B := rfl; have := hz.z.DN; have := hz.N.2; have := hz.B_le; have := hz.W; omega_arith
+theorem PSizes.o_uO_D_le_L (hz : PSizes H) : H.uO + H.D ≤ (H.W + H.S) * 8 := by
+  simp only [Hash.uO, Hash.stWO, Hash.stSO, Hash.st1O, Hash.st0O, Hash.sv]; have : H.S = H.P.N + H.P.B := rfl; have := hz.z.DN; have := hz.N.1; have := hz.B_ge; have := hz.z.D0; omega_arith
+theorem PSizes.o_uO_D_le_tO (hz : PSizes H) : H.uO + H.D ≤ H.tO := by
+  simp only [Hash.tO, Hash.uO, Hash.stWO, Hash.stSO, Hash.st1O, Hash.st0O, Hash.sv]; have : H.S = H.P.N + H.P.B := rfl; have := hz.z.DN; omega_using []
+theorem PSizes.o_uO_lt_4096 (hz : PSizes H) : H.uO < 4096 := by
+  simp only [Hash.uO, Hash.stWO, Hash.stSO, Hash.st1O, Hash.st0O, Hash.sv]; have : H.S = H.P.N + H.P.B := rfl; have := hz.z.DN; have := hz.N.2; have := hz.B_le; have := hz.W; omega_arith
+theorem PSizes.o_outO_mod_8_eq_0 (_hz : PSizes H) : H.outO % 8 = 0 := by
+  simp only [Hash.outO, Hash.sv]; omega_using []
+theorem PSizes.o_outO_lt_4096m8 (hz : PSizes H) : H.outO < 4096 * 8 := by
+  simp only [Hash.outO, Hash.sv]; have := hz.z.DN; have := hz.N.2; have := hz.B_le; have := hz.W; omega_arith
+theorem PSizes.o_olO_mod_8_eq_0 (_hz : PSizes H) : H.olO % 8 = 0 := by
+  simp only [Hash.olO, Hash.sv]; omega_using []
+theorem PSizes.o_olO_lt_4096m8 (hz : PSizes H) : H.olO < 4096 * 8 := by
+  simp only [Hash.olO, Hash.sv]; have := hz.z.DN; have := hz.N.2; have := hz.B_le; have := hz.W; omega_arith
+theorem PSizes.o_B_mod_4_eq_0 (hz : PSizes H) : H.P.B % 4 = 0 := by
+  have := hz.B4; omega_using [this]
+theorem PSizes.o_4mSd4_eq_S (hz : PSizes H) : 4 * (H.S / 4) = H.S := by
+  have : H.S = H.P.N + H.P.B := rfl; have := hz.B4; have := hz.z.N4; omega_arith
+theorem PSizes.o_stSO_mod_4_eq_0 (hz : PSizes H) : H.stSO % 4 = 0 := by
+  simp only [Hash.stSO, Hash.st1O, Hash.st0O, Hash.sv]; have : H.S = H.P.N + H.P.B := rfl; have := hz.B4; have := hz.z.N4; omega_arith
+theorem PSizes.o_stSO_4mSd4_le_4096m4 (hz : PSizes H) : H.stSO + 4 * (H.S / 4) ≤ 4096 * 4 := by
+  simp only [Hash.stSO, Hash.st1O, Hash.st0O, Hash.sv]; have : H.S = H.P.N + H.P.B := rfl; have := hz.z.DN; have := hz.N.2; have := hz.B_le; have := hz.W; have := hz.B4; have := hz.z.N4; omega_arith
+theorem PSizes.o_stWO_mod_4_eq_0 (hz : PSizes H) : H.stWO % 4 = 0 := by
+  simp only [Hash.stWO, Hash.stSO, Hash.st1O, Hash.st0O, Hash.sv]; have : H.S = H.P.N + H.P.B := rfl; have := hz.B4; have := hz.z.N4; omega_arith
+theorem PSizes.o_stWO_4mSd4_le_4096m4 (hz : PSizes H) : H.stWO + 4 * (H.S / 4) ≤ 4096 * 4 := by
+  simp only [Hash.stWO, Hash.stSO, Hash.st1O, Hash.st0O, Hash.sv]; have : H.S = H.P.N + H.P.B := rfl; have := hz.z.DN; have := hz.N.2; have := hz.B_le; have := hz.W; have := hz.B4; have := hz.z.N4; omega_arith
+theorem PSizes.o_intO_mod_4_eq_0 (hz : PSizes H) : H.intO % 4 = 0 := by
+  simp only [Hash.intO, Hash.hkO, Hash.tO, Hash.uO, Hash.stWO, Hash.stSO, Hash.st1O, Hash.st0O, Hash.sv]; have : H.S = H.P.N + H.P.B := rfl; have := hz.B4; have := hz.z.D4; have := hz.z.N4; omega_arith
+theorem PSizes.o_intO_lt_4096m4 (hz : PSizes H) : H.intO < 4096 * 4 := by
+  simp only [Hash.intO, Hash.hkO, Hash.tO, Hash.uO, Hash.stWO, Hash.stSO, Hash.st1O, Hash.st0O, Hash.sv]; have : H.S = H.P.N + H.P.B := rfl; have := hz.z.DN; have := hz.N.2; have := hz.B_le; have := hz.W; omega_arith
+theorem PSizes.o_stWO_le_uO (hz : PSizes H) : H.stWO ≤ H.uO := by
+  simp only [Hash.uO, Hash.stWO, Hash.stSO, Hash.st1O, Hash.st0O, Hash.sv]; have : H.S = H.P.N + H.P.B := rfl; have := hz.z.DN; omega_using []
+theorem PSizes.o_4mDd4_eq_D (hz : PSizes H) : 4 * (H.D / 4) = H.D := by
+  have := hz.z.D4; omega_using [this]
+theorem PSizes.o_uO_mod_4_eq_0 (hz : PSizes H) : H.uO % 4 = 0 := by
+  simp only [Hash.uO, Hash.stWO, Hash.stSO, Hash.st1O, Hash.st0O, Hash.sv]; have : H.S = H.P.N + H.P.B := rfl; have := hz.B4; have := hz.z.N4; omega_using []
+theorem PSizes.o_uO_4mDd4_le_4096m4 (hz : PSizes H) : H.uO + 4 * (H.D / 4) ≤ 4096 * 4 := by
+  simp only [Hash.uO, Hash.stWO, Hash.stSO, Hash.st1O, Hash.st0O, Hash.sv]; have : H.S = H.P.N + H.P.B := rfl; have := hz.z.DN; have := hz.N.2; have := hz.B_le; have := hz.W; have := hz.B4; have := hz.z.D4; have := hz.z.N4; omega_arith
+theorem PSizes.o_tO_mod_4_eq_0 (hz : PSizes H) : H.tO % 4 = 0 := by
+  simp only [Hash.tO, Hash.uO, Hash.stWO, Hash.stSO, Hash.st1O, Hash.st0O, Hash.sv]; have : H.S = H.P.N + H.P.B := rfl; have := hz.B4; have := hz.z.D4; have := hz.z.N4; omega_arith
+theorem PSizes.o_tO_4mDd4_le_4096m4 (hz : PSizes H) : H.tO + 4 * (H.D / 4) ≤ 4096 * 4 := by
+  simp only [Hash.tO, Hash.uO, Hash.stWO, Hash.stSO, Hash.st1O, Hash.st0O, Hash.sv]; have : H.S = H.P.N + H.P.B := rfl; have := hz.z.DN; have := hz.N.2; have := hz.B_le; have := hz.W; have := hz.B4; have := hz.z.D4; have := hz.z.N4; omega_arith
+theorem PSizes.o_cO_mod_8_eq_0 (_hz : PSizes H) : H.cO % 8 = 0 := by
+  simp only [Hash.cO, Hash.sv]; omega_using []
+theorem PSizes.o_cO_lt_4096m8 (hz : PSizes H) : H.cO < 4096 * 8 := by
+  simp only [Hash.cO, Hash.sv]; have := hz.z.DN; have := hz.N.2; have := hz.B_le; have := hz.W; omega_arith
+theorem PSizes.o_st0O_S_eq_st1O (_hz : PSizes H) : H.st0O + H.S = H.st1O := rfl
+theorem PSizes.o_W_le_1024 (hz : PSizes H) : H.W ≤ 1024 := by
+  have := hz.z.DN; have := hz.N.2; have := hz.B_le; have := hz.W; omega_arith
+theorem PSizes.o_st0O_le_stWO (hz : PSizes H) : H.st0O ≤ H.stWO := by
+  simp only [Hash.stWO, Hash.stSO, Hash.st1O, Hash.st0O, Hash.sv]; have : H.S = H.P.N + H.P.B := rfl; have := hz.z.DN; omega_using []
+theorem PSizes.o_st0O_le_hkO (hz : PSizes H) : H.st0O ≤ H.hkO := by
+  simp only [Hash.hkO, Hash.tO, Hash.uO, Hash.stWO, Hash.stSO, Hash.st1O, Hash.st0O, Hash.sv]; have : H.S = H.P.N + H.P.B := rfl; have := hz.z.DN; omega_using []
+theorem PSizes.o_D_le_hsF (hz : PSizes H) : H.D ≤ H.stream.F := by
+  have := hz.z.DN; have : H.stream.F = H.P.N := rfl; omega_arith
+theorem PSizes.o_D_le_B (hz : PSizes H) : H.D ≤ H.P.B := by
+  have := hz.z.DN; have := hz.N.2; have := hz.B_le; have := hz.W; have := hz.N.1; have := hz.B_ge; have := hz.z.D0; omega_arith
+theorem PSizes.o_st0O_mod_4_eq_0 (_hz : PSizes H) : H.st0O % 4 = 0 := by
+  simp only [Hash.st0O, Hash.sv]; omega_using []
+theorem PSizes.o_st0O_4mSd4_le_4096m4 (hz : PSizes H) : H.st0O + 4 * (H.S / 4) ≤ 4096 * 4 := by
+  simp only [Hash.st0O, Hash.sv]; have : H.S = H.P.N + H.P.B := rfl; have := hz.z.DN; have := hz.N.2; have := hz.B_le; have := hz.W; have := hz.B4; have := hz.z.N4; omega_arith
+theorem PSizes.o_B_lt_p16 (hz : PSizes H) : H.P.B < 2 ^ 16 := by
+  have := hz.z.DN; have := hz.N.2; have := hz.B_le; have := hz.W; omega_arith
+theorem PSizes.o_sv_80_le_stWO (hz : PSizes H) : H.sv + 80 ≤ H.stWO := by
+  simp only [Hash.stWO, Hash.stSO, Hash.st1O, Hash.st0O, Hash.sv]; have : H.S = H.P.N + H.P.B := rfl; have := hz.z.DN; omega_using []
+theorem PSizes.o_st0O_3mS_le_stWO (hz : PSizes H) : H.st0O + 3 * H.S ≤ H.stWO := by
+  simp only [Hash.stWO, Hash.stSO, Hash.st1O, Hash.st0O, Hash.sv]; have : H.S = H.P.N + H.P.B := rfl; have := hz.z.DN; omega_using []
+theorem PSizes.o_B_5_le_L (hz : PSizes H) : H.P.B + 5 ≤ (H.W + H.S) * 8 := by
+  have : H.S = H.P.N + H.P.B := rfl; have := hz.z.DN; have := hz.N.1; have := hz.B_ge; have := hz.z.D0; omega_arith
+theorem PSizes.o_0_lt_S (hz : PSizes H) : 0 < H.S := by
+  have : H.S = H.P.N + H.P.B := rfl; have := hz.z.DN; have := hz.N.1; have := hz.B_ge; have := hz.z.D0; omega_arith
+
+end VG.Proof.Pbkdf2.Md.AArch64.Pbk
+
+end
+
+end
+
 
 /-!
 # PBKDF2-HMAC over any Merkle–Damgård hash function on AArch64: `pbkdf2`, correct

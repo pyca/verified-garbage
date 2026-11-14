@@ -1,17 +1,90 @@
 module
 
-import VerifiedGarbage.Proof.TripleDes.X86_64.Pre
+public import VerifiedGarbage.Proof.TripleDes.X86_64.Block
+import VerifiedGarbage.Proof.TripleDes.Schedule
+public import VerifiedGarbage.Proof.TripleDes.X86_64.ConstantTime
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.TripleDes.X86_64.FunctionsLit
+import VerifiedGarbage.Proof.TripleDes.X86_64.RoundLit
 public import VerifiedGarbage.Proof.Modes.X86_64.Core
 import VerifiedGarbage.Proof.Modes.X86_64.Words
 public import VerifiedGarbage.Impl.TripleDes.X86_64.Cbc
 public import VerifiedGarbage.Proof.TripleDes.CbcBlocks
-public import VerifiedGarbage.Proof.TripleDes.X86_64.Block
-import VerifiedGarbage.Proof.TripleDes.Schedule
 import VerifiedGarbage.Proof.Modes.X86_64.Steps
-import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.TripleDes.X86_64.FunctionsLit
-import VerifiedGarbage.Proof.TripleDes.X86_64.RoundLit
+
+/-! ### `TripleDes.X86_64.Pre`, which only this module used -/
+
+section
+
+@[expose] public section
+
+namespace VG.Proof.TripleDes.X86_64
+
+open VG VG.X86_64 VG.X86_64.Straight VG.Impl.TripleDes.X86_64
+open VG.Spec.TripleDes (Direction)
+
+def selectedRound (d : Direction) (j : Nat) : Nat := if d = .encrypt then j else 15 - j
+
+theorem selectedRound_bound (d : Direction) (j : Nat) (hj : j < 16) : selectedRound d j < 16 := by
+  cases d <;> simp only [selectedRound, reduceCtorEq, ite_true, ite_false] <;> omega_arith
+
+theorem keyAddr_component (base : Addr) (c : Nat) (d : Direction) (j : Nat) :
+    keyAddr (componentBase base c) d j = base + BitVec.ofNat 64 (8 * (16 * c + selectedRound d j)) := by
+  unfold keyAddr componentBase selectedRound
+  rw [Offset.add_ofNat_add_ofNat]
+  exact congrArg (fun n => base + BitVec.ofNat 64 n) (by omega_using [])
+
+/-- The block function's precondition, from its 512 bytes of scratch at
+`rdx` writable, the schedule at `rdi` readable and the block at `rsi`
+writable, neither in the scratch. -/
+theorem headPre_of (s : State)
+    (scratchWrites : ∀ i < 64, InRegions s.wr (s.gpr .rdx + BitVec.ofNat 64 (8 * i)) 8)
+    (keyReads : ∀ i < 48, InRegions (s.rd ++ s.wr) (s.gpr .rdi + BitVec.ofNat 64 (8 * i)) 8)
+    (dataWrite : InRegions s.wr (s.gpr .rsi) 8)
+    (keySep : Region.Disjoint ⟨s.gpr .rdi, 384⟩ ⟨s.gpr .rdx, 512⟩)
+    (dataSep : Region.Disjoint ⟨s.gpr .rsi, 8⟩ ⟨s.gpr .rdx, 512⟩) :
+    HeadPre (Spec.TripleDes.componentSchedule (Spec.TripleDes.scheduleAt s.mem (s.gpr .rdi)))
+      (s.gpr .rdi) s := by
+  have inRd : ∀ {a n}, InRegions s.wr a n → InRegions (s.rd ++ s.wr) a n := fun ⟨r, h1, h2⟩ =>
+    ⟨r, List.mem_append_right _ h1, h2⟩
+  have scratchReads : ∀ i < 64, InRegions (s.rd ++ s.wr) (s.gpr .rdx + BitVec.ofNat 64 (8 * i)) 8 :=
+    fun i hi => inRd (scratchWrites i hi)
+  have spills : Ok sboxCfg s := by
+    refine ⟨scratchWrites, ?_, by decide, ?_⟩
+    · intro k hk; change k < 0 at hk; omega
+    · intro k hk j hj; change j < 0 at hj; omega
+  have keySub : ∀ c < 3, ∀ direction : Direction, ∀ j < 16,
+      Region.Sub ⟨keyAddr (componentBase (s.gpr .rdi) c) direction j, 8⟩ ⟨s.gpr .rdi, 384⟩ := by
+    intro c hc direction j hj
+    rw [keyAddr_component]
+    have hindex := selectedRound_bound direction j hj
+    exact Offset.sub_base _ (by omega_using [hc, hindex])
+  have workSub : Region.Sub (workRegion s) ⟨s.gpr .rdx, 512⟩ := Offset.sub_base _ (by decide)
+  have saveSub : Region.Sub (saveRegion s) ⟨s.gpr .rdx, 512⟩ := Region.sub_prefix (by decide)
+  refine ⟨spills, rfl, (fun i hi => scratchReads i (by omega_using [hi])),
+    (fun i hi => scratchWrites i (by omega_using [hi])), scratchReads 7 (by decide),
+    scratchWrites 7 (by decide), scratchWrites 56 (by decide), scratchReads 57 (by decide),
+    scratchWrites 57 (by decide), inRd dataWrite, dataSep.sub_right saveSub, ?_, ?_, ?_, ?_⟩
+  · intro c hc direction j hj
+    rw [keyAddr_component]
+    exact keyReads _ (by have := selectedRound_bound direction j hj; omega_using [hc, this])
+  · intro c hc direction j hj
+    exact (keySep.sub_left (keySub c hc direction j hj)).sub_right workSub
+  · intro c hc direction j hj
+    exact (keySep.sub_left (keySub c hc direction j hj)).sub_right saveSub
+  · intro c hc direction j hj
+    rw [keyAddr_component]
+    exact (VG.Proof.TripleDes.componentSchedule_readW s.mem (s.gpr .rdi) c
+      (selectedRound direction j) hc (selectedRound_bound direction j hj)).symm
+
+end VG.Proof.TripleDes.X86_64
+
+end
+
+end
+
 
 /-!
 # Triple DES's core for the modes on x86-64

@@ -5,16 +5,24 @@ public import VerifiedGarbage.Spec.Ffdh.Contract
 public import VerifiedGarbage.Proof.Ffdh.Contract
 public import VerifiedGarbage.Impl.Ffdh.Arm.ParameterCandidate
 public import VerifiedGarbage.Spec.Ffdh.SievedContract
-
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CandidateEntered
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Spec.Ffdh.SievedCandidate
-import VerifiedGarbage.TCB.Arm.Target
-import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CandidateInput
+public import VerifiedGarbage.TCB.Arm.Target
+public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CandidatePre
+public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CandidateFn
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CandidateDimensions
+import VerifiedGarbage.Proof.Ffdh.Arm.Entered
 import VerifiedGarbage.Proof.Framework.Arm.Contract
-import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.OffsetBelow
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Bignum.Arm.PcDimensions
+import Mathlib.Algebra.GroupWithZero.Basic
+import Mathlib.Algebra.GroupWithZero.Nat
+import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CTResiduePrime
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CTResidueLow
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.ResidueLow
@@ -23,14 +31,15 @@ import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.Residue
 import VerifiedGarbage.Proof.Bignum.Arm.StackOnlyCT
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CTTrialBuffers
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CandidateBuffers
-import VerifiedGarbage.Proof.Bignum.OctetsValue
+public import VerifiedGarbage.Spec.Rsa.Contract
+import VerifiedGarbage.Proof.Rsa.Octets
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CTCandidateResult
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CTShape
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CandidateShape
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CandidateResidue
-import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CTCandidateTest
-import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CTCandidateFinish
+public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CTCandidateTest
+import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CTFinish
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CandidateCount
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CTPolicy
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CTStackBlocks
@@ -43,23 +52,23 @@ import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.EntryContext
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CandidateEntry
 import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.CTBase
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CandidateParams
-import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CandidateFn
 import VerifiedGarbage.Proof.Ffdh.Arm.FrameCT
-import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CandidateSat
-import VerifiedGarbage.Proof.Ffdh.Arm.CallerRows
-import VerifiedGarbage.Proof.Framework.Arm.CallF
+public import VerifiedGarbage.Impl.Ffdh.Arm.CallerRows
+public import VerifiedGarbage.Proof.Framework.Arm.CallF
+import VerifiedGarbage.Proof.Bignum.Arm.DownRowUmaal
 import Mathlib.Data.Nat.Basic
 import Mathlib.Order.Basic
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.TablePointer
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CTPieces
-import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CTPairStep
-import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.PairState
+public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CTPairTrials
+public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.PairState
+import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.PairTrials
+import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.SieveControl
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.PairStep
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.PairMath
 import VerifiedGarbage.Proof.Framework.Arm.Inline
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.SievePolicy
-import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CTPairTrials
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.PairInit
 import VerifiedGarbage.Proof.Bignum.Arm.StackCT
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.Table
@@ -67,9 +76,342 @@ import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CandidatePair
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CandidateTable
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CandidatePairMath
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CTScreenedTests
-import VerifiedGarbage.Proof.Bignum.Arm.PcDimensions
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CandidateQOdd
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CTQOdd
+
+/-! ### `Ffdh.Arm.ParameterCandidate.CandidateInput`, which only this module used -/
+
+section
+
+/-! The public signature supplies all permissions, incoming words and 184 bytes of stack. -/
+
+@[expose] public section
+namespace VG.Proof.Ffdh.Arm.ParameterCandidate
+open VG VG.Arm VG.Proof.Ffdh.Arm VG.Proof.Bignum.Arm VG.Proof.Mont
+
+theorem candidateInput {s : State} {p : CandidateParams}
+    (pre : (Proof.Ffdh.sievedParameterCandidateContract abi 184).pre s) (args : CandidateAbi p s) :
+    CandidateFnInput p s := by
+  sig_pre [Proof.Ffdh.sievedParameterCandidateContract, Proof.Ffdh.parameterCandidateSig,
+    abi, argRegs, reduceClassify, Loc.val, State.addr] at pre
+  obtain ⟨stackFit, argFit, rd, wr, _, _, _, _, _, _, _, _, _, stackOut, stackUsed, stackTape, stackScratch, stackArgs,
+    _, _, _, _, _, _, _, _, _⟩ := pre
+  have widthNat : (s.gpr .r1).toNat = p.length := by
+    rw [args.width, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := p.length_bounds; omega_using [this])]
+  have tapeNat : (stackArg s 2).toNat = p.bytes.length := by
+    rw [args.tapeLength, BitVec.toNat_ofNat, Nat.mod_eq_of_lt p.tapeCount]
+  have capacityNat : (stackArg s 4).toNat = p.capacity := by
+    rw [args.capacity, BitVec.toNat_ofNat, Nat.mod_eq_of_lt p.capacity_fits]
+  rw [args.out, args.used, args.base, widthNat, capacityNat, Nat.mul_comm p.capacity 8] at wr
+  rw [args.tape, tapeNat] at rd
+  rw [args.out, widthNat] at stackOut
+  rw [args.used] at stackUsed
+  rw [args.tape, tapeNat] at stackTape
+  rw [args.base, capacityNat, Nat.mul_comm p.capacity 8] at stackScratch
+  have reserved : s.sp.setWidth 64 - 184#64 = State.addr (s.sp - 184#32) := (FrameStack.addr_sub' stackFit).symm
+  rw [reserved] at stackOut stackUsed stackTape stackScratch stackArgs
+  have fit128 : 128 ≤ s.sp.toNat := by omega_using [stackFit]
+  have sub128 := FrameStack.belowA_sub (sp := s.sp) (a := 128) (b := 184) (by decide) stackFit
+  have localsSub : (⟨State.addr (entered s).sp, 72⟩ : Region).Sub (FrameStack.belowA s.sp 184) :=
+    fun x hx => sub128 x (locals_sub_reserved s fit128 x hx)
+  have savedSub : (⟨State.addr (pcPushed s).sp, 56⟩ : Region).Sub (FrameStack.belowA s.sp 184) :=
+    fun x hx => sub128 x (saved_sub_reserved s fit128 x hx)
+  have belowSub : (FrameStack.belowA (entered s).sp 56).Sub (FrameStack.belowA s.sp 184) := by
+    rw [entered_sp]
+    exact FrameStack.belowA_inner (by decide) stackFit
+  have workspace : Workspace s p.base (8 * p.capacity) := ⟨p.scratchFits, by rw [wr]; simp [State.addr]⟩
+  have tapeRead : InRegions (s.rd ++ s.wr) (State.addr p.tape) p.bytes.length :=
+    ⟨_, List.mem_append_left _ (by rw [rd]; simp [State.addr]), Region.contains_self _ _⟩
+  have start : CandidateStart p (entered s) := by
+    refine ⟨⟨?_, List.mem_cons_self⟩, entered_workspace workspace, ?_, ?_, entered_read tapeRead, ?_, ?_,
+      stackOut.sub_left localsSub, stackUsed.sub_left localsSub, stackScratch.sub_left localsSub, stackTape.sub_left localsSub,
+      stackOut.sub_left belowSub, stackUsed.sub_left belowSub, stackScratch.sub_left belowSub, stackTape.sub_left belowSub⟩
+    · rw [entered_nat s fit128]; have := s.sp.isLt; omega_using []
+    · exact ⟨_, List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (by rw [wr]; simp [State.addr])), Region.contains_self _ _⟩
+    · exact ⟨_, List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (by rw [wr]; simp [State.addr])), Region.contains_self _ _⟩
+    · refine (rsa_bytes_frame (entered_frame s fit128) (by have := p.tapeCount; omega_using [tapeNat]) ?_).trans args.bytes
+      intro r hr
+      rw [List.mem_singleton] at hr
+      subst r
+      exact stackTape.symm.sub_right savedSub
+    · rw [entered_nat s fit128]; omega_using [stackFit]
+  have argStart : stackArgAddr s 0 = State.addr s.sp := by simp [stackArgAddr]
+  have argAddr (i : Nat) (hi : i < 5) : stackArgAddr s i = off (State.addr s.sp) (4 * i) := VG.Arm.addr_add (by omega_using [argFit, hi])
+  have argSub (i : Nat) (hi : i < 5) :
+      (⟨stackArgAddr s i, 4⟩ : Region).Sub ⟨stackArgAddr s 0, 20⟩ := by
+    rw [argStart, argAddr i hi]
+    exact Offset.sub_base _ (by omega_using [hi])
+  have incoming (i : Nat) (hi : i < 5) : IncomingWord (stackArg s i) (128 + 4 * i) (entered s) :=
+    enteredIncoming s fit128 (by omega_using [argFit, hi])
+      ⟨⟨stackArgAddr s 0, 20⟩, List.mem_append_left _ (by rw [rd]; simp), by
+        rw [argStart, argAddr i hi]; exact Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi])⟩
+      ((stackArgs.sub_left sub128).sub_right (argSub i hi)) rfl
+  have nativeIncoming : CandidateIncoming p (entered s) := by
+    refine ⟨?_⟩
+    intro i hi
+    have choices : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 := by omega_using [hi]
+    rcases choices with rfl | rfl | rfl | rfl | rfl
+    all_goals dsimp only [candidateIncomingValue]
+    · rw [← args.generator]; exact incoming 0 (by decide)
+    · rw [← args.tape]; exact incoming 1 (by decide)
+    · rw [← args.tapeLength]; exact incoming 2 (by decide)
+    · rw [← args.base]; exact incoming 3 (by decide)
+    · rw [← args.capacity]; exact incoming 4 (by decide)
+  refine ⟨stackFit, start, nativeIncoming, args.out, args.width, args.used, args.bits, ?_⟩
+  intro r hr
+  simp only [candidateEnteredRegions, List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl | rfl | rfl | rfl
+  · exact stackOut.sub_left savedSub
+  · exact stackUsed.sub_left savedSub
+  · exact stackScratch.sub_left savedSub
+  · exact saved_separate_locals s fit128
+  · have shift : (pcPushed s).sp = (entered s).sp + 72#32 := (BitVec.sub_add_cancel _ _).symm
+    have room : (entered s).sp.toNat + 72 < 2 ^ 32 := by rw [entered_nat s fit128]; have := s.sp.isLt; omega_using []
+    rw [shift, VG.Arm.addr_add room, FrameStack.belowA, FrameStack.addr_sub' start.stackBelow]
+    exact (Offset.disjoint_below_above _ (m := 56) (a := 72) (l := 56) (by decide)).symm
+
+end VG.Proof.Ffdh.Arm.ParameterCandidate
+
+end
+
+end
+
+/-! ### `Bignum.OctetsValue`, which only this module used -/
+
+section
+
+/-! A fixed-width big-endian encoding is determined by its integer value. -/
+
+@[expose] public section
+namespace VG.Proof.Bignum
+open VG
+
+theorem bytesAt_eq_of_value {m : Mem} {base : Addr} {n : Nat} {xs : List Byte}
+    (length : xs.length = n)
+    (value : Spec.Rsa.os2ip (Spec.Rsa.bytesAt m base n) = Spec.Rsa.os2ip xs) :
+    Spec.Rsa.bytesAt m base n = xs := by
+  have encoded := (VG.Proof.Rsa.i2osp_os2ip (Spec.Rsa.bytesAt m base n)).symm
+  rw [bytesAt_length, value, ← length] at encoded
+  simpa only [length] using encoded.trans (VG.Proof.Rsa.i2osp_os2ip xs)
+
+end VG.Proof.Bignum
+
+end
+
+end
+
+/-! ### `Ffdh.Arm.ParameterCandidate.CTCandidateFinish`, which only this module used -/
+
+section
+
+/-! Candidate returns use public output addresses and width. -/
+
+@[expose] public section
+namespace VG.Proof.Ffdh.Arm.ParameterCandidate
+open VG VG.Arm
+open VG.Proof.Ffdh.Arm.KeySearch
+
+def CandidateContextStart (p : CandidatePoint) (s : State) : Prop := CandidateContext p.params p.used s
+
+theorem candidateRejected_ct : RelCT isa (Two CandidateContextStart)
+    VG.Impl.Ffdh.Arm.ParameterCandidate.finRejected (fun _ _ => True) :=
+  two_map (fun p => (⟨p.params.out, p.params.usedPtr, p.params.length⟩ : ResultData))
+    (fun p _ h => ⟨p.used, h.result_context⟩) finRejected_ct
+
+theorem candidateNone_ct : RelCT isa (Two CandidateContextStart)
+    VG.Impl.Ffdh.Arm.ParameterCandidate.finNone (fun _ _ => True) :=
+  two_map (fun p => (⟨p.params.out, p.params.usedPtr, p.params.length⟩ : ResultData))
+    (fun p _ h => ⟨p.used, h.result_context⟩) finNone_ct
+
+end VG.Proof.Ffdh.Arm.ParameterCandidate
+
+end
+
+end
+
+/-! ### `Ffdh.Arm.CallerRows`, which only this module used -/
+
+section
+
+/-! RSA's proven UMAAL row simulation also applies around a selected
+shared callee, preserving its call name, body, trace and stack bound. -/
+
+@[expose] public section
+namespace VG.Proof.Ffdh.Arm.CallerRows
+open VG VG.Arm VG.Impl.Ffdh.Arm VG.Impl.Bignum.Arm
+open VG.Proof.Bignum.Arm
+
+theorem exec {c : Prog isa} {s s' : State} {trace : List Leak}
+    (h : Exec isa c s trace s') : Exec isa (callerRows c) s trace s' := by
+  induction h with
+  | icall hi hc h hr _ => simp only [callerRows]; exact .icall hi hc h hr
+  | icallNext hi hne h _ => simp only [callerRows]; exact .icallNext hi hne h
+  | block h =>
+    simp only [callerRows]
+    split
+    · rename_i e; exact row_sim (e ▸ .block h)
+    · split
+      · rename_i e; exact DownRowUmaal.code_sim (e ▸ .block h)
+      · exact .block h
+  | seq h1 h2 ih1 ih2 =>
+    simp only [callerRows]
+    split
+    · rename_i e; exact row_sim (e ▸ .seq h1 h2)
+    · split
+      · rename_i e; exact DownRowUmaal.code_sim (e ▸ .seq h1 h2)
+      · exact .seq ih1 ih2
+  | iteT hc h ih =>
+    simp only [callerRows]
+    split
+    · rename_i e; exact row_sim (e ▸ .iteT hc h)
+    · split
+      · rename_i e; exact DownRowUmaal.code_sim (e ▸ .iteT hc h)
+      · exact .iteT hc ih
+  | iteF hc h ih =>
+    simp only [callerRows]
+    split
+    · rename_i e; exact row_sim (e ▸ .iteF hc h)
+    · split
+      · rename_i e; exact DownRowUmaal.code_sim (e ▸ .iteF hc h)
+      · exact .iteF hc ih
+  | loopExit h hc ih =>
+    simp only [callerRows]
+    split
+    · rename_i e; exact row_sim (e ▸ .loopExit h hc)
+    · split
+      · rename_i e; exact DownRowUmaal.code_sim (e ▸ .loopExit h hc)
+      · exact .loopExit ih hc
+  | loopNext h hc h' ih ih' =>
+    simp only [callerRows]
+    split
+    · rename_i e; exact row_sim (e ▸ .loopNext h hc h')
+    · rename_i e
+      split
+      · rename_i d; exact DownRowUmaal.code_sim (d ▸ .loopNext h hc h')
+      · rename_i d
+        simp only [callerRows, e, d, ite_false] at ih'
+        exact .loopNext ih hc ih'
+  | call hc h hr _ => exact .call hc h hr
+  | frame hp h hq ih =>
+    simp only [callerRows]
+    split
+    · rename_i e; exact row_sim (e ▸ .frame hp h hq)
+    · split
+      · rename_i e; exact DownRowUmaal.code_sim (e ▸ .frame hp h hq)
+      · exact .frame hp ih hq
+
+theorem verified {c : Prog isa} {contract : Contract isa} (h : Verified target c contract) :
+    Verified target (callerRows c) contract := h.of_sim exec
+
+theorem stack (c : Prog isa) : FrameStack.armStack (callerRows c) ≤ FrameStack.armStack c := by
+  induction c with
+  | icall => exact Nat.le_refl _
+  | block _ =>
+    simp only [callerRows]; split
+    · simp [FrameStack.armStack, rowU, rowLoopU, rowBody, rowStep, rowStepAt]
+    · split
+      · simp [DownRowUmaal.codeU_stack]
+      · rfl
+  | seq a b iha ihb =>
+    simp only [callerRows]
+    split
+    · simp [FrameStack.armStack, rowU, rowLoopU, rowBody, rowStep, rowStepAt]
+    · split
+      · simp [DownRowUmaal.codeU_stack]
+      · simp only [FrameStack.armStack]; omega_using [iha, ihb]
+  | ite _ a b iha ihb =>
+    simp only [callerRows]
+    split
+    · simp [FrameStack.armStack, rowU, rowLoopU, rowBody, rowStep, rowStepAt]
+    · split
+      · simp [DownRowUmaal.codeU_stack]
+      · simp only [FrameStack.armStack]; omega_using [iha, ihb]
+  | loop a _ ih =>
+    simp only [callerRows]
+    split
+    · simp [FrameStack.armStack, rowU, rowLoopU, rowBody, rowStep, rowStepAt]
+    · split
+      · simp [DownRowUmaal.codeU_stack]
+      · exact ih
+  | call _ _ _ => rfl
+  | frame i a _ ih =>
+    simp only [callerRows]
+    split
+    · simp [FrameStack.armStack, rowU, rowLoopU, rowBody, rowStep, rowStepAt]
+    · split
+      · simp [DownRowUmaal.codeU_stack]
+      · cases i <;> simp only [FrameStack.armStack] <;> omega_using [ih]
+
+end VG.Proof.Ffdh.Arm.CallerRows
+
+end
+
+end
+
+/-! ### `Ffdh.Arm.ParameterCandidate.CTPairStep`, which only this module used -/
+
+section
+
+@[expose] public section
+namespace VG.Proof.Ffdh.Arm.ParameterCandidate
+open VG VG.Arm VG.Proof.Bignum.Arm
+open VG.Proof.Ffdh.Arm.KeySearch (Two two_post two_ite)
+
+private def PairDone (p : PairData × Nat) (s : State) : Prop :=
+  s.z=(Spec.Rsa.os2ip p.1.bytes%VG.Impl.RsaKeyGen.tabEntry p.2==0 ||
+    (VG.Impl.RsaKeyGen.tabEntry p.2-1+Spec.Rsa.os2ip p.1.bytes)%VG.Impl.RsaKeyGen.tabEntry p.2==0)
+
+theorem pairActiveStep_ct : RelCT isa (Two PairTrialsStart)
+    VG.Impl.Ffdh.Arm.ParameterCandidate.pairActiveStep (fun _ _ => True) := by
+  have trials : RelCT isa (Two PairTrialsStart) VG.Impl.Ffdh.Arm.ParameterCandidate.pairTrials (Two PairDone) :=
+    two_post pairTrials_ct (fun p s h => by
+      refine WP.mono (pairTrials_ok h.context h.index h.cursor (by rw [h.bytes])) ?_
+      rintro t ⟨flag,_,_⟩
+      exact flag)
+  have flag : RelCT isa (Two PairDone) VG.Impl.Ffdh.Arm.ParameterCandidate.sieveFlag (fun s t => s.sp=t.sp) :=
+    sieveFlag_ct.mono (fun _ _ ⟨_,a,b,sp⟩ => ⟨sp,a.trans b.symm⟩) (fun _ _ h => h)
+  have count : RelCT isa (fun s t => s.sp=t.sp)
+      (.block (VG.Impl.Ffdh.Arm.ParameterCandidate.pairAdvance ++ VG.Impl.Ffdh.Arm.ParameterCandidate.sieveCount))
+      (fun s t => s.sp=t.sp) := stackOnly_ct _ rfl
+  exact trials.seq (flag.seq (count.seq (RelCT.block_nil (fun _ _ _ => trivial))))
+
+structure PairStepStart (p : PairData × Nat) (s : State) : Prop where
+  trials : PairTrialsStart p s
+  bad : s.mem.readW (State.addr (s.sp+64#32)) 32 = if pairAny (Spec.Rsa.os2ip p.1.bytes) p.2 then 1 else 0
+
+private def PairGuarded (p : PairData × Nat) (s : State) : Prop :=
+  PairStepStart p s ∧ s.z = !pairAny (Spec.Rsa.os2ip p.1.bytes) p.2
+
+theorem pairStep_ct : RelCT isa (Two PairStepStart)
+    VG.Impl.Ffdh.Arm.ParameterCandidate.pairStep (fun _ _ => True) := by
+  have guardTrace : RelCT isa (Two PairStepStart)
+      (.block VG.Impl.Ffdh.Arm.ParameterCandidate.sieveFinish) (fun _ _ => True) :=
+    (stackOnly_ct _ rfl).mono (fun _ _ ⟨_,_,_,sp⟩ => sp) (fun _ _ _ => trivial)
+  have guard : RelCT isa (Two PairStepStart)
+      (.block VG.Impl.Ffdh.Arm.ParameterCandidate.sieveFinish) (Two PairGuarded) := by
+    refine two_post guardTrace ?_
+    intro p s h
+    refine WP.mono (sieveFinish_ok h.trials.context.read.frame.space h.bad) ?_
+    rintro t ⟨⟨flag,memory⟩,rest⟩
+    refine ⟨⟨⟨h.trials.context.after_memory memory rest,h.trials.index,?_,?_⟩,?_⟩,flag⟩
+    · rw [rest.gpr .r10 (by simp)]; exact h.trials.cursor
+    · rw [memory]; exact h.trials.bytes
+    · rw [memory,rest.sp]; exact h.bad
+  refine guard.seq (two_ite ?_ ?_ ?_)
+  · intro p s t h k
+    change some s.z=some t.z
+    rw [h.2,k.2]
+  · exact pairActiveStep_ct.mono
+      (fun _ _ ⟨p,a,b,sp⟩ => ⟨p,a.1.1.trials,b.1.1.trials,sp⟩) (fun _ _ h => h)
+  · exact (stackOnly_ct VG.Impl.Ffdh.Arm.ParameterCandidate.sieveSkip rfl).mono
+      (fun _ _ ⟨_,_,_,sp⟩ => sp) (fun _ _ _ => trivial)
+
+end VG.Proof.Ffdh.Arm.ParameterCandidate
+
+end
+
+end
+
 /-! A verified parameter candidate supplied to the native retry/refill controller. -/
 
 -- Formerly `VerifiedGarbage/Proof/Ffdh/Arm/ParameterCandidate/CTTable.lean`, which only this module imported.

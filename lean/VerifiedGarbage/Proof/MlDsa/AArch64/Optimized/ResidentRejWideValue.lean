@@ -1,12 +1,170 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejWideFold
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejFrame
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejTry
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.PlainSimp
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejFourStep
 import VerifiedGarbage.Proof.Framework.AArch64.Simd
 import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Sha3.AArch64.Sums
+
+/-! ### `MlDsa.AArch64.Optimized.ResidentRejWideFold`, which only this module used -/
+
+section
+
+/-! ## From `ResidentRejWide.lean` -/
+
+@[expose] public section
+
+section
+
+namespace VG.Proof.MlDsa.AArch64.Optimized.ResidentRej
+open VG VG.AArch64
+open VG.Proof.MlKem.AArch64
+open VG.Impl.MlDsa.AArch64.Optimized.ResidentRej
+
+def quarterCode (j : Nat) : List Instr :=
+ let d := wideRegs[j]!
+ [.addImm .x .x6 .x2 (12*j),.ldrq .v0 .x6 0,.vop (.tbl d .v0 .v3),
+  .vop (.logic .and d d .v4),.vop (.sub .s4 .v2 d .v5),
+  .vop (.shift .ushr .s4 .v2 .v2 31),.vop (.logic .and .v20 .v20 .v2)]
+
+/-- One quarter of a sixteen-candidate probe updates only its own value
+vector and the accumulated acceptance mask. Source buffers remain untouched. -/
+theorem quarter_ok {s : State} {j : Nat} (hj : j<4)
+    (hr : InRegions (s.rd++s.wr) (s.gpr .x2+BitVec.ofNat 64 (12*j)) 16)
+    (hi : s.v .v3=gatherIndex) :
+    WP isa (.block (quarterCode j)) s fun t =>
+      ProbeFrame [.x6] [.v0,wideRegs[j]!, .v2,.v20] s t ∧
+      t.v wideRegs[j]! =candidates (s.mem.read (s.gpr .x2+BitVec.ofNat 64 (12*j)) 16) (s.v .v4) ∧
+      t.v .v20=s.v .v20 &&&
+        accepted (candidates (s.mem.read (s.gpr .x2+BitVec.ofNat 64 (12*j)) 16) (s.v .v4)) (s.v .v5) := by
+  let d := wideRegs[j]!
+  have hn : d≠.v0 ∧ d≠.v2 ∧ d≠.v3 ∧ d≠.v4 ∧ d≠.v5 ∧ d≠.v20 := by
+    rcases (show j=0 ∨ j=1 ∨ j=2 ∨ j=3 by omega_using [hj]) with rfl | rfl | rfl | rfl <;> decide
+  have hvpres : ∀r∈preservedV,r∉[.v0,d,.v2,.v20] := by
+    rcases (show j=0 ∨ j=1 ∨ j=2 ∨ j=3 by omega_using [hj]) with rfl | rfl | rfl | rfl <;> decide
+  have hadd : WP isa (.block [.addImm .x .x6 .x2 (12*j)]) s fun a =>
+      Only [.x6] s a ∧ a.gpr .x6=s.gpr .x2+BitVec.ofNat 64 (12*j) := by
+    refine wp_addImm (by omega_using [hj]) fun a ha ea => wp_nil ⟨ha,ea⟩
+  change WP isa (.block (([.addImm .x .x6 .x2 (12*j)] : List Instr)++_)) s _
+  refine wp_scalar (by rfl) hadd fun a ⟨ha,ea⟩ hava => ?_
+  refine wp_ldrq (a := s.gpr .x2+BitVec.ofNat 64 (12*j)) (by decide)
+    (by rw [ea]; exact ptr_zero _) (by rw [ha.rd,ha.wr]; exact hr) fun b hb => ?_
+  rw [show ([Instr.vop (.tbl d .v0 .v3),.vop (.logic .and d d .v4),
+      .vop (.sub .s4 .v2 d .v5),.vop (.shift .ushr .s4 .v2 .v2 31),
+      .vop (.logic .and .v20 .v20 .v2)] : List Instr)=
+      ([.vop (.tbl d .v0 .v3),.vop (.logic .and d d .v4),
+      .vop (.sub .s4 .v2 d .v5),.vop (.shift .ushr .s4 .v2 .v2 31)] : List Instr)++
+      [.vop (.logic .and .v20 .v20 .v2)] from rfl,WP.block_append_iff]
+  refine WP.mono (decode_ok hn.2.1 hn.2.2.2.1 hn.2.2.2.2.1
+    (by rw [hb.other .v3 (by decide),hava]; exact hi)) fun c ⟨hc,hval,hbits⟩ => ?_
+  refine wp_vop (d := .v20) rfl fun t ht => WP.block_nil_iff.mpr ?_
+  have hvc : VChg [.v0,d,.v2,.v20] a t :=
+    ((hb.chg.trans hc).trans ht.chg).mono (by
+      intro r hr
+      simp only [List.mem_append,List.mem_cons,List.not_mem_nil,or_false] at *
+      grind only)
+  refine ⟨((ProbeFrame.ofScalar ha hava).trans (ProbeFrame.ofVector hvc hvpres)).mono
+    (by simp) (by simp [d]),?_,?_⟩
+  · rw [ht.other d hn.2.2.2.2.2,hval,hb.v,ha.mem,hb.other .v4 (by decide),hava]
+  · rw [ht.v,hc.get .v20 (by simp [Ne.symm hn.2.2.2.2.2]),
+      hb.other .v20 (by decide),hbits,hb.v,ha.mem,hb.other .v4 (by decide),
+      hb.other .v5 (by decide),hava]
+
+end VG.Proof.MlDsa.AArch64.Optimized.ResidentRej
+
+end
+
+/-! ## From `ResidentRejWideFold.lean` -/
+
+section
+
+namespace VG.Proof.MlDsa.AArch64.Optimized.ResidentRej
+open VG VG.AArch64
+open VG.Proof.MlKem.AArch64
+open VG.Impl.MlDsa.AArch64.Optimized.ResidentRej
+
+abbrev wideVectors : List VReg := [.v0,.v2,.v20,.v16,.v17,.v18,.v19]
+
+def quarterValues (s : State) (j : Nat) : BitVec 128 :=
+ candidates (s.mem.read (s.gpr .x2+BitVec.ofNat 64 (12*j)) 16) (s.v .v4)
+
+def quarterMask (s : State) : Nat → BitVec 128
+ | 0 => s.v .v20
+ | j+1 => quarterMask s j &&& accepted (quarterValues s j) (s.v .v5)
+
+structure QuarterPost (s : State) (n : Nat) (t : State) : Prop where
+ frame : ProbeFrame [.x6] wideVectors s t
+ values : ∀j<n,t.v wideRegs[j]! = quarterValues s j
+ mask : t.v .v20=quarterMask s n
+
+private theorem wide_ne {j : Nat} (hj : j<4) :
+    wideRegs[j]! ≠ .v0 ∧ wideRegs[j]! ≠ .v2 ∧ wideRegs[j]! ≠ .v20 := by
+  rcases (show j=0 ∨ j=1 ∨ j=2 ∨ j=3 by omega_using [hj]) with rfl | rfl | rfl | rfl <;> decide
+
+private theorem wide_inj {i j : Nat} (hi : i<4) (hj : j<4) (hne : i≠j) :
+    wideRegs[i]! ≠ wideRegs[j]! := by
+  have hh : ∀i<4,∀j<4,wideRegs[i]! =wideRegs[j]! → i=j := by decide +kernel
+  exact fun he => hne (hh i hi j hj he)
+
+/-- Compose the four independent probes while preserving earlier decoded
+vectors and accumulating their acceptance bits. -/
+theorem quarters_ok (n : Nat) (hn : n≤4) {s : State}
+    (hi : s.v .v3=gatherIndex)
+    (hr : ∀j<n,InRegions (s.rd++s.wr) (s.gpr .x2+BitVec.ofNat 64 (12*j)) 16) :
+    WP isa (.block ((List.range n).flatMap quarterCode)) s (QuarterPost s n) := by
+  induction n with
+  | zero =>
+    exact WP.block_nil_iff.mpr ⟨⟨Only.refl _ _,fun _ _ => rfl⟩,
+      fun _ h => absurd h (Nat.not_lt_zero _),rfl⟩
+  | succ n ih =>
+    have hn4 : n<4 := by omega_using [hn]
+    rw [List.range_succ,List.flatMap_append,List.flatMap_cons,List.flatMap_nil,List.append_nil,
+      WP.block_append_iff]
+    refine WP.mono (ih (by omega_using [hn]) (fun j hj => hr j (by omega_using [hj]))) fun a ha => ?_
+    refine WP.mono (quarter_ok (s := a) hn4
+      (by rw [ha.frame.only.rd,ha.frame.only.wr,ha.frame.only.get .x2]; exact hr n (by omega_using []))
+      (by rw [ha.frame.vectors .v3 (by decide)]; exact hi)) fun t ⟨ht,hval,hmask⟩ => ?_
+    have hv : candidates (a.mem.read (a.gpr .x2+BitVec.ofNat 64 (12*n)) 16) (a.v .v4)=
+        quarterValues s n := by
+      rw [ha.frame.only.mem,ha.frame.only.get .x2,ha.frame.vectors .v4 (by decide)]
+      rfl
+    have hframe : ProbeFrame [.x6] wideVectors s t := (ha.frame.trans ht).mono
+      (by simp) (by
+        intro r hr'
+        simp only [List.mem_append,List.mem_cons,List.not_mem_nil,or_false] at hr'
+        rcases hr' with h | rfl | h | rfl | rfl
+        · simpa only [wideVectors,List.mem_cons,List.not_mem_nil,or_false] using h
+        · decide
+        · rcases h with rfl
+          rcases (show n=0 ∨ n=1 ∨ n=2 ∨ n=3 by omega_using [hn]) with rfl | rfl | rfl | rfl <;> decide
+        · decide
+        · decide)
+    refine ⟨hframe,?_,?_⟩
+    · intro j hj
+      by_cases he : j=n
+      · subst j
+        rw [hval,hv]
+      · rw [ht.vectors _ (by
+          have hh := wide_ne (j := j) (by omega_using [hn, hj])
+          simp only [List.mem_cons,List.not_mem_nil,or_false,not_or]
+          exact ⟨hh.1,wide_inj (by omega_using [hn, hj]) hn4 he,hh.2.1,hh.2.2⟩)]
+        exact ha.values j (by omega_using [hj, he])
+    · rw [hmask,hv,ha.mask,ha.frame.vectors .v5 (by decide)]
+      rfl
+
+end VG.Proof.MlDsa.AArch64.Optimized.ResidentRej
+
+end
+
+end
+
+end
+
 
 /-! ## From `ResidentRejWideTry.lean` -/
 

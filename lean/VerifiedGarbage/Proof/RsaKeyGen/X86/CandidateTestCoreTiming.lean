@@ -3,26 +3,89 @@ module
 public import VerifiedGarbage.Impl.RsaKeyGen.X86.CandidateTest
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidatePrepareInput
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.MillerRabinTiming
-
 import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
-import VerifiedGarbage.Proof.RsaKeyGen.X86.PreparedR2Timing
+public import VerifiedGarbage.Proof.RsaKeyGen.X86.PreparedR2Timing
 import VerifiedGarbage.Proof.RsaKeyGen.X86.ConstantsTiming
 import VerifiedGarbage.Proof.RsaKeyGen.X86.PreparedR2
 import VerifiedGarbage.Impl.RsaKeyGen.X86.LowPair
-import VerifiedGarbage.Proof.MillerRabin.X86.TimingBlocks
+public import VerifiedGarbage.Proof.MillerRabin.X86.TimingBlocks
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Impl.RsaKeyGen.X86.LowBit
 import VerifiedGarbage.Impl.RsaKeyGen.X86.ExponentMarker
 import VerifiedGarbage.Impl.RsaKeyGen.X86.SigMask
 import VerifiedGarbage.Proof.Framework.KernelRfl
 import VerifiedGarbage.Impl.RsaKeyGen.X86.ExponentShift
-import VerifiedGarbage.Proof.RsaKeyGen.X86.HalfPassTiming
+public import VerifiedGarbage.Impl.RsaKeyGen.X86.HalfPass
 import VerifiedGarbage.Impl.RsaKeyGen.X86.Exponent
 import VerifiedGarbage.Impl.RsaKeyGen.X86.Prepare
-import VerifiedGarbage.Proof.RsaKeyGen.X86.PrepareTimingHeader
+public import VerifiedGarbage.Impl.RsaKeyGen.X86.PrepareHeader
+public import VerifiedGarbage.Proof.RsaKeyGen.X86.PrepareData
+import VerifiedGarbage.Proof.RsaKeyGen.X86.PrepareHeader
+import VerifiedGarbage.Proof.RsaKeyGen.X86.PrepareHeaderTiming
 import VerifiedGarbage.Proof.Framework.X86.Call
 import VerifiedGarbage.Proof.RsaKeyGen.X86.PreparedContext
 import VerifiedGarbage.Proof.RsaKeyGen.X86.Prepare
+
+/-! ### `RsaKeyGen.X86.HalfPassTiming`, which only this module used -/
+
+section
+
+/-! # A masked exponent halving always visits every native word -/
+
+@[expose] public section
+namespace VG.Proof.RsaKeyGen.X86.HalfPass
+open VG VG.X86 VG.Proof.Dsa.X86 VG.Proof.MillerRabin.X86 VG.Impl.RsaKeyGen.X86.HalfPass
+
+theorem code_trace (n src out : Nat) :
+    RelCT isa (VG.X86.Taint.Agree (roundTaint [.edi])) (code n src out)
+      (VG.X86.Taint.Agree (roundTaint [.edi])) :=
+  erased_relCT (code n src out) (code 1 0 0)
+    (VG.Taint.hintOf taint (roundTaint [.edi]) (Code.erase (code 1 0 0)))
+    (by kernel_rfl) (by kernel_rfl) (by kernel_rfl) (by decide +kernel)
+
+end VG.Proof.RsaKeyGen.X86.HalfPass
+
+end
+
+end
+
+/-! ### `RsaKeyGen.X86.PrepareTimingHeader`, which only this module used -/
+
+section
+
+/-! # Fresh candidates acquire identical public prepared metadata -/
+
+@[expose] public section
+namespace VG.Proof.RsaKeyGen.X86.Prepare
+open VG VG.X86 VG.Proof.Mont VG.Proof.Mont.X86 VG.Proof.MillerRabin.X86 VG.Proof.Dsa.X86
+
+def Initial (g : Geometry) (capacity : Nat) (p : BitVec 32) (s : State) (e : Nat := 64 * g.w - 1) : Prop :=
+  ∃ c, Input g c capacity p s e
+
+def InitialPair (g : Geometry) (capacity : Nat) (p : BitVec 32) (s t : State) (e : Nat := 64 * g.w - 1) : Prop :=
+  VG.X86.Taint.Agree (roundTaint [.edi]) s t ∧ Initial g capacity p s e ∧ Initial g capacity p t e
+
+theorem header_pair {g : Geometry} (v : g.Valid) {capacity : Nat} {p : BitVec 32}
+    (length : g.L = 8 * capacity) {e : Nat} :
+    RelCT isa (fun s t => InitialPair g capacity p s t e) (VG.Impl.RsaKeyGen.X86.PrepareHeader.code g.w)
+      (fun s t => PreparedR2.InputPair g capacity p s t e) := by
+  intro s t tr ur u z ⟨H, S, T⟩ E G
+  obtain ⟨trace, agree⟩ := PrepareHeader.code_trace g.w _ _ _ _ _ _ H E G
+  have post {a : State} (I : Initial g capacity p a e) :
+      WP isa (VG.Impl.RsaKeyGen.X86.PrepareHeader.code g.w) a (fun t => PreparedR2.Input g capacity p t e) := by
+    obtain ⟨c, I⟩ := I
+    exact WP.mono (PrepareHeader.code_ok v I.scratch I.caller length I.candidate I.odd)
+      fun _ ⟨R, _, _, _⟩ => ⟨c, R, I.odd, I.top⟩
+  obtain ⟨cu, Cu, ou, tu⟩ := wp_result (post S) E
+  obtain ⟨cz, Cz, oz, tz⟩ := wp_result (post T) G
+  exact ⟨trace, ⟨Cu.context, Cz.context, agree⟩, ⟨cu, Cu, ou, tu⟩, ⟨cz, Cz, oz, tz⟩⟩
+
+end VG.Proof.RsaKeyGen.X86.Prepare
+
+end
+
+end
+
 /-! # Preparation and all witness rounds share only the specified public iteration count -/
 
 -- Formerly `VerifiedGarbage/Proof/RsaKeyGen/X86/PrepareTimingR2.lean`, which only this module imported.

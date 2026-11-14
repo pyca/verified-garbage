@@ -5,20 +5,317 @@ public import VerifiedGarbage.Impl.RsaKeyGen.X86.HeaderRt
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.PreparedR2State
 public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.HeaderFrame
-
-import VerifiedGarbage.Proof.RsaKeyGen.X86.HeaderRt
-import VerifiedGarbage.Proof.RsaKeyGen.X86.HeaderLayout
+public import VerifiedGarbage.Proof.RsaKeyGen.X86.Header
+public import VerifiedGarbage.Proof.Mont.X86.Words
+import VerifiedGarbage.Proof.RsaKeyGen.X86.HeaderStore
+import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Ptr
+import VerifiedGarbage.Proof.Mont.X86.Instr
 import VerifiedGarbage.Proof.RsaKeyGen.X86.HeaderRead
+public import VerifiedGarbage.Proof.Rsa.MontContract
+public import VerifiedGarbage.Proof.MillerRabin.Contract
+import VerifiedGarbage.Proof.Framework.X86.Exec
 import VerifiedGarbage.Proof.RsaKeyGen.X86.LowWord
 import VerifiedGarbage.Proof.RsaKeyGen.X86.PreparedContext
 import VerifiedGarbage.Proof.MillerRabin.X86.Context
-import VerifiedGarbage.Proof.RsaKeyGen.X86.InverseLift
+public import VerifiedGarbage.Impl.RsaKeyGen.X86.InverseLift
+public import VerifiedGarbage.Proof.RsaKeyGen.X86.TrialWord
+public import VerifiedGarbage.TCB.X86.Isa
+import Mathlib.Data.Int.Basic
 import VerifiedGarbage.Proof.Mont.Words32
-import VerifiedGarbage.Proof.Mont.X86.Words
-import VerifiedGarbage.Impl.RsaKeyGen.X86.InverseLift
-import VerifiedGarbage.Proof.Mont.X86.Instr
 import VerifiedGarbage.Impl.RsaKeyGen.X86.MontInverse
 import VerifiedGarbage.Proof.Mont.X86.Inverse
+
+/-! ### `RsaKeyGen.X86.HeaderRt`, which only this module used -/
+
+section
+
+/-! # The run-time header writes `Header.code`'s memory for the width at byte 4 -/
+
+@[expose] public section
+namespace VG.Proof.RsaKeyGen.X86.HeaderRt
+open VG VG.X86 VG.X86.Wp VG.Proof.Mont VG.Proof.Mont.X86
+open VG.Impl.Bignum.X86.PublicContext VG.Impl.RsaKeyGen.X86.HeaderRt
+open VG.Proof.RsaKeyGen.X86.Header (headerMemory pointerMemory storePair_ok)
+open VG.Impl.Mont.X86 (sc)
+
+theorem pointers_ok {w : Nat} (k : Nat) : ∀ (n : Nat) {s : State} {base : Addr} {size : Nat}
+    (_ : Scr s base size) (_ : 64 + 8 * (k + n) ≤ size) (_ : s.gpr .edx = 0#32)
+    (_ : s.gpr .eax = s.gpr .edi + BitVec.ofNat 32 (slot w k))
+    (_ : s.gpr .ecx = BitVec.ofNat 32 (stride w)),
+    WP isa (.block ((List.range' k n).flatMap pointer)) s fun t =>
+      t.mem = (List.range' k n).foldl (pointerMemory base (s.gpr .edi) w) s.mem ∧ Keeps [.eax] s t
+  | 0, _, _, _, _, _, _, _, _ => WP.block_nil ⟨rfl, Keeps.refl _ _⟩
+  | n + 1, s, base, size, scratch, fit, zero, eax, ecx => by
+    rw [List.range'_succ, List.flatMap_cons]
+    unfold pointer
+    refine WP.block_append (WP.block_append (WP.mono (storePair_ok scratch (offset := 64 + 8 * k) (by omega_using [fit]))
+      fun a ⟨M, _, K⟩ => ?_))
+    refine wp_addS rfl fun b B _ => WP.block_nil ?_
+    have Kb : Keeps [.eax] s b := (K.mono (by decide)).widen B.keeps
+    have ih := pointers_ok (w := w) (k + 1) n (s := b) (scratch.of_keeps Kb (by decide)) (by omega_using [fit])
+      (by rw [Kb.1 .edx (by decide)]; exact zero)
+      (by
+        rw [B.gpr, K.1 .eax (by decide), K.1 .ecx (by decide), eax, ecx, BitVec.add_assoc, ← BitVec.ofNat_add, Kb.1 .edi (by decide)]
+        congr 2
+        simp only [slot, stride, Nat.succ_mul]
+        omega_using [])
+      (by rw [Kb.1 .ecx (by decide)]; exact ecx)
+    refine WP.mono ih fun t ⟨Mt, Kt⟩ => ⟨?_, Kb.trans Kt⟩
+    rw [Mt, Kb.1 .edi (by decide), B.mem, M, eax, zero, List.foldl_cons]
+    rfl
+
+theorem code_ok {s : State} {base : Addr} {size w : Nat} (scratch : Scr s base size) (fit : 256 ≤ size)
+    (bound : w ≤ 128) (len : s.mem.readW (off base 4) 32 = BitVec.ofNat 32 (8 * w)) :
+    WP isa (.block code) s fun t =>
+      t.mem = headerMemory base (s.gpr .edi) w s.mem ∧ Keeps [.eax, .ecx, .edx] s t := by
+  unfold code
+  simp only [List.cons_append]
+  refine wp_movS (readSrc_sc scratch (d := 4) (by omega_using [fit])) fun a A _ => wp_movS rfl fun b B _ =>
+    VG.Proof.Bignum.X86.PublicRt.wp_shr (by decide) fun c C => wp_movS rfl fun d D _ => ?_
+  have Kd : Keeps [.eax, .ecx, .edx] s d :=
+    (((A.keeps.mono (by decide)).widen B.keeps).widen C.keeps).widen D.keeps
+  have zero : d.gpr .edx = 0#32 := D.gpr
+  have width : d.gpr .eax = BitVec.ofNat 32 w := by
+    rw [D.other .eax (by decide), C.gpr, B.gpr, A.gpr, len]
+    apply BitVec.eq_of_toNat_eq
+    simp only [BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow]
+    omega_using [bound]
+  have Md : d.mem = s.mem := by rw [D.mem, C.mem, B.mem, A.mem]
+  show WP isa (.block ([.store (sc 48) .eax, .store (sc (48 + 4)) .edx] ++ _)) d _
+  refine WP.block_append (WP.mono (storePair_ok (scratch.of_keeps Kd (by decide)) (offset := 48) (by omega_using [fit]))
+    fun e ⟨Me, _, Ke⟩ => ?_)
+  refine wp_addS rfl fun f F _ => wp_movS rfl fun h H _ => ?_
+  have Kh : Keeps [.eax, .ecx, .edx] s h := ((Kd.widen Ke).widen F.keeps).widen H.keeps
+  have strideF : f.gpr .ecx = BitVec.ofNat 32 (stride w) := by
+    rw [F.gpr, Ke.1 .ecx (by decide), D.other .ecx (by decide), C.other .ecx (by decide), B.other .ecx (by decide),
+      A.gpr, len]
+    apply BitVec.eq_of_toNat_eq
+    have sixteen : (16 : BitVec 32).toNat = 16 := rfl
+    simp only [BitVec.toNat_add, BitVec.toNat_ofNat, stride, sixteen]
+    omega_using []
+  have zeroH : h.gpr .edx = 0#32 := by
+    rw [H.other .edx (by decide), F.other .edx (by decide), Ke.1 .edx (by decide)]; exact zero
+  show WP isa (.block ([.store (sc 224) .eax, .store (sc (224 + 4)) .edx] ++ _)) h _
+  refine WP.block_append (WP.mono (storePair_ok (scratch.of_keeps Kh (by decide)) (offset := 224) (by omega_using [fit]))
+    fun i ⟨Mi, _, Ki⟩ => ?_)
+  refine wp_movS rfl fun j J _ => wp_addS rfl fun l Lr _ => ?_
+  have Kl : Keeps [.eax, .ecx, .edx] s l := ((Kh.widen Ki).widen J.keeps).widen Lr.keeps
+  have edi : l.gpr .edi = s.gpr .edi := Kl.1 .edi (by decide)
+  have eaxL : l.gpr .eax = l.gpr .edi + BitVec.ofNat 32 (slot w 0) := by
+    rw [Lr.gpr, J.gpr, edi, Ki.1 .edi (by decide), Kh.1 .edi (by decide),
+      show slot w 0 = 256 by simp [slot, VG.Impl.Bignum.hdrBytes]]
+    rfl
+  have ecxL : l.gpr .ecx = BitVec.ofNat 32 (stride w) := by
+    rw [Lr.other .ecx (by decide), J.other .ecx (by decide), Ki.1 .ecx (by decide), H.other .ecx (by decide)]
+    exact strideF
+  have zeroL : l.gpr .edx = 0#32 := by
+    rw [Lr.other .edx (by decide), J.other .edx (by decide), Ki.1 .edx (by decide)]; exact zeroH
+  rw [List.range_eq_range']
+  refine WP.mono (pointers_ok 0 8 (scratch.of_keeps Kl (by decide)) (by omega_using [fit]) zeroL eaxL ecxL)
+    fun t ⟨Mt, Kt⟩ => ⟨?_, Kl.widen Kt⟩
+  have strideH : h.gpr .eax = BitVec.ofNat 32 (stride w) := by rw [H.gpr]; exact strideF
+  rw [Mt, edi, Lr.mem, J.mem, Mi, strideH, zeroH, H.mem, F.mem, Me, width, zero, Md]
+  unfold headerMemory
+  rw [List.range_eq_range']
+
+end VG.Proof.RsaKeyGen.X86.HeaderRt
+
+end
+
+end
+
+/-! ### `RsaKeyGen.X86.HeaderLayout`, which only this module used -/
+
+section
+
+/-! # The initialized header satisfies the existing Montgomery layout contract -/
+
+@[expose] public section
+namespace VG.Proof.RsaKeyGen.X86.Header
+open VG VG.X86 VG.Proof.Mont VG.Impl.Bignum.X86.PublicContext
+
+theorem zeroHigh (x : BitVec 32) : 0#32 ++ x = x.setWidth 64 := by
+  apply BitVec.eq_of_toNat_eq
+  simp only [BitVec.toNat_append, BitVec.toNat_setWidth, BitVec.toNat_ofNat, Nat.zero_mod, Nat.zero_shiftLeft, Nat.zero_or]
+  have := x.isLt
+  omega_using []
+
+theorem width_eq {base : Addr} {p : BitVec 32} {w : Nat} {m : Mem} (bound : w < 2 ^ 32) :
+    Proof.Rsa.Mont.wOf (headerMemory base p w m) base = w := by
+  change ((headerMemory base p w m).readW (off base 48) 64).toNat = w
+  rw [header_width, zeroHigh]
+  simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]
+  omega_using [bound]
+
+theorem slot_eq (w j : Nat) : slot w j = Proof.Rsa.Mont.arrAt w j := by
+  unfold slot stride VG.Impl.Bignum.hdrBytes Proof.Rsa.Mont.arrAt Proof.Rsa.Mont.hdrBytes
+  simp only [Nat.mul_add]
+
+theorem layout {base : Addr} {p : BitVec 32} {w wsLen : Nat} {m : Mem}
+    (baseEq : p.setWidth 64 = base) (positive : 2 ≤ w) (bound : w < 2 ^ 31)
+    (fit : Proof.Rsa.Mont.arrAt w 8 ≤ 8 * wsLen) (nowrap : base.toNat + 8 * wsLen ≤ 2 ^ 32) :
+    Proof.Rsa.Mont.Layout (headerMemory base p w m) base wsLen := by
+  unfold Proof.Rsa.Mont.Layout
+  rw [width_eq (by omega_using [bound])]
+  refine ⟨positive, bound, fit, ?_⟩
+  intro j index
+  change (headerMemory base p w m).readW (off base (8 * (8 + j))) 64 = _
+  rw [show 8 * (8 + j) = 64 + 8 * j by omega_using [], header_pointer index, zeroHigh]
+  change addr p (slot w j) = _
+  rw [addr_eq, baseEq, slot_eq]
+  have pNat : p.toNat = base.toNat := by
+    rw [← baseEq, BitVec.toNat_setWidth]
+    have := p.isLt
+    omega_using []
+  have offset : slot w j < Proof.Rsa.Mont.arrAt w 8 := by
+    rw [← slot_eq]
+    unfold slot stride
+    have := Nat.mul_lt_mul_of_pos_right index (by omega_using [] : 0 < 8 * w + 16)
+    omega_using [this]
+  omega_using [fit, nowrap, pNat, offset]
+
+end VG.Proof.RsaKeyGen.X86.Header
+
+end
+
+end
+
+/-! ### `RsaKeyGen.X86.InverseLift`, which only this module used -/
+
+section
+
+/-! # Execute the three-product inverse lift without memory accesses -/
+
+-- Formerly `VerifiedGarbage/Proof/RsaKeyGen/InverseLift.lean`, which only this module imported.
+section
+
+/-! # A one-step negative-inverse lift expressed in native-word parts -/
+
+section
+namespace VG.Proof.RsaKeyGen
+
+theorem inverse_lift_identity {b c x k q y : Int}
+    (inverse : c * x + 1 = b * k) (split : x * k = b * q + y) :
+    c * (x + b * y) + 1 = b * b * (k * k - c * q) := by
+  grind
+
+theorem inverse_lift_dvd {b c x k q y : Int}
+    (inverse : c * x + 1 = b * k) (split : x * k = b * q + y) :
+    b * b ∣ c * (x + b * y) + 1 :=
+  ⟨k * k - c * q, inverse_lift_identity inverse split⟩
+
+theorem inverse_lift_nat {b c x : Nat} (inverse : (c * x + 1) % b = 0) :
+    (c * (x + b * (x * ((c * x + 1) / b) % b)) + 1) % (b * b) = 0 := by
+  let k := (c * x + 1) / b
+  have eq₁ : c * x + 1 = b * k := by
+    have := Nat.div_add_mod (c * x + 1) b
+    rw [inverse, Nat.add_zero] at this
+    exact this.symm
+  have eq₂ : x * k = b * (x * k / b) + x * k % b := (Nat.div_add_mod (x * k) b).symm
+  have I : (c : Int) * x + 1 = (b : Int) * k := by
+    simpa only [Int.natCast_add, Int.natCast_mul, Int.natCast_one] using congrArg (fun n : Nat => (n : Int)) eq₁
+  have S : (x : Int) * k = (b : Int) * (x * k / b : Nat) + (x * k % b : Nat) := by
+    simpa only [Int.natCast_add, Int.natCast_mul] using congrArg (fun n : Nat => (n : Int)) eq₂
+  have D : ((b * b : Nat) : Int) ∣ ((c * (x + b * (x * k % b)) + 1 : Nat) : Int) := by
+    simpa only [Int.natCast_add, Int.natCast_mul, Int.natCast_one] using inverse_lift_dvd I S
+  exact Nat.mod_eq_zero_of_dvd (Int.natCast_dvd_natCast.mp D)
+
+end VG.Proof.RsaKeyGen
+end
+
+end
+
+@[expose] public section
+namespace VG.Proof.RsaKeyGen.X86.InverseLift
+open VG VG.X86 VG.X86.Wp VG.Proof.Mont.X86
+open VG.Impl.RsaKeyGen.X86.InverseLift
+
+def highCarry (a x : BitVec 32) : BitVec 32 :=
+  BitVec.ofNat 32 (a.toNat * x.toNat / 2 ^ 32) +
+    Trial.carryWord (Trial.carry (BitVec.ofNat 32 (a.toNat * x.toNat)) 1)
+
+def upper (a b x : BitVec 32) : BitVec 32 :=
+  BitVec.ofNat 32 (x.toNat *
+    (BitVec.ofNat 32 (b.toNat * x.toNat) + highCarry a x).toNat)
+
+theorem code_ok (s : State) :
+    WP isa (.block code) s fun t =>
+      t.gpr .eax = upper (s.gpr .ebx) (s.gpr .esi) (s.gpr .ecx) ∧
+      t.mem = s.mem ∧ Keeps [.eax, .edx, .ebp] s t := by
+  unfold code
+  refine wp_movS rfl fun a A _ => wp_mul fun b B => wp_addS rfl fun c C cfC =>
+    wp_adcS rfl cfC fun d D _ => ?_
+  have Kd : Keeps [.eax, .edx] s d :=
+    (((A.keeps.mono (by decide)).widen B.keeps).widen C.keeps).widen D.keeps
+  have high : d.gpr .edx = highCarry (s.gpr .ebx) (s.gpr .ecx) := by
+    rw [D.gpr, C.other .edx (by decide), B.edx, A.gpr, A.other .ecx (by decide)]
+    change _ + 0#32 + _ = _
+    rw [BitVec.add_zero, B.eax, A.gpr, A.other .ecx (by decide)]
+    rfl
+  refine wp_movS rfl fun e E _ => wp_movS rfl fun f F _ => wp_mul fun h H =>
+    wp_addS rfl fun i I _ => wp_movS rfl fun j J _ => wp_movS rfl fun k K _ =>
+    wp_mul fun t T => WP.block_nil ?_
+  have keep : Keeps [.eax, .edx, .ebp] s t :=
+    (((((((Kd.mono (by decide)).widen E.keeps).widen F.keeps).widen H.keeps).widen I.keeps).widen
+      J.keeps).widen K.keeps).widen T.keeps
+  refine ⟨?_, ?_, keep⟩
+  · rw [T.eax, K.gpr, J.other .ecx (by decide), I.other .ecx (by decide),
+      H.other .ecx (by decide) (by decide), F.other .ecx (by decide), E.other .ecx (by decide),
+      Kd.1 .ecx (by decide), K.other .ebp (by decide), J.gpr, I.gpr, H.eax, F.gpr,
+      E.other .esi (by decide), Kd.1 .esi (by decide), F.other .ecx (by decide),
+      E.other .ecx (by decide), Kd.1 .ecx (by decide), H.other .ebp (by decide) (by decide),
+      F.other .ebp (by decide), E.gpr, high]
+    rfl
+  · rw [T.mem, K.mem, J.mem, I.mem, H.mem, F.mem, E.mem, D.mem, C.mem, B.mem, A.mem]
+
+theorem highCarry_toNat (a x : BitVec 32) :
+    (highCarry a x).toNat = (a.toNat * x.toNat + 1) / 2 ^ 32 := by
+  have product := Nat.mul_le_mul (show a.toNat ≤ 2 ^ 32 - 1 by have := a.isLt; omega_using [])
+    (show x.toNat ≤ 2 ^ 32 - 1 by have := x.isLt; omega_using [])
+  have split := Nat.div_add_mod (a.toNat * x.toNat) (2 ^ 32)
+  have remainder := Nat.mod_lt (a.toNat * x.toNat) (by decide : 0 < 2 ^ 32)
+  unfold highCarry
+  rw [BitVec.toNat_add, Trial.carryWord_toNat, Trial.carry_toNat]
+  simp only [BitVec.toNat_ofNat, show (1 : BitVec 32).toNat = 1 from rfl]
+  omega_using [product]
+
+theorem upper_toNat (a b x : BitVec 32) :
+    (upper a b x).toNat =
+      x.toNat * ((a.toNat * x.toNat + 1) / 2 ^ 32 + b.toNat * x.toNat) % 2 ^ 32 := by
+  unfold upper
+  rw [BitVec.toNat_ofNat, BitVec.toNat_add, BitVec.toNat_ofNat, highCarry_toNat]
+  rw [Nat.mod_add_mod, Nat.mul_mod_mod]
+  congr 2
+  omega_using []
+
+theorem upper_inverse (a b x : BitVec 32)
+    (inverse : (a.toNat * x.toNat + 1) % 2 ^ 32 = 0) :
+    ((a.toNat + 2 ^ 32 * b.toNat) * (x.toNat + 2 ^ 32 * (upper a b x).toNat) + 1) % 2 ^ 64 = 0 := by
+  have rearrange : (a.toNat + 2 ^ 32 * b.toNat) * x.toNat + 1 =
+      a.toNat * x.toNat + 1 + 2 ^ 32 * (b.toNat * x.toNat) := by grind
+  have full : ((a.toNat + 2 ^ 32 * b.toNat) * x.toNat + 1) % 2 ^ 32 = 0 := by
+    rw [rearrange, Nat.add_mul_mod_self_left]
+    exact inverse
+  have result := VG.Proof.RsaKeyGen.inverse_lift_nat full
+  rw [rearrange, Nat.add_mul_div_left _ _ (by decide)] at result
+  rw [upper_toNat]
+  exact result
+
+theorem inverse_ok (s : State)
+    (inverse : ((s.gpr .ebx).toNat * (s.gpr .ecx).toNat + 1) % 2 ^ 32 = 0) :
+    WP isa (.block code) s fun t =>
+      (((s.gpr .ebx).toNat + 2 ^ 32 * (s.gpr .esi).toNat) *
+        ((t.gpr .ecx).toNat + 2 ^ 32 * (t.gpr .eax).toNat) + 1) % 2 ^ 64 = 0 ∧
+      t.mem = s.mem ∧ Keeps [.eax, .edx, .ebp] s t :=
+  WP.mono (code_ok s) fun t ⟨value, mem, keep⟩ =>
+    ⟨by rw [value, keep.1 .ecx (by decide)]; exact upper_inverse _ _ _ inverse, mem, keep⟩
+
+end VG.Proof.RsaKeyGen.X86.InverseLift
+
+end
+
+end
+
 /-! # A fresh candidate reaches the existing prepared Montgomery contract -/
 
 -- Formerly `VerifiedGarbage/Proof/RsaKeyGen/X86/HeaderContext.lean`, which only this module imported.

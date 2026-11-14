@@ -2,13 +2,118 @@ module
 
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTMain
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowPCT
-public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowSetupCT
+public import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTDefs
+public import VerifiedGarbage.Impl.Rsa.AArch64.WindowFive
+public import VerifiedGarbage.Proof.Bignum.CrtWindowFiveLayout
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTSetupWs
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowBack
-public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowQCT
-import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowMain
+public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowPowCT
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowPow
 import VerifiedGarbage.Proof.Bignum.AArch64.CTR2
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtPow
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowMain
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtMain
+
+/-! ### `Bignum.AArch64.CrtWindowSetupCT`, which only this module used -/
+
+section
+
+/-!
+# RSA with the CRT on AArch64: constant time of the primes' setup
+
+`WindowFive.primesSetup` is the code of `Crt.primesSetup`, and its
+precondition is `SetupPre`'s (`offQ32` is `offQ`, `tabBytes32` is `wsTab`):
+`setup_ct` is the 4-bit setup's.
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Bignum.AArch64.WindowFive
+
+open VG VG.AArch64 VG.Impl.Bignum VG.Impl.Bignum.AArch64 VG.Impl.Bignum.Crt VG.Impl.Rsa.AArch64
+open VG.Impl.Rsa.AArch64.Crt
+open VG.Proof.Bignum
+open VG.Proof.Bignum.CrtWindowFive
+
+def SetupPre (p : SetupPub) (s : State) : Prop :=
+  ∃ pb qb ib : List Byte, Good s p.B p.Z p.w p.minv ∧ 8 ≤ p.w ∧ p.w < 2 ^ 28 ∧
+    offQ32 p.w p.pl + slot (wsWords p.ql) 8 + tabBytes32 (wsWords p.ql) ≤ p.Z ∧
+    word s.mem p.B (8 * sPlen) = BitVec.ofNat 64 p.pl ∧ word s.mem p.B (8 * sQlen) = BitVec.ofNat 64 p.ql ∧
+    word s.mem p.B (8 * sP) = p.pp ∧ word s.mem p.B (8 * sQ) = p.qp ∧ word s.mem p.B (8 * sQinv) = p.ip ∧
+    Src s p.B p.Z p.pp pb ∧ Src s p.B p.Z p.qp qb ∧ Src s p.B p.Z p.ip ib ∧ pb.length = p.pl ∧
+    qb.length = p.ql ∧ ib.length = p.pl ∧ 1 ≤ p.pl ∧ p.pl < 8 * p.w ∧ 1 ≤ p.ql ∧ p.ql < 8 * p.w
+
+/-- `primesSetup` is constant time. -/
+def SetupCT : Prop := RelCT isa (Two SetupPre) (seqs VG.Impl.Rsa.AArch64.WindowFive.primesSetup) fun _ _ => True
+
+theorem setup_ct : SetupCT := VG.Proof.Bignum.AArch64.setup_ct
+
+end VG.Proof.Bignum.AArch64.WindowFive
+
+end
+
+end
+
+/-! ### `Bignum.AArch64.CrtWindowQCT`, which only this module used -/
+
+section
+
+/-! Constant time for the q phase with the wider window. -/
+
+@[expose] public section
+namespace VG.Proof.Bignum.AArch64.WindowFive
+open VG VG.AArch64 VG.Impl.Bignum VG.Impl.Bignum.AArch64 VG.Impl.Bignum.Crt VG.Impl.Rsa.AArch64.Crt
+open VG.Proof.Bignum
+
+def QPreWide (p : PhasePub) (s : State) : Prop := QPre p s ∧ Wide (CrtCTQ.sp p).x
+
+def Q1Wide (p : PhasePub) (s : State) : Prop := CrtCTQ.Q1 p s ∧ Wide (CrtCTQ.sp p).x
+
+def QPhaseCT (W : Window) (M : Mont) (S : Selector) : Prop :=
+  RelCT isa (Two QPreWide)
+    (seqs (VG.Impl.Rsa.AArch64.WindowFive.qPhase W.code M.mm S.code)) (fun _ _ => True)
+
+theorem unit_q1_wide (M : Mont) {p : PhasePub} {s : State} (h : QPreWide p s) :
+    WP isa (seqs (unitSteps M.mm sWsQ)) s (Q1Wide p) :=
+  WP.mono (CrtCTQ.unit_q1 M h.1) fun _ ht => ⟨ht,h.2⟩
+
+theorem mm_pwPre_wide (M : Mont) {p : PhasePub} {s : State} (h : Q1Wide p s) :
+    WP isa (M.mm Public.aY Public.aXm Public.aY) s (PwPreWide sWsQ sDq sQlen (CrtCTQ.sp p)) :=
+  WP.mono (CrtCTQ.mm_pwPre M h.1) fun _ ht => ⟨ht,h.2⟩
+
+theorem pow_q3_wide (W : Window) (M : Mont) (S : Selector) {p : PhasePub} {s : State}
+    (h : PwPreWide sWsQ sDq sQlen (CrtCTQ.sp p) s) :
+    WP isa (seqs (powSteps W.code S.code M.mm sWsQ sDq sQlen)) s (CrtCTQ.Q3 p) := by
+  obtain ⟨h,hwide⟩ := h
+  obtain ⟨_,mx,_,X,_,eb,hg,hw28,hlo,_,hwx2,hwx,hsl,hslv,hws,hX,hX1,hXodd,hnY,hyl,hyc,hsd,
+    hsln,hep,hel,_,hL1,hL2,he⟩ := h
+  exact WP.mono (powPhase_ok W M S hg hw28 hlo hwide hwx2 hwx hsl hslv hws hX hX1 hXodd hnY hyl hyc
+    hsd hsln hep hel hL1 hL2 he) fun _ ⟨hc,hX',_⟩ =>
+      ⟨mx,X,hc,hX',hX1,hwx2,(by omega_using [hw28, hwx] : (CrtCTQ.sp p).x.wx < 2 ^ 28)⟩
+
+theorem qPhase_ct (W : Window) (M : Mont) (S : Selector) (hU : UnitCT M sWsQ)
+    (hP : PowCT W M S sWsQ sDq sQlen) : QPhaseCT W M S := by
+  unfold QPhaseCT
+  rw [qPhase_eq]
+  refine RelCT.seqs_append (by simp [unitSteps,gPow]) (by simp) (RelCT.seq
+    (two_post (Ψ := Q1Wide) (two_map CrtCTQ.up (fun _ _ h => CrtCTQ.uPre h.1) hU)
+      fun _ _ h => unit_q1_wide M h) ?_)
+  refine RelCT.seqs_append (by simp) (by simp [powSteps]) (RelCT.seq
+    (two_post (Ψ := fun p => PwPreWide sWsQ sDq sQlen (CrtCTQ.sp p))
+      (two_map (fun p : PhasePub => (⟨p.B,p.Z,p.w⟩ : Ws))
+        (fun _ _ ⟨⟨_,_,_,hg,_,_,hlo,hhi,_⟩,_⟩ => ⟨_,hg,by dsimp only; omega_using [hlo, hhi]⟩)
+        (M.ct (by unfold MmUse; decide))) fun _ _ h => mm_pwPre_wide M h) ?_)
+  exact RelCT.seqs_append (by simp [powSteps]) (by simp) (RelCT.seq
+    (two_post (Ψ := CrtCTQ.Q3) (two_map CrtCTQ.sp (fun _ _ h => h) hP)
+      fun _ _ h => pow_q3_wide W M S h) (CrtCTQ.mmLeave_ct M))
+
+end VG.Proof.Bignum.AArch64.WindowFive
+
+end
+
+end
+
 
 /-!
 # RSA with the CRT on AArch64: `main` in constant time

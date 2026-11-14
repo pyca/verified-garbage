@@ -1,24 +1,351 @@
 module
 
 import VerifiedGarbage.Proof.Ed448.X86_64.FieldVariant
-import VerifiedGarbage.Proof.Ed448.X86_64.CombLoop
+import VerifiedGarbage.Proof.Ed448.X86_64.VerifyLoop
+public import VerifiedGarbage.Proof.Ed448.Comb
+public import VerifiedGarbage.Impl.Ed448.X86_64.ScalarBase
+public import VerifiedGarbage.Proof.X448.X86_64.Env
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.PlainSimp
+public import VerifiedGarbage.Proof.Ed448.X86_64.Point64.Fn
+import VerifiedGarbage.Proof.Ed448.X86_64.BaseStep
+import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Ed448.X86_64.BaseBits
 import VerifiedGarbage.Proof.Ed448.X86_64.BaseEncode
 public import VerifiedGarbage.Proof.Ed448.X86_64.BaseLocal
-public import VerifiedGarbage.Proof.Ed448.X86_64.Point64.Fn
 public import VerifiedGarbage.Proof.Framework.X86_64.Abi
 public import VerifiedGarbage.Proof.X448.X86_64.InvCall
-public import VerifiedGarbage.Impl.Ed448.X86_64.ScalarBase
 import VerifiedGarbage.Proof.Ed448.X86_64.ScalarMain
 import VerifiedGarbage.Proof.Ed448.X86_64.ScalarIO
 import VerifiedGarbage.Proof.Ed448.X86_64.BaseConst
 import VerifiedGarbage.Proof.Ed448.X86_64.Point64.AddSmall
 import VerifiedGarbage.Proof.X448.X86_64.Inv
-import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.X86_64.Exec
 import VerifiedGarbage.Proof.Ed448.X86_64.Point64.Lit
 import VerifiedGarbage.Proof.X448.X86_64.Lit
+
+/-! ### `Ed448.X86_64.CombLoop`, which only this module used -/
+
+section
+
+/-! ### `Ed448.X86_64.CombSelect`, which only this module used -/
+
+section
+
+/-! Constant-time selection of the compact four-column comb's affine point. -/
+
+@[expose] public section
+
+namespace VG.Proof.Ed448.X86_64.Comb
+
+open VG VG.X86_64 VG.Impl.Ed448.X86_64 VG.Proof.Ed448.X86_64
+open VG.Proof.X448.X86_64 (Scr Index Env E Keep off ofs Outside clob mask contains_sc cswapE opSwap)
+open VG.Impl.X448.X86_64 (BITS slot)
+
+private def pack (a b c d : Nat) : BitVec 64 :=
+  let x := (BitVec.ofNat 8 d).setWidth 64
+  let y := x + x + (BitVec.ofNat 8 c).setWidth 64
+  let z := y + y + (BitVec.ofNat 8 b).setWidth 64
+  z + z + (BitVec.ofNat 8 a).setWidth 64
+
+private theorem mask_calc : ∀ a < 2, ∀ b < 2, ∀ c < 2, ∀ d < 2, ∀ i < 16,
+    (0 : BitVec 64) - 0 - (BitVec.ofBool (decide
+      ((pack a b c d ^^^ (BitVec.ofNat 32 i).signExtend 64).toNat <
+        ((1 : BitVec 32).signExtend 64).toNat))).setWidth 64 =
+      mask (decide (a + b * 2 + c * 4 + d * 8 = i)) := by decide +kernel
+
+private theorem ea_set {s : State} (r : Reg) (v : BitVec 64) (o : Nat)
+    (hr : r ≠ .rdi) (hb : r ≠ .rbx) :
+    (s.setReg r v).ea { base := .rdi, index := some .rbx, disp := (o : Int) } =
+      s.ea { base := .rdi, index := some .rbx, disp := (o : Int) } := by
+  simp only [State.ea, RegUpd.gpr_setReg, Ne.symm hr, Ne.symm hb, ite_false]
+
+private theorem ea_flags {s : State} (v : BitVec 64) (c o' : Bool) (o : Nat) :
+    (arithFlags s v c o').ea { base := .rdi, index := some .rbx, disp := (o : Int) } =
+      s.ea { base := .rdi, index := some .rbx, disp := (o : Int) } := rfl
+
+/-- The mask compares the four bits with a public table index; no secret affects an address. -/
+theorem mask_ok {s : State} {base : Addr} (hs : Scr s base) {t i : Nat}
+    (ht : t < 114) (hi : i < 16) (hb : s.gpr .rbx = BitVec.ofNat 64 t)
+    {a b c d : Nat} (ha : a < 2) (hb' : b < 2) (hc : c < 2) (hd : d < 2)
+    (ba : s.mem (off base (BITS + t)) = BitVec.ofNat 8 a)
+    (bb : s.mem (off base (BITS + 114 + t)) = BitVec.ofNat 8 b)
+    (bc : s.mem (off base (BITS + 228 + t)) = BitVec.ofNat 8 c)
+    (bd : s.mem (off base (BITS + 342 + t)) = BitVec.ofNat 8 d) :
+    WP isa (.block (combMask i)) s fun u =>
+      u.gpr .rcx = mask (decide (a + b * 2 + c * 4 + d * 8 = i)) ∧
+      (∀ r, r ∉ [Reg.rax, .rdx, .rcx] → u.gpr r = s.gpr r) ∧
+      u.mem = s.mem ∧ u.rd = s.rd ∧ u.wr = s.wr := by
+  have ia : InRegions (s.rd ++ s.wr) (off base (BITS + t)) 1 :=
+    ⟨_, List.mem_append_right _ hs.wr, contains_sc (by simp only [BITS]; omega_using [ht])⟩
+  have ib : InRegions (s.rd ++ s.wr) (off base (BITS + 114 + t)) 1 :=
+    ⟨_, List.mem_append_right _ hs.wr, contains_sc (by simp only [BITS]; omega_using [ht])⟩
+  have ic : InRegions (s.rd ++ s.wr) (off base (BITS + 228 + t)) 1 :=
+    ⟨_, List.mem_append_right _ hs.wr, contains_sc (by simp only [BITS]; omega_using [ht])⟩
+  have id : InRegions (s.rd ++ s.wr) (off base (BITS + 342 + t)) 1 :=
+    ⟨_, List.mem_append_right _ hs.wr, contains_sc (by simp only [BITS]; omega_using [ht])⟩
+  apply WP.of_runBlock
+  simp only [combMask, runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, readSrc32,
+    execAlu, State.load8, State.setReg32, ea_set .rax _ _ (by decide) (by decide), ea_set .rdx _ _ (by decide) (by decide), ea_flags, ea_bitsAt hs.rdi hb, ia, ib, ic, id, ba, bb, bc, bd,
+    RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, RegUpd.cf_arithFlags, RegUpd.cf_setReg,
+    RegUpd.mem_setReg, RegUpd.mem_arithFlags, RegUpd.rd_setReg, RegUpd.wr_setReg,
+    RegUpd.rd_arithFlags, RegUpd.wr_arithFlags, ite_true, ite_false, reduceCtorEq,
+    Option.map_some, Option.bind_some, Option.some.injEq, exists_eq_left']
+  refine ⟨mask_calc a ha b hb' c hc d hd i hi, fun r hr => ?_, trivial, trivial, trivial⟩
+  simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
+  simp only [hr.1, hr.2.1, hr.2.2, ite_false]
+
+/-- The expanded scalar bits, beyond the slots every point operation modifies. -/
+def Bits (base : Addr) (k : Nat) (s : State) : Prop :=
+  ∀ t < 456, s.mem (off base (BITS + t)) = BitVec.ofNat 8 (k / 2 ^ t % 2)
+
+theorem Bits.keep {base : Addr} {k : Nat} {s u : State} (h : Bits base k s) (f : Keep base s u) :
+    Bits base k u := by
+  intro t ht
+  have hout : ofs base (off base (BITS + t)) < 64 ∨
+      64 + 1584 ≤ ofs base (off base (BITS + t)) := by
+    rw [VG.Proof.X448.X86_64.ofs_off' base (by simp only [BITS]; omega_using [ht])]
+    right; simp only [BITS]; omega_using []
+  rw [f.mem _ hout]
+  exact h t ht
+
+theorem mask_bits_ok {s : State} {base : Addr} (hs : Scr s base) {k t i : Nat}
+    (ht : t < 114) (hi : i < 16) (hb : s.gpr .rbx = BitVec.ofNat 64 t) (bs : Bits base k s) :
+    WP isa (.block (combMask i)) s fun u =>
+      u.gpr .rcx = mask (decide (Proof.Ed448.Comb.digit k t = i)) ∧ Keep base s u ∧ u.mem = s.mem := by
+  have bb := bs (t + 114) (by omega_using [ht])
+  have bc := bs (t + 228) (by omega_using [ht])
+  have bd := bs (t + 342) (by omega_using [ht])
+  rw [show BITS + (t + 114) = BITS + 114 + t by omega_using []] at bb
+  rw [show BITS + (t + 228) = BITS + 228 + t by omega_using []] at bc
+  rw [show BITS + (t + 342) = BITS + 342 + t by omega_using []] at bd
+  refine WP.mono (mask_ok hs ht hi hb (Nat.mod_lt _ (by decide)) (Nat.mod_lt _ (by decide))
+    (Nat.mod_lt _ (by decide)) (Nat.mod_lt _ (by decide)) (bs t (by omega_using [ht])) bb bc bd)
+    fun u ⟨cu, gu, mu, ru, wu⟩ => ⟨cu, ⟨fun r hr => gu r ?_, ru, wu, ?_⟩, mu⟩
+  · intro h
+    have hm : ∀ r ∈ [Reg.rax, .rdx, .rcx], r ∈ clob := by decide
+    exact hr (hm r h)
+  · rw [mu]; exact Outside.refl _ _ _ _
+
+private theorem entry_words : ∀ i < 16,
+    VG.Proof.X448.toFe (VG.Proof.X448.X86_64.wv (words7 (Impl.Ed448.Comb.entry i).1.val)) =
+      (Impl.Ed448.Comb.entry i).1 ∧
+    VG.Proof.X448.toFe (VG.Proof.X448.X86_64.wv (words7 (Impl.Ed448.Comb.entry i).2.val)) =
+      (Impl.Ed448.Comb.entry i).2 := by decide +kernel
+
+/-- Selection changes only the selected coordinates and two temporary coordinates. -/
+def SelKeeps (e e' : Env) : Prop :=
+  ∀ j, j ≠ 3 → j ≠ 4 → j ≠ 8 → j ≠ 9 → e' j = e j
+
+theorem entry_ok {s : State} {base : Addr} (hs : Scr s base) {k t i : Nat}
+    (ht : t < 114) (hi : i < 16) (hb : s.gpr .rbx = BitVec.ofNat 64 t) (bs : Bits base k s) :
+    WP isa (.block (combEntry i)) s fun u =>
+      Keep base s u ∧
+      (E u.mem base 8, E u.mem base 9) =
+        (if Proof.Ed448.Comb.digit k t = i then Impl.Ed448.Comb.entry i
+          else (E s.mem base 8, E s.mem base 9)) ∧
+      SelKeeps (E s.mem base) (E u.mem base) := by
+  rw [combEntry, List.append_assoc, List.append_assoc, List.append_assoc, WP.block_append_iff]
+  refine WP.mono (constE_ok hs 3 _ (entry_words i hi).1) fun s1 ⟨k1, e1⟩ => ?_
+  rw [WP.block_append_iff]
+  refine WP.mono (constE_ok (k1.scr hs) 4 _ (entry_words i hi).2) fun s2 ⟨k2, e2⟩ => ?_
+  rw [WP.block_append_iff]
+  refine WP.mono (mask_bits_ok (k2.scr (k1.scr hs)) ht hi
+    (by rw [k2.gpr _ (by decide), k1.gpr _ (by decide), hb]) ((bs.keep k1).keep k2))
+    fun s3 ⟨c3, k3, m3⟩ => ?_
+  rw [WP.block_append_iff]
+  refine WP.mono (cswapE (k3.scr (k2.scr (k1.scr hs))) 8 3 (by decide) c3)
+    fun s4 ⟨k4, c4, e4⟩ => ?_
+  refine WP.mono (cswapE (k4.scr (k3.scr (k2.scr (k1.scr hs)))) 9 4 (by decide) (c4.trans c3))
+    fun u ⟨ku, _, eu⟩ => ?_
+  refine ⟨(((k1.trans k2).trans k3).trans k4).trans ku, ?_, ?_⟩
+  · rw [eu, e4, m3, e2, e1]
+    by_cases he : Proof.Ed448.Comb.digit k t = i <;>
+      simp [opSwap, he]
+  · intro j h3 h4 h8 h9
+    rw [eu, e4, m3, e2, e1]
+    simp only [opSwap, Function.update_of_ne h3, Function.update_of_ne h4,
+      Function.update_of_ne h8, Function.update_of_ne h9]
+
+private def picked (xs : List Nat) (d : Nat) (q : Spec.X448.Fe × Spec.X448.Fe) :=
+  xs.foldl (fun q i => if d = i then Impl.Ed448.Comb.entry i else q) q
+
+private theorem picked_eq (xs : List Nat) (d : Nat) (q : Spec.X448.Fe × Spec.X448.Fe) :
+    picked xs d q = if d ∈ xs then Impl.Ed448.Comb.entry d else q := by
+  induction xs generalizing q with
+  | nil => simp [picked]
+  | cons i xs ih =>
+    change picked xs d (if d = i then Impl.Ed448.Comb.entry i else q) = _
+    rw [ih]
+    by_cases hi : d = i
+    · subst i; simp
+    · by_cases hx : d ∈ xs <;> simp [hi, hx]
+
+private theorem entries_ok (xs : List Nat) (hx : ∀ i ∈ xs, i < 16)
+    {s : State} {base : Addr} (hs : Scr s base) {k t : Nat}
+    (ht : t < 114) (hb : s.gpr .rbx = BitVec.ofNat 64 t) (bs : Bits base k s) :
+    WP isa (.block (xs.flatMap combEntry)) s fun u => Keep base s u ∧
+      (E u.mem base 8, E u.mem base 9) =
+        picked xs (Proof.Ed448.Comb.digit k t) (E s.mem base 8, E s.mem base 9) ∧
+      SelKeeps (E s.mem base) (E u.mem base) := by
+  induction xs generalizing s with
+  | nil => exact WP.block_nil ⟨Keep.refl _ _, rfl, fun _ _ _ _ _ => rfl⟩
+  | cons i xs ih =>
+    rw [List.flatMap_cons, WP.block_append_iff]
+    refine WP.mono (entry_ok hs ht (hx i List.mem_cons_self) hb bs) fun v ⟨kv, ev, fv⟩ => ?_
+    refine WP.mono (ih (fun j hj => hx j (List.mem_cons_of_mem _ hj)) (kv.scr hs)
+      (by rw [kv.gpr _ (by decide), hb]) (bs.keep kv)) fun u ⟨ku, eu, fu⟩ => ?_
+    refine ⟨kv.trans ku, ?_, fun j h3 h4 h8 h9 => (fu j h3 h4 h8 h9).trans (fv j h3 h4 h8 h9)⟩
+    rw [eu, ev]; simp only [picked, List.foldl_cons]
+
+/-- The selected affine point, while preserving the accumulator and curve constant. -/
+theorem select_ok {s : State} {base : Addr} (hs : Scr s base) {k t : Nat}
+    (ht : t < 114) (hb : s.gpr .rbx = BitVec.ofNat 64 t) (bs : Bits base k s) :
+    WP isa (.block combSelect) s fun u => Keep base s u ∧
+      (E u.mem base 8, E u.mem base 9) = Impl.Ed448.Comb.entry (Proof.Ed448.Comb.digit k t) ∧
+      SelKeeps (E s.mem base) (E u.mem base) := by
+  refine WP.mono (entries_ok (List.range 16) (fun i hi => List.mem_range.mp hi) hs ht hb bs)
+    fun u ⟨ku, eu, fu⟩ => ⟨ku, ?_, fu⟩
+  rw [eu, picked_eq]
+  simp only [List.mem_range, Proof.Ed448.Comb.digit_lt k t, ite_true]
+
+end VG.Proof.Ed448.X86_64.Comb
+
+end
+
+end
+
+
+/-! The 114 iterations of the four-column Ed448 fixed-base comb. -/
+
+@[expose] public section
+
+namespace VG.Proof.Ed448.X86_64.Comb
+
+open VG VG.X86_64 VG.Impl.Ed448 VG.Impl.Ed448.X86_64 VG.Proof.Ed448 VG.Proof.Ed448.X86_64
+open VG.Proof.X448.X86_64 (Scr Index Env E Keep clob Outside)
+open VG.Proof.Ed448.Comb (accScalar digit)
+
+/-- Move the sum into the accumulator, preserving the curve constant and testing the counter. -/
+theorem accept_ok {s : State} {base : Addr} (hs : Scr s base) {t : Nat}
+    (ht : t < 114) (hb : s.gpr .rbx = BitVec.ofNat 64 t) :
+    WP isa (.block combAccept) s fun u => Keep base s u ∧
+      pt (E u.mem base) 0 1 2 = pt (E s.mem base) 3 4 5 ∧
+      E u.mem base 11 = E s.mem base 11 ∧ u.zf = some (decide (t = 0)) := by
+  rw [combAccept, List.append_assoc, List.append_assoc, WP.block_append_iff]
+  refine WP.mono (copySlot_ok hs 0 3) fun s1 ⟨k1, e1⟩ => ?_
+  rw [WP.block_append_iff]
+  refine WP.mono (copySlot_ok (k1.scr hs) 1 4) fun s2 ⟨k2, e2⟩ => ?_
+  rw [WP.block_append_iff]
+  refine WP.mono (copySlot_ok (k2.scr (k1.scr hs)) 2 5) fun s3 ⟨k3, e3⟩ => ?_
+  refine WP.mono (testRbx_ok s3 t (by omega_using [ht])
+    (by rw [k3.gpr _ (by decide), k2.gpr _ (by decide), k1.gpr _ (by decide), hb]))
+    fun u ⟨zu, gu, mu, ru, wu⟩ => ?_
+  refine ⟨⟨fun r hr => (gu r).trans (((k1.trans k2).trans k3).gpr r hr),
+    ru.trans (k3.rd.trans (k2.rd.trans k1.rd)), wu.trans (k3.wr.trans (k2.wr.trans k1.wr)), ?_⟩,
+    ?_, ?_, zu⟩
+  · rw [mu]; exact (k1.mem.trans k2.mem).trans k3.mem
+  · rw [mu, e3, e2, e1]; simp (disch := decide) only [pt, Function.update_self, Function.update_of_ne]
+  · rw [mu, e3, e2, e1]; simp (disch := decide) only [Function.update_of_ne]
+
+private theorem step_rep {p : Spec.Ed448.Point} {k t : Nat} (ht : t < 114)
+    (hp : Rep p (accScalar k (t + 1) • baseAff)) :
+    Rep (Spec.Ed448.pointAdd (Proof.Ed448.double p)
+      (Proof.X448.basePt (Impl.Ed448.Comb.entry (digit k t)))) (accScalar k t • baseAff) := by
+  have h := pointAdd_rep (double_rep hp) (Proof.Ed448.Comb.entry_rep _ (Proof.Ed448.Comb.digit_lt k t))
+  rw [← two_nsmul, smul_smul, ← add_nsmul, ← Proof.Ed448.Comb.accScalar_step k t ht] at h
+  exact h
+
+variable {P : Point64.Ops} (hP : Point64.PointOk P)
+
+include hP in
+theorem step_ok {s : State} {base : Addr} (hs : Scr s base) {k t : Nat} (ht : t < 114)
+    (hb : s.gpr .rbx = BitVec.ofNat 64 (t + 1)) (bs : Bits base k s)
+    (hd : E s.mem base 11 = Spec.Ed448.d)
+    (hp : Rep (pt (E s.mem base) 0 1 2) (accScalar k (t + 1) • baseAff)) :
+    WP isa (combStep P) s fun u =>
+      u.gpr .rbx = BitVec.ofNat 64 t ∧ u.zf = some (decide (t = 0)) ∧
+      (∀ r, r ∉ .rbx :: clob → u.gpr r = s.gpr r) ∧ u.rd = s.rd ∧ u.wr = s.wr ∧
+      Outside base 64 1584 s.mem u.mem ∧ E u.mem base 11 = Spec.Ed448.d ∧
+      Rep (pt (E u.mem base) 0 1 2) (accScalar k t • baseAff) := by
+  rw [combStep]
+  refine WP.seq (WP.mono (dec_ok s hb) fun s1 ⟨b1, g1, m1, rd1, wr1⟩ => ?_)
+  have hs1 : Scr s1 base := ⟨(g1 _ (by decide)).trans hs.rdi, wr1 ▸ hs.wr, hs.nowrap⟩
+  refine WP.seq (WP.mono (hP.dbl hs1) fun s2 ⟨k2, e2⟩ => ?_)
+  have bs2 : Bits base k s2 := (show Bits base k s1 from by intro i hi; rw [m1]; exact bs i hi).keep k2
+  have b2 : s2.gpr .rbx = BitVec.ofNat 64 t := by rw [k2.gpr _ (by decide), b1]
+  refine WP.seq (WP.mono (select_ok (k2.scr hs1) ht b2 bs2) fun s3 ⟨k3, q3, f3⟩ => ?_)
+  have d3 : E s3.mem base 11 = Spec.Ed448.d := by
+    rw [f3 11 (by decide) (by decide) (by decide) (by decide), e2,
+      doubleOps_keep _ _ (Or.inl (by decide)), m1, hd]
+  have p3 : pt (E s3.mem base) 0 1 2 = Proof.Ed448.double (pt (E s.mem base) 0 1 2) := by
+    rw [pt_congr (f3 0 (by decide) (by decide) (by decide) (by decide))
+      (f3 1 (by decide) (by decide) (by decide) (by decide))
+      (f3 2 (by decide) (by decide) (by decide) (by decide)), e2, doubleOps_eval, m1]
+  refine WP.seq (WP.mono (hP.add (k3.scr (k2.scr hs1)) d3) fun s4 ⟨k4, e4⟩ => ?_)
+  have b4 : s4.gpr .rbx = BitVec.ofNat 64 t := by
+    rw [k4.gpr _ (by decide), k3.gpr _ (by decide), b2]
+  refine WP.mono (accept_ok (k4.scr (k3.scr (k2.scr hs1))) ht b4) fun u ⟨ku, pu, du, zu⟩ => ?_
+  have ku1 := ((k2.trans k3).trans k4).trans ku
+  refine ⟨(ku.gpr _ (by decide)).trans b4, zu, fun r hr => ?_, ku1.rd.trans rd1,
+    ku1.wr.trans wr1, ?_, ?_, ?_⟩
+  · simp only [List.mem_cons, not_or] at hr
+    exact (ku1.gpr r hr.2).trans (g1 r hr.1)
+  · rw [← m1]; exact ku1.mem
+  · rw [du, e4, Point64.addAffineOps_keep _ _ (Or.inr (Or.inl (by decide))), d3]
+  · rw [pu, e4, Point64.addAffineOps_eval, d3, addWith_d, p3]
+    have hx := congrArg Prod.fst q3
+    have hy := congrArg Prod.snd q3
+    dsimp only at hx hy
+    rw [hx, hy]
+    exact step_rep ht hp
+
+/-- The accumulator represents the already-processed high bits of all four columns. -/
+structure Inv (base : Addr) (k : Nat) (s₀ : State) (n : Nat) (s : State) : Prop where
+  scr : Scr s base
+  rbx : s.gpr .rbx = BitVec.ofNat 64 n
+  gpr : ∀ r, r ∉ .rbx :: clob → s.gpr r = s₀.gpr r
+  rd : s.rd = s₀.rd
+  wr : s.wr = s₀.wr
+  mem : Outside base 64 1584 s₀.mem s.mem
+  d : E s.mem base 11 = Spec.Ed448.d
+  rep : Rep (pt (E s.mem base) 0 1 2) (accScalar k n • baseAff)
+
+include hP in
+theorem loop_ok {s₀ : State} {base : Addr} {k : Nat} (bs : Bits base k s₀) :
+    ∀ n, ∀ s, 1 ≤ n → n ≤ 114 → Inv base k s₀ n s →
+      WP isa (.loop (combStep P) .ne) s fun u => Inv base k s₀ 0 u := by
+  intro n s hn1 hn2 hi
+  refine WP.loop (M := isa) (Q := fun u => Inv base k s₀ 0 u)
+    (fun m s => 1 ≤ m ∧ m ≤ 114 ∧ Inv base k s₀ m s) ?_ n s ⟨hn1, hn2, hi⟩
+  rintro m s ⟨hm1, hm2, hi⟩
+  obtain ⟨t, rfl⟩ : ∃ t, m = t + 1 := ⟨m - 1, by omega_using [hm1]⟩
+  have bss : Bits base k s := by
+    intro j hj
+    rw [hi.mem _ (Or.inr (by
+      rw [VG.Proof.X448.X86_64.ofs_off' base (by simp only [Impl.X448.X86_64.BITS]; omega_using [hj])]
+      simp only [Impl.X448.X86_64.BITS]; omega_using []))]
+    exact bs j hj
+  refine WP.mono (step_ok hP hi.scr (by omega_using [hm2]) hi.rbx bss hi.d hi.rep)
+    fun u ⟨bu, zu, gu, ru, wu, ou, du, pu⟩ => ?_
+  have inv : Inv base k s₀ t u :=
+    ⟨⟨(gu _ (by decide)).trans hi.scr.rdi, wu ▸ hi.scr.wr, hi.scr.nowrap⟩, bu,
+      fun r hr => (gu r hr).trans (hi.gpr r hr), ru.trans hi.rd, wu.trans hi.wr,
+      hi.mem.trans ou, du, pu⟩
+  simp only [eval, zu, Option.map_some]
+  rcases Nat.eq_zero_or_pos t with h | h
+  · subst h; exact .inl ⟨rfl, inv⟩
+  · exact .inr ⟨by simp only [decide_eq_false (by omega_using [h] : ¬t = 0), Bool.not_false],
+      t, by omega_using [], h, by omega_using [hm2], inv⟩
+
+end VG.Proof.Ed448.X86_64.Comb
+
+end
+
+end
+
 
 /-!
 # Ed448 base-point multiplication on x86-64: the whole function

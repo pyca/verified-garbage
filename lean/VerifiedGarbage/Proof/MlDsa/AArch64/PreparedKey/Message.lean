@@ -5,17 +5,14 @@ import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.CachedVerifyCorrect
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.CachedVerifyCall
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.CachedVerifyCT
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Message.VerifyCall
-
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.RootedCachedVerifyPre
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.RootedCachedVerifyCT
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.RootedCachedVerifySat
-
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AArch64.Syms
 import VerifiedGarbage.Proof.MlKem.Mem
 import VerifiedGarbage.Proof.MlDsa.AArch64.PreparedKey.Verified
-
 public import VerifiedGarbage.Proof.MlDsa.AArch64.PreparedKey.SignEntryTiming
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Message.Entry
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Message.HashMu
@@ -24,7 +21,8 @@ import VerifiedGarbage.Proof.MlDsa.AArch64.Message.SignCorrect
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Message.PairedCallTiming
 import VerifiedGarbage.Proof.MlDsa.AArch64.Message.OptimizedRel
 import VerifiedGarbage.Proof.MlDsa.AArch64.Message.HashCT
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Message.PairedTopTiming
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PairedRootsExec
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.StaticRootsExecution
 public import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.TableWords
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTableWords
@@ -42,6 +40,31 @@ public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.Inst
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PairedRootsEntry
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.StaticRoots
 public import VerifiedGarbage.Spec.MlDsa.CachedVerify
+
+/-! ### `MlDsa.AArch64.Message.PairedTopTiming`, which only this module used -/
+
+section
+
+@[expose] public section
+
+namespace VG.Proof.MlDsa.AArch64.Message.Paired
+open VG VG.AArch64 VG.Impl.MlDsa.AArch64.Message
+open VG.Proof.MlDsa.Message
+open VG.Proof.MlKem.AArch64 (Only)
+open VG.Spec.MlDsa
+open VG.Spec.Sha3 (bytesAt)
+open VG.Proof.MlDsa.AArch64.Sign (StaticRoots pairedSignRootConsts)
+variable {p : Params}
+
+structure SPub (p : Params) (s t : State) extends Message.SPub p s t where
+  roots : rootsAt s=rootsAt t
+
+end VG.Proof.MlDsa.AArch64.Message.Paired
+
+end
+
+end
+
 
 @[expose] public section
 

@@ -1,6 +1,25 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CandidateTestsMath
+public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.ScreenedTestsMath
+
+/-! ### `Ffdh.Arm.ParameterCandidate.CandidateTestsMath`, which only this module used -/
+
+section
+
+/-! The native candidate uses the reviewed early-p witness policy. -/
+
+@[expose] public section
+namespace VG.Proof.Ffdh.Arm.ParameterCandidate
+open VG
+
+def candidateTests (p : CandidateParams) (used : Nat) : Option (Bool × List Byte) := screenedTests p used
+
+end VG.Proof.Ffdh.Arm.ParameterCandidate
+
+end
+
+end
+
 
 /-! Screening stages of the existing candidate specification, before witness tests. -/
 

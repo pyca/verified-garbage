@@ -9,41 +9,75 @@ public import VerifiedGarbage.Impl.Ffdh.Arm.CachedPower
 public import VerifiedGarbage.Impl.Ffdh.Arm.KeyGenerate
 public import VerifiedGarbage.Proof.Bignum.Arm.MontBackend
 public import VerifiedGarbage.TCB.Arm.Isa
-
-import VerifiedGarbage.Proof.Ffdh.Arm.EnvironmentPrepareLaw
+public import VerifiedGarbage.Proof.Ffdh.Arm.EnvironmentPrepareLaw
 import VerifiedGarbage.Proof.Ffdh.Arm.CachedPrepare
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Ffdh.Arm.CachedGenerationEnvironment
+public import VerifiedGarbage.Proof.Ffdh.Arm.CachedGenerationEnvironment
 import VerifiedGarbage.Proof.Ffdh.Arm.KeyPrepareLaw
 import VerifiedGarbage.Proof.Ffdh.Arm.CachedPrepareCT
 import VerifiedGarbage.Proof.Ffdh.Arm.StackCT
 import VerifiedGarbage.Proof.Bignum.Arm.WindowBlocksCT
 import VerifiedGarbage.Proof.Ffdh.Arm.CachedPrepareState
-import VerifiedGarbage.Impl.Ffdh.Arm.SampleScalar
+public import VerifiedGarbage.Impl.Ffdh.Arm.SampleScalar
 import VerifiedGarbage.Proof.Ffdh.Arm.EnvironmentBoundLaw
 import VerifiedGarbage.Proof.Ffdh.Arm.KeyScalar
 import VerifiedGarbage.Proof.Ffdh.Arm.SampleScalarArgs
-import VerifiedGarbage.Proof.Ffdh.Arm.SampleCut
-import VerifiedGarbage.Proof.Ffdh.Arm.ScalarLayout
-import VerifiedGarbage.Proof.Ffdh.Arm.PrepareStack
-import VerifiedGarbage.Proof.Ffdh.Arm.KeyOutputs
+import VerifiedGarbage.Proof.Bignum.Arm.PcDimensions
+public import VerifiedGarbage.Proof.Ffdh.Arm.Octets
+public import VerifiedGarbage.Proof.Ffdh.Arm.SampleMemory
+public import Batteries.Tactic.Init
+public import Batteries.Tactic.PermuteGoals
+public import Batteries.Tactic.SeqFocus
+public import VerifiedGarbage.Proof.Framework.GetElem
+public import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Ffdh.Arm.SamplePrefix
+import VerifiedGarbage.Proof.Ffdh.Arm.SampleFirstRetained
+import VerifiedGarbage.Proof.Ffdh.Arm.ZeroOptional
+import VerifiedGarbage.Proof.Bignum.Arm.CopyBuffer
+import VerifiedGarbage.Proof.Bignum.Arm.CopyRegion
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+public import VerifiedGarbage.Impl.Bignum.Arm.CopyBytes
+public import VerifiedGarbage.Proof.X25519.Arm.Instr
+public import VerifiedGarbage.Impl.Ffdh.Arm.GenerateKey
+public import VerifiedGarbage.Spec.Rsa.Contract
+import VerifiedGarbage.Proof.Ffdh.Arm.KeyMemory
+import VerifiedGarbage.Proof.Ffdh.Arm.OutputSlice
+import VerifiedGarbage.Proof.Dsa.PackedBytes
+public import VerifiedGarbage.Proof.Ffdh.Arm.Output
+public import VerifiedGarbage.Proof.Ffdh.KeyScalar
+public import VerifiedGarbage.Proof.Mont.Words
+import VerifiedGarbage.Proof.Dsa.Generation.Memory
+import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Bignum.Arm.KeepsLayout
+public import VerifiedGarbage.Proof.Ffdh.Arm.ScalarLayout
+public import VerifiedGarbage.Proof.Ffdh.Arm.PrepareStack
+public import VerifiedGarbage.Proof.Ffdh.Arm.KeyOutputs
 import VerifiedGarbage.Proof.Bignum.Arm.ArithmeticReady
 import VerifiedGarbage.Proof.Bignum.Arm.ArithmeticExternal
-import VerifiedGarbage.TCB.Code
-import VerifiedGarbage.Proof.Ffdh.Arm.Context
-import VerifiedGarbage.Proof.Ffdh.Arm.SampleScalarCT
-import VerifiedGarbage.Proof.Ffdh.Arm.KeyScalarCT
+public import VerifiedGarbage.TCB.Code
+public import VerifiedGarbage.Proof.Ffdh.Arm.Context
+public import VerifiedGarbage.Proof.Ffdh.Arm.SampleBoundLaw
+public import VerifiedGarbage.Proof.Ffdh.Arm.KeyScalarCT
+public import VerifiedGarbage.Proof.Framework.RelCT
 import VerifiedGarbage.Proof.Ffdh.Arm.KeyArgsCT
 import VerifiedGarbage.Proof.Bignum.Arm.StackCT
-import VerifiedGarbage.Proof.Framework.RelCT
-import VerifiedGarbage.Proof.Ffdh.Arm.EnvironmentSampleLaw
+import VerifiedGarbage.Proof.Ffdh.Arm.KeyByteCT
+public import VerifiedGarbage.Proof.Ffdh.Arm.EnvironmentSampleLaw
 import VerifiedGarbage.Proof.Ffdh.Arm.CachedSamplePolicy
 import VerifiedGarbage.Proof.Ffdh.Arm.CachedSampleCT
 import VerifiedGarbage.Proof.Ffdh.Arm.CachedSampleBound
 import VerifiedGarbage.Proof.Bignum.Arm.CombExpBackend
 import VerifiedGarbage.Proof.Ffdh.Arm.CachedPowerMetadata
-import VerifiedGarbage.Proof.Ffdh.Arm.CachedGenerationTable
+import VerifiedGarbage.Proof.Ffdh.Arm.CachedGenerationFacts
+public import VerifiedGarbage.Proof.Bignum.Arm.CombTableState
+import VerifiedGarbage.Proof.Bignum.Octets
+import VerifiedGarbage.Proof.Ffdh.Domain
+import VerifiedGarbage.Proof.Bignum.ExportEncoding
+import VerifiedGarbage.Proof.Bignum.ByteWords
+import VerifiedGarbage.Proof.Framework.CallLay
+import VerifiedGarbage.Proof.Framework.AddrArith
+import Mathlib.Tactic.Ring
 import VerifiedGarbage.Proof.Rsa.FixedBaseComb
 import VerifiedGarbage.Proof.Bignum.Arm.TwoExpMontgomeryCT
 import VerifiedGarbage.Proof.Bignum.Arm.TwoExpSharedCT
@@ -54,44 +88,1294 @@ import VerifiedGarbage.Proof.Ffdh.Arm.CachedPowerArgsCT
 import VerifiedGarbage.Proof.Ffdh.Arm.SampleEnvironment
 import VerifiedGarbage.Proof.Ffdh.Arm.SamplePowerLaw
 import VerifiedGarbage.Proof.Ffdh.Arm.CachedPowerArgs
-import VerifiedGarbage.Proof.Ffdh.Arm.EnvironmentTailLaw
+public import VerifiedGarbage.Proof.Ffdh.Arm.EnvironmentTailLaw
 import VerifiedGarbage.Proof.Ffdh.Arm.KeyFinish
 import VerifiedGarbage.Proof.Ffdh.Arm.ExportResult
 import VerifiedGarbage.Proof.Ffdh.Arm.ExchangeMain
 import VerifiedGarbage.Proof.Ffdh.Arm.Range
 import VerifiedGarbage.Proof.Bignum.Math
-import VerifiedGarbage.Proof.Ffdh.Arm.KeyMemory
 import VerifiedGarbage.Proof.Ffdh.Arm.KeyTailLaw
 import VerifiedGarbage.Proof.Framework.Taint
-import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Ffdh.Arm.RangeCT
-import VerifiedGarbage.Spec.Ffdh.CachedKeyGenerationContract
-import VerifiedGarbage.Proof.Ffdh.Arm.SampleResult
+public import VerifiedGarbage.Spec.Ffdh.CachedKeyGenerationContract
+public import VerifiedGarbage.Proof.Ffdh.Arm.SampleResult
 import VerifiedGarbage.TCB.Arm.Target
-import VerifiedGarbage.Proof.Ffdh.Arm.SampleSpec
+import VerifiedGarbage.Proof.Ffdh.Arm.DomainSpec
+import VerifiedGarbage.Proof.Ffdh.Arm.PrivateSpec
+import VerifiedGarbage.Proof.Ffdh.Power
+import VerifiedGarbage.Proof.Rsa.Octets
+import VerifiedGarbage.Proof.Ffdh.Arm.CheckPublicSpec
 import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Contract
 import Init.Prelude
 import VerifiedGarbage.TCB.Artifact
 import VerifiedGarbage.Proof.Ffdh.Arm.CachedKeyGenerateData
-import VerifiedGarbage.Proof.Ffdh.Domain
-import VerifiedGarbage.Proof.Ffdh.Arm.CheckPublicSpec
 import VerifiedGarbage.Proof.Ffdh.Arm.CachedKeyGenerateFn
-import VerifiedGarbage.Proof.Ffdh.Arm.CachedKeyGenerateContractCT
+import VerifiedGarbage.Proof.Ffdh.Arm.CachedKeyGenerateInput
+import VerifiedGarbage.Proof.Ffdh.Arm.CachedKeyGenerateEnvironment
+public import VerifiedGarbage.Proof.Ffdh.Arm.KeyMain
+import VerifiedGarbage.Proof.Framework.Sig
+import VerifiedGarbage.Proof.Ffdh.Arm.CachedKeyGeneratePre
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+public import VerifiedGarbage.Impl.Ffdh.Arm.Domain
+public import VerifiedGarbage.Proof.Ffdh.Arm.KeyState
+import VerifiedGarbage.Proof.Ffdh.Arm.PrepareAt
+public import VerifiedGarbage.Proof.Ffdh.Arm.ScalarRange
+import VerifiedGarbage.Proof.Ffdh.Arm.ImportAt
+import VerifiedGarbage.Proof.Bignum.Arm.SmallConst
+import VerifiedGarbage.Proof.Ffdh.Arm.KeyCallMemory
+import VerifiedGarbage.Proof.Framework.Arm.Syms
+import VerifiedGarbage.Proof.Framework.Semantics
+import VerifiedGarbage.Impl.Ffdh.Arm.SampleKeyGenerate
+import VerifiedGarbage.Proof.Ffdh.Arm.ScalarRangeCT
+import VerifiedGarbage.Proof.Ffdh.Arm.ImportAtCT
+import VerifiedGarbage.Proof.Ffdh.Arm.FlagCT
+import VerifiedGarbage.TCB.Mem
+import VerifiedGarbage.Proof.Ffdh.Arm.Head
+import VerifiedGarbage.Proof.Ffdh.Arm.HeadCT
+import VerifiedGarbage.Proof.Ffdh.Arm.Block
+import VerifiedGarbage.Proof.Ffdh.Arm.FrameCT
+import VerifiedGarbage.Proof.Ffdh.Arm.Entered
+import VerifiedGarbage.Proof.Ffdh.Arm.CachedKeyGenerateEntry
 import VerifiedGarbage.Proof.Ffdh.Arm.CachedKeyGenerateSat
 import VerifiedGarbage.Proof.Bignum.Arm.CombExpChoose
-import VerifiedGarbage.Proof.Bignum.Arm.CombExpPhase
-import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Bignum.Arm.CombExpLoop
+import VerifiedGarbage.Proof.Bignum.Arm.CombExpInitial
+public import VerifiedGarbage.Proof.Bignum.Arm.CombExpKernel
+public import VerifiedGarbage.Spec.Rsa
+import VerifiedGarbage.Proof.Bignum.FoldedPublic
+public import VerifiedGarbage.Proof.Bignum.Arm.CombExpState
+public import VerifiedGarbage.Proof.Bignum.Arm.TwoExpMontgomery
 import VerifiedGarbage.Impl.Bignum.Arm.CombExp
 import VerifiedGarbage.Proof.Bignum.Arm.CombExpControl
 import VerifiedGarbage.Proof.Bignum.Arm.CombExpStepCT
-import VerifiedGarbage.Proof.Bignum.Arm.CombExpLoop
-import VerifiedGarbage.Proof.Bignum.Arm.CombExpKernel
-import VerifiedGarbage.Proof.Bignum.Arm.CombExpInitial
 import VerifiedGarbage.Proof.Bignum.Arm.CombExpInitialCT
 import VerifiedGarbage.Proof.Framework.Arm.CallF
 import VerifiedGarbage.Proof.Bignum.Arm.RoundState
-import VerifiedGarbage.Proof.Ffdh.Arm.KeyCallMemory
+
+/-! ### `Ffdh.Arm.SampleCut`, which only this module used -/
+
+section
+
+/-! ### `Ffdh.Arm.SampleSuffix`, which only this module used -/
+
+section
+
+/-! ### `Ffdh.Arm.CopyOptional`, which only this module used -/
+
+section
+
+/-! Copy the possibly empty suffix after a key scalar's masked leading byte. -/
+
+@[expose] public section
+namespace VG.Proof.Ffdh.Arm
+open VG VG.Arm VG.Proof.Bignum.Arm
+open VG.Proof.X25519.Arm (Rest ofNat_beq_zero)
+
+theorem copyOptional_ok (s : State) {src dst : BitVec 32} {n : Nat}
+    (fits : n < 2 ^ 32) (sourceFits : src.toNat + n ≤ 2 ^ 32) (destFits : dst.toNat + n ≤ 2 ^ 32)
+    (read : InRegions (s.rd ++ s.wr) (State.addr src) n) (write : InRegions s.wr (State.addr dst) n)
+    (separate : Region.Disjoint ⟨State.addr src, n⟩ ⟨State.addr dst, n⟩)
+    (source : s.gpr .r1 = src) (dest : s.gpr .r0 = dst) (count : s.gpr .lr = BitVec.ofNat 32 n) :
+    WP isa (VG.Impl.Ffdh.Arm.Domain.GenerateKey.unlessZero .lr VG.Impl.Bignum.Arm.copyBytes) s fun t =>
+      Spec.Rsa.bytesAt t.mem (State.addr dst) n = Spec.Rsa.bytesAt s.mem (State.addr src) n ∧
+      Frame [⟨State.addr dst, n⟩] s.mem t.mem ∧ Rest [.r0, .r1, .r2, .lr] s t := by
+  rw [VG.Impl.Ffdh.Arm.Domain.GenerateKey.unlessZero, WP.seq_iff]
+  refine WP.mono (zeroCount_ok s) ?_
+  rintro u ⟨⟨zeroU, memU⟩, restU⟩
+  by_cases empty : n = 0
+  · subst n
+    refine WP.ite true (by change some u.z = some true; rw [zeroU, count]; rfl) ?_ (by intro hf; cases hf)
+    intro _
+    exact WP.block_nil ⟨rfl, by rw [memU]; exact Frame.refl _ _, restU.mono (by simp)⟩
+  · refine WP.ite false (by
+      change some u.z = some false
+      rw [zeroU, count]
+      change some (BitVec.ofNat 32 n == (0 : BitVec 32)) = some false
+      rw [ofNat_beq_zero fits, decide_eq_false empty]) (by intro ht; cases ht) ?_
+    intro _
+    refine WP.mono (copyBytes_ok u (copyCtx_of_regions u src dst fits sourceFits destFits
+      (by rw [restU.rd, restU.wr]; exact read) (by rw [restU.wr]; exact write) separate)
+      (by omega_using [empty]) ((restU.gpr .r1 (by simp)).trans source) ((restU.gpr .r0 (by simp)).trans dest)
+      ((restU.gpr .lr (by simp)).trans count)) ?_
+    intro t inv
+    refine ⟨?_, ?_, (restU.mono (by simp)).trans inv.rest⟩
+    · unfold Spec.Rsa.bytesAt
+      apply List.map_congr_left
+      intro j hj
+      have bound := List.mem_range.mp hj
+      have byte := inv.copied j bound
+      rw [addr_add (by omega_using [destFits, bound]), addr_add (by omega_using [sourceFits, bound]), memU] at byte
+      exact byte
+    · have frame := inv.frame destFits
+      rw [memU] at frame
+      exact frame
+
+end VG.Proof.Ffdh.Arm
+
+end
+
+end
+
+
+/-! Copy the scalar suffix after its first significant byte, including the
+single-byte-bound case where the suffix is empty. -/
+
+@[expose] public section
+namespace VG.Proof.Ffdh.Arm
+open VG VG.Arm VG.Proof.Mont
+open VG.Proof.X25519.Arm (Rest)
+
+def sampleSuffix (p : Inputs) (l : ScalarLayout p) : Region :=
+  ⟨off (State.addr p.privateValue) (l.lead + 1), p.k - (l.lead + 1)⟩
+
+theorem sampleSuffix_ok (s : State) {p : Inputs} {l : ScalarLayout p} {slots : List Nat} {rb : List Byte}
+    (h : SampleMemory p l slots s) (saved : ∀ d ∈ slots, d + 4 ≤ 72)
+    (entropy : Octets p.base p.entropy p.len rb s) (size : rb.length = p.k)
+    (output : OutputBuffer p.privateValue p.k s)
+    (domainSep : Region.Disjoint ⟨State.addr p.domain, p.dom.length⟩ ⟨State.addr p.privateValue, p.k⟩)
+    (stackSep : Region.Disjoint ⟨State.addr s.sp, 72⟩ ⟨State.addr p.privateValue, p.k⟩)
+    (entropySep : Region.Disjoint ⟨State.addr p.entropy, p.k⟩ ⟨State.addr p.privateValue, p.k⟩)
+    (source : s.gpr .r1 = p.entropy + BitVec.ofNat 32 (l.lead + 1))
+    (dest : s.gpr .r0 = p.privateValue + BitVec.ofNat 32 (l.lead + 1))
+    (count : s.gpr .lr = BitVec.ofNat 32 (p.k - (l.lead + 1))) :
+    WP isa (VG.Impl.Ffdh.Arm.Domain.GenerateKey.unlessZero .lr VG.Impl.Bignum.Arm.copyBytes) s fun t =>
+      SampleMemory p l slots t ∧ Octets p.base p.entropy p.len rb t ∧
+      Spec.Rsa.bytesAt t.mem (sampleSuffix p l).base (sampleSuffix p l).len = rb.drop (l.lead + 1) ∧
+      Frame [sampleSuffix p l] s.mem t.mem ∧ Rest [.r0, .r1, .r2, .lr] s t := by
+  have lead := l.lead_lt
+  by_cases empty : p.k - (l.lead + 1) = 0
+  · rw [VG.Impl.Ffdh.Arm.Domain.GenerateKey.unlessZero, WP.seq_iff]
+    refine WP.mono (zeroCount_ok s) ?_
+    rintro t ⟨⟨zeroT, mem⟩, rest⟩
+    refine WP.ite true (by change some t.z = some true; rw [zeroT, count, empty]; rfl) ?_ (by intro hf; cases hf)
+    intro _
+    apply WP.block_nil
+    have frame : Frame [⟨State.addr p.privateValue, p.k⟩] s.mem t.mem := by rw [mem]; exact Frame.refl _ _
+    have context := h.after_output frame rest domainSep stackSep saved
+    have entropyT := entropy.after_frame frame rest (by simpa [size] using entropySep)
+    refine ⟨context, entropyT, ?_, ?_, rest.mono (by simp)⟩
+    · simp only [sampleSuffix, empty, Spec.Rsa.bytesAt, List.range_zero, List.map_nil]
+      exact (List.drop_eq_nil_iff.mpr (by omega_using [size, empty])).symm
+    · rw [mem]; exact Frame.refl _ _
+  · have positive : 0 < p.k - (l.lead + 1) := by omega_using [empty]
+    have out := output.slice positive (by omega_using [lead] : (l.lead + 1) + (p.k - (l.lead + 1)) ≤ p.k)
+    have inp := entropy.slice positive (by omega_using [size, lead] : (l.lead + 1) + (p.k - (l.lead + 1)) ≤ rb.length)
+    have inpSize : ((rb.drop (l.lead + 1)).take (p.k - (l.lead + 1))).length = p.k - (l.lead + 1) := by
+      simp only [List.length_take, List.length_drop, size, Nat.min_self]
+    have inpAddr := VG.Arm.addr_add (a := p.entropy) (k := l.lead + 1) (by have := entropy.fits; omega_using [size, empty, this])
+    have outAddr := VG.Arm.addr_add (a := p.privateValue) (k := l.lead + 1) (by have := output.fits; omega_using [empty, this])
+    have inpSub : (⟨State.addr (p.entropy + BitVec.ofNat 32 (l.lead + 1)), p.k - (l.lead + 1)⟩ : Region).Sub
+        ⟨State.addr p.entropy, p.k⟩ := by rw [inpAddr]; exact Offset.sub_base _ (by omega_using [lead])
+    have outSub : (⟨State.addr (p.privateValue + BitVec.ofNat 32 (l.lead + 1)), p.k - (l.lead + 1)⟩ : Region).Sub
+        ⟨State.addr p.privateValue, p.k⟩ := by rw [outAddr]; exact Offset.sub_base _ (by omega_using [lead])
+    refine WP.mono (copyOptional_ok s (by have := p.maxLength; omega_using [this]) (by simpa only [inpSize] using inp.fits) out.fits
+      (by simpa only [inpSize] using inp.readable) out.writable ((entropySep.sub_left inpSub).sub_right outSub)
+      source dest count) ?_
+    rintro t ⟨bytes, frame, rest⟩
+    have context := h.after_output frame rest (domainSep.sub_right outSub) (stackSep.sub_right outSub) saved
+    have entropyT := entropy.after_frame frame rest (by simpa [size] using entropySep.sub_right outSub)
+    refine ⟨context, entropyT, ?_, ?_, rest⟩
+    · rw [outAddr, inpAddr] at bytes
+      rw [← VG.Proof.Dsa.bytesAt_slice s.mem (State.addr p.entropy) (by omega_using [size, lead] : (l.lead + 1) + (p.k - (l.lead + 1)) ≤ rb.length), entropy.bytes] at bytes
+      rw [List.take_of_length_le (by simp only [List.length_drop, size]; omega_using [])] at bytes
+      exact bytes
+    · simpa only [sampleSuffix, outAddr] using frame
+
+end VG.Proof.Ffdh.Arm
+
+end
+
+end
+
+/-! ### `Ffdh.Arm.KeyCutEncoding`, which only this module used -/
+
+section
+
+/-! Reconstruct the exact scalar encoding from the prefix, masked byte, and suffix. -/
+
+@[expose] public section
+namespace VG.Proof.Ffdh.Arm
+open VG VG.Proof.Mont
+
+theorem keyCutEncoding {m : Mem} {dst : Addr} {rb : List Byte} {ld : Nat} {mask : Byte}
+    (bound : ld < rb.length)
+    (prefixBytes : Spec.Rsa.bytesAt m dst ld = List.replicate ld 0)
+    (firstByte : m (off dst ld) = rb.getD ld 0 &&& mask)
+    (suffixBytes : Spec.Rsa.bytesAt m (off dst (ld + 1)) (rb.length - (ld + 1)) = rb.drop (ld + 1)) :
+    Spec.Rsa.bytesAt m dst rb.length = VG.Proof.Ffdh.KeyScalar.cut rb ld mask := by
+  have splitLength : rb.length = ld + (1 + (rb.length - (ld + 1))) := by omega_using [bound]
+  rw [splitLength, VG.Proof.Dsa.Generation.bytesAt_append,
+    VG.Proof.Dsa.Generation.bytesAt_append, prefixBytes]
+  have one : Spec.Rsa.bytesAt m (off dst ld) 1 = [rb.getD ld 0 &&& mask] := by
+    simpa only [Spec.Rsa.bytesAt, List.range_succ, List.range_zero, List.map_append, List.map_nil,
+      List.map_cons, BitVec.add_zero, List.nil_append] using congrArg (fun b : Byte => [b]) firstByte
+  rw [one]
+  have ptr : off (off dst ld) 1 = off dst (ld + 1) := by
+    simp only [off, BitVec.ofNat_add, BitVec.add_assoc]
+  change List.replicate ld 0 ++ ([rb.getD ld 0 &&& mask] ++
+    Spec.Rsa.bytesAt m (off (off dst ld) 1) (rb.length - (ld + 1))) = _
+  rw [ptr, suffixBytes]
+  rfl
+
+end VG.Proof.Ffdh.Arm
+
+end
+
+end
+
+
+/-! Native entropy cutting produces exactly the shared scalar encoding. -/
+
+@[expose] public section
+namespace VG.Proof.Ffdh.Arm
+open VG VG.Arm VG.Proof.Mont
+open VG.Proof.X25519.Arm (Rest)
+
+theorem sampleCut_ok (s : State) {p : Inputs} {l : ScalarLayout p} {slots : List Nat} {rb : List Byte}
+    (h : SampleMemory p l slots s) (saved : ∀ d ∈ slots, d + 4 ≤ 72)
+    (entropy : Octets p.base p.entropy p.len rb s) (size : rb.length = p.k)
+    (output : OutputBuffer p.privateValue p.k s)
+    (domainSep : Region.Disjoint ⟨State.addr p.domain, p.dom.length⟩ ⟨State.addr p.privateValue, p.k⟩)
+    (stackSep : Region.Disjoint ⟨State.addr s.sp, 72⟩ ⟨State.addr p.privateValue, p.k⟩)
+    (entropySep : Region.Disjoint ⟨State.addr p.entropy, p.k⟩ ⟨State.addr p.privateValue, p.k⟩)
+    (source : s.gpr .r1 = p.entropy) (dest : s.gpr .r0 = p.privateValue)
+    (count : s.gpr .lr = BitVec.ofNat 32 l.lead) (zero : s.gpr .r2 = 0) :
+    WP isa VG.Impl.Ffdh.Arm.Domain.GenerateKey.cutEntropy s fun t =>
+      SampleMemory p l slots t ∧ Octets p.base p.entropy p.len rb t ∧
+      Spec.Rsa.bytesAt t.mem (State.addr p.privateValue) p.k =
+        VG.Proof.Ffdh.KeyScalar.cut rb l.lead (l.mask.setWidth 8) ∧
+      Frame [⟨State.addr p.privateValue, p.k⟩] s.mem t.mem ∧ Rest [.r0, .r1, .r2, .r3, .lr] s t := by
+  have lead := l.lead_lt
+  have bounds := p.maxLength
+  have prefixSub : (⟨State.addr p.privateValue, l.lead⟩ : Region).Sub ⟨State.addr p.privateValue, p.k⟩ :=
+    Region.sub_prefix (by omega_using [lead])
+  have suffixSub : (sampleSuffix p l).Sub ⟨State.addr p.privateValue, p.k⟩ :=
+    Offset.sub_base _ (by omega_using [lead])
+  have firstAddr : State.addr l.start = off (State.addr p.privateValue) l.lead :=
+    VG.Arm.addr_add (by have := output.fits; omega_using [lead, this])
+  have firstSub : (⟨State.addr l.start, 1⟩ : Region).Sub ⟨State.addr p.privateValue, p.k⟩ := by
+    rw [firstAddr]
+    exact Offset.sub_base _ (by omega_using [lead])
+  have prefixFirst : (⟨State.addr p.privateValue, l.lead⟩ : Region).Disjoint ⟨State.addr l.start, 1⟩ := by
+    rw [firstAddr]
+    exact (Offset.disjoint_base _ (by omega_using []) (by omega_using [lead, bounds])).symm
+  have prefixSuffix : (⟨State.addr p.privateValue, l.lead⟩ : Region).Disjoint (sampleSuffix p l) :=
+    (Offset.disjoint_base _ (by omega_using []) (by omega_using [lead, bounds])).symm
+  have firstSuffix : (⟨State.addr l.start, 1⟩ : Region).Disjoint (sampleSuffix p l) := by
+    rw [firstAddr]
+    exact Offset.disjoint _ (Or.inl (by omega_using [])) (by omega_using [lead, bounds]) (by omega_using [lead, bounds])
+  rw [VG.Impl.Ffdh.Arm.Domain.GenerateKey.cutEntropy, WP.seq_iff]
+  refine WP.mono (samplePrefix_ok s h saved output domainSep stackSep source dest count zero) ?_
+  rintro u ⟨contextU, bytesU, ptrU, srcU, frameU, restU⟩
+  have entropyU := entropy.after_frame frameU restU (by simpa [size] using entropySep.sub_right prefixSub)
+  rw [WP.seq_iff]
+  refine WP.mono (sampleFirst_retained u contextU saved entropyU size (output.after restU)
+    domainSep (by rw [restU.sp]; exact stackSep) entropySep srcU ptrU) ?_
+  rintro v ⟨contextV, entropyV, byteV, ptrV, srcV, countV, frameV, restV⟩
+  have suffixCount : v.gpr .lr = BitVec.ofNat 32 (p.k - (l.lead + 1)) := by
+    rw [countV]
+    congr 1
+  refine WP.mono (sampleSuffix_ok v contextV saved entropyV size ((output.after restU).after restV)
+    domainSep (by rw [restV.sp, restU.sp]; exact stackSep) entropySep srcV ptrV suffixCount) ?_
+  rintro t ⟨contextT, entropyT, suffix, frameT, restT⟩
+  have prefixV : Spec.Rsa.bytesAt v.mem (State.addr p.privateValue) l.lead = List.replicate l.lead 0 := by
+    rw [VG.Proof.Bignum.Arm.rsa_bytes_frame frameV (by omega_using [lead, bounds]) (by simpa using prefixFirst)]
+    exact bytesU
+  have prefixT : Spec.Rsa.bytesAt t.mem (State.addr p.privateValue) l.lead = List.replicate l.lead 0 := by
+    rw [VG.Proof.Bignum.Arm.rsa_bytes_frame frameT (by omega_using [lead, bounds]) (by simpa using prefixSuffix)]
+    exact prefixV
+  have byteT : t.mem (State.addr l.start) = rb.getD l.lead 0 &&& l.mask.setWidth 8 := by
+    have same := frameT.bytes (R := ⟨State.addr l.start, 1⟩) (by simpa using firstSuffix) (by change 1 ≤ 2 ^ 64; decide) (i := 0) (by change 0 < 1; decide)
+    simp only [BitVec.add_zero] at same
+    exact same.trans byteV
+  have encoded := keyCutEncoding (by omega_using [size, lead] : l.lead < rb.length) prefixT (by rw [← firstAddr]; exact byteT)
+    (by simpa only [size, sampleSuffix] using suffix)
+  have fullU : Frame [⟨State.addr p.privateValue, p.k⟩] s.mem u.mem :=
+    frameU.sub (by intro r hr; rw [List.mem_singleton] at hr; subst r; exact ⟨_, by simp, prefixSub⟩)
+  have fullV : Frame [⟨State.addr p.privateValue, p.k⟩] u.mem v.mem :=
+    frameV.sub (by intro r hr; rw [List.mem_singleton] at hr; subst r; exact ⟨_, by simp, firstSub⟩)
+  have fullT : Frame [⟨State.addr p.privateValue, p.k⟩] v.mem t.mem :=
+    frameT.sub (by intro r hr; rw [List.mem_singleton] at hr; subst r; exact ⟨_, by simp, suffixSub⟩)
+  exact ⟨contextT, entropyT, by simpa only [size] using encoded, (fullU.trans fullV).trans fullT,
+    ((restU.mono (by simp)).trans restV).trans (restT.mono (by simp))⟩
+
+end VG.Proof.Ffdh.Arm
+
+end
+
+end
+
+/-! ### `Ffdh.Arm.SampleScalarCT`, which only this module used -/
+
+section
+
+/-! Public scalar layouts determine sampling addresses and loop counts. -/
+
+-- Formerly `VerifiedGarbage/Proof/Ffdh/Arm/SampleCutCT.lean`, which only this module imported.
+section
+
+/-! Entropy cutting uses the same public prefix and suffix lengths for different
+secret tapes; no secret byte determines an address or loop count. -/
+
+@[expose] public section
+namespace VG.Proof.Ffdh.Arm
+open VG VG.Arm VG.Proof.Bignum.Arm
+
+structure SampleCutMemory (p : Inputs) (l : ScalarLayout p) (slots : List Nat) (rb : List Byte) (s : State) : Prop where
+  context : SampleMemory p l slots s
+  entropy : Octets p.base p.entropy p.len rb s
+  outputs : KeyOutputs p s
+
+structure SampleCutStart (p : Inputs) (l : ScalarLayout p) (slots : List Nat) (rb : List Byte) (s : State) : Prop extends SampleCutMemory p l slots rb s where
+  dest : s.gpr .r0 = p.privateValue
+  source : s.gpr .r1 = p.entropy
+  count : s.gpr .lr = BitVec.ofNat 32 l.lead
+  zero : s.gpr .r2 = 0
+
+structure SampleFirstStart (p : Inputs) (l : ScalarLayout p) (slots : List Nat) (rb : List Byte) (s : State) : Prop extends SampleCutMemory p l slots rb s where
+  dest : s.gpr .r0 = l.start
+  source : s.gpr .r1 = p.entropy + BitVec.ofNat 32 l.lead
+
+structure SampleCopyStart (p : Inputs) (l : ScalarLayout p) (slots : List Nat) (rb : List Byte) (s : State) : Prop extends SampleCutMemory p l slots rb s where
+  dest : s.gpr .r0 = p.privateValue + BitVec.ofNat 32 (l.lead + 1)
+  source : s.gpr .r1 = p.entropy + BitVec.ofNat 32 (l.lead + 1)
+  count : s.gpr .lr = BitVec.ofNat 32 (l.width - 1)
+
+theorem samplePrefix_next (s : State) {p : Inputs} {l : ScalarLayout p} {slots : List Nat} {rb : List Byte}
+    (saved : ∀ d ∈ slots, d + 4 ≤ 72) (size : rb.length = p.k)
+    (entropySep : Region.Disjoint ⟨State.addr p.entropy, p.k⟩ ⟨State.addr p.privateValue, p.k⟩)
+    (h : SampleCutStart p l slots rb s) :
+    WP isa (VG.Impl.Ffdh.Arm.Domain.GenerateKey.unlessZero .lr
+      (.loop (.block VG.Impl.Ffdh.Arm.Domain.GenerateKey.prefixStep) .ne)) s (SampleFirstStart p l slots rb) := by
+  refine WP.mono (samplePrefix_ok s h.context saved h.outputs.privateBuffer h.outputs.privateDomain h.outputs.privateStack
+    h.source h.dest h.count h.zero) ?_
+  rintro t ⟨context, _, dest, source, frame, rest⟩
+  have entropy := h.entropy.after_frame frame rest (by
+    simpa [size] using entropySep.sub_right (Region.sub_prefix (by have := l.lead_lt; omega_using [this])))
+  exact ⟨⟨context, entropy, h.outputs.after rest⟩, dest, source⟩
+
+theorem sampleFirst_next (s : State) {p : Inputs} {l : ScalarLayout p} {slots : List Nat} {rb : List Byte}
+    (saved : ∀ d ∈ slots, d + 4 ≤ 72) (size : rb.length = p.k)
+    (entropySep : Region.Disjoint ⟨State.addr p.entropy, p.k⟩ ⟨State.addr p.privateValue, p.k⟩)
+    (h : SampleFirstStart p l slots rb s) :
+    WP isa (.block VG.Impl.Ffdh.Arm.Domain.GenerateKey.first) s (SampleCopyStart p l slots rb) := by
+  refine WP.mono (sampleFirst_retained s h.context saved h.entropy size h.outputs.privateBuffer
+    h.outputs.privateDomain h.outputs.privateStack entropySep h.source h.dest) ?_
+  rintro t ⟨context, entropy, _, dest, source, count, _, rest⟩
+  exact ⟨⟨context, entropy, h.outputs.after rest⟩, dest, source, count⟩
+
+theorem sampleCut_ct {p : Inputs} {l : ScalarLayout p} {slots : List Nat} {rb1 rb2 : List Byte}
+    (saved : ∀ d ∈ slots, d + 4 ≤ 72)
+    (size1 : rb1.length = p.k) (size2 : rb2.length = p.k)
+    (entropySep : Region.Disjoint ⟨State.addr p.entropy, p.k⟩ ⟨State.addr p.privateValue, p.k⟩) :
+    RelCT isa (fun s t => SampleCutStart p l slots rb1 s ∧ SampleCutStart p l slots rb2 t ∧ s.sp = t.sp)
+      VG.Impl.Ffdh.Arm.Domain.GenerateKey.cutEntropy (fun _ _ => True) := by
+  have leading := keyPrefix_ct.mono
+    (P' := fun (s t : State) => SampleCutStart p l slots rb1 s ∧ SampleCutStart p l slots rb2 t ∧ s.sp = t.sp)
+    (fun _ _ h r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl
+      · exact h.1.dest.trans h.2.1.dest.symm
+      · exact h.1.count.trans h.2.1.count.symm) (fun _ _ h => h)
+  have first := keyFirst_ct.mono
+    (P' := fun (s t : State) => SampleFirstStart p l slots rb1 s ∧ SampleFirstStart p l slots rb2 t ∧ s.sp = t.sp)
+    (fun _ _ h => ⟨fun r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl
+      · exact h.1.dest.trans h.2.1.dest.symm
+      · exact h.1.source.trans h.2.1.source.symm, h.2.2⟩) (fun _ _ h => h)
+  have copy := keyCopy_ct.mono
+    (P' := fun (s t : State) => SampleCopyStart p l slots rb1 s ∧ SampleCopyStart p l slots rb2 t ∧ s.sp = t.sp)
+    (fun _ _ h r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl
+      · exact h.1.dest.trans h.2.1.dest.symm
+      · exact h.1.source.trans h.2.1.source.symm
+      · exact h.1.count.trans h.2.1.count.symm) (fun _ _ h => h)
+  unfold VG.Impl.Ffdh.Arm.Domain.GenerateKey.cutEntropy
+  exact relCT_chain leading (samplePrefix_next · saved size1 entropySep) (samplePrefix_next · saved size2 entropySep)
+    (relCT_chain first (sampleFirst_next · saved size1 entropySep) (sampleFirst_next · saved size2 entropySep) copy)
+
+end VG.Proof.Ffdh.Arm
+end
+
+end
+
+@[expose] public section
+namespace VG.Proof.Ffdh.Arm
+open VG VG.Arm VG.Proof.Bignum.Arm VG.Proof.Mont
+
+structure SampleBoundReady (p : Inputs) (l : ScalarLayout p) (slots : List Nat)
+    (rb : List Byte) (s : State) : Prop extends KeyScalarInput p slots rb s where
+  width : s.mem.readW (off (State.addr s.sp) 20) 32 = BitVec.ofNat 32 l.width
+  mask : s.mem.readW (off (State.addr s.sp) 68) 32 = l.mask
+
+theorem sampleScalarArgs_next (s : State) {p : Inputs} {l : ScalarLayout p} {slots : List Nat} {rb : List Byte}
+    (stable : stableSlots slots = true) (special : sampleSlots slots)
+    (h32 : 32 ∈ slots) (h40 : 40 ∈ slots) (h48 : 48 ∈ slots)
+    (size : rb.length = p.k) (h : SampleBoundReady p l slots rb s) :
+    WP isa (.block VG.Impl.Ffdh.Arm.Domain.GenerateKey.scalarArgs) s (SampleCutStart p l slots rb) := by
+  refine WP.mono (sampleScalarArgs_retained s h.context stable special h.width h.mask h32 h40 h48) ?_
+  rintro t ⟨context, dest, source, count, zero, frame, rest⟩
+  have entropy := h.entropy.after_frame frame rest (by
+    intro r hr
+    rw [List.mem_singleton] at hr; subst r
+    rw [size]
+    exact h.entropyStack.sub_right (Offset.sub_base _ (by decide)))
+  exact ⟨⟨context, entropy, h.outputs.after rest⟩, dest, source, count, zero⟩
+
+end VG.Proof.Ffdh.Arm
+
+end
+
+end
+
+/-! ### `Ffdh.Arm.CachedGenerationTable`, which only this module used -/
+
+section
+
+/-! Canonical reusable context words are exactly the read-only native comb table. -/
+
+@[expose] public section
+namespace VG.Proof.Ffdh.Arm
+open VG VG.Arm VG.Proof.Mont VG.Proof.Bignum VG.Proof.Bignum.Arm
+
+def cachedTablePtr (p : Inputs) : BitVec 32 := p.cachedContext+BitVec.ofNat 32 (24+16*p.w)
+
+theorem CachedGenerationContext.table {p : Inputs} {s : State} (h : CachedGenerationContext p s) :
+    CombTable (cachedTablePtr p) p.w p.P p.G
+      (Spec.Ffdh.generationScalarBits (Spec.Ffdh.domainOf p.k p.dom)) s := by
+  have wPos : 0<p.w := by have := p.width.1; omega_using [this]
+  have wordsCount : p.cachedWords=3+34*p.w := by
+    rw [h.canonical.1]
+    simp only [Spec.Ffdh.generationPrecomputedWords,Spec.Rsa.FixedBaseComb.precomputedWords,
+      Spec.Rsa.precomputedWords,Spec.Rsa.FixedBaseComb.entries,Spec.Rsa.FixedBaseComb.teeth,Inputs.w]
+    omega_using []
+  have size : 8*p.cachedWords=24+272*p.w := by rw [wordsCount]; omega_using []
+  have ptrAddr : State.addr (cachedTablePtr p)=VG.Proof.Mont.off (State.addr p.cachedContext) (24+16*p.w) := by
+    unfold cachedTablePtr
+    exact addr_add (by have := h.fit; omega_using [wPos, size, this])
+  have ptrNat : (cachedTablePtr p).toNat=p.cachedContext.toNat+(24+16*p.w) := by
+    simp only [cachedTablePtr,BitVec.toNat_add,BitVec.toNat_ofNat]
+    rw [Nat.mod_eq_of_lt (by have := h.fit; omega_using [wordsCount, this] : 24+16*p.w<2^32)]
+    exact Nat.mod_eq_of_lt (by have := h.fit; omega_using [wPos, size, this])
+  refine ⟨wPos,?_,?_,?_⟩
+  · rw [ptrNat]
+    have := h.fit
+    omega_using [size, this]
+  · rw [ptrAddr]
+    exact CallLay.inRegions_sub h.readable (by omega_using [wordsCount]) (by omega_using [wordsCount, ptrNat])
+  · intro a ha
+    let E := Spec.Rsa.powMod p.G
+      (Spec.Rsa.FixedBaseComb.exponent (Spec.Ffdh.generationScalarBits (Spec.Ffdh.domainOf p.k p.dom)) a) p.P *
+      2^(64*p.w)%p.P
+    have modValid := VG.Proof.Ffdh.domainValid_mod h.valid
+    have pPos : 0<p.P := by have := (valid_facts modValid p.minLength).2.1; exact Nat.lt_trans (by decide) this
+    have pBound : p.P<2^(64*p.w) := by
+      have v := os2ip_lt (p.dom.take p.k)
+      rw [p.pLength,pow256_eq] at v
+      exact Nat.lt_of_lt_of_le v (Nat.pow_le_pow_right (by decide) (by have := p.width.2.2.2.1; omega_using [this]))
+    have eBound : E<2^(64*p.w) := Nat.lt_trans (Nat.mod_lt _ pPos) pBound
+    have limb (i : Nat) (hi : i<p.w) :
+        s.mem.readW (VG.Proof.Mont.off (State.addr p.cachedContext) (24+16*p.w+8*p.w*a+8*i)) 64 =
+          BitVec.ofNat 64 (E/2^(64*i)) := by
+      let index := 3+(2+a)*p.w+i
+      have mulA : (2+a)*p.w≤33*p.w := Nat.mul_le_mul_right _ (by omega_using [ha])
+      have indexFit : index<p.cachedWords := by dsimp [index]; omega_using [wordsCount, hi, mulA]
+      have entries := VG.Proof.Ffdh.generationValues_entry p.k p.dom a ha
+      have entry := congrArg (fun xs : List (BitVec 64) => xs[i]?) entries
+      have hik : i<Spec.Rsa.modulusWords p.k := hi
+      simp only [List.getElem?_take,ite_eq_left hik,List.getElem?_drop,Spec.Rsa.toWords,
+        List.getElem?_map,List.getElem?_range hik,Option.map_some] at entry
+      have read := congrArg (fun xs : List (BitVec 64) => xs[index]?) h.words
+      simp only [Spec.Rsa.wordsAt,List.getElem?_map,List.getElem?_range indexFit,Option.map_some] at read
+      change some (s.mem.readW (VG.Proof.Mont.off (State.addr p.cachedContext) (8*index)) 64)=_ at read
+      dsimp only [index,Inputs.w] at read
+      rw [entry] at read
+      have offset : 24+16*p.w+8*p.w*a+8*i=8*index := by dsimp [index]; ring
+      rw [offset]
+      exact Option.some.inj read
+    have value : wv s.mem (State.addr p.cachedContext) (24+16*p.w+8*p.w*a) p.w=E := by
+      rw [← Nat.mod_eq_of_lt eBound]
+      apply wv_of_words
+      intro i hi
+      change (s.mem.readW (VG.Proof.Mont.off (State.addr p.cachedContext) (24+16*p.w+8*p.w*a+8*i)) 64).toNat=_
+      rw [limb i hi,BitVec.toNat_ofNat]
+    rw [← read_eq_val32,show 4*(2*p.w)=8*p.w by omega_using [],ptrAddr]
+    simp only [VG.Proof.Mont.off,Offset.add_add]
+    change (s.mem.read (VG.Proof.Mont.off (State.addr p.cachedContext) (24+16*p.w+8*p.w*a)) (8*p.w)).toNat=E
+    rw [read_eq_wv]
+    exact value
+
+theorem CachedGenerationContext.tableSeparate {p : Inputs} {s : State}
+    (h : CachedGenerationContext p s) : ∀ r∈keyCallWrites p s,
+      (⟨State.addr (cachedTablePtr p),32*(8*p.w)⟩ : Region).Disjoint r := by
+  have wPos : 0<p.w := by have := p.width.1; omega_using [this]
+  have wordsCount : p.cachedWords=3+34*p.w := by
+    rw [h.canonical.1]
+    simp only [Spec.Ffdh.generationPrecomputedWords,Spec.Rsa.FixedBaseComb.precomputedWords,
+      Spec.Rsa.precomputedWords,Spec.Rsa.FixedBaseComb.entries,Spec.Rsa.FixedBaseComb.teeth,Inputs.w]
+    omega_using []
+  have size : 8*p.cachedWords=24+272*p.w := by rw [wordsCount]; omega_using []
+  have address : State.addr (cachedTablePtr p)=VG.Proof.Mont.off (State.addr p.cachedContext) (24+16*p.w) := by
+    unfold cachedTablePtr
+    exact addr_add (by have := h.fit; omega_using [wPos, size, this])
+  have sub : (⟨State.addr (cachedTablePtr p),32*(8*p.w)⟩ : Region).Sub (cachedRegion p) := by
+    rw [address]
+    exact Offset.sub_base _ (by omega_using [wordsCount])
+  intro r hr
+  exact (h.separate r hr).sub_left sub
+
+end VG.Proof.Ffdh.Arm
+
+end
+
+end
+
+/-! ### `Ffdh.Arm.SampleSpec`, which only this module used -/
+
+section
+
+/-! The native attempt statuses and output encodings agree with the shared
+FFDH specification, using subgroup closure for generated powers. -/
+
+@[expose] public section
+namespace VG.Proof.Ffdh.Arm
+open VG VG.Arm
+
+theorem sampleMainFlag_spec (p : Inputs) (l : ScalarLayout p) (rb : List Byte) (_size : rb.length = p.k)
+    (valid : Spec.Ffdh.domainValid p.k p.dom = true) :
+    (sampleMainFlag p l rb).toNat = Spec.Ffdh.keyStatus (Spec.Ffdh.domainOf p.k p.dom)
+      (Spec.Rsa.os2ip (l.encode rb)) := by
+  have parameters : Spec.Ffdh.parametersValid (Spec.Ffdh.domainOf p.k p.dom) = true := by
+    have h := valid
+    rw [Spec.Ffdh.domainValid, Bool.and_eq_true] at h
+    exact h.1
+  have modulus := VG.Proof.Ffdh.domainValid_mod valid
+  rw [p.domainP] at modulus
+  have facts := VG.Proof.Bignum.valid_facts modulus p.minLength
+  rw [VG.Proof.Ffdh.KeyScalar.keyStatus_eq parameters]
+  have publicPower := VG.Proof.Ffdh.publicValid_power parameters (Spec.Rsa.os2ip (l.encode rb))
+  have publicBool : Spec.Ffdh.publicValid ⟨Spec.Ffdh.domainOf p.k p.dom,
+      (Spec.Ffdh.domainOf p.k p.dom).g ^ Spec.Rsa.os2ip (l.encode rb) % (Spec.Ffdh.domainOf p.k p.dom).p⟩ =
+      keyAccepted p (l.encode rb) := by
+    have equiv : Spec.Ffdh.publicValid ⟨Spec.Ffdh.domainOf p.k p.dom,
+      (Spec.Ffdh.domainOf p.k p.dom).g ^ Spec.Rsa.os2ip (l.encode rb) % (Spec.Ffdh.domainOf p.k p.dom).p⟩ = true ↔
+        keyAccepted p (l.encode rb) = true := by
+      rw [publicPower, p.domainP, p.domainG]
+      simp only [keyAccepted, keyPower, VG.Proof.Bignum.powMod_eq, decide_eq_true_eq]
+    exact Bool.eq_iff_iff.mpr equiv
+  rw [publicBool]
+  have scalarClass := p.privateValid_native (Spec.Rsa.os2ip (l.encode rb))
+  by_cases scalarGood : sampleScalarValid p l rb
+  · have priv : Spec.Ffdh.privateValid (Spec.Ffdh.domainOf p.k p.dom) (Spec.Rsa.os2ip (l.encode rb)) = true :=
+      scalarClass.mpr scalarGood
+    rw [sampleMainFlag, ite_eq_left scalarGood, priv, ite_eq_right (by decide : ¬(true = false))]
+    cases keyAccepted p (l.encode rb) <;> rfl
+  · have priv : Spec.Ffdh.privateValid (Spec.Ffdh.domainOf p.k p.dom) (Spec.Rsa.os2ip (l.encode rb)) = false := by
+      cases eq : Spec.Ffdh.privateValid (Spec.Ffdh.domainOf p.k p.dom) (Spec.Rsa.os2ip (l.encode rb))
+      · rfl
+      · exact False.elim (scalarGood (scalarClass.mp eq))
+    rw [sampleMainFlag, ite_eq_right scalarGood, priv, ite_eq_left rfl]
+    rfl
+
+theorem sampleMainFlag_one (p : Inputs) (l : ScalarLayout p) (rb : List Byte) :
+    (sampleMainFlag p l rb).toNat = 1 ↔ sampleSuccess p l rb = true := by
+  unfold sampleMainFlag sampleSuccess
+  by_cases valid : sampleScalarValid p l rb <;> cases accepted : keyAccepted p (l.encode rb) <;> simp [valid]
+
+theorem sampleOctets_encoded (p : Inputs) (l : ScalarLayout p) (rb : List Byte) (size : rb.length = p.k)
+    (valid : Spec.Ffdh.domainValid p.k p.dom = true) :
+    l.encode rb = Spec.Rsa.i2osp (Spec.Rsa.os2ip (l.encode rb)) p.k := by
+  have modulus := VG.Proof.Ffdh.domainValid_mod valid
+  rw [p.domainP] at modulus
+  have facts := VG.Proof.Bignum.valid_facts modulus p.minLength
+  rw [← l.encode_length size]
+  exact (VG.Proof.Rsa.i2osp_os2ip _).symm
+
+theorem sampleResult_spec {p : Inputs} {l : ScalarLayout p} {rb : List Byte} {t : State} (size : rb.length = p.k)
+    (valid : Spec.Ffdh.domainValid p.k p.dom = true) (result : sampleResult p l rb t) :
+    (t.gpr .r0).toNat = Spec.Ffdh.keyStatus (Spec.Ffdh.domainOf p.k p.dom)
+      (Spec.Rsa.os2ip (l.encode rb)) ∧
+    if Spec.Ffdh.keyStatus (Spec.Ffdh.domainOf p.k p.dom)
+        (Spec.Rsa.os2ip (l.encode rb)) = 1 then
+      Spec.Rsa.bytesAt t.mem (State.addr p.privateValue) p.k =
+        Spec.Rsa.i2osp (Spec.Rsa.os2ip (l.encode rb)) p.k ∧
+      Spec.Rsa.bytesAt t.mem (State.addr p.publicValue) p.k =
+        Spec.Rsa.i2osp (Spec.Rsa.powMod (Spec.Ffdh.domainOf p.k p.dom).g
+          (Spec.Rsa.os2ip (l.encode rb)) (Spec.Ffdh.domainOf p.k p.dom).p) p.k
+    else Spec.Rsa.bytesAt t.mem (State.addr p.privateValue) p.k = List.replicate p.k 0 ∧
+      Spec.Rsa.bytesAt t.mem (State.addr p.publicValue) p.k = List.replicate p.k 0 := by
+  obtain ⟨status, privateT, publicT⟩ := result
+  have statusSpec := sampleMainFlag_spec p l rb size valid
+  refine ⟨by rw [status]; exact statusSpec, ?_⟩
+  by_cases success : Spec.Ffdh.keyStatus (Spec.Ffdh.domainOf p.k p.dom)
+      (Spec.Rsa.os2ip (l.encode rb)) = 1
+  · have native := (sampleMainFlag_one p l rb).mp (statusSpec.trans success)
+    rw [native, ite_eq_left rfl] at privateT publicT
+    rw [ite_eq_left success]
+    refine ⟨privateT.trans (sampleOctets_encoded p l rb size valid), ?_⟩
+    have modulus := VG.Proof.Ffdh.domainValid_mod valid
+    rw [p.domainP] at modulus
+    have facts := VG.Proof.Bignum.valid_facts modulus p.minLength
+    rw [publicT, keyPower, p.domainP, p.domainG]
+  · have native : sampleSuccess p l rb = false := by
+      apply Bool.eq_false_iff.mpr
+      intro good
+      exact success (statusSpec.symm.trans ((sampleMainFlag_one p l rb).mpr good))
+    rw [native, ite_eq_right (by decide : ¬(false = true))] at privateT publicT
+    rw [ite_eq_right success]
+    exact ⟨privateT, publicT⟩
+
+end VG.Proof.Ffdh.Arm
+
+end
+
+end
+
+/-! ### `Ffdh.Arm.CachedKeyGenerateContractCT`, which only this module used -/
+
+section
+
+/-! ### `Ffdh.Arm.KeyClassification`, which only this module used -/
+
+section
+
+/-! Status 2 discloses exactly scalar rejection, including for unchecked
+parameter encodings; no other secret classification is needed for timing. -/
+
+@[expose] public section
+namespace VG.Proof.Ffdh.Arm
+open VG
+
+theorem keyStatus_two_iff (a : Spec.Ffdh.Parameters) (x : Nat) :
+    Spec.Ffdh.keyStatus a x = 2 ↔ Spec.Ffdh.privateValid a x = false := by
+  unfold Spec.Ffdh.keyStatus
+  cases valid : Spec.Ffdh.privateValid a x
+  · simp
+  · simp only [Bool.not_true, Bool.false_eq_true, ite_false, Bool.true_eq_false]
+    split <;> decide
+
+theorem keyStatus_validity_same (a : Spec.Ffdh.Parameters) (x1 x2 : Nat)
+    (status : Spec.Ffdh.keyStatus a x1 = Spec.Ffdh.keyStatus a x2) :
+    Spec.Ffdh.privateValid a x1 = true ↔ Spec.Ffdh.privateValid a x2 = true := by
+  constructor
+  · intro good
+    cases other : Spec.Ffdh.privateValid a x2
+    · have rejected := (keyStatus_two_iff a x1).mp (status.trans ((keyStatus_two_iff a x2).mpr other))
+      rw [good] at rejected
+      cases rejected
+    · rfl
+  · intro good
+    cases other : Spec.Ffdh.privateValid a x1
+    · have rejected := (keyStatus_two_iff a x2).mp (status.symm.trans ((keyStatus_two_iff a x1).mpr other))
+      rw [good] at rejected
+      cases rejected
+    · rfl
+
+end VG.Proof.Ffdh.Arm
+
+end
+
+end
+
+/-! ### `Ffdh.Arm.KeyEntryCT`, which only this module used -/
+
+section
+
+/-! Key-generation entry accesses only fixed offsets of the public stack frame. -/
+
+@[expose] public section
+namespace VG.Proof.Ffdh.Arm
+open VG VG.Arm
+
+theorem keyEntry_ct : RelCT isa (fun s t => s.sp = t.sp)
+    (.block VG.Impl.Ffdh.Arm.Domain.GenerateKey.entry) (fun _ _ => True) := by
+  have accesses := RelCT.block_append ((storeLocal_ct .r0 40).seq (RelCT.block_append ((storeLocal_ct .r2 36).seq (RelCT.block_append ((storeLocal_ct .r2 4).seq (RelCT.block_append ((loadLocal_ct .r3 128 (by decide)).seq (RelCT.block_append ((storeLocal_ct .r3 24).seq (RelCT.block_append ((loadLocal_ct .r3 132 (by decide)).seq (RelCT.block_append ((storeLocal_ct .r3 28).seq (RelCT.block_append ((loadLocal_ct .r3 136 (by decide)).seq (RelCT.block_append ((storeLocal_ct .r3 32).seq (RelCT.block_append ((storeLocal_ct .r3 44).seq (RelCT.block_append ((loadLocal_ct .r3 140 (by decide)).seq (RelCT.block_append ((storeLocal_ct .r3 48).seq (RelCT.block_append ((loadLocal_ct .r0 148 (by decide)).seq ((storeLocal_ct .r0 0)))))))))))))))))))))))))))
+  exact (RelCT.block_append (stackAddr_ct.seq accesses)).mono
+    (fun _ _ h => h) (fun _ _ _ => trivial)
+
+end VG.Proof.Ffdh.Arm
+
+end
+
+end
+
+/-! ### `Ffdh.Arm.SampleState`, which only this module used -/
+
+section
+
+/-! Native key-generation states used to compose functional and timing proofs. -/
+
+@[expose] public section
+namespace VG.Proof.Ffdh.Arm
+open VG VG.Arm VG.Proof.Bignum.Arm
+open VG.Proof.Rsa.Mont (numAt Operand arrAt)
+open VG.Proof.X25519.Arm (Rest)
+
+structure SampleReady (p : Inputs) (l : ScalarLayout p) (slots : List Nat) (rb : List Byte) (s : State) : Prop where
+  context : SampleContext p l slots s
+  ready : ArithmeticReady p.base p.len p.w s
+  modulus : numAt s.mem (State.addr p.base) p.w 0 = p.P
+  r2 : numAt s.mem (State.addr p.base) p.w 4 = 2 ^ (128 * p.w) % p.P
+  scalar : Octets p.base p.privateValue p.len (l.encode rb) s
+  significant : Octets p.base l.start p.len ((l.encode rb).drop l.lead) s
+  outputs : KeyOutputs p s
+
+structure SampleImported (p : Inputs) (l : ScalarLayout p) (slots : List Nat) (rb : List Byte) (s : State) : Prop extends SampleReady p l slots rb s where
+  imported : numAt s.mem (State.addr p.base) p.w 1 = Spec.Rsa.os2ip (l.encode rb)
+
+structure SampleRanged (p : Inputs) (l : ScalarLayout p) (slots : List Nat) (rb : List Byte) (s : State) : Prop extends SampleReady p l slots rb s where
+  flag : s.gpr .r11 = scalarValidFlag p (Spec.Rsa.os2ip (l.encode rb))
+
+theorem SampleReady.after_mem {p : Inputs} {l : ScalarLayout p} {slots : List Nat} {rb : List Byte} {s t : State}
+    (h : SampleReady p l slots rb s) (mem : t.mem = s.mem) (rest : Rest [] s t) : SampleReady p l slots rb t := by
+  have ptr := (rest.gpr .r0 (by simp)).trans h.context.ptr
+  have frame : Frame [⟨State.addr p.base, 8 * p.len⟩] s.mem t.mem := by rw [mem]; exact Frame.refl _ _
+  exact ⟨⟨h.context.toContext.of_mem mem rest ptr, by rw [rest.sp, mem]; exact h.context.scalarStart, by rw [rest.sp, mem]; exact h.context.scalarWidth, by rw [rest.sp, mem]; exact h.context.scalarMask⟩, h.ready.of_mem mem rest ptr, by rw [mem]; exact h.modulus,
+    by rw [mem]; exact h.r2, h.scalar.after_workspace frame rest, h.significant.after_workspace frame rest, h.outputs.after rest⟩
+
+theorem SampleRanged.after_mem {p : Inputs} {l : ScalarLayout p} {slots : List Nat} {rb : List Byte} {s t : State}
+    (h : SampleRanged p l slots rb s) (mem : t.mem = s.mem) (rest : Rest [] s t) : SampleRanged p l slots rb t :=
+  ⟨h.toSampleReady.after_mem mem rest, (rest.gpr .r11 (by simp)).trans h.flag⟩
+
+end VG.Proof.Ffdh.Arm
+
+end
+
+end
+
+/-! Cached attempts compare independent entropy tapes under the reviewed public leakage. -/
+
+-- Formerly `VerifiedGarbage/Proof/Ffdh/Arm/CachedKeyGenerateEntryCT.lean`, which only this module imported.
+section
+
+/-! Retaining the appended context reads and writes only fixed stack offsets. -/
+
+section
+namespace VG.Proof.Ffdh.Arm
+open VG VG.Arm VG.Proof.Bignum.Arm
+
+theorem cachedKeyGenerateEntry_ct : RelCT isa (fun s t => s.sp = t.sp)
+    (.block VG.Impl.Ffdh.Arm.CachedKeyGenerate.entry) (fun _ _ => True) := by
+  have extra := RelCT.block_append (stackAddr_ct.seq (RelCT.block_append
+    ((loadLocal_ct .r3 156 (by decide)).seq (storeLocal_ct .r3 52))))
+  exact RelCT.block_append ((relCT_keep_sp keyEntry_ct (fun _ _ h => h)).seq
+    (extra.mono (fun _ _ h => h) (fun _ _ _ => trivial)))
+
+end VG.Proof.Ffdh.Arm
+end
+
+end
+
+-- Formerly `VerifiedGarbage/Proof/Ffdh/Arm/EnvironmentSampleState.lean`, which only this module imported.
+section
+
+/-! Native key-generation states used to compose functional and timing proofs. -/
+
+section
+namespace VG.Proof.Ffdh.Arm
+open VG VG.Arm VG.Proof.Bignum.Arm
+open VG.Proof.Rsa.Mont (numAt Operand arrAt)
+open VG.Proof.X25519.Arm (Rest)
+
+theorem environmentSample_next (env : SampleEnvironment) (sample : Prog isa) (layout : (p : Inputs) → ScalarLayout p)
+    (sampler : EnvironmentSampleLaw env layout sample) (s : State) {p : Inputs} {slots : List Nat} {rb : List Byte}
+    (stable : stableSlots slots = true) (special : sampleSlots slots)
+    (h52 : 52 ∈ slots) (h0 : 0 ∈ slots) (h24 : 24 ∈ slots) (h28 : 28 ∈ slots) (h32 : 32 ∈ slots)
+    (h40 : 40 ∈ slots) (h48 : 48 ∈ slots) (h60 : 60 ∈ slots) (size : rb.length = p.k)
+    (entropySep : Region.Disjoint ⟨State.addr p.entropy, p.k⟩ ⟨State.addr p.privateValue, p.k⟩)
+    (h : KeyPrepared p slots rb s) (calls : KeyCallMemory p s) (environment : env.holds p s) (normalized : 2 ^ (64 * (p.w - 1)) ≤ p.P) (odd : p.P % 2 = 1) :
+    WP isa sample s (fun t => (SampleReady p (layout p) slots rb t ∧ KeyCallMemory p t) ∧ env.holds p t) := by
+  refine WP.mono_syms (sampler.correct s h.context environment normalized odd stable special h52 h0 h24 h28 h32 h40 h48 h60 h.ready h.modulus h.r2
+    h.entropy size h.entropyStack h.outputs entropySep) ?_
+  rintro t ⟨context, ready, modulus, r2, scalar, significant, frame, rest⟩ syms
+  refine ⟨⟨⟨context, ready, modulus, r2, scalar, significant, h.outputs.after rest⟩, calls.after rest⟩, env.stable environment ?_ rest syms⟩
+  exact frame.sub (by
+    intro r hr
+    simp only [keyScalarWrites, List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl | rfl
+    · exact ⟨⟨State.addr s.sp, 72⟩, by simp [keyCallWrites, keyWrites], Offset.sub_base _ (by decide)⟩
+    · exact ⟨⟨State.addr s.sp, 72⟩, by simp [keyCallWrites, keyWrites], Offset.sub_base _ (by decide)⟩
+    · exact ⟨⟨State.addr s.sp, 72⟩, by simp [keyCallWrites, keyWrites], Offset.sub_base _ (by decide)⟩
+    · exact ⟨⟨State.addr p.privateValue, p.k⟩, by simp [keyCallWrites, keyWrites], fun _ hx => hx⟩)
+
+theorem environmentImport_next (env : SampleEnvironment) (s : State) {p : Inputs} {l : ScalarLayout p} {slots : List Nat} {rb : List Byte}
+    (stable : stableSlots slots = true) (h40 : 40 ∈ slots) (h44 : 44 ∈ slots)
+    (size : rb.length = p.k) (privateLength : p.privateLength = p.k) (h : SampleReady p l slots rb s) (calls : KeyCallMemory p s) (environment : env.holds p s) :
+    WP isa (VG.Impl.Ffdh.Arm.Domain.importAt 1 40 44) s (fun t => (SampleImported p l slots rb t ∧ KeyCallMemory p t) ∧ env.holds p t) := by
+  have length := l.encode_length size
+  refine WP.mono_syms (importAt_ok s 1 40 44 h.context.toContext stable h40 h44 h.ready (by decide) (by decide) h.scalar
+    (by rw [length]; have := p.minLength; omega) (by rw [length]; exact p.width.2.2.2.1)
+    (by change BitVec.ofNat 32 p.privateLength = _; rw [privateLength, length])) ?_
+  rintro t ⟨context, ready, imported, keeps, frame, rest⟩ syms
+  have fits : arrAt p.w 8 ≤ 8 * p.len := ready.width ▸ ready.layout.2.2.1
+  refine ⟨⟨⟨⟨h.context.after_workspace frame rest context.ptr (fun d hd => (stableSlots_at stable hd).1), ready,
+    (keeps_array_num keeps fits (by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp] : Operand 0) (by decide)).trans h.modulus,
+    (keeps_array_num keeps fits (by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp] : Operand 4) (by decide)).trans h.r2,
+    h.scalar.after_workspace frame rest, h.significant.after_workspace frame rest, h.outputs.after rest⟩, imported⟩, calls.after rest⟩, env.stable environment ?_ rest syms⟩
+  exact frame.mono (by simp [keyCallWrites, keyWrites])
+
+theorem environmentRange_next (env : SampleEnvironment) (s : State) {p : Inputs} {l : ScalarLayout p} {slots : List Nat} {rb : List Byte}
+    (stable : stableSlots slots = true) (h28 : 28 ∈ slots) (h32 : 32 ∈ slots) (h60 : 60 ∈ slots)
+    (odd : p.P % 2 = 1) (h : SampleImported p l slots rb s) (calls : KeyCallMemory p s) (environment : env.holds p s) :
+    WP isa VG.Impl.Ffdh.Arm.Domain.CheckPrivate.scalarRange s (fun t => (SampleRanged p l slots rb t ∧ KeyCallMemory p t) ∧ env.holds p t) := by
+  refine WP.mono_syms (scalarRange_ok s h.context.toContext stable h28 h32 h60 h.ready h.modulus odd) ?_
+  rintro t ⟨context, ready, flag, arrays, frame, rest⟩ syms
+  rw [h.imported] at flag
+  refine ⟨⟨⟨⟨h.context.after_workspace frame rest context.ptr (fun d hd => (stableSlots_at stable hd).1), ready, (arrays 0 (by simp)).trans h.modulus, (arrays 4 (by simp)).trans h.r2,
+    h.scalar.after_workspace frame rest, h.significant.after_workspace frame rest, h.outputs.after rest⟩, flag⟩, calls.after rest⟩, env.stable environment ?_ rest syms⟩
+  exact frame.mono (by simp [keyCallWrites, keyWrites])
+
+end VG.Proof.Ffdh.Arm
+end
+
+end
+
+-- Formerly `VerifiedGarbage/Proof/Ffdh/Arm/EnvironmentPrepareState.lean`, which only this module imported.
+section
+
+/-! # Modulus preparation preserves key-generation input and call geometry -/
+
+section
+namespace VG.Proof.Ffdh.Arm
+open VG VG.Arm VG.Proof.Bignum.Arm
+
+theorem environmentPrepare_next (env : SampleEnvironment) (prepare : Prog isa) (prep : EnvironmentPrepareLaw env prepare) (s : State) {p : Inputs} {slots : List Nat} {rb : List Byte}
+    (stable : stableSlots slots = true) (h52 : 52 ∈ slots) (h0 : 0 ∈ slots) (h24 : 24 ∈ slots) (h32 : 32 ∈ slots)
+    (large : 1 < p.P) (odd : p.P % 2 = 1) (normalized : 2 ^ (64 * (p.w - 1)) ≤ p.P) (size : rb.length = p.k) (h : KeyScalarInput p slots rb s) (calls : KeyCallMemory p s) (environment : env.holds p s) :
+    WP isa prepare s (fun t => KeyPrepared p slots rb t ∧ KeyCallMemory p t) := by
+  refine WP.mono (prep.correct s h.context environment calls stable h52 h0 h24 h32 large odd normalized) ?_
+  rintro t ⟨context, ready, modulus, r2, frame, rest⟩
+  have entropy := h.entropy.after_frame frame rest (by
+    intro r hr
+    simp only [keyPrepareWrites, prepareAtWrites, prepareWrites, List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with (rfl | rfl | rfl) | rfl
+    · exact h.entropy.separate
+    · rw [size]; exact h.entropyStack.sub_right (Offset.sub_base _ (by decide))
+    · rw [size]; exact h.entropyStack.sub_right (Offset.sub_base _ (by decide))
+    · rw [size]; exact calls.entropy)
+  exact ⟨⟨⟨context, entropy, h.outputs.after rest, by rw [rest.sp]; exact h.entropyStack⟩, ready, modulus, r2⟩, calls.after rest⟩
+
+end VG.Proof.Ffdh.Arm
+end
+
+end
+
+-- Formerly `VerifiedGarbage/Proof/Ffdh/Arm/EnvironmentKeyGenerateMainCT.lean`, which only this module imported.
+section
+
+/-! The only secret-dependent key-generation branch is scalar acceptance,
+whose classification is disclosed by the attempt's returned status. -/
+
+section
+namespace VG.Proof.Ffdh.Arm
+open VG VG.Arm VG.Proof.Bignum.Arm
+
+theorem environmentKeyGenerateMain_ct (prepare sample tail : Prog isa) (env : SampleEnvironment) (layout : (p : Inputs) → ScalarLayout p) (prep : EnvironmentPrepareLaw env prepare) (sampler : EnvironmentSampleLaw env layout sample) (law : EnvironmentTailLaw env layout tail) {p : Inputs} {slots : List Nat} {rb1 rb2 : List Byte}
+    (layoutBound : ∀ (p : Inputs) (rb : List Byte), rb.length = p.k → Spec.Rsa.os2ip ((layout p).encode rb) < 2 ^ Spec.Ffdh.generationScalarBits (Spec.Ffdh.domainOf p.k p.dom))
+    (publicRelAll : ∀ s t, env.publicRel s t)
+    (afterMem : ∀ {p : Inputs} {s t : State}, env.holds p s → t.mem = s.mem → VG.Proof.X25519.Arm.Rest [] s t → env.holds p t)
+    (stable : stableSlots slots = true) (h52 : 52 ∈ slots) (h0 : 0 ∈ slots) (h4 : 4 ∈ slots) (h24 : 24 ∈ slots) (h28 : 28 ∈ slots)
+    (h32 : 32 ∈ slots) (h36 : 36 ∈ slots) (h40 : 40 ∈ slots) (h44 : 44 ∈ slots) (h48 : 48 ∈ slots) (h56 : 56 ∈ slots) (h60 : 60 ∈ slots)
+    (saved : ∀ d ∈ slots, d + 4 ≤ 64 ∨ 68 ≤ d)
+    (special : sampleSlots slots)
+    (size1 : rb1.length = p.k) (size2 : rb2.length = p.k)
+    (classification : sampleScalarValid p (layout p) rb1 ↔ sampleScalarValid p (layout p) rb2)
+    (entropySep : Region.Disjoint ⟨State.addr p.entropy, p.k⟩ ⟨State.addr p.privateValue, p.k⟩)
+    (privateLength : p.privateLength = p.k) (outputY : p.output = p.publicValue)
+    (large : 1 < p.P) (odd : p.P % 2 = 1) (normalized : 2 ^ (64 * (p.w - 1)) ≤ p.P) :
+    RelCT isa (fun s t => ((KeyScalarInput p slots rb1 s ∧ KeyCallMemory p s) ∧ env.holds p s) ∧ ((KeyScalarInput p slots rb2 t ∧ KeyCallMemory p t) ∧ env.holds p t) ∧ env.publicRel s t ∧ s.sp = t.sp)
+      (VG.Impl.Ffdh.Arm.SampleKeyGenerate.main prepare sample tail) (fun _ _ => True) := by
+  have preparePost (s : State) {rb : List Byte} (size : rb.length = p.k)
+      (h : (KeyScalarInput p slots rb s ∧ KeyCallMemory p s) ∧ env.holds p s) :
+      WP isa prepare s (fun t => (KeyPrepared p slots rb t ∧ KeyCallMemory p t) ∧ env.holds p t) := by
+    refine (environmentPrepare_next env prepare prep s stable h52 h0 h24 h32 large odd normalized size h.1.1 h.1.2 h.2).and ?_
+    refine WP.mono_syms (prep.correct s h.1.1.context h.2 h.1.2 stable h52 h0 h24 h32 large odd normalized) ?_
+    rintro t ⟨_, _, _, _, frame, rest⟩ syms
+    apply env.stable h.2 _ rest syms
+    exact frame.sub (by
+      intro r hr
+      simp only [keyPrepareWrites, prepareAtWrites, prepareWrites, List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with (rfl | rfl | rfl) | rfl
+      · exact ⟨⟨State.addr p.base, 8 * p.len⟩, by simp [keyCallWrites, keyWrites], by intro a ha; exact ha⟩
+      · exact ⟨⟨State.addr s.sp, 72⟩, by simp [keyCallWrites, keyWrites], Offset.sub_base _ (by decide)⟩
+      · exact ⟨⟨State.addr s.sp, 72⟩, by simp [keyCallWrites, keyWrites], Offset.sub_base _ (by decide)⟩
+      · exact ⟨_, by simp [keyCallWrites], fun _ hx => hx⟩)
+  have prepareCT : RelCT isa (fun s t =>
+      ((KeyScalarInput p slots rb1 s ∧ KeyCallMemory p s) ∧ env.holds p s) ∧
+      ((KeyScalarInput p slots rb2 t ∧ KeyCallMemory p t) ∧ env.holds p t) ∧ env.publicRel s t ∧ s.sp = t.sp)
+      prepare (fun s t => ((KeyPrepared p slots rb1 s ∧ KeyCallMemory p s) ∧ env.holds p s) ∧
+      ((KeyPrepared p slots rb2 t ∧ KeyCallMemory p t) ∧ env.holds p t) ∧ env.publicRel s t ∧ s.sp = t.sp) := by
+    intro s t tr1 tr2 u v h e1 e2
+    obtain ⟨trace, _⟩ := prep.ct stable h52 h0 h24 h32 large odd normalized s t tr1 tr2 u v
+      ⟨⟨⟨h.1.1.1.context, h.1.1.2⟩, h.1.2⟩, ⟨⟨h.2.1.1.1.context, h.2.1.1.2⟩, h.2.1.2⟩, h.2.2⟩ e1 e2
+    obtain ⟨_, u', runU, postU⟩ := preparePost s size1 h.1
+    obtain ⟨_, v', runV, postV⟩ := preparePost t size2 h.2.1
+    obtain ⟨-, rfl⟩ := Exec.det e1 runU
+    obtain ⟨-, rfl⟩ := Exec.det e2 runV
+    exact ⟨trace, postU, postV, env.public_stable h.2.2.1 (Exec.syms e1) (Exec.syms e2),
+      (Exec.sp e1).trans (h.2.2.2.trans (Exec.sp e2).symm)⟩
+  have sampleCT := (sampler.ct stable special normalized odd h52 h0 h24 h28 h32 h40 h48 h60 size1 size2 entropySep).mono
+    (P' := fun (s t : State) => ((KeyPrepared p slots rb1 s ∧ KeyCallMemory p s) ∧ env.holds p s) ∧
+      ((KeyPrepared p slots rb2 t ∧ KeyCallMemory p t) ∧ env.holds p t) ∧ env.publicRel s t ∧ s.sp = t.sp)
+    (fun _ _ h => ⟨⟨h.1.1.1.toKeyScalarInput, h.1.2⟩, ⟨h.2.1.1.1.toKeyScalarInput, h.2.1.2⟩, h.2.2⟩) (fun _ _ h => h)
+  have sampled := (relCT_keep_sp sampleCT (fun _ _ h => h.2.2.2)).wp (fun s t h =>
+    ⟨environmentSample_next env sample layout sampler s stable special h52 h0 h24 h28 h32 h40 h48 h60 size1 entropySep h.1.1.1 h.1.1.2 h.1.2 normalized odd,
+     environmentSample_next env sample layout sampler t stable special h52 h0 h24 h28 h32 h40 h48 h60 size2 entropySep h.2.1.1.1 h.2.1.1.2 h.2.1.2 normalized odd⟩)
+  have imports := (importAt_ct (p := p) (a := 1) (slot := 40) (countSlot := 44) (k := p.k) stable (by simp [h40]) (by simp [h44])
+    (by change BitVec.ofNat 32 p.privateLength = _; rw [privateLength]) (by decide)).mono
+    (P' := fun (s t : State) => ((SampleReady p (layout p) slots rb1 s ∧ KeyCallMemory p s) ∧ env.holds p s) ∧ ((SampleReady p (layout p) slots rb2 t ∧ KeyCallMemory p t) ∧ env.holds p t) ∧ s.sp = t.sp)
+    (fun _ _ h => ⟨⟨h.1.1.1.context.toContext, h.1.1.1.ready⟩, ⟨h.2.1.1.1.context.toContext, h.2.1.1.1.ready⟩, h.2.2⟩) (fun _ _ h => h)
+  have ranges := (scalarRange_ct stable (by simp [h28]) (by simp [h32]) (by simp [h60]) odd).mono
+    (P' := fun (s t : State) => ((SampleImported p (layout p) slots rb1 s ∧ KeyCallMemory p s) ∧ env.holds p s) ∧ ((SampleImported p (layout p) slots rb2 t ∧ KeyCallMemory p t) ∧ env.holds p t) ∧ s.sp = t.sp)
+    (fun _ _ h => ⟨⟨h.1.1.1.context.toContext, h.1.1.1.ready, h.1.1.1.modulus⟩, ⟨h.2.1.1.1.context.toContext, h.2.1.1.1.ready, h.2.1.1.1.modulus⟩, h.2.2⟩) (fun _ _ h => h)
+  have sigSize {rb : List Byte} (size : rb.length = p.k) : (((layout p).encode rb).drop (layout p).lead).length = (layout p).width := by
+    rw [List.length_drop, (layout p).encode_length size]
+    rfl
+  have branches : RelCT isa (fun s t => ((SampleRanged p (layout p) slots rb1 s ∧ KeyCallMemory p s) ∧ env.holds p s) ∧ ((SampleRanged p (layout p) slots rb2 t ∧ KeyCallMemory p t) ∧ env.holds p t) ∧ s.sp = t.sp)
+      (VG.Impl.Ffdh.Arm.Domain.ifFlag tail VG.Impl.Ffdh.Arm.Domain.GenerateKey.failScalar)
+      (fun _ _ => True) := by
+    apply ifFlag_pair_ct (decide (sampleScalarValid p (layout p) rb1))
+      (fun s h => by
+        have f := h.1.1.flag
+        change s.gpr .r11 = (if sampleScalarValid p (layout p) rb1 then 1 else 0) at f
+        simpa only [decide_eq_true_eq] using f)
+      (fun s h => by
+        have f := h.1.1.flag
+        change s.gpr .r11 = (if sampleScalarValid p (layout p) rb2 then 1 else 0) at f
+        simp only [← classification] at f
+        simpa only [decide_eq_true_eq] using f)
+      (fun _ _ h mem rest => ⟨⟨h.1.1.after_mem mem rest, h.1.2.after rest⟩, afterMem h.2 mem rest⟩) (fun _ _ h mem rest => ⟨⟨h.1.1.after_mem mem rest, h.1.2.after rest⟩, afterMem h.2 mem rest⟩)
+    · intro _
+      exact (law.ct stable h52 h4 h32 h36
+        h40 h56 saved (sigSize size1) (sigSize size2)
+        (by rw [(layout p).encode_significant rb1]; exact layoutBound p rb1 size1)
+        (by rw [(layout p).encode_significant rb2]; exact layoutBound p rb2 size2) odd outputY).mono
+        (fun s t h => ⟨⟨⟨⟨h.1.1.1.context, h.1.1.1.ready, h.1.1.1.modulus, h.1.1.1.r2, h.1.1.1.significant, h.1.1.1.outputs⟩, h.1.1.2⟩, h.1.2⟩,
+          ⟨⟨⟨h.2.1.1.1.context, h.2.1.1.1.ready, h.2.1.1.1.modulus, h.2.1.1.1.r2, h.2.1.1.1.significant, h.2.1.1.1.outputs⟩, h.2.1.1.2⟩, h.2.1.2⟩, publicRelAll s t, h.2.2⟩)
+        (fun _ _ h => h)
+    · intro _
+      exact (keyFail_ct (fun d hd => (stableSlots_at stable hd).1) (by simp [h32]) (by simp [h36]) (by simp [h40])).mono
+        (fun _ _ h => ⟨⟨h.1.1.1.context.toContext.toArgumentMemory, h.1.1.1.outputs⟩, ⟨h.2.1.1.1.context.toContext.toArgumentMemory, h.2.1.1.1.outputs⟩, h.2.2⟩) (fun _ _ h => h)
+  unfold VG.Impl.Ffdh.Arm.SampleKeyGenerate.main
+  exact prepareCT.seq (sampled.seq ((relCT_chain imports
+        (fun s h => environmentImport_next env s stable (by simp [h40]) (by simp [h44]) size1 privateLength h.1.1 h.1.2 h.2)
+        (fun s h => environmentImport_next env s stable (by simp [h40]) (by simp [h44]) size2 privateLength h.1.1 h.1.2 h.2)
+        (relCT_chain ranges
+          (fun s h => environmentRange_next env s stable (by simp [h28]) (by simp [h32]) (by simp [h60]) odd h.1.1 h.1.2 h.2)
+          (fun s h => environmentRange_next env s stable (by simp [h28]) (by simp [h32]) (by simp [h60]) odd h.1.1 h.1.2 h.2)
+          branches)).mono (fun _ _ h => ⟨h.2.1, h.2.2, h.1⟩) (fun _ _ h => h)))
+
+end VG.Proof.Ffdh.Arm
+end
+
+end
+
+-- Formerly `VerifiedGarbage/Proof/Ffdh/Arm/CachedKeyGenerateBodyCT.lean`, which only this module imported.
+section
+
+/-! The cached attempt uses only the native public setup prefix before sampling. -/
+
+section
+namespace VG.Proof.Ffdh.Arm
+open VG VG.Arm VG.Proof.Bignum.Arm
+
+theorem cachedKeyGenerateBody_ct (prepare sample tail : Prog isa) (env : SampleEnvironment)
+    (layout : (p : Inputs) → ScalarLayout p) (prep : EnvironmentPrepareLaw env prepare)
+    (sampler : EnvironmentSampleLaw env layout sample) (law : EnvironmentTailLaw env layout tail)
+    (layoutBound : ∀ (p : Inputs) (rb : List Byte), rb.length = p.k →
+      Spec.Rsa.os2ip ((layout p).encode rb) < 2 ^ Spec.Ffdh.generationScalarBits (Spec.Ffdh.domainOf p.k p.dom))
+    (publicRelAll : ∀ s t, env.publicRel s t)
+    (afterMem : ∀ {p : Inputs} {s t : State}, env.holds p s → t.mem = s.mem → VG.Proof.X25519.Arm.Rest [] s t → env.holds p t)
+    {p : Inputs} {slots : List Nat} {rb1 rb2 : List Byte}
+    (stable : stableSlots slots = true)
+    (h52 : 52 ∈ slots) (h0 : 0 ∈ slots) (h4 : 4 ∈ slots) (h24 : 24 ∈ slots)
+    (h28 : 28 ∈ slots) (h32 : 32 ∈ slots) (h36 : 36 ∈ slots) (h40 : 40 ∈ slots)
+    (h44 : 44 ∈ slots) (h48 : 48 ∈ slots)
+    (saved : ∀ d ∈ slots, d + 4 ≤ 64 ∨ 68 ≤ d) (special : sampleSlots slots)
+    (size1 : rb1.length = p.k) (size2 : rb2.length = p.k)
+    (classification : sampleScalarValid p (layout p) rb1 ↔ sampleScalarValid p (layout p) rb2)
+    (entropySep : Region.Disjoint ⟨State.addr p.entropy, p.k⟩ ⟨State.addr p.privateValue, p.k⟩)
+    (privateLength : p.privateLength = p.k) (outputY : p.output = p.publicValue)
+    (valid : Spec.Rsa.modulusValid p.P p.k = true) :
+    RelCT isa (fun s t => ((KeyScalarInput p slots rb1 s ∧ KeyCallMemory p s) ∧ env.holds p s) ∧
+      ((KeyScalarInput p slots rb2 t ∧ KeyCallMemory p t) ∧ env.holds p t) ∧ s.sp = t.sp)
+      (VG.Impl.Ffdh.Arm.CachedKeyGenerate.body prepare sample tail) (fun _ _ => True) := by
+  let P := fun rb s => (KeyScalarInput p slots rb s ∧ KeyCallMemory p s) ∧ env.holds p s
+  let Q := fun rb s => (KeyScalarInput p (60 :: 56 :: slots) rb s ∧ KeyCallMemory p s) ∧ env.holds p s
+  have head := (headPrefix_ct stable h0 h24 h32).mono
+    (P' := fun (s t : State) => P rb1 s ∧ P rb2 t ∧ s.sp = t.sp)
+    (fun _ _ h => ⟨h.1.1.1.context, h.2.1.1.1.context, h.2.2⟩) (fun _ _ h => h)
+  have wp (s : State) {rb : List Byte} (size : rb.length = p.k) (h : P rb s) :
+      WP isa (.block (VG.Impl.Ffdh.Arm.Domain.prepareArgs 24 ++ VG.Impl.Ffdh.Arm.Domain.domainPointers)) s (Q rb) := by
+    refine WP.mono_syms (headPrefix_ok s h.1.1.context stable h0 h24 h32) ?_
+    rintro u ⟨context, _, _, frame, rest⟩ syms
+    refine ⟨⟨⟨context, h.1.1.entropy.after_frame frame rest (by simpa [size] using h.1.1.entropyStack),
+      h.1.1.outputs.after rest, by rw [rest.sp]; exact h.1.1.entropyStack⟩, h.1.2.after rest⟩, ?_⟩
+    exact env.stable h.2 (frame.mono (by simp [keyCallWrites, keyWrites])) rest syms
+  have stableU : stableSlots (60 :: 56 :: slots) = true := by
+    change (true && (true && stableSlots slots)) = true
+    simp only [Bool.true_and, stable]
+  have facts := VG.Proof.Bignum.valid_facts valid p.minLength
+  have main := (environmentKeyGenerateMain_ct prepare sample tail env layout prep sampler law layoutBound
+    publicRelAll afterMem stableU
+    (by simp [h52]) (by simp [h0]) (by simp [h4]) (by simp [h24]) (by simp [h28])
+    (by simp [h32]) (by simp [h36]) (by simp [h40]) (by simp [h44]) (by simp [h48]) (by simp) (by simp)
+    (by intro d hd; simp only [List.mem_cons] at hd; rcases hd with rfl | rfl | hd <;> first | decide | exact saved d hd)
+    (by intro d hd; simp only [List.mem_cons] at hd; rcases hd with rfl | rfl | hd <;> first | decide | exact special d hd)
+    size1 size2 classification entropySep privateLength outputY facts.2.1 facts.1 facts.2.2).mono
+      (P' := fun (s t : State) => Q rb1 s ∧ Q rb2 t ∧ s.sp = t.sp)
+      (fun s t h => ⟨h.1, h.2.1, publicRelAll s t, h.2.2⟩) (fun _ _ h => h)
+  exact relCT_chain head (fun s h => wp s size1 h) (fun s h => wp s size2 h) main
+
+end VG.Proof.Ffdh.Arm
+end
+
+end
+
+-- Formerly `VerifiedGarbage/Proof/Ffdh/Arm/CachedKeyGenerateFnCT.lean`, which only this module imported.
+section
+
+/-! Cached key-generation timing reveals only the reviewed attempt classification. -/
+
+section
+namespace VG.Proof.Ffdh.Arm
+open VG VG.Arm VG.Proof.Bignum.Arm
+
+theorem cachedKeyGenerateFn_ct (prepare sample tail : Prog isa) (env : SampleEnvironment)
+    (layout : (p : Inputs) → ScalarLayout p) (prep : EnvironmentPrepareLaw env prepare)
+    (sampler : EnvironmentSampleLaw env layout sample) (law : EnvironmentTailLaw env layout tail)
+    (layoutBound : ∀ (p : Inputs) (rb : List Byte), rb.length = p.k →
+      Spec.Rsa.os2ip ((layout p).encode rb) < 2 ^ Spec.Ffdh.generationScalarBits (Spec.Ffdh.domainOf p.k p.dom))
+    (publicRelAll : ∀ s t, env.publicRel s t)
+    (afterMem : ∀ {p : Inputs} {s t : State}, env.holds p s → t.mem = s.mem → VG.Proof.X25519.Arm.Rest [] s t → env.holds p t)
+    {p : Inputs} {rb1 rb2 : List Byte}
+    (valid : Spec.Rsa.modulusValid p.P p.k = true)
+    (classification : sampleScalarValid p (layout p) rb1 ↔ sampleScalarValid p (layout p) rb2) :
+    RelCT isa (fun s t => (CachedKeyGenerateFnInput p rb1 s ∧ env.holds p (entered s)) ∧
+      (CachedKeyGenerateFnInput p rb2 t ∧ env.holds p (entered t)) ∧ s.sp = t.sp)
+      (VG.Impl.Ffdh.Arm.CachedKeyGenerate.code prepare sample tail) (fun _ _ => True) := by
+  let P := fun (rb : List Byte) (a : State) =>
+    ∃ s, CachedKeyGenerateFnInput p rb s ∧ a = entered s ∧ env.holds p a
+  let Q := fun (rb : List Byte) (u : State) =>
+    (KeyScalarInput p [52, 0, 48, 44, 32, 28, 24, 4, 36, 40] rb u ∧ KeyCallMemory p u) ∧ env.holds p u
+  have entry := cachedKeyGenerateEntry_ct.mono
+    (P' := fun (s t : State) => P rb1 s ∧ P rb2 t ∧ s.sp = t.sp)
+    (fun _ _ h => h.2.2) (fun _ _ h => h)
+  have wp (a : State) {rb : List Byte} (h : P rb a) :
+      WP isa (.block VG.Impl.Ffdh.Arm.CachedKeyGenerate.entry) a (Q rb) := by
+    obtain ⟨s, allInput, rfl, environment⟩ := h
+    have input := allInput.input
+    refine WP.mono_syms (withAllRest (cachedKeyGenerateEntry_ok (entered s) input.args input.incoming allInput.cache
+      input.privateValue input.publicValue input.outputY input.privateLength)) ?_
+    rintro u ⟨⟨context, frame⟩, rest⟩ syms
+    refine ⟨⟨⟨context, input.entropy.after_frame frame rest (by simpa [input.size] using input.entropyStack),
+      input.outputs.after rest, by rw [rest.sp]; exact input.entropyStack⟩, input.calls.after rest⟩, ?_⟩
+    exact env.stable environment (frame.mono (by simp [keyCallWrites, keyWrites]))
+      (rest.mono (by simp [roundClobbers])) syms
+  unfold VG.Impl.Ffdh.Arm.CachedKeyGenerate.code
+  apply framed_ct (fun _ _ h => ⟨h.1.1.input.stackFits, h.2.1.1.input.stackFits⟩) (fun _ _ h => h.2.2)
+  intro a b tr1 tr2 u v h e1 e2
+  obtain ⟨s, t, related, rfl, rfl⟩ := h
+  have body := relCT_chain entry (fun a h => wp a h) (fun a h => wp a h)
+    (cachedKeyGenerateBody_ct prepare sample tail env layout prep sampler law layoutBound publicRelAll afterMem
+      (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
+      (by decide) (by decide) (by decide) (by decide)
+      (by intro d hd; revert d; decide) (by intro d hd; revert d; decide)
+      related.1.1.input.size related.2.1.1.input.size classification related.1.1.input.entropySep
+      related.1.1.input.privateLength related.1.1.input.outputY valid)
+  exact body _ _ _ _ _ _ ⟨⟨s, related.1.1, rfl, related.1.2⟩,
+    ⟨t, related.2.1.1, rfl, related.2.1.2⟩,
+    by rw [entered_sp, entered_sp, related.2.2]⟩ e1 e2
+
+end VG.Proof.Ffdh.Arm
+end
+
+end
+
+-- Formerly `VerifiedGarbage/Proof/Ffdh/Arm/CachedGenerationMemory.lean`, which only this module imported.
+section
+
+/-! The immutable canonical context survives silent argument and flag operations. -/
+
+section
+namespace VG.Proof.Ffdh.Arm
+open VG VG.Arm VG.Proof.Bignum.Arm
+open VG.Proof.X25519.Arm (Rest)
+
+theorem cachedGeneration_publicRel (s t : State) : cachedGenerationEnvironment.publicRel s t := trivial
+
+theorem cachedGeneration_afterMem {p : Inputs} {s t : State}
+    (h : cachedGenerationEnvironment.holds p s) (mem : t.mem = s.mem) (rest : Rest [] s t) :
+    cachedGenerationEnvironment.holds p t := by
+  have frame : Frame (keyCallWrites p s) s.mem t.mem := by rw [mem]; exact Frame.refl _ _
+  exact h.after frame (rest.mono (by simp [roundClobbers]))
+
+end VG.Proof.Ffdh.Arm
+end
+
+end
+
+@[expose] public section
+namespace VG.Proof.Ffdh.Arm
+open VG VG.Arm
+
+theorem cachedKeyGenerate_contract_ct (prepare sample tail : Prog isa)
+    (prep : EnvironmentPrepareLaw cachedGenerationEnvironment prepare)
+    (sampler : EnvironmentSampleLaw cachedGenerationEnvironment ScalarLayout.vetted sample)
+    (law : EnvironmentTailLaw cachedGenerationEnvironment ScalarLayout.vetted tail) :
+    ConstantTime isa (Proof.Ffdh.cachedGenerateKeyContract abi 176).pre
+      (Proof.Ffdh.cachedGenerateKeyContract abi 176).pub
+      (VG.Impl.Ffdh.Arm.CachedKeyGenerate.code prepare sample tail) := by
+  intro s t tr1 tr2 u v hs ht hp e1 e2
+  obtain ⟨p, rb, base, privateValue, publicValue, domain, count, capacity, entropy, domainBytes, entropyBytes, allInputS,cachedS,validS,cachePointer,cacheWords⟩ := cachedKeyGenerate_data s hs
+  have inputS := allInputS.input
+  have randLength (a : State) (h : (Proof.Ffdh.cachedGenerateKeyContract abi 176).pre a) :
+      (stackArg a 4).toNat = (stackArg a 2).toNat := by
+    have h := cachedKeyGenerate_plain_pre a h
+    sig_pre [Spec.Ffdh.generateKeyContract, Spec.Ffdh.generateKeySig, abi, argRegs, reduceClassify, Loc.val, State.addr] at h
+    obtain ⟨_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, length, _⟩ := h
+    exact length
+  sig_pub [Proof.Ffdh.cachedGenerateKeyContract, Proof.Ffdh.cachedGenerateKeySig, Spec.Ffdh.generateKeySig, abi, argRegs, reduceClassify, Loc.val, State.addr] at hp
+  obtain ⟨sp, bytes, p0, _, p2, _, p4, p5, p6, p7, _, p9, p10, p11, p12⟩ := hp
+  rw [randLength s hs, randLength t ht, ← p4, ← p5, ← p6, ← p7] at bytes
+  obtain ⟨domEqNat, statusEq⟩ := List.append_inj bytes
+    (by simp only [Spec.Rsa.bytesAt, List.length_map, List.length_range])
+  have recover {a b : List Byte} (h : a.map BitVec.toNat = b.map BitVec.toNat) : a = b := by
+    have eq := congrArg (List.map (BitVec.ofNat 8)) h
+    simpa only [List.map_map, Function.comp_def, BitVec.ofNat_toNat,
+      BitVec.setWidth_eq, List.map_id'] using eq
+  have domEq := recover domEqNat
+  let rb2 := Spec.Rsa.bytesAt t.mem (State.addr p.entropy) p.k
+  have allInputT := cachedKeyGenerate_input t ht (p := p) (rb := rb2)
+    (p9.symm.trans base) (p0.symm.trans privateValue) (p2.symm.trans publicValue) (p4.symm.trans domain)
+    (by rw [← p6]; exact count) (by rw [← p10]; exact capacity) (p7.symm.trans entropy) (p11.symm.trans cachePointer) inputS.outputY inputS.privateLength ?_ rfl
+  · have inputT := allInputT.input
+    have cachedT := (cachedKeyGenerate_environment t ht (p9.symm.trans base)
+      (p0.symm.trans privateValue) (p2.symm.trans publicValue) (p4.symm.trans domain)
+      (by rw [←p6]; exact count) (by rw [←p10]; exact capacity)
+      (p11.symm.trans cachePointer) (by rw [←p12]; exact cacheWords)
+      (by rw [←p5,←domain]; change Spec.Rsa.bytesAt t.mem (BitVec.setWidth 64 (stackArg s 0)) (stackArg s 1).toNat=p.dom; rw [←domEq,domain]; exact domainBytes)).1
+    have status := (List.cons.inj statusEq).1
+    rw [← domEq] at status
+    simp only [State.addr] at domainBytes entropyBytes
+    simp only [count, domain, entropy, domainBytes, entropyBytes] at status
+    change Spec.Ffdh.keyStatus (Spec.Ffdh.domainOf p.k p.dom) (Spec.Ffdh.vettedScalarOfOctets (Spec.Ffdh.domainOf p.k p.dom) rb) =
+      Spec.Ffdh.keyStatus (Spec.Ffdh.domainOf p.k p.dom) (Spec.Ffdh.vettedScalarOfOctets (Spec.Ffdh.domainOf p.k p.dom) rb2) at status
+    rw [← ScalarLayout.vetted_value inputS.size, ← ScalarLayout.vetted_value inputT.size] at status
+    have classification := keyStatus_validity_same (Spec.Ffdh.domainOf p.k p.dom)
+      (Spec.Rsa.os2ip ((ScalarLayout.vetted p).encode rb))
+      (Spec.Rsa.os2ip ((ScalarLayout.vetted p).encode rb2)) status
+    rw [p.privateValid_native, p.privateValid_native] at classification
+    have modValid := VG.Proof.Ffdh.domainValid_mod validS
+    rw [p.domainP] at modValid
+    exact (cachedKeyGenerateFn_ct prepare sample tail cachedGenerationEnvironment ScalarLayout.vetted
+      prep sampler law CachedSample.layoutBound cachedGeneration_publicRel cachedGeneration_afterMem
+      modValid classification s t tr1 tr2 u v
+      ⟨⟨allInputS,cachedS⟩,⟨allInputT,cachedT⟩,sp⟩ e1 e2).1
+  · rw [← p5, ← domain]
+    change Spec.Rsa.bytesAt t.mem (BitVec.setWidth 64 (stackArg s 0)) (stackArg s 1).toNat = p.dom
+    rw [← domEq, domain]
+    exact domainBytes
+
+
+end VG.Proof.Ffdh.Arm
+
+end
+
+end
+
+/-! ### `Bignum.Arm.CombExpPhase`, which only this module used -/
+
+section
+
+/-! ### `Bignum.Arm.CombExpFinish`, which only this module used -/
+
+section
+
+/-! Decode the completed comb power with one shared Montgomery product. -/
+
+@[expose] public section
+namespace VG.Proof.Bignum.Arm.CombExp
+open VG VG.Arm
+open VG.Proof.Rsa.Mont (numAt arrAt Operand)
+open VG.Proof.X25519.Arm (Rest)
+
+theorem finish_ok {base : BitVec 32} {len w M g E : Nat} {P : State → Prop} {regions : List Region}
+    (A : TwoExp.Montgomery base len w P regions) (s : State) (h : Power base len w M g E s) (hp : P s) :
+    WP isa (A.op 6 6 7) s fun t => ArithmeticReady base len w t ∧
+      numAt t.mem (State.addr base) w 6 = Spec.Rsa.powMod g E M ∧
+      numAt t.mem (State.addr base) w 0 = M ∧
+      numAt t.mem (State.addr base) w 4 = 2 ^ (128 * w) % M ∧
+      numAt t.mem (State.addr base) w 7 = 1 ∧ P t ∧ TwoExp.HeaderKept base s t ∧
+      Frame regions s.mem t.mem ∧ Rest roundClobbers s t := by
+  refine WP.mono (A.op_ok s 6 6 7 h.ready hp
+    (by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp])
+    (by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp])
+    (by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]) (by decide)
+    (by rw [h.one]; exact h.ready.modulus)) ?_
+  rintro t ⟨ready, modulus, bound, value, keeps, pt, frame, rest⟩
+  rw [h.modulus] at modulus bound value
+  rw [h.one] at value
+  have final := mont_final_factor h.coprime h.value value
+  rw [Nat.mod_eq_of_lt bound, Nat.mul_one, ← powMod_eq] at final
+  have fits : arrAt w 8 ≤ 8 * len := h.ready.width ▸ h.ready.layout.2.2.1
+  have r2 := (keeps_array_num keeps fits
+    (q := 4) (by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]) (by decide)).trans h.r2
+  have one := (keeps_array_num keeps fits
+    (q := 7) (by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]) (by decide)).trans h.one
+  exact ⟨ready, final, modulus, r2, one, pt, TwoExp.header_of_keeps h.ready keeps, frame, rest⟩
+
+end VG.Proof.Bignum.Arm.CombExp
+
+end
+
+end
+
+
+/-! The public comb schedule computes the same full scalar power as direct exponentiation. -/
+
+@[expose] public section
+namespace VG.Proof.Bignum.Arm.CombExp
+open VG VG.Arm
+open VG.Proof.Rsa.Mont (numAt)
+open VG.Proof.X25519.Arm (Rest)
+
+theorem phase_ok {base source table : BitVec 32} {len w bytes N M g x : Nat}
+    {P : State→Prop} {regions : List Region}
+    (K : Kernel base source table len w bytes N M g x P regions) (s : State)
+    (ready : ArithmeticReady base len w s) (hp : P s) (controls : Controls base source table bytes N s)
+    (modulus : numAt s.mem (State.addr base) w 0=M) (odd : M%2=1)
+    (r2 : numAt s.mem (State.addr base) w 4=2^(128*w)%M)
+    (positive : 0<Spec.Rsa.FixedBaseComb.rows N) (fits : Spec.Rsa.FixedBaseComb.rows N<2^32)
+    (bound : x<2^N) :
+    WP isa (VG.Impl.Bignum.Arm.CombExp.phase K.arithmetic.op) s fun t =>
+      ArithmeticReady base len w t ∧ numAt t.mem (State.addr base) w 6=Spec.Rsa.powMod g x M ∧
+      numAt t.mem (State.addr base) w 0=M ∧ numAt t.mem (State.addr base) w 4=2^(128*w)%M ∧
+      numAt t.mem (State.addr base) w 7=1 ∧ P t ∧ Controls base source table bytes N t ∧
+      Frame regions s.mem t.mem ∧ Rest roundClobbers s t := by
+  rw [VG.Impl.Bignum.Arm.CombExp.phase,WP.seq_iff]
+  refine WP.mono (initial_ok (g:=g) K.arithmetic s ready hp controls modulus odd r2) ?_
+  rintro u ⟨powerU,pu,controlsU,counterU,frameU,restU⟩
+  have start : Power base len w M g (VG.Proof.Rsa.FixedBaseComb.high N x (Spec.Rsa.FixedBaseComb.rows N)) u := by
+    simpa only [VG.Proof.Rsa.FixedBaseComb.high_top] using powerU
+  rw [WP.seq_iff]
+  refine WP.mono (rows_ok K u positive (Nat.le_refl _) fits start pu controlsU counterU) ?_
+  rintro v ⟨powerV,pv,controlsV,_,frameV,restV⟩
+  rw [VG.Proof.Rsa.FixedBaseComb.high_zero N x bound] at powerV
+  refine WP.mono (finish_ok K.arithmetic v powerV pv) ?_
+  rintro t ⟨readyT,resultT,modT,r2T,oneT,pt,headerT,frameT,restT⟩
+  exact ⟨readyT,resultT,modT,r2T,oneT,pt,controlsV.after_header headerT,
+    frameU.trans (frameV.trans frameT),restU.trans (restV.trans restT)⟩
+
+end VG.Proof.Bignum.Arm.CombExp
+
+end
+
+end
+
 /-! Cached attempts inherit every callable RSA Montgomery backend and caller transform. -/
 
 -- Formerly `VerifiedGarbage/Proof/Ffdh/Arm/CachedKeyPrograms.lean`, which only this module imported.

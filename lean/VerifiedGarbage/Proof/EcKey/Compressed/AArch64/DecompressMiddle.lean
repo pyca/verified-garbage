@@ -6,20 +6,549 @@ public import VerifiedGarbage.Spec.EcKey.Compressed
 public import VerifiedGarbage.Proof.EcKey.Compressed.AArch64.Front
 public import VerifiedGarbage.Impl.EcKey.Compressed.AArch64.Decompress
 public import VerifiedGarbage.Proof.Ecdsa.AArch64.Fixed
-
 import VerifiedGarbage.Proof.EcKey.Compressed.AArch64.Frame
-import VerifiedGarbage.Proof.EcKey.Compressed.AArch64.Select
-import VerifiedGarbage.Proof.EcKey.Compressed.AArch64.Check
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Fprog
+import VerifiedGarbage.Proof.EcKey.Compressed.AArch64.Parity
+import VerifiedGarbage.Proof.Ecdsa.AArch64.SlotOps
+import VerifiedGarbage.Proof.Ecdsa.AArch64.Middle
+import VerifiedGarbage.Proof.Mont.AArch64.Ops
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Copy
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Unch
+import VerifiedGarbage.Proof.Ecdsa.AArch64.Lays
+import VerifiedGarbage.Proof.Ecdsa.AArch64.Stages
+import VerifiedGarbage.Proof.Ecdh.AArch64.Peer
+import VerifiedGarbage.Proof.Ecdsa.AArch64.Scalar
+public import VerifiedGarbage.Proof.Weierstrass.Words
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Pow
 import VerifiedGarbage.Proof.EcKey.Compressed.AArch64.Setup
 import VerifiedGarbage.Proof.Ecdsa.AArch64.Setup
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Ecdsa.AArch64.Lays
-import VerifiedGarbage.Proof.Ecdsa.AArch64.SlotOps
-import VerifiedGarbage.Proof.Ecdsa.AArch64.Middle
-import VerifiedGarbage.Proof.Ecdsa.AArch64.Stages
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Unch
-import VerifiedGarbage.Proof.EcKey.Compressed.AArch64.Peer
+import VerifiedGarbage.Proof.Weierstrass.AArch64.SetConst
+import VerifiedGarbage.Proof.Ecdsa.AArch64.Layout
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Bits
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+
+/-! ### `EcKey.Compressed.AArch64.Select`, which only this module used -/
+
+section
+
+/-! # Leave Montgomery form and choose between the two canonical roots -/
+
+@[expose] public section
+
+namespace VG.Proof.EcKey.Compressed.AArch64
+
+open VG VG.AArch64 VG.Impl.Ecdsa.AArch64 VG.Impl.Weierstrass.AArch64
+open VG.Impl.Ecdh.AArch64 (QY W0)
+open VG.Proof.Ecdsa.AArch64 VG.Proof.Mont VG.Proof.Mont.AArch64
+open VG.Proof.Weierstrass VG.Proof.Weierstrass.AArch64
+
+structure SelectPost (c : Cfg) (base : Addr) (s s' : State) : Prop where
+  scr : Scr s' base size
+  mod : ModOkA c.MP' size c.C.p s'.mem base
+  keep : KeepRegs (clob c.n) s s'
+  unch : Unch base (slW c [QY, W0, TMP]) s.mem s'.mem
+  lt : sv c base s' QY < c.C.p
+  val : Fin.ofNat c.C.p (sv c base s' QY) =
+    let y := toM c.C.p (2 ^ (64 * c.n)) (sv c base s ACC)
+    if y.val % 2 = (word s.mem base (c.sl D)).toNat % 2 then y else -y
+
+theorem selectRoot_ok {c : Cfg} (hc : BaseCfgOk c) {base : Addr} {s : State}
+    (hs : Scr s base size) (hM : ModOkA c.MP' size c.C.p s.mem base)
+    (hOne : sv c base s ONE = 1) (hZero : sv c base s ZERO = 0) :
+    WP isa (Impl.EcKey.Compressed.AArch64.selectRoot c) s (SelectPost c base s) := by
+  have h0 := hc.n0
+  have h7 := hc.n10
+  have hn := hs.nowrap
+  have hp3 := hc.p_ge
+  have hY := sl_le c h7 (i := QY) (by decide)
+  have hZ := sl_le c h7 (i := ZERO) (by decide)
+  have hW := sl_le c h7 (i := W0) (by decide)
+  have hD := sl_le c h7 (i := D) (by decide)
+  have hMP := sl_le c h7 (i := MP) (by decide)
+  change WP isa (.seq (opProg c.MP' (.mul (c.sl QY) (c.sl ACC) (c.sl ONE)))
+    (.block (opCode c.MP' (.sub (c.sl W0) (c.sl ZERO) (c.sl QY)) ++
+      Impl.EcKey.Compressed.AArch64.parityMask c ++ sel c.n (c.sl QY) (c.sl QY) (c.sl W0)))) s _
+  rw [mulPP_eq_op _ _ _ (by
+    intro h
+    have := sl_inj c hc.n0 h
+    contradiction)]
+  refine WP.seq (WP.mono (slMulP_ok hc hs hM (o := QY) (a := ACC) (b := ONE)
+    (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by rw [hOne]; omega_using [hp3]))
+    fun s₁ ⟨k₁, lt₁, e₁⟩ => ?_)
+  have hs₁ := k₁.scr hs
+  have hM₁ := hM.keepA64 (j := MP) (by decide) rfl rfl rfl rfl h7 hn k₁ (by decide) (by decide)
+  have normal : Fin.ofNat c.C.p (sv c base s₁ QY) =
+      toM c.C.p (2 ^ (64 * c.n)) (sv c base s ACC) :=
+    toM_one_mul (unitMod_pow_two hc.p_odd (64 * c.n)) (by simpa only [hOne] using e₁)
+  have normalVal : sv c base s₁ QY =
+      (toM c.C.p (2 ^ (64 * c.n)) (sv c base s ACC)).val := by
+    simpa only [Fin.val_ofNat, Nat.mod_eq_of_lt lt₁] using congrArg Fin.val normal
+  have zero₁ : sv c base s₁ ZERO = 0 :=
+    (sv_keep (MP'_n c) rfl h7 hn k₁ (by decide) (by decide) (by decide)).trans hZero
+  rw [List.append_assoc, WP.block_append_iff]
+  refine WP.mono (subOp_ok hs₁ hM₁ (MP'_A c) hW hZ hY (sl_mod8 c W0) (sl_mod8 c ZERO) (sl_mod8 c QY)
+    (by change sv c base s₁ ZERO < c.C.p; rw [zero₁]; omega_using [hp3])
+    lt₁) fun s₂ ⟨k₂, e₂⟩ => ?_
+  change sv c base s₂ W0 = (sv c base s₁ ZERO + c.C.p - sv c base s₁ QY) % c.C.p at e₂
+  have hs₂ := k₂.scr hs₁
+  have hM₂ := hM₁.keepA64 (j := MP) (by decide) rfl rfl rfl rfl h7 hn k₂ (by decide) (by decide)
+  have y₂ : sv c base s₂ QY = sv c base s₁ QY :=
+    sv_keep (MP'_n c) rfl h7 hn k₂ (by decide) (by decide) (by decide)
+  have negLt : sv c base s₂ W0 < c.C.p := by
+    rw [e₂]
+    exact Nat.mod_lt _ (by omega_using [hp3])
+  have negVal : Fin.ofNat c.C.p (sv c base s₂ W0) = -(Fin.ofNat c.C.p (sv c base s₁ QY)) := by
+    apply Fin.ext
+    simp only [Fin.val_ofNat, Fin.neg_def]
+    rw [show sv c base s₂ W0 = (sv c base s₁ ZERO + c.C.p - sv c base s₁ QY) % c.C.p from e₂,
+      zero₁, Nat.zero_add, Nat.mod_mod, Nat.mod_eq_of_lt lt₁]
+  have U₁₂ : Unch base (slW c [QY, W0, TMP]) s.mem s₂.mem :=
+    unch_same (unch_slots (MP'_n c) rfl k₁.unch (by simp) (by simp))
+      (unch_slots (MP'_n c) rfl k₂.unch (by simp) (by simp))
+  have tag₂ : word s₂.mem base (c.sl D) = word s.mem base (c.sl D) :=
+    U₁₂.word (fun w hw => by
+      have := (apart_slW (c := c) (by decide : D ∉ [QY, W0, TMP])) w hw
+      omega_using [h0, this]) (by have := hs.nowrap; omega_using [h0, hn, hD])
+  rw [WP.block_append_iff]
+  refine WP.mono (parityMask_ok hs₂ h0 (by omega_using [h0, hY]) (by omega_using [h0, hD])) fun s₃ ⟨mask₃, k₃⟩ => ?_
+  have hs₃ := hs₂.of_keeps k₃ (by decide)
+  refine WP.mono (sel_ok (decide (sv c base s₂ QY % 2 ≠ (word s₂.mem base (c.sl D)).toNat % 2)) c.n hs₃
+    (by simpa only [mask, decide_eq_true_eq] using mask₃)
+    hY hY hW (sl_mod8 c QY) (sl_mod8 c QY) (sl_mod8 c W0) (Or.inl (Nat.le_refl _))
+    (by have := sl_apart c (i := QY) (j := W0) (by decide); omega_using [this])) fun s₄ ⟨e₄, k₄, O₄⟩ => ?_
+  have hs₄ := hs₃.of_keepRegs k₄ (by decide)
+  have hM₄ : ModOkA c.MP' size c.C.p s₄.mem base := modP_of hc (by
+    rw [O₄.wordsVal (d := c.sl MP) (k := c.n)
+      (sl_apart c (i := MP) (j := QY) (by decide)) (by omega_using [hn, hMP]), k₃.mem]
+    exact hM₂.val)
+  have e₄' : sv c base s₄ QY =
+      if sv c base s₂ QY % 2 ≠ (word s₂.mem base (c.sl D)).toNat % 2 then
+        sv c base s₂ W0 else sv c base s₂ QY := by
+    simpa only [sv, k₃.mem, decide_eq_true_eq] using e₄
+  refine ⟨hs₄, hM₄, ?_, ?_, ?_, ?_⟩
+  · have k₁' : KeepRegs (clob c.n) s s₁ := ⟨k₁.gpr, k₁.rd, k₁.wr, k₁.sp⟩
+    have k₂' : KeepRegs (clob c.n) s₁ s₂ := ⟨k₂.gpr, k₂.rd, k₂.wr, k₂.sp⟩
+    exact ((k₁'.trans k₂').trans ((Keeps.regs k₃).mono (by
+      intro r hr
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl | rfl <;> simp [clob]))).trans
+        (k₄.mono (by intro r hr; simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+                     rcases hr with rfl | rfl <;> simp [clob]))
+  · apply unch_same U₁₂
+    rw [← k₃.mem]
+    exact slot_frame (by simp) (Nat.le_refl _) O₄
+  · rw [e₄']
+    split
+    · exact negLt
+    · rw [y₂]
+      exact lt₁
+  · change Fin.ofNat c.C.p (sv c base s₄ QY) =
+      if (toM c.C.p (2 ^ (64 * c.n)) (sv c base s ACC)).val % 2 =
+        (word s.mem base (c.sl D)).toNat % 2 then _ else _
+    rw [y₂, tag₂, normalVal] at e₄'
+    by_cases hm : (toM c.C.p (2 ^ (64 * c.n)) (sv c base s ACC)).val % 2 =
+        (word s.mem base (c.sl D)).toNat % 2
+    · rw [ite_eq_left hm]
+      rw [ite_eq_right (not_not_intro hm)] at e₄'
+      rw [e₄']
+      exact Fin.ext (Nat.mod_eq_of_lt (toM _ _ _).isLt)
+    · rw [ite_eq_right hm]
+      rw [ite_eq_left hm] at e₄'
+      rw [e₄', negVal, normal]
+
+end VG.Proof.EcKey.Compressed.AArch64
+
+end
+
+end
+
+/-! ### `EcKey.Compressed.AArch64.Check`, which only this module used -/
+
+section
+
+/-! # Check the recovered root's square and parity -/
+
+@[expose] public section
+
+namespace VG.Proof.EcKey.Compressed.AArch64
+
+open VG VG.AArch64 VG.Impl.Ecdsa.AArch64 VG.Impl.Weierstrass
+open VG.Impl.Ecdh.AArch64 (QY QYM R2P W1 W2 W3)
+open VG.Proof.Ecdsa.AArch64 VG.Proof.Mont VG.Proof.Mont.AArch64
+open VG.Proof.Weierstrass VG.Proof.Weierstrass.AArch64
+open VG.Proof.Ecdh.AArch64
+open VG.Proof.Ed25519.AArch64 (Keeps)
+
+def checkN : List FOp := [.mul QYM QY R2P, .mul W1 QYM QYM, .sub W3 W1 W2]
+abbrev checkSlots : List Nat := [QY, R2P, W2, QYM, W1, W3]
+
+theorem checkOps_eq (c : Cfg) : Impl.EcKey.Compressed.AArch64.checkRootOps c =
+    checkN.map (FOp.rename c.sl) := rfl
+
+theorem checkN_run {F : Type} [Lean.Grind.CommRing F] (e : Nat → F) :
+    runOps checkN e W3 = (e QY * e R2P) * (e QY * e R2P) - e W2 := by
+  simp only [checkN, runOps_cons, runOps_nil, FOp.run, Function.update_apply]
+  simp only [QYM, QY, R2P, W1, W2, X, RR, DM, TT, SM, Nat.reduceEqDiff, ↓reduceIte]
+
+theorem checkN_reads : readsOk checkN [QY, R2P, W2] = true := by decide
+theorem checkN_slots : ∀ op ∈ checkN, ∀ x ∈ op.out :: op.ins, x ∈ checkSlots := by decide
+theorem checkN_out : ∀ op ∈ checkN, op.out ∈ [QYM, W1, W3, TMP] := by decide
+
+theorem raw_r2_mul {c : Cfg} (hc : BaseCfgOk c) (a : Nat) :
+    toM c.C.p (2 ^ (64 * c.n)) a *
+      toM c.C.p (2 ^ (64 * c.n)) (c.R * c.R % c.C.p) = Fin.ofNat c.C.p a := by
+  change toM c.C.p (2 ^ (64 * c.n)) a * toM c.C.p (2 ^ (64 * c.n)) (c.mont c.R) = _
+  rw [toM_cmont hc]
+  unfold toM
+  have hu := mul_rinv (unitMod_pow_two hc.p_odd (64 * c.n))
+  change Fin.ofNat c.C.p c.R * rinv c.C.p (2 ^ (64 * c.n)) = 1 at hu
+  grind
+
+structure CheckPolyPost (c : Cfg) (base : Addr) (s s' : State) : Prop where
+  scr : Scr s' base size
+  keep : KeepRegs (clob c.n) s s'
+  unch : Unch base (slW c [QYM, W1, W3, TMP]) s.mem s'.mem
+  lt : sv c base s' W3 < c.C.p
+  val : toM c.C.p (2 ^ (64 * c.n)) (sv c base s' W3) =
+    Fin.ofNat c.C.p (sv c base s QY) * Fin.ofNat c.C.p (sv c base s QY) -
+      toM c.C.p (2 ^ (64 * c.n)) (sv c base s W2)
+
+theorem checkPoly_ok {c : Cfg} (hc : BaseCfgOk c) {base : Addr} {s : State}
+    (hs : Scr s base size) (hM : ModOkA c.MP' size c.C.p s.mem base)
+    (hy : sv c base s QY < c.C.p) (hr : sv c base s W2 < c.C.p)
+    (hr2 : sv c base s R2P = c.R * c.R % c.C.p) :
+    WP isa (Impl.Weierstrass.AArch64.fprogB c.MP'
+      (Impl.EcKey.Compressed.AArch64.checkRootOps c)) s (CheckPolyPost c base s) := by
+  have h7 := hc.n10
+  have hL : Lay c.MP' size (· ∈ checkSlots.map c.sl) := lay_map hc rfl rfl rfl (by decide)
+  have hAl : Aligned c.MP' (· ∈ checkSlots.map c.sl) := ⟨fun x hx => by
+    obtain ⟨i, _, rfl⟩ := List.mem_map.mp hx
+    exact sl_mod8 c i, MP'_A c, fun f m h => (hc.call_p f m h).2⟩
+  have I : Inv c.MP' base size c.C.p (· ∈ checkSlots.map c.sl) ([QY, R2P, W2].map c.sl)
+      (fun o => toM c.C.p (2 ^ (64 * c.n)) (wordsVal s.mem base o c.n)) s := by
+    refine ⟨hs, hM, ?_, ?_, fun _ _ => rfl⟩
+    · intro x hx
+      obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hx
+      have sub : ∀ i ∈ [QY, R2P, W2], i ∈ checkSlots := by decide
+      exact List.mem_map_of_mem (sub i hi)
+    · intro x hx
+      simp only [List.map_cons, List.map_nil, List.mem_cons, List.not_mem_nil, or_false] at hx
+      rcases hx with rfl | rfl | rfl
+      · exact hy
+      · show sv c base s R2P < _
+        rw [hr2]
+        exact Nat.mod_lt _ (by have := hc.p_ge; omega_arith)
+      · exact hr
+  rw [checkOps_eq]
+  refine WP.mono (fprogB_ok hL hAl (unitMod_pow_two hc.p_odd (64 * c.n)) _ I
+    (fun op hop x hx => ?_)
+    (by
+      intro op hop
+      apply Low.of_call
+      intro f m h x hx
+      obtain ⟨op₀, hop₀, rfl⟩ := List.mem_map.mp hop
+      have hx' : x ∈ (op₀.out :: op₀.ins).map c.sl := by
+        cases op₀ <;> simpa [FOp.rename, FOp.out, FOp.ins] using hx
+      obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hx'
+      have hi' := checkN_slots op₀ hop₀ i hi
+      have H : ∀ i ∈ checkSlots, i < 45 ∧ i ≠ TMP := by decide
+      exact sl_own_fn c h7 (H i hi').1 (H i hi').2)
+    (readsOk_rename c.sl checkN_reads)) fun t ⟨PK, IT⟩ => ?_
+  · obtain ⟨op₀, h₀, rfl⟩ := List.mem_map.mp hop
+    have hx' : x ∈ (op₀.out :: op₀.ins).map c.sl := by
+      cases op₀ <;> simpa [FOp.rename, FOp.out, FOp.ins] using hx
+    obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hx'
+    exact List.mem_map_of_mem (checkN_slots _ h₀ _ hi)
+  have hw : c.sl W3 ∈ validAfter (checkN.map (FOp.rename c.sl)) ([QY, R2P, W2].map c.sl) :=
+    (mem_validAfter _ _).mpr (Or.inr (by simp [checkN, FOp.rename, FOp.out]))
+  have vt := IT.val _ hw
+  have H : ∀ op ∈ checkN, op.out ≠ TMP ∧ op.out ≠ 54 ∧ op.out ≠ 61 ∧ op.out ≠ 82 := by decide
+  rw [congrFun (runOps_rename c.sl checkN _ fun op hop y h =>
+    sl_inj c hc.n0 h (.inr (H op hop).2) (.inl (H op hop).1)) W3, checkN_run] at vt
+  refine ⟨PK.scr hs, ⟨PK.gpr, PK.rd, PK.wr, PK.sp⟩, ?_, IT.lt _ hw, ?_⟩
+  · apply PK.unch.mono
+    intro w hw
+    rcases List.mem_append.mp hw with hw | hw
+    · obtain ⟨o, ho, rfl⟩ := List.mem_map.mp hw
+      obtain ⟨op, hop, rfl⟩ := List.mem_map.mp ho
+      obtain ⟨op₀, h₀, rfl⟩ := List.mem_map.mp hop
+      exact List.mem_map.mpr ⟨op₀.out, checkN_out _ h₀, by rw [FOp.out_rename]; rfl⟩
+    · obtain rfl := List.mem_singleton.mp hw
+      exact List.mem_map_of_mem (by decide)
+  · change toM c.C.p (2 ^ (64 * c.n)) (sv c base t W3) =
+      (toM c.C.p (2 ^ (64 * c.n)) (sv c base s QY) *
+        toM c.C.p (2 ^ (64 * c.n)) (sv c base s R2P)) *
+      (toM c.C.p (2 ^ (64 * c.n)) (sv c base s QY) *
+        toM c.C.p (2 ^ (64 * c.n)) (sv c base s R2P)) -
+      toM c.C.p (2 ^ (64 * c.n)) (sv c base s W2) at vt
+    simpa only [hr2, raw_r2_mul hc] using vt
+
+structure CheckRootPost (c : Cfg) (base : Addr) (P : Prop) [Decidable P] (s s' : State) : Prop where
+  scr : Scr s' base size
+  keep : KeepRegs (clob c.n) s s'
+  unch : Unch base (slW c [QYM, W1, W3, TMP, FLAG]) s.mem s'.mem
+  flag : word s'.mem base (c.sl FLAG) = mask
+    ((P ∧ Fin.ofNat c.C.p (sv c base s QY) * Fin.ofNat c.C.p (sv c base s QY) =
+      toM c.C.p (2 ^ (64 * c.n)) (sv c base s W2)) ∧
+      sv c base s QY % 2 = (word s.mem base (c.sl D)).toNat % 2)
+
+theorem checkRoot_ok {c : Cfg} (hc : BaseCfgOk c) {base : Addr} {s : State}
+    (hs : Scr s base size) (hM : ModOkA c.MP' size c.C.p s.mem base)
+    (hy : sv c base s QY < c.C.p) (hr : sv c base s W2 < c.C.p)
+    (hr2 : sv c base s R2P = c.R * c.R % c.C.p) {P : Prop} [Decidable P]
+    (hf : word s.mem base (c.sl FLAG) = mask P) :
+    WP isa (Impl.EcKey.Compressed.AArch64.checkRoot c) s (CheckRootPost c base P s) := by
+  have h0 := hc.n0
+  have h7 := hc.n10
+  have hn := hs.nowrap
+  have hsz : size = 8192 := rfl
+  have hF := sl_le c h7 (i := FLAG) (by decide)
+  have hW := sl_le c h7 (i := W3) (by decide)
+  have hY := sl_le c h7 (i := QY) (by decide)
+  have hD := sl_le c h7 (i := D) (by decide)
+  change WP isa (.seq
+    (Impl.Weierstrass.AArch64.fprogB c.MP' (Impl.EcKey.Compressed.AArch64.checkRootOps c))
+    (.block (Impl.EcKey.Compressed.AArch64.checkRootChecks c))) s _
+  refine WP.seq (WP.mono (checkPoly_ok hc hs hM hy hr hr2) fun s₁ I => ?_)
+  have flag₁ : word s₁.mem base (c.sl FLAG) = mask P := by
+    rw [flag_unch I.unch h7 h0 hn (by decide), hf]
+  have hz : sv c base s₁ W3 = 0 ↔
+      Fin.ofNat c.C.p (sv c base s QY) * Fin.ofNat c.C.p (sv c base s QY) =
+        toM c.C.p (2 ^ (64 * c.n)) (sv c base s W2) := by
+    rw [← toM_eq_zero_iff (unitMod_pow_two hc.p_odd (64 * c.n)) I.lt, I.val]
+    constructor <;> intro h <;> grind
+  rw [Impl.EcKey.Compressed.AArch64.checkRootChecks, WP.block_append_iff]
+  refine WP.mono (checkZero_ok c I.scr h0 hW (by omega_arith) (sl_mod8 c W3) (sl_mod8 c FLAG)) fun s₂ ⟨f₂, k₂, O₂⟩ => ?_
+  have hs₂ := I.scr.of_keepRegs k₂ (by decide)
+  have flag₂ : word s₂.mem base (c.sl FLAG) = mask
+      (P ∧ Fin.ofNat c.C.p (sv c base s QY) * Fin.ofNat c.C.p (sv c base s QY) =
+        toM c.C.p (2 ^ (64 * c.n)) (sv c base s W2)) := by
+    rw [f₂, flag₁, show wordsVal s₁.mem base (c.sl W3) c.n = sv c base s₁ W3 from rfl, mask_and]
+    simp only [mask, hz]
+  have y₂ : sv c base s₂ QY = sv c base s QY := by
+    rw [sv, sv_flag O₂ h0 h7 hn (by decide) (by decide)]
+    exact sv_unch I.unch h7 hn (by decide) (apart_slW (by decide))
+  have tag₂ : word s₂.mem base (c.sl D) = word s.mem base (c.sl D) := by
+    rw [O₂.word (by have := sl_apart c (i := D) (j := FLAG) (by decide); omega_arith) (by omega_arith)]
+    exact I.unch.word (fun w hw => by
+      have := (apart_slW (c := c) (by decide : D ∉ [QYM, W1, W3, TMP])) w hw
+      omega_arith) (by omega_arith)
+  rw [WP.block_append_iff]
+  refine WP.mono (parityMask_ok hs₂ h0 (by omega_arith) (by omega_arith)) fun s₃ ⟨mask₃, k₃⟩ => ?_
+  rw [y₂, tag₂] at mask₃
+  rw [WP.block_append_iff]
+  refine WP.mono (invertMask_ok s₃ _ mask₃) fun s₄ ⟨mask₄, k₄⟩ => ?_
+  have hs₄ := (hs₂.of_keeps k₃ (by decide)).of_keeps k₄ (by decide)
+  refine WP.mono (andFlag_ok c hs₄ (by omega_arith) (sl_mod8 c FLAG)) fun s₅ ⟨flag₅, k₅, O₅⟩ => ?_
+  refine ⟨hs₄.of_keepRegs k₅ (by decide), ?_, ?_, ?_⟩
+  · exact (((I.keep.trans (k₂.mono (by simp [clob]))).trans
+      ((Keeps.regs k₃).mono (by simp [clob]))).trans
+      ((Keeps.regs k₄).mono (by simp [clob]))).trans (k₅.mono (by simp [clob]))
+  · have U₁ : Unch base (slW c [QYM, W1, W3, TMP, FLAG]) s.mem s₁.mem := I.unch.mono (by
+      intro w hw
+      obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hw
+      exact List.mem_map_of_mem (List.mem_append_left [FLAG] hi))
+    have U₂ : Unch base (slW c [QYM, W1, W3, TMP, FLAG]) s₁.mem s₄.mem := by
+      rw [k₄.mem, k₃.mem]
+      exact slot_frame (by simp) (by omega_arith) O₂
+    exact unch_same (unch_same U₁ U₂) (slot_frame (by simp) (by omega_arith) O₅)
+  · rw [flag₅, k₄.mem, k₃.mem, flag₂, mask₄]
+    simp only [not_not]
+    exact mask_and _ _
+
+end VG.Proof.EcKey.Compressed.AArch64
+
+end
+
+end
+
+/-! ### `EcKey.Compressed.AArch64.Peer`, which only this module used -/
+
+section
+
+/-! # Compressed tag, canonical x and curve constants -/
+
+-- Formerly `VerifiedGarbage/Proof/EcKey/Compressed/AArch64/TagCheck.lean`, which only this module imported.
+section
+
+/-! # Accept precisely 02 and 03 and preserve their parity bit -/
+
+section
+
+namespace VG.Proof.EcKey.Compressed.AArch64
+
+open VG VG.AArch64 VG.Impl.Mont.AArch64 VG.Impl.Ecdsa.AArch64
+open VG.Proof.Ecdsa.AArch64 VG.Proof.Mont VG.Proof.Mont.AArch64
+open VG.Proof.Weierstrass VG.Proof.Weierstrass.AArch64 VG.Proof.Ecdh.AArch64
+open VG.Proof.Ed25519.AArch64 (Keeps read_x)
+
+ theorem tagRead_ok {s : State} {q : Addr} (hq : s.gpr .x6 = q)
+    (hin : InRegions (s.rd ++ s.wr) q 1) :
+    WP isa (.block [zero7, .ldrb .x1 .x6 0]) s fun t =>
+      t.gpr .x1 = (s.mem q).setWidth 64 ∧ t.gpr .x7 = 0 ∧ Keeps [.x1, .x7] s t := by
+  have ha : s.gpr .x6 + BitVec.ofNat 64 0 = q := by rw [hq, BitVec.add_zero]
+  apply WP.of_runBlock
+  simp only [zero7, runBlock_cons, runStep_some, runBlock_nil, exec, addr, Nat.mod_one,
+    show 0 < 4096 * 1 by decide, show 16 * 0 < Size.x.bits by decide, and_self, ite_true, Option.bind_some, State.load,
+    RegUpd.gpr_write, RegUpd.rd_write, RegUpd.wr_write, BitVec.setWidth_eq,
+    reduceCtorEq, ite_false, ha, hin, Option.map_some, Option.some.injEq, exists_eq_left']
+  refine ⟨by rw [read1_zext, RegUpd.mem_write], rfl, fun r hr => ?_, rfl, rfl, rfl, rfl⟩
+  simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
+  simp only [RegUpd.gpr_write, hr.1, hr.2, ite_false]
+
+ theorem tagBits_ok (s : State) :
+    WP isa (.block [.movz .x .x5 1 0, .logic .orr .x .x1 .x1 .x5,
+      .movz .x .x5 3 0, .logic .eor .x .x1 .x1 .x5]) s fun t =>
+      t.gpr .x1 = (s.gpr .x1 ||| 1) ^^^ 3 ∧ Keeps [.x1, .x5] s t := by
+  apply WP.of_runBlock
+  simp only [runBlock_cons, runStep_some, runBlock_nil, exec, read_x,
+    show 16 * 0 < Size.x.bits by decide, ite_true, RegUpd.gpr_write,
+    BitVec.setWidth_eq, reduceCtorEq, ite_false, Option.some.injEq, exists_eq_left']
+  refine ⟨rfl, fun r hr => ?_, rfl, rfl, rfl, rfl⟩
+  simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
+  simp only [RegUpd.gpr_write, hr.1, hr.2, ite_false]
+
+ theorem decompressTag_ok {c : Cfg} {s : State} {base q : Addr}
+    (hs : Scr s base size) (hq : s.gpr .x6 = q)
+    (hin : InRegions (s.rd ++ s.wr) q 1) (hD : c.sl D + 8 ≤ size) :
+    WP isa (.block (Impl.EcKey.Compressed.AArch64.decompressTag c)) s fun t =>
+      t.gpr .x2 = mask (s.mem q = 2 ∨ s.mem q = 3) ∧
+      word t.mem base (c.sl D) = (s.mem q).setWidth 64 ∧
+      KeepRegs [.x1, .x2, .x5, .x7, .x16] s t ∧ Outside base (c.sl D) 8 s.mem t.mem := by
+  change WP isa (.block ([zero7, .ldrb .x1 .x6 0] ++ ([st .x1 (c.sl D)] ++
+    ([.movz .x .x5 1 0, .logic .orr .x .x1 .x1 .x5, .movz .x .x5 3 0,
+      .logic .eor .x .x1 .x1 .x5] ++ Impl.Ecdh.AArch64.Cfg.isZero)))) s _
+  rw [WP.block_append_iff]
+  refine WP.mono (tagRead_ok hq hin) fun s₁ ⟨v₁, z₁, k₁⟩ => ?_
+  rw [WP.block_append_iff]
+  refine WP.mono (st_out (hs.of_keeps k₁ (by decide)) hD (sl_mod8 c D) .x1)
+    fun s₂ ⟨m₂, k₂, g₂⟩ => ?_
+  rw [WP.block_append_iff]
+  refine WP.mono (tagBits_ok s₂) fun s₃ ⟨v₃, k₃⟩ => ?_
+  refine WP.mono (isZero_ok s₃ (by rw [k₃.gpr _ (by decide), g₂, z₁]))
+    fun s₄ ⟨v₄, k₄⟩ => ?_
+  have m₄ : s₄.mem = s.mem.writeW (off base (c.sl D)) ((s.mem q).setWidth 64) := by
+    rw [k₄.mem, k₃.mem, m₂, k₁.mem, v₁]
+  refine ⟨?_, ?_, ?_, ?_⟩
+  · rw [v₄, v₃, g₂, v₁]
+    have key : ∀ b : Byte, ((b.setWidth 64 ||| 1) ^^^ 3 = 0) = (b = 2 ∨ b = 3) := by decide
+    simp only [mask, key]
+  · rw [m₄, word_writeW_self]
+  · exact (((Keeps.regs k₁).mono (by sub_regs)).trans (k₂.mono (by sub_regs))).trans
+      (((Keeps.regs k₃).mono (by sub_regs)).trans ((Keeps.regs k₄).mono (by sub_regs)))
+  · rw [m₄]
+    exact writeW_outside _ _ _ (by have := hs.nowrap; omega)
+
+end VG.Proof.EcKey.Compressed.AArch64
+end
+
+end
+
+@[expose] public section
+
+namespace VG.Proof.EcKey.Compressed.AArch64
+
+open VG VG.AArch64 VG.Impl.Ecdsa.AArch64 VG.Impl.Weierstrass.AArch64
+open VG.Impl.Ecdh.AArch64 (R2P BP)
+open VG.Proof.Ecdsa.AArch64 VG.Proof.Mont VG.Proof.Mont.AArch64
+open VG.Proof.Weierstrass VG.Proof.Weierstrass.AArch64 VG.Proof.Ecdh.AArch64
+
+theorem decompressPeer_eq (c : Cfg) : Impl.EcKey.Compressed.AArch64.decompressPeer c =
+    setConst c.n (c.sl R2P) (c.R * c.R % c.C.p) ++
+    (setConst c.n (c.sl BP) (c.mont c.C.b) ++
+    (Impl.EcKey.Compressed.AArch64.decompressTag c ++
+    (c.andFlag ++ Impl.Ecdh.AArch64.Cfg.checkLtP c (c.sl E)))) := by
+  simp only [Impl.EcKey.Compressed.AArch64.decompressPeer, Impl.Ecdh.AArch64.Cfg.consts,
+    List.flatMap_cons, List.flatMap_nil, List.append_nil, List.append_assoc]
+
+theorem decompressPeer_ok {c : Cfg} (hc : BaseCfgOk c) {base q : Addr} {s : State}
+    (hs : Scr s base size) (hq : s.gpr .x6 = q)
+    (hin : (⟨q, c.C.len + 1⟩ : Region) ∈ s.rd ++ s.wr)
+    (hd : Region.Disjoint ⟨q, c.C.len + 1⟩ ⟨base, size⟩)
+    (hmp : sv c base s MP = c.C.p) (hf : word s.mem base (c.sl FLAG) = BitVec.allOnes 64) :
+    WP isa (.block (Impl.EcKey.Compressed.AArch64.decompressPeer c)) s fun s' =>
+      Scr s' base size ∧ KeepRegs [.x1, .x2, .x5, .x7, .x16] s s' ∧
+      Unch base (slW c [R2P, BP, D, FLAG]) s.mem s'.mem ∧
+      sv c base s' R2P = c.R * c.R % c.C.p ∧ sv c base s' BP = c.mont c.C.b ∧
+      word s'.mem base (c.sl D) = (s.mem q).setWidth 64 ∧
+      word s'.mem base (c.sl FLAG) = mask ((s.mem q = 2 ∨ s.mem q = 3) ∧ sv c base s E < c.C.p) := by
+  have h0 := hc.n0
+  have h7 := hc.n10
+  have hn := hs.nowrap
+  have hsz : size = 8192 := rfl
+  have hR := sl_le c h7 (i := R2P) (by decide)
+  have hB := sl_le c h7 (i := BP) (by decide)
+  have hD := sl_le c h7 (i := D) (by decide)
+  have hE := sl_le c h7 (i := E) (by decide)
+  have hM := sl_le c h7 (i := MP) (by decide)
+  have hF := sl_le c h7 (i := FLAG) (by decide)
+  rw [decompressPeer_eq, WP.block_append_iff]
+  refine WP.mono (setConst_ok hs hR (sl_mod8 c R2P) (Nat.lt_trans (Nat.mod_lt _ (by have := hc.p_ge; omega_using [this])) hc.p_lt))
+    fun s₁ ⟨e₁, k₁, O₁⟩ => ?_
+  have hs₁ := hs.of_keepRegs k₁ (by decide)
+  rw [WP.block_append_iff]
+  refine WP.mono (setConst_ok hs₁ hB (sl_mod8 c BP) (show c.mont c.C.b < 2 ^ (64 * c.n) from
+    Nat.lt_trans (Nat.mod_lt _ (by have := hc.p_ge; omega_using [this])) hc.p_lt)) fun s₂ ⟨e₂, k₂, O₂⟩ => ?_
+  have hs₂ := hs₁.of_keepRegs k₂ (by decide)
+  have W₂ : Outside base 0 size s.mem s₂.mem :=
+    (O₁.mono (Nat.zero_le _) hR).trans (O₂.mono (Nat.zero_le _) hB)
+  have q₂ : s₂.mem q = s.mem q := by
+    have h := keep_of_disjoint' W₂ hd (by omega_using [hn]) (i := 0) (by omega_using []) (by have := hc.len_hi; omega_using [h7, this])
+    simpa only [BitVec.add_zero] using h
+  rw [WP.block_append_iff]
+  refine WP.mono (decompressTag_ok (c := c) (q := q) hs₂
+    (by rw [k₂.gpr _ (by decide), k₁.gpr _ (by decide), hq])
+    (by
+      exact ⟨_, by rw [k₂.rd, k₂.wr, k₁.rd, k₁.wr]; exact hin, by
+        simpa using Offset.contains_base q (d := 0) (n := 1)
+          (by omega_using [] : 0 + 1 ≤ c.C.len + 1) (by decide)⟩) (by omega_using [h0, hD])) fun s₃ ⟨mask₃, tag₃, k₃, O₃⟩ => ?_
+  rw [q₂] at mask₃ tag₃
+  have hs₃ := hs₂.of_keepRegs k₃ (by decide)
+  have U₃ : Unch base (slW c [R2P, BP, D]) s.mem s₃.mem :=
+    unch_same (unch_same (slot_frame (by simp) (Nat.le_refl _) O₁)
+      (slot_frame (by simp) (Nat.le_refl _) O₂)) (slot_frame (by simp) (by omega_using [h0]) O₃)
+  have flag₃ : word s₃.mem base (c.sl FLAG) = BitVec.allOnes 64 := by
+    rw [U₃.word (fun w hw => by have := (apart_slW (c := c) (by decide : FLAG ∉ [R2P, BP, D])) w hw; omega_using [h0, this])
+      (by omega_using [h0, hn, hF]), hf]
+  rw [WP.block_append_iff]
+  refine WP.mono (andFlag_ok c hs₃ (by omega_using [h0, hF]) (sl_mod8 c FLAG)) fun s₄ ⟨flag₄, k₄, O₄⟩ => ?_
+  have hs₄ := hs₃.of_keepRegs k₄ (by decide)
+  have U₄ : Unch base (slW c [R2P, BP, D, FLAG]) s.mem s₄.mem :=
+    unch_same (U₃.mono (by
+      intro w hw
+      obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hw
+      exact List.mem_map_of_mem (List.mem_append_left [FLAG] hi)))
+      (slot_frame (by simp) (by omega_using [h0]) O₄)
+  have keep₄ {i : Nat} (hi : i < 45) (hm : i ∉ [R2P, BP, D, FLAG]) :
+      sv c base s₄ i = sv c base s i := sv_unch U₄ h7 hn hi (apart_slW hm)
+  refine WP.mono (checkLtP_ok c hs₄ h0 hE hM (by omega_using [h0, hF]) (sl_mod8 c E) (sl_mod8 c MP) (sl_mod8 c FLAG)) fun s₅ ⟨flag₅, k₅, O₅⟩ => ?_
+  refine ⟨hs₄.of_keepRegs k₅ (by decide), ?_, ?_, ?_, ?_, ?_, ?_⟩
+  · exact ((((k₁.mono (by simp)).trans (k₂.mono (by simp))).trans (k₃.mono (by simp))).trans
+      (k₄.mono (by simp))).trans (k₅.mono (by sub_regs))
+  · exact unch_same U₄ (slot_frame (by simp) (by omega_using [h0]) O₅)
+  · rw [sv, sv_flag O₅ h0 h7 hn (by decide) (by decide), sv_flag O₄ h0 h7 hn (by decide) (by decide),
+      sv_out (O₃.mono (Nat.le_refl _) (by omega_using [h0] : c.sl D + 8 ≤ c.sl D + 8 * c.n)) h7 hn (by decide) (by decide),
+      sv_out O₂ h7 hn (by decide) (by decide)]
+    exact e₁
+  · rw [sv, sv_flag O₅ h0 h7 hn (by decide) (by decide), sv_flag O₄ h0 h7 hn (by decide) (by decide),
+      sv_out (O₃.mono (Nat.le_refl _) (by omega_using [h0] : c.sl D + 8 ≤ c.sl D + 8 * c.n)) h7 hn (by decide) (by decide)]
+    exact e₂
+  · rw [O₅.word (by have := sl_apart c (i := D) (j := FLAG) (by decide); omega_using [h0, this]) (by omega_using [h0, hn, hD]),
+      O₄.word (by have := sl_apart c (i := D) (j := FLAG) (by decide); omega_using [h0, this]) (by omega_using [h0, hn, hD])]
+    exact tag₃
+  · rw [flag₅, flag₄, flag₃, mask₃, BitVec.allOnes_and,
+      show wordsVal s₄.mem base (c.sl E) c.n = sv c base s₄ E from rfl,
+      show wordsVal s₄.mem base (c.sl MP) c.n = sv c base s₄ MP from rfl,
+      keep₄ (by decide) (by decide), keep₄ (by decide) (by decide), hmp, mask_and]
+
+end VG.Proof.EcKey.Compressed.AArch64
+
+end
+
+end
+
 /-! # Coordinate recovery and final checks preserve the parsed encoding -/
 
 -- Formerly `VerifiedGarbage/Proof/EcKey/Compressed/AArch64/Start.lean`, which only this module imported.

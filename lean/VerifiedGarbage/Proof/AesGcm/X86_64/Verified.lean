@@ -18,9 +18,270 @@ import VerifiedGarbage.Proof.AesGcm.X86_64.SealCT
 import VerifiedGarbage.Proof.AesGcm.X86_64.StreamFinishCT
 import VerifiedGarbage.Proof.AesGcm.X86_64.StreamRun
 import VerifiedGarbage.Proof.AesGcm.X86_64.StreamVerify
-import VerifiedGarbage.Proof.AesGcm.X86_64.StreamAad
-import VerifiedGarbage.Proof.AesGcm.X86_64.StreamInit
+public import VerifiedGarbage.Proof.Gcm.Stream
+import VerifiedGarbage.Proof.AesGcm.X86_64.Fn
+import VerifiedGarbage.Proof.AesGcm.X86_64.Arith
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.AesGcm.X86_64.Init
+
+/-! ### `AesGcm.X86_64.StreamAad`, which only this module used -/
+
+section
+
+/-!
+# AES-GCM on x86-64: `vg_aes_gcm_stream_aad`
+
+Untrusted: everything here is checked by Lean. The additional data absorbed
+into GHASH (`absorb 16`), for any additional data so far of the length
+`aad_len` gives modulo 16 (`streamAad_run`), and so for all of them
+(`streamAad_wp`).
+-/
+
+@[expose] public section
+
+set_option linter.unusedSimpArgs false
+
+namespace VG.Proof.AesGcm.X86_64
+
+open VG VG.X86_64 VG.X86_64.RegUpd VG.Impl.AesGcm.X86_64 VG.WriteBytes
+open VG.Spec.Aes (bytesAt)
+open VG.Spec.Gcm (Block blockAt StreamRepr ctxH)
+open VG.Proof.Gcm (Absorbed Ctr)
+
+/-- The regions `vg_aes_gcm_stream_aad` writes. -/
+abbrev aadFrame (St W SP : Addr) (N : Nat := 2560) : List Region :=
+  [⟨St + BitVec.ofNat 64 16, 32⟩, ⟨W, N⟩, below SP 8]
+
+/-- One run, for additional data so far `x` (of `aad_len` bytes modulo 16). -/
+theorem streamAad_run (v : GcmImpl) {N gs : Nat} [G : GhFits v N gs] {s : State}
+    (hp : (Proof.AesGcm.streamAadX86_64 N).pre s)
+    {x : List Byte} (hx : x.length % 16 = (s.gpr .rdx).toNat % 16) (hN : 176 ≤ N) (hN' : N < 2 ^ 64) :
+    WP isa (streamAad v.callees) s fun s' => gprPreserved s s' ∧
+      Frame (aadFrame (s.gpr .rsi) (s.gpr .r9) (s.gpr .rsp) N) s.mem s'.mem ∧
+      (Absorbed s.mem (s.gpr .rsi + BitVec.ofNat 64 16) (s.gpr .rsi + BitVec.ofNat 64 32)
+          (ctxH s.mem (s.gpr .rdi)) x →
+        Absorbed s'.mem (s.gpr .rsi + BitVec.ofNat 64 16) (s.gpr .rsi + BitVec.ofNat 64 32)
+          (ctxH s.mem (s.gpr .rdi)) (x ++ bytesAt s.mem (s.gpr .rcx) (s.gpr .r8).toNat)) := by
+  simp only [Proof.AesGcm.streamAadX86_64, Proof.AesGcm.stk, Proof.AesGcm.ret] at hp
+  obtain ⟨hrd, hwr, d_cs, d_cw, d_ds, d_dw, d_sw, r_s, r_w, k_c, k_d, k_s, k_w, wc, wd, ws, ww⟩ := hp
+  generalize hCtx : s.gpr .rdi = Ctx at *
+  generalize hSt : s.gpr .rsi = St at *
+  generalize hD : s.gpr .rcx = D at *
+  generalize hW : s.gpr .r9 = W at *
+  generalize hSP : s.gpr .rsp = SP at *
+  generalize hn : (s.gpr .r8).toNat = n at *
+  have L : Lay Ctx St W SP N := Lay.of wc ws ww d_cs d_cw d_sw k_c k_s k_w hN hN'
+  have pW : Covers [⟨W, N⟩] s.wr := by rw [hwr]; exact covers_of_mem (by simp)
+  obtain ⟨s₁, run₁, hg₁, hrd₁, hwr₁, hsv₁, f₁⟩ := save_ok s .r9 hW pW (by omega_using [hN])
+  obtain ⟨s₂, run₂, h15, h14, h13, h12, hbp, hbx, hg₂, hm₂, hrd₂, hwr₂⟩ : ∃ s₂, runBlock isa
+      [.mov .r15 (.reg .r9), .mov .r14 (.reg .rsi), .mov .r13 (.reg .rdi), .mov .r12 (.reg .rcx),
+        .mov .rbp (.reg .r8), .mov .rbx (.reg .rdx), .alu .and .rbx (imm 15)] s₁ = some s₂ ∧
+      s₂.gpr .r15 = W ∧ s₂.gpr .r14 = St ∧ s₂.gpr .r13 = Ctx ∧ s₂.gpr .r12 = D ∧
+      s₂.gpr .rbp = BitVec.ofNat 64 n ∧ s₂.gpr .rbx = BitVec.ofNat 64 (x.length % 16) ∧
+      s₂.gpr .rsp = SP ∧ s₂.mem = s₁.mem ∧ s₂.rd = s₁.rd ∧ s₂.wr = s₁.wr := by
+    have hand := and15 (s.gpr .rdx)
+    rw [imm_eq (by decide)] at hand
+    refine ⟨_, by xrun [], ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+    · simp [gpr_setReg, hg₁, hW]
+    · simp [gpr_setReg, hg₁, hSt]
+    · simp [gpr_setReg, hg₁, hCtx]
+    · simp [gpr_setReg, hg₁, hD]
+    · simp [gpr_setReg, hg₁, ← hn]
+    · simp only [gpr_setReg, gpr_arithFlags, ite_true, hg₁, hand, hx]
+    · simp [gpr_setReg, gpr_arithFlags, hg₁, hSP]
+    all_goals rfl
+  have he₂ : Env Ctx St W SP s₂ N := ⟨h13, h14, h15, hg₂, by
+    refine ⟨?_, ?_, ?_⟩ <;> simp only [hrd₂, hwr₂, hrd₁, hwr₁]
+    · rw [hrd]; exact covers_of_mem (List.mem_append_left _ (List.mem_cons_self ..))
+    · rw [hwr]; exact covers_of_mem (List.mem_cons_self ..)
+    · exact pW⟩
+  have dsv : ∀ r ∈ [savedR W], (⟨D, n⟩ : Region).Disjoint r := by
+    intro r hr; simp only [List.mem_singleton] at hr; subst hr; exact d_dw.sub_right (Lay.wSub L.le)
+  have hdata : bytesAt s₂.mem D n = bytesAt s.mem D n := by
+    rw [hm₂]; exact bytesAt_frame f₁ dsv (by omega_using [hn])
+  have hH : blockAt s₂.mem (Ctx + BitVec.ofNat 64 240) = ctxH s.mem Ctx := by
+    rw [hm₂, ctxH_eq, blockAt_frame f₁ fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr; exact L.ctx_w (by decide) L.le]
+  have rdD : Covers [⟨D, n⟩] (s₂.rd ++ s₂.wr) := by
+    rw [hrd₂, hrd₁, hwr₂, hwr₁, hrd]
+    exact covers_of_mem (List.mem_append_left _ (List.mem_cons_of_mem _ (List.mem_singleton_self _)))
+  have hai : AbsIn Ctx St W SP 16 (ctxH s.mem Ctx) x D n s₂ N :=
+    ⟨he₂, h12, hbp, hbx, ⟨rdD, by have := (s.gpr .r8).isLt; omega_using [hn], wd, d_ds, d_dw, k_d⟩, hH⟩
+  refine WP.seq (WP.block_append (WP.of_runBlock ⟨s₁, run₁, WP.of_runBlock ⟨s₂, run₂, ?_⟩⟩))
+  refine WP.seq (WP.mono (absorb_ok v L (yo := 16) (.inr rfl) hai) fun s₃ ho => ?_)
+  have he₃ := ho.env
+  have hsv₃ : SavedAt s₃.mem W s := (hm₂ ▸ hsv₁).frame ho.frame (saved_absFrame L G.fit (.inr rfl))
+  obtain ⟨s₄, run₄, hsv, hother, hm₄, hrd₄, hwr₄⟩ := restore_ok s₃ he₃.r15 (covers_left he₃.perm.w) hsv₃ (by omega_using [hN])
+  refine WP.of_runBlock ⟨s₄, run₄, ⟨?_, ?_⟩, ?_, fun ha => ?_⟩
+  · intro r hr
+    simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl
+    · exact hsv (.rbx, 128) (by simp [saved])
+    · exact hsv (.rbp, 136) (by simp [saved])
+    · rw [hother .rsp (by simp [saved]), he₃.rsp, hSP]
+    · exact hsv (.r12, 144) (by simp [saved])
+    · exact hsv (.r13, 152) (by simp [saved])
+    · exact hsv (.r14, 160) (by simp [saved])
+    · exact hsv (.r15, 168) (by simp [saved])
+  · rw [hm₄, hSP, ret_kept ho.frame (fun r hr => ?_), hm₂, ret_kept f₁ (fun r hr => ?_)]
+    · simp only [List.mem_singleton] at hr; subst hr; exact r_w.sub_right (Lay.wSub L.le)
+    · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl | rfl
+      · exact r_s.sub_right (Lay.stSub (by decide))
+      · exact r_s.sub_right (Lay.stSub (by decide))
+      · exact Lay.gh_of_w G.fit r_w
+      · exact ret_below SP
+  · rw [hm₄]
+    refine ((f₁.sub fun r hr => ?_).trans (hm₂ ▸ ho.frame.sub fun r hr => ?_))
+    · simp only [List.mem_singleton] at hr; subst hr
+      exact ⟨_, List.mem_cons_of_mem _ (List.mem_cons_self ..), Lay.wSub L.le⟩
+    · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl | rfl
+      · exact ⟨_, List.mem_cons_self .., Region.sub_prefix (by decide)⟩
+      · exact ⟨_, List.mem_cons_self .., Offset.sub _ (by decide) (by decide)⟩
+      · exact ⟨_, List.mem_cons_of_mem _ (List.mem_cons_self ..), Lay.ghSub G.fit⟩
+      · exact ⟨_, by simp, fun _ h => h⟩
+  · have dS : ∀ r ∈ [savedR W], ∀ d k, d + k ≤ 80 → (⟨St + BitVec.ofNat 64 d, k⟩ : Region).Disjoint r := by
+      intro r hr d k hk
+      simp only [List.mem_singleton] at hr; subst hr
+      exact (d_sw.sub_left (Lay.stSub hk)).sub_right (Lay.wSub L.le)
+    have ha₂ : Absorbed s₂.mem (St + BitVec.ofNat 64 16) (St + BitVec.ofNat 64 32) (ctxH s.mem Ctx) x := by
+      rw [hm₂]
+      refine ha.congr (blockAt_frame f₁ fun r hr => dS r hr 16 16 (by decide)) (bytesAt_frame f₁
+        (fun r hr => dS r hr 32 (x.length % 16) (by omega_using [])) (by omega_using []))
+    rw [hm₄, ← hdata]
+    exact ho.abs ha₂
+
+/-- `vg_aes_gcm_stream_aad`. -/
+theorem streamAad_wp (v : GcmImpl) {N gs : Nat} [G : GhFits v N gs] {s : State}
+    (hp : (Proof.AesGcm.streamAadX86_64 N).pre s) (hN : 176 ≤ N := by decide) (hN' : N < 2 ^ 64 := by decide) :
+    WP isa (streamAad v.callees) s fun s' => gprPreserved s s' ∧ (Proof.AesGcm.streamAadX86_64 N).post s s' := by
+  have h₀ := streamAad_run v hp (x := List.replicate ((s.gpr .rdx).toNat % 16) 0) (by simp) hN hN'
+  have h := WP.forall_det (P := fun a : List Byte => a.length % 16 = (s.gpr .rdx).toNat % 16)
+    (R := fun s' => gprPreserved s s' ∧ Frame (aadFrame (s.gpr .rsi) (s.gpr .r9) (s.gpr .rsp) N) s.mem s'.mem)
+    (WP.mono h₀ fun _ h => ⟨h.1, h.2.1⟩) fun a ha => WP.mono (streamAad_run v hp ha hN hN') fun _ h => h.2.2
+  refine WP.mono h fun s' ⟨⟨hg, hf⟩, hq⟩ => ⟨hg, fun ciph iv a hr hl => ?_⟩
+  have hp' := hp
+  simp only [Proof.AesGcm.streamAadX86_64, Proof.AesGcm.stk, Proof.AesGcm.ret] at hp'
+  obtain ⟨-, -, -, -, -, -, d_sw, -, -, -, -, k_s, -, -, -, ws, -⟩ := hp'
+  generalize s.gpr .rsi = St at *
+  have dS : ∀ d k, (d + k ≤ 16 ∨ (48 ≤ d ∧ d + k ≤ 80)) → ∀ r ∈ aadFrame St (s.gpr .r9) (s.gpr .rsp) N,
+      (⟨St + BitVec.ofNat 64 d, k⟩ : Region).Disjoint r := by
+    intro d k hk r hr
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl
+    · exact Offset.disjoint _ (by omega_using [hk]) (by omega_using [hk]) (by omega_using [])
+    · exact d_sw.sub_left (Lay.stSub (by omega_using [hk]))
+    · exact (k_s.sub_right (Lay.stSub (by omega_using [hk]))).symm
+  rw [Proof.Gcm.streamRepr_iff, ofNat_lit, ofNat_lit, ofNat_lit, ofNat_lit] at hr ⊢
+  obtain ⟨hj, ha, hc⟩ := hr
+  refine ⟨?_, ?_, ?_⟩
+  · rw [← hj]; simpa using blockAt_frame hf (dS 0 16 (.inl (by decide)))
+  · rw [Proof.Gcm.ghashInput_nil] at ha ⊢
+    refine hq a ?_ ha
+    rw [hl, toNat_mod16]
+  · exact hc.congr (blockAt_frame hf (dS 48 16 (.inr ⟨by decide, by decide⟩)))
+      (blockAt_frame hf (dS 64 16 (.inr ⟨by decide, by decide⟩)))
+
+end VG.Proof.AesGcm.X86_64
+
+end
+
+end
+
+/-! ### `AesGcm.X86_64.StreamInit`, which only this module used -/
+
+section
+
+/-!
+# AES-GCM on x86-64: `vg_aes_gcm_stream_init`
+
+Untrusted: everything here is checked by Lean. `J₀`, the accumulator and the
+first counter block, from `j0` (`streamInit_wp`).
+-/
+
+@[expose] public section
+
+set_option linter.unusedSimpArgs false
+
+namespace VG.Proof.AesGcm.X86_64
+
+open VG VG.X86_64 VG.X86_64.RegUpd VG.Impl.AesGcm.X86_64 VG.WriteBytes
+open VG.Spec.Aes (bytesAt)
+open VG.Spec.Gcm (Block blockAt StreamRepr ctxH)
+open VG.Proof.Gcm (Absorbed Ctr)
+
+/-- `vg_aes_gcm_stream_init`. -/
+theorem streamInit_wp (v : GcmImpl) {N gs : Nat} [G : GhFits v N gs] {s : State}
+    (hp : (Proof.AesGcm.streamInitX86_64 N).pre s) (hN : 224 ≤ N := by decide) (hN' : N < 2 ^ 64 := by decide) :
+    WP isa (streamInit v.callees) s fun s' => gprPreserved s s' ∧ (Proof.AesGcm.streamInitX86_64 N).post s s' := by
+  simp only [Proof.AesGcm.streamInitX86_64, Proof.AesGcm.stk, Proof.AesGcm.ret] at hp ⊢
+  obtain ⟨hrd, hwr, d_cs, d_cw, d_ns, d_nw, d_sw, r_s, r_w, k_c, k_n, k_s, k_w, wc, wn, ws, ww⟩ := hp
+  generalize hCtx : s.gpr .rdi = Ctx at *
+  generalize hNp : s.gpr .rsi = Np at *
+  generalize hSt : s.gpr .rcx = St at *
+  generalize hW : s.gpr .r8 = W at *
+  generalize hSP : s.gpr .rsp = SP at *
+  generalize hn : (s.gpr .rdx).toNat = n at *
+  have L : Lay Ctx St W SP N := Lay.of wc ws ww d_cs d_cw d_sw k_c k_s k_w (by omega_using [hN]) hN'
+  have pW : Covers [⟨W, N⟩] s.wr := by rw [hwr]; exact covers_of_mem (by simp)
+  obtain ⟨s₁, run₁, hg₁, hrd₁, hwr₁, hsv₁, f₁⟩ := save_ok s .r8 hW pW (by omega_using [hN])
+  obtain ⟨s₂, run₂, h15, h14, h13, h12, hbp, hg₂, hm₂, hrd₂, hwr₂⟩ : ∃ s₂, runBlock isa
+      [.mov .r15 (.reg .r8), .mov .r14 (.reg .rcx), .mov .r13 (.reg .rdi), .mov .r12 (.reg .rsi),
+        .mov .rbp (.reg .rdx)] s₁ = some s₂ ∧
+      s₂.gpr .r15 = W ∧ s₂.gpr .r14 = St ∧ s₂.gpr .r13 = Ctx ∧ s₂.gpr .r12 = Np ∧
+      s₂.gpr .rbp = BitVec.ofNat 64 n ∧ s₂.gpr .rsp = SP ∧ s₂.mem = s₁.mem ∧ s₂.rd = s₁.rd ∧ s₂.wr = s₁.wr := by
+    refine ⟨_, by xrun [], ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+    · simp [gpr_setReg, hg₁, hW]
+    · simp [gpr_setReg, hg₁, hSt]
+    · simp [gpr_setReg, hg₁, hCtx]
+    · simp [gpr_setReg, hg₁, hNp]
+    · simp [gpr_setReg, hg₁, ← hn]
+    · simp [gpr_setReg, hg₁, hSP]
+    all_goals rfl
+  have he₂ : Env Ctx St W SP s₂ N := ⟨h13, h14, h15, hg₂, by
+    refine ⟨?_, ?_, ?_⟩ <;> simp only [hrd₂, hwr₂, hrd₁, hwr₁]
+    · rw [hrd]; exact covers_of_mem (List.mem_append_left _ (List.mem_cons_self ..))
+    · rw [hwr]; exact covers_of_mem (List.mem_cons_self ..)
+    · exact pW⟩
+  have rdN : Covers [⟨Np, n⟩] (s₂.rd ++ s₂.wr) := by
+    rw [hrd₂, hrd₁, hwr₂, hwr₁, hrd]
+    exact covers_of_mem (List.mem_append_left _ (List.mem_cons_of_mem _ (List.mem_singleton_self _)))
+  have hiv : bytesAt s₂.mem Np n = bytesAt s.mem Np n := by
+    rw [hm₂]; exact bytesAt_frame f₁ (fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr; exact d_nw.sub_right (Lay.wSub L.le)) (by omega_using [hn])
+  have hH : blockAt s₂.mem (Ctx + BitVec.ofNat 64 240) = ctxH s.mem Ctx := by
+    rw [hm₂, ctxH_eq, blockAt_frame f₁ fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr; exact L.ctx_w (by decide) L.le]
+  have hji : J0In Ctx St W SP (ctxH s.mem Ctx) Np n s₂ N :=
+    ⟨he₂, hH, h12, hbp, ⟨rdN, by have := (s.gpr .rdx).isLt; omega_using [hn], wn, d_ns, d_nw, k_n⟩⟩
+  refine WP.seq (WP.block_append (WP.of_runBlock ⟨s₁, run₁, WP.of_runBlock ⟨s₂, run₂, ?_⟩⟩))
+  refine WP.seq (WP.mono (j0_ok v L hji hN) fun s₃ ho => ?_)
+  have he₃ := ho.env
+  have hret : s₃.mem.readW SP 64 = s.mem.readW SP 64 := by
+    rw [ret_kept ho.frame (fun r hr => ?_), hm₂, ret_kept f₁ (fun r hr => ?_)]
+    · simp only [List.mem_singleton] at hr; subst hr; exact r_w.sub_right (Lay.wSub L.le)
+    · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl | rfl | rfl
+      · exact r_s
+      · exact r_w.sub_right (Lay.wSub L.le)
+      · exact r_w.sub_right (Lay.wSub (Lay.leN hN))
+      · exact Lay.gh_of_w G.fit r_w
+      · exact ret_below SP
+  refine WP.mono (exit_ok he₃.r15 (by rw [he₃.rsp, hSP]) (covers_left he₃.perm.w)
+    ((hm₂ ▸ hsv₁).frame ho.frame (saved_j0Frame L hN G.fit)) (by rw [hSP, hret]) (by omega_using [hN])) fun s' ⟨hg, hm, _⟩ => ⟨hg, fun ciph => ?_⟩
+  rw [Proof.Gcm.streamRepr_iff, ofNat_lit, ofNat_lit, ofNat_lit, ofNat_lit, hm, ← hiv]
+  refine ⟨ho.j0, Proof.Gcm.absorbed_nil _ ho.y, ho.cb, fun h => absurd rfl h⟩
+
+end VG.Proof.AesGcm.X86_64
+
+end
+
+end
+
 
 /-!
 # AES-GCM on x86-64: `Verified`

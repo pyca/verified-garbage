@@ -3,19 +3,558 @@ module
 public import VerifiedGarbage.Proof.Ed448.Arm.VerifyDecodeLoop
 public import VerifiedGarbage.Proof.X448.Arm.Save
 public import VerifiedGarbage.TCB.Arm.Target
-import VerifiedGarbage.Proof.Ed448.Arm.VerifyLoop
+public import VerifiedGarbage.Proof.Ed448.Arm.VerifyField
+import VerifiedGarbage.Proof.Ed448.Arm.BaseBits
+public import VerifiedGarbage.Impl.Ed448.Arm.VerifyEquation
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.X448.Arm.Mem
+public import VerifiedGarbage.Spec.Ed448.Contract
+import VerifiedGarbage.Proof.Framework.Range
+import VerifiedGarbage.Proof.X448.Arm.BitWrite
+import VerifiedGarbage.Proof.X448.Arm.Iter
+import VerifiedGarbage.Proof.X448.Arm.Carry
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Proof.X448.Arm.Counters
 import VerifiedGarbage.Proof.Ed448.Arm.VerifyFinish
 import VerifiedGarbage.Proof.Ed448.Arm.BaseMain
 import VerifiedGarbage.Proof.X448.Arm.Finish
 import VerifiedGarbage.Proof.Ed448.Arm.BaseInit
-import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Ed448.Arm.VerifyDecode
 import VerifiedGarbage.Proof.Ed448.Arm.VerifyS
-import VerifiedGarbage.Proof.X448.Arm.Iter
-import VerifiedGarbage.Proof.X448.Arm.Carry
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.X448.Arm.Initial
+
+/-! ### `Ed448.Arm.VerifyLoop`, which only this module used -/
+
+section
+
+/-! ### `Ed448.Arm.VerifyBits`, which only this module used -/
+
+section
+
+/-!
+# Ed448 verification's equation on ARMv7: the bits of `S` and `k`
+
+`vbits_ok`: byte `t` at `VBITS` is bit `t` of `S` (the signature's last 57
+bytes) plus twice bit `t` of `k` (the challenge), for `t < 456`.
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Ed448.Arm
+
+open VG VG.Arm VG.Impl.Ed448.Arm VG.Proof.X448.Arm
+open VG.Spec.Ed448 (bytesAt decodeLE)
+open VG.Proof.X25519.Arm (wp_mov wp_dp wp_ldrb wp_strb wp_cmp op2_imm op2_reg op2_lsl)
+
+/-- Bits `t` of two numbers in one byte. -/
+def pair2 (a b t : Nat) : Nat := ((a >>> t) &&& 1) + 2 * ((b >>> t) &&& 1)
+
+theorem shift_eval (s : State) (r : Reg) {j : Nat} (hj : j < 8) :
+    Op2.eval s (if j = 0 then .reg r else .shifted r .lsr j) = some (s.gpr r >>> j) := by
+  by_cases hz : j = 0
+  · subst j; simp only [ite_true, Op2.eval, BitVec.ushiftRight_zero]
+  · rw [ite_eq_right hz]
+    exact VG.Proof.X25519.Arm.op2_lsr (by omega_using [hj, hz])
+
+theorem pack_bits (a b : BitVec 8) (j : Nat) :
+    (((a.setWidth 32 >>> j) &&& 1) + (((b.setWidth 32 >>> j) &&& 1) <<< 1)).setWidth 8 =
+      BitVec.ofNat 8 (pair2 a.toNat b.toNat j) := by
+  apply BitVec.eq_of_toNat_eq
+  have ha := a.isLt
+  have hb := b.isLt
+  have h1 : (a.toNat >>> j) &&& 1 ≤ 1 := Nat.and_le_right
+  have h2 : (b.toNat >>> j) &&& 1 ≤ 1 := Nat.and_le_right
+  simp only [BitVec.toNat_setWidth, BitVec.toNat_add, BitVec.toNat_and, BitVec.toNat_ushiftRight,
+    BitVec.toNat_shiftLeft, BitVec.toNat_ofNat, Nat.shiftLeft_eq, pair2]
+  rw [Nat.mod_eq_of_lt (a := a.toNat) (by omega_using []), Nat.mod_eq_of_lt (a := b.toNat) (by omega_using [])]
+  change ((a.toNat >>> j &&& 1) + ((b.toNat >>> j &&& 1) * 2 ^ 1) % 2 ^ 32) % 2 ^ 32 % 2 ^ 8 = _
+  omega_using []
+
+theorem vbitJ_ok {s : State} {base : Addr} (hs : Scr s base) {i : Nat} (hi : i < 57)
+    (hp : s.gpr .r7 = s.gpr .r0 + BitVec.ofNat 32 (8 * i))
+    {a b : BitVec 8} (ha : s.gpr .r3 = a.setWidth 32) (hb : s.gpr .r9 = b.setWidth 32) {j : Nat} (hj : j < 8) :
+    WP isa (.block (vbitJ j)) s fun t =>
+      t.mem = s.mem.writeW (off base (VBITS + (8 * i + j))) (BitVec.ofNat 8 (pair2 a.toNat b.toNat j)) ∧
+        Keeps [.r1, .r4] s t := by
+  unfold vbitJ
+  refine wp_mov (shift_eval s .r3 hj) fun t1 v1 => ?_
+  refine wp_dp (op2_imm (by decide)) fun t2 v2 => ?_
+  refine wp_mov (shift_eval t2 .r9 hj) fun t3 v3 => ?_
+  refine wp_dp (op2_imm (by decide)) fun t4 v4 => ?_
+  refine wp_dp (op2_lsl (by decide)) fun t5 v5 => ?_
+  have r7 : t5.gpr .r7 = s.gpr .r7 := by
+    rw [v5.other _ (by decide), v4.other _ (by decide), v3.other _ (by decide), v2.other _ (by decide),
+      v1.other _ (by decide)]
+  have ea : State.addr (t5.gpr .r7 + BitVec.ofNat 32 (VBITS + j)) = off base (VBITS + (8 * i + j)) := by
+    rw [r7, hp, BitVec.add_assoc, ← BitVec.ofNat_add, hs.ea (by simp only [VBITS]; omega_using [hi, hj])]
+    congr 1; omega_using []
+  refine wp_strb (by simp only [VBITS]; omega_using [hj]) ea
+    (by rw [v5.wr, v4.wr, v3.wr, v2.wr, v1.wr]; exact hs.write (by simp only [VBITS]; omega_using [hi, hj]))
+    fun t6 v6 => WP.block_nil ⟨?_, ?_⟩
+  · rw [v6.mem, v5.mem, v4.mem, v3.mem, v2.mem, v1.mem, v5.gpr]
+    change s.mem.writeW _ ((t4.gpr .r1 + t4.gpr .r4 <<< 1).setWidth 8) = _
+    rw [v4.other _ (by decide), v3.other _ (by decide), v2.gpr, v4.gpr]
+    change s.mem.writeW _ (((t1.gpr .r1 &&& 1) + (t3.gpr .r4 &&& 1) <<< 1).setWidth 8) = _
+    rw [v3.gpr, v1.gpr, v2.other _ (by decide), v1.other _ (by decide), ha, hb, pack_bits]
+  · exact rest_keeps ((v1.rest (by decide)).trans ((v2.rest (by decide)).trans ((v3.rest (by decide)).trans
+      ((v4.rest (by decide)).trans ((v5.rest (by decide)).trans (v6.rest _))))))
+
+theorem vbyteBits_ok {s : State} {base : Addr} (hs : Scr s base) {i : Nat} (hi : i < 57)
+    (hp : s.gpr .r7 = s.gpr .r0 + BitVec.ofNat 32 (8 * i))
+    {a b : BitVec 8} (ha : s.gpr .r3 = a.setWidth 32) (hb : s.gpr .r9 = b.setWidth 32) :
+    WP isa (.block ((List.range 8).flatMap vbitJ)) s fun t =>
+      (∀ j < 8, t.mem (off base (VBITS + (8 * i + j))) = BitVec.ofNat 8 (pair2 a.toNat b.toNat j)) ∧
+      Outside base (VBITS + 8 * i) 8 s.mem t.mem ∧ Keeps [.r1, .r4] s t := by
+  let inv := fun n (t : State) =>
+    (∀ j < n, t.mem (off base (VBITS + (8 * i + j))) = BitVec.ofNat 8 (pair2 a.toNat b.toNat j)) ∧
+    Outside base (VBITS + 8 * i) 8 s.mem t.mem ∧ Keeps [.r1, .r4] s t
+  have step : ∀ n t, n < 8 → inv n t → WP isa (.block (vbitJ n)) t (inv (n + 1)) := by
+    intro n t hn ⟨tf, tm, tk⟩
+    refine WP.mono (vbitJ_ok (hs.of_keeps tk (by decide)) hi
+      (by rw [tk.1 .r7 (by decide), tk.1 .r0 (by decide)]; exact hp)
+      ((tk.1 _ (by decide)).trans ha) ((tk.1 _ (by decide)).trans hb) hn) fun u ⟨um, uk⟩ => ?_
+    refine ⟨?_, tm.trans ?_, tk.trans uk⟩
+    · intro j hj
+      rw [um, writeW8_apply]
+      have eq : off base (VBITS + (8 * i + j)) = off base (VBITS + (8 * i + n)) ↔ j = n := by
+        rw [off_eq_iff base (by simp only [VBITS]; omega_using [hi, hn, hj]) (by simp only [VBITS]; omega_using [hi, hn])]
+        omega_using []
+      by_cases he : j = n
+      · rw [ite_eq_left (eq.mpr he), he]
+      · rw [ite_eq_right (fun h => he (eq.mp h))]; exact tf j (by omega_using [hj, he])
+    · intro x hx
+      rw [um]
+      exact writeW8_outside _ _ _ (by simp only [VBITS]; omega_using [hi, hn]) (by omega_using [hn, hx])
+  exact wp_range_flatMap (M := isa) (N := 8) inv step 8 (by decide) s
+    ⟨fun _ hj => by omega, Outside.refl _ _ _ _, Keeps.refl _ _⟩
+
+def vbitHead : List Instr :=
+  [.dp .add .r7 .r12 (.reg .r11), .ldrb .r3 .r7 57, .dp .add .r7 .r2 (.reg .r11), .ldrb .r9 .r7 0,
+    .dp .add .r7 .r0 (.shifted .r11 .lsl 3)]
+
+def vbitRegs : List Reg := [.r3, .r1, .r4, .r9, .r11, .r7]
+
+theorem vbitHead_ok {s : State} {sq kq : Addr} (hsq : State.addr (s.gpr .r12) + BitVec.ofNat 64 57 = sq)
+    (hkq : State.addr (s.gpr .r2) = kq)
+    (hfs : (s.gpr .r12).toNat + 114 ≤ 2 ^ 32) (hfk : (s.gpr .r2).toNat + 57 ≤ 2 ^ 32) {i : Nat} (hi : i < 57)
+    (hb : s.gpr .r11 = BitVec.ofNat 32 i) (hsr : InRegions (s.rd ++ s.wr) (sq + BitVec.ofNat 64 i) 1)
+    (hkr : InRegions (s.rd ++ s.wr) (kq + BitVec.ofNat 64 i) 1) :
+    WP isa (.block vbitHead) s fun t =>
+      t.gpr .r3 = (s.mem (sq + BitVec.ofNat 64 i)).setWidth 32 ∧
+      t.gpr .r9 = (s.mem (kq + BitVec.ofNat 64 i)).setWidth 32 ∧
+      t.gpr .r7 = t.gpr .r0 + BitVec.ofNat 32 (8 * i) ∧
+      t.mem = s.mem ∧ Keeps [.r3, .r9, .r7] s t := by
+  unfold vbitHead
+  refine wp_dp (op2_reg _ _) fun t1 v1 => ?_
+  have ea1 : State.addr (t1.gpr .r7 + BitVec.ofNat 32 57) = sq + BitVec.ofNat 64 i := by
+    rw [v1.gpr]; change State.addr (s.gpr .r12 + s.gpr .r11 + BitVec.ofNat 32 57) = _
+    rw [hb, Offset.add_add, addr_add (by omega_using [hfs, hi]), ← hsq, Offset.add_add, Nat.add_comm]
+  refine wp_ldrb (by decide) ea1 (by rw [v1.rd, v1.wr]; exact hsr) fun t2 v2 => ?_
+  refine wp_dp (op2_reg _ _) fun t3 v3 => ?_
+  have ea3 : State.addr (t3.gpr .r7 + BitVec.ofNat 32 0) = kq + BitVec.ofNat 64 i := by
+    rw [v3.gpr]; change State.addr (t2.gpr .r2 + t2.gpr .r11 + BitVec.ofNat 32 0) = _
+    rw [v2.other _ (by decide), v1.other _ (by decide), v2.other _ (by decide), v1.other _ (by decide),
+      BitVec.add_zero, hb, addr_add (by omega_using [hfk, hi]), hkq]
+  refine wp_ldrb (by decide) ea3 (by rw [v3.rd, v3.wr, v2.rd, v2.wr, v1.rd, v1.wr]; exact hkr)
+    fun t4 v4 => ?_
+  refine wp_dp (op2_lsl (by decide)) fun t5 v5 => WP.block_nil ⟨?_, ?_, ?_, ?_, ?_⟩
+  · rw [v5.other _ (by decide), v4.other _ (by decide), v3.other _ (by decide), v2.gpr, v1.mem]
+  · rw [v5.other _ (by decide), v4.gpr, v3.mem, v2.mem, v1.mem]
+  · rw [v5.gpr, v5.other .r0 (by decide)]
+    change t4.gpr .r0 + t4.gpr .r11 <<< 3 = _
+    rw [v4.other .r11 (by decide), v3.other .r11 (by decide), v2.other .r11 (by decide),
+      v1.other .r11 (by decide), hb]
+    apply congrArg (t4.gpr .r0 + ·)
+    apply BitVec.eq_of_toNat_eq
+    simp only [BitVec.toNat_shiftLeft, BitVec.toNat_ofNat, Nat.shiftLeft_eq]
+    omega_using []
+  · rw [v5.mem, v4.mem, v3.mem, v2.mem, v1.mem]
+  · exact rest_keeps ((v1.rest (by decide)).trans ((v2.rest (by decide)).trans ((v3.rest (by decide)).trans
+      ((v4.rest (by decide)).trans (v5.rest (by decide))))))
+
+theorem vbitsBody_ok {s : State} {base sq kq : Addr} (hs : Scr s base)
+    (hsq : State.addr (s.gpr .r12) + BitVec.ofNat 64 57 = sq) (hkq : State.addr (s.gpr .r2) = kq)
+    (hfs : (s.gpr .r12).toNat + 114 ≤ 2 ^ 32) (hfk : (s.gpr .r2).toNat + 57 ≤ 2 ^ 32) {i : Nat} (hi : i < 57)
+    (hb : s.gpr .r11 = BitVec.ofNat 32 i) (hsr : InRegions (s.rd ++ s.wr) (sq + BitVec.ofNat 64 i) 1)
+    (hkr : InRegions (s.rd ++ s.wr) (kq + BitVec.ofNat 64 i) 1) :
+    WP isa (.block vbitsBody) s fun t =>
+      t.gpr .r11 = BitVec.ofNat 32 (i + 1) ∧ t.z = decide (i + 1 = 57) ∧ Keeps vbitRegs s t ∧
+      (∀ j < 8, t.mem (off base (VBITS + (8 * i + j))) =
+        BitVec.ofNat 8 (pair2 (s.mem (sq + BitVec.ofNat 64 i)).toNat (s.mem (kq + BitVec.ofNat 64 i)).toNat j)) ∧
+      Outside base (VBITS + 8 * i) 8 s.mem t.mem := by
+  change WP isa (.block (vbitHead ++ (List.range 8).flatMap vbitJ ++ baseBitTail)) s _
+  rw [List.append_assoc, WP.block_append_iff]
+  refine WP.mono (vbitHead_ok hsq hkq hfs hfk hi hb hsr hkr) fun t ⟨ta, tb, tp, tm, tk⟩ => ?_
+  rw [WP.block_append_iff]
+  refine WP.mono (vbyteBits_ok (hs.of_keeps tk (by decide)) hi tp ta tb) fun u ⟨uf, um, uk⟩ => ?_
+  have ub : u.gpr .r11 = BitVec.ofNat 32 i := (uk.1 _ (by decide)).trans ((tk.1 _ (by decide)).trans hb)
+  refine WP.mono (baseBitTail_ok hi ub) fun v ⟨vb, vz, vm, vk⟩ => ?_
+  refine ⟨vb, vz, ?_, ?_, ?_⟩
+  · refine (tk.mono ?_).trans ((uk.mono ?_).trans (vk.mono ?_)) <;> decide
+  · rw [vm]; exact uf
+  · rw [vm, ← tm]; exact um
+
+/-- The bits loop's invariant, after `i` bytes. -/
+structure VBitsInv (base sq kq : Addr) (s₀ s : State) (i : Nat) : Prop where
+  scr : Scr s base
+  esq : State.addr (s.gpr .r12) + BitVec.ofNat 64 57 = sq
+  ekq : State.addr (s.gpr .r2) = kq
+  fs : (s.gpr .r12).toNat + 114 ≤ 2 ^ 32
+  fk : (s.gpr .r2).toNat + 57 ≤ 2 ^ 32
+  r11 : s.gpr .r11 = BitVec.ofNat 32 i
+  gpr : ∀ r, r ∉ vbitRegs → s.gpr r = s₀.gpr r
+  rd : s.rd = s₀.rd
+  wr : s.wr = s₀.wr
+  mem : Outside base VBITS 456 s₀.mem s.mem
+  bits : ∀ t < 8 * i, s.mem (off base (VBITS + t)) =
+    BitVec.ofNat 8 (pair2 (s₀.mem (sq + BitVec.ofNat 64 (t / 8))).toNat
+      (s₀.mem (kq + BitVec.ofNat 64 (t / 8))).toNat (t % 8))
+
+theorem vbitsLoop_ok {s₀ : State} {base sq kq : Addr}
+    (hsr : ∀ q < 57, InRegions (s₀.rd ++ s₀.wr) (sq + BitVec.ofNat 64 q) 1)
+    (hkr : ∀ q < 57, InRegions (s₀.rd ++ s₀.wr) (kq + BitVec.ofNat 64 q) 1)
+    (hsd : ∀ q < 57, 8192 ≤ ofs base (sq + BitVec.ofNat 64 q))
+    (hkd : ∀ q < 57, 8192 ≤ ofs base (kq + BitVec.ofNat 64 q)) :
+    ∀ i, ∀ s, i < 57 → VBitsInv base sq kq s₀ s i →
+      WP isa (.loop (.block vbitsBody) .ne) s fun s' => VBitsInv base sq kq s₀ s' 57 := by
+  intro i s hi hb
+  refine WP.loop (M := isa) (body := .block vbitsBody) (c := .ne)
+    (Q := fun s' => VBitsInv base sq kq s₀ s' 57)
+    (fun m (s : State) => ∃ i, m = 57 - i ∧ i < 57 ∧ VBitsInv base sq kq s₀ s i) ?_ (57 - i) s
+    ⟨i, rfl, hi, hb⟩
+  rintro m s ⟨i, rfl, hi, hb⟩
+  refine WP.mono (vbitsBody_ok hb.scr hb.esq hb.ekq hb.fs hb.fk hi hb.r11
+    (by rw [hb.rd, hb.wr]; exact hsr i hi) (by rw [hb.rd, hb.wr]; exact hkr i hi))
+    fun s' ⟨b', z', keep', bits', o'⟩ => ?_
+  obtain ⟨g', rd', wr'⟩ := keep'
+  have hbs : s.mem (sq + BitVec.ofNat 64 i) = s₀.mem (sq + BitVec.ofNat 64 i) :=
+    hb.mem _ (by have := hsd i hi; simp only [VBITS]; omega_using [this])
+  have hbk : s.mem (kq + BitVec.ofNat 64 i) = s₀.mem (kq + BitVec.ofNat 64 i) :=
+    hb.mem _ (by have := hkd i hi; simp only [VBITS]; omega_using [this])
+  have inv : VBitsInv base sq kq s₀ s' (i + 1) := by
+    refine ⟨hb.scr.of_keeps ⟨g', rd', wr'⟩ (by decide),
+      (by rw [g' _ (by decide)]; exact hb.esq), (by rw [g' _ (by decide)]; exact hb.ekq),
+      (by rw [g' _ (by decide)]; exact hb.fs), (by rw [g' _ (by decide)]; exact hb.fk), b',
+      fun r hr => (g' r hr).trans (hb.gpr r hr),
+      rd'.trans hb.rd, wr'.trans hb.wr, hb.mem.trans (o'.mono (by omega_using []) (by omega_using [hi])),
+      fun t ht => ?_⟩
+    rcases Nat.lt_or_ge t (8 * i) with h | h
+    · rw [o' _ (by rw [ofs_off' base (by simp only [VBITS]; omega_using [hi, ht])]; omega_using [h]), hb.bits t h]
+    · have e := bits' (t - 8 * i) (by omega_using [ht])
+      rw [show 8 * i + (t - 8 * i) = t by omega_using [h], hbs, hbk] at e
+      rw [e, show t / 8 = i by omega_using [ht, h], show t % 8 = t - 8 * i by omega_using [ht, h]]
+  simp only [eval, z']
+  rcases Nat.lt_or_ge (i + 1) 57 with h | h
+  · exact .inr ⟨by simp only [decide_eq_false (by omega_using [h] : ¬i + 1 = 57), Bool.not_false],
+      57 - (i + 1), by omega_using [hi], i + 1, rfl, h, inv⟩
+  · obtain rfl : i = 56 := by omega_using [hi, h]
+    exact .inl ⟨rfl, inv⟩
+
+/-- `vbits`: byte `t` of `VBITS` is bit `t` of `S` plus twice bit `t` of `k`, for `t < 456`. -/
+theorem vbits_ok {s : State} {base sq kq : Addr} (hs : Scr s base)
+    (hsq : State.addr (s.gpr .r12) + BitVec.ofNat 64 57 = sq) (hkq : State.addr (s.gpr .r2) = kq)
+    (hfs : (s.gpr .r12).toNat + 114 ≤ 2 ^ 32) (hfk : (s.gpr .r2).toNat + 57 ≤ 2 ^ 32)
+    (hsr : ∀ q < 57, InRegions (s.rd ++ s.wr) (sq + BitVec.ofNat 64 q) 1)
+    (hkr : ∀ q < 57, InRegions (s.rd ++ s.wr) (kq + BitVec.ofNat 64 q) 1)
+    (hsd : ∀ q < 57, 8192 ≤ ofs base (sq + BitVec.ofNat 64 q))
+    (hkd : ∀ q < 57, 8192 ≤ ofs base (kq + BitVec.ofNat 64 q)) :
+    WP isa vbits s fun s' =>
+      (∀ r, r ∉ vbitRegs → s'.gpr r = s.gpr r) ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧
+      Outside base VBITS 456 s.mem s'.mem ∧
+      ∀ t < 456, s'.mem (off base (VBITS + t)) =
+        BitVec.ofNat 8 (pair2 (decodeLE (bytesAt s.mem sq 57)) (decodeLE (bytesAt s.mem kq 57)) t) := by
+  unfold vbits
+  refine WP.seq (WP.mono (show WP isa (.block [.mov .r11 (.imm 0)]) s
+      (fun s' => VBitsInv base sq kq s s' 0) by
+    refine wp_mov (op2_imm (by decide)) fun t ht => WP.block_nil ?_
+    have keep : Keeps vbitRegs s t := rest_keeps (ht.rest (by decide))
+    exact ⟨hs.of_keeps keep (by decide), by rw [ht.other .r12 (by decide)]; exact hsq,
+      by rw [ht.other .r2 (by decide)]; exact hkq, by rw [ht.other .r12 (by decide)]; exact hfs,
+      by rw [ht.other .r2 (by decide)]; exact hfk, ht.gpr, keep.1, keep.2.1, keep.2.2,
+      ht.mem ▸ Outside.refl _ _ _ _, fun _ hi => by omega⟩) fun s₁ h₁ => ?_)
+  refine WP.mono (vbitsLoop_ok hsr hkr hsd hkd 0 s₁ (by omega_using []) h₁) fun s₂ h₂ => ?_
+  refine ⟨h₂.gpr, h₂.rd, h₂.wr, h₂.mem, fun t ht => ?_⟩
+  rw [h₂.bits t (by omega_using [ht])]
+  unfold pair2
+  rw [scalar_bit _ _ ht, scalar_bit _ _ ht]
+
+end VG.Proof.Ed448.Arm
+
+end
+
+end
+
+
+/-!
+# Ed448 verification's equation on ARMv7: `[S]B + [k](-A)`
+
+One iteration of `vloop` (`vstep_ok`), for bit `t` of `S` and of `k` (bits 0
+and 1 of byte `t` at `VBITS`): `Q` (slots 0, 21, 2) doubled, then `B` (slots
+8–10) added and swapped in by the first bit, and `-A` (slots 6, 7 and 10) by
+the second. The loop's invariant (`VInv`): `Q` is the reference ladder's
+point after the bits above `n` (`Proof.Ed448.vladder`).
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Ed448.Arm
+
+open VG VG.Arm VG.Impl.Ed448.Arm VG.Proof.X448.Arm
+open VG.Proof.Ed448 (double vladder vstepRef vladder_bit bitAt)
+open VG.Impl.X448.Arm (slot ACC)
+
+/-! ## The values -/
+
+/-- The slots after a swap of `T` into `Q`. -/
+def swapEnv (sw : Bool) (e : Env) : Env := opSwap 2 5 sw (opSwap 21 4 sw (opSwap 0 3 sw e))
+
+/-- The slots after an iteration, for the bits `sw₁` (of `S`) and `sw₂` (of `k`). -/
+def vstepEnv (sw₁ sw₂ : Bool) (e : Env) : Env :=
+  swapEnv sw₂ (applyOps (addF 6 7) (swapEnv sw₁ (applyOps (addF 8 9) (applyOps (doubleF 0 21 2) e))))
+
+theorem swapEnv_keep (sw : Bool) (e : Env) (i : Index) (hi : 6 ≤ i.val ∧ i.val < 12) :
+    swapEnv sw e i = e i := by
+  have h0 : i ≠ 0 := fun h => by subst h; omega_arith
+  have h2 : i ≠ 2 := fun h => by subst h; omega_arith
+  have h3 : i ≠ 3 := fun h => by subst h; omega_arith
+  have h4 : i ≠ 4 := fun h => by subst h; omega_arith
+  have h5 : i ≠ 5 := fun h => by subst h; omega_arith
+  have h21 : i ≠ 21 := fun h => by subst h; omega_arith
+  simp only [swapEnv, opSwap, Function.update_of_ne h0, Function.update_of_ne h2, Function.update_of_ne h3,
+    Function.update_of_ne h4, Function.update_of_ne h5, Function.update_of_ne h21]
+
+theorem pt_swap (sw : Bool) (e : Env) :
+    pt (swapEnv sw e) 0 21 2 = if sw then pt e 3 4 5 else pt e 0 21 2 := by
+  cases sw <;> rfl
+
+theorem vstepEnv_pt (sw₁ sw₂ : Bool) (e : Env) :
+    pt (vstepEnv sw₁ sw₂ e) 0 21 2 =
+      let r₁ := double (pt e 0 21 2)
+      let r₂ := if sw₁ then addWith (e 11) r₁ (pt e 8 9 10) else r₁
+      if sw₂ then addWith (e 11) r₂ (pt e 6 7 10) else r₂ := by
+  unfold vstepEnv
+  generalize he0 : applyOps (doubleF 0 21 2) e = e0
+  have p0 : pt e0 0 21 2 = double (pt e 0 21 2) := by rw [← he0, doubleF_eval0]
+  have k0 : ∀ i : Index, 3 ≤ i.val ∧ i.val < 12 → e0 i = e i := fun i hi => by
+    rw [← he0, doubleF_keep0 _ _ (Or.inl hi)]
+  generalize he1 : applyOps (addF 8 9) e0 = e1
+  have p1 : pt e1 3 4 5 = addWith (e0 11) (pt e0 0 21 2) (pt e0 8 9 10) := by rw [← he1, addF_eval8]
+  have q1 : pt e1 0 21 2 = pt e0 0 21 2 :=
+    pt_congr' (by rw [← he1, addF_keep _ 8 9 (Or.inr ⟨rfl, rfl⟩) _ (Or.inl (by decide))])
+      (by rw [← he1, addF_keep _ 8 9 (Or.inr ⟨rfl, rfl⟩) _ (Or.inr (Or.inr (by decide)))])
+      (by rw [← he1, addF_keep _ 8 9 (Or.inr ⟨rfl, rfl⟩) _ (Or.inl (by decide))])
+  have k1 : ∀ i : Index, 6 ≤ i.val ∧ i.val < 12 → e1 i = e0 i := fun i hi => by
+    rw [← he1, addF_keep _ 8 9 (Or.inr ⟨rfl, rfl⟩) _ (Or.inr (Or.inl hi))]
+  generalize he2 : swapEnv sw₁ e1 = e2
+  have p2 : pt e2 0 21 2 = if sw₁ then pt e1 3 4 5 else pt e1 0 21 2 := by rw [← he2, pt_swap]
+  have k2 : ∀ i : Index, 6 ≤ i.val ∧ i.val < 12 → e2 i = e1 i := fun i hi => by
+    rw [← he2, swapEnv_keep _ _ _ hi]
+  generalize he3 : applyOps (addF 6 7) e2 = e3
+  have p3 : pt e3 3 4 5 = addWith (e2 11) (pt e2 0 21 2) (pt e2 6 7 10) := by rw [← he3, addF_eval6]
+  have q3 : pt e3 0 21 2 = pt e2 0 21 2 :=
+    pt_congr' (by rw [← he3, addF_keep _ 6 7 (Or.inl ⟨rfl, rfl⟩) _ (Or.inl (by decide))])
+      (by rw [← he3, addF_keep _ 6 7 (Or.inl ⟨rfl, rfl⟩) _ (Or.inr (Or.inr (by decide)))])
+      (by rw [← he3, addF_keep _ 6 7 (Or.inl ⟨rfl, rfl⟩) _ (Or.inl (by decide))])
+  have e11 : e2 11 = e 11 := by rw [k2 11 (by decide), k1 11 (by decide), k0 11 (by decide)]
+  have e11' : e0 11 = e 11 := k0 11 (by decide)
+  have b8 : pt e0 8 9 10 = pt e 8 9 10 :=
+    pt_congr' (k0 8 (by decide)) (k0 9 (by decide)) (k0 10 (by decide))
+  have a6 : pt e2 6 7 10 = pt e 6 7 10 :=
+    pt_congr' (by rw [k2 6 (by decide), k1 6 (by decide), k0 6 (by decide)])
+      (by rw [k2 7 (by decide), k1 7 (by decide), k0 7 (by decide)])
+      (by rw [k2 10 (by decide), k1 10 (by decide), k0 10 (by decide)])
+  rw [pt_swap, p3, q3, p2, p1, q1, e11, e11', b8, a6, p0]
+
+theorem vstepEnv_keep (sw₁ sw₂ : Bool) (e : Env) (i : Index) (hi : 6 ≤ i.val ∧ i.val < 12) :
+    vstepEnv sw₁ sw₂ e i = e i := by
+  rw [vstepEnv, swapEnv_keep _ _ _ hi, addF_keep _ 6 7 (Or.inl ⟨rfl, rfl⟩) _ (Or.inr (Or.inl hi)),
+    swapEnv_keep _ _ _ hi, addF_keep _ 8 9 (Or.inr ⟨rfl, rfl⟩) _ (Or.inr (Or.inl hi)),
+    doubleF_keep0 _ _ (Or.inl ⟨by omega_arith, hi.2⟩)]
+
+/-- One bit of both scalars: the reference ladder's point after the bits above
+`t`, then after bit `t`. -/
+theorem vladder_step {e : Env} {S K t : Nat} {A : Spec.Ed448.Point} (ht : t < 456)
+    (hr : pt e 0 21 2 = vladder S K A (456 - (t + 1)))
+    (hq : pt e 8 9 10 = Spec.Ed448.basePoint) (ha : pt e 6 7 10 = A) (hd : e 11 = Spec.Ed448.d) :
+    pt (vstepEnv (decide ((S >>> t) &&& 1 = 1)) (decide ((K >>> t) &&& 1 = 1)) e) 0 21 2 =
+      vladder S K A (456 - t) := by
+  rw [vstepEnv_pt, hd, hq, ha, hr, vladder_bit S K A ht]
+  rfl
+
+/-! ## One iteration -/
+
+theorem pair_mask : ∀ a < 2, ∀ b < 2,
+    (0 : BitVec 32) - ((BitVec.ofNat 8 (a + 2 * b)).setWidth 32 &&& 1) = mask (decide (a = 1)) ∧
+    (0 : BitVec 32) - ((BitVec.ofNat 8 (a + 2 * b)).setWidth 32 >>> 1) = mask (decide (b = 1)) := by
+  decide
+
+theorem vmask_ok {s : State} {base : Addr} (hs : Scr s base) {t : Nat} (ht : t < 456)
+    (hb : s.gpr .r11 = BitVec.ofNat 32 t) {a b : Nat} (ha : a < 2) (hb2 : b < 2)
+    (hbit : s.mem (off base (VBITS + t)) = BitVec.ofNat 8 (a + 2 * b)) (hi : Bool) :
+    WP isa (.block (vmask hi)) s fun u =>
+      u.gpr .r5 = mask (decide ((if hi then b else a) = 1)) ∧ Keeps workRegs s u ∧ u.mem = s.mem := by
+  have hB : VBITS = 3104 := rfl
+  unfold vmask
+  refine VG.Proof.X25519.Arm.wp_dp (VG.Proof.X25519.Arm.op2_reg _ _) fun u1 v1 => ?_
+  have ba : State.addr (u1.gpr .r7 + BitVec.ofNat 32 VBITS) = off base (VBITS + t) := by
+    rw [v1.gpr]; change State.addr (s.gpr .r0 + s.gpr .r11 + BitVec.ofNat 32 VBITS) = _
+    rw [hb, Offset.add_add, Nat.add_comm t VBITS]
+    exact hs.ea (by omega_arith)
+  refine VG.Proof.X25519.Arm.wp_ldrb (by omega_arith) ba
+    (by rw [v1.rd, v1.wr]; exact hs.read (by omega_arith)) fun u2 v2 => ?_
+  have e2 : u2.gpr .r3 = (BitVec.ofNat 8 (a + 2 * b)).setWidth 32 := by rw [v2.gpr, v1.mem, hbit]
+  have pm := pair_mask a ha b hb2
+  cases hi
+  · refine VG.Proof.X25519.Arm.wp_dp (VG.Proof.X25519.Arm.op2_imm (by decide)) fun u3 v3 => ?_
+    refine VG.Proof.X25519.Arm.wp_mov (VG.Proof.X25519.Arm.op2_imm (by decide)) fun u4 v4 => ?_
+    refine VG.Proof.X25519.Arm.wp_dp (VG.Proof.X25519.Arm.op2_reg _ _) fun u5 v5 =>
+      WP.block_nil ⟨?_, ?_, ?_⟩
+    · rw [v5.gpr]; change u4.gpr .r5 - u4.gpr .r3 = _
+      rw [v4.gpr, v4.other _ (by decide), v3.gpr]
+      change (0 : BitVec 32) - (u2.gpr .r3 &&& 1) = _
+      rw [e2]; exact pm.1
+    · exact rest_keeps ((v1.rest (ws := workRegs) (by decide)).trans ((v2.rest (by decide)).trans
+        ((v3.rest (by decide)).trans ((v4.rest (by decide)).trans (v5.rest (by decide))))))
+    · rw [v5.mem, v4.mem, v3.mem, v2.mem, v1.mem]
+  · refine VG.Proof.X25519.Arm.wp_mov (VG.Proof.X25519.Arm.op2_lsr (by decide)) fun u3 v3 => ?_
+    refine VG.Proof.X25519.Arm.wp_mov (VG.Proof.X25519.Arm.op2_imm (by decide)) fun u4 v4 => ?_
+    refine VG.Proof.X25519.Arm.wp_dp (VG.Proof.X25519.Arm.op2_reg _ _) fun u5 v5 =>
+      WP.block_nil ⟨?_, ?_, ?_⟩
+    · rw [v5.gpr]; change u4.gpr .r5 - u4.gpr .r3 = _
+      rw [v4.gpr, v4.other _ (by decide), v3.gpr, e2]
+      exact pm.2
+    · exact rest_keeps ((v1.rest (ws := workRegs) (by decide)).trans ((v2.rest (by decide)).trans
+        ((v3.rest (by decide)).trans ((v4.rest (by decide)).trans (v5.rest (by decide))))))
+    · rw [v5.mem, v4.mem, v3.mem, v2.mem, v1.mem]
+
+theorem vswap_ok {s : State} {base : Addr} (hs : Scr s base) (hbd : BoundedEnv s.mem base) {sw : Bool}
+    (hc : s.gpr .r5 = mask sw) :
+    WP isa (.block vswap) s fun u => Keep base s u ∧ BoundedEnv u.mem base ∧
+      E u.mem base = swapEnv sw (E s.mem base) := by
+  unfold vswap
+  simp only [List.append_assoc]
+  refine VG.Proof.X25519.Arm.WP.append (cswapE hs hbd 0 3 (by decide) hc) fun u1 ⟨k1, b1, c1, e1⟩ => ?_
+  refine VG.Proof.X25519.Arm.WP.append (cswapE (k1.scr hs) b1 21 4 (by decide) (c1.trans hc))
+    fun u2 ⟨k2, b2, c2, e2⟩ => ?_
+  refine WP.mono (cswapE (k2.scr (k1.scr hs)) b2 2 5 (by decide) (c2.trans (c1.trans hc)))
+    fun u3 ⟨k3, b3, _, e3⟩ => ⟨k1.trans (k2.trans k3), b3, by rw [e3, e2, e1]; rfl⟩
+
+theorem vmaskSwap_ok {s : State} {base : Addr} (hs : Scr s base) (hbd : BoundedEnv s.mem base) {t : Nat}
+    (ht : t < 456) (hb : s.gpr .r11 = BitVec.ofNat 32 t) {a b : Nat} (ha : a < 2) (hb2 : b < 2)
+    (hbit : s.mem (off base (VBITS + t)) = BitVec.ofNat 8 (a + 2 * b)) (hi : Bool) :
+    WP isa (.block (vmask hi ++ vswap)) s fun u => Keep base s u ∧ BoundedEnv u.mem base ∧
+      E u.mem base = swapEnv (decide ((if hi then b else a) = 1)) (E s.mem base) :=
+  VG.Proof.X25519.Arm.WP.append (vmask_ok hs ht hb ha hb2 hbit hi) fun u ⟨c, k, m⟩ =>
+    WP.mono (vswap_ok (hs.of_keeps k (by decide)) (m ▸ hbd) c) fun v ⟨kv, bv, ev⟩ =>
+      ⟨Keep.trans ⟨k, by rw [m]; exact Outside2.refl _ _ _ _ _ _⟩ kv, bv, by rw [ev, m]⟩
+
+/-- The loop's invariant, after the bits above `n` of `S` and `k`, with `-A` the point `A`. -/
+structure VInv (base : Addr) (S K : Nat) (A : Spec.Ed448.Point) (s₀ s : State) (n : Nat) : Prop where
+  scr : Scr s base
+  bounded : BoundedEnv s.mem base
+  regs : Keeps (.r11 :: workRegs) s₀ s
+  r11 : s.gpr .r11 = BitVec.ofNat 32 n
+  mem : Outside2 base 64 2816 ACC 512 s₀.mem s.mem
+  rep : pt (E s.mem base) 0 21 2 = vladder S K A (456 - n)
+  q : pt (E s.mem base) 8 9 10 = Spec.Ed448.basePoint
+  na : pt (E s.mem base) 6 7 10 = A
+  d : E s.mem base 11 = Spec.Ed448.d
+
+theorem vstep_ok {s₀ s : State} {base : Addr} {S K : Nat} {A : Spec.Ed448.Point} {n : Nat} (hn : n < 456)
+    (hbits : ∀ t < 456, s₀.mem (off base (VBITS + t)) = BitVec.ofNat 8 (pair2 S K t))
+    (hi : VInv base S K A s₀ s (n + 1)) :
+    WP isa vstep s fun t => VInv base S K A s₀ t n ∧ t.z = decide (n = 0) := by
+  have hs := hi.scr
+  have hB : VBITS = 3104 := rfl
+  have hA : ACC = 3584 := rfl
+  have ha2 : (S >>> n) &&& 1 < 2 := bit_lt S n
+  have hb2 : (K >>> n) &&& 1 < 2 := bit_lt K n
+  have bitval : s.mem (off base (VBITS + n)) = BitVec.ofNat 8 (((S >>> n) &&& 1) + 2 * ((K >>> n) &&& 1)) := by
+    rw [hi.mem _ (by rw [ofs_off' base (by omega_arith)]; omega_arith) (by rw [ofs_off' base (by omega_arith)]; omega_arith)]
+    exact hbits n hn
+  unfold vstep
+  refine WP.seq (WP.mono (decR11_ok hi.r11) fun s₁ ⟨b₁, g₁, m₁, rd₁, wr₁⟩ => ?_)
+  have K₁ : Keeps [.r11] s s₁ := ⟨fun r hr => g₁ r (fun h => hr (by simp [h])), rd₁, wr₁⟩
+  have hs₁ := hs.of_keeps K₁ (by decide)
+  rw [show doubleAt 0 21 2 = (doubleF 0 21 2).map FieldOp.impl from rfl]
+  refine WP.seq (WP.mono (ops_ok hs₁ (m₁ ▸ hi.bounded) (doubleF 0 21 2)) fun s₂ ⟨k₂, bb₂, e₂⟩ => ?_)
+  rw [show addAt 8 9 = (addF 8 9).map FieldOp.impl from rfl]
+  refine WP.seq (WP.mono (ops_ok (k₂.scr hs₁) bb₂ (addF 8 9)) fun s₃ ⟨k₃, bb₃, e₃⟩ => ?_)
+  have hs₃ := k₃.scr (k₂.scr hs₁)
+  have b₃ : s₃.gpr .r11 = BitVec.ofNat 32 n := by
+    rw [k₃.regs.1 _ (by decide), k₂.regs.1 _ (by decide), b₁]
+  have bit₃ : s₃.mem (off base (VBITS + n)) = BitVec.ofNat 8 (((S >>> n) &&& 1) + 2 * ((K >>> n) &&& 1)) := by
+    rw [(k₂.trans k₃).mem _ (by rw [ofs_off' base (by omega_arith)]; omega_arith)
+      (by rw [ofs_off' base (by omega_arith)]; omega_arith), m₁, bitval]
+  refine WP.seq (WP.mono (vmaskSwap_ok hs₃ bb₃ hn b₃ ha2 hb2 bit₃ false) fun s₄ ⟨k₄, bb₄, e₄⟩ => ?_)
+  have hs₄ := k₄.scr hs₃
+  rw [show addAt 6 7 = (addF 6 7).map FieldOp.impl from rfl]
+  refine WP.seq (WP.mono (ops_ok hs₄ bb₄ (addF 6 7)) fun s₅ ⟨k₅, bb₅, e₅⟩ => ?_)
+  have hs₅ := k₅.scr hs₄
+  have core4 := k₂.trans (k₃.trans (k₄.trans k₅))
+  have b₅ : s₅.gpr .r11 = BitVec.ofNat 32 n := by rw [core4.regs.1 _ (by decide), b₁]
+  have bit₅ : s₅.mem (off base (VBITS + n)) = BitVec.ofNat 8 (((S >>> n) &&& 1) + 2 * ((K >>> n) &&& 1)) := by
+    rw [core4.mem _ (by rw [ofs_off' base (by omega_arith)]; omega_arith)
+      (by rw [ofs_off' base (by omega_arith)]; omega_arith), m₁, bitval]
+  refine VG.Proof.X25519.Arm.WP.append (vmaskSwap_ok hs₅ bb₅ hn b₅ ha2 hb2 bit₅ true)
+    fun s₆ ⟨k₆, bb₆, e₆⟩ => ?_
+  refine VG.Proof.X25519.Arm.wp_cmp (VG.Proof.X25519.Arm.op2_imm (by decide)) fun t vt hz =>
+    WP.block_nil ?_
+  have core := core4.trans k₆
+  have b₆ : s₆.gpr .r11 = BitVec.ofNat 32 n := by rw [core.regs.1 _ (by decide), b₁]
+  have ee : E t.mem base = vstepEnv (decide ((S >>> n) &&& 1 = 1)) (decide ((K >>> n) &&& 1 = 1))
+      (E s.mem base) := by
+    rw [vt.mem, e₆, e₅, e₄, e₃, e₂, m₁]; rfl
+  have kk : ∀ i : Index, 6 ≤ i.val ∧ i.val < 12 → E t.mem base i = E s.mem base i := fun i h => by
+    rw [ee, vstepEnv_keep _ _ _ _ h]
+  refine ⟨⟨core.scr hs₁ |> fun h => ?_, vt.mem ▸ bb₆, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩, ?_⟩
+  · exact h.of_keeps (rest_keeps (vt.rest [])) (by decide)
+  · refine hi.regs.trans ⟨fun r hr => ?_, ?_, ?_⟩
+    · rw [vt.gpr, core.regs.1 r (fun h => hr (List.mem_cons_of_mem _ h)), g₁ r (fun h => hr (by simp [h]))]
+    · rw [vt.rd, core.regs.2.1, rd₁]
+    · rw [vt.wr, core.regs.2.2, wr₁]
+  · rw [vt.gpr, b₆]
+  · refine hi.mem.trans ?_
+    intro p hp hq
+    rw [vt.mem, core.mem p hp hq, m₁]
+  · rw [ee]; exact vladder_step hn hi.rep hi.q hi.na hi.d
+  · rw [pt_congr' (kk 8 (by decide)) (kk 9 (by decide)) (kk 10 (by decide))]; exact hi.q
+  · rw [pt_congr' (kk 6 (by decide)) (kk 7 (by decide)) (kk 10 (by decide))]; exact hi.na
+  · rw [kk 11 (by decide)]; exact hi.d
+  · rw [hz, b₆]
+    change (BitVec.ofNat 32 n - BitVec.ofNat 32 0 == 0) = _
+    rw [BitVec.sub_zero]
+    exact VG.Proof.X25519.Arm.ofNat_beq_zero (by omega_arith)
+
+theorem vloop_ok {s₀ s : State} {base : Addr} {S K : Nat} {A : Spec.Ed448.Point}
+    (hbits : ∀ t < 456, s₀.mem (off base (VBITS + t)) = BitVec.ofNat 8 (pair2 S K t))
+    (hi : ∀ s', s'.gpr .r11 = BitVec.ofNat 32 456 → (∀ r, r ≠ .r11 → s'.gpr r = s.gpr r) →
+      s'.mem = s.mem → s'.rd = s.rd → s'.wr = s.wr → VInv base S K A s₀ s' 456) :
+    WP isa vloop s fun s' => VInv base S K A s₀ s' 0 := by
+  unfold vloop
+  refine WP.seq (WP.mono (setCounter_ok s 456 (by decide)) fun s' ⟨h1, h2, h3, h4, h5⟩ => ?_)
+  refine WP.loop (M := isa) (body := vstep) (c := .ne) (Q := fun s' => VInv base S K A s₀ s' 0)
+    (fun m (s : State) => 1 ≤ m ∧ m ≤ 456 ∧ VInv base S K A s₀ s m) ?_ 456 s'
+    ⟨by decide, by decide, hi s' h1 h2 h3 h4 h5⟩
+  intro m s ⟨h1, h2, hi⟩
+  obtain ⟨m, rfl⟩ : ∃ m', m = m' + 1 := ⟨m - 1, by omega_arith⟩
+  refine WP.mono (vstep_ok (by omega_arith) hbits hi) fun s' ⟨hi', hz⟩ => ?_
+  simp only [eval, hz]
+  rcases Nat.eq_zero_or_pos m with rfl | hm
+  · exact .inl ⟨rfl, hi'⟩
+  · refine .inr ⟨by simp only [decide_eq_false (by omega_arith : ¬m = 0), Bool.not_false], m, by omega_arith,
+      by omega_arith, by omega_arith, hi'⟩
+
+end VG.Proof.Ed448.Arm
+
+end
+
+end
+
 
 /-!
 # Ed448 verification's equation on ARMv7: the whole function

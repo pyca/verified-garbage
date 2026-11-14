@@ -6,13 +6,43 @@ public import VerifiedGarbage.Proof.MillerRabin.X86.Modulus
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.SieveStack
 public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Proof.Mont.X86.WordOps
-import VerifiedGarbage.Proof.RsaKeyGen.X86.PrepareRt.DoubleMath
+import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.RsaKeyGen.X86.WitnessRt.Blocks
 import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Loops
 import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Loops2
 import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Power
 import VerifiedGarbage.Proof.MillerRabin.X86.WorkspaceFrame
 import VerifiedGarbage.Proof.Mont.X86.Instr
+
+/-! ### `RsaKeyGen.X86.PrepareRt.DoubleMath`, which only this module used -/
+
+section
+
+/-! # One doubling of a residue: the sum where it is below the modulus, else the difference -/
+
+@[expose] public section
+namespace VG.Proof.RsaKeyGen.X86.PrepareRt
+
+/-- `S = L + B carry = 2 T`, and `D + M = L + B c1` (`D`, `c1` the
+difference and borrow of `L − M`): selecting `L` when `carry < c1`, else
+`D`, gives `2 T mod M`. -/
+theorem double_mod {B M T L D : Nat} {carry c1 : Nat} (hM : M < B) (hT : T < M) (carry1 : carry ≤ 1)
+    (c11 : c1 ≤ 1) (hD : D < B) (sum : L + B * carry = T + T) (diff : D + M = L + B * c1) :
+    (if carry < c1 then L else D) = (T + T) % M := by
+  have hc : carry = 0 ∨ carry = 1 := by omega_using [carry1]
+  have hb : c1 = 0 ∨ c1 = 1 := by omega_using [c11]
+  by_cases hS : T + T < M
+  · rw [Nat.mod_eq_of_lt hS]
+    rcases hc with rfl | rfl <;> rcases hb with rfl | rfl <;> simp <;> omega_arith
+  · rw [Nat.mod_eq_sub_mod (by omega_using [hS]), Nat.mod_eq_of_lt (by omega_using [hT])]
+    rcases hc with rfl | rfl <;> rcases hb with rfl | rfl <;> simp <;> omega_arith
+
+end VG.Proof.RsaKeyGen.X86.PrepareRt
+
+end
+
+end
+
 
 /-! # One doubling of array 6 modulo the candidate, inside the doublings' frame
 

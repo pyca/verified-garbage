@@ -1,8 +1,163 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.X86_64.CheckDomain.Scan
+public import VerifiedGarbage.Impl.Ffdh.X86_64.CheckDomain
+public import VerifiedGarbage.Proof.Ffdh.X86_64.CheckDomain.Parent
+import VerifiedGarbage.Proof.Ffdh.WordPred
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtChecks
+import VerifiedGarbage.Proof.Bignum.X86_64.Bytes
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Ffdh.X86_64.Scan
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Ffdh.X86_64.Setup
+
+/-! ### `Ffdh.X86_64.CheckDomain.Scan`, which only this module used -/
+
+section
+
+/-! ### `Ffdh.X86_64.CheckDomain.Minus`, which only this module used -/
+
+section
+
+/-! # FFDH domain validation on x86-64: p minus one -/
+
+@[expose] public section
+
+namespace VG.Proof.Ffdh.X86_64.CheckDomain
+
+open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Bignum.X86_64.Public
+open VG.Impl.Ffdh.X86_64.Domain
+open VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Proof.MlKem.X86_64
+open VG.Impl.Rsa.X86_64.Crt (zeroArr)
+
+theorem minus_one {p : CdP} {s : State} (h : Parent p s) (ho : p.P % 2 = 1) :
+    WP isa (seqs VG.Impl.Ffdh.X86_64.Domain.CheckDomain.pMinus1) s
+      (StepPost p s fun t => Parent p t ∧ wv t.mem p.B (slot p.w aX) p.w = p.P - 1 ∧
+        (∀ i < 32, word t.mem p.B (8 * i) = word s.mem p.B (8 * i))) := by
+  have hk := h.base.k1
+  have hk' := h.base.k2
+  have ew : 8 * p.w ≤ p.k + 7 ∧ p.k ≤ 8 * p.w := by unfold CdP.w; omega_using []
+  have hX := slot_le (w := p.w) (show aX < 8 by decide)
+  have hX0 := hdr_lt_slot p.w aX (show 31 < 32 by decide)
+  have hZ := h.good.2
+  have hn := h.outer.scr.nowrap
+  have arrFrame : ∀ {u v : State} (hu : Parent p u),
+      Outside p.B (slot p.w aX) (8 * (p.w + 2)) u.mem v.mem → Keep mmRegs u v →
+      Parent p v ∧ InScr p.B p.Z u.mem v.mem ∧
+        (∀ i < 32, word v.mem p.B (8 * i) = word u.mem p.B (8 * i)) := by
+    intro u v hu hf k
+    have ff : Frm p.B [(slot p.w aX, 8 * (p.w + 2))] u.mem v.mem := Frm.of_outside hf (by simp)
+    exact hu.array ff (fun r he => by
+      rw [List.mem_singleton.mp he]; exact ⟨by omega, by omega_using [hX, hZ]⟩) k (k.gpr (by decide))
+  unfold VG.Impl.Ffdh.X86_64.Domain.CheckDomain.pMinus1
+  simp only [seqs]
+  refine WP.seq (WP.mono (zeroArr_ok h.good.1 hZ (by omega_using [hk, ew]) (by omega_using [hk', ew]) (show aX < 8 by decide))
+    fun u₁ ⟨_, ho₁, k₁⟩ => ?_)
+  obtain ⟨h₁, hi₁, hh₁⟩ := arrFrame h ho₁ k₁
+  refine WP.seq (WP.mono (WP.keep [.rsi, .rcx, .rbx]
+    (Q := fun u => u.gpr .rsi = p.dp ∧ u.gpr .rcx = BitVec.ofNat 64 p.k ∧
+      u.gpr .rbx = off p.B (slot p.w aX) ∧ u.mem = u₁.mem)
+    (by xrun [State.ea, hdr, h₁.outer.rdi, hdrOff, h₁.outer.ld (show sDom < 32 by decide),
+      h₁.outer.ld (show sK < 32 by decide), h₁.outer.ld (show sArr aX < 32 by decide),
+      h₁.base.hdr (sDom, p.dp) (by simp [CdP.headers]),
+      h₁.base.hdr (sK, BitVec.ofNat 64 p.k) (by simp [CdP.headers]), h₁.outer.harr aX (by decide)]) rfl)
+    fun u₂ ⟨⟨hsi₂, hcx₂, hbx₂, hm₂⟩, k₂⟩ => ?_)
+  have h₂ := h₁.keep hm₂ k₂ (k₂.gpr (by decide))
+  have hsrc := h₂.base.dom.take p.k
+  refine WP.seq (WP.mono (loadBE_ok h₂.outer.scr hsi₂ hcx₂ hbx₂ h.base.plen
+    (by omega_using [hk]) (by omega_using [hk']) rfl (by omega_using [ew, hX, hZ])
+    (fun i hi => hsrc.rd i (by rw [h.base.plen]; exact hi))
+    (fun i hi => hsrc.val i _)
+    (fun i hi => Or.inr (by have := hsrc.out i (by rw [h.base.plen]; exact hi); omega_using [ew, hX, hZ, this])))
+    fun u₃ ⟨hP₃, ho₃, k₃⟩ => ?_)
+  have k₃' : Keep mmRegs u₂ u₃ := k₃.mono (by decide)
+  obtain ⟨h₃, hi₃, hh₃⟩ := arrFrame h₂ (ho₃.mono (Nat.le_refl _) (by omega_using [ew])) k₃'
+  have hbx₃ : u₃.gpr .rbx = off p.B (slot p.w aX) := (k₃.gpr (by decide)).trans hbx₂
+  refine WP.mono (WP.keep [.rax]
+    (Q := fun t => t.mem = u₃.mem.writeW (off p.B (slot p.w aX)) (word u₃.mem p.B (slot p.w aX) - 1))
+    (by xrun [State.ea, at0, hbx₃,
+      show off p.B (slot p.w aX) + BitVec.ofInt 64 0 = off p.B (slot p.w aX) from by simp,
+      h₃.outer.scr.ld (show slot p.w aX + 8 ≤ p.Z by omega_using [hX, hZ]),
+      h₃.outer.scr.st (show slot p.w aX + 8 ≤ p.Z by omega_using [hX, hZ])]) rfl)
+    fun t ⟨hm, k⟩ => ?_
+  have hw := writeW_outside u₃.mem p.B (d := slot p.w aX) (word u₃.mem p.B (slot p.w aX) - 1) (by omega_using [hX, hZ, hn])
+  rw [← hm] at hw
+  have kk : Keep mmRegs u₃ t := k.mono (by decide)
+  obtain ⟨ht, hit, hht⟩ := arrFrame h₃ (hw.mono (Nat.le_refl _) (by omega_using [])) kk
+  have hi : InScr p.B p.Z s.mem t.mem := hi₁.trans (by rw [hm₂] at hi₃; exact hi₃.trans hit)
+  have hh : ∀ i < 32, word t.mem p.B (8 * i) = word s.mem p.B (8 * i) := fun i hi => by
+    rw [hht i hi, hh₃ i hi, hm₂, hh₁ i hi]
+  refine ⟨⟨ht, ?_, hh⟩, hi, fun i hi => hh i (by omega_using [hi]),
+    keep_trans (keep_trans (keep_trans (k₁.mono (by decide)) (k₂.mono (by decide)))
+      (k₃'.mono (by decide))) (kk.mono (by decide))⟩
+  rw [hm, wv_dec _ _ (by omega_using [hk, ew]) (by rw [hP₃]; exact ho) (by omega_using [hX, hZ, hn]), hP₃]
+
+end VG.Proof.Ffdh.X86_64.CheckDomain
+
+end
+
+end
+
+
+/-! # FFDH domain validation on x86-64: significant bytes of q -/
+
+@[expose] public section
+
+namespace VG.Proof.Ffdh.X86_64.CheckDomain
+
+open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Bignum.X86_64.Public
+open VG.Impl.Ffdh.X86_64.Domain
+open VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Proof.MlKem.X86_64
+
+structure Scanned (p : CdP) (s : State) : Prop where
+  parent : Parent p s
+  ep : word s.mem p.B (8 * sEp) = p.eqp
+  el : word s.mem p.B (8 * sEl) = BitVec.ofNat 64 p.nq
+
+theorem scan_order {p : CdP} {s : State} (h : Parent p s) (hq : p.dl = 3 * p.k) :
+    WP isa (seqs (scan sQ)) s (StepPost p s (Scanned p)) := by
+  have hl := h.base.qlen hq
+  have hk := h.base.k1
+  have hk' := h.base.k2
+  have hn : p.qb ≠ [] := by intro he; simp [he] at hl; omega_using [hk, hl]
+  refine WP.mono (scan_ok h.outer (show sQ < 32 by decide) h.q
+    (by rw [hl]; exact h.base.hdr (sK, BitVec.ofNat 64 p.k) (by simp [CdP.headers])) hn
+    (by rw [hl]; omega_using [hk']) ((h.base.dom.drop (2 * p.k)).take p.k)) fun t ⟨hep, hel, _, hf, k⟩ => ?_
+  have hZ := h.good.2
+  have hE := hdr_lt_slot p.w 8 (show sEl < 32 by decide)
+  have hi : InScr p.B p.Z s.mem t.mem := InScr.of_frm hf (by
+    simp only [List.mem_cons, List.not_mem_nil, or_false]
+    rintro r (rfl | rfl) <;> simp only <;> unfold sEp sEl sFn at * <;> omega_using [hZ, hE])
+  have hh : ∀ i < 32, i ≠ sEp → i ≠ sEl → word t.mem p.B (8 * i) = word s.mem p.B (8 * i) :=
+    fun i hi h1 h2 => hf.word_eq (fun r he => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at he
+      rcases he with rfl | rfl <;> simp only <;> omega_arith) (by omega_using [hi])
+  have hb : Base p t := h.base.keep hi k (by
+    intro e he
+    simp only [CdP.headers, List.mem_cons, List.not_mem_nil, or_false] at he
+    rcases he with rfl | rfl | rfl <;>
+      exact hh _ (by dsimp only; decide) (by dsimp only; decide) (by dsimp only; decide))
+  have ho : Outer t p.B p.Z p.w := h.outer.of_frm hf (by
+    simp only [List.mem_cons, List.not_mem_nil, or_false]
+    rintro r (rfl | rfl) <;> simp only <;> unfold sEp sEl sFn at * <;> omega_using [hZ, hE]) k.2.2 (k.gpr (by decide))
+  refine ⟨⟨⟨hb, ho, ?_, ?_⟩, hep, ?_⟩, hi, ?_, k.mono (by decide)⟩
+  · rw [hh _ (by decide) (by decide) (by decide)]; exact h.g
+  · rw [hh _ (by decide) (by decide) (by decide)]; exact h.q
+  · simpa only [hl] using hel
+  · intro i hi
+    exact hh i (by omega_using [hi]) (by unfold sEp sFn; omega_using [hi]) (by unfold sEl sFn; omega_using [hi])
+
+theorem scanned_minus {p : CdP} {s : State} (h : Scanned p s) (ho : p.P % 2 = 1) :
+    WP isa (seqs VG.Impl.Ffdh.X86_64.Domain.CheckDomain.pMinus1) s
+      (StepPost p s fun t => Scanned p t ∧ wv t.mem p.B (slot p.w aX) p.w = p.P - 1) :=
+  WP.mono (minus_one h.parent ho) fun t ⟨⟨hp, hv, hh⟩, hi, hs, k⟩ =>
+    ⟨⟨⟨hp, (hh _ (by decide)).trans h.ep, (hh _ (by decide)).trans h.el⟩, hv⟩, hi, hs, k⟩
+
+end VG.Proof.Ffdh.X86_64.CheckDomain
+
+end
+
+end
+
 
 /-! # FFDH domain validation on x86-64: q's reduction workspace -/
 
