@@ -101,6 +101,20 @@ theorem disj (S : Addr) {a n b m : Nat} (h1 : n ≤ a) (h2 : a + m ≤ b) (h3 : 
   have := S.isLt
   bv_omega
 
+/-- A region below `S`, in the `b` bytes below it. -/
+theorem sub_at (S : Addr) {a n b : Nat} (h1 : n ≤ a) (h2 : a ≤ b) :
+    Region.Sub ⟨S - BitVec.ofNat 64 a, n⟩ (below S b) := by
+  intro x hx
+  simp only [Region.Contains] at hx ⊢
+  have := S.isLt
+  bv_omega
+
+/-- MXCSR's control bits, but for its reserved bits. -/
+theorem ctl_mask (x : BitVec 32) : (x &&& 0xFFFF).extractLsb' 6 10 = x.extractLsb' 6 10 := by
+  apply BitVec.eq_of_getLsbD_eq; intro i hi
+  simp only [BitVec.getLsbD_extractLsb', BitVec.getLsbD_and, hi, decide_true, Bool.true_and]
+  rw [show (0xFFFF : BitVec 32).getLsbD (6 + i) = true by revert i; decide, Bool.and_true]
+
 theorem popReg2 (u : State) : (popReg u .rbx 2).gpr .rbx = u.mem.readW (u.gpr .rsp + 8) 64 := by
   simp [popReg, State.setReg]
 
@@ -183,6 +197,11 @@ theorem covers_frame {rd wr rd' wr' : List Region} (F : Region) (hc : Covers (rd
       rcases hr with h | h
       exacts [.inl h, .inr (.inr h)]),
     hw.trans (Covers.of_mem fun r hr => List.mem_cons_of_mem _ hr)⟩
+
+/-- `mcdtCall n c` writes the stack pointer only in its frame's push and pop, if `c` does. -/
+theorem mcdtCall_spSafe {n : String} {c : Prog isa} (hc : c.all (fun i => !isa.writesSp i) = true) :
+    (mcdtCall n c).all (fun i => !isa.writesSp i) = true := by
+  simp only [mcdtCall, Code.all, hc]; rfl
 
 /-- `mcdtCall n c` runs `c` from a state at its entry that `EntryOf` describes, with its permissions
 narrowed to `rd` and `wr` (disjoint from the frame), and returns as `WP.call_mx` says a call does,
@@ -340,5 +359,53 @@ theorem RelCT.mcdtCall {n : String} {c : Prog isa} {k : Contract isa}
     exact taintRel [.rsp] (fun x y ⟨s₁, s₂, hp, h₁, h₂⟩ r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr; subst hr
       rw [h₁, h₂, (hP _ _ hp).1]) (by taint_decide)
+
+
+/-! ## A function that is only the call -/
+
+/-- A function whose code is `mcdtCall n c` meets its contract `k0` if `c` meets `k`: from each
+state `k0` admits, `c`'s precondition holds at its entry (`hpre`, with the caller's permissions),
+the 8 bytes at the stack pointer and the stack the call and its frame use are apart from the
+writable regions (`hdj`), and `k0`'s postcondition follows from `k`'s, given a memory on return that
+differs from the one `k` describes only in the frame (`hpost`). -/
+theorem mcdtEntry_correct {n : String} {c : Prog isa} {k k0 : Contract isa}
+    (hv : ∀ s, k.pre s → ∃ t s', Exec isa c s t s' ∧ abiPreserved s s' ∧ k.post s s')
+    (hsp : NoSp c) (hS : ∀ σ, k0.pre σ → 8 * c.depth + 24 ≤ (σ.gpr .rsp).toNat)
+    (hpre : ∀ σ e, k0.pre σ → EntryOf σ e → k.pre (e.withRegions σ.rd σ.wr))
+    (hdj : ∀ σ, k0.pre σ → ∀ r ∈ σ.wr,
+      (below (σ.gpr .rsp) (8 * c.depth + 24)).Disjoint r ∧ Region.Disjoint ⟨σ.gpr .rsp, 8⟩ r)
+    (hpost : ∀ σ e s₂ s', k0.pre σ → EntryOf σ e → Frame [below (σ.gpr .rsp) 16] s₂.mem s'.mem →
+      s₂.gpr .rax = s'.gpr .rax → k.post (e.withRegions σ.rd σ.wr) s₂ → k0.post σ s')
+    (σ : State) (hσ : k0.pre σ) :
+    ∃ t s', Exec isa (mcdtCall n c) σ t s' ∧ abiPreserved σ s' ∧ k0.post σ s' := by
+  have hS' := hS σ hσ
+  have main : WP isa (mcdtCall n c) σ fun s' => abiPreserved σ s' ∧ k0.post σ s' :=
+    WP.mcdtCall hv hsp hS' (rd := σ.rd) (wr := σ.wr) (fun e he => hpre σ e hσ he) (Covers.refl _) (Covers.refl _)
+      (fun r hr => (hdj σ hσ r hr).1.sub_left (below_sub (by omega) (by omega)))
+      fun s' _ _ hcs hf ⟨e, s₂, he, hm₂, hg₂, hq⟩ hmx =>
+        ⟨⟨hcs, hf.readW (r := ⟨σ.gpr .rsp, 8⟩) (Region.contains_self _ _) (fun r hr => by
+            rcases List.mem_append.mp hr with hr | hr
+            · exact (hdj σ hσ r hr).2
+            · rw [List.mem_singleton] at hr; subst hr
+              exact Offset.base_disjoint_below _ (by omega)) (by decide),
+          by rw [hmx, ctl_mask]⟩,
+        hpost σ e s₂ s' hσ he hm₂ (hg₂ _ (by decide) (by decide)) hq⟩
+  obtain ⟨t, s', he, ha, hq⟩ := main
+  exact ⟨t, s', he, ha, hq⟩
+
+/-- `mcdtEntry_correct`'s function is constant time if `c` is, and the states at the entry of `c`
+from two states `k0` relates are related by `k`'s public relation (`hpub`). -/
+theorem mcdtEntry_ct {n : String} {c : Prog isa} {k k0 : Contract isa}
+    (hv : ∀ s, k.pre s → ∃ t s', Exec isa c s t s' ∧ abiPreserved s s' ∧ k.post s s')
+    (hct : ConstantTime isa k.pre k.pub c) (hsp : NoSp c)
+    (hS : ∀ σ, k0.pre σ → 8 * c.depth + 24 ≤ (σ.gpr .rsp).toNat)
+    (hpre : ∀ σ e, k0.pre σ → EntryOf σ e → k.pre (e.withRegions σ.rd σ.wr))
+    (hrsp : ∀ σ₁ σ₂, k0.pre σ₁ → k0.pre σ₂ → k0.pub σ₁ σ₂ → σ₁.gpr .rsp = σ₂.gpr .rsp)
+    (hpub : ∀ σ₁ σ₂ e₁ e₂, k0.pre σ₁ → k0.pre σ₂ → k0.pub σ₁ σ₂ → EntryOf σ₁ e₁ → EntryOf σ₂ e₂ →
+      k.pub (e₁.withRegions σ₁.rd σ₁.wr) (e₂.withRegions σ₂.rd σ₂.wr)) :
+    ConstantTime isa k0.pre k0.pub (mcdtCall n c) :=
+  RelCT.constantTime (Q := fun _ _ => True) <| RelCT.mcdtCall hv hct hsp fun σ₁ σ₂ ⟨h₁, h₂, hp⟩ =>
+    ⟨hrsp σ₁ σ₂ h₁ h₂ hp, hS σ₁ h₁, σ₁.rd, σ₁.wr, σ₂.rd, σ₂.wr, Covers.refl _, Covers.refl _, Covers.refl _,
+      Covers.refl _, fun e₁ e₂ he₁ he₂ => ⟨hpre σ₁ e₁ h₁ he₁, hpre σ₂ e₂ h₂ he₂, hpub σ₁ σ₂ e₁ e₂ h₁ h₂ hp he₁ he₂⟩⟩
 
 end VG.Proof.Mcdt.X86_64
