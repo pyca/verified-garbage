@@ -417,7 +417,9 @@ lemmas and tactics to use; read it before writing a proof:
   with `lit_decide` or `taint_decide`, never `decide +kernel`, and every
   module that evaluates the code imports its `Lit` module, registration
   files too (nothing checks this: `ci/lit_imports.py` ranks the misses
-  that cost the build).
+  that cost the build). Arithmetic it evaluates is in a closed term: with
+  a variable anywhere in the term it adds and shifts in unary. A checker's
+  environment is a list, not a function updated at every write.
 * **Arithmetic side conditions:** finite facts by one `decide` on the
   bounded statement, not `interval_cases`; nested `if`s with
   `↓ite_eq_left`/`↓ite_eq_right`; ranges at offsets with `VG.Offset`, not

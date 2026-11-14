@@ -99,7 +99,7 @@ theorem core_rel {nm : String} (hL : VG.Proof.Weierstrass.Law Spec.P384.curve) {
   have cr : ∀ {s : State}, s.syms Impl.Ecdsa.RISCV64.Comb.p384Sym = f Impl.Ecdsa.RISCV64.Comb.p384Sym →
       constRegs Impl.Ecdsa.RISCV64.Comb.p384CombConsts s =
         [⟨f Impl.Ecdsa.RISCV64.Comb.p384Sym, 8 * Impl.Ecdsa.RISCV64.Comb.p384CombWords.length⟩] := fun hs => by
-    simp only [constRegs, Abi.constRegions, Impl.Ecdsa.RISCV64.Comb.p384CombConsts, List.map_cons, List.map_nil, hs]
+    simp only [constRegs, Impl.Ecdsa.RISCV64.Comb.p384CombConsts, Abi.constRegions_cons, Abi.constRegions_nil, hs]
   refine RelCT.call (sign_rv hL) sign_ct ([⟨d, 48⟩, ⟨g, 48⟩, ⟨k, 48⟩] ++
     [⟨f Impl.Ecdsa.RISCV64.Comb.p384Sym, 8 * Impl.Ecdsa.RISCV64.Comb.p384CombWords.length⟩])
     [⟨o, 96⟩, ⟨w, 8192⟩] fun s s' hp => ?_

@@ -92,7 +92,7 @@ theorem core_rel {nm : String} (hL : VG.Proof.Weierstrass.Law Spec.P256.curve) {
   have cr : ∀ {s : State}, s.syms Impl.Ecdsa.RISCV64.Comb.p256Sym = f Impl.Ecdsa.RISCV64.Comb.p256Sym →
       constRegs Impl.Ecdsa.RISCV64.Comb.p256CombConsts s =
         [⟨f Impl.Ecdsa.RISCV64.Comb.p256Sym, 8 * Impl.Ecdsa.RISCV64.Comb.p256CombWords.length⟩] := fun hs => by
-    simp only [constRegs, Abi.constRegions, Impl.Ecdsa.RISCV64.Comb.p256CombConsts, List.map_cons, List.map_nil, hs]
+    simp only [constRegs, Impl.Ecdsa.RISCV64.Comb.p256CombConsts, Abi.constRegions_cons, Abi.constRegions_nil, hs]
   refine RelCT.call (sign_rv hL) sign_ct ([⟨d, 32⟩, ⟨g, 32⟩, ⟨k, 32⟩] ++
     [⟨f Impl.Ecdsa.RISCV64.Comb.p256Sym, 8 * Impl.Ecdsa.RISCV64.Comb.p256CombWords.length⟩])
     [⟨o, 64⟩, ⟨w, 8192⟩] fun s s' hp => ?_

@@ -98,7 +98,7 @@ theorem core_rel {nm : String} (hL : VG.Proof.Weierstrass.Law Spec.Secp256k1.cur
   have cr : ∀ {s : State}, s.syms Impl.Ecdsa.RISCV64.Comb.secp256k1Sym = f Impl.Ecdsa.RISCV64.Comb.secp256k1Sym →
       constRegs Impl.Ecdsa.RISCV64.Comb.secp256k1CombConsts s =
         [⟨f Impl.Ecdsa.RISCV64.Comb.secp256k1Sym, 8 * Impl.Ecdsa.RISCV64.Comb.secp256k1CombWords.length⟩] := fun hs => by
-    simp only [constRegs, Abi.constRegions, Impl.Ecdsa.RISCV64.Comb.secp256k1CombConsts, List.map_cons, List.map_nil, hs]
+    simp only [constRegs, Impl.Ecdsa.RISCV64.Comb.secp256k1CombConsts, Abi.constRegions_cons, Abi.constRegions_nil, hs]
   refine RelCT.call (sign_rv hL) sign_ct ([⟨d, 32⟩, ⟨g, 32⟩, ⟨k, 32⟩] ++
     [⟨f Impl.Ecdsa.RISCV64.Comb.secp256k1Sym, 8 * Impl.Ecdsa.RISCV64.Comb.secp256k1CombWords.length⟩])
     [⟨o, 64⟩, ⟨w, 8192⟩] fun s s' hp => ?_

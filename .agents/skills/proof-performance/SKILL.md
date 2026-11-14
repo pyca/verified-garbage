@@ -214,6 +214,28 @@ Avoid these patterns (each has cost tens of seconds in one proof):
   unrelated upgrade of Lean). Prove the step once with the value a
   variable, and apply it (`fAcc_step`, `Proof/Blowfish/F.lean`), or
   abstract the value with `obtain` (not `generalize`: see above).
+* **Arithmetic the kernel evaluates is in a closed term:** the kernel adds,
+  multiplies, shifts and compares numerals as numerals only in a term with
+  no free variable in it (a state `s`, an opaque memory `m`, a hypothesis's
+  variable), even one in a branch it never takes. With one, it unfolds
+  `Nat.add`, `Nat.mul` and `Nat.shiftLeft` by their recursion: a byte
+  shifted left by 16 is 65,536 steps. `prepared_sign_sat`
+  (`Proof/MlDsa/X86/PreparedKey.lean`) read five argument words from
+  `above satMemE m`, below the address where `m` begins: 18 s. Rewrite to a
+  closed term first, with a lemma (`above_readW`), and evaluate that
+  (`decide +kernel`, `kernel_rfl`). The same is behind a `simp` that unfolds
+  `Mem.readW` under `… + 213056` on a state's registers, and behind most
+  proofs whose kernel profile is `Nat.add` or `Nat.mul` by the million.
+* **A checker's environment is data, not a function:** a reflective
+  checker that keeps its registers as `fun q => if q = r then v else f q`,
+  one function for every write, has the kernel follow the whole chain again
+  for every read: it remembers the values of terms it was asked for, and a
+  read part of the way down a chain is not one. As a list with a
+  register's value at its index, written with `List.set`, each list is
+  evaluated once. `Sha3.AArch64.Scalar`'s symbolic run of the 25 lanes took
+  29.5 s as functions and 2 s as a list (`KFile`, `symRun_regs`,
+  `Proof/Sha3/AArch64/Scalar/Reflect.lean`): keep the function, which the
+  proofs about the checker read easily, and prove it equal to the list's.
 * **Tables of constants:** the kernel evaluates a table's whole length
   (seconds for a comb's tables) when it compares `8 * words.length` with
   another form of it, such as a `Region`'s `len` projection. Never unfold

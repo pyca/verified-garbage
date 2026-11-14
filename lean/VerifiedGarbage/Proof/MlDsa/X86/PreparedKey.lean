@@ -486,6 +486,16 @@ theorem above_eq {a m : Mem} {i : Nat} (hi : i < 2 ^ 32) :
     exact Nat.mod_eq_of_lt (by omega_using [hi])
   rw [e, ite_eq_right_iff.mpr fun h => absurd h (by omega_using [])]
 
+theorem above_low {a m : Mem} {x : Addr} (hx : x.toNat < 0x8000) : above a m x = a x := by
+  unfold above; simp only [hx, ↓reduceIte]
+
+/-- An argument word below `0x8000`, read from `a`: a read the kernel then evaluates with no
+variable in it. It adds and shifts numerals as such only in a closed term; with `m` in the
+term, even in the branch not taken, it does so in unary. -/
+theorem above_readW {a m : Mem} {x : Addr} (hx : ∀ i < 4, (x + BitVec.ofNat 64 i).toNat < 0x8000) :
+    (above a m).readW x 32 = a.readW x 32 :=
+  Mem.readW_congr fun i hi => above_low (hx i hi)
+
 theorem polyStored_congr {m m' : Mem} {a : Addr} {f : Poly}
     (hc : ∀ i < 1024, m' (a + BitVec.ofNat 64 i) = m (a + BitVec.ofNat 64 i)) (h : PolyStored m a f) :
     PolyStored m' a f := fun i hi => by
@@ -557,7 +567,8 @@ theorem prepared_sign_sat {P : Prims} (hP : PrimsOk P) (hp3 : p = mlDsa44 ∨ p 
       arg τ 0 = 0x8000 ∧ arg τ 1 = 0x1000 ∧ arg τ 2 = 0x2000 ∧ arg τ 3 = 0x40000 ∧ arg τ 4 = 0x50000 := by
     intro τ hm he
     simp only [arg, argAddr, hm, he]
-    exact ⟨by kernel_rfl, by kernel_rfl, by kernel_rfl, by kernel_rfl, by kernel_rfl⟩
+    refine ⟨?_, ?_, ?_, ?_, ?_⟩ <;> rw [above_readW]
+    all_goals first | decide | kernel_rfl
   obtain ⟨b0, b1, b2, b3, b4⟩ := a0 (satState (above satMemE m) [⟨0x8000, preparedSecretKeyBytes p⟩, ⟨0x1000, 64⟩,
     ⟨0x2000, 32⟩] [⟨0x40000, p.sigLen⟩, ⟨0x50000, scratchWords p * 8⟩, ⟨0x5004, 20⟩]) rfl rfl
   have ag : argAddr (satState (above satMemE m) [⟨0x8000, preparedSecretKeyBytes p⟩, ⟨0x1000, 64⟩,
@@ -606,7 +617,8 @@ theorem prepared_verify_sat {P : Prims} (hP : PrimsOk P) (hp3 : p = mlDsa44 ∨ 
       arg τ 0 = 0x8000 ∧ arg τ 1 = 0x1000 ∧ arg τ 2 = 0x2000 ∧ arg τ 3 = 0x40000 := by
     intro τ hm he
     simp only [arg, argAddr, hm, he]
-    exact ⟨by kernel_rfl, by kernel_rfl, by kernel_rfl, by kernel_rfl⟩
+    refine ⟨?_, ?_, ?_, ?_⟩ <;> rw [above_readW]
+    all_goals first | decide | kernel_rfl
   obtain ⟨b0, b1, b2, b3⟩ := a0 (satState (above satMemE m) [⟨0x8000, preparedPublicKeyBytes p⟩, ⟨0x1000, 64⟩,
     ⟨0x2000, p.sigLen⟩] [⟨0x40000, scratchWords p * 8⟩, ⟨0x5004, 16⟩]) rfl rfl
   have ag : argAddr (satState (above satMemE m) [⟨0x8000, preparedPublicKeyBytes p⟩, ⟨0x1000, 64⟩,
@@ -633,14 +645,6 @@ theorem t1In_of {m : Mem} {key t : Addr} (h : PreparedPublicKey p m key) (ht : t
 def satMemC (t : Nat) : Mem := fun a =>
   if a = 0x5014 then BitVec.ofNat 8 t else if a = 0x5015 then BitVec.ofNat 8 (t / 256) else
   if a = 0x5016 then 0 else satMemE a
-
-theorem above_low {a m : Mem} {x : Addr} (hx : x.toNat < 0x8000) : above a m x = a x := by
-  unfold above; simp only [hx, ↓reduceIte]
-
-/-- An argument word below `0x8000`, read from `a`. -/
-theorem above_readW {a m : Mem} {x : Addr} (hx : ∀ i < 4, (x + BitVec.ofNat 64 i).toNat < 0x8000) :
-    (above a m).readW x 32 = a.readW x 32 :=
-  Mem.readW_congr fun i hi => above_low (hx i hi)
 
 theorem verify_core_sat {P : Prims} (hP : PrimsOk P) (hp3 : p = mlDsa44 ∨ p = mlDsa65 ∨ p = mlDsa87) :
     ∃ s, (Verify.verifyCoreContract p X86.abi 96).pre s := by
