@@ -112,8 +112,12 @@ instructions in an ISA model) go in their own PR before either.
    `zmm16`–`zmm31` and MXCSR's status flags, for code that writes those.
    It leaves a function as it is when the clearing would need a CPU
    feature the function does not: one that needs no AVX and may run an AVX2
-   hash function through a table it takes (`vg_rsa_pss_sign`,
-   `vg_rsa_oaep_decrypt`).
+   hash function through a table it takes, which
+   `X86_64.Scrub.withScrubAllUp` (`ScrubUp.lean`) scrubs instead at the
+   level `sse` when the AVX functions end with `vzeroupper`
+   (`vg_rsa_pss_sign`, `vg_ecdsa_<curve>_sign`). A registration that states
+   `written` is scrubbed with `X86_64.Scrub.withScrubAllW`
+   (`ScrubWritten.lean`), which keeps it.
    A function that calls another one with several implementations (e.g.
    scalar and SHA-NI compression) is proven once for any of them, and its
    registration file applies it to each: the implementations of the callee

@@ -8,6 +8,7 @@ public import VerifiedGarbage.Proof.Zeroize.X86_64Impl
 import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.Framework.X86_64.Scrub
+public import VerifiedGarbage.Proof.Framework.X86_64.ScrubWritten
 
 /-!
 # AES-CBC on x86-64, zeroing the scratch it writes
@@ -30,7 +31,8 @@ unchanged or zero (`*_scrubbed`, the contract of `Spec/Cbc/`,
 Which are emitted, for each implementation `v` of the blocks functions and
 `z` of `vg_zeroize` (`encryptRegs`, `decryptRegs`). Encryption: none for
 VAES (`Caller.vaes`), whose encryption is AES-NI's loop; that loop, which
-writes no `scratch`, unwrapped, once (with the `z` of no suffix); and
+writes no `scratch`, unwrapped, once (with the `z` of no suffix), scrubbed
+as it is, stating that it writes none of `scratch` (`Scrub.withScrubAllW`); and
 otherwise the call wiped with each `z`, named by both suffixes.
 Decryption: for VAES, the call wiped with the `z` that has a suffix (the
 one that needs AVX, as VAES's code does), named by `v`'s suffix alone;
@@ -251,14 +253,14 @@ with `z` (see the module's documentation). -/
 def encryptRegs (v : BlocksImpl) (z : ZeroizeImpl) : List (Registration Spec.Cbc.aesEncryptApi target) :=
   if Caller.vaes v then []
   else if h : Caller.hardware v then
-    if z.suffix = "" then [{
+    if z.suffix = "" then [Scrub.withScrubAllW {
       suffix := v.suffix
       code := Caller.encrypt v
       stack := 8
       verified := encrypt_free_scrubbed v h
       spSafe := Caller.spSafe v
       written := Caller.written v
-      writtenOk := Caller.written_ok v }]
+      writtenOk := Caller.written_ok v } (encryptOut _)]
     else []
   else [Scrub.withScrubAll {
     suffix := v.suffix ++ z.suffix
