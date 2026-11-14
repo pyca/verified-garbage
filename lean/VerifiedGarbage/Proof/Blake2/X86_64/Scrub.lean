@@ -192,6 +192,7 @@ def updateBReg (v : Backend) : Registration Spec.Blake2.updateBApi X86_64.target
     suffix := v.suffix
     code := Impl.StackScratch.X86_64.withStackScratch 584 .r8 v.update
     stack := 8 + 584
+    notWith := v.notWith
     verified := v.update_framed
     spSafe := X86_64.withStackScratch_spSafe_of v.updateSpSafe } (updateBOut _) [] (pubOk_nil _)
     v.updateRes
@@ -203,6 +204,7 @@ def finalizeBReg (v : Backend) : Registration Spec.Blake2.finalizeBApi X86_64.ta
     suffix := v.suffix
     code := Impl.StackScratch.X86_64.withStackScratch 584 .rcx v.finalize
     stack := 8 + 584
+    notWith := v.notWith
     verified := v.finalize_framed
     spSafe := X86_64.withStackScratch_spSafe_of v.finalizeSpSafe } (finalizeBOut _) [] (pubOk_nil _)
     v.finalizeRes
