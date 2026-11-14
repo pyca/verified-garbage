@@ -442,6 +442,242 @@ theorem load_stackArg (hA : ScrubAbi A) {c : Prog isa}
 
 end
 
+
+section
+variable {A : Abi isa} {sig : Sig} {pre : Curry (sig.words A.ptrBits) (Mem → Prop)}
+  {post : sig.Post A.ptrBits} {wa : Bool} {stack : Nat}
+  {leak : Option (Curry (sig.words A.ptrBits) (Mem → List Nat))}
+
+/-- `Verified.scrubM`, with its residue hypothesis (`ResOk`) moved into the
+conclusion: correctness and constant time need nothing of what the code
+leaves in the stack. -/
+theorem Verified.scrubMV {c : Prog isa} {v f : VecLevel} {xs : List XReg} {ps gs : List Reg} {ks cs : List Nat}
+    (hA : ScrubAbi A)
+    (h : Verified target c (sig.contract A pre post wa stack leak))
+    (hsp : SpSafe c) (hd : c.x86_64Depth ≤ stack) (hcs : cs.sum = stack) (hst : stack + 8 < 2 ^ 64)
+    (hv : ∀ b ∈ cs, 0 < b ∧ b < 4096 ∧ b % 8 = 0)
+    (hlv : ∀ i ∈ instrs c, i.vecLevelR ≤ v.level)
+    (hmx : f ≠ .evex → MxSame c)
+    (hrb : sig.retBits A.ptrBits ≤ 32 ∨ sig.retBits A.ptrBits = 64)
+    (hpost : ∀ s u u', (sig.contract A pre post wa stack leak).pre s →
+      (sig.contract A pre post wa stack leak).post s u →
+      (∀ x, (∃ r ∈ s.rd ++ s.wr, r.Contains x 1) → u'.mem x = u.mem x) →
+      (u'.gpr .rax).setWidth (sig.retBits A.ptrBits) = (u.gpr .rax).setWidth (sig.retBits A.ptrBits) →
+      (sig.contract A pre post wa stack leak).post s u')
+    (ht : TailOk (sig.retBits A.ptrBits) xs ps gs ks)
+    (hxs : (∀ x, x ∈ xs) ∨ ∀ i ∈ instrs c, writesVec i = false)
+    (hxe : v = .evex → ∀ x, x ∈ xs) (hev : ∀ p : Addr, cs.sum ≤ p.toNat → EvexOk f ks cs p)
+    (hgk : ∀ r ∈ scratchRegs, r ∉ gs → r ∉ ps → ∀ i ∈ instrs c, Taint.clobbers i r = false) :
+    Verified target (Impl.Scrub.X86_64.scrub v (sig.retBits A.ptrBits) xs ps gs ks cs c f)
+        (sig.contract A pre post wa stack leak) ∧
+      (ResOk c (sig.contract A pre post wa stack leak) stack ks cs →
+        NoResidue (Impl.Scrub.X86_64.scrub v (sig.retBits A.ptrBits) xs ps gs ks cs c f)
+          (sig.contract A pre post wa stack leak) (sig.retBits A.ptrBits)) := by
+  have hnps : ∀ r, r ∉ scratchRegs → r ∉ ps := fun r h h' => h (ht.psOk r h')
+  have hngs : ∀ r, r ∉ scratchRegs → r ∉ gs := fun r h h' => h (ht.gsOk r h')
+  obtain ⟨hcor, hct, hsat⟩ := h
+  -- What a run of `c`, then of the clearing, gives.
+  have run : ∀ s t u, (sig.contract A pre post wa stack leak).pre s → Exec isa c s t u →
+      abiPreserved s u ∧ (sig.contract A pre post wa stack leak).post s u ∧
+      u.gpr .rsp = s.gpr .rsp ∧ cs.sum ≤ (u.gpr .rsp).toNat := by
+    intro s t u hs he
+    obtain ⟨t', u', he', ha, hp⟩ := hcor s hs
+    obtain ⟨-, rfl⟩ := Exec.det he he'
+    have hr : u.gpr .rsp = s.gpr .rsp := ha.1 .rsp (by decide)
+    refine ⟨ha, hp, hr, ?_⟩
+    rcases (contract_pre_scrub hA hs).1 with h0 | h0
+    · rw [hcs, h0]; exact Nat.zero_le _
+    · rw [hcs, hr]; exact h0
+  -- The clearing's run.
+  have tail : ∀ s t u s' t', (sig.contract A pre post wa stack leak).pre s → Exec isa c s t u →
+      Exec isa (Impl.Scrub.X86_64.scrubTail v (sig.retBits A.ptrBits) xs ps gs ks cs f) u t' s' →
+      ∃ m', t' = tailTr v ks cs (s.gpr .rsp) f ∧ s' = finState v (sig.retBits A.ptrBits) xs ps gs m' u f ∧
+        (∀ x, ¬ (⟨s.gpr .rsp - BitVec.ofNat 64 stack, stack⟩ : Region).Contains x 1 → m' x = u.mem x) ∧
+        (∀ x, WCov ks cs (s.gpr .rsp) x → m' x = 0) ∧ (∀ x, ¬ WCov ks cs (s.gpr .rsp) x → m' x = u.mem x) := by
+    intro s t u s' t' hs he het
+    obtain ⟨-, -, hr, hl⟩ := run s t u hs he
+    obtain ⟨m', e, hz, hu⟩ := tail_run v (sig.retBits A.ptrBits) cs ht u hv hl (hev _ hl)
+    obtain ⟨rfl, rfl⟩ := Exec.det het e
+    rw [hr] at hz hu
+    have ho : ∀ x, ¬ (⟨s.gpr .rsp - BitVec.ofNat 64 stack, stack⟩ : Region).Contains x 1 → m' x = u.mem x :=
+      fun x h => hu x fun hw => h (hcs ▸ hw.1)
+    exact ⟨m', by rw [hr], rfl, ho, hz, hu⟩
+  -- Buffers are not in the stack the clearing wipes.
+  have outB : ∀ s, (sig.contract A pre post wa stack leak).pre s → ∀ x,
+      (∃ r ∈ s.rd ++ s.wr, r.Contains x 1) →
+        ¬ (⟨s.gpr .rsp - BitVec.ofNat 64 stack, stack⟩ : Region).Contains x 1 := by
+    intro s hs x ⟨r, hr, hx⟩ hb
+    by_cases h0 : stack = 0
+    · subst h0; simp [Region.Contains] at hb
+    · exact ((contract_pre_scrub hA hs).2 r hr).2 h0 x hb hx
+  refine ⟨⟨fun s hs => ?_, fun s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hp e₁ e₂ => ?_, hsat⟩,
+    fun hres s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hp ho hun e₁ e₂ => ?_⟩
+  · -- Correctness.
+    obtain ⟨t, u, he, -⟩ := hcor s hs
+    obtain ⟨ha, hq, hr, hl⟩ := run s t u hs he
+    obtain ⟨m', et, hz, hu⟩ := tail_run v (sig.retBits A.ptrBits) cs ht u hv hl (hev _ hl)
+    rw [hr] at hz hu
+    have hmo : ∀ x, ¬ (⟨s.gpr .rsp - BitVec.ofNat 64 stack, stack⟩ : Region).Contains x 1 → m' x = u.mem x :=
+      fun x h => hu x fun hw => h (hcs ▸ hw.1)
+    refine ⟨_, _, .seq he et, ⟨fun r hr' => ?_, ?_, ?_⟩, ?_⟩
+    · have h1 : r ∉ scratchRegs := by revert hr'; revert r; decide
+      have h2 : r ≠ .rax := by
+        have : ∀ r ∈ calleeSaved, r ≠ Reg.rax := by decide
+        exact this r hr'
+      rw [finState_gpr (hnps r h1) (hngs r h1) h2]
+      exact ha.1 r hr'
+    · rw [← ha.2.1]
+      apply Mem.readW_congr
+      intro i hi
+      rw [finState_other.1]
+      exact hmo _ (slot_not_below hst (by
+        simp only [Region.Contains]
+        rw [show s.gpr .rsp + BitVec.ofNat 64 i - s.gpr .rsp = BitVec.ofNat 64 i by
+          rw [BitVec.add_comm, BitVec.add_sub_cancel], BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+        simp only [Nat.reduceDiv] at hi; omega))
+    · rw [finState_other.2.2.2.2.2.1, fixMx_ctl]; exact ha.2.2
+    · refine hpost s u _ hs hq (fun x hx => hmo x (outB s hs x hx)) ?_
+      rw [finState_rax (hngs _ (by decide))]
+      exact retVal_low hrb _
+  · -- Constant time.
+    cases e₁ with | seq a₁ b₁ =>
+    cases e₂ with | seq a₂ b₂ =>
+    obtain ⟨m₁, rfl, -⟩ := tail s₁ _ _ _ _ h₁ a₁ b₁
+    obtain ⟨m₂, rfl, -⟩ := tail s₂ _ _ _ _ h₂ a₂ b₂
+    rw [hct _ _ _ _ _ _ h₁ h₂ hp a₁ a₂, contract_pub_rsp hA hp]
+  · -- No residue.
+    cases e₁ with | seq a₁ b₁ =>
+    cases e₂ with | seq a₂ b₂ =>
+    rename_i u₁ _ _ u₂ _ _
+    obtain ⟨m₁, -, rfl, hmo₁, hz₁, hu₁⟩ := tail s₁ _ _ _ _ h₁ a₁ b₁
+    obtain ⟨m₂, -, rfl, hmo₂, hz₂, hu₂⟩ := tail s₂ _ _ _ _ h₂ a₂ b₂
+    obtain ⟨ha₁, -, -, -⟩ := run s₁ _ _ h₁ a₁
+    obtain ⟨ha₂, -, -, -⟩ := run s₂ _ _ h₂ a₂
+    have ho' := ho
+    obtain ⟨hrd, hwr, hg, -, -, -, -, -, hxm, hy, hz, hyH, hzH, hmx', hm⟩ := ho
+    have hsp' : s₁.gpr .rsp = s₂.gpr .rsp := hg .rsp (by decide)
+    have rw₁ := Exec.rdwr a₁
+    have rw₂ := Exec.rdwr a₂
+    -- Below the level `evex`, the code keeps `zmm16`–`zmm31`, and leaves in
+    -- MXCSR a function of MXCSR on entry, which is the same in both runs.
+    have lv1 : v ≠ .evex → ∀ i ∈ instrs c, i.vecLevelR ≤ 1 := fun hne i hi => by
+      have := hlv i hi
+      cases v
+      · simp only [VecLevel.level] at this; omega
+      · exact this
+      · exact absurd rfl hne
+    have k1 : v ≠ .evex → (u₁.ymmH = s₁.ymmH ∧ u₁.zmmHiH = s₁.zmmHiH) ∧
+        (u₂.ymmH = s₂.ymmH ∧ u₂.zmmHiH = s₂.zmmHiH) := fun hne => by
+      have k₁ := Exec.vecKeep1R (lv1 hne) a₁
+      have k₂ := Exec.vecKeep1R (lv1 hne) a₂
+      simp only [vk1R, Prod.mk.injEq] at k₁ k₂
+      exact ⟨k₁, k₂⟩
+    have kmx : f ≠ .evex → u₁.mxcsr = u₂.mxcsr := fun hne =>
+      hmx hne _ _ _ _ _ a₁ (hct _ _ _ _ _ _ h₁ h₂ hp a₁ a₂ ▸ a₂) hmx'
+    have cH : v ≠ .evex → ∀ w : State, (clearedH v w).ymmH = w.ymmH ∧ (clearedH v w).zmmHiH = w.zmmHiH :=
+      fun hne w => by cases v <;> first | exact ⟨rfl, rfl⟩ | exact absurd rfl hne
+    have hdep : c.x86_64Depth < 2 ^ 64 := by omega
+    have f₁ := Exec.stackFrame hsp a₁ hdep
+    have f₂ := Exec.stackFrame hsp a₂ hdep
+    have cs_ : ∀ r : Reg, r ∉ scratchRegs → r ≠ .rax → r ∈ calleeSaved := by intro r; cases r <;> decide
+    -- With the vector registers' upper halves kept: code of level 0, or that writes none.
+    have l0 : (∃ x, x ∉ xs ∧ v ≠ .sse) → ∀ i ∈ instrs c, i.vecLevelR = 0 := by
+      rintro ⟨x, hx, -⟩ i hi
+      by_cases he : v = .evex
+      · exact absurd (hxe he x) hx
+      · rcases hxs with h | h
+        · exact absurd (h x) hx
+        · exact vecLevelR_of_writesVec (h i hi) (lv1 he i hi)
+    have upper : ∀ x, ¬ (v ≠ .sse ∧ x ∈ xs) → u₁.ymmHi x = u₂.ymmHi x ∧ u₁.zmmHi x = u₂.zmmHi x := by
+      intro x hn
+      have hl : ∀ i ∈ instrs c, i.vecLevelR = 0 := by
+        by_cases hs : v = .sse
+        · subst hs; exact fun i hi => by simpa [VecLevel.level] using hlv i hi
+        · exact l0 ⟨x, fun h => hn ⟨hs, h⟩, hs⟩
+      have k₁ := Exec.vecKeep0R hl a₁
+      have k₂ := Exec.vecKeep0R hl a₂
+      simp only [vk0R, Prod.mk.injEq] at k₁ k₂
+      rw [k₁.2.2.1, k₂.2.2.1, k₁.2.2.2, k₂.2.2.2, hy, hz]
+      exact ⟨rfl, rfl⟩
+    refine ⟨?_, ?_, fun r hr => ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, fun x hx => ?_⟩
+    · rw [finState_other.2.1, finState_other.2.1, rw₁.1, rw₂.1, hrd]
+    · rw [finState_other.2.2.1, finState_other.2.2.1, rw₁.2, rw₂.2, hwr]
+    · by_cases hs : r ∈ scratchRegs
+      · have h11 : r ≠ .rax := hr
+        by_cases hg' : r ∈ gs
+        · simp [finState, clearedG, hg']
+        · by_cases hp' : r ∈ ps
+          · simp [finState, clearedG, State.setReg, clearedP_gpr, hg', hp', h11]
+          · rw [finState_gpr hp' hg' h11, finState_gpr hp' hg' h11, Exec.gpr (hgk r hs hg' hp') a₁,
+              Exec.gpr (hgk r hs hg' hp') a₂]
+            exact hg r hr
+      · rw [finState_gpr (hnps r hs) (hngs r hs) hr, finState_gpr (hnps r hs) (hngs r hs) hr,
+          ha₁.1 r (cs_ r hs hr), ha₂.1 r (cs_ r hs hr)]
+        exact hg r hr
+    · rw [finState_rax (hngs _ (by decide)), finState_rax (hngs _ (by decide)), retVal_hi hrb, retVal_hi hrb]
+    · rw [finState_other.2.2.2.2.2.2.1, finState_other.2.2.2.2.2.2.1]
+    · rw [finState_other.2.2.2.2.2.2.2.1, finState_other.2.2.2.2.2.2.2.1]
+    · rw [finState_other.2.2.2.2.2.2.2.2.1, finState_other.2.2.2.2.2.2.2.2.1]
+    · rw [finState_other.2.2.2.2.2.2.2.2.2, finState_other.2.2.2.2.2.2.2.2.2]
+    · rw [finState_xmm, finState_xmm]
+      funext x
+      split
+      · rfl
+      · rename_i hx
+        rcases hxs with h | h
+        · exact absurd (h x) hx
+        · rw [Exec.xmmKeep h a₁, Exec.xmmKeep h a₂, hxm]
+    · rw [finState_ymmHi, finState_ymmHi]
+      funext x
+      split
+      · rfl
+      · rename_i hn; exact (upper x hn).1
+    · rw [finState_zmmHi, finState_zmmHi]
+      funext x
+      split
+      · rfl
+      · rename_i hn; exact (upper x hn).2
+    · rw [finState_other.2.2.2.1, finState_other.2.2.2.1]
+      by_cases he : v = .evex
+      · subst he; rfl
+      · rw [(cH he _).1, (cH he _).1, (k1 he).1.1, (k1 he).2.1, hyH]
+    · rw [finState_other.2.2.2.2.1, finState_other.2.2.2.2.1]
+      by_cases he : v = .evex
+      · subst he; rfl
+      · rw [(cH he _).2, (cH he _).2, (k1 he).1.2, (k1 he).2.2, hzH]
+    · rw [finState_other.2.2.2.2.2.1, finState_other.2.2.2.2.2.1]
+      by_cases he : f = .evex
+      · exact fixMx_congr f he (by rw [ha₁.2.2, ha₂.2.2, hmx'])
+      · cases f
+        · exact kmx he
+        · exact kmx he
+        · exact absurd rfl he
+    · rw [finState_other.1, finState_other.1]
+      have hx' : ∀ r ∈ s₁.rd ++ s₁.wr, ¬ r.Contains x 1 := by
+        rw [finState_other.2.1, finState_other.2.2.1, rw₁.1, rw₁.2] at hx
+        exact hx
+      by_cases hb : (⟨s₁.gpr .rsp - BitVec.ofNat 64 stack, stack⟩ : Region).Contains x 1
+      · by_cases hw : WCov ks cs (s₁.gpr .rsp) x
+        · rw [hz₁ x hw, hz₂ x (hsp' ▸ hw)]
+        · rw [hu₁ x hw, hu₂ x (hsp' ▸ hw)]
+          exact hres _ _ _ _ _ _ h₁ h₂ hp ho' hun a₁ a₂ x hb hw
+      · have nd : ∀ sp : Addr, sp = s₁.gpr .rsp →
+            ¬ (⟨sp - BitVec.ofNat 64 c.x86_64Depth, c.x86_64Depth⟩ : Region).Contains x 1 := by
+          rintro sp rfl hc; exact hb (below_sub hd (by omega) x hc)
+        have nw : ∀ r ∈ s₁.wr, ¬ r.Contains x 1 := fun r hr => hx' r (List.mem_append_right _ hr)
+        rw [hmo₁ x hb, hmo₂ x (hsp' ▸ hb),
+          f₁ x (fun r hr => by
+            rcases List.mem_append.mp hr with hr | hr
+            · exact nw r hr
+            · simp only [List.mem_singleton] at hr; subst hr; exact nd _ rfl),
+          f₂ x (fun r hr => by
+            rcases List.mem_append.mp hr with hr | hr
+            · exact nw r (hwr ▸ hr)
+            · simp only [List.mem_singleton] at hr; subst hr; exact nd _ hsp'.symm)]
+        exact hm x hx'
+
+end
+
 /-! ## Registering code scrubbed by `scrubSel` -/
 
 theorem xsOf_ne {c : Prog isa} {ks ks' : List Nat} (h : ks ≠ []) (h' : ks' ≠ []) : xsOf c ks = xsOf c ks' := by
@@ -593,5 +829,71 @@ def withScrubSel {api : Api} (r : Registration api target)
     if (Code.requiresDedup isa.requires r'.code).all
         (fun f => (Code.requiresDedup isa.requires r.code).contains f) then r' else r
   else r else r else r else r else r else r else r else r else r else r
+
+/-- `r`'s code, scrubbed with the granules `ks` wiped: verified, and without
+secret residue if two runs leave the same bytes in the rest of its stack. -/
+theorem scrubKsCode {api : Api} (r : Registration api target) (v : VecLevel) {ks : List Nat}
+    (hd : r.code.x86_64Depth ≤ r.stack) (hst : r.stack + 8 < 2 ^ 64) (h8 : r.stack % 8 = 0)
+    (hlv : r.code.all (fun i => decide (i.vecLevel ≤ v.level)) = true)
+    (hrb : api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits ≤ 32 ∨ api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits = 64)
+    (hpost : PostOut r.contract (api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits))
+    (hne : v ≠ .evex) :
+    Verified target (scrub v (api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits)
+        (xsOf r.code ks) (psOf ks) (gsOf Taint.clobbers r.code) ks (chunks r.stack) r.code) r.contract ∧
+      (ResOk r.code r.contract r.stack ks (chunks r.stack) →
+        NoResidue (scrub v (api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits)
+          (xsOf r.code ks) (psOf ks) (gsOf Taint.clobbers r.code) ks (chunks r.stack) r.code)
+          r.contract (api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits)) := by
+  obtain ⟨pre, post, leak, e⟩ := r.ofSig
+  have hv := r.verified
+  have hp := hpost
+  rw [e] at hv hp ⊢
+  have hrb' := hrb
+  rw [← withMode_ptrBits ((abi.withConsts r.consts).withTables api.sig r.tables) api.pubMode] at hrb' hp ⊢
+  exact Verified.scrubMV (ScrubAbi.of r.consts api.sig r.tables api.pubMode) hv (SpSafe.of_all r.spSafe) hd
+    (chunks_sum r.stack) hst (chunks_valid h8)
+    (fun i hi => by simpa using Code.all_instrs (allR_of_all hlv) i hi)
+    (fun hne => MxSame.of_fun (mxFun_of (mxOk_of_all hlv hne))) hrb' hp (tailOk_of _ _ _) (xs_of _ _)
+    (evexReg_of_ne (c := r.code) (ks := ks) (stack := r.stack) hne).1
+    (evexReg_of_ne (c := r.code) (stack := r.stack) hne).2 (gs_of _ _)
+
+/-- `r`, scrubbed below the level `evex` with the granules `ks` of its stack
+wiped (`scrub`), at the level of its code; without secret residue if `hres`
+is given. If a side condition fails, or the clearing would need a CPU
+feature `r`'s code does not, `r` itself. -/
+def withScrubKs {api : Api} (r : Registration api target)
+    (hpost : PostOut r.contract (api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits))
+    (ks : List Nat) (hres : Option (PLift (ResOk r.code r.contract r.stack ks (chunks r.stack)))) :
+    Registration api target :=
+  let v := levelAll r.code
+  if hne : v = .evex then r else
+  if hd : r.code.x86_64Depth ≤ r.stack then
+  if hst : r.stack + 8 < 2 ^ 64 then
+  if h8 : r.stack % 8 = 0 then
+  if hlv : r.code.all (fun i => decide (i.vecLevel ≤ v.level)) = true then
+  if hrb : api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits ≤ 32 ∨
+      api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits = 64 then
+  if hw : r.written = [] then
+    let r' : Registration api target := {
+      suffix := r.suffix
+      consts := r.consts
+      tables := r.tables
+      stack := r.stack
+      code := scrub v (api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits)
+        (xsOf r.code ks) (psOf ks) (gsOf Taint.clobbers r.code) ks (chunks r.stack) r.code
+      contract := r.contract
+      verified := (scrubKsCode r v hd hst h8 hlv hrb hpost hne).1
+      ofApi := r.ofApi
+      ofSig := r.ofSig
+      spSafe := scrub_spSafe v _ _ _ _ _ _ (tailOk_of 0 r.code ks).psOk (tailOk_of 0 r.code ks).gsOk r.spSafe
+      written := r.written
+      writtenOk := by rw [hw]; exact fun _ _ _ _ _ => True.intro
+      extra := r.extra
+      vendor := r.vendor
+      notWith := r.notWith
+      residue := hres.map fun h => ⟨(scrubKsCode r v hd hst h8 hlv hrb hpost hne).2 h.down⟩ }
+    if (Code.requiresDedup isa.requires r'.code).all
+        (fun f => (Code.requiresDedup isa.requires r.code).contains f) then r' else r
+  else r else r else r else r else r else r
 
 end VG.X86_64.Scrub
