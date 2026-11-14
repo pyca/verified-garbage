@@ -60,9 +60,10 @@ abbrev ciphOf (m : Mem) (Ctx : Addr) (R : Nat) : Block → Block :=
 def RoundsAt (m : Mem) (W : Addr) (R : Nat) : Prop :=
   m.readW (W + BitVec.ofNat 64 176) 64 = BitVec.ofNat 64 R ∧ (R = 10 ∨ R = 12 ∨ R = 14)
 
-/-- The regions `crypt` writes. -/
-abbrev crFrame (St W SP D : Addr) (n : Nat) : List Region :=
-  [⟨D, n⟩, ⟨St + BitVec.ofNat 64 48, 32⟩, ⟨W + BitVec.ofNat 64 512, 2048⟩, below SP 8]
+/-- The regions `crypt` writes, with `cs` bytes of `vg_aes_ctr32`'s working
+space at `W + 512` (none for an implementation that needs none). -/
+abbrev crFrame (St W SP D : Addr) (n : Nat) (cs : Nat := 2048) : List Region :=
+  [⟨D, n⟩, ⟨St + BitVec.ofNat 64 48, 32⟩, ⟨W + BitVec.ofNat 64 512, cs⟩, below SP 8]
 
 /-- Before `crypt`: `P` bytes of text so far, `n` bytes at `D` to go. -/
 structure CrIn (Ctx St W SP : Addr) (R : Nat) (icb : Block) (P : Nat) (D : Addr) (n : Nat) (s : State) :
@@ -76,7 +77,7 @@ structure CrIn (Ctx St W SP : Addr) (R : Nat) (icb : Block) (P : Nat) (D : Addr)
 
 /-- Part of the way: `j` bytes done, from `m₀`. -/
 structure CrMid (Ctx St W SP : Addr) (R : Nat) (icb : Block) (P : Nat) (D : Addr) (n : Nat) (m₀ : Mem)
-    (j : Nat) (s : State) : Prop where
+    (j : Nat) (s : State) (cs : Nat := 2048) : Prop where
   env : Env Ctx St W SP s
   le : j ≤ n
   r12 : s.gpr .r12 = D + BitVec.ofNat 64 j
@@ -89,31 +90,31 @@ structure CrMid (Ctx St W SP : Addr) (R : Nat) (icb : Block) (P : Nat) (D : Addr
     bytesAt s.mem D j = xorKs (ciphOf m₀ Ctx R) icb P (bytesAt m₀ D j)
   rest : bytesAt s.mem (D + BitVec.ofNat 64 j) (n - j) = bytesAt m₀ (D + BitVec.ofNat 64 j) (n - j)
   whole : n - j = 0 ∨ (P + j) % 16 = 0
-  frame : Frame (crFrame St W SP D n) m₀ s.mem
+  frame : Frame (crFrame St W SP D n cs) m₀ s.mem
 
 /-- After `crypt`. -/
 structure CrOut (Ctx St W SP : Addr) (R : Nat) (icb : Block) (P : Nat) (D : Addr) (n : Nat) (m₀ : Mem)
-    (s : State) : Prop where
+    (s : State) (cs : Nat := 2048) : Prop where
   env : Env Ctx St W SP s
   rounds : RoundsAt s.mem W R
   ctr : Ctr m₀ (St + BitVec.ofNat 64 48) (St + BitVec.ofNat 64 64) (ciphOf m₀ Ctx R) icb P →
     Ctr s.mem (St + BitVec.ofNat 64 48) (St + BitVec.ofNat 64 64) (ciphOf m₀ Ctx R) icb (P + n)
   out : Ctr m₀ (St + BitVec.ofNat 64 48) (St + BitVec.ofNat 64 64) (ciphOf m₀ Ctx R) icb P →
     bytesAt s.mem D n = xorKs (ciphOf m₀ Ctx R) icb P (bytesAt m₀ D n)
-  frame : Frame (crFrame St W SP D n) m₀ s.mem
+  frame : Frame (crFrame St W SP D n cs) m₀ s.mem
 
 /-- After `cryptTailG` from `CrMid` with `j` bytes done: the `n - j` bytes
 left read at `Q` (`D + j` in place), the keystream XORed into them and
 stored after the `j` at `D`. -/
 structure CrOutQ (Ctx St W SP : Addr) (R : Nat) (icb : Block) (P : Nat) (D : Addr) (n : Nat) (m₀ : Mem)
-    (Q : Addr) (j : Nat) (s : State) : Prop where
+    (Q : Addr) (j : Nat) (s : State) (cs : Nat := 2048) : Prop where
   env : Env Ctx St W SP s
   rounds : RoundsAt s.mem W R
   ctr : Ctr m₀ (St + BitVec.ofNat 64 48) (St + BitVec.ofNat 64 64) (ciphOf m₀ Ctx R) icb P →
     Ctr s.mem (St + BitVec.ofNat 64 48) (St + BitVec.ofNat 64 64) (ciphOf m₀ Ctx R) icb (P + n)
   out : Ctr m₀ (St + BitVec.ofNat 64 48) (St + BitVec.ofNat 64 64) (ciphOf m₀ Ctx R) icb P →
     bytesAt s.mem D n = xorKs (ciphOf m₀ Ctx R) icb P (bytesAt m₀ D j ++ bytesAt m₀ Q (n - j))
-  frame : Frame (crFrame St W SP D n) m₀ s.mem
+  frame : Frame (crFrame St W SP D n cs) m₀ s.mem
 
 /-- Where `cryptTailG` reads the `n - j` bytes left after `j` at `D`: in
 place there (`Q = D + j`), out of place (`to`) at `Q`, in `rbx`, readable,
@@ -127,15 +128,20 @@ section
 variable {Ctx St W SP : Addr} (L : Lay Ctx St W SP)
 include L
 
-theorem ctx_crFrame {s : State} {D : Addr} {n : Nat} (hd : DataW Ctx St W SP s D n) :
-    ∀ r ∈ crFrame St W SP D n, (⟨Ctx, 256⟩ : Region).Disjoint r := by
+theorem ctx_crFrameF {s : State} {D : Addr} {n : Nat} (hd : DataW Ctx St W SP s D n) {cs : Nat}
+    (hcs : 512 + cs ≤ 2560) :
+    ∀ r ∈ crFrame St W SP D n cs, (⟨Ctx, 256⟩ : Region).Disjoint r := by
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl
   · exact hd.ctx
   · exact L.cs.sub_right (Lay.stSub (by decide))
-  · exact L.cw'.sub_right (Lay.wSub (by decide))
+  · exact L.cw'.sub_right (Lay.wSub (by omega))
   · exact L.kc.symm
+
+theorem ctx_crFrame {s : State} {D : Addr} {n : Nat} (hd : DataW Ctx St W SP s D n) :
+    ∀ r ∈ crFrame St W SP D n, (⟨Ctx, 256⟩ : Region).Disjoint r :=
+  ctx_crFrameF L hd (by decide)
 
 omit L in
 theorem ciph_frame {rs : List Region} {m m' : Mem} (hf : Frame rs m m') (hd : ∀ r ∈ rs, (⟨Ctx, 256⟩ : Region).Disjoint r)

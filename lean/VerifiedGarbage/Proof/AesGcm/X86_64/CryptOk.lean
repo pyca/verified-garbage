@@ -52,14 +52,14 @@ theorem done_appendQ {m m₀ : Mem} {ciph : Block → Block} {icb : Block} {P : 
   rw [bytesAt_add, Proof.Gcm.xorKs_append, h₁, h₂, length_bytesAt]
 
 section
-variable (v : GcmImpl) {Ctx St W SP : Addr} (L : Lay Ctx St W SP)
+variable (v : GcmImpl) {Ctx St W SP : Addr} (L : Lay Ctx St W SP) {cs gs : Nat}
 include L
 
 omit L in
 /-- The rest of the keystream block. -/
 theorem cryptHead_ok {R : Nat} {icb : Block} {P : Nat} {D : Addr} {n : Nat} {s : State}
     (h : CrIn Ctx St W SP R icb P D n s) (hn : n ≠ 0) (hP : P % 16 ≠ 0) :
-    WP isa cryptHead s (CrMid Ctx St W SP R icb P D n s.mem (min (16 - P % 16) n)) := by
+    WP isa cryptHead s (CrMid Ctx St W SP R icb P D n s.mem (min (16 - P % 16) n) · cs) := by
   have hlt : P % 16 < 16 := Nat.mod_lt _ (by decide)
   have hn' := h.data.ok.lt
   have he := h.env
@@ -169,36 +169,37 @@ theorem ctrArgs_ok {R : Nat} {s : State} (he : Env Ctx St W SP s) (hR : RoundsAt
   all_goals rfl
 
 /-- The arguments of `cryptWhole`'s call of `vg_aes_ctr32`. -/
-theorem cwCall_of {R : Nat} {D : Addr} {n j nb : Nat} {s₂ : State} (he₂ : Env Ctx St W SP s₂)
+theorem cwCall_ofF {R : Nat} {D : Addr} {n j nb : Nat} {s₂ : State} (he₂ : Env Ctx St W SP s₂)
     (hd : DataW Ctx St W SP s₂ D n) (hj : j ≤ n) (h16 : 16 * nb ≤ n - j) (hR : R = 10 ∨ R = 12 ∨ R = 14)
     (hdi : s₂.gpr .rdi = Ctx) (hsi : s₂.gpr .rsi = BitVec.ofNat 64 R) (hdx : s₂.gpr .rdx = St + BitVec.ofNat 64 48)
     (hcx : s₂.gpr .rcx = D + BitVec.ofNat 64 j) (h8 : s₂.gpr .r8 = BitVec.ofNat 64 nb)
-    (h9 : s₂.gpr .r9 = W + BitVec.ofNat 64 512) :
-    CtrCall s₂ Ctx (St + BitVec.ofNat 64 48) (D + BitVec.ofNat 64 j) (W + BitVec.ofNat 64 512) R nb := by
+    (h9 : s₂.gpr .r9 = W + BitVec.ofNat 64 512) (hcs : 512 + cs ≤ 2560) :
+    CtrCall s₂ Ctx (St + BitVec.ofNat 64 48) (D + BitVec.ofNat 64 j) (W + BitVec.ofNat 64 512) R nb cs := by
   have hdj := (hd.drop hj).take (k := 16 * nb) h16
   have hk := he₂.rsp
   refine ⟨hdi, hsi, hdx, hcx, h8, h9, hR, hdj.ok.wrap,
     (L.cs.sub_left (Region.sub_prefix (by decide))).sub_right (Lay.stSub (by decide)),
     hdj.ctx.sub_left (Region.sub_prefix (by decide)),
-    L.cw'.sub_left (Region.sub_prefix (by decide)) |>.sub_right (Lay.wSub (by decide)),
-    (hdj.ok.st.sub_right (Lay.stSub (by decide))).symm, L.st_w (by decide) (.inr ⟨by decide, by decide⟩),
-    hdj.ok.w.sub_right (Lay.wSub (by decide)), ?_, ?_, ?_, ?_, ?_, ?_⟩
+    L.cw'.sub_left (Region.sub_prefix (by omega)) |>.sub_right (Lay.wSub (by omega)),
+    (hdj.ok.st.sub_right (Lay.stSub (by omega))).symm, L.st_w (by omega) (.inr ⟨by omega, by omega⟩),
+    hdj.ok.w.sub_right (Lay.wSub (by omega)), ?_, ?_, ?_, ?_, ?_, ?_⟩
   · rw [hk]; exact L.kc.sub_right (Region.sub_prefix (by decide))
   · rw [hk]; exact L.stk_st (by decide)
   · rw [hk]; exact hdj.ok.stk
-  · rw [hk]; exact L.stk_w (by decide)
+  · rw [hk]; exact L.stk_w (by omega)
   · refine covers_cons ?_ (covers_cons (covers_left (he₂.perm.stC (by decide))) (covers_cons ?_
-      (covers_left (he₂.perm.wC (by decide)))))
+      (covers_left (he₂.perm.wC (by omega)))))
     · exact fun a m' ⟨r, hr, hc'⟩ => by
         simp only [List.mem_singleton] at hr; subst hr
         exact he₂.perm.ctx a m' ⟨_, List.mem_singleton_self _, by simp only [Region.Contains] at hc' ⊢; omega_arith⟩
     · exact covers_left hdj.wr
-  · exact covers_cons (he₂.perm.stC (by decide)) (covers_cons hdj.wr (he₂.perm.wC (by decide)))
+  · exact covers_cons (he₂.perm.stC (by omega)) (covers_cons hdj.wr (he₂.perm.wC (by omega)))
 
 /-- Whole blocks. -/
-theorem cryptWhole_ok {R : Nat} {icb : Block} {P : Nat} {D : Addr} {n : Nat} {m₀ : Mem} {j : Nat} {s : State}
-    (h : CrMid Ctx St W SP R icb P D n m₀ j s) (hc : ciphOf s.mem Ctx R = ciphOf m₀ Ctx R) :
-    WP isa (cryptWhole v.callees) s (CrMid Ctx St W SP R icb P D n m₀ (j + 16 * ((n - j) / 16))) := by
+theorem cryptWhole_okF {R : Nat} {icb : Block} {P : Nat} {D : Addr} {n : Nat} {m₀ : Mem} {j : Nat} {s : State}
+    (h : CrMid Ctx St W SP R icb P D n m₀ j s cs) (hc : ciphOf s.mem Ctx R = ciphOf m₀ Ctx R)
+    (F : Fits v cs gs) (hcs : 512 + cs ≤ 2560) :
+    WP isa (cryptWhole v.callees) s (CrMid Ctx St W SP R icb P D n m₀ (j + 16 * ((n - j) / 16)) · cs) := by
   have hn' := h.data.ok.lt
   have he := h.env
   obtain ⟨s₁, run₁, hcx, h8, h12, hbp, hzf, hg₁, hm₁, hrd₁, hwr₁⟩ :=
@@ -228,10 +229,10 @@ theorem cryptWhole_ok {R : Nat} {icb : Block} {P : Nat} {D : Addr} {n : Nat} {m�
       rcases hr with rfl | rfl | rfl | rfl <;> exact hg₂ _ (by decide) (by decide) (by decide) (by decide))
       hrd₂ hwr₂
     have hk := he₂.rsp
-    have hcall := cwCall_of L he₂ (hd₁.of_eq hrd₂ hwr₂) h.le h16 h.rounds.2 hdi hsi hdx
+    have hcall := cwCall_ofF L he₂ (hd₁.of_eq hrd₂ hwr₂) h.le h16 h.rounds.2 hdi hsi hdx
       (by rw [hg₂ _ (by decide) (by decide) (by decide) (by decide), hcx])
-      (by rw [hg₂ _ (by decide) (by decide) (by decide) (by decide), h8]) h9
-    refine WP.mono (ctr_call v.ctr hcall) fun s₃ g => ?_
+      (by rw [hg₂ _ (by decide) (by decide) (by decide) (by decide), h8]) h9 hcs
+    refine WP.mono (F.ctr hcall) fun s₃ g => ?_
     have gout := g.out; have gctr := g.ctr; have gframe := g.frame
     rw [hm₂, hm₁] at gout gctr gframe
     have hcw := fun hc₀ => Proof.Gcm.ctr_whole (h.ctr hc₀) hw (m' := s₃.mem) (dp := D + BitVec.ofNat 64 j)
@@ -245,7 +246,7 @@ theorem cryptWhole_ok {R : Nat} {icb : Block} {P : Nat} {D : Addr} {n : Nat} {m�
       rcases hr with rfl | rfl | rfl | rfl
       · exact (L.st_w (by decide) (.inr ⟨by decide, by decide⟩)).symm
       · exact (hdj.ok.w.sub_right (Lay.wSub (by decide))).symm
-      · exact L.w_w (.inl (by decide)) (by decide) (by decide)
+      · exact L.w_w (.inl (by omega)) (by omega) (by omega)
       · rw [hk]; exact (L.stk_w (by decide)).symm
     · intro hc₀; rw [← Nat.add_assoc]; exact (hcw hc₀).2
     · -- The bytes done.
@@ -262,12 +263,12 @@ theorem cryptWhole_ok {R : Nat} {icb : Block} {P : Nat} {D : Addr} {n : Nat} {m�
         rcases hr with rfl | rfl | rfl | rfl
         · exact (h.data.take h.le).ok.st.sub_right (Lay.stSub (by decide))
         · exact split_disj (D := D) (j := j) (n := n) h.le hn' |>.sub_right (Region.sub_prefix (by omega_arith))
-        · exact (h.data.take h.le).ok.w.sub_right (Lay.wSub (by decide))
+        · exact (h.data.take h.le).ok.w.sub_right (Lay.wSub (by omega))
         · rw [hk]; exact (h.data.take h.le).ok.stk.symm) (by omega_arith)
       exact done_append (hjd.trans (h.done hc₀)) hj16
     · -- The bytes left.
       have hdis : ∀ r ∈ [⟨St + BitVec.ofNat 64 48, 16⟩, ⟨D + BitVec.ofNat 64 j, 16 * nb⟩,
-          ⟨W + BitVec.ofNat 64 512, 2048⟩, below (s₂.gpr .rsp) 8],
+          ⟨W + BitVec.ofNat 64 512, cs⟩, below (s₂.gpr .rsp) 8],
           (⟨D + BitVec.ofNat 64 (j + 16 * nb), n - (j + 16 * nb)⟩ : Region).Disjoint r := by
         have hrest := (h.data.drop (k := j + 16 * nb) (by omega_arith))
         intro r hr
@@ -278,7 +279,7 @@ theorem cryptWhole_ok {R : Nat} {icb : Block} {P : Nat} {D : Addr} {n : Nat} {m�
           have := split_disj (D := D + BitVec.ofNat 64 j) (j := 16 * nb) (n := n - j) h16 (by omega_arith)
           rw [show n - j - 16 * nb = n - (j + 16 * nb) by omega_arith] at this
           exact this.symm
-        · exact hrest.ok.w.sub_right (Lay.wSub (by decide))
+        · exact hrest.ok.w.sub_right (Lay.wSub (by omega))
         · rw [hk]; exact hrest.ok.stk.symm
       rw [bytesAt_frame gframe hdis (by omega_arith)]
       have e := congrArg (List.drop (16 * nb)) h.rest
@@ -297,11 +298,11 @@ theorem cryptWhole_ok {R : Nat} {icb : Block} {P : Nat} {D : Addr} {n : Nat} {m�
 
 /-- The last bytes, with a new keystream block, read at `Q` (`TailSrc`: in
 place, `D + j`). -/
-theorem cryptTailG_ok (to : Bool) {R : Nat} {icb : Block} {P : Nat} {D : Addr} {n : Nat} {m₀ : Mem} {j : Nat}
+theorem cryptTailG_okF (to : Bool) {R : Nat} {icb : Block} {P : Nat} {D : Addr} {n : Nat} {m₀ : Mem} {j : Nat}
     {s : State} {Q : Addr}
-    (h : CrMid Ctx St W SP R icb P D n m₀ j s) (hj : n - j < 16) (hc : ciphOf s.mem Ctx R = ciphOf m₀ Ctx R)
-    (hq : TailSrc to St W SP s m₀ D j n Q) :
-    WP isa (cryptTailG v.callees to) s (CrOutQ Ctx St W SP R icb P D n m₀ Q j) := by
+    (h : CrMid Ctx St W SP R icb P D n m₀ j s cs) (hj : n - j < 16) (hc : ciphOf s.mem Ctx R = ciphOf m₀ Ctx R)
+    (hq : TailSrc to St W SP s m₀ D j n Q) (F : Fits v cs gs) (hcs : 512 + cs ≤ 2560) :
+    WP isa (cryptTailG v.callees to) s (CrOutQ Ctx St W SP R icb P D n m₀ Q j · cs) := by
   have hn' := h.data.ok.lt
   have he := h.env
   obtain ⟨s₁, run₁, hzf, hg₁, hm₁, hrd₁, hwr₁⟩ := test_ok s .rbp h.rbp (by omega_arith)
@@ -366,25 +367,25 @@ theorem cryptTailG_ok (to : Bool) {R : Nat} {icb : Block} {P : Nat} {D : Addr} {
     have hc₂ : ciphOf s₂.mem Ctx R = ciphOf m₀ Ctx R := by
       rw [ciph_frame fz (fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr; exact L.cs.sub_right (Lay.stSub (by decide))) h.rounds.2, hc]
-    have hcall : CtrCall s₂ Ctx (St + BitVec.ofNat 64 48) (St + BitVec.ofNat 64 64) (W + BitVec.ofNat 64 512) R 1 := by
+    have hcall : CtrCall s₂ Ctx (St + BitVec.ofNat 64 48) (St + BitVec.ofNat 64 64) (W + BitVec.ofNat 64 512) R 1 cs := by
       refine ⟨hdi, hsi, hdx, hcx, h8, h9, h.rounds.2, by have := L.sw; rw [BitVec.toNat_add, BitVec.toNat_ofNat]; omega_arith,
         (L.cs.sub_left (Region.sub_prefix (by decide))).sub_right (Lay.stSub (by decide)),
         (L.cs.sub_left (Region.sub_prefix (by decide))).sub_right (Lay.stSub (by decide)),
-        L.cw'.sub_left (Region.sub_prefix (by decide)) |>.sub_right (Lay.wSub (by decide)),
-        L.st_st (.inl (by decide)) (by decide) (by decide), L.st_w (by decide) (.inr ⟨by decide, by decide⟩),
-        L.st_w (by decide) (.inr ⟨by decide, by decide⟩), ?_, ?_, ?_, ?_, ?_, ?_⟩
+        L.cw'.sub_left (Region.sub_prefix (by omega)) |>.sub_right (Lay.wSub (by omega)),
+        L.st_st (.inl (by omega)) (by omega) (by omega), L.st_w (by omega) (.inr ⟨by omega, by omega⟩),
+        L.st_w (by omega) (.inr ⟨by omega, by omega⟩), ?_, ?_, ?_, ?_, ?_, ?_⟩
       · rw [hk]; exact L.kc.sub_right (Region.sub_prefix (by decide))
       · rw [hk]; exact L.stk_st (by decide)
       · rw [hk]; exact L.stk_st (by decide)
-      · rw [hk]; exact L.stk_w (by decide)
+      · rw [hk]; exact L.stk_w (by omega)
       · refine covers_cons ?_ (covers_cons (covers_left (he₂.perm.stC (by decide))) (covers_cons
-          (covers_left (he₂.perm.stC (by decide))) (covers_left (he₂.perm.wC (by decide)))))
+          (covers_left (he₂.perm.stC (by omega))) (covers_left (he₂.perm.wC (by omega)))))
         exact fun a m' ⟨r, hr, hc'⟩ => by
           simp only [List.mem_singleton] at hr; subst hr
           exact he₂.perm.ctx a m' ⟨_, List.mem_singleton_self _, by simp only [Region.Contains] at hc' ⊢; omega_arith⟩
       · exact covers_cons (he₂.perm.stC (by decide)) (covers_cons (he₂.perm.stC (by decide))
-          (he₂.perm.wC (by decide)))
-    refine WP.seq (WP.mono (ctr_call v.ctr hcall) fun s₃ g => ?_)
+          (he₂.perm.wC (by omega)))
+    refine WP.seq (WP.mono (F.ctr hcall) fun s₃ g => ?_)
     have gout := g.out; have gctr := g.ctr; have gframe := g.frame
     rw [blocksAt_one, blocksAt_one, hKS0, Cmac.ctr32_one, List.cons.injEq] at gout
     have hKS : blockAt s₃.mem (St + BitVec.ofNat 64 64) = ciphOf m₀ Ctx R (blockAt s.mem (St + BitVec.ofNat 64 48)) := by
@@ -434,7 +435,7 @@ theorem cryptTailG_ok (to : Bool) {R : Nat} {icb : Block} {P : Nat} {D : Addr} {
           rcases hr with rfl | rfl | rfl | rfl
           · exact hdj.ok.st.sub_right (Lay.stSub (by decide))
           · exact hdj.ok.st.sub_right (Lay.stSub (by decide))
-          · exact hdj.ok.w.sub_right (Lay.wSub (by decide))
+          · exact hdj.ok.w.sub_right (Lay.wSub (by omega))
           · rw [hk]; exact hdj.ok.stk.symm
       · simp only [TailSrc, ↓reduceIte] at hq
         obtain ⟨-, hQd, hQD, hQm⟩ := hq
@@ -445,7 +446,7 @@ theorem cryptTailG_ok (to : Bool) {R : Nat} {icb : Block} {P : Nat} {D : Addr} {
           rcases hr with rfl | rfl | rfl | rfl
           · exact hQd.st.sub_right (Lay.stSub (by decide))
           · exact hQd.st.sub_right (Lay.stSub (by decide))
-          · exact hQd.w.sub_right (Lay.wSub (by decide))
+          · exact hQd.w.sub_right (Lay.wSub (by omega))
           · rw [hk]; exact hQd.stk.symm
     have lp : LoopPre s₄ (St + BitVec.ofNat 64 64) (D + BitVec.ofNat 64 j) (n - j) := by
       refine ⟨hsi₄, hdi₄, hcx₄, by omega_arith, by omega_arith, ?_, ?_, ?_⟩
@@ -478,7 +479,7 @@ theorem cryptTailG_ok (to : Bool) {R : Nat} {icb : Block} {P : Nat} {D : Addr} {
         rcases hr with rfl | rfl | rfl | rfl
         · exact (L.st_w (by decide) (.inr ⟨by decide, by decide⟩)).symm
         · exact (L.st_w (by decide) (.inr ⟨by decide, by decide⟩)).symm
-        · exact L.w_w (.inl (by decide)) (by decide) (by decide)
+        · exact L.w_w (.inl (by omega)) (by omega) (by omega)
         · rw [hk]; exact (L.stk_w (by decide)).symm
       · simp only [List.mem_singleton] at hr; subst hr
         exact (L.st_w (by decide) (.inr ⟨by decide, by decide⟩)).symm
@@ -496,7 +497,7 @@ theorem cryptTailG_ok (to : Bool) {R : Nat} {icb : Block} {P : Nat} {D : Addr} {
           rcases hr with rfl | rfl | rfl | rfl
           · exact (h.data.take h.le).ok.st.sub_right (Lay.stSub (by decide))
           · exact (h.data.take h.le).ok.st.sub_right (Lay.stSub (by decide))
-          · exact (h.data.take h.le).ok.w.sub_right (Lay.wSub (by decide))
+          · exact (h.data.take h.le).ok.w.sub_right (Lay.wSub (by omega))
           · rw [hk]; exact (h.data.take h.le).ok.stk.symm
         · simp only [List.mem_singleton] at hr; subst hr; exact split_disj (D := D) h.le hn'
       have hpiece : bytesAt s₅.mem (D + BitVec.ofNat 64 j) (n - j) =
@@ -523,24 +524,26 @@ theorem cryptTailG_ok (to : Bool) {R : Nat} {icb : Block} {P : Nat} {D : Addr} {
 omit L in
 /-- `CrOutQ` in place is `CrOut`. -/
 theorem CrOutQ.crOut {R : Nat} {icb : Block} {P : Nat} {D : Addr} {n : Nat} {m₀ : Mem} {j : Nat} {s : State}
-    (h : CrOutQ Ctx St W SP R icb P D n m₀ (D + BitVec.ofNat 64 j) j s) (hj : j ≤ n) :
-    CrOut Ctx St W SP R icb P D n m₀ s :=
+    (h : CrOutQ Ctx St W SP R icb P D n m₀ (D + BitVec.ofNat 64 j) j s cs) (hj : j ≤ n) :
+    CrOut Ctx St W SP R icb P D n m₀ s cs :=
   ⟨h.env, h.rounds, h.ctr, fun hc => by rw [h.out hc, ← bytesAt_add, Nat.add_sub_cancel' hj], h.frame⟩
 
 /-- The last bytes, with a new keystream block. -/
-theorem cryptTail_ok {R : Nat} {icb : Block} {P : Nat} {D : Addr} {n : Nat} {m₀ : Mem} {j : Nat} {s : State}
-    (h : CrMid Ctx St W SP R icb P D n m₀ j s) (hj : n - j < 16) (hc : ciphOf s.mem Ctx R = ciphOf m₀ Ctx R) :
-    WP isa (cryptTail v.callees) s (CrOut Ctx St W SP R icb P D n m₀) :=
-  WP.mono (cryptTailG_ok v L false h hj hc (by simp [TailSrc])) fun _ o => o.crOut h.le
+theorem cryptTail_okF {R : Nat} {icb : Block} {P : Nat} {D : Addr} {n : Nat} {m₀ : Mem} {j : Nat} {s : State}
+    (h : CrMid Ctx St W SP R icb P D n m₀ j s cs) (hj : n - j < 16) (hc : ciphOf s.mem Ctx R = ciphOf m₀ Ctx R)
+    (F : Fits v cs gs) (hcs : 512 + cs ≤ 2560) :
+    WP isa (cryptTail v.callees) s (CrOut Ctx St W SP R icb P D n m₀ · cs) :=
+  WP.mono (cryptTailG_okF v L false h hj hc (by simp [TailSrc]) F hcs) fun _ o => o.crOut h.le
 
-theorem CrMid.ciph {R : Nat} {icb : Block} {P : Nat} {D : Addr} {n : Nat} {m₀ : Mem} {j : Nat} {s : State}
-    (h : CrMid Ctx St W SP R icb P D n m₀ j s) : ciphOf s.mem Ctx R = ciphOf m₀ Ctx R :=
-  ciph_frame h.frame (ctx_crFrame L h.data) h.rounds.2
+theorem CrMid.ciphF {R : Nat} {icb : Block} {P : Nat} {D : Addr} {n : Nat} {m₀ : Mem} {j : Nat} {s : State}
+    (h : CrMid Ctx St W SP R icb P D n m₀ j s cs) (hcs : 512 + cs ≤ 2560) :
+    ciphOf s.mem Ctx R = ciphOf m₀ Ctx R :=
+  ciph_frame h.frame (ctx_crFrameF L h.data hcs) h.rounds.2
 
 /-- `crypt`. -/
-theorem crypt_ok {R : Nat} {icb : Block} {P : Nat} {D : Addr} {n : Nat} {s : State}
-    (h : CrIn Ctx St W SP R icb P D n s) :
-    WP isa (crypt v.callees) s (CrOut Ctx St W SP R icb P D n s.mem) := by
+theorem crypt_okF {R : Nat} {icb : Block} {P : Nat} {D : Addr} {n : Nat} {s : State}
+    (h : CrIn Ctx St W SP R icb P D n s) (F : Fits v cs gs) (hcs : 512 + cs ≤ 2560) :
+    WP isa (crypt v.callees) s (CrOut Ctx St W SP R icb P D n s.mem · cs) := by
   have hn' := h.data.ok.lt
   have he := h.env
   obtain ⟨s₁, run₁, hzf, hg₁, hm₁, hrd₁, hwr₁⟩ := test_ok s .rbp h.rbp hn'
@@ -561,42 +564,84 @@ theorem crypt_ok {R : Nat} {icb : Block} {P : Nat} {D : Addr} {n : Nat} {s : Sta
       by rw [hg₂]; exact h₁.rbx, h₁.data.of_eq hrd₂ hwr₂, by rw [hm₂]; exact h₁.rounds⟩
     have hm₀ : s₂.mem = s.mem := hm₂.trans hm₁
     refine WP.seq (WP.of_runBlock ⟨s₂, run₂, ?_⟩)
-    refine WP.seq (WP.mono (Q := fun s' => ∃ j, CrMid Ctx St W SP R icb P D n s.mem j s')
+    refine WP.seq (WP.mono (Q := fun s' => ∃ j, CrMid Ctx St W SP R icb P D n s.mem j s' cs)
       (WP.ite (decide (P % 16 = 0)) (eval_e hzf₂) (fun ht => ?_) (fun hf => ?_)) fun s' hj => ?_)
     · have ho : P % 16 = 0 := by simpa using ht
       exact WP.block_nil ⟨0, he₂, by omega_arith, by rw [h₂.r12]; simp, by rw [h₂.rbp, Nat.sub_zero], h₂.data,
         h₂.rounds, fun hc₀ => by rw [hm₀]; simpa using hc₀, fun _ => by simp [bytesAt]; rfl, by rw [hm₀],
         .inr (by omega_arith), by rw [← hm₀]; exact Frame.refl _ _⟩
-    · have := cryptHead_ok h₂ h0 (by simpa using hf)
+    · have := cryptHead_ok h₂ h0 (by simpa using hf) (cs := cs)
       rw [hm₀] at this; exact WP.mono this fun _ h => ⟨_, h⟩
     · obtain ⟨j, hj⟩ := hj
-      refine WP.seq (WP.mono (cryptWhole_ok v L hj (hj.ciph L)) fun s'' hj' => ?_)
-      exact cryptTail_ok v L hj' (by have := hj.le; omega_arith) (hj'.ciph L)
+      refine WP.seq (WP.mono (cryptWhole_okF v L hj (hj.ciphF L hcs) F hcs) fun s'' hj' => ?_)
+      exact cryptTail_okF v L hj' (by have := hj.le; omega_arith) (hj'.ciphF L hcs) F hcs
 
 omit L in
 /-- `cryptHead` alone, for data within the rest of the keystream block. -/
 theorem cryptHead_out {R : Nat} {icb : Block} {P : Nat} {D : Addr} {n : Nat} {s : State}
     (h : CrIn Ctx St W SP R icb P D n s) (hn : n ≠ 0) (hP : P % 16 ≠ 0) (hle : n ≤ 16 - P % 16) :
-    WP isa cryptHead s (CrOut Ctx St W SP R icb P D n s.mem) := by
+    WP isa cryptHead s (CrOut Ctx St W SP R icb P D n s.mem · cs) := by
   have e : min (16 - P % 16) n = n := Nat.min_eq_right hle
-  refine WP.mono (cryptHead_ok h hn hP) fun s' hm => ?_
+  refine WP.mono (cryptHead_ok h hn hP (cs := cs)) fun s' hm => ?_
   rw [e] at hm
   exact ⟨hm.env, hm.rounds, hm.ctr, hm.done, hm.frame⟩
 
 omit L in
 /-- From the start of a keystream block, nothing done yet. -/
 theorem CrIn.mid {R : Nat} {icb : Block} {P : Nat} {D : Addr} {n : Nat} {s : State}
-    (h : CrIn Ctx St W SP R icb P D n s) (hP : P % 16 = 0) : CrMid Ctx St W SP R icb P D n s.mem 0 s :=
+    (h : CrIn Ctx St W SP R icb P D n s) (hP : P % 16 = 0) : CrMid Ctx St W SP R icb P D n s.mem 0 s cs :=
   ⟨h.env, Nat.zero_le _, by rw [h.r12]; simp, by rw [h.rbp, Nat.sub_zero], h.data, h.rounds,
     fun hc₀ => by simpa using hc₀, fun _ => by simp [bytesAt]; rfl, rfl, .inr (by omega_arith), Frame.refl _ _⟩
 
 /-- `cryptAl`: `crypt` from the start of a keystream block. -/
+theorem cryptAl_okF {R : Nat} {icb : Block} {P : Nat} {D : Addr} {n : Nat} {s : State}
+    (h : CrIn Ctx St W SP R icb P D n s) (hP : P % 16 = 0) (F : Fits v cs gs) (hcs : 512 + cs ≤ 2560) :
+    WP isa (cryptAl v.callees) s (CrOut Ctx St W SP R icb P D n s.mem · cs) := by
+  have h₀ := h.mid hP (cs := cs)
+  refine WP.seq (WP.mono (cryptWhole_okF v L h₀ rfl F hcs) fun s' hj => ?_)
+  exact cryptTail_okF v L hj (by omega_arith) (hj.ciphF L hcs) F hcs
+
+
+/-! ### At the working space every implementation takes (`Fits.base`) -/
+
+theorem cwCall_of {R : Nat} {D : Addr} {n j nb : Nat} {s₂ : State} (he₂ : Env Ctx St W SP s₂)
+    (hd : DataW Ctx St W SP s₂ D n) (hj : j ≤ n) (h16 : 16 * nb ≤ n - j) (hR : R = 10 ∨ R = 12 ∨ R = 14)
+    (hdi : s₂.gpr .rdi = Ctx) (hsi : s₂.gpr .rsi = BitVec.ofNat 64 R) (hdx : s₂.gpr .rdx = St + BitVec.ofNat 64 48)
+    (hcx : s₂.gpr .rcx = D + BitVec.ofNat 64 j) (h8 : s₂.gpr .r8 = BitVec.ofNat 64 nb)
+    (h9 : s₂.gpr .r9 = W + BitVec.ofNat 64 512) :
+    CtrCall s₂ Ctx (St + BitVec.ofNat 64 48) (D + BitVec.ofNat 64 j) (W + BitVec.ofNat 64 512) R nb :=
+  cwCall_ofF L he₂ hd hj h16 hR hdi hsi hdx hcx h8 h9 (by decide)
+
+theorem cryptWhole_ok {R : Nat} {icb : Block} {P : Nat} {D : Addr} {n : Nat} {m₀ : Mem} {j : Nat} {s : State}
+    (h : CrMid Ctx St W SP R icb P D n m₀ j s) (hc : ciphOf s.mem Ctx R = ciphOf m₀ Ctx R) :
+    WP isa (cryptWhole v.callees) s (CrMid Ctx St W SP R icb P D n m₀ (j + 16 * ((n - j) / 16))) :=
+  cryptWhole_okF v L h hc (Fits.base v) (by decide)
+
+theorem cryptTailG_ok (to : Bool) {R : Nat} {icb : Block} {P : Nat} {D : Addr} {n : Nat} {m₀ : Mem} {j : Nat}
+    {s : State} {Q : Addr}
+    (h : CrMid Ctx St W SP R icb P D n m₀ j s) (hj : n - j < 16) (hc : ciphOf s.mem Ctx R = ciphOf m₀ Ctx R)
+    (hq : TailSrc to St W SP s m₀ D j n Q) :
+    WP isa (cryptTailG v.callees to) s (CrOutQ Ctx St W SP R icb P D n m₀ Q j) :=
+  cryptTailG_okF v L to h hj hc hq (Fits.base v) (by decide)
+
+theorem cryptTail_ok {R : Nat} {icb : Block} {P : Nat} {D : Addr} {n : Nat} {m₀ : Mem} {j : Nat} {s : State}
+    (h : CrMid Ctx St W SP R icb P D n m₀ j s) (hj : n - j < 16) (hc : ciphOf s.mem Ctx R = ciphOf m₀ Ctx R) :
+    WP isa (cryptTail v.callees) s (CrOut Ctx St W SP R icb P D n m₀) :=
+  cryptTail_okF v L h hj hc (Fits.base v) (by decide)
+
+theorem CrMid.ciph {R : Nat} {icb : Block} {P : Nat} {D : Addr} {n : Nat} {m₀ : Mem} {j : Nat} {s : State}
+    (h : CrMid Ctx St W SP R icb P D n m₀ j s) : ciphOf s.mem Ctx R = ciphOf m₀ Ctx R :=
+  h.ciphF L (by decide)
+
+theorem crypt_ok {R : Nat} {icb : Block} {P : Nat} {D : Addr} {n : Nat} {s : State}
+    (h : CrIn Ctx St W SP R icb P D n s) :
+    WP isa (crypt v.callees) s (CrOut Ctx St W SP R icb P D n s.mem) :=
+  crypt_okF v L h (Fits.base v) (by decide)
+
 theorem cryptAl_ok {R : Nat} {icb : Block} {P : Nat} {D : Addr} {n : Nat} {s : State}
     (h : CrIn Ctx St W SP R icb P D n s) (hP : P % 16 = 0) :
-    WP isa (cryptAl v.callees) s (CrOut Ctx St W SP R icb P D n s.mem) := by
-  have h₀ := h.mid hP
-  refine WP.seq (WP.mono (cryptWhole_ok v L h₀ rfl) fun s' hj => ?_)
-  exact cryptTail_ok v L hj (by omega_arith) (hj.ciph L)
+    WP isa (cryptAl v.callees) s (CrOut Ctx St W SP R icb P D n s.mem) :=
+  cryptAl_okF v L h hP (Fits.base v) (by decide)
 
 end
 
