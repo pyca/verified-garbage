@@ -255,8 +255,7 @@ theorem shift_ok {Φ : State → Prop}
   refine k s₁₂ ?_ ?_ ?_ ?_ (fun r h0 h1 h3 h3' h4 => ?_) (by rw [u₁₂.rd, u₁₁.rd, u₁₀.rd, u₉.rd, rd₈])
     (by rw [u₁₂.wr, u₁₁.wr, u₁₀.wr, u₉.wr, wr₈]) (by rw [u₁₂.sp, u₁₁.sp, u₁₀.sp, u₉.sp, sp₈])
   · rw [← regBlock_shift lo hi (s.gpr .t2)]
-    congr 1
-    refine regBlock_congr ?_ ?_
+    refine congrArg Vector.toList (regBlock_congr ?_ ?_)
     · show s₁₂.mem.readW (b + BitVec.ofNat 64 464) 64 = _
       rw [hm, Mem.readW_writeW_sep (Offset.sep b (by omega_using []) (by omega_using []) (by omega_using [])) (by decide),
         Mem.readW_writeW_self64]; rfl

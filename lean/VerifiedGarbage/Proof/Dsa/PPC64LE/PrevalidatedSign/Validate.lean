@@ -134,8 +134,8 @@ theorem privateChecks_ok {s₀ s : State} {L : Lay} {key : Addr} (hL : L.Ok) (hK
   refine ⟨⟨?_, by rw [mt]; exact K₄, (kall.gpr .r21 (by decide)).trans regs.r21, scr.congr kall.wr⟩,
     kall.mono (by decide)⟩
   rw [t3]
-  congr 2
-  simp only [PrivOk, hK, true_and, Bool.and_eq_true, decide_eq_true_eq, eq_iff_iff]
+  refine congrArg (BitVec.ofNat 64) (ite_congr (propext ?_) (fun _ => rfl) fun _ => rfl)
+  simp only [PrivOk, hK, true_and, Bool.and_eq_true, decide_eq_true_eq]
   exact ⟨fun ⟨a, b⟩ => ⟨b, a⟩, fun ⟨a, b⟩ => ⟨b, a⟩⟩
 
 theorem validatePrivate_correct (s : State) (h : vpkContract.pre s) :
