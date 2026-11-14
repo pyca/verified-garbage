@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.X86_64.ScrubChecks
 public import VerifiedGarbage.Proof.Framework.CodeOnce
 public import VerifiedGarbage.Proof.Framework.X86_64.ResidueKeep
 import VerifiedGarbage.Proof.Framework.X86_64.CallInline
@@ -33,25 +34,6 @@ open VG VG.X86_64
 /-- The upper halves of `zmm0`–`zmm15` agree. -/
 def UA (s₁ s₂ : State) : Prop := s₁.ymmHi = s₂.ymmHi ∧ s₁.zmmHi = s₂.zmmHi
 
-/-- Whether the upper halves agree after `i`, given whether they agreed before it. -/
-def stepI (a : Bool) (i : Instr) : Bool :=
-  match i with
-  | .vop .vzeroupper => true
-  | i => a && i.vecLevel == 0
-
-/-- Whether the upper halves agree after `c`, given whether they agreed before
-it. A loop's body is followed once, from the start of the loop: they then
-agree after it from a start at which they agree too (`up_mono`), as at each
-later iteration. -/
-def up : Prog isa → Bool → Bool
-  | .block is, a => is.foldl stepI a
-  | .seq x y, a => up y (up x a)
-  | .ite _ t e, a => up t a && up e a
-  | .loop b _, a => up b a
-  | .call _ b, a => up b a
-  | .frame _ b _, a => up b a
-  | .icall _ _ b n, a => up b a && up n a
-
 theorem stepI_mono {a a' : Bool} (h : a = true → a' = true) (i : Instr) (hs : stepI a i = true) :
     stepI a' i = true := by
   unfold stepI at hs ⊢
@@ -78,28 +60,6 @@ theorem up_mono : ∀ (c : Prog isa) {a a' : Bool}, (a = true → a' = true) →
   | .icall _ _ b n, _, _, h, hs => by
     simp only [up, Bool.and_eq_true] at hs ⊢; exact ⟨up_mono b h hs.1, up_mono n h hs.2⟩
 
-/-- `up c a`, given calls with `up`'s answer for them (`k`: a call's
-function, code, start and answer), with those calls and the calls of `c`:
-`up` follows the code of a function once per call of it, through every
-function that calls it, and this once per start (`Code.memoCall`). -/
-def upFrom : Prog isa → Bool → List (String × Prog isa × Bool × Bool) →
-    Bool × List (String × Prog isa × Bool × Bool)
-  | .block is, a, k => (is.foldl stepI a, k)
-  | .seq x y, a, k =>
-    let r := upFrom x a k
-    upFrom y r.1 r.2
-  | .ite _ t e, a, k =>
-    let r := upFrom t a k
-    let q := upFrom e a r.2
-    (r.1 && q.1, q.2)
-  | .loop b _, a, k => upFrom b a k
-  | .call n b, a, k => Code.memoCall n b a k fun _ => upFrom b a k
-  | .frame _ b _, a, k => upFrom b a k
-  | .icall _ n b nx, a, k =>
-    let r := Code.memoCall n b a k fun _ => upFrom b a k
-    let q := upFrom nx a r.2
-    (r.1 && q.1, q.2)
-
 theorem upFrom_ok : ∀ (c : Prog isa) (a : Bool) (k : List (String × Prog isa × Bool × Bool)),
     (∀ e ∈ k, e.2.2.2 = up e.2.1 e.2.2.1) →
       (upFrom c a k).1 = up c a ∧ ∀ e ∈ (upFrom c a k).2, e.2.2.2 = up e.2.1 e.2.2.1
@@ -121,21 +81,8 @@ theorem upFrom_ok : ∀ (c : Prog isa) (a : Bool) (k : List (String × Prog isa 
     obtain ⟨hn, kn⟩ := upFrom_ok nx a _ kb
     exact ⟨by rw [upFrom, hn, hb, up], kn⟩
 
-/-- `up c a`, following the code of each function `c` calls once per start. -/
-def upOnce (c : Prog isa) (a : Bool) : Bool := (upFrom c a []).1
-
 theorem upOnce_eq (c : Prog isa) (a : Bool) : upOnce c a = up c a :=
   (upFrom_ok c a [] fun _ h => by cases h).1
-
-/-- The functions `c` may call indirectly. -/
-def inames : Prog isa → List String
-  | .block _ => []
-  | .seq x y => inames x ++ inames y
-  | .ite _ t e => inames t ++ inames e
-  | .loop b _ => inames b
-  | .call _ b => inames b
-  | .frame _ b _ => inames b
-  | .icall _ n b nx => n :: inames b ++ inames nx
 
 theorem exec_ua {i : Instr} {a : Bool} {s₁ s₂ s₁' s₂' : State} (e₁ : exec i s₁ = some s₁')
     (e₂ : exec i s₂ = some s₂') (h : stepI a i = true) (hu : a = true → UA s₁ s₂) : UA s₁' s₂' := by

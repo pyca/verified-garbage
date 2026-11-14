@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.X86_64.ScrubChecks
 public import VerifiedGarbage.Proof.Framework.X86_64.ResidueTaintSound
 public import VerifiedGarbage.Proof.Framework.X86_64.Scrub
 public meta import Lean.Meta.Eval
@@ -677,46 +678,6 @@ def keepFor (sig : Sig) (stack : Nat) (code : Prog isa) (pubs : List (Nat × Nat
   | some (τ, _) => keepOf τ.sec (chunks stack)
   | none => []
 
-/-- `mxClass c`, given calls with their class (`k`: a call's function, code
-and class), with those calls and the calls of `c`: `mxClass` follows the
-code of a function once per call of it, through every function that calls
-it, and this once (`Code.memoCall`). -/
-def mxClassFrom : Prog isa → List (String × Prog isa × Unit × Option MxC) →
-    Option MxC × List (String × Prog isa × Unit × Option MxC)
-  | .block is, k => (if is.all (fun i => !loadsMxcsr i) then some .keep else none, k)
-  | .seq a b, k =>
-    if restoresC a b then (some .mask, k) else
-    let r := mxClassFrom a k
-    match r.1 with
-    | some x =>
-      let q := mxClassFrom b r.2
-      (match q.1 with
-      | some y => (some (x.comp y), q.2)
-      | none => (none, q.2))
-    | none => (none, r.2)
-  | .ite _ t e, k =>
-    let r := mxClassFrom t k
-    match r.1 with
-    | some x =>
-      let q := mxClassFrom e r.2
-      (match q.1 with
-      | some y => (if x = y then some x else none, q.2)
-      | none => (none, q.2))
-    | none => (none, r.2)
-  | .loop b _, k => mxClassFrom b k
-  | .call n b, k => Code.memoCall n b () k fun _ => mxClassFrom b k
-  | .frame i b j, k => if !loadsMxcsr i && !loadsMxcsr j then mxClassFrom b k else (none, k)
-  | .icall i n b nx, k =>
-    if loadsMxcsr i then (none, k) else
-    let r := Code.memoCall n b () k fun _ => mxClassFrom b k
-    match r.1 with
-    | some x =>
-      let q := mxClassFrom nx r.2
-      (match q.1 with
-      | some y => (if x = y then some x else none, q.2)
-      | none => (none, q.2))
-    | none => (none, r.2)
-
 theorem mxClassFrom_ok : ∀ (c : Prog isa) (k : List (String × Prog isa × Unit × Option MxC)),
     (∀ e ∈ k, e.2.2.2 = mxClass e.2.1) →
       (mxClassFrom c k).1 = mxClass c ∧ ∀ e ∈ (mxClassFrom c k).2, e.2.2.2 = mxClass e.2.1
@@ -767,9 +728,6 @@ theorem mxClassFrom_ok : ∀ (c : Prog isa) (k : List (String × Prog isa × Uni
         | none => exact ⟨rfl, kb⟩
         | some y => exact ⟨rfl, kb⟩
 
-/-- `mxClass c`, following the code of each function `c` calls once. -/
-def mxClassOnce (c : Prog isa) : Option MxC := (mxClassFrom c []).1
-
 theorem mxClassOnce_eq (c : Prog isa) : mxClassOnce c = mxClass c :=
   (mxClassFrom_ok c [] fun _ h => by cases h).1
 
@@ -778,7 +736,7 @@ nothing in it writes bits 511:128 of a vector register, else `vpxor`
 (`Instr.vecLevelR`: whatever it does to MXCSR, which `withScrub` asks of
 separately). -/
 def levelFor (code : Prog isa) : VecLevel :=
-  if code.allOnce (fun i => decide (i.vecLevelR ≤ VecLevel.sse.level)) then .sse else .avx
+  if levelLeROnce VecLevel.sse.level code then .sse else .avx
 
 theorem levelFor_ne (code : Prog isa) : levelFor code ≠ .evex := by
   unfold levelFor; split <;> exact VecLevel.noConfusion
@@ -822,7 +780,7 @@ def withScrub {api : Api} (r : Registration api target)
     if hd : r.code.x86_64Depth ≤ r.stack then
     if hst : r.stack + 8 < 2 ^ 64 then
     if h8 : r.stack % 8 = 0 then
-    if hlv : r.code.allOnce (fun i => decide (i.vecLevelR ≤ v.level)) = true then
+    if hlv : levelLeROnce v.level r.code = true then
     if hmx : (mxClassOnce r.code).isSome = true then
     if hrb : api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits ≤ 32 ∨
         api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits = 64 then

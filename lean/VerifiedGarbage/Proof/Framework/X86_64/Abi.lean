@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.X86_64.ScrubChecks
 public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.TCB.X86_64.Target
 import VerifiedGarbage.Proof.Framework.X86_64.Taint
@@ -17,11 +18,6 @@ loads MXCSR keeps it, so its proofs show only the other obligations
 @[expose] public section
 
 namespace VG.X86_64
-
-/-- Whether an instruction loads MXCSR. -/
-def loadsMxcsr : Instr → Bool
-  | .ldmxcsr _ => true
-  | _ => false
 
 theorem exec_mxcsr {i : Instr} (hi : loadsMxcsr i = false) {s s' : State} (h : exec i s = some s') :
     s'.mxcsr = s.mxcsr := by

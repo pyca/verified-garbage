@@ -267,10 +267,9 @@ def MdHash.initAuto (v : MdHash) (extra : List String := []) : InitImpl v.I :=
   if hn : 16 + initFrame v.H ≤ 24 + anyFrame v.H then
   if h8₁ : (16 + initFrame v.H) % 8 = 0 then
   if h8₂ : (24 + anyFrame v.H) % 8 = 0 then
-  if hl₁ : (Impl.StackScratch.X86_64.withStackScratch (initFrame v.H) .r8 v.H.hmacInit).allOnce
-      (fun i => decide (i.vecLevel ≤ lv.level)) = true then
-  if hl₂ : (Impl.StackScratch.X86_64.withStackScratchWiped (anyFrame v.H) .r8 (anyWords v.H)
-      v.H.hmacInitAny).allOnce (fun i => decide (i.vecLevel ≤ lv.level)) = true then
+  if hl₁ : levelLeOnce lv.level (Impl.StackScratch.X86_64.withStackScratch (initFrame v.H) .r8 v.H.hmacInit) = true then
+  if hl₂ : levelLeOnce lv.level (Impl.StackScratch.X86_64.withStackScratchWiped (anyFrame v.H) .r8 (anyWords v.H)
+      v.H.hmacInitAny) = true then
   if hrb : (Spec.Hmac.initSig v.I.S).retBits 64 ≤ 32 ∨ (Spec.Hmac.initSig v.I.S).retBits 64 = 64 then
     let r' := v.initScrubbed lv extra hne hS hd₁ hd₂ hst hn h8₁ h8₂ ((Code.allOnce_eq _ _).symm.trans hl₁)
       ((Code.allOnce_eq _ _).symm.trans hl₂) hrb
